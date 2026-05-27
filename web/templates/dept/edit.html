@@ -1,0 +1,513 @@
+{{/* ==========================================================================
+文件: web/templates/dept/edit.html 模块: 部门管理 职责: 编辑部门表单页。
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .PageTitle (string), .Form (*UpdateReq), .Dept
+(DeptFormView), .Resource (*model.Dept), .ParentOptions ([]ParentOption),
+.Errors ([]FieldError)
+========================================================================== */}}
+{{ define "content" }}
+<style>
+  .dept-tree-trigger {
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+  }
+
+  .dept-tree-menu {
+    width: 100%;
+    padding: var(--space-2);
+  }
+
+  .dept-tree-scroll {
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  .dept-tree-list {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+  }
+
+  .dept-tree-node-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+  }
+
+  .dept-tree-node-row:hover {
+    background: var(--color-surface-muted);
+  }
+
+  .dept-tree-toggle {
+    width: 16px;
+    text-align: center;
+    color: var(--color-text-disabled);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .dept-tree-toggle.placeholder {
+    visibility: hidden;
+    cursor: default;
+  }
+
+  .dept-tree-label {
+    cursor: pointer;
+    flex: 1;
+  }
+
+  .dept-tree-label.active {
+    color: var(--color-primary);
+    font-weight: 500;
+  }
+
+  .dept-tree-label.disabled {
+    color: var(--color-border-strong);
+    cursor: not-allowed;
+  }
+</style>
+<div style="margin-bottom: var(--space-4)">
+  <a href="/admin/depts" class="text-secondary">
+    <i class="bi bi-arrow-left"></i> 返回部门列表
+  </a>
+</div>
+
+<div class="table-panel">
+  <form
+    method="POST"
+    action="/admin/depts/{{ .Resource.ID }}"
+    novalidate
+    data-current-id="{{ .Resource.ID }}"
+    data-dept-status="{{ .Form.Status }}"
+    style="padding: var(--space-6)"
+  >
+    <input type="hidden" name="_method" value="PUT" />
+    <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}" />
+
+    <div
+      style="
+        margin-bottom: var(--space-4);
+        padding-bottom: var(--space-3);
+        border-bottom: 1px solid var(--color-border);
+      "
+    >
+      <h2 class="page-title" style="font-size: 18px">基础信息</h2>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-group" style="grid-column: 1 / -1">
+        <label for="parentId" class="form-label">上级部门</label>
+        <select id="parentId" name="parentId" style="display: none">
+          {{ range .ParentOptions }}
+          <option
+            value="{{ .ID }}"
+            {{
+            if
+            eq
+            .ID
+            $.Dept.ParentID
+            }}selected{{
+            end
+            }}
+          >
+            {{ .Title }}
+          </option>
+          {{ end }}
+        </select>
+        <div class="dropdown" style="width: 100%">
+          <div
+            id="parentTreeTrigger"
+            class="dept-tree-trigger"
+            aria-expanded="false"
+            onclick="return toggleDropdown(this);"
+          >
+            <span id="parentTreeSelectedText">请选择上级部门</span>
+            <i class="bi bi-chevron-down text-muted"></i>
+          </div>
+          <div class="dropdown-menu dept-tree-menu">
+            <input
+              id="parentTreeSearch"
+              type="text"
+              class="input"
+              placeholder="搜索部门"
+            />
+            <div class="dept-tree-scroll" style="margin-top: var(--space-2)">
+              <ul id="parentTreeList" class="dept-tree-list"></ul>
+            </div>
+          </div>
+        </div>
+        <div id="parentSelfWarning" class="field-error" style="display: none">
+          不能选择自己作为上级部门，已自动禁用该选项。
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="name" class="form-label required">部门名称</label>
+        <input
+          id="name"
+          name="name"
+          type="text"
+          maxlength="64"
+          required
+          class="input"
+          value="{{ .Form.Name }}"
+        />
+        <div
+          class="field-error"
+          id="nameRequiredFeedback"
+          style="display: none"
+        >
+          部门名称不能为空
+        </div>
+        {{ range .Errors }}{{ if eq .Field "name" }}
+        <div class="field-error">{{ .Message }}</div>
+        {{ end }}{{ end }}
+      </div>
+
+      <div class="form-group">
+        <label for="sort" class="form-label">排序</label>
+        <input
+          id="sort"
+          name="sort"
+          type="number"
+          class="input"
+          value="{{ .Form.Sort }}"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="managerName" class="form-label">负责人</label>
+        <input
+          id="managerName"
+          name="leader"
+          type="text"
+          class="input"
+          maxlength="64"
+          value="{{ .Form.Leader }}"
+          placeholder="请输入负责人"
+        />
+        {{ range .Errors }}{{ if eq .Field "leader" }}
+        <div class="field-error">{{ .Message }}</div>
+        {{ end }}{{ end }}
+      </div>
+
+      <div class="form-group">
+        <label for="managerPhone" class="form-label">联系电话</label>
+        <input
+          id="managerPhone"
+          name="phone"
+          type="text"
+          class="input"
+          maxlength="32"
+          value="{{ .Form.Phone }}"
+          placeholder="请输入联系电话"
+        />
+        {{ range .Errors }}{{ if eq .Field "phone" }}
+        <div class="field-error">{{ .Message }}</div>
+        {{ end }}{{ end }}
+      </div>
+
+      <div class="form-group">
+        <label for="managerEmail" class="form-label">邮箱</label>
+        <input
+          id="managerEmail"
+          name="email"
+          type="email"
+          class="input"
+          maxlength="64"
+          value="{{ .Form.Email }}"
+          placeholder="请输入邮箱"
+        />
+        {{ range .Errors }}{{ if eq .Field "email" }}
+        <div class="field-error">{{ .Message }}</div>
+        {{ end }}{{ end }}
+      </div>
+
+      <div class="form-group">
+        <label for="status" class="form-label">部门状态</label>
+        <select id="status" name="status" class="select">
+          <option value="0" {{ if ne .Form.Status 1 }}selected{{ end }}>
+            正常
+          </option>
+          <option value="1" {{ if eq .Form.Status 1 }}selected{{ end }}>
+            停用
+          </option>
+        </select>
+        {{ range .Errors }}{{ if eq .Field "status" }}
+        <div class="field-error">{{ .Message }}</div>
+        {{ end }}{{ end }}
+      </div>
+    </div>
+
+    <div
+      style="
+        display: flex;
+        justify-content: flex-end;
+        gap: var(--space-3);
+        margin-top: var(--space-6);
+        padding-top: var(--space-4);
+        border-top: 1px solid var(--color-border);
+      "
+    >
+      <a href="/admin/depts" class="btn btn-neutral">取消</a>
+      <button type="submit" class="btn btn-primary" id="saveDeptBtn">
+        保存
+      </button>
+    </div>
+  </form>
+</div>
+<script>
+  (() => {
+    const form = document.querySelector("form[data-current-id]");
+    const parentSelect = document.getElementById("parentId");
+    const parentTreeList = document.getElementById("parentTreeList");
+    const parentTreeSearch = document.getElementById("parentTreeSearch");
+    const parentTreeSelectedText = document.getElementById(
+      "parentTreeSelectedText",
+    );
+    const selfWarning = document.getElementById("parentSelfWarning");
+    if (
+      form &&
+      parentSelect &&
+      parentTreeList &&
+      parentTreeSearch &&
+      parentTreeSelectedText
+    ) {
+      const currentID = (form.getAttribute("data-current-id") || "").trim();
+      const options = Array.from(parentSelect.options);
+      const parseOption = (option) => {
+        const rawTitle = (option.textContent || "").trim();
+        const matched = rawTitle.match(/^(—\s)*/);
+        const prefix = matched && matched[0] ? matched[0] : "";
+        const level = prefix ? Math.floor(prefix.length / 2) : 0;
+        const title = rawTitle.replace(/^(—\s)*/, "").trim() || "未命名部门";
+        return {
+          id: option.value,
+          title,
+          level,
+          selected: option.selected,
+          disabled: option.disabled,
+        };
+      };
+
+      const items = options.map(parseOption);
+      const stack = [];
+      const roots = [];
+      const childrenMap = new Map();
+      items.forEach((item) => {
+        while (stack.length > item.level) {
+          stack.pop();
+        }
+        const parent = stack.length > 0 ? stack[stack.length - 1] : null;
+        const node = {
+          ...item,
+          children: [],
+          parentId: parent ? parent.id : "",
+        };
+        if (parent) {
+          parent.children.push(node);
+          const bucket = childrenMap.get(parent.id) || [];
+          bucket.push(node.id);
+          childrenMap.set(parent.id, bucket);
+        } else {
+          roots.push(node);
+        }
+        stack.push(node);
+      });
+
+      const disabledIDs = new Set();
+      if (currentID) {
+        disabledIDs.add(currentID);
+        const queue = [...(childrenMap.get(currentID) || [])];
+        while (queue.length > 0) {
+          const id = queue.shift();
+          if (!id || disabledIDs.has(id)) {
+            continue;
+          }
+          disabledIDs.add(id);
+          const next = childrenMap.get(id) || [];
+          next.forEach((childID) => queue.push(childID));
+        }
+      }
+
+      const selectedItem = items.find((it) => it.selected);
+      parentTreeSelectedText.textContent = selectedItem
+        ? selectedItem.title
+        : "请选择上级部门";
+
+      const renderNodes = (nodes, container, depth) => {
+        nodes.forEach((node) => {
+          const li = document.createElement("li");
+          li.dataset.id = node.id;
+          li.dataset.title = node.title.toLowerCase();
+          li.dataset.parentId = node.parentId;
+          li.dataset.depth = String(depth);
+          const row = document.createElement("div");
+          row.className = "dept-tree-node-row";
+          row.style.paddingLeft = `${depth * 14 + 6}px`;
+
+          const toggle = document.createElement("i");
+          if (node.children.length > 0) {
+            toggle.className = "bi bi-chevron-down dept-tree-toggle";
+          } else {
+            toggle.className = "bi bi-dot dept-tree-toggle placeholder";
+          }
+          row.appendChild(toggle);
+
+          const label = document.createElement("span");
+          label.className = "dept-tree-label";
+          label.textContent = node.title;
+          if (node.selected) {
+            label.classList.add("active");
+          }
+          if (disabledIDs.has(node.id)) {
+            label.classList.add("disabled");
+            li.dataset.disabled = "1";
+          }
+          row.appendChild(label);
+          li.appendChild(row);
+
+          if (node.children.length > 0) {
+            const childUL = document.createElement("ul");
+            childUL.className = "dept-tree-list";
+            renderNodes(node.children, childUL, depth + 1);
+            li.appendChild(childUL);
+          }
+          container.appendChild(li);
+        });
+      };
+
+      renderNodes(roots, parentTreeList, 0);
+
+      if (disabledIDs.size > 0 && selfWarning) {
+        selfWarning.style.display = "block";
+      }
+
+      parentTreeList.addEventListener("click", (event) => {
+        const toggle = event.target.closest(".dept-tree-toggle");
+        if (toggle && !toggle.classList.contains("placeholder")) {
+          event.stopPropagation();
+          const li = toggle.closest("li[data-id]");
+          if (!li) {
+            return;
+          }
+          const childUL = li.querySelector(":scope > ul");
+          if (!childUL) {
+            return;
+          }
+          const expanded = toggle.classList.contains("bi-chevron-down");
+          toggle.classList.toggle("bi-chevron-down", !expanded);
+          toggle.classList.toggle("bi-chevron-right", expanded);
+          childUL.style.display = expanded ? "none" : "";
+          return;
+        }
+
+        const label = event.target.closest(".dept-tree-label");
+        if (!label) {
+          return;
+        }
+        const li = label.closest("li[data-id]");
+        if (!li || li.dataset.disabled === "1") {
+          return;
+        }
+        const id = li.dataset.id || "0";
+        parentSelect.value = id;
+        parentTreeSelectedText.textContent =
+          label.textContent || "请选择上级部门";
+        parentTreeList
+          .querySelectorAll(".dept-tree-label.active")
+          .forEach((el) => el.classList.remove("active"));
+        label.classList.add("active");
+      });
+
+      parentTreeSearch.addEventListener("input", () => {
+        const keyword = (parentTreeSearch.value || "").trim().toLowerCase();
+        const allItems = Array.from(
+          parentTreeList.querySelectorAll("li[data-id]"),
+        );
+        if (!keyword) {
+          allItems.forEach((item) => {
+            item.style.display = "";
+          });
+          return;
+        }
+        allItems.forEach((item) => {
+          item.style.display = "none";
+        });
+        allItems.forEach((item) => {
+          const title = item.dataset.title || "";
+          if (!title.includes(keyword)) {
+            return;
+          }
+          item.style.display = "";
+          let parentId = item.dataset.parentId || "";
+          while (parentId) {
+            const parent = parentTreeList.querySelector(
+              `li[data-id="${parentId}"]`,
+            );
+            if (!parent) {
+              break;
+            }
+            parent.style.display = "";
+            const parentToggle = parent.querySelector(
+              ":scope > .dept-tree-node-row .dept-tree-toggle",
+            );
+            const childUL = parent.querySelector(":scope > ul");
+            if (parentToggle && childUL) {
+              parentToggle.classList.add("bi-chevron-down");
+              parentToggle.classList.remove("bi-chevron-right");
+              childUL.style.display = "";
+            }
+            parentId = parent.dataset.parentId || "";
+          }
+        });
+      });
+    }
+
+    const statusSelect = document.getElementById("status");
+    const nameInput = document.getElementById("name");
+    const saveBtn = document.getElementById("saveDeptBtn");
+    const nameFeedback = document.getElementById("nameRequiredFeedback");
+    if (!form || !statusSelect || !nameInput || !saveBtn || !nameFeedback) {
+      return;
+    }
+
+    form.addEventListener("submit", (event) => {
+      const deptName = (nameInput.value || "").trim();
+      if (!deptName) {
+        event.preventDefault();
+        nameInput.classList.add("error");
+        nameFeedback.style.display = "block";
+        nameInput.focus();
+        return;
+      }
+
+      nameInput.classList.remove("error");
+      nameFeedback.style.display = "none";
+      if (saveBtn.dataset.loading === "1") {
+        return;
+      }
+      saveBtn.dataset.loading = "1";
+      saveBtn.disabled = true;
+      saveBtn.innerHTML =
+        '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>保存中...';
+    });
+
+    nameInput.addEventListener("input", () => {
+      if ((nameInput.value || "").trim()) {
+        nameInput.classList.remove("error");
+        nameFeedback.style.display = "none";
+      }
+    });
+  })();
+</script>
+{{ end }}

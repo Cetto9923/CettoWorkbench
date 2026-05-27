@@ -1,0 +1,187 @@
+{{/* ==========================================================================
+文件: web/templates/user/edit.html
+模块: 用户管理
+职责: 渲染编辑用户表单页面。
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .PageTitle (string), .Form (*UpdateReq), .Resource (*model.User), .Roles ([]model.Role), .Depts ([]model.Dept), .SelectedRoleIDs (map[int64]bool), .Errors ([]FieldError)
+========================================================================== */}}
+{{ define "page_css" }}
+<link rel="stylesheet" href="/static/css/user/create.css">
+{{ end }}
+{{ define "content" }}
+<div class="page-header">
+  <div class="page-header-left">
+    <nav class="breadcrumb">
+      <a href="/admin">系统管理</a>
+      <span class="breadcrumb-sep">/</span>
+      <a href="/admin/users">用户管理</a>
+      <span class="breadcrumb-sep">/</span>
+      <span>编辑用户</span>
+    </nav>
+    <h1 class="page-title">编辑用户</h1>
+  </div>
+</div>
+
+<div class="table-panel user-form-panel">
+  <div class="panel-header">
+    <div class="panel-title"><i class="bi bi-person-badge"></i>账号基本信息</div>
+  </div>
+  <form method="POST" action="/admin/users/{{ .Resource.ID }}" novalidate class="user-form">
+    <input type="hidden" name="_method" value="PUT">
+    <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}">
+
+    <div class="user-form-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="account" class="form-label">账号</label>
+          <input id="account" name="account" type="text" maxlength="64" class="input" value="{{ .Resource.Account }}" readonly>
+        </div>
+
+        <div class="form-group">
+          <label for="displayName" class="form-label">姓名</label>
+          <input id="displayName" name="displayName" type="text" maxlength="64" class="input" value="{{ .Form.DisplayName }}">
+          {{ range .Errors }}{{ if eq .Field "displayName" }}<div class="field-error">{{ .Message }}</div>{{ end }}{{ end }}
+        </div>
+
+        <div class="form-group">
+          <label for="email" class="form-label required">邮箱</label>
+          <input id="email" name="email" type="email" maxlength="128" required class="input" value="{{ .Form.Email }}" placeholder="user@company.com">
+          {{ range .Errors }}{{ if eq .Field "email" }}<div class="field-error">{{ .Message }}</div>{{ end }}{{ end }}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label required">性别</label>
+          <div class="user-form-radio-group">
+            <label class="radio-label">
+              <input type="radio" name="gender" value="m" {{ if or (eq .Form.Gender "") (eq .Form.Gender "m") }}checked{{ end }}>
+              <span>男</span>
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="gender" value="f" {{ if eq .Form.Gender "f" }}checked{{ end }}>
+              <span>女</span>
+            </label>
+          </div>
+          {{ range .Errors }}{{ if eq .Field "gender" }}<div class="field-error">{{ .Message }}</div>{{ end }}{{ end }}
+        </div>
+
+        <div class="form-group form-tree-select-field">
+          <label for="userDeptTreeTrigger" class="form-label">部门</label>
+          <div id="userDeptTreeData" class="form-tree-select-data" hidden aria-hidden="true">
+            {{ range .Depts }}
+            <span data-id="{{ .ID }}" data-parent-id="{{ .ParentID }}" data-name="{{ .Name }}"></span>
+            {{ end }}
+          </div>
+          <select id="deptID" name="deptID" class="form-tree-select-native" tabindex="-1" aria-hidden="true">
+            <option value="">不关联部门</option>
+            {{ range .Depts }}
+            <option value="{{ .ID }}" {{ if eq $.Form.DeptID .ID }}selected{{ end }}>{{ .Name }}</option>
+            {{ end }}
+          </select>
+          <div class="dropdown form-tree-select-dropdown">
+            <div class="form-input-clear-wrap">
+              <input
+                id="userDeptTreeTrigger"
+                type="text"
+                class="input form-tree-select-input"
+                data-form-tree-input
+                autocomplete="off"
+                aria-autocomplete="list"
+                placeholder="不关联部门"
+              />
+              <button type="button" class="form-dropdown-chevron" aria-label="展开部门" onclick="return toggleDropdown(this);">
+                <i class="bi bi-chevron-down text-muted" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="form-dropdown-clear" data-form-tree-clear aria-label="清除" hidden>×</button>
+            </div>
+            <div class="dropdown-menu form-tree-select-menu">
+              <div class="form-tree-select-scroll">
+                <ul id="userDeptTreeList" class="form-tree-select-list" role="tree"></ul>
+              </div>
+            </div>
+          </div>
+          {{ range .Errors }}{{ if eq .Field "deptID" }}<div class="field-error">{{ .Message }}</div>{{ end }}{{ end }}
+        </div>
+      </div>
+
+      <section class="user-form-section">
+        <h2 class="user-form-section-title"><i class="bi bi-key-fill"></i>安全凭证</h2>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="password" class="form-label">新密码</label>
+            <input id="password" name="password" type="password" minlength="8" maxlength="64" class="input" placeholder="留空表示不修改">
+            <div class="text-secondary user-form-hint">修改密码时建议字母、数字、符号组合</div>
+            {{ range .Errors }}{{ if eq .Field "password" }}<div class="field-error">{{ .Message }}</div>{{ end }}{{ end }}
+          </div>
+
+          <div class="form-group">
+            <label for="passwordConfirm" class="form-label">确认新密码</label>
+            <input id="passwordConfirm" name="passwordConfirm" type="password" class="input" placeholder="再次输入新密码">
+            {{ range .Errors }}{{ if eq .Field "passwordConfirm" }}<div class="field-error">{{ .Message }}</div>{{ end }}{{ end }}
+          </div>
+        </div>
+      </section>
+
+      <section class="user-form-section">
+        <h2 class="user-form-section-title"><i class="bi bi-shield-lock"></i>角色分配</h2>
+        <div class="form-group">
+          <label class="form-label required">选择角色</label>
+          <div class="dropdown form-multiselect" data-role-dropdown>
+            <div class="form-input-clear-wrap">
+              <div class="form-multiselect-display" data-role-display>
+                <div class="form-multiselect-tags" data-role-tags></div>
+                <input
+                  id="userRoleTrigger"
+                  type="text"
+                  class="input form-multiselect-input"
+                  data-multiselect-filter
+                  placeholder="请选择角色"
+                  autocomplete="off"
+                  aria-autocomplete="list"
+                  aria-label="检索角色"
+                />
+              </div>
+              <button type="button" class="form-dropdown-chevron" aria-label="展开角色" onclick="return toggleDropdown(this);">
+                <i class="bi bi-chevron-down" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="form-dropdown-clear" data-form-multiselect-clear aria-label="清除角色" hidden>×</button>
+            </div>
+            <div class="dropdown-menu form-multiselect-menu">
+              <div class="form-multiselect-scroll">
+                <div class="form-multiselect-list">
+                  {{ range .Roles }}
+                  <label class="checkbox-label form-multiselect-option">
+                    <input name="roleIds" value="{{ .ID }}" type="checkbox" class="checkbox form-multiselect-checkbox" {{ if index $.SelectedRoleIDs .ID }}checked{{ end }}>
+                    <span class="checkbox-box"></span>
+                    <span class="form-multiselect-name">{{ .Name }}</span>
+                  </label>
+                  {{ else }}
+                  <div class="text-secondary">暂无可分配角色</div>
+                  {{ end }}
+                </div>
+              </div>
+            </div>
+          </div>
+          {{ range .Errors }}{{ if eq .Field "roleIds" }}<div class="field-error">{{ .Message }}</div>{{ end }}{{ end }}
+        </div>
+      </section>
+
+      <section class="user-form-section user-form-switch">
+        <div class="user-form-switch-label">
+          <i class="bi bi-toggle-on"></i>
+          <span>账户状态</span>
+        </div>
+        <label for="isActive" class="switch">
+          <input id="isActive" name="isActive" value="1" type="checkbox" {{ if .Form.IsActive }}checked{{ end }}>
+          <span class="slider"></span>
+        </label>
+        {{ range .Errors }}{{ if eq .Field "isActive" }}<div class="field-error">{{ .Message }}</div>{{ end }}{{ end }}
+      </section>
+    </div>
+
+    <div class="user-form-actions">
+      <a href="/admin/users" class="btn btn-neutral">取消</a>
+      <button type="submit" class="btn btn-primary">保存</button>
+    </div>
+  </form>
+</div>
+{{ end }}

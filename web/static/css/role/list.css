@@ -1,0 +1,18 @@
+/* 角色列表：搜索行与内置行强调 */
+.role-table-panel .role-list-search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.role-table-panel .role-list-search-input {
+  width: 220px;
+}
+
+.table tbody tr.row-builtin td {
+  background: var(--color-surface-muted);
+}
+
+.table tbody tr.row-builtin:hover td {
+  background: var(--color-surface-hover);
+}

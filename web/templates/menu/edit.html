@@ -1,0 +1,117 @@
+{{/* ==========================================================================
+文件: web/templates/menu/edit.html
+模块: 菜单管理
+职责: 编辑菜单表单页。
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .PageTitle (string), .Form (*FormReq), .Resource (*model.Menu), .ParentOptions ([]ParentOption), .Errors ([]FieldError)
+========================================================================== */}}
+{{ define "page_css" }}
+<link rel="stylesheet" href="/static/css/menu/create.css">
+{{ end }}
+{{ define "content" }}
+<div class="page-header">
+  <div class="page-header-left">
+    <nav class="breadcrumb">
+      <a href="/admin">系统管理</a>
+      <span class="breadcrumb-sep">/</span>
+      <a href="/admin/menus">菜单管理</a>
+      <span class="breadcrumb-sep">/</span>
+      <span>编辑菜单</span>
+    </nav>
+    <h1 class="page-title">编辑菜单</h1>
+  </div>
+</div>
+
+<div class="table-panel menu-form-panel">
+  <div class="panel-header">
+    <div class="panel-title">菜单信息</div>
+  </div>
+  <form method="POST" action="/admin/menus/{{ .Resource.ID }}" novalidate class="menu-form" data-menu-form data-current-id="{{ .Resource.ID }}">
+    <input type="hidden" name="_method" value="PUT">
+    <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}">
+
+    <div class="menu-form-body">
+      <div class="form-grid">
+        <div class="form-group menu-parent-group" data-menu-field="parent">
+          <label for="parentId" class="form-label">上级菜单</label>
+          <select id="parentId" name="parentId" class="menu-parent-select" data-parent-select>
+            {{ range .ParentOptions }}
+            <option value="{{ .ID }}" {{ if eq $.Form.ParentID .ID }}selected{{ end }}>{{ .Title }}</option>
+            {{ end }}
+          </select>
+          <div class="dropdown menu-parent-dropdown" data-parent-dropdown>
+            <div class="menu-parent-trigger" data-parent-trigger onclick="return toggleDropdown(this);">
+              <input type="text" class="input" value="请选择上级菜单" readonly data-parent-display>
+              <i class="bi bi-chevron-down"></i>
+            </div>
+            <div class="dropdown-menu menu-parent-menu">
+              <input type="text" class="input" placeholder="搜索菜单" data-parent-search>
+              <div class="menu-parent-tree-wrap">
+                <ul class="menu-parent-tree" data-parent-tree></ul>
+              </div>
+            </div>
+          </div>
+          {{ range .Errors }}{{ if eq .Field "parentId" }}<div class="field-error">{{ .Message }}</div>{{ end }}{{ end }}
+        </div>
+
+        <div class="form-group" data-menu-field="type">
+          <label for="type" class="form-label">菜单类型</label>
+          <select id="type" name="menuType" class="select" data-menu-type>
+            <option value="M" {{ if eq .Form.Type "M" }}selected{{ end }}>目录</option>
+            <option value="C" {{ if or (eq .Form.Type "C") (eq .Form.Type "") }}selected{{ end }}>菜单</option>
+            <option value="F" {{ if eq .Form.Type "F" }}selected{{ end }}>按钮</option>
+          </select>
+        </div>
+
+        <div class="form-group" data-menu-field="title">
+          <label for="title" class="form-label required">菜单标题</label>
+          <input id="title" name="title" type="text" maxlength="64" required class="input" value="{{ .Form.Title }}">
+          {{ range .Errors }}{{ if eq .Field "title" }}<div class="field-error">{{ .Message }}</div>{{ end }}{{ end }}
+        </div>
+
+        <div class="form-group field-path" data-field="path" data-menu-field="path">
+          <label for="path" class="form-label">路由路径</label>
+          <input id="path" name="path" type="text" maxlength="255" class="input" value="{{ .Form.Path }}" placeholder="/admin/xxx">
+          <div class="text-secondary menu-field-tip">用于菜单跳转地址，目录类型可仅作为分组容器。</div>
+          {{ range .Errors }}{{ if eq .Field "path" }}<div class="field-error">{{ .Message }}</div>{{ end }}{{ end }}
+        </div>
+
+        <div class="form-group field-perm" data-field="perm" data-menu-field="perm">
+          <label for="perm" class="form-label">权限标识</label>
+          <input id="perm" name="perm" type="text" maxlength="64" class="input" value="{{ .Form.Perm }}" placeholder="user:list">
+          {{ range .Errors }}{{ if eq .Field "perm" }}<div class="field-error">{{ .Message }}</div>{{ end }}{{ end }}
+        </div>
+
+        <div class="form-group" data-menu-field="sort">
+          <label for="sort" class="form-label">显示排序</label>
+          <input id="sort" name="sort" type="number" class="input menu-number-input" value="{{ .Form.Sort }}">
+        </div>
+
+        <div class="form-group" data-menu-field="icon">
+          <label for="icon" class="form-label">图标</label>
+          <div class="dropdown menu-icon-dropdown" data-icon-dropdown>
+            <div class="menu-icon-field-row">
+              <span class="menu-icon-preview" data-icon-preview><i class="bi bi-app"></i></span>
+              <input id="icon" name="icon" type="text" maxlength="64" class="input menu-icon-field-input" value="{{ .Form.Icon }}" placeholder="bi-gear">
+              <button type="button" class="btn btn-neutral btn-sm menu-icon-picker-open">选择图标</button>
+            </div>
+            <div class="dropdown-menu menu-icon-picker-menu">
+              <input type="text" class="input" placeholder="搜索图标" data-icon-search autocomplete="off">
+              <div class="menu-icon-picker-grid" data-icon-grid></div>
+            </div>
+          </div>
+          {{ range .Errors }}{{ if eq .Field "icon" }}<div class="field-error">{{ .Message }}</div>{{ end }}{{ end }}
+        </div>
+      </div>
+    </div>
+
+    <div class="menu-form-actions">
+      <a href="/admin/menus" class="btn btn-neutral">取消</a>
+      <button type="submit" class="btn btn-primary">保存</button>
+    </div>
+  </form>
+</div>
+{{ end }}
+{{ define "page_js" }}
+<script src="/static/js/menu/create.js"></script>
+{{ end }}

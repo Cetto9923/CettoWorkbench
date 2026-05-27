@@ -1,0 +1,446 @@
+/* ==========================================================================
+   文件: web/static/css/layout.css
+   模块: 布局
+   职责: 顶部导航 + 侧边栏 + 主内容区的三栏骨架布局
+         侧边栏支持多级展开/折叠与整体收起；主区为侧栏外剩余宽度的 70% 并水平居中
+   规范: 遵循 DESIGN_SYSTEM.md §1 变量 + §3 布局 + §4 导航
+========================================================================== */
+
+/* ── Topbar ── */
+
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: auto;
+  min-height: var(--topbar-height);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0;
+  z-index: 100;
+}
+
+.topbar-row {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: var(--space-4);
+  box-sizing: border-box;
+  height: var(--topbar-height);
+  min-height: var(--topbar-height);
+  padding: 0 var(--space-6);
+}
+
+.topbar-primary-spacer {
+  flex: 1;
+  min-width: 0;
+}
+
+/* layout.nav=top：无侧栏，主区全宽 */
+body.layout-nav-top .sidebar {
+  display: none;
+}
+
+body.layout-nav-top .main,
+body.layout-nav-top.sidebar-collapsed .main {
+  --main-gutter: 0px;
+  margin-left: calc(var(--main-gutter) + (100vw - var(--main-gutter)) * 0.15);
+  width: calc((100vw - var(--main-gutter)) * 0.7);
+  max-width: calc((100vw - var(--main-gutter)) * 0.7);
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-md);
+  font-weight: 500;
+  color: var(--color-text-primary);
+  width: var(--sidebar-width);
+  min-height: 0;
+  transition: width 0.2s ease;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 0;
+}
+
+/* ── Layout ── */
+
+.layout {
+  display: flex;
+  margin-top: var(--topbar-stack-height);
+  min-height: calc(100vh - var(--topbar-stack-height));
+}
+
+/* ── Sidebar ── */
+
+.sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  position: fixed;
+  top: var(--topbar-stack-height);
+  left: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: width 0.2s ease;
+  z-index: 50;
+}
+
+.sidebar-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--space-2) 0;
+}
+
+.sidebar-body::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-body::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--space-1);
+}
+
+.sidebar-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-footer {
+  border-top: 1px solid var(--color-border);
+  padding: var(--space-2) 0;
+}
+
+/* ── Nav Group ──
+   根级分组容器，与 DESIGN_SYSTEM.md §4 一致 */
+
+.nav-group {
+  padding: 0 var(--space-2);
+  margin-bottom: var(--space-1);
+}
+
+.nav-group-label {
+  display: block;
+  font-size: var(--font-size-2xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-disabled);
+  padding: var(--space-2) var(--space-2) var(--space-1);
+}
+
+/* ── Nav Item ──
+   与 DESIGN_SYSTEM.md §4 完全一致的基础样式 */
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1_5) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  cursor: pointer;
+  position: relative;
+  white-space: nowrap;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  transition: background 0.1s, color 0.1s;
+}
+
+.nav-item:hover {
+  background: var(--color-surface-muted);
+  color: var(--color-text-primary);
+}
+
+.nav-item.active {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+/* 激活项左侧竖线（无圆角，§4 规范） */
+.nav-item.active::before {
+  content: "";
+  position: absolute;
+  left: calc(-1 * var(--space-2));
+  top: var(--space-1);
+  bottom: var(--space-1);
+  width: 3px;
+  background: var(--color-primary);
+  border-radius: 0;
+}
+
+.nav-icon {
+  width: var(--size-3_75);
+  height: var(--size-3_75);
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-icon i,
+.nav-icon svg {
+  width: var(--size-3_75);
+  height: var(--size-3_75);
+}
+
+/* 当 .nav-icon 本身就是 <i> 而非包裹层时 */
+i.nav-icon {
+  font-size: var(--font-size-lg);
+  line-height: 1;
+}
+
+.nav-item-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: opacity 0.2s ease, width 0.2s ease;
+}
+
+/* ── Nav Item Header（带箭头的父级行）── */
+
+.nav-item-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  border-radius: var(--radius-sm);
+  transition: background 0.1s;
+}
+
+.nav-item-header:hover {
+  background: var(--color-surface-muted);
+}
+
+.nav-item-header .nav-item {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+}
+
+/* header 内的 nav-item 不需要自己的 hover 背景，由 header 统一处理 */
+.nav-item-header .nav-item:hover {
+  background: transparent;
+}
+
+.nav-item-header.has-active-child {
+  color: var(--color-primary);
+}
+
+.nav-item-header.has-active-child .nav-item {
+  color: var(--color-primary);
+}
+
+/* ── 展开箭头 ── */
+
+.nav-arrow-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--color-text-disabled);
+  transition: color 0.1s;
+}
+
+.nav-arrow-btn:hover {
+  color: var(--color-text-primary);
+}
+
+.nav-arrow {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.nav-arrow-btn[aria-expanded="true"] > .nav-arrow {
+  transform: rotate(90deg);
+}
+
+/* ── Submenu 面板 ── */
+
+.nav-submenu {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.25s ease;
+}
+
+/* ── 按 data-depth 计算缩进 ──
+   核心对齐机制：每嵌套一层，左侧增加 var(--space-5) = 20px。
+   depth=0 (根级)  → 继承 .nav-group 的 padding，nav-item 用默认 padding
+   depth=1 (一级子) → padding-left: 12px + 20px = 32px
+   depth=2 (二级子) → padding-left: 12px + 40px = 52px
+   depth=3 (三级子) → padding-left: 12px + 60px = 72px
+
+   对齐关键：
+   所有 .nav-item 的 gap: 8px + .nav-icon 15px 是固定的，
+   只有 padding-left 随深度变化，因此图标和文字各自纵向对齐。 */
+
+/* 子菜单内的直接叶子链接 */
+.nav-submenu > .nav-item[data-depth="1"] {
+  padding-left: var(--space-8);
+}
+
+.nav-submenu > .nav-item[data-depth="2"] {
+  padding-left: calc(var(--space-8) + var(--space-5));
+}
+
+.nav-submenu > .nav-item[data-depth="3"] {
+  padding-left: calc(var(--space-8) + var(--space-5) * 2);
+}
+
+/* 子菜单内的可展开组 */
+.nav-submenu > .nav-group-collapsible[data-depth="1"] > .nav-item-header {
+  padding-left: var(--space-5);
+}
+
+.nav-submenu > .nav-group-collapsible[data-depth="2"] > .nav-item-header {
+  padding-left: calc(var(--space-5) * 2);
+}
+
+.nav-submenu > .nav-group-collapsible[data-depth="3"] > .nav-item-header {
+  padding-left: calc(var(--space-5) * 3);
+}
+
+/* ── 收起按钮 ── */
+
+.sidebar-collapse-icon {
+  transition: transform 0.2s ease;
+}
+
+/* ── Sidebar 收起状态 ── */
+
+body.sidebar-collapsed .sidebar {
+  width: var(--sidebar-width-collapsed);
+}
+
+body.sidebar-collapsed .topbar-brand {
+  width: var(--sidebar-width-collapsed);
+}
+
+body.sidebar-collapsed .main {
+  --main-gutter: var(--sidebar-width-collapsed);
+  margin-left: calc(var(--main-gutter) + (100vw - var(--main-gutter)) * 0.15);
+  width: calc((100vw - var(--main-gutter)) * 0.7);
+  max-width: calc((100vw - var(--main-gutter)) * 0.7);
+}
+
+body.sidebar-collapsed .sidebar .nav-item-text,
+body.sidebar-collapsed .sidebar .nav-arrow {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+}
+
+body.sidebar-collapsed .sidebar .nav-submenu {
+  max-height: 0 !important;
+}
+
+body.sidebar-collapsed .sidebar .nav-item {
+  justify-content: center;
+  padding: var(--space-1_5) 0;
+}
+
+body.sidebar-collapsed .sidebar .nav-item-header {
+  justify-content: center;
+}
+
+body.sidebar-collapsed .sidebar .nav-arrow-btn {
+  display: none;
+}
+
+body.sidebar-collapsed .sidebar .nav-group {
+  padding: 0 var(--space-1);
+}
+
+body.sidebar-collapsed .sidebar .sidebar-collapse-icon {
+  transform: rotate(180deg);
+}
+
+/* ── Main Content ──
+   主区宽度为「视口减去侧栏占位」的 70%，并在该区域内水平居中（左右各余 15%） */
+
+.main {
+  flex: 1 1 auto;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: var(--space-6);
+  min-height: calc(100vh - var(--topbar-stack-height));
+  transition:
+    margin-left 0.2s ease,
+    width 0.2s ease,
+    max-width 0.2s ease;
+  --main-gutter: var(--sidebar-width);
+  width: calc((100vw - var(--main-gutter)) * 0.7);
+  max-width: calc((100vw - var(--main-gutter)) * 0.7);
+  margin-left: calc(var(--main-gutter) + (100vw - var(--main-gutter)) * 0.15);
+}
+
+/* layout-chrome-hidden：无顶栏、无侧栏；主区在整页视口内 70% 居中（须写在 .main 之后以免被覆盖） */
+
+body.layout-chrome-hidden .layout {
+  margin-top: 0;
+  min-height: 100vh;
+}
+
+body.layout-chrome-hidden .main,
+body.layout-chrome-hidden.sidebar-collapsed .main {
+  --main-gutter: 0px;
+  margin-left: calc((100vw - var(--main-gutter)) * 0.15);
+  width: calc((100vw - var(--main-gutter)) * 0.7);
+  max-width: calc((100vw - var(--main-gutter)) * 0.7);
+  min-height: 100vh;
+}
+
+/* ── 响应式：1024px 以下 ── */
+
+@media (max-width: 1024px) {
+  .table-scroll-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table-scroll-wrapper .table {
+    table-layout: auto;
+    min-width: 700px;
+  }
+
+  .table-scroll-wrapper .table th:nth-child(3),
+  .table-scroll-wrapper .table td:nth-child(3) {
+    position: sticky;
+    left: calc(var(--size-10) + var(--size-14));
+    background: inherit;
+    z-index: 1;
+  }
+
+  .table-scroll-wrapper .table th:last-child,
+  .table-scroll-wrapper .table td:last-child {
+    position: sticky;
+    right: 0;
+    background: inherit;
+    z-index: 1;
+  }
+}

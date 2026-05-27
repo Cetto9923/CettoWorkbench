@@ -1,0 +1,84 @@
+{{/* ==========================================================================
+文件: web/templates/dicttype/list.html
+模块: 字典类型
+职责: 字典类型列表页。
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .PageTitle (string), .Items ([]model.DictType), .Q (string)
+========================================================================== */}}
+{{ define "actions" }}
+<div></div>
+{{ end }}
+{{ define "searchpanel_fields" }}
+<div class="search-fields user-search-fields">
+  <div class="field-group search-field">
+    <label for="dictQ">
+      <i class="bi bi-search"></i>
+      <span>关键词</span>
+    </label>
+    <input id="dictQ" name="q" type="search" class="search-input" value="{{ .Q }}" placeholder="例如: gender 或 性别">
+  </div>
+</div>
+{{ end }}
+{{ define "content" }}
+{{ template "components/searchpanel" (dict
+  "PanelID" "dictTypeListSearchPanelBody"
+  "Action" "/admin/dict-types"
+  "Method" "GET"
+  "Title" "检索条件"
+  "CollapsedByDefault" true
+  "ResetURL" "/admin/dict-types"
+  "Data" .
+) }}
+<div class="table-toolbar">
+  <a href="/admin/dict-types/new" class="table-create-btn">
+    <i class="bi bi-plus-lg"></i>
+    <span>新增字典类型</span>
+  </a>
+</div>
+<div class="zen-card table-container">
+  <div class="table-wrapper">
+    <table class="table data-table zen-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>编码</th>
+          <th>名称</th>
+          <th>备注</th>
+          <th class="text-end">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ range .Items }}
+        <tr>
+          <td>{{ .ID }}</td>
+          <td><span class="badge bg-light text-dark border">{{ .Code }}</span></td>
+          <td>{{ .Name }}</td>
+          <td class="text-muted small">{{ if .Remark }}{{ .Remark }}{{ else }}—{{ end }}</td>
+          <td>
+            <div class="d-flex justify-content-end align-items-center gap-1 flex-nowrap zen-action-group">
+              <a href="/admin/dict-items?typeCode={{ .Code }}&typeName={{ .Name }}" class="zen-icon-action info" title="字典数据" aria-label="字典数据">
+                <i class="bi bi-list-ul"></i>
+              </a>
+              <a href="/admin/dict-types/{{ .ID }}/edit" class="zen-icon-action primary" title="编辑" aria-label="编辑">
+                <i class="bi bi-pencil-square"></i>
+              </a>
+              <form method="POST" action="/admin/dict-types/{{ .ID }}" class="d-inline">
+                <input type="hidden" name="_method" value="DELETE" />
+                <input type="hidden" name="csrf_token" value="{{ $.CSRFToken }}" />
+                <button type="submit" class="zen-icon-action primary" title="删除" aria-label="删除" data-confirm="确定删除字典类型 {{ .Name }}？">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {{ else }}
+        <tr>
+          <td colspan="5" class="text-center text-muted py-4">暂无字典类型数据</td>
+        </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{ end }}

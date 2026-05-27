@@ -1,0 +1,100 @@
+{{/* ==========================================================================
+文件: web/templates/operationlog/list.html
+模块: 操作日志
+职责: 渲染操作日志列表与筛选表单。
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .PageTitle (string), .Form (*operationlog.ListReq), .Logs ([]*model.OperationLog), .Pager (*pagination.Pager)
+========================================================================== */}}
+{{ define "content" }}
+{{ template "components/searchpanel" (dict
+  "PanelID" "operationLogListSearchPanelBody"
+  "Action" "/admin/operation-logs"
+  "Method" "GET"
+  "Title" "检索条件"
+  "CollapsedByDefault" true
+  "ResetURL" "/admin/operation-logs"
+  "Data" .
+) }}
+
+<div class="zen-card table-container">
+  <div class="table-wrapper">
+    <table class="table data-table zen-table">
+      <thead>
+        <tr>
+          <th>时间</th>
+          <th>操作人</th>
+          <th>方法</th>
+          <th>路径</th>
+          <th>状态码</th>
+          <th>IP</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ range .Logs }}
+        <tr>
+          <td>{{ .CreatedAt.Format "2006-01-02 15:04:05.000" }}</td>
+          <td>{{ if .Account }}{{ .Account }}{{ else }}-{{ end }}</td>
+          <td>
+            {{ if eq .Method "POST" }}
+            <span class="badge rounded-pill text-bg-primary">POST</span>
+            {{ else if eq .Method "PUT" }}
+            <span class="badge rounded-pill text-bg-warning">PUT</span>
+            {{ else if eq .Method "DELETE" }}
+            <span class="badge rounded-pill text-bg-danger">DELETE</span>
+            {{ else }}
+            <span class="badge rounded-pill text-bg-secondary">{{ .Method }}</span>
+            {{ end }}
+          </td>
+          <td>{{ .Path }}</td>
+          <td>
+            {{ if ge .StatusCode 400 }}
+            <span class="text-danger">{{ .StatusCode }}</span>
+            {{ else }}
+            {{ .StatusCode }}
+            {{ end }}
+          </td>
+          <td>{{ .IP }}</td>
+        </tr>
+        {{ else }}
+        <tr>
+          <td colspan="6" class="text-center text-muted py-4">暂无操作日志</td>
+        </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-body border-top bg-white">
+    {{ template "components/pager" . }}
+  </div>
+</div>
+{{ end }}
+{{ define "searchpanel_fields" }}
+<div class="search-fields user-search-fields">
+  <div class="field-group search-field">
+    <label for="operationAccount">
+      <i class="bi bi-person"></i>
+      <span>操作人</span>
+    </label>
+    <input id="operationAccount" type="text" name="account" class="search-input" placeholder="请输入操作人" value="{{ .Form.Account }}">
+  </div>
+  <div class="field-group search-field">
+    <label for="operationMethod">
+      <i class="bi bi-list"></i>
+      <span>请求方法</span>
+    </label>
+    <select id="operationMethod" name="method" class="select">
+      <option value="" {{ if eq .Form.Method "" }}selected{{ end }}>全部方法</option>
+      <option value="POST" {{ if eq .Form.Method "POST" }}selected{{ end }}>POST</option>
+      <option value="PUT" {{ if eq .Form.Method "PUT" }}selected{{ end }}>PUT</option>
+      <option value="DELETE" {{ if eq .Form.Method "DELETE" }}selected{{ end }}>DELETE</option>
+    </select>
+  </div>
+  <div class="field-group search-field">
+    <label for="operationPath">
+      <i class="bi bi-link-45deg"></i>
+      <span>请求路径</span>
+    </label>
+    <input id="operationPath" type="text" name="path" class="search-input" placeholder="请输入请求路径" value="{{ .Form.Path }}">
+  </div>
+</div>
+{{ end }}

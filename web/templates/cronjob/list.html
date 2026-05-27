@@ -1,0 +1,77 @@
+{{/* ==========================================================================
+文件: web/templates/cronjob/list.html
+模块: 定时任务
+职责: 渲染定时任务列表并提供启用禁用、手动触发与日志入口。
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .PageTitle (string), .Jobs ([]model.CronJob), .Pager (*pagination.Pager)
+========================================================================== */}}
+{{ define "content" }}
+<div class="d-flex justify-content-end mb-3">
+  <a href="/admin/cron-jobs/logs" class="btn btn-outline-secondary">查看执行日志</a>
+</div>
+
+<div class="zen-card table-container">
+  <div class="table-wrapper">
+    <table class="table data-table zen-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>名称</th>
+          <th>表达式</th>
+          <th>状态</th>
+          <th>最后执行时间</th>
+          <th class="text-end">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ range .Jobs }}
+        <tr>
+          <td>{{ .ID }}</td>
+          <td><code>{{ .Name }}</code></td>
+          <td><code>{{ .Spec }}</code></td>
+          <td>
+            {{ if .IsEnabled }}
+            <span class="badge rounded-pill text-bg-success">启用</span>
+            {{ else }}
+            <span class="badge rounded-pill text-bg-secondary">禁用</span>
+            {{ end }}
+          </td>
+          <td>
+            {{ if .LastRunAt }}
+              {{ .LastRunAt.Format "2006-01-02 15:04:05" }}
+            {{ else }}
+              <span class="text-muted">-</span>
+            {{ end }}
+          </td>
+          <td>
+            <div class="d-flex justify-content-end align-items-center gap-2 flex-nowrap">
+              <form method="POST" action="/admin/cron-jobs/{{ .ID }}/toggle">
+                <input type="hidden" name="csrf_token" value="{{ $.CSRFToken }}">
+                {{ if .IsEnabled }}
+                <input type="hidden" name="isEnabled" value="false">
+                <button type="submit" class="btn btn-sm btn-outline-warning">禁用</button>
+                {{ else }}
+                <input type="hidden" name="isEnabled" value="true">
+                <button type="submit" class="btn btn-sm btn-outline-success">启用</button>
+                {{ end }}
+              </form>
+              <form method="POST" action="/admin/cron-jobs/{{ .ID }}/trigger">
+                <input type="hidden" name="csrf_token" value="{{ $.CSRFToken }}">
+                <button type="submit" class="btn btn-sm btn-primary" {{ if not .IsEnabled }}disabled{{ end }}>手动触发</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {{ else }}
+        <tr>
+          <td colspan="6" class="text-center text-muted py-4">暂无定时任务</td>
+        </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-body border-top bg-white">
+    {{ template "components/pager" . }}
+  </div>
+</div>
+{{ end }}

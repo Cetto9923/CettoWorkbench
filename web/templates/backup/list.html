@@ -1,0 +1,55 @@
+{{/* ==========================================================================
+文件: web/templates/backup/list.html
+模块: 数据库备份
+职责: 渲染备份记录列表并提供手动备份与下载入口。
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .PageTitle (string), .Records ([]model.BackupRecord), .Pager (*pagination.Pager)
+========================================================================== */}}
+{{ define "content" }}
+<div class="d-flex justify-content-end mb-3">
+  <form method="POST" action="/admin/backups">
+    <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}">
+    <button type="submit" class="btn btn-primary">立即备份</button>
+  </form>
+</div>
+
+<div class="zen-card table-container">
+  <div class="table-wrapper">
+    <table class="table data-table zen-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>文件名</th>
+          <th>大小</th>
+          <th>创建时间</th>
+          <th class="text-end">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ range .Records }}
+        <tr>
+          <td>{{ .ID }}</td>
+          <td><code>{{ .Filename }}</code></td>
+          <td>{{ .SizeByte }} B</td>
+          <td>{{ .CreatedDate.Format "2006-01-02 15:04:05" }}</td>
+          <td>
+            <div class="d-flex justify-content-end align-items-center gap-1 flex-nowrap zen-action-group">
+              <a href="/admin/backups/{{ .ID }}/download" class="zen-icon-action primary" title="下载" aria-label="下载">
+                <i class="bi bi-download"></i>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {{ else }}
+        <tr>
+          <td colspan="5" class="text-center text-muted py-4">暂无备份记录</td>
+        </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-body border-top bg-white">
+    {{ template "components/pager" . }}
+  </div>
+</div>
+{{ end }}

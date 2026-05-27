@@ -1,0 +1,118 @@
+{{/* ==========================================================================
+文件: web/templates/menu/list.html
+模块: 菜单管理
+职责: 菜单树形列表页（扁平渲染，按层级缩进）。
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .PageTitle (string), .Items ([]FlatItem)
+========================================================================== */}}
+{{ define "page_css" }}
+<link rel="stylesheet" href="/static/css/menu/list.css">
+{{ end }}
+{{ define "searchpanel_fields" }}
+<div class="search-fields user-search-fields">
+  <div class="field-group search-field">
+    <label for="menuSearch">
+      <i class="bi bi-search"></i>
+      <span>菜单名称</span>
+    </label>
+    <input type="text" id="menuSearch" name="q" class="search-input" placeholder="搜索菜单名称...">
+  </div>
+</div>
+{{ end }}
+{{ define "content" }}
+{{ template "components/searchpanel" (dict
+  "PanelID" "menuListSearchPanelBody"
+  "Action" "/admin/menus"
+  "Method" "GET"
+  "Title" "检索条件"
+  "CollapsedByDefault" true
+  "ResetURL" "/admin/menus"
+  "Data" .
+) }}
+<div class="table-panel menu-table-panel">
+  <div class="panel-header">
+    <div class="panel-title">菜单列表</div>
+    <div class="panel-actions">
+      <a href="/admin/menus/new" class="btn btn-primary btn-sm">新增顶级菜单</a>
+    </div>
+  </div>
+  <div class="table-wrapper table-scroll-wrapper">
+    <table class="table data-table zen-table menu-table">
+      <thead>
+        <tr>
+          <th class="col-id">ID</th>
+          <th>名称</th>
+          <th>类型</th>
+          <th>路径</th>
+          <th>权限</th>
+          <th class="col-num">排序</th>
+          <th class="col-action">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ range .Items }}
+        {{ $row := . }}
+        {{ $hasChildren := false }}
+        {{ range $.Items }}
+        {{ if eq .ParentID $row.ID }}{{ $hasChildren = true }}{{ end }}
+        {{ end }}
+        {{ $typeVal := "2" }}
+        {{ $typeName := "菜单" }}
+        {{ $badgeClass := "status-success" }}
+        {{ if eq $row.Type "M" }}
+          {{ $typeVal = "1" }}
+          {{ $typeName = "目录" }}
+          {{ $badgeClass = "status-active" }}
+        {{ else if eq $row.Type "F" }}
+          {{ $typeVal = "3" }}
+          {{ $typeName = "按钮" }}
+          {{ $badgeClass = "status-inactive" }}
+        {{ end }}
+        <tr
+          data-id="{{ .ID }}"
+          data-parent-id="{{ .ParentID }}"
+          data-type="{{ $typeVal }}"
+          data-level="{{ .Level }}"
+          data-title="{{ .Title }}"
+          class="tree-row"
+          {{ if gt .Level 1 }}style="display:none;"{{ end }}
+        >
+          <td class="text-muted">{{ .ID }}</td>
+          <td>
+            <div class="tree-cell" style="--depth: {{ sub .Level 1 }}; padding-left: calc(var(--depth, 0) * 20px + 8px);">
+              {{ if $hasChildren }}
+              <i class="bi bi-chevron-down tree-toggle" title="展开/折叠"></i>
+              {{ else }}
+              <i class="bi bi-chevron-right tree-toggle tree-toggle-placeholder" title="无子节点"></i>
+              {{ end }}
+              {{ if .Icon }}<i class="bi {{ .Icon }} text-muted"></i>{{ end }}
+              <span class="text-strong">{{ .Title }}</span>
+            </div>
+          </td>
+          <td>
+            {{ template "ui/badge" (dict "Class" $badgeClass "Text" $typeName) }}
+          </td>
+          <td class="text-muted">{{ if .Path }}{{ .Path }}{{ else }}—{{ end }}</td>
+          <td class="text-muted">{{ if .Perm }}{{ .Perm }}{{ else }}—{{ end }}</td>
+          <td class="text-center text-muted">{{ .Sort }}</td>
+          <td>
+            {{ template "ui/action-group" (dict "ID" .ID "Name" .Title "EditUrl" (printf "/admin/menus/%d/edit" .ID) "DeleteUrl" (printf "/admin/menus/%d" .ID) "AddSubUrl" (printf "/admin/menus/new?parentId=%d" .ID)) }}
+          </td>
+        </tr>
+        {{ else }}
+        <tr>
+          <td colspan="7">
+            <div class="empty-state">
+              <p class="empty-state-text">暂无菜单数据</p>
+            </div>
+          </td>
+        </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{ end }}
+{{ define "page_js" }}
+<script src="/static/js/menu/list.js"></script>
+{{ end }}

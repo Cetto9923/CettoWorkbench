@@ -1,0 +1,237 @@
+{{/* ==========================================================================
+文件: web/templates/user/list.html 模块: 用户管理 职责:
+渲染用户列表、搜索筛选与行内操作入口。 全局字段: .CurrentUser, .CSRFToken,
+.Flash, .Menus, .AppName, .CurrentPath 页面字段: .Title (string), .PageTitle
+(string), .Users ([]UserListItem), .Pager (*pagination.Pager), .Q (string),
+.Status (string)
+========================================================================== */}}
+{{ define "page_css" }}
+<link rel="stylesheet" href="/static/css/user/list.css" />
+{{ end }} {{ define "actions" }}
+<div></div>
+{{ end }} {{ define "searchpanel_fields" }}
+<div class="search-fields user-search-fields">
+  <div class="field-group search-field">
+    <label for="searchAccount">
+      <i class="bi bi-person-badge"></i>
+      <span>账号</span>
+    </label>
+    <input
+      id="searchAccount"
+      type="search"
+      name="account"
+      class="search-input"
+      value="{{ .SearchForm.Account }}"
+      placeholder="请输入账号"
+      autocomplete="off"
+    />
+  </div>
+  <div class="field-group search-field">
+    <label for="searchEmail">
+      <i class="bi bi-envelope"></i>
+      <span>邮箱</span>
+    </label>
+    <input
+      id="searchEmail"
+      type="search"
+      name="email"
+      class="search-input"
+      value="{{ .SearchForm.Email }}"
+      placeholder="请输入邮箱"
+      autocomplete="off"
+    />
+  </div>
+  <div class="field-group search-field">
+    <label for="searchStatus">
+      <i class="bi bi-toggle-on"></i>
+      <span>状态</span>
+    </label>
+    <select id="searchStatus" name="status" class="select">
+      <option value="" {{ if eq .SearchForm.Status "" }}selected{{ end }}>全部状态</option>
+      <option value="active" {{ if eq .SearchForm.Status "active" }}selected{{ end }}>启用</option>
+      <option value="inactive" {{ if eq .SearchForm.Status "inactive" }}selected{{ end }}>禁用</option>
+    </select>
+  </div>
+</div>
+{{ end }} {{ define "content" }}
+{{ template "components/searchpanel" (dict
+  "PanelID" "userListSearchPanelBody"
+  "Action" "/admin/users"
+  "Method" "GET"
+  "Title" "检索条件"
+  "CollapsedByDefault" true
+  "ResetURL" "/admin/users"
+  "Data" .
+) }}
+  <div class="table-toolbar">
+    <div class="table-toolbar-actions">
+      <div class="dropdown">
+        <button
+          type="button"
+          class="table-tool-btn"
+          onclick="return toggleDropdown(this);"
+          aria-label="展开导入菜单"
+          title="展开导入菜单"
+        >
+          <i class="bi bi-upload"></i>
+          <span>导入</span>
+          <i class="bi bi-chevron-down"></i>
+        </button>
+        <div class="dropdown-menu table-import-menu">
+          <a href="/admin/users/batch/create" class="dropdown-item">导入</a>
+          <a href="javascript:void(0);" class="dropdown-item" aria-disabled="true">下载导入模板</a>
+        </div>
+      </div>
+      <button type="button" class="table-tool-btn" onclick="openModal('modal-export')">
+        <i class="bi bi-download"></i>
+        <span>导出</span>
+      </button>
+    </div>
+    <div class="dropdown table-create-split">
+      <a href="/admin/users/new" class="table-create-btn table-create-main">
+        <span class="table-create-main-label">
+          <i class="bi bi-plus-lg"></i>
+          <span>新增用户</span>
+        </span>
+        <span
+          class="table-create-toggle"
+          onclick="return toggleDropdown(this);"
+          role="button"
+          tabindex="0"
+          aria-label="展开新增菜单"
+        >
+          <i class="bi bi-chevron-down"></i>
+        </span>
+      </a>
+      <div class="dropdown-menu table-create-menu">
+        <a href="/admin/users/new" class="dropdown-item">创建</a>
+        <a href="/admin/users/batch/create" class="dropdown-item">批量创建</a>
+      </div>
+    </div>
+  </div>
+<div class="zen-card table-container">
+  <div class="table-wrapper">
+    <table class="table data-table zen-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>账号</th>
+          <th>邮箱</th>
+          <th>姓名</th>
+          <th>状态</th>
+          <th>最后登录时间</th>
+          <th class="text-end">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ range .Users }}
+        <tr>
+          <td class="table-id">{{ .ID }}</td>
+          <td title="{{ .Account }}"><span class="account-text">{{ .Account }}</span></td>
+          <td title="{{ .Email }}"><span class="email-text">{{ .Email }}</span></td>
+          <td title="{{ .DisplayName }}">{{ .DisplayName }}</td>
+          <td>
+            {{ if .IsActive }}
+            <span class="status-badge enabled">启用</span>
+            {{ else }}
+            <span class="status-badge disabled">禁用</span>
+            {{ end }}
+          </td>
+          <td>
+            {{ if .LastLoginDateDB }} {{ .LastLoginDateDB.Format "2006-01-02 15:04:05"
+            }} {{ else }}
+            <span class="last-login">-</span>
+            {{ end }}
+          </td>
+          <td>
+            <div
+              class="action-group d-flex justify-content-end align-items-center gap-1 flex-nowrap zen-action-group"
+            >
+              {{ if not .IsSuperAdmin }}
+              <form
+                method="POST"
+                action="/admin/users/{{ .ID }}/toggle-status"
+                class="d-inline"
+              >
+                <input
+                  type="hidden"
+                  name="csrf_token"
+                  value="{{ $.CSRFToken }}"
+                />
+                <button
+                  type="submit"
+                  class="action-btn zen-icon-action muted"
+                  title="{{ if .IsActive }}禁用{{ else }}启用{{ end }}"
+                  aria-label="{{ if .IsActive }}禁用{{ else }}启用{{ end }}"
+                >
+                  <i
+                    class="bi icon-toggle {{ if .IsActive }}bi-toggle-on{{ else }}bi-toggle-off{{ end }}"
+                  ></i>
+                </button>
+              </form>
+              {{ else }}
+              <span
+                class="action-btn zen-icon-action muted disabled"
+                title="超级管理员不可禁用"
+              >
+                <i class="bi icon-toggle bi-toggle-on"></i>
+              </span>
+              {{ end }}
+
+              <a
+                href="/admin/users/{{ .ID }}/edit"
+                class="action-btn zen-icon-action primary"
+                title="编辑"
+                aria-label="编辑"
+              >
+                <i class="bi bi-pencil-square"></i>
+              </a>
+
+              {{ if not .IsSuperAdmin }}
+              <form
+                method="POST"
+                action="/admin/users/{{ .ID }}"
+                class="d-inline"
+              >
+                <input type="hidden" name="_method" value="DELETE" />
+                <input
+                  type="hidden"
+                  name="csrf_token"
+                  value="{{ $.CSRFToken }}"
+                />
+                <button
+                  type="submit"
+                  class="action-btn zen-icon-action danger"
+                  data-confirm="确定删除用户 {{ .Account }}？删除后不可恢复。"
+                  title="删除"
+                  aria-label="删除"
+                >
+                  <i class="bi icon-delete bi-trash3"></i>
+                </button>
+              </form>
+              {{ else }}
+              <span
+                class="action-btn zen-icon-action danger disabled"
+                title="超级管理员不可删除"
+              >
+                <i class="bi icon-delete bi-trash3"></i>
+              </span>
+              {{ end }}
+            </div>
+          </td>
+        </tr>
+        {{ else }}
+        <tr>
+          <td colspan="8" class="text-center text-muted py-4">暂无用户数据</td>
+        </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-body border-top bg-white">
+    {{ template "components/pager" . }}
+  </div>
+</div>
+
+{{ template "components/exportmodal" (dict "BaseUrl" "/admin/users" "Title" "用户列表" "CSRFToken" .CSRFToken) }}
+{{ end }}

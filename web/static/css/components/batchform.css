@@ -1,0 +1,146 @@
+/* ==========================================================================
+文件: web/static/css/components/batchform.css
+模块: Design System / Components
+职责: 批量表单（表格化录入）公共样式。
+说明: 仅提供布局与间距；表单控件视觉沿用全局 form 组件（.input/.select/.radio-label 等）。
+========================================================================== */
+
+.batch-form-panel {
+  overflow: visible;
+}
+
+.table-panel.batch-form-panel {
+  overflow: visible;
+}
+
+.batch-form {
+  display: block;
+}
+
+.batch-form-hint {
+  margin: var(--space-3) var(--space-4) var(--space-2) var(--space-4);
+}
+
+.batch-form-table {
+  margin: 0;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  overflow: visible;
+  position: relative;
+}
+
+.batch-form-row {
+  display: grid;
+  grid-template-columns: 160px 160px 200px 220px 170px 200px 200px 88px;
+  gap: var(--space-3);
+  align-items: start;
+  padding: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  min-width: 1290px;
+}
+
+.batch-form-row--head {
+  border-top: 0;
+  background: var(--color-surface-soft-3);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.batch-form-row--head .batch-form-cell {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  padding-top: var(--space-0_5);
+  white-space: nowrap;
+}
+
+.batch-form-cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  position: relative;
+}
+
+.batch-form-cell .dropdown-menu {
+  z-index: 1200;
+}
+
+.batch-form .form-multiselect-display {
+  align-items: flex-start;
+  flex-wrap: wrap;
+  padding-top: var(--space-1);
+  padding-bottom: var(--space-1);
+}
+
+.batch-form .form-multiselect-tags {
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+
+.batch-form .form-multiselect-input {
+  width: auto;
+  flex: 1 1 56px;
+  min-width: 56px;
+}
+
+.batch-form-label {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.batch-form-cell--operation {
+  flex-direction: row;
+  align-items: center;
+  justify-content: left;
+  gap: var(--space-2);
+  padding-top: var(--space-1);
+}
+
+.batch-op-btn {
+  width: var(--size-8);
+  height: var(--size-8);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.batch-op-btn[hidden] {
+  display: none !important;
+}
+
+.batch-op-btn:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-border-strong);
+  color: var(--color-text-primary);
+}
+
+.batch-op-btn--danger:hover {
+  color: var(--color-danger-accent);
+  border-color: var(--color-danger-border);
+  background: var(--color-danger-bg);
+}
+
+.batch-form-actions {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+}
+
+@media (max-width: 1024px) {
+  .batch-form-row {
+    grid-template-columns: 160px 160px 200px 220px 170px 200px 200px 88px;
+  }
+}

@@ -1,0 +1,188 @@
+{{ define "sidebar/menuItems" }}
+{{/* ================================================================
+  递归渲染菜单项（支持无限层级嵌套）
+  参数:
+    .Items       []menu.Menu   — 当前层级的菜单列表
+    .CurrentPath string        — 当前页面路径
+    .ActiveNavKey string      — 当前路由声明的导航键（与 Menu.Key 一致），用于判断 active
+    .Depth       int           — 嵌套深度，0=根级
+================================================================ */}}
+{{ $ctx := . }}
+{{ range .Items }}
+  {{ if or (eq .Type "directory") (eq .Type "menu") }}
+
+    {{ if .Children }}
+      {{/* —— 收集子项中可导航的条目 —— */}}
+      {{ $hasNavChild := false }}
+      {{ $firstPath := "" }}
+      {{ range .Children }}
+        {{ if or (eq .Type "directory") (eq .Type "menu") }}
+          {{ $hasNavChild = true }}
+          {{ if and (not $firstPath) .Path }}{{ $firstPath = .Path }}{{ end }}
+        {{ end }}
+      {{ end }}
+
+      {{ if $hasNavChild }}
+      {{/* —— 可展开的父级菜单项 —— */}}
+      <div class="nav-group-collapsible" data-depth="{{ $ctx.Depth }}">
+        <div class="nav-item-header">
+          <a href="{{ if .Path }}{{ .Path }}{{ else }}{{ $firstPath }}{{ end }}"
+             class="nav-item{{ if and $ctx.ActiveNavKey (eq $ctx.ActiveNavKey .Key) }} active{{ end }}"
+             data-menu-path="{{ .Path }}"
+             title="{{ .Title }}">
+            {{ if .Icon }}
+              <i class="nav-icon bi {{ .Icon }}"></i>
+            {{ else }}
+              <i class="nav-icon bi bi-folder"></i>
+            {{ end }}
+            <span class="nav-item-text">{{ .Title }}</span>
+          </a>
+          <button type="button"
+                  class="nav-arrow-btn js-nav-toggle"
+                  data-menu-id="{{ .Key }}"
+                  aria-expanded="false"
+                  title="展开/收起 {{ .Title }}">
+            <svg class="nav-arrow" viewBox="0 0 15 15" fill="none"
+                 stroke="currentColor" stroke-width="1.5">
+              <path d="M6 3L10.5 7.5L6 12"/>
+            </svg>
+          </button>
+        </div>
+        <div class="nav-submenu js-nav-submenu" data-parent-id="{{ .Key }}">
+          {{ template "sidebar/menuItems" (dict
+               "Items"        .Children
+               "CurrentPath"  $ctx.CurrentPath
+               "ActiveNavKey" $ctx.ActiveNavKey
+               "Depth"        (add $ctx.Depth 1)) }}
+        </div>
+      </div>
+
+      {{ else if .Path }}
+      {{/* —— 有 children 但无可导航子项，渲染为叶子 —— */}}
+      <a href="{{ .Path }}"
+         class="nav-item{{ if menuNavActive $ctx.ActiveNavKey . }} active{{ end }}"
+         data-menu-path="{{ .Path }}"
+         data-depth="{{ $ctx.Depth }}"
+         title="{{ .Title }}">
+        {{ if .Icon }}<i class="nav-icon bi {{ .Icon }}"></i>
+        {{ else }}<i class="nav-icon bi bi-folder"></i>{{ end }}
+        <span class="nav-item-text">{{ .Title }}</span>
+      </a>
+      {{ end }}
+
+    {{ else if .Path }}
+    {{/* —— 无子项: 叶子链接 —— */}}
+    <a href="{{ .Path }}"
+       class="nav-item{{ if menuNavActive $ctx.ActiveNavKey . }} active{{ end }}"
+       data-menu-path="{{ .Path }}"
+       data-depth="{{ $ctx.Depth }}"
+       title="{{ .Title }}">
+      {{ if .Icon }}<i class="nav-icon bi {{ .Icon }}"></i>
+      {{ else }}<i class="nav-icon bi bi-grid"></i>{{ end }}
+      <span class="nav-item-text">{{ .Title }}</span>
+    </a>
+    {{ end }}
+
+  {{ end }}
+{{ end }}
+{{ end }}
+
+
+{{ define "layout/sidebar" }}
+{{/* ==========================================================================
+  文件: web/templates/layout/sidebar.html
+  模块: 布局
+  职责: 渲染后台左侧菜单导航，支持多级展开/折叠与整体收起。
+        通过 data-depth 驱动 CSS 缩进，保证所有层级图标和文字对齐。
+  全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath, .ActiveNavKey
+  页面字段: .CurrentMenus ([]menu.Menu)
+========================================================================== */}}
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-body">
+    {{ if .CurrentMenus }}
+      {{ range .CurrentMenus }}
+        {{ if or (eq .Type "directory") (eq .Type "menu") }}
+          {{ if .Children }}
+            {{ $hasNavChild := false }}
+            {{ $firstPath := "" }}
+            {{ range .Children }}
+              {{ if or (eq .Type "directory") (eq .Type "menu") }}
+                {{ $hasNavChild = true }}
+                {{ if and (not $firstPath) .Path }}{{ $firstPath = .Path }}{{ end }}
+              {{ end }}
+            {{ end }}
+
+            <div class="nav-group">
+              {{ if $hasNavChild }}
+              <div class="nav-item-header">
+                <a href="{{ if .Path }}{{ .Path }}{{ else }}{{ $firstPath }}{{ end }}"
+                   class="nav-item{{ if and $.ActiveNavKey (eq $.ActiveNavKey .Key) }} active{{ end }}"
+                   data-menu-path="{{ .Path }}"
+                   title="{{ .Title }}">
+                  {{ if .Icon }}
+                    <i class="nav-icon bi {{ .Icon }}"></i>
+                  {{ else }}
+                    <i class="nav-icon bi bi-folder"></i>
+                  {{ end }}
+                  <span class="nav-item-text">{{ .Title }}</span>
+                </a>
+                <button type="button"
+                        class="nav-arrow-btn js-nav-toggle"
+                        data-menu-id="{{ .Key }}"
+                        aria-expanded="false"
+                        title="展开/收起 {{ .Title }}">
+                  <svg class="nav-arrow" viewBox="0 0 15 15" fill="none"
+                       stroke="currentColor" stroke-width="1.5">
+                    <path d="M6 3L10.5 7.5L6 12"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="nav-submenu js-nav-submenu" data-parent-id="{{ .Key }}">
+                {{ template "sidebar/menuItems" (dict
+                     "Items"        .Children
+                     "CurrentPath"  $.CurrentPath
+                     "ActiveNavKey" $.ActiveNavKey
+                     "Depth"        1) }}
+              </div>
+              {{ else if .Path }}
+              <a href="{{ .Path }}"
+                 class="nav-item{{ if menuNavActive $.ActiveNavKey . }} active{{ end }}"
+                 data-menu-path="{{ .Path }}"
+                 data-depth="0"
+                 title="{{ .Title }}">
+                {{ if .Icon }}<i class="nav-icon bi {{ .Icon }}"></i>
+                {{ else }}<i class="nav-icon bi bi-grid"></i>{{ end }}
+                <span class="nav-item-text">{{ .Title }}</span>
+              </a>
+              {{ end }}
+            </div>
+
+          {{ else if .Path }}
+          <div class="nav-group">
+            <a href="{{ .Path }}"
+               class="nav-item{{ if menuNavActive $.ActiveNavKey . }} active{{ end }}"
+               data-menu-path="{{ .Path }}"
+               data-depth="0"
+               title="{{ .Title }}">
+              {{ if .Icon }}<i class="nav-icon bi {{ .Icon }}"></i>
+              {{ else }}<i class="nav-icon bi bi-grid"></i>{{ end }}
+              <span class="nav-item-text">{{ .Title }}</span>
+            </a>
+          </div>
+          {{ end }}
+        {{ end }}
+      {{ end }}
+    {{ end }}
+  </div>
+
+  <div class="sidebar-footer">
+    <button class="nav-item js-sidebar-collapse" id="sidebarToggle" title="收起菜单">
+      <svg class="nav-icon sidebar-collapse-icon" viewBox="0 0 15 15" fill="none"
+           stroke="currentColor" stroke-width="1.5">
+        <path d="M10 3L5.5 7.5L10 12"/>
+      </svg>
+      <span class="nav-item-text sidebar-collapse-text">收起菜单</span>
+    </button>
+  </div>
+</nav>
+{{ end }}

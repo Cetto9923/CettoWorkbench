@@ -1,0 +1,98 @@
+{{/* ==========================================================================
+文件: web/templates/loginlog/list.html
+模块: 登录日志
+职责: 渲染登录日志列表与筛选表单。
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .PageTitle (string), .Form (*loginlog.ListReq), .Errors ([]FieldError), .Resource ([]model.LoginLog), .Logs ([]model.LoginLog), .Pager (*pagination.Pager)
+========================================================================== */}}
+{{ define "content" }}
+{{ template "components/searchpanel" (dict
+  "PanelID" "loginLogListSearchPanelBody"
+  "Action" "/admin/login-logs"
+  "Method" "GET"
+  "Title" "检索条件"
+  "CollapsedByDefault" true
+  "ResetURL" "/admin/login-logs"
+  "Data" .
+) }}
+
+<div class="zen-card table-container">
+  <div class="table-wrapper">
+    <table class="table data-table zen-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>账号</th>
+          <th>用户ID</th>
+          <th>IP</th>
+          <th>结果</th>
+          <th>失败原因</th>
+          <th>时间</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ range .Logs }}
+        <tr>
+          <td>{{ .ID }}</td>
+          <td>{{ .Account }}</td>
+          <td>{{ if .UserID.Valid }}{{ .UserID.Int64 }}{{ else }}-{{ end }}</td>
+          <td>{{ .IP }}</td>
+          <td>
+            {{ if .Success }}
+            <span class="badge rounded-pill text-bg-success">成功</span>
+            {{ else }}
+            <span class="badge rounded-pill text-bg-danger">失败</span>
+            {{ end }}
+          </td>
+          <td>{{ if .FailReason }}{{ .FailReason }}{{ else }}-{{ end }}</td>
+          <td>{{ .CreatedAt.Format "2006-01-02 15:04:05" }}</td>
+        </tr>
+        {{ else }}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-4">暂无登录日志</td>
+        </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-body border-top bg-white">
+    {{ template "components/pager" . }}
+  </div>
+</div>
+{{ end }}
+{{ define "searchpanel_fields" }}
+<div class="search-fields user-search-fields">
+  <div class="field-group search-field">
+    <label for="loginAccount">
+      <i class="bi bi-person-badge"></i>
+      <span>账号</span>
+    </label>
+    <input id="loginAccount" type="text" name="account" class="search-input" placeholder="请输入账号" value="{{ .Form.Account }}">
+    {{ range .Errors }}{{ if eq .Field "account" }}<div class="invalid-feedback d-block">{{ .Message }}</div>{{ end }}{{ end }}
+  </div>
+  <div class="field-group search-field">
+    <label for="loginIP">
+      <i class="bi bi-hdd-network"></i>
+      <span>IP</span>
+    </label>
+    <input id="loginIP" type="text" name="ip" class="search-input" placeholder="请输入 IP" value="{{ .Form.IP }}">
+    {{ range .Errors }}{{ if eq .Field "ip" }}<div class="invalid-feedback d-block">{{ .Message }}</div>{{ end }}{{ end }}
+  </div>
+  <div class="field-group search-field">
+    <label for="loginStartAt">
+      <i class="bi bi-calendar-event"></i>
+      <span>开始时间</span>
+    </label>
+    <input id="loginStartAt" type="datetime-local" name="startAt" class="search-input" value="{{ .Form.StartAt }}">
+    {{ range .Errors }}{{ if eq .Field "startAt" }}<div class="invalid-feedback d-block">{{ .Message }}</div>{{ end }}{{ end }}
+  </div>
+  <div class="field-group search-field">
+    <label for="loginEndAt">
+      <i class="bi bi-calendar-check"></i>
+      <span>结束时间</span>
+    </label>
+    <input id="loginEndAt" type="datetime-local" name="endAt" class="search-input" value="{{ .Form.EndAt }}">
+    {{ range .Errors }}{{ if eq .Field "endAt" }}<div class="invalid-feedback d-block">{{ .Message }}</div>{{ end }}{{ end }}
+  </div>
+</div>
+{{ end }}

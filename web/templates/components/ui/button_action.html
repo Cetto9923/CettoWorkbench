@@ -1,0 +1,34 @@
+{{/* ==========================================================================
+文件: web/templates/components/ui/button_action.html
+模块: 通用模板
+职责: 渲染表格操作图标按钮组件，支持链接或按钮模式。
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: .Url (string), .Icon (string), .Color (string), .Title (string), .Confirm (string), .Type (string)
+========================================================================== */}}
+{{ define "ui/btn-action" }}
+  {{ if .Url }}
+    <a
+      href="{{ .Url }}"
+      class="ui-btn-action text-{{ if .Color }}{{ .Color }}{{ else }}primary{{ end }}"
+      title="{{ .Title }}"
+      data-bs-toggle="tooltip"
+      data-bs-placement="top"
+      data-bs-title="{{ .Title }}"
+      {{ if .Confirm }}onclick="return confirm('{{ .Confirm }}');"{{ end }}
+    >
+      <i class="bi bi-{{ if .Icon }}{{ .Icon }}{{ else }}pencil-square{{ end }}"></i>
+    </a>
+  {{ else }}
+    <button
+      type="{{ if .Type }}{{ .Type }}{{ else }}button{{ end }}"
+      class="ui-btn-action text-{{ if .Color }}{{ .Color }}{{ else }}primary{{ end }}"
+      title="{{ .Title }}"
+      data-bs-toggle="tooltip"
+      data-bs-placement="top"
+      data-bs-title="{{ .Title }}"
+      {{ if .Confirm }}onclick="return confirm('{{ .Confirm }}');"{{ end }}
+    >
+      <i class="bi bi-{{ if .Icon }}{{ .Icon }}{{ else }}pencil-square{{ end }}"></i>
+    </button>
+  {{ end }}
+{{ end }}

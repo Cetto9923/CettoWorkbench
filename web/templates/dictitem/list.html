@@ -1,0 +1,93 @@
+{{/* ==========================================================================
+文件: web/templates/dictitem/list.html
+模块: 字典值
+职责: 字典值列表页（按 typeCode 过滤）。
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .PageTitle (string), .Items ([]model.DictItem), .TypeCode (string)
+========================================================================== */}}
+{{ define "actions" }}
+<div></div>
+{{ end }}
+{{ define "searchpanel_fields" }}
+<div class="search-fields user-search-fields">
+  <div class="field-group search-field">
+    <label for="dictTypeCode">
+      <i class="bi bi-code-square"></i>
+      <span>类型编码</span>
+    </label>
+    <input id="dictTypeCode" name="typeCode" type="text" class="search-input" value="{{ .CurrentTypeCode }}" placeholder="例如: gender">
+  </div>
+</div>
+{{ end }}
+{{ define "content" }}
+<div class="zen-card mb-3">
+  <div class="card-body py-2">
+    <nav aria-label="breadcrumb" class="mb-2">
+      <ol class="breadcrumb mb-0 small">
+        <li class="breadcrumb-item">字典管理</li>
+        <li class="breadcrumb-item">
+          {{ if .CurrentTypeName }}{{ .CurrentTypeName }}{{ else }}当前字典类型{{ end }}
+          {{ if .CurrentTypeCode }}(<code>{{ .CurrentTypeCode }}</code>){{ end }}
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">数据列表</li>
+      </ol>
+    </nav>
+  </div>
+</div>
+{{ template "components/searchpanel" (dict
+  "PanelID" "dictItemListSearchPanelBody"
+  "Action" "/admin/dict-items"
+  "Method" "GET"
+  "Title" "检索条件"
+  "CollapsedByDefault" true
+  "ResetURL" "/admin/dict-items"
+  "Data" .
+) }}
+<div class="table-toolbar">
+  <a href="/admin/dict-items/new{{ if .CurrentTypeCode }}?typeCode={{ .CurrentTypeCode }}{{ end }}" class="table-create-btn">
+    <i class="bi bi-plus-lg"></i>
+    <span>新增字典值</span>
+  </a>
+</div>
+<div class="zen-card table-container">
+  <div class="table-wrapper">
+    <table class="table data-table zen-table">
+      <thead>
+        <tr>
+          <th>数据标签</th>
+          <th>数据键值</th>
+          <th>排序</th>
+          <th class="text-end">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ range .Items }}
+        <tr>
+          <td><strong>{{ .Label }}</strong></td>
+          <td><code>{{ .Value }}</code></td>
+          <td>{{ .Sort }}</td>
+          <td>
+            <div class="d-flex justify-content-end align-items-center gap-1 flex-nowrap zen-action-group">
+              <a href="/admin/dict-items/{{ .ID }}/edit" class="zen-icon-action primary" title="编辑" aria-label="编辑">
+                <i class="bi bi-pencil-square"></i>
+              </a>
+              <form method="POST" action="/admin/dict-items/{{ .ID }}" class="d-inline">
+                <input type="hidden" name="_method" value="DELETE" />
+                <input type="hidden" name="csrf_token" value="{{ $.CSRFToken }}" />
+                <button type="submit" class="zen-icon-action primary" title="删除" aria-label="删除" data-confirm="确定删除字典值 {{ .Label }}？">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {{ else }}
+        <tr>
+          <td colspan="4" class="text-center text-muted py-4">暂无字典值数据</td>
+        </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{ end }}
