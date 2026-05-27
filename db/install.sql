@@ -16,5 +16,6 @@ CREATE TABLE IF NOT EXISTS `zt_menus` (
   KEY `idx_zt_menus_perm` (`perm`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT IGNORE INTO zt_menus (id, parentId, title, icon, path, perm, type, sort) VALUES
-  (1, 0, '工作台首页', 'bi-speedometer2', '/admin/dashboard', '', 'C', 1);
+INSERT INTO `zt_menus` (`id`, `parentId`, `title`, `icon`, `path`, `perm`, `type`, `sort`) VALUES
+ (1,	0,	'PO专属',	'',	'',	'',	'M',	100),
+ (2,	1,	'工作台首页',	'fa-home',	'/admin/users',	'user:list',	'C',	1);

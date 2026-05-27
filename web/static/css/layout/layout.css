@@ -102,7 +102,15 @@ body.layout-nav-top.sidebar-collapsed .main {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: var(--space-2) 0;
+  padding: 0;
+}
+
+/* 侧栏导航主区（对齐 PO 工作台 sidebar-nav 结构） */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0_5);
+  padding: var(--space-3) var(--space-2) var(--space-2);
 }
 
 .sidebar-body::-webkit-scrollbar {
@@ -123,20 +131,46 @@ body.layout-nav-top.sidebar-collapsed .main {
   padding: var(--space-2) 0;
 }
 
-/* ── Nav Group ──
-   根级分组容器，与 DESIGN_SYSTEM.md §4 一致 */
+/* ── 分区标签与分隔线 ── */
 
+.nav-section-label {
+  font-size: var(--font-size-2xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--color-text-disabled);
+  padding: var(--space-2) var(--space-2) var(--space-1);
+  margin-top: var(--space-1);
+  user-select: none;
+}
+
+.sidebar-nav > .nav-section-label:first-child {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.nav-section-label-nested {
+  padding-left: var(--space-3);
+  font-weight: 500;
+}
+
+.nav-divider {
+  height: 1px;
+  margin: var(--space-2) var(--space-2);
+  background: var(--color-border);
+  flex-shrink: 0;
+}
+
+/* 兼容旧结构 */
 .nav-group {
-  padding: 0 var(--space-2);
-  margin-bottom: var(--space-1);
+  padding: 0;
+  margin-bottom: 0;
 }
 
 .nav-group-label {
   display: block;
   font-size: var(--font-size-2xs);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: var(--color-text-disabled);
   padding: var(--space-2) var(--space-2) var(--space-1);
 }
@@ -144,14 +178,15 @@ body.layout-nav-top.sidebar-collapsed .main {
 /* ── Nav Item ──
    与 DESIGN_SYSTEM.md §4 完全一致的基础样式 */
 
-.nav-item {
+.sidebar .nav-item {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-1_5) var(--space-3);
-  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
   font-family: var(--font-sans);
   font-size: var(--font-size-sm);
+  line-height: 1.25;
   color: var(--color-text-secondary);
   text-decoration: none;
   cursor: pointer;
@@ -161,58 +196,82 @@ body.layout-nav-top.sidebar-collapsed .main {
   background: transparent;
   width: 100%;
   text-align: left;
-  transition: background 0.1s, color 0.1s;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
-.nav-item:hover {
+.sidebar .nav-item:hover {
   background: var(--color-surface-muted);
   color: var(--color-text-primary);
 }
 
-.nav-item.active {
+.sidebar .nav-item.active {
   background: var(--color-primary-light);
   color: var(--color-primary);
   font-weight: 500;
 }
 
-/* 激活项左侧竖线（无圆角，§4 规范） */
-.nav-item.active::before {
-  content: "";
-  position: absolute;
-  left: calc(-1 * var(--space-2));
-  top: var(--space-1);
-  bottom: var(--space-1);
-  width: 3px;
-  background: var(--color-primary);
-  border-radius: 0;
+.sidebar .nav-item.active .nav-icon {
+  color: var(--color-primary);
 }
 
-.nav-icon {
-  width: var(--size-3_75);
-  height: var(--size-3_75);
+.sidebar .nav-icon {
+  width: 1.125rem;
+  min-width: 1.125rem;
+  height: 1.125rem;
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-}
-
-.nav-icon i,
-.nav-icon svg {
-  width: var(--size-3_75);
-  height: var(--size-3_75);
-}
-
-/* 当 .nav-icon 本身就是 <i> 而非包裹层时 */
-i.nav-icon {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-md);
   line-height: 1;
+  color: var(--color-text-disabled);
+  transition: color 0.15s ease;
 }
 
-.nav-item-text {
+.sidebar .nav-icon svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.sidebar .nav-item:hover .nav-icon {
+  color: var(--color-text-secondary);
+}
+
+.sidebar .nav-text,
+.sidebar .nav-item-text {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   transition: opacity 0.2s ease, width 0.2s ease;
+}
+
+/* 菜单角标（计数 / 角色标记） */
+.sidebar .nav-item .badge,
+.sidebar .nav-item .nav-badge {
+  flex-shrink: 0;
+  margin-left: auto;
+  font-size: var(--font-size-2xs);
+  font-weight: 600;
+  line-height: 1.2;
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius-pill);
+}
+
+.sidebar .nav-item .badge {
+  min-width: 1.25rem;
+  text-align: center;
+  color: var(--color-surface);
+  background: var(--color-danger-accent);
+}
+
+.sidebar .nav-item .nav-badge {
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  letter-spacing: 0.02em;
 }
 
 /* ── Nav Item Header（带箭头的父级行）── */
@@ -348,11 +407,20 @@ body.sidebar-collapsed .main {
   max-width: calc((100vw - var(--main-gutter)) * 0.7);
 }
 
+body.sidebar-collapsed .sidebar .nav-text,
 body.sidebar-collapsed .sidebar .nav-item-text,
-body.sidebar-collapsed .sidebar .nav-arrow {
+body.sidebar-collapsed .sidebar .nav-section-label,
+body.sidebar-collapsed .sidebar .nav-divider,
+body.sidebar-collapsed .sidebar .nav-arrow,
+body.sidebar-collapsed .sidebar .badge,
+body.sidebar-collapsed .sidebar .nav-badge {
   opacity: 0;
   width: 0;
   overflow: hidden;
+  margin: 0;
+  padding: 0;
+  height: 0;
+  min-height: 0;
 }
 
 body.sidebar-collapsed .sidebar .nav-submenu {
@@ -372,8 +440,8 @@ body.sidebar-collapsed .sidebar .nav-arrow-btn {
   display: none;
 }
 
-body.sidebar-collapsed .sidebar .nav-group {
-  padding: 0 var(--space-1);
+body.sidebar-collapsed .sidebar .sidebar-nav {
+  padding: var(--space-2) var(--space-1);
 }
 
 body.sidebar-collapsed .sidebar .sidebar-collapse-icon {

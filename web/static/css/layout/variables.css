@@ -151,7 +151,7 @@
   --color-primary-ring-soft: rgba(79, 70, 229, 0.16);
 
   /* 布局尺寸 */
-  --sidebar-width: 400px;
+  --sidebar-width: 200px;
   --sidebar-width-collapsed: calc(var(--size-10) + var(--space-5));
   --topbar-height: 52px;
   /* 含可选二级顶栏时的总高度，由 topnav.js 同步测量写入 */

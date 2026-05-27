@@ -43,11 +43,15 @@
   }
 
   function closeSiblings(currentSub) {
-    var parent = currentSub.parentElement;
-    if (!parent) return;
-    var openSubs = parent.querySelectorAll(
+    var container = currentSub.parentElement;
+    if (!container) return;
+    if (container.classList.contains("nav-group-collapsible")) {
+      container = container.parentElement;
+    }
+    if (!container) return;
+    var openSubs = container.querySelectorAll(
       ":scope > .nav-group > .js-nav-submenu.open," +
-      " :scope > .nav-group-collapsible > .js-nav-submenu.open"
+        " :scope > .nav-group-collapsible > .js-nav-submenu.open"
     );
     openSubs.forEach(function (s) {
       if (s !== currentSub) closeSubmenu(s);
@@ -88,7 +92,9 @@
     document.body.classList.toggle("sidebar-collapsed", collapsed);
     if (!collapseBtn) return;
     collapseBtn.setAttribute("aria-expanded", collapsed ? "false" : "true");
-    var text = collapseBtn.querySelector(".sidebar-collapse-text");
+    var text =
+      collapseBtn.querySelector(".sidebar-collapse-text") ||
+      collapseBtn.querySelector(".nav-text.sidebar-collapse-text");
     if (text) text.textContent = collapsed ? "展开菜单" : "收起菜单";
   }
 
