@@ -1,5 +1,5 @@
 ## 项目类型
-前后端不分离的 Go 单体 Web 项目（SSR）。URL 遵循 RESTful 风格，写操作（POST/PUT/DELETE）统一使用 ajax 请求，后端返回 JSON，前端根据 `redirectUrl` 跳转。ajax 请求直接使用真实 HTTP Method（`PUT` / `DELETE`），**不需要也不允许**附加 `_method` 字段。MethodOverride 中间件仅作为兼容保留，**GET 请求禁止使用 `_method`**。
+前后端不分离的 Go 单体 Web 项目（SSR）。URL 遵循 RESTful 风格，写操作（POST/PUT/DELETE）统一使用 ajax 请求，后端返回 JSON，前端根据 `redirectUrl` 跳转。ajax 请求直接使用真实 HTTP Method（`PUT` / `DELETE`）
 
 ## 技术栈
 - Web: Gin
@@ -24,15 +24,14 @@
    - JSON Body（POST/PUT，ajax）：`c.ShouldBindJSON(&req)`；Req 使用 `json` tag
    - 写入类 Req（`CreateReq`/`UpdateReq`）只用 `json` tag；读取类 Req（`ListReq`）只用 `form` tag
    - `DeleteReq.ID` 由 Handler 从 `c.Param("id")` 手动赋值
-8. **文件头注释块必须存在**（格式见 `@.cursor/rules/conventions.mdc` §4）
+8. **文件头注释块必须存在**
 9. **Repo `FindAll` 返回 `([]Xxx, int64, error)` 三元组**
 10. **模板数据 key 固定：`Form` / `Resource`（编辑页）/ `BaseUrl`（列表页+编辑页）**
     - `Errors` 不经服务端注入模板；验证失败走 ajax 422 JSON，由前端 `renderErrors` 渲染
     - 列表页禁止 `Resource`，业务数据用具体名（如 `Users` / `Products`）
     - ❌ 禁止具体实体名（`.User`、`.Customer`）替代 `Resource`
-11. **表单验证统一手写 `Validate() []FieldError` 方法，禁止引入 `go-playground/validator`**
-12. **所有 GORM model 字段必须显式声明 `gorm:"column:xxx"` tag**
-13. **除弹窗外的所有页面均在当前页打开**，禁止打开新窗口`
+11. **所有 GORM model 字段必须显式声明 `gorm:"column:xxx"` tag**
+12. **除弹窗外的所有页面均在当前页打开**，禁止打开新窗口`
 ---
 
 ## 命名规则
@@ -70,11 +69,4 @@ Handler / Service / Repo 方法顺序固定，结构对称是硬约束。
 
 ## 规范优先级（冲突时以高优先级为准）
 1. **核心底线**（本文件，必须）
-2. **conventions.mdc**（结构规范）
-3. **模块 golden reference**（`@internal/module/user/`）
-4. 其他补充说明
-
-## 规范索引
-- **Go 开发完整规范** → `@.cursor/rules/conventions.mdc`
-- **UI 设计系统规范** → `@.cursor/rules/ui-design-system.mdc`
-- **UI 组件代码参考** → `@.cursor/refs/` 目录下各组件 .md 文件
+2. **模块 golden reference**（`@internal/module/user/`）

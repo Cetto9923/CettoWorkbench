@@ -31,9 +31,9 @@
              data-menu-path="{{ .Path }}"
              title="{{ .Title }}">
             {{ if .Icon }}
-              <i class="nav-icon bi {{ .Icon }}"></i>
+              <i class="nav-icon fas {{ .Icon }}"></i>
             {{ else }}
-              <i class="nav-icon bi bi-folder"></i>
+              <i class="nav-icon fas fa-folder"></i>
             {{ end }}
             <span class="nav-item-text">{{ .Title }}</span>
           </a>
@@ -64,8 +64,8 @@
          data-menu-path="{{ .Path }}"
          data-depth="{{ $ctx.Depth }}"
          title="{{ .Title }}">
-        {{ if .Icon }}<i class="nav-icon bi {{ .Icon }}"></i>
-        {{ else }}<i class="nav-icon bi bi-folder"></i>{{ end }}
+        {{ if .Icon }}<i class="nav-icon fas {{ .Icon }}"></i>
+        {{ else }}<i class="nav-icon fas fa-folder"></i>{{ end }}
         <span class="nav-item-text">{{ .Title }}</span>
       </a>
       {{ end }}
@@ -77,8 +77,8 @@
        data-menu-path="{{ .Path }}"
        data-depth="{{ $ctx.Depth }}"
        title="{{ .Title }}">
-      {{ if .Icon }}<i class="nav-icon bi {{ .Icon }}"></i>
-      {{ else }}<i class="nav-icon bi bi-grid"></i>{{ end }}
+      {{ if .Icon }}<i class="nav-icon fas {{ .Icon }}"></i>
+      {{ else }}<i class="nav-icon fas fa-grid"></i>{{ end }}
       <span class="nav-item-text">{{ .Title }}</span>
     </a>
     {{ end }}
@@ -120,9 +120,9 @@
                    data-menu-path="{{ .Path }}"
                    title="{{ .Title }}">
                   {{ if .Icon }}
-                    <i class="nav-icon bi {{ .Icon }}"></i>
+                    <i class="nav-icon fas {{ .Icon }}"></i>
                   {{ else }}
-                    <i class="nav-icon bi bi-folder"></i>
+                    <i class="nav-icon fas fa-folder"></i>
                   {{ end }}
                   <span class="nav-item-text">{{ .Title }}</span>
                 </a>
@@ -150,8 +150,8 @@
                  data-menu-path="{{ .Path }}"
                  data-depth="0"
                  title="{{ .Title }}">
-                {{ if .Icon }}<i class="nav-icon bi {{ .Icon }}"></i>
-                {{ else }}<i class="nav-icon bi bi-grid"></i>{{ end }}
+                {{ if .Icon }}<i class="nav-icon fas {{ .Icon }}"></i>
+                {{ else }}<i class="nav-icon fas fa-grid"></i>{{ end }}
                 <span class="nav-item-text">{{ .Title }}</span>
               </a>
               {{ end }}
@@ -164,8 +164,8 @@
                data-menu-path="{{ .Path }}"
                data-depth="0"
                title="{{ .Title }}">
-              {{ if .Icon }}<i class="nav-icon bi {{ .Icon }}"></i>
-              {{ else }}<i class="nav-icon bi bi-grid"></i>{{ end }}
+              {{ if .Icon }}<i class="nav-icon fas {{ .Icon }}"></i>
+              {{ else }}<i class="nav-icon fas fa-grid"></i>{{ end }}
               <span class="nav-item-text">{{ .Title }}</span>
             </a>
           </div>
