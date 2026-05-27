@@ -11,7 +11,7 @@ package main
 import (
 	"log"
 
-	"goframework/internal/bootstrap"
+	"workbrench/internal/bootstrap"
 )
 
 func main() {

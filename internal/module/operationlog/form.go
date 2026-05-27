@@ -10,8 +10,8 @@
 package operationlog
 
 import (
-	"goframework/internal/model"
-	"goframework/internal/pkg/pagination"
+	"workbrench/internal/model"
+	"workbrench/internal/pkg/pagination"
 )
 
 // ListReq 操作日志列表查询请求。

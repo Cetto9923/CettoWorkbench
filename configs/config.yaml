@@ -1,5 +1,5 @@
 app:
-  name: goframework
+  name: workbrench
   env: dev
   addr: ":8080"
 
@@ -8,7 +8,7 @@ database:
   port: 3306
   user: "root"
   password: "zentao"
-  dbname: "goframework"
+  dbname: "workbrench"
   charset: "utf8mb4"
   parseTime: true
   loc: "Local"
@@ -19,7 +19,7 @@ zentao:
   password: "Asd123456"
 
 session:
-  cookieName: goframework_session
+  cookieName: workbrench_session
   lifetimeHours: 2
 
 log:

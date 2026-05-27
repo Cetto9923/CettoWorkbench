@@ -15,7 +15,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"goframework/internal/model"
+	"workbrench/internal/model"
 )
 
 // Repo 封装字典类型数据访问。

@@ -17,9 +17,9 @@ import (
 
 	"gorm.io/gorm"
 
-	"goframework/internal/model"
-	cronpkg "goframework/internal/pkg/cron"
-	"goframework/internal/pkg/pagination"
+	"workbrench/internal/model"
+	cronpkg "workbrench/internal/pkg/cron"
+	"workbrench/internal/pkg/pagination"
 )
 
 // Service 定时任务业务层。

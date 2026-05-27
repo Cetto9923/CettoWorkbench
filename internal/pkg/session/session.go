@@ -15,7 +15,7 @@ import (
 
 	"github.com/alexedwards/scs/v2"
 
-	"goframework/internal/config"
+	"workbrench/internal/config"
 )
 
 const (

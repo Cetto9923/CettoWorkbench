@@ -22,8 +22,8 @@ const csrfErrorHTML = "<!DOCTYPE html><html lang=\"zh-CN\"><head><meta charset=\
 func CSRF() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		// 临时关闭 CSRF 校验：默认透传请求。
-		// 需要恢复校验时，将环境变量 GOFRAMEWORK_CSRF_ENABLE 设为 "1"。
-		if os.Getenv("GOFRAMEWORK_CSRF_ENABLE") != "1" {
+		// 需要恢复校验时，将环境变量 workbrench_CSRF_ENABLE 设为 "1"。
+		if os.Getenv("workbrench_CSRF_ENABLE") != "1" {
 			return next
 		}
 
@@ -31,7 +31,7 @@ func CSRF() func(http.Handler) http.Handler {
 		csrf.SetBaseCookie(http.Cookie{
 			HttpOnly: true,
 			SameSite: http.SameSiteLaxMode,
-			Secure:   os.Getenv("GOFRAMEWORK_MODE") == "prod",
+			Secure:   os.Getenv("workbrench_MODE") == "prod",
 			Path:     "/",
 		})
 		csrf.SetFailureHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

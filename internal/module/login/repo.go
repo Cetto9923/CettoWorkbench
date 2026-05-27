@@ -17,7 +17,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"goframework/internal/model"
+	"workbrench/internal/model"
 )
 
 // Repo 封装认证相关数据访问。

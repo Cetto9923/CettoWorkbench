@@ -11,7 +11,7 @@ package dictitem
 import (
 	"strings"
 
-	"goframework/internal/model"
+	"workbrench/internal/model"
 )
 
 // FieldError 字段级验证错误。

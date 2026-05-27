@@ -1,8 +1,8 @@
 package server
 
 import (
-	loginmodule "goframework/internal/module/login"
-	"goframework/internal/module/user"
+	loginmodule "workbrench/internal/module/login"
+	"workbrench/internal/module/user"
 )
 
 // Handlers 聚合各业务模块 Handler。

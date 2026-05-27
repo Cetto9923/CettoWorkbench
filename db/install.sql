@@ -1,4 +1,4 @@
--- goframework schema install script
+-- workbrench schema install script
 -- Usage:
 --   mysql -u <user> -p <database> < db/install.sql
 --

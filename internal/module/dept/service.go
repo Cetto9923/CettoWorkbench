@@ -15,7 +15,8 @@ import (
 	"strings"
 	"time"
 
-	"goframework/internal/model"
+	"workbrench/internal/model"
+
 	"gorm.io/gorm"
 )
 

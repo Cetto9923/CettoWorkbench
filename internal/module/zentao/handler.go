@@ -11,11 +11,12 @@
 package zentao
 
 import (
-	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 	"net/http"
 
-	"goframework/internal/pkg/render"
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+
+	"workbrench/internal/pkg/render"
 )
 
 // Handler 处理禅道模块 HTTP 请求。
@@ -37,7 +38,6 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g := rg.Group("")
 	{
 		g.GET("/products", h.Products)
-		g.GET("/users", h.Users)
 	}
 }
 
@@ -51,16 +51,4 @@ func (h *Handler) Products(c *gin.Context) {
 	}
 
 	c.Data(http.StatusOK, "application/json; charset=utf-8", resp.Raw)
-}
-
-// Users 获取禅道用户列表。
-func (h *Handler) Users(c *gin.Context) {
-	resp, err := h.svc.Users(c.Request.Context())
-	if err != nil {
-		h.logger.Error("fetch zentao users failed", zap.Error(err))
-		render.Error(c, http.StatusBadGateway, "获取禅道用户失败", err)
-		return
-	}
-
-	c.JSON(http.StatusOK, resp)
 }

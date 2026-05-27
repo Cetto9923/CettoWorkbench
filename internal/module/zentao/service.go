@@ -24,7 +24,7 @@ import (
 	"github.com/alexedwards/scs/v2"
 	"go.uber.org/zap"
 
-	"goframework/internal/config"
+	"workbrench/internal/config"
 )
 
 const (
@@ -39,7 +39,6 @@ const (
 
 // Service 处理禅道集成业务逻辑。
 type Service struct {
-	repo       *Repo
 	sessionMgr *scs.SessionManager
 	cfg        config.ZentaoConfig
 	client     *http.Client
@@ -48,7 +47,6 @@ type Service struct {
 
 // NewService 创建 Service。
 func NewService(
-	repo *Repo,
 	sessionMgr *scs.SessionManager,
 	cfg config.ZentaoConfig,
 	logger *zap.Logger,
@@ -57,7 +55,6 @@ func NewService(
 		logger = zap.NewNop()
 	}
 	return &Service{
-		repo:       repo,
 		sessionMgr: sessionMgr,
 		cfg:        cfg,
 		client: &http.Client{
@@ -80,25 +77,6 @@ func (s *Service) Products(ctx context.Context, req ProductsReq) (ProductsResp, 
 	}
 
 	return ProductsResp{Raw: raw}, nil
-}
-
-// Users 获取禅道用户列表（account、realname）。
-func (s *Service) Users(ctx context.Context) ([]UserItem, error) {
-	if s.repo == nil {
-		return nil, errors.New("zentao repo is nil")
-	}
-	rows, err := s.repo.FindAllActiveUsers(ctx)
-	if err != nil {
-		return nil, err
-	}
-	items := make([]UserItem, 0, len(rows))
-	for _, row := range rows {
-		items = append(items, UserItem{
-			Account:  row.Account,
-			Realname: row.Realname,
-		})
-	}
-	return items, nil
 }
 
 func (s *Service) getToken(ctx context.Context) (string, error) {

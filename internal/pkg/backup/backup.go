@@ -21,7 +21,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"goframework/internal/model"
+	"workbrench/internal/model"
 )
 
 // Config 备份执行配置。

@@ -10,8 +10,8 @@
 package cronjob
 
 import (
-	"goframework/internal/model"
-	"goframework/internal/pkg/pagination"
+	"workbrench/internal/model"
+	"workbrench/internal/pkg/pagination"
 )
 
 // ListReq 定时任务列表查询请求。

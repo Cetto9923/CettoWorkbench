@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"goframework/internal/model"
+	"workbrench/internal/model"
 )
 
 // Service 处理字典值业务逻辑。

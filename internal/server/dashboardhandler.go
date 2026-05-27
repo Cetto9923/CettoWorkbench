@@ -13,7 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"goframework/internal/pkg/render"
+	"workbrench/internal/pkg/render"
 )
 
 // DashboardHandler 渲染仪表盘占位页。

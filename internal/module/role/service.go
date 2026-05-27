@@ -18,8 +18,8 @@ import (
 	"strings"
 	"time"
 
-	"goframework/internal/model"
-	"goframework/internal/pkg/perm"
+	"workbrench/internal/model"
+	"workbrench/internal/pkg/perm"
 )
 
 // Service 处理角色业务逻辑。

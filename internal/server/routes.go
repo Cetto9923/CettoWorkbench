@@ -13,22 +13,20 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"goframework/internal/middleware"
-	"goframework/internal/module/backup"
-	"goframework/internal/module/cronjob"
-	"goframework/internal/module/dept"
-	"goframework/internal/module/dictitem"
-	"goframework/internal/module/dicttype"
-	"goframework/internal/module/ledger"
-	loginmodule "goframework/internal/module/login"
-	"goframework/internal/module/loginlog"
-	menumodule "goframework/internal/module/menu"
-	"goframework/internal/module/operationlog"
-	"goframework/internal/module/resource"
-	"goframework/internal/module/role"
-	"goframework/internal/module/user"
-	"goframework/internal/module/zentao"
-	ratelimitpkg "goframework/internal/pkg/ratelimit"
+	"workbrench/internal/middleware"
+	"workbrench/internal/module/backup"
+	"workbrench/internal/module/cronjob"
+	"workbrench/internal/module/dept"
+	"workbrench/internal/module/dictitem"
+	"workbrench/internal/module/dicttype"
+	loginmodule "workbrench/internal/module/login"
+	"workbrench/internal/module/loginlog"
+	menumodule "workbrench/internal/module/menu"
+	"workbrench/internal/module/operationlog"
+	"workbrench/internal/module/role"
+	"workbrench/internal/module/user"
+	"workbrench/internal/module/zentao"
+	ratelimitpkg "workbrench/internal/pkg/ratelimit"
 )
 
 // RouteDeps 路由注册依赖。
@@ -49,9 +47,7 @@ type RouteDeps struct {
 	RoleHandler         *role.Handler
 	CronJobHandler      *cronjob.Handler
 	BackupHandler       *backup.Handler
-	ResourceHandler     *resource.Handler
 	ZentaoHandler       *zentao.Handler
-	LedgerHandler       *ledger.Handler
 }
 
 func registerRoutes(r *gin.Engine, deps RouteDeps) {
@@ -101,15 +97,6 @@ func registerRoutes(r *gin.Engine, deps RouteDeps) {
 		// deps.XxxHandler.RegisterRoutes(admin)
 	}
 
-	ledgerGrp := r.Group("/ledger")
-	ledgerGrp.Use(middleware.RequireLogin(deps.SessionMgr, deps.DB))
-	ledgerGrp.Use(middleware.RecordOperationLog(deps.DB, deps.SessionMgr))
-	{
-		if deps.LedgerHandler != nil {
-			deps.LedgerHandler.RegisterRoutes(ledgerGrp)
-		}
-	}
-
 	zentao := r.Group("/zentao")
 	zentao.Use(middleware.RequireLogin(deps.SessionMgr, deps.DB))
 	{
@@ -117,13 +104,4 @@ func registerRoutes(r *gin.Engine, deps RouteDeps) {
 			deps.ZentaoHandler.RegisterRoutes(zentao)
 		}
 	}
-
-	resources := r.Group("/resources")
-	resources.Use(middleware.RequireLogin(deps.SessionMgr, deps.DB))
-	{
-		if deps.ResourceHandler != nil {
-			deps.ResourceHandler.RegisterRoutes(resources)
-		}
-	}
-
 }

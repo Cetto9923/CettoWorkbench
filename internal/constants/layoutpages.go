@@ -8,7 +8,7 @@ package constants
 
 // hideChromePages 无顶栏、无侧栏的页面模板名（值为 render.Page 的 page 参数）。
 var hideChromePages = map[string]struct{}{
-	TEMPLATE_LEDGER_STATS: {},
+	// 模板名常量: {},
 }
 
 // PageHidesChrome 判断该 SSR 页面是否隐藏顶栏与侧栏。

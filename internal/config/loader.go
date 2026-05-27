@@ -15,17 +15,17 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Load 从文件加载配置，并允许使用环境变量覆盖（前缀 GOFRAMEWORK_，层级用下划线）。
-// GOFRAMEWORK_MODE=dev 时读取 configs/config.dev.yaml，否则读取 configs/config.yaml。
+// Load 从文件加载配置，并允许使用环境变量覆盖（前缀 workbrench_，层级用下划线）。
+// workbrench_MODE=dev 时读取 configs/config.dev.yaml，否则读取 configs/config.yaml。
 func Load() (*Config, error) {
 	configPath := "configs/config.yaml"
-	if os.Getenv("GOFRAMEWORK_MODE") == "dev" {
+	if os.Getenv("WORKBRENCH_MODE") == "dev" {
 		configPath = "configs/config.dev.yaml"
 	}
 
 	v := viper.New()
 	v.SetConfigFile(configPath)
-	v.SetEnvPrefix("goframework")
+	v.SetEnvPrefix("workbrench")
 	v.AutomaticEnv()
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	v.SetDefault("ratelimit.globalRPS", 100)

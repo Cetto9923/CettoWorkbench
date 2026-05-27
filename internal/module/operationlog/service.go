@@ -11,7 +11,7 @@ package operationlog
 import (
 	"context"
 
-	"goframework/internal/pkg/pagination"
+	"workbrench/internal/pkg/pagination"
 )
 
 // Service 操作日志业务层。

@@ -16,10 +16,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"goframework/internal/middleware"
-	"goframework/internal/pkg/pagination"
-	"goframework/internal/pkg/perm"
-	"goframework/internal/pkg/render"
+	"workbrench/internal/middleware"
+	"workbrench/internal/pkg/pagination"
+	"workbrench/internal/pkg/perm"
+	"workbrench/internal/pkg/render"
 )
 
 // Handler 登录日志 Handler。

@@ -10,8 +10,8 @@
 package backup
 
 import (
-	"goframework/internal/model"
-	"goframework/internal/pkg/pagination"
+	"workbrench/internal/model"
+	"workbrench/internal/pkg/pagination"
 )
 
 // ListReq 备份记录列表查询请求。

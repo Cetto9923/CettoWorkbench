@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"goframework/internal/model"
+	"workbrench/internal/model"
 )
 
 // MenuNode 表示菜单树节点。

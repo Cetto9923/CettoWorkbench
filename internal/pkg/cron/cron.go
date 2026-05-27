@@ -19,7 +19,7 @@ import (
 	cronlib "github.com/robfig/cron/v3"
 	"gorm.io/gorm"
 
-	"goframework/internal/model"
+	"workbrench/internal/model"
 )
 
 // Manager 封装 robfig/cron 的任务管理能力。

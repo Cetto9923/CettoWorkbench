@@ -15,8 +15,8 @@ import (
 
 	"gorm.io/gorm"
 
-	"goframework/internal/model"
-	"goframework/internal/pkg/pagination"
+	"workbrench/internal/model"
+	"workbrench/internal/pkg/pagination"
 )
 
 // Repo 操作日志数据访问层。

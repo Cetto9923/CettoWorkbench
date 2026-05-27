@@ -20,11 +20,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"goframework/internal/middleware"
-	"goframework/internal/model"
-	"goframework/internal/pkg/flash"
-	"goframework/internal/pkg/perm"
-	"goframework/internal/pkg/render"
+	"workbrench/internal/middleware"
+	"workbrench/internal/model"
+	"workbrench/internal/pkg/flash"
+	"workbrench/internal/pkg/perm"
+	"workbrench/internal/pkg/render"
 )
 
 // FlatItem 用于列表页扁平渲染树结构。

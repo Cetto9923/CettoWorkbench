@@ -14,7 +14,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	ratelimitpkg "goframework/internal/pkg/ratelimit"
+	ratelimitpkg "workbrench/internal/pkg/ratelimit"
 )
 
 const rateLimitHTML = "<!DOCTYPE html><html lang=\"zh-CN\"><head><meta charset=\"utf-8\"><title>请求过于频繁</title></head><body><h1>请求过于频繁，请稍后再试</h1></body></html>"

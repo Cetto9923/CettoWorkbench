@@ -1,7 +1,7 @@
 @import "../../vendor/bootstrap-icons/fonts/fonts.css";
 
 /*
- * goframework 项目样式文件。
+ * workbrench 项目样式文件。
  * 仅放置项目自定义样式；第三方样式统一放在 web/static/vendor/。
  */
 
@@ -107,7 +107,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
 .zen-nav-main {
@@ -178,7 +180,9 @@ body {
   align-items: center;
   justify-content: center;
   text-decoration: none;
-  transition: background-color 0.2s ease, transform 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .ui-btn-action:hover {
@@ -202,7 +206,9 @@ body {
 .btn {
   border-radius: var(--radius-md);
   padding: var(--space-2) var(--space-3_75);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .btn:focus,

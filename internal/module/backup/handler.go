@@ -20,10 +20,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"goframework/internal/middleware"
-	"goframework/internal/pkg/flash"
-	"goframework/internal/pkg/perm"
-	"goframework/internal/pkg/render"
+	"workbrench/internal/middleware"
+	"workbrench/internal/pkg/flash"
+	"workbrench/internal/pkg/perm"
+	"workbrench/internal/pkg/render"
 )
 
 // Handler 备份模块 Handler。

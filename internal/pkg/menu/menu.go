@@ -14,7 +14,8 @@ import (
 	"sort"
 	"strings"
 
-	"goframework/internal/model"
+	"workbrench/internal/model"
+
 	"gorm.io/gorm"
 )
 

@@ -19,7 +19,7 @@ import (
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
 
-	"goframework/internal/config"
+	"workbrench/internal/config"
 )
 
 const (

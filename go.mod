@@ -1,4 +1,4 @@
-module goframework
+module workbrench
 
 go 1.25.0
 

@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"goframework/internal/config"
+	"workbrench/internal/config"
 )
 
 // Init 根据配置初始化 Zap：dev 为 Development（可读、带颜色），prod 为 Production（JSON）。

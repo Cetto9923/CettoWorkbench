@@ -1,5 +1,5 @@
 /*
- * goframework 全项目唯一前端脚本。
+ * workbrench 全项目唯一前端脚本。
  * 原则：能用表单 PRG 就不用 JS。
  */
 (function () {

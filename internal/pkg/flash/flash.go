@@ -14,7 +14,7 @@ import (
 	"github.com/alexedwards/scs/v2"
 	"github.com/gin-gonic/gin"
 
-	"goframework/internal/pkg/logger"
+	"workbrench/internal/pkg/logger"
 )
 
 // Level 表示 Flash 消息级别。

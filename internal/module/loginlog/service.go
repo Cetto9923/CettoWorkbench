@@ -12,7 +12,7 @@ package loginlog
 import (
 	"context"
 
-	"goframework/internal/model"
+	"workbrench/internal/model"
 )
 
 // Service 登录日志业务层。

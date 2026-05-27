@@ -19,33 +19,31 @@ package bootstrap
 import (
 	"fmt"
 
+	"workbrench/internal/config"
+	"workbrench/internal/middleware"
+	"workbrench/internal/model"
+	"workbrench/internal/module/backup"
+	"workbrench/internal/module/cronjob"
+	"workbrench/internal/module/dept"
+	"workbrench/internal/module/dictitem"
+	"workbrench/internal/module/dicttype"
+	"workbrench/internal/module/login"
+	"workbrench/internal/module/loginlog"
+	"workbrench/internal/module/menu"
+	"workbrench/internal/module/operationlog"
+	"workbrench/internal/module/role"
+	"workbrench/internal/module/user"
+	backuppkg "workbrench/internal/pkg/backup"
+	"workbrench/internal/pkg/cron"
+	"workbrench/internal/pkg/database"
+	"workbrench/internal/pkg/flash"
+	"workbrench/internal/pkg/logger"
+	"workbrench/internal/pkg/ratelimit"
+	"workbrench/internal/pkg/render"
+	"workbrench/internal/pkg/session"
+	"workbrench/internal/server"
+
 	"go.uber.org/zap"
-	"goframework/internal/config"
-	"goframework/internal/middleware"
-	"goframework/internal/model"
-	"goframework/internal/module/backup"
-	"goframework/internal/module/cronjob"
-	"goframework/internal/module/dept"
-	"goframework/internal/module/dictitem"
-	"goframework/internal/module/dicttype"
-	"goframework/internal/module/ledger"
-	loginmodule "goframework/internal/module/login"
-	"goframework/internal/module/loginlog"
-	menumodule "goframework/internal/module/menu"
-	"goframework/internal/module/operationlog"
-	"goframework/internal/module/resource"
-	"goframework/internal/module/role"
-	"goframework/internal/module/user"
-	"goframework/internal/module/zentao"
-	backuppkg "goframework/internal/pkg/backup"
-	cronpkg "goframework/internal/pkg/cron"
-	"goframework/internal/pkg/database"
-	"goframework/internal/pkg/flash"
-	"goframework/internal/pkg/logger"
-	ratelimitpkg "goframework/internal/pkg/ratelimit"
-	"goframework/internal/pkg/render"
-	"goframework/internal/pkg/session"
-	"goframework/internal/server"
 )
 
 // Run 加载配置、初始化日志、启动 HTTP 服务。
@@ -71,8 +69,8 @@ func Run() error {
 	}
 	sessionMgr := session.New(cfg)
 	flash.SetDefault(sessionMgr)
-	limiter := ratelimitpkg.New(10, 20)
-	loginLimiter := ratelimitpkg.New(3.0, 10)
+	limiter := ratelimit.New(10, 20)
+	loginLimiter := ratelimit.New(3.0, 10)
 
 	isDev := cfg.App.Env == "dev"
 	rend, err := render.New(cfg, isDev)
@@ -81,9 +79,9 @@ func Run() error {
 	}
 	render.SetDefault(rend)
 
-	authRepo := loginmodule.NewRepo(db)
-	authSvc := loginmodule.NewService(authRepo, sessionMgr, zapLog)
-	authHandler := loginmodule.NewHandler(authSvc, zapLog)
+	authRepo := login.NewRepo(db)
+	authSvc := login.NewService(authRepo, sessionMgr, zapLog)
+	authHandler := login.NewHandler(authSvc, zapLog)
 	requireLogin := middleware.RequireLogin(sessionMgr, db)
 	redirectIfLoggedIn := middleware.RedirectIfLoggedIn(sessionMgr)
 	userRepo := user.NewRepo(db)
@@ -95,9 +93,9 @@ func Run() error {
 	operationLogRepo := operationlog.NewRepo(db)
 	operationLogSvc := operationlog.NewService(operationLogRepo)
 	operationLogHandler := operationlog.NewHandler(operationLogSvc)
-	menuRepo := menumodule.NewRepo(db)
-	menuSvc := menumodule.NewService(menuRepo)
-	menuHandler := menumodule.NewHandler(rend, zapLog, menuSvc)
+	menuRepo := menu.NewRepo(db)
+	menuSvc := menu.NewService(menuRepo)
+	menuHandler := menu.NewHandler(rend, zapLog, menuSvc)
 	deptRepo := dept.NewRepo(db)
 	deptSvc := dept.NewService(deptRepo)
 	deptHandler := dept.NewHandler(rend, zapLog, deptSvc)
@@ -111,7 +109,7 @@ func Run() error {
 	roleSvc := role.NewService(roleRepo)
 	roleHandler := role.NewHandler(rend, zapLog, roleSvc)
 
-	cronMgr := cronpkg.New(db)
+	cronMgr := cron.New(db)
 	if err := cronMgr.Register("builtin_auto_backup", cfg.Backup.AutoCron, func() {
 		if _, backupErr := backuppkg.Run(backuppkg.Config{
 			DB:       db,
@@ -134,15 +132,6 @@ func Run() error {
 	backupRepo := backup.NewRepo(db)
 	backupSvc := backup.NewService(backupRepo, cfg, db)
 	backupHandler := backup.NewHandler(zapLog, backupSvc)
-	zentaoRepo := zentao.NewRepo(db)
-	zentaoSvc := zentao.NewService(zentaoRepo, sessionMgr, cfg.Zentao, zapLog)
-	zentaoHandler := zentao.NewHandler(zentaoSvc, zapLog)
-	resourceRepo := resource.NewRepo(db)
-	resourceSvc := resource.NewService(resourceRepo)
-	resourceHandler := resource.NewHandler(resourceSvc)
-	ledgerRepo := ledger.NewRepo(db)
-	ledgerSvc := ledger.NewService(ledgerRepo)
-	ledgerHandler := ledger.NewHandler(ledgerSvc, zentaoSvc)
 
 	routeDeps := server.RouteDeps{
 		SessionMgr:          sessionMgr,
@@ -161,9 +150,6 @@ func Run() error {
 		RoleHandler:         roleHandler,
 		CronJobHandler:      cronJobHandler,
 		BackupHandler:       backupHandler,
-		ResourceHandler:     resourceHandler,
-		ZentaoHandler:       zentaoHandler,
-		LedgerHandler:       ledgerHandler,
 	}
 
 	cronMgr.Start()
