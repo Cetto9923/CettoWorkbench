@@ -37,6 +37,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.Use(middleware.ActiveNav("/po/home"))
 
 	g.GET("/home", h.Home)
+	g.GET("/demands", h.Demands)
 }
 
 // Home 渲染 PO 工作台首页。
@@ -53,6 +54,40 @@ func (h *Handler) Home(c *gin.Context) {
 		"Title":             "工作台首页",
 		"PageTitle":         "工作台首页",
 		"ValueStreamStages": resp.Stages,
+	})
+}
+
+// Demands 按价值流状态返回当前用户的需求/故事详情（JSON）。
+func (h *Handler) Demands(c *gin.Context) {
+	var req DemandsReq
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "参数解析失败",
+		})
+		return
+	}
+	if errs := req.Validate(); len(errs) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"message": "参数校验失败",
+			"errors":  errs,
+		})
+		return
+	}
+
+	resp, err := h.svc.Demands(c.Request.Context(), middleware.CurrentUser(c), req)
+	if err != nil {
+		if h.logger != nil {
+			h.logger.Error("po demand details", zap.Error(err), zap.String("status", req.Status))
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "获取需求详情失败",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"items":   resp.Items,
 	})
 }
 

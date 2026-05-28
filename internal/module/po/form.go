@@ -8,6 +8,14 @@
 
 package po
 
+import "strings"
+
+// FieldError 字段级验证错误。
+type FieldError struct {
+	Field   string `json:"field"`
+	Message string `json:"message"`
+}
+
 // ValueStreamStage 价值流阶段卡片数据（对应 homeVsCompact 单个阶段）。
 type ValueStreamStage struct {
 	Label       string
@@ -21,4 +29,36 @@ type ValueStreamStage struct {
 // HomeResp PO 工作台首页数据。
 type HomeResp struct {
 	Stages []ValueStreamStage
+}
+
+// DemandsReq 按价值流状态查询需求/故事详情。
+type DemandsReq struct {
+	Status string `form:"status"`
+}
+
+// Validate 校验查询参数。
+func (r *DemandsReq) Validate() []FieldError {
+	status := strings.TrimSpace(r.Status)
+	if status == "" {
+		return []FieldError{{Field: "status", Message: "状态不能为空"}}
+	}
+	if !isValidValueStreamStatus(status) {
+		return []FieldError{{Field: "status", Message: "无效的价值流状态"}}
+	}
+	r.Status = status
+	return nil
+}
+
+// WorkItemDetail 单条需求或故事详情（Redis hash 全字段）。
+type WorkItemDetail struct {
+	Kind  string `json:"kind"`
+	ID    string `json:"id"`
+	Pri   string `json:"pri"`
+	Title string `json:"title"`
+	// Detail map[string]string `json:"detail"`
+}
+
+// DemandsResp 价值流状态下的需求详情列表。
+type DemandsResp struct {
+	Items []WorkItemDetail `json:"items"`
 }
