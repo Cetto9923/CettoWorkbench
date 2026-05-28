@@ -435,6 +435,12 @@
   background: #fde8e8;
 }
 
+.po-home .po-top5 a.table-row-btn {
+  display: inline-block;
+  text-decoration: none;
+  color: #fff;
+}
+
 @media (max-width: 1180px) {
   .po-home .home-vs-compact-row {
     grid-template-columns: repeat(10, 84px);

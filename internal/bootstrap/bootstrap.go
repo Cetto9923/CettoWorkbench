@@ -43,6 +43,7 @@ import (
 	redispkg "workbench/internal/pkg/redis"
 	"workbench/internal/pkg/render"
 	"workbench/internal/pkg/session"
+	zentaopkg "workbench/internal/pkg/zentao"
 	"workbench/internal/server"
 
 	"go.uber.org/zap"
@@ -54,6 +55,7 @@ func Run() error {
 	if err != nil {
 		return fmt.Errorf("load config: %w", err)
 	}
+	zentaopkg.SetConfig(cfg.Zentao)
 
 	zapLog, err := logger.Init(cfg)
 	if err != nil {

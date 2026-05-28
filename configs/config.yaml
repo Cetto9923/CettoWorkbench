@@ -21,7 +21,10 @@ redis:
   clean_db: 6
 
 zentao:
-  url: "https://customer.chandao.net/api.php/v1"
+  # 禅道地址
+  url: "https://changshu.wrk.oop.cc/"
+  # 禅道 API 地址
+  api: "https://customer.chandao.net/api.php/v1"
   account: "encrypt"
   password: "Asd123456"
 

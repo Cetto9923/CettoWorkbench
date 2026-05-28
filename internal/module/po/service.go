@@ -18,6 +18,7 @@ import (
 
 	"workbench/internal/model"
 	redispkg "workbench/internal/pkg/redis"
+	"workbench/internal/pkg/zentao"
 )
 
 const valueStreamKeyPrefix = "valuestream"
@@ -38,8 +39,9 @@ var valueStreamStages = []struct {
 }
 
 type workItemRef struct {
-	kind string
-	id   string
+	kind        string
+	id          string
+	valueStream string
 }
 
 // Service PO 工作台业务逻辑。
@@ -106,7 +108,6 @@ func (s *Service) loadAllStageCounts(ctx context.Context, account string) ([]int
 	return out, nil
 }
 
-
 // Demands 按价值流状态返回当前用户关联的需求/故事详情。
 func (s *Service) Demands(ctx context.Context, actor *model.User, req DemandsReq) (*DemandsResp, error) {
 	account := ""
@@ -137,18 +138,103 @@ func isValidValueStreamStatus(status string) bool {
 	return false
 }
 
+func valueStreamLabelForStatus(status string) string {
+	for _, def := range valueStreamStages {
+		if def.status == status {
+			return def.label
+		}
+	}
+	return ""
+}
+
+func workItemStageKey(kind, id string) string {
+	return kind + ":" + id
+}
+
+// loadWorkItemStageMap 构建 kind:id → 价值流阶段名称（不含「全部」）。
+func (s *Service) loadWorkItemStageMap(ctx context.Context, account string) (map[string]string, error) {
+	out := make(map[string]string)
+	if s.redis == nil || s.redis.Clean == nil || account == "" {
+		return out, nil
+	}
+
+	kinds := []struct {
+		kind   string
+		suffix string
+	}{
+		{kind: "demand", suffix: "demand"},
+		{kind: "story", suffix: "story"},
+	}
+
+	type zrangeEntry struct {
+		label string
+		kind  string
+		cmd   *goredis.StringSliceCmd
+	}
+
+	pipe := s.redis.Clean.Pipeline()
+	entries := make([]zrangeEntry, 0)
+	for _, def := range valueStreamStages {
+		if def.status == "all" {
+			continue
+		}
+		for _, k := range kinds {
+			key := fmt.Sprintf("%s:%s:%s:%s", valueStreamKeyPrefix, account, def.status, k.suffix)
+			entries = append(entries, zrangeEntry{
+				label: def.label,
+				kind:  k.kind,
+				cmd:   pipe.ZRange(ctx, key, 0, -1),
+			})
+		}
+	}
+	if _, err := pipe.Exec(ctx); err != nil {
+		return nil, err
+	}
+
+	for _, e := range entries {
+		ids, err := e.cmd.Result()
+		if err != nil {
+			return nil, err
+		}
+		for _, id := range ids {
+			if id == "" {
+				continue
+			}
+			mapKey := workItemStageKey(e.kind, id)
+			if _, exists := out[mapKey]; exists {
+				continue
+			}
+			out[mapKey] = e.label
+		}
+	}
+	return out, nil
+}
+
 func (s *Service) listValueStreamRefs(ctx context.Context, account, status string) ([]workItemRef, error) {
 	if s.redis == nil || s.redis.Clean == nil || account == "" {
 		return nil, nil
 	}
 
 	kinds := []struct {
-		kind string
+		kind   string
 		suffix string
 	}{
 		{kind: "demand", suffix: "demand"},
 		{kind: "story", suffix: "story"},
 	}
+
+	var stageMap map[string]string
+	var fixedLabel string
+	if status == "all" {
+		var err error
+		stageMap, err = s.loadWorkItemStageMap(ctx, account)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		fixedLabel = valueStreamLabelForStatus(status)
+	}
+
 	refs := make([]workItemRef, 0)
 	for _, k := range kinds {
 		key := fmt.Sprintf("%s:%s:%s:%s", valueStreamKeyPrefix, account, status, k.suffix)
@@ -165,7 +251,11 @@ func (s *Service) listValueStreamRefs(ctx context.Context, account, status strin
 			if id == "" {
 				continue
 			}
-			refs = append(refs, workItemRef{kind: k.kind, id: id})
+			vs := fixedLabel
+			if status == "all" {
+				vs = stageMap[workItemStageKey(k.kind, id)]
+			}
+			refs = append(refs, workItemRef{kind: k.kind, id: id, valueStream: vs})
 		}
 	}
 	return refs, nil
@@ -191,7 +281,7 @@ func (s *Service) loadWorkItemDetails(ctx context.Context, refs []workItemRef) (
 
 	items := make([]WorkItemDetail, 0, len(refs))
 	for i, ref := range refs {
-		var title, pri string
+		var title, pri, zentaoUrl string
 
 		detail, err := cmds[i].Result()
 		if err != nil {
@@ -203,8 +293,10 @@ func (s *Service) loadWorkItemDetails(ctx context.Context, refs []workItemRef) (
 
 		if ref.kind == "demand" {
 			title = detail["name"]
+			zentaoUrl = zentao.URL("demand", "view", fmt.Sprintf("demandID=%s", detail["id"]))
 		} else {
 			title = detail["title"]
+			zentaoUrl = zentao.URL("story", "view", fmt.Sprintf("storyID=%s", detail["id"]))
 		}
 
 		if detail["pri"] != "" {
@@ -212,10 +304,12 @@ func (s *Service) loadWorkItemDetails(ctx context.Context, refs []workItemRef) (
 		}
 
 		items = append(items, WorkItemDetail{
-			Kind:   ref.kind,
-			ID:     detail["id"],
-			Pri:    pri,
-			Title:  title,
+			Kind:        ref.kind,
+			ID:          detail["id"],
+			Pri:         pri,
+			Title:       title,
+			ZentaoUrl:   zentaoUrl,
+			ValueStream: ref.valueStream,
 		})
 	}
 	return items, nil

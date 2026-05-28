@@ -55,6 +55,7 @@ type Redis struct {
 // ZentaoConfig 禅道配置。
 type ZentaoConfig struct {
 	URL      string `mapstructure:"url"`
+	API      string `mapstructure:"api"`
 	Account  string `mapstructure:"account"`
 	Password string `mapstructure:"password"`
 }
