@@ -40,6 +40,7 @@ import (
 	"workbench/internal/pkg/flash"
 	"workbench/internal/pkg/logger"
 	"workbench/internal/pkg/ratelimit"
+	redispkg "workbench/internal/pkg/redis"
 	"workbench/internal/pkg/render"
 	"workbench/internal/pkg/session"
 	"workbench/internal/server"
@@ -65,6 +66,11 @@ func Run() error {
 		return fmt.Errorf("init database: %w", err)
 	}
 	defer func() { _ = database.Close(db) }()
+	redisClients, err := redispkg.New(cfg, zapLog)
+	if err != nil {
+		return fmt.Errorf("init redis: %w", err)
+	}
+	defer func() { _ = redispkg.Close(redisClients) }()
 	if err := db.AutoMigrate(&model.OperationLog{}); err != nil {
 		return fmt.Errorf("ensure zt_operation_logs: %w", err)
 	}
@@ -133,7 +139,8 @@ func Run() error {
 	backupRepo := backup.NewRepo(db)
 	backupSvc := backup.NewService(backupRepo, cfg, db)
 	backupHandler := backup.NewHandler(zapLog, backupSvc)
-	poHandler := po.NewHandler()
+	poSvc := po.NewService(redisClients, zapLog)
+	poHandler := po.NewHandler(poSvc, zapLog)
 
 	routeDeps := server.RouteDeps{
 		SessionMgr:          sessionMgr,

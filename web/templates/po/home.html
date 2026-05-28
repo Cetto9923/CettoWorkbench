@@ -3,7 +3,7 @@
 模块: PO工作台
 职责: PO 工作台首页静态占位
 全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
-页面字段: .Title (string), .PageTitle (string)
+页面字段: .Title (string), .PageTitle (string), .ValueStreamStages ([]ValueStreamStage)
 ========================================================================== */}}
 {{ define "page_css" }}
 <link rel="stylesheet" href="{{ asset "/static/css/po/home.css" }}">
@@ -36,51 +36,16 @@
     <div class="home-vs-compact-scroll" id="homeVsCompactScroll">
       <div class="home-vs-compact" id="homeVsCompact">
         <div class="home-vs-compact-row">
-          <button type="button" class="home-vs-mini-card active risk" title="全部价值流：查看整体存量与风险，点击可清除阶段筛选">
-            <span class="vs-mini-name">全部</span>
-            <span class="vs-mini-count">25</span>
+          {{ range $i, $stage := .ValueStreamStages }}
+          <button type="button"
+            class="home-vs-mini-card{{ if eq $i 0 }} active risk{{ else if eq $stage.Count 0 }} empty{{ else }} attn{{ end }}"
+            data-vs-status="{{ $stage.Status }}"
+            title="{{ $stage.Label }} · {{ $stage.Count }} 条">
+            <span class="vs-mini-name">{{ $stage.Label }}</span>
+            <span class="vs-mini-count">{{ $stage.Count }}</span>
             <span class="vs-mini-meta">功能待开发，敬请期待...</span>
           </button>
-          <button type="button" class="home-vs-mini-card attn" title="受理 · 4 条">
-            <span class="vs-mini-name">受理</span>
-            <span class="vs-mini-count">4</span>
-            <span class="vs-mini-meta">功能待开发，敬请期待...</span>
-          </button>
-          <button type="button" class="home-vs-mini-card" title="澄清 · 3 条 · 最长 19 天">
-            <span class="vs-mini-name">澄清</span>
-            <span class="vs-mini-count">3</span>
-            <span class="vs-mini-meta">功能待开发，敬请期待...</span>
-          </button>
-          <button type="button" class="home-vs-mini-card attn" title="排期（含转研发与建任务） · 10 条 · 风险 1 · 最长 28 天">
-            <span class="vs-mini-name">排期</span>
-            <span class="vs-mini-count">10</span>
-            <span class="vs-mini-meta">功能待开发，敬请期待...</span>
-          </button>
-          <button type="button" class="home-vs-mini-card attn" title="提测 · 3 条 · 风险 1 · 最长 10 天">
-            <span class="vs-mini-name">提测</span>
-            <span class="vs-mini-count">3</span>
-            <span class="vs-mini-meta">功能待开发，敬请期待...</span>
-          </button>
-          <button type="button" class="home-vs-mini-card empty" title="联调测试 · 0 条 · 最长 0 天">
-            <span class="vs-mini-name">联调测试</span>
-            <span class="vs-mini-count">0</span>
-            <span class="vs-mini-meta">功能待开发，敬请期待...</span>
-          </button>
-          <button type="button" class="home-vs-mini-card attn" title="验收 · 3 条 · 风险 1 · 最长 25 天">
-            <span class="vs-mini-name">验收</span>
-            <span class="vs-mini-count">3</span>
-            <span class="vs-mini-meta">功能待开发，敬请期待...</span>
-          </button>
-          <button type="button" class="home-vs-mini-card attn" title="交付 · 1 条 · 风险 1 · 最长 26 天">
-            <span class="vs-mini-name">交付</span>
-            <span class="vs-mini-count">1</span>
-            <span class="vs-mini-meta">功能待开发，敬请期待...</span>
-          </button>
-          <button type="button" class="home-vs-mini-card attn" title="评价反馈 · 3 条 · 风险 1 · 最长 27 天">
-            <span class="vs-mini-name">评价反馈</span>
-            <span class="vs-mini-count">3</span>
-            <span class="vs-mini-meta">功能待开发，敬请期待...</span>
-          </button>
+          {{ end }}
         </div>
       </div>
     </div>
