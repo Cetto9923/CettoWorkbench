@@ -21,7 +21,7 @@ import (
 func RedirectIfLoggedIn(sessionMgr *scs.SessionManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if sessionMgr.GetInt64(c.Request.Context(), "userID") > 0 {
-			c.Redirect(http.StatusSeeOther, "/admin/dashboard")
+			c.Redirect(http.StatusSeeOther, "/po/home")
 			c.Abort()
 			return
 		}

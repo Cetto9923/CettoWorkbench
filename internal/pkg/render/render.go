@@ -62,7 +62,7 @@ type Renderer struct {
 func New(cfg *config.Config, isDev bool) (*Renderer, error) {
 	templateDir := filepath.Clean("web/templates")
 	staticDir := filepath.Join(filepath.Dir(templateDir), "static")
-	appName := "workbench"
+	appName := ""
 	if cfg != nil && strings.TrimSpace(cfg.App.Name) != "" {
 		appName = strings.TrimSpace(cfg.App.Name)
 	}

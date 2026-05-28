@@ -12,7 +12,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="csrf-token" content="{{ .CSRFToken }}">
   <title>{{ .Title }} - workbench</title>
-  <link rel="stylesheet" href="{{ asset "/static/vendor/bootstrap-icons/fonts/fonts.css" }}">
+  <link rel="stylesheet" href="{{ asset "/static/vendor/fonts/jetbrains-mono/fonts.css" }}">
   <link rel="stylesheet" href="{{ asset "/static/vendor/bootstrap-icons/bootstrap-icons.css" }}">
   <link rel="stylesheet" href="{{ asset "/static/vendor/fontawesome/css/all.min.css" }}">
   <link rel="stylesheet" href="{{ asset "/static/vendor/quill/quill.snow.css" }}">
@@ -68,6 +68,7 @@
   <script src="/static/js/components/components.js"></script>
   <script src="/static/js/layout/sidebar.js"></script>
   <script src="{{ asset "/static/vendor/quill/quill.min.js" }}"></script>
+  <script src="{{ asset "/static/vendor/jquery/jquery.min.js" }}"></script>
   {{ if and (not .HideChrome) (eq .LayoutNav "top") }}<script src="/static/js/layout/topnav.js"></script>{{ end }}
   {{ block "page_js" . }}{{ end }}
   {{ template "scripts" . }}

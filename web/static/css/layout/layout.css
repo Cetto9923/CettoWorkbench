@@ -2,7 +2,7 @@
    文件: web/static/css/layout.css
    模块: 布局
    职责: 顶部导航 + 侧边栏 + 主内容区的三栏骨架布局
-         侧边栏支持多级展开/折叠与整体收起；主区为侧栏外剩余宽度的 70% 并水平居中
+         侧边栏支持多级展开/折叠与整体收起；主区占满侧栏以外剩余视口
    规范: 遵循 DESIGN_SYSTEM.md §1 变量 + §3 布局 + §4 导航
 ========================================================================== */
 
@@ -48,9 +48,9 @@ body.layout-nav-top .sidebar {
 body.layout-nav-top .main,
 body.layout-nav-top.sidebar-collapsed .main {
   --main-gutter: 0px;
-  margin-left: calc(var(--main-gutter) + (100vw - var(--main-gutter)) * 0.15);
-  width: calc((100vw - var(--main-gutter)) * 0.7);
-  max-width: calc((100vw - var(--main-gutter)) * 0.7);
+  margin-left: var(--main-gutter);
+  width: calc(100vw - var(--main-gutter));
+  max-width: none;
 }
 
 .topbar-brand {
@@ -402,9 +402,9 @@ body.sidebar-collapsed .topbar-brand {
 
 body.sidebar-collapsed .main {
   --main-gutter: var(--sidebar-width-collapsed);
-  margin-left: calc(var(--main-gutter) + (100vw - var(--main-gutter)) * 0.15);
-  width: calc((100vw - var(--main-gutter)) * 0.7);
-  max-width: calc((100vw - var(--main-gutter)) * 0.7);
+  margin-left: var(--main-gutter);
+  width: calc(100vw - var(--main-gutter));
+  max-width: none;
 }
 
 body.sidebar-collapsed .sidebar .nav-text,
@@ -449,7 +449,7 @@ body.sidebar-collapsed .sidebar .sidebar-collapse-icon {
 }
 
 /* ── Main Content ──
-   主区宽度为「视口减去侧栏占位」的 70%，并在该区域内水平居中（左右各余 15%） */
+   主区占满视口减去顶栏与侧栏（固定侧栏占位由 --main-gutter 控制） */
 
 .main {
   flex: 1 1 auto;
@@ -459,15 +459,14 @@ body.sidebar-collapsed .sidebar .sidebar-collapse-icon {
   min-height: calc(100vh - var(--topbar-stack-height));
   transition:
     margin-left 0.2s ease,
-    width 0.2s ease,
-    max-width 0.2s ease;
+    width 0.2s ease;
   --main-gutter: var(--sidebar-width);
-  width: calc((100vw - var(--main-gutter)) * 0.7);
-  max-width: calc((100vw - var(--main-gutter)) * 0.7);
-  margin-left: calc(var(--main-gutter) + (100vw - var(--main-gutter)) * 0.15);
+  margin-left: var(--main-gutter);
+  width: calc(100vw - var(--main-gutter));
+  max-width: none;
 }
 
-/* layout-chrome-hidden：无顶栏、无侧栏；主区在整页视口内 70% 居中（须写在 .main 之后以免被覆盖） */
+/* layout-chrome-hidden：无顶栏、无侧栏；主区占满整页视口（须写在 .main 之后以免被覆盖） */
 
 body.layout-chrome-hidden .layout {
   margin-top: 0;
@@ -477,9 +476,9 @@ body.layout-chrome-hidden .layout {
 body.layout-chrome-hidden .main,
 body.layout-chrome-hidden.sidebar-collapsed .main {
   --main-gutter: 0px;
-  margin-left: calc((100vw - var(--main-gutter)) * 0.15);
-  width: calc((100vw - var(--main-gutter)) * 0.7);
-  max-width: calc((100vw - var(--main-gutter)) * 0.7);
+  margin-left: var(--main-gutter);
+  width: calc(100vw - var(--main-gutter));
+  max-width: none;
   min-height: 100vh;
 }
 

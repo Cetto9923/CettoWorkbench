@@ -19,7 +19,7 @@ import (
 // workbench_MODE=dev 时读取 configs/config.dev.yaml，否则读取 configs/config.yaml。
 func Load() (*Config, error) {
 	configPath := "configs/config.yaml"
-	if os.Getenv("workbench_MODE") == "dev" {
+	if os.Getenv("WORKBENCH_MODE") == "dev" {
 		configPath = "configs/config.dev.yaml"
 	}
 

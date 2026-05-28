@@ -42,9 +42,7 @@
   border: 1px solid transparent;
   transition: all 0.2s;
   cursor: pointer;
-  font-family:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-    "Courier New", monospace;
+  font-family: var(--font-sans);
   box-sizing: border-box;
 }
 

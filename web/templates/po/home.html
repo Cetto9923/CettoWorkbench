@@ -1,0 +1,181 @@
+{{/* ==========================================================================
+文件: web/templates/po/home.html
+模块: PO工作台
+职责: PO 工作台首页静态占位
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .PageTitle (string)
+========================================================================== */}}
+{{ define "page_css" }}
+<link rel="stylesheet" href="{{ asset "/static/css/po/home.css" }}">
+{{ end }}
+
+{{ define "content" }}
+<div class="po-home">
+  <div class="home-command-bar">
+    <div class="home-hero home-hero--compact">
+      <div class="home-hero-left">
+        <div class="home-hero-title"><i class="fas fa-diagram-project"></i>业务需求价值流工作台</div>
+        <div class="home-hero-sub" title="围绕业务需求从受理到交付反馈的全过程推进，帮助 PO 识别卡点、协调责任人、保障版本交付。">识别卡点 · 协调责任人 · 保障版本交付</div>
+      </div>
+    </div>
+
+    <div class="home-focal-section">
+      <div class="home-focal-label"><i class="fas fa-bolt"></i> 今日推进焦点</div>
+      <div class="home-focal-inline">
+        <span class="home-focal-hint">功能待开发，敬请期待...</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="home-vs-section home-vs-section--primary" id="homeValueStreamSection">
+    <div class="home-vs-hdr">
+      <div>
+        <div class="home-vs-title"><i class="fas fa-route"></i>业务需求价值流</div>
+      </div>
+    </div>
+    <div class="home-vs-compact-scroll" id="homeVsCompactScroll">
+      <div class="home-vs-compact" id="homeVsCompact">
+        <div class="home-vs-compact-row">
+          <button type="button" class="home-vs-mini-card active risk" title="全部价值流：查看整体存量与风险，点击可清除阶段筛选">
+            <span class="vs-mini-name">全部</span>
+            <span class="vs-mini-count">25</span>
+            <span class="vs-mini-meta">功能待开发，敬请期待...</span>
+          </button>
+          <button type="button" class="home-vs-mini-card attn" title="受理 · 4 条">
+            <span class="vs-mini-name">受理</span>
+            <span class="vs-mini-count">4</span>
+            <span class="vs-mini-meta">功能待开发，敬请期待...</span>
+          </button>
+          <button type="button" class="home-vs-mini-card" title="澄清 · 3 条 · 最长 19 天">
+            <span class="vs-mini-name">澄清</span>
+            <span class="vs-mini-count">3</span>
+            <span class="vs-mini-meta">功能待开发，敬请期待...</span>
+          </button>
+          <button type="button" class="home-vs-mini-card attn" title="排期（含转研发与建任务） · 10 条 · 风险 1 · 最长 28 天">
+            <span class="vs-mini-name">排期</span>
+            <span class="vs-mini-count">10</span>
+            <span class="vs-mini-meta">功能待开发，敬请期待...</span>
+          </button>
+          <button type="button" class="home-vs-mini-card attn" title="提测 · 3 条 · 风险 1 · 最长 10 天">
+            <span class="vs-mini-name">提测</span>
+            <span class="vs-mini-count">3</span>
+            <span class="vs-mini-meta">功能待开发，敬请期待...</span>
+          </button>
+          <button type="button" class="home-vs-mini-card empty" title="联调测试 · 0 条 · 最长 0 天">
+            <span class="vs-mini-name">联调测试</span>
+            <span class="vs-mini-count">0</span>
+            <span class="vs-mini-meta">功能待开发，敬请期待...</span>
+          </button>
+          <button type="button" class="home-vs-mini-card attn" title="验收 · 3 条 · 风险 1 · 最长 25 天">
+            <span class="vs-mini-name">验收</span>
+            <span class="vs-mini-count">3</span>
+            <span class="vs-mini-meta">功能待开发，敬请期待...</span>
+          </button>
+          <button type="button" class="home-vs-mini-card attn" title="交付 · 1 条 · 风险 1 · 最长 26 天">
+            <span class="vs-mini-name">交付</span>
+            <span class="vs-mini-count">1</span>
+            <span class="vs-mini-meta">功能待开发，敬请期待...</span>
+          </button>
+          <button type="button" class="home-vs-mini-card attn" title="评价反馈 · 3 条 · 风险 1 · 最长 27 天">
+            <span class="vs-mini-name">评价反馈</span>
+            <span class="vs-mini-count">3</span>
+            <span class="vs-mini-meta">功能待开发，敬请期待...</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TODO 卡点快速响应 -->
+  <!-- <div class="home-blocker-section" id="homeBlockerSection">
+    <div class="home-blocker-hdr">
+      <span class="home-blocker-title"><i class="fas fa-triangle-exclamation"></i> 卡点快速响应</span>
+      <span class="home-blocker-sub">优先处理阻塞、超期与质量卡点</span>
+    </div>
+    <div class="home-blocker-strip" id="homeBlockerStrip">
+      <div class="home-blocker-card">
+        <div class="hbc-top">
+          <span class="hbc-id">REQ-24018</span>
+          <span class="blocker-tag blocker-tag--blocked">阻塞</span>
+          <span class="priority-tag">P0</span>
+        </div>
+        <div class="hbc-title">核心交易链路对账差异修复</div>
+        <div class="hbc-meta">
+          <span>卡点 联调环境未就绪</span>
+          <span>责任人 张三</span>
+          <span>时限 今日</span>
+        </div>
+      </div>
+      <div class="home-blocker-card">
+        <div class="hbc-top">
+          <span class="hbc-id">REQ-23986</span>
+          <span class="blocker-tag blocker-tag--blocked">超期</span>
+          <span class="priority-tag">P1</span>
+        </div>
+        <div class="hbc-title">会员积分批量补发与核对</div>
+        <div class="hbc-meta">
+          <span>卡点 业务确认超时</span>
+          <span>责任人 李四</span>
+          <span>时限 已超 3 天</span>
+        </div>
+      </div>
+      <div class="home-blocker-card">
+        <div class="hbc-top">
+          <span class="hbc-id">REQ-23952</span>
+          <span class="blocker-tag blocker-tag--blocked">阻塞</span>
+          <span class="priority-tag">P1</span>
+        </div>
+        <div class="hbc-title">订单导出性能优化（百万级）</div>
+        <div class="hbc-meta">
+          <span>卡点 排期未锁定</span>
+          <span>责任人 王五</span>
+          <span>时限 本周五</span>
+        </div>
+      </div>
+      <div class="home-blocker-card">
+        <div class="hbc-top">
+          <span class="hbc-id">REQ-23901</span>
+          <span class="blocker-tag blocker-tag--blocked">风险</span>
+          <span class="priority-tag">P2</span>
+        </div>
+        <div class="hbc-title">渠道结算报表字段扩展</div>
+        <div class="hbc-meta">
+          <span>卡点 测试阻塞</span>
+          <span>责任人 赵六</span>
+          <span>时限 下周一</span>
+        </div>
+      </div>
+    </div>
+  </div> -->
+
+  <div class="po-top5 home-vs-section" id="top5Section">
+    <div class="po-section-title" id="top5Title"><i class="fas fa-star"></i> 当前应推进事项：今日必推 / 全部价值流 / 5条</div>
+    <div class="table-container table-container--flat" id="top5List">
+      <div class="table-wrapper">
+        <table class="table data-table">
+          <thead>
+            <tr>
+              <th class="col-id">ID</th>
+              <th>标题</th>
+              <th class="col-sm">价值流</th>
+              <th>卡点</th>
+              <th>PO下一步</th>
+              <th class="col-sm">下一责任人</th>
+              <th class="col-action">操作</th>
+            </tr>
+          </thead>
+          <tbody id="top5TableBody"></tbody>
+        </table>
+      </div>
+      <div class="po-top5-more" id="top5ToggleWrap" hidden>
+        <button type="button" class="po-top5-more-link" id="top5Toggle" aria-expanded="false"></button>
+      </div>
+    </div>
+  </div>
+</div>
+{{ end }}
+
+{{ define "page_js" }}
+<script src="{{ asset "/static/vendor/jquery/jquery.min.js" }}"></script>
+<script src="{{ asset "/static/js/po/home.js" }}"></script>
+{{ end }}

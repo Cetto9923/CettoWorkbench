@@ -8,7 +8,7 @@
 .data-table .email-text {
   color: var(--color-text-link-muted);
   font-size: var(--font-size-sm);
-  font-family: monospace;
+  font-family: var(--font-sans);
   letter-spacing: 0.2px;
   word-break: break-word;
 }
@@ -17,7 +17,7 @@
   display: inline-block;
   padding: var(--space-1) var(--space-2);
   border-radius: 999px;
-  font-family: monospace;
+  font-family: var(--font-sans);
   font-size: var(--font-size-sm);
   color: var(--color-text-accent-muted);
   background: var(--color-surface-soft-2);

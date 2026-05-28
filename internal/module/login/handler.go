@@ -149,7 +149,7 @@ func (h *Handler) DoLogin(c *gin.Context) {
 		render.Redirect(c, req.Redirect)
 		return
 	}
-	render.Redirect(c, "/admin/dashboard")
+	render.Redirect(c, "/po/home")
 }
 
 // DoLogout 执行登出。

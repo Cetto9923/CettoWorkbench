@@ -1,6 +1,5 @@
 .table-container {
   background: var(--color-surface);
-  border-radius: 20px;
   box-shadow: var(--shadow-table-panel);
   overflow: hidden;
 }
@@ -95,7 +94,8 @@
   filter: brightness(0.98);
 }
 
-.data-table {
+/* 仅 data-table：大卡片区表格（无 .table 时） */
+.data-table:not(.table) {
   width: 100%;
   min-width: 820px;
   border-collapse: separate;
@@ -104,11 +104,11 @@
   letter-spacing: -0.01em;
 }
 
-.data-table thead tr {
+.data-table:not(.table) thead tr {
   background: var(--color-surface-soft);
 }
 
-.data-table th {
+.data-table:not(.table) th {
   padding: 1rem 1.25rem;
   font-size: 0.85rem;
   font-weight: 600;
@@ -120,31 +120,31 @@
   white-space: nowrap;
 }
 
-.data-table th:first-child {
+.data-table:not(.table) th:first-child {
   border-top-left-radius: 16px;
   padding-left: 1.5rem;
 }
 
-.data-table th:last-child {
+.data-table:not(.table) th:last-child {
   border-top-right-radius: 16px;
   padding-right: 1.5rem;
 }
 
-.data-table td {
+.data-table:not(.table) td {
   padding: 1rem 1.25rem;
   border-bottom: 1px solid var(--color-border-soft-4);
   color: var(--color-text-primary);
   vertical-align: middle;
 }
 
-.data-table tbody tr {
+.data-table:not(.table) tbody tr {
   transition: background-color 0.2s ease;
 }
 
-.data-table .table-id {
+.data-table:not(.table) .table-id {
   font-weight: 500;
   color: var(--color-text-body);
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--font-sans);
   font-size: 0.85rem;
 }
 
@@ -235,20 +235,15 @@
   transform: none;
 }
 
-.data-table th:last-child,
-.data-table td:last-child {
+.data-table:not(.table) th:last-child,
+.data-table:not(.table) td:last-child {
   width: calc(var(--space-16) + var(--space-12) + var(--space-6));
   white-space: nowrap;
 }
 
-.data-table .table-action, .data-table .table-id {
+.data-table:not(.table) .table-action,
+.data-table:not(.table) .table-id {
   width: var(--space-20);
-}
-
-.data-table .col-action {
-  width: 80px;
-  white-space: nowrap;
-  vertical-align: middle;
 }
 
 .table {
@@ -258,8 +253,65 @@
   table-layout: fixed;
 }
 
-/* 表头 */
-.table thead th {
+/* .table + .data-table：后台列表与区块表格（统一紧凑样式） */
+.table.data-table {
+  min-width: 720px;
+  border-collapse: collapse;
+  border-spacing: 0;
+  letter-spacing: normal;
+}
+
+.table.data-table thead th {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-2xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: none;
+  letter-spacing: 0;
+  background: var(--color-surface-muted);
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+  text-align: left;
+}
+
+.table.data-table tbody td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.table.data-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.table.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table.data-table tbody tr:hover td {
+  background: var(--color-primary-light);
+}
+
+.table.data-table .table-id {
+  font-size: var(--font-size-2xs);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.table.data-table .cell-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.table.data-table th.col-action,
+.table.data-table td.col-action {
+  width: 72px;
+  text-align: center;
+}
+
+/* 表头（仅 .table） */
+.table:not(.data-table) thead th {
   padding: var(--space-2) var(--space-4);
   font-size: var(--font-size-2xs);
   font-weight: 500;
@@ -275,7 +327,7 @@
   width: var(--size-10);
 }
 .table .col-id {
-  width: var(--size-14);
+  width: var(--space-25);
 }
 .table .col-num {
   width: calc(var(--space-8) + var(--space-8) + var(--space-4));
@@ -286,25 +338,19 @@
   width: var(--space-25);
 }
 
-/* 编辑 + 分配权限 + 删除 三枚图标时需略宽于双操作列 */
-.table .col-action {
-  width: calc(var(--size-14) * 2 + var(--space-5));
-  text-align: left;
-}
-
-/* 数据行 */
-.table tbody td {
-  padding: var(--space-3) var(--space-4); /* 12px 16px */
+/* 数据行（仅 .table，不含 .data-table 组合） */
+.table:not(.data-table) tbody td {
+  padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--color-border);
   vertical-align: middle;
   color: var(--color-text-primary);
 }
 
-.table tbody tr:last-child td {
+.table:not(.data-table) tbody tr:last-child td {
   border-bottom: none;
 }
 
-.table tbody tr:hover td {
+.table:not(.data-table) tbody tr:hover td {
   background: var(--color-surface-hover);
 }
 
@@ -321,10 +367,95 @@
   color: var(--color-border-strong);
 }
 
-.table .col-action {
+.table .col-action,
+.data-table .col-action {
   width: 80px;
   white-space: nowrap;
   vertical-align: middle;
+}
+
+/* 嵌入区块的表格容器（无重阴影） */
+.table-container--flat {
+  box-shadow: none;
+  background: transparent;
+  overflow: visible;
+}
+
+.table-container--flat > .table-wrapper {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+/* 表格内标签与行内按钮 */
+.table-tag {
+  display: inline-block;
+  width: fit-content;
+  max-width: 100%;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: var(--font-size-2xs);
+  font-weight: 600;
+  line-height: 1.3;
+  background: var(--color-primary-light);
+  color: var(--color-info);
+  white-space: nowrap;
+}
+
+.table .priority-tag,
+.table.data-table .priority-tag {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.table .priority-tag.P1,
+.table.data-table .priority-tag.P1 {
+  background: var(--color-danger-accent);
+  color: #fff;
+}
+
+.table .priority-tag.P2,
+.table.data-table .priority-tag.P2 {
+  background: var(--color-warning-light);
+  color: #fff;
+}
+
+.table .priority-tag.P3,
+.table.data-table .priority-tag.P3 {
+  background: var(--color-info);
+  color: #fff;
+}
+
+.table .priority-tag.P4,
+.table.data-table .priority-tag.P4 {
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+
+.table-row-btn {
+  padding: 3px 10px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font-size: var(--font-size-2xs);
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  background: var(--color-primary-hover);
+  color: #fff;
+  transition: background-color 0.15s ease;
+}
+
+.table-row-btn:hover {
+  background: var(--color-primary-active);
 }
 
 @media (max-width: 720px) {
@@ -332,8 +463,13 @@
     border-radius: 16px;
   }
 
-  .data-table th,
-  .data-table td {
+  .data-table:not(.table) th,
+  .data-table:not(.table) td {
     padding: 0.75rem 0.9rem;
+  }
+
+  .table.data-table thead th,
+  .table.data-table tbody td {
+    padding: var(--space-2) var(--space-3);
   }
 }
