@@ -97,7 +97,6 @@ func emptyValueStreamStages() []ValueStreamStage {
 		stages = append(stages, ValueStreamStage{
 			Label:  def.label,
 			Status: def.status,
-			IsAll:  def.isAll,
 		})
 	}
 	return stages

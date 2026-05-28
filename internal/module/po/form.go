@@ -23,7 +23,6 @@ type ValueStreamStage struct {
 	Count       int64
 	DemandCount int64
 	StoryCount  int64
-	IsAll       bool
 }
 
 // HomeResp PO 工作台首页数据。
@@ -51,11 +50,14 @@ func (r *DemandsReq) Validate() []FieldError {
 
 // WorkItemDetail 单条需求或故事详情（Redis hash 全字段）。
 type WorkItemDetail struct {
-	Kind  string `json:"kind"`
-	ID    string `json:"id"`
-	Pri   string `json:"pri"`
-	Title string `json:"title"`
-	// Detail map[string]string `json:"detail"`
+	Kind    string `json:"kind"`
+	ID      string `json:"id"`
+	Pri     string `json:"pri"`
+	Title   string `json:"title"`
+	Stage   string `json:"stage"`
+	Blocker string `json:"blocker"`
+	Next    string `json:"next"`
+	Owner   string `json:"owner"`
 }
 
 // DemandsResp 价值流状态下的需求详情列表。

@@ -25,9 +25,8 @@ const valueStreamKeyPrefix = "valuestream"
 var valueStreamStages = []struct {
 	label  string
 	status string
-	isAll  bool
 }{
-	{label: "全部", status: "all", isAll: true},
+	{label: "全部", status: "all"},
 	{label: "受理", status: "accept"},
 	{label: "澄清", status: "clarify"},
 	{label: "排期", status: "schedule"},
@@ -76,7 +75,6 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 			Count:       demand + story,
 			DemandCount: demand,
 			StoryCount:  story,
-			IsAll:       def.isAll,
 		})
 	}
 	return &HomeResp{Stages: stages}, nil
@@ -193,7 +191,7 @@ func (s *Service) loadWorkItemDetails(ctx context.Context, refs []workItemRef) (
 
 	items := make([]WorkItemDetail, 0, len(refs))
 	for i, ref := range refs {
-		title := ""
+		var title, pri string
 
 		detail, err := cmds[i].Result()
 		if err != nil {
@@ -209,10 +207,14 @@ func (s *Service) loadWorkItemDetails(ctx context.Context, refs []workItemRef) (
 			title = detail["title"]
 		}
 
+		if detail["pri"] != "" {
+			pri = "P" + detail["pri"]
+		}
+
 		items = append(items, WorkItemDetail{
 			Kind:   ref.kind,
 			ID:     detail["id"],
-			Pri:    detail["pri"],
+			Pri:    pri,
 			Title:  title,
 		})
 	}
