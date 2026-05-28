@@ -1,8 +1,8 @@
 package server
 
 import (
-	loginmodule "workbrench/internal/module/login"
-	"workbrench/internal/module/user"
+	loginmodule "workbench/internal/module/login"
+	"workbench/internal/module/user"
 )
 
 // Handlers 聚合各业务模块 Handler。

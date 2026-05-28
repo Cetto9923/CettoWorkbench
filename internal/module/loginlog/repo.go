@@ -15,7 +15,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"workbrench/internal/model"
+	"workbench/internal/model"
 )
 
 // Repo 登录日志数据访问层。

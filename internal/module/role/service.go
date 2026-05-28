@@ -18,8 +18,8 @@ import (
 	"strings"
 	"time"
 
-	"workbrench/internal/model"
-	"workbrench/internal/pkg/perm"
+	"workbench/internal/model"
+	"workbench/internal/pkg/perm"
 )
 
 // Service 处理角色业务逻辑。

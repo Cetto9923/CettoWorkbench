@@ -15,7 +15,7 @@ import (
 
 	"github.com/alexedwards/scs/v2"
 
-	"workbrench/internal/config"
+	"workbench/internal/config"
 )
 
 const (

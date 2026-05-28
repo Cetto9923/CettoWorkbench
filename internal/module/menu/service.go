@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"workbrench/internal/model"
+	"workbench/internal/model"
 )
 
 // MenuNode 表示菜单树节点。

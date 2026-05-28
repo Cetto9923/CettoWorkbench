@@ -14,7 +14,7 @@ import (
 	"errors"
 	"strings"
 
-	"workbrench/internal/model"
+	"workbench/internal/model"
 
 	"golang.org/x/crypto/bcrypt"
 )

@@ -20,12 +20,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"workbrench/internal/middleware"
-	"workbrench/internal/pkg/errorx"
-	"workbrench/internal/pkg/flash"
-	"workbrench/internal/pkg/perm"
-	ratelimitpkg "workbrench/internal/pkg/ratelimit"
-	"workbrench/internal/pkg/render"
+	"workbench/internal/middleware"
+	"workbench/internal/pkg/errorx"
+	"workbench/internal/pkg/flash"
+	"workbench/internal/pkg/perm"
+	ratelimitpkg "workbench/internal/pkg/ratelimit"
+	"workbench/internal/pkg/render"
 )
 
 // Handler 处理认证 HTTP 请求。

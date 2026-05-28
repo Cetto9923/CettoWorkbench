@@ -15,7 +15,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"workbrench/internal/model"
+	"workbench/internal/model"
 )
 
 // Repo 封装用户数据访问。

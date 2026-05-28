@@ -10,8 +10,8 @@
 package operationlog
 
 import (
-	"workbrench/internal/model"
-	"workbrench/internal/pkg/pagination"
+	"workbench/internal/model"
+	"workbench/internal/pkg/pagination"
 )
 
 // ListReq 操作日志列表查询请求。

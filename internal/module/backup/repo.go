@@ -14,8 +14,8 @@ import (
 
 	"gorm.io/gorm"
 
-	"workbrench/internal/model"
-	"workbrench/internal/pkg/pagination"
+	"workbench/internal/model"
+	"workbench/internal/pkg/pagination"
 )
 
 // Repo 备份记录仓储。

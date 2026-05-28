@@ -19,10 +19,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"workbrench/internal/middleware"
-	"workbrench/internal/pkg/flash"
-	"workbrench/internal/pkg/perm"
-	"workbrench/internal/pkg/render"
+	"workbench/internal/middleware"
+	"workbench/internal/pkg/flash"
+	"workbench/internal/pkg/perm"
+	"workbench/internal/pkg/render"
 )
 
 // Handler 处理字典值页面请求。

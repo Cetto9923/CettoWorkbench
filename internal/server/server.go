@@ -31,10 +31,10 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"workbrench/internal/config"
-	"workbrench/internal/middleware"
-	"workbrench/internal/pkg/menu"
-	ratelimitpkg "workbrench/internal/pkg/ratelimit"
+	"workbench/internal/config"
+	"workbench/internal/middleware"
+	"workbench/internal/pkg/menu"
+	ratelimitpkg "workbench/internal/pkg/ratelimit"
 )
 
 // Server 封装 Gin 与 HTTP Server。

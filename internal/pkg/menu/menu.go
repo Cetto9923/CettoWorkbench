@@ -14,7 +14,7 @@ import (
 	"sort"
 	"strings"
 
-	"workbrench/internal/model"
+	"workbench/internal/model"
 
 	"gorm.io/gorm"
 )

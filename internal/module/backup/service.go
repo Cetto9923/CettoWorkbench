@@ -19,10 +19,10 @@ import (
 
 	"gorm.io/gorm"
 
-	"workbrench/internal/config"
-	"workbrench/internal/model"
-	backuppkg "workbrench/internal/pkg/backup"
-	"workbrench/internal/pkg/pagination"
+	"workbench/internal/config"
+	"workbench/internal/model"
+	backuppkg "workbench/internal/pkg/backup"
+	"workbench/internal/pkg/pagination"
 )
 
 // Service 备份业务层。

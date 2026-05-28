@@ -11,7 +11,7 @@ package main
 import (
 	"log"
 
-	"workbrench/internal/bootstrap"
+	"workbench/internal/bootstrap"
 )
 
 func main() {

@@ -13,7 +13,7 @@ import (
 	"strings"
 	"unicode"
 
-	"workbrench/internal/model"
+	"workbench/internal/model"
 )
 
 // accountPattern / emailPattern 目前仅 user 模块使用，保留在本文件中。

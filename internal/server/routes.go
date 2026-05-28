@@ -13,20 +13,21 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"workbrench/internal/middleware"
-	"workbrench/internal/module/backup"
-	"workbrench/internal/module/cronjob"
-	"workbrench/internal/module/dept"
-	"workbrench/internal/module/dictitem"
-	"workbrench/internal/module/dicttype"
-	loginmodule "workbrench/internal/module/login"
-	"workbrench/internal/module/loginlog"
-	menumodule "workbrench/internal/module/menu"
-	"workbrench/internal/module/operationlog"
-	"workbrench/internal/module/role"
-	"workbrench/internal/module/user"
-	"workbrench/internal/module/zentao"
-	ratelimitpkg "workbrench/internal/pkg/ratelimit"
+	"workbench/internal/middleware"
+	"workbench/internal/module/backup"
+	"workbench/internal/module/cronjob"
+	"workbench/internal/module/dept"
+	"workbench/internal/module/dictitem"
+	"workbench/internal/module/dicttype"
+	loginmodule "workbench/internal/module/login"
+	"workbench/internal/module/loginlog"
+	menumodule "workbench/internal/module/menu"
+	"workbench/internal/module/operationlog"
+	pomodule "workbench/internal/module/po"
+	"workbench/internal/module/role"
+	"workbench/internal/module/user"
+	"workbench/internal/module/zentao"
+	ratelimitpkg "workbench/internal/pkg/ratelimit"
 )
 
 // RouteDeps 路由注册依赖。
@@ -47,6 +48,7 @@ type RouteDeps struct {
 	RoleHandler         *role.Handler
 	CronJobHandler      *cronjob.Handler
 	BackupHandler       *backup.Handler
+	PoHandler           *pomodule.Handler
 	ZentaoHandler       *zentao.Handler
 }
 
@@ -95,6 +97,16 @@ func registerRoutes(r *gin.Engine, deps RouteDeps) {
 
 		// 后续各模块：
 		// deps.XxxHandler.RegisterRoutes(admin)
+	}
+
+	// PO 工作台（菜单 path：/po/home）
+	po := r.Group("/po")
+	po.Use(middleware.RequireLogin(deps.SessionMgr, deps.DB))
+	po.Use(middleware.RecordOperationLog(deps.DB, deps.SessionMgr))
+	{
+		if deps.PoHandler != nil {
+			deps.PoHandler.RegisterRoutes(po)
+		}
 	}
 
 	zentao := r.Group("/zentao")

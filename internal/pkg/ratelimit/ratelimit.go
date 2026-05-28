@@ -17,7 +17,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/time/rate"
 
-	"workbrench/internal/pkg/render"
+	"workbench/internal/pkg/render"
 )
 
 const (

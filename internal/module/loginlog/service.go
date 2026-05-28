@@ -12,7 +12,7 @@ package loginlog
 import (
 	"context"
 
-	"workbrench/internal/model"
+	"workbench/internal/model"
 )
 
 // Service 登录日志业务层。

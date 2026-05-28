@@ -10,8 +10,8 @@
 package cronjob
 
 import (
-	"workbrench/internal/model"
-	"workbrench/internal/pkg/pagination"
+	"workbench/internal/model"
+	"workbench/internal/pkg/pagination"
 )
 
 // ListReq 定时任务列表查询请求。

@@ -1,4 +1,4 @@
-module workbrench
+module workbench
 
 go 1.25.0
 

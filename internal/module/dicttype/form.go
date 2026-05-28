@@ -11,7 +11,7 @@ package dicttype
 import (
 	"strings"
 
-	"workbrench/internal/model"
+	"workbench/internal/model"
 )
 
 // FieldError 字段级验证错误。

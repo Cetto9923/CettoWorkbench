@@ -15,17 +15,17 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Load 从文件加载配置，并允许使用环境变量覆盖（前缀 workbrench_，层级用下划线）。
-// workbrench_MODE=dev 时读取 configs/config.dev.yaml，否则读取 configs/config.yaml。
+// Load 从文件加载配置，并允许使用环境变量覆盖（前缀 workbench_，层级用下划线）。
+// workbench_MODE=dev 时读取 configs/config.dev.yaml，否则读取 configs/config.yaml。
 func Load() (*Config, error) {
 	configPath := "configs/config.yaml"
-	if os.Getenv("WORKBRENCH_MODE") == "dev" {
+	if os.Getenv("workbench_MODE") == "dev" {
 		configPath = "configs/config.dev.yaml"
 	}
 
 	v := viper.New()
 	v.SetConfigFile(configPath)
-	v.SetEnvPrefix("workbrench")
+	v.SetEnvPrefix("workbench")
 	v.AutomaticEnv()
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	v.SetDefault("ratelimit.globalRPS", 100)

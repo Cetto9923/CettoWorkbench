@@ -1,5 +1,5 @@
 app:
-  name: workbrench
+  name: workbench
   env: dev
   addr: ":8080"
 
@@ -8,7 +8,7 @@ database:
   port: 3306
   user: "root"
   password: "zentao"
-  dbname: "workbrench"
+  dbname: "workbench"
   charset: "utf8mb4"
   parseTime: true
   loc: "Local"
@@ -19,7 +19,7 @@ zentao:
   password: "Asd123456"
 
 session:
-  cookieName: workbrench_session
+  cookieName: workbench_session
   lifetimeHours: 2
 
 log:

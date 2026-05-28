@@ -10,8 +10,8 @@
 package backup
 
 import (
-	"workbrench/internal/model"
-	"workbrench/internal/pkg/pagination"
+	"workbench/internal/model"
+	"workbench/internal/pkg/pagination"
 )
 
 // ListReq 备份记录列表查询请求。

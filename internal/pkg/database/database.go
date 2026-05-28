@@ -19,7 +19,7 @@ import (
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
 
-	"workbrench/internal/config"
+	"workbench/internal/config"
 )
 
 const (

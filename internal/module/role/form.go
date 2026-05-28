@@ -12,7 +12,7 @@ import (
 	"strings"
 	"unicode"
 
-	"workbrench/internal/model"
+	"workbench/internal/model"
 )
 
 // FieldError 字段级验证错误。

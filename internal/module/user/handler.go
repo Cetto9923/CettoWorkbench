@@ -22,13 +22,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"workbrench/internal/middleware"
-	"workbrench/internal/model"
-	"workbrench/internal/pkg/fileexport"
-	"workbrench/internal/pkg/flash"
-	"workbrench/internal/pkg/pagination"
-	"workbrench/internal/pkg/perm"
-	"workbrench/internal/pkg/render"
+	"workbench/internal/middleware"
+	"workbench/internal/model"
+	"workbench/internal/pkg/fileexport"
+	"workbench/internal/pkg/flash"
+	"workbench/internal/pkg/pagination"
+	"workbench/internal/pkg/perm"
+	"workbench/internal/pkg/render"
 )
 
 // Handler 处理用户管理页面请求。

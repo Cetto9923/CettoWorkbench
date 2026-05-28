@@ -24,7 +24,7 @@ import (
 	"github.com/alexedwards/scs/v2"
 	"go.uber.org/zap"
 
-	"workbrench/internal/config"
+	"workbench/internal/config"
 )
 
 const (

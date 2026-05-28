@@ -13,7 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"workbrench/internal/pkg/menu"
+	"workbench/internal/pkg/menu"
 )
 
 // ActiveNav 声明本路由组对应的菜单入口 path（须与数据库 zt_menus.path 一致，例如 "/resources/categories"）。

@@ -20,10 +20,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"workbrench/internal/model"
-	"workbrench/internal/pkg/menu"
-	"workbrench/internal/pkg/perm"
-	"workbrench/internal/pkg/session"
+	"workbench/internal/model"
+	"workbench/internal/pkg/menu"
+	"workbench/internal/pkg/perm"
+	"workbench/internal/pkg/session"
 )
 
 var authColumnCache sync.Map // key: table.column, value: bool

@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"workbrench/internal/model"
+	"workbench/internal/model"
 )
 
 // Service 处理字典值业务逻辑。

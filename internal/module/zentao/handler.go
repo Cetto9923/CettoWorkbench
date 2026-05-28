@@ -16,7 +16,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"workbrench/internal/pkg/render"
+	"workbench/internal/pkg/render"
 )
 
 // Handler 处理禅道模块 HTTP 请求。

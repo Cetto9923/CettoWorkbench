@@ -15,7 +15,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	loggerpkg "workbrench/internal/pkg/logger"
+	loggerpkg "workbench/internal/pkg/logger"
 )
 
 // RequestLogger 记录请求基础信息，不记录请求体。

@@ -19,29 +19,30 @@ package bootstrap
 import (
 	"fmt"
 
-	"workbrench/internal/config"
-	"workbrench/internal/middleware"
-	"workbrench/internal/model"
-	"workbrench/internal/module/backup"
-	"workbrench/internal/module/cronjob"
-	"workbrench/internal/module/dept"
-	"workbrench/internal/module/dictitem"
-	"workbrench/internal/module/dicttype"
-	"workbrench/internal/module/login"
-	"workbrench/internal/module/loginlog"
-	"workbrench/internal/module/menu"
-	"workbrench/internal/module/operationlog"
-	"workbrench/internal/module/role"
-	"workbrench/internal/module/user"
-	backuppkg "workbrench/internal/pkg/backup"
-	"workbrench/internal/pkg/cron"
-	"workbrench/internal/pkg/database"
-	"workbrench/internal/pkg/flash"
-	"workbrench/internal/pkg/logger"
-	"workbrench/internal/pkg/ratelimit"
-	"workbrench/internal/pkg/render"
-	"workbrench/internal/pkg/session"
-	"workbrench/internal/server"
+	"workbench/internal/config"
+	"workbench/internal/middleware"
+	"workbench/internal/model"
+	"workbench/internal/module/backup"
+	"workbench/internal/module/cronjob"
+	"workbench/internal/module/dept"
+	"workbench/internal/module/dictitem"
+	"workbench/internal/module/dicttype"
+	"workbench/internal/module/login"
+	"workbench/internal/module/loginlog"
+	"workbench/internal/module/menu"
+	"workbench/internal/module/operationlog"
+	"workbench/internal/module/po"
+	"workbench/internal/module/role"
+	"workbench/internal/module/user"
+	backuppkg "workbench/internal/pkg/backup"
+	"workbench/internal/pkg/cron"
+	"workbench/internal/pkg/database"
+	"workbench/internal/pkg/flash"
+	"workbench/internal/pkg/logger"
+	"workbench/internal/pkg/ratelimit"
+	"workbench/internal/pkg/render"
+	"workbench/internal/pkg/session"
+	"workbench/internal/server"
 
 	"go.uber.org/zap"
 )
@@ -132,6 +133,7 @@ func Run() error {
 	backupRepo := backup.NewRepo(db)
 	backupSvc := backup.NewService(backupRepo, cfg, db)
 	backupHandler := backup.NewHandler(zapLog, backupSvc)
+	poHandler := po.NewHandler()
 
 	routeDeps := server.RouteDeps{
 		SessionMgr:          sessionMgr,
@@ -150,6 +152,7 @@ func Run() error {
 		RoleHandler:         roleHandler,
 		CronJobHandler:      cronJobHandler,
 		BackupHandler:       backupHandler,
+		PoHandler:           poHandler,
 	}
 
 	cronMgr.Start()

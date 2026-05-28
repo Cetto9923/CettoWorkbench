@@ -19,8 +19,8 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 
-	"workbrench/internal/model"
-	"workbrench/internal/pkg/errorx"
+	"workbench/internal/model"
+	"workbench/internal/pkg/errorx"
 )
 
 // 登录失败锁定策略：

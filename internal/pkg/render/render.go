@@ -30,12 +30,12 @@ import (
 	"github.com/justinas/nosurf"
 	"go.uber.org/zap"
 
-	"workbrench/internal/config"
-	"workbrench/internal/constants"
-	"workbrench/internal/model"
-	"workbrench/internal/pkg/flash"
-	"workbrench/internal/pkg/logger"
-	"workbrench/internal/pkg/menu"
+	"workbench/internal/config"
+	"workbench/internal/constants"
+	"workbench/internal/model"
+	"workbench/internal/pkg/flash"
+	"workbench/internal/pkg/logger"
+	"workbench/internal/pkg/menu"
 )
 
 const (
@@ -62,7 +62,7 @@ type Renderer struct {
 func New(cfg *config.Config, isDev bool) (*Renderer, error) {
 	templateDir := filepath.Clean("web/templates")
 	staticDir := filepath.Join(filepath.Dir(templateDir), "static")
-	appName := "workbrench"
+	appName := "workbench"
 	if cfg != nil && strings.TrimSpace(cfg.App.Name) != "" {
 		appName = strings.TrimSpace(cfg.App.Name)
 	}

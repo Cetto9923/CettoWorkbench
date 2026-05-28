@@ -1,7 +1,7 @@
 .PHONY: dev build run db-install test
 
 DB_USER ?= root
-DB_NAME ?= workbrench
+DB_NAME ?= workbench
 
 dev:
 	air -c .air.toml

@@ -16,9 +16,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"workbrench/internal/middleware"
-	"workbrench/internal/pkg/perm"
-	"workbrench/internal/pkg/render"
+	"workbench/internal/middleware"
+	"workbench/internal/pkg/perm"
+	"workbench/internal/pkg/render"
 )
 
 // Handler 操作日志 Handler。
