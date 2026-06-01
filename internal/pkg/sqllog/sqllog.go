@@ -21,7 +21,7 @@ import (
 	"sync"
 	"time"
 
-	"goframework/internal/config"
+	"workbench/internal/config"
 )
 
 const slowThreshold = 200 * time.Millisecond

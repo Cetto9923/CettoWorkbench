@@ -14,12 +14,12 @@ import (
 	"net/url"
 	"time"
 
-	"go.uber.org/zap"
 	gormmysql "gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
 
 	"workbench/internal/config"
+	"workbench/internal/pkg/sqllog"
 )
 
 const (

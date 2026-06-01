@@ -38,4 +38,4 @@ log:
 
 layout:
   # 导航样式 sidebar(侧边导航) | top(顶部导航)
-  nav: top
+  nav: sidebar

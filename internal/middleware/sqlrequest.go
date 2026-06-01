@@ -13,7 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"goframework/internal/pkg/sqllog"
+	"workbench/internal/pkg/sqllog"
 )
 
 // SQLRequestContext 注入 request_id 与 SQL 请求上下文，请求结束后写汇总行。

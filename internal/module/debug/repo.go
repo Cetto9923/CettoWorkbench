@@ -14,7 +14,7 @@ import (
 	"slices"
 	"strings"
 
-	"goframework/internal/pkg/sqllog"
+	"workbench/internal/pkg/sqllog"
 )
 
 // Repo SQL 性能分析数据访问层。

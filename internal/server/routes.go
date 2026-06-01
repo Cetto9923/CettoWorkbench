@@ -16,6 +16,7 @@ import (
 	"workbench/internal/middleware"
 	"workbench/internal/module/backup"
 	"workbench/internal/module/cronjob"
+	"workbench/internal/module/debug"
 	"workbench/internal/module/dept"
 	"workbench/internal/module/dictitem"
 	"workbench/internal/module/dicttype"
