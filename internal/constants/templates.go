@@ -40,7 +40,7 @@ const (
 
 	TEMPLATE_DASHBOARD_INDEX = "dashboard/index"
 
-	TEMPLATE_DEBUG_SQLPERF = "debug/sqlperf"
+	TEMPLATE_DEBUG_SQLPERF = "web/templates/debug/sqlperf.html"
 
 	TEMPLATE_PO_HOME = "po/home"
 )
