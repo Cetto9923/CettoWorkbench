@@ -23,14 +23,3 @@ type tokenRequest struct {
 type tokenResponse struct {
 	Token string `json:"token"`
 }
-
-// UserItem 禅道用户简要信息。
-type UserItem struct {
-	Account  string `json:"account"`
-	Realname string `json:"realname"`
-}
-
-// UsersResp 获取禅道用户列表响应。
-type UsersResp struct {
-	Items []UserItem `json:"items"`
-}

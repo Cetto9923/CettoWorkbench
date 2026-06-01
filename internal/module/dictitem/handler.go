@@ -78,7 +78,7 @@ func (h *Handler) List(c *gin.Context) {
 		render.Error(c, http.StatusInternalServerError, "获取字典值失败", err)
 		return
 	}
-	render.Page(c, http.StatusOK, "dictitem/list", gin.H{
+	render.Page(c, http.StatusOK, constants.TEMPLATE_DICTITEM_LIST, gin.H{
 		"Title":           "字典值管理",
 		"PageTitle":       "字典值管理",
 		"TypeCode":        req.TypeCode,
@@ -125,7 +125,7 @@ func (h *Handler) ListByTypeJSON(c *gin.Context) {
 // NewForm 渲染新建页。
 func (h *Handler) NewForm(c *gin.Context) {
 	h.bindRenderer(c)
-	render.Page(c, http.StatusOK, "dictitem/create", gin.H{
+	render.Page(c, http.StatusOK, constants.TEMPLATE_DICTITEM_CREATE, gin.H{
 		"Title":     "新增字典值",
 		"PageTitle": "新增字典值",
 		"Form": &CreateReq{
@@ -170,7 +170,7 @@ func (h *Handler) EditForm(c *gin.Context) {
 		render.Error(c, http.StatusNotFound, "字典值不存在", err)
 		return
 	}
-	render.Page(c, http.StatusOK, "dictitem/edit", gin.H{
+	render.Page(c, http.StatusOK, constants.TEMPLATE_DICTITEM_EDIT, gin.H{
 		"Title":     "编辑字典值",
 		"PageTitle": "编辑字典值",
 		"Form":      NewUpdateReqFromModel(resource),
@@ -233,7 +233,7 @@ func (h *Handler) Delete(c *gin.Context) {
 
 func (h *Handler) renderCreateForm(c *gin.Context, req *CreateReq, errs []FieldError) {
 	h.bindRenderer(c)
-	render.Page(c, http.StatusUnprocessableEntity, "dictitem/create", gin.H{
+	render.Page(c, http.StatusUnprocessableEntity, constants.TEMPLATE_DICTITEM_CREATE, gin.H{
 		"Title":     "新增字典值",
 		"PageTitle": "新增字典值",
 		"Form":      req,
@@ -243,7 +243,7 @@ func (h *Handler) renderCreateForm(c *gin.Context, req *CreateReq, errs []FieldE
 
 func (h *Handler) renderEditForm(c *gin.Context, req *UpdateReq, resource any, errs []FieldError) {
 	h.bindRenderer(c)
-	render.Page(c, http.StatusUnprocessableEntity, "dictitem/edit", gin.H{
+	render.Page(c, http.StatusUnprocessableEntity, constants.TEMPLATE_DICTITEM_EDIT, gin.H{
 		"Title":     "编辑字典值",
 		"PageTitle": "编辑字典值",
 		"Form":      req,

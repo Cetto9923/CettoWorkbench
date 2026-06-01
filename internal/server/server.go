@@ -161,6 +161,7 @@ func (s *Server) Run() error {
 		c.Next()
 	})
 
+	s.engine.Use(middleware.SQLRequestContext())
 	s.engine.Use(middleware.Recovery(s.logger))
 	s.engine.Use(ratelimitpkg.NewGlobalLimiter(s.globalRPS))
 	s.engine.Use(middleware.RequestLogger(s.logger))
@@ -169,7 +170,6 @@ func (s *Server) Run() error {
 	if s.sessionMgr != nil {
 		s.engine.Use(wrapStdMiddleware(s.sessionMgr.LoadAndSave))
 	}
-	// s.engine.Use(wrapStdMiddleware(middleware.CSRF()))
 
 	registerRoutes(s.engine, s.routeDeps)
 

@@ -65,7 +65,7 @@ func (h *Handler) List(c *gin.Context) {
 		render.Error(c, http.StatusInternalServerError, "获取备份记录失败", err)
 		return
 	}
-	render.Page(c, http.StatusOK, "backup/list", gin.H{
+	render.Page(c, http.StatusOK, constants.TEMPLATE_BACKUP_LIST, gin.H{
 		"Title":     "数据库备份",
 		"PageTitle": "数据库备份",
 		"Records":   resp.Items,

@@ -53,7 +53,7 @@ func (h *Handler) List(c *gin.Context) {
 		return
 	}
 
-	render.Page(c, http.StatusOK, "operationlog/list", gin.H{
+	render.Page(c, http.StatusOK, constants.TEMPLATE_OPERATIONLOG_LIST, gin.H{
 		"Title":     "操作日志",
 		"PageTitle": "操作日志",
 		"Form":      &req,

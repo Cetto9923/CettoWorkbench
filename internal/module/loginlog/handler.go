@@ -48,7 +48,7 @@ func (h *Handler) List(c *gin.Context) {
 	}
 	req.Normalize()
 	if fieldErrs := req.Validate(); len(fieldErrs) > 0 {
-		render.Page(c, http.StatusUnprocessableEntity, "loginlog/list", gin.H{
+		render.Page(c, http.StatusUnprocessableEntity, constants.TEMPLATE_LOGINLOG_LIST, gin.H{
 			"Title":     "登录日志",
 			"PageTitle": "登录日志",
 			"Form":      &req,
@@ -65,7 +65,7 @@ func (h *Handler) List(c *gin.Context) {
 	}
 
 	pager := pagination.New(resp.Total, req.Page, pagination.DefaultPageSize)
-	render.Page(c, http.StatusOK, "loginlog/list", gin.H{
+	render.Page(c, http.StatusOK, constants.TEMPLATE_LOGINLOG_LIST, gin.H{
 		"Title":     "登录日志",
 		"PageTitle": "登录日志",
 		"Form":      &req,

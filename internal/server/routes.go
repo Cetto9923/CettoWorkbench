@@ -50,6 +50,7 @@ type RouteDeps struct {
 	BackupHandler       *backup.Handler
 	PoHandler           *pomodule.Handler
 	ZentaoHandler       *zentao.Handler
+	SqlPerfHandler      *debug.Handler
 }
 
 func registerRoutes(r *gin.Engine, deps RouteDeps) {
@@ -94,9 +95,6 @@ func registerRoutes(r *gin.Engine, deps RouteDeps) {
 		if deps.BackupHandler != nil {
 			deps.BackupHandler.RegisterRoutes(admin)
 		}
-
-		// 后续各模块：
-		// deps.XxxHandler.RegisterRoutes(admin)
 	}
 
 	// PO 工作台（菜单 path：/po/home）
@@ -114,6 +112,13 @@ func registerRoutes(r *gin.Engine, deps RouteDeps) {
 	{
 		if deps.ZentaoHandler != nil {
 			deps.ZentaoHandler.RegisterRoutes(zentao)
+		}
+	}
+
+	debugGroup := r.Group("/debug")
+	{
+		if deps.SqlPerfHandler != nil {
+			deps.SqlPerfHandler.RegisterRoutes(debugGroup)
 		}
 	}
 }

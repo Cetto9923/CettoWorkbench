@@ -75,7 +75,7 @@ func (h *Handler) renderLoginPage(c *gin.Context, status int, redirectTo, accoun
 	if errors == nil {
 		errors = []FieldError{}
 	}
-	render.Page(c, status, "auth/login", gin.H{
+	render.Page(c, status, constants.TEMPLATE_AUTH_LOGIN, gin.H{
 		"Title":      "登录",
 		"RedirectTo": redirectTo,
 		"Form":       &LoginForm{Account: account},
@@ -149,7 +149,7 @@ func (h *Handler) DoLogin(c *gin.Context) {
 		render.Redirect(c, req.Redirect)
 		return
 	}
-	render.Redirect(c, "/po/home")
+	render.Redirect(c, "/admin/dashboard")
 }
 
 // DoLogout 执行登出。

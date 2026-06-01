@@ -7,6 +7,7 @@
 //       internal/pkg/database
 //       internal/pkg/flash
 //       internal/pkg/logger
+//       internal/pkg/sqllog
 //       internal/pkg/menu
 //       internal/pkg/ratelimit
 //       internal/pkg/render
@@ -24,6 +25,7 @@ import (
 	"workbench/internal/model"
 	"workbench/internal/module/backup"
 	"workbench/internal/module/cronjob"
+	"workbench/internal/module/debug"
 	"workbench/internal/module/dept"
 	"workbench/internal/module/dictitem"
 	"workbench/internal/module/dicttype"
@@ -43,6 +45,7 @@ import (
 	redispkg "workbench/internal/pkg/redis"
 	"workbench/internal/pkg/render"
 	"workbench/internal/pkg/session"
+	"workbench/internal/pkg/sqllog"
 	zentaopkg "workbench/internal/pkg/zentao"
 	"workbench/internal/server"
 
@@ -63,7 +66,12 @@ func Run() error {
 	}
 	defer func() { _ = zapLog.Sync() }()
 
-	db, err := database.New(cfg, zapLog)
+	if err := sqllog.Init(cfg); err != nil {
+		return fmt.Errorf("init sql log: %w", err)
+	}
+	defer func() { _ = sqllog.Sync() }()
+
+	db, err := database.New(cfg)
 	if err != nil {
 		return fmt.Errorf("init database: %w", err)
 	}
@@ -143,6 +151,9 @@ func Run() error {
 	backupHandler := backup.NewHandler(zapLog, backupSvc)
 	poSvc := po.NewService(redisClients, zapLog)
 	poHandler := po.NewHandler(poSvc, zapLog)
+	sqlPerfRepo := debug.NewRepo(cfg.Log.Dir)
+	sqlPerfSvc := debug.NewService(sqlPerfRepo)
+	sqlPerfHandler := debug.NewHandler(sqlPerfSvc)
 
 	routeDeps := server.RouteDeps{
 		SessionMgr:          sessionMgr,
@@ -162,6 +173,7 @@ func Run() error {
 		CronJobHandler:      cronJobHandler,
 		BackupHandler:       backupHandler,
 		PoHandler:           poHandler,
+		SqlPerfHandler:      sqlPerfHandler,
 	}
 
 	cronMgr.Start()

@@ -81,7 +81,7 @@ func (h *Handler) List(c *gin.Context) {
 	}
 
 	pager := pagination.New(resp.Total, req.Page, req.PageSize)
-	render.Page(c, http.StatusOK, "role/list", gin.H{
+	render.Page(c, http.StatusOK, constants.TEMPLATE_ROLE_LIST, gin.H{
 		"Title":     "角色管理",
 		"PageTitle": "角色管理",
 		"Roles":     resp.Items,
@@ -93,7 +93,7 @@ func (h *Handler) List(c *gin.Context) {
 // NewForm 渲染新建角色页（示例文案，不调用 Service）。
 func (h *Handler) NewForm(c *gin.Context) {
 	h.bindRenderer(c)
-	render.Page(c, http.StatusOK, "role/create", gin.H{
+	render.Page(c, http.StatusOK, constants.TEMPLATE_ROLE_CREATE, gin.H{
 		"Title":     "新增角色",
 		"PageTitle": "新增角色",
 		"Form": &CreateReq{
@@ -142,7 +142,7 @@ func (h *Handler) EditForm(c *gin.Context) {
 		return
 	}
 
-	render.Page(c, http.StatusOK, "role/edit", gin.H{
+	render.Page(c, http.StatusOK, constants.TEMPLATE_ROLE_EDIT, gin.H{
 		"Title":     "编辑角色",
 		"PageTitle": "编辑角色",
 		"Form":      NewUpdateReqFromRole(role),
@@ -227,7 +227,7 @@ func (h *Handler) AssignPermsForm(c *gin.Context) {
 		return
 	}
 
-	render.Page(c, http.StatusOK, "role/assignperms", gin.H{
+	render.Page(c, http.StatusOK, constants.TEMPLATE_ROLE_ASSIGNPERMS, gin.H{
 		"Title":     "分配权限",
 		"PageTitle": "分配权限 — " + role.Name,
 		"Resource":  role,
@@ -277,7 +277,7 @@ func parseID(raw string) (int64, bool) {
 
 func (h *Handler) renderCreateForm(c *gin.Context, req *CreateReq, errs []FieldError) {
 	h.bindRenderer(c)
-	render.Page(c, http.StatusUnprocessableEntity, "role/create", gin.H{
+	render.Page(c, http.StatusUnprocessableEntity, constants.TEMPLATE_ROLE_CREATE, gin.H{
 		"Title":     "新增角色",
 		"PageTitle": "新增角色",
 		"Form":      req,
@@ -287,7 +287,7 @@ func (h *Handler) renderCreateForm(c *gin.Context, req *CreateReq, errs []FieldE
 
 func (h *Handler) renderEditForm(c *gin.Context, req *UpdateReq, resource *model.Role, errs []FieldError) {
 	h.bindRenderer(c)
-	render.Page(c, http.StatusUnprocessableEntity, "role/edit", gin.H{
+	render.Page(c, http.StatusUnprocessableEntity, constants.TEMPLATE_ROLE_EDIT, gin.H{
 		"Title":     "编辑角色",
 		"PageTitle": "编辑角色",
 		"Form":      req,

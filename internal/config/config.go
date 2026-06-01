@@ -45,11 +45,11 @@ type Database struct {
 
 // Redis 缓存连接参数。
 type Redis struct {
-	Host      string `mapstructure:"host"`
-	Port      int    `mapstructure:"port"`
-	Password  string `mapstructure:"password"`
-	SourceDB  int    `mapstructure:"source_db"`
-	CleanDB   int    `mapstructure:"clean_db"`
+	Host     string `mapstructure:"host"`
+	Port     int    `mapstructure:"port"`
+	Password string `mapstructure:"password"`
+	SourceDB int    `mapstructure:"source_db"`
+	CleanDB  int    `mapstructure:"clean_db"`
 }
 
 // ZentaoConfig 禅道配置。

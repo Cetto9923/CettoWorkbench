@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SQL 性能分析 - goframework</title>
+  <link rel="stylesheet" href="/static/css/layout/variables.css">
+  <link rel="stylesheet" href="/static/css/layout/base.css">
+  <link rel="stylesheet" href="/static/css/components/components.css">
+  <link rel="stylesheet" href="/static/css/debug/sqlperf.css">
+</head>
+<body>
+  <main class="main sqlperf-page">
+    <div class="page-header">
+      <div class="page-header-left">
+        <h1 class="page-title">SQL 性能分析</h1>
+      </div>
+    </div>
+
+    <div class="sqlperf-range-bar">
+      <label class="sqlperf-filter-label" for="sqlperf-date-start">时间范围</label>
+      <input type="date" id="sqlperf-date-start" class="input sqlperf-filter-control" aria-describedby="sqlperf-summary">
+      <span class="sqlperf-range-sep">至</span>
+      <input type="date" id="sqlperf-date-end" class="input sqlperf-filter-control" aria-describedby="sqlperf-summary">
+    </div>
+
+    <div id="sqlperf-app" class="sqlperf-app">
+      <section class="sqlperf-chart-card" aria-labelledby="sqlperf-trend-title">
+        <div class="sqlperf-chart-head">
+          <div>
+            <h2 class="sqlperf-chart-title" id="sqlperf-trend-title">同一接口不同时间</h2>
+            <p class="sqlperf-chart-desc">观察单个接口在多次请求中的耗时与 SQL 查询次数变化</p>
+          </div>
+        </div>
+
+        <div class="sqlperf-chart-filter">
+          <label class="sqlperf-filter-label" for="sqlperf-route">选择接口</label>
+          <select id="sqlperf-route" class="select sqlperf-filter-control" aria-describedby="sqlperf-trend-context"></select>
+        </div>
+
+        <div class="sqlperf-chart-context" id="sqlperf-trend-context"></div>
+        <div id="sqlperf-route-trend" class="sqlperf-chart" role="img" aria-label="同一接口不同时间折线图"></div>
+      </section>
+
+      <section class="sqlperf-chart-card" aria-labelledby="sqlperf-compare-title">
+        <div class="sqlperf-chart-head">
+          <div>
+            <h2 class="sqlperf-chart-title" id="sqlperf-compare-title">同一小时不同接口</h2>
+            <p class="sqlperf-chart-desc">在同一小时内，对比各接口平均耗时与 SQL 查询平均次数</p>
+          </div>
+        </div>
+
+        <div class="sqlperf-chart-filter">
+          <label class="sqlperf-filter-label" for="sqlperf-hour">选择小时</label>
+          <select id="sqlperf-hour" class="select sqlperf-filter-control" aria-describedby="sqlperf-compare-context"></select>
+        </div>
+
+        <div class="sqlperf-chart-context" id="sqlperf-compare-context"></div>
+        <div id="sqlperf-route-compare" class="sqlperf-chart" role="img" aria-label="同一小时不同接口柱状图"></div>
+      </section>
+    </div>
+  </main>
+
+  <script src="/static/vendor/echarts/echarts.min.js"></script>
+  <script src="/static/js/debug/sqlperf.js"></script>
+</body>
+</html>

@@ -68,7 +68,7 @@ func (h *Handler) List(c *gin.Context) {
 		render.Error(c, http.StatusInternalServerError, "获取定时任务失败", err)
 		return
 	}
-	render.Page(c, http.StatusOK, "cronjob/list", gin.H{
+	render.Page(c, http.StatusOK, constants.TEMPLATE_CRONJOB_LIST, gin.H{
 		"Title":     "定时任务",
 		"PageTitle": "定时任务",
 		"Jobs":      resp.Items,
@@ -148,7 +148,7 @@ func (h *Handler) Logs(c *gin.Context) {
 		render.Error(c, http.StatusInternalServerError, "获取执行日志失败", err)
 		return
 	}
-	render.Page(c, http.StatusOK, "cronjob/logs", gin.H{
+	render.Page(c, http.StatusOK, constants.TEMPLATE_CRONJOB_LOGS, gin.H{
 		"Title":     "任务执行日志",
 		"PageTitle": "任务执行日志",
 		"Form":      &req,

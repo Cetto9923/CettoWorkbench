@@ -115,7 +115,7 @@ func (h *Handler) List(c *gin.Context) {
 		return
 	}
 	pager := pagination.New(resp.Total, req.Page, pagination.DefaultPageSize)
-	render.Page(c, http.StatusOK, "user/list", gin.H{
+	render.Page(c, http.StatusOK, constants.TEMPLATE_USER_LIST, gin.H{
 		"Title":      "用户管理",
 		"PageTitle":  "用户管理",
 		"Users":      resp.Items,
@@ -133,7 +133,7 @@ func (h *Handler) NewForm(c *gin.Context) {
 		render.Error(c, http.StatusInternalServerError, "获取角色列表失败", err)
 		return
 	}
-	render.Page(c, http.StatusOK, "user/create", gin.H{
+	render.Page(c, http.StatusOK, constants.TEMPLATE_USER_CREATE, gin.H{
 		"Title":           "新增用户",
 		"PageTitle":       "新增用户",
 		"Form":            &CreateReq{IsActive: true, Gender: "m"},
@@ -157,7 +157,7 @@ func (h *Handler) BatchPage(c *gin.Context) {
 		return
 	}
 
-	render.Page(c, http.StatusOK, "user/batchcreate", gin.H{
+	render.Page(c, http.StatusOK, constants.TEMPLATE_USER_BATCHCREATE, gin.H{
 		"Title":     "批量创建用户",
 		"PageTitle": "批量创建用户",
 		"Roles":     roles,
@@ -323,7 +323,7 @@ func (h *Handler) EditForm(c *gin.Context) {
 	form := NewUpdateReqFromUser(user)
 	form.RoleIDs = roleIDs
 
-	render.Page(c, http.StatusOK, "user/edit", gin.H{
+	render.Page(c, http.StatusOK, constants.TEMPLATE_USER_EDIT, gin.H{
 		"Title":           "编辑用户",
 		"PageTitle":       "编辑用户",
 		"Form":            form,
@@ -491,7 +491,7 @@ func isBatchRowEmpty(req CreateReq) bool {
 func (h *Handler) renderCreateForm(c *gin.Context, req *CreateReq, errs []FieldError) {
 	actor := middleware.CurrentUser(c)
 	roles, _ := h.svc.GetRoles(c.Request.Context(), actor)
-	render.Page(c, http.StatusUnprocessableEntity, "user/create", gin.H{
+	render.Page(c, http.StatusUnprocessableEntity, constants.TEMPLATE_USER_CREATE, gin.H{
 		"Title":           "新增用户",
 		"PageTitle":       "新增用户",
 		"Form":            req,
@@ -510,7 +510,7 @@ func (h *Handler) renderEditForm(c *gin.Context, req *UpdateReq, resource *model
 	actor := middleware.CurrentUser(c)
 	roles, _ := h.svc.GetRoles(c.Request.Context(), actor)
 	depts, _ := h.svc.GetDepts(c.Request.Context(), actor)
-	render.Page(c, http.StatusUnprocessableEntity, "user/edit", gin.H{
+	render.Page(c, http.StatusUnprocessableEntity, constants.TEMPLATE_USER_EDIT, gin.H{
 		"Title":           "编辑用户",
 		"PageTitle":       "编辑用户",
 		"Form":            req,

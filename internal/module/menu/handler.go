@@ -89,7 +89,7 @@ func (h *Handler) List(c *gin.Context) {
 		return
 	}
 	nodes := buildTree(resp.Items)
-	render.Page(c, http.StatusOK, "menu/list", gin.H{
+	render.Page(c, http.StatusOK, constants.TEMPLATE_MENU_LIST, gin.H{
 		"Title":     "菜单管理",
 		"PageTitle": "菜单管理",
 		"Items":     flatten(nodes, 1),
@@ -106,7 +106,7 @@ func (h *Handler) NewForm(c *gin.Context) {
 		return
 	}
 	nodes := buildTree(filterParentCandidates(listResp.Items))
-	render.Page(c, http.StatusOK, "menu/create", gin.H{
+	render.Page(c, http.StatusOK, constants.TEMPLATE_MENU_CREATE, gin.H{
 		"Title":         "新增菜单",
 		"PageTitle":     "新增菜单",
 		"Form":          &CreateReq{},
@@ -159,7 +159,7 @@ func (h *Handler) EditForm(c *gin.Context) {
 	nodes := buildTree(filterParentCandidates(listResp.Items))
 	excluded := descendantsSet(nodes, id)
 	excluded[id] = true
-	render.Page(c, http.StatusOK, "menu/edit", gin.H{
+	render.Page(c, http.StatusOK, constants.TEMPLATE_MENU_EDIT, gin.H{
 		"Title":         "编辑菜单",
 		"PageTitle":     "编辑菜单",
 		"Form":          NewUpdateReqFromModel(m),
@@ -226,7 +226,7 @@ func (h *Handler) renderCreateForm(c *gin.Context, req *CreateReq, errs []FieldE
 	actor := middleware.CurrentUser(c)
 	listResp, _ := h.svc.List(c.Request.Context(), actor, ListReq{})
 	nodes := buildTree(filterParentCandidates(listResp.Items))
-	render.Page(c, http.StatusUnprocessableEntity, "menu/create", gin.H{
+	render.Page(c, http.StatusUnprocessableEntity, constants.TEMPLATE_MENU_CREATE, gin.H{
 		"Title":         "新增菜单",
 		"PageTitle":     "新增菜单",
 		"Form":          req,
@@ -242,7 +242,7 @@ func (h *Handler) renderEditForm(c *gin.Context, id uint64, req *UpdateReq, reso
 	nodes := buildTree(filterParentCandidates(listResp.Items))
 	excluded := descendantsSet(nodes, id)
 	excluded[id] = true
-	render.Page(c, http.StatusUnprocessableEntity, "menu/edit", gin.H{
+	render.Page(c, http.StatusUnprocessableEntity, constants.TEMPLATE_MENU_EDIT, gin.H{
 		"Title":         "编辑菜单",
 		"PageTitle":     "编辑菜单",
 		"Form":          req,

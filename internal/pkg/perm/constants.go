@@ -31,11 +31,6 @@ const (
 	OperationLogList Permission = "operationlog:list"
 	LoginLogList     Permission = "loginlog:list"
 
-	// 项目台账
-	ProjectList   Permission = "project:list"
-	ProjectCreate Permission = "project:create"
-	LedgerStats   Permission = "ledger:stats"
-
 	// 角色管理
 	RoleList   Permission = "role:list"
 	RoleCreate Permission = "role:create"
@@ -69,16 +64,6 @@ const (
 	BackupList     Permission = "backup:list"
 	BackupCreate   Permission = "backup:create"
 	BackupDownload Permission = "backup:download"
-
-	// 资源配置
-	GfResourceList          Permission = "gfresource:list"
-	GfResourceCreate        Permission = "gfresource:create"
-	GfResourceUpdate        Permission = "gfresource:update"
-	GfResourceDelete        Permission = "gfresource:delete"
-	GfCategoryList          Permission = "gfcategory:list"
-	GfCategoryCreate        Permission = "gfcategory:create"
-	GfCategoryUpdate        Permission = "gfcategory:update"
-	GfCategoryAttributeList Permission = "gfcategoryattribute:list"
 )
 
 // allPermInfos 必须与上方 const 块中的所有 Permission 常量保持一一对应。
@@ -93,9 +78,6 @@ var allPermInfos = []PermInfo{
 	{Code: UserResetPassword, Name: "用户-重置密码", Module: "user"},
 	{Code: OperationLogList, Name: "操作日志-列表", Module: "operationlog"},
 	{Code: LoginLogList, Name: "登录日志-列表", Module: "loginlog"},
-	{Code: ProjectList, Name: "项目-列表", Module: "project"},
-	{Code: ProjectCreate, Name: "项目-台账录入", Module: "project"},
-	{Code: LedgerStats, Name: "项目-台账统计", Module: "project"},
 	{Code: RoleList, Name: "角色-列表", Module: "role"},
 	{Code: RoleCreate, Name: "角色-新增", Module: "role"},
 	{Code: RoleEdit, Name: "角色-编辑", Module: "role"},
@@ -118,14 +100,6 @@ var allPermInfos = []PermInfo{
 	{Code: BackupList, Name: "备份-列表", Module: "backup"},
 	{Code: BackupCreate, Name: "备份-创建", Module: "backup"},
 	{Code: BackupDownload, Name: "备份-下载", Module: "backup"},
-	{Code: GfResourceList, Name: "资源配置-资源", Module: "gfresource"},
-	{Code: GfResourceCreate, Name: "资源配置-资源新增", Module: "gfresource"},
-	{Code: GfResourceUpdate, Name: "资源配置-资源编辑", Module: "gfresource"},
-	{Code: GfResourceDelete, Name: "资源配置-资源删除", Module: "gfresource"},
-	{Code: GfCategoryList, Name: "资源配置-分类", Module: "gfcategory"},
-	{Code: GfCategoryCreate, Name: "资源配置-分类新增", Module: "gfcategory"},
-	{Code: GfCategoryUpdate, Name: "资源配置-分类编辑", Module: "gfcategory"},
-	{Code: GfCategoryAttributeList, Name: "资源配置-属性", Module: "gfcategoryattribute"},
 }
 
 // systemPerms 是系统内置放行权限，不对外暴露到权限配置 UI。

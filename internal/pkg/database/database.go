@@ -26,14 +26,13 @@ const (
 	maxOpenConns    = 50
 	maxIdleConns    = 10
 	connMaxLifetime = time.Hour
-	slowThreshold   = 200 * time.Millisecond
 )
 
 // New 根据配置初始化 GORM MySQL 连接。
-func New(cfg *config.Config, logger *zap.Logger) (*gorm.DB, error) {
+func New(cfg *config.Config) (*gorm.DB, error) {
 	dsn := buildDSN(cfg)
 	gormCfg := &gorm.Config{
-		Logger: newGormZapLogger(logger),
+		Logger: newGormSQLLogger(),
 	}
 
 	db, err := gorm.Open(gormmysql.Open(dsn), gormCfg)
@@ -86,66 +85,29 @@ func buildDSN(cfg *config.Config) string {
 	)
 }
 
-type gormZapLogger struct {
-	logger *zap.Logger
-	level  gormlogger.LogLevel
+type gormSQLLogger struct {
+	level gormlogger.LogLevel
 }
 
-func newGormZapLogger(logger *zap.Logger) gormlogger.Interface {
-	if logger == nil {
-		logger = zap.NewNop()
-	}
-	return &gormZapLogger{
-		logger: logger,
-		level:  gormlogger.Warn,
-	}
+func newGormSQLLogger() gormlogger.Interface {
+	return &gormSQLLogger{level: gormlogger.Info}
 }
 
-func (l *gormZapLogger) LogMode(level gormlogger.LogLevel) gormlogger.Interface {
-	return &gormZapLogger{
-		logger: l.logger,
-		level:  level,
-	}
+func (l *gormSQLLogger) LogMode(level gormlogger.LogLevel) gormlogger.Interface {
+	return &gormSQLLogger{level: level}
 }
 
-func (l *gormZapLogger) Info(context.Context, string, ...interface{}) {}
+func (l *gormSQLLogger) Info(context.Context, string, ...interface{}) {}
 
-func (l *gormZapLogger) Warn(ctx context.Context, msg string, data ...interface{}) {
-	if l.level < gormlogger.Warn {
-		return
-	}
-	l.logger.Warn(fmt.Sprintf(msg, data...))
-}
+func (l *gormSQLLogger) Warn(context.Context, string, ...interface{}) {}
 
-func (l *gormZapLogger) Error(ctx context.Context, msg string, data ...interface{}) {
-	if l.level < gormlogger.Error {
-		return
-	}
-	l.logger.Error(fmt.Sprintf(msg, data...))
-}
+func (l *gormSQLLogger) Error(context.Context, string, ...interface{}) {}
 
-func (l *gormZapLogger) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {
+func (l *gormSQLLogger) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {
 	if l.level == gormlogger.Silent {
 		return
 	}
 	elapsed := time.Since(begin)
 	sql, rows := fc()
-
-	switch {
-	case err != nil && l.level >= gormlogger.Error:
-		l.logger.Error(
-			"gorm query error",
-			zap.Error(err),
-			zap.Duration("elapsed", elapsed),
-			zap.Int64("rows", rows),
-			zap.String("sql", sql),
-		)
-	case elapsed > slowThreshold && l.level >= gormlogger.Warn:
-		l.logger.Warn(
-			"gorm slow query",
-			zap.Duration("elapsed", elapsed),
-			zap.Int64("rows", rows),
-			zap.String("sql", sql),
-		)
-	}
+	sqllog.LogQuery(ctx, sql, elapsed, rows, err)
 }

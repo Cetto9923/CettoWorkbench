@@ -13,12 +13,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"workbench/internal/constants"
 	"workbench/internal/pkg/render"
 )
 
 // DashboardHandler 渲染仪表盘占位页。
 func DashboardHandler(c *gin.Context) {
-	render.Page(c, http.StatusOK, "dashboard/index", gin.H{
+	render.Page(c, http.StatusOK, constants.TEMPLATE_DASHBOARD_INDEX, gin.H{
 		"Title":     "仪表盘",
 		"PageTitle": "仪表盘",
 	})

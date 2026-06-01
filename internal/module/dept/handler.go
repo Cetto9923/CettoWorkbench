@@ -102,7 +102,7 @@ func (h *Handler) List(c *gin.Context) {
 		render.Error(c, http.StatusInternalServerError, "获取部门列表失败", err)
 		return
 	}
-	render.Page(c, http.StatusOK, "dept/list", gin.H{
+	render.Page(c, http.StatusOK, constants.TEMPLATE_DEPT_LIST, gin.H{
 		"Title":     "部门管理",
 		"PageTitle": "部门管理",
 		"Items":     flatten(resp.Items, 0),
@@ -122,7 +122,7 @@ func (h *Handler) NewForm(c *gin.Context) {
 	if parentID, ok := parseID(c.Query("parentId")); ok {
 		form.ParentID = parentID
 	}
-	render.Page(c, http.StatusOK, "dept/create", gin.H{
+	render.Page(c, http.StatusOK, constants.TEMPLATE_DEPT_CREATE, gin.H{
 		"Title":         "新增部门",
 		"PageTitle":     "新增部门",
 		"Form":          form,
@@ -200,7 +200,7 @@ func (h *Handler) EditForm(c *gin.Context) {
 	}
 	excluded := descendantsSet(resp.Items, id)
 	excluded[id] = true
-	render.Page(c, http.StatusOK, "dept/edit", gin.H{
+	render.Page(c, http.StatusOK, constants.TEMPLATE_DEPT_EDIT, gin.H{
 		"Title":         "编辑部门",
 		"PageTitle":     "编辑部门",
 		"Form":          NewUpdateReqFromDept(resource),
@@ -316,7 +316,7 @@ func (h *Handler) renderCreateForm(c *gin.Context, req *CreateReq, errs []FieldE
 	h.bindRenderer(c)
 	actor := middleware.CurrentUser(c)
 	resp, _ := h.svc.List(c.Request.Context(), actor, ListReq{})
-	render.Page(c, http.StatusUnprocessableEntity, "dept/create", gin.H{
+	render.Page(c, http.StatusUnprocessableEntity, constants.TEMPLATE_DEPT_CREATE, gin.H{
 		"Title":         "新增部门",
 		"PageTitle":     "新增部门",
 		"Form":          req,
@@ -331,7 +331,7 @@ func (h *Handler) renderEditForm(c *gin.Context, req *UpdateReq, resource *model
 	resp, _ := h.svc.List(c.Request.Context(), actor, ListReq{})
 	excluded := descendantsSet(resp.Items, req.ID)
 	excluded[req.ID] = true
-	render.Page(c, http.StatusUnprocessableEntity, "dept/edit", gin.H{
+	render.Page(c, http.StatusUnprocessableEntity, constants.TEMPLATE_DEPT_EDIT, gin.H{
 		"Title":         "编辑部门",
 		"PageTitle":     "编辑部门",
 		"Form":          req,
