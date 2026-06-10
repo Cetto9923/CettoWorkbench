@@ -33,6 +33,7 @@ import (
 	"workbench/internal/module/operationlog"
 	"workbench/internal/module/po"
 	"workbench/internal/module/role"
+	"workbench/internal/module/schedule"
 	"workbench/internal/module/user"
 	"workbench/internal/pkg/database"
 	"workbench/internal/pkg/flash"
@@ -116,6 +117,9 @@ func Run() error {
 
 	poSvc := po.NewService(redisClients, zapLog)
 	poHandler := po.NewHandler(poSvc, zapLog)
+	scheduleRepo := schedule.NewRepo(db)
+	scheduleSvc := schedule.NewService(scheduleRepo)
+	scheduleHandler := schedule.NewHandler(scheduleSvc, zapLog)
 	sqlPerfRepo := debug.NewRepo(cfg.Log.Dir)
 	sqlPerfSvc := debug.NewService(sqlPerfRepo)
 	sqlPerfHandler := debug.NewHandler(sqlPerfSvc)
@@ -134,6 +138,7 @@ func Run() error {
 		DeptHandler:         deptHandler,
 		RoleHandler:         roleHandler,
 		PoHandler:           poHandler,
+		ScheduleHandler:     scheduleHandler,
 		SqlPerfHandler:      sqlPerfHandler,
 	}
 

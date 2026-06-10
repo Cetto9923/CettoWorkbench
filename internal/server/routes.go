@@ -24,6 +24,7 @@ import (
 	"workbench/internal/module/operationlog"
 	pomodule "workbench/internal/module/po"
 	"workbench/internal/module/role"
+	"workbench/internal/module/schedule"
 	"workbench/internal/module/user"
 	ratelimitpkg "workbench/internal/pkg/ratelimit"
 )
@@ -43,6 +44,8 @@ type RouteDeps struct {
 	DeptHandler         *dept.Handler
 	RoleHandler         *role.Handler
 	PoHandler           *pomodule.Handler
+	ScheduleHandler     *schedule.Handler
+	ZentaoHandler       *zentao.Handler
 	SqlPerfHandler      *debug.Handler
 }
 
@@ -75,6 +78,27 @@ func registerRoutes(r *gin.Engine, deps RouteDeps) {
 		if deps.RoleHandler != nil {
 			deps.RoleHandler.RegisterRoutes(admin)
 		}
+		if deps.CronJobHandler != nil {
+			deps.CronJobHandler.RegisterRoutes(admin)
+		}
+		if deps.BackupHandler != nil {
+			deps.BackupHandler.RegisterRoutes(admin)
+		}
+	}
+
+	// 排期工作台（菜单 path：/po/schedule）
+	if deps.ScheduleHandler != nil {
+		r.GET("/po/schedule",
+			middleware.RequireLogin(deps.SessionMgr, deps.DB),
+			middleware.RecordOperationLog(deps.DB, deps.SessionMgr),
+			middleware.ActiveNav("/po/schedule"),
+			deps.ScheduleHandler.Index,
+		)
+		r.GET("/po/schedule/matching-plans",
+			middleware.RequireLogin(deps.SessionMgr, deps.DB),
+			middleware.RecordOperationLog(deps.DB, deps.SessionMgr),
+			deps.ScheduleHandler.GetMatchingPlans,
+		)
 	}
 
 	// PO 工作台（菜单 path：/po/home）
