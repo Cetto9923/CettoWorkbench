@@ -174,10 +174,6 @@ func (r *Renderer) warmCache() error {
 		if strings.HasPrefix(rel, layoutDir+"/") || strings.HasPrefix(rel, "components/") {
 			return nil
 		}
-		// 仅作为 attribute/list 的 companion 片段（命名模板），不作为独立页面解析。
-		if rel == "attribute/create.html" || rel == "attribute/edit.html" {
-			return nil
-		}
 		page := strings.TrimSuffix(rel, ".html")
 		tpl, err := r.parseTemplates(page)
 		if err != nil {
@@ -200,11 +196,6 @@ func (r *Renderer) parseTemplates(page string) (*template.Template, error) {
 	layoutFile := filepath.Join(r.templateDir, layoutDir, layout+".html")
 	pageFile := filepath.Join(r.templateDir, filepath.FromSlash(page)+".html")
 	files := []string{layoutFile, pageFile}
-	// 列表页弹窗复用 attribute/create.html、attribute/edit.html 中的命名模板，需与主页面一并解析。
-	if page == "attribute/list" {
-		files = append(files, filepath.Join(r.templateDir, "attribute", "create.html"))
-		files = append(files, filepath.Join(r.templateDir, "attribute", "edit.html"))
-	}
 	layoutFiles, err := collectTemplateFiles(filepath.Join(r.templateDir, layoutDir))
 	if err != nil {
 		return nil, err
