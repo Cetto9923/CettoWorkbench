@@ -10,8 +10,8 @@
 package debug
 
 import (
-    "workbench/internal/constants"
 	"net/http"
+	"workbench/internal/constants"
 
 	"github.com/gin-gonic/gin"
 )
@@ -35,7 +35,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 
 // List 性能分析页面。
 func (h *Handler) List(c *gin.Context) {
-    c.File(constants.TEMPLATE_DEBUG_SQLPERF)
+	c.File(constants.TEMPLATE_DEBUG_SQLPERF)
 }
 
 // Requests 返回 sql.log 中的请求汇总数据。

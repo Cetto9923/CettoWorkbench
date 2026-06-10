@@ -11,7 +11,6 @@ package login
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync"
 	"time"
 
@@ -46,29 +45,6 @@ func (r *Repo) FindUserByAccount(ctx context.Context, account string) (*model.Us
 	return nil, err
 }
 
-// CountFailuresByAccount 统计指定时间之后某账号的失败次数。
-func (r *Repo) CountFailuresByAccount(ctx context.Context, account string, since time.Time) (int64, error) {
-	var count int64
-	accountCol := r.resolveAccountColumn(ctx, "zt_login_failures")
-	err := r.db.WithContext(ctx).
-		Model(&model.LoginFailure{}).
-		Where(fmt.Sprintf("%s = ? AND failedAt >= ?", accountCol), account, since).
-		Count(&count).
-		Error
-	return count, err
-}
-
-// CountFailuresByIP 统计指定时间之后某 IP 的失败次数。
-func (r *Repo) CountFailuresByIP(ctx context.Context, ip string, since time.Time) (int64, error) {
-	var count int64
-	err := r.db.WithContext(ctx).
-		Model(&model.LoginFailure{}).
-		Where("ip = ? AND failedAt >= ?", ip, since).
-		Count(&count).
-		Error
-	return count, err
-}
-
 // RecordFailure 写入一次登录失败记录。
 func (r *Repo) RecordFailure(ctx context.Context, account, ip string) error {
 	accountCol := r.resolveAccountColumn(ctx, "zt_login_failures")
@@ -101,7 +77,6 @@ func (r *Repo) InsertLoginLog(ctx context.Context, log *model.LoginLog) error {
 		"userAgent":  log.UserAgent,
 		"success":    log.Success,
 		"failReason": log.FailReason,
-		"tenantId":   log.TenantID,
 	}
 	if !log.CreatedAt.IsZero() {
 		payload["createdDate"] = log.CreatedAt

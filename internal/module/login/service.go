@@ -19,19 +19,8 @@ import (
 	"go.uber.org/zap"
 
 	"workbench/internal/model"
-	"workbench/internal/pkg/errorx"
 	"workbench/internal/pkg/encode"
-)
-
-// 登录失败锁定策略：
-//   - loginFailureWindow：统计失败次数的时间滑动窗口。
-//   - accountLockThreshold：同一账号在窗口内失败达此次数后锁定账号，防止密码爆破。
-//   - ipLockThreshold：同一 IP 在窗口内失败达此次数后锁定，防止分布式枚举账号。
-//     IP 阈值（20）高于单账号阈值（5）：因为一个 IP 后面可能有多个合法账号同时使用。
-const (
-	loginFailureWindow         = 15 * time.Minute
-	accountLockThreshold int64 = 5
-	ipLockThreshold      int64 = 20
+	"workbench/internal/pkg/errorx"
 )
 
 // Service 处理认证业务逻辑。
@@ -42,8 +31,6 @@ type Service struct {
 }
 
 type authRepo interface {
-	CountFailuresByAccount(ctx context.Context, account string, since time.Time) (int64, error)
-	CountFailuresByIP(ctx context.Context, ip string, since time.Time) (int64, error)
 	FindUserByAccount(ctx context.Context, account string) (*model.User, error)
 	RecordFailure(ctx context.Context, account, ip string) error
 	InsertLoginLog(ctx context.Context, log *model.LoginLog) error
@@ -115,22 +102,12 @@ func (s *Service) Login(ctx context.Context, req LoginReq) (LoginResp, error) {
 // checkLockout 检查账号和 IP 是否触发登录失败锁定。
 // 返回 (reason, err)：reason 仅在 err != nil 时有意义，用于写登录日志。
 func (s *Service) checkLockout(ctx context.Context, account, ip string) (reason string, err error) {
-	since := time.Now().Add(-loginFailureWindow)
-
-	accountCount, err := s.repo.CountFailuresByAccount(ctx, account, since)
+	user, err := s.repo.FindUserByAccount(ctx, account)
 	if err != nil {
 		return "", err
 	}
-	if accountCount >= accountLockThreshold {
+	if user.Locked != nil && user.Locked.Before(time.Now()) {
 		return "account_locked", errorx.New("auth.login.locked", "账号已被临时锁定，请 15 分钟后再试")
-	}
-
-	ipCount, err := s.repo.CountFailuresByIP(ctx, ip, since)
-	if err != nil {
-		return "", err
-	}
-	if ipCount >= ipLockThreshold {
-		return "ip_locked", errorx.New("auth.login.iplocked", "当前 IP 尝试次数过多，请 15 分钟后再试")
 	}
 
 	return "", nil
@@ -165,7 +142,6 @@ func (s *Service) recordLoginLog(ctx context.Context, req LoginReq, userID sql.N
 		UserAgent:  strings.TrimSpace(req.UserAgent),
 		Success:    success,
 		FailReason: strings.TrimSpace(failReason),
-		TenantID:   0, // 多租户预埋：第一期固定为 0，第三期从 ctx 中读取真实 tenantID。
 	}
 	if err := s.repo.InsertLoginLog(ctx, loginLog); err != nil {
 		s.logger.Warn("insert login log failed",

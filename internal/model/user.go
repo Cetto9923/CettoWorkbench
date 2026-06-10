@@ -38,11 +38,11 @@ type User struct {
 
 	// ── 以下字段不持久化，由 AfterFind 根据 DB 字段计算回填 ──────────────
 	// 禁止对这些字段添加 gorm tag 或在 Where 条件中直接引用。
-	IsSuperAdmin   bool       `gorm:"-"`
-	IsActive       bool       `gorm:"-"`
-	IsActiveDB     bool       `gorm:"-"`
-	IsSuperAdminDB bool       `gorm:"-"`
-	LastLoginDate  *time.Time `gorm:"-"`
+	IsSuperAdmin    bool       `gorm:"-"`
+	IsActive        bool       `gorm:"-"`
+	IsActiveDB      bool       `gorm:"-"`
+	IsSuperAdminDB  bool       `gorm:"-"`
+	LastLoginDate   *time.Time `gorm:"-"`
 	LastLoginDateDB *time.Time `gorm:"-"`
 }
 

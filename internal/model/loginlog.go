@@ -23,7 +23,6 @@ type LoginLog struct {
 	Success    bool          `gorm:"column:success"`
 	FailReason string        `gorm:"column:failReason"`
 	CreatedAt  time.Time     `gorm:"column:createdDate"`
-	TenantID   int64         `gorm:"column:tenantId"`
 }
 
 // TableName 指定 zt_login_logs 表。
