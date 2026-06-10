@@ -68,7 +68,7 @@ type LoginResp struct {
 func (s *Service) Login(ctx context.Context, req LoginReq) (LoginResp, error) {
 	req.normalizeLoginAccount()
 	account := req.Account
-	if reason, err := s.checkLockout(ctx, account, req.IP); err != nil {
+	if reason, err := s.checkLockout(ctx, account); err != nil {
 		s.recordLoginLog(ctx, req, sql.NullInt64{}, false, reason)
 		s.logger.Warn("login failed", zap.String("account", account), zap.String("reason", reason))
 		return LoginResp{}, err
@@ -101,7 +101,7 @@ func (s *Service) Login(ctx context.Context, req LoginReq) (LoginResp, error) {
 
 // checkLockout 检查账号和 IP 是否触发登录失败锁定。
 // 返回 (reason, err)：reason 仅在 err != nil 时有意义，用于写登录日志。
-func (s *Service) checkLockout(ctx context.Context, account, ip string) (reason string, err error) {
+func (s *Service) checkLockout(ctx context.Context, account string) (reason string, err error) {
 	user, err := s.repo.FindUserByAccount(ctx, account)
 	if err != nil {
 		return "", err

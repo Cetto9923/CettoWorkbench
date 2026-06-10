@@ -23,12 +23,10 @@ import (
 	"workbench/internal/config"
 	"workbench/internal/middleware"
 	"workbench/internal/model"
-	"workbench/internal/module/backup"
-	"workbench/internal/module/cronjob"
+
 	"workbench/internal/module/debug"
 	"workbench/internal/module/dept"
-	"workbench/internal/module/dictitem"
-	"workbench/internal/module/dicttype"
+
 	"workbench/internal/module/login"
 	"workbench/internal/module/loginlog"
 	"workbench/internal/module/menu"
@@ -36,8 +34,6 @@ import (
 	"workbench/internal/module/po"
 	"workbench/internal/module/role"
 	"workbench/internal/module/user"
-	backuppkg "workbench/internal/pkg/backup"
-	"workbench/internal/pkg/cron"
 	"workbench/internal/pkg/database"
 	"workbench/internal/pkg/flash"
 	"workbench/internal/pkg/logger"
@@ -48,8 +44,6 @@ import (
 	"workbench/internal/pkg/sqllog"
 	zentaopkg "workbench/internal/pkg/zentao"
 	"workbench/internal/server"
-
-	"go.uber.org/zap"
 )
 
 // Run 加载配置、初始化日志、启动 HTTP 服务。
@@ -116,39 +110,10 @@ func Run() error {
 	deptRepo := dept.NewRepo(db)
 	deptSvc := dept.NewService(deptRepo)
 	deptHandler := dept.NewHandler(rend, zapLog, deptSvc)
-	dictTypeRepo := dicttype.NewRepo(db)
-	dictTypeSvc := dicttype.NewService(dictTypeRepo)
-	dictTypeHandler := dicttype.NewHandler(rend, zapLog, dictTypeSvc)
-	dictItemRepo := dictitem.NewRepo(db)
-	dictItemSvc := dictitem.NewService(dictItemRepo)
-	dictItemHandler := dictitem.NewHandler(rend, zapLog, dictItemSvc)
 	roleRepo := role.NewRepo(db)
 	roleSvc := role.NewService(roleRepo)
 	roleHandler := role.NewHandler(rend, zapLog, roleSvc)
 
-	cronMgr := cron.New(db)
-	if err := cronMgr.Register("builtin_auto_backup", cfg.Backup.AutoCron, func() {
-		if _, backupErr := backuppkg.Run(backuppkg.Config{
-			DB:       db,
-			Host:     cfg.Database.Host,
-			Port:     cfg.Database.Port,
-			User:     cfg.Database.User,
-			Password: cfg.Database.Password,
-			DBName:   cfg.Database.DBName,
-			Dir:      cfg.Backup.Dir,
-			KeepDays: cfg.Backup.KeepDays,
-		}); backupErr != nil {
-			zapLog.Error("auto backup failed", zap.Error(backupErr))
-		}
-	}); err != nil {
-		return fmt.Errorf("register auto backup cron: %w", err)
-	}
-	cronJobRepo := cronjob.NewRepo(db)
-	cronJobSvc := cronjob.NewService(cronJobRepo, cronMgr)
-	cronJobHandler := cronjob.NewHandler(rend, zapLog, cronJobSvc)
-	backupRepo := backup.NewRepo(db)
-	backupSvc := backup.NewService(backupRepo, cfg, db)
-	backupHandler := backup.NewHandler(zapLog, backupSvc)
 	poSvc := po.NewService(redisClients, zapLog)
 	poHandler := po.NewHandler(poSvc, zapLog)
 	sqlPerfRepo := debug.NewRepo(cfg.Log.Dir)
@@ -167,17 +132,10 @@ func Run() error {
 		OperationLogHandler: operationLogHandler,
 		MenuHandler:         menuHandler,
 		DeptHandler:         deptHandler,
-		DictTypeHandler:     dictTypeHandler,
-		DictItemHandler:     dictItemHandler,
 		RoleHandler:         roleHandler,
-		CronJobHandler:      cronJobHandler,
-		BackupHandler:       backupHandler,
 		PoHandler:           poHandler,
 		SqlPerfHandler:      sqlPerfHandler,
 	}
-
-	cronMgr.Start()
-	defer cronMgr.Stop()
 
 	srv := server.New(cfg, zapLog, db, sessionMgr, limiter, nil, routeDeps)
 	return srv.Run()

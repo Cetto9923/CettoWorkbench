@@ -1,3 +1,28 @@
+CREATE TABLE IF NOT EXISTS `zt_login_failures` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `account` VARCHAR(64) NOT NULL,
+  `ip` VARCHAR(45) NOT NULL,
+  `failedAt` DATETIME NOT NULL,
+  `createdDate` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_zt_loginfailures_account_time` (`account`, `failedAt`),
+  KEY `idx_zt_loginfailures_ip_time` (`ip`, `failedAt`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS zt_login_logs (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `account` VARCHAR(64) NOT NULL,
+  `userId` BIGINT NULL,
+  `ip` VARCHAR(45) NOT NULL,
+  `userAgent` VARCHAR(512) NOT NULL,
+  `success` TINYINT(1) NOT NULL DEFAULT 0,
+  `failReason` VARCHAR(64) NOT NULL DEFAULT '',
+  `createdDate` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_zt_loginlogs_account_time` (`account`, `createdDate`),
+  KEY `idx_zt_loginlogs_ip_time` (`ip`, `createdDate`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS `zt_menus` (
   `id`        BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `parentId`  BIGINT UNSIGNED NOT NULL DEFAULT 0,

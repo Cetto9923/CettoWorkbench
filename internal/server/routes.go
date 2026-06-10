@@ -14,12 +14,10 @@ import (
 	"gorm.io/gorm"
 
 	"workbench/internal/middleware"
-	"workbench/internal/module/backup"
-	"workbench/internal/module/cronjob"
+
 	"workbench/internal/module/debug"
 	"workbench/internal/module/dept"
-	"workbench/internal/module/dictitem"
-	"workbench/internal/module/dicttype"
+
 	loginmodule "workbench/internal/module/login"
 	"workbench/internal/module/loginlog"
 	menumodule "workbench/internal/module/menu"
@@ -27,7 +25,6 @@ import (
 	pomodule "workbench/internal/module/po"
 	"workbench/internal/module/role"
 	"workbench/internal/module/user"
-	"workbench/internal/module/zentao"
 	ratelimitpkg "workbench/internal/pkg/ratelimit"
 )
 
@@ -44,13 +41,8 @@ type RouteDeps struct {
 	OperationLogHandler *operationlog.Handler
 	MenuHandler         *menumodule.Handler
 	DeptHandler         *dept.Handler
-	DictTypeHandler     *dicttype.Handler
-	DictItemHandler     *dictitem.Handler
 	RoleHandler         *role.Handler
-	CronJobHandler      *cronjob.Handler
-	BackupHandler       *backup.Handler
 	PoHandler           *pomodule.Handler
-	ZentaoHandler       *zentao.Handler
 	SqlPerfHandler      *debug.Handler
 }
 
@@ -65,7 +57,6 @@ func registerRoutes(r *gin.Engine, deps RouteDeps) {
 	admin.Use(middleware.RequireLogin(deps.SessionMgr, deps.DB))
 	admin.Use(middleware.RecordOperationLog(deps.DB, deps.SessionMgr))
 	{
-		admin.GET("/dashboard", middleware.ActiveNav("/admin/dashboard"), DashboardHandler)
 		if deps.UserHandler != nil {
 			deps.UserHandler.RegisterRoutes(admin)
 		}
@@ -81,20 +72,8 @@ func registerRoutes(r *gin.Engine, deps RouteDeps) {
 		if deps.DeptHandler != nil {
 			deps.DeptHandler.RegisterRoutes(admin)
 		}
-		if deps.DictTypeHandler != nil {
-			deps.DictTypeHandler.RegisterRoutes(admin)
-		}
-		if deps.DictItemHandler != nil {
-			deps.DictItemHandler.RegisterRoutes(admin)
-		}
 		if deps.RoleHandler != nil {
 			deps.RoleHandler.RegisterRoutes(admin)
-		}
-		if deps.CronJobHandler != nil {
-			deps.CronJobHandler.RegisterRoutes(admin)
-		}
-		if deps.BackupHandler != nil {
-			deps.BackupHandler.RegisterRoutes(admin)
 		}
 	}
 
@@ -105,14 +84,6 @@ func registerRoutes(r *gin.Engine, deps RouteDeps) {
 	{
 		if deps.PoHandler != nil {
 			deps.PoHandler.RegisterRoutes(po)
-		}
-	}
-
-	zentao := r.Group("/zentao")
-	zentao.Use(middleware.RequireLogin(deps.SessionMgr, deps.DB))
-	{
-		if deps.ZentaoHandler != nil {
-			deps.ZentaoHandler.RegisterRoutes(zentao)
 		}
 	}
 

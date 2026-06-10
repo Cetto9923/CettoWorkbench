@@ -16,7 +16,6 @@ import (
 )
 
 // RedirectIfLoggedIn 若当前用户已登录（Session 中存在有效 userID），
-// 则重定向到 /dashboard，不继续执行后续 Handler。
 // 仅用于登录页等“已登录不应访问”的公开路由。
 func RedirectIfLoggedIn(sessionMgr *scs.SessionManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
