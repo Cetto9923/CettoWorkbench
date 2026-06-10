@@ -14,7 +14,6 @@ import (
 	"context"
 	"net/http"
 	"net/url"
-	"sync"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/gin-gonic/gin"
@@ -25,8 +24,6 @@ import (
 	"workbench/internal/pkg/perm"
 	"workbench/internal/pkg/session"
 )
-
-var authColumnCache sync.Map // key: table.column, value: bool
 
 // RequireLogin 要求请求已登录，否则重定向到登录页。
 func RequireLogin(mgr *scs.SessionManager, db *gorm.DB) gin.HandlerFunc {
@@ -87,21 +84,9 @@ func RequireLogin(mgr *scs.SessionManager, db *gorm.DB) gin.HandlerFunc {
 }
 
 func loadUserByID(ctx context.Context, db *gorm.DB, userID int64, user *model.User) error {
-	q := db.WithContext(ctx).Unscoped().Table("zt_gf_user").Where("id = ?", userID)
-	if hasColumn(ctx, db, "zt_gf_user", "deleted") {
-		q = q.Where("deleted = 0")
-	}
-	return q.Take(user).Error
-}
-
-func hasColumn(ctx context.Context, db *gorm.DB, table, column string) bool {
-	cacheKey := table + "." + column
-	if v, ok := authColumnCache.Load(cacheKey); ok {
-		return v.(bool)
-	}
-	ok := db.WithContext(ctx).Migrator().HasColumn(table, column)
-	authColumnCache.Store(cacheKey, ok)
-	return ok
+	return db.WithContext(ctx).
+		Where("id = ? AND deleted = ?", userID, "0").
+		First(user).Error
 }
 
 // TODO 返回用户信息、权限

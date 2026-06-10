@@ -15,15 +15,7 @@ import (
 	"strings"
 
 	"workbench/internal/model"
-
-	"golang.org/x/crypto/bcrypt"
-)
-
-const (
-	// defaultOperator 用于无法从请求上下文获取操作人账号时的兜底值。
-	defaultOperator = "system"
-	// bcryptCost bcrypt 加密强度，12 在安全性与性能之间取得平衡。
-	bcryptCost = 12
+	"workbench/internal/pkg/encode"
 )
 
 // Service 处理用户业务逻辑。
@@ -74,24 +66,13 @@ func (s *Service) Create(ctx context.Context, actor *model.User, req CreateReq) 
 		return CreateResp{}, errors.New("用户名已存在")
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcryptCost)
-	if err != nil {
-		return CreateResp{}, err
-	}
-
-	createdBy := defaultOperator
-	if actor != nil && actor.Account != "" {
-		createdBy = actor.Account
-	}
 	m := &model.User{
-		Account:       req.Account,
-		Email:         req.Email,
-		DisplayName:   req.DisplayName,
-		Gender:        req.Gender,
-		PasswordHash:  string(hash),
-		CreatedByName: createdBy,
-		UpdatedByName: createdBy,
-		DeptID:        req.DeptID,
+		Account:      req.Account,
+		Email:        req.Email,
+		DisplayName:  req.DisplayName,
+		Gender:       req.Gender,
+		PasswordHash: encode.MD5(req.Password),
+		DeptID:       req.DeptID,
 	}
 	m.SetActive(req.IsActive)
 	if err := s.repo.Create(ctx, m); err != nil {
@@ -115,9 +96,6 @@ func (s *Service) Update(ctx context.Context, actor *model.User, req UpdateReq) 
 	user.Gender = req.Gender
 	user.SetActive(req.IsActive)
 	user.DeptID = req.DeptID
-	if actor != nil && actor.Account != "" {
-		user.UpdatedByName = actor.Account
-	}
 	if err := s.repo.Update(ctx, user); err != nil {
 		return UpdateResp{}, err
 	}
@@ -139,11 +117,6 @@ func (s *Service) BatchCreate(ctx context.Context, actor *model.User, req BatchC
 		return BatchCreateResp{}, errors.New("请至少填写一条用户数据")
 	}
 
-	createdBy := defaultOperator
-	if actor != nil && actor.Account != "" {
-		createdBy = actor.Account
-	}
-
 	users := make([]*model.User, 0, len(req.Users))
 	roleIDsList := make([][]int64, 0, len(req.Users))
 	seen := make(map[string]struct{}, len(req.Users))
@@ -163,19 +136,13 @@ func (s *Service) BatchCreate(ctx context.Context, actor *model.User, req BatchC
 			return BatchCreateResp{}, errors.New("用户名已存在: " + item.Account)
 		}
 
-		hash, err := bcrypt.GenerateFromPassword([]byte(item.Password), bcryptCost)
-		if err != nil {
-			return BatchCreateResp{}, err
-		}
 		user := &model.User{
-			Account:       item.Account,
-			Email:         item.Email,
-			DisplayName:   item.DisplayName,
-			Gender:        item.Gender,
-			PasswordHash:  string(hash),
-			CreatedByName: createdBy,
-			UpdatedByName: createdBy,
-			DeptID:        item.DeptID,
+			Account:      item.Account,
+			Email:        item.Email,
+			DisplayName:  item.DisplayName,
+			Gender:       item.Gender,
+			PasswordHash: encode.MD5(item.Password),
+			DeptID:       item.DeptID,
 		}
 		user.SetActive(item.IsActive)
 		users = append(users, user)
@@ -218,12 +185,7 @@ func (s *Service) ResetPassword(ctx context.Context, actor *model.User, req Rese
 		return err
 	}
 
-	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcryptCost)
-	if err != nil {
-		return err
-	}
-
-	return s.repo.UpdatePassword(ctx, req.ID, string(hashedPwd))
+	return s.repo.UpdatePassword(ctx, req.ID, encode.MD5(req.NewPassword))
 }
 
 // GetRoles 查询可分配角色列表。

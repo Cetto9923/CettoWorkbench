@@ -17,10 +17,10 @@ import (
 
 	"github.com/alexedwards/scs/v2"
 	"go.uber.org/zap"
-	"golang.org/x/crypto/bcrypt"
 
 	"workbench/internal/model"
 	"workbench/internal/pkg/errorx"
+	"workbench/internal/pkg/encode"
 )
 
 // 登录失败锁定策略：
@@ -98,7 +98,7 @@ func (s *Service) Login(ctx context.Context, req LoginReq) (LoginResp, error) {
 	if !user.IsActiveDB {
 		return LoginResp{}, s.failLogin(ctx, req, sql.NullInt64{Int64: user.ID, Valid: true}, "user_disabled", "auth.login.disabled", "账号已被禁用")
 	}
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
+	if user.PasswordHash != encode.MD5(req.Password) {
 		return LoginResp{}, s.failLogin(ctx, req, sql.NullInt64{Int64: user.ID, Valid: true}, "password_mismatch", "auth.login.failed", "账号或密码错误")
 	}
 

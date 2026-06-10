@@ -47,7 +47,7 @@ type RepoFindAllReq struct {
 
 // FindAll 按条件查询用户列表及总数。
 func (r *Repo) FindAll(ctx context.Context, req RepoFindAllReq) ([]model.User, int64, error) {
-	db := r.db.WithContext(ctx).Model(&model.User{}).Where("deleted = 0")
+	db := r.db.WithContext(ctx).Model(&model.User{}).Where("deleted = ?", "0")
 	account := strings.TrimSpace(req.Account)
 	if account != "" {
 		db = db.Where("account LIKE ?", "%"+account+"%")
@@ -62,8 +62,11 @@ func (r *Repo) FindAll(ctx context.Context, req RepoFindAllReq) ([]model.User, i
 	}
 
 	if req.IsActive != nil {
-		// 直接传递 bool，GORM 正确映射至 tinyint(1)，无需中间 int 变量
-		db = db.Where("isActive = ?", *req.IsActive)
+		if *req.IsActive {
+			db = db.Where("locked IS NULL OR locked < NOW()")
+		} else {
+			db = db.Where("locked IS NOT NULL AND locked >= NOW()")
+		}
 	}
 
 	var total int64
@@ -87,7 +90,7 @@ func (r *Repo) FindAllForExport(ctx context.Context) ([]model.User, error) {
 	var users []model.User
 	if err := r.db.WithContext(ctx).
 		Model(&model.User{}).
-		Where("deleted = 0").
+		Where("deleted = ?", "0").
 		Order("id DESC").
 		Find(&users).Error; err != nil {
 		return nil, fmt.Errorf("find users for export: %w", err)
@@ -98,7 +101,7 @@ func (r *Repo) FindAllForExport(ctx context.Context) ([]model.User, error) {
 // FindByID 按 ID 查询用户详情。
 func (r *Repo) FindByID(ctx context.Context, id int64) (*model.User, error) {
 	var user model.User
-	if err := r.db.WithContext(ctx).Where("id = ? AND deleted = 0", id).First(&user).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("id = ? AND deleted = ?", id, "0").First(&user).Error; err != nil {
 		return nil, err
 	}
 	return &user, nil
@@ -110,34 +113,28 @@ func (r *Repo) Create(ctx context.Context, m *model.User) error {
 }
 
 func (r *Repo) createWithTx(tx *gorm.DB, m *model.User) error {
-	// 某些历史库未包含 lastLoginDate/lastLoginIP 列。
-	// 创建用户时使用显式列白名单，避免 GORM 根据模型字段自动拼接不存在的列导致 1054。
-	if err := tx.
-		Model(&model.User{}).
-		Create(map[string]any{
-			"account":      m.Account,
-			"email":        m.Email,
-			"password":     m.PasswordHash,
-			"realname":     m.DisplayName,
-			"gender":       m.Gender,
-			"position":     m.Position,
-			"manager":      m.ManagerID,
-			"phone":        m.Phone,
-			"createdBy":    m.CreatedByName,
-			"updatedBy":    m.UpdatedByName,
-			"isSuperAdmin": m.IsSuperAdminDB,
-			"isActive":     m.IsActiveDB,
-			"deptID":       m.DeptID,
-		}).
-		Error; err != nil {
+	payload := map[string]any{
+		"account":  m.Account,
+		"email":    m.Email,
+		"password": m.PasswordHash,
+		"realname": m.DisplayName,
+		"gender":   m.Gender,
+		"phone":    m.Phone,
+		"dept":     m.DeptID,
+		"deleted":  "0",
+	}
+	if locked := m.LockedForActive(); locked != nil {
+		payload["locked"] = locked
+	}
+	if err := tx.Model(&model.User{}).Create(payload).Error; err != nil {
 		return err
 	}
 
 	var id int64
 	if err := tx.
-		Table("zt_gf_user").
+		Model(&model.User{}).
 		Select("id").
-		Where("account = ? AND deleted = 0", m.Account).
+		Where("account = ? AND deleted = ?", m.Account, "0").
 		Order("id DESC").
 		Limit(1).
 		Scan(&id).
@@ -150,18 +147,18 @@ func (r *Repo) createWithTx(tx *gorm.DB, m *model.User) error {
 
 // Update 更新用户。
 func (r *Repo) Update(ctx context.Context, m *model.User) error {
+	updates := map[string]any{
+		"account":  m.Account,
+		"email":    m.Email,
+		"realname": m.DisplayName,
+		"gender":   m.Gender,
+		"dept":     m.DeptID,
+		"locked":   m.LockedForActive(),
+	}
 	return r.db.WithContext(ctx).
 		Model(&model.User{}).
-		Where("id = ? AND deleted = 0", m.ID).
-		Updates(map[string]any{
-			"account":     m.Account,
-			"email":       m.Email,
-			"realname":    m.DisplayName,
-			"isActive":    m.IsActiveDB,
-			"deptID":      m.DeptID,
-			"updatedBy":   m.UpdatedByName,
-			"updatedDate": m.UpdatedAt,
-		}).
+		Where("id = ? AND deleted = ?", m.ID, "0").
+		Updates(updates).
 		Error
 }
 
@@ -170,23 +167,27 @@ func (r *Repo) Update(ctx context.Context, m *model.User) error {
 func (r *Repo) Delete(ctx context.Context, id int64) error {
 	return r.db.WithContext(ctx).
 		Model(&model.User{}).
-		Where("id = ? AND deleted = 0", id).
+		Where("id = ? AND deleted = ?", id, "0").
 		Updates(map[string]any{
-			"deleted":     1,
-			"updatedDate": gorm.Expr("NOW()"),
+			"deleted": "1",
 		}).
 		Error
 }
 
 // UpdateStatus 按 ID 更新用户启用状态。
 func (r *Repo) UpdateStatus(ctx context.Context, id uint64, isActive bool) error {
+	updates := map[string]any{}
+	if isActive {
+		updates["locked"] = nil
+	} else {
+		disabled := &model.User{}
+		disabled.SetActive(false)
+		updates["locked"] = disabled.Locked
+	}
 	return r.db.WithContext(ctx).
 		Model(&model.User{}).
-		Where("id = ? AND deleted = 0", id).
-		Updates(map[string]any{
-			// isActive -> model.User.IsActiveDB
-			"isActive": isActive,
-		}).
+		Where("id = ? AND deleted = ?", id, "0").
+		Updates(updates).
 		Error
 }
 
@@ -194,7 +195,7 @@ func (r *Repo) UpdateStatus(ctx context.Context, id uint64, isActive bool) error
 func (r *Repo) UpdatePassword(ctx context.Context, id uint64, hashedPwd string) error {
 	return r.db.WithContext(ctx).
 		Model(&model.User{}).
-		Where("id = ? AND deleted = 0", id).
+		Where("id = ? AND deleted = ?", id, "0").
 		Updates(map[string]any{
 			// password -> model.User.PasswordHash
 			"password": hashedPwd,
@@ -204,7 +205,7 @@ func (r *Repo) UpdatePassword(ctx context.Context, id uint64, hashedPwd string) 
 
 // ExistsByAccount 检查账号是否已存在。
 func (r *Repo) ExistsByAccount(ctx context.Context, account string, excludeID int64) (bool, error) {
-	q := r.db.WithContext(ctx).Model(&model.User{}).Where("account = ? AND deleted = 0", account)
+	q := r.db.WithContext(ctx).Model(&model.User{}).Where("account = ? AND deleted = ?", account, "0")
 	if excludeID > 0 {
 		q = q.Where("id <> ?", excludeID)
 	}

@@ -14,55 +14,74 @@ import (
 	"gorm.io/gorm"
 )
 
-// User 表示 zt_gf_user 用户表。
+// disabledLockedUntil 表示管理员禁用账号时写入 locked 的占位时间。
+var disabledLockedUntil = time.Date(2099, 12, 31, 23, 59, 59, 0, time.UTC)
+
+// User 表示禅道 zt_user 用户表。
 type User struct {
-	ID             int64     `gorm:"column:id;primaryKey;autoIncrement"`
-	Account        string    `gorm:"column:account;size:30;not null"`
-	PasswordHash   string    `gorm:"column:password;size:60;not null"`
-	DisplayName    string    `gorm:"column:realname;size:30;not null"`
-	Gender         string    `gorm:"column:gender;type:enum('f','m');not null;default:m"`
-	Position       string    `gorm:"column:position;size:30;not null"`
-	ManagerID      int64     `gorm:"column:manager;not null;default:0"`
-	Phone          string    `gorm:"column:phone;size:20;not null"`
-	Email          string    `gorm:"column:email;size:60;not null"`
-	CreatedByName  string    `gorm:"column:createdBy;size:30;not null"`
-	CreatedAt      time.Time `gorm:"column:createdDate;autoCreateTime"`
-	UpdatedByName  string    `gorm:"column:updatedBy;size:30;not null"`
-	UpdatedAt      time.Time `gorm:"column:updatedDate;autoUpdateTime"`
-	Deleted        uint8     `gorm:"column:deleted;not null;default:0;index"`
-	IsSuperAdminDB bool      `gorm:"column:isSuperAdmin;not null;default:false"`
-	// IsActiveDB 是数据库持久化列，对应 isActive 字段。
-	// 业务代码请使用 AfterFind 回填的 IsActive 字段（非持久化），
-	// 该字段屏蔽了软删除用户，能正确反映用户实际可用状态。
-	IsActiveDB      bool       `gorm:"column:isActive;not null;default:true"`
-	DeptID          uint64     `gorm:"column:deptID;not null;default:0"`
-	LastLoginDateDB *time.Time `gorm:"column:lastLoginDate"`
-	LastLoginIPDB   string     `gorm:"column:lastLoginIP;size:45"`
+	ID            int64      `gorm:"column:id;primaryKey;autoIncrement"`
+	Company       uint64     `gorm:"column:company;not null;default:0"`
+	Type          string     `gorm:"column:type;size:30;not null;default:inside"`
+	DeptID        uint64     `gorm:"column:dept;not null;default:0"`
+	Account       string     `gorm:"column:account;size:30;not null"`
+	PasswordHash  string     `gorm:"column:password;size:32;not null"`
+	Role          string     `gorm:"column:role;size:10;not null;default:''"`
+	DisplayName   string     `gorm:"column:realname;size:100;not null"`
+	Gender        string     `gorm:"column:gender;type:enum('f','m');not null;default:f"`
+	Email         string     `gorm:"column:email;size:90;not null"`
+	Phone         string     `gorm:"column:phone;size:20;not null"`
+	Mobile        string     `gorm:"column:mobile;size:11;not null"`
+	Deleted       string     `gorm:"column:deleted;type:enum('0','1');not null;default:0;index"`
+	Locked        *time.Time `gorm:"column:locked"`
+	LastLoginUnix uint32     `gorm:"column:last;not null;default:0"`
+	LastLoginIP   string     `gorm:"column:ip;size:255;not null"`
 
 	// ── 以下字段不持久化，由 AfterFind 根据 DB 字段计算回填 ──────────────
 	// 禁止对这些字段添加 gorm tag 或在 Where 条件中直接引用。
-	IsSuperAdmin  bool       `gorm:"-"`
-	IsActive      bool       `gorm:"-"`
-	LastLoginDate *time.Time `gorm:"-"`
-	LastLoginIP   string     `gorm:"-"`
+	IsSuperAdmin   bool       `gorm:"-"`
+	IsActive       bool       `gorm:"-"`
+	IsActiveDB     bool       `gorm:"-"`
+	IsSuperAdminDB bool       `gorm:"-"`
+	LastLoginDate  *time.Time `gorm:"-"`
+	LastLoginDateDB *time.Time `gorm:"-"`
 }
 
-// TableName 指定 zt_gf_user 表。
+// TableName 指定 zt_user 表。
 func (User) TableName() string {
-	return "zt_gf_user"
+	return "zt_user"
 }
 
 // AfterFind 回填兼容状态字段。
 func (u *User) AfterFind(_ *gorm.DB) error {
-	u.IsSuperAdmin = u.IsSuperAdminDB
-	// 用户可用状态由 isActive 字段直接决定，删除状态由 deleted 字段在查询层过滤。
-	u.IsActive = u.IsActiveDB
-	u.LastLoginDate = u.LastLoginDateDB
-	u.LastLoginIP = u.LastLoginIPDB
+	now := time.Now()
+	u.IsActive = u.Deleted == "0" && (u.Locked == nil || u.Locked.Before(now))
+	u.IsActiveDB = u.IsActive
+	u.IsSuperAdmin = u.Account == "admin" || u.Role == "admin"
+	u.IsSuperAdminDB = u.IsSuperAdmin
+	if u.LastLoginUnix > 0 {
+		t := time.Unix(int64(u.LastLoginUnix), 0)
+		u.LastLoginDate = &t
+		u.LastLoginDateDB = &t
+	}
 	return nil
 }
 
-// SetActive 更新用户启用状态。
+// SetActive 更新用户启用状态（通过 locked 字段映射禅道禁用语义）。
 func (u *User) SetActive(active bool) {
 	u.IsActiveDB = active
+	if active {
+		u.Locked = nil
+		return
+	}
+	locked := disabledLockedUntil
+	u.Locked = &locked
+}
+
+// LockedForActive 返回与启用状态对应的 locked 列值。
+func (u *User) LockedForActive() *time.Time {
+	if u.IsActiveDB {
+		return nil
+	}
+	locked := disabledLockedUntil
+	return &locked
 }

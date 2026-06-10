@@ -34,12 +34,9 @@ func NewRepo(db *gorm.DB) *Repo {
 // FindUserByAccount 按账号查询用户。未找到返回 (nil, nil)。
 func (r *Repo) FindUserByAccount(ctx context.Context, account string) (*model.User, error) {
 	var user model.User
-	userAccountCol := r.resolveAccountColumn(ctx, "zt_gf_user")
-	q := r.db.WithContext(ctx).Table("zt_gf_user")
-	if r.hasColumn(ctx, "zt_gf_user", "deleted") {
-		q = q.Where("deleted = 0")
-	}
-	err := q.Where(fmt.Sprintf("%s = ?", userAccountCol), account).First(&user).Error
+	err := r.db.WithContext(ctx).
+		Where("account = ? AND deleted = ?", account, "0").
+		First(&user).Error
 	if err == nil {
 		return &user, nil
 	}
@@ -51,21 +48,13 @@ func (r *Repo) FindUserByAccount(ctx context.Context, account string) (*model.Us
 
 // UpdateLastLogin 更新最后登录时间和 IP。
 func (r *Repo) UpdateLastLogin(ctx context.Context, userID int64, ip string) error {
-	now := time.Now()
-	updates := map[string]any{}
-	if r.hasColumn(ctx, "zt_gf_user", "lastLoginDate") {
-		updates["lastLoginDate"] = now
-	}
-	if r.hasColumn(ctx, "zt_gf_user", "lastLoginIP") {
-		updates["lastLoginIP"] = ip
-	}
-	if r.hasColumn(ctx, "zt_gf_user", "updatedDate") {
-		updates["updatedDate"] = now
-	}
-	if len(updates) == 0 {
-		return nil
-	}
-	return r.db.WithContext(ctx).Table("zt_gf_user").Where("id = ?", userID).Updates(updates).Error
+	return r.db.WithContext(ctx).
+		Model(&model.User{}).
+		Where("id = ?", userID).
+		Updates(map[string]any{
+			"last": time.Now().Unix(),
+			"ip":   ip,
+		}).Error
 }
 
 // CountFailuresByAccount 统计指定时间之后某账号的失败次数。
