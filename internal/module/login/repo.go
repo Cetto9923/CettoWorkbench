@@ -46,17 +46,6 @@ func (r *Repo) FindUserByAccount(ctx context.Context, account string) (*model.Us
 	return nil, err
 }
 
-// UpdateLastLogin 更新最后登录时间和 IP。
-func (r *Repo) UpdateLastLogin(ctx context.Context, userID int64, ip string) error {
-	return r.db.WithContext(ctx).
-		Model(&model.User{}).
-		Where("id = ?", userID).
-		Updates(map[string]any{
-			"last": time.Now().Unix(),
-			"ip":   ip,
-		}).Error
-}
-
 // CountFailuresByAccount 统计指定时间之后某账号的失败次数。
 func (r *Repo) CountFailuresByAccount(ctx context.Context, account string, since time.Time) (int64, error) {
 	var count int64

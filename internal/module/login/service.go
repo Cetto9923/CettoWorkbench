@@ -46,7 +46,6 @@ type authRepo interface {
 	CountFailuresByIP(ctx context.Context, ip string, since time.Time) (int64, error)
 	FindUserByAccount(ctx context.Context, account string) (*model.User, error)
 	RecordFailure(ctx context.Context, account, ip string) error
-	UpdateLastLogin(ctx context.Context, userID int64, ip string) error
 	InsertLoginLog(ctx context.Context, log *model.LoginLog) error
 }
 
@@ -106,10 +105,6 @@ func (s *Service) Login(ctx context.Context, req LoginReq) (LoginResp, error) {
 		return LoginResp{}, err
 	}
 	s.sessionMgr.Put(ctx, "userID", user.ID)
-
-	if err := s.repo.UpdateLastLogin(ctx, user.ID, req.IP); err != nil {
-		s.logger.Warn("update last login failed", zap.Int64("userID", user.ID), zap.Error(err))
-	}
 
 	s.recordLoginLog(ctx, req, sql.NullInt64{Int64: user.ID, Valid: true}, true, "")
 	s.logger.Info("login success", zap.String("account", account), zap.Int64("userID", user.ID))
