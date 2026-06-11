@@ -11,8 +11,9 @@
     independentRD: "独立研发需求列表",
   };
 
-  var scheduleVersionWindowModalMode = "edit";
+  var scheduleVersionWindowModalMode = "idle";
   var scheduleVersionCreateDraft = null;
+  var scheduleEditingWindowId = null;
 
   var windowTypeLabels = {
     regular: "常规",
@@ -21,6 +22,16 @@
   };
 
   var SCHEDULE_MATCHING_PLANS_URL = "/po/schedule/matching-plans";
+  var SCHEDULE_CREATE_WINDOW_URL = "/po/schedule/windows";
+  var SCHEDULE_LIST_WINDOWS_URL = "/po/schedule/windows";
+
+  function scheduleWindowURL(windowId) {
+    var id = Number(windowId);
+    if (!id) {
+      return SCHEDULE_CREATE_WINDOW_URL;
+    }
+    return SCHEDULE_CREATE_WINDOW_URL + "/" + id;
+  }
 
   var scheduleIterationDefinitions = [
     {
@@ -64,6 +75,170 @@
       online: "2026-05-10",
     },
   ];
+
+  function escapeHtml(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function scheduleWindowEditDisabledTip(canEdit) {
+    return canEdit ? "" : "非本人创建，无法维护";
+  }
+
+  function scheduleWindowDeleteDisabledTip(item) {
+    if (!item || item.canDelete) {
+      return "";
+    }
+    if (!item.canEdit) {
+      return "非本人创建，无法维护";
+    }
+    if (item.hasLinkedDemands) {
+      return "已关联需求，无法删除";
+    }
+    return "无法删除";
+  }
+
+  function isScheduleWindowActionDisabled($el) {
+    return $el.prop("disabled") || $el.hasClass("is-disabled");
+  }
+
+  function buildManageVersionWindowActionBtn(type, item) {
+    var enabled = type === "edit" ? !!item.canEdit : !!item.canDelete;
+    var tip = type === "edit" ? scheduleWindowEditDisabledTip(item.canEdit) : scheduleWindowDeleteDisabledTip(item);
+    var cls = "action-btn schedule-window-action js-manage-" + type + "-version-window";
+    if (type === "edit") {
+      cls += " primary";
+    }
+    if (!enabled) {
+      cls += " is-disabled";
+    }
+    var attrs =
+      ' type="button" class="' +
+      cls +
+      '" data-window-id="' +
+      Number(item.id) +
+      '" data-window-name="' +
+      escapeHtml(item.name || "") +
+      '"';
+    if (type === "delete") {
+      attrs += ' style="color:var(--red)"';
+    }
+    if (!enabled && tip) {
+      attrs += ' disabled title="' + escapeHtml(tip) + '"';
+    } else if (type === "edit") {
+      attrs += ' title="编辑窗口"';
+    } else {
+      attrs += ' title="删除窗口"';
+    }
+    var icon = type === "edit" ? "fa-pen" : "fa-trash-can";
+    return "<button" + attrs + '><i class="fas ' + icon + '"></i></button>';
+  }
+
+  function renderManageVersionWindowsTable(windows) {
+    var body = document.getElementById("manageVersionWindowsTableBody");
+    var countEl = document.getElementById("manageWindowCount");
+    if (!body) {
+      return;
+    }
+    var rows = windows || [];
+    if (!rows.length) {
+      body.innerHTML = '<tr><td colspan="7" class="schedule-create-empty" style="text-align:center;padding:16px 0">暂无版本窗口</td></tr>';
+      if (countEl) {
+        countEl.textContent = "0";
+      }
+      return;
+    }
+    body.innerHTML = rows
+      .map(function (item, index) {
+        return (
+          "<tr>" +
+          '<td style="text-align:center;color:var(--t3)">' +
+          (index + 1) +
+          "</td>" +
+          "<td><strong>" +
+          escapeHtml(item.name || "") +
+          "</strong></td>" +
+          "<td>" +
+          escapeHtml(item.releaseDate || "—") +
+          "</td>" +
+          '<td style="font-size:11px;color:var(--t3)">' +
+          escapeHtml(item.range || "—") +
+          "</td>" +
+          "<td><span class=\"schedule-version-status\">" +
+          escapeHtml(item.status || "") +
+          "</span></td>" +
+          '<td style="text-align:center">' +
+          Number(item.capacityHours || 0) +
+          "</td>" +
+          '<td style="text-align:center"><div class="schedule-manage-window-actions">' +
+          buildManageVersionWindowActionBtn("edit", item) +
+          buildManageVersionWindowActionBtn("delete", item) +
+          "</div></td>" +
+          "</tr>"
+        );
+      })
+      .join("");
+    if (countEl) {
+      countEl.textContent = String(rows.length);
+    }
+  }
+
+  function openManageVersionWindowsModal() {
+    closeAllScheduleWindowCardMenus();
+    var fetchFn = window.appFetch || fetch;
+    var headers = {
+      Accept: "application/json",
+      "X-Requested-With": "XMLHttpRequest",
+    };
+    var csrf = getCsrfToken();
+    if (csrf) {
+      headers["X-CSRF-Token"] = csrf;
+    }
+
+    fetchFn(SCHEDULE_LIST_WINDOWS_URL, { method: "GET", headers: headers })
+      .then(function (resp) {
+        return resp
+          .json()
+          .catch(function () {
+            return {};
+          })
+          .then(function (data) {
+            return { ok: resp.ok, data: data || {} };
+          });
+      })
+      .then(function (result) {
+        if (!result.data || !result.data.success) {
+          var message = (result.data && result.data.error) || "加载版本窗口列表失败";
+          if (typeof window.showToast === "function") {
+            window.showToast(message, "error");
+          }
+          return;
+        }
+        renderManageVersionWindowsTable(result.data.windows || []);
+        document.getElementById("manageVersionWindowsModal").classList.add("show");
+        document.getElementById("manageVersionWindowsOverlay").classList.add("show");
+      })
+      .catch(function () {
+        if (typeof window.showToast === "function") {
+          window.showToast("加载版本窗口列表失败，请稍后重试", "error");
+        }
+      });
+  }
+
+  function closeManageVersionWindowsModal() {
+    var modal = document.getElementById("manageVersionWindowsModal");
+    var overlay = document.getElementById("manageVersionWindowsOverlay");
+    if (modal) {
+      modal.classList.remove("show");
+    }
+    if (overlay) {
+      overlay.classList.remove("show");
+    }
+  }
 
   function escapeJsString(value) {
     return String(value == null ? "" : value)
@@ -175,15 +350,6 @@
     $children.addClass("is-hidden");
   }
 
-  function escapeHtml(value) {
-    return String(value == null ? "" : value)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  }
-
   function scheduleAddDaysIso(isoDate, deltaDays) {
     var text = String(isoDate || "").slice(0, 10);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
@@ -283,7 +449,7 @@
   }
 
   function getScheduleVersionModalDraft() {
-    if (scheduleVersionWindowModalMode === "create") {
+    if (scheduleVersionWindowModalMode === "create" || scheduleVersionWindowModalMode === "edit") {
       return getScheduleVersionCreateDraft();
     }
     return null;
@@ -752,13 +918,126 @@
   }
 
   function renderScheduleVersionWindowModalBody() {
-    if (scheduleVersionWindowModalMode === "create") {
+    if (scheduleVersionWindowModalMode === "create" || scheduleVersionWindowModalMode === "edit") {
       renderScheduleCreateVersionWindowModalBody();
     }
   }
 
+  function populateDraftFromWindowDetail(detail) {
+    var d = createScheduleVersionCreateDraft();
+    d.online = detail.releaseDate || "";
+    d.name = detail.name || "";
+    d.start = detail.startDate || "";
+    d.end = detail.releaseDate || "";
+    d.teamgroupId = detail.teamgroupId ? String(detail.teamgroupId) : getDefaultTeamgroupID();
+    d._nameAutoGenerated = false;
+    d._startManual = !!detail.startDate;
+    d._startAutoGenerated = false;
+    d._lastOnlineAuto = d.online;
+    d._lastPlanNameOnline = d.online;
+    d.productIds = (detail.products || [])
+      .map(function (item) {
+        return Number(item.productId);
+      })
+      .filter(function (id) {
+        return id > 0;
+      });
+
+    (detail.products || []).forEach(function (item) {
+      var key = String(item.productId);
+      var productName = item.productName || getProductNameById(item.productId);
+      if (item.hasMatch && item.plans && item.plans.length) {
+        d.systemPlanMatch[key] = {
+          loading: false,
+          productName: productName,
+          hasMatch: true,
+          plans: item.plans,
+          selectedPlanIds: item.plans
+            .map(function (plan) {
+              return Number(plan.id);
+            })
+            .filter(function (id) {
+              return id > 0;
+            }),
+        };
+        return;
+      }
+      d.systemPlanMatch[key] = {
+        loading: false,
+        productName: productName,
+        hasMatch: false,
+        plans: [],
+      };
+      d.systemPlanDraft[key] = {
+        syncCreate: !!item.syncPlan,
+        planName: item.planTitle || detail.name || "",
+        planBegin: detail.startDate || "",
+        productName: productName,
+      };
+    });
+    return d;
+  }
+
+  function openScheduleEditVersionWindowModal(windowId) {
+    var id = Number(windowId);
+    if (!id) {
+      return;
+    }
+    closeAllScheduleWindowCardMenus();
+    var fetchFn = window.appFetch || fetch;
+    var headers = {
+      Accept: "application/json",
+      "X-Requested-With": "XMLHttpRequest",
+    };
+    var csrf = getCsrfToken();
+    if (csrf) {
+      headers["X-CSRF-Token"] = csrf;
+    }
+
+    fetchFn(scheduleWindowURL(id), { method: "GET", headers: headers })
+      .then(function (resp) {
+        return resp
+          .json()
+          .catch(function () {
+            return {};
+          })
+          .then(function (data) {
+            return { ok: resp.ok, data: data || {} };
+          });
+      })
+      .then(function (result) {
+        if (!result.data || !result.data.success) {
+          var message = (result.data && result.data.error) || "加载窗口详情失败";
+          if (typeof window.showToast === "function") {
+            window.showToast(message, "error");
+          }
+          return;
+        }
+        scheduleVersionWindowModalMode = "edit";
+        scheduleEditingWindowId = id;
+        scheduleVersionCreateDraft = populateDraftFromWindowDetail(result.data);
+        var titleEl = document.getElementById("scheduleVersionWindowModalTitle");
+        var saveBtn = document.getElementById("scheduleVersionWindowModalSaveBtn");
+        if (titleEl) {
+          titleEl.textContent = "编辑版本窗口";
+        }
+        if (saveBtn) {
+          saveBtn.textContent = "保存";
+        }
+        renderScheduleVersionWindowModalBody();
+        document.getElementById("scheduleVersionWindowModal").classList.add("show");
+        document.getElementById("scheduleVersionWindowModalOverlay").classList.add("show");
+      })
+      .catch(function () {
+        if (typeof window.showToast === "function") {
+          window.showToast("加载窗口详情失败，请稍后重试", "error");
+        }
+      });
+  }
+
   function openScheduleCreateVersionWindowModal() {
     scheduleVersionWindowModalMode = "create";
+    scheduleEditingWindowId = null;
     scheduleVersionCreateDraft = createScheduleVersionCreateDraft();
     var titleEl = document.getElementById("scheduleVersionWindowModalTitle");
     var saveBtn = document.getElementById("scheduleVersionWindowModalSaveBtn");
@@ -782,7 +1061,8 @@
     if (overlay) {
       overlay.classList.remove("show");
     }
-    scheduleVersionWindowModalMode = "edit";
+    scheduleVersionWindowModalMode = "idle";
+    scheduleEditingWindowId = null;
     scheduleVersionCreateDraft = null;
     var saveBtn = document.getElementById("scheduleVersionWindowModalSaveBtn");
     if (saveBtn) {
@@ -817,18 +1097,183 @@
     };
   }
 
+  function getCsrfToken() {
+    var el = document.querySelector('meta[name="csrf-token"]');
+    return el ? String(el.getAttribute("content") || "").trim() : "";
+  }
+
+  function validateScheduleCreateSavePayload(payload) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(payload.releaseDate || "").slice(0, 10))) {
+      return "请填写预计上线日期";
+    }
+    if (!String(payload.name || "").trim()) {
+      return "请填写窗口名称";
+    }
+    if (!Number(payload.teamgroupId)) {
+      return "请选择敏捷小组";
+    }
+    return "";
+  }
+
+  function buildScheduleWindowSaveBody(payload) {
+    return JSON.stringify({
+      releaseDate: payload.releaseDate,
+      name: payload.name,
+      startDate: payload.startDate,
+      teamgroupId: Number(payload.teamgroupId),
+      products: (payload.products || []).map(function (item) {
+        return {
+          productId: Number(item.productId),
+          syncPlan: !!item.syncPlan,
+          planTitle: item.planTitle || "",
+        };
+      }),
+    });
+  }
+
+  function submitScheduleWindowRequest(method, url, payload) {
+    var fetchFn = window.appFetch || fetch;
+    var headers = {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "X-Requested-With": "XMLHttpRequest",
+    };
+    var csrf = getCsrfToken();
+    if (csrf) {
+      headers["X-CSRF-Token"] = csrf;
+    }
+
+    return fetchFn(url, {
+      method: method,
+      headers: headers,
+      body: buildScheduleWindowSaveBody(payload),
+    })
+      .then(function (resp) {
+        return resp
+          .json()
+          .catch(function () {
+            return {};
+          })
+          .then(function (data) {
+            return { ok: resp.ok, data: data || {} };
+          });
+      });
+  }
+
   function saveScheduleVersionWindowModal() {
     if (scheduleVersionWindowModalMode === "create") {
-      var payload = collectScheduleCreateSavePayload();
-      if (typeof window.showToast === "function") {
-        window.showToast("保存功能待实现");
-      }
-      if (typeof console !== "undefined" && console.log) {
-        console.log("[schedule] create window payload", payload);
-      }
-      return payload;
+      return submitScheduleWindowSave(false);
+    }
+    if (scheduleVersionWindowModalMode === "edit" && Number(scheduleEditingWindowId) > 0) {
+      return submitScheduleWindowSave(true);
     }
     return null;
+  }
+
+  function submitScheduleWindowSave(isEdit) {
+    var payload = collectScheduleCreateSavePayload();
+    var validationError = validateScheduleCreateSavePayload(payload);
+    if (validationError) {
+      if (typeof window.showToast === "function") {
+        window.showToast(validationError, "error");
+      }
+      return null;
+    }
+
+    var method = isEdit ? "PUT" : "POST";
+    var url = isEdit ? scheduleWindowURL(scheduleEditingWindowId) : SCHEDULE_CREATE_WINDOW_URL;
+    var successMessage = isEdit ? "版本窗口更新成功" : "版本窗口保存成功";
+
+    submitScheduleWindowRequest(method, url, payload)
+      .then(function (result) {
+        if (result.data && result.data.success) {
+          if (typeof window.showToast === "function") {
+            window.showToast(successMessage, "success");
+          }
+          closeScheduleVersionWindowModal();
+          window.location.reload();
+          return;
+        }
+        var message =
+          (result.data && result.data.error) ||
+          (result.ok ? "保存失败" : "保存失败，请稍后重试");
+        if (typeof window.showToast === "function") {
+          window.showToast(message, "error");
+        }
+      })
+      .catch(function () {
+        if (typeof window.showToast === "function") {
+          window.showToast("保存失败，请稍后重试", "error");
+        }
+      });
+    return payload;
+  }
+
+  function deleteScheduleVersionWindow(windowId, windowName) {
+    var id = Number(windowId);
+    if (!id) {
+      return;
+    }
+    closeAllScheduleWindowCardMenus();
+    var label = String(windowName || "").trim() || "该窗口";
+    if (!window.confirm("确定要删除窗口 " + label + " 吗？")) {
+      return;
+    }
+
+    var fetchFn = window.appFetch || fetch;
+    var headers = {
+      Accept: "application/json",
+      "X-Requested-With": "XMLHttpRequest",
+    };
+    var csrf = getCsrfToken();
+    if (csrf) {
+      headers["X-CSRF-Token"] = csrf;
+    }
+
+    fetchFn(scheduleWindowURL(id), { method: "DELETE", headers: headers })
+      .then(function (resp) {
+        return resp
+          .json()
+          .catch(function () {
+            return {};
+          })
+          .then(function (data) {
+            return { ok: resp.ok, data: data || {} };
+          });
+      })
+      .then(function (result) {
+        if (result.data && result.data.success) {
+          if (typeof window.showToast === "function") {
+            window.showToast("版本窗口已删除", "success");
+          }
+          window.location.reload();
+          return;
+        }
+        var message =
+          (result.data && result.data.error) ||
+          (result.ok ? "删除失败" : "删除失败，请稍后重试");
+        if (typeof window.showToast === "function") {
+          window.showToast(message, "error");
+        }
+      })
+      .catch(function () {
+        if (typeof window.showToast === "function") {
+          window.showToast("删除失败，请稍后重试", "error");
+        }
+      });
+  }
+
+  function closeAllScheduleWindowCardMenus() {
+    $root.find(".version-card-dropdown.show").removeClass("show");
+  }
+
+  function toggleScheduleWindowCardMenu($actions) {
+    var $dropdown = $actions.find(".version-card-dropdown");
+    var isOpen = $dropdown.hasClass("show");
+    closeAllScheduleWindowCardMenus();
+    if (!isOpen) {
+      $dropdown.addClass("show");
+    }
   }
 
   function updateScheduleCreateDraftField(field, value) {
@@ -919,6 +1364,7 @@
   window.toggleScheduleCreateSystemPlanSync = toggleScheduleCreateSystemPlanSync;
   window.updateScheduleCreateSystemPlanName = updateScheduleCreateSystemPlanName;
   window.openScheduleCreateVersionWindowModal = openScheduleCreateVersionWindowModal;
+  window.openScheduleEditVersionWindowModal = openScheduleEditVersionWindowModal;
   window.closeScheduleVersionWindowModal = closeScheduleVersionWindowModal;
   window.saveScheduleVersionWindowModal = saveScheduleVersionWindowModal;
 
@@ -945,9 +1391,73 @@
     openScheduleCreateVersionWindowModal();
   });
 
+  $root.on("click", ".js-open-manage-version-windows", function () {
+    openManageVersionWindowsModal();
+  });
+
+  $root.on("click", ".js-toggle-window-card-menu", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleScheduleWindowCardMenu($(this).closest(".schedule-version-card-actions"));
+  });
+
+  $root.on("click", ".js-edit-version-window", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isScheduleWindowActionDisabled($(this))) {
+      return;
+    }
+    openScheduleEditVersionWindowModal($(this).data("window-id"));
+  });
+
+  $root.on("click", ".js-delete-version-window", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    var $btn = $(this);
+    if (isScheduleWindowActionDisabled($btn)) {
+      return;
+    }
+    deleteScheduleVersionWindow($btn.data("window-id"), $btn.data("window-name"));
+  });
+
+  $(document).on("click", ".js-manage-edit-version-window", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    var $btn = $(this);
+    if (isScheduleWindowActionDisabled($btn)) {
+      return;
+    }
+    closeManageVersionWindowsModal();
+    openScheduleEditVersionWindowModal($btn.data("window-id"));
+  });
+
+  $(document).on("click", ".js-manage-delete-version-window", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    var $btn = $(this);
+    if (isScheduleWindowActionDisabled($btn)) {
+      return;
+    }
+    deleteScheduleVersionWindow($btn.data("window-id"), $btn.data("window-name"));
+  });
+
+  $(document).on("click", function (e) {
+    if ($(e.target).closest(".schedule-version-card-actions").length) {
+      return;
+    }
+    closeAllScheduleWindowCardMenus();
+  });
+
   $("#scheduleVersionWindowModalOverlay").on("click", closeScheduleVersionWindowModal);
   $("#scheduleVersionWindowModalCloseBtn, #scheduleVersionWindowModalDismissBtn").on("click", closeScheduleVersionWindowModal);
   $("#scheduleVersionWindowModalSaveBtn").on("click", saveScheduleVersionWindowModal);
+
+  $("#manageVersionWindowsOverlay").on("click", closeManageVersionWindowsModal);
+  $("#manageVersionWindowsCloseBtn, #manageVersionWindowsDismissBtn").on("click", closeManageVersionWindowsModal);
+  $(".js-open-create-version-window-from-manage").on("click", function () {
+    closeManageVersionWindowsModal();
+    openScheduleCreateVersionWindowModal();
+  });
 
   $("#scheduleMoreFiltersBtn").on("click", toggleMoreFilters);
   $("#scheduleClearFilters").on("click", clearFilters);

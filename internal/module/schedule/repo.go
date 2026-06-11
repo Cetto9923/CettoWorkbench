@@ -10,12 +10,24 @@ package schedule
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"gorm.io/gorm"
 
 	"workbench/internal/model"
 )
+
+// WindowProductRow 版本窗口关联产品及计划查询结果。
+type WindowProductRow struct {
+	ProductID   uint   `gorm:"column:product_id"`
+	ProductName string `gorm:"column:product_name"`
+	PlanID      *uint  `gorm:"column:plan_id"`
+	PlanSynced  uint8  `gorm:"column:plan_synced"`
+	PlanTitle   string `gorm:"column:plan_title"`
+	PlanBegin   string `gorm:"column:plan_begin"`
+	PlanEnd     string `gorm:"column:plan_end"`
+}
 
 // ZtProduct 表示禅道 zt_product 表只读字段。
 type ZtProduct struct {
@@ -157,6 +169,83 @@ func (r *Repo) Transaction(ctx context.Context, fn func(txRepo *Repo) error) err
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		return fn(&Repo{db: tx})
 	})
+}
+
+// GetVersionWindowByID 按 ID 查询未删除的版本窗口。
+func (r *Repo) GetVersionWindowByID(ctx context.Context, id uint64) (*model.VersionWindow, error) {
+	var window model.VersionWindow
+	err := r.db.WithContext(ctx).
+		Where("id = ? AND deleted = ?", id, 0).
+		First(&window).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &window, nil
+}
+
+// GetWindowProducts 查询窗口关联产品及计划信息。
+func (r *Repo) GetWindowProducts(ctx context.Context, windowID uint64) ([]WindowProductRow, error) {
+	const query = `
+SELECT
+  vwp.product_id,
+  p.name AS product_name,
+  vwp.plan_id,
+  vwp.plan_synced,
+  pp.title AS plan_title,
+  pp.begin AS plan_begin,
+  pp.end AS plan_end
+FROM version_window_product vwp
+INNER JOIN zt_product p ON p.id = vwp.product_id
+LEFT JOIN zt_productplan pp ON pp.id = vwp.plan_id AND pp.deleted = '0'
+WHERE vwp.window_id = ?
+ORDER BY vwp.id ASC`
+
+	var rows []WindowProductRow
+	if err := r.db.WithContext(ctx).Raw(query, windowID).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+// UpdateVersionWindow 更新版本窗口基本信息。
+func (r *Repo) UpdateVersionWindow(ctx context.Context, window *model.VersionWindow) error {
+	if window == nil || window.ID == 0 {
+		return errors.New("version window is invalid")
+	}
+	return r.db.WithContext(ctx).
+		Model(window).
+		Select("Name", "ReleaseDate", "StartDate", "TeamgroupID", "GroupSize").
+		Updates(window).Error
+}
+
+// DeleteWindowProducts 删除窗口关联的产品记录。
+func (r *Repo) DeleteWindowProducts(ctx context.Context, windowID uint64) error {
+	return r.db.WithContext(ctx).
+		Where("window_id = ?", windowID).
+		Delete(&model.VersionWindowProduct{}).Error
+}
+
+// SoftDeleteVersionWindow 软删除版本窗口。
+func (r *Repo) SoftDeleteVersionWindow(ctx context.Context, id uint64) error {
+	return r.db.WithContext(ctx).
+		Model(&model.VersionWindow{}).
+		Where("id = ? AND deleted = ?", id, 0).
+		Update("deleted", 1).Error
+}
+
+// ListVersionWindows 查询未删除的版本窗口，按预计上线日期升序。
+func (r *Repo) ListVersionWindows(ctx context.Context) ([]model.VersionWindow, error) {
+	var rows []model.VersionWindow
+	if err := r.db.WithContext(ctx).
+		Where("deleted = ?", 0).
+		Order("release_date ASC").
+		Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
 }
 
 // CreateVersionWindow 写入 version_window 并回填自增 ID。

@@ -123,3 +123,25 @@ type FieldError struct {
 	Field   string `json:"field"`
 	Message string `json:"message"`
 }
+
+// WindowProductDetail 版本窗口关联产品及计划详情。
+type WindowProductDetail struct {
+	ProductID   uint               `json:"productId"`
+	ProductName string             `json:"productName"`
+	SyncPlan    bool               `json:"syncPlan"`
+	PlanTitle   string             `json:"planTitle"`
+	PlanID      *uint              `json:"planId,omitempty"`
+	HasMatch    bool               `json:"hasMatch"`
+	Plans       []MatchingPlanItem `json:"plans,omitempty"`
+}
+
+// WindowDetailResp 版本窗口详情响应。
+type WindowDetailResp struct {
+	ID          uint64                `json:"id"`
+	ReleaseDate string                `json:"releaseDate"`
+	Name        string                `json:"name"`
+	StartDate   string                `json:"startDate"`
+	TeamgroupID uint                  `json:"teamgroupId"`
+	GroupSize   uint                  `json:"groupSize"`
+	Products    []WindowProductDetail `json:"products"`
+}

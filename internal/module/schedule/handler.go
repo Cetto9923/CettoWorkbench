@@ -11,8 +11,8 @@
 package schedule
 
 import (
-	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -27,17 +27,34 @@ import (
 
 // WindowCard 版本窗口概览卡片展示数据。
 type WindowCard struct {
-	ShortName      string
-	Range          string
-	Status         string
-	ToneClass      string
-	AgileGroup     string
-	DemandCount    int
-	CapacityHours  int
-	UsedHours      int
-	RemainingHours int
-	BlockedCount   int
-	UsedPercent    int
+	ID               uint64
+	ShortName        string
+	Range            string
+	Status           string
+	ToneClass        string
+	AgileGroup       string
+	DemandCount      int
+	CapacityHours    int
+	UsedHours        int
+	RemainingHours   int
+	BlockedCount     int
+	UsedPercent      int
+	CanEdit          bool
+	CanDelete        bool
+	HasLinkedDemands bool
+}
+
+// WindowListItem 版本窗口维护列表项（JSON）。
+type WindowListItem struct {
+	ID               uint64 `json:"id"`
+	Name             string `json:"name"`
+	ReleaseDate      string `json:"releaseDate"`
+	Range            string `json:"range"`
+	Status           string `json:"status"`
+	CapacityHours    int    `json:"capacityHours"`
+	CanEdit          bool   `json:"canEdit"`
+	CanDelete        bool   `json:"canDelete"`
+	HasLinkedDemands bool   `json:"hasLinkedDemands"`
 }
 
 // DevRequirement 研发需求行（树形三级）。
@@ -118,22 +135,12 @@ func (h *Handler) Index(c *gin.Context) {
 		}
 	}
 
-	windows := []WindowCard{
-		{
-			ShortName: "26-0524窗口", Range: "05-11 ~ 05-24", Status: "当前", ToneClass: "red",
-			AgileGroup: "移动银行组", DemandCount: 10, CapacityHours: 55, UsedHours: 42,
-			RemainingHours: 13, BlockedCount: 2, UsedPercent: 76,
-		},
-		{
-			ShortName: "26-0607窗口", Range: "05-25 ~ 06-07", Status: "下一", ToneClass: "blue",
-			AgileGroup: "基础平台组", DemandCount: 7, CapacityHours: 48, UsedHours: 28,
-			RemainingHours: 20, BlockedCount: 1, UsedPercent: 58,
-		},
-		{
-			ShortName: "26-0621窗口", Range: "06-08 ~ 06-21", Status: "规划中", ToneClass: "green",
-			AgileGroup: "客户服务组", DemandCount: 4, CapacityHours: 48, UsedHours: 12,
-			RemainingHours: 36, BlockedCount: 0, UsedPercent: 25,
-		},
+	windows, err := h.svc.ListWindowCards(c.Request.Context(), account)
+	if err != nil {
+		if h.logger != nil {
+			h.logger.Error("load version windows failed", zap.Error(err))
+		}
+		windows = []WindowCard{}
 	}
 
 	bizRequirements := buildBizRequirements()
@@ -147,6 +154,290 @@ func (h *Handler) Index(c *gin.Context) {
 		"Products":        formData.Products,
 		"Pager":           pagination.New(int64(len(bizRequirements)), 1, 10),
 	})
+}
+
+// ListWindows 返回版本窗口维护列表（JSON）。
+func (h *Handler) ListWindows(c *gin.Context) {
+	actor := middleware.CurrentUser(c)
+	account := ""
+	if actor != nil {
+		account = actor.Account
+	}
+
+	items, err := h.svc.ListWindows(c.Request.Context(), account)
+	if err != nil {
+		if h.logger != nil {
+			h.logger.Error("list version windows failed", zap.Error(err), zap.String("account", account))
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"error":   "加载版本窗口列表失败",
+		})
+		return
+	}
+	if items == nil {
+		items = []WindowListItem{}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"windows": items,
+	})
+}
+
+// CreateWindow 保存新建版本窗口（JSON）。
+func (h *Handler) CreateWindow(c *gin.Context) {
+	var form CreateWindowForm
+	if err := c.ShouldBindJSON(&form); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "请求参数解析失败",
+		})
+		return
+	}
+	if errs := form.Validate(); len(errs) > 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"error":   formatFieldErrors(errs),
+		})
+		return
+	}
+
+	actor := middleware.CurrentUser(c)
+	account := ""
+	if actor != nil {
+		account = actor.Account
+	}
+	if strings.TrimSpace(account) == "" {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"error":   "未登录或无法识别当前用户",
+		})
+		return
+	}
+
+	window, err := BuildVersionWindowFromForm(form)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"error":   "窗口日期无效",
+		})
+		return
+	}
+
+	if err := h.svc.SaveWindowWithPlans(c.Request.Context(), window, form.Products, account); err != nil {
+		if h.logger != nil {
+			h.logger.Error("save version window failed",
+				zap.Error(err),
+				zap.String("account", account),
+				zap.String("name", window.Name),
+			)
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"error":   "保存版本窗口失败",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":  true,
+		"windowId": window.ID,
+	})
+}
+
+// GetWindow 获取版本窗口详情（JSON）。
+func (h *Handler) GetWindow(c *gin.Context) {
+	id, ok := parseWindowID(c)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "窗口 ID 无效",
+		})
+		return
+	}
+
+	detail, err := h.svc.GetWindowDetail(c.Request.Context(), id)
+	if err != nil {
+		if h.logger != nil {
+			h.logger.Error("get version window detail failed", zap.Error(err), zap.Uint64("window_id", id))
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	resp := gin.H{"success": true}
+	if detail != nil {
+		resp["id"] = detail.ID
+		resp["releaseDate"] = detail.ReleaseDate
+		resp["name"] = detail.Name
+		resp["startDate"] = detail.StartDate
+		resp["teamgroupId"] = detail.TeamgroupID
+		resp["groupSize"] = detail.GroupSize
+		resp["products"] = detail.Products
+	}
+	c.JSON(http.StatusOK, resp)
+}
+
+// UpdateWindow 更新版本窗口（JSON）。
+func (h *Handler) UpdateWindow(c *gin.Context) {
+	id, ok := parseWindowID(c)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "窗口 ID 无效",
+		})
+		return
+	}
+
+	var form CreateWindowForm
+	if err := c.ShouldBindJSON(&form); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "请求参数解析失败",
+		})
+		return
+	}
+	if errs := form.Validate(); len(errs) > 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"error":   formatFieldErrors(errs),
+		})
+		return
+	}
+
+	actor := middleware.CurrentUser(c)
+	account := ""
+	if actor != nil {
+		account = actor.Account
+	}
+	if strings.TrimSpace(account) == "" {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"error":   "未登录或无法识别当前用户",
+		})
+		return
+	}
+
+	window, err := h.svc.GetVersionWindow(c.Request.Context(), id)
+	if err != nil {
+		if h.logger != nil {
+			h.logger.Error("load version window for update failed", zap.Error(err), zap.Uint64("window_id", id))
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"error":   "加载版本窗口失败",
+		})
+		return
+	}
+	if window == nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"error":   "窗口不存在",
+		})
+		return
+	}
+
+	if err := ApplyFormToVersionWindow(window, form); err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"error":   "窗口日期无效",
+		})
+		return
+	}
+
+	if err := h.svc.UpdateWindowWithPlans(c.Request.Context(), window, form.Products, account); err != nil {
+		if h.logger != nil {
+			h.logger.Error("update version window failed",
+				zap.Error(err),
+				zap.Uint64("window_id", id),
+				zap.String("account", account),
+			)
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"error":   "更新版本窗口失败",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":  true,
+		"windowId": window.ID,
+	})
+}
+
+// DeleteWindow 软删除版本窗口（JSON）。
+func (h *Handler) DeleteWindow(c *gin.Context) {
+	id, ok := parseWindowID(c)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "窗口 ID 无效",
+		})
+		return
+	}
+
+	actor := middleware.CurrentUser(c)
+	account := ""
+	if actor != nil {
+		account = actor.Account
+	}
+	if strings.TrimSpace(account) == "" {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"error":   "未登录或无法识别当前用户",
+		})
+		return
+	}
+
+	if err := h.svc.SoftDeleteWindow(c.Request.Context(), id, account); err != nil {
+		if h.logger != nil {
+			h.logger.Error("delete version window failed",
+				zap.Error(err),
+				zap.Uint64("window_id", id),
+				zap.String("account", account),
+			)
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+	})
+}
+
+func parseWindowID(c *gin.Context) (uint64, bool) {
+	idStr := strings.TrimSpace(c.Param("id"))
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil || id == 0 {
+		return 0, false
+	}
+	return id, true
+}
+
+func formatFieldErrors(errs []FieldError) string {
+	if len(errs) == 0 {
+		return "参数校验失败"
+	}
+	messages := make([]string, 0, len(errs))
+	for _, item := range errs {
+		msg := strings.TrimSpace(item.Message)
+		if msg != "" {
+			messages = append(messages, msg)
+		}
+	}
+	if len(messages) == 0 {
+		return "参数校验失败"
+	}
+	return strings.Join(messages, "；")
 }
 
 // GetMatchingPlans 根据产品 ID 和结束日期返回匹配计划（JSON）。
@@ -165,9 +456,6 @@ func (h *Handler) GetMatchingPlans(c *gin.Context) {
 		})
 		return
 	}
-
-	// TODO: 临时调试日志，确认匹配参数后删除
-	log.Printf("[DEBUG] matching-plans 请求: product_id=%d, end_date=%s", req.ProductID, req.EndDate)
 
 	resp, err := h.svc.GetMatchingPlans(c.Request.Context(), req)
 	if err != nil {

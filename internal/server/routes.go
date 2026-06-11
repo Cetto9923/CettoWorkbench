@@ -45,7 +45,6 @@ type RouteDeps struct {
 	RoleHandler         *role.Handler
 	PoHandler           *pomodule.Handler
 	ScheduleHandler     *schedule.Handler
-	ZentaoHandler       *zentao.Handler
 	SqlPerfHandler      *debug.Handler
 }
 
@@ -78,12 +77,6 @@ func registerRoutes(r *gin.Engine, deps RouteDeps) {
 		if deps.RoleHandler != nil {
 			deps.RoleHandler.RegisterRoutes(admin)
 		}
-		if deps.CronJobHandler != nil {
-			deps.CronJobHandler.RegisterRoutes(admin)
-		}
-		if deps.BackupHandler != nil {
-			deps.BackupHandler.RegisterRoutes(admin)
-		}
 	}
 
 	// 排期工作台（菜单 path：/po/schedule）
@@ -98,6 +91,31 @@ func registerRoutes(r *gin.Engine, deps RouteDeps) {
 			middleware.RequireLogin(deps.SessionMgr, deps.DB),
 			middleware.RecordOperationLog(deps.DB, deps.SessionMgr),
 			deps.ScheduleHandler.GetMatchingPlans,
+		)
+		r.POST("/po/schedule/windows",
+			middleware.RequireLogin(deps.SessionMgr, deps.DB),
+			middleware.RecordOperationLog(deps.DB, deps.SessionMgr),
+			deps.ScheduleHandler.CreateWindow,
+		)
+		r.GET("/po/schedule/windows",
+			middleware.RequireLogin(deps.SessionMgr, deps.DB),
+			middleware.RecordOperationLog(deps.DB, deps.SessionMgr),
+			deps.ScheduleHandler.ListWindows,
+		)
+		r.GET("/po/schedule/windows/:id",
+			middleware.RequireLogin(deps.SessionMgr, deps.DB),
+			middleware.RecordOperationLog(deps.DB, deps.SessionMgr),
+			deps.ScheduleHandler.GetWindow,
+		)
+		r.PUT("/po/schedule/windows/:id",
+			middleware.RequireLogin(deps.SessionMgr, deps.DB),
+			middleware.RecordOperationLog(deps.DB, deps.SessionMgr),
+			deps.ScheduleHandler.UpdateWindow,
+		)
+		r.DELETE("/po/schedule/windows/:id",
+			middleware.RequireLogin(deps.SessionMgr, deps.DB),
+			middleware.RecordOperationLog(deps.DB, deps.SessionMgr),
+			deps.ScheduleHandler.DeleteWindow,
 		)
 	}
 
