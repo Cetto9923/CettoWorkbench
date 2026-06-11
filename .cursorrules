@@ -32,6 +32,7 @@
     - 禁止具体实体名（`.User`、`.Customer`）替代 `Resource`
 11. **表单验证统一手写 `Validate() []FieldError` 方法，禁止引入 `go-playground/validator`**
 13. **除弹窗外的所有页面均在当前页打开**，禁止打开新窗口`
+14. 在 `db/install.sql` 新增建表 SQL，字段名小驼峰，含 `deletedAt` 、`createdBy` 、`createdDate` 、`updatedBy` 、`updatedDate` 字段，表名前缀为zt_
 ---
 
 ## 命名规则
