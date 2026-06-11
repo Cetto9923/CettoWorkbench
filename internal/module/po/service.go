@@ -17,6 +17,7 @@ import (
 	"go.uber.org/zap"
 
 	"workbench/internal/model"
+	"workbench/internal/module/schedule"
 	redispkg "workbench/internal/pkg/redis"
 	"workbench/internal/pkg/zentao"
 )
@@ -46,13 +47,14 @@ type workItemRef struct {
 
 // Service PO 工作台业务逻辑。
 type Service struct {
-	redis  *redispkg.Clients
-	logger *zap.Logger
+	redis    *redispkg.Clients
+	schedule *schedule.Service
+	logger   *zap.Logger
 }
 
 // NewService 创建 Service。
-func NewService(redisClients *redispkg.Clients, logger *zap.Logger) *Service {
-	return &Service{redis: redisClients, logger: logger}
+func NewService(redisClients *redispkg.Clients, scheduleSvc *schedule.Service, logger *zap.Logger) *Service {
+	return &Service{redis: redisClients, schedule: scheduleSvc, logger: logger}
 }
 
 // Home 加载首页价值流阶段统计。
@@ -79,7 +81,24 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 			StoryCount:  story,
 		})
 	}
-	return &HomeResp{Stages: stages}, nil
+
+	versionWindows := []schedule.HomeVersionWindowCard{}
+	if s.schedule == nil {
+		if s.logger != nil {
+			s.logger.Error("po home schedule service is nil, version windows skipped")
+		}
+	} else {
+		windows, winErr := s.schedule.ListHomeVersionWindows(ctx, account)
+		if winErr != nil {
+			if s.logger != nil {
+				s.logger.Warn("po home version windows", zap.Error(winErr), zap.String("account", account))
+			}
+		} else {
+			versionWindows = windows
+		}
+	}
+
+	return &HomeResp{Stages: stages, VersionWindows: versionWindows}, nil
 }
 
 // loadAllStageCounts 一次 Pipeline 读取全部阶段的 demand/story 数量（1 次网络往返）。

@@ -3,7 +3,8 @@
 模块: PO工作台
 职责: PO 工作台首页静态占位
 全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
-页面字段: .Title (string), .PageTitle (string), .ValueStreamStages ([]ValueStreamStage)
+页面字段: .Title (string), .PageTitle (string), .ValueStreamStages ([]ValueStreamStage),
+          .VersionWindows ([]schedule.HomeVersionWindowCard), .VersionWindowCount (int)
 ========================================================================== */}}
 {{ define "page_css" }}
 <link rel="stylesheet" href="{{ asset "/static/css/po/home.css" }}">
@@ -136,6 +137,44 @@
         <button type="button" class="po-top5-more-link" id="top5Toggle" aria-expanded="false"></button>
       </div>
     </div>
+  </div>
+
+  <div class="home-version-dock" id="homeVersionCollapsible">
+    <div class="home-version-dock-hdr">
+      <div>
+        <div class="home-version-dock-title"><i class="fas fa-layer-group"></i> 版本窗口 <span class="home-version-dock-sub-inline">本期 {{ .VersionWindowCount }} 个窗口 · 历史窗口在版本跟进中查看</span></div>
+        <div class="home-version-dock-sub">当前上线窗口 + 后续 3 个规划窗口 概览</div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button type="button" class="action-btn action-btn--disabled" title="查看全部窗口:本期不提供(待推出)"><i class="fas fa-th-list" style="margin-right:4px"></i>查看全部窗口</button>
+        <button type="button" class="action-btn action-btn--disabled" title="进入版本跟进:本期不提供(待推出)"><i class="fas fa-layer-group" style="margin-right:4px"></i>进入版本跟进</button>
+      </div>
+    </div>
+    <div class="home-version-panel" id="homeCurrentVersionSummary">
+      {{ range .VersionWindows }}
+      <div class="home-version-mini" title="点击窗口卡片:本期无响应(v2.7 AC-3.5)">
+        <div class="summary-top">
+          <div>
+            <div class="summary-title" title="{{ .Name }}"><i class="fas fa-layer-group" style="color:var(--po-blue)"></i>{{ .Name }} <span class="status-tag st-progress" style="font-size:10px">{{ .StatusLabel }}</span>{{ if .AgileGroup }}<span class="agile-team-tag">{{ .AgileGroup }}</span>{{ end }}</div>
+            <div class="summary-sub">{{ .Range }}</div>
+          </div>
+          <div class="summary-btns" style="display:flex;gap:6px;flex-wrap:wrap">
+            <button type="button" class="action-btn primary summary-btn action-btn--disabled" style="padding:4px 10px;font-size:11px" title="进入版本跟进:本期不提供(待推出)">进入版本跟进</button>
+          </div>
+        </div>
+        <div class="summary-stats summary-stats--compact">
+          <span class="summary-stat">需求 <strong>{{ .DemandCount }}</strong></span>
+          <span class="summary-stat">开发 <strong>{{ .DevCount }}</strong></span>
+          <span class="summary-stat">测试 <strong>{{ .TestCount }}</strong></span>
+          <span class="summary-stat">待交付 <strong>{{ .DeliverCount }}</strong></span>
+        </div>
+      </div>
+      {{ else }}
+      <div class="home-version-empty">暂无近期版本窗口</div>
+      {{ end }}
+    </div>
+    <div class="home-version-next-link" id="homeNextVersionLink"></div>
+    <div class="home-metrics-strip" id="homeMetricsStrip"></div>
   </div>
 </div>
 {{ end }}

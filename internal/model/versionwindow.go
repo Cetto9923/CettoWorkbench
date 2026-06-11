@@ -8,40 +8,49 @@
 
 package model
 
-import "time"
+import (
+	"time"
 
-// VersionWindow 表示 version_window 版本窗口表。
+	"gorm.io/gorm"
+)
+
+// VersionWindow 表示 zt_versionwindow 版本窗口表。
 type VersionWindow struct {
-	ID          uint64     `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
-	Name        string     `gorm:"column:name;size:100;not null" json:"name"`
-	ReleaseDate time.Time  `gorm:"column:release_date;type:date;not null" json:"releaseDate"`
-	StartDate   *time.Time `gorm:"column:start_date;type:date" json:"startDate"`
-	TeamgroupID uint       `gorm:"column:teamgroup_id;not null;index:idx_teamgroup" json:"teamgroupId"`
-	GroupSize   uint       `gorm:"column:group_size;not null;default:1" json:"groupSize"`
-	CreatedBy   string     `gorm:"column:created_by;size:30;not null;index:idx_created_by" json:"createdBy"`
-	Status      string     `gorm:"column:status;size:20;not null;default:planning" json:"status"`
-	SortOrder   int        `gorm:"column:sort_order;not null;default:0" json:"sortOrder"`
-	Deleted     uint8      `gorm:"column:deleted;not null;default:0" json:"deleted"`
-	CreatedAt   time.Time  `gorm:"column:created_at;autoCreateTime" json:"createdAt"`
-	UpdatedAt   time.Time  `gorm:"column:updated_at;autoUpdateTime" json:"updatedAt"`
+	ID          uint64         `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
+	Name        string         `gorm:"column:name;size:100;not null" json:"name"`
+	ReleaseDate time.Time      `gorm:"column:releaseDate;type:date;not null" json:"releaseDate"`
+	StartDate   *time.Time     `gorm:"column:startDate;type:date" json:"startDate"`
+	TeamgroupID uint           `gorm:"column:teamgroup;not null;index:idx_teamgroup" json:"teamgroupId"`
+	GroupSize   uint           `gorm:"column:groupSize;not null;default:1" json:"groupSize"`
+	CreatedBy   string         `gorm:"column:createdBy;size:30;not null;index:idx_createdBy" json:"createdBy"`
+	UpdatedBy   string         `gorm:"column:updatedBy;size:30;not null;default:''" json:"updatedBy"`
+	Status      string         `gorm:"column:status;size:20;not null;default:planning" json:"status"`
+	Order       int            `gorm:"column:order;not null;default:0" json:"order"`
+	CreatedDate time.Time      `gorm:"column:createdDate;autoCreateTime" json:"createdDate"`
+	UpdatedDate time.Time      `gorm:"column:updatedDate;autoUpdateTime" json:"updatedDate"`
+	DeletedAt   gorm.DeletedAt `gorm:"column:deletedAt;index" json:"-"`
 }
 
-// TableName 指定 version_window 表。
+// TableName 指定 zt_versionwindow 表。
 func (VersionWindow) TableName() string {
-	return "version_window"
+	return "zt_versionwindow"
 }
 
-// VersionWindowProduct 表示 version_window_product 窗口-系统关联表。
+// VersionWindowProduct 表示 zt_versionwindowproduct 窗口-系统关联表。
 type VersionWindowProduct struct {
-	ID         uint64    `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
-	WindowID   uint64    `gorm:"column:window_id;not null;index:idx_window;uniqueIndex:uk_window_product" json:"windowId"`
-	ProductID  uint      `gorm:"column:product_id;not null;index:idx_product;uniqueIndex:uk_window_product" json:"productId"`
-	PlanID     *uint     `gorm:"column:plan_id" json:"planId"`
-	PlanSynced uint8     `gorm:"column:plan_synced;not null;default:0" json:"planSynced"`
-	CreatedAt  time.Time `gorm:"column:created_at;autoCreateTime" json:"createdAt"`
+	ID         uint64         `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
+	WindowID   uint64         `gorm:"column:versionWindow;not null;index:idx_versionWindow;uniqueIndex:uk_versionWindow_product" json:"windowId"`
+	ProductID  uint           `gorm:"column:product;not null;index:idx_product;uniqueIndex:uk_versionWindow_product" json:"productId"`
+	PlanID     *uint          `gorm:"column:plan" json:"planId"`
+	PlanSynced uint8          `gorm:"column:planSynced;not null;default:0" json:"planSynced"`
+	CreatedBy  string         `gorm:"column:createdBy;size:30;not null;default:''" json:"createdBy"`
+	UpdatedBy  string         `gorm:"column:updatedBy;size:30;not null;default:''" json:"updatedBy"`
+	CreatedDate time.Time     `gorm:"column:createdDate;autoCreateTime" json:"createdDate"`
+	UpdatedDate time.Time     `gorm:"column:updatedDate;autoUpdateTime" json:"updatedDate"`
+	DeletedAt  gorm.DeletedAt `gorm:"column:deletedAt;index" json:"-"`
 }
 
-// TableName 指定 version_window_product 表。
+// TableName 指定 zt_versionwindowproduct 表。
 func (VersionWindowProduct) TableName() string {
-	return "version_window_product"
+	return "zt_versionwindowproduct"
 }

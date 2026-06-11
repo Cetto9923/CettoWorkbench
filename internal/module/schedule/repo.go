@@ -11,6 +11,8 @@ package schedule
 import (
 	"context"
 	"errors"
+	"strconv"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -20,10 +22,10 @@ import (
 
 // WindowProductRow 版本窗口关联产品及计划查询结果。
 type WindowProductRow struct {
-	ProductID   uint   `gorm:"column:product_id"`
+	ProductID   uint   `gorm:"column:product"`
 	ProductName string `gorm:"column:product_name"`
-	PlanID      *uint  `gorm:"column:plan_id"`
-	PlanSynced  uint8  `gorm:"column:plan_synced"`
+	PlanID      *uint  `gorm:"column:plan"`
+	PlanSynced  uint8  `gorm:"column:planSynced"`
 	PlanTitle   string `gorm:"column:plan_title"`
 	PlanBegin   string `gorm:"column:plan_begin"`
 	PlanEnd     string `gorm:"column:plan_end"`
@@ -74,6 +76,20 @@ type ZtTeamgroup struct {
 // TableName 指定 zt_teamgroup 表。
 func (ZtTeamgroup) TableName() string {
 	return "zt_teamgroup"
+}
+
+// ZtHoliday 表示禅道 zt_holiday 表只读字段。
+type ZtHoliday struct {
+	ID    uint   `gorm:"column:id"`
+	Name  string `gorm:"column:name"`
+	Type  string `gorm:"column:type"`
+	Begin string `gorm:"column:begin"`
+	End   string `gorm:"column:end"`
+}
+
+// TableName 指定 zt_holiday 表。
+func (ZtHoliday) TableName() string {
+	return "zt_holiday"
 }
 
 // Repo 封装排期相关只读数据访问。
@@ -175,7 +191,7 @@ func (r *Repo) Transaction(ctx context.Context, fn func(txRepo *Repo) error) err
 func (r *Repo) GetVersionWindowByID(ctx context.Context, id uint64) (*model.VersionWindow, error) {
 	var window model.VersionWindow
 	err := r.db.WithContext(ctx).
-		Where("id = ? AND deleted = ?", id, 0).
+		Where("id = ?", id).
 		First(&window).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -190,17 +206,17 @@ func (r *Repo) GetVersionWindowByID(ctx context.Context, id uint64) (*model.Vers
 func (r *Repo) GetWindowProducts(ctx context.Context, windowID uint64) ([]WindowProductRow, error) {
 	const query = `
 SELECT
-  vwp.product_id,
+  vwp.product,
   p.name AS product_name,
-  vwp.plan_id,
-  vwp.plan_synced,
+  vwp.plan,
+  vwp.planSynced,
   pp.title AS plan_title,
   pp.begin AS plan_begin,
   pp.end AS plan_end
-FROM version_window_product vwp
-INNER JOIN zt_product p ON p.id = vwp.product_id
-LEFT JOIN zt_productplan pp ON pp.id = vwp.plan_id AND pp.deleted = '0'
-WHERE vwp.window_id = ?
+FROM zt_versionwindowproduct vwp
+INNER JOIN zt_product p ON p.id = vwp.product
+LEFT JOIN zt_productplan pp ON pp.id = vwp.plan AND pp.deleted = '0'
+WHERE vwp.versionWindow = ? AND vwp.deletedAt IS NULL
 ORDER BY vwp.id ASC`
 
 	var rows []WindowProductRow
@@ -217,38 +233,57 @@ func (r *Repo) UpdateVersionWindow(ctx context.Context, window *model.VersionWin
 	}
 	return r.db.WithContext(ctx).
 		Model(window).
-		Select("Name", "ReleaseDate", "StartDate", "TeamgroupID", "GroupSize").
+		Select("Name", "ReleaseDate", "StartDate", "TeamgroupID", "GroupSize", "UpdatedBy").
 		Updates(window).Error
 }
 
-// DeleteWindowProducts 删除窗口关联的产品记录。
+// DeleteWindowProducts 物理删除窗口关联的产品记录（更新时重建关联，须绕过软删以免唯一索引冲突）。
 func (r *Repo) DeleteWindowProducts(ctx context.Context, windowID uint64) error {
 	return r.db.WithContext(ctx).
-		Where("window_id = ?", windowID).
+		Unscoped().
+		Where("versionWindow = ?", windowID).
 		Delete(&model.VersionWindowProduct{}).Error
 }
 
 // SoftDeleteVersionWindow 软删除版本窗口。
 func (r *Repo) SoftDeleteVersionWindow(ctx context.Context, id uint64) error {
 	return r.db.WithContext(ctx).
-		Model(&model.VersionWindow{}).
-		Where("id = ? AND deleted = ?", id, 0).
-		Update("deleted", 1).Error
+		Where("id = ?", id).
+		Delete(&model.VersionWindow{}).Error
 }
 
 // ListVersionWindows 查询未删除的版本窗口，按预计上线日期升序。
 func (r *Repo) ListVersionWindows(ctx context.Context) ([]model.VersionWindow, error) {
 	var rows []model.VersionWindow
 	if err := r.db.WithContext(ctx).
-		Where("deleted = ?", 0).
-		Order("release_date ASC").
+		Order("releaseDate ASC").
 		Find(&rows).Error; err != nil {
 		return nil, err
 	}
 	return rows, nil
 }
 
-// CreateVersionWindow 写入 version_window 并回填自增 ID。
+// ListUpcomingVersionWindowsForTeamgroups 查询指定敏捷小组未过期版本窗口（最多 limit 条）。
+func (r *Repo) ListUpcomingVersionWindowsForTeamgroups(ctx context.Context, teamgroupIDs []uint, limit int) ([]model.VersionWindow, error) {
+	if len(teamgroupIDs) == 0 {
+		return []model.VersionWindow{}, nil
+	}
+	if limit <= 0 {
+		limit = 4
+	}
+
+	var rows []model.VersionWindow
+	if err := r.db.WithContext(ctx).
+		Where("releaseDate >= CURDATE() AND teamgroup IN ?", teamgroupIDs).
+		Order("releaseDate ASC").
+		Limit(limit).
+		Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+// CreateVersionWindow 写入 zt_versionwindow 并回填自增 ID。
 func (r *Repo) CreateVersionWindow(ctx context.Context, window *model.VersionWindow) error {
 	return r.db.WithContext(ctx).Create(window).Error
 }
@@ -275,7 +310,7 @@ func (r *Repo) CreateProductPlan(ctx context.Context, productID uint, title, beg
 	return row.ID, nil
 }
 
-// CreateWindowProduct 写入 version_window_product 关联记录。
+// CreateWindowProduct 写入 zt_versionwindowproduct 关联记录。
 func (r *Repo) CreateWindowProduct(ctx context.Context, wp *model.VersionWindowProduct) error {
 	return r.db.WithContext(ctx).Create(wp).Error
 }
@@ -293,4 +328,66 @@ ORDER BY id DESC`
 		return nil, err
 	}
 	return rows, nil
+}
+
+// GetHolidays 获取与指定日期范围重叠的法定节假日。
+func (r *Repo) GetHolidays(ctx context.Context, begin, end string) ([]ZtHoliday, error) {
+	const query = `
+SELECT id, name, type, ` + "`begin`" + `, ` + "`end`" + `
+FROM zt_holiday
+WHERE type = 'holiday' AND ` + "`begin`" + ` <= ? AND ` + "`end`" + ` >= ?`
+
+	var rows []ZtHoliday
+	if err := r.db.WithContext(ctx).Raw(query, end, begin).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+// GetWorkingDays 获取与指定日期范围重叠的补班日。
+func (r *Repo) GetWorkingDays(ctx context.Context, begin, end string) ([]ZtHoliday, error) {
+	const query = `
+SELECT id, name, type, ` + "`begin`" + `, ` + "`end`" + `
+FROM zt_holiday
+WHERE type = 'working' AND ` + "`begin`" + ` <= ? AND ` + "`end`" + ` >= ?`
+
+	var rows []ZtHoliday
+	if err := r.db.WithContext(ctx).Raw(query, end, begin).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+type workhoursConfigRow struct {
+	Key   string `gorm:"column:key"`
+	Value string `gorm:"column:value"`
+}
+
+// GetWorkhoursConfig 读取 execution 模块的每日工时与周末规则配置。
+func (r *Repo) GetWorkhoursConfig(ctx context.Context) (int, int, error) {
+	const query = `
+SELECT ` + "`key`" + `, value
+FROM zt_config
+WHERE module = 'execution' AND ` + "`key`" + ` IN ('defaultWorkhours', 'weekend')`
+
+	var rows []workhoursConfigRow
+	if err := r.db.WithContext(ctx).Raw(query).Scan(&rows).Error; err != nil {
+		return 7, 2, err
+	}
+
+	defaultWorkhours := 7
+	weekend := 2
+	for _, row := range rows {
+		value, err := strconv.Atoi(strings.TrimSpace(row.Value))
+		if err != nil {
+			continue
+		}
+		switch row.Key {
+		case "defaultWorkhours":
+			defaultWorkhours = value
+		case "weekend":
+			weekend = value
+		}
+	}
+	return defaultWorkhours, weekend, nil
 }

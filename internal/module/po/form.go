@@ -8,7 +8,11 @@
 
 package po
 
-import "strings"
+import (
+	"strings"
+
+	"workbench/internal/module/schedule"
+)
 
 // FieldError 字段级验证错误。
 type FieldError struct {
@@ -27,7 +31,8 @@ type ValueStreamStage struct {
 
 // HomeResp PO 工作台首页数据。
 type HomeResp struct {
-	Stages []ValueStreamStage
+	Stages         []ValueStreamStage
+	VersionWindows []schedule.HomeVersionWindowCard
 }
 
 // DemandsReq 按价值流状态查询需求/故事详情。

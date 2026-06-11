@@ -42,7 +42,13 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 
 // Home 渲染 PO 工作台首页。
 func (h *Handler) Home(c *gin.Context) {
-	resp, err := h.svc.Home(c.Request.Context(), middleware.CurrentUser(c))
+	actor := middleware.CurrentUser(c)
+	account := ""
+	if actor != nil {
+		account = actor.Account
+	}
+
+	resp, err := h.svc.Home(c.Request.Context(), actor)
 	if err != nil {
 		if h.logger != nil {
 			h.logger.Warn("po home value stream", zap.Error(err))
@@ -50,10 +56,19 @@ func (h *Handler) Home(c *gin.Context) {
 		resp = &HomeResp{Stages: emptyValueStreamStages()}
 	}
 
+	if h.logger != nil {
+		h.logger.Info("po home version windows render",
+			zap.String("account", account),
+			zap.Int("render_count", len(resp.VersionWindows)),
+		)
+	}
+
 	render.Page(c, http.StatusOK, constants.TEMPLATE_PO_HOME, gin.H{
 		"Title":             "工作台首页",
 		"PageTitle":         "工作台首页",
 		"ValueStreamStages": resp.Stages,
+		"VersionWindows":    resp.VersionWindows,
+		"VersionWindowCount": len(resp.VersionWindows),
 	})
 }
 

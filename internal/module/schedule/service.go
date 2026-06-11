@@ -17,6 +17,8 @@ import (
 	"strings"
 	"time"
 
+	"go.uber.org/zap"
+
 	"workbench/internal/model"
 )
 
@@ -24,12 +26,13 @@ var windowCardToneClasses = []string{"red", "blue", "green", "purple"}
 
 // Service 处理排期业务逻辑。
 type Service struct {
-	repo *Repo
+	repo   *Repo
+	logger *zap.Logger
 }
 
 // NewService 创建 Service。
-func NewService(repo *Repo) *Service {
-	return &Service{repo: repo}
+func NewService(repo *Repo, logger *zap.Logger) *Service {
+	return &Service{repo: repo, logger: logger}
 }
 
 // GetUserTeamgroups 查询用户所属敏捷小组并拼接展示名称。
@@ -208,12 +211,15 @@ func (s *Service) ListWindowCards(ctx context.Context, account string) ([]Window
 		if window.StartDate != nil {
 			start = *window.StartDate
 		}
-		workdays := countWorkdays(start, window.ReleaseDate)
-		groupSize := window.GroupSize
-		if groupSize == 0 {
-			groupSize = 1
+		capacityHours, err := s.CalcCapacity(
+			ctx,
+			start.Format("2006-01-02"),
+			window.ReleaseDate.Format("2006-01-02"),
+			int(window.GroupSize),
+		)
+		if err != nil {
+			return nil, err
 		}
-		capacityHours := workdays * 7 * int(groupSize)
 
 		canEdit, canDelete, hasLinkedDemands := computeWindowPermissions(window.CreatedBy, account)
 
@@ -238,6 +244,222 @@ func (s *Service) ListWindowCards(ctx context.Context, account string) ([]Window
 	return cards, nil
 }
 
+// HomeVersionWindowCard PO 首页版本窗口卡片展示数据。
+type HomeVersionWindowCard struct {
+	Name         string
+	AgileGroup   string
+	StatusLabel  string
+	Range        string
+	ToneClass    string
+	DemandCount  int
+	DevCount     int
+	TestCount    int
+	DeliverCount int
+	RiskCount    int
+}
+
+// ListHomeVersionWindows 查询 PO 首页近期版本窗口（最多 4 条，按用户敏捷小组过滤）。
+func (s *Service) ListHomeVersionWindows(ctx context.Context, account string) ([]HomeVersionWindowCard, error) {
+	account = strings.TrimSpace(account)
+	if account == "" {
+		s.logHomeVersionWindows(account, nil, "account empty", 0, nil)
+		return []HomeVersionWindowCard{}, nil
+	}
+
+	teamgroups, err := s.GetUserTeamgroups(ctx, account)
+	if err != nil {
+		return nil, err
+	}
+	teamgroupIDs := make([]uint, 0, len(teamgroups))
+	for _, group := range teamgroups {
+		if group.ID == 0 {
+			continue
+		}
+		teamgroupIDs = append(teamgroupIDs, group.ID)
+	}
+	if len(teamgroupIDs) == 0 {
+		s.logHomeVersionWindows(account, teamgroupIDs, "deletedAt IS NULL AND releaseDate>=CURDATE() AND teamgroup IN (...)", 0, nil)
+		return []HomeVersionWindowCard{}, nil
+	}
+
+	windows, err := s.repo.ListUpcomingVersionWindowsForTeamgroups(ctx, teamgroupIDs, 4)
+	if err != nil {
+		return nil, err
+	}
+	s.logHomeVersionWindows(account, teamgroupIDs, "deletedAt IS NULL AND releaseDate>=CURDATE() AND teamgroup IN (...)", len(windows), windows)
+	if len(windows) == 0 {
+		return []HomeVersionWindowCard{}, nil
+	}
+
+	nameByID, err := s.loadTeamgroupDisplayNames(ctx, windows)
+	if err != nil {
+		return nil, err
+	}
+
+	today := time.Now()
+	statusLabels := assignHomeWindowStatusLabels(windows, today)
+	cards := make([]HomeVersionWindowCard, 0, len(windows))
+	for i, window := range windows {
+		start := window.ReleaseDate
+		if window.StartDate != nil {
+			start = *window.StartDate
+		}
+		// TODO(#87950): 接入真实需求/开发/测试/待交付/风险统计
+		cards = append(cards, HomeVersionWindowCard{
+			Name:         window.Name,
+			AgileGroup:   nameByID[window.TeamgroupID],
+			StatusLabel:  statusLabels[i],
+			Range:        formatWindowDateRange(start, window.ReleaseDate),
+			ToneClass:    homeVersionToneClass(statusLabels[i]),
+			DemandCount:  0,
+			DevCount:     0,
+			TestCount:    0,
+			DeliverCount: 0,
+			RiskCount:    0,
+		})
+	}
+	return cards, nil
+}
+
+func (s *Service) logHomeVersionWindows(account string, teamgroupIDs []uint, sqlCondition string, resultCount int, windows []model.VersionWindow) {
+	if s.logger == nil {
+		return
+	}
+	fields := []zap.Field{
+		zap.String("account", account),
+		zap.Uint64s("teamgroup_ids", uintsToUint64s(teamgroupIDs)),
+		zap.String("sql_condition", sqlCondition),
+		zap.Int("result_count", resultCount),
+	}
+	if len(windows) > 0 {
+		ids := make([]uint64, 0, len(windows))
+		names := make([]string, 0, len(windows))
+		for _, window := range windows {
+			ids = append(ids, window.ID)
+			names = append(names, window.Name)
+		}
+		fields = append(fields, zap.Uint64s("window_ids", ids), zap.Strings("window_names", names))
+	}
+	s.logger.Info("home version windows query", fields...)
+}
+
+func uintsToUint64s(values []uint) []uint64 {
+	out := make([]uint64, len(values))
+	for i, value := range values {
+		out[i] = uint64(value)
+	}
+	return out
+}
+
+func (s *Service) loadTeamgroupDisplayNames(ctx context.Context, windows []model.VersionWindow) (map[uint]string, error) {
+	teamgroupIDs := make([]uint, 0, len(windows))
+	seen := make(map[uint]struct{}, len(windows))
+	for _, window := range windows {
+		if window.TeamgroupID == 0 {
+			continue
+		}
+		if _, ok := seen[window.TeamgroupID]; ok {
+			continue
+		}
+		seen[window.TeamgroupID] = struct{}{}
+		teamgroupIDs = append(teamgroupIDs, window.TeamgroupID)
+	}
+	if len(teamgroupIDs) == 0 {
+		return map[uint]string{}, nil
+	}
+
+	groups, err := s.repo.FindTeamgroupsByIDs(ctx, teamgroupIDs)
+	if err != nil {
+		return nil, err
+	}
+	nameByID := make(map[uint]string, len(groups))
+	parentIDs := make([]uint, 0)
+	parentSeen := make(map[uint]struct{})
+	for _, group := range groups {
+		nameByID[group.ID] = strings.TrimSpace(group.Name)
+		if group.Parent == 0 {
+			continue
+		}
+		if _, ok := parentSeen[group.Parent]; ok {
+			continue
+		}
+		parentSeen[group.Parent] = struct{}{}
+		parentIDs = append(parentIDs, group.Parent)
+	}
+	if len(parentIDs) > 0 {
+		parents, err := s.repo.FindTeamgroupsByIDs(ctx, parentIDs)
+		if err != nil {
+			return nil, err
+		}
+		parentNameByID := make(map[uint]string, len(parents))
+		for _, parent := range parents {
+			parentNameByID[parent.ID] = strings.TrimSpace(parent.Name)
+		}
+		for _, group := range groups {
+			name := strings.TrimSpace(group.Name)
+			if group.Parent > 0 {
+				if parentName := parentNameByID[group.Parent]; parentName != "" {
+					name = fmt.Sprintf("%s / %s", parentName, name)
+				}
+			}
+			nameByID[group.ID] = name
+		}
+	}
+	return nameByID, nil
+}
+
+func assignHomeWindowStatusLabels(windows []model.VersionWindow, today time.Time) []string {
+	n := len(windows)
+	labels := make([]string, n)
+	for i := range labels {
+		labels[i] = "规划中"
+	}
+	if n == 0 {
+		return labels
+	}
+
+	today = dateOnly(today)
+	currentIdx := -1
+	for i, window := range windows {
+		start := window.ReleaseDate
+		if window.StartDate != nil {
+			start = *window.StartDate
+		}
+		start = dateOnly(start)
+		end := dateOnly(window.ReleaseDate)
+		if !today.Before(start) && !today.After(end) {
+			currentIdx = i
+			break
+		}
+	}
+
+	if currentIdx >= 0 {
+		labels[currentIdx] = "当前"
+		if currentIdx+1 < n {
+			labels[currentIdx+1] = "下一"
+		}
+	} else {
+		labels[0] = "下一"
+	}
+	return labels
+}
+
+func homeVersionToneClass(statusLabel string) string {
+	switch statusLabel {
+	case "当前":
+		return "home-version-mini--danger"
+	case "下一":
+		return "home-version-mini--warn"
+	default:
+		return "home-version-mini--ok"
+	}
+}
+
+func dateOnly(value time.Time) time.Time {
+	value = value.In(time.Local)
+	return time.Date(value.Year(), value.Month(), value.Day(), 0, 0, 0, 0, value.Location())
+}
+
 // ListWindows 查询版本窗口维护列表。
 func (s *Service) ListWindows(ctx context.Context, account string) ([]WindowListItem, error) {
 	windows, err := s.repo.ListVersionWindows(ctx)
@@ -254,12 +476,15 @@ func (s *Service) ListWindows(ctx context.Context, account string) ([]WindowList
 		if window.StartDate != nil {
 			start = *window.StartDate
 		}
-		workdays := countWorkdays(start, window.ReleaseDate)
-		groupSize := window.GroupSize
-		if groupSize == 0 {
-			groupSize = 1
+		capacityHours, err := s.CalcCapacity(
+			ctx,
+			start.Format("2006-01-02"),
+			window.ReleaseDate.Format("2006-01-02"),
+			int(window.GroupSize),
+		)
+		if err != nil {
+			return nil, err
 		}
-		capacityHours := workdays * 7 * int(groupSize)
 		canEdit, canDelete, hasLinkedDemands := computeWindowPermissions(window.CreatedBy, account)
 
 		items = append(items, WindowListItem{
@@ -386,24 +611,115 @@ func (s *Service) GetWindowDetail(ctx context.Context, id uint64) (*WindowDetail
 	return detail, nil
 }
 
-func countWorkdays(start, end time.Time) int {
+// CountActualWorkdays 按禅道规则统计实际工作日（含节假日与补班）。
+func (s *Service) CountActualWorkdays(ctx context.Context, startDate, endDate string) (int, error) {
+	start, err := time.ParseInLocation("2006-01-02", strings.TrimSpace(startDate), time.Local)
+	if err != nil {
+		return 0, fmt.Errorf("invalid start date")
+	}
+	end, err := time.ParseInLocation("2006-01-02", strings.TrimSpace(endDate), time.Local)
+	if err != nil {
+		return 0, fmt.Errorf("invalid end date")
+	}
 	if end.Before(start) {
 		start, end = end, start
 	}
-	start = time.Date(start.Year(), start.Month(), start.Day(), 0, 0, 0, 0, start.Location())
-	end = time.Date(end.Year(), end.Month(), end.Day(), 0, 0, 0, 0, end.Location())
+
+	holidays, err := s.repo.GetHolidays(ctx, start.Format("2006-01-02"), end.Format("2006-01-02"))
+	if err != nil {
+		return 0, err
+	}
+	workingDays, err := s.repo.GetWorkingDays(ctx, start.Format("2006-01-02"), end.Format("2006-01-02"))
+	if err != nil {
+		return 0, err
+	}
+	_, weekendMode, err := s.repo.GetWorkhoursConfig(ctx)
+	if err != nil {
+		weekendMode = 2
+	}
+
+	holidaySet := holidayDatesSet(holidays)
+	workingSet := holidayDatesSet(workingDays)
 
 	count := 0
 	for current := start; !current.After(end); current = current.AddDate(0, 0, 1) {
-		weekday := current.Weekday()
-		if weekday != time.Saturday && weekday != time.Sunday {
+		dateKey := current.Format("2006-01-02")
+		if _, ok := workingSet[dateKey]; ok {
 			count++
+			continue
 		}
+		if _, ok := holidaySet[dateKey]; ok {
+			continue
+		}
+		if isConfiguredWeekend(current.Weekday(), weekendMode) {
+			continue
+		}
+		count++
 	}
 	if count == 0 {
-		return 1
+		return 1, nil
 	}
-	return count
+	return count, nil
+}
+
+// CalcCapacity 计算版本窗口容量工时（工作日 × 每日工时 × 小组人数）。
+func (s *Service) CalcCapacity(ctx context.Context, startDate, endDate string, groupSize int) (int, error) {
+	workdays, err := s.CountActualWorkdays(ctx, startDate, endDate)
+	if err != nil {
+		return 0, err
+	}
+	hoursPerDay, _, err := s.repo.GetWorkhoursConfig(ctx)
+	if err != nil {
+		hoursPerDay = 7
+	}
+	if hoursPerDay == 0 {
+		hoursPerDay = 7
+	}
+	if groupSize == 0 {
+		groupSize = 1
+	}
+	return workdays * hoursPerDay * groupSize, nil
+}
+
+func holidayDatesSet(rows []ZtHoliday) map[string]struct{} {
+	set := make(map[string]struct{})
+	for _, row := range rows {
+		begin, ok1 := parseHolidayDate(row.Begin)
+		end, ok2 := parseHolidayDate(row.End)
+		if !ok1 || !ok2 {
+			continue
+		}
+		begin = dateOnly(begin)
+		end = dateOnly(end)
+		if end.Before(begin) {
+			begin, end = end, begin
+		}
+		for current := begin; !current.After(end); current = current.AddDate(0, 0, 1) {
+			set[current.Format("2006-01-02")] = struct{}{}
+		}
+	}
+	return set
+}
+
+func parseHolidayDate(value string) (time.Time, bool) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return time.Time{}, false
+	}
+	if parsed, err := time.ParseInLocation("2006-01-02", value, time.Local); err == nil {
+		return parsed, true
+	}
+	if parsed, err := time.Parse(time.RFC3339, value); err == nil {
+		return parsed.In(time.Local), true
+	}
+	return time.Time{}, false
+}
+
+func isConfiguredWeekend(weekday time.Weekday, weekendMode int) bool {
+	if weekendMode == 1 {
+		return weekday == time.Sunday
+	}
+	return weekday == time.Saturday || weekday == time.Sunday
 }
 
 func formatWindowDateRange(start, end time.Time) string {
@@ -430,6 +746,7 @@ func (s *Service) SaveWindowWithPlans(ctx context.Context, window *model.Version
 	}
 	account = strings.TrimSpace(account)
 	window.CreatedBy = account
+	window.UpdatedBy = account
 
 	return s.repo.Transaction(ctx, func(txRepo *Repo) error {
 		if err := txRepo.CreateVersionWindow(ctx, window); err != nil {
@@ -445,6 +762,7 @@ func (s *Service) UpdateWindowWithPlans(ctx context.Context, window *model.Versi
 		return fmt.Errorf("version window is invalid")
 	}
 	account = strings.TrimSpace(account)
+	window.UpdatedBy = account
 
 	return s.repo.Transaction(ctx, func(txRepo *Repo) error {
 		if err := txRepo.UpdateVersionWindow(ctx, window); err != nil {
@@ -513,6 +831,8 @@ func (s *Service) saveWindowProducts(ctx context.Context, txRepo *Repo, windowID
 			ProductID:  product.ProductID,
 			PlanID:     planID,
 			PlanSynced: planSynced,
+			CreatedBy:  account,
+			UpdatedBy:  account,
 		}
 		if err := txRepo.CreateWindowProduct(ctx, wp); err != nil {
 			return fmt.Errorf("create window product for product %d: %w", product.ProductID, err)

@@ -46,32 +46,40 @@ INSERT INTO `zt_menus` (`id`, `parentId`, `title`, `icon`, `path`, `perm`, `type
  (2,	1,	'工作台首页',	'fa-home',	'/po/home',	'po:home',	'C',	1),
  (3,	1,	'排期工作台',	'fa-calendar-check',	'/po/schedule',	'po:schedule',	'C',	2);
 
-CREATE TABLE IF NOT EXISTS `version_window` (
+DROP TABLE IF EXISTS `version_window_product`;
+DROP TABLE IF EXISTS `version_window`;
+
+CREATE TABLE IF NOT EXISTS `zt_versionwindow` (
     `id`            BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `name`          VARCHAR(100) NOT NULL COMMENT '窗口名称，根据预计上线日期自动生成，如 26-0701窗口',
-    `release_date`  DATE NOT NULL COMMENT '预计上线日期（=窗口结束日期）',
-    `start_date`    DATE DEFAULT NULL COMMENT '窗口开始日期，用户手填',
-    `teamgroup_id`  MEDIUMINT UNSIGNED NOT NULL COMMENT '关联敏捷小组，对应 zt_teamgroup.id',
-    `group_size`    INT UNSIGNED NOT NULL DEFAULT 1 COMMENT '小组人数，用于容量计算（工作日×7h×人数）',
-    `created_by`    VARCHAR(30) NOT NULL COMMENT '创建人账号，对应 zt_team.account / zt_user.account',
+    `releaseDate`   DATE NOT NULL COMMENT '预计上线日期（=窗口结束日期）',
+    `startDate`     DATE DEFAULT NULL COMMENT '窗口开始日期，用户手填',
+    `teamgroup`     MEDIUMINT UNSIGNED NOT NULL COMMENT '关联敏捷小组，对应 zt_teamgroup.id',
+    `groupSize`     INT UNSIGNED NOT NULL DEFAULT 1 COMMENT '小组人数，用于容量计算（工作日×7h×人数）',
+    `createdBy`     VARCHAR(30) NOT NULL COMMENT '创建人账号，对应 zt_team.account / zt_user.account',
+    `updatedBy`     VARCHAR(30) NOT NULL DEFAULT '' COMMENT '最后更新人账号',
     `status`        VARCHAR(20) NOT NULL DEFAULT 'planning' COMMENT 'current/next/planning/released',
-    `sort_order`    INT NOT NULL DEFAULT 0,
-    `deleted`       TINYINT(1) NOT NULL DEFAULT 0,
-    `created_at`    DATETIME DEFAULT CURRENT_TIMESTAMP,
-    `updated_at`    DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX `idx_teamgroup` (`teamgroup_id`),
-    INDEX `idx_release_date` (`release_date`),
-    INDEX `idx_created_by` (`created_by`)
+    `order`         INT NOT NULL DEFAULT 0,
+    `createdDate`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updatedDate`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `deletedAt`     DATETIME(3) DEFAULT NULL,
+    INDEX `idx_teamgroup` (`teamgroup`),
+    INDEX `idx_releaseDate` (`releaseDate`),
+    INDEX `idx_createdBy` (`createdBy`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='版本窗口';
 
-CREATE TABLE IF NOT EXISTS `version_window_product` (
+CREATE TABLE IF NOT EXISTS `zt_versionwindowproduct` (
     `id`            BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    `window_id`     BIGINT UNSIGNED NOT NULL COMMENT '版本窗口ID',
-    `product_id`    MEDIUMINT UNSIGNED NOT NULL COMMENT '关联产品/系统，对应 zt_product.id',
-    `plan_id`       MEDIUMINT UNSIGNED DEFAULT NULL COMMENT '匹配到的禅道计划ID，对应 zt_productplan.id，NULL表示待建计划',
-    `plan_synced`   TINYINT(1) NOT NULL DEFAULT 0 COMMENT '计划是否已同步到禅道（0=待同步/待建，1=已同步）',
-    `created_at`    DATETIME DEFAULT CURRENT_TIMESTAMP,
-    INDEX `idx_window` (`window_id`),
-    INDEX `idx_product` (`product_id`),
-    UNIQUE KEY `uk_window_product` (`window_id`, `product_id`)
+    `versionWindow` BIGINT UNSIGNED NOT NULL COMMENT '版本窗口ID',
+    `product`       MEDIUMINT UNSIGNED NOT NULL COMMENT '关联产品/系统，对应 zt_product.id',
+    `plan`          MEDIUMINT UNSIGNED DEFAULT NULL COMMENT '匹配到的禅道计划ID，对应 zt_productplan.id，NULL表示待建计划',
+    `planSynced`    TINYINT(1) NOT NULL DEFAULT 0 COMMENT '计划是否已同步到禅道（0=待同步/待建，1=已同步）',
+    `createdBy`     VARCHAR(30) NOT NULL DEFAULT '' COMMENT '创建人账号',
+    `updatedBy`     VARCHAR(30) NOT NULL DEFAULT '' COMMENT '最后更新人账号',
+    `createdDate`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updatedDate`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `deletedAt`     DATETIME(3) DEFAULT NULL,
+    INDEX `idx_versionWindow` (`versionWindow`),
+    INDEX `idx_product` (`product`),
+    UNIQUE KEY `uk_versionWindow_product` (`versionWindow`, `product`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='版本窗口关联产品/系统';
