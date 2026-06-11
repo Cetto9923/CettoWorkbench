@@ -21,7 +21,6 @@ type Config struct {
 	// 内置配置
 	RateLimit RateLimit `mapstructure:"ratelimit"`
 	Upload    Upload    `mapstructure:"upload"`
-	Backup    Backup    `mapstructure:"backup"`
 }
 
 // App 应用基础信息。
@@ -87,11 +86,4 @@ type Upload struct {
 	MaxSizeMB    int      `mapstructure:"maxSizeMB"`
 	AllowedTypes []string `mapstructure:"allowedTypes"`
 	LocalDir     string   `mapstructure:"localDir"`
-}
-
-// Backup 备份配置。
-type Backup struct {
-	Dir      string `mapstructure:"dir"`
-	KeepDays int    `mapstructure:"keepDays"`
-	AutoCron string `mapstructure:"autoCron"`
 }

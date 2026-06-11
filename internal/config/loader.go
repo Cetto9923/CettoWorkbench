@@ -32,9 +32,6 @@ func Load() (*Config, error) {
 	v.SetDefault("upload.maxSizeMB", 10)
 	v.SetDefault("upload.localDir", "uploads")
 	v.SetDefault("upload.allowedTypes", []string{"image/jpeg", "image/png", "application/pdf"})
-	v.SetDefault("backup.dir", "backups")
-	v.SetDefault("backup.keepDays", 30)
-	v.SetDefault("backup.autoCron", "0 2 * * *")
 
 	if err := v.ReadInConfig(); err != nil {
 		return nil, err
@@ -55,15 +52,6 @@ func Load() (*Config, error) {
 	}
 	if len(cfg.Upload.AllowedTypes) == 0 {
 		cfg.Upload.AllowedTypes = []string{"image/jpeg", "image/png", "application/pdf"}
-	}
-	if strings.TrimSpace(cfg.Backup.Dir) == "" {
-		cfg.Backup.Dir = "backups"
-	}
-	if cfg.Backup.KeepDays <= 0 {
-		cfg.Backup.KeepDays = 30
-	}
-	if strings.TrimSpace(cfg.Backup.AutoCron) == "" {
-		cfg.Backup.AutoCron = "0 2 * * *"
 	}
 	return &cfg, nil
 }

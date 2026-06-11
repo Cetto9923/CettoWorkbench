@@ -48,22 +48,6 @@ const (
 	DeptCreate Permission = "dept:create"
 	DeptEdit   Permission = "dept:edit"
 	DeptDelete Permission = "dept:delete"
-
-	// 字典管理
-	DictList   Permission = "dict:list"
-	DictCreate Permission = "dict:create"
-	DictEdit   Permission = "dict:edit"
-	DictDelete Permission = "dict:delete"
-
-	// 定时任务
-	CronJobList    Permission = "cronjob:list"
-	CronJobEdit    Permission = "cronjob:edit"
-	CronJobTrigger Permission = "cronjob:trigger"
-
-	// 备份
-	BackupList     Permission = "backup:list"
-	BackupCreate   Permission = "backup:create"
-	BackupDownload Permission = "backup:download"
 )
 
 // allPermInfos 必须与上方 const 块中的所有 Permission 常量保持一一对应。
@@ -90,16 +74,6 @@ var allPermInfos = []PermInfo{
 	{Code: DeptCreate, Name: "部门-新增", Module: "dept"},
 	{Code: DeptEdit, Name: "部门-编辑", Module: "dept"},
 	{Code: DeptDelete, Name: "部门-删除", Module: "dept"},
-	{Code: DictList, Name: "字典-列表", Module: "dict"},
-	{Code: DictCreate, Name: "字典-新增", Module: "dict"},
-	{Code: DictEdit, Name: "字典-编辑", Module: "dict"},
-	{Code: DictDelete, Name: "字典-删除", Module: "dict"},
-	{Code: CronJobList, Name: "定时任务-列表", Module: "cronjob"},
-	{Code: CronJobEdit, Name: "定时任务-编辑", Module: "cronjob"},
-	{Code: CronJobTrigger, Name: "定时任务-触发", Module: "cronjob"},
-	{Code: BackupList, Name: "备份-列表", Module: "backup"},
-	{Code: BackupCreate, Name: "备份-创建", Module: "backup"},
-	{Code: BackupDownload, Name: "备份-下载", Module: "backup"},
 }
 
 // systemPerms 是系统内置放行权限，不对外暴露到权限配置 UI。
