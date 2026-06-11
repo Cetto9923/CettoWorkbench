@@ -103,85 +103,114 @@
   }
 
   function isScheduleWindowActionDisabled($el) {
-    return $el.prop("disabled") || $el.hasClass("is-disabled");
+    return $el.prop("disabled") || $el.hasClass("is-disabled") || $el.hasClass("action-btn--disabled");
+  }
+
+  function getManageWindowStatusTagClass(statusLabel) {
+    var label = String(statusLabel || "").trim();
+    if (label === "当前") {
+      return "st-progress";
+    }
+    if (label === "规划中") {
+      return "st-pending";
+    }
+    if (label === "已发布") {
+      return "st-success";
+    }
+    return "st-gray";
   }
 
   function buildManageVersionWindowActionBtn(type, item) {
     var enabled = type === "edit" ? !!item.canEdit : !!item.canDelete;
     var tip = type === "edit" ? scheduleWindowEditDisabledTip(item.canEdit) : scheduleWindowDeleteDisabledTip(item);
-    var cls = "action-btn schedule-window-action js-manage-" + type + "-version-window";
     if (type === "edit") {
-      cls += " primary";
+      var editCls = "action-btn primary js-manage-edit-version-window";
+      if (!enabled) {
+        editCls += " action-btn--disabled";
+      }
+      var editAttrs =
+        ' type="button" class="' +
+        editCls +
+        '" style="padding:2px 8px;font-size:11px" data-window-id="' +
+        Number(item.id) +
+        '" data-window-name="' +
+        escapeHtml(item.name || "") +
+        '"';
+      if (!enabled && tip) {
+        editAttrs += ' disabled title="' + escapeHtml(tip) + '"';
+      } else {
+        editAttrs += ' title="编辑窗口"';
+      }
+      return "<button" + editAttrs + '><i class="fas fa-pen"></i></button>';
     }
+
+    var deleteCls = "action-btn js-manage-delete-version-window";
     if (!enabled) {
-      cls += " is-disabled";
+      deleteCls += " action-btn--disabled";
     }
-    var attrs =
+    var deleteAttrs =
       ' type="button" class="' +
-      cls +
-      '" data-window-id="' +
+      deleteCls +
+      '" style="padding:2px 8px;font-size:11px;margin-left:4px;color:var(--red)" data-window-id="' +
       Number(item.id) +
       '" data-window-name="' +
       escapeHtml(item.name || "") +
       '"';
-    if (type === "delete") {
-      attrs += ' style="color:var(--red)"';
-    }
     if (!enabled && tip) {
-      attrs += ' disabled title="' + escapeHtml(tip) + '"';
-    } else if (type === "edit") {
-      attrs += ' title="编辑窗口"';
+      deleteAttrs += ' disabled title="' + escapeHtml(tip) + '"';
     } else {
-      attrs += ' title="删除窗口"';
+      deleteAttrs += ' title="删除窗口"';
     }
-    var icon = type === "edit" ? "fa-pen" : "fa-trash-can";
-    return "<button" + attrs + '><i class="fas ' + icon + '"></i></button>';
+    return "<button" + deleteAttrs + '><i class="fas fa-trash-can"></i></button>';
   }
 
   function renderManageVersionWindowsTable(windows) {
-    var body = document.getElementById("manageVersionWindowsTableBody");
+    var body = document.getElementById("manageVersionWindowsBody");
     var countEl = document.getElementById("manageWindowCount");
     if (!body) {
       return;
     }
     var rows = windows || [];
     if (!rows.length) {
-      body.innerHTML = '<tr><td colspan="7" class="schedule-create-empty" style="text-align:center;padding:16px 0">暂无版本窗口</td></tr>';
+      body.innerHTML = "";
       if (countEl) {
         countEl.textContent = "0";
       }
       return;
     }
-    body.innerHTML = rows
-      .map(function (item, index) {
-        return (
-          "<tr>" +
-          '<td style="text-align:center;color:var(--t3)">' +
-          (index + 1) +
-          "</td>" +
-          "<td><strong>" +
-          escapeHtml(item.name || "") +
-          "</strong></td>" +
-          "<td>" +
-          escapeHtml(item.releaseDate || "—") +
-          "</td>" +
-          '<td style="font-size:11px;color:var(--t3)">' +
-          escapeHtml(item.range || "—") +
-          "</td>" +
-          "<td><span class=\"schedule-version-status\">" +
-          escapeHtml(item.status || "") +
-          "</span></td>" +
-          '<td style="text-align:center">' +
-          Number(item.capacityHours || 0) +
-          "</td>" +
-          '<td style="text-align:center"><div class="schedule-manage-window-actions">' +
-          buildManageVersionWindowActionBtn("edit", item) +
-          buildManageVersionWindowActionBtn("delete", item) +
-          "</div></td>" +
-          "</tr>"
-        );
-      })
-      .join("");
+    var html = "";
+    rows.forEach(function (item, index) {
+      var statusLabel = String(item.status || "").trim();
+      var statusTagClass = getManageWindowStatusTagClass(statusLabel);
+      html +=
+        "<tr>" +
+        '<td style="text-align:center;color:var(--t3)">' +
+        (index + 1) +
+        "</td>" +
+        "<td><strong>" +
+        escapeHtml(item.name || "") +
+        "</strong></td>" +
+        "<td>" +
+        escapeHtml(item.releaseDate || "—") +
+        "</td>" +
+        '<td style="font-size:11px;color:var(--t3)">' +
+        escapeHtml(item.range || "—") +
+        "</td>" +
+        '<td><span class="status-tag ' +
+        statusTagClass +
+        '" style="font-size:10px">' +
+        escapeHtml(statusLabel) +
+        "</span></td>" +
+        '<td style="text-align:center">' +
+        Number(item.capacityHours || 0) +
+        "</td>" +
+        '<td style="text-align:center">' +
+        buildManageVersionWindowActionBtn("edit", item) +
+        buildManageVersionWindowActionBtn("delete", item) +
+        "</td>" +
+        "</tr>";
+    });
+    body.innerHTML = html;
     if (countEl) {
       countEl.textContent = String(rows.length);
     }
