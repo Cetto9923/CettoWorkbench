@@ -26,6 +26,7 @@ import (
 	"workbench/internal/module/role"
 	"workbench/internal/module/schedule"
 	"workbench/internal/module/user"
+	"workbench/internal/pkg/perm"
 	ratelimitpkg "workbench/internal/pkg/ratelimit"
 )
 
@@ -84,37 +85,44 @@ func registerRoutes(r *gin.Engine, deps RouteDeps) {
 		r.GET("/po/schedule",
 			middleware.RequireLogin(deps.SessionMgr, deps.DB),
 			middleware.RecordOperationLog(deps.DB, deps.SessionMgr),
+			middleware.RequirePerm(perm.ScheduleList),
 			middleware.ActiveNav("/po/schedule"),
 			deps.ScheduleHandler.Index,
 		)
 		r.GET("/po/schedule/matching-plans",
 			middleware.RequireLogin(deps.SessionMgr, deps.DB),
 			middleware.RecordOperationLog(deps.DB, deps.SessionMgr),
+			middleware.RequirePerm(perm.ScheduleList),
 			deps.ScheduleHandler.GetMatchingPlans,
 		)
 		r.POST("/po/schedule/windows",
 			middleware.RequireLogin(deps.SessionMgr, deps.DB),
 			middleware.RecordOperationLog(deps.DB, deps.SessionMgr),
+			middleware.RequirePerm(perm.ScheduleCreate),
 			deps.ScheduleHandler.CreateWindow,
 		)
 		r.GET("/po/schedule/windows",
 			middleware.RequireLogin(deps.SessionMgr, deps.DB),
 			middleware.RecordOperationLog(deps.DB, deps.SessionMgr),
+			middleware.RequirePerm(perm.ScheduleList),
 			deps.ScheduleHandler.ListWindows,
 		)
 		r.GET("/po/schedule/windows/:id",
 			middleware.RequireLogin(deps.SessionMgr, deps.DB),
 			middleware.RecordOperationLog(deps.DB, deps.SessionMgr),
+			middleware.RequirePerm(perm.ScheduleList),
 			deps.ScheduleHandler.GetWindow,
 		)
 		r.PUT("/po/schedule/windows/:id",
 			middleware.RequireLogin(deps.SessionMgr, deps.DB),
 			middleware.RecordOperationLog(deps.DB, deps.SessionMgr),
+			middleware.RequirePerm(perm.ScheduleUpdate),
 			deps.ScheduleHandler.UpdateWindow,
 		)
 		r.DELETE("/po/schedule/windows/:id",
 			middleware.RequireLogin(deps.SessionMgr, deps.DB),
 			middleware.RecordOperationLog(deps.DB, deps.SessionMgr),
+			middleware.RequirePerm(perm.ScheduleDelete),
 			deps.ScheduleHandler.DeleteWindow,
 		)
 	}

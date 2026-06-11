@@ -1217,10 +1217,12 @@
       .then(function (result) {
         if (result.data && result.data.success) {
           if (typeof window.showToast === "function") {
-            window.showToast(successMessage, "success");
+            window.showToast(result.data.message || successMessage, "success");
           }
           closeScheduleVersionWindowModal();
-          window.location.reload();
+          if (result.data.redirectUrl) {
+            window.location.href = result.data.redirectUrl;
+          }
           return;
         }
         var message =
@@ -1273,9 +1275,11 @@
       .then(function (result) {
         if (result.data && result.data.success) {
           if (typeof window.showToast === "function") {
-            window.showToast("版本窗口已删除", "success");
+            window.showToast(result.data.message || "版本窗口已删除", "success");
           }
-          window.location.reload();
+          if (result.data.redirectUrl) {
+            window.location.href = result.data.redirectUrl;
+          }
           return;
         }
         var message =

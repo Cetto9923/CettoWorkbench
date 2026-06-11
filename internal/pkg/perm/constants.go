@@ -48,6 +48,12 @@ const (
 	DeptCreate Permission = "dept:create"
 	DeptEdit   Permission = "dept:edit"
 	DeptDelete Permission = "dept:delete"
+
+	// 排期工作台
+	ScheduleList   Permission = "schedule:list"
+	ScheduleCreate Permission = "schedule:create"
+	ScheduleUpdate Permission = "schedule:update"
+	ScheduleDelete Permission = "schedule:delete"
 )
 
 // allPermInfos 必须与上方 const 块中的所有 Permission 常量保持一一对应。
@@ -74,6 +80,10 @@ var allPermInfos = []PermInfo{
 	{Code: DeptCreate, Name: "部门-新增", Module: "dept"},
 	{Code: DeptEdit, Name: "部门-编辑", Module: "dept"},
 	{Code: DeptDelete, Name: "部门-删除", Module: "dept"},
+	{Code: ScheduleList, Name: "排期-列表", Module: "schedule"},
+	{Code: ScheduleCreate, Name: "排期-新增", Module: "schedule"},
+	{Code: ScheduleUpdate, Name: "排期-编辑", Module: "schedule"},
+	{Code: ScheduleDelete, Name: "排期-删除", Module: "schedule"},
 }
 
 // systemPerms 是系统内置放行权限，不对外暴露到权限配置 UI。
