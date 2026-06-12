@@ -42,7 +42,6 @@ type ZtProduct struct {
 	RD        string `gorm:"column:RD"`
 	CreatedBy string `gorm:"column:createdBy"`
 	Whitelist string `gorm:"column:whitelist"`
-	PMT       string `gorm:"column:PMT"`
 }
 
 // TableName 指定 zt_product 表。
@@ -138,7 +137,7 @@ func (r *Repo) FindTeamgroupsByIDs(ctx context.Context, ids []uint) ([]ZtTeamgro
 // GetUserProducts 查询当前用户参与的产品/系统列表。
 func (r *Repo) GetUserProducts(ctx context.Context, account string) ([]ZtProduct, error) {
 	const query = `
-SELECT id, name, code, status, PO, QD, RD, createdBy, whitelist, PMT
+SELECT id, name, code, status, PO, QD, RD, createdBy, whitelist
 FROM zt_product
 WHERE deleted = '0' AND status != 'closed'
   AND (
@@ -147,7 +146,7 @@ WHERE deleted = '0' AND status != 'closed'
     OR RD = ?
     OR createdBy = ?
     OR CONCAT(',', whitelist, ',') LIKE CONCAT('%,', ?, ',%')
-    OR CONCAT(',', PMT, ',') LIKE CONCAT('%,', ?, ',%')
+    OR id IN (SELECT DISTINCT CAST(dc.product AS UNSIGNED) FROM zt_demandclarify dc WHERE dc.PM = ?)
   )
 ORDER BY ` + "`order`" + ` ASC, id ASC`
 

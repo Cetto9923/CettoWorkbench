@@ -13,7 +13,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -105,30 +104,6 @@ func (s *Service) GetCreateWindowFormData(ctx context.Context, account string) (
 	if products == nil {
 		products = []ZtProduct{}
 	}
-	// TODO: 临时调试日志，确认产品匹配逻辑后删除
-	for _, p := range products {
-		matchedBy := []string{}
-		if p.PO == account {
-			matchedBy = append(matchedBy, "PO")
-		}
-		if p.QD == account {
-			matchedBy = append(matchedBy, "QD")
-		}
-		if p.RD == account {
-			matchedBy = append(matchedBy, "RD")
-		}
-		if p.CreatedBy == account {
-			matchedBy = append(matchedBy, "createdBy")
-		}
-		if strings.Contains(","+p.Whitelist+",", ","+account+",") {
-			matchedBy = append(matchedBy, "whitelist")
-		}
-		if strings.Contains(","+p.PMT+",", ","+account+",") {
-			matchedBy = append(matchedBy, "PMT")
-		}
-		log.Printf("[DEBUG] 产品 %d %s 匹配方式: %v", p.ID, p.Name, matchedBy)
-	}
-	log.Printf("[DEBUG] GetUserProducts account=%s 共 %d 个产品", account, len(products))
 	return &CreateWindowFormData{
 		Teamgroups: teamgroups,
 		Products:   products,
