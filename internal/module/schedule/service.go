@@ -207,7 +207,7 @@ func (s *Service) ListWindowCards(ctx context.Context, account string) ([]Window
 		}
 
 		usedHours := int(math.Round(consumed))
-		remainingHours := max(0, capacityHours-usedHours)
+		remainingHours := capacityHours - usedHours
 		usedPercent := 0
 		if capacityHours > 0 {
 			usedPercent = usedHours * 100 / capacityHours

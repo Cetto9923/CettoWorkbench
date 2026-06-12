@@ -305,6 +305,9 @@
     if (!String(payload.name || "").trim()) {
       return "请填写窗口名称";
     }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(payload.startDate || "").slice(0, 10))) {
+      return "请填写窗口开始日期";
+    }
     if (!Number(payload.teamgroupId)) {
       return "请选择敏捷小组";
     }

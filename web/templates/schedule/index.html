@@ -49,7 +49,7 @@
                 <span>需求 <b>{{ $w.DemandCount }}</b></span><i></i>
                 <span>容量 <b>{{ $w.CapacityHours }}H</b></span><i></i>
                 <span>已占用 <b>{{ $w.UsedHours }}H</b></span><i></i>
-                <span>剩余 <b>{{ $w.RemainingHours }}H</b></span><i></i>
+                <span>剩余 <b{{ if lt $w.RemainingHours 0 }} class="schedule-remaining-over"{{ end }}>{{ $w.RemainingHours }}H</b></span><i></i>
                 <span>阻塞 <b>{{ $w.BlockedCount }}</b></span>
               </div>
             </div>
@@ -386,8 +386,8 @@
           <input type="text" class="form-input" id="scheduleWindowName" name="name" placeholder="根据预计上线自动生成">
         </div>
         <div class="form-group">
-          <label class="form-label" for="scheduleWindowStart">窗口开始</label>
-          <input type="date" class="form-input" id="scheduleWindowStart" name="start">
+          <label class="form-label" for="scheduleWindowStart">窗口开始 <span style="color:var(--red)">*</span></label>
+          <input type="date" class="form-input" id="scheduleWindowStart" name="start" required>
         </div>
         <div class="form-group">
           <label class="form-label" for="scheduleWindowEnd">窗口结束</label>

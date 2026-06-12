@@ -230,6 +230,17 @@
     });
   }
 
+  function syncScheduleDateInputFilledState(root) {
+    var scope = root || document.getElementById("scheduleVersionWindowForm") || document;
+    scope.querySelectorAll('input[type="date"].form-input').forEach(function (input) {
+      if (String(input.value || "").trim()) {
+        input.classList.add("has-value");
+      } else {
+        input.classList.remove("has-value");
+      }
+    });
+  }
+
   function fillScheduleVersionWindowForm(isActive) {
     var d = getScheduleVersionCreateDraft();
     $("#scheduleWindowOnline").val(d.online || "");
@@ -249,6 +260,23 @@
     });
 
     renderSchedulePlanGrid(isActive);
+    syncScheduleDateInputFilledState();
+  }
+
+  var scheduleWindowForm = document.getElementById("scheduleVersionWindowForm");
+  if (scheduleWindowForm) {
+    scheduleWindowForm.addEventListener("change", function (e) {
+      var target = e.target;
+      if (target && target.type === "date") {
+        syncScheduleDateInputFilledState(scheduleWindowForm);
+      }
+    });
+    scheduleWindowForm.addEventListener("input", function (e) {
+      var target = e.target;
+      if (target && target.type === "date") {
+        syncScheduleDateInputFilledState(scheduleWindowForm);
+      }
+    });
   }
 
   function fetchMatchingPlansForProduct(productId, productName, isActive) {

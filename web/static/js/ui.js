@@ -12,6 +12,15 @@
     return el ? (el.getAttribute("content") || "").trim() : "";
   }
 
+  function removeToast(toast, timerId) {
+    if (timerId) {
+      window.clearTimeout(timerId);
+    }
+    if (toast && toast.parentNode) {
+      toast.remove();
+    }
+  }
+
   function showToast(message, type) {
     var text = (message || "").trim();
     if (!text) {
@@ -32,27 +41,29 @@
 
     var toast = document.createElement("div");
     toast.className = "toast toast-" + level;
+    toast.setAttribute("role", "alert");
 
     var textNode = document.createElement("span");
+    textNode.className = "toast-message";
     textNode.textContent = text;
     toast.appendChild(textNode);
 
-    if (level === "error") {
-      var closeBtn = document.createElement("button");
-      closeBtn.textContent = "✕";
-      closeBtn.style.cssText = "margin-left:8px;background:none;border:none;cursor:pointer;font-size:12px;color:inherit;padding:0;";
-      closeBtn.onclick = function () {
-        toast.remove();
-      };
-      toast.appendChild(closeBtn);
-    }
+    var closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "toast-close";
+    closeBtn.setAttribute("aria-label", "关闭");
+    closeBtn.textContent = "✕";
+    toast.appendChild(closeBtn);
 
     container.appendChild(toast);
-    if (level === "success") {
-      window.setTimeout(function () {
-        toast.remove();
-      }, 3000);
-    }
+
+    var timerId = window.setTimeout(function () {
+      removeToast(toast);
+    }, 5000);
+
+    closeBtn.onclick = function () {
+      removeToast(toast, timerId);
+    };
   }
 
   function confirmDelete(triggerEl, name, deleteUrl) {

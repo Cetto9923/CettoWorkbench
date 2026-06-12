@@ -83,10 +83,10 @@ func (f CreateWindowForm) Validate() []FieldError {
 		errs = append(errs, FieldError{Field: "name", Message: "窗口名称不能为空"})
 	}
 	startDate := strings.TrimSpace(f.StartDate)
-	if startDate != "" {
-		if _, err := time.Parse("2006-01-02", startDate); err != nil {
-			errs = append(errs, FieldError{Field: "startDate", Message: "窗口开始日期格式无效"})
-		}
+	if startDate == "" {
+		errs = append(errs, FieldError{Field: "startDate", Message: "窗口开始日期不能为空"})
+	} else if _, err := time.Parse("2006-01-02", startDate); err != nil {
+		errs = append(errs, FieldError{Field: "startDate", Message: "窗口开始日期格式无效"})
 	}
 	if f.TeamgroupID == 0 {
 		errs = append(errs, FieldError{Field: "teamgroupId", Message: "敏捷小组不能为空"})

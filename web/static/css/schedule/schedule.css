@@ -412,6 +412,38 @@
   color: #0f172a;
 }
 
+.schedule-version-meta b.schedule-remaining-over {
+  color: var(--red);
+}
+
+/* 日期输入框：未填时占位（年/月/日）浅灰，有值后正常色 */
+#page-schedule input[type="date"].form-input,
+#scheduleVersionWindowModal input[type="date"].form-input {
+  color: #333;
+}
+
+#page-schedule input[type="date"].form-input::-webkit-datetime-edit,
+#scheduleVersionWindowModal input[type="date"].form-input::-webkit-datetime-edit {
+  color: #aaa;
+}
+
+#page-schedule input[type="date"].form-input.has-value::-webkit-datetime-edit,
+#scheduleVersionWindowModal input[type="date"].form-input.has-value::-webkit-datetime-edit,
+#page-schedule input[type="date"].form-input:focus::-webkit-datetime-edit,
+#scheduleVersionWindowModal input[type="date"].form-input:focus::-webkit-datetime-edit {
+  color: #333;
+}
+
+#page-schedule input[type="date"].form-input:invalid,
+#scheduleVersionWindowModal input[type="date"].form-input:invalid {
+  color: #aaa;
+}
+
+#page-schedule input[type="date"].form-input:valid.has-value,
+#scheduleVersionWindowModal input[type="date"].form-input:valid.has-value {
+  color: #333;
+}
+
 .schedule-version-extra {
   grid-column: 4;
   grid-row: 1;
