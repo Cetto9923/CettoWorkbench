@@ -127,6 +127,14 @@ func registerRoutes(r *gin.Engine, deps RouteDeps) {
 		)
 	}
 
+	// 排期工作台（菜单 path：/schedule）
+	r.GET("/schedule",
+		middleware.RequireLogin(deps.SessionMgr, deps.DB),
+		middleware.RecordOperationLog(deps.DB, deps.SessionMgr),
+		middleware.ActiveNav("/schedule"),
+		ScheduleHandler,
+	)
+
 	// PO 工作台（菜单 path：/po/home）
 	po := r.Group("/po")
 	po.Use(middleware.RequireLogin(deps.SessionMgr, deps.DB))
