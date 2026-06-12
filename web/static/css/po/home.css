@@ -627,23 +627,6 @@
   line-height: 1.4;
 }
 
-.po-home .home-version-dock .status-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 2px 8px;
-  border-radius: 3px;
-  font-size: 11px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.po-home .home-version-dock .st-progress {
-  background: var(--po-blue-bg);
-  color: var(--po-blue);
-  border: 1px solid var(--po-blue-bd);
-}
-
 .po-home .home-version-dock .action-btn {
   padding: 4px 10px;
   border: 1px solid var(--po-border);

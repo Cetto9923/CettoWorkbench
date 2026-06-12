@@ -282,23 +282,6 @@ func (r *Repo) ListUpcomingVersionWindowsForTeamgroups(ctx context.Context, team
 	return rows, nil
 }
 
-// ListRecentVersionWindowTemplates 查询近期版本窗口（含近 28 天内已发布与后续规划，最多 limit 条）。
-func (r *Repo) ListRecentVersionWindowTemplates(ctx context.Context, limit int) ([]model.VersionWindow, error) {
-	if limit <= 0 {
-		limit = 8
-	}
-
-	var rows []model.VersionWindow
-	if err := r.db.WithContext(ctx).
-		Where("releaseDate >= DATE_SUB(CURDATE(), INTERVAL 28 DAY)").
-		Order("releaseDate ASC").
-		Limit(limit).
-		Find(&rows).Error; err != nil {
-		return nil, err
-	}
-	return rows, nil
-}
-
 // CreateVersionWindow 写入 zt_versionwindow 并回填自增 ID。
 func (r *Repo) CreateVersionWindow(ctx context.Context, window *model.VersionWindow) error {
 	return r.db.WithContext(ctx).Create(window).Error

@@ -5,7 +5,7 @@
 全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
 页面字段: .Title (string), .PageTitle (string), .Windows ([]schedule.WindowCard),
           .BizRequirements ([]schedule.BizRequirement), .Teamgroups ([]schedule.TeamgroupOption),
-          .Products ([]schedule.ZtProduct), .WindowTemplatesJSON (template.JS), .Pager (*pagination.Pager)
+          .Products ([]schedule.ZtProduct), .Pager (*pagination.Pager)
 ========================================================================== */}}
 {{ define "page_css" }}
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedule.css" }}">
@@ -41,7 +41,6 @@
                   <i class="fas fa-calendar-day"></i>{{ $w.ShortName }}
                   {{ if $w.AgileGroup }}<span class="agile-team-tag">{{ $w.AgileGroup }}</span>{{ end }}
                 </div>
-                <span class="schedule-version-status">{{ $w.Status }}</span>
               </div>
               <div class="schedule-version-range">{{ $w.Range }}</div>
               <div class="schedule-version-bar"><span style="width: {{ $w.UsedPercent }}%;"></span></div>
@@ -81,7 +80,7 @@
               <option value="">其他窗口</option>
               {{ range $i, $w := .Windows }}
               {{ if ge $i 3 }}
-              <option value="{{ $w.ID }}">{{ $w.ShortName }} · {{ $w.Status }}</option>
+              <option value="{{ $w.ID }}">{{ $w.ShortName }}</option>
               {{ end }}
               {{ end }}
             </select>
@@ -414,10 +413,6 @@
               <option value="urgent">紧急</option>
             </select>
           </div>
-          <label class="chk schedule-create-inline-check">
-            <input type="checkbox" id="scheduleWindowUseOrgTemplate" name="useOrgTemplate">
-            <span>里程碑跟随组织窗口</span>
-          </label>
         </div>
       </div>
       <div class="schedule-create-section">
@@ -531,7 +526,6 @@
     <td><strong data-field="name"></strong></td>
     <td data-field="releaseDate"></td>
     <td data-field="range" style="font-size:11px;color:var(--t3)"></td>
-    <td><span class="status-tag" data-field="status" style="font-size:10px"></span></td>
     <td data-field="capacity" style="text-align:center"></td>
     <td data-field="actions" style="text-align:center"></td>
   </tr>
@@ -565,7 +559,6 @@
             <th style="min-width:120px">窗口名称</th>
             <th style="width:120px">上线日期</th>
             <th style="width:100px">日期范围</th>
-            <th style="width:80px">状态</th>
             <th style="width:70px;text-align:center">容量(H)</th>
             <th style="width:120px;text-align:center">操作</th>
           </tr>
@@ -581,7 +574,6 @@
 {{ end }}
 
 {{ define "page_js" }}
-<script type="application/json" id="scheduleWindowTemplates">{{ .WindowTemplatesJSON }}</script>
 <script src="{{ asset "/static/js/schedule/schedulewindowdraft.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/schedulewindow.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/schedulemanage.js" }}"></script>

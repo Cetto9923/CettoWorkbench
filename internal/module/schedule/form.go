@@ -21,18 +21,8 @@ type TeamgroupOption struct {
 
 // CreateWindowFormData 新建版本窗口弹窗表单数据。
 type CreateWindowFormData struct {
-	Teamgroups      []TeamgroupOption
-	Products        []ZtProduct
-	WindowTemplates []WindowTemplateItem
-}
-
-// WindowTemplateItem 版本窗口组织模板（新建弹窗「跟随组织窗口」用）。
-type WindowTemplateItem struct {
-	ID     uint64 `json:"id"`
-	Label  string `json:"label"`
-	Start  string `json:"start"`
-	End    string `json:"end"`
-	Online string `json:"online"`
+	Teamgroups []TeamgroupOption
+	Products   []ZtProduct
 }
 
 // MatchingPlansReq 计划匹配查询请求。

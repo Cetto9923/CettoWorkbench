@@ -146,7 +146,7 @@
         <div class="home-version-dock-sub">当前上线窗口 + 后续 3 个规划窗口 概览</div>
       </div>
       <div style="display:flex;gap:6px">
-        <button type="button" class="action-btn action-btn--disabled" title="查看全部窗口:本期不提供(待推出)"><i class="fas fa-th-list" style="margin-right:4px"></i>查看全部窗口</button>
+        <button type="button" class="action-btn action-btn--disabled" title="待推出"><i class="fas fa-th-list" style="margin-right:4px"></i>查看全部窗口</button>
         <button type="button" class="action-btn action-btn--disabled" title="进入版本跟进:本期不提供(待推出)"><i class="fas fa-layer-group" style="margin-right:4px"></i>进入版本跟进</button>
       </div>
     </div>
@@ -155,7 +155,7 @@
       <div class="home-version-mini" title="点击窗口卡片:本期无响应(v2.7 AC-3.5)">
         <div class="summary-top">
           <div>
-            <div class="summary-title" title="{{ .Name }}"><i class="fas fa-layer-group" style="color:var(--po-blue)"></i>{{ .Name }} <span class="status-tag st-progress" style="font-size:10px">{{ .StatusLabel }}</span>{{ if .AgileGroup }}<span class="agile-team-tag">{{ .AgileGroup }}</span>{{ end }}</div>
+            <div class="summary-title" title="{{ .Name }}"><i class="fas fa-layer-group" style="color:var(--po-blue)"></i>{{ .Name }}{{ if .AgileGroup }} <span class="agile-team-tag">{{ .AgileGroup }}</span>{{ end }}</div>
             <div class="summary-sub">{{ .Range }}</div>
           </div>
           <div class="summary-btns" style="display:flex;gap:6px;flex-wrap:wrap">

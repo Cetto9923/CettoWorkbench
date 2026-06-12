@@ -294,7 +294,7 @@
 
 .schedule-version-top {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
   gap: 8px;
 }
@@ -327,17 +327,6 @@
   line-height: 1.4;
   margin-left: 4px;
   vertical-align: middle;
-}
-
-.schedule-version-status {
-  font-size: 10px;
-  font-weight: 800;
-  border: 1px solid var(--blue-bd);
-  background: var(--blue-bg);
-  color: var(--blue);
-  border-radius: 999px;
-  padding: 1px 7px;
-  white-space: nowrap;
 }
 
 .schedule-version-top strong {
@@ -1465,7 +1454,7 @@
   width: 94%;
 }
 
-/* ── 窗口管理弹窗（demo modal + action-btn + status-tag） ── */
+/* ── 窗口管理弹窗（demo modal + action-btn） ── */
 .modal-overlay {
   position: fixed;
   top: var(--header);
@@ -1587,41 +1576,6 @@
   border-color: var(--border) !important;
   color: var(--t3) !important;
   background: #f5f5f5 !important;
-}
-
-.status-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 2px 8px;
-  border-radius: 3px;
-  font-size: 11px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.st-progress {
-  background: var(--blue-bg);
-  color: var(--blue);
-  border: 1px solid var(--blue-bd);
-}
-
-.st-pending {
-  background: var(--gray-bg);
-  color: var(--gray);
-  border: 1px solid var(--border);
-}
-
-.st-success {
-  background: var(--green-bg);
-  color: var(--green);
-  border: 1px solid var(--green-bd);
-}
-
-.st-suspended {
-  background: var(--gray-bg);
-  color: var(--gray);
-  border: 1px solid var(--border);
 }
 
 .batch-modal.show {
