@@ -170,6 +170,24 @@
   align-items: stretch;
 }
 
+.schedule-version-grid--empty {
+  grid-template-columns: 1fr;
+}
+
+.schedule-version-grid--empty .schedule-create-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 14px;
+  color: #999;
+  padding: 0;
+  margin: 0;
+}
+
 .schedule-version-card {
   position: relative;
   border: 1px solid var(--border);
@@ -449,14 +467,6 @@
 
 .schedule-version-add i {
   font-size: 12px;
-}
-
-.schedule-version-grid .schedule-create-empty,
-#scheduleCapacitySummaryLine > .schedule-create-empty {
-  font-size: 11px;
-  color: var(--t3);
-  padding: 4px 0;
-  margin-top: 4px;
 }
 
 /* ── 需求列表区 ── */
@@ -1576,6 +1586,66 @@
   border-color: var(--border) !important;
   color: var(--t3) !important;
   background: #f5f5f5 !important;
+}
+
+/* 操作列：轻量图标按钮（对齐 user/list zen-icon-action） */
+#manageVersionWindowsModal .schedule-manage-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+#manageVersionWindowsModal .action-btn.zen-icon-action {
+  width: 1.65rem;
+  height: 1.65rem;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #999;
+  box-shadow: none;
+}
+
+#manageVersionWindowsModal .action-btn.zen-icon-action i {
+  font-size: 12px;
+  line-height: 1;
+}
+
+#manageVersionWindowsModal .action-btn.zen-icon-action.primary {
+  background: transparent;
+  border: none;
+  color: #999;
+}
+
+#manageVersionWindowsModal .action-btn.zen-icon-action.primary:hover:not(.action-btn--disabled) {
+  background: transparent;
+  border: none;
+  color: var(--blue);
+}
+
+#manageVersionWindowsModal .action-btn.zen-icon-action.danger {
+  background: transparent;
+  border: none;
+  color: #999;
+}
+
+#manageVersionWindowsModal .action-btn.zen-icon-action.danger:hover:not(.action-btn--disabled) {
+  background: transparent;
+  border: none;
+  color: var(--red);
+  transform: none;
+}
+
+#manageVersionWindowsModal .action-btn.zen-icon-action.action-btn--disabled,
+#manageVersionWindowsModal .action-btn.zen-icon-action.action-btn--disabled:hover {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: transparent;
+  border: none;
+  color: #ccc;
+  pointer-events: none;
 }
 
 .batch-modal.show {

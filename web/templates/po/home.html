@@ -142,12 +142,12 @@
   <div class="home-version-dock" id="homeVersionCollapsible">
     <div class="home-version-dock-hdr">
       <div>
-        <div class="home-version-dock-title"><i class="fas fa-layer-group"></i> 版本窗口 <span class="home-version-dock-sub-inline">本期 {{ .VersionWindowCount }} 个窗口 · 历史窗口在版本跟进中查看</span></div>
-        <div class="home-version-dock-sub">当前上线窗口 + 后续 3 个规划窗口 概览</div>
+        <!-- <div class="home-version-dock-title"><i class="fas fa-layer-group"></i> 版本窗口 <span class="home-version-dock-sub-inline">本期 {{ .VersionWindowCount }} 个窗口 · 历史窗口在版本跟进中查看</span></div> -->
+        <!-- <div class="home-version-dock-sub">当前上线窗口 + 后续 3 个规划窗口 概览</div> -->
       </div>
       <div style="display:flex;gap:6px">
         <button type="button" class="action-btn action-btn--disabled" title="待推出"><i class="fas fa-th-list" style="margin-right:4px"></i>查看全部窗口</button>
-        <button type="button" class="action-btn action-btn--disabled" title="进入版本跟进:本期不提供(待推出)"><i class="fas fa-layer-group" style="margin-right:4px"></i>进入版本跟进</button>
+        <button type="button" class="action-btn action-btn--disabled" title="待推出"><i class="fas fa-layer-group" style="margin-right:4px"></i>进入版本跟进</button>
       </div>
     </div>
     <div class="home-version-panel" id="homeCurrentVersionSummary">
@@ -159,7 +159,7 @@
             <div class="summary-sub">{{ .Range }}</div>
           </div>
           <div class="summary-btns" style="display:flex;gap:6px;flex-wrap:wrap">
-            <button type="button" class="action-btn primary summary-btn action-btn--disabled" style="padding:4px 10px;font-size:11px" title="进入版本跟进:本期不提供(待推出)">进入版本跟进</button>
+            <button type="button" class="action-btn primary summary-btn action-btn--disabled" style="padding:4px 10px;font-size:11px" title="待推出">进入版本跟进</button>
           </div>
         </div>
         <div class="summary-stats summary-stats--compact">

@@ -230,6 +230,11 @@ body.layout-nav-top.sidebar-collapsed .main {
   transition: color 0.15s ease;
 }
 
+/* Font Awesome 图标即 .nav-icon 本身时，保证 glyph 在固定尺寸盒内居中 */
+.sidebar i.nav-icon {
+  text-align: center;
+}
+
 .sidebar .nav-icon svg {
   width: 1.125rem;
   height: 1.125rem;
@@ -414,6 +419,8 @@ body.sidebar-collapsed .sidebar .nav-divider,
 body.sidebar-collapsed .sidebar .nav-arrow,
 body.sidebar-collapsed .sidebar .badge,
 body.sidebar-collapsed .sidebar .nav-badge {
+  display: none;
+  flex: none;
   opacity: 0;
   width: 0;
   overflow: hidden;
@@ -429,10 +436,21 @@ body.sidebar-collapsed .sidebar .nav-submenu {
 
 body.sidebar-collapsed .sidebar .nav-item {
   justify-content: center;
-  padding: var(--space-1_5) 0;
+  gap: 0;
+  padding: var(--space-2) 0;
+}
+
+body.sidebar-collapsed .sidebar .nav-item.active::before {
+  display: none;
 }
 
 body.sidebar-collapsed .sidebar .nav-item-header {
+  justify-content: center;
+}
+
+body.sidebar-collapsed .sidebar .nav-item-header .nav-item {
+  flex: none;
+  width: 100%;
   justify-content: center;
 }
 

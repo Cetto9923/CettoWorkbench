@@ -116,13 +116,14 @@
         capacityCell.textContent = String(Number(item.capacityHours || 0));
       }
       if (actionsCell) {
+        var actionsWrap = actionsCell.querySelector(".schedule-manage-actions") || actionsCell;
         var editBtn = buildManageActionBtn("edit", item);
         var deleteBtn = buildManageActionBtn("delete", item);
         if (editBtn) {
-          actionsCell.appendChild(editBtn);
+          actionsWrap.appendChild(editBtn);
         }
         if (deleteBtn) {
-          actionsCell.appendChild(deleteBtn);
+          actionsWrap.appendChild(deleteBtn);
         }
       }
       body.appendChild(tr);

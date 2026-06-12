@@ -29,7 +29,7 @@
     scheduleVersionWindowModalMode = "create";
     scheduleEditingWindowId = null;
     draftApi.setDraft(draftApi.createDraft());
-    $("#scheduleVersionWindowModalTitle").text("新建版本窗口（SM/PO）");
+    $("#scheduleVersionWindowModalTitle").text("新建版本窗口");
     $("#scheduleVersionWindowModalSaveBtn").text("保存");
     draftApi.fillForm(true);
     $("#scheduleVersionWindowModal, #scheduleVersionWindowModalOverlay").addClass("show");

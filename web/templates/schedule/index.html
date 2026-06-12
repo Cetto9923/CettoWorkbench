@@ -15,14 +15,14 @@
 <div id="page-schedule">
   <div class="schedule-page-head">
     <div>
-      <h2>PO 排期工作台 <span class="page-role-badge">PO 专属</span></h2>
-      <div class="schedule-page-sub">管理业务需求排期，跟踪执行进度，推动需求按时交付</div>
+      <h2>PO 排期工作台</h2>
+      <!-- <div class="schedule-page-sub">管理业务需求排期，跟踪执行进度，推动需求按时交付</div> -->
     </div>
     <div class="schedule-page-actions">
       <button type="button" class="action-btn js-open-manage-version-windows"><i class="fas fa-gear"></i> 窗口维护</button>
       <button type="button" class="action-btn primary js-open-create-version-window"><i class="fas fa-plus"></i> 新建窗口</button>
       <button type="button" class="action-btn">版本概览</button>
-      <button type="button" class="action-btn" title="刷新"><i class="fas fa-rotate"></i></button>
+      <button type="button" class="action-btn js-schedule-reload" title="刷新" aria-label="刷新"><i class="fas fa-rotate"></i></button>
     </div>
   </div>
 
@@ -31,6 +31,7 @@
     <div class="schedule-version-body">
       <div id="schedulePoSummaryBar" class="schedule-po-summary-host"></div>
       <div id="scheduleCapacitySummaryLine">
+        {{ if .Windows }}
         <div class="schedule-version-grid">
           {{ range $i, $w := .Windows }}
           {{ if lt $i 3 }}
@@ -87,8 +88,10 @@
             <button type="button" class="schedule-version-add js-open-create-version-window"><i class="fas fa-plus"></i><span>新建窗口</span></button>
           </div>
         </div>
-        {{ if not .Windows }}
-        <div class="schedule-create-empty">暂无版本窗口</div>
+        {{ else }}
+        <div class="schedule-version-grid schedule-version-grid--empty">
+          <div class="schedule-create-empty">暂无版本窗口</div>
+        </div>
         {{ end }}
       </div>
     </div>
@@ -373,9 +376,6 @@
   </div>
   <div class="batch-modal-body" id="scheduleVersionWindowModalBody">
     <div class="schedule-create-modal" id="scheduleVersionWindowForm">
-      <div class="schedule-create-note">
-        创建<strong>版本窗口</strong>并可选同步创建各系统的<strong>系统计划</strong>。窗口名称默认按预计上线日生成（如 26-0701窗口），系统计划名称默认与窗口名称一致，可按需微调。
-      </div>
       <div class="schedule-create-grid schedule-create-grid--4">
         <div class="form-group">
           <label class="form-label" for="scheduleWindowOnline">预计上线 <span style="color:var(--red)">*</span></label>
@@ -398,7 +398,7 @@
         <div class="schedule-create-section-head"><strong>窗口归属</strong></div>
         <div class="schedule-create-inline-row">
           <div class="form-group">
-            <label class="form-label" for="scheduleWindowTeamgroup">敏捷小组（窗口默认）</label>
+            <label class="form-label" for="scheduleWindowTeamgroup">敏捷小组</label>
             <select class="form-select" id="scheduleWindowTeamgroup" name="teamgroupId" style="width:100%">
               {{ range .Teamgroups }}
               <option value="{{ .ID }}">{{ .DisplayName }}</option>
@@ -406,7 +406,7 @@
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label" for="scheduleWindowType">发布类型（窗口参考）</label>
+            <label class="form-label" for="scheduleWindowType">发布类型</label>
             <select class="form-select" id="scheduleWindowType" name="windowType" style="width:100%">
               <option value="regular">常规</option>
               <option value="fast">快速</option>
@@ -416,10 +416,10 @@
         </div>
       </div>
       <div class="schedule-create-section">
-        <div class="schedule-create-section-head">
+         <!-- <div class="schedule-create-section-head">
           <strong>关键时间（本窗口）</strong>
           <span class="schedule-create-inline-meta">上线日期：<span id="scheduleWindowOnlineMeta">-</span></span>
-        </div>
+        </div>  -->
         <div class="schedule-create-grid schedule-create-grid--3">
           <div class="form-group">
             <label class="form-label" for="scheduleWindowPlanTestDone">预计提测 / 开发完成</label>
@@ -527,18 +527,20 @@
     <td data-field="releaseDate"></td>
     <td data-field="range" style="font-size:11px;color:var(--t3)"></td>
     <td data-field="capacity" style="text-align:center"></td>
-    <td data-field="actions" style="text-align:center"></td>
+    <td data-field="actions" style="text-align:center">
+      <div class="action-group schedule-manage-actions"></div>
+    </td>
   </tr>
 </template>
 
 <template id="scheduleManageEditBtn">
-  <button type="button" class="action-btn primary js-manage-edit-version-window" style="padding:2px 8px;font-size:11px" title="编辑窗口">
+  <button type="button" class="action-btn zen-icon-action primary js-manage-edit-version-window" title="编辑窗口" aria-label="编辑窗口">
     <i class="fas fa-pen"></i>
   </button>
 </template>
 
 <template id="scheduleManageDeleteBtn">
-  <button type="button" class="action-btn js-manage-delete-version-window" style="padding:2px 8px;font-size:11px;margin-left:4px;color:var(--red)" title="删除">
+  <button type="button" class="action-btn zen-icon-action danger js-manage-delete-version-window" title="删除" aria-label="删除">
     <i class="fas fa-trash-can"></i>
   </button>
 </template>

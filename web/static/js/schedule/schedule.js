@@ -101,6 +101,10 @@
     }
   });
 
+  $root.on("click", ".js-schedule-reload", function () {
+    window.location.reload();
+  });
+
   $root.on("click", ".js-toggle-window-card-menu", function (e) {
     e.preventDefault();
     e.stopPropagation();
