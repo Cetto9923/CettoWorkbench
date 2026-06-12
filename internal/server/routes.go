@@ -26,7 +26,6 @@ import (
 	"workbench/internal/module/role"
 	"workbench/internal/module/schedule"
 	"workbench/internal/module/user"
-	"workbench/internal/pkg/perm"
 	ratelimitpkg "workbench/internal/pkg/ratelimit"
 )
 
@@ -80,60 +79,16 @@ func registerRoutes(r *gin.Engine, deps RouteDeps) {
 		}
 	}
 
-	// 排期工作台（菜单 path：/po/schedule）
-	if deps.ScheduleHandler != nil {
-		r.GET("/po/schedule",
-			middleware.RequireLogin(deps.SessionMgr, deps.DB),
-			middleware.RecordOperationLog(deps.DB, deps.SessionMgr),
-			middleware.RequirePerm(perm.ScheduleList),
-			middleware.ActiveNav("/po/schedule"),
-			deps.ScheduleHandler.Index,
-		)
-		r.GET("/po/schedule/matching-plans",
-			middleware.RequireLogin(deps.SessionMgr, deps.DB),
-			middleware.RecordOperationLog(deps.DB, deps.SessionMgr),
-			middleware.RequirePerm(perm.ScheduleList),
-			deps.ScheduleHandler.GetMatchingPlans,
-		)
-		r.POST("/po/schedule/windows",
-			middleware.RequireLogin(deps.SessionMgr, deps.DB),
-			middleware.RecordOperationLog(deps.DB, deps.SessionMgr),
-			middleware.RequirePerm(perm.ScheduleCreate),
-			deps.ScheduleHandler.CreateWindow,
-		)
-		r.GET("/po/schedule/windows",
-			middleware.RequireLogin(deps.SessionMgr, deps.DB),
-			middleware.RecordOperationLog(deps.DB, deps.SessionMgr),
-			middleware.RequirePerm(perm.ScheduleList),
-			deps.ScheduleHandler.ListWindows,
-		)
-		r.GET("/po/schedule/windows/:id",
-			middleware.RequireLogin(deps.SessionMgr, deps.DB),
-			middleware.RecordOperationLog(deps.DB, deps.SessionMgr),
-			middleware.RequirePerm(perm.ScheduleList),
-			deps.ScheduleHandler.GetWindow,
-		)
-		r.PUT("/po/schedule/windows/:id",
-			middleware.RequireLogin(deps.SessionMgr, deps.DB),
-			middleware.RecordOperationLog(deps.DB, deps.SessionMgr),
-			middleware.RequirePerm(perm.ScheduleUpdate),
-			deps.ScheduleHandler.UpdateWindow,
-		)
-		r.DELETE("/po/schedule/windows/:id",
-			middleware.RequireLogin(deps.SessionMgr, deps.DB),
-			middleware.RecordOperationLog(deps.DB, deps.SessionMgr),
-			middleware.RequirePerm(perm.ScheduleDelete),
-			deps.ScheduleHandler.DeleteWindow,
-		)
-	}
-
-	// PO 工作台（菜单 path：/po/home）
+	// PO 工作台（菜单 path：/po/home、/po/schedule）
 	po := r.Group("/po")
 	po.Use(middleware.RequireLogin(deps.SessionMgr, deps.DB))
 	po.Use(middleware.RecordOperationLog(deps.DB, deps.SessionMgr))
 	{
 		if deps.PoHandler != nil {
 			deps.PoHandler.RegisterRoutes(po)
+		}
+		if deps.ScheduleHandler != nil {
+			deps.ScheduleHandler.RegisterRoutes(po)
 		}
 	}
 

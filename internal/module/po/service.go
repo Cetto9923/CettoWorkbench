@@ -88,10 +88,10 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 			s.logger.Error("po home schedule service is nil, version windows skipped")
 		}
 	} else {
-		windows, winErr := s.schedule.ListHomeVersionWindows(ctx, account)
+		windows, winErr := s.schedule.ListHomeVersionWindows(ctx, actor)
 		if winErr != nil {
 			if s.logger != nil {
-				s.logger.Warn("po home version windows", zap.Error(winErr), zap.String("account", account))
+				s.logger.Warn("po home version windows", zap.Error(winErr))
 			}
 		} else {
 			versionWindows = windows

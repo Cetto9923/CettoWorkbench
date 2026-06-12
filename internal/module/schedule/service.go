@@ -91,13 +91,20 @@ func (s *Service) GetUserTeamgroups(ctx context.Context, account string) ([]Team
 	return options, nil
 }
 
+func actorAccount(actor *model.User) string {
+	if actor == nil {
+		return ""
+	}
+	return strings.TrimSpace(actor.Account)
+}
+
 // GetCreateWindowFormData 查询新建版本窗口弹窗所需表单数据。
-func (s *Service) GetCreateWindowFormData(ctx context.Context, account string) (*CreateWindowFormData, error) {
+func (s *Service) GetCreateWindowFormData(ctx context.Context, actor *model.User) (*CreateWindowFormData, error) {
+	account := actorAccount(actor)
 	teamgroups, err := s.GetUserTeamgroups(ctx, account)
 	if err != nil {
 		return nil, err
 	}
-	account = strings.TrimSpace(account)
 	products, err := s.repo.GetUserProducts(ctx, account)
 	if err != nil {
 		return nil, err
@@ -119,8 +126,9 @@ func computeWindowPermissions(createdBy, account string, demandCount int) (canEd
 }
 
 // ListWindowCards 查询版本窗口概览卡片数据。
-func (s *Service) ListWindowCards(ctx context.Context, account string) ([]WindowCard, error) {
-	windows, err := s.repo.ListVersionWindows(ctx)
+func (s *Service) ListWindowCards(ctx context.Context, actor *model.User) ([]WindowCard, error) {
+	account := actorAccount(actor)
+	windows, _, err := s.repo.FindAll(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -247,8 +255,8 @@ type HomeVersionWindowCard struct {
 }
 
 // ListHomeVersionWindows 查询 PO 首页近期版本窗口（最多 4 条，按用户敏捷小组过滤）。
-func (s *Service) ListHomeVersionWindows(ctx context.Context, account string) ([]HomeVersionWindowCard, error) {
-	account = strings.TrimSpace(account)
+func (s *Service) ListHomeVersionWindows(ctx context.Context, actor *model.User) ([]HomeVersionWindowCard, error) {
+	account := actorAccount(actor)
 	if account == "" {
 		s.logHomeVersionWindows(account, nil, "account empty", 0, nil)
 		return []HomeVersionWindowCard{}, nil
@@ -400,13 +408,14 @@ func dateOnly(value time.Time) time.Time {
 }
 
 // ListWindows 查询版本窗口维护列表。
-func (s *Service) ListWindows(ctx context.Context, account string) ([]WindowListItem, error) {
-	windows, err := s.repo.ListVersionWindows(ctx)
+func (s *Service) ListWindows(ctx context.Context, actor *model.User) (ListWindowsResp, error) {
+	account := actorAccount(actor)
+	windows, _, err := s.repo.FindAll(ctx)
 	if err != nil {
-		return nil, err
+		return ListWindowsResp{}, err
 	}
 	if len(windows) == 0 {
-		return []WindowListItem{}, nil
+		return ListWindowsResp{Windows: []WindowListItem{}}, nil
 	}
 
 	items := make([]WindowListItem, 0, len(windows))
@@ -422,11 +431,11 @@ func (s *Service) ListWindows(ctx context.Context, account string) ([]WindowList
 			int(window.GroupSize),
 		)
 		if err != nil {
-			return nil, err
+			return ListWindowsResp{}, err
 		}
 		demandCount, err := s.repo.GetWindowDemandCount(ctx, window.ID)
 		if err != nil {
-			return nil, err
+			return ListWindowsResp{}, err
 		}
 		canEdit, canDelete, hasLinkedDemands := computeWindowPermissions(window.CreatedBy, account, demandCount)
 
@@ -441,29 +450,28 @@ func (s *Service) ListWindows(ctx context.Context, account string) ([]WindowList
 			HasLinkedDemands: hasLinkedDemands,
 		})
 	}
-	return items, nil
+	return ListWindowsResp{Windows: items}, nil
 }
 
-// BuildVersionWindowFromForm 将保存请求转换为版本窗口模型。
-func BuildVersionWindowFromForm(form CreateWindowForm) (*model.VersionWindow, error) {
-	releaseDate, err := time.ParseInLocation("2006-01-02", strings.TrimSpace(form.ReleaseDate), time.Local)
+func buildVersionWindowFromCreateReq(req CreateReq) (*model.VersionWindow, error) {
+	releaseDate, err := time.ParseInLocation("2006-01-02", strings.TrimSpace(req.ReleaseDate), time.Local)
 	if err != nil {
 		return nil, fmt.Errorf("invalid release date")
 	}
 
 	window := &model.VersionWindow{
-		Name:        strings.TrimSpace(form.Name),
+		Name:        strings.TrimSpace(req.Name),
 		ReleaseDate: releaseDate,
-		TeamgroupID: form.TeamgroupID,
+		TeamgroupID: req.TeamgroupID,
 		Status:      "planning",
 	}
-	if form.GroupSize > 0 {
-		window.GroupSize = uint(form.GroupSize)
+	if req.GroupSize > 0 {
+		window.GroupSize = uint(req.GroupSize)
 	} else {
 		window.GroupSize = 1
 	}
 
-	startDate := strings.TrimSpace(form.StartDate)
+	startDate := strings.TrimSpace(req.StartDate)
 	if startDate != "" {
 		parsed, err := time.ParseInLocation("2006-01-02", startDate, time.Local)
 		if err != nil {
@@ -474,31 +482,39 @@ func BuildVersionWindowFromForm(form CreateWindowForm) (*model.VersionWindow, er
 	return window, nil
 }
 
-// ApplyFormToVersionWindow 将表单数据应用到已有版本窗口。
-func ApplyFormToVersionWindow(window *model.VersionWindow, form CreateWindowForm) error {
+func applyUpdateReqToVersionWindow(window *model.VersionWindow, req UpdateReq) error {
 	if window == nil {
 		return fmt.Errorf("version window is nil")
 	}
-	updated, err := BuildVersionWindowFromForm(form)
+	releaseDate, err := time.ParseInLocation("2006-01-02", strings.TrimSpace(req.ReleaseDate), time.Local)
 	if err != nil {
-		return err
+		return fmt.Errorf("invalid release date")
 	}
-	window.Name = updated.Name
-	window.ReleaseDate = updated.ReleaseDate
-	window.StartDate = updated.StartDate
-	window.TeamgroupID = updated.TeamgroupID
-	window.GroupSize = updated.GroupSize
+	window.Name = strings.TrimSpace(req.Name)
+	window.ReleaseDate = releaseDate
+	window.TeamgroupID = req.TeamgroupID
+	if req.GroupSize > 0 {
+		window.GroupSize = uint(req.GroupSize)
+	} else {
+		window.GroupSize = 1
+	}
+	startDate := strings.TrimSpace(req.StartDate)
+	if startDate != "" {
+		parsed, err := time.ParseInLocation("2006-01-02", startDate, time.Local)
+		if err != nil {
+			return fmt.Errorf("invalid start date")
+		}
+		window.StartDate = &parsed
+	} else {
+		window.StartDate = nil
+	}
 	return nil
 }
 
-// GetVersionWindow 按 ID 查询未删除的版本窗口。
-func (s *Service) GetVersionWindow(ctx context.Context, id uint64) (*model.VersionWindow, error) {
-	return s.repo.GetVersionWindowByID(ctx, id)
-}
-
-// GetWindowDetail 查询版本窗口详情。
-func (s *Service) GetWindowDetail(ctx context.Context, id uint64) (*WindowDetailResp, error) {
-	window, err := s.repo.GetVersionWindowByID(ctx, id)
+// GetByID 查询版本窗口详情。
+func (s *Service) GetByID(ctx context.Context, actor *model.User, id uint64) (*WindowDetailResp, error) {
+	_ = actor
+	window, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -557,57 +573,65 @@ func formatWindowDateRange(start, end time.Time) string {
 	return start.Format("01-02") + " ~ " + end.Format("01-02")
 }
 
-// SaveWindowWithPlans 保存版本窗口并按需同步禅道产品计划。
-func (s *Service) SaveWindowWithPlans(ctx context.Context, window *model.VersionWindow, products []WindowProductInput, account string) error {
-	if window == nil {
-		return fmt.Errorf("version window is nil")
+// Create 保存版本窗口并按需同步禅道产品计划。
+func (s *Service) Create(ctx context.Context, actor *model.User, req CreateReq) error {
+	window, err := buildVersionWindowFromCreateReq(req)
+	if err != nil {
+		return err
 	}
-	account = strings.TrimSpace(account)
+	account := actorAccount(actor)
 	window.CreatedBy = account
 	window.UpdatedBy = account
 
 	return s.repo.Transaction(ctx, func(txRepo *Repo) error {
-		if err := txRepo.CreateVersionWindow(ctx, window); err != nil {
+		if err := txRepo.Create(ctx, window); err != nil {
 			return fmt.Errorf("create version window: %w", err)
 		}
-		return s.saveWindowProducts(ctx, txRepo, window.ID, window, products, account)
+		return s.saveWindowProducts(ctx, txRepo, window.ID, window, req.Products, account)
 	})
 }
 
-// UpdateWindowWithPlans 更新版本窗口并重建关联产品及计划。
-func (s *Service) UpdateWindowWithPlans(ctx context.Context, window *model.VersionWindow, products []WindowProductInput, account string) error {
-	if window == nil || window.ID == 0 {
-		return fmt.Errorf("version window is invalid")
-	}
-	account = strings.TrimSpace(account)
-	window.UpdatedBy = account
-
-	return s.repo.Transaction(ctx, func(txRepo *Repo) error {
-		if err := txRepo.UpdateVersionWindow(ctx, window); err != nil {
-			return fmt.Errorf("update version window: %w", err)
-		}
-		if err := txRepo.DeleteWindowProducts(ctx, window.ID); err != nil {
-			return fmt.Errorf("delete window products: %w", err)
-		}
-		return s.saveWindowProducts(ctx, txRepo, window.ID, window, products, account)
-	})
-}
-
-// SoftDeleteWindow 软删除版本窗口。
-func (s *Service) SoftDeleteWindow(ctx context.Context, id uint64, account string) error {
-	window, err := s.repo.GetVersionWindowByID(ctx, id)
+// Update 更新版本窗口并重建关联产品及计划。
+func (s *Service) Update(ctx context.Context, actor *model.User, req UpdateReq) error {
+	window, err := s.repo.FindByID(ctx, req.ID)
 	if err != nil {
 		return err
 	}
 	if window == nil {
 		return errors.New("窗口不存在")
 	}
-	account = strings.TrimSpace(account)
+	if err := applyUpdateReqToVersionWindow(window, req); err != nil {
+		return err
+	}
+	account := actorAccount(actor)
+	window.UpdatedBy = account
+
+	return s.repo.Transaction(ctx, func(txRepo *Repo) error {
+		if err := txRepo.Update(ctx, window); err != nil {
+			return fmt.Errorf("update version window: %w", err)
+		}
+		if err := txRepo.DeleteWindowProducts(ctx, window.ID); err != nil {
+			return fmt.Errorf("delete window products: %w", err)
+		}
+		return s.saveWindowProducts(ctx, txRepo, window.ID, window, req.Products, account)
+	})
+}
+
+// Delete 软删除版本窗口。
+func (s *Service) Delete(ctx context.Context, actor *model.User, req DeleteReq) error {
+	window, err := s.repo.FindByID(ctx, req.ID)
+	if err != nil {
+		return err
+	}
+	if window == nil {
+		return errors.New("窗口不存在")
+	}
+	account := actorAccount(actor)
 	if window.CreatedBy != account {
 		return errors.New("只有创建人可以删除")
 	}
 	// TODO: 如果窗口已关联需求，不允许删除
-	return s.repo.SoftDeleteVersionWindow(ctx, id)
+	return s.repo.Delete(ctx, req.ID)
 }
 
 func (s *Service) saveWindowProducts(ctx context.Context, txRepo *Repo, windowID uint64, window *model.VersionWindow, products []WindowProductInput, account string) error {
@@ -660,7 +684,8 @@ func (s *Service) saveWindowProducts(ctx context.Context, txRepo *Repo, windowID
 }
 
 // GetMatchingPlans 根据产品 ID 和结束日期查询匹配计划。
-func (s *Service) GetMatchingPlans(ctx context.Context, req MatchingPlansReq) (*MatchingPlansResp, error) {
+func (s *Service) GetMatchingPlans(ctx context.Context, actor *model.User, req MatchingPlansReq) (*MatchingPlansResp, error) {
+	_ = actor
 	plans, err := s.repo.GetMatchingPlans(ctx, req.ProductID, strings.TrimSpace(req.EndDate))
 	if err != nil {
 		return nil, err

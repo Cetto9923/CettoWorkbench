@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 )
+
 // TeamgroupOption 敏捷小组下拉选项。
 type TeamgroupOption struct {
 	ID          uint
@@ -32,7 +33,7 @@ type MatchingPlansReq struct {
 }
 
 // Validate 校验计划匹配查询参数。
-func (r MatchingPlansReq) Validate() []FieldError {
+func (r *MatchingPlansReq) Validate() []FieldError {
 	var errs []FieldError
 	if r.ProductID == 0 {
 		errs = append(errs, FieldError{Field: "product_id", Message: "产品 ID 不能为空"})
@@ -60,8 +61,8 @@ type MatchingPlansResp struct {
 	HasMatch bool               `json:"has_match"`
 }
 
-// CreateWindowForm 新建版本窗口保存请求。
-type CreateWindowForm struct {
+// CreateReq 新建版本窗口保存请求。
+type CreateReq struct {
 	ReleaseDate string               `json:"releaseDate"`
 	Name        string               `json:"name"`
 	StartDate   string               `json:"startDate"`
@@ -71,44 +72,73 @@ type CreateWindowForm struct {
 }
 
 // Validate 校验新建版本窗口请求。
-func (f CreateWindowForm) Validate() []FieldError {
+func (r *CreateReq) Validate() []FieldError {
+	return validateWindowSaveFields(
+		r.ReleaseDate,
+		r.Name,
+		r.StartDate,
+		r.TeamgroupID,
+		r.GroupSize,
+		r.Products,
+	)
+}
+
+// UpdateReq 更新版本窗口请求。
+type UpdateReq struct {
+	ID          uint64               `json:"-"`
+	ReleaseDate string               `json:"releaseDate"`
+	Name        string               `json:"name"`
+	StartDate   string               `json:"startDate"`
+	TeamgroupID uint                 `json:"teamgroupId"`
+	GroupSize   int                  `json:"groupSize"`
+	Products    []WindowProductInput `json:"products"`
+}
+
+// Validate 校验更新版本窗口请求。
+func (r *UpdateReq) Validate() []FieldError {
 	var errs []FieldError
-	releaseDate := strings.TrimSpace(f.ReleaseDate)
-	if releaseDate == "" {
-		errs = append(errs, FieldError{Field: "releaseDate", Message: "预计上线日期不能为空"})
-	} else if _, err := time.Parse("2006-01-02", releaseDate); err != nil {
-		errs = append(errs, FieldError{Field: "releaseDate", Message: "预计上线日期格式无效"})
+	if r.ID == 0 {
+		errs = append(errs, FieldError{Field: "id", Message: "窗口 ID 无效"})
 	}
-	if strings.TrimSpace(f.Name) == "" {
-		errs = append(errs, FieldError{Field: "name", Message: "窗口名称不能为空"})
-	}
-	startDate := strings.TrimSpace(f.StartDate)
-	if startDate == "" {
-		errs = append(errs, FieldError{Field: "startDate", Message: "窗口开始日期不能为空"})
-	} else if _, err := time.Parse("2006-01-02", startDate); err != nil {
-		errs = append(errs, FieldError{Field: "startDate", Message: "窗口开始日期格式无效"})
-	}
-	if f.TeamgroupID == 0 {
-		errs = append(errs, FieldError{Field: "teamgroupId", Message: "敏捷小组不能为空"})
-	}
-	if f.GroupSize < 0 {
-		errs = append(errs, FieldError{Field: "groupSize", Message: "小组人数不能为负数"})
-	}
-	for i, product := range f.Products {
-		if product.ProductID == 0 {
-			errs = append(errs, FieldError{
-				Field:   "products",
-				Message: "第 " + strconv.Itoa(i+1) + " 个关联系统 ID 不能为空",
-			})
-		}
-		if product.SyncPlan && strings.TrimSpace(product.PlanTitle) == "" {
-			errs = append(errs, FieldError{
-				Field:   "products",
-				Message: "第 " + strconv.Itoa(i+1) + " 个系统勾选同步创建计划时，计划名称不能为空",
-			})
-		}
-	}
+	errs = append(errs, validateWindowSaveFields(
+		r.ReleaseDate,
+		r.Name,
+		r.StartDate,
+		r.TeamgroupID,
+		r.GroupSize,
+		r.Products,
+	)...)
 	return errs
+}
+
+// DeleteReq 删除版本窗口请求。
+type DeleteReq struct {
+	ID uint64
+}
+
+// Validate 校验删除版本窗口请求。
+func (r *DeleteReq) Validate() []FieldError {
+	if r.ID == 0 {
+		return []FieldError{{Field: "id", Message: "窗口 ID 无效"}}
+	}
+	return nil
+}
+
+// ListWindowsResp 版本窗口维护列表响应。
+type ListWindowsResp struct {
+	Windows []WindowListItem
+}
+
+// WindowListItem 版本窗口维护列表项。
+type WindowListItem struct {
+	ID               uint64
+	Name             string
+	ReleaseDate      string
+	Range            string
+	CapacityHours    int
+	CanEdit          bool
+	CanDelete        bool
+	HasLinkedDemands bool
 }
 
 // WindowProductInput 版本窗口关联系统及计划同步选项。
@@ -118,10 +148,10 @@ type WindowProductInput struct {
 	PlanTitle string `json:"planTitle"`
 }
 
-// FieldError 表单字段错误。
+// FieldError 字段级验证错误。
 type FieldError struct {
-	Field   string `json:"field"`
-	Message string `json:"message"`
+	Field   string
+	Message string
 }
 
 // WindowProductDetail 版本窗口关联产品及计划详情。
@@ -144,4 +174,49 @@ type WindowDetailResp struct {
 	TeamgroupID uint                  `json:"teamgroupId"`
 	GroupSize   uint                  `json:"groupSize"`
 	Products    []WindowProductDetail `json:"products"`
+}
+
+func validateWindowSaveFields(
+	releaseDate, name, startDate string,
+	teamgroupID uint,
+	groupSize int,
+	products []WindowProductInput,
+) []FieldError {
+	var errs []FieldError
+	releaseDate = strings.TrimSpace(releaseDate)
+	if releaseDate == "" {
+		errs = append(errs, FieldError{Field: "releaseDate", Message: "预计上线日期不能为空"})
+	} else if _, err := time.Parse("2006-01-02", releaseDate); err != nil {
+		errs = append(errs, FieldError{Field: "releaseDate", Message: "预计上线日期格式无效"})
+	}
+	if strings.TrimSpace(name) == "" {
+		errs = append(errs, FieldError{Field: "name", Message: "窗口名称不能为空"})
+	}
+	startDate = strings.TrimSpace(startDate)
+	if startDate == "" {
+		errs = append(errs, FieldError{Field: "startDate", Message: "窗口开始日期不能为空"})
+	} else if _, err := time.Parse("2006-01-02", startDate); err != nil {
+		errs = append(errs, FieldError{Field: "startDate", Message: "窗口开始日期格式无效"})
+	}
+	if teamgroupID == 0 {
+		errs = append(errs, FieldError{Field: "teamgroupId", Message: "敏捷小组不能为空"})
+	}
+	if groupSize < 0 {
+		errs = append(errs, FieldError{Field: "groupSize", Message: "小组人数不能为负数"})
+	}
+	for i, product := range products {
+		if product.ProductID == 0 {
+			errs = append(errs, FieldError{
+				Field:   "products",
+				Message: "第 " + strconv.Itoa(i+1) + " 个关联系统 ID 不能为空",
+			})
+		}
+		if product.SyncPlan && strings.TrimSpace(product.PlanTitle) == "" {
+			errs = append(errs, FieldError{
+				Field:   "products",
+				Message: "第 " + strconv.Itoa(i+1) + " 个系统勾选同步创建计划时，计划名称不能为空",
+			})
+		}
+	}
+	return errs
 }

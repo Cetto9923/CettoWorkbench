@@ -96,6 +96,34 @@
   }
 
   /**
+   * 切换带 .show 类名的弹窗与遮罩（schedule 等模块使用）。
+   * @param {string|string[]} elementIds 弹窗/遮罩元素 id，可传数组
+   * @param {boolean} visible 是否显示
+   */
+  function setShowModals(elementIds, visible) {
+    var ids = Array.isArray(elementIds) ? elementIds : [elementIds];
+    for (var i = 0; i < ids.length; i++) {
+      var el = document.getElementById(ids[i]);
+      if (!el) {
+        continue;
+      }
+      if (visible) {
+        el.classList.add("show");
+      } else {
+        el.classList.remove("show");
+      }
+    }
+  }
+
+  function openShowModals(elementIds) {
+    setShowModals(elementIds, true);
+  }
+
+  function closeShowModals(elementIds) {
+    setShowModals(elementIds, false);
+  }
+
+  /**
    * 切换下拉：点击触发器时切换父级 .dropdown 的 .open；点击页面其他区域关闭所有已打开的下拉。
    * @param {Element} el 触发器或其子节点（在 .dropdown 内）
    * @returns {boolean} false（便于内联 onclick 阻止默认行为）
@@ -216,6 +244,8 @@
   window.showToast = showToast;
   window.confirmDelete = confirmDelete;
   window.closeModal = closeModal;
+  window.openShowModals = openShowModals;
+  window.closeShowModals = closeShowModals;
   window.submitDelete = submitDelete;
   window.toggleDropdown = toggleDropdown;
   window.closeAllDropdowns = closeAllDropdowns;

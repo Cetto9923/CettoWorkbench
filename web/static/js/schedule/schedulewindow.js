@@ -6,6 +6,7 @@
   var draftApi = window.ScheduleWindowDraft;
 
   var SCHEDULE_CREATE_WINDOW_URL = "/po/schedule/windows";
+  var VERSION_WINDOW_MODAL_IDS = ["scheduleVersionWindowModal", "scheduleVersionWindowModalOverlay"];
 
   if (!draftApi) {
     return;
@@ -20,11 +21,6 @@
     return id ? SCHEDULE_CREATE_WINDOW_URL + "/" + id : SCHEDULE_CREATE_WINDOW_URL;
   }
 
-  function getCsrfToken() {
-    var el = document.querySelector('meta[name="csrf-token"]');
-    return el ? String(el.getAttribute("content") || "").trim() : "";
-  }
-
   function openScheduleCreateVersionWindowModal() {
     scheduleVersionWindowModalMode = "create";
     scheduleEditingWindowId = null;
@@ -32,7 +28,9 @@
     $("#scheduleVersionWindowModalTitle").text("新建版本窗口");
     $("#scheduleVersionWindowModalSaveBtn").text("保存");
     draftApi.fillForm(true);
-    $("#scheduleVersionWindowModal, #scheduleVersionWindowModalOverlay").addClass("show");
+    if (typeof window.showScheduleModals === "function") {
+      window.showScheduleModals(VERSION_WINDOW_MODAL_IDS);
+    }
   }
 
   function isSessionExpiredError(err) {
@@ -52,11 +50,7 @@
     if (typeof window.closeAllScheduleWindowCardMenus === "function") {
       window.closeAllScheduleWindowCardMenus();
     }
-    var headers = { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" };
-    var csrf = getCsrfToken();
-    if (csrf) {
-      headers["X-CSRF-Token"] = csrf;
-    }
+    var headers = { Accept: "application/json" };
 
     scheduleRequestFetch(scheduleWindowURL(id), { method: "GET", headers: headers })
       .then(function (resp) {
@@ -82,7 +76,9 @@
         $("#scheduleVersionWindowModalTitle").text("编辑版本窗口");
         $("#scheduleVersionWindowModalSaveBtn").text("保存");
         draftApi.fillForm(true);
-        $("#scheduleVersionWindowModal, #scheduleVersionWindowModalOverlay").addClass("show");
+        if (typeof window.showScheduleModals === "function") {
+          window.showScheduleModals(VERSION_WINDOW_MODAL_IDS);
+        }
       })
       .catch(function (err) {
         if (isSessionExpiredError(err)) {
@@ -95,7 +91,9 @@
   }
 
   function closeScheduleVersionWindowModal() {
-    $("#scheduleVersionWindowModal, #scheduleVersionWindowModalOverlay").removeClass("show");
+    if (typeof window.hideScheduleModals === "function") {
+      window.hideScheduleModals(VERSION_WINDOW_MODAL_IDS);
+    }
     scheduleVersionWindowModalMode = "idle";
     scheduleEditingWindowId = null;
     draftApi.resetDraft();
@@ -315,18 +313,12 @@
   }
 
   function submitScheduleWindowRequest(method, url, payload) {
-    var headers = {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      "X-Requested-With": "XMLHttpRequest",
-    };
-    var csrf = getCsrfToken();
-    if (csrf) {
-      headers["X-CSRF-Token"] = csrf;
-    }
     return scheduleRequestFetch(url, {
       method: method,
-      headers: headers,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
       body: JSON.stringify({
         releaseDate: payload.releaseDate,
         name: payload.name,
@@ -411,12 +403,10 @@
     if (!window.confirm("确定要删除窗口 " + label + " 吗？")) {
       return;
     }
-    var headers = { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" };
-    var csrf = getCsrfToken();
-    if (csrf) {
-      headers["X-CSRF-Token"] = csrf;
-    }
-    scheduleRequestFetch(scheduleWindowURL(id), { method: "DELETE", headers: headers })
+    scheduleRequestFetch(scheduleWindowURL(id), {
+      method: "DELETE",
+      headers: { Accept: "application/json" },
+    })
       .then(function (resp) {
         return resp
           .json()

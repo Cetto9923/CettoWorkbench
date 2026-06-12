@@ -5,6 +5,7 @@
 // 职责: 处理排期工作台页面请求并调用 Service。
 // 依赖: internal/middleware
 //       internal/pkg/pagination
+//       internal/pkg/perm
 //       internal/pkg/render
 // =============================================================================
 
@@ -21,6 +22,7 @@ import (
 	"workbench/internal/constants"
 	"workbench/internal/middleware"
 	"workbench/internal/pkg/pagination"
+	"workbench/internal/pkg/perm"
 	"workbench/internal/pkg/render"
 )
 
@@ -43,7 +45,7 @@ type WindowCard struct {
 }
 
 // WindowListItem 版本窗口维护列表项（JSON）。
-type WindowListItem struct {
+type windowListItemJSON struct {
 	ID               uint64 `json:"id"`
 	Name             string `json:"name"`
 	ReleaseDate      string `json:"releaseDate"`
@@ -52,6 +54,19 @@ type WindowListItem struct {
 	CanEdit          bool   `json:"canEdit"`
 	CanDelete        bool   `json:"canDelete"`
 	HasLinkedDemands bool   `json:"hasLinkedDemands"`
+}
+
+func toWindowListItemJSON(item WindowListItem) windowListItemJSON {
+	return windowListItemJSON{
+		ID:               item.ID,
+		Name:             item.Name,
+		ReleaseDate:      item.ReleaseDate,
+		Range:            item.Range,
+		CapacityHours:    item.CapacityHours,
+		CanEdit:          item.CanEdit,
+		CanDelete:        item.CanDelete,
+		HasLinkedDemands: item.HasLinkedDemands,
+	}
 }
 
 // DevRequirement 研发需求行（树形三级）。
@@ -102,27 +117,44 @@ const scheduleRedirectURL = "/po/schedule"
 
 // Handler 处理排期工作台页面请求。
 type Handler struct {
-	svc    *Service
-	logger *zap.Logger
+	renderer *render.Renderer
+	logger   *zap.Logger
+	svc      *Service
 }
 
 // NewHandler 创建排期模块 Handler。
-func NewHandler(svc *Service, logger *zap.Logger) *Handler {
-	return &Handler{svc: svc, logger: logger}
+func NewHandler(renderer *render.Renderer, logger *zap.Logger, svc *Service) *Handler {
+	return &Handler{
+		renderer: renderer,
+		logger:   logger,
+		svc:      svc,
+	}
+}
+
+// RegisterRoutes 注册排期工作台路由。
+func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
+	g := rg.Group("/schedule")
+	g.Use(middleware.ActiveNav("/po/schedule"))
+	{
+		g.GET("", middleware.RequirePerm(perm.ScheduleList), h.Index)
+		g.GET("/matching-plans", middleware.RequirePerm(perm.ScheduleList), h.GetMatchingPlans)
+		g.POST("/windows", middleware.RequirePerm(perm.ScheduleCreate), h.CreateWindow)
+		g.GET("/windows", middleware.RequirePerm(perm.ScheduleList), h.ListWindows)
+		g.GET("/windows/:id", middleware.RequirePerm(perm.ScheduleList), h.GetWindow)
+		g.PUT("/windows/:id", middleware.RequirePerm(perm.ScheduleUpdate), h.UpdateWindow)
+		g.DELETE("/windows/:id", middleware.RequirePerm(perm.ScheduleDelete), h.DeleteWindow)
+	}
 }
 
 // Index 渲染排期工作台页面。
 func (h *Handler) Index(c *gin.Context) {
+	h.bindRenderer(c)
 	actor := middleware.CurrentUser(c)
-	account := ""
-	if actor != nil {
-		account = actor.Account
-	}
 
-	formData, err := h.svc.GetCreateWindowFormData(c.Request.Context(), account)
+	formData, err := h.svc.GetCreateWindowFormData(c.Request.Context(), actor)
 	if err != nil {
 		if h.logger != nil {
-			h.logger.Error("load create window form data failed", zap.Error(err), zap.String("account", account))
+			h.logger.Error("load create window form data failed", zap.Error(err))
 		}
 		formData = &CreateWindowFormData{
 			Teamgroups: []TeamgroupOption{},
@@ -130,7 +162,7 @@ func (h *Handler) Index(c *gin.Context) {
 		}
 	}
 
-	windows, err := h.svc.ListWindowCards(c.Request.Context(), account)
+	windows, err := h.svc.ListWindowCards(c.Request.Context(), actor)
 	if err != nil {
 		if h.logger != nil {
 			h.logger.Error("load version windows failed", zap.Error(err))
@@ -145,24 +177,20 @@ func (h *Handler) Index(c *gin.Context) {
 		"PageTitle":       "排期工作台",
 		"Windows":         windows,
 		"BizRequirements": bizRequirements,
-		"Teamgroups": formData.Teamgroups,
-		"Products":   formData.Products,
-		"Pager":      pagination.New(int64(len(bizRequirements)), 1, 10),
+		"Teamgroups":      formData.Teamgroups,
+		"Products":        formData.Products,
+		"Pager":           pagination.New(int64(len(bizRequirements)), 1, 10),
 	})
 }
 
 // ListWindows 返回版本窗口维护列表（JSON）。
 func (h *Handler) ListWindows(c *gin.Context) {
 	actor := middleware.CurrentUser(c)
-	account := ""
-	if actor != nil {
-		account = actor.Account
-	}
 
-	items, err := h.svc.ListWindows(c.Request.Context(), account)
+	resp, err := h.svc.ListWindows(c.Request.Context(), actor)
 	if err != nil {
 		if h.logger != nil {
-			h.logger.Error("list version windows failed", zap.Error(err), zap.String("account", account))
+			h.logger.Error("list version windows failed", zap.Error(err))
 		}
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -170,40 +198,40 @@ func (h *Handler) ListWindows(c *gin.Context) {
 		})
 		return
 	}
-	if items == nil {
-		items = []WindowListItem{}
+
+	windows := make([]windowListItemJSON, 0, len(resp.Windows))
+	for _, item := range resp.Windows {
+		windows = append(windows, toWindowListItemJSON(item))
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"windows": items,
+		"windows": windows,
 	})
 }
 
 // CreateWindow 保存新建版本窗口（JSON）。
 func (h *Handler) CreateWindow(c *gin.Context) {
-	var form CreateWindowForm
-	if err := c.ShouldBindJSON(&form); err != nil {
+	var req CreateReq
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
 			"error":   "请求参数解析失败",
 		})
 		return
 	}
-	if errs := form.Validate(); len(errs) > 0 {
-		c.JSON(http.StatusOK, gin.H{
+	if errs := req.Validate(); len(errs) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"success": false,
+			"message": "参数校验失败",
+			"errors":  errs,
 			"error":   formatFieldErrors(errs),
 		})
 		return
 	}
 
 	actor := middleware.CurrentUser(c)
-	account := ""
-	if actor != nil {
-		account = actor.Account
-	}
-	if strings.TrimSpace(account) == "" {
+	if actorAccount(actor) == "" {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
 			"error":   "未登录或无法识别当前用户",
@@ -211,21 +239,11 @@ func (h *Handler) CreateWindow(c *gin.Context) {
 		return
 	}
 
-	window, err := BuildVersionWindowFromForm(form)
-	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"error":   "窗口日期无效",
-		})
-		return
-	}
-
-	if err := h.svc.SaveWindowWithPlans(c.Request.Context(), window, form.Products, account); err != nil {
+	if err := h.svc.Create(c.Request.Context(), actor, req); err != nil {
 		if h.logger != nil {
 			h.logger.Error("save version window failed",
 				zap.Error(err),
-				zap.String("account", account),
-				zap.String("name", window.Name),
+				zap.String("name", strings.TrimSpace(req.Name)),
 			)
 		}
 		c.JSON(http.StatusOK, gin.H{
@@ -253,7 +271,8 @@ func (h *Handler) GetWindow(c *gin.Context) {
 		return
 	}
 
-	detail, err := h.svc.GetWindowDetail(c.Request.Context(), id)
+	actor := middleware.CurrentUser(c)
+	detail, err := h.svc.GetByID(c.Request.Context(), actor, id)
 	if err != nil {
 		if h.logger != nil {
 			h.logger.Error("get version window detail failed", zap.Error(err), zap.Uint64("window_id", id))
@@ -289,28 +308,27 @@ func (h *Handler) UpdateWindow(c *gin.Context) {
 		return
 	}
 
-	var form CreateWindowForm
-	if err := c.ShouldBindJSON(&form); err != nil {
+	var req UpdateReq
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
 			"error":   "请求参数解析失败",
 		})
 		return
 	}
-	if errs := form.Validate(); len(errs) > 0 {
-		c.JSON(http.StatusOK, gin.H{
+	req.ID = id
+	if errs := req.Validate(); len(errs) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"success": false,
+			"message": "参数校验失败",
+			"errors":  errs,
 			"error":   formatFieldErrors(errs),
 		})
 		return
 	}
 
 	actor := middleware.CurrentUser(c)
-	account := ""
-	if actor != nil {
-		account = actor.Account
-	}
-	if strings.TrimSpace(account) == "" {
+	if actorAccount(actor) == "" {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
 			"error":   "未登录或无法识别当前用户",
@@ -318,39 +336,11 @@ func (h *Handler) UpdateWindow(c *gin.Context) {
 		return
 	}
 
-	window, err := h.svc.GetVersionWindow(c.Request.Context(), id)
-	if err != nil {
-		if h.logger != nil {
-			h.logger.Error("load version window for update failed", zap.Error(err), zap.Uint64("window_id", id))
-		}
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"error":   "加载版本窗口失败",
-		})
-		return
-	}
-	if window == nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"error":   "窗口不存在",
-		})
-		return
-	}
-
-	if err := ApplyFormToVersionWindow(window, form); err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"error":   "窗口日期无效",
-		})
-		return
-	}
-
-	if err := h.svc.UpdateWindowWithPlans(c.Request.Context(), window, form.Products, account); err != nil {
+	if err := h.svc.Update(c.Request.Context(), actor, req); err != nil {
 		if h.logger != nil {
 			h.logger.Error("update version window failed",
 				zap.Error(err),
 				zap.Uint64("window_id", id),
-				zap.String("account", account),
 			)
 		}
 		c.JSON(http.StatusOK, gin.H{
@@ -379,11 +369,7 @@ func (h *Handler) DeleteWindow(c *gin.Context) {
 	}
 
 	actor := middleware.CurrentUser(c)
-	account := ""
-	if actor != nil {
-		account = actor.Account
-	}
-	if strings.TrimSpace(account) == "" {
+	if actorAccount(actor) == "" {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
 			"error":   "未登录或无法识别当前用户",
@@ -391,12 +377,19 @@ func (h *Handler) DeleteWindow(c *gin.Context) {
 		return
 	}
 
-	if err := h.svc.SoftDeleteWindow(c.Request.Context(), id, account); err != nil {
+	deleteReq := DeleteReq{ID: id}
+	if errs := deleteReq.Validate(); len(errs) > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   formatFieldErrors(errs),
+		})
+		return
+	}
+	if err := h.svc.Delete(c.Request.Context(), actor, deleteReq); err != nil {
 		if h.logger != nil {
 			h.logger.Error("delete version window failed",
 				zap.Error(err),
 				zap.Uint64("window_id", id),
-				zap.String("account", account),
 			)
 		}
 		c.JSON(http.StatusOK, gin.H{
@@ -411,6 +404,48 @@ func (h *Handler) DeleteWindow(c *gin.Context) {
 		"message":     "版本窗口已删除",
 		"redirectUrl": scheduleRedirectURL,
 	})
+}
+
+// GetMatchingPlans 根据产品 ID 和结束日期返回匹配计划（JSON）。
+func (h *Handler) GetMatchingPlans(c *gin.Context) {
+	var req MatchingPlansReq
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "参数解析失败",
+		})
+		return
+	}
+	if errs := req.Validate(); len(errs) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"message": "参数校验失败",
+			"errors":  errs,
+		})
+		return
+	}
+
+	actor := middleware.CurrentUser(c)
+	resp, err := h.svc.GetMatchingPlans(c.Request.Context(), actor, req)
+	if err != nil {
+		if h.logger != nil {
+			h.logger.Error("get matching plans failed",
+				zap.Error(err),
+				zap.Uint("product_id", req.ProductID),
+				zap.String("end_date", req.EndDate),
+			)
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "查询匹配计划失败",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
+func (h *Handler) bindRenderer(c *gin.Context) {
+	if h.renderer != nil {
+		c.Set("renderer", h.renderer)
+	}
 }
 
 func parseWindowID(c *gin.Context) (uint64, bool) {
@@ -438,39 +473,3 @@ func formatFieldErrors(errs []FieldError) string {
 	}
 	return strings.Join(messages, "；")
 }
-
-// GetMatchingPlans 根据产品 ID 和结束日期返回匹配计划（JSON）。
-func (h *Handler) GetMatchingPlans(c *gin.Context) {
-	var req MatchingPlansReq
-	if err := c.ShouldBindQuery(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "参数解析失败",
-		})
-		return
-	}
-	if errs := req.Validate(); len(errs) > 0 {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"message": "参数校验失败",
-			"errors":  errs,
-		})
-		return
-	}
-
-	resp, err := h.svc.GetMatchingPlans(c.Request.Context(), req)
-	if err != nil {
-		if h.logger != nil {
-			h.logger.Error("get matching plans failed",
-				zap.Error(err),
-				zap.Uint("product_id", req.ProductID),
-				zap.String("end_date", req.EndDate),
-			)
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "查询匹配计划失败",
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, resp)
-}
-

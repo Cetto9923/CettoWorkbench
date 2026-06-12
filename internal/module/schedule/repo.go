@@ -186,8 +186,8 @@ func (r *Repo) Transaction(ctx context.Context, fn func(txRepo *Repo) error) err
 	})
 }
 
-// GetVersionWindowByID 按 ID 查询未删除的版本窗口。
-func (r *Repo) GetVersionWindowByID(ctx context.Context, id uint64) (*model.VersionWindow, error) {
+// FindByID 按 ID 查询未删除的版本窗口。
+func (r *Repo) FindByID(ctx context.Context, id uint64) (*model.VersionWindow, error) {
 	var window model.VersionWindow
 	err := r.db.WithContext(ctx).
 		Where("id = ?", id).
@@ -304,8 +304,8 @@ ORDER BY vwp.id ASC`
 	return rows, nil
 }
 
-// UpdateVersionWindow 更新版本窗口基本信息。
-func (r *Repo) UpdateVersionWindow(ctx context.Context, window *model.VersionWindow) error {
+// Update 更新版本窗口基本信息。
+func (r *Repo) Update(ctx context.Context, window *model.VersionWindow) error {
 	if window == nil || window.ID == 0 {
 		return errors.New("version window is invalid")
 	}
@@ -323,22 +323,29 @@ func (r *Repo) DeleteWindowProducts(ctx context.Context, windowID uint64) error 
 		Delete(&model.VersionWindowProduct{}).Error
 }
 
-// SoftDeleteVersionWindow 软删除版本窗口。
-func (r *Repo) SoftDeleteVersionWindow(ctx context.Context, id uint64) error {
+// Delete 软删除版本窗口。
+func (r *Repo) Delete(ctx context.Context, id uint64) error {
 	return r.db.WithContext(ctx).
 		Where("id = ?", id).
 		Delete(&model.VersionWindow{}).Error
 }
 
-// ListVersionWindows 查询未删除的版本窗口，按预计上线日期升序。
-func (r *Repo) ListVersionWindows(ctx context.Context) ([]model.VersionWindow, error) {
+// FindAll 查询未删除的版本窗口（count + find），按预计上线日期升序。
+func (r *Repo) FindAll(ctx context.Context) ([]model.VersionWindow, int64, error) {
+	query := r.db.WithContext(ctx).Model(&model.VersionWindow{})
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
 	var rows []model.VersionWindow
-	if err := r.db.WithContext(ctx).
+	if err := query.
 		Order("releaseDate ASC").
 		Find(&rows).Error; err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return rows, nil
+	return rows, total, nil
 }
 
 // ListUpcomingVersionWindowsForTeamgroups 查询指定敏捷小组未过期版本窗口（最多 limit 条）。
@@ -361,8 +368,8 @@ func (r *Repo) ListUpcomingVersionWindowsForTeamgroups(ctx context.Context, team
 	return rows, nil
 }
 
-// CreateVersionWindow 写入 zt_versionwindow 并回填自增 ID。
-func (r *Repo) CreateVersionWindow(ctx context.Context, window *model.VersionWindow) error {
+// Create 写入 zt_versionwindow 并回填自增 ID。
+func (r *Repo) Create(ctx context.Context, window *model.VersionWindow) error {
 	return r.db.WithContext(ctx).Create(window).Error
 }
 

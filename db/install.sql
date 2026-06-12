@@ -46,9 +46,6 @@ INSERT INTO `zt_menus` (`id`, `parentId`, `title`, `icon`, `path`, `perm`, `type
  (2,	1,	'工作台首页',	'fa-home',	'/po/home',	'po:home',	'C',	1),
  (3,	1,	'排期工作台',	'fa-calendar-check',	'/po/schedule',	'po:schedule',	'C',	2);
 
-DROP TABLE IF EXISTS `version_window_product`;
-DROP TABLE IF EXISTS `version_window`;
-
 CREATE TABLE IF NOT EXISTS `zt_versionwindow` (
     `id`            BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `name`          VARCHAR(100) NOT NULL COMMENT '窗口名称，根据预计上线日期自动生成，如 26-0701窗口',

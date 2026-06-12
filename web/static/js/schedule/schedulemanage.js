@@ -2,11 +2,7 @@
   "use strict";
 
   var SCHEDULE_LIST_WINDOWS_URL = "/po/schedule/windows";
-
-  function getCsrfToken() {
-    var el = document.querySelector('meta[name="csrf-token"]');
-    return el ? String(el.getAttribute("content") || "").trim() : "";
-  }
+  var MANAGE_MODAL_IDS = ["manageVersionWindowsModal", "manageVersionWindowsOverlay"];
 
   function scheduleWindowEditDisabledTip(canEdit) {
     return canEdit ? "" : "非本人创建，无法维护";
@@ -123,13 +119,11 @@
     if (typeof window.closeAllScheduleWindowCardMenus === "function") {
       window.closeAllScheduleWindowCardMenus();
     }
-    var headers = { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" };
-    var csrf = getCsrfToken();
-    if (csrf) {
-      headers["X-CSRF-Token"] = csrf;
-    }
 
-    scheduleRequestFetch(SCHEDULE_LIST_WINDOWS_URL, { method: "GET", headers: headers })
+    scheduleRequestFetch(SCHEDULE_LIST_WINDOWS_URL, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+    })
       .then(function (resp) {
         return resp
           .json()
@@ -148,8 +142,9 @@
           return;
         }
         renderManageVersionWindowsTable(result.data.windows || []);
-        document.getElementById("manageVersionWindowsModal").classList.add("show");
-        document.getElementById("manageVersionWindowsOverlay").classList.add("show");
+        if (typeof window.showScheduleModals === "function") {
+          window.showScheduleModals(MANAGE_MODAL_IDS);
+        }
       })
       .catch(function (err) {
         if (isSessionExpiredError(err)) {
@@ -162,13 +157,8 @@
   }
 
   function closeManageVersionWindowsModal() {
-    var modal = document.getElementById("manageVersionWindowsModal");
-    var overlay = document.getElementById("manageVersionWindowsOverlay");
-    if (modal) {
-      modal.classList.remove("show");
-    }
-    if (overlay) {
-      overlay.classList.remove("show");
+    if (typeof window.hideScheduleModals === "function") {
+      window.hideScheduleModals(MANAGE_MODAL_IDS);
     }
   }
 

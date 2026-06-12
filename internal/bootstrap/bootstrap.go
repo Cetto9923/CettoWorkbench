@@ -117,7 +117,7 @@ func Run() error {
 
 	scheduleRepo := schedule.NewRepo(db)
 	scheduleSvc := schedule.NewService(scheduleRepo, zapLog)
-	scheduleHandler := schedule.NewHandler(scheduleSvc, zapLog)
+	scheduleHandler := schedule.NewHandler(rend, zapLog, scheduleSvc)
 	poSvc := po.NewService(redisClients, scheduleSvc, zapLog)
 	poHandler := po.NewHandler(poSvc, zapLog)
 	sqlPerfRepo := debug.NewRepo(cfg.Log.Dir)
