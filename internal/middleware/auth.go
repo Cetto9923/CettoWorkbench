@@ -14,6 +14,7 @@ import (
 	"context"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/gin-gonic/gin"
@@ -33,9 +34,7 @@ func RequireLogin(mgr *scs.SessionManager, db *gorm.DB) gin.HandlerFunc {
 			userID = session.GetUserID(c.Request.Context(), mgr)
 		}
 		if userID <= 0 {
-			target := "/login?redirect=" + url.QueryEscape(c.Request.URL.RequestURI())
-			c.Redirect(http.StatusSeeOther, target)
-			c.Abort()
+			abortUnauthenticated(c)
 			return
 		}
 		if db == nil {
@@ -46,9 +45,7 @@ func RequireLogin(mgr *scs.SessionManager, db *gorm.DB) gin.HandlerFunc {
 		var user model.User
 		if err := loadUserByID(c.Request.Context(), db, userID, &user); err != nil {
 			_ = session.Clear(c.Request.Context(), mgr)
-			target := "/login?redirect=" + url.QueryEscape(c.Request.URL.RequestURI())
-			c.Redirect(http.StatusSeeOther, target)
-			c.Abort()
+			abortUnauthenticated(c)
 			return
 		}
 
@@ -83,6 +80,25 @@ func RequireLogin(mgr *scs.SessionManager, db *gorm.DB) gin.HandlerFunc {
 		c.Set("currentMenus", currentMenus)
 		c.Next()
 	}
+}
+
+func expectsJSON(c *gin.Context) bool {
+	accept := strings.ToLower(c.GetHeader("Accept"))
+	requestedWith := strings.ToLower(c.GetHeader("X-Requested-With"))
+	return strings.Contains(accept, "application/json") || requestedWith == "xmlhttprequest"
+}
+
+func abortUnauthenticated(c *gin.Context) {
+	if expectsJSON(c) {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+			"success": false,
+			"error":   "未登录或会话已过期",
+		})
+		return
+	}
+	target := "/login?redirect=" + url.QueryEscape(c.Request.URL.RequestURI())
+	c.Redirect(http.StatusSeeOther, target)
+	c.Abort()
 }
 
 func loadUserByID(ctx context.Context, db *gorm.DB, userID int64, user *model.User) error {

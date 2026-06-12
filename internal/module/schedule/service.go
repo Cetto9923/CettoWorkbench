@@ -13,6 +13,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"time"
 
@@ -110,8 +111,8 @@ func (s *Service) GetCreateWindowFormData(ctx context.Context, account string) (
 	}, nil
 }
 
-func computeWindowPermissions(createdBy, account string) (canEdit, canDelete, hasLinkedDemands bool) {
-	hasLinkedDemands = false // TODO: 接需求数据后改为真实查询
+func computeWindowPermissions(createdBy, account string, demandCount int) (canEdit, canDelete, hasLinkedDemands bool) {
+	hasLinkedDemands = demandCount > 0
 	canEdit = strings.TrimSpace(createdBy) == strings.TrimSpace(account)
 	canDelete = canEdit && !hasLinkedDemands
 	return
@@ -196,7 +197,23 @@ func (s *Service) ListWindowCards(ctx context.Context, account string) ([]Window
 			return nil, err
 		}
 
-		canEdit, canDelete, hasLinkedDemands := computeWindowPermissions(window.CreatedBy, account)
+		consumed, err := s.repo.GetWindowConsumedHours(ctx, window.ID)
+		if err != nil {
+			return nil, err
+		}
+		demandCount, err := s.repo.GetWindowDemandCount(ctx, window.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		usedHours := int(math.Round(consumed))
+		remainingHours := max(0, capacityHours-usedHours)
+		usedPercent := 0
+		if capacityHours > 0 {
+			usedPercent = usedHours * 100 / capacityHours
+		}
+
+		canEdit, canDelete, hasLinkedDemands := computeWindowPermissions(window.CreatedBy, account, demandCount)
 
 		cards = append(cards, WindowCard{
 			ID:               window.ID,
@@ -205,12 +222,12 @@ func (s *Service) ListWindowCards(ctx context.Context, account string) ([]Window
 			Status:           windowStatusLabel(window.Status),
 			ToneClass:        windowCardToneClasses[i%len(windowCardToneClasses)],
 			AgileGroup:       teamgroupNameByID[window.TeamgroupID],
-			DemandCount:      0,
+			DemandCount:      demandCount,
 			CapacityHours:    capacityHours,
-			UsedHours:        0,
-			RemainingHours:   capacityHours,
+			UsedHours:        usedHours,
+			RemainingHours:   remainingHours,
 			BlockedCount:     0,
-			UsedPercent:      0,
+			UsedPercent:      usedPercent,
 			CanEdit:          canEdit,
 			CanDelete:        canDelete,
 			HasLinkedDemands: hasLinkedDemands,
@@ -460,7 +477,11 @@ func (s *Service) ListWindows(ctx context.Context, account string) ([]WindowList
 		if err != nil {
 			return nil, err
 		}
-		canEdit, canDelete, hasLinkedDemands := computeWindowPermissions(window.CreatedBy, account)
+		demandCount, err := s.repo.GetWindowDemandCount(ctx, window.ID)
+		if err != nil {
+			return nil, err
+		}
+		canEdit, canDelete, hasLinkedDemands := computeWindowPermissions(window.CreatedBy, account, demandCount)
 
 		items = append(items, WindowListItem{
 			ID:               window.ID,

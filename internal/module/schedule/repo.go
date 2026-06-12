@@ -201,6 +201,42 @@ func (r *Repo) GetVersionWindowByID(ctx context.Context, id uint64) (*model.Vers
 	return &window, nil
 }
 
+// GetWindowConsumedHours 查询窗口关联任务的已消耗工时总和。
+// 链路: zt_versionwindowproduct.plan → zt_planstory.story → zt_task.consumed
+func (r *Repo) GetWindowConsumedHours(ctx context.Context, windowID uint64) (float64, error) {
+	const query = `
+SELECT COALESCE(SUM(t.consumed), 0) AS total
+FROM zt_versionwindowproduct vwp
+JOIN zt_planstory ps ON ps.plan = vwp.plan
+JOIN zt_task t ON t.story = ps.story AND t.deleted = '0'
+WHERE vwp.versionWindow = ? AND vwp.deletedAt IS NULL AND vwp.plan IS NOT NULL`
+
+	var row struct {
+		Total float64 `gorm:"column:total"`
+	}
+	if err := r.db.WithContext(ctx).Raw(query, windowID).Scan(&row).Error; err != nil {
+		return 0, err
+	}
+	return row.Total, nil
+}
+
+// GetWindowDemandCount 查询窗口关联的需求数量。
+func (r *Repo) GetWindowDemandCount(ctx context.Context, windowID uint64) (int, error) {
+	const query = `
+SELECT COUNT(DISTINCT ps.story) AS cnt
+FROM zt_versionwindowproduct vwp
+JOIN zt_planstory ps ON ps.plan = vwp.plan
+WHERE vwp.versionWindow = ? AND vwp.deletedAt IS NULL AND vwp.plan IS NOT NULL`
+
+	var row struct {
+		Cnt int64 `gorm:"column:cnt"`
+	}
+	if err := r.db.WithContext(ctx).Raw(query, windowID).Scan(&row).Error; err != nil {
+		return 0, err
+	}
+	return int(row.Cnt), nil
+}
+
 // GetWindowProducts 查询窗口关联产品及计划信息。
 func (r *Repo) GetWindowProducts(ctx context.Context, windowID uint64) ([]WindowProductRow, error) {
 	const query = `
@@ -210,8 +246,8 @@ SELECT
   vwp.plan,
   vwp.planSynced,
   pp.title AS plan_title,
-  pp.begin AS plan_begin,
-  pp.end AS plan_end
+  DATE_FORMAT(pp.` + "`begin`" + `, '%Y-%m-%d') AS plan_begin,
+  DATE_FORMAT(pp.` + "`end`" + `, '%Y-%m-%d') AS plan_end
 FROM zt_versionwindowproduct vwp
 INNER JOIN zt_product p ON p.id = vwp.product
 LEFT JOIN zt_productplan pp ON pp.id = vwp.plan AND pp.deleted = '0'
