@@ -130,18 +130,26 @@
     });
   }
 
+  function isSessionExpiredError(err) {
+    return !!(err && err.message === "session expired");
+  }
+
+  function scheduleRequestFetch(url, options) {
+    var fetchFn = window.scheduleFetch || window.appFetch || fetch;
+    return fetchFn(url, options);
+  }
+
   function openManageVersionWindowsModal() {
     if (typeof window.closeAllScheduleWindowCardMenus === "function") {
       window.closeAllScheduleWindowCardMenus();
     }
-    var fetchFn = window.appFetch || fetch;
     var headers = { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" };
     var csrf = getCsrfToken();
     if (csrf) {
       headers["X-CSRF-Token"] = csrf;
     }
 
-    fetchFn(SCHEDULE_LIST_WINDOWS_URL, { method: "GET", headers: headers })
+    scheduleRequestFetch(SCHEDULE_LIST_WINDOWS_URL, { method: "GET", headers: headers })
       .then(function (resp) {
         return resp
           .json()
@@ -163,7 +171,10 @@
         document.getElementById("manageVersionWindowsModal").classList.add("show");
         document.getElementById("manageVersionWindowsOverlay").classList.add("show");
       })
-      .catch(function () {
+      .catch(function (err) {
+        if (isSessionExpiredError(err)) {
+          return;
+        }
         if (typeof window.showToast === "function") {
           window.showToast("加载版本窗口列表失败，请稍后重试", "error");
         }

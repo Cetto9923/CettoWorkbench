@@ -264,12 +264,24 @@
     d.systemPlanMatch[key] = { loading: true, productName: productName || getProductNameById(productId) };
     renderSchedulePlanGrid(isActive);
 
-    $.ajax({
-      url: SCHEDULE_MATCHING_PLANS_URL,
+    var query = new URLSearchParams({
+      product_id: String(productId),
+      end_date: endDate,
+    });
+    var fetchFn = window.scheduleFetch || window.appFetch || fetch;
+    fetchFn(SCHEDULE_MATCHING_PLANS_URL + "?" + query.toString(), {
       method: "GET",
-      data: { product_id: productId, end_date: endDate },
+      headers: {
+        Accept: "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+      },
     })
-      .done(function (resp) {
+      .then(function (resp) {
+        return resp.json().catch(function () {
+          return {};
+        });
+      })
+      .then(function (resp) {
         var draft = getScheduleVersionCreateDraft();
         var plans = (resp && resp.plans) || [];
         draft.systemPlanMatch[key] = {
@@ -294,7 +306,10 @@
         }
         renderSchedulePlanGrid(isActive);
       })
-      .fail(function () {
+      .catch(function (err) {
+        if (err && err.message === "session expired") {
+          return;
+        }
         var draft = getScheduleVersionCreateDraft();
         draft.systemPlanMatch[key] = {
           loading: false,

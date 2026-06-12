@@ -35,6 +35,15 @@
     $("#scheduleVersionWindowModal, #scheduleVersionWindowModalOverlay").addClass("show");
   }
 
+  function isSessionExpiredError(err) {
+    return !!(err && err.message === "session expired");
+  }
+
+  function scheduleRequestFetch(url, options) {
+    var fetchFn = window.scheduleFetch || window.appFetch || fetch;
+    return fetchFn(url, options);
+  }
+
   function openScheduleEditVersionWindowModal(windowId) {
     var id = Number(windowId);
     if (!id) {
@@ -43,14 +52,13 @@
     if (typeof window.closeAllScheduleWindowCardMenus === "function") {
       window.closeAllScheduleWindowCardMenus();
     }
-    var fetchFn = window.appFetch || fetch;
     var headers = { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" };
     var csrf = getCsrfToken();
     if (csrf) {
       headers["X-CSRF-Token"] = csrf;
     }
 
-    fetchFn(scheduleWindowURL(id), { method: "GET", headers: headers })
+    scheduleRequestFetch(scheduleWindowURL(id), { method: "GET", headers: headers })
       .then(function (resp) {
         return resp
           .json()
@@ -76,7 +84,10 @@
         draftApi.fillForm(true);
         $("#scheduleVersionWindowModal, #scheduleVersionWindowModalOverlay").addClass("show");
       })
-      .catch(function () {
+      .catch(function (err) {
+        if (isSessionExpiredError(err)) {
+          return;
+        }
         if (typeof window.showToast === "function") {
           window.showToast("加载窗口详情失败，请稍后重试", "error");
         }
@@ -301,7 +312,6 @@
   }
 
   function submitScheduleWindowRequest(method, url, payload) {
-    var fetchFn = window.appFetch || fetch;
     var headers = {
       "Content-Type": "application/json",
       Accept: "application/json",
@@ -311,7 +321,7 @@
     if (csrf) {
       headers["X-CSRF-Token"] = csrf;
     }
-    return fetchFn(url, {
+    return scheduleRequestFetch(url, {
       method: method,
       headers: headers,
       body: JSON.stringify({
@@ -375,7 +385,10 @@
           );
         }
       })
-      .catch(function () {
+      .catch(function (err) {
+        if (isSessionExpiredError(err)) {
+          return;
+        }
         if (typeof window.showToast === "function") {
           window.showToast("保存失败，请稍后重试", "error");
         }
@@ -395,13 +408,12 @@
     if (!window.confirm("确定要删除窗口 " + label + " 吗？")) {
       return;
     }
-    var fetchFn = window.appFetch || fetch;
     var headers = { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" };
     var csrf = getCsrfToken();
     if (csrf) {
       headers["X-CSRF-Token"] = csrf;
     }
-    fetchFn(scheduleWindowURL(id), { method: "DELETE", headers: headers })
+    scheduleRequestFetch(scheduleWindowURL(id), { method: "DELETE", headers: headers })
       .then(function (resp) {
         return resp
           .json()
@@ -429,7 +441,10 @@
           );
         }
       })
-      .catch(function () {
+      .catch(function (err) {
+        if (isSessionExpiredError(err)) {
+          return;
+        }
         if (typeof window.showToast === "function") {
           window.showToast("删除失败，请稍后重试", "error");
         }
