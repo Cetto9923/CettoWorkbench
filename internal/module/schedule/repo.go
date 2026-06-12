@@ -220,21 +220,64 @@ WHERE vwp.versionWindow = ? AND vwp.deletedAt IS NULL AND vwp.plan IS NOT NULL`
 	return row.Total, nil
 }
 
-// GetWindowDemandCount 查询窗口关联的需求数量。
-func (r *Repo) GetWindowDemandCount(ctx context.Context, windowID uint64) (int, error) {
+// WindowStageStats 窗口需求阶段统计。
+type WindowStageStats struct {
+	DemandCount  int // 业需数 + 非需求池软需数
+	DevCount     int // 开发中
+	TestCount    int // 测试中
+	DeliverCount int // 待交付
+}
+
+// GetWindowStageStats 查询窗口关联 story 的需求/开发/测试/待交付统计。
+// 链路: zt_versionwindowproduct.plan → zt_planstory.story → zt_story
+func (r *Repo) GetWindowStageStats(ctx context.Context, windowID uint64) (*WindowStageStats, error) {
 	const query = `
-SELECT COUNT(DISTINCT ps.story) AS cnt
+SELECT
+  COUNT(DISTINCT CASE WHEN s.fromDemand > 0 THEN s.fromDemand ELSE NULL END)
+  + COUNT(CASE WHEN s.fromDemand = 0 THEN 1 ELSE NULL END) AS demandCount,
+  SUM(CASE WHEN s.stage = 'developing' THEN 1 ELSE 0 END) AS devCount,
+  SUM(CASE WHEN s.stage = 'testing' THEN 1 ELSE 0 END) AS testCount,
+  SUM(CASE WHEN s.stage IN ('verified','tested','delivering','delivered') THEN 1 ELSE 0 END) AS deliverCount
 FROM zt_versionwindowproduct vwp
 JOIN zt_planstory ps ON ps.plan = vwp.plan
+JOIN zt_story s ON s.id = ps.story AND s.deleted = '0'
 WHERE vwp.versionWindow = ? AND vwp.deletedAt IS NULL AND vwp.plan IS NOT NULL`
 
 	var row struct {
-		Cnt int64 `gorm:"column:cnt"`
+		DemandCount  int64 `gorm:"column:demandCount"`
+		DevCount     int64 `gorm:"column:devCount"`
+		TestCount    int64 `gorm:"column:testCount"`
+		DeliverCount int64 `gorm:"column:deliverCount"`
+	}
+	if err := r.db.WithContext(ctx).Raw(query, windowID).Scan(&row).Error; err != nil {
+		return nil, err
+	}
+	return &WindowStageStats{
+		DemandCount:  int(row.DemandCount),
+		DevCount:     int(row.DevCount),
+		TestCount:    int(row.TestCount),
+		DeliverCount: int(row.DeliverCount),
+	}, nil
+}
+
+// GetWindowDemandCount 查询窗口关联的需求数量（业需去重 + 独立软需）。
+func (r *Repo) GetWindowDemandCount(ctx context.Context, windowID uint64) (int, error) {
+	const query = `
+SELECT
+  COUNT(DISTINCT CASE WHEN s.fromDemand > 0 THEN s.fromDemand ELSE NULL END)
+  + COUNT(CASE WHEN s.fromDemand = 0 THEN 1 ELSE NULL END) AS demandCount
+FROM zt_versionwindowproduct vwp
+JOIN zt_planstory ps ON ps.plan = vwp.plan
+JOIN zt_story s ON s.id = ps.story AND s.deleted = '0'
+WHERE vwp.versionWindow = ? AND vwp.deletedAt IS NULL AND vwp.plan IS NOT NULL`
+
+	var row struct {
+		DemandCount int64 `gorm:"column:demandCount"`
 	}
 	if err := r.db.WithContext(ctx).Raw(query, windowID).Scan(&row).Error; err != nil {
 		return 0, err
 	}
-	return int(row.Cnt), nil
+	return int(row.DemandCount), nil
 }
 
 // GetWindowProducts 查询窗口关联产品及计划信息。

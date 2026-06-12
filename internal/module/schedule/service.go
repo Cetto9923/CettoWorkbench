@@ -296,17 +296,20 @@ func (s *Service) ListHomeVersionWindows(ctx context.Context, account string) ([
 		if window.StartDate != nil {
 			start = *window.StartDate
 		}
-		// TODO(#87950): 接入真实需求/开发/测试/待交付/风险统计
+		stats, err := s.repo.GetWindowStageStats(ctx, window.ID)
+		if err != nil {
+			return nil, err
+		}
 		cards = append(cards, HomeVersionWindowCard{
 			Name:         window.Name,
 			AgileGroup:   nameByID[window.TeamgroupID],
 			StatusLabel:  statusLabels[i],
 			Range:        formatWindowDateRange(start, window.ReleaseDate),
 			ToneClass:    homeVersionToneClass(statusLabels[i]),
-			DemandCount:  0,
-			DevCount:     0,
-			TestCount:    0,
-			DeliverCount: 0,
+			DemandCount:  stats.DemandCount,
+			DevCount:     stats.DevCount,
+			TestCount:    stats.TestCount,
+			DeliverCount: stats.DeliverCount,
 			RiskCount:    0,
 		})
 	}
