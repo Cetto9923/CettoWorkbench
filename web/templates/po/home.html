@@ -4,7 +4,7 @@
 职责: PO 工作台首页静态占位
 全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
 页面字段: .Title (string), .PageTitle (string), .ValueStreamStages ([]ValueStreamStage),
-          .VersionWindows ([]schedule.HomeVersionWindowCard), .VersionWindowCount (int)
+          .VersionWindows ([]schedule.HomeVersionWindowCard)
 ========================================================================== */}}
 {{ define "page_css" }}
 <link rel="stylesheet" href="{{ asset "/static/css/po/home.css" }}">
@@ -141,10 +141,7 @@
 
   <div class="home-version-dock" id="homeVersionCollapsible">
     <div class="home-version-dock-hdr">
-      <div>
-        <!-- <div class="home-version-dock-title"><i class="fas fa-layer-group"></i> 版本窗口 <span class="home-version-dock-sub-inline">本期 {{ .VersionWindowCount }} 个窗口 · 历史窗口在版本跟进中查看</span></div> -->
-        <!-- <div class="home-version-dock-sub">当前上线窗口 + 后续 3 个规划窗口 概览</div> -->
-      </div>
+      <div></div>
       <div style="display:flex;gap:6px">
         <button type="button" class="action-btn action-btn--disabled" title="待推出"><i class="fas fa-th-list" style="margin-right:4px"></i>查看全部窗口</button>
         <button type="button" class="action-btn action-btn--disabled" title="待推出"><i class="fas fa-layer-group" style="margin-right:4px"></i>进入版本跟进</button>
@@ -173,8 +170,6 @@
       <div class="home-version-empty">暂无近期版本窗口</div>
       {{ end }}
     </div>
-    <div class="home-version-next-link" id="homeNextVersionLink"></div>
-    <div class="home-metrics-strip" id="homeMetricsStrip"></div>
   </div>
 </div>
 {{ end }}

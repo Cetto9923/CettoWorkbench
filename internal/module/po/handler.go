@@ -68,7 +68,6 @@ func (h *Handler) Home(c *gin.Context) {
 		"PageTitle":         "工作台首页",
 		"ValueStreamStages": resp.Stages,
 		"VersionWindows":    resp.VersionWindows,
-		"VersionWindowCount": len(resp.VersionWindows),
 	})
 }
 

@@ -109,30 +109,11 @@
   color: #0f172a;
 }
 
-.schedule-page-sub {
-  font-size: 12px;
-  color: #64748b;
-  margin-top: 5px;
-}
-
 .schedule-page-actions {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-}
-
-.page-role-badge {
-  display: inline-flex;
-  align-items: center;
-  margin-left: 6px;
-  padding: 2px 7px;
-  border-radius: 999px;
-  background: var(--purple-bg);
-  color: var(--purple);
-  font-size: 11px;
-  font-weight: 700;
-  vertical-align: middle;
 }
 
 /* ── 版本窗口概览 ── */
@@ -157,10 +138,6 @@
   font-weight: 600;
   color: #64748b;
   margin-left: 8px;
-}
-
-.schedule-version-body .schedule-po-summary-host {
-  display: none;
 }
 
 .schedule-version-grid {
@@ -204,8 +181,7 @@
   flex-direction: column;
 }
 
-.schedule-version-card:hover,
-.schedule-version-card.active {
+.schedule-version-card:hover {
   border-color: var(--blue);
   box-shadow: 0 6px 18px rgba(37, 99, 235, 0.1);
 }
@@ -460,24 +436,6 @@
   box-sizing: border-box;
 }
 
-.schedule-version-extra .form-select {
-  height: 28px;
-  font-size: 12px;
-  padding: 4px 8px;
-  width: 100%;
-}
-
-#page-schedule .schedule-version-extra .form-select {
-  width: 100% !important;
-  height: 28px;
-  padding: 4px 8px;
-  font-size: 12px;
-  line-height: 1.2;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  box-sizing: border-box;
-}
-
 .schedule-version-add {
   border: 1px solid var(--blue-bd);
   border-radius: 6px;
@@ -561,18 +519,6 @@
   margin-left: 4px;
 }
 
-.schedule-scope-chip.warn {
-  border-color: var(--orange-bd);
-  background: var(--orange-bg);
-  color: var(--orange);
-}
-
-.schedule-scope-chip.danger {
-  border-color: var(--red-bd);
-  background: var(--red-bg);
-  color: var(--red);
-}
-
 .schedule-scope-chip--secondary {
   border-style: dashed;
   background: var(--bg);
@@ -581,16 +527,6 @@
 
 .schedule-clear-btn {
   margin-left: 4px;
-}
-
-.schedule-scope-hint {
-  font-size: 11px;
-  color: var(--t3);
-  margin-left: auto;
-  padding: 2px 8px;
-  background: var(--bg);
-  border-radius: 10px;
-  white-space: nowrap;
 }
 
 .schedule-list-head {
@@ -652,11 +588,6 @@
 .schedule-view-tabs .view-tab:hover {
   background: var(--hover);
   color: var(--t1);
-}
-
-.schedule-table-scroll {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
 }
 
 /* schedule-table 基础样式（demo，窗口维护弹窗等 #page-schedule 外使用） */
@@ -854,66 +785,6 @@
   box-sizing: border-box;
 }
 
-.schedule-alert {
-  display: none;
-  gap: 12px;
-  padding: 12px 20px;
-  background: var(--orange-bg);
-  border-bottom: 1px solid var(--orange-bd);
-  font-size: 12px;
-  align-items: center;
-}
-
-.schedule-alert .alert-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: var(--orange);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  flex-shrink: 0;
-}
-
-.schedule-alert .alert-content {
-  flex: 1;
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.schedule-alert .alert-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.schedule-alert .alert-item span {
-  font-weight: 600;
-  font-family: "JetBrains Mono", monospace;
-}
-
-.schedule-alert .alert-item.blocked span {
-  color: var(--red);
-}
-
-.schedule-alert .alert-item.suspended span {
-  color: var(--orange);
-}
-
-.schedule-alert .alert-item.overdue span {
-  color: var(--orange);
-}
-
-.schedule-alert .alert-suggestion {
-  margin-left: auto;
-  color: var(--orange);
-  font-weight: 500;
-  white-space: nowrap;
-}
-
 /* ── 数据类型 Tab ── */
 .schedule-data-tabs {
   display: flex;
@@ -991,8 +862,8 @@
 }
 
 #page-schedule .schedule-title-cell {
-  flex-wrap: wrap;
-  align-items: flex-start;
+  flex-wrap: nowrap;
+  align-items: center;
 }
 
 .schedule-title-cell--l1 {
@@ -1013,6 +884,7 @@
   flex-shrink: 0;
   border-left: 1px solid var(--border-lt);
   height: 1em;
+  position: relative;
 }
 
 .schedule-title-cell--l2 .tree-guide::before,
@@ -1040,6 +912,7 @@
   flex-shrink: 0;
   padding: 0;
   font-family: inherit;
+  margin-top: 2px;
 }
 
 .schedule-row-expand i {
@@ -1051,6 +924,15 @@
   border-color: var(--blue);
   color: var(--blue);
   background: var(--blue-bg);
+}
+
+.schedule-row-toggle {
+  font-size: 10px;
+  color: var(--t3);
+  flex-shrink: 0;
+  margin-right: 2px;
+  cursor: pointer;
+  transition: transform 0.15s;
 }
 
 .schedule-type-badge {
@@ -1078,17 +960,17 @@
   border: 1px solid #ede9fe;
 }
 
-.schedule-type-badge--rd-main,
 .schedule-type-badge--rd {
   background: #fef2f2;
   color: #dc2626;
   border: 1px solid #fee2e2;
 }
 
-.schedule-type-badge--rd-sub {
-  background: #f5f5f5;
-  color: #757575;
-  border: 1px solid #e0e0e0;
+.rd-subtype {
+  font-size: 10px;
+  font-weight: 400;
+  opacity: 0.7;
+  margin-left: 2px;
 }
 
 .schedule-title-link {
@@ -1102,15 +984,18 @@
   font: inherit;
   text-align: left;
   max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   display: inline-block;
   vertical-align: bottom;
 }
 
 #page-schedule .schedule-title-link {
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
-  word-break: break-word;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .schedule-title-link:hover {
@@ -1294,11 +1179,6 @@
   background: #f8fafc;
 }
 
-/* ── 批量操作栏 ── */
-.schedule-batch {
-  display: none;
-}
-
 @media (max-width: 1180px) {
   .schedule-filter-main {
     grid-template-columns: 64px minmax(120px, 1fr) 74px minmax(120px, 1fr);
@@ -1321,10 +1201,6 @@
     grid-column: 1 / -1;
     flex-direction: row;
     align-items: center;
-  }
-
-  .schedule-version-extra .form-select {
-    max-width: 220px;
   }
 
   .schedule-version-add {
@@ -1361,8 +1237,7 @@
 }
 
 #scheduleVersionWindowModal .form-input,
-#scheduleVersionWindowModal .form-select,
-#scheduleVersionWindowModal .form-textarea {
+#scheduleVersionWindowModal .form-select {
   width: 100%;
   padding: 8px 12px;
   border: 1px solid var(--border);
@@ -1376,8 +1251,7 @@
 }
 
 #scheduleVersionWindowModal .form-input:focus,
-#scheduleVersionWindowModal .form-select:focus,
-#scheduleVersionWindowModal .form-textarea:focus {
+#scheduleVersionWindowModal .form-select:focus {
   outline: none;
   border-color: var(--blue);
 }
@@ -1774,17 +1648,6 @@
   height: 14px;
 }
 
-.schedule-create-note {
-  padding: 9px 12px;
-  background: var(--blue-bg);
-  border: 1px solid var(--blue-bd);
-  border-radius: 6px;
-  font-size: 11px;
-  line-height: 1.55;
-  color: var(--blue);
-  margin-bottom: 10px;
-}
-
 .schedule-create-grid {
   display: grid;
   gap: 10px 12px;
@@ -1826,11 +1689,6 @@
 .schedule-create-section-head strong {
   font-size: 12px;
   color: var(--t1);
-}
-
-.schedule-create-inline-meta {
-  font-size: 11px;
-  color: var(--t3);
 }
 
 .schedule-create-systems {
@@ -1928,10 +1786,6 @@
 
   .schedule-create-inline-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .schedule-create-inline-row .schedule-create-inline-check {
-    grid-column: 1 / -1;
   }
 }
 

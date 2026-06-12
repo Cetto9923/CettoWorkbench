@@ -29,7 +29,6 @@ type WindowCard struct {
 	ID               uint64
 	ShortName        string
 	Range            string
-	Status           string
 	ToneClass        string
 	AgileGroup       string
 	DemandCount      int
@@ -49,7 +48,6 @@ type WindowListItem struct {
 	Name             string `json:"name"`
 	ReleaseDate      string `json:"releaseDate"`
 	Range            string `json:"range"`
-	Status           string `json:"status"`
 	CapacityHours    int    `json:"capacityHours"`
 	CanEdit          bool   `json:"canEdit"`
 	CanDelete        bool   `json:"canDelete"`
@@ -64,7 +62,6 @@ type DevRequirement struct {
 	PriClass     string
 	IsMain       bool
 	Owner        string
-	OwnerInitial string
 	TaskCount    int
 	HasTasks     bool
 	ActionLabel  string
@@ -78,7 +75,6 @@ type SubBizRequirement struct {
 	Priority        string
 	PriClass        string
 	Owner           string
-	OwnerInitial    string
 	DevRequirements []DevRequirement
 }
 
@@ -95,8 +91,6 @@ type BizRequirement struct {
 	StageTagClass      string
 	VersionWindow      string
 	Owner              string
-	OwnerInitial       string
-	Blocked            bool
 	Overdue            bool
 	RowClass           string
 	HasChildren        bool

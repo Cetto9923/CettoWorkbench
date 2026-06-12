@@ -25,20 +25,6 @@
     return "无法删除";
   }
 
-  function getManageWindowStatusTagClass(statusLabel) {
-    var label = String(statusLabel || "").trim();
-    if (label === "当前") {
-      return "st-progress";
-    }
-    if (label === "规划中") {
-      return "st-pending";
-    }
-    if (label === "已发布") {
-      return "st-success";
-    }
-    return "st-gray";
-  }
-
   function cloneManageTemplate(id) {
     var tpl = document.getElementById(id);
     if (!tpl || !tpl.content || !tpl.content.firstElementChild) {
@@ -87,8 +73,6 @@
       if (!tr) {
         return;
       }
-      var statusLabel = String(item.status || "").trim();
-      var statusTag = tr.querySelector('[data-field="status"]');
       var indexCell = tr.querySelector('[data-field="index"]');
       var nameCell = tr.querySelector('[data-field="name"]');
       var releaseCell = tr.querySelector('[data-field="releaseDate"]');
@@ -107,10 +91,6 @@
       }
       if (rangeCell) {
         rangeCell.textContent = item.range || "—";
-      }
-      if (statusTag) {
-        statusTag.textContent = statusLabel;
-        statusTag.classList.add(getManageWindowStatusTagClass(statusLabel));
       }
       if (capacityCell) {
         capacityCell.textContent = String(Number(item.capacityHours || 0));

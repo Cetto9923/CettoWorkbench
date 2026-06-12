@@ -252,7 +252,6 @@
     $("#scheduleWindowPlanTestDone").val(d.planTestDone || "");
     $("#scheduleWindowTestDone").val(d.testDone || "");
     $("#scheduleWindowAcceptDone").val(d.acceptDone || "");
-    $("#scheduleWindowOnlineMeta").text(d.online || "-");
 
     var selected = new Set((d.productIds || []).map(Number));
     $("#scheduleWindowSystemsGrid input[name='productIds']").each(function () {

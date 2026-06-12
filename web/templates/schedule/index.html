@@ -16,7 +16,6 @@
   <div class="schedule-page-head">
     <div>
       <h2>PO 排期工作台</h2>
-      <!-- <div class="schedule-page-sub">管理业务需求排期，跟踪执行进度，推动需求按时交付</div> -->
     </div>
     <div class="schedule-page-actions">
       <button type="button" class="action-btn js-open-manage-version-windows"><i class="fas fa-gear"></i> 窗口维护</button>
@@ -29,7 +28,6 @@
   <div class="schedule-version-overview">
     <div class="schedule-section-title">版本窗口概览 <span>按预计上线时间</span></div>
     <div class="schedule-version-body">
-      <div id="schedulePoSummaryBar" class="schedule-po-summary-host"></div>
       <div id="scheduleCapacitySummaryLine">
         {{ if .Windows }}
         <div class="schedule-version-grid">
@@ -77,14 +75,6 @@
           {{ end }}
           {{ end }}
           <div class="schedule-version-extra">
-            <select class="form-select" id="scheduleExtraVersionWindow" title="查看其他窗口">
-              <option value="">其他窗口</option>
-              {{ range $i, $w := .Windows }}
-              {{ if ge $i 3 }}
-              <option value="{{ $w.ID }}">{{ $w.ShortName }}</option>
-              {{ end }}
-              {{ end }}
-            </select>
             <button type="button" class="schedule-version-add js-open-create-version-window"><i class="fas fa-plus"></i><span>新建窗口</span></button>
           </div>
         </div>
@@ -184,12 +174,6 @@
       <input class="form-input" id="scheduleDeptFilter" placeholder="业务部门">
     </div>
 
-    <div class="schedule-alert" id="scheduleAlert" style="display:none">
-      <div class="alert-icon"><i class="fas fa-exclamation-triangle"></i></div>
-      <div class="alert-content" id="scheduleAlertContent"></div>
-      <div class="alert-suggestion" id="scheduleAlertSuggestion"></div>
-    </div>
-
     <div class="schedule-data-tabs">
       <button type="button" class="schedule-data-tab active" data-type="bizReq"><i class="fas fa-file-lines"></i>业务需求</button>
       <button type="button" class="schedule-data-tab" data-type="independentRD"><i class="fas fa-code-branch"></i>独立研发需求</button>
@@ -226,7 +210,7 @@
           {{ range .BizRequirements }}
           {{ $biz := . }}
           <tr class="schedule-biz-row schedule-tree-l1 {{ .RowClass }}" data-id="{{ .ID }}">
-            <td><input type="checkbox" class="schedule-chk" value="{{ .ID }}"{{ if .Blocked }} disabled{{ end }}></td>
+            <td><input type="checkbox" class="schedule-chk" value="{{ .ID }}"{{ if eq .WindowStatus "阻塞" }} disabled{{ end }}></td>
             <td>
               <div class="schedule-title-cell schedule-title-cell--l1">
                 {{ if .HasChildren }}
@@ -239,17 +223,16 @@
             </td>
             <td class="schedule-col-nowrap"><span class="pri-tag {{ .PriClass }}">{{ .Priority }}</span></td>
             <td class="schedule-col-nowrap">
-              <span class="window-status-tag {{ .WindowStatusClass }}">
-                {{ if eq .WindowStatus "阻塞" }}<i class="fas fa-ban"></i>{{ end }}
-                {{ .WindowStatus }}
-              </span>
+              <span class="window-status-tag {{ .WindowStatusClass }}">{{ .WindowStatus }}</span>
             </td>
             <td>{{ .AgileGroup }}</td>
             <td class="schedule-col-stage"><span class="stage-tag {{ .StageTagClass }}">{{ .StageTag }}</span> <span class="window-name-tag-inline">{{ .VersionWindow }}</span></td>
             <td class="schedule-col-owner"><span class="schedule-owner-line"><i class="fas fa-user"></i><span class="name">{{ .Owner }}</span></span></td>
             <td class="schedule-task-col"><span class="t3">—</span></td>
             <td class="schedule-action-col">
-              <button type="button" class="action-btn primary" style="padding:4px 10px;font-size:11px">详情</button>
+              <div class="schedule-action-buttons">
+                <button type="button" class="action-btn primary" style="padding:4px 10px;font-size:11px">详情</button>
+              </div>
             </td>
           </tr>
           {{ range .SubBizRequirements }}
@@ -265,17 +248,16 @@
             </td>
             <td class="schedule-col-nowrap"><span class="pri-tag {{ .PriClass }}">{{ .Priority }}</span></td>
             <td class="schedule-col-nowrap">
-              <span class="window-status-tag {{ $biz.WindowStatusClass }}">
-                {{ if eq $biz.WindowStatus "阻塞" }}<i class="fas fa-ban"></i>{{ end }}
-                {{ $biz.WindowStatus }}
-              </span>
+              <span class="window-status-tag {{ $biz.WindowStatusClass }}">{{ $biz.WindowStatus }}</span>
             </td>
             <td>{{ $biz.AgileGroup }}</td>
             <td class="schedule-col-stage"><span class="stage-tag {{ $biz.StageTagClass }}">{{ $biz.StageTag }}</span> <span class="window-name-tag-inline">{{ $biz.VersionWindow }}</span></td>
             <td class="schedule-col-owner"><span class="schedule-owner-line"><i class="fas fa-user"></i><span class="name">{{ .Owner }}</span></span></td>
             <td class="schedule-task-col"><span class="t3">—</span></td>
             <td class="schedule-action-col">
-              <button type="button" class="action-btn primary" style="padding:4px 10px;font-size:11px">排期</button>
+              <div class="schedule-action-buttons">
+                <button type="button" class="action-btn primary" style="padding:4px 10px;font-size:11px">排期</button>
+              </div>
             </td>
           </tr>
           {{ range .DevRequirements }}
@@ -284,17 +266,14 @@
             <td>
               <div class="schedule-title-cell schedule-title-cell--l3">
                 <span class="tree-guide"></span>
-                {{ if .IsMain }}<span class="schedule-type-badge schedule-type-badge--rd-main">研发需求主</span>{{ else }}<span class="schedule-type-badge schedule-type-badge--rd-sub">研发需求配</span>{{ end }}
+                {{ if .IsMain }}<span class="schedule-type-badge schedule-type-badge--rd">研发需求<span class="rd-subtype">主</span></span>{{ else }}<span class="schedule-type-badge schedule-type-badge--rd">研发需求<span class="rd-subtype">配</span></span>{{ end }}
                 <span class="schedule-id-badge">{{ .ID }}</span>
                 <button type="button" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</button>
               </div>
             </td>
             <td class="schedule-col-nowrap"><span class="pri-tag {{ .PriClass }}">{{ .Priority }}</span></td>
             <td class="schedule-col-nowrap">
-              <span class="window-status-tag {{ $biz.WindowStatusClass }}">
-                {{ if eq $biz.WindowStatus "阻塞" }}<i class="fas fa-ban"></i>{{ end }}
-                {{ $biz.WindowStatus }}
-              </span>
+              <span class="window-status-tag {{ $biz.WindowStatusClass }}">{{ $biz.WindowStatus }}</span>
             </td>
             <td>{{ $biz.AgileGroup }}</td>
             <td class="schedule-col-stage"><span class="stage-tag {{ $biz.StageTagClass }}">{{ $biz.StageTag }}</span> <span class="window-name-tag-inline">{{ $biz.VersionWindow }}</span></td>
@@ -307,7 +286,9 @@
               {{ end }}
             </td>
             <td class="schedule-action-col">
-              <button type="button" class="action-btn {{ .ActionClass }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</button>
+              <div class="schedule-action-buttons">
+                <button type="button" class="action-btn {{ .ActionClass }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</button>
+              </div>
             </td>
           </tr>
           {{ end }}
@@ -318,17 +299,14 @@
             <td>
               <div class="schedule-title-cell schedule-title-cell--l3">
                 <span class="tree-guide"></span>
-                {{ if .IsMain }}<span class="schedule-type-badge schedule-type-badge--rd-main">研发需求主</span>{{ else }}<span class="schedule-type-badge schedule-type-badge--rd-sub">研发需求配</span>{{ end }}
+                {{ if .IsMain }}<span class="schedule-type-badge schedule-type-badge--rd">研发需求<span class="rd-subtype">主</span></span>{{ else }}<span class="schedule-type-badge schedule-type-badge--rd">研发需求<span class="rd-subtype">配</span></span>{{ end }}
                 <span class="schedule-id-badge">{{ .ID }}</span>
                 <button type="button" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</button>
               </div>
             </td>
             <td class="schedule-col-nowrap"><span class="pri-tag {{ .PriClass }}">{{ .Priority }}</span></td>
             <td class="schedule-col-nowrap">
-              <span class="window-status-tag {{ $biz.WindowStatusClass }}">
-                {{ if eq $biz.WindowStatus "阻塞" }}<i class="fas fa-ban"></i>{{ end }}
-                {{ $biz.WindowStatus }}
-              </span>
+              <span class="window-status-tag {{ $biz.WindowStatusClass }}">{{ $biz.WindowStatus }}</span>
             </td>
             <td>{{ $biz.AgileGroup }}</td>
             <td class="schedule-col-stage"><span class="stage-tag {{ $biz.StageTagClass }}">{{ $biz.StageTag }}</span> <span class="window-name-tag-inline">{{ $biz.VersionWindow }}</span></td>
@@ -341,7 +319,9 @@
               {{ end }}
             </td>
             <td class="schedule-action-col">
-              <button type="button" class="action-btn {{ .ActionClass }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</button>
+              <div class="schedule-action-buttons">
+                <button type="button" class="action-btn {{ .ActionClass }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</button>
+              </div>
             </td>
           </tr>
           {{ end }}
@@ -356,14 +336,6 @@
 
     <div id="schedulePagination" class="pagination-container" style="padding:10px 20px;border-top:1px solid var(--border-lt)">
       {{ template "components/pager" . }}
-    </div>
-
-    <div class="schedule-batch">
-      <span class="sel-info">已选 <strong id="scheduleSelCount">0</strong> 条</span>
-      <div class="batch-actions">
-        <button type="button" class="action-btn"><i class="fas fa-shield-check" style="margin-right:4px"></i>排期校验</button>
-        <button type="button" class="action-btn primary"><i class="fas fa-pen-to-square" style="margin-right:4px"></i>批量改窗口</button>
-      </div>
     </div>
   </div>
 </div>
@@ -416,10 +388,6 @@
         </div>
       </div>
       <div class="schedule-create-section">
-         <!-- <div class="schedule-create-section-head">
-          <strong>关键时间（本窗口）</strong>
-          <span class="schedule-create-inline-meta">上线日期：<span id="scheduleWindowOnlineMeta">-</span></span>
-        </div>  -->
         <div class="schedule-create-grid schedule-create-grid--3">
           <div class="form-group">
             <label class="form-label" for="scheduleWindowPlanTestDone">预计提测 / 开发完成</label>

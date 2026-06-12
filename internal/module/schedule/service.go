@@ -219,7 +219,6 @@ func (s *Service) ListWindowCards(ctx context.Context, account string) ([]Window
 			ID:               window.ID,
 			ShortName:        window.Name,
 			Range:            formatWindowDateRange(start, window.ReleaseDate),
-			Status:           windowStatusLabel(window.Status),
 			ToneClass:        windowCardToneClasses[i%len(windowCardToneClasses)],
 			AgileGroup:       teamgroupNameByID[window.TeamgroupID],
 			DemandCount:      demandCount,
@@ -240,14 +239,11 @@ func (s *Service) ListWindowCards(ctx context.Context, account string) ([]Window
 type HomeVersionWindowCard struct {
 	Name         string
 	AgileGroup   string
-	StatusLabel  string
 	Range        string
-	ToneClass    string
 	DemandCount  int
 	DevCount     int
 	TestCount    int
 	DeliverCount int
-	RiskCount    int
 }
 
 // ListHomeVersionWindows 查询 PO 首页近期版本窗口（最多 4 条，按用户敏捷小组过滤）。
@@ -288,10 +284,8 @@ func (s *Service) ListHomeVersionWindows(ctx context.Context, account string) ([
 		return nil, err
 	}
 
-	today := time.Now()
-	statusLabels := assignHomeWindowStatusLabels(windows, today)
 	cards := make([]HomeVersionWindowCard, 0, len(windows))
-	for i, window := range windows {
+	for _, window := range windows {
 		start := window.ReleaseDate
 		if window.StartDate != nil {
 			start = *window.StartDate
@@ -303,14 +297,11 @@ func (s *Service) ListHomeVersionWindows(ctx context.Context, account string) ([
 		cards = append(cards, HomeVersionWindowCard{
 			Name:         window.Name,
 			AgileGroup:   nameByID[window.TeamgroupID],
-			StatusLabel:  statusLabels[i],
 			Range:        formatWindowDateRange(start, window.ReleaseDate),
-			ToneClass:    homeVersionToneClass(statusLabels[i]),
 			DemandCount:  stats.DemandCount,
 			DevCount:     stats.DevCount,
 			TestCount:    stats.TestCount,
 			DeliverCount: stats.DeliverCount,
-			RiskCount:    0,
 		})
 	}
 	return cards, nil
@@ -403,53 +394,6 @@ func (s *Service) loadTeamgroupDisplayNames(ctx context.Context, windows []model
 	return nameByID, nil
 }
 
-func assignHomeWindowStatusLabels(windows []model.VersionWindow, today time.Time) []string {
-	n := len(windows)
-	labels := make([]string, n)
-	for i := range labels {
-		labels[i] = "规划中"
-	}
-	if n == 0 {
-		return labels
-	}
-
-	today = dateOnly(today)
-	currentIdx := -1
-	for i, window := range windows {
-		start := window.ReleaseDate
-		if window.StartDate != nil {
-			start = *window.StartDate
-		}
-		start = dateOnly(start)
-		end := dateOnly(window.ReleaseDate)
-		if !today.Before(start) && !today.After(end) {
-			currentIdx = i
-			break
-		}
-	}
-
-	if currentIdx >= 0 {
-		labels[currentIdx] = "当前"
-		if currentIdx+1 < n {
-			labels[currentIdx+1] = "下一"
-		}
-	} else {
-		labels[0] = "下一"
-	}
-	return labels
-}
-
-func homeVersionToneClass(statusLabel string) string {
-	switch statusLabel {
-	case "当前":
-		return "home-version-mini--danger"
-	case "下一":
-		return "home-version-mini--warn"
-	default:
-		return "home-version-mini--ok"
-	}
-}
-
 func dateOnly(value time.Time) time.Time {
 	value = value.In(time.Local)
 	return time.Date(value.Year(), value.Month(), value.Day(), 0, 0, 0, 0, value.Location())
@@ -491,7 +435,6 @@ func (s *Service) ListWindows(ctx context.Context, account string) ([]WindowList
 			Name:             window.Name,
 			ReleaseDate:      window.ReleaseDate.Format("2006-01-02"),
 			Range:            formatWindowDateRange(start, window.ReleaseDate),
-			Status:           windowStatusLabel(window.Status),
 			CapacityHours:    capacityHours,
 			CanEdit:          canEdit,
 			CanDelete:        canDelete,
@@ -612,19 +555,6 @@ func (s *Service) GetWindowDetail(ctx context.Context, id uint64) (*WindowDetail
 
 func formatWindowDateRange(start, end time.Time) string {
 	return start.Format("01-02") + " ~ " + end.Format("01-02")
-}
-
-func windowStatusLabel(status string) string {
-	switch strings.TrimSpace(status) {
-	case "current":
-		return "当前"
-	case "next":
-		return "下一"
-	case "released":
-		return "已发布"
-	default:
-		return "规划中"
-	}
 }
 
 // SaveWindowWithPlans 保存版本窗口并按需同步禅道产品计划。

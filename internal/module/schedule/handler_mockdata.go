@@ -10,7 +10,6 @@ package schedule
 
 import (
 	"strings"
-	"unicode/utf8"
 )
 
 func buildBizRequirements() []BizRequirement {
@@ -33,7 +32,7 @@ func buildBizReq4001() BizRequirement {
 	biz.SubBizRequirements = []SubBizRequirement{
 		{
 			ID: "SUB-4001-01", Title: "大额转账审批规则优化", Priority: "P0", PriClass: "p0",
-			Owner: "张明远", OwnerInitial: ownerInitial("张明远"),
+			Owner: "张明远",
 		},
 	}
 	biz.HasChildren = true
@@ -107,8 +106,8 @@ func newBizBase(id, title, agile, plan, pri, stage string, blocked, overdue bool
 		ID: id, Title: title, Priority: pri, PriClass: strings.ToLower(pri),
 		WindowStatus: windowStatus, WindowStatusClass: windowStatusClass,
 		AgileGroup: agileLabel(agile), StageTag: stageTag, StageTagClass: stageTagClass,
-		VersionWindow: versionWindow(plan), Owner: owner, OwnerInitial: ownerInitial(owner),
-		Blocked: blocked, Overdue: overdue, RowClass: rowClass,
+		VersionWindow: versionWindow(plan), Owner: owner,
+		Overdue: overdue, RowClass: rowClass,
 	}
 }
 
@@ -121,7 +120,7 @@ func newDevReq(id, title, pri string, isMain bool, owner string, taskCount int) 
 	}
 	return DevRequirement{
 		ID: id, Title: title, Priority: pri, PriClass: strings.ToLower(pri), IsMain: isMain,
-		Owner: owner, OwnerInitial: ownerInitial(owner),
+		Owner: owner,
 		TaskCount: taskCount, HasTasks: taskCount > 0, ActionLabel: actionLabel, ActionClass: actionClass,
 	}
 }
@@ -131,12 +130,12 @@ func windowStatus(blocked, overdue bool, plan string) (string, string) {
 		return "超期", "overdue"
 	}
 	if blocked {
-		return "阻塞", "blocked"
+		return "阻塞", "warn"
 	}
 	if plan == "" || plan == "future" {
 		return "未排期", ""
 	}
-	return "已排期", "planning"
+	return "已排期", "ok"
 }
 
 func stageTag(stage string) (string, string) {
@@ -144,15 +143,6 @@ func stageTag(stage string) (string, string) {
 		return "终排", "stage-tag--final"
 	}
 	return "初排", "stage-tag--draft"
-}
-
-func ownerInitial(name string) string {
-	n := strings.TrimSpace(name)
-	if n == "" || n == "待分配" {
-		return "?"
-	}
-	r, _ := utf8.DecodeRuneInString(n)
-	return string(r)
 }
 
 func agileLabel(agile string) string {
