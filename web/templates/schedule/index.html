@@ -5,7 +5,7 @@
 全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
 页面字段: .Title (string), .PageTitle (string), .Windows ([]schedule.WindowCard),
           .BizRequirements ([]schedule.BizRequirement), .Teamgroups ([]schedule.TeamgroupOption),
-          .Products ([]schedule.ZtProduct), .Pager (*pagination.Pager)
+          .Products ([]schedule.ZtProduct), .WindowTemplatesJSON (template.JS), .Pager (*pagination.Pager)
 ========================================================================== */}}
 {{ define "page_css" }}
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedule.css" }}">
@@ -432,5 +432,6 @@
 {{ end }}
 
 {{ define "page_js" }}
+<script type="application/json" id="scheduleWindowTemplates">{{ .WindowTemplatesJSON }}</script>
 <script src="{{ asset "/static/js/schedule/schedule.js" }}"></script>
 {{ end }}

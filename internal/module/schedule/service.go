@@ -104,10 +104,47 @@ func (s *Service) GetCreateWindowFormData(ctx context.Context, account string) (
 	if products == nil {
 		products = []ZtProduct{}
 	}
+	windowTemplates, err := s.ListWindowTemplates(ctx, 8)
+	if err != nil {
+		return nil, err
+	}
 	return &CreateWindowFormData{
-		Teamgroups: teamgroups,
-		Products:   products,
+		Teamgroups:      teamgroups,
+		Products:        products,
+		WindowTemplates: windowTemplates,
 	}, nil
+}
+
+// ListWindowTemplates 查询近期版本窗口模板。
+func (s *Service) ListWindowTemplates(ctx context.Context, limit int) ([]WindowTemplateItem, error) {
+	windows, err := s.repo.ListRecentVersionWindowTemplates(ctx, limit)
+	if err != nil {
+		return nil, err
+	}
+	if len(windows) == 0 {
+		return []WindowTemplateItem{}, nil
+	}
+
+	items := make([]WindowTemplateItem, 0, len(windows))
+	for _, window := range windows {
+		items = append(items, versionWindowToTemplate(window))
+	}
+	return items, nil
+}
+
+func versionWindowToTemplate(window model.VersionWindow) WindowTemplateItem {
+	start := ""
+	if window.StartDate != nil {
+		start = window.StartDate.Format("2006-01-02")
+	}
+	online := window.ReleaseDate.Format("2006-01-02")
+	return WindowTemplateItem{
+		ID:     window.ID,
+		Label:  strings.TrimSpace(window.Name),
+		Start:  start,
+		End:    online,
+		Online: online,
+	}
 }
 
 func computeWindowPermissions(createdBy, account string) (canEdit, canDelete, hasLinkedDemands bool) {

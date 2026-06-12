@@ -11,6 +11,8 @@
 package schedule
 
 import (
+	"encoding/json"
+	"html/template"
 	"net/http"
 	"strconv"
 	"strings"
@@ -131,8 +133,16 @@ func (h *Handler) Index(c *gin.Context) {
 			h.logger.Error("load create window form data failed", zap.Error(err), zap.String("account", account))
 		}
 		formData = &CreateWindowFormData{
-			Teamgroups: []TeamgroupOption{},
-			Products:   []ZtProduct{},
+			Teamgroups:      []TeamgroupOption{},
+			Products:        []ZtProduct{},
+			WindowTemplates: []WindowTemplateItem{},
+		}
+	}
+
+	windowTemplatesJSON := template.JS("[]")
+	if len(formData.WindowTemplates) > 0 {
+		if encoded, marshalErr := json.Marshal(formData.WindowTemplates); marshalErr == nil {
+			windowTemplatesJSON = template.JS(encoded)
 		}
 	}
 
@@ -151,9 +161,10 @@ func (h *Handler) Index(c *gin.Context) {
 		"PageTitle":       "排期工作台",
 		"Windows":         windows,
 		"BizRequirements": bizRequirements,
-		"Teamgroups":      formData.Teamgroups,
-		"Products":        formData.Products,
-		"Pager":           pagination.New(int64(len(bizRequirements)), 1, 10),
+		"Teamgroups":          formData.Teamgroups,
+		"Products":            formData.Products,
+		"WindowTemplatesJSON": windowTemplatesJSON,
+		"Pager":               pagination.New(int64(len(bizRequirements)), 1, 10),
 	})
 }
 

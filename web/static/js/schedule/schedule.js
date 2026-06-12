@@ -33,48 +33,20 @@
     return SCHEDULE_CREATE_WINDOW_URL + "/" + id;
   }
 
-  var scheduleIterationDefinitions = [
-    {
-      key: "current",
-      label: "26-0524窗口",
-      start: "2026-05-11",
-      end: "2026-05-24",
-      planTestDone: "2026-05-20",
-      testDone: "2026-05-22",
-      acceptDone: "2026-05-23",
-      online: "2026-05-24",
-    },
-    {
-      key: "next",
-      label: "26-0607窗口",
-      start: "2026-05-25",
-      end: "2026-06-07",
-      planTestDone: "2026-06-03",
-      testDone: "2026-06-05",
-      acceptDone: "2026-06-06",
-      online: "2026-06-07",
-    },
-    {
-      key: "nextnext",
-      label: "26-0621窗口",
-      start: "2026-06-08",
-      end: "2026-06-21",
-      planTestDone: "2026-06-17",
-      testDone: "2026-06-19",
-      acceptDone: "2026-06-20",
-      online: "2026-06-21",
-    },
-    {
-      key: "recent",
-      label: "26-0510已发",
-      start: "2026-04-27",
-      end: "2026-05-10",
-      planTestDone: "2026-05-06",
-      testDone: "2026-05-08",
-      acceptDone: "2026-05-09",
-      online: "2026-05-10",
-    },
-  ];
+  function loadScheduleWindowTemplates() {
+    var el = document.getElementById("scheduleWindowTemplates");
+    if (!el) {
+      return [];
+    }
+    try {
+      var parsed = JSON.parse(el.textContent || "[]");
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  var scheduleWindowTemplates = loadScheduleWindowTemplates();
 
   function escapeHtml(value) {
     return String(value == null ? "" : value)
@@ -672,21 +644,35 @@
     });
   }
 
+  function findScheduleWindowTemplate(online) {
+    if (!online) {
+      return null;
+    }
+    var exact = scheduleWindowTemplates.find(function (item) {
+      return item.online === online;
+    });
+    if (exact) {
+      return exact;
+    }
+    return (
+      scheduleWindowTemplates.find(function (item) {
+        var end = item.end || item.online;
+        var start = item.start || scheduleAddDaysIso(item.online, -13);
+        return online >= start && online <= end;
+      }) || null
+    );
+  }
+
   function applyScheduleCreateOrgTemplateDates() {
     var d = getScheduleVersionCreateDraft();
-    var tpl =
-      scheduleIterationDefinitions.find(function (item) {
-        return item.online === d.online;
-      }) ||
-      scheduleIterationDefinitions.find(function (item) {
-        return d.online >= item.start && d.online <= item.end;
-      });
+    var tpl = findScheduleWindowTemplate(d.online);
     if (tpl) {
-      d.planTestDone = tpl.planTestDone || "";
-      d.testDone = tpl.testDone || "";
-      d.acceptDone = tpl.acceptDone || "";
-      d.start = tpl.start || d.start;
-      d.end = tpl.end || d.end;
+      var online = tpl.online || d.online;
+      d.start = tpl.start || scheduleAddDaysIso(online, -13);
+      d.end = tpl.end || online;
+      d.planTestDone = scheduleAddDaysIso(online, -4);
+      d.testDone = scheduleAddDaysIso(online, -2);
+      d.acceptDone = scheduleAddDaysIso(online, -1);
       return;
     }
     if (d.online) {
