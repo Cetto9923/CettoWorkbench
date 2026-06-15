@@ -45,31 +45,5 @@
     });
   }
 
-  /** 显示/隐藏带 .show 类名的弹窗与遮罩（schedule 模块自包含，不依赖 ui.js）。 */
-  function setScheduleModals(elementIds, visible) {
-    var ids = Array.isArray(elementIds) ? elementIds : [elementIds];
-    for (var i = 0; i < ids.length; i++) {
-      var el = document.getElementById(ids[i]);
-      if (!el) {
-        continue;
-      }
-      if (visible) {
-        el.classList.add("show");
-      } else {
-        el.classList.remove("show");
-      }
-    }
-  }
-
-  function showScheduleModals(elementIds) {
-    setScheduleModals(elementIds, true);
-  }
-
-  function hideScheduleModals(elementIds) {
-    setScheduleModals(elementIds, false);
-  }
-
   window.scheduleFetch = scheduleFetch;
-  window.showScheduleModals = showScheduleModals;
-  window.hideScheduleModals = hideScheduleModals;
 })();

@@ -3,7 +3,7 @@
 
   var scheduleVersionCreateDraft = null;
 
-  var SCHEDULE_MATCHING_PLANS_URL = "/po/schedule/matching-plans";
+  var SCHEDULE_MATCHING_PLANS_URL = "/schedule/matching-plans";
 
   function getDefaultTeamgroupID() {
     var sel = document.getElementById("scheduleWindowTeamgroup");

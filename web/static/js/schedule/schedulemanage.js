@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var SCHEDULE_LIST_WINDOWS_URL = "/po/schedule/windows";
+  var SCHEDULE_LIST_WINDOWS_URL = "/schedule/windows";
   var MANAGE_MODAL_IDS = ["manageVersionWindowsModal", "manageVersionWindowsOverlay"];
 
   function scheduleWindowEditDisabledTip(canEdit) {
@@ -142,9 +142,7 @@
           return;
         }
         renderManageVersionWindowsTable(result.data.windows || []);
-        if (typeof window.showScheduleModals === "function") {
-          window.showScheduleModals(MANAGE_MODAL_IDS);
-        }
+        window.openShowModals(MANAGE_MODAL_IDS);
       })
       .catch(function (err) {
         if (isSessionExpiredError(err)) {
@@ -156,12 +154,5 @@
       });
   }
 
-  function closeManageVersionWindowsModal() {
-    if (typeof window.hideScheduleModals === "function") {
-      window.hideScheduleModals(MANAGE_MODAL_IDS);
-    }
-  }
-
   window.openManageVersionWindowsModal = openManageVersionWindowsModal;
-  window.closeManageVersionWindowsModal = closeManageVersionWindowsModal;
 })();

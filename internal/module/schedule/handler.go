@@ -113,7 +113,7 @@ type BizRequirement struct {
 	DevRequirements    []DevRequirement
 }
 
-const scheduleRedirectURL = "/po/schedule"
+const scheduleRedirectURL = "/schedule"
 
 // Handler 处理排期工作台页面请求。
 type Handler struct {
@@ -134,7 +134,7 @@ func NewHandler(renderer *render.Renderer, logger *zap.Logger, svc *Service) *Ha
 // RegisterRoutes 注册排期工作台路由。
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g := rg.Group("/schedule")
-	g.Use(middleware.ActiveNav("/po/schedule"))
+	g.Use(middleware.ActiveNav("/schedule"))
 	{
 		g.GET("", middleware.RequirePerm(perm.ScheduleList), h.Index)
 		g.GET("/matching-plans", middleware.RequirePerm(perm.ScheduleList), h.GetMatchingPlans)

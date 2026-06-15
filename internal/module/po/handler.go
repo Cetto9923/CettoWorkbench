@@ -34,7 +34,7 @@ func NewHandler(svc *Service, logger *zap.Logger) *Handler {
 // RegisterRoutes 注册 PO 工作台路由（挂载在已配置登录与操作日志的中间件组上）。
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g := rg.Group("")
-	g.Use(middleware.ActiveNav("/po/home"))
+	g.Use(middleware.ActiveNav("/home"))
 
 	g.GET("/home", h.Home)
 	g.GET("/demands", h.Demands)

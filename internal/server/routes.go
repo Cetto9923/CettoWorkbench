@@ -79,8 +79,8 @@ func registerRoutes(r *gin.Engine, deps RouteDeps) {
 		}
 	}
 
-	// PO 工作台（菜单 path：/po/home、/po/schedule）
-	po := r.Group("/po")
+	// PO 工作台（根 group 挂载，不含 /po 前缀；菜单 path：/home、/schedule）
+	po := r.Group("")
 	po.Use(middleware.RequireLogin(deps.SessionMgr, deps.DB))
 	po.Use(middleware.RecordOperationLog(deps.DB, deps.SessionMgr))
 	{

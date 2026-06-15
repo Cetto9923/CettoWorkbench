@@ -141,9 +141,7 @@
     if (isScheduleWindowActionDisabled($btn)) {
       return;
     }
-    if (typeof window.closeManageVersionWindowsModal === "function") {
-      window.closeManageVersionWindowsModal();
-    }
+    window.closeShowModals(["manageVersionWindowsModal", "manageVersionWindowsOverlay"]);
     if (typeof window.openScheduleEditVersionWindowModal === "function") {
       window.openScheduleEditVersionWindowModal($btn.data("window-id"));
     }
@@ -185,19 +183,13 @@
   });
 
   $("#manageVersionWindowsOverlay").on("click", function () {
-    if (typeof window.closeManageVersionWindowsModal === "function") {
-      window.closeManageVersionWindowsModal();
-    }
+    window.closeShowModals(["manageVersionWindowsModal", "manageVersionWindowsOverlay"]);
   });
   $("#manageVersionWindowsCloseBtn, #manageVersionWindowsDismissBtn").on("click", function () {
-    if (typeof window.closeManageVersionWindowsModal === "function") {
-      window.closeManageVersionWindowsModal();
-    }
+    window.closeShowModals(["manageVersionWindowsModal", "manageVersionWindowsOverlay"]);
   });
   $(".js-open-create-version-window-from-manage").on("click", function () {
-    if (typeof window.closeManageVersionWindowsModal === "function") {
-      window.closeManageVersionWindowsModal();
-    }
+    window.closeShowModals(["manageVersionWindowsModal", "manageVersionWindowsOverlay"]);
     if (typeof window.openScheduleCreateVersionWindowModal === "function") {
       window.openScheduleCreateVersionWindowModal();
     }

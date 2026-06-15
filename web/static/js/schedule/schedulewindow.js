@@ -5,7 +5,7 @@
   var scheduleEditingWindowId = null;
   var draftApi = window.ScheduleWindowDraft;
 
-  var SCHEDULE_CREATE_WINDOW_URL = "/po/schedule/windows";
+  var SCHEDULE_CREATE_WINDOW_URL = "/schedule/windows";
   var VERSION_WINDOW_MODAL_IDS = ["scheduleVersionWindowModal", "scheduleVersionWindowModalOverlay"];
 
   if (!draftApi) {
@@ -28,9 +28,7 @@
     $("#scheduleVersionWindowModalTitle").text("新建版本窗口");
     $("#scheduleVersionWindowModalSaveBtn").text("保存");
     draftApi.fillForm(true);
-    if (typeof window.showScheduleModals === "function") {
-      window.showScheduleModals(VERSION_WINDOW_MODAL_IDS);
-    }
+    window.openShowModals(VERSION_WINDOW_MODAL_IDS);
   }
 
   function isSessionExpiredError(err) {
@@ -76,9 +74,7 @@
         $("#scheduleVersionWindowModalTitle").text("编辑版本窗口");
         $("#scheduleVersionWindowModalSaveBtn").text("保存");
         draftApi.fillForm(true);
-        if (typeof window.showScheduleModals === "function") {
-          window.showScheduleModals(VERSION_WINDOW_MODAL_IDS);
-        }
+        window.openShowModals(VERSION_WINDOW_MODAL_IDS);
       })
       .catch(function (err) {
         if (isSessionExpiredError(err)) {
@@ -91,9 +87,7 @@
   }
 
   function closeScheduleVersionWindowModal() {
-    if (typeof window.hideScheduleModals === "function") {
-      window.hideScheduleModals(VERSION_WINDOW_MODAL_IDS);
-    }
+    window.closeShowModals(VERSION_WINDOW_MODAL_IDS);
     scheduleVersionWindowModalMode = "idle";
     scheduleEditingWindowId = null;
     draftApi.resetDraft();

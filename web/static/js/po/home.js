@@ -4,7 +4,7 @@
   var DEFAULT_VISIBLE = 5;
 
   function demandsUrl(status) {
-    return "/po/demands?status=" + encodeURIComponent(status || "all");
+    return "/demands?status=" + encodeURIComponent(status || "all");
   }
 
   function escapeHtml(text) {
