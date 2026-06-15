@@ -229,6 +229,9 @@ const (
 	StageTaskUnassigned = "已建任务未指派"
 	StageTaskAssigned   = "已建任务并指派"
 
+	// 独立研发需求 Tab 排期阶段（4 级，末级文案与业需不同）。
+	IndependentStageTaskAssigned = "已建任务已指派"
+
 	StoryStageNoWindow  = "未关联窗口"
 	StoryStageHasWindow = "已关联窗口"
 )
@@ -325,9 +328,10 @@ type StoryItem struct {
 
 // StoryWindowRef 研发需求关联的版本窗口。
 type StoryWindowRef struct {
-	StoryID    uint
-	WindowID   uint
-	WindowName string
+	StoryID     uint
+	WindowID    uint
+	WindowName  string
+	TeamgroupID uint
 }
 
 // StoryTaskStat 研发任务统计。
@@ -356,6 +360,57 @@ type ZtDemand struct {
 	EstimateLaunch string `gorm:"column:estimateLaunch"`
 }
 
+// ListIndependentReq 独立研发需求 Tab 列表查询入参。
+type ListIndependentReq struct {
+	Page     int `form:"page"`
+	PageSize int `form:"pageSize"`
+}
+
+// Validate 校验分页参数。
+func (r *ListIndependentReq) Validate() []FieldError {
+	var errs []FieldError
+	if r.Page < 1 {
+		errs = append(errs, FieldError{Field: "page", Message: "页码必须大于等于 1"})
+	}
+	if r.PageSize < 1 || r.PageSize > 100 {
+		errs = append(errs, FieldError{Field: "pageSize", Message: "每页条数须在 1 到 100 之间"})
+	}
+	return errs
+}
+
+// Normalize 规范化分页参数。
+func (r *ListIndependentReq) Normalize() {
+	if r.Page < 1 {
+		r.Page = 1
+	}
+	if r.PageSize < 1 {
+		r.PageSize = 10
+	}
+	if r.PageSize > 100 {
+		r.PageSize = 100
+	}
+}
+
+// ListIndependentResp 独立研发需求 Tab 列表响应。
+type ListIndependentResp struct {
+	Total int64                  `json:"total"`
+	Items []IndependentStoryItem `json:"items"`
+}
+
+// IndependentStoryItem 独立研发需求（树形一级/二级）。
+type IndependentStoryItem struct {
+	ID             uint                   `json:"id"`
+	Title          string                 `json:"title"`
+	Pri            int                    `json:"pri"`
+	ProductName    string                 `json:"productName"`
+	AssignedToName string                 `json:"assignedToName"`
+	Stage          string                 `json:"stage"`
+	WindowName     string                 `json:"windowName"`
+	TaskCount      int                    `json:"taskCount"`
+	TeamgroupName  string                 `json:"teamgroupName"`
+	Children       []IndependentStoryItem `json:"children"`
+}
+
 // ZtStory 禅道 zt_story 只读投影。
 type ZtStory struct {
 	ID                      uint   `gorm:"column:id"`
@@ -366,6 +421,8 @@ type ZtStory struct {
 	Stage                   string `gorm:"column:stage"`
 	Status                  string `gorm:"column:status"`
 	FromDemand              uint   `gorm:"column:fromDemand"`
+	SourceType              string `gorm:"column:sourceType"`
+	Parent                  uint   `gorm:"column:parent"`
 	IsMainSystemAssociation int    `gorm:"column:isMainSystemAssociation"`
 	AssignedTo              string `gorm:"column:assignedTo"`
 }

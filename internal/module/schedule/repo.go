@@ -171,6 +171,21 @@ func (r *Repo) FindTeamgroupsByIDs(ctx context.Context, ids []uint) ([]ZtTeamgro
 	return rows, nil
 }
 
+// ListAllProductIDs 返回全部未关闭产品 ID（超管可见范围）。
+func (r *Repo) ListAllProductIDs(ctx context.Context) ([]uint, error) {
+	const query = `
+SELECT id
+FROM zt_product
+WHERE deleted = '0' AND status != 'closed'
+ORDER BY id ASC`
+
+	var ids []uint
+	if err := r.db.WithContext(ctx).Raw(query).Scan(&ids).Error; err != nil {
+		return nil, err
+	}
+	return ids, nil
+}
+
 // GetUserProducts 查询当前用户参与的产品/系统列表。
 func (r *Repo) GetUserProducts(ctx context.Context, account string) ([]ZtProduct, error) {
 	const query = `
@@ -270,8 +285,8 @@ type WindowStageStats struct {
 func (r *Repo) GetWindowStageStats(ctx context.Context, windowID uint64) (*WindowStageStats, error) {
 	const query = `
 SELECT
-  COUNT(DISTINCT CASE WHEN s.fromDemand > 0 THEN s.fromDemand ELSE NULL END)
-  + COUNT(CASE WHEN s.fromDemand = 0 THEN 1 ELSE NULL END) AS demandCount,
+  COUNT(DISTINCT CASE WHEN s.sourceType = 'demandpool' AND s.fromDemand > 0 THEN s.fromDemand ELSE NULL END)
+  + COUNT(CASE WHEN IFNULL(s.sourceType, '') != 'demandpool' THEN 1 ELSE NULL END) AS demandCount,
   SUM(CASE WHEN s.stage = 'developing' THEN 1 ELSE 0 END) AS devCount,
   SUM(CASE WHEN s.stage = 'testing' THEN 1 ELSE 0 END) AS testCount,
   SUM(CASE WHEN s.stage IN ('verified','tested','delivering','delivered') THEN 1 ELSE 0 END) AS deliverCount
@@ -301,8 +316,8 @@ WHERE vwp.versionWindow = ? AND vwp.deletedAt IS NULL AND vwp.plan IS NOT NULL`
 func (r *Repo) GetWindowDemandCount(ctx context.Context, windowID uint64) (int, error) {
 	const query = `
 SELECT
-  COUNT(DISTINCT CASE WHEN s.fromDemand > 0 THEN s.fromDemand ELSE NULL END)
-  + COUNT(CASE WHEN s.fromDemand = 0 THEN 1 ELSE NULL END) AS demandCount
+  COUNT(DISTINCT CASE WHEN s.sourceType = 'demandpool' AND s.fromDemand > 0 THEN s.fromDemand ELSE NULL END)
+  + COUNT(CASE WHEN IFNULL(s.sourceType, '') != 'demandpool' THEN 1 ELSE NULL END) AS demandCount
 FROM zt_versionwindowproduct vwp
 JOIN zt_planstory ps ON ps.plan = vwp.plan
 JOIN zt_story s ON s.id = ps.story AND s.deleted = '0'
@@ -520,9 +535,10 @@ type clarifyProductCountRow struct {
 }
 
 type storyWindowRow struct {
-	StoryID    uint   `gorm:"column:story"`
-	WindowID   uint   `gorm:"column:windowID"`
-	WindowName string `gorm:"column:windowName"`
+	StoryID     uint   `gorm:"column:story"`
+	WindowID    uint   `gorm:"column:windowID"`
+	WindowName  string `gorm:"column:windowName"`
+	TeamgroupID uint   `gorm:"column:teamgroupID"`
 }
 
 type storyTaskStatRow struct {
@@ -760,10 +776,13 @@ SELECT
   stage,
   status,
   fromDemand,
-  isMainSystemAssociation,
+  sourceType,
+  parent,
+  CAST(IFNULL(NULLIF(isMainSystemAssociation, ''), '0') AS SIGNED) AS isMainSystemAssociation,
   assignedTo
 FROM zt_story
 WHERE fromDemand IN ?
+  AND sourceType = 'demandpool'
   AND type = 'story'
   AND deleted = '0'
 ORDER BY fromDemand ASC, isMainSystemAssociation DESC, id ASC`
@@ -828,7 +847,7 @@ func (r *Repo) FindStoryWindowMappings(ctx context.Context, storyIDs []uint) (ma
 	}
 
 	const query = `
-SELECT ps.story, vw.id AS windowID, vw.name AS windowName
+SELECT ps.story, vw.id AS windowID, vw.name AS windowName, vw.teamgroup AS teamgroupID
 FROM zt_planstory ps
 INNER JOIN zt_versionwindowproduct vwp
   ON vwp.plan = ps.plan AND vwp.deletedAt IS NULL
@@ -847,9 +866,10 @@ ORDER BY ps.story ASC, vw.id ASC`
 			continue
 		}
 		out[row.StoryID] = StoryWindowRef{
-			StoryID:    row.StoryID,
-			WindowID:   row.WindowID,
-			WindowName: strings.TrimSpace(row.WindowName),
+			StoryID:     row.StoryID,
+			WindowID:    row.WindowID,
+			WindowName:  strings.TrimSpace(row.WindowName),
+			TeamgroupID: row.TeamgroupID,
 		}
 	}
 	return out, nil
@@ -885,6 +905,96 @@ GROUP BY story`
 		}
 	}
 	return out, nil
+}
+
+// ListIndependentStories 分页查询独立研发需求（顶层 parent=0）。
+func (r *Repo) ListIndependentStories(ctx context.Context, productIDs []uint, page, pageSize int) ([]ZtStory, int64, error) {
+	if len(productIDs) == 0 {
+		return []ZtStory{}, 0, nil
+	}
+
+	const countQuery = `
+SELECT COUNT(*) AS total
+FROM zt_story
+WHERE IFNULL(sourceType, '') != 'demandpool'
+  AND parent = 0
+  AND type = 'story'
+  AND deleted = '0'
+  AND product IN ?`
+
+	var total int64
+	if err := r.db.WithContext(ctx).Raw(countQuery, productIDs).Scan(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 10
+	}
+	offset := (page - 1) * pageSize
+
+	const listQuery = `
+SELECT
+  id,
+  title,
+  pri,
+  product,
+  plan,
+  stage,
+  status,
+  fromDemand,
+  sourceType,
+  parent,
+  CAST(IFNULL(NULLIF(isMainSystemAssociation, ''), '0') AS SIGNED) AS isMainSystemAssociation,
+  assignedTo
+FROM zt_story
+WHERE IFNULL(sourceType, '') != 'demandpool'
+  AND parent = 0
+  AND type = 'story'
+  AND deleted = '0'
+  AND product IN ?
+ORDER BY id DESC
+LIMIT ? OFFSET ?`
+
+	var rows []ZtStory
+	if err := r.db.WithContext(ctx).Raw(listQuery, productIDs, pageSize, offset).Scan(&rows).Error; err != nil {
+		return nil, 0, err
+	}
+	return rows, total, nil
+}
+
+// FindChildStories 批量查子研发需求。
+func (r *Repo) FindChildStories(ctx context.Context, parentIDs []uint) ([]ZtStory, error) {
+	if len(parentIDs) == 0 {
+		return []ZtStory{}, nil
+	}
+
+	const query = `
+SELECT
+  id,
+  title,
+  pri,
+  product,
+  plan,
+  stage,
+  status,
+  fromDemand,
+  sourceType,
+  parent,
+  CAST(IFNULL(NULLIF(isMainSystemAssociation, ''), '0') AS SIGNED) AS isMainSystemAssociation,
+  assignedTo
+FROM zt_story
+WHERE parent IN ?
+  AND deleted = '0'
+ORDER BY parent ASC, id ASC`
+
+	var rows []ZtStory
+	if err := r.db.WithContext(ctx).Raw(query, parentIDs).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
 }
 
 // FindUsersByAccounts 批量查用户 realname。

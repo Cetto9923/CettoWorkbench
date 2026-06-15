@@ -25,6 +25,25 @@
     $tab.addClass("active");
     var type = $tab.data("type") || "bizReq";
     $("#scheduleListTitle").text(listTitles[type] || listTitles.bizReq);
+
+    var $count = $("#scheduleListCountText");
+    var total = type === "independentRD"
+      ? ($count.data("independent-total") || 0)
+      : ($count.data("biz-total") || 0);
+    $count.text("（共 " + total + " 条）");
+
+    if (type === "independentRD") {
+      $("#scheduleBizListPanel").hide();
+      $("#scheduleIndependentListPanel").show();
+      $("#scheduleBizPagination").hide();
+      $("#scheduleIndependentPagination").show();
+      return;
+    }
+
+    $("#scheduleBizListPanel").show();
+    $("#scheduleIndependentListPanel").hide();
+    $("#scheduleBizPagination").show();
+    $("#scheduleIndependentPagination").hide();
   }
 
   function toggleMoreFilters() {
@@ -197,4 +216,12 @@
 
   $("#scheduleMoreFiltersBtn").on("click", toggleMoreFilters);
   $("#scheduleClearFilters").on("click", clearFilters);
+
+  var params = new URLSearchParams(window.location.search);
+  if (params.get("tab") === "indep") {
+    var $indepTab = $root.find('.schedule-data-tab[data-type="independentRD"]');
+    if ($indepTab.length) {
+      setDataTab($indepTab);
+    }
+  }
 })(jQuery);

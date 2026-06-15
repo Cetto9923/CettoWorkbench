@@ -160,3 +160,89 @@ func formatSubID(id uint) string {
 func formatStoryID(id uint) string {
 	return "RD-" + strconv.FormatUint(uint64(id), 10)
 }
+
+// toIndependentRequirementsView 将独立研发需求列表转为页面树形行。
+func toIndependentRequirementsView(items []IndependentStoryItem, zentaoBase string) []IndependentRequirement {
+	out := make([]IndependentRequirement, 0, len(items))
+	for _, item := range items {
+		priority, priClass := formatPriority(item.Pri)
+		productName := item.ProductName
+		if productName == "" {
+			productName = "—"
+		}
+		windowName := item.WindowName
+		if windowName == "" {
+			windowName = "—"
+		}
+		teamgroupName := item.TeamgroupName
+		if teamgroupName == "" {
+			teamgroupName = "—"
+		}
+		children := toIndependentChildrenView(item.Children, zentaoBase)
+		out = append(out, IndependentRequirement{
+			ID:            formatStoryID(item.ID),
+			Title:         item.Title,
+			Priority:      priority,
+			PriClass:      priClass,
+			ProductName:   productName,
+			Stage:         item.Stage,
+			StageClass:    deriveIndependentStageClass(item.Stage),
+			WindowName:    windowName,
+			TeamgroupName: teamgroupName,
+			Owner:         formatOwner(item.AssignedToName),
+			TaskCount:     item.TaskCount,
+			HasChildren:   len(children) > 0,
+			DetailURL:     template.URL(zentao.StoryViewURLWithBase(zentaoBase, item.ID)),
+			Children:      children,
+		})
+	}
+	return out
+}
+
+func toIndependentChildrenView(items []IndependentStoryItem, zentaoBase string) []IndependentChildRequirement {
+	out := make([]IndependentChildRequirement, 0, len(items))
+	for _, item := range items {
+		priority, priClass := formatPriority(item.Pri)
+		productName := item.ProductName
+		if productName == "" {
+			productName = "—"
+		}
+		windowName := item.WindowName
+		if windowName == "" {
+			windowName = "—"
+		}
+		teamgroupName := item.TeamgroupName
+		if teamgroupName == "" {
+			teamgroupName = "—"
+		}
+		detailURL := template.URL(zentao.StoryViewURLWithBase(zentaoBase, item.ID))
+		out = append(out, IndependentChildRequirement{
+			ID:              formatStoryID(item.ID),
+			Title:           item.Title,
+			Priority:        priority,
+			PriClass:        priClass,
+			ProductName:     productName,
+			Stage:           item.Stage,
+			StageClass:      deriveIndependentStageClass(item.Stage),
+			WindowName:      windowName,
+			TeamgroupName:   teamgroupName,
+			Owner:           formatOwner(item.AssignedToName),
+			TaskCount:       item.TaskCount,
+			DetailURL:       detailURL,
+			ScheduleURL:     detailURL,
+			MaintainTaskURL: detailURL,
+		})
+	}
+	return out
+}
+
+func deriveIndependentStageClass(stage string) string {
+	switch stage {
+	case StageNoWindow, StageNoTask:
+		return "stage-tag--draft"
+	case StageTaskUnassigned, StageTaskAssigned, IndependentStageTaskAssigned:
+		return "stage-tag--final"
+	default:
+		return ""
+	}
+}

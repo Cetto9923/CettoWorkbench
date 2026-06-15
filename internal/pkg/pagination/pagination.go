@@ -8,6 +8,8 @@
 
 package pagination
 
+import "strings"
+
 // 分页默认配置。
 const (
 	DefaultPageSize = 20
@@ -16,13 +18,15 @@ const (
 
 // Pager 描述分页状态及用于渲染页码的数据。
 type Pager struct {
-	TotalItems  int64
-	TotalPages  int
-	CurrentPage int
-	PageSize    int
-	HasPrev     bool
-	HasNext     bool
-	Pages       []int
+	TotalItems    int64
+	TotalPages    int
+	CurrentPage   int
+	PageSize      int
+	HasPrev       bool
+	HasNext       bool
+	Pages         []int
+	PageParam       string            // query 参数名，默认 page
+	PreserveParams  map[string]string // 分页链接需保留的其他 query 参数
 }
 
 // New 按 totalItems/currentPage/pageSize 创建分页对象，并自动规范化参数。
@@ -83,6 +87,14 @@ func (p *Pager) Limit() int {
 		return MaxPageSize
 	}
 	return p.PageSize
+}
+
+// QueryPageParam 返回页码 query 参数名。
+func (p *Pager) QueryPageParam() string {
+	if p == nil || strings.TrimSpace(p.PageParam) == "" {
+		return "page"
+	}
+	return strings.TrimSpace(p.PageParam)
 }
 
 func buildPages(currentPage, totalPages, around int) []int {

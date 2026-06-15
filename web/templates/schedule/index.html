@@ -4,8 +4,12 @@
 职责: 排期工作台首页（版本窗口概览 + 需求列表）。
 全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
 页面字段: .Title (string), .PageTitle (string), .Windows ([]schedule.WindowCard),
-          .BizRequirements ([]schedule.BizRequirement), .Teamgroups ([]schedule.TeamgroupOption),
-          .Products ([]schedule.ZtProduct), .Pager (*pagination.Pager)
+          .BizRequirements ([]schedule.BizRequirement),
+          .IndependentRequirements ([]schedule.IndependentRequirement),
+          .BizTotal (int64), .IndependentTotal (int64),
+          .Teamgroups ([]schedule.TeamgroupOption),
+          .Products ([]schedule.ZtProduct), .BizPager (*pagination.Pager),
+          .IndepPager (*pagination.Pager)
 ========================================================================== */}}
 {{ define "page_css" }}
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedule.css" }}">
@@ -181,7 +185,7 @@
     </div>
 
     <div class="schedule-list-head">
-      <div class="schedule-list-title"><span id="scheduleListTitle">业务需求列表</span> <span id="scheduleListCountText">（共 {{ .BizTotal }} 条）</span></div>
+      <div class="schedule-list-title"><span id="scheduleListTitle">业务需求列表</span> <span id="scheduleListCountText" data-biz-total="{{ .BizTotal }}" data-independent-total="{{ .IndependentTotal }}">（共 {{ .BizTotal }} 条）</span></div>
       <div class="schedule-list-tools">
         <div class="view-tabs schedule-view-tabs">
           <div class="view-tab active"><i class="fas fa-list"></i>列表</div>
@@ -192,6 +196,7 @@
       </div>
     </div>
 
+    <div id="scheduleBizListPanel">
     <div style="overflow-x:auto">
       <table class="schedule-table">
         <thead id="scheduleTableHead">
@@ -344,8 +349,119 @@
       </table>
     </div>
 
-    <div id="schedulePagination" class="pagination-container" style="padding:10px 20px;border-top:1px solid var(--border-lt)">
-      {{ template "components/pager" . }}
+    <div id="scheduleBizPagination" class="pagination-container" style="padding:10px 20px;border-top:1px solid var(--border-lt)">
+      {{ template "components/pager" (dict "Pager" .BizPager "CurrentPath" .CurrentPath) }}
+    </div>
+    </div>
+
+    <div id="scheduleIndependentListPanel" style="display:none">
+    <div style="overflow-x:auto">
+      <table class="schedule-table">
+        <thead>
+          <tr>
+            <th class="schedule-col-title" style="min-width:300px">标题</th>
+            <th class="schedule-col-nowrap" style="width:72px">优先级</th>
+            <th class="schedule-col-nowrap" style="width:120px">关联系统</th>
+            <th class="schedule-col-nowrap" style="width:120px">排期窗口</th>
+            <th class="schedule-col-nowrap" style="min-width:120px">排期阶段</th>
+            <th class="schedule-col-nowrap" style="width:120px">敏捷小组</th>
+            <th class="schedule-col-owner" style="min-width:110px">负责人</th>
+            <th class="schedule-col-nowrap" style="width:72px">任务</th>
+            <th class="schedule-action-col schedule-col-nowrap" style="width:140px">操作</th>
+          </tr>
+        </thead>
+        <tbody id="scheduleIndependentBody">
+          {{ range .IndependentRequirements }}
+          {{ $parent := . }}
+          <tr class="schedule-indep-row schedule-tree-l1" data-id="{{ .ID }}">
+            <td>
+              <div class="schedule-title-cell schedule-title-cell--l1">
+                {{ if .HasChildren }}
+                <button type="button" class="schedule-row-expand" data-target="{{ .ID }}" title="展开/收起子行"><i class="fas fa-chevron-down"></i></button>
+                {{ end }}
+                <span class="schedule-type-badge schedule-type-badge--rd">独立研发</span>
+                <span class="schedule-id-badge">{{ .ID }}</span>
+                {{ if .DetailURL }}
+                <a href="{{ .DetailURL }}" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
+                {{ else }}
+                <span class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</span>
+                {{ end }}
+              </div>
+            </td>
+            <td class="schedule-col-nowrap"><span class="pri-tag {{ .PriClass }}">{{ .Priority }}</span></td>
+            <td>{{ .ProductName }}</td>
+            <td><span class="window-name-tag-inline">{{ .WindowName }}</span></td>
+            <td><span class="stage-tag {{ .StageClass }}">{{ .Stage }}</span></td>
+            <td>{{ .TeamgroupName }}</td>
+            <td class="schedule-col-owner"><span class="schedule-owner-line"><i class="fas fa-user"></i><span class="name">{{ .Owner }}</span></span></td>
+            <td class="schedule-task-col">
+              {{ if gt .TaskCount 0 }}
+              <a href="javascript:void(0)" class="schedule-task-link">T{{ .TaskCount }}</a>
+              {{ else }}
+              <span class="t3">—</span>
+              {{ end }}
+            </td>
+            <td class="schedule-action-col">
+              <div class="schedule-action-buttons">
+                {{ if .DetailURL }}
+                <a href="{{ .DetailURL }}" class="action-btn primary" style="padding:4px 10px;font-size:11px">详情</a>
+                {{ else }}
+                <button type="button" class="action-btn primary" style="padding:4px 10px;font-size:11px">详情</button>
+                {{ end }}
+              </div>
+            </td>
+          </tr>
+          {{ range .Children }}
+          <tr class="schedule-indep-child-row schedule-tree-l2 schedule-child-row" data-parent="{{ $parent.ID }}">
+            <td>
+              <div class="schedule-title-cell schedule-title-cell--l2">
+                <span class="tree-guide"></span>
+                <span class="schedule-type-badge schedule-type-badge--rd">子研发</span>
+                <span class="schedule-id-badge">{{ .ID }}</span>
+                {{ if .DetailURL }}
+                <a href="{{ .DetailURL }}" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
+                {{ else }}
+                <span class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</span>
+                {{ end }}
+              </div>
+            </td>
+            <td class="schedule-col-nowrap"><span class="pri-tag {{ .PriClass }}">{{ .Priority }}</span></td>
+            <td>{{ .ProductName }}</td>
+            <td><span class="window-name-tag-inline">{{ .WindowName }}</span></td>
+            <td><span class="stage-tag {{ .StageClass }}">{{ .Stage }}</span></td>
+            <td>{{ .TeamgroupName }}</td>
+            <td class="schedule-col-owner"><span class="schedule-owner-line"><i class="fas fa-user"></i><span class="name">{{ .Owner }}</span></span></td>
+            <td class="schedule-task-col">
+              {{ if gt .TaskCount 0 }}
+              <a href="javascript:void(0)" class="schedule-task-link">T{{ .TaskCount }}</a>
+              {{ else }}
+              <span class="t3">—</span>
+              {{ end }}
+            </td>
+            <td class="schedule-action-col">
+              <div class="schedule-action-buttons">
+                {{ if .ScheduleURL }}
+                <a href="{{ .ScheduleURL }}" class="action-btn primary" style="padding:4px 10px;font-size:11px">排期</a>
+                {{ end }}
+                {{ if .MaintainTaskURL }}
+                <a href="{{ .MaintainTaskURL }}" class="action-btn primary" style="padding:4px 10px;font-size:11px">维护任务</a>
+                {{ end }}
+              </div>
+            </td>
+          </tr>
+          {{ end }}
+          {{ else }}
+          <tr>
+            <td colspan="9" class="text-center text-muted" style="padding:32px 16px">暂无数据</td>
+          </tr>
+          {{ end }}
+        </tbody>
+      </table>
+    </div>
+
+    <div id="scheduleIndependentPagination" class="pagination-container" style="padding:10px 20px;border-top:1px solid var(--border-lt);display:none">
+      {{ template "components/pager" (dict "Pager" .IndepPager "CurrentPath" .CurrentPath) }}
+    </div>
     </div>
   </div>
 </div>
