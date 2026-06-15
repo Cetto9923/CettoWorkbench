@@ -7,3 +7,4 @@ configs/config.dev.yaml
 web/static/uploads/**
 backups/*.sql.gz
 /demo
+server
