@@ -42,7 +42,17 @@ func (s *Service) GetUserTeamgroups(ctx context.Context, account string) ([]Team
 		return []TeamgroupOption{}, nil
 	}
 
-	groups, err := s.repo.GetUserTeamgroups(ctx, account)
+	isAdmin, err := s.repo.IsAdmin(ctx, account)
+	if err != nil {
+		return nil, err
+	}
+
+	var groups []ZtTeamgroup
+	if isAdmin {
+		groups, err = s.repo.ListAllTeamgroups(ctx)
+	} else {
+		groups, err = s.repo.GetUserTeamgroups(ctx, account)
+	}
 	if err != nil {
 		return nil, err
 	}

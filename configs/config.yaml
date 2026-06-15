@@ -1,5 +1,5 @@
 app:
-  name: workbench
+  name: 个人工作台
   env: dev
   addr: ":8080"
 

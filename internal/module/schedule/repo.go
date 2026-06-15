@@ -101,6 +101,43 @@ func NewRepo(db *gorm.DB) *Repo {
 	return &Repo{db: db}
 }
 
+// IsAdmin 判断账号是否为禅道超级管理员（zt_company.admins）。
+func (r *Repo) IsAdmin(ctx context.Context, account string) (bool, error) {
+	account = strings.TrimSpace(account)
+	if account == "" {
+		return false, nil
+	}
+
+	const query = `
+SELECT 1 AS ok
+FROM zt_company
+WHERE CONCAT(',', admins, ',') LIKE CONCAT('%,', ?, ',%')
+LIMIT 1`
+
+	var row struct {
+		OK int `gorm:"column:ok"`
+	}
+	err := r.db.WithContext(ctx).Raw(query, account).Scan(&row).Error
+	if err != nil {
+		return false, err
+	}
+	return row.OK == 1, nil
+}
+
+// ListAllTeamgroups 查询全部未删除的敏捷小组。
+func (r *Repo) ListAllTeamgroups(ctx context.Context) ([]ZtTeamgroup, error) {
+	var rows []ZtTeamgroup
+	if err := r.db.WithContext(ctx).
+		Table((ZtTeamgroup{}).TableName()).
+		Select("id", "name", "parent", "path").
+		Where("deleted = '0'").
+		Order("id ASC").
+		Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
 // GetUserTeamgroups 查询当前用户所属的敏捷小组。
 func (r *Repo) GetUserTeamgroups(ctx context.Context, account string) ([]ZtTeamgroup, error) {
 	const query = `
