@@ -1,0 +1,162 @@
+// =============================================================================
+// 文件: internal/module/schedule/bizdemand_view.go
+// 模块: 排期工作台
+// 类型: action
+// 职责: 将 Service 层业需列表 DTO 转换为页面展示用 BizRequirement 视图模型。
+// 依赖: internal/module/schedule/form.go（Stage 常量）
+//       internal/pkg/zentao
+// =============================================================================
+
+package schedule
+
+import (
+	"html/template"
+	"strconv"
+	"strings"
+
+	"workbench/internal/pkg/zentao"
+)
+
+// toBizRequirementsView 将顶层业需列表转为页面树形一级行。
+func toBizRequirementsView(items []BizDemandItem, zentaoBase string) []BizRequirement {
+	out := make([]BizRequirement, 0, len(items))
+	for _, item := range items {
+		windowStatus, windowStatusClass := deriveWindowStatus(item.Stage)
+		stageTag, stageTagClass := deriveStageTag(item.Stage)
+		priority, priClass := formatPriority(item.Pri)
+		agileGroup := item.TeamgroupName
+		if agileGroup == "" {
+			agileGroup = "—"
+		}
+		versionWindow := item.WindowName
+		if versionWindow == "" {
+			versionWindow = "—"
+		}
+		subReqs := toSubBizRequirementsView(item.Children, zentaoBase)
+		devReqs := toDevRequirementsView(item.Stories, zentaoBase)
+		out = append(out, BizRequirement{
+			ID:                 formatBizID(item.ID),
+			Title:              item.Name,
+			Priority:           priority,
+			PriClass:           priClass,
+			WindowStatus:       windowStatus,
+			WindowStatusClass:  windowStatusClass,
+			AgileGroup:         agileGroup,
+			StageTag:           stageTag,
+			StageTagClass:      stageTagClass,
+			VersionWindow:      versionWindow,
+			Owner:              formatOwner(item.OwnerName),
+			ActionLabel:        "详情",
+			ActionClass:        "primary",
+			DetailURL:          template.URL(zentao.DemandViewURLWithBase(zentaoBase, item.ID)),
+			HasChildren:        len(item.Children) > 0 || len(item.Stories) > 0,
+			SubBizRequirements: subReqs,
+			DevRequirements:    devReqs,
+			// 未映射的 BizDemandItem 字段（本期零值/忽略）：Status、MainSystemName、ExtraSystemCount
+		})
+	}
+	return out
+}
+
+// toSubBizRequirementsView 将子业需列表转为页面树形二级行。
+func toSubBizRequirementsView(items []SubDemandItem, zentaoBase string) []SubBizRequirement {
+	out := make([]SubBizRequirement, 0, len(items))
+	for _, item := range items {
+		priority, priClass := formatPriority(item.Pri)
+		out = append(out, SubBizRequirement{
+			ID:              formatSubID(item.ID),
+			Title:           item.Name,
+			Priority:        priority,
+			PriClass:        priClass,
+			Owner:           formatOwner(item.OwnerName),
+			ActionLabel:     "排期",
+			ActionClass:     "primary",
+			DetailURL:       template.URL(zentao.DemandViewURLWithBase(zentaoBase, item.ID)),
+			DevRequirements: toDevRequirementsView(item.Stories, zentaoBase),
+			// 未映射的 SubDemandItem 字段（本期零值/忽略）：Status、MainSystemName、ExtraSystemCount、
+			// TeamgroupName、Stage、WindowName
+		})
+	}
+	return out
+}
+
+// toDevRequirementsView 将研发需求列表转为页面树形三级行。
+func toDevRequirementsView(stories []StoryItem, zentaoBase string) []DevRequirement {
+	out := make([]DevRequirement, 0, len(stories))
+	for _, story := range stories {
+		priority, priClass := formatPriority(story.Pri)
+		owner := story.AssignedToName
+		if owner == "" {
+			owner = "待分配"
+		}
+		out = append(out, DevRequirement{
+			ID:          formatStoryID(story.ID),
+			Title:       story.Title,
+			Priority:    priority,
+			PriClass:    priClass,
+			IsMain:      story.IsMainSystemAssociation == 1,
+			Owner:       owner,
+			TaskCount:   story.TaskCount,
+			ActionLabel: "维护任务",
+			ActionClass: "primary",
+			DetailURL:   template.URL(zentao.StoryViewURLWithBase(zentaoBase, story.ID)),
+			// 未映射的 StoryItem 字段（本期零值/忽略）：ProductName、Stage、WindowName、
+			// TeamgroupName、AssignedTo
+		})
+	}
+	return out
+}
+
+func formatPriority(pri int) (label, class string) {
+	if pri < 0 {
+		pri = 0
+	}
+	if pri > 4 {
+		pri = 4
+	}
+	label = "P" + strconv.Itoa(pri)
+	class = strings.ToLower(label)
+	return label, class
+}
+
+func deriveWindowStatus(stage string) (status, class string) {
+	switch stage {
+	case StageNoWindow, StageNoStory, StageNoTask:
+		return "未排期", ""
+	default:
+		return "已排期", "ok"
+	}
+}
+
+func deriveStageTag(stage string) (tag, class string) {
+	switch stage {
+	case StageNoWindow:
+		return "", ""
+	case StageNoStory:
+		return "初排", "stage-tag--draft"
+	case StageNoTask, StageTaskUnassigned, StageTaskAssigned:
+		return "终排", "stage-tag--final"
+	default:
+		return "", ""
+	}
+}
+
+func formatOwner(name string) string {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return "待分配"
+	}
+	return name
+}
+
+func formatBizID(id uint) string {
+	return "REQ-" + strconv.FormatUint(uint64(id), 10)
+}
+
+func formatSubID(id uint) string {
+	return "SUB-" + strconv.FormatUint(uint64(id), 10)
+}
+
+func formatStoryID(id uint) string {
+	return "RD-" + strconv.FormatUint(uint64(id), 10)
+}

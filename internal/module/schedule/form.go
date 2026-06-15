@@ -258,6 +258,19 @@ func (r *ListBizDemandsReq) Validate() []FieldError {
 	return errs
 }
 
+// Normalize 规范化分页参数。
+func (r *ListBizDemandsReq) Normalize() {
+	if r.Page < 1 {
+		r.Page = 1
+	}
+	if r.PageSize < 1 {
+		r.PageSize = 10
+	}
+	if r.PageSize > 100 {
+		r.PageSize = 100
+	}
+}
+
 // ListBizDemandsResp 业务需求 Tab 列表响应。
 type ListBizDemandsResp struct {
 	Total int64           `json:"total"`
@@ -273,7 +286,7 @@ type BizDemandItem struct {
 	MainSystemName   string          `json:"mainSystemName"`
 	ExtraSystemCount int             `json:"extraSystemCount"`
 	TeamgroupName    string          `json:"teamgroupName"`
-	PMs              []string        `json:"pms"`
+	OwnerName        string          `json:"ownerName"`
 	Stage            string          `json:"stage"`
 	WindowName       string          `json:"windowName"`
 	Children         []SubDemandItem `json:"children"`
@@ -289,7 +302,7 @@ type SubDemandItem struct {
 	MainSystemName   string      `json:"mainSystemName"`
 	ExtraSystemCount int         `json:"extraSystemCount"`
 	TeamgroupName    string      `json:"teamgroupName"`
-	PMs              []string    `json:"pms"`
+	OwnerName        string      `json:"ownerName"`
 	Stage            string      `json:"stage"`
 	WindowName       string      `json:"windowName"`
 	Stories          []StoryItem `json:"stories"`
@@ -308,13 +321,6 @@ type StoryItem struct {
 	AssignedToName          string `json:"assignedToName"`
 	TaskCount               int    `json:"taskCount"`
 	IsMainSystemAssociation int    `json:"isMainSystemAssociation"`
-}
-
-// ClarifyPM 业需澄清 PM 行。
-type ClarifyPM struct {
-	Demand  uint
-	Product string
-	PM      string
 }
 
 // StoryWindowRef 研发需求关联的版本窗口。

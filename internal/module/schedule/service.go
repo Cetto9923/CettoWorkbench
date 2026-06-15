@@ -723,7 +723,7 @@ func (s *Service) ListBizDemands(ctx context.Context, actor *model.User, req Lis
 		return &ListBizDemandsResp{Total: 0, Items: []BizDemandItem{}}, nil
 	}
 
-	normalizeBizDemandPage(&req)
+	req.Normalize()
 
 	poolIDs, err := s.repo.GetUserDemandPools(ctx, account)
 	if err != nil {
@@ -761,15 +761,10 @@ func (s *Service) ListBizDemands(ctx context.Context, actor *model.User, req Lis
 	if err != nil {
 		return nil, err
 	}
-	clarifyPMsByDemand, err := s.repo.FindClarifyPMsByDemands(ctx, allDemandIDs)
-	if err != nil {
-		return nil, err
-	}
-
 	productIDs := collectBizDemandProductIDs(topDemands, childDemands, stories)
 	storyIDs := pluckStoryIDs(stories)
 	teamgroupIDs := collectBizDemandTeamgroupIDs(topDemands)
-	accounts := collectBizDemandAccounts(stories, clarifyPMsByDemand)
+	accounts := collectBizDemandAccounts(topDemands, childDemands, stories)
 
 	productNameByID, err := s.repo.FindProductsByIDs(ctx, productIDs)
 	if err != nil {
@@ -796,7 +791,6 @@ func (s *Service) ListBizDemands(ctx context.Context, actor *model.User, req Lis
 		childByParent:        childByParent,
 		storiesByDemand:      storiesByDemand,
 		productCountByDemand: productCountByDemand,
-		clarifyPMsByDemand:   clarifyPMsByDemand,
 		productNameByID:      productNameByID,
 		windowByStory:        windowByStory,
 		taskStatByStory:      taskStatByStory,
@@ -814,23 +808,10 @@ func (s *Service) ListBizDemands(ctx context.Context, actor *model.User, req Lis
 	return &ListBizDemandsResp{Total: total, Items: items}, nil
 }
 
-func normalizeBizDemandPage(req *ListBizDemandsReq) {
-	if req.Page < 1 {
-		req.Page = 1
-	}
-	if req.PageSize < 1 {
-		req.PageSize = 10
-	}
-	if req.PageSize > 100 {
-		req.PageSize = 100
-	}
-}
-
 type bizDemandAssembleContext struct {
 	childByParent        map[uint][]ZtDemand
 	storiesByDemand      map[uint][]ZtStory
 	productCountByDemand map[uint]int
-	clarifyPMsByDemand   map[uint][]ClarifyPM
 	productNameByID      map[uint]string
 	windowByStory        map[uint]StoryWindowRef
 	taskStatByStory      map[uint]StoryTaskStat
@@ -852,7 +833,7 @@ func (c bizDemandAssembleContext) buildBizDemandItem(top ZtDemand) BizDemandItem
 		MainSystemName:   c.productNameByID[parseUintString(top.MainSystem)],
 		ExtraSystemCount: extraSystemCount(c.productCountByDemand[top.ID]),
 		TeamgroupName:    teamgroupName,
-		PMs:              resolvePMNames(c.clarifyPMsByDemand[top.ID], c.realnameByAccount),
+		OwnerName:        resolveDemandOwner(top.BRA, c.realnameByAccount),
 		Stage:            calcBizDemandStage(subtreeStories, mainSystemStories, c.windowByStory, c.taskStatByStory),
 		WindowName:       pickBizWindowName(subtreeStories, c.windowByStory),
 		Children:         c.buildSubDemandItems(top, children),
@@ -877,7 +858,7 @@ func (c bizDemandAssembleContext) buildSubDemandItems(parent ZtDemand, children 
 			MainSystemName:   c.productNameByID[parseUintString(child.MainSystem)],
 			ExtraSystemCount: extraSystemCount(c.productCountByDemand[child.ID]),
 			TeamgroupName:    parentTeamgroupName,
-			PMs:              resolvePMNames(c.clarifyPMsByDemand[child.ID], c.realnameByAccount),
+			OwnerName:        resolveDemandOwner(child.BRA, c.realnameByAccount),
 			WindowName:       pickBizWindowName(subtreeStories, c.windowByStory),
 			Stories:          c.buildStoryItems(parent.TeamGroup, parentTeamgroupName, childStories),
 		})
@@ -1031,6 +1012,8 @@ func calcBizDemandStage(
 	windowByStory map[uint]StoryWindowRef,
 	taskStatByStory map[uint]StoryTaskStat,
 ) string {
+	// 业需窗口仅经 story → planstory → versionwindowproduct 关联，无 story 时不可能有窗口。
+	// 故须先判「未转研发」，再判「未关联窗口」，否则 len(stories)==0 会误落未关联窗口。
 	if len(allStories) == 0 {
 		return StageNoStory
 	}
@@ -1096,24 +1079,12 @@ func extraSystemCount(distinctProductCount int) int {
 	return distinctProductCount - 1
 }
 
-func resolvePMNames(clarifyPMs []ClarifyPM, realnameByAccount map[string]string) []string {
-	if len(clarifyPMs) == 0 {
-		return []string{}
+func resolveDemandOwner(bra string, realnameByAccount map[string]string) string {
+	bra = strings.TrimSpace(bra)
+	if bra == "" {
+		return "待分配"
 	}
-	seen := make(map[string]struct{}, len(clarifyPMs))
-	names := make([]string, 0, len(clarifyPMs))
-	for _, item := range clarifyPMs {
-		account := strings.TrimSpace(item.PM)
-		if account == "" {
-			continue
-		}
-		if _, ok := seen[account]; ok {
-			continue
-		}
-		seen[account] = struct{}{}
-		names = append(names, resolveRealname(account, realnameByAccount))
-	}
-	return names
+	return resolveRealname(bra, realnameByAccount)
 }
 
 func resolveRealname(account string, realnameByAccount map[string]string) string {
@@ -1166,7 +1137,7 @@ func collectBizDemandTeamgroupIDs(topDemands []ZtDemand) []uint {
 	return ids
 }
 
-func collectBizDemandAccounts(stories []ZtStory, clarifyPMsByDemand map[uint][]ClarifyPM) []string {
+func collectBizDemandAccounts(topDemands, childDemands []ZtDemand, stories []ZtStory) []string {
 	seen := make(map[string]struct{})
 	accounts := make([]string, 0)
 	add := func(account string) {
@@ -1180,13 +1151,11 @@ func collectBizDemandAccounts(stories []ZtStory, clarifyPMsByDemand map[uint][]C
 		seen[account] = struct{}{}
 		accounts = append(accounts, account)
 	}
+	for _, demand := range append(topDemands, childDemands...) {
+		add(demand.BRA)
+	}
 	for _, story := range stories {
 		add(story.AssignedTo)
-	}
-	for _, clarifyPMs := range clarifyPMsByDemand {
-		for _, item := range clarifyPMs {
-			add(item.PM)
-		}
 	}
 	return accounts
 }

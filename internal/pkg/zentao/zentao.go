@@ -27,7 +27,15 @@ func SetConfig(cfg config.ZentaoConfig) {
 
 // URL 拼接禅道页面链接，站点前缀取自 config.Zentao.URL（zentao.url）。
 func URL(m, f string, params ...string) string {
-	base := strings.TrimRight(zentaoCfg.URL, "/")
+	return URLWithBase(strings.TrimRight(zentaoCfg.URL, "/"), m, f, params...)
+}
+
+// URLWithBase 使用指定站点前缀拼接禅道页面链接（base 为空时回退全局配置）。
+func URLWithBase(base, m, f string, params ...string) string {
+	base = strings.TrimRight(base, "/")
+	if base == "" {
+		base = strings.TrimRight(zentaoCfg.URL, "/")
+	}
 	if base == "" || m == "" || f == "" {
 		return ""
 	}
@@ -38,5 +46,37 @@ func URL(m, f string, params ...string) string {
 		query += "&" + params[0]
 	}
 
-	return base + "/index.php?" + query
+	return base + indexPath + "?" + query
+}
+
+// DemandViewURL 业需详情页链接。
+func DemandViewURL(demandID uint) string {
+	if demandID == 0 {
+		return ""
+	}
+	return URL("demand", "view", fmt.Sprintf("demandID=%d", demandID))
+}
+
+// DemandViewURLWithBase 使用指定站点前缀拼接业需详情页链接。
+func DemandViewURLWithBase(base string, demandID uint) string {
+	if demandID == 0 {
+		return ""
+	}
+	return URLWithBase(base, "demand", "view", fmt.Sprintf("demandID=%d", demandID))
+}
+
+// StoryViewURL 研发需求详情页链接。
+func StoryViewURL(storyID uint) string {
+	if storyID == 0 {
+		return ""
+	}
+	return URL("story", "view", fmt.Sprintf("storyID=%d", storyID))
+}
+
+// StoryViewURLWithBase 使用指定站点前缀拼接研发需求详情页链接。
+func StoryViewURLWithBase(base string, storyID uint) string {
+	if storyID == 0 {
+		return ""
+	}
+	return URLWithBase(base, "story", "view", fmt.Sprintf("storyID=%d", storyID))
 }

@@ -12,6 +12,7 @@
 package schedule
 
 import (
+	"html/template"
 	"net/http"
 	"strconv"
 	"strings"
@@ -71,16 +72,16 @@ func toWindowListItemJSON(item WindowListItem) windowListItemJSON {
 
 // DevRequirement 研发需求行（树形三级）。
 type DevRequirement struct {
-	ID           string
-	Title        string
-	Priority     string
-	PriClass     string
-	IsMain       bool
-	Owner        string
-	TaskCount    int
-	HasTasks     bool
-	ActionLabel  string
-	ActionClass  string
+	ID          string
+	Title       string
+	Priority    string
+	PriClass    string
+	IsMain      bool
+	Owner       string
+	TaskCount   int
+	ActionLabel string
+	ActionClass string
+	DetailURL   template.URL
 }
 
 // SubBizRequirement 子业务需求行（树形二级）。
@@ -90,6 +91,9 @@ type SubBizRequirement struct {
 	Priority        string
 	PriClass        string
 	Owner           string
+	ActionLabel     string
+	ActionClass     string
+	DetailURL       template.URL
 	DevRequirements []DevRequirement
 }
 
@@ -106,8 +110,9 @@ type BizRequirement struct {
 	StageTagClass      string
 	VersionWindow      string
 	Owner              string
-	Overdue            bool
-	RowClass           string
+	ActionLabel        string
+	ActionClass        string
+	DetailURL          template.URL
 	HasChildren        bool
 	SubBizRequirements []SubBizRequirement
 	DevRequirements    []DevRequirement
@@ -117,17 +122,19 @@ const scheduleRedirectURL = "/schedule"
 
 // Handler 处理排期工作台页面请求。
 type Handler struct {
-	renderer *render.Renderer
-	logger   *zap.Logger
-	svc      *Service
+	renderer  *render.Renderer
+	logger    *zap.Logger
+	svc       *Service
+	zentaoURL string
 }
 
 // NewHandler 创建排期模块 Handler。
-func NewHandler(renderer *render.Renderer, logger *zap.Logger, svc *Service) *Handler {
+func NewHandler(renderer *render.Renderer, logger *zap.Logger, svc *Service, zentaoURL string) *Handler {
 	return &Handler{
-		renderer: renderer,
-		logger:   logger,
-		svc:      svc,
+		renderer:  renderer,
+		logger:    logger,
+		svc:       svc,
+		zentaoURL: strings.TrimRight(strings.TrimSpace(zentaoURL), "/"),
 	}
 }
 
@@ -151,6 +158,13 @@ func (h *Handler) Index(c *gin.Context) {
 	h.bindRenderer(c)
 	actor := middleware.CurrentUser(c)
 
+	var listReq ListBizDemandsReq
+	if err := c.ShouldBindQuery(&listReq); err != nil {
+		render.Error(c, http.StatusBadRequest, "参数解析失败", err)
+		return
+	}
+	listReq.Normalize()
+
 	formData, err := h.svc.GetCreateWindowFormData(c.Request.Context(), actor)
 	if err != nil {
 		if h.logger != nil {
@@ -170,16 +184,30 @@ func (h *Handler) Index(c *gin.Context) {
 		windows = []WindowCard{}
 	}
 
-	bizRequirements := buildBizRequirements()
+	bizResp, err := h.svc.ListBizDemands(c.Request.Context(), actor, listReq)
+	if err != nil {
+		if h.logger != nil {
+			h.logger.Error("load biz demands failed", zap.Error(err))
+		}
+		bizResp = &ListBizDemandsResp{Total: 0, Items: []BizDemandItem{}}
+	}
+	bizRequirements := toBizRequirementsView(bizResp.Items, h.zentaoURL)
+	if h.logger != nil && len(bizRequirements) > 0 {
+		h.logger.Debug("schedule biz demand detail url sample",
+			zap.String("detailURL", string(bizRequirements[0].DetailURL)),
+			zap.String("zentaoURL", h.zentaoURL),
+		)
+	}
 
 	render.Page(c, http.StatusOK, constants.TEMPLATE_SCHEDULE_INDEX, gin.H{
 		"Title":           "排期工作台",
 		"PageTitle":       "排期工作台",
 		"Windows":         windows,
 		"BizRequirements": bizRequirements,
+		"BizTotal":        bizResp.Total,
 		"Teamgroups":      formData.Teamgroups,
 		"Products":        formData.Products,
-		"Pager":           pagination.New(int64(len(bizRequirements)), 1, 10),
+		"Pager":           pagination.New(bizResp.Total, listReq.Page, listReq.PageSize),
 	})
 }
 

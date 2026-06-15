@@ -181,7 +181,7 @@
     </div>
 
     <div class="schedule-list-head">
-      <div class="schedule-list-title"><span id="scheduleListTitle">业务需求列表</span> <span id="scheduleListCountText">（共 {{ len .BizRequirements }} 条）</span></div>
+      <div class="schedule-list-title"><span id="scheduleListTitle">业务需求列表</span> <span id="scheduleListCountText">（共 {{ .BizTotal }} 条）</span></div>
       <div class="schedule-list-tools">
         <div class="view-tabs schedule-view-tabs">
           <div class="view-tab active"><i class="fas fa-list"></i>列表</div>
@@ -210,7 +210,7 @@
         <tbody id="scheduleBody">
           {{ range .BizRequirements }}
           {{ $biz := . }}
-          <tr class="schedule-biz-row schedule-tree-l1 {{ .RowClass }}" data-id="{{ .ID }}">
+          <tr class="schedule-biz-row schedule-tree-l1" data-id="{{ .ID }}">
             <td><input type="checkbox" class="schedule-chk" value="{{ .ID }}"{{ if eq .WindowStatus "阻塞" }} disabled{{ end }}></td>
             <td>
               <div class="schedule-title-cell schedule-title-cell--l1">
@@ -219,7 +219,11 @@
                 {{ end }}
                 <span class="schedule-type-badge schedule-type-badge--biz">业务需求</span>
                 <span class="schedule-id-badge">{{ .ID }}</span>
-                <button type="button" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</button>
+                {{ if .DetailURL }}
+                <a href="{{ .DetailURL }}" target="_blank" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
+                {{ else }}
+                <span class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</span>
+                {{ end }}
               </div>
             </td>
             <td class="schedule-col-nowrap"><span class="pri-tag {{ .PriClass }}">{{ .Priority }}</span></td>
@@ -227,12 +231,13 @@
               <span class="window-status-tag {{ .WindowStatusClass }}">{{ .WindowStatus }}</span>
             </td>
             <td>{{ .AgileGroup }}</td>
-            <td class="schedule-col-stage"><span class="stage-tag {{ .StageTagClass }}">{{ .StageTag }}</span> <span class="window-name-tag-inline">{{ .VersionWindow }}</span></td>
+            {{/* TODO：未关联窗口/未转研发时显示窗口下拉；未建任务/已建任务时仅文本查看 */}}
+            <td class="schedule-col-stage"><span class="stage-tag {{ .StageTagClass }}">{{ .StageTag }}</span>{{ if .StageTag }} {{ end }}<span class="window-name-tag-inline">{{ .VersionWindow }}</span></td>
             <td class="schedule-col-owner"><span class="schedule-owner-line"><i class="fas fa-user"></i><span class="name">{{ .Owner }}</span></span></td>
             <td class="schedule-task-col"><span class="t3">—</span></td>
             <td class="schedule-action-col">
               <div class="schedule-action-buttons">
-                <button type="button" class="action-btn primary" style="padding:4px 10px;font-size:11px">详情</button>
+                <button type="button" class="action-btn {{ .ActionClass }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</button>
               </div>
             </td>
           </tr>
@@ -244,7 +249,11 @@
                 <span class="tree-guide"></span>
                 <span class="schedule-type-badge schedule-type-badge--sub">子业务需求</span>
                 <span class="schedule-id-badge">{{ .ID }}</span>
-                <button type="button" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</button>
+                {{ if .DetailURL }}
+                <a href="{{ .DetailURL }}" target="_blank" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
+                {{ else }}
+                <span class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</span>
+                {{ end }}
               </div>
             </td>
             <td class="schedule-col-nowrap"><span class="pri-tag {{ .PriClass }}">{{ .Priority }}</span></td>
@@ -252,12 +261,12 @@
               <span class="window-status-tag {{ $biz.WindowStatusClass }}">{{ $biz.WindowStatus }}</span>
             </td>
             <td>{{ $biz.AgileGroup }}</td>
-            <td class="schedule-col-stage"><span class="stage-tag {{ $biz.StageTagClass }}">{{ $biz.StageTag }}</span> <span class="window-name-tag-inline">{{ $biz.VersionWindow }}</span></td>
+            <td class="schedule-col-stage"><span class="stage-tag {{ $biz.StageTagClass }}">{{ $biz.StageTag }}</span>{{ if $biz.StageTag }} {{ end }}<span class="window-name-tag-inline">{{ $biz.VersionWindow }}</span></td>
             <td class="schedule-col-owner"><span class="schedule-owner-line"><i class="fas fa-user"></i><span class="name">{{ .Owner }}</span></span></td>
             <td class="schedule-task-col"><span class="t3">—</span></td>
             <td class="schedule-action-col">
               <div class="schedule-action-buttons">
-                <button type="button" class="action-btn primary" style="padding:4px 10px;font-size:11px">排期</button>
+                <button type="button" class="action-btn {{ .ActionClass }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</button>
               </div>
             </td>
           </tr>
@@ -269,7 +278,11 @@
                 <span class="tree-guide"></span>
                 {{ if .IsMain }}<span class="schedule-type-badge schedule-type-badge--rd">研发需求<span class="rd-subtype">主</span></span>{{ else }}<span class="schedule-type-badge schedule-type-badge--rd">研发需求<span class="rd-subtype">配</span></span>{{ end }}
                 <span class="schedule-id-badge">{{ .ID }}</span>
-                <button type="button" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</button>
+                {{ if .DetailURL }}
+                <a href="{{ .DetailURL }}" target="_blank" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
+                {{ else }}
+                <span class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</span>
+                {{ end }}
               </div>
             </td>
             <td class="schedule-col-nowrap"><span class="pri-tag {{ .PriClass }}">{{ .Priority }}</span></td>
@@ -277,14 +290,10 @@
               <span class="window-status-tag {{ $biz.WindowStatusClass }}">{{ $biz.WindowStatus }}</span>
             </td>
             <td>{{ $biz.AgileGroup }}</td>
-            <td class="schedule-col-stage"><span class="stage-tag {{ $biz.StageTagClass }}">{{ $biz.StageTag }}</span> <span class="window-name-tag-inline">{{ $biz.VersionWindow }}</span></td>
+            <td class="schedule-col-stage"><span class="stage-tag {{ $biz.StageTagClass }}">{{ $biz.StageTag }}</span>{{ if $biz.StageTag }} {{ end }}<span class="window-name-tag-inline">{{ $biz.VersionWindow }}</span></td>
             <td class="schedule-col-owner"><span class="schedule-owner-line"><i class="fas fa-user"></i><span class="name">{{ .Owner }}</span></span></td>
             <td class="schedule-task-col">
-              {{ if .HasTasks }}
               <a href="javascript:void(0)" class="schedule-task-link">T{{ .TaskCount }}</a>
-              {{ else }}
-              <span class="t3">—</span>
-              {{ end }}
             </td>
             <td class="schedule-action-col">
               <div class="schedule-action-buttons">
@@ -302,7 +311,11 @@
                 <span class="tree-guide"></span>
                 {{ if .IsMain }}<span class="schedule-type-badge schedule-type-badge--rd">研发需求<span class="rd-subtype">主</span></span>{{ else }}<span class="schedule-type-badge schedule-type-badge--rd">研发需求<span class="rd-subtype">配</span></span>{{ end }}
                 <span class="schedule-id-badge">{{ .ID }}</span>
-                <button type="button" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</button>
+                {{ if .DetailURL }}
+                <a href="{{ .DetailURL }}" target="_blank" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
+                {{ else }}
+                <span class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</span>
+                {{ end }}
               </div>
             </td>
             <td class="schedule-col-nowrap"><span class="pri-tag {{ .PriClass }}">{{ .Priority }}</span></td>
@@ -310,14 +323,10 @@
               <span class="window-status-tag {{ $biz.WindowStatusClass }}">{{ $biz.WindowStatus }}</span>
             </td>
             <td>{{ $biz.AgileGroup }}</td>
-            <td class="schedule-col-stage"><span class="stage-tag {{ $biz.StageTagClass }}">{{ $biz.StageTag }}</span> <span class="window-name-tag-inline">{{ $biz.VersionWindow }}</span></td>
+            <td class="schedule-col-stage"><span class="stage-tag {{ $biz.StageTagClass }}">{{ $biz.StageTag }}</span>{{ if $biz.StageTag }} {{ end }}<span class="window-name-tag-inline">{{ $biz.VersionWindow }}</span></td>
             <td class="schedule-col-owner"><span class="schedule-owner-line"><i class="fas fa-user"></i><span class="name">{{ .Owner }}</span></span></td>
             <td class="schedule-task-col">
-              {{ if .HasTasks }}
               <a href="javascript:void(0)" class="schedule-task-link">T{{ .TaskCount }}</a>
-              {{ else }}
-              <span class="t3">—</span>
-              {{ end }}
             </td>
             <td class="schedule-action-col">
               <div class="schedule-action-buttons">

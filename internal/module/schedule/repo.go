@@ -245,7 +245,7 @@ func (r *Repo) GetWindowConsumedHours(ctx context.Context, windowID uint64) (flo
 SELECT COALESCE(SUM(t.consumed), 0) AS total
 FROM zt_versionwindowproduct vwp
 JOIN zt_planstory ps ON ps.plan = vwp.plan
-JOIN zt_task t ON t.story = ps.story AND t.deleted = '0'
+JOIN zt_task t ON t.story = ps.story AND t.deleted = '0' AND t.status != 'closed'
 WHERE vwp.versionWindow = ? AND vwp.deletedAt IS NULL AND vwp.plan IS NOT NULL`
 
 	var row struct {
@@ -512,12 +512,6 @@ WHERE module = 'execution' AND ` + "`key`" + ` IN ('defaultWorkhours', 'weekend'
 		}
 	}
 	return defaultWorkhours, weekend, nil
-}
-
-type clarifyPMRow struct {
-	Demand  uint   `gorm:"column:demand"`
-	Product string `gorm:"column:product"`
-	PM      string `gorm:"column:PM"`
 }
 
 type clarifyProductCountRow struct {
@@ -804,33 +798,6 @@ GROUP BY demand`
 	return out, nil
 }
 
-// FindClarifyPMsByDemands 查询业需澄清 PM，按 demand 分组。
-func (r *Repo) FindClarifyPMsByDemands(ctx context.Context, demandIDs []uint) (map[uint][]ClarifyPM, error) {
-	if len(demandIDs) == 0 {
-		return map[uint][]ClarifyPM{}, nil
-	}
-
-	const query = `
-SELECT demand, product, PM
-FROM zt_demandclarify
-WHERE demand IN ?
-ORDER BY demand ASC, product ASC`
-
-	var rows []clarifyPMRow
-	if err := r.db.WithContext(ctx).Raw(query, demandIDs).Scan(&rows).Error; err != nil {
-		return nil, err
-	}
-	out := make(map[uint][]ClarifyPM, len(rows))
-	for _, row := range rows {
-		out[row.Demand] = append(out[row.Demand], ClarifyPM{
-			Demand:  row.Demand,
-			Product: row.Product,
-			PM:      strings.TrimSpace(row.PM),
-		})
-	}
-	return out, nil
-}
-
 // FindProductsByIDs 批量查产品/系统名称。
 func (r *Repo) FindProductsByIDs(ctx context.Context, productIDs []uint) (map[uint]string, error) {
 	if len(productIDs) == 0 {
@@ -902,6 +869,7 @@ SELECT
 FROM zt_task
 WHERE story IN ?
   AND deleted = '0'
+  AND status != 'closed'
 GROUP BY story`
 
 	var rows []storyTaskStatRow

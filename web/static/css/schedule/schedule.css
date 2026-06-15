@@ -37,6 +37,25 @@
   --sidebar: 200px;
 }
 
+#page-schedule a.table-row-btn {
+  display: inline-block;
+  text-decoration: none;
+  color: #fff;
+}
+
+#page-schedule a.action-btn {
+  text-decoration: none;
+  color: inherit;
+}
+
+#page-schedule a.action-btn.primary {
+  color: #fff;
+}
+
+#page-schedule a.action-btn.success {
+  color: #fff;
+}
+
 /* ── 通用按钮（demo action-btn） ── */
 #page-schedule .action-btn {
   padding: 4px 10px;
@@ -623,10 +642,6 @@
   background: var(--hover);
 }
 
-.schedule-table tbody tr.overdue-row {
-  background: var(--red-bg);
-}
-
 #page-schedule .schedule-table {
   border: 0;
   border-top: 1px solid var(--border-lt);
@@ -655,10 +670,6 @@
 
 #page-schedule .schedule-biz-row:hover {
   background: #f8fbff;
-}
-
-#page-schedule .schedule-table tbody tr.overdue-row {
-  background: var(--red-bg);
 }
 
 .schedule-child-row.is-hidden {
@@ -1053,7 +1064,6 @@
   color: #ea580c;
 }
 
-.window-status-tag.overdue,
 .window-status-tag.blocked {
   background: #fef2f2;
   color: #dc2626;
@@ -1064,8 +1074,7 @@
   color: #2563eb;
 }
 
-.window-status-tag.blocked i,
-.window-status-tag.overdue i {
+.window-status-tag.blocked i {
   font-size: 10px;
 }
 

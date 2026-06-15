@@ -19,6 +19,7 @@ package bootstrap
 
 import (
 	"fmt"
+	"strings"
 
 	"workbench/internal/config"
 	"workbench/internal/middleware"
@@ -117,7 +118,7 @@ func Run() error {
 
 	scheduleRepo := schedule.NewRepo(db)
 	scheduleSvc := schedule.NewService(scheduleRepo, zapLog)
-	scheduleHandler := schedule.NewHandler(rend, zapLog, scheduleSvc)
+	scheduleHandler := schedule.NewHandler(rend, zapLog, scheduleSvc, strings.TrimRight(cfg.Zentao.URL, "/"))
 	poSvc := po.NewService(redisClients, scheduleSvc, zapLog)
 	poHandler := po.NewHandler(poSvc, zapLog)
 	sqlPerfRepo := debug.NewRepo(cfg.Log.Dir)
