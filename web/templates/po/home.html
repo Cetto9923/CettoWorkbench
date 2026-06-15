@@ -141,7 +141,9 @@
 
   <div class="home-version-dock" id="homeVersionCollapsible">
     <div class="home-version-dock-hdr">
-      <div></div>
+      <div>
+        <div class="home-version-dock-title"><i class="fas fa-layer-group"></i> 版本窗口</div>
+      </div>
       <div style="display:flex;gap:6px">
         <button type="button" class="action-btn action-btn--disabled" title="待推出"><i class="fas fa-th-list" style="margin-right:4px"></i>查看全部窗口</button>
         <button type="button" class="action-btn action-btn--disabled" title="待推出"><i class="fas fa-layer-group" style="margin-right:4px"></i>进入版本跟进</button>
@@ -149,14 +151,16 @@
     </div>
     <div class="home-version-panel" id="homeCurrentVersionSummary">
       {{ range .VersionWindows }}
-      <div class="home-version-mini" title="待推出">
+      <!-- <div class="home-version-mini" title="待推出"> -->
+      <div class="home-version-mini" >
         <div class="summary-top">
           <div>
             <div class="summary-title" title="{{ .Name }}"><i class="fas fa-layer-group" style="color:var(--po-blue)"></i>{{ .Name }}{{ if .AgileGroup }} <span class="agile-team-tag">{{ .AgileGroup }}</span>{{ end }}</div>
             <div class="summary-sub">{{ .Range }}</div>
           </div>
           <div class="summary-btns" style="display:flex;gap:6px;flex-wrap:wrap">
-            <button type="button" class="action-btn primary summary-btn action-btn--disabled" style="padding:4px 10px;font-size:11px" title="待推出">进入版本跟进</button>
+            <!-- <button type="button" class="action-btn primary summary-btn action-btn--disabled" style="padding:4px 10px;font-size:11px" title="待推出">进入版本跟进</button> -->
+            <button type="button" class="action-btn primary summary-btn action-btn--disabled" style="padding:4px 10px;font-size:11px">进入版本跟进</button>
           </div>
         </div>
         <div class="summary-stats summary-stats--compact">
