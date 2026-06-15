@@ -220,3 +220,146 @@ func validateWindowSaveFields(
 	}
 	return errs
 }
+
+// 业需排期阶段（Service 层计算）。
+const (
+	StageNoWindow       = "未关联窗口"
+	StageNoStory        = "未转研发"
+	StageNoTask         = "未建任务"
+	StageTaskUnassigned = "已建任务未指派"
+	StageTaskAssigned   = "已建任务并指派"
+
+	StoryStageNoWindow  = "未关联窗口"
+	StoryStageHasWindow = "已关联窗口"
+)
+
+// ListBizDemandsReq 业务需求 Tab 列表查询入参。
+type ListBizDemandsReq struct {
+	Page        int    `form:"page"`
+	PageSize    int    `form:"pageSize"`
+	TeamgroupID uint   `form:"teamgroupId"`
+	ProductID   uint   `form:"productId"`
+	Stage       string `form:"stage"`
+	Status      string `form:"status"`
+	Keyword     string `form:"keyword"`
+	WindowID    uint   `form:"windowId"`
+	Scope       string `form:"scope"`
+}
+
+// Validate 校验分页与基础参数。
+func (r *ListBizDemandsReq) Validate() []FieldError {
+	var errs []FieldError
+	if r.Page < 1 {
+		errs = append(errs, FieldError{Field: "page", Message: "页码必须大于等于 1"})
+	}
+	if r.PageSize < 1 || r.PageSize > 100 {
+		errs = append(errs, FieldError{Field: "pageSize", Message: "每页条数须在 1 到 100 之间"})
+	}
+	return errs
+}
+
+// ListBizDemandsResp 业务需求 Tab 列表响应。
+type ListBizDemandsResp struct {
+	Total int64           `json:"total"`
+	Items []BizDemandItem `json:"items"`
+}
+
+// BizDemandItem 顶层业需（树形一级）。
+type BizDemandItem struct {
+	ID               uint            `json:"id"`
+	Name             string          `json:"name"`
+	Pri              int             `json:"pri"`
+	Status           string          `json:"status"`
+	MainSystemName   string          `json:"mainSystemName"`
+	ExtraSystemCount int             `json:"extraSystemCount"`
+	TeamgroupName    string          `json:"teamgroupName"`
+	PMs              []string        `json:"pms"`
+	Stage            string          `json:"stage"`
+	WindowName       string          `json:"windowName"`
+	Children         []SubDemandItem `json:"children"`
+	Stories          []StoryItem     `json:"stories"`
+}
+
+// SubDemandItem 子业需（树形二级）。
+type SubDemandItem struct {
+	ID               uint        `json:"id"`
+	Name             string      `json:"name"`
+	Pri              int         `json:"pri"`
+	Status           string      `json:"status"`
+	MainSystemName   string      `json:"mainSystemName"`
+	ExtraSystemCount int         `json:"extraSystemCount"`
+	TeamgroupName    string      `json:"teamgroupName"`
+	PMs              []string    `json:"pms"`
+	Stage            string      `json:"stage"`
+	WindowName       string      `json:"windowName"`
+	Stories          []StoryItem `json:"stories"`
+}
+
+// StoryItem 研发需求（树形三级）。
+type StoryItem struct {
+	ID                      uint   `json:"id"`
+	Title                   string `json:"title"`
+	Pri                     int    `json:"pri"`
+	ProductName             string `json:"productName"`
+	Stage                   string `json:"stage"`
+	WindowName              string `json:"windowName"`
+	TeamgroupName           string `json:"teamgroupName"`
+	AssignedTo              string `json:"assignedTo"`
+	AssignedToName          string `json:"assignedToName"`
+	TaskCount               int    `json:"taskCount"`
+	IsMainSystemAssociation int    `json:"isMainSystemAssociation"`
+}
+
+// ClarifyPM 业需澄清 PM 行。
+type ClarifyPM struct {
+	Demand  uint
+	Product string
+	PM      string
+}
+
+// StoryWindowRef 研发需求关联的版本窗口。
+type StoryWindowRef struct {
+	StoryID    uint
+	WindowID   uint
+	WindowName string
+}
+
+// StoryTaskStat 研发任务统计。
+type StoryTaskStat struct {
+	StoryID    uint
+	Total      int
+	Unassigned int
+}
+
+// ZtDemand 禅道 zt_demand 只读投影。
+type ZtDemand struct {
+	ID             uint   `gorm:"column:id"`
+	Name           string `gorm:"column:name"`
+	Pri            string `gorm:"column:pri"`
+	Status         string `gorm:"column:status"`
+	MainSystem     string `gorm:"column:mainSystem"`
+	TeamGroup      string `gorm:"column:teamGroup"`
+	BRA            string `gorm:"column:BRA"`
+	QD             string `gorm:"column:QD"`
+	RD             string `gorm:"column:RD"`
+	CreatedBy      string `gorm:"column:createdBy"`
+	Pool           uint   `gorm:"column:pool"`
+	Parent         uint   `gorm:"column:parent"`
+	Hang           string `gorm:"column:hang"`
+	Category       string `gorm:"column:category"`
+	EstimateLaunch string `gorm:"column:estimateLaunch"`
+}
+
+// ZtStory 禅道 zt_story 只读投影。
+type ZtStory struct {
+	ID                      uint   `gorm:"column:id"`
+	Title                   string `gorm:"column:title"`
+	Pri                     int    `gorm:"column:pri"`
+	Product                 uint   `gorm:"column:product"`
+	Plan                    string `gorm:"column:plan"`
+	Stage                   string `gorm:"column:stage"`
+	Status                  string `gorm:"column:status"`
+	FromDemand              uint   `gorm:"column:fromDemand"`
+	IsMainSystemAssociation int    `gorm:"column:isMainSystemAssociation"`
+	AssignedTo              string `gorm:"column:assignedTo"`
+}
