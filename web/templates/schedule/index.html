@@ -577,6 +577,242 @@
   </div>
 </div>
 
+<div class="batch-modal-overlay" id="scheduleIntegratedModalOverlay"></div>
+<div class="batch-modal schedule-integrated-modal" id="scheduleIntegratedModal">
+  <div class="batch-modal-hdr">
+    <h3 id="scheduleIntegratedModalTitle">排期一体化办理</h3>
+    <button type="button" class="drawer-close" id="scheduleIntegratedModalCloseBtn"><i class="fas fa-xmark"></i></button>
+  </div>
+  <div class="batch-modal-body" id="scheduleIntegratedModalBody">
+    <div class="schedule-modal-info">
+      <div class="schedule-modal-title" id="scheduleIntegratedReqTitle">—</div>
+      <div class="schedule-modal-summary">
+        <span>主系统 <strong id="scheduleIntegratedReqSystem">—</strong></span>
+        <span>负责人 <strong id="scheduleIntegratedReqOwner">—</strong></span>
+      </div>
+    </div>
+    <div class="schedule-integrated-role-banner">
+      <span class="role-tag">主系统</span>
+      <span>主系统 PO：可维护排期、时间与研发拆分，并维护主系统研发需求的开发/测试任务</span>
+    </div>
+
+    <div class="schedule-integrated-section">
+      <div class="schedule-integrated-section-hdr"><strong>① 业务需求排期</strong><span>选版本窗口后自动带出关键时间</span></div>
+      <div class="schedule-integrated-section-body">
+        <div class="schedule-integrated-form-sheet">
+          <div class="schedule-integrated-grid">
+            <div class="schedule-integrated-cell">
+              <label class="schedule-integrated-label">版本窗口 <span class="req">*</span></label>
+              <div class="schedule-window-combo">
+                <select class="form-select schedule-field-control schedule-window-combo-select">
+                  <option value="">请选择版本窗口</option>
+                  <option value="w1">2026-Q2-常规</option>
+                  <option value="w2">2026-Q2-快速</option>
+                </select>
+                <button type="button" class="schedule-addon-btn" title="选不到合适窗口时，按计划发布日新建自选窗口并自动选中">添加窗口</button>
+              </div>
+            </div>
+            <div class="schedule-integrated-cell">
+              <label class="schedule-integrated-label">预计上线</label>
+              <div class="schedule-target-combo">
+                <input type="date" class="form-input schedule-field-control schedule-target-combo-date">
+                <label class="schedule-rush-pill" title="勾选后允许倒排或插队排期">
+                  <input type="checkbox">
+                  <span>倒排/插队</span>
+                </label>
+              </div>
+            </div>
+            <div class="schedule-integrated-cell">
+              <label class="schedule-integrated-label">开发负责人</label>
+              <select class="form-select schedule-field-control">
+                <option value="">请选择</option>
+                <option value="u1">张明远</option>
+                <option value="u2">李开发</option>
+              </select>
+            </div>
+            <div class="schedule-integrated-cell">
+              <label class="schedule-integrated-label">测试负责人</label>
+              <select class="form-select schedule-field-control">
+                <option value="">请选择</option>
+                <option value="u3">王测试</option>
+              </select>
+            </div>
+            <div class="schedule-integrated-cell">
+              <label class="schedule-integrated-label">验收负责人</label>
+              <select class="form-select schedule-field-control">
+                <option value="">请选择</option>
+                <option value="u4">赵验收</option>
+              </select>
+            </div>
+            <div class="schedule-integrated-cell">
+              <label class="schedule-integrated-label">提测/开发</label>
+              <input type="date" class="form-input schedule-field-control">
+            </div>
+            <div class="schedule-integrated-cell">
+              <label class="schedule-integrated-label">测试完成</label>
+              <input type="date" class="form-input schedule-field-control">
+            </div>
+            <div class="schedule-integrated-cell">
+              <label class="schedule-integrated-label">验收完成</label>
+              <input type="date" class="form-input schedule-field-control">
+            </div>
+            <div class="schedule-integrated-cell schedule-integrated-cell--pad" aria-hidden="true"></div>
+          </div>
+          <div class="schedule-integrated-meta-row">
+            <div class="schedule-modal-release-strip schedule-integrated-release-strip" id="scheduleIntegratedReleaseStrip">窗口 — ｜ —</div>
+            <div class="schedule-integrated-hint" id="scheduleIntegratedSystemsHint">涉及系统：—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="schedule-integrated-section">
+      <div class="schedule-integrated-section-hdr schedule-integrated-section-hdr--actions">
+        <div><strong>② 研发需求与任务</strong><span>澄清带入 → 表格确认 → 保存后拆任务</span></div>
+      </div>
+      <div class="schedule-integrated-section-body">
+        <div class="transfer-dev-note integrated-rd-note">已按澄清与排期结果预填研发需求；<strong>指派人</strong>默认各系统需求分析人员；<strong>研发团队</strong>按组织架构自动带出（管理维度）；保存后「拆任务」，<strong>参与人</strong>与<strong>预计工时</strong>由任务自下而上汇总。</div>
+        <div class="transfer-dev-section">
+          <div class="transfer-dev-section-head"><strong>用户故事条目</strong><span>只读，用于拼接研发需求 · 合计 6 SP</span></div>
+          <table class="transfer-dev-story-table">
+            <thead>
+              <tr>
+                <th style="width:56px">序号</th>
+                <th style="width:120px">角色</th>
+                <th>目标和值</th>
+                <th style="width:120px">涉及系统</th>
+                <th style="width:132px">负责团队</th>
+                <th style="width:72px">故事点</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td>主系统故事</td>
+                <td>示例业务需求标题</td>
+                <td>核心系统</td>
+                <td><span class="schedule-dev-team-cell transfer-story-team" title="按该系统需求分析人员在组织架构中的研发团队">平台研发一组</span></td>
+                <td>4</td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td>配合故事</td>
+                <td>示例业务需求标题（外围系统）</td>
+                <td>外围系统</td>
+                <td><span class="schedule-dev-team-cell transfer-story-team" title="按该系统需求分析人员在组织架构中的研发团队">外围研发组</span></td>
+                <td>2</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="rdTaskTree" style="margin-top: 16px;">
+
+          <div class="rd-node" style="border:1px solid #e5e7eb; border-radius:6px; margin-bottom:12px;">
+            <div class="rd-node-header" style="display:flex; align-items:center; gap:8px; padding:10px 14px; background:#f8fafc; cursor:pointer; border-radius:6px 6px 0 0;">
+              <span class="rd-toggle" style="font-size:12px;">▼</span>
+              <span style="background:#2563eb;color:#fff;padding:1px 6px;border-radius:3px;font-size:11px;">主</span>
+              <span style="font-size:11px; color:#666;">企业网银</span>
+              <strong style="font-size:13px;">企业网银大额转账审批流程优化-主流程改造</strong>
+              <span style="margin-left:auto; color:#999; font-size:11px;">指派: 张明远 | 团队: 线上运营团队</span>
+              <button type="button" class="rd-remove-node" style="border:1px solid #d1d5db;background:#fff;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;color:#666;" title="删除此研发需求">×</button>
+            </div>
+            <div class="rd-node-tasks" style="padding:0 14px 10px;">
+              <table style="width:100%; border-collapse:collapse; font-size:12px; margin-top:8px;">
+                <thead>
+                  <tr style="background:#f9fafb;">
+                    <th style="width:70px; padding:6px 8px; border-bottom:1px solid #e5e7eb; text-align:left;">类型</th>
+                    <th style="padding:6px 8px; border-bottom:1px solid #e5e7eb; text-align:left;">任务名称</th>
+                    <th style="width:90px; padding:6px 8px; border-bottom:1px solid #e5e7eb;">负责人</th>
+                    <th style="width:60px; padding:6px 8px; border-bottom:1px solid #e5e7eb;">预估(h)</th>
+                    <th style="width:90px; padding:6px 8px; border-bottom:1px solid #e5e7eb;">开始</th>
+                    <th style="width:90px; padding:6px 8px; border-bottom:1px solid #e5e7eb;">截止</th>
+                    <th style="width:40px; padding:6px 8px; border-bottom:1px solid #e5e7eb;">操作</th>
+                  </tr>
+                </thead>
+                <tbody class="rd-task-body">
+                  <tr>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;"><span style="color:#2563eb;font-weight:600;font-size:11px;">开发</span></td>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">【开发】企业网银大额转账审批流程优化</td>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">王工</td>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">16</td>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">2026-06-01</td>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">2026-06-10</td>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:center;"><button type="button" class="rd-remove-task" style="border:none;background:none;color:#999;cursor:pointer;font-size:12px;">×</button></td>
+                  </tr>
+                  <tr>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;"><span style="color:#ea580c;font-weight:600;font-size:11px;">测试</span></td>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">【测试】企业网银大额转账审批流程优化</td>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">赵工</td>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">8</td>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">2026-06-11</td>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">2026-06-14</td>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:center;"><button type="button" class="rd-remove-task" style="border:none;background:none;color:#999;cursor:pointer;font-size:12px;">×</button></td>
+                  </tr>
+                </tbody>
+              </table>
+              <button type="button" class="rd-add-task" style="margin-top:6px; border:1px dashed #d1d5db; background:#fff; padding:4px 12px; border-radius:4px; font-size:11px; color:#2563eb; cursor:pointer;">+ 添加任务</button>
+            </div>
+          </div>
+
+          <div class="rd-node" style="border:1px solid #e5e7eb; border-radius:6px; margin-bottom:12px;">
+            <div class="rd-node-header" style="display:flex; align-items:center; gap:8px; padding:10px 14px; background:#f8fafc; cursor:pointer; border-radius:6px 6px 0 0;">
+              <span class="rd-toggle" style="font-size:12px;">▼</span>
+              <span style="background:#ea580c;color:#fff;padding:1px 6px;border-radius:3px;font-size:11px;">配</span>
+              <span style="font-size:11px; color:#666;">外部系统</span>
+              <strong style="font-size:13px;">外部系统接口联调改造</strong>
+              <span style="margin-left:auto; color:#999; font-size:11px;">指派: 李开发 | 团队: 外围研发组</span>
+              <button type="button" class="rd-remove-node" style="border:1px solid #d1d5db;background:#fff;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;color:#666;" title="删除此研发需求">×</button>
+            </div>
+            <div class="rd-node-tasks" style="padding:0 14px 10px;">
+              <table style="width:100%; border-collapse:collapse; font-size:12px; margin-top:8px;">
+                <thead>
+                  <tr style="background:#f9fafb;">
+                    <th style="width:70px; padding:6px 8px; border-bottom:1px solid #e5e7eb; text-align:left;">类型</th>
+                    <th style="padding:6px 8px; border-bottom:1px solid #e5e7eb; text-align:left;">任务名称</th>
+                    <th style="width:90px; padding:6px 8px; border-bottom:1px solid #e5e7eb;">负责人</th>
+                    <th style="width:60px; padding:6px 8px; border-bottom:1px solid #e5e7eb;">预估(h)</th>
+                    <th style="width:90px; padding:6px 8px; border-bottom:1px solid #e5e7eb;">开始</th>
+                    <th style="width:90px; padding:6px 8px; border-bottom:1px solid #e5e7eb;">截止</th>
+                    <th style="width:40px; padding:6px 8px; border-bottom:1px solid #e5e7eb;">操作</th>
+                  </tr>
+                </thead>
+                <tbody class="rd-task-body">
+                  <tr>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;"><span style="color:#2563eb;font-weight:600;font-size:11px;">开发</span></td>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">【开发】外部系统接口联调改造</td>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">李工</td>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">12</td>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">2026-06-05</td>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">2026-06-12</td>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:center;"><button type="button" class="rd-remove-task" style="border:none;background:none;color:#999;cursor:pointer;font-size:12px;">×</button></td>
+                  </tr>
+                  <tr>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;"><span style="color:#ea580c;font-weight:600;font-size:11px;">测试</span></td>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">【测试】外部系统接口联调改造</td>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">周工</td>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">6</td>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">2026-06-13</td>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">2026-06-16</td>
+                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:center;"><button type="button" class="rd-remove-task" style="border:none;background:none;color:#999;cursor:pointer;font-size:12px;">×</button></td>
+                  </tr>
+                </tbody>
+              </table>
+              <button type="button" class="rd-add-task" style="margin-top:6px; border:1px dashed #d1d5db; background:#fff; padding:4px 12px; border-radius:4px; font-size:11px; color:#2563eb; cursor:pointer;">+ 添加任务</button>
+            </div>
+          </div>
+
+          <button type="button" class="rd-add-node" style="width:100%; border:1px dashed #d1d5db; background:#fff; padding:10px; border-radius:6px; font-size:12px; color:#2563eb; cursor:pointer;">+ 添加研发需求</button>
+
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="batch-modal-footer schedule-integrated-footer">
+    <button type="button" class="action-btn" id="scheduleIntegratedModalDismissBtn">取消</button>
+    <button type="button" class="action-btn primary" id="scheduleIntegratedSaveBtn">确认并同步</button>
+  </div>
+</div>
+
 <template id="schedulePlanCardLoading">
   <div class="schedule-create-plan-card">
     <div class="schedule-create-plan-title">
@@ -693,5 +929,6 @@
 <script src="{{ asset "/static/js/schedule/schedulewindowdraft.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/schedulewindow.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/schedulemanage.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/scheduleintegrated.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/schedule.js" }}"></script>
 {{ end }}

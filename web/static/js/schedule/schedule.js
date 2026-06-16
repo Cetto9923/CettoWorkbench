@@ -89,6 +89,17 @@
 
   window.closeAllScheduleWindowCardMenus = closeAllScheduleWindowCardMenus;
 
+  $root.on("click", ".schedule-action-buttons .action-btn", function (e) {
+    var label = $.trim($(this).text());
+    if (label !== "去排期" && label !== "排期") {
+      return;
+    }
+    e.preventDefault();
+    if (typeof window.openScheduleIntegratedModal === "function") {
+      window.openScheduleIntegratedModal($(this));
+    }
+  });
+
   $root.on("click", ".schedule-scope-chip", function () {
     setScopeChip($(this));
   });
