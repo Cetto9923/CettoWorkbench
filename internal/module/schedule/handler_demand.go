@@ -212,8 +212,16 @@ func (h *Handler) GetDemandScheduling(c *gin.Context) {
 		return
 	}
 
-	out := gin.H{"success": true, "windows": []SchedulingWindowOption{}, "users": []SchedulingUserOption{}}
+	out := gin.H{
+		"success": true,
+		"stories": []DemandSchedulingStoryItem{},
+		"windows": []SchedulingWindowOption{},
+		"users":   []SchedulingUserOption{},
+	}
 	if resp != nil {
+		if resp.Stories != nil {
+			out["stories"] = resp.Stories
+		}
 		if resp.Windows != nil {
 			out["windows"] = resp.Windows
 		}

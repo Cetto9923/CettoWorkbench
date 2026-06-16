@@ -671,7 +671,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
       </div>
       <div class="schedule-integrated-section-body">
         <div class="transfer-dev-section">
-          <div class="transfer-dev-section-head"><strong>用户故事条目</strong><span>只读，用于拼接研发需求 · 合计 6 SP</span></div>
+          <div class="transfer-dev-section-head"><strong>用户故事条目</strong></div>
           <table class="transfer-dev-story-table">
             <thead>
               <tr>
@@ -683,27 +683,11 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
                 <th style="width:72px">故事点</th>
               </tr>
             </thead>
-            <tbody>
-              <tr>
-                <td>1</td>
-                <td>主系统故事</td>
-                <td>示例业务需求标题</td>
-                <td>核心系统</td>
-                <td><span class="schedule-dev-team-cell transfer-story-team" title="按该系统需求分析人员在组织架构中的研发团队">平台研发一组</span></td>
-                <td>4</td>
-              </tr>
-              <tr>
-                <td>2</td>
-                <td>配合故事</td>
-                <td>示例业务需求标题（外围系统）</td>
-                <td>外围系统</td>
-                <td><span class="schedule-dev-team-cell transfer-story-team" title="按该系统需求分析人员在组织架构中的研发团队">外围研发组</span></td>
-                <td>2</td>
-              </tr>
-            </tbody>
+            <tbody id="storyItemsBody"></tbody>
           </table>
         </div>
         <div id="rdTaskTree" style="margin-top: 16px;">
+          <div class="transfer-dev-section-head"><strong>研发需求</strong></div>
           {{/* TODO: rd-node / rd-task 内联 style= 待抽成 CSS class（见 scheduleintegrated.css 文件头） */}}
           <div class="rd-node" style="border:1px solid #e5e7eb; border-radius:6px; margin-bottom:12px;">
             <div class="rd-node-header" style="display:flex; align-items:center; gap:8px; padding:10px 14px; background:#f8fafc; cursor:pointer; border-radius:6px 6px 0 0;">

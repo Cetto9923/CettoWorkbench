@@ -394,9 +394,47 @@ func (s *Service) GetDemandScheduling(ctx context.Context, actor *model.User, de
 	if err != nil {
 		return nil, err
 	}
+	stories, err := s.buildDemandSchedulingStories(ctx, demandID)
+	if err != nil {
+		return nil, err
+	}
 	return &DemandSchedulingResp{
 		DemandSchedulingDetail: detail,
+		Stories:                stories,
 		Windows:                windows,
 		Users:                  users,
 	}, nil
+}
+
+func (s *Service) buildDemandSchedulingStories(ctx context.Context, demandID uint) ([]DemandSchedulingStoryItem, error) {
+	rows, err := s.repo.GetDemandStories(ctx, demandID)
+	if err != nil {
+		return nil, err
+	}
+	if len(rows) == 0 {
+		return []DemandSchedulingStoryItem{}, nil
+	}
+
+	productIDs := make([]uint, 0, len(rows))
+	for _, row := range rows {
+		if row.Product > 0 {
+			productIDs = append(productIDs, row.Product)
+		}
+	}
+	productNameByID, err := s.repo.FindProductsByIDs(ctx, productIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]DemandSchedulingStoryItem, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, DemandSchedulingStoryItem{
+			ID:          row.ID,
+			Title:       strings.TrimSpace(row.Title),
+			ProductName: productNameByID[row.Product],
+			IsMain:      row.IsMainSystemAssociation > 0,
+			Estimate:    row.Estimate,
+		})
+	}
+	return items, nil
 }

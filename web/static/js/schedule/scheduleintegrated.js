@@ -168,6 +168,77 @@
     });
   }
 
+  function escapeHtml(text) {
+    return $("<div>").text(text == null ? "" : String(text)).html();
+  }
+
+  function formatStoryEstimate(value) {
+    if (value === undefined || value === null || value === "") {
+      return "0";
+    }
+    var num = Number(value);
+    if (isNaN(num)) {
+      return "0";
+    }
+    if (Math.floor(num) === num) {
+      return String(num);
+    }
+    return String(num);
+  }
+
+  function fillStoryItems(stories) {
+    var $tbody = $("#storyItemsBody");
+    var $summary = $("#storyItemsSummary");
+    var list = stories || [];
+    var totalSp = 0;
+
+    $tbody.empty();
+
+    if (!list.length) {
+      $tbody.append(
+        '<tr><td colspan="6" class="transfer-dev-story-empty">暂无研发需求，请先转化研发需求</td></tr>'
+      );
+      $summary.text("只读，用于拼接研发需求");
+      return;
+    }
+
+    list.forEach(function (story, index) {
+      var role = story.isMain ? "主系统故事" : "配合故事";
+      var estimate = formatStoryEstimate(story.estimate);
+      var estimateNum = Number(estimate);
+      if (!isNaN(estimateNum)) {
+        totalSp += estimateNum;
+      }
+
+      $tbody.append(
+        "<tr>" +
+          "<td>" +
+          (index + 1) +
+          "</td>" +
+          "<td>" +
+          escapeHtml(role) +
+          "</td>" +
+          "<td>" +
+          escapeHtml(story.title || "—") +
+          "</td>" +
+          "<td>" +
+          escapeHtml(story.productName || "—") +
+          "</td>" +
+          "<td>—</td>" +
+          "<td>" +
+          escapeHtml(estimate) +
+          "</td>" +
+          "</tr>"
+      );
+    });
+
+    $summary.text("只读，用于拼接研发需求 · 合计 " + formatStoryEstimate(totalSp) + " SP");
+  }
+
+  function resetStoryItems() {
+    fillStoryItems([]);
+  }
+
   function fillSchedulingDetail(data) {
     var mainSystem = $.trim(data.mainSystemName || "") || "—";
     var owner = $.trim(data.braName || "") || $.trim(data.bra || "") || "待分配";
@@ -184,6 +255,7 @@
     setDateInputValue($("#scheduleIntegratedAcceptancedDate"), data.acceptancedDate);
 
     $("#scheduleIntegratedSystemsHint").text("涉及系统：" + mainSystem);
+    fillStoryItems(data.stories);
   }
 
   function loadSchedulingDetail(demandID, ctx) {
@@ -219,6 +291,7 @@
     $body.find(".schedule-rush-pill").removeClass("is-on");
     $("#scheduleIntegratedReleaseStrip").text("窗口 — ｜ —");
     $("#scheduleIntegratedSystemsHint").text("涉及系统：—");
+    resetStoryItems();
   }
 
   function fillModalHeader(ctx) {

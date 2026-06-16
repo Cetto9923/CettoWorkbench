@@ -447,11 +447,21 @@ type SchedulingUserOption struct {
 	Realname string `json:"realname"`
 }
 
+// DemandSchedulingStoryItem 排期弹窗用户故事条目。
+type DemandSchedulingStoryItem struct {
+	ID          uint    `json:"id"`
+	Title       string  `json:"title"`
+	ProductName string  `json:"productName"`
+	IsMain      bool    `json:"isMain"`
+	Estimate    float64 `json:"estimate"`
+}
+
 // DemandSchedulingResp 排期一体化弹窗加载数据。
 type DemandSchedulingResp struct {
 	*DemandSchedulingDetail
-	Windows []SchedulingWindowOption `json:"windows"`
-	Users   []SchedulingUserOption   `json:"users"`
+	Stories []DemandSchedulingStoryItem `json:"stories"`
+	Windows []SchedulingWindowOption    `json:"windows"`
+	Users   []SchedulingUserOption      `json:"users"`
 }
 
 // ZtStory 禅道 zt_story 只读投影。
@@ -466,6 +476,7 @@ type ZtStory struct {
 	FromDemand              uint   `gorm:"column:fromDemand"`
 	SourceType              string `gorm:"column:sourceType"`
 	Parent                  uint   `gorm:"column:parent"`
-	IsMainSystemAssociation int    `gorm:"column:isMainSystemAssociation"`
-	AssignedTo              string `gorm:"column:assignedTo"`
+	IsMainSystemAssociation int     `gorm:"column:isMainSystemAssociation"`
+	AssignedTo              string  `gorm:"column:assignedTo"`
+	Estimate                float64 `gorm:"column:estimate"`
 }

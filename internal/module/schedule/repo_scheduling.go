@@ -230,3 +230,28 @@ ORDER BY account ASC`
 	}
 	return out, nil
 }
+
+// GetDemandStories 按业需 ID 查询关联研发需求（排期弹窗用户故事条目）。
+func (r *Repo) GetDemandStories(ctx context.Context, demandID uint) ([]ZtStory, error) {
+	if demandID == 0 {
+		return []ZtStory{}, nil
+	}
+
+	const query = `
+SELECT
+  id,
+  title,
+  product,
+  estimate,
+  CAST(IFNULL(NULLIF(isMainSystemAssociation, ''), '0') AS SIGNED) AS isMainSystemAssociation
+FROM zt_story
+WHERE fromDemand = ?
+  AND deleted = '0'
+ORDER BY isMainSystemAssociation DESC, id ASC`
+
+	var rows []ZtStory
+	if err := r.db.WithContext(ctx).Raw(query, demandID).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
