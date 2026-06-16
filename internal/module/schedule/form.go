@@ -411,6 +411,49 @@ type IndependentStoryItem struct {
 	Children       []IndependentStoryItem `json:"children"`
 }
 
+// DemandSchedulingDetail 排期一体化弹窗业需详情。
+type DemandSchedulingDetail struct {
+	ID               uint   `json:"id"`
+	Name             string `json:"name"`
+	Pri              int    `json:"pri"`
+	BRA              string `json:"bra"`
+	BRAName          string `json:"braName"`
+	RD               string `json:"rd"`
+	RDName           string `json:"rdName"`
+	QD               string `json:"qd"`
+	QDName           string `json:"qdName"`
+	Accepter         string `json:"accepter"`
+	AccepterName     string `json:"accepterName"`
+	MainSystemID     uint   `json:"mainSystemId"`
+	MainSystemName   string `json:"mainSystemName"`
+	SchedulePlanDate string `json:"schedulePlanDate"`
+	DevelopFinish    string `json:"developFinish"`
+	TestFinish       string `json:"testFinish"`
+	AcceptancedDate  string `json:"acceptancedDate"`
+	WindowID         uint   `json:"windowId"`
+	WindowName       string `json:"windowName"`
+}
+
+// SchedulingWindowOption 排期弹窗版本窗口下拉项。
+type SchedulingWindowOption struct {
+	ID          uint   `json:"id"`
+	Name        string `json:"name"`
+	ReleaseDate string `json:"releaseDate"`
+}
+
+// SchedulingUserOption 排期弹窗负责人下拉项。
+type SchedulingUserOption struct {
+	Account  string `json:"account"`
+	Realname string `json:"realname"`
+}
+
+// DemandSchedulingResp 排期一体化弹窗加载数据。
+type DemandSchedulingResp struct {
+	*DemandSchedulingDetail
+	Windows []SchedulingWindowOption `json:"windows"`
+	Users   []SchedulingUserOption   `json:"users"`
+}
+
 // ZtStory 禅道 zt_story 只读投影。
 type ZtStory struct {
 	ID                      uint   `gorm:"column:id"`

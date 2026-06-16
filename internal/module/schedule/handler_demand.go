@@ -14,10 +14,12 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
+	"workbench/internal/middleware"
 	"workbench/internal/model"
 	"workbench/internal/pkg/pagination"
 	"workbench/internal/pkg/render"
@@ -73,6 +75,7 @@ type DevRequirement struct {
 
 // SubBizRequirement 子业务需求行（树形二级）。
 type SubBizRequirement struct {
+	DemandID        uint
 	ID              string
 	Title           string
 	Priority        string
@@ -86,6 +89,7 @@ type SubBizRequirement struct {
 
 // BizRequirement 业务需求行（树形一级）。
 type BizRequirement struct {
+	DemandID           uint
 	ID                 string
 	Title              string
 	Priority           string
@@ -170,4 +174,74 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 		IndependentTotal:        indepResp.Total,
 		IndepPager:              indepPager,
 	}, true
+}
+
+func parseDemandID(c *gin.Context) (uint, bool) {
+	idStr := strings.TrimSpace(c.Param("id"))
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil || id == 0 {
+		return 0, false
+	}
+	return uint(id), true
+}
+
+// GetDemandScheduling 返回排期一体化弹窗业需详情（JSON）。
+func (h *Handler) GetDemandScheduling(c *gin.Context) {
+	demandID, ok := parseDemandID(c)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "业需 ID 无效",
+		})
+		return
+	}
+
+	actor := middleware.CurrentUser(c)
+	resp, err := h.svc.GetDemandScheduling(c.Request.Context(), actor, demandID)
+	if err != nil {
+		if h.logger != nil {
+			h.logger.Error("get demand scheduling detail failed",
+				zap.Error(err),
+				zap.Uint("demand_id", demandID),
+			)
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	out := gin.H{"success": true, "windows": []SchedulingWindowOption{}, "users": []SchedulingUserOption{}}
+	if resp != nil {
+		if resp.Windows != nil {
+			out["windows"] = resp.Windows
+		}
+		if resp.Users != nil {
+			out["users"] = resp.Users
+		}
+		if resp.DemandSchedulingDetail != nil {
+			detail := resp.DemandSchedulingDetail
+			out["id"] = detail.ID
+			out["name"] = detail.Name
+			out["pri"] = detail.Pri
+			out["bra"] = detail.BRA
+			out["braName"] = detail.BRAName
+			out["rd"] = detail.RD
+			out["rdName"] = detail.RDName
+			out["qd"] = detail.QD
+			out["qdName"] = detail.QDName
+			out["accepter"] = detail.Accepter
+			out["accepterName"] = detail.AccepterName
+			out["mainSystemId"] = detail.MainSystemID
+			out["mainSystemName"] = detail.MainSystemName
+			out["schedulePlanDate"] = detail.SchedulePlanDate
+			out["developFinish"] = detail.DevelopFinish
+			out["testFinish"] = detail.TestFinish
+			out["acceptancedDate"] = detail.AcceptancedDate
+			out["windowId"] = detail.WindowID
+			out["windowName"] = detail.WindowName
+		}
+	}
+	c.JSON(http.StatusOK, out)
 }

@@ -154,6 +154,419 @@
     }
   }
 
+  var autocompleteInstances = {};
+
+  function trimText(value) {
+    return (value || "").trim();
+  }
+
+  function normalizeAutocompleteItems(items) {
+    var seen = {};
+    var out = [];
+    (items || []).forEach(function (item) {
+      var value = trimText(item && item.value);
+      if (!value || seen[value]) {
+        return;
+      }
+      seen[value] = true;
+      out.push({
+        value: value,
+        label: trimText(item.label) || value,
+      });
+    });
+    return out;
+  }
+
+  function findAutocompleteItem(items, value) {
+    value = trimText(value);
+    if (!value) {
+      return null;
+    }
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].value === value) {
+        return items[i];
+      }
+    }
+    return null;
+  }
+
+  function ensureAutocompleteItem(items, value, label) {
+    value = trimText(value);
+    if (!value) {
+      return items;
+    }
+    if (findAutocompleteItem(items, value)) {
+      return items;
+    }
+    return items.concat([
+      {
+        value: value,
+        label: trimText(label) || value,
+      },
+    ]);
+  }
+
+  function formatAutocompleteLabel(item) {
+    var label = trimText(item.label);
+    var value = trimText(item.value);
+    if (!value) {
+      return label;
+    }
+    if (!label || label === value) {
+      return value;
+    }
+    if (label.indexOf(value) >= 0) {
+      return label;
+    }
+    return label + "(" + value + ")";
+  }
+
+  function filterAutocompleteItems(items, query, maxShow) {
+    query = trimText(query).toLowerCase();
+    if (!query) {
+      var total = items.length;
+      return {
+        items: items.slice(0, maxShow),
+        showHint: total > maxShow,
+        remainingCount: total > maxShow ? total - maxShow : 0,
+        hasQuery: false,
+      };
+    }
+
+    var matches = [];
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+      var haystack = (item.label + " " + item.value).toLowerCase();
+      if (haystack.indexOf(query) === -1) {
+        continue;
+      }
+      matches.push(item);
+    }
+
+    return {
+      items: matches.slice(0, maxShow),
+      showHint: matches.length > maxShow,
+      remainingCount: matches.length > maxShow ? matches.length - maxShow : 0,
+      hasQuery: true,
+    };
+  }
+
+  function updateAutocompleteClearButton(state) {
+    if (!state.clearBtn) {
+      return;
+    }
+    var hasValue = !!trimText(state.input.value) || !!trimText(state.hidden.value);
+    state.clearBtn.classList.toggle("is-visible", hasValue);
+  }
+
+  function closeAutocomplete(state) {
+    if (!state || !state.dropdown) {
+      return;
+    }
+    state.dropdown.classList.remove("is-open");
+    state.dropdown.innerHTML = "";
+    state.activeIndex = -1;
+    state.open = false;
+  }
+
+  function closeAllAutocompletes(exceptInputId) {
+    Object.keys(autocompleteInstances).forEach(function (inputId) {
+      if (exceptInputId && inputId === exceptInputId) {
+        return;
+      }
+      closeAutocomplete(autocompleteInstances[inputId]);
+    });
+  }
+
+  function renderAutocompleteDropdown(state) {
+    var query = state.input.value;
+    var result = filterAutocompleteItems(state.items, query, state.maxShow);
+    var matches = result.items;
+    var dropdown = state.dropdown;
+
+    dropdown.innerHTML = "";
+    state.activeIndex = -1;
+
+    if (!matches.length) {
+      var empty = document.createElement("div");
+      empty.className = "ui-autocomplete-empty";
+      empty.textContent = result.hasQuery ? "无匹配结果" : "暂无可选用户";
+      dropdown.appendChild(empty);
+      dropdown.classList.add("is-open");
+      state.open = true;
+      state.filteredItems = [];
+      return;
+    }
+
+    matches.forEach(function (item, index) {
+      var displayLabel = formatAutocompleteLabel(item);
+      var option = document.createElement("div");
+      option.className = "ui-autocomplete-option";
+      option.setAttribute("role", "option");
+      option.setAttribute("data-index", String(index));
+      option.setAttribute("data-value", item.value);
+      option.setAttribute("data-label", displayLabel);
+      option.textContent = displayLabel;
+      option.addEventListener("mousedown", function (ev) {
+        ev.preventDefault();
+      });
+      option.addEventListener("click", function () {
+        selectAutocompleteItem(state, item.value, displayLabel);
+      });
+      dropdown.appendChild(option);
+    });
+
+    if (result.showHint) {
+      var hint = document.createElement("div");
+      hint.className = "ui-autocomplete-hint";
+      hint.textContent = "还有 " + result.remainingCount + " 条，输入关键词缩小范围";
+      dropdown.appendChild(hint);
+    }
+
+    dropdown.classList.add("is-open");
+    state.open = true;
+    state.filteredItems = matches;
+  }
+
+  function setActiveAutocompleteOption(state, index) {
+    var options = state.dropdown.querySelectorAll(".ui-autocomplete-option");
+    if (!options.length) {
+      state.activeIndex = -1;
+      return;
+    }
+    if (index < 0) {
+      index = options.length - 1;
+    }
+    if (index >= options.length) {
+      index = 0;
+    }
+    state.activeIndex = index;
+    for (var i = 0; i < options.length; i++) {
+      options[i].classList.toggle("is-active", i === index);
+    }
+    options[index].scrollIntoView({ block: "nearest" });
+  }
+
+  function selectAutocompleteItem(state, value, label) {
+    value = trimText(value);
+    label = trimText(label) || value;
+    state.hidden.value = value;
+    state.input.value = value ? label : "";
+    state.items = ensureAutocompleteItem(state.items, value, label);
+    updateAutocompleteClearButton(state);
+    closeAutocomplete(state);
+  }
+
+  function clearAutocompleteValue(state) {
+    state.input.value = "";
+    state.hidden.value = "";
+    updateAutocompleteClearButton(state);
+    closeAutocomplete(state);
+  }
+
+  function ensureAutocompleteStructure(input, hidden) {
+    var host = input.parentElement;
+    if (!host) {
+      return null;
+    }
+    host.classList.add("ui-autocomplete");
+
+    var wrap = input.parentElement;
+    if (!wrap.classList.contains("ui-autocomplete-input-wrap")) {
+      wrap = document.createElement("div");
+      wrap.className = "ui-autocomplete-input-wrap";
+      host.insertBefore(wrap, input);
+      wrap.appendChild(input);
+    }
+    input.classList.add("ui-autocomplete-input");
+
+    var clearBtn = wrap.querySelector(".ui-autocomplete-clear");
+    if (!clearBtn) {
+      clearBtn = document.createElement("button");
+      clearBtn.type = "button";
+      clearBtn.className = "ui-autocomplete-clear";
+      clearBtn.setAttribute("aria-label", "清除");
+      clearBtn.innerHTML =
+        '<svg viewBox="0 0 10 10" aria-hidden="true">' +
+        '<path d="M2 2l6 6M8 2L2 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path>' +
+        "</svg>";
+      wrap.appendChild(clearBtn);
+    }
+
+    var dropdown = wrap.querySelector(".ui-autocomplete-dropdown");
+    if (!dropdown) {
+      dropdown = document.createElement("div");
+      dropdown.className = "ui-autocomplete-dropdown";
+      dropdown.setAttribute("role", "listbox");
+      wrap.appendChild(dropdown);
+    }
+
+    if (hidden.parentElement !== host) {
+      host.appendChild(hidden);
+    }
+
+    return {
+      host: host,
+      wrap: wrap,
+      clearBtn: clearBtn,
+      dropdown: dropdown,
+    };
+  }
+
+  function openAutocompleteDropdown(state) {
+    closeAllAutocompletes(state.inputId);
+    renderAutocompleteDropdown(state);
+  }
+
+  function bindAutocompleteEvents(state) {
+    if (state.bound) {
+      return;
+    }
+    state.bound = true;
+
+    state.host.addEventListener("mousedown", function (ev) {
+      ev.stopPropagation();
+    });
+
+    state.input.addEventListener("focus", function () {
+      openAutocompleteDropdown(state);
+    });
+
+    state.input.addEventListener("mousedown", function () {
+      openAutocompleteDropdown(state);
+    });
+
+    state.input.addEventListener("input", function () {
+      state.hidden.value = "";
+      updateAutocompleteClearButton(state);
+      renderAutocompleteDropdown(state);
+    });
+
+    state.input.addEventListener("keydown", function (ev) {
+      if (!state.open) {
+        if (ev.key === "ArrowDown" || ev.key === "ArrowUp") {
+          openAutocompleteDropdown(state);
+        }
+        return;
+      }
+
+      var options = state.dropdown.querySelectorAll(".ui-autocomplete-option");
+      if (!options.length) {
+        if (ev.key === "Escape") {
+          closeAutocomplete(state);
+        }
+        return;
+      }
+
+      if (ev.key === "ArrowDown") {
+        ev.preventDefault();
+        setActiveAutocompleteOption(state, state.activeIndex + 1);
+        return;
+      }
+      if (ev.key === "ArrowUp") {
+        ev.preventDefault();
+        setActiveAutocompleteOption(state, state.activeIndex - 1);
+        return;
+      }
+      if (ev.key === "Enter") {
+        if (state.activeIndex >= 0 && state.filteredItems[state.activeIndex]) {
+          ev.preventDefault();
+          var picked = state.filteredItems[state.activeIndex];
+          selectAutocompleteItem(state, picked.value, formatAutocompleteLabel(picked));
+        }
+        return;
+      }
+      if (ev.key === "Escape") {
+        ev.preventDefault();
+        closeAutocomplete(state);
+      }
+    });
+
+    state.clearBtn.addEventListener("click", function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      clearAutocompleteValue(state);
+      state.input.focus();
+    });
+  }
+
+  function createAutocompleteState(input, hidden, inputId) {
+    var structure = ensureAutocompleteStructure(input, hidden);
+    if (!structure) {
+      return null;
+    }
+
+    return {
+      inputId: inputId,
+      input: input,
+      hidden: hidden,
+      host: structure.host,
+      clearBtn: structure.clearBtn,
+      dropdown: structure.dropdown,
+      items: [],
+      filteredItems: [],
+      maxShow: 50,
+      activeIndex: -1,
+      open: false,
+      bound: false,
+    };
+  }
+
+  /**
+   * 初始化自动补全输入框。
+   * @param {string} inputId 可见输入框 ID
+   * @param {string} hiddenId 隐藏字段 ID（存 value）
+   * @param {Array<{value:string,label:string}>} items 选项列表
+   * @param {{placeholder?:string,maxShow?:number,value?:string,label?:string}} options
+   */
+  function initAutocomplete(inputId, hiddenId, items, options) {
+    var input = document.getElementById(inputId);
+    var hidden = document.getElementById(hiddenId);
+    if (!input || !hidden) {
+      return;
+    }
+
+    options = options || {};
+    var state = autocompleteInstances[inputId];
+    if (!state) {
+      state = createAutocompleteState(input, hidden, inputId);
+      if (!state) {
+        return;
+      }
+      autocompleteInstances[inputId] = state;
+      bindAutocompleteEvents(state);
+    }
+
+    state.items = normalizeAutocompleteItems(items);
+    state.maxShow = options.maxShow > 0 ? options.maxShow : 50;
+    if (options.placeholder) {
+      state.input.placeholder = options.placeholder;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(options, "value")) {
+      if (trimText(options.value)) {
+        state.items = ensureAutocompleteItem(state.items, options.value, options.label);
+        var selectedItem = findAutocompleteItem(state.items, options.value);
+        var displayLabel = selectedItem
+          ? formatAutocompleteLabel(selectedItem)
+          : formatAutocompleteLabel({ value: options.value, label: options.label });
+        selectAutocompleteItem(state, options.value, displayLabel);
+      } else {
+        clearAutocompleteValue(state);
+      }
+    } else {
+      updateAutocompleteClearButton(state);
+    }
+  }
+
+  function clearAutocomplete(inputId) {
+    var state = autocompleteInstances[inputId];
+    if (!state) {
+      return;
+    }
+    clearAutocompleteValue(state);
+  }
+
   document.addEventListener("click", function (ev) {
     var t = ev.target;
     if (!t || !t.closest) {
@@ -163,6 +576,9 @@
       return;
     }
     closeAllDropdowns();
+    if (!t.closest(".ui-autocomplete")) {
+      closeAllAutocompletes();
+    }
   });
 
   function submitDelete() {
@@ -249,4 +665,6 @@
   window.submitDelete = submitDelete;
   window.toggleDropdown = toggleDropdown;
   window.closeAllDropdowns = closeAllDropdowns;
+  window.initAutocomplete = initAutocomplete;
+  window.clearAutocomplete = clearAutocomplete;
 })();

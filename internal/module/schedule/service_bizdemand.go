@@ -11,6 +11,7 @@ package schedule
 
 import (
 	"context"
+	"errors"
 	"strconv"
 	"strings"
 
@@ -372,4 +373,30 @@ func parseUintString(raw string) uint {
 		return 0
 	}
 	return uint(value)
+}
+
+// GetDemandScheduling 查询排期一体化弹窗加载数据（业需详情、窗口与用户下拉）。
+func (s *Service) GetDemandScheduling(ctx context.Context, actor *model.User, demandID uint) (*DemandSchedulingResp, error) {
+	if demandID == 0 {
+		return nil, errors.New("业需 ID 无效")
+	}
+	_ = actorAccount(actor)
+
+	detail, err := s.repo.GetDemandSchedulingDetail(ctx, demandID)
+	if err != nil {
+		return nil, err
+	}
+	windows, err := s.repo.ListUpcomingSchedulingWindows(ctx)
+	if err != nil {
+		return nil, err
+	}
+	users, err := s.repo.ListInsideUsersForScheduling(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &DemandSchedulingResp{
+		DemandSchedulingDetail: detail,
+		Windows:                windows,
+		Users:                  users,
+	}, nil
 }

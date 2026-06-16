@@ -96,6 +96,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	{
 		g.GET("", middleware.RequirePerm(perm.ScheduleList), h.Index)
 		g.GET("/matching-plans", middleware.RequirePerm(perm.ScheduleList), h.GetMatchingPlans)
+		g.GET("/demands/:id/scheduling", middleware.RequirePerm(perm.ScheduleList), h.GetDemandScheduling)
 		g.POST("/windows", middleware.RequirePerm(perm.ScheduleCreate), h.CreateWindow)
 		g.GET("/windows", middleware.RequirePerm(perm.ScheduleList), h.ListWindows)
 		g.GET("/windows/:id", middleware.RequirePerm(perm.ScheduleList), h.GetWindow)

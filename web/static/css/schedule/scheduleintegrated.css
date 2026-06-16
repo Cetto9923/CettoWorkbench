@@ -44,17 +44,52 @@
   color: #333;
 }
 
-#scheduleIntegratedModal input[type="date"].form-input::-webkit-datetime-edit {
-  color: #999;
+#scheduleIntegratedModal input[type="date"].form-input:not([readonly]) {
+  position: relative;
+  cursor: pointer;
+}
+
+#scheduleIntegratedModal input[type="date"].form-input:not([readonly])::-webkit-calendar-picker-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+#scheduleIntegratedModal input[type="date"].form-input::-webkit-datetime-edit,
+#scheduleIntegratedModal input[type="date"]::-webkit-datetime-edit {
+  color: #aaa;
 }
 
 #scheduleIntegratedModal input[type="date"].form-input:focus::-webkit-datetime-edit,
-#scheduleIntegratedModal input[type="date"].form-input.has-value::-webkit-datetime-edit {
+#scheduleIntegratedModal input[type="date"]:focus::-webkit-datetime-edit,
+#scheduleIntegratedModal input[type="date"].form-input.has-value::-webkit-datetime-edit,
+#scheduleIntegratedModal input[type="date"].has-value::-webkit-datetime-edit {
   color: #333;
 }
 
 #scheduleIntegratedModal input[type="date"].form-input:invalid {
   color: #999;
+}
+
+#scheduleIntegratedModal input[type="date"].form-input[readonly] {
+  background: #f8fafc;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+#scheduleIntegratedModal .schedule-integrated-field-hint {
+  margin: 4px 0 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #94a3b8;
 }
 
 /* ── 角色说明条 ── */
@@ -85,6 +120,17 @@
   border: 1px solid var(--border-lt);
   border-radius: 8px;
   overflow: hidden;
+}
+
+#scheduleIntegratedModal .schedule-integrated-section {
+  overflow: visible;
+}
+
+#scheduleIntegratedModal .schedule-integrated-section-body,
+#scheduleIntegratedModal .schedule-integrated-form-sheet,
+#scheduleIntegratedModal .schedule-integrated-grid,
+#scheduleIntegratedModal .schedule-integrated-cell {
+  overflow: visible;
 }
 
 .schedule-integrated-section-hdr {
@@ -280,6 +326,25 @@
   color: var(--t3);
   margin: 0;
   line-height: 1.5;
+}
+
+#scheduleIntegratedModal .schedule-integrated-cell .ui-autocomplete {
+  width: 100%;
+  min-width: 0;
+}
+
+#scheduleIntegratedModal .schedule-integrated-cell .ui-autocomplete-input-wrap .ui-autocomplete-input {
+  display: block;
+}
+
+#scheduleIntegratedModal .schedule-integrated-cell .ui-autocomplete-input-wrap .ui-autocomplete-input:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+}
+
+#scheduleIntegratedModal .ui-autocomplete-dropdown {
+  z-index: 700;
 }
 
 /* ── 版本窗口 / 预计上线组合控件 ── */

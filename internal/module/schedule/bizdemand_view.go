@@ -39,6 +39,7 @@ func toBizRequirementsView(items []BizDemandItem, zentaoBase string) []BizRequir
 			actionLabel = "去排期"
 		}
 		out = append(out, BizRequirement{
+			DemandID:           item.ID,
 			ID:                 formatBizID(item.ID),
 			Title:              item.Name,
 			Priority:           priority,
@@ -68,6 +69,7 @@ func toSubBizRequirementsView(items []SubDemandItem, zentaoBase string) []SubBiz
 	for _, item := range items {
 		priority, priClass := formatPriority(item.Pri)
 		out = append(out, SubBizRequirement{
+			DemandID:        item.ID,
 			ID:              formatSubID(item.ID),
 			Title:           item.Name,
 			Priority:        priority,

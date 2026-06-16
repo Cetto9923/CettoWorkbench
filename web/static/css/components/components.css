@@ -3,6 +3,7 @@
 @import "./table.css";
 @import "./form.css";
 @import "./modal.css";
+@import "./autocomplete.css";
 
 .form-required-mark {
   display: inline-block;

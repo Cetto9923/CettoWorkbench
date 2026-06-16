@@ -6,6 +6,15 @@
     "width:100%;padding:4px;border:1px solid #d1d5db;border-radius:3px;font-size:11px;box-sizing:border-box;";
   var CELL_STYLE = "padding:6px 8px; border-bottom:1px solid #f0f0f0;";
 
+  function extractDemandID($btn) {
+    var raw = $btn.data("demand-id");
+    if (raw === undefined || raw === null || raw === "") {
+      return 0;
+    }
+    var id = parseInt(String(raw), 10);
+    return isNaN(id) || id <= 0 ? 0 : id;
+  }
+
   function extractRowContext($btn) {
     var $row = $btn.closest("tr");
     var id = $.trim($row.find(".schedule-id-badge").first().text()) || "REQ-—";
@@ -26,13 +35,186 @@
     };
   }
 
+  function toAutocompleteItems(users) {
+    return (users || []).map(function (user) {
+      return {
+        value: $.trim(user.account || ""),
+        label: $.trim(user.realname || "") || $.trim(user.account || ""),
+      };
+    }).filter(function (item) {
+      return !!item.value;
+    });
+  }
+
+  function initSchedulingOwnerPickers(users, data) {
+    if (typeof window.initAutocomplete !== "function") {
+      return;
+    }
+
+    var items = toAutocompleteItems(users);
+    var placeholder = "输入姓名或工号搜索";
+
+    window.initAutocomplete("scheduleIntRDInput", "scheduleIntRDValue", items, {
+      placeholder: placeholder,
+      maxShow: 50,
+      value: data.rd,
+      label: data.rdName,
+    });
+    window.initAutocomplete("scheduleIntQDInput", "scheduleIntQDValue", items, {
+      placeholder: placeholder,
+      maxShow: 50,
+      value: data.qd,
+      label: data.qdName,
+    });
+    window.initAutocomplete("scheduleIntAccepterInput", "scheduleIntAccepterValue", items, {
+      placeholder: placeholder,
+      maxShow: 50,
+      value: data.accepter,
+      label: data.accepterName,
+    });
+  }
+
+  function resetSchedulingOwnerPickers() {
+    if (typeof window.clearAutocomplete !== "function") {
+      return;
+    }
+
+    window.clearAutocomplete("scheduleIntRDInput");
+    window.clearAutocomplete("scheduleIntQDInput");
+    window.clearAutocomplete("scheduleIntAccepterInput");
+  }
+
+  function fillWindowSelect(windows, selectedID, selectedName, fallbackReleaseDate) {
+    var $select = $("#scheduleIntegratedWindowSelect");
+    var selected = String(selectedID || "");
+    var seen = {};
+
+    $select.empty().append('<option value="">请选择版本窗口</option>');
+
+    (windows || []).forEach(function (window) {
+      var id = String(window.id || "");
+      var name = $.trim(window.name || "");
+      var releaseDate = $.trim(window.releaseDate || "");
+      if (!id) {
+        return;
+      }
+      seen[id] = true;
+      $("<option></option>")
+        .val(id)
+        .text(name || id)
+        .attr("data-release-date", releaseDate)
+        .appendTo($select);
+    });
+
+    if (selected && selected !== "0" && !seen[selected]) {
+      $("<option></option>")
+        .val(selected)
+        .text($.trim(selectedName || "") || selected)
+        .attr("data-release-date", $.trim(fallbackReleaseDate || ""))
+        .appendTo($select);
+    }
+
+    if (selected && selected !== "0") {
+      $select.val(selected);
+    } else {
+      $select.val("");
+    }
+  }
+
+  function syncPlanDateFromWindow() {
+    var $select = $("#scheduleIntegratedWindowSelect");
+    var $selected = $select.find("option:selected");
+    var releaseDate = "";
+
+    if ($select.val()) {
+      releaseDate = $.trim($selected.attr("data-release-date") || "");
+    }
+
+    setDateInputValue($("#scheduleIntegratedSchedulePlanDate"), releaseDate);
+    updateReleaseMeta();
+  }
+
+  function updateReleaseMeta() {
+    var $select = $("#scheduleIntegratedWindowSelect");
+    var windowLabel = "—";
+    var planDate = "—";
+
+    if ($select.val()) {
+      windowLabel = $.trim($select.find("option:selected").text()) || "—";
+      planDate = $.trim($("#scheduleIntegratedSchedulePlanDate").val()) || "—";
+    }
+
+    $("#scheduleIntegratedReleaseStrip").text("窗口 " + windowLabel + " ｜ " + planDate);
+  }
+
+  function setDateInputValue($input, value) {
+    var date = $.trim(value || "");
+    $input.val(date);
+    syncIntegratedDateInputState($input[0]);
+  }
+
+  function syncIntegratedDateInputState(input) {
+    if (!input) {
+      return;
+    }
+    var $input = $(input);
+    var date = $.trim($input.val() || "");
+    $input.toggleClass("has-value", date !== "");
+  }
+
+  function syncAllIntegratedDateInputs() {
+    $("#scheduleIntegratedModalBody input[type='date']").each(function () {
+      syncIntegratedDateInputState(this);
+    });
+  }
+
+  function fillSchedulingDetail(data) {
+    var mainSystem = $.trim(data.mainSystemName || "") || "—";
+    var owner = $.trim(data.braName || "") || $.trim(data.bra || "") || "待分配";
+
+    $("#scheduleIntegratedReqTitle").text(data.name || "—");
+    $("#scheduleIntegratedReqSystem").text(mainSystem);
+    $("#scheduleIntegratedReqOwner").text(owner);
+
+    fillWindowSelect(data.windows, data.windowId, data.windowName, data.schedulePlanDate);
+    syncPlanDateFromWindow();
+    initSchedulingOwnerPickers(data.users, data);
+    setDateInputValue($("#scheduleIntegratedDevelopFinish"), data.developFinish);
+    setDateInputValue($("#scheduleIntegratedTestFinish"), data.testFinish);
+    setDateInputValue($("#scheduleIntegratedAcceptancedDate"), data.acceptancedDate);
+
+    $("#scheduleIntegratedSystemsHint").text("涉及系统：" + mainSystem);
+  }
+
+  function loadSchedulingDetail(demandID, ctx) {
+    $.ajax({
+      url: "/schedule/demands/" + demandID + "/scheduling",
+      method: "GET",
+      dataType: "json",
+    })
+      .done(function (resp) {
+        if (!resp || !resp.success) {
+          window.alert((resp && resp.error) || "加载业需详情失败");
+          return;
+        }
+        fillSchedulingDetail(resp);
+        if (resp.id) {
+          $("#scheduleIntegratedModalTitle").text("排期一体化办理 · REQ-" + resp.id);
+        }
+      })
+      .fail(function () {
+        window.alert("加载业需详情失败，请稍后重试");
+      });
+  }
+
   function resetIntegratedForm() {
     var $body = $("#scheduleIntegratedModalBody");
 
     $body.find("select").each(function () {
       this.selectedIndex = 0;
     });
-    $body.find('input[type="date"]').val("");
+    resetSchedulingOwnerPickers();
+    $body.find('input[type="date"]').val("").removeClass("has-value");
     $body.find('input[type="checkbox"]').prop("checked", false);
     $body.find(".schedule-rush-pill").removeClass("is-on");
     $("#scheduleIntegratedReleaseStrip").text("窗口 — ｜ —");
@@ -48,8 +230,10 @@
 
   function openScheduleIntegratedModal(source) {
     var ctx;
+    var demandID = 0;
 
     if (source && source.jquery) {
+      demandID = extractDemandID(source);
       ctx = extractRowContext(source);
     } else if (source && typeof source === "object" && source.id) {
       ctx = {
@@ -58,6 +242,7 @@
         owner: source.owner || "待分配",
         system: source.system || "—",
       };
+      demandID = source.demandId || source.demandID || 0;
     } else {
       ctx = {
         id: "REQ-—",
@@ -72,6 +257,10 @@
 
     if (typeof window.openShowModals === "function") {
       window.openShowModals(MODAL_IDS);
+    }
+
+    if (demandID > 0) {
+      loadSchedulingDetail(demandID, ctx);
     }
   }
 
@@ -244,6 +433,12 @@
     e.stopPropagation();
     removeRdNode($(this).closest(".rd-node"));
   });
+
+  $(document).on("change input", "#scheduleIntegratedModalBody input[type='date']", function () {
+    syncIntegratedDateInputState(this);
+  });
+
+  $(document).on("change", "#scheduleIntegratedWindowSelect", syncPlanDateFromWindow);
 
   $(document).on("change", "#scheduleIntegratedModalBody .schedule-rush-pill input[type='checkbox']", function () {
     $(this).closest(".schedule-rush-pill").toggleClass("is-on", this.checked);
