@@ -84,8 +84,6 @@ type IndependentChildRequirement struct {
 	Owner           string
 	TaskCount       int
 	DetailURL       template.URL
-	ScheduleURL     template.URL
-	MaintainTaskURL template.URL
 }
 
 // IndependentRequirement 独立研发需求行（树形一级）。

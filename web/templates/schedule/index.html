@@ -420,9 +420,11 @@
             <td class="schedule-action-col">
               <div class="schedule-action-buttons">
                 {{ if .DetailURL }}
-                <a href="{{ .DetailURL }}" class="action-btn primary" style="padding:4px 10px;font-size:11px">详情</a>
+                <a href="{{ .DetailURL }}" class="action-btn action-btn--primary">排期</a>
+                <a href="{{ .DetailURL }}" class="action-btn action-btn--success">维护任务</a>
                 {{ else }}
-                <button type="button" class="action-btn primary" style="padding:4px 10px;font-size:11px">详情</button>
+                <button type="button" class="action-btn action-btn--primary">排期</button>
+                <button type="button" class="action-btn action-btn--success">维护任务</button>
                 {{ end }}
               </div>
             </td>
@@ -456,11 +458,12 @@
             </td>
             <td class="schedule-action-col">
               <div class="schedule-action-buttons">
-                {{ if .ScheduleURL }}
-                <a href="{{ .ScheduleURL }}" class="action-btn primary" style="padding:4px 10px;font-size:11px">排期</a>
-                {{ end }}
-                {{ if .MaintainTaskURL }}
-                <a href="{{ .MaintainTaskURL }}" class="action-btn primary" style="padding:4px 10px;font-size:11px">维护任务</a>
+                {{ if .DetailURL }}
+                <a href="{{ .DetailURL }}" class="action-btn action-btn--primary">排期</a>
+                <a href="{{ .DetailURL }}" class="action-btn action-btn--success">维护任务</a>
+                {{ else }}
+                <button type="button" class="action-btn action-btn--primary">排期</button>
+                <button type="button" class="action-btn action-btn--success">维护任务</button>
                 {{ end }}
               </div>
             </td>

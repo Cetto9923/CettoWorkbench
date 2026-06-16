@@ -221,20 +221,18 @@ func toIndependentChildrenView(items []IndependentStoryItem, zentaoBase string) 
 		}
 		detailURL := template.URL(zentao.StoryViewURLWithBase(zentaoBase, item.ID))
 		out = append(out, IndependentChildRequirement{
-			ID:              formatStoryID(item.ID),
-			Title:           item.Title,
-			Priority:        priority,
-			PriClass:        priClass,
-			ProductName:     productName,
-			Stage:           item.Stage,
-			StageClass:      deriveIndependentStageClass(item.Stage),
-			WindowName:      windowName,
-			TeamgroupName:   teamgroupName,
-			Owner:           formatOwner(item.AssignedToName),
-			TaskCount:       item.TaskCount,
-			DetailURL:       detailURL,
-			ScheduleURL:     detailURL,
-			MaintainTaskURL: detailURL,
+			ID:            formatStoryID(item.ID),
+			Title:         item.Title,
+			Priority:      priority,
+			PriClass:      priClass,
+			ProductName:   productName,
+			Stage:         item.Stage,
+			StageClass:    deriveIndependentStageClass(item.Stage),
+			WindowName:    windowName,
+			TeamgroupName: teamgroupName,
+			Owner:         formatOwner(item.AssignedToName),
+			TaskCount:     item.TaskCount,
+			DetailURL:     detailURL,
 		})
 	}
 	return out

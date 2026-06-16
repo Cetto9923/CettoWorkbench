@@ -98,6 +98,26 @@
   background: #15803d;
 }
 
+#page-schedule .action-btn.action-btn--primary {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+}
+
+#page-schedule .action-btn.action-btn--primary:hover {
+  background: #1d4ed8;
+}
+
+#page-schedule .action-btn.action-btn--success {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+
+#page-schedule .action-btn.action-btn--success:hover {
+  background: #15803d;
+}
+
 #page-schedule .action-btn--disabled {
   opacity: 0.55;
   cursor: not-allowed;
