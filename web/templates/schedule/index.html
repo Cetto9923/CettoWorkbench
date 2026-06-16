@@ -242,7 +242,11 @@
             <td class="schedule-task-col"><span class="t3">—</span></td>
             <td class="schedule-action-col">
               <div class="schedule-action-buttons">
+                {{ if .DetailURL }}
+                <a href="{{ .DetailURL }}" class="action-btn {{ .ActionClass }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</a>
+                {{ else }}
                 <button type="button" class="action-btn {{ .ActionClass }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</button>
+                {{ end }}
               </div>
             </td>
           </tr>
@@ -271,7 +275,11 @@
             <td class="schedule-task-col"><span class="t3">—</span></td>
             <td class="schedule-action-col">
               <div class="schedule-action-buttons">
+                {{ if .DetailURL }}
+                <a href="{{ .DetailURL }}" class="action-btn {{ .ActionClass }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</a>
+                {{ else }}
                 <button type="button" class="action-btn {{ .ActionClass }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</button>
+                {{ end }}
               </div>
             </td>
           </tr>
@@ -302,7 +310,11 @@
             </td>
             <td class="schedule-action-col">
               <div class="schedule-action-buttons">
+                {{ if .DetailURL }}
+                <a href="{{ .DetailURL }}" class="action-btn {{ .ActionClass }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</a>
+                {{ else }}
                 <button type="button" class="action-btn {{ .ActionClass }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</button>
+                {{ end }}
               </div>
             </td>
           </tr>
@@ -335,7 +347,11 @@
             </td>
             <td class="schedule-action-col">
               <div class="schedule-action-buttons">
+                {{ if .DetailURL }}
+                <a href="{{ .DetailURL }}" class="action-btn {{ .ActionClass }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</a>
+                {{ else }}
                 <button type="button" class="action-btn {{ .ActionClass }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</button>
+                {{ end }}
               </div>
             </td>
           </tr>

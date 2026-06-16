@@ -34,6 +34,10 @@ func toBizRequirementsView(items []BizDemandItem, zentaoBase string) []BizRequir
 		}
 		subReqs := toSubBizRequirementsView(item.Children, zentaoBase)
 		devReqs := toDevRequirementsView(item.Stories, zentaoBase)
+		actionLabel := "详情"
+		if len(item.Children) == 0 {
+			actionLabel = "去排期"
+		}
 		out = append(out, BizRequirement{
 			ID:                 formatBizID(item.ID),
 			Title:              item.Name,
@@ -46,7 +50,7 @@ func toBizRequirementsView(items []BizDemandItem, zentaoBase string) []BizRequir
 			StageTagClass:      stageTagClass,
 			VersionWindow:      versionWindow,
 			Owner:              formatOwner(item.OwnerName),
-			ActionLabel:        "详情",
+			ActionLabel:        actionLabel,
 			ActionClass:        "primary",
 			DetailURL:          template.URL(zentao.DemandViewURLWithBase(zentaoBase, item.ID)),
 			HasChildren:        len(item.Children) > 0 || len(item.Stories) > 0,
