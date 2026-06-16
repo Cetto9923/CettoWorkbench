@@ -10,9 +10,11 @@
           .Teamgroups ([]schedule.TeamgroupOption),
           .Products ([]schedule.ZtProduct), .BizPager (*pagination.Pager),
           .IndepPager (*pagination.Pager)
+TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
 ========================================================================== */}}
 {{ define "page_css" }}
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedule.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/schedule/scheduleintegrated.css" }}">
 {{ end }}
 
 {{ define "content" }}
@@ -706,7 +708,7 @@
           </table>
         </div>
         <div id="rdTaskTree" style="margin-top: 16px;">
-
+          {{/* TODO: rd-node / rd-task 内联 style= 待抽成 CSS class（见 scheduleintegrated.css 文件头） */}}
           <div class="rd-node" style="border:1px solid #e5e7eb; border-radius:6px; margin-bottom:12px;">
             <div class="rd-node-header" style="display:flex; align-items:center; gap:8px; padding:10px 14px; background:#f8fafc; cursor:pointer; border-radius:6px 6px 0 0;">
               <span class="rd-toggle" style="font-size:12px;">▼</span>

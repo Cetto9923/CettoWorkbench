@@ -4,15 +4,14 @@
 // 类型: action
 // 职责: 处理排期工作台页面请求并调用 Service。
 // 依赖: internal/middleware
-//       internal/pkg/pagination
 //       internal/pkg/perm
 //       internal/pkg/render
+//       internal/module/schedule/handler_demand.go
 // =============================================================================
 
 package schedule
 
 import (
-	"html/template"
 	"net/http"
 	"strconv"
 	"strings"
@@ -22,10 +21,12 @@ import (
 
 	"workbench/internal/constants"
 	"workbench/internal/middleware"
-	"workbench/internal/pkg/pagination"
 	"workbench/internal/pkg/perm"
 	"workbench/internal/pkg/render"
 )
+
+const scheduleRedirectURL = "/schedule"
+const scheduleListPageSize = 10
 
 // WindowCard 版本窗口概览卡片展示数据。
 type WindowCard struct {
@@ -70,91 +71,6 @@ func toWindowListItemJSON(item WindowListItem) windowListItemJSON {
 	}
 }
 
-// IndependentChildRequirement 独立研发需求子行（树形二级）。
-type IndependentChildRequirement struct {
-	ID              string
-	Title           string
-	Priority        string
-	PriClass        string
-	ProductName     string
-	Stage           string
-	StageClass      string
-	WindowName      string
-	TeamgroupName   string
-	Owner           string
-	TaskCount       int
-	DetailURL       template.URL
-}
-
-// IndependentRequirement 独立研发需求行（树形一级）。
-type IndependentRequirement struct {
-	ID              string
-	Title           string
-	Priority        string
-	PriClass        string
-	ProductName     string
-	Stage           string
-	StageClass      string
-	WindowName      string
-	TeamgroupName   string
-	Owner           string
-	TaskCount       int
-	HasChildren     bool
-	DetailURL       template.URL
-	Children        []IndependentChildRequirement
-}
-
-// DevRequirement 研发需求行（树形三级）。
-type DevRequirement struct {
-	ID          string
-	Title       string
-	Priority    string
-	PriClass    string
-	IsMain      bool
-	Owner       string
-	TaskCount   int
-	ActionLabel string
-	ActionClass string
-	DetailURL   template.URL
-}
-
-// SubBizRequirement 子业务需求行（树形二级）。
-type SubBizRequirement struct {
-	ID              string
-	Title           string
-	Priority        string
-	PriClass        string
-	Owner           string
-	ActionLabel     string
-	ActionClass     string
-	DetailURL       template.URL
-	DevRequirements []DevRequirement
-}
-
-// BizRequirement 业务需求行（树形一级）。
-type BizRequirement struct {
-	ID                 string
-	Title              string
-	Priority           string
-	PriClass           string
-	WindowStatus       string
-	WindowStatusClass  string
-	AgileGroup         string
-	StageTag           string
-	StageTagClass      string
-	VersionWindow      string
-	Owner              string
-	ActionLabel        string
-	ActionClass        string
-	DetailURL          template.URL
-	HasChildren        bool
-	SubBizRequirements []SubBizRequirement
-	DevRequirements    []DevRequirement
-}
-
-const scheduleRedirectURL = "/schedule"
-const scheduleListPageSize = 10
-
 // Handler 处理排期工作台页面请求。
 type Handler struct {
 	renderer  *render.Renderer
@@ -196,14 +112,10 @@ func (h *Handler) Index(c *gin.Context) {
 	bizPage := parseSchedulePage(c.DefaultQuery("bizPage", "1"))
 	indepPage := parseSchedulePage(c.DefaultQuery("indepPage", "1"))
 
-	var listReq ListBizDemandsReq
-	if err := c.ShouldBindQuery(&listReq); err != nil {
-		render.Error(c, http.StatusBadRequest, "参数解析失败", err)
+	demandData, ok := h.loadScheduleIndexDemandData(c, actor, bizPage, indepPage)
+	if !ok {
 		return
 	}
-	listReq.Page = bizPage
-	listReq.PageSize = scheduleListPageSize
-	listReq.Normalize()
 
 	formData, err := h.svc.GetCreateWindowFormData(c.Request.Context(), actor)
 	if err != nil {
@@ -224,75 +136,18 @@ func (h *Handler) Index(c *gin.Context) {
 		windows = []WindowCard{}
 	}
 
-	bizResp, err := h.svc.ListBizDemands(c.Request.Context(), actor, listReq)
-	if err != nil {
-		if h.logger != nil {
-			h.logger.Error("load biz demands failed", zap.Error(err))
-		}
-		bizResp = &ListBizDemandsResp{Total: 0, Items: []BizDemandItem{}}
-	}
-	bizRequirements := toBizRequirementsView(bizResp.Items, h.zentaoURL)
-	if h.logger != nil && len(bizRequirements) > 0 {
-		h.logger.Debug("schedule biz demand detail url sample",
-			zap.String("detailURL", string(bizRequirements[0].DetailURL)),
-			zap.String("zentaoURL", h.zentaoURL),
-		)
-	}
-
-	indepReq := ListIndependentReq{
-		Page:     indepPage,
-		PageSize: scheduleListPageSize,
-	}
-	indepReq.Normalize()
-
-	if h.logger != nil {
-		h.logger.Debug("independent stories query start",
-			zap.String("account", actorAccount(actor)),
-		)
-	}
-
-	indepResp, err := h.svc.ListIndependentStories(c.Request.Context(), actor, indepReq)
-	if err != nil {
-		if h.logger != nil {
-			h.logger.Error("load independent stories failed", zap.Error(err))
-		}
-		indepResp = &ListIndependentResp{Total: 0, Items: []IndependentStoryItem{}}
-	}
-	if indepResp == nil {
-		indepResp = &ListIndependentResp{Total: 0, Items: []IndependentStoryItem{}}
-	}
-	if h.logger != nil {
-		h.logger.Debug("independent stories query done",
-			zap.Int64("total", indepResp.Total),
-			zap.Int("items", len(indepResp.Items)),
-			zap.Error(err),
-		)
-	}
-	independentRequirements := toIndependentRequirementsView(indepResp.Items, h.zentaoURL)
-
-	bizPager := pagination.New(bizResp.Total, bizPage, scheduleListPageSize)
-	bizPager.PageParam = "bizPage"
-	bizPager.PreserveParams = map[string]string{"indepPage": strconv.Itoa(indepPage)}
-
-	indepPager := pagination.New(indepResp.Total, indepPage, scheduleListPageSize)
-	indepPager.PageParam = "indepPage"
-	indepPager.PreserveParams = map[string]string{
-		"bizPage": strconv.Itoa(bizPage),
-		"tab":     "indep",
-	}
-
 	render.Page(c, http.StatusOK, constants.TEMPLATE_SCHEDULE_INDEX, gin.H{
 		"Title":                   "排期工作台",
 		"PageTitle":               "排期工作台",
 		"Windows":                 windows,
-		"BizRequirements":         bizRequirements,
-		"BizTotal":                bizResp.Total,
-		"IndependentRequirements": independentRequirements,
-		"IndependentTotal":        indepResp.Total,
+		"BizRequirements":         demandData.BizRequirements,
+		"BizTotal":                demandData.BizTotal,
+		"IndependentRequirements": demandData.IndependentRequirements,
+		"IndependentTotal":        demandData.IndependentTotal,
 		"Teamgroups":              formData.Teamgroups,
 		"Products":                formData.Products,
-		"BizPager":                bizPager,
-		"IndepPager":              indepPager,
+		"BizPager":                demandData.BizPager,
+		"IndepPager":              demandData.IndepPager,
 	})
 }
 
