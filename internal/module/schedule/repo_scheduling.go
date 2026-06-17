@@ -231,6 +231,36 @@ ORDER BY account ASC`
 	return out, nil
 }
 
+// GetDemandInvolvedProducts 查询业需涉及的系统列表（来自 demandclarify）。
+func (r *Repo) GetDemandInvolvedProducts(ctx context.Context, demandID uint) ([]ZtProductOption, error) {
+	if demandID == 0 {
+		return []ZtProductOption{}, nil
+	}
+
+	const query = `
+SELECT DISTINCT p.id, p.name
+FROM zt_demandclarify dc
+JOIN zt_product p ON p.id = dc.product AND p.deleted = '0'
+WHERE dc.demand = ?
+ORDER BY p.id ASC`
+
+	var rows []ZtProductOption
+	if err := r.db.WithContext(ctx).Raw(query, demandID).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	out := make([]ZtProductOption, 0, len(rows))
+	for _, row := range rows {
+		if row.ID == 0 {
+			continue
+		}
+		out = append(out, ZtProductOption{
+			ID:   row.ID,
+			Name: strings.TrimSpace(row.Name),
+		})
+	}
+	return out, nil
+}
+
 // GetDemandStories 按业需 ID 查询关联研发需求（排期弹窗用户故事条目）。
 func (r *Repo) GetDemandStories(ctx context.Context, demandID uint) ([]ZtStory, error) {
 	if demandID == 0 {
@@ -243,6 +273,7 @@ SELECT
   title,
   product,
   estimate,
+  assignedTo,
   CAST(IFNULL(NULLIF(isMainSystemAssociation, ''), '0') AS SIGNED) AS isMainSystemAssociation
 FROM zt_story
 WHERE fromDemand = ?
@@ -254,4 +285,110 @@ ORDER BY isMainSystemAssociation DESC, id ASC`
 		return nil, err
 	}
 	return rows, nil
+}
+
+// GetStoryTasks 查询某个研发需求下的未关闭任务列表。
+func (r *Repo) GetStoryTasks(ctx context.Context, storyID uint) ([]ZtTaskItem, error) {
+	if storyID == 0 {
+		return []ZtTaskItem{}, nil
+	}
+
+	const query = `
+SELECT
+  id,
+  name,
+  type,
+  assignedTo,
+  estimate,
+  consumed,
+  ` + "`left`" + `,
+  DATE_FORMAT(estStarted, '%Y-%m-%d') AS estStarted,
+  DATE_FORMAT(deadline, '%Y-%m-%d') AS deadline,
+  status,
+  project,
+  execution
+FROM zt_task
+WHERE story = ?
+  AND deleted = '0'
+  AND status != 'closed'
+ORDER BY id ASC`
+
+	var rows []ZtTaskItem
+	if err := r.db.WithContext(ctx).Raw(query, storyID).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+// GetProductProjects 查询产品关联的进行中和未开始项目。
+func (r *Repo) GetProductProjects(ctx context.Context, productID uint) ([]ZtProjectOption, error) {
+	if productID == 0 {
+		return []ZtProjectOption{}, nil
+	}
+
+	const query = `
+SELECT p.id, p.name, p.status, p.model
+FROM zt_projectproduct pp
+JOIN zt_project p ON p.id = pp.project AND p.deleted = '0' AND p.type = 'project'
+WHERE pp.product = ?
+  AND p.status IN ('doing', 'wait')
+ORDER BY p.id DESC`
+
+	var rows []ZtProjectOption
+	if err := r.db.WithContext(ctx).Raw(query, productID).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+// GetProjectExecutions 查询项目下进行中和未开始的执行。
+func (r *Repo) GetProjectExecutions(ctx context.Context, projectID uint) ([]ZtExecutionOption, error) {
+	if projectID == 0 {
+		return []ZtExecutionOption{}, nil
+	}
+
+	const query = `
+SELECT id, name, type, status
+FROM zt_project
+WHERE parent = ?
+  AND type IN ('sprint', 'stage', 'kanban')
+  AND deleted = '0'
+  AND status IN ('doing', 'wait')
+ORDER BY id DESC`
+
+	var rows []ZtExecutionOption
+	if err := r.db.WithContext(ctx).Raw(query, projectID).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+// FindProjectsByIDs 批量查项目名称。
+func (r *Repo) FindProjectsByIDs(ctx context.Context, ids []uint) (map[uint]string, error) {
+	if len(ids) == 0 {
+		return map[uint]string{}, nil
+	}
+
+	const query = `
+SELECT id, name
+FROM zt_project
+WHERE id IN ?
+  AND deleted = '0'`
+
+	type projectNameRow struct {
+		ID   uint   `gorm:"column:id"`
+		Name string `gorm:"column:name"`
+	}
+	var rows []projectNameRow
+	if err := r.db.WithContext(ctx).Raw(query, ids).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	out := make(map[uint]string, len(rows))
+	for _, row := range rows {
+		if row.ID == 0 {
+			continue
+		}
+		out[row.ID] = strings.TrimSpace(row.Name)
+	}
+	return out, nil
 }

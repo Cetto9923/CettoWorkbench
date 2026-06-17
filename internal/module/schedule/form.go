@@ -447,21 +447,90 @@ type SchedulingUserOption struct {
 	Realname string `json:"realname"`
 }
 
+// ZtProductOption 禅道产品/系统下拉选项。
+type ZtProductOption struct {
+	ID   uint   `gorm:"column:id" json:"id"`
+	Name string `gorm:"column:name" json:"name"`
+}
+
+// ZtTaskItem 禅道 zt_task 只读投影（排期弹窗）。
+type ZtTaskItem struct {
+	ID         uint    `gorm:"column:id" json:"id"`
+	Name       string  `gorm:"column:name" json:"name"`
+	Type       string  `gorm:"column:type" json:"type"`
+	AssignedTo string  `gorm:"column:assignedTo" json:"assignedTo"`
+	Estimate   float64 `gorm:"column:estimate" json:"estimate"`
+	Consumed   float64 `gorm:"column:consumed" json:"consumed"`
+	Left       float64 `gorm:"column:left" json:"left"`
+	EstStarted string  `gorm:"column:estStarted" json:"estStarted"`
+	Deadline   string  `gorm:"column:deadline" json:"deadline"`
+	Status     string  `gorm:"column:status" json:"status"`
+	Project    uint    `gorm:"column:project" json:"project"`
+	Execution  uint    `gorm:"column:execution" json:"execution"`
+}
+
+// ZtProjectOption 禅道项目下拉选项。
+type ZtProjectOption struct {
+	ID     uint   `gorm:"column:id" json:"id"`
+	Name   string `gorm:"column:name" json:"name"`
+	Status string `gorm:"column:status" json:"status"`
+	Model  string `gorm:"column:model" json:"model"`
+}
+
+// ZtExecutionOption 禅道执行下拉选项。
+type ZtExecutionOption struct {
+	ID     uint   `gorm:"column:id" json:"id"`
+	Name   string `gorm:"column:name" json:"name"`
+	Type   string `gorm:"column:type" json:"type"`
+	Status string `gorm:"column:status" json:"status"`
+}
+
+// DemandSchedulingTaskItem 排期弹窗研发任务条目。
+type DemandSchedulingTaskItem struct {
+	ID             uint    `json:"id"`
+	Name           string  `json:"name"`
+	Type           string  `json:"type"`
+	TypeLabel      string  `json:"typeLabel"`
+	AssignedTo     string  `json:"assignedTo"`
+	AssignedToName string  `json:"assignedToName"`
+	Estimate       float64 `json:"estimate"`
+	EstStarted     string  `json:"estStarted"`
+	Deadline       string  `json:"deadline"`
+	Project        uint    `json:"project"`
+	ProjectName    string  `json:"projectName"`
+	Execution      uint    `json:"execution"`
+	ExecutionName  string  `json:"executionName"`
+}
+
+// DemandSchedulingProjectOption 排期弹窗项目下拉项。
+type DemandSchedulingProjectOption struct {
+	ID   uint   `json:"id"`
+	Name string `json:"name"`
+}
+
 // DemandSchedulingStoryItem 排期弹窗用户故事条目。
 type DemandSchedulingStoryItem struct {
-	ID          uint    `json:"id"`
-	Title       string  `json:"title"`
-	ProductName string  `json:"productName"`
-	IsMain      bool    `json:"isMain"`
-	Estimate    float64 `json:"estimate"`
+	ID             uint                            `json:"id"`
+	Title          string                          `json:"title"`
+	ProductID      uint                            `json:"productId"`
+	ProductName    string                          `json:"productName"`
+	IsMain         bool                            `json:"isMain"`
+	Estimate       float64                         `json:"estimate"`
+	AssignedTo     string                          `json:"assignedTo"`
+	AssignedToName string                          `json:"assignedToName"`
+	Tasks          []DemandSchedulingTaskItem      `json:"tasks"`
+	Projects       []DemandSchedulingProjectOption `json:"projects"`
 }
 
 // DemandSchedulingResp 排期一体化弹窗加载数据。
 type DemandSchedulingResp struct {
 	*DemandSchedulingDetail
-	Stories []DemandSchedulingStoryItem `json:"stories"`
-	Windows []SchedulingWindowOption    `json:"windows"`
-	Users   []SchedulingUserOption      `json:"users"`
+	InvolvedProducts  []ZtProductOption                            `json:"involvedProducts"`
+	ProductProjects   map[string][]DemandSchedulingProjectOption   `json:"productProjects"`
+	ProjectExecutions map[string][]ZtExecutionOption               `json:"projectExecutions"`
+	Stories           []DemandSchedulingStoryItem                  `json:"stories"`
+	Windows           []SchedulingWindowOption                     `json:"windows"`
+	Users             []SchedulingUserOption                       `json:"users"`
 }
 
 // ZtStory 禅道 zt_story 只读投影。

@@ -213,12 +213,24 @@ func (h *Handler) GetDemandScheduling(c *gin.Context) {
 	}
 
 	out := gin.H{
-		"success": true,
-		"stories": []DemandSchedulingStoryItem{},
-		"windows": []SchedulingWindowOption{},
-		"users":   []SchedulingUserOption{},
+		"success":           true,
+		"involvedProducts":  []ZtProductOption{},
+		"productProjects":   gin.H{},
+		"projectExecutions": gin.H{},
+		"stories":           []DemandSchedulingStoryItem{},
+		"windows":           []SchedulingWindowOption{},
+		"users":             []SchedulingUserOption{},
 	}
 	if resp != nil {
+		if resp.InvolvedProducts != nil {
+			out["involvedProducts"] = resp.InvolvedProducts
+		}
+		if resp.ProductProjects != nil {
+			out["productProjects"] = resp.ProductProjects
+		}
+		if resp.ProjectExecutions != nil {
+			out["projectExecutions"] = resp.ProjectExecutions
+		}
 		if resp.Stories != nil {
 			out["stories"] = resp.Stories
 		}
@@ -252,4 +264,83 @@ func (h *Handler) GetDemandScheduling(c *gin.Context) {
 		}
 	}
 	c.JSON(http.StatusOK, out)
+}
+
+// GetProjectExecutions 返回项目下的执行列表（JSON）。
+func (h *Handler) GetProjectExecutions(c *gin.Context) {
+	projectID, ok := parseProjectID(c)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "项目 ID 无效",
+		})
+		return
+	}
+
+	actor := middleware.CurrentUser(c)
+	executions, err := h.svc.GetProjectExecutions(c.Request.Context(), actor, projectID)
+	if err != nil {
+		if h.logger != nil {
+			h.logger.Error("get project executions failed",
+				zap.Error(err),
+				zap.Uint("project_id", projectID),
+			)
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"error":   "加载执行列表失败",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":    true,
+		"executions": executions,
+	})
+}
+
+// GetProductProjects 返回产品关联的项目列表（JSON）。
+func (h *Handler) GetProductProjects(c *gin.Context) {
+	productID, ok := parseProductID(c)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "产品 ID 无效",
+		})
+		return
+	}
+
+	actor := middleware.CurrentUser(c)
+	projects, err := h.svc.GetProductProjects(c.Request.Context(), actor, productID)
+	if err != nil {
+		if h.logger != nil {
+			h.logger.Error("get product projects failed",
+				zap.Error(err),
+				zap.Uint("product_id", productID),
+			)
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"error":   "加载项目列表失败",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":  true,
+		"projects": projects,
+	})
+}
+
+func parseProductID(c *gin.Context) (uint, bool) {
+	idStr := strings.TrimSpace(c.Param("id"))
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil || id == 0 {
+		return 0, false
+	}
+	return uint(id), true
+}
+
+func parseProjectID(c *gin.Context) (uint, bool) {
+	return parseProductID(c)
 }

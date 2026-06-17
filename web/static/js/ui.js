@@ -528,7 +528,7 @@
 
     options = options || {};
     var state = autocompleteInstances[inputId];
-    if (!state) {
+    if (!state || state.input !== input || state.hidden !== hidden) {
       state = createAutocompleteState(input, hidden, inputId);
       if (!state) {
         return;
@@ -565,6 +565,15 @@
       return;
     }
     clearAutocompleteValue(state);
+  }
+
+  function destroyAutocomplete(inputId) {
+    var state = autocompleteInstances[inputId];
+    if (!state) {
+      return;
+    }
+    closeAutocomplete(state);
+    delete autocompleteInstances[inputId];
   }
 
   document.addEventListener("click", function (ev) {
@@ -667,4 +676,5 @@
   window.closeAllDropdowns = closeAllDropdowns;
   window.initAutocomplete = initAutocomplete;
   window.clearAutocomplete = clearAutocomplete;
+  window.destroyAutocomplete = destroyAutocomplete;
 })();

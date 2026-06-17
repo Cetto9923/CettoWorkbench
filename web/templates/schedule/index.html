@@ -14,6 +14,9 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
 ========================================================================== */}}
 {{ define "page_css" }}
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedule.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulelist.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulewindow.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulemodal.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/scheduleintegrated.css" }}">
 {{ end }}
 
@@ -686,105 +689,13 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             <tbody id="storyItemsBody"></tbody>
           </table>
         </div>
-        <div id="rdTaskTree" style="margin-top: 16px;">
+        <div id="rdTaskTree" class="rd-task-tree">
           <div class="transfer-dev-section-head"><strong>研发需求</strong></div>
-          {{/* TODO: rd-node / rd-task 内联 style= 待抽成 CSS class（见 scheduleintegrated.css 文件头） */}}
-          <div class="rd-node" style="border:1px solid #e5e7eb; border-radius:6px; margin-bottom:12px;">
-            <div class="rd-node-header" style="display:flex; align-items:center; gap:8px; padding:10px 14px; background:#f8fafc; cursor:pointer; border-radius:6px 6px 0 0;">
-              <span class="rd-toggle" style="font-size:12px;">▼</span>
-              <span style="background:#2563eb;color:#fff;padding:1px 6px;border-radius:3px;font-size:11px;">主</span>
-              <span style="font-size:11px; color:#666;">企业网银</span>
-              <strong style="font-size:13px;">企业网银大额转账审批流程优化-主流程改造</strong>
-              <span style="margin-left:auto; color:#999; font-size:11px;">指派: 张明远 | 团队: 线上运营团队</span>
-              <button type="button" class="rd-remove-node" style="border:1px solid #d1d5db;background:#fff;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;color:#666;" title="删除此研发需求">×</button>
-            </div>
-            <div class="rd-node-tasks" style="padding:0 14px 10px;">
-              <table style="width:100%; border-collapse:collapse; font-size:12px; margin-top:8px;">
-                <thead>
-                  <tr style="background:#f9fafb;">
-                    <th style="width:70px; padding:6px 8px; border-bottom:1px solid #e5e7eb; text-align:left;">类型</th>
-                    <th style="padding:6px 8px; border-bottom:1px solid #e5e7eb; text-align:left;">任务名称</th>
-                    <th style="width:90px; padding:6px 8px; border-bottom:1px solid #e5e7eb;">负责人</th>
-                    <th style="width:60px; padding:6px 8px; border-bottom:1px solid #e5e7eb;">预估(h)</th>
-                    <th style="width:90px; padding:6px 8px; border-bottom:1px solid #e5e7eb;">开始</th>
-                    <th style="width:90px; padding:6px 8px; border-bottom:1px solid #e5e7eb;">截止</th>
-                    <th style="width:40px; padding:6px 8px; border-bottom:1px solid #e5e7eb;">操作</th>
-                  </tr>
-                </thead>
-                <tbody class="rd-task-body">
-                  <tr>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;"><span style="color:#2563eb;font-weight:600;font-size:11px;">开发</span></td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">【开发】企业网银大额转账审批流程优化</td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">王工</td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">16</td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">2026-06-01</td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">2026-06-10</td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:center;"><button type="button" class="rd-remove-task" style="border:none;background:none;color:#999;cursor:pointer;font-size:12px;">×</button></td>
-                  </tr>
-                  <tr>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;"><span style="color:#ea580c;font-weight:600;font-size:11px;">测试</span></td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">【测试】企业网银大额转账审批流程优化</td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">赵工</td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">8</td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">2026-06-11</td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">2026-06-14</td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:center;"><button type="button" class="rd-remove-task" style="border:none;background:none;color:#999;cursor:pointer;font-size:12px;">×</button></td>
-                  </tr>
-                </tbody>
-              </table>
-              <button type="button" class="rd-add-task" style="margin-top:6px; border:1px dashed #d1d5db; background:#fff; padding:4px 12px; border-radius:4px; font-size:11px; color:#2563eb; cursor:pointer;">+ 添加任务</button>
-            </div>
+          <div id="rdTreeEmpty" class="integrated-rd-tree-empty compact" style="display:none;">
+            <p>暂无研发需求</p>
           </div>
-
-          <div class="rd-node" style="border:1px solid #e5e7eb; border-radius:6px; margin-bottom:12px;">
-            <div class="rd-node-header" style="display:flex; align-items:center; gap:8px; padding:10px 14px; background:#f8fafc; cursor:pointer; border-radius:6px 6px 0 0;">
-              <span class="rd-toggle" style="font-size:12px;">▼</span>
-              <span style="background:#ea580c;color:#fff;padding:1px 6px;border-radius:3px;font-size:11px;">配</span>
-              <span style="font-size:11px; color:#666;">外部系统</span>
-              <strong style="font-size:13px;">外部系统接口联调改造</strong>
-              <span style="margin-left:auto; color:#999; font-size:11px;">指派: 李开发 | 团队: 外围研发组</span>
-              <button type="button" class="rd-remove-node" style="border:1px solid #d1d5db;background:#fff;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;color:#666;" title="删除此研发需求">×</button>
-            </div>
-            <div class="rd-node-tasks" style="padding:0 14px 10px;">
-              <table style="width:100%; border-collapse:collapse; font-size:12px; margin-top:8px;">
-                <thead>
-                  <tr style="background:#f9fafb;">
-                    <th style="width:70px; padding:6px 8px; border-bottom:1px solid #e5e7eb; text-align:left;">类型</th>
-                    <th style="padding:6px 8px; border-bottom:1px solid #e5e7eb; text-align:left;">任务名称</th>
-                    <th style="width:90px; padding:6px 8px; border-bottom:1px solid #e5e7eb;">负责人</th>
-                    <th style="width:60px; padding:6px 8px; border-bottom:1px solid #e5e7eb;">预估(h)</th>
-                    <th style="width:90px; padding:6px 8px; border-bottom:1px solid #e5e7eb;">开始</th>
-                    <th style="width:90px; padding:6px 8px; border-bottom:1px solid #e5e7eb;">截止</th>
-                    <th style="width:40px; padding:6px 8px; border-bottom:1px solid #e5e7eb;">操作</th>
-                  </tr>
-                </thead>
-                <tbody class="rd-task-body">
-                  <tr>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;"><span style="color:#2563eb;font-weight:600;font-size:11px;">开发</span></td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">【开发】外部系统接口联调改造</td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">李工</td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">12</td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">2026-06-05</td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">2026-06-12</td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:center;"><button type="button" class="rd-remove-task" style="border:none;background:none;color:#999;cursor:pointer;font-size:12px;">×</button></td>
-                  </tr>
-                  <tr>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;"><span style="color:#ea580c;font-weight:600;font-size:11px;">测试</span></td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">【测试】外部系统接口联调改造</td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">周工</td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">6</td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">2026-06-13</td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0;">2026-06-16</td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #f0f0f0; text-align:center;"><button type="button" class="rd-remove-task" style="border:none;background:none;color:#999;cursor:pointer;font-size:12px;">×</button></td>
-                  </tr>
-                </tbody>
-              </table>
-              <button type="button" class="rd-add-task" style="margin-top:6px; border:1px dashed #d1d5db; background:#fff; padding:4px 12px; border-radius:4px; font-size:11px; color:#2563eb; cursor:pointer;">+ 添加任务</button>
-            </div>
-          </div>
-
-          <button type="button" class="rd-add-node" style="width:100%; border:1px dashed #d1d5db; background:#fff; padding:10px; border-radius:6px; font-size:12px; color:#2563eb; cursor:pointer;">+ 添加研发需求</button>
-
+          <div id="rdTreeNodes"></div>
+          <button type="button" class="rd-add-node">+ 添加研发需求</button>
         </div>
       </div>
     </div>
@@ -794,6 +705,154 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
     <button type="button" class="action-btn primary" id="scheduleIntegratedSaveBtn">确认并同步</button>
   </div>
 </div>
+
+<template id="tplRdTaskTableHead">
+  <thead>
+    <tr class="rd-task-table-head-row">
+      <th class="rd-task-th rd-task-th--project" style="width:120px">项目</th>
+      <th class="rd-task-th rd-task-th--execution" style="width:120px">执行</th>
+      <th class="rd-task-th rd-task-th--type" style="width:80px">类型</th>
+      <th class="rd-task-th rd-task-th--name">任务名称</th>
+      <th class="rd-task-th rd-task-th--owner" style="width:140px">负责人</th>
+      <th class="rd-task-th rd-task-th--hours" style="width:60px">预估(h)</th>
+      <th class="rd-task-th rd-task-th--start" style="width:100px">开始</th>
+      <th class="rd-task-th rd-task-th--end" style="width:100px">截止</th>
+      <th class="rd-task-th rd-task-th--actions" style="width:40px">操作</th>
+    </tr>
+  </thead>
+</template>
+
+<template id="tplRdTaskRowNew">
+  <tr class="rd-task-row rd-task-row--new" data-story-id="">
+    <td class="rd-task-cell rd-task-cell-project"><select class="rd-task-project-select form-select rd-task-select"><option value="">请选择项目</option></select></td>
+    <td class="rd-task-cell rd-task-cell-execution"><select class="rd-task-execution-select form-select rd-task-select" disabled><option value="">请选择执行</option></select></td>
+    <td class="rd-task-cell rd-task-cell-type"><select class="rd-task-type form-select rd-task-select"><option value="devel">开发</option><option value="test">测试</option><option value="OLtest">上线测试</option><option value="review">评审</option><option value="affair">事务</option><option value="request">需求</option><option value="misc">其他</option><option value="codereview">代码评审</option><option value="design">设计</option><option value="study">研究</option><option value="OLDebug">上线调试</option><option value="Online">上线</option><option value="Train">培训</option><option value="meeting">会议</option><option value="discuss">讨论</option><option value="ui">界面</option></select></td>
+    <td class="rd-task-cell rd-task-cell-name rd-task-cell--name"><input type="text" class="rd-task-name form-input rd-task-input" placeholder="任务名称"></td>
+    <td class="rd-task-cell rd-task-cell-owner rd-task-cell--owner rd-task-owner-cell"><input type="text" class="rd-task-owner-input form-input rd-task-input" placeholder="负责人" autocomplete="off"><input type="hidden" class="rd-task-owner-value"></td>
+    <td class="rd-task-cell rd-task-cell-hours"><input type="number" class="rd-task-hours form-input rd-task-input" min="0" step="0.5" placeholder="h"></td>
+    <td class="rd-task-cell rd-task-cell-start"><input type="date" class="rd-task-start form-input rd-task-input"></td>
+    <td class="rd-task-cell rd-task-cell-end"><input type="date" class="rd-task-end form-input rd-task-input"></td>
+    <td class="rd-task-cell rd-task-cell-actions"><span class="task-actions"></span></td>
+  </tr>
+</template>
+
+<template id="tplRdTaskRowReadonly">
+  <tr class="rd-task-row rd-task-row--existing">
+    <td class="rd-task-cell rd-task-cell-project"></td>
+    <td class="rd-task-cell rd-task-cell-execution"></td>
+    <td class="rd-task-cell rd-task-cell-type"></td>
+    <td class="rd-task-cell rd-task-cell-name rd-task-cell--name"></td>
+    <td class="rd-task-cell rd-task-cell-owner rd-task-cell--owner"></td>
+    <td class="rd-task-cell rd-task-cell-hours"></td>
+    <td class="rd-task-cell rd-task-cell-start"></td>
+    <td class="rd-task-cell rd-task-cell-end"></td>
+    <td class="rd-task-cell rd-task-cell-actions"><span class="task-actions"></span></td>
+  </tr>
+</template>
+
+<template id="tplRdTaskRowEdit">
+  <tr class="rd-task-row rd-task-row--editing">
+    <td class="rd-task-cell rd-task-cell-project"><select class="rd-task-project-select form-select rd-task-select"><option value="">请选择项目</option></select></td>
+    <td class="rd-task-cell rd-task-cell-execution"><select class="rd-task-execution-select form-select rd-task-select" disabled><option value="">请选择执行</option></select></td>
+    <td class="rd-task-cell rd-task-cell-type"><select class="rd-task-type form-select rd-task-select"></select></td>
+    <td class="rd-task-cell rd-task-cell-name rd-task-cell--name"><input type="text" class="rd-task-name form-input rd-task-input" placeholder="任务名称"></td>
+    <td class="rd-task-cell rd-task-cell-owner rd-task-cell--owner rd-task-owner-cell"><input type="text" class="rd-task-owner-input form-input rd-task-input" placeholder="负责人" autocomplete="off"><input type="hidden" class="rd-task-owner-value"></td>
+    <td class="rd-task-cell rd-task-cell-hours"><input type="number" class="rd-task-hours form-input rd-task-input" min="0" step="0.5" placeholder="h"></td>
+    <td class="rd-task-cell rd-task-cell-start"><input type="date" class="rd-task-start form-input rd-task-input"></td>
+    <td class="rd-task-cell rd-task-cell-end"><input type="date" class="rd-task-end form-input rd-task-input"></td>
+    <td class="rd-task-cell rd-task-cell-actions"><span class="task-actions"></span></td>
+  </tr>
+</template>
+
+<template id="tplRdTaskActions">
+  <span class="task-actions">
+    <button type="button" class="task-edit-btn" title="编辑"><i class="fas fa-pen"></i></button>
+    <button type="button" class="task-delete-btn" title="删除此任务"><i class="fas fa-trash-can"></i></button>
+  </span>
+</template>
+
+<template id="tplRdTaskActionsDeleteOnly">
+  <span class="task-actions">
+    <button type="button" class="task-delete-btn" title="删除此任务"><i class="fas fa-trash-can"></i></button>
+  </span>
+</template>
+
+<template id="tplRdTaskSection">
+  <div class="rd-node-tasks">
+    <table class="rd-task-table">
+      <tbody class="rd-task-body"></tbody>
+    </table>
+    <button type="button" class="rd-add-task">+ 添加任务</button>
+  </div>
+</template>
+
+<template id="tplRdNode">
+  <div class="rd-node rd-node--story">
+    <div class="rd-node-header">
+      <button type="button" class="rd-toggle" title="展开/收起任务" aria-label="展开/收起任务">▼</button>
+      <span class="rd-node-id"></span>
+      <span class="rd-node-role-badge"></span>
+      <span class="rd-node-product-name"></span>
+      <strong class="rd-node-title-display"></strong>
+      <span class="rd-node-assignee-display"></span>
+      <span class="rd-node-actions"></span>
+    </div>
+  </div>
+</template>
+
+<template id="tplRdNodeDraft">
+  <div class="rd-node rd-node--draft">
+    <div class="rd-node-header rd-node-header--edit">
+      <button type="button" class="rd-toggle" title="展开/收起任务" aria-label="展开/收起任务">▼</button>
+      <span class="rd-node-role-badge"></span>
+      <select class="rd-node-product form-select rd-node-product-select"><option value="">请选择系统</option></select>
+      <input type="text" class="rd-node-title form-input rd-node-title-input" placeholder="研发需求名称">
+      <span class="rd-node-assignee-wrap">
+        <input type="text" class="rd-node-assignee-input form-input rd-node-assignee-field" placeholder="指派人" autocomplete="off">
+        <input type="hidden" class="rd-node-assignee-value">
+      </span>
+      <span class="rd-node-actions"></span>
+    </div>
+  </div>
+</template>
+
+<template id="tplRdNodeActionsEdit">
+  <span class="rd-node-actions">
+    <button type="button" class="rd-edit-btn" title="编辑"><i class="fas fa-pen"></i></button>
+  </span>
+</template>
+
+<template id="tplRdNodeActionsDelete">
+  <span class="rd-node-actions">
+    <button type="button" class="rd-delete-btn" title="删除此研发需求"><i class="fas fa-trash-can"></i></button>
+  </span>
+</template>
+
+<template id="tplRdNodeConfirmBtn">
+  <button type="button" class="rd-confirm-btn" title="确认"><i class="fas fa-check"></i></button>
+</template>
+
+<template id="tplRdStoryAssigneeEdit">
+  <span class="rd-node-assignee-wrap">
+    <input type="text" class="rd-node-assignee-input form-input rd-node-assignee-field" placeholder="指派人" autocomplete="off">
+    <input type="hidden" class="rd-node-assignee-value">
+  </span>
+</template>
+
+<template id="tplStoryItemEmpty">
+  <tr><td colspan="6" class="transfer-dev-story-empty">暂无研发需求，请先转化研发需求</td></tr>
+</template>
+
+<template id="tplStoryItemRow">
+  <tr>
+    <td class="story-item-index"></td>
+    <td class="story-item-role"></td>
+    <td class="story-item-title"></td>
+    <td class="story-item-product"></td>
+    <td>—</td>
+    <td class="story-item-estimate"></td>
+  </tr>
+</template>
 
 <template id="schedulePlanCardLoading">
   <div class="schedule-create-plan-card">
@@ -911,6 +970,9 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
 <script src="{{ asset "/static/js/schedule/schedulewindowdraft.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/schedulewindow.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/schedulemanage.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/scheduleintegratedshared.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/scheduleintegratedtasks.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/scheduleintegratedrd.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/scheduleintegrated.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/schedule.js" }}"></script>
 {{ end }}

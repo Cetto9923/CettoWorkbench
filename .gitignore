@@ -6,6 +6,9 @@ logs/*
 configs/config.dev.yaml
 web/static/uploads/**
 backups/*.sql.gz
+server
+
 /demo
 /demo2
-server
+/docs/demo-analysis.md
+/docs/design

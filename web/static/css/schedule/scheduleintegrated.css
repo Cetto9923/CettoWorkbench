@@ -2,8 +2,7 @@
    文件: web/static/css/schedule/scheduleintegrated.css
    模块: 排期工作台
    职责: 一体化排期弹窗（#scheduleIntegratedModal）样式
-   依赖: web/static/css/schedule/schedule.css（:root 颜色变量须先加载）
-   TODO: index.html / scheduleintegrated.js 中 rd-node、rd-task 等区域仍含大量内联 style=，后续抽成 CSS class
+   依赖: web/static/css/schedule/schedule.css、schedulemodal.css（:root 变量与弹窗骨架须先加载）
 ========================================================================== */
 
 /* ── 弹窗容器（对齐 #scheduleVersionWindowModal 布局） ── */
@@ -49,7 +48,8 @@
   cursor: pointer;
 }
 
-#scheduleIntegratedModal input[type="date"].form-input:not([readonly])::-webkit-calendar-picker-indicator {
+#scheduleIntegratedModal input[type="date"].form-input:not([readonly])::-webkit-calendar-picker-indicator,
+#scheduleIntegratedModal .rd-node-tasks input[type="date"]::-webkit-calendar-picker-indicator {
   position: absolute;
   top: 0;
   left: 0;
@@ -83,35 +83,6 @@
   background: #f8fafc;
   color: #64748b;
   cursor: not-allowed;
-}
-
-#scheduleIntegratedModal .schedule-integrated-field-hint {
-  margin: 4px 0 0;
-  font-size: 11px;
-  line-height: 1.4;
-  color: #94a3b8;
-}
-
-/* ── 角色说明条 ── */
-.schedule-integrated-role-banner {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  padding: 10px 12px;
-  margin-bottom: 12px;
-  border-radius: 8px;
-  background: var(--blue-bg);
-  border: 1px solid var(--blue-bd);
-  font-size: 12px;
-  color: var(--blue);
-}
-
-.schedule-integrated-role-banner .role-tag {
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 4px;
-  background: var(--white);
 }
 
 /* ── 分区卡片 ── */
@@ -169,71 +140,6 @@
 
 .schedule-integrated-section-body {
   padding: 12px 14px;
-}
-
-.schedule-integrated-section.readonly .schedule-integrated-section-body {
-  opacity: 0.92;
-}
-
-.schedule-integrated-section.readonly .schedule-rush-pill {
-  cursor: default;
-  opacity: 0.88;
-}
-
-.schedule-integrated-section.readonly .schedule-rush-jump-chk {
-  cursor: default;
-  opacity: 0.85;
-}
-
-.schedule-integrated-owner-summary {
-  margin-top: 10px;
-  padding: 8px 10px;
-  border-radius: 6px;
-  background: var(--bg);
-  font-size: 12px;
-  color: var(--t2);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-/* ── 研发需求块（静态 markup） ── */
-.schedule-integrated-rd-block {
-  margin-top: 12px;
-  padding: 12px;
-  border: 1px solid var(--border-lt);
-  border-radius: 8px;
-  background: var(--white);
-}
-
-.schedule-integrated-rd-block.locked {
-  background: var(--bg);
-  opacity: 0.88;
-}
-
-.schedule-integrated-rd-hdr {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 8px;
-  flex-wrap: wrap;
-}
-
-.schedule-integrated-rd-hdr h4 {
-  margin: 0;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--t1);
-}
-
-.schedule-integrated-rd-meta {
-  font-size: 11px;
-  color: var(--t3);
-}
-
-.schedule-integrated-rd-saved-table td {
-  vertical-align: middle;
 }
 
 /* ── 业务排期表单区 ── */
@@ -301,33 +207,6 @@
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
 }
 
-.schedule-integrated-meta-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px 16px;
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px dashed var(--border-lt);
-}
-
-.schedule-integrated-release-strip {
-  flex: 1 1 auto;
-  margin: 0;
-  padding: 6px 10px;
-  font-size: 11px;
-  border-radius: 6px;
-  background: var(--white);
-}
-
-.schedule-integrated-hint {
-  font-size: 11px;
-  color: var(--t3);
-  margin: 0;
-  line-height: 1.5;
-}
-
 #scheduleIntegratedModal .schedule-integrated-cell .ui-autocomplete {
   width: 100%;
   min-width: 0;
@@ -375,22 +254,7 @@
   background: transparent;
 }
 
-.schedule-window-combo-select {
-  flex: 1 1 auto;
-  min-width: 0;
-  height: 100%;
-  padding: 0 8px;
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-}
-
-.schedule-window-combo-select:focus {
-  outline: none;
-  box-shadow: none;
-}
-
+.schedule-window-combo-select,
 .schedule-target-combo-date {
   flex: 1 1 auto;
   min-width: 0;
@@ -402,187 +266,10 @@
   box-shadow: none;
 }
 
+.schedule-window-combo-select:focus,
 .schedule-target-combo-date:focus {
   outline: none;
   box-shadow: none;
-}
-
-.schedule-addon-btn {
-  flex: 0 0 auto;
-  margin: 0;
-  padding: 0 10px;
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 1;
-  color: var(--blue);
-  background: var(--bg);
-  border: none;
-  border-left: 1px solid var(--border-lt);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.15s, color 0.15s;
-}
-
-.schedule-addon-btn:hover:not(:disabled) {
-  background: var(--blue-bg);
-}
-
-.schedule-addon-btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-.schedule-rush-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  flex: 0 0 auto;
-  margin: 0;
-  padding: 0 10px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--t2);
-  background: var(--bg);
-  border-left: 1px solid var(--border-lt);
-  white-space: nowrap;
-  cursor: pointer;
-  user-select: none;
-  transition: background 0.15s, color 0.15s;
-}
-
-.schedule-rush-pill span {
-  line-height: 1;
-}
-
-.schedule-rush-pill input[type="checkbox"] {
-  width: 13px;
-  height: 13px;
-  margin: 0;
-  cursor: pointer;
-  accent-color: var(--orange);
-}
-
-.schedule-rush-pill.is-on,
-.schedule-rush-pill:has(input:checked) {
-  background: var(--orange-bg);
-  color: var(--orange);
-  border-left-color: rgba(234, 88, 12, 0.25);
-}
-
-.schedule-dates-target-cell {
-  min-width: 0;
-}
-
-.schedule-target-rush-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
-.schedule-target-rush-row .form-input {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.schedule-target-rush-row .schedule-rush-jump-chk {
-  flex: 0 0 auto;
-  margin: 0;
-  white-space: nowrap;
-  font-size: 11px;
-}
-
-.schedule-rush-jump-row {
-  margin-top: 0;
-  margin-bottom: 0;
-}
-
-.schedule-rush-jump-chk {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--t2);
-  cursor: pointer;
-  user-select: none;
-}
-
-.schedule-rush-jump-chk input[type="checkbox"] {
-  width: 14px;
-  height: 14px;
-  margin: 0;
-  cursor: pointer;
-  accent-color: var(--blue);
-}
-
-/* ── 任务树行（表格内） ── */
-.schedule-task-row {
-  background: var(--bg);
-  opacity: 0.96;
-}
-
-.schedule-task-row .schedule-task-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding-left: 8px;
-  font-size: 12px;
-  color: var(--t2);
-}
-
-.schedule-task-branch {
-  display: inline-block;
-  width: 12px;
-  height: 1px;
-  background: var(--border);
-  margin-right: 2px;
-}
-
-.schedule-task-type-tag {
-  font-size: 10px;
-  font-weight: 600;
-  padding: 1px 6px;
-  border-radius: 4px;
-}
-
-.schedule-task-type-tag.dev {
-  background: var(--blue-bg);
-  color: var(--blue);
-}
-
-.schedule-task-type-tag.test {
-  background: var(--orange-bg);
-  color: var(--orange);
-}
-
-.schedule-task-type-tag.release {
-  background: var(--purple-bg);
-  color: var(--purple);
-}
-
-.schedule-tree-toggle--task {
-  margin-left: 4px;
-}
-
-/* ── 研发需求树（integrated-rd-* 组件） ── */
-.integrated-rd-tree {
-  margin-top: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.integrated-rd-tree.compact .integrated-rd-node {
-  margin-bottom: 6px;
-}
-
-.integrated-rd-tree.compact .integrated-rd-node-hdr {
-  padding: 8px 10px;
-}
-
-.integrated-rd-tree.compact .integrated-rd-node-body {
-  padding: 0 10px 8px;
 }
 
 .integrated-rd-tree-empty {
@@ -614,214 +301,7 @@
   margin: 0;
 }
 
-.integrated-rd-toolbar {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.integrated-rd-toolbar .action-btn--sm,
-.integrated-rd-node-hdr .action-btn--sm {
-  flex-shrink: 0;
-}
-
-.integrated-rd-node {
-  border: 1px solid var(--border-lt);
-  border-radius: 8px;
-  background: var(--white);
-  overflow: hidden;
-}
-
-.integrated-rd-note {
-  margin-bottom: 10px;
-  font-size: 11px;
-}
-
-.integrated-rd-draft-section {
-  margin-top: 10px;
-}
-
-.integrated-rd-saved-block {
-  margin-top: 12px;
-  padding-top: 10px;
-  border-top: 1px solid var(--border-lt);
-}
-
-.integrated-rd-node-hdr {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  flex-wrap: wrap;
-}
-
-#scheduleIntegratedModal .integrated-rd-node-hdr .action-btn--sm {
-  flex-shrink: 0;
-}
-
-.integrated-rd-toggle {
-  border: none;
-  background: transparent;
-  padding: 4px;
-  cursor: pointer;
-  color: var(--t2);
-  flex: 0 0 auto;
-}
-
-.integrated-rd-node-summary {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.integrated-rd-summary-line {
-  display: flex;
-  align-items: center;
-  gap: 8px 14px;
-  flex-wrap: wrap;
-}
-
-.integrated-rd-id {
-  font-family: "JetBrains Mono", monospace;
-  font-size: 11px;
-  color: var(--blue);
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
-.integrated-rd-kv {
-  font-size: 11px;
-  color: var(--t2);
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  min-width: 0;
-  white-space: nowrap;
-}
-
-.integrated-rd-kv em {
-  font-style: normal;
-  color: var(--t3);
-  font-size: 10px;
-}
-
-.integrated-rd-kv strong {
-  font-weight: 600;
-  color: var(--t1);
-  font-size: 12px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: min(280px, 36vw);
-}
-
-.integrated-rd-name {
-  cursor: help;
-  flex: 1 1 120px;
-  min-width: 80px;
-}
-
-.integrated-rd-participants,
-.integrated-rd-assignee {
-  cursor: help;
-  max-width: 120px;
-}
-
-.integrated-rd-zentao-meta {
-  font-size: 11px;
-  color: var(--t2);
-  margin: 0 0 8px 28px;
-  padding: 6px 10px;
-  background: var(--blue-bg);
-  border-radius: 6px;
-  border: 1px solid var(--blue-bd);
-}
-
-.integrated-rd-zentao-meta strong {
-  font-weight: 600;
-  color: var(--blue);
-}
-
-.schedule-rd-metrics {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 10px;
-  font-size: 11px;
-  color: var(--t2);
-  line-height: 1.35;
-}
-
-.schedule-rd-metric {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  white-space: nowrap;
-}
-
-.schedule-rd-metric em {
-  font-style: normal;
-  color: var(--t3);
-  font-size: 10px;
-}
-
-.schedule-dev-team-cell {
-  display: inline-block;
-  font-size: 11px;
-  color: var(--t2);
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: var(--bg);
-  border: 1px solid var(--border-lt);
-  white-space: nowrap;
-  max-width: 100px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* ── 按钮尺寸（弹窗内） ── */
-.action-btn--sm {
-  padding: 4px 10px;
-  font-size: 11px;
-  line-height: 1.35;
-  border-radius: 5px;
-}
-
-.action-btn--xs {
-  padding: 2px 7px;
-  font-size: 11px;
-  line-height: 1.2;
-  border-radius: 4px;
-  min-width: 24px;
-}
-
 /* ── 澄清转入：用户故事与研发需求区 ── */
-.transfer-dev-note {
-  padding: 10px 12px;
-  background: var(--blue-bg);
-  border: 1px solid var(--blue-bd);
-  border-radius: 8px;
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--blue);
-  margin-bottom: 12px;
-}
-
-.transfer-dev-top {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: linear-gradient(180deg, #fafbfd 0%, var(--white) 100%);
-  padding: 12px 14px;
-  margin-bottom: 12px;
-}
-
-.transfer-dev-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px 12px;
-}
-
-.transfer-dev-grid .form-group {
-  margin: 0;
-}
-
 .transfer-dev-section {
   margin-top: 12px;
 }
@@ -842,28 +322,6 @@
 .transfer-dev-section-head span {
   font-size: 11px;
   color: var(--t3);
-}
-
-.transfer-dev-story-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-  background: var(--white);
-}
-
-.transfer-dev-story-table th,
-.transfer-dev-story-table td {
-  border: 1px solid var(--border);
-  padding: 8px 10px;
-  text-align: left;
-  vertical-align: top;
-}
-
-.transfer-dev-story-table th {
-  background: var(--bg);
-  font-size: 11px;
-  color: var(--t3);
-  font-weight: 600;
 }
 
 #scheduleIntegratedModal .transfer-dev-story-table {
@@ -888,28 +346,358 @@
   font-weight: 600;
 }
 
-.transfer-story-team {
-  display: inline-block;
+/* ── 研发需求树（rd-node / rd-task 模板组件） ── */
+.rd-task-tree {
+  margin-top: 16px;
+}
+
+.rd-add-node {
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px dashed #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 12px;
+  color: #2563eb;
+  cursor: pointer;
+}
+
+.rd-node {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.rd-node-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border-radius: 6px 6px 0 0;
+}
+
+.rd-node-header--edit {
+  cursor: default;
+}
+
+.rd-node-header--collapsed {
+  border-radius: 6px;
+}
+
+.rd-node-id {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.rd-node-product-name {
+  font-size: 11px;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.rd-node-assignee-display {
+  color: #999;
+  font-size: 11px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.rd-node-role-badge {
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.rd-node-role-badge--main {
+  background: #2563eb;
+}
+
+.rd-node-role-badge--cooperate {
+  background: #ea580c;
+}
+
+.rd-node-role-badge--none {
+  background: #64748b;
+}
+
+.rd-node-product-select,
+.rd-node-title-input,
+.rd-node-assignee-field,
+.rd-task-input,
+.rd-task-select {
+  width: 100%;
+  padding: 4px;
+  border: 1px solid #d1d5db;
+  border-radius: 3px;
+  font-size: 11px;
+  box-sizing: border-box;
+}
+
+.rd-node-product-select,
+.rd-task-select {
+  padding: 3px 4px;
+}
+
+.rd-node-product-select {
+  width: auto;
+  min-width: 100px;
+}
+
+.rd-node-title-input {
+  font-weight: 600;
+}
+
+.rd-node-tasks {
+  padding: 0 14px 10px;
+}
+
+.rd-task-table-head-row {
+  background: #f9fafb;
+}
+
+.rd-task-th {
+  padding: 6px 8px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+  font-weight: 600;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.rd-task-th--project,
+.rd-task-th--execution {
+  width: 120px;
+}
+
+.rd-task-th--type {
+  width: 80px;
+}
+
+.rd-task-th--name {
+  overflow: hidden;
+}
+
+.rd-task-th--owner {
+  width: 140px;
+}
+
+.rd-task-th--hours {
+  width: 60px;
+}
+
+.rd-task-th--start,
+.rd-task-th--end {
+  width: 100px;
+}
+
+.rd-task-th--actions {
+  width: 40px;
+}
+
+.rd-task-cell {
+  padding: 6px 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.rd-task-cell--name,
+.rd-task-cell--owner {
+  overflow: hidden;
+}
+
+.rd-task-type-label {
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.rd-task-type-label--devel {
+  color: #2563eb;
+}
+
+.rd-task-type-label--test {
+  color: #ea580c;
+}
+
+.rd-task-type-label--Online {
+  color: #16a34a;
+}
+
+.rd-task-type-label--default {
+  color: #64748b;
+}
+
+.rd-add-task {
+  margin-top: 6px;
+  padding: 4px 12px;
+  border: 1px dashed #d1d5db;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 11px;
+  color: #2563eb;
+  cursor: pointer;
+}
+
+#scheduleIntegratedModal .rd-toggle {
+  border: none;
+  background: none;
+  padding: 8px;
+  cursor: pointer;
+  color: #64748b;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+#scheduleIntegratedModal .rd-toggle:hover {
+  background: #f0f0f0;
+}
+
+#scheduleIntegratedModal .rd-delete-btn,
+#scheduleIntegratedModal .task-delete-btn,
+#scheduleIntegratedModal .rd-edit-btn,
+#scheduleIntegratedModal .task-edit-btn,
+#scheduleIntegratedModal .rd-confirm-btn {
+  border: none;
+  background: none;
+  padding: 8px;
+  cursor: pointer;
+  color: #999;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+#scheduleIntegratedModal .rd-confirm-btn {
+  color: #2563eb;
+}
+
+#scheduleIntegratedModal .rd-delete-btn:hover,
+#scheduleIntegratedModal .task-delete-btn:hover {
+  color: #e53e3e;
+  background: #f0f0f0;
+}
+
+#scheduleIntegratedModal .rd-edit-btn:hover,
+#scheduleIntegratedModal .task-edit-btn:hover {
+  color: #2563eb;
+  background: #f0f0f0;
+}
+
+#scheduleIntegratedModal .rd-confirm-btn:hover {
+  color: #1d4ed8;
+  background: #f0f0f0;
+}
+
+#scheduleIntegratedModal .rd-delete-btn i,
+#scheduleIntegratedModal .task-delete-btn i,
+#scheduleIntegratedModal .rd-edit-btn i,
+#scheduleIntegratedModal .task-edit-btn i,
+#scheduleIntegratedModal .rd-confirm-btn i {
+  font-size: 13px;
+}
+
+#scheduleIntegratedModal .rd-node-actions,
+#scheduleIntegratedModal .task-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+#scheduleIntegratedModal .rd-node-actions {
+  margin-left: auto;
+}
+
+#scheduleIntegratedModal .task-actions {
+  justify-content: flex-end;
+}
+
+#scheduleIntegratedModal .rd-node-title-display {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+}
+
+#scheduleIntegratedModal .rd-node-tasks .rd-task-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+#scheduleIntegratedModal .rd-node-tasks .rd-task-table th:nth-child(5),
+#scheduleIntegratedModal .rd-node-tasks .rd-task-table td.rd-task-cell-owner {
+  width: 140px;
+}
+
+#scheduleIntegratedModal .rd-node-tasks .rd-task-table td input,
+#scheduleIntegratedModal .rd-node-tasks .rd-task-table td select,
+#scheduleIntegratedModal .rd-node-tasks .rd-task-table td .ui-autocomplete,
+#scheduleIntegratedModal .rd-node-tasks .rd-task-table td .ui-autocomplete-input-wrap {
+  width: 100%;
   max-width: 100%;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--t1);
-  line-height: 1.4;
+  box-sizing: border-box;
 }
 
-.transfer-dev-rd-row-title {
-  font-weight: 600;
-  color: var(--t1);
+#scheduleIntegratedModal .rd-task-row:not(.rd-task-row--editing):not(.rd-task-row--new) td.rd-task-cell-name,
+#scheduleIntegratedModal .rd-task-row:not(.rd-task-row--editing):not(.rd-task-row--new) td.rd-task-cell-owner {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.transfer-dev-rd-row-sub {
-  margin-top: 4px;
-  font-size: 11px;
-  color: var(--t3);
+#scheduleIntegratedModal .rd-node-tasks th:last-child,
+#scheduleIntegratedModal .rd-node-tasks td.rd-task-cell-actions {
+  width: 40px;
+  text-align: right;
 }
 
-.transfer-dev-rd-check {
-  text-align: center;
+#scheduleIntegratedModal .rd-node-tasks input[type="date"] {
+  cursor: pointer;
+  position: relative;
+}
+
+#scheduleIntegratedModal .rd-node-tasks input[type="date"]::-webkit-datetime-edit {
+  color: #aaa;
+}
+
+#scheduleIntegratedModal .rd-node-tasks input[type="date"]:focus::-webkit-datetime-edit,
+#scheduleIntegratedModal .rd-node-tasks input[type="date"].has-value::-webkit-datetime-edit {
+  color: #333;
+}
+
+#scheduleIntegratedModal .rd-node-header--edit .rd-node-title {
+  flex: 1 1 50%;
+  max-width: 50%;
+  min-width: 140px;
+}
+
+#scheduleIntegratedModal .rd-node-header--edit .rd-node-assignee-wrap {
+  flex: 0 0 110px;
+  width: 110px;
+  min-width: 110px;
+}
+
+#scheduleIntegratedModal .rd-node-header--edit .rd-node-assignee-wrap .ui-autocomplete-input-wrap,
+#scheduleIntegratedModal .rd-node-header--edit .rd-node-assignee-wrap .rd-node-assignee-input {
+  width: 100%;
+  max-width: 110px;
+}
+
+#scheduleIntegratedModal .rd-task-owner-cell .ui-autocomplete-input-wrap,
+#scheduleIntegratedModal .rd-task-owner-cell .rd-task-owner-input {
+  width: 100%;
+  max-width: 100%;
 }
 
 /* ── 响应式 ── */
@@ -920,11 +708,5 @@
 
   .schedule-integrated-cell--pad {
     display: none;
-  }
-}
-
-@media (max-width: 1080px) {
-  .transfer-dev-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
