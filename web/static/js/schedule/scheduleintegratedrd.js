@@ -29,6 +29,7 @@
     $node.attr("data-story-title", $.trim(story.title || ""));
     $node.attr("data-assigned-to", $.trim(story.assignedTo || ""));
     $node.attr("data-assigned-to-name", $.trim(story.assignedToName || ""));
+    $node.attr("data-product-name", $.trim(story.productName || ""));
   }
 
   function buildStoryNode(story) {
@@ -114,6 +115,42 @@
     return $.trim(assignedToName || "") || $.trim(assignedTo || "") || "待分配";
   }
 
+  function resolveProductName(productId) {
+    var id = String(productId || "");
+    if (!id) {
+      return "—";
+    }
+    var name = "";
+    (shared.involvedProducts || []).some(function (product) {
+      if (String(product.id || "") === id) {
+        name = $.trim(product.name || "") || id;
+        return true;
+      }
+      return false;
+    });
+    return name || id;
+  }
+
+  function buildProductSelect(selectedId) {
+    var $select = $('<select class="rd-node-product form-select rd-node-product-select"></select>');
+    shared.fillProductSelect($select, shared.involvedProducts, selectedId);
+    return $select;
+  }
+
+  function applyProductChange($node, productId) {
+    var name = resolveProductName(productId);
+    $node.attr("data-product-id", productId || "");
+    $node.attr("data-product-name", name === "—" ? "" : name);
+    $node.find(".rd-node-role-badge").first().replaceWith(shared.buildRoleBadge(productId, shared.mainSystemId));
+    if (!productId) {
+      $node.attr("data-projects", JSON.stringify([]));
+      return;
+    }
+    tasksApi.loadProductProjects(productId, function (projects) {
+      $node.attr("data-projects", JSON.stringify(projects));
+    });
+  }
+
   function closeOtherInlineEdits($exceptNode) {
     $("#scheduleIntegratedModalBody .rd-node--editing").each(function () {
       var $node = $(this);
@@ -137,12 +174,16 @@
     var title = $node.attr("data-story-title") || "";
     var assignedTo = $node.attr("data-assigned-to") || "";
     var assignedToName = $node.attr("data-assigned-to-name") || "";
+    var productId = $node.attr("data-product-id") || "";
     var inputId = "rdStoryOwnerInput" + storyId;
     var hiddenId = "rdStoryOwnerValue" + storyId;
 
     $node.addClass("rd-node--editing");
     var $header = $node.find(".rd-node-header").first();
-    $header.addClass("rd-node-header--edit");
+    $header.addClass("rd-node-header--story-edit");
+
+    $header.find(".rd-node-product-name").replaceWith(buildProductSelect(productId));
+    $header.find(".rd-node-role-badge").replaceWith(shared.buildRoleBadge(productId, shared.mainSystemId));
 
     $header.find(".rd-node-title-display").replaceWith(
       $('<input type="text" class="rd-node-title-input rd-node-title form-input">')
@@ -155,7 +196,7 @@
     var assigneeWrap = shared.cloneTemplateElement("tplRdStoryAssigneeEdit", ".rd-node-assignee-wrap");
     if (!assigneeWrap) {
       $node.removeClass("rd-node--editing");
-      $header.removeClass("rd-node-header--edit");
+      $header.removeClass("rd-node-header--story-edit");
       return;
     }
     $(assigneeWrap).find(".rd-node-assignee-input").attr("id", inputId);
@@ -176,17 +217,26 @@
       return;
     }
 
+    var $header = $node.find(".rd-node-header").first();
     var title = $.trim($node.find(".rd-node-title-input").val() || $node.find(".rd-node-title").val() || "");
     var assignedTo = $.trim($node.find(".rd-node-assignee-value").val() || "");
     var assignedToName = $.trim($node.find(".rd-node-assignee-input").val() || "");
+    var productId = $.trim($header.find(".rd-node-product").val() || $node.attr("data-product-id") || "");
+    var productName = resolveProductName(productId);
 
     if (title) {
       $node.attr("data-story-title", title);
     }
     $node.attr("data-assigned-to", assignedTo);
     $node.attr("data-assigned-to-name", assignedToName);
+    $node.attr("data-product-id", productId);
+    $node.attr("data-product-name", productName === "—" ? "" : productName);
 
-    var $header = $node.find(".rd-node-header").first();
+    $header.find(".rd-node-product").replaceWith(
+      $('<span class="rd-node-product-name"></span>').text(productName || "—")
+    );
+    $header.find(".rd-node-role-badge").replaceWith(shared.buildRoleBadge(productId, shared.mainSystemId));
+
     $header.find(".rd-node-title-input, .rd-node-title").first().replaceWith(
       $('<strong class="rd-node-title-display"></strong>').text(title || "—")
     );
@@ -198,7 +248,7 @@
 
     mountNodeActions($header, "tplRdNodeActionsEdit");
 
-    $header.removeClass("rd-node-header--edit");
+    $header.removeClass("rd-node-header--story-edit");
     $node.removeClass("rd-node--editing");
 
     destroyStoryAssigneePicker("rdStoryOwnerInput" + ($node.attr("data-story-id") || "0"));
@@ -324,12 +374,6 @@
   });
 
   $(document).on("change", "#scheduleIntegratedModalBody .rd-node-product", function () {
-    var $node = $(this).closest(".rd-node");
-    var productId = $(this).val();
-    $node.find(".rd-node-role-badge").first().replaceWith(shared.buildRoleBadge(productId, shared.mainSystemId));
-    tasksApi.loadProductProjects(productId, function (projects) {
-      $node.attr("data-product-id", productId || "");
-      $node.attr("data-projects", JSON.stringify(projects));
-    });
+    applyProductChange($(this).closest(".rd-node"), $(this).val());
   });
 })(jQuery);

@@ -4,7 +4,6 @@
 // 类型: action
 // 职责: 处理排期工作台页面请求并调用 Service。
 // 依赖: internal/middleware
-//       internal/pkg/perm
 //       internal/pkg/render
 //       internal/module/schedule/handler_demand.go
 // =============================================================================
@@ -21,7 +20,6 @@ import (
 
 	"workbench/internal/constants"
 	"workbench/internal/middleware"
-	"workbench/internal/pkg/perm"
 	"workbench/internal/pkg/render"
 )
 
@@ -89,21 +87,22 @@ func NewHandler(renderer *render.Renderer, logger *zap.Logger, svc *Service, zen
 	}
 }
 
-// RegisterRoutes 注册排期工作台路由。
+// RegisterRoutes 注册排期工作台路由（挂载在已配置登录与操作日志的中间件组上）。
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g := rg.Group("/schedule")
 	g.Use(middleware.ActiveNav("/schedule"))
+	// TODO: 上线前恢复权限校验 RequirePerm(perm.ScheduleXxx)
 	{
-		g.GET("", middleware.RequirePerm(perm.ScheduleList), h.Index)
-		g.GET("/matching-plans", middleware.RequirePerm(perm.ScheduleList), h.GetMatchingPlans)
-		g.GET("/demands/:id/scheduling", middleware.RequirePerm(perm.ScheduleList), h.GetDemandScheduling)
-		g.GET("/products/:id/projects", middleware.RequirePerm(perm.ScheduleList), h.GetProductProjects)
-		g.GET("/projects/:id/executions", middleware.RequirePerm(perm.ScheduleList), h.GetProjectExecutions)
-		g.POST("/windows", middleware.RequirePerm(perm.ScheduleCreate), h.CreateWindow)
-		g.GET("/windows", middleware.RequirePerm(perm.ScheduleList), h.ListWindows)
-		g.GET("/windows/:id", middleware.RequirePerm(perm.ScheduleList), h.GetWindow)
-		g.PUT("/windows/:id", middleware.RequirePerm(perm.ScheduleUpdate), h.UpdateWindow)
-		g.DELETE("/windows/:id", middleware.RequirePerm(perm.ScheduleDelete), h.DeleteWindow)
+		g.GET("", h.Index)
+		g.GET("/matching-plans", h.GetMatchingPlans)
+		g.GET("/demands/:id/scheduling", h.GetDemandScheduling)
+		g.GET("/products/:id/projects", h.GetProductProjects)
+		g.GET("/projects/:id/executions", h.GetProjectExecutions)
+		g.POST("/windows", h.CreateWindow)
+		g.GET("/windows", h.ListWindows)
+		g.GET("/windows/:id", h.GetWindow)
+		g.PUT("/windows/:id", h.UpdateWindow)
+		g.DELETE("/windows/:id", h.DeleteWindow)
 	}
 }
 

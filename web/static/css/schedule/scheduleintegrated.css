@@ -430,8 +430,10 @@
   cursor: pointer;
 }
 
-.rd-node-header--edit {
+.rd-node-header--edit,
+.rd-node-header--story-edit {
   cursor: default;
+  flex-wrap: nowrap;
 }
 
 .rd-node-header--collapsed {
@@ -486,12 +488,10 @@
   background: #64748b;
 }
 
-.rd-node-product-select,
 .rd-node-title-input,
 .rd-node-assignee-field,
 .rd-task-input,
 .rd-task-select,
-#scheduleIntegratedModal .rd-node-product-select,
 #scheduleIntegratedModal .rd-node-title-input,
 #scheduleIntegratedModal .rd-node-assignee-field,
 #scheduleIntegratedModal .rd-task-input,
@@ -509,11 +509,18 @@
 .rd-node-product-select,
 .rd-task-select {
   padding: 3px 4px;
+  border: 1px solid #d1d5db;
+  border-radius: 3px;
+  font-size: 11px;
+  box-sizing: border-box;
+  background: #fff;
+  color: var(--t1);
 }
 
 .rd-node-product-select {
   width: auto;
   min-width: 100px;
+  flex-shrink: 0;
 }
 
 .rd-node-title-input {
@@ -752,20 +759,33 @@
   color: #333;
 }
 
-#scheduleIntegratedModal .rd-node-header--edit .rd-node-title {
-  flex: 1 1 50%;
-  max-width: 50%;
+#scheduleIntegratedModal .rd-node-header--edit .rd-node-title,
+#scheduleIntegratedModal .rd-node-header--story-edit .rd-node-title {
+  flex: 1 1 auto;
   min-width: 140px;
+  width: auto;
+  max-width: none;
 }
 
-#scheduleIntegratedModal .rd-node-header--edit .rd-node-assignee-wrap {
+#scheduleIntegratedModal .rd-node-header--edit .rd-node-product-select,
+#scheduleIntegratedModal .rd-node-header--story-edit .rd-node-product-select {
+  width: auto;
+  min-width: 100px;
+  max-width: 180px;
+  flex: 0 0 auto;
+}
+
+#scheduleIntegratedModal .rd-node-header--edit .rd-node-assignee-wrap,
+#scheduleIntegratedModal .rd-node-header--story-edit .rd-node-assignee-wrap {
   flex: 0 0 110px;
   width: 110px;
   min-width: 110px;
 }
 
 #scheduleIntegratedModal .rd-node-header--edit .rd-node-assignee-wrap .ui-autocomplete-input-wrap,
-#scheduleIntegratedModal .rd-node-header--edit .rd-node-assignee-wrap .rd-node-assignee-input {
+#scheduleIntegratedModal .rd-node-header--edit .rd-node-assignee-wrap .rd-node-assignee-input,
+#scheduleIntegratedModal .rd-node-header--story-edit .rd-node-assignee-wrap .ui-autocomplete-input-wrap,
+#scheduleIntegratedModal .rd-node-header--story-edit .rd-node-assignee-wrap .rd-node-assignee-input {
   width: 100%;
   max-width: 110px;
 }
