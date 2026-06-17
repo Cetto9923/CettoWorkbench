@@ -717,7 +717,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
       <th class="rd-task-th rd-task-th--hours" style="width:60px">预估(h)</th>
       <th class="rd-task-th rd-task-th--start" style="width:100px">开始</th>
       <th class="rd-task-th rd-task-th--end" style="width:100px">截止</th>
-      <th class="rd-task-th rd-task-th--actions" style="width:40px">操作</th>
+      <th class="rd-task-th rd-task-th--actions" style="width:48px">操作</th>
     </tr>
   </thead>
 </template>
@@ -794,8 +794,10 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
       <span class="rd-node-role-badge"></span>
       <span class="rd-node-product-name"></span>
       <strong class="rd-node-title-display"></strong>
-      <span class="rd-node-assignee-display"></span>
-      <span class="rd-node-actions"></span>
+      <span class="rd-node-header-right">
+        <span class="rd-node-assignee-display"></span>
+        <span class="rd-node-actions"></span>
+      </span>
     </div>
   </div>
 </template>
@@ -807,11 +809,13 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
       <span class="rd-node-role-badge"></span>
       <select class="rd-node-product form-select rd-node-product-select"><option value="">请选择系统</option></select>
       <input type="text" class="rd-node-title form-input rd-node-title-input" placeholder="研发需求名称">
-      <span class="rd-node-assignee-wrap">
-        <input type="text" class="rd-node-assignee-input form-input rd-node-assignee-field" placeholder="指派人" autocomplete="off">
-        <input type="hidden" class="rd-node-assignee-value">
+      <span class="rd-node-header-right">
+        <span class="rd-node-assignee-wrap">
+          <input type="text" class="rd-node-assignee-input form-input rd-node-assignee-field" placeholder="指派人" autocomplete="off">
+          <input type="hidden" class="rd-node-assignee-value">
+        </span>
+        <span class="rd-node-actions"></span>
       </span>
-      <span class="rd-node-actions"></span>
     </div>
   </div>
 </template>
@@ -819,6 +823,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
 <template id="tplRdNodeActionsEdit">
   <span class="rd-node-actions">
     <button type="button" class="rd-edit-btn" title="编辑"><i class="fas fa-pen"></i></button>
+    <button type="button" class="rd-delete-btn" title="删除此研发需求"><i class="fas fa-trash-can"></i></button>
   </span>
 </template>
 

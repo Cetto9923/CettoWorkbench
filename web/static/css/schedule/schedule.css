@@ -102,6 +102,16 @@
   background: #15803d;
 }
 
+.batch-modal .action-btn.danger {
+  background: var(--red);
+  border-color: var(--red);
+  color: #fff;
+}
+
+.batch-modal .action-btn.danger:hover {
+  background: #b91c1c;
+}
+
 #page-schedule .action-btn--disabled {
   opacity: 0.55;
   cursor: not-allowed;
