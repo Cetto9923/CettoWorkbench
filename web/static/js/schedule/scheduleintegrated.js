@@ -3,7 +3,340 @@
 
   var shared = window.ScheduleIntegratedShared;
   var rdApi = window.ScheduleIntegratedRd;
+  var tasksApi = window.ScheduleIntegratedTasks;
   var MODAL_IDS = ["scheduleIntegratedModal", "scheduleIntegratedModalOverlay"];
+  var SAVE_BTN_DEFAULT_TEXT = "确认并同步";
+  var SAVE_BTN_LOADING_TEXT = "保存中...";
+
+  function parsePositiveInt(value) {
+    var num = parseInt(String(value == null ? "" : value), 10);
+    return isNaN(num) || num <= 0 ? 0 : num;
+  }
+
+  function parseEstimateValue(value) {
+    var raw = $.trim(value == null ? "" : String(value));
+    if (!raw) {
+      return 0;
+    }
+    var num = Number(raw);
+    return isNaN(num) ? 0 : num;
+  }
+
+  function toast(message, type) {
+    if (typeof window.showToast === "function") {
+      window.showToast(message, type || "success");
+      return;
+    }
+    window.alert(message);
+  }
+
+  function flushInlineEdits() {
+    if (rdApi && rdApi.exitStoryEditMode) {
+      $("#scheduleIntegratedModalBody .rd-node--editing").each(function () {
+        rdApi.exitStoryEditMode($(this));
+      });
+    }
+    if (tasksApi && tasksApi.exitEditMode) {
+      tasksApi.exitEditMode($("#scheduleIntegratedModalBody .rd-task-row--editing"));
+    }
+  }
+
+  function readStoryTitle($node) {
+    var $header = $node.find(".rd-node-header").first();
+    var fromInput = $.trim($header.find(".rd-node-title-input, .rd-node-title").first().val() || "");
+    if (fromInput) {
+      return fromInput;
+    }
+    return $.trim($node.attr("data-story-title") || $header.find(".rd-node-title-display").first().text() || "");
+  }
+
+  function readStoryProductId($node) {
+    var $header = $node.find(".rd-node-header").first();
+    var fromSelect = $.trim($header.find(".rd-node-product").first().val() || "");
+    if (fromSelect) {
+      return parsePositiveInt(fromSelect);
+    }
+    return parsePositiveInt($node.attr("data-product-id"));
+  }
+
+  function readStoryAssignedTo($node) {
+    var $header = $node.find(".rd-node-header").first();
+    var fromHidden = $.trim($header.find(".rd-node-assignee-value").first().val() || "");
+    if (fromHidden) {
+      return fromHidden;
+    }
+    return $.trim($node.attr("data-assigned-to") || "");
+  }
+
+  function isDraftStoryEmpty($node) {
+    var storyId = parsePositiveInt($node.attr("data-story-id"));
+    if (storyId > 0) {
+      return false;
+    }
+    return !readStoryTitle($node) && !readStoryProductId($node);
+  }
+
+  function collectTaskFromRow($row) {
+    var $row = $($row);
+    var taskId = parsePositiveInt($row.attr("data-task-id"));
+    var isNewRow = $row.hasClass("rd-task-row--new") || taskId === 0;
+    var isEditing = $row.hasClass("rd-task-row--editing") || $row.hasClass("rd-task-row--new");
+
+    var executionId = 0;
+    var type = "";
+    var name = "";
+    var assignedTo = "";
+    var estimate = 0;
+    var estStarted = "";
+    var deadline = "";
+
+    if (isEditing) {
+      executionId = parsePositiveInt($row.find(".rd-task-execution-select").first().val() || $row.attr("data-execution-id"));
+      type = $.trim($row.find(".rd-task-type").first().val() || $row.attr("data-task-type") || "");
+      name = $.trim($row.find(".rd-task-name").first().val() || $row.attr("data-task-name") || "");
+      assignedTo = $.trim($row.find(".rd-node-assignee-value").first().val() || $row.attr("data-assigned-to") || "");
+      estimate = parseEstimateValue($row.find(".rd-task-hours").first().val() || $row.attr("data-estimate"));
+      estStarted = $.trim($row.find(".rd-task-start").first().val() || $row.attr("data-est-started") || "");
+      deadline = $.trim($row.find(".rd-task-end").first().val() || $row.attr("data-deadline") || "");
+    } else {
+      executionId = parsePositiveInt($row.attr("data-execution-id"));
+      type = $.trim($row.attr("data-task-type") || "");
+      name = $.trim($row.attr("data-task-name") || "");
+      assignedTo = $.trim($row.attr("data-assigned-to") || "");
+      estimate = parseEstimateValue($row.attr("data-estimate"));
+      estStarted = $.trim($row.attr("data-est-started") || "");
+      deadline = $.trim($row.attr("data-deadline") || "");
+    }
+
+    var task = {
+      action: isNewRow ? "new" : "edit",
+      executionId: executionId,
+      type: type,
+      name: name,
+      assignedTo: assignedTo,
+      estimate: estimate,
+      estStarted: estStarted,
+      deadline: deadline,
+    };
+    if (!isNewRow) {
+      task.id = taskId;
+    }
+    return task;
+  }
+
+  function isNewTaskRowEmpty(task) {
+    return !$.trim(task.name || "") && !task.executionId;
+  }
+
+  function collectDeletedTasksForStory(storyId) {
+    var tasks = [];
+    (shared.deletedTaskIds || []).forEach(function (entry) {
+      if (!entry || entry.storyId !== storyId || !entry.taskId) {
+        return;
+      }
+      tasks.push({
+        action: "delete",
+        id: entry.taskId,
+      });
+    });
+    return tasks;
+  }
+
+  function collectTasksFromNode($node, storyId) {
+    var tasks = [];
+    var seenDeleteIds = {};
+
+    $node.find(".rd-task-body tr").each(function () {
+      var task = collectTaskFromRow(this);
+      if (task.action === "new" && isNewTaskRowEmpty(task)) {
+        return;
+      }
+      tasks.push(task);
+    });
+
+    collectDeletedTasksForStory(storyId).forEach(function (task) {
+      if (seenDeleteIds[task.id]) {
+        return;
+      }
+      seenDeleteIds[task.id] = true;
+      var exists = tasks.some(function (item) {
+        return item.id === task.id;
+      });
+      if (!exists) {
+        tasks.push(task);
+      }
+    });
+
+    return tasks;
+  }
+
+  function collectStoryFromNode($node) {
+    var storyId = parsePositiveInt($node.attr("data-story-id"));
+    var isNew = $node.attr("data-new") === "true" || storyId === 0;
+
+    if (isNew && isDraftStoryEmpty($node)) {
+      return null;
+    }
+
+    var story = {
+      productId: readStoryProductId($node),
+      title: readStoryTitle($node),
+      assignedTo: readStoryAssignedTo($node),
+      estimate: parseEstimateValue($node.attr("data-estimate")),
+      spec: $.trim($node.attr("data-spec") || ""),
+      tasks: [],
+    };
+
+    if (isNew) {
+      story.action = "new";
+    } else {
+      story.action = "edit";
+      story.id = storyId;
+    }
+
+    story.tasks = collectTasksFromNode($node, storyId);
+    return story;
+  }
+
+  function collectSchedulingData() {
+    var data = {
+      windowId: parsePositiveInt($("#scheduleIntegratedWindowSelect").val()),
+      rd: $.trim($("#scheduleIntRDValue").val() || ""),
+      qd: $.trim($("#scheduleIntQDValue").val() || ""),
+      accepter: $.trim($("#scheduleIntAccepterValue").val() || ""),
+      developFinish: $.trim($("#scheduleIntegratedDevelopFinish").val() || ""),
+      testFinish: $.trim($("#scheduleIntegratedTestFinish").val() || ""),
+      acceptancedDate: $.trim($("#scheduleIntegratedAcceptancedDate").val() || ""),
+      stories: [],
+    };
+
+    $("#rdTreeNodes .rd-node").each(function () {
+      var story = collectStoryFromNode($(this));
+      if (story) {
+        data.stories.push(story);
+      }
+    });
+
+    var existingStoryIds = {};
+    data.stories.forEach(function (story) {
+      if (story.id) {
+        existingStoryIds[story.id] = true;
+      }
+    });
+
+    (shared.deletedStoryIds || []).forEach(function (storyId) {
+      if (!storyId || existingStoryIds[storyId]) {
+        return;
+      }
+      data.stories.push({
+        action: "delete",
+        id: storyId,
+        tasks: [],
+      });
+    });
+
+    return data;
+  }
+
+  function validateSchedulingData(data) {
+    if (!data.windowId) {
+      return "请选择版本窗口";
+    }
+
+    for (var i = 0; i < data.stories.length; i++) {
+      var story = data.stories[i];
+      if (story.action === "new") {
+        if (!$.trim(story.title || "")) {
+          return "新建的研发需求必须填写标题";
+        }
+        if (!story.productId) {
+          return "新建的研发需求必须选择系统";
+        }
+      }
+      if (story.action === "delete") {
+        continue;
+      }
+      for (var j = 0; j < (story.tasks || []).length; j++) {
+        var task = story.tasks[j];
+        if (task.action !== "new") {
+          continue;
+        }
+        if (!$.trim(task.name || "")) {
+          return "新建的任务必须填写名称";
+        }
+        if (!task.executionId) {
+          return "新建的任务必须选择执行";
+        }
+      }
+    }
+
+    return "";
+  }
+
+  function setSaveButtonLoading(loading) {
+    var $btn = $("#scheduleIntegratedSaveBtn");
+    if (!$btn.length) {
+      return;
+    }
+    if (loading) {
+      if (!$btn.data("default-text")) {
+        $btn.data("default-text", $.trim($btn.text()) || SAVE_BTN_DEFAULT_TEXT);
+      }
+      $btn.prop("disabled", true).text(SAVE_BTN_LOADING_TEXT);
+      return;
+    }
+    var defaultText = $btn.data("default-text") || SAVE_BTN_DEFAULT_TEXT;
+    $btn.prop("disabled", false).text(defaultText);
+  }
+
+  function saveScheduling() {
+    if (!shared || !shared.currentDemandId) {
+      toast("业需 ID 无效，请关闭弹窗后重试", "error");
+      return;
+    }
+
+    flushInlineEdits();
+
+    var data = collectSchedulingData();
+    var validationError = validateSchedulingData(data);
+    if (validationError) {
+      toast(validationError, "error");
+      return;
+    }
+
+    setSaveButtonLoading(true);
+
+    var fetchFn = window.scheduleFetch;
+    if (typeof fetchFn !== "function") {
+      setSaveButtonLoading(false);
+      toast("保存功能未加载，请刷新页面后重试", "error");
+      return;
+    }
+
+    fetchFn("/schedule/demands/" + shared.currentDemandId + "/save-scheduling", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    })
+      .then(function (resp) {
+        return resp.json();
+      })
+      .then(function (result) {
+        if (result && result.success) {
+          toast("保存成功", "success");
+          closeScheduleIntegratedModal();
+          window.location.reload();
+          return;
+        }
+        toast((result && result.message) || "保存失败", "error");
+      })
+      .catch(function (err) {
+        toast("保存失败: " + (err && err.message ? err.message : "请稍后重试"), "error");
+      })
+      .finally(function () {
+        setSaveButtonLoading(false);
+      });
+  }
 
   function extractDemandID($btn) {
     var raw = $btn.data("demand-id");
@@ -44,19 +377,16 @@
 
     window.initAutocomplete("scheduleIntRDInput", "scheduleIntRDValue", items, {
       placeholder: placeholder,
-      maxShow: 50,
       value: data.rd,
       label: data.rdName,
     });
     window.initAutocomplete("scheduleIntQDInput", "scheduleIntQDValue", items, {
       placeholder: placeholder,
-      maxShow: 50,
       value: data.qd,
       label: data.qdName,
     });
     window.initAutocomplete("scheduleIntAccepterInput", "scheduleIntAccepterValue", items, {
       placeholder: placeholder,
-      maxShow: 50,
       value: data.accepter,
       label: data.accepterName,
     });
@@ -256,6 +586,9 @@
         fillSchedulingDetail(resp);
         if (resp.id) {
           $("#scheduleIntegratedModalTitle").text("排期一体化办理 · REQ-" + resp.id);
+          if (shared) {
+            shared.currentDemandId = parsePositiveInt(resp.id);
+          }
         }
       })
       .fail(function () {
@@ -286,6 +619,8 @@
       shared.productExecutionsMap = {};
       shared.taskRowSeq = 0;
       shared.manualNodeSeq = 0;
+      shared.currentDemandId = 0;
+      shared.resetDeletedRecords();
     }
   }
 
@@ -323,6 +658,10 @@
     resetIntegratedForm();
     fillModalHeader(ctx);
 
+    if (shared) {
+      shared.currentDemandId = demandID;
+    }
+
     if (typeof window.openShowModals === "function") {
       window.openShowModals(MODAL_IDS);
     }
@@ -351,4 +690,8 @@
   });
 
   $(document).on("change", "#scheduleIntegratedWindowSelect", syncPlanDateFromWindow);
+
+  $("#scheduleIntegratedSaveBtn").on("click", function () {
+    saveScheduling();
+  });
 })(jQuery);

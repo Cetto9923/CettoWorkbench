@@ -66,6 +66,7 @@
     }
     var $node = $(node);
     $node.attr("data-node-id", nodeId);
+    $node.attr("data-new", "true");
     $node.attr("data-product-id", defaultProductId || "");
 
     var $header = $node.find(".rd-node-header").first();
@@ -85,30 +86,10 @@
     return node;
   }
 
-  function destroyStoryAssigneePicker(inputId) {
-    if (!inputId || typeof window.destroyAutocomplete !== "function") {
-      return;
-    }
-    window.destroyAutocomplete(inputId);
-  }
-
-  function initStoryAssigneePicker(inputId, hiddenId, assignedTo, assignedToName) {
-    if (typeof window.initAutocomplete !== "function" || !inputId || !hiddenId) {
-      return;
-    }
-    destroyStoryAssigneePicker(inputId);
-    window.initAutocomplete(inputId, hiddenId, shared.toAutocompleteItems(shared.schedulingUsers), {
-      placeholder: "输入姓名或工号搜索",
-      maxShow: 50,
-      value: assignedTo || "",
-      label: assignedToName || "",
-    });
-  }
-
   function initDraftNodePickers($node) {
     var inputId = $node.find(".rd-node-assignee-input").attr("id");
     var hiddenId = $node.find(".rd-node-assignee-value").attr("id");
-    initStoryAssigneePicker(inputId, hiddenId, "", "");
+    shared.initStoryAssigneePicker(inputId, hiddenId, "", "");
   }
 
   function assigneeDisplayText(assignedToName, assignedTo) {
@@ -191,7 +172,7 @@
         .val(title)
     );
 
-    destroyStoryAssigneePicker(inputId);
+    shared.destroyStoryAssigneePicker(inputId);
 
     var assigneeWrap = shared.cloneTemplateElement("tplRdStoryAssigneeEdit", ".rd-node-assignee-wrap");
     if (!assigneeWrap) {
@@ -208,7 +189,7 @@
       $header.find(".rd-edit-btn").replaceWith(confirmBtn);
     }
 
-    initStoryAssigneePicker(inputId, hiddenId, assignedTo, assignedToName);
+    shared.initStoryAssigneePicker(inputId, hiddenId, assignedTo, assignedToName);
     $node.find(".rd-node-title-input, .rd-node-title").first().trigger("focus");
   }
 
@@ -251,7 +232,7 @@
     $header.removeClass("rd-node-header--story-edit");
     $node.removeClass("rd-node--editing");
 
-    destroyStoryAssigneePicker("rdStoryOwnerInput" + ($node.attr("data-story-id") || "0"));
+    shared.destroyStoryAssigneePicker("rdStoryOwnerInput" + ($node.attr("data-story-id") || "0"));
   }
 
   function updateTreeEmptyState() {
@@ -287,6 +268,7 @@
     shared.productProjectsMap = {};
     shared.manualNodeSeq = 0;
     shared.taskRowSeq = 0;
+    shared.resetDeletedRecords();
     $("#rdTreeNodes").empty();
     $("#rdTreeEmpty").show();
   }
@@ -313,6 +295,10 @@
   }
 
   function removeRdNode($node) {
+    var storyId = parseInt(String($node.attr("data-story-id") || ""), 10);
+    if (!isNaN(storyId) && storyId > 0) {
+      shared.deletedStoryIds.push(storyId);
+    }
     $node.remove();
     updateTreeEmptyState();
   }

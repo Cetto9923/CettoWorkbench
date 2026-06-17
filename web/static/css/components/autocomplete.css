@@ -55,7 +55,7 @@
   top: calc(100% + 4px);
   left: 0;
   width: 100%;
-  z-index: 700;
+  z-index: 9999;
   max-height: 200px;
   overflow-y: auto;
   overflow-x: hidden;
@@ -67,6 +67,14 @@
 
 .ui-autocomplete-dropdown.is-open {
   display: block;
+}
+
+.ui-autocomplete-dropdown--floating {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: auto;
+  z-index: 99999;
 }
 
 .ui-autocomplete-option {

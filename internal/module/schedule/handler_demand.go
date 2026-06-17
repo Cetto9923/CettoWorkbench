@@ -266,6 +266,52 @@ func (h *Handler) GetDemandScheduling(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
+// SaveScheduling 保存排期一体化弹窗数据并同步禅道（JSON）。
+func (h *Handler) SaveScheduling(c *gin.Context) {
+	demandID, ok := parseDemandID(c)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "参数错误",
+		})
+		return
+	}
+
+	var req SaveSchedulingReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "参数错误",
+		})
+		return
+	}
+	if errs := req.Validate(); len(errs) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"success": false,
+			"message": formatFieldErrors(errs),
+			"errors":  errs,
+		})
+		return
+	}
+
+	actor := middleware.CurrentUser(c)
+	if err := h.svc.SaveScheduling(c.Request.Context(), actor, demandID, &req); err != nil {
+		if h.logger != nil {
+			h.logger.Error("save demand scheduling failed",
+				zap.Error(err),
+				zap.Uint("demand_id", demandID),
+			)
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true})
+}
+
 // GetProjectExecutions 返回项目下的执行列表（JSON）。
 func (h *Handler) GetProjectExecutions(c *gin.Context) {
 	projectID, ok := parseProjectID(c)

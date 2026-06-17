@@ -252,7 +252,7 @@
 }
 
 #scheduleIntegratedModal .ui-autocomplete-dropdown {
-  z-index: 700;
+  z-index: 99999;
 }
 
 /* ── 版本窗口 / 预计上线组合控件 ── */
@@ -413,7 +413,6 @@
   border-radius: 6px;
   margin-bottom: 12px;
   background: #fff;
-  overflow: hidden;
 }
 
 .rd-node-header {
@@ -582,6 +581,11 @@
 .rd-task-cell--name,
 .rd-task-cell--owner {
   overflow: hidden;
+}
+
+.rd-task-row--new .rd-task-cell--owner,
+.rd-task-row--editing .rd-task-cell--owner {
+  overflow: visible;
 }
 
 .rd-task-type-label {
@@ -790,8 +794,9 @@
   max-width: 110px;
 }
 
+#scheduleIntegratedModal .rd-task-owner-cell .rd-node-assignee-wrap,
 #scheduleIntegratedModal .rd-task-owner-cell .ui-autocomplete-input-wrap,
-#scheduleIntegratedModal .rd-task-owner-cell .rd-task-owner-input {
+#scheduleIntegratedModal .rd-task-owner-cell .rd-node-assignee-input {
   width: 100%;
   max-width: 100%;
 }

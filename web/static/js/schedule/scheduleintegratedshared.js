@@ -66,8 +66,16 @@
     productExecutionsMap: {},
     taskRowSeq: 0,
     manualNodeSeq: 0,
+    currentDemandId: 0,
+    deletedStoryIds: [],
+    deletedTaskIds: [],
     taskTypeOptions: taskTypeOptions,
     taskTypeLabels: taskTypeLabels,
+
+    resetDeletedRecords: function () {
+      this.deletedStoryIds = [];
+      this.deletedTaskIds = [];
+    },
 
     cloneTemplate: cloneTemplate,
     cloneTemplateElement: cloneTemplateElement,
@@ -101,6 +109,25 @@
         .filter(function (item) {
           return !!item.value;
         });
+    },
+
+    destroyStoryAssigneePicker: function (inputId) {
+      if (!inputId || typeof window.destroyAutocomplete !== "function") {
+        return;
+      }
+      window.destroyAutocomplete(inputId);
+    },
+
+    initStoryAssigneePicker: function (inputId, hiddenId, assignedTo, assignedToName) {
+      if (typeof window.initAutocomplete !== "function" || !inputId || !hiddenId) {
+        return;
+      }
+      this.destroyStoryAssigneePicker(inputId);
+      window.initAutocomplete(inputId, hiddenId, this.toAutocompleteItems(this.schedulingUsers), {
+        placeholder: "输入姓名或工号搜索",
+        value: assignedTo || "",
+        label: assignedToName || "",
+      });
     },
 
     taskTypeLabel: function (type) {

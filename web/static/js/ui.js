@@ -269,6 +269,92 @@
     state.open = false;
   }
 
+  function resolveAutocompleteDropdownPortal() {
+    return document.body;
+  }
+
+  function positionAutocompleteDropdown(state) {
+    var input = state.input;
+    var dropdown = state.dropdown;
+    if (!input || !dropdown) {
+      return;
+    }
+    var rect = input.getBoundingClientRect();
+    dropdown.style.position = "fixed";
+    dropdown.style.left = rect.left + "px";
+    dropdown.style.top = rect.bottom + "px";
+    dropdown.style.width = rect.width + "px";
+    dropdown.style.zIndex = "99999";
+  }
+
+  function ensureAutocompleteDropdown(input, inputId) {
+    var wrap = input.closest(".ui-autocomplete-input-wrap");
+    if (wrap) {
+      var legacy = wrap.querySelector(".ui-autocomplete-dropdown");
+      if (legacy) {
+        legacy.remove();
+      }
+    }
+
+    var portal = resolveAutocompleteDropdownPortal();
+    var dropdown = portal.querySelector('.ui-autocomplete-dropdown[data-autocomplete-for="' + inputId + '"]');
+    if (!dropdown) {
+      dropdown = document.createElement("div");
+      dropdown.className = "ui-autocomplete-dropdown ui-autocomplete-dropdown--floating";
+      dropdown.setAttribute("role", "listbox");
+      dropdown.setAttribute("data-autocomplete-for", inputId);
+      dropdown.addEventListener("mousedown", function (ev) {
+        ev.stopPropagation();
+      });
+      portal.appendChild(dropdown);
+    }
+    return dropdown;
+  }
+
+  function isModalScrollTarget(target) {
+    if (!target || !target.closest) {
+      return false;
+    }
+    return !!target.closest(".batch-modal-body, .batch-modal, .modal, .drawer-body");
+  }
+
+  function bindAutocompleteReposition(state) {
+    if (state.repositionBound) {
+      return;
+    }
+    state.repositionBound = true;
+    state.repositionHandler = function () {
+      if (state.open) {
+        positionAutocompleteDropdown(state);
+      }
+    };
+    state.modalScrollHandler = function (ev) {
+      if (!state.open) {
+        return;
+      }
+      if (isModalScrollTarget(ev.target)) {
+        closeAutocomplete(state);
+      }
+    };
+    window.addEventListener("resize", state.repositionHandler);
+    document.addEventListener("scroll", state.modalScrollHandler, true);
+  }
+
+  function unbindAutocompleteReposition(state) {
+    if (!state || !state.repositionBound) {
+      return;
+    }
+    if (state.repositionHandler) {
+      window.removeEventListener("resize", state.repositionHandler);
+    }
+    if (state.modalScrollHandler) {
+      document.removeEventListener("scroll", state.modalScrollHandler, true);
+    }
+    state.repositionBound = false;
+    state.repositionHandler = null;
+    state.modalScrollHandler = null;
+  }
+
   function closeAllAutocompletes(exceptInputId) {
     Object.keys(autocompleteInstances).forEach(function (inputId) {
       if (exceptInputId && inputId === exceptInputId) {
@@ -295,6 +381,7 @@
       dropdown.classList.add("is-open");
       state.open = true;
       state.filteredItems = [];
+      positionAutocompleteDropdown(state);
       return;
     }
 
@@ -326,6 +413,7 @@
     dropdown.classList.add("is-open");
     state.open = true;
     state.filteredItems = matches;
+    positionAutocompleteDropdown(state);
   }
 
   function setActiveAutocompleteOption(state, index) {
@@ -393,14 +481,6 @@
       wrap.appendChild(clearBtn);
     }
 
-    var dropdown = wrap.querySelector(".ui-autocomplete-dropdown");
-    if (!dropdown) {
-      dropdown = document.createElement("div");
-      dropdown.className = "ui-autocomplete-dropdown";
-      dropdown.setAttribute("role", "listbox");
-      wrap.appendChild(dropdown);
-    }
-
     if (hidden.parentElement !== host) {
       host.appendChild(hidden);
     }
@@ -409,7 +489,6 @@
       host: host,
       wrap: wrap,
       clearBtn: clearBtn,
-      dropdown: dropdown,
     };
   }
 
@@ -429,6 +508,7 @@
     });
 
     state.input.addEventListener("focus", function () {
+      positionAutocompleteDropdown(state);
       openAutocompleteDropdown(state);
     });
 
@@ -495,6 +575,7 @@
     if (!structure) {
       return null;
     }
+    var dropdown = ensureAutocompleteDropdown(input, inputId);
 
     return {
       inputId: inputId,
@@ -502,13 +583,16 @@
       hidden: hidden,
       host: structure.host,
       clearBtn: structure.clearBtn,
-      dropdown: structure.dropdown,
+      dropdown: dropdown,
       items: [],
       filteredItems: [],
-      maxShow: 50,
+      maxShow: 1000,
       activeIndex: -1,
       open: false,
       bound: false,
+      repositionBound: false,
+      repositionHandler: null,
+      modalScrollHandler: null,
     };
   }
 
@@ -529,16 +613,23 @@
     options = options || {};
     var state = autocompleteInstances[inputId];
     if (!state || state.input !== input || state.hidden !== hidden) {
+      if (state) {
+        unbindAutocompleteReposition(state);
+        if (state.dropdown && state.dropdown.parentElement) {
+          state.dropdown.remove();
+        }
+      }
       state = createAutocompleteState(input, hidden, inputId);
       if (!state) {
         return;
       }
       autocompleteInstances[inputId] = state;
       bindAutocompleteEvents(state);
+      bindAutocompleteReposition(state);
     }
 
     state.items = normalizeAutocompleteItems(items);
-    state.maxShow = options.maxShow > 0 ? options.maxShow : 50;
+    state.maxShow = options.maxShow > 0 ? options.maxShow : 1000;
     if (options.placeholder) {
       state.input.placeholder = options.placeholder;
     }
@@ -573,6 +664,10 @@
       return;
     }
     closeAutocomplete(state);
+    unbindAutocompleteReposition(state);
+    if (state.dropdown && state.dropdown.parentElement) {
+      state.dropdown.remove();
+    }
     delete autocompleteInstances[inputId];
   }
 
@@ -585,7 +680,7 @@
       return;
     }
     closeAllDropdowns();
-    if (!t.closest(".ui-autocomplete")) {
+    if (!t.closest(".ui-autocomplete") && !t.closest(".ui-autocomplete-dropdown")) {
       closeAllAutocompletes();
     }
   });

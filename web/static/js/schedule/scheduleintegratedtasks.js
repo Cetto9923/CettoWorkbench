@@ -243,8 +243,8 @@
       executionName: executionId ? $.trim($executionSelect.find("option:selected").text() || "") : "",
       type: $.trim($row.find(".rd-task-type").val() || ""),
       name: $.trim($row.find(".rd-task-name").val() || ""),
-      assignedTo: $.trim($row.find(".rd-task-owner-value").val() || ""),
-      assignedToName: $.trim($row.find(".rd-task-owner-input").val() || ""),
+      assignedTo: $.trim($row.find(".rd-node-assignee-value").val() || ""),
+      assignedToName: $.trim($row.find(".rd-node-assignee-input").val() || ""),
       estimate: $.trim($row.find(".rd-task-hours").val() || ""),
       estStarted: $.trim($row.find(".rd-task-start").val() || ""),
       deadline: $.trim($row.find(".rd-task-end").val() || ""),
@@ -276,25 +276,37 @@
     });
   }
 
-  function initTaskOwnerPicker($row, inputId, hiddenId, assignedTo, assignedToName) {
-    if (typeof window.initAutocomplete !== "function" || !inputId || !hiddenId) {
-      return;
+  function destroyTaskOwnerPicker($row) {
+    var inputId = $.trim($row.attr("data-owner-input-id") || "");
+    if (inputId) {
+      shared.destroyStoryAssigneePicker(inputId);
     }
-    window.initAutocomplete(inputId, hiddenId, shared.toAutocompleteItems(shared.schedulingUsers), {
-      placeholder: "输入姓名或工号搜索",
-      maxShow: 50,
-      value: assignedTo || "",
-      label: assignedToName || "",
-    });
   }
 
-  function assignOwnerInputIds($row) {
+  function nextTaskOwnerIds($row) {
+    destroyTaskOwnerPicker($row);
     shared.taskRowSeq += 1;
     var inputId = "rdTaskOwnerInput" + shared.taskRowSeq;
     var hiddenId = "rdTaskOwnerValue" + shared.taskRowSeq;
-    $row.find(".rd-task-owner-input").attr("id", inputId);
-    $row.find(".rd-task-owner-value").attr("id", hiddenId);
+    $row.attr("data-owner-input-id", inputId);
+    $row.attr("data-owner-hidden-id", hiddenId);
     return { inputId: inputId, hiddenId: hiddenId };
+  }
+
+  function mountTaskOwnerPicker($row, inputId, hiddenId, assignedTo, assignedToName) {
+    var assigneeWrap = shared.cloneTemplateElement("tplRdStoryAssigneeEdit", ".rd-node-assignee-wrap");
+    if (!assigneeWrap) {
+      return;
+    }
+    $(assigneeWrap).find(".rd-node-assignee-input").attr("id", inputId);
+    $(assigneeWrap).find(".rd-node-assignee-value").attr("id", hiddenId);
+    $row.find(".rd-task-cell-owner").first().empty().append(assigneeWrap);
+    shared.initStoryAssigneePicker(inputId, hiddenId, assignedTo, assignedToName);
+  }
+
+  function clearTaskOwnerPickerMeta($row) {
+    destroyTaskOwnerPicker($row);
+    $row.removeAttr("data-owner-input-id data-owner-hidden-id");
   }
 
   function copyEditCellsFromTemplate($row) {
@@ -307,7 +319,6 @@
       "rd-task-cell-execution",
       "rd-task-cell-type",
       "rd-task-cell-name",
-      "rd-task-cell-owner",
       "rd-task-cell-hours",
       "rd-task-cell-start",
       "rd-task-cell-end",
@@ -356,7 +367,6 @@
     }
     row.setAttribute("data-story-id", storyId || "");
     var $row = $(row);
-    assignOwnerInputIds($row);
     mountTaskActions($row.find(".rd-task-cell-actions"), false);
     return row;
   }
@@ -404,14 +414,14 @@
     $row.find(".rd-task-end").val(task.deadline);
     mountTaskActions($row.find(".rd-task-cell-actions"), false);
 
-    var ownerIds = assignOwnerInputIds($row);
+    var ownerIds = nextTaskOwnerIds($row);
     syncTaskRowDateInputs($row);
 
     ensureNodeProjects($node, function (projects) {
       fillProjectSelect($row.find(".rd-task-project-select"), projects, task.projectId);
       loadRowExecutions($row, task.projectId, task.executionId);
     });
-    initTaskOwnerPicker($row, ownerIds.inputId, ownerIds.hiddenId, task.assignedTo, task.assignedToName);
+    mountTaskOwnerPicker($row, ownerIds.inputId, ownerIds.hiddenId, task.assignedTo, task.assignedToName);
     $row.find(".rd-task-name").first().trigger("focus");
   }
 
@@ -423,6 +433,7 @@
       }
 
       var task = collectTaskFormData($row);
+      clearTaskOwnerPickerMeta($row);
       applyTaskDataAttrs($row, task);
       renderTaskReadCells($row, task);
       mountTaskActions($row.find(".rd-task-cell-actions"), true);
@@ -442,14 +453,13 @@
     ensureNodeProjects($node, function (projects) {
       fillProjectSelect($row.find(".rd-task-project-select"), projects, "");
     });
-    var inputId = $row.find(".rd-task-owner-input").attr("id");
-    var hiddenId = $row.find(".rd-task-owner-value").attr("id");
-    initTaskOwnerPicker($row, inputId, hiddenId, "", "");
+    var ownerIds = nextTaskOwnerIds($row);
+    mountTaskOwnerPicker($row, ownerIds.inputId, ownerIds.hiddenId, "", "");
     syncTaskRowDateInputs($row);
   }
 
   function isAutocompleteTarget(target) {
-    return $(target).closest(".ui-autocomplete").length > 0;
+    return $(target).closest(".ui-autocomplete, .ui-autocomplete-dropdown").length > 0;
   }
 
   function isSelectTarget(target) {
@@ -473,7 +483,18 @@
   $(document).on("click", "#scheduleIntegratedModalBody .task-delete-btn", function (e) {
     e.preventDefault();
     e.stopPropagation();
-    $(this).closest("tr").remove();
+    var $row = $(this).closest("tr");
+    var $node = $row.closest(".rd-node");
+    var storyId = parseInt(String($node.attr("data-story-id") || ""), 10);
+    var taskId = parseInt(String($row.attr("data-task-id") || ""), 10);
+    if (!isNaN(taskId) && taskId > 0) {
+      shared.deletedTaskIds.push({
+        storyId: !isNaN(storyId) && storyId > 0 ? storyId : 0,
+        taskId: taskId,
+      });
+    }
+    clearTaskOwnerPickerMeta($row);
+    $row.remove();
   });
 
   $(document).on("click", "#scheduleIntegratedModalBody .task-edit-btn", function (e) {

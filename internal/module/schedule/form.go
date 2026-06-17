@@ -549,3 +549,93 @@ type ZtStory struct {
 	AssignedTo              string  `gorm:"column:assignedTo"`
 	Estimate                float64 `gorm:"column:estimate"`
 }
+
+// SaveSchedulingReq 排期一体化「确认并同步」保存请求。
+type SaveSchedulingReq struct {
+	WindowID        uint                  `json:"windowId"`
+	RD              string                `json:"rd"`
+	QD              string                `json:"qd"`
+	Accepter        string                `json:"accepter"`
+	DevelopFinish   string                `json:"developFinish"`
+	TestFinish      string                `json:"testFinish"`
+	AcceptancedDate string                `json:"acceptancedDate"`
+	Stories         []SaveSchedulingStory `json:"stories"`
+}
+
+// Validate 校验排期保存请求。
+func (r *SaveSchedulingReq) Validate() []FieldError {
+	var errs []FieldError
+	if r.WindowID == 0 {
+		errs = append(errs, FieldError{Field: "windowId", Message: "版本窗口不能为空"})
+	}
+	for i, story := range r.Stories {
+		prefix := "stories[" + strconv.Itoa(i) + "]"
+		action := strings.TrimSpace(story.Action)
+		switch action {
+		case "new":
+			if story.ProductID == 0 {
+				errs = append(errs, FieldError{Field: prefix + ".productId", Message: "系统不能为空"})
+			}
+			if strings.TrimSpace(story.Title) == "" {
+				errs = append(errs, FieldError{Field: prefix + ".title", Message: "研发需求标题不能为空"})
+			}
+		case "edit", "delete":
+			if story.ID == 0 {
+				errs = append(errs, FieldError{Field: prefix + ".id", Message: "研发需求 ID 无效"})
+			}
+		case "":
+			errs = append(errs, FieldError{Field: prefix + ".action", Message: "操作类型不能为空"})
+		default:
+			errs = append(errs, FieldError{Field: prefix + ".action", Message: "不支持的操作类型"})
+		}
+		for j, task := range story.Tasks {
+			taskPrefix := prefix + ".tasks[" + strconv.Itoa(j) + "]"
+			taskAction := strings.TrimSpace(task.Action)
+			switch taskAction {
+			case "new":
+				if task.ExecutionID == 0 {
+					errs = append(errs, FieldError{Field: taskPrefix + ".executionId", Message: "执行不能为空"})
+				}
+				if strings.TrimSpace(task.Name) == "" {
+					errs = append(errs, FieldError{Field: taskPrefix + ".name", Message: "任务名称不能为空"})
+				}
+			case "edit", "delete":
+				if task.ID == 0 {
+					errs = append(errs, FieldError{Field: taskPrefix + ".id", Message: "任务 ID 无效"})
+				}
+			case "":
+				if action != "delete" {
+					errs = append(errs, FieldError{Field: taskPrefix + ".action", Message: "任务操作类型不能为空"})
+				}
+			default:
+				errs = append(errs, FieldError{Field: taskPrefix + ".action", Message: "不支持的任务操作类型"})
+			}
+		}
+	}
+	return errs
+}
+
+// SaveSchedulingStory 排期保存研发需求条目。
+type SaveSchedulingStory struct {
+	Action     string               `json:"action"`
+	ID         uint                 `json:"id"`
+	ProductID  uint                 `json:"productId"`
+	Title      string               `json:"title"`
+	AssignedTo string               `json:"assignedTo"`
+	Estimate   float64              `json:"estimate"`
+	Spec       string               `json:"spec"`
+	Tasks      []SaveSchedulingTask `json:"tasks"`
+}
+
+// SaveSchedulingTask 排期保存任务条目。
+type SaveSchedulingTask struct {
+	Action      string  `json:"action"`
+	ID          uint    `json:"id"`
+	ExecutionID uint    `json:"executionId"`
+	Type        string  `json:"type"`
+	Name        string  `json:"name"`
+	AssignedTo  string  `json:"assignedTo"`
+	Estimate    float64 `json:"estimate"`
+	EstStarted  string  `json:"estStarted"`
+	Deadline    string  `json:"deadline"`
+}
