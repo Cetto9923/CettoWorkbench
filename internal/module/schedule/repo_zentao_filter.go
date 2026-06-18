@@ -27,6 +27,16 @@ type bizDemandSimpleCountRow struct {
 
 const bizDemandHangSuspendedSQL = ` AND d.hang = '1'`
 
+const bizDemandAllOpenSQL = `AND d.status != 'closed' AND d.status != 'released'`
+
+const bizDemandExcludeReleasedSQL = `AND d.status != 'released'`
+
+const bizDemandUnscheduledExcludeHangSQL = `AND d.hang = '0'`
+
+const indepStoryAllOpenSQL = `AND s.status != 'closed' AND s.status != 'released'`
+
+const indepStoryExcludeReleasedSQL = `AND s.status != 'released'`
+
 type indepStorySimpleCountRow struct {
 	AllOpen       int64 `gorm:"column:all_open"`
 	PendingReview int64 `gorm:"column:pending_review"`
@@ -113,19 +123,21 @@ func buildBizDemandFilterClause(filter, account string) filterClause {
 	switch filter {
 	case FilterUnscheduled:
 		return filterClause{
-			sql:  bizDemandUnscheduledSQL,
+			sql:  bizDemandExcludeReleasedSQL + "\n" + bizDemandUnscheduledExcludeHangSQL + bizDemandUnscheduledSQL,
 			args: []interface{}{account, account, account},
 		}
 	case FilterPendingReview:
 		return filterClause{sql: "AND d.status = 'wait'"}
 	case FilterUnassigned:
-		return filterClause{sql: bizDemandUnassignedSQL}
+		return filterClause{
+			sql: bizDemandExcludeReleasedSQL + "\n" + bizDemandUnassignedSQL,
+		}
 	case FilterManagerReviewing:
 		return filterClause{sql: "AND d.isManagerReview = 'reviewing'"}
 	case FilterClosed:
 		return filterClause{sql: "AND d.status = 'closed'"}
 	default:
-		return filterClause{sql: "AND d.status != 'closed'"}
+		return filterClause{sql: bizDemandAllOpenSQL}
 	}
 }
 
@@ -143,19 +155,21 @@ func buildIndepStoryFilterClause(filter, account string) filterClause {
 	switch filter {
 	case FilterUnscheduled:
 		return filterClause{
-			sql:  indepStoryUnscheduledSQL,
+			sql:  indepStoryExcludeReleasedSQL + "\n" + indepStoryUnscheduledSQL,
 			args: []interface{}{account, account, account, account},
 		}
 	case FilterPendingReview:
 		return filterClause{sql: "AND s.status = 'reviewing'"}
 	case FilterUnassigned:
-		return filterClause{sql: indepStoryUnassignedSQL}
+		return filterClause{
+			sql: indepStoryExcludeReleasedSQL + "\n" + indepStoryUnassignedSQL,
+		}
 	case FilterManagerReviewing:
 		return filterClause{sql: "AND 1 = 0"}
 	case FilterClosed:
 		return filterClause{sql: "AND s.status = 'closed'"}
 	default:
-		return filterClause{sql: "AND s.status != 'closed'"}
+		return filterClause{sql: indepStoryAllOpenSQL}
 	}
 }
 
@@ -167,7 +181,7 @@ func (r *Repo) GetBizDemandFilterCounts(ctx context.Context, poolIDs []uint, acc
 
 	const simpleQuery = `
 SELECT
-  SUM(CASE WHEN status != 'closed' THEN 1 ELSE 0 END) AS all_open,
+  SUM(CASE WHEN status != 'closed' AND status != 'released' THEN 1 ELSE 0 END) AS all_open,
   SUM(CASE WHEN status = 'wait' THEN 1 ELSE 0 END) AS pending_review,
   SUM(CASE WHEN isManagerReview = 'reviewing' THEN 1 ELSE 0 END) AS manager_reviewing,
   SUM(CASE WHEN status = 'closed' THEN 1 ELSE 0 END) AS closed
@@ -230,7 +244,7 @@ func (r *Repo) GetIndependentFilterCounts(ctx context.Context, productIDs []uint
 
 	const simpleQuery = `
 SELECT
-  SUM(CASE WHEN s.status != 'closed' THEN 1 ELSE 0 END) AS all_open,
+  SUM(CASE WHEN s.status != 'closed' AND s.status != 'released' THEN 1 ELSE 0 END) AS all_open,
   SUM(CASE WHEN s.status = 'reviewing' THEN 1 ELSE 0 END) AS pending_review,
   SUM(CASE WHEN s.status = 'closed' THEN 1 ELSE 0 END) AS closed
 FROM zt_story s

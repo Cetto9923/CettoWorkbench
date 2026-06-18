@@ -6,6 +6,11 @@
     return;
   }
 
+  var $row = $("#scheduleMultiselectRow");
+  if (!$row.length) {
+    return;
+  }
+
   function readURLParams() {
     return new URLSearchParams(window.location.search);
   }
@@ -28,21 +33,18 @@
     window.location.href = buildScheduleURL(overrides);
   }
 
-  function closeAllScheduleMultiselects(except) {
-    $root.find(".schedule-multiselect.open").each(function () {
-      if (except && except[0] === this) {
-        return;
-      }
+  function closeAllScheduleMultiselects() {
+    $row.find(".schedule-ms.open").each(function () {
       var $ms = $(this);
       $ms.removeClass("open");
-      $ms.find(".schedule-multiselect-panel").prop("hidden", true);
-      $ms.find(".schedule-multiselect-trigger").attr("aria-expanded", "false");
+      $ms.find(".schedule-ms-panel").prop("hidden", true);
+      $ms.find(".schedule-ms-trigger").attr("aria-expanded", "false");
     });
   }
 
   function getSelectedValues($multiselect) {
     var selected = [];
-    $multiselect.find(".schedule-multiselect-checkbox:checked").each(function () {
+    $multiselect.find(".schedule-ms-checkbox:checked").each(function () {
       selected.push({
         value: String($(this).val()),
         label: String($(this).data("label") || $(this).val()),
@@ -66,7 +68,7 @@
 
   function syncMultiselectTrigger($multiselect) {
     var selected = getSelectedValues($multiselect);
-    $multiselect.find(".schedule-multiselect-text").text(formatMultiselectDisplay($multiselect, selected));
+    $multiselect.find(".schedule-ms-text").text(formatMultiselectDisplay($multiselect, selected));
   }
 
   function collectAdvancedFilterValues() {
@@ -75,7 +77,7 @@
       products: "",
       stages: "",
     };
-    $root.find(".schedule-multiselect").each(function () {
+    $row.find(".schedule-ms").each(function () {
       var $ms = $(this);
       var key = $ms.data("filter-key");
       if (!key) {
@@ -100,37 +102,33 @@
     });
   }
 
-  $root.find(".schedule-multiselect").each(function () {
+  $row.find(".schedule-ms").each(function () {
     syncMultiselectTrigger($(this));
   });
 
-  $root.on("click", ".schedule-multiselect-trigger", function (e) {
+  $row.on("click", ".schedule-ms-trigger", function (e) {
     e.stopPropagation();
-    var $ms = $(this).closest(".schedule-multiselect");
+    var $ms = $(this).closest(".schedule-ms");
     var isOpen = $ms.hasClass("open");
-    closeAllScheduleMultiselects(isOpen ? $ms : null);
+    closeAllScheduleMultiselects();
     if (isOpen) {
-      $ms.removeClass("open");
-      $ms.find(".schedule-multiselect-panel").prop("hidden", true);
-      $(this).attr("aria-expanded", "false");
       return;
     }
     $ms.addClass("open");
-    $ms.find(".schedule-multiselect-panel").prop("hidden", false);
+    $ms.find(".schedule-ms-panel").prop("hidden", false);
     $(this).attr("aria-expanded", "true");
   });
 
-  $root.on("click", ".schedule-multiselect-panel", function (e) {
+  $row.on("click", ".schedule-ms-panel", function (e) {
     e.stopPropagation();
   });
 
-  $root.on("change", ".schedule-multiselect-checkbox", function () {
-    syncMultiselectTrigger($(this).closest(".schedule-multiselect"));
+  $row.on("change", ".schedule-ms-checkbox", function () {
+    syncMultiselectTrigger($(this).closest(".schedule-ms"));
   });
 
-  $root.on("click", ".schedule-multiselect-apply", function (e) {
+  $row.on("click", "#scheduleApplyFilters", function (e) {
     e.preventDefault();
-    e.stopPropagation();
     closeAllScheduleMultiselects();
     applyAdvancedFilters();
   });

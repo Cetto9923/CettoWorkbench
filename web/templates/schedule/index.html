@@ -117,69 +117,64 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
       <button type="button" class="action-btn schedule-clear-btn" id="scheduleClearFilters"><i class="fas fa-sliders"></i> 清空筛选</button>
     </div>
 
-    <div class="schedule-multiselect-row" id="scheduleMultiselectRow">
-      <div class="schedule-multiselect" data-filter-key="groups" data-filter-label="敏捷小组">
-        <button type="button" class="schedule-multiselect-trigger" aria-haspopup="listbox" aria-expanded="false">
-          <span class="schedule-multiselect-text">敏捷小组</span>
-          <i class="fas fa-chevron-down schedule-multiselect-chevron" aria-hidden="true"></i>
+    <div class="schedule-filter schedule-filter--primary">
+      <div class="schedule-filter-primary-inner" id="scheduleMultiselectRow">
+      <div class="schedule-ms" data-filter-key="groups" data-filter-label="敏捷小组">
+        <button type="button" class="form-select schedule-ms-trigger" aria-haspopup="listbox" aria-expanded="false">
+          <span class="schedule-ms-text">敏捷小组</span>
+          <i class="fas fa-chevron-down" aria-hidden="true"></i>
         </button>
-        <div class="schedule-multiselect-panel" hidden>
-          <div class="schedule-multiselect-options">
+        <div class="schedule-ms-panel" hidden>
+          <div class="schedule-ms-options">
             {{ range .Teamgroups }}
-            <label class="schedule-multiselect-option">
-              <input type="checkbox" class="schedule-multiselect-checkbox" value="{{ .ID }}" data-label="{{ .DisplayName }}"{{ if index $.SelectedGroupMap .ID }} checked{{ end }}>
-              <span class="schedule-multiselect-option-name">{{ .DisplayName }}</span>
+            <label class="schedule-ms-option">
+              <input type="checkbox" class="schedule-ms-checkbox" value="{{ .ID }}" data-label="{{ .DisplayName }}"{{ if index $.SelectedGroupMap .ID }} checked{{ end }}>
+              <span>{{ .DisplayName }}</span>
             </label>
             {{ else }}
-            <div class="schedule-multiselect-empty">暂无敏捷小组</div>
+            <div class="schedule-ms-empty">暂无敏捷小组</div>
             {{ end }}
-          </div>
-          <div class="schedule-multiselect-footer">
-            <button type="button" class="action-btn schedule-multiselect-apply">确定</button>
           </div>
         </div>
       </div>
 
-      <div class="schedule-multiselect" data-filter-key="products" data-filter-label="系统">
-        <button type="button" class="schedule-multiselect-trigger" aria-haspopup="listbox" aria-expanded="false">
-          <span class="schedule-multiselect-text">系统</span>
-          <i class="fas fa-chevron-down schedule-multiselect-chevron" aria-hidden="true"></i>
+      <div class="schedule-ms" data-filter-key="products" data-filter-label="系统">
+        <button type="button" class="form-select schedule-ms-trigger" aria-haspopup="listbox" aria-expanded="false">
+          <span class="schedule-ms-text">系统</span>
+          <i class="fas fa-chevron-down" aria-hidden="true"></i>
         </button>
-        <div class="schedule-multiselect-panel" hidden>
-          <div class="schedule-multiselect-options">
+        <div class="schedule-ms-panel" hidden>
+          <div class="schedule-ms-options">
             {{ range .FilterProducts }}
-            <label class="schedule-multiselect-option">
-              <input type="checkbox" class="schedule-multiselect-checkbox" value="{{ .ID }}" data-label="{{ .Name }}"{{ if index $.SelectedProductMap .ID }} checked{{ end }}>
-              <span class="schedule-multiselect-option-name">{{ .Name }}</span>
+            <label class="schedule-ms-option">
+              <input type="checkbox" class="schedule-ms-checkbox" value="{{ .ID }}" data-label="{{ .Name }}"{{ if index $.SelectedProductMap .ID }} checked{{ end }}>
+              <span>{{ .Name }}</span>
             </label>
             {{ else }}
-            <div class="schedule-multiselect-empty">暂无系统</div>
+            <div class="schedule-ms-empty">暂无系统</div>
             {{ end }}
-          </div>
-          <div class="schedule-multiselect-footer">
-            <button type="button" class="action-btn schedule-multiselect-apply">确定</button>
           </div>
         </div>
       </div>
 
-      <div class="schedule-multiselect" data-filter-key="stages" data-filter-label="排期阶段">
-        <button type="button" class="schedule-multiselect-trigger" aria-haspopup="listbox" aria-expanded="false">
-          <span class="schedule-multiselect-text">排期阶段</span>
-          <i class="fas fa-chevron-down schedule-multiselect-chevron" aria-hidden="true"></i>
+      <div class="schedule-ms" data-filter-key="stages" data-filter-label="排期阶段">
+        <button type="button" class="form-select schedule-ms-trigger" aria-haspopup="listbox" aria-expanded="false">
+          <span class="schedule-ms-text">排期阶段</span>
+          <i class="fas fa-chevron-down" aria-hidden="true"></i>
         </button>
-        <div class="schedule-multiselect-panel" hidden>
-          <div class="schedule-multiselect-options">
+        <div class="schedule-ms-panel" hidden>
+          <div class="schedule-ms-options">
             {{ range .StageFilterOptions }}
-            <label class="schedule-multiselect-option">
-              <input type="checkbox" class="schedule-multiselect-checkbox" value="{{ .Value }}" data-label="{{ .Label }}"{{ if index $.SelectedStageMap .Value }} checked{{ end }}>
-              <span class="schedule-multiselect-option-name">{{ .Label }}</span>
+            <label class="schedule-ms-option">
+              <input type="checkbox" class="schedule-ms-checkbox" value="{{ .Value }}" data-label="{{ .Label }}"{{ if index $.SelectedStageMap .Value }} checked{{ end }}>
+              <span>{{ .Label }}</span>
             </label>
             {{ end }}
           </div>
-          <div class="schedule-multiselect-footer">
-            <button type="button" class="action-btn schedule-multiselect-apply">确定</button>
-          </div>
         </div>
+      </div>
+
+      <button type="button" class="action-btn" id="scheduleApplyFilters">筛选</button>
       </div>
     </div>
 
