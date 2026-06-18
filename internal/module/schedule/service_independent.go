@@ -33,7 +33,7 @@ func (s *Service) ListIndependentStories(ctx context.Context, actor *model.User,
 		return &ListIndependentResp{Total: 0, Items: []IndependentStoryItem{}}, nil
 	}
 
-	topStories, total, err := s.repo.ListIndependentStories(ctx, productIDs, req.Page, req.PageSize)
+	topStories, total, err := s.repo.ListIndependentStories(ctx, req, productIDs, account)
 	if err != nil {
 		return nil, err
 	}

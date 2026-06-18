@@ -11,16 +11,99 @@
     independentRD: "独立研发需求列表",
   };
 
+  var defaultFilter = "all_open";
+  var bizOnlyFilters = ["manager_reviewing"];
+  var indepTabDisabledTitles = {
+    manager_reviewing: "无主管审批状态",
+  };
+
+  function currentDataTabType() {
+    var $active = $root.find(".schedule-data-tab.active");
+    return ($active.data("type") || "bizReq");
+  }
+
   function isScheduleWindowActionDisabled($el) {
     return $el.prop("disabled") || $el.hasClass("is-disabled") || $el.hasClass("action-btn--disabled");
   }
 
-  function setScopeChip($chip) {
-    $root.find(".schedule-scope-chip").removeClass("active");
-    $chip.addClass("active");
+  function readURLParams() {
+    return new URLSearchParams(window.location.search);
   }
 
-  function setDataTab($tab) {
+  function buildScheduleURL(overrides) {
+    var params = readURLParams();
+    Object.keys(overrides || {}).forEach(function (key) {
+      var value = overrides[key];
+      if (value === null || value === undefined || value === "") {
+        params.delete(key);
+        return;
+      }
+      params.set(key, String(value));
+    });
+    var query = params.toString();
+    return window.location.pathname + (query ? "?" + query : "");
+  }
+
+  function navigateSchedule(overrides) {
+    window.location.href = buildScheduleURL(overrides);
+  }
+
+  function currentFilter() {
+    return readURLParams().get("filter") || defaultFilter;
+  }
+
+  function isSuspendedActive() {
+    return readURLParams().get("suspended") === "1";
+  }
+
+  function preserveSuspendedOverride(overrides) {
+    if (isSuspendedActive()) {
+      overrides.suspended = "1";
+    }
+    return overrides;
+  }
+
+  function isIndepTabBlockedByFilter(filter) {
+    return bizOnlyFilters.indexOf(filter) >= 0;
+  }
+
+  function syncFilterTabUI() {
+    var type = currentDataTabType();
+    var filter = currentFilter();
+    var $indepTab = $root.find('.schedule-data-tab[data-type="independentRD"]');
+    var $bizOnlyControls = $root.find(".schedule-scope-chip--biz-only, #scheduleSuspendedToggle");
+
+    if (type === "independentRD") {
+      $bizOnlyControls.hide();
+      $indepTab.removeClass("is-disabled").removeAttr("title");
+    } else {
+      $bizOnlyControls.show();
+      if (isIndepTabBlockedByFilter(filter)) {
+        $indepTab
+          .addClass("is-disabled")
+          .attr("title", indepTabDisabledTitles[filter] || "");
+      } else {
+        $indepTab.removeClass("is-disabled").removeAttr("title");
+      }
+    }
+
+    updateFilterChipCounts();
+  }
+
+  function updateFilterChipCounts() {
+    var type = currentDataTabType();
+    var attrName = type === "independentRD" ? "indep-count" : "biz-count";
+    $root.find(".schedule-scope-chip").each(function () {
+      var $chip = $(this);
+      var count = $chip.attr("data-" + attrName);
+      if (count === undefined || count === null || count === "") {
+        count = 0;
+      }
+      $chip.find(".js-filter-count").text(count);
+    });
+  }
+
+  function setDataTab($tab, updateURL) {
     $root.find(".schedule-data-tab").removeClass("active");
     $tab.addClass("active");
     var type = $tab.data("type") || "bizReq";
@@ -37,13 +120,19 @@
       $("#scheduleIndependentListPanel").show();
       $("#scheduleBizPagination").hide();
       $("#scheduleIndependentPagination").show();
-      return;
+    } else {
+      $("#scheduleBizListPanel").show();
+      $("#scheduleIndependentListPanel").hide();
+      $("#scheduleBizPagination").show();
+      $("#scheduleIndependentPagination").hide();
     }
 
-    $("#scheduleBizListPanel").show();
-    $("#scheduleIndependentListPanel").hide();
-    $("#scheduleBizPagination").show();
-    $("#scheduleIndependentPagination").hide();
+    syncFilterTabUI();
+
+    if (updateURL) {
+      var overrides = { tab: type === "independentRD" ? "indep" : null };
+      navigateSchedule(overrides);
+    }
   }
 
   function toggleMoreFilters() {
@@ -51,13 +140,12 @@
   }
 
   function clearFilters() {
-    $root.find(".schedule-scope-chip").removeClass("active");
-    $root.find('.schedule-scope-chip[data-scope="notClosed"]').addClass("active");
-    $("#scheduleMoreFilters").removeClass("open");
-    $("#scheduleFilterAgile, #scheduleFilterSystem, #scheduleFilterStatus, #scheduleFilterAnomaly").val("");
-    $("#scheduleSearch, #scheduleCreatorFilter, #scheduleSourceFilter, #scheduleDeptFilter").val("");
-    $("#scheduleFilterPri, #scheduleFilterWindow, #scheduleFilterDev, #scheduleFilterTest, #scheduleFilterAccept").val("");
-    $("#scheduleFilterRole").val("all");
+    navigateSchedule({
+      filter: defaultFilter,
+      suspended: null,
+      bizPage: null,
+      indepPage: null,
+    });
   }
 
   function toggleBizChildren(parentId, $toggle) {
@@ -101,11 +189,28 @@
   });
 
   $root.on("click", ".schedule-scope-chip", function () {
-    setScopeChip($(this));
+    var filter = $(this).data("filter") || defaultFilter;
+    navigateSchedule(preserveSuspendedOverride({
+      filter: filter,
+      bizPage: null,
+      indepPage: null,
+    }));
+  });
+
+  $root.on("click", "#scheduleSuspendedToggle", function () {
+    navigateSchedule({
+      suspended: isSuspendedActive() ? null : "1",
+      bizPage: null,
+      indepPage: null,
+    });
   });
 
   $root.on("click", ".schedule-data-tab", function () {
-    setDataTab($(this));
+    var $tab = $(this);
+    if ($tab.hasClass("is-disabled")) {
+      return;
+    }
+    setDataTab($tab, true);
   });
 
   $root.on("click", ".schedule-row-expand", function (e) {
@@ -228,11 +333,13 @@
   $("#scheduleMoreFiltersBtn").on("click", toggleMoreFilters);
   $("#scheduleClearFilters").on("click", clearFilters);
 
-  var params = new URLSearchParams(window.location.search);
+  var params = readURLParams();
   if (params.get("tab") === "indep") {
     var $indepTab = $root.find('.schedule-data-tab[data-type="independentRD"]');
     if ($indepTab.length) {
-      setDataTab($indepTab);
+      setDataTab($indepTab, false);
     }
+  } else {
+    syncFilterTabUI();
   }
 })(jQuery);

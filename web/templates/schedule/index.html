@@ -98,15 +98,21 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
   </div>
 
   <div id="scheduleListViewWrap" class="schedule-area" style="margin-bottom:16px">
-    <div class="schedule-quick-scope">
+    {{ $activeFilter := .ActiveFilter }}
+    {{ $bizCounts := .BizFilterCounts }}
+    {{ $indepCounts := .IndepFilterCounts }}
+    <div class="schedule-quick-scope" id="scheduleQuickScope">
       <span style="font-size:12px;font-weight:700;color:var(--t2);margin-right:4px"><i class="fas fa-bolt" style="color:var(--orange);margin-right:4px"></i>快捷筛选</span>
-      <button type="button" class="schedule-scope-chip active" data-scope="notClosed" title="显示全部未关闭的需求(含草稿、非本小组)"><i class="fas fa-folder-open"></i>全部未关闭 <strong>18</strong></button>
-      <button type="button" class="schedule-scope-chip" data-scope="unscheduled" title="未绑窗口 / 未转研发 / 已转未拆任务或无指派人"><i class="fas fa-hourglass-start"></i>待排期 <strong>6</strong></button>
-      <button type="button" class="schedule-scope-chip" data-scope="unassigned" title="已转研发未建任务 / 已建任务无指派人(待排期子集)"><i class="fas fa-user-plus"></i>待分配负责人 <strong>4</strong></button>
-      <button type="button" class="schedule-scope-chip" data-scope="approval" title="当前正在进行主管部门审批的业务需求"><i class="fas fa-stamp"></i>主管审批中 <strong>1</strong></button>
-      <button type="button" class="schedule-scope-chip" data-scope="closed" title="所有已关闭的需求"><i class="fas fa-circle-check"></i>已关闭 <strong>3</strong></button>
-      <button type="button" class="schedule-scope-chip schedule-scope-chip--secondary" data-scope="risk" title="风险需求(可与其他筛选组合)"><i class="fas fa-triangle-exclamation"></i>风险需求 <strong>7</strong></button>
-      <button type="button" class="schedule-scope-chip schedule-scope-chip--secondary" data-scope="suspended" title="已挂起的需求(可与其他筛选组合)"><i class="fas fa-pause-circle"></i>挂起 <strong>1</strong></button>
+      <button type="button" class="schedule-scope-chip{{ if eq $activeFilter "all_open" }} active{{ end }}" data-filter="all_open" data-biz-count="{{ $bizCounts.AllOpen }}" data-indep-count="{{ $indepCounts.AllOpen }}" title="显示全部未关闭的需求"><i class="fas fa-folder-open"></i>全部未关闭 <strong class="js-filter-count">{{ $bizCounts.AllOpen }}</strong></button>
+      <button type="button" class="schedule-scope-chip{{ if eq $activeFilter "unscheduled" }} active{{ end }}" data-filter="unscheduled" data-biz-count="{{ $bizCounts.Unscheduled }}" data-indep-count="{{ $indepCounts.Unscheduled }}" title="未绑窗口 / 未转研发 / 已转未拆任务或无指派人"><i class="fas fa-hourglass-start"></i>待排期 <strong class="js-filter-count">{{ $bizCounts.Unscheduled }}</strong></button>
+      <button type="button" class="schedule-scope-chip{{ if eq $activeFilter "pending_review" }} active{{ end }}" data-filter="pending_review" data-biz-count="{{ $bizCounts.PendingReview }}" data-indep-count="{{ $indepCounts.PendingReview }}" title="待评审状态的需求"><i class="fas fa-clipboard-check"></i>待评审 <strong class="js-filter-count">{{ $bizCounts.PendingReview }}</strong></button>
+      <button type="button" class="schedule-scope-chip{{ if eq $activeFilter "unassigned" }} active{{ end }}" data-filter="unassigned" data-biz-count="{{ $bizCounts.Unassigned }}" data-indep-count="{{ $indepCounts.Unassigned }}" title="已转研发未建任务 / 已建任务无指派人"><i class="fas fa-user-plus"></i>待分配负责人 <strong class="js-filter-count">{{ $bizCounts.Unassigned }}</strong></button>
+      <button type="button" class="schedule-scope-chip schedule-scope-chip--biz-only{{ if eq $activeFilter "manager_reviewing" }} active{{ end }}" data-filter="manager_reviewing" data-biz-only="1" data-biz-count="{{ $bizCounts.ManagerReviewing }}" data-indep-count="{{ $indepCounts.ManagerReviewing }}" title="当前正在进行主管部门审批的业务需求"><i class="fas fa-stamp"></i>主管审批中 <strong class="js-filter-count">{{ $bizCounts.ManagerReviewing }}</strong></button>
+      <button type="button" class="schedule-scope-chip{{ if eq $activeFilter "closed" }} active{{ end }}" data-filter="closed" data-biz-count="{{ $bizCounts.Closed }}" data-indep-count="{{ $indepCounts.Closed }}" title="所有已关闭的需求"><i class="fas fa-circle-check"></i>已关闭 <strong class="js-filter-count">{{ $bizCounts.Closed }}</strong></button>
+      <button type="button" class="schedule-suspended-toggle schedule-scope-chip--biz-only{{ if .SuspendedActive }} active{{ end }}" id="scheduleSuspendedToggle" title="叠加筛选：仅显示挂起的需求">
+        <span class="schedule-suspended-toggle-box" aria-hidden="true"><i class="fas fa-check"></i></span>
+        挂起 <strong class="js-suspended-count">({{ .SuspendedCount }})</strong>
+      </button>
       <button type="button" class="action-btn schedule-clear-btn" id="scheduleClearFilters"><i class="fas fa-sliders"></i> 清空筛选</button>
     </div>
 

@@ -151,6 +151,11 @@ func (h *Handler) Index(c *gin.Context) {
 		"Products":                formData.Products,
 		"BizPager":                demandData.BizPager,
 		"IndepPager":              demandData.IndepPager,
+		"ActiveFilter":            demandData.ActiveFilter,
+		"SuspendedActive":         demandData.SuspendedActive,
+		"SuspendedCount":          demandData.SuspendedCount,
+		"BizFilterCounts":         demandData.BizFilterCounts,
+		"IndepFilterCounts":       demandData.IndepFilterCounts,
 	})
 }
 

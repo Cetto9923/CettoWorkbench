@@ -116,6 +116,30 @@ type scheduleIndexDemandData struct {
 	IndependentRequirements []IndependentRequirement
 	IndependentTotal        int64
 	IndepPager              *pagination.Pager
+	ActiveFilter            string
+	SuspendedActive         bool
+	SuspendedCount          int64
+	BizFilterCounts         FilterCounts
+	IndepFilterCounts       FilterCounts
+}
+
+func scheduleFilterPreserveParams(filter string, suspended bool, bizPage, indepPage int, tab string) map[string]string {
+	params := map[string]string{
+		"filter": filter,
+	}
+	if suspended {
+		params["suspended"] = "1"
+	}
+	if indepPage > 1 {
+		params["indepPage"] = strconv.Itoa(indepPage)
+	}
+	if bizPage > 1 {
+		params["bizPage"] = strconv.Itoa(bizPage)
+	}
+	if tab == "indep" {
+		params["tab"] = tab
+	}
+	return params
 }
 
 func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User, bizPage, indepPage int) (scheduleIndexDemandData, bool) {
@@ -127,6 +151,8 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 	listReq.Page = bizPage
 	listReq.PageSize = scheduleListPageSize
 	listReq.Normalize()
+	activeFilter := listReq.Filter
+	suspendedActive := listReq.Suspended
 
 	bizResp, err := h.svc.ListBizDemands(c.Request.Context(), actor, listReq)
 	if err != nil {
@@ -137,10 +163,15 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 	}
 	bizRequirements := toBizRequirementsView(bizResp.Items, h.zentaoURL)
 
-	indepReq := ListIndependentReq{
-		Page:     indepPage,
-		PageSize: scheduleListPageSize,
+	var indepReq ListIndependentReq
+	if err := c.ShouldBindQuery(&indepReq); err != nil {
+		render.Error(c, http.StatusBadRequest, "参数解析失败", err)
+		return scheduleIndexDemandData{}, false
 	}
+	indepReq.Page = indepPage
+	indepReq.PageSize = scheduleListPageSize
+	indepReq.Filter = activeFilter
+	indepReq.Suspended = false
 	indepReq.Normalize()
 
 	indepResp, err := h.svc.ListIndependentStories(c.Request.Context(), actor, indepReq)
@@ -155,16 +186,33 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 	}
 	independentRequirements := toIndependentRequirementsView(indepResp.Items, h.zentaoURL)
 
+	tab := strings.TrimSpace(c.Query("tab"))
+	if tab != "indep" {
+		tab = "biz"
+	}
+
+	bizFilterCounts, err := h.svc.GetBizDemandFilterCounts(c.Request.Context(), actor, activeFilter)
+	if err != nil {
+		if h.logger != nil {
+			h.logger.Error("load biz filter counts failed", zap.Error(err))
+		}
+		bizFilterCounts = FilterCounts{}
+	}
+	indepFilterCounts, err := h.svc.GetIndependentFilterCounts(c.Request.Context(), actor)
+	if err != nil {
+		if h.logger != nil {
+			h.logger.Error("load independent filter counts failed", zap.Error(err))
+		}
+		indepFilterCounts = FilterCounts{}
+	}
+
 	bizPager := pagination.New(bizResp.Total, bizPage, scheduleListPageSize)
 	bizPager.PageParam = "bizPage"
-	bizPager.PreserveParams = map[string]string{"indepPage": strconv.Itoa(indepPage)}
+	bizPager.PreserveParams = scheduleFilterPreserveParams(activeFilter, suspendedActive, bizPage, indepPage, tab)
 
 	indepPager := pagination.New(indepResp.Total, indepPage, scheduleListPageSize)
 	indepPager.PageParam = "indepPage"
-	indepPager.PreserveParams = map[string]string{
-		"bizPage": strconv.Itoa(bizPage),
-		"tab":     "indep",
-	}
+	indepPager.PreserveParams = scheduleFilterPreserveParams(activeFilter, suspendedActive, bizPage, indepPage, "indep")
 
 	return scheduleIndexDemandData{
 		BizRequirements:         bizRequirements,
@@ -173,6 +221,11 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 		IndependentRequirements: independentRequirements,
 		IndependentTotal:        indepResp.Total,
 		IndepPager:              indepPager,
+		ActiveFilter:            activeFilter,
+		SuspendedActive:         suspendedActive,
+		SuspendedCount:          bizFilterCounts.Suspended,
+		BizFilterCounts:         bizFilterCounts,
+		IndepFilterCounts:       indepFilterCounts,
 	}, true
 }
 

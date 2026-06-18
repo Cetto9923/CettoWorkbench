@@ -165,58 +165,54 @@ func parseDeptPathIDs(path string) []uint {
 }
 
 // ListBizDemands 顶层业需分页主查询（parent=0）。
-func (r *Repo) ListBizDemands(ctx context.Context, req ListBizDemandsReq, poolIDs []uint) ([]ZtDemand, int64, error) {
+func (r *Repo) ListBizDemands(ctx context.Context, req ListBizDemandsReq, poolIDs []uint, account string) ([]ZtDemand, int64, error) {
 	if len(poolIDs) == 0 {
 		return []ZtDemand{}, 0, nil
 	}
 
+	clause := applyBizDemandSuspended(buildBizDemandFilterClause(req.Filter, account), req.Suspended)
+	countArgs := append([]interface{}{poolIDs}, clause.args...)
 	const countQuery = `
 SELECT COUNT(*) AS total
-FROM zt_demand
-WHERE deleted = '0'
-  AND parent = 0
-  AND pool IN ?
-  -- AND status = ?           -- TODO：status 筛选
-  -- AND teamGroup = ?        -- TODO：teamgroupId 筛选
-  -- AND mainSystem = ?       -- TODO：productId 筛选（主系统）
-  -- AND (id = ? OR name LIKE ?)  -- TODO：keyword`
+FROM zt_demand d
+WHERE d.deleted = '0'
+  AND d.parent = 0
+  AND d.pool IN ?`
 
 	var total int64
-	if err := r.db.WithContext(ctx).Raw(countQuery, poolIDs).Scan(&total).Error; err != nil {
+	if err := r.db.WithContext(ctx).Raw(countQuery+clause.sql, countArgs...).Scan(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
 	offset := (req.Page - 1) * req.PageSize
+	listArgs := append([]interface{}{poolIDs}, clause.args...)
+	listArgs = append(listArgs, req.PageSize, offset)
 	const listQuery = `
 SELECT
-  id,
-  name,
-  pri,
-  status,
-  mainSystem,
-  teamGroup,
-  BRA,
-  QD,
-  RD,
-  createdBy,
-  pool,
-  parent,
-  hang,
-  category,
-  estimateLaunch
-FROM zt_demand
-WHERE deleted = '0'
-  AND parent = 0
-  AND pool IN ?
-  -- AND status = ?           -- TODO：status 筛选
-  -- AND teamGroup = ?        -- TODO：teamgroupId 筛选
-  -- AND mainSystem = ?       -- TODO：productId 筛选（主系统）
-  -- AND (id = ? OR name LIKE ?)  -- TODO：keyword
-ORDER BY id DESC
-LIMIT ? OFFSET ?`
+  d.id,
+  d.name,
+  d.pri,
+  d.status,
+  d.mainSystem,
+  d.teamGroup,
+  d.BRA,
+  d.QD,
+  d.RD,
+  d.createdBy,
+  d.pool,
+  d.parent,
+  d.hang,
+  d.category,
+  d.estimateLaunch
+FROM zt_demand d
+WHERE d.deleted = '0'
+  AND d.parent = 0
+  AND d.pool IN ?`
 
 	var rows []ZtDemand
-	if err := r.db.WithContext(ctx).Raw(listQuery, poolIDs, req.PageSize, offset).Scan(&rows).Error; err != nil {
+	if err := r.db.WithContext(ctx).Raw(listQuery+clause.sql+`
+ORDER BY d.id DESC
+LIMIT ? OFFSET ?`, listArgs...).Scan(&rows).Error; err != nil {
 		return nil, 0, err
 	}
 	return rows, total, nil
@@ -392,25 +388,29 @@ GROUP BY story`
 }
 
 // ListIndependentStories 分页查询独立研发需求（顶层 parent=0）。
-func (r *Repo) ListIndependentStories(ctx context.Context, productIDs []uint, page, pageSize int) ([]ZtStory, int64, error) {
+func (r *Repo) ListIndependentStories(ctx context.Context, req ListIndependentReq, productIDs []uint, account string) ([]ZtStory, int64, error) {
 	if len(productIDs) == 0 {
 		return []ZtStory{}, 0, nil
 	}
 
+	clause := buildIndepStoryFilterClause(req.Filter, account)
+	countArgs := append([]interface{}{productIDs}, clause.args...)
 	const countQuery = `
 SELECT COUNT(*) AS total
-FROM zt_story
-WHERE IFNULL(sourceType, '') != 'demandpool'
-  AND parent = 0
-  AND type = 'story'
-  AND deleted = '0'
-  AND product IN ?`
+FROM zt_story s
+WHERE IFNULL(s.sourceType, '') != 'demandpool'
+  AND s.parent = 0
+  AND s.type = 'story'
+  AND s.deleted = '0'
+  AND s.product IN ?`
 
 	var total int64
-	if err := r.db.WithContext(ctx).Raw(countQuery, productIDs).Scan(&total).Error; err != nil {
+	if err := r.db.WithContext(ctx).Raw(countQuery+clause.sql, countArgs...).Scan(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
+	page := req.Page
+	pageSize := req.PageSize
 	if page < 1 {
 		page = 1
 	}
@@ -419,31 +419,33 @@ WHERE IFNULL(sourceType, '') != 'demandpool'
 	}
 	offset := (page - 1) * pageSize
 
+	listArgs := append([]interface{}{productIDs}, clause.args...)
+	listArgs = append(listArgs, pageSize, offset)
 	const listQuery = `
 SELECT
-  id,
-  title,
-  pri,
-  product,
-  plan,
-  stage,
-  status,
-  fromDemand,
-  sourceType,
-  parent,
-  CAST(IFNULL(NULLIF(isMainSystemAssociation, ''), '0') AS SIGNED) AS isMainSystemAssociation,
-  assignedTo
-FROM zt_story
-WHERE IFNULL(sourceType, '') != 'demandpool'
-  AND parent = 0
-  AND type = 'story'
-  AND deleted = '0'
-  AND product IN ?
-ORDER BY id DESC
-LIMIT ? OFFSET ?`
+  s.id,
+  s.title,
+  s.pri,
+  s.product,
+  s.plan,
+  s.stage,
+  s.status,
+  s.fromDemand,
+  s.sourceType,
+  s.parent,
+  CAST(IFNULL(NULLIF(s.isMainSystemAssociation, ''), '0') AS SIGNED) AS isMainSystemAssociation,
+  s.assignedTo
+FROM zt_story s
+WHERE IFNULL(s.sourceType, '') != 'demandpool'
+  AND s.parent = 0
+  AND s.type = 'story'
+  AND s.deleted = '0'
+  AND s.product IN ?`
 
 	var rows []ZtStory
-	if err := r.db.WithContext(ctx).Raw(listQuery, productIDs, pageSize, offset).Scan(&rows).Error; err != nil {
+	if err := r.db.WithContext(ctx).Raw(listQuery+clause.sql+`
+ORDER BY s.id DESC
+LIMIT ? OFFSET ?`, listArgs...).Scan(&rows).Error; err != nil {
 		return nil, 0, err
 	}
 	return rows, total, nil

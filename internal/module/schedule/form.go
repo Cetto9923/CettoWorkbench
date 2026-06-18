@@ -236,6 +236,40 @@ const (
 	StoryStageHasWindow = "已关联窗口"
 )
 
+// 列表快捷筛选 filter 参数值。
+const (
+	FilterAllOpen          = "all_open"
+	FilterUnscheduled      = "unscheduled"
+	FilterPendingReview    = "pending_review"
+	FilterUnassigned       = "unassigned"
+	FilterManagerReviewing = "manager_reviewing"
+	FilterClosed           = "closed"
+)
+
+// FilterCounts 各快捷筛选项数量。
+type FilterCounts struct {
+	AllOpen          int64
+	Unscheduled      int64
+	PendingReview    int64
+	Unassigned       int64
+	ManagerReviewing int64
+	Closed           int64
+	Suspended        int64 // 当前主筛选下 hang='1' 的数量
+}
+
+// NormalizeDemandFilter 规范化快捷筛选参数，默认全部未关闭。
+func NormalizeDemandFilter(filter string) string {
+	switch strings.TrimSpace(filter) {
+	case FilterUnscheduled, FilterPendingReview, FilterUnassigned,
+		FilterManagerReviewing, FilterClosed:
+		return strings.TrimSpace(filter)
+	case "suspended":
+		return FilterAllOpen
+	default:
+		return FilterAllOpen
+	}
+}
+
 // ListBizDemandsReq 业务需求 Tab 列表查询入参。
 type ListBizDemandsReq struct {
 	Page        int    `form:"page"`
@@ -247,6 +281,8 @@ type ListBizDemandsReq struct {
 	Keyword     string `form:"keyword"`
 	WindowID    uint   `form:"windowId"`
 	Scope       string `form:"scope"`
+	Filter      string `form:"filter"` // all_open, unscheduled, pending_review, unassigned, manager_reviewing, closed
+	Suspended   bool   `form:"suspended"` // true 时叠加 AND hang = '1'
 }
 
 // Validate 校验分页与基础参数。
@@ -272,6 +308,7 @@ func (r *ListBizDemandsReq) Normalize() {
 	if r.PageSize > 100 {
 		r.PageSize = 100
 	}
+	r.Filter = NormalizeDemandFilter(r.Filter)
 }
 
 // ListBizDemandsResp 业务需求 Tab 列表响应。
@@ -362,8 +399,10 @@ type ZtDemand struct {
 
 // ListIndependentReq 独立研发需求 Tab 列表查询入参。
 type ListIndependentReq struct {
-	Page     int `form:"page"`
-	PageSize int `form:"pageSize"`
+	Page      int    `form:"page"`
+	PageSize  int    `form:"pageSize"`
+	Filter    string `form:"filter"`
+	Suspended bool   `form:"suspended"` // story 无 hang 字段，查询时忽略
 }
 
 // Validate 校验分页参数。
@@ -389,6 +428,7 @@ func (r *ListIndependentReq) Normalize() {
 	if r.PageSize > 100 {
 		r.PageSize = 100
 	}
+	r.Filter = NormalizeDemandFilter(r.Filter)
 }
 
 // ListIndependentResp 独立研发需求 Tab 列表响应。

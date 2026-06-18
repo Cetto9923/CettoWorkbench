@@ -35,7 +35,7 @@ func (s *Service) ListBizDemands(ctx context.Context, actor *model.User, req Lis
 		return &ListBizDemandsResp{Total: 0, Items: []BizDemandItem{}}, nil
 	}
 
-	topDemands, total, err := s.repo.ListBizDemands(ctx, req, poolIDs)
+	topDemands, total, err := s.repo.ListBizDemands(ctx, req, poolIDs, account)
 	if err != nil {
 		return nil, err
 	}
@@ -104,8 +104,6 @@ func (s *Service) ListBizDemands(ctx context.Context, actor *model.User, req Lis
 	for _, top := range topDemands {
 		items = append(items, assembleCtx.buildBizDemandItem(top))
 	}
-
-	// TODO: req.Stage / req.Scope 等 Service 层过滤
 
 	return &ListBizDemandsResp{Total: total, Items: items}, nil
 }
