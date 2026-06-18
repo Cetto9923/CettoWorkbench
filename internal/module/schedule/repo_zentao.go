@@ -170,7 +170,10 @@ func (r *Repo) ListBizDemands(ctx context.Context, req ListBizDemandsReq, poolID
 		return []ZtDemand{}, 0, nil
 	}
 
-	clause := applyBizDemandSuspended(buildBizDemandFilterClause(req.Filter, account), req.Suspended)
+	clause := mergeFilterClauses(
+		applyBizDemandSuspended(buildBizDemandFilterClause(req.Filter, account), req.Suspended),
+		buildBizDemandAdvancedClause(advancedFilterParamsFromBizReq(req)),
+	)
 	countArgs := append([]interface{}{poolIDs}, clause.args...)
 	const countQuery = `
 SELECT COUNT(*) AS total
@@ -393,7 +396,10 @@ func (r *Repo) ListIndependentStories(ctx context.Context, req ListIndependentRe
 		return []ZtStory{}, 0, nil
 	}
 
-	clause := buildIndepStoryFilterClause(req.Filter, account)
+	clause := mergeFilterClauses(
+		buildIndepStoryFilterClause(req.Filter, account),
+		buildIndepStoryAdvancedClause(advancedFilterParamsFromIndepReq(req)),
+	)
 	countArgs := append([]interface{}{productIDs}, clause.args...)
 	const countQuery = `
 SELECT COUNT(*) AS total

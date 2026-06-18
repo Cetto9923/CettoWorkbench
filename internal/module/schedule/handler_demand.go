@@ -121,14 +121,34 @@ type scheduleIndexDemandData struct {
 	SuspendedCount          int64
 	BizFilterCounts         FilterCounts
 	IndepFilterCounts       FilterCounts
+	SelectedGroups          string
+	SelectedProducts        string
+	SelectedStages          string
+	SelectedGroupMap        map[uint]bool
+	SelectedProductMap      map[uint]bool
+	SelectedStageMap        map[string]bool
 }
 
-func scheduleFilterPreserveParams(filter string, suspended bool, bizPage, indepPage int, tab string) map[string]string {
+func scheduleFilterPreserveParams(
+	filter string,
+	suspended bool,
+	bizPage, indepPage int,
+	tab, groups, products, stages string,
+) map[string]string {
 	params := map[string]string{
 		"filter": filter,
 	}
 	if suspended {
 		params["suspended"] = "1"
+	}
+	if strings.TrimSpace(groups) != "" {
+		params["groups"] = strings.TrimSpace(groups)
+	}
+	if strings.TrimSpace(products) != "" {
+		params["products"] = strings.TrimSpace(products)
+	}
+	if strings.TrimSpace(stages) != "" {
+		params["stages"] = strings.TrimSpace(stages)
 	}
 	if indepPage > 1 {
 		params["indepPage"] = strconv.Itoa(indepPage)
@@ -140,6 +160,24 @@ func scheduleFilterPreserveParams(filter string, suspended bool, bizPage, indepP
 		params["tab"] = tab
 	}
 	return params
+}
+
+func selectedUintMap(raw string) map[uint]bool {
+	ids := ParseCommaSeparatedUints(raw)
+	out := make(map[uint]bool, len(ids))
+	for _, id := range ids {
+		out[id] = true
+	}
+	return out
+}
+
+func selectedStageMap(raw string) map[string]bool {
+	stages := ParseCommaSeparatedStages(raw)
+	out := make(map[string]bool, len(stages))
+	for _, stage := range stages {
+		out[stage] = true
+	}
+	return out
 }
 
 func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User, bizPage, indepPage int) (scheduleIndexDemandData, bool) {
@@ -172,6 +210,9 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 	indepReq.PageSize = scheduleListPageSize
 	indepReq.Filter = activeFilter
 	indepReq.Suspended = false
+	indepReq.Groups = listReq.Groups
+	indepReq.Products = listReq.Products
+	indepReq.Stages = listReq.Stages
 	indepReq.Normalize()
 
 	indepResp, err := h.svc.ListIndependentStories(c.Request.Context(), actor, indepReq)
@@ -208,11 +249,17 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 
 	bizPager := pagination.New(bizResp.Total, bizPage, scheduleListPageSize)
 	bizPager.PageParam = "bizPage"
-	bizPager.PreserveParams = scheduleFilterPreserveParams(activeFilter, suspendedActive, bizPage, indepPage, tab)
+	bizPager.PreserveParams = scheduleFilterPreserveParams(
+		activeFilter, suspendedActive, bizPage, indepPage, tab,
+		listReq.Groups, listReq.Products, listReq.Stages,
+	)
 
 	indepPager := pagination.New(indepResp.Total, indepPage, scheduleListPageSize)
 	indepPager.PageParam = "indepPage"
-	indepPager.PreserveParams = scheduleFilterPreserveParams(activeFilter, suspendedActive, bizPage, indepPage, "indep")
+	indepPager.PreserveParams = scheduleFilterPreserveParams(
+		activeFilter, suspendedActive, bizPage, indepPage, "indep",
+		listReq.Groups, listReq.Products, listReq.Stages,
+	)
 
 	return scheduleIndexDemandData{
 		BizRequirements:         bizRequirements,
@@ -226,6 +273,12 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 		SuspendedCount:          bizFilterCounts.Suspended,
 		BizFilterCounts:         bizFilterCounts,
 		IndepFilterCounts:       indepFilterCounts,
+		SelectedGroups:          listReq.Groups,
+		SelectedProducts:        listReq.Products,
+		SelectedStages:          listReq.Stages,
+		SelectedGroupMap:        selectedUintMap(listReq.Groups),
+		SelectedProductMap:      selectedUintMap(listReq.Products),
+		SelectedStageMap:        selectedStageMap(listReq.Stages),
 	}, true
 }
 

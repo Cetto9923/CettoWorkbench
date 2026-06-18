@@ -17,6 +17,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulelist.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulewindow.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulemodal.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulefilter.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/scheduleintegrated.css" }}">
 {{ end }}
 
@@ -116,43 +117,67 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
       <button type="button" class="action-btn schedule-clear-btn" id="scheduleClearFilters"><i class="fas fa-sliders"></i> 清空筛选</button>
     </div>
 
-    <div class="schedule-filter schedule-filter--primary">
-      <div class="schedule-filter-primary-inner">
-        <div class="schedule-filter-main">
-          <label for="scheduleFilterAgile">敏捷小组</label>
-          <select class="form-select" id="scheduleFilterAgile" multiple size="1" title="按住 Ctrl/Cmd 可多选">
-            <option value="">全部小组</option>
+    <div class="schedule-multiselect-row" id="scheduleMultiselectRow">
+      <div class="schedule-multiselect" data-filter-key="groups" data-filter-label="敏捷小组">
+        <button type="button" class="schedule-multiselect-trigger" aria-haspopup="listbox" aria-expanded="false">
+          <span class="schedule-multiselect-text">敏捷小组</span>
+          <i class="fas fa-chevron-down schedule-multiselect-chevron" aria-hidden="true"></i>
+        </button>
+        <div class="schedule-multiselect-panel" hidden>
+          <div class="schedule-multiselect-options">
             {{ range .Teamgroups }}
-            <option value="{{ .ID }}">{{ .DisplayName }}</option>
+            <label class="schedule-multiselect-option">
+              <input type="checkbox" class="schedule-multiselect-checkbox" value="{{ .ID }}" data-label="{{ .DisplayName }}"{{ if index $.SelectedGroupMap .ID }} checked{{ end }}>
+              <span class="schedule-multiselect-option-name">{{ .DisplayName }}</span>
+            </label>
+            {{ else }}
+            <div class="schedule-multiselect-empty">暂无敏捷小组</div>
             {{ end }}
-          </select>
-          <label for="scheduleFilterSystem">产品 / 系统</label>
-          <select class="form-select" id="scheduleFilterSystem">
-            <option value="">全部系统</option>
-            {{ range .Products }}
-            <option value="{{ .ID }}">{{ .Name }}</option>
+          </div>
+          <div class="schedule-multiselect-footer">
+            <button type="button" class="action-btn schedule-multiselect-apply">确定</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="schedule-multiselect" data-filter-key="products" data-filter-label="系统">
+        <button type="button" class="schedule-multiselect-trigger" aria-haspopup="listbox" aria-expanded="false">
+          <span class="schedule-multiselect-text">系统</span>
+          <i class="fas fa-chevron-down schedule-multiselect-chevron" aria-hidden="true"></i>
+        </button>
+        <div class="schedule-multiselect-panel" hidden>
+          <div class="schedule-multiselect-options">
+            {{ range .FilterProducts }}
+            <label class="schedule-multiselect-option">
+              <input type="checkbox" class="schedule-multiselect-checkbox" value="{{ .ID }}" data-label="{{ .Name }}"{{ if index $.SelectedProductMap .ID }} checked{{ end }}>
+              <span class="schedule-multiselect-option-name">{{ .Name }}</span>
+            </label>
+            {{ else }}
+            <div class="schedule-multiselect-empty">暂无系统</div>
             {{ end }}
-          </select>
-          <label for="scheduleFilterStatus">排期阶段</label>
-          <select class="form-select" id="scheduleFilterStatus">
-            <option value="">全部阶段</option>
-            <option value="未排期">待排期</option>
-            <option value="已排期未转研发">已排期未转研发</option>
-            <option value="已转研发未建任务">已转研发未建任务</option>
-            <option value="已建任务">验收</option>
-          </select>
-          <label for="scheduleFilterAnomaly">风险状态</label>
-          <select class="form-select" id="scheduleFilterAnomaly">
-            <option value="">全部风险</option>
-            <option value="有卡点">有风险</option>
-            <option value="待分配负责人">待分配负责人</option>
-            <option value="超期">超期</option>
-            <option value="阻塞">阻塞</option>
-          </select>
-          <label for="scheduleSearch">搜索</label>
-          <input class="form-input schedule-filter-search" id="scheduleSearch" placeholder="编号 / 名称 / 责任人 / 系统">
-          <div class="schedule-filter-actions">
-            <button type="button" class="action-btn" id="scheduleMoreFiltersBtn"><i class="fas fa-sliders" style="margin-right:4px"></i>更多筛选</button>
+          </div>
+          <div class="schedule-multiselect-footer">
+            <button type="button" class="action-btn schedule-multiselect-apply">确定</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="schedule-multiselect" data-filter-key="stages" data-filter-label="排期阶段">
+        <button type="button" class="schedule-multiselect-trigger" aria-haspopup="listbox" aria-expanded="false">
+          <span class="schedule-multiselect-text">排期阶段</span>
+          <i class="fas fa-chevron-down schedule-multiselect-chevron" aria-hidden="true"></i>
+        </button>
+        <div class="schedule-multiselect-panel" hidden>
+          <div class="schedule-multiselect-options">
+            {{ range .StageFilterOptions }}
+            <label class="schedule-multiselect-option">
+              <input type="checkbox" class="schedule-multiselect-checkbox" value="{{ .Value }}" data-label="{{ .Label }}"{{ if index $.SelectedStageMap .Value }} checked{{ end }}>
+              <span class="schedule-multiselect-option-name">{{ .Label }}</span>
+            </label>
+            {{ end }}
+          </div>
+          <div class="schedule-multiselect-footer">
+            <button type="button" class="action-btn schedule-multiselect-apply">确定</button>
           </div>
         </div>
       </div>
@@ -985,5 +1010,6 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
 <script src="{{ asset "/static/js/schedule/scheduleintegratedtasks.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/scheduleintegratedrd.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/scheduleintegrated.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/schedulefilter.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/schedule.js" }}"></script>
 {{ end }}

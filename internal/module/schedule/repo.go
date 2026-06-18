@@ -171,6 +171,21 @@ ORDER BY id ASC`
 	return ids, nil
 }
 
+// ListAllProducts 返回全部未删除产品（筛选下拉用）。
+func (r *Repo) ListAllProducts(ctx context.Context) ([]ZtProduct, error) {
+	const query = `
+SELECT id, name
+FROM zt_product
+WHERE deleted = '0'
+ORDER BY id DESC`
+
+	var rows []ZtProduct
+	if err := r.db.WithContext(ctx).Raw(query).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
 // GetUserProducts 查询当前用户参与的产品/系统列表。
 func (r *Repo) GetUserProducts(ctx context.Context, account string) ([]ZtProduct, error) {
 	const query = `

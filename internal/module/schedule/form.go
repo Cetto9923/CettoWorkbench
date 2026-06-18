@@ -236,6 +236,94 @@ const (
 	StoryStageHasWindow = "已关联窗口"
 )
 
+// 列表高级筛选排期阶段 URL 参数值。
+const (
+	StageFilterNoWindow     = "no_window"
+	StageFilterNoStory      = "no_story"
+	StageFilterNoTask       = "no_task"
+	StageFilterTaskAssigned = "task_assigned"
+)
+
+// StageFilterOption 排期阶段下拉选项。
+type StageFilterOption struct {
+	Value string
+	Label string
+}
+
+// ScheduleStageFilterOptions 列表筛选区排期阶段选项（写死）。
+var ScheduleStageFilterOptions = []StageFilterOption{
+	{Value: StageFilterNoWindow, Label: "未关联窗口"},
+	{Value: StageFilterNoStory, Label: "未转研发"},
+	{Value: StageFilterNoTask, Label: "未建任务"},
+	{Value: StageFilterTaskAssigned, Label: "已建任务"},
+}
+
+// ParseCommaSeparatedUints 解析逗号分隔的无符号整型列表。
+func ParseCommaSeparatedUints(raw string) []uint {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil
+	}
+	parts := strings.Split(raw, ",")
+	out := make([]uint, 0, len(parts))
+	seen := make(map[uint]struct{}, len(parts))
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		value, err := strconv.ParseUint(part, 10, 64)
+		if err != nil || value == 0 {
+			continue
+		}
+		id := uint(value)
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		out = append(out, id)
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+// ParseCommaSeparatedStages 解析逗号分隔的排期阶段筛选值。
+func ParseCommaSeparatedStages(raw string) []string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil
+	}
+	allowed := map[string]struct{}{
+		StageFilterNoWindow:     {},
+		StageFilterNoStory:      {},
+		StageFilterNoTask:       {},
+		StageFilterTaskAssigned: {},
+	}
+	parts := strings.Split(raw, ",")
+	out := make([]string, 0, len(parts))
+	seen := make(map[string]struct{}, len(parts))
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		if _, ok := allowed[part]; !ok {
+			continue
+		}
+		if _, ok := seen[part]; ok {
+			continue
+		}
+		seen[part] = struct{}{}
+		out = append(out, part)
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
 // 列表快捷筛选 filter 参数值。
 const (
 	FilterAllOpen          = "all_open"
@@ -283,6 +371,9 @@ type ListBizDemandsReq struct {
 	Scope       string `form:"scope"`
 	Filter      string `form:"filter"` // all_open, unscheduled, pending_review, unassigned, manager_reviewing, closed
 	Suspended   bool   `form:"suspended"` // true 时叠加 AND hang = '1'
+	Groups      string `form:"groups"`   // 逗号分隔的小组 ID
+	Products    string `form:"products"` // 逗号分隔的产品 ID
+	Stages      string `form:"stages"`   // 逗号分隔的阶段值
 }
 
 // Validate 校验分页与基础参数。
@@ -403,6 +494,9 @@ type ListIndependentReq struct {
 	PageSize  int    `form:"pageSize"`
 	Filter    string `form:"filter"`
 	Suspended bool   `form:"suspended"` // story 无 hang 字段，查询时忽略
+	Groups    string `form:"groups"`   // 逗号分隔的小组 ID
+	Products  string `form:"products"` // 逗号分隔的产品 ID
+	Stages    string `form:"stages"`   // 逗号分隔的阶段值
 }
 
 // Validate 校验分页参数。

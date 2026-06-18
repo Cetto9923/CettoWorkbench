@@ -126,6 +126,18 @@ func (s *Service) GetCreateWindowFormData(ctx context.Context, actor *model.User
 	}, nil
 }
 
+// ListFilterProducts 查询筛选区全部产品/系统列表。
+func (s *Service) ListFilterProducts(ctx context.Context) ([]ZtProduct, error) {
+	products, err := s.repo.ListAllProducts(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if products == nil {
+		return []ZtProduct{}, nil
+	}
+	return products, nil
+}
+
 func computeWindowPermissions(createdBy, account string, demandCount int) (canEdit, canDelete, hasLinkedDemands bool) {
 	hasLinkedDemands = demandCount > 0
 	canEdit = strings.TrimSpace(createdBy) == strings.TrimSpace(account)

@@ -135,14 +135,13 @@
     }
   }
 
-  function toggleMoreFilters() {
-    $("#scheduleMoreFilters").toggleClass("open");
-  }
-
   function clearFilters() {
     navigateSchedule({
       filter: defaultFilter,
       suspended: null,
+      groups: null,
+      products: null,
+      stages: null,
       bizPage: null,
       indepPage: null,
     });
@@ -330,7 +329,6 @@
     }
   });
 
-  $("#scheduleMoreFiltersBtn").on("click", toggleMoreFilters);
   $("#scheduleClearFilters").on("click", clearFilters);
 
   var params = readURLParams();

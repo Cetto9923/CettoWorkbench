@@ -139,6 +139,14 @@ func (h *Handler) Index(c *gin.Context) {
 		windows = []WindowCard{}
 	}
 
+	filterProducts, err := h.svc.ListFilterProducts(c.Request.Context())
+	if err != nil {
+		if h.logger != nil {
+			h.logger.Error("load filter products failed", zap.Error(err))
+		}
+		filterProducts = []ZtProduct{}
+	}
+
 	render.Page(c, http.StatusOK, constants.TEMPLATE_SCHEDULE_INDEX, gin.H{
 		"Title":                   "排期工作台",
 		"PageTitle":               "排期工作台",
@@ -149,6 +157,14 @@ func (h *Handler) Index(c *gin.Context) {
 		"IndependentTotal":        demandData.IndependentTotal,
 		"Teamgroups":              formData.Teamgroups,
 		"Products":                formData.Products,
+		"FilterProducts":          filterProducts,
+		"StageFilterOptions":      ScheduleStageFilterOptions,
+		"SelectedGroups":          demandData.SelectedGroups,
+		"SelectedProducts":        demandData.SelectedProducts,
+		"SelectedStages":          demandData.SelectedStages,
+		"SelectedGroupMap":        demandData.SelectedGroupMap,
+		"SelectedProductMap":      demandData.SelectedProductMap,
+		"SelectedStageMap":        demandData.SelectedStageMap,
 		"BizPager":                demandData.BizPager,
 		"IndepPager":              demandData.IndepPager,
 		"ActiveFilter":            demandData.ActiveFilter,
