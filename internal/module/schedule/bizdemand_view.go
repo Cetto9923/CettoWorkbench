@@ -96,6 +96,7 @@ func toDevRequirementsView(stories []StoryItem, zentaoBase string) []DevRequirem
 			owner = "待分配"
 		}
 		out = append(out, DevRequirement{
+			StoryID:     story.ID,
 			ID:          formatStoryID(story.ID),
 			Title:       story.Title,
 			Priority:    priority,
@@ -186,6 +187,7 @@ func toIndependentRequirementsView(items []IndependentStoryItem, zentaoBase stri
 		}
 		children := toIndependentChildrenView(item.Children, zentaoBase)
 		out = append(out, IndependentRequirement{
+			StoryID:       item.ID,
 			ID:            formatStoryID(item.ID),
 			Title:         item.Title,
 			Priority:      priority,
@@ -223,6 +225,7 @@ func toIndependentChildrenView(items []IndependentStoryItem, zentaoBase string) 
 		}
 		detailURL := template.URL(zentao.StoryViewURLWithBase(zentaoBase, item.ID))
 		out = append(out, IndependentChildRequirement{
+			StoryID:       item.ID,
 			ID:            formatStoryID(item.ID),
 			Title:         item.Title,
 			Priority:      priority,

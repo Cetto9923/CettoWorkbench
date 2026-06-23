@@ -140,7 +140,6 @@ func (ztTaskSpecRow) TableName() string { return "zt_taskspec" }
 
 type ztActionRow struct {
 	ID         uint      `gorm:"column:id;primaryKey;autoIncrement"`
-	Company    int       `gorm:"column:company"`
 	ObjectType string    `gorm:"column:objectType"`
 	ObjectID   uint      `gorm:"column:objectID"`
 	Product    string    `gorm:"column:product"`
@@ -413,7 +412,6 @@ func (r *Repo) CreateAction(ctx context.Context, objectType string, objectID uin
 		productField = fmt.Sprintf(",%d,", productID)
 	}
 	row := ztActionRow{
-		Company:    1,
 		ObjectType: objectType,
 		ObjectID:   objectID,
 		Product:    productField,

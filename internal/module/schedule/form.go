@@ -773,3 +773,108 @@ type SaveSchedulingTask struct {
 	EstStarted  string  `json:"estStarted"`
 	Deadline    string  `json:"deadline"`
 }
+
+// StoryAttachmentItem 研发需求附件条目。
+type StoryAttachmentItem struct {
+	ID    uint   `json:"id"`
+	Title string `json:"title"`
+}
+
+// StoryTaskStoryItem 维护任务弹窗研发需求详情。
+type StoryTaskStoryItem struct {
+	ID             uint                  `json:"id"`
+	Title          string                `json:"title"`
+	ProductID      uint                  `json:"productId"`
+	ProductName    string                `json:"productName"`
+	AssignedToName string                `json:"assignedToName"`
+	Spec           string                `json:"spec"`
+	Verify         string                `json:"verify"`
+	DemandID       uint                  `json:"demandId"`
+	DemandName     string                `json:"demandName"`
+	WindowName     string                `json:"windowName"`
+	ReleaseDate    string                `json:"releaseDate"`
+	Attachments    []StoryAttachmentItem `json:"attachments"`
+}
+
+// StoryTaskItem 维护任务弹窗任务条目。
+type StoryTaskItem struct {
+	ID             uint    `json:"id"`
+	Type           string  `json:"type"`
+	TypeLabel      string  `json:"typeLabel"`
+	Name           string  `json:"name"`
+	AssignedTo     string  `json:"assignedTo"`
+	AssignedToName string  `json:"assignedToName"`
+	Estimate       float64 `json:"estimate"`
+	EstStarted     string  `json:"estStarted"`
+	Deadline       string  `json:"deadline"`
+	ProjectID      uint    `json:"projectId"`
+	ProjectName    string  `json:"projectName"`
+	ExecutionID    uint    `json:"executionId"`
+	ExecutionName  string  `json:"executionName"`
+}
+
+// StoryTasksResp 维护任务弹窗加载响应。
+type StoryTasksResp struct {
+	Story              StoryTaskStoryItem              `json:"story"`
+	Tasks              []StoryTaskItem                 `json:"tasks"`
+	Projects           []DemandSchedulingProjectOption `json:"projects"`
+	Users              []SchedulingUserOption          `json:"users"`
+	DefaultProjectID   uint                            `json:"defaultProjectId"`
+	DefaultExecutionID uint                            `json:"defaultExecutionId"`
+}
+
+// SaveStoryTasksReq 维护任务弹窗保存请求。
+type SaveStoryTasksReq struct {
+	ProjectID   uint               `json:"projectId"`
+	ExecutionID uint               `json:"executionId"`
+	Tasks       []SaveStoryTasksTask `json:"tasks"`
+}
+
+// Validate 校验维护任务保存请求。
+func (r *SaveStoryTasksReq) Validate() []FieldError {
+	var errs []FieldError
+	hasNew := false
+	for i, task := range r.Tasks {
+		prefix := "tasks[" + strconv.Itoa(i) + "]"
+		action := strings.TrimSpace(task.Action)
+		switch action {
+		case "new":
+			if task.Create {
+				hasNew = true
+			}
+			if task.Create && strings.TrimSpace(task.Name) == "" {
+				errs = append(errs, FieldError{Field: prefix + ".name", Message: "任务名称不能为空"})
+			}
+		case "edit", "delete":
+			if task.ID == 0 {
+				errs = append(errs, FieldError{Field: prefix + ".id", Message: "任务 ID 无效"})
+			}
+		case "":
+			errs = append(errs, FieldError{Field: prefix + ".action", Message: "操作类型不能为空"})
+		default:
+			errs = append(errs, FieldError{Field: prefix + ".action", Message: "不支持的操作类型"})
+		}
+	}
+	if hasNew {
+		if r.ProjectID == 0 {
+			errs = append(errs, FieldError{Field: "projectId", Message: "项目不能为空"})
+		}
+		if r.ExecutionID == 0 {
+			errs = append(errs, FieldError{Field: "executionId", Message: "执行不能为空"})
+		}
+	}
+	return errs
+}
+
+// SaveStoryTasksTask 维护任务弹窗保存任务条目。
+type SaveStoryTasksTask struct {
+	Action     string  `json:"action"`
+	ID         uint    `json:"id"`
+	Type       string  `json:"type"`
+	Name       string  `json:"name"`
+	AssignedTo string  `json:"assignedTo"`
+	Estimate   float64 `json:"estimate"`
+	EstStarted string  `json:"estStarted"`
+	Deadline   string  `json:"deadline"`
+	Create     bool    `json:"create"`
+}

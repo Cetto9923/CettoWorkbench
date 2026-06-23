@@ -43,13 +43,23 @@
   color: #333;
 }
 
+#taskModal input[type="date"].form-input {
+  color: #333;
+}
+
 #scheduleIntegratedModal input[type="date"].form-input:not([readonly]) {
   position: relative;
   cursor: pointer;
 }
 
+#taskModal input[type="date"].form-input:not([readonly]) {
+  position: relative;
+  cursor: pointer;
+}
+
 #scheduleIntegratedModal input[type="date"].form-input:not([readonly])::-webkit-calendar-picker-indicator,
-#scheduleIntegratedModal .rd-node-tasks input[type="date"]::-webkit-calendar-picker-indicator {
+#scheduleIntegratedModal .rd-node-tasks input[type="date"]::-webkit-calendar-picker-indicator,
+#taskModal .rd-node-tasks input[type="date"]::-webkit-calendar-picker-indicator {
   position: absolute;
   top: 0;
   left: 0;
@@ -64,18 +74,25 @@
 }
 
 #scheduleIntegratedModal input[type="date"].form-input::-webkit-datetime-edit,
-#scheduleIntegratedModal input[type="date"]::-webkit-datetime-edit {
+#scheduleIntegratedModal input[type="date"]::-webkit-datetime-edit,
+#taskModal input[type="date"].form-input::-webkit-datetime-edit,
+#taskModal input[type="date"]::-webkit-datetime-edit {
   color: #aaa;
 }
 
 #scheduleIntegratedModal input[type="date"].form-input:focus::-webkit-datetime-edit,
 #scheduleIntegratedModal input[type="date"]:focus::-webkit-datetime-edit,
 #scheduleIntegratedModal input[type="date"].form-input.has-value::-webkit-datetime-edit,
-#scheduleIntegratedModal input[type="date"].has-value::-webkit-datetime-edit {
+#scheduleIntegratedModal input[type="date"].has-value::-webkit-datetime-edit,
+#taskModal input[type="date"].form-input:focus::-webkit-datetime-edit,
+#taskModal input[type="date"]:focus::-webkit-datetime-edit,
+#taskModal input[type="date"].form-input.has-value::-webkit-datetime-edit,
+#taskModal input[type="date"].has-value::-webkit-datetime-edit {
   color: #333;
 }
 
-#scheduleIntegratedModal input[type="date"].form-input:invalid {
+#scheduleIntegratedModal input[type="date"].form-input:invalid,
+#taskModal input[type="date"].form-input:invalid {
   color: #999;
 }
 
@@ -251,7 +268,8 @@
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
 }
 
-#scheduleIntegratedModal .ui-autocomplete-dropdown {
+#scheduleIntegratedModal .ui-autocomplete-dropdown,
+#taskModal .ui-autocomplete-dropdown {
   z-index: 99999;
 }
 
@@ -494,7 +512,10 @@
 #scheduleIntegratedModal .rd-node-title-input,
 #scheduleIntegratedModal .rd-node-assignee-field,
 #scheduleIntegratedModal .rd-task-input,
-#scheduleIntegratedModal .rd-task-select {
+#scheduleIntegratedModal .rd-task-select,
+#taskModal .rd-node-assignee-field,
+#taskModal .rd-task-input,
+#taskModal .rd-task-select {
   width: 100%;
   padding: 4px;
   border: 1px solid #d1d5db;
@@ -729,7 +750,9 @@
 #scheduleIntegratedModal .rd-node-tasks .rd-task-table td input,
 #scheduleIntegratedModal .rd-node-tasks .rd-task-table td select,
 #scheduleIntegratedModal .rd-node-tasks .rd-task-table td .ui-autocomplete,
-#scheduleIntegratedModal .rd-node-tasks .rd-task-table td .ui-autocomplete-input-wrap {
+#scheduleIntegratedModal .rd-node-tasks .rd-task-table td .ui-autocomplete-input-wrap,
+#taskModal .rd-node-tasks .rd-task-table td .ui-autocomplete,
+#taskModal .rd-node-tasks .rd-task-table td .ui-autocomplete-input-wrap {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -749,17 +772,21 @@
   text-align: right;
 }
 
-#scheduleIntegratedModal .rd-node-tasks input[type="date"] {
+#scheduleIntegratedModal .rd-node-tasks input[type="date"],
+#taskModal .rd-node-tasks input[type="date"] {
   cursor: pointer;
   position: relative;
 }
 
-#scheduleIntegratedModal .rd-node-tasks input[type="date"]::-webkit-datetime-edit {
+#scheduleIntegratedModal .rd-node-tasks input[type="date"]::-webkit-datetime-edit,
+#taskModal .rd-node-tasks input[type="date"]::-webkit-datetime-edit {
   color: #aaa;
 }
 
 #scheduleIntegratedModal .rd-node-tasks input[type="date"]:focus::-webkit-datetime-edit,
-#scheduleIntegratedModal .rd-node-tasks input[type="date"].has-value::-webkit-datetime-edit {
+#scheduleIntegratedModal .rd-node-tasks input[type="date"].has-value::-webkit-datetime-edit,
+#taskModal .rd-node-tasks input[type="date"]:focus::-webkit-datetime-edit,
+#taskModal .rd-node-tasks input[type="date"].has-value::-webkit-datetime-edit {
   color: #333;
 }
 
@@ -796,7 +823,10 @@
 
 #scheduleIntegratedModal .rd-task-owner-cell .rd-node-assignee-wrap,
 #scheduleIntegratedModal .rd-task-owner-cell .ui-autocomplete-input-wrap,
-#scheduleIntegratedModal .rd-task-owner-cell .rd-node-assignee-input {
+#scheduleIntegratedModal .rd-task-owner-cell .rd-node-assignee-input,
+#taskModal .rd-task-owner-cell .rd-node-assignee-wrap,
+#taskModal .rd-task-owner-cell .ui-autocomplete-input-wrap,
+#taskModal .rd-task-owner-cell .rd-node-assignee-input {
   width: 100%;
   max-width: 100%;
 }

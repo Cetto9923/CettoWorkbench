@@ -473,6 +473,12 @@
     loadRowExecutions: loadRowExecutions,
     loadProductProjects: loadProductProjects,
     exitEditMode: exitTaskEditMode,
+    mountTaskOwnerPicker: mountTaskOwnerPicker,
+    syncTaskRowDateInputs: syncTaskRowDateInputs,
+    clearTaskOwnerPickerMeta: clearTaskOwnerPickerMeta,
+    nextTaskOwnerIds: nextTaskOwnerIds,
+    destroyTaskOwnerPicker: destroyTaskOwnerPicker,
+    fillTaskTypeSelect: fillTaskTypeSelect,
   };
 
   $(document).on("click", "#scheduleIntegratedModalBody .rd-add-task", function (e) {

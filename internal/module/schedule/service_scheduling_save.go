@@ -169,71 +169,85 @@ func (s *Service) applySchedulingTasks(
 	tasks []SaveSchedulingTask,
 ) error {
 	for _, taskReq := range tasks {
-		switch strings.TrimSpace(taskReq.Action) {
-		case "new":
-			projectID, err := txRepo.GetProjectIDByExecution(ctx, taskReq.ExecutionID)
-			if err != nil {
-				return err
-			}
-			taskID, err := txRepo.CreateTask(ctx, &ZtTaskInsert{
-				Name:       taskReq.Name,
-				Type:       taskReq.Type,
-				Story:      storyID,
-				Project:    projectID,
-				Execution:  taskReq.ExecutionID,
-				AssignedTo: taskReq.AssignedTo,
-				Estimate:   taskReq.Estimate,
-				EstStarted: taskReq.EstStarted,
-				Deadline:   taskReq.Deadline,
-				OpenedBy:   account,
-			})
-			if err != nil {
-				return fmt.Errorf("create task: %w", err)
-			}
-			if err := txRepo.CreateTaskSpec(ctx, &ZtTaskSpec{
-				Task:       taskID,
-				Version:    1,
-				Name:       taskReq.Name,
-				EstStarted: taskReq.EstStarted,
-				Deadline:   taskReq.Deadline,
-			}); err != nil {
-				return fmt.Errorf("create task spec: %w", err)
-			}
-			if err := txRepo.CreateAction(ctx, "task", taskID, "Opened", account, productID, projectID, taskReq.ExecutionID); err != nil {
-				return fmt.Errorf("create task action: %w", err)
-			}
+		if err := s.applySingleSchedulingTask(ctx, txRepo, account, storyID, productID, taskReq); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
-		case "edit":
-			projectID, err := txRepo.GetProjectIDByExecution(ctx, taskReq.ExecutionID)
-			if err != nil {
-				return err
-			}
-			if err := txRepo.UpdateTask(ctx, taskReq.ID, map[string]interface{}{
-				"name":           strings.TrimSpace(taskReq.Name),
-				"type":           strings.TrimSpace(taskReq.Type),
-				"assignedTo":     strings.TrimSpace(taskReq.AssignedTo),
-				"estimate":       taskReq.Estimate,
-				"left":           taskReq.Estimate,
-				"estStarted":     nullableDateValue(taskReq.EstStarted),
-				"deadline":       nullableDateValue(taskReq.Deadline),
-				"execution":      taskReq.ExecutionID,
-				"project":        projectID,
-				"lastEditedBy":   account,
-				"lastEditedDate": time.Now(),
-			}); err != nil {
-				return fmt.Errorf("update task %d: %w", taskReq.ID, err)
-			}
-			if err := txRepo.CreateAction(ctx, "task", taskReq.ID, "Edited", account, productID, projectID, taskReq.ExecutionID); err != nil {
-				return fmt.Errorf("create task action: %w", err)
-			}
+func (s *Service) applySingleSchedulingTask(
+	ctx context.Context,
+	txRepo *Repo,
+	account string,
+	storyID uint,
+	productID uint,
+	taskReq SaveSchedulingTask,
+) error {
+	switch strings.TrimSpace(taskReq.Action) {
+	case "new":
+		projectID, err := txRepo.GetProjectIDByExecution(ctx, taskReq.ExecutionID)
+		if err != nil {
+			return err
+		}
+		taskID, err := txRepo.CreateTask(ctx, &ZtTaskInsert{
+			Name:       taskReq.Name,
+			Type:       taskReq.Type,
+			Story:      storyID,
+			Project:    projectID,
+			Execution:  taskReq.ExecutionID,
+			AssignedTo: taskReq.AssignedTo,
+			Estimate:   taskReq.Estimate,
+			EstStarted: taskReq.EstStarted,
+			Deadline:   taskReq.Deadline,
+			OpenedBy:   account,
+		})
+		if err != nil {
+			return fmt.Errorf("create task: %w", err)
+		}
+		if err := txRepo.CreateTaskSpec(ctx, &ZtTaskSpec{
+			Task:       taskID,
+			Version:    1,
+			Name:       taskReq.Name,
+			EstStarted: taskReq.EstStarted,
+			Deadline:   taskReq.Deadline,
+		}); err != nil {
+			return fmt.Errorf("create task spec: %w", err)
+		}
+		if err := txRepo.CreateAction(ctx, "task", taskID, "Opened", account, productID, projectID, taskReq.ExecutionID); err != nil {
+			return fmt.Errorf("create task action: %w", err)
+		}
 
-		case "delete":
-			if err := txRepo.CloseTask(ctx, taskReq.ID, account); err != nil {
-				return fmt.Errorf("close task %d: %w", taskReq.ID, err)
-			}
-			if err := txRepo.CreateAction(ctx, "task", taskReq.ID, "Closed", account, productID, 0, 0); err != nil {
-				return fmt.Errorf("create task action: %w", err)
-			}
+	case "edit":
+		projectID, err := txRepo.GetProjectIDByExecution(ctx, taskReq.ExecutionID)
+		if err != nil {
+			return err
+		}
+		if err := txRepo.UpdateTask(ctx, taskReq.ID, map[string]interface{}{
+			"name":           strings.TrimSpace(taskReq.Name),
+			"type":           strings.TrimSpace(taskReq.Type),
+			"assignedTo":     strings.TrimSpace(taskReq.AssignedTo),
+			"estimate":       taskReq.Estimate,
+			"left":           taskReq.Estimate,
+			"estStarted":     nullableDateValue(taskReq.EstStarted),
+			"deadline":       nullableDateValue(taskReq.Deadline),
+			"execution":      taskReq.ExecutionID,
+			"project":        projectID,
+			"lastEditedBy":   account,
+			"lastEditedDate": time.Now(),
+		}); err != nil {
+			return fmt.Errorf("update task %d: %w", taskReq.ID, err)
+		}
+		if err := txRepo.CreateAction(ctx, "task", taskReq.ID, "Edited", account, productID, projectID, taskReq.ExecutionID); err != nil {
+			return fmt.Errorf("create task action: %w", err)
+		}
+
+	case "delete":
+		if err := txRepo.CloseTask(ctx, taskReq.ID, account); err != nil {
+			return fmt.Errorf("close task %d: %w", taskReq.ID, err)
+		}
+		if err := txRepo.CreateAction(ctx, "task", taskReq.ID, "Closed", account, productID, 0, 0); err != nil {
+			return fmt.Errorf("create task action: %w", err)
 		}
 	}
 	return nil
