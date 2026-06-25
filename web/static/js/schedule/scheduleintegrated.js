@@ -347,6 +347,30 @@
     return isNaN(id) || id <= 0 ? 0 : id;
   }
 
+  function extractStoryID($btn) {
+    var raw = $btn.data("story-id");
+    if (raw === undefined || raw === null || raw === "") {
+      return 0;
+    }
+    var id = parseInt(String(raw), 10);
+    return isNaN(id) || id <= 0 ? 0 : id;
+  }
+
+  function isIndependentScheduleSource(source) {
+    if (source && source.jquery) {
+      var $row = source.closest("tr");
+      return $row.hasClass("schedule-indep-row") || $row.hasClass("schedule-indep-child-row");
+    }
+    if (source && typeof source === "object" && source.isIndependent) {
+      return true;
+    }
+    return false;
+  }
+
+  function setRdTaskSectionVisible(visible) {
+    $("#scheduleIntegratedRdSection").toggle(!!visible);
+  }
+
   function extractRowContext($btn) {
     var $row = $btn.closest("tr");
     var id = $.trim($row.find(".schedule-id-badge").first().text()) || "REQ-—";
@@ -588,11 +612,37 @@
           $("#scheduleIntegratedModalTitle").text("排期一体化办理 · REQ-" + resp.id);
           if (shared) {
             shared.currentDemandId = parsePositiveInt(resp.id);
+            shared.currentStoryId = 0;
           }
         }
       })
       .fail(function () {
         window.alert("加载业需详情失败，请稍后重试");
+      });
+  }
+
+  function loadStorySchedulingDetail(storyID) {
+    $.ajax({
+      url: "/schedule/stories/" + storyID + "/scheduling",
+      method: "GET",
+      dataType: "json",
+    })
+      .done(function (resp) {
+        if (!resp || !resp.success) {
+          window.alert((resp && resp.error) || "加载研发需求详情失败");
+          return;
+        }
+        fillSchedulingDetail(resp);
+        if (resp.id) {
+          $("#scheduleIntegratedModalTitle").text("排期一体化办理 · RD-" + resp.id);
+          if (shared) {
+            shared.currentStoryId = parsePositiveInt(resp.id);
+            shared.currentDemandId = 0;
+          }
+        }
+      })
+      .fail(function () {
+        window.alert("加载研发需求详情失败，请稍后重试");
       });
   }
 
@@ -608,6 +658,7 @@
     $("#scheduleIntegratedReleaseStrip").text("窗口 — ｜ —");
     $("#scheduleIntegratedSystemsHint").text("涉及系统：—");
     resetStoryItems();
+    setRdTaskSectionVisible(true);
     if (rdApi) {
       rdApi.reset();
     }
@@ -620,6 +671,7 @@
       shared.taskRowSeq = 0;
       shared.manualNodeSeq = 0;
       shared.currentDemandId = 0;
+      shared.currentStoryId = 0;
       shared.resetDeletedRecords();
     }
   }
@@ -634,9 +686,12 @@
   function openScheduleIntegratedModal(source) {
     var ctx;
     var demandID = 0;
+    var storyID = 0;
+    var fromIndependent = isIndependentScheduleSource(source);
 
     if (source && source.jquery) {
       demandID = extractDemandID(source);
+      storyID = extractStoryID(source);
       ctx = extractRowContext(source);
     } else if (source && typeof source === "object" && source.id) {
       ctx = {
@@ -657,16 +712,20 @@
 
     resetIntegratedForm();
     fillModalHeader(ctx);
+    setRdTaskSectionVisible(!fromIndependent);
 
     if (shared) {
-      shared.currentDemandId = demandID;
+      shared.currentDemandId = fromIndependent ? 0 : demandID;
+      shared.currentStoryId = fromIndependent ? storyID : 0;
     }
 
     if (typeof window.openShowModals === "function") {
       window.openShowModals(MODAL_IDS);
     }
 
-    if (demandID > 0) {
+    if (fromIndependent && storyID > 0) {
+      loadStorySchedulingDetail(storyID);
+    } else if (demandID > 0) {
       loadSchedulingDetail(demandID);
     }
   }

@@ -247,3 +247,91 @@ LIMIT 1`
 	}
 	return executionID, nil
 }
+
+type storySchedulingRow struct {
+	ID         uint   `gorm:"column:id"`
+	Title      string `gorm:"column:title"`
+	Product    uint   `gorm:"column:product"`
+	FromDemand uint   `gorm:"column:fromDemand"`
+	AssignedTo string `gorm:"column:assignedTo"`
+}
+
+// GetStorySchedulingDetail 查询独立研发需求排期弹窗所需的研发需求详情。
+func (r *Repo) GetStorySchedulingDetail(ctx context.Context, storyID uint) (*DemandSchedulingDetail, error) {
+	if storyID == 0 {
+		return nil, errors.New("研发需求 ID 无效")
+	}
+
+	const storyQuery = `
+SELECT
+  s.id,
+  s.title,
+  s.product,
+  s.fromDemand,
+  s.assignedTo
+FROM zt_story s
+WHERE s.id = ?
+  AND s.deleted = '0'
+LIMIT 1`
+
+	var row storySchedulingRow
+	if err := r.db.WithContext(ctx).Raw(storyQuery, storyID).Scan(&row).Error; err != nil {
+		return nil, err
+	}
+	if row.ID == 0 {
+		return nil, errors.New("研发需求不存在")
+	}
+	if row.FromDemand > 0 {
+		return nil, errors.New("该研发需求关联业需，请从业需入口排期")
+	}
+
+	mainSystemName := ""
+	if row.Product > 0 {
+		productNames, err := r.FindProductsByIDs(ctx, []uint{row.Product})
+		if err != nil {
+			return nil, err
+		}
+		mainSystemName = productNames[row.Product]
+	}
+
+	windowID := uint(0)
+	windowName := ""
+	schedulePlanDate := ""
+	windowByStory, err := r.FindStoryWindowMappings(ctx, []uint{storyID})
+	if err != nil {
+		return nil, err
+	}
+	if ref, ok := windowByStory[storyID]; ok {
+		windowID = ref.WindowID
+		windowName = strings.TrimSpace(ref.WindowName)
+	}
+	if windowID > 0 {
+		_, releaseDate, err := r.findStoryWindowDetail(ctx, storyID)
+		if err != nil {
+			return nil, err
+		}
+		schedulePlanDate = releaseDate
+	}
+
+	assignedTo := strings.TrimSpace(row.AssignedTo)
+	assignedToName := ""
+	if assignedTo != "" {
+		realnameByAccount, err := r.FindUsersByAccounts(ctx, []string{assignedTo})
+		if err != nil {
+			return nil, err
+		}
+		assignedToName = resolveRealname(assignedTo, realnameByAccount)
+	}
+
+	return &DemandSchedulingDetail{
+		ID:               row.ID,
+		Name:             strings.TrimSpace(row.Title),
+		BRA:              assignedTo,
+		BRAName:          assignedToName,
+		MainSystemID:     row.Product,
+		MainSystemName:   mainSystemName,
+		SchedulePlanDate: schedulePlanDate,
+		WindowID:         windowID,
+		WindowName:       windowName,
+	}, nil
+}

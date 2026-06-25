@@ -223,7 +223,6 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
           <div class="view-tab action-btn--disabled" title="看板:待推出"><i class="fas fa-table-columns"></i>看板</div>
           <div class="view-tab action-btn--disabled" title="分组:待推出"><i class="fas fa-border-all"></i>分组</div>
         </div>
-        <button type="button" class="action-btn"><i class="fas fa-download"></i> 导出</button>
       </div>
     </div>
 
@@ -232,7 +231,6 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
       <table class="schedule-table">
         <thead id="scheduleTableHead">
           <tr>
-            <th class="schedule-col-chk" style="width:34px"><input type="checkbox" class="chk-all" id="scheduleChkAll"></th>
             <th class="schedule-col-title" style="min-width:300px">标题</th>
             <th class="schedule-col-nowrap" style="width:72px">优先级</th>
             <th class="schedule-col-nowrap" style="width:100px">窗口状态</th>
@@ -247,12 +245,13 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
           {{ range .BizRequirements }}
           {{ $biz := . }}
           <tr class="schedule-biz-row schedule-tree-l1" data-id="{{ .ID }}">
-            <td><input type="checkbox" class="schedule-chk" value="{{ .ID }}"{{ if eq .WindowStatus "阻塞" }} disabled{{ end }}></td>
             <td>
               <div class="schedule-title-cell schedule-title-cell--l1">
-                {{ if .HasChildren }}
-                <button type="button" class="schedule-row-expand" data-target="{{ .ID }}" title="展开/收起子行"><i class="fas fa-chevron-down"></i></button>
-                {{ end }}
+                <span class="schedule-row-expand-slot">
+                  {{ if .HasChildren }}
+                  <button type="button" class="schedule-row-expand" data-target="{{ .ID }}" title="展开/收起子行"><i class="fas fa-chevron-down"></i></button>
+                  {{ end }}
+                </span>
                 <span class="schedule-type-badge schedule-type-badge--biz">业务需求</span>
                 <span class="schedule-id-badge">{{ .ID }}</span>
                 {{ if .DetailURL }}
@@ -316,7 +315,6 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
           </tr>
           {{ range .DevRequirements }}
           <tr class="schedule-rd-row schedule-tree-l3 schedule-child-row" data-parent="{{ $biz.ID }}">
-            <td></td>
             <td>
               <div class="schedule-title-cell schedule-title-cell--l3">
                 <span class="tree-guide"></span>
@@ -349,7 +347,6 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
           {{ end }}
           {{ range .DevRequirements }}
           <tr class="schedule-rd-row schedule-tree-l3 schedule-child-row" data-parent="{{ $biz.ID }}">
-            <td></td>
             <td>
               <div class="schedule-title-cell schedule-title-cell--l3">
                 <span class="tree-guide"></span>
@@ -398,7 +395,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
       <table class="schedule-table">
         <thead>
           <tr>
-            <th class="schedule-col-title" style="min-width:300px">标题</th>
+            <th class="schedule-col-title" style="min-width:300px;padding-left: 20px;">标题</th>
             <th class="schedule-col-nowrap" style="width:72px">优先级</th>
             <th class="schedule-col-nowrap" style="width:120px">关联系统</th>
             <th class="schedule-col-nowrap" style="width:120px">排期窗口</th>
@@ -413,12 +410,12 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
           {{ range .IndependentRequirements }}
           {{ $parent := . }}
           <tr class="schedule-indep-row schedule-tree-l1" data-id="{{ .ID }}">
-            <td>
+            <td style="padding-left: 20px;">
               <div class="schedule-title-cell schedule-title-cell--l1">
                 {{ if .HasChildren }}
                 <button type="button" class="schedule-row-expand" data-target="{{ .ID }}" title="展开/收起子行"><i class="fas fa-chevron-down"></i></button>
                 {{ end }}
-                <span class="schedule-type-badge schedule-type-badge--rd">独立研发</span>
+                <!-- <span class="schedule-type-badge schedule-type-badge--rd">独立研发</span> -->
                 <span class="schedule-id-badge">{{ .ID }}</span>
                 {{ if .DetailURL }}
                 <a href="{{ .DetailURL }}" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
@@ -443,9 +440,9 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             <td class="schedule-action-col">
               <div class="schedule-action-buttons">
                 {{ if .DetailURL }}
-                <a href="{{ .DetailURL }}" class="action-btn action-btn--primary">排期</a>
+                <a href="{{ .DetailURL }}" class="action-btn action-btn--primary" data-story-id="{{ .StoryID }}">排期</a>
                 {{ else }}
-                <button type="button" class="action-btn action-btn--primary">排期</button>
+                <button type="button" class="action-btn action-btn--primary" data-story-id="{{ .StoryID }}">排期</button>
                 {{ end }}
                 <button type="button" class="action-btn action-btn--success js-open-task-modal" data-story-id="{{ .StoryID }}">维护任务</button>
               </div>
@@ -481,9 +478,9 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             <td class="schedule-action-col">
               <div class="schedule-action-buttons">
                 {{ if .DetailURL }}
-                <a href="{{ .DetailURL }}" class="action-btn action-btn--primary">排期</a>
+                <a href="{{ .DetailURL }}" class="action-btn action-btn--primary" data-story-id="{{ .StoryID }}">排期</a>
                 {{ else }}
-                <button type="button" class="action-btn action-btn--primary">排期</button>
+                <button type="button" class="action-btn action-btn--primary" data-story-id="{{ .StoryID }}">排期</button>
                 {{ end }}
                 <button type="button" class="action-btn action-btn--success js-open-task-modal" data-story-id="{{ .StoryID }}">维护任务</button>
               </div>
@@ -666,7 +663,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
     </div>
 
     <div class="schedule-integrated-section">
-      <div class="schedule-integrated-section-hdr"><strong>业务需求排期</strong></div>
+      <div class="schedule-integrated-section-hdr"><strong>需求排期</strong></div>
       <div class="schedule-integrated-section-body">
         <div class="schedule-integrated-form-sheet">
           <div class="schedule-integrated-grid">
@@ -676,7 +673,6 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
                 <select id="scheduleIntegratedWindowSelect" class="form-select schedule-field-control schedule-window-combo-select">
                   <option value="">请选择版本窗口</option>
                 </select>
-                <!-- <button type="button" class="schedule-addon-btn" title="选不到合适窗口时，按计划发布日新建自选窗口并自动选中">添加窗口</button> -->
               </div>
             </div>
             <div class="schedule-integrated-cell">
@@ -736,7 +732,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
       </div>
     </div>
 
-    <div class="schedule-integrated-section">
+    <div class="schedule-integrated-section" id="scheduleIntegratedRdSection">
       <div class="schedule-integrated-section-hdr schedule-integrated-section-hdr--actions">
         <div><strong>研发需求与任务</strong></div>
       </div>

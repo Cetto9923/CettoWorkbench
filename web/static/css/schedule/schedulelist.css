@@ -192,6 +192,15 @@
   margin-left: -14px;
 }
 
+.schedule-row-expand-slot {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .schedule-row-expand {
   width: 18px;
   height: 18px;
@@ -408,6 +417,10 @@
 
 .t3 {
   color: var(--t3);
+}
+
+.schedule-col-title {
+  padding-left: 20px;
 }
 
 .schedule-rd-row td {

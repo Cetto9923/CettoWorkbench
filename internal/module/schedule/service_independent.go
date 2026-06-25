@@ -11,6 +11,7 @@ package schedule
 
 import (
 	"context"
+	"errors"
 	"strings"
 
 	"workbench/internal/model"
@@ -95,6 +96,45 @@ func (s *Service) ListIndependentStories(ctx context.Context, actor *model.User,
 	}
 
 	return &ListIndependentResp{Total: total, Items: items}, nil
+}
+
+// GetStoryScheduling 查询独立研发需求排期弹窗加载数据。
+func (s *Service) GetStoryScheduling(ctx context.Context, actor *model.User, storyID uint) (*DemandSchedulingResp, error) {
+	if storyID == 0 {
+		return nil, errors.New("研发需求 ID 无效")
+	}
+	_ = actorAccount(actor)
+
+	detail, err := s.repo.GetStorySchedulingDetail(ctx, storyID)
+	if err != nil {
+		return nil, err
+	}
+	windows, err := s.repo.ListUpcomingSchedulingWindows(ctx)
+	if err != nil {
+		return nil, err
+	}
+	users, err := s.repo.ListInsideUsersForScheduling(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	involvedProducts := []ZtProductOption{}
+	if detail.MainSystemID > 0 {
+		involvedProducts = append(involvedProducts, ZtProductOption{
+			ID:   detail.MainSystemID,
+			Name: detail.MainSystemName,
+		})
+	}
+
+	return &DemandSchedulingResp{
+		DemandSchedulingDetail: detail,
+		InvolvedProducts:       involvedProducts,
+		ProductProjects:        map[string][]DemandSchedulingProjectOption{},
+		ProjectExecutions:      map[string][]ZtExecutionOption{},
+		Stories:                []DemandSchedulingStoryItem{},
+		Windows:                windows,
+		Users:                  users,
+	}, nil
 }
 
 func (s *Service) getVisibleProductIDs(ctx context.Context, account string) ([]uint, error) {

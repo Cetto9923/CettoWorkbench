@@ -67,6 +67,7 @@
     taskRowSeq: 0,
     manualNodeSeq: 0,
     currentDemandId: 0,
+    currentStoryId: 0,
     deletedStoryIds: [],
     deletedTaskIds: [],
     taskTypeOptions: taskTypeOptions,

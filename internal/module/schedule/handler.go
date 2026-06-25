@@ -91,12 +91,12 @@ func NewHandler(renderer *render.Renderer, logger *zap.Logger, svc *Service, zen
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g := rg.Group("/schedule")
 	g.Use(middleware.ActiveNav("/schedule"))
-	// TODO: 上线前恢复权限校验 RequirePerm(perm.ScheduleXxx)
 	{
 		g.GET("", h.Index)
 		g.GET("/matching-plans", h.GetMatchingPlans)
 		g.GET("/demands/:id/scheduling", h.GetDemandScheduling)
 		g.POST("/demands/:id/save-scheduling", h.SaveScheduling)
+		g.GET("/stories/:id/scheduling", h.GetStoryScheduling)
 		g.GET("/products/:id/projects", h.GetProductProjects)
 		g.GET("/projects/:id/executions", h.GetProjectExecutions)
 		g.GET("/stories/:id/tasks", h.GetStoryTasks)
