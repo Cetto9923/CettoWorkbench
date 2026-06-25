@@ -250,6 +250,12 @@ type StageFilterOption struct {
 	Label string
 }
 
+// WindowFilterOption 版本窗口筛选下拉选项。
+type WindowFilterOption struct {
+	ID   uint
+	Name string
+}
+
 // ScheduleStageFilterOptions 列表筛选区排期阶段选项（写死）。
 var ScheduleStageFilterOptions = []StageFilterOption{
 	{Value: StageFilterNoWindow, Label: "未关联窗口"},
@@ -374,6 +380,7 @@ type ListBizDemandsReq struct {
 	Groups      string `form:"groups"`   // 逗号分隔的小组 ID
 	Products    string `form:"products"` // 逗号分隔的产品 ID
 	Stages      string `form:"stages"`   // 逗号分隔的阶段值
+	Windows     string `form:"windows"`  // 逗号分隔的版本窗口 ID
 }
 
 // Validate 校验分页与基础参数。
@@ -497,6 +504,7 @@ type ListIndependentReq struct {
 	Groups    string `form:"groups"`   // 逗号分隔的小组 ID
 	Products  string `form:"products"` // 逗号分隔的产品 ID
 	Stages    string `form:"stages"`   // 逗号分隔的阶段值
+	Windows   string `form:"windows"`  // 逗号分隔的版本窗口 ID
 }
 
 // Validate 校验分页参数。

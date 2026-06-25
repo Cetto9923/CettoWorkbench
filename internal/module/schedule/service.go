@@ -138,6 +138,25 @@ func (s *Service) ListFilterProducts(ctx context.Context) ([]ZtProduct, error) {
 	return products, nil
 }
 
+// ListFilterWindows 查询筛选区全部版本窗口列表。
+func (s *Service) ListFilterWindows(ctx context.Context) ([]WindowFilterOption, error) {
+	windows, _, err := s.repo.FindAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if len(windows) == 0 {
+		return []WindowFilterOption{}, nil
+	}
+	out := make([]WindowFilterOption, 0, len(windows))
+	for _, window := range windows {
+		out = append(out, WindowFilterOption{
+			ID:   uint(window.ID),
+			Name: strings.TrimSpace(window.Name),
+		})
+	}
+	return out, nil
+}
+
 func computeWindowPermissions(createdBy, account string, demandCount int) (canEdit, canDelete, hasLinkedDemands bool) {
 	hasLinkedDemands = demandCount > 0
 	canEdit = strings.TrimSpace(createdBy) == strings.TrimSpace(account)

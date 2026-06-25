@@ -182,9 +182,40 @@ const indepStoryGroupWindowSQL = `
   )
 )`
 
+const bizDemandWindowIDsSQL = `
+EXISTS (
+  SELECT 1 FROM zt_story s
+  INNER JOIN zt_planstory ps ON ps.story = s.id
+  INNER JOIN zt_versionwindowproduct vwp ON vwp.plan = ps.plan AND vwp.deletedAt IS NULL
+  INNER JOIN zt_versionwindow vw ON vw.id = vwp.versionWindow AND vw.deletedAt IS NULL
+  WHERE s.deleted = '0'
+    AND s.sourceType = 'demandpool'
+    AND s.type = 'story'
+    AND ` + bizDemandSubtreeStoryFrom + `
+    AND vw.id IN ?
+)`
+
+const indepStoryWindowIDsSQL = `
+(
+  EXISTS (
+    SELECT 1 FROM zt_planstory ps
+    INNER JOIN zt_versionwindowproduct vwp ON vwp.plan = ps.plan AND vwp.deletedAt IS NULL
+    INNER JOIN zt_versionwindow vw ON vw.id = vwp.versionWindow AND vw.deletedAt IS NULL
+    WHERE ps.story = s.id AND vw.id IN ?
+  )
+  OR EXISTS (
+    SELECT 1 FROM zt_story ch
+    INNER JOIN zt_planstory ps ON ps.story = ch.id
+    INNER JOIN zt_versionwindowproduct vwp ON vwp.plan = ps.plan AND vwp.deletedAt IS NULL
+    INNER JOIN zt_versionwindow vw ON vw.id = vwp.versionWindow AND vw.deletedAt IS NULL
+    WHERE ch.parent = s.id AND ch.deleted = '0' AND ch.type = 'story' AND vw.id IN ?
+  )
+)`
+
 type advancedFilterParams struct {
 	groupIDs   []uint
 	productIDs []uint
+	windowIDs  []uint
 	stages     []string
 }
 
@@ -192,6 +223,7 @@ func advancedFilterParamsFromBizReq(req ListBizDemandsReq) advancedFilterParams 
 	return advancedFilterParams{
 		groupIDs:   ParseCommaSeparatedUints(req.Groups),
 		productIDs: ParseCommaSeparatedUints(req.Products),
+		windowIDs:  ParseCommaSeparatedUints(req.Windows),
 		stages:     ParseCommaSeparatedStages(req.Stages),
 	}
 }
@@ -200,6 +232,7 @@ func advancedFilterParamsFromIndepReq(req ListIndependentReq) advancedFilterPara
 	return advancedFilterParams{
 		groupIDs:   ParseCommaSeparatedUints(req.Groups),
 		productIDs: ParseCommaSeparatedUints(req.Products),
+		windowIDs:  ParseCommaSeparatedUints(req.Windows),
 		stages:     ParseCommaSeparatedStages(req.Stages),
 	}
 }
@@ -215,6 +248,10 @@ func buildBizDemandAdvancedClause(params advancedFilterParams) filterClause {
 	if len(params.productIDs) > 0 {
 		parts = append(parts, "AND d.id IN (SELECT demand FROM zt_demandclarify WHERE product IN ?)")
 		args = append(args, params.productIDs)
+	}
+	if len(params.windowIDs) > 0 {
+		parts = append(parts, "AND "+bizDemandWindowIDsSQL)
+		args = append(args, params.windowIDs)
 	}
 	if len(params.stages) > 0 {
 		stageClause := buildBizDemandStageOrClause(params.stages)
@@ -238,6 +275,10 @@ func buildIndepStoryAdvancedClause(params advancedFilterParams) filterClause {
 	if len(params.productIDs) > 0 {
 		parts = append(parts, "AND s.product IN ?")
 		args = append(args, params.productIDs)
+	}
+	if len(params.windowIDs) > 0 {
+		parts = append(parts, "AND "+indepStoryWindowIDsSQL)
+		args = append(args, params.windowIDs, params.windowIDs)
 	}
 	if len(params.stages) > 0 {
 		stageClause := buildIndepStoryStageOrClause(params.stages)

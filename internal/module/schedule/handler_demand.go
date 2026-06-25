@@ -127,16 +127,18 @@ type scheduleIndexDemandData struct {
 	SelectedGroups          string
 	SelectedProducts        string
 	SelectedStages          string
+	SelectedWindows         string
 	SelectedGroupMap        map[uint]bool
 	SelectedProductMap      map[uint]bool
 	SelectedStageMap        map[string]bool
+	SelectedWindowMap       map[uint]bool
 }
 
 func scheduleFilterPreserveParams(
 	filter string,
 	suspended bool,
 	bizPage, indepPage int,
-	tab, groups, products, stages string,
+	tab, groups, products, stages, windows string,
 ) map[string]string {
 	params := map[string]string{
 		"filter": filter,
@@ -152,6 +154,9 @@ func scheduleFilterPreserveParams(
 	}
 	if strings.TrimSpace(stages) != "" {
 		params["stages"] = strings.TrimSpace(stages)
+	}
+	if strings.TrimSpace(windows) != "" {
+		params["windows"] = strings.TrimSpace(windows)
 	}
 	if indepPage > 1 {
 		params["indepPage"] = strconv.Itoa(indepPage)
@@ -216,6 +221,7 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 	indepReq.Groups = listReq.Groups
 	indepReq.Products = listReq.Products
 	indepReq.Stages = listReq.Stages
+	indepReq.Windows = listReq.Windows
 	indepReq.Normalize()
 
 	indepResp, err := h.svc.ListIndependentStories(c.Request.Context(), actor, indepReq)
@@ -254,14 +260,14 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 	bizPager.PageParam = "bizPage"
 	bizPager.PreserveParams = scheduleFilterPreserveParams(
 		activeFilter, suspendedActive, bizPage, indepPage, tab,
-		listReq.Groups, listReq.Products, listReq.Stages,
+		listReq.Groups, listReq.Products, listReq.Stages, listReq.Windows,
 	)
 
 	indepPager := pagination.New(indepResp.Total, indepPage, scheduleListPageSize)
 	indepPager.PageParam = "indepPage"
 	indepPager.PreserveParams = scheduleFilterPreserveParams(
 		activeFilter, suspendedActive, bizPage, indepPage, "indep",
-		listReq.Groups, listReq.Products, listReq.Stages,
+		listReq.Groups, listReq.Products, listReq.Stages, listReq.Windows,
 	)
 
 	return scheduleIndexDemandData{
@@ -279,9 +285,11 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 		SelectedGroups:          listReq.Groups,
 		SelectedProducts:        listReq.Products,
 		SelectedStages:          listReq.Stages,
+		SelectedWindows:         listReq.Windows,
 		SelectedGroupMap:        selectedUintMap(listReq.Groups),
 		SelectedProductMap:      selectedUintMap(listReq.Products),
 		SelectedStageMap:        selectedStageMap(listReq.Stages),
+		SelectedWindowMap:       selectedUintMap(listReq.Windows),
 	}, true
 }
 

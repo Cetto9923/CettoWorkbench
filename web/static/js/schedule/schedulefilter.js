@@ -76,6 +76,7 @@
       groups: "",
       products: "",
       stages: "",
+      windows: "",
     };
     $row.find(".schedule-ms").each(function () {
       var $ms = $(this);
@@ -97,6 +98,7 @@
       groups: values.groups || null,
       products: values.products || null,
       stages: values.stages || null,
+      windows: values.windows || null,
       bizPage: null,
       indepPage: null,
     });

@@ -142,6 +142,7 @@
       groups: null,
       products: null,
       stages: null,
+      windows: null,
       bizPage: null,
       indepPage: null,
     });

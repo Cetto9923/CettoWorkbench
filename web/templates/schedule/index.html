@@ -8,7 +8,11 @@
           .IndependentRequirements ([]schedule.IndependentRequirement),
           .BizTotal (int64), .IndependentTotal (int64),
           .Teamgroups ([]schedule.TeamgroupOption),
-          .Products ([]schedule.ZtProduct), .BizPager (*pagination.Pager),
+          .Products ([]schedule.ZtProduct),
+          .FilterProducts ([]schedule.ZtProduct),
+          .FilterWindows ([]schedule.WindowFilterOption),
+          .StageFilterOptions ([]schedule.StageFilterOption),
+          .SelectedWindowMap (map[uint]bool), .BizPager (*pagination.Pager),
           .IndepPager (*pagination.Pager)
 TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
 ========================================================================== */}}
@@ -169,6 +173,25 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
               <input type="checkbox" class="schedule-ms-checkbox" value="{{ .Value }}" data-label="{{ .Label }}"{{ if index $.SelectedStageMap .Value }} checked{{ end }}>
               <span>{{ .Label }}</span>
             </label>
+            {{ end }}
+          </div>
+        </div>
+      </div>
+
+      <div class="schedule-ms" data-filter-key="windows" data-filter-label="窗口">
+        <button type="button" class="form-select schedule-ms-trigger" aria-haspopup="listbox" aria-expanded="false">
+          <span class="schedule-ms-text">窗口</span>
+          <i class="fas fa-chevron-down" aria-hidden="true"></i>
+        </button>
+        <div class="schedule-ms-panel" hidden>
+          <div class="schedule-ms-options">
+            {{ range .FilterWindows }}
+            <label class="schedule-ms-option">
+              <input type="checkbox" class="schedule-ms-checkbox" value="{{ .ID }}" data-label="{{ .Name }}"{{ if index $.SelectedWindowMap .ID }} checked{{ end }}>
+              <span>{{ .Name }}</span>
+            </label>
+            {{ else }}
+            <div class="schedule-ms-empty">暂无窗口</div>
             {{ end }}
           </div>
         </div>
