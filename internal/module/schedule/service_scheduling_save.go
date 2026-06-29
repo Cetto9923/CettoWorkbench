@@ -39,7 +39,7 @@ func (s *Service) SaveScheduling(ctx context.Context, actor *model.User, demandI
 
 	return s.repo.Transaction(ctx, func(txRepo *Repo) error {
 		for _, storyReq := range req.Stories {
-			storyID, productID, planID, err := s.applySchedulingStory(ctx, txRepo, account, demandID, mainSystemID, req.WindowID, storyReq)
+			storyID, productID, _, err := s.applySchedulingStory(ctx, txRepo, account, demandID, mainSystemID, req.WindowID, storyReq)
 			if err != nil {
 				return err
 			}
@@ -49,34 +49,13 @@ func (s *Service) SaveScheduling(ctx context.Context, actor *model.User, demandI
 			if err := s.applySchedulingTasks(ctx, txRepo, account, storyID, productID, storyReq.Tasks); err != nil {
 				return err
 			}
-			if storyID > 0 && planID > 0 && productID > 0 {
-				planIDCopy := planID
-				if err := txRepo.SaveDemandWindow(ctx, &model.DemandWindow{
-					DemandID:  demandID,
-					StoryID:   storyID,
-					WindowID:  uint64(req.WindowID),
-					PlanID:    &planIDCopy,
-					ProductID: productID,
-					CreatedBy: account,
-					UpdatedBy: account,
-				}); err != nil {
-					return fmt.Errorf("save demand window for story %d: %w", storyID, err)
-				}
-			}
 		}
 
 		if err := txRepo.UpdateDemandScheduling(ctx, demandID, buildDemandSchedulingUpdates(req, account)); err != nil {
 			return fmt.Errorf("update demand scheduling: %w", err)
 		}
 
-		return txRepo.SaveDemandWindow(ctx, &model.DemandWindow{
-			DemandID:  demandID,
-			StoryID:   0,
-			WindowID:  uint64(req.WindowID),
-			ProductID: 0,
-			CreatedBy: account,
-			UpdatedBy: account,
-		})
+		return txRepo.SaveDemandLevelWindow(ctx, demandID, uint64(req.WindowID), account)
 	})
 }
 

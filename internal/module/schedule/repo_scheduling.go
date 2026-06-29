@@ -110,7 +110,43 @@ LIMIT 1`
 	}, nil
 }
 
+// findDemandLevelWindow 读 zt_demandwindow 业需级（story=0）窗口关联，
+// 优先于 plan 反推链路使用。查无行时返回 (0, "", nil) 不视为错误。
+// 注意：Raw 不自动加软删除过滤，必须手加 dw.deletedAt IS NULL。
+func (r *Repo) findDemandLevelWindow(ctx context.Context, demandID uint) (uint, string, error) {
+	const query = `
+SELECT dw.versionWindow AS windowID, vw.name AS windowName
+FROM zt_demandwindow dw
+INNER JOIN zt_versionwindow vw ON vw.id = dw.versionWindow AND vw.deletedAt IS NULL
+WHERE dw.demand = ?
+  AND dw.story = 0
+  AND dw.deletedAt IS NULL
+ORDER BY dw.updatedDate DESC, dw.id DESC
+LIMIT 1`
+
+	type demandLevelWindowRow struct {
+		WindowID   uint   `gorm:"column:windowID"`
+		WindowName string `gorm:"column:windowName"`
+	}
+	var row demandLevelWindowRow
+	if err := r.db.WithContext(ctx).Raw(query, demandID).Scan(&row).Error; err != nil {
+		return 0, "", err
+	}
+	if row.WindowID == 0 {
+		return 0, "", nil
+	}
+	return row.WindowID, strings.TrimSpace(row.WindowName), nil
+}
+
 func (r *Repo) findDemandWindowRef(ctx context.Context, demandID uint) (uint, string, error) {
+	// 优先读 zt_demandwindow 业需级（story=0）记录，避免无 story/plan 时回显为 0。
+	if windowID, windowName, err := r.findDemandLevelWindow(ctx, demandID); err != nil {
+		return 0, "", err
+	} else if windowID > 0 {
+		return windowID, windowName, nil
+	}
+
+	// Fallback：业需级无记录时走 story → plan 反推链路（保留原逻辑）。
 	stories, err := r.FindStoriesByDemands(ctx, []uint{demandID})
 	if err != nil {
 		return 0, "", err

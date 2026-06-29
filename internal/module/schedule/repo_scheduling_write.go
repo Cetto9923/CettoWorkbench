@@ -440,31 +440,23 @@ func (r *Repo) UpdateDemandScheduling(ctx context.Context, demandID uint, update
 		Updates(updates).Error
 }
 
-// SaveDemandWindow 保存业需-窗口关联（存在则更新 plan / updatedBy）。
-func (r *Repo) SaveDemandWindow(ctx context.Context, dw *model.DemandWindow) error {
-	if dw == nil {
-		return errors.New("demand window is nil")
-	}
-	var existing model.DemandWindow
-	err := r.db.WithContext(ctx).
-		Where("demand = ? AND story = ? AND versionWindow = ? AND product = ?",
-			dw.DemandID, dw.StoryID, dw.WindowID, dw.ProductID).
-		First(&existing).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return r.db.WithContext(ctx).Create(dw).Error
-	}
-	if err != nil {
+// SaveDemandLevelWindow 保存业需级窗口关联（硬删除旧记录后 INSERT 单行）。
+// 用 Unscoped 绕开 gorm 软删除以释放 uk_demand_story 唯一键位，避免残留行撞键；
+// 实际调用方 service 将本方法包在事务内以保证两步原子性。
+func (r *Repo) SaveDemandLevelWindow(ctx context.Context, demandID uint, windowID uint64, account string) error {
+	if err := r.db.WithContext(ctx).
+		Unscoped().
+		Where("demand = ? AND story = 0", demandID).
+		Delete(&model.DemandWindow{}).Error; err != nil {
 		return err
 	}
-	updates := map[string]interface{}{
-		"updatedBy": dw.UpdatedBy,
-	}
-	if dw.PlanID != nil {
-		updates["plan"] = *dw.PlanID
-	}
-	return r.db.WithContext(ctx).
-		Model(&existing).
-		Updates(updates).Error
+	return r.db.WithContext(ctx).Create(&model.DemandWindow{
+		DemandID:  demandID,
+		StoryID:   0,
+		WindowID:  windowID,
+		CreatedBy: account,
+		UpdatedBy: account,
+	}).Error
 }
 
 func nullableDateValue(raw string) string {

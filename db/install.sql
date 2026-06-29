@@ -84,10 +84,8 @@ CREATE TABLE IF NOT EXISTS `zt_versionwindowproduct` (
 CREATE TABLE IF NOT EXISTS `zt_demandwindow` (
     `id`            BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `demand`        MEDIUMINT UNSIGNED NOT NULL COMMENT '业务需求ID，对应 zt_demand.id',
-    `story`         MEDIUMINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '研发需求ID，0=业需级关联，对应 zt_story.id',
+    `story`         MEDIUMINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '研发需求ID，0=业需级关联（固定值），对应 zt_story.id',
     `versionWindow` BIGINT UNSIGNED NOT NULL COMMENT '版本窗口ID，对应 zt_versionwindow.id',
-    `plan`          MEDIUMINT UNSIGNED DEFAULT NULL COMMENT '计划ID，对应 zt_productplan.id',
-    `product`       MEDIUMINT UNSIGNED NOT NULL COMMENT '系统/产品ID，对应 zt_product.id',
     `createdBy`     VARCHAR(30) NOT NULL DEFAULT '' COMMENT '创建人账号',
     `updatedBy`     VARCHAR(30) NOT NULL DEFAULT '' COMMENT '最后更新人账号',
     `createdDate`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -96,6 +94,5 @@ CREATE TABLE IF NOT EXISTS `zt_demandwindow` (
     INDEX `idx_demand` (`demand`),
     INDEX `idx_story` (`story`),
     INDEX `idx_versionWindow` (`versionWindow`),
-    INDEX `idx_product` (`product`),
-    UNIQUE KEY `uk_demand_story_versionWindow_product` (`demand`, `story`, `versionWindow`, `product`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='业务需求-窗口关联';
+    UNIQUE KEY `uk_demand_story` (`demand`, `story`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='业务需求-窗口关联（业需级单值：demand+story(=0) 唯一）';
