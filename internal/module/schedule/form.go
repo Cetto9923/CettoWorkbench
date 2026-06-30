@@ -857,30 +857,33 @@ type StoryTasksResp struct {
 }
 
 // SaveStoryTasksReq 维护任务弹窗保存请求。
+// 每条任务独立携带 projectId/executionId，支持弹窗内逐行选择项目与执行。
 type SaveStoryTasksReq struct {
-	ProjectID   uint               `json:"projectId"`
-	ExecutionID uint               `json:"executionId"`
-	Tasks       []SaveStoryTasksTask `json:"tasks"`
+	Tasks []SaveStoryTasksTask `json:"tasks"`
 }
 
 // Validate 校验维护任务保存请求。
 func (r *SaveStoryTasksReq) Validate() []FieldError {
 	var errs []FieldError
-	hasNew := false
 	for i, task := range r.Tasks {
 		prefix := "tasks[" + strconv.Itoa(i) + "]"
 		action := strings.TrimSpace(task.Action)
 		switch action {
 		case "new":
 			if task.Create {
-				hasNew = true
-			}
-			if task.Create && strings.TrimSpace(task.Name) == "" {
-				errs = append(errs, FieldError{Field: prefix + ".name", Message: "任务名称不能为空"})
+				if strings.TrimSpace(task.Name) == "" {
+					errs = append(errs, FieldError{Field: prefix + ".name", Message: "任务名称不能为空"})
+				}
+				if task.ExecutionID == 0 {
+					errs = append(errs, FieldError{Field: prefix + ".executionId", Message: "执行不能为空"})
+				}
 			}
 		case "edit", "delete":
 			if task.ID == 0 {
 				errs = append(errs, FieldError{Field: prefix + ".id", Message: "任务 ID 无效"})
+			}
+			if action == "edit" && task.ExecutionID == 0 {
+				errs = append(errs, FieldError{Field: prefix + ".executionId", Message: "执行不能为空"})
 			}
 		case "":
 			errs = append(errs, FieldError{Field: prefix + ".action", Message: "操作类型不能为空"})
@@ -888,28 +891,24 @@ func (r *SaveStoryTasksReq) Validate() []FieldError {
 			errs = append(errs, FieldError{Field: prefix + ".action", Message: "不支持的操作类型"})
 		}
 	}
-	if hasNew {
-		if r.ProjectID == 0 {
-			errs = append(errs, FieldError{Field: "projectId", Message: "项目不能为空"})
-		}
-		if r.ExecutionID == 0 {
-			errs = append(errs, FieldError{Field: "executionId", Message: "执行不能为空"})
-		}
-	}
 	return errs
 }
 
 // SaveStoryTasksTask 维护任务弹窗保存任务条目。
+// ProjectID/ExecutionID 由每条任务独立携带，projectId 仅用于前端联动加载执行，
+// 后端通过 executionId 反查所属 project。
 type SaveStoryTasksTask struct {
-	Action     string  `json:"action"`
-	ID         uint    `json:"id"`
-	Type       string  `json:"type"`
-	Name       string  `json:"name"`
-	AssignedTo string  `json:"assignedTo"`
-	Estimate   float64 `json:"estimate"`
-	EstStarted string  `json:"estStarted"`
-	Deadline   string  `json:"deadline"`
-	Create     bool    `json:"create"`
+	Action      string  `json:"action"`
+	ID          uint    `json:"id"`
+	ProjectID   uint    `json:"projectId"`
+	ExecutionID uint    `json:"executionId"`
+	Type        string  `json:"type"`
+	Name        string  `json:"name"`
+	AssignedTo  string  `json:"assignedTo"`
+	Estimate    float64 `json:"estimate"`
+	EstStarted  string  `json:"estStarted"`
+	Deadline    string  `json:"deadline"`
+	Create      bool    `json:"create"`
 }
 
 // storyPointLabel 将故事点数字映射为关键词，与禅道 config/changshu.php:152-156 一致。

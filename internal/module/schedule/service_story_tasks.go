@@ -177,12 +177,9 @@ func (s *Service) applyStoryTaskSave(
 		if !taskReq.Create {
 			return nil
 		}
-		if req.ProjectID == 0 || req.ExecutionID == 0 {
-			return errors.New("新建任务时项目和执行不能为空")
-		}
 		return s.applySingleSchedulingTask(ctx, txRepo, account, storyID, productID, SaveSchedulingTask{
 			Action:      "new",
-			ExecutionID: req.ExecutionID,
+			ExecutionID: taskReq.ExecutionID,
 			Type:        taskReq.Type,
 			Name:        taskReq.Name,
 			AssignedTo:  taskReq.AssignedTo,
@@ -192,14 +189,10 @@ func (s *Service) applyStoryTaskSave(
 		})
 
 	case "edit":
-		executionID, err := txRepo.GetTaskExecution(ctx, taskReq.ID)
-		if err != nil {
-			return fmt.Errorf("resolve task %d execution: %w", taskReq.ID, err)
-		}
 		return s.applySingleSchedulingTask(ctx, txRepo, account, storyID, productID, SaveSchedulingTask{
 			Action:      "edit",
 			ID:          taskReq.ID,
-			ExecutionID: executionID,
+			ExecutionID: taskReq.ExecutionID,
 			Type:        taskReq.Type,
 			Name:        taskReq.Name,
 			AssignedTo:  taskReq.AssignedTo,

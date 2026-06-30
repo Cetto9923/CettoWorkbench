@@ -6,6 +6,7 @@
   var MODAL_IDS = ["taskModal", "taskModalOverlay"];
   var currentStoryId = 0;
   var deletedTaskIds = [];
+  var cachedProjects = [];
 
   function parsePositiveInt(value) {
     var num = parseInt(String(value == null ? "" : value), 10);
@@ -110,8 +111,9 @@
     }
   }
 
-  function fillProjectSelect(projects, selectedId) {
-    var $select = $("#taskModalProject");
+  function fillRowProjectSelect($row, projects, selectedId) {
+    var $select = $row.find(".rd-task-project-select").first();
+    var selected = String(selectedId || "");
     $select.empty();
     $("<option></option>").val("").text("请选择项目").appendTo($select);
     (projects || []).forEach(function (project) {
@@ -119,15 +121,16 @@
       if (!id) {
         return;
       }
-      $("<option></option>").val(id).text(project.name || id).appendTo($select);
+      $("<option></option>").val(id).text($.trim(project.name || "") || id).appendTo($select);
     });
-    if (selectedId) {
-      $select.val(String(selectedId));
+    if (selected) {
+      $select.val(selected);
     }
   }
 
-  function fillExecutionSelect(executions, selectedId) {
-    var $select = $("#taskModalExecution");
+  function fillRowExecutionSelect($row, executions, selectedId, disabled) {
+    var $select = $row.find(".rd-task-execution-select").first();
+    var selected = String(selectedId || "");
     $select.empty();
     $("<option></option>").val("").text("请选择执行").appendTo($select);
     (executions || []).forEach(function (execution) {
@@ -135,26 +138,34 @@
       if (!id) {
         return;
       }
-      var label = shared ? shared.formatExecutionOptionLabel(execution) : execution.name || id;
+      var label = shared && shared.formatExecutionOptionLabel
+        ? shared.formatExecutionOptionLabel(execution)
+        : execution.name || id;
       $("<option></option>").val(id).text(label).appendTo($select);
     });
-    if (selectedId) {
-      $select.val(String(selectedId));
+    $select.prop("disabled", !!disabled);
+    if (selected) {
+      $select.val(selected);
     }
-    $select.prop("disabled", !(executions && executions.length));
   }
 
-  function loadExecutions(projectId, selectedId) {
+  function loadRowExecutions($row, projectId, selectedExecutionId) {
     var pid = parsePositiveInt(projectId);
     if (!pid) {
-      fillExecutionSelect([], 0);
+      fillRowExecutionSelect($row, [], 0, true);
       return $.Deferred().resolve([]).promise();
     }
-    return scheduleGetJSON("/schedule/projects/" + pid + "/executions").then(function (resp) {
-      var executions = (resp && resp.executions) || [];
-      fillExecutionSelect(executions, selectedId);
-      return executions;
-    });
+    fillRowExecutionSelect($row, [], 0, true);
+    return scheduleGetJSON("/schedule/projects/" + pid + "/executions")
+      .then(function (resp) {
+        var executions = (resp && resp.executions) || [];
+        fillRowExecutionSelect($row, executions, selectedExecutionId, false);
+        return executions;
+      })
+      .catch(function () {
+        fillRowExecutionSelect($row, [], 0, false);
+        return [];
+      });
   }
 
   function sanitizeRichHtml(html) {
@@ -236,6 +247,8 @@
     $row.find(".rd-task-hours").val(task.estimate != null ? task.estimate : "");
     $row.find(".rd-task-start").val(task.estStarted || "");
     $row.find(".rd-task-end").val(task.deadline || "");
+    fillRowProjectSelect($row, cachedProjects, task.projectId || 0);
+    loadRowExecutions($row, task.projectId || 0, task.executionId || 0);
     return $row;
   }
 
@@ -269,6 +282,7 @@
     if (tasksApi) {
       tasksApi.fillTaskTypeSelect($row.find(".rd-task-type"), "devel");
     }
+    fillRowProjectSelect($row, cachedProjects, 0);
     $("#taskModalTableBody").append($row);
     mountTaskRowControls($row);
   }
@@ -281,8 +295,6 @@
     $("#taskModalTableBody").empty();
     $("#taskModalSpec").empty();
     $("#taskModalInfoBar").empty();
-    $("#taskModalProject").empty();
-    $("#taskModalExecution").empty().prop("disabled", true);
   }
 
   function loadTaskModalData(storyId) {
@@ -294,18 +306,15 @@
         shared.schedulingUsers = resp.users || [];
       }
 
+      cachedProjects = resp.projects || [];
+
       var story = resp.story || {};
       $("#taskModalTitle").text("拆任务 · RD-" + (story.id || storyId));
       renderSpec(story);
       renderInfoBar(story);
-      fillProjectSelect(resp.projects || [], resp.defaultProjectId || 0);
 
-      var defaultProjectId = resp.defaultProjectId || 0;
-      var defaultExecutionId = resp.defaultExecutionId || 0;
-      return loadExecutions(defaultProjectId, defaultExecutionId).then(function () {
-        renderTaskRows(resp.tasks || []);
-        return resp;
-      });
+      renderTaskRows(resp.tasks || []);
+      return resp;
     });
   }
 
@@ -332,6 +341,8 @@
       tasks.push({
         action: "edit",
         id: taskId,
+        projectId: parsePositiveInt($row.find(".rd-task-project-select").val()),
+        executionId: parsePositiveInt($row.find(".rd-task-execution-select").val()),
         type: $.trim($row.attr("data-task-type") || ""),
         name: $.trim($row.find(".rd-task-name").val() || ""),
         assignedTo: readRowAssignedTo($row),
@@ -346,6 +357,8 @@
       tasks.push({
         action: "new",
         create: !!$row.find('input[type="checkbox"]').prop("checked"),
+        projectId: parsePositiveInt($row.find(".rd-task-project-select").val()),
+        executionId: parsePositiveInt($row.find(".rd-task-execution-select").val()),
         type: $.trim($row.find(".rd-task-type").val() || "devel"),
         name: $.trim($row.find(".rd-task-name").val() || ""),
         assignedTo: readRowAssignedTo($row),
@@ -362,22 +375,18 @@
     if (!currentStoryId) {
       return;
     }
-    var projectId = parsePositiveInt($("#taskModalProject").val());
-    var executionId = parsePositiveInt($("#taskModalExecution").val());
     var tasks = collectTasksPayload();
-    var hasNew = tasks.some(function (item) {
-      return item.action === "new" && item.create;
+    var missingExecution = tasks.some(function (item) {
+      return item.action === "new" && item.create && !item.executionId;
     });
-    if (hasNew && (!projectId || !executionId)) {
-      toast("请选择项目和执行", "error");
+    if (missingExecution) {
+      toast("请选择执行", "error");
       return;
     }
 
     var $btn = $("#taskModalSaveBtn");
     $btn.prop("disabled", true);
     schedulePostJSON("/schedule/stories/" + currentStoryId + "/save-tasks", {
-      projectId: projectId,
-      executionId: executionId,
       tasks: tasks,
     })
       .then(function (result) {
@@ -393,7 +402,7 @@
       .catch(function () {
         toast("保存失败", "error");
       })
-      .always(function () {
+      .finally(function () {
         $btn.prop("disabled", false);
       });
   }
@@ -427,8 +436,10 @@
     }
   };
 
-  $("#taskModalProject").on("change", function () {
-    loadExecutions($(this).val(), 0);
+  $("#taskModalTableBody").on("change", ".rd-task-project-select", function () {
+    var $row = $(this).closest("tr");
+    var pid = parsePositiveInt($(this).val());
+    loadRowExecutions($row, pid, 0);
   });
 
   $("#taskModalAddBtn").on("click", addTaskModalRow);
