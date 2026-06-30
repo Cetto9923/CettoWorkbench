@@ -196,6 +196,9 @@ func (s *Service) applySingleSchedulingTask(
 		if err := txRepo.CreateAction(ctx, "task", taskID, "Opened", account, productID, projectID, taskReq.ExecutionID); err != nil {
 			return fmt.Errorf("create task action: %w", err)
 		}
+		if err := txRepo.LinkStoryToProjectAndExecution(ctx, storyID, productID, projectID, taskReq.ExecutionID, account); err != nil {
+			return fmt.Errorf("link story to project/execution: %w", err)
+		}
 
 	case "edit":
 		projectID, err := txRepo.GetProjectIDByExecution(ctx, taskReq.ExecutionID)
@@ -219,6 +222,9 @@ func (s *Service) applySingleSchedulingTask(
 		}
 		if err := txRepo.CreateAction(ctx, "task", taskReq.ID, "Edited", account, productID, projectID, taskReq.ExecutionID); err != nil {
 			return fmt.Errorf("create task action: %w", err)
+		}
+		if err := txRepo.LinkStoryToProjectAndExecution(ctx, storyID, productID, projectID, taskReq.ExecutionID, account); err != nil {
+			return fmt.Errorf("link story to project/execution: %w", err)
 		}
 
 	case "delete":
