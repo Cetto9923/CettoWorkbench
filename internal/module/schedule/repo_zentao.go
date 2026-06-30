@@ -164,7 +164,7 @@ func parseDeptPathIDs(path string) []uint {
 	return ids
 }
 
-// ListBizDemands 顶层业需分页主查询（parent=0）。
+// ListBizDemands 顶层业需分页主查询（parent IN (0,-1)：含被拆分的父需求）。
 func (r *Repo) ListBizDemands(ctx context.Context, req ListBizDemandsReq, poolIDs []uint, account string) ([]ZtDemand, int64, error) {
 	if len(poolIDs) == 0 {
 		return []ZtDemand{}, 0, nil
@@ -179,7 +179,7 @@ func (r *Repo) ListBizDemands(ctx context.Context, req ListBizDemandsReq, poolID
 SELECT COUNT(*) AS total
 FROM zt_demand d
 WHERE d.deleted = '0'
-  AND d.parent = 0
+  AND d.parent IN (0, -1)
   AND d.pool IN ?`
 
 	var total int64
@@ -209,7 +209,7 @@ SELECT
   d.estimateLaunch
 FROM zt_demand d
 WHERE d.deleted = '0'
-  AND d.parent = 0
+  AND d.parent IN (0, -1)
   AND d.pool IN ?`
 
 	var rows []ZtDemand

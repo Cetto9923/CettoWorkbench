@@ -186,7 +186,7 @@ SELECT
   SUM(CASE WHEN isManagerReview = 'reviewing' THEN 1 ELSE 0 END) AS manager_reviewing,
   SUM(CASE WHEN status = 'closed' THEN 1 ELSE 0 END) AS closed
 FROM zt_demand
-WHERE deleted = '0' AND parent = 0 AND pool IN ?`
+WHERE deleted = '0' AND parent IN (0, -1) AND pool IN ?`
 
 	var row bizDemandSimpleCountRow
 	if err := r.db.WithContext(ctx).Raw(simpleQuery, poolIDs).Scan(&row).Error; err != nil {
@@ -223,7 +223,7 @@ func (r *Repo) countBizDemandsWithFilter(ctx context.Context, poolIDs []uint, ac
 SELECT COUNT(*) AS total
 FROM zt_demand d
 WHERE d.deleted = '0'
-  AND d.parent = 0
+  AND d.parent IN (0, -1)
   AND d.pool IN ?`
 
 	args := append([]interface{}{poolIDs}, clause.args...)

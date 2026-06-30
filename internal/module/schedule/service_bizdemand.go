@@ -109,7 +109,7 @@ func (s *Service) ListBizDemands(ctx context.Context, actor *model.User, req Lis
 }
 
 type bizDemandAssembleContext struct {
-	childByParent        map[uint][]ZtDemand
+	childByParent        map[int][]ZtDemand
 	storiesByDemand      map[uint][]ZtStory
 	productCountByDemand map[uint]int
 	productNameByID      map[uint]string
@@ -120,7 +120,7 @@ type bizDemandAssembleContext struct {
 }
 
 func (c bizDemandAssembleContext) buildBizDemandItem(top ZtDemand) BizDemandItem {
-	children := c.childByParent[top.ID]
+	children := c.childByParent[int(top.ID)]
 	subtreeStories := collectSubtreeStories(top.ID, children, c.storiesByDemand)
 	mainSystemStories := filterMainSystemStories(subtreeStories)
 	teamgroupName := c.teamgroupName(top.TeamGroup)
@@ -226,8 +226,8 @@ func mergeDemandIDs(a, b []uint) []uint {
 	return out
 }
 
-func groupChildDemandsByParent(children []ZtDemand) map[uint][]ZtDemand {
-	out := make(map[uint][]ZtDemand, len(children))
+func groupChildDemandsByParent(children []ZtDemand) map[int][]ZtDemand {
+	out := make(map[int][]ZtDemand, len(children))
 	for _, child := range children {
 		out[child.Parent] = append(out[child.Parent], child)
 	}

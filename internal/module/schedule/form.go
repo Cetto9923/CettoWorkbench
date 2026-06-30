@@ -489,7 +489,7 @@ type ZtDemand struct {
 	RD             string `gorm:"column:RD"`
 	CreatedBy      string `gorm:"column:createdBy"`
 	Pool           uint   `gorm:"column:pool"`
-	Parent         uint   `gorm:"column:parent"`
+	Parent         int    `gorm:"column:parent"`
 	Hang           string `gorm:"column:hang"`
 	Category       string `gorm:"column:category"`
 	EstimateLaunch string `gorm:"column:estimateLaunch"`
