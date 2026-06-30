@@ -225,29 +225,6 @@ ORDER BY id ASC`
 	return out, nil
 }
 
-// GetTaskExecution 查询任务所属执行 ID。
-func (r *Repo) GetTaskExecution(ctx context.Context, taskID uint) (uint, error) {
-	if taskID == 0 {
-		return 0, errors.New("任务 ID 无效")
-	}
-
-	const query = `
-SELECT execution
-FROM zt_task
-WHERE id = ?
-  AND deleted = '0'
-LIMIT 1`
-
-	var executionID uint
-	if err := r.db.WithContext(ctx).Raw(query, taskID).Scan(&executionID).Error; err != nil {
-		return 0, err
-	}
-	if executionID == 0 {
-		return 0, errors.New("任务不存在")
-	}
-	return executionID, nil
-}
-
 type storySchedulingRow struct {
 	ID         uint   `gorm:"column:id"`
 	Title      string `gorm:"column:title"`
