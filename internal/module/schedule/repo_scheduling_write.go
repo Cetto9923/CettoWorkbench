@@ -74,6 +74,7 @@ type ztStoryCreateRow struct {
 	Title                   string    `gorm:"column:title"`
 	Type                    string    `gorm:"column:type"`
 	Pri                     int       `gorm:"column:pri"`
+	Grade                   int       `gorm:"column:grade"`
 	Estimate                float64   `gorm:"column:estimate"`
 	Status                  string    `gorm:"column:status"`
 	Stage                   string    `gorm:"column:stage"`
@@ -271,6 +272,7 @@ func (r *Repo) CreateStory(ctx context.Context, story *ZtStoryInsert) (uint, err
 		Title:                   strings.TrimSpace(story.Title),
 		Type:                    "story",
 		Pri:                     3,
+		Grade:                   1,
 		Estimate:                story.Estimate,
 		Status:                  "active",
 		Stage:                   "planned",
