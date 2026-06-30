@@ -664,6 +664,18 @@ type DemandSchedulingStoryItem struct {
 	Projects       []DemandSchedulingProjectOption `json:"projects"`
 }
 
+// UserStoryItem 排期弹窗用户故事条目（来自 zt_demanduserstory）。
+type UserStoryItem struct {
+	ID             uint   `json:"id"`
+	Role           string `json:"role"`
+	GV             string `json:"gv"`
+	ProductID      uint   `json:"productId"`
+	ProductName    string `json:"productName"`
+	Revpoint       int    `json:"revpoint"`
+	PointLabel     string `json:"pointLabel"`
+	EffectivePoint int    `json:"effectivePoint"`
+}
+
 // DemandSchedulingResp 排期一体化弹窗加载数据。
 type DemandSchedulingResp struct {
 	*DemandSchedulingDetail
@@ -671,6 +683,7 @@ type DemandSchedulingResp struct {
 	ProductProjects   map[string][]DemandSchedulingProjectOption   `json:"productProjects"`
 	ProjectExecutions map[string][]ZtExecutionOption               `json:"projectExecutions"`
 	Stories           []DemandSchedulingStoryItem                  `json:"stories"`
+	UserStories       []UserStoryItem                              `json:"userStories"`
 	Windows           []SchedulingWindowOption                     `json:"windows"`
 	Users             []SchedulingUserOption                       `json:"users"`
 }
@@ -690,6 +703,18 @@ type ZtStory struct {
 	IsMainSystemAssociation int     `gorm:"column:isMainSystemAssociation"`
 	AssignedTo              string  `gorm:"column:assignedTo"`
 	Estimate                float64 `gorm:"column:estimate"`
+}
+
+// ZtDemandUserStory 禅道 zt_demanduserstory 只读投影。
+type ZtDemandUserStory struct {
+	ID         uint   `gorm:"column:id"`
+	Demand     uint   `gorm:"column:demand"`
+	Role       string `gorm:"column:role"`
+	GV         string `gorm:"column:gv"`
+	Product    uint   `gorm:"column:product"`
+	Point      int    `gorm:"column:point"`
+	Revpoint   int    `gorm:"column:revpoint"`
+	SourceType string `gorm:"column:sourceType"`
 }
 
 // SaveSchedulingReq 排期一体化「确认并同步」保存请求。
@@ -885,4 +910,20 @@ type SaveStoryTasksTask struct {
 	EstStarted string  `json:"estStarted"`
 	Deadline   string  `json:"deadline"`
 	Create     bool    `json:"create"`
+}
+
+// storyPointLabel 将故事点数字映射为关键词，与禅道 config/changshu.php:152-156 一致。
+func storyPointLabel(point int) string {
+	switch point {
+	case 2:
+		return "微型"
+	case 3:
+		return "小型"
+	case 5:
+		return "中型"
+	case 8:
+		return "大型"
+	default:
+		return ""
+	}
 }

@@ -410,6 +410,10 @@ func (s *Service) GetDemandScheduling(ctx context.Context, actor *model.User, de
 	if err != nil {
 		return nil, err
 	}
+	userStories, err := s.buildDemandUserStories(ctx, demandID)
+	if err != nil {
+		return nil, err
+	}
 	projectExecutions, err := s.buildProjectExecutionsMap(ctx, productProjects)
 	if err != nil {
 		return nil, err
@@ -420,6 +424,7 @@ func (s *Service) GetDemandScheduling(ctx context.Context, actor *model.User, de
 		ProductProjects:        productProjects,
 		ProjectExecutions:      projectExecutions,
 		Stories:                stories,
+		UserStories:            userStories,
 		Windows:                windows,
 		Users:                  users,
 	}, nil

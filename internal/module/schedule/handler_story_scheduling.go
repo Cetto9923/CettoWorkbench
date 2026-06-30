@@ -55,6 +55,7 @@ func buildSchedulingDetailJSON(resp *DemandSchedulingResp) gin.H {
 		"productProjects":   gin.H{},
 		"projectExecutions": gin.H{},
 		"stories":           []DemandSchedulingStoryItem{},
+		"userStories":       []UserStoryItem{},
 		"windows":           []SchedulingWindowOption{},
 		"users":             []SchedulingUserOption{},
 	}

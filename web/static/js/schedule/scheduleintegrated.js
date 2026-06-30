@@ -520,34 +520,32 @@
         $tbody.append(emptyRow);
       }
       if ($summary.length) {
-        $summary.text("只读，用于拼接研发需求");
+        $summary.text("只读 · 用户故事条目");
       }
       return;
     }
 
-    list.forEach(function (story, index) {
+    list.forEach(function (item, index) {
       var row = shared ? shared.cloneTemplateElement("tplStoryItemRow", "tr") : null;
       if (!row) {
         return;
       }
-      var role = story.isMain ? "主系统故事" : "配合故事";
-      var estimate = shared ? shared.formatStoryEstimate(story.estimate) : String(story.estimate || "0");
-      var estimateNum = Number(estimate);
-      if (!isNaN(estimateNum)) {
-        totalSp += estimateNum;
+      var effectivePoint = Number(item.effectivePoint || 0);
+      if (!isNaN(effectivePoint)) {
+        totalSp += effectivePoint;
       }
 
       row.querySelector(".story-item-index").textContent = String(index + 1);
-      row.querySelector(".story-item-role").textContent = role;
-      row.querySelector(".story-item-title").textContent = story.title || "—";
-      row.querySelector(".story-item-product").textContent = story.productName || "—";
-      row.querySelector(".story-item-estimate").textContent = estimate;
+      row.querySelector(".story-item-role").textContent = item.role || "—";
+      row.querySelector(".story-item-title").textContent = item.gv || "—";
+      row.querySelector(".story-item-product").textContent = item.productName || "—";
+      row.querySelector(".story-item-estimate").textContent = item.pointLabel || "—";
       $tbody.append(row);
     });
 
     if ($summary.length) {
       $summary.text(
-        "只读，用于拼接研发需求 · 合计 " +
+        "只读 · 合计 " +
           (shared ? shared.formatStoryEstimate(totalSp) : totalSp) +
           " SP"
       );
@@ -589,7 +587,7 @@
       : mainSystem;
     $("#scheduleIntegratedSystemsHint").text("涉及系统：" + systemsHint);
 
-    fillStoryItems(data.stories);
+    fillStoryItems(data.userStories || []);
     if (rdApi) {
       rdApi.render(data.stories, users, involvedProducts, mainSystemId, data.productProjects);
     }

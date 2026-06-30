@@ -435,6 +435,7 @@ func (h *Handler) GetDemandScheduling(c *gin.Context) {
 		"productProjects":   gin.H{},
 		"projectExecutions": gin.H{},
 		"stories":           []DemandSchedulingStoryItem{},
+		"userStories":       []UserStoryItem{},
 		"windows":           []SchedulingWindowOption{},
 		"users":             []SchedulingUserOption{},
 	}
@@ -450,6 +451,9 @@ func (h *Handler) GetDemandScheduling(c *gin.Context) {
 		}
 		if resp.Stories != nil {
 			out["stories"] = resp.Stories
+		}
+		if resp.UserStories != nil {
+			out["userStories"] = resp.UserStories
 		}
 		if resp.Windows != nil {
 			out["windows"] = resp.Windows

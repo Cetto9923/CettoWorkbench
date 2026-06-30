@@ -97,6 +97,51 @@ func (s *Service) buildDemandSchedulingStories(
 	return items, nil
 }
 
+// buildDemandUserStories 装配业需级用户故事条目（来自 zt_demanduserstory）。
+// EffectivePoint = revpoint > 0 ? revpoint : point（未校准 fallback 到建议值）。
+func (s *Service) buildDemandUserStories(
+	ctx context.Context,
+	demandID uint,
+) ([]UserStoryItem, error) {
+	rows, err := s.repo.GetDemandUserStories(ctx, demandID)
+	if err != nil {
+		return nil, err
+	}
+	if len(rows) == 0 {
+		return []UserStoryItem{}, nil
+	}
+
+	productIDs := make([]uint, 0, len(rows))
+	for _, row := range rows {
+		if row.Product > 0 {
+			productIDs = append(productIDs, row.Product)
+		}
+	}
+	productNameByID, err := s.repo.FindProductsByIDs(ctx, productIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]UserStoryItem, 0, len(rows))
+	for _, row := range rows {
+		effectivePoint := row.Point
+		if row.Revpoint > 0 {
+			effectivePoint = row.Revpoint
+		}
+		items = append(items, UserStoryItem{
+			ID:             row.ID,
+			Role:           row.Role,
+			GV:             row.GV,
+			ProductID:      row.Product,
+			ProductName:    productNameByID[row.Product],
+			Revpoint:       row.Revpoint,
+			PointLabel:     storyPointLabel(effectivePoint),
+			EffectivePoint: effectivePoint,
+		})
+	}
+	return items, nil
+}
+
 func (s *Service) buildProductProjectsMap(ctx context.Context, productIDs []uint) (map[string][]DemandSchedulingProjectOption, error) {
 	out := make(map[string][]DemandSchedulingProjectOption)
 	for _, productID := range uniqueUints(productIDs) {

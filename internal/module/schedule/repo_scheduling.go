@@ -323,6 +323,33 @@ ORDER BY isMainSystemAssociation DESC, id ASC`
 	return rows, nil
 }
 
+// GetDemandUserStories 按业需 ID 查询用户故事条目（来自 zt_demanduserstory）。
+func (r *Repo) GetDemandUserStories(ctx context.Context, demandID uint) ([]ZtDemandUserStory, error) {
+	if demandID == 0 {
+		return []ZtDemandUserStory{}, nil
+	}
+
+	const query = `
+SELECT
+  id,
+  demand,
+  role,
+  gv,
+  product,
+  point,
+  revpoint,
+  source_type AS sourceType
+FROM zt_demanduserstory
+WHERE demand = ?
+ORDER BY id ASC`
+
+	var rows []ZtDemandUserStory
+	if err := r.db.WithContext(ctx).Raw(query, demandID).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
 // GetStoryTasks 查询某个研发需求下的未关闭任务列表。
 func (r *Repo) GetStoryTasks(ctx context.Context, storyID uint) ([]ZtTaskItem, error) {
 	if storyID == 0 {
