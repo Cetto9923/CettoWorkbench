@@ -84,6 +84,7 @@ type ztStoryCreateRow struct {
 	OpenedDate              time.Time `gorm:"column:openedDate"`
 	AssignedTo              string    `gorm:"column:assignedTo"`
 	IsMainSystemAssociation string    `gorm:"column:isMainSystemAssociation"`
+	VerifyPlan              string    `gorm:"column:verifyPlan"`
 	Deleted                 string    `gorm:"column:deleted"`
 }
 
@@ -280,6 +281,7 @@ func (r *Repo) CreateStory(ctx context.Context, story *ZtStoryInsert) (uint, err
 		OpenedDate:              now,
 		AssignedTo:              strings.TrimSpace(story.AssignedTo),
 		IsMainSystemAssociation: story.IsMainSystemAssociation,
+		VerifyPlan:              "",
 		Deleted:                 "0",
 	}
 	if err := r.db.WithContext(ctx).Create(&row).Error; err != nil {

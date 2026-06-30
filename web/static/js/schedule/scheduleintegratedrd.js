@@ -283,7 +283,7 @@
       return;
     }
     var $node = $(node);
-    $("#rdTaskTree .rd-add-node").before(node);
+    $("#rdTreeNodes").append(node);
     initDraftNodePickers($node);
     var defaultProductId = $node.attr("data-product-id") || "";
     if (defaultProductId) {
