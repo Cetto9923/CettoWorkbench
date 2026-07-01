@@ -644,7 +644,6 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
     <table class="rd-task-table" id="taskModalTable">
       <thead>
         <tr>
-          <th style="width:44px">创建</th>
           <th style="width:120px">项目</th>
           <th style="width:120px">执行</th>
           <th style="width:80px">类型</th>
@@ -846,7 +845,6 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
 
 <template id="tplTaskModalRowNew">
   <tr class="task-modal-row task-modal-row--new rd-task-row rd-task-row--new">
-    <td class="rd-task-cell" style="text-align:center"><input type="checkbox" checked></td>
     <td class="rd-task-cell rd-task-cell-project"><select class="rd-task-project-select form-select rd-task-select"><option value="">请选择项目</option></select></td>
     <td class="rd-task-cell rd-task-cell-execution"><select class="rd-task-execution-select form-select rd-task-select" disabled><option value="">请选择执行</option></select></td>
     <td class="rd-task-cell rd-task-cell-type"><select class="rd-task-type form-select rd-task-select"></select></td>
@@ -860,7 +858,6 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
 
 <template id="tplTaskModalRowExisting">
   <tr class="task-modal-row task-modal-row--existing rd-task-row rd-task-row--editing" data-task-id="">
-    <td class="rd-task-cell" style="text-align:center"><input type="checkbox" checked></td>
     <td class="rd-task-cell rd-task-cell-project"><select class="rd-task-project-select form-select rd-task-select"><option value="">请选择项目</option></select></td>
     <td class="rd-task-cell rd-task-cell-execution"><select class="rd-task-execution-select form-select rd-task-select" disabled><option value="">请选择执行</option></select></td>
     <td class="rd-task-cell rd-task-cell-type task-modal-type-cell"></td>

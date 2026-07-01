@@ -334,10 +334,7 @@
       if (!taskId) {
         return;
       }
-      if (!$row.find('input[type="checkbox"]').prop("checked")) {
-        tasks.push({ action: "delete", id: taskId });
-        return;
-      }
+      // 去掉"创建"列后，现有任务默认保留编辑
       tasks.push({
         action: "edit",
         id: taskId,
@@ -356,7 +353,7 @@
       var $row = $(this);
       tasks.push({
         action: "new",
-        create: !!$row.find('input[type="checkbox"]').prop("checked"),
+        create: true,  // 去掉"创建"列后，新任务默认创建
         projectId: parsePositiveInt($row.find(".rd-task-project-select").val()),
         executionId: parsePositiveInt($row.find(".rd-task-execution-select").val()),
         type: $.trim($row.find(".rd-task-type").val() || "devel"),
