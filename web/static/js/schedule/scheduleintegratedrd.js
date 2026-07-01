@@ -274,8 +274,20 @@
   }
 
   function addDraftRdNode() {
+    if (!shared.isSchedulingDetailLoaded) {
+      if (typeof window.showToast === "function") {
+        window.showToast("业需详情加载中，请稍后再试", "error");
+      } else {
+        window.alert("业需详情加载中，请稍后再试");
+      }
+      return;
+    }
     if (!shared.involvedProducts.length) {
-      window.alert("暂无涉及系统，无法添加研发需求");
+      var detailUrl = $.trim(shared.currentDemandDetailURL || "");
+      var confirmed = window.confirm("暂无涉及系统，无法添加研发需求，去澄清添加系统。");
+      if (confirmed && detailUrl) {
+        window.open(detailUrl, "_blank");
+      }
       return;
     }
     var node = buildDraftRdNode();

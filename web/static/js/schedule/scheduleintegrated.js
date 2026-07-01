@@ -609,6 +609,7 @@
       shared.productProjectsMap = shared.buildProductProjectsMap(data.productProjects);
       shared.productExecutionsMap = shared.buildProductExecutionsMap(data.projectExecutions);
       shared.zentaoURL = $.trim(data.zentaoUrl || "");
+      shared.isSchedulingDetailLoaded = true;
     }
 
     $("#scheduleIntegratedReqTitle").text(data.name || "—");
@@ -710,6 +711,8 @@
       shared.manualNodeSeq = 0;
       shared.currentDemandId = 0;
       shared.currentStoryId = 0;
+      shared.currentDemandDetailURL = "";
+      shared.isSchedulingDetailLoaded = false;
       shared.resetDeletedRecords();
     }
   }
@@ -731,12 +734,14 @@
       demandID = extractDemandID(source);
       storyID = extractStoryID(source);
       ctx = extractRowContext(source);
+      ctx.detailUrl = $.trim(source.attr("href") || "");
     } else if (source && typeof source === "object" && source.id) {
       ctx = {
         id: source.id,
         title: source.title || "—",
         owner: source.owner || "待分配",
         system: source.system || "—",
+        detailUrl: source.detailUrl || "",
       };
       demandID = source.demandId || source.demandID || 0;
     } else {
@@ -745,6 +750,7 @@
         title: "—",
         owner: "待分配",
         system: "—",
+        detailUrl: "",
       };
     }
 
@@ -755,6 +761,7 @@
     if (shared) {
       shared.currentDemandId = fromIndependent ? 0 : demandID;
       shared.currentStoryId = fromIndependent ? storyID : 0;
+      shared.currentDemandDetailURL = fromIndependent ? "" : $.trim(ctx.detailUrl || "");
     }
 
     if (typeof window.openShowModals === "function") {

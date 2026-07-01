@@ -68,6 +68,8 @@
     manualNodeSeq: 0,
     currentDemandId: 0,
     currentStoryId: 0,
+    currentDemandDetailURL: "",
+    isSchedulingDetailLoaded: false,
     deletedStoryIds: [],
     deletedTaskIds: [],
     zentaoURL: "",
