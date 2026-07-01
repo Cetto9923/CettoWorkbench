@@ -157,6 +157,14 @@ func (h *Handler) Index(c *gin.Context) {
 		filterWindows = []WindowFilterOption{}
 	}
 
+	filterUsers, err := h.svc.ListScheduleUsers(c.Request.Context())
+	if err != nil {
+		if h.logger != nil {
+			h.logger.Error("load filter users failed", zap.Error(err))
+		}
+		filterUsers = []SchedulingUserOption{}
+	}
+
 	render.Page(c, http.StatusOK, constants.TEMPLATE_SCHEDULE_INDEX, gin.H{
 		"Title":                   "排期工作台",
 		"PageTitle":               "排期工作台",
@@ -169,11 +177,19 @@ func (h *Handler) Index(c *gin.Context) {
 		"Products":                formData.Products,
 		"FilterProducts":          filterProducts,
 		"FilterWindows":           filterWindows,
+		"FilterUsers":             filterUsers,
 		"StageFilterOptions":      ScheduleStageFilterOptions,
+		"WindowTypeFilterOptions": ScheduleWindowTypeFilterOptions,
 		"SelectedGroups":          demandData.SelectedGroups,
 		"SelectedProducts":        demandData.SelectedProducts,
 		"SelectedStages":          demandData.SelectedStages,
 		"SelectedWindows":         demandData.SelectedWindows,
+		"SelectedKeyword":         demandData.SelectedKeyword,
+		"SelectedPri":             demandData.SelectedPri,
+		"SelectedWindowType":      demandData.SelectedWindowType,
+		"SelectedDevOwner":        demandData.SelectedDevOwner,
+		"SelectedTestOwner":       demandData.SelectedTestOwner,
+		"SelectedAcceptOwner":     demandData.SelectedAcceptOwner,
 		"SelectedGroupMap":        demandData.SelectedGroupMap,
 		"SelectedProductMap":      demandData.SelectedProductMap,
 		"SelectedStageMap":        demandData.SelectedStageMap,

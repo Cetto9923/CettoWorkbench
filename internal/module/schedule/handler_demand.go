@@ -130,44 +130,81 @@ type scheduleIndexDemandData struct {
 	SelectedProducts        string
 	SelectedStages          string
 	SelectedWindows         string
+	SelectedKeyword         string
+	SelectedPri             string
+	SelectedWindowType      string
+	SelectedDevOwner        string
+	SelectedTestOwner       string
+	SelectedAcceptOwner     string
 	SelectedGroupMap        map[uint]bool
 	SelectedProductMap      map[uint]bool
 	SelectedStageMap        map[string]bool
 	SelectedWindowMap       map[uint]bool
 }
 
-func scheduleFilterPreserveParams(
-	filter string,
-	suspended bool,
-	bizPage, indepPage int,
-	tab, groups, products, stages, windows string,
-) map[string]string {
+type scheduleFilterPreserveReq struct {
+	filter      string
+	suspended   bool
+	bizPage     int
+	indepPage   int
+	tab         string
+	groups      string
+	products    string
+	stages      string
+	windows     string
+	keyword     string
+	pri         string
+	windowType  string
+	devOwner    string
+	testOwner   string
+	acceptOwner string
+}
+
+func scheduleFilterPreserveParams(req scheduleFilterPreserveReq) map[string]string {
 	params := map[string]string{
-		"filter": filter,
+		"filter": req.filter,
 	}
-	if suspended {
+	if req.suspended {
 		params["suspended"] = "1"
 	}
-	if strings.TrimSpace(groups) != "" {
-		params["groups"] = strings.TrimSpace(groups)
+	if strings.TrimSpace(req.groups) != "" {
+		params["groups"] = strings.TrimSpace(req.groups)
 	}
-	if strings.TrimSpace(products) != "" {
-		params["products"] = strings.TrimSpace(products)
+	if strings.TrimSpace(req.products) != "" {
+		params["products"] = strings.TrimSpace(req.products)
 	}
-	if strings.TrimSpace(stages) != "" {
-		params["stages"] = strings.TrimSpace(stages)
+	if strings.TrimSpace(req.stages) != "" {
+		params["stages"] = strings.TrimSpace(req.stages)
 	}
-	if strings.TrimSpace(windows) != "" {
-		params["windows"] = strings.TrimSpace(windows)
+	if strings.TrimSpace(req.windows) != "" {
+		params["windows"] = strings.TrimSpace(req.windows)
 	}
-	if indepPage > 1 {
-		params["indepPage"] = strconv.Itoa(indepPage)
+	if strings.TrimSpace(req.keyword) != "" {
+		params["keyword"] = strings.TrimSpace(req.keyword)
 	}
-	if bizPage > 1 {
-		params["bizPage"] = strconv.Itoa(bizPage)
+	if strings.TrimSpace(req.pri) != "" {
+		params["pri"] = strings.TrimSpace(req.pri)
 	}
-	if tab == "indep" {
-		params["tab"] = tab
+	if strings.TrimSpace(req.windowType) != "" {
+		params["windowType"] = strings.TrimSpace(req.windowType)
+	}
+	if strings.TrimSpace(req.devOwner) != "" {
+		params["dev"] = strings.TrimSpace(req.devOwner)
+	}
+	if strings.TrimSpace(req.testOwner) != "" {
+		params["test"] = strings.TrimSpace(req.testOwner)
+	}
+	if strings.TrimSpace(req.acceptOwner) != "" {
+		params["accept"] = strings.TrimSpace(req.acceptOwner)
+	}
+	if req.indepPage > 1 {
+		params["indepPage"] = strconv.Itoa(req.indepPage)
+	}
+	if req.bizPage > 1 {
+		params["bizPage"] = strconv.Itoa(req.bizPage)
+	}
+	if req.tab == "indep" {
+		params["tab"] = req.tab
 	}
 	return params
 }
@@ -224,6 +261,11 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 	indepReq.Products = listReq.Products
 	indepReq.Stages = listReq.Stages
 	indepReq.Windows = listReq.Windows
+	indepReq.Keyword = listReq.Keyword
+	indepReq.Pri = listReq.Pri
+	indepReq.WindowType = listReq.WindowType
+	indepReq.DevOwner = listReq.DevOwner
+	indepReq.TestOwner = listReq.TestOwner
 	indepReq.Normalize()
 
 	indepResp, err := h.svc.ListIndependentStories(c.Request.Context(), actor, indepReq)
@@ -260,17 +302,21 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 
 	bizPager := pagination.New(bizResp.Total, bizPage, scheduleListPageSize)
 	bizPager.PageParam = "bizPage"
-	bizPager.PreserveParams = scheduleFilterPreserveParams(
-		activeFilter, suspendedActive, bizPage, indepPage, tab,
-		listReq.Groups, listReq.Products, listReq.Stages, listReq.Windows,
-	)
+	bizPager.PreserveParams = scheduleFilterPreserveParams(scheduleFilterPreserveReq{
+		filter: activeFilter, suspended: suspendedActive, bizPage: bizPage, indepPage: indepPage, tab: tab,
+		groups: listReq.Groups, products: listReq.Products, stages: listReq.Stages, windows: listReq.Windows,
+		keyword: listReq.Keyword, pri: listReq.Pri, windowType: listReq.WindowType,
+		devOwner: listReq.DevOwner, testOwner: listReq.TestOwner, acceptOwner: listReq.AcceptOwner,
+	})
 
 	indepPager := pagination.New(indepResp.Total, indepPage, scheduleListPageSize)
 	indepPager.PageParam = "indepPage"
-	indepPager.PreserveParams = scheduleFilterPreserveParams(
-		activeFilter, suspendedActive, bizPage, indepPage, "indep",
-		listReq.Groups, listReq.Products, listReq.Stages, listReq.Windows,
-	)
+	indepPager.PreserveParams = scheduleFilterPreserveParams(scheduleFilterPreserveReq{
+		filter: activeFilter, suspended: suspendedActive, bizPage: bizPage, indepPage: indepPage, tab: "indep",
+		groups: listReq.Groups, products: listReq.Products, stages: listReq.Stages, windows: listReq.Windows,
+		keyword: listReq.Keyword, pri: listReq.Pri, windowType: listReq.WindowType,
+		devOwner: listReq.DevOwner, testOwner: listReq.TestOwner, acceptOwner: listReq.AcceptOwner,
+	})
 
 	return scheduleIndexDemandData{
 		BizRequirements:         bizRequirements,
@@ -288,6 +334,12 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 		SelectedProducts:        listReq.Products,
 		SelectedStages:          listReq.Stages,
 		SelectedWindows:         listReq.Windows,
+		SelectedKeyword:         listReq.Keyword,
+		SelectedPri:             listReq.Pri,
+		SelectedWindowType:      listReq.WindowType,
+		SelectedDevOwner:        listReq.DevOwner,
+		SelectedTestOwner:       listReq.TestOwner,
+		SelectedAcceptOwner:     listReq.AcceptOwner,
 		SelectedGroupMap:        selectedUintMap(listReq.Groups),
 		SelectedProductMap:      selectedUintMap(listReq.Products),
 		SelectedStageMap:        selectedStageMap(listReq.Stages),

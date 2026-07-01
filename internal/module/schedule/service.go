@@ -157,6 +157,18 @@ func (s *Service) ListFilterWindows(ctx context.Context) ([]WindowFilterOption, 
 	return out, nil
 }
 
+// ListScheduleUsers 查询筛选区负责人下拉用户。
+func (s *Service) ListScheduleUsers(ctx context.Context) ([]SchedulingUserOption, error) {
+	users, err := s.repo.ListInsideUsersForScheduling(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if users == nil {
+		return []SchedulingUserOption{}, nil
+	}
+	return users, nil
+}
+
 func computeWindowPermissions(createdBy, account string, demandCount int) (canEdit, canDelete, hasLinkedDemands bool) {
 	hasLinkedDemands = demandCount > 0
 	canEdit = strings.TrimSpace(createdBy) == strings.TrimSpace(account)

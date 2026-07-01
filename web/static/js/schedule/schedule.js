@@ -143,6 +143,12 @@
       products: null,
       stages: null,
       windows: null,
+      keyword: null,
+      pri: null,
+      windowType: null,
+      dev: null,
+      test: null,
+      accept: null,
       bizPage: null,
       indepPage: null,
     });

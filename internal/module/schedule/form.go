@@ -264,6 +264,28 @@ var ScheduleStageFilterOptions = []StageFilterOption{
 	{Value: StageFilterTaskAssigned, Label: "已建任务"},
 }
 
+// 版本窗口类型筛选值（对应 zt_versionwindow.status）。
+const (
+	WindowTypePlanning = "planning"
+	WindowTypeCurrent  = "current"
+	WindowTypeNext     = "next"
+	WindowTypeReleased = "released"
+)
+
+// WindowTypeFilterOption 版本窗口类型筛选下拉项。
+type WindowTypeFilterOption struct {
+	Value string
+	Label string
+}
+
+// ScheduleWindowTypeFilterOptions 列表筛选区版本窗口类型选项。
+var ScheduleWindowTypeFilterOptions = []WindowTypeFilterOption{
+	{Value: WindowTypePlanning, Label: "规划中"},
+	{Value: WindowTypeCurrent, Label: "当前窗口"},
+	{Value: WindowTypeNext, Label: "下一窗口"},
+	{Value: WindowTypeReleased, Label: "已发布"},
+}
+
 // ParseCommaSeparatedUints 解析逗号分隔的无符号整型列表。
 func ParseCommaSeparatedUints(raw string) []uint {
 	raw = strings.TrimSpace(raw)
@@ -330,6 +352,26 @@ func ParseCommaSeparatedStages(raw string) []string {
 	return out
 }
 
+// NormalizePriorityFilter 规范化优先级筛选参数。
+func NormalizePriorityFilter(value string) string {
+	switch strings.TrimSpace(value) {
+	case "0", "1", "2", "3", "4":
+		return strings.TrimSpace(value)
+	default:
+		return ""
+	}
+}
+
+// NormalizeWindowTypeFilter 规范化版本窗口类型筛选参数。
+func NormalizeWindowTypeFilter(value string) string {
+	switch strings.TrimSpace(value) {
+	case WindowTypePlanning, WindowTypeCurrent, WindowTypeNext, WindowTypeReleased:
+		return strings.TrimSpace(value)
+	default:
+		return ""
+	}
+}
+
 // 列表快捷筛选 filter 参数值。
 const (
 	FilterAllOpen          = "all_open"
@@ -375,12 +417,17 @@ type ListBizDemandsReq struct {
 	Keyword     string `form:"keyword"`
 	WindowID    uint   `form:"windowId"`
 	Scope       string `form:"scope"`
-	Filter      string `form:"filter"`    // all_open, unscheduled, pending_review, unassigned, manager_reviewing, closed
-	Suspended   bool   `form:"suspended"` // true 时叠加 AND hang = '1'
-	Groups      string `form:"groups"`    // 逗号分隔的小组 ID
-	Products    string `form:"products"`  // 逗号分隔的产品 ID
-	Stages      string `form:"stages"`    // 逗号分隔的阶段值
-	Windows     string `form:"windows"`   // 逗号分隔的版本窗口 ID
+	Filter      string `form:"filter"`     // all_open, unscheduled, pending_review, unassigned, manager_reviewing, closed
+	Suspended   bool   `form:"suspended"`  // true 时叠加 AND hang = '1'
+	Groups      string `form:"groups"`     // 逗号分隔的小组 ID
+	Products    string `form:"products"`   // 逗号分隔的产品 ID
+	Stages      string `form:"stages"`     // 逗号分隔的阶段值
+	Windows     string `form:"windows"`    // 逗号分隔的版本窗口 ID
+	Pri         string `form:"pri"`        // 单值优先级：0-4
+	WindowType  string `form:"windowType"` // 版本窗口类型：planning/current/next/released
+	DevOwner    string `form:"dev"`        // 开发负责人账号
+	TestOwner   string `form:"test"`       // 测试负责人账号
+	AcceptOwner string `form:"accept"`     // 验收负责人账号
 }
 
 // Validate 校验分页与基础参数。
@@ -407,6 +454,16 @@ func (r *ListBizDemandsReq) Normalize() {
 		r.PageSize = 100
 	}
 	r.Filter = NormalizeDemandFilter(r.Filter)
+	r.Keyword = strings.TrimSpace(r.Keyword)
+	r.Groups = strings.TrimSpace(r.Groups)
+	r.Products = strings.TrimSpace(r.Products)
+	r.Stages = strings.TrimSpace(r.Stages)
+	r.Windows = strings.TrimSpace(r.Windows)
+	r.Pri = NormalizePriorityFilter(r.Pri)
+	r.WindowType = NormalizeWindowTypeFilter(r.WindowType)
+	r.DevOwner = strings.TrimSpace(r.DevOwner)
+	r.TestOwner = strings.TrimSpace(r.TestOwner)
+	r.AcceptOwner = strings.TrimSpace(r.AcceptOwner)
 }
 
 // ListBizDemandsResp 业务需求 Tab 列表响应。
@@ -497,14 +554,19 @@ type ZtDemand struct {
 
 // ListIndependentReq 独立研发需求 Tab 列表查询入参。
 type ListIndependentReq struct {
-	Page      int    `form:"page"`
-	PageSize  int    `form:"pageSize"`
-	Filter    string `form:"filter"`
-	Suspended bool   `form:"suspended"` // story 无 hang 字段，查询时忽略
-	Groups    string `form:"groups"`    // 逗号分隔的小组 ID
-	Products  string `form:"products"`  // 逗号分隔的产品 ID
-	Stages    string `form:"stages"`    // 逗号分隔的阶段值
-	Windows   string `form:"windows"`   // 逗号分隔的版本窗口 ID
+	Page       int    `form:"page"`
+	PageSize   int    `form:"pageSize"`
+	Filter     string `form:"filter"`
+	Suspended  bool   `form:"suspended"`  // story 无 hang 字段，查询时忽略
+	Groups     string `form:"groups"`     // 逗号分隔的小组 ID
+	Products   string `form:"products"`   // 逗号分隔的产品 ID
+	Stages     string `form:"stages"`     // 逗号分隔的阶段值
+	Windows    string `form:"windows"`    // 逗号分隔的版本窗口 ID
+	Keyword    string `form:"keyword"`    // 编号/标题/负责人/系统
+	Pri        string `form:"pri"`        // 单值优先级：0-4
+	WindowType string `form:"windowType"` // 版本窗口类型：planning/current/next/released
+	DevOwner   string `form:"dev"`        // 独立研发需求当前按 assignedTo 过滤
+	TestOwner  string `form:"test"`       // 独立研发需求当前按测试任务 assignedTo 过滤
 }
 
 // Validate 校验分页参数。
@@ -531,6 +593,15 @@ func (r *ListIndependentReq) Normalize() {
 		r.PageSize = 100
 	}
 	r.Filter = NormalizeDemandFilter(r.Filter)
+	r.Groups = strings.TrimSpace(r.Groups)
+	r.Products = strings.TrimSpace(r.Products)
+	r.Stages = strings.TrimSpace(r.Stages)
+	r.Windows = strings.TrimSpace(r.Windows)
+	r.Keyword = strings.TrimSpace(r.Keyword)
+	r.Pri = NormalizePriorityFilter(r.Pri)
+	r.WindowType = NormalizeWindowTypeFilter(r.WindowType)
+	r.DevOwner = strings.TrimSpace(r.DevOwner)
+	r.TestOwner = strings.TrimSpace(r.TestOwner)
 }
 
 // ListIndependentResp 独立研发需求 Tab 列表响应。
@@ -636,6 +707,7 @@ type DemandSchedulingTaskItem struct {
 	Name           string  `json:"name"`
 	Type           string  `json:"type"`
 	TypeLabel      string  `json:"typeLabel"`
+	Pri            int     `json:"pri"`
 	AssignedTo     string  `json:"assignedTo"`
 	AssignedToName string  `json:"assignedToName"`
 	Estimate       float64 `json:"estimate"`
