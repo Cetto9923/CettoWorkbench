@@ -37,6 +37,15 @@ func (s *Service) SaveScheduling(ctx context.Context, actor *model.User, demandI
 		return err
 	}
 
+	// 进事务前做整体校验:任一目标系统「不在窗口且无匹配计划」则零写入、返回提示。
+	notice, err := s.precheckSchedulingProducts(ctx, req.WindowID, req.Stories)
+	if err != nil {
+		return err
+	}
+	if notice != nil {
+		return notice // *ProductAccessNoticeError,由 handler 用 errors.As 识别
+	}
+
 	return s.repo.Transaction(ctx, func(txRepo *Repo) error {
 		for _, storyReq := range req.Stories {
 			storyID, productID, _, err := s.applySchedulingStory(ctx, txRepo, account, demandID, mainSystemID, req.WindowID, storyReq)
@@ -99,8 +108,8 @@ func (s *Service) applySchedulingStory(
 		}); err != nil {
 			return 0, 0, 0, fmt.Errorf("create story spec: %w", err)
 		}
-		if err := txRepo.CreatePlanStory(ctx, planID, storyID); err != nil {
-			return 0, 0, 0, fmt.Errorf("create plan story: %w", err)
+		if err := txRepo.EnsurePlanStoryRelation(ctx, planID, storyID); err != nil {
+			return 0, 0, 0, fmt.Errorf("ensure plan story relation: %w", err)
 		}
 		if err := txRepo.CreateAction(ctx, "story", storyID, "Opened", account, productID, 0, 0); err != nil {
 			return 0, 0, 0, fmt.Errorf("create story action: %w", err)
@@ -121,6 +130,18 @@ func (s *Service) applySchedulingStory(
 		}
 		if err := txRepo.CreateAction(ctx, "story", storyID, "Edited", account, storyReq.ProductID, 0, 0); err != nil {
 			return 0, 0, 0, fmt.Errorf("create story action: %w", err)
+		}
+		// 同步计划关联:解析目标计划 → 从该 story 的其他计划移除 → 幂等关联到目标计划。
+		// 对 productID 未变化的情况也幂等(Ensure INSERT IGNORE + Remove 保留当前 plan)。
+		newPlanID, err := s.resolvePlanForProduct(ctx, txRepo, account, windowID, storyReq.ProductID)
+		if err != nil {
+			return 0, 0, 0, fmt.Errorf("resolve plan for edited story %d: %w", storyID, err)
+		}
+		if err := txRepo.RemoveStoryFromOtherPlans(ctx, storyID, newPlanID); err != nil {
+			return 0, 0, 0, fmt.Errorf("remove story %d from other plans: %w", storyID, err)
+		}
+		if err := txRepo.EnsurePlanStoryRelation(ctx, newPlanID, storyID); err != nil {
+			return 0, 0, 0, fmt.Errorf("ensure plan-story relation: %w", err)
 		}
 		return storyID, productID, 0, nil
 
@@ -253,14 +274,37 @@ func (s *Service) resolvePlanForProduct(
 		return *vwp.PlanID, nil
 	}
 
-	ok, err := txRepo.UserCanAccessProduct(ctx, account, productID)
-	if err != nil {
-		return 0, err
-	}
-	if !ok {
-		return 0, errors.New("无权限为该系统创建计划")
+	// vwp != nil:系统已在窗口中但无计划,自动创建计划并回填窗口产品。
+	if vwp != nil {
+		window, err := txRepo.FindByID(ctx, uint64(windowID))
+		if err != nil {
+			return 0, err
+		}
+		if window == nil {
+			return 0, errors.New("版本窗口不存在")
+		}
+
+		endDate := window.ReleaseDate.Format("2006-01-02")
+		beginDate := endDate
+		if window.StartDate != nil {
+			beginDate = window.StartDate.Format("2006-01-02")
+		}
+		title := strings.TrimSpace(window.Name)
+		if title == "" {
+			title = endDate
+		}
+
+		planID, err := txRepo.CreateProductPlan(ctx, productID, title, beginDate, endDate, account)
+		if err != nil {
+			return 0, fmt.Errorf("create product plan: %w", err)
+		}
+		if err := txRepo.UpdateWindowProductPlanID(ctx, vwp.ID, planID, account); err != nil {
+			return 0, err
+		}
+		return planID, nil
 	}
 
+	// vwp == nil:系统不在窗口,使用禅道已有匹配计划(前置校验保证非空,这里是兜底)。
 	window, err := txRepo.FindByID(ctx, uint64(windowID))
 	if err != nil {
 		return 0, err
@@ -268,42 +312,15 @@ func (s *Service) resolvePlanForProduct(
 	if window == nil {
 		return 0, errors.New("版本窗口不存在")
 	}
-
-	endDate := window.ReleaseDate.Format("2006-01-02")
-	beginDate := endDate
-	if window.StartDate != nil {
-		beginDate = window.StartDate.Format("2006-01-02")
-	}
-	title := strings.TrimSpace(window.Name)
-	if title == "" {
-		title = endDate
-	}
-
-	planID, err := txRepo.CreateProductPlan(ctx, productID, title, beginDate, endDate, account)
+	releaseDate := window.ReleaseDate.Format("2006-01-02")
+	plans, err := txRepo.GetMatchingPlans(ctx, productID, releaseDate)
 	if err != nil {
-		return 0, fmt.Errorf("create product plan: %w", err)
+		return 0, fmt.Errorf("get matching plans for product %d: %w", productID, err)
 	}
-
-	if vwp != nil {
-		if err := txRepo.UpdateWindowProductPlanID(ctx, vwp.ID, planID, account); err != nil {
-			return 0, err
-		}
-		return planID, nil
+	if len(plans) == 0 {
+		return 0, fmt.Errorf("系统 %d 不在窗口且无匹配计划", productID)
 	}
-
-	planIDCopy := planID
-	wp := &model.VersionWindowProduct{
-		WindowID:   uint64(windowID),
-		ProductID:  productID,
-		PlanID:     &planIDCopy,
-		PlanSynced: 1,
-		CreatedBy:  account,
-		UpdatedBy:  account,
-	}
-	if err := txRepo.CreateWindowProduct(ctx, wp); err != nil {
-		return 0, fmt.Errorf("create window product: %w", err)
-	}
-	return planID, nil
+	return plans[0].ID, nil
 }
 
 func buildDemandSchedulingUpdates(req *SaveSchedulingReq, account string) map[string]interface{} {
