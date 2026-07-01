@@ -268,9 +268,9 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
           <tr>
             <th class="schedule-col-title" style="min-width:300px">标题</th>
             <th class="schedule-col-nowrap" style="width:72px">优先级</th>
-            <th class="schedule-col-nowrap" style="width:100px">窗口状态</th>
             <th class="schedule-col-nowrap" style="width:120px">敏捷小组</th>
-            <th class="schedule-col-stage" style="min-width:200px">排期阶段/版本窗口</th>
+            <th class="schedule-col-nowrap" style="min-width:120px">排期阶段</th>
+            <th class="schedule-col-stage" style="min-width:160px">版本窗口</th>
             <th class="schedule-col-owner" style="min-width:110px">负责人</th>
             <th class="schedule-col-nowrap" style="width:72px">任务</th>
             <th class="schedule-action-col schedule-col-nowrap" style="width:100px">操作</th>
@@ -297,12 +297,9 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
               </div>
             </td>
             <td class="schedule-col-nowrap"><span class="pri-tag {{ .PriClass }}">{{ .Priority }}</span></td>
-            <td class="schedule-col-nowrap">
-              <span class="window-status-tag {{ .WindowStatusClass }}">{{ .WindowStatus }}</span>
-            </td>
             <td>{{ .AgileGroup }}</td>
-            {{/* TODO：未关联窗口/未转研发时显示窗口下拉；未建任务/已建任务时仅文本查看 */}}
-            <td class="schedule-col-stage"><span class="stage-tag {{ .StageTagClass }}">{{ .StageTag }}</span>{{ if .StageTag }} {{ end }}<span class="window-name-tag-inline">{{ .VersionWindow }}</span></td>
+            <td class="schedule-col-nowrap"><span class="stage-tag {{ .StageClass }}">{{ .Stage }}</span></td>
+            <td class="schedule-col-stage"><span class="schedule-window-name">{{ .WindowName }}</span></td>
             <td class="schedule-col-owner"><span class="schedule-owner-line"><i class="fas fa-user"></i><span class="name">{{ .Owner }}</span></span></td>
             <td class="schedule-task-col"><span class="t3">—</span></td>
             <td class="schedule-action-col">
@@ -330,11 +327,9 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
               </div>
             </td>
             <td class="schedule-col-nowrap"><span class="pri-tag {{ .PriClass }}">{{ .Priority }}</span></td>
-            <td class="schedule-col-nowrap">
-              <span class="window-status-tag {{ $biz.WindowStatusClass }}">{{ $biz.WindowStatus }}</span>
-            </td>
-            <td>{{ $biz.AgileGroup }}</td>
-            <td class="schedule-col-stage"><span class="stage-tag {{ $biz.StageTagClass }}">{{ $biz.StageTag }}</span>{{ if $biz.StageTag }} {{ end }}<span class="window-name-tag-inline">{{ $biz.VersionWindow }}</span></td>
+            <td>{{ .AgileGroup }}</td>
+            <td class="schedule-col-nowrap"><span class="stage-tag {{ .StageClass }}">{{ .Stage }}</span></td>
+            <td class="schedule-col-stage"><span class="schedule-window-name">{{ .WindowName }}</span></td>
             <td class="schedule-col-owner"><span class="schedule-owner-line"><i class="fas fa-user"></i><span class="name">{{ .Owner }}</span></span></td>
             <td class="schedule-task-col"><span class="t3">—</span></td>
             <td class="schedule-action-col">
@@ -362,11 +357,9 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
               </div>
             </td>
             <td class="schedule-col-nowrap"><span class="pri-tag {{ .PriClass }}">{{ .Priority }}</span></td>
-            <td class="schedule-col-nowrap">
-              <span class="window-status-tag {{ $biz.WindowStatusClass }}">{{ $biz.WindowStatus }}</span>
-            </td>
-            <td>{{ $biz.AgileGroup }}</td>
-            <td class="schedule-col-stage"><span class="stage-tag {{ $biz.StageTagClass }}">{{ $biz.StageTag }}</span>{{ if $biz.StageTag }} {{ end }}<span class="window-name-tag-inline">{{ $biz.VersionWindow }}</span></td>
+            <td>{{ .AgileGroup }}</td>
+            <td class="schedule-col-nowrap"><span class="stage-tag {{ .StageClass }}">{{ .Stage }}</span></td>
+            <td class="schedule-col-stage"><span class="schedule-window-name">{{ .WindowName }}</span></td>
             <td class="schedule-col-owner"><span class="schedule-owner-line"><i class="fas fa-user"></i><span class="name">{{ .Owner }}</span></span></td>
             <td class="schedule-task-col">
               {{ if gt .TaskCount 0 }}
@@ -398,11 +391,9 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
               </div>
             </td>
             <td class="schedule-col-nowrap"><span class="pri-tag {{ .PriClass }}">{{ .Priority }}</span></td>
-            <td class="schedule-col-nowrap">
-              <span class="window-status-tag {{ $biz.WindowStatusClass }}">{{ $biz.WindowStatus }}</span>
-            </td>
-            <td>{{ $biz.AgileGroup }}</td>
-            <td class="schedule-col-stage"><span class="stage-tag {{ $biz.StageTagClass }}">{{ $biz.StageTag }}</span>{{ if $biz.StageTag }} {{ end }}<span class="window-name-tag-inline">{{ $biz.VersionWindow }}</span></td>
+            <td>{{ .AgileGroup }}</td>
+            <td class="schedule-col-nowrap"><span class="stage-tag {{ .StageClass }}">{{ .Stage }}</span></td>
+            <td class="schedule-col-stage"><span class="schedule-window-name">{{ .WindowName }}</span></td>
             <td class="schedule-col-owner"><span class="schedule-owner-line"><i class="fas fa-user"></i><span class="name">{{ .Owner }}</span></span></td>
             <td class="schedule-task-col">
               {{ if gt .TaskCount 0 }}
@@ -420,7 +411,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
           {{ end }}
           {{ else }}
           <tr>
-            <td colspan="9" class="text-center text-muted" style="padding:32px 16px">暂无数据</td>
+            <td colspan="8" class="text-center text-muted" style="padding:32px 16px">暂无数据</td>
           </tr>
           {{ end }}
         </tbody>
@@ -1100,7 +1091,11 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
     <td><strong data-field="name"></strong></td>
     <td data-field="releaseDate"></td>
     <td data-field="range" style="font-size:11px;color:var(--t3)"></td>
+    <td data-field="demandCount" style="text-align:center"></td>
     <td data-field="capacity" style="text-align:center"></td>
+    <td data-field="usedHours" style="text-align:center"></td>
+    <td data-field="remainingHours" style="text-align:center"></td>
+    <td data-field="blockedCount" style="text-align:center"></td>
     <td data-field="actions" style="text-align:center">
       <div class="action-group schedule-manage-actions"></div>
     </td>
@@ -1135,7 +1130,11 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             <th style="min-width:120px">窗口名称</th>
             <th style="width:120px">上线日期</th>
             <th style="width:100px">日期范围</th>
+            <th style="width:60px;text-align:center">需求</th>
             <th style="width:70px;text-align:center">容量(H)</th>
+            <th style="width:70px;text-align:center">已占用(H)</th>
+            <th style="width:70px;text-align:center">剩余(H)</th>
+            <th style="width:60px;text-align:center">阻塞</th>
             <th style="width:120px;text-align:center">操作</th>
           </tr>
         </thead>

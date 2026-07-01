@@ -73,7 +73,11 @@
       var nameCell = tr.querySelector('[data-field="name"]');
       var releaseCell = tr.querySelector('[data-field="releaseDate"]');
       var rangeCell = tr.querySelector('[data-field="range"]');
+      var demandCell = tr.querySelector('[data-field="demandCount"]');
       var capacityCell = tr.querySelector('[data-field="capacity"]');
+      var usedHoursCell = tr.querySelector('[data-field="usedHours"]');
+      var remainingHoursCell = tr.querySelector('[data-field="remainingHours"]');
+      var blockedCountCell = tr.querySelector('[data-field="blockedCount"]');
       var actionsCell = tr.querySelector('[data-field="actions"]');
 
       if (indexCell) {
@@ -88,8 +92,20 @@
       if (rangeCell) {
         rangeCell.textContent = item.range || "—";
       }
+      if (demandCell) {
+        demandCell.textContent = String(Number(item.demandCount || 0));
+      }
       if (capacityCell) {
         capacityCell.textContent = String(Number(item.capacityHours || 0));
+      }
+      if (usedHoursCell) {
+        usedHoursCell.textContent = String(Number(item.usedHours || 0));
+      }
+      if (remainingHoursCell) {
+        remainingHoursCell.textContent = String(Number(item.remainingHours || 0));
+      }
+      if (blockedCountCell) {
+        blockedCountCell.textContent = String(Number(item.blockedCount || 0));
       }
       if (actionsCell) {
         var actionsWrap = actionsCell.querySelector(".schedule-manage-actions") || actionsCell;
