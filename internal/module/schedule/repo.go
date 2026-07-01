@@ -196,14 +196,13 @@ WHERE deleted = '0' AND status != 'closed'
     PO = ?
     OR QD = ?
     OR RD = ?
-    OR createdBy = ?
     OR CONCAT(',', whitelist, ',') LIKE CONCAT('%,', ?, ',%')
     OR id IN (SELECT DISTINCT CAST(dc.product AS UNSIGNED) FROM zt_demandclarify dc WHERE dc.PM = ?)
   )
 ORDER BY ` + "`order`" + ` ASC, id ASC`
 
 	var rows []ZtProduct
-	if err := r.db.WithContext(ctx).Raw(query, account, account, account, account, account, account).Scan(&rows).Error; err != nil {
+	if err := r.db.WithContext(ctx).Raw(query, account, account, account, account, account).Scan(&rows).Error; err != nil {
 		return nil, err
 	}
 	return rows, nil
