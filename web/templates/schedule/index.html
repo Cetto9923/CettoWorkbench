@@ -780,6 +780,21 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
   </div>
 </div>
 
+<div class="batch-modal-overlay" id="scheduleProductNoticeOverlay"></div>
+<div class="batch-modal schedule-product-notice-modal" id="scheduleProductNoticeModal">
+  <div class="batch-modal-hdr">
+    <h3>系统维护提示</h3>
+    <button type="button" class="drawer-close" id="scheduleProductNoticeCloseBtn"><i class="fas fa-xmark"></i></button>
+  </div>
+  <div class="batch-modal-body">
+    <p id="scheduleProductNoticeMessage" class="schedule-product-notice-message"></p>
+    <div class="batch-modal-footer">
+      <button type="button" class="action-btn action-btn--primary" id="scheduleProductNoticeOkBtn">确定（去禅道）</button>
+      <button type="button" class="action-btn" id="scheduleProductNoticeCancelBtn">取消</button>
+    </div>
+  </div>
+</div>
+
 <template id="tplTaskModalRowNew">
   <tr class="task-modal-row task-modal-row--new rd-task-row rd-task-row--new">
     <td class="rd-task-cell" style="text-align:center"><input type="checkbox" checked></td>

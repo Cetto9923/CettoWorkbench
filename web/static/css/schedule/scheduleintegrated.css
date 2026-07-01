@@ -841,3 +841,40 @@
     display: none;
   }
 }
+
+/* ==========================================================================
+   系统维护提示子弹窗（#scheduleProductNoticeModal）
+   用途: 排期一体化办理时，系统不在版本窗口且无匹配计划 → 提示去禅道维护
+   层级: 叠在排期一体化弹窗之上
+        - 排期弹窗 overlay(.batch-modal-overlay) z-index 600 / modal(.batch-modal) z-index 601
+        - 本弹窗 overlay 1600 / modal 1601（各 +1000）
+   骨架复用 .batch-modal / .batch-modal-overlay（schedulemodal.css），本文件仅覆盖专属宽度/层级/文案样式
+   显示/隐藏由 ui.js 的 openShowModals/closeShowModals 控制（与排期弹窗同一机制）
+ ========================================================================== */
+
+/* overlay 提层（高于排期弹窗 overlay 600） */
+#scheduleProductNoticeOverlay.batch-modal-overlay {
+  z-index: 1600;
+}
+
+/* 弹窗主体：复用 .batch-modal 居中/圆角/阴影/背景，收窄宽度并提层 */
+#scheduleProductNoticeModal.batch-modal.schedule-product-notice-modal {
+  width: min(92vw, 480px);
+  max-width: 480px;
+  max-height: 80vh;
+  z-index: 1601;
+}
+
+/* 提示文案：留白、行高、底色与现有错误提示风格一致（参考 .integrated-rd-tree-empty） */
+#scheduleProductNoticeModal .schedule-product-notice-message {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  line-height: 1.7;
+  font-size: 14px;
+  color: var(--t2);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  word-break: break-word;
+  white-space: pre-wrap;
+}
