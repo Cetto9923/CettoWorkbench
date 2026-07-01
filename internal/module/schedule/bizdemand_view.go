@@ -21,16 +21,14 @@ import (
 func toBizRequirementsView(items []BizDemandItem, zentaoBase string) []BizRequirement {
 	out := make([]BizRequirement, 0, len(items))
 	for _, item := range items {
-		windowStatus, windowStatusClass := deriveWindowStatus(item.Stage)
-		stageTag, stageTagClass := deriveStageTag(item.Stage)
 		priority, priClass := formatPriority(item.Pri)
 		agileGroup := item.TeamgroupName
 		if agileGroup == "" {
 			agileGroup = "—"
 		}
-		versionWindow := item.WindowName
-		if versionWindow == "" {
-			versionWindow = "—"
+		windowName := item.WindowName
+		if windowName == "" {
+			windowName = "—"
 		}
 		subReqs := toSubBizRequirementsView(item.Children, zentaoBase)
 		devReqs := toDevRequirementsView(item.Stories, zentaoBase)
@@ -44,12 +42,10 @@ func toBizRequirementsView(items []BizDemandItem, zentaoBase string) []BizRequir
 			Title:              item.Name,
 			Priority:           priority,
 			PriClass:           priClass,
-			WindowStatus:       windowStatus,
-			WindowStatusClass:  windowStatusClass,
 			AgileGroup:         agileGroup,
-			StageTag:           stageTag,
-			StageTagClass:      stageTagClass,
-			VersionWindow:      versionWindow,
+			Stage:              item.Stage,
+			StageClass:         deriveBizStageClass(item.Stage),
+			WindowName:         windowName,
 			Owner:              formatOwner(item.OwnerName),
 			ActionLabel:        actionLabel,
 			ActionClass:        "primary",
@@ -68,12 +64,24 @@ func toSubBizRequirementsView(items []SubDemandItem, zentaoBase string) []SubBiz
 	out := make([]SubBizRequirement, 0, len(items))
 	for _, item := range items {
 		priority, priClass := formatPriority(item.Pri)
+		agileGroup := item.TeamgroupName
+		if agileGroup == "" {
+			agileGroup = "—"
+		}
+		windowName := item.WindowName
+		if windowName == "" {
+			windowName = "—"
+		}
 		out = append(out, SubBizRequirement{
 			DemandID:        item.ID,
 			ID:              formatSubID(item.ID),
 			Title:           item.Name,
 			Priority:        priority,
 			PriClass:        priClass,
+			AgileGroup:      agileGroup,
+			Stage:           item.Stage,
+			StageClass:      deriveBizStageClass(item.Stage),
+			WindowName:      windowName,
 			Owner:           formatOwner(item.OwnerName),
 			ActionLabel:     "排期",
 			ActionClass:     "primary",
@@ -95,6 +103,14 @@ func toDevRequirementsView(stories []StoryItem, zentaoBase string) []DevRequirem
 		if owner == "" {
 			owner = "待分配"
 		}
+		windowName := story.WindowName
+		if windowName == "" {
+			windowName = "—"
+		}
+		agileGroup := story.TeamgroupName
+		if agileGroup == "" {
+			agileGroup = "—"
+		}
 		out = append(out, DevRequirement{
 			StoryID:     story.ID,
 			ID:          formatStoryID(story.ID),
@@ -102,6 +118,10 @@ func toDevRequirementsView(stories []StoryItem, zentaoBase string) []DevRequirem
 			Priority:    priority,
 			PriClass:    priClass,
 			IsMain:      story.IsMainSystemAssociation == 1,
+			Stage:       story.Stage,
+			StageClass:  deriveBizStageClass(story.Stage),
+			WindowName:  windowName,
+			AgileGroup:  agileGroup,
 			Owner:       owner,
 			TaskCount:   story.TaskCount,
 			ActionLabel: "维护任务",
@@ -126,25 +146,14 @@ func formatPriority(pri int) (label, class string) {
 	return label, class
 }
 
-func deriveWindowStatus(stage string) (status, class string) {
+func deriveBizStageClass(stage string) string {
 	switch stage {
 	case StageNoWindow, StageNoStory, StageNoTask:
-		return "未排期", ""
+		return "stage-tag--draft"
+	case StageTaskUnassigned, StageTaskAssigned, IndependentStageTaskAssigned:
+		return "stage-tag--final"
 	default:
-		return "已排期", "ok"
-	}
-}
-
-func deriveStageTag(stage string) (tag, class string) {
-	switch stage {
-	case StageNoWindow:
-		return "", ""
-	case StageNoStory:
-		return "初排", "stage-tag--draft"
-	case StageNoTask, StageTaskUnassigned, StageTaskAssigned:
-		return "终排", "stage-tag--final"
-	default:
-		return "", ""
+		return ""
 	}
 }
 
@@ -245,7 +254,7 @@ func toIndependentChildrenView(items []IndependentStoryItem, zentaoBase string) 
 
 func deriveIndependentStageClass(stage string) string {
 	switch stage {
-	case StageNoWindow, StageNoTask:
+	case StageNoWindow, StageNoStory, StageNoTask:
 		return "stage-tag--draft"
 	case StageTaskUnassigned, StageTaskAssigned, IndependentStageTaskAssigned:
 		return "stage-tag--final"

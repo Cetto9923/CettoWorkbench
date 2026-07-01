@@ -368,6 +368,14 @@
   word-break: break-word;
 }
 
+.schedule-window-name {
+  display: inline-block;
+  font-size: 11px;
+  color: var(--t2);
+  white-space: normal;
+  word-break: break-word;
+}
+
 .schedule-owner-line {
   display: flex;
   align-items: center;
