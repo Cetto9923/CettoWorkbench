@@ -37,8 +37,8 @@ func (s *Service) SaveScheduling(ctx context.Context, actor *model.User, demandI
 		return err
 	}
 
-	// 进事务前做整体校验:任一目标系统「不在窗口且无匹配计划」则零写入、返回提示。
-	notice, err := s.precheckSchedulingProducts(ctx, req.WindowID, req.Stories)
+	// 进事务前做整体校验:任一目标系统不在当前用户有权限的产品集合内则零写入、返回提示。
+	notice, err := s.precheckSchedulingProducts(ctx, req.WindowID, req.Stories, account)
 	if err != nil {
 		return err
 	}

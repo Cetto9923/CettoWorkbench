@@ -2,7 +2,6 @@ package schedule
 
 import (
 	"context"
-	"errors"
 	"sort"
 	"strconv"
 )
@@ -28,10 +27,10 @@ func (e *ProductAccessNoticeError) Error() string {
 }
 
 // precheckSchedulingProducts 排期保存前置只读校验：
-// 收集本次提交中 new/edit 涉及的系统，逐一判断是否「在窗口中」或「有匹配计划」，
-// 若两者皆无则记入拦截列表。本函数为只读，不写库、不进事务、不查权限，
+// 收集本次提交中 new/edit 涉及的系统，判断是否在当前用户有权限操作的产品集合内，
+// 不在则记入拦截列表。本函数为只读，不写库、不进事务，
 // 在 SaveScheduling 事务开启之前调用。
-func (s *Service) precheckSchedulingProducts(ctx context.Context, windowID uint, stories []SaveSchedulingStory) (*ProductAccessNoticeError, error) {
+func (s *Service) precheckSchedulingProducts(ctx context.Context, windowID uint, stories []SaveSchedulingStory, account string) (*ProductAccessNoticeError, error) {
 	// 收集 new/edit 涉及的系统 ID（跳过 delete 与空 action）。
 	var rawProductIDs []uint
 	for _, story := range stories {
@@ -46,39 +45,23 @@ func (s *Service) precheckSchedulingProducts(ctx context.Context, windowID uint,
 	if len(productIDs) == 0 {
 		return nil, nil
 	}
-	if windowID == 0 {
-		return nil, errors.New("版本窗口不能为空")
-	}
 
-	window, err := s.repo.FindByID(ctx, uint64(windowID))
+	// 查询当前用户有权限操作的产品集合。
+	products, err := s.repo.GetUserProducts(ctx, account)
 	if err != nil {
 		return nil, err
 	}
-	if window == nil {
-		return nil, errors.New("版本窗口不存在")
+	accessSet := make(map[uint]struct{}, len(products))
+	for _, p := range products {
+		accessSet[p.ID] = struct{}{}
 	}
-	releaseDate := window.ReleaseDate.Format("2006-01-02")
 
-	// 遍历去重后的系统，识别「不在窗口 且 无匹配计划」的违规模块。
+	// 遍历去重后的系统，不在有权集合内则记入拦截列表。
 	var offenders []uint
 	for _, productID := range productIDs {
-		vwp, err := s.repo.FindWindowProductPlan(ctx, windowID, productID)
-		if err != nil {
-			return nil, err
+		if _, ok := accessSet[productID]; !ok {
+			offenders = append(offenders, productID)
 		}
-		if vwp != nil {
-			// 已在窗口中，跳过。
-			continue
-		}
-		plans, err := s.repo.GetMatchingPlans(ctx, productID, releaseDate)
-		if err != nil {
-			return nil, err
-		}
-		if len(plans) > 0 {
-			// 存在匹配计划，跳过。
-			continue
-		}
-		offenders = append(offenders, productID)
 	}
 	if len(offenders) == 0 {
 		return nil, nil
