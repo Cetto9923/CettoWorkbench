@@ -123,114 +123,126 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
 
     <div class="schedule-filter schedule-filter--primary">
       <div class="schedule-filter-primary-inner" id="scheduleMultiselectRow">
-      <div class="schedule-ms" data-filter-key="groups" data-filter-label="敏捷小组">
-        <button type="button" class="form-select schedule-ms-trigger" aria-haspopup="listbox" aria-expanded="false">
-          <span class="schedule-ms-text">敏捷小组</span>
-          <i class="fas fa-chevron-down" aria-hidden="true"></i>
-        </button>
-        <div class="schedule-ms-panel" hidden>
-          <div class="schedule-ms-options">
-            {{ range .Teamgroups }}
-            <label class="schedule-ms-option">
-              <input type="checkbox" class="schedule-ms-checkbox" value="{{ .ID }}" data-label="{{ .DisplayName }}"{{ if index $.SelectedGroupMap .ID }} checked{{ end }}>
-              <span>{{ .DisplayName }}</span>
-            </label>
-            {{ else }}
-            <div class="schedule-ms-empty">暂无敏捷小组</div>
-            {{ end }}
+        <div class="schedule-filter-core">
+          <div class="schedule-ms" data-filter-key="groups" data-filter-label="敏捷小组">
+            <button type="button" class="form-select schedule-ms-trigger" aria-haspopup="listbox" aria-expanded="false">
+              <span class="schedule-ms-text">敏捷小组</span>
+              <i class="fas fa-chevron-down" aria-hidden="true"></i>
+            </button>
+            <div class="schedule-ms-panel" hidden>
+              <div class="schedule-ms-options">
+                {{ range .Teamgroups }}
+                <label class="schedule-ms-option">
+                  <input type="checkbox" class="schedule-ms-checkbox" value="{{ .ID }}" data-label="{{ .DisplayName }}"{{ if index $.SelectedGroupMap .ID }} checked{{ end }}>
+                  <span>{{ .DisplayName }}</span>
+                </label>
+                {{ else }}
+                <div class="schedule-ms-empty">暂无敏捷小组</div>
+                {{ end }}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      <div class="schedule-ms" data-filter-key="products" data-filter-label="系统">
-        <button type="button" class="form-select schedule-ms-trigger" aria-haspopup="listbox" aria-expanded="false">
-          <span class="schedule-ms-text">系统</span>
-          <i class="fas fa-chevron-down" aria-hidden="true"></i>
-        </button>
-        <div class="schedule-ms-panel" hidden>
-          <div class="schedule-ms-options">
-            {{ range .FilterProducts }}
-            <label class="schedule-ms-option">
-              <input type="checkbox" class="schedule-ms-checkbox" value="{{ .ID }}" data-label="{{ .Name }}"{{ if index $.SelectedProductMap .ID }} checked{{ end }}>
-              <span>{{ .Name }}</span>
-            </label>
-            {{ else }}
-            <div class="schedule-ms-empty">暂无系统</div>
-            {{ end }}
+          <div class="schedule-ms" data-filter-key="products" data-filter-label="系统">
+            <button type="button" class="form-select schedule-ms-trigger" aria-haspopup="listbox" aria-expanded="false">
+              <span class="schedule-ms-text">系统</span>
+              <i class="fas fa-chevron-down" aria-hidden="true"></i>
+            </button>
+            <div class="schedule-ms-panel" hidden>
+              <div class="schedule-ms-options">
+                {{ range .FilterProducts }}
+                <label class="schedule-ms-option">
+                  <input type="checkbox" class="schedule-ms-checkbox" value="{{ .ID }}" data-label="{{ .Name }}"{{ if index $.SelectedProductMap .ID }} checked{{ end }}>
+                  <span>{{ .Name }}</span>
+                </label>
+                {{ else }}
+                <div class="schedule-ms-empty">暂无系统</div>
+                {{ end }}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      <div class="schedule-ms" data-filter-key="stages" data-filter-label="排期阶段">
-        <button type="button" class="form-select schedule-ms-trigger" aria-haspopup="listbox" aria-expanded="false">
-          <span class="schedule-ms-text">排期阶段</span>
-          <i class="fas fa-chevron-down" aria-hidden="true"></i>
-        </button>
-        <div class="schedule-ms-panel" hidden>
-          <div class="schedule-ms-options">
-            {{ range .StageFilterOptions }}
-            <label class="schedule-ms-option">
-              <input type="checkbox" class="schedule-ms-checkbox" value="{{ .Value }}" data-label="{{ .Label }}"{{ if index $.SelectedStageMap .Value }} checked{{ end }}>
-              <span>{{ .Label }}</span>
-            </label>
-            {{ end }}
+          <div class="schedule-ms" data-filter-key="stages" data-filter-label="排期阶段">
+            <button type="button" class="form-select schedule-ms-trigger" aria-haspopup="listbox" aria-expanded="false">
+              <span class="schedule-ms-text">排期阶段</span>
+              <i class="fas fa-chevron-down" aria-hidden="true"></i>
+            </button>
+            <div class="schedule-ms-panel" hidden>
+              <div class="schedule-ms-options">
+                {{ range .StageFilterOptions }}
+                <label class="schedule-ms-option">
+                  <input type="checkbox" class="schedule-ms-checkbox" value="{{ .Value }}" data-label="{{ .Label }}"{{ if index $.SelectedStageMap .Value }} checked{{ end }}>
+                  <span>{{ .Label }}</span>
+                </label>
+                {{ end }}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      <div class="schedule-ms" data-filter-key="windows" data-filter-label="窗口">
-        <button type="button" class="form-select schedule-ms-trigger" aria-haspopup="listbox" aria-expanded="false">
-          <span class="schedule-ms-text">窗口</span>
-          <i class="fas fa-chevron-down" aria-hidden="true"></i>
-        </button>
-        <div class="schedule-ms-panel" hidden>
-          <div class="schedule-ms-options">
-            {{ range .FilterWindows }}
-            <label class="schedule-ms-option">
-              <input type="checkbox" class="schedule-ms-checkbox" value="{{ .ID }}" data-label="{{ .Name }}"{{ if index $.SelectedWindowMap .ID }} checked{{ end }}>
-              <span>{{ .Name }}</span>
-            </label>
-            {{ else }}
-            <div class="schedule-ms-empty">暂无窗口</div>
-            {{ end }}
+          <div class="schedule-ms" data-filter-key="windows" data-filter-label="窗口">
+            <button type="button" class="form-select schedule-ms-trigger" aria-haspopup="listbox" aria-expanded="false">
+              <span class="schedule-ms-text">窗口</span>
+              <i class="fas fa-chevron-down" aria-hidden="true"></i>
+            </button>
+            <div class="schedule-ms-panel" hidden>
+              <div class="schedule-ms-options">
+                {{ range .FilterWindows }}
+                <label class="schedule-ms-option">
+                  <input type="checkbox" class="schedule-ms-checkbox" value="{{ .ID }}" data-label="{{ .Name }}"{{ if index $.SelectedWindowMap .ID }} checked{{ end }}>
+                  <span>{{ .Name }}</span>
+                </label>
+                {{ else }}
+                <div class="schedule-ms-empty">暂无窗口</div>
+                {{ end }}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      <button type="button" class="action-btn" id="scheduleApplyFilters">筛选</button>
+          <label class="schedule-search-inline" for="scheduleSearch">
+            <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+            <input id="scheduleSearch" name="keyword" value="{{ .SelectedKeyword }}" placeholder="编号 / 名称 / 责任人 / 系统">
+          </label>
+        </div>
+        <div class="schedule-filter-actions">
+          <button type="button" class="action-btn schedule-more-filter-btn" id="scheduleMoreFilterToggle" aria-expanded="false" aria-controls="scheduleMoreFilters"><i class="fas fa-sliders"></i> 更多筛选</button>
+          <button type="button" class="action-btn primary schedule-apply-btn" id="scheduleApplyFilters"><i class="fas fa-filter"></i> 筛选</button>
+        </div>
       </div>
     </div>
 
-    <div id="scheduleMoreFilters" class="schedule-filter schedule-filter-more" style="display:none">
+    <div id="scheduleMoreFilters" class="schedule-filter schedule-filter-more" hidden>
       <select class="form-select" id="scheduleFilterPri">
         <option value="">优先级</option>
-        <option value="P0">P0</option>
-        <option value="P1">P1</option>
-        <option value="P2">P2</option>
+        <option value="0"{{ if eq .SelectedPri "0" }} selected{{ end }}>P0</option>
+        <option value="1"{{ if eq .SelectedPri "1" }} selected{{ end }}>P1</option>
+        <option value="2"{{ if eq .SelectedPri "2" }} selected{{ end }}>P2</option>
+        <option value="3"{{ if eq .SelectedPri "3" }} selected{{ end }}>P3</option>
+        <option value="4"{{ if eq .SelectedPri "4" }} selected{{ end }}>P4</option>
       </select>
-      <select class="form-select" id="scheduleFilterWindow">
+      <select class="form-select" id="scheduleFilterWindowType">
         <option value="">发布窗口/类型</option>
-        <option value="regular">常规窗口</option>
-        <option value="fast">快速窗口</option>
-        <option value="urgent">紧急发布</option>
+        {{ range .WindowTypeFilterOptions }}
+        <option value="{{ .Value }}"{{ if eq $.SelectedWindowType .Value }} selected{{ end }}>{{ .Label }}</option>
+        {{ end }}
       </select>
       <select class="form-select" id="scheduleFilterDev">
         <option value="">开发负责人</option>
+        {{ range .FilterUsers }}
+        <option value="{{ .Account }}"{{ if eq $.SelectedDevOwner .Account }} selected{{ end }}>{{ .Realname }}</option>
+        {{ end }}
       </select>
       <select class="form-select" id="scheduleFilterTest">
         <option value="">测试负责人</option>
+        {{ range .FilterUsers }}
+        <option value="{{ .Account }}"{{ if eq $.SelectedTestOwner .Account }} selected{{ end }}>{{ .Realname }}</option>
+        {{ end }}
       </select>
       <select class="form-select" id="scheduleFilterAccept">
         <option value="">验收负责人</option>
+        {{ range .FilterUsers }}
+        <option value="{{ .Account }}"{{ if eq $.SelectedAcceptOwner .Account }} selected{{ end }}>{{ .Realname }}</option>
+        {{ end }}
       </select>
-      <select class="form-select" id="scheduleFilterRole">
-        <option value="all">全部主配</option>
-        <option value="main">主系统</option>
-        <option value="sub">配合系统</option>
-      </select>
-      <input class="form-input" id="scheduleCreatorFilter" placeholder="创建人">
-      <input class="form-input" id="scheduleSourceFilter" placeholder="需求来源">
-      <input class="form-input" id="scheduleDeptFilter" placeholder="业务部门">
     </div>
 
     <div class="schedule-data-tabs">
@@ -716,7 +728,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
       <div class="schedule-modal-title" id="scheduleIntegratedReqTitle">—</div>
       <div class="schedule-modal-summary">
         <span>主系统 <strong id="scheduleIntegratedReqSystem">—</strong></span>
-        <span>负责人 <strong id="scheduleIntegratedReqOwner">—</strong></span>
+        <span>指派人 <strong id="scheduleIntegratedReqOwner">—</strong></span>
       </div>
     </div>
 
@@ -875,11 +887,12 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
       <th class="rd-task-th rd-task-th--project" style="width:120px">项目</th>
       <th class="rd-task-th rd-task-th--execution" style="width:120px">执行</th>
       <th class="rd-task-th rd-task-th--type" style="width:80px">类型</th>
-      <th class="rd-task-th rd-task-th--name">任务名称</th>
+      <th class="rd-task-th rd-task-th--pri" style="width:72px">优先级</th>
+      <th class="rd-task-th rd-task-th--name">任务名称 <span class="req">*</span></th>
       <th class="rd-task-th rd-task-th--owner" style="width:140px">负责人</th>
-      <th class="rd-task-th rd-task-th--hours" style="width:60px">预估(h)</th>
+      <th class="rd-task-th rd-task-th--hours" style="width:60px">预估(h) <span class="req">*</span></th>
       <th class="rd-task-th rd-task-th--start" style="width:100px">开始</th>
-      <th class="rd-task-th rd-task-th--end" style="width:100px">截止</th>
+      <th class="rd-task-th rd-task-th--end" style="width:100px">截止 <span class="req">*</span></th>
       <th class="rd-task-th rd-task-th--actions" style="width:48px">操作</th>
     </tr>
   </thead>
@@ -890,6 +903,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
     <td class="rd-task-cell rd-task-cell-project"><select class="rd-task-project-select form-select rd-task-select"><option value="">请选择项目</option></select></td>
     <td class="rd-task-cell rd-task-cell-execution"><select class="rd-task-execution-select form-select rd-task-select" disabled><option value="">请选择执行</option></select></td>
     <td class="rd-task-cell rd-task-cell-type"><select class="rd-task-type form-select rd-task-select"><option value="devel">开发</option><option value="test">测试</option><option value="OLtest">上线测试</option><option value="review">评审</option><option value="affair">事务</option><option value="request">需求</option><option value="misc">其他</option><option value="codereview">代码评审</option><option value="design">设计</option><option value="study">研究</option><option value="OLDebug">上线调试</option><option value="Online">上线</option><option value="Train">培训</option><option value="meeting">会议</option><option value="discuss">讨论</option><option value="ui">界面</option></select></td>
+    <td class="rd-task-cell rd-task-cell-pri"><select class="rd-task-pri form-select rd-task-select"><option value="0">P0</option><option value="1">P1</option><option value="2">P2</option><option value="3" selected>P3</option><option value="4">P4</option></select></td>
     <td class="rd-task-cell rd-task-cell-name rd-task-cell--name"><input type="text" class="rd-task-name form-input rd-task-input" placeholder="任务名称"></td>
     <td class="rd-task-cell rd-task-cell-owner rd-task-cell--owner rd-task-owner-cell"></td>
     <td class="rd-task-cell rd-task-cell-hours"><input type="number" class="rd-task-hours form-input rd-task-input" min="0" step="0.5" placeholder="h"></td>
@@ -904,6 +918,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
     <td class="rd-task-cell rd-task-cell-project"></td>
     <td class="rd-task-cell rd-task-cell-execution"></td>
     <td class="rd-task-cell rd-task-cell-type"></td>
+    <td class="rd-task-cell rd-task-cell-pri"></td>
     <td class="rd-task-cell rd-task-cell-name rd-task-cell--name"></td>
     <td class="rd-task-cell rd-task-cell-owner rd-task-cell--owner"></td>
     <td class="rd-task-cell rd-task-cell-hours"></td>
@@ -918,6 +933,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
     <td class="rd-task-cell rd-task-cell-project"><select class="rd-task-project-select form-select rd-task-select"><option value="">请选择项目</option></select></td>
     <td class="rd-task-cell rd-task-cell-execution"><select class="rd-task-execution-select form-select rd-task-select" disabled><option value="">请选择执行</option></select></td>
     <td class="rd-task-cell rd-task-cell-type"><select class="rd-task-type form-select rd-task-select"></select></td>
+    <td class="rd-task-cell rd-task-cell-pri"><select class="rd-task-pri form-select rd-task-select"><option value="0">P0</option><option value="1">P1</option><option value="2">P2</option><option value="3">P3</option><option value="4">P4</option></select></td>
     <td class="rd-task-cell rd-task-cell-name rd-task-cell--name"><input type="text" class="rd-task-name form-input rd-task-input" placeholder="任务名称"></td>
     <td class="rd-task-cell rd-task-cell-owner rd-task-cell--owner rd-task-owner-cell"></td>
     <td class="rd-task-cell rd-task-cell-hours"><input type="number" class="rd-task-hours form-input rd-task-input" min="0" step="0.5" placeholder="h"></td>

@@ -22,6 +22,11 @@
     return isNaN(num) ? 0 : num;
   }
 
+  function parseTaskPri(value) {
+    var num = parseInt(String(value == null ? "" : value), 10);
+    return isNaN(num) || num < 0 || num > 4 ? 3 : num;
+  }
+
   function toast(message, type) {
     if (typeof window.showToast === "function") {
       window.showToast(message, type || "success");
@@ -84,6 +89,7 @@
 
     var executionId = 0;
     var type = "";
+    var pri = 3;
     var name = "";
     var assignedTo = "";
     var estimate = 0;
@@ -93,6 +99,7 @@
     if (isEditing) {
       executionId = parsePositiveInt($row.find(".rd-task-execution-select").first().val() || $row.attr("data-execution-id"));
       type = $.trim($row.find(".rd-task-type").first().val() || $row.attr("data-task-type") || "");
+      pri = parseTaskPri($row.find(".rd-task-pri").first().val() || $row.attr("data-pri") || "3");
       name = $.trim($row.find(".rd-task-name").first().val() || $row.attr("data-task-name") || "");
       assignedTo = $.trim($row.find(".rd-node-assignee-value").first().val() || $row.attr("data-assigned-to") || "");
       estimate = parseEstimateValue($row.find(".rd-task-hours").first().val() || $row.attr("data-estimate"));
@@ -101,6 +108,7 @@
     } else {
       executionId = parsePositiveInt($row.attr("data-execution-id"));
       type = $.trim($row.attr("data-task-type") || "");
+      pri = parseTaskPri($row.attr("data-pri") || "3");
       name = $.trim($row.attr("data-task-name") || "");
       assignedTo = $.trim($row.attr("data-assigned-to") || "");
       estimate = parseEstimateValue($row.attr("data-estimate"));
@@ -112,6 +120,7 @@
       action: isNewRow ? "new" : "edit",
       executionId: executionId,
       type: type,
+      pri: pri,
       name: name,
       assignedTo: assignedTo,
       estimate: estimate,
@@ -125,7 +134,7 @@
   }
 
   function isNewTaskRowEmpty(task) {
-    return !$.trim(task.name || "") && !task.executionId;
+    return !$.trim(task.name || "") && !task.executionId && !task.estimate && !$.trim(task.deadline || "");
   }
 
   function collectDeletedTasksForStory(storyId) {
@@ -258,14 +267,20 @@
       }
       for (var j = 0; j < (story.tasks || []).length; j++) {
         var task = story.tasks[j];
-        if (task.action !== "new") {
+        if (task.action === "delete") {
           continue;
         }
         if (!$.trim(task.name || "")) {
-          return "新建的任务必须填写名称";
+          return "任务名称不能为空";
         }
         if (!task.executionId) {
-          return "新建的任务必须选择执行";
+          return "请选择执行";
+        }
+        if (!task.estimate || task.estimate <= 0) {
+          return "预估不能为空";
+        }
+        if (!$.trim(task.deadline || "")) {
+          return "截止时间不能为空";
         }
       }
     }

@@ -246,6 +246,7 @@ func buildDemandSchedulingTasks(
 			Name:           strings.TrimSpace(task.Name),
 			Type:           strings.TrimSpace(task.Type),
 			TypeLabel:      taskTypeLabel(task.Type),
+			Pri:            normalizeTaskPriority(task.Pri),
 			AssignedTo:     assignedTo,
 			AssignedToName: resolveRealname(assignedTo, realnameByAccount),
 			Estimate:       task.Estimate,

@@ -193,6 +193,7 @@ func (s *Service) applySingleSchedulingTask(
 		taskID, err := txRepo.CreateTask(ctx, &ZtTaskInsert{
 			Name:       taskReq.Name,
 			Type:       taskReq.Type,
+			Pri:        normalizeTaskPriority(taskReq.Pri),
 			Story:      storyID,
 			Project:    projectID,
 			Execution:  taskReq.ExecutionID,
@@ -229,6 +230,7 @@ func (s *Service) applySingleSchedulingTask(
 		if err := txRepo.UpdateTask(ctx, taskReq.ID, map[string]interface{}{
 			"name":           strings.TrimSpace(taskReq.Name),
 			"type":           strings.TrimSpace(taskReq.Type),
+			"pri":            normalizeTaskPriority(taskReq.Pri),
 			"assignedTo":     strings.TrimSpace(taskReq.AssignedTo),
 			"estimate":       taskReq.Estimate,
 			"left":           taskReq.Estimate,

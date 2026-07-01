@@ -321,14 +321,25 @@
 }
 
 .schedule-filter-primary-inner {
-  padding: 10px 12px;
+  padding: 8px 12px;
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between;
+  gap: 8px;
   width: 100%;
   min-width: 0;
   overflow: visible;
+  flex-wrap: wrap;
+  background: #fff;
+}
+
+.schedule-filter-core {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 640px;
+  min-width: 0;
   flex-wrap: wrap;
 }
 
@@ -363,34 +374,89 @@
   grid-column: span 3;
 }
 
+.schedule-search-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  min-width: 220px;
+  max-width: 360px;
+  flex: 1 1 260px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  box-sizing: border-box;
+}
+
+.schedule-search-inline i {
+  color: var(--t3);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.schedule-search-inline input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 12px;
+  color: var(--t1);
+  font-family: inherit;
+}
+
 .schedule-filter-actions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
   gap: 8px;
+  flex: 0 0 auto;
 }
 
 .schedule-filter-main .action-btn {
   height: 30px;
 }
 
+.schedule-more-filter-btn,
+.schedule-apply-btn {
+  height: 30px;
+  font-weight: 700;
+}
+
+#page-schedule .schedule-more-filter-btn {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  color: #334155;
+}
+
+#page-schedule .schedule-more-filter-btn:hover,
+#page-schedule .schedule-more-filter-btn.active {
+  border-color: var(--blue);
+  background: var(--blue-bg);
+  color: var(--blue);
+}
+
 .schedule-filter-more {
-  display: none !important;
-  border-top: none !important;
-  padding: 0 12px 10px !important;
-  gap: 8px;
-  flex-wrap: wrap;
+  display: none;
+  border-top: none;
+  padding: 7px 12px 10px;
+  gap: 8px 10px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   align-items: center;
-  background: var(--white);
+  background: var(--bg);
   border-bottom: 1px solid var(--border-lt);
+  box-sizing: border-box;
 }
 
 .schedule-filter-more.open {
-  display: flex !important;
+  display: grid;
 }
 
 .schedule-filter-more .form-select,
 .schedule-filter-more .form-input {
-  width: 132px !important;
+  width: 100% !important;
+  min-width: 0;
   height: 30px;
   padding: 5px 8px;
   font-size: 12px;
@@ -421,12 +487,31 @@
 #page-schedule .schedule-filter-more .form-input,
 #page-schedule .schedule-filter-more .form-select {
   width: 100% !important;
+  min-width: 0;
   height: 30px;
   padding: 5px 8px;
   font-size: 12px;
   border: 1px solid var(--border);
   border-radius: 4px;
   box-sizing: border-box;
+}
+
+@media (max-width: 1400px) {
+  .schedule-filter-more {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 960px) {
+  .schedule-filter-more {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .schedule-filter-more {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ── 数据类型 Tab ── */
@@ -493,4 +578,3 @@
     flex-direction: column;
   }
 }
-

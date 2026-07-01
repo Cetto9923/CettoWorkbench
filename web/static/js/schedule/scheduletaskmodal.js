@@ -13,6 +13,11 @@
     return isNaN(num) || num <= 0 ? 0 : num;
   }
 
+  function normalizeTaskPri(value) {
+    var num = parseInt(String(value == null ? "" : value), 10);
+    return isNaN(num) || num < 0 || num > 4 ? 3 : num;
+  }
+
   function escapeHtml(text) {
     if (shared && shared.escapeHtml) {
       return shared.escapeHtml(text);
@@ -240,6 +245,7 @@
     var $row = $(row);
     $row.attr("data-task-id", String(task.id || ""));
     $row.attr("data-task-type", task.type || "");
+    $row.attr("data-pri", String(normalizeTaskPri(task.pri)));
     $row.attr("data-assigned-to", task.assignedTo || "");
     $row.attr("data-assigned-to-name", task.assignedToName || "");
     $row.find(".task-modal-type-cell").text(task.typeLabel || (shared && shared.taskTypeLabel(task.type)) || task.type || "—");
@@ -341,6 +347,7 @@
         projectId: parsePositiveInt($row.find(".rd-task-project-select").val()),
         executionId: parsePositiveInt($row.find(".rd-task-execution-select").val()),
         type: $.trim($row.attr("data-task-type") || ""),
+        pri: normalizeTaskPri($row.attr("data-pri")),
         name: $.trim($row.find(".rd-task-name").val() || ""),
         assignedTo: readRowAssignedTo($row),
         estimate: Number($row.find(".rd-task-hours").val()) || 0,
@@ -357,6 +364,7 @@
         projectId: parsePositiveInt($row.find(".rd-task-project-select").val()),
         executionId: parsePositiveInt($row.find(".rd-task-execution-select").val()),
         type: $.trim($row.find(".rd-task-type").val() || "devel"),
+        pri: 3,
         name: $.trim($row.find(".rd-task-name").val() || ""),
         assignedTo: readRowAssignedTo($row),
         estimate: Number($row.find(".rd-task-hours").val()) || 0,

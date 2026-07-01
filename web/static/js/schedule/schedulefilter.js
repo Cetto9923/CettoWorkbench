@@ -77,6 +77,12 @@
       products: "",
       stages: "",
       windows: "",
+      keyword: $.trim($("#scheduleSearch").val() || ""),
+      pri: $.trim($("#scheduleFilterPri").val() || ""),
+      windowType: $.trim($("#scheduleFilterWindowType").val() || ""),
+      dev: $.trim($("#scheduleFilterDev").val() || ""),
+      test: $.trim($("#scheduleFilterTest").val() || ""),
+      accept: $.trim($("#scheduleFilterAccept").val() || ""),
     };
     $row.find(".schedule-ms").each(function () {
       var $ms = $(this);
@@ -99,9 +105,35 @@
       products: values.products || null,
       stages: values.stages || null,
       windows: values.windows || null,
+      keyword: values.keyword || null,
+      pri: values.pri || null,
+      windowType: values.windowType || null,
+      dev: values.dev || null,
+      test: values.test || null,
+      accept: values.accept || null,
       bizPage: null,
       indepPage: null,
     });
+  }
+
+  function hasMoreFiltersActive() {
+    var values = collectAdvancedFilterValues();
+    return !!(values.pri || values.windowType || values.dev || values.test || values.accept);
+  }
+
+  function setMoreFiltersOpen(open) {
+    var $more = $("#scheduleMoreFilters");
+    var $toggle = $("#scheduleMoreFilterToggle");
+    if (!$more.length) {
+      return;
+    }
+    $more.toggleClass("open", open).prop("hidden", !open);
+    $toggle.toggleClass("active", open).attr("aria-expanded", open ? "true" : "false");
+  }
+
+  function toggleMoreFilters() {
+    var $more = $("#scheduleMoreFilters");
+    setMoreFiltersOpen(!$more.hasClass("open"));
   }
 
   $row.find(".schedule-ms").each(function () {
@@ -135,10 +167,31 @@
     applyAdvancedFilters();
   });
 
+  $row.on("click", "#scheduleMoreFilterToggle", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    closeAllScheduleMultiselects();
+    toggleMoreFilters();
+  });
+
+  $("#scheduleSearch").on("keydown", function (e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      applyAdvancedFilters();
+    }
+  });
+
+  $("#scheduleMoreFilters").on("change", ".form-select", function () {
+    applyAdvancedFilters();
+  });
+
   $(document).on("click", function () {
     closeAllScheduleMultiselects();
   });
 
+  setMoreFiltersOpen(hasMoreFiltersActive());
+
   window.scheduleApplyAdvancedFilters = applyAdvancedFilters;
   window.scheduleCollectAdvancedFilterValues = collectAdvancedFilterValues;
+  window.toggleScheduleMoreFilters = toggleMoreFilters;
 })(jQuery);
