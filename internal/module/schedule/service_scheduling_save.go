@@ -111,7 +111,7 @@ func (s *Service) applySchedulingStory(
 		if err := txRepo.EnsurePlanStoryRelation(ctx, planID, storyID); err != nil {
 			return 0, 0, 0, fmt.Errorf("ensure plan story relation: %w", err)
 		}
-		if err := txRepo.CreateAction(ctx, "story", storyID, "Opened", account, productID, 0, 0); err != nil {
+		if err := txRepo.CreateAction(ctx, "story", storyID, "Opened", account, productID, 0, 0, ""); err != nil {
 			return 0, 0, 0, fmt.Errorf("create story action: %w", err)
 		}
 		return storyID, productID, planID, nil
@@ -128,7 +128,7 @@ func (s *Service) applySchedulingStory(
 		}); err != nil {
 			return 0, 0, 0, fmt.Errorf("update story %d: %w", storyID, err)
 		}
-		if err := txRepo.CreateAction(ctx, "story", storyID, "Edited", account, storyReq.ProductID, 0, 0); err != nil {
+		if err := txRepo.CreateAction(ctx, "story", storyID, "Edited", account, storyReq.ProductID, 0, 0, ""); err != nil {
 			return 0, 0, 0, fmt.Errorf("create story action: %w", err)
 		}
 		// 同步计划关联:解析目标计划 → 从该 story 的其他计划移除 → 幂等关联到目标计划。
@@ -150,7 +150,7 @@ func (s *Service) applySchedulingStory(
 		if err := txRepo.CloseStory(ctx, storyID, account); err != nil {
 			return 0, 0, 0, fmt.Errorf("close story %d: %w", storyID, err)
 		}
-		if err := txRepo.CreateAction(ctx, "story", storyID, "Closed", account, 0, 0, 0); err != nil {
+		if err := txRepo.CreateAction(ctx, "story", storyID, "Closed", account, 0, 0, 0, ""); err != nil {
 			return 0, 0, 0, fmt.Errorf("create story action: %w", err)
 		}
 		return storyID, 0, 0, nil
@@ -214,7 +214,7 @@ func (s *Service) applySingleSchedulingTask(
 		}); err != nil {
 			return fmt.Errorf("create task spec: %w", err)
 		}
-		if err := txRepo.CreateAction(ctx, "task", taskID, "Opened", account, productID, projectID, taskReq.ExecutionID); err != nil {
+		if err := txRepo.CreateAction(ctx, "task", taskID, "Opened", account, productID, projectID, taskReq.ExecutionID, ""); err != nil {
 			return fmt.Errorf("create task action: %w", err)
 		}
 		if err := txRepo.LinkStoryToProjectAndExecution(ctx, storyID, productID, projectID, taskReq.ExecutionID, account); err != nil {
@@ -241,7 +241,7 @@ func (s *Service) applySingleSchedulingTask(
 		}); err != nil {
 			return fmt.Errorf("update task %d: %w", taskReq.ID, err)
 		}
-		if err := txRepo.CreateAction(ctx, "task", taskReq.ID, "Edited", account, productID, projectID, taskReq.ExecutionID); err != nil {
+		if err := txRepo.CreateAction(ctx, "task", taskReq.ID, "Edited", account, productID, projectID, taskReq.ExecutionID, ""); err != nil {
 			return fmt.Errorf("create task action: %w", err)
 		}
 		if err := txRepo.LinkStoryToProjectAndExecution(ctx, storyID, productID, projectID, taskReq.ExecutionID, account); err != nil {
@@ -252,7 +252,7 @@ func (s *Service) applySingleSchedulingTask(
 		if err := txRepo.CloseTask(ctx, taskReq.ID, account); err != nil {
 			return fmt.Errorf("close task %d: %w", taskReq.ID, err)
 		}
-		if err := txRepo.CreateAction(ctx, "task", taskReq.ID, "Closed", account, productID, 0, 0); err != nil {
+		if err := txRepo.CreateAction(ctx, "task", taskReq.ID, "Closed", account, productID, 0, 0, ""); err != nil {
 			return fmt.Errorf("create task action: %w", err)
 		}
 	}

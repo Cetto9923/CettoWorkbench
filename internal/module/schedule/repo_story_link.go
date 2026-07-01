@@ -119,7 +119,7 @@ func (r *Repo) LinkStoryToProjectAndExecution(ctx context.Context, storyID, prod
 		}
 		// M1 存在性守卫：仅首次关联写 action，避免 edit 刷屏。
 		if !existed {
-			if err := r.CreateAction(ctx, "story", storyID, "linked2project", account, productID, projectID, 0); err != nil {
+			if err := r.CreateAction(ctx, "story", storyID, "linked2project", account, productID, projectID, 0, fmt.Sprintf("%d", projectID)); err != nil {
 				return fmt.Errorf("create linked2project action: %w", err)
 			}
 		}
@@ -146,7 +146,7 @@ func (r *Repo) LinkStoryToProjectAndExecution(ctx context.Context, storyID, prod
 			return fmt.Errorf("replace project story for execution %d: %w", executionID, err)
 		}
 		if !existed {
-			if err := r.CreateAction(ctx, "story", storyID, "linked2execution", account, productID, projectID, executionID); err != nil {
+			if err := r.CreateAction(ctx, "story", storyID, "linked2execution", account, productID, projectID, executionID, fmt.Sprintf("%d", executionID)); err != nil {
 				return fmt.Errorf("create linked2execution action: %w", err)
 			}
 		}

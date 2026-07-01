@@ -410,7 +410,7 @@ func (r *Repo) CloseTask(ctx context.Context, taskID uint, actor string) error {
 }
 
 // CreateAction 创建禅道操作日志。
-func (r *Repo) CreateAction(ctx context.Context, objectType string, objectID uint, action string, actor string, productID uint, projectID uint, executionID uint) error {
+func (r *Repo) CreateAction(ctx context.Context, objectType string, objectID uint, action string, actor string, productID uint, projectID uint, executionID uint, extra string) error {
 	productField := ",0,"
 	if productID > 0 {
 		productField = fmt.Sprintf(",%d,", productID)
@@ -425,7 +425,7 @@ func (r *Repo) CreateAction(ctx context.Context, objectType string, objectID uin
 		Action:     action,
 		Date:       time.Now(),
 		Comment:    "",
-		Extra:      "",
+		Extra:      extra,
 	}
 	return r.db.WithContext(ctx).Create(&row).Error
 }
