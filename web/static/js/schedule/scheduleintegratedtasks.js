@@ -190,6 +190,14 @@
     }
   }
 
+  function normalizeTaskPri(pri) {
+    var value = parseInt(String(pri == null ? "" : pri), 10);
+    if (isNaN(value) || value < 0 || value > 4) {
+      return 3;
+    }
+    return value;
+  }
+
   function mountTaskActions($container, showEdit) {
     var tplId = showEdit ? "tplRdTaskActions" : "tplRdTaskActionsDeleteOnly";
     var actions = shared.cloneTemplateElement(tplId, ".task-actions");
@@ -205,6 +213,7 @@
     $row.attr("data-execution-id", task.executionId || "");
     $row.attr("data-execution-name", task.executionName || "");
     $row.attr("data-task-type", task.type || "");
+    $row.attr("data-pri", String(normalizeTaskPri(task.pri)));
     $row.attr("data-task-name", task.name || "");
     $row.attr("data-assigned-to", task.assignedTo || "");
     $row.attr("data-assigned-to-name", task.assignedToName || "");
@@ -221,6 +230,7 @@
       executionId: $row.attr("data-execution-id") || "",
       executionName: $row.attr("data-execution-name") || "",
       type: $row.attr("data-task-type") || "",
+      pri: normalizeTaskPri($row.attr("data-pri")),
       name: $row.attr("data-task-name") || "",
       assignedTo: $row.attr("data-assigned-to") || "",
       assignedToName: $row.attr("data-assigned-to-name") || "",
@@ -242,6 +252,7 @@
       executionId: executionId,
       executionName: executionId ? $.trim($executionSelect.find("option:selected").text() || "") : "",
       type: $.trim($row.find(".rd-task-type").val() || ""),
+      pri: normalizeTaskPri($row.find(".rd-task-pri").val()),
       name: $.trim($row.find(".rd-task-name").val() || ""),
       assignedTo: $.trim($row.find(".rd-node-assignee-value").val() || ""),
       assignedToName: $.trim($row.find(".rd-node-assignee-input").val() || ""),
@@ -263,6 +274,7 @@
     $row.find(".rd-task-cell-project").text(task.projectName || "—");
     $row.find(".rd-task-cell-execution").text(task.executionName || "—");
     renderTaskTypeCell($row.find(".rd-task-cell-type"), task.type);
+    $row.find(".rd-task-cell-pri").text("P" + normalizeTaskPri(task.pri));
     $row.find(".rd-task-cell-name").text(task.name || "—");
     $row.find(".rd-task-cell-owner").text(task.assignedToName || task.assignedTo || "—");
     $row.find(".rd-task-cell-hours").text(shared.formatStoryEstimate(task.estimate));
@@ -318,6 +330,7 @@
       "rd-task-cell-project",
       "rd-task-cell-execution",
       "rd-task-cell-type",
+      "rd-task-cell-pri",
       "rd-task-cell-name",
       "rd-task-cell-hours",
       "rd-task-cell-start",
@@ -341,6 +354,7 @@
       executionId: String(task.execution || ""),
       executionName: task.executionName || "",
       type: type,
+      pri: normalizeTaskPri(task.pri),
       name: task.name || "",
       assignedTo: task.assignedTo || "",
       assignedToName: task.assignedToName || "",
@@ -408,6 +422,7 @@
     $row.addClass("rd-task-row--editing");
     copyEditCellsFromTemplate($row);
     fillTaskTypeSelect($row.find(".rd-task-type"), task.type);
+    $row.find(".rd-task-pri").val(String(normalizeTaskPri(task.pri)));
     $row.find(".rd-task-name").val(task.name);
     $row.find(".rd-task-hours").val(task.estimate);
     $row.find(".rd-task-start").val(task.estStarted);

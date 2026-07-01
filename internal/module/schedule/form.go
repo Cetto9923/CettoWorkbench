@@ -769,9 +769,26 @@ func (r *SaveSchedulingReq) Validate() []FieldError {
 				if strings.TrimSpace(task.Name) == "" {
 					errs = append(errs, FieldError{Field: taskPrefix + ".name", Message: "任务名称不能为空"})
 				}
+				if task.Estimate <= 0 {
+					errs = append(errs, FieldError{Field: taskPrefix + ".estimate", Message: "预估不能为空"})
+				}
+				if strings.TrimSpace(task.Deadline) == "" {
+					errs = append(errs, FieldError{Field: taskPrefix + ".deadline", Message: "截止时间不能为空"})
+				}
 			case "edit", "delete":
 				if task.ID == 0 {
 					errs = append(errs, FieldError{Field: taskPrefix + ".id", Message: "任务 ID 无效"})
+				}
+				if taskAction == "edit" {
+					if strings.TrimSpace(task.Name) == "" {
+						errs = append(errs, FieldError{Field: taskPrefix + ".name", Message: "任务名称不能为空"})
+					}
+					if task.Estimate <= 0 {
+						errs = append(errs, FieldError{Field: taskPrefix + ".estimate", Message: "预估不能为空"})
+					}
+					if strings.TrimSpace(task.Deadline) == "" {
+						errs = append(errs, FieldError{Field: taskPrefix + ".deadline", Message: "截止时间不能为空"})
+					}
 				}
 			case "":
 				if action != "delete" {
@@ -803,6 +820,7 @@ type SaveSchedulingTask struct {
 	ID          uint    `json:"id"`
 	ExecutionID uint    `json:"executionId"`
 	Type        string  `json:"type"`
+	Pri         int     `json:"pri"`
 	Name        string  `json:"name"`
 	AssignedTo  string  `json:"assignedTo"`
 	Estimate    float64 `json:"estimate"`
@@ -838,6 +856,7 @@ type StoryTaskItem struct {
 	Type           string  `json:"type"`
 	TypeLabel      string  `json:"typeLabel"`
 	Name           string  `json:"name"`
+	Pri            int     `json:"pri"`
 	PriLabel       string  `json:"priLabel"`
 	Status         string  `json:"status"`
 	StatusLabel    string  `json:"statusLabel"`
@@ -902,6 +921,12 @@ func (r *SaveStoryTasksReq) Validate() []FieldError {
 				if task.ExecutionID == 0 {
 					errs = append(errs, FieldError{Field: prefix + ".executionId", Message: "执行不能为空"})
 				}
+				if task.Estimate <= 0 {
+					errs = append(errs, FieldError{Field: prefix + ".estimate", Message: "预估不能为空"})
+				}
+				if strings.TrimSpace(task.Deadline) == "" {
+					errs = append(errs, FieldError{Field: prefix + ".deadline", Message: "截止时间不能为空"})
+				}
 			}
 		case "edit", "delete":
 			if task.ID == 0 {
@@ -909,6 +934,17 @@ func (r *SaveStoryTasksReq) Validate() []FieldError {
 			}
 			if action == "edit" && task.ExecutionID == 0 {
 				errs = append(errs, FieldError{Field: prefix + ".executionId", Message: "执行不能为空"})
+			}
+			if action == "edit" {
+				if strings.TrimSpace(task.Name) == "" {
+					errs = append(errs, FieldError{Field: prefix + ".name", Message: "任务名称不能为空"})
+				}
+				if task.Estimate <= 0 {
+					errs = append(errs, FieldError{Field: prefix + ".estimate", Message: "预估不能为空"})
+				}
+				if strings.TrimSpace(task.Deadline) == "" {
+					errs = append(errs, FieldError{Field: prefix + ".deadline", Message: "截止时间不能为空"})
+				}
 			}
 		case "":
 			errs = append(errs, FieldError{Field: prefix + ".action", Message: "操作类型不能为空"})
@@ -928,6 +964,7 @@ type SaveStoryTasksTask struct {
 	ProjectID   uint    `json:"projectId"`
 	ExecutionID uint    `json:"executionId"`
 	Type        string  `json:"type"`
+	Pri         int     `json:"pri"`
 	Name        string  `json:"name"`
 	AssignedTo  string  `json:"assignedTo"`
 	Estimate    float64 `json:"estimate"`

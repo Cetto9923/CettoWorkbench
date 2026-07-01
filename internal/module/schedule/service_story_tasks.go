@@ -125,6 +125,7 @@ func buildStoryTaskItems(
 			ID:             task.ID,
 			Type:           strings.TrimSpace(task.Type),
 			TypeLabel:      taskTypeLabel(task.Type),
+			Pri:            normalizeTaskPriority(task.Pri),
 			Name:           strings.TrimSpace(task.Name),
 			PriLabel:       formatTaskPriority(task.Pri),
 			Status:         strings.TrimSpace(task.Status),
@@ -167,13 +168,14 @@ func buildStoryTaskSummary(tasks []ZtTaskItem) StoryTaskSummary {
 }
 
 func formatTaskPriority(pri int) string {
-	if pri < 0 {
-		pri = 0
+	return "P" + fmt.Sprintf("%d", normalizeTaskPriority(pri))
+}
+
+func normalizeTaskPriority(pri int) int {
+	if pri < 0 || pri > 4 {
+		return 3
 	}
-	if pri > 4 {
-		pri = 4
-	}
-	return "P" + fmt.Sprintf("%d", pri)
+	return pri
 }
 
 func taskStatusLabel(status string) string {
@@ -266,6 +268,7 @@ func (s *Service) applyStoryTaskSave(
 			Action:      "new",
 			ExecutionID: taskReq.ExecutionID,
 			Type:        taskReq.Type,
+			Pri:         taskReq.Pri,
 			Name:        taskReq.Name,
 			AssignedTo:  taskReq.AssignedTo,
 			Estimate:    taskReq.Estimate,
@@ -279,6 +282,7 @@ func (s *Service) applyStoryTaskSave(
 			ID:          taskReq.ID,
 			ExecutionID: taskReq.ExecutionID,
 			Type:        taskReq.Type,
+			Pri:         taskReq.Pri,
 			Name:        taskReq.Name,
 			AssignedTo:  taskReq.AssignedTo,
 			Estimate:    taskReq.Estimate,

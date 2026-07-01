@@ -44,6 +44,7 @@ type ZtStorySpec struct {
 type ZtTaskInsert struct {
 	Name       string
 	Type       string
+	Pri        int
 	Story      uint
 	Project    uint
 	Execution  uint
@@ -112,6 +113,7 @@ type ztTaskCreateRow struct {
 	ID         uint      `gorm:"column:id;primaryKey;autoIncrement"`
 	Name       string    `gorm:"column:name"`
 	Type       string    `gorm:"column:type"`
+	Pri        int       `gorm:"column:pri"`
 	Story      uint      `gorm:"column:story"`
 	Project    uint      `gorm:"column:project"`
 	Execution  uint      `gorm:"column:execution"`
@@ -348,6 +350,7 @@ func (r *Repo) CreateTask(ctx context.Context, task *ZtTaskInsert) (uint, error)
 	row := ztTaskCreateRow{
 		Name:       strings.TrimSpace(task.Name),
 		Type:       strings.TrimSpace(task.Type),
+		Pri:        task.Pri,
 		Story:      task.Story,
 		Project:    task.Project,
 		Execution:  task.Execution,

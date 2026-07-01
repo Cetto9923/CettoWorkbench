@@ -716,7 +716,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
       <div class="schedule-modal-title" id="scheduleIntegratedReqTitle">—</div>
       <div class="schedule-modal-summary">
         <span>主系统 <strong id="scheduleIntegratedReqSystem">—</strong></span>
-        <span>负责人 <strong id="scheduleIntegratedReqOwner">—</strong></span>
+        <span>指派人 <strong id="scheduleIntegratedReqOwner">—</strong></span>
       </div>
     </div>
 
@@ -875,11 +875,12 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
       <th class="rd-task-th rd-task-th--project" style="width:120px">项目</th>
       <th class="rd-task-th rd-task-th--execution" style="width:120px">执行</th>
       <th class="rd-task-th rd-task-th--type" style="width:80px">类型</th>
-      <th class="rd-task-th rd-task-th--name">任务名称</th>
+      <th class="rd-task-th rd-task-th--pri" style="width:72px">优先级</th>
+      <th class="rd-task-th rd-task-th--name">任务名称 <span class="req">*</span></th>
       <th class="rd-task-th rd-task-th--owner" style="width:140px">负责人</th>
-      <th class="rd-task-th rd-task-th--hours" style="width:60px">预估(h)</th>
+      <th class="rd-task-th rd-task-th--hours" style="width:60px">预估(h) <span class="req">*</span></th>
       <th class="rd-task-th rd-task-th--start" style="width:100px">开始</th>
-      <th class="rd-task-th rd-task-th--end" style="width:100px">截止</th>
+      <th class="rd-task-th rd-task-th--end" style="width:100px">截止 <span class="req">*</span></th>
       <th class="rd-task-th rd-task-th--actions" style="width:48px">操作</th>
     </tr>
   </thead>
@@ -890,6 +891,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
     <td class="rd-task-cell rd-task-cell-project"><select class="rd-task-project-select form-select rd-task-select"><option value="">请选择项目</option></select></td>
     <td class="rd-task-cell rd-task-cell-execution"><select class="rd-task-execution-select form-select rd-task-select" disabled><option value="">请选择执行</option></select></td>
     <td class="rd-task-cell rd-task-cell-type"><select class="rd-task-type form-select rd-task-select"><option value="devel">开发</option><option value="test">测试</option><option value="OLtest">上线测试</option><option value="review">评审</option><option value="affair">事务</option><option value="request">需求</option><option value="misc">其他</option><option value="codereview">代码评审</option><option value="design">设计</option><option value="study">研究</option><option value="OLDebug">上线调试</option><option value="Online">上线</option><option value="Train">培训</option><option value="meeting">会议</option><option value="discuss">讨论</option><option value="ui">界面</option></select></td>
+    <td class="rd-task-cell rd-task-cell-pri"><select class="rd-task-pri form-select rd-task-select"><option value="0">P0</option><option value="1">P1</option><option value="2">P2</option><option value="3" selected>P3</option><option value="4">P4</option></select></td>
     <td class="rd-task-cell rd-task-cell-name rd-task-cell--name"><input type="text" class="rd-task-name form-input rd-task-input" placeholder="任务名称"></td>
     <td class="rd-task-cell rd-task-cell-owner rd-task-cell--owner rd-task-owner-cell"></td>
     <td class="rd-task-cell rd-task-cell-hours"><input type="number" class="rd-task-hours form-input rd-task-input" min="0" step="0.5" placeholder="h"></td>
@@ -904,6 +906,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
     <td class="rd-task-cell rd-task-cell-project"></td>
     <td class="rd-task-cell rd-task-cell-execution"></td>
     <td class="rd-task-cell rd-task-cell-type"></td>
+    <td class="rd-task-cell rd-task-cell-pri"></td>
     <td class="rd-task-cell rd-task-cell-name rd-task-cell--name"></td>
     <td class="rd-task-cell rd-task-cell-owner rd-task-cell--owner"></td>
     <td class="rd-task-cell rd-task-cell-hours"></td>
@@ -918,6 +921,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
     <td class="rd-task-cell rd-task-cell-project"><select class="rd-task-project-select form-select rd-task-select"><option value="">请选择项目</option></select></td>
     <td class="rd-task-cell rd-task-cell-execution"><select class="rd-task-execution-select form-select rd-task-select" disabled><option value="">请选择执行</option></select></td>
     <td class="rd-task-cell rd-task-cell-type"><select class="rd-task-type form-select rd-task-select"></select></td>
+    <td class="rd-task-cell rd-task-cell-pri"><select class="rd-task-pri form-select rd-task-select"><option value="0">P0</option><option value="1">P1</option><option value="2">P2</option><option value="3">P3</option><option value="4">P4</option></select></td>
     <td class="rd-task-cell rd-task-cell-name rd-task-cell--name"><input type="text" class="rd-task-name form-input rd-task-input" placeholder="任务名称"></td>
     <td class="rd-task-cell rd-task-cell-owner rd-task-cell--owner rd-task-owner-cell"></td>
     <td class="rd-task-cell rd-task-cell-hours"><input type="number" class="rd-task-hours form-input rd-task-input" min="0" step="0.5" placeholder="h"></td>
