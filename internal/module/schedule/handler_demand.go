@@ -24,6 +24,7 @@ import (
 	"workbench/internal/model"
 	"workbench/internal/pkg/pagination"
 	"workbench/internal/pkg/render"
+	"workbench/internal/pkg/zentao"
 )
 
 // IndependentChildRequirement 独立研发需求子行（树形二级）。
@@ -417,6 +418,9 @@ func (h *Handler) SaveScheduling(c *gin.Context) {
 		// 业务前置校验拦截：零写入，前端弹警告框引导去禅道维护。
 		var notice *ProductAccessNoticeError
 		if errors.As(err, &notice) {
+			for i := range notice.Products {
+				notice.Products[i].ViewURL = zentao.ProductViewURLWithBase(h.zentaoURL, notice.Products[i].ID)
+			}
 			c.JSON(http.StatusOK, gin.H{
 				"success":  false,
 				"code":     "PRODUCT_ACCESS_NOTICE",

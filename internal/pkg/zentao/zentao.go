@@ -80,3 +80,19 @@ func StoryViewURLWithBase(base string, storyID uint) string {
 	}
 	return URLWithBase(base, "story", "view", fmt.Sprintf("storyID=%d", storyID))
 }
+
+// ProductViewURL 产品概况页链接。
+func ProductViewURL(productID uint) string {
+	if productID == 0 {
+		return ""
+	}
+	return URL("product", "view", fmt.Sprintf("productID=%d", productID))
+}
+
+// ProductViewURLWithBase 使用指定站点前缀拼接产品概况页链接。
+func ProductViewURLWithBase(base string, productID uint) string {
+	if productID == 0 {
+		return ""
+	}
+	return URLWithBase(base, "product", "view", fmt.Sprintf("productID=%d", productID))
+}

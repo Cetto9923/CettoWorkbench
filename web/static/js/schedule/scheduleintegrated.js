@@ -345,9 +345,10 @@
   function showProductNotice(products) {
     products = products || [];
     if (!products.length) { return; }
-    var maxID = products[0].id || 0;
+    // 找 id 最大的产品，用其后端生成的 viewUrl（完整 GET 风格链接，不再前端拼接）
+    var pick = products[0];
     for (var i = 1; i < products.length; i++) {
-      if ((products[i].id || 0) > maxID) { maxID = products[i].id; }
+      if ((products[i].id || 0) > (pick.id || 0)) { pick = products[i]; }
     }
     var names = [];
     for (var j = 0; j < products.length; j++) {
@@ -356,8 +357,8 @@
     }
     $("#scheduleProductNoticeMessage").text("您不是 " + names.join("、") + " 的负责人，请去禅道维护");
     $("#scheduleProductNoticeOkBtn").off("click").on("click", function () {
-      var url = $.trim(shared.zentaoURL || "");
-      if (url) { window.open(url + "/product-view-" + maxID + ".html", "_blank"); }
+      var viewUrl = $.trim(pick.viewUrl || "");
+      if (viewUrl) { window.open(viewUrl, "_blank"); }
       closeProductNotice();
     });
     $("#scheduleProductNoticeCancelBtn").off("click").on("click", closeProductNotice);

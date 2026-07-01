@@ -10,8 +10,9 @@ import (
 // NoticeProduct 产品访问拦截提示中的产品条目。
 // JSON tag 必须小写，前端按 products[].id / products[].name 读取。
 type NoticeProduct struct {
-	ID   uint   `json:"id"`
-	Name string `json:"name"`
+	ID      uint   `json:"id"`
+	Name    string `json:"name"`
+	ViewURL string `json:"viewUrl"` // 禅道产品概况页完整链接，由 handler 用 zentao.ProductViewURLWithBase 填充
 }
 
 // ProductAccessNoticeError 排期前置校验失败错误。
