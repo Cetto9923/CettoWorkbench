@@ -304,7 +304,7 @@ func (s *Service) resolvePlanForProduct(
 		return planID, nil
 	}
 
-	// vwp == nil:系统不在窗口,使用禅道已有匹配计划(前置校验保证非空,这里是兜底)。
+	// vwp == nil:系统不在窗口,自动勾选到窗口并复用已有计划或新建计划。
 	window, err := txRepo.FindByID(ctx, uint64(windowID))
 	if err != nil {
 		return 0, err
@@ -312,15 +312,40 @@ func (s *Service) resolvePlanForProduct(
 	if window == nil {
 		return 0, errors.New("版本窗口不存在")
 	}
-	releaseDate := window.ReleaseDate.Format("2006-01-02")
-	plans, err := txRepo.GetMatchingPlans(ctx, productID, releaseDate)
+	endDate := window.ReleaseDate.Format("2006-01-02")
+	beginDate := endDate
+	if window.StartDate != nil {
+		beginDate = window.StartDate.Format("2006-01-02")
+	}
+	title := strings.TrimSpace(window.Name)
+	if title == "" {
+		title = endDate
+	}
+	plans, err := txRepo.GetMatchingPlans(ctx, productID, endDate)
 	if err != nil {
 		return 0, fmt.Errorf("get matching plans for product %d: %w", productID, err)
 	}
-	if len(plans) == 0 {
-		return 0, fmt.Errorf("系统 %d 不在窗口且无匹配计划", productID)
+	var planID uint
+	if len(plans) > 0 {
+		planID = plans[0].ID
+	} else {
+		planID, err = txRepo.CreateProductPlan(ctx, productID, title, beginDate, endDate, account)
+		if err != nil {
+			return 0, fmt.Errorf("create product plan: %w", err)
+		}
 	}
-	return plans[0].ID, nil
+	wp := &model.VersionWindowProduct{
+		WindowID:   uint64(windowID),
+		ProductID:  productID,
+		PlanID:     &planID,
+		PlanSynced: 1,
+		CreatedBy:  account,
+		UpdatedBy:  account,
+	}
+	if err := txRepo.CreateWindowProduct(ctx, wp); err != nil {
+		return 0, fmt.Errorf("create window product for product %d: %w", productID, err)
+	}
+	return planID, nil
 }
 
 func buildDemandSchedulingUpdates(req *SaveSchedulingReq, account string) map[string]interface{} {
