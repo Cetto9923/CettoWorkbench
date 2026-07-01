@@ -375,12 +375,12 @@ type ListBizDemandsReq struct {
 	Keyword     string `form:"keyword"`
 	WindowID    uint   `form:"windowId"`
 	Scope       string `form:"scope"`
-	Filter      string `form:"filter"` // all_open, unscheduled, pending_review, unassigned, manager_reviewing, closed
+	Filter      string `form:"filter"`    // all_open, unscheduled, pending_review, unassigned, manager_reviewing, closed
 	Suspended   bool   `form:"suspended"` // true 时叠加 AND hang = '1'
-	Groups      string `form:"groups"`   // 逗号分隔的小组 ID
-	Products    string `form:"products"` // 逗号分隔的产品 ID
-	Stages      string `form:"stages"`   // 逗号分隔的阶段值
-	Windows     string `form:"windows"`  // 逗号分隔的版本窗口 ID
+	Groups      string `form:"groups"`    // 逗号分隔的小组 ID
+	Products    string `form:"products"`  // 逗号分隔的产品 ID
+	Stages      string `form:"stages"`    // 逗号分隔的阶段值
+	Windows     string `form:"windows"`   // 逗号分隔的版本窗口 ID
 }
 
 // Validate 校验分页与基础参数。
@@ -501,10 +501,10 @@ type ListIndependentReq struct {
 	PageSize  int    `form:"pageSize"`
 	Filter    string `form:"filter"`
 	Suspended bool   `form:"suspended"` // story 无 hang 字段，查询时忽略
-	Groups    string `form:"groups"`   // 逗号分隔的小组 ID
-	Products  string `form:"products"` // 逗号分隔的产品 ID
-	Stages    string `form:"stages"`   // 逗号分隔的阶段值
-	Windows   string `form:"windows"`  // 逗号分隔的版本窗口 ID
+	Groups    string `form:"groups"`    // 逗号分隔的小组 ID
+	Products  string `form:"products"`  // 逗号分隔的产品 ID
+	Stages    string `form:"stages"`    // 逗号分隔的阶段值
+	Windows   string `form:"windows"`   // 逗号分隔的版本窗口 ID
 }
 
 // Validate 校验分页参数。
@@ -597,18 +597,21 @@ type ZtProductOption struct {
 
 // ZtTaskItem 禅道 zt_task 只读投影（排期弹窗）。
 type ZtTaskItem struct {
-	ID         uint    `gorm:"column:id" json:"id"`
-	Name       string  `gorm:"column:name" json:"name"`
-	Type       string  `gorm:"column:type" json:"type"`
-	AssignedTo string  `gorm:"column:assignedTo" json:"assignedTo"`
-	Estimate   float64 `gorm:"column:estimate" json:"estimate"`
-	Consumed   float64 `gorm:"column:consumed" json:"consumed"`
-	Left       float64 `gorm:"column:left" json:"left"`
-	EstStarted string  `gorm:"column:estStarted" json:"estStarted"`
-	Deadline   string  `gorm:"column:deadline" json:"deadline"`
-	Status     string  `gorm:"column:status" json:"status"`
-	Project    uint    `gorm:"column:project" json:"project"`
-	Execution  uint    `gorm:"column:execution" json:"execution"`
+	ID           uint    `gorm:"column:id" json:"id"`
+	Name         string  `gorm:"column:name" json:"name"`
+	Type         string  `gorm:"column:type" json:"type"`
+	Pri          int     `gorm:"column:pri" json:"pri"`
+	AssignedTo   string  `gorm:"column:assignedTo" json:"assignedTo"`
+	Estimate     float64 `gorm:"column:estimate" json:"estimate"`
+	Consumed     float64 `gorm:"column:consumed" json:"consumed"`
+	Left         float64 `gorm:"column:left" json:"left"`
+	EstStarted   string  `gorm:"column:estStarted" json:"estStarted"`
+	Deadline     string  `gorm:"column:deadline" json:"deadline"`
+	Status       string  `gorm:"column:status" json:"status"`
+	FinishedBy   string  `gorm:"column:finishedBy" json:"finishedBy"`
+	FinishedDate string  `gorm:"column:finishedDate" json:"finishedDate"`
+	Project      uint    `gorm:"column:project" json:"project"`
+	Execution    uint    `gorm:"column:execution" json:"execution"`
 }
 
 // ZtProjectOption 禅道项目下拉选项。
@@ -679,27 +682,27 @@ type UserStoryItem struct {
 // DemandSchedulingResp 排期一体化弹窗加载数据。
 type DemandSchedulingResp struct {
 	*DemandSchedulingDetail
-	InvolvedProducts  []ZtProductOption                            `json:"involvedProducts"`
-	ProductProjects   map[string][]DemandSchedulingProjectOption   `json:"productProjects"`
-	ProjectExecutions map[string][]ZtExecutionOption               `json:"projectExecutions"`
-	Stories           []DemandSchedulingStoryItem                  `json:"stories"`
-	UserStories       []UserStoryItem                              `json:"userStories"`
-	Windows           []SchedulingWindowOption                     `json:"windows"`
-	Users             []SchedulingUserOption                       `json:"users"`
+	InvolvedProducts  []ZtProductOption                          `json:"involvedProducts"`
+	ProductProjects   map[string][]DemandSchedulingProjectOption `json:"productProjects"`
+	ProjectExecutions map[string][]ZtExecutionOption             `json:"projectExecutions"`
+	Stories           []DemandSchedulingStoryItem                `json:"stories"`
+	UserStories       []UserStoryItem                            `json:"userStories"`
+	Windows           []SchedulingWindowOption                   `json:"windows"`
+	Users             []SchedulingUserOption                     `json:"users"`
 }
 
 // ZtStory 禅道 zt_story 只读投影。
 type ZtStory struct {
-	ID                      uint   `gorm:"column:id"`
-	Title                   string `gorm:"column:title"`
-	Pri                     int    `gorm:"column:pri"`
-	Product                 uint   `gorm:"column:product"`
-	Plan                    string `gorm:"column:plan"`
-	Stage                   string `gorm:"column:stage"`
-	Status                  string `gorm:"column:status"`
-	FromDemand              uint   `gorm:"column:fromDemand"`
-	SourceType              string `gorm:"column:sourceType"`
-	Parent                  uint   `gorm:"column:parent"`
+	ID                      uint    `gorm:"column:id"`
+	Title                   string  `gorm:"column:title"`
+	Pri                     int     `gorm:"column:pri"`
+	Product                 uint    `gorm:"column:product"`
+	Plan                    string  `gorm:"column:plan"`
+	Stage                   string  `gorm:"column:stage"`
+	Status                  string  `gorm:"column:status"`
+	FromDemand              uint    `gorm:"column:fromDemand"`
+	SourceType              string  `gorm:"column:sourceType"`
+	Parent                  uint    `gorm:"column:parent"`
 	IsMainSystemAssociation int     `gorm:"column:isMainSystemAssociation"`
 	AssignedTo              string  `gorm:"column:assignedTo"`
 	Estimate                float64 `gorm:"column:estimate"`
@@ -835,9 +838,18 @@ type StoryTaskItem struct {
 	Type           string  `json:"type"`
 	TypeLabel      string  `json:"typeLabel"`
 	Name           string  `json:"name"`
+	PriLabel       string  `json:"priLabel"`
+	Status         string  `json:"status"`
+	StatusLabel    string  `json:"statusLabel"`
 	AssignedTo     string  `json:"assignedTo"`
 	AssignedToName string  `json:"assignedToName"`
+	FinishedBy     string  `json:"finishedBy"`
+	FinishedByName string  `json:"finishedByName"`
+	FinishedDate   string  `json:"finishedDate"`
 	Estimate       float64 `json:"estimate"`
+	Consumed       float64 `json:"consumed"`
+	Left           float64 `json:"left"`
+	Progress       int     `json:"progress"`
 	EstStarted     string  `json:"estStarted"`
 	Deadline       string  `json:"deadline"`
 	ProjectID      uint    `json:"projectId"`
@@ -846,10 +858,21 @@ type StoryTaskItem struct {
 	ExecutionName  string  `json:"executionName"`
 }
 
+// StoryTaskSummary 只读任务列表汇总。
+type StoryTaskSummary struct {
+	Total         int     `json:"total"`
+	WaitCount     int     `json:"waitCount"`
+	DoingCount    int     `json:"doingCount"`
+	EstimateTotal float64 `json:"estimateTotal"`
+	ConsumedTotal float64 `json:"consumedTotal"`
+	LeftTotal     float64 `json:"leftTotal"`
+}
+
 // StoryTasksResp 维护任务弹窗加载响应。
 type StoryTasksResp struct {
 	Story              StoryTaskStoryItem              `json:"story"`
 	Tasks              []StoryTaskItem                 `json:"tasks"`
+	Summary            StoryTaskSummary                `json:"summary"`
 	Projects           []DemandSchedulingProjectOption `json:"projects"`
 	Users              []SchedulingUserOption          `json:"users"`
 	DefaultProjectID   uint                            `json:"defaultProjectId"`
@@ -859,7 +882,9 @@ type StoryTasksResp struct {
 // SaveStoryTasksReq 维护任务弹窗保存请求。
 // 每条任务独立携带 projectId/executionId，支持弹窗内逐行选择项目与执行。
 type SaveStoryTasksReq struct {
-	Tasks []SaveStoryTasksTask `json:"tasks"`
+	ProjectID   uint                 `json:"projectId"`
+	ExecutionID uint                 `json:"executionId"`
+	Tasks       []SaveStoryTasksTask `json:"tasks"`
 }
 
 // Validate 校验维护任务保存请求。

@@ -13,6 +13,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 
 	"workbench/internal/model"
@@ -39,6 +40,7 @@ func (s *Service) GetStoryTasks(ctx context.Context, actor *model.User, storyID 
 	projectIDs := make([]uint, 0)
 	for _, task := range taskRows {
 		accounts = append(accounts, strings.TrimSpace(task.AssignedTo))
+		accounts = append(accounts, strings.TrimSpace(task.FinishedBy))
 		if task.Project > 0 {
 			projectIDs = append(projectIDs, task.Project)
 		}
@@ -98,9 +100,10 @@ func (s *Service) GetStoryTasks(ctx context.Context, actor *model.User, storyID 
 			ReleaseDate:    detail.ReleaseDate,
 			Attachments:    detail.Attachments,
 		},
-		Tasks:             buildStoryTaskItems(taskRows, realnameByAccount, projectNameByID),
-		Projects:          projects,
-		Users:             users,
+		Tasks:              buildStoryTaskItems(taskRows, realnameByAccount, projectNameByID),
+		Summary:            buildStoryTaskSummary(taskRows),
+		Projects:           projects,
+		Users:              users,
 		DefaultProjectID:   detail.DefaultProjectID,
 		DefaultExecutionID: detail.DefaultExecutionID,
 	}, nil
@@ -117,14 +120,24 @@ func buildStoryTaskItems(
 	out := make([]StoryTaskItem, 0, len(tasks))
 	for _, task := range tasks {
 		assignedTo := strings.TrimSpace(task.AssignedTo)
+		finishedBy := strings.TrimSpace(task.FinishedBy)
 		out = append(out, StoryTaskItem{
 			ID:             task.ID,
 			Type:           strings.TrimSpace(task.Type),
 			TypeLabel:      taskTypeLabel(task.Type),
 			Name:           strings.TrimSpace(task.Name),
+			PriLabel:       formatTaskPriority(task.Pri),
+			Status:         strings.TrimSpace(task.Status),
+			StatusLabel:    taskStatusLabel(task.Status),
 			AssignedTo:     assignedTo,
 			AssignedToName: resolveRealname(assignedTo, realnameByAccount),
+			FinishedBy:     finishedBy,
+			FinishedByName: resolveRealname(finishedBy, realnameByAccount),
+			FinishedDate:   formatZenTaoDate(task.FinishedDate),
 			Estimate:       task.Estimate,
+			Consumed:       task.Consumed,
+			Left:           task.Left,
+			Progress:       calculateTaskProgress(task.Estimate, task.Consumed, task.Left, task.Status),
 			EstStarted:     formatZenTaoDate(task.EstStarted),
 			Deadline:       formatZenTaoDate(task.Deadline),
 			ProjectID:      task.Project,
@@ -134,6 +147,78 @@ func buildStoryTaskItems(
 		})
 	}
 	return out
+}
+
+func buildStoryTaskSummary(tasks []ZtTaskItem) StoryTaskSummary {
+	summary := StoryTaskSummary{}
+	for _, task := range tasks {
+		summary.Total++
+		switch strings.TrimSpace(task.Status) {
+		case "wait":
+			summary.WaitCount++
+		case "doing":
+			summary.DoingCount++
+		}
+		summary.EstimateTotal += task.Estimate
+		summary.ConsumedTotal += task.Consumed
+		summary.LeftTotal += task.Left
+	}
+	return summary
+}
+
+func formatTaskPriority(pri int) string {
+	if pri < 0 {
+		pri = 0
+	}
+	if pri > 4 {
+		pri = 4
+	}
+	return "P" + fmt.Sprintf("%d", pri)
+}
+
+func taskStatusLabel(status string) string {
+	switch strings.TrimSpace(status) {
+	case "wait":
+		return "未开始"
+	case "doing":
+		return "进行中"
+	case "done":
+		return "已完成"
+	case "pause":
+		return "已暂停"
+	case "cancel":
+		return "已取消"
+	case "closed":
+		return "已关闭"
+	default:
+		return strings.TrimSpace(status)
+	}
+}
+
+func calculateTaskProgress(estimate, consumed, left float64, status string) int {
+	switch strings.TrimSpace(status) {
+	case "done", "closed":
+		return 100
+	case "wait":
+		if consumed <= 0 {
+			return 0
+		}
+	}
+	total := estimate
+	if total <= 0 {
+		total = consumed + left
+	}
+	if total <= 0 {
+		return 0
+	}
+	progress := int(math.Round(consumed / total * 100))
+	if progress < 0 {
+		return 0
+	}
+	if progress > 100 {
+		return 100
+	}
+	return progress
 }
 
 // SaveStoryTasks 保存维护任务弹窗中的任务变更。
