@@ -70,6 +70,7 @@
     currentStoryId: 0,
     deletedStoryIds: [],
     deletedTaskIds: [],
+    zentaoURL: "",
     taskTypeOptions: taskTypeOptions,
     taskTypeLabels: taskTypeLabels,
 

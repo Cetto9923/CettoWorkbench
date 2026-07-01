@@ -322,6 +322,10 @@
         return resp.json();
       })
       .then(function (result) {
+        if (result && result.code === "PRODUCT_ACCESS_NOTICE") {
+          showProductNotice(result.products || []);
+          return;
+        }
         if (result && result.success) {
           toast("保存成功", "success");
           closeScheduleIntegratedModal();
@@ -337,6 +341,40 @@
         setSaveButtonLoading(false);
       });
   }
+
+  function showProductNotice(products) {
+    products = products || [];
+    if (!products.length) { return; }
+    var maxID = products[0].id || 0;
+    for (var i = 1; i < products.length; i++) {
+      if ((products[i].id || 0) > maxID) { maxID = products[i].id; }
+    }
+    var names = [];
+    for (var j = 0; j < products.length; j++) {
+      var n = $.trim(products[j].name || "");
+      if (n) { names.push(n); }
+    }
+    $("#scheduleProductNoticeMessage").text("您不是 " + names.join("、") + " 的负责人，请去禅道维护");
+    $("#scheduleProductNoticeOkBtn").off("click").on("click", function () {
+      var url = $.trim(shared.zentaoURL || "");
+      if (url) { window.open(url + "/product-view-" + maxID + ".html", "_blank"); }
+      closeProductNotice();
+    });
+    $("#scheduleProductNoticeCancelBtn").off("click").on("click", closeProductNotice);
+    $("#scheduleProductNoticeCloseBtn").off("click").on("click", closeProductNotice);
+    if (typeof window.openShowModals === "function") {
+      window.openShowModals(["scheduleProductNoticeModal", "scheduleProductNoticeOverlay"]);
+    }
+  }
+
+  function closeProductNotice() {
+    if (typeof window.closeShowModals === "function") {
+      window.closeShowModals(["scheduleProductNoticeModal", "scheduleProductNoticeOverlay"]);
+    }
+  }
+
+  window.showProductNotice = showProductNotice;
+  window.closeProductNotice = closeProductNotice;
 
   function extractDemandID($btn) {
     var raw = $btn.data("demand-id");
@@ -569,6 +607,7 @@
       shared.involvedProducts = involvedProducts;
       shared.productProjectsMap = shared.buildProductProjectsMap(data.productProjects);
       shared.productExecutionsMap = shared.buildProductExecutionsMap(data.projectExecutions);
+      shared.zentaoURL = $.trim(data.zentaoUrl || "");
     }
 
     $("#scheduleIntegratedReqTitle").text(data.name || "—");
