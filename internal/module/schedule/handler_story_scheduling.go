@@ -45,7 +45,9 @@ func (h *Handler) GetStoryScheduling(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, buildSchedulingDetailJSON(resp))
+	out := buildSchedulingDetailJSON(resp)
+	out["zentaoUrl"] = h.zentaoURL
+	c.JSON(http.StatusOK, out)
 }
 
 func buildSchedulingDetailJSON(resp *DemandSchedulingResp) gin.H {

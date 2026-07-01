@@ -11,6 +11,7 @@
 package schedule
 
 import (
+	"errors"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -484,6 +485,7 @@ func (h *Handler) GetDemandScheduling(c *gin.Context) {
 			out["windowName"] = detail.WindowName
 		}
 	}
+	out["zentaoUrl"] = h.zentaoURL
 	c.JSON(http.StatusOK, out)
 }
 
@@ -517,6 +519,16 @@ func (h *Handler) SaveScheduling(c *gin.Context) {
 
 	actor := middleware.CurrentUser(c)
 	if err := h.svc.SaveScheduling(c.Request.Context(), actor, demandID, &req); err != nil {
+		// 业务前置校验拦截：零写入，前端弹警告框引导去禅道维护。
+		var notice *ProductAccessNoticeError
+		if errors.As(err, &notice) {
+			c.JSON(http.StatusOK, gin.H{
+				"success":  false,
+				"code":     "PRODUCT_ACCESS_NOTICE",
+				"products": notice.Products,
+			})
+			return
+		}
 		if h.logger != nil {
 			h.logger.Error("save demand scheduling failed",
 				zap.Error(err),
