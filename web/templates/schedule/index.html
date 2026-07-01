@@ -357,7 +357,11 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             <td class="schedule-col-stage"><span class="stage-tag {{ $biz.StageTagClass }}">{{ $biz.StageTag }}</span>{{ if $biz.StageTag }} {{ end }}<span class="window-name-tag-inline">{{ $biz.VersionWindow }}</span></td>
             <td class="schedule-col-owner"><span class="schedule-owner-line"><i class="fas fa-user"></i><span class="name">{{ .Owner }}</span></span></td>
             <td class="schedule-task-col">
-              <a href="javascript:void(0)" class="schedule-task-link">T{{ .TaskCount }}</a>
+              {{ if gt .TaskCount 0 }}
+              <a href="javascript:void(0)" class="schedule-task-link js-open-task-list-modal" data-story-id="{{ .StoryID }}">T{{ .TaskCount }}</a>
+              {{ else }}
+              <span class="t3">—</span>
+              {{ end }}
             </td>
             <td class="schedule-action-col">
               <div class="schedule-action-buttons">
@@ -389,7 +393,11 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             <td class="schedule-col-stage"><span class="stage-tag {{ $biz.StageTagClass }}">{{ $biz.StageTag }}</span>{{ if $biz.StageTag }} {{ end }}<span class="window-name-tag-inline">{{ $biz.VersionWindow }}</span></td>
             <td class="schedule-col-owner"><span class="schedule-owner-line"><i class="fas fa-user"></i><span class="name">{{ .Owner }}</span></span></td>
             <td class="schedule-task-col">
-              <a href="javascript:void(0)" class="schedule-task-link">T{{ .TaskCount }}</a>
+              {{ if gt .TaskCount 0 }}
+              <a href="javascript:void(0)" class="schedule-task-link js-open-task-list-modal" data-story-id="{{ .StoryID }}">T{{ .TaskCount }}</a>
+              {{ else }}
+              <span class="t3">—</span>
+              {{ end }}
             </td>
             <td class="schedule-action-col">
               <div class="schedule-action-buttons">
@@ -454,7 +462,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             <td class="schedule-col-owner"><span class="schedule-owner-line"><i class="fas fa-user"></i><span class="name">{{ .Owner }}</span></span></td>
             <td class="schedule-task-col">
               {{ if gt .TaskCount 0 }}
-              <a href="javascript:void(0)" class="schedule-task-link">T{{ .TaskCount }}</a>
+              <a href="javascript:void(0)" class="schedule-task-link js-open-task-list-modal" data-story-id="{{ .StoryID }}">T{{ .TaskCount }}</a>
               {{ else }}
               <span class="t3">—</span>
               {{ end }}
@@ -492,7 +500,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             <td class="schedule-col-owner"><span class="schedule-owner-line"><i class="fas fa-user"></i><span class="name">{{ .Owner }}</span></span></td>
             <td class="schedule-task-col">
               {{ if gt .TaskCount 0 }}
-              <a href="javascript:void(0)" class="schedule-task-link">T{{ .TaskCount }}</a>
+              <a href="javascript:void(0)" class="schedule-task-link js-open-task-list-modal" data-story-id="{{ .StoryID }}">T{{ .TaskCount }}</a>
               {{ else }}
               <span class="t3">—</span>
               {{ end }}
@@ -666,6 +674,47 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
   <div class="batch-modal-footer">
     <button type="button" class="action-btn" onclick="closeTaskModal()">取消</button>
     <button type="button" class="action-btn action-btn--primary" id="taskModalSaveBtn">保存任务</button>
+  </div>
+</div>
+
+<div class="batch-modal-overlay" id="taskListModalOverlay"></div>
+<div class="batch-modal" id="taskListModal">
+  <div class="batch-modal-hdr">
+    <h3 id="taskListModalTitle">相关任务</h3>
+    <button type="button" class="modal-close" id="taskListModalCloseBtn"><i class="fas fa-xmark"></i></button>
+  </div>
+  <div class="batch-modal-body">
+    <div id="taskListModalInfoBar" class="task-list-modal-info">—</div>
+    <div class="task-list-modal-table-wrap">
+      <table class="task-list-modal-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>任务名称</th>
+            <th>任务类型</th>
+            <th>P</th>
+            <th>状态</th>
+            <th>指派给</th>
+            <th>由谁完成</th>
+            <th>截止日期</th>
+            <th>实际完成时间</th>
+            <th>预计(h)</th>
+            <th>消耗</th>
+            <th>剩余</th>
+            <th>进度</th>
+          </tr>
+        </thead>
+        <tbody id="taskListModalTableBody">
+          <tr>
+            <td colspan="13" class="task-list-modal-empty">暂无任务</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="taskListModalSummary" class="task-list-modal-summary">本页共 0 个任务，未开始 0，进行中 0，总预计 0 工时，已消耗 0 工时，剩余 0 工时。</div>
+  </div>
+  <div class="batch-modal-footer">
+    <button type="button" class="action-btn" id="taskListModalDismissBtn">关闭</button>
   </div>
 </div>
 
@@ -1090,6 +1139,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
 <script src="{{ asset "/static/js/schedule/scheduleintegratedrd.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/scheduleintegrated.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/scheduletaskmodal.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/scheduletasklistmodal.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/schedulefilter.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/schedule.js" }}"></script>
 {{ end }}

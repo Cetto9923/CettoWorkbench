@@ -361,6 +361,7 @@ SELECT
   id,
   name,
   type,
+  pri,
   assignedTo,
   estimate,
   consumed,
@@ -368,6 +369,8 @@ SELECT
   DATE_FORMAT(estStarted, '%Y-%m-%d') AS estStarted,
   DATE_FORMAT(deadline, '%Y-%m-%d') AS deadline,
   status,
+  finishedBy,
+  DATE_FORMAT(finishedDate, '%Y-%m-%d') AS finishedDate,
   project,
   execution
 FROM zt_task

@@ -541,3 +541,99 @@
 #taskModal .rd-task-table {
   width: 100%;
 }
+
+/* ── 只读任务列表弹窗 ── */
+#taskListModal.batch-modal {
+  width: min(96vw, 1180px);
+  max-width: 1180px;
+  max-height: 88vh;
+  overflow: hidden;
+  display: none;
+}
+
+#taskListModal.batch-modal.show {
+  display: flex;
+  flex-direction: column;
+}
+
+#taskListModal .batch-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.task-list-modal-info {
+  font-size: 12px;
+  color: var(--t2);
+  margin-bottom: 12px;
+}
+
+.task-list-modal-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border-lt);
+  border-radius: 8px;
+}
+
+.task-list-modal-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1080px;
+  font-size: 12px;
+}
+
+.task-list-modal-table th,
+.task-list-modal-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-lt);
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.task-list-modal-table thead th {
+  background: #f8fafc;
+  color: var(--t2);
+  font-weight: 600;
+}
+
+.task-list-modal-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.task-list-modal-empty {
+  text-align: center !important;
+  color: var(--t3);
+  padding: 28px 12px !important;
+}
+
+.task-list-modal-summary {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--t2);
+}
+
+.task-list-modal-progress {
+  position: relative;
+  width: 72px;
+  height: 18px;
+  border-radius: 999px;
+  background: #eef2f7;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.task-list-modal-progress-bar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: #cfe0ff;
+}
+
+.task-list-modal-progress em {
+  position: relative;
+  z-index: 1;
+  font-style: normal;
+  font-size: 11px;
+  color: var(--t1);
+}
