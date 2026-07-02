@@ -19,6 +19,17 @@ import (
 	"workbench/internal/model"
 )
 
+type SchedulingBusinessError struct {
+	Message string
+}
+
+func (e *SchedulingBusinessError) Error() string {
+	if e == nil {
+		return ""
+	}
+	return e.Message
+}
+
 // SaveScheduling 保存业需排期并同步禅道研发需求与任务。
 func (s *Service) SaveScheduling(ctx context.Context, actor *model.User, demandID uint, req *SaveSchedulingReq) error {
 	if demandID == 0 {
@@ -30,6 +41,9 @@ func (s *Service) SaveScheduling(ctx context.Context, actor *model.User, demandI
 	account := actorAccount(actor)
 	if account == "" {
 		return errors.New("未登录或无法识别当前用户")
+	}
+	if err := s.ensureDemandWindowEditable(ctx, demandID, req.WindowID); err != nil {
+		return err
 	}
 
 	mainSystemID, err := s.repo.GetDemandMainSystem(ctx, demandID)
@@ -66,6 +80,42 @@ func (s *Service) SaveScheduling(ctx context.Context, actor *model.User, demandI
 
 		return txRepo.SaveDemandLevelWindow(ctx, demandID, uint64(req.WindowID), account)
 	})
+}
+
+func (s *Service) ensureDemandWindowEditable(ctx context.Context, demandID uint, requestedWindowID uint) error {
+	currentWindowID, storyCount, err := s.loadDemandWindowEditState(ctx, demandID)
+	if err != nil {
+		return err
+	}
+	if currentWindowID == 0 || currentWindowID == requestedWindowID {
+		return nil
+	}
+	if storyCount == 0 {
+		return nil
+	}
+	return &SchedulingBusinessError{Message: "终排业务需求不能修改版本窗口"}
+}
+
+func (s *Service) loadDemandWindowEditState(ctx context.Context, demandID uint) (uint, int, error) {
+	demandIDs := []uint{demandID}
+	children, err := s.repo.FindChildDemandsByParents(ctx, []uint{demandID})
+	if err != nil {
+		return 0, 0, err
+	}
+	demandIDs = mergeDemandIDs(demandIDs, pluckDemandIDs(children))
+	stories, err := s.repo.FindStoriesByDemands(ctx, demandIDs)
+	if err != nil {
+		return 0, 0, err
+	}
+	windowByDemand, err := s.repo.FindDemandWindowMappings(ctx, demandIDs)
+	if err != nil {
+		return 0, 0, err
+	}
+	windowByStory, err := s.repo.FindStoryWindowMappings(ctx, pluckStoryIDs(stories))
+	if err != nil {
+		return 0, 0, err
+	}
+	return pickDemandWindowID(demandIDs, stories, windowByDemand, windowByStory), len(stories), nil
 }
 
 // SaveStoryScheduling 保存独立研发需求（zt_story fromDemand=0）排期并同步计划/窗口/历史。

@@ -67,6 +67,10 @@ func allStoriesHaveNoWindow(stories []ZtStory, windowByStory map[uint]StoryWindo
 	return true
 }
 
+func anyStoryHasWindow(stories []ZtStory, windowByStory map[uint]StoryWindowRef) bool {
+	return !allStoriesHaveNoWindow(stories, windowByStory)
+}
+
 func anyDemandHasWindow(demandIDs []uint, windowByDemand map[uint]DemandWindowRef) bool {
 	for _, demandID := range demandIDs {
 		if ref, ok := windowByDemand[demandID]; ok && ref.WindowID > 0 {
@@ -74,6 +78,41 @@ func anyDemandHasWindow(demandIDs []uint, windowByDemand map[uint]DemandWindowRe
 		}
 	}
 	return false
+}
+
+func anyDemandOrStoryHasWindow(
+	demandIDs []uint,
+	stories []ZtStory,
+	windowByDemand map[uint]DemandWindowRef,
+	windowByStory map[uint]StoryWindowRef,
+) bool {
+	return anyDemandHasWindow(demandIDs, windowByDemand) || anyStoryHasWindow(stories, windowByStory)
+}
+
+func calcDemandWindowPhase(
+	demandIDs []uint,
+	stories []ZtStory,
+	windowByDemand map[uint]DemandWindowRef,
+	windowByStory map[uint]StoryWindowRef,
+) string {
+	if !anyDemandOrStoryHasWindow(demandIDs, stories, windowByDemand, windowByStory) {
+		return ""
+	}
+	return calcSchedulingWindowPhase(pickDemandWindowID(demandIDs, stories, windowByDemand, windowByStory), len(stories))
+}
+
+func calcSchedulingWindowPhase(windowID uint, storyCount int) string {
+	if windowID == 0 {
+		return ""
+	}
+	if storyCount > 0 {
+		return WindowPhaseFinal
+	}
+	return WindowPhaseInitial
+}
+
+func canEditSchedulingWindow(windowID uint, storyCount int) bool {
+	return windowID == 0 || storyCount == 0
 }
 
 func sumMainSystemTasks(stories []ZtStory, taskStatByStory map[uint]StoryTaskStat) (int, int) {
@@ -99,6 +138,27 @@ func pickBizWindowName(stories []ZtStory, windowByStory map[uint]StoryWindowRef)
 		}
 	}
 	return ""
+}
+
+func pickDemandWindowID(
+	demandIDs []uint,
+	stories []ZtStory,
+	windowByDemand map[uint]DemandWindowRef,
+	windowByStory map[uint]StoryWindowRef,
+) uint {
+	for _, demandID := range demandIDs {
+		ref, ok := windowByDemand[demandID]
+		if ok && ref.WindowID > 0 {
+			return ref.WindowID
+		}
+	}
+	for _, story := range stories {
+		ref, ok := windowByStory[story.ID]
+		if ok && ref.WindowID > 0 {
+			return ref.WindowID
+		}
+	}
+	return 0
 }
 
 func pickDemandWindowName(

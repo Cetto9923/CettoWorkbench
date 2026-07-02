@@ -103,6 +103,69 @@ func TestCalcBizDemandStage(t *testing.T) {
 	}
 }
 
+func TestCalcDemandWindowPhase(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name           string
+		demandIDs      []uint
+		stories        []ZtStory
+		windowByDemand map[uint]DemandWindowRef
+		windowByStory  map[uint]StoryWindowRef
+		want           string
+	}{
+		{
+			name:      "no window has no phase",
+			demandIDs: []uint{1},
+			want:      "",
+		},
+		{
+			name:           "demand window without story is initial",
+			demandIDs:      []uint{1},
+			windowByDemand: map[uint]DemandWindowRef{1: {DemandID: 1, WindowID: 10, WindowName: "w"}},
+			want:           WindowPhaseInitial,
+		},
+		{
+			name:           "demand window with story is final",
+			demandIDs:      []uint{1},
+			stories:        []ZtStory{{ID: 11}},
+			windowByDemand: map[uint]DemandWindowRef{1: {DemandID: 1, WindowID: 10, WindowName: "w"}},
+			want:           WindowPhaseFinal,
+		},
+		{
+			name:          "story window with story is final",
+			demandIDs:     []uint{1},
+			stories:       []ZtStory{{ID: 11}},
+			windowByStory: map[uint]StoryWindowRef{11: {StoryID: 11, WindowID: 10, WindowName: "w"}},
+			want:          WindowPhaseFinal,
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			if got := calcDemandWindowPhase(tc.demandIDs, tc.stories, tc.windowByDemand, tc.windowByStory); got != tc.want {
+				t.Fatalf("calcDemandWindowPhase() = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestCanEditSchedulingWindow(t *testing.T) {
+	t.Parallel()
+
+	if !canEditSchedulingWindow(0, 1) {
+		t.Fatalf("no window should remain editable")
+	}
+	if !canEditSchedulingWindow(10, 0) {
+		t.Fatalf("initial window should remain editable")
+	}
+	if canEditSchedulingWindow(10, 1) {
+		t.Fatalf("final window should be locked")
+	}
+}
+
 func TestCalcIndependentStoryStage(t *testing.T) {
 	t.Parallel()
 

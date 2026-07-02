@@ -236,6 +236,9 @@ const (
 
 	// 独立研发需求 Tab 排期阶段（4 级，末级文案与业需不同）。
 	IndependentStageTaskAssigned = "已建任务已指派"
+
+	WindowPhaseInitial = "初排"
+	WindowPhaseFinal   = "终排"
 )
 
 // 列表高级筛选排期阶段 URL 参数值。
@@ -532,6 +535,7 @@ type BizDemandItem struct {
 	TeamgroupName    string          `json:"teamgroupName"`
 	OwnerName        string          `json:"ownerName"`
 	Stage            string          `json:"stage"`
+	WindowPhase      string          `json:"windowPhase"`
 	WindowName       string          `json:"windowName"`
 	Children         []SubDemandItem `json:"children"`
 	Stories          []StoryItem     `json:"stories"`
@@ -548,6 +552,7 @@ type SubDemandItem struct {
 	TeamgroupName    string      `json:"teamgroupName"`
 	OwnerName        string      `json:"ownerName"`
 	Stage            string      `json:"stage"`
+	WindowPhase      string      `json:"windowPhase"`
 	WindowName       string      `json:"windowName"`
 	Stories          []StoryItem `json:"stories"`
 }
@@ -702,6 +707,8 @@ type DemandSchedulingDetail struct {
 	AcceptancedDate  string `json:"acceptancedDate"`
 	WindowID         uint   `json:"windowId"`
 	WindowName       string `json:"windowName"`
+	WindowPhase      string `json:"windowPhase"`
+	CanEditWindow    bool   `json:"canEditWindow"`
 }
 
 // SchedulingWindowOption 排期弹窗版本窗口下拉项。

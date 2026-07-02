@@ -45,6 +45,8 @@ func toBizRequirementsView(items []BizDemandItem, zentaoBase string) []BizRequir
 			AgileGroup:         agileGroup,
 			Stage:              item.Stage,
 			StageClass:         deriveBizStageClass(item.Stage),
+			WindowPhase:        item.WindowPhase,
+			WindowPhaseClass:   deriveWindowPhaseClass(item.WindowPhase),
 			WindowName:         windowName,
 			Owner:              formatOwner(item.OwnerName),
 			ActionLabel:        actionLabel,
@@ -73,20 +75,22 @@ func toSubBizRequirementsView(items []SubDemandItem, zentaoBase string) []SubBiz
 			windowName = "—"
 		}
 		out = append(out, SubBizRequirement{
-			DemandID:        item.ID,
-			ID:              formatSubID(item.ID),
-			Title:           item.Name,
-			Priority:        priority,
-			PriClass:        priClass,
-			AgileGroup:      agileGroup,
-			Stage:           item.Stage,
-			StageClass:      deriveBizStageClass(item.Stage),
-			WindowName:      windowName,
-			Owner:           formatOwner(item.OwnerName),
-			ActionLabel:     "排期",
-			ActionClass:     "primary",
-			DetailURL:       template.URL(zentao.DemandViewURLWithBase(zentaoBase, item.ID)),
-			DevRequirements: toDevRequirementsView(item.Stories, zentaoBase),
+			DemandID:         item.ID,
+			ID:               formatSubID(item.ID),
+			Title:            item.Name,
+			Priority:         priority,
+			PriClass:         priClass,
+			AgileGroup:       agileGroup,
+			Stage:            item.Stage,
+			StageClass:       deriveBizStageClass(item.Stage),
+			WindowPhase:      item.WindowPhase,
+			WindowPhaseClass: deriveWindowPhaseClass(item.WindowPhase),
+			WindowName:       windowName,
+			Owner:            formatOwner(item.OwnerName),
+			ActionLabel:      "排期",
+			ActionClass:      "primary",
+			DetailURL:        template.URL(zentao.DemandViewURLWithBase(zentaoBase, item.ID)),
+			DevRequirements:  toDevRequirementsView(item.Stories, zentaoBase),
 			// 未映射的 SubDemandItem 字段（本期零值/忽略）：Status、MainSystemName、ExtraSystemCount、
 			// TeamgroupName、Stage、WindowName
 		})
@@ -152,6 +156,17 @@ func deriveBizStageClass(stage string) string {
 		return "stage-tag--draft"
 	case StageTaskUnassigned, StageTaskAssigned, IndependentStageTaskAssigned:
 		return "stage-tag--final"
+	default:
+		return ""
+	}
+}
+
+func deriveWindowPhaseClass(phase string) string {
+	switch phase {
+	case WindowPhaseInitial:
+		return "schedule-window-phase-tag--initial"
+	case WindowPhaseFinal:
+		return "schedule-window-phase-tag--final"
 	default:
 		return ""
 	}

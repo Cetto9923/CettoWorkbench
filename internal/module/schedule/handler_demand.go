@@ -84,20 +84,22 @@ type DevRequirement struct {
 
 // SubBizRequirement 子业务需求行（树形二级）。
 type SubBizRequirement struct {
-	DemandID        uint
-	ID              string
-	Title           string
-	Priority        string
-	PriClass        string
-	AgileGroup      string
-	Stage           string
-	StageClass      string
-	WindowName      string
-	Owner           string
-	ActionLabel     string
-	ActionClass     string
-	DetailURL       template.URL
-	DevRequirements []DevRequirement
+	DemandID         uint
+	ID               string
+	Title            string
+	Priority         string
+	PriClass         string
+	AgileGroup       string
+	Stage            string
+	StageClass       string
+	WindowPhase      string
+	WindowPhaseClass string
+	WindowName       string
+	Owner            string
+	ActionLabel      string
+	ActionClass      string
+	DetailURL        template.URL
+	DevRequirements  []DevRequirement
 }
 
 // BizRequirement 业务需求行（树形一级）。
@@ -110,6 +112,8 @@ type BizRequirement struct {
 	AgileGroup         string
 	Stage              string
 	StageClass         string
+	WindowPhase        string
+	WindowPhaseClass   string
 	WindowName         string
 	Owner              string
 	ActionLabel        string
@@ -447,6 +451,8 @@ func (h *Handler) GetDemandScheduling(c *gin.Context) {
 			out["acceptancedDate"] = detail.AcceptancedDate
 			out["windowId"] = detail.WindowID
 			out["windowName"] = detail.WindowName
+			out["windowPhase"] = detail.WindowPhase
+			out["canEditWindow"] = detail.CanEditWindow
 		}
 	}
 	out["zentaoUrl"] = h.zentaoURL
@@ -493,6 +499,14 @@ func (h *Handler) SaveScheduling(c *gin.Context) {
 				"success":  false,
 				"code":     "PRODUCT_ACCESS_NOTICE",
 				"products": notice.Products,
+			})
+			return
+		}
+		var businessErr *SchedulingBusinessError
+		if errors.As(err, &businessErr) {
+			c.JSON(http.StatusUnprocessableEntity, gin.H{
+				"success": false,
+				"message": businessErr.Error(),
 			})
 			return
 		}

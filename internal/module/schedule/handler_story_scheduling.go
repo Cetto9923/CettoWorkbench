@@ -103,6 +103,8 @@ func buildSchedulingDetailJSON(resp *DemandSchedulingResp) gin.H {
 		out["acceptancedDate"] = detail.AcceptancedDate
 		out["windowId"] = detail.WindowID
 		out["windowName"] = detail.WindowName
+		out["windowPhase"] = detail.WindowPhase
+		out["canEditWindow"] = detail.CanEditWindow
 	}
 	return out
 }
