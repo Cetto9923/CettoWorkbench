@@ -305,7 +305,9 @@
   }
 
   function saveScheduling() {
-    if (!shared || !shared.currentDemandId) {
+    // 先判来源：独立研发需求（story）走 story 路径，业需（demand）走 demand 路径
+    var isStorySource = shared && shared.currentStoryId > 0;
+    if (!isStorySource && (!shared || !shared.currentDemandId)) {
       toast("业需 ID 无效，请关闭弹窗后重试", "error");
       return;
     }
@@ -328,7 +330,12 @@
       return;
     }
 
-    fetchFn("/schedule/demands/" + shared.currentDemandId + "/save-scheduling", {
+    // 按来源分流：story 路径打 /schedule/stories/:id/save-scheduling，demand 路径保持原样
+    var saveUrl = isStorySource
+      ? "/schedule/stories/" + shared.currentStoryId + "/save-scheduling"
+      : "/schedule/demands/" + shared.currentDemandId + "/save-scheduling";
+
+    fetchFn(saveUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),

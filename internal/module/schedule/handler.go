@@ -107,6 +107,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 		g.GET("/demands/:id/scheduling", h.GetDemandScheduling)
 		g.POST("/demands/:id/save-scheduling", h.SaveScheduling)
 		g.GET("/stories/:id/scheduling", h.GetStoryScheduling)
+		g.POST("/stories/:id/save-scheduling", h.SaveStoryScheduling)
 		g.GET("/products/:id/projects", h.GetProductProjects)
 		g.GET("/projects/:id/executions", h.GetProjectExecutions)
 		g.GET("/stories/:id/tasks", h.GetStoryTasks)

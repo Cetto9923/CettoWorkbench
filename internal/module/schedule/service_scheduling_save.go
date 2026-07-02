@@ -68,6 +68,80 @@ func (s *Service) SaveScheduling(ctx context.Context, actor *model.User, demandI
 	})
 }
 
+// SaveStoryScheduling 保存独立研发需求（zt_story fromDemand=0）排期并同步计划/窗口/历史。
+// 与 SaveScheduling（业需）的区别：主条目通过 zt_story.product 反查主系统，
+// 不写 zt_demand 窗口表；窗口归属经 plan 关联反推（zt_planstory → zt_versionwindowproduct → zt_versionwindow）。
+func (s *Service) SaveStoryScheduling(ctx context.Context, actor *model.User, storyID uint, req *SaveSchedulingReq) error {
+	if storyID == 0 {
+		return errors.New("研发需求 ID 无效")
+	}
+	if req == nil {
+		return errors.New("请求参数无效")
+	}
+	account := actorAccount(actor)
+	if account == "" {
+		return errors.New("未登录或无法识别当前用户")
+	}
+
+	// 主系统取自 zt_story.product（独立研发需求无 zt_demand.mainSystem）。
+	mainSystemID, err := s.repo.GetStoryProductID(ctx, storyID)
+	if err != nil {
+		return err
+	}
+
+	// precheck 覆盖主系统：独立研发需求弹窗 req.Stories 通常为空（service_independent.go 返回 Stories:[]），
+	// 直接传 precheck 会因无 productID 而放行。此处显式追加主系统条目，precheck 内部 uniqueUints 会自动去重。
+	precheckStories := append([]SaveSchedulingStory{}, req.Stories...)
+	precheckStories = append(precheckStories, SaveSchedulingStory{Action: "edit", ProductID: mainSystemID})
+	notice, err := s.precheckSchedulingProducts(ctx, req.WindowID, precheckStories, account)
+	if err != nil {
+		return err
+	}
+	if notice != nil {
+		return notice
+	}
+
+	return s.repo.Transaction(ctx, func(txRepo *Repo) error {
+		// (a) 子节点循环：独立研发需求常态为空，兼容未来子节点；demandID 传 0。
+		for _, storyReq := range req.Stories {
+			storyID2, productID, _, err := s.applySchedulingStory(ctx, txRepo, account, 0, mainSystemID, req.WindowID, storyReq)
+			if err != nil {
+				return err
+			}
+			if strings.TrimSpace(storyReq.Action) == "delete" {
+				continue
+			}
+			if err := s.applySchedulingTasks(ctx, txRepo, account, storyID2, productID, storyReq.Tasks); err != nil {
+				return err
+			}
+		}
+
+		// (b) 主条目关联三连：自动勾选系统/建计划 → 从老计划移除 → 关联到新计划 → 写主条目历史。
+		planID, err := s.resolvePlanForProduct(ctx, txRepo, account, req.WindowID, mainSystemID)
+		if err != nil {
+			return err
+		}
+		if err := txRepo.RemoveStoryFromOtherPlans(ctx, storyID, planID); err != nil {
+			return err
+		}
+		if err := txRepo.EnsurePlanStoryRelation(ctx, planID, storyID); err != nil {
+			return err
+		}
+		if err := txRepo.CreateAction(ctx, "story", storyID, "Edited", account, mainSystemID, 0, 0, ""); err != nil {
+			return err
+		}
+
+		// (c) 日期存 zt_story：req.AcceptancedDate → zt_story.verifyFinish（与 GetStorySchedulingDetail 映射一致）。
+		return txRepo.UpdateStory(ctx, storyID, map[string]interface{}{
+			"developFinish":  nullableSchedulingDate(req.DevelopFinish),
+			"testFinish":     nullableSchedulingDate(req.TestFinish),
+			"verifyFinish":   nullableSchedulingDate(req.AcceptancedDate),
+			"lastEditedBy":   account,
+			"lastEditedDate": time.Now(),
+		})
+	})
+}
+
 func (s *Service) applySchedulingStory(
 	ctx context.Context,
 	txRepo *Repo,

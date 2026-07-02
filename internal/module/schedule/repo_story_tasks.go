@@ -226,11 +226,14 @@ ORDER BY id ASC`
 }
 
 type storySchedulingRow struct {
-	ID         uint   `gorm:"column:id"`
-	Title      string `gorm:"column:title"`
-	Product    uint   `gorm:"column:product"`
-	FromDemand uint   `gorm:"column:fromDemand"`
-	AssignedTo string `gorm:"column:assignedTo"`
+	ID            uint   `gorm:"column:id"`
+	Title         string `gorm:"column:title"`
+	Product       uint   `gorm:"column:product"`
+	FromDemand    uint   `gorm:"column:fromDemand"`
+	AssignedTo    string `gorm:"column:assignedTo"`
+	DevelopFinish string `gorm:"column:developFinish"`
+	TestFinish    string `gorm:"column:testFinish"`
+	VerifyFinish  string `gorm:"column:verifyFinish"`
 }
 
 // GetStorySchedulingDetail 查询独立研发需求排期弹窗所需的研发需求详情。
@@ -245,7 +248,10 @@ SELECT
   s.title,
   s.product,
   s.fromDemand,
-  s.assignedTo
+  s.assignedTo,
+  s.developFinish,
+  s.testFinish,
+  s.verifyFinish
 FROM zt_story s
 WHERE s.id = ?
   AND s.deleted = '0'
@@ -308,6 +314,9 @@ LIMIT 1`
 		MainSystemID:     row.Product,
 		MainSystemName:   mainSystemName,
 		SchedulePlanDate: schedulePlanDate,
+		DevelopFinish:    formatZenTaoDate(row.DevelopFinish),
+		TestFinish:       formatZenTaoDate(row.TestFinish),
+		AcceptancedDate:  formatZenTaoDate(row.VerifyFinish),
 		WindowID:         windowID,
 		WindowName:       windowName,
 	}, nil
