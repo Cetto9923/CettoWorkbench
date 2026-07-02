@@ -63,6 +63,10 @@ func (s *Service) ListBizDemands(ctx context.Context, actor *model.User, req Lis
 	if err != nil {
 		return nil, err
 	}
+	clarifyPMByDemand, err := s.repo.FindDemandClarifyPMMatches(ctx, allDemandIDs, account)
+	if err != nil {
+		return nil, err
+	}
 	productIDs := collectBizDemandProductIDs(topDemands, childDemands, stories)
 	storyIDs := pluckStoryIDs(stories)
 	teamgroupIDs := collectBizDemandTeamgroupIDs(topDemands)
@@ -90,14 +94,20 @@ func (s *Service) ListBizDemands(ctx context.Context, actor *model.User, req Lis
 	}
 
 	assembleCtx := bizDemandAssembleContext{
+		account:              account,
 		childByParent:        childByParent,
 		storiesByDemand:      storiesByDemand,
 		productCountByDemand: productCountByDemand,
+		clarifyPMByDemand:    clarifyPMByDemand,
 		productNameByID:      productNameByID,
 		windowByStory:        windowByStory,
 		taskStatByStory:      taskStatByStory,
 		teamgroupNameByID:    teamgroupNameByID,
 		realnameByAccount:    realnameByAccount,
+	}
+
+	if req.Filter == FilterUnscheduled {
+		topDemands = assembleCtx.filterUnscheduledBizDemandTree(topDemands)
 	}
 
 	items := make([]BizDemandItem, 0, len(topDemands))
@@ -109,9 +119,11 @@ func (s *Service) ListBizDemands(ctx context.Context, actor *model.User, req Lis
 }
 
 type bizDemandAssembleContext struct {
+	account              string
 	childByParent        map[int][]ZtDemand
 	storiesByDemand      map[uint][]ZtStory
 	productCountByDemand map[uint]int
+	clarifyPMByDemand    map[uint]bool
 	productNameByID      map[uint]string
 	windowByStory        map[uint]StoryWindowRef
 	taskStatByStory      map[uint]StoryTaskStat
@@ -159,6 +171,7 @@ func (c bizDemandAssembleContext) buildSubDemandItems(parent ZtDemand, children 
 			ExtraSystemCount: extraSystemCount(c.productCountByDemand[child.ID]),
 			TeamgroupName:    parentTeamgroupName,
 			OwnerName:        resolveDemandOwner(child.BRA, c.realnameByAccount),
+			Stage:            calcBizDemandStage(subtreeStories, filterMainSystemStories(subtreeStories), c.windowByStory, c.taskStatByStory),
 			WindowName:       pickBizWindowName(subtreeStories, c.windowByStory),
 			Stories:          c.buildStoryItems(parent.TeamGroup, parentTeamgroupName, childStories),
 		})
@@ -181,7 +194,7 @@ func (c bizDemandAssembleContext) buildStoryItems(teamGroup, teamgroupName strin
 			Title:                   strings.TrimSpace(story.Title),
 			Pri:                     story.Pri,
 			ProductName:             c.productNameByID[story.Product],
-			Stage:                   calcStoryStage(story.ID, c.windowByStory),
+			Stage:                   calcStoryStage(story.ID, c.windowByStory, taskStat),
 			WindowName:              windowRef.WindowName,
 			TeamgroupName:           teamgroupName,
 			AssignedTo:              assignedTo,
@@ -284,18 +297,28 @@ func calcBizDemandStage(
 	}
 	return StageTaskAssigned
 }
-func calcStoryStage(storyID uint, windowByStory map[uint]StoryWindowRef) string {
-	if ref, ok := windowByStory[storyID]; ok && ref.WindowID > 0 {
-		return StoryStageHasWindow
+
+func calcStoryStage(storyID uint, windowByStory map[uint]StoryWindowRef, taskStat StoryTaskStat) string {
+	ref, ok := windowByStory[storyID]
+	if !ok || ref.WindowID == 0 {
+		return StageNoWindow
 	}
-	return StoryStageNoWindow
+	if taskStat.Total == 0 {
+		return StageNoTask
+	}
+	if taskStat.Unassigned > 0 {
+		return StageTaskUnassigned
+	}
+	return StageTaskAssigned
 }
+
 func extraSystemCount(distinctProductCount int) int {
 	if distinctProductCount <= 1 {
 		return 0
 	}
 	return distinctProductCount - 1
 }
+
 func collectBizDemandProductIDs(topDemands, childDemands []ZtDemand, stories []ZtStory) []uint {
 	seen := make(map[uint]struct{})
 	ids := make([]uint, 0)

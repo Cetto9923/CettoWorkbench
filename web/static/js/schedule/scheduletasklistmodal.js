@@ -86,7 +86,7 @@
         "<td>", escapeHtml(task.id), "</td>",
         "<td>", escapeHtml(task.name || "—"), "</td>",
         "<td>", escapeHtml(task.typeLabel || task.type || "—"), "</td>",
-        "<td>", escapeHtml(task.priLabel || "P0"), "</td>",
+        "<td>", escapeHtml(task.priLabel || ""), "</td>",
         "<td>", escapeHtml(task.statusLabel || task.status || "—"), "</td>",
         "<td>", escapeHtml(task.assignedToName || "—"), "</td>",
         "<td>", escapeHtml(task.finishedByName || "—"), "</td>",

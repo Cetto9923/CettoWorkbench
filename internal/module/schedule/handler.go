@@ -50,7 +50,12 @@ type windowListItemJSON struct {
 	Name             string `json:"name"`
 	ReleaseDate      string `json:"releaseDate"`
 	Range            string `json:"range"`
+	DemandCount      int    `json:"demandCount"`
 	CapacityHours    int    `json:"capacityHours"`
+	UsedHours        int    `json:"usedHours"`
+	RemainingHours   int    `json:"remainingHours"`
+	BlockedCount     int    `json:"blockedCount"`
+	UsedPercent      int    `json:"usedPercent"`
 	CanEdit          bool   `json:"canEdit"`
 	CanDelete        bool   `json:"canDelete"`
 	HasLinkedDemands bool   `json:"hasLinkedDemands"`
@@ -62,7 +67,12 @@ func toWindowListItemJSON(item WindowListItem) windowListItemJSON {
 		Name:             item.Name,
 		ReleaseDate:      item.ReleaseDate,
 		Range:            item.Range,
+		DemandCount:      item.DemandCount,
 		CapacityHours:    item.CapacityHours,
+		UsedHours:        item.UsedHours,
+		RemainingHours:   item.RemainingHours,
+		BlockedCount:     item.BlockedCount,
+		UsedPercent:      item.UsedPercent,
 		CanEdit:          item.CanEdit,
 		CanDelete:        item.CanDelete,
 		HasLinkedDemands: item.HasLinkedDemands,

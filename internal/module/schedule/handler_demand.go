@@ -71,6 +71,10 @@ type DevRequirement struct {
 	Priority    string
 	PriClass    string
 	IsMain      bool
+	Stage       string
+	StageClass  string
+	WindowName  string
+	AgileGroup  string
 	Owner       string
 	TaskCount   int
 	ActionLabel string
@@ -85,6 +89,10 @@ type SubBizRequirement struct {
 	Title           string
 	Priority        string
 	PriClass        string
+	AgileGroup      string
+	Stage           string
+	StageClass      string
+	WindowName      string
 	Owner           string
 	ActionLabel     string
 	ActionClass     string
@@ -99,12 +107,10 @@ type BizRequirement struct {
 	Title              string
 	Priority           string
 	PriClass           string
-	WindowStatus       string
-	WindowStatusClass  string
 	AgileGroup         string
-	StageTag           string
-	StageTagClass      string
-	VersionWindow      string
+	Stage              string
+	StageClass         string
+	WindowName         string
 	Owner              string
 	ActionLabel        string
 	ActionClass        string

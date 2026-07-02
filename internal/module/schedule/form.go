@@ -135,7 +135,12 @@ type WindowListItem struct {
 	Name             string
 	ReleaseDate      string
 	Range            string
+	DemandCount      int
 	CapacityHours    int
+	UsedHours        int
+	RemainingHours   int
+	BlockedCount     int
+	UsedPercent      int
 	CanEdit          bool
 	CanDelete        bool
 	HasLinkedDemands bool
@@ -231,9 +236,6 @@ const (
 
 	// 独立研发需求 Tab 排期阶段（4 级，末级文案与业需不同）。
 	IndependentStageTaskAssigned = "已建任务已指派"
-
-	StoryStageNoWindow  = "未关联窗口"
-	StoryStageHasWindow = "已关联窗口"
 )
 
 // 列表高级筛选排期阶段 URL 参数值。
@@ -539,6 +541,7 @@ type ZtDemand struct {
 	Name           string `gorm:"column:name"`
 	Pri            string `gorm:"column:pri"`
 	Status         string `gorm:"column:status"`
+	AssignedTo     string `gorm:"column:assignedTo"`
 	MainSystem     string `gorm:"column:mainSystem"`
 	TeamGroup      string `gorm:"column:teamGroup"`
 	BRA            string `gorm:"column:BRA"`

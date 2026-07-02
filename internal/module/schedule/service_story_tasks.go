@@ -168,6 +168,9 @@ func buildStoryTaskSummary(tasks []ZtTaskItem) StoryTaskSummary {
 }
 
 func formatTaskPriority(pri int) string {
+	if pri <= 0 {
+		return ""
+	}
 	return "P" + fmt.Sprintf("%d", normalizeTaskPriority(pri))
 }
 

@@ -326,9 +326,19 @@ func (s *Service) ListWindows(ctx context.Context, actor *model.User) (ListWindo
 		if err != nil {
 			return ListWindowsResp{}, err
 		}
+		consumed, err := s.repo.GetWindowConsumedHours(ctx, window.ID)
+		if err != nil {
+			return ListWindowsResp{}, err
+		}
 		demandCount, err := s.repo.GetWindowDemandCount(ctx, window.ID)
 		if err != nil {
 			return ListWindowsResp{}, err
+		}
+		usedHours := int(math.Round(consumed))
+		remainingHours := capacityHours - usedHours
+		usedPercent := 0
+		if capacityHours > 0 {
+			usedPercent = usedHours * 100 / capacityHours
 		}
 		canEdit, canDelete, hasLinkedDemands := computeWindowPermissions(window.CreatedBy, account, demandCount)
 
@@ -337,7 +347,12 @@ func (s *Service) ListWindows(ctx context.Context, actor *model.User) (ListWindo
 			Name:             window.Name,
 			ReleaseDate:      window.ReleaseDate.Format("2006-01-02"),
 			Range:            formatWindowDateRange(start, window.ReleaseDate),
+			DemandCount:      demandCount,
 			CapacityHours:    capacityHours,
+			UsedHours:        usedHours,
+			RemainingHours:   remainingHours,
+			BlockedCount:     0,
+			UsedPercent:      usedPercent,
 			CanEdit:          canEdit,
 			CanDelete:        canDelete,
 			HasLinkedDemands: hasLinkedDemands,

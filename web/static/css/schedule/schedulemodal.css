@@ -534,6 +534,12 @@
   white-space: nowrap;
 }
 
+#taskModal .req,
+.rd-task-table .req {
+  color: var(--red);
+  font-weight: 700;
+}
+
 #taskModal .rd-node-tasks {
   padding: 0;
 }
