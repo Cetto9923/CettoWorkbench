@@ -95,46 +95,6 @@ EXISTS (
   WHERE ch.parent = s.id AND ch.deleted = '0' AND ch.type = 'story'
 )`
 
-const indepStoryNoWindowSQL = `
-(
-  (` + indepStoryHasChildrenSQL + `
-    AND NOT EXISTS (
-      SELECT 1 FROM zt_story ch
-      INNER JOIN zt_planstory ps ON ps.story = ch.id
-      INNER JOIN zt_versionwindowproduct vwp ON vwp.plan = ps.plan AND vwp.deletedAt IS NULL
-      WHERE ch.parent = s.id AND ch.deleted = '0' AND ch.type = 'story'
-    )
-  )
-  OR (
-    NOT ` + indepStoryHasChildrenSQL + `
-    AND NOT EXISTS (
-      SELECT 1 FROM zt_planstory ps
-      INNER JOIN zt_versionwindowproduct vwp ON vwp.plan = ps.plan AND vwp.deletedAt IS NULL
-      WHERE ps.story = s.id
-    )
-  )
-)`
-
-const indepStoryHasWindowSQL = `
-(
-  (` + indepStoryHasChildrenSQL + `
-    AND EXISTS (
-      SELECT 1 FROM zt_story ch
-      INNER JOIN zt_planstory ps ON ps.story = ch.id
-      INNER JOIN zt_versionwindowproduct vwp ON vwp.plan = ps.plan AND vwp.deletedAt IS NULL
-      WHERE ch.parent = s.id AND ch.deleted = '0' AND ch.type = 'story'
-    )
-  )
-  OR (
-    NOT ` + indepStoryHasChildrenSQL + `
-    AND EXISTS (
-      SELECT 1 FROM zt_planstory ps
-      INNER JOIN zt_versionwindowproduct vwp ON vwp.plan = ps.plan AND vwp.deletedAt IS NULL
-      WHERE ps.story = s.id
-    )
-  )
-)`
-
 const indepAggregateStoryMatch = `
 (
   (ch.parent = s.id AND ch.deleted = '0' AND ch.type = 'story')
@@ -144,44 +104,59 @@ const indepAggregateStoryMatch = `
   )
 )`
 
-const indepAggregateTaskSQL = `
-EXISTS (
-  SELECT 1 FROM zt_story ch
-  WHERE ` + indepAggregateStoryMatch + `
-    AND EXISTS (
-      SELECT 1 FROM zt_task t
-      WHERE t.story = ch.id
-        AND t.deleted = '0'
-        AND t.status != 'closed'
-    )
-)`
-
-const indepAggregateUnassignedTaskSQL = `
-EXISTS (
-  SELECT 1 FROM zt_story ch
-  WHERE ` + indepAggregateStoryMatch + `
-    AND EXISTS (
-      SELECT 1 FROM zt_task t
-      WHERE t.story = ch.id
-        AND t.deleted = '0'
-        AND t.status != 'closed'
-        AND (t.assignedTo IS NULL OR t.assignedTo = '')
-    )
-)`
-
-const indepStoryStageNoTaskSQL = `
-` + indepStoryHasWindowSQL + `
-AND NOT ` + indepAggregateTaskSQL
-
-const indepStoryStageTaskUnassignedSQL = `
-` + indepStoryHasWindowSQL + `
-AND ` + indepAggregateTaskSQL + `
-AND ` + indepAggregateUnassignedTaskSQL
-
-const indepStoryStageTaskAssignedSQL = `
-` + indepStoryHasWindowSQL + `
-AND ` + indepAggregateTaskSQL + `
-AND NOT ` + indepAggregateUnassignedTaskSQL
+const indepStoryStageAggregateSQL = `
+SELECT agg.top_id
+FROM (
+  SELECT
+    x.top_id,
+    SUM(CASE WHEN win.story IS NULL THEN 0 ELSE 1 END) AS window_count,
+    SUM(COALESCE(task_stat.task_count, 0)) AS task_count,
+    SUM(COALESCE(task_stat.unassigned_count, 0)) AS unassigned_task_count
+  FROM (
+    SELECT p.id AS top_id, ch.id AS story_id
+    FROM zt_story ch
+    INNER JOIN zt_story p ON p.id = ch.parent
+      AND IFNULL(p.sourceType, '') != 'demandpool'
+      AND p.parent = 0
+      AND p.type = 'story'
+      AND p.deleted = '0'
+    WHERE ch.parent > 0
+      AND ch.deleted = '0'
+      AND ch.type = 'story'
+    UNION ALL
+    SELECT p.id AS top_id, p.id AS story_id
+    FROM zt_story p
+    LEFT JOIN (
+      SELECT DISTINCT parent
+      FROM zt_story
+      WHERE parent > 0
+        AND deleted = '0'
+        AND type = 'story'
+    ) child_parent ON child_parent.parent = p.id
+    WHERE IFNULL(p.sourceType, '') != 'demandpool'
+      AND p.parent = 0
+      AND p.type = 'story'
+      AND p.deleted = '0'
+      AND child_parent.parent IS NULL
+  ) x
+  LEFT JOIN (
+    SELECT DISTINCT ps.story
+    FROM zt_planstory ps
+    INNER JOIN zt_versionwindowproduct vwp
+      ON vwp.plan = ps.plan AND vwp.deletedAt IS NULL
+  ) win ON win.story = x.story_id
+  LEFT JOIN (
+    SELECT
+      story,
+      COUNT(*) AS task_count,
+      SUM(CASE WHEN assignedTo IS NULL OR assignedTo = '' THEN 1 ELSE 0 END) AS unassigned_count
+    FROM zt_task
+    WHERE deleted = '0'
+      AND status != 'closed'
+    GROUP BY story
+  ) task_stat ON task_stat.story = x.story_id
+  GROUP BY x.top_id
+) agg`
 
 func buildBizDemandStageOrClause(stages []string) filterClause {
 	conditions := make([]string, 0, len(stages))
@@ -210,17 +185,20 @@ func buildIndepStoryStageOrClause(stages []string) filterClause {
 	for _, stage := range stages {
 		switch stage {
 		case StageFilterNoWindow:
-			conditions = append(conditions, "("+indepStoryNoWindowSQL+")")
+			conditions = append(conditions, "agg.window_count = 0")
 		case StageFilterNoTask:
-			conditions = append(conditions, "("+indepStoryStageNoTaskSQL+")")
+			conditions = append(conditions, "(agg.window_count > 0 AND agg.task_count = 0)")
 		case StageFilterTaskUnassigned:
-			conditions = append(conditions, "("+indepStoryStageTaskUnassignedSQL+")")
+			conditions = append(conditions, "(agg.window_count > 0 AND agg.task_count > 0 AND agg.unassigned_task_count > 0)")
 		case StageFilterTaskAssigned:
-			conditions = append(conditions, "("+indepStoryStageTaskAssignedSQL+")")
+			conditions = append(conditions, "(agg.window_count > 0 AND agg.task_count > 0 AND agg.unassigned_task_count = 0)")
 		}
 	}
 	if len(conditions) == 0 {
 		return filterClause{}
 	}
-	return filterClause{sql: "AND (" + strings.Join(conditions, " OR ") + ")"}
+	return filterClause{sql: `AND s.id IN (
+` + indepStoryStageAggregateSQL + `
+  WHERE ` + strings.Join(conditions, " OR ") + `
+)`}
 }

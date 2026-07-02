@@ -1,8 +1,20 @@
 /* 高级筛选多选下拉：仅作用于 #scheduleMultiselectRow，不影响页面其他样式 */
 
+#page-schedule .schedule-filter--primary {
+  z-index: 30;
+}
+
+#page-schedule #scheduleMoreFilters {
+  z-index: 5;
+}
+
 #scheduleMultiselectRow .schedule-ms {
   position: relative;
   min-width: 132px;
+}
+
+#scheduleMultiselectRow .schedule-ms.open {
+  z-index: 120;
 }
 
 #scheduleMultiselectRow .schedule-ms-trigger {
@@ -36,7 +48,7 @@
   position: absolute;
   top: calc(100% + 2px);
   left: 0;
-  z-index: 40;
+  z-index: 1200;
   min-width: 180px;
   max-width: 280px;
   border: 1px solid var(--border);

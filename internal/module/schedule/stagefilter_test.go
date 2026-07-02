@@ -1,6 +1,9 @@
 package schedule
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestNormalizeStageFilterForTab(t *testing.T) {
 	t.Parallel()
@@ -24,28 +27,40 @@ func TestBuildIndepStoryStageOrClause(t *testing.T) {
 	}
 }
 
+func TestBuildIndepStoryStageOrClauseUsesAggregateSQL(t *testing.T) {
+	t.Parallel()
+
+	got := buildIndepStoryStageOrClause([]string{StageFilterNoWindow, StageFilterTaskAssigned})
+	if !strings.Contains(got.sql, "SELECT agg.top_id") {
+		t.Fatalf("expected aggregate top story query, got: %q", got.sql)
+	}
+	if strings.Contains(got.sql, "ch.parent = s.id") {
+		t.Fatalf("stage filter should avoid correlated child story lookups, got: %q", got.sql)
+	}
+}
+
 func TestCalcBizDemandStage(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {
-		name         string
-		demandIDs    []uint
-		allStories   []ZtStory
-		mainStories   []ZtStory
-		windowByDemand map[uint]DemandWindowRef
+		name            string
+		demandIDs       []uint
+		allStories      []ZtStory
+		mainStories     []ZtStory
+		windowByDemand  map[uint]DemandWindowRef
 		taskStatByStory map[uint]StoryTaskStat
-		want         string
+		want            string
 	}{
 		{
 			name:           "no window first",
 			demandIDs:      []uint{1},
-			windowByDemand:  map[uint]DemandWindowRef{},
+			windowByDemand: map[uint]DemandWindowRef{},
 			want:           StageNoWindow,
 		},
 		{
 			name:           "no story after window",
 			demandIDs:      []uint{1},
-			windowByDemand:  map[uint]DemandWindowRef{1: {DemandID: 1, WindowID: 10, WindowName: "w"}},
+			windowByDemand: map[uint]DemandWindowRef{1: {DemandID: 1, WindowID: 10, WindowName: "w"}},
 			want:           StageNoStory,
 		},
 		{
@@ -92,11 +107,11 @@ func TestCalcIndependentStoryStage(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {
-		name          string
-		stories       []ZtStory
-		windowByStory map[uint]StoryWindowRef
+		name            string
+		stories         []ZtStory
+		windowByStory   map[uint]StoryWindowRef
 		taskStatByStory map[uint]StoryTaskStat
-		want          string
+		want            string
 	}{
 		{
 			name:          "no window",
@@ -105,25 +120,25 @@ func TestCalcIndependentStoryStage(t *testing.T) {
 			want:          StageNoWindow,
 		},
 		{
-			name:          "no task",
-			stories:       []ZtStory{{ID: 11}},
-			windowByStory: map[uint]StoryWindowRef{11: {StoryID: 11, WindowID: 10, WindowName: "w"}},
+			name:            "no task",
+			stories:         []ZtStory{{ID: 11}},
+			windowByStory:   map[uint]StoryWindowRef{11: {StoryID: 11, WindowID: 10, WindowName: "w"}},
 			taskStatByStory: map[uint]StoryTaskStat{11: {StoryID: 11, Total: 0, Unassigned: 0}},
-			want:          StageNoTask,
+			want:            StageNoTask,
 		},
 		{
-			name:          "unassigned",
-			stories:       []ZtStory{{ID: 11}},
-			windowByStory: map[uint]StoryWindowRef{11: {StoryID: 11, WindowID: 10, WindowName: "w"}},
+			name:            "unassigned",
+			stories:         []ZtStory{{ID: 11}},
+			windowByStory:   map[uint]StoryWindowRef{11: {StoryID: 11, WindowID: 10, WindowName: "w"}},
 			taskStatByStory: map[uint]StoryTaskStat{11: {StoryID: 11, Total: 1, Unassigned: 1}},
-			want:          StageTaskUnassigned,
+			want:            StageTaskUnassigned,
 		},
 		{
-			name:          "assigned",
-			stories:       []ZtStory{{ID: 11}},
-			windowByStory: map[uint]StoryWindowRef{11: {StoryID: 11, WindowID: 10, WindowName: "w"}},
+			name:            "assigned",
+			stories:         []ZtStory{{ID: 11}},
+			windowByStory:   map[uint]StoryWindowRef{11: {StoryID: 11, WindowID: 10, WindowName: "w"}},
 			taskStatByStory: map[uint]StoryTaskStat{11: {StoryID: 11, Total: 1, Unassigned: 0}},
-			want:          IndependentStageTaskAssigned,
+			want:            IndependentStageTaskAssigned,
 		},
 	}
 
