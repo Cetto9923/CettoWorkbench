@@ -66,18 +66,20 @@ func (c bizDemandAssembleContext) demandRelatedToAccount(demand ZtDemand) bool {
 }
 
 func (c bizDemandAssembleContext) demandHasUnscheduledState(demandID uint) bool {
+	if !anyDemandHasWindow([]uint{demandID}, c.windowByDemand) {
+		return true
+	}
 	stories := c.storiesByDemand[demandID]
 	if len(stories) == 0 {
 		return true
 	}
-	if allStoriesHaveNoWindow(stories, c.windowByStory) {
+	mainStories := filterMainSystemStories(stories)
+	taskTotal, unassignedTotal := sumMainSystemTasks(mainStories, c.taskStatByStory)
+	if taskTotal == 0 {
 		return true
 	}
-	for _, story := range stories {
-		stat := c.taskStatByStory[story.ID]
-		if stat.Total == 0 || stat.Unassigned > 0 {
-			return true
-		}
+	if unassignedTotal > 0 {
+		return true
 	}
 	return false
 }

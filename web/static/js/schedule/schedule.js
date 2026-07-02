@@ -52,6 +52,28 @@
     return readURLParams().get("filter") || defaultFilter;
   }
 
+  var bizStageValues = ["no_window", "no_story", "no_task", "task_unassigned", "task_assigned"];
+  var indepStageValues = ["no_window", "no_task", "task_unassigned", "task_assigned"];
+
+  function sanitizeStagesForTab(raw, type) {
+    var allowed = type === "independentRD" ? indepStageValues : bizStageValues;
+    if (!raw) {
+      return "";
+    }
+    return String(raw)
+      .split(",")
+      .map(function (item) {
+        return $.trim(item);
+      })
+      .filter(function (item) {
+        return allowed.indexOf(item) >= 0;
+      })
+      .filter(function (item, index, list) {
+        return list.indexOf(item) === index;
+      })
+      .join(",");
+  }
+
   function isSuspendedActive() {
     return readURLParams().get("suspended") === "1";
   }
@@ -130,7 +152,12 @@
     syncFilterTabUI();
 
     if (updateURL) {
-      var overrides = { tab: type === "independentRD" ? "indep" : null };
+      var params = readURLParams();
+      var overrides = {
+        tab: type === "independentRD" ? "indep" : null,
+      };
+      var stages = sanitizeStagesForTab(params.get("stages"), type);
+      overrides.stages = stages || null;
       navigateSchedule(overrides);
     }
   }

@@ -127,6 +127,7 @@ type scheduleIndexDemandData struct {
 	IndependentRequirements []IndependentRequirement
 	IndependentTotal        int64
 	IndepPager              *pagination.Pager
+	ActiveTab               string
 	ActiveFilter            string
 	SuspendedActive         bool
 	SuspendedCount          int64
@@ -234,6 +235,11 @@ func selectedStageMap(raw string) map[string]bool {
 }
 
 func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User, bizPage, indepPage int) (scheduleIndexDemandData, bool) {
+	tab := strings.TrimSpace(c.Query("tab"))
+	if tab != "indep" {
+		tab = "biz"
+	}
+
 	var listReq ListBizDemandsReq
 	if err := c.ShouldBindQuery(&listReq); err != nil {
 		render.Error(c, http.StatusBadRequest, "参数解析失败", err)
@@ -242,6 +248,10 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 	listReq.Page = bizPage
 	listReq.PageSize = scheduleListPageSize
 	listReq.Normalize()
+	rawStages := listReq.Stages
+	bizStages := NormalizeStageFilterForTab(rawStages, "biz")
+	indepStages := NormalizeStageFilterForTab(rawStages, "indep")
+	listReq.Stages = bizStages
 	activeFilter := listReq.Filter
 	suspendedActive := listReq.Suspended
 
@@ -265,7 +275,7 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 	indepReq.Suspended = false
 	indepReq.Groups = listReq.Groups
 	indepReq.Products = listReq.Products
-	indepReq.Stages = listReq.Stages
+	indepReq.Stages = indepStages
 	indepReq.Windows = listReq.Windows
 	indepReq.Keyword = listReq.Keyword
 	indepReq.Pri = listReq.Pri
@@ -286,11 +296,6 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 	}
 	independentRequirements := toIndependentRequirementsView(indepResp.Items, h.zentaoURL)
 
-	tab := strings.TrimSpace(c.Query("tab"))
-	if tab != "indep" {
-		tab = "biz"
-	}
-
 	bizFilterCounts, err := h.svc.GetBizDemandFilterCounts(c.Request.Context(), actor, activeFilter)
 	if err != nil {
 		if h.logger != nil {
@@ -305,12 +310,16 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 		}
 		indepFilterCounts = FilterCounts{}
 	}
+	selectedStages := bizStages
+	if tab == "indep" {
+		selectedStages = indepStages
+	}
 
 	bizPager := pagination.New(bizResp.Total, bizPage, scheduleListPageSize)
 	bizPager.PageParam = "bizPage"
 	bizPager.PreserveParams = scheduleFilterPreserveParams(scheduleFilterPreserveReq{
 		filter: activeFilter, suspended: suspendedActive, bizPage: bizPage, indepPage: indepPage, tab: tab,
-		groups: listReq.Groups, products: listReq.Products, stages: listReq.Stages, windows: listReq.Windows,
+		groups: listReq.Groups, products: listReq.Products, stages: bizStages, windows: listReq.Windows,
 		keyword: listReq.Keyword, pri: listReq.Pri, windowType: listReq.WindowType,
 		devOwner: listReq.DevOwner, testOwner: listReq.TestOwner, acceptOwner: listReq.AcceptOwner,
 	})
@@ -319,7 +328,7 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 	indepPager.PageParam = "indepPage"
 	indepPager.PreserveParams = scheduleFilterPreserveParams(scheduleFilterPreserveReq{
 		filter: activeFilter, suspended: suspendedActive, bizPage: bizPage, indepPage: indepPage, tab: "indep",
-		groups: listReq.Groups, products: listReq.Products, stages: listReq.Stages, windows: listReq.Windows,
+		groups: listReq.Groups, products: listReq.Products, stages: indepStages, windows: listReq.Windows,
 		keyword: listReq.Keyword, pri: listReq.Pri, windowType: listReq.WindowType,
 		devOwner: listReq.DevOwner, testOwner: listReq.TestOwner, acceptOwner: listReq.AcceptOwner,
 	})
@@ -331,6 +340,7 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 		IndependentRequirements: independentRequirements,
 		IndependentTotal:        indepResp.Total,
 		IndepPager:              indepPager,
+		ActiveTab:               tab,
 		ActiveFilter:            activeFilter,
 		SuspendedActive:         suspendedActive,
 		SuspendedCount:          bizFilterCounts.Suspended,
@@ -338,7 +348,7 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 		IndepFilterCounts:       indepFilterCounts,
 		SelectedGroups:          listReq.Groups,
 		SelectedProducts:        listReq.Products,
-		SelectedStages:          listReq.Stages,
+		SelectedStages:          selectedStages,
 		SelectedWindows:         listReq.Windows,
 		SelectedKeyword:         listReq.Keyword,
 		SelectedPri:             listReq.Pri,
@@ -348,7 +358,7 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 		SelectedAcceptOwner:     listReq.AcceptOwner,
 		SelectedGroupMap:        selectedUintMap(listReq.Groups),
 		SelectedProductMap:      selectedUintMap(listReq.Products),
-		SelectedStageMap:        selectedStageMap(listReq.Stages),
+		SelectedStageMap:        selectedStageMap(selectedStages),
 		SelectedWindowMap:       selectedUintMap(listReq.Windows),
 	}, true
 }

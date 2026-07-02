@@ -67,6 +67,15 @@ func allStoriesHaveNoWindow(stories []ZtStory, windowByStory map[uint]StoryWindo
 	return true
 }
 
+func anyDemandHasWindow(demandIDs []uint, windowByDemand map[uint]DemandWindowRef) bool {
+	for _, demandID := range demandIDs {
+		if ref, ok := windowByDemand[demandID]; ok && ref.WindowID > 0 {
+			return true
+		}
+	}
+	return false
+}
+
 func sumMainSystemTasks(stories []ZtStory, taskStatByStory map[uint]StoryTaskStat) (int, int) {
 	taskTotal := 0
 	unassignedTotal := 0
@@ -91,6 +100,25 @@ func pickBizWindowName(stories []ZtStory, windowByStory map[uint]StoryWindowRef)
 	}
 	return ""
 }
+
+func pickDemandWindowName(
+	demandIDs []uint,
+	stories []ZtStory,
+	windowByDemand map[uint]DemandWindowRef,
+	windowByStory map[uint]StoryWindowRef,
+) string {
+	for _, demandID := range demandIDs {
+		ref, ok := windowByDemand[demandID]
+		if !ok || ref.WindowID == 0 {
+			continue
+		}
+		if name := strings.TrimSpace(ref.WindowName); name != "" {
+			return name
+		}
+	}
+	return pickBizWindowName(stories, windowByStory)
+}
+
 func resolveDemandOwner(bra string, realnameByAccount map[string]string) string {
 	bra = strings.TrimSpace(bra)
 	if bra == "" {
