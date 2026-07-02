@@ -246,6 +246,19 @@ func (r *Repo) GetDemandMainSystem(ctx context.Context, demandID uint) (uint, er
 	return parseUintString(mainSystem), nil
 }
 
+// GetStoryProductID 查询独立研发需求的主系统 ID（zt_story.product）。
+func (r *Repo) GetStoryProductID(ctx context.Context, storyID uint) (uint, error) {
+	if storyID == 0 {
+		return 0, errors.New("研发需求 ID 无效")
+	}
+	const query = `SELECT product FROM zt_story WHERE id = ? AND deleted = '0' LIMIT 1`
+	var product uint
+	if err := r.db.WithContext(ctx).Raw(query, storyID).Scan(&product).Error; err != nil {
+		return 0, err
+	}
+	return product, nil
+}
+
 // UpdateWindowProductPlanID 更新窗口-产品关联的计划 ID。
 func (r *Repo) UpdateWindowProductPlanID(ctx context.Context, id uint64, planID uint, account string) error {
 	return r.db.WithContext(ctx).
