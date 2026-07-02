@@ -110,7 +110,7 @@ LIMIT 1`
 	const pathQuery = `
 SELECT path
 FROM zt_dept
-WHERE id = ? AND deleted = '0'
+WHERE id = ?
 LIMIT 1`
 
 	var path string
