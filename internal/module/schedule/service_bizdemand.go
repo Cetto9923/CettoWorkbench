@@ -76,6 +76,10 @@ func (s *Service) ListBizDemands(ctx context.Context, actor *model.User, req Lis
 	if err != nil {
 		return nil, err
 	}
+	windowByDemand, err := s.repo.FindDemandWindowMappings(ctx, allDemandIDs)
+	if err != nil {
+		return nil, err
+	}
 	windowByStory, err := s.repo.FindStoryWindowMappings(ctx, storyIDs)
 	if err != nil {
 		return nil, err
@@ -100,6 +104,7 @@ func (s *Service) ListBizDemands(ctx context.Context, actor *model.User, req Lis
 		productCountByDemand: productCountByDemand,
 		clarifyPMByDemand:    clarifyPMByDemand,
 		productNameByID:      productNameByID,
+		windowByDemand:       windowByDemand,
 		windowByStory:        windowByStory,
 		taskStatByStory:      taskStatByStory,
 		teamgroupNameByID:    teamgroupNameByID,
@@ -125,6 +130,7 @@ type bizDemandAssembleContext struct {
 	productCountByDemand map[uint]int
 	clarifyPMByDemand    map[uint]bool
 	productNameByID      map[uint]string
+	windowByDemand       map[uint]DemandWindowRef
 	windowByStory        map[uint]StoryWindowRef
 	taskStatByStory      map[uint]StoryTaskStat
 	teamgroupNameByID    map[uint]string
@@ -133,6 +139,7 @@ type bizDemandAssembleContext struct {
 
 func (c bizDemandAssembleContext) buildBizDemandItem(top ZtDemand) BizDemandItem {
 	children := c.childByParent[int(top.ID)]
+	subtreeDemandIDs := mergeDemandIDs([]uint{top.ID}, pluckDemandIDs(children))
 	subtreeStories := collectSubtreeStories(top.ID, children, c.storiesByDemand)
 	mainSystemStories := filterMainSystemStories(subtreeStories)
 	teamgroupName := c.teamgroupName(top.TeamGroup)
@@ -146,8 +153,8 @@ func (c bizDemandAssembleContext) buildBizDemandItem(top ZtDemand) BizDemandItem
 		ExtraSystemCount: extraSystemCount(c.productCountByDemand[top.ID]),
 		TeamgroupName:    teamgroupName,
 		OwnerName:        resolveDemandOwner(top.BRA, c.realnameByAccount),
-		Stage:            calcBizDemandStage(subtreeStories, mainSystemStories, c.windowByStory, c.taskStatByStory),
-		WindowName:       pickBizWindowName(subtreeStories, c.windowByStory),
+		Stage:            calcBizDemandStage(subtreeDemandIDs, subtreeStories, mainSystemStories, c.windowByDemand, c.taskStatByStory),
+		WindowName:       pickDemandWindowName(subtreeDemandIDs, subtreeStories, c.windowByDemand, c.windowByStory),
 		Children:         c.buildSubDemandItems(top, children),
 		Stories:          c.buildStoryItems(top.TeamGroup, teamgroupName, c.storiesByDemand[top.ID]),
 	}
@@ -161,6 +168,7 @@ func (c bizDemandAssembleContext) buildSubDemandItems(parent ZtDemand, children 
 	items := make([]SubDemandItem, 0, len(children))
 	for _, child := range children {
 		childStories := c.storiesByDemand[child.ID]
+		demandIDs := []uint{child.ID}
 		subtreeStories := append([]ZtStory(nil), childStories...)
 		items = append(items, SubDemandItem{
 			ID:               child.ID,
@@ -171,8 +179,8 @@ func (c bizDemandAssembleContext) buildSubDemandItems(parent ZtDemand, children 
 			ExtraSystemCount: extraSystemCount(c.productCountByDemand[child.ID]),
 			TeamgroupName:    parentTeamgroupName,
 			OwnerName:        resolveDemandOwner(child.BRA, c.realnameByAccount),
-			Stage:            calcBizDemandStage(subtreeStories, filterMainSystemStories(subtreeStories), c.windowByStory, c.taskStatByStory),
-			WindowName:       pickBizWindowName(subtreeStories, c.windowByStory),
+			Stage:            calcBizDemandStage(demandIDs, subtreeStories, filterMainSystemStories(subtreeStories), c.windowByDemand, c.taskStatByStory),
+			WindowName:       pickDemandWindowName(demandIDs, subtreeStories, c.windowByDemand, c.windowByStory),
 			Stories:          c.buildStoryItems(parent.TeamGroup, parentTeamgroupName, childStories),
 		})
 	}
@@ -274,20 +282,18 @@ func filterMainSystemStories(stories []ZtStory) []ZtStory {
 }
 
 func calcBizDemandStage(
+	demandIDs []uint,
 	allStories []ZtStory,
 	mainStories []ZtStory,
-	windowByStory map[uint]StoryWindowRef,
+	windowByDemand map[uint]DemandWindowRef,
 	taskStatByStory map[uint]StoryTaskStat,
 ) string {
-	// 业需窗口仅经 story → planstory → versionwindowproduct 关联，无 story 时不可能有窗口。
-	// 故须先判「未转研发」，再判「未关联窗口」，否则 len(stories)==0 会误落未关联窗口。
+	if !anyDemandHasWindow(demandIDs, windowByDemand) {
+		return StageNoWindow
+	}
 	if len(allStories) == 0 {
 		return StageNoStory
 	}
-	if allStoriesHaveNoWindow(allStories, windowByStory) {
-		return StageNoWindow
-	}
-
 	taskTotal, unassignedTotal := sumMainSystemTasks(mainStories, taskStatByStory)
 	if taskTotal == 0 {
 		return StageNoTask

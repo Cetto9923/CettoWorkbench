@@ -240,10 +240,11 @@ const (
 
 // 列表高级筛选排期阶段 URL 参数值。
 const (
-	StageFilterNoWindow     = "no_window"
-	StageFilterNoStory      = "no_story"
-	StageFilterNoTask       = "no_task"
-	StageFilterTaskAssigned = "task_assigned"
+	StageFilterNoWindow       = "no_window"
+	StageFilterNoStory        = "no_story"
+	StageFilterNoTask         = "no_task"
+	StageFilterTaskUnassigned = "task_unassigned"
+	StageFilterTaskAssigned   = "task_assigned"
 )
 
 // StageFilterOption 排期阶段下拉选项。
@@ -258,12 +259,21 @@ type WindowFilterOption struct {
 	Name string
 }
 
-// ScheduleStageFilterOptions 列表筛选区排期阶段选项（写死）。
-var ScheduleStageFilterOptions = []StageFilterOption{
+// ScheduleBizStageFilterOptions 业务需求列表筛选区排期阶段选项。
+var ScheduleBizStageFilterOptions = []StageFilterOption{
 	{Value: StageFilterNoWindow, Label: "未关联窗口"},
 	{Value: StageFilterNoStory, Label: "未转研发"},
 	{Value: StageFilterNoTask, Label: "未建任务"},
-	{Value: StageFilterTaskAssigned, Label: "已建任务"},
+	{Value: StageFilterTaskUnassigned, Label: "已建任务未指派"},
+	{Value: StageFilterTaskAssigned, Label: "已建任务并指派"},
+}
+
+// ScheduleIndependentStageFilterOptions 独立研发需求列表筛选区排期阶段选项。
+var ScheduleIndependentStageFilterOptions = []StageFilterOption{
+	{Value: StageFilterNoWindow, Label: "未关联窗口"},
+	{Value: StageFilterNoTask, Label: "未建任务"},
+	{Value: StageFilterTaskUnassigned, Label: "已建任务未指派"},
+	{Value: StageFilterTaskAssigned, Label: "已建任务已指派"},
 }
 
 // 版本窗口类型筛选值（对应 zt_versionwindow.status）。
@@ -326,10 +336,11 @@ func ParseCommaSeparatedStages(raw string) []string {
 		return nil
 	}
 	allowed := map[string]struct{}{
-		StageFilterNoWindow:     {},
-		StageFilterNoStory:      {},
-		StageFilterNoTask:       {},
-		StageFilterTaskAssigned: {},
+		StageFilterNoWindow:       {},
+		StageFilterNoStory:        {},
+		StageFilterNoTask:         {},
+		StageFilterTaskUnassigned: {},
+		StageFilterTaskAssigned:   {},
 	}
 	parts := strings.Split(raw, ",")
 	out := make([]string, 0, len(parts))
@@ -352,6 +363,42 @@ func ParseCommaSeparatedStages(raw string) []string {
 		return nil
 	}
 	return out
+}
+
+// NormalizeStageFilterForTab 保留当前列表 Tab 支持的排期阶段值。
+func NormalizeStageFilterForTab(raw, tab string) string {
+	stages := ParseCommaSeparatedStages(raw)
+	if len(stages) == 0 {
+		return ""
+	}
+	allowed := allowedStageFilterValues(tab)
+	out := make([]string, 0, len(stages))
+	for _, stage := range stages {
+		if allowed[stage] {
+			out = append(out, stage)
+		}
+	}
+	return strings.Join(out, ",")
+}
+
+// ScheduleStageFilterOptionsForTab 返回当前列表 Tab 的排期阶段选项。
+func ScheduleStageFilterOptionsForTab(tab string) []StageFilterOption {
+	if tab == "indep" {
+		return ScheduleIndependentStageFilterOptions
+	}
+	return ScheduleBizStageFilterOptions
+}
+
+func allowedStageFilterValues(tab string) map[string]bool {
+	options := ScheduleBizStageFilterOptions
+	if tab == "indep" {
+		options = ScheduleIndependentStageFilterOptions
+	}
+	allowed := make(map[string]bool, len(options))
+	for _, option := range options {
+		allowed[option.Value] = true
+	}
+	return allowed
 }
 
 // NormalizePriorityFilter 规范化优先级筛选参数。
@@ -526,6 +573,13 @@ type StoryWindowRef struct {
 	WindowID    uint
 	WindowName  string
 	TeamgroupID uint
+}
+
+// DemandWindowRef 业务需求关联的版本窗口。
+type DemandWindowRef struct {
+	DemandID   uint
+	WindowID   uint
+	WindowName string
 }
 
 // StoryTaskStat 研发任务统计。

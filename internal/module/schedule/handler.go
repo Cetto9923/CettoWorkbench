@@ -188,7 +188,7 @@ func (h *Handler) Index(c *gin.Context) {
 		"FilterProducts":          filterProducts,
 		"FilterWindows":           filterWindows,
 		"FilterUsers":             filterUsers,
-		"StageFilterOptions":      ScheduleStageFilterOptions,
+		"StageFilterOptions":      ScheduleStageFilterOptionsForTab(demandData.ActiveTab),
 		"WindowTypeFilterOptions": ScheduleWindowTypeFilterOptions,
 		"SelectedGroups":          demandData.SelectedGroups,
 		"SelectedProducts":        demandData.SelectedProducts,
