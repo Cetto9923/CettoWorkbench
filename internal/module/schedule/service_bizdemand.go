@@ -63,6 +63,10 @@ func (s *Service) ListBizDemands(ctx context.Context, actor *model.User, req Lis
 	if err != nil {
 		return nil, err
 	}
+	clarifyPMByDemand, err := s.repo.FindDemandClarifyPMMatches(ctx, allDemandIDs, account)
+	if err != nil {
+		return nil, err
+	}
 	productIDs := collectBizDemandProductIDs(topDemands, childDemands, stories)
 	storyIDs := pluckStoryIDs(stories)
 	teamgroupIDs := collectBizDemandTeamgroupIDs(topDemands)
@@ -90,14 +94,20 @@ func (s *Service) ListBizDemands(ctx context.Context, actor *model.User, req Lis
 	}
 
 	assembleCtx := bizDemandAssembleContext{
+		account:              account,
 		childByParent:        childByParent,
 		storiesByDemand:      storiesByDemand,
 		productCountByDemand: productCountByDemand,
+		clarifyPMByDemand:    clarifyPMByDemand,
 		productNameByID:      productNameByID,
 		windowByStory:        windowByStory,
 		taskStatByStory:      taskStatByStory,
 		teamgroupNameByID:    teamgroupNameByID,
 		realnameByAccount:    realnameByAccount,
+	}
+
+	if req.Filter == FilterUnscheduled {
+		topDemands = assembleCtx.filterUnscheduledBizDemandTree(topDemands)
 	}
 
 	items := make([]BizDemandItem, 0, len(topDemands))
@@ -109,9 +119,11 @@ func (s *Service) ListBizDemands(ctx context.Context, actor *model.User, req Lis
 }
 
 type bizDemandAssembleContext struct {
+	account              string
 	childByParent        map[int][]ZtDemand
 	storiesByDemand      map[uint][]ZtStory
 	productCountByDemand map[uint]int
+	clarifyPMByDemand    map[uint]bool
 	productNameByID      map[uint]string
 	windowByStory        map[uint]StoryWindowRef
 	taskStatByStory      map[uint]StoryTaskStat

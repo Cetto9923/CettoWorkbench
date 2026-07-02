@@ -541,6 +541,7 @@ type ZtDemand struct {
 	Name           string `gorm:"column:name"`
 	Pri            string `gorm:"column:pri"`
 	Status         string `gorm:"column:status"`
+	AssignedTo     string `gorm:"column:assignedTo"`
 	MainSystem     string `gorm:"column:mainSystem"`
 	TeamGroup      string `gorm:"column:teamGroup"`
 	BRA            string `gorm:"column:BRA"`

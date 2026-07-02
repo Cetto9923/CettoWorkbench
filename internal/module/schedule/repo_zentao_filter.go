@@ -43,32 +43,124 @@ type indepStorySimpleCountRow struct {
 	Closed        int64 `gorm:"column:closed"`
 }
 
-const bizDemandUnscheduledSQL = `
+const bizDemandHasChildSQL = `
+EXISTS (
+  SELECT 1 FROM zt_demand c
+  WHERE c.parent = d.id AND c.deleted = '0'
+)`
+
+const bizDemandUnscheduledSelfSQL = `
+EXISTS (
+  SELECT 1 FROM zt_demandclarify dc
+  WHERE dc.demand = d.id
+    AND TRIM(IFNULL(dc.product, '')) != ''
+)
 AND (
   d.assignedTo = ?
   OR d.BRA = ?
-  OR d.id IN (SELECT demand FROM zt_demandclarify WHERE PM = ?)
+  OR EXISTS (
+    SELECT 1 FROM zt_demandclarify dc
+    WHERE dc.demand = d.id
+      AND dc.PM = ?
+      AND TRIM(IFNULL(dc.product, '')) != ''
+  )
 )
 AND (
   NOT EXISTS (
     SELECT 1 FROM zt_story s
     JOIN zt_planstory ps ON ps.story = s.id
     JOIN zt_versionwindowproduct vwp ON vwp.plan = ps.plan AND vwp.deletedAt IS NULL
-    WHERE s.fromDemand = d.id AND s.deleted = '0'
+    WHERE s.fromDemand = d.id
+      AND s.deleted = '0'
+      AND s.sourceType = 'demandpool'
+      AND s.type = 'story'
   )
-  OR NOT EXISTS (SELECT 1 FROM zt_story s WHERE s.fromDemand = d.id AND s.deleted = '0')
+  OR NOT EXISTS (
+    SELECT 1 FROM zt_story s
+    WHERE s.fromDemand = d.id
+      AND s.deleted = '0'
+      AND s.sourceType = 'demandpool'
+      AND s.type = 'story'
+  )
   OR EXISTS (
     SELECT 1 FROM zt_story s
-    WHERE s.fromDemand = d.id AND s.deleted = '0'
+    WHERE s.fromDemand = d.id
+      AND s.deleted = '0'
+      AND s.sourceType = 'demandpool'
+      AND s.type = 'story'
+      AND (
+        NOT EXISTS (SELECT 1 FROM zt_task t WHERE t.story = s.id AND t.deleted = '0' AND t.status != 'closed')
+        OR EXISTS (
+          SELECT 1 FROM zt_task t
+          WHERE t.story = s.id AND t.deleted = '0' AND t.status != 'closed'
+            AND (t.assignedTo = '' OR t.assignedTo IS NULL)
+        )
+      )
+  )
+)`
+
+const bizDemandUnscheduledChildSQL = `
+EXISTS (
+  SELECT 1 FROM zt_demand c
+  WHERE c.parent = d.id
+    AND c.deleted = '0'
+    AND EXISTS (
+      SELECT 1 FROM zt_demandclarify dc
+      WHERE dc.demand = c.id
+        AND TRIM(IFNULL(dc.product, '')) != ''
+    )
     AND (
-      NOT EXISTS (SELECT 1 FROM zt_task t WHERE t.story = s.id AND t.deleted = '0' AND t.status != 'closed')
+      c.assignedTo = ?
+      OR c.BRA = ?
       OR EXISTS (
-        SELECT 1 FROM zt_task t
-        WHERE t.story = s.id AND t.deleted = '0' AND t.status != 'closed'
-          AND (t.assignedTo = '' OR t.assignedTo IS NULL)
+        SELECT 1 FROM zt_demandclarify dc
+        WHERE dc.demand = c.id
+          AND dc.PM = ?
+          AND TRIM(IFNULL(dc.product, '')) != ''
       )
     )
+    AND (
+      NOT EXISTS (
+        SELECT 1 FROM zt_story s
+        JOIN zt_planstory ps ON ps.story = s.id
+        JOIN zt_versionwindowproduct vwp ON vwp.plan = ps.plan AND vwp.deletedAt IS NULL
+        WHERE s.fromDemand = c.id
+          AND s.deleted = '0'
+          AND s.sourceType = 'demandpool'
+          AND s.type = 'story'
+      )
+      OR NOT EXISTS (
+        SELECT 1 FROM zt_story s
+        WHERE s.fromDemand = c.id
+          AND s.deleted = '0'
+          AND s.sourceType = 'demandpool'
+          AND s.type = 'story'
+      )
+      OR EXISTS (
+        SELECT 1 FROM zt_story s
+        WHERE s.fromDemand = c.id
+          AND s.deleted = '0'
+          AND s.sourceType = 'demandpool'
+          AND s.type = 'story'
+          AND (
+            NOT EXISTS (SELECT 1 FROM zt_task t WHERE t.story = s.id AND t.deleted = '0' AND t.status != 'closed')
+            OR EXISTS (
+              SELECT 1 FROM zt_task t
+              WHERE t.story = s.id AND t.deleted = '0' AND t.status != 'closed'
+                AND (t.assignedTo = '' OR t.assignedTo IS NULL)
+            )
+          )
+      )
+    )
+)`
+
+const bizDemandUnscheduledSQL = `
+AND (
+  (
+    NOT ` + bizDemandHasChildSQL + `
+    AND ` + bizDemandUnscheduledSelfSQL + `
   )
+  OR ` + bizDemandUnscheduledChildSQL + `
 )`
 
 const bizDemandUnassignedSQL = `
@@ -124,7 +216,7 @@ func buildBizDemandFilterClause(filter, account string) filterClause {
 	case FilterUnscheduled:
 		return filterClause{
 			sql:  bizDemandExcludeReleasedSQL + "\n" + bizDemandUnscheduledExcludeHangSQL + bizDemandUnscheduledSQL,
-			args: []interface{}{account, account, account},
+			args: []interface{}{account, account, account, account, account, account},
 		}
 	case FilterPendingReview:
 		return filterClause{sql: "AND d.status = 'wait'"}
@@ -234,6 +326,34 @@ WHERE d.deleted = '0'
 		return 0, err
 	}
 	return total, nil
+}
+
+// FindDemandClarifyPMMatches 查询当前用户作为系统需求分析人员的业务需求 ID。
+func (r *Repo) FindDemandClarifyPMMatches(ctx context.Context, demandIDs []uint, account string) (map[uint]bool, error) {
+	account = strings.TrimSpace(account)
+	if len(demandIDs) == 0 || account == "" {
+		return map[uint]bool{}, nil
+	}
+
+	const query = `
+SELECT DISTINCT demand
+FROM zt_demandclarify
+WHERE demand IN ?
+  AND PM = ?
+  AND TRIM(IFNULL(product, '')) != ''`
+
+	var ids []uint
+	if err := r.db.WithContext(ctx).Raw(query, demandIDs, account).Scan(&ids).Error; err != nil {
+		return nil, err
+	}
+	out := make(map[uint]bool, len(ids))
+	for _, id := range ids {
+		if id == 0 {
+			continue
+		}
+		out[id] = true
+	}
+	return out, nil
 }
 
 // GetIndependentFilterCounts 统计独立研发需求各快捷筛选项数量。

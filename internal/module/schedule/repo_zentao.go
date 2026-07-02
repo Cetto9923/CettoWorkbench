@@ -196,6 +196,7 @@ SELECT
   d.name,
   d.pri,
   d.status,
+  d.assignedTo,
   d.mainSystem,
   d.teamGroup,
   d.BRA,
@@ -229,7 +230,7 @@ func (r *Repo) FindChildDemandsByParents(ctx context.Context, parentIDs []uint) 
 
 	const query = `
 SELECT
-  id, name, pri, status, mainSystem, teamGroup,
+  id, name, pri, status, assignedTo, mainSystem, teamGroup,
   BRA, QD, RD, createdBy, pool, parent, hang, category, estimateLaunch
 FROM zt_demand
 WHERE deleted = '0'
@@ -287,6 +288,7 @@ func (r *Repo) CountClarifyProductsByDemands(ctx context.Context, demandIDs []ui
 SELECT demand, COUNT(DISTINCT product) AS productCount
 FROM zt_demandclarify
 WHERE demand IN ?
+  AND TRIM(IFNULL(product, '')) != ''
 GROUP BY demand`
 
 	var rows []clarifyProductCountRow
