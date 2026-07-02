@@ -648,13 +648,14 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
       <thead>
         <tr>
           <th style="width:120px">项目</th>
-          <th style="width:120px">执行</th>
+          <th style="width:120px">执行 <span class="req">*</span></th>
           <th style="width:80px">类型</th>
-          <th>任务名称</th>
+          <th style="width:72px">优先级</th>
+          <th>任务名称 <span class="req">*</span></th>
           <th style="width:120px">指派给</th>
-          <th style="width:70px">预估(h)</th>
+          <th style="width:70px">预估(h) <span class="req">*</span></th>
           <th style="width:110px">预计开始</th>
-          <th style="width:110px">截止时间</th>
+          <th style="width:110px">截止时间 <span class="req">*</span></th>
         </tr>
       </thead>
       <tbody id="taskModalTableBody"></tbody>
@@ -851,6 +852,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
     <td class="rd-task-cell rd-task-cell-project"><select class="rd-task-project-select form-select rd-task-select"><option value="">请选择项目</option></select></td>
     <td class="rd-task-cell rd-task-cell-execution"><select class="rd-task-execution-select form-select rd-task-select" disabled><option value="">请选择执行</option></select></td>
     <td class="rd-task-cell rd-task-cell-type"><select class="rd-task-type form-select rd-task-select"></select></td>
+    <td class="rd-task-cell rd-task-cell-pri"><select class="rd-task-pri form-select rd-task-select"><option value="0">P0</option><option value="1">P1</option><option value="2">P2</option><option value="3" selected>P3</option><option value="4">P4</option></select></td>
     <td class="rd-task-cell rd-task-cell-name rd-task-cell--name"><input type="text" class="rd-task-name form-input rd-task-input" placeholder="任务名称"></td>
     <td class="rd-task-cell rd-task-cell-owner rd-task-cell--owner rd-task-owner-cell"></td>
     <td class="rd-task-cell rd-task-cell-hours"><input type="number" class="rd-task-hours form-input rd-task-input" min="0" step="0.5" placeholder="h"></td>
@@ -864,6 +866,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
     <td class="rd-task-cell rd-task-cell-project"><select class="rd-task-project-select form-select rd-task-select"><option value="">请选择项目</option></select></td>
     <td class="rd-task-cell rd-task-cell-execution"><select class="rd-task-execution-select form-select rd-task-select" disabled><option value="">请选择执行</option></select></td>
     <td class="rd-task-cell rd-task-cell-type task-modal-type-cell"></td>
+    <td class="rd-task-cell rd-task-cell-pri"><select class="rd-task-pri form-select rd-task-select"><option value="0">P0</option><option value="1">P1</option><option value="2">P2</option><option value="3">P3</option><option value="4">P4</option></select></td>
     <td class="rd-task-cell rd-task-cell-name rd-task-cell--name"><input type="text" class="rd-task-name form-input rd-task-input"></td>
     <td class="rd-task-cell rd-task-cell-owner rd-task-cell--owner rd-task-owner-cell"></td>
     <td class="rd-task-cell rd-task-cell-hours"><input type="number" class="rd-task-hours form-input rd-task-input" min="0" step="0.5"></td>

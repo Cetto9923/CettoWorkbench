@@ -249,6 +249,7 @@
     $row.attr("data-assigned-to", task.assignedTo || "");
     $row.attr("data-assigned-to-name", task.assignedToName || "");
     $row.find(".task-modal-type-cell").text(task.typeLabel || (shared && shared.taskTypeLabel(task.type)) || task.type || "—");
+    $row.find(".rd-task-pri").val(String(normalizeTaskPri(task.pri)));
     $row.find(".rd-task-name").val(task.name || "");
     $row.find(".rd-task-hours").val(task.estimate != null ? task.estimate : "");
     $row.find(".rd-task-start").val(task.estStarted || "");
@@ -347,7 +348,7 @@
         projectId: parsePositiveInt($row.find(".rd-task-project-select").val()),
         executionId: parsePositiveInt($row.find(".rd-task-execution-select").val()),
         type: $.trim($row.attr("data-task-type") || ""),
-        pri: normalizeTaskPri($row.attr("data-pri")),
+        pri: normalizeTaskPri($row.find(".rd-task-pri").val()),
         name: $.trim($row.find(".rd-task-name").val() || ""),
         assignedTo: readRowAssignedTo($row),
         estimate: Number($row.find(".rd-task-hours").val()) || 0,
@@ -364,7 +365,7 @@
         projectId: parsePositiveInt($row.find(".rd-task-project-select").val()),
         executionId: parsePositiveInt($row.find(".rd-task-execution-select").val()),
         type: $.trim($row.find(".rd-task-type").val() || "devel"),
-        pri: 3,
+        pri: normalizeTaskPri($row.find(".rd-task-pri").val()),
         name: $.trim($row.find(".rd-task-name").val() || ""),
         assignedTo: readRowAssignedTo($row),
         estimate: Number($row.find(".rd-task-hours").val()) || 0,
