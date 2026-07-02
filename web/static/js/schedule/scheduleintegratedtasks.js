@@ -191,11 +191,25 @@
   }
 
   function normalizeTaskPri(pri) {
-    var value = parseInt(String(pri == null ? "" : pri), 10);
+    var raw = $.trim(String(pri == null ? "" : pri));
+    if (!raw) {
+      return 0;
+    }
+    var value = parseInt(raw, 10);
     if (isNaN(value) || value < 0 || value > 4) {
       return 3;
     }
     return value;
+  }
+
+  function formatTaskPriLabel(pri) {
+    var value = normalizeTaskPri(pri);
+    return value <= 0 ? "" : "P" + value;
+  }
+
+  function taskPriSelectValue(pri) {
+    var value = normalizeTaskPri(pri);
+    return value <= 0 ? "3" : String(value);
   }
 
   function mountTaskActions($container, showEdit) {
@@ -274,7 +288,7 @@
     $row.find(".rd-task-cell-project").text(task.projectName || "—");
     $row.find(".rd-task-cell-execution").text(task.executionName || "—");
     renderTaskTypeCell($row.find(".rd-task-cell-type"), task.type);
-    $row.find(".rd-task-cell-pri").text("P" + normalizeTaskPri(task.pri));
+    $row.find(".rd-task-cell-pri").text(formatTaskPriLabel(task.pri));
     $row.find(".rd-task-cell-name").text(task.name || "—");
     $row.find(".rd-task-cell-owner").text(task.assignedToName || task.assignedTo || "—");
     $row.find(".rd-task-cell-hours").text(shared.formatStoryEstimate(task.estimate));
@@ -422,7 +436,7 @@
     $row.addClass("rd-task-row--editing");
     copyEditCellsFromTemplate($row);
     fillTaskTypeSelect($row.find(".rd-task-type"), task.type);
-    $row.find(".rd-task-pri").val(String(normalizeTaskPri(task.pri)));
+    $row.find(".rd-task-pri").val(taskPriSelectValue(task.pri));
     $row.find(".rd-task-name").val(task.name);
     $row.find(".rd-task-hours").val(task.estimate);
     $row.find(".rd-task-start").val(task.estStarted);

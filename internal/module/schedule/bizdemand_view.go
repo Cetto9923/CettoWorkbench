@@ -135,8 +135,8 @@ func toDevRequirementsView(stories []StoryItem, zentaoBase string) []DevRequirem
 }
 
 func formatPriority(pri int) (label, class string) {
-	if pri < 0 {
-		pri = 0
+	if pri <= 0 {
+		return "", ""
 	}
 	if pri > 4 {
 		pri = 4

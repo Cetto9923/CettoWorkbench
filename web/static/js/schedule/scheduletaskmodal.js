@@ -14,8 +14,17 @@
   }
 
   function normalizeTaskPri(value) {
-    var num = parseInt(String(value == null ? "" : value), 10);
+    var raw = $.trim(String(value == null ? "" : value));
+    if (!raw) {
+      return 0;
+    }
+    var num = parseInt(raw, 10);
     return isNaN(num) || num < 0 || num > 4 ? 3 : num;
+  }
+
+  function taskPriSelectValue(value) {
+    var num = normalizeTaskPri(value);
+    return num <= 0 ? "3" : String(num);
   }
 
   function escapeHtml(text) {
@@ -249,7 +258,7 @@
     $row.attr("data-assigned-to", task.assignedTo || "");
     $row.attr("data-assigned-to-name", task.assignedToName || "");
     $row.find(".task-modal-type-cell").text(task.typeLabel || (shared && shared.taskTypeLabel(task.type)) || task.type || "—");
-    $row.find(".rd-task-pri").val(String(normalizeTaskPri(task.pri)));
+    $row.find(".rd-task-pri").val(taskPriSelectValue(task.pri));
     $row.find(".rd-task-name").val(task.name || "");
     $row.find(".rd-task-hours").val(task.estimate != null ? task.estimate : "");
     $row.find(".rd-task-start").val(task.estStarted || "");

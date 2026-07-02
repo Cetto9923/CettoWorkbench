@@ -213,7 +213,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
     <div id="scheduleMoreFilters" class="schedule-filter schedule-filter-more" hidden>
       <select class="form-select" id="scheduleFilterPri">
         <option value="">优先级</option>
-        <option value="0"{{ if eq .SelectedPri "0" }} selected{{ end }}>P0</option>
+        <option value="0"{{ if eq .SelectedPri "0" }} selected{{ end }}>未设置优先级</option>
         <option value="1"{{ if eq .SelectedPri "1" }} selected{{ end }}>P1</option>
         <option value="2"{{ if eq .SelectedPri "2" }} selected{{ end }}>P2</option>
         <option value="3"{{ if eq .SelectedPri "3" }} selected{{ end }}>P3</option>
@@ -852,7 +852,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
     <td class="rd-task-cell rd-task-cell-project"><select class="rd-task-project-select form-select rd-task-select"><option value="">请选择项目</option></select></td>
     <td class="rd-task-cell rd-task-cell-execution"><select class="rd-task-execution-select form-select rd-task-select" disabled><option value="">请选择执行</option></select></td>
     <td class="rd-task-cell rd-task-cell-type"><select class="rd-task-type form-select rd-task-select"></select></td>
-    <td class="rd-task-cell rd-task-cell-pri"><select class="rd-task-pri form-select rd-task-select"><option value="0">P0</option><option value="1">P1</option><option value="2">P2</option><option value="3" selected>P3</option><option value="4">P4</option></select></td>
+    <td class="rd-task-cell rd-task-cell-pri"><select class="rd-task-pri form-select rd-task-select"><option value="1">P1</option><option value="2">P2</option><option value="3" selected>P3</option><option value="4">P4</option></select></td>
     <td class="rd-task-cell rd-task-cell-name rd-task-cell--name"><input type="text" class="rd-task-name form-input rd-task-input" placeholder="任务名称"></td>
     <td class="rd-task-cell rd-task-cell-owner rd-task-cell--owner rd-task-owner-cell"></td>
     <td class="rd-task-cell rd-task-cell-hours"><input type="number" class="rd-task-hours form-input rd-task-input" min="0" step="0.5" placeholder="h"></td>
@@ -866,7 +866,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
     <td class="rd-task-cell rd-task-cell-project"><select class="rd-task-project-select form-select rd-task-select"><option value="">请选择项目</option></select></td>
     <td class="rd-task-cell rd-task-cell-execution"><select class="rd-task-execution-select form-select rd-task-select" disabled><option value="">请选择执行</option></select></td>
     <td class="rd-task-cell rd-task-cell-type task-modal-type-cell"></td>
-    <td class="rd-task-cell rd-task-cell-pri"><select class="rd-task-pri form-select rd-task-select"><option value="0">P0</option><option value="1">P1</option><option value="2">P2</option><option value="3">P3</option><option value="4">P4</option></select></td>
+    <td class="rd-task-cell rd-task-cell-pri"><select class="rd-task-pri form-select rd-task-select"><option value="1">P1</option><option value="2">P2</option><option value="3">P3</option><option value="4">P4</option></select></td>
     <td class="rd-task-cell rd-task-cell-name rd-task-cell--name"><input type="text" class="rd-task-name form-input rd-task-input"></td>
     <td class="rd-task-cell rd-task-cell-owner rd-task-cell--owner rd-task-owner-cell"></td>
     <td class="rd-task-cell rd-task-cell-hours"><input type="number" class="rd-task-hours form-input rd-task-input" min="0" step="0.5"></td>
@@ -897,7 +897,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
     <td class="rd-task-cell rd-task-cell-project"><select class="rd-task-project-select form-select rd-task-select"><option value="">请选择项目</option></select></td>
     <td class="rd-task-cell rd-task-cell-execution"><select class="rd-task-execution-select form-select rd-task-select" disabled><option value="">请选择执行</option></select></td>
     <td class="rd-task-cell rd-task-cell-type"><select class="rd-task-type form-select rd-task-select"><option value="devel">开发</option><option value="test">测试</option><option value="OLtest">上线测试</option><option value="review">评审</option><option value="affair">事务</option><option value="request">需求</option><option value="misc">其他</option><option value="codereview">代码评审</option><option value="design">设计</option><option value="study">研究</option><option value="OLDebug">上线调试</option><option value="Online">上线</option><option value="Train">培训</option><option value="meeting">会议</option><option value="discuss">讨论</option><option value="ui">界面</option></select></td>
-    <td class="rd-task-cell rd-task-cell-pri"><select class="rd-task-pri form-select rd-task-select"><option value="0">P0</option><option value="1">P1</option><option value="2">P2</option><option value="3" selected>P3</option><option value="4">P4</option></select></td>
+    <td class="rd-task-cell rd-task-cell-pri"><select class="rd-task-pri form-select rd-task-select"><option value="1">P1</option><option value="2">P2</option><option value="3" selected>P3</option><option value="4">P4</option></select></td>
     <td class="rd-task-cell rd-task-cell-name rd-task-cell--name"><input type="text" class="rd-task-name form-input rd-task-input" placeholder="任务名称"></td>
     <td class="rd-task-cell rd-task-cell-owner rd-task-cell--owner rd-task-owner-cell"></td>
     <td class="rd-task-cell rd-task-cell-hours"><input type="number" class="rd-task-hours form-input rd-task-input" min="0" step="0.5" placeholder="h"></td>
@@ -927,7 +927,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
     <td class="rd-task-cell rd-task-cell-project"><select class="rd-task-project-select form-select rd-task-select"><option value="">请选择项目</option></select></td>
     <td class="rd-task-cell rd-task-cell-execution"><select class="rd-task-execution-select form-select rd-task-select" disabled><option value="">请选择执行</option></select></td>
     <td class="rd-task-cell rd-task-cell-type"><select class="rd-task-type form-select rd-task-select"></select></td>
-    <td class="rd-task-cell rd-task-cell-pri"><select class="rd-task-pri form-select rd-task-select"><option value="0">P0</option><option value="1">P1</option><option value="2">P2</option><option value="3">P3</option><option value="4">P4</option></select></td>
+    <td class="rd-task-cell rd-task-cell-pri"><select class="rd-task-pri form-select rd-task-select"><option value="1">P1</option><option value="2">P2</option><option value="3">P3</option><option value="4">P4</option></select></td>
     <td class="rd-task-cell rd-task-cell-name rd-task-cell--name"><input type="text" class="rd-task-name form-input rd-task-input" placeholder="任务名称"></td>
     <td class="rd-task-cell rd-task-cell-owner rd-task-cell--owner rd-task-owner-cell"></td>
     <td class="rd-task-cell rd-task-cell-hours"><input type="number" class="rd-task-hours form-input rd-task-input" min="0" step="0.5" placeholder="h"></td>
