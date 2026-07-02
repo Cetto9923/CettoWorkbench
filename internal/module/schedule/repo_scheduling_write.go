@@ -494,24 +494,3 @@ func nullableSchedulingDate(raw string) interface{} {
 	}
 	return raw
 }
-
-// RemoveStoryFromOtherPlans 从 zt_planstory 删除指定 story 在「非 keepPlanID」计划中的关联行。
-// 用于 edit plan 场景：把 story 从其他计划摘除，仅保留在 keepPlanID。
-func (r *Repo) RemoveStoryFromOtherPlans(ctx context.Context, storyID uint, keepPlanID uint) error {
-	if storyID == 0 {
-		return errors.New("story id 无效")
-	}
-	const query = "DELETE FROM zt_planstory WHERE story = ? AND plan <> ?"
-	return r.db.WithContext(ctx).Exec(query, storyID, keepPlanID).Error
-}
-
-// EnsurePlanStoryRelation 幂等地把 story 关联到 plan。
-// 用 INSERT IGNORE 应对 (plan, story) 复合主键冲突，已存在则不报错。
-// `order` 是 MySQL 保留字，必须反引号。
-func (r *Repo) EnsurePlanStoryRelation(ctx context.Context, planID uint, storyID uint) error {
-	if planID == 0 || storyID == 0 {
-		return errors.New("plan or story id is invalid")
-	}
-	const query = "INSERT IGNORE INTO zt_planstory (plan, story, `order`) VALUES (?, ?, 0)"
-	return r.db.WithContext(ctx).Exec(query, planID, storyID).Error
-}

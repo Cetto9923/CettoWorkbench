@@ -121,10 +121,10 @@ func (s *Service) SaveStoryScheduling(ctx context.Context, actor *model.User, st
 		if err != nil {
 			return err
 		}
-		if err := txRepo.RemoveStoryFromOtherPlans(ctx, storyID, planID); err != nil {
+		if err := txRepo.RemoveStoryFromOtherPlans(ctx, storyID, planID, mainSystemID, account); err != nil {
 			return err
 		}
-		if err := txRepo.EnsurePlanStoryRelation(ctx, planID, storyID); err != nil {
+		if err := txRepo.LinkStoryToPlan(ctx, storyID, mainSystemID, planID, account); err != nil {
 			return err
 		}
 		if err := txRepo.CreateAction(ctx, "story", storyID, "Edited", account, mainSystemID, 0, 0, ""); err != nil {
@@ -182,11 +182,12 @@ func (s *Service) applySchedulingStory(
 		}); err != nil {
 			return 0, 0, 0, fmt.Errorf("create story spec: %w", err)
 		}
-		if err := txRepo.EnsurePlanStoryRelation(ctx, planID, storyID); err != nil {
-			return 0, 0, 0, fmt.Errorf("ensure plan story relation: %w", err)
-		}
 		if err := txRepo.CreateAction(ctx, "story", storyID, "Opened", account, productID, 0, 0, ""); err != nil {
 			return 0, 0, 0, fmt.Errorf("create story action: %w", err)
+		}
+		// 关联到计划：排在 Opened 之后，保证 story 详情页 action 顺序 Opened → linked2plan → linked2project → linked2execution。
+		if err := txRepo.LinkStoryToPlan(ctx, storyID, productID, planID, account); err != nil {
+			return 0, 0, 0, fmt.Errorf("link story to plan: %w", err)
 		}
 		return storyID, productID, planID, nil
 
@@ -211,11 +212,11 @@ func (s *Service) applySchedulingStory(
 		if err != nil {
 			return 0, 0, 0, fmt.Errorf("resolve plan for edited story %d: %w", storyID, err)
 		}
-		if err := txRepo.RemoveStoryFromOtherPlans(ctx, storyID, newPlanID); err != nil {
+		if err := txRepo.RemoveStoryFromOtherPlans(ctx, storyID, newPlanID, productID, account); err != nil {
 			return 0, 0, 0, fmt.Errorf("remove story %d from other plans: %w", storyID, err)
 		}
-		if err := txRepo.EnsurePlanStoryRelation(ctx, newPlanID, storyID); err != nil {
-			return 0, 0, 0, fmt.Errorf("ensure plan-story relation: %w", err)
+		if err := txRepo.LinkStoryToPlan(ctx, storyID, productID, newPlanID, account); err != nil {
+			return 0, 0, 0, fmt.Errorf("link story to plan: %w", err)
 		}
 		return storyID, productID, 0, nil
 
