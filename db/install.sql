@@ -23,6 +23,19 @@ CREATE TABLE IF NOT EXISTS zt_login_logs (
   KEY `idx_zt_loginlogs_ip_time` (`ip`, `createdDate`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS `zt_role_permissions` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `roleId` bigint NOT NULL,
+  `permCode` varchar(64) NOT NULL DEFAULT '',
+  `createdBy` bigint NOT NULL DEFAULT '0',
+  `updatedBy` bigint NOT NULL DEFAULT '0',
+  `createdDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deletedAt` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_role_perm_deleted` (`roleId`,`permCode`,`deletedAt`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS `zt_menus` (
   `id`        BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `parentId`  BIGINT UNSIGNED NOT NULL DEFAULT 0,
