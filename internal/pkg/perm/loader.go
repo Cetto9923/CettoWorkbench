@@ -29,9 +29,6 @@ func LoadUserPermissionSet(ctx context.Context, db *gorm.DB, userID int64) (map[
 		Joins("JOIN zt_gf_user_roles ur ON ur.roleId = rp.roleId").
 		Joins("JOIN zt_roles r ON r.id = ur.roleId").
 		Where("ur.userId = ?", userID).
-		Where("ur.deleted = ?", 0).
-		Where("rp.deleted = ?", 0).
-		Where("r.deleted = ?", 0).
 		Where("r.isActive = ?", true).
 		Scan(&permCodes).
 		Error

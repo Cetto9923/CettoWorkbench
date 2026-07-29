@@ -36,6 +36,40 @@ CREATE TABLE IF NOT EXISTS `zt_role_permissions` (
   UNIQUE KEY `uk_role_perm_deleted` (`roleId`,`permCode`,`deletedAt`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE `zt_roles` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `code` varchar(64) NOT NULL,
+  `name` varchar(64) NOT NULL,
+  `description` varchar(255) NOT NULL DEFAULT '',
+  `isBuiltin` tinyint(1) NOT NULL DEFAULT '0',
+  `isActive` tinyint(1) NOT NULL DEFAULT '1',
+  `sortOrder` int NOT NULL DEFAULT '0',
+  `createdBy` bigint NOT NULL DEFAULT '0',
+  `updatedBy` bigint NOT NULL DEFAULT '0',
+  `createdDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_zt_roles_code_deleted` (`code`,`deleted`),
+  UNIQUE KEY `uk_zt_roles_name_deleted` (`name`,`deleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `zt_gf_user_roles` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `userId` bigint NOT NULL,
+  `roleId` bigint NOT NULL,
+  `tenantId` bigint NOT NULL DEFAULT '0',
+  `createdBy` bigint NOT NULL DEFAULT '0',
+  `updatedBy` bigint NOT NULL DEFAULT '0',
+  `createdDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_zt_userroles_user_role_deleted` (`tenantId`,`userId`,`roleId`,`deleted`),
+  KEY `idx_zt_userroles_user` (`tenantId`,`userId`),
+  KEY `idx_zt_userroles_role` (`tenantId`,`roleId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 CREATE TABLE IF NOT EXISTS `zt_menus` (
   `id`        BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `parentId`  BIGINT UNSIGNED NOT NULL DEFAULT 0,
