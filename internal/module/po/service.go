@@ -2,7 +2,7 @@
 // 文件: internal/module/po/service.go
 // 模块: PO 工作台
 // 类型: action
-// 职责: 组装 PO 首页价值流统计与需求列表（受理阶段读 MySQL，其余读 Redis）。
+// 职责: 组装 PO 首页价值流统计与需求列表（受理/联调测试读 MySQL，其余读 Redis）。
 // 依赖: internal/model
 //       internal/module/schedule
 //       internal/pkg/redis
@@ -72,17 +72,16 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 		return nil, err
 	}
 
-	acceptDemandCount, err := s.repo.CountAcceptDemands(ctx, account)
-	if err != nil {
-		return nil, err
-	}
-
 	stages := make([]ValueStreamStage, 0, len(valueStreamStages))
 	for i, def := range valueStreamStages {
 		demand := counts[i*2]
 		story := counts[i*2+1]
-		if def.status == "accept" {
-			demand = acceptDemandCount
+		if statuses, ok := mysqlStageDemandStatuses[def.status]; ok {
+			n, countErr := s.repo.CountRoleDemands(ctx, account, statuses)
+			if countErr != nil {
+				return nil, countErr
+			}
+			demand = n
 			story = 0
 		}
 		stages = append(stages, ValueStreamStage{
@@ -141,8 +140,8 @@ func (s *Service) loadAllStageCounts(ctx context.Context, account string) ([]int
 
 // Demands 按价值流状态返回当前用户关联的需求/故事详情。
 func (s *Service) Demands(ctx context.Context, actor *model.User, req DemandsReq) (*DemandsResp, error) {
-	if req.Status == "accept" {
-		return s.listAcceptDemands(ctx, actor)
+	if statuses, ok := mysqlStageDemandStatuses[req.Status]; ok {
+		return s.listMySQLDemands(ctx, actor, req.Status, statuses)
 	}
 
 	account := ""
@@ -164,16 +163,17 @@ func (s *Service) Demands(ctx context.Context, actor *model.User, req DemandsReq
 	return &DemandsResp{Items: items}, nil
 }
 
-// listAcceptDemands 从 MySQL 加载受理阶段业需列表。
-func (s *Service) listAcceptDemands(ctx context.Context, actor *model.User) (*DemandsResp, error) {
+// listMySQLDemands 从 MySQL 加载指定价值流阶段的业需列表。
+func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stageStatus string, statuses []string) (*DemandsResp, error) {
 	account := ""
 	if actor != nil {
 		account = actor.Account
 	}
-	rows, err := s.repo.FindAcceptDemands(ctx, account)
+	rows, err := s.repo.FindRoleDemands(ctx, account, statuses)
 	if err != nil {
 		return nil, err
 	}
+	label := valueStreamLabelForStatus(stageStatus)
 	items := make([]WorkItemDetail, 0, len(rows))
 	for _, row := range rows {
 		pri := ""
@@ -186,7 +186,7 @@ func (s *Service) listAcceptDemands(ctx context.Context, actor *model.User) (*De
 			Pri:         pri,
 			Title:       row.Name,
 			ZentaoUrl:   zentao.URL("demand", "view", fmt.Sprintf("demandID=%d", row.ID)),
-			ValueStream: "受理",
+			ValueStream: label,
 		})
 	}
 	return &DemandsResp{Items: items}, nil
