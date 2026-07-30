@@ -2,7 +2,7 @@
 // 文件: internal/module/po/repo.go
 // 模块: PO 工作台
 // 类型: action
-// 职责: 价值流阶段业需的 MySQL 统计与列表查询（按 QD/RD/BRA + 阶段条件）。
+// 职责: 价值流阶段业需/研发需求的 MySQL 统计与列表查询。
 // 依赖: 无
 // =============================================================================
 
@@ -18,12 +18,13 @@ import (
 
 // mysqlStageFilter 走 MySQL 的价值流阶段过滤条件。
 type mysqlStageFilter struct {
-	statuses         []string
-	overall          *string
-	parent           *string
-	developFinishDue bool // true：今天 >= developFinish（且 developFinish 非空）
-	noClarify        bool // true：无 zt_demandclarify 记录
-	acceptanceStage  bool // true：验收阶段复合条件
+	statuses           []string
+	overall            *string
+	parent             *string
+	developFinishDue   bool // true：今天 >= developFinish（且 developFinish 非空）
+	noClarify          bool // true：无 zt_demandclarify 记录
+	acceptanceStage    bool // true：验收阶段复合条件
+	scheduleIncomplete bool // true：排期未完成（关键日期/QD/主研未填）
 }
 
 var (
@@ -33,10 +34,11 @@ var (
 
 // mysqlStageFilters 价值流阶段 → MySQL 查询条件。
 var mysqlStageFilters = map[string]mysqlStageFilter{
-	"accept":     {statuses: []string{"draft", "wait", "refuse"}},
-	"clarify":    {statuses: []string{"active"}, noClarify: true},
-	"developing": {statuses: []string{"developing"}, developFinishDue: true},
-	"testing":    {statuses: []string{"testing"}},
+	"accept":         {statuses: []string{"draft", "wait", "refuse"}},
+	"clarify":        {statuses: []string{"active"}, noClarify: true},
+	"schedule":       {statuses: []string{"clarified"}, scheduleIncomplete: true},
+	"developing":     {statuses: []string{"developing"}, developFinishDue: true},
+	"testing":        {statuses: []string{"testing"}},
 	"waitacceptance": {acceptanceStage: true},
 	"released": {
 		statuses: []string{"released"},
@@ -60,6 +62,13 @@ type DemandRow struct {
 	ID   int    `gorm:"column:id"`
 	Name string `gorm:"column:name"`
 	Pri  string `gorm:"column:pri"`
+}
+
+// StoryRow 研发需求列表投影。
+type StoryRow struct {
+	ID    int    `gorm:"column:id"`
+	Title string `gorm:"column:title"`
+	Pri   int    `gorm:"column:pri"`
 }
 
 func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysqlStageFilter) *gorm.DB {
@@ -92,7 +101,32 @@ func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysql
 		// 等价于 (SELECT COUNT(*) FROM zt_demandclarify WHERE demand = 需求id) = 0
 		q = q.Where("NOT EXISTS (SELECT 1 FROM zt_demandclarify dc WHERE dc.demand = zt_demand.id)")
 	}
+	if filter.scheduleIncomplete {
+		// 日期未填：NULL / 0000-00-00（DATE 不可与 '' 比较，会触发 Error 1525）；或 QD、mainDevelopers 为空
+		q = q.Where(`(
+			developFinish IS NULL OR developFinish = '0000-00-00'
+			OR testFinish IS NULL OR testFinish = '0000-00-00'
+			OR verifyFinish IS NULL OR verifyFinish = '0000-00-00'
+			OR estimateLaunch IS NULL OR estimateLaunch = '0000-00-00'
+			OR QD = ''
+			OR mainDevelopers = ''
+		)`)
+	}
 	return q
+}
+
+// scheduleStoryScope 排期阶段独立研发需求：非需求池、指派给当前用户、关键日期未填。
+func (r *Repo) scheduleStoryScope(ctx context.Context, account string) *gorm.DB {
+	return r.db.WithContext(ctx).Table("zt_story").
+		Where("deleted = ?", "0").
+		Where("IFNULL(sourceType, '') != ?", "demandpool").
+		Where("type = ?", "story").
+		Where("assignedTo = ?", account).
+		Where(`(
+			developFinish IS NULL OR developFinish = '0000-00-00'
+			OR testFinish IS NULL OR testFinish = '0000-00-00'
+			OR verifyFinish IS NULL OR verifyFinish = '0000-00-00'
+		)`)
 }
 
 func filterReady(account string, filter mysqlStageFilter) bool {
@@ -123,6 +157,32 @@ func (r *Repo) FindRoleDemands(ctx context.Context, account string, filter mysql
 	var rows []DemandRow
 	err := r.roleDemandScope(ctx, account, filter).
 		Select("id", "name", "pri").
+		Order("id DESC").
+		Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+// CountScheduleStories 统计排期阶段独立研发需求数量。
+func (r *Repo) CountScheduleStories(ctx context.Context, account string) (int64, error) {
+	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
+		return 0, nil
+	}
+	var total int64
+	err := r.scheduleStoryScope(ctx, account).Count(&total).Error
+	return total, err
+}
+
+// FindScheduleStories 查询排期阶段独立研发需求列表。
+func (r *Repo) FindScheduleStories(ctx context.Context, account string) ([]StoryRow, error) {
+	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
+		return nil, nil
+	}
+	var rows []StoryRow
+	err := r.scheduleStoryScope(ctx, account).
+		Select("id", "title", "pri").
 		Order("id DESC").
 		Find(&rows).Error
 	if err != nil {
