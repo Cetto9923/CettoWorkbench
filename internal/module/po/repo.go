@@ -11,15 +11,17 @@ package po
 import (
 	"context"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 )
 
 // mysqlStageFilter 走 MySQL 的价值流阶段过滤条件。
 type mysqlStageFilter struct {
-	statuses []string
-	overall  *string
-	parent   *string
+	statuses         []string
+	overall          *string
+	parent           *string
+	developFinishDue bool // true：今天 >= developFinish（且 developFinish 非空）
 }
 
 var (
@@ -29,8 +31,9 @@ var (
 
 // mysqlStageFilters 价值流阶段 → MySQL 查询条件。
 var mysqlStageFilters = map[string]mysqlStageFilter{
-	"accept":  {statuses: []string{"draft", "wait", "refuse"}},
-	"testing": {statuses: []string{"testing"}},
+	"accept":     {statuses: []string{"draft", "wait", "refuse"}},
+	"developing": {statuses: []string{"developing"}, developFinishDue: true},
+	"testing":    {statuses: []string{"testing"}},
 	"released": {
 		statuses: []string{"released"},
 		overall:  &releasedOverallEmpty,
@@ -65,6 +68,10 @@ func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysql
 	}
 	if filter.parent != nil {
 		q = q.Where("parent != ?", *filter.parent)
+	}
+	if filter.developFinishDue {
+		today := time.Now().Format("2006-01-02")
+		q = q.Where("developFinish IS NOT NULL AND developFinish <= ?", today)
 	}
 	return q
 }
