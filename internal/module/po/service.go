@@ -2,7 +2,7 @@
 // 文件: internal/module/po/service.go
 // 模块: PO 工作台
 // 类型: action
-// 职责: 组装 PO 首页价值流统计与需求列表（受理/澄清/提测/联调测试/评价反馈读 MySQL，其余读 Redis）。
+// 职责: 组装 PO 首页价值流统计与需求列表（受理/澄清/提测/联调测试/验收/评价反馈读 MySQL，其余读 Redis）。
 // 依赖: internal/model
 //       internal/module/schedule
 //       internal/pkg/redis
