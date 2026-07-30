@@ -2,7 +2,7 @@
 // 文件: internal/module/po/repo.go
 // 模块: PO 工作台
 // 类型: action
-// 职责: 价值流阶段业需/研发需求的 MySQL 统计与列表查询。
+// 职责: 价值流阶段业需/研发需求的 MySQL 统计与列表查询（业需范围：澄清 PM 或 QD/RD/BRA，排除 closed）。
 // 依赖: 无
 // =============================================================================
 
@@ -81,9 +81,16 @@ type StoryRow struct {
 }
 
 func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysqlStageFilter) *gorm.DB {
+	// 业需可见范围：澄清表 PM = 当前账号，或 QD/RD/BRA = 当前账号；排除已关闭
 	q := r.db.WithContext(ctx).Table("zt_demand").
 		Where("deleted = ?", "0").
-		Where("(QD = ? OR RD = ? OR BRA = ?)", account, account, account)
+		Where("status NOT IN ?", []string{"closed"}).
+		Where(`(
+			id IN (SELECT demand FROM zt_demandclarify WHERE PM = ?)
+			OR QD = ?
+			OR RD = ?
+			OR BRA = ?
+		)`, account, account, account, account)
 
 	if filter.acceptanceStage {
 		today := time.Now().Format("2006-01-02")

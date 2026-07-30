@@ -2,7 +2,7 @@
 // 文件: internal/module/po/service.go
 // 模块: PO 工作台
 // 类型: action
-// 职责: 组装 PO 首页价值流统计与需求列表（受理/澄清/排期/提测/联调测试/验收/交付/评价反馈读 MySQL，其余读 Redis）。
+// 职责: 组装 PO 首页价值流统计与需求列表（各阶段读 MySQL，「全部」为其余阶段总和）。
 // 依赖: internal/model
 //       internal/module/schedule
 //       internal/pkg/redis
@@ -67,22 +67,22 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 		account = actor.Account
 	}
 
-	counts, err := s.loadAllStageCounts(ctx, account)
-	if err != nil {
-		return nil, err
-	}
-
 	stages := make([]ValueStreamStage, 0, len(valueStreamStages))
-	for i, def := range valueStreamStages {
-		demand := counts[i*2]
-		story := counts[i*2+1]
+	allIdx := -1
+	for _, def := range valueStreamStages {
+		if def.status == "all" {
+			allIdx = len(stages)
+			stages = append(stages, ValueStreamStage{Label: def.label, Status: def.status})
+			continue
+		}
+
+		var demand, story int64
 		if filter, ok := mysqlStageFilters[def.status]; ok {
 			n, countErr := s.repo.CountRoleDemands(ctx, account, filter)
 			if countErr != nil {
 				return nil, countErr
 			}
 			demand = n
-			story = 0
 			if filter.scheduleIncomplete {
 				sn, storyErr := s.repo.CountScheduleStories(ctx, account)
 				if storyErr != nil {
@@ -105,6 +105,25 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 			DemandCount: demand,
 			StoryCount:  story,
 		})
+	}
+
+	// 「全部」= 其余各阶段去重后的 demand/story 数量
+	if allIdx >= 0 {
+		allResp, allErr := s.listAllStageDemands(ctx, actor)
+		if allErr != nil {
+			return nil, allErr
+		}
+		var demandSum, storySum int64
+		for _, item := range allResp.Items {
+			if item.Kind == "story" {
+				storySum++
+			} else {
+				demandSum++
+			}
+		}
+		stages[allIdx].DemandCount = demandSum
+		stages[allIdx].StoryCount = storySum
+		stages[allIdx].Count = demandSum + storySum
 	}
 
 	versionWindows := []schedule.HomeVersionWindowCard{}
@@ -154,6 +173,9 @@ func (s *Service) loadAllStageCounts(ctx context.Context, account string) ([]int
 
 // Demands 按价值流状态返回当前用户关联的需求/故事详情。
 func (s *Service) Demands(ctx context.Context, actor *model.User, req DemandsReq) (*DemandsResp, error) {
+	if req.Status == "all" {
+		return s.listAllStageDemands(ctx, actor)
+	}
 	if filter, ok := mysqlStageFilters[req.Status]; ok {
 		return s.listMySQLDemands(ctx, actor, req.Status, filter)
 	}
@@ -173,6 +195,34 @@ func (s *Service) Demands(ctx context.Context, actor *model.User, req DemandsReq
 	}
 	if items == nil {
 		items = []WorkItemDetail{}
+	}
+	return &DemandsResp{Items: items}, nil
+}
+
+// listAllStageDemands 「全部」列表 = 其余各阶段列表按阶段顺序拼接，按 kind+id 去重（保留首次出现）。
+func (s *Service) listAllStageDemands(ctx context.Context, actor *model.User) (*DemandsResp, error) {
+	items := make([]WorkItemDetail, 0)
+	seen := make(map[string]struct{})
+	for _, def := range valueStreamStages {
+		if def.status == "all" {
+			continue
+		}
+		filter, ok := mysqlStageFilters[def.status]
+		if !ok {
+			continue
+		}
+		resp, err := s.listMySQLDemands(ctx, actor, def.status, filter)
+		if err != nil {
+			return nil, err
+		}
+		for _, item := range resp.Items {
+			key := workItemStageKey(item.Kind, item.ID)
+			if _, ok := seen[key]; ok {
+				continue
+			}
+			seen[key] = struct{}{}
+			items = append(items, item)
+		}
 	}
 	return &DemandsResp{Items: items}, nil
 }
