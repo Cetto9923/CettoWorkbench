@@ -2,7 +2,7 @@
 // 文件: internal/module/po/service.go
 // 模块: PO 工作台
 // 类型: action
-// 职责: 组装 PO 首页价值流统计与需求列表（受理/澄清/排期/提测/联调测试/验收/评价反馈读 MySQL，其余读 Redis）。
+// 职责: 组装 PO 首页价值流统计与需求列表（受理/澄清/排期/提测/联调测试/验收/交付/评价反馈读 MySQL，其余读 Redis）。
 // 依赖: internal/model
 //       internal/module/schedule
 //       internal/pkg/redis
@@ -90,6 +90,13 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 				}
 				story = sn
 			}
+			if filter.deliverStories {
+				sn, storyErr := s.repo.CountDeliverStories(ctx, account)
+				if storyErr != nil {
+					return nil, storyErr
+				}
+				story = sn
+			}
 		}
 		stages = append(stages, ValueStreamStage{
 			Label:       def.label,
@@ -170,7 +177,7 @@ func (s *Service) Demands(ctx context.Context, actor *model.User, req DemandsReq
 	return &DemandsResp{Items: items}, nil
 }
 
-// listMySQLDemands 从 MySQL 加载指定价值流阶段的业需列表（排期阶段额外合并独立研发需求）。
+// listMySQLDemands 从 MySQL 加载指定价值流阶段的业需列表（排期/交付阶段额外合并独立研发需求）。
 func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stageStatus string, filter mysqlStageFilter) (*DemandsResp, error) {
 	account := ""
 	if actor != nil {
@@ -201,18 +208,31 @@ func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stage
 		if storyErr != nil {
 			return nil, storyErr
 		}
-		for _, row := range stories {
-			items = append(items, WorkItemDetail{
-				Kind:        "story",
-				ID:          fmt.Sprintf("%d", row.ID),
-				Pri:         fmt.Sprintf("P%d", row.Pri),
-				Title:       row.Title,
-				ZentaoUrl:   zentao.URL("story", "view", fmt.Sprintf("storyID=%d", row.ID)),
-				ValueStream: label,
-			})
+		items = append(items, storyWorkItems(stories, label)...)
+	}
+	if filter.deliverStories {
+		stories, storyErr := s.repo.FindDeliverStories(ctx, account)
+		if storyErr != nil {
+			return nil, storyErr
 		}
+		items = append(items, storyWorkItems(stories, label)...)
 	}
 	return &DemandsResp{Items: items}, nil
+}
+
+func storyWorkItems(rows []StoryRow, label string) []WorkItemDetail {
+	items := make([]WorkItemDetail, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, WorkItemDetail{
+			Kind:        "story",
+			ID:          fmt.Sprintf("%d", row.ID),
+			Pri:         fmt.Sprintf("P%d", row.Pri),
+			Title:       row.Title,
+			ZentaoUrl:   zentao.URL("story", "view", fmt.Sprintf("storyID=%d", row.ID)),
+			ValueStream: label,
+		})
+	}
+	return items
 }
 
 func isValidValueStreamStatus(status string) bool {

@@ -22,9 +22,12 @@ type mysqlStageFilter struct {
 	overall            *string
 	parent             *string
 	developFinishDue   bool // true：今天 >= developFinish（且 developFinish 非空）
+	deliverDateDue     bool // true：今天 >= deliverDate（且 deliverDate 非空）
+	braRequired        bool // true：BRA 必须等于当前账号
 	noClarify          bool // true：无 zt_demandclarify 记录
 	acceptanceStage    bool // true：验收阶段复合条件
 	scheduleIncomplete bool // true：排期未完成（关键日期/QD/主研未填）
+	deliverStories     bool // true：合并交付阶段独立研发需求
 }
 
 var (
@@ -40,6 +43,12 @@ var mysqlStageFilters = map[string]mysqlStageFilter{
 	"developing":     {statuses: []string{"developing"}, developFinishDue: true},
 	"testing":        {statuses: []string{"testing"}},
 	"waitacceptance": {acceptanceStage: true},
+	"acceptanced": {
+		statuses:       []string{"acceptanced"},
+		braRequired:    true,
+		deliverDateDue: true,
+		deliverStories: true,
+	},
 	"released": {
 		statuses: []string{"released"},
 		overall:  &releasedOverallEmpty,
@@ -97,6 +106,13 @@ func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysql
 		today := time.Now().Format("2006-01-02")
 		q = q.Where("developFinish IS NOT NULL AND developFinish <= ?", today)
 	}
+	if filter.deliverDateDue {
+		today := time.Now().Format("2006-01-02")
+		q = q.Where("deliverDate IS NOT NULL AND deliverDate != '0000-00-00' AND deliverDate <= ?", today)
+	}
+	if filter.braRequired {
+		q = q.Where("BRA = ?", account)
+	}
 	if filter.noClarify {
 		// 等价于 (SELECT COUNT(*) FROM zt_demandclarify WHERE demand = 需求id) = 0
 		q = q.Where("NOT EXISTS (SELECT 1 FROM zt_demandclarify dc WHERE dc.demand = zt_demand.id)")
@@ -127,6 +143,17 @@ func (r *Repo) scheduleStoryScope(ctx context.Context, account string) *gorm.DB 
 			OR testFinish IS NULL OR testFinish = '0000-00-00'
 			OR verifyFinish IS NULL OR verifyFinish = '0000-00-00'
 		)`)
+}
+
+// deliverStoryScope 交付阶段独立研发需求：非需求池、指派给当前用户、今天 >= deliverDate。
+func (r *Repo) deliverStoryScope(ctx context.Context, account string) *gorm.DB {
+	today := time.Now().Format("2006-01-02")
+	return r.db.WithContext(ctx).Table("zt_story").
+		Where("deleted = ?", "0").
+		Where("IFNULL(sourceType, '') != ?", "demandpool").
+		Where("type = ?", "story").
+		Where("assignedTo = ?", account).
+		Where("deliverDate IS NOT NULL AND deliverDate != '0000-00-00' AND deliverDate <= ?", today)
 }
 
 func filterReady(account string, filter mysqlStageFilter) bool {
@@ -182,6 +209,32 @@ func (r *Repo) FindScheduleStories(ctx context.Context, account string) ([]Story
 	}
 	var rows []StoryRow
 	err := r.scheduleStoryScope(ctx, account).
+		Select("id", "title", "pri").
+		Order("id DESC").
+		Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+// CountDeliverStories 统计交付阶段独立研发需求数量。
+func (r *Repo) CountDeliverStories(ctx context.Context, account string) (int64, error) {
+	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
+		return 0, nil
+	}
+	var total int64
+	err := r.deliverStoryScope(ctx, account).Count(&total).Error
+	return total, err
+}
+
+// FindDeliverStories 查询交付阶段独立研发需求列表。
+func (r *Repo) FindDeliverStories(ctx context.Context, account string) ([]StoryRow, error) {
+	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
+		return nil, nil
+	}
+	var rows []StoryRow
+	err := r.deliverStoryScope(ctx, account).
 		Select("id", "title", "pri").
 		Order("id DESC").
 		Find(&rows).Error
