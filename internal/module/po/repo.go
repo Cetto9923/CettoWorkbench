@@ -2,7 +2,7 @@
 // 文件: internal/module/po/repo.go
 // 模块: PO 工作台
 // 类型: action
-// 职责: 价值流阶段业需的 MySQL 统计与列表查询（按 QD/RD/BRA + status）。
+// 职责: 价值流阶段业需的 MySQL 统计与列表查询（按 QD/RD/BRA + 阶段条件）。
 // 依赖: 无
 // =============================================================================
 
@@ -15,10 +15,27 @@ import (
 	"gorm.io/gorm"
 )
 
-// mysqlStageDemandStatuses 走 MySQL 的价值流阶段 → zt_demand.status 列表。
-var mysqlStageDemandStatuses = map[string][]string{
-	"accept":  {"draft", "wait", "refuse"},
-	"testing": {"testing"},
+// mysqlStageFilter 走 MySQL 的价值流阶段过滤条件。
+type mysqlStageFilter struct {
+	statuses []string
+	overall  *string
+	parent   *string
+}
+
+var (
+	releasedOverallEmpty = "0"
+	releasedParent       = "-1"
+)
+
+// mysqlStageFilters 价值流阶段 → MySQL 查询条件。
+var mysqlStageFilters = map[string]mysqlStageFilter{
+	"accept":  {statuses: []string{"draft", "wait", "refuse"}},
+	"testing": {statuses: []string{"testing"}},
+	"released": {
+		statuses: []string{"released"},
+		overall:  &releasedOverallEmpty,
+		parent:   &releasedParent,
+	},
 }
 
 // Repo PO 工作台数据访问。
@@ -38,31 +55,38 @@ type DemandRow struct {
 	Pri  string `gorm:"column:pri"`
 }
 
-// CountRoleDemands 统计当前用户作为 QD/RD/BRA 且 status 在指定集合内的业需数量。
-func (r *Repo) CountRoleDemands(ctx context.Context, account string, statuses []string) (int64, error) {
-	if r == nil || r.db == nil || strings.TrimSpace(account) == "" || len(statuses) == 0 {
+func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysqlStageFilter) *gorm.DB {
+	q := r.db.WithContext(ctx).Table("zt_demand").
+		Where("deleted = ?", "0").
+		Where("(QD = ? OR RD = ? OR BRA = ?)", account, account, account).
+		Where("status IN ?", filter.statuses)
+	if filter.overall != nil {
+		q = q.Where("overall = ?", *filter.overall)
+	}
+	if filter.parent != nil {
+		q = q.Where("parent != ?", *filter.parent)
+	}
+	return q
+}
+
+// CountRoleDemands 按阶段过滤条件统计业需数量。
+func (r *Repo) CountRoleDemands(ctx context.Context, account string, filter mysqlStageFilter) (int64, error) {
+	if r == nil || r.db == nil || strings.TrimSpace(account) == "" || len(filter.statuses) == 0 {
 		return 0, nil
 	}
 	var total int64
-	err := r.db.WithContext(ctx).Table("zt_demand").
-		Where("deleted = ?", "0").
-		Where("(QD = ? OR RD = ? OR BRA = ?)", account, account, account).
-		Where("status IN ?", statuses).
-		Count(&total).Error
+	err := r.roleDemandScope(ctx, account, filter).Count(&total).Error
 	return total, err
 }
 
-// FindRoleDemands 查询当前用户作为 QD/RD/BRA 且 status 在指定集合内的业需列表。
-func (r *Repo) FindRoleDemands(ctx context.Context, account string, statuses []string) ([]DemandRow, error) {
-	if r == nil || r.db == nil || strings.TrimSpace(account) == "" || len(statuses) == 0 {
+// FindRoleDemands 按阶段过滤条件查询业需列表。
+func (r *Repo) FindRoleDemands(ctx context.Context, account string, filter mysqlStageFilter) ([]DemandRow, error) {
+	if r == nil || r.db == nil || strings.TrimSpace(account) == "" || len(filter.statuses) == 0 {
 		return nil, nil
 	}
 	var rows []DemandRow
-	err := r.db.WithContext(ctx).Table("zt_demand").
+	err := r.roleDemandScope(ctx, account, filter).
 		Select("id", "name", "pri").
-		Where("deleted = ?", "0").
-		Where("(QD = ? OR RD = ? OR BRA = ?)", account, account, account).
-		Where("status IN ?", statuses).
 		Order("id DESC").
 		Find(&rows).Error
 	if err != nil {
