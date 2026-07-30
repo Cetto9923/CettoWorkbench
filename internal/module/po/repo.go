@@ -22,6 +22,7 @@ type mysqlStageFilter struct {
 	overall          *string
 	parent           *string
 	developFinishDue bool // true：今天 >= developFinish（且 developFinish 非空）
+	noClarify        bool // true：无 zt_demandclarify 记录
 }
 
 var (
@@ -32,6 +33,7 @@ var (
 // mysqlStageFilters 价值流阶段 → MySQL 查询条件。
 var mysqlStageFilters = map[string]mysqlStageFilter{
 	"accept":     {statuses: []string{"draft", "wait", "refuse"}},
+	"clarify":    {statuses: []string{"active"}, noClarify: true},
 	"developing": {statuses: []string{"developing"}, developFinishDue: true},
 	"testing":    {statuses: []string{"testing"}},
 	"released": {
@@ -72,6 +74,10 @@ func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysql
 	if filter.developFinishDue {
 		today := time.Now().Format("2006-01-02")
 		q = q.Where("developFinish IS NOT NULL AND developFinish <= ?", today)
+	}
+	if filter.noClarify {
+		// 等价于 (SELECT COUNT(*) FROM zt_demandclarify WHERE demand = 需求id) = 0
+		q = q.Where("NOT EXISTS (SELECT 1 FROM zt_demandclarify dc WHERE dc.demand = zt_demand.id)")
 	}
 	return q
 }
