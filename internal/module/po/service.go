@@ -2,9 +2,11 @@
 // 文件: internal/module/po/service.go
 // 模块: PO 工作台
 // 类型: action
-// 职责: 从 Redis 读取价值流 zset 统计并组装首页数据。
+// 职责: 组装 PO 首页价值流统计与需求列表（受理阶段读 MySQL，其余读 Redis）。
 // 依赖: internal/model
+//       internal/module/schedule
 //       internal/pkg/redis
+//       internal/pkg/zentao
 // =============================================================================
 
 package po
@@ -47,14 +49,15 @@ type workItemRef struct {
 
 // Service PO 工作台业务逻辑。
 type Service struct {
+	repo     *Repo
 	redis    *redispkg.Clients
 	schedule *schedule.Service
 	logger   *zap.Logger
 }
 
 // NewService 创建 Service。
-func NewService(redisClients *redispkg.Clients, scheduleSvc *schedule.Service, logger *zap.Logger) *Service {
-	return &Service{redis: redisClients, schedule: scheduleSvc, logger: logger}
+func NewService(repo *Repo, redisClients *redispkg.Clients, scheduleSvc *schedule.Service, logger *zap.Logger) *Service {
+	return &Service{repo: repo, redis: redisClients, schedule: scheduleSvc, logger: logger}
 }
 
 // Home 加载首页价值流阶段统计。
@@ -69,10 +72,19 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 		return nil, err
 	}
 
+	acceptDemandCount, err := s.repo.CountAcceptDemands(ctx, account)
+	if err != nil {
+		return nil, err
+	}
+
 	stages := make([]ValueStreamStage, 0, len(valueStreamStages))
 	for i, def := range valueStreamStages {
 		demand := counts[i*2]
 		story := counts[i*2+1]
+		if def.status == "accept" {
+			demand = acceptDemandCount
+			story = 0
+		}
 		stages = append(stages, ValueStreamStage{
 			Label:       def.label,
 			Status:      def.status,
@@ -129,6 +141,10 @@ func (s *Service) loadAllStageCounts(ctx context.Context, account string) ([]int
 
 // Demands 按价值流状态返回当前用户关联的需求/故事详情。
 func (s *Service) Demands(ctx context.Context, actor *model.User, req DemandsReq) (*DemandsResp, error) {
+	if req.Status == "accept" {
+		return s.listAcceptDemands(ctx, actor)
+	}
+
 	account := ""
 	if actor != nil {
 		account = actor.Account
@@ -144,6 +160,34 @@ func (s *Service) Demands(ctx context.Context, actor *model.User, req DemandsReq
 	}
 	if items == nil {
 		items = []WorkItemDetail{}
+	}
+	return &DemandsResp{Items: items}, nil
+}
+
+// listAcceptDemands 从 MySQL 加载受理阶段业需列表。
+func (s *Service) listAcceptDemands(ctx context.Context, actor *model.User) (*DemandsResp, error) {
+	account := ""
+	if actor != nil {
+		account = actor.Account
+	}
+	rows, err := s.repo.FindAcceptDemands(ctx, account)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]WorkItemDetail, 0, len(rows))
+	for _, row := range rows {
+		pri := ""
+		if row.Pri != "" {
+			pri = "P" + row.Pri
+		}
+		items = append(items, WorkItemDetail{
+			Kind:        "demand",
+			ID:          fmt.Sprintf("%d", row.ID),
+			Pri:         pri,
+			Title:       row.Name,
+			ZentaoUrl:   zentao.URL("demand", "view", fmt.Sprintf("demandID=%d", row.ID)),
+			ValueStream: "受理",
+		})
 	}
 	return &DemandsResp{Items: items}, nil
 }
