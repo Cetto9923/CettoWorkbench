@@ -13,13 +13,6 @@ database:
   parseTime: true
   loc: "Local"
 
-redis:
-  host: "127.0.0.1"
-  port: 6379
-  password: ""
-  source_db: 5
-  clean_db: 6
-
 zentao:
   # 禅道地址
   url: "https://changshu.wrk.oop.cc/"

@@ -53,7 +53,7 @@ func (r *DemandsReq) Validate() []FieldError {
 	return nil
 }
 
-// WorkItemDetail 单条需求或故事详情（Redis hash 全字段）。
+// WorkItemDetail 单条需求或故事详情。
 type WorkItemDetail struct {
 	Kind        string `json:"kind"`
 	ID          string `json:"id"`

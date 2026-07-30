@@ -40,7 +40,6 @@ import (
 	"workbench/internal/pkg/flash"
 	"workbench/internal/pkg/logger"
 	"workbench/internal/pkg/ratelimit"
-	redispkg "workbench/internal/pkg/redis"
 	"workbench/internal/pkg/render"
 	"workbench/internal/pkg/session"
 	"workbench/internal/pkg/sqllog"
@@ -72,11 +71,6 @@ func Run() error {
 		return fmt.Errorf("init database: %w", err)
 	}
 	defer func() { _ = database.Close(db) }()
-	redisClients, err := redispkg.New(cfg, zapLog)
-	if err != nil {
-		return fmt.Errorf("init redis: %w", err)
-	}
-	defer func() { _ = redispkg.Close(redisClients) }()
 	if err := db.AutoMigrate(&model.OperationLog{}); err != nil {
 		return fmt.Errorf("ensure zt_operation_logs: %w", err)
 	}
@@ -120,7 +114,7 @@ func Run() error {
 	scheduleSvc := schedule.NewService(scheduleRepo, zapLog)
 	scheduleHandler := schedule.NewHandler(rend, zapLog, scheduleSvc, strings.TrimRight(cfg.Zentao.URL, "/"))
 	poRepo := po.NewRepo(db)
-	poSvc := po.NewService(poRepo, redisClients, scheduleSvc, zapLog)
+	poSvc := po.NewService(poRepo, scheduleSvc, zapLog)
 	poHandler := po.NewHandler(poSvc, zapLog)
 	sqlPerfRepo := debug.NewRepo(cfg.Log.Dir)
 	sqlPerfSvc := debug.NewService(sqlPerfRepo)

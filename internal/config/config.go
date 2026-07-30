@@ -12,7 +12,6 @@ package config
 type Config struct {
 	App      App          `mapstructure:"app"`
 	Database Database     `mapstructure:"database"`
-	Redis    Redis        `mapstructure:"redis"`
 	Zentao   ZentaoConfig `mapstructure:"zentao"`
 	Session  Session      `mapstructure:"session"`
 	Log      Log          `mapstructure:"log"`
@@ -40,15 +39,6 @@ type Database struct {
 	Charset   string `mapstructure:"charset"`
 	Loc       string `mapstructure:"loc"`
 	ParseTime bool   `mapstructure:"parseTime"`
-}
-
-// Redis 缓存连接参数。
-type Redis struct {
-	Host     string `mapstructure:"host"`
-	Port     int    `mapstructure:"port"`
-	Password string `mapstructure:"password"`
-	SourceDB int    `mapstructure:"source_db"`
-	CleanDB  int    `mapstructure:"clean_db"`
 }
 
 // ZentaoConfig 禅道配置。
