@@ -32,6 +32,7 @@ func Load() (*Config, error) {
 	v.SetDefault("upload.maxSizeMB", 10)
 	v.SetDefault("upload.localDir", "uploads")
 	v.SetDefault("upload.allowedTypes", []string{"image/jpeg", "image/png", "application/pdf"})
+	v.SetDefault("databaseReadonly.sessionVariables", "ob_read_consistency=Weak")
 
 	if err := v.ReadInConfig(); err != nil {
 		return nil, err

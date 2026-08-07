@@ -12,6 +12,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strings"
 	"time"
 
 	gormmysql "gorm.io/driver/mysql"
@@ -28,9 +29,14 @@ const (
 	connMaxLifetime = time.Hour
 )
 
-// New 根据配置初始化 GORM MySQL 连接。
+// New 根据主库配置初始化 GORM MySQL 连接。
 func New(cfg *config.Config) (*gorm.DB, error) {
-	dsn := buildDSN(cfg)
+	return Open(cfg.Database)
+}
+
+// Open 按给定 Database 配置打开 GORM 连接（主库 / 只读备库均可）。
+func Open(dbCfg config.Database) (*gorm.DB, error) {
+	dsn := buildDSN(dbCfg)
 	gormCfg := &gorm.Config{
 		Logger: newGormSQLLogger(),
 	}
@@ -49,6 +55,7 @@ func New(cfg *config.Config) (*gorm.DB, error) {
 	sqlDB.SetConnMaxLifetime(connMaxLifetime)
 
 	if err := sqlDB.Ping(); err != nil {
+		_ = sqlDB.Close()
 		return nil, fmt.Errorf("ping mysql: %w", err)
 	}
 	return db, nil
@@ -66,23 +73,75 @@ func Close(db *gorm.DB) error {
 	return sqlDB.Close()
 }
 
-func buildDSN(cfg *config.Config) string {
+func buildDSN(dbCfg config.Database) string {
 	parseTime := "false"
-	if cfg.Database.ParseTime {
+	if dbCfg.ParseTime {
 		parseTime = "true"
 	}
-	loc := url.QueryEscape(cfg.Database.Loc)
-	return fmt.Sprintf(
+	loc := url.QueryEscape(dbCfg.Loc)
+	dsn := fmt.Sprintf(
 		"%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=%s&loc=%s",
-		cfg.Database.User,
-		cfg.Database.Password,
-		cfg.Database.Host,
-		cfg.Database.Port,
-		cfg.Database.DBName,
-		cfg.Database.Charset,
+		dbCfg.User,
+		dbCfg.Password,
+		dbCfg.Host,
+		dbCfg.Port,
+		dbCfg.DBName,
+		dbCfg.Charset,
 		parseTime,
 		loc,
 	)
+	// 配置可写 JDBC 风格 "ob_read_consistency=Weak"；Go mysql 驱动无 sessionVariables 参数，
+	// 需拆成系统变量 DSN：&ob_read_consistency=%27Weak%27 → SET ob_read_consistency = 'Weak'
+	return dsn + appendSessionVarParams(dbCfg.SessionVariables)
+}
+
+// appendSessionVarParams 将 sessionVariables 转为 go-sql-driver 可识别的系统变量查询参数。
+func appendSessionVarParams(sessionVariables string) string {
+	sv := strings.TrimSpace(sessionVariables)
+	if sv == "" {
+		return ""
+	}
+	var b strings.Builder
+	for _, pair := range strings.Split(sv, ",") {
+		pair = strings.TrimSpace(pair)
+		if pair == "" {
+			continue
+		}
+		key, val, ok := strings.Cut(pair, "=")
+		key = strings.TrimSpace(key)
+		val = strings.TrimSpace(val)
+		if !ok || key == "" {
+			continue
+		}
+		// 非数字/布尔的字符串变量需加单引号，否则 OceanBase 会把右侧当成列名
+		if !isBareSQLLiteral(val) {
+			val = "'" + strings.Trim(val, "'") + "'"
+		}
+		b.WriteByte('&')
+		b.WriteString(key)
+		b.WriteByte('=')
+		b.WriteString(url.QueryEscape(val))
+	}
+	return b.String()
+}
+
+func isBareSQLLiteral(val string) bool {
+	if val == "" {
+		return true
+	}
+	if strings.HasPrefix(val, "'") && strings.HasSuffix(val, "'") {
+		return true
+	}
+	switch strings.ToLower(val) {
+	case "0", "1", "true", "false", "on", "off":
+		return true
+	}
+	for _, r := range val {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 type gormSQLLogger struct {

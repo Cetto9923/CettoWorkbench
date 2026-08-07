@@ -2,7 +2,7 @@
 // 文件: internal/module/po/service.go
 // 模块: PO 工作台
 // 类型: action
-// 职责: 组装 PO 首页价值流统计与需求列表（各阶段读 MySQL，「全部」为其余阶段去重总和）。
+// 职责: 组装 PO 首页价值流统计与需求列表（各阶段读只读备库，「全部」为其余阶段去重总和；排期窗口走主库 schedule）。
 // 依赖: internal/model
 //       internal/module/schedule
 //       internal/pkg/zentao

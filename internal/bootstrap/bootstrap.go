@@ -21,6 +21,9 @@ import (
 	"fmt"
 	"strings"
 
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+
 	"workbench/internal/config"
 	"workbench/internal/middleware"
 	"workbench/internal/model"
@@ -74,6 +77,20 @@ func Run() error {
 	if err := db.AutoMigrate(&model.OperationLog{}); err != nil {
 		return fmt.Errorf("ensure zt_operation_logs: %w", err)
 	}
+
+	// 价值流只读备库：失败不阻断启动，PO 价值流降级为空阶段
+	var dbReadonly *gorm.DB
+	if strings.TrimSpace(cfg.DatabaseReadonly.Host) != "" {
+		ro, roErr := database.Open(cfg.DatabaseReadonly)
+		if roErr != nil {
+			zapLog.Warn("init databaseReadonly failed, value stream will degrade", zap.Error(roErr))
+		} else {
+			dbReadonly = ro
+			defer func() { _ = database.Close(dbReadonly) }()
+		}
+	} else {
+		zapLog.Warn("databaseReadonly.host empty, value stream will degrade")
+	}
 	sessionMgr := session.New(cfg)
 	flash.SetDefault(sessionMgr)
 	limiter := ratelimit.New(10, 20)
@@ -113,7 +130,7 @@ func Run() error {
 	scheduleRepo := schedule.NewRepo(db)
 	scheduleSvc := schedule.NewService(scheduleRepo, zapLog)
 	scheduleHandler := schedule.NewHandler(rend, zapLog, scheduleSvc, strings.TrimRight(cfg.Zentao.URL, "/"))
-	poRepo := po.NewRepo(db)
+	poRepo := po.NewRepo(dbReadonly)
 	poSvc := po.NewService(poRepo, scheduleSvc, zapLog)
 	poHandler := po.NewHandler(poSvc, zapLog)
 	sqlPerfRepo := debug.NewRepo(cfg.Log.Dir)

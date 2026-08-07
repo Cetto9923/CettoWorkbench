@@ -10,12 +10,13 @@ package config
 
 // Config 根配置，字段名与 YAML 键一致。
 type Config struct {
-	App      App          `mapstructure:"app"`
-	Database Database     `mapstructure:"database"`
-	Zentao   ZentaoConfig `mapstructure:"zentao"`
-	Session  Session      `mapstructure:"session"`
-	Log      Log          `mapstructure:"log"`
-	Layout   Layout       `mapstructure:"layout"`
+	App              App          `mapstructure:"app"`
+	Database         Database     `mapstructure:"database"`
+	DatabaseReadonly Database     `mapstructure:"databaseReadonly"` // 价值流弱读备库；连不上时降级，不阻断启动
+	Zentao           ZentaoConfig `mapstructure:"zentao"`
+	Session          Session      `mapstructure:"session"`
+	Log              Log          `mapstructure:"log"`
+	Layout           Layout       `mapstructure:"layout"`
 
 	// 内置配置
 	RateLimit RateLimit `mapstructure:"ratelimit"`
@@ -31,14 +32,15 @@ type App struct {
 
 // Database 数据库连接参数。
 type Database struct {
-	Host      string `mapstructure:"host"`
-	Port      int    `mapstructure:"port"`
-	User      string `mapstructure:"user"`
-	Password  string `mapstructure:"password"`
-	DBName    string `mapstructure:"dbname"`
-	Charset   string `mapstructure:"charset"`
-	Loc       string `mapstructure:"loc"`
-	ParseTime bool   `mapstructure:"parseTime"`
+	Host             string `mapstructure:"host"`
+	Port             int    `mapstructure:"port"`
+	User             string `mapstructure:"user"`
+	Password         string `mapstructure:"password"`
+	DBName           string `mapstructure:"dbname"`
+	Charset          string `mapstructure:"charset"`
+	Loc              string `mapstructure:"loc"`
+	ParseTime        bool   `mapstructure:"parseTime"`
+	SessionVariables string `mapstructure:"sessionVariables"` // JDBC 风格 k=v，如 ob_read_consistency=Weak；DSN 内转为 Go 驱动系统变量
 }
 
 // ZentaoConfig 禅道配置。

@@ -5,13 +5,25 @@ app:
 
 database:
   host: "127.0.0.1"
-  port: 3306
+  port: 2881
   user: "root"
   password: "zentao"
   dbname: "workbench"
   charset: "utf8mb4"
   parseTime: true
   loc: "Local"
+
+# 弱读备库
+databaseReadonly:
+  host: "127.0.0.1"
+  port: 2881
+  user: "root"
+  password: "zentao"
+  dbname: "workbench"
+  charset: "utf8mb4"
+  parseTime: true
+  loc: "Local"
+  sessionVariables: "ob_read_consistency=Weak"
 
 zentao:
   # 禅道地址
