@@ -52,7 +52,7 @@ CREATE TABLE `zt_roles` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_zt_roles_code_deleted` (`code`,`deleted`),
   UNIQUE KEY `uk_zt_roles_name_deleted` (`name`,`deleted`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `zt_gf_user_roles` (
   `id` bigint NOT NULL AUTO_INCREMENT,
@@ -68,7 +68,7 @@ CREATE TABLE `zt_gf_user_roles` (
   UNIQUE KEY `uk_zt_userroles_user_role_deleted` (`tenantId`,`userId`,`roleId`,`deleted`),
   KEY `idx_zt_userroles_user` (`tenantId`,`userId`),
   KEY `idx_zt_userroles_role` (`tenantId`,`roleId`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `zt_menus` (
   `id`        BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
