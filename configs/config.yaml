@@ -32,6 +32,8 @@ databaseReadonly:
 zentao:
   # 禅道地址
   url: "https://changshu.wrk.oop.cc/"
+  # 对齐禅道 config->requestType
+  requestType: PATH_INFO
   # 禅道 API 地址
   api: "https://customer.chandao.net/api.php/v1"
   account: "encrypt"

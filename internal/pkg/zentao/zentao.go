@@ -2,7 +2,7 @@
 // 文件: internal/pkg/zentao/zentao.go
 // 模块: 基础设施
 // 类型: infra
-// 职责: 根据禅道站点地址与 m、f 等参数拼接页面链接。
+// 职责: 根据禅道站点地址、requestType 与 m、f 等参数拼接页面链接。
 // 依赖: internal/config
 // =============================================================================
 
@@ -40,13 +40,47 @@ func URLWithBase(base, m, f string, params ...string) string {
 		return ""
 	}
 
-	query := fmt.Sprintf("m=%s&f=%s", url.QueryEscape(m), url.QueryEscape(f))
+	if isPathInfo(zentaoCfg.RequestType) {
+		return pathInfoURL(base, m, f, params...)
+	}
+	return getURL(base, m, f, params...)
+}
 
+func isPathInfo(requestType string) bool {
+	return strings.EqualFold(strings.TrimSpace(requestType), "PATH_INFO")
+}
+
+func getURL(base, m, f string, params ...string) string {
+	query := fmt.Sprintf("m=%s&f=%s", url.QueryEscape(m), url.QueryEscape(f))
 	if len(params) > 0 && params[0] != "" {
 		query += "&" + params[0]
 	}
-
 	return base + indexPath + "?" + query
+}
+
+func pathInfoURL(base, m, f string, params ...string) string {
+	parts := []string{m, f}
+	if len(params) > 0 && params[0] != "" {
+		parts = append(parts, pathInfoValues(params[0])...)
+	}
+	return base + "/" + strings.Join(parts, "-") + ".html"
+}
+
+// pathInfoValues 从 GET 风格参数中取出值序列，对齐禅道 createLink 的 PATH_INFO 拼法。
+func pathInfoValues(raw string) []string {
+	var values []string
+	for _, pair := range strings.Split(raw, "&") {
+		if pair == "" {
+			continue
+		}
+		_, val, found := strings.Cut(pair, "=")
+		if found {
+			values = append(values, val)
+			continue
+		}
+		values = append(values, pair)
+	}
+	return values
 }
 
 // DemandViewURL 业需详情页链接。

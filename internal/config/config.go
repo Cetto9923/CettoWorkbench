@@ -45,10 +45,11 @@ type Database struct {
 
 // ZentaoConfig 禅道配置。
 type ZentaoConfig struct {
-	URL      string `mapstructure:"url"`
-	API      string `mapstructure:"api"`
-	Account  string `mapstructure:"account"`
-	Password string `mapstructure:"password"`
+	URL         string `mapstructure:"url"`
+	API         string `mapstructure:"api"`
+	Account     string `mapstructure:"account"`
+	Password    string `mapstructure:"password"`
+	RequestType string `mapstructure:"requestType"` // GET | PATH_INFO，对齐禅道 config->requestType
 }
 
 // Session 会话相关。
