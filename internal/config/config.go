@@ -55,6 +55,7 @@ type ZentaoConfig struct {
 type Session struct {
 	CookieName    string `mapstructure:"cookieName"`
 	LifetimeHours int    `mapstructure:"lifetimeHours"`
+	CookieSecure  bool   `mapstructure:"cookieSecure"` // 仅在 HTTPS 时设为 true；HTTP 下开启会导致登录后 303 回登录页
 }
 
 // Log 日志。

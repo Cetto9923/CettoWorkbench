@@ -167,11 +167,15 @@ func (s *Server) Run() error {
 	s.engine.Use(middleware.RequestLogger(s.logger))
 	s.engine.Use(middleware.SecureHeaders())
 	s.engine.Use(middleware.MethodOverride())
-	if s.sessionMgr != nil {
-		s.engine.Use(wrapStdMiddleware(s.sessionMgr.LoadAndSave))
-	}
 
 	registerRoutes(s.engine, s.routeDeps)
+
+	var handler http.Handler = s.engine
+	if s.sessionMgr != nil {
+		// 必须包在 gin.Engine 外层：SCS 才能拦截 gin 的 WriteHeader，登录 303 才会带上 Set-Cookie。
+		handler = s.sessionMgr.LoadAndSave(s.engine)
+	}
+	s.httpServer.Handler = handler
 
 	errCh := make(chan error, 1)
 	go func() {
@@ -192,21 +196,4 @@ func (s *Server) Run() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	return s.httpServer.Shutdown(ctx)
-}
-
-func wrapStdMiddleware(m func(http.Handler) http.Handler) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		nextCalled := false
-		var next http.HandlerFunc = func(w http.ResponseWriter, r *http.Request) {
-			nextCalled = true
-			c.Request = r
-			c.Next()
-		}
-		m(next).ServeHTTP(c.Writer, c.Request)
-		if !nextCalled {
-			// 标准库中间件已直接完成响应（如 CSRF 校验失败），
-			// 需要显式中止 Gin 后续处理器，避免重复写 Header。
-			c.Abort()
-		}
-	}
 }

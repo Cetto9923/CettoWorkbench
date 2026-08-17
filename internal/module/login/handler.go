@@ -71,6 +71,13 @@ func (h *Handler) RegisterRoutes(
 }
 
 func (h *Handler) renderLoginPage(c *gin.Context, status int, redirectTo, account string, errors []FieldError) {
+	if wantsJSON(c) {
+		c.JSON(status, gin.H{
+			"success": false,
+			"errors":  jsonFieldErrors(errors),
+		})
+		return
+	}
 	// html/template 中 {{ if .Errors }} 对 nil 和空切片行为不同（nil 为 false，空切片为 true）。
 	// 统一转为空切片，保证模板逻辑一致，避免“无错误时表单错误区域意外显示”的渲染 Bug。
 	if errors == nil {
@@ -146,11 +153,19 @@ func (h *Handler) DoLogin(c *gin.Context) {
 
 	flash.Success(c, "登录成功")
 
+	redirectTo := "/home"
 	if isSafeInternalPath(req.Redirect) {
-		render.Redirect(c, req.Redirect)
+		redirectTo = req.Redirect
+	}
+	if wantsJSON(c) {
+		c.JSON(http.StatusOK, gin.H{
+			"success":     true,
+			"message":     "登录成功",
+			"redirectUrl": redirectTo,
+		})
 		return
 	}
-	render.Redirect(c, "/home")
+	render.Redirect(c, redirectTo)
 }
 
 // DoLogout 执行登出。
@@ -174,4 +189,17 @@ func isSafeInternalPath(path string) bool {
 	// 禁止 "//" 开头：防止 "//evil.com" 协议相对 URL 被浏览器解析为外部跳转（开放重定向漏洞）。
 	// 局限性：不防御路径穿越（如 "/../etc/passwd"）；如需更严格校验，可结合 path.Clean 或白名单。
 	return strings.HasPrefix(path, "/") && !strings.Contains(path, "//")
+}
+
+func wantsJSON(c *gin.Context) bool {
+	accept := strings.ToLower(c.GetHeader("Accept"))
+	requestedWith := strings.ToLower(c.GetHeader("X-Requested-With"))
+	return strings.Contains(accept, "application/json") || requestedWith == "xmlhttprequest"
+}
+
+func jsonFieldErrors(errors []FieldError) []FieldError {
+	if errors == nil {
+		return []FieldError{}
+	}
+	return errors
 }

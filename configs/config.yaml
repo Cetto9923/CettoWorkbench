@@ -1,29 +1,33 @@
 app:
   name: 个人工作台
-  env: dev
+  env: prod
   addr: ":8080"
 
 database:
+  # host: "wds.oop.cc"
+  # port: "2881"
   host: "127.0.0.1"
-  port: 2881
+  port: "3306"
   user: "root"
   password: "zentao"
-  dbname: "workbench"
+  dbname: "zentao_changshu"
   charset: "utf8mb4"
   parseTime: true
   loc: "Local"
 
 # 弱读备库
 databaseReadonly:
+  # host: "wds.oop.cc"
+  # port: 2881
   host: "127.0.0.1"
-  port: 2881
+  port: "3306"
   user: "root"
   password: "zentao"
-  dbname: "workbench"
+  dbname: "zentao_changshu"
   charset: "utf8mb4"
   parseTime: true
   loc: "Local"
-  sessionVariables: "ob_read_consistency=Weak"
+  sessionVariables: ""
 
 zentao:
   # 禅道地址
@@ -34,8 +38,10 @@ zentao:
   password: "Asd123456"
 
 session:
-  cookieName: workbench_session
+  cookieName: workbench_sid
   lifetimeHours: 2
+  # 是否开启https
+  cookieSecure: true
 
 log:
   level: debug

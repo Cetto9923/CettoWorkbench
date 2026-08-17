@@ -12,8 +12,8 @@ import "strings"
 
 // FieldError 表示表单字段错误；表单级错误使用 "_form"。
 type FieldError struct {
-	Field   string
-	Message string
+	Field   string `json:"field"`
+	Message string `json:"message"`
 }
 
 // LoginForm 登录页数据回填。

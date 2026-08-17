@@ -29,7 +29,7 @@ func New(cfg *config.Config) *scs.SessionManager {
 	mgr.Cookie.Name = cfg.Session.CookieName
 	mgr.Cookie.HttpOnly = true
 	mgr.Cookie.SameSite = http.SameSiteLaxMode
-	mgr.Cookie.Secure = cfg.App.Env == "prod"
+	mgr.Cookie.Secure = cfg.Session.CookieSecure
 	mgr.Cookie.Path = "/"
 	return mgr
 }
@@ -41,8 +41,6 @@ func PutUserID(ctx context.Context, mgr *scs.SessionManager, userID int64) {
 
 // GetUserID 从会话读取登录用户 ID。
 func GetUserID(ctx context.Context, mgr *scs.SessionManager) int64 {
-	// return 1
-
 	val := mgr.Get(ctx, userIDKey)
 
 	switch v := val.(type) {
