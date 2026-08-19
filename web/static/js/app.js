@@ -64,6 +64,9 @@
       if (!form || form.tagName !== "FORM") {
         return;
       }
+      if (event.defaultPrevented) {
+        return;
+      }
       setSubmittingState(form);
     });
   }
