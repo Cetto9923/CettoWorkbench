@@ -212,3 +212,9 @@ func (s *Service) Export(ctx context.Context, actor *model.User, req ExportReq) 
 	_ = req
 	return s.repo.FindAllForExport(ctx)
 }
+
+// AccountDisplayMap 返回全部用户 account →「姓名(工号)」映射，供其它模块解析责任人展示名。
+func (s *Service) AccountDisplayMap(ctx context.Context, actor *model.User) (map[string]string, error) {
+	_ = actor
+	return s.repo.FindAccountDisplayMap(ctx)
+}

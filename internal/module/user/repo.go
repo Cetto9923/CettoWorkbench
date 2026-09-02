@@ -98,6 +98,47 @@ func (r *Repo) FindAllForExport(ctx context.Context) ([]model.User, error) {
 	return users, nil
 }
 
+// FindAccountDisplayMap 查询全部未删除用户的 account →「姓名(工号)」映射（约 5k 行，仅两列）。
+func (r *Repo) FindAccountDisplayMap(ctx context.Context) (map[string]string, error) {
+	var rows []struct {
+		Account  string `gorm:"column:account"`
+		Realname string `gorm:"column:realname"`
+	}
+	if err := r.db.WithContext(ctx).
+		Table("zt_user").
+		Select("account", "realname").
+		Where("deleted = ?", "0").
+		Find(&rows).Error; err != nil {
+		return nil, fmt.Errorf("find account display map: %w", err)
+	}
+	out := make(map[string]string, len(rows))
+	for _, row := range rows {
+		acc := strings.TrimSpace(row.Account)
+		if acc == "" {
+			continue
+		}
+		out[acc] = formatAccountDisplay(acc, row.Realname)
+	}
+	return out, nil
+}
+
+// formatAccountDisplay 账号 + realname →「姓名(工号)」；无 realname 时回退裸账号。
+func formatAccountDisplay(account, realname string) string {
+	v := strings.TrimSpace(account)
+	if v == "" {
+		return ""
+	}
+	n := strings.TrimSpace(realname)
+	if n == "" {
+		return v
+	}
+	suffix := "(" + v + ")"
+	if n == v || strings.HasSuffix(n, suffix) || strings.Contains(n, suffix) {
+		return n
+	}
+	return n + suffix
+}
+
 // FindByID 按 ID 查询用户详情。
 func (r *Repo) FindByID(ctx context.Context, id int64) (*model.User, error) {
 	var user model.User

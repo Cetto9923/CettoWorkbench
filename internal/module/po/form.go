@@ -62,7 +62,8 @@ type WorkItemDetail struct {
 	Stage        string `json:"stage"`
 	Blocker      string `json:"blocker"`
 	Next         string `json:"next"`
-	Owner        string `json:"owner"`
+	Owner        string `json:"owner"`     // 与 NextOwner 同值，兼容旧字段
+	NextOwner    string `json:"nextOwner"` // 下一责任人展示名（DeriveCurrentHandler）
 	ZentaoUrl    string `json:"zentaoUrl"`
 	ValueStream  string `json:"valueStream"`
 	ZentaoStatus string `json:"zentaoStatus"` // 禅道 status 原文，前端按业需/研需分别映射中文

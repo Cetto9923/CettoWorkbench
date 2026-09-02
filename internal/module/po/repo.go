@@ -2,7 +2,7 @@
 // 文件: internal/module/po/repo.go
 // 模块: PO 工作台
 // 类型: action
-// 职责: 价值流阶段业需/研发需求的只读库统计与列表查询（业需范围：澄清 PM 或 QD/RD/BRA，排除 closed）。
+// 职责: 价值流阶段业需/研发需求的只读库统计与列表查询（业需范围：澄清 PM 或 QD/RD/BRA，排除 closed；「全部」计数仅 Pluck id）。
 // 依赖: 无
 // =============================================================================
 
@@ -68,12 +68,17 @@ func NewRepo(db *gorm.DB) *Repo {
 	return &Repo{db: db}
 }
 
-// DemandRow 业需列表投影。
+// DemandRow 业需列表投影（账号字段；展示名由 Service 用用户 map 解析，避免 JOIN zt_user）。
 type DemandRow struct {
-	ID     int    `gorm:"column:id"`
-	Name   string `gorm:"column:name"`
-	Pri    string `gorm:"column:pri"`
-	Status string `gorm:"column:status"`
+	ID         int    `gorm:"column:id"`
+	Name       string `gorm:"column:name"`
+	Pri        string `gorm:"column:pri"`
+	Status     string `gorm:"column:status"`
+	AssignedTo string `gorm:"column:assignedTo"`
+	QD         string `gorm:"column:QD"`
+	RD         string `gorm:"column:RD"`
+	BRA        string `gorm:"column:BRA"`
+	PM         string `gorm:"column:pm"` // zt_demandclarify.PM，多账号逗号分隔
 }
 
 // StoryRow 研发需求列表投影。
@@ -203,15 +208,38 @@ func (r *Repo) CountRoleDemands(ctx context.Context, account string, filter mysq
 	return total, err
 }
 
-// FindRoleDemands 按阶段过滤条件查询业需列表。
+// FindRoleDemandIDs 按阶段过滤条件只查业需 ID（供「全部」去重计数，避免拉全字段）。
+func (r *Repo) FindRoleDemandIDs(ctx context.Context, account string, filter mysqlStageFilter) ([]int, error) {
+	if r == nil || r.db == nil || !filterReady(account, filter) {
+		return nil, nil
+	}
+	var ids []int
+	err := r.roleDemandScope(ctx, account, filter).
+		Order("zt_demand.id DESC").
+		Pluck("zt_demand.id", &ids).Error
+	if err != nil {
+		return nil, err
+	}
+	return ids, nil
+}
+
+// FindRoleDemands 按阶段过滤条件查询业需列表（只取账号字段，不 JOIN zt_user）。
 func (r *Repo) FindRoleDemands(ctx context.Context, account string, filter mysqlStageFilter) ([]DemandRow, error) {
 	if r == nil || r.db == nil || !filterReady(account, filter) {
 		return nil, nil
 	}
 	var rows []DemandRow
 	err := r.roleDemandScope(ctx, account, filter).
-		Select("id", "name", "pri", "status").
-		Order("id DESC").
+		Select(`zt_demand.id, zt_demand.name, zt_demand.pri, zt_demand.status,
+			zt_demand.assignedTo, zt_demand.QD, zt_demand.RD, zt_demand.BRA,
+			clarify_pm.PM AS pm`).
+		Joins(`LEFT JOIN (
+			SELECT demand, GROUP_CONCAT(PM) AS PM
+			FROM zt_demandclarify
+			WHERE PM IS NOT NULL AND PM <> ''
+			GROUP BY demand
+		) AS clarify_pm ON clarify_pm.demand = zt_demand.id`).
+		Order("zt_demand.id DESC").
 		Find(&rows).Error
 	if err != nil {
 		return nil, err
@@ -227,6 +255,21 @@ func (r *Repo) CountScheduleStories(ctx context.Context, account string) (int64,
 	var total int64
 	err := r.scheduleStoryScope(ctx, account).Count(&total).Error
 	return total, err
+}
+
+// FindScheduleStoryIDs 查询排期阶段独立研发需求 ID。
+func (r *Repo) FindScheduleStoryIDs(ctx context.Context, account string) ([]int, error) {
+	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
+		return nil, nil
+	}
+	var ids []int
+	err := r.scheduleStoryScope(ctx, account).
+		Order("id DESC").
+		Pluck("id", &ids).Error
+	if err != nil {
+		return nil, err
+	}
+	return ids, nil
 }
 
 // FindScheduleStories 查询排期阶段独立研发需求列表。
@@ -253,6 +296,21 @@ func (r *Repo) CountDeliverStories(ctx context.Context, account string) (int64, 
 	var total int64
 	err := r.deliverStoryScope(ctx, account).Count(&total).Error
 	return total, err
+}
+
+// FindDeliverStoryIDs 查询交付阶段独立研发需求 ID。
+func (r *Repo) FindDeliverStoryIDs(ctx context.Context, account string) ([]int, error) {
+	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
+		return nil, nil
+	}
+	var ids []int
+	err := r.deliverStoryScope(ctx, account).
+		Order("id DESC").
+		Pluck("id", &ids).Error
+	if err != nil {
+		return nil, err
+	}
+	return ids, nil
 }
 
 // FindDeliverStories 查询交付阶段独立研发需求列表。
