@@ -32,7 +32,8 @@ var valueStreamStages = []struct {
 	{label: "提测", status: "developing"},
 	{label: "联调测试", status: "testing"},
 	{label: "验收", status: "waitacceptance"},
-	{label: "交付", status: "acceptanced"},
+	{label: "发起交付", status: "acceptanced"},
+	{label: "发布", status: "publish"},
 	{label: "评价反馈", status: "released"},
 }
 
