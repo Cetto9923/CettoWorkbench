@@ -1,0 +1,66 @@
+/* ==========================================================================
+   文件: web/static/css/po/home-top5.css
+   模块: PO工作台
+   职责: 首页"当前应推进事项（Top 5）"表格区域
+   命名约定: dw-* (Data Workbench shell)
+========================================================================== */
+
+.po-home .po-section-title,
+.po-home .dw-section-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--po-t1);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0.2px;
+}
+
+.po-home .po-section-title i,
+.po-home .dw-section-title i {
+  color: var(--po-orange);
+  font-size: 13px;
+}
+
+.po-home .po-top5-more {
+  text-align: center;
+  padding: 10px 12px 12px;
+  border-top: 1px solid var(--po-border);
+  background: var(--po-white);
+}
+
+.po-home .po-top5-more-link {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--po-blue);
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1.4;
+}
+
+.po-home .po-top5-more-link:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.po-home .po-top5 .table.data-table tbody tr.is-row-hidden {
+  display: none;
+}
+
+.po-home .po-top5 .table.data-table tbody tr.top5-row--alert td {
+  background: var(--po-red-bg);
+}
+
+.po-home .po-top5 .table.data-table tbody tr.top5-row--alert:hover td {
+  background: #fde8e8;
+}
+
+.po-home .po-top5 a.table-row-btn {
+  display: inline-block;
+  text-decoration: none;
+  color: #fff;
+}

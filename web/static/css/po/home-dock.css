@@ -1,0 +1,206 @@
+/* ==========================================================================
+   文件: web/static/css/po/home-dock.css
+   模块: PO工作台
+   职责: 首页"版本窗口" dock 区域 + action-btn 通用按钮
+   命名约定: schedule-* (Schedule Dock)；action-btn / action-btn--disabled 对齐 CRCB
+========================================================================== */
+
+.po-home .home-version-dock,
+.po-home .schedule-dock {
+  margin: 10px 0 4px;
+  background: var(--po-white);
+  border: 1px solid var(--po-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.po-home .home-version-dock-hdr,
+.po-home .schedule-dock-hdr {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.po-home .home-version-dock-title,
+.po-home .schedule-dock-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--po-t1);
+  letter-spacing: 0.2px;
+}
+
+.po-home .home-version-dock-title i,
+.po-home .schedule-dock-title i {
+  color: var(--po-blue);
+  font-size: 13px;
+}
+
+.po-home .home-version-dock-sub,
+.po-home .schedule-dock-sub {
+  font-size: 11px;
+  color: var(--po-t3);
+  margin-top: 4px;
+}
+
+.po-home .schedule-dock-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.po-home .home-version-panel,
+.po-home .schedule-dock-panel {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 0;
+}
+
+.po-home .home-version-mini,
+.po-home .schedule-mini {
+  background: #fff;
+  border: 1px solid var(--po-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: not-allowed;
+  opacity: 0.94;
+  transition: box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.po-home .home-version-mini:hover,
+.po-home .schedule-mini:hover {
+  opacity: 1;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.po-home .home-version-dock .summary-top,
+.po-home .schedule-mini-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.po-home .home-version-dock .summary-title,
+.po-home .schedule-mini-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--po-t1);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.po-home .home-version-dock .summary-sub,
+.po-home .schedule-mini-sub {
+  font-size: 11px;
+  color: var(--po-t3);
+  margin-top: 3px;
+}
+
+.po-home .home-version-dock .summary-stats,
+.po-home .schedule-mini-stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--po-t2);
+}
+
+.po-home .home-version-dock .summary-stat strong,
+.po-home .schedule-stat strong {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  color: var(--po-t1);
+  margin-left: 2px;
+}
+
+.po-home .home-version-dock .agile-team-tag,
+.po-home .schedule-team-tag {
+  display: inline-block;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: #e8f4fd;
+  color: #1a73e8;
+  border: 1px solid #c5e1fb;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* ---------- action-btn (对齐 CRCB) ---------- */
+.po-home .home-version-dock .action-btn,
+.po-home .schedule-dock .action-btn,
+.po-home .schedule-dock-actions .action-btn,
+.po-home .schedule-mini .action-btn {
+  padding: 4px 12px;
+  border: 1px solid var(--po-border);
+  border-radius: 5px;
+  background: var(--po-white);
+  font-size: 12px;
+  color: var(--po-t2);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+}
+
+.po-home .home-version-dock .action-btn:hover,
+.po-home .schedule-dock .action-btn:hover {
+  border-color: var(--po-blue);
+  color: var(--po-blue);
+}
+
+.po-home .home-version-dock .action-btn.primary,
+.po-home .schedule-dock .action-btn.primary {
+  background: var(--po-blue);
+  border-color: var(--po-blue);
+  color: #fff;
+}
+
+.po-home .home-version-dock .action-btn.primary:hover,
+.po-home .schedule-dock .action-btn.primary:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  color: #fff;
+}
+
+.po-home .home-version-dock .action-btn--disabled,
+.po-home .schedule-dock .action-btn--disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: #f5f5f5;
+  border-style: dashed;
+  color: var(--po-t3) !important;
+}
+
+.po-home .home-version-dock .action-btn--disabled:hover,
+.po-home .schedule-dock .action-btn--disabled:hover {
+  border-color: var(--po-border) !important;
+  color: var(--po-t3) !important;
+  background: #f5f5f5 !important;
+}
+
+.po-home .home-version-dock .summary-btn,
+.po-home .schedule-mini-btn {
+  flex-shrink: 0;
+}
+
+.po-home .home-version-empty,
+.po-home .schedule-dock-empty {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  color: var(--po-t3);
+  padding: 18px 8px;
+  text-align: center;
+}

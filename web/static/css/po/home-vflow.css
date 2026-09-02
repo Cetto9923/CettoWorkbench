@@ -1,0 +1,197 @@
+/* ==========================================================================
+   文件: web/static/css/po/home-vflow.css
+   模块: PO工作台
+   职责: 首页"业务需求价值流"九阶段区域
+   命名约定: vf-* (Value Flow)
+========================================================================== */
+
+.po-home .home-vs-section,
+.po-home .vf-section {
+  background: var(--po-white);
+  border: 1px solid var(--po-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.po-home .home-vs-section--primary,
+.po-home .vf-section--primary {
+  height: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.po-home .home-vs-hdr,
+.po-home .vf-hdr {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.po-home .home-vs-title,
+.po-home .vf-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--po-t1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0.2px;
+}
+
+.po-home .home-vs-title i,
+.po-home .vf-title i {
+  color: var(--po-blue);
+  font-size: 13px;
+}
+
+.po-home .home-vs-desc,
+.po-home .vf-desc {
+  font-size: 11px;
+  color: var(--po-t3);
+  margin-top: 4px;
+}
+
+.po-home .vf-hdr-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.po-home .vf-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 11px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.po-home .vf-meta-chip--neutral {
+  background: var(--po-bg);
+  color: var(--po-t2);
+  border: 1px solid var(--po-border);
+}
+
+.po-home .home-vs-compact-scroll,
+.po-home .vf-scroll {
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.po-home .home-vs-compact-row,
+.po-home .vf-row {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(92px, 1fr));
+  gap: 8px;
+  align-items: stretch;
+  min-width: 1040px;
+}
+
+/* mini stage card  ← vf-stage-card 同款；命名沿用 home-vs-mini-card 兼容 */
+.po-home .home-vs-mini-card,
+.po-home .vf-mini-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "name count"
+    "meta meta";
+  gap: 4px;
+  min-height: 72px;
+  min-width: 92px;
+  text-align: left;
+  border: 1px solid var(--po-border);
+  border-radius: 9px;
+  border-top: 3px solid transparent;
+  background: #fff;
+  padding: 9px 11px;
+  color: var(--po-t2);
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.po-home .home-vs-mini-card:hover,
+.po-home .vf-mini-card:hover {
+  border-color: var(--po-blue-bd);
+  border-top-color: var(--po-blue);
+  background: #f8fbff;
+}
+
+.po-home .home-vs-mini-card.active,
+.po-home .vf-mini-card.active {
+  border-color: var(--po-blue);
+  border-top-color: var(--po-blue);
+  background: var(--po-blue-bg);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.12);
+}
+
+.po-home .home-vs-mini-card.risk,
+.po-home .vf-mini-card.risk {
+  border-top-color: var(--po-red);
+  background: var(--po-red-bg);
+}
+
+.po-home .home-vs-mini-card.attn,
+.po-home .vf-mini-card.attn {
+  border-top-color: var(--po-orange);
+  background: var(--po-orange-bg);
+}
+
+.po-home .home-vs-mini-card.empty,
+.po-home .vf-mini-card.empty {
+  opacity: 0.62;
+  background: #f8fafc;
+}
+
+.po-home .vs-mini-name,
+.po-home .vf-mini-name {
+  grid-area: name;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--po-t1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.po-home .vs-mini-count,
+.po-home .vf-mini-count {
+  grid-area: count;
+  font-family: var(--font-sans);
+  font-size: 19px;
+  line-height: 1;
+  font-weight: 900;
+  color: var(--po-t1);
+}
+
+.po-home .vs-mini-meta,
+.po-home .vf-mini-meta {
+  grid-area: meta;
+  font-size: 10px;
+  color: var(--po-t3);
+  white-space: nowrap;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.po-home .home-vs-mini-card.risk .vf-mini-meta strong,
+.po-home .vf-mini-card.risk .vf-mini-meta strong {
+  color: var(--po-red);
+}
+
+.po-home .home-vs-mini-card.attn .vf-mini-meta strong,
+.po-home .vf-mini-card.attn .vf-mini-meta strong {
+  color: var(--po-orange);
+}

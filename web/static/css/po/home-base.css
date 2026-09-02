@@ -1,0 +1,152 @@
+/* ==========================================================================
+   文件: web/static/css/po/home-base.css
+   模块: PO工作台
+   职责: 首页页面壳 + 顶部命令栏（Hero / Focal）
+   命名约定: dw-* (Data Workbench shell)
+========================================================================== */
+
+.po-home {
+  font-size: 14px;
+  color: var(--po-t1);
+  line-height: 1.45;
+}
+
+/* ---------- Command Bar (Hero + Focal) ---------- */
+.po-home .home-command-bar {
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  gap: 10px;
+  margin-bottom: 10px;
+  align-items: stretch;
+}
+
+.po-home .home-hero {
+  display: flex;
+  margin: 0;
+  min-height: 0;
+  align-items: stretch;
+}
+
+.po-home .home-hero-left {
+  flex: 1;
+  background: var(--po-white);
+  border: 1px solid var(--po-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  min-height: 86px;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.02);
+}
+
+.po-home .home-hero-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--po-t1);
+  letter-spacing: 0.2px;
+}
+
+.po-home .home-hero-title i {
+  color: var(--po-blue);
+  font-size: 14px;
+}
+
+.po-home .home-hero-sub {
+  font-size: 12px;
+  color: var(--po-t2);
+  line-height: 1.4;
+}
+
+.po-home .home-focal-section {
+  background: var(--po-white);
+  border: 1px solid var(--po-border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin: 0;
+  min-height: 86px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+}
+
+.po-home .home-focal-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--po-t1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.po-home .home-focal-label i {
+  color: var(--po-orange);
+}
+
+.po-home .home-focal-hint {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--po-t3);
+  margin-left: 6px;
+}
+
+.po-home .home-focal-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* focal chip  ← dw-filter-chip 同款（filter-chip 节奏） */
+.po-home .focal-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 2px 10px;
+  border: 1px solid var(--po-border);
+  border-radius: 13px;
+  background: var(--po-bg);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.po-home .focal-chip.active {
+  border-color: var(--po-blue);
+  background: var(--po-blue-bg);
+  color: var(--po-blue);
+}
+
+.po-home .focal-chip.danger {
+  border-color: var(--po-red-bd);
+  background: var(--po-red-bg);
+}
+
+.po-home .focal-chip.warning {
+  border-color: var(--po-orange-bd);
+  background: var(--po-orange-bg);
+}
+
+.po-home .focal-chip-num {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--po-blue);
+}
+
+.po-home .focal-chip.danger .focal-chip-num {
+  color: var(--po-red);
+}
+
+.po-home .focal-chip.warning .focal-chip-num {
+  color: var(--po-orange);
+}
+
+.po-home .focal-chip-label {
+  color: var(--po-t2);
+}

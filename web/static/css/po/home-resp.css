@@ -1,0 +1,42 @@
+/* ==========================================================================
+   文件: web/static/css/po/home-resp.css
+   模块: PO工作台
+   职责: 首页响应式断点（≤1180px / ≤980px）
+========================================================================== */
+
+@media (max-width: 1180px) {
+  .po-home .home-version-dock .home-version-panel,
+  .po-home .schedule-dock-panel {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1180px) {
+  .po-home .home-vs-compact-row,
+  .po-home .vf-row {
+    grid-template-columns: repeat(10, 84px);
+    min-width: 920px;
+  }
+}
+
+@media (max-width: 980px) {
+  .po-home .home-command-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .po-home .home-hero-left,
+  .po-home .home-focal-section {
+    min-height: auto;
+  }
+
+  .po-home .home-blocker-strip,
+  .po-home .dw-blocker-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .po-home .home-vs-compact-row,
+  .po-home .vf-row {
+    grid-template-columns: repeat(10, 82px);
+    min-width: 900px;
+  }
+}

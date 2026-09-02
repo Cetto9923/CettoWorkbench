@@ -1,0 +1,103 @@
+/* ==========================================================================
+   文件: web/static/css/po/home-blocker.css
+   模块: PO工作台
+   职责: 首页"卡点快速响应"区域
+   命名约定: dw-* (Data Workbench shell)
+========================================================================== */
+
+.po-home .home-blocker-section,
+.po-home .dw-blocker {
+  background: var(--po-white);
+  border: 1px solid var(--po-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+.po-home .home-blocker-hdr,
+.po-home .dw-blocker-hdr {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.po-home .home-blocker-title,
+.po-home .dw-blocker-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--po-red);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.po-home .home-blocker-title i {
+  font-size: 13px;
+}
+
+.po-home .home-blocker-sub,
+.po-home .dw-blocker-sub {
+  font-size: 11px;
+  color: var(--po-t3);
+}
+
+.po-home .home-blocker-strip,
+.po-home .dw-blocker-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.po-home .home-blocker-card {
+  border: 1px solid var(--po-red-bd);
+  background: var(--po-red-bg);
+  border-radius: 8px;
+  padding: 8px 10px;
+  min-width: 0;
+}
+
+.po-home .hbc-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.po-home .hbc-id {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: var(--po-t3);
+}
+
+.po-home .blocker-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.po-home .blocker-tag--blocked {
+  background: var(--po-red);
+  color: #fff;
+}
+
+.po-home .hbc-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--po-t1);
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.po-home .hbc-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--po-t2);
+}

@@ -1,7 +1,7 @@
 {{/* ==========================================================================
 文件: web/templates/po/home.html
 模块: PO工作台
-职责: PO 工作台首页静态占位
+职责: PO 工作台首页（设计语言对齐 CRCBWorkbench/po.html：vf-* / schedule-* / dw-* / action-btn / batch-modal）
 全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
 页面字段: .Title (string), .PageTitle (string), .ValueStreamStages ([]ValueStreamStage),
           .VersionWindows ([]schedule.HomeVersionWindowCard)
@@ -11,42 +11,48 @@
 {{ end }}
 
 {{ define "content" }}
-<div class="po-home">
-  <div class="home-command-bar">
-    <div class="home-hero home-hero--compact">
-      <div class="home-hero-left">
-        <div class="home-hero-title"><i class="fas fa-diagram-project"></i>业务需求价值流工作台</div>
-        <div class="home-hero-sub" title="围绕业务需求从受理到交付反馈的全过程推进，帮助 PO 识别卡点、协调责任人、保障版本交付。">识别卡点 · 协调责任人 · 保障版本交付</div>
+<div class="po-home dw-page" data-page="po-home">
+  {{/* ====== Command Bar: Hero + Focal ====== */}}
+  <div class="home-command-bar dw-cmdbar">
+    <div class="home-hero dw-hero">
+      <div class="home-hero-left dw-hero-card">
+        <div class="home-hero-title dw-hero-title"><i class="fas fa-diagram-project"></i>业务需求价值流工作台</div>
+        <div class="home-hero-sub dw-hero-sub" title="围绕业务需求从受理到交付反馈的全过程推进，帮助 PO 识别卡点、协调责任人、保障版本交付。">识别卡点 · 协调责任人 · 保障版本交付</div>
       </div>
     </div>
 
-    <div class="home-focal-section">
-      <div class="home-focal-label"><i class="fas fa-bolt"></i> 今日推进焦点</div>
-      <div class="home-focal-inline" id="homeFocalList" data-loading="true">
-        <div class="home-focal-skeleton" aria-hidden="true">
-          <span class="home-focal-hint">今日推进焦点加载中...</span>
+    <div class="home-focal-section dw-focal">
+      <div class="home-focal-label dw-focal-label"><i class="fas fa-bolt"></i> 今日推进焦点</div>
+      <div class="home-focal-inline dw-focal-inline" id="homeFocalList" data-loading="true">
+        <div class="home-focal-skeleton dw-focal-skeleton" aria-hidden="true">
+          <span class="home-focal-hint dw-focal-hint">今日推进焦点加载中...</span>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="home-vs-section home-vs-section--primary" id="homeValueStreamSection">
-    <div class="home-vs-hdr">
-      <div>
-        <div class="home-vs-title"><i class="fas fa-route"></i>业务需求价值流</div>
+  {{/* ====== Value Flow (9 stages) ====== */}}
+  <div class="home-vs-section home-vs-section--primary vf-section vf-section--primary" id="homeValueStreamSection">
+    <div class="home-vs-hdr vf-hdr">
+      <div class="vf-hdr-title">
+        <div class="home-vs-title vf-title"><i class="fas fa-route"></i>业务需求价值流</div>
+        <div class="home-vs-desc vf-desc">当前 PO 视角下的 9 阶段生命周期分布，点击卡片查看该阶段明细</div>
+      </div>
+      <div class="vf-hdr-meta">
+        <span class="vf-meta-chip vf-meta-chip--neutral">9 阶段</span>
       </div>
     </div>
-    <div class="home-vs-compact-scroll" id="homeVsCompactScroll">
-      <div class="home-vs-compact" id="homeVsCompact">
-        <div class="home-vs-compact-row">
+    <div class="home-vs-compact-scroll vf-scroll">
+      <div class="home-vs-compact vf-compact">
+        <div class="home-vs-compact-row vf-row">
           {{ range $i, $stage := .ValueStreamStages }}
           <button type="button"
-            class="home-vs-mini-card{{ if eq $i 0 }} active risk{{ else if eq $stage.Count 0 }} empty{{ else }} attn{{ end }}"
+            class="home-vs-mini-card vf-mini-card{{ if eq $i 0 }} active risk{{ else if eq $stage.Count 0 }} empty{{ else }} attn{{ end }}"
             data-vs-status="{{ $stage.Status }}"
             title="{{ $stage.Label }} · 共 {{ $stage.Count }} 条（业需 {{ $stage.DemandCount }} / 研发 {{ $stage.StoryCount }}）">
-            <span class="vs-mini-name">{{ $stage.Label }}</span>
-            <span class="vs-mini-count">{{ $stage.Count }}</span>
-            <span class="vs-mini-meta">
+            <span class="vs-mini-name vf-mini-name">{{ $stage.Label }}</span>
+            <span class="vs-mini-count vf-mini-count">{{ $stage.Count }}</span>
+            <span class="vs-mini-meta vf-mini-meta">
               {{ if eq $stage.Count 0 }}该阶段暂无待推进事项{{ else }}点击查看该阶段明细 →{{ end }}
             </span>
           </button>
@@ -56,21 +62,23 @@
     </div>
   </div>
 
-  <div class="home-blocker-section" id="homeBlockerSection">
-    <div class="home-blocker-hdr">
-      <span class="home-blocker-title"><i class="fas fa-triangle-exclamation"></i> 卡点快速响应</span>
-      <span class="home-blocker-sub">优先处理阻塞、超期与质量卡点</span>
+  {{/* ====== Blocker Strip ====== */}}
+  <div class="home-blocker-section dw-blocker" id="homeBlockerSection">
+    <div class="home-blocker-hdr dw-blocker-hdr">
+      <span class="home-blocker-title dw-blocker-title"><i class="fas fa-triangle-exclamation"></i> 卡点快速响应</span>
+      <span class="home-blocker-sub dw-blocker-sub">优先处理阻塞、超期与质量卡点</span>
     </div>
-    <div class="home-blocker-strip" id="homeBlockerStrip" data-loading="true">
-      <div class="home-blocker-skeleton" aria-hidden="true">
-        <span class="home-blocker-hint">卡点列表加载中...</span>
+    <div class="home-blocker-strip dw-blocker-strip" id="homeBlockerStrip" data-loading="true">
+      <div class="home-blocker-skeleton dw-blocker-skeleton" aria-hidden="true">
+        <span class="home-blocker-hint dw-blocker-hint">卡点列表加载中...</span>
       </div>
     </div>
   </div>
 
-  <div class="po-top5 home-vs-section" id="top5Section">
-    <div class="po-section-title" id="top5Title"><i class="fas fa-star"></i> 当前应推进事项：今日必推 / 全部 / 5条</div>
-    <div class="table-container table-container--flat" id="top5List">
+  {{/* ====== Top 5 (Today / 全部 / 5 条) ====== */}}
+  <div class="po-top5 home-vs-section dw-top5" id="top5Section">
+    <div class="po-section-title dw-section-title" id="top5Title"><i class="fas fa-star"></i> 当前应推进事项：今日必推 / 全部 / 5条</div>
+    <div class="table-container table-container--flat dw-table-flat" id="top5List">
       <div class="table-wrapper">
         <table class="table data-table">
           <thead>
@@ -93,39 +101,39 @@
     </div>
   </div>
 
-  <div class="home-version-dock" id="homeVersionCollapsible">
-    <div class="home-version-dock-hdr">
-      <div>
-        <div class="home-version-dock-title"><i class="fas fa-layer-group"></i> 版本窗口</div>
+  {{/* ====== Version Window Dock ====== */}}
+  <div class="home-version-dock schedule-dock" id="homeVersionCollapsible">
+    <div class="home-version-dock-hdr schedule-dock-hdr">
+      <div class="schedule-dock-title-wrap">
+        <div class="home-version-dock-title schedule-dock-title"><i class="fas fa-layer-group"></i> 版本窗口</div>
+        <div class="home-version-dock-sub schedule-dock-sub">近期版本窗口与各阶段计数（需求 / 开发 / 测试 / 待交付）</div>
       </div>
-      <div style="display:flex;gap:6px">
+      <div class="schedule-dock-actions">
         <button type="button" class="action-btn action-btn--disabled" title="待推出"><i class="fas fa-th-list" style="margin-right:4px"></i>查看全部窗口</button>
         <button type="button" class="action-btn action-btn--disabled" title="待推出"><i class="fas fa-layer-group" style="margin-right:4px"></i>进入版本跟进</button>
       </div>
     </div>
-    <div class="home-version-panel" id="homeCurrentVersionSummary">
+    <div class="home-version-panel schedule-dock-panel" id="homeCurrentVersionSummary">
       {{ range .VersionWindows }}
-      <!-- <div class="home-version-mini" title="待推出"> -->
-      <div class="home-version-mini" >
-        <div class="summary-top">
-          <div>
-            <div class="summary-title" title="{{ .Name }}"><i class="fas fa-layer-group" style="color:var(--po-blue)"></i>{{ .Name }}{{ if .AgileGroup }} <span class="agile-team-tag">{{ .AgileGroup }}</span>{{ end }}</div>
-            <div class="summary-sub">{{ .Range }}</div>
+      <div class="home-version-mini schedule-mini">
+        <div class="summary-top schedule-mini-top">
+          <div class="schedule-mini-titles">
+            <div class="summary-title schedule-mini-title" title="{{ .Name }}"><i class="fas fa-layer-group" style="color:var(--po-blue)"></i>{{ .Name }}{{ if .AgileGroup }} <span class="agile-team-tag schedule-team-tag">{{ .AgileGroup }}</span>{{ end }}</div>
+            <div class="summary-sub schedule-mini-sub">{{ .Range }}</div>
           </div>
-          <div class="summary-btns" style="display:flex;gap:6px;flex-wrap:wrap">
-            <!-- <button type="button" class="action-btn primary summary-btn action-btn--disabled" style="padding:4px 10px;font-size:11px" title="待推出">进入版本跟进</button> -->
-            <button type="button" class="action-btn primary summary-btn " style="padding:4px 10px;font-size:11px">进入版本跟进</button>
+          <div class="summary-btns schedule-mini-btns">
+            <button type="button" class="action-btn primary summary-btn schedule-mini-btn" style="padding:4px 10px;font-size:11px">进入版本跟进</button>
           </div>
         </div>
-        <div class="summary-stats summary-stats--compact">
-          <span class="summary-stat">需求 <strong>{{ .DemandCount }}</strong></span>
-          <span class="summary-stat">开发 <strong>{{ .DevCount }}</strong></span>
-          <span class="summary-stat">测试 <strong>{{ .TestCount }}</strong></span>
-          <span class="summary-stat">待交付 <strong>{{ .DeliverCount }}</strong></span>
+        <div class="summary-stats summary-stats--compact schedule-mini-stats">
+          <span class="summary-stat schedule-stat">需求 <strong>{{ .DemandCount }}</strong></span>
+          <span class="summary-stat schedule-stat">开发 <strong>{{ .DevCount }}</strong></span>
+          <span class="summary-stat schedule-stat">测试 <strong>{{ .TestCount }}</strong></span>
+          <span class="summary-stat schedule-stat">待交付 <strong>{{ .DeliverCount }}</strong></span>
         </div>
       </div>
       {{ else }}
-      <div class="home-version-empty">暂无近期版本窗口</div>
+      <div class="home-version-empty schedule-dock-empty">暂无近期版本窗口</div>
       {{ end }}
     </div>
   </div>
