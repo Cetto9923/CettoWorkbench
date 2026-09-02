@@ -25,6 +25,7 @@ import (
 // 业务口径：
 //   - 「发布」 = waitdeliver（在禅道「等待发布」语义）
 //   - 「评价」 = released && overall=0 && parent≠-1 && overall≠5（PO 待评价,排除已被系统自动五星评价的）
+//
 // 「发布」与「评价」业务相邻但 SQL 装载层不同，故拆为 2 段。
 var valueStreamStages = []struct {
 	label  string

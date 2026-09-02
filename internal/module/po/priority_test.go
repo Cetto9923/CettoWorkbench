@@ -14,9 +14,9 @@ func TestParsePriDemand(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {
-		in          string
-		wantRank    int
-		wantLabel   string
+		in        string
+		wantRank  int
+		wantLabel string
 	}{
 		{in: "", wantRank: PriRankUnknown, wantLabel: ""},
 		{in: "   ", wantRank: PriRankUnknown, wantLabel: ""},

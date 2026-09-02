@@ -25,11 +25,11 @@ import (
 // 仅指"验收通过已发起交付"——尚未到反馈评价阶段。该映射由持续讨论决定，本文件
 // 当前按 PO 心智直接复用 status 枚举，避免误导前端。
 var focusStatuses = []string{
-	"clarify",       // 澄清
-	"schedule",      // 排期
-	"developing",    // 提测
+	"clarify",        // 澄清
+	"schedule",       // 排期
+	"developing",     // 提测
 	"waitacceptance", // 验收
-	"released",      // 发起交付（验收通过）
+	"released",       // 发起交付（验收通过）
 }
 
 // FocusLimit 今日推进焦点的最大条数。

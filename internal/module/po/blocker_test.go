@@ -201,9 +201,9 @@ func TestIsOwnAction(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {
-		name                              string
-		who, rd, qd, bra, assigned        string
-		want                              bool
+		name                       string
+		who, rd, qd, bra, assigned string
+		want                       bool
 	}{
 		{name: "empty who never own", who: "", rd: "alice", qd: "alice", bra: "alice", assigned: "alice", want: false},
 		{name: "match rd", who: "alice", rd: "alice", want: true},

@@ -60,14 +60,14 @@ func (r *BlockerReq) Validate() []FieldError {
 
 // BlockerDetail 单条卡点。
 type BlockerDetail struct {
-	Kind        string       `json:"kind"`        // demand / story
+	Kind        string       `json:"kind"` // demand / story
 	ID          string       `json:"id"`
 	Level       BlockerLevel `json:"level"`
 	LevelLabel  string       `json:"levelLabel"`
 	Title       string       `json:"title"`
 	Owner       string       `json:"owner"`
-	DueAt       string       `json:"dueAt"`        // YYYY-MM-DD
-	DueLabel    string       `json:"dueLabel"`     // "今日已超 3 天" / "距今 2 天" / "今日"
+	DueAt       string       `json:"dueAt"`    // YYYY-MM-DD
+	DueLabel    string       `json:"dueLabel"` // "今日已超 3 天" / "距今 2 天" / "今日"
 	Stage       string       `json:"stage"`
 	ZentaoUrl   string       `json:"zentaoUrl"`
 	IsOwnAction bool         `json:"isOwnAction"`
@@ -216,7 +216,7 @@ func classifyDateBased(due *time.Time, today time.Time, ownAction bool) BlockerL
 	if due == nil {
 		return BlockerLevelRisk
 	}
-	delta := int(today.Truncate(24 * time.Hour).Sub(due.Truncate(24 * time.Hour)).Hours() / 24)
+	delta := int(today.Truncate(24*time.Hour).Sub(due.Truncate(24*time.Hour)).Hours() / 24)
 	switch {
 	case delta > 0 && !ownAction:
 		return BlockerLevelBlocked

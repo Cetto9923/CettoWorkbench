@@ -18,17 +18,17 @@ import (
 
 // mysqlStageFilter 走 MySQL 的价值流阶段过滤条件。
 type mysqlStageFilter struct {
-	statuses            []string
-	overall             *string
-	parent              *string
-	overallNotFive      bool // true：排除 overall=5（已完成五星评价的）
-	developFinishDue    bool // true：今天 >= developFinish（且 developFinish 非空）
-	deliverDateDue      bool // true：今天 >= deliverDate（且 deliverDate 非空）
-	braRequired         bool // true：BRA 必须等于当前账号
-	noClarify           bool // true：无 zt_demandclarify 记录
-	acceptanceStage     bool // true：验收阶段复合条件
-	scheduleIncomplete  bool // true：排期未完成（关键日期/QD/主研未填）
-	deliverStories      bool // true：合并交付阶段独立研发需求
+	statuses           []string
+	overall            *string
+	parent             *string
+	overallNotFive     bool // true：排除 overall=5（已完成五星评价的）
+	developFinishDue   bool // true：今天 >= developFinish（且 developFinish 非空）
+	deliverDateDue     bool // true：今天 >= deliverDate（且 deliverDate 非空）
+	braRequired        bool // true：BRA 必须等于当前账号
+	noClarify          bool // true：无 zt_demandclarify 记录
+	acceptanceStage    bool // true：验收阶段复合条件
+	scheduleIncomplete bool // true：排期未完成（关键日期/QD/主研未填）
+	deliverStories     bool // true：合并交付阶段独立研发需求
 }
 
 var (
@@ -74,15 +74,15 @@ func NewRepo(db *gorm.DB) *Repo {
 // DemandRow 业需列表投影（仅选择业务要展示/排序/责任追溯所需要的列，避免 SELECT *）。
 // 列名与数据库列名一致（小驼峰），由 zt_demand 真实 schema 校准。
 type DemandRow struct {
-	ID           int     `gorm:"column:id"`
-	Name         string  `gorm:"column:name"`
-	Pri          string  `gorm:"column:pri"`              // '1'/'2'/'3'/'4'（字符串），空字符串表示未设
-	Status       string  `gorm:"column:status"`
-	AssignedTo   string  `gorm:"column:assignedTo"`        // 业务负责人
-	QD           string  `gorm:"column:QD"`                // 牵头人
-	RD           string  `gorm:"column:RD"`                // 主研发责任人
-	BRA          string  `gorm:"column:BRA"`               // 业务需求负责人
-	IsNeedFocus  string  `gorm:"column:isNeedFocus"`       // '0'/'1'
+	ID            int        `gorm:"column:id"`
+	Name          string     `gorm:"column:name"`
+	Pri           string     `gorm:"column:pri"` // '1'/'2'/'3'/'4'（字符串），空字符串表示未设
+	Status        string     `gorm:"column:status"`
+	AssignedTo    string     `gorm:"column:assignedTo"`    // 业务负责人
+	QD            string     `gorm:"column:QD"`            // 牵头人
+	RD            string     `gorm:"column:RD"`            // 主研发责任人
+	BRA           string     `gorm:"column:BRA"`           // 业务需求负责人
+	IsNeedFocus   string     `gorm:"column:isNeedFocus"`   // '0'/'1'
 	DevelopFinish *time.Time `gorm:"column:developFinish"` // 计划开发完成日
 	TestFinish    *time.Time `gorm:"column:testFinish"`    // 计划联调完成日
 	VerifyFinish  *time.Time `gorm:"column:verifyFinish"`  // 计划验收完成日

@@ -18,15 +18,15 @@ const (
 
 // Pager 描述分页状态及用于渲染页码的数据。
 type Pager struct {
-	TotalItems    int64
-	TotalPages    int
-	CurrentPage   int
-	PageSize      int
-	HasPrev       bool
-	HasNext       bool
-	Pages         []int
-	PageParam       string            // query 参数名，默认 page
-	PreserveParams  map[string]string // 分页链接需保留的其他 query 参数
+	TotalItems     int64
+	TotalPages     int
+	CurrentPage    int
+	PageSize       int
+	HasPrev        bool
+	HasNext        bool
+	Pages          []int
+	PageParam      string            // query 参数名，默认 page
+	PreserveParams map[string]string // 分页链接需保留的其他 query 参数
 }
 
 // New 按 totalItems/currentPage/pageSize 创建分页对象，并自动规范化参数。

@@ -14,11 +14,11 @@ func TestDemandsReqValidate(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {
-		name        string
-		status      string
-		wantErr     bool
-		wantErrMsg  string
-		wantNormed  string
+		name       string
+		status     string
+		wantErr    bool
+		wantErrMsg string
+		wantNormed string
 	}{
 		{name: "empty", status: "", wantErr: true, wantErrMsg: "状态不能为空"},
 		{name: "whitespace only", status: "   ", wantErr: true, wantErrMsg: "状态不能为空"},
