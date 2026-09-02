@@ -91,7 +91,7 @@
       : "<span class=\"priority-tag\">—</span>";
 
     var linkHtml = url
-      ? "<a class=\"table-row-btn\" href=\"" + escapeHtml(url) + "\" target=\"_blank\">处理</a>"
+      ? "<a class=\"table-row-btn\" href=\"" + escapeHtml(url) + "\">处理</a>"
       : "<button type=\"button\" class=\"table-row-btn\" disabled>处理</button>";
 
     return (
@@ -212,7 +212,7 @@
     var dueAt = item.dueAt || "";
 
     var titleHtml = url
-      ? "<a class=\"hbc-title-link\" href=\"" + escapeHtml(url) + "\" target=\"_blank\">" + escapeHtml(title) + "</a>"
+      ? "<a class=\"hbc-title-link\" href=\"" + escapeHtml(url) + "\">" + escapeHtml(title) + "</a>"
       : "<span class=\"hbc-title-link\">" + escapeHtml(title) + "</span>";
 
     return (
