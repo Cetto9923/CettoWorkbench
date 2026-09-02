@@ -144,27 +144,50 @@ func dueMetrics(due *time.Time, today time.Time) (dueAt, label string, isOverdue
 	}
 }
 
-// chooseDeadline 选取该条目最相关的截止日期：状态决定哪个关键日最切合。
-// 联调 testing → testFinish；waitacceptance → verifyFinish；交付 → deliverDate；其余 → developFinish。
+// 选择合理的截止日：状态决定首选关键日；用 guardMinYear 过滤掉 0000-00-00 /
+// 0001-01-01 等 MySQL 零日期误解析后的超古老占位。
+//
+// 联调 testing → testFinish
+// waitacceptance → verifyFinish
+// acceptanced → deliverDate
+// 其他（developing / schedule / clarify）→ developFinish
+//
+// 若首选日期为空或为 MySQL 零日期，会回退到其余关键日；都无效则返 nil。
 func chooseDeadline(status string, d *time.Time, tf, vf, dd *time.Time) *time.Time {
+	primary := pickPrimary(status, d, tf, vf, dd)
+	if validDate(primary) {
+		return primary
+	}
+	// 回退顺序：先试其他关键日（同 status 不同字段），再 try 别的 status 路径
+	for _, cand := range []*time.Time{d, tf, vf, dd} {
+		if validDate(cand) {
+			return cand
+		}
+	}
+	return nil
+}
+
+// pickPrimary 根据状态挑出首选截止字段（不做有效性判断）。
+func pickPrimary(status string, d *time.Time, tf, vf, dd *time.Time) *time.Time {
 	switch status {
 	case "testing":
-		if tf != nil {
-			return tf
-		}
+		return tf
 	case "waitacceptance":
-		if vf != nil {
-			return vf
-		}
+		return vf
 	case "acceptanced":
-		if dd != nil {
-			return dd
-		}
+		return dd
 	}
-	if d != nil {
-		return d
+	return d
+}
+
+// validDate 过滤 MySQL 零日期伪值。MySQL DATE '0000-00-00' 经 parseTime=true 时会被
+// 解析成 0001-01-01（远早于 2000），不能让 blocker 显示「今日已超 N 年」。
+func validDate(t *time.Time) bool {
+	if t == nil {
+		return false
 	}
-	return tf
+	guardYear := 2000 // 业务上禅道需求早于 2000 的概率极低，未到这一年的视为脏值。
+	return t.Year() >= guardYear
 }
 
 // isOwnAction 当前账号在该阶段是否为执行人/承接人。

@@ -117,6 +117,30 @@ func TestClassifyDateBased(t *testing.T) {
 	}
 }
 
+func TestValidDate(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name string
+		in   *time.Time
+		want bool
+	}{
+		{name: "nil", in: nil, want: false},
+		{name: "year 1999 dirty", in: ptrTime(day("1999-12-31")), want: false},
+		{name: "year 0001 mysql zero", in: ptrTime(day("0001-01-01")), want: false},
+		{name: "year 2000 boundary", in: ptrTime(day("2000-01-01")), want: true},
+		{name: "year 2025 fresh", in: ptrTime(day("2025-08-28")), want: true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			if got := validDate(tc.in); got != tc.want {
+				t.Errorf("validDate(%v)=%v want %v", tc.in, got, tc.want)
+			}
+		})
+	}
+}
+
 func TestChooseDeadline(t *testing.T) {
 	t.Parallel()
 
@@ -124,6 +148,7 @@ func TestChooseDeadline(t *testing.T) {
 	tf := ptrTime(day("2026-09-12"))
 	vf := ptrTime(day("2026-09-14"))
 	dd := ptrTime(day("2026-09-20"))
+	dirty := ptrTime(day("0001-01-01")) // MySQL '0000-00-00' 解析后值
 
 	cases := []struct {
 		name   string
@@ -139,6 +164,10 @@ func TestChooseDeadline(t *testing.T) {
 		{name: "acceptanced picks deliverDate", status: "acceptanced", d: nil, tf: tf, vf: vf, dd: dd, want: dd},
 		{name: "schedule fallback developFinish", status: "schedule", d: dev, tf: nil, vf: nil, dd: nil, want: dev},
 		{name: "all nil returns nil", status: "schedule", d: nil, tf: nil, vf: nil, dd: nil, want: nil},
+		// 零日期防护：acceptanced 阶段 deliverDate 是 0000-00-00 应回退。
+		{name: "acceptanced dirty deliverDate falls back", status: "acceptanced", d: dev, tf: tf, vf: vf, dd: dirty, want: dev},
+		{name: "testing dirty testFinish falls back", status: "testing", d: dev, tf: dirty, vf: vf, dd: dd, want: dev},
+		{name: "waitacceptance dirty verifyFinish falls back", status: "waitacceptance", d: dev, tf: tf, vf: dirty, dd: dd, want: dev},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
