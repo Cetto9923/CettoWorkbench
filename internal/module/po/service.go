@@ -195,10 +195,12 @@ func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stage
 		if row.Pri != "" {
 			pri = "P" + row.Pri
 		}
+		rank, _ := ParsePriDemand(row.Pri)
 		items = append(items, WorkItemDetail{
 			Kind:        "demand",
 			ID:          fmt.Sprintf("%d", row.ID),
 			Pri:         pri,
+			PriRank:     rank,
 			Title:       row.Name,
 			ZentaoUrl:   zentao.URL("demand", "view", fmt.Sprintf("demandID=%d", row.ID)),
 			ValueStream: label,
@@ -224,10 +226,12 @@ func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stage
 func storyWorkItems(rows []StoryRow, label string) []WorkItemDetail {
 	items := make([]WorkItemDetail, 0, len(rows))
 	for _, row := range rows {
+		rank, labelPri := ParsePriStory(row.Pri)
 		items = append(items, WorkItemDetail{
 			Kind:        "story",
 			ID:          fmt.Sprintf("%d", row.ID),
-			Pri:         fmt.Sprintf("P%d", row.Pri),
+			Pri:         labelPri,
+			PriRank:     rank,
 			Title:       row.Title,
 			ZentaoUrl:   zentao.URL("story", "view", fmt.Sprintf("storyID=%d", row.ID)),
 			ValueStream: label,
