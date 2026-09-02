@@ -70,16 +70,18 @@ func NewRepo(db *gorm.DB) *Repo {
 
 // DemandRow 业需列表投影。
 type DemandRow struct {
-	ID   int    `gorm:"column:id"`
-	Name string `gorm:"column:name"`
-	Pri  string `gorm:"column:pri"`
+	ID     int    `gorm:"column:id"`
+	Name   string `gorm:"column:name"`
+	Pri    string `gorm:"column:pri"`
+	Status string `gorm:"column:status"`
 }
 
 // StoryRow 研发需求列表投影。
 type StoryRow struct {
-	ID    int    `gorm:"column:id"`
-	Title string `gorm:"column:title"`
-	Pri   int    `gorm:"column:pri"`
+	ID     int    `gorm:"column:id"`
+	Title  string `gorm:"column:title"`
+	Pri    int    `gorm:"column:pri"`
+	Status string `gorm:"column:status"`
 }
 
 func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysqlStageFilter) *gorm.DB {
@@ -208,7 +210,7 @@ func (r *Repo) FindRoleDemands(ctx context.Context, account string, filter mysql
 	}
 	var rows []DemandRow
 	err := r.roleDemandScope(ctx, account, filter).
-		Select("id", "name", "pri").
+		Select("id", "name", "pri", "status").
 		Order("id DESC").
 		Find(&rows).Error
 	if err != nil {
@@ -234,7 +236,7 @@ func (r *Repo) FindScheduleStories(ctx context.Context, account string) ([]Story
 	}
 	var rows []StoryRow
 	err := r.scheduleStoryScope(ctx, account).
-		Select("id", "title", "pri").
+		Select("id", "title", "pri", "status").
 		Order("id DESC").
 		Find(&rows).Error
 	if err != nil {
@@ -260,7 +262,7 @@ func (r *Repo) FindDeliverStories(ctx context.Context, account string) ([]StoryR
 	}
 	var rows []StoryRow
 	err := r.deliverStoryScope(ctx, account).
-		Select("id", "title", "pri").
+		Select("id", "title", "pri", "status").
 		Order("id DESC").
 		Find(&rows).Error
 	if err != nil {

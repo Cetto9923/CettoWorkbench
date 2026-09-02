@@ -42,6 +42,70 @@
     return text || "—";
   }
 
+  // 禅道业需 status → 中文（与原型 po-core.js ZENTAO_STATUS_LABELS 对齐）
+  var ZENTAO_STATUS_LABELS = {
+    draft: "暂存",
+    wait: "待评审",
+    active: "已评审",
+    clarified: "已澄清",
+    changed: "已变更",
+    developing: "开发中",
+    testing: "测试中",
+    waitacceptance: "待验收",
+    acceptanced: "已验收",
+    waitdeliver: "待交付",
+    delivered: "已交付",
+    released: "已发布",
+    closed: "已关闭",
+    suspended: "已挂起",
+    refuse: "已驳回"
+  };
+
+  // 禅道研需 zt_story.status → 中文（与业需同名码语义不同，禁止共用）
+  var STORY_STATUS_LABELS = {
+    draft: "草稿",
+    reviewing: "评审中",
+    active: "激活",
+    changing: "变更中",
+    closed: "已关闭"
+  };
+
+  function getZentaoStatusLabel(key) {
+    var k = String(key || "").trim().toLowerCase();
+    if (!k) {
+      return "";
+    }
+    return ZENTAO_STATUS_LABELS[k] || key;
+  }
+
+  function getStoryZentaoStatusLabel(key) {
+    var k = String(key || "").trim().toLowerCase();
+    if (!k) {
+      return "";
+    }
+    return STORY_STATUS_LABELS[k] || key;
+  }
+
+  // 对齐原型 getHomeZentaoStatusLabel：业需/研需分表映射，禁止用动作态冒充禅道状态
+  function getHomeZentaoStatusLabel(item) {
+    var raw = String((item && item.zentaoStatus) || "").trim();
+    if (raw) {
+      var isStory =
+        (item && String(item.kind || "") === "story") ||
+        Number(item && item.storyId) > 0 ||
+        /^S\d+$/i.test(String((item && item.id) || ""));
+      if (isStory) {
+        return getStoryZentaoStatusLabel(raw);
+      }
+      return getZentaoStatusLabel(raw);
+    }
+    var label = String((item && (item.zentaoStatusLabel || item.statusLabel)) || "").trim();
+    if (label && !/^待(受理|澄清|排期)$/.test(label)) {
+      return label;
+    }
+    return "—";
+  }
+
   function loadDemands(status) {
     var fetchFn = window.appFetch || fetch;
     return fetchFn(demandsUrl(status), { method: "GET" })
@@ -112,7 +176,11 @@
       escapeHtml(item.title || "") +
       "</div>" +
       "<div class=\"row-stage\"><span class=\"stage-tag\">" + escapeHtml(item.valueStream || item.stage || "—") + "</span></div>" +
-      "<div class=\"row-zt-status\"><span class=\"status-tag\">" + escapeHtml(dash(item.blocker)) + "</span></div>" +
+      "<div class=\"row-zt-status\"><span class=\"status-tag st-progress\" title=\"" +
+      escapeHtml(item.zentaoStatus || "") +
+      "\">" +
+      escapeHtml(getHomeZentaoStatusLabel(item)) +
+      "</span></div>" +
       "<div class=\"row-next\">" + escapeHtml(action) + "</div>" +
       "<div class=\"row-owner\">" + escapeHtml(dash(item.owner)) + "</div>" +
       "<div class=\"row-actions\">" + actionHtml + "</div>" +

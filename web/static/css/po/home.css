@@ -327,6 +327,16 @@
   color: var(--po-blue);
 }
 
+.po-home .status-tag.st-progress {
+  padding: 2px 8px;
+  border-radius: 3px;
+  background: var(--po-blue-bg, #eff6ff);
+  color: var(--po-blue, #1e40af);
+  border: 1px solid var(--po-blue-bd, #bfdbfe);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
 .po-home .row-next,
 .po-home .row-owner {
   font-size: 12px;

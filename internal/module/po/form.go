@@ -55,16 +55,17 @@ func (r *DemandsReq) Validate() []FieldError {
 
 // WorkItemDetail 单条需求或故事详情。
 type WorkItemDetail struct {
-	Kind        string `json:"kind"`
-	ID          string `json:"id"`
-	Pri         string `json:"pri"`
-	Title       string `json:"title"`
-	Stage       string `json:"stage"`
-	Blocker     string `json:"blocker"`
-	Next        string `json:"next"`
-	Owner       string `json:"owner"`
-	ZentaoUrl   string `json:"zentaoUrl"`
-	ValueStream string `json:"valueStream"`
+	Kind         string `json:"kind"`
+	ID           string `json:"id"`
+	Pri          string `json:"pri"`
+	Title        string `json:"title"`
+	Stage        string `json:"stage"`
+	Blocker      string `json:"blocker"`
+	Next         string `json:"next"`
+	Owner        string `json:"owner"`
+	ZentaoUrl    string `json:"zentaoUrl"`
+	ValueStream  string `json:"valueStream"`
+	ZentaoStatus string `json:"zentaoStatus"` // 禅道 status 原文，前端按业需/研需分别映射中文
 }
 
 // DemandsResp 价值流状态下的需求详情列表。
