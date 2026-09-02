@@ -91,8 +91,16 @@ var allPermInfos = []PermInfo{
 }
 
 // systemPerms 是系统内置放行权限，不对外暴露到权限配置 UI。
+// 所有登录用户默认放行，无需在角色权限中显式授予（自助动作性质）。
 var systemPerms = map[Permission]bool{
 	AuthLogout: true,
+	PoHome:     true,
+}
+
+// IsSystemPerm 报告指定权限是否为系统内置自助动作。
+// 中间件 RequirePerm 对命中此函数的权限默认放行，无需在角色权限中显式授予。
+func IsSystemPerm(p Permission) bool {
+	return systemPerms[p]
 }
 
 // Configurable 返回可分配给角色的权限列表（排除系统内置权限）。

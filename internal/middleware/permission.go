@@ -19,8 +19,8 @@ import (
 const permissionDeniedHTML = "<!DOCTYPE html><html lang=\"zh-CN\"><head><meta charset=\"utf-8\"><title>无权限</title></head><body><h1>无权限访问</h1></body></html>"
 
 // RequirePerm 检查当前用户是否具备权限。
-// 策略：超级管理员短路通过；非超级管理员基于 userPerms 校验；
-// 自助动作 perm.AuthLogout 对所有已登录用户默认放行。
+// 策略：超级管理员短路通过；自助动作 perm（systemPerms 中的项）对所有已登录用户默认放行；
+// 其余权限基于 userPerms 校验。
 func RequirePerm(p perm.Permission) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		u := CurrentUser(c)
@@ -32,7 +32,7 @@ func RequirePerm(p perm.Permission) gin.HandlerFunc {
 			c.Next()
 			return
 		}
-		if p == perm.AuthLogout {
+		if perm.IsSystemPerm(p) {
 			c.Next()
 			return
 		}
