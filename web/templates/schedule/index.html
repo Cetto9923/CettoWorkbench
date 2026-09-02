@@ -291,7 +291,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
                 <span class="schedule-type-badge schedule-type-badge--biz">业务需求</span>
                 <span class="schedule-id-badge">{{ .ID }}</span>
                 {{ if .DetailURL }}
-                <a href="{{ .DetailURL }}" target="_blank" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
+                <a href="{{ .DetailURL }}"  class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
                 {{ else }}
                 <span class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</span>
                 {{ end }}
@@ -324,7 +324,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
                 <span class="schedule-type-badge schedule-type-badge--sub">子业务需求</span>
                 <span class="schedule-id-badge">{{ .ID }}</span>
                 {{ if .DetailURL }}
-                <a href="{{ .DetailURL }}" target="_blank" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
+                <a href="{{ .DetailURL }}"  class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
                 {{ else }}
                 <span class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</span>
                 {{ end }}
@@ -357,7 +357,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
                 {{ if .IsMain }}<span class="schedule-type-badge schedule-type-badge--rd">研发需求<span class="rd-subtype">主</span></span>{{ else }}<span class="schedule-type-badge schedule-type-badge--rd">研发需求<span class="rd-subtype">配</span></span>{{ end }}
                 <span class="schedule-id-badge">{{ .ID }}</span>
                 {{ if .DetailURL }}
-                <a href="{{ .DetailURL }}" target="_blank" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
+                <a href="{{ .DetailURL }}"  class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
                 {{ else }}
                 <span class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</span>
                 {{ end }}
@@ -392,7 +392,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
                 {{ if .IsMain }}<span class="schedule-type-badge schedule-type-badge--rd">研发需求<span class="rd-subtype">主</span></span>{{ else }}<span class="schedule-type-badge schedule-type-badge--rd">研发需求<span class="rd-subtype">配</span></span>{{ end }}
                 <span class="schedule-id-badge">{{ .ID }}</span>
                 {{ if .DetailURL }}
-                <a href="{{ .DetailURL }}" target="_blank" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
+                <a href="{{ .DetailURL }}"  class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
                 {{ else }}
                 <span class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</span>
                 {{ end }}
@@ -460,7 +460,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
                 <!-- <span class="schedule-type-badge schedule-type-badge--rd">独立研发</span> -->
                 <span class="schedule-id-badge">{{ .ID }}</span>
                 {{ if .DetailURL }}
-                <a href="{{ .DetailURL }}" target="_blank" rel="noopener noreferrer" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
+                <a href="{{ .DetailURL }}"  rel="noopener noreferrer" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
                 {{ else }}
                 <span class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</span>
                 {{ end }}
@@ -498,7 +498,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
                 <span class="schedule-type-badge schedule-type-badge--rd">子研发</span>
                 <span class="schedule-id-badge">{{ .ID }}</span>
                 {{ if .DetailURL }}
-                <a href="{{ .DetailURL }}" target="_blank" rel="noopener noreferrer" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
+                <a href="{{ .DetailURL }}"  rel="noopener noreferrer" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
                 {{ else }}
                 <span class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</span>
                 {{ end }}
