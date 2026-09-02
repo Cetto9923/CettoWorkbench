@@ -1,0 +1,1114 @@
+---
+description: goframework Go 开发完整规范。编写 Go 代码、HTML 模板、数据库结构时必须遵守。
+globs:
+  - "**/*.go"
+  - web/templates/**/*.html
+  - db/**/*.sql
+---
+
+# goframework 开发规范
+
+> **规范优先级（冲突时以高优先级为准）**
+> 1. `.cursorrules` 核心底线（必须）
+> 2. 本文件（conventions.mdc）结构规范
+> 3. 模块 golden reference（`@internal/module/user/`）
+> 4. 其他补充说明
+
+---
+
+## 1. 命名规则
+
+### 1.1 文件与目录命名
+
+- **必须**全小写单词拼接，**禁止**下划线，**禁止**连字符。
+- 多词语义优先拆目录，不要在单文件名里堆词。
+- 页面模板文件按语义命名，保持稳定可读。
+- **例外**：静态资源文件（如字体文件 `Inter-Regular.woff2`、第三方库原始文件、图片等）豁免此约束
+
+| ✅ 合法 | ❌ 违规 |
+|--------|--------|
+| `internal/module/user/handler.go` | `internal/module/user_handler.go` |
+| `internal/module/operationlog/service.go` | `internal/module/operation-log/service.go` |
+| `web/templates/user/create.html` | `web/templates/user/form-create.html` |
+| `web/templates/user/edit.html` | `web/templates/user/formedit.html` |
+
+### 1.2 Go 标识符命名
+
+- 未导出变量 / 字段 / 函数：**小驼峰**。
+- 导出类型 / 函数 / 常量：**大驼峰**。
+- 包名：**全小写单词**。
+
+| ✅ 合法 | ❌ 违规 |
+|--------|--------|
+| `userSvc`, `fieldErrs`, `createReq` | `user_svc`, `Field_errs` |
+| `CreateReq`, `NewService`, `RequirePerm` | `new_service`, `create_req` |
+
+### 1.3 模板文件命名
+
+- 页面模板：`list.html` / `create.html` / `batchcreate.html` / `edit.html` / `batchedit.html` / `view.html`（括号内按需创建）
+- 布局模板：`layout/base.html`、`layout/auth.html`
+- 组件模板放 `components/` 下，按用途命名
+
+### 1.5 配置 Key 命名
+
+- 配置文件 key 使用小驼峰或小写单词，同层级保持一致。
+- 配置结构体字段用 Go 命名，`mapstructure` 明确映射关系。
+
+✅ `cookieName`, `lifetimeHours`, `parseTime`
+❌ `cookie_name`, `lifetime_hours`, `parse_time`
+
+---
+
+## 2. 代码风格（强制）
+
+### 2.1 格式化工具
+
+- **统一使用 `gofmt`**，禁止使用其他格式化工具（如 `gofumpt`、`goimports` 等）。
+- `gofmt` 的输出即为标准格式，不做额外的列对齐、等号对齐等手动格式要求。
+- 列对齐在 `gofmt` 每次运行后会被还原，强制维护只会产生无意义的 diff 噪音。
+
+**关于结构体字段 tag 的列对齐**：`gofmt` 不处理 tag 内容的对齐，因此字段 tag 部分（如 `gorm:"..."` 前的空格）不在 gofmt 管辖范围内。项目规范如下：
+- ✅ 字段名与类型之间：**一个空格**（gofmt 标准）
+- ✅ 结构体 tag 的空格对齐：**允许保留**（gofmt 不还原，不产生 diff 噪音）
+- ❌ **禁止**字段名之间手动添加空格使类型名列对齐（如在 `ID` 后加多余空格使其与 `CreatedBy` 的类型对齐）
+
+> **统一比完美更重要，工具说了算比人工维护更可靠。**
+
+---
+
+## 3. 目录结构
+
+```
+cmd/                          ← 应用入口
+internal/
+├── config/                   ← 配置结构体和加载
+├── server/                   ← HTTP Server 启动与路由注册
+├── pkg/                      ← 基础设施包（被所有模块依赖）
+│   └── pages/                ← 全局页面模板路径常量（pages.go）
+├── middleware/                ← 中间件
+├── model/                    ← GORM Model（含 BaseModel）
+├── module/                   ← 业务模块（按模块拆目录）
+└── bootstrap/                ← 应用初始化编排
+web/
+├── templates/                ← HTML 模板
+└── static/                   ← 静态资源
+configs/                      ← 配置文件
+db/                           ← 数据库安装脚本（install.sql）
+docs/                         ← 项目文档
+```
+
+---
+
+## 4. 文件头注释（强制）
+
+每个 `.go` 业务文件（handler / service / repo / form / model）和每个 `.html` 模板文件**必须**以标准注释块开头。这是 AI 的"局部上下文标签"，即使主上下文被挤掉，AI 读到这个文件时也能立刻识别身份、类型、依赖。
+
+### 4.1 Go 文件头注释格式
+
+```go
+// =============================================================================
+// 文件: internal/module/{module}/{filename}.go
+// 模块: {模块中文名}
+// 类型: crud | readonly | action | infra | middleware | model
+// 职责: 一句话描述本文件做什么
+// 依赖: 只列直接 import 的项目内部包（不列标准库和第三方），以 import 路径书写
+// =============================================================================
+
+package {packagename}
+```
+
+**依赖字段维护规则**：
+- 只列项目内部包（`internal/...`），不列标准库和第三方库
+- 以 import 路径（非别名）书写
+- 新建文件时根据实际 import 自动生成；后续修改 import 时同步更新
+- 属于"尽力维护"级别，Code Review 时若发现与实际不符须修正
+
+✅ 示例：
+
+```go
+// =============================================================================
+// 文件: internal/module/user/handler.go
+// 模块: 用户管理
+// 类型: crud
+// 职责: 处理用户管理相关的 HTTP 请求，调用 Service 层
+// 依赖: internal/module/user/service.go
+//       internal/module/user/form.go
+//       internal/pkg/render
+//       internal/pkg/pages
+//       internal/pkg/pagination
+//       internal/pkg/perm
+//       internal/middleware
+// =============================================================================
+
+package user
+```
+
+### 4.2 HTML 模板文件头注释格式
+
+```html
+{{/* ==========================================================================
+文件: web/templates/{module}/{filename}.html
+模块: {模块中文名}
+职责: 一句话描述本模板做什么
+全局字段: 本模板使用的全局注入字段（.CurrentUser / .CSRFToken / .Menus / .AppName）
+页面字段: 本模板需要的业务数据字段，格式为"字段名 (完整Go类型路径)"
+========================================================================== */}}
+```
+
+✅ 示例（**页面字段必须写出完整包路径类型**）：
+
+```html
+{{/* ==========================================================================
+文件: web/templates/user/list.html
+模块: 用户管理
+职责: 用户列表页面
+全局字段: .CurrentUser, .CSRFToken, .Menus
+页面字段: .Title (string)
+          .Users ([]module/user.UserListItem)
+          .Keyword (string)
+          .Pager (*pkg/pagination.Pager)
+          .BaseUrl (string)
+========================================================================== */}}
+```
+
+```html
+{{/* ==========================================================================
+文件: web/templates/user/edit.html
+模块: 用户管理
+职责: 用户编辑表单
+全局字段: .CurrentUser, .CSRFToken, .Menus
+页面字段: .Title (string)
+          .Form (*module/user.UpdateReq)
+          .Resource (*model.User)
+          .BaseUrl (string)
+========================================================================== */}}
+```
+
+### 4.3 其他文件类型
+
+| 文件位置 | "类型"字段值 |
+|---------|------------|
+| `internal/pkg/` 下的基础包 | `infra` |
+| `internal/middleware/` 下的中间件 | `middleware` |
+| `internal/model/` 下的 model | `model` |
+
+---
+
+## 5. 模块类型与方法集（强制对称）
+
+goframework 将所有业务模块分为三种类型。**同一类型的所有模块必须结构完全对称**——方法名相同、方法顺序相同、参数结构相同、错误处理方式相同。
+
+收益：
+1. AI 生成新模块时严格对照同类型已有模块，不会漂移
+2. 任何人看一个 crud 模块就能立刻理解所有 crud 模块
+3. 发现问题时在 golden reference 修一次，其他模块照抄
+
+**生成新模块的强制要求**：AI 必须以 `@internal/module/user/` 为模板，复制目录结构，替换实体名，保持方法顺序完全一致。
+
+---
+
+### 5.1 crud 类型
+
+适用场景：标准增删改查模块（用户、客户、产品、角色等）
+参照实现：`@internal/module/user/`
+文件：`handler.go` / `form.go` / `service.go` / `repo.go`
+
+**Handler 方法集（顺序固定）**：
+
+| 顺序 | 方法 | HTTP | 路径 |
+|-----|------|------|------|
+| 1 | `List` | GET | `/xxxs` |
+| 2 | `CreatePage` | GET | `/xxxs/new` |
+| 3 | `Create` | POST | `/xxxs` |
+| 4 | `(BatchCreatePage)` | GET | `/xxxs/batch/create` |
+| 5 | `(BatchCreate)` | POST | `/xxxs/batch/create` |
+| 6 | `EditPage` | GET | `/xxxs/:id/edit` |
+| 7 | `Update` | PUT | `/xxxs/:id` |
+| 8 | `(BatchUpdatePage)` | GET | `/xxxs/batch/edit` |
+| 9 | `(BatchUpdate)` | PUT | `/xxxs/batch/edit` |
+| 10 | `Delete` | DELETE | `/xxxs/:id` |
+
+括号内方法**按需实现**，但组内方法**必须成对出现**（有 `BatchCreatePage` 就必须有 `BatchCreate`）。标准方法集（`List` / `CreatePage` / `Create` / `EditPage` / `Update` / `Delete`）**必须全部实现**。
+
+路由前缀由 `RegisterRoutes` 的调用方传入，模块内只维护相对路径，不硬编码前缀：
+
+```go
+// RegisterRoutes 签名统一为（接收者为 Handler）：
+func (h *Handler) RegisterRoutes(rg *gin.RouterGroup)
+
+// 调用方示例：
+admin := r.Group("/admin")
+userModule.RegisterRoutes(admin)
+
+order := r.Group("/order")
+orderModule.RegisterRoutes(order)
+```
+
+**Service 方法集（顺序固定）**：
+
+```go
+// 1. 列表查询（带数据范围过滤，故需 actor）
+List(ctx context.Context, actor *model.User, req ListReq) (ListResp, error)
+
+// 2. 按 ID 查询（可能涉及对象级权限，故需 actor）
+GetByID(ctx context.Context, actor *model.User, id int64) (*model.Xxx, error)
+
+// 3. 创建
+Create(ctx context.Context, actor *model.User, req CreateReq) (CreateResp, error)
+
+// 4. 更新（返回 UpdateResp 而非 error，预留扩展）
+Update(ctx context.Context, actor *model.User, req UpdateReq) (UpdateResp, error)
+
+// 5. 删除（req 包含 ID，不单独传 int64）
+Delete(ctx context.Context, actor *model.User, req DeleteReq) error
+```
+
+**UpdateResp 最小标准定义**（禁止随意追加字段，扩展时先在 golden reference 中修改）：
+
+```go
+type UpdateResp struct {
+	ID int64 // 当前仅返回 ID，后续扩展字段在此追加
+}
+```
+
+**Service actor 规则**：
+- **所有方法都接收 actor**，包括 List / GetByID（用于数据范围过滤和对象级权限校验）
+- ❌ 禁止仅因"只读方法"而省略 actor
+
+**Repo 方法集（顺序固定）**：
+
+```go
+// 1. 分页查询（三元组：数据 + 总数 + error，内部一次调用完成 Count + Find）
+FindAll(ctx context.Context, req RepoFindAllReq) ([]model.Xxx, int64, error)
+
+// 2. 按 ID 查询
+FindByID(ctx context.Context, id int64) (*model.Xxx, error)
+
+// 3. 创建（返回新记录 id，显式意图优于 GORM 副作用写回）
+Create(ctx context.Context, m *model.Xxx) (int64, error)
+
+// 4. 更新
+Update(ctx context.Context, m *model.Xxx) error
+
+// 5. 删除（软删除，GORM 自动处理）
+Delete(ctx context.Context, id int64) error
+
+// 6. 额外方法（ExistsByXxx / CountByXxx 等）追加在后面，不打乱上方顺序
+```
+
+**Repo 层 actor 规则**：
+- **Repo 层永远不接收 actor**
+- Repo 不感知权限与操作人，actor 仅存在于 Service 层
+
+业务追加方法（如 `ToggleStatus`、`ResetPassword`）在固定方法之后追加，不打乱顺序。
+
+---
+
+### 5.2 readonly 类型
+
+适用场景：只读查询模块（操作日志、登录日志）
+参照实现：`@internal/module/operationlog/`
+文件：`handler.go` / `form.go` / `service.go` / `repo.go`
+
+**Handler 方法集**：
+
+| 顺序 | 方法 | HTTP | 路径 |
+|-----|------|------|------|
+| 1 | `List` | GET | `/xxxs` |
+
+**Service 方法集**：
+
+```go
+// readonly 的 actor 规则：
+// - 若需要按当前用户过滤数据范围，传 actor：
+//   List(ctx context.Context, actor *model.User, req ListReq) (ListResp, error)
+// - 若所有登录用户看全量数据（如操作日志），省略 actor：
+//   List(ctx context.Context, req ListReq) (ListResp, error)
+//
+// 当前 operationlog 为全量查询，签名为无 actor 版本。
+// 新增 readonly 模块时，按上述规则明确选择，并在文件头注释中注明原因。
+List(ctx context.Context, req ListReq) (ListResp, error)
+```
+
+**Repo 方法集**：
+
+```go
+// 返回三元组（无单独 Count，FindAll 已包含 total）
+FindAll(ctx context.Context, req RepoFindAllReq) ([]model.Xxx, int64, error)
+```
+
+⚠️ **readonly 模块禁止出现 Create / Update / Delete 方法。AI 生成时若出现，视为 bug。**
+
+---
+
+### 5.3 action 类型
+
+适用场景：动作导向模块（登录、找回密码、导入导出等）
+参照实现：`@internal/module/login/`
+文件：`handler.go` / `service.go` / `repo.go`（按需 `form.go`）
+
+**模块职责划分**：
+
+| 模块 | 职责 | 类型 |
+|-----|------|------|
+| `module/login` | 登录/登出业务逻辑（账密验证、session 建立、登录日志、失败锁定） | action |
+| `middleware/auth.go` | 每次请求的身份验证与权限集加载 | middleware |
+
+⚠️ `module/login` 与 `middleware/auth.go` 职责严格区分，不可混淆。
+
+**action 类型最小约束（必须遵守）**：
+
+1. **Handler 方法**：命名用动词（`Login` / `Logout` / `ImportExcel` / `ExportExcel`）
+2. **Service 方法**：
+   - 入参超过 1 个时**必须**使用 Req 结构体
+   - 写操作**必须**接收 `actor *model.User`
+   - 例外：`Login` 无 actor（登录前不存在）
+   - 例外：注册、找回密码等"准入类"写操作，actor 可为 nil，注释注明 `// Unauthenticated Write Operation`
+3. **Repo 方法**：
+   - 查询方法**必须**以 `Find` 开头
+   - 持久化方法**必须**以 `Save` 或 `Record` 开头
+   - 入参超过 2 个时**强制**使用 `RepoXxxReq` 结构体
+   - Repo 不做业务逻辑
+   - 禁止 `db.Raw()` / `db.Exec()` 拼接字符串
+   - 错误值必须在返回值最后一个
+
+---
+
+### 5.4 路由注册的模块自治原则（强制）
+
+每个模块的 Handler **必须**提供 `RegisterRoutes` 方法，自己注册自己的路由。
+`server/routes.go` 的职责只是：创建公开 / 管理后台两个路由组，然后调用各模块的 `RegisterRoutes`。
+
+**禁止**：在 `server/routes.go` 里手写 `r.GET("/admin/users", userHandler.List)` 这种直接注册。
+
+**各模块类型的 RegisterRoutes 参数签名**：
+
+| 模块类型 | 接收参数类型 | 原因 |
+|---------|------------|------|
+| crud / readonly | `rg *gin.RouterGroup` | 挂载在调用方指定的路由组内（如 `/admin`、`/order` 等，由 `server/routes.go` 决定） |
+| action（auth/login） | `r *gin.Engine` | 登录页是公开路由，不在任何受保护路由组内 |
+| action（其他） | 默认 `rg *gin.RouterGroup`，有公开路由时用 `r *gin.Engine` |
+
+**crud 模块 RegisterRoutes 标准模板**：
+
+```go
+func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
+	g := rg.Group("/{modulepluralname}")
+
+	g.GET("", middleware.RequirePerm(perm.XxxList), h.List)
+	g.GET("/new", middleware.RequirePerm(perm.XxxCreate), h.CreatePage)
+	g.GET("/:id/edit", middleware.RequirePerm(perm.XxxUpdate), h.EditPage)
+
+	g.POST("", middleware.RequirePerm(perm.XxxCreate), h.Create)
+	g.PUT("/:id", middleware.RequirePerm(perm.XxxUpdate), h.Update)
+
+	g.DELETE("/:id", middleware.RequirePerm(perm.XxxDelete), h.Delete)
+}
+```
+
+**RegisterRoutes 内部路由定义规范**：
+
+1. **按 HTTP 方法分组**（GET / POST / PUT / DELETE），组间空行隔开
+2. **组内按 Handler 方法集顺序排列**（List → CreatePage → EditPage → ...）
+3. **扩展方法**（`ToggleStatus`、`ResetPassword` 等）追加在对应 HTTP 方法组末尾
+4. **同路径 GET+POST 对**（如 `BatchCreatePage` GET + `BatchCreate` POST 共享 `/batch/create`）：GET 归 GET 组，POST 归 POST 组，通过路径名称对应关系识别为同一功能对，这是预期行为，不需要集中在一起
+
+✅ 含扩展方法的完整示例（`gofmt` 实际输出，不做列对齐）：
+
+```go
+func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
+	users := rg.Group("/users")
+
+	users.GET("", middleware.RequirePerm(perm.UserList), h.List)
+	users.GET("/new", middleware.RequirePerm(perm.UserCreate), h.CreatePage)
+	users.GET("/batch/create", middleware.RequirePerm(perm.UserCreate), h.BatchCreatePage)
+	users.GET("/:id/edit", middleware.RequirePerm(perm.UserUpdate), h.EditPage)
+	users.GET("/batch/edit", middleware.RequirePerm(perm.UserUpdate), h.BatchUpdatePage)
+
+	users.POST("", middleware.RequirePerm(perm.UserCreate), h.Create)
+	users.POST("/batch/create", middleware.RequirePerm(perm.UserCreate), h.BatchCreate)
+	users.PUT("/:id", middleware.RequirePerm(perm.UserUpdate), h.Update)
+	users.PUT("/batch/edit", middleware.RequirePerm(perm.UserUpdate), h.BatchUpdate)
+	users.PUT("/:id/toggle-status", middleware.RequirePerm(perm.UserUpdate), h.ToggleStatus)
+	users.PUT("/:id/reset-password", middleware.RequirePerm(perm.UserUpdate), h.ResetPassword)
+
+	users.DELETE("/:id", middleware.RequirePerm(perm.UserDelete), h.Delete)
+}
+```
+
+> ⚠️ 注意：扩展动作（`ToggleStatus`、`ResetPassword`）使用 `PUT`，不使用 `POST`，语义更准确（幂等操作）。
+
+**中间件依赖传递规则**：`RegisterRoutes` 所需的外部依赖必须以 `gin.HandlerFunc` 形式传入，在 `bootstrap.go` 中预先组装好，**禁止**传入裸资源（`*gorm.DB`、`*scs.SessionManager`）。
+
+```go
+// bootstrap.go（组装）
+requireLogin := middleware.RequireLogin(sessionMgr, db)
+authHandler.RegisterRoutes(r, requireLogin, loginLimiter)
+
+// handler.go（接收）
+func (h *Handler) RegisterRoutes(r *gin.Engine, requireLogin gin.HandlerFunc, loginLimiter *ratelimitpkg.Limiter)
+```
+
+---
+
+## 6. 模板数据契约（强制）
+
+模板中可用的数据分为两类，必须严格区分。
+
+### 6.1 全局自动注入字段
+
+由 render 包在渲染时自动注入，**所有页面都可以使用，Handler 不需要手动传**。
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `.CurrentUser` | `*model.User` | 当前登录用户（未登录为 nil） |
+| `.CSRFToken` | `string` | CSRF Token（用于 ajax 请求头 `X-CSRF-Token`） |
+| `.Menus` | `[]menu.Menu` | 当前用户可见的侧边栏菜单 |
+| `.AppName` | `string` | 应用名称（从配置读取） |
+| `.CurrentPath` | `string` | 当前请求路径（用于菜单高亮） |
+
+⚠️ `.Flash` 字段已废弃，不再注入。操作反馈改为后端返回 `message`，前端调用 `showToast` 显示。
+
+⚠️ Handler **不应该**在 `gin.H` 里重复传递这些字段。如果传了同名 key，渲染器会覆盖为自动注入值。
+
+### 6.2 页面手动传递字段
+
+由 Handler 通过 `gin.H{}` 传入，**页面特定的业务数据**。
+
+| 字段 | 是否必填 | 说明 |
+|------|---------|------|
+| `Title` | **必填** | 页面标题（会拼到 `<title>` 标签和顶部 `<h1>`） |
+| `PageTitle` | 可选 | 如需页面顶部标题与 browser title 不同，可单独指定 |
+| `BaseUrl` | 列表页 / 编辑页**必填** | 当前模块的资源根路径（如 `/admin/users`），供模板拼接操作 URL，不得硬编码在模板内 |
+| 其他 | 按需 | 业务数据，命名用大驼峰（模板访问需要大写字段名） |
+
+### 6.3 表单页的数据契约
+
+创建 / 编辑表单页 GET 渲染时**必须**传以下字段：
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `Form` | `*XxxReq` | 创建页传空结构体；编辑页传当前记录预填数据 |
+
+> ⚠️ **`Errors` 字段不在 GET 渲染路径传递。** 表单验证错误通过 ajax POST 返回 422 JSON，由前端 `renderErrors` 在当前页面就地渲染，服务端不注入 `Errors` 到模板。
+
+编辑页**额外**传：
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `Resource` | `*model.Xxx`（实体指针） | 当前编辑的对象，模板通过 `.Resource` 访问 |
+
+**命名约束**：
+
+- ✅ 统一使用 `Resource`，模板中通过 `.Resource.FieldName` 访问
+- ❌ 禁止使用具体实体名（`.User`、`.Customer`）替代 `Resource`
+- ❌ 禁止使用 `FormData` / `FieldErrors` 等其他命名
+
+表单级错误（非字段错误）的 `Field` 约定为 `_form`，由前端统一渲染为 `alert-danger`。
+
+---
+
+## 7. Req/Resp 结构体命名约定（强制）
+
+| 结构体命名 | 所在层 | 用途 | 说明 |
+|---|---|---|---|
+| `CreateReq` / `UpdateReq` / `ListReq` | Service | Service 方法入参 | 包名已区分模块，不加模块前缀 |
+| `DeleteReq` | Service | Service 方法入参 | ID 由 Handler 从 `c.Param("id")` 手动赋值后传入，结构体本身无需绑定 tag |
+| `CreateResp` / `UpdateResp` / `ListResp` | Service | Service 方法出参 | 多字段出参时定义 Resp；单实体返回直接用 `*model.Xxx` |
+| `RepoFindAllReq` / `RepoXxxReq` | Repo | Repo 多参数查询入参 | 前缀 `Repo` 明确层级 |
+
+**使用结构体的优势**：
+1. 加字段不破坏调用点
+2. AI 不会数位置参数
+3. 字段命名自解释，Review 更快
+
+**何时可以不用结构体（分层规则）**：
+
+| 层 | 可省略结构体的情形 | 示例 |
+|---|---|---|
+| **Repo 层** | 单个标识参数 | `FindByID(ctx, id int64)` |
+| **Repo 层** | 单个操作 ID | `Delete(ctx, id int64)` |
+| **Service 层** | 单个标识参数 | `GetByID(ctx, actor, id int64)` |
+| **Service 层** | **Delete 必须用 DeleteReq** | `Delete(ctx, actor, req DeleteReq)` ← 方便后续追加"删除原因"等字段 |
+
+⚠️ **Service 层的 Delete 必须使用 `DeleteReq` 结构体**，即使当前只有 ID 字段：
+
+```go
+type DeleteReq struct {
+	ID int64
+}
+```
+
+---
+
+## 8. 分层职责
+
+### 8.1 Handler 层
+
+- **只做**：参数绑定、调用 Service、返回 JSON 或渲染页面。
+- **不做**：业务逻辑、直接访问数据库。
+- 写操作成功：调用 `render.Success(c, message, redirectUrl)` 返回 JSON
+- 表单验证失败：调用 `render.Fail(c, errors)` 返回 422 JSON，前端负责回填错误
+- 错误处理：调用 `render.Error(c, err)` 统一处理
+
+**参数获取规则**：
+
+| 参数类型 | 获取方式 | 是否在禁止范围 |
+|---------|---------|-------------|
+| Path 参数（`:id`） | `c.Param("id")` | **不在禁止范围**，允许使用 |
+| Query 参数（GET） | `c.ShouldBindQuery(&req)` 或带 `form` tag 的 `c.ShouldBind(&req)` | `c.Query()` 散落**禁止** |
+| JSON Body（POST/PUT，ajax） | `c.ShouldBindJSON(&req)` | 需要 `json` tag；`c.PostForm()` 散落**禁止** |
+
+❌ 错误示例：
+```go
+// 禁止：逐字段取值散落
+name := c.PostForm("name")
+email := c.Query("email")
+```
+
+✅ 正确示例：
+```go
+// 正确：ajax JSON body 绑定（POST/PUT）
+var req CreateReq
+if err := c.ShouldBindJSON(&req); err != nil {
+	render.Fail(c, []FieldError{{Field: "_form", Message: "请求格式错误"}})
+	return
+}
+```
+
+### 8.2 Service 层
+
+- 负责业务逻辑、事务编排、权限校验（对象级）。
+- 入参出参**必须**用结构体：`CreateReq` / `CreateResp` / `UpdateReq` / ...
+- 写操作**必须**接收 `actor *model.User`，用于审计字段填充和对象级权限校验。
+- **不**直接依赖 `gin.Context`，接收 `context.Context`。
+
+### 8.3 Repo 层
+
+- **只做**：数据库 CRUD 封装。
+- **必须**参数化查询，**禁止** `db.Raw()` 和 `db.Exec()` 拼接字符串。
+  - 允许例外：复杂 JOIN / 子查询 / 报表，必须用 `?` 占位符，且 SQL 只能写在 Repo 层。
+- 分页查询用 `pagination.Pager`。
+- **Repo 不接收 actor**，不感知权限与操作人。
+
+**零值字段更新规则**：
+
+| 情形 | 写法 |
+|------|------|
+| 需要更新零值字段 | `map[string]any`，key 为 `gorm:"column:xxx"` 中的列名（小驼峰），每个 key 附注释说明对应 model 字段名 |
+| 不涉及零值字段 | `.Select("Field1", "Field2").Updates(&model.Xxx{})` 结构体更新，**必须显式指定更新列** |
+| **禁止** | 不加 `Select` 的裸结构体 `Updates`（GORM 会静默跳过零值字段且不报错） |
+
+✅ 示例：
+
+```go
+// 需要更新零值字段时使用 map（如恢复软删除记录将 deletedAt 置 nil，或将 status 置 0）
+db.Model(&model.User{}).Where("id = ?", id).Updates(map[string]any{
+	"deletedAt": nil, // model.User.DeletedAt（恢复软删除，置 NULL）
+	"status":    0,   // model.User.Status（int 零值）
+})
+
+// 不涉及零值
+db.Model(&model.User{}).Select("name", "email").Updates(&model.User{Name: name, Email: email})
+```
+
+---
+
+## 9. 表单处理约定
+
+- 所有表单在 `form.go` 里定义 Req 结构体，按职责分三类：
+  - **写入类**（`CreateReq` / `UpdateReq`）：走 ajax JSON body 绑定，使用 `json` tag
+  - **删除类**（`DeleteReq`）：ID 由 Handler 从 `c.Param("id")` 解析后手动赋值，**无需绑定 tag**
+  - **读取类**（`ListReq`）：走 GET query 参数绑定，使用 `form` tag
+
+```go
+// 写入类：走 ajax JSON body，使用 json tag
+type CreateReq struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
+// 删除类：ID 由 Handler 从 c.Param("id") 手动赋值，不参与 body 绑定，无需 tag
+type DeleteReq struct {
+	ID int64
+}
+
+// 读取类：走 GET query 参数，使用 form tag
+type ListReq struct {
+	Keyword  string `form:"keyword"`
+	Page     int    `form:"page"`
+	PageSize int    `form:"pageSize"`
+}
+```
+- **验证统一手写 `Validate() []FieldError` 方法，禁止引入 `go-playground/validator`**，两套机制不允许并存。
+- `Validate()` 产出的 `[]FieldError` 在 Handler 层通过 `render.Fail(c, errors)` 序列化为 422 JSON 返回，前端 `renderErrors` 负责渲染到页面；不再由服务端回填模板。
+- `CreateReq` / `UpdateReq` **必须**有 `Validate()` 方法。
+- `ListReq` 包含分页字段（`Page`、`PageSize`）和搜索字段。
+
+**标准验证结构体定义**：
+
+```go
+type FieldError struct {
+	Field   string
+	Message string
+}
+
+// Validate 返回字段级验证错误，不返回 error。
+// 业务逻辑错误（如邮箱重复）由 Service 层返回 BizError。
+func (r *CreateReq) Validate() []FieldError {
+	var errs []FieldError
+	if strings.TrimSpace(r.Name) == "" {
+		errs = append(errs, FieldError{Field: "name", Message: "姓名不能为空"})
+	}
+	// ...
+	return errs
+}
+```
+
+❌ 禁止使用 `map[string]string` 保存验证错误（切片保留字段顺序，确保前端 `renderErrors` 按定义顺序渲染，`map` 无法保证遍历顺序）。
+
+---
+
+## 10. 路由规范（RESTful）
+
+crud 模块标准路由（相对路径，前缀由调用方的 RouterGroup 决定）：
+
+```
+GET    /xxxs           → List
+GET    /xxxs/new       → CreatePage
+POST   /xxxs           → Create
+GET    /xxxs/:id/edit  → EditPage
+PUT    /xxxs/:id       → Update
+DELETE /xxxs/:id       → Delete
+```
+
+**PUT/DELETE 的标准写法（ajax）**：
+
+```javascript
+// 实际 URL 由前端根据当前路由前缀 + 资源 ID 拼接，如 /admin/users/123
+// PUT 示例
+await submitForm(`${baseUrl}/${id}`, 'PUT', formData)
+
+// DELETE 示例
+await submitForm(`${baseUrl}/${id}`, 'DELETE', {})
+```
+
+- 写操作统一通过 `submitForm` 发 ajax 请求，由 `app.js` 统一处理响应
+- **GET 请求禁止使用 `_method`**
+
+---
+
+## 11. 模板规范
+
+- 所有页面继承 `layout/base.html` 或 `layout/auth.html`。
+- 页面模板用 `{{ define "content" }}...{{ end }}` 块。
+- 模板文件命名：`list.html` / `create.html` / `edit.html` / `show.html`。
+- **禁止** `template.HTML`，**禁止** `<script>` 内使用模板变量。
+- CSRF Token 通过 `<meta name="csrf-token">` 注入到布局，供 ajax 请求头使用。
+- 操作反馈通过 `showToast` 显示，**不使用 Flash 组件**（`components/flash.html` 已废弃）。
+- 已有宏（如 `{{ template "pagination" . }}`）时，**禁止**展开写原生 HTML。
+
+### 11.1 前端 JS 职责分离
+
+| 文件 | 职责 |
+|------|------|
+| `components/*.js` | UI 组件交互函数（Toast、Modal、Dropdown 等），通过 `components.js` 汇总加载 |
+| `app.js` | 核心业务逻辑（Fetch 请求、DOM 数据绑定、表单提交、`submitForm`、`renderErrors` 等） |
+| `layout/*.js` | 布局相关交互（如 `sidebar.js`） |
+| `模块名/*.js` | 模块独有逻辑 |
+
+`app.js` 必须包含以下统一提交函数：
+
+```javascript
+async function submitForm(url, method, data) {
+    const res = await fetch(url, {
+        method,
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify(data)
+    })
+    const json = await res.json()
+    if (json.success) {
+        showToast(json.message, "success")
+        window.location.href = json.redirectUrl
+    } else if (res.status === 422) {
+        renderErrors(json.errors)
+    } else if (res.status === 401) {
+        window.location.href = "/login"
+    } else {
+        showToast(json.message, "error")
+    }
+}
+```
+
+### 11.2 删除操作的前端实现规范
+
+删除操作**必须**通过二次确认弹窗，禁止直接提交：
+
+```html
+<!-- 删除按钮：type="button"，禁止 type="submit" -->
+<!-- URL 由模板动态生成，不得硬编码路由前缀 -->
+<button type="button"
+        class="btn btn-icon"
+        title="删除"
+        onclick="confirmDelete('{{.BaseUrl}}/{{.Resource.ID}}', '{{.Resource.Name}}')">
+  <!-- icon -->
+</button>
+```
+
+`confirmDelete(url, name)` 由 `components/modal.js` 实现，确认后调用 `submitForm(url, 'DELETE', {})` 发送 ajax 请求。
+
+> `.BaseUrl` 由 Handler 注入（如 `/admin/users`），模板拼接完整资源路径，不在 HTML 中硬编码前缀。
+
+---
+
+## 12. 数据库规范
+
+### 12.1 字段命名规则
+
+- **数据库字段名统一小驼峰，禁止下划线**（如 `createdDate`，禁止 `created_at`）
+- **所有 GORM model 字段必须显式声明 `gorm:"column:xxx"` tag**，防止 GORM 默认生成下划线列名
+- GORM 初始化时**必须**配置 `NamingStrategy` 禁用下划线转换，或通过强制 `column` tag 覆盖
+
+### 12.2 BaseModel 标准定义
+
+**所有业务 model 必须嵌入 `BaseModel`**：
+
+```go
+// internal/model/base.go
+// =============================================================================
+// 文件: internal/model/base.go
+// 类型: model
+// 职责: 所有业务 model 的公共嵌入基类
+// =============================================================================
+
+package model
+
+import (
+	"time"
+	"gorm.io/gorm"
+)
+
+// BaseModel 所有业务表的公共字段。
+// 软删除通过 gorm.DeletedAt 实现，GORM 查询时自动追加 WHERE deletedAt IS NULL。
+type BaseModel struct {
+	ID          int64          `gorm:"primaryKey;column:id"`
+	CreatedBy   int64          `gorm:"column:createdBy;not null;default:0"`
+	CreatedDate time.Time      `gorm:"column:createdDate;not null"`
+	UpdatedBy   int64          `gorm:"column:updatedBy;not null;default:0"`
+	UpdatedDate time.Time      `gorm:"column:updatedDate;not null"`
+	DeletedAt   gorm.DeletedAt `gorm:"column:deletedAt"` // 软删除字段，列名小驼峰
+}
+```
+
+### 12.3 软删除规范
+
+- **统一使用 `gorm.DeletedAt`**（`BaseModel` 中已嵌入），GORM 查询时自动追加 `WHERE deletedAt IS NULL`
+- ❌ **禁止**另设 `deleted` 整型 / 布尔字段作为软删除标志
+- ❌ **禁止**在 `Where` 中手写 `deleted = 0`（冗余且与 `gorm.DeletedAt` 语义冲突）
+
+### 11.4 软删除与唯一索引
+
+MySQL 8.0 的 `gorm.DeletedAt` 未删除状态为 `NULL`，唯一索引允许多个 `NULL` 值（无法阻止邮箱重复）。
+**必须**将 `deletedAt` 用 `BIGINT` 时间戳方案实现唯一索引保护：
+需要查询已删除记录时，使用 `Unscoped()`：
+- ✅ **审计场景**：展示已删除记录的历史
+- ❌ **禁止**用于常规业务查询
+- ❌ **禁止**用于唯一性校验（见 §12.4，应直接走普通查询，利用 GORM 自动过滤）
+
+### 12.4 唯一性校验与软删除
+
+不同业务场景对唯一字段的处理要求不同，在模块 Service 层明确选择，并在代码注释中注明原因：
+
+**场景一：唯一值不可复用**（如系统配置 key、权限标识）
+
+依赖数据库唯一索引，直接查询即可：
+
+```go
+// 唯一值不可复用，依赖数据库唯一索引
+db.Where("code = ?", code).First(&m)
+```
+
+**场景二：唯一值可复用**（如用户 email 注销后可重新注册）
+
+`gorm.DeletedAt` 为 NULL 时 MySQL 唯一索引不生效（允许多个 NULL），需在 Service 层手动校验当前是否存在未删除的同值记录：
+
+```go
+// 唯一值可复用，检查是否存在未软删除的同值记录
+var existing model.User
+err := db.Where("email = ?", email).First(&existing).Error
+if err == nil {
+	// 记录存在（GORM 自动追加 WHERE deletedAt IS NULL）
+	return ErrEmailAlreadyExists
+}
+if !errors.Is(err, gorm.ErrRecordNotFound) {
+	return err
+}
+// err == ErrRecordNotFound：无冲突，可继续创建
+```
+
+### 12.5 其他数据库约定
+
+- 所有业务表使用 `zt_` 前缀（如 `zt_users`、`zt_login_logs`）
+- 唯一索引命名：`uk_zt_<table>_<field>`
+- 普通索引命名：`idx_zt_<table>_<field>`
+- 数据库结构统一维护在 `db/install.sql`
+- **禁止** PostgreSQL 特有语法（条件索引、数组类型、jsonb 等）
+
+---
+
+## 13. 错误处理
+
+- `errorx` 包定义业务错误类型：`BizError`（`Code` + `Msg`）。
+- Service 层返回 `BizError` 或原生 `error`。
+- 所有写操作（POST/PUT/DELETE）统一返回 JSON，不再使用页面重定向或 Flash 消息。
+
+**统一 JSON 响应结构**：
+
+| 场景 | HTTP 状态码 | 响应体 |
+|------|------------|--------|
+| 操作成功 | 200 | `{ success: true, message: "xxx", redirectUrl: "/xxx" }` |
+| 表单验证失败 | 422 | `{ success: false, errors: [{ field: "email", message: "xxx" }] }` |
+| 业务错误 | 400 | `{ success: false, message: "xxx" }` |
+| 无权限 | 403 | `{ success: false, message: "xxx" }` |
+| 未登录（ajax 请求） | 401 | `{ success: false, message: "请先登录" }` |
+| 服务器错误 | 500 | `{ success: false, message: "xxx" }` |
+
+`render` 包统一方法：
+
+```go
+render.Success(c, "创建成功", "/admin/users")  // 200
+render.Fail(c, errors)                         // 422（表单验证失败）
+render.Error(c, err)                           // BizError → 映射对应状态码；未知 error → 500
+```
+
+Handler 调用 `render.Error(c, err)` 统一处理：
+- `BizError`：按 `Code` 字段映射 HTTP 状态码（400 业务错误 / 403 无权限 / 404 资源不存在），响应体为 `{ success: false, message: Msg }`
+- 未知 `error`：`zap` 记录日志 + 返回 500 JSON
+
+### 13.1 HTTP 状态码标准
+
+| 场景 | 状态码 | 常量 |
+|------|--------|------|
+| 参数解析失败（框架层 Bind 错误） | 400 | `http.StatusBadRequest` |
+| 表单验证失败（业务层 Validate 错误） | **422** | `http.StatusUnprocessableEntity` |
+| 未登录（页面请求） | 302 重定向到登录页 | `http.StatusFound` |
+| 未登录（ajax 请求） | **401** | `http.StatusUnauthorized` |
+| 无权限 | 403 | `http.StatusForbidden` |
+| 资源不存在 | 404 | `http.StatusNotFound` |
+| CSRF Token 失败 | 403 | `http.StatusForbidden` |
+| 限流触发 | 429 | `http.StatusTooManyRequests` |
+| 服务器错误 | 500 | `http.StatusInternalServerError` |
+
+⚠️ 表单验证失败**必须**使用 422，不是 400。
+
+---
+
+## 14. 权限规范
+
+权限常量未注册时，默认拒绝访问，不存在"未配置即放行"的情况。
+
+- 所有权限标识定义在 `internal/pkg/perm/constants.go`，强类型常量。
+- **所有路由（包括 List）必须绑定 `middleware.RequirePerm(perm.Xxx)`**。
+- 权限粒度固定为四类：`XxxList` / `XxxCreate` / `XxxUpdate` / `XxxDelete`。
+- Service 层对象级权限在方法内部校验（根据 `actor`）。
+- 超级管理员（`isSuperAdmin=true`）短路通过所有权限中间件。
+
+### 14.1 请求处理链顺序
+
+```
+1. session middleware（解析 session）
+2. auth middleware（解析 CurrentUser，加载权限集）
+3. CSRF middleware（nosurf 自动注入 token，受配置 csrf.enabled 控制）
+4. RequirePerm / RequireLogin middleware
+5. handler
+```
+
+### 14.2 Session 存储内容
+
+```go
+// session 存储：
+// - userID（int64）
+// - sessionVersion（int，用于强制下线）
+```
+
+### 14.3 "自助动作"权限设计原则
+
+以下"用户自助操作"需要权限，但应设计为所有登录用户默认拥有：
+- 登出（`perm.AuthLogout`）
+- 修改自己密码（后续二期）
+- 查看自己个人资料（后续二期）
+
+处理方式：
+- 仍按标准模式绑定 `perm` 常量和 `RequirePerm` 中间件（保持结构一致）
+- 在种子数据或角色初始化时，所有角色默认拥有这些 perm
+- ❌ **不允许**将这类操作设计为"只需 `RequireLogin` 不需 `RequirePerm`"（会破坏"所有路由都绑 RequirePerm"的强约束）
+
+---
+
+## 15. 日志规范
+
+- 所有组件用 `zap.Logger`。
+- **禁止** `fmt.Println`、`log.Print` 散落。
+- 敏感字段过滤：`password`、`token`、`secret`、`apikey` 不进日志。
+- Error 级别**必须**带 `error` 字段：`logger.Error("msg", zap.Error(err))`。
+
+---
+
+## 16. 注释规范
+
+普通业务逻辑不强制写注释。以下四类场景**必须**写"为什么"注释：
+
+1. **安全边界函数**（路径校验、Token 验证、权限检查）：说明防御的具体攻击向量
+2. **安全策略常量**（锁定阈值、超时时间等魔法数字）：说明数值来源和防御目标
+3. **架构决策点**（为什么用 map 而非 struct、为什么保留某参数）：说明决策理由，防止后续 AI 或开发者"优化"掉
+4. **预埋字段**（`_ = actor` 等）：说明预埋意图和后续修改指引
+
+❌ 避免注释污染：不对每行普通代码写注释，注释描述"为什么"而非"是什么"。
+
+---
+
+## 17. 禁用清单
+
+| ❌ 禁止 | ✅ 替代 |
+|--------|--------|
+| `init()` 函数（全局禁止，含 bootstrap.go） | `bootstrap.go` 显式初始化 |
+| blank import 散落在业务模块中 | `bootstrap.go` 集中管理，每行附注释说明用途 |
+| `gofumpt` / `goimports` 等非官方格式化工具 | 统一使用 `gofmt` |
+| 手动列对齐、等号对齐 | `gofmt` 输出即为标准，不做额外对齐要求 |
+| `template.HTML` | 修改数据源或用 `{{ . }}` 转义 |
+| `db.Raw()` 拼接字符串 | GORM 链式 API 或带 `?` 占位符的参数化查询 |
+| `db.Exec()` 拼接字符串 | 同上（与 `db.Raw()` 同等注入风险） |
+| MD5/SHA256 存密码 | bcrypt cost=12 |
+| 多位置参数 Service（超过 1 个 id 型参数） | Req/Resp 结构体 |
+| 下划线文件名 | 拆目录或单词化 |
+| `fmt.Println` | `zap.Logger` |
+| Redis | MySQL / 进程内 |
+| HTMX / 前端框架 | 原生 fetch + app.js |
+| `c.PostForm()` / `c.Query()` 散落 | 写入类（POST/PUT）：`json` tag + `c.ShouldBindJSON`；读取类（GET）：`form` tag + `c.ShouldBindQuery` |
+| `go-playground/validator` | 手写 `Validate() []FieldError` |
+| GORM model 字段缺少 `gorm:"column:xxx"` tag | 所有字段显式声明 column tag |
+| `deleted` 整型软删除字段 | `gorm.DeletedAt`（`gorm:"column:deletedAt"`） |
+| `Unscoped()` 用于常规业务查询或唯一性校验 | 只允许用于审计场景（见 §12.3） |
+| 模板数据 key 使用具体实体名 | 统一使用 `Resource`（编辑页）/ 具体集合名（列表页） |
+| 模板中超过 3 个 if 嵌套或 2 个 range 嵌套 | 封装为模板函数（`template.FuncMap`）或拆分到 `components/` |
+
+### 17.1 单文件行数建议与拆分策略
+
+- ✅ 建议 **300 行**以内
+- ⚠️ **500 行**为硬线，超过必须拆分
+
+**拆分命名模式**（保持全小写，多词语义拆目录）：
+
+```
+handler.go            ← 主 CRUD 方法（List/CreatePage/Create/EditPage/Update/Delete）
+handleraction.go      ← 追加动作（导入/导出/ToggleStatus 等）
+
+service.go            ← 主 CRUD 逻辑
+serviceaction.go      ← 追加动作逻辑
+
+repo.go               ← 主查询与写入
+repoquery.go          ← 复杂查询（报表/聚合）
+```
+
+---
+
+## 18. 新模块开发 Checklist
+
+按顺序执行，**不得跳步**：
+
+**第 1 步：页面层**
+- [ ] 创建 `web/templates/xxx/` 目录
+- [ ] 写 `list.html` / `create.html` / `edit.html`
+- [ ] 写临时 `handler.go`，返回假数据
+- [ ] 注册**临时路由**（仅 GET 展示路由：List / CreatePage / EditPage）
+  - 临时路由绑定 `middleware.RequireLogin`（权限常量尚未定义）
+  - **不注册** Create / Update / Delete 写路由
+- [ ] 浏览器打开三张页面，确认样式
+
+**第 2 步：form.go**
+- [ ] 定义 `CreateReq` / `UpdateReq` / `ListReq` + `Resp`
+- [ ] 实现 `Validate()` 方法（手写，返回 `[]FieldError`）
+
+**第 3 步：model + install.sql**
+- [ ] 写 `internal/model/xxx.go`，嵌入 `BaseModel`，所有字段加 `gorm:"column:xxx"` tag
+- [ ] 在 `db/install.sql` 新增建表 SQL（字段名小驼峰，含 `deletedAt` 字段）
+- [ ] 导入 install.sql 验证表创建成功
+
+**第 4 步：repo.go / service.go / 真实 handler.go**
+- [ ] 按方法集顺序实现，替换临时 handler
+- [ ] 在 `internal/pkg/pages/pages.go` 对应分组下添加页面常量
+
+**第 5 步：注册（权限正式化）**
+- [ ] `perm/constants.go` 加权限常量（`XxxList` / `XxxCreate` / `XxxUpdate` / `XxxDelete`）
+- [ ] `server/routes.go` 调用模块 `RegisterRoutes`（传入对应 `*gin.RouterGroup`）
+- [ ] 模块 `RegisterRoutes` 中完整绑定所有 `RequirePerm`（包括临时路由升级）
+- [ ] `bootstrap.go` 初始化模块
+
+**第 6 步：Review**
+- [ ] 所有路由（含 List）有 `RequirePerm`
+- [ ] 写操作返回 JSON（`render.Success` / `render.Fail` / `render.Error`）
+- [ ] Service 写操作接收 `actor`
+- [ ] Service 使用 `Req/Resp` 结构体
+- [ ] Repo 方法不接收 `actor`
+- [ ] Repo `Create` 返回 `(int64, error)`
+- [ ] Handler 使用 `pages.XxxYyy` 常量，无模板名裸字符串
+- [ ] 无 `c.PostForm()` / `c.Query()` 散落
+- [ ] 写入类 Req（`CreateReq`/`UpdateReq`）字段使用 `json` tag，Handler 绑定用 `c.ShouldBindJSON`
+- [ ] 读取类 Req（`ListReq`）字段使用 `form` tag，Handler 绑定用 `c.ShouldBindQuery`
+- [ ] `DeleteReq.ID` 由 `c.Param("id")` 手动赋值，未误加绑定 tag
+- [ ] 所有 model 字段有 `gorm:"column:xxx"` tag
+- [ ] 无 `template.HTML`
+- [ ] 无下划线文件命名
+- [ ] 文件不超过 300 行
+- [ ] `configs/` 中 `csrf.enabled` 生产环境为 `true`
+
+---
+
+## 19. 例外说明
+
+- `db/install.sql` 为数据库结构唯一入口，新增表结构时直接在该文件维护。
+- 静态资源文件（字体、第三方库、图片）命名豁免全小写约束，保留原始命名。
+- 复杂 JOIN / 子查询 / 报表允许使用 `db.Raw()`，但**必须**使用 `?` 占位符，禁止字符串拼接。
+
+---
+
+## 20. 全局页面常量（pages.go）
+
+所有模板路径统一定义在 `internal/pkg/pages/pages.go`，Handler 中**禁止**使用裸字符串引用模板。
+
+```go
+// =============================================================================
+// 文件: internal/pkg/pages/pages.go
+// 类型: infra
+// 职责: 全局页面模板路径常量，按模块分组
+// =============================================================================
+
+package pages
+
+const (
+	// 用户管理
+	UserList   = "user/list.html"
+	UserCreate = "user/create.html"
+	UserEdit   = "user/edit.html"
+
+	// 部门管理
+	DeptList   = "dept/list.html"
+	DeptCreate = "dept/create.html"
+	DeptEdit   = "dept/edit.html"
+)
+```
+
+Handler 中使用方式：
+
+```go
+import "goframework/internal/pkg/pages"
+
+render.HTML(c, pages.UserList, data)
+```
+
+新增模块时在对应分组下追加常量，**不创建独立文件**。
+
+---

@@ -1,0 +1,14 @@
+tmp/*
+dist/*
+logs/*
+.idea/
+.vscode/
+configs/config.dev.yaml
+web/static/uploads/**
+backups/*.sql.gz
+server
+
+/demo
+/demo2
+/docs/demo-analysis.md
+/docs/design

@@ -1,0 +1,100 @@
+{{/* ==========================================================================
+文件: web/templates/dept/list.html
+模块: 部门管理
+职责: 部门树形列表页（扁平渲染，按层级缩进）。
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .PageTitle (string), .Items ([]FlatItem)
+========================================================================== */}}
+{{ define "page_css" }}
+<link rel="stylesheet" href="/static/css/dept/list.css">
+{{ end }}
+{{ define "content" }}
+<div class="split-layout">
+  <div class="tree-panel">
+    <div class="panel-header">
+      <span class="panel-title">组织架构树</span>
+    </div>
+    <div class="tree-body" id="deptTree">
+      {{ range .Items }}
+      {{ $row := . }}
+      {{ $hasChildren := false }}
+      {{ range $.Items }}
+      {{ if eq .ParentID $row.ID }}
+      {{ $hasChildren = true }}
+      {{ end }}
+      {{ end }}
+      <div
+        class="tree-node-wrap"
+        data-id="{{ .ID }}"
+        data-parent-id="{{ .ParentID }}"
+        data-level="{{ .Level }}"
+        data-name="{{ .Name }}"
+        data-status="{{ .Status }}"
+        data-leader="{{ .Leader }}"
+        data-sort="{{ .Sort }}"
+        data-created-at="{{ if .CreatedAt.IsZero }}—{{ else }}{{ .CreatedAt.Format "2006-01-02 15:04" }}{{ end }}"
+        data-edit-url="/admin/depts/{{ .ID }}/edit"
+      >
+        <a href="#" class="tree-node" data-id="{{ .ID }}" style="--depth: {{ sub .Level 1 }};">
+          {{ if $hasChildren }}
+          <i class="bi bi-chevron-down tree-node-toggle"></i>
+          {{ else }}
+          <i class="bi bi-dot tree-node-toggle placeholder"></i>
+          {{ end }}
+          <span class="tree-node-name">{{ .Name }}</span>
+        </a>
+      </div>
+      {{ else }}
+      <div class="text-muted">暂无部门数据</div>
+      {{ end }}
+    </div>
+  </div>
+
+  <div class="content-panel">
+    <div class="table-panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span id="currentDeptName">请在左侧选择部门</span>
+          <span class="panel-badge" id="currentDeptCount">子部门 0 个</span>
+        </div>
+      </div>
+
+      <div class="table-wrapper table-scroll-wrapper" id="deptTableWrap" style="display:none;">
+        <table class="table data-table zen-table">
+          <thead>
+            <tr>
+              <th class="col-id">ID</th>
+              <th>部门名称</th>
+              <th>负责人</th>
+              <th>状态</th>
+              <th class="col-num">排序</th>
+              <th>创建时间</th>
+              <th class="col-action">操作</th>
+            </tr>
+          </thead>
+          <tbody id="deptChildRows"></tbody>
+        </table>
+      </div>
+      <div class="empty-state" id="deptEmptyTip">
+        <p class="empty-state-text">请在左侧选择部门</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="deptRowTemplates" style="display:none;">
+  {{ range .Items }}
+  <template data-badge-id="{{ .ID }}">
+    {{ if eq (printf "%v" .Status) "0" }}
+      {{ template "ui/badge" (dict "Status" .Status "Text" "正常") }}
+    {{ else }}
+      {{ template "ui/badge" (dict "Status" .Status "Text" "停用") }}
+    {{ end }}
+  </template>
+  <template data-action-id="{{ .ID }}">{{ template "ui/action-group" (dict "ID" .ID "Name" .Name "EditUrl" (printf "/admin/depts/%d/edit" .ID) "DeleteUrl" (printf "/admin/depts/%d" .ID)) }}</template>
+  {{ end }}
+</div>
+{{ end }}
+{{ define "page_js" }}
+<script src="/static/js/dept/list.js"></script>
+{{ end }}

@@ -1,0 +1,176 @@
+:root {
+  /* 品牌主色 */
+  --color-primary: #6366f1;
+  --color-primary-hover: #4f46e5;
+  --color-primary-active: #4338ca;
+  --color-primary-active-deep: #3730a3;
+  --color-primary-light: #eef2ff;
+  --color-primary-border: #c7d2fe;
+
+  /* 语义功能色 */
+  --color-success: #065f46;
+  --color-success-bg: #d1fae5;
+  --color-danger: #991b1b;
+  --color-danger-bg: #fee2e2;
+  --color-warning: #92400e;
+  --color-warning-light: #f5cd2d;
+  --color-warning-bg: #fef3c7;
+
+  /* 页面层级色 */
+  --color-page-bg: #f8f9fc;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f9fafb;
+  --color-surface-muted: #f8fafc;
+
+  /* 文字色阶 */
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #64748b;
+  --color-text-disabled: #94a3b8;
+
+  /* 边框色阶 */
+  --color-border: #e2e8f0; /* 1px 使用此色，视觉轻量且 Windows 可靠渲染 */
+  --color-border-strong: #cbd5e1;
+  --color-border-focus: #6366f1;
+  --color-border-soft: #e3eaf3;
+  --color-border-soft-2: #e5edf6;
+  --color-border-soft-3: #d7e1ed;
+  --color-border-soft-4: #eef3f8;
+  --color-border-soft-5: #d0dbe8;
+  --color-border-soft-6: #b2c2d6;
+  --color-border-soft-7: #d4dbe7;
+  --color-border-soft-8: #c3ccdb;
+
+  /* 扩展文本/背景色 */
+  --color-text-body: #334155;
+  --color-text-strong: #1e293b;
+  --color-text-deep: #1f2937;
+  --color-text-link-muted: #2c3e66;
+  --color-text-accent-muted: #5b6e8c;
+  --color-text-brand: #1e4b6e;
+  --color-text-placeholder: #99aac2;
+  --color-info: #2563eb;
+
+  --color-surface-soft: #f8fafd;
+  --color-surface-soft-2: #f9f9fc;
+  --color-surface-soft-3: #f1f5f9;
+  --color-surface-soft-4: #eef2f7;
+  --color-surface-soft-5: #f9fbfe;
+  --color-surface-soft-6: #f1f1f3;
+  --color-surface-soft-7: #f5f9ff;
+
+  --color-success-strong: #0b5e42;
+  --color-success-accent: #16a34a;
+  --color-success-border: #a7f3d0;
+  --color-danger-strong: #b91c1c;
+  --color-danger-accent: #dc2626;
+  --color-danger-bright: #ef4444;
+  --color-danger-deep: #be123c;
+  --color-danger-deeper: #9f1239;
+  --color-danger-border: #fecaca;
+  --color-primary-gradient-start: #4f7cff;
+  --color-primary-gradient-end: #3b5bdb;
+
+  /* 透明色 */
+  --color-white-35: rgba(255, 255, 255, 0.35);
+  --color-white-08: rgba(255, 255, 255, 0.08);
+  --color-overlay: rgba(0, 0, 0, 0.35);
+  --color-shadow-05: rgba(0, 0, 0, 0.05);
+  --color-shadow-02: rgba(0, 0, 0, 0.02);
+  --color-shadow-12: rgba(0, 0, 0, 0.12);
+  --color-ink-15-23-42-02: rgba(15, 23, 42, 0.2);
+  --color-ink-15-23-42-03: rgba(15, 23, 42, 0.03);
+  --color-ink-15-23-42-08: rgba(15, 23, 42, 0.08);
+  --color-success-ring: rgba(34, 197, 94, 0.2);
+  --color-dange--po-bg: #f4f5f7;
+
+  --po-white: #fff;
+  --po-border: #e5e7eb;
+  --po-t1: #1f2937;
+  --po-t2: #6b7280;
+  --po-t3: #9ca3af;
+  --po-blue: #2563eb;
+  --po-blue-bg: #eff6ff;
+  --po-blue-bd: #bfdbfe;
+  --po-red: #dc2626;
+  --po-red-bg: #fef2f2;
+  --po-red-bd: #fecaca;
+  --po-orange: #ea580c;
+  --po-orange-bg: #fff7ed;
+  --po-orange-bd: #fed7aa;
+  --po-green: #16a34a;r-ring: rgba(220, 38, 38, 0.2);
+
+  /* 间距基准（只允许使用这些值）*/
+  --space-0_5: 2px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-25: 100px;
+
+  /* 尺寸变量（高度/宽度） */
+  --size-0_5: 2px;
+  --size-0_75: 3px;
+  --size-2: 8px;
+  --size-3: 12px;
+  --size-4: 16px;
+  --size-5: 20px;
+  --size-6: 24px;
+  --size-7: 28px;
+  --size-8: 32px;
+  --size-9: 36px;
+  --size-10: 40px;
+  --size-11: 44px;
+  --size-12: 48px;
+  --size-13: 52px;
+  --size-14: 56px;
+
+  /* 字号变量 */
+  --font-size-2xs: 11px;
+  --font-size-xs: 12px;
+  --font-size-sm: 13px;
+  --font-size-md: 14px;
+  --font-size-base: 14px;
+  --font-size-lg: 15px;
+  --font-size-2xl: 20px;
+
+  /* 交互元素垂直内边距例外规则：
+     按钮和导航项的垂直 padding 允许使用 6px / 7px，
+     目的是配合 36px 固定行高（font-size:13px + line-height:1 + padding*2 = 36px）。
+     除此之外所有布局间距必须使用上方规范值，不允许其他奇数值。 */
+
+  /* 圆角 */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-pill: 20px;
+
+  /* 投影（只允许这一档轻量阴影）*/
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-soft: 0 4px 6px -1px var(--color-shadow-05), 0 2px 4px -2px var(--color-shadow-05);
+  --shadow-popover: 0 10px 24px var(--color-ink-15-23-42-08);
+  --shadow-search-panel: 0 8px 20px var(--color-ink-15-23-42-03), 0 0 0 1px var(--color-shadow-02);
+  --shadow-table-panel: 0 20px 35px -12px var(--color-shadow-12), 0 1px 3px var(--color-shadow-02);
+  --shadow-success-inset: inset 0 0 0 1px var(--color-success-ring);
+  --shadow-danger-inset: inset 0 0 0 1px var(--color-danger-ring);
+
+  /* 字体栈 */
+  --font-sans: 'Noto Sans SC',-apple-system,sans-serif;
+  /* --font-sans: "JetBrains Mono", monospace; */
+
+  /* Focus Ring */
+  --focus-ring: 0 0 0 3px rgba(99, 102, 241, 0.25);
+  --color-primary-ring-soft: rgba(79, 70, 229, 0.16);
+
+  /* 布局尺寸 */
+  --sidebar-width: 200px;
+  --sidebar-width-collapsed: calc(var(--size-10) + var(--space-5));
+  --topbar-height: 52px;
+  /* 含可选二级顶栏时的总高度，由 topnav.js 同步测量写入 */
+  --topbar-stack-height: 52px;
+}

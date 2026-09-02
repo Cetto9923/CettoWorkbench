@@ -1,0 +1,17 @@
+{{/* ==========================================================================
+文件: web/templates/error.html
+模块: 通用模板
+职责: 统一错误页面模板。
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .Status (int), .Message (string), .Detail (string)
+========================================================================== */}}
+{{ define "content" }}
+  <div class="text-center py-5">
+    <h1 class="display-1 text-muted">{{ .Status }}</h1>
+    <h3 class="mb-3">{{ .Message }}</h3>
+    {{ if .Detail }}
+      <pre class="bg-light p-3 text-start text-danger small">{{ .Detail }}</pre>
+    {{ end }}
+    <a href="/" class="btn btn-primary mt-3">返回首页</a>
+  </div>
+{{ end }}

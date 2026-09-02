@@ -1,0 +1,259 @@
+@import "../../vendor/fonts/jetbrains-mono/fonts.css";
+
+/*
+ * workbench 项目样式文件。
+ * 仅放置项目自定义样式；第三方样式统一放在 web/static/vendor/。
+ */
+
+:root {
+  --bs-primary: var(--color-primary-hover);
+  --bs-primary-rgb: 79, 70, 229;
+  --bs-link-color: var(--color-primary-hover);
+  --bs-link-hover-color: var(--color-primary-active);
+  --bs-font-sans-serif: var(--font-sans);
+  --bs-body-font-family: var(--font-sans);
+
+  --bg-surface: var(--color-surface-muted);
+  --box-shadow-soft: var(--shadow-soft);
+  --radius-lg: 12px;
+  --radius-md: 8px;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-surface);
+  color: var(--color-text-strong);
+}
+
+button,
+input,
+select,
+textarea,
+.form-control,
+.form-select {
+  font-family: inherit;
+}
+
+.ql-container,
+.ql-editor {
+  font-family: var(--font-sans);
+}
+
+.zen-header {
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.zen-header .navbar-brand {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.zen-header .navbar-brand:hover {
+  color: var(--bs-primary);
+}
+
+.zen-header-meta {
+  border-top: 1px solid var(--color-surface-soft-3);
+  background-color: var(--color-surface);
+}
+
+.zen-header .breadcrumb {
+  --bs-breadcrumb-font-size: var(--font-size-xs);
+}
+
+.zen-header .breadcrumb-item a {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+}
+
+.zen-header .breadcrumb-item a:hover {
+  color: var(--bs-primary);
+}
+
+.zen-user-avatar {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  background-color: var(--color-primary-light);
+  color: var(--bs-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-zen-header {
+  color: var(--color-text-body);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+}
+
+.btn-zen-header:hover {
+  color: var(--color-text-primary);
+  background-color: var(--color-surface-muted);
+  border-color: var(--color-text-disabled);
+}
+
+.zen-sidebar-panel {
+  width: 240px;
+  flex-shrink: 0;
+  background-color: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  box-shadow: 4px 0 16px -14px var(--color-ink-15-23-42-02);
+  display: flex;
+  flex-direction: column;
+}
+
+.zen-side-nav {
+  padding: var(--space-4) var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.zen-nav-link {
+  border: 0;
+  text-decoration: none;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-md);
+  font-weight: 500;
+  min-height: 2.5rem;
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.zen-nav-main {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.zen-nav-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.zen-nav-link:hover {
+  background-color: var(--color-surface-soft-3);
+  color: var(--color-text-strong);
+}
+
+.zen-nav-link.active {
+  background-color: var(--color-primary-light);
+  color: var(--bs-primary);
+  font-weight: 600;
+}
+
+.zen-nav-children {
+  margin-left: var(--space-2);
+  margin-top: var(--space-1);
+  padding-left: var(--space-2);
+  border-left: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.zen-nav-child {
+  min-height: 2.2rem;
+  font-size: var(--font-size-sm);
+}
+
+.zen-nav-arrow {
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-disabled);
+}
+
+.zen-sidebar-toggle {
+  margin: auto var(--space-3) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  min-height: var(--size-9);
+}
+
+.zen-sidebar-toggle:hover {
+  background-color: var(--color-primary-light);
+  color: var(--bs-primary);
+}
+
+.ui-btn-action {
+  width: var(--size-8);
+  height: var(--size-8);
+  border: 0;
+  border-radius: 999px;
+  background-color: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.ui-btn-action:hover {
+  background-color: var(--color-primary-light);
+  transform: translateY(-1px);
+}
+
+.card,
+.zen-card {
+  border: none;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--box-shadow-soft);
+  background-color: var(--color-surface);
+}
+
+.card > .card-body,
+.zen-card > .card-body {
+  padding: 0;
+}
+
+.btn {
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3_75);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.btn:focus,
+.btn:focus-visible,
+.btn:active:focus,
+.btn-check:focus + .btn {
+  box-shadow: none;
+  outline: none;
+}
+
+.btn-primary {
+  height: var(--size-9);
+  --bs-btn-bg: var(--bs-primary);
+  --bs-btn-border-color: var(--bs-primary);
+  --bs-btn-hover-bg: var(--color-primary-active);
+  --bs-btn-hover-border-color: var(--color-primary-active);
+  --bs-btn-active-bg: var(--color-primary-active-deep);
+  --bs-btn-active-border-color: var(--color-primary-active-deep);
+}
+
+.form-control,
+.form-select {
+  border-radius: var(--radius-md);
+  border-color: var(--color-border-strong);
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--bs-primary);
+  box-shadow: 0 0 0 0.14rem var(--color-primary-ring-soft);
+  outline: none;
+}

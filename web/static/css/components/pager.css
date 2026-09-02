@@ -1,0 +1,112 @@
+/* 分页容器（Ant Design 风格）*/
+.pager-footer {
+  border-top: 1px solid var(--color-border);
+}
+
+.pagination-container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-size-md);
+  color: var(--color-text-regular, var(--color-text-secondary));
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  gap: var(--space-2);
+}
+
+.pagination .page-item {
+  margin: 0;
+}
+
+/* 基础页码按钮 */
+.pagination .page-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--size-6);
+  height: var(--size-6);
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  background-color: transparent;
+  color: var(--color-text-regular, var(--color-text-secondary));
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  box-sizing: border-box;
+}
+
+/* 悬浮状态：文字变主题色 */
+.pagination .page-item:not(.active):not(.disabled) .page-link:hover {
+  color: var(--color-primary);
+  background-color: var(--color-surface-hover);
+}
+
+/* 当前页：主题色边框 + 主题色文字 */
+.pagination .page-item.active .page-link {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background-color: var(--color-surface);
+  font-weight: 500;
+}
+
+/* 禁用状态 */
+.pagination .page-item.disabled .page-link {
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
+}
+
+.pagination .page-item.disabled {
+  pointer-events: none;
+}
+
+/* 扩展组件：条数选择与跳页 */
+.pagination-options {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: var(--space-2);
+}
+
+.pagination-total {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.pagination-size-form,
+.pagination-jump-form {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.pagination-options .select,
+.pagination-options .input {
+  height: var(--size-8);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  transition: border-color 0.2s;
+}
+
+.pagination-options .select:hover,
+.pagination-options .input:hover,
+.pagination-options .select:focus,
+.pagination-options .input:focus {
+  border-color: var(--color-primary);
+}
+
+.pagination-options .input {
+  width: var(--size-12);
+  text-align: center;
+}

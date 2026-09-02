@@ -1,0 +1,28 @@
+{{/* ==========================================================================
+文件: web/templates/layout/auth.html
+模块: 布局
+职责: 认证页面布局模板。
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string)
+========================================================================== */}}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ .CSRFToken }}">
+  <title>{{ .Title }} - workbench</title>
+  <link rel="stylesheet" href="{{ asset "/static/vendor/bootstrap/css/bootstrap.min.css" }}">
+  <link rel="stylesheet" href="{{ asset "/static/vendor/bootstrap-icons/bootstrap-icons.css" }}">
+  <link rel="stylesheet" href="{{ asset "/static/css/layout/variables.css" }}">
+  <link rel="stylesheet" href="{{ asset "/static/css/layout/app.css" }}">
+</head>
+<body class="bg-light">
+  <div class="container py-4">
+    {{ template "content" . }}
+  </div>
+	<script src="{{ asset "/static/vendor/bootstrap/js/bootstrap.bundle.min.js" }}"></script>
+  <script src="{{ asset "/static/js/app.js" }}"></script>
+  <script src="{{ asset "/static/js/login.js" }}"></script>
+</body>
+</html>

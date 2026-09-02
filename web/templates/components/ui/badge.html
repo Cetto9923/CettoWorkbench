@@ -1,0 +1,54 @@
+{{/* ==========================================================================
+文件: web/templates/components/ui/badge.html
+模块: 通用模板
+职责: 渲染可复用状态徽章组件。
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: .Status (any), .Text (string)
+========================================================================== */}}
+{{ define "ui/badge" }}
+{{ $status := printf "%v" .Status }}
+{{ $text := .Text }}
+{{ $class := .Class }}
+{{ $iconPath := "M2 5h6" }}
+{{ if or (eq $class "status-active") (eq $class "status-success") (eq $class "status-type-builtin") }}
+  {{ $iconPath = "M2 5l2 2 4-4" }}
+{{ else if eq $class "status-inactive" }}
+  {{ $iconPath = "M2 5h6" }}
+{{ end }}
+{{ if eq $text "" }}
+  {{ if or (eq $status "0") (eq $status "true") }}
+    {{ $text = "正常" }}
+  {{ else }}
+    {{ $text = "停用" }}
+  {{ end }}
+{{ end }}
+{{ if ne $class "" }}
+<span class="status-badge {{ $class }}">
+  <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5">
+    <path d="{{ $iconPath }}"/>
+  </svg>
+  {{ $text }}
+</span>
+{{ else if or (eq $status "0") (eq $status "true") }}
+<span class="status-badge status-active">
+  <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5">
+    <path d="M2 5l2 2 4-4"/>
+  </svg>
+  {{ $text }}
+</span>
+{{ else if or (eq $status "1") (eq $status "false") }}
+<span class="status-badge status-inactive">
+  <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5">
+    <path d="M2 5h6"/>
+  </svg>
+  {{ $text }}
+</span>
+{{ else }}
+<span class="status-badge status-inactive">
+  <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5">
+    <path d="M2 5h6"/>
+  </svg>
+  {{ $text }}
+</span>
+{{ end }}
+{{ end }}

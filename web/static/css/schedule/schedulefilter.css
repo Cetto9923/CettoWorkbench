@@ -1,0 +1,92 @@
+/* 高级筛选多选下拉：仅作用于 #scheduleMultiselectRow，不影响页面其他样式 */
+
+#page-schedule .schedule-filter--primary {
+  z-index: 30;
+}
+
+#page-schedule #scheduleMoreFilters {
+  z-index: 5;
+}
+
+#scheduleMultiselectRow .schedule-ms {
+  position: relative;
+  min-width: 132px;
+}
+
+#scheduleMultiselectRow .schedule-ms.open {
+  z-index: 120;
+}
+
+#scheduleMultiselectRow .schedule-ms-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 132px;
+  height: 30px;
+  padding: 5px 8px;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+#scheduleMultiselectRow .schedule-ms-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+#scheduleMultiselectRow .schedule-ms-trigger i {
+  flex-shrink: 0;
+  font-size: 10px;
+  color: #64748b;
+}
+
+#scheduleMultiselectRow .schedule-ms-panel {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  z-index: 1200;
+  min-width: 180px;
+  max-width: 280px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--white, #fff);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+#scheduleMultiselectRow .schedule-ms-options {
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+#scheduleMultiselectRow .schedule-ms-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+#scheduleMultiselectRow .schedule-ms-option:hover {
+  background: #f8fafc;
+}
+
+#scheduleMultiselectRow .schedule-ms-checkbox {
+  flex-shrink: 0;
+  margin: 0;
+}
+
+#scheduleMultiselectRow .schedule-ms-empty {
+  padding: 8px 10px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+#scheduleMultiselectRow > .action-btn {
+  height: 30px;
+}

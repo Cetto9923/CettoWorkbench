@@ -1,0 +1,76 @@
+{{/* ==========================================================================
+文件: web/templates/layout/base.html
+模块: 布局
+职责: 后台主布局模板，负责导航、侧栏与页面容器结构。
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath, .LayoutNav (sidebar|top，来自配置 layout.nav), .HideChrome (bool，constants 全屏页表)
+页面字段: .Title (string), .PageTitle (string), .CurrentMenus ([]menu.Menu)
+========================================================================== */}}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ .CSRFToken }}">
+  <title>{{ .Title }} - workbench</title>
+  <link rel="stylesheet" href="{{ asset "/static/vendor/fonts/jetbrains-mono/fonts.css" }}">
+  <link rel="stylesheet" href="{{ asset "/static/vendor/bootstrap-icons/bootstrap-icons.css" }}">
+  <link rel="stylesheet" href="{{ asset "/static/vendor/fontawesome/css/all.min.css" }}">
+  <link rel="stylesheet" href="{{ asset "/static/vendor/quill/quill.snow.css" }}">
+  <link rel="stylesheet" href="/static/css/layout/base.css">
+  <link rel="stylesheet" href="/static/css/layout/variables.css">
+  <link rel="stylesheet" href="/static/css/layout/app.css">
+  <link rel="stylesheet" href="/static/css/layout/layout.css">
+  {{ if and (not .HideChrome) (eq .LayoutNav "top") }}<link rel="stylesheet" href="/static/css/layout/topnav.css">{{ end }}
+  <link rel="stylesheet" href="/static/css/components/components.css">
+  {{ block "page_css" . }}{{ end }}
+</head>
+<body{{ if .HideChrome }} class="layout-chrome-hidden"{{ else if eq .LayoutNav "top" }} class="layout-nav-top"{{ end }}>
+  {{ if not .HideChrome }}
+  <header class="topbar">
+    {{ template "layout/header" . }}
+  </header>
+  {{ end }}
+
+  <div class="layout">
+    {{ if and (not .HideChrome) (eq .LayoutNav "sidebar") }}{{ template "layout/sidebar" . }}{{ end }}
+
+    <main class="main">
+      {{ template "content" . }}
+    </main>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+  <div class="modal-backdrop" id="modal-delete">
+    <div class="modal modal-sm">
+      <div class="modal-header modal-header-danger">
+        <div class="modal-danger-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M8 6v4M8 11.5v.5"/>
+            <path d="M7 2.3L1.5 12A1 1 0 002.4 13.5h11.2a1 1 0 00.9-1.5L9 2.3a1 1 0 00-2 0z"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="modal-title">确认删除？</h2>
+          <p class="modal-subtitle">此操作不可撤销，删除后数据将永久移除。</p>
+        </div>
+      </div>
+      <div class="modal-impact">
+        请确认该数据不再被业务流程依赖后再执行删除操作。
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-neutral" type="button" onclick="closeModal('modal-delete')">取消</button>
+        <button class="btn btn-danger" type="button" onclick="submitDelete()">确认删除</button>
+      </div>
+    </div>
+  </div>
+  <script src="/static/js/ui.js"></script>
+  <script src="/static/js/app.js"></script>
+  <script src="/static/js/components/components.js"></script>
+  <script src="/static/js/layout/sidebar.js"></script>
+  <script src="{{ asset "/static/vendor/quill/quill.min.js" }}"></script>
+  <script src="{{ asset "/static/vendor/jquery/jquery.min.js" }}"></script>
+  {{ if and (not .HideChrome) (eq .LayoutNav "top") }}<script src="/static/js/layout/topnav.js"></script>{{ end }}
+  {{ block "page_js" . }}{{ end }}
+  {{ template "scripts" . }}
+</body>
+</html>

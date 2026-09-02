@@ -1,0 +1,394 @@
+/* ==========================================================================
+文件: web/static/css/components/form.css
+模块: Design System
+职责: 表单基础组件样式（输入框、标签、错误态、表单网格、树形单选下拉、多选检索、下拉内清除与展开按钮）。
+========================================================================== */
+
+.input,
+.select,
+.textarea {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-3);
+  height: var(--size-9);
+  width: 100%;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+.textarea {
+  height: auto;
+  padding: var(--space-2) var(--space-3);
+  resize: vertical;
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--color-text-disabled);
+}
+
+.input:hover,
+.select:hover {
+  border-color: var(--color-border-strong);
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border: 2px solid var(--color-border-focus);
+  box-shadow: var(--focus-ring);
+}
+
+/* 只读输入：弱化交互感，保留清晰可读性 */
+.input[readonly] {
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+  cursor: not-allowed;
+}
+
+.input[readonly]:hover {
+  border-color: var(--color-border);
+}
+
+.input[readonly]:focus {
+  border: 1px solid var(--color-border);
+  box-shadow: none;
+}
+
+/* 错误态 */
+.input.error,
+.select.error {
+  border: 2px solid var(--color-danger-bright);
+}
+
+.field-error {
+  font-size: var(--font-size-xs);
+  color: var(--color-danger-bright);
+  margin-top: var(--space-1);
+}
+
+/* 表单布局 */
+.form-group {
+  margin-bottom: var(--space-4);
+}
+
+.form-label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.form-label.required::after {
+  content: " *";
+  color: var(--color-danger-bright);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0 var(--space-6);
+}
+
+/* 通用多选下拉（输入检索 + 下拉列表） */
+.form-multiselect {
+  width: 100%;
+}
+
+.form-multiselect-input {
+  width: 100%;
+  min-height: var(--size-9);
+}
+
+.form-multiselect-display {
+  min-height: var(--size-9);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  padding: var(--space-0_5) var(--size-13) var(--space-0_5) var(--space-2);
+}
+
+.form-multiselect.open .form-multiselect-display {
+  border: 2px solid var(--color-border-focus);
+  box-shadow: var(--focus-ring);
+}
+
+.form-multiselect-display .form-multiselect-input {
+  border: none;
+  box-shadow: none;
+  height: var(--size-7);
+  min-height: var(--size-7);
+  background: transparent;
+  padding: 0;
+}
+
+.form-multiselect-display .form-multiselect-input:focus,
+.form-multiselect-display .form-multiselect-input:hover {
+  border: none;
+  box-shadow: none;
+}
+
+.form-multiselect-tags {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-wrap: nowrap;
+}
+
+.form-multiselect-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-0_5) var(--space-2);
+  border-radius: var(--radius-xs);
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  max-width: calc(var(--space-16) + var(--space-16) + var(--space-8));
+}
+
+.form-multiselect-tag-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.form-multiselect-tag-remove {
+  border: none;
+  background: transparent;
+  color: var(--color-text-disabled);
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.form-multiselect-overflow {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-0_5) var(--space-2);
+  border-radius: var(--radius-xs);
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+}
+
+.form-multiselect-menu {
+  width: 100%;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-popover);
+}
+
+/* 高于侧栏/表格叠层与常规 dropdown-menu(1050)，弹窗内避免被兄弟节点压住 */
+.form-multiselect.open > .dropdown-menu.form-multiselect-menu {
+  z-index: 1200;
+}
+
+.form-multiselect-list {
+  padding: var(--space-2);
+}
+
+.form-multiselect-scroll {
+  max-height: calc(var(--size-14) * 5);
+  overflow-y: auto;
+}
+
+.form-multiselect-option {
+  width: 100%;
+  min-height: var(--size-8);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  border-radius: var(--radius-xs);
+  padding: 0 var(--space-2);
+}
+
+.form-multiselect-option:hover {
+  background: var(--color-surface-muted);
+}
+
+.form-multiselect-name {
+  color: var(--color-text-primary);
+}
+
+/* 通用树形单选：隐藏原生 select + 触发条 + 下拉树（如部门选择） */
+.form-tree-select-field {
+  position: relative;
+}
+
+.form-tree-select-data {
+  display: none;
+}
+
+.form-tree-select-native {
+  position: absolute;
+  width: var(--size-0_5);
+  height: var(--size-0_5);
+  padding: 0;
+  margin: calc(-1 * var(--size-0_5));
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.form-tree-select-dropdown {
+  width: 100%;
+}
+
+.form-tree-select-input {
+  width: 100%;
+  min-height: var(--size-9);
+}
+
+.form-tree-select-dropdown.open .form-tree-select-input {
+  border: 2px solid var(--color-border-focus);
+  box-shadow: var(--focus-ring);
+}
+
+/* 框内右侧 ⌄ 与 ×：相对定位 + input padding-right */
+.form-input-clear-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.form-input-clear-wrap > .form-dropdown-chevron {
+  position: absolute;
+  right: var(--size-7);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-7);
+  height: var(--size-7);
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-text-disabled);
+  cursor: pointer;
+  border-radius: var(--radius-xs);
+}
+
+.form-input-clear-wrap > .form-dropdown-chevron:hover {
+  color: var(--color-text-primary);
+}
+
+.form-input-clear-wrap > .form-dropdown-clear {
+  position: absolute;
+  right: var(--space-2);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+}
+
+.form-input-clear-wrap > .form-tree-select-input {
+  padding-right: var(--size-13);
+}
+
+.form-input-clear-wrap > .form-multiselect-input {
+  padding-right: var(--size-13);
+}
+
+.form-dropdown-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-5);
+  height: var(--size-5);
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-text-disabled);
+  font-size: var(--size-4);
+  line-height: 1;
+  cursor: pointer;
+  border-radius: var(--radius-xs);
+  flex-shrink: 0;
+}
+
+.form-dropdown-clear:hover {
+  color: var(--color-text-primary);
+  background: var(--color-surface-muted);
+}
+
+.form-tree-select-menu {
+  width: 100%;
+  padding: var(--space-2);
+}
+
+.form-tree-select-scroll {
+  max-height: calc(var(--size-14) * 5 + var(--size-10));
+  overflow-y: auto;
+}
+
+.form-tree-select-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.form-tree-select-item {
+  margin: 0;
+  padding: 0;
+}
+
+.form-tree-select-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.form-tree-select-row:hover {
+  background: var(--color-surface-muted);
+}
+
+.form-tree-select-toggle {
+  width: var(--size-4);
+  text-align: center;
+  color: var(--color-text-disabled);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.form-tree-select-toggle--placeholder {
+  visibility: hidden;
+  cursor: default;
+}
+
+.form-tree-select-label {
+  cursor: pointer;
+  flex: 1;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+}
+
+.form-tree-select-label--active {
+  color: var(--color-primary);
+  font-weight: 500;
+  background: var(--color-primary-light);
+  border-radius: var(--radius-xs);
+  padding: 0 var(--space-1);
+  margin: 0 calc(-1 * var(--space-1));
+}
+
+@media (max-width: 768px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}

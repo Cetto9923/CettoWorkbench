@@ -1,0 +1,54 @@
+app:
+  name: 个人工作台
+  env: prod
+  addr: ":8080"
+
+database:
+  # host: "wds.oop.cc"
+  # port: "2881"
+  host: "127.0.0.1"
+  port: "3306"
+  user: "root"
+  password: "zentao"
+  dbname: "zentao_changshu"
+  charset: "utf8mb4"
+  parseTime: true
+  loc: "Local"
+
+# 弱读备库
+databaseReadonly:
+  # host: "wds.oop.cc"
+  # port: 2881
+  host: "127.0.0.1"
+  port: "3306"
+  user: "root"
+  password: "zentao"
+  dbname: "zentao_changshu"
+  charset: "utf8mb4"
+  parseTime: true
+  loc: "Local"
+  sessionVariables: ""
+
+zentao:
+  # 禅道地址
+  url: "https://changshu.wrk.oop.cc/"
+  # 对齐禅道 config->requestType
+  requestType: PATH_INFO
+  # 禅道 API 地址
+  api: "https://customer.chandao.net/api.php/v1"
+  account: "encrypt"
+  password: "Asd123456"
+
+session:
+  cookieName: workbench_sid
+  lifetimeHours: 2
+  # 是否开启https
+  cookieSecure: true
+
+log:
+  level: debug
+  dir: logs
+
+layout:
+  # 导航样式 sidebar(侧边导航) | top(顶部导航)
+  nav: sidebar

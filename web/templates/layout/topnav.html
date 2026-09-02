@@ -1,0 +1,130 @@
+{{ define "topnav/subItems" }}
+{{/* ================================================================
+  渲染顶栏二级区：仅展开当前根菜单的直接子项（与侧栏第一层子菜单对应）。
+  参数: .Items ([]menu.Menu), .CurrentPath (string), .ActiveNavKey (string)
+================================================================ */}}
+{{ $ctx := . }}
+{{ range .Items }}
+  {{ if or (eq .Type "directory") (eq .Type "menu") }}
+    {{ if .Children }}
+      {{ $hasNavChild := false }}
+      {{ $firstPath := "" }}
+      {{ range .Children }}
+        {{ if or (eq .Type "directory") (eq .Type "menu") }}
+          {{ $hasNavChild = true }}
+          {{ if and (not $firstPath) .Path }}{{ $firstPath = .Path }}{{ end }}
+        {{ end }}
+      {{ end }}
+      {{ if $hasNavChild }}
+        {{ $href := .Path }}
+        {{ if eq $href "" }}{{ $href = $firstPath }}{{ end }}
+        <a href="{{ $href }}"
+           class="topnav-subitem{{ if menuNavActive $ctx.ActiveNavKey . }} is-active{{ end }}"
+           title="{{ .Title }}">{{ .Title }}</a>
+      {{ else if .Path }}
+        <a href="{{ .Path }}"
+           class="topnav-subitem{{ if menuNavActive $ctx.ActiveNavKey . }} is-active{{ end }}"
+           title="{{ .Title }}">{{ .Title }}</a>
+      {{ end }}
+    {{ else if .Path }}
+      <a href="{{ .Path }}"
+         class="topnav-subitem{{ if menuNavActive $ctx.ActiveNavKey . }} is-active{{ end }}"
+         title="{{ .Title }}">{{ .Title }}</a>
+    {{ end }}
+  {{ end }}
+{{ end }}
+{{ end }}
+
+{{ define "layout/topnavPrimary" }}
+{{/* ==========================================================================
+文件: web/templates/layout/topnav.html
+模块: 布局
+职责: 蓝色一级顶栏，数据源与侧栏一致（.CurrentMenus + .CurrentPath + .ActiveNavKey）。
+全局字段: .CurrentMenus, .CurrentPath, .ActiveNavKey
+========================================================================== */}}
+<nav id="topnav-primary" class="topnav-primary" aria-label="主导航">
+  <div class="topnav-primary-track">
+    {{ if .CurrentMenus }}
+      {{ range .CurrentMenus }}
+        {{ if or (eq .Type "directory") (eq .Type "menu") }}
+          {{ if .Children }}
+            {{ $hasNavChild := false }}
+            {{ $firstPath := "" }}
+            {{ range .Children }}
+              {{ if or (eq .Type "directory") (eq .Type "menu") }}
+                {{ $hasNavChild = true }}
+                {{ if and (not $firstPath) .Path }}{{ $firstPath = .Path }}{{ end }}
+              {{ end }}
+            {{ end }}
+            {{ if $hasNavChild }}
+              <button type="button"
+                      class="topnav-primary-item{{ if menuNavActive $.ActiveNavKey . }} is-active{{ end }}"
+                      data-topnav-panel="{{ .Key }}"
+                      title="{{ .Title }}">
+                {{ if .Icon }}<i class="bi {{ .Icon }} topnav-primary-icon" aria-hidden="true"></i>{{ end }}
+                <span class="topnav-primary-label">{{ .Title }}</span>
+              </button>
+            {{ else if .Path }}
+              <a href="{{ .Path }}"
+                 class="topnav-primary-item topnav-primary-item--leaf{{ if and $.ActiveNavKey (eq $.ActiveNavKey .Key) }} is-active{{ end }}"
+                 title="{{ .Title }}">
+                {{ if .Icon }}<i class="bi {{ .Icon }} topnav-primary-icon" aria-hidden="true"></i>{{ end }}
+                <span class="topnav-primary-label">{{ .Title }}</span>
+              </a>
+            {{ end }}
+          {{ else if .Path }}
+            <a href="{{ .Path }}"
+               class="topnav-primary-item topnav-primary-item--leaf{{ if and $.ActiveNavKey (eq $.ActiveNavKey .Key) }} is-active{{ end }}"
+               title="{{ .Title }}">
+              {{ if .Icon }}<i class="bi {{ .Icon }} topnav-primary-icon" aria-hidden="true"></i>{{ end }}
+              <span class="topnav-primary-label">{{ .Title }}</span>
+            </a>
+          {{ end }}
+        {{ end }}
+      {{ end }}
+    {{ end }}
+  </div>
+</nav>
+{{ end }}
+
+{{ define "layout/topnavSecondary" }}
+{{ $initial := "" }}
+{{ range .CurrentMenus }}
+  {{ if or (eq .Type "directory") (eq .Type "menu") }}
+    {{ if .Children }}
+      {{ $hasNavChild := false }}
+      {{ range .Children }}
+        {{ if or (eq .Type "directory") (eq .Type "menu") }}
+          {{ $hasNavChild = true }}
+        {{ end }}
+      {{ end }}
+      {{ if and $hasNavChild (menuNavActive $.ActiveNavKey .) }}
+        {{ if eq $initial "" }}
+          {{ $initial = .Key }}
+        {{ end }}
+      {{ end }}
+    {{ end }}
+  {{ end }}
+{{ end }}
+<div id="topnav-secondary" class="topnav-secondary"{{ if eq $initial "" }} hidden{{ end }}>
+  {{ if .CurrentMenus }}
+    {{ range .CurrentMenus }}
+      {{ if or (eq .Type "directory") (eq .Type "menu") }}
+        {{ if .Children }}
+          {{ $hasNavChild := false }}
+          {{ range .Children }}
+            {{ if or (eq .Type "directory") (eq .Type "menu") }}
+              {{ $hasNavChild = true }}
+            {{ end }}
+          {{ end }}
+          {{ if $hasNavChild }}
+            <div class="topnav-panel" data-topnav-panel="{{ .Key }}"{{ if ne .Key $initial }} hidden{{ end }}>
+              {{ template "topnav/subItems" (dict "Items" .Children "CurrentPath" $.CurrentPath "ActiveNavKey" $.ActiveNavKey) }}
+            </div>
+          {{ end }}
+        {{ end }}
+      {{ end }}
+    {{ end }}
+  {{ end }}
+</div>
+{{ end }}

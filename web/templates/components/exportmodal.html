@@ -1,0 +1,55 @@
+{{/* ==========================================================================
+文件: web/templates/components/exportmodal.html
+模块: 用户管理
+职责: 复用用户列表导出弹窗组件。
+全局字段: .CurrentUser, .CSRFToken, .Menus, .AppName, .CurrentPath
+页面字段: .BaseUrl (string), .Title (string)
+========================================================================== */}}
+{{ define "components/exportmodal" }}
+<div class="modal-backdrop" id="modal-export">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h2 class="modal-title">导出{{ .Title }}</h2>
+      </div>
+    </div>
+    <form method="POST" action="{{ .BaseUrl }}/export">
+      <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}">
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="exportFileName" class="form-label required">文件名</label>
+          <input
+            id="exportFileName"
+            name="fileName"
+            type="text"
+            class="input"
+            maxlength="128"
+            required
+            placeholder="例如：用户列表_20260429"
+          >
+        </div>
+        <div class="form-group">
+          <label for="exportFileType" class="form-label required">文件类型</label>
+          <select id="exportFileType" name="fileType" class="select" required>
+            <option value="xlsx">xlsx</option>
+            <option value="xls">xls</option>
+            <option value="csv">csv</option>
+            <option value="xml">xml</option>
+            <option value="html">html</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="exportScope" class="form-label required">导出范围</label>
+          <select id="exportScope" name="scope" class="select" required>
+            <option value="all">全部记录</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-neutral" type="button" onclick="closeModal('modal-export')">取消</button>
+        <button class="btn btn-primary" type="submit">开始导出</button>
+      </div>
+    </form>
+  </div>
+</div>
+{{ end }}

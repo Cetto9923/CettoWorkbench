@@ -1,0 +1,1176 @@
+{{/* ==========================================================================
+文件: web/templates/schedule/index.html
+模块: 排期工作台
+职责: 排期工作台首页（版本窗口概览 + 需求列表）。
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .PageTitle (string), .Windows ([]schedule.WindowCard),
+          .BizRequirements ([]schedule.BizRequirement),
+          .IndependentRequirements ([]schedule.IndependentRequirement),
+          .BizTotal (int64), .IndependentTotal (int64),
+          .Teamgroups ([]schedule.TeamgroupOption),
+          .Products ([]schedule.ZtProduct),
+          .FilterProducts ([]schedule.ZtProduct),
+          .FilterWindows ([]schedule.WindowFilterOption),
+          .StageFilterOptions ([]schedule.StageFilterOption),
+          .SelectedWindowMap (map[uint]bool), .BizPager (*pagination.Pager),
+          .IndepPager (*pagination.Pager)
+TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
+========================================================================== */}}
+{{ define "page_css" }}
+<link rel="stylesheet" href="{{ asset "/static/css/schedule/schedule.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulelist.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulewindow.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulemodal.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulefilter.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/schedule/scheduleintegrated.css" }}">
+{{ end }}
+
+{{ define "content" }}
+<div id="page-schedule">
+  <div class="schedule-page-head">
+    <div>
+      <h2>PO 排期工作台</h2>
+    </div>
+    <div class="schedule-page-actions">
+      <button type="button" class="action-btn js-open-manage-version-windows"><i class="fas fa-gear"></i> 窗口维护</button>
+      <button type="button" class="action-btn primary js-open-create-version-window"><i class="fas fa-plus"></i> 新建窗口</button>
+      <button type="button" class="action-btn">版本概览</button>
+      <!-- <button type="button" class="action-btn js-schedule-reload" title="刷新" aria-label="刷新"><i class="fas fa-rotate"></i></button> -->
+    </div>
+  </div>
+
+  <div class="schedule-version-overview">
+    <!-- <div class="schedule-section-title">版本窗口概览 <span>按预计上线时间</span></div> -->
+    <div class="schedule-section-title">版本窗口概览</div>
+    <div class="schedule-version-body">
+      <div id="scheduleCapacitySummaryLine">
+        {{ if .Windows }}
+        <div class="schedule-version-grid">
+          {{ range $i, $w := .Windows }}
+          {{ if lt $i 3 }}
+          <div class="schedule-version-card {{ $w.ToneClass }}" data-window-id="{{ $w.ID }}">
+            <div class="schedule-version-body-click">
+              <div class="schedule-version-top">
+                <div class="schedule-version-name">
+                  <i class="fas fa-calendar-day"></i>{{ $w.ShortName }}
+                  {{ if $w.AgileGroup }}<span class="agile-team-tag">{{ $w.AgileGroup }}</span>{{ end }}
+                </div>
+              </div>
+              <div class="schedule-version-range">{{ $w.Range }}</div>
+              <div class="schedule-version-bar"><span style="width: {{ $w.UsedPercent }}%;"></span></div>
+              <div class="schedule-version-meta">
+                <span>需求 <b>{{ $w.DemandCount }}</b></span><i></i>
+                <span>容量 <b>{{ $w.CapacityHours }}H</b></span><i></i>
+                <span>已占用 <b>{{ $w.UsedHours }}H</b></span><i></i>
+                <span>剩余 <b{{ if lt $w.RemainingHours 0 }} class="schedule-remaining-over"{{ end }}>{{ $w.RemainingHours }}H</b></span><i></i>
+                <span>阻塞 <b>{{ $w.BlockedCount }}</b></span>
+              </div>
+            </div>
+            <div class="schedule-version-card-actions">
+              <button type="button" class="version-card-menu-btn js-toggle-window-card-menu" title="更多操作">
+                <i class="fas fa-ellipsis-vertical"></i>
+              </button>
+              <div class="version-card-dropdown">
+                <button type="button"
+                  class="js-edit-version-window{{ if not $w.CanEdit }} is-disabled{{ end }}"
+                  data-window-id="{{ $w.ID }}"
+                  data-window-name="{{ $w.ShortName }}"
+                  {{ if not $w.CanEdit }}disabled title="非本人创建，无法维护"{{ end }}><i class="fas fa-pen"></i> 编辑</button>
+                <button type="button"
+                  class="js-delete-version-window{{ if not $w.CanDelete }} is-disabled{{ end }}"
+                  data-window-id="{{ $w.ID }}"
+                  data-window-name="{{ $w.ShortName }}"
+                  {{ if not $w.CanDelete }}
+                  disabled
+                  {{ if not $w.CanEdit }}title="非本人创建，无法维护"{{ else }}title="已关联需求，无法删除"{{ end }}
+                  {{ end }}><i class="fas fa-trash-can"></i> 删除</button>
+              </div>
+            </div>
+          </div>
+          {{ end }}
+          {{ end }}
+          <div class="schedule-version-extra">
+            <button type="button" class="schedule-version-add js-open-create-version-window"><i class="fas fa-plus"></i><span>新建窗口</span></button>
+          </div>
+        </div>
+        {{ else }}
+        <div class="schedule-version-grid schedule-version-grid--empty">
+          <div class="schedule-create-empty">暂无版本窗口</div>
+        </div>
+        {{ end }}
+      </div>
+    </div>
+  </div>
+
+  <div id="scheduleListViewWrap" class="schedule-area" style="margin-bottom:16px">
+    {{ $activeFilter := .ActiveFilter }}
+    {{ $bizCounts := .BizFilterCounts }}
+    {{ $indepCounts := .IndepFilterCounts }}
+    <div class="schedule-quick-scope" id="scheduleQuickScope">
+      <span style="font-size:12px;font-weight:700;color:var(--t2);margin-right:4px"><i class="fas fa-bolt" style="color:var(--orange);margin-right:4px"></i>快捷筛选</span>
+      <button type="button" class="schedule-scope-chip{{ if eq $activeFilter "all_open" }} active{{ end }}" data-filter="all_open" data-biz-count="{{ $bizCounts.AllOpen }}" data-indep-count="{{ $indepCounts.AllOpen }}" title="显示全部未关闭的需求"><i class="fas fa-folder-open"></i>全部未关闭 <strong class="js-filter-count">{{ $bizCounts.AllOpen }}</strong></button>
+      <button type="button" class="schedule-scope-chip{{ if eq $activeFilter "unscheduled" }} active{{ end }}" data-filter="unscheduled" data-biz-count="{{ $bizCounts.Unscheduled }}" data-indep-count="{{ $indepCounts.Unscheduled }}" title="未绑窗口 / 未转研发 / 已转未拆任务或无指派人"><i class="fas fa-hourglass-start"></i>待排期 <strong class="js-filter-count">{{ $bizCounts.Unscheduled }}</strong></button>
+      <button type="button" class="schedule-scope-chip{{ if eq $activeFilter "pending_review" }} active{{ end }}" data-filter="pending_review" data-biz-count="{{ $bizCounts.PendingReview }}" data-indep-count="{{ $indepCounts.PendingReview }}" title="待评审状态的需求"><i class="fas fa-clipboard-check"></i>待评审 <strong class="js-filter-count">{{ $bizCounts.PendingReview }}</strong></button>
+      <button type="button" class="schedule-scope-chip{{ if eq $activeFilter "unassigned" }} active{{ end }}" data-filter="unassigned" data-biz-count="{{ $bizCounts.Unassigned }}" data-indep-count="{{ $indepCounts.Unassigned }}" title="已转研发未建任务 / 已建任务无指派人"><i class="fas fa-user-plus"></i>待分配负责人 <strong class="js-filter-count">{{ $bizCounts.Unassigned }}</strong></button>
+      <button type="button" class="schedule-scope-chip schedule-scope-chip--biz-only{{ if eq $activeFilter "manager_reviewing" }} active{{ end }}" data-filter="manager_reviewing" data-biz-only="1" data-biz-count="{{ $bizCounts.ManagerReviewing }}" data-indep-count="{{ $indepCounts.ManagerReviewing }}" title="当前正在进行主管部门审批的业务需求"><i class="fas fa-stamp"></i>主管审批中 <strong class="js-filter-count">{{ $bizCounts.ManagerReviewing }}</strong></button>
+      <button type="button" class="schedule-scope-chip{{ if eq $activeFilter "closed" }} active{{ end }}" data-filter="closed" data-biz-count="{{ $bizCounts.Closed }}" data-indep-count="{{ $indepCounts.Closed }}" title="所有已关闭的需求"><i class="fas fa-circle-check"></i>已关闭 <strong class="js-filter-count">{{ $bizCounts.Closed }}</strong></button>
+      <button type="button" class="schedule-suspended-toggle schedule-scope-chip--biz-only{{ if .SuspendedActive }} active{{ end }}" id="scheduleSuspendedToggle" title="叠加筛选：仅显示挂起的需求">
+        <span class="schedule-suspended-toggle-box" aria-hidden="true"><i class="fas fa-check"></i></span>
+        挂起 <strong class="js-suspended-count">({{ .SuspendedCount }})</strong>
+      </button>
+      <button type="button" class="action-btn schedule-clear-btn" id="scheduleClearFilters"><i class="fas fa-sliders"></i> 清空筛选</button>
+    </div>
+
+    <div class="schedule-filter schedule-filter--primary">
+      <div class="schedule-filter-primary-inner" id="scheduleMultiselectRow">
+        <div class="schedule-filter-core">
+          <div class="schedule-ms" data-filter-key="groups" data-filter-label="敏捷小组">
+            <button type="button" class="form-select schedule-ms-trigger" aria-haspopup="listbox" aria-expanded="false">
+              <span class="schedule-ms-text">敏捷小组</span>
+              <i class="fas fa-chevron-down" aria-hidden="true"></i>
+            </button>
+            <div class="schedule-ms-panel" hidden>
+              <div class="schedule-ms-options">
+                {{ range .Teamgroups }}
+                <label class="schedule-ms-option">
+                  <input type="checkbox" class="schedule-ms-checkbox" value="{{ .ID }}" data-label="{{ .DisplayName }}"{{ if index $.SelectedGroupMap .ID }} checked{{ end }}>
+                  <span>{{ .DisplayName }}</span>
+                </label>
+                {{ else }}
+                <div class="schedule-ms-empty">暂无敏捷小组</div>
+                {{ end }}
+              </div>
+            </div>
+          </div>
+
+          <div class="schedule-ms" data-filter-key="products" data-filter-label="系统">
+            <button type="button" class="form-select schedule-ms-trigger" aria-haspopup="listbox" aria-expanded="false">
+              <span class="schedule-ms-text">系统</span>
+              <i class="fas fa-chevron-down" aria-hidden="true"></i>
+            </button>
+            <div class="schedule-ms-panel" hidden>
+              <div class="schedule-ms-options">
+                {{ range .FilterProducts }}
+                <label class="schedule-ms-option">
+                  <input type="checkbox" class="schedule-ms-checkbox" value="{{ .ID }}" data-label="{{ .Name }}"{{ if index $.SelectedProductMap .ID }} checked{{ end }}>
+                  <span>{{ .Name }}</span>
+                </label>
+                {{ else }}
+                <div class="schedule-ms-empty">暂无系统</div>
+                {{ end }}
+              </div>
+            </div>
+          </div>
+
+          <div class="schedule-ms" data-filter-key="stages" data-filter-label="排期阶段">
+            <button type="button" class="form-select schedule-ms-trigger" aria-haspopup="listbox" aria-expanded="false">
+              <span class="schedule-ms-text">排期阶段</span>
+              <i class="fas fa-chevron-down" aria-hidden="true"></i>
+            </button>
+            <div class="schedule-ms-panel" hidden>
+              <div class="schedule-ms-options">
+                {{ range .StageFilterOptions }}
+                <label class="schedule-ms-option">
+                  <input type="checkbox" class="schedule-ms-checkbox" value="{{ .Value }}" data-label="{{ .Label }}"{{ if index $.SelectedStageMap .Value }} checked{{ end }}>
+                  <span>{{ .Label }}</span>
+                </label>
+                {{ end }}
+              </div>
+            </div>
+          </div>
+
+          <div class="schedule-ms" data-filter-key="windows" data-filter-label="窗口">
+            <button type="button" class="form-select schedule-ms-trigger" aria-haspopup="listbox" aria-expanded="false">
+              <span class="schedule-ms-text">窗口</span>
+              <i class="fas fa-chevron-down" aria-hidden="true"></i>
+            </button>
+            <div class="schedule-ms-panel" hidden>
+              <div class="schedule-ms-options">
+                {{ range .FilterWindows }}
+                <label class="schedule-ms-option">
+                  <input type="checkbox" class="schedule-ms-checkbox" value="{{ .ID }}" data-label="{{ .Name }}"{{ if index $.SelectedWindowMap .ID }} checked{{ end }}>
+                  <span>{{ .Name }}</span>
+                </label>
+                {{ else }}
+                <div class="schedule-ms-empty">暂无窗口</div>
+                {{ end }}
+              </div>
+            </div>
+          </div>
+
+          <label class="schedule-search-inline" for="scheduleSearch">
+            <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+            <input id="scheduleSearch" name="keyword" value="{{ .SelectedKeyword }}" placeholder="编号 / 名称 / 责任人 / 系统">
+          </label>
+        </div>
+        <div class="schedule-filter-actions">
+          <button type="button" class="action-btn schedule-more-filter-btn" id="scheduleMoreFilterToggle" aria-expanded="false" aria-controls="scheduleMoreFilters"><i class="fas fa-sliders"></i> 更多筛选</button>
+          <button type="button" class="action-btn primary schedule-apply-btn" id="scheduleApplyFilters"><i class="fas fa-filter"></i> 筛选</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="scheduleMoreFilters" class="schedule-filter schedule-filter-more" hidden>
+      <select class="form-select" id="scheduleFilterPri">
+        <option value="">优先级</option>
+        <option value="0"{{ if eq .SelectedPri "0" }} selected{{ end }}>未设置优先级</option>
+        <option value="1"{{ if eq .SelectedPri "1" }} selected{{ end }}>P1</option>
+        <option value="2"{{ if eq .SelectedPri "2" }} selected{{ end }}>P2</option>
+        <option value="3"{{ if eq .SelectedPri "3" }} selected{{ end }}>P3</option>
+        <option value="4"{{ if eq .SelectedPri "4" }} selected{{ end }}>P4</option>
+      </select>
+      <select class="form-select" id="scheduleFilterWindowType">
+        <option value="">发布窗口/类型</option>
+        {{ range .WindowTypeFilterOptions }}
+        <option value="{{ .Value }}"{{ if eq $.SelectedWindowType .Value }} selected{{ end }}>{{ .Label }}</option>
+        {{ end }}
+      </select>
+      <select class="form-select" id="scheduleFilterDev">
+        <option value="">开发负责人</option>
+        {{ range .FilterUsers }}
+        <option value="{{ .Account }}"{{ if eq $.SelectedDevOwner .Account }} selected{{ end }}>{{ .Realname }}</option>
+        {{ end }}
+      </select>
+      <select class="form-select" id="scheduleFilterTest">
+        <option value="">测试负责人</option>
+        {{ range .FilterUsers }}
+        <option value="{{ .Account }}"{{ if eq $.SelectedTestOwner .Account }} selected{{ end }}>{{ .Realname }}</option>
+        {{ end }}
+      </select>
+      <select class="form-select" id="scheduleFilterAccept">
+        <option value="">验收负责人</option>
+        {{ range .FilterUsers }}
+        <option value="{{ .Account }}"{{ if eq $.SelectedAcceptOwner .Account }} selected{{ end }}>{{ .Realname }}</option>
+        {{ end }}
+      </select>
+    </div>
+
+    <div class="schedule-data-tabs">
+      <button type="button" class="schedule-data-tab active" data-type="bizReq"><i class="fas fa-file-lines"></i>业务需求</button>
+      <button type="button" class="schedule-data-tab" data-type="independentRD"><i class="fas fa-code-branch"></i>独立研发需求</button>
+    </div>
+
+    <div class="schedule-list-head">
+      <div class="schedule-list-title"><span id="scheduleListTitle">业务需求列表</span> <span id="scheduleListCountText" data-biz-total="{{ .BizTotal }}" data-independent-total="{{ .IndependentTotal }}">（共 {{ .BizTotal }} 条）</span></div>
+      <div class="schedule-list-tools">
+        <div class="view-tabs schedule-view-tabs">
+          <div class="view-tab active"><i class="fas fa-list"></i>列表</div>
+          <div class="view-tab action-btn--disabled" title="看板:待推出"><i class="fas fa-table-columns"></i>看板</div>
+          <div class="view-tab action-btn--disabled" title="分组:待推出"><i class="fas fa-border-all"></i>分组</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="scheduleBizListPanel">
+    <div style="overflow-x:auto">
+      <table class="schedule-table">
+        <thead id="scheduleTableHead">
+          <tr>
+            <th class="schedule-col-title" style="min-width:500px">标题</th>
+            <th class="schedule-col-nowrap" style="width:72px">优先级</th>
+            <th class="schedule-col-nowrap" style="width:120px">敏捷小组</th>
+            <th class="schedule-col-nowrap" style="min-width:120px">排期阶段</th>
+            <th class="schedule-col-nowrap" style="min-width:96px">窗口阶段</th>
+            <th class="schedule-col-stage" style="min-width:160px">版本窗口</th>
+            <th class="schedule-col-owner" style="min-width:110px">负责人</th>
+            <th class="schedule-col-nowrap" style="width:72px">任务</th>
+            <th class="schedule-action-col schedule-col-nowrap" style="width:100px">操作</th>
+          </tr>
+        </thead>
+        <tbody id="scheduleBody">
+          {{ range .BizRequirements }}
+          {{ $biz := . }}
+          <tr class="schedule-biz-row schedule-tree-l1" data-id="{{ .ID }}">
+            <td>
+              <div class="schedule-title-cell schedule-title-cell--l1">
+                <span class="schedule-row-expand-slot">
+                  {{ if .HasChildren }}
+                  <button type="button" class="schedule-row-expand" data-target="{{ .ID }}" title="展开/收起子行"><i class="fas fa-chevron-down"></i></button>
+                  {{ end }}
+                </span>
+                <span class="schedule-type-badge schedule-type-badge--biz">业务需求</span>
+                <span class="schedule-id-badge">{{ .ID }}</span>
+                {{ if .DetailURL }}
+                <a href="{{ .DetailURL }}" target="_blank" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
+                {{ else }}
+                <span class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</span>
+                {{ end }}
+              </div>
+            </td>
+            <td class="schedule-col-nowrap"><span class="pri-tag {{ .PriClass }}">{{ .Priority }}</span></td>
+            <td>{{ .AgileGroup }}</td>
+            <td class="schedule-col-nowrap"><span class="stage-tag {{ .StageClass }}">{{ .Stage }}</span></td>
+            <td class="schedule-col-nowrap">
+              {{ if .WindowPhase }}<span class="schedule-window-phase-tag {{ .WindowPhaseClass }}">{{ .WindowPhase }}</span>{{ else }}<span class="t3">—</span>{{ end }}
+            </td>
+            <td class="schedule-col-stage"><span class="schedule-window-name">{{ .WindowName }}</span></td>
+            <td class="schedule-col-owner"><span class="schedule-owner-line"><i class="fas fa-user"></i><span class="name">{{ .Owner }}</span></span></td>
+            <td class="schedule-task-col"><span class="t3">—</span></td>
+            <td class="schedule-action-col">
+              <div class="schedule-action-buttons">
+                {{ if .DetailURL }}
+                <a href="{{ .DetailURL }}" class="action-btn {{ .ActionClass }}" data-demand-id="{{ .DemandID }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</a>
+                {{ else }}
+                <button type="button" class="action-btn {{ .ActionClass }}" data-demand-id="{{ .DemandID }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</button>
+                {{ end }}
+              </div>
+            </td>
+          </tr>
+          {{ range .SubBizRequirements }}
+          <tr class="schedule-sub-row schedule-tree-l2 schedule-child-row" data-parent="{{ $biz.ID }}">
+            <td>
+              <div class="schedule-title-cell schedule-title-cell--l2">
+                <span class="tree-guide"></span>
+                <span class="schedule-type-badge schedule-type-badge--sub">子业务需求</span>
+                <span class="schedule-id-badge">{{ .ID }}</span>
+                {{ if .DetailURL }}
+                <a href="{{ .DetailURL }}" target="_blank" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
+                {{ else }}
+                <span class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</span>
+                {{ end }}
+              </div>
+            </td>
+            <td class="schedule-col-nowrap"><span class="pri-tag {{ .PriClass }}">{{ .Priority }}</span></td>
+            <td>{{ .AgileGroup }}</td>
+            <td class="schedule-col-nowrap"><span class="stage-tag {{ .StageClass }}">{{ .Stage }}</span></td>
+            <td class="schedule-col-nowrap">
+              {{ if .WindowPhase }}<span class="schedule-window-phase-tag {{ .WindowPhaseClass }}">{{ .WindowPhase }}</span>{{ else }}<span class="t3">—</span>{{ end }}
+            </td>
+            <td class="schedule-col-stage"><span class="schedule-window-name">{{ .WindowName }}</span></td>
+            <td class="schedule-col-owner"><span class="schedule-owner-line"><i class="fas fa-user"></i><span class="name">{{ .Owner }}</span></span></td>
+            <td class="schedule-task-col"><span class="t3">—</span></td>
+            <td class="schedule-action-col">
+              <div class="schedule-action-buttons">
+                {{ if .DetailURL }}
+                <a href="{{ .DetailURL }}" class="action-btn {{ .ActionClass }}" data-demand-id="{{ .DemandID }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</a>
+                {{ else }}
+                <button type="button" class="action-btn {{ .ActionClass }}" data-demand-id="{{ .DemandID }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</button>
+                {{ end }}
+              </div>
+            </td>
+          </tr>
+          {{ range .DevRequirements }}
+          <tr class="schedule-rd-row schedule-tree-l3 schedule-child-row" data-parent="{{ $biz.ID }}">
+            <td>
+              <div class="schedule-title-cell schedule-title-cell--l3">
+                <span class="tree-guide"></span>
+                {{ if .IsMain }}<span class="schedule-type-badge schedule-type-badge--rd">研发需求<span class="rd-subtype">主</span></span>{{ else }}<span class="schedule-type-badge schedule-type-badge--rd">研发需求<span class="rd-subtype">配</span></span>{{ end }}
+                <span class="schedule-id-badge">{{ .ID }}</span>
+                {{ if .DetailURL }}
+                <a href="{{ .DetailURL }}" target="_blank" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
+                {{ else }}
+                <span class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</span>
+                {{ end }}
+              </div>
+            </td>
+            <td class="schedule-col-nowrap"><span class="pri-tag {{ .PriClass }}">{{ .Priority }}</span></td>
+            <td>{{ .AgileGroup }}</td>
+            <td class="schedule-col-nowrap"><span class="stage-tag {{ .StageClass }}">{{ .Stage }}</span></td>
+            <td class="schedule-col-nowrap"><span class="t3">—</span></td>
+            <td class="schedule-col-stage"><span class="schedule-window-name">{{ .WindowName }}</span></td>
+            <td class="schedule-col-owner"><span class="schedule-owner-line"><i class="fas fa-user"></i><span class="name">{{ .Owner }}</span></span></td>
+            <td class="schedule-task-col">
+              {{ if gt .TaskCount 0 }}
+              <a href="javascript:void(0)" class="schedule-task-link js-open-task-list-modal" data-story-id="{{ .StoryID }}">T{{ .TaskCount }}</a>
+              {{ else }}
+              <span class="t3">—</span>
+              {{ end }}
+            </td>
+            <td class="schedule-action-col">
+              <div class="schedule-action-buttons">
+                <button type="button" class="action-btn action-btn--success js-open-task-modal" data-story-id="{{ .StoryID }}" style="padding:4px 10px;font-size:11px">维护任务</button>
+              </div>
+            </td>
+          </tr>
+          {{ end }}
+          {{ end }}
+          {{ range .DevRequirements }}
+          <tr class="schedule-rd-row schedule-tree-l3 schedule-child-row" data-parent="{{ $biz.ID }}">
+            <td>
+              <div class="schedule-title-cell schedule-title-cell--l3">
+                <span class="tree-guide"></span>
+                {{ if .IsMain }}<span class="schedule-type-badge schedule-type-badge--rd">研发需求<span class="rd-subtype">主</span></span>{{ else }}<span class="schedule-type-badge schedule-type-badge--rd">研发需求<span class="rd-subtype">配</span></span>{{ end }}
+                <span class="schedule-id-badge">{{ .ID }}</span>
+                {{ if .DetailURL }}
+                <a href="{{ .DetailURL }}" target="_blank" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
+                {{ else }}
+                <span class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</span>
+                {{ end }}
+              </div>
+            </td>
+            <td class="schedule-col-nowrap"><span class="pri-tag {{ .PriClass }}">{{ .Priority }}</span></td>
+            <td>{{ .AgileGroup }}</td>
+            <td class="schedule-col-nowrap"><span class="stage-tag {{ .StageClass }}">{{ .Stage }}</span></td>
+            <td class="schedule-col-nowrap"><span class="t3">—</span></td>
+            <td class="schedule-col-stage"><span class="schedule-window-name">{{ .WindowName }}</span></td>
+            <td class="schedule-col-owner"><span class="schedule-owner-line"><i class="fas fa-user"></i><span class="name">{{ .Owner }}</span></span></td>
+            <td class="schedule-task-col">
+              {{ if gt .TaskCount 0 }}
+              <a href="javascript:void(0)" class="schedule-task-link js-open-task-list-modal" data-story-id="{{ .StoryID }}">T{{ .TaskCount }}</a>
+              {{ else }}
+              <span class="t3">—</span>
+              {{ end }}
+            </td>
+            <td class="schedule-action-col">
+              <div class="schedule-action-buttons">
+                <button type="button" class="action-btn action-btn--success js-open-task-modal" data-story-id="{{ .StoryID }}" style="padding:4px 10px;font-size:11px">维护任务</button>
+              </div>
+            </td>
+          </tr>
+          {{ end }}
+          {{ else }}
+          <tr>
+            <td colspan="9" class="text-center text-muted" style="padding:32px 16px">暂无数据</td>
+          </tr>
+          {{ end }}
+        </tbody>
+      </table>
+    </div>
+
+    <div id="scheduleBizPagination" class="pagination-container" style="padding:10px 20px;border-top:1px solid var(--border-lt)">
+      {{ template "components/pager" (dict "Pager" .BizPager "CurrentPath" .CurrentPath) }}
+    </div>
+    </div>
+
+    <div id="scheduleIndependentListPanel" style="display:none">
+    <div style="overflow-x:auto">
+      <table class="schedule-table">
+        <thead>
+          <tr>
+            <th class="schedule-col-title" style="min-width:300px;padding-left: 20px;">标题</th>
+            <th class="schedule-col-nowrap" style="width:72px">优先级</th>
+            <th class="schedule-col-nowrap" style="width:120px">关联系统</th>
+            <th class="schedule-col-nowrap" style="width:120px">排期窗口</th>
+            <th class="schedule-col-nowrap" style="min-width:120px">排期阶段</th>
+            <th class="schedule-col-nowrap" style="width:120px">敏捷小组</th>
+            <th class="schedule-col-owner" style="min-width:110px">负责人</th>
+            <th class="schedule-col-nowrap" style="width:72px">任务</th>
+            <th class="schedule-action-col schedule-col-nowrap" style="width:140px">操作</th>
+          </tr>
+        </thead>
+        <tbody id="scheduleIndependentBody">
+          {{ range .IndependentRequirements }}
+          {{ $parent := . }}
+          <tr class="schedule-indep-row schedule-tree-l1" data-id="{{ .ID }}">
+            <td style="padding-left: 20px;">
+              <div class="schedule-title-cell schedule-title-cell--l1">
+                {{ if .HasChildren }}
+                <button type="button" class="schedule-row-expand" data-target="{{ .ID }}" title="展开/收起子行"><i class="fas fa-chevron-down"></i></button>
+                {{ end }}
+                <!-- <span class="schedule-type-badge schedule-type-badge--rd">独立研发</span> -->
+                <span class="schedule-id-badge">{{ .ID }}</span>
+                {{ if .DetailURL }}
+                <a href="{{ .DetailURL }}" target="_blank" rel="noopener noreferrer" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
+                {{ else }}
+                <span class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</span>
+                {{ end }}
+              </div>
+            </td>
+            <td class="schedule-col-nowrap"><span class="pri-tag {{ .PriClass }}">{{ .Priority }}</span></td>
+            <td>{{ .ProductName }}</td>
+            <td><span class="window-name-tag-inline">{{ .WindowName }}</span></td>
+            <td><span class="stage-tag {{ .StageClass }}">{{ .Stage }}</span></td>
+            <td>{{ .TeamgroupName }}</td>
+            <td class="schedule-col-owner"><span class="schedule-owner-line"><i class="fas fa-user"></i><span class="name">{{ .Owner }}</span></span></td>
+            <td class="schedule-task-col">
+              {{ if gt .TaskCount 0 }}
+              <a href="javascript:void(0)" class="schedule-task-link js-open-task-list-modal" data-story-id="{{ .StoryID }}">T{{ .TaskCount }}</a>
+              {{ else }}
+              <span class="t3">—</span>
+              {{ end }}
+            </td>
+            <td class="schedule-action-col">
+              <div class="schedule-action-buttons">
+                {{ if .DetailURL }}
+                <a href="{{ .DetailURL }}" class="action-btn action-btn--primary" data-story-id="{{ .StoryID }}">排期</a>
+                {{ else }}
+                <button type="button" class="action-btn action-btn--primary" data-story-id="{{ .StoryID }}">排期</button>
+                {{ end }}
+                <button type="button" class="action-btn action-btn--success js-open-task-modal" data-story-id="{{ .StoryID }}">维护任务</button>
+              </div>
+            </td>
+          </tr>
+          {{ range .Children }}
+          <tr class="schedule-indep-child-row schedule-tree-l2 schedule-child-row" data-parent="{{ $parent.ID }}">
+            <td>
+              <div class="schedule-title-cell schedule-title-cell--l2">
+                <span class="tree-guide"></span>
+                <span class="schedule-type-badge schedule-type-badge--rd">子研发</span>
+                <span class="schedule-id-badge">{{ .ID }}</span>
+                {{ if .DetailURL }}
+                <a href="{{ .DetailURL }}" target="_blank" rel="noopener noreferrer" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
+                {{ else }}
+                <span class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</span>
+                {{ end }}
+              </div>
+            </td>
+            <td class="schedule-col-nowrap"><span class="pri-tag {{ .PriClass }}">{{ .Priority }}</span></td>
+            <td>{{ .ProductName }}</td>
+            <td><span class="window-name-tag-inline">{{ .WindowName }}</span></td>
+            <td><span class="stage-tag {{ .StageClass }}">{{ .Stage }}</span></td>
+            <td>{{ .TeamgroupName }}</td>
+            <td class="schedule-col-owner"><span class="schedule-owner-line"><i class="fas fa-user"></i><span class="name">{{ .Owner }}</span></span></td>
+            <td class="schedule-task-col">
+              {{ if gt .TaskCount 0 }}
+              <a href="javascript:void(0)" class="schedule-task-link js-open-task-list-modal" data-story-id="{{ .StoryID }}">T{{ .TaskCount }}</a>
+              {{ else }}
+              <span class="t3">—</span>
+              {{ end }}
+            </td>
+            <td class="schedule-action-col">
+              <div class="schedule-action-buttons">
+                {{ if .DetailURL }}
+                <a href="{{ .DetailURL }}" class="action-btn action-btn--primary" data-story-id="{{ .StoryID }}">排期</a>
+                {{ else }}
+                <button type="button" class="action-btn action-btn--primary" data-story-id="{{ .StoryID }}">排期</button>
+                {{ end }}
+                <button type="button" class="action-btn action-btn--success js-open-task-modal" data-story-id="{{ .StoryID }}">维护任务</button>
+              </div>
+            </td>
+          </tr>
+          {{ end }}
+          {{ else }}
+          <tr>
+            <td colspan="9" class="text-center text-muted" style="padding:32px 16px">暂无数据</td>
+          </tr>
+          {{ end }}
+        </tbody>
+      </table>
+    </div>
+
+    <div id="scheduleIndependentPagination" class="pagination-container" style="padding:10px 20px;border-top:1px solid var(--border-lt);display:none">
+      {{ template "components/pager" (dict "Pager" .IndepPager "CurrentPath" .CurrentPath) }}
+    </div>
+    </div>
+  </div>
+</div>
+
+<div class="batch-modal-overlay" id="scheduleVersionWindowModalOverlay"></div>
+<div class="batch-modal" id="scheduleVersionWindowModal">
+  <div class="batch-modal-hdr">
+    <h3 id="scheduleVersionWindowModalTitle">版本窗口属性</h3>
+    <button type="button" class="drawer-close" id="scheduleVersionWindowModalCloseBtn"><i class="fas fa-xmark"></i></button>
+  </div>
+  <div class="batch-modal-body" id="scheduleVersionWindowModalBody">
+    <div class="schedule-create-modal" id="scheduleVersionWindowForm">
+      <div class="schedule-create-grid schedule-create-grid--4">
+        <div class="form-group">
+          <label class="form-label" for="scheduleWindowOnline">预计上线 <span style="color:var(--red)">*</span></label>
+          <input type="date" class="form-input" id="scheduleWindowOnline" name="online">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="scheduleWindowName">窗口名称 <span style="color:var(--red)">*</span></label>
+          <input type="text" class="form-input" id="scheduleWindowName" name="name" placeholder="根据预计上线自动生成">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="scheduleWindowStart">窗口开始 <span style="color:var(--red)">*</span></label>
+          <input type="date" class="form-input" id="scheduleWindowStart" name="start" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="scheduleWindowEnd">窗口结束</label>
+          <input type="date" class="form-input" id="scheduleWindowEnd" name="end">
+        </div>
+      </div>
+      <div class="schedule-create-section">
+        <div class="schedule-create-section-head"><strong>窗口归属</strong></div>
+        <div class="schedule-create-inline-row">
+          <div class="form-group">
+            <label class="form-label" for="scheduleWindowTeamgroup">敏捷小组</label>
+            <select class="form-select" id="scheduleWindowTeamgroup" name="teamgroupId" style="width:100%">
+              {{ range .Teamgroups }}
+              <option value="{{ .ID }}">{{ .DisplayName }}</option>
+              {{ end }}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="scheduleWindowType">发布类型</label>
+            <select class="form-select" id="scheduleWindowType" name="windowType" style="width:100%">
+              <option value="regular">常规</option>
+              <option value="fast">快速</option>
+              <option value="urgent">紧急</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="schedule-create-section">
+        <div class="schedule-create-grid schedule-create-grid--3">
+          <div class="form-group">
+            <label class="form-label" for="scheduleWindowPlanTestDone">预计提测 / 开发完成</label>
+            <input type="date" class="form-input" id="scheduleWindowPlanTestDone" name="planTestDone">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="scheduleWindowTestDone">预计测试完成</label>
+            <input type="date" class="form-input" id="scheduleWindowTestDone" name="testDone">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="scheduleWindowAcceptDone">预计验收完成</label>
+            <input type="date" class="form-input" id="scheduleWindowAcceptDone" name="acceptDone">
+          </div>
+        </div>
+      </div>
+      <div class="schedule-create-section">
+        <div class="schedule-create-section-head"><strong>关联系统</strong></div>
+        <div class="schedule-create-grid schedule-create-grid--systems schedule-create-systems" id="scheduleWindowSystemsGrid">
+          {{ if .Products }}
+          {{ range .Products }}
+          <label class="chk" data-product-id="{{ .ID }}" data-product-name="{{ .Name }}">
+            <input type="checkbox" name="productIds" value="{{ .ID }}">
+            <span>{{ .Name }}</span>
+          </label>
+          {{ end }}
+          {{ else }}
+          <div class="schedule-create-empty">暂无关联系统</div>
+          {{ end }}
+        </div>
+      </div>
+      <div class="schedule-create-section">
+        <div class="schedule-create-section-head"><strong>系统计划</strong></div>
+        <div class="schedule-create-plan-grid" id="scheduleWindowPlanGrid">
+          <div class="schedule-create-empty" id="scheduleWindowPlanEmpty">请先勾选关联系统，将显示各系统的计划情况。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="batch-modal-footer">
+    <button type="button" class="action-btn" id="scheduleVersionWindowModalDismissBtn">关闭</button>
+    <button type="button" class="action-btn primary" id="scheduleVersionWindowModalSaveBtn">保存</button>
+  </div>
+</div>
+
+<div class="batch-modal-overlay" id="taskModalOverlay"></div>
+<div class="batch-modal" id="taskModal">
+  <div class="batch-modal-hdr">
+    <h3 id="taskModalTitle">拆任务 · RD-xxxxx</h3>
+    <button type="button" class="drawer-close" onclick="closeTaskModal()"><i class="fas fa-xmark"></i></button>
+  </div>
+  <div class="batch-modal-body" id="taskModalBody">
+    <div id="taskModalSpec"></div>
+
+    <div id="taskModalInfoBar" style="font-size:12px; color:#666; margin:12px 0;"></div>
+
+    <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
+      <button type="button" class="action-btn action-btn--primary" id="taskModalAddBtn">拆任务</button>
+    </div>
+
+    <div class="rd-node-tasks" id="taskModalTasksWrap">
+    <table class="rd-task-table" id="taskModalTable">
+      <thead>
+        <tr>
+          <th style="width:120px">项目</th>
+          <th style="width:120px">执行 <span class="req">*</span></th>
+          <th style="width:80px">类型</th>
+          <th style="width:72px">优先级</th>
+          <th>任务名称 <span class="req">*</span></th>
+          <th style="width:120px">指派给</th>
+          <th style="width:70px">预估(h) <span class="req">*</span></th>
+          <th style="width:110px">预计开始</th>
+          <th style="width:110px">截止时间 <span class="req">*</span></th>
+        </tr>
+      </thead>
+      <tbody id="taskModalTableBody"></tbody>
+    </table>
+    </div>
+  </div>
+  <div class="batch-modal-footer">
+    <button type="button" class="action-btn" onclick="closeTaskModal()">取消</button>
+    <button type="button" class="action-btn action-btn--primary" id="taskModalSaveBtn">保存任务</button>
+  </div>
+</div>
+
+<div class="batch-modal-overlay" id="taskListModalOverlay"></div>
+<div class="batch-modal" id="taskListModal">
+  <div class="batch-modal-hdr">
+    <h3 id="taskListModalTitle">相关任务</h3>
+    <button type="button" class="modal-close" id="taskListModalCloseBtn"><i class="fas fa-xmark"></i></button>
+  </div>
+  <div class="batch-modal-body">
+    <div id="taskListModalInfoBar" class="task-list-modal-info">—</div>
+    <div class="task-list-modal-table-wrap">
+      <table class="task-list-modal-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>任务名称</th>
+            <th>任务类型</th>
+            <th>P</th>
+            <th>状态</th>
+            <th>指派给</th>
+            <th>由谁完成</th>
+            <th>截止日期</th>
+            <th>实际完成时间</th>
+            <th>预计(h)</th>
+            <th>消耗</th>
+            <th>剩余</th>
+            <th>进度</th>
+          </tr>
+        </thead>
+        <tbody id="taskListModalTableBody">
+          <tr>
+            <td colspan="13" class="task-list-modal-empty">暂无任务</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="taskListModalSummary" class="task-list-modal-summary">本页共 0 个任务，未开始 0，进行中 0，总预计 0 工时，已消耗 0 工时，剩余 0 工时。</div>
+  </div>
+  <div class="batch-modal-footer">
+    <button type="button" class="action-btn" id="taskListModalDismissBtn">关闭</button>
+  </div>
+</div>
+
+<div class="batch-modal-overlay" id="scheduleIntegratedModalOverlay"></div>
+<div class="batch-modal schedule-integrated-modal" id="scheduleIntegratedModal">
+  <div class="batch-modal-hdr">
+    <h3 id="scheduleIntegratedModalTitle">排期一体化办理</h3>
+    <button type="button" class="drawer-close" id="scheduleIntegratedModalCloseBtn"><i class="fas fa-xmark"></i></button>
+  </div>
+  <div class="batch-modal-body" id="scheduleIntegratedModalBody">
+    <div class="schedule-modal-info">
+      <div class="schedule-modal-title" id="scheduleIntegratedReqTitle">—</div>
+      <div class="schedule-modal-summary">
+        <span>主系统 <strong id="scheduleIntegratedReqSystem">—</strong></span>
+        <span>指派人 <strong id="scheduleIntegratedReqOwner">—</strong></span>
+      </div>
+    </div>
+
+    <div class="schedule-integrated-section">
+      <div class="schedule-integrated-section-hdr"><strong>需求排期</strong></div>
+      <div class="schedule-integrated-section-body">
+        <div class="schedule-integrated-form-sheet">
+          <div class="schedule-integrated-grid">
+            <div class="schedule-integrated-cell">
+              <label class="schedule-integrated-label">版本窗口 <span class="req">*</span></label>
+              <div class="schedule-window-combo">
+                <select id="scheduleIntegratedWindowSelect" class="form-select schedule-field-control schedule-window-combo-select">
+                  <option value="">请选择版本窗口</option>
+                </select>
+              </div>
+            </div>
+            <div class="schedule-integrated-cell">
+              <label class="schedule-integrated-label">预计上线</label>
+              <div class="schedule-target-combo">
+                <input type="date" id="scheduleIntegratedSchedulePlanDate" class="form-input schedule-field-control schedule-target-combo-date" readonly>
+              </div>
+            </div>
+            <div class="schedule-integrated-cell">
+              <label class="schedule-integrated-label" for="scheduleIntRDInput">开发负责人</label>
+              <input
+                type="text"
+                id="scheduleIntRDInput"
+                class="form-input schedule-field-control"
+                placeholder="输入姓名或工号搜索"
+                autocomplete="off"
+              >
+              <input type="hidden" id="scheduleIntRDValue" name="rd">
+            </div>
+            <div class="schedule-integrated-cell">
+              <label class="schedule-integrated-label" for="scheduleIntQDInput">测试负责人</label>
+              <input
+                type="text"
+                id="scheduleIntQDInput"
+                class="form-input schedule-field-control"
+                placeholder="输入姓名或工号搜索"
+                autocomplete="off"
+              >
+              <input type="hidden" id="scheduleIntQDValue" name="qd">
+            </div>
+            <div class="schedule-integrated-cell">
+              <label class="schedule-integrated-label" for="scheduleIntAccepterInput">验收负责人</label>
+              <input
+                type="text"
+                id="scheduleIntAccepterInput"
+                class="form-input schedule-field-control"
+                placeholder="输入姓名或工号搜索"
+                autocomplete="off"
+              >
+              <input type="hidden" id="scheduleIntAccepterValue" name="accepter">
+            </div>
+            <div class="schedule-integrated-cell">
+              <label class="schedule-integrated-label">提测/开发</label>
+              <input type="date" id="scheduleIntegratedDevelopFinish" class="form-input schedule-field-control">
+            </div>
+            <div class="schedule-integrated-cell">
+              <label class="schedule-integrated-label">测试完成</label>
+              <input type="date" id="scheduleIntegratedTestFinish" class="form-input schedule-field-control">
+            </div>
+            <div class="schedule-integrated-cell">
+              <label class="schedule-integrated-label">验收完成</label>
+              <input type="date" id="scheduleIntegratedAcceptancedDate" class="form-input schedule-field-control">
+            </div>
+            <div class="schedule-integrated-cell schedule-integrated-cell--pad" aria-hidden="true"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="schedule-integrated-section" id="scheduleIntegratedRdSection">
+      <div class="schedule-integrated-section-hdr schedule-integrated-section-hdr--actions">
+        <div><strong>研发需求与任务</strong></div>
+      </div>
+      <div class="schedule-integrated-section-body">
+        <div class="transfer-dev-section">
+          <div class="transfer-dev-section-head"><strong>用户故事条目</strong></div>
+          <table class="transfer-dev-story-table">
+            <thead>
+              <tr>
+                <th style="width:56px">序号</th>
+                <th style="width:120px">角色</th>
+                <th>目标和值</th>
+                <th style="width:120px">涉及系统</th>
+                <th style="width:132px">负责团队</th>
+                <th style="width:72px">故事点</th>
+              </tr>
+            </thead>
+            <tbody id="storyItemsBody"></tbody>
+          </table>
+        </div>
+        <div id="rdTaskTree" class="rd-task-tree">
+          <div class="transfer-dev-section-head"><strong>研发需求</strong></div>
+          <div id="rdTreeEmpty" class="integrated-rd-tree-empty compact" style="display:none;">
+            <p>暂无研发需求</p>
+          </div>
+          <div id="rdTreeNodes"></div>
+          <button type="button" class="rd-add-node">+ 添加研发需求</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="batch-modal-footer schedule-integrated-footer">
+    <button type="button" class="action-btn" id="scheduleIntegratedModalDismissBtn">取消</button>
+    <button type="button" class="action-btn primary" id="scheduleIntegratedSaveBtn">确认并同步</button>
+  </div>
+</div>
+
+<div class="batch-modal-overlay" id="scheduleProductNoticeOverlay"></div>
+<div class="batch-modal schedule-product-notice-modal" id="scheduleProductNoticeModal">
+  <div class="batch-modal-hdr">
+    <h3>系统维护提示</h3>
+    <button type="button" class="drawer-close" id="scheduleProductNoticeCloseBtn"><i class="fas fa-xmark"></i></button>
+  </div>
+  <div class="batch-modal-body">
+    <p id="scheduleProductNoticeMessage" class="schedule-product-notice-message"></p>
+    <div class="batch-modal-footer">
+      <button type="button" class="action-btn action-btn--primary" id="scheduleProductNoticeOkBtn">确定（去禅道）</button>
+      <button type="button" class="action-btn" id="scheduleProductNoticeCancelBtn">取消</button>
+    </div>
+  </div>
+</div>
+
+<template id="tplTaskModalRowNew">
+  <tr class="task-modal-row task-modal-row--new rd-task-row rd-task-row--new">
+    <td class="rd-task-cell rd-task-cell-project"><select class="rd-task-project-select form-select rd-task-select"><option value="">请选择项目</option></select></td>
+    <td class="rd-task-cell rd-task-cell-execution"><select class="rd-task-execution-select form-select rd-task-select" disabled><option value="">请选择执行</option></select></td>
+    <td class="rd-task-cell rd-task-cell-type"><select class="rd-task-type form-select rd-task-select"></select></td>
+    <td class="rd-task-cell rd-task-cell-pri"><select class="rd-task-pri form-select rd-task-select"><option value="1">P1</option><option value="2">P2</option><option value="3" selected>P3</option><option value="4">P4</option></select></td>
+    <td class="rd-task-cell rd-task-cell-name rd-task-cell--name"><input type="text" class="rd-task-name form-input rd-task-input" placeholder="任务名称"></td>
+    <td class="rd-task-cell rd-task-cell-owner rd-task-cell--owner rd-task-owner-cell"></td>
+    <td class="rd-task-cell rd-task-cell-hours"><input type="number" class="rd-task-hours form-input rd-task-input" min="0" step="0.5" placeholder="h"></td>
+    <td class="rd-task-cell rd-task-cell-start"><input type="date" class="rd-task-start form-input rd-task-input"></td>
+    <td class="rd-task-cell rd-task-cell-end"><input type="date" class="rd-task-end form-input rd-task-input"></td>
+  </tr>
+</template>
+
+<template id="tplTaskModalRowExisting">
+  <tr class="task-modal-row task-modal-row--existing rd-task-row rd-task-row--editing" data-task-id="">
+    <td class="rd-task-cell rd-task-cell-project"><select class="rd-task-project-select form-select rd-task-select"><option value="">请选择项目</option></select></td>
+    <td class="rd-task-cell rd-task-cell-execution"><select class="rd-task-execution-select form-select rd-task-select" disabled><option value="">请选择执行</option></select></td>
+    <td class="rd-task-cell rd-task-cell-type task-modal-type-cell"></td>
+    <td class="rd-task-cell rd-task-cell-pri"><select class="rd-task-pri form-select rd-task-select"><option value="1">P1</option><option value="2">P2</option><option value="3">P3</option><option value="4">P4</option></select></td>
+    <td class="rd-task-cell rd-task-cell-name rd-task-cell--name"><input type="text" class="rd-task-name form-input rd-task-input"></td>
+    <td class="rd-task-cell rd-task-cell-owner rd-task-cell--owner rd-task-owner-cell"></td>
+    <td class="rd-task-cell rd-task-cell-hours"><input type="number" class="rd-task-hours form-input rd-task-input" min="0" step="0.5"></td>
+    <td class="rd-task-cell rd-task-cell-start"><input type="date" class="rd-task-start form-input rd-task-input"></td>
+    <td class="rd-task-cell rd-task-cell-end"><input type="date" class="rd-task-end form-input rd-task-input"></td>
+  </tr>
+</template>
+
+<template id="tplRdTaskTableHead">
+  <thead>
+    <tr class="rd-task-table-head-row">
+      <th class="rd-task-th rd-task-th--project" style="width:120px">项目</th>
+      <th class="rd-task-th rd-task-th--execution" style="width:120px">执行</th>
+      <th class="rd-task-th rd-task-th--type" style="width:80px">类型</th>
+      <th class="rd-task-th rd-task-th--pri" style="width:72px">优先级</th>
+      <th class="rd-task-th rd-task-th--name">任务名称 <span class="req">*</span></th>
+      <th class="rd-task-th rd-task-th--owner" style="width:140px">负责人</th>
+      <th class="rd-task-th rd-task-th--hours" style="width:60px">预估(h) <span class="req">*</span></th>
+      <th class="rd-task-th rd-task-th--start" style="width:100px">开始</th>
+      <th class="rd-task-th rd-task-th--end" style="width:100px">截止 <span class="req">*</span></th>
+      <th class="rd-task-th rd-task-th--actions" style="width:48px">操作</th>
+    </tr>
+  </thead>
+</template>
+
+<template id="tplRdTaskRowNew">
+  <tr class="rd-task-row rd-task-row--new" data-story-id="">
+    <td class="rd-task-cell rd-task-cell-project"><select class="rd-task-project-select form-select rd-task-select"><option value="">请选择项目</option></select></td>
+    <td class="rd-task-cell rd-task-cell-execution"><select class="rd-task-execution-select form-select rd-task-select" disabled><option value="">请选择执行</option></select></td>
+    <td class="rd-task-cell rd-task-cell-type"><select class="rd-task-type form-select rd-task-select"><option value="devel">开发</option><option value="test">测试</option><option value="OLtest">上线测试</option><option value="review">评审</option><option value="affair">事务</option><option value="request">需求</option><option value="misc">其他</option><option value="codereview">代码评审</option><option value="design">设计</option><option value="study">研究</option><option value="OLDebug">上线调试</option><option value="Online">上线</option><option value="Train">培训</option><option value="meeting">会议</option><option value="discuss">讨论</option><option value="ui">界面</option></select></td>
+    <td class="rd-task-cell rd-task-cell-pri"><select class="rd-task-pri form-select rd-task-select"><option value="1">P1</option><option value="2">P2</option><option value="3" selected>P3</option><option value="4">P4</option></select></td>
+    <td class="rd-task-cell rd-task-cell-name rd-task-cell--name"><input type="text" class="rd-task-name form-input rd-task-input" placeholder="任务名称"></td>
+    <td class="rd-task-cell rd-task-cell-owner rd-task-cell--owner rd-task-owner-cell"></td>
+    <td class="rd-task-cell rd-task-cell-hours"><input type="number" class="rd-task-hours form-input rd-task-input" min="0" step="0.5" placeholder="h"></td>
+    <td class="rd-task-cell rd-task-cell-start"><input type="date" class="rd-task-start form-input rd-task-input"></td>
+    <td class="rd-task-cell rd-task-cell-end"><input type="date" class="rd-task-end form-input rd-task-input"></td>
+    <td class="rd-task-cell rd-task-cell-actions"><span class="task-actions"></span></td>
+  </tr>
+</template>
+
+<template id="tplRdTaskRowReadonly">
+  <tr class="rd-task-row rd-task-row--existing">
+    <td class="rd-task-cell rd-task-cell-project"></td>
+    <td class="rd-task-cell rd-task-cell-execution"></td>
+    <td class="rd-task-cell rd-task-cell-type"></td>
+    <td class="rd-task-cell rd-task-cell-pri"></td>
+    <td class="rd-task-cell rd-task-cell-name rd-task-cell--name"></td>
+    <td class="rd-task-cell rd-task-cell-owner rd-task-cell--owner"></td>
+    <td class="rd-task-cell rd-task-cell-hours"></td>
+    <td class="rd-task-cell rd-task-cell-start"></td>
+    <td class="rd-task-cell rd-task-cell-end"></td>
+    <td class="rd-task-cell rd-task-cell-actions"><span class="task-actions"></span></td>
+  </tr>
+</template>
+
+<template id="tplRdTaskRowEdit">
+  <tr class="rd-task-row rd-task-row--editing">
+    <td class="rd-task-cell rd-task-cell-project"><select class="rd-task-project-select form-select rd-task-select"><option value="">请选择项目</option></select></td>
+    <td class="rd-task-cell rd-task-cell-execution"><select class="rd-task-execution-select form-select rd-task-select" disabled><option value="">请选择执行</option></select></td>
+    <td class="rd-task-cell rd-task-cell-type"><select class="rd-task-type form-select rd-task-select"></select></td>
+    <td class="rd-task-cell rd-task-cell-pri"><select class="rd-task-pri form-select rd-task-select"><option value="1">P1</option><option value="2">P2</option><option value="3">P3</option><option value="4">P4</option></select></td>
+    <td class="rd-task-cell rd-task-cell-name rd-task-cell--name"><input type="text" class="rd-task-name form-input rd-task-input" placeholder="任务名称"></td>
+    <td class="rd-task-cell rd-task-cell-owner rd-task-cell--owner rd-task-owner-cell"></td>
+    <td class="rd-task-cell rd-task-cell-hours"><input type="number" class="rd-task-hours form-input rd-task-input" min="0" step="0.5" placeholder="h"></td>
+    <td class="rd-task-cell rd-task-cell-start"><input type="date" class="rd-task-start form-input rd-task-input"></td>
+    <td class="rd-task-cell rd-task-cell-end"><input type="date" class="rd-task-end form-input rd-task-input"></td>
+    <td class="rd-task-cell rd-task-cell-actions"><span class="task-actions"></span></td>
+  </tr>
+</template>
+
+<template id="tplRdTaskActions">
+  <span class="task-actions">
+    <button type="button" class="task-edit-btn" title="编辑"><i class="fas fa-pen"></i></button>
+    <button type="button" class="task-delete-btn" title="删除此任务"><i class="fas fa-trash-can"></i></button>
+  </span>
+</template>
+
+<template id="tplRdTaskActionsDeleteOnly">
+  <span class="task-actions">
+    <button type="button" class="task-delete-btn" title="删除此任务"><i class="fas fa-trash-can"></i></button>
+  </span>
+</template>
+
+<template id="tplRdTaskSection">
+  <div class="rd-node-tasks">
+    <table class="rd-task-table">
+      <tbody class="rd-task-body"></tbody>
+    </table>
+    <button type="button" class="rd-add-task">+ 添加任务</button>
+  </div>
+</template>
+
+<template id="tplRdNode">
+  <div class="rd-node rd-node--story">
+    <div class="rd-node-header">
+      <button type="button" class="rd-toggle" title="展开/收起任务" aria-label="展开/收起任务">▼</button>
+      <span class="rd-node-id"></span>
+      <span class="rd-node-role-badge"></span>
+      <span class="rd-node-product-name"></span>
+      <strong class="rd-node-title-display"></strong>
+      <span class="rd-node-header-right">
+        <span class="rd-node-assignee-display"></span>
+        <span class="rd-node-actions"></span>
+      </span>
+    </div>
+  </div>
+</template>
+
+<template id="tplRdNodeDraft">
+  <div class="rd-node rd-node--draft">
+    <div class="rd-node-header rd-node-header--edit">
+      <button type="button" class="rd-toggle" title="展开/收起任务" aria-label="展开/收起任务">▼</button>
+      <span class="rd-node-role-badge"></span>
+      <select class="rd-node-product form-select rd-node-product-select"><option value="">请选择系统</option></select>
+      <input type="text" class="rd-node-title form-input rd-node-title-input" placeholder="研发需求名称">
+      <span class="rd-node-header-right">
+        <span class="rd-node-assignee-wrap">
+          <input type="text" class="rd-node-assignee-input form-input rd-node-assignee-field" placeholder="指派人" autocomplete="off">
+          <input type="hidden" class="rd-node-assignee-value">
+        </span>
+        <span class="rd-node-actions"></span>
+      </span>
+    </div>
+  </div>
+</template>
+
+<template id="tplRdNodeActionsEdit">
+  <span class="rd-node-actions">
+    <button type="button" class="rd-edit-btn" title="编辑"><i class="fas fa-pen"></i></button>
+    <button type="button" class="rd-delete-btn" title="删除此研发需求"><i class="fas fa-trash-can"></i></button>
+  </span>
+</template>
+
+<template id="tplRdNodeActionsDelete">
+  <span class="rd-node-actions">
+    <button type="button" class="rd-delete-btn" title="删除此研发需求"><i class="fas fa-trash-can"></i></button>
+  </span>
+</template>
+
+<template id="tplRdNodeConfirmBtn">
+  <button type="button" class="rd-confirm-btn" title="确认"><i class="fas fa-check"></i></button>
+</template>
+
+<template id="tplRdStoryAssigneeEdit">
+  <span class="rd-node-assignee-wrap">
+    <input type="text" class="rd-node-assignee-input form-input rd-node-assignee-field" placeholder="指派人" autocomplete="off">
+    <input type="hidden" class="rd-node-assignee-value">
+  </span>
+</template>
+
+<template id="tplStoryItemEmpty">
+  <tr><td colspan="6" class="transfer-dev-story-empty">暂无用户故事条目</td></tr>
+</template>
+
+<template id="tplStoryItemRow">
+  <tr>
+    <td class="story-item-index"></td>
+    <td class="story-item-role"></td>
+    <td class="story-item-title"></td>
+    <td class="story-item-product"></td>
+    <td>—</td>
+    <td class="story-item-estimate"></td>
+  </tr>
+</template>
+
+<template id="schedulePlanCardLoading">
+  <div class="schedule-create-plan-card">
+    <div class="schedule-create-plan-title">
+      <span data-field="productName"></span>
+      <span>查询中</span>
+    </div>
+    <div class="schedule-create-plan-summary">
+      <i class="fas fa-spinner fa-spin"></i>
+      <span>正在匹配系统计划…</span>
+    </div>
+  </div>
+</template>
+
+<template id="schedulePlanCardPending">
+  <div class="schedule-create-plan-card">
+    <div class="schedule-create-plan-title">
+      <span data-field="productName"></span>
+      <span>待匹配</span>
+    </div>
+    <div class="schedule-create-plan-meta">请先填写预计上线日期，再匹配系统计划。</div>
+  </div>
+</template>
+
+<template id="schedulePlanCardExisting">
+  <div class="schedule-create-plan-card schedule-create-plan-card--existing">
+    <div class="schedule-create-plan-title">
+      <span data-field="productName"></span>
+      <span class="schedule-create-plan-tag">已有计划</span>
+    </div>
+    <div class="schedule-create-plan-summary">
+      <i class="fas fa-check-circle"></i>
+      <span>已有系统计划</span>
+      <strong class="schedule-create-plan-name" data-field="planTitle"></strong>
+      <span>上线 <span data-field="planOnline"></span></span>
+    </div>
+  </div>
+</template>
+
+<template id="schedulePlanCardDraft">
+  <div class="schedule-create-plan-card" data-field="planCard">
+    <div class="schedule-create-plan-title">
+      <span data-field="productName"></span>
+      <span>待建计划</span>
+    </div>
+    <label class="chk schedule-create-plan-toggle">
+      <input type="checkbox" data-field="syncCreate">
+      <span>同步创建对应系统计划（日期与本窗口一致）</span>
+    </label>
+    <div class="form-group" data-field="planNameGroup" style="margin:0">
+      <label class="form-label">计划名称</label>
+      <input type="text" class="form-input" data-field="planName" placeholder="默认与窗口名称一致，可修改">
+    </div>
+    <div class="schedule-create-plan-meta" data-field="planMeta"></div>
+  </div>
+</template>
+
+<template id="scheduleManageWindowRow">
+  <tr>
+    <td data-field="index" style="text-align:center;color:var(--t3)"></td>
+    <td><strong data-field="name"></strong></td>
+    <td data-field="releaseDate"></td>
+    <td data-field="range" style="font-size:11px;color:var(--t3)"></td>
+    <td data-field="demandCount" style="text-align:center"></td>
+    <td data-field="capacity" style="text-align:center"></td>
+    <td data-field="usedHours" style="text-align:center"></td>
+    <td data-field="remainingHours" style="text-align:center"></td>
+    <td data-field="blockedCount" style="text-align:center"></td>
+    <td data-field="actions" style="text-align:center">
+      <div class="action-group schedule-manage-actions"></div>
+    </td>
+  </tr>
+</template>
+
+<template id="scheduleManageEditBtn">
+  <button type="button" class="action-btn zen-icon-action primary js-manage-edit-version-window" title="编辑窗口" aria-label="编辑窗口">
+    <i class="fas fa-pen"></i>
+  </button>
+</template>
+
+<template id="scheduleManageDeleteBtn">
+  <button type="button" class="action-btn zen-icon-action danger js-manage-delete-version-window" title="删除" aria-label="删除">
+    <i class="fas fa-trash-can"></i>
+  </button>
+</template>
+
+<div class="modal-overlay" id="manageVersionWindowsOverlay"></div>
+<div class="modal" id="manageVersionWindowsModal" style="width:700px;max-width:90vw">
+  <div class="modal-hdr"><h3><i class="fas fa-layer-group" style="color:var(--blue)"></i> 版本窗口管理</h3><button type="button" class="modal-close" id="manageVersionWindowsCloseBtn"><i class="fas fa-xmark"></i></button></div>
+  <div class="modal-body" style="padding:16px 20px">
+    <div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:12px;color:var(--t3)">共 <strong id="manageWindowCount">0</strong> 个版本窗口</span>
+      <button type="button" class="action-btn primary js-open-create-version-window-from-manage" style="font-size:11px;padding:4px 12px"><i class="fas fa-plus"></i> 新建窗口</button>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="schedule-table" style="width:100%;font-size:12px">
+        <thead>
+          <tr>
+            <th style="width:44px;text-align:center">#</th>
+            <th style="min-width:120px">窗口名称</th>
+            <th style="width:120px">上线日期</th>
+            <th style="width:100px">日期范围</th>
+            <th style="width:60px;text-align:center">需求</th>
+            <th style="width:70px;text-align:center">容量(H)</th>
+            <th style="width:70px;text-align:center">已占用(H)</th>
+            <th style="width:70px;text-align:center">剩余(H)</th>
+            <th style="width:60px;text-align:center">阻塞</th>
+            <th style="width:120px;text-align:center">操作</th>
+          </tr>
+        </thead>
+        <tbody id="manageVersionWindowsBody"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="action-btn" id="manageVersionWindowsDismissBtn">关闭</button>
+  </div>
+</div>
+{{ end }}
+
+{{ define "page_js" }}
+<script src="{{ asset "/static/js/schedule/schedulefetch.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/schedulewindowdraft.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/schedulewindow.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/schedulemanage.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/scheduleintegratedshared.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/scheduleintegratedtasks.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/scheduleintegratedrd.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/scheduleintegrated.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/scheduletaskmodal.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/scheduletasklistmodal.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/schedulefilter.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/schedule.js" }}"></script>
+{{ end }}

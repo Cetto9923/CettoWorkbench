@@ -1,0 +1,104 @@
+{{/* ==========================================================================
+文件: web/templates/role/assignperms.html
+模块: 角色管理
+职责: 标准树形表格（thead+tbody）：左列菜单层级与勾选，右列页面级操作权限勾选。
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .PageTitle (string), .Resource (*model.Role), .PermTree ([]*PermTreeNode)
+页面局部样式: /static/css/role/assignperms.css（树表布局、行分隔与悬停）
+========================================================================== */}}
+
+{{ define "page_css" }}
+<link rel="stylesheet" href="/static/css/role/assignperms.css">
+{{ end }}
+
+{{ define "permTreeTableRow" }}
+<tr class="js-perm-tree-node" data-perm-depth="{{ .Depth }}" data-perm-expanded="1">
+  <td class="js-perm-tree-cell-left">
+    <div class="js-perm-tree-row" style="--level: {{ .Depth }};">
+      {{/* expander 按钮或占位 */}}
+      {{ if .HasBranchChildren }}
+      <button type="button" class="btn-icon js-perm-tree-expander" aria-expanded="true" title="展开/折叠">
+        <svg class="js-perm-tree-expander-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M6 12L10 8L6 4"></path>
+        </svg>
+      </button>
+      {{ else }}
+      <span class="js-perm-tree-expander-spacer" aria-hidden="true"></span>
+      {{ end }}
+      {{/* branch checkbox + label，水平排列 */}}
+      <label class="js-perm-tree-branch-check">
+        <input type="checkbox" class="checkbox js-perm-tree-cb-branch"
+          id="{{ .ID }}-branch" data-id="{{ .ID }}" data-parent-id="{{ .ParentID }}">
+        <span class="js-perm-tree-branch-label">{{ .Name }}</span>
+      </label>
+    </div>
+  </td>
+  <td class="js-perm-tree-cell-right">
+    {{ if not .HasBranchChildren }}
+    <div class="js-perm-tree-actions">
+      {{ range .Children }}{{ if .Code }}
+      <label class="js-perm-tree-leaf-check">
+        <input type="checkbox" class="checkbox js-perm-tree-cb-leaf"
+          name="permCodes" value="{{ .Code }}" id="{{ .ID }}"
+          data-id="{{ .ID }}" data-parent-id="{{ .ParentID }}"
+          {{ if .Checked }}checked{{ end }}>
+        <span class="js-perm-tree-leaf-label">{{ .Name }}</span>
+      </label>
+      {{ end }}{{ end }}
+    </div>
+    {{ else }}
+    <div class="js-perm-tree-actions js-perm-tree-actions-empty">—</div>
+    {{ end }}
+  </td>
+</tr>
+{{ range .Children }}{{ if not .Code }}{{ template "permTreeTableRow" . }}{{ end }}{{ end }}
+{{ end }}
+
+{{ define "content" }}
+<form method="POST" action="/admin/roles/{{ .Resource.ID }}/permissions" novalidate class="js-perm-assign-form">
+  <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}">
+
+  {{/* 工具栏 */}}
+  <div class="js-perm-tree-toolbar">
+    <div class="js-perm-tree-toolbar-left">
+      <button type="button" class="btn btn-neutral btn-sm js-perm-tree-tool-expand" aria-expanded="true">全部折叠</button>
+      <button type="button" class="btn btn-neutral btn-sm js-perm-tree-tool-selectall">全选</button>
+    </div>
+    <label class="js-perm-tree-linkage-check">
+      <input type="checkbox" class="checkbox js-perm-tree-linkage" id="perm-linkage" checked>
+      <span>父子联动</span>
+    </label>
+  </div>
+
+  {{/* 权限树表格 */}}
+  <div class="js-perm-tree-mount">
+    <div class="table-wrapper table-scroll-wrapper">
+      <table class="table data-table zen-table js-perm-tree-table">
+        <colgroup>
+          <col class="js-perm-tree-col-left">
+          <col class="js-perm-tree-col-right">
+        </colgroup>
+        <thead>
+          <tr>
+            <th scope="col">菜单层级</th>
+            <th scope="col">操作权限</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{ range .PermTree }}{{ template "permTreeTableRow" . }}{{ end }}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {{/* 提交区 */}}
+  <div class="js-perm-tree-form-actions">
+    <button type="submit" class="btn btn-primary">保存权限</button>
+    <a href="/admin/roles" class="btn btn-neutral">取消</a>
+  </div>
+</form>
+{{ end }}
+
+{{ define "page_js" }}
+<script src="/static/js/role/assignperms.js"></script>
+{{ end }}

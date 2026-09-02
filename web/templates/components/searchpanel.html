@@ -1,0 +1,47 @@
+{{/* ==========================================================================
+文件: web/templates/components/searchpanel.html
+模块: 通用组件
+职责: 渲染可复用的检索面板（含展开/收起，支持 collapsedByDefault）。
+全局字段: .CurrentUser, .CSRFToken, .Menus, .AppName, .CurrentPath
+页面字段: .PanelID (string), .Action (string), .Method (string), .Title (string), .CollapsedByDefault (bool), .Data (any), .ResetURL (string)
+========================================================================== */}}
+{{ define "components/searchpanel" }}
+{{ $panelID := .PanelID }}
+{{ $collapsed := .CollapsedByDefault }}
+{{ $title := .Title }}
+{{ if not $title }}{{ $title = "检索条件" }}{{ end }}
+<div class="search-layout">
+  <form method="{{ if .Method }}{{ .Method }}{{ else }}GET{{ end }}" action="{{ .Action }}" class="search-panel js-search-panel{{ if $collapsed }} collapsed{{ end }}">
+    <div class="search-panel-header">
+      <div class="search-panel-title-wrap">
+        <i class="bi bi-search"></i>
+        <span class="search-panel-title">{{ $title }}</span>
+      </div>
+      <button
+        type="button"
+        class="search-panel-toggle"
+        data-search-toggle
+        aria-expanded="{{ if $collapsed }}false{{ else }}true{{ end }}"
+        aria-controls="{{ $panelID }}"
+        title="{{ if $collapsed }}展开检索条件{{ else }}收起检索条件{{ end }}"
+      >
+        <span class="search-panel-toggle-text">{{ if $collapsed }}展开{{ else }}收起{{ end }}</span>
+        <i class="bi {{ if $collapsed }}bi-chevron-down{{ else }}bi-chevron-up{{ end }} search-panel-toggle-icon"></i>
+      </button>
+    </div>
+    <div class="search-panel-body" id="{{ $panelID }}">
+      {{ template "searchpanel_fields" .Data }}
+      <div class="search-actions">
+        <button type="submit" class="search-btn search-btn-primary">
+          <i class="bi bi-search"></i>
+          <span>搜索</span>
+        </button>
+        <a href="{{ .ResetURL }}" class="search-btn search-btn-secondary">
+          <i class="bi bi-arrow-clockwise"></i>
+          <span>重置</span>
+        </a>
+      </div>
+    </div>
+  </form>
+</div>
+{{ end }}

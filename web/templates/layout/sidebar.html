@@ -1,0 +1,196 @@
+{{ define "sidebar/navLink" }}
+{{/* 叶子菜单链接（section 内与嵌套子菜单共用） */}}
+<a href="{{ .Path }}"
+   class="nav-item{{ if menuNavActive .ActiveNavKey .Menu }} active{{ end }}"
+   data-menu-path="{{ .Path }}"
+   {{ if gt .Depth 0 }}data-depth="{{ .Depth }}"{{ end }}
+   title="{{ .Menu.Title }}">
+  {{ if .Menu.Icon }}<i class="nav-icon fas {{ .Menu.Icon }}"></i>{{ else }}<i class="nav-icon fas fa-circle"></i>{{ end }}
+  <span class="nav-text">{{ .Menu.Title }}</span>
+</a>
+{{ end }}
+
+{{ define "sidebar/menuItems" }}
+{{/* ================================================================
+  递归渲染菜单项（支持无限层级嵌套）
+  参数:
+    .Items         []menu.Menu — 当前层级的菜单列表
+    .CurrentPath   string
+    .ActiveNavKey  string
+    .Depth         int — 0=分区直子项，>0 为嵌套层
+================================================================ */}}
+{{ $ctx := . }}
+{{ range .Items }}
+  {{ if or (eq .Type "directory") (eq .Type "menu") }}
+
+    {{ if .Children }}
+      {{ $hasNavChild := false }}
+      {{ $firstPath := "" }}
+      {{ range .Children }}
+        {{ if or (eq .Type "directory") (eq .Type "menu") }}
+          {{ $hasNavChild = true }}
+          {{ if and (not $firstPath) .Path }}{{ $firstPath = .Path }}{{ end }}
+        {{ end }}
+      {{ end }}
+
+      {{ if $hasNavChild }}
+      {{ if gt $ctx.Depth 0 }}
+      {{/* 嵌套层：可展开父级 */}}
+      <div class="nav-group-collapsible" data-depth="{{ $ctx.Depth }}">
+        <div class="nav-item-header">
+          <a href="{{ if .Path }}{{ .Path }}{{ else }}{{ $firstPath }}{{ end }}"
+             class="nav-item{{ if and $ctx.ActiveNavKey (eq $ctx.ActiveNavKey .Key) }} active{{ end }}"
+             data-menu-path="{{ .Path }}"
+             title="{{ .Title }}">
+            {{ if .Icon }}<i class="nav-icon fas {{ .Icon }}"></i>{{ else }}<i class="nav-icon fas fa-circle"></i>{{ end }}
+            <span class="nav-text">{{ .Title }}</span>
+          </a>
+          <button type="button"
+                  class="nav-arrow-btn js-nav-toggle"
+                  data-menu-id="{{ .Key }}"
+                  aria-expanded="false"
+                  title="展开/收起 {{ .Title }}">
+            <svg class="nav-arrow" viewBox="0 0 15 15" fill="none"
+                 stroke="currentColor" stroke-width="1.5">
+              <path d="M6 3L10.5 7.5L6 12"/>
+            </svg>
+          </button>
+        </div>
+        <div class="nav-submenu js-nav-submenu" data-parent-id="{{ .Key }}">
+          {{ template "sidebar/menuItems" (dict
+               "Items"        .Children
+               "CurrentPath"  $ctx.CurrentPath
+               "ActiveNavKey" $ctx.ActiveNavKey
+               "Depth"        (add $ctx.Depth 1)) }}
+        </div>
+      </div>
+      {{ else }}
+      {{/* 分区直子项：扁平链接；含子级的目录在下一层展开 */}}
+      {{ range .Children }}
+        {{ if or (eq .Type "directory") (eq .Type "menu") }}
+          {{ if .Path }}
+          {{ template "sidebar/navLink" (dict
+               "Menu"         .
+               "Path"         .Path
+               "ActiveNavKey" $ctx.ActiveNavKey
+               "Depth"        0) }}
+          {{ else if .Children }}
+          {{ $subFirst := "" }}
+          {{ range .Children }}
+            {{ if and (not $subFirst) .Path }}{{ $subFirst = .Path }}{{ end }}
+          {{ end }}
+          <div class="nav-group-collapsible" data-depth="1">
+            <div class="nav-item-header">
+              <a href="{{ $subFirst }}"
+                 class="nav-item{{ if and $ctx.ActiveNavKey (eq $ctx.ActiveNavKey .Key) }} active{{ end }}"
+                 data-menu-path="{{ .Path }}"
+                 title="{{ .Title }}">
+                {{ if .Icon }}<i class="nav-icon fas {{ .Icon }}"></i>{{ else }}<i class="nav-icon fas fa-circle"></i>{{ end }}
+                <span class="nav-text">{{ .Title }}</span>
+              </a>
+              <button type="button"
+                      class="nav-arrow-btn js-nav-toggle"
+                      data-menu-id="{{ .Key }}"
+                      aria-expanded="false"
+                      title="展开/收起 {{ .Title }}">
+                <svg class="nav-arrow" viewBox="0 0 15 15" fill="none"
+                     stroke="currentColor" stroke-width="1.5">
+                  <path d="M6 3L10.5 7.5L6 12"/>
+                </svg>
+              </button>
+            </div>
+            <div class="nav-submenu js-nav-submenu" data-parent-id="{{ .Key }}">
+              {{ template "sidebar/menuItems" (dict
+                   "Items"        .Children
+                   "CurrentPath"  $ctx.CurrentPath
+                   "ActiveNavKey" $ctx.ActiveNavKey
+                   "Depth"        1) }}
+            </div>
+          </div>
+          {{ end }}
+        {{ end }}
+      {{ end }}
+      {{ end }}
+
+      {{ else if .Path }}
+      {{ template "sidebar/navLink" (dict
+           "Menu"         .
+           "Path"         .Path
+           "ActiveNavKey" $ctx.ActiveNavKey
+           "Depth"        $ctx.Depth) }}
+      {{ end }}
+
+    {{ else if .Path }}
+    {{ template "sidebar/navLink" (dict
+         "Menu"         .
+         "Path"         .Path
+         "ActiveNavKey" $ctx.ActiveNavKey
+         "Depth"        $ctx.Depth) }}
+    {{ end }}
+
+  {{ end }}
+{{ end }}
+{{ end }}
+
+
+{{ define "layout/sidebar" }}
+{{/* ==========================================================================
+  文件: web/templates/layout/sidebar.html
+  模块: 布局
+  职责: 渲染后台左侧菜单导航，分区标签 + 分隔线样式，支持多级展开/折叠与整体收起
+  全局字段: .CurrentUser, .CSRFToken, .Menus, .AppName, .CurrentPath, .ActiveNavKey
+  页面字段: .CurrentMenus ([]menu.Menu)
+========================================================================== */}}
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-body">
+    <div class="sidebar-nav">
+      {{ if .CurrentMenus }}
+        {{ range $i, $m := .CurrentMenus }}
+          {{ if or (eq $m.Type "directory") (eq $m.Type "menu") }}
+            {{ if gt $i 0 }}<div class="nav-divider" role="separator"></div>{{ end }}
+
+            {{ if $m.Children }}
+              {{ $hasNavChild := false }}
+              {{ range $m.Children }}
+                {{ if or (eq .Type "directory") (eq .Type "menu") }}{{ $hasNavChild = true }}{{ end }}
+              {{ end }}
+
+              {{ if $hasNavChild }}
+              <div class="nav-section-label">{{ $m.Title }}</div>
+              {{ template "sidebar/menuItems" (dict
+                   "Items"        $m.Children
+                   "CurrentPath"  $.CurrentPath
+                   "ActiveNavKey" $.ActiveNavKey
+                   "Depth"        0) }}
+              {{ else if $m.Path }}
+              {{ template "sidebar/navLink" (dict
+                   "Menu"         $m
+                   "Path"         $m.Path
+                   "ActiveNavKey" $.ActiveNavKey
+                   "Depth"        0) }}
+              {{ end }}
+
+            {{ else if $m.Path }}
+            {{ template "sidebar/navLink" (dict
+                 "Menu"         $m
+                 "Path"         $m.Path
+                 "ActiveNavKey" $.ActiveNavKey
+                 "Depth"        0) }}
+            {{ end }}
+          {{ end }}
+        {{ end }}
+      {{ end }}
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <button type="button" class="nav-item js-sidebar-collapse" id="sidebarToggle" title="收起菜单">
+      <svg class="nav-icon sidebar-collapse-icon" viewBox="0 0 15 15" fill="none"
+           stroke="currentColor" stroke-width="1.5">
+        <path d="M10 3L5.5 7.5L10 12"/>
+      </svg>
+      <span class="nav-text sidebar-collapse-text">收起菜单</span>
+    </button>
+  </div>
+</nav>
+{{ end }}

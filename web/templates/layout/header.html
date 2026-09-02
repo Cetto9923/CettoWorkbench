@@ -1,0 +1,52 @@
+{{ define "layout/header" }} {{/*
+========================================================================== 文件:
+web/templates/layout/header.html 模块: 布局 职责:
+渲染后台顶部导航栏、面包屑与页面标题区。 全局字段: .CurrentUser, .CSRFToken,
+.Flash, .Menus, .AppName, .CurrentPath, .LayoutNav 页面字段: .Title (string),
+.PageTitle (string), .CurrentMenus ([]menu.Menu)
+========================================================================== */}}
+<div class="topbar-row">
+  {{ if eq .LayoutNav "sidebar" }}
+  <div class="topbar-brand">
+    <a href="/home" class="nav-item">
+      <i class="bi bi-boxes nav-icon"></i>
+      <span class="nav-item-text"
+        >{{ if .AppName }}{{ .AppName }}{{ else }}workbench{{ end }}</span
+      >
+    </a>
+  </div>
+  {{ end }} {{ if eq .LayoutNav "top" }} {{ template "layout/topnavPrimary" . }}
+  {{ else }}
+  <div class="topbar-primary-spacer" aria-hidden="true"></div>
+  {{ end }} {{ if eq .LayoutNav "sidebar" }}
+  <div class="topbar-actions">
+    <div class="dropdown">
+      <button
+        class="btn btn-neutral btn-sm"
+        type="button"
+        onclick="return toggleDropdown(this);"
+      >
+        <i class="bi bi-person nav-icon"></i>
+        <span class="nav-item-text"
+          >{{ if .CurrentUser }}{{ .CurrentUser.DisplayName }}{{ else }}用户{{
+          end }}</span
+        >
+      </button>
+      <div class="dropdown-menu">
+        <form action="/logout" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}" />
+          <button
+            type="submit"
+            class="dropdown-item dropdown-item-danger topbar-dropdown-item"
+          >
+            <i class="bi bi-box-arrow-right"></i>
+            <span>登出</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {{ end }}
+</div>
+{{ if eq .LayoutNav "top" }}{{ template "layout/topnavSecondary" . }}{{ end }}
+{{ end }}

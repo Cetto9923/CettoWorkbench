@@ -1,0 +1,475 @@
+.table-container {
+  background: var(--color-surface);
+  box-shadow: var(--shadow-table-panel);
+  overflow: hidden;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  scroll-behavior: smooth;
+}
+
+.table-wrapper::-webkit-scrollbar {
+  height: var(--size-2);
+  width: var(--size-2);
+}
+
+.table-wrapper::-webkit-scrollbar-track {
+  background: var(--color-surface-soft-6);
+  border-radius: 12px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 12px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-disabled);
+}
+
+.table-toolbar {
+  margin-bottom: var(--space-2);
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.table-toolbar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.table-tool-btn {
+  border: 1px solid var(--color-border-soft-7);
+  background: var(--color-surface-muted);
+  color: var(--color-text-body);
+  height: var(--size-9);
+  padding: 0 var(--space-3);
+  border-radius: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.table-tool-btn i {
+  font-size: var(--font-size-xs);
+  line-height: 1;
+}
+
+.table-tool-btn:hover {
+  background: var(--color-surface-soft-4);
+  color: var(--color-text-deep);
+  border-color: var(--color-border-soft-8);
+}
+
+.table-create-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--size-9);
+  padding: 0 var(--space-3);
+  border-radius: 18px;
+  background: linear-gradient(135deg, var(--color-primary-gradient-start) 0%, var(--color-primary-gradient-end) 100%);
+  color: var(--color-surface);
+  text-decoration: none;
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  line-height: 1;
+}
+
+.table-create-btn i {
+  font-size: var(--font-size-xs);
+  line-height: 1;
+}
+
+.table-create-btn:hover {
+  color: var(--color-surface);
+  filter: brightness(0.98);
+}
+
+/* 仅 data-table：大卡片区表格（无 .table 时） */
+.data-table:not(.table) {
+  width: 100%;
+  min-width: 820px;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.9rem;
+  letter-spacing: -0.01em;
+}
+
+.data-table:not(.table) thead tr {
+  background: var(--color-surface-soft);
+}
+
+.data-table:not(.table) th {
+  padding: 1rem 1.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-strong);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  background-color: var(--color-surface-soft-5);
+  border-bottom: 1px solid var(--color-border-soft);
+  white-space: nowrap;
+}
+
+.data-table:not(.table) th:first-child {
+  border-top-left-radius: 16px;
+  padding-left: 1.5rem;
+}
+
+.data-table:not(.table) th:last-child {
+  border-top-right-radius: 16px;
+  padding-right: 1.5rem;
+}
+
+.data-table:not(.table) td {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--color-border-soft-4);
+  color: var(--color-text-primary);
+  vertical-align: middle;
+}
+
+.data-table:not(.table) tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.data-table:not(.table) .table-id {
+  font-weight: 500;
+  color: var(--color-text-body);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+}
+
+.data-table .status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.data-table .status-badge::before {
+  content: "●";
+  font-size: 0.65rem;
+  line-height: 1;
+}
+
+.data-table .status-badge.enabled {
+  background: var(--color-success-bg);
+  color: var(--color-success-strong);
+  box-shadow: var(--shadow-success-inset);
+}
+
+.data-table .status-badge.enabled::before {
+  color: var(--color-success-accent);
+}
+
+.data-table .status-badge.disabled {
+  background: var(--color-danger-bg);
+  color: var(--color-danger-strong);
+  box-shadow: var(--shadow-danger-inset);
+}
+
+.data-table .status-badge.disabled::before {
+  color: var(--color-danger-accent);
+}
+
+.action-group {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+}
+
+.action-group form {
+  margin: 0;
+}
+
+.action-btn {
+  border-radius: 999px;
+}
+
+.zen-icon-action {
+  width: 1.85rem;
+  height: 1.85rem;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--color-text-body);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.zen-icon-action i {
+  font-size: var(--font-size-md);
+  line-height: 1;
+}
+
+.zen-icon-action.danger {
+  color: var(--color-danger-deep);
+}
+
+.zen-icon-action.danger:hover {
+  color: var(--color-danger-deeper);
+  transform: translateY(-1px);
+}
+
+.zen-icon-action.disabled,
+.zen-icon-action.disabled:hover {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.data-table:not(.table) th:last-child,
+.data-table:not(.table) td:last-child {
+  width: calc(var(--space-16) + var(--space-12) + var(--space-6));
+  white-space: nowrap;
+}
+
+.data-table:not(.table) .table-action,
+.data-table:not(.table) .table-id {
+  width: var(--space-20);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+  table-layout: fixed;
+}
+
+/* .table + .data-table：后台列表与区块表格（统一紧凑样式） */
+.table.data-table {
+  min-width: 720px;
+  border-collapse: collapse;
+  border-spacing: 0;
+  letter-spacing: normal;
+}
+
+.table.data-table thead th {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-2xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: none;
+  letter-spacing: 0;
+  background: var(--color-surface-muted);
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+  text-align: left;
+}
+
+.table.data-table tbody td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.table.data-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.table.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table.data-table tbody tr:hover td {
+  background: var(--color-primary-light);
+}
+
+.table.data-table .table-id {
+  font-size: var(--font-size-2xs);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.table.data-table .cell-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.table.data-table th.col-action,
+.table.data-table td.col-action {
+  width: 72px;
+  text-align: center;
+}
+
+/* 表头（仅 .table） */
+.table:not(.data-table) thead th {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--font-size-2xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--color-surface-muted);
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+}
+
+/* 列宽 */
+.table .col-cb {
+  width: var(--size-10);
+}
+.table .col-id {
+  width: var(--space-25);
+}
+.table .col-num {
+  width: calc(var(--space-8) + var(--space-8) + var(--space-4));
+  text-align: center;
+}
+
+.table .col-sm {
+  width: var(--space-25);
+}
+
+/* 数据行（仅 .table，不含 .data-table 组合） */
+.table:not(.data-table) tbody td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+  color: var(--color-text-primary);
+}
+
+.table:not(.data-table) tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table:not(.data-table) tbody tr:hover td {
+  background: var(--color-surface-hover);
+}
+
+/* 禁用行：用颜色降级，不用 opacity（opacity 会使低分辨率屏幕内容模糊不可辨）*/
+.table tbody tr.row-disabled td {
+  background: var(--color-surface-muted);
+}
+/* 辅助字段和次字段降级为 --color-border-strong，主字段（.text-strong）保持原色 */
+.table tbody tr.row-disabled td:not(.text-strong) {
+  color: var(--color-border-strong);
+}
+/* 禁用行操作图标：视觉弱化但仍可点击（至少保留"启用"操作）*/
+.table tbody tr.row-disabled .action-group .btn-icon {
+  color: var(--color-border-strong);
+}
+
+.table .col-action,
+.data-table .col-action {
+  width: 80px;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* 嵌入区块的表格容器（无重阴影） */
+.table-container--flat {
+  box-shadow: none;
+  background: transparent;
+  overflow: visible;
+}
+
+.table-container--flat > .table-wrapper {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+/* 表格内标签与行内按钮 */
+.table-tag {
+  display: inline-block;
+  width: fit-content;
+  max-width: 100%;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: var(--font-size-2xs);
+  font-weight: 600;
+  line-height: 1.3;
+  background: var(--color-primary-light);
+  color: var(--color-info);
+  white-space: nowrap;
+}
+
+.table .priority-tag,
+.table.data-table .priority-tag {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.table .priority-tag.P1,
+.table.data-table .priority-tag.P1 {
+  background: var(--color-danger-accent);
+  color: #fff;
+}
+
+.table .priority-tag.P2,
+.table.data-table .priority-tag.P2 {
+  background: var(--color-warning-light);
+  color: #fff;
+}
+
+.table .priority-tag.P3,
+.table.data-table .priority-tag.P3 {
+  background: var(--color-info);
+  color: #fff;
+}
+
+.table .priority-tag.P4,
+.table.data-table .priority-tag.P4 {
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+
+.table-row-btn {
+  padding: 3px 10px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font-size: var(--font-size-2xs);
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  background: var(--color-primary-hover);
+  color: #fff;
+  transition: background-color 0.15s ease;
+}
+
+.table-row-btn:hover {
+  background: var(--color-primary-active);
+}
+
+@media (max-width: 720px) {
+  .table-container {
+    border-radius: 16px;
+  }
+
+  .data-table:not(.table) th,
+  .data-table:not(.table) td {
+    padding: 0.75rem 0.9rem;
+  }
+
+  .table.data-table thead th,
+  .table.data-table tbody td {
+    padding: var(--space-2) var(--space-3);
+  }
+}

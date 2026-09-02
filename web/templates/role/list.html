@@ -1,0 +1,109 @@
+{{/* ==========================================================================
+文件: web/templates/role/list.html
+模块: 角色管理
+职责: 角色列表、按名称搜索与行内操作。
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .PageTitle (string), .Roles ([]model.Role), .Pager (*pagination.Pager), .Q (string)
+========================================================================== */}}
+{{ define "page_css" }}
+<link rel="stylesheet" href="/static/css/role/list.css">
+{{ end }}
+{{ define "searchpanel_fields" }}
+{{ if .Pager }}<input type="hidden" name="pageSize" value="{{ .Pager.PageSize }}">{{ end }}
+<div class="search-fields user-search-fields">
+  <div class="field-group search-field">
+    <label for="roleListSearch">
+      <i class="bi bi-shield-lock"></i>
+      <span>角色名称</span>
+    </label>
+    <input id="roleListSearch" type="search" name="q" class="search-input" placeholder="例如: 管理员" value="{{ .Q }}" aria-label="按角色名称搜索" autocomplete="off">
+  </div>
+</div>
+{{ end }}
+{{ define "content" }}
+{{ template "components/searchpanel" (dict
+  "PanelID" "roleListSearchPanelBody"
+  "Action" "/admin/roles"
+  "Method" "GET"
+  "Title" "检索条件"
+  "CollapsedByDefault" true
+  "ResetURL" "/admin/roles"
+  "Data" .
+) }}
+<div class="table-toolbar">
+  <a href="/admin/roles/new" class="table-create-btn">
+    <i class="bi bi-plus-lg"></i>
+    <span>新增角色</span>
+  </a>
+</div>
+<div class="table-panel role-table-panel table-container">
+  <div class="table-wrapper table-scroll-wrapper">
+    <table class="table data-table zen-table">
+      <thead>
+        <tr>
+          <th class="col-id">ID</th>
+          <th>名称</th>
+          <th>备注</th>
+          <th>类型</th>
+          <th class="col-action">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ if .Roles }}
+        {{ range .Roles }}
+        {{ $protected := or .IsBuiltin (eq .ID 1) }}
+        <tr{{ if $protected }} class="row-builtin" data-builtin="1"{{ end }} data-role-search="{{ .Name }}{{ if .Remark }} {{ .Remark }}{{ end }}">
+          <td class="text-muted col-id">{{ .ID }}</td>
+          <td><span class="text-strong">{{ .Name }}</span></td>
+          <td class="text-muted">{{ if .Remark }}{{ .Remark }}{{ else }}—{{ end }}</td>
+          <td>
+            {{ if $protected }}
+            {{ template "ui/badge" (dict "Class" "status-type-builtin" "Text" "内置") }}
+            {{ else }}
+            {{ template "ui/badge" (dict "Class" "status-inactive" "Text" "自定义") }}
+            {{ end }}
+          </td>
+          <td class="text-right col-action">
+            {{ $deleteUrl := "" }}
+            {{ if not $protected }}
+              {{ $deleteUrl = printf "/admin/roles/%d" .ID }}
+            {{ end }}
+            {{ template "ui/action-group" (dict
+              "ID" .ID
+              "Name" .Name
+              "EditUrl" (printf "/admin/roles/%d/edit" .ID)
+              "DeleteUrl" $deleteUrl
+              "AssignPermUrl" (printf "/admin/roles/%d/permissions" .ID)
+            ) }}
+          </td>
+        </tr>
+        {{ end }}
+        <tr class="role-js-no-match" hidden>
+          <td colspan="5">
+            <div class="empty-state">
+              <p class="empty-state-text">没有匹配当前筛选的角色</p>
+            </div>
+          </td>
+        </tr>
+        {{ else }}
+        <tr class="role-list-empty">
+          <td colspan="5">
+            <div class="empty-state">
+              <p class="empty-state-text">暂无角色数据</p>
+            </div>
+          </td>
+        </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+  {{ if .Pager }}
+  <div class="pager-footer">
+    {{ template "components/pager" . }}
+  </div>
+  {{ end }}
+</div>
+{{ end }}
+{{ define "page_js" }}
+<script src="/static/js/role/list.js"></script>
+{{ end }}

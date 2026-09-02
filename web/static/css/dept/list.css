@@ -1,0 +1,62 @@
+.tree-node-wrap {
+  width: 100%;
+}
+
+.tree-node-toggle {
+  width: var(--size-3_5);
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.tree-node-toggle.placeholder {
+  visibility: hidden;
+}
+
+.tree-node-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.status-switch {
+  position: relative;
+  display: inline-block;
+  width: var(--size-8);
+  height: var(--space-4_5);
+  margin-right: var(--space-2);
+  vertical-align: middle;
+}
+
+.status-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.status-switch-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--color-border-strong);
+  border-radius: 999px;
+  transition: background 0.15s;
+}
+
+.status-switch-slider::before {
+  content: "";
+  position: absolute;
+  width: var(--size-3_5);
+  height: var(--size-3_5);
+  left: var(--space-0_5);
+  top: var(--space-0_5);
+  background: var(--color-surface);
+  border-radius: 50%;
+  transition: transform 0.15s;
+}
+
+.status-switch input:checked + .status-switch-slider {
+  background: var(--color-primary);
+}
+
+.status-switch input:checked + .status-switch-slider::before {
+  transform: translateX(var(--size-3_5));
+}

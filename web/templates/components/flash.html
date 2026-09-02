@@ -1,0 +1,19 @@
+{{/* ==========================================================================
+文件: web/templates/components/flash.html
+模块: 通用模板
+职责: Flash 消息组件模板。
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: .FlashMessages ([]flash.Message)
+========================================================================== */}}
+{{ define "components/flash" }}
+  {{ range .FlashMessages }}
+    <div
+      class="alert alert-{{ alertclass .Level }} alert-dismissible fade show {{ if eq .Level "success" }}js-flash-success{{ end }}"
+      role="alert"
+      {{ if eq .Level "success" }}data-flash-text="{{ .Text }}"{{ end }}
+    >
+      {{ .Text }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  {{ end }}
+{{ end }}

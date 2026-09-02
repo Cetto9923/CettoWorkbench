@@ -1,0 +1,183 @@
+/* ==================== 权限分配页 ==================== */
+
+/* --- 工具类（项目未全局定义则在此补充） --- */
+.d-none { display: none !important; }
+
+/* --- 工具栏 --- */
+.js-perm-assign-form .js-perm-tree-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+
+.js-perm-assign-form .js-perm-tree-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.js-perm-assign-form .js-perm-tree-linkage-check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+/* --- 树表格容器 --- */
+.js-perm-assign-form .js-perm-tree-mount {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+/* --- 表格基础 --- */
+.js-perm-assign-form .js-perm-tree-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.js-perm-assign-form .js-perm-tree-col-left  { width: 30%; }
+.js-perm-assign-form .js-perm-tree-col-right { width: 70%; }
+
+/* --- 表头 --- */
+.js-perm-assign-form .js-perm-tree-table thead th {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--font-size-2xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-muted);
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+}
+
+/* --- 数据行 --- */
+.js-perm-assign-form .js-perm-tree-table tbody td {
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.js-perm-assign-form .js-perm-tree-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.js-perm-assign-form .js-perm-tree-table tbody tr:hover td {
+  background: var(--color-surface-hover);
+}
+
+/* --- 左列：树行布局 --- */
+.js-perm-assign-form .js-perm-tree-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--size-7);
+  padding-left: calc(var(--level, 0) * var(--space-5));
+}
+
+/* --- Expander 按钮 & 占位 --- */
+.js-perm-assign-form .js-perm-tree-expander,
+.js-perm-assign-form .js-perm-tree-expander-spacer {
+  width: var(--space-6);
+  height: var(--space-6);
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.js-perm-assign-form .js-perm-tree-expander-spacer {
+  /* 无子节点时的透明占位，保持对齐 */
+}
+
+.js-perm-assign-form .js-perm-tree-expander {
+  color: var(--color-text-disabled);
+  transition: color 0.15s, background 0.15s;
+}
+
+.js-perm-assign-form .js-perm-tree-expander:hover {
+  color: var(--color-text-secondary);
+  background: var(--color-surface-muted);
+}
+
+/* Expander icon：始终是右箭头 SVG，通过 rotate 控制展开状态 */
+.js-perm-assign-form .js-perm-tree-expander-icon {
+  width: var(--size-3_5);
+  height: var(--size-3_5);
+  transition: transform 0.15s ease;
+}
+
+.js-perm-assign-form .js-perm-tree-expander[aria-expanded="true"] .js-perm-tree-expander-icon {
+  transform: rotate(90deg);
+}
+
+/* --- Branch checkbox（左列菜单名） --- */
+.js-perm-assign-form .js-perm-tree-branch-check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  min-width: 0;
+  flex: 1;
+}
+
+.js-perm-assign-form .js-perm-tree-branch-label {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- 右列：操作权限 --- */
+.js-perm-assign-form .js-perm-tree-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+}
+
+.js-perm-assign-form .js-perm-tree-actions-empty {
+  color: var(--color-text-disabled);
+  font-size: var(--font-size-sm);
+}
+
+/* Leaf checkbox（右列操作项） */
+.js-perm-assign-form .js-perm-tree-leaf-check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  cursor: pointer;
+}
+
+.js-perm-assign-form .js-perm-tree-leaf-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+/* --- Checkbox 样式 --- */
+.js-perm-assign-form .checkbox {
+  accent-color: var(--color-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* --- 提交区 --- */
+.js-perm-assign-form .js-perm-tree-form-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}

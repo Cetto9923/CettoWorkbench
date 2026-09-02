@@ -1,0 +1,157 @@
+{{/* ==========================================================================
+文件: web/templates/user/batchcreate.html
+模块: 用户管理
+职责: 渲染批量创建用户的静态表单页面。
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .PageTitle (string), .Depts ([]model.Dept), .Roles ([]model.Role)
+========================================================================== */}}
+{{ define "page_css" }}
+<link rel="stylesheet" href="/static/css/components/batchform.css">
+{{ end }}
+{{ define "page_js" }}
+<script src="/static/js/user/batchcreate.js"></script>
+{{ end }}
+{{ define "content" }}
+<div class="page-header">
+  <div class="page-header-left">
+    <nav class="breadcrumb">
+      <a href="/admin">系统管理</a>
+      <span class="breadcrumb-sep">/</span>
+      <a href="/admin/users">用户管理</a>
+      <span class="breadcrumb-sep">/</span>
+      <span>批量创建用户</span>
+    </nav>
+    <h1 class="page-title">批量创建用户</h1>
+  </div>
+</div>
+
+<div class="table-panel batch-form-panel">
+  <div class="panel-header">
+    <div class="panel-title"><i class="bi bi-people-fill"></i>批量录入</div>
+  </div>
+
+  <form method="POST" action="/admin/users/batch/create" novalidate class="batch-form">
+    <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}">
+
+    <div class="batch-form-table" role="table" aria-label="批量创建用户表单">
+      <div class="batch-form-row batch-form-row--head" role="row">
+        <div class="batch-form-cell" role="columnheader">用户名<span class="form-required-mark">*</span></div>
+        <div class="batch-form-cell" role="columnheader">姓名<span class="form-required-mark">*</span></div>
+        <div class="batch-form-cell" role="columnheader">部门</div>
+        <div class="batch-form-cell" role="columnheader">邮箱</div>
+        <div class="batch-form-cell" role="columnheader">性别<span class="form-required-mark">*</span></div>
+        <div class="batch-form-cell" role="columnheader">密码<span class="form-required-mark">*</span></div>
+        <div class="batch-form-cell" role="columnheader">角色</div>
+        <div class="batch-form-cell batch-form-cell--operation" role="columnheader">操作</div>
+      </div>
+
+      <div class="batch-form-row" role="row" data-batch-row>
+        <div class="batch-form-cell" role="cell">
+          <input id="account_0" name="users[0].account" type="text" maxlength="64" class="input" placeholder="例如: zhang.li" required>
+        </div>
+        <div class="batch-form-cell" role="cell">
+          <input id="displayName_0" name="users[0].displayName" type="text" maxlength="64" class="input" placeholder="例如: 张力" required>
+        </div>
+        <div class="batch-form-cell form-tree-select-field" role="cell">
+          <div id="userDeptTreeData_0" class="form-tree-select-data" hidden aria-hidden="true">
+            {{ range .Depts }}
+            <span data-id="{{ .ID }}" data-parent-id="{{ .ParentID }}" data-name="{{ .Name }}"></span>
+            {{ end }}
+          </div>
+          <select id="deptID_0" name="users[0].deptID" class="form-tree-select-native" tabindex="-1" aria-hidden="true">
+            <option value="">请选择部门</option>
+            {{ range .Depts }}
+            <option value="{{ .ID }}">{{ .Name }}</option>
+            {{ end }}
+          </select>
+          <div class="dropdown form-tree-select-dropdown">
+            <div class="form-input-clear-wrap">
+              <input
+                id="userDeptTreeTrigger_0"
+                type="text"
+                class="input form-tree-select-input"
+                data-form-tree-input
+                autocomplete="off"
+                aria-autocomplete="list"
+                placeholder="请选择部门"
+              />
+              <button type="button" class="form-dropdown-chevron" aria-label="展开部门" onclick="return toggleDropdown(this);">
+                <i class="bi bi-chevron-down text-muted" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="form-dropdown-clear" data-form-tree-clear aria-label="清除" hidden>×</button>
+            </div>
+            <div class="dropdown-menu form-tree-select-menu">
+              <div class="form-tree-select-scroll">
+                <ul id="userDeptTreeList_0" class="form-tree-select-list" role="tree"></ul>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="batch-form-cell" role="cell">
+          <input id="email_0" name="users[0].email" type="email" maxlength="128" class="input" placeholder="user@company.com">
+        </div>
+        <div class="batch-form-cell" role="cell">
+          <div class="batch-form-radio">
+            <label class="radio-label"><input type="radio" name="users[0].gender" value="m" checked required><span>男</span></label>
+            <label class="radio-label"><input type="radio" name="users[0].gender" value="f"><span>女</span></label>
+          </div>
+        </div>
+        <div class="batch-form-cell" role="cell">
+          <input id="password_0" name="users[0].password" type="password" minlength="8" maxlength="64" class="input" placeholder="至少 8 位字符" required>
+        </div>
+        <div class="batch-form-cell" role="cell">
+          <div class="dropdown form-multiselect" data-role-dropdown>
+            <div class="form-input-clear-wrap">
+              <div class="form-multiselect-display" data-role-display>
+                <div class="form-multiselect-tags" data-role-tags></div>
+                <input
+                  id="userRoleTrigger_0"
+                  type="text"
+                  class="input form-multiselect-input"
+                  data-multiselect-filter
+                  placeholder="请选择角色"
+                  autocomplete="off"
+                  aria-autocomplete="list"
+                  aria-label="检索角色"
+                />
+              </div>
+              <button type="button" class="form-dropdown-chevron" aria-label="展开角色" onclick="return toggleDropdown(this);">
+                <i class="bi bi-chevron-down" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="form-dropdown-clear" data-form-multiselect-clear aria-label="清除角色" hidden>×</button>
+            </div>
+            <div class="dropdown-menu form-multiselect-menu">
+              <div class="form-multiselect-scroll">
+                <div class="form-multiselect-list">
+                {{ range .Roles }}
+                <label class="checkbox-label form-multiselect-option">
+                  <input name="users[0].roleIds" value="{{ .ID }}" type="checkbox" class="checkbox form-multiselect-checkbox">
+                  <span class="checkbox-box"></span>
+                  <span class="form-multiselect-name">{{ .Name }}</span>
+                </label>
+                {{ else }}
+                <div class="text-secondary">暂无可分配角色</div>
+                {{ end }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="batch-form-cell batch-form-cell--operation" role="cell">
+          <button type="button" class="batch-op-btn" aria-label="新增一行" data-batch-add>
+            <i class="bi bi-plus-lg" aria-hidden="true"></i>
+          </button>
+          <button type="button" class="batch-op-btn batch-op-btn--danger" aria-label="删除本行" data-batch-remove>
+            <i class="bi bi-trash3" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="batch-form-actions">
+      <a href="/admin/users" class="btn btn-neutral">取消</a>
+      <button type="submit" class="btn btn-primary">保存</button>
+    </div>
+  </form>
+</div>
+{{ end }}

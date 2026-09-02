@@ -1,0 +1,192 @@
+/* ==========================================================================
+   文件: web/static/css/layout/topnav.css
+   模块: 布局
+   职责: 双层水平顶栏（蓝色一级 + 白色二级），与 layout/header 配套
+========================================================================== */
+
+:root {
+  --topnav-primary-bg: #3883fa;
+  --topnav-primary-active-bg: #3479E6;
+  --topnav-primary-fg: #ffffff;
+  --topnav-sep-color: rgba(255, 255, 255, 0.35);
+  --topnav-subitem-hover-bg: #F2F2F2;
+
+/* 顶栏整体改为主题蓝，二级条单独白底 */
+.topbar {
+  background: var(--topnav-primary-bg);
+  border-bottom: none;
+}
+
+.topbar-brand .nav-item {
+  color: var(--topnav-primary-fg);
+}
+
+.topbar-brand .nav-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--topnav-primary-fg);
+}
+
+.topbar-actions .btn-neutral {
+  color: var(--topnav-primary-fg);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.topbar-actions .btn-neutral:hover {
+  color: var(--topnav-primary-fg);
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.topbar-row .topbar-brand,
+.topbar-row .topbar-actions {
+  flex-shrink: 0;
+}
+
+.topnav-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  align-self: stretch;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.topnav-primary-track {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: nowrap;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+.topnav-primary-track::-webkit-scrollbar {
+  height: 4px;
+}
+
+.topnav-primary-track::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: var(--radius-sm);
+}
+
+.topnav-sep {
+  width: 1px;
+  height: var(--size-5);
+  flex-shrink: 0;
+  background: var(--topnav-sep-color);
+  margin: 0 var(--space-2);
+}
+
+.topnav-primary-icon {
+  font-size: var(--font-size-md);
+  line-height: 1;
+  flex-shrink: 0;
+  opacity: 0.95;
+}
+
+.topnav-primary-label {
+  white-space: nowrap;
+}
+
+.topnav-primary-item {
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+  padding: var(--space-1) var(--space-3);
+  border: none;
+  background: transparent;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  line-height: 1;
+  color: var(--topnav-primary-fg);
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.topnav-primary-item:hover {
+  color: var(--topnav-primary-fg);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.topnav-primary-item.is-active {
+  background: var(--topnav-primary-active-bg);
+  color: var(--topnav-primary-fg);
+}
+
+.topnav-chevron {
+  font-size: var(--font-size-2xs);
+  opacity: 0.85;
+}
+
+.topnav-dropdown {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.topnav-dropdown .dropdown-menu {
+  left: 0;
+  right: auto;
+  min-width: calc(var(--size-10) * 4);
+}
+
+.topnav-secondary {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: 0 1px 0 var(--color-ink-15-23-42-03);
+}
+
+.topnav-secondary[hidden] {
+  display: none !important;
+}
+
+.topnav-panel[hidden] {
+  display: none !important;
+}
+
+.topnav-panel {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: var(--space-1) var(--space-1);
+}
+
+.topnav-subitem {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  box-sizing: border-box;
+  min-height: var(--size-10);
+  padding: var(--space-2) var(--space-5);
+  text-decoration: none;
+  transition: color 0.12s ease, background 0.12s ease;
+}
+
+.topnav-subitem:hover {
+  color: var(--color-text-primary);
+  background: var(--topnav-subitem-hover-bg);
+}
+
+.topnav-subitem.is-active {
+  color: var(--topnav-primary-bg);
+  font-weight: 600;
+}

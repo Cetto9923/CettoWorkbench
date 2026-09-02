@@ -1,0 +1,120 @@
+{{/* ==========================================================================
+文件: web/templates/components/pager.html
+模块: 通用模板
+职责: 分页组件模板（底部条 + ul.pagination / li.page-item / .page-link）。
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: .Pager (*pagination.Pager)；可选 .SelectedCategoryID (int64)，>0 时附带 categoryID 查询参数（属性列表等）。
+Pager.PageParam 自定义页码参数名（默认 page）；Pager.PreserveParams 保留其他 query 参数。
+========================================================================== */}}
+{{ define "components/pager" }}
+{{ $currentPage := 1 }}
+{{ $totalPages := 1 }}
+{{ $pageSize := 20 }}
+{{ $pageParam := "page" }}
+{{ $preserveParams := dict }}
+{{ $selCat := index . "SelectedCategoryID" }}
+{{ if .Pager }}
+  {{ if gt .Pager.CurrentPage 0 }}{{ $currentPage = .Pager.CurrentPage }}{{ end }}
+  {{ if gt .Pager.TotalPages 0 }}{{ $totalPages = .Pager.TotalPages }}{{ end }}
+  {{ if gt .Pager.PageSize 0 }}{{ $pageSize = .Pager.PageSize }}{{ end }}
+  {{ if .Pager.PageParam }}{{ $pageParam = .Pager.PageParam }}{{ end }}
+  {{ if .Pager.PreserveParams }}{{ $preserveParams = .Pager.PreserveParams }}{{ end }}
+{{ end }}
+<div class="pagination-container" aria-label="分页">
+  <ul class="pagination">
+    {{ if and .Pager .Pager.HasPrev }}
+    <li class="page-item">
+      <a class="page-link" href="?{{ $pageParam }}={{ sub $currentPage 1 }}&pageSize={{ $pageSize }}{{ range $k, $v := $preserveParams }}&{{ $k }}={{ $v }}{{ end }}{{ if .Q }}&q={{ .Q | urlquery }}{{ end }}{{ if .Status }}&status={{ .Status | urlquery }}{{ end }}{{ if .Account }}&account={{ .Account | urlquery }}{{ end }}{{ if .Method }}&method={{ .Method | urlquery }}{{ end }}{{ if .Path }}&path={{ .Path | urlquery }}{{ end }}{{ if .IP }}&ip={{ .IP | urlquery }}{{ end }}{{ if .StartAt }}&startAt={{ .StartAt | urlquery }}{{ end }}{{ if .EndAt }}&endAt={{ .EndAt | urlquery }}{{ end }}{{ if and $selCat (gt $selCat 0) }}&categoryID={{ $selCat }}{{ end }}" aria-label="上一页">
+        <i class="bi bi-chevron-left" aria-hidden="true"></i>
+      </a>
+    </li>
+    {{ else }}
+    <li class="page-item disabled">
+      <span class="page-link" aria-hidden="true"><i class="bi bi-chevron-left"></i></span>
+    </li>
+    {{ end }}
+
+    {{ if and (gt $totalPages 1) .Pager (gt (len .Pager.Pages) 0) }}
+      {{ if gt (index .Pager.Pages 0) 1 }}
+      <li class="page-item"><a class="page-link" href="?{{ $pageParam }}=1&pageSize={{ $pageSize }}{{ range $k, $v := $preserveParams }}&{{ $k }}={{ $v }}{{ end }}{{ if .Q }}&q={{ .Q | urlquery }}{{ end }}{{ if .Status }}&status={{ .Status | urlquery }}{{ end }}{{ if .Account }}&account={{ .Account | urlquery }}{{ end }}{{ if .Method }}&method={{ .Method | urlquery }}{{ end }}{{ if .Path }}&path={{ .Path | urlquery }}{{ end }}{{ if .IP }}&ip={{ .IP | urlquery }}{{ end }}{{ if .StartAt }}&startAt={{ .StartAt | urlquery }}{{ end }}{{ if .EndAt }}&endAt={{ .EndAt | urlquery }}{{ end }}{{ if and $selCat (gt $selCat 0) }}&categoryID={{ $selCat }}{{ end }}">1</a></li>
+      {{ end }}
+      {{ if gt (index .Pager.Pages 0) 2 }}
+      <li class="page-item disabled"><span class="page-link">•••</span></li>
+      {{ end }}
+
+      {{ range .Pager.Pages }}
+      <li class="page-item{{ if eq . $currentPage }} active{{ end }}">
+        {{ if eq . $currentPage }}
+        <span class="page-link" aria-current="page">{{ . }}</span>
+        {{ else }}
+        <a class="page-link" href="?{{ $pageParam }}={{ . }}&pageSize={{ $pageSize }}{{ range $k, $v := $preserveParams }}&{{ $k }}={{ $v }}{{ end }}{{ if $.Q }}&q={{ $.Q | urlquery }}{{ end }}{{ if $.Status }}&status={{ $.Status | urlquery }}{{ end }}{{ if $.Account }}&account={{ $.Account | urlquery }}{{ end }}{{ if $.Method }}&method={{ $.Method | urlquery }}{{ end }}{{ if $.Path }}&path={{ $.Path | urlquery }}{{ end }}{{ if $.IP }}&ip={{ $.IP | urlquery }}{{ end }}{{ if $.StartAt }}&startAt={{ $.StartAt | urlquery }}{{ end }}{{ if $.EndAt }}&endAt={{ $.EndAt | urlquery }}{{ end }}{{ if and $selCat (gt $selCat 0) }}&categoryID={{ $selCat }}{{ end }}">{{ . }}</a>
+        {{ end }}
+      </li>
+      {{ end }}
+
+      {{ if lt (index .Pager.Pages (sub (len .Pager.Pages) 1)) (sub $totalPages 1) }}
+      <li class="page-item disabled"><span class="page-link">•••</span></li>
+      {{ end }}
+      {{ if lt (index .Pager.Pages (sub (len .Pager.Pages) 1)) $totalPages }}
+      <li class="page-item"><a class="page-link" href="?{{ $pageParam }}={{ $totalPages }}&pageSize={{ $pageSize }}{{ range $k, $v := $preserveParams }}&{{ $k }}={{ $v }}{{ end }}{{ if .Q }}&q={{ .Q | urlquery }}{{ end }}{{ if .Status }}&status={{ .Status | urlquery }}{{ end }}{{ if .Account }}&account={{ .Account | urlquery }}{{ end }}{{ if .Method }}&method={{ .Method | urlquery }}{{ end }}{{ if .Path }}&path={{ .Path | urlquery }}{{ end }}{{ if .IP }}&ip={{ .IP | urlquery }}{{ end }}{{ if .StartAt }}&startAt={{ .StartAt | urlquery }}{{ end }}{{ if .EndAt }}&endAt={{ .EndAt | urlquery }}{{ end }}{{ if and $selCat (gt $selCat 0) }}&categoryID={{ $selCat }}{{ end }}">{{ $totalPages }}</a></li>
+      {{ end }}
+    {{ else }}
+    <li class="page-item active">
+      <span class="page-link" aria-current="page">{{ $currentPage }}</span>
+    </li>
+    {{ end }}
+
+    {{ if and .Pager .Pager.HasNext }}
+    <li class="page-item">
+      <a class="page-link" href="?{{ $pageParam }}={{ add $currentPage 1 }}&pageSize={{ $pageSize }}{{ range $k, $v := $preserveParams }}&{{ $k }}={{ $v }}{{ end }}{{ if .Q }}&q={{ .Q | urlquery }}{{ end }}{{ if .Status }}&status={{ .Status | urlquery }}{{ end }}{{ if .Account }}&account={{ .Account | urlquery }}{{ end }}{{ if .Method }}&method={{ .Method | urlquery }}{{ end }}{{ if .Path }}&path={{ .Path | urlquery }}{{ end }}{{ if .IP }}&ip={{ .IP | urlquery }}{{ end }}{{ if .StartAt }}&startAt={{ .StartAt | urlquery }}{{ end }}{{ if .EndAt }}&endAt={{ .EndAt | urlquery }}{{ end }}{{ if and $selCat (gt $selCat 0) }}&categoryID={{ $selCat }}{{ end }}" aria-label="下一页">
+        <i class="bi bi-chevron-right" aria-hidden="true"></i>
+      </a>
+    </li>
+    {{ else }}
+    <li class="page-item disabled">
+      <span class="page-link" aria-hidden="true"><i class="bi bi-chevron-right"></i></span>
+    </li>
+    {{ end }}
+  </ul>
+
+  <div class="pagination-options">
+    <span class="pagination-total">共 {{ if .Pager }}{{ .Pager.TotalItems }}{{ else }}0{{ end }} 条</span>
+    <form method="GET" action="{{ .CurrentPath }}" class="pagination-size-form">
+      {{ range $k, $v := $preserveParams }}<input type="hidden" name="{{ $k }}" value="{{ $v }}">{{ end }}
+      {{ if .Q }}<input type="hidden" name="q" value="{{ .Q }}">{{ end }}
+      {{ if .Status }}<input type="hidden" name="status" value="{{ .Status }}">{{ end }}
+      {{ if .Account }}<input type="hidden" name="account" value="{{ .Account }}">{{ end }}
+      {{ if .Method }}<input type="hidden" name="method" value="{{ .Method }}">{{ end }}
+      {{ if .Path }}<input type="hidden" name="path" value="{{ .Path }}">{{ end }}
+      {{ if .IP }}<input type="hidden" name="ip" value="{{ .IP }}">{{ end }}
+      {{ if .StartAt }}<input type="hidden" name="startAt" value="{{ .StartAt }}">{{ end }}
+      {{ if .EndAt }}<input type="hidden" name="endAt" value="{{ .EndAt }}">{{ end }}
+      {{ if and $selCat (gt $selCat 0) }}<input type="hidden" name="categoryID" value="{{ $selCat }}">{{ end }}
+      <input type="hidden" name="{{ $pageParam }}" value="1">
+      <select name="pageSize" class="select" onchange="this.form.submit()">
+        <option value="10"{{ if eq $pageSize 10 }} selected{{ end }}>10 条/页</option>
+        <option value="20"{{ if eq $pageSize 20 }} selected{{ end }}>20 条/页</option>
+        <option value="50"{{ if eq $pageSize 50 }} selected{{ end }}>50 条/页</option>
+        <option value="100"{{ if eq $pageSize 100 }} selected{{ end }}>100 条/页</option>
+      </select>
+    </form>
+    <form method="GET" action="{{ .CurrentPath }}" class="pagination-jump-form">
+      {{ range $k, $v := $preserveParams }}<input type="hidden" name="{{ $k }}" value="{{ $v }}">{{ end }}
+      {{ if .Q }}<input type="hidden" name="q" value="{{ .Q }}">{{ end }}
+      {{ if .Status }}<input type="hidden" name="status" value="{{ .Status }}">{{ end }}
+      {{ if .Account }}<input type="hidden" name="account" value="{{ .Account }}">{{ end }}
+      {{ if .Method }}<input type="hidden" name="method" value="{{ .Method }}">{{ end }}
+      {{ if .Path }}<input type="hidden" name="path" value="{{ .Path }}">{{ end }}
+      {{ if .IP }}<input type="hidden" name="ip" value="{{ .IP }}">{{ end }}
+      {{ if .StartAt }}<input type="hidden" name="startAt" value="{{ .StartAt }}">{{ end }}
+      {{ if .EndAt }}<input type="hidden" name="endAt" value="{{ .EndAt }}">{{ end }}
+      {{ if and $selCat (gt $selCat 0) }}<input type="hidden" name="categoryID" value="{{ $selCat }}">{{ end }}
+      <input type="hidden" name="pageSize" value="{{ $pageSize }}">
+      <span>跳至</span>
+      <input type="number" min="1" max="{{ $totalPages }}" name="{{ $pageParam }}" class="input" value="{{ $currentPage }}">
+      <span>页</span>
+      <button type="submit" class="btn btn-neutral btn-sm">前往</button>
+    </form>
+  </div>
+</div>
+{{ end }}

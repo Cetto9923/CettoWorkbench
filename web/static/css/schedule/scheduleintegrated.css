@@ -1,0 +1,880 @@
+/* ==========================================================================
+   文件: web/static/css/schedule/scheduleintegrated.css
+   模块: 排期工作台
+   职责: 一体化排期弹窗（#scheduleIntegratedModal）样式
+   依赖: web/static/css/schedule/schedule.css、schedulemodal.css（:root 变量与 batch-modal 骨架须先加载；一体化弹窗样式在本文件）
+========================================================================== */
+
+/* ── 弹窗容器（对齐 #scheduleVersionWindowModal 布局） ── */
+#scheduleIntegratedModal.batch-modal.schedule-integrated-modal {
+  width: min(96vw, 1520px);
+  max-width: 1520px;
+  height: auto;
+  max-height: 92vh;
+  overflow: hidden;
+  display: none;
+  flex-direction: column;
+}
+
+#scheduleIntegratedModal.batch-modal.schedule-integrated-modal.show {
+  display: flex;
+}
+
+#scheduleIntegratedModal .batch-modal-hdr,
+#scheduleIntegratedModal .schedule-integrated-footer,
+#scheduleIntegratedModal .batch-modal-footer {
+  flex: 0 0 auto;
+}
+
+#scheduleIntegratedModal .batch-modal-body {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 18px 18px;
+}
+
+#scheduleIntegratedModal .form-input,
+#scheduleIntegratedModal .form-select {
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+#scheduleIntegratedModal input[type="date"].form-input {
+  color: #333;
+}
+
+#taskModal input[type="date"].form-input {
+  color: #333;
+}
+
+#scheduleIntegratedModal input[type="date"].form-input:not([readonly]) {
+  position: relative;
+  cursor: pointer;
+}
+
+#taskModal input[type="date"].form-input:not([readonly]) {
+  position: relative;
+  cursor: pointer;
+}
+
+#scheduleIntegratedModal input[type="date"].form-input:not([readonly])::-webkit-calendar-picker-indicator,
+#scheduleIntegratedModal .rd-node-tasks input[type="date"]::-webkit-calendar-picker-indicator,
+#taskModal .rd-node-tasks input[type="date"]::-webkit-calendar-picker-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+#scheduleIntegratedModal input[type="date"].form-input::-webkit-datetime-edit,
+#scheduleIntegratedModal input[type="date"]::-webkit-datetime-edit,
+#taskModal input[type="date"].form-input::-webkit-datetime-edit,
+#taskModal input[type="date"]::-webkit-datetime-edit {
+  color: #aaa;
+}
+
+#scheduleIntegratedModal input[type="date"].form-input:focus::-webkit-datetime-edit,
+#scheduleIntegratedModal input[type="date"]:focus::-webkit-datetime-edit,
+#scheduleIntegratedModal input[type="date"].form-input.has-value::-webkit-datetime-edit,
+#scheduleIntegratedModal input[type="date"].has-value::-webkit-datetime-edit,
+#taskModal input[type="date"].form-input:focus::-webkit-datetime-edit,
+#taskModal input[type="date"]:focus::-webkit-datetime-edit,
+#taskModal input[type="date"].form-input.has-value::-webkit-datetime-edit,
+#taskModal input[type="date"].has-value::-webkit-datetime-edit {
+  color: #333;
+}
+
+#scheduleIntegratedModal input[type="date"].form-input:invalid,
+#taskModal input[type="date"].form-input:invalid {
+  color: #999;
+}
+
+#scheduleIntegratedModal input[type="date"].form-input[readonly] {
+  background: #f8fafc;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+/* ── 排期一体化办理弹窗信息条 ── */
+.schedule-modal-info {
+  padding: 12px 14px;
+  background: var(--blue-bg);
+  border: 1px solid var(--blue-bd);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--blue);
+  margin-bottom: 12px;
+}
+
+.schedule-modal-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--blue);
+}
+
+.schedule-modal-summary {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.schedule-modal-summary strong {
+  color: var(--t1);
+}
+
+/* ── 分区卡片 ── */
+.schedule-integrated-section {
+  margin-bottom: 16px;
+  border: 1px solid var(--border-lt);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+#scheduleIntegratedModal .schedule-integrated-section {
+  overflow: visible;
+}
+
+#scheduleIntegratedModal .schedule-integrated-section-body,
+#scheduleIntegratedModal .schedule-integrated-form-sheet,
+#scheduleIntegratedModal .schedule-integrated-grid,
+#scheduleIntegratedModal .schedule-integrated-cell {
+  overflow: visible;
+}
+
+.schedule-integrated-section-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border-lt);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--t1);
+}
+
+.schedule-integrated-section-hdr span {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--t3);
+}
+
+.schedule-integrated-section-hdr--actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.schedule-integrated-section-hdr--actions > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.schedule-integrated-section-body {
+  padding: 12px 14px;
+}
+
+/* ── 业务排期表单区 ── */
+.schedule-integrated-form-sheet {
+  padding: 14px 16px 12px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #f8fafc 0%, var(--white) 55%);
+  border: 1px solid var(--border-lt);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.schedule-integrated-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px 16px;
+  align-items: end;
+}
+
+.schedule-integrated-cell {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.schedule-integrated-cell--pad {
+  min-height: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.schedule-integrated-label {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--t3);
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+
+.schedule-integrated-label .req {
+  color: var(--red);
+  font-weight: 700;
+}
+
+.schedule-integrated-cell .schedule-field-control,
+.schedule-integrated-cell .form-select.schedule-field-control,
+.schedule-integrated-cell .form-input.schedule-field-control {
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  font-size: 12px;
+  line-height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--white);
+  box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.schedule-integrated-cell .schedule-field-control:focus,
+.schedule-integrated-cell .form-input.schedule-field-control:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+}
+
+#scheduleIntegratedModal .schedule-integrated-cell .ui-autocomplete {
+  width: 100%;
+  min-width: 0;
+}
+
+#scheduleIntegratedModal .schedule-integrated-cell .ui-autocomplete-input-wrap .ui-autocomplete-input {
+  display: block;
+}
+
+#scheduleIntegratedModal .schedule-integrated-cell .ui-autocomplete-input-wrap .ui-autocomplete-input:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+}
+
+#scheduleIntegratedModal .ui-autocomplete-dropdown,
+#taskModal .ui-autocomplete-dropdown {
+  z-index: 99999;
+}
+
+/* ── 版本窗口 / 预计上线组合控件 ── */
+.schedule-window-combo,
+.schedule-target-combo {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--white);
+  overflow: hidden;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.schedule-window-combo:focus-within,
+.schedule-target-combo:focus-within {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+}
+
+#scheduleIntegratedModal .schedule-integrated-cell .schedule-window-combo .schedule-window-combo-select,
+#scheduleIntegratedModal .schedule-integrated-cell .schedule-target-combo .schedule-target-combo-date {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.schedule-window-combo-select,
+.schedule-target-combo-date {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  padding: 0 8px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.schedule-window-combo-select:focus,
+.schedule-target-combo-date:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.integrated-rd-tree-empty {
+  padding: 24px 16px;
+  text-align: center;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--t2);
+  font-size: 13px;
+}
+
+.integrated-rd-tree-empty p {
+  margin: 0 0 12px;
+}
+
+.integrated-rd-tree-empty.compact {
+  padding: 8px 12px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px dashed var(--border-lt);
+  border-radius: 6px;
+  margin-top: 8px;
+}
+
+.integrated-rd-tree-empty.compact p {
+  margin: 0;
+}
+
+/* ── 澄清转入：用户故事与研发需求区 ── */
+.transfer-dev-section {
+  margin-top: 12px;
+}
+
+.transfer-dev-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.transfer-dev-section-head strong {
+  font-size: 13px;
+  color: var(--t1);
+}
+
+.transfer-dev-section-head span {
+  font-size: 11px;
+  color: var(--t3);
+}
+
+#scheduleIntegratedModal .transfer-dev-story-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  background: var(--white);
+}
+
+#scheduleIntegratedModal .transfer-dev-story-table th,
+#scheduleIntegratedModal .transfer-dev-story-table td {
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+#scheduleIntegratedModal .transfer-dev-story-table th {
+  background: var(--bg);
+  font-size: 11px;
+  color: var(--t3);
+  font-weight: 600;
+}
+
+/* ── 按钮尺寸（弹窗内） ── */
+#scheduleIntegratedModal .action-btn--sm {
+  padding: 4px 10px;
+  font-size: 11px;
+  line-height: 1.35;
+  border-radius: 5px;
+}
+
+#scheduleIntegratedModal .action-btn--xs {
+  padding: 2px 7px;
+  font-size: 11px;
+  line-height: 1.2;
+  border-radius: 4px;
+  min-width: 24px;
+}
+
+/* ── 研发需求树（rd-node / rd-task 模板组件） ── */
+.rd-task-tree {
+  margin-top: 16px;
+}
+
+.rd-add-node {
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px dashed #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 12px;
+  color: #2563eb;
+  cursor: pointer;
+}
+
+.rd-node {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  background: #fff;
+}
+
+.rd-node-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border-radius: 6px 6px 0 0;
+  flex-wrap: wrap;
+}
+
+.rd-node-header:not(.rd-node-header--edit) {
+  cursor: pointer;
+}
+
+.rd-node-header--edit,
+.rd-node-header--story-edit {
+  cursor: default;
+  flex-wrap: nowrap;
+}
+
+.rd-node-header--collapsed {
+  border-radius: 6px;
+}
+
+.rd-node-id {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.rd-node-product-name {
+  font-size: 11px;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.rd-node-assignee-display {
+  color: #999;
+  font-size: 11px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+#scheduleIntegratedModal .rd-node-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.rd-node-role-badge {
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.rd-node-role-badge--main {
+  background: #2563eb;
+}
+
+.rd-node-role-badge--cooperate {
+  background: #ea580c;
+}
+
+.rd-node-role-badge--none {
+  background: #64748b;
+}
+
+.rd-node-title-input,
+.rd-node-assignee-field,
+.rd-task-input,
+.rd-task-select,
+#scheduleIntegratedModal .rd-node-title-input,
+#scheduleIntegratedModal .rd-node-assignee-field,
+#scheduleIntegratedModal .rd-task-input,
+#scheduleIntegratedModal .rd-task-select,
+#taskModal .rd-node-assignee-field,
+#taskModal .rd-task-input,
+#taskModal .rd-task-select {
+  width: 100%;
+  padding: 4px;
+  border: 1px solid #d1d5db;
+  border-radius: 3px;
+  font-size: 11px;
+  box-sizing: border-box;
+  background: #fff;
+  color: var(--t1);
+}
+
+.rd-node-product-select,
+.rd-task-select {
+  padding: 3px 4px;
+  border: 1px solid #d1d5db;
+  border-radius: 3px;
+  font-size: 11px;
+  box-sizing: border-box;
+  background: #fff;
+  color: var(--t1);
+}
+
+.rd-node-product-select {
+  width: auto;
+  min-width: 100px;
+  flex-shrink: 0;
+}
+
+.rd-node-title-input {
+  font-weight: 600;
+}
+
+.rd-node-tasks {
+  padding: 0 14px 10px;
+}
+
+.rd-task-table-head-row {
+  background: #f9fafb;
+}
+
+.rd-task-th {
+  padding: 6px 8px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+  font-weight: 600;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.rd-task-th--project,
+.rd-task-th--execution {
+  width: 120px;
+}
+
+.rd-task-th--type {
+  width: 80px;
+}
+
+.rd-task-th--name {
+  overflow: hidden;
+}
+
+.rd-task-th--owner {
+  width: 140px;
+}
+
+.rd-task-th--hours {
+  width: 60px;
+}
+
+.rd-task-th--start,
+.rd-task-th--end {
+  width: 100px;
+}
+
+.rd-task-th--actions {
+  width: 48px;
+}
+
+.rd-task-cell {
+  padding: 6px 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.rd-task-cell--name,
+.rd-task-cell--owner {
+  overflow: hidden;
+}
+
+.rd-task-row--new .rd-task-cell--owner,
+.rd-task-row--editing .rd-task-cell--owner {
+  overflow: visible;
+}
+
+.rd-task-type-label {
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.rd-task-type-label--devel {
+  color: #2563eb;
+}
+
+.rd-task-type-label--test {
+  color: #ea580c;
+}
+
+.rd-task-type-label--Online {
+  color: #16a34a;
+}
+
+.rd-task-type-label--default {
+  color: #64748b;
+}
+
+.rd-add-task {
+  margin-top: 6px;
+  padding: 4px 12px;
+  border: 1px dashed #d1d5db;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 11px;
+  color: #2563eb;
+  cursor: pointer;
+}
+
+#scheduleIntegratedModal .rd-toggle {
+  border: none;
+  background: none;
+  padding: 8px;
+  cursor: pointer;
+  color: #64748b;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+#scheduleIntegratedModal .rd-toggle:hover {
+  background: #f0f0f0;
+}
+
+#scheduleIntegratedModal .rd-delete-btn,
+#scheduleIntegratedModal .task-delete-btn,
+#scheduleIntegratedModal .rd-edit-btn,
+#scheduleIntegratedModal .task-edit-btn,
+#scheduleIntegratedModal .rd-confirm-btn {
+  border: none;
+  background: none;
+  padding: 8px;
+  cursor: pointer;
+  color: #999;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+#scheduleIntegratedModal .rd-confirm-btn {
+  color: #2563eb;
+}
+
+#scheduleIntegratedModal .rd-delete-btn:hover,
+#scheduleIntegratedModal .task-delete-btn:hover {
+  color: #e53e3e;
+  background: #f0f0f0;
+}
+
+#scheduleIntegratedModal .rd-edit-btn:hover,
+#scheduleIntegratedModal .task-edit-btn:hover {
+  color: #2563eb;
+  background: #f0f0f0;
+}
+
+#scheduleIntegratedModal .rd-confirm-btn:hover {
+  color: #1d4ed8;
+  background: #f0f0f0;
+}
+
+#scheduleIntegratedModal .rd-delete-btn i,
+#scheduleIntegratedModal .task-delete-btn i,
+#scheduleIntegratedModal .rd-edit-btn i,
+#scheduleIntegratedModal .task-edit-btn i,
+#scheduleIntegratedModal .rd-confirm-btn i {
+  font-size: 13px;
+}
+
+#scheduleIntegratedModal .rd-node-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+#scheduleIntegratedModal .task-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+#scheduleIntegratedModal .task-edit-btn,
+#scheduleIntegratedModal .task-delete-btn {
+  padding: 4px;
+}
+
+#scheduleIntegratedModal .rd-node-title-display {
+  min-width: 0;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#scheduleIntegratedModal .rd-node-tasks .rd-task-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+#scheduleIntegratedModal .rd-node-tasks .rd-task-table th:nth-child(5),
+#scheduleIntegratedModal .rd-node-tasks .rd-task-table td.rd-task-cell-owner {
+  width: 140px;
+}
+
+#scheduleIntegratedModal .rd-node-tasks .rd-task-table td input,
+#scheduleIntegratedModal .rd-node-tasks .rd-task-table td select,
+#scheduleIntegratedModal .rd-node-tasks .rd-task-table td .ui-autocomplete,
+#scheduleIntegratedModal .rd-node-tasks .rd-task-table td .ui-autocomplete-input-wrap,
+#taskModal .rd-node-tasks .rd-task-table td .ui-autocomplete,
+#taskModal .rd-node-tasks .rd-task-table td .ui-autocomplete-input-wrap {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+#scheduleIntegratedModal .rd-task-row:not(.rd-task-row--editing):not(.rd-task-row--new) td.rd-task-cell-name,
+#scheduleIntegratedModal .rd-task-row:not(.rd-task-row--editing):not(.rd-task-row--new) td.rd-task-cell-owner {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#scheduleIntegratedModal .rd-node-tasks th:last-child,
+#scheduleIntegratedModal .rd-node-tasks td.rd-task-cell-actions {
+  width: 48px;
+  padding: 6px 4px;
+  text-align: right;
+}
+
+#scheduleIntegratedModal .rd-node-tasks input[type="date"],
+#taskModal .rd-node-tasks input[type="date"] {
+  cursor: pointer;
+  position: relative;
+}
+
+#scheduleIntegratedModal .rd-node-tasks input[type="date"]::-webkit-datetime-edit,
+#taskModal .rd-node-tasks input[type="date"]::-webkit-datetime-edit {
+  color: #aaa;
+}
+
+#scheduleIntegratedModal .rd-node-tasks input[type="date"]:focus::-webkit-datetime-edit,
+#scheduleIntegratedModal .rd-node-tasks input[type="date"].has-value::-webkit-datetime-edit,
+#taskModal .rd-node-tasks input[type="date"]:focus::-webkit-datetime-edit,
+#taskModal .rd-node-tasks input[type="date"].has-value::-webkit-datetime-edit {
+  color: #333;
+}
+
+#scheduleIntegratedModal .rd-node-header--edit .rd-node-title,
+#scheduleIntegratedModal .rd-node-header--story-edit .rd-node-title {
+  flex: 1 1 auto;
+  min-width: 140px;
+  width: auto;
+  max-width: none;
+}
+
+#scheduleIntegratedModal .rd-node-header--edit .rd-node-product-select,
+#scheduleIntegratedModal .rd-node-header--story-edit .rd-node-product-select {
+  width: auto;
+  min-width: 100px;
+  max-width: 180px;
+  flex: 0 0 auto;
+}
+
+#scheduleIntegratedModal .rd-node-header--edit .rd-node-assignee-wrap,
+#scheduleIntegratedModal .rd-node-header--story-edit .rd-node-assignee-wrap {
+  flex: 0 0 110px;
+  width: 110px;
+  min-width: 110px;
+}
+
+#scheduleIntegratedModal .rd-node-header--edit .rd-node-assignee-wrap .ui-autocomplete-input-wrap,
+#scheduleIntegratedModal .rd-node-header--edit .rd-node-assignee-wrap .rd-node-assignee-input,
+#scheduleIntegratedModal .rd-node-header--story-edit .rd-node-assignee-wrap .ui-autocomplete-input-wrap,
+#scheduleIntegratedModal .rd-node-header--story-edit .rd-node-assignee-wrap .rd-node-assignee-input {
+  width: 100%;
+  max-width: 110px;
+}
+
+#scheduleIntegratedModal .rd-task-owner-cell .rd-node-assignee-wrap,
+#scheduleIntegratedModal .rd-task-owner-cell .ui-autocomplete-input-wrap,
+#scheduleIntegratedModal .rd-task-owner-cell .rd-node-assignee-input,
+#taskModal .rd-task-owner-cell .rd-node-assignee-wrap,
+#taskModal .rd-task-owner-cell .ui-autocomplete-input-wrap,
+#taskModal .rd-task-owner-cell .rd-node-assignee-input {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* ── 响应式 ── */
+@media (max-width: 900px) {
+  .schedule-integrated-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .schedule-integrated-cell--pad {
+    display: none;
+  }
+}
+
+/* ==========================================================================
+   系统维护提示子弹窗（#scheduleProductNoticeModal）
+   用途: 排期一体化办理时，系统不在版本窗口且无匹配计划 → 提示去禅道维护
+   层级: 叠在排期一体化弹窗之上
+        - 排期弹窗 overlay(.batch-modal-overlay) z-index 600 / modal(.batch-modal) z-index 601
+        - 本弹窗 overlay 1600 / modal 1601（各 +1000）
+   骨架复用 .batch-modal / .batch-modal-overlay（schedulemodal.css），本文件仅覆盖专属宽度/层级/文案样式
+   显示/隐藏由 ui.js 的 openShowModals/closeShowModals 控制（与排期弹窗同一机制）
+ ========================================================================== */
+
+/* overlay 提层（高于排期弹窗 overlay 600） */
+#scheduleProductNoticeOverlay.batch-modal-overlay {
+  z-index: 1600;
+}
+
+/* 弹窗主体：复用 .batch-modal 居中/圆角/阴影/背景，收窄宽度并提层 */
+#scheduleProductNoticeModal.batch-modal.schedule-product-notice-modal {
+  width: min(92vw, 480px);
+  max-width: 480px;
+  max-height: 80vh;
+  z-index: 1601;
+}
+
+/* 提示文案：留白、行高、底色与现有错误提示风格一致（参考 .integrated-rd-tree-empty） */
+#scheduleProductNoticeModal .schedule-product-notice-message {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  line-height: 1.7;
+  font-size: 14px;
+  color: var(--t2);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  word-break: break-word;
+  white-space: pre-wrap;
+}

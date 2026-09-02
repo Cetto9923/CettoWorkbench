@@ -1,0 +1,67 @@
+## 项目类型
+前后端不分离的 Go 单体 Web 项目（SSR）。URL 遵循 RESTful 风格，写操作（POST/PUT/DELETE）统一使用 ajax 请求，后端返回 JSON，前端根据 `redirectUrl` 跳转。ajax 请求直接使用真实 HTTP Method（`PUT` / `DELETE`）
+
+## 技术栈
+- Web: Gin
+- ORM: GORM + MySQL
+- 数据库: MySQL 8.0+
+- 前端: HTML + CSS + JS
+---
+
+## 核心底线（违反即为 bug）
+
+1. **所有路由（包括 List）必须绑定 `middleware.RequirePerm(perm.Xxx)`**
+   - 权限粒度：`XxxList` / `XxxCreate` / `XxxUpdate` / `XxxDelete`
+2. **所有 POST/PUT/DELETE 成功后返回 JSON**，格式为 `{ success: true, message: "xxx", redirectUrl: "/xxx" }`，前端根据 `redirectUrl` 跳转
+3. **Service 写操作必须接收 `actor *model.User`**
+4. **Service 方法用 Req/Resp 结构体，禁止多位置参数**（单个 id int64 除外，见 §6）
+5. **SQL 必须参数化(复杂报表除外)，禁止 `db.Raw()` 和 `db.Exec()` 拼接字符串**
+   - 复杂报表 JOIN / 子查询，必须使用 `?` 占位符，禁止字符串拼接，SQL 只能写在 Repo 层
+6. **单文件 ≤500 行**（硬线），建议 300 行；超限按职责拆分（见 §17.1）
+7. **禁止 `c.PostForm()` / `c.Query()` 散落，强制结构体绑定**
+   - Path 参数（`:id`）通过 `c.Param("id")` 获取
+   - Query 参数（GET）：`c.ShouldBindQuery(&req)` 或带 `form` tag 的 `c.ShouldBind(&req)`；Req 使用 `form` tag
+   - JSON Body（POST/PUT，ajax）：`c.ShouldBindJSON(&req)`；Req 使用 `json` tag
+   - 写入类 Req（`CreateReq`/`UpdateReq`）只用 `json` tag；读取类 Req（`ListReq`）只用 `form` tag
+   - `DeleteReq.ID` 由 Handler 从 `c.Param("id")` 手动赋值
+8. **文件头注释块必须存在**（格式见 `@.cursor/rules/conventions.mdc` §4）
+9. **Repo `FindAll` 返回 `([]Xxx, int64, error)` 三元组**
+10. **模板数据 key 固定：`Form` / `Resource`（编辑页）/ `BaseUrl`（列表页+编辑页）**
+    - `Errors` 不经服务端注入模板；验证失败走 ajax 422 JSON，由前端 `renderErrors` 渲染
+    - 列表页禁止 `Resource`，业务数据用具体名（如 `Users` / `Products`）
+    - 禁止具体实体名（`.User`、`.Customer`）替代 `Resource`
+11. **表单验证统一手写 `Validate() []FieldError` 方法，禁止引入 `go-playground/validator`**
+13. **除弹窗外的所有页面均在当前页打开**，禁止打开新窗口`
+14. 在 `db/install.sql` 新增建表 SQL，字段名小驼峰，含 `deletedAt` 、`createdBy` 、`createdDate` 、`updatedBy` 、`updatedDate` 字段，表名前缀为zt_
+---
+
+## 命名规则
+- **文件名/目录名**：全小写拼接
+  - 例外：静态资源文件（字体、第三方库、图片）保留原始命名
+- **Go 标识符**：未导出小驼峰，导出大驼峰
+
+---
+
+## 模块类型
+- **crud**: List → CreatePage → Create → EditPage → Update → Delete（参照 `@internal/module/user/`）
+- **readonly**: 只有 List（参照 `@internal/module/operationlog/`）
+- **action**: 自定义方法（参照 `@internal/module/login/`）
+
+Handler / Service / Repo 方法顺序固定，结构对称是硬约束。
+
+---
+
+## 新模块开发顺序
+1. **form.go**：Req/Resp 结构体 + `Validate()` 方法
+2. **model.go + install.sql**
+3. **repo.go / service.go / 真实 handler.go**
+4. **routes.go + bootstrap.go 注册**
+
+---
+
+## 规范优先级（冲突时以高优先级为准）
+1. **核心底线**（本文件，必须）
+2. **模块 golden reference**（`@internal/module/user/`）
+
+## 规范索引
+- **Go 开发完整规范** → `@.cursor/rules/conventions.mdc`
