@@ -286,7 +286,7 @@
       var detailUrl = $.trim(shared.currentDemandDetailURL || "");
       var confirmed = window.confirm("暂无涉及系统，无法添加研发需求，去澄清添加系统。");
       if (confirmed && detailUrl) {
-        window.open(detailUrl, "_blank");
+        window.location.href = detailUrl;
       }
       return;
     }

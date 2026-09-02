@@ -380,7 +380,7 @@
     $("#scheduleProductNoticeMessage").text("您不是 " + names.join("、") + " 的负责人，请去禅道维护");
     $("#scheduleProductNoticeOkBtn").off("click").on("click", function () {
       var viewUrl = $.trim(pick.viewUrl || "");
-      if (viewUrl) { window.open(viewUrl, "_blank"); }
+      if (viewUrl) { window.location.href = viewUrl; }
       closeProductNotice();
     });
     $("#scheduleProductNoticeCancelBtn").off("click").on("click", closeProductNotice);
