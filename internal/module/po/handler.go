@@ -42,6 +42,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.GET("/home", middleware.RequirePerm(perm.PoHome), h.Home)
 	g.GET("/demands", middleware.RequirePerm(perm.PoHome), h.Demands)
 	g.GET("/po-focus", middleware.RequirePerm(perm.PoHome), h.Focus)
+	g.GET("/po-blockers", middleware.RequirePerm(perm.PoHome), h.Blocker)
 }
 
 // Home 渲染 PO 工作台首页。
@@ -136,6 +137,43 @@ func (h *Handler) Focus(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
 			"message": "获取今日推进焦点失败",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"items":   resp.Items,
+	})
+}
+
+// Blocker 返回首页"卡点快速响应"列表（JSON）。
+func (h *Handler) Blocker(c *gin.Context) {
+	var req BlockerReq
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "参数解析失败",
+		})
+		return
+	}
+	if errs := req.Validate(); len(errs) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"success": false,
+			"message": "参数校验失败",
+			"errors":  errs,
+		})
+		return
+	}
+
+	resp, err := h.svc.Blocker(c.Request.Context(), middleware.CurrentUser(c), req)
+	if err != nil {
+		if h.logger != nil {
+			h.logger.Error("po blocker failed", zap.Error(err))
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "获取卡点列表失败",
 		})
 		return
 	}

@@ -176,6 +176,105 @@
     loadFocus().then(renderFocal);
   }
 
+  function blockerUrl() {
+    return "/po-blockers";
+  }
+
+  function blockerTagClass(level) {
+    switch (level) {
+      case "blocked":
+        return "blocker-tag--blocked";
+      case "overdue":
+        return "blocker-tag--overdue";
+      case "risk":
+        return "blocker-tag--risk";
+      case "coord":
+        return "blocker-tag--coord";
+      default:
+        return "blocker-tag--blocked";
+    }
+  }
+
+  function buildBlockerCard(item) {
+    if (!item || !item.id) {
+      return "";
+    }
+    var level = (item.level || "blocked");
+    var id = String(item.id);
+    var kind = String(item.kind || "demand");
+    var url = (item.zentaoUrl || "").trim();
+    var tagCls = blockerTagClass(level);
+    var levelLabel = item.levelLabel || "阻塞";
+    var title = item.title || "";
+    var stage = item.stage || "";
+    var owner = item.owner || "—";
+    var due = item.dueLabel || "今日";
+    var dueAt = item.dueAt || "";
+
+    var titleHtml = url
+      ? "<a class=\"hbc-title-link\" href=\"" + escapeHtml(url) + "\" target=\"_blank\">" + escapeHtml(title) + "</a>"
+      : "<span class=\"hbc-title-link\">" + escapeHtml(title) + "</span>";
+
+    return (
+      "<div class=\"home-blocker-card" + (item.isOwnAction ? " is-own" : "") + "\">" +
+      "<div class=\"hbc-top\">" +
+      "<span class=\"hbc-id\">" + escapeHtml(kind.toUpperCase() + "-" + id) + "</span>" +
+      "<span class=\"blocker-tag " + escapeHtml(tagCls) + "\">" + escapeHtml(levelLabel) + "</span>" +
+      "<span class=\"hbc-stage-tag\">" + escapeHtml(stage) + "</span>" +
+      "</div>" +
+      "<div class=\"hbc-title\">" + titleHtml + "</div>" +
+      "<div class=\"hbc-meta\">" +
+      "<span>责任人 " + escapeHtml(owner) + "</span>" +
+      "<span>时限 " + escapeHtml(due) + (dueAt ? " (" + escapeHtml(dueAt) + ")" : "") + "</span>" +
+      "</div>" +
+      "</div>"
+    );
+  }
+
+  function loadBlocker() {
+    var fetchFn = window.appFetch || fetch;
+    return fetchFn(blockerUrl(), { method: "GET" })
+      .then(function (res) {
+        if (!res.ok) {
+          throw new Error("load blocker failed");
+        }
+        return res.json();
+      })
+      .then(function (payload) {
+        if (!payload || payload.success !== true) {
+          throw new Error("invalid payload");
+        }
+        return Array.isArray(payload.items) ? payload.items : [];
+      })
+      .catch(function () {
+        if (typeof window.showToast === "function") {
+          window.showToast("加载卡点列表失败，请稍后重试", "danger");
+        }
+        return [];
+      });
+  }
+
+  function renderBlockers(items) {
+    var $host = $("#homeBlockerStrip");
+    if (!$host.length) {
+      return;
+    }
+    $host.removeAttr("data-loading");
+    var list = Array.isArray(items) ? items : [];
+    if (!list.length) {
+      $host.html(
+        "<span class=\"home-blocker-hint\">今日无关键卡点，PO 可安心推进 ☕</span>"
+      );
+      return;
+    }
+    var html = $.map(list, buildBlockerCard).join("");
+    $host.html(html);
+  }
+
+  function initBlocker() {
+    loadBlocker().then(renderBlockers);
+  }
+
   function updateSectionTitle($card, count) {
     var $title = $("#top5Title");
     if (!$title.length) {
@@ -254,6 +353,7 @@
   $(function () {
     initValueStreamLinkage();
     initFocus();
+    initBlocker();
 
     var $active = $(".home-vs-mini-card.active").first();
     if (!$active.length) {
