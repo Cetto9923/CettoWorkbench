@@ -14,6 +14,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strconv"
 
 	"workbench/internal/model"
 	"workbench/internal/pkg/zentao"
@@ -47,27 +48,34 @@ type FocusResp struct {
 	Items []WorkItemDetail `json:"items"`
 }
 
-// priOrder 把 "P1" / "P2" / "P3" / "P4" / 其他归一为可排序的 int，缺失值设为最大优先级权值。
-// 禅道优先级：数字越小越重要（P1 > P2 > P3 > P4）。
-func priOrder(pri string) int {
-	switch pri {
-	case "P1":
-		return 1
-	case "P2":
-		return 2
-	case "P3":
-		return 3
-	case "P4":
-		return 4
-	default:
-		return 99
+// priLabelToRank 把展示标签 "P1"/"P2"/"P3"/"P4" 转回数字权重（1=最高）。
+// 与 priority.go 的 ParsePriDemand / ParsePriStory 共用同一定义，避免重复硬编码表。
+// 该函数在 sort 时使用：pri 已在 WorkItemDetail.Pri 写成 "P1" 形式，但更精确的排序
+// 使用 PriRank 字段（detail 入库时已带上权重，避免再次解析）。
+func priLabelToRank(label string) int {
+	if len(label) < 2 || label[0] != 'P' {
+		return PriRankUnknown
 	}
+	n, err := strconv.Atoi(label[1:])
+	if err != nil || n < 1 || n > 4 {
+		return PriRankUnknown
+	}
+	return n
+}
+
+// effectiveRank 取 WorkItemDetail 已解析好的权重（PriRank 字段）；
+// 若为空（旧数据/老版本兼容），从 Pri 标签反解。
+func effectiveRank(it WorkItemDetail) int {
+	if it.PriRank > 0 {
+		return it.PriRank
+	}
+	return priLabelToRank(it.Pri)
 }
 
 // sortItemsByPriASC 按禅道优先级数字升序排序（数字小者在前）、同级按 kind + id 稳定排序。
 func sortItemsByPriASC(items []WorkItemDetail) {
 	sort.SliceStable(items, func(i, j int) bool {
-		pi, pj := priOrder(items[i].Pri), priOrder(items[j].Pri)
+		pi, pj := effectiveRank(items[i]), effectiveRank(items[j])
 		if pi != pj {
 			return pi < pj
 		}
@@ -104,6 +112,13 @@ func (s *Service) Focus(ctx context.Context, actor *model.User, _ FocusReq) (*Fo
 			seen[key] = struct{}{}
 			if item.ValueStream == "" {
 				item.ValueStream = label
+			}
+			// 真实优先级权重只走 PriRank 字段：Pri 标签可能在某些路径下空或
+			// 解析失败，effectiveRank 会从 Pri 反解并落到 PriRankUnknown=99。
+			if item.Pri != "" {
+				if rank, _ := strconv.Atoi(item.Pri[1:]); rank >= 1 && rank <= 4 {
+					item.PriRank = rank
+				}
 			}
 			if item.ZentaoUrl == "" {
 				if item.Kind == "demand" {

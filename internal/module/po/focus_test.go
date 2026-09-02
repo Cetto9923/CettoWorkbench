@@ -13,7 +13,7 @@ import (
 	"testing"
 )
 
-func TestPriOrder(t *testing.T) {
+func TestPriLabelToRank(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {
@@ -24,14 +24,32 @@ func TestPriOrder(t *testing.T) {
 		{in: "P2", want: 2},
 		{in: "P3", want: 3},
 		{in: "P4", want: 4},
-		{in: "", want: 99},
-		{in: "p1", want: 99}, // 大小写敏感，禅道约定大写
-		{in: "PX", want: 99},
+		{in: "", want: PriRankUnknown},
+		{in: "p1", want: PriRankUnknown}, // 大小写敏感，禅道约定大写
+		{in: "PX", want: PriRankUnknown},
+		{in: "P5", want: PriRankUnknown}, // 禅道 pri 范围 1-4
 	}
 	for _, tc := range cases {
-		if got := priOrder(tc.in); got != tc.want {
-			t.Errorf("priOrder(%q)=%d want %d", tc.in, got, tc.want)
+		if got := priLabelToRank(tc.in); got != tc.want {
+			t.Errorf("priLabelToRank(%q)=%d want %d", tc.in, got, tc.want)
 		}
+	}
+}
+
+func TestEffectiveRank(t *testing.T) {
+	t.Parallel()
+
+	// PriRank 字段优先级高于 Pri 标签（PriRank 在 Service 层填充，避免重复解析）
+	if got := effectiveRank(WorkItemDetail{Pri: "P1", PriRank: 3}); got != 3 {
+		t.Errorf("PriRank 优先：got %d want 3", got)
+	}
+	// PriRank 为 0 时回退到 Pri 标签
+	if got := effectiveRank(WorkItemDetail{Pri: "P2"}); got != 2 {
+		t.Errorf("回退到 Pri：got %d want 2", got)
+	}
+	// 全部为空 → 未识别
+	if got := effectiveRank(WorkItemDetail{}); got != PriRankUnknown {
+		t.Errorf("未识别：got %d want %d", got, PriRankUnknown)
 	}
 }
 
@@ -39,16 +57,16 @@ func TestSortItemsByPriASC(t *testing.T) {
 	t.Parallel()
 
 	in := []WorkItemDetail{
-		{ID: "1", Pri: "P4", Kind: "demand", ValueStream: "排期"},
-		{ID: "2", Pri: "P1", Kind: "demand", ValueStream: "澄清"},
-		{ID: "3", Pri: "", Kind: "story", ValueStream: "提测"},
-		{ID: "4", Pri: "P2", Kind: "demand", ValueStream: "验收"},
-		{ID: "5", Pri: "P1", Kind: "demand", ValueStream: "验收"},
+		{ID: "1", Pri: "P4", PriRank: 4, Kind: "demand", ValueStream: "排期"},
+		{ID: "2", Pri: "P1", PriRank: 1, Kind: "demand", ValueStream: "澄清"},
+		{ID: "3", Pri: "", PriRank: PriRankUnknown, Kind: "story", ValueStream: "提测"},
+		{ID: "4", Pri: "P2", PriRank: 2, Kind: "demand", ValueStream: "验收"},
+		{ID: "5", Pri: "P1", PriRank: 1, Kind: "demand", ValueStream: "验收"},
 	}
 	got := append([]WorkItemDetail(nil), in...)
 	sortItemsByPriASC(got)
 
-	// 期望 P1 排序优先；同级 P1 按 valueStream asc, kind asc, id asc
+	// 期望 P1 优先；同级按 valueStream asc, kind asc, id asc；未识别排末位
 	wantIDs := []string{"2", "5", "4", "1", "3"}
 	gotIDs := make([]string, 0, len(got))
 	for _, it := range got {

@@ -66,18 +66,35 @@ func NewRepo(db *gorm.DB) *Repo {
 	return &Repo{db: db}
 }
 
-// DemandRow 业需列表投影。
+// DemandRow 业需列表投影（仅选择业务要展示/排序/责任追溯所需要的列，避免 SELECT *）。
+// 列名与数据库列名一致（小驼峰），由 zt_demand 真实 schema 校准。
 type DemandRow struct {
-	ID   int    `gorm:"column:id"`
-	Name string `gorm:"column:name"`
-	Pri  string `gorm:"column:pri"`
+	ID           int     `gorm:"column:id"`
+	Name         string  `gorm:"column:name"`
+	Pri          string  `gorm:"column:pri"`              // '1'/'2'/'3'/'4'（字符串），空字符串表示未设
+	Status       string  `gorm:"column:status"`
+	AssignedTo   string  `gorm:"column:assignedTo"`        // 业务负责人
+	QD           string  `gorm:"column:QD"`                // 牵头人
+	RD           string  `gorm:"column:RD"`                // 主研发责任人
+	BRA          string  `gorm:"column:BRA"`               // 业务需求负责人
+	IsNeedFocus  string  `gorm:"column:isNeedFocus"`       // '0'/'1'
+	DevelopFinish *time.Time `gorm:"column:developFinish"` // 计划开发完成日
+	TestFinish    *time.Time `gorm:"column:testFinish"`    // 计划联调完成日
+	VerifyFinish  *time.Time `gorm:"column:verifyFinish"`  // 计划验收完成日
+	DeliverDate   *time.Time `gorm:"column:deliverDate"`   // 计划交付日
 }
 
-// StoryRow 研发需求列表投影。
+// StoryRow 研发需求列表投影（pri 为 tinyint 数字）。
 type StoryRow struct {
-	ID    int    `gorm:"column:id"`
-	Title string `gorm:"column:title"`
-	Pri   int    `gorm:"column:pri"`
+	ID            int        `gorm:"column:id"`
+	Title         string     `gorm:"column:title"`
+	Pri           int        `gorm:"column:pri"`
+	Status        string     `gorm:"column:status"`
+	AssignedTo    string     `gorm:"column:assignedTo"`
+	DevelopFinish *time.Time `gorm:"column:developFinish"`
+	TestFinish    *time.Time `gorm:"column:testFinish"`
+	VerifyFinish  *time.Time `gorm:"column:verifyFinish"`
+	DeliverDate   *time.Time `gorm:"column:deliverDate"`
 }
 
 func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysqlStageFilter) *gorm.DB {
@@ -190,7 +207,11 @@ func (r *Repo) FindRoleDemands(ctx context.Context, account string, filter mysql
 	}
 	var rows []DemandRow
 	err := r.roleDemandScope(ctx, account, filter).
-		Select("id", "name", "pri").
+		Select(
+			"id", "name", "pri", "status",
+			"assignedTo", "QD", "RD", "BRA", "isNeedFocus",
+			"developFinish", "testFinish", "verifyFinish", "deliverDate",
+		).
 		Order("id DESC").
 		Find(&rows).Error
 	if err != nil {
@@ -216,7 +237,10 @@ func (r *Repo) FindScheduleStories(ctx context.Context, account string) ([]Story
 	}
 	var rows []StoryRow
 	err := r.scheduleStoryScope(ctx, account).
-		Select("id", "title", "pri").
+		Select(
+			"id", "title", "pri", "status", "assignedTo",
+			"developFinish", "testFinish", "verifyFinish",
+		).
 		Order("id DESC").
 		Find(&rows).Error
 	if err != nil {
@@ -242,7 +266,10 @@ func (r *Repo) FindDeliverStories(ctx context.Context, account string) ([]StoryR
 	}
 	var rows []StoryRow
 	err := r.deliverStoryScope(ctx, account).
-		Select("id", "title", "pri").
+		Select(
+			"id", "title", "pri", "status", "assignedTo",
+			"developFinish", "testFinish", "verifyFinish", "deliverDate",
+		).
 		Order("id DESC").
 		Find(&rows).Error
 	if err != nil {

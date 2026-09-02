@@ -2,7 +2,8 @@
 // 文件: internal/module/po/blocker_test.go
 // 模块: PO 工作台
 // 类型: action
-// 职责: 「卡点快速响应」纯函数单测：等级优先级、限长、去重与契约。
+// 职责: 「卡点快速响应」纯函数单测：等级优先级、限长、契约，以及从真实日期字段算
+//       等级 / dueLabel / owner 的工具函数。
 // 依赖: 无
 // =============================================================================
 
@@ -11,6 +12,7 @@ package po
 import (
 	"reflect"
 	"testing"
+	"time"
 )
 
 func TestLevelOrder(t *testing.T) {
@@ -50,49 +52,143 @@ func TestLevelLabel(t *testing.T) {
 	}
 }
 
-func TestClassifyDemand(t *testing.T) {
+func day(s string) time.Time {
+	t, err := time.Parse("2006-01-02", s)
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
+
+func ptrTime(t time.Time) *time.Time { return &t }
+
+func TestDueMetrics(t *testing.T) {
 	t.Parallel()
 
-	cases := map[string]BlockerLevel{
-		"developing":     BlockerLevelBlocked,
-		"testing":        BlockerLevelOverdue,
-		"waitacceptance": BlockerLevelOverdue,
-		"schedule":       BlockerLevelRisk,
-		"clarify":        BlockerLevelCoord,
-		"__unknown__":    BlockerLevelRisk,
+	today := day("2026-09-02")
+	cases := []struct {
+		name        string
+		due         *time.Time
+		wantDueAt   string
+		wantLabel   string
+		wantOverdue bool
+	}{
+		{name: "nil", due: nil, wantDueAt: "", wantLabel: "", wantOverdue: false},
+		{name: "today", due: ptrTime(today), wantDueAt: "2026-09-02", wantLabel: "今日", wantOverdue: false},
+		{name: "future 5", due: ptrTime(day("2026-09-07")), wantDueAt: "2026-09-07", wantLabel: "距今 5 天", wantOverdue: false},
+		{name: "past 3", due: ptrTime(day("2026-08-30")), wantDueAt: "2026-08-30", wantLabel: "今日已超 3 天", wantOverdue: true},
 	}
-	for in, want := range cases {
-		if got := classifyDemand(in); got != want {
-			t.Errorf("classifyDemand(%q)=%q want %q", in, got, want)
-		}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			dueAt, label, overdue := dueMetrics(tc.due, today)
+			if dueAt != tc.wantDueAt || label != tc.wantLabel || overdue != tc.wantOverdue {
+				t.Errorf("dueMetrics = (%q,%q,%v) want (%q,%q,%v)",
+					dueAt, label, overdue, tc.wantDueAt, tc.wantLabel, tc.wantOverdue)
+			}
+		})
 	}
 }
 
-func TestClassifyStory(t *testing.T) {
+func TestClassifyDateBased(t *testing.T) {
 	t.Parallel()
 
-	if got := classifyStory("schedule"); got != BlockerLevelRisk {
-		t.Errorf("schedule 应当 risk，got %q", got)
+	today := day("2026-09-02")
+	cases := []struct {
+		name      string
+		due       *time.Time
+		ownAction bool
+		want      BlockerLevel
+	}{
+		{name: "nil default risk", due: nil, ownAction: false, want: BlockerLevelRisk},
+		{name: "overdue not own", due: ptrTime(day("2026-08-30")), ownAction: false, want: BlockerLevelBlocked},
+		{name: "overdue own", due: ptrTime(day("2026-08-30")), ownAction: true, want: BlockerLevelOverdue},
+		{name: "close range risk", due: ptrTime(day("2026-09-04")), ownAction: false, want: BlockerLevelRisk},
+		{name: "far own coord", due: ptrTime(day("2026-12-01")), ownAction: true, want: BlockerLevelCoord},
+		{name: "far not own risk", due: ptrTime(day("2026-12-01")), ownAction: false, want: BlockerLevelRisk},
 	}
-	if got := classifyStory("acceptanced"); got != BlockerLevelOverdue {
-		t.Errorf("acceptanced 应当 overdue，got %q", got)
-	}
-	if got := classifyStory("__any__"); got != BlockerLevelRisk {
-		t.Errorf("unknown 应当 risk，got %q", got)
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			if got := classifyDateBased(tc.due, today, tc.ownAction); got != tc.want {
+				t.Errorf("classifyDateBased=%q want %q", got, tc.want)
+			}
+		})
 	}
 }
 
-func TestIsOwnActionStage(t *testing.T) {
+func TestChooseDeadline(t *testing.T) {
 	t.Parallel()
 
-	if !isOwnActionStage("waitacceptance") {
-		t.Errorf("waitacceptance 应该是 own action")
+	dev := ptrTime(day("2026-09-10"))
+	tf := ptrTime(day("2026-09-12"))
+	vf := ptrTime(day("2026-09-14"))
+	dd := ptrTime(day("2026-09-20"))
+
+	cases := []struct {
+		name   string
+		status string
+		d      *time.Time
+		tf     *time.Time
+		vf     *time.Time
+		dd     *time.Time
+		want   *time.Time
+	}{
+		{name: "testing picks testFinish", status: "testing", d: nil, tf: tf, vf: vf, dd: dd, want: tf},
+		{name: "waitacceptance picks verifyFinish", status: "waitacceptance", d: nil, tf: tf, vf: vf, dd: dd, want: vf},
+		{name: "acceptanced picks deliverDate", status: "acceptanced", d: nil, tf: tf, vf: vf, dd: dd, want: dd},
+		{name: "schedule fallback developFinish", status: "schedule", d: dev, tf: nil, vf: nil, dd: nil, want: dev},
+		{name: "all nil returns nil", status: "schedule", d: nil, tf: nil, vf: nil, dd: nil, want: nil},
 	}
-	if !isOwnActionStage("acceptanced") {
-		t.Errorf("acceptanced 应该是 own action")
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			got := chooseDeadline(tc.status, tc.d, tc.tf, tc.vf, tc.dd)
+			if (got == nil) != (tc.want == nil) {
+				t.Fatalf("nil mismatch: got nil=%v want nil=%v", got == nil, tc.want == nil)
+			}
+			if got != nil && !got.Equal(*tc.want) {
+				t.Errorf("chooseDeadline=%v want %v", got.Format("2006-01-02"), tc.want.Format("2006-01-02"))
+			}
+		})
 	}
-	if isOwnActionStage("developing") {
-		t.Errorf("developing 不应该是 own action")
+}
+
+func TestPickOwner(t *testing.T) {
+	t.Parallel()
+
+	if got := pickOwner("alice", "", "bob", ""); got != "alice" {
+		t.Errorf("alice first → got %q", got)
+	}
+	if got := pickOwner("", "bob", "alice", ""); got != "bob" {
+		t.Errorf("bob second → got %q", got)
+	}
+	if got := pickOwner("", "", "", ""); got != "" {
+		t.Errorf("all empty → got %q", got)
+	}
+}
+
+func TestIsOwnAction(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name                              string
+		who, rd, qd, bra, assigned        string
+		want                              bool
+	}{
+		{name: "empty who never own", who: "", rd: "alice", qd: "alice", bra: "alice", assigned: "alice", want: false},
+		{name: "match rd", who: "alice", rd: "alice", want: true},
+		{name: "match assignedTo", who: "alice", assigned: "alice", want: true},
+		{name: "no match", who: "alice", rd: "bob", qd: "carol", want: false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			got := isOwnAction(tc.who, tc.rd, tc.qd, tc.bra, tc.assigned)
+			if got != tc.want {
+				t.Errorf("isOwnAction=%v want %v", got, tc.want)
+			}
+		})
 	}
 }
 
@@ -109,7 +205,6 @@ func TestSortBlockers(t *testing.T) {
 	got := append([]BlockerDetail(nil), in...)
 	sortBlockers(got)
 
-	// 期望：先 blocked（同级 own-action first），后 overdue，再 risk，最后 coord。
 	wantIDs := []string{"2", "3", "4", "1", "5"}
 	gotIDs := make([]string, 0, len(got))
 	for _, it := range got {
@@ -120,9 +215,9 @@ func TestSortBlockers(t *testing.T) {
 	}
 }
 
-func TestBlockerLimitAndOverallLimit(t *testing.T) {
+func TestBlockerLimits(t *testing.T) {
 	if BlockerStageLimit <= 0 || BlockerStageLimit >= 100 {
-		t.Fatalf("BlockerStageLimit 取值离群：%d", BlockerStageLimit)
+		t.Fatalf("BlockerStageLimit 离群：%d", BlockerStageLimit)
 	}
 	if BlockerOverallLimit <= BlockerStageLimit {
 		t.Fatalf("BlockerOverallLimit(%d) 必须大于 BlockerStageLimit(%d)", BlockerOverallLimit, BlockerStageLimit)

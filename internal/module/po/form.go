@@ -57,12 +57,15 @@ func (r *DemandsReq) Validate() []FieldError {
 type WorkItemDetail struct {
 	Kind        string `json:"kind"`
 	ID          string `json:"id"`
-	Pri         string `json:"pri"`
+	Pri         string `json:"pri"`         // 呈现给前端用 "P1"/"P2"/"P3"/"P4"，由 Service 层从真实列格式化
+	PriRank     int    `json:"priRank"`     // 排序权重（1 最高，未识别填 99）
 	Title       string `json:"title"`
 	Stage       string `json:"stage"`
 	Blocker     string `json:"blocker"`
 	Next        string `json:"next"`
 	Owner       string `json:"owner"`
+	DueAt       string `json:"dueAt"`       // YYYY-MM-DD 或空
+	DueLabel    string `json:"dueLabel"`    // 人类可读 "今日已超 3 天" / "距今 2 天"
 	ZentaoUrl   string `json:"zentaoUrl"`
 	ValueStream string `json:"valueStream"`
 }

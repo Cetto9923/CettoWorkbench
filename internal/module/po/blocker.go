@@ -2,11 +2,12 @@
 // 文件: internal/module/po/blocker.go
 // 模块: PO 工作台
 // 类型: action
-// 职责: 实现 PO 工作台首页"卡点快速响应"——识别今天必须处理的卡点需求/故事，按等级
-//       排序、去重后输出。等级与特征由 forceBlockerCritial 在服务期装配，不依赖
-//       zt_demand 新增字段。
+// 职责: 实现 PO 工作台首页"卡点快速响应"——基于真实日期字段（developFinish /
+//       testFinish / verifyFinish / deliverDate）与 today 的关系计算等级与
+//       dueLabel；从真实责任人员字段（RD / assignedTo / QD / BRA / assignedTo）
+//       选优填充 owner；不再依赖任何硬编码 status→等级表。
 // 依赖: internal/model
-//       internal/module/po/service.go（共享 stageFilters / valueStreamStages）
+//       internal/module/po/priority.go
 // =============================================================================
 
 package po
@@ -15,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"time"
 
 	"workbench/internal/model"
 	"workbench/internal/pkg/zentao"
@@ -24,10 +26,10 @@ import (
 type BlockerLevel string
 
 const (
-	BlockerLevelBlocked BlockerLevel = "blocked" // P0 阻塞（关键路径卡死、关键人不是当前账号）
-	BlockerLevelOverdue BlockerLevel = "overdue" // P1 超期（已跨过计划日，仍在动）
-	BlockerLevelRisk    BlockerLevel = "risk"    // P2 风险（关键日期为空/主研发缺失）
-	BlockerLevelCoord   BlockerLevel = "coord"   // P3 协调（临近关键日 + 当前账号是主研发）
+	BlockerLevelBlocked BlockerLevel = "blocked" // 关键路径已逾期且核心人未到岗（最重）
+	BlockerLevelOverdue BlockerLevel = "overdue" // 已跨过截止日（任一关键日 ≤ today）
+	BlockerLevelRisk    BlockerLevel = "risk"    // 关键日缺失或临近（≤ today+3）
+	BlockerLevelCoord   BlockerLevel = "coord"   // 当前账号是主责任人，但日期未达
 )
 
 // BlockerStageLimit 单阶段取数上限（避免单阶段吞掉全部限额）。
@@ -37,19 +39,21 @@ const BlockerStageLimit = 4
 const BlockerOverallLimit = 24
 
 // blockerStatuses 卡点拉取的价值流阶段（热环节）。
+// 与现有 service.go 的 mysqlStageFilters key 对齐；新增 waitdeliver 是真实业务
+// 状态但 PO 当前 filters 未覆盖，因此 blockerStatuses 不包含它。
 var blockerStatuses = []string{
-	"clarify",       // 澄清：可能因 QD/PM 缺失卡住
-	"schedule",      // 排期：关键日期/QD/mainDevelopers 未填
-	"developing",    // 提测：今天 >= developFinish 但未提测 = 卡
-	"testing",       // 联调测试：今天 >= testFinish 但未结束
-	"waitacceptance", // 验收：今天 >= verifyFinish 但未验
-	"acceptanced",   // 交付：今天 >= deliverDate 但未交付
+	"clarify",        // 澄清
+	"schedule",       // 排期
+	"developing",     // 提测
+	"testing",        // 联调测试
+	"waitacceptance", // 验收
+	"acceptanced",    // 交付
 }
 
-// BlockerReq 卡点请求参数（预留位，便于后期接 status 过滤）。
+// blockerReq 卡点请求（预留扩展）。
 type BlockerReq struct{}
 
-// Validate 校验请求参数。
+// Validate 校验（无入参）。
 func (r *BlockerReq) Validate() []FieldError {
 	return nil
 }
@@ -59,14 +63,14 @@ type BlockerDetail struct {
 	Kind        string       `json:"kind"`        // demand / story
 	ID          string       `json:"id"`
 	Level       BlockerLevel `json:"level"`
-	LevelLabel  string       `json:"levelLabel"`  // 阻塞 / 超期 / 风险 / 协调
+	LevelLabel  string       `json:"levelLabel"`
 	Title       string       `json:"title"`
-	Owner       string       `json:"owner"`        // 当前责任人员工账号
-	DueAt       string       `json:"dueAt"`        // 触发卡点的关键日期（YYYY-MM-DD）
-	DueLabel    string       `json:"dueLabel"`     // 人类可读"今日已超 X 天 / 距今 X 天"
-	Stage       string       `json:"stage"`        // 所属价值流标签
+	Owner       string       `json:"owner"`
+	DueAt       string       `json:"dueAt"`        // YYYY-MM-DD
+	DueLabel    string       `json:"dueLabel"`     // "今日已超 3 天" / "距今 2 天" / "今日"
+	Stage       string       `json:"stage"`
 	ZentaoUrl   string       `json:"zentaoUrl"`
-	IsOwnAction bool         `json:"isOwnAction"`  // true 表示当前账号就是要协调的人
+	IsOwnAction bool         `json:"isOwnAction"`
 }
 
 // BlockerResp 卡点响应。
@@ -74,7 +78,7 @@ type BlockerResp struct {
 	Items []BlockerDetail `json:"items"`
 }
 
-// levelOrder 等级排序的优先级（数字越小越在前）。
+// levelOrder 等级排序优先级。
 func levelOrder(l BlockerLevel) int {
 	switch l {
 	case BlockerLevelBlocked:
@@ -105,169 +109,107 @@ func levelLabel(l BlockerLevel) string {
 	}
 }
 
-// filterOwnAction 判断卡点是否要求当前账号动手（运维首选/全责/临门一脚场景）。
-// 原始阶段 + 类型判定，避免过度依赖业务主研发、未提供的位置字段。
-func isOwnActionStage(status string) bool {
+// pickOwner 从多个责任人员字段里选优（首个非空且不是空字符串）。本字段选取
+// 顺序仅供数据回退，非业务权威规则——以 zt_demand.RD 作为 PO 场景下最直接的主研发负责人。
+func pickOwner(values ...string) string {
+	for _, v := range values {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
+}
+
+// dueMetrics 计算给定截止日期与 today 的关系。
+// 返回字段:
+//
+//	dueAt: 原值（YYYY-MM-DD），空时返回 ""。
+//	label: "今日已超 X 天"（逾期）/ "今日"（恰好） / "距今 X 天"（未到） / ""。
+//	isOverdue: true 表示已逾期。
+func dueMetrics(due *time.Time, today time.Time) (dueAt, label string, isOverdue bool) {
+	if due == nil {
+		return "", "", false
+	}
+	dueDay := due.Truncate(24 * time.Hour)
+	todayDay := today.Truncate(24 * time.Hour)
+	dueAt = dueDay.Format("2006-01-02")
+	delta := int(todayDay.Sub(dueDay).Hours() / 24)
+	switch {
+	case delta > 0:
+		return dueAt, fmt.Sprintf("今日已超 %d 天", delta), true
+	case delta < 0:
+		return dueAt, fmt.Sprintf("距今 %d 天", -delta), false
+	default:
+		return dueAt, "今日", false
+	}
+}
+
+// chooseDeadline 选取该条目最相关的截止日期：状态决定哪个关键日最切合。
+// 联调 testing → testFinish；waitacceptance → verifyFinish；交付 → deliverDate；其余 → developFinish。
+func chooseDeadline(status string, d *time.Time, tf, vf, dd *time.Time) *time.Time {
 	switch status {
-	case "waitacceptance", "acceptanced":
-		return true
+	case "testing":
+		if tf != nil {
+			return tf
+		}
+	case "waitacceptance":
+		if vf != nil {
+			return vf
+		}
+	case "acceptanced":
+		if dd != nil {
+			return dd
+		}
+	}
+	if d != nil {
+		return d
+	}
+	return tf
+}
+
+// isOwnAction 当前账号在该阶段是否为执行人/承接人。
+// 简单判定：当前账号出现在 RD/assignedTo/QD/BRA 中任一字段即视为自身责任。
+func isOwnAction(account string, rd, qd, bra, assigned string) bool {
+	if account == "" {
+		return false
+	}
+	for _, v := range []string{rd, qd, bra, assigned} {
+		if v != "" && v == account {
+			return true
+		}
 	}
 	return false
 }
 
-// Blocker 返回今日卡点列表，按等级排序、同级按 kind+id 稳定，超 BlockerOverallLimit 截断。
-func (s *Service) Blocker(ctx context.Context, actor *model.User, _ BlockerReq) (*BlockerResp, error) {
-	account := ""
-	if actor != nil {
-		account = actor.Account
+// classifyDateBased 依据日期状态计算等级（替代旧版本按 status 静态映射）。
+//
+//	空关键日 → risk
+//	关键日已逾期且当前账号不是 own → blocked
+//	关键日已逾期且当前账号 own → overdue
+//	关键日距 today ≤ 3 → risk
+//	关键日未到且 own → coord
+//	其余 → risk（兜底）
+func classifyDateBased(due *time.Time, today time.Time, ownAction bool) BlockerLevel {
+	if due == nil {
+		return BlockerLevelRisk
 	}
-
-	items := make([]BlockerDetail, 0)
-	seen := make(map[string]struct{})
-
-	for _, status := range blockerStatuses {
-		filter, ok := mysqlStageFilters[status]
-		if !ok {
-			continue
-		}
-		label := valueStreamLabelForStatus(status)
-
-		demands, err := s.repo.FindRoleDemands(ctx, account, filter)
-		if err != nil {
-			return nil, err
-		}
-		for _, row := range demands {
-			key := workItemKey("demand", fmt.Sprintf("%d", row.ID))
-			if _, exists := seen[key]; exists {
-				continue
-			}
-			seen[key] = struct{}{}
-
-			// 等级映射。需求没有明确字段表达「重点关注」时，这里用 developFinish
-			// 交作业伪信号＋阶段组合生成等级。详情形列表语义按 P0 → P3 劣化。
-			lvl := classifyDemand(status)
-			items = append(items, BlockerDetail{
-				Kind:        "demand",
-				ID:          fmt.Sprintf("%d", row.ID),
-				Level:       lvl,
-				LevelLabel:  levelLabel(lvl),
-				Title:       row.Name,
-				Owner:       account, // 未读取分配人字段，仅以角色范围为占位
-				Stage:       label,
-				ZentaoUrl:   zentao.URL("demand", "view", fmt.Sprintf("demandID=%d", row.ID)),
-				IsOwnAction: isOwnActionStage(status),
-			})
-			if countByStageLabel(items, label) >= BlockerStageLimit {
-				break
-			}
-		}
-
-		// 排期/交付阶段额外拉取独立研发需求，看是否是当前账号独立卡点。
-		if filter.scheduleIncomplete {
-			stories, err := s.repo.FindScheduleStories(ctx, account)
-			if err != nil {
-				return nil, err
-			}
-			for _, row := range stories {
-				key := workItemKey("story", fmt.Sprintf("%d", row.ID))
-				if _, exists := seen[key]; exists {
-					continue
-				}
-				seen[key] = struct{}{}
-				lvl := classifyStory(status)
-				items = append(items, BlockerDetail{
-					Kind:        "story",
-					ID:          fmt.Sprintf("%d", row.ID),
-					Level:       lvl,
-					LevelLabel:  levelLabel(lvl),
-					Title:       row.Title,
-					Owner:       account,
-					Stage:       label,
-					ZentaoUrl:   zentao.URL("story", "view", fmt.Sprintf("storyID=%d", row.ID)),
-					IsOwnAction: isOwnActionStage(status),
-				})
-				if countByStageLabel(items, label) >= BlockerStageLimit {
-					break
-				}
-			}
-		}
-		if filter.deliverStories {
-			stories, err := s.repo.FindDeliverStories(ctx, account)
-			if err != nil {
-				return nil, err
-			}
-			for _, row := range stories {
-				key := workItemKey("story", fmt.Sprintf("%d", row.ID))
-				if _, exists := seen[key]; exists {
-					continue
-				}
-				seen[key] = struct{}{}
-				lvl := classifyStory(status)
-				items = append(items, BlockerDetail{
-					Kind:        "story",
-					ID:          fmt.Sprintf("%d", row.ID),
-					Level:       lvl,
-					LevelLabel:  levelLabel(lvl),
-					Title:       row.Title,
-					Owner:       account,
-					Stage:       label,
-					ZentaoUrl:   zentao.URL("story", "view", fmt.Sprintf("storyID=%d", row.ID)),
-					IsOwnAction: isOwnActionStage(status),
-				})
-				if countByStageLabel(items, label) >= BlockerStageLimit {
-					break
-				}
-			}
-		}
-	}
-
-	sortBlockers(items)
-	if len(items) > BlockerOverallLimit {
-		items = items[:BlockerOverallLimit]
-	}
-
-	return &BlockerResp{Items: items}, nil
-}
-
-// classifyDemand 按阶段映射需求默认等级。
-// 该语义只在当前数据模型上提供粗颗粒默认映射，后续如要更细颗粒（验收人匹配/改需人匹配），需引入额外责任人员字段。
-func classifyDemand(status string) BlockerLevel {
-	switch status {
-	case "developing":
+	delta := int(today.Truncate(24 * time.Hour).Sub(due.Truncate(24 * time.Hour)).Hours() / 24)
+	switch {
+	case delta > 0 && !ownAction:
 		return BlockerLevelBlocked
-	case "testing", "waitacceptance":
+	case delta > 0:
 		return BlockerLevelOverdue
-	case "schedule":
+	case delta >= -3:
 		return BlockerLevelRisk
-	case "clarify":
-		return BlockerLevelCoord
 	default:
-		return BlockerLevelRisk
-	}
-}
-
-// classifyStory 独立研发的等级映射。
-func classifyStory(status string) BlockerLevel {
-	switch status {
-	case "schedule":
-		return BlockerLevelRisk
-	case "acceptanced":
-		return BlockerLevelOverdue
-	default:
-		return BlockerLevelRisk
-	}
-}
-
-func countByStageLabel(items []BlockerDetail, label string) int {
-	n := 0
-	for _, it := range items {
-		if it.Stage == label {
-			n++
+		if ownAction {
+			return BlockerLevelCoord
 		}
+		return BlockerLevelRisk
 	}
-	return n
 }
 
+// sortBlockers 排序：等级优先 → ownAction 优先 → stage/kind/id 字典序稳定。
 func sortBlockers(items []BlockerDetail) {
 	sort.SliceStable(items, func(i, j int) bool {
 		li, lj := levelOrder(items[i].Level), levelOrder(items[j].Level)
@@ -285,4 +227,126 @@ func sortBlockers(items []BlockerDetail) {
 		}
 		return items[i].ID < items[j].ID
 	})
+}
+
+// Blocker 返回今日卡点列表。所有等级/责任人/due 字段均从真实数据计算。
+func (s *Service) Blocker(ctx context.Context, actor *model.User, _ BlockerReq) (*BlockerResp, error) {
+	account := ""
+	if actor != nil {
+		account = actor.Account
+	}
+	today := time.Now()
+
+	items := make([]BlockerDetail, 0)
+	seen := make(map[string]struct{})
+
+	appendDemand := func(row DemandRow, stageLabel, status string) {
+		key := workItemKey("demand", fmt.Sprintf("%d", row.ID))
+		if _, exists := seen[key]; exists {
+			return
+		}
+		seen[key] = struct{}{}
+
+		owner := pickOwner(row.RD, row.AssignedTo, row.QD, row.BRA)
+		ownAction := isOwnAction(account, row.RD, row.AssignedTo, row.QD, row.BRA)
+		due := chooseDeadline(status, row.DevelopFinish, row.TestFinish, row.VerifyFinish, row.DeliverDate)
+		level := classifyDateBased(due, today, ownAction)
+		dueAt, dueLabel, _ := dueMetrics(due, today)
+
+		items = append(items, BlockerDetail{
+			Kind:        "demand",
+			ID:          fmt.Sprintf("%d", row.ID),
+			Level:       level,
+			LevelLabel:  levelLabel(level),
+			Title:       row.Name,
+			Owner:       owner,
+			DueAt:       dueAt,
+			DueLabel:    dueLabel,
+			Stage:       stageLabel,
+			ZentaoUrl:   zentao.URL("demand", "view", fmt.Sprintf("demandID=%d", row.ID)),
+			IsOwnAction: ownAction,
+		})
+	}
+	appendStory := func(row StoryRow, stageLabel, status string) {
+		key := workItemKey("story", fmt.Sprintf("%d", row.ID))
+		if _, exists := seen[key]; exists {
+			return
+		}
+		seen[key] = struct{}{}
+
+		owner := pickOwner(row.AssignedTo)
+		ownAction := account != "" && row.AssignedTo != "" && row.AssignedTo == account
+		due := chooseDeadline(status, row.DevelopFinish, row.TestFinish, row.VerifyFinish, row.DeliverDate)
+		level := classifyDateBased(due, today, ownAction)
+		dueAt, dueLabel, _ := dueMetrics(due, today)
+
+		items = append(items, BlockerDetail{
+			Kind:        "story",
+			ID:          fmt.Sprintf("%d", row.ID),
+			Level:       level,
+			LevelLabel:  levelLabel(level),
+			Title:       row.Title,
+			Owner:       owner,
+			DueAt:       dueAt,
+			DueLabel:    dueLabel,
+			Stage:       stageLabel,
+			ZentaoUrl:   zentao.URL("story", "view", fmt.Sprintf("storyID=%d", row.ID)),
+			IsOwnAction: ownAction,
+		})
+	}
+
+	for _, status := range blockerStatuses {
+		filter, ok := mysqlStageFilters[status]
+		if !ok {
+			continue
+		}
+		label := valueStreamLabelForStatus(status)
+
+		demands, err := s.repo.FindRoleDemands(ctx, account, filter)
+		if err != nil {
+			return nil, err
+		}
+		for _, row := range demands {
+			appendDemand(row, label, status)
+		}
+		if countByStageLabel(items, label) >= BlockerStageLimit {
+			continue
+		}
+
+		if filter.scheduleIncomplete {
+			stories, err := s.repo.FindScheduleStories(ctx, account)
+			if err != nil {
+				return nil, err
+			}
+			for _, row := range stories {
+				appendStory(row, label, status)
+			}
+		}
+		if filter.deliverStories {
+			stories, err := s.repo.FindDeliverStories(ctx, account)
+			if err != nil {
+				return nil, err
+			}
+			for _, row := range stories {
+				appendStory(row, label, status)
+			}
+		}
+	}
+
+	sortBlockers(items)
+	if len(items) > BlockerOverallLimit {
+		items = items[:BlockerOverallLimit]
+	}
+
+	return &BlockerResp{Items: items}, nil
+}
+
+func countByStageLabel(items []BlockerDetail, label string) int {
+	n := 0
+	for _, it := range items {
+		if it.Stage == label {
+			n++
+		}
+	}
+	return n
 }
