@@ -74,6 +74,108 @@
       });
   }
 
+  function focusUrl() {
+    return "/po-focus";
+  }
+
+  function buildFocalCell(item) {
+    var url = (item && item.zentaoUrl) ? String(item.zentaoUrl).trim() : "";
+    var pri = (item && item.pri) ? String(item.pri).trim() : "";
+    var id = (item && item.id) ? String(item.id) : "";
+    var title = (item && item.title) ? String(item.title) : "";
+    var stream = (item && item.valueStream) ? String(item.valueStream) : "";
+    var owner = (item && item.owner) ? String(item.owner) : "—";
+
+    var priHtml = pri
+      ? "<span class=\"priority-tag " + escapeHtml(pri) + "\">" + escapeHtml(pri) + "</span>"
+      : "<span class=\"priority-tag\">—</span>";
+
+    var linkHtml = url
+      ? "<a class=\"table-row-btn\" href=\"" + escapeHtml(url) + "\" target=\"_blank\">处理</a>"
+      : "<button type=\"button\" class=\"table-row-btn\" disabled>处理</button>";
+
+    return (
+      "<tr>" +
+      "<td class=\"table-id col-id\">" + escapeHtml(id) + "</td>" +
+      "<td class=\"text-strong cell-ellipsis\">" + priHtml + escapeHtml(title) + "</td>" +
+      "<td><span class=\"table-tag\">" + escapeHtml(stream) + "</span></td>" +
+      "<td class=\"text-muted\">—</td>" +
+      "<td class=\"text-muted\">推进讨论</td>" +
+      "<td>" + escapeHtml(owner) + "</td>" +
+      "<td class=\"col-action\">" + linkHtml + "</td>" +
+      "</tr>"
+    );
+  }
+
+  function escapeAttr(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function loadFocus() {
+    var fetchFn = window.appFetch || fetch;
+    return fetchFn(focusUrl(), { method: "GET" })
+      .then(function (res) {
+        if (!res.ok) {
+          throw new Error("load focus failed");
+        }
+        return res.json();
+      })
+      .then(function (payload) {
+        if (!payload || payload.success !== true) {
+          throw new Error("invalid payload");
+        }
+        return Array.isArray(payload.items) ? payload.items : [];
+      })
+      .catch(function () {
+        if (typeof window.showToast === "function") {
+          window.showToast("加载今日推进焦点失败，请稍后重试", "danger");
+        }
+        return [];
+      });
+  }
+
+  function renderFocal(items) {
+    var $host = $("#homeFocalList");
+    if (!$host.length) {
+      return;
+    }
+    $host.removeAttr("data-loading");
+    var list = Array.isArray(items) ? items : [];
+    if (!list.length) {
+      $host.html(
+        "<span class=\"home-focal-hint\">今日无高优先级待推进事项，去喝杯茶吧 ☕</span>"
+      );
+      return;
+    }
+    var rows = $.map(list, buildFocalCell).join("");
+    var html =
+      "<div class=\"table-wrapper\">" +
+      "<table class=\"table data-table home-focal-table\">" +
+      "<thead>" +
+      "<tr>" +
+      "<th class=\"col-id\">ID</th>" +
+      "<th>标题</th>" +
+      "<th class=\"col-sm\">价值流</th>" +
+      "<th>卡点</th>" +
+      "<th>PO 下一步</th>" +
+      "<th class=\"col-sm\">下一责任人</th>" +
+      "<th class=\"col-action\">操作</th>" +
+      "</tr>" +
+      "</thead>" +
+      "<tbody>" + rows + "</tbody>" +
+      "</table>" +
+      "</div>";
+    $host.html(html);
+  }
+
+  function initFocus() {
+    loadFocus().then(renderFocal);
+  }
+
   function updateSectionTitle($card, count) {
     var $title = $("#top5Title");
     if (!$title.length) {
@@ -151,6 +253,7 @@
 
   $(function () {
     initValueStreamLinkage();
+    initFocus();
 
     var $active = $(".home-vs-mini-card.active").first();
     if (!$active.length) {
