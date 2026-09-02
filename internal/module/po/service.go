@@ -21,6 +21,11 @@ import (
 	"workbench/internal/pkg/zentao"
 )
 
+// valueStreamStages 价值流卡片（UI 视角）。
+// 业务口径：
+//   - 「发布」 = waitdeliver（在禅道「等待发布」语义）
+//   - 「评价」 = released && overall=0 && parent≠-1 && overall≠5（PO 待评价,排除已被系统自动五星评价的）
+// 「发布」与「评价」业务相邻但 SQL 装载层不同，故拆为 2 段。
 var valueStreamStages = []struct {
 	label  string
 	status string
@@ -32,8 +37,9 @@ var valueStreamStages = []struct {
 	{label: "提测", status: "developing"},
 	{label: "联调测试", status: "testing"},
 	{label: "验收", status: "waitacceptance"},
-	{label: "交付", status: "acceptanced"},
-	{label: "评价反馈", status: "released"},
+	{label: "发起交付", status: "acceptanced"},
+	{label: "发布", status: "waitdeliver"},
+	{label: "评价", status: "released"},
 }
 
 // Service PO 工作台业务逻辑。

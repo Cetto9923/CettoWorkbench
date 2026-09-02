@@ -85,11 +85,22 @@ func TestWorkItemKey(t *testing.T) {
 func TestValueStreamLabelForStatus(t *testing.T) {
 	t.Parallel()
 
-	if got := valueStreamLabelForStatus("accept"); got != "受理" {
-		t.Errorf("accept = %q want 受理", got)
+	cases := map[string]string{
+		"accept":         "受理",
+		"clarify":        "澄清",
+		"schedule":       "排期",
+		"developing":     "提测",
+		"testing":        "联调测试",
+		"waitacceptance": "验收",
+		"acceptanced":    "发起交付",
+		"waitdeliver":    "发布",
+		"released":       "评价",
+		"all":            "全部",
 	}
-	if got := valueStreamLabelForStatus("released"); got != "评价反馈" {
-		t.Errorf("released = %q want 评价反馈", got)
+	for status, want := range cases {
+		if got := valueStreamLabelForStatus(status); got != want {
+			t.Errorf("status=%q label=%q want %q", status, got, want)
+		}
 	}
 	if got := valueStreamLabelForStatus("__unknown__"); got != "" {
 		t.Errorf("unknown = %q want empty", got)
@@ -99,7 +110,10 @@ func TestValueStreamLabelForStatus(t *testing.T) {
 func TestIsValidValueStreamStatus(t *testing.T) {
 	t.Parallel()
 
-	valid := []string{"all", "accept", "clarify", "schedule", "developing", "testing", "waitacceptance", "acceptanced", "released"}
+	valid := []string{
+		"all", "accept", "clarify", "schedule", "developing", "testing",
+		"waitacceptance", "acceptanced", "waitdeliver", "released",
+	}
 	for _, s := range valid {
 		if !isValidValueStreamStatus(s) {
 			t.Errorf("%q should be valid", s)

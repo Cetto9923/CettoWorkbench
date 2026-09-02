@@ -18,16 +18,17 @@ import (
 
 // mysqlStageFilter 走 MySQL 的价值流阶段过滤条件。
 type mysqlStageFilter struct {
-	statuses           []string
-	overall            *string
-	parent             *string
-	developFinishDue   bool // true：今天 >= developFinish（且 developFinish 非空）
-	deliverDateDue     bool // true：今天 >= deliverDate（且 deliverDate 非空）
-	braRequired        bool // true：BRA 必须等于当前账号
-	noClarify          bool // true：无 zt_demandclarify 记录
-	acceptanceStage    bool // true：验收阶段复合条件
-	scheduleIncomplete bool // true：排期未完成（关键日期/QD/主研未填）
-	deliverStories     bool // true：合并交付阶段独立研发需求
+	statuses            []string
+	overall             *string
+	parent              *string
+	overallNotFive      bool // true：排除 overall=5（已完成五星评价的）
+	developFinishDue    bool // true：今天 >= developFinish（且 developFinish 非空）
+	deliverDateDue      bool // true：今天 >= deliverDate（且 deliverDate 非空）
+	braRequired         bool // true：BRA 必须等于当前账号
+	noClarify           bool // true：无 zt_demandclarify 记录
+	acceptanceStage     bool // true：验收阶段复合条件
+	scheduleIncomplete  bool // true：排期未完成（关键日期/QD/主研未填）
+	deliverStories      bool // true：合并交付阶段独立研发需求
 }
 
 var (
@@ -36,6 +37,8 @@ var (
 )
 
 // mysqlStageFilters 价值流阶段 → MySQL 查询条件。
+// 「released」段（PO 评价页）排除已被系统自动完成五星评价（overall=5）的记录，
+// 保留 PO 真正需要看的人为评价项。
 var mysqlStageFilters = map[string]mysqlStageFilter{
 	"accept":         {statuses: []string{"draft", "wait", "refuse"}},
 	"clarify":        {statuses: []string{"active"}, noClarify: true},
@@ -49,10 +52,12 @@ var mysqlStageFilters = map[string]mysqlStageFilter{
 		deliverDateDue: true,
 		deliverStories: true,
 	},
+	"waitdeliver": {statuses: []string{"waitdeliver"}},
 	"released": {
-		statuses: []string{"released"},
-		overall:  &releasedOverallEmpty,
-		parent:   &releasedParent,
+		statuses:       []string{"released"},
+		overall:        &releasedOverallEmpty,
+		parent:         &releasedParent,
+		overallNotFive: true,
 	},
 }
 
@@ -125,6 +130,10 @@ func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysql
 	}
 	if filter.parent != nil {
 		q = q.Where("parent != ?", *filter.parent)
+	}
+	if filter.overallNotFive {
+		// 排除已被系统完成五星评价的（PO 评价页不该再出现这些项）
+		q = q.Where("overall <> ?", "5")
 	}
 	if filter.developFinishDue {
 		today := time.Now().Format("2006-01-02")
