@@ -278,6 +278,16 @@
   background: #eef3ff;
 }
 
+.po-home .row-title-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.po-home .row-title-link:hover {
+  color: #155eef;
+  text-decoration: underline;
+}
+
 .po-home .row-id-link {
   border: 0;
   background: none;
