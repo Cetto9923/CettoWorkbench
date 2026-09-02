@@ -41,10 +41,12 @@
           <button type="button"
             class="home-vs-mini-card{{ if eq $i 0 }} active risk{{ else if eq $stage.Count 0 }} empty{{ else }} attn{{ end }}"
             data-vs-status="{{ $stage.Status }}"
-            title="{{ $stage.Label }} · {{ $stage.Count }} 条">
+            title="{{ $stage.Label }} · 共 {{ $stage.Count }} 条（业需 {{ $stage.DemandCount }} / 研发 {{ $stage.StoryCount }}）">
             <span class="vs-mini-name">{{ $stage.Label }}</span>
             <span class="vs-mini-count">{{ $stage.Count }}</span>
-            <span class="vs-mini-meta">功能待开发，敬请期待...</span>
+            <span class="vs-mini-meta">
+              {{ if eq $stage.Count 0 }}该阶段暂无待推进事项{{ else }}点击查看该阶段明细 →{{ end }}
+            </span>
           </button>
           {{ end }}
         </div>

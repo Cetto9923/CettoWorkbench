@@ -4,6 +4,7 @@
 // 类型: action
 // 职责: PO 工作台页面 HTTP 请求。
 // 依赖: internal/middleware
+//       internal/pkg/perm
 //       internal/pkg/render
 // =============================================================================
 
@@ -17,6 +18,7 @@ import (
 
 	"workbench/internal/constants"
 	"workbench/internal/middleware"
+	"workbench/internal/pkg/perm"
 	"workbench/internal/pkg/render"
 )
 
@@ -32,12 +34,13 @@ func NewHandler(svc *Service, logger *zap.Logger) *Handler {
 }
 
 // RegisterRoutes 注册 PO 工作台路由（挂载在已配置登录与操作日志的中间件组上）。
+// 所有读路由（包括首页）必须绑定 RequirePerm，符合核心底线第 1 条。
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g := rg.Group("")
 	g.Use(middleware.ActiveNav("/home"))
 
-	g.GET("/home", h.Home)
-	g.GET("/demands", h.Demands)
+	g.GET("/home", middleware.RequirePerm(perm.PoHome), h.Home)
+	g.GET("/demands", middleware.RequirePerm(perm.PoHome), h.Demands)
 }
 
 // Home 渲染 PO 工作台首页。

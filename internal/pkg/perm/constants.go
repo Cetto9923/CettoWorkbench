@@ -54,6 +54,9 @@ const (
 	ScheduleCreate Permission = "schedule:create"
 	ScheduleUpdate Permission = "schedule:update"
 	ScheduleDelete Permission = "schedule:delete"
+
+	// PO 工作台首页（与 zt_menus.perm='po:home' 对齐）
+	PoHome Permission = "po:home"
 )
 
 // allPermInfos 必须与上方 const 块中的所有 Permission 常量保持一一对应。
@@ -84,6 +87,7 @@ var allPermInfos = []PermInfo{
 	{Code: ScheduleCreate, Name: "排期-新增", Module: "schedule"},
 	{Code: ScheduleUpdate, Name: "排期-编辑", Module: "schedule"},
 	{Code: ScheduleDelete, Name: "排期-删除", Module: "schedule"},
+	{Code: PoHome, Name: "PO工作台-首页", Module: "po"},
 }
 
 // systemPerms 是系统内置放行权限，不对外暴露到权限配置 UI。
