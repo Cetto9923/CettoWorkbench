@@ -142,7 +142,7 @@
 
 .po-home .home-vs-compact-row {
   display: grid;
-  grid-template-columns: repeat(9, minmax(0, 1fr));
+  grid-template-columns: repeat(10, minmax(0, 1fr));
   gap: 6px;
   min-width: 0;
 }
@@ -493,8 +493,8 @@
 
 @media (max-width: 1180px) {
   .po-home .home-vs-compact-row {
-    grid-template-columns: repeat(9, minmax(84px, 1fr));
-    min-width: 860px;
+    grid-template-columns: repeat(10, minmax(84px, 1fr));
+    min-width: 960px;
   }
 
   .po-home .home-version-panel {
