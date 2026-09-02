@@ -26,6 +26,7 @@ type mysqlStageFilter struct {
 	braRequired        bool // true：BRA 必须等于当前账号
 	noClarify          bool // true：无 zt_demandclarify 记录
 	acceptanceStage    bool // true：验收阶段复合条件
+	publishStage       bool // true：发布阶段复合条件（waitdeliver 或已发布未评价）
 	scheduleIncomplete bool // true：排期未完成（关键日期/QD/主研未填）
 	deliverStories     bool // true：合并交付阶段独立研发需求
 }
@@ -49,6 +50,7 @@ var mysqlStageFilters = map[string]mysqlStageFilter{
 		deliverDateDue: true,
 		deliverStories: true,
 	},
+	"publish": {publishStage: true},
 	"released": {
 		statuses: []string{"released"},
 		overall:  &releasedOverallEmpty,
@@ -99,6 +101,22 @@ func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysql
 			(status = ? AND testFinish IS NOT NULL AND testFinish <= ?)
 			OR (status = ? AND (RD = ? OR BRA = ?))
 		)`, "testing", today, "waitacceptance", account, account)
+		return q
+	}
+	if filter.publishStage {
+		// status=waitdeliver OR (status=released AND 无有效评价记录)
+		q = q.Where(`(
+			status = ?
+			OR (
+				status = ?
+				AND NOT EXISTS (
+					SELECT 1 FROM zt_demandappraise
+					WHERE demand = zt_demand.id
+						AND appraiseBy <> '' AND appraiseBy IS NOT NULL
+						AND appraiseTime IS NOT NULL
+				)
+			)
+		)`, "waitdeliver", "released")
 		return q
 	}
 
@@ -167,7 +185,7 @@ func filterReady(account string, filter mysqlStageFilter) bool {
 	if strings.TrimSpace(account) == "" {
 		return false
 	}
-	if filter.acceptanceStage {
+	if filter.acceptanceStage || filter.publishStage {
 		return true
 	}
 	return len(filter.statuses) > 0
