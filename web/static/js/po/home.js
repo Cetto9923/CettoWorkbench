@@ -1,54 +1,45 @@
 (function ($) {
   "use strict";
 
-  var DEFAULT_VISIBLE = 5;
+  var PAGE_SIZES = [4, 5, 6, 7, 8, 10];
+  var state = {
+    items: [],
+    status: "all",
+    focal: "myPending",
+    page: 1,
+    pageSize: 6
+  };
+
+  var FOCAL_LABELS = {
+    today: "今日必推",
+    myPending: "待我处理",
+    blocked: "阻塞",
+    overdue: "超期"
+  };
 
   function demandsUrl(status) {
     return "/demands?status=" + encodeURIComponent(status || "all");
   }
 
   function escapeHtml(text) {
-    return $("<div>").text(text).html();
+    return $("<div>").text(text == null ? "" : String(text)).html();
   }
 
-  function buildActionCell(item) {
-    var url = (item.zentaoUrl || "").trim();
-    if (!url) {
-      return "<td class=\"col-action\"><button type=\"button\" class=\"table-row-btn\" disabled>处理</button></td>";
+  function displayId(item) {
+    var id = item.id || "";
+    if (item.kind === "story" && id && id.indexOf("US") !== 0) {
+      return "US" + id;
     }
-    return (
-      "<td class=\"col-action\">" +
-      "<a href=\"" + escapeHtml(url) + "\" class=\"table-row-btn\" target=\"_blank\">处理</a>" +
-      "</td>"
-    );
+    return id;
   }
 
-  function buildRowHtml(item) {
-    var rowClass = item.alert ? "js-top5-row top5-row--alert" : "js-top5-row";
-    return (
-      "<tr class=\"" + rowClass + "\">" +
-      "<td class=\"table-id col-id\">" + escapeHtml(item.id || "") + "</td>" +
-      "<td class=\"text-strong cell-ellipsis\"><span class=\"priority-tag " + escapeHtml(item.pri || "") + "\">" +
-      escapeHtml(item.pri || "") + "</span>" + escapeHtml(item.title || "") + "</td>" +
-      "<td><span class=\"table-tag\">" + escapeHtml(item.valueStream || item.stage || "") + "</span></td>" +
-      "<td class=\"text-muted\">" + escapeHtml(item.blocker || "") + "</td>" +
-      "<td class=\"text-muted\">" + escapeHtml(item.next || "") + "</td>" +
-      "<td>" + escapeHtml(item.owner || "") + "</td>" +
-      buildActionCell(item) +
-      "</tr>"
-    );
+  function actionLabel(item) {
+    return (item.next || "").trim() || "跟进";
   }
 
-  function renderTop5Rows(items) {
-    var $tbody = $("#top5TableBody");
-    if (!$tbody.length) {
-      return $();
-    }
-
-    var list = Array.isArray(items) ? items : [];
-    var html = $.map(list, buildRowHtml).join("");
-    $tbody.html(html);
-    return $tbody.find(".js-top5-row");
+  function dash(value) {
+    var text = (value || "").trim();
+    return text || "—";
   }
 
   function loadDemands(status) {
@@ -74,14 +65,138 @@
       });
   }
 
-  function updateSectionTitle($card, count) {
+  function updateTitle(count) {
     var $title = $("#top5Title");
     if (!$title.length) {
       return;
     }
-    var label = $card.find(".vs-mini-name").first().text() || "全部";
-    var iconHtml = $title.find("i").first().prop("outerHTML") || "<i class=\"fas fa-star\"></i>";
-    $title.html(iconHtml + " 当前应推进事项：今日必推 / " + escapeHtml(label) + " / " + count + " 条");
+    var focal = FOCAL_LABELS[state.focal] || "待我处理";
+    var stage = $(".home-vs-mini-card.active .vs-mini-name").first().text() || "全部";
+    var stagePart = stage && stage !== "全部" ? " · " + escapeHtml(stage) : "";
+    $title.html(
+      "<i class=\"fas fa-list-check\"></i> 统一行动列表 · " +
+        escapeHtml(focal) +
+        stagePart +
+        "（" +
+        count +
+        "）"
+    );
+  }
+
+  function renderEmpty() {
+    $("#top5List").html(
+      "<div class=\"empty-state\">" +
+        "<div style=\"font-weight:700;color:var(--po-t2);margin-bottom:6px\">当前焦点暂无事项</div>" +
+        "<div style=\"font-size:12px\">可切换顶部焦点或价值流阶段查看其他队列</div>" +
+        "</div>"
+    );
+  }
+
+  function renderRow(item) {
+    var id = displayId(item);
+    var url = (item.zentaoUrl || "").trim();
+    var pri = item.pri || "";
+    var idHtml = url
+      ? "<a class=\"row-id-link\" href=\"" + escapeHtml(url) + "\">" + escapeHtml(id) + "</a>"
+      : "<span class=\"row-id-link\">" + escapeHtml(id) + "</span>";
+    var action = actionLabel(item);
+    var actionHtml = url
+      ? "<a class=\"action-btn primary\" href=\"" + escapeHtml(url) + "\">" + escapeHtml(action) + "</a>"
+      : "<button type=\"button\" class=\"action-btn primary\" disabled>" + escapeHtml(action) + "</button>";
+
+    return (
+      "<div class=\"top5-row\">" +
+      idHtml +
+      "<div class=\"row-title\" title=\"" + escapeHtml(item.title || "") + "\">" +
+      (pri ? "<span class=\"inline-pri " + escapeHtml(pri) + "\">" + escapeHtml(pri) + "</span>" : "") +
+      escapeHtml(item.title || "") +
+      "</div>" +
+      "<div class=\"row-stage\"><span class=\"stage-tag\">" + escapeHtml(item.valueStream || item.stage || "—") + "</span></div>" +
+      "<div class=\"row-zt-status\"><span class=\"status-tag\">" + escapeHtml(dash(item.blocker)) + "</span></div>" +
+      "<div class=\"row-next\">" + escapeHtml(action) + "</div>" +
+      "<div class=\"row-owner\">" + escapeHtml(dash(item.owner)) + "</div>" +
+      "<div class=\"row-actions\">" + actionHtml + "</div>" +
+      "</div>"
+    );
+  }
+
+  function renderPagination(total) {
+    var page = state.page;
+    var ps = state.pageSize;
+    var totalPages = Math.max(1, Math.ceil(total / Math.max(1, ps)));
+    var startIdx = total ? (page - 1) * ps + 1 : 0;
+    var endIdx = Math.min(page * ps, total);
+    var html = "<div class=\"pagination-container\"><div class=\"pagination\">";
+    html += "<span class=\"pagination-summary\">显示 " + startIdx + "-" + endIdx + " / 共 " + total + " 条</span>";
+    html += "<div class=\"pagination-controls\">";
+    html += "<button type=\"button\" class=\"action-btn js-show-all\">查看全部 " + total + " 条</button>";
+    html += "<select class=\"filter-select\" aria-label=\"每页条数\">";
+    PAGE_SIZES.forEach(function (n) {
+      html += "<option value=\"" + n + "\"" + (n === ps ? " selected" : "") + ">" + n + " 条/页</option>";
+    });
+    html += "</select>";
+    html += "<button type=\"button\" class=\"action-btn small js-page-prev\"" + (page <= 1 ? " disabled" : "") + ">上一页</button>";
+    for (var i = 1; i <= totalPages; i++) {
+      if (i === 1 || i === totalPages || (i >= page - 1 && i <= page + 1)) {
+        html += "<button type=\"button\" class=\"action-btn small js-page-num" + (i === page ? " primary" : "") + "\" data-page=\"" + i + "\">" + i + "</button>";
+      } else if (i === page - 2 || i === page + 2) {
+        html += "<span class=\"pagination-ellipsis\">...</span>";
+      }
+    }
+    html += "<button type=\"button\" class=\"action-btn small js-page-next\"" + (page >= totalPages ? " disabled" : "") + ">下一页</button>";
+    html += "</div></div></div>";
+    return html;
+  }
+
+  function bindPagination(total) {
+    var $list = $("#top5List");
+    $list.find(".js-show-all").on("click", function () {
+      state.pageSize = Math.max(total, 1);
+      state.page = 1;
+      renderList();
+    });
+    $list.find(".filter-select").on("change", function () {
+      state.pageSize = parseInt($(this).val(), 10) || 6;
+      state.page = 1;
+      renderList();
+    });
+    $list.find(".js-page-prev").on("click", function () {
+      if (state.page > 1) {
+        state.page -= 1;
+        renderList();
+      }
+    });
+    $list.find(".js-page-next").on("click", function () {
+      var totalPages = Math.max(1, Math.ceil(total / Math.max(1, state.pageSize)));
+      if (state.page < totalPages) {
+        state.page += 1;
+        renderList();
+      }
+    });
+    $list.find(".js-page-num").on("click", function () {
+      state.page = parseInt($(this).attr("data-page"), 10) || 1;
+      renderList();
+    });
+  }
+
+  function renderList() {
+    var total = state.items.length;
+    updateTitle(total);
+    if (!total) {
+      renderEmpty();
+      return;
+    }
+    var totalPages = Math.max(1, Math.ceil(total / Math.max(1, state.pageSize)));
+    if (state.page > totalPages) {
+      state.page = totalPages;
+    }
+    var start = (state.page - 1) * state.pageSize;
+    var pageItems = state.items.slice(start, start + state.pageSize);
+    var html = "<div class=\"top5-cols\"><span>ID</span><span>标题</span><span>当前阶段</span><span>需求状态</span><span>下一步</span><span>下一责任人</span><span>操作</span></div>";
+    html += $.map(pageItems, renderRow).join("");
+    html += renderPagination(total);
+    $("#top5List").html(html);
+    bindPagination(total);
   }
 
   function setActiveCard($card) {
@@ -89,68 +204,60 @@
     $card.addClass("active");
   }
 
-  function refreshDemandsTable(status, $card) {
-    return loadDemands(status).then(function (items) {
-      updateSectionTitle($card, items.length);
-      initTop5Toggle(renderTop5Rows(items));
+  function refreshDemands(status) {
+    state.status = status || "all";
+    state.page = 1;
+    return loadDemands(state.status).then(function (items) {
+      state.items = items;
+      renderList();
       return items;
     });
   }
 
-  function initTop5Toggle($rows) {
-    var $wrap = $("#top5ToggleWrap");
-    var $btn = $("#top5Toggle");
-    if (!$wrap.length || !$btn.length || !$rows.length) {
-      if ($wrap.length) {
-        $wrap.prop("hidden", true);
-      }
-      return;
-    }
-
-    if ($rows.length <= DEFAULT_VISIBLE) {
-      $wrap.prop("hidden", true);
-      return;
-    }
-
-    $wrap.prop("hidden", false);
-    var expanded = false;
-
-    function apply() {
-      $rows.each(function (index) {
-        $(this).toggleClass("is-row-hidden", !expanded && index >= DEFAULT_VISIBLE);
-      });
-      $btn
-        .attr("aria-expanded", expanded ? "true" : "false")
-        .text(expanded ? "收起 ↑" : "查看全部 " + $rows.length + " 条 →");
-    }
-
-    $btn.off("click.top5toggle").on("click.top5toggle", function () {
-      expanded = !expanded;
-      apply();
-    });
-
-    apply();
-  }
-
   function initValueStreamLinkage() {
-    var $cards = $(".home-vs-mini-card");
-    if (!$cards.length) {
-      return;
-    }
-
-    $cards.on("click", function () {
+    $(".home-vs-mini-card").on("click", function () {
       var $card = $(this);
       var status = $card.attr("data-vs-status");
       if (!status) {
         return;
       }
       setActiveCard($card);
-      refreshDemandsTable(status, $card);
+      refreshDemands(status);
     });
+  }
+
+  function initFocalChips() {
+    $(".home-hl-kpi").on("click", function () {
+      var $btn = $(this);
+      $(".home-hl-kpi").removeClass("active");
+      $btn.addClass("active");
+      state.focal = $btn.attr("data-focal") || "myPending";
+      updateTitle(state.items.length);
+    });
+  }
+
+  function fillUpdateTime() {
+    var now = new Date();
+    var pad = function (n) {
+      return n < 10 ? "0" + n : String(n);
+    };
+    $("#lastUpdateTime").text(
+      now.getFullYear() +
+        "-" +
+        pad(now.getMonth() + 1) +
+        "-" +
+        pad(now.getDate()) +
+        " " +
+        pad(now.getHours()) +
+        ":" +
+        pad(now.getMinutes())
+    );
   }
 
   $(function () {
     initValueStreamLinkage();
+    initFocalChips();
+    fillUpdateTime();
 
     var $active = $(".home-vs-mini-card.active").first();
     if (!$active.length) {
@@ -159,8 +266,6 @@
         setActiveCard($active);
       }
     }
-
-    var initialStatus = $active.attr("data-vs-status") || "all";
-    refreshDemandsTable(initialStatus, $active);
+    refreshDemands($active.attr("data-vs-status") || "all");
   });
 })(jQuery);
