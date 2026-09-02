@@ -182,7 +182,7 @@
       escapeHtml(getHomeZentaoStatusLabel(item)) +
       "</span></div>" +
       "<div class=\"row-next\">" + escapeHtml(action) + "</div>" +
-      "<div class=\"row-owner\">" + escapeHtml(dash(item.owner)) + "</div>" +
+      "<div class=\"row-owner\">" + escapeHtml(dash(item.nextOwner || item.owner)) + "</div>" +
       "<div class=\"row-actions\">" + actionHtml + "</div>" +
       "</div>"
     );
