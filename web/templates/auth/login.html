@@ -1,8 +1,9 @@
 ﻿{{/* ==========================================================================
-文件: web/templates/auth/login.html 模块: 认证 职责: 登录页面模板。 全局字段:
-.CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath 页面字段:
-.Title (string), .RedirectTo (string), .Form (*LoginForm), .Errors
-([]FieldError)
+文件: web/templates/auth/login.html
+模块: 认证
+职责: 登录页面模板。
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .RedirectTo (string), .Form (*LoginForm), .Errors ([]FieldError)
 ========================================================================== */}}
 {{ define "content" }}
 <div
@@ -11,22 +12,17 @@
 >
   <div class="w-100" style="max-width: 400px">
     <div class="text-center mb-3">
-      <div class="d-inline-flex align-items-center gap-2">
-        <i class="bi bi-boxes fs-3 text-primary"></i>
-        <span class="fw-semibold fs-5">workbench</span>
-      </div>
+      <img src="{{ asset "/static/img/csrcb-logo.png" }}" alt="江苏常熟农村商业银行" class="login-logo" style="max-height: 60px; max-width: 80%; height: auto;" />
     </div>
     <div class="card shadow-sm rounded-3 border-0">
       <div class="card-body p-4 p-md-5">
         <h1 class="h5 text-center mb-4">登录后台管理系统</h1>
 
-        <div id="login-error">
         {{ range .Errors }} {{ if eq .Field "_form" }}
         <div class="alert alert-danger">{{ .Message }}</div>
         {{ end }} {{ end }}
-        </div>
 
-        <form id="login-form" action="/login" method="POST">
+        <form action="/login" method="POST">
           <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}" />
           {{ if .RedirectTo }}
           <input type="hidden" name="redirect" value="{{ .RedirectTo }}" />
