@@ -20,6 +20,18 @@ web/templates/layout/header.html 模块: 布局 职责:
   <div class="topbar-primary-spacer" aria-hidden="true"></div>
   {{ end }} {{ if eq .LayoutNav "sidebar" }}
   <div class="topbar-actions">
+    <div class="search-box" id="searchBox">
+      <i class="fas fa-search"></i>
+      <input
+        type="text"
+        id="globalSearch"
+        autocomplete="off"
+        placeholder="搜索需求 / 任务 / Bug / MR"
+        title="搜索需求、任务、Bug、MR、版本窗口、项目"
+        aria-label="搜索需求、任务、Bug、MR、版本窗口、项目"
+      />
+      <div class="search-results" id="searchResults"></div>
+    </div>
     <div class="dropdown">
       <button
         class="btn btn-neutral btn-sm"
