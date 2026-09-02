@@ -156,24 +156,40 @@
     );
   }
 
+  function zentaoLinkAttrs(url, extraClass) {
+    var cls = ("js-zentao-link " + (extraClass || "")).trim();
+    return (
+      "href=\"" +
+      escapeHtml(url) +
+      "\" class=\"" +
+      cls +
+      "\" target=\"_blank\" rel=\"noopener noreferrer\""
+    );
+  }
+
   function renderRow(item) {
     var id = displayId(item);
     var url = (item.zentaoUrl || "").trim();
     var pri = item.pri || "";
     var idHtml = url
-      ? "<a class=\"row-id-link\" href=\"" + escapeHtml(url) + "\">" + escapeHtml(id) + "</a>"
+      ? "<a " + zentaoLinkAttrs(url, "row-id-link") + ">" + escapeHtml(id) + "</a>"
       : "<span class=\"row-id-link\">" + escapeHtml(id) + "</span>";
     var action = actionLabel(item);
     var actionHtml = url
-      ? "<a class=\"action-btn primary\" href=\"" + escapeHtml(url) + "\">" + escapeHtml(action) + "</a>"
+      ? "<a " + zentaoLinkAttrs(url, "action-btn primary") + ">" + escapeHtml(action) + "</a>"
       : "<button type=\"button\" class=\"action-btn primary\" disabled>" + escapeHtml(action) + "</button>";
+    var titleInner =
+      (pri ? "<span class=\"inline-pri " + escapeHtml(pri) + "\">" + escapeHtml(pri) + "</span>" : "") +
+      escapeHtml(item.title || "");
+    var titleHtml = url
+      ? "<a " + zentaoLinkAttrs(url, "row-title-link") + ">" + titleInner + "</a>"
+      : titleInner;
 
     return (
       "<div class=\"top5-row\">" +
       idHtml +
       "<div class=\"row-title\" title=\"" + escapeHtml(item.title || "") + "\">" +
-      (pri ? "<span class=\"inline-pri " + escapeHtml(pri) + "\">" + escapeHtml(pri) + "</span>" : "") +
-      escapeHtml(item.title || "") +
+      titleHtml +
       "</div>" +
       "<div class=\"row-stage\"><span class=\"stage-tag\">" + escapeHtml(item.valueStream || item.stage || "—") + "</span></div>" +
       "<div class=\"row-zt-status\"><span class=\"status-tag st-progress\" title=\"" +
@@ -214,6 +230,17 @@
     html += "<button type=\"button\" class=\"action-btn small js-page-next\"" + (page >= totalPages ? " disabled" : "") + ">下一页</button>";
     html += "</div></div></div>";
     return html;
+  }
+
+  function bindZentaoLinks($list) {
+    $list.find("a.js-zentao-link").on("click", function (e) {
+      var href = (this.getAttribute("href") || "").trim();
+      if (!href) {
+        return;
+      }
+      e.preventDefault();
+      window.open(href, "_blank", "noopener,noreferrer");
+    });
   }
 
   function bindPagination(total) {
@@ -264,6 +291,7 @@
     html += $.map(pageItems, renderRow).join("");
     html += renderPagination(total);
     $("#top5List").html(html);
+    bindZentaoLinks($("#top5List"));
     bindPagination(total);
   }
 
