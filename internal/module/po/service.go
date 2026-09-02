@@ -191,12 +191,13 @@ func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stage
 			pri = "P" + row.Pri
 		}
 		items = append(items, WorkItemDetail{
-			Kind:        "demand",
-			ID:          fmt.Sprintf("%d", row.ID),
-			Pri:         pri,
-			Title:       row.Name,
-			ZentaoUrl:   zentao.URL("demand", "view", fmt.Sprintf("demandID=%d", row.ID)),
-			ValueStream: label,
+			Kind:         "demand",
+			ID:           fmt.Sprintf("%d", row.ID),
+			Pri:          pri,
+			Title:        row.Name,
+			ZentaoUrl:    zentao.URL("demand", "view", fmt.Sprintf("demandID=%d", row.ID)),
+			ValueStream:  label,
+			ZentaoStatus: row.Status,
 		})
 	}
 	if filter.scheduleIncomplete {
@@ -220,12 +221,13 @@ func storyWorkItems(rows []StoryRow, label string) []WorkItemDetail {
 	items := make([]WorkItemDetail, 0, len(rows))
 	for _, row := range rows {
 		items = append(items, WorkItemDetail{
-			Kind:        "story",
-			ID:          fmt.Sprintf("%d", row.ID),
-			Pri:         fmt.Sprintf("P%d", row.Pri),
-			Title:       row.Title,
-			ZentaoUrl:   zentao.URL("story", "view", fmt.Sprintf("storyID=%d", row.ID)),
-			ValueStream: label,
+			Kind:         "story",
+			ID:           fmt.Sprintf("%d", row.ID),
+			Pri:          fmt.Sprintf("P%d", row.Pri),
+			Title:        row.Title,
+			ZentaoUrl:    zentao.URL("story", "view", fmt.Sprintf("storyID=%d", row.ID)),
+			ValueStream:  label,
+			ZentaoStatus: row.Status,
 		})
 	}
 	return items
