@@ -18,7 +18,7 @@
     }
     return (
       "<td class=\"col-action\">" +
-      "<a href=\"" + escapeHtml(url) + "\" class=\"table-row-btn\" target=\"_blank\">处理</a>" +
+      "<a href=\"" + escapeHtml(url) + "\" class=\"table-row-btn\">处理</a>" +
       "</td>"
     );
   }

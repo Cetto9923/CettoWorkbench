@@ -1,7 +1,7 @@
 // =============================================================================
 // 文件: internal/module/po/handler.go
 // 模块: PO 工作台
-// 类型: action
+// 类型: readonly
 // 职责: PO 工作台页面 HTTP 请求。
 // 依赖: internal/middleware
 //       internal/pkg/perm

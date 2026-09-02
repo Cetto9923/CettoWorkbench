@@ -1,7 +1,7 @@
 // =============================================================================
 // 文件: internal/module/po/blocker.go
 // 模块: PO 工作台
-// 类型: action
+// 类型: readonly
 // 职责: 实现 PO 工作台首页"卡点快速响应"——基于真实日期字段（developFinish /
 //       testFinish / verifyFinish / deliverDate）与 today 的关系计算等级与
 //       dueLabel；从真实责任人员字段（RD / assignedTo / QD / BRA / assignedTo）
