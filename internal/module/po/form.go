@@ -56,7 +56,7 @@ func (r *DemandsReq) Validate() []FieldError {
 // WorkItemDetail 单条需求或故事详情。
 type WorkItemDetail struct {
 	Kind         string `json:"kind"`
-	ID           string `json:"id"`
+	ID           string `json:"id"` // 展示编号：业需 US{id}，研需 U{id}
 	Pri          string `json:"pri"`
 	Title        string `json:"title"`
 	Stage        string `json:"stage"`

@@ -241,7 +241,7 @@ func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stage
 		ownerDisp := resolveNextOwnerDisplay(row, displayMap)
 		items = append(items, WorkItemDetail{
 			Kind:         "demand",
-			ID:           fmt.Sprintf("%d", row.ID),
+			ID:           fmt.Sprintf("US%d", row.ID),
 			Pri:          pri,
 			Title:        row.Name,
 			Owner:        ownerDisp,
@@ -322,7 +322,7 @@ func storyWorkItems(rows []StoryRow, label string, actor *model.User, displayMap
 	for _, row := range rows {
 		items = append(items, WorkItemDetail{
 			Kind:         "story",
-			ID:           fmt.Sprintf("%d", row.ID),
+			ID:           fmt.Sprintf("U%d", row.ID),
 			Pri:          fmt.Sprintf("P%d", row.Pri),
 			Title:        row.Title,
 			Owner:        owner,

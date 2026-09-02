@@ -25,14 +25,6 @@
     return $("<div>").text(text == null ? "" : String(text)).html();
   }
 
-  function displayId(item) {
-    var id = item.id || "";
-    if (item.kind === "story" && id && id.indexOf("US") !== 0) {
-      return "US" + id;
-    }
-    return id;
-  }
-
   function actionLabel(item) {
     return (item.next || "").trim() || "跟进";
   }
@@ -93,7 +85,7 @@
       var isStory =
         (item && String(item.kind || "") === "story") ||
         Number(item && item.storyId) > 0 ||
-        /^S\d+$/i.test(String((item && item.id) || ""));
+        /^U\d+$/i.test(String((item && item.id) || ""));
       if (isStory) {
         return getStoryZentaoStatusLabel(raw);
       }
@@ -168,7 +160,7 @@
   }
 
   function renderRow(item) {
-    var id = displayId(item);
+    var id = item.id || "";
     var url = (item.zentaoUrl || "").trim();
     var pri = item.pri || "";
     var idHtml = url
