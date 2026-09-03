@@ -90,9 +90,11 @@ type StoryRow struct {
 	Status string `gorm:"column:status"`
 }
 
-func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysqlStageFilter) *gorm.DB {
-	// 业需可见范围：澄清表 PM = 当前账号，或 QD/RD/BRA = 当前账号；排除已关闭
-	q := r.db.WithContext(ctx).Table("zt_demand").
+// roleDemandBase 返回当前账号可见且未关闭的业需基础查询集（PM in clarify ∪ QD ∪ RD ∪ BRA，排除 closed）。
+// 仅含跨阶段共用的可见范围与删除/关闭过滤；阶段状态与日期等专项条件由调用方链式 Where 追加。
+// 价值流列表与 KPI 计数共用同一基础集，保证两处数字口径一致。
+func (r *Repo) roleDemandBase(ctx context.Context, account string) *gorm.DB {
+	return r.db.WithContext(ctx).Table("zt_demand").
 		Where("deleted = ?", "0").
 		Where("status NOT IN ?", []string{"closed"}).
 		Where(`(
@@ -101,6 +103,11 @@ func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysql
 			OR RD = ?
 			OR BRA = ?
 		)`, account, account, account, account)
+}
+
+func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysqlStageFilter) *gorm.DB {
+	// 业需可见范围：澄清表 PM = 当前账号，或 QD/RD/BRA = 当前账号；排除已关闭
+	q := r.roleDemandBase(ctx, account)
 
 	if filter.acceptanceStage {
 		today := time.Now().Format("2006-01-02")
@@ -338,16 +345,8 @@ func (r *Repo) CountKPIToday(ctx context.Context, account string) (int64, error)
 	}
 	today := time.Now().Format("2006-01-02")
 	var total int64
-	err := r.db.WithContext(ctx).Table("zt_demand").
-		Where("deleted = ?", "0").
-		Where("status NOT IN ?", []string{"closed"}).
+	err := r.roleDemandBase(ctx, account).
 		Where("deadline IS NOT NULL AND deadline != '0000-00-00' AND deadline <= ?", today).
-		Where(`(
-			id IN (SELECT demand FROM zt_demandclarify WHERE PM = ?)
-			OR QD = ?
-			OR RD = ?
-			OR BRA = ?
-		)`, account, account, account, account).
 		Count(&total).Error
 	return total, err
 }
@@ -360,16 +359,8 @@ func (r *Repo) CountKPIOverdue(ctx context.Context, account string) (int64, erro
 	}
 	today := time.Now().Format("2006-01-02")
 	var total int64
-	err := r.db.WithContext(ctx).Table("zt_demand").
-		Where("deleted = ?", "0").
-		Where("status NOT IN ?", []string{"closed"}).
+	err := r.roleDemandBase(ctx, account).
 		Where("deadline IS NOT NULL AND deadline != '0000-00-00' AND deadline < ?", today).
-		Where(`(
-			id IN (SELECT demand FROM zt_demandclarify WHERE PM = ?)
-			OR QD = ?
-			OR RD = ?
-			OR BRA = ?
-		)`, account, account, account, account).
 		Count(&total).Error
 	return total, err
 }
@@ -381,16 +372,8 @@ func (r *Repo) CountKPISuspended(ctx context.Context, account string) (int64, er
 		return 0, nil
 	}
 	var total int64
-	err := r.db.WithContext(ctx).Table("zt_demand").
-		Where("deleted = ?", "0").
-		Where("status NOT IN ?", []string{"closed"}).
+	err := r.roleDemandBase(ctx, account).
 		Where("hang = ?", "1").
-		Where(`(
-			id IN (SELECT demand FROM zt_demandclarify WHERE PM = ?)
-			OR QD = ?
-			OR RD = ?
-			OR BRA = ?
-		)`, account, account, account, account).
 		Count(&total).Error
 	return total, err
 }
@@ -405,14 +388,14 @@ func (r *Repo) CountKPIBlocked(ctx context.Context, account string) (int64, erro
 		return 0, nil
 	}
 	today := time.Now().Format("2006-01-02")
-	var total int64
-	err := r.db.WithContext(ctx).Table("zt_demand").
-		Where("deleted = ?", "0").
-		Where("status NOT IN ?", []string{"closed"}).
+	var n int64
+	err := r.roleDemandBase(ctx, account).
 		Where(`(
 			EXISTS (
 				SELECT 1 FROM zt_demandmanagerreview mr
 				WHERE mr.demand = zt_demand.id
+				AND mr.resultStatus IS NOT NULL
+				AND mr.resultStatus != ''
 				AND JSON_SEARCH(mr.resultStatus, 'one', 'refuse') IS NOT NULL
 			)
 			OR (
@@ -422,12 +405,6 @@ func (r *Repo) CountKPIBlocked(ctx context.Context, account string) (int64, erro
 				AND testFinish < ?
 			)
 		)`, "waitacceptance", today).
-		Where(`(
-			id IN (SELECT demand FROM zt_demandclarify WHERE PM = ?)
-			OR QD = ?
-			OR RD = ?
-			OR BRA = ?
-		)`, account, account, account, account).
-		Count(&total).Error
-	return total, err
+		Count(&n).Error
+	return n, err
 }

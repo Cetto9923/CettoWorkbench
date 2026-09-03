@@ -130,22 +130,47 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 	// 5 个焦点摘要：MyPending 已包含在 all 阶段计数；其余 4 个由 Repo 真实统计。
 	kpi := KPICounts{MyPending: stages[allIdx].Count}
 	if strings.TrimSpace(account) != "" {
-		var kpiErr error
-		if kpi.Today, kpiErr = s.repo.CountKPIToday(ctx, account); kpiErr != nil {
-			return nil, kpiErr
+		if err := s.fillKPICounts(ctx, account, &kpi); err != nil {
+			return nil, err
 		}
-		if kpi.Overdue, kpiErr = s.repo.CountKPIOverdue(ctx, account); kpiErr != nil {
-			return nil, kpiErr
-		}
-		if kpi.Suspended, kpiErr = s.repo.CountKPISuspended(ctx, account); kpiErr != nil {
-			return nil, kpiErr
-		}
-		if kpi.Blocked, kpiErr = s.repo.CountKPIBlocked(ctx, account); kpiErr != nil {
-			return nil, kpiErr
+		if s.logger != nil {
+			s.logger.Info("po home kpi",
+				zap.String("account", account),
+				zap.Int64("today", kpi.Today),
+				zap.Int64("overdue", kpi.Overdue),
+				zap.Int64("suspended", kpi.Suspended),
+				zap.Int64("blocked", kpi.Blocked),
+				zap.Int64("my_pending", kpi.MyPending),
+			)
 		}
 	}
 
 	return &HomeResp{Stages: stages, VersionWindows: versionWindows, KPI: kpi}, nil
+}
+
+// kpiCountFn 适配 CountKPI* 方法的统一签名，便于在 fillKPICounts 中以 map 驱动循环。
+type kpiCountFn func(context.Context, string) (int64, error)
+
+// fillKPICounts 顺序调用 4 个 CountKPI* 方法并填充 KPICounts；任一失败即返回（首个错误包 label）。
+func (s *Service) fillKPICounts(ctx context.Context, account string, kpi *KPICounts) error {
+	fills := []struct {
+		label string
+		fn    kpiCountFn
+		dst   *int64
+	}{
+		{"today", s.repo.CountKPIToday, &kpi.Today},
+		{"overdue", s.repo.CountKPIOverdue, &kpi.Overdue},
+		{"suspended", s.repo.CountKPISuspended, &kpi.Suspended},
+		{"blocked", s.repo.CountKPIBlocked, &kpi.Blocked},
+	}
+	for _, f := range fills {
+		n, err := f.fn(ctx, account)
+		if err != nil {
+			return fmt.Errorf("kpi %s: %w", f.label, err)
+		}
+		*f.dst = n
+	}
+	return nil
 }
 
 // Demands 按价值流状态返回当前用户关联的需求/故事详情。

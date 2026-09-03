@@ -107,3 +107,18 @@ func readHomeFile(t *testing.T, path string) string {
 	}
 	return string(data)
 }
+
+// TestHomeHandlerRendersKPI 锁住 handler.go 渲染首页必须传 "KPI" 键给模板的契约。
+// 回归 259e29bf 修复的 bug —— handler.go 曾因 render.Page 调用漏传 resp.KPI 而导致首页 5 个焦点摘要永远为 0。
+// 真实数据由 Service 计算，但模板能否拿到 KPI 全靠 handler 显式传值；少一个 key 整行 KPI 消失。
+func TestHomeHandlerRendersKPI(t *testing.T) {
+	root := filepath.Join("..", "..", "..")
+	handler := readHomeFile(t, filepath.Join(root, "internal", "module", "po", "handler.go"))
+
+	if !strings.Contains(handler, `"KPI"`) {
+		t.Errorf("handler.go render.Page call must pass \"KPI\" key with resp.KPI value; missing in:\n%s", handler)
+	}
+	if !strings.Contains(handler, "resp.KPI") {
+		t.Errorf("handler.go must reference resp.KPI (HomeResp.KPI), not a hardcoded empty struct; missing in:\n%s", handler)
+	}
+}
