@@ -207,6 +207,7 @@ func (h *Handler) DoneItems(c *gin.Context) {
 		"success":  true,
 		"items":    resp.Items,
 		"total":    resp.Total,
+		"summary":  resp.Summary,
 		"page":     resp.Page,
 		"pageSize": resp.PageSize,
 	})

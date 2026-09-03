@@ -11,44 +11,52 @@
 
 {{ define "content" }}
 <div class="po-done">
-  <div class="page-hdr">
-    <h2>我的已办</h2>
-    <span class="page-hdr-meta">已实际执行的正式业务动作 · 待办消失 ≠ 已办</span>
-  </div>
+  <header class="done-header">
+    <div><h2>我的已办</h2><p>已实际执行的正式业务动作 · 待办消失 ≠ 已办</p></div>
+  </header>
 
-  <div class="done-filter-bar">
-    <div class="done-time-range">
-      <button type="button" class="time-chip active" data-range="all">全部时间</button>
-      <button type="button" class="time-chip" data-range="today">今天</button>
-      <button type="button" class="time-chip" data-range="7d">近 7 天</button>
-      <button type="button" class="time-chip" data-range="week">本周</button>
-      <button type="button" class="time-chip" data-range="30d">近 30 天</button>
-      <button type="button" class="time-chip" data-range="month">本月</button>
-      <button type="button" class="time-chip" data-range="quarter">本季度</button>
-    </div>
-    <div class="done-summary">
-      <span id="doneSummary">加载中…</span>
-    </div>
-  </div>
+  <section class="focus-grid" aria-label="已办时间概览">
+    <button type="button" class="focus-card active" data-range="all"><span>全部时间</span><strong id="countRangeAll">—</strong></button>
+    <button type="button" class="focus-card" data-range="today"><span>今天</span><strong id="countRangeToday">—</strong></button>
+    <button type="button" class="focus-card" data-range="7d"><span>近 7 天</span><strong id="countRange7d">—</strong></button>
+    <button type="button" class="focus-card" data-range="week"><span>本周</span><strong id="countRangeWeek">—</strong></button>
+    <button type="button" class="focus-card" data-range="30d"><span>近 30 天</span><strong id="countRange30d">—</strong></button>
+    <button type="button" class="focus-card" data-range="month"><span>本月</span><strong id="countRangeMonth">—</strong></button>
+    <button type="button" class="focus-card" data-range="quarter"><span>本季度</span><strong id="countRangeQuarter">—</strong></button>
+  </section>
 
-  <div class="done-list-host">
-    <table class="done-table" id="doneTable">
-      <thead>
-        <tr>
-          <th class="c-when">时间</th>
-          <th class="c-actor">操作人</th>
-          <th class="c-action">动作</th>
-          <th class="c-object">对象</th>
-          <th class="c-id">对象编号</th>
-        </tr>
-      </thead>
-      <tbody id="doneTbody"></tbody>
-    </table>
-    <div class="done-empty" id="doneEmpty" hidden>当前时间段暂无已办</div>
-  </div>
+  <section class="todos-panel">
+    <nav class="group-tabs" aria-label="操作对象">
+      <button type="button" class="group-tab active" data-object="">全部已办</button>
+      <button type="button" class="group-tab" data-object="demand">业务需求</button>
+      <button type="button" class="group-tab" data-object="story">研发需求</button>
+      <button type="button" class="group-tab" data-object="task">任务</button>
+      <button type="button" class="group-tab" data-object="bug">Bug</button>
+      <button type="button" class="group-tab" data-object="risk">风险</button>
+      <button type="button" class="group-tab" data-object="issue">问题</button>
+      <button type="button" class="group-tab" data-object="feedback">反馈</button>
+      <button type="button" class="group-tab" data-object="release">发布</button>
+      <button type="button" class="group-tab" data-object="build">构建</button>
+      <button type="button" class="group-tab" data-object="todo">待办</button>
+    </nav>
+
+    <div class="todos-toolbar">
+      <label class="search-field"><span aria-hidden="true">⌕</span><input type="search" id="doneKeyword" placeholder="搜索 ID、标题或操作人" aria-label="关键词"></label>
+      <select id="doneResult" aria-label="处理结果"><option value="all">处理结果：全部</option><option value="done">完成</option><option value="approved">通过</option><option value="rejected">驳回</option><option value="closed">关闭</option><option value="activated">激活</option><option value="submitted">已提交</option><option value="verified">已验收</option><option value="resolved">已解决</option><option value="returned">已退回</option></select>
+      <button type="button" id="doneResetBtn" class="toolbar-btn">重置</button>
+    </div>
+
+    <div class="todos-result-bar"><span id="doneSummary">加载中…</span></div>
+    <div class="todos-table-wrap">
+      <table class="todos-table done-table-cols" id="doneTable">
+        <thead><tr><th class="c-id">ID</th><th class="c-title">标题</th><th class="c-type">类型</th><th class="c-action">形成原因</th><th class="c-result">处理结果</th><th class="c-dead">处理时间</th><th class="c-owner">操作人</th><th class="c-op">操作</th></tr></thead>
+        <tbody id="doneTbody"></tbody>
+      </table>
+      <div class="todos-empty" id="doneEmpty" hidden>当前条件下暂无已办记录</div>
+    </div>
+    <footer class="todos-pagination" id="donePagination" hidden></footer>
+  </section>
 </div>
 {{ end }}
 
-{{ define "page_js" }}
-<script src="{{ asset "/static/js/po/done.js" }}"></script>
-{{ end }}
+{{ define "page_js" }}<script src="{{ asset "/static/js/po/done.js" }}"></script>{{ end }}

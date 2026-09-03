@@ -26,6 +26,7 @@ type RepoFindDoneActionsReq struct {
 	CustomFrom string
 	CustomTo   string
 	ObjectType string
+	Result     string
 	Page       int
 	PageSize   int
 }
@@ -78,6 +79,24 @@ var formalDoneActions = map[string]doneActionMeta{
 	"bug:activated":               {Label: "激活 Bug", Result: "activated"},
 	"bug:bugconfirmed":            {Label: "确认 Bug", Result: "done"},
 	"bug:tostory":                 {Label: "转研发需求", Result: "done"},
+
+	// 反馈/发布/待办等无 formal 明细对象的常用动作（中文展示，result 尽力归类）
+	"feedback:closed":   {Label: "关闭反馈", Result: "closed"},
+	"feedback:replied":  {Label: "回复反馈", Result: "done"},
+	"feedback:resolved": {Label: "解决反馈", Result: "resolved"},
+	"release:delivered": {Label: "发布上线", Result: "done"},
+	"release:closed":    {Label: "关闭发布", Result: "closed"},
+	"todo:opened":       {Label: "创建待办", Result: "done"},
+	"todo:finished":     {Label: "完成待办", Result: "done"},
+	"todo:closed":       {Label: "关闭待办", Result: "closed"},
+	"todo:assigned":     {Label: "指派待办", Result: "done"},
+	"todo:started":      {Label: "开始待办", Result: "done"},
+	"todo:deleted":      {Label: "删除待办", Result: "done"},
+	"todo:activated":    {Label: "激活待办", Result: "activated"},
+	"risk:closed":       {Label: "关闭风险", Result: "closed"},
+	"risk:resolved":     {Label: "解决风险", Result: "resolved"},
+	"issue:closed":      {Label: "关闭问题", Result: "closed"},
+	"issue:resolved":    {Label: "解决问题", Result: "resolved"},
 }
 
 func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) ([]DoneAction, int64, error) {
@@ -91,17 +110,13 @@ func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) 
 		req.PageSize = 20
 	}
 
+	scopeSQL, scopeArgs := buildFormalDoneScopeSQL()
 	q := r.db.WithContext(ctx).Table("zt_action AS a").
 		Where("a.actor = ?", req.Account).
-		Where(`
-			(a.objectType = ? AND a.action IN ?) OR
-			(a.objectType = ? AND a.action IN ?) OR
-			(a.objectType = ? AND a.action IN ?) OR
-			(a.objectType = ? AND a.action IN ?)`,
-			"demand", formalDoneActionCodes("demand"),
-			"story", formalDoneActionCodes("story"),
-			"task", formalDoneActionCodes("task"),
-			"bug", formalDoneActionCodes("bug"))
+		Where(scopeSQL, scopeArgs...)
+	if req.Result != "" && req.Result != "all" {
+		q = q.Where("a.action IN ?", codesWithResult(req.Result))
+	}
 	if req.ObjectType != "" && req.ObjectType != "all" {
 		q = q.Where("a.objectType = ?", req.ObjectType)
 	} else {
@@ -256,20 +271,70 @@ func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) 
 	items := make([]DoneAction, 0, len(rows))
 	for _, row := range rows {
 		meta := formalDoneActions[row.ObjectType+":"+row.Action]
+		actionLabel := meta.Label
+		if actionLabel == "" {
+			actionLabel = row.Action // 无 formal 定义（如 todo/release/feedback）时展示原始动作 code
+		}
 		items = append(items, DoneAction{
-			ID:         row.ID,
-			Actor:      actor,
-			Action:     meta.Label,
-			ObjectType: row.ObjectType,
-			ObjectID:   row.ObjectID,
-			ObjectName: nameByKey[fmt.Sprintf("%s:%d", row.ObjectType, row.ObjectID)],
-			Date:       row.Date.Format("2006-01-02 15:04:05"),
-			Result:     meta.Result,
-			URL:        objectViewURL(row.ObjectType, uint(row.ObjectID)),
+			ID:              row.ID,
+			Actor:           actor,
+			Action:          actionLabel,
+			ObjectType:      row.ObjectType,
+			ObjectTypeLabel: doneObjectTypeLabel(row.ObjectType),
+			ObjectID:        row.ObjectID,
+			ObjectName:      nameByKey[fmt.Sprintf("%s:%d", row.ObjectType, row.ObjectID)],
+			Date:            row.Date.Format("2006-01-02 15:04:05"),
+			Result:          meta.Result,
+			URL:             objectViewURL(row.ObjectType, uint(row.ObjectID)),
 		})
 	}
 
 	return items, total, nil
+}
+
+// CountDoneActionsForObject 按对象类型 + 时间段统计已办动作数（对象型概览）。
+func (r *Repo) CountDoneActionsForObject(ctx context.Context, account, objectType string, timeRange TimeRange) (int64, error) {
+	n, err := r.CountScopedDoneActions(ctx, account, timeRange, objectType)
+	return n, err
+}
+
+// CountScopedDoneActions 通用已办计数；objectType 为空 = 全部对象。
+func (r *Repo) CountScopedDoneActions(ctx context.Context, account string, timeRange TimeRange, objectType string) (int64, error) {
+	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
+		return 0, nil
+	}
+	q := r.db.WithContext(ctx).Table("zt_action AS a").
+		Where("a.actor = ?", account)
+	scopeSQL, scopeArgs := buildFormalDoneScopeSQL()
+	q = q.Where(scopeSQL, scopeArgs...)
+	if objectType != "" {
+		q = q.Where("a.objectType = ?", objectType)
+	}
+	now := time.Now()
+	switch timeRange {
+	case TimeRangeToday:
+		q = q.Where("DATE(a.date) = CURDATE()")
+	case TimeRange7d:
+		q = q.Where("a.date >= ?", now.AddDate(0, 0, -7))
+	case TimeRangeWeek:
+		q = q.Where("YEARWEEK(a.date, 3) = YEARWEEK(CURDATE(), 3)")
+	case TimeRange30d:
+		q = q.Where("a.date >= ?", now.AddDate(0, 0, -30))
+	case TimeRangeMonth:
+		q = q.Where("DATE_FORMAT(a.date, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m')")
+	case TimeRangeQuarter:
+		q = q.Where("QUARTER(a.date) = QUARTER(CURDATE()) AND YEAR(a.date) = YEAR(CURDATE())")
+	}
+	var total int64
+	if err := q.Count(&total).Error; err != nil {
+		return 0, err
+	}
+	return total, nil
+}
+
+// CountDoneActions 按时间段统计当前账号正式已办动作数（供已办页时间段概览卡）。
+func (r *Repo) CountDoneActions(ctx context.Context, account string, timeRange TimeRange) (int64, error) {
+	return r.CountScopedDoneActions(ctx, account, timeRange, "")
 }
 
 func formalDoneActionCodes(objectType string) []string {
@@ -281,6 +346,83 @@ func formalDoneActionCodes(objectType string) []string {
 		}
 	}
 	return codes
+}
+
+// codesWithResult 返回 formalDoneActions 中指定处理结果的全部 action code。
+func codesWithResult(result string) []string {
+	codes := make([]string, 0)
+	for key, meta := range formalDoneActions {
+		if meta.Result == result {
+			codes = append(codes, strings.TrimPrefix(key, objectTypePrefix(key)))
+		}
+	}
+	return codes
+}
+
+// objectTypePrefix 取 "demand:reviewed" 的 "demand:" 前缀。
+func objectTypePrefix(key string) string {
+	if i := strings.Index(key, ":"); i >= 0 {
+		return key[:i+1]
+	}
+	return ""
+}
+
+// doneObjectTypeLabels 对象类型中文标签（与操作对象 chips 顺序一致）。
+var doneObjectTypeLabels = map[string]string{
+	"demand": "业务需求", "story": "研发需求", "task": "任务", "bug": "Bug",
+	"risk": "风险", "issue": "问题", "feedback": "反馈", "release": "发布",
+	"build": "构建", "todo": "待办", "testtask": "测试单",
+}
+
+// doneObjectTypeLabel 对象类型中文标签；未知类型原样返回。
+func doneObjectTypeLabel(objectType string) string {
+	if label, ok := doneObjectTypeLabels[objectType]; ok {
+		return label
+	}
+	return objectType
+}
+
+// doneScopeObjectTypes 我的已办操作对象范围（顺序与 CRCBWorkbench objectTypeOrder 对齐）。
+var doneScopeObjectTypes = []string{"demand", "story", "task", "bug", "risk", "issue", "feedback", "release", "build", "todo", "testtask"}
+
+// buildFormalDoneScopeSQL 构造已办正式动作范围 SQL：有 formal 白名单的对象按 action 过滤，
+// 其余对象类型（risk/issue/feedback/release/build/todo/testtask）按 objectType 放行（任何 action）。
+// 返回 SQL 片段（不带 WHERE 关键字）与对应参数；SQL 全部使用 ? 占位符。
+func buildFormalDoneScopeSQL() (string, []interface{}) {
+	var b strings.Builder
+	args := make([]interface{}, 0, len(doneScopeObjectTypes)*2)
+	b.WriteString("(")
+	first := true
+	for _, ot := range doneScopeObjectTypes {
+		codes := formalDoneActionCodes(ot)
+		if len(codes) == 0 {
+			continue // formalDoneActions 未定义的对象类型交给兜底分支处理
+		}
+		if !first {
+			b.WriteString(" OR ")
+		}
+		first = false
+		b.WriteString("(a.objectType = ? AND a.action IN ?)")
+		args = append(args, ot, codes)
+	}
+	// 兜底：无 formal 白名单的对象类型，只要 actor=本人即视为已办动作
+	if len(doneScopeObjectTypes) > 0 {
+		typeList := make([]string, 0)
+		for _, ot := range doneScopeObjectTypes {
+			if len(formalDoneActionCodes(ot)) == 0 {
+				typeList = append(typeList, ot)
+			}
+		}
+		if len(typeList) > 0 {
+			if !first {
+				b.WriteString(" OR ")
+			}
+			b.WriteString("a.objectType IN ?")
+			args = append(args, typeList)
+		}
+	}
+	b.WriteString(")")
+	return b.String(), args
 }
 
 // objectViewURL 按 zentao 对象类型拼详情页链接。
@@ -296,6 +438,8 @@ func objectViewURL(objectType string, id uint) string {
 		return zentao.BugViewURL(id)
 	case "testtask":
 		return zentao.TesttaskViewURL(id)
+	case "risk", "issue", "feedback", "release", "build", "todo", "case":
+		return zentao.URL(objectType, "view", fmt.Sprintf("%sID=%d", objectType, id))
 	}
 	return ""
 }

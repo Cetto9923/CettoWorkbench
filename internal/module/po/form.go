@@ -342,23 +342,36 @@ func (r *DoneListReq) Validate() []FieldError {
 
 // DoneAction 我的已办单条：zt_action 投影。
 type DoneAction struct {
-	ID         int64  `json:"id"`         // zt_action.id
-	Actor      string `json:"actor"`      // 操作人（应 = 当前账号）
-	Action     string `json:"action"`     // 操作代码（中文化见 DoneActionLabel）
-	ObjectType string `json:"objectType"` // 对象类型（demand/story/task/bug/testtask）
-	ObjectID   int64  `json:"objectId"`   // 对象 ID
-	ObjectName string `json:"objectName"` // 对象标题
-	Date       string `json:"date"`       // 操作时间 YYYY-MM-DD HH:MM:SS
-	Result     string `json:"result"`     // 操作结果/前后状态
-	URL        string `json:"url"`        // 禅道详情 URL
+	ID              int64  `json:"id"`              // zt_action.id
+	Actor           string `json:"actor"`           // 操作人（应 = 当前账号）
+	Action          string `json:"action"`          // 操作代码（中文化见 DoneActionLabel）
+	ObjectType      string `json:"objectType"`      // 对象类型（demand/story/task/bug/testtask...）
+	ObjectTypeLabel string `json:"objectTypeLabel"` // 对象类型中文标签
+	ObjectID        int64  `json:"objectId"`        // 对象 ID
+	ObjectName      string `json:"objectName"`      // 对象标题
+	Date            string `json:"date"`            // 操作时间 YYYY-MM-DD HH:MM:SS
+	Result          string `json:"result"`          // 操作结果/前后状态
+	URL             string `json:"url"`             // 禅道详情 URL
 }
 
 // DoneListResp 我的已办列表响应。
 type DoneListResp struct {
 	Items    []DoneAction `json:"items"`
 	Total    int64        `json:"total"`
+	Summary  DoneSummary  `json:"summary"` // 时间段概览计数（与待办 focus 卡同构）
 	Page     int          `json:"page"`
 	PageSize int          `json:"pageSize"`
+}
+
+// DoneSummary 已办时间段概览计数。
+type DoneSummary struct {
+	All     int64 `json:"all"`
+	Today   int64 `json:"today"`
+	Last7d  int64 `json:"last7d"`
+	Week    int64 `json:"week"`
+	Last30d int64 `json:"last30d"`
+	Month   int64 `json:"month"`
+	Quarter int64 `json:"quarter"`
 }
 
 // NoticeListReq 通知中心列表请求。
