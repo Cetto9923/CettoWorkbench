@@ -85,3 +85,199 @@ type WorkItemDetail struct {
 type DemandsResp struct {
 	Items []WorkItemDetail `json:"items"`
 }
+
+// TodoTab 我的待办对象域 Tab。V10.1 02 节：6 类对象域，本期先打通审批决策 + 需求治理。
+// 其它 Tab（研发执行/测试质量/问题风险/个人事项）作为占位渲染，详细数据来源后续阶段接入。
+type TodoTab string
+
+const (
+	TodoTabApproval TodoTab = "approval" // 审批决策（V10.1 默认第 1 Tab）
+	TodoTabDemand   TodoTab = "demand"   // 需求治理（业务需求 + 研发需求 + 反馈）
+	TodoTabAll      TodoTab = "all"      // 全部（跨 Tab 汇总）
+)
+
+// Relation 我的关系 V10.1 02 节。
+type Relation string
+
+const (
+	RelationAll        Relation = "all"
+	RelationInCharge   Relation = "in_charge"  // 我负责
+	RelationCooperate  Relation = "cooperate"  // 我配合
+	RelationFollow     Relation = "follow"     // 我关注
+)
+
+// Responsibility 办理责任 V10.1 02 节。
+type Responsibility string
+
+const (
+	ResponsibilityAll         Responsibility = "all"
+	ResponsibilityMyAction     Responsibility = "my_action"     // 待我处理
+	ResponsibilityMyFollowUp   Responsibility = "my_follow_up"  // 待我跟进
+)
+
+// TodoListReq 我的待办列表请求。
+// V10.1 02 节：7 维 AND = Tab ∩ 办理场景 ∩ 阶段 ∩ 对象 ∩ 我的关系 ∩ 办理责任 ∩ 关键词。
+// 本期最小可用：Tab + 我的关系 + 办理责任 + 关键词。其它维度作为后续扩展点。
+type TodoListReq struct {
+	Tab           TodoTab        `form:"tab"`           // 对象域 Tab；默认 approval
+	Relation      Relation       `form:"relation"`      // 我的关系；默认 all
+	Responsibility Responsibility `form:"responsibility"` // 办理责任；默认 all
+	Keyword       string         `form:"keyword"`       // 关键词
+	Page          int            `form:"page"`          // 页码；1-based
+	PageSize      int            `form:"pageSize"`      // 每页条数；默认 20
+}
+
+// Validate 校验 TodoListReq。
+func (r *TodoListReq) Validate() []FieldError {
+	r.Tab = TodoTab(strings.TrimSpace(string(r.Tab)))
+	if r.Tab == "" {
+		r.Tab = TodoTabApproval
+	}
+	if r.Tab != TodoTabApproval && r.Tab != TodoTabDemand && r.Tab != TodoTabAll {
+		return []FieldError{{Field: "tab", Message: "无效的对象域 Tab"}}
+	}
+	r.Relation = Relation(strings.TrimSpace(string(r.Relation)))
+	if r.Relation == "" {
+		r.Relation = RelationAll
+	}
+	switch r.Relation {
+	case RelationAll, RelationInCharge, RelationCooperate, RelationFollow:
+	default:
+		return []FieldError{{Field: "relation", Message: "无效的我的关系"}}
+	}
+	r.Responsibility = Responsibility(strings.TrimSpace(string(r.Responsibility)))
+	if r.Responsibility == "" {
+		r.Responsibility = ResponsibilityAll
+	}
+	switch r.Responsibility {
+	case ResponsibilityAll, ResponsibilityMyAction, ResponsibilityMyFollowUp:
+	default:
+		return []FieldError{{Field: "responsibility", Message: "无效的办理责任"}}
+	}
+	r.Keyword = strings.TrimSpace(r.Keyword)
+	if r.Page < 1 {
+		r.Page = 1
+	}
+	if r.PageSize < 1 || r.PageSize > 100 {
+		r.PageSize = 20
+	}
+	return nil
+}
+
+// TodoItem 我的待办单条（横跨业务需求/研发需求/任务/Bug/测试单等多种对象）。
+// kind 决定展示与跳转链接生成。
+type TodoItem struct {
+	Kind         string `json:"kind"`            // demand / story / task / bug / test
+	ID           int64  `json:"id"`              // 业务需求 ID（业需/任务/...各自主键）
+	DisplayID    string `json:"displayId"`       // 展示编号：业需 US{id}，研需 U{id}，任务/单据 TASK-{id} 等
+	Title        string `json:"title"`           // 标题
+	Type         string `json:"type"`            // 对象类型中文标签（业务需求/任务/Bug/测试单...）
+	Stage        string `json:"stage"`           // 当前阶段（valueStream 标签或 zentao status 中文）
+	Priority     string `json:"priority"`        // 优先级 P0..P4
+	Relation     string `json:"relation"`        // 我负责/我配合/我关注
+	Responsibility string `json:"responsibility"` // 待我处理/待我跟进
+	Reason       string `json:"reason"`          // 形成原因（来源禅道 status 或业务场景）
+	Deadline     string `json:"deadline"`        // 截止日期 YYYY-MM-DD（无日期空串）
+	Owner        string `json:"owner"`           // 责任人展示名
+	URL          string `json:"url"`             // 禅道详情 URL 或工作台任务详情 URL
+}
+
+// TodoListResp 我的待办列表响应。
+type TodoListResp struct {
+	Items     []TodoItem `json:"items"`
+	Total     int64      `json:"total"`     // 过滤后总数（不含分页截断）
+	Page      int        `json:"page"`      // 当前页
+	PageSize  int        `json:"pageSize"`  // 每页条数
+}
+
+// DoneTab 已办对象域。V10.1 02 节：本期先打通需求治理 + 研发执行。
+type DoneTab string
+
+const (
+	DoneTabAll    DoneTab = "all"
+	DoneTabDemand DoneTab = "demand"
+	DoneTabTask   DoneTab = "task"
+	DoneTabBug    DoneTab = "bug"
+	DoneTabTest   DoneTab = "test"
+)
+
+// TimeRange 已办时间段。
+type TimeRange string
+
+const (
+	TimeRangeToday     TimeRange = "today"
+	TimeRange7d        TimeRange = "7d"
+	TimeRangeWeek      TimeRange = "week"
+	TimeRange30d       TimeRange = "30d"
+	TimeRangeMonth     TimeRange = "month"
+	TimeRangeLastMonth TimeRange = "last_month"
+	TimeRangeQuarter   TimeRange = "quarter"
+	TimeRangeCustom    TimeRange = "custom"
+	TimeRangeAll       TimeRange = "all"
+)
+
+// DoneListReq 我的已办列表请求。
+// V10.1 02 节：已办形成条件 = 本人真实执行的正式业务动作。来源 zt_action + Workbench 审计。
+// 严格定义：待办消失不能自动变成已办。
+type DoneListReq struct {
+	Tab       DoneTab   `form:"tab"`       // 对象域；默认 all
+	TimeRange TimeRange `form:"timeRange"` // 时间段；默认 all
+	CustomFrom string   `form:"from"`      // 时间段=custom 时生效
+	CustomTo   string   `form:"to"`        // 时间段=custom 时生效
+	ObjectType string   `form:"objectType"` // 业务需求/任务/Bug/测试单等
+	Result     string   `form:"result"`     // 操作结果
+	Page       int      `form:"page"`
+	PageSize   int      `form:"pageSize"`
+}
+
+// Validate 校验 DoneListReq。
+func (r *DoneListReq) Validate() []FieldError {
+	r.Tab = DoneTab(strings.TrimSpace(string(r.Tab)))
+	if r.Tab == "" {
+		r.Tab = DoneTabAll
+	}
+	switch r.Tab {
+	case DoneTabAll, DoneTabDemand, DoneTabTask, DoneTabBug, DoneTabTest:
+	default:
+		return []FieldError{{Field: "tab", Message: "无效的对象域 Tab"}}
+	}
+	r.TimeRange = TimeRange(strings.TrimSpace(string(r.TimeRange)))
+	if r.TimeRange == "" {
+		r.TimeRange = TimeRangeAll
+	}
+	switch r.TimeRange {
+	case TimeRangeToday, TimeRange7d, TimeRangeWeek, TimeRange30d, TimeRangeMonth,
+		TimeRangeLastMonth, TimeRangeQuarter, TimeRangeCustom, TimeRangeAll:
+	default:
+		return []FieldError{{Field: "timeRange", Message: "无效的时间段"}}
+	}
+	r.ObjectType = strings.TrimSpace(r.ObjectType)
+	r.Result = strings.TrimSpace(r.Result)
+	if r.Page < 1 {
+		r.Page = 1
+	}
+	if r.PageSize < 1 || r.PageSize > 100 {
+		r.PageSize = 20
+	}
+	return nil
+}
+
+// DoneAction 我的已办单条：zt_action 投影。
+type DoneAction struct {
+	ID         int64  `json:"id"`         // zt_action.id
+	Actor      string `json:"actor"`      // 操作人（应 = 当前账号）
+	Action     string `json:"action"`     // 操作代码（中文化见 DoneActionLabel）
+	ObjectType string `json:"objectType"` // 对象类型（demand/story/task/bug/testtask）
+	ObjectID   int64  `json:"objectId"`   // 对象 ID
+	ObjectName string `json:"objectName"` // 对象标题
+	Date       string `json:"date"`       // 操作时间 YYYY-MM-DD HH:MM:SS
+	Result     string `json:"result"`     // 操作结果/前后状态
+}
+
+// DoneListResp 我的已办列表响应。
+type DoneListResp struct {
+	Items    []DoneAction `json:"items"`
+	Total    int64        `json:"total"`
+	Page     int          `json:"page"`
+	PageSize int          `json:"pageSize"`
+}

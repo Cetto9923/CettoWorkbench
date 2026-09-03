@@ -1,0 +1,56 @@
+{{/* ==========================================================================
+文件: web/templates/po/todos.html
+模块: PO 工作台
+职责: 我的待办列表页（V10.1 02 节 7 维 AND：Tab ∩ 场景 ∩ 阶段 ∩ 对象 ∩ 我的关系 ∩ 办理责任 ∩ 关键词）
+全局字段: .CurrentUser, .CSRFToken, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .PageTitle (string)
+========================================================================== */}}
+{{ define "page_css" }}
+<link rel="stylesheet" href="{{ asset "/static/css/po/todos.css" }}">
+{{ end }}
+
+{{ define "content" }}
+<div class="po-todos">
+  <div class="page-hdr">
+    <h2>我的待办</h2>
+    <span class="page-hdr-meta">按对象分类 · 集中办理</span>
+  </div>
+
+  <div class="todos-filter-bar" id="todosFilterBar">
+    <div class="todos-tabs" role="tablist" aria-label="对象域 Tab">
+      <button type="button" class="todos-tab active" data-tab="demand">需求治理</button>
+      <button type="button" class="todos-tab" data-tab="approval">审批决策</button>
+    </div>
+    <div class="todos-filters">
+      <input type="search" id="todosKeyword" placeholder="ID / 标题 / 责任人" aria-label="关键词">
+      <button type="button" id="todosResetBtn" class="action-btn">重置</button>
+    </div>
+  </div>
+
+  <div class="todos-result-bar">
+    <span id="todosSummary">加载中…</span>
+  </div>
+
+  <div class="todos-list-host">
+    <table class="todos-table" id="todosTable">
+      <thead>
+        <tr>
+          <th class="c-id">ID</th>
+          <th class="c-title">标题</th>
+          <th class="c-stage">阶段</th>
+          <th class="c-pri">优先级</th>
+          <th class="c-dead">截止</th>
+          <th class="c-owner">责任人</th>
+          <th class="c-action">操作</th>
+        </tr>
+      </thead>
+      <tbody id="todosTbody"></tbody>
+    </table>
+    <div class="todos-empty" id="todosEmpty" hidden>当前筛选条件下暂无待办</div>
+  </div>
+</div>
+{{ end }}
+
+{{ define "page_js" }}
+<script src="{{ asset "/static/js/po/todos.js" }}"></script>
+{{ end }}

@@ -39,6 +39,12 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 
 	g.GET("/home", middleware.RequirePerm(perm.PoHome), h.Home)
 	g.GET("/demands", middleware.RequirePerm(perm.PoHome), h.Demands)
+
+	// 我的待办 / 我的已办（M3 阶段）
+	g.GET("/todos", middleware.RequirePerm(perm.PoTodo), h.Todos)
+	g.GET("/todos/items", middleware.RequirePerm(perm.PoTodo), h.TodosItems)
+	g.GET("/done", middleware.RequirePerm(perm.PoDone), h.Done)
+	g.GET("/done/items", middleware.RequirePerm(perm.PoDone), h.DoneItems)
 }
 
 // Home 渲染 PO 工作台首页。
@@ -116,4 +122,84 @@ func emptyValueStreamStages() []ValueStreamStage {
 		})
 	}
 	return stages
+}
+
+// Todos 渲染"我的待办"页面。
+func (h *Handler) Todos(c *gin.Context) {
+	actor := middleware.CurrentUser(c)
+	render.Page(c, http.StatusOK, constants.TEMPLATE_PO_TODOS, gin.H{
+		"Title":     "我的待办",
+		"PageTitle": "我的待办",
+		"CurrentUser": actor,
+	})
+}
+
+// TodosItems 返回"我的待办"列表 JSON。
+func (h *Handler) TodosItems(c *gin.Context) {
+	actor := middleware.CurrentUser(c)
+	var req TodoListReq
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "参数解析失败"})
+		return
+	}
+	if errs := req.Validate(); len(errs) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"message": "参数校验失败",
+			"errors":  errs,
+		})
+		return
+	}
+	resp, err := h.svc.TodoList(c.Request.Context(), actor, req)
+	if err != nil {
+		h.logger.Error("po todo list", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取待办列表失败"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"items":   resp.Items,
+		"total":   resp.Total,
+		"page":    resp.Page,
+		"pageSize": resp.PageSize,
+	})
+}
+
+// Done 渲染"我的已办"页面。
+func (h *Handler) Done(c *gin.Context) {
+	actor := middleware.CurrentUser(c)
+	render.Page(c, http.StatusOK, constants.TEMPLATE_PO_DONE, gin.H{
+		"Title":     "我的已办",
+		"PageTitle": "我的已办",
+		"CurrentUser": actor,
+	})
+}
+
+// DoneItems 返回"我的已办"列表 JSON。
+func (h *Handler) DoneItems(c *gin.Context) {
+	actor := middleware.CurrentUser(c)
+	var req DoneListReq
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "参数解析失败"})
+		return
+	}
+	if errs := req.Validate(); len(errs) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"message": "参数校验失败",
+			"errors":  errs,
+		})
+		return
+	}
+	resp, err := h.svc.DoneList(c.Request.Context(), actor, req)
+	if err != nil {
+		h.logger.Error("po done list", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取已办列表失败"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"items":   resp.Items,
+		"total":   resp.Total,
+		"page":    resp.Page,
+		"pageSize": resp.PageSize,
+	})
 }

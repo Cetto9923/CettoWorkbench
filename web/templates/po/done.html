@@ -1,0 +1,54 @@
+{{/* ==========================================================================
+文件: web/templates/po/done.html
+模块: PO 工作台
+职责: 我的已办列表页（V10.1 02 节：本人真实执行的正式业务动作真源 = zt_action）
+全局字段: .CurrentUser, .CSRFToken, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .PageTitle (string)
+========================================================================== */}}
+{{ define "page_css" }}
+<link rel="stylesheet" href="{{ asset "/static/css/po/done.css" }}">
+{{ end }}
+
+{{ define "content" }}
+<div class="po-done">
+  <div class="page-hdr">
+    <h2>我的已办</h2>
+    <span class="page-hdr-meta">已实际执行的正式业务动作 · 待办消失 ≠ 已办</span>
+  </div>
+
+  <div class="done-filter-bar">
+    <div class="done-time-range">
+      <button type="button" class="time-chip active" data-range="all">全部时间</button>
+      <button type="button" class="time-chip" data-range="today">今天</button>
+      <button type="button" class="time-chip" data-range="7d">近 7 天</button>
+      <button type="button" class="time-chip" data-range="week">本周</button>
+      <button type="button" class="time-chip" data-range="30d">近 30 天</button>
+      <button type="button" class="time-chip" data-range="month">本月</button>
+      <button type="button" class="time-chip" data-range="quarter">本季度</button>
+    </div>
+    <div class="done-summary">
+      <span id="doneSummary">加载中…</span>
+    </div>
+  </div>
+
+  <div class="done-list-host">
+    <table class="done-table" id="doneTable">
+      <thead>
+        <tr>
+          <th class="c-when">时间</th>
+          <th class="c-actor">操作人</th>
+          <th class="c-action">动作</th>
+          <th class="c-object">对象</th>
+          <th class="c-id">对象编号</th>
+        </tr>
+      </thead>
+      <tbody id="doneTbody"></tbody>
+    </table>
+    <div class="done-empty" id="doneEmpty" hidden>当前时间段暂无已办</div>
+  </div>
+</div>
+{{ end }}
+
+{{ define "page_js" }}
+<script src="{{ asset "/static/js/po/done.js" }}"></script>
+{{ end }}

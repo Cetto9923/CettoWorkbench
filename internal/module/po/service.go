@@ -188,6 +188,57 @@ func (s *Service) Demands(ctx context.Context, actor *model.User, req DemandsReq
 	return &DemandsResp{Items: []WorkItemDetail{}}, nil
 }
 
+// TodoList 我的待办列表服务。
+// V10.1 02 节：7 维 AND 公式。本期实现 Tab + 我的关系 + 办理责任 + 关键词；
+// 对象域=需求治理 Tab 返回 actor scope 聚合，审批决策 Tab 占位（后续接入）。
+func (s *Service) TodoList(ctx context.Context, actor *model.User, req TodoListReq) (*TodoListResp, error) {
+	if actor == nil || strings.TrimSpace(actor.Account) == "" {
+		return &TodoListResp{Items: []TodoItem{}, Page: req.Page, PageSize: req.PageSize}, nil
+	}
+	// 审批决策 Tab：本期占位（真实审批流后续接入）
+	if req.Tab == TodoTabApproval {
+		return &TodoListResp{Items: []TodoItem{}, Total: 0, Page: req.Page, PageSize: req.PageSize}, nil
+	}
+	// 需求治理 / 全部 Tab：actor scope ∪ 关键词
+	items, total, err := s.repo.FindTodoItems(ctx, actor.Account, TodoScopeFilter{Keyword: req.Keyword})
+	if err != nil {
+		return nil, err
+	}
+	page := req.Page
+	pageSize := req.PageSize
+	start := (page - 1) * pageSize
+	end := start + pageSize
+	if start > len(items) {
+		start = len(items)
+	}
+	if end > len(items) {
+		end = len(items)
+	}
+	return &TodoListResp{
+		Items:    items[start:end],
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+	}, nil
+}
+
+// DoneList 我的已办列表服务。
+func (s *Service) DoneList(ctx context.Context, actor *model.User, req DoneListReq) (*DoneListResp, error) {
+	if actor == nil || strings.TrimSpace(actor.Account) == "" {
+		return &DoneListResp{Items: []DoneAction{}, Page: req.Page, PageSize: req.PageSize}, nil
+	}
+	items, total, err := s.repo.FindDoneActions(ctx, actor.Account, req.TimeRange, req.CustomFrom, req.CustomTo, req.Page, req.PageSize)
+	if err != nil {
+		return nil, err
+	}
+	return &DoneListResp{
+		Items:    items,
+		Total:    total,
+		Page:     req.Page,
+		PageSize: req.PageSize,
+	}, nil
+}
+
 func (s *Service) loadAccountDisplayMap(ctx context.Context, actor *model.User) (map[string]string, error) {
 	if s.userSvc == nil {
 		return map[string]string{}, nil

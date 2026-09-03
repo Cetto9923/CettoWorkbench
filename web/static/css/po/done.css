@@ -1,0 +1,17 @@
+/* PO 我的已办 — 极简样式 */
+.po-done .page-hdr { display: flex; align-items: baseline; gap: 16px; padding: 16px 20px 12px; border-bottom: 1px solid var(--po-border, #e6e8ee); }
+.po-done .page-hdr h2 { font-size: 18px; font-weight: 600; margin: 0; }
+.po-done .page-hdr-meta { color: var(--po-t2, #65758b); font-size: 12px; }
+
+.done-filter-bar { padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+.done-time-range { display: flex; gap: 6px; flex-wrap: wrap; }
+.time-chip { padding: 4px 12px; border: 1px solid var(--po-border, #dfe6ee); border-radius: 12px; background: #fff; cursor: pointer; font-size: 12px; color: var(--po-t2, #65758b); }
+.time-chip.active { background: var(--po-blue, #1d4ed8); color: #fff; border-color: var(--po-blue, #1d4ed8); }
+.done-summary { color: var(--po-t2, #65758b); font-size: 12px; }
+
+.done-list-host { padding: 0 20px 20px; overflow-x: auto; }
+.done-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.done-table th, .done-table td { padding: 8px 10px; border-bottom: 1px solid var(--po-border, #e6e8ee); text-align: left; }
+.done-table th { background: #f7f8fa; font-weight: 500; color: var(--po-t2, #65758b); font-size: 12px; }
+.done-table tr:hover { background: #f7faff; }
+.done-empty { padding: 40px 20px; text-align: center; color: var(--po-t2, #65758b); }
