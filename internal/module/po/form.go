@@ -268,16 +268,17 @@ type TodoListResp struct {
 	Groups   TodoGroupCounts `json:"groups"`
 }
 
-// DoneTab 已办的动作分类。对象类型由 ObjectType 二级筛选；审批决策是跨需求对象的正式动作集合。
+// DoneTab 已办的一级场景分类（业务场景维度）。
+// 对象类型由 ObjectType 二级筛选承载；一级场景固定为 6 个，不在 Tab 混入对象类型。
 type DoneTab string
 
 const (
-	DoneTabAll      DoneTab = "all"
-	DoneTabApproval DoneTab = "approval"
-	DoneTabDemand   DoneTab = "demand"
-	DoneTabTask     DoneTab = "task"
-	DoneTabBug      DoneTab = "bug"
-	DoneTabTest     DoneTab = "test"
+	DoneTabAll       DoneTab = "all"       // 全部已办
+	DoneTabApproval  DoneTab = "approval"  // 审批决策
+	DoneTabDemand    DoneTab = "demand"    // 需求治理
+	DoneTabExecution DoneTab = "execution" // 研发执行
+	DoneTabQuality   DoneTab = "quality"   // 测试质量
+	DoneTabRisks     DoneTab = "risks"     // 问题风险
 )
 
 // TimeRange 已办时间段。
@@ -299,12 +300,14 @@ const (
 // V10.1 02 节：已办形成条件 = 本人真实执行的正式业务动作。来源 zt_action + Workbench 审计。
 // 严格定义：待办消失不能自动变成已办。
 type DoneListReq struct {
-	Tab        DoneTab   `form:"tab"`        // 动作分类；默认 all
+	Tab        DoneTab   `form:"tab"`        // 一级场景分类；默认 all
 	TimeRange  TimeRange `form:"timeRange"`  // 时间段；默认 all
 	CustomFrom string    `form:"from"`       // 时间段=custom 时生效
 	CustomTo   string    `form:"to"`         // 时间段=custom 时生效
-	ObjectType string    `form:"objectType"` // 业务需求/任务/Bug/测试单等
-	Result     string    `form:"result"`     // 操作结果
+	ObjectType string    `form:"objectType"` // 二级筛选：对象类型（业务需求/任务/Bug/测试单等）
+	Result     string    `form:"result"`     // 处理结果
+	Action     string    `form:"action"`     // 处理动作（"objectType:action" 全键，逗号可多选）
+	Keyword    string    `form:"keyword"`    // 搜索 ID / 标题 / 操作内容
 	Page       int       `form:"page"`
 	PageSize   int       `form:"pageSize"`
 }
@@ -316,9 +319,9 @@ func (r *DoneListReq) Validate() []FieldError {
 		r.Tab = DoneTabAll
 	}
 	switch r.Tab {
-	case DoneTabAll, DoneTabApproval, DoneTabDemand, DoneTabTask, DoneTabBug, DoneTabTest:
+	case DoneTabAll, DoneTabApproval, DoneTabDemand, DoneTabExecution, DoneTabQuality, DoneTabRisks:
 	default:
-		return []FieldError{{Field: "tab", Message: "无效的对象域 Tab"}}
+		return []FieldError{{Field: "tab", Message: "无效的场景 Tab"}}
 	}
 	r.TimeRange = TimeRange(strings.TrimSpace(string(r.TimeRange)))
 	if r.TimeRange == "" {
@@ -332,6 +335,8 @@ func (r *DoneListReq) Validate() []FieldError {
 	}
 	r.ObjectType = strings.TrimSpace(r.ObjectType)
 	r.Result = strings.TrimSpace(r.Result)
+	r.Action = strings.TrimSpace(r.Action)
+	r.Keyword = strings.TrimSpace(r.Keyword)
 	if r.Page < 1 {
 		r.Page = 1
 	}

@@ -28,19 +28,19 @@
   </section>
 
   <section class="todos-panel">
-    <nav class="group-tabs" aria-label="已办对象分类">
-      <button type="button" class="group-tab active" data-tab="all" data-object="">全部已办</button>
-      <button type="button" class="group-tab" data-tab="approval" data-object="">审批决策</button>
-      <button type="button" class="group-tab" data-tab="demand" data-object="">需求治理</button>
-      <button type="button" class="group-tab" data-tab="all" data-object="task">研发执行</button>
-      <button type="button" class="group-tab" data-tab="all" data-object="bug">Bug</button>
-      <button type="button" class="group-tab" data-tab="all" data-object="issue">问题</button>
-      <label class="more-types"><span>更多类型</span><select id="doneMoreType" aria-label="更多对象类型"><option value="">请选择</option><option value="testtask">测试单</option><option value="risk">风险</option><option value="feedback">反馈</option><option value="release">发布</option><option value="build">构建</option><option value="todo">待办</option></select></label>
+    <nav class="group-tabs" aria-label="已办场景分类">
+      <button type="button" class="group-tab active" data-tab="all">全部已办</button>
+      <button type="button" class="group-tab" data-tab="approval">审批决策</button>
+      <button type="button" class="group-tab" data-tab="demand">需求治理</button>
+      <button type="button" class="group-tab" data-tab="execution">研发执行</button>
+      <button type="button" class="group-tab" data-tab="quality">测试质量</button>
+      <button type="button" class="group-tab" data-tab="risks">问题风险</button>
     </nav>
 
     <div class="todos-toolbar">
-      <label class="search-field"><span aria-hidden="true">⌕</span><input type="search" id="doneKeyword" placeholder="搜索 ID、标题或操作内容" aria-label="关键词"></label>
-      <select id="doneObjectType" aria-label="对象类型"><option value="">对象类型：全部</option><option value="demand">业务需求</option><option value="story">研发需求</option><option value="task">任务</option><option value="bug">Bug</option><option value="testtask">测试单</option><option value="issue">问题</option><option value="risk">风险</option><option value="feedback">反馈</option><option value="release">发布</option><option value="build">构建</option><option value="todo">待办</option></select>
+      <label class="search-field"><span aria-hidden="true">⌕</span><input type="search" id="doneKeyword" placeholder="搜索 ID / 标题 / 操作内容" aria-label="关键词"></label>
+      <select id="doneObjectType" aria-label="对象类型"></select>
+      <select id="doneAction" aria-label="处理动作"><option value="all">处理动作：全部</option><option value="task:started">开始任务</option><option value="task:finished">完成任务</option><option value="task:activated">激活任务</option><option value="demand:plan">完成排期</option><option value="demand:deliver">发起交付</option><option value="demand:reviewed">需求评审</option><option value="demand:reviewpassed">审批通过</option><option value="demand:reviewrejected">审批驳回</option><option value="story:submitreview">提交评审</option><option value="bug:resolved">解决 Bug</option><option value="bug:closed">关闭 Bug</option></select>
       <select id="doneResult" aria-label="处理结果"><option value="all">处理结果：全部</option><option value="done">完成</option><option value="approved">通过</option><option value="rejected">驳回</option><option value="closed">关闭</option><option value="activated">激活</option><option value="submitted">已提交</option><option value="verified">已验收</option><option value="resolved">已解决</option><option value="returned">已退回</option></select>
       <button type="button" id="doneResetBtn" class="toolbar-btn">重置</button>
     </div>

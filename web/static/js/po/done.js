@@ -5,11 +5,36 @@
     tab: "all",
     timeRange: "all",
     objectType: "",
+    action: "all",
     keyword: "",
     result: "all",
     page: 1,
     pageSize: 15,
   };
+
+  // 一级场景 -> 对象类型集合（前端场景映射，不改后端接口）。
+  // 审批决策是跨需求对象的正式动作集合，故其可选对象为 demand/story。
+  var OBJECT_TYPE_LABELS = {
+    demand: "业务需求", story: "研发需求", task: "任务", bug: "Bug", testtask: "测试单",
+    issue: "问题", risk: "风险", feedback: "反馈", release: "发布", build: "构建", todo: "待办",
+  };
+  var SCENE_OBJECT_TYPES = {
+    all: ["demand", "story", "task", "bug", "testtask", "issue", "risk", "feedback", "release", "build", "todo"],
+    approval: ["demand", "story"],
+    demand: ["demand", "story"],
+    execution: ["task", "build", "release"],
+    quality: ["bug", "testtask"],
+    risks: ["risk", "issue"],
+  };
+
+  function populateObjectType(scene, selected) {
+    var sel = document.getElementById("doneObjectType");
+    var types = SCENE_OBJECT_TYPES[scene] || SCENE_OBJECT_TYPES.all;
+    var html = '<option value="">对象类型：全部</option>';
+    types.forEach(function (t) { html += '<option value="' + t + '">' + (OBJECT_TYPE_LABELS[t] || t) + "</option>"; });
+    sel.innerHTML = html;
+    sel.value = selected || "";
+  }
 
   function escapeHtml(value) {
     return String(value == null ? "" : value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
@@ -20,6 +45,7 @@
     params.set("tab", state.tab);
     params.set("timeRange", state.timeRange);
     if (state.objectType) { params.set("objectType", state.objectType); }
+    if (state.action !== "all") { params.set("action", state.action); }
     if (state.keyword) { params.set("keyword", state.keyword); }
         if (state.result !== "all") { params.set("result", state.result); }
     params.set("page", String(state.page));
@@ -92,10 +118,13 @@
 
   function refresh() {
     document.getElementById("doneSummary").textContent = "加载中…";
+    document.getElementById("donePagination").hidden = true;
     queryItems().then(renderList).catch(function () {
-      document.getElementById("doneSummary").textContent = "加载失败，请稍后重试";
+      // 失败状态：只显示失败提示与重新加载，不显示"暂无数据"，不展示旧的列表/分页总数。
+      document.getElementById("doneSummary").innerHTML = '数据加载失败 <button type="button" id="doneRetryBtn" class="retry-link">重新加载</button>';
       document.getElementById("doneTbody").innerHTML = "";
-      document.getElementById("doneEmpty").hidden = false;
+      document.getElementById("doneEmpty").hidden = true;
+      document.getElementById("donePagination").hidden = true;
     });
   }
 
@@ -115,44 +144,29 @@
     document.querySelectorAll(".group-tab").forEach(function (button) {
       button.addEventListener("click", function () {
         activate(".group-tab", button);
-		state.tab = button.dataset.tab || "all";
-        state.objectType = button.dataset.object || "";
-        document.getElementById("doneObjectType").value = state.objectType;
-        document.getElementById("doneMoreType").value = "";
+        state.tab = button.dataset.tab || "all";
+        state.objectType = "";
         state.page = 1;
+        populateObjectType(state.tab, "");
         refresh();
       });
     });
     var keyword = document.getElementById("doneKeyword"); var timer;
     keyword.addEventListener("input", function () { clearTimeout(timer); timer = setTimeout(function () { state.keyword = keyword.value.trim(); state.page = 1; refresh(); }, 300); });
-    var fields = { doneObjectType: "objectType", doneResult: "result" };
+    var fields = { doneObjectType: "objectType", doneAction: "action", doneResult: "result" };
     Object.keys(fields).forEach(function (id) {
       document.getElementById(id).addEventListener("change", function (event) {
-        state[fields[id]] = event.target.value; state.page = 1;
-        if (id === "doneObjectType") {
-          state.tab = "all";
-          document.querySelectorAll(".group-tab").forEach(function (button) { button.classList.toggle("active", !state.objectType && button.dataset.tab === "all" && !button.dataset.object); });
-          document.getElementById("doneMoreType").value = "";
-        }
-        refresh();
+        state[fields[id]] = event.target.value; state.page = 1; refresh();
       });
     });
-    document.getElementById("doneMoreType").addEventListener("change", function (event) {
-      if (!event.target.value) { return; }
-      document.querySelectorAll(".group-tab").forEach(function (button) { button.classList.remove("active"); });
-      state.tab = "all"; state.objectType = event.target.value; state.page = 1;
-      document.getElementById("doneObjectType").value = state.objectType;
-      refresh();
-    });
     document.getElementById("doneResetBtn").addEventListener("click", function () {
-      state.timeRange = "all"; state.tab = "all"; state.objectType = ""; state.keyword = ""; state.result = "all"; state.page = 1;
+      state.timeRange = "all"; state.tab = "all"; state.objectType = ""; state.action = "all"; state.keyword = ""; state.result = "all"; state.page = 1;
       document.querySelectorAll("[data-range]").forEach(function (b) { b.classList.toggle("active", b.dataset.range === "all"); });
       document.querySelectorAll(".group-tab").forEach(function (b) { b.classList.remove("active"); });
-      document.querySelectorAll(".group-tab").forEach(function (b) { if (b.dataset.tab === "all" && !b.dataset.object) b.classList.add("active"); });
-      
+      document.querySelectorAll(".group-tab").forEach(function (b) { if (b.dataset.tab === "all") b.classList.add("active"); });
+      populateObjectType("all", "");
+      document.getElementById("doneAction").value = "all";
       document.getElementById("doneResult").value = "all";
-      document.getElementById("doneObjectType").value = "";
-      document.getElementById("doneMoreType").value = "";
       keyword.value = "";
       refresh();
     });
@@ -162,6 +176,8 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     bindEvents();
+    populateObjectType("all", "");
+    document.addEventListener("click", function (event) { if (event.target && event.target.id === "doneRetryBtn") { refresh(); } });
     refresh();
   });
 })();

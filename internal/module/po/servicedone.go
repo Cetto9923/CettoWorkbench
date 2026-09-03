@@ -22,7 +22,8 @@ func (s *Service) DoneList(ctx context.Context, actor *model.User, req DoneListR
 	}
 	items, total, err := s.repo.FindDoneActions(ctx, RepoFindDoneActionsReq{
 		Account: actor.Account, Tab: req.Tab, TimeRange: req.TimeRange,
-		CustomFrom: req.CustomFrom, CustomTo: req.CustomTo, ObjectType: req.ObjectType, Result: req.Result,
+		CustomFrom: req.CustomFrom, CustomTo: req.CustomTo, ObjectType: req.ObjectType,
+		Result: req.Result, Action: req.Action, Keyword: req.Keyword,
 		Page: req.Page, PageSize: req.PageSize,
 	})
 	if err != nil {

@@ -27,6 +27,8 @@ type RepoFindDoneActionsReq struct {
 	CustomTo   string
 	ObjectType string
 	Result     string
+	Action     string
+	Keyword    string
 	Page       int
 	PageSize   int
 }
@@ -125,13 +127,21 @@ func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) 
 			q = q.Where(buildApprovalDoneScopeSQL())
 		case DoneTabDemand:
 			q = q.Where("a.objectType IN ?", []string{"demand", "story"})
-		case DoneTabTask:
-			q = q.Where("a.objectType = ?", "task")
-		case DoneTabBug:
-			q = q.Where("a.objectType = ?", "bug")
-		case DoneTabTest:
-			q = q.Where("a.objectType = ?", "testtask")
+		case DoneTabExecution:
+			q = q.Where("a.objectType IN ?", []string{"task", "build", "release"})
+		case DoneTabQuality:
+			q = q.Where("a.objectType IN ?", []string{"bug", "testtask"})
+		case DoneTabRisks:
+			q = q.Where("a.objectType IN ?", []string{"risk", "issue"})
 		}
+	}
+	if req.Action != "" && req.Action != "all" {
+		sql, args := buildActionFilterSQL(req.Action)
+		q = q.Where(sql, args...)
+	}
+	if req.Keyword != "" {
+		kw := "%" + req.Keyword + "%"
+		q = q.Where(buildDoneKeywordFilterSQL(), kw, kw, kw, kw, kw, kw)
 	}
 
 	// 时间段 bound
@@ -299,6 +309,42 @@ func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) 
 func buildApprovalDoneScopeSQL() string {
 	return "((a.objectType = 'demand' AND a.action IN ('reviewed', 'reviewpassed', 'reviewrejected')) OR " +
 		"(a.objectType = 'story' AND a.action IN ('submitreview', 'reviewed', 'reviewpassed', 'reviewrejected')))"
+}
+
+// buildActionFilterSQL 处理动作筛选：req.Action 为 "objectType:action" 全键，逗号分隔。
+// 按 (objectType=? AND action=?) 复合条件过滤，避免同名动作跨对象串扰（如 "closed"）。
+func buildActionFilterSQL(raw string) (string, []interface{}) {
+	var b strings.Builder
+	args := make([]interface{}, 0, 4)
+	first := true
+	for _, key := range strings.Split(raw, ",") {
+		key = strings.TrimSpace(key)
+		parts := strings.SplitN(key, ":", 2)
+		if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+			continue
+		}
+		if !first {
+			b.WriteString(" OR ")
+		}
+		first = false
+		b.WriteString("(a.objectType = ? AND a.action = ?)")
+		args = append(args, parts[0], parts[1])
+	}
+	if first {
+		return "1=1", nil
+	}
+	return "(" + b.String() + ")", args
+}
+
+// buildDoneKeywordFilterSQL 搜索 ID / 标题 / 操作内容：
+// 命中对象 ID、动作 code，或按对象类型匹配其名称/标题（demand/story/task/bug 有确认的标题列）。
+func buildDoneKeywordFilterSQL() string {
+	return `(CAST(a.objectID AS CHAR) LIKE ?
+		OR a.action LIKE ?
+		OR (a.objectType = 'demand' AND a.objectID IN (SELECT id FROM zt_demand WHERE name LIKE ?))
+		OR (a.objectType = 'story'  AND a.objectID IN (SELECT id FROM zt_story  WHERE title LIKE ?))
+		OR (a.objectType = 'task'   AND a.objectID IN (SELECT id FROM zt_task   WHERE name LIKE ?))
+		OR (a.objectType = 'bug'    AND a.objectID IN (SELECT id FROM zt_bug    WHERE title LIKE ?)))`
 }
 
 // RepoCountDoneActionsReq 已办时间段概览计数参数。
