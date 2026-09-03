@@ -292,49 +292,53 @@ func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) 
 	return items, total, nil
 }
 
-// CountDoneActionsForObject 按对象类型 + 时间段统计已办动作数（对象型概览）。
-func (r *Repo) CountDoneActionsForObject(ctx context.Context, account, objectType string, timeRange TimeRange) (int64, error) {
-	n, err := r.CountScopedDoneActions(ctx, account, timeRange, objectType)
-	return n, err
+// RepoCountDoneActionsReq 已办时间段概览计数参数。
+type RepoCountDoneActionsReq struct {
+	Account    string
+	ObjectType string // 空 = 全部对象
 }
 
-// CountScopedDoneActions 通用已办计数；objectType 为空 = 全部对象。
-func (r *Repo) CountScopedDoneActions(ctx context.Context, account string, timeRange TimeRange, objectType string) (int64, error) {
-	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
-		return 0, nil
+// CountDoneActions 一次 SQL 聚合统计当前账号正式已办动作的 7 个时间段计数。
+// 时间段依据 MySQL 函数归一，无 Go 侧日期参数；objectType 空表示全部对象。
+func (r *Repo) CountDoneActions(ctx context.Context, req RepoCountDoneActionsReq) (DoneSummary, error) {
+	summary := DoneSummary{}
+	if r == nil || r.db == nil || strings.TrimSpace(req.Account) == "" {
+		return summary, nil
 	}
 	q := r.db.WithContext(ctx).Table("zt_action AS a").
-		Where("a.actor = ?", account)
+		Where("a.actor = ?", req.Account)
 	scopeSQL, scopeArgs := buildFormalDoneScopeSQL()
 	q = q.Where(scopeSQL, scopeArgs...)
-	if objectType != "" {
-		q = q.Where("a.objectType = ?", objectType)
+	if req.ObjectType != "" {
+		q = q.Where("a.objectType = ?", req.ObjectType)
 	}
-	now := time.Now()
-	switch timeRange {
-	case TimeRangeToday:
-		q = q.Where("DATE(a.date) = CURDATE()")
-	case TimeRange7d:
-		q = q.Where("a.date >= ?", now.AddDate(0, 0, -7))
-	case TimeRangeWeek:
-		q = q.Where("YEARWEEK(a.date, 3) = YEARWEEK(CURDATE(), 3)")
-	case TimeRange30d:
-		q = q.Where("a.date >= ?", now.AddDate(0, 0, -30))
-	case TimeRangeMonth:
-		q = q.Where("DATE_FORMAT(a.date, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m')")
-	case TimeRangeQuarter:
-		q = q.Where("QUARTER(a.date) = QUARTER(CURDATE()) AND YEAR(a.date) = YEAR(CURDATE())")
-	}
-	var total int64
-	if err := q.Count(&total).Error; err != nil {
-		return 0, err
-	}
-	return total, nil
-}
 
-// CountDoneActions 按时间段统计当前账号正式已办动作数（供已办页时间段概览卡）。
-func (r *Repo) CountDoneActions(ctx context.Context, account string, timeRange TimeRange) (int64, error) {
-	return r.CountScopedDoneActions(ctx, account, timeRange, "")
+	type row struct {
+		Total   int64 `gorm:"column:c_all"`
+		Today   int64 `gorm:"column:c_today"`
+		Last7d  int64 `gorm:"column:c_last7d"`
+		Week    int64 `gorm:"column:c_week"`
+		Last30d int64 `gorm:"column:c_last30d"`
+		Month   int64 `gorm:"column:c_month"`
+		Quarter int64 `gorm:"column:c_quarter"`
+	}
+	var out row
+	err := q.Select(`
+		COUNT(*) AS c_all,
+		SUM(CASE WHEN DATE(a.date) = CURDATE() THEN 1 ELSE 0 END) AS c_today,
+		SUM(CASE WHEN a.date >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS c_last7d,
+		SUM(CASE WHEN YEARWEEK(a.date, 3) = YEARWEEK(CURDATE(), 3) THEN 1 ELSE 0 END) AS c_week,
+		SUM(CASE WHEN a.date >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) AS c_last30d,
+		SUM(CASE WHEN DATE_FORMAT(a.date, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m') THEN 1 ELSE 0 END) AS c_month,
+		SUM(CASE WHEN QUARTER(a.date) = QUARTER(CURDATE()) AND YEAR(a.date) = YEAR(CURDATE()) THEN 1 ELSE 0 END) AS c_quarter`).
+		Scan(&out).Error
+	if err != nil {
+		return summary, err
+	}
+	return DoneSummary{
+		All: out.Total, Today: out.Today, Last7d: out.Last7d, Week: out.Week,
+		Last30d: out.Last30d, Month: out.Month, Quarter: out.Quarter,
+	}, nil
 }
 
 func formalDoneActionCodes(objectType string) []string {
