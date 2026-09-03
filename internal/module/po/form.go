@@ -281,3 +281,141 @@ type DoneListResp struct {
 	Page     int          `json:"page"`
 	PageSize int          `json:"pageSize"`
 }
+
+// NoticeListReq 通知中心列表请求。
+// 本期实现: quick view 筛选 (全部/未读/需处理/异常提醒/今日新增) + 关键词。
+// workbench 为主, 分类由 zt_action.action + zt_notify.objectType 推断, 不强套 V10.1 6 类。
+type NoticeListReq struct {
+	QuickView string `form:"quickView"` // all / unread / action / abnormal / today
+	Keyword   string `form:"keyword"`
+	Page      int    `form:"page"`
+	PageSize  int    `form:"pageSize"`
+}
+
+// Validate 校验 NoticeListReq。
+func (r *NoticeListReq) Validate() []FieldError {
+	r.QuickView = strings.TrimSpace(r.QuickView)
+	if r.QuickView == "" {
+		r.QuickView = "all"
+	}
+	switch r.QuickView {
+	case "all", "unread", "action", "abnormal", "today":
+	default:
+		return []FieldError{{Field: "quickView", Message: "无效的快捷视图"}}
+	}
+	r.Keyword = strings.TrimSpace(r.Keyword)
+	if r.Page < 1 {
+		r.Page = 1
+	}
+	if r.PageSize < 1 || r.PageSize > 100 {
+		r.PageSize = 20
+	}
+	return nil
+}
+
+// NoticeItem 通知中心单条。
+type NoticeItem struct {
+	ID         int64  `json:"id"`
+	ObjectType string `json:"objectType"` // 关联对象类型
+	ObjectID   int64  `json:"objectId"`   // 关联对象 ID
+	Subject    string `json:"subject"`    // 主题
+	Data       string `json:"data"`       // 正文
+	Actor      string `json:"actor"`      // 触发人
+	Action     string `json:"action"`     // 触发的 action 标识
+	Category   string `json:"category"`   // 推断分类 (workbench 实现)
+	Read       bool   `json:"read"`       // 是否已读
+	Date       string `json:"date"`       // 时间
+	URL        string `json:"url"`        // 关联对象 URL (本期空, 后续接入 SSO)
+}
+
+// NoticeBucketResp 通知中心响应（含顶部 quick view 计数 + 列表）。
+type NoticeBucketResp struct {
+	Items    []NoticeItem `json:"items"`
+	Total    int64        `json:"total"`
+	Unread   int64        `json:"unread"`
+	Action   int64        `json:"action"`
+	Abnormal int64        `json:"abnormal"`
+	Today    int64        `json:"today"`
+	Page     int          `json:"page"`
+	PageSize int          `json:"pageSize"`
+}
+
+// FollowTab 我的关注对象视图。V10.1 04 节明确：只有 2 个对象视图（业务需求 / 项目报告），
+// 不再有"全部"对象 Tab；切 Tab 时重置基础集合。
+type FollowTab string
+
+const (
+	FollowTabDemand         FollowTab = "demand"          // 业务需求（默认）
+	FollowTabProjectReport  FollowTab = "project_report"  // 项目报告
+)
+
+// FollowScope 我的关注二级筛选（V10.1 04 节：业务需求内部有 全部/重点关注/已关闭 等）。
+type FollowScope string
+
+const (
+	FollowScopeAll      FollowScope = "all"
+	FollowScopeKey      FollowScope = "key"      // 重点关注
+	FollowScopeClosed   FollowScope = "closed"   // 已关闭
+)
+
+// FollowListReq 我的关注列表请求。
+// V10.1 04 节：对象 Tab × 内部二级筛选 × 关键词；不再有跨对象的"全部"Tab。
+type FollowListReq struct {
+	Tab       FollowTab    `form:"tab"`       // 业务需求 / 项目报告
+	Scope     FollowScope  `form:"scope"`     // 业务需求内部 全部/重点关注/已关闭
+	Keyword   string       `form:"keyword"`
+	Page      int          `form:"page"`
+	PageSize  int          `form:"pageSize"`
+}
+
+// Validate 校验 FollowListReq。
+func (r *FollowListReq) Validate() []FieldError {
+	r.Tab = FollowTab(strings.TrimSpace(string(r.Tab)))
+	if r.Tab == "" {
+		r.Tab = FollowTabDemand
+	}
+	switch r.Tab {
+	case FollowTabDemand, FollowTabProjectReport:
+	default:
+		return []FieldError{{Field: "tab", Message: "无效的对象视图"}}
+	}
+	r.Scope = FollowScope(strings.TrimSpace(string(r.Scope)))
+	if r.Scope == "" {
+		r.Scope = FollowScopeAll
+	}
+	switch r.Scope {
+	case FollowScopeAll, FollowScopeKey, FollowScopeClosed:
+	default:
+		return []FieldError{{Field: "scope", Message: "无效的二级筛选"}}
+	}
+	r.Keyword = strings.TrimSpace(r.Keyword)
+	if r.Page < 1 {
+		r.Page = 1
+	}
+	if r.PageSize < 1 || r.PageSize > 100 {
+		r.PageSize = 20
+	}
+	return nil
+}
+
+// FollowItem 我的关注单条。
+type FollowItem struct {
+	ID         int64  `json:"id"`
+	Title      string `json:"title"`
+	Status     string `json:"status"`
+	Priority   string `json:"priority"`
+	Owner      string `json:"owner"`
+	LatestNote string `json:"latestNote"` // 最新动态
+	Date       string `json:"date"`
+	IsKey      bool   `json:"isKey"`     // 是否重点关注
+	IsClosed   bool   `json:"isClosed"`  // 是否已关闭
+	URL        string `json:"url"`
+}
+
+// FollowListResp 我的关注响应。
+type FollowListResp struct {
+	Items    []FollowItem `json:"items"`
+	Total    int64        `json:"total"`
+	Page     int          `json:"page"`
+	PageSize int          `json:"pageSize"`
+}

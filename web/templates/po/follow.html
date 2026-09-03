@@ -1,0 +1,45 @@
+{{/* ==========================================================================
+文件: web/templates/po/follow.html
+模块: PO 工作台
+职责: 我的关注页面。V10.1 04 节：只有 2 个对象视图（业务需求默认 / 项目报告），删除"全部"对象 Tab。
+全局字段: .CurrentUser, .CSRFToken, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .PageTitle (string)
+========================================================================== */}}
+{{ define "page_css" }}
+<link rel="stylesheet" href="{{ asset "/static/css/po/follow.css" }}">
+{{ end }}
+
+{{ define "content" }}
+<div class="po-follow">
+  <div class="page-hdr">
+    <h2>我的关注</h2>
+    <span class="page-hdr-meta">只展示当前账号持续关注的对象</span>
+  </div>
+
+  <div class="follow-tabs" role="tablist" aria-label="对象视图">
+    <button type="button" class="follow-tab active" data-tab="demand">业务需求</button>
+    <button type="button" class="follow-tab" data-tab="project_report">项目报告</button>
+  </div>
+
+  <div class="follow-filter-bar">
+    <div class="follow-scope" role="tablist" aria-label="二级筛选">
+      <button type="button" class="scope-chip active" data-scope="all">全部</button>
+      <button type="button" class="scope-chip" data-scope="key">重点关注</button>
+      <button type="button" class="scope-chip" data-scope="closed">已关闭</button>
+    </div>
+    <input type="search" id="followKeyword" placeholder="标题 / 编号">
+  </div>
+
+  <div class="follow-result-bar">
+    <span id="followSummary">加载中…</span>
+  </div>
+
+  <div class="follow-list-host" id="followListHost">
+    <div class="follow-empty" id="followEmpty" hidden>当前条件下暂无关注对象</div>
+  </div>
+</div>
+{{ end }}
+
+{{ define "page_js" }}
+<script src="{{ asset "/static/js/po/follow.js" }}"></script>
+{{ end }}

@@ -1,0 +1,244 @@
+// =============================================================================
+// 文件: internal/module/po/repo_notice.go
+// 模块: PO 工作台
+// 类型: action
+// 职责: 通知中心数据访问。通知内容真源 zt_notify（toList 含账号），已读 zt_workbench_notify_reads。
+//       workbench 为主: 分类由 zt_action.action + objectType 推断, 不强套 V10.1 6 类。
+// 依赖: 无
+// =============================================================================
+
+package po
+
+import (
+	"context"
+	"strings"
+	"time"
+
+	"gorm.io/gorm"
+)
+
+// FindNotices 通知中心分页列表（join 触发 action 元数据 + 触发人）。
+// 去重键: 每对象最新一条（按每对象的 zt_notify.id MAX）。本期先按 createdDate DESC 简化。
+func (r *Repo) FindNotices(ctx context.Context, account string, req NoticeListReq) ([]NoticeItem, int64, int64, int64, int64, int64, error) {
+	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
+		return nil, 0, 0, 0, 0, 0, nil
+	}
+
+	// 基础 query: 通知 toList 包含本账号
+	base := r.db.WithContext(ctx).Table("zt_notify AS n").
+		Where("FIND_IN_SET(?, REPLACE(n.toList, ' ', '')) > 0", account)
+
+	// 关键词: subject / data / objectID
+	if req.Keyword != "" {
+		base = base.Where(`(n.subject LIKE ? OR n.data LIKE ? OR CAST(n.objectID AS CHAR) = ?)`,
+			"%"+req.Keyword+"%", "%"+req.Keyword+"%", req.Keyword)
+	}
+
+	// 读取标记：左连接已读表
+	base = base.Select(`n.id, n.objectType, n.objectID, n.subject, n.data,
+		n.action, n.createdBy, n.createdDate, n.toList,
+		CASE WHEN nr.id IS NULL THEN 0 ELSE 1 END AS is_read`).
+		Joins(`LEFT JOIN zt_workbench_notify_reads nr ON nr.notify = n.id AND nr.account = ?`, account)
+
+	// 排序 + 分页
+	if req.PageSize < 1 {
+		req.PageSize = 20
+	}
+	offset := (req.Page - 1) * req.PageSize
+	if offset < 0 {
+		offset = 0
+	}
+
+	type row struct {
+		ID         int64     `gorm:"column:id"`
+		ObjectType string    `gorm:"column:objectType"`
+		ObjectID   int64     `gorm:"column:objectID"`
+		Subject    string    `gorm:"column:subject"`
+		Data       string    `gorm:"column:data"`
+		Action     int64     `gorm:"column:action"`
+		CreatedBy  string    `gorm:"column:createdBy"`
+		CreatedDate time.Time `gorm:"column:createdDate"`
+		ToList     string    `gorm:"column:toList"`
+		IsRead     int       `gorm:"column:is_read"`
+	}
+
+	// 总数 + 各 quick view 计数 (在过滤前取)
+	var total, unread, action, abnormal, today int64
+	if err := base.Count(&total).Error; err != nil {
+		return nil, 0, 0, 0, 0, 0, err
+	}
+	if err := base.Session(&gorm.Session{}).Where("nr.id IS NULL").Count(&unread).Error; err != nil {
+		return nil, 0, 0, 0, 0, 0, err
+	}
+	if err := base.Session(&gorm.Session{}).Where("n.action IN ?", []int64{3, 12, 13, 14, 22, 30, 31}).Count(&action).Error; err != nil {
+		return nil, 0, 0, 0, 0, 0, err
+	}
+	if err := base.Session(&gorm.Session{}).Where("n.action IN ?", []int64{20, 21, 22, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33}).Count(&abnormal).Error; err != nil {
+		return nil, 0, 0, 0, 0, 0, err
+	}
+	if err := base.Session(&gorm.Session{}).Where("DATE(n.createdDate) = CURDATE()").Count(&today).Error; err != nil {
+		return nil, 0, 0, 0, 0, 0, err
+	}
+
+	// 列表查询
+	filtered := base.Session(&gorm.Session{})
+	switch req.QuickView {
+	case "unread":
+		filtered = filtered.Where("nr.id IS NULL")
+	case "action":
+		filtered = filtered.Where("n.action IN ?", []int64{3, 12, 13, 14, 22, 30, 31})
+	case "abnormal":
+		filtered = filtered.Where("n.action IN ?", []int64{20, 21, 22, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33})
+	case "today":
+		filtered = filtered.Where("DATE(n.createdDate) = CURDATE()")
+	}
+
+	var rows []row
+	if err := filtered.
+		Order("n.id DESC").
+		Limit(req.PageSize).
+		Offset(offset).
+		Find(&rows).Error; err != nil {
+		return nil, 0, 0, 0, 0, 0, err
+	}
+
+	// 加载触发人展示名
+	displayMap, _ := r.loadAccountDisplayMap(ctx)
+
+	// 批量加载 zt_action 元数据（按 action id 取 comment/objectType）
+	actionIDs := make([]int64, 0)
+	actorIDs := make([]int64, 0)
+	seen := make(map[int64]struct{})
+	for _, row := range rows {
+		if row.Action > 0 {
+			if _, ok := seen[row.Action]; !ok {
+				actionIDs = append(actionIDs, row.Action)
+				seen[row.Action] = struct{}{}
+			}
+		}
+	}
+	actionMeta := make(map[int64]struct{ ObjectType, Actor string })
+	if len(actionIDs) > 0 {
+		var metas []struct {
+			ID         int64  `gorm:"column:id"`
+			ObjectType string `gorm:"column:objectType"`
+			Actor      string `gorm:"column:actor"`
+		}
+		if err := r.db.WithContext(ctx).Table("zt_action").
+			Where("id IN ?", actionIDs).
+			Select("id, objectType, actor").
+			Find(&metas).Error; err == nil {
+			for _, m := range metas {
+				actionMeta[m.ID] = struct{ ObjectType, Actor string }{m.ObjectType, m.Actor}
+				if m.Actor != "" {
+					actorIDs = append(actorIDs, 0) // placeholder
+				}
+			}
+		}
+	}
+
+	items := make([]NoticeItem, 0, len(rows))
+	for _, row := range rows {
+		item := NoticeItem{
+			ID:         row.ID,
+			ObjectType: row.ObjectType,
+			ObjectID:   row.ObjectID,
+			Subject:    strings.TrimSpace(stripHTMLTags(row.Subject)),
+			Data:       strings.TrimSpace(stripHTMLTags(row.Data)),
+			Actor:      displayMap[row.CreatedBy],
+			Read:       row.IsRead == 1,
+			Date:       row.CreatedDate.Format("2006-01-02 15:04:05"),
+		}
+		if row.Action > 0 {
+			if meta, ok := actionMeta[row.Action]; ok {
+				if meta.Actor != "" {
+					item.Actor = displayMap[meta.Actor]
+				}
+				if meta.ObjectType != "" {
+					item.ObjectType = meta.ObjectType
+				}
+			}
+		}
+		item.Category = inferCategory(row.ObjectType, row.Action)
+		items = append(items, item)
+	}
+
+	return items, total, unread, action, abnormal, today, nil
+}
+
+// MarkNoticeRead 标记单条通知已读。
+func (r *Repo) MarkNoticeRead(ctx context.Context, account string, notifyID int64) error {
+	if r == nil || r.db == nil || strings.TrimSpace(account) == "" || notifyID <= 0 {
+		return nil
+	}
+	// 检查是否已存在
+	var count int64
+	if err := r.db.WithContext(ctx).Table("zt_workbench_notify_reads").
+		Where("notify = ? AND account = ?", notifyID, account).
+		Count(&count).Error; err != nil {
+		return err
+	}
+	if count > 0 {
+		return nil
+	}
+	return r.db.WithContext(ctx).Exec(
+		`INSERT INTO zt_workbench_notify_reads (notify, account, readAt) VALUES (?, ?, NOW())`,
+		notifyID, account,
+	).Error
+}
+
+// MarkAllNoticesRead 标记当前账号所有未读通知为已读。
+func (r *Repo) MarkAllNoticesRead(ctx context.Context, account string) (int64, error) {
+	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
+		return 0, nil
+	}
+	res := r.db.WithContext(ctx).Exec(`
+		INSERT INTO zt_workbench_notify_reads (notify, account, readAt)
+		SELECT n.id, ?, NOW()
+		FROM zt_notify n
+		LEFT JOIN zt_workbench_notify_reads nr ON nr.notify = n.id AND nr.account = ?
+		WHERE FIND_IN_SET(?, REPLACE(n.toList, ' ', '')) > 0
+		  AND nr.id IS NULL`,
+		account, account, account,
+	)
+	if res.Error != nil {
+		return 0, res.Error
+	}
+	return res.RowsAffected, nil
+}
+
+// inferCategory workbench 通知分类推断（按 objectType + action 启发式）。
+func inferCategory(objectType string, action int64) string {
+	switch objectType {
+	case "demand", "story", "task", "bug", "testtask":
+		return "business"
+	case "approval", "review":
+		return "approval"
+	case "doc", "release":
+		return "system"
+	}
+	switch action {
+	case 0:
+		return "system"
+	case 3:
+		return "approval"
+	}
+	return "business"
+}
+
+// stripHTMLTags 简单剥 HTML 标签。
+func stripHTMLTags(s string) string {
+	var b strings.Builder
+	inTag := false
+	for _, r := range s {
+		switch {
+		case r == '<':
+			inTag = true
+		case r == '>':
+			inTag = false
+		case !inTag:
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}

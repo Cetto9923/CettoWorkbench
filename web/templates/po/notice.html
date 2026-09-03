@@ -1,0 +1,45 @@
+{{/* ==========================================================================
+文件: web/templates/po/notice.html
+模块: PO 工作台
+职责: 通知中心页面。已读 ≠ 已处理 (V10.1 03 节核心契约)。
+全局字段: .CurrentUser, .CSRFToken, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .PageTitle (string)
+========================================================================== */}}
+{{ define "page_css" }}
+<link rel="stylesheet" href="{{ asset "/static/css/po/notice.css" }}">
+{{ end }}
+
+{{ define "content" }}
+<div class="po-notice">
+  <div class="page-hdr">
+    <h2>通知中心</h2>
+    <span class="page-hdr-meta">发生了什么 · 已读 ≠ 已处理</span>
+  </div>
+
+  <div class="notice-filter-bar">
+    <div class="notice-quick-tabs" role="tablist" aria-label="快捷视图">
+      <button type="button" class="quick-tab active" data-qv="all">全部 <strong id="qvCountAll">0</strong></button>
+      <button type="button" class="quick-tab" data-qv="unread">未读 <strong id="qvCountUnread">0</strong></button>
+      <button type="button" class="quick-tab" data-qv="action">需处理 <strong id="qvCountAction">0</strong></button>
+      <button type="button" class="quick-tab" data-qv="abnormal">异常提醒 <strong id="qvCountAbnormal">0</strong></button>
+      <button type="button" class="quick-tab" data-qv="today">今日新增 <strong id="qvCountToday">0</strong></button>
+    </div>
+    <div class="notice-actions">
+      <input type="search" id="noticeKeyword" placeholder="标题 / 对象编号 / 摘要">
+      <button type="button" class="action-btn" id="noticeMarkAllBtn">全部标为已读</button>
+    </div>
+  </div>
+
+  <div class="notice-result-bar">
+    <span id="noticeSummary">加载中…</span>
+  </div>
+
+  <div class="notice-list-host" id="noticeListHost">
+    <div class="notice-empty" id="noticeEmpty" hidden>当前条件下暂无通知</div>
+  </div>
+</div>
+{{ end }}
+
+{{ define "page_js" }}
+<script src="{{ asset "/static/js/po/notice.js" }}"></script>
+{{ end }}

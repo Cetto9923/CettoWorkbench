@@ -1,0 +1,33 @@
+/* PO 我的关注 */
+.po-follow .page-hdr { display: flex; align-items: baseline; gap: 16px; padding: 16px 20px 12px; border-bottom: 1px solid var(--po-border, #e6e8ee); }
+.po-follow .page-hdr h2 { font-size: 18px; font-weight: 600; margin: 0; }
+.po-follow .page-hdr-meta { color: var(--po-t2, #65758b); font-size: 12px; }
+
+.follow-tabs { display: flex; gap: 0; padding: 0 20px; border-bottom: 1px solid var(--po-border, #e6e8ee); }
+.follow-tab { padding: 12px 20px; border: none; background: transparent; cursor: pointer; font-size: 14px; color: var(--po-t2, #65758b); border-bottom: 2px solid transparent; }
+.follow-tab.active { color: var(--po-blue, #1d4ed8); border-bottom-color: var(--po-blue, #1d4ed8); font-weight: 600; }
+
+.follow-filter-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; }
+.follow-scope { display: flex; gap: 6px; }
+.scope-chip { padding: 4px 12px; border: 1px solid var(--po-border, #dfe6ee); border-radius: 12px; background: #fff; cursor: pointer; font-size: 12px; color: var(--po-t2, #65758b); }
+.scope-chip.active { background: var(--po-blue, #1d4ed8); color: #fff; border-color: var(--po-blue, #1d4ed8); }
+.follow-filter-bar input { padding: 6px 10px; border: 1px solid var(--po-border, #dfe6ee); border-radius: 4px; min-width: 220px; }
+
+.follow-result-bar { padding: 0 20px 12px; color: var(--po-t2, #65758b); font-size: 12px; }
+
+.follow-list-host { padding: 0 20px 20px; }
+.follow-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--po-border, #e6e8ee); background: #fff; }
+.follow-item:hover { background: #f7faff; }
+.follow-main { flex: 1; min-width: 0; }
+.follow-title { font-weight: 500; font-size: 13px; }
+.follow-meta { color: var(--po-t2, #65758b); font-size: 12px; margin-top: 4px; }
+.follow-pri { display: inline-block; padding: 1px 6px; border-radius: 8px; font-size: 11px; font-weight: 600; }
+.follow-pri.p1, .follow-pri.p2 { background: #fff1f0; color: #d4380d; }
+.follow-pri.p3, .follow-pri.p4 { background: #f6ffed; color: #389e0d; }
+.follow-pri.normal { background: #f0f0f0; color: #595959; }
+.follow-key { display: inline-block; padding: 1px 6px; border-radius: 8px; font-size: 11px; background: #fff7e6; color: #fa8c16; }
+.follow-closed { display: inline-block; padding: 1px 6px; border-radius: 8px; font-size: 11px; background: #f0f0f0; color: #595959; }
+.follow-actions { display: flex; gap: 6px; }
+.follow-btn { padding: 4px 10px; font-size: 12px; border: 1px solid var(--po-border, #dfe6ee); border-radius: 4px; background: #fff; cursor: pointer; }
+.follow-btn.primary { background: var(--po-blue, #1d4ed8); color: #fff; border-color: var(--po-blue, #1d4ed8); }
+.follow-empty { padding: 40px 20px; text-align: center; color: var(--po-t2, #65758b); }

@@ -11,6 +11,8 @@ package po
 
 import (
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -45,6 +47,15 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.GET("/todos/items", middleware.RequirePerm(perm.PoTodo), h.TodosItems)
 	g.GET("/done", middleware.RequirePerm(perm.PoDone), h.Done)
 	g.GET("/done/items", middleware.RequirePerm(perm.PoDone), h.DoneItems)
+
+	// 通知中心 / 我的关注（M4 阶段）
+	g.GET("/notice", middleware.RequirePerm(perm.PoNotice), h.Notice)
+	g.GET("/notice/items", middleware.RequirePerm(perm.PoNotice), h.NoticeItems)
+	g.PUT("/notice/:id/read", middleware.RequirePerm(perm.PoNotice), h.NoticeMarkRead)
+	g.POST("/notice/read-all", middleware.RequirePerm(perm.PoNotice), h.NoticeMarkAllRead)
+	g.GET("/follow", middleware.RequirePerm(perm.PoFollow), h.Follow)
+	g.GET("/follow/items", middleware.RequirePerm(perm.PoFollow), h.FollowItems)
+	g.POST("/follow/demand/:id", middleware.RequirePerm(perm.PoFollow), h.FollowSetDemand)
 }
 
 // Home 渲染 PO 工作台首页。
@@ -202,4 +213,133 @@ func (h *Handler) DoneItems(c *gin.Context) {
 		"page":    resp.Page,
 		"pageSize": resp.PageSize,
 	})
+}
+
+// Notice 渲染"通知中心"页面。
+func (h *Handler) Notice(c *gin.Context) {
+	actor := middleware.CurrentUser(c)
+	render.Page(c, http.StatusOK, constants.TEMPLATE_PO_NOTICE, gin.H{
+		"Title":     "通知中心",
+		"PageTitle": "通知中心",
+		"CurrentUser": actor,
+	})
+}
+
+// NoticeItems 返回"通知中心"列表 + quick view 计数 JSON。
+func (h *Handler) NoticeItems(c *gin.Context) {
+	actor := middleware.CurrentUser(c)
+	var req NoticeListReq
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "参数解析失败"})
+		return
+	}
+	if errs := req.Validate(); len(errs) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"message": "参数校验失败",
+			"errors":  errs,
+		})
+		return
+	}
+	resp, err := h.svc.NoticeList(c.Request.Context(), actor, req)
+	if err != nil {
+		h.logger.Error("po notice list", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取通知列表失败"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success":  true,
+		"items":    resp.Items,
+		"total":    resp.Total,
+		"unread":   resp.Unread,
+		"action":   resp.Action,
+		"abnormal": resp.Abnormal,
+		"today":    resp.Today,
+		"page":     resp.Page,
+		"pageSize": resp.PageSize,
+	})
+}
+
+// NoticeMarkRead 标记单条通知已读。
+func (h *Handler) NoticeMarkRead(c *gin.Context) {
+	actor := middleware.CurrentUser(c)
+	id, err := strconv.ParseInt(strings.TrimSpace(c.Param("id")), 10, 64)
+	if err != nil || id <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "无效的通知 ID"})
+		return
+	}
+	if err := h.svc.NoticeMarkRead(c.Request.Context(), actor, id); err != nil {
+		h.logger.Error("po notice mark read", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "标记已读失败"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "已标记已读"})
+}
+
+// NoticeMarkAllRead 全部标记已读。
+func (h *Handler) NoticeMarkAllRead(c *gin.Context) {
+	actor := middleware.CurrentUser(c)
+	n, err := h.svc.NoticeMarkAllRead(c.Request.Context(), actor)
+	if err != nil {
+		h.logger.Error("po notice mark all read", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "全部标记已读失败"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "全部已读", "affected": n})
+}
+
+// Follow 渲染"我的关注"页面。
+func (h *Handler) Follow(c *gin.Context) {
+	actor := middleware.CurrentUser(c)
+	render.Page(c, http.StatusOK, constants.TEMPLATE_PO_FOLLOW, gin.H{
+		"Title":     "我的关注",
+		"PageTitle": "我的关注",
+		"CurrentUser": actor,
+	})
+}
+
+// FollowItems 返回"我的关注"列表 JSON。
+func (h *Handler) FollowItems(c *gin.Context) {
+	actor := middleware.CurrentUser(c)
+	var req FollowListReq
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "参数解析失败"})
+		return
+	}
+	if errs := req.Validate(); len(errs) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"message": "参数校验失败",
+			"errors":  errs,
+		})
+		return
+	}
+	resp, err := h.svc.FollowList(c.Request.Context(), actor, req)
+	if err != nil {
+		h.logger.Error("po follow list", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取关注列表失败"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"items":   resp.Items,
+		"total":   resp.Total,
+		"page":    resp.Page,
+		"pageSize": resp.PageSize,
+	})
+}
+
+// FollowSetDemand 切换对业务需求的关注状态。
+func (h *Handler) FollowSetDemand(c *gin.Context) {
+	actor := middleware.CurrentUser(c)
+	id, err := strconv.ParseInt(strings.TrimSpace(c.Param("id")), 10, 64)
+	if err != nil || id <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "无效的业务需求 ID"})
+		return
+	}
+	followed := strings.TrimSpace(c.PostForm("followed")) == "1"
+	if err := h.svc.FollowSetDemand(c.Request.Context(), actor, id, followed); err != nil {
+		h.logger.Error("po follow set", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "更新关注失败"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "已更新关注"})
 }
