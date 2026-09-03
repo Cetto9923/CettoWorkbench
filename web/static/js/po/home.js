@@ -263,11 +263,32 @@
     }
     var start = (state.page - 1) * state.pageSize;
     var pageItems = state.items.slice(start, start + state.pageSize);
+    renderPriorityStrip(state.items);
     var html = "<div class=\"top5-cols\"><span>ID</span><span>标题</span><span>当前阶段</span><span>需求状态</span><span>下一步</span><span>下一责任人</span><span>操作</span></div>";
     html += $.map(pageItems, renderRow).join("");
     html += renderPagination(total);
     $("#top5List").html(html);
     bindPagination(total);
+  }
+
+  function renderPriorityStrip(items) {
+    var topItems = items.slice(0, 3);
+    if (!topItems.length) {
+      $("#homePriorityStrip").empty();
+      return;
+    }
+    var html = $.map(topItems, function (item) {
+      var action = actionLabel(item);
+      return (
+        "<article class=\"home-priority-card\">" +
+        "<div class=\"priority-card-meta\"><span>" + escapeHtml(item.id || "—") + "</span>" +
+        (item.pri ? "<span class=\"inline-pri " + escapeHtml(item.pri) + "\">" + escapeHtml(item.pri) + "</span>" : "") +
+        "</div><div class=\"priority-card-title\" title=\"" + escapeHtml(item.title || "") + "\">" + escapeHtml(item.title || "未命名事项") + "</div>" +
+        "<div class=\"priority-card-foot\"><span>" + escapeHtml(dash(item.nextOwner || item.owner)) + "</span><span class=\"action-btn primary\">" + escapeHtml(action) + "</span></div>" +
+        "</article>"
+      );
+    }).join("");
+    $("#homePriorityStrip").html(html);
   }
 
   function setActiveCard($card) {

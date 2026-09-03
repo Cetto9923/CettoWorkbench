@@ -4,7 +4,7 @@
 职责: PO 工作台首页，展示真实价值流、行动列表与版本窗口。
 全局字段: .CurrentUser, .CSRFToken, .Menus, .AppName, .CurrentPath
 页面字段: .Title (string), .PageTitle (string), .ValueStreamStages ([]module/po.ValueStreamStage),
-          .VersionWindows ([]module/schedule.HomeVersionWindowCard)
+          .VersionWindows ([]module/schedule.HomeVersionWindowCard), .KPI (module/po.KPICounts)
 ========================================================================== */}}
 {{ define "page_css" }}
 <link rel="stylesheet" href="{{ asset "/static/css/po/home.css" }}">
@@ -18,8 +18,11 @@
     <h2>工作台首页</h2>
     <span class="page-hdr-meta">今日行动 · 价值流推进</span>
     <div class="home-summary page-hdr-actions" aria-label="首页焦点摘要">
-      <span class="home-summary-label">当前相关事项</span>
-      <strong class="home-summary-count" id="homeRelatedTotal">{{ $total }}</strong>
+      <button type="button" class="home-hl-kpi" data-summary="today"><strong class="home-hl-num">{{ .KPI.Today }}</strong><span class="home-hl-lab">今日必推</span></button>
+      <button type="button" class="home-hl-kpi active" data-summary="myPending"><strong class="home-hl-num">{{ $total }}</strong><span class="home-hl-lab">待我处理</span></button>
+      <button type="button" class="home-hl-kpi danger" data-summary="blocked"><strong class="home-hl-num">{{ .KPI.Blocked }}</strong><span class="home-hl-lab">阻塞</span></button>
+      <button type="button" class="home-hl-kpi warning" data-summary="overdue"><strong class="home-hl-num">{{ .KPI.Overdue }}</strong><span class="home-hl-lab">超期</span></button>
+      <button type="button" class="home-hl-kpi warning" data-summary="suspended"><strong class="home-hl-num">{{ .KPI.Suspended }}</strong><span class="home-hl-lab">挂起</span></button>
     </div>
   </div>
 
@@ -27,7 +30,7 @@
     <div class="home-vs-hdr">
       <div>
         <div class="home-vs-title"><i class="fas fa-route"></i>需求价值流</div>
-        <div class="home-vs-desc">阶段数字来自 Main 当前用户数据范围；点击阶段筛选下方行动列表</div>
+        <div class="home-vs-desc">生命周期全景 · 点击阶段筛选行动列表</div>
       </div>
     </div>
     <div class="home-vs-compact-scroll" id="homeVsCompactScroll">
@@ -38,8 +41,8 @@
             class="home-vs-mini-card{{ if eq $i 0 }} active{{ else if eq $stage.Count 0 }} empty{{ end }}"
             data-vs-status="{{ $stage.Status }}"
             aria-pressed="{{ if eq $i 0 }}true{{ else }}false{{ end }}"
-            title="{{ $stage.Label }} · 共 {{ $stage.Count }} 条">
-            <span class="vs-mini-name">{{ $stage.Label }}</span>
+            title="{{ if eq $stage.Status "testing" }}测试{{ else }}{{ $stage.Label }}{{ end }} · 共 {{ $stage.Count }} 条">
+            <span class="vs-mini-name">{{ if eq $stage.Status "testing" }}测试{{ else }}{{ $stage.Label }}{{ end }}</span>
             <span class="vs-mini-count">{{ $stage.Count }}</span>
             <span class="vs-mini-meta">业需 {{ $stage.DemandCount }} · 研需 {{ $stage.StoryCount }}</span>
           </button>
@@ -51,6 +54,7 @@
 
   <div class="top5-section" id="top5Section">
     <div class="section-title" id="top5Title"><i class="fas fa-list-check"></i>统一行动列表 · 全部生命周期</div>
+    <div class="home-priority-strip" id="homePriorityStrip" aria-label="高优卡点摘要"></div>
     <div class="top5-list" id="top5List" aria-live="polite"></div>
   </div>
 

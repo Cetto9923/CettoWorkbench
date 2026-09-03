@@ -2,7 +2,8 @@
 // 文件: internal/module/po/repo.go
 // 模块: PO 工作台
 // 类型: action
-// 职责: 价值流阶段业需/研发需求的只读库统计与列表查询（业需范围：澄清 PM 或 QD/RD/BRA，排除 closed；「全部」计数仅 Pluck id）。
+// 职责: 价值流阶段业需/研需的只读库统计与列表查询(业需范围：澄清 PM 或 QD/RD/BRA，排除 closed；「全部」计数仅 Pluck id)，
+//       以及首页 5 个焦点摘要 KPI 真实计数(今日必推/待我处理/阻塞/超期/挂起；actor role scope)。
 // 依赖: 无
 // =============================================================================
 
@@ -327,4 +328,106 @@ func (r *Repo) FindDeliverStories(ctx context.Context, account string) ([]StoryR
 		return nil, err
 	}
 	return rows, nil
+}
+
+// CountKPIToday 统计今日必推：今日到期 OR 已逾期 且未完成（业务需求）。
+// V10.1 01 节：今日到期 OR 已逾期 且未完成。actor role scope 与 value stream 一致。
+func (r *Repo) CountKPIToday(ctx context.Context, account string) (int64, error) {
+	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
+		return 0, nil
+	}
+	today := time.Now().Format("2006-01-02")
+	var total int64
+	err := r.db.WithContext(ctx).Table("zt_demand").
+		Where("deleted = ?", "0").
+		Where("status NOT IN ?", []string{"closed"}).
+		Where("deadline IS NOT NULL AND deadline != '0000-00-00' AND deadline <= ?", today).
+		Where(`(
+			id IN (SELECT demand FROM zt_demandclarify WHERE PM = ?)
+			OR QD = ?
+			OR RD = ?
+			OR BRA = ?
+		)`, account, account, account, account).
+		Count(&total).Error
+	return total, err
+}
+
+// CountKPIOverdue 统计超期：today > deadline 且未完成，缺日期不算。
+// V10.1 01 节：today > deadline 且未完成（缺日期不算超期）。
+func (r *Repo) CountKPIOverdue(ctx context.Context, account string) (int64, error) {
+	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
+		return 0, nil
+	}
+	today := time.Now().Format("2006-01-02")
+	var total int64
+	err := r.db.WithContext(ctx).Table("zt_demand").
+		Where("deleted = ?", "0").
+		Where("status NOT IN ?", []string{"closed"}).
+		Where("deadline IS NOT NULL AND deadline != '0000-00-00' AND deadline < ?", today).
+		Where(`(
+			id IN (SELECT demand FROM zt_demandclarify WHERE PM = ?)
+			OR QD = ?
+			OR RD = ?
+			OR BRA = ?
+		)`, account, account, account, account).
+		Count(&total).Error
+	return total, err
+}
+
+// CountKPISuspended 统计挂起：hang='1' 且未关闭。
+// V10.1 01 节：存在未闭合 hangup 区间。zentao hang='1' 即为挂起中。
+func (r *Repo) CountKPISuspended(ctx context.Context, account string) (int64, error) {
+	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
+		return 0, nil
+	}
+	var total int64
+	err := r.db.WithContext(ctx).Table("zt_demand").
+		Where("deleted = ?", "0").
+		Where("status NOT IN ?", []string{"closed"}).
+		Where("hang = ?", "1").
+		Where(`(
+			id IN (SELECT demand FROM zt_demandclarify WHERE PM = ?)
+			OR QD = ?
+			OR RD = ?
+			OR BRA = ?
+		)`, account, account, account, account).
+		Count(&total).Error
+	return total, err
+}
+
+// CountKPIBlocked 统计阻塞：主管部门审批存在拒绝记录 ∪ 验收阶段测试超期。
+// V10.1 01 节：存在明确阻塞下一动作的事实。zentao 二开字段：
+//   - zt_demandmanagerreview.resultStatus（JSON,值 wait/pass/refuse）存在 refuse 即被拒
+//   - status='waitacceptance' AND testFinish < today 即验收阶段超期
+// 挂起由 hang='1' 单独统计，不并入阻塞。
+func (r *Repo) CountKPIBlocked(ctx context.Context, account string) (int64, error) {
+	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
+		return 0, nil
+	}
+	today := time.Now().Format("2006-01-02")
+	var total int64
+	err := r.db.WithContext(ctx).Table("zt_demand").
+		Where("deleted = ?", "0").
+		Where("status NOT IN ?", []string{"closed"}).
+		Where(`(
+			EXISTS (
+				SELECT 1 FROM zt_demandmanagerreview mr
+				WHERE mr.demand = zt_demand.id
+				AND JSON_SEARCH(mr.resultStatus, 'one', 'refuse') IS NOT NULL
+			)
+			OR (
+				status = ?
+				AND testFinish IS NOT NULL
+				AND testFinish != '0000-00-00'
+				AND testFinish < ?
+			)
+		)`, "waitacceptance", today).
+		Where(`(
+			id IN (SELECT demand FROM zt_demandclarify WHERE PM = ?)
+			OR QD = ?
+			OR RD = ?
+			OR BRA = ?
+		)`, account, account, account, account).
+		Count(&total).Error
+	return total, err
 }

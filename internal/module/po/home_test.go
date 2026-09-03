@@ -65,6 +65,15 @@ func TestHomeFrontendTruthContract(t *testing.T) {
 		"aria-pressed=",
 		"id=\"top5List\"",
 		"href=\"/schedule\"",
+		"今日必推",
+		"待我处理",
+		"阻塞",
+		"超期",
+		"挂起",
+		".KPI.Today",
+		".KPI.Blocked",
+		".KPI.Overdue",
+		".KPI.Suspended",
 	} {
 		if !strings.Contains(template, marker) {
 			t.Errorf("home template missing %q", marker)
@@ -72,11 +81,11 @@ func TestHomeFrontendTruthContract(t *testing.T) {
 	}
 
 	for _, forbidden := range []string{
-		"今日必推",
 		"data-focal=",
 		"风险 <strong>0</strong>",
 		"最长 —天",
 		"target=\"_blank\"",
+		`home-hl-num">—<`, // 数字必须是真实值,禁止破折号占位
 	} {
 		if strings.Contains(template, forbidden) {
 			t.Errorf("home template contains unsupported placeholder %q", forbidden)

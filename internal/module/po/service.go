@@ -127,7 +127,25 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 		}
 	}
 
-	return &HomeResp{Stages: stages, VersionWindows: versionWindows}, nil
+	// 5 个焦点摘要：MyPending 已包含在 all 阶段计数；其余 4 个由 Repo 真实统计。
+	kpi := KPICounts{MyPending: stages[allIdx].Count}
+	if strings.TrimSpace(account) != "" {
+		var kpiErr error
+		if kpi.Today, kpiErr = s.repo.CountKPIToday(ctx, account); kpiErr != nil {
+			return nil, kpiErr
+		}
+		if kpi.Overdue, kpiErr = s.repo.CountKPIOverdue(ctx, account); kpiErr != nil {
+			return nil, kpiErr
+		}
+		if kpi.Suspended, kpiErr = s.repo.CountKPISuspended(ctx, account); kpiErr != nil {
+			return nil, kpiErr
+		}
+		if kpi.Blocked, kpiErr = s.repo.CountKPIBlocked(ctx, account); kpiErr != nil {
+			return nil, kpiErr
+		}
+	}
+
+	return &HomeResp{Stages: stages, VersionWindows: versionWindows, KPI: kpi}, nil
 }
 
 // Demands 按价值流状态返回当前用户关联的需求/故事详情。
