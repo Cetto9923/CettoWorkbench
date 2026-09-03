@@ -91,9 +91,13 @@ type DemandsResp struct {
 type TodoTab string
 
 const (
-	TodoTabApproval TodoTab = "approval" // 审批决策（V10.1 默认第 1 Tab）
-	TodoTabDemand   TodoTab = "demand"   // 需求治理（业务需求 + 研发需求 + 反馈）
-	TodoTabAll      TodoTab = "all"      // 全部（跨 Tab 汇总）
+	TodoTabApproval  TodoTab = "approval" // 审批决策
+	TodoTabDemand    TodoTab = "demand"   // 需求治理（业务需求 + 研发需求 + 反馈）
+	TodoTabAll       TodoTab = "all"      // 全部（跨 Tab 汇总）
+	TodoTabExecution TodoTab = "execution"
+	TodoTabTesting   TodoTab = "testing"
+	TodoTabRisk      TodoTab = "risk"
+	TodoTabPersonal  TodoTab = "personal"
 )
 
 // Relation 我的关系 V10.1 02 节。
@@ -119,12 +123,13 @@ const (
 // V10.1 02 节：7 维 AND = Tab ∩ 办理场景 ∩ 阶段 ∩ 对象 ∩ 我的关系 ∩ 办理责任 ∩ 关键词。
 // 本期实现全部 7 维；具体对象 objectType 过滤只展示当前 Tab 实际有数据的对象类型。
 type TodoListReq struct {
-	Tab            TodoTab        `form:"tab"`            // 对象域 Tab；默认 approval
+	Tab            TodoTab        `form:"tab"`            // 对象域 Tab；默认 all
 	Action         TodoAction     `form:"action"`         // 办理场景；默认 all
 	Stage          string         `form:"stage"`          // 阶段（仅 demand 生效）；默认 all
 	ObjectType     string         `form:"objectType"`     // 对象类型 demand/story/task/bug/testtask；默认 all
 	Relation       Relation       `form:"relation"`       // 我的关系；默认 all
 	Responsibility Responsibility `form:"responsibility"` // 办理责任；默认 all
+	Focus          string         `form:"focus"`          // 一级快捷筛选；默认 pending
 	Keyword        string         `form:"keyword"`        // 关键词
 	Page           int            `form:"page"`           // 页码；1-based
 	PageSize       int            `form:"pageSize"`       // 每页条数；默认 20
@@ -139,7 +144,7 @@ const (
 	TodoActionReview   TodoAction = "todo_review"   // 待受理/待评审: status IN (draft, wait, active, refuse)
 	TodoActionSchedule TodoAction = "todo_schedule" // 待排期: status IN (clarified) + scheduleIncomplete
 	TodoActionVerify   TodoAction = "todo_verify"   // 待验收: status IN (testing, waitacceptance)
-	TodoActionDeliver  TodoAction = "todo_deliver"  // 待发起交付: status IN (acceptanced) + BRA=account
+	TodoActionDeliver  TodoAction = "todo_deliver"  // 待发起交付: status IN (acceptanced)，个人责任由基础集合约束
 	TodoActionFollow   TodoAction = "todo_follow"   // 待跟进: 其它主动跟进
 )
 
@@ -147,9 +152,11 @@ const (
 func (r *TodoListReq) Validate() []FieldError {
 	r.Tab = TodoTab(strings.TrimSpace(string(r.Tab)))
 	if r.Tab == "" {
-		r.Tab = TodoTabApproval
+		r.Tab = TodoTabAll
 	}
-	if r.Tab != TodoTabApproval && r.Tab != TodoTabDemand && r.Tab != TodoTabAll {
+	switch r.Tab {
+	case TodoTabApproval, TodoTabDemand, TodoTabAll, TodoTabExecution, TodoTabTesting, TodoTabRisk, TodoTabPersonal:
+	default:
 		return []FieldError{{Field: "tab", Message: "无效的对象域 Tab"}}
 	}
 	r.Action = TodoAction(strings.TrimSpace(string(r.Action)))
@@ -170,7 +177,7 @@ func (r *TodoListReq) Validate() []FieldError {
 		r.ObjectType = "all"
 	}
 	switch r.ObjectType {
-	case "all", "demand", "story", "task", "bug", "testtask":
+	case "all", "approval", "demand", "story", "task", "bug", "testtask", "issue", "risk", "todo":
 	default:
 		return []FieldError{{Field: "objectType", Message: "无效的对象类型"}}
 	}
@@ -191,6 +198,15 @@ func (r *TodoListReq) Validate() []FieldError {
 	case ResponsibilityAll, ResponsibilityMyAction, ResponsibilityMyFollowUp:
 	default:
 		return []FieldError{{Field: "responsibility", Message: "无效的办理责任"}}
+	}
+	r.Focus = strings.TrimSpace(r.Focus)
+	if r.Focus == "" {
+		r.Focus = "pending"
+	}
+	switch r.Focus {
+	case "pending", "today", "overdue", "blocked", "p1":
+	default:
+		return []FieldError{{Field: "focus", Message: "无效的一级筛选"}}
 	}
 	r.Keyword = strings.TrimSpace(r.Keyword)
 	if r.Page < 1 {
@@ -218,14 +234,38 @@ type TodoItem struct {
 	Deadline       string `json:"deadline"`       // 截止日期 YYYY-MM-DD（无日期空串）
 	Owner          string `json:"owner"`          // 责任人展示名
 	URL            string `json:"url"`            // 禅道详情 URL 或工作台任务详情 URL
+	Action         string `json:"action"`         // 当前可执行或跟进动作
+	Blocked        bool   `json:"blocked"`        // 是否存在明确阻塞事实
+}
+
+// TodoSummary 我的待办一级快捷指标，与返回列表同源计算。
+type TodoSummary struct {
+	Pending int `json:"pending"`
+	Today   int `json:"today"`
+	Overdue int `json:"overdue"`
+	Blocked int `json:"blocked"`
+	P1      int `json:"p1"`
+}
+
+// TodoGroupCounts 我的待办对象域计数。
+type TodoGroupCounts struct {
+	All       int `json:"all"`
+	Approval  int `json:"approval"`
+	Demand    int `json:"demand"`
+	Execution int `json:"execution"`
+	Testing   int `json:"testing"`
+	Risk      int `json:"risk"`
+	Personal  int `json:"personal"`
 }
 
 // TodoListResp 我的待办列表响应。
 type TodoListResp struct {
-	Items    []TodoItem `json:"items"`
-	Total    int64      `json:"total"`    // 过滤后总数（不含分页截断）
-	Page     int        `json:"page"`     // 当前页
-	PageSize int        `json:"pageSize"` // 每页条数
+	Items    []TodoItem      `json:"items"`
+	Total    int64           `json:"total"`    // 过滤后总数（不含分页截断）
+	Page     int             `json:"page"`     // 当前页
+	PageSize int             `json:"pageSize"` // 每页条数
+	Summary  TodoSummary     `json:"summary"`
+	Groups   TodoGroupCounts `json:"groups"`
 }
 
 // DoneTab 已办对象域。V10.1 02 节：本期先打通需求治理 + 研发执行。
@@ -375,86 +415,6 @@ type NoticeBucketResp struct {
 	Action   int64        `json:"action"`
 	Abnormal int64        `json:"abnormal"`
 	Today    int64        `json:"today"`
-	Page     int          `json:"page"`
-	PageSize int          `json:"pageSize"`
-}
-
-// FollowTab 我的关注对象视图。V10.1 04 节明确：只有 2 个对象视图（业务需求 / 项目报告），
-// 不再有"全部"对象 Tab；切 Tab 时重置基础集合。
-type FollowTab string
-
-const (
-	FollowTabDemand        FollowTab = "demand"         // 业务需求（默认）
-	FollowTabProjectReport FollowTab = "project_report" // 项目报告
-)
-
-// FollowScope 我的关注二级筛选（V10.1 04 节：业务需求内部有 全部/重点关注/已关闭 等）。
-type FollowScope string
-
-const (
-	FollowScopeAll    FollowScope = "all"
-	FollowScopeKey    FollowScope = "key"    // 重点关注
-	FollowScopeClosed FollowScope = "closed" // 已关闭
-)
-
-// FollowListReq 我的关注列表请求。
-// V10.1 04 节：对象 Tab × 内部二级筛选 × 关键词；不再有跨对象的"全部"Tab。
-type FollowListReq struct {
-	Tab      FollowTab   `form:"tab"`   // 业务需求 / 项目报告
-	Scope    FollowScope `form:"scope"` // 业务需求内部 全部/重点关注/已关闭
-	Keyword  string      `form:"keyword"`
-	Page     int         `form:"page"`
-	PageSize int         `form:"pageSize"`
-}
-
-// Validate 校验 FollowListReq。
-func (r *FollowListReq) Validate() []FieldError {
-	r.Tab = FollowTab(strings.TrimSpace(string(r.Tab)))
-	if r.Tab == "" {
-		r.Tab = FollowTabDemand
-	}
-	switch r.Tab {
-	case FollowTabDemand, FollowTabProjectReport:
-	default:
-		return []FieldError{{Field: "tab", Message: "无效的对象视图"}}
-	}
-	r.Scope = FollowScope(strings.TrimSpace(string(r.Scope)))
-	if r.Scope == "" {
-		r.Scope = FollowScopeAll
-	}
-	switch r.Scope {
-	case FollowScopeAll, FollowScopeKey, FollowScopeClosed:
-	default:
-		return []FieldError{{Field: "scope", Message: "无效的二级筛选"}}
-	}
-	r.Keyword = strings.TrimSpace(r.Keyword)
-	if r.Page < 1 {
-		r.Page = 1
-	}
-	if r.PageSize < 1 || r.PageSize > 100 {
-		r.PageSize = 20
-	}
-	return nil
-}
-
-// FollowItem 我的关注单条。
-type FollowItem struct {
-	ID         int64  `json:"id"`
-	Title      string `json:"title"`
-	Status     string `json:"status"`
-	Priority   string `json:"priority"`
-	Owner      string `json:"owner"`
-	LatestNote string `json:"latestNote"` // 最新动态
-	Date       string `json:"date"`
-	IsKey      bool   `json:"isKey"`    // 是否重点关注
-	IsClosed   bool   `json:"isClosed"` // 是否已关闭
-	URL        string `json:"url"`
-}
-
-// FollowListResp 我的关注响应。
-type FollowListResp struct {
-	Items    []FollowItem `json:"items"`
-	Total    int64        `json:"total"`
 	Page     int          `json:"page"`
 	PageSize int          `json:"pageSize"`
 }

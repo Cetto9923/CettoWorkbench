@@ -39,23 +39,20 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g := rg.Group("")
 	g.Use(middleware.ActiveNav("/home"))
 
-	g.GET("/home", middleware.RequirePerm(perm.PoHome), h.Home)
-	g.GET("/demands", middleware.RequirePerm(perm.PoHome), h.Demands)
+	g.GET("/home", middleware.RequirePerm(perm.PoHomeList), h.Home)
+	g.GET("/demands", middleware.RequirePerm(perm.PoHomeList), h.Demands)
+	g.GET("/todos", middleware.RequirePerm(perm.PoTodoList), h.Todos)
+	g.GET("/todos/items", middleware.RequirePerm(perm.PoTodoList), h.TodosItems)
+	g.GET("/done", middleware.RequirePerm(perm.PoDoneList), h.Done)
+	g.GET("/done/items", middleware.RequirePerm(perm.PoDoneList), h.DoneItems)
+	g.GET("/notice", middleware.RequirePerm(perm.PoNoticeList), h.Notice)
+	g.GET("/notice/items", middleware.RequirePerm(perm.PoNoticeList), h.NoticeItems)
+	g.GET("/follow", middleware.RequirePerm(perm.PoFollowList), h.Follow)
+	g.GET("/follow/items", middleware.RequirePerm(perm.PoFollowList), h.FollowItems)
 
-	// 我的待办 / 我的已办（M3 阶段）
-	g.GET("/todos", middleware.RequirePerm(perm.PoTodo), h.Todos)
-	g.GET("/todos/items", middleware.RequirePerm(perm.PoTodo), h.TodosItems)
-	g.GET("/done", middleware.RequirePerm(perm.PoDone), h.Done)
-	g.GET("/done/items", middleware.RequirePerm(perm.PoDone), h.DoneItems)
-
-	// 通知中心 / 我的关注（M4 阶段）
-	g.GET("/notice", middleware.RequirePerm(perm.PoNotice), h.Notice)
-	g.GET("/notice/items", middleware.RequirePerm(perm.PoNotice), h.NoticeItems)
-	g.PUT("/notice/:id/read", middleware.RequirePerm(perm.PoNotice), h.NoticeMarkRead)
-	g.POST("/notice/read-all", middleware.RequirePerm(perm.PoNotice), h.NoticeMarkAllRead)
-	g.GET("/follow", middleware.RequirePerm(perm.PoFollow), h.Follow)
-	g.GET("/follow/items", middleware.RequirePerm(perm.PoFollow), h.FollowItems)
-	g.POST("/follow/demand/:id", middleware.RequirePerm(perm.PoFollow), h.FollowSetDemand)
+	g.PUT("/notice/:id/read", middleware.RequirePerm(perm.PoNoticeUpdate), h.NoticeMarkRead)
+	g.PUT("/notice/read-all", middleware.RequirePerm(perm.PoNoticeUpdate), h.NoticeMarkAllRead)
+	g.PUT("/follow/demand/:id", middleware.RequirePerm(perm.PoFollowUpdate), h.FollowSetDemand)
 }
 
 // Home 渲染 PO 工作台首页。
@@ -137,11 +134,10 @@ func emptyValueStreamStages() []ValueStreamStage {
 
 // Todos 渲染"我的待办"页面。
 func (h *Handler) Todos(c *gin.Context) {
-	actor := middleware.CurrentUser(c)
 	render.Page(c, http.StatusOK, constants.TEMPLATE_PO_TODOS, gin.H{
-		"Title":       "我的待办",
-		"PageTitle":   "我的待办",
-		"CurrentUser": actor,
+		"Title":     "我的待办",
+		"PageTitle": "我的待办",
+		"BaseUrl":   "/todos",
 	})
 }
 
@@ -172,16 +168,17 @@ func (h *Handler) TodosItems(c *gin.Context) {
 		"total":    resp.Total,
 		"page":     resp.Page,
 		"pageSize": resp.PageSize,
+		"summary":  resp.Summary,
+		"groups":   resp.Groups,
 	})
 }
 
 // Done 渲染"我的已办"页面。
 func (h *Handler) Done(c *gin.Context) {
-	actor := middleware.CurrentUser(c)
 	render.Page(c, http.StatusOK, constants.TEMPLATE_PO_DONE, gin.H{
-		"Title":       "我的已办",
-		"PageTitle":   "我的已办",
-		"CurrentUser": actor,
+		"Title":     "我的已办",
+		"PageTitle": "我的已办",
+		"BaseUrl":   "/done",
 	})
 }
 
@@ -217,11 +214,10 @@ func (h *Handler) DoneItems(c *gin.Context) {
 
 // Notice 渲染"通知中心"页面。
 func (h *Handler) Notice(c *gin.Context) {
-	actor := middleware.CurrentUser(c)
 	render.Page(c, http.StatusOK, constants.TEMPLATE_PO_NOTICE, gin.H{
-		"Title":       "通知中心",
-		"PageTitle":   "通知中心",
-		"CurrentUser": actor,
+		"Title":     "通知中心",
+		"PageTitle": "通知中心",
+		"BaseUrl":   "/notice",
 	})
 }
 
@@ -272,7 +268,7 @@ func (h *Handler) NoticeMarkRead(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "标记已读失败"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"success": true, "message": "已标记已读"})
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "已标记已读", "redirectUrl": "/notice"})
 }
 
 // NoticeMarkAllRead 全部标记已读。
@@ -284,16 +280,15 @@ func (h *Handler) NoticeMarkAllRead(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "全部标记已读失败"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"success": true, "message": "全部已读", "affected": n})
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "全部已读", "redirectUrl": "/notice", "affected": n})
 }
 
 // Follow 渲染"我的关注"页面。
 func (h *Handler) Follow(c *gin.Context) {
-	actor := middleware.CurrentUser(c)
 	render.Page(c, http.StatusOK, constants.TEMPLATE_PO_FOLLOW, gin.H{
-		"Title":       "我的关注",
-		"PageTitle":   "我的关注",
-		"CurrentUser": actor,
+		"Title":     "我的关注",
+		"PageTitle": "我的关注",
+		"BaseUrl":   "/follow",
 	})
 }
 
@@ -335,11 +330,19 @@ func (h *Handler) FollowSetDemand(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "无效的业务需求 ID"})
 		return
 	}
-	followed := strings.TrimSpace(c.PostForm("followed")) == "1"
-	if err := h.svc.FollowSetDemand(c.Request.Context(), actor, id, followed); err != nil {
+	req := FollowSetReq{ID: id}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "参数解析失败"})
+		return
+	}
+	if errs := req.Validate(); len(errs) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"message": "参数校验失败", "errors": errs})
+		return
+	}
+	if err := h.svc.FollowSetDemand(c.Request.Context(), actor, req); err != nil {
 		h.logger.Error("po follow set", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "更新关注失败"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"success": true, "message": "已更新关注"})
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "已更新关注", "redirectUrl": "/follow"})
 }

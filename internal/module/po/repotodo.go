@@ -1,5 +1,5 @@
 // =============================================================================
-// 文件: internal/module/po/repo_todo.go
+// 文件: internal/module/po/repotodo.go
 // 模块: PO 工作台
 // 类型: action
 // 职责: 我的待办聚合查询（V10.1 02 节 7 维 AND）。本期打通业务需求 + 任务 + Bug；
@@ -22,11 +22,13 @@ import (
 
 // FindTodoItems 查询我的待办列表（V10.1 02 节 7 维 AND 公式）。
 // 数据真源:
-//   - 业务需求 zt_demand (actor scope: PM in clarify ∪ QD ∪ RD ∪ BRA)
+//   - 业务需求 zt_demand (个人责任 scope: assignedTo/distributedBy/QD/RD/accepter/澄清 PM)
 //   - 任务 zt_task (assignedTo=account)
 //   - Bug zt_bug (assignedTo=account)
+//
 // 排序: 优先级 P1>P2>P3, deadline ASC NULLS LAST (zentao 用 '0000-00-00' 表示无 deadline,
-//       用 '9999-12-31' 占位确保排最后), id DESC。
+//
+//	用 '9999-12-31' 占位确保排最后), id DESC。
 func (r *Repo) FindTodoItems(ctx context.Context, account string, req TodoListReq) ([]TodoItem, int64, error) {
 	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
 		return nil, 0, nil
@@ -34,8 +36,14 @@ func (r *Repo) FindTodoItems(ctx context.Context, account string, req TodoListRe
 	keyword := strings.TrimSpace(req.Keyword)
 
 	// 业务需求: actor scope + 关键词 + 阶段 + 办理场景
-	demandBase := r.roleDemandBase(ctx, account).
-		Where("status NOT IN ?", []string{"closed", "cancel"})
+	demandBase := r.db.WithContext(ctx).Table("zt_demand").
+		Where("deleted = ?", "0").
+		Where("status IN ?", []string{"draft", "wait", "refuse", "active", "clarified", "developing", "testing", "waitacceptance", "waitdeliver", "acceptanced"}).
+		Where("NOT EXISTS (SELECT 1 FROM zt_demand child WHERE child.deleted = ? AND child.parent = zt_demand.id)", "0").
+		Where(`(
+			assignedTo = ? OR distributedBy = ? OR QD = ? OR RD = ? OR accepter = ?
+			OR id IN (SELECT demand FROM zt_demandclarify WHERE PM = ?)
+		)`, account, account, account, account, account, account)
 
 	// 阶段过滤 (V10.1 价值流 10 阶段)
 	if req.Stage != "" && req.Stage != "all" {
@@ -52,22 +60,10 @@ func (r *Repo) FindTodoItems(ctx context.Context, account string, req TodoListRe
 	demandBase = demandBase.Order("CASE WHEN zt_demand.pri = '1' THEN 1 WHEN zt_demand.pri = '2' THEN 2 WHEN zt_demand.pri = '3' THEN 3 ELSE 4 END, CASE WHEN zt_demand.deadline IS NULL OR zt_demand.deadline = '0000-00-00' OR zt_demand.deadline = '0001-01-01' THEN '9999-12-31' ELSE zt_demand.deadline END ASC, zt_demand.id DESC")
 
 	var demandIDs []int64
-	// 用 Raw SQL + Scan 替代 Pluck: GORM 1.31 的 Pluck + Order 链式不生效 (实测), Raw 更稳
-	if err := r.db.WithContext(ctx).Raw(`
-		SELECT zt_demand.id FROM zt_demand
-		WHERE zt_demand.deleted = '0'
-		  AND zt_demand.status NOT IN ('closed','cancel')
-		  AND (zt_demand.id IN (SELECT demand FROM zt_demandclarify WHERE PM = ?)
-		       OR zt_demand.QD = ? OR zt_demand.RD = ? OR zt_demand.BRA = ?)
-		  AND (zt_demand.name LIKE ? OR CAST(zt_demand.id AS CHAR) LIKE ?)
-		ORDER BY
-		  CASE WHEN zt_demand.pri = '1' THEN 1 WHEN zt_demand.pri = '2' THEN 2 WHEN zt_demand.pri = '3' THEN 3 ELSE 4 END,
-		  CASE WHEN zt_demand.deadline IS NULL OR zt_demand.deadline = '0000-00-00' OR zt_demand.deadline = '0001-01-01'
-		    THEN '9999-12-31' ELSE zt_demand.deadline END ASC,
-		  zt_demand.id DESC
-		LIMIT 2000
-	`, account, account, account, account, "%"+keyword+"%", "%"+keyword+"%").
-		Scan(&demandIDs).Error; err != nil {
+	// 先取有序 ID，再按该顺序重建详情，避免第二次 IN 查询丢失优先级排序。
+	if err := demandBase.
+		Where(`(name LIKE ? OR CAST(id AS CHAR) LIKE ?)`, "%"+keyword+"%", "%"+keyword+"%").
+		Pluck("zt_demand.id", &demandIDs).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -79,7 +75,7 @@ func (r *Repo) FindTodoItems(ctx context.Context, account string, req TodoListRe
 		Where("status NOT IN ?", []string{"done", "closed", "cancel"}).
 		Where(`(name LIKE ? OR CAST(id AS CHAR) LIKE ?)`, "%"+keyword+"%", "%"+keyword+"%").
 		Order("CASE WHEN (deadline IS NULL OR deadline = '0000-00-00' OR deadline = '0001-01-01') THEN 1 ELSE 0 END, deadline ASC, id DESC")
-	if err := taskQ.Limit(2000).Pluck("zt_task.id", &taskIDs).Error; err != nil {
+	if err := taskQ.Pluck("zt_task.id", &taskIDs).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -91,7 +87,7 @@ func (r *Repo) FindTodoItems(ctx context.Context, account string, req TodoListRe
 		Where("status NOT IN ?", []string{"resolved", "closed"}).
 		Where(`(title LIKE ? OR CAST(id AS CHAR) LIKE ?)`, "%"+keyword+"%", "%"+keyword+"%").
 		Order("CASE WHEN (deadline IS NULL OR deadline = '0000-00-00' OR deadline = '0001-01-01') THEN 1 ELSE 0 END, deadline ASC, id DESC")
-	if err := bugQ.Limit(2000).Pluck("zt_bug.id", &bugIDs).Error; err != nil {
+	if err := bugQ.Pluck("zt_bug.id", &bugIDs).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -104,40 +100,37 @@ func (r *Repo) FindTodoItems(ctx context.Context, account string, req TodoListRe
 
 	if includeDemand && len(demandIDs) > 0 {
 		type row struct {
-			ID       int64      `gorm:"column:id"`
-			Name     string     `gorm:"column:name"`
-			Status   string     `gorm:"column:status"`
-			Pri      string     `gorm:"column:pri"`
-			QD       string     `gorm:"column:QD"`
-			RD       string     `gorm:"column:RD"`
-			Deadline *time.Time `gorm:"column:deadline"`
+			ID         int64      `gorm:"column:id"`
+			Name       string     `gorm:"column:name"`
+			Status     string     `gorm:"column:status"`
+			Pri        string     `gorm:"column:pri"`
+			AssignedTo string     `gorm:"column:assignedTo"`
+			QD         string     `gorm:"column:QD"`
+			RD         string     `gorm:"column:RD"`
+			Deadline   *time.Time `gorm:"column:deadline"`
 		}
 		var rows []row
-		// Raw SQL: 用 FIELD(id, ...) 让 MySQL 按 demandIDs 切片顺序排
-		// gorm.Expr("FIELD(id, ?)", demandIDs) 在 GORM 1.31 不展开 slice, 改用占位符手动拼接
-		placeholders := strings.Repeat("?,", len(demandIDs))
-		placeholders = placeholders[:len(placeholders)-1]
-		args := make([]interface{}, 0, 2*len(demandIDs))
-		for _, id := range demandIDs {
-			args = append(args, id) // IN 子句用
-		}
-		for _, id := range demandIDs {
-			args = append(args, id) // FIELD 子句用
-		}
-		if err := r.db.WithContext(ctx).Raw(
-			"SELECT id, name, status, pri, QD, RD, deadline FROM zt_demand WHERE id IN ("+placeholders+") ORDER BY FIELD(id, "+placeholders+")",
-			args...,
-		).Scan(&rows).Error; err != nil {
+		if err := r.db.WithContext(ctx).Table("zt_demand").
+			Where("id IN ?", demandIDs).
+			Select("id, name, status, pri, assignedTo, QD, RD, deadline").
+			Find(&rows).Error; err != nil {
 			return nil, 0, err
 		}
-		displayMap, _ := r.loadAccountDisplayMap(ctx)
+		rowsByID := make(map[int64]row, len(rows))
 		for _, row := range rows {
-			deadline := ""
-			if row.Deadline != nil {
-				deadline = row.Deadline.Format("2006-01-02")
+			rowsByID[row.ID] = row
+		}
+		displayMap, _ := r.loadAccountDisplayMap(ctx)
+		for _, id := range demandIDs {
+			row, ok := rowsByID[id]
+			if !ok {
+				continue
 			}
+			deadline := formatTodoDeadline(row.Deadline)
 			owner := ""
-			if strings.TrimSpace(row.QD) != "" {
+			if strings.TrimSpace(row.AssignedTo) != "" {
+				owner = displayMap[row.AssignedTo]
+			} else if strings.TrimSpace(row.QD) != "" {
 				owner = displayMap[row.QD]
 			} else if strings.TrimSpace(row.RD) != "" {
 				owner = displayMap[row.RD]
@@ -146,6 +139,7 @@ func (r *Repo) FindTodoItems(ctx context.Context, account string, req TodoListRe
 			if row.Pri != "" {
 				priority = "P" + row.Pri
 			}
+			relation, responsibility := demandTodoRelation(row.AssignedTo, account)
 			items = append(items, TodoItem{
 				Kind:           "demand",
 				ID:             row.ID,
@@ -154,12 +148,14 @@ func (r *Repo) FindTodoItems(ctx context.Context, account string, req TodoListRe
 				Type:           "业务需求",
 				Stage:          row.Status,
 				Priority:       priority,
-				Relation:       "我负责",
-				Responsibility: "待我处理",
+				Relation:       relation,
+				Responsibility: responsibility,
 				Reason:         row.Status,
 				Deadline:       deadline,
 				Owner:          owner,
 				URL:            zentao.DemandViewURL(uint(row.ID)),
+				Action:         todoActionLabel(row.Status),
+				Blocked:        row.Status == "refuse",
 			})
 		}
 	}
@@ -181,10 +177,7 @@ func (r *Repo) FindTodoItems(ctx context.Context, account string, req TodoListRe
 		}
 		displayMap, _ := r.loadAccountDisplayMap(ctx)
 		for _, row := range rows {
-			deadline := ""
-			if row.Deadline != nil {
-				deadline = row.Deadline.Format("2006-01-02")
-			}
+			deadline := formatTodoDeadline(row.Deadline)
 			owner := displayMap[account]
 			items = append(items, TodoItem{
 				Kind:           "task",
@@ -200,6 +193,7 @@ func (r *Repo) FindTodoItems(ctx context.Context, account string, req TodoListRe
 				Deadline:       deadline,
 				Owner:          owner,
 				URL:            zentao.TaskViewURL(uint(row.ID)),
+				Action:         "办理",
 			})
 		}
 	}
@@ -234,12 +228,57 @@ func (r *Repo) FindTodoItems(ctx context.Context, account string, req TodoListRe
 				Deadline:       "",
 				Owner:          displayMap[account],
 				URL:            zentao.BugViewURL(uint(row.ID)),
+				Action:         "处理",
 			})
 		}
 	}
 
+	extraItems, err := r.FindTodoExtraItems(ctx, RepoFindTodoExtraReq{
+		Account: account, Keyword: keyword, ObjectType: req.ObjectType,
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+	items = append(items, extraItems...)
+
 	total := int64(len(items))
 	return items, total, nil
+}
+
+func demandTodoRelation(assignedTo, account string) (string, string) {
+	if strings.TrimSpace(assignedTo) == strings.TrimSpace(account) {
+		return "我负责", "待我处理"
+	}
+	return "我配合", "待我跟进"
+}
+
+func todoActionLabel(status string) string {
+	switch status {
+	case "draft", "wait", "refuse":
+		return "受理"
+	case "active":
+		return "澄清"
+	case "clarified":
+		return "排期"
+	case "developing", "testing":
+		return "跟进"
+	case "waitacceptance":
+		return "验收"
+	case "acceptanced":
+		return "发起交付"
+	case "waitdeliver":
+		return "跟进发布"
+	default:
+		return "查看"
+	}
+}
+
+// formatTodoDeadline 将禅道的零日期归为空，避免前端展示不存在的截止日。
+func formatTodoDeadline(deadline *time.Time) string {
+	if deadline == nil || deadline.Year() <= 1 {
+		return ""
+	}
+	return deadline.Format("2006-01-02")
 }
 
 // applyDemandStageFilter 把 V10.1 价值流 10 阶段映射到 zt_demand.status SQL。
@@ -316,7 +355,7 @@ func (r *Repo) loadAccountDisplayMap(ctx context.Context) (map[string]string, er
 		if strings.TrimSpace(row.Realname) == "" {
 			out[row.Account] = row.Account
 		} else {
-			out[row.Account] = row.Realname + "(" + row.Account + ")"
+			out[row.Account] = FormatAccountName(row.Account, row.Realname)
 		}
 	}
 	return out, nil

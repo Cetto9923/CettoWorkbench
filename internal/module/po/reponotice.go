@@ -1,5 +1,5 @@
 // =============================================================================
-// 文件: internal/module/po/repo_notice.go
+// 文件: internal/module/po/reponotice.go
 // 模块: PO 工作台
 // 类型: action
 // 职责: 通知中心数据访问。通知内容真源 zt_notify（toList 含账号），已读 zt_workbench_notify_reads。
@@ -51,16 +51,16 @@ func (r *Repo) FindNotices(ctx context.Context, account string, req NoticeListRe
 	}
 
 	type row struct {
-		ID         int64     `gorm:"column:id"`
-		ObjectType string    `gorm:"column:objectType"`
-		ObjectID   int64     `gorm:"column:objectID"`
-		Subject    string    `gorm:"column:subject"`
-		Data       string    `gorm:"column:data"`
-		Action     int64     `gorm:"column:action"`
-		CreatedBy  string    `gorm:"column:createdBy"`
+		ID          int64     `gorm:"column:id"`
+		ObjectType  string    `gorm:"column:objectType"`
+		ObjectID    int64     `gorm:"column:objectID"`
+		Subject     string    `gorm:"column:subject"`
+		Data        string    `gorm:"column:data"`
+		Action      int64     `gorm:"column:action"`
+		CreatedBy   string    `gorm:"column:createdBy"`
 		CreatedDate time.Time `gorm:"column:createdDate"`
-		ToList     string    `gorm:"column:toList"`
-		IsRead     int       `gorm:"column:is_read"`
+		ToList      string    `gorm:"column:toList"`
+		IsRead      int       `gorm:"column:is_read"`
 	}
 
 	// 各种 quick view 计数（基础集，与读取标志 join）
@@ -186,29 +186,23 @@ func (r *Repo) FindNotices(ctx context.Context, account string, req NoticeListRe
 	return items, total, unread, actionCount, abnormal, today, nil
 }
 
-// MarkNoticeRead 标记单条通知已读。
-func (r *Repo) MarkNoticeRead(ctx context.Context, account string, notifyID int64) error {
+// SaveNoticeRead 标记当前账号可见的单条通知已读。
+func (r *Repo) SaveNoticeRead(ctx context.Context, account string, notifyID int64) error {
 	if r == nil || r.db == nil || strings.TrimSpace(account) == "" || notifyID <= 0 {
 		return nil
 	}
-	// 检查是否已存在
-	var count int64
-	if err := r.db.WithContext(ctx).Table("zt_workbench_notify_reads").
-		Where("notify = ? AND account = ?", notifyID, account).
-		Count(&count).Error; err != nil {
-		return err
-	}
-	if count > 0 {
-		return nil
-	}
-	return r.db.WithContext(ctx).Exec(
-		`INSERT INTO zt_workbench_notify_reads (notify, account, readAt) VALUES (?, ?, NOW())`,
-		notifyID, account,
-	).Error
+	return r.db.WithContext(ctx).Exec(`
+		INSERT INTO zt_workbench_notify_reads (notify, account, readAt)
+		SELECT n.id, ?, NOW()
+		FROM zt_notify n
+		LEFT JOIN zt_workbench_notify_reads nr ON nr.notify = n.id AND nr.account = ?
+		WHERE n.id = ?
+		  AND FIND_IN_SET(?, REPLACE(n.toList, ' ', '')) > 0
+		  AND nr.id IS NULL`, account, account, notifyID, account).Error
 }
 
-// MarkAllNoticesRead 标记当前账号所有未读通知为已读。
-func (r *Repo) MarkAllNoticesRead(ctx context.Context, account string) (int64, error) {
+// SaveAllNoticeReads 标记当前账号所有未读通知为已读。
+func (r *Repo) SaveAllNoticeReads(ctx context.Context, account string) (int64, error) {
 	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
 		return 0, nil
 	}

@@ -3,7 +3,7 @@
 模块: PO 工作台
 职责: 我的关注页面。V10.1 04 节：只有 2 个对象视图（业务需求默认 / 项目报告），删除"全部"对象 Tab。
 全局字段: .CurrentUser, .CSRFToken, .Menus, .AppName, .CurrentPath
-页面字段: .Title (string), .PageTitle (string)
+页面字段: .Title (string), .PageTitle (string), .BaseUrl (string)
 ========================================================================== */}}
 {{ define "page_css" }}
 <link rel="stylesheet" href="{{ asset "/static/css/po/follow.css" }}">
@@ -22,7 +22,7 @@
   </div>
 
   <div class="follow-filter-bar">
-    <div class="follow-scope" role="tablist" aria-label="二级筛选">
+    <div class="follow-scope" id="followScope" role="tablist" aria-label="二级筛选">
       <button type="button" class="scope-chip active" data-scope="all">全部</button>
       <button type="button" class="scope-chip" data-scope="key">重点关注</button>
       <button type="button" class="scope-chip" data-scope="closed">已关闭</button>

@@ -1,5 +1,5 @@
 // =============================================================================
-// 文件: internal/module/po/service_notice.go
+// 文件: internal/module/po/servicenotice.go
 // 模块: PO 工作台
 // 类型: action
 // 职责: 通知中心服务。workbench 为主: 不强套 V10.1 6 类, 分类由 zt_action + objectType 启发式。
@@ -42,7 +42,7 @@ func (s *Service) NoticeMarkRead(ctx context.Context, actor *model.User, notifyI
 	if actor == nil || strings.TrimSpace(actor.Account) == "" {
 		return nil
 	}
-	return s.repo.MarkNoticeRead(ctx, actor.Account, notifyID)
+	return s.repo.SaveNoticeRead(ctx, actor.Account, notifyID)
 }
 
 // NoticeMarkAllRead 标记全部已读。
@@ -50,6 +50,5 @@ func (s *Service) NoticeMarkAllRead(ctx context.Context, actor *model.User) (int
 	if actor == nil || strings.TrimSpace(actor.Account) == "" {
 		return 0, nil
 	}
-	return s.repo.MarkAllNoticesRead(ctx, actor.Account)
+	return s.repo.SaveAllNoticeReads(ctx, actor.Account)
 }
-

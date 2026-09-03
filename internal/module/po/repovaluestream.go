@@ -1,8 +1,8 @@
 // =============================================================================
-// 文件: internal/module/po/repo_valuestream.go
+// 文件: internal/module/po/repovaluestream.go
 // 模块: PO 工作台
 // 类型: action
-// 职责: 价值流 10 阶段业需/研需的只读库统计与列表查询（业需范围：澄清 PM 或 QD/RD/BRA，排除 closed；「全部」计数仅 Pluck id）。
+// 职责: 价值流 9 阶段业需/研需的个人行动范围统计与列表查询；「全部」计数仅 Pluck id。
 // 依赖: 无
 // =============================================================================
 
@@ -79,23 +79,27 @@ type StoryRow struct {
 	Status string `gorm:"column:status"`
 }
 
-// roleDemandBase 返回当前账号可见且未关闭的业需基础查询集（PM in clarify ∪ QD ∪ RD ∪ BRA，排除 closed）。
-// 仅含跨阶段共用的可见范围与删除/关闭过滤；阶段状态与日期等专项条件由调用方链式 Where 追加。
+// roleDemandBase 返回当前账号可推动且未关闭的业务办理单元。
+// 个人责任包括指派、派单、质量、研发、验收和澄清 PM；存在有效子需求时父需求只汇总，不重复统计。
 // 价值流列表与 KPI 计数共用同一基础集，保证两处数字口径一致。
 func (r *Repo) roleDemandBase(ctx context.Context, account string) *gorm.DB {
 	return r.db.WithContext(ctx).Table("zt_demand").
 		Where("deleted = ?", "0").
 		Where("status NOT IN ?", []string{"closed"}).
+		Where("NOT EXISTS (SELECT 1 FROM zt_demand child WHERE child.deleted = ? AND child.parent = zt_demand.id)", "0").
 		Where(`(
-			id IN (SELECT demand FROM zt_demandclarify WHERE PM = ?)
+			assignedTo = ?
+			OR distributedBy = ?
 			OR QD = ?
 			OR RD = ?
 			OR BRA = ?
-		)`, account, account, account, account)
+			OR accepter = ?
+			OR id IN (SELECT demand FROM zt_demandclarify WHERE PM = ?)
+		)`, account, account, account, account, account, account, account)
 }
 
 func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysqlStageFilter) *gorm.DB {
-	// 业需可见范围：澄清表 PM = 当前账号，或 QD/RD/BRA = 当前账号；排除已关闭
+	// 业需个人行动范围由 roleDemandBase 统一限定。
 	q := r.roleDemandBase(ctx, account)
 
 	if filter.acceptanceStage {

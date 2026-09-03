@@ -1,5 +1,5 @@
 // =============================================================================
-// 文件: internal/module/po/service_follow.go
+// 文件: internal/module/po/servicefollow.go
 // 模块: PO 工作台
 // 类型: action
 // 职责: 我的关注服务。V10.1 04 节: 只有 2 个对象视图（业务需求默认 / 项目报告），无"全部"。
@@ -25,24 +25,33 @@ func (s *Service) FollowList(ctx context.Context, actor *model.User, req FollowL
 	}
 	switch req.Tab {
 	case FollowTabDemand:
-		items, total, err := s.repo.FindFollowedDemands(ctx, actor.Account, req.Scope, req.Keyword, req.Page, req.PageSize)
+		items, total, err := s.repo.FindFollowedDemands(ctx, RepoFindFollowedDemandsReq{
+			Account: actor.Account, Scope: req.Scope, Keyword: req.Keyword, Page: req.Page, PageSize: req.PageSize,
+		})
 		if err != nil {
 			return nil, err
 		}
 		return &FollowListResp{Items: items, Total: total, Page: req.Page, PageSize: req.PageSize}, nil
 	case FollowTabProjectReport:
-		// 项目报告 Tab 本期占位（依赖 zt_project.follow + zt_projectweekly，后续阶段接入）
-		return &FollowListResp{Items: []FollowItem{}, Total: 0, Page: req.Page, PageSize: req.PageSize}, nil
+		items, total, err := s.repo.FindFollowedProjectReports(ctx, RepoFindFollowedProjectReportsReq{
+			Account: actor.Account, Keyword: req.Keyword, Page: req.Page, PageSize: req.PageSize,
+		})
+		if err != nil {
+			return nil, err
+		}
+		return &FollowListResp{Items: items, Total: total, Page: req.Page, PageSize: req.PageSize}, nil
 	}
 	return &FollowListResp{Items: []FollowItem{}, Page: req.Page, PageSize: req.PageSize}, nil
 }
 
 // FollowSetDemand 切换对业务需求的关注。
-func (s *Service) FollowSetDemand(ctx context.Context, actor *model.User, demandID int64, followed bool) error {
+func (s *Service) FollowSetDemand(ctx context.Context, actor *model.User, req FollowSetReq) error {
 	if actor == nil || strings.TrimSpace(actor.Account) == "" {
 		return nil
 	}
-	return s.repo.SetDemandFollow(ctx, actor.Account, demandID, followed)
+	return s.repo.SaveDemandFollow(ctx, RepoSaveDemandFollowReq{
+		Account: actor.Account, DemandID: req.ID, Followed: *req.Followed,
+	})
 }
 
 func (s *Service) loadAccountDisplayMap(ctx context.Context, actor *model.User) (map[string]string, error) {

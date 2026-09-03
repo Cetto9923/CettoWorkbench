@@ -44,18 +44,21 @@
       '<div class="follow-item">' +
       '<div class="follow-main">' +
       '<div class="follow-title">' +
-      '<span style="color:var(--po-t2);margin-right:6px">US' + escapeHtml(item.id) + '</span>' +
+      '<span style="color:var(--po-t2);margin-right:6px">' +
+      (state.tab === "demand" ? "US" : "P") + escapeHtml(item.id) + '</span>' +
       escapeHtml(item.title) +
       '</div>' +
       '<div class="follow-meta">' +
       '<span class="follow-pri ' + priClass + '">' + escapeHtml(item.priority) + '</span> ' +
       tags +
       '状态: ' + escapeHtml(item.status) + ' · 负责人: ' + escapeHtml(item.owner || "—") +
+      (item.latestNote ? ' · 最新周报: ' + escapeHtml(item.latestNote) : '') +
+      (item.date ? ' · ' + escapeHtml(item.date) : '') +
       '</div>' +
       '</div>' +
       '<div class="follow-actions">' +
-      '<button type="button" class="follow-btn" data-action="view" data-id="' + escapeHtml(item.id) + '">查看</button>' +
-      '<button type="button" class="follow-btn" data-action="unfollow" data-id="' + escapeHtml(item.id) + '">取消关注</button>' +
+      '<a class="follow-btn" href="' + escapeHtml(item.url || "#") + '">查看</a>' +
+      (state.tab === "demand" ? '<button type="button" class="follow-btn" data-action="unfollow" data-id="' + escapeHtml(item.id) + '">取消关注</button>' : '') +
       '</div>' +
       '</div>'
     );
@@ -83,17 +86,21 @@
         var id = b.dataset.id;
         if (action === "unfollow") {
           b.disabled = true;
-          fetch("/follow/demand/" + encodeURIComponent(id), {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: "followed=0",
+          window.appFetch("/follow/demand/" + encodeURIComponent(id), {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ followed: false }),
           })
-            .then(function (r) { return r.json(); })
-            .then(function () { refresh(); })
+            .then(function (r) {
+              return r.json().then(function (payload) {
+                if (!r.ok || !payload || payload.success !== true) {
+                  throw new Error((payload && payload.message) || "更新关注失败");
+                }
+                return payload;
+              });
+            })
+            .then(function (payload) { window.location.href = payload.redirectUrl; })
             .catch(function () { b.disabled = false; });
-        } else if (action === "view") {
-          // 本期占位，后续接 SSO
-          window.open("about:blank", "_blank");
         }
       });
     });
@@ -104,7 +111,8 @@
     fetchItems()
       .then(function (payload) {
         document.getElementById("followSummary").textContent =
-          "业务需求 · " + (payload.items || []).length + " / " + (payload.total || 0) + " 个";
+          (state.tab === "demand" ? "业务需求" : "项目周报") + " · " +
+          (payload.items || []).length + " / " + (payload.total || 0) + " 个";
         renderList(payload.items || []);
       })
       .catch(function () {
@@ -119,6 +127,11 @@
         document.querySelectorAll(".follow-tab").forEach(function (b) { b.classList.remove("active"); });
         btn.classList.add("active");
         state.tab = btn.dataset.tab;
+        state.scope = "all";
+        document.querySelectorAll(".scope-chip").forEach(function (chip) {
+          chip.classList.toggle("active", chip.dataset.scope === "all");
+        });
+        document.getElementById("followScope").hidden = state.tab !== "demand";
         refresh();
       });
     });

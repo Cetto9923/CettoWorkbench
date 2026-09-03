@@ -38,7 +38,7 @@
     var catLabel = catLabels[cat] || item.category || "—";
     var unread = item.read ? "" : '<span class="unread-dot"></span>';
     var objCell = item.url
-      ? '<a href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener" title="在禅道中查看">' +
+      ? '<a href="' + escapeHtml(item.url) + '" title="在禅道中查看">' +
         escapeHtml(item.objectType || "—") + "/" + escapeHtml(String(item.objectId || 0)) + "</a>"
       : escapeHtml(item.objectType || "—") + "/" + escapeHtml(String(item.objectId || 0));
     var readBtn = item.read
@@ -84,9 +84,16 @@
       b.addEventListener("click", function () {
         var id = b.dataset.noticeId;
         b.disabled = true;
-        fetch("/notice/" + encodeURIComponent(id) + "/read", { method: "PUT" })
-          .then(function (r) { return r.json(); })
-          .then(function () { refresh(); })
+        window.appFetch("/notice/" + encodeURIComponent(id) + "/read", { method: "PUT" })
+          .then(function (r) {
+            return r.json().then(function (payload) {
+              if (!r.ok || !payload || payload.success !== true) {
+                throw new Error((payload && payload.message) || "标记已读失败");
+              }
+              return payload;
+            });
+          })
+          .then(function (payload) { window.location.href = payload.redirectUrl; })
           .catch(function () { b.disabled = false; });
       });
     });
@@ -140,9 +147,16 @@
     });
 
     document.getElementById("noticeMarkAllBtn").addEventListener("click", function () {
-      fetch("/notice/read-all", { method: "POST" })
-        .then(function (r) { return r.json(); })
-        .then(function () { refresh(); });
+      window.appFetch("/notice/read-all", { method: "PUT" })
+        .then(function (r) {
+          return r.json().then(function (payload) {
+            if (!r.ok || !payload || payload.success !== true) {
+              throw new Error((payload && payload.message) || "全部标记已读失败");
+            }
+            return payload;
+          });
+        })
+        .then(function (payload) { window.location.href = payload.redirectUrl; });
     });
   }
 

@@ -3,10 +3,10 @@
 // 模块: PO 工作台
 // 类型: action
 // 职责: Repo 结构体与 NewRepo 构造器；其它数据访问职责拆分为：
-//       repo_valuestream.go（价值流阶段聚合查询）
-//       repo_kpi.go（首页 5 个焦点摘要 KPI 计数）
-//       repo_todo.go（我的待办聚合查询）
-//       repo_done.go（我的已办 zt_action 查询）
+//       repovaluestream.go（价值流阶段聚合查询）
+//       repokpi.go（首页 5 个焦点摘要 KPI 计数）
+//       repotodo.go（我的待办聚合查询）
+//       repodone.go（我的已办 zt_action 查询）
 // 依赖: 无
 // =============================================================================
 

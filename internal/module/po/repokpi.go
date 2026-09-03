@@ -1,5 +1,5 @@
 // =============================================================================
-// 文件: internal/module/po/repo_kpi.go
+// 文件: internal/module/po/repokpi.go
 // 模块: PO 工作台
 // 类型: action
 // 职责: 首页 5 个焦点摘要 KPI 真实计数（今日必推/阻塞/超期/挂起；actor role scope）。
@@ -58,6 +58,7 @@ func (r *Repo) CountKPISuspended(ctx context.Context, account string) (int64, er
 // V10.1 01 节：存在明确阻塞下一动作的事实。zentao 二开字段：
 //   - zt_demandmanagerreview.resultStatus（JSON,值 wait/pass/refuse）存在 refuse 即被拒
 //   - status='waitacceptance' AND testFinish < today 即验收阶段超期
+//
 // 挂起由 hang='1' 单独统计，不并入阻塞。
 func (r *Repo) CountKPIBlocked(ctx context.Context, account string) (int64, error) {
 	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
@@ -87,7 +88,7 @@ func (r *Repo) CountKPIBlocked(ctx context.Context, account string) (int64, erro
 
 // TodoScopeFilter 我的待办过滤条件（V10.1 02 节 7 维 AND 简化版）。
 type TodoScopeFilter struct {
-	Keyword string  // 关键词：标题 / ID
+	Keyword string // 关键词：标题 / ID
 }
 
 // FindTodoItems 查询我的待办列表（去重后按对象 ID 返回）。

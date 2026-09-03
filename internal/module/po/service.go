@@ -186,4 +186,3 @@ func (s *Service) Demands(ctx context.Context, actor *model.User, req DemandsReq
 	}
 	return &DemandsResp{Items: []WorkItemDetail{}}, nil
 }
-

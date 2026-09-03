@@ -56,11 +56,13 @@ const (
 	ScheduleDelete Permission = "schedule:delete"
 
 	// PO 工作台
-	PoHome   Permission = "po:home"
-	PoTodo   Permission = "po:todo"
-	PoDone   Permission = "po:done"
-	PoNotice Permission = "po:notice"
-	PoFollow Permission = "po:follow"
+	PoHomeList     Permission = "po:home"
+	PoTodoList     Permission = "po:todo"
+	PoDoneList     Permission = "po:done"
+	PoNoticeList   Permission = "po:notice"
+	PoNoticeUpdate Permission = "po:notice:update"
+	PoFollowList   Permission = "po:follow"
+	PoFollowUpdate Permission = "po:follow:update"
 )
 
 // allPermInfos 必须与上方 const 块中的所有 Permission 常量保持一一对应。
@@ -91,11 +93,13 @@ var allPermInfos = []PermInfo{
 	{Code: ScheduleCreate, Name: "排期-新增", Module: "schedule"},
 	{Code: ScheduleUpdate, Name: "排期-编辑", Module: "schedule"},
 	{Code: ScheduleDelete, Name: "排期-删除", Module: "schedule"},
-	{Code: PoHome, Name: "PO 工作台-首页", Module: "po"},
-	{Code: PoTodo, Name: "PO 工作台-我的待办", Module: "po"},
-	{Code: PoDone, Name: "PO 工作台-我的已办", Module: "po"},
-	{Code: PoNotice, Name: "PO 工作台-通知中心", Module: "po"},
-	{Code: PoFollow, Name: "PO 工作台-我的关注", Module: "po"},
+	{Code: PoHomeList, Name: "PO 工作台-首页", Module: "po"},
+	{Code: PoTodoList, Name: "PO 工作台-我的待办", Module: "po"},
+	{Code: PoDoneList, Name: "PO 工作台-我的已办", Module: "po"},
+	{Code: PoNoticeList, Name: "PO 工作台-通知中心", Module: "po"},
+	{Code: PoNoticeUpdate, Name: "PO 工作台-更新通知状态", Module: "po"},
+	{Code: PoFollowList, Name: "PO 工作台-我的关注", Module: "po"},
+	{Code: PoFollowUpdate, Name: "PO 工作台-更新关注关系", Module: "po"},
 }
 
 // systemPerms 是系统内置放行权限，不对外暴露到权限配置 UI。
