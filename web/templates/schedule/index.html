@@ -18,11 +18,6 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
 ========================================================================== */}}
 {{ define "page_css" }}
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedule.css" }}">
-<link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulelist.css" }}">
-<link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulewindow.css" }}">
-<link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulemodal.css" }}">
-<link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulefilter.css" }}">
-<link rel="stylesheet" href="{{ asset "/static/css/schedule/scheduleintegrated.css" }}">
 {{ end }}
 
 {{ define "content" }}
@@ -102,12 +97,12 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
     </div>
   </div>
 
-  <div id="scheduleListViewWrap" class="schedule-area" style="margin-bottom:16px">
+  <div id="scheduleListViewWrap" class="schedule-area mg-b-16">
     {{ $activeFilter := .ActiveFilter }}
     {{ $bizCounts := .BizFilterCounts }}
     {{ $indepCounts := .IndepFilterCounts }}
     <div class="schedule-quick-scope" id="scheduleQuickScope">
-      <span style="font-size:12px;font-weight:700;color:var(--t2);margin-right:4px"><i class="fas fa-bolt" style="color:var(--orange);margin-right:4px"></i>快捷筛选</span>
+      <span class="section-title-bold"><i class="fas fa-bolt text-orange modal-hdr-icon"></i>快捷筛选</span>
       <button type="button" class="schedule-scope-chip{{ if eq $activeFilter "all_open" }} active{{ end }}" data-filter="all_open" data-biz-count="{{ $bizCounts.AllOpen }}" data-indep-count="{{ $indepCounts.AllOpen }}" title="显示全部未关闭的需求"><i class="fas fa-folder-open"></i>全部未关闭 <strong class="js-filter-count">{{ $bizCounts.AllOpen }}</strong></button>
       <button type="button" class="schedule-scope-chip{{ if eq $activeFilter "unscheduled" }} active{{ end }}" data-filter="unscheduled" data-biz-count="{{ $bizCounts.Unscheduled }}" data-indep-count="{{ $indepCounts.Unscheduled }}" title="未绑窗口 / 未转研发 / 已转未拆任务或无指派人"><i class="fas fa-hourglass-start"></i>待排期 <strong class="js-filter-count">{{ $bizCounts.Unscheduled }}</strong></button>
       <button type="button" class="schedule-scope-chip{{ if eq $activeFilter "pending_review" }} active{{ end }}" data-filter="pending_review" data-biz-count="{{ $bizCounts.PendingReview }}" data-indep-count="{{ $indepCounts.PendingReview }}" title="待评审状态的需求"><i class="fas fa-clipboard-check"></i>待评审 <strong class="js-filter-count">{{ $bizCounts.PendingReview }}</strong></button>
@@ -262,19 +257,19 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
     </div>
 
     <div id="scheduleBizListPanel">
-    <div style="overflow-x:auto">
+    <div class="table-scroll-x">
       <table class="schedule-table">
         <thead id="scheduleTableHead">
           <tr>
-            <th class="schedule-col-title" style="min-width:500px">标题</th>
-            <th class="schedule-col-nowrap" style="width:72px">优先级</th>
-            <th class="schedule-col-nowrap" style="width:120px">敏捷小组</th>
-            <th class="schedule-col-nowrap" style="min-width:120px">排期阶段</th>
-            <th class="schedule-col-nowrap" style="min-width:96px">窗口阶段</th>
-            <th class="schedule-col-stage" style="min-width:160px">版本窗口</th>
-            <th class="schedule-col-owner" style="min-width:110px">负责人</th>
-            <th class="schedule-col-nowrap" style="width:72px">任务</th>
-            <th class="schedule-action-col schedule-col-nowrap" style="width:100px">操作</th>
+            <th class="schedule-col-title col-min-500">标题</th>
+            <th class="schedule-col-nowrap col-w-72">优先级</th>
+            <th class="schedule-col-nowrap col-w-120">敏捷小组</th>
+            <th class="schedule-col-nowrap col-min-120">排期阶段</th>
+            <th class="schedule-col-nowrap col-min-96">窗口阶段</th>
+            <th class="schedule-col-stage col-min-160">版本窗口</th>
+            <th class="schedule-col-owner col-min-110">负责人</th>
+            <th class="schedule-col-nowrap col-w-72">任务</th>
+            <th class="schedule-action-col schedule-col-nowrap col-w-100">操作</th>
           </tr>
         </thead>
         <tbody id="scheduleBody">
@@ -309,9 +304,9 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             <td class="schedule-action-col">
               <div class="schedule-action-buttons">
                 {{ if .DetailURL }}
-                <a href="{{ .DetailURL }}" class="action-btn {{ .ActionClass }}" data-demand-id="{{ .DemandID }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</a>
+                <a href="{{ .DetailURL }}" class="action-btn action-btn--sm {{ .ActionClass }}" data-demand-id="{{ .DemandID }}">{{ .ActionLabel }}</a>
                 {{ else }}
-                <button type="button" class="action-btn {{ .ActionClass }}" data-demand-id="{{ .DemandID }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</button>
+                <button type="button" class="action-btn action-btn--sm {{ .ActionClass }}" data-demand-id="{{ .DemandID }}">{{ .ActionLabel }}</button>
                 {{ end }}
               </div>
             </td>
@@ -342,9 +337,9 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             <td class="schedule-action-col">
               <div class="schedule-action-buttons">
                 {{ if .DetailURL }}
-                <a href="{{ .DetailURL }}" class="action-btn {{ .ActionClass }}" data-demand-id="{{ .DemandID }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</a>
+                <a href="{{ .DetailURL }}" class="action-btn action-btn--sm {{ .ActionClass }}" data-demand-id="{{ .DemandID }}">{{ .ActionLabel }}</a>
                 {{ else }}
-                <button type="button" class="action-btn {{ .ActionClass }}" data-demand-id="{{ .DemandID }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</button>
+                <button type="button" class="action-btn action-btn--sm {{ .ActionClass }}" data-demand-id="{{ .DemandID }}">{{ .ActionLabel }}</button>
                 {{ end }}
               </div>
             </td>
@@ -378,7 +373,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             </td>
             <td class="schedule-action-col">
               <div class="schedule-action-buttons">
-                <button type="button" class="action-btn action-btn--success js-open-task-modal" data-story-id="{{ .StoryID }}" style="padding:4px 10px;font-size:11px">维护任务</button>
+                <button type="button" class="action-btn action-btn--sm action-btn--success js-open-task-modal" data-story-id="{{ .StoryID }}">维护任务</button>
               </div>
             </td>
           </tr>
@@ -413,46 +408,46 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             </td>
             <td class="schedule-action-col">
               <div class="schedule-action-buttons">
-                <button type="button" class="action-btn action-btn--success js-open-task-modal" data-story-id="{{ .StoryID }}" style="padding:4px 10px;font-size:11px">维护任务</button>
+                <button type="button" class="action-btn action-btn--sm action-btn--success js-open-task-modal" data-story-id="{{ .StoryID }}">维护任务</button>
               </div>
             </td>
           </tr>
           {{ end }}
           {{ else }}
           <tr>
-            <td colspan="9" class="text-center text-muted" style="padding:32px 16px">暂无数据</td>
+            <td colspan="9" class="text-center text-muted empty-row">暂无数据</td>
           </tr>
           {{ end }}
         </tbody>
       </table>
     </div>
 
-    <div id="scheduleBizPagination" class="pagination-container" style="padding:10px 20px;border-top:1px solid var(--border-lt)">
+    <div id="scheduleBizPagination" class="pagination-container pager-bar">
       {{ template "components/pager" (dict "Pager" .BizPager "CurrentPath" .CurrentPath) }}
     </div>
     </div>
 
-    <div id="scheduleIndependentListPanel" style="display:none">
-    <div style="overflow-x:auto">
+    <div id="scheduleIndependentListPanel" class="is-hidden">
+    <div class="table-scroll-x">
       <table class="schedule-table">
         <thead>
           <tr>
-            <th class="schedule-col-title" style="min-width:300px;padding-left: 20px;">标题</th>
-            <th class="schedule-col-nowrap" style="width:72px">优先级</th>
-            <th class="schedule-col-nowrap" style="width:120px">关联系统</th>
-            <th class="schedule-col-nowrap" style="width:120px">排期窗口</th>
-            <th class="schedule-col-nowrap" style="min-width:120px">排期阶段</th>
-            <th class="schedule-col-nowrap" style="width:120px">敏捷小组</th>
-            <th class="schedule-col-owner" style="min-width:110px">负责人</th>
-            <th class="schedule-col-nowrap" style="width:72px">任务</th>
-            <th class="schedule-action-col schedule-col-nowrap" style="width:140px">操作</th>
+            <th class="schedule-col-title col-min-300 pd-l-20">标题</th>
+            <th class="schedule-col-nowrap col-w-72">优先级</th>
+            <th class="schedule-col-nowrap col-w-120">关联系统</th>
+            <th class="schedule-col-nowrap col-w-120">排期窗口</th>
+            <th class="schedule-col-nowrap col-min-120">排期阶段</th>
+            <th class="schedule-col-nowrap col-w-120">敏捷小组</th>
+            <th class="schedule-col-owner col-min-110">负责人</th>
+            <th class="schedule-col-nowrap col-w-72">任务</th>
+            <th class="schedule-action-col schedule-col-nowrap col-w-140">操作</th>
           </tr>
         </thead>
         <tbody id="scheduleIndependentBody">
           {{ range .IndependentRequirements }}
           {{ $parent := . }}
           <tr class="schedule-indep-row schedule-tree-l1" data-id="{{ .ID }}">
-            <td style="padding-left: 20px;">
+            <td class="pd-l-20">
               <div class="schedule-title-cell schedule-title-cell--l1">
                 {{ if .HasChildren }}
                 <button type="button" class="schedule-row-expand" data-target="{{ .ID }}" title="展开/收起子行"><i class="fas fa-chevron-down"></i></button>
@@ -531,14 +526,14 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
           {{ end }}
           {{ else }}
           <tr>
-            <td colspan="9" class="text-center text-muted" style="padding:32px 16px">暂无数据</td>
+            <td colspan="9" class="text-center text-muted empty-row">暂无数据</td>
           </tr>
           {{ end }}
         </tbody>
       </table>
     </div>
 
-    <div id="scheduleIndependentPagination" class="pagination-container" style="padding:10px 20px;border-top:1px solid var(--border-lt);display:none">
+    <div id="scheduleIndependentPagination" class="pagination-container pager-bar is-hidden">
       {{ template "components/pager" (dict "Pager" .IndepPager "CurrentPath" .CurrentPath) }}
     </div>
     </div>
@@ -555,15 +550,15 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
     <div class="schedule-create-modal" id="scheduleVersionWindowForm">
       <div class="schedule-create-grid schedule-create-grid--4">
         <div class="form-group">
-          <label class="form-label" for="scheduleWindowOnline">预计上线 <span style="color:var(--red)">*</span></label>
+          <label class="form-label" for="scheduleWindowOnline">预计上线 <span class="required">*</span></label>
           <input type="date" class="form-input" id="scheduleWindowOnline" name="online">
         </div>
         <div class="form-group">
-          <label class="form-label" for="scheduleWindowName">窗口名称 <span style="color:var(--red)">*</span></label>
+          <label class="form-label" for="scheduleWindowName">窗口名称 <span class="required">*</span></label>
           <input type="text" class="form-input" id="scheduleWindowName" name="name" placeholder="根据预计上线自动生成">
         </div>
         <div class="form-group">
-          <label class="form-label" for="scheduleWindowStart">窗口开始 <span style="color:var(--red)">*</span></label>
+          <label class="form-label" for="scheduleWindowStart">窗口开始 <span class="required">*</span></label>
           <input type="date" class="form-input" id="scheduleWindowStart" name="start" required>
         </div>
         <div class="form-group">
@@ -576,7 +571,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
         <div class="schedule-create-inline-row">
           <div class="form-group">
             <label class="form-label" for="scheduleWindowTeamgroup">敏捷小组</label>
-            <select class="form-select" id="scheduleWindowTeamgroup" name="teamgroupId" style="width:100%">
+            <select class="form-select full-width" id="scheduleWindowTeamgroup" name="teamgroupId">
               {{ range .Teamgroups }}
               <option value="{{ .ID }}">{{ .DisplayName }}</option>
               {{ end }}
@@ -584,7 +579,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
           </div>
           <div class="form-group">
             <label class="form-label" for="scheduleWindowType">发布类型</label>
-            <select class="form-select" id="scheduleWindowType" name="windowType" style="width:100%">
+            <select class="form-select full-width" id="scheduleWindowType" name="windowType">
               <option value="regular">常规</option>
               <option value="fast">快速</option>
               <option value="urgent">紧急</option>
@@ -646,9 +641,9 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
   <div class="batch-modal-body" id="taskModalBody">
     <div id="taskModalSpec"></div>
 
-    <div id="taskModalInfoBar" style="font-size:12px; color:#666; margin:12px 0;"></div>
+    <div id="taskModalInfoBar" class="info-bar"></div>
 
-    <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
+    <div class="toolbar-flex">
       <button type="button" class="action-btn action-btn--primary" id="taskModalAddBtn">拆任务</button>
     </div>
 
@@ -656,15 +651,15 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
     <table class="rd-task-table" id="taskModalTable">
       <thead>
         <tr>
-          <th style="width:120px">项目</th>
-          <th style="width:120px">执行 <span class="req">*</span></th>
-          <th style="width:80px">类型</th>
-          <th style="width:72px">优先级</th>
+          <th class="col-w-120">项目</th>
+          <th class="col-w-120">执行 <span class="req">*</span></th>
+          <th class="col-w-80">类型</th>
+          <th class="col-w-72">优先级</th>
           <th>任务名称 <span class="req">*</span></th>
-          <th style="width:120px">指派给</th>
-          <th style="width:70px">预估(h) <span class="req">*</span></th>
-          <th style="width:110px">预计开始</th>
-          <th style="width:110px">截止时间 <span class="req">*</span></th>
+          <th class="col-w-120">指派给</th>
+          <th class="col-w-70">预估(h) <span class="req">*</span></th>
+          <th class="col-w-110">预计开始</th>
+          <th class="col-w-110">截止时间 <span class="req">*</span></th>
         </tr>
       </thead>
       <tbody id="taskModalTableBody"></tbody>
@@ -813,12 +808,12 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
           <table class="transfer-dev-story-table">
             <thead>
               <tr>
-                <th style="width:56px">序号</th>
-                <th style="width:120px">角色</th>
+                <th class="col-w-56">序号</th>
+                <th class="col-w-120">角色</th>
                 <th>目标和值</th>
-                <th style="width:120px">涉及系统</th>
-                <th style="width:132px">负责团队</th>
-                <th style="width:72px">故事点</th>
+                <th class="col-w-120">涉及系统</th>
+                <th class="col-w-132">负责团队</th>
+                <th class="col-w-72">故事点</th>
               </tr>
             </thead>
             <tbody id="storyItemsBody"></tbody>
@@ -826,7 +821,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
         </div>
         <div id="rdTaskTree" class="rd-task-tree">
           <div class="transfer-dev-section-head"><strong>研发需求</strong></div>
-          <div id="rdTreeEmpty" class="integrated-rd-tree-empty compact" style="display:none;">
+          <div id="rdTreeEmpty" class="integrated-rd-tree-empty compact is-hidden">
             <p>暂无研发需求</p>
           </div>
           <div id="rdTreeNodes"></div>
@@ -887,16 +882,16 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
 <template id="tplRdTaskTableHead">
   <thead>
     <tr class="rd-task-table-head-row">
-      <th class="rd-task-th rd-task-th--project" style="width:120px">项目</th>
-      <th class="rd-task-th rd-task-th--execution" style="width:120px">执行</th>
-      <th class="rd-task-th rd-task-th--type" style="width:80px">类型</th>
-      <th class="rd-task-th rd-task-th--pri" style="width:72px">优先级</th>
+      <th class="rd-task-th rd-task-th--project col-w-120">项目</th>
+      <th class="rd-task-th rd-task-th--execution col-w-120">执行</th>
+      <th class="rd-task-th rd-task-th--type col-w-80">类型</th>
+      <th class="rd-task-th rd-task-th--pri col-w-72">优先级</th>
       <th class="rd-task-th rd-task-th--name">任务名称 <span class="req">*</span></th>
-      <th class="rd-task-th rd-task-th--owner" style="width:140px">负责人</th>
-      <th class="rd-task-th rd-task-th--hours" style="width:60px">预估(h) <span class="req">*</span></th>
-      <th class="rd-task-th rd-task-th--start" style="width:100px">开始</th>
-      <th class="rd-task-th rd-task-th--end" style="width:100px">截止 <span class="req">*</span></th>
-      <th class="rd-task-th rd-task-th--actions" style="width:48px">操作</th>
+      <th class="rd-task-th rd-task-th--owner col-w-140">负责人</th>
+      <th class="rd-task-th rd-task-th--hours col-w-60">预估(h) <span class="req">*</span></th>
+      <th class="rd-task-th rd-task-th--start col-w-100">开始</th>
+      <th class="rd-task-th rd-task-th--end col-w-100">截止 <span class="req">*</span></th>
+      <th class="rd-task-th rd-task-th--actions col-w-48">操作</th>
     </tr>
   </thead>
 </template>
@@ -1089,7 +1084,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
       <input type="checkbox" data-field="syncCreate">
       <span>同步创建对应系统计划（日期与本窗口一致）</span>
     </label>
-    <div class="form-group" data-field="planNameGroup" style="margin:0">
+    <div class="form-group mg-0" data-field="planNameGroup">
       <label class="form-label">计划名称</label>
       <input type="text" class="form-input" data-field="planName" placeholder="默认与窗口名称一致，可修改">
     </div>
@@ -1099,16 +1094,16 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
 
 <template id="scheduleManageWindowRow">
   <tr>
-    <td data-field="index" style="text-align:center;color:var(--t3)"></td>
+    <td data-field="index" class="text-t3-center"></td>
     <td><strong data-field="name"></strong></td>
     <td data-field="releaseDate"></td>
-    <td data-field="range" style="font-size:11px;color:var(--t3)"></td>
-    <td data-field="demandCount" style="text-align:center"></td>
-    <td data-field="capacity" style="text-align:center"></td>
-    <td data-field="usedHours" style="text-align:center"></td>
-    <td data-field="remainingHours" style="text-align:center"></td>
-    <td data-field="blockedCount" style="text-align:center"></td>
-    <td data-field="actions" style="text-align:center">
+    <td data-field="range" class="text-xs-t3"></td>
+    <td data-field="demandCount" class="col-center"></td>
+    <td data-field="capacity" class="col-center"></td>
+    <td data-field="usedHours" class="col-center"></td>
+    <td data-field="remainingHours" class="col-center"></td>
+    <td data-field="blockedCount" class="col-center"></td>
+    <td data-field="actions" class="col-center">
       <div class="action-group schedule-manage-actions"></div>
     </td>
   </tr>
@@ -1127,27 +1122,27 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
 </template>
 
 <div class="modal-overlay" id="manageVersionWindowsOverlay"></div>
-<div class="modal" id="manageVersionWindowsModal" style="width:700px;max-width:90vw">
-  <div class="modal-hdr"><h3><i class="fas fa-layer-group" style="color:var(--blue)"></i> 版本窗口管理</h3><button type="button" class="modal-close" id="manageVersionWindowsCloseBtn"><i class="fas fa-xmark"></i></button></div>
-  <div class="modal-body" style="padding:16px 20px">
-    <div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
-      <span style="font-size:12px;color:var(--t3)">共 <strong id="manageWindowCount">0</strong> 个版本窗口</span>
-      <button type="button" class="action-btn primary js-open-create-version-window-from-manage" style="font-size:11px;padding:4px 12px"><i class="fas fa-plus"></i> 新建窗口</button>
+<div class="modal modal-700" id="manageVersionWindowsModal">
+  <div class="modal-hdr"><h3><i class="fas fa-layer-group text-blue modal-hdr-icon"></i> 版本窗口管理</h3><button type="button" class="modal-close" id="manageVersionWindowsCloseBtn"><i class="fas fa-xmark"></i></button></div>
+  <div class="modal-body modal-pd-16">
+    <div class="toolbar-between">
+      <span class="section-meta">共 <strong id="manageWindowCount">0</strong> 个版本窗口</span>
+      <button type="button" class="action-btn primary action-btn--sm js-open-create-version-window-from-manage"><i class="fas fa-plus"></i> 新建窗口</button>
     </div>
-    <div style="overflow-x:auto">
-      <table class="schedule-table" style="width:100%;font-size:12px">
+    <div class="table-scroll-x">
+      <table class="schedule-table full-width-sm">
         <thead>
           <tr>
-            <th style="width:44px;text-align:center">#</th>
-            <th style="min-width:120px">窗口名称</th>
-            <th style="width:120px">上线日期</th>
-            <th style="width:100px">日期范围</th>
-            <th style="width:60px;text-align:center">需求</th>
-            <th style="width:70px;text-align:center">容量(H)</th>
-            <th style="width:70px;text-align:center">已占用(H)</th>
-            <th style="width:70px;text-align:center">剩余(H)</th>
-            <th style="width:60px;text-align:center">阻塞</th>
-            <th style="width:120px;text-align:center">操作</th>
+            <th class="col-w-44-center">#</th>
+            <th class="col-min-120">窗口名称</th>
+            <th class="col-w-120">上线日期</th>
+            <th class="col-w-100">日期范围</th>
+            <th class="col-w-60-center">需求</th>
+            <th class="col-w-70-center">容量(H)</th>
+            <th class="col-w-70-center">已占用(H)</th>
+            <th class="col-w-70-center">剩余(H)</th>
+            <th class="col-w-60-center">阻塞</th>
+            <th class="col-w-120-center">操作</th>
           </tr>
         </thead>
         <tbody id="manageVersionWindowsBody"></tbody>
