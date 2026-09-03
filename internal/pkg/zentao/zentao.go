@@ -31,6 +31,11 @@ func URL(m, f string, params ...string) string {
 }
 
 // URLWithBase 使用指定站点前缀拼接禅道页面链接（base 为空时回退全局配置）。
+//
+// 禅道 max5 前端壳下 PATH_INFO 伪静态（base/m-f-N.html）会被 rewrite 回首页
+// （CRCBWorkbench 实测 /task-view-142.html → "首页 - 禅道"），故一律走 GET 入口
+// index.php?m=X&f=view&key=N&id=N；demand view 另加 #app=demandpool，
+// 缺少该壳上下文时会被前端壳回落到"地盘/首页"。
 func URLWithBase(base, m, f string, params ...string) string {
 	base = strings.TrimRight(base, "/")
 	if base == "" {
@@ -40,9 +45,6 @@ func URLWithBase(base, m, f string, params ...string) string {
 		return ""
 	}
 
-	if isPathInfo(zentaoCfg.RequestType) {
-		return pathInfoURL(base, m, f, params...)
-	}
 	return getURL(base, m, f, params...)
 }
 
@@ -54,8 +56,30 @@ func getURL(base, m, f string, params ...string) string {
 	query := fmt.Sprintf("m=%s&f=%s", url.QueryEscape(m), url.QueryEscape(f))
 	if len(params) > 0 && params[0] != "" {
 		query += "&" + params[0]
+		// 禅道 max5 需要 id 参数与业务 ID 参数并存（CRCBWorkbench buildZentaoURL 双设）。
+		if val, ok := extractParamsValue(params[0]); ok && !strings.Contains(params[0], "id=") {
+			query += "&id=" + url.QueryEscape(val)
+		}
 	}
-	return base + indexPath + "?" + query
+	u := base + indexPath + "?" + query
+	// 禅道 max5 需求池应用壳：demand view 缺 #app=demandpool 会回落"地盘/首页"。
+	if m == "demand" && f == "view" {
+		u += "#app=demandpool"
+	}
+	return u
+}
+
+// extractParamsValue 从 "key=value" 形式的参数串中取出 value；无 "=" 时返回 false。
+func extractParamsValue(raw string) (string, bool) {
+	_, val, found := strings.Cut(raw, "=")
+	if !found {
+		return "", false
+	}
+	val = strings.TrimSpace(val)
+	if val == "" {
+		return "", false
+	}
+	return val, true
 }
 
 func pathInfoURL(base, m, f string, params ...string) string {

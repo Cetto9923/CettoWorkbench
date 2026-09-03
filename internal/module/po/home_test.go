@@ -84,7 +84,6 @@ func TestHomeFrontendTruthContract(t *testing.T) {
 		"data-focal=",
 		"风险 <strong>0</strong>",
 		"最长 —天",
-		"target=\"_blank\"",
 		`home-hl-num">—<`, // 数字必须是真实值,禁止破折号占位
 	} {
 		if strings.Contains(template, forbidden) {
@@ -92,10 +91,14 @@ func TestHomeFrontendTruthContract(t *testing.T) {
 		}
 	}
 
-	for _, forbidden := range []string{"window.open(", "target=\\\"_blank\\\"", "FOCAL_LABELS"} {
+	for _, forbidden := range []string{"window.open(", "FOCAL_LABELS"} {
 		if strings.Contains(script, forbidden) {
 			t.Errorf("home script violates current-page or truth contract with %q", forbidden)
 		}
+	}
+	// 禅道详情跳转对齐 CRCBWorkbench: 新窗口打开 (target=_blank + noopener noreferrer)。
+	if !strings.Contains(script, "target=\\\"_blank\\\"") || !strings.Contains(script, "noopener noreferrer") {
+		t.Errorf("home script zentao links must open in new window with noopener noreferrer (CRCBWorkbench parity)")
 	}
 }
 

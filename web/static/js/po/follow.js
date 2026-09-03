@@ -57,7 +57,7 @@
       '</div>' +
       '</div>' +
       '<div class="follow-actions">' +
-      '<a class="follow-btn" href="' + escapeHtml(item.url || "#") + '">查看</a>' +
+      '<a class="follow-btn" href="' + escapeHtml(item.url || "#") + '" target="_blank" rel="noopener noreferrer">查看</a>' +
       (state.tab === "demand" ? '<button type="button" class="follow-btn" data-action="unfollow" data-id="' + escapeHtml(item.id) + '">取消关注</button>' : '') +
       '</div>' +
       '</div>'

@@ -148,7 +148,7 @@
     return (
       "href=\"" +
       escapeHtml(url) +
-      "\" class=\"" +
+      "\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"" +
       cls +
       "\""
     );

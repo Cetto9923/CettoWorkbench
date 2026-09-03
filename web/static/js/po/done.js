@@ -38,11 +38,11 @@
 
   function renderRow(item) {
     var objectCell = item.url
-      ? '<a href="' + escapeHtml(item.url) + '" title="在禅道中查看">' +
+      ? '<a href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener noreferrer" title="在禅道中查看">' +
         escapeHtml(item.objectType) + "/" + escapeHtml(String(item.objectId)) + "</a>"
       : escapeHtml(item.objectType) + "/" + escapeHtml(String(item.objectId));
     var nameCell = item.url
-      ? '<a href="' + escapeHtml(item.url) + '" title="在禅道中查看">' +
+      ? '<a href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener noreferrer" title="在禅道中查看">' +
         escapeHtml(item.objectName || "—") + "</a>"
       : escapeHtml(item.objectName || "—");
     return (

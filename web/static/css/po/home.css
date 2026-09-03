@@ -128,9 +128,9 @@
     "meta meta";
   grid-template-columns: 1fr auto;
   min-width: 0;
-  min-height: var(--size-14);
+  min-height: 48px;
   gap: var(--space-0_5);
-  padding: var(--space-2);
+  padding: 5px 7px;
   border: 1px solid var(--po-border);
   border-radius: var(--radius-sm);
   background: var(--po-white);
@@ -154,11 +154,12 @@
 .po-home .home-vs-mini-card.active {
   border-color: var(--po-blue);
   background: var(--po-blue-bg);
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.12);
 }
 
 .po-home .home-vs-mini-card.empty {
   background: var(--po-bg);
-  opacity: 0.68;
+  opacity: 0.72;
 }
 
 .po-home .home-vs-mini-card.active.empty {
@@ -180,8 +181,8 @@
   grid-area: count;
   color: var(--po-t1);
   font-family: "JetBrains Mono", var(--font-sans);
-  font-size: var(--font-size-2xl);
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 650;
   line-height: 1;
 }
 

@@ -28,8 +28,8 @@
     var priority = ["P1", "P2", "P3", "P4"].indexOf(item.priority) >= 0 ? item.priority.toLowerCase() : "normal";
     var id = escapeHtml(item.displayId || item.id);
     var title = escapeHtml(item.title || "—");
-    var idContent = item.url ? '<a class="row-id-link" href="' + escapeHtml(item.url) + '">' + id + "</a>" : id;
-    var titleContent = item.url ? '<a class="row-title-link" href="' + escapeHtml(item.url) + '">' + title + "</a>" : title;
+    var idContent = item.url ? '<a class="row-id-link" href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener noreferrer">' + id + "</a>" : id;
+    var titleContent = item.url ? '<a class="row-title-link" href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener noreferrer">' + title + "</a>" : title;
     var action = escapeHtml(item.action || "查看");
     return "<tr>" +
       '<td class="c-id">' + idContent + "</td>" +

@@ -38,7 +38,7 @@
     var catLabel = catLabels[cat] || item.category || "—";
     var unread = item.read ? "" : '<span class="unread-dot"></span>';
     var objCell = item.url
-      ? '<a href="' + escapeHtml(item.url) + '" title="在禅道中查看">' +
+      ? '<a href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener noreferrer" title="在禅道中查看">' +
         escapeHtml(item.objectType || "—") + "/" + escapeHtml(String(item.objectId || 0)) + "</a>"
       : escapeHtml(item.objectType || "—") + "/" + escapeHtml(String(item.objectId || 0));
     var readBtn = item.read
