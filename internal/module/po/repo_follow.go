@@ -56,13 +56,13 @@ func (r *Repo) FindFollowedDemands(ctx context.Context, account string, scope Fo
 	}
 
 	type row struct {
-		ID       int64   `gorm:"column:id"`
-		Name     string  `gorm:"column:name"`
-		Status   string  `gorm:"column:status"`
-		Pri      string  `gorm:"column:pri"`
-		BRA      string  `gorm:"column:BRA"`
-		QD       string  `gorm:"column:QD"`
-		RD       string  `gorm:"column:RD"`
+		ID       int64      `gorm:"column:id"`
+		Name     string     `gorm:"column:name"`
+		Status   string     `gorm:"column:status"`
+		Pri      string     `gorm:"column:pri"`
+		BRA      string     `gorm:"column:BRA"`
+		QD       string     `gorm:"column:QD"`
+		RD       string     `gorm:"column:RD"`
 		Deadline *time.Time `gorm:"column:deadline"`
 	}
 	var rows []row

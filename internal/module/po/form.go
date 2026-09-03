@@ -100,34 +100,34 @@ const (
 type Relation string
 
 const (
-	RelationAll        Relation = "all"
-	RelationInCharge   Relation = "in_charge"  // 我负责
-	RelationCooperate  Relation = "cooperate"  // 我配合
-	RelationFollow     Relation = "follow"     // 我关注
+	RelationAll       Relation = "all"
+	RelationInCharge  Relation = "in_charge" // 我负责
+	RelationCooperate Relation = "cooperate" // 我配合
+	RelationFollow    Relation = "follow"    // 我关注
 )
 
 // Responsibility 办理责任 V10.1 02 节。
 type Responsibility string
 
 const (
-	ResponsibilityAll         Responsibility = "all"
-	ResponsibilityMyAction     Responsibility = "my_action"     // 待我处理
-	ResponsibilityMyFollowUp   Responsibility = "my_follow_up"  // 待我跟进
+	ResponsibilityAll        Responsibility = "all"
+	ResponsibilityMyAction   Responsibility = "my_action"    // 待我处理
+	ResponsibilityMyFollowUp Responsibility = "my_follow_up" // 待我跟进
 )
 
 // TodoListReq 我的待办列表请求。
 // V10.1 02 节：7 维 AND = Tab ∩ 办理场景 ∩ 阶段 ∩ 对象 ∩ 我的关系 ∩ 办理责任 ∩ 关键词。
 // 本期实现全部 7 维；具体对象 objectType 过滤只展示当前 Tab 实际有数据的对象类型。
 type TodoListReq struct {
-	Tab           TodoTab        `form:"tab"`           // 对象域 Tab；默认 approval
-	Action        TodoAction     `form:"action"`        // 办理场景；默认 all
-	Stage         string         `form:"stage"`         // 阶段（仅 demand 生效）；默认 all
-	ObjectType    string         `form:"objectType"`    // 对象类型 demand/story/task/bug/testtask；默认 all
-	Relation      Relation       `form:"relation"`      // 我的关系；默认 all
+	Tab            TodoTab        `form:"tab"`            // 对象域 Tab；默认 approval
+	Action         TodoAction     `form:"action"`         // 办理场景；默认 all
+	Stage          string         `form:"stage"`          // 阶段（仅 demand 生效）；默认 all
+	ObjectType     string         `form:"objectType"`     // 对象类型 demand/story/task/bug/testtask；默认 all
+	Relation       Relation       `form:"relation"`       // 我的关系；默认 all
 	Responsibility Responsibility `form:"responsibility"` // 办理责任；默认 all
-	Keyword       string         `form:"keyword"`       // 关键词
-	Page          int            `form:"page"`          // 页码；1-based
-	PageSize      int            `form:"pageSize"`      // 每页条数；默认 20
+	Keyword        string         `form:"keyword"`        // 关键词
+	Page           int            `form:"page"`           // 页码；1-based
+	PageSize       int            `form:"pageSize"`       // 每页条数；默认 20
 }
 
 // TodoAction 办理场景（V10.1 02 节 "为什么现在要办"）。
@@ -205,27 +205,27 @@ func (r *TodoListReq) Validate() []FieldError {
 // TodoItem 我的待办单条（横跨业务需求/研发需求/任务/Bug/测试单等多种对象）。
 // kind 决定展示与跳转链接生成。
 type TodoItem struct {
-	Kind         string `json:"kind"`            // demand / story / task / bug / test
-	ID           int64  `json:"id"`              // 业务需求 ID（业需/任务/...各自主键）
-	DisplayID    string `json:"displayId"`       // 展示编号：业需 US{id}，研需 U{id}，任务/单据 TASK-{id} 等
-	Title        string `json:"title"`           // 标题
-	Type         string `json:"type"`            // 对象类型中文标签（业务需求/任务/Bug/测试单...）
-	Stage        string `json:"stage"`           // 当前阶段（valueStream 标签或 zentao status 中文）
-	Priority     string `json:"priority"`        // 优先级 P0..P4
-	Relation     string `json:"relation"`        // 我负责/我配合/我关注
+	Kind           string `json:"kind"`           // demand / story / task / bug / test
+	ID             int64  `json:"id"`             // 业务需求 ID（业需/任务/...各自主键）
+	DisplayID      string `json:"displayId"`      // 展示编号：业需 US{id}，研需 U{id}，任务/单据 TASK-{id} 等
+	Title          string `json:"title"`          // 标题
+	Type           string `json:"type"`           // 对象类型中文标签（业务需求/任务/Bug/测试单...）
+	Stage          string `json:"stage"`          // 当前阶段（valueStream 标签或 zentao status 中文）
+	Priority       string `json:"priority"`       // 优先级 P0..P4
+	Relation       string `json:"relation"`       // 我负责/我配合/我关注
 	Responsibility string `json:"responsibility"` // 待我处理/待我跟进
-	Reason       string `json:"reason"`          // 形成原因（来源禅道 status 或业务场景）
-	Deadline     string `json:"deadline"`        // 截止日期 YYYY-MM-DD（无日期空串）
-	Owner        string `json:"owner"`           // 责任人展示名
-	URL          string `json:"url"`             // 禅道详情 URL 或工作台任务详情 URL
+	Reason         string `json:"reason"`         // 形成原因（来源禅道 status 或业务场景）
+	Deadline       string `json:"deadline"`       // 截止日期 YYYY-MM-DD（无日期空串）
+	Owner          string `json:"owner"`          // 责任人展示名
+	URL            string `json:"url"`            // 禅道详情 URL 或工作台任务详情 URL
 }
 
 // TodoListResp 我的待办列表响应。
 type TodoListResp struct {
-	Items     []TodoItem `json:"items"`
-	Total     int64      `json:"total"`     // 过滤后总数（不含分页截断）
-	Page      int        `json:"page"`      // 当前页
-	PageSize  int        `json:"pageSize"`  // 每页条数
+	Items    []TodoItem `json:"items"`
+	Total    int64      `json:"total"`    // 过滤后总数（不含分页截断）
+	Page     int        `json:"page"`     // 当前页
+	PageSize int        `json:"pageSize"` // 每页条数
 }
 
 // DoneTab 已办对象域。V10.1 02 节：本期先打通需求治理 + 研发执行。
@@ -258,14 +258,14 @@ const (
 // V10.1 02 节：已办形成条件 = 本人真实执行的正式业务动作。来源 zt_action + Workbench 审计。
 // 严格定义：待办消失不能自动变成已办。
 type DoneListReq struct {
-	Tab       DoneTab   `form:"tab"`       // 对象域；默认 all
-	TimeRange TimeRange `form:"timeRange"` // 时间段；默认 all
-	CustomFrom string   `form:"from"`      // 时间段=custom 时生效
-	CustomTo   string   `form:"to"`        // 时间段=custom 时生效
-	ObjectType string   `form:"objectType"` // 业务需求/任务/Bug/测试单等
-	Result     string   `form:"result"`     // 操作结果
-	Page       int      `form:"page"`
-	PageSize   int      `form:"pageSize"`
+	Tab        DoneTab   `form:"tab"`        // 对象域；默认 all
+	TimeRange  TimeRange `form:"timeRange"`  // 时间段；默认 all
+	CustomFrom string    `form:"from"`       // 时间段=custom 时生效
+	CustomTo   string    `form:"to"`         // 时间段=custom 时生效
+	ObjectType string    `form:"objectType"` // 业务需求/任务/Bug/测试单等
+	Result     string    `form:"result"`     // 操作结果
+	Page       int       `form:"page"`
+	PageSize   int       `form:"pageSize"`
 }
 
 // Validate 校验 DoneListReq。
@@ -384,27 +384,27 @@ type NoticeBucketResp struct {
 type FollowTab string
 
 const (
-	FollowTabDemand         FollowTab = "demand"          // 业务需求（默认）
-	FollowTabProjectReport  FollowTab = "project_report"  // 项目报告
+	FollowTabDemand        FollowTab = "demand"         // 业务需求（默认）
+	FollowTabProjectReport FollowTab = "project_report" // 项目报告
 )
 
 // FollowScope 我的关注二级筛选（V10.1 04 节：业务需求内部有 全部/重点关注/已关闭 等）。
 type FollowScope string
 
 const (
-	FollowScopeAll      FollowScope = "all"
-	FollowScopeKey      FollowScope = "key"      // 重点关注
-	FollowScopeClosed   FollowScope = "closed"   // 已关闭
+	FollowScopeAll    FollowScope = "all"
+	FollowScopeKey    FollowScope = "key"    // 重点关注
+	FollowScopeClosed FollowScope = "closed" // 已关闭
 )
 
 // FollowListReq 我的关注列表请求。
 // V10.1 04 节：对象 Tab × 内部二级筛选 × 关键词；不再有跨对象的"全部"Tab。
 type FollowListReq struct {
-	Tab       FollowTab    `form:"tab"`       // 业务需求 / 项目报告
-	Scope     FollowScope  `form:"scope"`     // 业务需求内部 全部/重点关注/已关闭
-	Keyword   string       `form:"keyword"`
-	Page      int          `form:"page"`
-	PageSize  int          `form:"pageSize"`
+	Tab      FollowTab   `form:"tab"`   // 业务需求 / 项目报告
+	Scope    FollowScope `form:"scope"` // 业务需求内部 全部/重点关注/已关闭
+	Keyword  string      `form:"keyword"`
+	Page     int         `form:"page"`
+	PageSize int         `form:"pageSize"`
 }
 
 // Validate 校验 FollowListReq。
@@ -446,8 +446,8 @@ type FollowItem struct {
 	Owner      string `json:"owner"`
 	LatestNote string `json:"latestNote"` // 最新动态
 	Date       string `json:"date"`
-	IsKey      bool   `json:"isKey"`     // 是否重点关注
-	IsClosed   bool   `json:"isClosed"`  // 是否已关闭
+	IsKey      bool   `json:"isKey"`    // 是否重点关注
+	IsClosed   bool   `json:"isClosed"` // 是否已关闭
 	URL        string `json:"url"`
 }
 

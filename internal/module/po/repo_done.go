@@ -70,10 +70,10 @@ func (r *Repo) FindDoneActions(ctx context.Context, account string, timeRange Ti
 
 	// 分页查询
 	type row struct {
-		ID         int64   `gorm:"column:id"`
-		ObjectType string  `gorm:"column:objectType"`
-		ObjectID   int64   `gorm:"column:objectID"`
-		Action     string  `gorm:"column:action"`
+		ID         int64     `gorm:"column:id"`
+		ObjectType string    `gorm:"column:objectType"`
+		ObjectID   int64     `gorm:"column:objectID"`
+		Action     string    `gorm:"column:action"`
 		Date       time.Time `gorm:"column:date"`
 	}
 	var rows []row

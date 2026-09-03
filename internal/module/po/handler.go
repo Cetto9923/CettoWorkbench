@@ -139,8 +139,8 @@ func emptyValueStreamStages() []ValueStreamStage {
 func (h *Handler) Todos(c *gin.Context) {
 	actor := middleware.CurrentUser(c)
 	render.Page(c, http.StatusOK, constants.TEMPLATE_PO_TODOS, gin.H{
-		"Title":     "我的待办",
-		"PageTitle": "我的待办",
+		"Title":       "我的待办",
+		"PageTitle":   "我的待办",
 		"CurrentUser": actor,
 	})
 }
@@ -167,10 +167,10 @@ func (h *Handler) TodosItems(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"items":   resp.Items,
-		"total":   resp.Total,
-		"page":    resp.Page,
+		"success":  true,
+		"items":    resp.Items,
+		"total":    resp.Total,
+		"page":     resp.Page,
 		"pageSize": resp.PageSize,
 	})
 }
@@ -179,8 +179,8 @@ func (h *Handler) TodosItems(c *gin.Context) {
 func (h *Handler) Done(c *gin.Context) {
 	actor := middleware.CurrentUser(c)
 	render.Page(c, http.StatusOK, constants.TEMPLATE_PO_DONE, gin.H{
-		"Title":     "我的已办",
-		"PageTitle": "我的已办",
+		"Title":       "我的已办",
+		"PageTitle":   "我的已办",
 		"CurrentUser": actor,
 	})
 }
@@ -207,10 +207,10 @@ func (h *Handler) DoneItems(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"items":   resp.Items,
-		"total":   resp.Total,
-		"page":    resp.Page,
+		"success":  true,
+		"items":    resp.Items,
+		"total":    resp.Total,
+		"page":     resp.Page,
 		"pageSize": resp.PageSize,
 	})
 }
@@ -219,8 +219,8 @@ func (h *Handler) DoneItems(c *gin.Context) {
 func (h *Handler) Notice(c *gin.Context) {
 	actor := middleware.CurrentUser(c)
 	render.Page(c, http.StatusOK, constants.TEMPLATE_PO_NOTICE, gin.H{
-		"Title":     "通知中心",
-		"PageTitle": "通知中心",
+		"Title":       "通知中心",
+		"PageTitle":   "通知中心",
 		"CurrentUser": actor,
 	})
 }
@@ -291,8 +291,8 @@ func (h *Handler) NoticeMarkAllRead(c *gin.Context) {
 func (h *Handler) Follow(c *gin.Context) {
 	actor := middleware.CurrentUser(c)
 	render.Page(c, http.StatusOK, constants.TEMPLATE_PO_FOLLOW, gin.H{
-		"Title":     "我的关注",
-		"PageTitle": "我的关注",
+		"Title":       "我的关注",
+		"PageTitle":   "我的关注",
 		"CurrentUser": actor,
 	})
 }
@@ -319,10 +319,10 @@ func (h *Handler) FollowItems(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"items":   resp.Items,
-		"total":   resp.Total,
-		"page":    resp.Page,
+		"success":  true,
+		"items":    resp.Items,
+		"total":    resp.Total,
+		"page":     resp.Page,
 		"pageSize": resp.PageSize,
 	})
 }
