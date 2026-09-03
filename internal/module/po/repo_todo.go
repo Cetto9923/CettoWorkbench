@@ -23,7 +23,8 @@ import (
 //   - 业务需求 zt_demand (actor scope: PM in clarify ∪ QD ∪ RD ∪ BRA)
 //   - 任务 zt_task (assignedTo=account)
 //   - Bug zt_bug (assignedTo=account)
-// 排序: deadline ASC NULLS LAST, id DESC。P0/超期优先。
+// 排序: 优先级 P1>P2>P3, deadline ASC NULLS LAST (zentao 用 '0000-00-00' 表示无 deadline,
+//       用 '9999-12-31' 占位确保排最后), id DESC。
 func (r *Repo) FindTodoItems(ctx context.Context, account string, req TodoListReq) ([]TodoItem, int64, error) {
 	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
 		return nil, 0, nil
@@ -44,14 +45,27 @@ func (r *Repo) FindTodoItems(ctx context.Context, account string, req TodoListRe
 		demandBase = applyTodoActionFilter(demandBase, req.Action)
 	}
 
-	// 排序: deadline ASC NULLS LAST, id DESC
-	demandBase = demandBase.Order("CASE WHEN zt_demand.deadline IS NULL OR zt_demand.deadline = '0000-00-00' THEN 1 ELSE 0 END, zt_demand.deadline ASC, zt_demand.id DESC")
+	// 排序: 优先级 P1>P2>P3, deadline ASC NULLS LAST (用 '9999-12-31' 占位确保无 deadline 排最后), id DESC
+	// 单行 Order 避免 GORM backtick 字符串中嵌入换行符的解析问题
+	demandBase = demandBase.Order("CASE WHEN zt_demand.pri = '1' THEN 1 WHEN zt_demand.pri = '2' THEN 2 WHEN zt_demand.pri = '3' THEN 3 ELSE 4 END, CASE WHEN zt_demand.deadline IS NULL OR zt_demand.deadline = '0000-00-00' OR zt_demand.deadline = '0001-01-01' THEN '9999-12-31' ELSE zt_demand.deadline END ASC, zt_demand.id DESC")
 
 	var demandIDs []int64
-	if err := demandBase.
-		Where(`(name LIKE ? OR CAST(id AS CHAR) LIKE ?)`, "%"+keyword+"%", "%"+keyword+"%").
-		Limit(500).
-		Pluck("zt_demand.id", &demandIDs).Error; err != nil {
+	// 用 Raw SQL + Scan 替代 Pluck: GORM 1.31 的 Pluck + Order 链式不生效 (实测), Raw 更稳
+	if err := r.db.WithContext(ctx).Raw(`
+		SELECT zt_demand.id FROM zt_demand
+		WHERE zt_demand.deleted = '0'
+		  AND zt_demand.status NOT IN ('closed','cancel')
+		  AND (zt_demand.id IN (SELECT demand FROM zt_demandclarify WHERE PM = ?)
+		       OR zt_demand.QD = ? OR zt_demand.RD = ? OR zt_demand.BRA = ?)
+		  AND (zt_demand.name LIKE ? OR CAST(zt_demand.id AS CHAR) LIKE ?)
+		ORDER BY
+		  CASE WHEN zt_demand.pri = '1' THEN 1 WHEN zt_demand.pri = '2' THEN 2 WHEN zt_demand.pri = '3' THEN 3 ELSE 4 END,
+		  CASE WHEN zt_demand.deadline IS NULL OR zt_demand.deadline = '0000-00-00' OR zt_demand.deadline = '0001-01-01'
+		    THEN '9999-12-31' ELSE zt_demand.deadline END ASC,
+		  zt_demand.id DESC
+		LIMIT 2000
+	`, account, account, account, account, "%"+keyword+"%", "%"+keyword+"%").
+		Scan(&demandIDs).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -62,8 +76,8 @@ func (r *Repo) FindTodoItems(ctx context.Context, account string, req TodoListRe
 		Where("assignedTo = ?", account).
 		Where("status NOT IN ?", []string{"done", "closed", "cancel"}).
 		Where(`(name LIKE ? OR CAST(id AS CHAR) LIKE ?)`, "%"+keyword+"%", "%"+keyword+"%").
-		Order("CASE WHEN deadline IS NULL OR deadline = '0000-00-00' THEN 1 ELSE 0 END, deadline ASC, id DESC")
-	if err := taskQ.Limit(500).Pluck("zt_task.id", &taskIDs).Error; err != nil {
+		Order("CASE WHEN (deadline IS NULL OR deadline = '0000-00-00' OR deadline = '0001-01-01') THEN 1 ELSE 0 END, deadline ASC, id DESC")
+	if err := taskQ.Limit(2000).Pluck("zt_task.id", &taskIDs).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -74,8 +88,8 @@ func (r *Repo) FindTodoItems(ctx context.Context, account string, req TodoListRe
 		Where("assignedTo = ?", account).
 		Where("status NOT IN ?", []string{"resolved", "closed"}).
 		Where(`(title LIKE ? OR CAST(id AS CHAR) LIKE ?)`, "%"+keyword+"%", "%"+keyword+"%").
-		Order("CASE WHEN deadline IS NULL OR deadline = '0000-00-00' THEN 1 ELSE 0 END, deadline ASC, id DESC")
-	if err := bugQ.Limit(500).Pluck("zt_bug.id", &bugIDs).Error; err != nil {
+		Order("CASE WHEN (deadline IS NULL OR deadline = '0000-00-00' OR deadline = '0001-01-01') THEN 1 ELSE 0 END, deadline ASC, id DESC")
+	if err := bugQ.Limit(2000).Pluck("zt_bug.id", &bugIDs).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -97,10 +111,21 @@ func (r *Repo) FindTodoItems(ctx context.Context, account string, req TodoListRe
 			Deadline *time.Time `gorm:"column:deadline"`
 		}
 		var rows []row
-		if err := r.db.WithContext(ctx).Table("zt_demand").
-			Where("id IN ?", demandIDs).
-			Select("id, name, status, pri, QD, RD, deadline").
-			Find(&rows).Error; err != nil {
+		// Raw SQL: 用 FIELD(id, ...) 让 MySQL 按 demandIDs 切片顺序排
+		// gorm.Expr("FIELD(id, ?)", demandIDs) 在 GORM 1.31 不展开 slice, 改用占位符手动拼接
+		placeholders := strings.Repeat("?,", len(demandIDs))
+		placeholders = placeholders[:len(placeholders)-1]
+		args := make([]interface{}, 0, 2*len(demandIDs))
+		for _, id := range demandIDs {
+			args = append(args, id) // IN 子句用
+		}
+		for _, id := range demandIDs {
+			args = append(args, id) // FIELD 子句用
+		}
+		if err := r.db.WithContext(ctx).Raw(
+			"SELECT id, name, status, pri, QD, RD, deadline FROM zt_demand WHERE id IN ("+placeholders+") ORDER BY FIELD(id, "+placeholders+")",
+			args...,
+		).Scan(&rows).Error; err != nil {
 			return nil, 0, err
 		}
 		displayMap, _ := r.loadAccountDisplayMap(ctx)
