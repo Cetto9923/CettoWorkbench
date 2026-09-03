@@ -72,7 +72,8 @@
       controls += '<button class="pager-btn' + (page === state.page ? " active" : "") + '" data-page="' + page + '">' + page + "</button>";
     }
     controls += '<button class="pager-btn" data-page="' + (state.page + 1) + '"' + (state.page === pages ? " disabled" : "") + ">›</button>";
-    host.innerHTML = "<span>显示 " + start + "–" + end + "，共 " + total + ' 条</span><div class="pager-controls">' + controls + "</div>";
+    host.innerHTML = "<span>显示 " + start + "–" + end + "，共 " + total + ' 条</span><div class="pager-controls"><select class="pager-page-size" aria-label="每页条数"><option value="10">10 条/页</option><option value="15">15 条/页</option><option value="20">20 条/页</option><option value="30">30 条/页</option><option value="50">50 条/页</option></select>' + controls + "</div>";
+    host.querySelector(".pager-page-size").value = String(state.pageSize);
   }
 
   function refresh() {
@@ -117,6 +118,7 @@
     document.getElementById("todosResetBtn").addEventListener("click", function () { state.action = "all"; state.stage = "all"; state.objectType = "all"; state.responsibility = "all"; state.keyword = ""; state.page = 1; Object.keys(fields).forEach(function (id) { document.getElementById(id).value = "all"; }); keyword.value = ""; refresh(); });
     document.getElementById("todosTbody").addEventListener("click", function (event) { var button = event.target.closest("[data-url]"); if (button) { window.location.href = button.dataset.url; } });
     document.getElementById("todosPagination").addEventListener("click", function (event) { var button = event.target.closest("[data-page]"); if (!button || button.disabled) { return; } state.page = Number(button.dataset.page); refresh(); });
+    document.getElementById("todosPagination").addEventListener("change", function (event) { if (!event.target.matches(".pager-page-size")) { return; } state.pageSize = Number(event.target.value); state.page = 1; refresh(); });
   }
 
   document.addEventListener("DOMContentLoaded", function () { syncObjectTypeOptions(); bindEvents(); refresh(); });

@@ -121,6 +121,8 @@ func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) 
 		q = q.Where("a.objectType = ?", req.ObjectType)
 	} else {
 		switch req.Tab {
+		case DoneTabApproval:
+			q = q.Where(buildApprovalDoneScopeSQL())
 		case DoneTabDemand:
 			q = q.Where("a.objectType IN ?", []string{"demand", "story"})
 		case DoneTabTask:
@@ -290,6 +292,13 @@ func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) 
 	}
 
 	return items, total, nil
+}
+
+// buildApprovalDoneScopeSQL 返回真正构成审批决策的已办动作范围。
+// 审批决策不是独立对象表，需按需求和研发需求的正式评审动作筛选。
+func buildApprovalDoneScopeSQL() string {
+	return "((a.objectType = 'demand' AND a.action IN ('reviewed', 'reviewpassed', 'reviewrejected')) OR " +
+		"(a.objectType = 'story' AND a.action IN ('submitreview', 'reviewed', 'reviewpassed', 'reviewrejected')))"
 }
 
 // RepoCountDoneActionsReq 已办时间段概览计数参数。

@@ -268,15 +268,16 @@ type TodoListResp struct {
 	Groups   TodoGroupCounts `json:"groups"`
 }
 
-// DoneTab 已办对象域。V10.1 02 节：本期先打通需求治理 + 研发执行。
+// DoneTab 已办的动作分类。对象类型由 ObjectType 二级筛选；审批决策是跨需求对象的正式动作集合。
 type DoneTab string
 
 const (
-	DoneTabAll    DoneTab = "all"
-	DoneTabDemand DoneTab = "demand"
-	DoneTabTask   DoneTab = "task"
-	DoneTabBug    DoneTab = "bug"
-	DoneTabTest   DoneTab = "test"
+	DoneTabAll      DoneTab = "all"
+	DoneTabApproval DoneTab = "approval"
+	DoneTabDemand   DoneTab = "demand"
+	DoneTabTask     DoneTab = "task"
+	DoneTabBug      DoneTab = "bug"
+	DoneTabTest     DoneTab = "test"
 )
 
 // TimeRange 已办时间段。
@@ -298,7 +299,7 @@ const (
 // V10.1 02 节：已办形成条件 = 本人真实执行的正式业务动作。来源 zt_action + Workbench 审计。
 // 严格定义：待办消失不能自动变成已办。
 type DoneListReq struct {
-	Tab        DoneTab   `form:"tab"`        // 对象域；默认 all
+	Tab        DoneTab   `form:"tab"`        // 动作分类；默认 all
 	TimeRange  TimeRange `form:"timeRange"`  // 时间段；默认 all
 	CustomFrom string    `form:"from"`       // 时间段=custom 时生效
 	CustomTo   string    `form:"to"`         // 时间段=custom 时生效
@@ -315,7 +316,7 @@ func (r *DoneListReq) Validate() []FieldError {
 		r.Tab = DoneTabAll
 	}
 	switch r.Tab {
-	case DoneTabAll, DoneTabDemand, DoneTabTask, DoneTabBug, DoneTabTest:
+	case DoneTabAll, DoneTabApproval, DoneTabDemand, DoneTabTask, DoneTabBug, DoneTabTest:
 	default:
 		return []FieldError{{Field: "tab", Message: "无效的对象域 Tab"}}
 	}
@@ -372,62 +373,4 @@ type DoneSummary struct {
 	Last30d int64 `json:"last30d"`
 	Month   int64 `json:"month"`
 	Quarter int64 `json:"quarter"`
-}
-
-// NoticeListReq 通知中心列表请求。
-// 本期实现: quick view 筛选 (全部/未读/需处理/异常提醒/今日新增) + 关键词。
-// workbench 为主, 分类由 zt_action.action + zt_notify.objectType 推断, 不强套 V10.1 6 类。
-type NoticeListReq struct {
-	QuickView string `form:"quickView"` // all / unread / action / abnormal / today
-	Keyword   string `form:"keyword"`
-	Page      int    `form:"page"`
-	PageSize  int    `form:"pageSize"`
-}
-
-// Validate 校验 NoticeListReq。
-func (r *NoticeListReq) Validate() []FieldError {
-	r.QuickView = strings.TrimSpace(r.QuickView)
-	if r.QuickView == "" {
-		r.QuickView = "all"
-	}
-	switch r.QuickView {
-	case "all", "unread", "action", "abnormal", "today":
-	default:
-		return []FieldError{{Field: "quickView", Message: "无效的快捷视图"}}
-	}
-	r.Keyword = strings.TrimSpace(r.Keyword)
-	if r.Page < 1 {
-		r.Page = 1
-	}
-	if r.PageSize < 1 || r.PageSize > 100 {
-		r.PageSize = 20
-	}
-	return nil
-}
-
-// NoticeItem 通知中心单条。
-type NoticeItem struct {
-	ID         int64  `json:"id"`
-	ObjectType string `json:"objectType"` // 关联对象类型
-	ObjectID   int64  `json:"objectId"`   // 关联对象 ID
-	Subject    string `json:"subject"`    // 主题
-	Data       string `json:"data"`       // 正文
-	Actor      string `json:"actor"`      // 触发人
-	Action     string `json:"action"`     // 触发的 action 标识
-	Category   string `json:"category"`   // 推断分类 (workbench 实现)
-	Read       bool   `json:"read"`       // 是否已读
-	Date       string `json:"date"`       // 时间
-	URL        string `json:"url"`        // 关联对象 URL (本期空, 后续接入 SSO)
-}
-
-// NoticeBucketResp 通知中心响应（含顶部 quick view 计数 + 列表）。
-type NoticeBucketResp struct {
-	Items    []NoticeItem `json:"items"`
-	Total    int64        `json:"total"`
-	Unread   int64        `json:"unread"`
-	Action   int64        `json:"action"`
-	Abnormal int64        `json:"abnormal"`
-	Today    int64        `json:"today"`
-	Page     int          `json:"page"`
-	PageSize int          `json:"pageSize"`
 }

@@ -11,11 +11,11 @@
 
 {{ define "content" }}
 <div class="po-done">
-  <header class="done-header">
+  <header class="todos-header">
     <div><h2>我的已办</h2><p>已实际执行的正式业务动作 · 待办消失 ≠ 已办</p></div>
   </header>
 
-  <section class="focus-grid" aria-label="已办时间概览">
+  <section class="focus-grid done-focus-grid" aria-label="已办时间概览">
     <button type="button" class="focus-card active" data-range="all"><span>全部时间</span><strong id="countRangeAll">—</strong></button>
     <button type="button" class="focus-card" data-range="today"><span>今天</span><strong id="countRangeToday">—</strong></button>
     <button type="button" class="focus-card" data-range="7d"><span>近 7 天</span><strong id="countRange7d">—</strong></button>
@@ -26,18 +26,20 @@
   </section>
 
   <section class="todos-panel">
-    <nav class="group-tabs" aria-label="操作对象">
-      <button type="button" class="group-tab active" data-object="">全部已办</button>
-      <button type="button" class="group-tab" data-object="demand">业务需求</button>
-      <button type="button" class="group-tab" data-object="story">研发需求</button>
-      <button type="button" class="group-tab" data-object="task">任务</button>
-      <button type="button" class="group-tab" data-object="bug">Bug</button>
-      <button type="button" class="group-tab" data-object="risk">风险</button>
-      <button type="button" class="group-tab" data-object="issue">问题</button>
-      <button type="button" class="group-tab" data-object="feedback">反馈</button>
-      <button type="button" class="group-tab" data-object="release">发布</button>
-      <button type="button" class="group-tab" data-object="build">构建</button>
-      <button type="button" class="group-tab" data-object="todo">待办</button>
+    <nav class="group-tabs" aria-label="已办对象分类">
+      <button type="button" class="group-tab active" data-tab="all" data-object="">全部已办</button>
+      <button type="button" class="group-tab" data-tab="approval" data-object="">审批决策</button>
+      <button type="button" class="group-tab" data-tab="all" data-object="demand">业务需求</button>
+      <button type="button" class="group-tab" data-tab="all" data-object="story">研发需求</button>
+      <button type="button" class="group-tab" data-tab="all" data-object="task">任务</button>
+      <button type="button" class="group-tab" data-tab="all" data-object="bug">Bug</button>
+      <button type="button" class="group-tab" data-tab="all" data-object="testtask">测试单</button>
+      <button type="button" class="group-tab" data-tab="all" data-object="risk">风险</button>
+      <button type="button" class="group-tab" data-tab="all" data-object="issue">问题</button>
+      <button type="button" class="group-tab" data-tab="all" data-object="feedback">反馈</button>
+      <button type="button" class="group-tab" data-tab="all" data-object="release">发布</button>
+      <button type="button" class="group-tab" data-tab="all" data-object="build">构建</button>
+      <button type="button" class="group-tab" data-tab="all" data-object="todo">待办</button>
     </nav>
 
     <div class="todos-toolbar">

@@ -17,10 +17,8 @@
   <link rel="stylesheet" href="{{ asset "/static/css/layout/variables.css" }}">
   <link rel="stylesheet" href="{{ asset "/static/css/layout/app.css" }}">
 </head>
-<body class="bg-light">
-  <div class="container py-4">
-    {{ template "content" . }}
-  </div>
+<body class="bg-light auth-page">
+  {{ template "content" . }}
   <script src="{{ asset "/static/vendor/bootstrap/js/bootstrap.bundle.min.js" }}"></script>
   <script src="{{ asset "/static/js/app.js" }}"></script>
 </body>

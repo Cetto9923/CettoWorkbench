@@ -2,6 +2,7 @@
   "use strict";
 
   var state = {
+    tab: "all",
     timeRange: "all",
     objectType: "",
     keyword: "",
@@ -16,6 +17,7 @@
 
   function queryItems() {
     var params = new URLSearchParams();
+    params.set("tab", state.tab);
     params.set("timeRange", state.timeRange);
     if (state.objectType) { params.set("objectType", state.objectType); }
     if (state.keyword) { params.set("keyword", state.keyword); }
@@ -35,10 +37,10 @@
 
   function renderRow(item) {
     var idCell = item.url
-      ? '<a class="row-id-link" href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener noreferrer" title="在禅道中查看">' + escapeHtml(item.displayId || (item.objectType + "/" + item.objectId)) + "</a>"
+      ? '<a class="row-id-link" href="' + escapeHtml(item.url) + '" title="在禅道中查看">' + escapeHtml(item.displayId || (item.objectType + "/" + item.objectId)) + "</a>"
       : escapeHtml(item.displayId || (item.objectType + "/" + item.objectId));
     var titleCell = item.url
-      ? '<a class="row-title-link" href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener noreferrer" title="在禅道中查看">' + escapeHtml(item.objectName || "—") + "</a>"
+      ? '<a class="row-title-link" href="' + escapeHtml(item.url) + '" title="在禅道中查看">' + escapeHtml(item.objectName || "—") + "</a>"
       : escapeHtml(item.objectName || "—");
     return "<tr>" +
       '<td class="c-id">' + idCell + "</td>" +
@@ -48,7 +50,7 @@
       '<td class="c-result">' + escapeHtml(item.result || "—") + "</td>" +
       '<td class="c-dead">' + escapeHtml(item.date || "—") + "</td>" +
       '<td class="c-owner">' + escapeHtml(item.actor || "—") + "</td>" +
-      '<td class="c-op">' + (item.url ? '<a class="todo-action" href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener noreferrer">查看</a>' : "—") + "</td>" +
+      '<td class="c-op">' + (item.url ? '<a class="todo-action" href="' + escapeHtml(item.url) + '">查看</a>' : "—") + "</td>" +
       "</tr>";
   }
 
@@ -82,7 +84,8 @@
       controls += '<button class="pager-btn' + (page === state.page ? " active" : "") + '" data-page="' + page + '">' + page + "</button>";
     }
     controls += '<button class="pager-btn" data-page="' + (state.page + 1) + '"' + (state.page === pages ? " disabled" : "") + ">›</button>";
-    host.innerHTML = "<span>显示 " + start + "–" + end + "，共 " + total + ' 条</span><div class="pager-controls">' + controls + "</div>";
+    host.innerHTML = "<span>显示 " + start + "–" + end + "，共 " + total + ' 条</span><div class="pager-controls"><select class="pager-page-size" aria-label="每页条数"><option value="10">10 条/页</option><option value="15">15 条/页</option><option value="20">20 条/页</option><option value="30">30 条/页</option><option value="50">50 条/页</option></select>' + controls + "</div>";
+    host.querySelector(".pager-page-size").value = String(state.pageSize);
   }
 
   function refresh() {
@@ -110,6 +113,7 @@
     document.querySelectorAll(".group-tab").forEach(function (button) {
       button.addEventListener("click", function () {
         activate(".group-tab", button);
+		state.tab = button.dataset.tab || "all";
         state.objectType = button.dataset.object || "";
         state.page = 1;
         refresh();
@@ -122,21 +126,17 @@
       document.getElementById(id).addEventListener("change", function (event) { state[fields[id]] = event.target.value; state.page = 1; refresh(); });
     });
     document.getElementById("doneResetBtn").addEventListener("click", function () {
-      state.timeRange = "all"; state.objectType = ""; state.keyword = ""; state.result = "all"; state.page = 1;
+      state.timeRange = "all"; state.tab = "all"; state.objectType = ""; state.keyword = ""; state.result = "all"; state.page = 1;
       document.querySelectorAll(".focus-card").forEach(function (b) { b.classList.remove("active"); });
       document.querySelectorAll(".group-tab").forEach(function (b) { b.classList.remove("active"); });
-      document.querySelectorAll(".group-tab").forEach(function (b) { if (!b.dataset.object) b.classList.add("active"); });
+      document.querySelectorAll(".group-tab").forEach(function (b) { if (b.dataset.tab === "all" && !b.dataset.object) b.classList.add("active"); });
       
       document.getElementById("doneResult").value = "all";
       keyword.value = "";
       refresh();
     });
-    document.querySelectorAll(".pager-btn").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var p = parseInt(btn.dataset.page, 10);
-        if (p >= 1 && !btn.disabled) { state.page = p; refresh(); }
-      });
-    });
+    document.getElementById("donePagination").addEventListener("click", function (event) { var btn = event.target.closest("[data-page]"); if (!btn || btn.disabled) { return; } state.page = Number(btn.dataset.page); refresh(); });
+    document.getElementById("donePagination").addEventListener("change", function (event) { if (!event.target.matches(".pager-page-size")) { return; } state.pageSize = Number(event.target.value); state.page = 1; refresh(); });
   }
 
   document.addEventListener("DOMContentLoaded", function () {

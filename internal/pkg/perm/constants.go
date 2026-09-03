@@ -63,6 +63,9 @@ const (
 	PoNoticeUpdate Permission = "po:notice:update"
 	PoFollowList   Permission = "po:follow"
 	PoFollowUpdate Permission = "po:follow:update"
+	// PO 工作看板
+	PoBoardDemandList Permission = "po:boarddemand:list"
+	PoBoardTaskList   Permission = "po:boardtask:list"
 )
 
 // allPermInfos 必须与上方 const 块中的所有 Permission 常量保持一一对应。
@@ -100,6 +103,8 @@ var allPermInfos = []PermInfo{
 	{Code: PoNoticeUpdate, Name: "PO 工作台-更新通知状态", Module: "po"},
 	{Code: PoFollowList, Name: "PO 工作台-我的关注", Module: "po"},
 	{Code: PoFollowUpdate, Name: "PO 工作台-更新关注关系", Module: "po"},
+	{Code: PoBoardDemandList, Name: "PO 工作台-需求看板", Module: "po"},
+	{Code: PoBoardTaskList, Name: "PO 工作台-任务看板", Module: "po"},
 }
 
 // systemPerms 是系统内置放行权限，不对外暴露到权限配置 UI。

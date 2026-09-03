@@ -2,8 +2,7 @@
 // 文件: internal/module/po/servicenotice.go
 // 模块: PO 工作台
 // 类型: action
-// 职责: 通知中心服务。workbench 为主: 不强套 V10.1 6 类, 分类由 zt_action + objectType 启发式。
-//       严守 V10.1 03 节契约: 已读 ≠ 已处理。
+// 职责: 通知中心服务。按服务端事件分类口径聚合真实通知与已读状态。
 // 依赖: 无
 // =============================================================================
 
@@ -21,19 +20,21 @@ func (s *Service) NoticeList(ctx context.Context, actor *model.User, req NoticeL
 	if actor == nil || strings.TrimSpace(actor.Account) == "" {
 		return &NoticeBucketResp{Items: []NoticeItem{}, Page: req.Page, PageSize: req.PageSize}, nil
 	}
-	items, total, unread, action, abnormal, today, err := s.repo.FindNotices(ctx, actor.Account, req)
+	repoResp, err := s.repo.FindNotices(ctx, actor.Account, req)
 	if err != nil {
 		return nil, err
 	}
 	return &NoticeBucketResp{
-		Items:    items,
-		Total:    total,
-		Unread:   unread,
-		Action:   action,
-		Abnormal: abnormal,
-		Today:    today,
-		Page:     req.Page,
-		PageSize: req.PageSize,
+		Items:      repoResp.Items,
+		Total:      repoResp.Total,
+		Filtered:   repoResp.Filtered,
+		Unread:     repoResp.Unread,
+		Action:     repoResp.Action,
+		Abnormal:   repoResp.Abnormal,
+		Today:      repoResp.Today,
+		Categories: repoResp.Categories,
+		Page:       req.Page,
+		PageSize:   req.PageSize,
 	}, nil
 }
 

@@ -8,7 +8,10 @@
 
 package po
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestFormalDoneActionsExcludeNoise(t *testing.T) {
 	for _, key := range []string{"user:login", "demand:edit", "task:comment"} {
@@ -20,5 +23,27 @@ func TestFormalDoneActionsExcludeNoise(t *testing.T) {
 		if _, ok := formalDoneActions[key]; !ok {
 			t.Fatalf("formal action %q missing", key)
 		}
+	}
+}
+
+func TestDoneListReqAllowsApprovalTab(t *testing.T) {
+	req := DoneListReq{Tab: DoneTabApproval}
+	if errs := req.Validate(); len(errs) != 0 {
+		t.Fatalf("approval tab should be valid: %#v", errs)
+	}
+	if req.Tab != DoneTabApproval {
+		t.Fatalf("unexpected tab after validation: %q", req.Tab)
+	}
+}
+
+func TestApprovalDoneScopeContainsOnlyReviewActions(t *testing.T) {
+	scope := buildApprovalDoneScopeSQL()
+	for _, action := range []string{"reviewed", "reviewpassed", "reviewrejected"} {
+		if !strings.Contains(scope, action) {
+			t.Fatalf("approval scope missing %q", action)
+		}
+	}
+	if strings.Contains(scope, "demand:edit") {
+		t.Fatal("approval scope must not include ordinary edits")
 	}
 }

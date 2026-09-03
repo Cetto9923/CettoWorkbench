@@ -53,6 +53,9 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.PUT("/notice/:id/read", middleware.RequirePerm(perm.PoNoticeUpdate), h.NoticeMarkRead)
 	g.PUT("/notice/read-all", middleware.RequirePerm(perm.PoNoticeUpdate), h.NoticeMarkAllRead)
 	g.PUT("/follow/demand/:id", middleware.RequirePerm(perm.PoFollowUpdate), h.FollowSetDemand)
+
+	// PO 工作看板（V1.3 需求+任务双视图）
+	NewBoardHandler(h.svc, h.logger).RegisterRoutes(g)
 }
 
 // Home 渲染 PO 工作台首页。
@@ -244,15 +247,17 @@ func (h *Handler) NoticeItems(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"success":  true,
-		"items":    resp.Items,
-		"total":    resp.Total,
-		"unread":   resp.Unread,
-		"action":   resp.Action,
-		"abnormal": resp.Abnormal,
-		"today":    resp.Today,
-		"page":     resp.Page,
-		"pageSize": resp.PageSize,
+		"success":       true,
+		"items":         resp.Items,
+		"total":         resp.Total,
+		"filteredTotal": resp.Filtered,
+		"unread":        resp.Unread,
+		"action":        resp.Action,
+		"abnormal":      resp.Abnormal,
+		"today":         resp.Today,
+		"categories":    resp.Categories,
+		"page":          resp.Page,
+		"pageSize":      resp.PageSize,
 	})
 }
 

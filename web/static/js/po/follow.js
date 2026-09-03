@@ -5,6 +5,8 @@
     tab: "demand",
     scope: "all",
     keyword: "",
+    page: 1,
+    pageSize: 20,
   };
 
   function escapeHtml(s) {
@@ -23,6 +25,8 @@
     if (state.keyword) {
       params.set("keyword", state.keyword);
     }
+    params.set("page", String(state.page));
+    params.set("pageSize", String(state.pageSize));
     return fetch("/follow/items?" + params.toString(), { method: "GET" })
       .then(function (r) {
         if (!r.ok) { throw new Error("fetch failed"); }
@@ -78,6 +82,19 @@
     bindItemActions();
   }
 
+  function renderPagination(total) {
+    var host = document.getElementById("followPagination");
+    var pages = Math.max(1, Math.ceil(total / state.pageSize));
+    host.hidden = total === 0;
+    if (total === 0) { host.innerHTML = ""; return; }
+    var start = (state.page - 1) * state.pageSize + 1;
+    var end = Math.min(total, state.page * state.pageSize);
+    host.innerHTML = "<span>显示 " + start + "–" + end + "，共 " + total + " 个</span>" +
+      '<div class="follow-pager-controls"><select class="follow-page-size" aria-label="每页条数"><option value="10">10 条/页</option><option value="15">15 条/页</option><option value="20">20 条/页</option><option value="30">30 条/页</option><option value="50">50 条/页</option></select>' +
+      '<button type="button" class="follow-pager-btn" data-page="' + (state.page - 1) + '"' + (state.page === 1 ? " disabled" : "") + '>‹</button><span>第 ' + state.page + " / " + pages + ' 页</span><button type="button" class="follow-pager-btn" data-page="' + (state.page + 1) + '"' + (state.page === pages ? " disabled" : "") + ">›</button></div>";
+    host.querySelector(".follow-page-size").value = String(state.pageSize);
+  }
+
   function bindItemActions() {
     var btns = document.querySelectorAll(".follow-btn[data-action]");
     btns.forEach(function (b) {
@@ -114,10 +131,12 @@
           (state.tab === "demand" ? "业务需求" : "项目周报") + " · " +
           (payload.items || []).length + " / " + (payload.total || 0) + " 个";
         renderList(payload.items || []);
+        renderPagination(payload.total || 0);
       })
       .catch(function () {
         document.getElementById("followSummary").textContent = "加载失败";
         renderList([]);
+        document.getElementById("followPagination").hidden = true;
       });
   }
 
@@ -128,6 +147,7 @@
         btn.classList.add("active");
         state.tab = btn.dataset.tab;
         state.scope = "all";
+        state.page = 1;
         document.querySelectorAll(".scope-chip").forEach(function (chip) {
           chip.classList.toggle("active", chip.dataset.scope === "all");
         });
@@ -140,6 +160,7 @@
         document.querySelectorAll(".scope-chip").forEach(function (b) { b.classList.remove("active"); });
         btn.classList.add("active");
         state.scope = btn.dataset.scope;
+        state.page = 1;
         refresh();
       });
     });
@@ -149,8 +170,21 @@
       clearTimeout(kwTimer);
       kwTimer = setTimeout(function () {
         state.keyword = kw.value.trim();
+        state.page = 1;
         refresh();
       }, 300);
+    });
+    document.getElementById("followPagination").addEventListener("click", function (event) {
+      var button = event.target.closest("[data-page]");
+      if (!button || button.disabled) { return; }
+      state.page = Number(button.dataset.page);
+      refresh();
+    });
+    document.getElementById("followPagination").addEventListener("change", function (event) {
+      if (!event.target.matches(".follow-page-size")) { return; }
+      state.pageSize = Number(event.target.value);
+      state.page = 1;
+      refresh();
     });
   }
 

@@ -15,7 +15,7 @@
 
 .follow-result-bar { padding: 0 20px 12px; color: var(--po-t2, #65758b); font-size: 12px; }
 
-.follow-list-host { padding: 0 20px 20px; }
+.follow-list-host { max-height: calc(100vh - 280px); overflow-y: auto; padding: 0 20px; }
 .follow-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--po-border, #e6e8ee); background: #fff; }
 .follow-item:hover { background: #f7faff; }
 .follow-main { flex: 1; min-width: 0; }
@@ -31,3 +31,8 @@
 .follow-btn { padding: 4px 10px; font-size: 12px; border: 1px solid var(--po-border, #dfe6ee); border-radius: 4px; background: #fff; cursor: pointer; }
 .follow-btn.primary { background: var(--po-blue, #1d4ed8); color: #fff; border-color: var(--po-blue, #1d4ed8); }
 .follow-empty { padding: 40px 20px; text-align: center; color: var(--po-t2, #65758b); }
+.follow-pagination { display: flex; justify-content: space-between; align-items: center; min-height: 46px; padding: 0 20px; color: var(--po-t2, #65758b); font-size: 12px; }
+.follow-pager-controls { display: flex; align-items: center; gap: 6px; }
+.follow-page-size { height: 28px; border: 1px solid var(--po-border, #dfe6ee); border-radius: 4px; background: #fff; color: var(--po-t2, #65758b); font-size: 12px; }
+.follow-pager-btn { min-width: 28px; height: 28px; border: 1px solid var(--po-border, #dfe6ee); border-radius: 4px; background: #fff; color: var(--po-t2, #65758b); cursor: pointer; }
+.follow-pager-btn:disabled { cursor: not-allowed; opacity: .45; }

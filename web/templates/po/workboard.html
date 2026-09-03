@@ -1,0 +1,101 @@
+{{/* ==========================================================================
+文件: web/templates/po/workboard.html
+模块: PO 工作台
+职责: 工作看板（需求 / 任务双视图，紧凑效能快照）。UI 基线 = PO工作看板_需求任务双视图_紧凑效能快照_V1.3。
+     数据真实，非 Mock；需求/任务模式由 URL /board/demand 与 /board/task 决定初始 tab。
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .PageTitle (string), .BaseUrl (string)
+========================================================================== */}}
+{{ define "page_css" }}<link rel="stylesheet" href="{{ asset "/static/css/po/board.css" }}">{{ end }}
+
+{{ define "content" }}
+<div class="po-board">
+  <div class="page-hdr">
+    <h2>工作看板</h2>
+    <div class="board-switch">
+      <button id="demandTab" type="button" data-mode="demand">需求看板</button>
+      <button id="taskTab" type="button" data-mode="task">任务看板</button>
+    </div>
+    <span id="modeNote" class="mode-note"></span>
+    <div id="demandStats" class="stats">
+      <button type="button" class="stat blue" data-flag="clarify">待澄清 <strong>—</strong></button>
+      <button type="button" class="stat blue" data-flag="schedule">待排期 <strong>—</strong></button>
+      <button type="button" class="stat orange" data-flag="blocked">阻塞 <strong>—</strong></button>
+      <button type="button" class="stat red" data-flag="overdue">超期 <strong>—</strong></button>
+    </div>
+    <div id="taskStats" class="stats hidden">
+      <button type="button" class="stat orange" data-flag="blocked">阻塞 <strong>—</strong></button>
+      <button type="button" class="stat red" data-flag="overdue">超期 <strong>—</strong></button>
+    </div>
+    <div class="filter-stack">
+      <span class="filter-label">敏捷小组</span>
+      <div class="chips" id="agileChips"></div>
+    </div>
+    <div id="demandActions" class="actions">
+      <button type="button" class="action">需求查询</button>
+      <button type="button" class="action soft">需求排期</button>
+      <button type="button" class="action primary">+ 提问题</button>
+    </div>
+    <div id="taskActions" class="actions hidden">
+      <button type="button" class="action primary">+ 建任务</button>
+      <button type="button" class="action primary">+ 提问题</button>
+      <button type="button" class="action">调整成员</button>
+    </div>
+  </div>
+
+  <div class="owner-row">
+    <span id="ownerTitle" class="owner-title">PO / 需求负责人</span>
+    <div id="demandOwners" class="people"></div>
+    <div id="taskOwners" class="people hidden"></div>
+    <span id="ownerHint" class="scope-hint"></span>
+  </div>
+
+  <section class="team-metrics" aria-label="敏捷小组关键指标">
+    <div class="team-metrics-head">
+      <span class="team-metrics-title">小组效能快照</span>
+      <span class="team-metrics-group" id="metricsGroupName">—</span>
+      <span class="team-metrics-note">小组级 · 不随负责人筛选变化</span>
+      <button type="button" class="team-metrics-more">全部指标 ›</button>
+    </div>
+    <div class="team-metrics-grid" id="metricsGrid"><!-- JS 填充 8 格 --></div>
+  </section>
+
+  <div id="demandRoleBanner" class="role-banner"></div>
+  <div id="taskRoleBanner" class="role-banner task hidden"></div>
+  <div id="taskFilterTip" class="task-filter-tip hidden"></div>
+
+  <div class="standup">
+    <div class="board-main">
+      <div id="demandBoard" class="demand-board">
+        <div class="demand-grid">
+          <div class="grid-head">
+            <div>需求树（PO工作对象 / 交付上下文）</div><div>受理 / 澄清</div><div>排期</div><div>研发 / 提测</div><div>联调 / 验收</div><div>交付 / 评价</div>
+          </div>
+          <div id="demandGroups"><!-- JS 填充：业务/独立研发对象 + 子业务 + 研发交付进展行 --></div>
+          <div id="demandEmpty" class="demand-empty">当前条件下没有需求</div>
+          <div class="legend">
+            <span><b>业务需求 / 独立研发需求</b> = PO 本人工作对象</span>
+            <span><b>子业务需求</b> = 交付单元</span>
+            <span><b>研发需求</b> = 下钻交付进展，不等于 PO 的“任务”</span>
+            <span>需求阶段由状态派生，不支持拖拽</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="taskBoard" class="task-board hidden">
+        <div class="task-col" data-col="wait"><div class="task-col-hdr">未开始 <span class="k-count">0</span></div><div class="task-col-body"></div></div>
+        <div class="task-col" data-col="doing"><div class="task-col-hdr">进行中 <span class="k-count">0</span></div><div class="task-col-body"></div></div>
+        <div class="task-col" data-col="done"><div class="task-col-hdr">已完成 <span class="k-count">0</span></div><div class="task-col-body"></div></div>
+      </div>
+    </div>
+
+    <aside class="issue-panel">
+      <div class="issue-hdr"><strong>问题</strong><span class="issue-count" id="issueCount">0</span><button type="button" class="issue-all">查看全部</button></div>
+      <div class="issue-tabs" id="issueTabs"></div>
+      <div class="issue-list" id="issueList"><div class="demand-empty">暂无问题</div></div>
+    </aside>
+  </div>
+</div>
+{{ end }}
+
+{{ define "page_js" }}<script src="{{ asset "/static/js/po/workboard.js" }}"></script>{{ end }}

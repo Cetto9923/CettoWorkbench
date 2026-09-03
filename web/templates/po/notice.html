@@ -1,45 +1,48 @@
 {{/* ==========================================================================
 文件: web/templates/po/notice.html
 模块: PO 工作台
-职责: 通知中心页面。已读 ≠ 已处理 (V10.1 03 节核心契约)。
+职责: 通知中心，展示交叉概览、事件分类与真实通知列表。
 全局字段: .CurrentUser, .CSRFToken, .Menus, .AppName, .CurrentPath
 页面字段: .Title (string), .PageTitle (string), .BaseUrl (string)
 ========================================================================== */}}
-{{ define "page_css" }}
-<link rel="stylesheet" href="{{ asset "/static/css/po/notice.css" }}">
-{{ end }}
+{{ define "page_css" }}<link rel="stylesheet" href="{{ asset "/static/css/po/notice.css" }}">{{ end }}
 
 {{ define "content" }}
 <div class="po-notice">
-  <div class="page-hdr">
-    <h2>通知中心</h2>
-    <span class="page-hdr-meta">发生了什么 · 已读 ≠ 已处理</span>
-  </div>
-
-  <div class="notice-filter-bar">
-    <div class="notice-quick-tabs" role="tablist" aria-label="快捷视图">
-      <button type="button" class="quick-tab active" data-qv="all">全部 <strong id="qvCountAll">0</strong></button>
-      <button type="button" class="quick-tab" data-qv="unread">未读 <strong id="qvCountUnread">0</strong></button>
-      <button type="button" class="quick-tab" data-qv="action">需处理 <strong id="qvCountAction">0</strong></button>
-      <button type="button" class="quick-tab" data-qv="abnormal">异常提醒 <strong id="qvCountAbnormal">0</strong></button>
-      <button type="button" class="quick-tab" data-qv="today">今日新增 <strong id="qvCountToday">0</strong></button>
+  <header class="notice-header">
+    <div><h2>通知中心</h2><p>聚合与我有关的业务动态、待处理事项和风险提醒</p></div>
+  </header>
+  <section class="notice-focus-grid" aria-label="通知概览">
+    <button type="button" class="notice-focus active" data-qv="all"><span>全部通知</span><strong id="qvCountAll">—</strong></button>
+    <button type="button" class="notice-focus" data-qv="unread"><span>未读</span><strong id="qvCountUnread">—</strong></button>
+    <button type="button" class="notice-focus action" data-qv="action"><span>需处理</span><strong id="qvCountAction">—</strong></button>
+    <button type="button" class="notice-focus warning" data-qv="abnormal"><span>异常提醒</span><strong id="qvCountAbnormal">—</strong></button>
+    <button type="button" class="notice-focus" data-qv="today"><span>今日新增</span><strong id="qvCountToday">—</strong></button>
+  </section>
+  <section class="notice-panel">
+    <nav class="notice-category-tabs" aria-label="通知分类">
+      <button type="button" class="notice-category-tab active" data-category="all">全部分类 <em id="categoryAll">0</em></button>
+      <button type="button" class="notice-category-tab" data-category="business">业务动态 <em id="categoryBusiness">0</em></button>
+      <button type="button" class="notice-category-tab" data-category="approval">审批流程 <em id="categoryApproval">0</em></button>
+      <button type="button" class="notice-category-tab" data-category="reminder">时效提醒 <em id="categoryReminder">0</em></button>
+      <button type="button" class="notice-category-tab" data-category="collaboration">协作消息 <em id="categoryCollaboration">0</em></button>
+      <button type="button" class="notice-category-tab" data-category="risk">风险异常 <em id="categoryRisk">0</em></button>
+      <button type="button" class="notice-category-tab" data-category="system">系统消息 <em id="categorySystem">0</em></button>
+    </nav>
+    <div class="notice-toolbar">
+      <label class="notice-search"><span aria-hidden="true">⌕</span><input type="search" id="noticeKeyword" placeholder="搜索标题、对象编号或摘要" aria-label="关键词"></label>
+      <select id="noticeObjectType" aria-label="关联对象"><option value="all">关联对象：全部</option><option value="demand">业务需求</option><option value="story">研发需求</option><option value="project">项目</option><option value="task">任务</option><option value="bug">Bug</option><option value="testtask">测试单</option><option value="issue">问题</option><option value="risk">风险</option><option value="approval">审批</option></select>
+      <select id="noticeTimeRange" aria-label="通知时间"><option value="all">通知时间：全部</option><option value="today">今天</option><option value="3d">近 3 天</option><option value="7d">近 7 天</option><option value="30d">近 30 天</option></select>
+      <select id="noticeReadState" aria-label="已读状态"><option value="all">已读状态：全部</option><option value="unread">未读</option><option value="read">已读</option></select>
+      <select id="noticeNeedAction" aria-label="处理状态"><option value="all">处理状态：全部</option><option value="required">需处理</option><option value="none">仅知会</option></select>
+      <button type="button" class="notice-toolbar-btn" id="noticeResetBtn">重置</button>
+      <button type="button" class="notice-toolbar-btn primary" id="noticeMarkAllBtn">全部标为已读</button>
     </div>
-    <div class="notice-actions">
-      <input type="search" id="noticeKeyword" placeholder="标题 / 对象编号 / 摘要">
-      <button type="button" class="action-btn" id="noticeMarkAllBtn">全部标为已读</button>
-    </div>
-  </div>
-
-  <div class="notice-result-bar">
-    <span id="noticeSummary">加载中…</span>
-  </div>
-
-  <div class="notice-list-host" id="noticeListHost">
-    <div class="notice-empty" id="noticeEmpty" hidden>当前条件下暂无通知</div>
-  </div>
+    <div class="notice-result-bar"><span id="noticeSummary">加载中…</span><span>已读不影响待办、风险或异常处理状态</span></div>
+    <div class="notice-table-wrap"><table class="notice-table"><thead><tr><th class="notice-subject">通知内容</th><th>分类</th><th>关联对象</th><th>触发人</th><th>通知时间</th><th class="notice-status">状态</th><th class="notice-operation">操作</th></tr></thead><tbody id="noticeTbody"></tbody></table><div class="notice-empty" id="noticeEmpty" hidden>当前筛选条件下暂无通知</div></div>
+    <footer class="notice-pagination" id="noticePagination" hidden></footer>
+  </section>
 </div>
 {{ end }}
 
-{{ define "page_js" }}
-<script src="{{ asset "/static/js/po/notice.js" }}"></script>
-{{ end }}
+{{ define "page_js" }}<script src="{{ asset "/static/js/po/notice.js" }}"></script>{{ end }}
