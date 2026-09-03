@@ -5,16 +5,8 @@
   var state = {
     items: [],
     status: "all",
-    focal: "myPending",
     page: 1,
     pageSize: 6
-  };
-
-  var FOCAL_LABELS = {
-    today: "今日必推",
-    myPending: "待我处理",
-    blocked: "阻塞",
-    overdue: "超期"
   };
 
   function demandsUrl(status) {
@@ -26,7 +18,7 @@
   }
 
   function actionLabel(item) {
-    return (item.next || "").trim() || "跟进";
+    return (item.next || "").trim() || "查看";
   }
 
   function dash(value) {
@@ -112,12 +104,6 @@
           throw new Error("invalid payload");
         }
         return Array.isArray(payload.items) ? payload.items : [];
-      })
-      .catch(function () {
-        if (typeof window.showToast === "function") {
-          window.showToast("加载需求列表失败，请稍后重试", "danger");
-        }
-        return [];
       });
   }
 
@@ -126,13 +112,10 @@
     if (!$title.length) {
       return;
     }
-    var focal = FOCAL_LABELS[state.focal] || "待我处理";
     var stage = $(".home-vs-mini-card.active .vs-mini-name").first().text() || "全部";
-    var stagePart = stage && stage !== "全部" ? " · " + escapeHtml(stage) : "";
     $title.html(
-      "<i class=\"fas fa-list-check\"></i> 统一行动列表 · " +
-        escapeHtml(focal) +
-        stagePart +
+      "<i class=\"fas fa-list-check\"></i>统一行动列表 · " +
+        escapeHtml(stage === "全部" ? "全部生命周期" : stage) +
         "（" +
         count +
         "）"
@@ -142,10 +125,22 @@
   function renderEmpty() {
     $("#top5List").html(
       "<div class=\"empty-state\">" +
-        "<div style=\"font-weight:700;color:var(--po-t2);margin-bottom:6px\">当前焦点暂无事项</div>" +
-        "<div style=\"font-size:12px\">可切换顶部焦点或价值流阶段查看其他队列</div>" +
+        "<div class=\"empty-state-title\">当前阶段暂无事项</div>" +
+        "<div class=\"empty-state-hint\">可切换其他价值流阶段继续查看</div>" +
         "</div>"
     );
+  }
+
+  function renderError() {
+    $("#top5List").html(
+      "<div class=\"empty-state empty-state-error\">" +
+        "<div class=\"empty-state-title\">行动列表加载失败</div>" +
+        "<button type=\"button\" class=\"action-btn js-retry\">重新加载</button>" +
+        "</div>"
+    );
+    $("#top5List .js-retry").on("click", function () {
+      refreshDemands(state.status);
+    });
   }
 
   function zentaoLinkAttrs(url, extraClass) {
@@ -155,7 +150,7 @@
       escapeHtml(url) +
       "\" class=\"" +
       cls +
-      "\" target=\"_blank\" rel=\"noopener noreferrer\""
+      "\""
     );
   }
 
@@ -224,17 +219,6 @@
     return html;
   }
 
-  function bindZentaoLinks($list) {
-    $list.find("a.js-zentao-link").on("click", function (e) {
-      var href = (this.getAttribute("href") || "").trim();
-      if (!href) {
-        return;
-      }
-      e.preventDefault();
-      window.open(href, "_blank", "noopener,noreferrer");
-    });
-  }
-
   function bindPagination(total) {
     var $list = $("#top5List");
     $list.find(".js-show-all").on("click", function () {
@@ -283,23 +267,33 @@
     html += $.map(pageItems, renderRow).join("");
     html += renderPagination(total);
     $("#top5List").html(html);
-    bindZentaoLinks($("#top5List"));
     bindPagination(total);
   }
 
   function setActiveCard($card) {
-    $(".home-vs-mini-card").removeClass("active");
-    $card.addClass("active");
+    $(".home-vs-mini-card").removeClass("active").attr("aria-pressed", "false");
+    $card.addClass("active").attr("aria-pressed", "true");
   }
 
   function refreshDemands(status) {
     state.status = status || "all";
     state.page = 1;
-    return loadDemands(state.status).then(function (items) {
-      state.items = items;
-      renderList();
-      return items;
-    });
+    $("#top5List").html("<div class=\"empty-state\">正在加载行动列表…</div>");
+    return loadDemands(state.status)
+      .then(function (items) {
+        state.items = items;
+        renderList();
+        return items;
+      })
+      .catch(function () {
+        state.items = [];
+        updateTitle(0);
+        renderError();
+        if (typeof window.showToast === "function") {
+          window.showToast("加载需求列表失败，请稍后重试", "danger");
+        }
+        return [];
+      });
   }
 
   function initValueStreamLinkage() {
@@ -311,16 +305,6 @@
       }
       setActiveCard($card);
       refreshDemands(status);
-    });
-  }
-
-  function initFocalChips() {
-    $(".home-hl-kpi").on("click", function () {
-      var $btn = $(this);
-      $(".home-hl-kpi").removeClass("active");
-      $btn.addClass("active");
-      state.focal = $btn.attr("data-focal") || "myPending";
-      updateTitle(state.items.length);
     });
   }
 
@@ -344,7 +328,6 @@
 
   $(function () {
     initValueStreamLinkage();
-    initFocalChips();
     fillUpdateTime();
 
     var $active = $(".home-vs-mini-card.active").first();

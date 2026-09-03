@@ -1,41 +1,34 @@
 {{/* ==========================================================================
 文件: web/templates/po/home.html
 模块: PO工作台
-职责: PO 工作台首页（对齐 workbench_ui 首页布局，数据仍由现有接口提供）
-全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
-页面字段: .Title (string), .PageTitle (string), .ValueStreamStages ([]ValueStreamStage),
-          .VersionWindows ([]schedule.HomeVersionWindowCard)
+职责: PO 工作台首页，展示真实价值流、行动列表与版本窗口。
+全局字段: .CurrentUser, .CSRFToken, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .PageTitle (string), .ValueStreamStages ([]module/po.ValueStreamStage),
+          .VersionWindows ([]module/schedule.HomeVersionWindowCard)
 ========================================================================== */}}
 {{ define "page_css" }}
 <link rel="stylesheet" href="{{ asset "/static/css/po/home.css" }}">
 {{ end }}
 
 {{ define "content" }}
-{{ $pending := 0 }}
-{{ range .ValueStreamStages }}{{ if eq .Status "all" }}{{ $pending = .Count }}{{ end }}{{ end }}
+{{ $total := 0 }}
+{{ range .ValueStreamStages }}{{ if eq .Status "all" }}{{ $total = .Count }}{{ end }}{{ end }}
 <div class="po-home">
   <div class="page-hdr">
-    <h2 title="需求治理视角 · 受理→澄清→排期→提测→测试→验收→发起交付→发布→评价反馈">工作台首页</h2>
+    <h2>工作台首页</h2>
     <span class="page-hdr-meta">今日行动 · 价值流推进</span>
     <div class="home-summary page-hdr-actions" aria-label="首页焦点摘要">
-      <button type="button" class="home-hl-kpi" data-focal="today">
-        <strong class="home-hl-num">0</strong><span class="home-hl-lab">今日必推</span>
-      </button>
-      <button type="button" class="home-hl-kpi active" data-focal="myPending">
-        <strong class="home-hl-num" id="hubMyPending">{{ $pending }}</strong><span class="home-hl-lab">待我处理</span>
-      </button>
-      <button type="button" class="home-hl-kpi danger" data-focal="blocked">
-        <strong class="home-hl-num">0</strong><span class="home-hl-lab">阻塞</span>
-      </button>
-      <button type="button" class="home-hl-kpi warning" data-focal="overdue">
-        <strong class="home-hl-num">0</strong><span class="home-hl-lab">超期</span>
-      </button>
+      <span class="home-summary-label">当前相关事项</span>
+      <strong class="home-summary-count" id="homeRelatedTotal">{{ $total }}</strong>
     </div>
   </div>
 
   <div class="home-vs-section home-vs-section--primary" id="homeValueStreamSection">
     <div class="home-vs-hdr">
-      <div class="home-vs-title"><i class="fas fa-route"></i>需求价值流</div>
+      <div>
+        <div class="home-vs-title"><i class="fas fa-route"></i>需求价值流</div>
+        <div class="home-vs-desc">阶段数字来自 Main 当前用户数据范围；点击阶段筛选下方行动列表</div>
+      </div>
     </div>
     <div class="home-vs-compact-scroll" id="homeVsCompactScroll">
       <div class="home-vs-compact" id="homeVsCompact">
@@ -44,11 +37,11 @@
           <button type="button"
             class="home-vs-mini-card{{ if eq $i 0 }} active{{ else if eq $stage.Count 0 }} empty{{ end }}"
             data-vs-status="{{ $stage.Status }}"
-            title="{{ $stage.Label }} · {{ $stage.Count }} 条">
+            aria-pressed="{{ if eq $i 0 }}true{{ else }}false{{ end }}"
+            title="{{ $stage.Label }} · 共 {{ $stage.Count }} 条">
             <span class="vs-mini-name">{{ $stage.Label }}</span>
             <span class="vs-mini-count">{{ $stage.Count }}</span>
-            <span class="vs-mini-meta">风险 <strong>0</strong></span>
-            <span class="vs-mini-meta">最长 —天</span>
+            <span class="vs-mini-meta">业需 {{ $stage.DemandCount }} · 研需 {{ $stage.StoryCount }}</span>
           </button>
           {{ end }}
         </div>
@@ -57,9 +50,8 @@
   </div>
 
   <div class="top5-section" id="top5Section">
-    <div class="section-title" id="top5Title"><i class="fas fa-list-check"></i> 统一行动列表 · 待我处理</div>
-    <div class="home-priority-strip home-blocker-strip" id="homeBlockerStrip" hidden></div>
-    <div class="top5-list" id="top5List"></div>
+    <div class="section-title" id="top5Title"><i class="fas fa-list-check"></i>统一行动列表 · 全部生命周期</div>
+    <div class="top5-list" id="top5List" aria-live="polite"></div>
   </div>
 
   <div class="home-version-dock" id="homeVersionCollapsible">
@@ -75,6 +67,7 @@
             <div class="summary-title" title="{{ .Name }}"><i class="fas fa-layer-group"></i>{{ .Name }}{{ if .AgileGroup }} <span class="agile-team-tag">{{ .AgileGroup }}</span>{{ end }}</div>
             <div class="summary-sub">{{ .Range }}</div>
           </div>
+          <a class="action-btn primary" href="/schedule">进入排期</a>
         </div>
         <div class="summary-stats">
           <span class="summary-stat">需求 <strong>{{ .DemandCount }}</strong></span>
@@ -84,7 +77,7 @@
         </div>
       </div>
       {{ else }}
-      <div class="home-version-empty">当前无进行中等待发布的真实版本窗口</div>
+      <div class="home-version-empty">当前用户范围内暂无近期版本窗口</div>
       {{ end }}
     </div>
   </div>
