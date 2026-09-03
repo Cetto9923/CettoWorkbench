@@ -38,3 +38,5 @@
 .cat-tag.system { background: #f0f0f0; color: #595959; }
 .unread-dot { display: inline-block; width: 6px; height: 6px; background: var(--po-blue, #1d4ed8); border-radius: 50%; margin-right: 4px; }
 .notice-empty { padding: 40px 20px; text-align: center; color: var(--po-t2, #65758b); }
+.notice-row1 a { color: var(--po-blue, #1d4ed8); text-decoration: none; }
+.notice-row1 a:hover { text-decoration: underline; }

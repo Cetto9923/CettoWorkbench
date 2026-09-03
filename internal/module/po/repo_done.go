@@ -14,6 +14,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"workbench/internal/pkg/zentao"
 )
 
 func (r *Repo) FindDoneActions(ctx context.Context, account string, timeRange TimeRange, from, to string, page, pageSize int) ([]DoneAction, int64, error) {
@@ -176,8 +178,26 @@ func (r *Repo) FindDoneActions(ctx context.Context, account string, timeRange Ti
 			ObjectID:   row.ObjectID,
 			ObjectName: nameByKey[fmt.Sprintf("%s:%d", row.ObjectType, row.ObjectID)],
 			Date:       row.Date.Format("2006-01-02 15:04:05"),
+			URL:        objectViewURL(row.ObjectType, uint(row.ObjectID)),
 		})
 	}
 
 	return items, total, nil
+}
+
+// objectViewURL 按 zentao 对象类型拼详情页链接。
+func objectViewURL(objectType string, id uint) string {
+	switch objectType {
+	case "demand":
+		return zentao.DemandViewURL(id)
+	case "story":
+		return zentao.StoryViewURL(id)
+	case "task":
+		return zentao.TaskViewURL(id)
+	case "bug":
+		return zentao.BugViewURL(id)
+	case "testtask":
+		return zentao.TesttaskViewURL(id)
+	}
+	return ""
 }

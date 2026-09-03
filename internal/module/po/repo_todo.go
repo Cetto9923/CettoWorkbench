@@ -16,6 +16,8 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+
+	"workbench/internal/pkg/zentao"
 )
 
 // FindTodoItems 查询我的待办列表（V10.1 02 节 7 维 AND 公式）。
@@ -157,7 +159,7 @@ func (r *Repo) FindTodoItems(ctx context.Context, account string, req TodoListRe
 				Reason:         row.Status,
 				Deadline:       deadline,
 				Owner:          owner,
-				URL:            "",
+				URL:            zentao.DemandViewURL(uint(row.ID)),
 			})
 		}
 	}
@@ -197,7 +199,7 @@ func (r *Repo) FindTodoItems(ctx context.Context, account string, req TodoListRe
 				Reason:         row.Status,
 				Deadline:       deadline,
 				Owner:          owner,
-				URL:            "",
+				URL:            zentao.TaskViewURL(uint(row.ID)),
 			})
 		}
 	}
@@ -231,7 +233,7 @@ func (r *Repo) FindTodoItems(ctx context.Context, account string, req TodoListRe
 				Reason:         row.Status,
 				Deadline:       "",
 				Owner:          displayMap[account],
-				URL:            "",
+				URL:            zentao.BugViewURL(uint(row.ID)),
 			})
 		}
 	}

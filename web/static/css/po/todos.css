@@ -20,6 +20,8 @@
 .todos-table tr:hover { background: #f7faff; }
 
 .todos-empty { padding: 40px 20px; text-align: center; color: var(--po-t2, #65758b); }
+.row-id-link, .row-title-link { color: var(--po-blue, #1d4ed8); text-decoration: none; }
+.row-id-link:hover, .row-title-link:hover { text-decoration: underline; }
 .pri-tag { display: inline-block; padding: 1px 6px; border-radius: 8px; font-size: 11px; font-weight: 600; }
 .pri-tag.p1, .pri-tag.p2 { background: #fff1f0; color: #d4380d; }
 .pri-tag.p3, .pri-tag.p4 { background: #f6ffed; color: #389e0d; }

@@ -310,6 +310,7 @@ type DoneAction struct {
 	ObjectName string `json:"objectName"` // 对象标题
 	Date       string `json:"date"`       // 操作时间 YYYY-MM-DD HH:MM:SS
 	Result     string `json:"result"`     // 操作结果/前后状态
+	URL        string `json:"url"`        // 禅道详情 URL
 }
 
 // DoneListResp 我的已办列表响应。

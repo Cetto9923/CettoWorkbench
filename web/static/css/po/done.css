@@ -15,3 +15,5 @@
 .done-table th { background: #f7f8fa; font-weight: 500; color: var(--po-t2, #65758b); font-size: 12px; }
 .done-table tr:hover { background: #f7faff; }
 .done-empty { padding: 40px 20px; text-align: center; color: var(--po-t2, #65758b); }
+.done-table a { color: var(--po-blue, #1d4ed8); text-decoration: none; }
+.done-table a:hover { text-decoration: underline; }

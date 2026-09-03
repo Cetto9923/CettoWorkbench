@@ -37,7 +37,10 @@
     var catLabels = { business: "业务", approval: "审批", reminder: "提醒", collaboration: "协作", risk: "风险", system: "系统" };
     var catLabel = catLabels[cat] || item.category || "—";
     var unread = item.read ? "" : '<span class="unread-dot"></span>';
-    var objLabel = (item.objectType || "—") + "/" + (item.objectId || 0);
+    var objCell = item.url
+      ? '<a href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener" title="在禅道中查看">' +
+        escapeHtml(item.objectType || "—") + "/" + escapeHtml(String(item.objectId || 0)) + "</a>"
+      : escapeHtml(item.objectType || "—") + "/" + escapeHtml(String(item.objectId || 0));
     var readBtn = item.read
       ? '<button type="button" class="notice-read-btn" disabled>已读</button>'
       : '<button type="button" class="notice-read-btn" data-notice-id="' + escapeHtml(item.id) + '">标为已读</button>';
@@ -53,7 +56,7 @@
       '</div>' +
       (item.data ? '<div class="notice-summary">' + escapeHtml(item.data.substring(0, 200)) + '</div>' : "") +
       '<div class="notice-row1" style="margin-top:6px">' +
-      '<span class="notice-meta">关联对象: ' + escapeHtml(objLabel) + '</span>' +
+      '<span class="notice-meta">关联对象: ' + objCell + '</span>' +
       '</div>' +
       '</div>' +
       '<div class="notice-actions-cell">' + readBtn + '</div>' +

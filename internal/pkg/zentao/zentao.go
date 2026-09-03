@@ -130,3 +130,27 @@ func ProductViewURLWithBase(base string, productID uint) string {
 	}
 	return URLWithBase(base, "product", "view", fmt.Sprintf("productID=%d", productID))
 }
+
+// TaskViewURL 任务详情页链接。
+func TaskViewURL(taskID uint) string {
+	if taskID == 0 {
+		return ""
+	}
+	return URL("task", "view", fmt.Sprintf("taskID=%d", taskID))
+}
+
+// BugViewURL Bug 详情页链接。
+func BugViewURL(bugID uint) string {
+	if bugID == 0 {
+		return ""
+	}
+	return URL("bug", "view", fmt.Sprintf("bugID=%d", bugID))
+}
+
+// TesttaskViewURL 测试单详情页链接。
+func TesttaskViewURL(testtaskID uint) string {
+	if testtaskID == 0 {
+		return ""
+	}
+	return URL("testtask", "view", fmt.Sprintf("taskID=%d", testtaskID))
+}

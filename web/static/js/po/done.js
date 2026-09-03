@@ -37,6 +37,14 @@
   }
 
   function renderRow(item) {
+    var objectCell = item.url
+      ? '<a href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener" title="在禅道中查看">' +
+        escapeHtml(item.objectType) + "/" + escapeHtml(String(item.objectId)) + "</a>"
+      : escapeHtml(item.objectType) + "/" + escapeHtml(String(item.objectId));
+    var nameCell = item.url
+      ? '<a href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener" title="在禅道中查看">' +
+        escapeHtml(item.objectName || "—") + "</a>"
+      : escapeHtml(item.objectName || "—");
     return (
       "<tr>" +
       '<td class="c-when">' + escapeHtml(item.date) + "</td>" +
@@ -45,11 +53,9 @@
       escapeHtml(item.action) +
       "</span></td>" +
       '<td class="c-object" title="' + escapeHtml(item.objectName) + '">' +
-      escapeHtml(item.objectName || "—") +
+      nameCell +
       "</td>" +
-      '<td class="c-id">' +
-      escapeHtml(item.objectType) + "/" + escapeHtml(String(item.objectId)) +
-      "</td>" +
+      '<td class="c-id">' + objectCell + "</td>" +
       "</tr>"
     );
   }

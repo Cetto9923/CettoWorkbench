@@ -61,11 +61,21 @@
     var priClass = ["P1", "P2", "P3", "P4"].indexOf(item.priority) >= 0
       ? item.priority.toLowerCase()
       : "normal";
+    // ID 列: 有 zentaoUrl 时渲染为新窗口链接, 无时为纯文本
+    var idHtml = item.url
+      ? '<a class="row-id-link" href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener" title="在禅道中查看">' +
+        escapeHtml(item.displayId || item.id) + "</a>"
+      : escapeHtml(item.displayId || item.id);
+    // 标题列: 有 zentaoUrl 时也变链接
+    var titleHtml = item.url
+      ? '<a class="row-title-link" href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener" title="在禅道中查看">' +
+        escapeHtml(item.title || "—") + "</a>"
+      : escapeHtml(item.title || "—");
     return (
       "<tr>" +
-      '<td class="c-id">' + escapeHtml(item.displayId || item.id) + "</td>" +
+      '<td class="c-id">' + idHtml + "</td>" +
       '<td class="c-title" title="' + escapeHtml(item.title) + '">' +
-      escapeHtml(item.title || "—") +
+      titleHtml +
       "</td>" +
       '<td class="c-stage">' + escapeHtml(item.stage || "—") + "</td>" +
       '<td class="c-pri"><span class="pri-tag ' + priClass + '">' +
