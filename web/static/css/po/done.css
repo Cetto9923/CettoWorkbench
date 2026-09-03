@@ -1,24 +1,69 @@
-/* PO 我的待办：对齐已确认 CRCBWorkbench 信息结构，颜色与控件沿用 Workbench token。 */
-.po-done { padding: 18px 20px 28px; background: #f5f7fb; min-height: calc(100vh - 56px); color: #172033; }
-.todos-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 14px; }
-.todos-header h2 { margin: 0; font-size: 22px; line-height: 30px; font-weight: 650; }.todos-header p { margin: 3px 0 0; color: #7a8799; font-size: 12px; }
-.relation-tabs { display: flex; gap: 2px; padding: 3px; background: #e9edf4; border-radius: 6px; }.relation-tab { border: 0; background: transparent; color: #65758b; padding: 6px 15px; border-radius: 4px; font-size: 12px; cursor: pointer; }.relation-tab.active { background: #fff; color: #1d4ed8; box-shadow: 0 1px 3px rgb(15 23 42 / 10%); font-weight: 600; }
-.focus-grid { display: grid; gap: 10px; margin-bottom: 12px; }.focus-card { min-height: 76px; padding: 12px 16px; text-align: left; border: 1px solid #e3e8f0; border-radius: 7px; background: #fff; cursor: pointer; }.focus-card span { display: block; color: #66758a; font-size: 12px; margin-bottom: 7px; }.focus-card strong { font-size: 24px; line-height: 26px; color: #23324a; }.focus-card.active { border-color: #78a4f8; box-shadow: inset 0 0 0 1px #78a4f8; }
-.done-focus-grid { grid-template-columns: repeat(7, minmax(110px, 1fr)); }
-.todos-panel { background: #fff; border: 1px solid #e3e8f0; border-radius: 7px; overflow: hidden; }.group-tabs { display: flex; gap: 25px; padding: 0 18px; border-bottom: 1px solid #e6eaf0; overflow-x: auto; }.group-tab { position: relative; padding: 13px 1px 11px; border: 0; background: transparent; color: #66758a; white-space: nowrap; font-size: 12px; cursor: pointer; }.group-tab em { padding: 1px 5px; margin-left: 2px; border-radius: 8px; background: #eef1f6; color: #7b8798; font-style: normal; font-size: 10px; }.group-tab.active { color: #1d4ed8; font-weight: 600; }.group-tab.active::after { content: ""; position: absolute; right: 0; bottom: -1px; left: 0; height: 2px; background: #1d4ed8; }
-.todos-toolbar { display: flex; align-items: center; gap: 7px; padding: 11px 14px; border-bottom: 1px solid #edf0f4; flex-wrap: wrap; }.todos-toolbar select,.search-field { height: 30px; border: 1px solid #dce2ea; border-radius: 4px; background: #fff; color: #536176; font-size: 12px; }.todos-toolbar select { padding: 0 24px 0 8px; }.search-field { display: flex; align-items: center; width: 210px; padding: 0 8px; color: #9aa5b4; }.search-field input { min-width: 0; width: 100%; border: 0; outline: 0; padding-left: 6px; font-size: 12px; }.toolbar-btn { height: 30px; padding: 0 12px; border: 1px solid #dce2ea; border-radius: 4px; background: #fff; color: #536176; font-size: 12px; cursor: pointer; }
-.todos-result-bar { display: flex; align-items: center; min-height: 36px; padding: 0 15px; color: #7a8799; font-size: 12px; }.todos-table-wrap { max-height: 52vh; overflow: auto; }.todos-table { width: 100%; min-width: 1080px; border-collapse: collapse; table-layout: fixed; font-size: 12px; }.todos-table th { position: sticky; top: 0; z-index: 1; height: 34px; padding: 0 9px; text-align: left; background: #f7f8fa; color: #7a8799; font-weight: 500; border-top: 1px solid #edf0f4; border-bottom: 1px solid #e6eaf0; }.todos-table td { height: 42px; padding: 0 9px; border-bottom: 1px solid #edf0f4; color: #4b5a6f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }.todos-table tbody tr:hover { background: #f8faff; }.c-id { width: 82px; }.c-title { width: 27%; }.c-type { width: 78px; }.c-pri { width: 66px; }.c-relation { width: 72px; }.c-reason { width: 105px; }.c-dead { width: 92px; }.c-owner { width: 118px; }.c-action { width: 70px; text-align: right; }
-.row-id-link,.row-title-link { color: #2563d8; text-decoration: none; }.row-title-link { color: #26364e; }.row-id-link:hover,.row-title-link:hover { color: #174eb7; text-decoration: underline; }.type-tag,.relation-tag,.pri-tag { display: inline-flex; align-items: center; min-height: 19px; padding: 0 6px; border-radius: 3px; font-size: 11px; }.type-tag { background: #edf4ff; color: #3568ad; }.relation-tag { background: #f1f4f8; color: #65758b; }.pri-tag { font-weight: 600; }.pri-tag.p1 { background: #fee2e2; color: #b91c1c; }.pri-tag.p2 { background: #ffedd5; color: #c2410c; }.pri-tag.p3,.pri-tag.p4 { background: #e8f5ec; color: #27834a; }.pri-tag.normal { background: #f1f3f6; color: #7a8799; }.todo-action { height: 25px; padding: 0 9px; border: 1px solid #8bb2f4; border-radius: 4px; background: #eff5ff; color: #1d5fc4; font-size: 11px; cursor: pointer; }
-.todos-empty { padding: 55px 20px; text-align: center; color: #8c98a8; font-size: 13px; }.todos-pagination { display: flex; justify-content: space-between; align-items: center; min-height: 46px; padding: 0 14px; color: #7a8799; font-size: 12px; }.pager-controls { display: flex; align-items: center; gap: 5px; }.pager-page-size { height: 28px; margin-right: 8px; border: 1px solid #dce2ea; border-radius: 4px; background: #fff; color: #536176; font-size: 12px; }.pager-btn { min-width: 28px; height: 28px; border: 1px solid #dce2ea; border-radius: 4px; background: #fff; color: #536176; cursor: pointer; }.pager-btn.active { color: #fff; background: #2563d8; border-color: #2563d8; }.pager-btn:disabled { cursor: not-allowed; opacity: .45; }
-@media (max-width: 980px) { .done-focus-grid { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 620px) { .po-done { padding: 14px 10px 22px; }.done-focus-grid { grid-template-columns: repeat(2, 1fr); } }
-
-/* done 专属：表头列宽（c-action=形成原因中间列 / c-op=操作右对齐） */
-.done-table-cols .c-action { width: 110px; text-align: left; }
-.done-table-cols .c-result { width: 80px; }
-.done-table-cols .c-op { width: 60px; text-align: right; }
-.done-table-cols .c-dead { width: 150px; }
-
-/* 分类仍可横向滑动，但不在右侧显示无意义的内部滚动条。 */
-.po-done .group-tabs { overflow-y: hidden; scrollbar-width: none; }
+/* PO 我的已办：沿用工作台 token 的高密度动作轨迹列表。 */
+.po-done { min-height: calc(100vh - 56px); padding: 12px 20px 28px; background: var(--po-bg); color: var(--color-text-strong); }
+.po-done .todos-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 10px; }
+.po-done .todos-header h2 { margin: 0; font-size: 20px; line-height: 28px; font-weight: 650; }
+.po-done .todos-header p { margin: 2px 0 0; color: var(--color-text-disabled); font-size: var(--font-size-xs); }
+.done-summary { display: grid; grid-template-columns: minmax(150px, 1.2fr) minmax(720px, 5.8fr); gap: 8px; height: 68px; margin-bottom: 10px; }
+.done-total,.done-stat { border: 0; background: var(--color-surface); color: var(--color-text-secondary); font-family: inherit; text-align: left; cursor: pointer; }
+.done-total { height: 68px; padding: 9px 14px; border: 1px solid var(--po-blue-bd); border-radius: var(--radius-sm); }
+.done-total span,.done-stat span { display: block; margin-bottom: 4px; color: var(--color-text-secondary); font-size: 11px; line-height: 16px; }
+.done-total strong { color: var(--color-text-strong); font-size: 22px; line-height: 26px; font-weight: 700; }
+.done-total.active { background: var(--po-blue-bg); }
+.done-total.active span,.done-total.active strong { color: var(--po-blue); }
+.done-stat-strip { display: grid; grid-template-columns: repeat(6, minmax(92px, 1fr)); overflow: hidden; border: 1px solid var(--po-border); border-radius: var(--radius-sm); background: var(--color-surface); }
+.done-stat { position: relative; min-width: 0; height: 66px; padding: 9px 12px; }
+.done-stat:not(:last-child)::after { position: absolute; top: 13px; right: 0; bottom: 13px; width: 1px; background: var(--color-border-soft); content: ""; }
+.done-stat:hover { background: var(--color-surface-hover); }
+.done-stat.active { background: var(--po-blue-bg); }
+.done-stat strong { color: var(--color-text-strong); font-size: 17px; line-height: 22px; font-weight: 650; }
+.done-stat.active span,.done-stat.active strong { color: var(--po-blue); }
+.po-done .todos-panel { overflow: hidden; border: 1px solid var(--po-border); border-radius: var(--radius-sm); background: var(--color-surface); }
+.po-done .group-tabs { display: flex; align-items: flex-end; gap: 6px; height: 42px; padding: 0 12px; overflow: hidden; border-bottom: 1px solid var(--po-border); scrollbar-width: none; }
 .po-done .group-tabs::-webkit-scrollbar { display: none; }
+.po-done .group-tab { position: relative; flex: 0 0 auto; height: 42px; padding: 0 11px; border: 0; background: transparent; color: var(--color-text-secondary); font-size: var(--font-size-xs); white-space: nowrap; cursor: pointer; }
+.po-done .group-tab.active { color: var(--po-blue); font-weight: 600; }
+.po-done .group-tab.active::after { position: absolute; right: 9px; bottom: -1px; left: 9px; height: 2px; background: var(--po-blue); content: ""; }
+.more-types { position: relative; flex: 0 0 auto; height: 42px; margin-left: auto; color: var(--color-text-secondary); font-size: var(--font-size-xs); line-height: 42px; cursor: pointer; }
+.more-types span::after { margin-left: 4px; content: "▾"; }
+.more-types select { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: pointer; }
+.po-done .todos-toolbar { display: flex; align-items: center; gap: 7px; min-height: 45px; padding: 7px 10px; border-bottom: 1px solid var(--color-border-soft); white-space: nowrap; }
+.po-done .todos-toolbar select,.po-done .search-field { height: 30px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-surface); color: var(--color-text-secondary); font-size: var(--font-size-xs); }
+.po-done .todos-toolbar select { min-width: 132px; padding: 0 24px 0 8px; }
+.po-done .search-field { display: flex; align-items: center; width: 230px; padding: 0 8px; color: var(--color-text-disabled); }
+.po-done .search-field input { width: 100%; min-width: 0; padding-left: 6px; border: 0; outline: 0; background: transparent; font-size: var(--font-size-xs); }
+.po-done .toolbar-btn { height: 30px; padding: 0 11px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-surface); color: var(--color-text-secondary); font-size: var(--font-size-xs); cursor: pointer; }
+.po-done .toolbar-btn:hover { border-color: var(--color-border-strong); color: var(--color-text-body); }
+.done-load-state:empty { display: none; }
+.done-load-state:not(:empty) { min-height: 30px; padding: 7px 10px; color: var(--color-text-disabled); font-size: var(--font-size-xs); }
+/* 保留用户现有约束：长列表在表格内部滚动，让分页在常见笔记本视口内可见。 */
+.po-done .todos-table-wrap { max-height: 44vh; overflow: auto; }
+.po-done .todos-table { width: 100%; min-width: 860px; border-collapse: collapse; table-layout: fixed; font-size: var(--font-size-xs); }
+.po-done .todos-table th { position: sticky; top: 0; z-index: 2; height: 32px; padding: 0 10px; border-bottom: 1px solid var(--po-border); background: var(--color-surface-muted); color: var(--color-text-secondary); font-size: 11px; font-weight: 500; text-align: left; }
+.po-done .todos-table td { height: 42px; padding: 4px 10px; overflow: hidden; border-bottom: 1px solid var(--color-border-soft); color: var(--color-text-body); text-overflow: ellipsis; white-space: nowrap; }
+.po-done .todos-table tbody tr:hover { background: var(--color-surface-hover); }
+.done-table-cols .c-item { width: 42%; }
+.done-table-cols .c-type { width: 10%; }
+.done-table-cols .c-action { width: 14%; }
+.done-table-cols .c-result { width: 11%; }
+.done-table-cols .c-dead { width: 17%; }
+.done-table-cols .c-op { width: 6%; text-align: right; }
+.done-item-title { overflow: hidden; color: var(--color-text-strong); line-height: 17px; text-overflow: ellipsis; white-space: nowrap; }
+.done-item-id { overflow: hidden; margin-top: 1px; color: var(--po-blue); font-size: 10px; line-height: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.row-title-link,.row-id-link { color: inherit; text-decoration: none; }
+.row-title-link:hover,.row-id-link:hover { color: var(--po-blue); text-decoration: underline; }
+.type-tag,.result-tag { display: inline-flex; align-items: center; min-height: 19px; padding: 0 6px; border-radius: 3px; font-size: 11px; white-space: nowrap; }
+.type-tag { background: var(--po-blue-bg); color: #3568ad; }
+.result-tag { background: var(--color-surface-muted); color: var(--color-text-secondary); }
+.result-tag.success { background: var(--color-success-bg); color: var(--color-success); }
+.result-tag.danger { background: var(--color-danger-bg); color: var(--color-danger); }
+.todo-action { padding: 0; border: 0; background: transparent; color: var(--po-blue); font-size: var(--font-size-xs); text-decoration: none; cursor: pointer; }
+.todo-action:hover { text-decoration: underline; }
+.po-done .todos-empty { padding: 46px 20px; color: var(--color-text-disabled); font-size: var(--font-size-sm); text-align: center; }
+.po-done .todos-pagination { display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 0 10px; color: var(--color-text-secondary); font-size: 11px; }
+.po-done .pager-controls { display: flex; align-items: center; gap: 5px; }
+.po-done .pager-page-size { height: 28px; margin-right: 6px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-surface); color: var(--color-text-secondary); font-size: 11px; }
+.po-done .pager-btn { min-width: 28px; height: 28px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-surface); color: var(--color-text-secondary); cursor: pointer; }
+.po-done .pager-btn.active { border-color: var(--po-blue); background: var(--po-blue); color: #fff; }
+.po-done .pager-btn:disabled { cursor: not-allowed; opacity: .45; }
+@media (max-width: 1100px) { .done-summary { grid-template-columns: 142px minmax(660px, 1fr); overflow-x: auto; }.po-done .group-tabs { overflow-x: auto; } }
+@media (max-width: 760px) { .po-done { padding: 10px 10px 22px; }.po-done .todos-toolbar { overflow-x: auto; }.po-done .todos-pagination { align-items: flex-start; gap: 8px; flex-direction: column; padding-block: 8px; }.po-done .pager-controls { flex-wrap: wrap; } }

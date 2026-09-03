@@ -36,3 +36,4 @@
 .follow-page-size { height: 28px; border: 1px solid var(--po-border, #dfe6ee); border-radius: 4px; background: #fff; color: var(--po-t2, #65758b); font-size: 12px; }
 .follow-pager-btn { min-width: 28px; height: 28px; border: 1px solid var(--po-border, #dfe6ee); border-radius: 4px; background: #fff; color: var(--po-t2, #65758b); cursor: pointer; }
 .follow-pager-btn:disabled { cursor: not-allowed; opacity: .45; }
+@media (max-width: 620px) { .follow-pagination { align-items: flex-start; gap: 8px; flex-direction: column; padding-block: 8px; }.follow-pager-controls { flex-wrap: wrap; } }

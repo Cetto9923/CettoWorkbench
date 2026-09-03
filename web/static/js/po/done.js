@@ -8,7 +8,7 @@
     keyword: "",
     result: "all",
     page: 1,
-    pageSize: 20,
+    pageSize: 15,
   };
 
   function escapeHtml(value) {
@@ -36,20 +36,22 @@
   }
 
   function renderRow(item) {
+    var displayId = item.displayId || (item.objectType + "/" + item.objectId);
     var idCell = item.url
-      ? '<a class="row-id-link" href="' + escapeHtml(item.url) + '" title="在禅道中查看">' + escapeHtml(item.displayId || (item.objectType + "/" + item.objectId)) + "</a>"
-      : escapeHtml(item.displayId || (item.objectType + "/" + item.objectId));
+      ? '<a class="row-id-link" href="' + escapeHtml(item.url) + '" title="在禅道中查看">' + escapeHtml(displayId) + "</a>"
+      : escapeHtml(displayId);
     var titleCell = item.url
       ? '<a class="row-title-link" href="' + escapeHtml(item.url) + '" title="在禅道中查看">' + escapeHtml(item.objectName || "—") + "</a>"
       : escapeHtml(item.objectName || "—");
+    var resultLabels = { activated: "已激活", done: "处理成功", submitted: "已提交", approved: "已通过", rejected: "已驳回", closed: "已关闭", verified: "已验收", resolved: "已解决", returned: "已退回" };
+    var result = resultLabels[item.result] || "已处理";
+    var resultTone = ["approved", "done", "verified", "resolved"].indexOf(item.result) >= 0 ? " success" : (["rejected", "returned"].indexOf(item.result) >= 0 ? " danger" : "");
     return "<tr>" +
-      '<td class="c-id">' + idCell + "</td>" +
-      '<td class="c-title" title="' + escapeHtml(item.objectName || "") + '">' + titleCell + "</td>" +
+      '<td class="c-item" title="' + escapeHtml(item.objectName || "") + '"><div class="done-item-title">' + titleCell + '</div><div class="done-item-id">' + idCell + "</div></td>" +
       '<td class="c-type"><span class="type-tag">' + escapeHtml(item.objectTypeLabel || item.objectType || "—") + "</span></td>" +
-      '<td class="c-action"><span class="reason-tag">' + escapeHtml(item.action || "—") + "</span></td>" +
-      '<td class="c-result">' + escapeHtml(item.result || "—") + "</td>" +
+      '<td class="c-action">' + escapeHtml(item.action || "已处理") + "</td>" +
+      '<td class="c-result"><span class="result-tag' + resultTone + '">' + escapeHtml(result) + "</span></td>" +
       '<td class="c-dead">' + escapeHtml(item.date || "—") + "</td>" +
-      '<td class="c-owner">' + escapeHtml(item.actor || "—") + "</td>" +
       '<td class="c-op">' + (item.url ? '<a class="todo-action" href="' + escapeHtml(item.url) + '">查看</a>' : "—") + "</td>" +
       "</tr>";
   }
@@ -66,7 +68,7 @@
     var items = payload.items || [];
     document.getElementById("doneTbody").innerHTML = items.map(renderRow).join("");
     document.getElementById("doneEmpty").hidden = items.length !== 0;
-    document.getElementById("doneSummary").textContent = "共 " + (payload.total || 0) + " 条已办记录";
+    document.getElementById("doneSummary").textContent = "";
     renderSummary(payload.summary);
     renderPagination(payload.total || 0);
   }
@@ -102,9 +104,9 @@
   }
 
   function bindEvents() {
-    document.querySelectorAll(".focus-card").forEach(function (button) {
+    document.querySelectorAll("[data-range]").forEach(function (button) {
       button.addEventListener("click", function () {
-        activate(".focus-card", button);
+        activate("[data-range]", button);
         state.timeRange = button.dataset.range;
         state.page = 1;
         refresh();
@@ -115,23 +117,42 @@
         activate(".group-tab", button);
 		state.tab = button.dataset.tab || "all";
         state.objectType = button.dataset.object || "";
+        document.getElementById("doneObjectType").value = state.objectType;
+        document.getElementById("doneMoreType").value = "";
         state.page = 1;
         refresh();
       });
     });
     var keyword = document.getElementById("doneKeyword"); var timer;
     keyword.addEventListener("input", function () { clearTimeout(timer); timer = setTimeout(function () { state.keyword = keyword.value.trim(); state.page = 1; refresh(); }, 300); });
-    var fields = { doneResult: "result" };
+    var fields = { doneObjectType: "objectType", doneResult: "result" };
     Object.keys(fields).forEach(function (id) {
-      document.getElementById(id).addEventListener("change", function (event) { state[fields[id]] = event.target.value; state.page = 1; refresh(); });
+      document.getElementById(id).addEventListener("change", function (event) {
+        state[fields[id]] = event.target.value; state.page = 1;
+        if (id === "doneObjectType") {
+          state.tab = "all";
+          document.querySelectorAll(".group-tab").forEach(function (button) { button.classList.toggle("active", !state.objectType && button.dataset.tab === "all" && !button.dataset.object); });
+          document.getElementById("doneMoreType").value = "";
+        }
+        refresh();
+      });
+    });
+    document.getElementById("doneMoreType").addEventListener("change", function (event) {
+      if (!event.target.value) { return; }
+      document.querySelectorAll(".group-tab").forEach(function (button) { button.classList.remove("active"); });
+      state.tab = "all"; state.objectType = event.target.value; state.page = 1;
+      document.getElementById("doneObjectType").value = state.objectType;
+      refresh();
     });
     document.getElementById("doneResetBtn").addEventListener("click", function () {
       state.timeRange = "all"; state.tab = "all"; state.objectType = ""; state.keyword = ""; state.result = "all"; state.page = 1;
-      document.querySelectorAll(".focus-card").forEach(function (b) { b.classList.remove("active"); });
+      document.querySelectorAll("[data-range]").forEach(function (b) { b.classList.toggle("active", b.dataset.range === "all"); });
       document.querySelectorAll(".group-tab").forEach(function (b) { b.classList.remove("active"); });
       document.querySelectorAll(".group-tab").forEach(function (b) { if (b.dataset.tab === "all" && !b.dataset.object) b.classList.add("active"); });
       
       document.getElementById("doneResult").value = "all";
+      document.getElementById("doneObjectType").value = "";
+      document.getElementById("doneMoreType").value = "";
       keyword.value = "";
       refresh();
     });

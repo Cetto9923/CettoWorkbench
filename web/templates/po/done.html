@@ -15,43 +15,40 @@
     <div><h2>我的已办</h2><p>已实际执行的正式业务动作 · 待办消失 ≠ 已办</p></div>
   </header>
 
-  <section class="focus-grid done-focus-grid" aria-label="已办时间概览">
-    <button type="button" class="focus-card active" data-range="all"><span>全部时间</span><strong id="countRangeAll">—</strong></button>
-    <button type="button" class="focus-card" data-range="today"><span>今天</span><strong id="countRangeToday">—</strong></button>
-    <button type="button" class="focus-card" data-range="7d"><span>近 7 天</span><strong id="countRange7d">—</strong></button>
-    <button type="button" class="focus-card" data-range="week"><span>本周</span><strong id="countRangeWeek">—</strong></button>
-    <button type="button" class="focus-card" data-range="30d"><span>近 30 天</span><strong id="countRange30d">—</strong></button>
-    <button type="button" class="focus-card" data-range="month"><span>本月</span><strong id="countRangeMonth">—</strong></button>
-    <button type="button" class="focus-card" data-range="quarter"><span>本季度</span><strong id="countRangeQuarter">—</strong></button>
+  <section class="done-summary" aria-label="已办时间概览">
+    <button type="button" class="done-total active" data-range="all"><span>累计处理</span><strong id="countRangeAll">—</strong></button>
+    <div class="done-stat-strip">
+      <button type="button" class="done-stat" data-range="today"><span>今天</span><strong id="countRangeToday">—</strong></button>
+      <button type="button" class="done-stat" data-range="7d"><span>近 7 天</span><strong id="countRange7d">—</strong></button>
+      <button type="button" class="done-stat" data-range="week"><span>本周</span><strong id="countRangeWeek">—</strong></button>
+      <button type="button" class="done-stat" data-range="30d"><span>近 30 天</span><strong id="countRange30d">—</strong></button>
+      <button type="button" class="done-stat" data-range="month"><span>本月</span><strong id="countRangeMonth">—</strong></button>
+      <button type="button" class="done-stat" data-range="quarter"><span>本季度</span><strong id="countRangeQuarter">—</strong></button>
+    </div>
   </section>
 
   <section class="todos-panel">
     <nav class="group-tabs" aria-label="已办对象分类">
       <button type="button" class="group-tab active" data-tab="all" data-object="">全部已办</button>
       <button type="button" class="group-tab" data-tab="approval" data-object="">审批决策</button>
-      <button type="button" class="group-tab" data-tab="all" data-object="demand">业务需求</button>
-      <button type="button" class="group-tab" data-tab="all" data-object="story">研发需求</button>
-      <button type="button" class="group-tab" data-tab="all" data-object="task">任务</button>
+      <button type="button" class="group-tab" data-tab="demand" data-object="">需求治理</button>
+      <button type="button" class="group-tab" data-tab="all" data-object="task">研发执行</button>
       <button type="button" class="group-tab" data-tab="all" data-object="bug">Bug</button>
-      <button type="button" class="group-tab" data-tab="all" data-object="testtask">测试单</button>
-      <button type="button" class="group-tab" data-tab="all" data-object="risk">风险</button>
       <button type="button" class="group-tab" data-tab="all" data-object="issue">问题</button>
-      <button type="button" class="group-tab" data-tab="all" data-object="feedback">反馈</button>
-      <button type="button" class="group-tab" data-tab="all" data-object="release">发布</button>
-      <button type="button" class="group-tab" data-tab="all" data-object="build">构建</button>
-      <button type="button" class="group-tab" data-tab="all" data-object="todo">待办</button>
+      <label class="more-types"><span>更多类型</span><select id="doneMoreType" aria-label="更多对象类型"><option value="">请选择</option><option value="testtask">测试单</option><option value="risk">风险</option><option value="feedback">反馈</option><option value="release">发布</option><option value="build">构建</option><option value="todo">待办</option></select></label>
     </nav>
 
     <div class="todos-toolbar">
-      <label class="search-field"><span aria-hidden="true">⌕</span><input type="search" id="doneKeyword" placeholder="搜索 ID、标题或操作人" aria-label="关键词"></label>
+      <label class="search-field"><span aria-hidden="true">⌕</span><input type="search" id="doneKeyword" placeholder="搜索 ID、标题或操作内容" aria-label="关键词"></label>
+      <select id="doneObjectType" aria-label="对象类型"><option value="">对象类型：全部</option><option value="demand">业务需求</option><option value="story">研发需求</option><option value="task">任务</option><option value="bug">Bug</option><option value="testtask">测试单</option><option value="issue">问题</option><option value="risk">风险</option><option value="feedback">反馈</option><option value="release">发布</option><option value="build">构建</option><option value="todo">待办</option></select>
       <select id="doneResult" aria-label="处理结果"><option value="all">处理结果：全部</option><option value="done">完成</option><option value="approved">通过</option><option value="rejected">驳回</option><option value="closed">关闭</option><option value="activated">激活</option><option value="submitted">已提交</option><option value="verified">已验收</option><option value="resolved">已解决</option><option value="returned">已退回</option></select>
       <button type="button" id="doneResetBtn" class="toolbar-btn">重置</button>
     </div>
 
-    <div class="todos-result-bar"><span id="doneSummary">加载中…</span></div>
+    <div class="done-load-state" id="doneSummary" aria-live="polite">加载中…</div>
     <div class="todos-table-wrap">
       <table class="todos-table done-table-cols" id="doneTable">
-        <thead><tr><th class="c-id">ID</th><th class="c-title">标题</th><th class="c-type">类型</th><th class="c-action">形成原因</th><th class="c-result">处理结果</th><th class="c-dead">处理时间</th><th class="c-owner">操作人</th><th class="c-op">操作</th></tr></thead>
+        <thead><tr><th class="c-item">事项</th><th class="c-type">对象</th><th class="c-action">处理动作</th><th class="c-result">处理结果</th><th class="c-dead">处理时间</th><th class="c-op">操作</th></tr></thead>
         <tbody id="doneTbody"></tbody>
       </table>
       <div class="todos-empty" id="doneEmpty" hidden>当前条件下暂无已办记录</div>
