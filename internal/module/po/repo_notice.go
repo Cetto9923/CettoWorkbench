@@ -19,6 +19,7 @@ import (
 
 // FindNotices 通知中心分页列表（join 触发 action 元数据 + 触发人）。
 // 去重键: 每对象最新一条（按每对象的 zt_notify.id MAX）。本期先按 createdDate DESC 简化。
+// 注意: zt_notify.action 是 zt_action.id (FK)，不是字符串；zt_action.action 才是字符串。
 func (r *Repo) FindNotices(ctx context.Context, account string, req NoticeListReq) ([]NoticeItem, int64, int64, int64, int64, int64, error) {
 	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
 		return nil, 0, 0, 0, 0, 0, nil
@@ -62,33 +63,56 @@ func (r *Repo) FindNotices(ctx context.Context, account string, req NoticeListRe
 		IsRead     int       `gorm:"column:is_read"`
 	}
 
-	// 总数 + 各 quick view 计数 (在过滤前取)
-	var total, unread, action, abnormal, today int64
+	// 各种 quick view 计数（基础集，与读取标志 join）
+	// 总数: 基础集 count
+	var total int64
 	if err := base.Count(&total).Error; err != nil {
 		return nil, 0, 0, 0, 0, 0, err
 	}
+	// 未读: 左连接未匹配
+	var unread int64
 	if err := base.Session(&gorm.Session{}).Where("nr.id IS NULL").Count(&unread).Error; err != nil {
 		return nil, 0, 0, 0, 0, 0, err
 	}
-	if err := base.Session(&gorm.Session{}).Where("n.action IN ?", []int64{3, 12, 13, 14, 22, 30, 31}).Count(&action).Error; err != nil {
-		return nil, 0, 0, 0, 0, 0, err
-	}
-	if err := base.Session(&gorm.Session{}).Where("n.action IN ?", []int64{20, 21, 22, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33}).Count(&abnormal).Error; err != nil {
-		return nil, 0, 0, 0, 0, 0, err
-	}
+	// 今日: DATE(createdDate) = CURDATE()
+	var today int64
 	if err := base.Session(&gorm.Session{}).Where("DATE(n.createdDate) = CURDATE()").Count(&today).Error; err != nil {
 		return nil, 0, 0, 0, 0, 0, err
 	}
 
-	// 列表查询
+	// 需处理 + 异常: JOIN zt_action，按 zt_action.action 字符串过滤
+	// 需处理 = 需要用户介入（评审/澄清/指派/催办/退回）
+	var actionCount int64
+	if err := r.db.WithContext(ctx).Table("zt_notify AS n").
+		Where("FIND_IN_SET(?, REPLACE(n.toList, ' ', '')) > 0", account).
+		Joins("INNER JOIN zt_action a ON a.id = n.action").
+		Where("a.action IN ?", []string{"reviewed", "clarify", "assigned", "assignedTo", "submitted", "submit", "returned", "reminded"}).
+		Count(&actionCount).Error; err != nil {
+		return nil, 0, 0, 0, 0, 0, err
+	}
+	// 异常: 拒绝/关闭/bug确认
+	var abnormal int64
+	if err := r.db.WithContext(ctx).Table("zt_notify AS n").
+		Where("FIND_IN_SET(?, REPLACE(n.toList, ' ', '')) > 0", account).
+		Joins("INNER JOIN zt_action a ON a.id = n.action").
+		Where("a.action IN ?", []string{"rejected", "bugconfirmed", "paused", "suspended", "hangup", "archive"}).
+		Count(&abnormal).Error; err != nil {
+		return nil, 0, 0, 0, 0, 0, err
+	}
+
+	// 列表查询 + quick view 过滤
 	filtered := base.Session(&gorm.Session{})
 	switch req.QuickView {
 	case "unread":
 		filtered = filtered.Where("nr.id IS NULL")
 	case "action":
-		filtered = filtered.Where("n.action IN ?", []int64{3, 12, 13, 14, 22, 30, 31})
+		filtered = filtered.
+			Joins("INNER JOIN zt_action a ON a.id = n.action").
+			Where("a.action IN ?", []string{"reviewed", "clarify", "assigned", "assignedTo", "submitted", "submit", "returned", "reminded"})
 	case "abnormal":
-		filtered = filtered.Where("n.action IN ?", []int64{20, 21, 22, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33})
+		filtered = filtered.
+			Joins("INNER JOIN zt_action a ON a.id = n.action").
+			Where("a.action IN ?", []string{"rejected", "bugconfirmed", "paused", "suspended", "hangup", "archive"})
 	case "today":
 		filtered = filtered.Where("DATE(n.createdDate) = CURDATE()")
 	}
@@ -102,12 +126,9 @@ func (r *Repo) FindNotices(ctx context.Context, account string, req NoticeListRe
 		return nil, 0, 0, 0, 0, 0, err
 	}
 
-	// 加载触发人展示名
+	// 加载触发人展示名 + 批量加载 zt_action 元数据
 	displayMap, _ := r.loadAccountDisplayMap(ctx)
-
-	// 批量加载 zt_action 元数据（按 action id 取 comment/objectType）
 	actionIDs := make([]int64, 0)
-	actorIDs := make([]int64, 0)
 	seen := make(map[int64]struct{})
 	for _, row := range rows {
 		if row.Action > 0 {
@@ -117,22 +138,20 @@ func (r *Repo) FindNotices(ctx context.Context, account string, req NoticeListRe
 			}
 		}
 	}
-	actionMeta := make(map[int64]struct{ ObjectType, Actor string })
+	actionMeta := make(map[int64]struct{ ActionCode, ObjectType, Actor string })
 	if len(actionIDs) > 0 {
 		var metas []struct {
 			ID         int64  `gorm:"column:id"`
+			Action     string `gorm:"column:action"`
 			ObjectType string `gorm:"column:objectType"`
 			Actor      string `gorm:"column:actor"`
 		}
 		if err := r.db.WithContext(ctx).Table("zt_action").
 			Where("id IN ?", actionIDs).
-			Select("id, objectType, actor").
+			Select("id, action, objectType, actor").
 			Find(&metas).Error; err == nil {
 			for _, m := range metas {
-				actionMeta[m.ID] = struct{ ObjectType, Actor string }{m.ObjectType, m.Actor}
-				if m.Actor != "" {
-					actorIDs = append(actorIDs, 0) // placeholder
-				}
+				actionMeta[m.ID] = struct{ ActionCode, ObjectType, Actor string }{m.Action, m.ObjectType, m.Actor}
 			}
 		}
 	}
@@ -157,13 +176,14 @@ func (r *Repo) FindNotices(ctx context.Context, account string, req NoticeListRe
 				if meta.ObjectType != "" {
 					item.ObjectType = meta.ObjectType
 				}
+				item.Action = meta.ActionCode
 			}
 		}
-		item.Category = inferCategory(row.ObjectType, row.Action)
+		item.Category = inferCategory(item.ObjectType, item.Action)
 		items = append(items, item)
 	}
 
-	return items, total, unread, action, abnormal, today, nil
+	return items, total, unread, actionCount, abnormal, today, nil
 }
 
 // MarkNoticeRead 标记单条通知已读。
@@ -207,21 +227,24 @@ func (r *Repo) MarkAllNoticesRead(ctx context.Context, account string) (int64, e
 	return res.RowsAffected, nil
 }
 
-// inferCategory workbench 通知分类推断（按 objectType + action 启发式）。
-func inferCategory(objectType string, action int64) string {
+// inferCategory workbench 通知分类推断（按 objectType + action 字符串启发式）。
+// workbench 为主: 不强套 V10.1 6 类, 分类用最直接的语义映射。
+func inferCategory(objectType, action string) string {
+	switch action {
+	case "reviewed", "clarify", "submitted", "submit", "returned":
+		return "approval"
+	case "rejected", "bugconfirmed", "paused", "suspended", "hangup", "archive":
+		return "risk"
+	case "reminded":
+		return "reminder"
+	case "assigned", "assignedTo":
+		return "collaboration"
+	}
 	switch objectType {
 	case "demand", "story", "task", "bug", "testtask":
 		return "business"
-	case "approval", "review":
-		return "approval"
 	case "doc", "release":
 		return "system"
-	}
-	switch action {
-	case 0:
-		return "system"
-	case 3:
-		return "approval"
 	}
 	return "business"
 }
