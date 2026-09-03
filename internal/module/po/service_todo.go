@@ -16,8 +16,8 @@ import (
 )
 
 // TodoList 我的待办列表服务。
-// V10.1 02 节：7 维 AND 公式。本期实现 Tab + 我的关系 + 办理责任 + 关键词；
-// 对象域=需求治理 Tab 返回 actor scope 聚合，审批决策 Tab 占位（后续接入）。
+// V10.1 02 节：7 维 AND 公式。本期完整实现：Tab + 办理场景 + 阶段 + 对象 + 我的关系 + 办理责任 + 关键词。
+// 审批决策 Tab 占位（真实审批流后续接入），需求治理 / 全部 Tab 走 actor scope 聚合。
 func (s *Service) TodoList(ctx context.Context, actor *model.User, req TodoListReq) (*TodoListResp, error) {
 	if actor == nil || strings.TrimSpace(actor.Account) == "" {
 		return &TodoListResp{Items: []TodoItem{}, Page: req.Page, PageSize: req.PageSize}, nil
@@ -26,8 +26,8 @@ func (s *Service) TodoList(ctx context.Context, actor *model.User, req TodoListR
 	if req.Tab == TodoTabApproval {
 		return &TodoListResp{Items: []TodoItem{}, Total: 0, Page: req.Page, PageSize: req.PageSize}, nil
 	}
-	// 需求治理 / 全部 Tab：actor scope ∪ 关键词
-	items, total, err := s.repo.FindTodoItems(ctx, actor.Account, TodoScopeFilter{Keyword: req.Keyword})
+	// 需求治理 / 全部 Tab：actor scope ∪ 7 维 AND 公式
+	items, total, err := s.repo.FindTodoItems(ctx, actor.Account, req)
 	if err != nil {
 		return nil, err
 	}

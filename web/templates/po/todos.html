@@ -22,6 +22,42 @@
       <button type="button" class="todos-tab" data-tab="approval">审批决策</button>
     </div>
     <div class="todos-filters">
+      <select id="todosAction" aria-label="办理场景">
+        <option value="all">全部场景</option>
+        <option value="todo_review">待评审</option>
+        <option value="todo_schedule">待排期</option>
+        <option value="todo_verify">待验收</option>
+        <option value="todo_deliver">待交付</option>
+        <option value="todo_follow">待跟进</option>
+      </select>
+      <select id="todosStage" aria-label="阶段">
+        <option value="all">全部阶段</option>
+        <option value="accept">受理</option>
+        <option value="clarify">澄清</option>
+        <option value="schedule">排期</option>
+        <option value="developing">提测</option>
+        <option value="testing">测试</option>
+        <option value="waitacceptance">验收</option>
+        <option value="acceptanced">发起交付</option>
+        <option value="released">评价反馈</option>
+      </select>
+      <select id="todosObjectType" aria-label="对象">
+        <option value="all">全部对象</option>
+        <option value="demand">业务需求</option>
+        <option value="task">任务</option>
+        <option value="bug">Bug</option>
+      </select>
+      <select id="todosRelation" aria-label="我的关系">
+        <option value="all">全部关系</option>
+        <option value="in_charge">我负责</option>
+        <option value="cooperate">我配合</option>
+        <option value="follow">我关注</option>
+      </select>
+      <select id="todosResponsibility" aria-label="办理责任">
+        <option value="all">全部责任</option>
+        <option value="my_action">待我处理</option>
+        <option value="my_follow_up">待我跟进</option>
+      </select>
       <input type="search" id="todosKeyword" placeholder="ID / 标题 / 责任人" aria-label="关键词">
       <button type="button" id="todosResetBtn" class="action-btn">重置</button>
     </div>

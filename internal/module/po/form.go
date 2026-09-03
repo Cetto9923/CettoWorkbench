@@ -117,15 +117,31 @@ const (
 
 // TodoListReq 我的待办列表请求。
 // V10.1 02 节：7 维 AND = Tab ∩ 办理场景 ∩ 阶段 ∩ 对象 ∩ 我的关系 ∩ 办理责任 ∩ 关键词。
-// 本期最小可用：Tab + 我的关系 + 办理责任 + 关键词。其它维度作为后续扩展点。
+// 本期实现全部 7 维；具体对象 objectType 过滤只展示当前 Tab 实际有数据的对象类型。
 type TodoListReq struct {
 	Tab           TodoTab        `form:"tab"`           // 对象域 Tab；默认 approval
+	Action        TodoAction     `form:"action"`        // 办理场景；默认 all
+	Stage         string         `form:"stage"`         // 阶段（仅 demand 生效）；默认 all
+	ObjectType    string         `form:"objectType"`    // 对象类型 demand/story/task/bug/testtask；默认 all
 	Relation      Relation       `form:"relation"`      // 我的关系；默认 all
 	Responsibility Responsibility `form:"responsibility"` // 办理责任；默认 all
 	Keyword       string         `form:"keyword"`       // 关键词
 	Page          int            `form:"page"`          // 页码；1-based
 	PageSize      int            `form:"pageSize"`      // 每页条数；默认 20
 }
+
+// TodoAction 办理场景（V10.1 02 节 "为什么现在要办"）。
+// 本期按需求 status 启发式映射；后续接入 zt_action action 字符串后精确化。
+type TodoAction string
+
+const (
+	TodoActionAll      TodoAction = "all"
+	TodoActionReview   TodoAction = "todo_review"   // 待受理/待评审: status IN (draft, wait, active, refuse)
+	TodoActionSchedule TodoAction = "todo_schedule" // 待排期: status IN (clarified) + scheduleIncomplete
+	TodoActionVerify   TodoAction = "todo_verify"   // 待验收: status IN (testing, waitacceptance)
+	TodoActionDeliver  TodoAction = "todo_deliver"  // 待发起交付: status IN (acceptanced) + BRA=account
+	TodoActionFollow   TodoAction = "todo_follow"   // 待跟进: 其它主动跟进
+)
 
 // Validate 校验 TodoListReq。
 func (r *TodoListReq) Validate() []FieldError {
@@ -135,6 +151,28 @@ func (r *TodoListReq) Validate() []FieldError {
 	}
 	if r.Tab != TodoTabApproval && r.Tab != TodoTabDemand && r.Tab != TodoTabAll {
 		return []FieldError{{Field: "tab", Message: "无效的对象域 Tab"}}
+	}
+	r.Action = TodoAction(strings.TrimSpace(string(r.Action)))
+	if r.Action == "" {
+		r.Action = TodoActionAll
+	}
+	switch r.Action {
+	case TodoActionAll, TodoActionReview, TodoActionSchedule, TodoActionVerify, TodoActionDeliver, TodoActionFollow:
+	default:
+		return []FieldError{{Field: "action", Message: "无效的办理场景"}}
+	}
+	r.Stage = strings.TrimSpace(r.Stage)
+	if r.Stage == "" {
+		r.Stage = "all"
+	}
+	r.ObjectType = strings.TrimSpace(r.ObjectType)
+	if r.ObjectType == "" {
+		r.ObjectType = "all"
+	}
+	switch r.ObjectType {
+	case "all", "demand", "story", "task", "bug", "testtask":
+	default:
+		return []FieldError{{Field: "objectType", Message: "无效的对象类型"}}
 	}
 	r.Relation = Relation(strings.TrimSpace(string(r.Relation)))
 	if r.Relation == "" {

@@ -14,64 +14,86 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"gorm.io/gorm"
 )
 
-func (r *Repo) FindTodoItems(ctx context.Context, account string, filter TodoScopeFilter) ([]TodoItem, int64, error) {
+// FindTodoItems 查询我的待办列表（V10.1 02 节 7 维 AND 公式）。
+// 数据真源:
+//   - 业务需求 zt_demand (actor scope: PM in clarify ∪ QD ∪ RD ∪ BRA)
+//   - 任务 zt_task (assignedTo=account)
+//   - Bug zt_bug (assignedTo=account)
+// 排序: deadline ASC NULLS LAST, id DESC。P0/超期优先。
+func (r *Repo) FindTodoItems(ctx context.Context, account string, req TodoListReq) ([]TodoItem, int64, error) {
 	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
 		return nil, 0, nil
 	}
-	keyword := strings.TrimSpace(filter.Keyword)
+	keyword := strings.TrimSpace(req.Keyword)
 
-	// 业务需求：actor scope + status not closed + 关键词
+	// 业务需求: actor scope + 关键词 + 阶段 + 办理场景
 	demandBase := r.roleDemandBase(ctx, account).
 		Where("status NOT IN ?", []string{"closed", "cancel"})
+
+	// 阶段过滤 (V10.1 价值流 10 阶段)
+	if req.Stage != "" && req.Stage != "all" {
+		demandBase = applyDemandStageFilter(demandBase, req.Stage)
+	}
+
+	// 办理场景过滤
+	if req.Action != "" && req.Action != "all" {
+		demandBase = applyTodoActionFilter(demandBase, req.Action)
+	}
+
+	// 排序: deadline ASC NULLS LAST, id DESC
+	demandBase = demandBase.Order("CASE WHEN zt_demand.deadline IS NULL OR zt_demand.deadline = '0000-00-00' THEN 1 ELSE 0 END, zt_demand.deadline ASC, zt_demand.id DESC")
 
 	var demandIDs []int64
 	if err := demandBase.
 		Where(`(name LIKE ? OR CAST(id AS CHAR) LIKE ?)`, "%"+keyword+"%", "%"+keyword+"%").
-		Order("zt_demand.id DESC").
-		Limit(200).
+		Limit(500).
 		Pluck("zt_demand.id", &demandIDs).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// 任务：assignedTo = account + status not in done/closed/cancel + 关键词
+	// 任务: assignedTo + status + 关键词
 	var taskIDs []int64
-	if err := r.db.WithContext(ctx).Table("zt_task").
+	taskQ := r.db.WithContext(ctx).Table("zt_task").
 		Where("deleted = ?", "0").
 		Where("assignedTo = ?", account).
 		Where("status NOT IN ?", []string{"done", "closed", "cancel"}).
 		Where(`(name LIKE ? OR CAST(id AS CHAR) LIKE ?)`, "%"+keyword+"%", "%"+keyword+"%").
-		Order("zt_task.id DESC").
-		Limit(200).
-		Pluck("zt_task.id", &taskIDs).Error; err != nil {
+		Order("CASE WHEN deadline IS NULL OR deadline = '0000-00-00' THEN 1 ELSE 0 END, deadline ASC, id DESC")
+	if err := taskQ.Limit(500).Pluck("zt_task.id", &taskIDs).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// Bug：assignedTo = account + status not in resolved/closed + 关键词
+	// Bug: assignedTo + status + 关键词
 	var bugIDs []int64
-	if err := r.db.WithContext(ctx).Table("zt_bug").
+	bugQ := r.db.WithContext(ctx).Table("zt_bug").
 		Where("deleted = ?", "0").
 		Where("assignedTo = ?", account).
 		Where("status NOT IN ?", []string{"resolved", "closed"}).
 		Where(`(title LIKE ? OR CAST(id AS CHAR) LIKE ?)`, "%"+keyword+"%", "%"+keyword+"%").
-		Order("zt_bug.id DESC").
-		Limit(200).
-		Pluck("zt_bug.id", &bugIDs).Error; err != nil {
+		Order("CASE WHEN deadline IS NULL OR deadline = '0000-00-00' THEN 1 ELSE 0 END, deadline ASC, id DESC")
+	if err := bugQ.Limit(500).Pluck("zt_bug.id", &bugIDs).Error; err != nil {
 		return nil, 0, err
 	}
 
-	items := make([]TodoItem, 0, len(demandIDs)+len(taskIDs)+len(bugIDs))
-	now := time.Now().Format("2006-01-02")
+	// 对象类型过滤
+	includeDemand := req.ObjectType == "" || req.ObjectType == "all" || req.ObjectType == "demand"
+	includeTask := req.ObjectType == "" || req.ObjectType == "all" || req.ObjectType == "task"
+	includeBug := req.ObjectType == "" || req.ObjectType == "all" || req.ObjectType == "bug"
 
-	if len(demandIDs) > 0 {
+	items := make([]TodoItem, 0, len(demandIDs)+len(taskIDs)+len(bugIDs))
+
+	if includeDemand && len(demandIDs) > 0 {
 		type row struct {
-			ID       int64   `gorm:"column:id"`
-			Name     string  `gorm:"column:name"`
-			Status   string  `gorm:"column:status"`
-			Pri      string  `gorm:"column:pri"`
-			QD       string  `gorm:"column:QD"`
-			RD       string  `gorm:"column:RD"`
+			ID       int64      `gorm:"column:id"`
+			Name     string     `gorm:"column:name"`
+			Status   string     `gorm:"column:status"`
+			Pri      string     `gorm:"column:pri"`
+			QD       string     `gorm:"column:QD"`
+			RD       string     `gorm:"column:RD"`
 			Deadline *time.Time `gorm:"column:deadline"`
 		}
 		var rows []row
@@ -98,29 +120,29 @@ func (r *Repo) FindTodoItems(ctx context.Context, account string, filter TodoSco
 				priority = "P" + row.Pri
 			}
 			items = append(items, TodoItem{
-				Kind:         "demand",
-				ID:           row.ID,
-				DisplayID:    fmt.Sprintf("US%d", row.ID),
-				Title:        row.Name,
-				Type:         "业务需求",
-				Stage:        row.Status,
-				Priority:     priority,
-				Relation:     "我负责",
+				Kind:           "demand",
+				ID:             row.ID,
+				DisplayID:      fmt.Sprintf("US%d", row.ID),
+				Title:          row.Name,
+				Type:           "业务需求",
+				Stage:          row.Status,
+				Priority:       priority,
+				Relation:       "我负责",
 				Responsibility: "待我处理",
-				Reason:       row.Status,
-				Deadline:     deadline,
-				Owner:        owner,
-				URL:          "",
+				Reason:         row.Status,
+				Deadline:       deadline,
+				Owner:          owner,
+				URL:            "",
 			})
 		}
 	}
 
-	if len(taskIDs) > 0 {
+	if includeTask && len(taskIDs) > 0 {
 		type row struct {
-			ID       int64   `gorm:"column:id"`
-			Name     string  `gorm:"column:name"`
-			Status   string  `gorm:"column:status"`
-			Pri      int     `gorm:"column:pri"`
+			ID       int64      `gorm:"column:id"`
+			Name     string     `gorm:"column:name"`
+			Status   string     `gorm:"column:status"`
+			Pri      int        `gorm:"column:pri"`
 			Deadline *time.Time `gorm:"column:deadline"`
 		}
 		var rows []row
@@ -135,30 +157,27 @@ func (r *Repo) FindTodoItems(ctx context.Context, account string, filter TodoSco
 			deadline := ""
 			if row.Deadline != nil {
 				deadline = row.Deadline.Format("2006-01-02")
-				if deadline < now {
-					deadline = deadline // 已逾期，service 层标红
-				}
 			}
 			owner := displayMap[account]
 			items = append(items, TodoItem{
-				Kind:         "task",
-				ID:           row.ID,
-				DisplayID:    fmt.Sprintf("TASK-%d", row.ID),
-				Title:        row.Name,
-				Type:         "任务",
-				Stage:        row.Status,
-				Priority:     fmt.Sprintf("P%d", row.Pri),
-				Relation:     "我负责",
+				Kind:           "task",
+				ID:             row.ID,
+				DisplayID:      fmt.Sprintf("TASK-%d", row.ID),
+				Title:          row.Name,
+				Type:           "任务",
+				Stage:          row.Status,
+				Priority:       fmt.Sprintf("P%d", row.Pri),
+				Relation:       "我负责",
 				Responsibility: "待我处理",
-				Reason:       row.Status,
-				Deadline:     deadline,
-				Owner:        owner,
-				URL:          "",
+				Reason:         row.Status,
+				Deadline:       deadline,
+				Owner:          owner,
+				URL:            "",
 			})
 		}
 	}
 
-	if len(bugIDs) > 0 {
+	if includeBug && len(bugIDs) > 0 {
 		type row struct {
 			ID     int64  `gorm:"column:id"`
 			Title  string `gorm:"column:title"`
@@ -175,25 +194,78 @@ func (r *Repo) FindTodoItems(ctx context.Context, account string, filter TodoSco
 		displayMap, _ := r.loadAccountDisplayMap(ctx)
 		for _, row := range rows {
 			items = append(items, TodoItem{
-				Kind:         "bug",
-				ID:           row.ID,
-				DisplayID:    fmt.Sprintf("BUG-%d", row.ID),
-				Title:        row.Title,
-				Type:         "Bug",
-				Stage:        row.Status,
-				Priority:     fmt.Sprintf("P%d", row.Pri),
-				Relation:     "我负责",
+				Kind:           "bug",
+				ID:             row.ID,
+				DisplayID:      fmt.Sprintf("BUG-%d", row.ID),
+				Title:          row.Title,
+				Type:           "Bug",
+				Stage:          row.Status,
+				Priority:       fmt.Sprintf("P%d", row.Pri),
+				Relation:       "我负责",
 				Responsibility: "待我处理",
-				Reason:       row.Status,
-				Deadline:     "",
-				Owner:        displayMap[account],
-				URL:          "",
+				Reason:         row.Status,
+				Deadline:       "",
+				Owner:          displayMap[account],
+				URL:            "",
 			})
 		}
 	}
 
 	total := int64(len(items))
 	return items, total, nil
+}
+
+// applyDemandStageFilter 把 V10.1 价值流 10 阶段映射到 zt_demand.status SQL。
+func applyDemandStageFilter(q *gorm.DB, stage string) *gorm.DB {
+	switch stage {
+	case "accept":
+		return q.Where("status IN ?", []string{"draft", "wait", "refuse"})
+	case "clarify":
+		return q.Where("status = ? AND NOT EXISTS (SELECT 1 FROM zt_demandclarify dc WHERE dc.demand = zt_demand.id)", "active")
+	case "schedule":
+		return q.Where(`status = 'clarified' AND (
+			developFinish IS NULL OR developFinish = '0000-00-00'
+			OR testFinish IS NULL OR testFinish = '0000-00-00'
+			OR verifyFinish IS NULL OR verifyFinish = '0000-00-00'
+			OR estimateLaunch IS NULL OR estimateLaunch = '0000-00-00'
+			OR QD = '' OR mainDevelopers = ''
+		)`)
+	case "developing":
+		return q.Where("status = ?", "developing")
+	case "testing":
+		return q.Where("status = ?", "testing")
+	case "waitacceptance":
+		return q.Where(`(
+			(status = 'testing')
+			OR (status = 'waitacceptance')
+		)`)
+	case "acceptanced":
+		return q.Where("status = ?", "acceptanced")
+	case "released":
+		return q.Where("status = ? AND overall = '0' AND parent != '-1'", "released")
+	}
+	return q
+}
+
+// applyTodoActionFilter 把 V10.1 办理场景映射到 zt_demand SQL。
+func applyTodoActionFilter(q *gorm.DB, action TodoAction) *gorm.DB {
+	switch action {
+	case TodoActionReview:
+		return q.Where("status IN ?", []string{"draft", "wait", "active", "refuse"})
+	case TodoActionSchedule:
+		return q.Where(`status = 'clarified' AND (
+			developFinish IS NULL OR developFinish = '0000-00-00'
+			OR testFinish IS NULL OR testFinish = '0000-00-00'
+			OR verifyFinish IS NULL OR verifyFinish = '0000-00-00'
+			OR estimateLaunch IS NULL OR estimateLaunch = '0000-00-00'
+			OR QD = '' OR mainDevelopers = ''
+		)`)
+	case TodoActionVerify:
+		return q.Where("status IN ?", []string{"testing", "waitacceptance"})
+	case TodoActionDeliver:
+		return q.Where("status = ?", "acceptanced")
+	}
+	return q
 }
 
 // loadAccountDisplayMap 加载 account → 展示名映射（zhentao 兼容）。
@@ -222,7 +294,3 @@ func (r *Repo) loadAccountDisplayMap(ctx context.Context) (map[string]string, er
 	}
 	return out, nil
 }
-
-// FindDoneActions 查询我的已办列表（来自 zt_action）。
-// V10.1 02 节：已办形成条件 = 本人真实执行的正式业务动作；待办消失不能自动变已办。
-// 本期实现：actor = account + 时间段 bound + 对象类型筛选；按 zt_action.id DESC。

@@ -3,6 +3,11 @@
 
   var state = {
     tab: "demand",
+    action: "all",
+    stage: "all",
+    objectType: "all",
+    relation: "all",
+    responsibility: "all",
     keyword: "",
     page: 1,
     pageSize: 20,
@@ -20,11 +25,14 @@
   function fetchItems() {
     var params = new URLSearchParams();
     params.set("tab", state.tab);
+    if (state.action) { params.set("action", state.action); }
+    if (state.stage) { params.set("stage", state.stage); }
+    if (state.objectType) { params.set("objectType", state.objectType); }
+    if (state.relation) { params.set("relation", state.relation); }
+    if (state.responsibility) { params.set("responsibility", state.responsibility); }
+    if (state.keyword) { params.set("keyword", state.keyword); }
     params.set("page", String(state.page));
     params.set("pageSize", String(state.pageSize));
-    if (state.keyword) {
-      params.set("keyword", state.keyword);
-    }
     return fetch("/todos/items?" + params.toString(), { method: "GET" })
       .then(function (r) {
         if (!r.ok) {
@@ -122,9 +130,38 @@
       }, 300);
     });
 
+    // 7 维筛选：所有 select 变化都触发刷新
+    var selectIds = ["todosAction", "todosStage", "todosObjectType", "todosRelation", "todosResponsibility"];
+    var stateKeyMap = {
+      todosAction: "action",
+      todosStage: "stage",
+      todosObjectType: "objectType",
+      todosRelation: "relation",
+      todosResponsibility: "responsibility",
+    };
+    selectIds.forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) { return; }
+      el.addEventListener("change", function () {
+        state[stateKeyMap[id]] = el.value;
+        state.page = 1;
+        refresh();
+      });
+    });
+
     document.getElementById("todosResetBtn").addEventListener("click", function () {
+      state.action = "all";
+      state.stage = "all";
+      state.objectType = "all";
+      state.relation = "all";
+      state.responsibility = "all";
       state.keyword = "";
       state.page = 1;
+      document.getElementById("todosAction").value = "all";
+      document.getElementById("todosStage").value = "all";
+      document.getElementById("todosObjectType").value = "all";
+      document.getElementById("todosRelation").value = "all";
+      document.getElementById("todosResponsibility").value = "all";
       kw.value = "";
       refresh();
     });
