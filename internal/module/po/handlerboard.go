@@ -20,13 +20,60 @@ import (
 	"workbench/internal/pkg/render"
 )
 
-// RegisterRoutes 注册看板路由（需求 + 任务 + 各自 items）。。
+// RegisterRoutes 注册看板路由（需求 + 任务 + 各自 items）。
 // Rules §1: 路由必须挂 RequirePerm（拆分 boarddemand 与 boardtask 两个权限便于角色授权）。
 func (h *BoardHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	rg.GET("/board/demand", middleware.RequirePerm(perm.PoBoardDemandList), h.BoardDemand)
 	rg.GET("/board/demand/items", middleware.RequirePerm(perm.PoBoardDemandList), h.BoardDemandItems)
 	rg.GET("/board/task", middleware.RequirePerm(perm.PoBoardTaskList), h.BoardTask)
 	rg.GET("/board/task/items", middleware.RequirePerm(perm.PoBoardTaskList), h.BoardTaskItems)
+	rg.GET("/board/issues", middleware.RequirePerm(perm.PoBoardDemandList), h.BoardIssues)
+	rg.GET("/board/group/metrics", middleware.RequirePerm(perm.PoBoardDemandList), h.BoardGroupMetrics)
+}
+
+// BoardGroupMetrics 返回选定敏捷小组的真实效能指标 JSON。
+func (h *BoardHandler) BoardGroupMetrics(c *gin.Context) {
+	actor := middleware.CurrentUser(c)
+	var req GroupMetricsReq
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "参数解析失败"})
+		return
+	}
+	if errs := req.Validate(); len(errs) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"message": "参数校验失败", "errors": errs})
+		return
+	}
+	resp, err := h.svc.BoardGroupMetrics(c.Request.Context(), actor, req)
+	if err != nil {
+		h.logger.Error("po board group metrics", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取小组效能指标失败"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success":   true,
+		"groupId":   resp.GroupID,
+		"hasGroup":  resp.HasGroup,
+		"groupName": resp.GroupName,
+		"metrics":   resp.Metrics,
+	})
+}
+
+// BoardIssues 返回右侧问题栏真实问题 JSON。
+func (h *BoardHandler) BoardIssues(c *gin.Context) {
+	actor := middleware.CurrentUser(c)
+	resp, err := h.svc.BoardIssues(c.Request.Context(), actor)
+	if err != nil {
+		h.logger.Error("po board issues", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取问题失败"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"total":   resp.Total,
+		"open":    resp.Open,
+		"closed":  resp.Closed,
+		"items":   resp.Items,
+	})
 }
 
 // BoardHandler 看板 HTTP 处理器（独立 struct 与 service 其它 handler 解耦）。

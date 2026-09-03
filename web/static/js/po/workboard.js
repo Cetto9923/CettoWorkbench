@@ -1,11 +1,21 @@
-/* PO 工作看板（需求/任务双视图，V1.3 紧凑效能快照）。数据来自真实 API，禁止 mock。 */
+/* PO 工作看板（需求/任务双视图，V1.3 紧凑效能快照）。
+   数据真实；指标带来自 /board/group/metrics（小组级）。树遍历用迭代栈，不使用递归。 */
 (function () {
   "use strict";
 
   var mode = location.pathname.indexOf("/board/task") >= 0 ? "task" : "demand";
-  var state = { owner: "", flag: "", teamgroup: 0, storyFilter: 0, demandRows: [] };
+  // 小组选择：优先上次记录，其次主小组，最后才全部；teamgroup=0 表示"全部"。
+  var state = { owner: "", teamgroup: loadTeamgroup(), storyFilter: 0, pendingFocus: 0 };
   var teams = [];
   var toastTimer = null;
+  var MAX_OWNERS = 6; // 直接展示人数（不含"全部"与"更多"）
+
+  var TG_KEY = "po.board.teamgroup";
+  function loadTeamgroup() {
+    var v = parseInt(localStorage.getItem(TG_KEY), 10);
+    return isNaN(v) ? 0 : v;
+  }
+  function saveTeamgroup(id) { localStorage.setItem(TG_KEY, String(id)); }
 
   function $(id) { return document.getElementById(id); }
   function esc(v) {
@@ -18,28 +28,47 @@
     if (!t) { return; }
     t.textContent = msg; t.classList.add("show");
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { t.classList.remove("show"); }, 1500);
+    toastTimer = setTimeout(function () { t.classList.remove("show"); }, 1800);
   }
-  function onErr(hostId, retry) {
+  function onErr(hostId) {
     var host = $(hostId);
     if (host) { host.innerHTML = '<div class="demand-empty">加载失败 · <button type="button" class="action soft" data-retry="1">重试</button></div>'; }
   }
-  function dash(v) { return String(v || "").trim() || "—"; }
-  function statusTone(s) {
-    if (s === "blocked" || s === "refuse") { return "orange"; }
-    if (s === "overdue") { return "red"; }
-    return "";
+  function todayStr() {
+    var d = new Date();
+    var m = String(d.getMonth() + 1).padStart(2, "0");
+    var day = String(d.getDate()).padStart(2, "0");
+    return d.getFullYear() + "-" + m + "-" + day;
   }
-  function typeTag(kind) {
-    if (kind === "demand") { return '<span class="type-tag type-biz">业务需求</span>'; }
-    if (kind === "sub_demand") { return '<span class="type-tag type-child">子业务</span>'; }
-    if (kind === "story") { return '<span class="type-tag type-rd">研发需求</span>'; }
-    if (kind === "task") { return '<span class="type-tag type-task">任务</span>'; }
-    return "";
+  /* 四类需求节点类型（前端 ViewModel）：基于真实父子关系 + 树位置判定，不依赖 ID 前缀/标题。
+     business=业务需求根；childBusiness=子业务；rd=研发需求；independentRd=独立研发需求；unknown=未知（不 fallback）。 */
+  var NODE_TYPES = {
+    business: { label: "业务需求", cls: "type-biz" },
+    childBusiness: { label: "子业务", cls: "type-child" },
+    rd: { label: "研发需求", cls: "type-rd" },
+    independentRd: { label: "独立研发需求", cls: "type-rd type-rd-indep" },
+    task: { label: "任务", cls: "type-task" },
+    unknown: { label: "未知需求类型", cls: "type-unknown" }
+  };
+  function nodeTypeOf(node, parentKind) {
+    if (node.kind === "story") { return node.independent ? "independentRd" : "rd"; }
+    if (node.kind === "sub_demand") { return "childBusiness"; }
+    if (node.kind === "demand") { return parentKind ? "childBusiness" : "business"; }
+    return "unknown";
+  }
+  function typeTag(nodeType) {
+    var t = NODE_TYPES[nodeType] || NODE_TYPES.unknown;
+    if (!NODE_TYPES[nodeType]) { console.warn("PO board: 未知需求节点类型", nodeType); }
+    return '<span class="type-tag ' + t.cls + '">' + t.label + "</span>";
   }
   function priTag(p) {
     if (!p) { return ""; }
     return '<span class="priority">' + esc(p) + "</span>";
+  }
+  function ownerBadge(name, prefix) {
+    if (!name) { return ""; }
+    var p = prefix ? prefix : "";
+    return '<span class="owner-badge"><span class="owner-dot">' + esc(name.charAt(0)) + "</span>" + p + esc(name) + "</span>";
   }
 
   /* ---------- mode switch ---------- */
@@ -56,56 +85,75 @@
     $("taskOwners").classList.toggle("hidden", demand);
     $("demandActions").classList.toggle("hidden", !demand);
     $("taskActions").classList.toggle("hidden", demand);
-    $("demandRoleBanner").classList.toggle("hidden", !demand);
-    $("taskRoleBanner").classList.toggle("hidden", demand);
+    $("taskFilterTip").classList.toggle("hidden", demand || !state.storyFilter);
     $("ownerTitle").textContent = demand ? "PO / 需求负责人" : "任务负责人";
     $("ownerHint").textContent = demand
-      ? "仅显示实际拥有业务需求 / 独立研发需求的人；开发人员不会混进来"
-      : "仅显示实际拥有任务的人；没有任务的 PO 不会混进来";
+      ? "仅当前小组中实际拥有业务需求 / 研发需求之人"
+      : "仅当前小组中实际拥有任务之人";
     $("modeNote").textContent = demand
-      ? "PO视角：看我负责的需求是否持续向前推进"
-      : "研发执行视角：看开发/测试具体正在做什么";
-    if (demand) { loadDemand(); } else { loadTasks(); }
+      ? "看我负责的需求是否持续推进"
+      : "看研发 / 测试正在做什么";
+    if (demand) { loadDemand(); } else { ensureTeamgroup(); loadTasks(); }
   }
   $("demandTab").addEventListener("click", function () { switchMode("demand"); });
   $("taskTab").addEventListener("click", function () { switchMode("task"); });
-  document.addEventListener("click", function (e) {
-    var r = e.target.closest("[data-retry]");
-    if (r) { mode === "demand" ? loadDemand() : loadTasks(); }
-  });
 
-  /* ---------- group / owners chips ---------- */
+  /* ---------- group / owners ---------- */
+  function ensureTeamgroup() {
+    // 任务看板必须有真实小组；用户显式选"全部"时不强制改回
+    if (state.teamgroup === 0 && teams.length && !state.userPickedAll) { state.teamgroup = teams[0].id; }
+  }
   function renderTeamChips() {
     var host = $("agileChips"); host.innerHTML = "";
     if (!teams.length) { return; }
-    teams.forEach(function (team, i) {
+    // 默认具体小组：无记录则取首个小组为当前用户的主小组；用户已选"全部"时保持全部。
+    if (state.teamgroup === 0 && !state.userPickedAll) {
+      var idx = teams.findIndex(function (t) { return t.id === loadTeamgroup(); });
+      state.teamgroup = idx < 0 ? teams[0].id : teams[idx].id;
+    }
+    // "全部"作为可选项保留，但默认不选中
+    var all = document.createElement("button");
+    all.type = "button";
+    all.className = "chip" + (state.teamgroup === 0 ? " active" : "");
+    all.textContent = "全部";
+    all.dataset.tg = "0";
+    all.addEventListener("click", function () { onGroupPick(0, "全部"); });
+    host.appendChild(all);
+    teams.forEach(function (team) {
       var b = document.createElement("button");
       b.type = "button";
-      b.className = "chip" + (i === 0 || state.teamgroup === team.id ? " active" : "");
+      b.className = "chip" + (state.teamgroup === team.id ? " active" : "");
       b.textContent = team.name;
       b.dataset.tg = team.id;
-      b.addEventListener("click", function () {
-        teams.forEach(function (t) { t.btn && t.btn.classList.remove("active"); });
-        document.querySelectorAll("#agileChips .chip").forEach(function (x) { x.classList.remove("active"); });
-        b.classList.add("active");
-        state.teamgroup = Number(b.dataset.tg);
-        $("metricsGroupName").textContent = b.textContent;
-        // 任务模式随小组刷新；需求模式当前按当前账号（后端未接小组过滤）
-        if (mode === "task") { loadTasks(); }
-        showToast("已切换到 " + b.textContent);
-      });
+      b.addEventListener("click", function () { onGroupPick(team.id, team.name); });
       host.appendChild(b);
     });
-    if (teams.length) { $("metricsGroupName").textContent = teams[0].name; }
   }
+  function onGroupPick(id, name) {
+    state.teamgroup = Number(id);
+    state.userPickedAll = state.teamgroup === 0;
+    saveTeamgroup(id);
+    document.querySelectorAll("#agileChips .chip").forEach(function (x) { x.classList.remove("active"); });
+    var sel = document.querySelector('#agileChips .chip[data-tg="' + id + '"]');
+    if (sel) { sel.classList.add("active"); }
+    $("metricsGroupName").textContent = id === 0 ? "全部" : name;
+    loadMetrics();
+    if (mode === "task") { loadTasks(); } else { loadDemand(); }
+  }
+  // 负责人最多展示 MAX_OWNERS 人，多出的收进"更多"折叠
   function renderOwnerChips(containerId, list, onSelect) {
     var host = $(containerId); host.innerHTML = "";
     if (!list || !list.length) { return; }
-    list.forEach(function (it, i) {
+    var all = list[0]; // 约定 list[0] 为"全部"
+    var rest = list.slice(1);
+    var shown = rest.slice(0, MAX_OWNERS);
+    var hiddenCount = rest.length - shown.length;
+    var mkBtn = function (it) {
       var b = document.createElement("button");
       b.type = "button";
-      b.className = "person" + (i === 0 || state.owner === it.value ? " active" : "");
+      b.className = "person" + ((it.value === "" && state.owner === "") || state.owner === it.value ? " active" : "");
       b.dataset.value = it.value;
+      b.textContent = "";
       var inner = '<span class="count">' + it.count + "</span>";
       if (it.display && it.display.length) {
         inner = '<span class="mini-avatar">' + esc(it.display.charAt(0)) + "</span>" + esc(it.display) + inner;
@@ -113,112 +161,218 @@
         inner = "全部" + inner;
       }
       b.innerHTML = inner;
+      return b;
+    };
+    // "全部"先
+    var a = mkBtn(all);
+    a.addEventListener("click", function () {
+      selectOwner(host, a); onSelect("");
+    });
+    host.appendChild(a);
+    shown.forEach(function (it) {
+      var b = mkBtn(it);
       b.addEventListener("click", function () {
-        host.querySelectorAll(".person").forEach(function (x) { x.classList.remove("active"); });
-        b.classList.add("active");
-        state.owner = b.dataset.value;
-        onSelect(state.owner);
+        selectOwner(host, b); onSelect(it.value);
       });
       host.appendChild(b);
     });
+    if (hiddenCount > 0) {
+      var more = document.createElement("button");
+      more.type = "button";
+      more.className = "person more";
+      more.textContent = "更多 " + hiddenCount + " ›";
+      more.addEventListener("click", function () {
+        // 展开剩余全部
+        host.removeChild(more);
+        rest.forEach(function (it) {
+          var b = mkBtn(it);
+          b.addEventListener("click", function () {
+            selectOwner(host, b); onSelect(it.value);
+          });
+          host.appendChild(b);
+        });
+      });
+      host.appendChild(more);
+    }
+  }
+  function selectOwner(host, btn) {
+    host.querySelectorAll(".person").forEach(function (x) { x.classList.remove("active"); });
+    btn.classList.add("active");
+    state.owner = btn.dataset.value;
   }
 
-  /* ---------- demand matrix ---------- */
-  var STAGE_COLS = { "clarify": 1, "schedule": 2, "dev": 3, "test": 4, "deliver": 5 };
+  /* ---------- state derivation（真实状态派生，不可拖拽） ---------- */
   function stageColOf(stage) {
     stage = String(stage || "");
     if (stage.indexOf("受理") >= 0 || stage.indexOf("澄清") >= 0) { return 1; }
     if (stage.indexOf("排期") >= 0) { return 2; }
     if (stage.indexOf("研发") >= 0 || stage.indexOf("提测") >= 0) { return 3; }
-    if (stage.indexOf("联调") >= 0 || stage.indexOf("验收") >= 0 || stage.indexOf("测试") >= 0) { return 4; }
+    if (stage.indexOf("联调") >= 0 || stage.indexOf("验收") >= 0) { return 4; }
     if (stage.indexOf("交付") >= 0 || stage.indexOf("评价") >= 0) { return 5; }
     return 0;
   }
-  function leafAction(item) {
-    if (item.actionLabel) { return item.actionLabel; }
-    return "查看";
+  function isBlocked(it) { return it.status === "refuse" || it.status === "hang"; }
+  function isOverdue(it) {
+    if (it.status === "done" || it.status === "released") { return false; }
+    return it.deadline && it.deadline < todayStr();
   }
-  function renderStageCards(row, object) {
+  // 研需阶段卡：查看任务仅 taskTotal>0；无任务时按阶段给"建任务/去排期"真实动作。
+  function storyReason(it) {
+    if (it.taskTotal > 0) {
+      return "任务 " + it.taskDone + "/" + it.taskTotal + (it.currentOwner ? " · " + it.currentOwner + "负责" : "");
+    }
+    if (it.stage.indexOf("研发") >= 0 || it.stage.indexOf("提测") >= 0) { return "尚未创建研发任务"; }
+    if (it.stage.indexOf("排期") >= 0) { return "未绑定版本窗口"; }
+    if (it.stage.indexOf("受理") >= 0 || it.stage.indexOf("澄清") >= 0) { return "科技侧需求梳理尚未完成"; }
+    if (it.stage.indexOf("联调") >= 0 || it.stage.indexOf("验收") >= 0) { return "测试完成 · 等待业务验收"; }
+    if (it.stage.indexOf("交付") >= 0 || it.stage.indexOf("评价") >= 0) { return "待交付 · 等待发起"; }
+    return "尚未进入执行";
+  }
+  function storyAction(it) {
+    if (it.taskTotal > 0) { return { label: "查看任务", open: true }; }
+    if (it.stage.indexOf("排期") >= 0) { return { label: "去排期", open: false }; }
+    if (it.stage.indexOf("受理") >= 0 || it.stage.indexOf("澄清") >= 0) { return { label: "去梳理", open: false }; }
+    if (it.stage.indexOf("研发") >= 0 || it.stage.indexOf("提测") >= 0) { return { label: "建任务", open: false }; }
+    if (it.stage.indexOf("联调") >= 0 || it.stage.indexOf("验收") >= 0) { return { label: "验收", open: false }; }
+    return { label: "查看任务", open: true };
+  }
+  function renderStageCards(object) {
     var html = "";
-    for (var col = 1; col <= 5; col++) {
-      if (col === stageColOf(object.stage)) {
-        var tone = statusTone(object.status);
-        var cls = "stage-card";
-        if (object.status === "clarified") { cls += " actionable"; }
-        else if (tone === "orange") { cls += " blocked"; }
-        else if (tone === "red") { cls += " overdue"; }
-        var top = '<span class="stage-name">' + esc(object.stage || object.status) + "</span>";
-        var action = object.url
-          ? '<a class="stage-action" href="' + esc(object.url) + '" target="_blank" rel="noopener noreferrer">' + esc(leafAction(object)) + "</a>"
-          : "";
-        var mini = "";
-        if (object.storyCount > 0) { mini += object.storyCount + " 研发需求 · "; }
-        if (object.taskOpenCount > 0) { mini += object.taskOpenCount + " 开放任务 · "; }
-        if (object.storyCount === 0 && object.kind !== "story") { mini += "未拆研发 · 即使无任务也显示 · "; }
-        html += '<div class="stage-cell"><div class="' + cls + '"><div class="stage-top">' + top + action +
-          "</div><div class=\"stage-mini\">" + esc(mini || "") + "</div></div></div>";
+    var col = stageColOf(object.stage);
+    var blocked = isBlocked(object);
+    var overdue = isOverdue(object);
+    for (var c = 1; c <= 5; c++) {
+      if (c !== col) { html += '<div class="stage-cell"></div>'; continue; }
+      var cls = "stage-card";
+      if (blocked) { cls += " blocked"; }
+      else if (overdue) { cls += " overdue"; }
+      else { cls += " actionable"; }
+      if (object.kind === "story") {
+        var pill = '<span class="stage-pill' + (object.status === "done" ? " green" : "") + '">' + esc(object.stage) + "</span>";
+        if (object.progress > 0 && object.status !== "done") {
+          pill = '<span class="stage-pill">开发中 ' + object.progress + '%</span>';
+        }
+        var act = storyAction(object);
+        var actionBtn = act.open
+          ? '<button type="button" class="stage-action" data-open-tasks="' + object.id + '" data-rd-label="' + esc(object.displayId) + '">' + esc(act.label) + "</button>"
+          : '<button type="button" class="stage-action" data-toast="' + esc(act.label + "：" + object.displayId) + '">' + esc(act.label) + "</button>";
+        var mini = storyReason(object);
+        var bar = (object.progress > 0 && object.status !== "done") ? '<div class="progress"><span style="width:' + object.progress + '%"></span></div>' : "";
+        html += '<div class="stage-cell"><div class="' + cls + '"><div class="stage-top">' + pill + actionBtn + "</div>" +
+          '<div class="stage-mini">' + esc(mini) + "</div>" + bar + "</div></div>";
       } else {
-        html += '<div class="stage-cell"></div>';
+        // 业务需求 / 子业务：只有无研需时自身承载阶段；否则仅由下层最细对象承载（父不重复出卡）
+        if (object.storyCount > 0) {
+          // 父节点仅汇总，不在此列渲染推进卡；但保持列占位对齐
+          if (c === col) { html += '<div class="stage-cell"><span class="stage-mini">' + object.storyCount + " 研发需求推进中</span></div>"; }
+          else { html += '<div class="stage-cell"></div>'; }
+          continue;
+        }
+        var nm = isBlocked(object) ? esc(object.stage) + " · 阻塞" : esc(object.stage);
+        var reason = "";
+        if (object.kind === "sub_demand") { reason = "待拆研发需求"; }
+        else if (object.stage.indexOf("排期") >= 0) { reason = "未绑定版本窗口"; }
+        else if (object.stage.indexOf("受理") >= 0 || object.stage.indexOf("澄清") >= 0) { reason = "科技侧需求梳理尚未完成"; }
+        if (isBlocked(object)) { reason = "审批未通过 · 暂不可推进"; }
+        var actLabel = object.actionLabel || "查看";
+        var btn = '<button type="button" class="stage-action" data-toast="' + esc(actLabel + "：" + object.displayId) + '">' + esc(actLabel) + "</button>";
+        var m = reason ? '<div class="stage-mini">' + esc(reason) + "</div>" : "";
+        html += '<div class="stage-cell"><div class="' + cls + '"><div class="stage-top"><span class="stage-name">' + nm + "</span>" + btn + "</div>" + m + "</div></div>";
       }
     }
     return html;
   }
-  function renderDemandRow(object, depth, isLast) {
-    var branch = (depth === 0 ? "" : (isLast ? "└" : "├"));
-    var ownerBadge = object.owner
-      ? '<span class="owner-badge"><span class="owner-dot">' + esc(object.owner.charAt(0)) + "</span>" + esc(object.owner) + "</span>"
-      : "";
-    var metaBits = [];
-    if (object.deadline) { metaBits.push("目标上线 " + esc(object.deadline)); }
-    if (object.subDemandCount > 0) { metaBits.push(object.subDemandCount + " 子业务"); }
-    if (object.storyCount > 0) { metaBits.push(object.storyCount + " 研发需求"); }
+  function nodeMeta(object, nodeType) {
+    var bits = [];
+    if (nodeType === "rd" || nodeType === "independentRd") {
+      if (object.productName) { bits.push("产品：" + esc(object.productName)); }
+      if (object.currentOwner) { bits.push(esc(object.currentOwner) + " 负责"); }
+    } else if (nodeType === "childBusiness") {
+      bits.push("交付单元");
+      if (object.owner) { bits.push(ownerBadge(object.owner)); }
+    } else {
+      if (object.owner) { bits.push(ownerBadge(object.owner)); }
+    }
+    if (object.deadline) { bits.push("目标上线 " + esc(object.deadline)); }
+    return bits.length ? '<span>' + bits.join(" · ") + "</span>" : "";
+  }
+  // 子节点行（子业务 / 研发需求）：第一行 tag+ID+标题+P，第二行 meta。
+  function renderDemandRow(object, depth, isLast, groupOwner) {
+    var nodeType = nodeTypeOf(object, depth > 0 ? "childBusiness" : null);
+    var branch = depth === 0 ? "" : (isLast ? "└" : "├");
+    var isIndy = !!object.independent;
+    var rowOwner = isIndy ? object.owner : (groupOwner || object.owner);
+    var ind = Math.min(depth, 2);
+    var rowCls = "demand-row" + (isOverdue(object) ? " has-overdue" : "") + (isBlocked(object) ? " has-blocked" : "");
     return (
-      '<div class="demand-row" data-owner="' + esc(object.owner || "") + '" data-stage="' + esc(object.stage || "") + '" data-rd="' + esc(object.displayId || "") + '">' +
-      '<div class="tree-cell ind' + depth + '">' +
+      '<div class="' + rowCls + '" data-owner="' + esc(rowOwner || "") + '" data-stage="' + esc(object.stage || "") +
+      '" data-status="' + esc(object.status || "") + '" data-deadline="' + esc(object.deadline || "") +
+      '" data-rd="' + (object.kind === "story" ? esc(object.displayId) : "") + '">' +
+      '<div class="tree-cell ind' + ind + '">' +
       (depth > 0 ? '<span class="branch">' + branch + "</span>" : "") +
-      typeTag(object.kind) +
+      typeTag(nodeType) +
       '<div class="node-main"><div class="node-title-line"><span class="code">' + esc(object.displayId) + "</span>" +
-      '<span class="node-title">' + esc(object.title) + "</span>" + priTag(object.priority) + "</div>" +
-      '<div class="node-meta">' + ownerBadge + (metaBits.length ? '<span>' + esc(metaBits.join(" · ")) + "</span>" : "") + "</div></div>" +
-      "</div>" +
-      renderStageCards(null, object) +
-      "</div>"
+      '<span class="node-title" title="' + esc(object.title) + '">' + esc(object.title) + "</span>" + priTag(object.priority) + "</div>" +
+      '<div class="node-meta">' + nodeMeta(object, nodeType) + "</div></div>" +
+      "</div>" + renderStageCards(object) + "</div>"
     );
   }
+  // 叶行：根节点自身即最细推进对象（无子业务的 BR / 独立研需）。
+  // 对象头已在 biz-head 完整展示，此处不重复 tag/ID/标题，只保留树枝定位与推进状态卡。
+  function renderLeafRow(object) {
+    var isIndy = !!object.independent;
+    var rowCls = "demand-row leaf-row" + (isOverdue(object) ? " has-overdue" : "") + (isBlocked(object) ? " has-blocked" : "");
+    return (
+      '<div class="' + rowCls + '" data-owner="' + esc(object.owner || "") + '" data-stage="' + esc(object.stage || "") +
+      '" data-status="' + esc(object.status || "") + '" data-deadline="' + esc(object.deadline || "") +
+      '" data-rd="' + (isIndy ? esc(object.displayId) : "") + '">' +
+      '<div class="tree-cell ind0 leaf-cell"><span class="branch">└</span><span class="leaf-note">推进状态</span></div>' +
+      renderStageCards(object) + "</div>"
+    );
+  }
+  // 需求树去重：无子业务的 BR / 独立研需作为根只出现一次（biz-head 完整对象，叶行仅承载推进状态）。
   function renderDemandMatrix(tree) {
     var host = $("demandGroups");
-    if (!tree || !tree.length) { host.innerHTML = ""; $("demandEmpty").style.display = "block"; return; }
+    if (!tree || !tree.length) { host.innerHTML = ""; $("demandEmpty").style.display = "block"; renderSummaryFromRows(); return; }
     $("demandEmpty").style.display = "none";
     var html = "";
-    tree.forEach(function (root, ri) {
+    tree.forEach(function (root) {
+      var nodeType = nodeTypeOf(root, null);
+      var isIndy = root.kind === "story";
       var children = root.children || [];
       var hasChild = children.length > 0;
-      // 自身对象作为最细行(无子业务)或作为汇总根
-      if (hasChild) {
-        // 根 = 业务需求汇总
-        var cflags = [];
-        if (root.status === "clarified") { cflags.push("schedule"); }
-        if (root.status === "refuse" || root.status === "hang") { cflags.push("blocked"); }
-        var summaries = [];
-        if (children.length) { summaries.push('<span class="summary">' + children.length + " 子业务</span>"); }
-        if (root.storyCount) { summaries.push('<span class="summary">' + root.storyCount + " 研发需求</span>"); }
-        var rootOwner = root.owner ? '<span class="owner-badge"><span class="owner-dot">' + esc(root.owner.charAt(0)) + "</span>PO " + esc(root.owner) + "</span>" : "";
-        html += '<section class="biz-group" data-owner="' + esc(root.owner || "") + '" data-flags="' + cflags.join(" ") + '" id="bg' + ri + '">';
-        html += '<div class="biz-head"><div class="biz-head-main" data-toggle-group="bg' + ri + '">' +
-          '<button type="button" class="toggle">▼</button>' + typeTag("demand") + '<span class="code">' + esc(root.displayId) + "</span>" +
-          '<span class="biz-title" title="' + esc(root.title) + '">' + esc(root.title) + "</span>" + priTag(root.priority) +
-          rootOwner + summaries.join("") +
-          '<span class="biz-date">' + (root.deadline ? "目标上线 " + esc(root.deadline) : "") + "</span></div></div>";
-        html += '<div class="group-body">';
-        children.forEach(function (child, ci) {
-          html += renderDemandRow(child, 1, ci === children.length - 1);
-        });
-        html += "</div></section>";
-      } else {
-        // 无子业务的业务需求/独立研发需求：自身即最细行
-        html += '<section class="biz-group" data-owner="' + esc(root.owner || "") + '" data-flags="" id="bg' + ri + '">';
-        html += '<div class="group-body">' + renderDemandRow(root, 0, true) + "</div></section>";
+      var flags = [];
+      if (isOverdue(root)) { flags.push("overdue"); }
+      if (isBlocked(root)) { flags.push("blocked"); }
+      // 根行：第一行 tag+ID+标题+P；第二行 负责人 · 汇总 · 目标上线
+      var summaries = [];
+      if (nodeType === "business") {
+        if (root.subDemandCount > 0) { summaries.push(root.subDemandCount + " 子业务"); }
+        if (root.storyCount > 0) { summaries.push(root.storyCount + " 研发需求"); }
+        if (root.subDemandCount === 0 && root.storyCount === 0) { summaries.push("无子业务"); }
       }
+      var metaBits = [];
+      if (root.owner) { metaBits.push("PO " + esc(root.owner)); }
+      if (summaries.length) { metaBits.push(summaries.join(" · ")); }
+      if (root.deadline) { metaBits.push("目标上线 " + esc(root.deadline)); }
+      html += '<section class="biz-group" data-owner="' + esc(root.owner || "") + '" data-flags="' + flags.join(" ") + '" id="bg' + root.id + '">';
+      html += '<div class="biz-head"><div class="biz-head-main" data-toggle-group="bg' + root.id + '">' +
+        '<div class="biz-head-line">' +
+        '<button type="button" class="toggle">▼</button>' + typeTag(nodeType) +
+        '<span class="code">' + esc(root.displayId) + "</span>" +
+        '<span class="biz-title" title="' + esc(root.title) + '">' + esc(root.title) + "</span>" + priTag(root.priority) +
+        "</div>" +
+        (metaBits.length ? '<div class="biz-head-meta">' + metaBits.join(" · ") + "</div>" : "") +
+        "</div></div>";
+      html += '<div class="group-body">';
+      if (hasChild) {
+        children.forEach(function (child, ci) {
+          html += renderDemandRow(child, child.kind === "story" ? 2 : 1, ci === children.length - 1, root.owner);
+        });
+      } else {
+        html += renderLeafRow(root);
+      }
+      html += "</div></section>";
     });
     host.innerHTML = html;
     host.querySelectorAll("[data-toggle-group]").forEach(function (h) {
@@ -232,74 +386,138 @@
       });
     });
     renderSummaryFromRows();
+    applyDemandOwnerFilter();
+  }
+  function applyDemandOwnerFilter() {
+    document.querySelectorAll("#demandGroups .demand-row, #demandGroups .biz-group")
+      .forEach(function (el) { el.classList.toggle("hidden", state.owner && el.dataset.owner !== state.owner); });
+    renderSummaryFromRows();
   }
   function renderSummaryFromRows() {
-    var rows = Array.prototype.slice.call(document.querySelectorAll("#demandGroups .demand-row"));
-    var total = rows.length, clarify = 0, schedule = 0, blocked = 0, overdue = 0;
+    var rows = document.querySelectorAll("#demandGroups .demand-row");
+    var clarify = 0, schedule = 0, blocked = 0, overdue = 0, visible = 0;
     rows.forEach(function (r) {
+      if (r.classList.contains("hidden")) { return; }
+      visible++;
       var stage = r.dataset.stage || "";
-      if (stage.indexOf("澄清") >= 0 || stage.indexOf("受理") >= 0) { clarify++; }
+      var status = r.dataset.status || "";
+      var deadline = r.dataset.deadline || "";
+      if (stage.indexOf("受理") >= 0 || stage.indexOf("澄清") >= 0) { clarify++; }
       if (stage.indexOf("排期") >= 0) { schedule++; }
-      if (r.className.indexOf("blocked") >= 0) { blocked++; }
-      if (r.className.indexOf("overdue") >= 0) { overdue++; }
+      if (status === "refuse" || status === "hang") { blocked++; }
+      if (deadline && status !== "done" && status !== "released" && deadline < todayStr()) { overdue++; }
     });
     $("demandStats").querySelector('[data-flag="clarify"] strong').textContent = clarify;
     $("demandStats").querySelector('[data-flag="schedule"] strong').textContent = schedule;
     $("demandStats").querySelector('[data-flag="blocked"] strong').textContent = blocked;
     $("demandStats").querySelector('[data-flag="overdue"] strong').textContent = overdue;
-    if (total === 0) { $("demandEmpty").style.display = "block"; }
+    if (visible === 0) { $("demandEmpty").style.display = "block"; }
+  }
+
+  /* ---------- metrics ---------- */
+  function loadMetrics() {
+    // 全部小组 → 轻量 Empty State（指标属于具体小组）
+    if (state.teamgroup === 0) {
+      $("metricsGroupName").textContent = "全部";
+      $("metricsGrid").innerHTML = '<div class="metric-empty">请选择具体敏捷小组查看效能指标</div>';
+      return;
+    }
+    $("metricsGrid").innerHTML = '<div class="metric-empty">加载中…</div>';
+    fetch("/board/group/metrics?teamgroupId=" + state.teamgroup, { method: "GET" })
+      .then(function (r) { return r.json(); })
+      .then(function (p) {
+        if (!p || p.success !== true) { throw new Error("payload"); }
+        $("metricsGroupName").textContent = p.groupName || "";
+        if (p.hasGroup && p.metrics && p.metrics.length) { renderMetrics(p.metrics); }
+        else { $("metricsGrid").innerHTML = '<div class="metric-empty">请选择具体敏捷小组查看效能指标</div>'; }
+      })
+      .catch(function () { $("metricsGrid").innerHTML = '<div class="metric-empty">效能指标加载失败</div>'; });
+  }
+  function renderMetrics(metrics) {
+    var html = metrics.map(function (m) {
+      var cls = "team-metric" + (m.state ? " is-" + m.state : "");
+      return '<div class="' + cls + '" title="' + esc(m.name) + " · 目标" + esc(m.target) + '">' +
+        '<div class="metric-top"><span class="metric-name">' + esc(m.name) + "</span>" +
+        '<span class="metric-value">' + esc(m.value === "-" ? "—" : m.value) + "</span></div>" +
+        '<div class="metric-meta"><span class="metric-target">' + (m.target ? "目标 " + esc(m.target) : "") + "</span></div></div>";
+    }).join("");
+    $("metricsGrid").innerHTML = html;
   }
 
   /* ---------- loaders ---------- */
   function loadDemand() {
     var host = $("demandGroups");
     host.innerHTML = '<div class="demand-empty">加载中…</div>';
-    fetch("/board/demand/items", { method: "GET" })
+    var params = new URLSearchParams();
+    if (state.teamgroup) { params.set("teamgroupId", state.teamgroup); }
+    fetch("/board/demand/items?" + params.toString(), { method: "GET" })
       .then(function (r) { if (!r.ok) { throw new Error("http"); } return r.json(); })
       .then(function (payload) {
         if (!payload || payload.success !== true) { throw new Error("payload"); }
-        if (payload.teamgroups && payload.teamgroups.length) {
-          teams = payload.teamgroups;
-          renderTeamChips();
-        }
+        if (payload.teamgroups && payload.teamgroups.length) { teams = payload.teamgroups; renderTeamChips(); }
         renderDemandMatrix(payload.tree || []);
-        // 需求负责人：仅含实际拥有需求对象的人
-        var owners = {};
-        (payload.tree || []).forEach(function walk(n) {
-          if (n && n.owner) { owners[n.owner] = (owners[n.owner] || 0) + 1; }
-          (n.children || []).forEach(walk);
-        });
-        var opts = [{ value: "", display: "全部", count: (payload.tree || []).length }];
-        Object.keys(owners).forEach(function (acc) { opts.push({ value: acc, display: acc, count: owners[acc] }); });
-        state.owner = "";
-        renderOwnerChips("demandOwners", opts, function (owner) {
-          document.querySelectorAll("#demandGroups .demand-row, #demandGroups .biz-group")
-            .forEach(function (el) { el.classList.toggle("hidden", owner && el.dataset.owner !== owner); });
-        });
+        renderDemandOwners(payload.tree || []);
+        if (state.pendingFocus) { focusStoryRow(state.pendingFocus); state.pendingFocus = 0; }
+        loadMetrics();
       })
       .catch(function () { onErr("demandGroups"); });
   }
+  function seqOwners(tree) {
+    var owners = {};
+    var stack = (tree || []).slice().reverse();
+    while (stack.length) {
+      var n = stack.pop();
+      if (n && n.owner) { owners[n.owner] = (owners[n.owner] || 0) + 1; }
+      var cs = (n && n.children) || [];
+      for (var i = cs.length - 1; i >= 0; i--) { stack.push(cs[i]); }
+    }
+    var arr = Object.keys(owners).map(function (acc) { return { value: acc, display: acc, count: owners[acc] }; });
+    arr.sort(function (a, b) { return b.count - a.count; });
+    return arr;
+  }
+  function renderDemandOwners(tree) {
+    var opts = [{ value: "", display: "", count: (tree || []).length }];
+    opts = opts.concat(seqOwners(tree));
+    state.owner = "";
+    renderOwnerChips("demandOwners", opts, applyDemandOwnerFilter);
+  }
+  function focusStoryRow(storyId) {
+    var row = document.querySelector('.demand-row[data-rd="RD-' + storyId + '"]');
+    if (!row) { return; }
+    var grp = row.closest(".biz-group");
+    if (grp) {
+      var body = grp.querySelector(".group-body");
+      if (body && body.classList.contains("collapsed")) {
+        body.classList.remove("collapsed");
+        var tg = grp.querySelector(".toggle");
+        if (tg) { tg.textContent = "▼"; }
+      }
+    }
+    row.scrollIntoView({ block: "center", behavior: "smooth" });
+    row.style.background = "#fffbea";
+    setTimeout(function () { row.style.background = ""; }, 2000);
+  }
   function loadTasks() {
-    var host = document.querySelector("#taskBoard .task-col-body"); // 容器先清
     document.querySelectorAll("#taskBoard .task-col-body").forEach(function (c) { c.innerHTML = ""; });
+    ensureTeamgroup();
+    if (!state.teamgroup) { return; }
     var params = new URLSearchParams();
-    if (state.teamgroup) { params.set("teamgroupId", state.teamgroup); }
+    params.set("teamgroupId", state.teamgroup);
     if (state.storyFilter) { params.set("storyId", state.storyFilter); }
+    if (state.owner) { params.set("ownerAccount", state.owner); }
     fetch("/board/task/items?" + params.toString(), { method: "GET" })
       .then(function (r) { if (!r.ok) { throw new Error("http"); } return r.json(); })
       .then(function (payload) {
         if (!payload || payload.success !== true) { throw new Error("payload"); }
-        if (payload.teamgroups && payload.teamgroups.length) {
-          teams = payload.teamgroups;
-          renderTeamChips();
-        }
+        if (payload.teamgroups && payload.teamgroups.length) { teams = payload.teamgroups; renderTeamChips(); }
         if (payload.owners) {
-          var opts = [{ value: "", display: "全部", count: payload.owners.reduce(function (s, o) { return s + o.count; }, 0) }];
+          var total = payload.owners.reduce(function (s, o) { return s + o.count; }, 0);
+          var opts = [{ value: "", display: "", count: total }];
           payload.owners.forEach(function (o) { opts.push({ value: o.account, display: o.display, count: o.count }); });
-          renderOwnerChips("taskOwners", opts, function () { applyTaskOwnerFilter(); });
+          renderOwnerChips("taskOwners", opts, function () { loadTasks(); });
         }
         renderTaskColumns(payload.columns || []);
-        updateTaskStats();
+        loadMetrics();
       })
       .catch(function () { onErr("taskBoard"); });
   }
@@ -314,6 +532,7 @@
       body.innerHTML = items.map(taskCard).join("");
       colEl.querySelector(".k-count").textContent = items.length;
     });
+    updateTaskStats();
   }
   function taskCard(task) {
     var cls = "task-card";
@@ -322,9 +541,10 @@
     if (task.status === "done") { cls += " done"; }
     var due = task.deadline ? "截止 " + esc(task.deadline) : "";
     if (task.overdue && task.status !== "done") { due = '<span class="task-due over">已超期</span>'; }
-    var storyLink = task.storyTitle
-      ? '<span class="task-link" data-back-rd="' + esc(task.displayId || task.storyId) + '">所属研需 ' + esc(task.storyTitle) + "</span>"
-      : "";
+    var storyLink = "";
+    if (task.storyId) {
+      storyLink = '<span class="task-link" data-back-rd="' + task.storyId + '" title="返回需求看板并定位研需">所属研需 ' + esc(task.storyTitle || ("RD-" + task.storyId)) + "</span>";
+    }
     return (
       '<div class="' + cls + '" data-owner="' + esc(task.owner || "") + '">' +
       '<div class="task-head">' + typeTag("task") + '<span class="code">' + esc(task.displayId || task.id) + "</span>" +
@@ -336,24 +556,105 @@
       "</div>"
     );
   }
-  function applyTaskOwnerFilter() {
-    var rows = document.querySelectorAll("#taskBoard .task-card");
-    rows.forEach(function (r) {
-      r.classList.toggle("hidden", state.owner && r.dataset.owner !== state.owner);
-    });
-    updateTaskStats();
-  }
   function updateTaskStats() {
-    var blocked = 0, overdue = 0;
+    var blocked = 0, overdue = 0, visible = 0;
     document.querySelectorAll("#taskBoard .task-card").forEach(function (r) {
-      if (r.classList.contains("hidden")) { return; }
+      visible++;
       if (r.classList.contains("blocked")) { blocked++; }
       if (r.classList.contains("overdue")) { overdue++; }
     });
     $("taskStats").querySelector('[data-flag="blocked"] strong').textContent = blocked;
     $("taskStats").querySelector('[data-flag="overdue"] strong').textContent = overdue;
+    if (visible === 0) {
+      document.querySelectorAll("#taskBoard .task-col-body").forEach(function (c) {
+        if (!c.children.length) { c.innerHTML = '<div class="demand-empty" style="display:block">当前条件下没有任务</div>'; }
+      });
+    }
+  }
+
+  /* ---------- demand ↔ task 穿透 ---------- */
+  function openStoryTasks(storyId, label) {
+    state.storyFilter = storyId;
+    state.owner = "";
+    var tip = $("taskFilterTip");
+    tip.innerHTML = '已从需求看板下钻：仅显示 <strong>' + esc(label) + '</strong> 的任务。点任务卡上的「所属研需」可返回需求看板。';
+    var allBtn = document.querySelector('#taskOwners .person[data-value=""]');
+    if (allBtn) { allBtn.classList.add("active"); }
+    ensureTeamgroup();
+    switchMode("task");
+    tip.classList.remove("hidden");
+  }
+  function backToDemandFromTask(storyId) {
+    state.storyFilter = 0;
+    state.pendingFocus = storyId;
+    switchMode("demand");
+  }
+
+  document.addEventListener("click", function (e) {
+    var retry = e.target.closest("[data-retry]");
+    if (retry) { mode === "demand" ? loadDemand() : loadTasks(); return; }
+    var open = e.target.closest("[data-open-tasks]");
+    if (open) { openStoryTasks(Number(open.dataset.openTasks), open.dataset.rdLabel || "研需"); return; }
+    var back = e.target.closest("[data-back-rd]");
+    if (back) { backToDemandFromTask(Number(back.dataset.backRd)); return; }
+    var toastBtn = e.target.closest("[data-toast]");
+    if (toastBtn) { showToast(toastBtn.dataset.toast); return; }
+  });
+
+  /* ---------- issue panel ---------- */
+  function loadIssues() {
+    fetch("/board/issues", { method: "GET" })
+      .then(function (r) { if (!r.ok) { throw new Error("http"); } return r.json(); })
+      .then(function (payload) {
+        if (!payload || payload.success !== true) { throw new Error("payload"); }
+        renderIssues(payload);
+      })
+      .catch(function () { $("issueList").innerHTML = '<div class="demand-empty">加载失败</div>'; });
+  }
+  var issueTabFilter = "open";
+  function renderIssues(payload) {
+    var items = payload.items || [];
+    var open = (payload.open || 0), closed = (payload.closed || 0);
+    $("issueCount").textContent = items.length || open + closed;
+    var tabs = $("issueTabs"); tabs.innerHTML = "";
+    var tabDefs = [];
+    if (open > 0) { tabDefs.push({ key: "open", label: "未解决 " + open }); }
+    if (closed > 0) { tabDefs.push({ key: "closed", label: "已关闭 " + closed }); }
+    if (!tabDefs.length) { tabDefs.push({ key: "open", label: "未解决 0" }); }
+    tabDefs.forEach(function (td) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "issue-tab" + (issueTabFilter === td.key ? " active" : "");
+      b.textContent = td.label;
+      b.dataset.key = td.key;
+      b.addEventListener("click", function () {
+        issueTabFilter = td.key;
+        tabs.querySelectorAll(".issue-tab").forEach(function (x) { x.classList.remove("active"); });
+        b.classList.add("active");
+        renderIssueCards(items, td.key);
+      });
+      tabs.appendChild(b);
+    });
+    renderIssueCards(items, issueTabFilter);
+  }
+  function renderIssueCards(items, filter) {
+    var list = $("issueList");
+    var matched = items.filter(function (it) {
+      var grp = it.status === "closed" ? "closed" : "open";
+      return grp === filter;
+    });
+    if (!matched.length) { list.innerHTML = '<div class="demand-empty">暂无问题</div>'; return; }
+    list.innerHTML = matched.map(function (it) {
+      var stateLabel = it.status === "closed" ? "已关闭" : "未处理";
+      var stateCls = it.status === "closed" ? "" : "issue-state";
+      return '<div class="issue-card"><div class="issue-id">ISSUE-' + it.id + "</div>" +
+        '<div class="issue-title" title="' + esc(it.title) + '">' + esc(it.title) + "</div>" +
+        '<div class="issue-meta"><span>' + esc(it.createdBy || "") + (it.priority ? " · P" + esc(it.priority) : "") + "</span>" +
+        '<span class="' + stateCls + '">' + stateLabel + "</span></div></div>";
+    }).join("");
   }
 
   /* ---------- init ---------- */
+  loadIssues();
   switchMode(mode);
 })();

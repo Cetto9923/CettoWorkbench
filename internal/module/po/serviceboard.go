@@ -24,7 +24,11 @@ func (s *Service) BoardDemand(ctx context.Context, actor *model.User, req BoardD
 	if req.POAccount == "" {
 		req.POAccount = actor.Account
 	}
-	tree, summary, err := s.repo.FindBoardDemandTree(ctx, req)
+	displayMap, err := s.loadAccountDisplayMap(ctx, actor)
+	if err != nil {
+		return nil, err
+	}
+	tree, summary, err := s.repo.FindBoardDemandTree(ctx, req, displayMap)
 	if err != nil {
 		return nil, err
 	}
@@ -33,6 +37,48 @@ func (s *Service) BoardDemand(ctx context.Context, actor *model.User, req BoardD
 		return nil, err
 	}
 	return &BoardDemandResp{Tree: tree, Summary: summary, Teamgroups: teams}, nil
+}
+
+// BoardIssues 右侧问题栏：当前账号可见真实问题。
+func (s *Service) BoardIssues(ctx context.Context, actor *model.User) (*BoardIssueResp, error) {
+	if actor == nil || strings.TrimSpace(actor.Account) == "" {
+		return &BoardIssueResp{Items: []BoardIssueItem{}}, nil
+	}
+	return s.repo.FindBoardIssues(ctx, actor.Account)
+}
+
+// BoardGroupMetrics 小组效能快照：选定具体敏捷小组时返回 8 项真实指标。
+func (s *Service) BoardGroupMetrics(ctx context.Context, actor *model.User, req GroupMetricsReq) (*GroupMetricsResp, error) {
+	if actor == nil || strings.TrimSpace(actor.Account) == "" {
+		return &GroupMetricsResp{HasGroup: false, Metrics: []*BoardMetric{}}, nil
+	}
+	if req.TeamgroupID == 0 {
+		return &GroupMetricsResp{HasGroup: false, GroupID: 0, Metrics: []*BoardMetric{}}, nil
+	}
+	teams, err := s.repo.FindBoardTeamgroups(ctx, actor.Account)
+	if err != nil {
+		return nil, err
+	}
+	name := ""
+	allowed := false
+	for _, t := range teams {
+		if t.ID == req.TeamgroupID {
+			allowed = true
+			name = t.Name
+			break
+		}
+	}
+	if !allowed {
+		return &GroupMetricsResp{HasGroup: false, Metrics: []*BoardMetric{}}, nil
+	}
+	ms, err := s.repo.FindBoardTeamMetrics(ctx, req.TeamgroupID)
+	if err != nil {
+		return nil, err
+	}
+	if ms == nil {
+		ms = []*BoardMetric{}
+	}
+	return &GroupMetricsResp{GroupID: req.TeamgroupID, HasGroup: true, GroupName: name, Metrics: ms}, nil
 }
 
 // BoardTask 我的任务看板（按任务负责人筛选 + 4 列）。

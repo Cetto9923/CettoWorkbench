@@ -21,6 +21,41 @@ type BoardDemandReq struct {
 	PageSize    int    `form:"pageSize"`
 }
 
+// GroupMetricsReq 是小组效能指标查询参数。
+type GroupMetricsReq struct {
+	TeamgroupID uint `form:"teamgroupId"`
+}
+
+// Validate 校验小组效能查询。
+func (r *GroupMetricsReq) Validate() []FieldError {
+	return nil
+}
+
+// BoardMetric 是小组效能快照中的一个指标。value/state 为真实聚合结果；
+// 无法从真实表得出的指标 value="-"（前端展示为 "—"，禁止 mock）。
+type BoardMetric struct {
+	Key    string `json:"key"`
+	Name   string `json:"name"`
+	Value  string `json:"value"`
+	Target string `json:"target"`
+	Trend  string `json:"trend"`
+	State  string `json:"state"` // good / warn / risk / flat
+
+	// 内部用于阈值折算，不参与 JSON 序列化。
+	higherIsBetter bool
+	targetValue    float64
+	measured       float64
+	hasValue       bool
+}
+
+// GroupMetricsResp 是小组效能指标响应；HasGroup=false 时前端展示 Empty State。
+type GroupMetricsResp struct {
+	GroupID   uint           `json:"groupId"`
+	HasGroup  bool           `json:"hasGroup"`
+	GroupName string         `json:"groupName"`
+	Metrics   []*BoardMetric `json:"metrics"`
+}
+
 // Validate 校验需求看板查询。
 func (r *BoardDemandReq) Validate() []FieldError {
 	r.POAccount = strings.TrimSpace(r.POAccount)
@@ -40,7 +75,9 @@ func (r *BoardDemandReq) Validate() []FieldError {
 	return nil
 }
 
-// BoardDemandItem 是需求树节点。
+// BoardDemandItem 是需求树节点。业务需求/子业务/研发需求共用一行结构。
+// 研发需求(story)是"最细有效推进对象"：携带交付进展(Progress/TaskDone/TaskTotal)
+// 与当前执行负责人(CurrentOwner)，且可通过兄弟接口按 storyId 下钻任务。
 type BoardDemandItem struct {
 	Kind           string             `json:"kind"`
 	ID             int64              `json:"id"`
@@ -54,6 +91,12 @@ type BoardDemandItem struct {
 	StoryCount     int                `json:"storyCount"`
 	TaskOpenCount  int                `json:"taskOpenCount"`
 	Deadline       string             `json:"deadline"`
+	CurrentOwner   string             `json:"currentOwner"`
+	Progress       int                `json:"progress"`
+	TaskTotal      int                `json:"taskTotal"`
+	TaskDone       int                `json:"taskDone"`
+	ProductName    string             `json:"productName"`
+	Independent    bool               `json:"independent"`
 	Children       []*BoardDemandItem `json:"children,omitempty"`
 	Collapse       bool               `json:"collapse"`
 	ActionLabel    string             `json:"actionLabel"`
@@ -151,10 +194,11 @@ type BoardTaskResp struct {
 	Summary             BoardTaskSummary       `json:"summary"`
 }
 
-// BoardOwnerOption 是任务负责人筛选项。
+// BoardOwnerOption 是任务负责人筛选项（Count 为该负责人的任务数，供 chips 显示）。
 type BoardOwnerOption struct {
 	Account string `json:"account"`
 	Display string `json:"display"`
+	Count   int64  `json:"count"`
 }
 
 // BoardTaskSummary 是任务看板顶部快捷筛选数字。
@@ -162,4 +206,22 @@ type BoardTaskSummary struct {
 	Total   int64 `json:"total"`
 	Blocked int64 `json:"blocked"`
 	Overdue int64 `json:"overdue"`
+}
+
+// BoardIssueItem 右侧问题栏一条真实问题。
+type BoardIssueItem struct {
+	ID        int64  `json:"id"`
+	Title     string `json:"title"`
+	Priority  string `json:"priority"`
+	Severity  string `json:"severity"`
+	Status    string `json:"status"`
+	CreatedBy string `json:"createdBy"`
+}
+
+// BoardIssueResp 右侧问题栏响应；open/closed 为按状态聚类的真实计数。
+type BoardIssueResp struct {
+	Total  int64            `json:"total"`
+	Open   int64            `json:"open"`
+	Closed int64            `json:"closed"`
+	Items  []BoardIssueItem `json:"items"`
 }

@@ -24,7 +24,15 @@ func (r *Repo) FindBoardTaskList(ctx context.Context, req BoardTaskReq, displayM
 		return columns, BoardTaskSummary{}, nil
 	}
 
+	// 按敏捷小组真实成员过滤任务负责人（小组 ↔ 任务无直接表，采用组内成员口径）。
+	members, memberErr := r.FindBoardTeamgroupMembers(ctx, req.TeamgroupID)
+	if memberErr != nil {
+		return nil, BoardTaskSummary{}, memberErr
+	}
 	q := r.boardTaskQuery(ctx, req)
+	if len(members) > 0 {
+		q = q.Where("zt_task.assignedTo IN ?", members)
+	}
 	var rows []boardTaskRow
 	if err := q.Select("zt_task.id, zt_task.name, zt_task.type, zt_task.status, zt_task.pri, zt_task.story, zt_task.assignedTo, zt_task.deadline").
 		Order("zt_task.id DESC").Limit(req.PageSize).Find(&rows).Error; err != nil {
@@ -36,7 +44,9 @@ func (r *Repo) FindBoardTaskList(ctx context.Context, req BoardTaskReq, displayM
 	}
 
 	summary := BoardTaskSummary{Total: int64(len(rows))}
-	today := time.Now().Truncate(24 * time.Hour)
+	// 本地零点口径（Truncate 按 UTC 截断，本地 0~8 点窗口会错判超期）
+	now := time.Now()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 	for _, row := range rows {
 		blocked := row.Status == "pause"
 		overdue := taskIsOverdue(row.Status, row.Deadline, today)
@@ -165,18 +175,26 @@ func boardTaskItem(row boardTaskRow, stories map[int64]string, displayMap map[st
 	}
 }
 
-// FindBoardTaskOwners 查询当前小组实际拥有任务的负责人。
+// FindBoardTaskOwners 查询当前小组实际拥有任务的负责人及各自任务数。
 func (r *Repo) FindBoardTaskOwners(ctx context.Context, teamgroupID uint, displayMap map[string]string) ([]BoardOwnerOption, error) {
 	if r == nil || r.db == nil || teamgroupID == 0 {
 		return []BoardOwnerOption{}, nil
 	}
 	var rows []struct {
 		AssignedTo string `gorm:"column:assignedTo"`
+		Count      int64  `gorm:"column:cnt"`
 	}
-	if err := r.db.WithContext(ctx).Table("zt_task").
+	q := r.db.WithContext(ctx).Table("zt_task").
 		Where("deleted = ? AND status IN ?", "0", []string{"wait", "doing", "done", "pause"}).
-		Where("assignedTo <> ''").
-		Select("assignedTo").Group("assignedTo").Order("assignedTo").Find(&rows).Error; err != nil {
+		Where("assignedTo <> ''")
+	members, memberErr := r.FindBoardTeamgroupMembers(ctx, teamgroupID)
+	if memberErr != nil {
+		return nil, memberErr
+	}
+	if len(members) > 0 {
+		q = q.Where("assignedTo IN ?", members)
+	}
+	if err := q.Select("assignedTo, COUNT(*) AS cnt").Group("assignedTo").Order("cnt DESC").Find(&rows).Error; err != nil {
 		return nil, err
 	}
 	out := make([]BoardOwnerOption, 0, len(rows))
@@ -185,7 +203,7 @@ func (r *Repo) FindBoardTaskOwners(ctx context.Context, teamgroupID uint, displa
 		if display == "" {
 			display = row.AssignedTo
 		}
-		out = append(out, BoardOwnerOption{Account: row.AssignedTo, Display: display})
+		out = append(out, BoardOwnerOption{Account: row.AssignedTo, Display: display, Count: row.Count})
 	}
 	return out, nil
 }

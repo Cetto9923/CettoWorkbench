@@ -57,11 +57,9 @@
       <span class="team-metrics-note">小组级 · 不随负责人筛选变化</span>
       <button type="button" class="team-metrics-more">全部指标 ›</button>
     </div>
-    <div class="team-metrics-grid" id="metricsGrid"><!-- JS 填充 8 格 --></div>
+    <div class="team-metrics-grid" id="metricsGrid"><!-- JS 填充 8 格或 Empty State --></div>
   </section>
 
-  <div id="demandRoleBanner" class="role-banner"></div>
-  <div id="taskRoleBanner" class="role-banner task hidden"></div>
   <div id="taskFilterTip" class="task-filter-tip hidden"></div>
 
   <div class="standup">
@@ -69,16 +67,10 @@
       <div id="demandBoard" class="demand-board">
         <div class="demand-grid">
           <div class="grid-head">
-            <div>需求树（PO工作对象 / 交付上下文）</div><div>受理 / 澄清</div><div>排期</div><div>研发 / 提测</div><div>联调 / 验收</div><div>交付 / 评价</div>
+            <div>需求树</div><div>受理 / 澄清</div><div>排期</div><div>研发 / 提测</div><div>联调 / 验收</div><div>交付 / 评价</div>
           </div>
           <div id="demandGroups"><!-- JS 填充：业务/独立研发对象 + 子业务 + 研发交付进展行 --></div>
           <div id="demandEmpty" class="demand-empty">当前条件下没有需求</div>
-          <div class="legend">
-            <span><b>业务需求 / 独立研发需求</b> = PO 本人工作对象</span>
-            <span><b>子业务需求</b> = 交付单元</span>
-            <span><b>研发需求</b> = 下钻交付进展，不等于 PO 的“任务”</span>
-            <span>需求阶段由状态派生，不支持拖拽</span>
-          </div>
         </div>
       </div>
 
