@@ -142,6 +142,36 @@
   页面字段: .CurrentMenus ([]menu.Menu)
 ========================================================================== */}}
 <nav class="sidebar" id="sidebar">
+  {{ if or (eq .CurrentPath "/home") (eq .CurrentPath "/schedule") (eq .CurrentPath "/todos") (eq .CurrentPath "/done") (eq .CurrentPath "/notice") (eq .CurrentPath "/follow") }}
+  <div class="po-sidebar-brand">
+    <span class="po-brand-logo">研</span>
+    <strong class="nav-text">研发工作台</strong>
+    <button type="button" class="po-sidebar-collapse js-sidebar-collapse" id="sidebarToggle" title="收起菜单" aria-label="收起菜单"><i class="fas fa-chevron-left"></i></button>
+  </div>
+  <div class="sidebar-body">
+    <div class="sidebar-nav po-sidebar-nav">
+      <div class="nav-section-label">个人入口</div>
+      <a href="/home" class="nav-item{{ if eq .CurrentPath "/home" }} active{{ end }}"><i class="nav-icon fas fa-home"></i><span class="nav-text">首页</span></a>
+      <a href="/todos" class="nav-item{{ if eq .CurrentPath "/todos" }} active{{ end }}"><i class="nav-icon fas fa-list-check"></i><span class="nav-text">我的待办</span></a>
+      <a href="/done" class="nav-item{{ if eq .CurrentPath "/done" }} active{{ end }}"><i class="nav-icon fas fa-clock-rotate-left"></i><span class="nav-text">我的已办</span></a>
+      <a href="/notice" class="nav-item{{ if eq .CurrentPath "/notice" }} active{{ end }}"><i class="nav-icon fas fa-bell"></i><span class="nav-text">通知中心</span></a>
+      <a href="/follow" class="nav-item{{ if eq .CurrentPath "/follow" }} active{{ end }}"><i class="nav-icon fas fa-star"></i><span class="nav-text">我的关注</span></a>
+      <div class="nav-divider" role="separator"></div>
+      <div class="nav-section-label">工作区</div>
+      <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-table-cells-large"></i><span class="nav-text">任务看板</span></button>
+      <button type="button" class="nav-item po-shell-placeholder" data-upcoming-page="需求查询"><i class="nav-icon fas fa-briefcase"></i><span class="nav-text">需求查询</span></button>
+      <a href="/schedule" class="nav-item{{ if eq .CurrentPath "/schedule" }} active{{ end }}"><i class="nav-icon fas fa-calendar-check"></i><span class="nav-text">需求排期</span><span class="nav-badge">PO</span></a>
+      <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-vial-circle-check"></i><span class="nav-text">版本跟进</span></button>
+      <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-clipboard-check"></i><span class="nav-text">验收交付</span></button>
+      <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-shield-halved"></i><span class="nav-text">问题风险</span></button>
+      <div class="nav-divider" role="separator"></div>
+      <div class="nav-section-label">专项分析</div>
+      <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-sliders"></i><span class="nav-text">指标管理</span></button>
+      <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-chart-line"></i><span class="nav-text">指标雷达</span></button>
+      <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-triangle-exclamation"></i><span class="nav-text">质效预警</span></button>
+    </div>
+  </div>
+  {{ else }}
   <div class="sidebar-body">
     <div class="sidebar-nav">
       {{ if .CurrentMenus }}
@@ -192,5 +222,6 @@
       <span class="nav-text sidebar-collapse-text">收起菜单</span>
     </button>
   </div>
+  {{ end }}
 </nav>
 {{ end }}

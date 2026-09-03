@@ -17,6 +17,7 @@ import (
 
 	"workbench/internal/constants"
 	"workbench/internal/middleware"
+	"workbench/internal/pkg/perm"
 	"workbench/internal/pkg/render"
 )
 
@@ -36,8 +37,8 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g := rg.Group("")
 	g.Use(middleware.ActiveNav("/home"))
 
-	g.GET("/home", h.Home)
-	g.GET("/demands", h.Demands)
+	g.GET("/home", middleware.RequirePerm(perm.PoHome), h.Home)
+	g.GET("/demands", middleware.RequirePerm(perm.PoHome), h.Demands)
 }
 
 // Home 渲染 PO 工作台首页。

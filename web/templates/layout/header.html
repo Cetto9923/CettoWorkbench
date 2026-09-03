@@ -6,6 +6,33 @@ web/templates/layout/header.html 模块: 布局 职责:
 .PageTitle (string), .CurrentMenus ([]menu.Menu)
 ========================================================================== */}}
 <div class="topbar-row">
+  {{ if or (eq .CurrentPath "/home") (eq .CurrentPath "/schedule") (eq .CurrentPath "/todos") (eq .CurrentPath "/done") (eq .CurrentPath "/notice") (eq .CurrentPath "/follow") }}
+  <div class="po-role-switcher" role="tablist" aria-label="工作台角色">
+    <a class="po-role-tab active" role="tab" aria-selected="true" href="/home">PO</a>
+    <button class="po-role-tab" role="tab" aria-selected="false" type="button">SM</button>
+    <button class="po-role-tab" role="tab" aria-selected="false" type="button">业务</button>
+    <button class="po-role-tab" role="tab" aria-selected="false" type="button">PMO</button>
+  </div>
+  <div class="po-header-right">
+    <label class="po-global-search">
+      <i class="fas fa-search" aria-hidden="true"></i>
+      <input type="search" aria-label="搜索需求、任务、Bug、MR、版本窗口、项目" placeholder="搜索需求 / 任务 / Bug / MR">
+    </label>
+    <button type="button" class="po-header-icon" aria-label="通知"><i class="fas fa-bell"></i></button>
+    <div class="dropdown">
+      <button class="po-user-info" type="button" onclick="return toggleDropdown(this);" aria-haspopup="menu">
+        <span class="po-user-avatar">{{ if .CurrentUser }}{{ slice .CurrentUser.DisplayName 0 3 }}{{ else }}用{{ end }}</span>
+        <span>{{ if .CurrentUser }}{{ .CurrentUser.DisplayName }}{{ else }}用户{{ end }}</span>
+      </button>
+      <div class="dropdown-menu">
+        <form action="/logout" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}">
+          <button type="submit" class="dropdown-item dropdown-item-danger topbar-dropdown-item"><i class="bi bi-box-arrow-right"></i><span>登出</span></button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {{ else }}
   {{ if eq .LayoutNav "sidebar" }}
   <div class="topbar-brand">
     <a href="/home" class="nav-item">
@@ -46,6 +73,7 @@ web/templates/layout/header.html 模块: 布局 职责:
       </div>
     </div>
   </div>
+  {{ end }}
   {{ end }}
 </div>
 {{ if eq .LayoutNav "top" }}{{ template "layout/topnavSecondary" . }}{{ end }}

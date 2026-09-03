@@ -20,11 +20,12 @@
   <link rel="stylesheet" href="/static/css/layout/variables.css">
   <link rel="stylesheet" href="/static/css/layout/app.css">
   <link rel="stylesheet" href="/static/css/layout/layout.css">
+  {{ if or (eq .CurrentPath "/home") (eq .CurrentPath "/schedule") (eq .CurrentPath "/todos") (eq .CurrentPath "/done") (eq .CurrentPath "/notice") (eq .CurrentPath "/follow") }}<link rel="stylesheet" href="{{ asset "/static/css/po/shell.css" }}">{{ end }}
   {{ if and (not .HideChrome) (eq .LayoutNav "top") }}<link rel="stylesheet" href="/static/css/layout/topnav.css">{{ end }}
   <link rel="stylesheet" href="/static/css/components/components.css">
   {{ block "page_css" . }}{{ end }}
 </head>
-<body{{ if .HideChrome }} class="layout-chrome-hidden"{{ else if eq .LayoutNav "top" }} class="layout-nav-top"{{ end }}>
+<body{{ if .HideChrome }} class="layout-chrome-hidden"{{ else if or (eq .CurrentPath "/home") (eq .CurrentPath "/schedule") (eq .CurrentPath "/todos") (eq .CurrentPath "/done") (eq .CurrentPath "/notice") (eq .CurrentPath "/follow") }} class="po-workbench-shell has-bottom-tabs"{{ else if eq .LayoutNav "top" }} class="layout-nav-top"{{ end }}>
   {{ if not .HideChrome }}
   <header class="topbar">
     {{ template "layout/header" . }}
@@ -38,6 +39,13 @@
       {{ template "content" . }}
     </main>
   </div>
+
+  {{ if and (not .HideChrome) (or (eq .CurrentPath "/home") (eq .CurrentPath "/schedule")) }}
+  <nav class="bottom-tabbar" aria-label="已打开工作页签">
+    <a class="bottom-tab{{ if eq .CurrentPath "/home" }} active{{ end }}" href="/home"><i class="fas fa-home"></i><span>PO 首页</span></a>
+    {{ if eq .CurrentPath "/schedule" }}<a class="bottom-tab active" href="/schedule"><i class="fas fa-calendar-check"></i><span>需求排期</span></a>{{ end }}
+  </nav>
+  {{ end }}
 
   <div class="toast-container" id="toast-container"></div>
   <div class="modal-backdrop" id="modal-delete">
