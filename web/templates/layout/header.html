@@ -4,6 +4,7 @@ web/templates/layout/header.html 模块: 布局 职责:
 渲染后台顶部导航栏、面包屑与页面标题区。 全局字段: .CurrentUser, .CSRFToken,
 .Flash, .Menus, .AppName, .CurrentPath, .LayoutNav 页面字段: .Title (string),
 .PageTitle (string), .CurrentMenus ([]menu.Menu)
+说明: sidebar 布局含全局编号搜索框（#globalSearch），跳转禅道由 globalsearch.js 处理。
 ========================================================================== */}}
 <div class="topbar-row">
   {{ if eq .LayoutNav "sidebar" }}
@@ -21,16 +22,28 @@ web/templates/layout/header.html 模块: 布局 职责:
   {{ end }} {{ if eq .LayoutNav "sidebar" }}
   <div class="topbar-actions">
     <div class="search-box" id="searchBox">
-      <i class="fas fa-search"></i>
+      <i class="fas fa-search" aria-hidden="true"></i>
       <input
         type="text"
         id="globalSearch"
         autocomplete="off"
-        placeholder="搜索需求 / 任务 / Bug / MR"
-        title="搜索需求、任务、Bug、MR、版本窗口、项目"
-        aria-label="搜索需求、任务、Bug、MR、版本窗口、项目"
+        placeholder="编号搜索"
+        title="仅支持编号搜索，输入数字后选择对象类型跳转禅道"
+        aria-label="全局编号搜索"
+        aria-autocomplete="list"
+        aria-controls="searchResults"
       />
-      <div class="search-results" id="searchResults"></div>
+      <button
+        type="button"
+        class="search-box-clear"
+        id="globalSearchClear"
+        title="清除"
+        aria-label="清除搜索"
+        hidden
+      >
+        <i class="fas fa-times" aria-hidden="true"></i>
+      </button>
+      <div class="search-results" id="searchResults" role="listbox"></div>
     </div>
     <div class="dropdown">
       <button

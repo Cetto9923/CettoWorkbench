@@ -72,7 +72,7 @@ body.layout-nav-top.sidebar-collapsed .main {
   min-height: 0;
 }
 
-/* Global Search（对齐 workbench_pro 原型 .search-box / .search-results） */
+/* Global Search（对齐禅道 globalsearch / search-box：仅编号 + 类型跳转） */
 .search-box {
   position: relative;
   display: flex;
@@ -91,7 +91,7 @@ body.layout-nav-top.sidebar-collapsed .main {
   border-color: var(--color-info);
 }
 
-.search-box > i {
+.search-box > i.fa-search {
   color: var(--color-text-disabled);
   font-size: var(--font-size-xs);
   flex-shrink: 0;
@@ -112,14 +112,40 @@ body.layout-nav-top.sidebar-collapsed .main {
   color: var(--color-text-disabled);
 }
 
+.search-box-clear {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-5);
+  height: var(--size-5);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-disabled);
+  cursor: pointer;
+}
+
+.search-box-clear:hover {
+  color: var(--color-text-secondary);
+  background: var(--color-surface-hover);
+}
+
+.search-box-clear[hidden] {
+  display: none !important;
+}
+
 .search-results {
   display: none;
   position: absolute;
   top: calc(100% + var(--space-1));
-  left: 0;
   right: 0;
-  max-height: 400px;
+  left: auto;
+  width: 320px;
+  max-height: 420px;
   overflow-y: auto;
+  padding: var(--space-1);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
@@ -131,101 +157,42 @@ body.layout-nav-top.sidebar-collapsed .main {
   display: block;
 }
 
-.search-results .sr-header {
-  padding: var(--space-2) var(--space-3);
-  border-bottom: 1px solid var(--color-border-soft-4);
-  font-size: var(--font-size-2xs);
-  color: var(--color-text-disabled);
-  font-weight: 600;
-}
-
-.search-results .sr-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px var(--space-3);
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.search-results .sr-item:hover {
-  background: var(--color-surface-hover);
-}
-
-.search-results .sr-item.active {
-  background: var(--color-primary-light);
-}
-
-.search-results .sr-icon {
-  width: var(--size-7);
-  height: var(--size-7);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--font-size-xs);
-  flex-shrink: 0;
-}
-
-.search-results .sr-icon.req,
-.search-results .sr-icon.task {
-  background: var(--po-blue-bg);
-  color: var(--po-blue);
-}
-
-.search-results .sr-icon.bug {
-  background: var(--po-red-bg);
-  color: var(--po-red);
-}
-
-.search-results .sr-icon.mr {
-  background: var(--po-orange-bg);
-  color: var(--po-orange);
-}
-
-.search-results .sr-icon.test,
-.search-results .sr-icon.sprint {
-  background: #f5f3ff;
-  color: #5b21b6;
-}
-
-.search-results .sr-icon.project {
-  background: var(--color-success-bg);
-  color: var(--po-green);
-}
-
-.search-results .sr-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.search-results .sr-title {
-  font-size: var(--font-size-sm);
-  font-weight: 500;
+.search-results .gs-item {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
   color: var(--color-text-deep);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: var(--font-size-sm);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  line-height: 1.4;
 }
 
-.search-results .sr-meta {
+.search-results .gs-item:hover,
+.search-results .gs-item.is-active {
+  background: var(--color-surface-hover);
+  color: var(--color-text-deep);
+}
+
+.search-results .gs-item-primary.is-active,
+.search-results .gs-item-primary:hover {
+  background: var(--color-info);
+  color: #fff;
+}
+
+.search-results .gs-grid {
   display: flex;
-  gap: var(--space-2);
-  margin-top: var(--size-0_5);
-  font-size: var(--font-size-2xs);
-  color: var(--color-text-disabled);
+  flex-wrap: wrap;
 }
 
-.search-results .sr-link {
-  font-size: var(--font-size-2xs);
-  color: var(--color-info);
-}
-
-.search-results .sr-no-results {
-  padding: var(--space-5) var(--space-3);
-  text-align: center;
-  color: var(--color-text-disabled);
-  font-size: var(--font-size-xs);
+.search-results .gs-grid .gs-item {
+  width: 50%;
 }
 
 /* ── Layout ── */
