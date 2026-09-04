@@ -1,0 +1,18 @@
+---
+description: SQL and schema-ownership boundaries; AGENTS.md remains canonical
+globs: "{internal/**/*repo*.go,internal/model/**/*.go,db/**/*.sql,configs/**/*.yaml}"
+alwaysApply: false
+---
+
+# Database local rules
+
+- Read `AGENTS.md` and `docs/engineering/database.md` first.
+- Identify every touched table as Workbench-owned or existing ZenTao before
+  applying model, audit, or soft-delete conventions.
+- Parameterize values; select only required columns; do not interpolate SQL.
+- List queries normally perform filter, sort, count, and pagination in SQL.
+- Reject unbounded load-then-page, looped per-row SQL, repeated same-request
+  dictionary loads, and unevaluated metric query fan-out.
+- Keep business and authorization decisions in Service even when SQL helps derive
+  facts. Use transactions when one business write spans multiple repositories.
+- Committed configuration contains placeholders only; secrets enter at runtime.

@@ -1,0 +1,18 @@
+---
+description: Test placement and evidence rules; AGENTS.md remains canonical
+globs: "{**/*_test.go,tests/**/*}"
+alwaysApply: false
+---
+
+# Testing local rules
+
+- Read `AGENTS.md` and `docs/engineering/testing.md` first.
+- Package-level deterministic Go tests are colocated as `*_test.go`.
+- Real DB, cross-module, or network-backed tests are integration tests and must
+  be explicitly labeled/configured; browser journeys belong to E2E.
+- Put fixtures and sample/mock data in `testdata/`.
+- Prioritize business rules, state transitions, permissions, SQL contracts,
+  regression cases, and complex algorithms. Coverage percentage alone is not a
+  reason to add low-value tests.
+- Never weaken/delete a test or relabel a real integration test merely to make a
+  gate green.

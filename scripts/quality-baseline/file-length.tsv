@@ -1,0 +1,21 @@
+# path<TAB>current debt line count; every shrink must ratchet this number down
+internal/module/po/repodone.go	504
+internal/module/schedule/form.go	1126
+internal/module/schedule/handler_demand.go	665
+internal/module/schedule/handler.go	515
+internal/module/user/handler.go	544
+web/static/css/components/components.css	595
+web/static/css/layout/layout.css	531
+web/static/css/schedule/schedule.css	580
+web/static/css/schedule/scheduleintegrated.css	880
+web/static/css/schedule/schedulelist.css	503
+web/static/css/schedule/schedulemodal.css	645
+web/static/js/components/form.js	513
+web/static/js/debug/sqlperf.js	550
+web/static/js/dept/list.js	655
+web/static/js/po/workboard.js	660
+web/static/js/schedule/scheduleintegrated.js	842
+web/static/js/schedule/scheduleintegratedtasks.js	556
+web/static/js/ui.js	775
+web/templates/dept/edit.html	513
+web/templates/schedule/index.html	1176

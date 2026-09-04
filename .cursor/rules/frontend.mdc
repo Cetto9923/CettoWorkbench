@@ -1,0 +1,21 @@
+---
+description: Browser JavaScript and CSS boundaries; AGENTS.md remains canonical
+globs: "{web/static/js/**/*.js,web/static/css/**/*.css,web/templates/**/*.html}"
+alwaysApply: false
+---
+
+# Frontend local rules
+
+- Read `AGENTS.md` and `docs/engineering/frontend.md` first.
+- Templates render server-provided data; JavaScript owns interaction, not
+  permissions, workflow truth, authoritative filtering, or state transitions.
+- Reuse shared fetch/error, CSRF, toast, modal, pagination, dropdown, form, and
+  loading/empty/error-state behavior before adding a page-local copy.
+- Extract shared code only when the repeated behavior is stable and genuinely
+  identical; do not build speculative component frameworks.
+- Keep common CSS tokens/components separate from page CSS. Keep each page
+  script capability-focused and within the repository file-size gate.
+- Open internal links in the current page by default. New-window behavior needs
+  an explicit requirement and `noopener` protection.
+- UI work is not verified until authenticated browser interaction, visual state,
+  Console/network results, and loaded assets are checked.
