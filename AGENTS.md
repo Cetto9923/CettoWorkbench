@@ -1,10 +1,23 @@
 # workbench engineering constitution
 
-`AGENTS.md` is the repository-wide canonical engineering source for Codex,
+`AGENTS.md` is the repository-wide canonical **engineering** source for Codex,
 Claude Code, Cursor, and other coding agents. Tool adapters may summarize how
-to load it, but MUST NOT redefine or weaken it. Conflicts are resolved in this
-order: this file, `docs/engineering/`, file-scoped `.cursor/rules/*.mdc`, then
-task/design documents. Existing code is evidence, not a rule.
+to load it, but MUST NOT redefine or weaken it.
+
+Engineering and business truth are separate chains:
+
+- **Engineering truth:** `AGENTS.md` -> `docs/engineering/` -> file-scoped
+  `.cursor/rules/*.mdc`. It governs architecture, security, quality, and other
+  engineering constraints.
+- **Business truth:** the current user's explicit requirement/current task ->
+  the current valid PRD, prototype, or confirmed business decision ->
+  implementation evidence. It governs what the feature should do.
+
+Engineering rules MUST NOT invent or override business behavior. Business
+requirements MUST NOT bypass any MUST-level security, architecture, or quality
+gate in this file. If the two chains appear to conflict, stop and surface the
+specific conflict instead of silently choosing one. Existing code is evidence
+of current behavior, not automatically an engineering or business rule.
 
 ## Project and scope
 
@@ -19,10 +32,12 @@ Rules use these meanings:
 - **SHOULD**: preferred default; deviations need a concrete local reason.
 - **MAY**: permitted choice, not a requirement.
 
-Only the current task scope may be changed. Unrelated findings MUST go to
-`docs/engineering/debt.md`; never fix them opportunistically. Preserve unrelated
-dirty/untracked work. Do not create, switch, merge, rebase, or push branches
-unless the user explicitly asks. Never write on `main` or `master`.
+Only the current task scope may be changed. Report unrelated findings; never fix
+them opportunistically. Update `docs/engineering/debt.md` only during a
+governance task or when the user explicitly authorizes that documentation
+change. Preserve unrelated dirty/untracked work. Do not create, switch, merge,
+rebase, or push branches unless the user explicitly asks. Never write on `main`
+or `master`.
 
 ## Mandatory pre-flight
 

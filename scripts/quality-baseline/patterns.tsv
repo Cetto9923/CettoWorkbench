@@ -1,39 +1,68 @@
-# rule<TAB>path<TAB>exact pre-Phase-1 occurrence count
-DIRECT_GIN_SCALAR	internal/middleware/ratelimit.go	2
-DIRECT_GIN_SCALAR	internal/module/dept/handler.go	1
-DIRECT_GIN_SCALAR	internal/module/schedule/handler_demand.go	1
-DIRECT_PAGE_FETCH	web/static/js/debug/sqlperf.js	1
-DIRECT_PAGE_FETCH	web/static/js/dept/list.js	2
-DIRECT_PAGE_FETCH	web/static/js/po/done.js	1
-DIRECT_PAGE_FETCH	web/static/js/po/follow.js	1
-DIRECT_PAGE_FETCH	web/static/js/po/notice.js	1
-DIRECT_PAGE_FETCH	web/static/js/po/todos.js	1
-DIRECT_PAGE_FETCH	web/static/js/po/workboard.js	4
-DIRECT_PAGE_FETCH	web/static/js/user/batchcreate.js	1
-INIT_FUNCTION	internal/pkg/logger/logger.go	1
-INIT_FUNCTION	internal/pkg/sqllog/sqllog.go	1
-IN_MEMORY_PAGINATION	internal/module/po/reponotice.go	1
-IN_MEMORY_PAGINATION	internal/module/po/servicetodo.go	1
-LOCAL_ESCAPE_HTML	web/static/js/po/done.js	1
-LOCAL_ESCAPE_HTML	web/static/js/po/follow.js	1
-LOCAL_ESCAPE_HTML	web/static/js/po/home.js	1
-LOCAL_ESCAPE_HTML	web/static/js/po/notice.js	1
-LOCAL_ESCAPE_HTML	web/static/js/po/todos.js	1
-LOCAL_ESCAPE_HTML	web/static/js/schedule/scheduletasklistmodal.js	1
-LOCAL_ESCAPE_HTML	web/static/js/schedule/scheduletaskmodal.js	1
-LOCAL_PAGINATION	web/static/js/po/done.js	1
-LOCAL_PAGINATION	web/static/js/po/follow.js	1
-LOCAL_PAGINATION	web/static/js/po/home.js	1
-LOCAL_PAGINATION	web/static/js/po/notice.js	1
-LOCAL_PAGINATION	web/static/js/po/todos.js	1
-NEW_WINDOW	internal/module/po/home_test.go	1
-NEW_WINDOW	web/static/js/po/follow.js	1
-NEW_WINDOW	web/static/js/po/todos.js	2
-NEW_WINDOW	web/static/js/schedule/scheduleintegrated.js	1
-NEW_WINDOW	web/static/js/schedule/scheduleintegratedrd.js	1
-NEW_WINDOW	web/templates/schedule/index.html	6
-ROUTE_WITHOUT_PERMISSION	internal/module/debug/handler.go	2
-ROUTE_WITHOUT_PERMISSION	internal/module/schedule/handler.go	15
-WEAK_PASSWORD_HASH	internal/module/login/service.go	1
-WEAK_PASSWORD_HASH	internal/module/user/service.go	3
-WEAK_PASSWORD_HASH	internal/pkg/encode/encode.go	2
+# severity<TAB>rule<TAB>path<TAB>stable finding fingerprint
+advisory	DIRECT_GIN_SCALAR	internal/middleware/ratelimit.go	63764de28e13632c455feba1f037fee437eca5a1
+advisory	DIRECT_GIN_SCALAR	internal/middleware/ratelimit.go	f949337b3ee5ea15ab4221b3f5fd166806d635b7
+advisory	DIRECT_GIN_SCALAR	internal/module/dept/handler.go	cb3749b3eb5733a05fe7141b0c4af23d63890a99
+advisory	DIRECT_GIN_SCALAR	internal/module/schedule/handler_demand.go	cbc571d45d5da8799dccf1c47afb695454993d59
+advisory	DIRECT_PAGE_FETCH	web/static/js/debug/sqlperf.js	9caa6ac519ba94536792a7ccbdf6cbedaa35b102
+advisory	DIRECT_PAGE_FETCH	web/static/js/dept/list.js	5cd9fccd47efd0d6095778175c2c8226aecc70f5
+advisory	DIRECT_PAGE_FETCH	web/static/js/dept/list.js	7a87da3f3e5dc559b33df15d580363069850d213
+advisory	DIRECT_PAGE_FETCH	web/static/js/po/done.js	703f0291409a646fd6c0d025de5e9c4aaa54cc50
+advisory	DIRECT_PAGE_FETCH	web/static/js/po/follow.js	c56ecd201a9e2374b26bbb64596b6bbee0086fe4
+advisory	DIRECT_PAGE_FETCH	web/static/js/po/notice.js	ba77dbaffd02ca10e0d71b34345148501763f53d
+advisory	DIRECT_PAGE_FETCH	web/static/js/po/todos.js	d90d9a9679969a1d68eee7e5080be81ab981e888
+advisory	DIRECT_PAGE_FETCH	web/static/js/po/workboard.js	5d31e2922bf84a6157089c655c0551efccdfaa5e
+advisory	DIRECT_PAGE_FETCH	web/static/js/po/workboard.js	b49acb5d60cc861d2bdf48d48bdfd1a5f78ed905
+advisory	DIRECT_PAGE_FETCH	web/static/js/po/workboard.js	cfe725e2d365b0cf1bbb32e689b443c271efa4aa
+advisory	DIRECT_PAGE_FETCH	web/static/js/po/workboard.js	d6501e8759a70fc1bd803f6fe7bd425b4c3730ec
+advisory	DIRECT_PAGE_FETCH	web/static/js/user/batchcreate.js	11e4f4704c4dc8555b986a8565c2317feae672de
+advisory	IN_MEMORY_PAGINATION	internal/module/po/reponotice.go	2588a424b1333e879c384272a8f752699cced9b4
+advisory	IN_MEMORY_PAGINATION	internal/module/po/servicetodo.go	b704b21f7ead1926da03e5c5f0a1782ce85ec87a
+advisory	INIT_FUNCTION	internal/pkg/logger/logger.go	a01f6877859800025d6eebf9738b404cd0c5470a
+advisory	INIT_FUNCTION	internal/pkg/sqllog/sqllog.go	caebcfaa8d94aabae6c1170edbb0b33e49a4d91d
+advisory	LOCAL_ESCAPE_HTML	web/static/js/po/done.js	56389e08f1df6a53ab84608c9262ab3b5b3c0816
+advisory	LOCAL_ESCAPE_HTML	web/static/js/po/follow.js	c387ce9fa924f0f55776075986c0faa12642ec6c
+advisory	LOCAL_ESCAPE_HTML	web/static/js/po/home.js	a869776d39aef46c39d3e1d5392cae5637ac5be9
+advisory	LOCAL_ESCAPE_HTML	web/static/js/po/notice.js	700846e225315ed5dc16b9f5979f032c4392fd14
+advisory	LOCAL_ESCAPE_HTML	web/static/js/po/todos.js	ce68d188f303de1f41224fa5c52d0693566ef4e3
+advisory	LOCAL_ESCAPE_HTML	web/static/js/schedule/scheduletasklistmodal.js	c6453d897af02504a9ad8567275e2612cf8716c5
+advisory	LOCAL_ESCAPE_HTML	web/static/js/schedule/scheduletaskmodal.js	28c3900c423f85efd9b007ca9969c1440a33d31d
+advisory	LOCAL_PAGINATION	web/static/js/po/done.js	dd881856757e61a00d8c047075ae6fbd4658f82a
+advisory	LOCAL_PAGINATION	web/static/js/po/follow.js	b0e25de846ca15e3d2800488d328918a82a5bc95
+advisory	LOCAL_PAGINATION	web/static/js/po/home.js	ad9c4caf66b557b7692103671a3faf837541a28b
+advisory	LOCAL_PAGINATION	web/static/js/po/notice.js	e3b35d4c8b6980d1a4074c81a233795697a7672e
+advisory	LOCAL_PAGINATION	web/static/js/po/todos.js	637a777ee09f7f151c3b1f95fad4b7486ef9d5f4
+advisory	NEW_WINDOW	internal/module/po/home_test.go	25e45b20f11e63c733399e2c6b0c9040272b916b
+advisory	NEW_WINDOW	web/static/js/po/follow.js	0e673719b5de209988045a37e901ff8b14639d01
+advisory	NEW_WINDOW	web/static/js/po/todos.js	94fe957a8c7e11542e3228f225ea179342ebeb2f
+advisory	NEW_WINDOW	web/static/js/po/todos.js	ba001bdfd157ad0c2f7f7b5ba6f9967b6348ef75
+advisory	NEW_WINDOW	web/static/js/schedule/scheduleintegrated.js	91fa5825380a3633f3a25250c881c495268273b3
+advisory	NEW_WINDOW	web/static/js/schedule/scheduleintegratedrd.js	08551c7403827fe3d429ad034b577dcd3e9cacbf
+advisory	NEW_WINDOW	web/templates/schedule/index.html	2bd933be3264743872e926101020c3425bcf6594
+advisory	NEW_WINDOW	web/templates/schedule/index.html	751034d00d5b98507d51b4094843138185c160b8
+advisory	NEW_WINDOW	web/templates/schedule/index.html	b831db7aa81ea0366b5c35db8641095f47c593c5
+advisory	NEW_WINDOW	web/templates/schedule/index.html	d92dc2f6d21d5d20b33907856f7b847d3c2c8a29
+advisory	NEW_WINDOW	web/templates/schedule/index.html	da97b093d9ab9e719940dcfa08f5c7b00342ac7f
+advisory	NEW_WINDOW	web/templates/schedule/index.html	f86f8e97741fe9b1886f1304ee2b544f933f78cd
+advisory	ROUTE_PERMISSION_REVIEW	internal/module/debug/handler.go	bbb1af59c5ada4a8c5da352c7b16f50c6c91a12b
+advisory	ROUTE_PERMISSION_REVIEW	internal/module/debug/handler.go	bbfb02ab3c40caf239e10c8fe43ec6c7973a0ab7
+advisory	ROUTE_PERMISSION_REVIEW	internal/module/schedule/handler.go	05ff71f98beccdaac61e75439491a900ac3e8e6a
+advisory	ROUTE_PERMISSION_REVIEW	internal/module/schedule/handler.go	0f06b26a8f42158f7f02296bf9cace3b838cd2fd
+advisory	ROUTE_PERMISSION_REVIEW	internal/module/schedule/handler.go	1430cdbe6f287073d718d66ab183a029a35c912c
+advisory	ROUTE_PERMISSION_REVIEW	internal/module/schedule/handler.go	1f91f82c342b67a1cb2836157ab673f1190d3236
+advisory	ROUTE_PERMISSION_REVIEW	internal/module/schedule/handler.go	2626894ad911bd4504ef450f3d158d47b75c681f
+advisory	ROUTE_PERMISSION_REVIEW	internal/module/schedule/handler.go	506be56f15c1330c4b7efccbe0c02241e0805569
+advisory	ROUTE_PERMISSION_REVIEW	internal/module/schedule/handler.go	551f4244e36beb37d9d7bdb8cc5dde6a3f3a04d6
+advisory	ROUTE_PERMISSION_REVIEW	internal/module/schedule/handler.go	616f0b41d1401d5bd53a31a0d1a0535f6c810fff
+advisory	ROUTE_PERMISSION_REVIEW	internal/module/schedule/handler.go	64fa034dff88e3af255582063dfc025fb2382a35
+advisory	ROUTE_PERMISSION_REVIEW	internal/module/schedule/handler.go	9010fafc258c8270c598f102bc2f7d8a158e84b0
+advisory	ROUTE_PERMISSION_REVIEW	internal/module/schedule/handler.go	91957d47fcd6a25d0b2edd664e24501cfe49a579
+advisory	ROUTE_PERMISSION_REVIEW	internal/module/schedule/handler.go	c903b344e2673c8ad66c75ffc0647f9441a74bd0
+advisory	ROUTE_PERMISSION_REVIEW	internal/module/schedule/handler.go	cfea061e745ed4635914d13f3874fb8c91c9575d
+advisory	ROUTE_PERMISSION_REVIEW	internal/module/schedule/handler.go	e8ad89ad8b8e6d895ddc5204393270768ccc48a8
+advisory	ROUTE_PERMISSION_REVIEW	internal/module/schedule/handler.go	eb2ded211238f2bc3779e53f9af67c7663ef2b84
+advisory	WEAK_PASSWORD_HASH	internal/module/login/service.go	28267fb599ca62f3fc0db0ca90f3283d7632a8f1
+advisory	WEAK_PASSWORD_HASH	internal/module/user/service.go	001403c972cf63388be0431b528aedc07da7bd44
+advisory	WEAK_PASSWORD_HASH	internal/module/user/service.go	697e7074eb074640ec0d1295cd2fe4f77a5cdf37
+advisory	WEAK_PASSWORD_HASH	internal/module/user/service.go	70cf2a220a2b32b45105c091957b11d5d455552b
+advisory	WEAK_PASSWORD_HASH	internal/pkg/encode/encode.go	167b6cfabf183890714a9331de857d62a0be3584
+advisory	WEAK_PASSWORD_HASH	internal/pkg/encode/encode.go	6b5c93ed34b0d9cb15bd8fa49f56a78c5f3ccb66

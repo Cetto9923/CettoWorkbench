@@ -29,6 +29,20 @@ A Repo MUST own database access, query construction, projections, and bounded
 persistence operations. It MUST NOT import Gin, decide permission, reinterpret
 business status, or make a UI decision. Complex parameterized SQL is valid here.
 
+## Transaction boundary
+
+A Service decides business atomicity: which writes must succeed or fail as one
+operation, and therefore where the transaction boundary belongs. The Repo or
+another persistence-layer implementation executes the database transaction.
+A Service MUST NOT hold, expose, or operate a `*gorm.DB` directly.
+
+This repository does not yet have a certified, uniform cross-Repo transaction
+pattern. When an atomic write spans Repos, an Agent MUST first inspect the
+current implementations and obtain architecture confirmation. It MUST NOT
+invent a `UnitOfWork`, `TransactionManager`, DB accessor, or similar abstraction
+as part of an ordinary feature task. This rule defines ownership only; it does
+not introduce a transaction framework.
+
 Templates display explicit page data. JavaScript coordinates interaction and
 rendering. Neither is an authority for permissions, workflow transitions,
 business totals, or data visibility. Server enforcement remains mandatory.

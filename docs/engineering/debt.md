@@ -22,5 +22,6 @@ risk, not authorization to repair. Machine-readable non-growth baselines live in
 | `web/static/js/po/*.js`, schedule scripts | Escape, pagination, direct fetch/error, and new-window behavior repeat locally. | P2 | Inventory contracts; consolidate only stable identical behavior; add browser coverage. |
 | Repository tests | Unit tests are sparse; no explicit integration/E2E suites; SQL/permission contracts largely unprotected. | P2 | Add isolated integration fixtures and focused E2E; prioritize rules/permissions/query contracts. |
 | `scripts/quality-baseline/gofmt.tsv` entries | Six tracked Go files have formatting debt. | P2 | Format when deliberately touched and remove exact fingerprint. |
+| `go.mod:71` | `replace workbench => /home/wds/repo/workbench` couples module resolution to one developer's absolute filesystem path. | P2 | In Phase 2, confirm why the replacement exists and whether it can be removed or replaced portably. |
 
 The complete >500-line list is stored once in the exact non-growth baseline.

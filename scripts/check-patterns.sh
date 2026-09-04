@@ -7,7 +7,10 @@ baseline="scripts/quality-baseline/patterns.tsv"
 raw=$(mktemp)
 current=$(mktemp)
 expected=$(mktemp)
-trap 'rm -f "$raw" "$current" "$expected"' EXIT
+details=$(mktemp)
+new_hard=$(mktemp)
+new_advisory=$(mktemp)
+trap 'rm -f "$raw" "$current" "$expected" "$details" "$new_hard" "$new_advisory"' EXIT
 
 sources=()
 while IFS= read -r file; do
@@ -16,28 +19,32 @@ while IFS= read -r file; do
 done < <(git ls-files --cached --others --exclude-standard -- '*.go' '*.js' '*.html')
 
 scan() {
-  local rule=$1
-  local regex=$2
-  shift 2
+  local severity=$1
+  local rule=$2
+  local regex=$3
+  shift 3
   local matches
+  local evidence
   matches=$(grep -EnHi -- "$regex" "$@" 2>/dev/null || true)
   while IFS=: read -r path line rest; do
     [[ -z "$path" ]] && continue
-    printf '%s\t%s\t%s\n' "$rule" "$path" "$line" >>"$raw"
+    evidence=$(printf '%s' "$rest" | sed -E 's/[[:space:]]+/ /g; s/^ //; s/ $//')
+    printf '%s\t%s\t%s\t%s\t%s\n' \
+      "$severity" "$rule" "$path" "$line" "$evidence" >>"$raw"
   done <<<"$matches"
 }
 
 if ((${#sources[@]} > 0)); then
-  scan DIRECT_GIN_SCALAR 'c\.(Query|PostForm)[[:space:]]*\(' "${sources[@]}"
-  scan WEAK_PASSWORD_HASH '(md5\.|encode\.MD5[[:space:]]*\()' "${sources[@]}"
-  scan INIT_FUNCTION 'func[[:space:]]+init[[:space:]]*\(' "${sources[@]}"
-  scan AD_HOC_PRINT '(fmt|log)\.Print(f|ln)?[[:space:]]*\(' "${sources[@]}"
-  scan UNSAFE_TEMPLATE_HTML 'template\.HTML' "${sources[@]}"
-  scan NEW_WINDOW '(target[[:space:]]*=[[:space:]]*"_blank|window\.open[[:space:]]*\()' "${sources[@]}"
-  scan LOCAL_ESCAPE_HTML 'function[[:space:]]+escapeHtml[[:space:]]*\(' "${sources[@]}"
-  scan LOCAL_PAGINATION 'function[[:space:]]+renderPagination[[:space:]]*\(' "${sources[@]}"
-  scan IN_MEMORY_PAGINATION '\[[[:space:]]*start[[:space:]]*:[[:space:]]*end[[:space:]]*\]' "${sources[@]}"
-  scan SQL_WILDCARD 'SELECT[[:space:]]+([A-Za-z_][A-Za-z0-9_]*\.)?\*([[:space:],]|$)' "${sources[@]}"
+  scan advisory DIRECT_GIN_SCALAR 'c\.(Query|PostForm)[[:space:]]*\(' "${sources[@]}"
+  scan advisory WEAK_PASSWORD_HASH '(md5\.|encode\.MD5[[:space:]]*\()' "${sources[@]}"
+  scan advisory INIT_FUNCTION 'func[[:space:]]+init[[:space:]]*\(' "${sources[@]}"
+  scan advisory AD_HOC_PRINT '(fmt|log)\.Print(f|ln)?[[:space:]]*\(' "${sources[@]}"
+  scan advisory UNSAFE_TEMPLATE_HTML 'template\.HTML' "${sources[@]}"
+  scan advisory NEW_WINDOW '(target[[:space:]]*=[[:space:]]*"_blank|window\.open[[:space:]]*\()' "${sources[@]}"
+  scan advisory LOCAL_ESCAPE_HTML 'function[[:space:]]+escapeHtml[[:space:]]*\(' "${sources[@]}"
+  scan advisory LOCAL_PAGINATION 'function[[:space:]]+renderPagination[[:space:]]*\(' "${sources[@]}"
+  scan advisory IN_MEMORY_PAGINATION '\[[[:space:]]*start[[:space:]]*:[[:space:]]*end[[:space:]]*\]' "${sources[@]}"
+  scan hard SQL_WILDCARD 'SELECT[[:space:]]+([A-Za-z_][A-Za-z0-9_]*\.)?\*([[:space:],]|$)' "${sources[@]}"
 fi
 
 fetch_sources=()
@@ -48,7 +55,7 @@ for file in "${sources[@]}"; do
   esac
 done
 if ((${#fetch_sources[@]} > 0)); then
-  scan DIRECT_PAGE_FETCH '(^|[^A-Za-z0-9_])fetch[[:space:]]*\(' "${fetch_sources[@]}"
+  scan advisory DIRECT_PAGE_FETCH '(^|[^A-Za-z0-9_])fetch[[:space:]]*\(' "${fetch_sources[@]}"
 fi
 
 handler_files=()
@@ -61,22 +68,61 @@ if ((${#handler_files[@]} > 0)); then
   while IFS=: read -r path line rest; do
     [[ -z "$path" ]] && continue
     [[ "$rest" == *RequirePerm* ]] && continue
-    printf '%s\t%s\t%s\n' ROUTE_WITHOUT_PERMISSION "$path" "$line" >>"$raw"
+    evidence=$(printf '%s' "$rest" | sed -E 's/[[:space:]]+/ /g; s/^ //; s/ $//')
+    printf '%s\t%s\t%s\t%s\t%s\n' \
+      advisory ROUTE_PERMISSION_REVIEW "$path" "$line" "$evidence" >>"$raw"
   done <<<"$routes"
 fi
 
-awk -F '\t' '{ key=$1 FS $2; count[key]++ } END { for (key in count) print key FS count[key] }' "$raw" | sort >"$current"
+while IFS=$'\t' read -r severity rule path line evidence ordinal; do
+  fingerprint=$(printf '%s\t%s\t%s\t%s' "$rule" "$path" "$evidence" "$ordinal" | git hash-object --stdin)
+  printf '%s\t%s\t%s\t%s\n' "$severity" "$rule" "$path" "$fingerprint" >>"$current"
+  printf '%s\t%s\t%s\t%s\t%s\n' \
+    "$severity" "$rule" "$path" "$line" "$fingerprint" >>"$details"
+done < <(
+  sort -t $'\t' -k1,1 -k2,2 -k3,3 -k5,5 -k4,4n "$raw" |
+    awk -F '\t' 'BEGIN { OFS=FS }
+      { key=$1 FS $2 FS $3 FS $5; occurrence[key]++; print $0, occurrence[key] }'
+)
+sort -u -o "$current" "$current"
+sort -u -o "$details" "$details"
 
 if [[ "${1:-}" == "--emit-baseline" ]]; then
   cat "$current"
   exit 0
 fi
 
-grep -Ev '^[[:space:]]*(#|$)' "$baseline" | sort >"$expected"
-if ! diff -u "$expected" "$current"; then
-  echo "forbidden-pattern regression: fix new findings; do not add baseline entries just to make CI green" >&2
+{ grep -Ev '^[[:space:]]*(#|$)' "$baseline" || true; } | sort >"$expected"
+if ! awk -F '\t' 'NF != 4 || ($1 != "hard" && $1 != "advisory") { exit 1 }' "$expected"; then
+  echo "invalid pattern baseline: expected severity, rule, path, fingerprint" >&2
   exit 1
 fi
 
-count=$(awk -F '\t' '{sum += $3} END {print sum+0}' "$current")
-echo "forbidden-pattern regression gate passed (existing debt: $count finding(s))"
+while IFS=$'\t' read -r severity rule path line fingerprint; do
+  key=$(printf '%s\t%s\t%s\t%s' "$severity" "$rule" "$path" "$fingerprint")
+  grep -Fxq "$key" "$expected" && continue
+  if [[ "$severity" == hard ]]; then
+    printf '%s\t%s\t%s\t%s\n' "$rule" "$path" "$line" "$fingerprint" >>"$new_hard"
+  else
+    printf '%s\t%s\t%s\t%s\n' "$rule" "$path" "$line" "$fingerprint" >>"$new_advisory"
+  fi
+done <"$details"
+
+hard_count=$(awk -F '\t' '$1 == "hard" { count++ } END { print count+0 }' "$current")
+advisory_count=$(awk -F '\t' '$1 == "advisory" { count++ } END { print count+0 }' "$current")
+new_advisory_count=$(wc -l <"$new_advisory" | tr -d ' ')
+
+if [[ -s "$new_advisory" ]]; then
+  echo "advisory pattern findings not in the recorded inventory:" >&2
+  cat "$new_advisory" >&2
+fi
+echo "advisory pattern scan completed ($advisory_count finding(s), $new_advisory_count new)"
+
+if [[ -s "$new_hard" ]]; then
+  echo "hard-pattern regression: new exact finding(s):" >&2
+  cat "$new_hard" >&2
+  echo "fix new findings; do not add a baseline entry just to make CI green" >&2
+  exit 1
+fi
+
+echo "hard-pattern non-growth gate passed ($hard_count existing finding(s))"

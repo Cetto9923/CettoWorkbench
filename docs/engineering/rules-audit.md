@@ -11,7 +11,8 @@ This conflict matrix records rule defects; it does not authorize business edits.
 | P1 | Golden Reference | `user` was mandatory to copy despite protocol, hashing, size, and schema conflicts. | No Golden Reference until a candidate passes current rules/gates. |
 | P1 | Architecture | Rigid CRUD symmetry was applied to action/workbench flows. | CRUD shape only for genuine CRUD; complex flows follow capabilities. |
 | P1 | Performance | No rule stopped load/filter/page, N+1, repeated dictionaries, or page query fan-out. | Database rules and debt list govern all four. |
-| P1 | Enforcement | File limit, forbidden APIs, architecture, secrets, vet, and status words had no gate. | `make check`, exact baselines, and CI enforce regression. |
+| P1 | Enforcement | File limit, forbidden APIs, architecture, secrets, vet, and status words had no gate. | `make check`, exact finding baselines, advisory detectors, and CI enforce only mechanically reliable regressions. |
+| P1 | Scanner truth | Pattern counts allowed one old finding to hide one new finding, while conditional patterns and same-line route checks were treated as unconditional violations. | Stable per-finding fingerprints enforce hard non-growth; contextual patterns and route candidates are advisory. |
 | P1 | Completion | PO plan called M1 `verified` while documenting required `go vet` failure. | Required failures force partial/blocked status. |
 | P1 | Secrets | Tracked config has non-placeholder sensitive fields and no secret scan. | Values untouched; masked fingerprint gate and debt record added. |
 | P2 | Naming | Underscore ban contradicted `*_test.go` and idiomatic capability/layer names. | Lower-case capability/layer underscores allowed. |
