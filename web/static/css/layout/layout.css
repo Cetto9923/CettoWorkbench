@@ -72,6 +72,129 @@ body.layout-nav-top.sidebar-collapsed .main {
   min-height: 0;
 }
 
+/* Global Search（对齐禅道 globalsearch / search-box：仅编号 + 类型跳转） */
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-sizing: border-box;
+  width: 260px;
+  height: var(--size-8);
+  padding: 0 10px;
+  background: var(--color-page-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.search-box:focus-within {
+  border-color: var(--color-info);
+}
+
+.search-box > i.fa-search {
+  color: var(--color-text-disabled);
+  font-size: var(--font-size-xs);
+  flex-shrink: 0;
+}
+
+.search-box input {
+  width: 100%;
+  min-width: 0;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--color-text-deep);
+  font-size: var(--font-size-sm);
+  font-family: inherit;
+}
+
+.search-box input::placeholder {
+  color: var(--color-text-disabled);
+}
+
+.search-box-clear {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-5);
+  height: var(--size-5);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-disabled);
+  cursor: pointer;
+}
+
+.search-box-clear:hover {
+  color: var(--color-text-secondary);
+  background: var(--color-surface-hover);
+}
+
+.search-box-clear[hidden] {
+  display: none !important;
+}
+
+.search-results {
+  display: none;
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  right: 0;
+  left: auto;
+  width: 320px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding: var(--space-1);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 20px var(--color-shadow-12);
+  z-index: 500;
+}
+
+.search-results.show {
+  display: block;
+}
+
+.search-results .gs-item {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-text-deep);
+  font-size: var(--font-size-sm);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.search-results .gs-item:hover,
+.search-results .gs-item.is-active {
+  background: var(--color-surface-hover);
+  color: var(--color-text-deep);
+}
+
+.search-results .gs-item-primary.is-active,
+.search-results .gs-item-primary:hover {
+  background: var(--color-info);
+  color: #fff;
+}
+
+.search-results .gs-grid {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.search-results .gs-grid .gs-item {
+  width: 50%;
+}
+
 /* ── Layout ── */
 
 .layout {
