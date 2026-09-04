@@ -129,7 +129,7 @@ func (r *Repo) computeUnscheduled(ctx context.Context, ms []*BoardMetric, member
 		Where("(st.openedBy IN ? OR st.assignedTo IN ?)", members, members).
 		Where("NOT EXISTS (SELECT 1 FROM zt_task t WHERE t.story=st.id AND t.deleted='0')")
 	if err := q.Count(&n).Error; err == nil {
-		setMetricCount(ms, "unscheduled", n, 3, 6)
+		setMetricCount(ms, "unscheduled", n, 6, 3) // 目标 ≤3 个达标，≤6 预警
 	}
 }
 
@@ -200,7 +200,8 @@ func metricOf(ms []*BoardMetric, key string) *BoardMetric {
 	return nil
 }
 
-// setMetricValue 记录真实值并按阈值折算 state（better=高 时越高越好）。
+// setMetricValue 记录真实值并按阈值折算 state。
+// goal 为"达标"严格线、warnLimit 为"预警"宽松线；higherIsBetter=true 时越高越好，false 越低越好。
 func setMetricValue(ms []*BoardMetric, key, display string, v, warnLimit, goal float64) {
 	m := metricOf(ms, key)
 	if m == nil {
@@ -209,8 +210,16 @@ func setMetricValue(ms []*BoardMetric, key, display string, v, warnLimit, goal f
 	m.Value = display
 	m.hasValue = true
 	m.measured = v
-	if !m.higherIsBetter {
-		warnLimit, goal = goal, warnLimit // 越低越好：goal 为上限阈值
+	if m.higherIsBetter {
+		switch {
+		case v >= goal:
+			m.State = "good"
+		case v >= warnLimit:
+			m.State = "warn"
+		default:
+			m.State = "risk"
+		}
+		return
 	}
 	switch {
 	case v <= goal:
@@ -222,7 +231,7 @@ func setMetricValue(ms []*BoardMetric, key, display string, v, warnLimit, goal f
 	}
 }
 
-// setMetricCount 计数类指标（整型）。
+// setMetricCount 计数类指标（整型）。goal 为达标严格线、warnLimit 为预警宽松线。
 func setMetricCount(ms []*BoardMetric, key string, v int64, warnLimit, goal int64) {
 	m := metricOf(ms, key)
 	if m == nil {
@@ -231,15 +240,21 @@ func setMetricCount(ms []*BoardMetric, key string, v int64, warnLimit, goal int6
 	m.Value = fmt.Sprintf("%d个", v)
 	m.measured = float64(v)
 	m.hasValue = true
-	if !m.higherIsBetter {
-		warnLimit, goal = goal, warnLimit
+	if m.higherIsBetter {
+		if float64(v) >= float64(goal) {
+			m.State = "good"
+		} else if float64(v) >= float64(warnLimit) {
+			m.State = "warn"
+		} else {
+			m.State = "risk"
+		}
+		return
 	}
-	switch {
-	case float64(v) <= float64(goal):
+	if float64(v) <= float64(goal) {
 		m.State = "good"
-	case float64(v) <= float64(warnLimit):
+	} else if float64(v) <= float64(warnLimit) {
 		m.State = "warn"
-	default:
+	} else {
 		m.State = "risk"
 	}
 }
