@@ -50,16 +50,23 @@ data ambiguity instead of inventing a contract.
 ## MUST rules
 
 1. **Layers.** Handlers bind protocol input, call Services, and render/return HTTP
-   responses. Services own business rules, object authorization, and transaction
-   orchestration. Repos own database access and query shaping. Repos MUST NOT
-   decide permissions or business state; Handlers MUST NOT access the DB; browser
-   code MUST NOT become the source of business truth.
+  responses. Services own business rules, the authorization decisions the
+  business model requires, and transaction orchestration. Repos own database
+  access and query shaping. Repos MUST NOT decide permissions or business state;
+  Handlers MUST NOT access the DB; browser code MUST NOT become the source of
+  business truth.
 2. **Module shape.** CRUD conventions apply only to genuinely simple CRUD.
    Action/workbench modules follow capabilities and business flows; they MUST NOT
    be forced into symmetric CRUD methods or copied from another module.
 3. **Authorization.** Protected routes require authentication and the applicable
-   capability permission. Object-level authorization is repeated in Service
-   methods for reads and writes. A hidden button is never authorization.
+  capability permission. When access depends on object ownership, scope,
+  membership, tenant, state, assignment, participation, or another
+  object-specific condition, the Service MUST enforce object-level
+  authorization for both reads and writes. For capability-wide administrative
+  or reference resources where possession of the capability legitimately
+  grants access to all objects, do not invent fake object-level authorization
+  merely to consume actor. A hidden or disabled UI control is never
+  authorization.
 4. **Write protocol.** New browser mutations use CSRF-protected `fetch`, JSON,
    the real HTTP method (`POST`/`PUT`/`DELETE`), and a consistent JSON envelope.
    File downloads and explicitly documented external callbacks are exceptions.

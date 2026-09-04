@@ -23,7 +23,12 @@ translate the result to HTML/JSON/download responses. It MUST NOT query the DB,
 own business transitions, or rely on hidden controls for authorization.
 
 A Service MUST own business rules, object-level read/write authorization, and
-transaction orchestration. It accepts `context.Context`, not `gin.Context`.
+the authorization decisions the business model requires, and transaction
+orchestration. Object-level authorization is one form those decisions may take
+when access depends on ownership, scope, membership, tenant, state,
+assignment, or participation; it is not a default for capability-wide
+administrative or reference resources. The Service accepts `context.Context`,
+not `gin.Context`.
 
 A Repo MUST own database access, query construction, projections, and bounded
 persistence operations. It MUST NOT import Gin, decide permission, reinterpret
