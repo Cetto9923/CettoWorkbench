@@ -53,6 +53,11 @@ if ((${#sources[@]} > 0)); then
   scan advisory LOCAL_PAGINATION 'function[[:space:]]+renderPagination[[:space:]]*\(' "${sources[@]}"
   scan advisory IN_MEMORY_PAGINATION '\[[[:space:]]*start[[:space:]]*:[[:space:]]*end[[:space:]]*\]' "${sources[@]}"
   scan hard SQL_WILDCARD 'SELECT[[:space:]]+([A-Za-z_][A-Za-z0-9_]*\.)?\*([[:space:],]|$)' "${sources[@]}"
+fi
+
+# Only run the *.sql variant of SQL_WILDCARD when SQL files actually exist;
+# otherwise grep would be invoked with no path arguments and could read stdin.
+if ((${#sql_sources[@]} > 0)); then
   scan hard SQL_WILDCARD 'SELECT[[:space:]]+([A-Za-z_][A-Za-z0-9_]*\.)?\*([[:space:],]|$)' "${sql_sources[@]}"
 fi
 

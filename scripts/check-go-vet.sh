@@ -11,7 +11,14 @@ trap 'rm -f "$current" "$expected"' EXIT
 mkdir -p tmp/gocache
 status=0
 GOCACHE="$root/tmp/gocache" go vet ./... >"$current" 2>&1 || status=$?
-sed "s|$root/||g" "$current" | sed '/^[[:space:]]*$/d' | sort -o "$current"
+# Go 1.25+ prefixes each package with a `# package/path` header. Strip that
+# header line during normalization so the exact diagnostic fingerprint is
+# independent of the tool version; baseline intentionally stores only real
+# diagnostics and is not padded with these tool-emitted headers.
+sed "s|$root/||g" "$current" \
+  | sed '/^[[:space:]]*$/d' \
+  | grep -Ev '^# [^[:space:]]+$' \
+  | sort -o "$current"
 grep -Ev '^[[:space:]]*(#|$)' "$baseline" | sort >"$expected"
 
 if ! diff -u "$expected" "$current"; then
