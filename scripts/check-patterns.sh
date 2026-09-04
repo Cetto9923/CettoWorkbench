@@ -18,6 +18,14 @@ while IFS= read -r file; do
   sources+=("$file")
 done < <(git ls-files --cached --others --exclude-standard -- '*.go' '*.js' '*.html')
 
+# SQL files are fed exclusively into SQL_WILDCARD so the hard detector can
+# cover CREATE TABLE / view definitions; other advisory scanners keep their
+# existing scope and do not start matching *.sql.
+sql_sources=()
+while IFS= read -r file; do
+  sql_sources+=("$file")
+done < <(git ls-files --cached --others --exclude-standard -- '*.sql')
+
 scan() {
   local severity=$1
   local rule=$2
@@ -45,6 +53,7 @@ if ((${#sources[@]} > 0)); then
   scan advisory LOCAL_PAGINATION 'function[[:space:]]+renderPagination[[:space:]]*\(' "${sources[@]}"
   scan advisory IN_MEMORY_PAGINATION '\[[[:space:]]*start[[:space:]]*:[[:space:]]*end[[:space:]]*\]' "${sources[@]}"
   scan hard SQL_WILDCARD 'SELECT[[:space:]]+([A-Za-z_][A-Za-z0-9_]*\.)?\*([[:space:],]|$)' "${sources[@]}"
+  scan hard SQL_WILDCARD 'SELECT[[:space:]]+([A-Za-z_][A-Za-z0-9_]*\.)?\*([[:space:],]|$)' "${sql_sources[@]}"
 fi
 
 fetch_sources=()
