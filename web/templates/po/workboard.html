@@ -106,6 +106,26 @@
   </div>
 </div>
 <div id="toast" class="toast"></div>
+<div id="taskDrawerBackdrop" class="task-drawer-backdrop hidden" aria-hidden="true"></div>
+<div id="taskDrawer" class="task-drawer hidden" role="dialog" aria-modal="true" aria-label="研发需求关联任务">
+  <div class="drawer-header">
+    <div class="drawer-topline">
+      <div class="drawer-tag-group" id="drawerTagGroup"></div>
+      <button type="button" class="drawer-close" id="drawerClose" aria-label="关闭">✕</button>
+    </div>
+    <div class="drawer-title" id="drawerTitle"></div>
+    <div class="drawer-context" id="drawerContext"></div>
+    <div class="drawer-summary-card" id="drawerSummary"></div>
+  </div>
+  <div class="drawer-body">
+    <div class="drawer-sec-title"><span>执行任务清单</span><span class="drawer-sec-note">实时同步自禅道系统</span></div>
+    <div id="drawerTaskList"></div>
+  </div>
+  <div class="drawer-footer">
+    <button type="button" class="action" id="drawerCloseBtn">关闭</button>
+    <a id="drawerZtLink" class="action soft" href="#" target="_blank" rel="noopener noreferrer">在禅道打开研需 ↗</a>
+  </div>
+</div>
 {{ end }}
 
 {{ define "page_js" }}<script src="{{ asset "/static/js/po/workboard.js" }}"></script>{{ end }}
