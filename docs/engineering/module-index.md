@@ -17,3 +17,5 @@ This index provides a structural map of the modules under `internal/module/`.
 | `schedule` | Window scheduling, demand allocation | `schedule.Service` | `schedule.Repo`, `gorm.DB`, `zentao` | `zt_demand`, `zt_task` | SOURCE VERIFIED / SCHEMA UNVERIFIED | `internal/module/schedule/` |
 | `po` | PO value stream, board metrics, todos, notices | `po.Service` | `po.Repo`, `schedule.Service`, `user.Service` | `zt_demand`, `zt_task` | SOURCE VERIFIED / SCHEMA UNVERIFIED | `internal/module/po/` |
 | `debug` | SQL performance telemetry (superadmin only) | `debug.Service` | `debug.Repo`, filesystem logs | None (file logs only) | SOURCE VERIFIED | `internal/module/debug/` |
+
+- **Future Capabilities**: Future assistant boundaries are documented in [ai-boundary.md](ai-boundary.md). No AI runtime or SDK is currently implemented.
