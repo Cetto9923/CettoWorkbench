@@ -299,6 +299,16 @@ func formatWindowDateRange(start, end time.Time) string {
 	return start.Format("01-02") + " ~ " + end.Format("01-02")
 }
 
+func collectWindowProductIDs(products []WindowProductInput) []uint {
+	raw := make([]uint, 0, len(products))
+	for _, p := range products {
+		if p.ProductID != 0 {
+			raw = append(raw, p.ProductID)
+		}
+	}
+	return uniqueUints(raw)
+}
+
 // Create 保存版本窗口并按需同步禅道产品计划。
 func (s *Service) Create(ctx context.Context, actor *model.User, req CreateReq) error {
 	window, err := buildVersionWindowFromCreateReq(req)
@@ -308,6 +318,15 @@ func (s *Service) Create(ctx context.Context, actor *model.User, req CreateReq) 
 	account := actorAccount(actor)
 	window.CreatedBy = account
 	window.UpdatedBy = account
+
+	productIDs := collectWindowProductIDs(req.Products)
+	notice, err := s.validateProductsAccess(ctx, productIDs, account)
+	if err != nil {
+		return err
+	}
+	if notice != nil {
+		return notice
+	}
 
 	return s.repo.Transaction(ctx, func(txRepo *Repo) error {
 		if err := txRepo.Create(ctx, window); err != nil {
@@ -334,6 +353,15 @@ func (s *Service) Update(ctx context.Context, actor *model.User, req UpdateReq) 
 		return err
 	}
 	window.UpdatedBy = account
+
+	productIDs := collectWindowProductIDs(req.Products)
+	notice, err := s.validateProductsAccess(ctx, productIDs, account)
+	if err != nil {
+		return err
+	}
+	if notice != nil {
+		return notice
+	}
 
 	return s.repo.Transaction(ctx, func(txRepo *Repo) error {
 		if err := txRepo.Update(ctx, window); err != nil {
