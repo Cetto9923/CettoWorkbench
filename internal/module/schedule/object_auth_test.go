@@ -35,8 +35,8 @@ func TestUpdateWindow_OwnerAuth(t *testing.T) {
 	repo := NewRepo(db)
 	svc := NewService(repo, nil)
 
-	// Mock FindByID query
-	mock.ExpectQuery(".*").
+	// Mock FindByID query with exact GORM First query pattern
+	mock.ExpectQuery(`^SELECT \* FROM `+"`zt_versionwindow`"+` WHERE id = \? AND `+"`zt_versionwindow`"+`\.`+"`deletedAt`"+` IS NULL ORDER BY `+"`zt_versionwindow`"+`\.`+"`id`"+` LIMIT \?`).
 		WithArgs(1, 1).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "createdBy"}).
 			AddRow(1, "Test Window", "userA"))
@@ -67,32 +67,36 @@ func TestSaveStoryTasks_ProductScopeAuth(t *testing.T) {
 	repo := NewRepo(db)
 	svc := NewService(repo, nil)
 
-	// Mock GetStoryTaskDetail (the raw query from repo_story_tasks.go)
-	mock.ExpectQuery(".*").
+	// 1. GetStoryTaskDetail: zt_story join zt_storyspec
+	mock.ExpectQuery(`(?s)SELECT\s+s\.id,\s+s\.title,\s+s\.product.*FROM zt_story s`).
 		WithArgs(1).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "title", "product", "fromDemand"}).
 			AddRow(1, "Test Story", 100, 0))
 
-	mock.ExpectQuery(".*").
+	// 2. findStoryWindowDetail: zt_planstory join zt_versionwindowproduct join zt_versionwindow
+	mock.ExpectQuery(`(?s)SELECT\s+vw\.id AS windowID.*FROM zt_planstory ps`).
 		WithArgs(1).
 		WillReturnRows(sqlmock.NewRows([]string{"windowID", "windowName", "releaseDate"}).
 			AddRow(1, "Window", "2023-12-31"))
 
-	mock.ExpectQuery(".*").
+	// 3. findRecentProductTaskProject: zt_task join zt_story
+	mock.ExpectQuery(`(?s)SELECT\s+t\.project AS projectId.*FROM zt_task t`).
 		WithArgs(100).
 		WillReturnRows(sqlmock.NewRows([]string{"projectId", "executionId"}).
 			AddRow(1, 1))
 
-	mock.ExpectQuery(".*").
+	// 4. findStoryAttachments: zt_file
+	mock.ExpectQuery(`(?s)SELECT id, title, extension\s+FROM zt_file`).
 		WithArgs(1).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "title", "extension"}))
 
-	// GetUserProducts
-	mock.ExpectQuery(".*").
+	// 5. GetUserProducts: zt_product with account checks
+	mock.ExpectQuery(`(?s)SELECT id, name, code, status, PO, QD, RD, createdBy, whitelist\s+FROM zt_product`).
 		WithArgs("userA", "userA", "userA", "userA", "userA").
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name"})) // Return empty slice, user has no products
 
-	mock.ExpectQuery(".*").
+	// 6. GetProductsByIDs: unassigned product names
+	mock.ExpectQuery(`(?s)SELECT id, name\s+FROM zt_product\s+WHERE id IN \(\?\) AND deleted = '0'`).
 		WithArgs(100).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name"}).
 			AddRow(100, "Test Product"))
