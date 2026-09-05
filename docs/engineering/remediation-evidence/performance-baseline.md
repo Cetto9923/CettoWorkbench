@@ -1,31 +1,34 @@
-# 性能基线与结果等价契约报告 (Phase P0)
+# 性能基线与结果等价契约报告 (Phase P0 / P0.1)
 
-- **采集时间**: 2026-09-05 14:00 CST
+- **采集时间**: 2026-09-05 14:20 CST
 - **测试环境**: Apple M5 / macOS (Darwin arm64)
-- **基线输入 HEAD**: `546caf8de325148ab5e50a32d9630bd4aec8ed44`
-- **环境状态**: `WB_TEST_MYSQL_DSN` 未注入（由于禁止直连真实业务库 `zentaopms` 进行写操作，本次建立标准化合成基线 Synthetic Baseline，真实隔离 MySQL 运行测试标记为 DATA REQUIRED）。
+- **基线输入 HEAD**: `2b4ed960ed05f7635ba4c9f389d7e53746b409aa`
+- **隔离环境**: 本地 Docker 独立 MySQL 8.4 容器 (`127.0.0.1:3307`, Database: `workbench_test_perf`)
+- **状态结论**: **COMPLETE** (从原 `PARTIAL / DATA REQUIRED` 升级为 `COMPLETE`)
 
 ---
 
-## 一、性能瓶颈真源与当前行为分析
+## 一、真实隔离 MySQL 性能与查询数量基线 (Live Isolated MySQL Harness)
 
-依据治理计划确证事实：
-1. **通知列表 (E31-N)**: `internal/module/po/reponotice.go`
-   - `findNoticeRows` 一次性拉取当前用户名下全部历史通知（包括大文本列 `n.data`）。
-   - 在应用层内存中连续执行两次 `filterNoticeRows`：一次用于统计全分类计数，一次用于截取 `[start:end]` 分页数据。
-   - 随用户历史通知积累，内存分配与延迟呈 $O(N)$ 线性增长。
-2. **我的待办 (E31-T)**: `internal/module/po/servicetodo.go` 与 `repotodo.go`
-   - `FindTodoItems` 聚合需求、任务、Bug 的所有候选 ID，并在内存中做 7 维过滤。
-   - `sortTodoItems` 对全部候选结果在内存中执行全量排序后截断，计算复杂度为 $O(N \log N)$。
-3. **版本窗口 (E32)**: `internal/module/schedule/service_window.go`
-   - `ListWindowCards` 获取全部窗口列表后，使用 `for` 循环针对每个窗口执行 `CalcCapacity`、`GetWindowConsumedHours`、`GetWindowDemandCount`。
-   - 查询数量随窗口数量 $N$ 呈 $1 + 2N$ 线性膨胀（N+1 查询扇出）。
+在完全隔离的本地 MySQL 8.4 环境中运行真实生产代码链路 (`FindNotices`, `FindTodoItems`, `ListWindowCards`)，通过 GORM Callback Query Counter 精确统计当前老实现的 SQL 查询开销与执行结果：
+
+| 生产链路 | 测试数据集规模 | 返回条目数 | 实际执行 SQL 查询数 | 瓶颈分析 |
+|---|---|---|---|---|
+| **通知列表** (`poRepo.FindNotices`) | 100 条通知，28 条目标可见 | 20 (分页 Page 1) | **2 次 SQL 查询** | 无论目标通知有多少，首查无分页拉取全量通知行，再在内存中执行 2 次全量过滤和切片。 |
+| **待办列表** (`poRepo.FindTodoItems`) | 50 需求 + 50 任务 + 50 Bug + 10 附加待办 | 148 条待办 | **21 次 SQL 查询** | 多表独立拉取 (zt_demand, zt_task, zt_bug 及各类审批/项目/评审等 10+ 表)，聚合所有 ID 后在 Go 内存执行 7 维过滤与 $O(N \log N)$ 排序。 |
+| **版本窗口** (`scheduleSvc.ListWindowCards`) | 10 个版本窗口 | 10 个窗口卡片 | **63 次 SQL 查询** | **$O(N)$ 线性查询扇出**: 1 次查询查出 10 个窗口后，在循环中为每个窗口分别执行 `CalcCapacity` (查节假日/工时)、`GetWindowConsumedHours`、`GetWindowDemandCount`，总查询数高达 $3 + 6N = 63$ 次。 |
+
+### 老实现结果基准快照 (Old Implementation Result Fixture)
+老实现的输出结果已固化保存在 `tests/integration/testdata/performance/old_impl_results.json`，供后续 P1 与 P2 进行结果等价性比对：
+- **Notices**: Total = 28, Unread = 18, Filtered = 28, Returned Page = 20, Categories: all = 28, business = 22, collaboration = 4, approval = 2.
+- **Todos**: Total = 148, Filtered = 148.
+- **Windows**: Count = 10, Total Queries = 63.
 
 ---
 
-## 二、合成基准测试数据与增长检测
+## 二、合成基准测试数据与增长趋势 (Synthetic Baseline)
 
-通过 `tests/integration/performance_baseline_test.go` 测量得出的当前实现开销基线：
+通过 `tests/integration/performance_baseline_test.go` 测量得出的老实现内存计算开销基线：
 
 | 模块与测试场景 | 规模 N | 平均延迟 (ns/op) | 每次分配内存 (B/op) | 每次分配次数 (allocs/op) | 增长趋势 |
 |---|---|---|---|---|---|
@@ -64,9 +67,10 @@
 ## 四、验证与复现命令
 
 ```sh
-# 1. 运行性能基线确定性与隔离测试
-GOCACHE="$PWD/tmp/gocache" go test -tags=integration -count=1 ./tests/integration -run PerformanceBaseline
+# 1. 运行隔离 MySQL 性能基准测试（需提供隔离 DB DSN）
+WB_TEST_MYSQL_DSN="<user>:<password>@tcp(<host>:<port>)/<isolated_test_db>?charset=utf8mb4&parseTime=True&loc=Local" \
+GOCACHE="$PWD/tmp/gocache" go test -v -tags=integration -count=1 ./tests/integration -run PerformanceBaseline
 
-# 2. 运行列表内存基准测试
+# 2. 运行列表内存基准测试（无需数据库）
 GOCACHE="$PWD/tmp/gocache" go test -tags=integration -run '^$' -bench WorkbenchLists -benchmem ./tests/integration
 ```

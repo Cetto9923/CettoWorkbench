@@ -1,0 +1,25 @@
+{
+  "notices": {
+    "categories": {
+      "all": 28,
+      "approval": 2,
+      "business": 22,
+      "collaboration": 4,
+      "reminder": 0,
+      "risk": 0,
+      "system": 0
+    },
+    "filtered": 28,
+    "returned_item_count": 20,
+    "total": 28,
+    "unread": 18
+  },
+  "todos": {
+    "returned_item_count": 148,
+    "total": 148
+  },
+  "windows": {
+    "count": 10,
+    "query_count": 63
+  }
+}
