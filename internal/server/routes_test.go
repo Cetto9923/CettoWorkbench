@@ -18,6 +18,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"workbench/internal/middleware"
+	"workbench/internal/model"
 	"workbench/internal/module/debug"
 )
 
@@ -51,11 +52,16 @@ func newDebugTestRouter(t *testing.T, mode string) (*gin.Engine, *scs.SessionMan
 	case "real":
 		// 真 RequireLogin: userID<=0 时 abort，nil DB 不影响 anon 路径
 		debugGroup.Use(middleware.RequireLogin(mgr, nil))
+		debugGroup.Use(middleware.RequireSuperAdmin())
 	case "stub":
 		debugGroup.Use(func(c *gin.Context) {
-			// 测试 control：显式标记 "已登录"，仅用于 wiring 通过性验证
+			if c.GetHeader("X-Test-SuperAdmin") == "1" {
+				c.Set("currentUser", &model.User{ID: 1, Account: "super", IsSuperAdmin: true})
+				c.Next()
+				return
+			}
 			if c.GetHeader("X-Test-Authed") == "1" {
-				c.Set("currentUser", &struct{}{})
+				c.Set("currentUser", &model.User{ID: 2, Account: "regular", IsSuperAdmin: false})
 				c.Next()
 				return
 			}
@@ -71,6 +77,7 @@ func newDebugTestRouter(t *testing.T, mode string) (*gin.Engine, *scs.SessionMan
 			c.Redirect(http.StatusSeeOther, "/login?redirect="+c.Request.URL.RequestURI())
 			c.Abort()
 		})
+		debugGroup.Use(middleware.RequireSuperAdmin())
 	default:
 		t.Fatalf("unknown mode: %s", mode)
 	}
@@ -135,10 +142,13 @@ func TestDebugRoutes_AnonymousBlocked(t *testing.T) {
 	}
 }
 
-// TestDebugRoutes_AuthenticatedPasses 验证已登录态不会被 wiring 拦下。
-// 用 stub middleware + X-Test-Authed header 模拟登录态，验证 handler 可达。
-// Wave 0A 不锁 userID>0 后的 menu/perm 加载（auth.go:60-73），那是后续 Wave 的范围。
-func TestDebugRoutes_AuthenticatedPasses(t *testing.T) {
+// TestDebugRoutes_DebugAnonymous 对应回归场景 DebugAnonymous。
+func TestDebugRoutes_DebugAnonymous(t *testing.T) {
+	TestDebugRoutes_AnonymousBlocked(t)
+}
+
+// TestDebugRoutes_DebugSuperAllowed 验证超级管理员可正常访问 debug 路由。
+func TestDebugRoutes_DebugSuperAllowed(t *testing.T) {
 	r, mgr := newDebugTestRouter(t, "stub")
 
 	cases := []struct {
@@ -152,16 +162,82 @@ func TestDebugRoutes_AuthenticatedPasses(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, tc.path, nil)
-			req.Header.Set("X-Test-Authed", "1")
+			req.Header.Set("X-Test-SuperAdmin", "1")
 			rr := doWithSession(mgr, r, req)
 			if rr.Code != http.StatusOK {
-				t.Fatalf("authed: status = %d, want 200 (body=%q)", rr.Code, rr.Body.String())
+				t.Fatalf("superadmin: status = %d, want 200 (body=%q)", rr.Code, rr.Body.String())
 			}
 			if !strings.Contains(rr.Body.String(), "REACHED_HANDLER:"+tc.path) {
-				t.Fatalf("authed: handler not reached (body=%q)", rr.Body.String())
+				t.Fatalf("superadmin: handler not reached (body=%q)", rr.Body.String())
 			}
 		})
 	}
+}
+
+// TestDebugRoutes_DebugRegularDenied 验证普通真实登录用户被 403 拦截且不执行 handler。
+func TestDebugRoutes_DebugRegularDenied(t *testing.T) {
+	r, mgr := newDebugTestRouter(t, "stub")
+
+	cases := []struct {
+		name string
+		path string
+	}{
+		{"sqlperf", "/debug/sqlperf"},
+		{"sqlperf_requests", "/debug/sqlperf/requests"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Case A: JSON Accept -> 403 JSON envelope
+			reqJSON := httptest.NewRequest(http.MethodGet, tc.path, nil)
+			reqJSON.Header.Set("X-Test-Authed", "1")
+			reqJSON.Header.Set("Accept", "application/json")
+			rrJSON := doWithSession(mgr, r, reqJSON)
+			if rrJSON.Code != http.StatusForbidden {
+				t.Fatalf("regular authed JSON: status = %d, want %d", rrJSON.Code, http.StatusForbidden)
+			}
+			if !strings.Contains(rrJSON.Body.String(), `"success":false`) {
+				t.Fatalf("regular authed JSON: missing success:false (body=%q)", rrJSON.Body.String())
+			}
+			if strings.Contains(rrJSON.Body.String(), "REACHED_HANDLER") {
+				t.Fatalf("regular authed JSON: handler was reached (body=%q)", rrJSON.Body.String())
+			}
+
+			// Case B: HTML Accept -> 403 HTML
+			reqHTML := httptest.NewRequest(http.MethodGet, tc.path, nil)
+			reqHTML.Header.Set("X-Test-Authed", "1")
+			reqHTML.Header.Set("Accept", "text/html")
+			rrHTML := doWithSession(mgr, r, reqHTML)
+			if rrHTML.Code != http.StatusForbidden {
+				t.Fatalf("regular authed HTML: status = %d, want %d", rrHTML.Code, http.StatusForbidden)
+			}
+			if strings.Contains(rrHTML.Body.String(), "REACHED_HANDLER") {
+				t.Fatalf("regular authed HTML: handler was reached (body=%q)", rrHTML.Body.String())
+			}
+		})
+	}
+}
+
+// TestDebugRoutes_DebugForgedFlag 验证请求参数伪造 superadmin=true 被 403 拦截。
+func TestDebugRoutes_DebugForgedFlag(t *testing.T) {
+	r, mgr := newDebugTestRouter(t, "stub")
+
+	req := httptest.NewRequest(http.MethodGet, "/debug/sqlperf?superadmin=true&is_super_admin=1", nil)
+	req.Header.Set("X-Test-Authed", "1")
+	req.Header.Set("Accept", "application/json")
+	rr := doWithSession(mgr, r, req)
+
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("forged flag status = %d, want %d", rr.Code, http.StatusForbidden)
+	}
+	if strings.Contains(rr.Body.String(), "REACHED_HANDLER") {
+		t.Fatalf("forged flag: handler was reached (body=%q)", rr.Body.String())
+	}
+}
+
+// TestDebugRoutes_AuthenticatedPasses 保留原有测试名称，更新为可信超级管理员通过。
+func TestDebugRoutes_AuthenticatedPasses(t *testing.T) {
+	TestDebugRoutes_DebugSuperAllowed(t)
 }
 
 // newProductionRouter 用真实 registerRoutes 构造 router,锁定 routes.go 里的
