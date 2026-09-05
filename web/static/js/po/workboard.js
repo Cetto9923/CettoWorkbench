@@ -30,6 +30,7 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { t.classList.remove("show"); }, 1800);
   }
+  window.showToast = showToast;
   function onErr(hostId) {
     var host = $(hostId);
     if (host) { host.innerHTML = '<div class="demand-empty">加载失败 · <button type="button" class="action soft" data-retry="1">重试</button></div>'; }
@@ -85,14 +86,16 @@
     $("taskOwners").classList.toggle("hidden", demand);
     $("demandActions").classList.toggle("hidden", !demand);
     $("taskActions").classList.toggle("hidden", demand);
+    if ($("demandRoleBanner")) { $("demandRoleBanner").classList.toggle("hidden", !demand); }
+    if ($("taskRoleBanner")) { $("taskRoleBanner").classList.toggle("hidden", demand); }
     $("taskFilterTip").classList.toggle("hidden", demand || !state.storyFilter);
     $("ownerTitle").textContent = demand ? "PO / 需求负责人" : "任务负责人";
     $("ownerHint").textContent = demand
-      ? "仅当前小组中实际拥有业务需求 / 研发需求之人"
-      : "仅当前小组中实际拥有任务之人";
+      ? "仅显示当前小组中实际拥有业务需求 / 独立研发需求的人；开发人员不会混进来"
+      : "仅显示当前小组中实际拥有任务的人；没有任务的 PO 不会混进来";
     $("modeNote").textContent = demand
-      ? "看我负责的需求是否持续推进"
-      : "看研发 / 测试正在做什么";
+      ? "PO视角：看我负责的需求是否持续向前推进"
+      : "研发执行视角：看开发/测试具体正在做什么";
     if (demand) { loadDemand(); } else { ensureTeamgroup(); loadTasks(); }
   }
   $("demandTab").addEventListener("click", function () { switchMode("demand"); });
@@ -144,53 +147,25 @@
   function renderOwnerChips(containerId, list, onSelect) {
     var host = $(containerId); host.innerHTML = "";
     if (!list || !list.length) { return; }
-    var all = list[0]; // 约定 list[0] 为"全部"
-    var rest = list.slice(1);
-    var shown = rest.slice(0, MAX_OWNERS);
-    var hiddenCount = rest.length - shown.length;
+    var rest = list.slice(1), shown = rest.slice(0, MAX_OWNERS), hiddenCount = rest.length - shown.length;
     var mkBtn = function (it) {
       var b = document.createElement("button");
       b.type = "button";
       b.className = "person" + ((it.value === "" && state.owner === "") || state.owner === it.value ? " active" : "");
       b.dataset.value = it.value;
-      b.textContent = "";
-      var inner = '<span class="count">' + it.count + "</span>";
-      if (it.display && it.display.length) {
-        inner = '<span class="mini-avatar">' + esc(it.display.charAt(0)) + "</span>" + esc(it.display) + inner;
-      } else {
-        inner = "全部" + inner;
-      }
-      b.innerHTML = inner;
+      var count = '<span class="count">' + it.count + "</span>";
+      b.innerHTML = it.display ? '<span class="mini-avatar">' + esc(it.display.charAt(0)) + "</span>" + esc(it.display) + count : "全部" + count;
+      b.addEventListener("click", function () { selectOwner(host, b); onSelect(it.value); });
       return b;
     };
-    // "全部"先
-    var a = mkBtn(all);
-    a.addEventListener("click", function () {
-      selectOwner(host, a); onSelect("");
-    });
-    host.appendChild(a);
-    shown.forEach(function (it) {
-      var b = mkBtn(it);
-      b.addEventListener("click", function () {
-        selectOwner(host, b); onSelect(it.value);
-      });
-      host.appendChild(b);
-    });
+    host.appendChild(mkBtn(list[0]));
+    shown.forEach(function (it) { host.appendChild(mkBtn(it)); });
     if (hiddenCount > 0) {
       var more = document.createElement("button");
-      more.type = "button";
-      more.className = "person more";
-      more.textContent = "更多 " + hiddenCount + " ›";
+      more.type = "button"; more.className = "person more"; more.textContent = "更多 " + hiddenCount + " ›";
       more.addEventListener("click", function () {
-        // 展开剩余全部
         host.removeChild(more);
-        rest.forEach(function (it) {
-          var b = mkBtn(it);
-          b.addEventListener("click", function () {
-            selectOwner(host, b); onSelect(it.value);
-          });
-          host.appendChild(b);
-        });
+        rest.forEach(function (it) { host.appendChild(mkBtn(it)); });
       });
       host.appendChild(more);
     }
@@ -204,11 +179,11 @@
   /* ---------- state derivation（真实状态派生，不可拖拽） ---------- */
   function stageColOf(stage) {
     stage = String(stage || "");
-    if (stage.indexOf("受理") >= 0 || stage.indexOf("澄清") >= 0) { return 1; }
-    if (stage.indexOf("排期") >= 0) { return 2; }
-    if (stage.indexOf("研发") >= 0 || stage.indexOf("提测") >= 0) { return 3; }
-    if (stage.indexOf("联调") >= 0 || stage.indexOf("验收") >= 0) { return 4; }
-    if (stage.indexOf("交付") >= 0 || stage.indexOf("评价") >= 0) { return 5; }
+    if (/受理|澄清/.test(stage)) { return 1; }
+    if (/排期/.test(stage)) { return 2; }
+    if (/研发|提测/.test(stage)) { return 3; }
+    if (/联调|验收/.test(stage)) { return 4; }
+    if (/交付|评价/.test(stage)) { return 5; }
     return 0;
   }
   function isBlocked(it) { return it.status === "refuse" || it.status === "hang"; }
@@ -218,22 +193,20 @@
   }
   // 研需阶段卡：查看任务仅 taskTotal>0；无任务时按阶段给"建任务/去排期"真实动作。
   function storyReason(it) {
-    if (it.taskTotal > 0) {
-      return "任务 " + it.taskDone + "/" + it.taskTotal + (it.currentOwner ? " · " + it.currentOwner + "负责" : "");
-    }
-    if (it.stage.indexOf("研发") >= 0 || it.stage.indexOf("提测") >= 0) { return "尚未创建研发任务"; }
-    if (it.stage.indexOf("排期") >= 0) { return "未绑定版本窗口"; }
-    if (it.stage.indexOf("受理") >= 0 || it.stage.indexOf("澄清") >= 0) { return "科技侧需求梳理尚未完成"; }
-    if (it.stage.indexOf("联调") >= 0 || it.stage.indexOf("验收") >= 0) { return "测试完成 · 等待业务验收"; }
-    if (it.stage.indexOf("交付") >= 0 || it.stage.indexOf("评价") >= 0) { return "待交付 · 等待发起"; }
+    if (it.taskTotal > 0) { return "任务 " + it.taskDone + "/" + it.taskTotal + (it.currentOwner ? " · " + it.currentOwner + "负责" : ""); }
+    if (/研发|提测/.test(it.stage)) { return "尚未创建研发任务"; }
+    if (/排期/.test(it.stage)) { return "未绑定版本窗口"; }
+    if (/受理|澄清/.test(it.stage)) { return "科技侧需求梳理尚未完成"; }
+    if (/联调|验收/.test(it.stage)) { return "测试完成 · 等待业务验收"; }
+    if (/交付|评价/.test(it.stage)) { return "待交付 · 等待发起"; }
     return "尚未进入执行";
   }
   function storyAction(it) {
     if (it.taskTotal > 0) { return { label: "查看任务", open: true }; }
-    if (it.stage.indexOf("排期") >= 0) { return { label: "去排期", open: false }; }
-    if (it.stage.indexOf("受理") >= 0 || it.stage.indexOf("澄清") >= 0) { return { label: "去梳理", open: false }; }
-    if (it.stage.indexOf("研发") >= 0 || it.stage.indexOf("提测") >= 0) { return { label: "建任务", open: false }; }
-    if (it.stage.indexOf("联调") >= 0 || it.stage.indexOf("验收") >= 0) { return { label: "验收", open: false }; }
+    if (/排期/.test(it.stage)) { return { label: "去排期", open: false }; }
+    if (/受理|澄清/.test(it.stage)) { return { label: "去梳理", open: false }; }
+    if (/研发|提测/.test(it.stage)) { return { label: "建任务", open: false }; }
+    if (/联调|验收/.test(it.stage)) { return { label: "验收", open: false }; }
     return { label: "查看任务", open: true };
   }
   function renderStageCards(object) {
@@ -318,19 +291,30 @@
     );
   }
   // 叶行：根节点自身即最细推进对象（无子业务的 BR / 独立研需）。
-  // 对象头已在 biz-head 完整展示，此处不重复 tag/ID/标题，只保留树枝定位与推进状态卡。
   function renderLeafRow(object) {
+    var nodeType = nodeTypeOf(object, null);
     var isIndy = !!object.independent;
-    var rowCls = "demand-row leaf-row" + (isOverdue(object) ? " has-overdue" : "") + (isBlocked(object) ? " has-blocked" : "");
+    var rowCls = "demand-row" + (isOverdue(object) ? " has-overdue" : "") + (isBlocked(object) ? " has-blocked" : "");
+    var metaBits = [];
+    if (object.owner) { metaBits.push("PO " + esc(object.owner)); }
+    if (isIndy) {
+      metaBits.push("尚未纳入执行");
+    } else {
+      metaBits.push("研发需求 0");
+    }
     return (
       '<div class="' + rowCls + '" data-owner="' + esc(object.owner || "") + '" data-stage="' + esc(object.stage || "") +
       '" data-status="' + esc(object.status || "") + '" data-deadline="' + esc(object.deadline || "") +
       '" data-rd="' + (isIndy ? esc(object.displayId) : "") + '">' +
-      '<div class="tree-cell ind0 leaf-cell"><span class="branch">└</span><span class="leaf-note">推进状态</span></div>' +
+      '<div class="tree-cell"><span class="branch">└</span>' +
+      typeTag(nodeType) +
+      '<div class="node-main"><div class="node-title-line"><span class="code">' + esc(object.displayId) + "</span>" +
+      '<span class="node-title" title="' + esc(object.title) + '">' + esc(object.title) + "</span>" + priTag(object.priority) + "</div>" +
+      '<div class="node-meta"><span>' + metaBits.join(" · ") + "</span></div></div></div>" +
       renderStageCards(object) + "</div>"
     );
   }
-  // 需求树去重：无子业务的 BR / 独立研需作为根只出现一次（biz-head 完整对象，叶行仅承载推进状态）。
+  // 需求树矩阵渲染（对齐原型 V1.3）
   function renderDemandMatrix(tree) {
     var host = $("demandGroups");
     if (!tree || !tree.length) { host.innerHTML = ""; $("demandEmpty").style.display = "block"; renderSummaryFromRows(); return; }
@@ -338,31 +322,43 @@
     var html = "";
     tree.forEach(function (root) {
       var nodeType = nodeTypeOf(root, null);
-      var isIndy = root.kind === "story";
       var children = root.children || [];
       var hasChild = children.length > 0;
       var flags = [];
       if (isOverdue(root)) { flags.push("overdue"); }
       if (isBlocked(root)) { flags.push("blocked"); }
-      // 根行：第一行 tag+ID+标题+P；第二行 负责人 · 汇总 · 目标上线
       var summaries = [];
       if (nodeType === "business") {
         if (root.subDemandCount > 0) { summaries.push(root.subDemandCount + " 子业务"); }
         if (root.storyCount > 0) { summaries.push(root.storyCount + " 研发需求"); }
         if (root.subDemandCount === 0 && root.storyCount === 0) { summaries.push("无子业务"); }
+      } else {
+        summaries.push("无业务需求来源");
       }
-      var metaBits = [];
-      if (root.owner) { metaBits.push("PO " + esc(root.owner)); }
-      if (summaries.length) { metaBits.push(summaries.join(" · ")); }
-      if (root.deadline) { metaBits.push("目标上线 " + esc(root.deadline)); }
+      if (root.stage && root.stage.indexOf("排期") >= 0) { summaries.push("待排期"); }
+      if (isBlocked(root)) { summaries.push("阻塞"); }
+      if (isOverdue(root)) { summaries.push("超期"); }
+
+      var summaryHtml = summaries.map(function (s) {
+        var cls = "summary";
+        if (s.indexOf("阻塞") >= 0 || s.indexOf("排期") >= 0) { cls += " warn"; }
+        if (s.indexOf("超期") >= 0) { cls += " danger"; }
+        return '<span class="' + cls + '">' + esc(s) + "</span>";
+      }).join("");
+
+      var ownerDot = root.owner ? '<span class="owner-badge"><span class="owner-dot">' + esc(root.owner.charAt(0)) + "</span>PO " + esc(root.owner) + "</span>" : "";
+      var dateHtml = root.deadline ? '<span class="biz-date">目标上线 ' + esc(root.deadline) + "</span>" : "";
+
       html += '<section class="biz-group" data-owner="' + esc(root.owner || "") + '" data-flags="' + flags.join(" ") + '" id="bg' + root.id + '">';
       html += '<div class="biz-head"><div class="biz-head-main" data-toggle-group="bg' + root.id + '">' +
-        '<div class="biz-head-line">' +
-        '<button type="button" class="toggle">▼</button>' + typeTag(nodeType) +
+        '<button type="button" class="toggle">▼</button>' +
+        typeTag(nodeType) +
         '<span class="code">' + esc(root.displayId) + "</span>" +
-        '<span class="biz-title" title="' + esc(root.title) + '">' + esc(root.title) + "</span>" + priTag(root.priority) +
-        "</div>" +
-        (metaBits.length ? '<div class="biz-head-meta">' + metaBits.join(" · ") + "</div>" : "") +
+        '<span class="biz-title" title="' + esc(root.title) + '">' + esc(root.title) + "</span>" +
+        priTag(root.priority) +
+        ownerDot +
+        summaryHtml +
+        dateHtml +
         "</div></div>";
       html += '<div class="group-body">';
       if (hasChild) {
@@ -434,14 +430,26 @@
       .catch(function () { $("metricsGrid").innerHTML = '<div class="metric-empty">效能指标加载失败</div>'; });
   }
   function renderMetrics(metrics) {
-    var html = metrics.map(function (m) {
+    var details = {
+      "交付周期": "端到端流动速度：需求从进入研发到完成交付用了多久。",
+      "实施周期": "研发实施效率：进入实施后到完成研发交付用了多久。",
+      "超预迭代周期占比": "交付可预测性：有多少工作超过预期迭代节奏。",
+      "超2周未排期": "需求入口健康度：识别长期未进入时间盒的需求积压。",
+      "质量门禁通过率": "内建质量：研发产物能否稳定通过质量门禁。",
+      "缺陷关闭率": "质量收敛：已发现缺陷是否及时形成闭环。",
+      "缺陷响应效率": "质量响应速度：缺陷是否得到及时确认和处理。",
+      "上线延期数": "交付兑现：已承诺上线的事项是否按窗口完成。"
+    };
+    $("metricsGrid").innerHTML = metrics.map(function (m) {
       var cls = "team-metric" + (m.state ? " is-" + m.state : "");
-      return '<div class="' + cls + '" title="' + esc(m.name) + " · 目标" + esc(m.target) + '">' +
-        '<div class="metric-top"><span class="metric-name">' + esc(m.name) + "</span>" +
-        '<span class="metric-value">' + esc(m.value === "-" ? "—" : m.value) + "</span></div>" +
-        '<div class="metric-meta"><span class="metric-target">' + (m.target ? "目标 " + esc(m.target) : "") + "</span></div></div>";
+      var trendHtml = m.trend ? '<span class="metric-trend ' + (m.state || "") + '">' + esc(m.trend) + "</span>" : "";
+      return '<div class="' + cls + '" data-metric-name="' + esc(m.name) + '">' +
+        '<div class="metric-top"><span class="metric-name">' + esc(m.name) + '</span><span class="metric-value">' + esc(m.value === "-" ? "—" : m.value) + "</span></div>" +
+        '<div class="metric-meta"><span class="metric-target">' + (m.target ? "目标 " + esc(m.target) : "") + "</span>" + trendHtml + "</div></div>";
     }).join("");
-    $("metricsGrid").innerHTML = html;
+    $("metricsGrid").querySelectorAll(".team-metric").forEach(function (el) {
+      el.addEventListener("click", function () { var n = el.dataset.metricName || ""; showToast(n + "：" + (details[n] || "")); });
+    });
   }
 
   /* ---------- loaders ---------- */
@@ -617,16 +625,12 @@
     var open = (payload.open || 0), closed = (payload.closed || 0);
     $("issueCount").textContent = items.length || open + closed;
     var tabs = $("issueTabs"); tabs.innerHTML = "";
-    var tabDefs = [];
-    if (open > 0) { tabDefs.push({ key: "open", label: "未解决 " + open }); }
+    var tabDefs = [{ key: "open", label: "未解决 " + open }];
     if (closed > 0) { tabDefs.push({ key: "closed", label: "已关闭 " + closed }); }
-    if (!tabDefs.length) { tabDefs.push({ key: "open", label: "未解决 0" }); }
     tabDefs.forEach(function (td) {
       var b = document.createElement("button");
-      b.type = "button";
-      b.className = "issue-tab" + (issueTabFilter === td.key ? " active" : "");
-      b.textContent = td.label;
-      b.dataset.key = td.key;
+      b.type = "button"; b.className = "issue-tab" + (issueTabFilter === td.key ? " active" : "");
+      b.textContent = td.label; b.dataset.key = td.key;
       b.addEventListener("click", function () {
         issueTabFilter = td.key;
         tabs.querySelectorAll(".issue-tab").forEach(function (x) { x.classList.remove("active"); });
@@ -639,18 +643,14 @@
   }
   function renderIssueCards(items, filter) {
     var list = $("issueList");
-    var matched = items.filter(function (it) {
-      var grp = it.status === "closed" ? "closed" : "open";
-      return grp === filter;
-    });
+    var matched = items.filter(function (it) { return (it.status === "closed" ? "closed" : "open") === filter; });
     if (!matched.length) { list.innerHTML = '<div class="demand-empty">暂无问题</div>'; return; }
     list.innerHTML = matched.map(function (it) {
-      var stateLabel = it.status === "closed" ? "已关闭" : "未处理";
-      var stateCls = it.status === "closed" ? "" : "issue-state";
+      var isCls = it.status === "closed";
       return '<div class="issue-card"><div class="issue-id">ISSUE-' + it.id + "</div>" +
         '<div class="issue-title" title="' + esc(it.title) + '">' + esc(it.title) + "</div>" +
         '<div class="issue-meta"><span>' + esc(it.createdBy || "") + (it.priority ? " · P" + esc(it.priority) : "") + "</span>" +
-        '<span class="' + stateCls + '">' + stateLabel + "</span></div></div>";
+        '<span class="' + (isCls ? "" : "issue-state") + '">' + (isCls ? "已关闭" : "未处理") + "</span></div></div>";
     }).join("");
   }
 

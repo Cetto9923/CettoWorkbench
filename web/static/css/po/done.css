@@ -1,67 +1,62 @@
-/* PO 我的已办：沿用工作台 token 的高密度动作轨迹列表。 */
-.po-done { min-height: calc(100vh - 56px); padding: 12px 20px 28px; background: var(--po-bg); color: var(--color-text-strong); }
-.po-done .todos-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 10px; }
-.po-done .todos-header h2 { margin: 0; font-size: 20px; line-height: 28px; font-weight: 650; }
-.po-done .todos-header p { margin: 2px 0 0; color: var(--color-text-disabled); font-size: var(--font-size-xs); }
-.done-summary { display: grid; grid-template-columns: minmax(150px, 1.2fr) minmax(720px, 5.8fr); gap: 8px; height: 68px; margin-bottom: 10px; }
-.done-total,.done-stat { border: 0; background: var(--color-surface); color: var(--color-text-secondary); font-family: inherit; text-align: left; cursor: pointer; }
-.done-total { height: 68px; padding: 9px 14px; border: 1px solid var(--po-blue-bd); border-radius: var(--radius-sm); }
-.done-total span,.done-stat span { display: block; margin-bottom: 4px; color: var(--color-text-secondary); font-size: 11px; line-height: 16px; }
-.done-total strong { color: var(--color-text-strong); font-size: 22px; line-height: 26px; font-weight: 700; }
-.done-total.active { background: var(--po-blue-bg); }
-.done-total.active span,.done-total.active strong { color: var(--po-blue); }
-.done-stat-strip { display: grid; grid-template-columns: repeat(6, minmax(92px, 1fr)); overflow: hidden; border: 1px solid var(--po-border); border-radius: var(--radius-sm); background: var(--color-surface); }
-.done-stat { position: relative; min-width: 0; height: 66px; padding: 9px 12px; }
-.done-stat:not(:last-child)::after { position: absolute; top: 13px; right: 0; bottom: 13px; width: 1px; background: var(--color-border-soft); content: ""; }
-.done-stat:hover { background: var(--color-surface-hover); }
-.done-stat.active { background: var(--po-blue-bg); }
-.done-stat strong { color: var(--color-text-strong); font-size: 17px; line-height: 22px; font-weight: 650; }
-.done-stat.active span,.done-stat.active strong { color: var(--po-blue); }
-.po-done .todos-panel { overflow: hidden; border: 1px solid var(--po-border); border-radius: var(--radius-sm); background: var(--color-surface); }
-.po-done .group-tabs { display: flex; align-items: flex-end; gap: 6px; height: 42px; padding: 0 12px; overflow: hidden; border-bottom: 1px solid var(--po-border); scrollbar-width: none; }
-.po-done .group-tabs::-webkit-scrollbar { display: none; }
-.po-done .group-tab { position: relative; flex: 0 0 auto; height: 42px; padding: 0 11px; border: 0; background: transparent; color: var(--color-text-secondary); font-size: var(--font-size-xs); white-space: nowrap; cursor: pointer; }
-.po-done .group-tab.active { color: var(--po-blue); font-weight: 600; }
-.po-done .group-tab.active::after { position: absolute; right: 9px; bottom: -1px; left: 9px; height: 2px; background: var(--po-blue); content: ""; }
-.po-done .todos-toolbar { display: flex; align-items: center; gap: 7px; min-height: 45px; padding: 7px 10px; border-bottom: 1px solid var(--color-border-soft); white-space: nowrap; }
-.po-done .todos-toolbar select,.po-done .search-field { height: 30px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-surface); color: var(--color-text-secondary); font-size: var(--font-size-xs); }
-.po-done .todos-toolbar select { min-width: 132px; padding: 0 24px 0 8px; }
-.po-done .search-field { display: flex; align-items: center; width: 230px; padding: 0 8px; color: var(--color-text-disabled); }
-.po-done .search-field input { width: 100%; min-width: 0; padding-left: 6px; border: 0; outline: 0; background: transparent; font-size: var(--font-size-xs); }
-.po-done .toolbar-btn { height: 30px; padding: 0 11px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-surface); color: var(--color-text-secondary); font-size: var(--font-size-xs); cursor: pointer; }
-.po-done .toolbar-btn:hover { border-color: var(--color-border-strong); color: var(--color-text-body); }
-.done-load-state:empty { display: none; }
-.done-load-state:not(:empty) { min-height: 30px; padding: 7px 10px; color: var(--color-text-disabled); font-size: var(--font-size-xs); }
-.retry-link { margin-left: 6px; padding: 0; border: 0; background: transparent; color: var(--po-blue); font-size: var(--font-size-xs); text-decoration: underline; cursor: pointer; }
-/* 保留用户现有约束：长列表在表格内部滚动，让分页在常见笔记本视口内可见。 */
-.po-done .todos-table-wrap { max-height: 44vh; overflow: auto; }
-.po-done .todos-table { width: 100%; min-width: 860px; border-collapse: collapse; table-layout: fixed; font-size: var(--font-size-xs); }
-.po-done .todos-table th { position: sticky; top: 0; z-index: 2; height: 32px; padding: 0 10px; border-bottom: 1px solid var(--po-border); background: var(--color-surface-muted); color: var(--color-text-secondary); font-size: 11px; font-weight: 500; text-align: left; }
-.po-done .todos-table td { height: 42px; padding: 4px 10px; overflow: hidden; border-bottom: 1px solid var(--color-border-soft); color: var(--color-text-body); text-overflow: ellipsis; white-space: nowrap; }
-.po-done .todos-table tbody tr:hover { background: var(--color-surface-hover); }
-.done-table-cols .c-item { width: 42%; }
-.done-table-cols .c-type { width: 10%; }
-.done-table-cols .c-action { width: 14%; }
-.done-table-cols .c-result { width: 11%; }
-.done-table-cols .c-dead { width: 17%; }
-.done-table-cols .c-op { width: 6%; text-align: right; }
-.done-item-title { overflow: hidden; color: var(--color-text-strong); line-height: 17px; text-overflow: ellipsis; white-space: nowrap; }
-.done-item-id { overflow: hidden; margin-top: 1px; color: var(--po-blue); font-size: 10px; line-height: 13px; text-overflow: ellipsis; white-space: nowrap; }
-.row-title-link,.row-id-link { color: inherit; text-decoration: none; }
-.row-title-link:hover,.row-id-link:hover { color: var(--po-blue); text-decoration: underline; }
-.type-tag,.result-tag { display: inline-flex; align-items: center; min-height: 19px; padding: 0 6px; border-radius: 3px; font-size: 11px; white-space: nowrap; }
-.type-tag { background: var(--po-blue-bg); color: #3568ad; }
-.result-tag { background: var(--color-surface-muted); color: var(--color-text-secondary); }
-.result-tag.success { background: var(--color-success-bg); color: var(--color-success); }
-.result-tag.danger { background: var(--color-danger-bg); color: var(--color-danger); }
-.todo-action { padding: 0; border: 0; background: transparent; color: var(--po-blue); font-size: var(--font-size-xs); text-decoration: none; cursor: pointer; }
-.todo-action:hover { text-decoration: underline; }
-.po-done .todos-empty { padding: 46px 20px; color: var(--color-text-disabled); font-size: var(--font-size-sm); text-align: center; }
-.po-done .todos-pagination { display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 0 10px; color: var(--color-text-secondary); font-size: 11px; }
-.po-done .pager-controls { display: flex; align-items: center; gap: 5px; }
-.po-done .pager-page-size { height: 28px; margin-right: 6px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-surface); color: var(--color-text-secondary); font-size: 11px; }
-.po-done .pager-btn { min-width: 28px; height: 28px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-surface); color: var(--color-text-secondary); cursor: pointer; }
-.po-done .pager-btn.active { border-color: var(--po-blue); background: var(--po-blue); color: #fff; }
-.po-done .pager-btn:disabled { cursor: not-allowed; opacity: .45; }
-@media (max-width: 1100px) { .done-summary { grid-template-columns: 142px minmax(660px, 1fr); overflow-x: auto; }.po-done .group-tabs { overflow-x: auto; } }
-@media (max-width: 760px) { .po-done { padding: 10px 10px 22px; }.po-done .todos-toolbar { overflow-x: auto; }.po-done .todos-pagination { align-items: flex-start; gap: 8px; flex-direction: column; padding-block: 8px; }.po-done .pager-controls { flex-wrap: wrap; } }
+/* =============================================================================
+   文件: web/static/css/po/done.css
+   模块: PO 个人工作台 - 我的已办专属样式
+   职责: 定义已办列表专属列宽、动作徽章与状态色彩
+   依赖: personal-workspace.css
+   ============================================================================= */
+
+.po-done .done-table .done-col-item { width: auto; min-width: 240px; }
+.po-done .done-table .done-col-type { width: 90px; }
+.po-done .done-table .done-col-action { width: 120px; }
+.po-done .done-table .done-col-result { width: 90px; }
+.po-done .done-table .done-col-date { width: 144px; }
+.po-done .done-table .done-col-opt { width: 90px; text-align: right; }
+
+.po-done .done-item-title {
+  overflow: hidden;
+  color: var(--po-t1, #1f2937);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.po-done .done-item-id {
+  overflow: hidden;
+  margin-top: 1px;
+  color: var(--po-blue, #2563eb);
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.po-done .type-tag,
+.po-done .result-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.po-done .type-tag {
+  background: var(--po-blue-bg, #eff6ff);
+  color: #1e40af;
+  border: 1px solid var(--po-blue-bd, #bfdbfe);
+}
+.po-done .result-tag {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+.po-done .result-tag.success {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+.po-done .result-tag.danger {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}

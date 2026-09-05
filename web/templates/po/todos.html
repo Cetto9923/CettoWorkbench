@@ -1,65 +1,93 @@
-{{/* ===========================================================================
+{{/* ==========================================================================
 文件: web/templates/po/todos.html
 模块: PO 工作台
-职责: 我的待办列表页（个人责任口径 + 七维 AND 筛选）
+职责: 我的待办列表页（个人责任事项 + 统一工作台骨架）
 全局字段: .CurrentUser, .CSRFToken, .Menus, .AppName, .CurrentPath
 页面字段: .Title (string), .PageTitle (string), .BaseUrl (string)
-============================================================================ */}}
+========================================================================== */}}
 {{ define "page_css" }}
+<link rel="stylesheet" href="{{ asset "/static/css/po/personal-workspace.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/po/todos.css" }}">
 {{ end }}
 
 {{ define "content" }}
-<div class="po-todos">
-  <header class="todos-header">
-    <div><h2>我的待办</h2><p>聚合当前需要我处理、配合和跟进的事项</p></div>
-    <nav class="relation-tabs" aria-label="我的关系">
-      <button type="button" class="relation-tab active" data-relation="all">全部</button>
-      <button type="button" class="relation-tab" data-relation="in_charge">我负责</button>
-      <button type="button" class="relation-tab" data-relation="cooperate">我配合</button>
-      <button type="button" class="relation-tab" data-relation="follow">我关注</button>
-    </nav>
+<div class="po-personal-workspace po-todos">
+  <header class="workspace-header">
+    <div class="workspace-header-left">
+      <h2>我的待办</h2>
+      <p>个人责任事项 · 办理与跟进</p>
+    </div>
+    <div class="header-quick-filters" id="todosQuickChips" role="group" aria-label="快捷焦点">
+      <button type="button" class="header-quick-chip active" data-focus="pending" aria-pressed="true">待处理 <em id="countPending">—</em></button>
+      <button type="button" class="header-quick-chip" data-focus="today" aria-pressed="false">今日到期 <em id="countToday">—</em></button>
+      <button type="button" class="header-quick-chip danger" data-focus="overdue" aria-pressed="false">超期 <em id="countOverdue">—</em></button>
+      <button type="button" class="header-quick-chip warning" data-focus="blocked" aria-pressed="false">阻塞 <em id="countBlocked">—</em></button>
+      <button type="button" class="header-quick-chip" data-focus="p1" aria-pressed="false">P1 <em id="countP1">—</em></button>
+    </div>
   </header>
 
-  <section class="focus-grid" aria-label="待办概览">
-    <button type="button" class="focus-card active" data-focus="pending"><span>待处理</span><strong id="countPending">—</strong></button>
-    <button type="button" class="focus-card" data-focus="today"><span>今日到期</span><strong id="countToday">—</strong></button>
-    <button type="button" class="focus-card danger" data-focus="overdue"><span>超期</span><strong id="countOverdue">—</strong></button>
-    <button type="button" class="focus-card warning" data-focus="blocked"><span>阻塞</span><strong id="countBlocked">—</strong></button>
-    <button type="button" class="focus-card priority" data-focus="p1"><span>P1</span><strong id="countP1">—</strong></button>
-  </section>
-
-  <section class="todos-panel">
-    <nav class="group-tabs" aria-label="待办分类">
-      <button type="button" class="group-tab active" data-tab="all">全部待办 <em id="groupAll">0</em></button>
-      <button type="button" class="group-tab" data-tab="approval">审批决策 <em id="groupApproval">0</em></button>
-      <button type="button" class="group-tab" data-tab="demand">需求治理 <em id="groupDemand">0</em></button>
-      <button type="button" class="group-tab" data-tab="execution">研发执行 <em id="groupExecution">0</em></button>
-      <button type="button" class="group-tab" data-tab="testing">测试质量 <em id="groupTesting">0</em></button>
-      <button type="button" class="group-tab" data-tab="risk">问题风险 <em id="groupRisk">0</em></button>
-      <button type="button" class="group-tab" data-tab="personal">个人事项 <em id="groupPersonal">0</em></button>
+  <section class="workspace-panel">
+    <nav class="category-tabs" aria-label="待办分类">
+      <button type="button" class="category-tab active" data-tab="all" aria-current="page">全部待办 <em id="groupAll">—</em></button>
+      <button type="button" class="category-tab" data-tab="demand">需求治理 <em id="groupDemand">—</em></button>
+      <button type="button" class="category-tab" data-tab="execution">研发执行 <em id="groupExecution">—</em></button>
+      <button type="button" class="category-tab" data-tab="testing">测试质量 <em id="groupTesting">—</em></button>
+      <button type="button" class="category-tab unsupported" data-tab="approval" disabled title="已具备查询适配器，统一分页与排序待接线 (available_not_wired)">审批决策 <span class="unsupported-tag">待接线</span></button>
+      <button type="button" class="category-tab unsupported" data-tab="risk" disabled title="已具备查询适配器，责任判定规则待业务裁决 (available_not_wired)">问题风险 <span class="unsupported-tag">待接线</span></button>
+      <button type="button" class="category-tab unsupported" data-tab="personal" disabled title="已具备查询适配器，个人待办边界待业务裁决 (available_not_wired)">个人事项 <span class="unsupported-tag">待接线</span></button>
     </nav>
 
-    <div class="todos-toolbar">
-      <label class="search-field"><span aria-hidden="true">⌕</span><input type="search" id="todosKeyword" placeholder="搜索 ID、标题或责任人" aria-label="关键词"></label>
-      <select id="todosAction" aria-label="办理场景"><option value="all">办理场景：全部</option><option value="todo_review">待受理 / 评审</option><option value="todo_schedule">待排期</option><option value="todo_verify">待验收</option><option value="todo_deliver">待交付</option><option value="todo_follow">待跟进</option></select>
+    <div class="workspace-toolbar">
+      <label class="workspace-search"><span aria-hidden="true">⌕</span><input type="search" id="todosKeyword" placeholder="搜索 ID、标题或责任人" aria-label="关键词"></label>
+      <div class="relation-segment" aria-label="我的关系">
+        <button type="button" class="active" data-relation="all">全部</button>
+        <button type="button" data-relation="in_charge">我负责</button>
+        <button type="button" data-relation="cooperate">我配合</button>
+        <button type="button" data-relation="follow" title="关注数据源仍待业务规则裁决 (WAIT DECISION)" disabled>我关注 (待决策)</button>
+      </div>
+      <select id="todosAction" aria-label="办理场景"><option value="all">办理场景：全部</option><option value="todo_review">待受理 / 澄清</option><option value="todo_schedule">待排期</option><option value="todo_verify">待验收</option><option value="todo_deliver">待交付</option><option value="todo_follow">待跟进</option></select>
       <select id="todosStage" aria-label="价值阶段"><option value="all">价值阶段：全部</option><option value="accept">受理</option><option value="clarify">澄清</option><option value="schedule">排期</option><option value="developing">研发</option><option value="testing">测试</option><option value="waitacceptance">验收</option><option value="acceptanced">交付</option></select>
       <select id="todosObjectType" aria-label="具体对象"></select>
       <select id="todosResponsibility" aria-label="办理责任"><option value="all">办理责任：全部</option><option value="my_action">待我处理</option><option value="my_follow_up">待我跟进</option></select>
-      <button type="button" id="todosResetBtn" class="toolbar-btn">重置</button>
+      <button type="button" id="todosResetBtn" class="workspace-btn">重置筛选</button>
     </div>
 
-    <div class="todos-result-bar"><span id="todosSummary">加载中…</span></div>
-    <div class="todos-table-wrap">
-      <table class="todos-table" id="todosTable">
-        <thead><tr><th class="c-id">ID</th><th class="c-title">标题</th><th class="c-type">类型</th><th class="c-pri">优先级</th><th class="c-relation">关系</th><th class="c-reason">形成原因</th><th class="c-dead">截止</th><th class="c-owner">责任人</th><th class="c-action">操作</th></tr></thead>
-        <tbody id="todosTbody"></tbody>
-      </table>
-      <div class="todos-empty" id="todosEmpty" hidden>当前筛选条件下暂无待办</div>
+    <div class="workspace-result-bar" aria-live="polite">
+      <span id="todosSummary">加载中…</span>
+      <span class="workspace-result-hint">待办代表当前责任事项</span>
     </div>
-    <footer class="todos-pagination" id="todosPagination" hidden></footer>
+
+    <div class="table-scroll-container">
+      <table class="workspace-table todos-table" id="todosTable">
+        <thead>
+          <tr>
+            <th class="todos-col-item">事项标题 / 对象ID</th>
+            <th class="todos-col-type">对象类型</th>
+            <th class="todos-col-pri">优先级</th>
+            <th class="todos-col-rel">关系 / 责任</th>
+            <th class="todos-col-stage">阶段 / 形成原因</th>
+            <th class="todos-col-dead">截止时间</th>
+            <th class="todos-col-owner">责任人</th>
+            <th class="todos-col-opt">操作</th>
+          </tr>
+        </thead>
+        <tbody id="todosTbody">
+          <tr><td colspan="8" class="state-placeholder">正在拉取待办事项…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="state-placeholder" id="todosEmpty" hidden>当前条件下没有待办事项</div>
+    <div class="state-placeholder error" id="todosError" hidden>
+      <span class="error-msg">拉取待办列表失败，请检查网络或重试</span>
+      <button type="button" class="retry-btn" id="todosRetryBtn">重试</button>
+    </div>
+    <div class="workspace-pagination" id="todosPagination" hidden></div>
   </section>
 </div>
 {{ end }}
 
-{{ define "page_js" }}<script src="{{ asset "/static/js/po/todos.js" }}"></script>{{ end }}
+{{ define "page_js" }}
+<script src="{{ asset "/static/js/po/personal-list.js" }}"></script>
+<script src="{{ asset "/static/js/po/todos.js" }}"></script>
+{{ end }}

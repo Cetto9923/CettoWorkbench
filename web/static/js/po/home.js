@@ -1,20 +1,26 @@
+/* =============================================================================
+   文件: web/static/js/po/home.js
+   模块: PO 个人工作台 - 首页交互脚本
+   职责: 绑定需求价值流下钻筛选、统一行动列表展示、分页与更新时序保护
+   依赖: personal-list.js, jQuery
+   ============================================================================= */
+
 (function ($) {
   "use strict";
 
-  var PAGE_SIZES = [4, 5, 6, 7, 8, 10];
+  var esc = (window.PersonalList && window.PersonalList.escapeHtml) || function (v) { return String(v == null ? "" : v); };
+
   var state = {
     items: [],
     status: "all",
     page: 1,
-    pageSize: 6
+    pageSize: 15
   };
+
+  var currentSeq = 0;
 
   function demandsUrl(status) {
     return "/demands?status=" + encodeURIComponent(status || "all");
-  }
-
-  function escapeHtml(text) {
-    return $("<div>").text(text == null ? "" : String(text)).html();
   }
 
   function actionLabel(item) {
@@ -26,62 +32,34 @@
     return text || "—";
   }
 
-  // 禅道业需 status → 中文（与原型 po-core.js ZENTAO_STATUS_LABELS 对齐）
   var ZENTAO_STATUS_LABELS = {
-    draft: "暂存",
-    wait: "待评审",
-    active: "已评审",
-    clarified: "已澄清",
-    changed: "已变更",
-    developing: "开发中",
-    testing: "测试中",
-    waitacceptance: "待验收",
-    acceptanced: "已验收",
-    waitdeliver: "待交付",
-    delivered: "已交付",
-    released: "已发布",
-    closed: "已关闭",
-    suspended: "已挂起",
-    refuse: "已驳回"
+    draft: "暂存", wait: "待评审", active: "已评审", clarified: "已澄清",
+    changed: "已变更", developing: "开发中", testing: "测试中", waitacceptance: "待验收",
+    acceptanced: "已验收", waitdeliver: "待交付", delivered: "已交付", released: "已发布",
+    closed: "已关闭", suspended: "已挂起", refuse: "已驳回"
   };
 
-  // 禅道研需 zt_story.status → 中文（与业需同名码语义不同，禁止共用）
   var STORY_STATUS_LABELS = {
-    draft: "草稿",
-    reviewing: "评审中",
-    active: "激活",
-    changing: "变更中",
-    closed: "已关闭"
+    draft: "草稿", reviewing: "评审中", active: "激活", changing: "变更中", closed: "已关闭"
   };
 
   function getZentaoStatusLabel(key) {
     var k = String(key || "").trim().toLowerCase();
-    if (!k) {
-      return "";
-    }
-    return ZENTAO_STATUS_LABELS[k] || key;
+    return ZENTAO_STATUS_LABELS[k] || key || "—";
   }
 
   function getStoryZentaoStatusLabel(key) {
     var k = String(key || "").trim().toLowerCase();
-    if (!k) {
-      return "";
-    }
-    return STORY_STATUS_LABELS[k] || key;
+    return STORY_STATUS_LABELS[k] || key || "—";
   }
 
-  // 对齐原型 getHomeZentaoStatusLabel：业需/研需分表映射，禁止用动作态冒充禅道状态
   function getHomeZentaoStatusLabel(item) {
     var raw = String((item && item.zentaoStatus) || "").trim();
     if (raw) {
-      var isStory =
-        (item && String(item.kind || "") === "story") ||
+      var isStory = (item && String(item.kind || "") === "story") ||
         Number(item && item.storyId) > 0 ||
         /^U\d+$/i.test(String((item && item.id) || ""));
-      if (isStory) {
-        return getStoryZentaoStatusLabel(raw);
-      }
-      return getZentaoStatusLabel(raw);
+      return isStory ? getStoryZentaoStatusLabel(raw) : getZentaoStatusLabel(raw);
     }
     var label = String((item && (item.zentaoStatusLabel || item.statusLabel)) || "").trim();
     if (label && !/^待(受理|澄清|排期)$/.test(label)) {
@@ -94,9 +72,7 @@
     var fetchFn = window.appFetch || fetch;
     return fetchFn(demandsUrl(status), { method: "GET" })
       .then(function (res) {
-        if (!res.ok) {
-          throw new Error("load demands failed");
-        }
+        if (!res.ok) { throw new Error("load demands failed (" + res.status + ")"); }
         return res.json();
       })
       .then(function (payload) {
@@ -109,48 +85,21 @@
 
   function updateTitle(count) {
     var $title = $("#top5Title");
-    if (!$title.length) {
-      return;
-    }
+    if (!$title.length) { return; }
     var stage = $(".home-vs-mini-card.active .vs-mini-name").first().text() || "全部";
     $title.html(
-      "<i class=\"fas fa-list-check\"></i>统一行动列表 · " +
-        escapeHtml(stage === "全部" ? "全部生命周期" : stage) +
-        "（" +
-        count +
-        "）"
+      '<i class="fas fa-list-check"></i>统一行动列表 · ' +
+      esc(stage === "全部" ? "全部生命周期" : stage) +
+      "（" + count + "）"
     );
   }
 
-  function renderEmpty() {
-    $("#top5List").html(
-      "<div class=\"empty-state\">" +
-        "<div class=\"empty-state-title\">当前阶段暂无事项</div>" +
-        "<div class=\"empty-state-hint\">可切换其他价值流阶段继续查看</div>" +
-        "</div>"
-    );
-  }
-
-  function renderError() {
-    $("#top5List").html(
-      "<div class=\"empty-state empty-state-error\">" +
-        "<div class=\"empty-state-title\">行动列表加载失败</div>" +
-        "<button type=\"button\" class=\"action-btn js-retry\">重新加载</button>" +
-        "</div>"
-    );
-    $("#top5List .js-retry").on("click", function () {
-      refreshDemands(state.status);
-    });
-  }
-
-  function zentaoLinkAttrs(url, extraClass) {
-    var cls = ("js-zentao-link " + (extraClass || "")).trim();
-    return (
-      "href=\"" +
-      escapeHtml(url) +
-      "\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"" +
-      cls +
-      "\""
+  function fillUpdateTime() {
+    var now = new Date();
+    var pad = function (n) { return n < 10 ? "0" + n : String(n); };
+    $("#lastUpdateTime").text(
+      now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate()) + " " +
+      pad(now.getHours()) + ":" + pad(now.getMinutes())
     );
   }
 
@@ -159,136 +108,63 @@
     var url = (item.zentaoUrl || "").trim();
     var pri = item.pri || "";
     var idHtml = url
-      ? "<a " + zentaoLinkAttrs(url, "row-id-link") + ">" + escapeHtml(id) + "</a>"
-      : "<span class=\"row-id-link\">" + escapeHtml(id) + "</span>";
+      ? "<a class=\"table-id-link\" href=\"" + esc(url) + "\" target=\"_blank\" rel=\"noopener noreferrer\">" + esc(id) + "</a>"
+      : '<span class="table-id-link">' + esc(id) + "</span>";
+
     var action = actionLabel(item);
     var actionHtml = url
-      ? "<a " + zentaoLinkAttrs(url, "action-btn primary") + ">" + escapeHtml(action) + "</a>"
-      : "<button type=\"button\" class=\"action-btn primary\" disabled>" + escapeHtml(action) + "</button>";
-    var titleInner =
-      (pri ? "<span class=\"inline-pri " + escapeHtml(pri) + "\">" + escapeHtml(pri) + "</span>" : "") +
-      escapeHtml(item.title || "");
+      ? "<a class=\"table-action-btn\" href=\"" + esc(url) + "\" target=\"_blank\" rel=\"noopener noreferrer\">" + esc(action) + "</a>"
+      : '<span class="table-action-btn" style="opacity:.4;cursor:default">' + esc(action) + "</span>";
+
+    var priTag = pri ? '<span class="inline-pri ' + esc(pri.toLowerCase()) + '">' + esc(pri) + "</span> " : "";
     var titleHtml = url
-      ? "<a " + zentaoLinkAttrs(url, "row-title-link") + ">" + titleInner + "</a>"
-      : titleInner;
+      ? "<a class=\"table-title-link\" href=\"" + esc(url) + "\" target=\"_blank\" rel=\"noopener noreferrer\">" + esc(item.title || "—") + "</a>"
+      : esc(item.title || "—");
 
-    return (
-      "<div class=\"top5-row\">" +
-      idHtml +
-      "<div class=\"row-title\" title=\"" + escapeHtml(item.title || "") + "\">" +
-      titleHtml +
-      "</div>" +
-      "<div class=\"row-stage\"><span class=\"stage-tag\">" + escapeHtml(item.valueStream || item.stage || "—") + "</span></div>" +
-      "<div class=\"row-zt-status\"><span class=\"status-tag st-progress\" title=\"" +
-      escapeHtml(item.zentaoStatus || "") +
-      "\">" +
-      escapeHtml(getHomeZentaoStatusLabel(item)) +
-      "</span></div>" +
-      "<div class=\"row-next\">" + escapeHtml(action) + "</div>" +
-      "<div class=\"row-owner\">" + escapeHtml(dash(item.nextOwner || item.owner)) + "</div>" +
-      "<div class=\"row-actions\">" + actionHtml + "</div>" +
-      "</div>"
-    );
-  }
-
-  function renderPagination(total) {
-    var page = state.page;
-    var ps = state.pageSize;
-    var totalPages = Math.max(1, Math.ceil(total / Math.max(1, ps)));
-    var startIdx = total ? (page - 1) * ps + 1 : 0;
-    var endIdx = Math.min(page * ps, total);
-    var html = "<div class=\"pagination-container\"><div class=\"pagination\">";
-    html += "<span class=\"pagination-summary\">显示 " + startIdx + "-" + endIdx + " / 共 " + total + " 条</span>";
-    html += "<div class=\"pagination-controls\">";
-    html += "<button type=\"button\" class=\"action-btn js-show-all\">查看全部 " + total + " 条</button>";
-    html += "<select class=\"filter-select\" aria-label=\"每页条数\">";
-    PAGE_SIZES.forEach(function (n) {
-      html += "<option value=\"" + n + "\"" + (n === ps ? " selected" : "") + ">" + n + " 条/页</option>";
-    });
-    html += "</select>";
-    html += "<button type=\"button\" class=\"action-btn small js-page-prev\"" + (page <= 1 ? " disabled" : "") + ">上一页</button>";
-    for (var i = 1; i <= totalPages; i++) {
-      if (i === 1 || i === totalPages || (i >= page - 1 && i <= page + 1)) {
-        html += "<button type=\"button\" class=\"action-btn small js-page-num" + (i === page ? " primary" : "") + "\" data-page=\"" + i + "\">" + i + "</button>";
-      } else if (i === page - 2 || i === page + 2) {
-        html += "<span class=\"pagination-ellipsis\">...</span>";
-      }
-    }
-    html += "<button type=\"button\" class=\"action-btn small js-page-next\"" + (page >= totalPages ? " disabled" : "") + ">下一页</button>";
-    html += "</div></div></div>";
-    return html;
-  }
-
-  function bindPagination(total) {
-    var $list = $("#top5List");
-    $list.find(".js-show-all").on("click", function () {
-      state.pageSize = Math.max(total, 1);
-      state.page = 1;
-      renderList();
-    });
-    $list.find(".filter-select").on("change", function () {
-      state.pageSize = parseInt($(this).val(), 10) || 6;
-      state.page = 1;
-      renderList();
-    });
-    $list.find(".js-page-prev").on("click", function () {
-      if (state.page > 1) {
-        state.page -= 1;
-        renderList();
-      }
-    });
-    $list.find(".js-page-next").on("click", function () {
-      var totalPages = Math.max(1, Math.ceil(total / Math.max(1, state.pageSize)));
-      if (state.page < totalPages) {
-        state.page += 1;
-        renderList();
-      }
-    });
-    $list.find(".js-page-num").on("click", function () {
-      state.page = parseInt($(this).attr("data-page"), 10) || 1;
-      renderList();
-    });
+    return "<tr>" +
+      '<td class="c-id">' + idHtml + "</td>" +
+      '<td class="c-title" title="' + esc(item.title || "") + '">' + priTag + titleHtml + "</td>" +
+      '<td class="c-stage"><span class="stage-tag">' + esc(item.valueStream || item.stage || "—") + "</span></td>" +
+      '<td class="c-zt-status"><span class="status-tag">' + esc(getHomeZentaoStatusLabel(item)) + "</span></td>" +
+      '<td class="c-next">' + esc(action) + "</td>" +
+      '<td class="c-owner">' + esc(dash(item.nextOwner || item.owner)) + "</td>" +
+      '<td class="c-actions">' + actionHtml + "</td>" +
+      "</tr>";
   }
 
   function renderList() {
     var total = state.items.length;
     updateTitle(total);
+    $("#top5Error").attr("hidden", true);
+
     if (!total) {
-      renderEmpty();
+      $("#top5Tbody").empty();
+      $("#top5Empty").removeAttr("hidden");
+      $("#homePagination").attr("hidden", true);
       return;
     }
-    var totalPages = Math.max(1, Math.ceil(total / Math.max(1, state.pageSize)));
+
+    $("#top5Empty").attr("hidden", true);
+    var totalPages = Math.max(1, Math.ceil(total / state.pageSize));
     if (state.page > totalPages) {
       state.page = totalPages;
     }
+
     var start = (state.page - 1) * state.pageSize;
     var pageItems = state.items.slice(start, start + state.pageSize);
-    renderPriorityStrip(state.items);
-    var html = "<div class=\"top5-cols\"><span>ID</span><span>标题</span><span>当前阶段</span><span>需求状态</span><span>下一步</span><span>下一责任人</span><span>操作</span></div>";
-    html += $.map(pageItems, renderRow).join("");
-    html += renderPagination(total);
-    $("#top5List").html(html);
-    bindPagination(total);
-  }
 
-  function renderPriorityStrip(items) {
-    var topItems = items.slice(0, 3);
-    if (!topItems.length) {
-      $("#homePriorityStrip").empty();
-      return;
+    $("#top5Tbody").html(pageItems.map(renderRow).join(""));
+
+    if (window.PersonalList) {
+      window.PersonalList.renderPagination({
+        container: document.getElementById("homePagination"),
+        page: state.page,
+        pageSize: state.pageSize,
+        total: total,
+        onPageChange: function (p) { state.page = p; renderList(); },
+        onPageSizeChange: function (s) { state.pageSize = s; state.page = 1; renderList(); }
+      });
     }
-    var html = $.map(topItems, function (item) {
-      var action = actionLabel(item);
-      return (
-        "<article class=\"home-priority-card\">" +
-        "<div class=\"priority-card-meta\"><span>" + escapeHtml(item.id || "—") + "</span>" +
-        (item.pri ? "<span class=\"inline-pri " + escapeHtml(item.pri) + "\">" + escapeHtml(item.pri) + "</span>" : "") +
-        "</div><div class=\"priority-card-title\" title=\"" + escapeHtml(item.title || "") + "\">" + escapeHtml(item.title || "未命名事项") + "</div>" +
-        "<div class=\"priority-card-foot\"><span>" + escapeHtml(dash(item.nextOwner || item.owner)) + "</span><span class=\"action-btn primary\">" + escapeHtml(action) + "</span></div>" +
-        "</article>"
-      );
-    }).join("");
-    $("#homePriorityStrip").html(html);
   }
 
   function setActiveCard($card) {
@@ -297,19 +173,31 @@
   }
 
   function refreshDemands(status) {
+    currentSeq += 1;
+    var reqSeq = currentSeq;
     state.status = status || "all";
     state.page = 1;
-    $("#top5List").html("<div class=\"empty-state\">正在加载行动列表…</div>");
+
+    $("#top5Empty").attr("hidden", true);
+    $("#top5Error").attr("hidden", true);
+    $("#top5Tbody").html('<tr><td colspan="7" class="state-placeholder">正在加载行动列表…</td></tr>');
+
     return loadDemands(state.status)
       .then(function (items) {
+        if (reqSeq !== currentSeq) { return items; }
         state.items = items;
         renderList();
+        fillUpdateTime();
         return items;
       })
-      .catch(function () {
+      .catch(function (err) {
+        if (reqSeq !== currentSeq) { return []; }
         state.items = [];
         updateTitle(0);
-        renderError();
+        $("#top5Tbody").empty();
+        $("#top5Empty").attr("hidden", true);
+        $("#top5Error").removeAttr("hidden");
+        $("#homePagination").attr("hidden", true);
         if (typeof window.showToast === "function") {
           window.showToast("加载需求列表失败，请稍后重试", "danger");
         }
@@ -321,42 +209,40 @@
     $(".home-vs-mini-card").on("click", function () {
       var $card = $(this);
       var status = $card.attr("data-vs-status");
-      if (!status) {
-        return;
-      }
+      if (!status) { return; }
       setActiveCard($card);
       refreshDemands(status);
     });
   }
 
-  function fillUpdateTime() {
-    var now = new Date();
-    var pad = function (n) {
-      return n < 10 ? "0" + n : String(n);
-    };
-    $("#lastUpdateTime").text(
-      now.getFullYear() +
-        "-" +
-        pad(now.getMonth() + 1) +
-        "-" +
-        pad(now.getDate()) +
-        " " +
-        pad(now.getHours()) +
-        ":" +
-        pad(now.getMinutes())
-    );
+  function initFocusChips() {
+    $("#homeFocusChips .header-quick-chip").on("click", function () {
+      var $chip = $(this);
+      var focus = $chip.attr("data-focus");
+      if (focus === "all" || focus === "pending") {
+        $("#homeFocusChips .header-quick-chip").removeClass("active").attr("aria-pressed", "false");
+        $chip.addClass("active").attr("aria-pressed", "true");
+        refreshDemands(state.status);
+      } else {
+        if (typeof window.showToast === "function") {
+          window.showToast("该焦点筛选数据源待业务规则冻结 (WAIT DECISION)", "info");
+        }
+      }
+    });
   }
 
   $(function () {
     initValueStreamLinkage();
-    fillUpdateTime();
+    initFocusChips();
+
+    $("#homeRetryBtn").on("click", function () {
+      refreshDemands(state.status);
+    });
 
     var $active = $(".home-vs-mini-card.active").first();
     if (!$active.length) {
       $active = $(".home-vs-mini-card").first();
-      if ($active.length) {
-        setActiveCard($active);
-      }
+      if ($active.length) { setActiveCard($active); }
     }
     refreshDemands($active.attr("data-vs-status") || "all");
   });

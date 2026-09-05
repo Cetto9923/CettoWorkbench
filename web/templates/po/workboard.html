@@ -13,10 +13,10 @@
   <div class="page-hdr">
     <h2>工作看板</h2>
     <div class="board-switch">
-      <button id="demandTab" type="button" data-mode="demand">需求看板</button>
+      <button id="demandTab" type="button" class="active" data-mode="demand">需求看板</button>
       <button id="taskTab" type="button" data-mode="task">任务看板</button>
     </div>
-    <span id="modeNote" class="mode-note"></span>
+    <span id="modeNote" class="mode-note">PO视角：看我负责的需求是否持续向前推进</span>
     <div id="demandStats" class="stats">
       <button type="button" class="stat blue" data-flag="clarify">待澄清 <strong>—</strong></button>
       <button type="button" class="stat blue" data-flag="schedule">待排期 <strong>—</strong></button>
@@ -32,14 +32,14 @@
       <div class="chips" id="agileChips"></div>
     </div>
     <div id="demandActions" class="actions">
-      <button type="button" class="action">需求查询</button>
-      <button type="button" class="action soft">需求排期</button>
-      <button type="button" class="action primary">+ 提问题</button>
+      <button type="button" class="action" onclick="location.href='/demand'">需求查询</button>
+      <button type="button" class="action soft" onclick="location.href='/schedule'">需求排期</button>
+      <button type="button" class="action primary" onclick="showToast('提问题')">+ 提问题</button>
     </div>
     <div id="taskActions" class="actions hidden">
-      <button type="button" class="action primary">+ 建任务</button>
-      <button type="button" class="action primary">+ 提问题</button>
-      <button type="button" class="action">调整成员</button>
+      <button type="button" class="action primary" onclick="showToast('建任务')">+ 建任务</button>
+      <button type="button" class="action primary" onclick="showToast('提问题')">+ 提问题</button>
+      <button type="button" class="action" onclick="showToast('调整成员')">调整成员</button>
     </div>
   </div>
 
@@ -47,18 +47,29 @@
     <span id="ownerTitle" class="owner-title">PO / 需求负责人</span>
     <div id="demandOwners" class="people"></div>
     <div id="taskOwners" class="people hidden"></div>
-    <span id="ownerHint" class="scope-hint"></span>
+    <span id="ownerHint" class="scope-hint">仅显示当前小组中实际拥有业务需求 / 独立研发需求的人；开发人员不会混进来</span>
   </div>
 
   <section class="team-metrics" aria-label="敏捷小组关键指标">
     <div class="team-metrics-head">
       <span class="team-metrics-title">小组效能快照</span>
       <span class="team-metrics-group" id="metricsGroupName">—</span>
-      <span class="team-metrics-note">小组级 · 不随负责人筛选变化</span>
+      <span class="team-metrics-note">小组级 · 不随 PO / 任务负责人筛选变化</span>
       <button type="button" class="team-metrics-more">全部指标 ›</button>
     </div>
     <div class="team-metrics-grid" id="metricsGrid"><!-- JS 填充 8 格或 Empty State --></div>
   </section>
+
+  <div id="demandRoleBanner" class="role-banner">
+    <strong>需求看板</strong><span class="arrow">→</span>
+    <span>根节点是 <b>PO 的工作对象</b>（业务需求 / 独立研发需求）</span><span class="arrow">→</span>
+    <span>树下研发需求仅用于展示 <b>交付进展</b>，不代表它也是 PO 的个人任务</span>
+  </div>
+  <div id="taskRoleBanner" class="role-banner task hidden">
+    <strong>任务看板</strong><span class="arrow">→</span>
+    <span>卡片全部是 <b>开发/测试执行任务</b></span><span class="arrow">→</span>
+    <span>按任务负责人筛选；PO 没有任务时不会出现在负责人列表</span>
+  </div>
 
   <div id="taskFilterTip" class="task-filter-tip hidden"></div>
 
@@ -67,10 +78,16 @@
       <div id="demandBoard" class="demand-board">
         <div class="demand-grid">
           <div class="grid-head">
-            <div>需求树</div><div>受理 / 澄清</div><div>排期</div><div>研发 / 提测</div><div>联调 / 验收</div><div>交付 / 评价</div>
+            <div>需求树（PO工作对象 / 交付上下文）</div><div>受理 / 澄清</div><div>排期</div><div>研发 / 提测</div><div>联调 / 验收</div><div>交付 / 评价</div>
           </div>
           <div id="demandGroups"><!-- JS 填充：业务/独立研发对象 + 子业务 + 研发交付进展行 --></div>
           <div id="demandEmpty" class="demand-empty">当前条件下没有需求</div>
+          <div class="legend">
+            <span><b>业务需求 / 独立研发需求</b> = PO 本人工作对象</span>
+            <span><b>子业务需求</b> = 交付单元</span>
+            <span><b>研发需求</b> = 下钻交付进展，不等于 PO 的“任务”</span>
+            <span>需求阶段由状态派生，不支持拖拽</span>
+          </div>
         </div>
       </div>
 
@@ -88,6 +105,7 @@
     </aside>
   </div>
 </div>
+<div id="toast" class="toast"></div>
 {{ end }}
 
 {{ define "page_js" }}<script src="{{ asset "/static/js/po/workboard.js" }}"></script>{{ end }}

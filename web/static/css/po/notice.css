@@ -1,13 +1,80 @@
-/* PO 通知中心：沿用待办的卡片、表格密度和圆角分类按钮语言。 */
-.po-notice { min-height: calc(100vh - 56px); padding: 18px 20px 28px; background: #f5f7fb; color: #172033; }
-.notice-header { margin-bottom: 14px; }.notice-header h2 { margin: 0; font-size: 22px; line-height: 30px; font-weight: 650; }.notice-header p { margin: 3px 0 0; color: #7a8799; font-size: 12px; }
-.notice-focus-grid { display: grid; grid-template-columns: repeat(5, minmax(120px, 1fr)); gap: 10px; margin-bottom: 12px; }.notice-focus { min-height: 76px; padding: 12px 16px; border: 1px solid #e3e8f0; border-radius: 7px; background: #fff; color: #66758a; text-align: left; cursor: pointer; }.notice-focus span { display: block; margin-bottom: 7px; font-size: 12px; }.notice-focus strong { color: #23324a; font-size: 24px; line-height: 26px; }.notice-focus.active { border-color: #78a4f8; box-shadow: inset 0 0 0 1px #78a4f8; }.notice-focus.action strong { color: #2563d8; }.notice-focus.warning strong { color: #d97706; }
-.notice-panel { overflow: hidden; border: 1px solid #e3e8f0; border-radius: 7px; background: #fff; }.notice-category-tabs { display: flex; gap: 10px; padding: 12px 16px; border-bottom: 1px solid #e6eaf0; overflow-x: auto; }.notice-category-tab { min-height: 32px; padding: 0 13px; border: 1px solid #e1e6ef; border-radius: 18px; background: #fff; color: #647187; font-size: 12px; white-space: nowrap; cursor: pointer; }.notice-category-tab em { margin-left: 4px; color: #8b97a8; font-style: normal; font-weight: 600; }.notice-category-tab.active { border-color: #2864e8; background: #2864e8; color: #fff; box-shadow: 0 2px 5px rgb(37 99 216 / 18%); }.notice-category-tab.active em { color: #e6efff; }
-.notice-toolbar { display: flex; align-items: center; gap: 7px; padding: 11px 14px; border-bottom: 1px solid #edf0f4; flex-wrap: wrap; }.notice-search,.notice-toolbar select { height: 30px; border: 1px solid #dce2ea; border-radius: 4px; background: #fff; color: #536176; font-size: 12px; }.notice-search { display: flex; align-items: center; width: 220px; padding: 0 8px; color: #9aa5b4; }.notice-search input { width: 100%; min-width: 0; padding-left: 6px; border: 0; outline: 0; font-size: 12px; }.notice-toolbar select { padding: 0 22px 0 8px; }.notice-toolbar-btn { height: 30px; padding: 0 12px; border: 1px solid #dce2ea; border-radius: 4px; background: #fff; color: #536176; font-size: 12px; cursor: pointer; }.notice-toolbar-btn.primary { border-color: #8bb2f4; background: #eff5ff; color: #1d5fc4; }
-.notice-result-bar { display: flex; justify-content: space-between; align-items: center; min-height: 36px; padding: 0 15px; color: #7a8799; font-size: 12px; }.notice-table-wrap { max-height: 52vh; overflow: auto; }.notice-table { width: 100%; min-width: 1020px; border-collapse: collapse; table-layout: fixed; font-size: 12px; }.notice-table th { position: sticky; top: 0; z-index: 1; height: 34px; padding: 0 9px; border-top: 1px solid #edf0f4; border-bottom: 1px solid #e6eaf0; background: #f7f8fa; color: #7a8799; text-align: left; font-weight: 500; }.notice-table td { height: 45px; padding: 0 9px; border-bottom: 1px solid #edf0f4; color: #4b5a6f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }.notice-table tbody tr:hover { background: #f8faff; }.notice-table tbody tr.is-unread { background: #fbfdff; }.notice-subject { width: 34%; }.notice-status { width: 68px; }.notice-operation { width: 82px; text-align: right; }.notice-subject-text { overflow: hidden; color: #26364e; font-weight: 500; text-overflow: ellipsis; }.notice-subject small { display: block; overflow: hidden; margin-top: 2px; color: #8b97a8; font-size: 11px; font-weight: 400; text-overflow: ellipsis; }.notice-category-tag { display: inline-flex; align-items: center; min-height: 19px; padding: 0 6px; border-radius: 3px; background: #edf4ff; color: #3568ad; font-size: 11px; }.notice-category-tag.approval { background: #f4edff; color: #744db2; }.notice-category-tag.reminder { background: #fff5e6; color: #b66a10; }.notice-category-tag.collaboration { background: #e8f7f3; color: #16806c; }.notice-category-tag.risk { background: #feeaea; color: #c23939; }.notice-category-tag.system { background: #f0f2f5; color: #697586; }.notice-object-link { color: #2563d8; text-decoration: none; }.notice-object-link:hover { color: #174eb7; text-decoration: underline; }.notice-read-state,.notice-unread-state { color: #7a8799; }.notice-unread-state { color: #2563d8; font-weight: 600; }.notice-unread-state i { display: inline-block; width: 6px; height: 6px; margin-right: 4px; border-radius: 50%; background: #2563d8; vertical-align: middle; }.notice-read-btn { height: 25px; padding: 0 9px; border: 1px solid #8bb2f4; border-radius: 4px; background: #eff5ff; color: #1d5fc4; font-size: 11px; cursor: pointer; }.notice-read-btn:disabled { border-color: transparent; background: transparent; color: #9aa5b4; cursor: default; }.notice-empty { padding: 55px 20px; color: #8c98a8; text-align: center; font-size: 13px; }.notice-pagination { display: flex; justify-content: space-between; align-items: center; min-height: 46px; padding: 0 14px; color: #7a8799; font-size: 12px; }.notice-pager-controls { display: flex; align-items: center; gap: 7px; }.notice-page-size { height: 28px; border: 1px solid #dce2ea; border-radius: 4px; background: #fff; color: #536176; font-size: 12px; }.notice-pager-btn { width: 28px; height: 28px; border: 1px solid #dce2ea; border-radius: 4px; background: #fff; color: #536176; cursor: pointer; }.notice-pager-btn:disabled { cursor: not-allowed; opacity: .45; }
-@media (max-width: 980px) { .notice-focus-grid { grid-template-columns: repeat(3, 1fr); }.notice-search { width: 100%; }.notice-toolbar select { flex: 1 1 140px; } }
-@media (max-width: 620px) { .po-notice { padding: 14px 10px 22px; }.notice-focus-grid { grid-template-columns: repeat(2, 1fr); }.notice-result-bar { align-items: flex-start; gap: 4px; flex-direction: column; padding-block: 7px; }.notice-category-tabs { gap: 8px; padding-inline: 10px; } }
+/* =============================================================================
+   文件: web/static/css/po/notice.css
+   模块: PO 个人工作台 - 通知中心专属样式
+   职责: 定义通知列表列宽、未读指示器与分类标签
+   依赖: personal-workspace.css
+   ============================================================================= */
 
-/* 保留分页栏在常见笔记本视口内可见，长列表在表格内部滚动。 */
-.po-notice .notice-table-wrap { max-height: 44vh; }
-@media (max-width: 620px) { .notice-pagination { align-items: flex-start; gap: 8px; flex-direction: column; padding-block: 8px; }.notice-pager-controls { flex-wrap: wrap; } }
+.po-notice .notice-table .notice-subject { width: auto; min-width: 260px; }
+.po-notice .notice-table .notice-object { width: 130px; }
+.po-notice .notice-table .notice-actor { width: 90px; }
+.po-notice .notice-table .notice-date { width: 140px; }
+.po-notice .notice-table .notice-state { width: 72px; }
+.po-notice .notice-table .notice-opt { width: 140px; text-align: right; }
+
+.po-notice .notice-subject-text {
+  overflow: hidden;
+  color: var(--po-t1, #1f2937);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.po-notice .notice-subject-sub {
+  display: block;
+  overflow: hidden;
+  margin-top: 2px;
+  color: var(--color-text-secondary, #64748b);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.po-notice .notice-opt-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.po-notice .notice-read-state {
+  color: var(--color-text-disabled, #94a3b8);
+}
+.po-notice .notice-unread-state {
+  color: var(--po-blue, #2563eb);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.po-notice .notice-unread-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--po-blue, #2563eb);
+}
+
+.po-notice .notice-read-btn {
+  height: 24px;
+  padding: 0 6px;
+  border: 1px solid var(--po-border, #cbd5e1);
+  border-radius: 4px;
+  background: #ffffff;
+  color: var(--color-text-secondary, #64748b);
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+.po-notice .notice-read-btn:hover:not(:disabled) {
+  border-color: var(--po-blue, #2563eb);
+  color: var(--po-blue, #2563eb);
+  background: #f8fafc;
+}
+.po-notice .notice-missing-rel {
+  color: var(--color-text-disabled, #94a3b8);
+  font-size: 11px;
+}
+.po-notice .notice-no-op {
+  color: var(--color-text-disabled, #94a3b8);
+}

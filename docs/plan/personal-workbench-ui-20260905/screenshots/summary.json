@@ -1,0 +1,185 @@
+{
+  "results": [
+    {
+      "page": "/home",
+      "viewport": "desktop-1440",
+      "width": 1440,
+      "height": 900,
+      "file": "home_desktop-1440.png",
+      "hasHScroll": false,
+      "title": "工作台首页 - workbench"
+    },
+    {
+      "page": "/home",
+      "viewport": "widescreen-1920",
+      "width": 1920,
+      "height": 1080,
+      "file": "home_widescreen-1920.png",
+      "hasHScroll": false,
+      "title": "工作台首页 - workbench"
+    },
+    {
+      "page": "/home",
+      "viewport": "laptop-1280",
+      "width": 1280,
+      "height": 800,
+      "file": "home_laptop-1280.png",
+      "hasHScroll": false,
+      "title": "工作台首页 - workbench"
+    },
+    {
+      "page": "/home",
+      "viewport": "half-960",
+      "width": 960,
+      "height": 900,
+      "file": "home_half-960.png",
+      "hasHScroll": false,
+      "title": "工作台首页 - workbench"
+    },
+    {
+      "page": "/home",
+      "viewport": "mobile-390",
+      "width": 390,
+      "height": 844,
+      "file": "home_mobile-390.png",
+      "hasHScroll": false,
+      "title": "工作台首页 - workbench"
+    },
+    {
+      "page": "/todos",
+      "viewport": "desktop-1440",
+      "width": 1440,
+      "height": 900,
+      "file": "todos_desktop-1440.png",
+      "hasHScroll": false,
+      "title": "我的待办 - workbench"
+    },
+    {
+      "page": "/todos",
+      "viewport": "widescreen-1920",
+      "width": 1920,
+      "height": 1080,
+      "file": "todos_widescreen-1920.png",
+      "hasHScroll": false,
+      "title": "我的待办 - workbench"
+    },
+    {
+      "page": "/todos",
+      "viewport": "laptop-1280",
+      "width": 1280,
+      "height": 800,
+      "file": "todos_laptop-1280.png",
+      "hasHScroll": false,
+      "title": "我的待办 - workbench"
+    },
+    {
+      "page": "/todos",
+      "viewport": "half-960",
+      "width": 960,
+      "height": 900,
+      "file": "todos_half-960.png",
+      "hasHScroll": false,
+      "title": "我的待办 - workbench"
+    },
+    {
+      "page": "/todos",
+      "viewport": "mobile-390",
+      "width": 390,
+      "height": 844,
+      "file": "todos_mobile-390.png",
+      "hasHScroll": false,
+      "title": "我的待办 - workbench"
+    },
+    {
+      "page": "/done",
+      "viewport": "desktop-1440",
+      "width": 1440,
+      "height": 900,
+      "file": "done_desktop-1440.png",
+      "hasHScroll": false,
+      "title": "我的已办 - workbench"
+    },
+    {
+      "page": "/done",
+      "viewport": "widescreen-1920",
+      "width": 1920,
+      "height": 1080,
+      "file": "done_widescreen-1920.png",
+      "hasHScroll": false,
+      "title": "我的已办 - workbench"
+    },
+    {
+      "page": "/done",
+      "viewport": "laptop-1280",
+      "width": 1280,
+      "height": 800,
+      "file": "done_laptop-1280.png",
+      "hasHScroll": false,
+      "title": "我的已办 - workbench"
+    },
+    {
+      "page": "/done",
+      "viewport": "half-960",
+      "width": 960,
+      "height": 900,
+      "file": "done_half-960.png",
+      "hasHScroll": false,
+      "title": "我的已办 - workbench"
+    },
+    {
+      "page": "/done",
+      "viewport": "mobile-390",
+      "width": 390,
+      "height": 844,
+      "file": "done_mobile-390.png",
+      "hasHScroll": false,
+      "title": "我的已办 - workbench"
+    },
+    {
+      "page": "/notice",
+      "viewport": "desktop-1440",
+      "width": 1440,
+      "height": 900,
+      "file": "notice_desktop-1440.png",
+      "hasHScroll": false,
+      "title": "通知中心 - workbench"
+    },
+    {
+      "page": "/notice",
+      "viewport": "widescreen-1920",
+      "width": 1920,
+      "height": 1080,
+      "file": "notice_widescreen-1920.png",
+      "hasHScroll": false,
+      "title": "通知中心 - workbench"
+    },
+    {
+      "page": "/notice",
+      "viewport": "laptop-1280",
+      "width": 1280,
+      "height": 800,
+      "file": "notice_laptop-1280.png",
+      "hasHScroll": false,
+      "title": "通知中心 - workbench"
+    },
+    {
+      "page": "/notice",
+      "viewport": "half-960",
+      "width": 960,
+      "height": 900,
+      "file": "notice_half-960.png",
+      "hasHScroll": false,
+      "title": "通知中心 - workbench"
+    },
+    {
+      "page": "/notice",
+      "viewport": "mobile-390",
+      "width": 390,
+      "height": 844,
+      "file": "notice_mobile-390.png",
+      "hasHScroll": false,
+      "title": "通知中心 - workbench"
+    }
+  ],
+  "consoleErrors": []
+}

@@ -1,5 +1,15 @@
+/* =============================================================================
+   文件: web/static/js/po/done.js
+   模块: PO 个人工作台 - 我的已办交互脚本
+   职责: 绑定已办分类 Tab、时间范围 Chips、高级筛选、列表渲染与分页
+   依赖: personal-list.js
+   ============================================================================= */
+
 (function () {
   "use strict";
+
+  var esc = (window.PersonalList && window.PersonalList.escapeHtml) || function (v) { return String(v == null ? "" : v); };
+  var $ = function (id) { return document.getElementById(id); };
 
   var state = {
     tab: "all",
@@ -9,175 +19,276 @@
     keyword: "",
     result: "all",
     page: 1,
-    pageSize: 15,
+    pageSize: 20
   };
 
-  // 一级场景 -> 对象类型集合（前端场景映射，不改后端接口）。
-  // 审批决策是跨需求对象的正式动作集合，故其可选对象为 demand/story。
-  var OBJECT_TYPE_LABELS = {
-    demand: "业务需求", story: "研发需求", task: "任务", bug: "Bug", testtask: "测试单",
-    issue: "问题", risk: "风险", feedback: "反馈", release: "发布", build: "构建", todo: "待办",
+  var RANGE_FIELD_MAP = {
+    all: "all",
+    today: "today",
+    "7d": "d7",
+    week: "thisWeek",
+    "30d": "d30",
+    month: "thisMonth",
+    quarter: "thisQuarter"
   };
+
   var SCENE_OBJECT_TYPES = {
-    all: ["demand", "story", "task", "bug", "testtask", "issue", "risk", "feedback", "release", "build", "todo"],
-    approval: ["demand", "story"],
-    demand: ["demand", "story"],
-    execution: ["task", "build", "release"],
-    quality: ["bug", "testtask"],
-    risks: ["risk", "issue"],
+    all: [
+      { value: "", label: "全部对象" },
+      { value: "demand", label: "业务需求" },
+      { value: "story", label: "研发需求" },
+      { value: "task", label: "任务" },
+      { value: "bug", label: "Bug" },
+      { value: "testtask", label: "测试单" },
+      { value: "issue", label: "问题" },
+      { value: "risk", label: "风险" },
+      { value: "approval", label: "审批流程" }
+    ],
+    approval: [{ value: "approval", label: "审批流程" }],
+    demand: [{ value: "demand", label: "业务需求" }],
+    execution: [{ value: "task", label: "任务" }, { value: "story", label: "研发需求" }],
+    quality: [{ value: "bug", label: "Bug" }, { value: "testtask", label: "测试单" }],
+    risks: [{ value: "issue", label: "问题" }, { value: "risk", label: "风险" }]
   };
 
-  function populateObjectType(scene, selected) {
-    var sel = document.getElementById("doneObjectType");
-    var types = SCENE_OBJECT_TYPES[scene] || SCENE_OBJECT_TYPES.all;
-    var html = '<option value="">对象类型：全部</option>';
-    types.forEach(function (t) { html += '<option value="' + t + '">' + (OBJECT_TYPE_LABELS[t] || t) + "</option>"; });
-    sel.innerHTML = html;
-    sel.value = selected || "";
-  }
-
-  function escapeHtml(value) {
-    return String(value == null ? "" : value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-  }
-
-  function queryItems() {
+  function buildUrl() {
     var params = new URLSearchParams();
     params.set("tab", state.tab);
     params.set("timeRange", state.timeRange);
     if (state.objectType) { params.set("objectType", state.objectType); }
     if (state.action !== "all") { params.set("action", state.action); }
     if (state.keyword) { params.set("keyword", state.keyword); }
-        if (state.result !== "all") { params.set("result", state.result); }
+    if (state.result !== "all") { params.set("result", state.result); }
     params.set("page", String(state.page));
     params.set("pageSize", String(state.pageSize));
-    return fetch("/done/items?" + params.toString(), { method: "GET" })
-      .then(function (response) {
-        if (!response.ok) { throw new Error("request failed"); }
-        return response.json();
-      })
-      .then(function (payload) {
-        if (!payload || payload.success !== true) { throw new Error("invalid payload"); }
-        return payload;
-      });
+    return "/done/items?" + params.toString();
   }
 
   function renderRow(item) {
     var displayId = item.displayId || (item.objectType + "/" + item.objectId);
     var idCell = item.url
-      ? '<a class="row-id-link" href="' + escapeHtml(item.url) + '" title="在禅道中查看">' + escapeHtml(displayId) + "</a>"
-      : escapeHtml(displayId);
+      ? '<a class="table-id-link" href="' + esc(item.url) + '" rel="noopener noreferrer" title="查看对象">' + esc(displayId) + "</a>"
+      : esc(displayId);
     var titleCell = item.url
-      ? '<a class="row-title-link" href="' + escapeHtml(item.url) + '" title="在禅道中查看">' + escapeHtml(item.objectName || "—") + "</a>"
-      : escapeHtml(item.objectName || "—");
-    var resultLabels = { activated: "已激活", done: "处理成功", submitted: "已提交", approved: "已通过", rejected: "已驳回", closed: "已关闭", verified: "已验收", resolved: "已解决", returned: "已退回" };
+      ? '<a class="table-title-link" href="' + esc(item.url) + '" rel="noopener noreferrer" title="查看对象">' + esc(item.objectName || "—") + "</a>"
+      : esc(item.objectName || "—");
+
+    var resultLabels = {
+      activated: "已激活", done: "处理成功", submitted: "已提交", approved: "已通过",
+      rejected: "已驳回", closed: "已关闭", verified: "已验收", resolved: "已解决", returned: "已退回"
+    };
     var result = resultLabels[item.result] || "已处理";
-    var resultTone = ["approved", "done", "verified", "resolved"].indexOf(item.result) >= 0 ? " success" : (["rejected", "returned"].indexOf(item.result) >= 0 ? " danger" : "");
+    var resultTone = ["approved", "done", "verified", "resolved"].indexOf(item.result) >= 0
+      ? " success"
+      : (["rejected", "returned"].indexOf(item.result) >= 0 ? " danger" : "");
+
     return "<tr>" +
-      '<td class="c-item" title="' + escapeHtml(item.objectName || "") + '"><div class="done-item-title">' + titleCell + '</div><div class="done-item-id">' + idCell + "</div></td>" +
-      '<td class="c-type"><span class="type-tag">' + escapeHtml(item.objectTypeLabel || item.objectType || "—") + "</span></td>" +
-      '<td class="c-action">' + escapeHtml(item.action || "已处理") + "</td>" +
-      '<td class="c-result"><span class="result-tag' + resultTone + '">' + escapeHtml(result) + "</span></td>" +
-      '<td class="c-dead">' + escapeHtml(item.date || "—") + "</td>" +
-      '<td class="c-op">' + (item.url ? '<a class="todo-action" href="' + escapeHtml(item.url) + '">查看</a>' : "—") + "</td>" +
+      '<td class="done-col-item" title="' + esc(item.objectName || "") + '">' +
+        '<div class="done-item-title">' + titleCell + "</div>" +
+        '<div class="done-item-id">' + idCell + "</div>" +
+      "</td>" +
+      '<td class="done-col-type"><span class="type-tag">' + esc(item.objectTypeLabel || item.objectType || "—") + "</span></td>" +
+      '<td class="done-col-action">' + esc(item.action || "已处理") + "</td>" +
+      '<td class="done-col-result"><span class="result-tag' + resultTone + '">' + esc(result) + "</span></td>" +
+      '<td class="done-col-date">' + esc(item.date || "—") + "</td>" +
+      '<td class="done-col-opt">' + (item.url ? '<a class="table-action-btn" href="' + esc(item.url) + '" rel="noopener noreferrer">查看记录</a>' : "—") + "</td>" +
       "</tr>";
   }
 
   function renderSummary(summary) {
-    var map = { countRangeAll: "all", countRangeToday: "today", countRange7d: "last7d", countRangeWeek: "week", countRange30d: "last30d", countRangeMonth: "month", countRangeQuarter: "quarter" };
-    Object.keys(map).forEach(function (id) {
-      var el = document.getElementById(id);
-      if (el) { el.textContent = (summary && summary[map[id]]) || 0; }
-    });
-  }
-
-  function renderList(payload) {
-    var items = payload.items || [];
-    document.getElementById("doneTbody").innerHTML = items.map(renderRow).join("");
-    document.getElementById("doneEmpty").hidden = items.length !== 0;
-    document.getElementById("doneSummary").textContent = "";
-    renderSummary(payload.summary);
-    renderPagination(payload.total || 0);
-  }
-
-  function renderPagination(total) {
-    var host = document.getElementById("donePagination");
-    var pages = Math.max(1, Math.ceil(total / state.pageSize));
-    host.hidden = total === 0;
-    if (total === 0) { host.innerHTML = ""; return; }
-    var start = (state.page - 1) * state.pageSize + 1;
-    var end = Math.min(total, state.page * state.pageSize);
-    var controls = '<button class="pager-btn" data-page="' + (state.page - 1) + '"' + (state.page === 1 ? " disabled" : "") + ">‹</button>";
-    for (var page = 1; page <= pages; page += 1) {
-      if (pages > 7 && page > 2 && page < pages - 1 && Math.abs(page - state.page) > 1) { if (page === 3 || page === pages - 2) { controls += "<span>…</span>"; } continue; }
-      controls += '<button class="pager-btn' + (page === state.page ? " active" : "") + '" data-page="' + page + '">' + page + "</button>";
+    if (!summary) { return; }
+    var totalEl = $("countRangeAll");
+    if (totalEl) { totalEl.textContent = summary.all != null ? summary.all : 0; }
+    var curEl = $("countRangeCurrent");
+    if (curEl) {
+      var field = RANGE_FIELD_MAP[state.timeRange] || "all";
+      curEl.textContent = summary[field] != null ? summary[field] : 0;
     }
-    controls += '<button class="pager-btn" data-page="' + (state.page + 1) + '"' + (state.page === pages ? " disabled" : "") + ">›</button>";
-    host.innerHTML = "<span>显示 " + start + "–" + end + "，共 " + total + ' 条</span><div class="pager-controls"><select class="pager-page-size" aria-label="每页条数"><option value="10">10 条/页</option><option value="15">15 条/页</option><option value="20">20 条/页</option><option value="30">30 条/页</option><option value="50">50 条/页</option></select>' + controls + "</div>";
-    host.querySelector(".pager-page-size").value = String(state.pageSize);
   }
 
-  function refresh() {
-    document.getElementById("doneSummary").textContent = "加载中…";
-    document.getElementById("donePagination").hidden = true;
-    queryItems().then(renderList).catch(function () {
-      // 失败状态：只显示失败提示与重新加载，不显示"暂无数据"，不展示旧的列表/分页总数。
-      document.getElementById("doneSummary").innerHTML = '数据加载失败 <button type="button" id="doneRetryBtn" class="retry-link">重新加载</button>';
-      document.getElementById("doneTbody").innerHTML = "";
-      document.getElementById("doneEmpty").hidden = true;
-      document.getElementById("donePagination").hidden = true;
+  function syncObjectTypeOptions(tab) {
+    var select = $("doneObjectType");
+    if (!select) { return; }
+    var list = SCENE_OBJECT_TYPES[tab] || SCENE_OBJECT_TYPES.all;
+    select.innerHTML = list.map(function (opt) {
+      return '<option value="' + esc(opt.value) + '">' + esc(opt.label) + "</option>";
+    }).join("");
+    state.objectType = list[0] ? list[0].value : "";
+  }
+
+  var controller = null;
+
+  function loadData() {
+    if (!controller) { return; }
+    controller.fetch(buildUrl(), { method: "GET" }, function (payload) {
+      var items = (payload && Array.isArray(payload.items)) ? payload.items : [];
+      var total = (payload && typeof payload.total === "number") ? payload.total : items.length;
+
+      var tbody = $("doneTbody");
+      if (tbody) {
+        tbody.innerHTML = items.map(renderRow).join("");
+      }
+      if ($("doneSummary")) { $("doneSummary").textContent = "共 " + total + " 条已办记录"; }
+      renderSummary(payload && payload.summary);
+
+      if (window.PersonalList) {
+        window.PersonalList.renderPagination({
+          container: $("donePagination"),
+          page: state.page,
+          pageSize: state.pageSize,
+          total: total,
+          onPageChange: function (p) { state.page = p; loadData(); },
+          onPageSizeChange: function (s) { state.pageSize = s; state.page = 1; loadData(); }
+        });
+      }
     });
   }
 
-  function activate(selector, current) {
-    document.querySelectorAll(selector).forEach(function (button) { button.classList.toggle("active", button === current); });
-  }
-
-  function bindEvents() {
-    document.querySelectorAll("[data-range]").forEach(function (button) {
-      button.addEventListener("click", function () {
-        activate("[data-range]", button);
-        state.timeRange = button.dataset.range;
+  function initTabs() {
+    var tabs = document.querySelectorAll(".po-done .category-tab");
+    tabs.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var tab = btn.getAttribute("data-tab") || "all";
+        if (state.tab === tab) { return; }
+        tabs.forEach(function (b) {
+          b.classList.remove("active");
+          b.removeAttribute("aria-current");
+        });
+        btn.classList.add("active");
+        btn.setAttribute("aria-current", "page");
+        state.tab = tab;
         state.page = 1;
-        refresh();
+        state.action = "all";
+        state.result = "all";
+        if ($("doneAction")) { $("doneAction").value = "all"; }
+        if ($("doneResult")) { $("doneResult").value = "all"; }
+        syncObjectTypeOptions(tab);
+        loadData();
       });
     });
-    document.querySelectorAll(".group-tab").forEach(function (button) {
-      button.addEventListener("click", function () {
-        activate(".group-tab", button);
-        state.tab = button.dataset.tab || "all";
+  }
+
+  function initTimeChips() {
+    var chips = document.querySelectorAll("#doneTimeChips .header-quick-chip");
+    chips.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var range = btn.getAttribute("data-range") || "all";
+        if (state.timeRange === range) { return; }
+        chips.forEach(function (b) {
+          b.classList.remove("active");
+          b.setAttribute("aria-pressed", "false");
+        });
+        btn.classList.add("active");
+        btn.setAttribute("aria-pressed", "true");
+        state.timeRange = range;
+        state.page = 1;
+        loadData();
+      });
+    });
+  }
+
+  function initToolbar() {
+    var kwInput = $("doneKeyword");
+    if (kwInput) {
+      var timer = null;
+      kwInput.addEventListener("input", function () {
+        clearTimeout(timer);
+        timer = setTimeout(function () {
+          state.keyword = (kwInput.value || "").trim();
+          state.page = 1;
+          loadData();
+        }, 300);
+      });
+    }
+
+    var objSel = $("doneObjectType");
+    if (objSel) {
+      objSel.addEventListener("change", function () {
+        state.objectType = objSel.value;
+        state.page = 1;
+        loadData();
+      });
+    }
+
+    var actSel = $("doneAction");
+    if (actSel) {
+      actSel.addEventListener("change", function () {
+        state.action = actSel.value;
+        state.page = 1;
+        loadData();
+      });
+    }
+
+    var resSel = $("doneResult");
+    if (resSel) {
+      resSel.addEventListener("change", function () {
+        state.result = resSel.value;
+        state.page = 1;
+        loadData();
+      });
+    }
+
+    var resetBtn = $("doneResetBtn");
+    if (resetBtn) {
+      resetBtn.addEventListener("click", function () {
+        state.tab = "all";
+        state.timeRange = "all";
         state.objectType = "";
+        state.action = "all";
+        state.keyword = "";
+        state.result = "all";
         state.page = 1;
-        populateObjectType(state.tab, "");
-        refresh();
+
+        document.querySelectorAll(".po-done .category-tab").forEach(function (b) {
+          var isAll = (b.getAttribute("data-tab") || "all") === "all";
+          b.classList.toggle("active", isAll);
+          if (isAll) {
+            b.setAttribute("aria-current", "page");
+          } else {
+            b.removeAttribute("aria-current");
+          }
+        });
+        document.querySelectorAll("#doneTimeChips .header-quick-chip").forEach(function (b) {
+          var isAll = (b.getAttribute("data-range") || "all") === "all";
+          b.classList.toggle("active", isAll);
+          b.setAttribute("aria-pressed", isAll ? "true" : "false");
+        });
+
+        if (kwInput) { kwInput.value = ""; }
+        if (actSel) { actSel.value = "all"; }
+        if (resSel) { resSel.value = "all"; }
+        syncObjectTypeOptions("all");
+        loadData();
       });
-    });
-    var keyword = document.getElementById("doneKeyword"); var timer;
-    keyword.addEventListener("input", function () { clearTimeout(timer); timer = setTimeout(function () { state.keyword = keyword.value.trim(); state.page = 1; refresh(); }, 300); });
-    var fields = { doneObjectType: "objectType", doneAction: "action", doneResult: "result" };
-    Object.keys(fields).forEach(function (id) {
-      document.getElementById(id).addEventListener("change", function (event) {
-        state[fields[id]] = event.target.value; state.page = 1; refresh();
-      });
-    });
-    document.getElementById("doneResetBtn").addEventListener("click", function () {
-      state.timeRange = "all"; state.tab = "all"; state.objectType = ""; state.action = "all"; state.keyword = ""; state.result = "all"; state.page = 1;
-      document.querySelectorAll("[data-range]").forEach(function (b) { b.classList.toggle("active", b.dataset.range === "all"); });
-      document.querySelectorAll(".group-tab").forEach(function (b) { b.classList.remove("active"); });
-      document.querySelectorAll(".group-tab").forEach(function (b) { if (b.dataset.tab === "all") b.classList.add("active"); });
-      populateObjectType("all", "");
-      document.getElementById("doneAction").value = "all";
-      document.getElementById("doneResult").value = "all";
-      keyword.value = "";
-      refresh();
-    });
-    document.getElementById("donePagination").addEventListener("click", function (event) { var btn = event.target.closest("[data-page]"); if (!btn || btn.disabled) { return; } state.page = Number(btn.dataset.page); refresh(); });
-    document.getElementById("donePagination").addEventListener("change", function (event) { if (!event.target.matches(".pager-page-size")) { return; } state.pageSize = Number(event.target.value); state.page = 1; refresh(); });
+    }
+
+    var retryBtn = $("doneRetryBtn");
+    if (retryBtn) {
+      retryBtn.addEventListener("click", function () { loadData(); });
+    }
   }
 
   document.addEventListener("DOMContentLoaded", function () {
-    bindEvents();
-    populateObjectType("all", "");
-    document.addEventListener("click", function (event) { if (event.target && event.target.id === "doneRetryBtn") { refresh(); } });
-    refresh();
+    if (window.PersonalList) {
+      controller = window.PersonalList.createController({
+        summaryEl: $("doneSummary"),
+        emptyEl: $("doneEmpty"),
+        errorEl: $("doneError"),
+        tbodyEl: $("doneTbody"),
+        errorColspan: 6,
+        onError: function () {
+          var totalEl = $("countRangeAll");
+          if (totalEl) { totalEl.textContent = "—"; }
+          var curEl = $("countRangeCurrent");
+          if (curEl) { curEl.textContent = "—"; }
+        }
+      });
+    }
+
+    syncObjectTypeOptions("all");
+    initTabs();
+    initTimeChips();
+    initToolbar();
+    loadData();
   });
 })();
