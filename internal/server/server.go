@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -39,15 +40,17 @@ import (
 
 // Server 封装 Gin 与 HTTP Server。
 type Server struct {
-	httpServer *http.Server
-	engine     *gin.Engine
-	logger     *zap.Logger
-	db         *gorm.DB
-	sessionMgr *scs.SessionManager
-	limiter    *ratelimitpkg.Limiter
-	globalRPS  int
-	menus      []menu.Menu
-	routeDeps  RouteDeps
+	httpServer   *http.Server
+	engine       *gin.Engine
+	logger       *zap.Logger
+	db           *gorm.DB
+	sessionMgr   *scs.SessionManager
+	limiter      *ratelimitpkg.Limiter
+	globalRPS    int
+	menus        []menu.Menu
+	routeDeps    RouteDeps
+	cookieSecure bool
+	initOnce     sync.Once
 }
 
 // New 创建 Server；根据 App.Env 设置 Gin 模式并注册路由。
@@ -60,31 +63,63 @@ func New(
 	menus []menu.Menu,
 	routeDeps RouteDeps,
 ) *Server {
-	if strings.EqualFold(cfg.App.Env, "prod") {
+	if cfg != nil && strings.EqualFold(cfg.App.Env, "prod") {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	r := gin.New()
 	r.Static("/static", "web/static")
-	t, err := loadTemplates("web/templates")
+	t, err := loadTemplates(findTemplatesDir())
 	if err != nil {
 		zapLog.Panic("load templates failed", zap.Error(err))
 	}
 	r.SetHTMLTemplate(t)
 
+	addr := ""
+	globalRPS := 0
+	cookieSecure := false
+	if cfg != nil {
+		addr = cfg.App.Addr
+		globalRPS = cfg.RateLimit.GlobalRPS
+		cookieSecure = cfg.Session.CookieSecure
+	}
+
 	return &Server{
 		httpServer: &http.Server{
-			Addr:    cfg.App.Addr,
+			Addr:    addr,
 			Handler: r,
 		},
-		engine:     r,
-		logger:     zapLog,
-		db:         db,
-		sessionMgr: sessionMgr,
-		limiter:    limiter,
-		globalRPS:  cfg.RateLimit.GlobalRPS,
-		menus:      menus,
-		routeDeps:  routeDeps,
+		engine:       r,
+		logger:       zapLog,
+		db:           db,
+		sessionMgr:   sessionMgr,
+		limiter:      limiter,
+		globalRPS:    globalRPS,
+		menus:        menus,
+		routeDeps:    routeDeps,
+		cookieSecure: cookieSecure,
 	}
+}
+
+func findTemplatesDir() string {
+	candidate := filepath.Clean("web/templates")
+	if _, err := os.Stat(candidate); err == nil {
+		return candidate
+	}
+	dir, err := os.Getwd()
+	if err == nil {
+		for i := 0; i < 5; i++ {
+			p := filepath.Join(dir, "web/templates")
+			if _, err := os.Stat(p); err == nil {
+				return p
+			}
+			parent := filepath.Dir(dir)
+			if parent == dir {
+				break
+			}
+			dir = parent
+		}
+	}
+	return candidate
 }
 
 // loadTemplates 递归加载目录下全部 html 模板，并注入基础 FuncMap。
@@ -152,30 +187,44 @@ func loadTemplates(templatesDir string) (*template.Template, error) {
 	return template.New("").Funcs(funcMap).ParseFiles(files...)
 }
 
+// Setup 注册全局中间件与业务路由（幂等）。
+func (s *Server) Setup() {
+	s.initOnce.Do(func() {
+		s.engine.Use(func(c *gin.Context) {
+			c.Set("db", s.db)
+			c.Set("sessionMgr", s.sessionMgr)
+			c.Set("menus", s.menus)
+			c.Next()
+		})
+
+		s.engine.Use(middleware.SQLRequestContext())
+		s.engine.Use(middleware.Recovery(s.logger))
+		s.engine.Use(ratelimitpkg.NewGlobalLimiter(s.globalRPS))
+		s.engine.Use(middleware.RequestLogger(s.logger))
+		s.engine.Use(middleware.SecureHeaders())
+		s.engine.Use(middleware.MethodOverride())
+
+		registerRoutes(s.engine, s.routeDeps)
+	})
+}
+
+// BuildHandler 组装生产使用的完整 HTTP 中间件链：
+// SCS LoadAndSave -> CSRF -> Gin Engine。
+// 外部测试必须直接测试此方法返回的 Handler，保证测试与生产完全同一构造。
+func (s *Server) BuildHandler() http.Handler {
+	s.Setup()
+	var handler http.Handler = s.engine
+	handler = middleware.CSRF(s.cookieSecure)(handler)
+	if s.sessionMgr != nil {
+		// 必须包在最外层：SCS 才能拦截 gin 的 WriteHeader，登录 303 才会带上 Set-Cookie。
+		handler = s.sessionMgr.LoadAndSave(handler)
+	}
+	return handler
+}
+
 // Run 启动 HTTP 服务，并在收到 SIGINT/SIGTERM 时优雅关闭（最长等待 30 秒）。
 func (s *Server) Run() error {
-	s.engine.Use(func(c *gin.Context) {
-		c.Set("db", s.db)
-		c.Set("sessionMgr", s.sessionMgr)
-		c.Set("menus", s.menus)
-		c.Next()
-	})
-
-	s.engine.Use(middleware.SQLRequestContext())
-	s.engine.Use(middleware.Recovery(s.logger))
-	s.engine.Use(ratelimitpkg.NewGlobalLimiter(s.globalRPS))
-	s.engine.Use(middleware.RequestLogger(s.logger))
-	s.engine.Use(middleware.SecureHeaders())
-	s.engine.Use(middleware.MethodOverride())
-
-	registerRoutes(s.engine, s.routeDeps)
-
-	var handler http.Handler = s.engine
-	if s.sessionMgr != nil {
-		// 必须包在 gin.Engine 外层：SCS 才能拦截 gin 的 WriteHeader，登录 303 才会带上 Set-Cookie。
-		handler = s.sessionMgr.LoadAndSave(s.engine)
-	}
-	s.httpServer.Handler = handler
+	s.httpServer.Handler = s.BuildHandler()
 
 	errCh := make(chan error, 1)
 	go func() {
