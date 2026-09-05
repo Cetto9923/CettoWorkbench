@@ -1,0 +1,60 @@
+{
+  "metadata": {
+    "version": "20260905-P0",
+    "seed": 42,
+    "base_time": "2026-09-05T00:00:00Z",
+    "time_zone": "Asia/Shanghai",
+    "actors": {
+      "primary": "user_a",
+      "secondary": "user_b",
+      "empty": "user_empty"
+    }
+  },
+  "scale_targets": {
+    "notices": [100, 1000, 10000],
+    "todos": [100, 1000, 10000],
+    "windows": [1, 10, 50, 100]
+  },
+  "edge_cases": [
+    {
+      "type": "empty_set",
+      "actor": "user_empty",
+      "expected_count": 0
+    },
+    {
+      "type": "cross_actor_isolation",
+      "actor_a": "user_a",
+      "actor_b": "user_b",
+      "rule": "no actor_b items visible to actor_a"
+    },
+    {
+      "type": "soft_deleted",
+      "rule": "items with deleted=1 must be excluded"
+    },
+    {
+      "type": "wildcard_literal",
+      "sample_subjects": [
+        "进度达成 100% 验收通知",
+        "order_v2 模块联调提醒",
+        "普通需求变更"
+      ],
+      "test_keywords": ["100%", "order_v2", "_v2"]
+    },
+    {
+      "type": "unicode_multilingual",
+      "sample_titles": [
+        "排期交付·核心系统升级 🚀",
+        "デプロイ準備タスク",
+        "Special characters: <>&\"'/"
+      ]
+    },
+    {
+      "type": "zero_date_and_nulls",
+      "sample_deadlines": ["0000-00-00", "", null]
+    },
+    {
+      "type": "tie_breaking_order",
+      "rule": "equal priorities must preserve stable secondary sort order (id DESC)"
+    }
+  ]
+}
