@@ -40,6 +40,13 @@ func RequirePerm(p perm.Permission) gin.HandlerFunc {
 			c.Next()
 			return
 		}
+		if expectsJSON(c) {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+				"success": false,
+				"error":   "无权限访问",
+			})
+			return
+		}
 		c.Header("Content-Type", "text/html; charset=utf-8")
 		c.Status(http.StatusForbidden)
 		c.Abort()
