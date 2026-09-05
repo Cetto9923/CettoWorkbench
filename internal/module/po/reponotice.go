@@ -45,46 +45,77 @@ func (r *Repo) FindNotices(ctx context.Context, account string, req NoticeListRe
 		return resp, nil
 	}
 
-	allRows, err := r.findNoticeRows(ctx, account)
+	now := time.Now()
+
+	// 1. 统计计算（未筛选时合并为单条 SQL 聚合；筛选时分为全量 Quick 统计与过滤 Category 统计）
+	if isNoticeReqCategoryUnfiltered(req) {
+		comb, err := r.queryCombinedNoticeCounts(ctx, account, now)
+		if err != nil {
+			return resp, err
+		}
+		resp.Total = comb.Total
+		resp.Unread = comb.Unread
+		resp.Action = comb.Action
+		resp.Abnormal = comb.Abnormal
+		resp.Today = comb.Today
+
+		resp.Categories["all"] = comb.Total
+		resp.Categories["approval"] = comb.ApprovalCount
+		resp.Categories["business"] = comb.BusinessCount
+		resp.Categories["collaboration"] = comb.CollabCount
+		resp.Categories["reminder"] = comb.ReminderCount
+		resp.Categories["risk"] = comb.Abnormal
+		resp.Categories["system"] = comb.SystemCount
+	} else {
+		quick, err := r.queryQuickNoticeCounts(ctx, account, now)
+		if err != nil {
+			return resp, err
+		}
+		resp.Total = quick.Total
+		resp.Unread = quick.Unread
+		resp.Action = quick.Action
+		resp.Abnormal = quick.Abnormal
+		resp.Today = quick.Today
+
+		cats, err := r.queryCategoryNoticeCounts(ctx, account, now, req)
+		if err != nil {
+			return resp, err
+		}
+		resp.Categories["all"] = cats.Total
+		resp.Categories["approval"] = cats.ApprovalCount
+		resp.Categories["business"] = cats.BusinessCount
+		resp.Categories["collaboration"] = cats.CollabCount
+		resp.Categories["reminder"] = cats.ReminderCount
+		resp.Categories["risk"] = cats.RiskCount
+		resp.Categories["system"] = cats.SystemCount
+	}
+
+	// 2. 计算 Filtered 总数
+	if req.Category != "" && req.Category != "all" {
+		resp.Filtered = resp.Categories[req.Category]
+	} else {
+		resp.Filtered = resp.Categories["all"]
+	}
+
+	// 3. 有界 SQL 分页加载明细
+	if resp.Filtered == 0 {
+		return resp, nil
+	}
+	start := (req.Page - 1) * req.PageSize
+	if start >= int(resp.Filtered) {
+		return resp, nil
+	}
+	limit := req.PageSize
+	pagedRows, err := r.queryPagedNoticeRows(ctx, account, now, req, limit, start)
 	if err != nil {
 		return resp, err
 	}
-	resp.Total, resp.Unread, resp.Action, resp.Abnormal, resp.Today = noticeQuickCounts(allRows)
-	categoryRows := filterNoticeRows(allRows, NoticeListReq{QuickView: req.QuickView, ObjectType: req.ObjectType, TimeRange: req.TimeRange, ReadState: req.ReadState, NeedAction: req.NeedAction, Keyword: req.Keyword})
-	resp.Categories["all"] = int64(len(categoryRows))
-	for _, row := range categoryRows {
-		resp.Categories[classifyNotice(row.ObjectType, row.ActionCode)]++
-	}
-	filteredRows := filterNoticeRows(allRows, req)
-	resp.Filtered = int64(len(filteredRows))
-	start := (req.Page - 1) * req.PageSize
-	if start >= len(filteredRows) {
-		return resp, nil
-	}
-	end := start + req.PageSize
-	if end > len(filteredRows) {
-		end = len(filteredRows)
-	}
+
 	displayMap, _ := r.loadAccountDisplayMap(ctx)
-	for _, row := range filteredRows[start:end] {
+	for _, row := range pagedRows {
 		resp.Items = append(resp.Items, newNoticeItem(row, displayMap))
 	}
 	return resp, nil
-}
-
-func (r *Repo) findNoticeRows(ctx context.Context, account string) ([]noticeRow, error) {
-	q := r.db.WithContext(ctx).Table("zt_notify AS n").
-		Select(`n.id, COALESCE(a.objectType, n.objectType) AS objectType, n.objectID, n.subject, n.data,
-			COALESCE(a.action, '') AS actionCode, COALESCE(a.actor, '') AS actor, n.createdBy, n.createdDate,
-			CASE WHEN nr.id IS NULL THEN 0 ELSE 1 END AS isRead`).
-		Joins("LEFT JOIN zt_action AS a ON a.id = n.action").
-		Joins("LEFT JOIN zt_workbench_notify_reads AS nr ON nr.notify = n.id AND nr.account = ?", account).
-		Where("FIND_IN_SET(?, REPLACE(n.toList, ' ', '')) > 0", account)
-	var rows []noticeRow
-	if err := q.Order("n.createdDate DESC, n.id DESC").Find(&rows).Error; err != nil {
-		return nil, err
-	}
-	return rows, nil
 }
 
 func filterNoticeRows(rows []noticeRow, req NoticeListReq) []noticeRow {

@@ -217,8 +217,10 @@ func TestPerformanceBaseline(t *testing.T) {
 				"query_count": windowQueries,
 			},
 		}
-		bytes, _ := json.MarshalIndent(fixtureData, "", "  ")
-		_ = os.WriteFile("testdata/performance/old_impl_results.json", bytes, 0644)
+		if _, err := os.Stat("testdata/performance/old_impl_results.json"); os.IsNotExist(err) {
+			bytes, _ := json.MarshalIndent(fixtureData, "", "  ")
+			_ = os.WriteFile("testdata/performance/old_impl_results.json", bytes, 0644)
+		}
 	})
 }
 
