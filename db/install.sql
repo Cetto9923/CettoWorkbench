@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS `zt_menus` (
 INSERT INTO `zt_menus` (`id`, `parentId`, `title`, `icon`, `path`, `perm`, `type`, `sort`) VALUES
  (1,	0,	'PO专属',	'',	'',	'',	'M',	100),
  (2,	1,	'工作台首页',	'fa-home',	'/home',	'po:home',	'C',	1),
- (3,	1,	'排期工作台',	'fa-calendar-check',	'/schedule',	'po:schedule',	'C',	2);
+ (3,	1,	'排期工作台',	'fa-calendar-check',	'/schedule',	'schedule:list',	'C',	2);
 
 CREATE TABLE IF NOT EXISTS `zt_versionwindow` (
     `id`            BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

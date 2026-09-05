@@ -2,7 +2,6 @@
 internal/module/po/repodone.go	504
 internal/module/schedule/form.go	1126
 internal/module/schedule/handler_demand.go	665
-internal/module/schedule/handler.go	515
 internal/module/user/handler.go	544
 web/static/css/components/components.css	595
 web/static/css/layout/layout.css	531
