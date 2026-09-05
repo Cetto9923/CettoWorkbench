@@ -148,7 +148,7 @@ func (r *Repo) FindFollowedProjectReports(ctx context.Context, req RepoFindFollo
 	base := r.db.WithContext(ctx).Table("zt_project AS p").
 		Joins("INNER JOIN zt_user AS u ON u.account = ? AND u.deleted = ?", req.Account, "0").
 		Where("p.deleted = ?", "0").
-		Where("FIND_IN_SET(CAST(u.id AS CHAR), TRIM(BOTH ',' FROM p.follow)) > 0")
+		Where("FIND_IN_SET(u.id, TRIM(BOTH ',' FROM p.follow)) > 0")
 	if req.Keyword != "" {
 		base = base.Where("p.name LIKE ? OR CAST(p.id AS CHAR) LIKE ?", "%"+req.Keyword+"%", "%"+req.Keyword+"%")
 	}

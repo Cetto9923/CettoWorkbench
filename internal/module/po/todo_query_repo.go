@@ -145,7 +145,8 @@ func buildTodoUnionSQL(account string, req TodoListReq) (string, []interface{}) 
 	var parts []string
 	var args []interface{}
 	if includeDemand {
-		demandSQL := `SELECT 'demand' AS kind, d.id, CONCAT('US', d.id) AS display_id, d.name AS title, d.status, d.pri AS pri_str,
+		demandSQL := `SELECT 'demand' AS kind, d.id, CONCAT('US', d.id) AS display_id, d.name AS title, d.status,
+			CASE WHEN d.pri = '1' THEN '1' WHEN d.pri = '2' THEN '2' WHEN d.pri = '3' THEN '3' WHEN d.pri = '4' THEN '4' ELSE '0' END AS pri_str,
 			CASE WHEN d.pri = '1' THEN 1 WHEN d.pri = '2' THEN 2 WHEN d.pri = '3' THEN 3 ELSE 4 END AS priority_rank,
 			CASE WHEN d.deadline IS NULL OR d.deadline = '0000-00-00' OR d.deadline = '0001-01-01' THEN '9999-12-31' ELSE DATE_FORMAT(d.deadline, '%Y-%m-%d') END AS deadline_str,
 			CASE WHEN TRIM(d.assignedTo) != '' THEN d.assignedTo WHEN TRIM(d.QD) != '' THEN d.QD WHEN TRIM(d.RD) != '' THEN d.RD ELSE '' END AS owner_account,
@@ -161,7 +162,8 @@ func buildTodoUnionSQL(account string, req TodoListReq) (string, []interface{}) 
 		parts = append(parts, demandSQL)
 	}
 	if includeTask {
-		taskSQL := `SELECT 'task' AS kind, t.id, CONCAT('TASK-', t.id) AS display_id, t.name AS title, t.status, CAST(t.pri AS CHAR) AS pri_str,
+		taskSQL := `SELECT 'task' AS kind, t.id, CONCAT('TASK-', t.id) AS display_id, t.name AS title, t.status,
+			CASE WHEN t.pri = 1 THEN '1' WHEN t.pri = 2 THEN '2' WHEN t.pri = 3 THEN '3' WHEN t.pri = 4 THEN '4' ELSE '0' END AS pri_str,
 			CASE WHEN t.pri = 1 THEN 1 WHEN t.pri = 2 THEN 2 WHEN t.pri = 3 THEN 3 ELSE 4 END AS priority_rank,
 			CASE WHEN t.deadline IS NULL OR t.deadline = '0000-00-00' OR t.deadline = '0001-01-01' THEN '9999-12-31' ELSE DATE_FORMAT(t.deadline, '%Y-%m-%d') END AS deadline_str,
 			t.assignedTo AS owner_account, '我负责' AS relation, '待我处理' AS responsibility, 0 AS blocked, 2 AS type_order
@@ -170,7 +172,8 @@ func buildTodoUnionSQL(account string, req TodoListReq) (string, []interface{}) 
 		parts = append(parts, taskSQL)
 	}
 	if includeBug {
-		bugSQL := `SELECT 'bug' AS kind, b.id, CONCAT('BUG-', b.id) AS display_id, b.title AS title, b.status, CAST(b.pri AS CHAR) AS pri_str,
+		bugSQL := `SELECT 'bug' AS kind, b.id, CONCAT('BUG-', b.id) AS display_id, b.title AS title, b.status,
+			CASE WHEN b.pri = 1 THEN '1' WHEN b.pri = 2 THEN '2' WHEN b.pri = 3 THEN '3' WHEN b.pri = 4 THEN '4' ELSE '0' END AS pri_str,
 			CASE WHEN b.pri = 1 THEN 1 WHEN b.pri = 2 THEN 2 WHEN b.pri = 3 THEN 3 ELSE 4 END AS priority_rank,
 			'9999-12-31' AS deadline_str, b.assignedTo AS owner_account, '我负责' AS relation, '待我处理' AS responsibility, 0 AS blocked, 3 AS type_order
 		FROM zt_bug AS b WHERE b.deleted = '0' AND b.assignedTo = ? AND b.status NOT IN ('resolved', 'closed')`
