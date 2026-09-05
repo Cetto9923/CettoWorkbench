@@ -24,39 +24,17 @@ func (s *Service) TodoList(ctx context.Context, actor *model.User, req TodoListR
 	if actor == nil || strings.TrimSpace(actor.Account) == "" {
 		return &TodoListResp{Items: []TodoItem{}, Page: req.Page, PageSize: req.PageSize}, nil
 	}
-	queryReq := req
-	queryReq.Tab = TodoTabAll
-	queryReq.Focus = "pending"
-	queryReq.Keyword = ""
-	items, _, err := s.repo.FindTodoItems(ctx, actor.Account, queryReq)
+	pagedResult, err := s.repo.QueryTodoUnified(ctx, actor.Account, req)
 	if err != nil {
 		return nil, err
 	}
-	items = filterTodoKeyword(items, req.Keyword)
-	items = filterTodoDimensions(items, req)
-	summary := summarizeTodoItems(items)
-	groups := countTodoGroups(items)
-	items = filterTodoGroup(items, req.Tab)
-	items = filterTodoFocus(items, req.Focus, time.Now())
-	sortTodoItems(items)
-	total := int64(len(items))
-	page := req.Page
-	pageSize := req.PageSize
-	start := (page - 1) * pageSize
-	end := start + pageSize
-	if start > len(items) {
-		start = len(items)
-	}
-	if end > len(items) {
-		end = len(items)
-	}
 	return &TodoListResp{
-		Items:    items[start:end],
-		Total:    total,
-		Page:     page,
-		PageSize: pageSize,
-		Summary:  summary,
-		Groups:   groups,
+		Items:    pagedResult.Items,
+		Total:    pagedResult.Total,
+		Page:     req.Page,
+		PageSize: req.PageSize,
+		Summary:  pagedResult.Summary,
+		Groups:   pagedResult.Groups,
 	}, nil
 }
 
