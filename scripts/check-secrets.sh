@@ -3,7 +3,7 @@ set -euo pipefail
 
 root=$(git rev-parse --show-toplevel)
 cd "$root"
-baseline="scripts/quality-baseline/secrets.tsv"
+baseline="${SECRETS_BASELINE:-scripts/quality-baseline/secrets.tsv}"
 current=$(mktemp)
 details=$(mktemp)
 expected=$(mktemp)
@@ -67,7 +67,7 @@ if [[ "${1:-}" == "--emit-baseline" ]]; then
   exit 0
 fi
 
-grep -Ev '^[[:space:]]*(#|$)' "$baseline" | sort >"$expected"
+awk '!/^[[:space:]]*(#|$)/' "$baseline" | sort >"$expected"
 if ! diff -u "$expected" "$current"; then
   echo "secret regression detected; findings (values suppressed):" >&2
   cat "$details" >&2

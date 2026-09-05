@@ -3,7 +3,7 @@ set -euo pipefail
 
 root=$(git rev-parse --show-toplevel)
 cd "$root"
-baseline="scripts/quality-baseline/file-length.tsv"
+baseline="${FILE_LENGTH_BASELINE:-scripts/quality-baseline/file-length.tsv}"
 current=$(mktemp)
 trap 'rm -f "$current"' EXIT
 
@@ -17,7 +17,7 @@ done < <(git ls-files --cached --others --exclude-standard -- '*.go' '*.js' '*.c
 sort -o "$current" "$current"
 
 if ! awk -F '\t' '
-  NR == FNR {
+  FILENAME == ARGV[1] {
     if ($0 !~ /^[[:space:]]*(#|$)/) allowed[$1] = $2
     next
   }

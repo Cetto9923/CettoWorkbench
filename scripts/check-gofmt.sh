@@ -3,7 +3,7 @@ set -euo pipefail
 
 root=$(git rev-parse --show-toplevel)
 cd "$root"
-baseline="scripts/quality-baseline/gofmt.tsv"
+baseline="${GOFMT_BASELINE:-scripts/quality-baseline/gofmt.tsv}"
 current=$(mktemp)
 expected=$(mktemp)
 trap 'rm -f "$current" "$expected"' EXIT
@@ -28,7 +28,7 @@ if ((${#files[@]} > 0)); then
   done < <(gofmt -l "${files[@]}")
 fi
 sort -o "$current" "$current"
-grep -Ev '^[[:space:]]*(#|$)' "$baseline" | sort >"$expected"
+awk '!/^[[:space:]]*(#|$)/' "$baseline" | sort >"$expected"
 
 if ! diff -u "$expected" "$current"; then
   echo "gofmt regression: format changed files with gofmt; remove fixed fingerprints from $baseline" >&2

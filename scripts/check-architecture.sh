@@ -3,7 +3,7 @@ set -euo pipefail
 
 root=$(git rev-parse --show-toplevel)
 cd "$root"
-baseline="scripts/quality-baseline/architecture.tsv"
+baseline="${ARCHITECTURE_BASELINE:-scripts/quality-baseline/architecture.tsv}"
 current=$(mktemp)
 expected=$(mktemp)
 trap 'rm -f "$current" "$expected"' EXIT
@@ -39,7 +39,7 @@ while IFS= read -r file; do
 done < <(git ls-files --cached --others --exclude-standard -- 'internal/module/**/*service*.go')
 
 sort -u -o "$current" "$current"
-grep -Ev '^[[:space:]]*(#|$)' "$baseline" | sort >"$expected"
+awk '!/^[[:space:]]*(#|$)/' "$baseline" | sort >"$expected"
 if ! diff -u "$expected" "$current"; then
   echo "architecture regression: fix the boundary violation; update baseline only when removing resolved debt" >&2
   exit 1

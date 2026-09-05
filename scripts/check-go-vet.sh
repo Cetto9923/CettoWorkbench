@@ -3,23 +3,31 @@ set -euo pipefail
 
 root=$(git rev-parse --show-toplevel)
 cd "$root"
-baseline="scripts/quality-baseline/go-vet.txt"
+baseline="${GO_VET_BASELINE:-scripts/quality-baseline/go-vet.txt}"
 current=$(mktemp)
 expected=$(mktemp)
 trap 'rm -f "$current" "$expected"' EXIT
 
 mkdir -p tmp/gocache
 status=0
-GOCACHE="$root/tmp/gocache" go vet ./... >"$current" 2>&1 || status=$?
+if [[ -n "${GO_VET_MOCK_CMD:-}" ]]; then
+  eval "$GO_VET_MOCK_CMD" >"$current" 2>&1 || status=$?
+else
+  GOCACHE="$root/tmp/gocache" go vet ./... >"$current" 2>&1 || status=$?
+fi
 # Go 1.25+ prefixes each package with a `# package/path` header. Strip that
 # header line during normalization so the exact diagnostic fingerprint is
 # independent of the tool version; baseline intentionally stores only real
 # diagnostics and is not padded with these tool-emitted headers.
 sed "s|$root/||g" "$current" \
-  | sed '/^[[:space:]]*$/d' \
-  | grep -Ev '^# [^[:space:]]+$' \
+  | awk '!/^[[:space:]]*$/ && !/^# [^[:space:]]+$/' \
   | sort -o "$current"
-grep -Ev '^[[:space:]]*(#|$)' "$baseline" | sort >"$expected"
+awk '!/^[[:space:]]*(#|$)/' "$baseline" | sort >"$expected"
+
+if ((status != 0)) && [[ ! -s "$current" ]]; then
+  echo "go vet failed with exit code $status but produced no diagnostics" >&2
+  exit 1
+fi
 
 if ! diff -u "$expected" "$current"; then
   echo "go vet regression: diagnostics differ from the exact baseline" >&2
