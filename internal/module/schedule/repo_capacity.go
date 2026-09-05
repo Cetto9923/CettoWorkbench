@@ -89,3 +89,84 @@ WHERE module = 'execution' AND ` + "`key`" + ` IN ('defaultWorkhours', 'weekend'
 	}
 	return defaultWorkhours, weekend, nil
 }
+
+const windowBatchChunkSize = 200
+
+// GetWindowConsumedHoursBatch 批量查询窗口关联任务的已消耗工时总和。
+// 链路: zt_versionwindowproduct.plan → zt_planstory.story → zt_task.consumed
+// 按 windowBatchChunkSize (B=200) 分块执行，消除 N+1 扇出。
+func (r *Repo) GetWindowConsumedHoursBatch(ctx context.Context, windowIDs []uint64) (map[uint64]float64, error) {
+	result := make(map[uint64]float64, len(windowIDs))
+	if len(windowIDs) == 0 {
+		return result, nil
+	}
+
+	const query = `
+SELECT vwp.versionWindow AS window_id, COALESCE(SUM(t.consumed), 0) AS total
+FROM zt_versionwindowproduct vwp
+JOIN zt_planstory ps ON ps.plan = vwp.plan
+JOIN zt_task t ON t.story = ps.story AND t.deleted = '0' AND t.status != 'closed'
+WHERE vwp.versionWindow IN ? AND vwp.deletedAt IS NULL AND vwp.plan IS NOT NULL
+GROUP BY vwp.versionWindow`
+
+	for i := 0; i < len(windowIDs); i += windowBatchChunkSize {
+		end := i + windowBatchChunkSize
+		if end > len(windowIDs) {
+			end = len(windowIDs)
+		}
+		chunk := windowIDs[i:end]
+
+		var rows []struct {
+			WindowID uint64  `gorm:"column:window_id"`
+			Total    float64 `gorm:"column:total"`
+		}
+		if err := r.db.WithContext(ctx).Raw(query, chunk).Scan(&rows).Error; err != nil {
+			return nil, err
+		}
+		for _, row := range rows {
+			result[row.WindowID] = row.Total
+		}
+	}
+	return result, nil
+}
+
+// GetWindowDemandCountBatch 批量查询窗口关联的需求数量（业需去重 + 独立软需）。
+// 链路: zt_versionwindowproduct.plan → zt_planstory.story → zt_story
+// 按 windowBatchChunkSize (B=200) 分块执行，消除 N+1 扇出。
+func (r *Repo) GetWindowDemandCountBatch(ctx context.Context, windowIDs []uint64) (map[uint64]int, error) {
+	result := make(map[uint64]int, len(windowIDs))
+	if len(windowIDs) == 0 {
+		return result, nil
+	}
+
+	const query = `
+SELECT
+  vwp.versionWindow AS window_id,
+  COUNT(DISTINCT CASE WHEN s.sourceType = 'demandpool' AND s.fromDemand > 0 THEN s.fromDemand ELSE NULL END)
+  + COUNT(CASE WHEN IFNULL(s.sourceType, '') != 'demandpool' THEN 1 ELSE NULL END) AS demand_count
+FROM zt_versionwindowproduct vwp
+JOIN zt_planstory ps ON ps.plan = vwp.plan
+JOIN zt_story s ON s.id = ps.story AND s.deleted = '0'
+WHERE vwp.versionWindow IN ? AND vwp.deletedAt IS NULL AND vwp.plan IS NOT NULL
+GROUP BY vwp.versionWindow`
+
+	for i := 0; i < len(windowIDs); i += windowBatchChunkSize {
+		end := i + windowBatchChunkSize
+		if end > len(windowIDs) {
+			end = len(windowIDs)
+		}
+		chunk := windowIDs[i:end]
+
+		var rows []struct {
+			WindowID    uint64 `gorm:"column:window_id"`
+			DemandCount int64  `gorm:"column:demand_count"`
+		}
+		if err := r.db.WithContext(ctx).Raw(query, chunk).Scan(&rows).Error; err != nil {
+			return nil, err
+		}
+		for _, row := range rows {
+			result[row.WindowID] = int(row.DemandCount)
+		}
+	}
+	return result, nil
+}

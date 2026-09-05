@@ -34,57 +34,14 @@ func (s *Service) ListWindowCards(ctx context.Context, actor *model.User) ([]Win
 		return []WindowCard{}, nil
 	}
 
-	teamgroupIDs := make([]uint, 0, len(windows))
-	seen := make(map[uint]struct{}, len(windows))
-	for _, window := range windows {
-		if window.TeamgroupID == 0 {
-			continue
-		}
-		if _, ok := seen[window.TeamgroupID]; ok {
-			continue
-		}
-		seen[window.TeamgroupID] = struct{}{}
-		teamgroupIDs = append(teamgroupIDs, window.TeamgroupID)
+	teamgroupNameByID, err := s.loadTeamgroupDisplayNames(ctx, windows)
+	if err != nil {
+		return nil, err
 	}
 
-	teamgroupNameByID := make(map[uint]string, len(teamgroupIDs))
-	if len(teamgroupIDs) > 0 {
-		groups, err := s.repo.FindTeamgroupsByIDs(ctx, teamgroupIDs)
-		if err != nil {
-			return nil, err
-		}
-		parentIDs := make([]uint, 0)
-		parentSeen := make(map[uint]struct{})
-		for _, group := range groups {
-			teamgroupNameByID[group.ID] = strings.TrimSpace(group.Name)
-			if group.Parent == 0 {
-				continue
-			}
-			if _, ok := parentSeen[group.Parent]; ok {
-				continue
-			}
-			parentSeen[group.Parent] = struct{}{}
-			parentIDs = append(parentIDs, group.Parent)
-		}
-		if len(parentIDs) > 0 {
-			parents, err := s.repo.FindTeamgroupsByIDs(ctx, parentIDs)
-			if err != nil {
-				return nil, err
-			}
-			parentNameByID := make(map[uint]string, len(parents))
-			for _, parent := range parents {
-				parentNameByID[parent.ID] = strings.TrimSpace(parent.Name)
-			}
-			for _, group := range groups {
-				name := strings.TrimSpace(group.Name)
-				if group.Parent > 0 {
-					if parentName := parentNameByID[group.Parent]; parentName != "" {
-						name = fmt.Sprintf("%s / %s", parentName, name)
-					}
-				}
-				teamgroupNameByID[group.ID] = name
-			}
-		}
+	stats, err := s.loadWindowBatchStats(ctx, windows)
+	if err != nil {
+		return nil, err
 	}
 
 	cards := make([]WindowCard, 0, len(windows))
@@ -93,24 +50,9 @@ func (s *Service) ListWindowCards(ctx context.Context, actor *model.User) ([]Win
 		if window.StartDate != nil {
 			start = *window.StartDate
 		}
-		capacityHours, err := s.CalcCapacity(
-			ctx,
-			start.Format("2006-01-02"),
-			window.ReleaseDate.Format("2006-01-02"),
-			int(window.GroupSize),
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		consumed, err := s.repo.GetWindowConsumedHours(ctx, window.ID)
-		if err != nil {
-			return nil, err
-		}
-		demandCount, err := s.repo.GetWindowDemandCount(ctx, window.ID)
-		if err != nil {
-			return nil, err
-		}
+		capacityHours := stats.capacityMap[window.ID]
+		consumed := stats.consumedMap[window.ID]
+		demandCount := stats.demandCountMap[window.ID]
 
 		usedHours := int(math.Round(consumed))
 		remainingHours := capacityHours - usedHours
@@ -139,6 +81,45 @@ func (s *Service) ListWindowCards(ctx context.Context, actor *model.User) ([]Win
 		})
 	}
 	return cards, nil
+}
+
+type windowBatchStats struct {
+	capacityMap    map[uint64]int
+	consumedMap    map[uint64]float64
+	demandCountMap map[uint64]int
+}
+
+func (s *Service) loadWindowBatchStats(ctx context.Context, windows []model.VersionWindow) (*windowBatchStats, error) {
+	if len(windows) == 0 {
+		return &windowBatchStats{
+			capacityMap:    map[uint64]int{},
+			consumedMap:    map[uint64]float64{},
+			demandCountMap: map[uint64]int{},
+		}, nil
+	}
+	windowIDs := make([]uint64, len(windows))
+	for i, w := range windows {
+		windowIDs[i] = w.ID
+	}
+
+	capacityMap, err := s.CalcCapacityBatch(ctx, windows)
+	if err != nil {
+		return nil, err
+	}
+	consumedMap, err := s.repo.GetWindowConsumedHoursBatch(ctx, windowIDs)
+	if err != nil {
+		return nil, err
+	}
+	demandCountMap, err := s.repo.GetWindowDemandCountBatch(ctx, windowIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	return &windowBatchStats{
+		capacityMap:    capacityMap,
+		consumedMap:    consumedMap,
+		demandCountMap: demandCountMap,
+	}, nil
 }
 
 // HomeVersionWindowCard PO 首页版本窗口卡片展示数据。
@@ -311,29 +292,21 @@ func (s *Service) ListWindows(ctx context.Context, actor *model.User) (ListWindo
 		return ListWindowsResp{Windows: []WindowListItem{}}, nil
 	}
 
+	stats, err := s.loadWindowBatchStats(ctx, windows)
+	if err != nil {
+		return ListWindowsResp{}, err
+	}
+
 	items := make([]WindowListItem, 0, len(windows))
 	for _, window := range windows {
 		start := window.ReleaseDate
 		if window.StartDate != nil {
 			start = *window.StartDate
 		}
-		capacityHours, err := s.CalcCapacity(
-			ctx,
-			start.Format("2006-01-02"),
-			window.ReleaseDate.Format("2006-01-02"),
-			int(window.GroupSize),
-		)
-		if err != nil {
-			return ListWindowsResp{}, err
-		}
-		consumed, err := s.repo.GetWindowConsumedHours(ctx, window.ID)
-		if err != nil {
-			return ListWindowsResp{}, err
-		}
-		demandCount, err := s.repo.GetWindowDemandCount(ctx, window.ID)
-		if err != nil {
-			return ListWindowsResp{}, err
-		}
+		capacityHours := stats.capacityMap[window.ID]
+		consumed := stats.consumedMap[window.ID]
+		demandCount := stats.demandCountMap[window.ID]
+
 		usedHours := int(math.Round(consumed))
 		remainingHours := capacityHours - usedHours
 		usedPercent := 0

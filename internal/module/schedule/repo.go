@@ -255,20 +255,11 @@ func (r *Repo) FindByID(ctx context.Context, id uint64) (*model.VersionWindow, e
 // GetWindowConsumedHours 查询窗口关联任务的已消耗工时总和。
 // 链路: zt_versionwindowproduct.plan → zt_planstory.story → zt_task.consumed
 func (r *Repo) GetWindowConsumedHours(ctx context.Context, windowID uint64) (float64, error) {
-	const query = `
-SELECT COALESCE(SUM(t.consumed), 0) AS total
-FROM zt_versionwindowproduct vwp
-JOIN zt_planstory ps ON ps.plan = vwp.plan
-JOIN zt_task t ON t.story = ps.story AND t.deleted = '0' AND t.status != 'closed'
-WHERE vwp.versionWindow = ? AND vwp.deletedAt IS NULL AND vwp.plan IS NOT NULL`
-
-	var row struct {
-		Total float64 `gorm:"column:total"`
-	}
-	if err := r.db.WithContext(ctx).Raw(query, windowID).Scan(&row).Error; err != nil {
+	m, err := r.GetWindowConsumedHoursBatch(ctx, []uint64{windowID})
+	if err != nil {
 		return 0, err
 	}
-	return row.Total, nil
+	return m[windowID], nil
 }
 
 // WindowStageStats 窗口需求阶段统计。
@@ -313,22 +304,11 @@ WHERE vwp.versionWindow = ? AND vwp.deletedAt IS NULL AND vwp.plan IS NOT NULL`
 
 // GetWindowDemandCount 查询窗口关联的需求数量（业需去重 + 独立软需）。
 func (r *Repo) GetWindowDemandCount(ctx context.Context, windowID uint64) (int, error) {
-	const query = `
-SELECT
-  COUNT(DISTINCT CASE WHEN s.sourceType = 'demandpool' AND s.fromDemand > 0 THEN s.fromDemand ELSE NULL END)
-  + COUNT(CASE WHEN IFNULL(s.sourceType, '') != 'demandpool' THEN 1 ELSE NULL END) AS demandCount
-FROM zt_versionwindowproduct vwp
-JOIN zt_planstory ps ON ps.plan = vwp.plan
-JOIN zt_story s ON s.id = ps.story AND s.deleted = '0'
-WHERE vwp.versionWindow = ? AND vwp.deletedAt IS NULL AND vwp.plan IS NOT NULL`
-
-	var row struct {
-		DemandCount int64 `gorm:"column:demandCount"`
-	}
-	if err := r.db.WithContext(ctx).Raw(query, windowID).Scan(&row).Error; err != nil {
+	m, err := r.GetWindowDemandCountBatch(ctx, []uint64{windowID})
+	if err != nil {
 		return 0, err
 	}
-	return int(row.DemandCount), nil
+	return m[windowID], nil
 }
 
 // GetWindowProducts 查询窗口关联产品及计划信息。
