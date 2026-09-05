@@ -1,2 +1,1 @@
 # Exact pre-Phase-1 diagnostics. Fixing one requires removing its entry.
-internal/model/basemodel.go:17:2: struct field tag `gorm:"column:id;primaryKey;autoIncrement` not compatible with reflect.StructTag.Get: bad syntax for struct tag value
