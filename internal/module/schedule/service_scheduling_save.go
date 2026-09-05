@@ -42,7 +42,17 @@ func (s *Service) SaveScheduling(ctx context.Context, actor *model.User, demandI
 	if account == "" {
 		return errors.New("未登录或无法识别当前用户")
 	}
-	if err := s.ensureDemandWindowEditable(ctx, demandID, req.WindowID); err != nil {
+
+	currentWindowID, allowedStoryByID, err := s.loadDemandStoryScopeAndWindow(ctx, demandID)
+	if err != nil {
+		return err
+	}
+	if currentWindowID != 0 && currentWindowID != req.WindowID && len(allowedStoryByID) > 0 {
+		return &SchedulingBusinessError{Message: "终排业务需求不能修改版本窗口"}
+	}
+
+	// 1. 已有需求对象作用域校验：edit/delete 的 Story 必须属于当前 Demand 或其子 Demand。
+	if err := validateSaveSchedulingStoryScope(req.Stories, allowedStoryByID); err != nil {
 		return err
 	}
 
@@ -51,8 +61,11 @@ func (s *Service) SaveScheduling(ctx context.Context, actor *model.User, demandI
 		return err
 	}
 
-	// 进事务前做整体校验:任一目标系统不在当前用户有权限的产品集合内则零写入、返回提示。
-	notice, err := s.precheckSchedulingProducts(ctx, req.WindowID, req.Stories, account)
+	// 2. 进事务前做产品访问权限校验:
+	// new: 目标产品 ID;
+	// edit: 目标产品 ID 及已有 Story 当前真实产品 ID;
+	// delete: 已有 Story 当前真实产品 ID.
+	notice, err := s.precheckDemandSchedulingProducts(ctx, req.WindowID, req.Stories, allowedStoryByID, account)
 	if err != nil {
 		return err
 	}
@@ -80,42 +93,6 @@ func (s *Service) SaveScheduling(ctx context.Context, actor *model.User, demandI
 
 		return txRepo.SaveDemandLevelWindow(ctx, demandID, uint64(req.WindowID), account)
 	})
-}
-
-func (s *Service) ensureDemandWindowEditable(ctx context.Context, demandID uint, requestedWindowID uint) error {
-	currentWindowID, storyCount, err := s.loadDemandWindowEditState(ctx, demandID)
-	if err != nil {
-		return err
-	}
-	if currentWindowID == 0 || currentWindowID == requestedWindowID {
-		return nil
-	}
-	if storyCount == 0 {
-		return nil
-	}
-	return &SchedulingBusinessError{Message: "终排业务需求不能修改版本窗口"}
-}
-
-func (s *Service) loadDemandWindowEditState(ctx context.Context, demandID uint) (uint, int, error) {
-	demandIDs := []uint{demandID}
-	children, err := s.repo.FindChildDemandsByParents(ctx, []uint{demandID})
-	if err != nil {
-		return 0, 0, err
-	}
-	demandIDs = mergeDemandIDs(demandIDs, pluckDemandIDs(children))
-	stories, err := s.repo.FindStoriesByDemands(ctx, demandIDs)
-	if err != nil {
-		return 0, 0, err
-	}
-	windowByDemand, err := s.repo.FindDemandWindowMappings(ctx, demandIDs)
-	if err != nil {
-		return 0, 0, err
-	}
-	windowByStory, err := s.repo.FindStoryWindowMappings(ctx, pluckStoryIDs(stories))
-	if err != nil {
-		return 0, 0, err
-	}
-	return pickDemandWindowID(demandIDs, stories, windowByDemand, windowByStory), len(stories), nil
 }
 
 // SaveStoryScheduling 保存独立研发需求（zt_story fromDemand=0）排期并同步计划/窗口/历史。
