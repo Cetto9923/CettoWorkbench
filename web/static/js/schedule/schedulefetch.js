@@ -26,9 +26,43 @@
     return false;
   }
 
+  function getCsrfToken() {
+    if (typeof document === "undefined") {
+      return "";
+    }
+    var el = document.querySelector('meta[name="csrf-token"]');
+    if (!el) {
+      return "";
+    }
+    return (el.getAttribute("content") || "").trim();
+  }
+
   function scheduleFetch(input, init) {
     var options = init || {};
-    var fetchFn = window.appFetch || fetch;
+    var fetchFn = (typeof window !== "undefined" && window.appFetch) ? window.appFetch : fetch;
+    if (fetchFn === fetch) {
+      var csrf = (typeof window !== "undefined" && typeof window.getCsrfToken === "function")
+        ? window.getCsrfToken()
+        : getCsrfToken();
+      if (csrf) {
+        if (typeof Headers !== "undefined" && options.headers instanceof Headers) {
+          if (!options.headers.has("X-CSRF-Token")) {
+            options.headers.set("X-CSRF-Token", csrf);
+          }
+          if (!options.headers.has("X-Requested-With")) {
+            options.headers.set("X-Requested-With", "XMLHttpRequest");
+          }
+        } else {
+          options.headers = options.headers || {};
+          if (!options.headers["X-CSRF-Token"] && !options.headers["x-csrf-token"]) {
+            options.headers["X-CSRF-Token"] = csrf;
+          }
+          if (!options.headers["X-Requested-With"] && !options.headers["x-requested-with"]) {
+            options.headers["X-Requested-With"] = "XMLHttpRequest";
+          }
+        }
+      }
+    }
     return fetchFn(input, options).then(function (resp) {
       if (isSessionExpired(resp, options)) {
         redirectToLogin();
@@ -42,6 +76,6 @@
     window.scheduleFetch = scheduleFetch;
   }
   if (typeof module !== "undefined" && module.exports) {
-    module.exports = { isSessionExpired: isSessionExpired, scheduleFetch: scheduleFetch };
+    module.exports = { isSessionExpired: isSessionExpired, scheduleFetch: scheduleFetch, getCsrfToken: getCsrfToken };
   }
 })();

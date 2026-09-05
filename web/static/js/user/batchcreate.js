@@ -86,14 +86,24 @@
       submitBtn.classList.add("loading");
     }
 
-    fetch(form.action, {
+    var fetchFn = window.appFetch || fetch;
+    var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    var csrfToken = (typeof window.getCsrfToken === "function")
+      ? window.getCsrfToken()
+      : (csrfMeta ? (csrfMeta.getAttribute("content") || "").trim() : "");
+    var headers = {
+      "X-Requested-With": "XMLHttpRequest",
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    };
+    if (csrfToken) {
+      headers["X-CSRF-Token"] = csrfToken;
+    }
+
+    fetchFn(form.action, {
       method: "POST",
       body: JSON.stringify(payload),
-      headers: {
-        "X-Requested-With": "XMLHttpRequest",
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
+      headers: headers,
       credentials: "same-origin",
     })
       .then(function (response) {

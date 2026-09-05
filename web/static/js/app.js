@@ -325,6 +325,7 @@
   }
 
   window.appFetch = appFetch;
+  window.getCsrfToken = getCsrfToken;
   window.openModal = openModal;
   bindFormLoading();
   bindConfirmAction();

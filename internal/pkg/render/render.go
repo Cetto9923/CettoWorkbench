@@ -309,7 +309,11 @@ func (r *Renderer) enrichData(c *gin.Context, page string, data gin.H) {
 		}
 	}
 	if _, ok := data["CSRFToken"]; !ok {
-		data["CSRFToken"] = nosurf.Token(c.Request)
+		if c.Request != nil {
+			data["CSRFToken"] = nosurf.Token(c.Request)
+		} else {
+			data["CSRFToken"] = ""
+		}
 	}
 	if _, ok := data["Menus"]; !ok {
 		if v, exists := c.Get("currentMenus"); exists {
@@ -335,7 +339,11 @@ func (r *Renderer) enrichData(c *gin.Context, page string, data gin.H) {
 		data["LayoutNav"] = r.layoutNav
 	}
 	if _, ok := data["CurrentPath"]; !ok {
-		data["CurrentPath"] = c.Request.URL.Path
+		if c.Request != nil && c.Request.URL != nil {
+			data["CurrentPath"] = c.Request.URL.Path
+		} else {
+			data["CurrentPath"] = ""
+		}
 	}
 	if _, ok := data["ActiveNavKey"]; !ok {
 		if v, exists := c.Get(menu.ContextActiveNavKey); exists {
