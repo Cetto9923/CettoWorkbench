@@ -1,6 +1,7 @@
 /*
- * workbench 全项目唯一前端脚本。
- * 原则：能用表单 PRG 就不用 JS。
+ * workbench 基础共享前端脚本。
+ * 职责：提供基础 appFetch、CSRF token 提取、全局表单提交防重与弹窗辅助能力。
+ * 注意：各业务模块可拥有独立专用脚本（如 schedule、user、po）；appFetch 返回原始 Response，不自动反序列化 JSON。
  */
 (function () {
   "use strict";

@@ -19,3 +19,4 @@ This index provides a structural map of the modules under `internal/module/`.
 | `debug` | SQL performance telemetry (superadmin only) | `debug.Service` | `debug.Repo`, filesystem logs | None (file logs only) | SOURCE VERIFIED | `internal/module/debug/` |
 
 - **Future Capabilities**: Future assistant boundaries are documented in [ai-boundary.md](ai-boundary.md). No AI runtime or SDK is currently implemented.
+- **Shared Frontend**: Certified shared client-side capabilities are documented in [shared-frontend.md](shared-frontend.md).
