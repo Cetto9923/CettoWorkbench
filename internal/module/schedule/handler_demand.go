@@ -516,7 +516,7 @@ func (h *Handler) SaveScheduling(c *gin.Context) {
 				zap.Uint("demand_id", demandID),
 			)
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.JSON(taskMutationHTTPStatus(err), gin.H{
 			"success": false,
 			"message": err.Error(),
 		})
@@ -575,7 +575,7 @@ func (h *Handler) SaveStoryScheduling(c *gin.Context) {
 				zap.Uint("story_id", storyID),
 			)
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.JSON(taskMutationHTTPStatus(err), gin.H{
 			"success": false,
 			"message": err.Error(),
 		})

@@ -257,6 +257,16 @@ func (s *Service) SaveStoryTasks(ctx context.Context, actor *model.User, storyID
 	}
 
 	return s.repo.Transaction(ctx, func(txRepo *Repo) error {
+		if err := txRepo.ValidateStoryForTaskMutation(ctx, storyID); err != nil {
+			return err
+		}
+		for _, taskReq := range req.Tasks {
+			if action := strings.TrimSpace(taskReq.Action); action == "edit" || action == "delete" {
+				if err := txRepo.ValidateTaskOwnership(ctx, taskReq.ID, storyID); err != nil {
+					return err
+				}
+			}
+		}
 		for _, taskReq := range req.Tasks {
 			if err := s.applyStoryTaskSave(ctx, txRepo, account, storyID, detail.ProductID, req, taskReq); err != nil {
 				return err

@@ -293,6 +293,16 @@ func (s *Service) applySchedulingTasks(
 	productID uint,
 	tasks []SaveSchedulingTask,
 ) error {
+	if err := txRepo.ValidateStoryForTaskMutation(ctx, storyID); err != nil {
+		return err
+	}
+	for _, taskReq := range tasks {
+		if action := strings.TrimSpace(taskReq.Action); action == "edit" || action == "delete" {
+			if err := txRepo.ValidateTaskOwnership(ctx, taskReq.ID, storyID); err != nil {
+				return err
+			}
+		}
+	}
 	for _, taskReq := range tasks {
 		if err := s.applySingleSchedulingTask(ctx, txRepo, account, storyID, productID, taskReq); err != nil {
 			return err
@@ -352,7 +362,7 @@ func (s *Service) applySingleSchedulingTask(
 		if err != nil {
 			return err
 		}
-		if err := txRepo.UpdateTask(ctx, taskReq.ID, map[string]interface{}{
+		if err := txRepo.UpdateTaskForStory(ctx, taskReq.ID, storyID, map[string]interface{}{
 			"name":           strings.TrimSpace(taskReq.Name),
 			"type":           strings.TrimSpace(taskReq.Type),
 			"pri":            normalizeTaskPriority(taskReq.Pri),
@@ -376,7 +386,7 @@ func (s *Service) applySingleSchedulingTask(
 		}
 
 	case "delete":
-		if err := txRepo.CloseTask(ctx, taskReq.ID, account); err != nil {
+		if err := txRepo.CloseTaskForStory(ctx, taskReq.ID, storyID, account); err != nil {
 			return fmt.Errorf("close task %d: %w", taskReq.ID, err)
 		}
 		if err := txRepo.CreateAction(ctx, "task", taskReq.ID, "Closed", account, productID, 0, 0, ""); err != nil {

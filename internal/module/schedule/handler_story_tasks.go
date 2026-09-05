@@ -9,6 +9,7 @@
 package schedule
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -18,6 +19,31 @@ import (
 
 	"workbench/internal/middleware"
 )
+
+func writeTaskMutationError(c *gin.Context, err error) bool {
+	var taskErr *TaskMutationError
+	if !errors.As(err, &taskErr) {
+		return false
+	}
+	status := taskMutationHTTPStatus(err)
+	c.JSON(status, gin.H{"success": false, "message": taskErr.Error()})
+	return true
+}
+
+func taskMutationHTTPStatus(err error) int {
+	var taskErr *TaskMutationError
+	if !errors.As(err, &taskErr) {
+		return http.StatusInternalServerError
+	}
+	status := http.StatusConflict
+	switch taskErr.Code {
+	case taskMutationNotFound:
+		status = http.StatusNotFound
+	case taskMutationForbidden:
+		status = http.StatusForbidden
+	}
+	return status
+}
 
 func parseStoryID(c *gin.Context) (uint, bool) {
 	idStr := strings.TrimSpace(c.Param("id"))
@@ -115,6 +141,9 @@ func (h *Handler) SaveStoryTasks(c *gin.Context) {
 				zap.Error(err),
 				zap.Uint("story_id", storyID),
 			)
+		}
+		if writeTaskMutationError(c, err) {
+			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
