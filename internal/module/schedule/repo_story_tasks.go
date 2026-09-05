@@ -44,20 +44,20 @@ type recentProjectRow struct {
 
 // StoryTaskDetail 维护任务弹窗研发需求详情（Repo 层聚合）。
 type StoryTaskDetail struct {
-	StoryID           uint
-	Title             string
-	ProductID         uint
-	FromDemand        uint
-	AssignedTo        string
-	Status            string
-	Spec              string
-	Verify            string
-	DemandName        string
-	WindowName        string
-	ReleaseDate       string
-	DefaultProjectID  uint
+	StoryID            uint
+	Title              string
+	ProductID          uint
+	FromDemand         uint
+	AssignedTo         string
+	Status             string
+	Spec               string
+	Verify             string
+	DemandName         string
+	WindowName         string
+	ReleaseDate        string
+	DefaultProjectID   uint
 	DefaultExecutionID uint
-	Attachments       []StoryAttachmentItem
+	Attachments        []StoryAttachmentItem
 }
 
 // GetStoryTaskDetail 查询维护任务弹窗所需的研发需求详情。

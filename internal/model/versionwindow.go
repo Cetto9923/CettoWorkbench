@@ -38,16 +38,16 @@ func (VersionWindow) TableName() string {
 
 // VersionWindowProduct 表示 zt_versionwindowproduct 窗口-系统关联表。
 type VersionWindowProduct struct {
-	ID         uint64         `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
-	WindowID   uint64         `gorm:"column:versionWindow;not null;index:idx_versionWindow;uniqueIndex:uk_versionWindow_product" json:"windowId"`
-	ProductID  uint           `gorm:"column:product;not null;index:idx_product;uniqueIndex:uk_versionWindow_product" json:"productId"`
-	PlanID     *uint          `gorm:"column:plan" json:"planId"`
-	PlanSynced uint8          `gorm:"column:planSynced;not null;default:0" json:"planSynced"`
-	CreatedBy  string         `gorm:"column:createdBy;size:30;not null;default:''" json:"createdBy"`
-	UpdatedBy  string         `gorm:"column:updatedBy;size:30;not null;default:''" json:"updatedBy"`
-	CreatedDate time.Time     `gorm:"column:createdDate;autoCreateTime" json:"createdDate"`
-	UpdatedDate time.Time     `gorm:"column:updatedDate;autoUpdateTime" json:"updatedDate"`
-	DeletedAt  gorm.DeletedAt `gorm:"column:deletedAt;index" json:"-"`
+	ID          uint64         `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
+	WindowID    uint64         `gorm:"column:versionWindow;not null;index:idx_versionWindow;uniqueIndex:uk_versionWindow_product" json:"windowId"`
+	ProductID   uint           `gorm:"column:product;not null;index:idx_product;uniqueIndex:uk_versionWindow_product" json:"productId"`
+	PlanID      *uint          `gorm:"column:plan" json:"planId"`
+	PlanSynced  uint8          `gorm:"column:planSynced;not null;default:0" json:"planSynced"`
+	CreatedBy   string         `gorm:"column:createdBy;size:30;not null;default:''" json:"createdBy"`
+	UpdatedBy   string         `gorm:"column:updatedBy;size:30;not null;default:''" json:"updatedBy"`
+	CreatedDate time.Time      `gorm:"column:createdDate;autoCreateTime" json:"createdDate"`
+	UpdatedDate time.Time      `gorm:"column:updatedDate;autoUpdateTime" json:"updatedDate"`
+	DeletedAt   gorm.DeletedAt `gorm:"column:deletedAt;index" json:"-"`
 }
 
 // TableName 指定 zt_versionwindowproduct 表。
