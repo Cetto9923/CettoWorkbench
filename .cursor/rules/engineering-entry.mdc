@@ -1,0 +1,24 @@
+---
+description: Canonical workbench engineering entry rule loading AGENTS.md
+globs: "*"
+alwaysApply: true
+---
+
+# Workbench Engineering Entry
+
+Always load and follow `AGENTS.md` as the repository-wide canonical engineering source.
+Engineering truth: `AGENTS.md` -> `docs/engineering/` -> file-scoped `.cursor/rules/*.mdc`.
+Business truth: current task -> confirmed PRD/decision -> implementation evidence.
+
+## Mandatory Rules
+
+- Monolith layer boundaries: Handler -> Service -> Repo -> Database. Handlers handle HTTP protocol; Services own business rules and object-level authorization; Repos own query building. Handlers MUST NOT touch DB; Repos MUST NOT decide permissions.
+- Branch protection: Never write on `main` or `master`. Never create, switch, or rebase branches unless explicitly requested.
+- Scope discipline: Only modify files within the allowed scope of the current task. Preserve unrelated dirty/untracked WIP.
+- Schema ownership: Workbench-owned tables follow Workbench audit/soft-delete conventions; ZenTao tables follow legacy ZenTao schema. Do not invent schema without real DDL.
+- Query standards: List queries follow SQL filter -> SQL sort -> SQL count -> SQL pagination. Never use `SELECT *` or large-table memory pagination.
+- Pre-handoff gates:
+  ```sh
+  git diff --check
+  make check
+  ```
