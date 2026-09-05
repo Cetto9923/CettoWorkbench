@@ -33,7 +33,7 @@ type boardDemandRow struct {
 // boardStoryRow 研发需求（zt_story）供树挂载所用列。
 type boardStoryRow struct {
 	ID         int64  `gorm:"column:id"`
-	DemandID   int64  `gorm:"column:demand"`
+	DemandID   int64  `gorm:"column:fromDemand"`
 	Title      string `gorm:"column:title"`
 	Status     string `gorm:"column:status"`
 	Stage      string `gorm:"column:stage"`
@@ -50,7 +50,7 @@ type taskAgg struct {
 	CurrOwner string
 }
 
-// FindBoardDemandTree 查需求树：业务需求根 + 子业务 + 研发需求(交付进展行) + 独立研发需求单列。
+// FindBoardDemandTree 查需求树：业务需求根 + 子需求 + 研发需求(交付进展行) + 独立研发需求单列。
 // 小组过滤通过 zt_demand.teamGroup 真实关联（无关联表时探明为空则保留全部不假过滤）。
 func (r *Repo) FindBoardDemandTree(ctx context.Context, req BoardDemandReq, displayMap map[string]string) ([]*BoardDemandItem, BoardDemandSummary, error) {
 	summary := BoardDemandSummary{}
@@ -89,15 +89,12 @@ func (r *Repo) FindBoardDemandTree(ctx context.Context, req BoardDemandReq, disp
 		rootIDs = append(rootIDs, rr.ID)
 	}
 
-	// 子业务（parent = 根）
+	// 子需求（parent = 根需求，子需求继承父需求小组）
 	var children []boardDemandRow
 	childQ := r.db.WithContext(ctx).Table("zt_demand").
 		Where("parent IN ?", rootIDs).
 		Where("deleted = ?", "0").
 		Where("status NOT IN ?", []string{"closed", "cancel"})
-	if req.TeamgroupID > 0 {
-		childQ = childQ.Where("teamGroup = ?", req.TeamgroupID)
-	}
 	if err := childQ.Find(&children).Error; err != nil {
 		return nil, summary, err
 	}
@@ -106,8 +103,8 @@ func (r *Repo) FindBoardDemandTree(ctx context.Context, req BoardDemandReq, disp
 }
 
 // buildDemandTree 组装树并统计摘要。roots/children 为 nil/空时仅输出独立研发需求。
-// 树规则：业务需求(根) → 子业务 → 研发需求；独立研发需求单列根。
-// 研发需求挂到其直接 parent.deamnd 节点（可能是子业务）；父节点负责汇总，最细对象承载阶段卡。
+// 树规则：业务需求(根) → 子需求 → 研发需求；独立研发需求单列根。
+// 研发需求挂到其直接 parent.demand 节点（可能是子需求）；父节点负责汇总，最细对象承载阶段卡。
 func (r *Repo) buildDemandTree(ctx context.Context, account string, roots, children []boardDemandRow, displayMap map[string]string) ([]*BoardDemandItem, BoardDemandSummary, error) {
 	summary := BoardDemandSummary{}
 
@@ -124,14 +121,14 @@ func (r *Repo) buildDemandTree(ctx context.Context, account string, roots, child
 	nodeIDs(roots)
 	nodeIDs(children)
 
-	// 树内研需（story.demand ∈ 需求集）
+	// 树内研需（story.fromDemand ∈ 需求集）
 	var stories []boardStoryRow
 	if len(allDemand) > 0 {
 		if err := r.db.WithContext(ctx).Table("zt_story").
-			Where("demand IN ?", allDemand).
+			Where("fromDemand IN ?", allDemand).
 			Where("deleted = ?", "0").
 			Where("status != ?", "closed").
-			Select("id, demand, title, status, stage, pri, assignedTo, product, sourceType").
+			Select("id, fromDemand, title, status, stage, pri, assignedTo, product, sourceType").
 			Find(&stories).Error; err != nil {
 			return nil, summary, err
 		}
@@ -141,12 +138,12 @@ func (r *Repo) buildDemandTree(ctx context.Context, account string, roots, child
 	var independent []boardStoryRow
 	excludedSource := []string{"", "demandpool", "demandlib", "feedback"}
 	if err := r.db.WithContext(ctx).Table("zt_story").
-		Where("(demand IS NULL OR demand = 0)").
+		Where("(fromDemand IS NULL OR fromDemand = 0)").
 		Where("deleted = ?", "0").
 		Where("status != ?", "closed").
 		Where("sourceType NOT IN ?", excludedSource).
 		Where("(assignedTo = ? OR openedBy = ?)", account, account).
-		Select("id, demand, title, status, stage, pri, assignedTo, product, sourceType").
+		Select("id, fromDemand, title, status, stage, pri, assignedTo, product, sourceType").
 		Order("id DESC").Limit(100).
 		Find(&independent).Error; err != nil {
 		return nil, summary, err

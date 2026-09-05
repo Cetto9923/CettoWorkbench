@@ -20,18 +20,20 @@ import (
 // FindBoardTaskList 查询当前敏捷小组中的真实任务，并按原型归入三列。
 func (r *Repo) FindBoardTaskList(ctx context.Context, req BoardTaskReq, displayMap map[string]string) ([]*BoardTaskColumn, BoardTaskSummary, error) {
 	columns := newBoardTaskColumns()
-	if r == nil || r.db == nil || req.TeamgroupID == 0 {
+	if r == nil || r.db == nil || (req.TeamgroupID == 0 && req.StoryID == 0) {
 		return columns, BoardTaskSummary{}, nil
 	}
 
-	// 按敏捷小组真实成员过滤任务负责人（小组 ↔ 任务无直接表，采用组内成员口径）。
-	members, memberErr := r.FindBoardTeamgroupMembers(ctx, req.TeamgroupID)
-	if memberErr != nil {
-		return nil, BoardTaskSummary{}, memberErr
-	}
 	q := r.boardTaskQuery(ctx, req)
-	if len(members) > 0 {
-		q = q.Where("zt_task.assignedTo IN ?", members)
+	// 仅在全局任务看板时按敏捷小组真实成员过滤；按具体研需查看任务时，返回该需求下的全部任务
+	if req.StoryID == 0 && req.TeamgroupID > 0 {
+		members, memberErr := r.FindBoardTeamgroupMembers(ctx, req.TeamgroupID)
+		if memberErr != nil {
+			return nil, BoardTaskSummary{}, memberErr
+		}
+		if len(members) > 0 {
+			q = q.Where("zt_task.assignedTo IN ?", members)
+		}
 	}
 	var rows []boardTaskRow
 	if err := q.Select("zt_task.id, zt_task.name, zt_task.type, zt_task.status, zt_task.pri, zt_task.story, zt_task.assignedTo, zt_task.deadline").
