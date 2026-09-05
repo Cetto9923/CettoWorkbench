@@ -102,9 +102,19 @@ func (s *Service) countAllStageUniq(ctx context.Context, account string) (demand
 	return int64(len(seenDemand)), int64(len(seenStory)), nil
 }
 
-// listAllStageDemands 「全部」列表 = 其余各阶段列表按阶段顺序拼接，按 kind+id 去重（保留首次出现）。
-func (s *Service) listAllStageDemands(ctx context.Context, actor *model.User, displayMap map[string]string) (*DemandsResp, error) {
-	items := make([]WorkItemDetail, 0)
+type itemRef struct {
+	kind        string
+	id          int
+	stageStatus string
+}
+
+// listAllStageDemands 「全部」列表 = 其余各阶段列表按阶段顺序拼接，按 kind+id 去重（保留首次出现），并分页返回。
+func (s *Service) listAllStageDemands(ctx context.Context, actor *model.User, req DemandsReq, displayMap map[string]string) (*DemandsResp, error) {
+	account := ""
+	if actor != nil {
+		account = actor.Account
+	}
+	allRefs := make([]itemRef, 0)
 	seen := make(map[string]struct{})
 	for _, def := range valueStreamStages {
 		if def.status == "all" {
@@ -114,67 +124,201 @@ func (s *Service) listAllStageDemands(ctx context.Context, actor *model.User, di
 		if !ok {
 			continue
 		}
-		resp, err := s.listMySQLDemands(ctx, actor, def.status, filter, displayMap)
+		demandIDs, err := s.repo.FindRoleDemandIDs(ctx, account, filter)
 		if err != nil {
 			return nil, err
 		}
-		for _, item := range resp.Items {
-			key := workItemKey(item.Kind, item.ID)
-			if _, ok := seen[key]; ok {
-				continue
+		for _, id := range demandIDs {
+			key := fmt.Sprintf("demand:%d", id)
+			if _, exists := seen[key]; !exists {
+				seen[key] = struct{}{}
+				allRefs = append(allRefs, itemRef{kind: "demand", id: id, stageStatus: def.status})
 			}
-			seen[key] = struct{}{}
-			items = append(items, item)
+		}
+		if filter.scheduleIncomplete {
+			storyIDs, sErr := s.repo.FindScheduleStoryIDs(ctx, account)
+			if sErr != nil {
+				return nil, sErr
+			}
+			for _, id := range storyIDs {
+				key := fmt.Sprintf("story:%d", id)
+				if _, exists := seen[key]; !exists {
+					seen[key] = struct{}{}
+					allRefs = append(allRefs, itemRef{kind: "story", id: id, stageStatus: def.status})
+				}
+			}
+		}
+		if filter.deliverStories {
+			storyIDs, sErr := s.repo.FindDeliverStoryIDs(ctx, account)
+			if sErr != nil {
+				return nil, sErr
+			}
+			for _, id := range storyIDs {
+				key := fmt.Sprintf("story:%d", id)
+				if _, exists := seen[key]; !exists {
+					seen[key] = struct{}{}
+					allRefs = append(allRefs, itemRef{kind: "story", id: id, stageStatus: def.status})
+				}
+			}
 		}
 	}
-	return &DemandsResp{Items: items}, nil
+
+	total := len(allRefs)
+	offset := (req.Page - 1) * req.PageSize
+	if offset >= total || total == 0 {
+		return &DemandsResp{Items: []WorkItemDetail{}, Total: total, Page: req.Page, PageSize: req.PageSize}, nil
+	}
+	end := offset + req.PageSize
+	if end > total {
+		end = total
+	}
+	pageRefs := allRefs[offset:end]
+
+	return s.populateWorkItems(ctx, actor, pageRefs, total, req.Page, req.PageSize, displayMap)
 }
 
-// listMySQLDemands 从 MySQL 加载指定价值流阶段的业需列表（排期/交付阶段额外合并独立研发需求）。
-func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stageStatus string, filter mysqlStageFilter, displayMap map[string]string) (*DemandsResp, error) {
+// listMySQLDemands 从 MySQL 加载指定价值流阶段的业需列表（排期/交付阶段额外合并独立研发需求），并分页返回。
+func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stageStatus string, filter mysqlStageFilter, req DemandsReq, displayMap map[string]string) (*DemandsResp, error) {
 	account := ""
 	if actor != nil {
 		account = actor.Account
 	}
-	rows, err := s.repo.FindRoleDemands(ctx, account, filter)
+	label := valueStreamLabelForStatus(stageStatus)
+	offset := (req.Page - 1) * req.PageSize
+
+	// 纯业需阶段：直接单 SQL Count + 单 SQL 分页查
+	if !filter.scheduleIncomplete && !filter.deliverStories {
+		total, err := s.repo.CountRoleDemands(ctx, account, filter)
+		if err != nil {
+			return nil, err
+		}
+		if total == 0 || int64(offset) >= total {
+			return &DemandsResp{Items: []WorkItemDetail{}, Total: int(total), Page: req.Page, PageSize: req.PageSize}, nil
+		}
+		rows, err := s.repo.FindRoleDemandsPaged(ctx, account, filter, offset, req.PageSize)
+		if err != nil {
+			return nil, err
+		}
+		items := make([]WorkItemDetail, 0, len(rows))
+		for _, row := range rows {
+			items = append(items, buildDemandWorkItem(row, label, displayMap))
+		}
+		return &DemandsResp{Items: items, Total: int(total), Page: req.Page, PageSize: req.PageSize}, nil
+	}
+
+	// 包含独立研发需求阶段（排期/交付）：按 ID 投影分页后按需加载详情
+	demandIDs, err := s.repo.FindRoleDemandIDs(ctx, account, filter)
 	if err != nil {
 		return nil, err
 	}
-	label := valueStreamLabelForStatus(stageStatus)
-	items := make([]WorkItemDetail, 0, len(rows))
-	for _, row := range rows {
-		pri := ""
-		if row.Pri != "" {
-			pri = "P" + row.Pri
-		}
-		ownerDisp := resolveNextOwnerDisplay(row, displayMap)
-		items = append(items, WorkItemDetail{
-			Kind:         "demand",
-			ID:           fmt.Sprintf("US%d", row.ID),
-			Pri:          pri,
-			Title:        row.Name,
-			Owner:        ownerDisp,
-			NextOwner:    ownerDisp,
-			ZentaoUrl:    zentao.URL("demand", "view", fmt.Sprintf("demandID=%d", row.ID)),
-			ValueStream:  label,
-			ZentaoStatus: row.Status,
-		})
+	refs := make([]itemRef, 0, len(demandIDs))
+	for _, id := range demandIDs {
+		refs = append(refs, itemRef{kind: "demand", id: id, stageStatus: stageStatus})
 	}
 	if filter.scheduleIncomplete {
-		stories, storyErr := s.repo.FindScheduleStories(ctx, account)
-		if storyErr != nil {
-			return nil, storyErr
+		storyIDs, sErr := s.repo.FindScheduleStoryIDs(ctx, account)
+		if sErr != nil {
+			return nil, sErr
 		}
-		items = append(items, storyWorkItems(stories, label, actor, displayMap)...)
+		for _, id := range storyIDs {
+			refs = append(refs, itemRef{kind: "story", id: id, stageStatus: stageStatus})
+		}
 	}
 	if filter.deliverStories {
-		stories, storyErr := s.repo.FindDeliverStories(ctx, account)
-		if storyErr != nil {
-			return nil, storyErr
+		storyIDs, sErr := s.repo.FindDeliverStoryIDs(ctx, account)
+		if sErr != nil {
+			return nil, sErr
 		}
-		items = append(items, storyWorkItems(stories, label, actor, displayMap)...)
+		for _, id := range storyIDs {
+			refs = append(refs, itemRef{kind: "story", id: id, stageStatus: stageStatus})
+		}
 	}
-	return &DemandsResp{Items: items}, nil
+
+	total := len(refs)
+	if offset >= total || total == 0 {
+		return &DemandsResp{Items: []WorkItemDetail{}, Total: total, Page: req.Page, PageSize: req.PageSize}, nil
+	}
+	end := offset + req.PageSize
+	if end > total {
+		end = total
+	}
+	pageRefs := refs[offset:end]
+
+	return s.populateWorkItems(ctx, actor, pageRefs, total, req.Page, req.PageSize, displayMap)
+}
+
+func (s *Service) populateWorkItems(ctx context.Context, actor *model.User, pageRefs []itemRef, total, page, pageSize int, displayMap map[string]string) (*DemandsResp, error) {
+	var demandIDs []int
+	var storyIDs []int
+	for _, ref := range pageRefs {
+		if ref.kind == "demand" {
+			demandIDs = append(demandIDs, ref.id)
+		} else if ref.kind == "story" {
+			storyIDs = append(storyIDs, ref.id)
+		}
+	}
+
+	demandMap := make(map[int]DemandRow, len(demandIDs))
+	if len(demandIDs) > 0 {
+		dRows, err := s.repo.FindRoleDemandsByIDs(ctx, demandIDs)
+		if err != nil {
+			return nil, err
+		}
+		for _, r := range dRows {
+			demandMap[r.ID] = r
+		}
+	}
+
+	storyMap := make(map[int]StoryRow, len(storyIDs))
+	if len(storyIDs) > 0 {
+		sRows, err := s.repo.FindStoriesByIDs(ctx, storyIDs)
+		if err != nil {
+			return nil, err
+		}
+		for _, r := range sRows {
+			storyMap[r.ID] = r
+		}
+	}
+
+	items := make([]WorkItemDetail, 0, len(pageRefs))
+	for _, ref := range pageRefs {
+		label := valueStreamLabelForStatus(ref.stageStatus)
+		if ref.kind == "demand" {
+			if row, ok := demandMap[ref.id]; ok {
+				items = append(items, buildDemandWorkItem(row, label, displayMap))
+			}
+		} else if ref.kind == "story" {
+			if row, ok := storyMap[ref.id]; ok {
+				items = append(items, buildStoryWorkItem(row, label, actor, displayMap))
+			}
+		}
+	}
+
+	return &DemandsResp{
+		Items:    items,
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+	}, nil
+}
+
+func buildDemandWorkItem(row DemandRow, label string, displayMap map[string]string) WorkItemDetail {
+	pri := ""
+	if row.Pri != "" {
+		pri = "P" + row.Pri
+	}
+	ownerDisp := resolveNextOwnerDisplay(row, displayMap)
+	return WorkItemDetail{
+		Kind:         "demand",
+		ID:           fmt.Sprintf("US%d", row.ID),
+		Pri:          pri,
+		Title:        row.Name,
+		Owner:        ownerDisp,
+		NextOwner:    ownerDisp,
+		ZentaoUrl:    zentao.URL("demand", "view", fmt.Sprintf("demandID=%d", row.ID)),
+		ValueStream:  label,
+		ZentaoStatus: row.Status,
+	}
 }
 
 func resolveNextOwnerDisplay(row DemandRow, displayMap map[string]string) string {
@@ -218,7 +362,7 @@ func lookupAccountsDisplay(displayMap map[string]string, accountsCSV string) str
 	return strings.Join(names, ", ")
 }
 
-func storyWorkItems(rows []StoryRow, label string, actor *model.User, displayMap map[string]string) []WorkItemDetail {
+func buildStoryWorkItem(row StoryRow, label string, actor *model.User, displayMap map[string]string) WorkItemDetail {
 	account := ""
 	if actor != nil {
 		account = actor.Account
@@ -227,21 +371,17 @@ func storyWorkItems(rows []StoryRow, label string, actor *model.User, displayMap
 	if owner == "" && actor != nil {
 		owner = FormatAccountName(actor.Account, actor.DisplayName)
 	}
-	items := make([]WorkItemDetail, 0, len(rows))
-	for _, row := range rows {
-		items = append(items, WorkItemDetail{
-			Kind:         "story",
-			ID:           fmt.Sprintf("U%d", row.ID),
-			Pri:          fmt.Sprintf("P%d", row.Pri),
-			Title:        row.Title,
-			Owner:        owner,
-			NextOwner:    owner,
-			ZentaoUrl:    zentao.URL("story", "view", fmt.Sprintf("storyID=%d", row.ID)),
-			ValueStream:  label,
-			ZentaoStatus: row.Status,
-		})
+	return WorkItemDetail{
+		Kind:         "story",
+		ID:           fmt.Sprintf("U%d", row.ID),
+		Pri:          fmt.Sprintf("P%d", row.Pri),
+		Title:        row.Title,
+		Owner:        owner,
+		NextOwner:    owner,
+		ZentaoUrl:    zentao.URL("story", "view", fmt.Sprintf("storyID=%d", row.ID)),
+		ValueStream:  label,
+		ZentaoStatus: row.Status,
 	}
-	return items
 }
 
 func isValidValueStreamStatus(status string) bool {
@@ -260,8 +400,4 @@ func valueStreamLabelForStatus(status string) string {
 		}
 	}
 	return ""
-}
-
-func workItemKey(kind, id string) string {
-	return kind + ":" + id
 }

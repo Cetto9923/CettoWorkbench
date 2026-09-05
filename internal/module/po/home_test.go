@@ -61,6 +61,25 @@ func TestDemandsReqValidate(t *testing.T) {
 	if req.Status != "schedule" {
 		t.Fatalf("trimmed status = %q, want schedule", req.Status)
 	}
+	if req.Page != 1 || req.PageSize != 15 {
+		t.Fatalf("default pagination: got page=%d pageSize=%d, want page=1 pageSize=15", req.Page, req.PageSize)
+	}
+
+	reqCustom := DemandsReq{Status: "all", Page: 3, PageSize: 50}
+	if errs := reqCustom.Validate(); len(errs) != 0 {
+		t.Fatalf("valid custom pagination returned errors: %v", errs)
+	}
+	if reqCustom.Page != 3 || reqCustom.PageSize != 50 {
+		t.Fatalf("custom pagination: got page=%d pageSize=%d, want 3, 50", reqCustom.Page, reqCustom.PageSize)
+	}
+
+	reqClamp := DemandsReq{Status: "all", Page: -2, PageSize: 500}
+	if errs := reqClamp.Validate(); len(errs) != 0 {
+		t.Fatalf("clamp pagination returned errors: %v", errs)
+	}
+	if reqClamp.Page != 1 || reqClamp.PageSize != 100 {
+		t.Fatalf("clamped pagination: got page=%d pageSize=%d, want 1, 100", reqClamp.Page, reqClamp.PageSize)
+	}
 
 	invalid := DemandsReq{Status: "unknown"}
 	if errs := invalid.Validate(); len(errs) != 1 || errs[0].Field != "status" {

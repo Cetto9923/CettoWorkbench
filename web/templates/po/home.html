@@ -24,7 +24,6 @@
     <div class="header-quick-filters" id="homeFocusChips" role="group" aria-label="快捷焦点">
       <button type="button" class="header-quick-chip active" data-focus="all" aria-pressed="true">全部 <em>{{ if .PageError }}—{{ else }}{{ $total }}{{ end }}</em></button>
       <button type="button" class="header-quick-chip" data-focus="today" aria-pressed="false" title="待业务决策 (WAIT DECISION)">今日必推 <em>{{ if .PageError }}—{{ else }}{{ .KPI.Today }}{{ end }}</em></button>
-      <button type="button" class="header-quick-chip" data-focus="pending" aria-pressed="false">待我处理 <em>{{ if .PageError }}—{{ else }}{{ $total }}{{ end }}</em></button>
       <button type="button" class="header-quick-chip warning" data-focus="blocked" aria-pressed="false" title="缺少阻塞事实数据源 (BLOCKED)">阻塞 <em>{{ if .PageError }}—{{ else }}{{ .KPI.Blocked }}{{ end }}</em></button>
       <button type="button" class="header-quick-chip danger" data-focus="overdue" aria-pressed="false" title="待业务决策 (WAIT DECISION)">超期 <em>{{ if .PageError }}—{{ else }}{{ .KPI.Overdue }}{{ end }}</em></button>
       <button type="button" class="header-quick-chip warning" data-focus="suspended" aria-pressed="false" title="缺少挂起数据源 (BLOCKED)">挂起 <em>{{ if .PageError }}—{{ else }}{{ .KPI.Suspended }}{{ end }}</em></button>
@@ -53,8 +52,8 @@
             class="home-vs-mini-card{{ if eq $i 0 }} active{{ else if eq $stage.Count 0 }} empty{{ end }}"
             data-vs-status="{{ $stage.Status }}"
             aria-pressed="{{ if eq $i 0 }}true{{ else }}false{{ end }}"
-            title="{{ if eq $stage.Status "testing" }}测试{{ else }}{{ $stage.Label }}{{ end }} · 共 {{ $stage.Count }} 条">
-            <span class="vs-mini-name">{{ if eq $stage.Status "testing" }}测试{{ else }}{{ $stage.Label }}{{ end }}</span>
+            title="{{ $stage.Label }} · 共 {{ $stage.Count }} 条">
+            <span class="vs-mini-name">{{ $stage.Label }}</span>
             <span class="vs-mini-count">{{ if $.PageError }}暂不可用{{ else }}{{ $stage.Count }}{{ end }}</span>
             <span class="vs-mini-meta">{{ if $.PageError }}暂不可用{{ else }}业需 {{ $stage.DemandCount }} · 研需 {{ $stage.StoryCount }}{{ end }}</span>
           </button>
@@ -100,7 +99,12 @@
       <a class="table-action-btn" href="/schedule">进入排期与规划</a>
     </div>
     <div class="home-version-panel">
-      {{ if .VersionWindows }}
+      {{ if .VersionWindowsError }}
+        <div class="workspace-alert workspace-alert-error" role="alert" style="margin:8px 0;padding:8px 12px;background:#fef2f2;border:1px solid #fca5a5;border-radius:4px;color:#991b1b;font-size:13px;display:flex;align-items:center;gap:8px;">
+          <i class="fas fa-circle-exclamation"></i>
+          <span>版本窗口暂不可用（{{ .VersionWindowsError }}）</span>
+        </div>
+      {{ else if .VersionWindows }}
         {{ range .VersionWindows }}
         <div class="home-version-card">
           <div class="home-version-card-hdr">

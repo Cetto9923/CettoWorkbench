@@ -24,6 +24,14 @@
     pageSize: 15
   };
 
+  var VALID_TABS = ["all", "demand", "execution", "testing"];
+  var VALID_FOCUSES = ["pending", "today", "overdue", "blocked", "p1"];
+  var VALID_RELATIONS = ["all", "in_charge", "cooperate"];
+  var VALID_ACTIONS = ["all", "todo_review", "todo_schedule", "todo_verify", "todo_deliver", "todo_follow"];
+  var VALID_STAGES = ["all", "accept", "clarify", "schedule", "developing", "testing", "waitacceptance", "acceptanced", "publish", "released"];
+  var VALID_RESPONSIBILITIES = ["all", "my_action", "my_follow_up"];
+  var hasCorrectedPage = false;
+
   var searchTimer = null;
   var summaryMap = { countPending: "pending", countToday: "today", countOverdue: "overdue", countBlocked: "blocked", countP1: "p1" };
   var groupMap = { groupAll: "all", groupDemand: "demand", groupExecution: "execution", groupTesting: "testing" };
@@ -40,6 +48,102 @@
     execution: [{ value: "all", label: "具体对象：全部" }, { value: "task", label: "任务" }],
     testing: [{ value: "all", label: "具体对象：全部" }, { value: "bug", label: "Bug" }]
   };
+
+  function syncUrl() {
+    if (!window.history || !window.history.replaceState) { return; }
+    var p = new URLSearchParams();
+    if (state.tab !== "all") { p.set("tab", state.tab); }
+    if (state.focus !== "pending") { p.set("focus", state.focus); }
+    if (state.action !== "all") { p.set("action", state.action); }
+    if (state.stage !== "all") { p.set("stage", state.stage); }
+    if (state.objectType !== "all") { p.set("objectType", state.objectType); }
+    if (state.relation !== "all") { p.set("relation", state.relation); }
+    if (state.responsibility !== "all") { p.set("responsibility", state.responsibility); }
+    if (state.keyword) { p.set("keyword", state.keyword); }
+    if (state.page > 1) { p.set("page", String(state.page)); }
+    if (state.pageSize !== 15) { p.set("pageSize", String(state.pageSize)); }
+    var qs = p.toString();
+    var newUrl = window.location.pathname + (qs ? "?" + qs : "");
+    window.history.replaceState(null, "", newUrl);
+  }
+
+  function initFromUrl() {
+    if (!window.location.search) { return; }
+    var sp = new URLSearchParams(window.location.search);
+    var tab = (sp.get("tab") || "").trim();
+    if (VALID_TABS.indexOf(tab) >= 0) {
+      state.tab = tab;
+      document.querySelectorAll(".po-todos .category-tab").forEach(function (t) {
+        var isCurrent = (t.getAttribute("data-tab") || "all") === tab;
+        t.classList.toggle("active", isCurrent);
+        if (isCurrent) { t.setAttribute("aria-current", "page"); } else { t.removeAttribute("aria-current"); }
+      });
+    }
+
+    var focus = (sp.get("focus") || "").trim();
+    if (VALID_FOCUSES.indexOf(focus) >= 0) {
+      state.focus = focus;
+      document.querySelectorAll("#todosQuickChips .header-quick-chip").forEach(function (c) {
+        var isCurrent = (c.getAttribute("data-focus") || "") === focus;
+        c.classList.toggle("active", isCurrent);
+        c.setAttribute("aria-pressed", isCurrent ? "true" : "false");
+      });
+    }
+
+    var rel = (sp.get("relation") || "").trim();
+    if (VALID_RELATIONS.indexOf(rel) >= 0) {
+      state.relation = rel;
+      document.querySelectorAll(".relation-segment button").forEach(function (b) {
+        b.classList.toggle("active", (b.getAttribute("data-relation") || "all") === rel);
+      });
+    }
+
+    syncObjectTypeOptions(state.tab);
+    var ot = (sp.get("objectType") || "").trim();
+    var selOt = $("todosObjectType");
+    if (ot && selOt) {
+      for (var i = 0; i < selOt.options.length; i++) {
+        if (selOt.options[i].value === ot) {
+          state.objectType = ot;
+          selOt.value = ot;
+          break;
+        }
+      }
+    }
+
+    var act = (sp.get("action") || "").trim();
+    if (VALID_ACTIONS.indexOf(act) >= 0 && $("todosAction")) {
+      state.action = act;
+      $("todosAction").value = act;
+    }
+
+    var stg = (sp.get("stage") || "").trim();
+    if (VALID_STAGES.indexOf(stg) >= 0 && $("todosStage")) {
+      state.stage = stg;
+      $("todosStage").value = stg;
+    }
+
+    var resp = (sp.get("responsibility") || "").trim();
+    if (VALID_RESPONSIBILITIES.indexOf(resp) >= 0 && $("todosResponsibility")) {
+      state.responsibility = resp;
+      $("todosResponsibility").value = resp;
+    }
+
+    var kw = (sp.get("keyword") || "").trim();
+    if (kw && $("todosKeyword")) {
+      state.keyword = kw;
+      $("todosKeyword").value = kw;
+    }
+
+    var p = parseInt(sp.get("page"), 10);
+    if (!isNaN(p) && p >= 1) {
+      state.page = p;
+    }
+    var ps = parseInt(sp.get("pageSize"), 10);
+    if (!isNaN(ps) && [15, 30, 50, 100].indexOf(ps) >= 0) {
+      state.pageSize = ps;
+    }
+  }
 
   function buildUrl() {
     var params = new URLSearchParams();
@@ -115,11 +219,14 @@
       var total = (payload && payload.total) || 0;
       var totalPages = Math.max(1, Math.ceil(total / state.pageSize));
 
-      if (state.page > totalPages && total > 0) {
+      if (state.page > totalPages && total > 0 && !hasCorrectedPage) {
+        hasCorrectedPage = true;
         state.page = totalPages;
+        syncUrl();
         refresh();
         return;
       }
+      hasCorrectedPage = false;
 
       var tbody = $("todosTbody");
       if (tbody) { tbody.innerHTML = items.map(rowHtml).join(""); }
@@ -134,8 +241,19 @@
           page: state.page,
           pageSize: state.pageSize,
           total: total,
-          onPageChange: function (p) { state.page = p; refresh(); },
-          onPageSizeChange: function (s) { state.pageSize = s; state.page = 1; refresh(); }
+          onPageChange: function (p) {
+            state.page = p;
+            hasCorrectedPage = false;
+            syncUrl();
+            refresh();
+          },
+          onPageSizeChange: function (s) {
+            state.pageSize = s;
+            state.page = 1;
+            hasCorrectedPage = false;
+            syncUrl();
+            refresh();
+          }
         });
       }
     });
@@ -155,6 +273,8 @@
         card.setAttribute("aria-pressed", "true");
         state.focus = focus;
         state.page = 1;
+        hasCorrectedPage = false;
+        syncUrl();
         refresh();
       });
     });
@@ -180,6 +300,8 @@
         if ($("todosStage")) { $("todosStage").value = "all"; }
         if ($("todosAction")) { $("todosAction").value = "all"; }
         syncObjectTypeOptions(tab);
+        hasCorrectedPage = false;
+        syncUrl();
         refresh();
       });
     });
@@ -193,6 +315,8 @@
         searchTimer = setTimeout(function () {
           state.keyword = (kwInput.value || "").trim();
           state.page = 1;
+          hasCorrectedPage = false;
+          syncUrl();
           refresh();
         }, 300);
       });
@@ -208,6 +332,8 @@
         btn.classList.add("active");
         state.relation = rel;
         state.page = 1;
+        hasCorrectedPage = false;
+        syncUrl();
         refresh();
       });
     });
@@ -219,6 +345,8 @@
         sel.addEventListener("change", function () {
           state[parts[1]] = sel.value;
           state.page = 1;
+          hasCorrectedPage = false;
+          syncUrl();
           refresh();
         });
       }
@@ -260,6 +388,8 @@
         if ($("todosStage")) { $("todosStage").value = "all"; }
         if ($("todosResponsibility")) { $("todosResponsibility").value = "all"; }
         syncObjectTypeOptions("all");
+        hasCorrectedPage = false;
+        syncUrl();
         refresh();
       });
     }
@@ -286,6 +416,8 @@
     initQuickChips();
     initTabs();
     initToolbar();
+    initFromUrl();
+    syncUrl();
     refresh();
   });
 })();

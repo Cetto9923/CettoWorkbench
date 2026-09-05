@@ -188,15 +188,23 @@ func (s *Service) fillKPICounts(ctx context.Context, account string, kpi *KPICou
 
 // Demands 按价值流状态返回当前用户关联的需求/故事详情。
 func (s *Service) Demands(ctx context.Context, actor *model.User, req DemandsReq) (*DemandsResp, error) {
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+	if req.PageSize <= 0 {
+		req.PageSize = 15
+	} else if req.PageSize > 100 {
+		req.PageSize = 100
+	}
 	displayMap, err := s.loadAccountDisplayMap(ctx, actor)
 	if err != nil {
 		return nil, err
 	}
 	if req.Status == "all" {
-		return s.listAllStageDemands(ctx, actor, displayMap)
+		return s.listAllStageDemands(ctx, actor, req, displayMap)
 	}
 	if filter, ok := mysqlStageFilters[req.Status]; ok {
-		return s.listMySQLDemands(ctx, actor, req.Status, filter, displayMap)
+		return s.listMySQLDemands(ctx, actor, req.Status, filter, req, displayMap)
 	}
-	return &DemandsResp{Items: []WorkItemDetail{}}, nil
+	return &DemandsResp{Items: []WorkItemDetail{}, Total: 0, Page: req.Page, PageSize: req.PageSize}, nil
 }

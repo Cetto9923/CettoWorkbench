@@ -23,6 +23,75 @@
     pageSize: 20
   };
 
+  var VALID_QUICKVIEWS = ["all", "unread", "action", "abnormal", "today"];
+  var VALID_CATEGORIES = ["all", "business", "approval", "reminder", "collaboration", "risk", "system"];
+  var VALID_OBJECT_TYPES = ["all", "demand", "story", "project", "task", "bug", "testtask", "issue", "risk", "approval"];
+  var VALID_TIME_RANGES = ["all", "today", "7d", "week", "30d", "month"];
+  var VALID_READ_STATES = ["all", "unread", "read"];
+  var VALID_ACTION_STATES = ["all", "yes", "no"];
+  var hasCorrectedPage = false;
+
+  function syncUrl() {
+    if (!window.history || !window.history.replaceState) { return; }
+    var p = new URLSearchParams();
+    ["quickView", "category", "objectType", "timeRange", "readState", "needAction"].forEach(function (k) {
+      if (state[k] && state[k] !== "all") { p.set(k, state[k]); }
+    });
+    if (state.keyword) { p.set("keyword", state.keyword); }
+    if (state.page > 1) { p.set("page", String(state.page)); }
+    if (state.pageSize !== 20) { p.set("pageSize", String(state.pageSize)); }
+    var qs = p.toString();
+    window.history.replaceState(null, "", window.location.pathname + (qs ? "?" + qs : ""));
+  }
+
+  function initFromUrl() {
+    if (!window.location.search) { return; }
+    var sp = new URLSearchParams(window.location.search);
+    var qv = (sp.get("quickView") || "").trim();
+    if (VALID_QUICKVIEWS.indexOf(qv) >= 0) {
+      state.quickView = qv;
+      document.querySelectorAll("#noticeQuickChips .header-quick-chip").forEach(function (b) {
+        var isCurrent = (b.getAttribute("data-qv") || "all") === qv;
+        b.classList.toggle("active", isCurrent);
+        b.setAttribute("aria-pressed", isCurrent ? "true" : "false");
+      });
+    }
+
+    var cat = (sp.get("category") || "").trim();
+    if (VALID_CATEGORIES.indexOf(cat) >= 0) {
+      state.category = cat;
+      document.querySelectorAll(".po-notice .category-tab").forEach(function (b) {
+        var isCurrent = (b.getAttribute("data-category") || "all") === cat;
+        b.classList.toggle("active", isCurrent);
+        if (isCurrent) { b.setAttribute("aria-current", "page"); } else { b.removeAttribute("aria-current"); }
+      });
+    }
+
+    [
+      { key: "objectType", list: VALID_OBJECT_TYPES, id: "noticeObjectType" },
+      { key: "timeRange", list: VALID_TIME_RANGES, id: "noticeTimeRange" },
+      { key: "readState", list: VALID_READ_STATES, id: "noticeReadState" },
+      { key: "needAction", list: VALID_ACTION_STATES, id: "noticeNeedAction" }
+    ].forEach(function (item) {
+      var val = (sp.get(item.key) || "").trim();
+      if (item.list.indexOf(val) >= 0 && $(item.id)) {
+        state[item.key] = val;
+        $(item.id).value = val;
+      }
+    });
+
+    var kw = (sp.get("keyword") || "").trim();
+    if (kw && $("noticeKeyword")) {
+      state.keyword = kw;
+      $("noticeKeyword").value = kw;
+    }
+
+    var p = parseInt(sp.get("page"), 10);
+    if (!isNaN(p) && p >= 1) { state.page = p; }
+    var ps = parseInt(sp.get("pageSize"), 10);
+    if (!isNaN(ps) && [10, 20, 50, 100].indexOf(ps) >= 0) { state.pageSize = ps; }
+  }
+
   var OBJECT_TYPE_LABELS = {
     demand: "需求", story: "研需", project: "项目", task: "任务",
     bug: "Bug", testtask: "测试", issue: "问题", risk: "风险", approval: "审批"
@@ -134,6 +203,16 @@
     controller.fetch(buildUrl(), { method: "GET" }, function (payload) {
       var items = (payload && Array.isArray(payload.items)) ? payload.items : [];
       var total = (payload && typeof payload.filteredTotal === "number") ? payload.filteredTotal : ((payload && typeof payload.total === "number") ? payload.total : items.length);
+      var totalPages = Math.max(1, Math.ceil(total / state.pageSize));
+
+      if (state.page > totalPages && total > 0 && !hasCorrectedPage) {
+        hasCorrectedPage = true;
+        state.page = totalPages;
+        syncUrl();
+        loadData();
+        return;
+      }
+      hasCorrectedPage = false;
 
       var tbody = $("noticeTbody");
       if (tbody) { tbody.innerHTML = items.map(rowHtml).join(""); }
@@ -146,8 +225,19 @@
           page: state.page,
           pageSize: state.pageSize,
           total: total,
-          onPageChange: function (p) { state.page = p; loadData(); },
-          onPageSizeChange: function (s) { state.pageSize = s; state.page = 1; loadData(); }
+          onPageChange: function (p) {
+            state.page = p;
+            hasCorrectedPage = false;
+            syncUrl();
+            loadData();
+          },
+          onPageSizeChange: function (s) {
+            state.pageSize = s;
+            state.page = 1;
+            hasCorrectedPage = false;
+            syncUrl();
+            loadData();
+          }
         });
       }
     });
@@ -216,6 +306,8 @@
         btn.setAttribute("aria-pressed", "true");
         state.quickView = qv;
         state.page = 1;
+        hasCorrectedPage = false;
+        syncUrl();
         loadData();
       });
     });
@@ -235,6 +327,8 @@
         btn.setAttribute("aria-current", "page");
         state.category = cat;
         state.page = 1;
+        hasCorrectedPage = false;
+        syncUrl();
         loadData();
       });
     });
@@ -249,6 +343,8 @@
         timer = setTimeout(function () {
           state.keyword = (kwInput.value || "").trim();
           state.page = 1;
+          hasCorrectedPage = false;
+          syncUrl();
           loadData();
         }, 300);
       });
@@ -259,6 +355,8 @@
       objSel.addEventListener("change", function () {
         state.objectType = objSel.value;
         state.page = 1;
+        hasCorrectedPage = false;
+        syncUrl();
         loadData();
       });
     }
@@ -268,6 +366,8 @@
       timeSel.addEventListener("change", function () {
         state.timeRange = timeSel.value;
         state.page = 1;
+        hasCorrectedPage = false;
+        syncUrl();
         loadData();
       });
     }
@@ -277,6 +377,8 @@
       readSel.addEventListener("change", function () {
         state.readState = readSel.value;
         state.page = 1;
+        hasCorrectedPage = false;
+        syncUrl();
         loadData();
       });
     }
@@ -286,6 +388,8 @@
       actionSel.addEventListener("change", function () {
         state.needAction = actionSel.value;
         state.page = 1;
+        hasCorrectedPage = false;
+        syncUrl();
         loadData();
       });
     }
@@ -322,6 +426,8 @@
         if (timeSel) { timeSel.value = "all"; }
         if (readSel) { readSel.value = "all"; }
         if (actionSel) { actionSel.value = "all"; }
+        hasCorrectedPage = false;
+        syncUrl();
         loadData();
       });
     }
@@ -363,6 +469,8 @@
     initQuickChips();
     initTabs();
     initToolbar();
+    initFromUrl();
+    syncUrl();
     loadData();
   });
 })();

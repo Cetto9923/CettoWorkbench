@@ -11,16 +11,49 @@
   var esc = (window.PersonalList && window.PersonalList.escapeHtml) || function (v) { return String(v == null ? "" : v); };
 
   var state = {
-    items: [],
     status: "all",
     page: 1,
     pageSize: 15
   };
 
+  var VALID_STATUSES = ["all", "accept", "clarify", "schedule", "developing", "testing", "waitacceptance", "acceptanced", "publish", "released"];
   var currentSeq = 0;
+  var hasCorrectedPage = false;
 
-  function demandsUrl(status) {
-    return "/demands?status=" + encodeURIComponent(status || "all");
+  function demandsUrl(status, page, pageSize) {
+    var p = new URLSearchParams();
+    p.set("status", status || "all");
+    p.set("page", String(page || 1));
+    p.set("pageSize", String(pageSize || 15));
+    return "/demands?" + p.toString();
+  }
+
+  function syncUrl() {
+    if (!window.history || !window.history.replaceState) { return; }
+    var params = new URLSearchParams();
+    if (state.status && state.status !== "all") { params.set("status", state.status); }
+    if (state.page > 1) { params.set("page", String(state.page)); }
+    if (state.pageSize && state.pageSize !== 15) { params.set("pageSize", String(state.pageSize)); }
+    var qs = params.toString();
+    var newUrl = window.location.pathname + (qs ? "?" + qs : "");
+    window.history.replaceState(null, "", newUrl);
+  }
+
+  function initFromUrl() {
+    if (!window.location.search) { return; }
+    var sp = new URLSearchParams(window.location.search);
+    var st = (sp.get("status") || "").trim();
+    if (VALID_STATUSES.indexOf(st) >= 0) {
+      state.status = st;
+    }
+    var p = parseInt(sp.get("page"), 10);
+    if (!isNaN(p) && p >= 1) {
+      state.page = p;
+    }
+    var ps = parseInt(sp.get("pageSize"), 10);
+    if (!isNaN(ps) && [15, 30, 50, 100].indexOf(ps) >= 0) {
+      state.pageSize = ps;
+    }
   }
 
   function actionLabel(item) {
@@ -68,9 +101,9 @@
     return "—";
   }
 
-  function loadDemands(status) {
+  function loadDemands(status, page, pageSize) {
     var fetchFn = window.appFetch || fetch;
-    return fetchFn(demandsUrl(status), { method: "GET" })
+    return fetchFn(demandsUrl(status, page, pageSize), { method: "GET" })
       .then(function (res) {
         if (!res.ok) { throw new Error("load demands failed (" + res.status + ")"); }
         return res.json();
@@ -79,7 +112,12 @@
         if (!payload || payload.success !== true) {
           throw new Error("invalid payload");
         }
-        return Array.isArray(payload.items) ? payload.items : [];
+        return {
+          items: Array.isArray(payload.items) ? payload.items : [],
+          total: typeof payload.total === "number" ? payload.total : 0,
+          page: typeof payload.page === "number" ? payload.page : 1,
+          pageSize: typeof payload.pageSize === "number" ? payload.pageSize : 15
+        };
       });
   }
 
@@ -132,12 +170,11 @@
       "</tr>";
   }
 
-  function renderList() {
-    var total = state.items.length;
+  function renderList(items, total) {
     updateTitle(total);
     $("#top5Error").attr("hidden", true);
 
-    if (!total) {
+    if (!total || !items.length) {
       $("#top5Tbody").empty();
       $("#top5Empty").removeAttr("hidden");
       $("#homePagination").attr("hidden", true);
@@ -145,15 +182,7 @@
     }
 
     $("#top5Empty").attr("hidden", true);
-    var totalPages = Math.max(1, Math.ceil(total / state.pageSize));
-    if (state.page > totalPages) {
-      state.page = totalPages;
-    }
-
-    var start = (state.page - 1) * state.pageSize;
-    var pageItems = state.items.slice(start, start + state.pageSize);
-
-    $("#top5Tbody").html(pageItems.map(renderRow).join(""));
+    $("#top5Tbody").html(items.map(renderRow).join(""));
 
     if (window.PersonalList) {
       window.PersonalList.renderPagination({
@@ -161,8 +190,17 @@
         page: state.page,
         pageSize: state.pageSize,
         total: total,
-        onPageChange: function (p) { state.page = p; renderList(); },
-        onPageSizeChange: function (s) { state.pageSize = s; state.page = 1; renderList(); }
+        onPageChange: function (p) {
+          state.page = p;
+          syncUrl();
+          refreshDemands(state.status);
+        },
+        onPageSizeChange: function (s) {
+          state.pageSize = s;
+          state.page = 1;
+          syncUrl();
+          refreshDemands(state.status);
+        }
       });
     }
   }
@@ -175,24 +213,34 @@
   function refreshDemands(status) {
     currentSeq += 1;
     var reqSeq = currentSeq;
-    state.status = status || "all";
-    state.page = 1;
+    if (status) { state.status = status; }
 
     $("#top5Empty").attr("hidden", true);
     $("#top5Error").attr("hidden", true);
     $("#top5Tbody").html('<tr><td colspan="7" class="state-placeholder">正在加载行动列表…</td></tr>');
 
-    return loadDemands(state.status)
-      .then(function (items) {
-        if (reqSeq !== currentSeq) { return items; }
-        state.items = items;
-        renderList();
+    return loadDemands(state.status, state.page, state.pageSize)
+      .then(function (res) {
+        if (reqSeq !== currentSeq) { return; }
+        var total = res.total;
+        var totalPages = Math.max(1, Math.ceil(total / state.pageSize));
+
+        // 越界安全：page > totalPages 时最多纠偏一次
+        if (state.page > totalPages && total > 0 && !hasCorrectedPage) {
+          hasCorrectedPage = true;
+          state.page = totalPages;
+          syncUrl();
+          refreshDemands(state.status);
+          return;
+        }
+        hasCorrectedPage = false;
+
+        renderList(res.items, total);
         fillUpdateTime();
-        return items;
       })
       .catch(function (err) {
-        if (reqSeq !== currentSeq) { return []; }
-        state.items = [];
+        if (reqSeq !== currentSeq) { return; }
+        hasCorrectedPage = false;
         updateTitle(0);
         $("#top5Tbody").empty();
         $("#top5Empty").attr("hidden", true);
@@ -201,7 +249,6 @@
         if (typeof window.showToast === "function") {
           window.showToast("加载需求列表失败，请稍后重试", "danger");
         }
-        return [];
       });
   }
 
@@ -211,6 +258,9 @@
       var status = $card.attr("data-vs-status");
       if (!status) { return; }
       setActiveCard($card);
+      state.status = status;
+      state.page = 1;
+      syncUrl();
       refreshDemands(status);
     });
   }
@@ -219,9 +269,14 @@
     $("#homeFocusChips .header-quick-chip").on("click", function () {
       var $chip = $(this);
       var focus = $chip.attr("data-focus");
-      if (focus === "all" || focus === "pending") {
+      if (focus === "all") {
         $("#homeFocusChips .header-quick-chip").removeClass("active").attr("aria-pressed", "false");
         $chip.addClass("active").attr("aria-pressed", "true");
+        state.status = "all";
+        state.page = 1;
+        var $card = $('.home-vs-mini-card[data-vs-status="all"]');
+        if ($card.length) { setActiveCard($card); }
+        syncUrl();
         refreshDemands(state.status);
       } else {
         if (typeof window.showToast === "function") {
@@ -232,6 +287,7 @@
   }
 
   $(function () {
+    initFromUrl();
     initValueStreamLinkage();
     initFocusChips();
 
@@ -239,11 +295,20 @@
       refreshDemands(state.status);
     });
 
-    var $active = $(".home-vs-mini-card.active").first();
-    if (!$active.length) {
-      $active = $(".home-vs-mini-card").first();
-      if ($active.length) { setActiveCard($active); }
+    var $targetCard = $('.home-vs-mini-card[data-vs-status="' + state.status + '"]');
+    if ($targetCard.length) {
+      setActiveCard($targetCard);
+    } else {
+      var $active = $(".home-vs-mini-card.active").first();
+      if (!$active.length) {
+        $active = $(".home-vs-mini-card").first();
+      }
+      if ($active.length) {
+        setActiveCard($active);
+        state.status = $active.attr("data-vs-status") || "all";
+      }
     }
-    refreshDemands($active.attr("data-vs-status") || "all");
+    syncUrl();
+    refreshDemands(state.status);
   });
 })(jQuery);

@@ -22,6 +22,102 @@
     pageSize: 20
   };
 
+  var VALID_TABS = ["all", "approval", "demand", "execution", "quality", "risks"];
+  var VALID_RANGES = ["all", "today", "7d", "week", "30d", "month", "quarter"];
+  var hasCorrectedPage = false;
+
+  function syncUrl() {
+    if (!window.history || !window.history.replaceState) { return; }
+    var params = new URLSearchParams();
+    if (state.tab !== "all") { params.set("tab", state.tab); }
+    if (state.timeRange !== "all") { params.set("timeRange", state.timeRange); }
+    if (state.objectType) { params.set("objectType", state.objectType); }
+    if (state.action !== "all") { params.set("action", state.action); }
+    if (state.keyword) { params.set("keyword", state.keyword); }
+    if (state.result !== "all") { params.set("result", state.result); }
+    if (state.page > 1) { params.set("page", String(state.page)); }
+    if (state.pageSize !== 20) { params.set("pageSize", String(state.pageSize)); }
+    var qs = params.toString();
+    var newUrl = window.location.pathname + (qs ? "?" + qs : "");
+    window.history.replaceState(null, "", newUrl);
+  }
+
+  function initFromUrl() {
+    if (!window.location.search) { return; }
+    var sp = new URLSearchParams(window.location.search);
+    var tab = (sp.get("tab") || "").trim();
+    if (VALID_TABS.indexOf(tab) >= 0) {
+      state.tab = tab;
+      document.querySelectorAll(".po-done .category-tab").forEach(function (b) {
+        var isCurrent = (b.getAttribute("data-tab") || "all") === tab;
+        b.classList.toggle("active", isCurrent);
+        if (isCurrent) { b.setAttribute("aria-current", "page"); } else { b.removeAttribute("aria-current"); }
+      });
+    }
+
+    var tr = (sp.get("timeRange") || "").trim();
+    if (VALID_RANGES.indexOf(tr) >= 0) {
+      state.timeRange = tr;
+      document.querySelectorAll("#doneTimeChips .header-quick-chip").forEach(function (b) {
+        var isCurrent = (b.getAttribute("data-range") || "all") === tr;
+        b.classList.toggle("active", isCurrent);
+        b.setAttribute("aria-pressed", isCurrent ? "true" : "false");
+      });
+    }
+
+    syncObjectTypeOptions(state.tab);
+    var ot = (sp.get("objectType") || "").trim();
+    var selOt = $("doneObjectType");
+    if (ot && selOt) {
+      for (var i = 0; i < selOt.options.length; i++) {
+        if (selOt.options[i].value === ot) {
+          state.objectType = ot;
+          selOt.value = ot;
+          break;
+        }
+      }
+    }
+
+    var act = (sp.get("action") || "").trim();
+    if (act && $("doneAction")) {
+      var selAct = $("doneAction");
+      for (var j = 0; j < selAct.options.length; j++) {
+        if (selAct.options[j].value === act) {
+          state.action = act;
+          selAct.value = act;
+          break;
+        }
+      }
+    }
+
+    var res = (sp.get("result") || "").trim();
+    if (res && $("doneResult")) {
+      var selRes = $("doneResult");
+      for (var k = 0; k < selRes.options.length; k++) {
+        if (selRes.options[k].value === res) {
+          state.result = res;
+          selRes.value = res;
+          break;
+        }
+      }
+    }
+
+    var kw = (sp.get("keyword") || "").trim();
+    if (kw && $("doneKeyword")) {
+      state.keyword = kw;
+      $("doneKeyword").value = kw;
+    }
+
+    var p = parseInt(sp.get("page"), 10);
+    if (!isNaN(p) && p >= 1) {
+      state.page = p;
+    }
+    var ps = parseInt(sp.get("pageSize"), 10);
+    if (!isNaN(ps) && [10, 20, 50, 100].indexOf(ps) >= 0) {
+      state.pageSize = ps;
+    }
+  }
+
   var RANGE_FIELD_MAP = {
     all: "all",
     today: "today",
@@ -123,6 +219,16 @@
     controller.fetch(buildUrl(), { method: "GET" }, function (payload) {
       var items = (payload && Array.isArray(payload.items)) ? payload.items : [];
       var total = (payload && typeof payload.total === "number") ? payload.total : items.length;
+      var totalPages = Math.max(1, Math.ceil(total / state.pageSize));
+
+      if (state.page > totalPages && total > 0 && !hasCorrectedPage) {
+        hasCorrectedPage = true;
+        state.page = totalPages;
+        syncUrl();
+        loadData();
+        return;
+      }
+      hasCorrectedPage = false;
 
       var tbody = $("doneTbody");
       if (tbody) {
@@ -137,8 +243,19 @@
           page: state.page,
           pageSize: state.pageSize,
           total: total,
-          onPageChange: function (p) { state.page = p; loadData(); },
-          onPageSizeChange: function (s) { state.pageSize = s; state.page = 1; loadData(); }
+          onPageChange: function (p) {
+            state.page = p;
+            hasCorrectedPage = false;
+            syncUrl();
+            loadData();
+          },
+          onPageSizeChange: function (s) {
+            state.pageSize = s;
+            state.page = 1;
+            hasCorrectedPage = false;
+            syncUrl();
+            loadData();
+          }
         });
       }
     });
@@ -163,6 +280,8 @@
         if ($("doneAction")) { $("doneAction").value = "all"; }
         if ($("doneResult")) { $("doneResult").value = "all"; }
         syncObjectTypeOptions(tab);
+        hasCorrectedPage = false;
+        syncUrl();
         loadData();
       });
     });
@@ -182,6 +301,8 @@
         btn.setAttribute("aria-pressed", "true");
         state.timeRange = range;
         state.page = 1;
+        hasCorrectedPage = false;
+        syncUrl();
         loadData();
       });
     });
@@ -196,6 +317,8 @@
         timer = setTimeout(function () {
           state.keyword = (kwInput.value || "").trim();
           state.page = 1;
+          hasCorrectedPage = false;
+          syncUrl();
           loadData();
         }, 300);
       });
@@ -206,6 +329,8 @@
       objSel.addEventListener("change", function () {
         state.objectType = objSel.value;
         state.page = 1;
+        hasCorrectedPage = false;
+        syncUrl();
         loadData();
       });
     }
@@ -215,6 +340,8 @@
       actSel.addEventListener("change", function () {
         state.action = actSel.value;
         state.page = 1;
+        hasCorrectedPage = false;
+        syncUrl();
         loadData();
       });
     }
@@ -224,6 +351,8 @@
       resSel.addEventListener("change", function () {
         state.result = resSel.value;
         state.page = 1;
+        hasCorrectedPage = false;
+        syncUrl();
         loadData();
       });
     }
@@ -258,6 +387,8 @@
         if (actSel) { actSel.value = "all"; }
         if (resSel) { resSel.value = "all"; }
         syncObjectTypeOptions("all");
+        hasCorrectedPage = false;
+        syncUrl();
         loadData();
       });
     }
@@ -289,6 +420,8 @@
     initTabs();
     initTimeChips();
     initToolbar();
+    initFromUrl();
+    syncUrl();
     loadData();
   });
 })();

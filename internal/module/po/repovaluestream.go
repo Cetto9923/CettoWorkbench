@@ -248,6 +248,36 @@ func (r *Repo) FindRoleDemands(ctx context.Context, account string, filter mysql
 	return rows, nil
 }
 
+// FindRoleDemandsPaged 按阶段过滤条件分页查询业需列表（只取账号字段，不 JOIN zt_user）。
+func (r *Repo) FindRoleDemandsPaged(ctx context.Context, account string, filter mysqlStageFilter, offset, limit int) ([]DemandRow, error) {
+	if r == nil || r.db == nil || !filterReady(account, filter) {
+		return nil, nil
+	}
+	var rows []DemandRow
+	q := r.roleDemandScope(ctx, account, filter).
+		Select(`zt_demand.id, zt_demand.name, zt_demand.pri, zt_demand.status,
+			zt_demand.assignedTo, zt_demand.QD, zt_demand.RD, zt_demand.BRA,
+			clarify_pm.PM AS pm`).
+		Joins(`LEFT JOIN (
+			SELECT demand, GROUP_CONCAT(PM) AS PM
+			FROM zt_demandclarify
+			WHERE PM IS NOT NULL AND PM <> ''
+			GROUP BY demand
+		) AS clarify_pm ON clarify_pm.demand = zt_demand.id`).
+		Order("zt_demand.id DESC")
+	if offset > 0 {
+		q = q.Offset(offset)
+	}
+	if limit > 0 {
+		q = q.Limit(limit)
+	}
+	err := q.Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
 // CountScheduleStories 统计排期阶段独立研发需求数量。
 func (r *Repo) CountScheduleStories(ctx context.Context, account string) (int64, error) {
 	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
@@ -323,6 +353,46 @@ func (r *Repo) FindDeliverStories(ctx context.Context, account string) ([]StoryR
 	err := r.deliverStoryScope(ctx, account).
 		Select("id", "title", "pri", "status").
 		Order("id DESC").
+		Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+// FindRoleDemandsByIDs 按 ID 列表批量查询业需详情。
+func (r *Repo) FindRoleDemandsByIDs(ctx context.Context, ids []int) ([]DemandRow, error) {
+	if r == nil || r.db == nil || len(ids) == 0 {
+		return nil, nil
+	}
+	var rows []DemandRow
+	err := r.db.WithContext(ctx).Table("zt_demand").
+		Select(`zt_demand.id, zt_demand.name, zt_demand.pri, zt_demand.status,
+			zt_demand.assignedTo, zt_demand.QD, zt_demand.RD, zt_demand.BRA,
+			clarify_pm.PM AS pm`).
+		Joins(`LEFT JOIN (
+			SELECT demand, GROUP_CONCAT(PM) AS PM
+			FROM zt_demandclarify
+			WHERE PM IS NOT NULL AND PM <> ''
+			GROUP BY demand
+		) AS clarify_pm ON clarify_pm.demand = zt_demand.id`).
+		Where("zt_demand.id IN ?", ids).
+		Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+// FindStoriesByIDs 按 ID 列表批量查询研发需求详情。
+func (r *Repo) FindStoriesByIDs(ctx context.Context, ids []int) ([]StoryRow, error) {
+	if r == nil || r.db == nil || len(ids) == 0 {
+		return nil, nil
+	}
+	var rows []StoryRow
+	err := r.db.WithContext(ctx).Table("zt_story").
+		Select("id", "title", "pri", "status").
+		Where("id IN ?", ids).
 		Find(&rows).Error
 	if err != nil {
 		return nil, err

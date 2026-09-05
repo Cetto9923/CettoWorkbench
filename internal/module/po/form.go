@@ -53,7 +53,9 @@ type KPICounts struct {
 
 // DemandsReq 按价值流状态查询需求/故事详情。
 type DemandsReq struct {
-	Status string `form:"status"`
+	Status   string `form:"status"`
+	Page     int    `form:"page"`
+	PageSize int    `form:"pageSize"`
 }
 
 // Validate 校验查询参数。
@@ -66,6 +68,14 @@ func (r *DemandsReq) Validate() []FieldError {
 		return []FieldError{{Field: "status", Message: "无效的价值流状态"}}
 	}
 	r.Status = status
+	if r.Page <= 0 {
+		r.Page = 1
+	}
+	if r.PageSize <= 0 {
+		r.PageSize = 15
+	} else if r.PageSize > 100 {
+		r.PageSize = 100
+	}
 	return nil
 }
 
@@ -87,7 +97,10 @@ type WorkItemDetail struct {
 
 // DemandsResp 价值流状态下的需求详情列表。
 type DemandsResp struct {
-	Items []WorkItemDetail `json:"items"`
+	Items    []WorkItemDetail `json:"items"`
+	Total    int              `json:"total"`
+	Page     int              `json:"page"`
+	PageSize int              `json:"pageSize"`
 }
 
 // TodoTab 我的待办对象域 Tab。V10.1 02 节：6 类对象域，本期先打通审批决策 + 需求治理。

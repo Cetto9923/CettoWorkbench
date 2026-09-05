@@ -134,8 +134,11 @@ func (h *Handler) Demands(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"items":   resp.Items,
+		"success":  true,
+		"items":    resp.Items,
+		"total":    resp.Total,
+		"page":     resp.Page,
+		"pageSize": resp.PageSize,
 	})
 }
 

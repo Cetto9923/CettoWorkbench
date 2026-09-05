@@ -26,7 +26,8 @@ func InitMinimalSchema(ctx context.Context, db *gorm.DB) error {
 		"zt_demand", "zt_task", "zt_story", "zt_bug", "zt_versionwindowproduct", "zt_demandwindow",
 		"zt_versionwindow", "zt_planstory", "zt_dept", "zt_approvalnode", "zt_approvalobject",
 		"zt_charter", "zt_project", "zt_planchange", "zt_projectbuildguide", "zt_review",
-		"zt_testtask", "zt_issue", "zt_risk", "zt_todo",
+		"zt_testtask", "zt_issue", "zt_risk", "zt_todo", "zt_demandappraise",
+		"zt_company", "zt_demandmanagerreview",
 		"zt_product", "zt_productplan", "zt_teamgroup",
 		"zt_holiday", "zt_config",
 	}
@@ -105,6 +106,13 @@ func InitMinimalSchema(ctx context.Context, db *gorm.DB) error {
 			hang enum('0','1') DEFAULT '0',
 			hangUpReason longtext,
 			deadline date DEFAULT NULL,
+			developFinish date DEFAULT NULL,
+			testFinish date DEFAULT NULL,
+			verifyFinish date DEFAULT NULL,
+			estimateLaunch date DEFAULT NULL,
+			deliverDate date DEFAULT NULL,
+			mainDevelopers text,
+			overall varchar(30) NOT NULL DEFAULT '',
 			createdBy char(30) NOT NULL DEFAULT '',
 			createdDate datetime DEFAULT NULL,
 			deleted enum('0','1') NOT NULL DEFAULT '0',
@@ -117,6 +125,30 @@ func InitMinimalSchema(ctx context.Context, db *gorm.DB) error {
 			demand mediumint NOT NULL DEFAULT '0',
 			product varchar(255) NOT NULL DEFAULT '',
 			PM longtext,
+			PRIMARY KEY (id),
+			KEY idx_demand (demand)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+		`CREATE TABLE IF NOT EXISTS zt_demandappraise (
+			id int NOT NULL AUTO_INCREMENT,
+			demand int NOT NULL DEFAULT '0',
+			appraiseBy varchar(30) NOT NULL DEFAULT '',
+			appraiseTime datetime DEFAULT NULL,
+			PRIMARY KEY (id),
+			KEY idx_demand (demand)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+		`CREATE TABLE IF NOT EXISTS zt_company (
+			id int NOT NULL AUTO_INCREMENT,
+			name varchar(100) NOT NULL DEFAULT '',
+			admins text,
+			PRIMARY KEY (id)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+		`CREATE TABLE IF NOT EXISTS zt_demandmanagerreview (
+			id int NOT NULL AUTO_INCREMENT,
+			demand int NOT NULL DEFAULT '0',
+			resultStatus text,
 			PRIMARY KEY (id),
 			KEY idx_demand (demand)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
@@ -150,6 +182,10 @@ func InitMinimalSchema(ctx context.Context, db *gorm.DB) error {
 			assignedTo varchar(30) NOT NULL DEFAULT '',
 			openedBy varchar(30) NOT NULL DEFAULT '',
 			deliverDate date DEFAULT NULL,
+			developFinish date DEFAULT NULL,
+			testFinish date DEFAULT NULL,
+			verifyFinish date DEFAULT NULL,
+			type varchar(30) NOT NULL DEFAULT 'story',
 			sourceType varchar(255) NOT NULL DEFAULT '',
 			deleted enum('0','1') NOT NULL DEFAULT '0',
 			PRIMARY KEY (id)
