@@ -24,6 +24,7 @@ type FieldError struct {
 type ValueStreamStage struct {
 	Label       string
 	Status      string
+	Valid       bool // 真实统计有效标记，失败兜底时为 false (ERROR ≠ ZERO)
 	Count       int64
 	DemandCount int64
 	StoryCount  int64
@@ -31,9 +32,12 @@ type ValueStreamStage struct {
 
 // HomeResp PO 工作台首页数据。
 type HomeResp struct {
-	Stages         []ValueStreamStage
-	VersionWindows []schedule.HomeVersionWindowCard
-	KPI            KPICounts
+	Stages              []ValueStreamStage
+	StagesValid         bool
+	StagesError         string
+	VersionWindows      []schedule.HomeVersionWindowCard
+	VersionWindowsError string
+	KPI                 KPICounts
 }
 
 // KPICounts 首页 5 个焦点摘要的真实计数。
@@ -155,7 +159,9 @@ func (r *TodoListReq) Validate() []FieldError {
 		r.Tab = TodoTabAll
 	}
 	switch r.Tab {
-	case TodoTabApproval, TodoTabDemand, TodoTabAll, TodoTabExecution, TodoTabTesting, TodoTabRisk, TodoTabPersonal:
+	case TodoTabAll, TodoTabDemand, TodoTabExecution, TodoTabTesting:
+	case TodoTabApproval, TodoTabRisk, TodoTabPersonal:
+		return []FieldError{{Field: "tab", Message: "该对象域待办数据源暂未接入"}}
 	default:
 		return []FieldError{{Field: "tab", Message: "无效的对象域 Tab"}}
 	}
@@ -172,14 +178,23 @@ func (r *TodoListReq) Validate() []FieldError {
 	if r.Stage == "" {
 		r.Stage = "all"
 	}
+	switch r.Stage {
+	case "all", "accept", "clarify", "schedule", "developing", "testing", "waitacceptance", "acceptanced", "publish", "released":
+	default:
+		return []FieldError{{Field: "stage", Message: "无效的阶段状态"}}
+	}
 	r.ObjectType = strings.TrimSpace(r.ObjectType)
 	if r.ObjectType == "" {
 		r.ObjectType = "all"
 	}
 	switch r.ObjectType {
-	case "all", "approval", "demand", "story", "task", "bug", "testtask", "issue", "risk", "todo":
+	case "all", "demand", "task", "bug":
+	case "story":
+		return []FieldError{{Field: "objectType", Message: "objectType=story 待办数据源暂未接入 (WAIT DECISION)"}}
+	case "approval", "testtask", "issue", "risk", "todo":
+		return []FieldError{{Field: "objectType", Message: "待办数据源暂未接入"}}
 	default:
-		return []FieldError{{Field: "objectType", Message: "无效的对象类型"}}
+		return []FieldError{{Field: "objectType", Message: "不支持的对象类型"}}
 	}
 	r.Relation = Relation(strings.TrimSpace(string(r.Relation)))
 	if r.Relation == "" {

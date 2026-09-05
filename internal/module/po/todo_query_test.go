@@ -47,6 +47,16 @@ func TestBuildTodoUnionSQLObjectFiltering(t *testing.T) {
 	}
 }
 
+func TestBuildTodoUnionSQL_PublishStage(t *testing.T) {
+	sqlPublish, _ := buildTodoUnionSQL("user_a", TodoListReq{Stage: "publish"})
+	if !strings.Contains(sqlPublish, "'demand' AS kind") {
+		t.Errorf("expected demand in union for publish stage, got: %s", sqlPublish)
+	}
+	if !strings.Contains(sqlPublish, "waitdeliver") || !strings.Contains(sqlPublish, "released") {
+		t.Errorf("expected publish stage SQL to check waitdeliver or released, got: %s", sqlPublish)
+	}
+}
+
 func TestBuildTodoOuterWhereKeywords(t *testing.T) {
 	displayMap := map[string]string{
 		"user_a": "张三(user_a)",

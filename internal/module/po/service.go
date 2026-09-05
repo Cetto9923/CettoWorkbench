@@ -59,12 +59,16 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 		account = actor.Account
 	}
 
+	if s.repo == nil {
+		return nil, fmt.Errorf("po repo is not configured")
+	}
+
 	stages := make([]ValueStreamStage, 0, len(valueStreamStages))
 	allIdx := -1
 	for _, def := range valueStreamStages {
 		if def.status == "all" {
 			allIdx = len(stages)
-			stages = append(stages, ValueStreamStage{Label: def.label, Status: def.status})
+			stages = append(stages, ValueStreamStage{Label: def.label, Status: def.status, Valid: true})
 			continue
 		}
 
@@ -93,6 +97,7 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 		stages = append(stages, ValueStreamStage{
 			Label:       def.label,
 			Status:      def.status,
+			Valid:       true,
 			Count:       demand + story,
 			DemandCount: demand,
 			StoryCount:  story,
@@ -111,13 +116,16 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 	}
 
 	versionWindows := []schedule.HomeVersionWindowCard{}
+	versionWindowsError := ""
 	if s.schedule == nil {
+		versionWindowsError = "排期服务不可用"
 		if s.logger != nil {
 			s.logger.Error("po home schedule service is nil, version windows skipped")
 		}
 	} else {
 		windows, winErr := s.schedule.ListHomeVersionWindows(ctx, actor)
 		if winErr != nil {
+			versionWindowsError = "版本窗口查询失败"
 			if s.logger != nil {
 				s.logger.Warn("po home version windows", zap.Error(winErr))
 			}
@@ -144,7 +152,13 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 		}
 	}
 
-	return &HomeResp{Stages: stages, VersionWindows: versionWindows, KPI: kpi}, nil
+	return &HomeResp{
+		Stages:              stages,
+		StagesValid:         true,
+		VersionWindows:      versionWindows,
+		VersionWindowsError: versionWindowsError,
+		KPI:                 kpi,
+	}, nil
 }
 
 // kpiCountFn 适配 CountKPI* 方法的统一签名，便于在 fillKPICounts 中以 map 驱动循环。

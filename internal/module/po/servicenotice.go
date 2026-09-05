@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"workbench/internal/model"
+	"workbench/internal/pkg/errorx"
 )
 
 // NoticeList 通知中心列表 + quick view 计数。
@@ -41,7 +42,17 @@ func (s *Service) NoticeList(ctx context.Context, actor *model.User, req NoticeL
 // NoticeMarkRead 标记单条已读。
 func (s *Service) NoticeMarkRead(ctx context.Context, actor *model.User, notifyID int64) error {
 	if actor == nil || strings.TrimSpace(actor.Account) == "" {
-		return nil
+		return errorx.New(errorx.ErrCodeForbidden, "未登录")
+	}
+	exists, authorized, err := s.repo.CheckNoticeAccess(ctx, actor.Account, notifyID)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return errorx.New(errorx.ErrCodeNotFound, "通知不存在")
+	}
+	if !authorized {
+		return errorx.New(errorx.ErrCodeForbidden, "无权操作此通知")
 	}
 	return s.repo.SaveNoticeRead(ctx, actor.Account, notifyID)
 }

@@ -73,7 +73,7 @@ func formatTodoDeadline(deadline *time.Time) string {
 	return deadline.Format("2006-01-02")
 }
 
-// applyDemandStageFilter 把 V10.1 价值流 10 阶段映射到 zt_demand.status SQL。
+// applyDemandStageFilter 把 V10.1 价值流 9 阶段映射到 zt_demand.status SQL。
 func applyDemandStageFilter(q *gorm.DB, stage string) *gorm.DB {
 	switch stage {
 	case "accept":
@@ -99,6 +99,13 @@ func applyDemandStageFilter(q *gorm.DB, stage string) *gorm.DB {
 		)`)
 	case "acceptanced":
 		return q.Where("status = ?", "acceptanced")
+	case "publish":
+		return q.Where(`(status = 'waitdeliver' OR (status = 'released' AND NOT EXISTS (
+			SELECT 1 FROM zt_demandappraise
+			WHERE demand = zt_demand.id
+				AND appraiseBy <> '' AND appraiseBy IS NOT NULL
+				AND appraiseTime IS NOT NULL
+		)))`)
 	case "released":
 		return q.Where("status = ? AND overall = '0' AND parent != '-1'", "released")
 	}

@@ -171,16 +171,22 @@ func (s *Service) ListHomeVersionWindows(ctx context.Context, actor *model.User)
 		return nil, err
 	}
 
+	windowIDs := make([]uint64, len(windows))
+	for i, w := range windows {
+		windowIDs[i] = w.ID
+	}
+	statsByWindowID, err := s.repo.GetWindowStageStatsBatch(ctx, windowIDs)
+	if err != nil {
+		return nil, err
+	}
+
 	cards := make([]HomeVersionWindowCard, 0, len(windows))
 	for _, window := range windows {
 		start := window.ReleaseDate
 		if window.StartDate != nil {
 			start = *window.StartDate
 		}
-		stats, err := s.repo.GetWindowStageStats(ctx, window.ID)
-		if err != nil {
-			return nil, err
-		}
+		stats := statsByWindowID[window.ID]
 		cards = append(cards, HomeVersionWindowCard{
 			Name:         window.Name,
 			AgileGroup:   nameByID[window.TeamgroupID],

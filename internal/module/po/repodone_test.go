@@ -11,6 +11,9 @@ package po
 import (
 	"strings"
 	"testing"
+
+	"workbench/internal/config"
+	"workbench/internal/pkg/zentao"
 )
 
 func TestFormalDoneActionsExcludeNoise(t *testing.T) {
@@ -45,5 +48,25 @@ func TestApprovalDoneScopeContainsOnlyReviewActions(t *testing.T) {
 	}
 	if strings.Contains(scope, "demand:edit") {
 		t.Fatal("approval scope must not include ordinary edits")
+	}
+}
+
+func TestObjectViewURLZeroIDReturnsEmpty(t *testing.T) {
+	if url := objectViewURL("demand", 0); url != "" {
+		t.Fatalf("objectViewURL with id=0 should return empty, got %q", url)
+	}
+	if url := objectViewURL("story", 0); url != "" {
+		t.Fatalf("objectViewURL with id=0 should return empty, got %q", url)
+	}
+	if url := objectViewURL("task", 0); url != "" {
+		t.Fatalf("objectViewURL with id=0 should return empty, got %q", url)
+	}
+}
+
+func TestObjectViewURLValidID(t *testing.T) {
+	zentao.SetConfig(config.ZentaoConfig{URL: "http://zentao.test"})
+	url := objectViewURL("demand", 42)
+	if !strings.Contains(url, "demand") || !strings.Contains(url, "42") {
+		t.Fatalf("unexpected demand url: %q", url)
 	}
 }

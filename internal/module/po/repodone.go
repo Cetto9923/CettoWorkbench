@@ -217,61 +217,17 @@ func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) 
 	}
 
 	nameByKey := make(map[string]string)
-	if len(demandIDs) > 0 {
-		var ns []struct {
-			ID   int64  `gorm:"column:id"`
-			Name string `gorm:"column:name"`
-		}
-		if err := r.db.WithContext(ctx).Table("zt_demand").
-			Where("id IN ?", demandIDs).
-			Select("id, name").
-			Find(&ns).Error; err == nil {
-			for _, n := range ns {
-				nameByKey[fmt.Sprintf("demand:%d", n.ID)] = n.Name
-			}
-		}
+	if err := r.fetchObjectNames(ctx, "zt_demand", "name", "demand", demandIDs, nameByKey); err != nil {
+		return nil, 0, err
 	}
-	if len(taskIDs) > 0 {
-		var ns []struct {
-			ID   int64  `gorm:"column:id"`
-			Name string `gorm:"column:name"`
-		}
-		if err := r.db.WithContext(ctx).Table("zt_task").
-			Where("id IN ?", taskIDs).
-			Select("id, name").
-			Find(&ns).Error; err == nil {
-			for _, n := range ns {
-				nameByKey[fmt.Sprintf("task:%d", n.ID)] = n.Name
-			}
-		}
+	if err := r.fetchObjectNames(ctx, "zt_task", "name", "task", taskIDs, nameByKey); err != nil {
+		return nil, 0, err
 	}
-	if len(bugIDs) > 0 {
-		var ns []struct {
-			ID    int64  `gorm:"column:id"`
-			Title string `gorm:"column:title"`
-		}
-		if err := r.db.WithContext(ctx).Table("zt_bug").
-			Where("id IN ?", bugIDs).
-			Select("id, title").
-			Find(&ns).Error; err == nil {
-			for _, n := range ns {
-				nameByKey[fmt.Sprintf("bug:%d", n.ID)] = n.Title
-			}
-		}
+	if err := r.fetchObjectNames(ctx, "zt_bug", "title", "bug", bugIDs, nameByKey); err != nil {
+		return nil, 0, err
 	}
-	if len(storyIDs) > 0 {
-		var ns []struct {
-			ID    int64  `gorm:"column:id"`
-			Title string `gorm:"column:title"`
-		}
-		if err := r.db.WithContext(ctx).Table("zt_story").
-			Where("id IN ?", storyIDs).
-			Select("id, title").
-			Find(&ns).Error; err == nil {
-			for _, n := range ns {
-				nameByKey[fmt.Sprintf("story:%d", n.ID)] = n.Title
-			}
-		}
+	if err := r.fetchObjectNames(ctx, "zt_story", "title", "story", storyIDs, nameByKey); err != nil {
+		return nil, 0, err
 	}
 
 	displayMap, _ := r.loadAccountDisplayMap(ctx)
@@ -287,6 +243,13 @@ func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) 
 		if actionLabel == "" {
 			actionLabel = row.Action // 无 formal 定义（如 todo/release/feedback）时展示原始动作 code
 		}
+		objName := nameByKey[fmt.Sprintf("%s:%d", row.ObjectType, row.ObjectID)]
+		if objName == "" {
+			switch row.ObjectType {
+			case "demand", "task", "bug", "story":
+				objName = "原对象不可用"
+			}
+		}
 		items = append(items, DoneAction{
 			ID:              row.ID,
 			Actor:           actor,
@@ -294,7 +257,7 @@ func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) 
 			ObjectType:      row.ObjectType,
 			ObjectTypeLabel: doneObjectTypeLabel(row.ObjectType),
 			ObjectID:        row.ObjectID,
-			ObjectName:      nameByKey[fmt.Sprintf("%s:%d", row.ObjectType, row.ObjectID)],
+			ObjectName:      objName,
 			Date:            row.Date.Format("2006-01-02 15:04:05"),
 			Result:          meta.Result,
 			URL:             objectViewURL(row.ObjectType, uint(row.ObjectID)),
@@ -465,20 +428,18 @@ func buildFormalDoneScopeSQL() (string, []interface{}) {
 		args = append(args, ot, codes)
 	}
 	// 兜底：无 formal 白名单的对象类型，只要 actor=本人即视为已办动作
-	if len(doneScopeObjectTypes) > 0 {
-		typeList := make([]string, 0)
-		for _, ot := range doneScopeObjectTypes {
-			if len(formalDoneActionCodes(ot)) == 0 {
-				typeList = append(typeList, ot)
-			}
+	var typeList []string
+	for _, ot := range doneScopeObjectTypes {
+		if len(formalDoneActionCodes(ot)) == 0 {
+			typeList = append(typeList, ot)
 		}
-		if len(typeList) > 0 {
-			if !first {
-				b.WriteString(" OR ")
-			}
-			b.WriteString("a.objectType IN ?")
-			args = append(args, typeList)
+	}
+	if len(typeList) > 0 {
+		if !first {
+			b.WriteString(" OR ")
 		}
+		b.WriteString("a.objectType IN ?")
+		args = append(args, typeList)
 	}
 	b.WriteString(")")
 	return b.String(), args
@@ -486,6 +447,9 @@ func buildFormalDoneScopeSQL() (string, []interface{}) {
 
 // objectViewURL 按 zentao 对象类型拼详情页链接。
 func objectViewURL(objectType string, id uint) string {
+	if id == 0 {
+		return ""
+	}
 	switch objectType {
 	case "demand":
 		return zentao.DemandViewURL(id)
@@ -501,4 +465,22 @@ func objectViewURL(objectType string, id uint) string {
 		return zentao.URL(objectType, "view", fmt.Sprintf("%sID=%d", objectType, id))
 	}
 	return ""
+}
+
+func (r *Repo) fetchObjectNames(ctx context.Context, table, col, prefix string, ids []int64, nameByKey map[string]string) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	var rows []struct {
+		ID   int64  `gorm:"column:id"`
+		Name string `gorm:"column:name_col"`
+	}
+	if err := r.db.WithContext(ctx).Table(table).Where("id IN ?", ids).
+		Select("id, " + col + " AS name_col").Find(&rows).Error; err != nil {
+		return err
+	}
+	for _, row := range rows {
+		nameByKey[fmt.Sprintf("%s:%d", prefix, row.ID)] = row.Name
+	}
+	return nil
 }

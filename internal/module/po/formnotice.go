@@ -73,8 +73,11 @@ type NoticeItem struct {
 	ID         int64  `json:"id"`
 	ObjectType string `json:"objectType"`
 	ObjectID   int64  `json:"objectId"`
-	Subject    string `json:"subject"`
-	Data       string `json:"data"`
+	Title      string `json:"title"`   // 列表标题（Subject 清洗截断）
+	Summary    string `json:"summary"` // 列表摘要（Data 截断摘要，与 Title 重复时为空）
+	Content    string `json:"content"` // 完整内容（Data 清洗后完整文本）
+	Subject    string `json:"subject"` // 兼容既有字段 (= Title)
+	Data       string `json:"data"`    // 兼容既有字段 (= Summary)
 	Actor      string `json:"actor"`
 	Action     string `json:"action"`
 	Category   string `json:"category"`

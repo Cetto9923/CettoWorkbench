@@ -85,14 +85,17 @@ func (r *Repo) FindOwnedStories(ctx context.Context, req RepoFindTodoExtraReq) (
 		Where("deleted = ? AND assignedTo = ?", "0", req.Account).
 		Where("status NOT IN ?", []string{"closed", "released"}).
 		Where("IFNULL(sourceType, '') <> ?", "demandpool").
-		Where("title LIKE ? OR CAST(id AS CHAR) LIKE ?", "%"+req.Keyword+"%", "%"+req.Keyword+"%").
+		Where("(title LIKE ? OR CAST(id AS CHAR) LIKE ?)", "%"+req.Keyword+"%", "%"+req.Keyword+"%").
 		// zt_story 无 deadline 列，用 deliverDate(预计交付) 作为研需截止参考。
 		Select("id, title, status, pri, deliverDate AS deadline, assignedTo").
 		Find(&rows).Error
 	if err != nil {
 		return nil, err
 	}
-	displayMap, _ := r.loadAccountDisplayMap(ctx)
+	displayMap, err := r.loadAccountDisplayMap(ctx)
+	if err != nil {
+		return nil, err
+	}
 	items := make([]TodoItem, 0, len(rows))
 	for _, row := range rows {
 		items = append(items, TodoItem{
@@ -118,13 +121,16 @@ func (r *Repo) FindPersonalTodos(ctx context.Context, req RepoFindTodoExtraReq) 
 	err := r.db.WithContext(ctx).Table("zt_todo").
 		Where("deleted = ? AND (account = ? OR assignedTo = ?)", "0", req.Account, req.Account).
 		Where("status NOT IN ?", []string{"done", "closed"}).
-		Where("name LIKE ? OR CAST(id AS CHAR) LIKE ?", "%"+req.Keyword+"%", "%"+req.Keyword+"%").
+		Where("(name LIKE ? OR CAST(id AS CHAR) LIKE ?)", "%"+req.Keyword+"%", "%"+req.Keyword+"%").
 		Select("id, name, status, pri, date, assignedTo").
 		Find(&rows).Error
 	if err != nil {
 		return nil, err
 	}
-	displayMap, _ := r.loadAccountDisplayMap(ctx)
+	displayMap, err := r.loadAccountDisplayMap(ctx)
+	if err != nil {
+		return nil, err
+	}
 	items := make([]TodoItem, 0, len(rows))
 	for _, row := range rows {
 		owner := row.AssignedTo
@@ -152,12 +158,15 @@ func (r *Repo) FindOwnedTesttasks(ctx context.Context, req RepoFindTodoExtraReq)
 	var rows []row
 	err := r.db.WithContext(ctx).Table("zt_testtask").
 		Where("deleted = ? AND owner = ? AND status <> ?", "0", req.Account, "done").
-		Where("name LIKE ? OR CAST(id AS CHAR) LIKE ?", "%"+req.Keyword+"%", "%"+req.Keyword+"%").
+		Where("(name LIKE ? OR CAST(id AS CHAR) LIKE ?)", "%"+req.Keyword+"%", "%"+req.Keyword+"%").
 		Select("id, name, status, pri, end").Find(&rows).Error
 	if err != nil {
 		return nil, err
 	}
-	displayMap, _ := r.loadAccountDisplayMap(ctx)
+	displayMap, err := r.loadAccountDisplayMap(ctx)
+	if err != nil {
+		return nil, err
+	}
 	items := make([]TodoItem, 0, len(rows))
 	for _, row := range rows {
 		items = append(items, TodoItem{
@@ -176,13 +185,16 @@ func (r *Repo) FindIssueTodos(ctx context.Context, req RepoFindTodoExtraReq) ([]
 	err := r.db.WithContext(ctx).Table("zt_issue").
 		Where("deleted = ? AND (assignedTo = ? OR createdBy = ?)", "0", req.Account, req.Account).
 		Where("status NOT IN ?", []string{"closed", "cancel"}).
-		Where("title LIKE ? OR CAST(id AS CHAR) LIKE ?", "%"+req.Keyword+"%", "%"+req.Keyword+"%").
+		Where("(title LIKE ? OR CAST(id AS CHAR) LIKE ?)", "%"+req.Keyword+"%", "%"+req.Keyword+"%").
 		Select("id, title, status, pri, deadline, assignedTo, createdBy").
 		Find(&rows).Error
 	if err != nil {
 		return nil, err
 	}
-	displayMap, _ := r.loadAccountDisplayMap(ctx)
+	displayMap, err := r.loadAccountDisplayMap(ctx)
+	if err != nil {
+		return nil, err
+	}
 	return buildIssueRiskTodoItems(rows, req.Account, displayMap, todoIssueRiskMeta{
 		Kind: "issue", Label: "问题", Prefix: "ISSUE",
 	}), nil
@@ -193,13 +205,16 @@ func (r *Repo) FindRiskTodos(ctx context.Context, req RepoFindTodoExtraReq) ([]T
 	err := r.db.WithContext(ctx).Table("zt_risk").
 		Where("deleted = ? AND (assignedTo = ? OR createdBy = ?)", "0", req.Account, req.Account).
 		Where("status NOT IN ?", []string{"closed", "cancel"}).
-		Where("name LIKE ? OR CAST(id AS CHAR) LIKE ?", "%"+req.Keyword+"%", "%"+req.Keyword+"%").
+		Where("(name LIKE ? OR CAST(id AS CHAR) LIKE ?)", "%"+req.Keyword+"%", "%"+req.Keyword+"%").
 		Select("id, name AS title, status, pri, plannedClosedDate AS deadline, assignedTo, createdBy").
 		Find(&rows).Error
 	if err != nil {
 		return nil, err
 	}
-	displayMap, _ := r.loadAccountDisplayMap(ctx)
+	displayMap, err := r.loadAccountDisplayMap(ctx)
+	if err != nil {
+		return nil, err
+	}
 	return buildIssueRiskTodoItems(rows, req.Account, displayMap, todoIssueRiskMeta{
 		Kind: "risk", Label: "风险", Prefix: "RISK",
 	}), nil

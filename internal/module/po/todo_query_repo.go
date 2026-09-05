@@ -204,6 +204,8 @@ func getDemandFilterClauses(req TodoListReq) string {
 			sql += " AND (d.status = 'testing' OR d.status = 'waitacceptance')"
 		case "acceptanced":
 			sql += " AND d.status = 'acceptanced'"
+		case "publish":
+			sql += " AND (d.status = 'waitdeliver' OR (d.status = 'released' AND NOT EXISTS (SELECT 1 FROM zt_demandappraise da WHERE da.demand = d.id AND da.appraiseBy <> '' AND da.appraiseBy IS NOT NULL AND da.appraiseTime IS NOT NULL)))"
 		case "released":
 			sql += " AND d.status = 'released' AND d.overall = '0' AND d.parent != '-1'"
 		}

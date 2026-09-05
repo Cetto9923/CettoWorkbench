@@ -19,6 +19,7 @@ import (
 
 	"workbench/internal/constants"
 	"workbench/internal/middleware"
+	"workbench/internal/pkg/errorx"
 	"workbench/internal/pkg/perm"
 	"workbench/internal/pkg/render"
 )
@@ -66,12 +67,23 @@ func (h *Handler) Home(c *gin.Context) {
 		account = actor.Account
 	}
 
+	pageError := ""
+	versionWindowsError := ""
 	resp, err := h.svc.Home(c.Request.Context(), actor)
 	if err != nil {
 		if h.logger != nil {
 			h.logger.Warn("po home value stream", zap.Error(err))
 		}
-		resp = &HomeResp{Stages: emptyValueStreamStages()}
+		pageError = "数据统计暂不可用"
+		versionWindowsError = "版本窗口查询失败"
+		resp = &HomeResp{
+			Stages:              emptyValueStreamStages(),
+			StagesValid:         false,
+			StagesError:         pageError,
+			VersionWindowsError: versionWindowsError,
+		}
+	} else {
+		versionWindowsError = resp.VersionWindowsError
 	}
 
 	if h.logger != nil {
@@ -82,11 +94,14 @@ func (h *Handler) Home(c *gin.Context) {
 	}
 
 	render.Page(c, http.StatusOK, constants.TEMPLATE_PO_HOME, gin.H{
-		"Title":             "工作台首页",
-		"PageTitle":         "工作台首页",
-		"ValueStreamStages": resp.Stages,
-		"VersionWindows":    resp.VersionWindows,
-		"KPI":               resp.KPI,
+		"Title":               "工作台首页",
+		"PageTitle":           "工作台首页",
+		"ValueStreamStages":   resp.Stages,
+		"StagesValid":         resp.StagesValid,
+		"VersionWindows":      resp.VersionWindows,
+		"VersionWindowsError": versionWindowsError,
+		"KPI":                 resp.KPI,
+		"PageError":           pageError,
 	})
 }
 
@@ -130,6 +145,7 @@ func emptyValueStreamStages() []ValueStreamStage {
 		stages = append(stages, ValueStreamStage{
 			Label:  def.label,
 			Status: def.status,
+			Valid:  false, // 错误状态下 Valid 显式为 false (ERROR ≠ ZERO)
 		})
 	}
 	return stages
@@ -270,6 +286,16 @@ func (h *Handler) NoticeMarkRead(c *gin.Context) {
 		return
 	}
 	if err := h.svc.NoticeMarkRead(c.Request.Context(), actor, id); err != nil {
+		if bizErr, ok := errorx.IsBizError(err); ok {
+			switch bizErr.Code {
+			case errorx.ErrCodeNotFound:
+				c.JSON(http.StatusNotFound, gin.H{"message": bizErr.Msg})
+				return
+			case errorx.ErrCodeForbidden:
+				c.JSON(http.StatusForbidden, gin.H{"message": bizErr.Msg})
+				return
+			}
+		}
 		h.logger.Error("po notice mark read", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "标记已读失败"})
 		return

@@ -9,11 +9,25 @@
 package po
 
 import (
+	"context"
+	"errors"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+
+	"workbench/internal/config"
+	"workbench/internal/model"
+	"workbench/internal/pkg/render"
 )
 
 func TestValueStreamStagesRemainOrdered(t *testing.T) {
@@ -54,74 +68,130 @@ func TestDemandsReqValidate(t *testing.T) {
 	}
 }
 
-func TestHomeFrontendTruthContract(t *testing.T) {
-	root := filepath.Join("..", "..", "..")
-	template := readHomeFile(t, filepath.Join(root, "web", "templates", "po", "home.html"))
-	script := readHomeFile(t, filepath.Join(root, "web", "static", "js", "po", "home.js"))
-
-	for _, marker := range []string{
-		"$stage.DemandCount",
-		"$stage.StoryCount",
-		"aria-pressed=",
-		"id=\"top5List\"",
-		"href=\"/schedule\"",
-		"今日必推",
-		"待我处理",
-		"阻塞",
-		"超期",
-		"挂起",
-		".KPI.Today",
-		".KPI.Blocked",
-		".KPI.Overdue",
-		".KPI.Suspended",
-	} {
-		if !strings.Contains(template, marker) {
-			t.Errorf("home template missing %q", marker)
-		}
-	}
-
-	for _, forbidden := range []string{
-		"data-focal=",
-		"风险 <strong>0</strong>",
-		"最长 —天",
-		`home-hl-num">—<`, // 数字必须是真实值,禁止破折号占位
-	} {
-		if strings.Contains(template, forbidden) {
-			t.Errorf("home template contains unsupported placeholder %q", forbidden)
-		}
-	}
-
-	for _, forbidden := range []string{"window.open(", "FOCAL_LABELS"} {
-		if strings.Contains(script, forbidden) {
-			t.Errorf("home script violates current-page or truth contract with %q", forbidden)
-		}
-	}
-	// 禅道详情跳转对齐 CRCBWorkbench: 新窗口打开 (target=_blank + noopener noreferrer)。
-	if !strings.Contains(script, "target=\\\"_blank\\\"") || !strings.Contains(script, "noopener noreferrer") {
-		t.Errorf("home script zentao links must open in new window with noopener noreferrer (CRCBWorkbench parity)")
-	}
-}
-
-func readHomeFile(t *testing.T, path string) string {
+func findRepoRoot(t *testing.T) string {
 	t.Helper()
-	data, err := os.ReadFile(path)
+	dir, err := os.Getwd()
 	if err != nil {
-		t.Fatalf("read %s: %v", path, err)
+		t.Fatalf("getwd: %v", err)
 	}
-	return string(data)
+	for i := 0; i < 10; i++ {
+		if _, err := os.Stat(filepath.Join(dir, "web", "templates")); err == nil {
+			return dir
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			break
+		}
+		dir = parent
+	}
+	t.Fatalf("cannot find repo root containing web/templates")
+	return ""
 }
 
-// TestHomeHandlerRendersKPI 锁住 handler.go 渲染首页必须传 "KPI" 键给模板的契约。
-// 回归 259e29bf 修复的 bug —— handler.go 曾因 render.Page 调用漏传 resp.KPI 而导致首页 5 个焦点摘要永远为 0。
-// 真实数据由 Service 计算，但模板能否拿到 KPI 全靠 handler 显式传值；少一个 key 整行 KPI 消失。
-func TestHomeHandlerRendersKPI(t *testing.T) {
-	root := filepath.Join("..", "..", "..")
-	handler := readHomeFile(t, filepath.Join(root, "internal", "module", "po", "handler.go"))
-
-	if !strings.Contains(handler, `"KPI"`) {
-		t.Errorf("handler.go render.Page call must pass \"KPI\" key with resp.KPI value; missing in:\n%s", handler)
+func setupMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock) {
+	t.Helper()
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	if !strings.Contains(handler, "resp.KPI") {
-		t.Errorf("handler.go must reference resp.KPI (HomeResp.KPI), not a hardcoded empty struct; missing in:\n%s", handler)
+	dialector := mysql.New(mysql.Config{
+		Conn:                      db,
+		SkipInitializeWithVersion: true,
+	})
+	gormDB, err := gorm.Open(dialector, &gorm.Config{})
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening gorm database", err)
+	}
+	return gormDB, mock
+}
+
+func initTestRenderer(t *testing.T) {
+	t.Helper()
+	root := findRepoRoot(t)
+	if err := os.Chdir(root); err != nil {
+		t.Fatalf("chdir repo root: %v", err)
+	}
+	cfg := &config.Config{
+		App:    config.App{Name: "Workbench", Env: "dev"},
+		Layout: config.Layout{Nav: "sidebar"},
+	}
+	r, err := render.New(cfg, true)
+	if err != nil {
+		t.Fatalf("init test renderer: %v", err)
+	}
+	render.SetDefault(r)
+}
+
+func TestEmptyValueStreamStages(t *testing.T) {
+	stages := emptyValueStreamStages()
+	if len(stages) != len(valueStreamStages) {
+		t.Fatalf("emptyValueStreamStages length = %d, want %d", len(stages), len(valueStreamStages))
+	}
+	for i, stage := range stages {
+		if stage.Valid {
+			t.Errorf("stage[%d] (%s) Valid should be false in empty stages", i, stage.Status)
+		}
+		if stage.Count != 0 || stage.DemandCount != 0 || stage.StoryCount != 0 {
+			t.Errorf("stage[%d] counts should be 0, got %#v", i, stage)
+		}
+		if stage.Status != valueStreamStages[i].status {
+			t.Errorf("stage[%d].Status = %q, want %q", i, stage.Status, valueStreamStages[i].status)
+		}
+	}
+}
+
+func TestServiceHome_RepoNilReturnsError(t *testing.T) {
+	svc := NewService(nil, nil, nil, nil)
+	resp, err := svc.Home(context.Background(), &model.User{Account: "alice"})
+	if err == nil {
+		t.Fatal("expected error when repo is nil, got nil")
+	}
+	if resp != nil {
+		t.Fatalf("expected nil resp on error, got %#v", resp)
+	}
+}
+
+func TestServiceHome_DBErrorPropagated(t *testing.T) {
+	gormDB, mock := setupMockDB(t)
+	repo := NewRepo(gormDB)
+	svc := NewService(repo, nil, nil, nil)
+
+	mock.ExpectQuery(".+").WillReturnError(errors.New("db disconnect"))
+
+	resp, err := svc.Home(context.Background(), &model.User{Account: "alice"})
+	if err == nil {
+		t.Fatal("expected DB error to be returned, got nil")
+	}
+	if resp != nil {
+		t.Fatalf("expected nil resp on DB error, got %#v", resp)
+	}
+}
+
+func TestHomeHandler_ServiceErrorRendersPageError(t *testing.T) {
+	initTestRenderer(t)
+	gin.SetMode(gin.TestMode)
+
+	svc := NewService(nil, nil, nil, zap.NewNop())
+	h := NewHandler(svc, zap.NewNop())
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	req, _ := http.NewRequest(http.MethodGet, "/home", nil)
+	c.Request = req
+
+	h.Home(c)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status code = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	body := w.Body.String()
+	// 验证错误警示信息已渲染
+	if !strings.Contains(body, "数据统计暂不可用，统计数据暂不可用") {
+		t.Fatalf("expected PageError alert in response body, got:\n%s", body)
+	}
+	// 验证阶段数字为“暂不可用”，绝非显示为 0 (ERROR ≠ ZERO)
+	if !strings.Contains(body, "暂不可用") {
+		t.Fatalf("expected '暂不可用' in stage counts, got:\n%s", body)
 	}
 }

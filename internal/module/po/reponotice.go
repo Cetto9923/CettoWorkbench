@@ -10,9 +10,12 @@ package po
 
 import (
 	"context"
+	"errors"
 	"strconv"
 	"strings"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type noticeRepoResp struct {
@@ -221,7 +224,34 @@ func newNoticeItem(row noticeRow, displayMap map[string]string) NoticeItem {
 	if displayName := displayMap[actor]; displayName != "" {
 		actor = displayName
 	}
-	return NoticeItem{ID: row.ID, ObjectType: row.ObjectType, ObjectID: row.ObjectID, Subject: strings.TrimSpace(stripHTMLTags(row.Subject)), Data: strings.TrimSpace(stripHTMLTags(row.Data)), Actor: actor, Action: row.ActionCode, Category: classifyNotice(row.ObjectType, row.ActionCode), NeedAction: noticeNeedsAction(row.ActionCode), Anomaly: classifyNotice(row.ObjectType, row.ActionCode) == "risk", Read: row.IsRead != 0, Date: row.CreatedDate.Format("2006-01-02 15:04:05"), URL: objectViewURL(row.ObjectType, uint(row.ObjectID))}
+	title := cleanNoticeText(row.Subject, 80)
+	summary := cleanNoticeText(row.Data, 80)
+	content := cleanNoticeText(row.Data, 0)
+	if summary == title {
+		summary = ""
+	}
+	var url string
+	if row.ObjectID > 0 {
+		url = objectViewURL(row.ObjectType, uint(row.ObjectID))
+	}
+	return NoticeItem{
+		ID:         row.ID,
+		ObjectType: row.ObjectType,
+		ObjectID:   row.ObjectID,
+		Title:      title,
+		Summary:    summary,
+		Content:    content,
+		Subject:    title,
+		Data:       summary,
+		Actor:      actor,
+		Action:     row.ActionCode,
+		Category:   classifyNotice(row.ObjectType, row.ActionCode),
+		NeedAction: noticeNeedsAction(row.ActionCode),
+		Anomaly:    classifyNotice(row.ObjectType, row.ActionCode) == "risk",
+		Read:       row.IsRead != 0,
+		Date:       row.CreatedDate.Format("2006-01-02 15:04:05"),
+		URL:        url,
+	}
 }
 
 // classifyNotice 只按事件 action 和对象类型映射，浏览器不参与猜测分类。
@@ -242,7 +272,6 @@ func classifyNotice(objectType, action string) string {
 	}
 	return "business"
 }
-
 func noticeNeedsAction(action string) bool {
 	switch action {
 	case "reviewed", "clarify", "assigned", "assignedTo", "submitted", "submit", "returned", "reminded":
@@ -252,6 +281,35 @@ func noticeNeedsAction(action string) bool {
 }
 func sameNoticeDay(left, right time.Time) bool {
 	return left.Year() == right.Year() && left.YearDay() == right.YearDay()
+}
+
+// CheckNoticeAccess 校验用户对通知项的归属与存在性（Service 对象级授权）。
+func (r *Repo) CheckNoticeAccess(ctx context.Context, account string, notifyID int64) (exists bool, authorized bool, err error) {
+	if r == nil || r.db == nil || strings.TrimSpace(account) == "" || notifyID <= 0 {
+		return false, false, nil
+	}
+	var row struct {
+		ID     int64  `gorm:"column:id"`
+		ToList string `gorm:"column:toList"`
+	}
+	err = r.db.WithContext(ctx).Table("zt_notify").
+		Select("id, toList").
+		Where("id = ?", notifyID).
+		Take(&row).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, false, nil
+		}
+		return false, false, err
+	}
+	exists = true
+	for _, recipient := range strings.Split(row.ToList, ",") {
+		if strings.TrimSpace(recipient) == account {
+			authorized = true
+			break
+		}
+	}
+	return exists, authorized, nil
 }
 
 func (r *Repo) SaveNoticeRead(ctx context.Context, account string, notifyID int64) error {
@@ -271,19 +329,4 @@ func (r *Repo) SaveAllNoticeReads(ctx context.Context, account string) (int64, e
 		SELECT n.id, ?, NOW() FROM zt_notify n LEFT JOIN zt_workbench_notify_reads nr ON nr.notify = n.id AND nr.account = ?
 		WHERE FIND_IN_SET(?, REPLACE(n.toList, ' ', '')) > 0 AND nr.id IS NULL`, account, account, account)
 	return result.RowsAffected, result.Error
-}
-
-func stripHTMLTags(value string) string {
-	var builder strings.Builder
-	inTag := false
-	for _, char := range value {
-		if char == '<' {
-			inTag = true
-		} else if char == '>' {
-			inTag = false
-		} else if !inTag {
-			builder.WriteRune(char)
-		}
-	}
-	return builder.String()
 }
