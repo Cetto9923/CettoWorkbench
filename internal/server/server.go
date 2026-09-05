@@ -68,7 +68,7 @@ func New(
 	}
 	r := gin.New()
 	r.Static("/static", "web/static")
-	t, err := loadTemplates(findTemplatesDir())
+	t, err := loadTemplates("web/templates")
 	if err != nil {
 		zapLog.Panic("load templates failed", zap.Error(err))
 	}
@@ -98,28 +98,6 @@ func New(
 		routeDeps:    routeDeps,
 		cookieSecure: cookieSecure,
 	}
-}
-
-func findTemplatesDir() string {
-	candidate := filepath.Clean("web/templates")
-	if _, err := os.Stat(candidate); err == nil {
-		return candidate
-	}
-	dir, err := os.Getwd()
-	if err == nil {
-		for i := 0; i < 5; i++ {
-			p := filepath.Join(dir, "web/templates")
-			if _, err := os.Stat(p); err == nil {
-				return p
-			}
-			parent := filepath.Dir(dir)
-			if parent == dir {
-				break
-			}
-			dir = parent
-		}
-	}
-	return candidate
 }
 
 // loadTemplates 递归加载目录下全部 html 模板，并注入基础 FuncMap。

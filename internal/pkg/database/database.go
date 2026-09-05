@@ -144,6 +144,20 @@ func isBareSQLLiteral(val string) bool {
 	return true
 }
 
+// GORM Scan uses its own recorder rather than the configured logger's filter.
+// Install the same no-bind policy before any database is opened.
+func init() {
+	gormlogger.RecorderParamsFilter = omitLogParameters
+}
+
+func omitLogParameters(_ context.Context, sql string, _ ...interface{}) (string, []interface{}) {
+	return sql, nil
+}
+
+func (l *gormSQLLogger) ParamsFilter(ctx context.Context, sql string, params ...interface{}) (string, []interface{}) {
+	return omitLogParameters(ctx, sql, params...)
+}
+
 type gormSQLLogger struct {
 	level gormlogger.LogLevel
 }

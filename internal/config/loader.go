@@ -18,12 +18,10 @@ import (
 )
 
 // Load 从文件加载配置，并允许使用环境变量覆盖（前缀 workbench_，层级用下划线）。
-// 运行模式与路径选择保留现有 WORKBENCH_MODE / WORKBENCH_CONFIG 兼容合同。
+// 运行模式与路径选择保留现有 WORKBENCH_MODE 兼容合同。
 func Load() (*Config, error) {
 	configPath := "configs/config.yaml"
-	if p := os.Getenv("WORKBENCH_CONFIG"); p != "" {
-		configPath = p
-	} else if os.Getenv("WORKBENCH_MODE") == "dev" {
+	if os.Getenv("WORKBENCH_MODE") == "dev" {
 		configPath = "configs/config.dev.yaml"
 	}
 
@@ -51,12 +49,12 @@ func LoadFromPath(configPath string) (*Config, error) {
 	v.SetDefault("databaseReadonly.sessionVariables", "ob_read_consistency=Weak")
 
 	if err := v.ReadInConfig(); err != nil {
-		return nil, fmt.Errorf("read config file %q: %w", configPath, err)
+		return nil, errors.New("read config file failed: check file availability and syntax")
 	}
 
 	var cfg Config
 	if err := v.Unmarshal(&cfg); err != nil {
-		return nil, fmt.Errorf("unmarshal config: %w", err)
+		return nil, errors.New("unmarshal config failed: check configuration field types")
 	}
 
 	// 补全默认值
@@ -114,7 +112,7 @@ func Validate(cfg *Config) error {
 	case "prod", "production", "dev", "development", "test", "local":
 		// valid
 	default:
-		return fmt.Errorf("invalid app.env: %q (expected prod/dev/test/local)", cfg.App.Env)
+		return errors.New("invalid app.env: expected prod/dev/test/local")
 	}
 
 	if strings.TrimSpace(cfg.Database.Host) == "" {
@@ -130,11 +128,7 @@ func Validate(cfg *Config) error {
 		return errors.New("missing required config: database.dbname")
 	}
 
-	if strings.TrimSpace(cfg.DatabaseReadonly.Host) != "" {
-		if cfg.DatabaseReadonly.Port < 1 || cfg.DatabaseReadonly.Port > 65535 {
-			return fmt.Errorf("invalid databaseReadonly.port: %d (expected 1-65535)", cfg.DatabaseReadonly.Port)
-		}
-	}
+	// Optional replica connection errors are handled by bootstrap degradation.
 
 	if strings.TrimSpace(cfg.Session.CookieName) == "" {
 		return errors.New("missing required config: session.cookieName")

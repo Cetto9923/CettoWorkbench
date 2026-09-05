@@ -3,7 +3,7 @@ set -euo pipefail
 
 root=$(git rev-parse --show-toplevel)
 cd "$root"
-baseline="${FILE_LENGTH_BASELINE:-scripts/quality-baseline/file-length.tsv}"
+baseline="scripts/quality-baseline/file-length.tsv"
 current=$(mktemp)
 trap 'rm -f "$current"' EXIT
 

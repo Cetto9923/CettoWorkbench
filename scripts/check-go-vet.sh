@@ -3,18 +3,15 @@ set -euo pipefail
 
 root=$(git rev-parse --show-toplevel)
 cd "$root"
-baseline="${GO_VET_BASELINE:-scripts/quality-baseline/go-vet.txt}"
+baseline="scripts/quality-baseline/go-vet.txt"
 current=$(mktemp)
 expected=$(mktemp)
 trap 'rm -f "$current" "$expected"' EXIT
 
 mkdir -p tmp/gocache
 status=0
-if [[ -n "${GO_VET_MOCK_CMD:-}" ]]; then
-  eval "$GO_VET_MOCK_CMD" >"$current" 2>&1 || status=$?
-else
-  GOCACHE="$root/tmp/gocache" go vet ./... >"$current" 2>&1 || status=$?
-fi
+GOCACHE="$root/tmp/gocache" go vet ./... >"$current" 2>&1 || status=$?
+
 # Go 1.25+ prefixes each package with a `# package/path` header. Strip that
 # header line during normalization so the exact diagnostic fingerprint is
 # independent of the tool version; baseline intentionally stores only real

@@ -55,8 +55,8 @@ func TestDatabase_SQLCanaryAbsent(t *testing.T) {
 	if strings.Contains(content, canary) {
 		t.Fatalf("Trace leaked SQL canary: %q", canary)
 	}
-	if !strings.Contains(content, "SELECT id, account FROM `zt_user` WHERE `password` = ?") {
-		t.Fatalf("expected parameterized query not found in log: %s", content)
+	if !strings.Contains(content, "SQL fingerprint sha256:") {
+		t.Fatalf("expected conservative inline-SQL fingerprint not found in log: %s", content)
 	}
 }
 

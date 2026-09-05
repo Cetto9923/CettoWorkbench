@@ -3,7 +3,7 @@ set -euo pipefail
 
 root=$(git rev-parse --show-toplevel)
 cd "$root"
-baseline="${SECRETS_BASELINE:-scripts/quality-baseline/secrets.tsv}"
+baseline="scripts/quality-baseline/secrets.tsv"
 current=$(mktemp)
 details=$(mktemp)
 expected=$(mktemp)

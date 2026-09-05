@@ -10,10 +10,11 @@ This document freezes the architectural, security, and authorization boundaries 
 ### 1.1 Identity & Actor Boundary
 - The current authenticated HTTP session (`c.Get("currentUser")`) exclusively determines user identity.
 - The model must **never** be trusted to declare or assume user identity, role, or permissions.
-- In multi-turn conversations, every request independently derives the actor from the server-side session.
+- In multi-turn conversations, every request independently derives the actor from the server-side session. Conversations and caches must be isolated by employee and permission scope.
 
 ### 1.2 Data & Pre-Retrieval Boundary
 - **Pre-retrieval filtering only**: Data retrieval (RAG / vector / search) must enforce actor permissions in the database query before content is fetched.
+- Future indexes, embeddings and caches must carry source ACLs and honor permission changes and source deletion; do not create these stores before an approved AI feature.
 - Under no circumstances may unauthorized records be retrieved into memory or sent to a model with the expectation that the model will hide or redact them.
 
 ### 1.3 Content Safety & Prompt Injection Boundary
@@ -32,16 +33,18 @@ This document freezes the architectural, security, and authorization boundaries 
   1. Presenting explicit object and field diffs to the employee in the UI.
   2. User confirmation bound to a unique, single-use, time-limited confirmation token.
   3. Re-verifying actor permissions at the exact moment of execution.
-  4. Idempotent replay protection (duplicate tokens rejected).
+  4. Idempotent replay protection: same key and payload must not duplicate effects; a different payload with the same key is rejected. The first write feature must freeze the detailed response protocol.
 
 ### 1.6 Reliability & Fallback Boundary
-- Model calls must have strict timeouts, concurrency limits, and budget quotas.
+- Model calls must support cancellation and strict timeouts, concurrency limits, and budget quotas. The first feature card must provide concrete limits before release.
 - Failure of model calls must degrade gracefully: standard Workbench operations (logging in, viewing demands, scheduling, updating tasks) must function completely without AI.
 
 ### 1.7 Environment, Privacy & Citation Boundary
 - Only approved internal enterprise environments may be used; external third-party model providers require explicit approval.
 - Answers must provide verifiable, timestamped citations to resources that the actor is authorized to view.
 - When sufficient evidence is unavailable, the assistant must explicitly declare the answer unknown.
+
+Future AI errors must not expose prompts, credentials, or inaccessible sources.
 
 ## 2. Mandatory Future Test Scenarios
 
@@ -54,7 +57,9 @@ Any future phase introducing AI capabilities must implement and pass the followi
 | `RevokedPermissionBeforeTool` | User A is granted edit permission; model prepares tool call; permission is revoked in DB. | Confirmation token submitted for execution. | Service rejects execution with 403 Forbidden; zero DB writes occur. |
 | `ForgedActor` | Client sends payload claiming `actor_id = 1` (superadmin) while session is User 2. | Model tool execution triggered. | Session actor User 2 is used; forged actor argument rejected or ignored. |
 | `ToolArgumentValidation` | Model emits invalid arguments (e.g. negative IDs, unapproved enum status). | Tool dispatcher invokes Service. | Handler/Service rejects with 422 / 400 validation error; no partial mutation. |
-| `DuplicateConfirmation` | User confirms a mutation action; network retries the same confirmation token. | Confirmation token submitted twice. | First execution succeeds; second request is rejected as duplicate/expired token. |
+| `DuplicateConfirmation` | User confirms a mutation action; network retries the same confirmation token. | Confirmation token submitted twice. | At most one effect for the same key and payload; changed payload or expired confirmation is rejected. |
 | `ProviderTimeout` | Upstream model gateway fails to respond within configured deadline. | User triggers AI assistant query. | Request fails cleanly with friendly error; main UI and page navigation unaffected. |
 | `BudgetExhaustion` | Daily token or request budget threshold reached. | User sends additional AI prompt. | Assistant cleanly reports quota limit; zero unauthorized overage charges. |
 | `SourceVisibility` | Model generates response based on mixed data sources. | Assistant response rendered to user. | Citations show only documents user has read access to; hidden document titles omitted. |
+
+Status: the scenarios above are **NOT IMPLEMENTED** and have not been executed. This card provides a specification only.

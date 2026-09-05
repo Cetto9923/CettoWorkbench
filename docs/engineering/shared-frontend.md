@@ -1,9 +1,9 @@
 # Shared Frontend Capabilities
 
-This document catalogs and certifies the shared client-side capabilities, network abstractions, and token conventions in Workbench.
+This document catalogs the shared client-side capabilities, network abstractions, and token conventions in Workbench.
 
 > [!IMPORTANT]
-> **Golden Reference Policy**: Certification applies strictly to the bounded fetch, CSRF token propagation, and session expiry capabilities verified in Phases H0, X0, X1, and FE0. Legacy modules (such as `internal/module/user/` or legacy scripts in `ui.js`) are **not** certified as global golden references.
+> **Evidence status**: Source inspection and Node mock / Go handler tests cover only the bounded contracts listed below. Real authenticated browser acceptance is **RUNTIME ACCEPTANCE PENDING**; these capabilities are not yet certified. Legacy modules (such as `internal/module/user/` or legacy scripts in `ui.js`) are **not** certified as global golden references.
 
 ---
 
@@ -21,7 +21,7 @@ Workbench maintains two primary client-side fetch abstractions in `web/static/js
 - **Return Contract**: Returns a raw standard `Response` object.
 
 ```javascript
-// Example: Recommended usage of appFetch for JSON mutation
+// Illustrative placeholder URL; replace using the actual route contract.
 window.appFetch("/api/example", {
   method: "POST",
   headers: {
@@ -34,7 +34,7 @@ window.appFetch("/api/example", {
     if (!resp.ok) {
       // Caller must inspect HTTP status and deserialize error payload
       return resp.json().then(function (errData) {
-        throw new Error(errData.message || "Request failed with status " + resp.status);
+        throw new Error(errData.error || errData.message || "Request failed with status " + resp.status);
       });
     }
     return resp.json();
@@ -50,8 +50,8 @@ window.appFetch("/api/example", {
 > [!CAUTION]
 > **Anti-Pattern (FalseReferenceRejected)**: Never assume `appFetch` automatically parses JSON or throws on 4xx/5xx responses. It returns the raw `Promise<Response>`. Callers must explicitly check `resp.ok` and handle serialization.
 
-- **Certified Test Evidence**:
-  - `tests/e2e/csrf-tokens.spec.js` (header propagation)
+- **Automated Evidence (not browser acceptance)**:
+  - `tests/e2e/csrf-tokens.spec.js` covers scheduleFetch fallback only; appFetch is source-inspected, not tested by this script.
   - `internal/server/http_chain_test.go` (server-side verification)
 
 ---
@@ -65,29 +65,14 @@ window.appFetch("/api/example", {
   2. **Session Expiry (401)**: When response status is 401, or if redirected to `/login`, immediately redirects window to `/login?redirect=<currentPath>` and rejects promise.
   3. **Preservation of Business Errors (403, 409, 500+)**: Strictly distinguishes permission denial (403), concurrent conflicts (409), and internal server errors (500+) from session expiry. These errors are returned to caller without redirecting.
 
-```javascript
-// Example: Usage of scheduleFetch in schedule workflows
-window.scheduleFetch("/schedule/windows/1/tasks", {
-  method: "PUT",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ taskIds: [101, 102] })
-})
-  .then(function (resp) {
-    if (!resp.ok) {
-      return resp.json().then(function (data) {
-        throw new Error(data.message || "Save failed");
-      });
-    }
-    return resp.json();
-  })
-  .catch(function (err) {
-    if (err.message !== "session expired") {
-      showToast(err.message, "error");
-    }
-  });
-```
+Use `scheduleFetch(url, options)` with a route and payload confirmed in the
+current module's route registration. It returns a raw Response: inspect status,
+then parse the endpoint's envelope (`error`, with `message` only for documented
+legacy endpoints). The former `/schedule/windows/1/tasks` PUT example was not a
+registered route and must not be copied.
 
-- **Certified Test Evidence**:
+
+- **Automated Evidence (not browser acceptance)**:
   - `tests/e2e/auth-errors.spec.js` (preservation of 403/409/500+ and detection of 401)
   - `tests/e2e/csrf-tokens.spec.js` (header attachment fallback)
 
@@ -118,5 +103,5 @@ To prevent CSRF vulnerabilities while maintaining compatibility across form PRG 
 
 - **Pagination**: Rendered server-side via `web/templates/components/pager.html`. Supports query preservation, jump controls, and page size selection.
 - **Modal Dialogs**: `openModal(id)` and `closeModal(id)` in `app.js` toggle `.open` CSS class.
-- **Form Loading States**: `bindFormLoading()` in `app.js` automatically applies spinner and prevents duplicate submits for 3 seconds.
+- **Form Loading States**: `bindFormLoading()` in `app.js` disables the submit button and applies a spinner, restoring it after 3 seconds; it does not cancel repeated submit events or provide server-side idempotency.
 - **Action Confirmations**: Handled via `[data-confirm]` attribute and native confirmation.

@@ -11,6 +11,7 @@ package sqllog
 import (
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -243,160 +244,15 @@ func relModulePath(path string) string {
 	return filepath.ToSlash(path)
 }
 
-// SanitizeSQL 将原始 SQL 规范化为参数脱敏后的查询指纹。
-// 移除全部字面量（单双引号字符串、十六进制字面量、数字字面量）并替换为 ?，同时移除 SQL 注释。
+// SanitizeSQL preserves parameterized templates after GORM removes bind values.
+// Inline literals/comments or ambiguous escaping use only a stable fingerprint;
+// do not attempt to reconstruct a safe template from interpolated SQL.
 func SanitizeSQL(raw string) string {
-	if raw == "" {
-		return ""
+	if strings.ContainsAny(raw, "\"'\\#0123456789") || strings.Contains(raw, "--") || strings.Contains(raw, "/*") {
+		sum := sha256.Sum256([]byte(raw))
+		return fmt.Sprintf("SQL fingerprint sha256:%x", sum)
 	}
-
-	var sb strings.Builder
-	sb.Grow(len(raw))
-
-	runes := []rune(raw)
-	n := len(runes)
-	i := 0
-
-	for i < n {
-		r := runes[i]
-
-		// 1. 块注释 /* ... */
-		if r == '/' && i+1 < n && runes[i+1] == '*' {
-			i += 2
-			for i+1 < n && !(runes[i] == '*' && runes[i+1] == '/') {
-				i++
-			}
-			i += 2
-			continue
-		}
-
-		// 2. 行注释 -- 或 #
-		if (r == '-' && i+1 < n && runes[i+1] == '-') || r == '#' {
-			for i < n && runes[i] != '\n' {
-				i++
-			}
-			continue
-		}
-
-		// 3. 单引号字符串 '...'
-		if r == '\'' {
-			i++
-			for i < n {
-				if runes[i] == '\\' && i+1 < n {
-					i += 2
-					continue
-				}
-				if runes[i] == '\'' {
-					if i+1 < n && runes[i+1] == '\'' {
-						i += 2
-						continue
-					}
-					i++
-					break
-				}
-				i++
-			}
-			sb.WriteRune('?')
-			continue
-		}
-
-		// 4. 双引号字符串 "..."
-		if r == '"' {
-			i++
-			for i < n {
-				if runes[i] == '\\' && i+1 < n {
-					i += 2
-					continue
-				}
-				if runes[i] == '"' {
-					if i+1 < n && runes[i+1] == '"' {
-						i += 2
-						continue
-					}
-					i++
-					break
-				}
-				i++
-			}
-			sb.WriteRune('?')
-			continue
-		}
-
-		// 5. 反引号标识符 `...`（表名、列名原样保留）
-		if r == '`' {
-			sb.WriteRune('`')
-			i++
-			for i < n {
-				sb.WriteRune(runes[i])
-				if runes[i] == '`' {
-					i++
-					break
-				}
-				i++
-			}
-			continue
-		}
-
-		// 6. 十六进制字面量 0x...
-		if r == '0' && i+1 < n && (runes[i+1] == 'x' || runes[i+1] == 'X') {
-			i += 2
-			for i < n && isHexDigit(runes[i]) {
-				i++
-			}
-			sb.WriteRune('?')
-			continue
-		}
-
-		// 7. 数字字面量
-		if isDigit(r) {
-			prevIsIdent := false
-			if sb.Len() > 0 {
-				lastRune := rune(sb.String()[sb.Len()-1])
-				if isIdentChar(lastRune) {
-					prevIsIdent = true
-				}
-			}
-			if !prevIsIdent {
-				for i < n && (isDigit(runes[i]) || runes[i] == '.') {
-					i++
-				}
-				sb.WriteRune('?')
-				continue
-			}
-		}
-
-		// 8. 空白折叠
-		if isWhitespace(r) {
-			for i < n && isWhitespace(runes[i]) {
-				i++
-			}
-			if sb.Len() > 0 && sb.String()[sb.Len()-1] != ' ' {
-				sb.WriteRune(' ')
-			}
-			continue
-		}
-
-		sb.WriteRune(r)
-		i++
-	}
-
-	return strings.TrimSpace(sb.String())
-}
-
-func isDigit(r rune) bool {
-	return r >= '0' && r <= '9'
-}
-
-func isHexDigit(r rune) bool {
-	return isDigit(r) || (r >= 'a' && r <= 'f') || (r >= 'A' && r <= 'F')
-}
-
-func isIdentChar(r rune) bool {
-	return isDigit(r) || (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || r == '_' || r == '$'
-}
-
-func isWhitespace(r rune) bool {
-	return r == ' ' || r == '\t' || r == '\n' || r == '\r' || r == '\f' || r == '\v'
+	return strings.Join(strings.Fields(raw), " ")
 }
 
 // SafeErrorCategory 返回数据库错误的安全分类摘要，坚决不包含任何原始驱动参数或输入内容。

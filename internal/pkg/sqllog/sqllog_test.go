@@ -66,12 +66,9 @@ func TestSQLLog_SQLCanaryAbsent(t *testing.T) {
 		}
 	}
 
-	// 确认规范化后的指纹保留了查询结构
-	if !strings.Contains(content, "SELECT id, account FROM `zt_user` WHERE `account` = ? AND `password` = ?") {
-		t.Fatalf("expected parameterized select fingerprint not found in log: %s", content)
-	}
-	if !strings.Contains(content, "INSERT INTO `zt_user` (`account`, `email`, `token`) VALUES (?, ?, ?)") {
-		t.Fatalf("expected parameterized insert fingerprint not found in log: %s", content)
+	// Raw SQL with literals is intentionally fingerprint-only, never parsed heuristically.
+	if strings.Count(content, "SQL fingerprint sha256:") != len(queries) {
+		t.Fatal("raw literal queries must retain only fingerprints")
 	}
 }
 

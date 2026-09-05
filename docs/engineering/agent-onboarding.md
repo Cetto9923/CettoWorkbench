@@ -27,16 +27,13 @@ Before editing any file, confirm and report:
 3. Relevant engineering guides: `architecture.md`, `database.md`, `frontend.md`, `testing.md`, `quality.md`.
 4. Existing dirty or untracked WIP. Never discard or overwrite unrelated work.
 
-## 3. Core Architectural Boundaries
+## 3. Load the canonical boundaries
 
-- **Layers:** Handler -> Service -> Repo -> Database.
-  - Handler binds protocol input, calls Service, and writes HTTP response.
-  - Service owns business logic, authorization decisions, and transactions.
-  - Repo owns database queries and data mapping.
-  - Handlers MUST NOT access the DB directly; Repos MUST NOT decide permissions.
-- **Query Discipline:** SQL filter -> SQL sort -> SQL count -> SQL pagination. Never use `SELECT *`, unindexed scans, or unbounded in-memory filtering.
-- **Schema Ownership:** Workbench-owned tables follow Workbench conventions; ZenTao tables follow ZenTao schema. Do not invent columns without real schema DDL.
-- **Security:** No secrets in Git; no MD5/SHA password writes.
+Read the MUST rules and Golden Reference policy in `AGENTS.md`; this guide does
+not maintain a second abbreviated rule list. Then read the focused engineering
+references selected by the task, `module-index.md`, and the current task card.
+If a decision gate is unresolved, report that exact gate rather than inventing
+a business or schema contract.
 
 ## 4. Pre-Handoff Gates
 
@@ -50,3 +47,14 @@ make check
 ## 5. Delivery Truth
 
 Use `done`, `complete`, `verified`, or `可交付` ONLY when every required gate and acceptance test passes. If any gate fails or is skipped, report `partial`, `failed`, or `blocked`.
+
+## 6. Agent loading evidence
+
+Adapter files being present does not prove a tool loaded them. Before accepting
+an agent handoff, record its tool/version, task, actual files read, applicable
+rules and gates, and its treatment of one legacy exception and one blocked
+decision. A fresh session must demonstrate this without relying on prior chat.
+
+Current evidence: repository adapters inspected; independent cold-start runs for
+Codex, Claude Code, Cursor, Gemini and Jules are **NOT VERIFIED**. No claim of
+cross-agent compliance or enforcement follows from this document alone.

@@ -11,7 +11,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -27,6 +29,8 @@ import (
 func newTestServer(t *testing.T, cookieSecure bool) *Server {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
+	_, source, _, _ := runtime.Caller(0)
+	t.Chdir(filepath.Join(filepath.Dir(source), "../.."))
 
 	cfg := &config.Config{
 		App: config.App{
@@ -49,6 +53,7 @@ func newTestServer(t *testing.T, cookieSecure bool) *Server {
 	sessionMgr.Cookie.Secure = cookieSecure
 
 	srv := New(cfg, zap.NewNop(), nil, sessionMgr, ratelimitpkg.New(100, 200), nil, RouteDeps{})
+	srv.Setup() // Test routes must inherit the actual Gin middleware too.
 	return srv
 }
 
@@ -313,7 +318,7 @@ func TestHTTPChain_CrossOriginOrJSONFailure(t *testing.T) {
 		t.Fatalf("expected application/json, got %q", ct)
 	}
 	body := rec.Body.String()
-	if !strings.Contains(body, `"success":false`) || !strings.Contains(body, `"code":403`) {
+	if !strings.Contains(body, `"success":false`) || !strings.Contains(body, `"code":403`) || !strings.Contains(body, `"error":"CSRF 校验失败"`) {
 		t.Fatalf("expected JSON 403 response envelope, got %s", body)
 	}
 }

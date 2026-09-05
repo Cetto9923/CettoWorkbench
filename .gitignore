@@ -7,7 +7,7 @@ logs/*
 configs/config.dev.yaml
 web/static/uploads/**
 backups/*.sql.gz
-server
+/server
 
 /demo
 /demo2

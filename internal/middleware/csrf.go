@@ -18,7 +18,7 @@ import (
 
 const (
 	csrfErrorHTML = "<!DOCTYPE html><html lang=\"zh-CN\"><head><meta charset=\"utf-8\"><title>CSRF 校验失败</title></head><body><h1>CSRF 校验失败</h1></body></html>"
-	csrfErrorJSON = `{"success":false,"code":403,"message":"CSRF 校验失败"}`
+	csrfErrorJSON = `{"success":false,"code":403,"error":"CSRF 校验失败","message":"CSRF 校验失败"}`
 )
 
 // CSRF 返回可挂载到标准 net/http 的 nosurf 中间件。

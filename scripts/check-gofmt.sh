@@ -3,7 +3,7 @@ set -euo pipefail
 
 root=$(git rev-parse --show-toplevel)
 cd "$root"
-baseline="${GOFMT_BASELINE:-scripts/quality-baseline/gofmt.tsv}"
+baseline="scripts/quality-baseline/gofmt.tsv"
 current=$(mktemp)
 expected=$(mktemp)
 trap 'rm -f "$current" "$expected"' EXIT
