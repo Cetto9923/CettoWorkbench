@@ -326,10 +326,13 @@ func (s *Service) Update(ctx context.Context, actor *model.User, req UpdateReq) 
 	if window == nil {
 		return errors.New("窗口不存在")
 	}
+	account := actorAccount(actor)
+	if window.CreatedBy != account {
+		return errors.New("只有创建人可以修改")
+	}
 	if err := applyUpdateReqToVersionWindow(window, req); err != nil {
 		return err
 	}
-	account := actorAccount(actor)
 	window.UpdatedBy = account
 
 	return s.repo.Transaction(ctx, func(txRepo *Repo) error {

@@ -244,6 +244,18 @@ func (s *Service) SaveStoryTasks(ctx context.Context, actor *model.User, storyID
 		return err
 	}
 
+	// 进事务前做整体校验: 如果目标系统不在当前用户有权限的产品集合内，则返回提示
+	precheckStories := []SaveSchedulingStory{
+		{Action: "edit", ProductID: detail.ProductID},
+	}
+	notice, err := s.precheckSchedulingProducts(ctx, 0, precheckStories, account)
+	if err != nil {
+		return err
+	}
+	if notice != nil {
+		return notice
+	}
+
 	return s.repo.Transaction(ctx, func(txRepo *Repo) error {
 		for _, taskReq := range req.Tasks {
 			if err := s.applyStoryTaskSave(ctx, txRepo, account, storyID, detail.ProductID, req, taskReq); err != nil {

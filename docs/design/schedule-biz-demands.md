@@ -1,7 +1,7 @@
 # 排期工作台 · 业务需求 Tab 列表 — 数据层设计
 
-> 模块：`internal/module/schedule`  
-> 范围：本阶段仅方法签名 + SQL 草稿 + Service 装配伪代码，**不写 Go 实现**。  
+> 模块：`internal/module/schedule`
+> 范围：本阶段仅方法签名 + SQL 草稿 + Service 装配伪代码，**不写 Go 实现**。
 > 模式：禅道「主表分页 + 批量 IN 补字段」，禁止大宽表 JOIN。
 
 ---
@@ -75,7 +75,7 @@
 
 ## 二、Form 层结构体
 
-> 落位：`internal/module/schedule/form.go`（下一阶段实现）。  
+> 落位：`internal/module/schedule/form.go`（下一阶段实现）。
 > 读取类 Req 仅用 `form` tag；JSON 响应用 `json` tag。
 
 ### 排期阶段常量（Service 层使用）
@@ -231,7 +231,7 @@ type ZtStory struct {
 
 ## 三、Repo 层新增方法清单
 
-> 落位：`internal/module/schedule/repo.go`（下一阶段实现）。  
+> 落位：`internal/module/schedule/repo.go`（下一阶段实现）。
 > **复用已有**：`IsAdmin`、`FindTeamgroupsByIDs`（见现有 `internal/module/schedule/repo.go`）。
 
 ---
@@ -680,7 +680,7 @@ func (s *Service) ListBizDemands(ctx context.Context, actor *model.User, req Lis
 
 ## 五、排期阶段判定（重点）
 
-> **全部在 Service 层 Go 代码计算**，不写入 SQL。  
+> **全部在 Service 层 Go 代码计算**，不写入 SQL。
 > 判定输入：某**顶层业需**及其**全部子业需**下的**全部研发 story**，以及 `windowByStory`、`taskStatByStory`。
 
 ### 5.1 业需层面 5 态（按顺序判定，首个命中为准）
