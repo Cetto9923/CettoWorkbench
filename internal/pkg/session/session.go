@@ -29,7 +29,11 @@ func New(cfg *config.Config) *scs.SessionManager {
 	mgr.Cookie.Name = cfg.Session.CookieName
 	mgr.Cookie.HttpOnly = true
 	mgr.Cookie.SameSite = http.SameSiteLaxMode
-	mgr.Cookie.Secure = cfg.Session.CookieSecure
+	if cfg.App.Env == "prod" || cfg.App.Env == "production" || cfg.Session.CookieSecure {
+		mgr.Cookie.Secure = true
+	} else {
+		mgr.Cookie.Secure = false
+	}
 	mgr.Cookie.Path = "/"
 	return mgr
 }
