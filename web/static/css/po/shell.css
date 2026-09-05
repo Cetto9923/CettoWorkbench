@@ -270,10 +270,15 @@ body.po-workbench-shell .main::-webkit-scrollbar-track { background: transparent
   font-weight: 700;
 }
 
+body.po-workbench-shell.has-bottom-tabs .main { padding-bottom: 56px; }
+
+body.sidebar-collapsed.po-workbench-shell .sidebar { width: var(--sidebar-width-collapsed); }
 body.sidebar-collapsed.po-workbench-shell .topbar { left: var(--sidebar-width-collapsed); }
 body.sidebar-collapsed.po-workbench-shell .bottom-tabbar { left: var(--sidebar-width-collapsed); }
-body.sidebar-collapsed.po-workbench-shell .po-sidebar-brand { justify-content: center; padding: 0; }
-body.sidebar-collapsed.po-workbench-shell .po-sidebar-collapse { display: none; }
+body.sidebar-collapsed.po-workbench-shell .po-sidebar-brand { justify-content: center; padding: 0 4px; }
+body.sidebar-collapsed.po-workbench-shell .po-brand-logo { margin: 0; }
+body.sidebar-collapsed.po-workbench-shell .po-sidebar-collapse { display: inline-flex; align-items: center; justify-content: center; opacity: 1; margin: 0; }
+body.sidebar-collapsed.po-workbench-shell .po-sidebar-collapse i { transform: rotate(180deg); }
 
 @media (max-width: 900px) {
   .po-global-search { width: 200px; }

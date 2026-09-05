@@ -14,7 +14,7 @@
     var object = escapeHtml(item.objectType || "—") + " / " + escapeHtml(item.objectId || "—");
     var objectLink = item.url ? '<a class="notice-object-link" href="' + escapeHtml(item.url) + '">' + object + "</a>" : object;
     var status = item.read ? '<span class="notice-read-state">已读</span>' : '<span class="notice-unread-state"><i></i>未读</span>';
-    var operation = item.read ? '<button type="button" class="notice-read-btn" disabled>已读</button>' : '<button type="button" class="notice-read-btn" data-notice-id="' + escapeHtml(item.id) + '">标为已读</button>';
+    var operation = item.read ? '<span class="notice-op-empty" style="color:#9aa5b4">—</span>' : '<button type="button" class="notice-read-btn" data-notice-id="' + escapeHtml(item.id) + '">标为已读</button>';
     return "<tr" + (item.read ? "" : ' class="is-unread"') + "><td class=\"notice-subject\"><div class=\"notice-subject-text\">" + content + "</div>" + description + "</td><td><span class=\"notice-category-tag " + escapeHtml(category) + "\">" + escapeHtml(categoryLabels[category] || category) + "</span></td><td>" + objectLink + "</td><td>" + escapeHtml(item.actor || "—") + "</td><td>" + escapeHtml(item.date || "—") + "</td><td class=\"notice-status\">" + status + "</td><td class=\"notice-operation\">" + operation + "</td></tr>";
   }
 

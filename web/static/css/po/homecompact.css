@@ -17,7 +17,7 @@ body.po-workbench-shell .main:has(.po-home) { padding: 12px 20px 40px; }
 .po-home .home-vs-title { color: var(--po-t2); font-size: 11px; }
 .po-home .home-vs-title + .home-vs-desc { display: inline; margin: 0 0 0 8px; }
 .po-home .home-vs-mini-card { height: 56px; min-height: 56px; padding: 5px 7px; border-radius: 4px; }
-.po-home .top5-section { display: flex; flex-direction: column; min-height: 0; height: calc(100vh - 256px); padding: 10px 12px 8px; border-color: var(--po-blue-bd); border-radius: 8px; }
+.po-home .top5-section { display: flex; flex-direction: column; min-height: 0; height: auto; margin-bottom: 8px; padding: 10px 12px 8px; border-color: var(--po-blue-bd); border-radius: 8px; }
 .po-home .section-title { gap: 8px; font-size: 14px; line-height: 22px; }
 .po-home .home-priority-strip { display: grid; grid-template-columns: repeat(3, 177px); gap: 6px; min-height: 94px; padding-bottom: 2px; margin-bottom: 8px; }
 .po-home .home-priority-card { display: flex; min-width: 0; flex-direction: column; justify-content: space-between; gap: 4px; padding: 5px 7px; border: 1px solid var(--po-border); border-left: 3px solid var(--po-orange); border-radius: 4px; background: var(--po-white); }

@@ -96,7 +96,7 @@
 #page-schedule .schedule-table {
   border: 0;
   border-top: 1px solid var(--border-lt);
-  min-width: 1180px;
+  min-width: 980px; width: 100%;
   table-layout: auto;
 }
 

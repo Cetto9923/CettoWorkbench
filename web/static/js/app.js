@@ -325,6 +325,26 @@
     modal.classList.add("open");
   }
 
+  function bindShellPlaceholderNotice() {
+    document.addEventListener("click", function (event) {
+      var btn = event.target.closest("button.po-shell-placeholder, button.po-role-tab:not(.active)");
+      if (!btn) {
+        return;
+      }
+      event.preventDefault();
+      var label = "";
+      if (btn.classList.contains("po-role-tab")) {
+        label = (btn.textContent || "").trim() + " 工作台";
+      } else {
+        var textEl = btn.querySelector(".nav-text");
+        label = textEl ? textEl.textContent.trim() : (btn.getAttribute("data-upcoming-page") || "该功能");
+      }
+      if (typeof window.showToast === "function") {
+        window.showToast(label + " 正在规划建设中", "info");
+      }
+    });
+  }
+
   window.appFetch = appFetch;
   window.getCsrfToken = getCsrfToken;
   window.openModal = openModal;
@@ -335,4 +355,5 @@
   showSuccessFlashPopup();
   bindAsyncSearch();
   bindBatchActions();
+  bindShellPlaceholderNotice();
 })();
