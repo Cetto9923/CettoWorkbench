@@ -15,6 +15,8 @@ import (
 )
 
 // LoadUserPermissionSet 按用户 ID 从 RBAC 关系表加载权限集合。
+// 仅加载有效角色（r.isActive=true, r.deleted=0）、有效关系（ur.deleted=0）及
+// 有效授权（rp.deletedAt IS NULL）。
 // 返回值 key 为权限 code，value 固定为 true。
 func LoadUserPermissionSet(ctx context.Context, db *gorm.DB, userID int64) (map[string]bool, error) {
 	set := make(map[string]bool)
@@ -29,7 +31,10 @@ func LoadUserPermissionSet(ctx context.Context, db *gorm.DB, userID int64) (map[
 		Joins("JOIN zt_gf_user_roles ur ON ur.roleId = rp.roleId").
 		Joins("JOIN zt_roles r ON r.id = ur.roleId").
 		Where("ur.userId = ?", userID).
+		Where("ur.deleted = ?", 0).
+		Where("r.deleted = ?", 0).
 		Where("r.isActive = ?", true).
+		Where("rp.deletedAt IS NULL").
 		Scan(&permCodes).
 		Error
 	if err != nil {

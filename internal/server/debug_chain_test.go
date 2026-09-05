@@ -57,7 +57,7 @@ func TestDebugProductionChainTrustedIdentity(t *testing.T) {
 					WillReturnRows(sqlmock.NewRows([]string{"id", "account", "role", "deleted"}).AddRow(7, actor, "", "0"))
 				want = http.StatusOK
 				if actor == "regular" {
-					mock.ExpectQuery("SELECT DISTINCT .*zt_role_permissions").WithArgs(int64(7), true).
+					mock.ExpectQuery("SELECT DISTINCT .*zt_role_permissions").WithArgs(int64(7), 0, 0, true).
 						WillReturnRows(sqlmock.NewRows([]string{"permCode"}))
 					want = http.StatusForbidden
 				}
