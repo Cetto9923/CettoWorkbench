@@ -13,6 +13,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -20,6 +21,9 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	gomysql "github.com/go-sql-driver/mysql"
+	"gorm.io/gorm"
 
 	"workbench/internal/config"
 )
@@ -64,13 +68,13 @@ func LogQuery(ctx context.Context, sql string, elapsed time.Duration, rows int64
 		Time:      formatTime(time.Now()),
 		RequestID: requestID,
 		Seq:       seq,
-		SQL:       sql,
+		SQL:       SanitizeSQL(sql),
 		Elapsed:   formatDuration(elapsed),
 		Rows:      rows,
 		File:      callerLocation(),
 	}
 	if err != nil {
-		entry.Error = err.Error()
+		entry.Error = SafeErrorCategory(err)
 	}
 
 	defaultWriter.write(entry)
@@ -237,4 +241,228 @@ func relModulePath(path string) string {
 		return path[idx+len(marker):]
 	}
 	return filepath.ToSlash(path)
+}
+
+// SanitizeSQL 将原始 SQL 规范化为参数脱敏后的查询指纹。
+// 移除全部字面量（单双引号字符串、十六进制字面量、数字字面量）并替换为 ?，同时移除 SQL 注释。
+func SanitizeSQL(raw string) string {
+	if raw == "" {
+		return ""
+	}
+
+	var sb strings.Builder
+	sb.Grow(len(raw))
+
+	runes := []rune(raw)
+	n := len(runes)
+	i := 0
+
+	for i < n {
+		r := runes[i]
+
+		// 1. 块注释 /* ... */
+		if r == '/' && i+1 < n && runes[i+1] == '*' {
+			i += 2
+			for i+1 < n && !(runes[i] == '*' && runes[i+1] == '/') {
+				i++
+			}
+			i += 2
+			continue
+		}
+
+		// 2. 行注释 -- 或 #
+		if (r == '-' && i+1 < n && runes[i+1] == '-') || r == '#' {
+			for i < n && runes[i] != '\n' {
+				i++
+			}
+			continue
+		}
+
+		// 3. 单引号字符串 '...'
+		if r == '\'' {
+			i++
+			for i < n {
+				if runes[i] == '\\' && i+1 < n {
+					i += 2
+					continue
+				}
+				if runes[i] == '\'' {
+					if i+1 < n && runes[i+1] == '\'' {
+						i += 2
+						continue
+					}
+					i++
+					break
+				}
+				i++
+			}
+			sb.WriteRune('?')
+			continue
+		}
+
+		// 4. 双引号字符串 "..."
+		if r == '"' {
+			i++
+			for i < n {
+				if runes[i] == '\\' && i+1 < n {
+					i += 2
+					continue
+				}
+				if runes[i] == '"' {
+					if i+1 < n && runes[i+1] == '"' {
+						i += 2
+						continue
+					}
+					i++
+					break
+				}
+				i++
+			}
+			sb.WriteRune('?')
+			continue
+		}
+
+		// 5. 反引号标识符 `...`（表名、列名原样保留）
+		if r == '`' {
+			sb.WriteRune('`')
+			i++
+			for i < n {
+				sb.WriteRune(runes[i])
+				if runes[i] == '`' {
+					i++
+					break
+				}
+				i++
+			}
+			continue
+		}
+
+		// 6. 十六进制字面量 0x...
+		if r == '0' && i+1 < n && (runes[i+1] == 'x' || runes[i+1] == 'X') {
+			i += 2
+			for i < n && isHexDigit(runes[i]) {
+				i++
+			}
+			sb.WriteRune('?')
+			continue
+		}
+
+		// 7. 数字字面量
+		if isDigit(r) {
+			prevIsIdent := false
+			if sb.Len() > 0 {
+				lastRune := rune(sb.String()[sb.Len()-1])
+				if isIdentChar(lastRune) {
+					prevIsIdent = true
+				}
+			}
+			if !prevIsIdent {
+				for i < n && (isDigit(runes[i]) || runes[i] == '.') {
+					i++
+				}
+				sb.WriteRune('?')
+				continue
+			}
+		}
+
+		// 8. 空白折叠
+		if isWhitespace(r) {
+			for i < n && isWhitespace(runes[i]) {
+				i++
+			}
+			if sb.Len() > 0 && sb.String()[sb.Len()-1] != ' ' {
+				sb.WriteRune(' ')
+			}
+			continue
+		}
+
+		sb.WriteRune(r)
+		i++
+	}
+
+	return strings.TrimSpace(sb.String())
+}
+
+func isDigit(r rune) bool {
+	return r >= '0' && r <= '9'
+}
+
+func isHexDigit(r rune) bool {
+	return isDigit(r) || (r >= 'a' && r <= 'f') || (r >= 'A' && r <= 'F')
+}
+
+func isIdentChar(r rune) bool {
+	return isDigit(r) || (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || r == '_' || r == '$'
+}
+
+func isWhitespace(r rune) bool {
+	return r == ' ' || r == '\t' || r == '\n' || r == '\r' || r == '\f' || r == '\v'
+}
+
+// SafeErrorCategory 返回数据库错误的安全分类摘要，坚决不包含任何原始驱动参数或输入内容。
+func SafeErrorCategory(err error) string {
+	if err == nil {
+		return ""
+	}
+
+	var mysqlErr *gomysql.MySQLError
+	if errors.As(err, &mysqlErr) {
+		return fmt.Sprintf("mysql error %d: %s", mysqlErr.Number, mysqlErrCodeName(mysqlErr.Number))
+	}
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return "record not found"
+	}
+	if errors.Is(err, gorm.ErrDuplicatedKey) {
+		return "duplicate key"
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return "deadline exceeded"
+	}
+	if errors.Is(err, context.Canceled) {
+		return "context canceled"
+	}
+
+	errStr := strings.ToLower(err.Error())
+	switch {
+	case strings.Contains(errStr, "duplicate") || strings.Contains(errStr, "1062"):
+		return "mysql error 1062: duplicate entry"
+	case strings.Contains(errStr, "deadlock") || strings.Contains(errStr, "1213"):
+		return "mysql error 1213: deadlock"
+	case strings.Contains(errStr, "timeout") || strings.Contains(errStr, "1205"):
+		return "mysql error 1205: lock wait timeout"
+	case strings.Contains(errStr, "foreign key") || strings.Contains(errStr, "1451") || strings.Contains(errStr, "1452"):
+		return "foreign key constraint violation"
+	case strings.Contains(errStr, "record not found"):
+		return "record not found"
+	case strings.Contains(errStr, "syntax"):
+		return "sql syntax error"
+	case strings.Contains(errStr, "connection refused") || strings.Contains(errStr, "connection reset"):
+		return "database connection error"
+	default:
+		return "database query error"
+	}
+}
+
+func mysqlErrCodeName(code uint16) string {
+	switch code {
+	case 1062:
+		return "duplicate entry"
+	case 1048:
+		return "column cannot be null"
+	case 1213:
+		return "deadlock"
+	case 1205:
+		return "lock wait timeout"
+	case 1451, 1452:
+		return "foreign key constraint violation"
+	case 1054:
+		return "unknown column"
+	case 1146:
+		return "table does not exist"
+	case 1064:
+		return "syntax error"
+	default:
+		return "query failure"
+	}
 }
