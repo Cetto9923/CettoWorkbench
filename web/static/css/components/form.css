@@ -62,6 +62,20 @@
   box-shadow: none;
 }
 
+/* 禁用态输入 */
+.input[disabled],
+.select[disabled],
+.textarea[disabled],
+.input:disabled,
+.select:disabled,
+.textarea:disabled {
+  background: var(--color-surface-muted);
+  color: var(--color-text-disabled);
+  border-color: var(--color-border);
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
 /* 错误态 */
 .input.error,
 .select.error {

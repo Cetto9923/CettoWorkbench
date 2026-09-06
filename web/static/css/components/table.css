@@ -450,7 +450,7 @@
   font-family: inherit;
   white-space: nowrap;
   background: var(--color-primary-hover);
-  color: #fff;
+  color: var(--color-text-on-accent);
   transition: background-color 0.15s ease;
 }
 

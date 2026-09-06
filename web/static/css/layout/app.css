@@ -247,8 +247,24 @@ textarea,
 
 .form-control,
 .form-select {
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
   border-radius: var(--radius-md);
   border-color: var(--color-border-strong);
+}
+
+.form-control::placeholder,
+.form-select::placeholder {
+  color: var(--color-text-placeholder);
+}
+
+.form-control:disabled,
+.form-select:disabled,
+.form-control[readonly],
+.form-select[readonly] {
+  background-color: var(--color-surface-muted);
+  color: var(--color-text-disabled);
+  opacity: 0.75;
 }
 
 .form-control:focus,
@@ -256,6 +272,27 @@ textarea,
   border-color: var(--bs-primary);
   box-shadow: 0 0 0 0.14rem var(--color-primary-ring-soft);
   outline: none;
+}
+
+.btn-neutral:hover {
+  background-color: var(--color-surface-hover);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-strong);
+}
+
+.dropdown-header {
+  padding: var(--space-2) var(--space-3) var(--space-1);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-disabled);
+  user-select: none;
+}
+
+.dropdown-divider {
+  height: 1px;
+  margin: var(--space-1) 0;
+  overflow: hidden;
+  background-color: var(--color-border);
 }
 
 /* Theme Picker */

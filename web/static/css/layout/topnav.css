@@ -9,7 +9,8 @@
   --topnav-primary-active-bg: #3479E6;
   --topnav-primary-fg: #ffffff;
   --topnav-sep-color: rgba(255, 255, 255, 0.35);
-  --topnav-subitem-hover-bg: #F2F2F2;
+  --topnav-subitem-hover-bg: var(--color-surface-hover);
+}
 
 /* 顶栏整体改为主题蓝，二级条单独白底 */
 .topbar {
@@ -187,6 +188,6 @@
 }
 
 .topnav-subitem.is-active {
-  color: var(--topnav-primary-bg);
+  color: var(--color-primary);
   font-weight: 600;
 }

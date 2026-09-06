@@ -159,7 +159,7 @@
 /* 主按钮：每页只允许出现一个 */
 .btn-primary {
   background: var(--color-primary);
-  color: var(--color-surface);
+  color: var(--color-text-on-accent);
   border-color: var(--color-primary);
 }
 .btn-primary:active {
@@ -187,12 +187,12 @@
 /* 危险按钮：只允许出现在删除确认弹窗内 */
 .btn-danger {
   height: var(--size-9);
-  background: var(--color-danger-bright);
-  color: var(--color-surface);
-  border-color: var(--color-danger-bright);
+  background: var(--color-danger-fill);
+  color: var(--color-text-on-accent);
+  border-color: var(--color-danger-fill);
 }
 .btn-danger:hover {
-  background: var(--color-danger-accent);
+  background: var(--color-danger-strong);
 }
 
 /* 图标按钮（操作列用）*/
@@ -405,15 +405,15 @@
 }
 
 .toast-success {
-  background: #f0fdf4;
-  color: #16a34a;
-  border: 1px solid #bbf7d0;
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  border: 1px solid var(--color-success-border);
 }
 
 .toast-error {
-  background: #fef2f2;
-  color: #dc2626;
-  border: 1px solid #fecaca;
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger-border);
 }
 
 @keyframes toast-in {
@@ -462,7 +462,7 @@
 }
 
 .dropdown-item:hover {
-  background: var(--color-surface-muted);
+  background: var(--color-surface-hover);
   color: var(--color-text-primary);
 }
 
@@ -512,7 +512,7 @@
 }
 
 .topbar-actions .topbar-dropdown-item.dropdown-item-danger:hover {
-  background: var(--color-surface);
+  background: var(--color-danger-bg);
   color: var(--color-danger-accent);
 }
 
