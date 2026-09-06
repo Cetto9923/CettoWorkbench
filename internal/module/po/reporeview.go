@@ -151,8 +151,11 @@ func (r *Repo) SaveDemandReview(ctx context.Context, in saveDemandReviewIn) erro
 	}
 	now := time.Now()
 	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// 每次从干净 session 起查，避免上一条 SQL 的 Where/Select 串到下一句。
+		q := func() *gorm.DB { return tx.Session(&gorm.Session{NewDB: true}) }
+
 		var locked demandReviewRow
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+		if err := q().Clauses(clause.Locking{Strength: "UPDATE"}).
 			Select("id, status, deleted, createdBy, reviewedBy, mailto, isNeedFocus, product").
 			Where("id = ?", in.DemandID).
 			Take(&locked).Error; err != nil {
@@ -163,9 +166,13 @@ func (r *Repo) SaveDemandReview(ctx context.Context, in saveDemandReviewIn) erro
 		}
 
 		var mine demandReviewerRow
-		if err := tx.Select("result").
+		if err := q().Model(&demandReviewerRow{}).
+			Select("result").
 			Where("demand = ? AND reviewer = ?", in.DemandID, in.Account).
 			Take(&mine).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return errDemandNotReviewable
+			}
 			return fmt.Errorf("load demandreview %d %s: %w", in.DemandID, in.Account, err)
 		}
 		if strings.TrimSpace(mine.Result) != "" {
@@ -173,7 +180,7 @@ func (r *Repo) SaveDemandReview(ctx context.Context, in saveDemandReviewIn) erro
 		}
 
 		// 1) 当前登录人在 zt_demandreview 里的那一行：写下结果和时间
-		if err := tx.Model(&demandReviewerRow{}).
+		if err := q().Table("zt_demandreview").
 			Where("demand = ? AND reviewer = ?", in.DemandID, in.Account).
 			Updates(map[string]any{
 				"result":     in.Result,
@@ -186,7 +193,7 @@ func (r *Repo) SaveDemandReview(ctx context.Context, in saveDemandReviewIn) erro
 		statusAction := in.StatusAction
 		assignBackTo := in.AssignBackTo
 		if in.Result == "pass" {
-			left, countErr := countUnpassedReviewers(tx, in.DemandID)
+			left, countErr := countUnpassedReviewers(q(), in.DemandID)
 			if countErr != nil {
 				return countErr
 			}
@@ -218,7 +225,7 @@ func (r *Repo) SaveDemandReview(ctx context.Context, in saveDemandReviewIn) erro
 				updates["assignedTo"] = assignBackTo
 			}
 		}
-		if err := tx.Table("zt_demand").Where("id = ?", in.DemandID).Updates(updates).Error; err != nil {
+		if err := q().Table("zt_demand").Where("id = ?", in.DemandID).Updates(updates).Error; err != nil {
 			return fmt.Errorf("update demand: %w", err)
 		}
 
@@ -227,7 +234,7 @@ func (r *Repo) SaveDemandReview(ctx context.Context, in saveDemandReviewIn) erro
 			productField = "," + p + ","
 		}
 		// extra 存 pass/refuse，禅道历史里用来显示「确认通过/拒绝」
-		if err := tx.Create(&demandActionRow{
+		if err := q().Create(&demandActionRow{
 			ObjectType: "demand",
 			ObjectID:   uint(in.DemandID),
 			Product:    productField,
@@ -241,7 +248,7 @@ func (r *Repo) SaveDemandReview(ctx context.Context, in saveDemandReviewIn) erro
 		}
 
 		if statusAction != "" {
-			if err := tx.Create(&demandActionRow{
+			if err := q().Create(&demandActionRow{
 				ObjectType: "demand",
 				ObjectID:   uint(in.DemandID),
 				Product:    productField,

@@ -83,6 +83,9 @@ func (s *Service) ReviewDemand(ctx context.Context, actor *model.User, req Revie
 		if errors.Is(err, errDemandNotReviewable) || errors.Is(err, errAlreadyReviewed) {
 			return empty, errorx.New(errorx.ErrCodeConflict, err.Error())
 		}
+		if isLockWait(err) {
+			return empty, errorx.New(errorx.ErrCodeConflict, "该需求正在被他人编辑，请稍后重试")
+		}
 		return empty, err
 	}
 
@@ -126,4 +129,12 @@ func normalizeMailto(raw string) *string {
 	}
 	joined := strings.Join(parts, ",")
 	return &joined
+}
+
+func isLockWait(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "lock wait timeout") || strings.Contains(msg, "deadlock")
 }

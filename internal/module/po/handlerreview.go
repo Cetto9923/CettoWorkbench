@@ -12,6 +12,7 @@ package po
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -25,7 +26,7 @@ import (
 // 请求：POST /demands/:id/review ，Body 是 JSON（不是表单）。
 // 成功：{ success, message, redirectUrl } —— 前端可刷新列表或跳转首页。
 func (h *Handler) ReviewDemand(c *gin.Context) {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	id, err := parseReviewDemandID(c.Param("id"))
 	if err != nil || id <= 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "需求 ID 无效"})
 		return
@@ -60,6 +61,15 @@ func (h *Handler) ReviewDemand(c *gin.Context) {
 		"message":     "评审成功",
 		"redirectUrl": "/home",
 	})
+}
+
+// parseReviewDemandID 接受数字主键，或列表展示用的 US{id}。
+func parseReviewDemandID(raw string) (int64, error) {
+	raw = strings.TrimSpace(raw)
+	if len(raw) >= 2 && strings.EqualFold(raw[:2], "US") {
+		raw = raw[2:]
+	}
+	return strconv.ParseInt(raw, 10, 64)
 }
 
 func reviewHTTPError(err error) (int, string) {

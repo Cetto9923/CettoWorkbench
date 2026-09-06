@@ -16,6 +16,41 @@
 
   var currentItem = null;
 
+  // 列表 id 是展示号 US{主键}，接口路径要用数字主键。
+  function demandNumericId(item) {
+    var raw = String((item && item.id) || "").trim();
+    var matched = raw.match(/^US(\d+)$/i);
+    if (matched) {
+      return matched[1];
+    }
+    if (/^\d+$/.test(raw)) {
+      return raw;
+    }
+    return "";
+  }
+
+  function reviewFailMessage(res, data, text) {
+    if (data) {
+      var fromApi = String(data.message || data.error || "").trim();
+      if (fromApi) {
+        return fromApi;
+      }
+    }
+    if (res && res.status === 401) {
+      return "未登录或会话已过期，请刷新后重试";
+    }
+    if (res && res.status === 403) {
+      return "没有评审权限";
+    }
+    if (text && /CSRF/i.test(text)) {
+      return "安全校验失败，请刷新页面后重试";
+    }
+    if (res && res.status) {
+      return "评审失败（HTTP " + res.status + "）";
+    }
+    return "评审失败";
+  }
+
   function csrfHeaders() {
     var headers = {
       Accept: "application/json",
@@ -59,7 +94,7 @@
     });
     $("#poDemandReviewForm").on("submit", function (e) {
       e.preventDefault();
-      var id = currentItem && currentItem.id ? String(currentItem.id).trim() : "";
+      var id = demandNumericId(currentItem);
       var result = $("#poDemandReviewResult").val();
       var focus = $("#poDemandReviewFocus").val();
       if (!id) {
@@ -88,9 +123,9 @@
             try {
               data = text ? JSON.parse(text) : {};
             } catch (ignore) {
-              data = { message: res.status === 403 ? "没有评审权限" : "评审失败" };
+              data = {};
             }
-            return { ok: res.ok, data: data };
+            return { ok: res.ok, data: data, res: res, text: text };
           });
         })
         .then(function (resultWrap) {
@@ -103,7 +138,7 @@
             }
             return;
           }
-          showToast(data.message || "评审失败", "error");
+          showToast(reviewFailMessage(resultWrap.res, data, resultWrap.text), "error");
         })
         .catch(function () {
           showToast("评审失败，请稍后重试", "error");
