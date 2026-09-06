@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"sync"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/gin-gonic/gin"
@@ -29,8 +28,6 @@ var sensitiveOperationLogFields = map[string]struct{}{
 	"token":           {},
 	"secret":          {},
 }
-
-var operationLogTableInit sync.Once
 
 // RecordOperationLog 记录 POST/PUT/DELETE 请求的操作审计日志。
 func RecordOperationLog(db *gorm.DB, sessionMgr *scs.SessionManager) gin.HandlerFunc {
@@ -51,10 +48,6 @@ func RecordOperationLog(db *gorm.DB, sessionMgr *scs.SessionManager) gin.Handler
 		if db == nil {
 			return
 		}
-		operationLogTableInit.Do(func() {
-			// 启动后首次写操作日志时兜底建表，避免因目标库缺表导致审计日志永久写入失败。
-			_ = db.AutoMigrate(&model.OperationLog{})
-		})
 
 		userID := int64(0)
 		account := ""

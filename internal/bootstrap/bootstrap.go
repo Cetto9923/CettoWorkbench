@@ -26,7 +26,6 @@ import (
 
 	"workbench/internal/config"
 	"workbench/internal/middleware"
-	"workbench/internal/model"
 
 	"workbench/internal/module/debug"
 	"workbench/internal/module/dept"
@@ -74,7 +73,7 @@ func Run() error {
 		return fmt.Errorf("init database: %w", err)
 	}
 	defer func() { _ = database.Close(db) }()
-	if err := db.AutoMigrate(&model.OperationLog{}); err != nil {
+	if err := ensureOperationLogSchema(db); err != nil {
 		return fmt.Errorf("ensure zt_operation_logs: %w", err)
 	}
 

@@ -143,3 +143,19 @@ CREATE TABLE IF NOT EXISTS `zt_demandwindow` (
     INDEX `idx_versionWindow` (`versionWindow`),
     UNIQUE KEY `uk_demand_story` (`demand`, `story`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='业务需求-窗口关联（业需级单值：demand+story(=0) 唯一）';
+
+CREATE TABLE IF NOT EXISTS `zt_operation_logs` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `tenantId` BIGINT NOT NULL DEFAULT 0,
+  `userId` BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  `account` VARCHAR(64) NOT NULL DEFAULT '',
+  `method` VARCHAR(10) NOT NULL DEFAULT '',
+  `path` VARCHAR(255) NOT NULL DEFAULT '',
+  `query` VARCHAR(500) NOT NULL DEFAULT '',
+  `body` TEXT,
+  `ip` VARCHAR(64) NOT NULL DEFAULT '',
+  `userAgent` VARCHAR(255) NOT NULL DEFAULT '',
+  `statusCode` BIGINT NOT NULL DEFAULT 0,
+  `createdAt` DATETIME(3) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='工作台操作审计（由受控迁移创建，运行账号不得 DDL）';
