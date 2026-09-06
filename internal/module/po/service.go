@@ -232,6 +232,16 @@ func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stage
 		return nil, err
 	}
 	label := valueStreamLabelForStatus(stageStatus)
+	waitIDs := make([]int, 0, len(rows))
+	for _, row := range rows {
+		if strings.TrimSpace(row.Status) == "wait" {
+			waitIDs = append(waitIDs, row.ID)
+		}
+	}
+	pendingReview, pendingErr := s.repo.FindPendingReviewDemandIDs(ctx, account, waitIDs)
+	if pendingErr != nil {
+		return nil, pendingErr
+	}
 	items := make([]WorkItemDetail, 0, len(rows))
 	for _, row := range rows {
 		pri := ""
@@ -239,6 +249,7 @@ func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stage
 			pri = "P" + row.Pri
 		}
 		ownerDisp := resolveNextOwnerDisplay(row, displayMap)
+		_, canReview := pendingReview[row.ID]
 		items = append(items, WorkItemDetail{
 			Kind:         "demand",
 			ID:           fmt.Sprintf("US%d", row.ID),
@@ -249,6 +260,7 @@ func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stage
 			ZentaoUrl:    zentao.URL("demand", "view", fmt.Sprintf("demandID=%d", row.ID)),
 			ValueStream:  label,
 			ZentaoStatus: row.Status,
+			CanReview:    canReview,
 		})
 	}
 	if filter.scheduleIncomplete {

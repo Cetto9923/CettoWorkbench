@@ -60,12 +60,15 @@ var mysqlStageFilters = map[string]mysqlStageFilter{
 
 // Repo PO 工作台数据访问。
 type Repo struct {
+	// db 只读备库：首页列表/统计走这里，避免压主库。
 	db *gorm.DB
+	// writeDB 主库：评审等写操作必须走这里。备库失败时可能为 nil。
+	writeDB *gorm.DB
 }
 
-// NewRepo 创建 Repo。
-func NewRepo(db *gorm.DB) *Repo {
-	return &Repo{db: db}
+// NewRepo 创建 Repo。readDB 用于查询；writeDB 用于写入（可与 readDB 相同）。
+func NewRepo(readDB, writeDB *gorm.DB) *Repo {
+	return &Repo{db: readDB, writeDB: writeDB}
 }
 
 // DemandRow 业需列表投影（账号字段；展示名由 Service 用用户 map 解析，避免 JOIN zt_user）。
