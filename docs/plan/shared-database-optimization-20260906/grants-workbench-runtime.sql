@@ -16,7 +16,9 @@
 --   no real passwords
 --
 -- Replace <APP_HOST> with the MySQL host identity of the Workbench process
--- (often '127.0.0.1' or '%' depending on how the app connects).
+-- <APP_HOST> MUST be resolved before execution. Do NOT default to '%'.
+-- For the documented Mac→SSH-tunnel→VM MySQL path, resolved host is '127.0.0.1'.
+-- Other topologies (Workbench on VM, ZenTao via 10.211.55.2) need separate resolution.
 
 -- =============================================================================
 -- 0) CREATE USERS (DBA injects passwords; do not commit secrets)
@@ -106,7 +108,8 @@ GRANT SELECT ON `zentaopms`.`zt_notify` TO 'workbench_rw'@'<APP_HOST>';
 GRANT INSERT ON `zentaopms`.`zt_operation_logs` TO 'workbench_rw'@'<APP_HOST>';
 
 -- WB: login failures INSERT + DELETE (CleanOldFailures exists in source; currently no live caller)
-GRANT INSERT, DELETE ON `zentaopms`.`zt_login_failures` TO 'workbench_rw'@'<APP_HOST>';
+GRANT INSERT ON `zentaopms`.`zt_login_failures` TO 'workbench_rw'@'<APP_HOST>';
+-- DELETE intentionally omitted: CleanOldFailures has no production caller.
 
 -- WB: login logs INSERT
 GRANT INSERT ON `zentaopms`.`zt_login_logs` TO 'workbench_rw'@'<APP_HOST>';

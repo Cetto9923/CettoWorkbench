@@ -1,7 +1,7 @@
 # 工作台 × 禅道共享数据库优化 PLAN
 
 日期：2026-09-06
-状态：P0 / P1a / P1b-code **CLOSED**。**P1b-vm Preflight** 文档已产出（权限矩阵 + GRANT 模板 + Runbook）；**未执行** CREATE USER / GRANT / REVOKE。生产拓扑仍未验证。
+状态：P0 / P1a / P1b-code **CLOSED**。**P1b-vm Preflight Closeout** 已对齐矩阵↔SQL（见 `P1B-VM-GRANT-CHECKLIST.md`）。**仍未执行** CREATE USER / GRANT / REVOKE。
 代码基线：Claude-PO / 见 GitHub HEAD；P0 接手时工作区仅本目录未跟踪。
 
 ## 1. 目标与本次边界

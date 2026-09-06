@@ -2,7 +2,7 @@
 
 日期：2026-09-06
 依赖：`P0-AUDIT.md`
-状态：P1a / P1b-code **CLOSED**。**P1b-vm Preflight** 已产出 `P1B-VM-PERMISSIONS.md` / `P1B-VM-RUNBOOK.md` / `grants-workbench-runtime.sql`。**禁止**在未 Review 前执行 CREATE USER / GRANT / REVOKE。本 Agent **未**对目标库执行 DDL/GRANT。
+状态：P1a / P1b-code **CLOSED**。**P1b-vm Preflight Closeout** 已对齐矩阵↔SQL（`P1B-VM-GRANT-CHECKLIST.md`）。**禁止**未过 EXECUTION GATE 前执行 CREATE USER / GRANT。本 Agent **未**执行 DDL/GRANT。
 
 约束：不拆双连接事务；不改 RC；不接禅道 API；不引入通用框架；不扩大 file-length 基线；不顺手修无关文件。
 
