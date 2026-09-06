@@ -257,3 +257,28 @@ textarea,
   box-shadow: 0 0 0 0.14rem var(--color-primary-ring-soft);
   outline: none;
 }
+
+/* Theme Picker */
+.theme-picker-group .dropdown-item {
+  display: flex;
+  align-items: center;
+}
+
+.theme-picker-group .dropdown-item i:first-child {
+  margin-right: var(--space-2);
+}
+
+.theme-picker-group .dropdown-item .check-mark {
+  margin-left: auto;
+  opacity: 0;
+  color: var(--color-primary);
+}
+
+.theme-picker-group .dropdown-item[aria-checked="true"] {
+  background-color: var(--color-surface-hover);
+  color: var(--color-primary);
+}
+
+.theme-picker-group .dropdown-item[aria-checked="true"] .check-mark {
+  opacity: 1;
+}

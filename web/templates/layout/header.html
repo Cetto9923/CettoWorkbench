@@ -25,6 +25,7 @@ web/templates/layout/header.html 模块: 布局 职责:
         <span>{{ if .CurrentUser }}{{ .CurrentUser.DisplayName }}{{ else }}用户{{ end }}</span>
       </button>
       <div class="dropdown-menu">
+        {{ template "layout/themepicker" }}
         <form action="/logout" method="POST">
           <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}">
           <button type="submit" class="dropdown-item dropdown-item-danger topbar-dropdown-item"><i class="bi bi-box-arrow-right"></i><span>登出</span></button>
@@ -45,7 +46,7 @@ web/templates/layout/header.html 模块: 布局 职责:
   {{ end }} {{ if eq .LayoutNav "top" }} {{ template "layout/topnavPrimary" . }}
   {{ else }}
   <div class="topbar-primary-spacer" aria-hidden="true"></div>
-  {{ end }} {{ if eq .LayoutNav "sidebar" }}
+  {{ end }}
   <div class="topbar-actions">
     <div class="dropdown">
       <button
@@ -60,6 +61,7 @@ web/templates/layout/header.html 模块: 布局 职责:
         >
       </button>
       <div class="dropdown-menu">
+        {{ template "layout/themepicker" }}
         <form action="/logout" method="POST">
           <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}" />
           <button
@@ -73,7 +75,6 @@ web/templates/layout/header.html 模块: 布局 职责:
       </div>
     </div>
   </div>
-  {{ end }}
   {{ end }}
 </div>
 {{ if eq .LayoutNav "top" }}{{ template "layout/topnavSecondary" . }}{{ end }}
