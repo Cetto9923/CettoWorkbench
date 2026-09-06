@@ -167,6 +167,13 @@
     );
   }
 
+  function canShowReview(item) {
+    if (!item || String(item.kind || "") === "story") {
+      return false;
+    }
+    return !!item.canReview;
+  }
+
   function renderRow(item) {
     var id = displayId(item);
     var url = (item.zentaoUrl || "").trim();
@@ -175,9 +182,13 @@
       ? "<a " + zentaoLinkAttrs(url, "row-id-link") + ">" + escapeHtml(id) + "</a>"
       : "<span class=\"row-id-link\">" + escapeHtml(id) + "</span>";
     var action = actionLabel(item);
-    var actionHtml = url
-      ? "<a " + zentaoLinkAttrs(url, "action-btn primary") + ">" + escapeHtml(action) + "</a>"
-      : "<button type=\"button\" class=\"action-btn primary\" disabled>" + escapeHtml(action) + "</button>";
+    var actionHtml = "";
+    if (canShowReview(item)) {
+      actionHtml =
+        "<button type=\"button\" class=\"action-btn primary js-demand-review\" data-demand-id=\"" +
+        escapeHtml(item.id || "") +
+        "\">评审</button>";
+    }
     var titleInner =
       (pri ? "<span class=\"inline-pri " + escapeHtml(pri) + "\">" + escapeHtml(pri) + "</span>" : "") +
       escapeHtml(item.title || "");
@@ -243,6 +254,23 @@
     });
   }
 
+  function bindReviewButtons($list) {
+    $list.find(".js-demand-review").on("click", function () {
+      var demandId = String($(this).attr("data-demand-id") || "").trim();
+      var item = null;
+      for (var i = 0; i < state.items.length; i++) {
+        if (String(state.items[i].id || "") === demandId) {
+          item = state.items[i];
+          break;
+        }
+      }
+      if (!item || typeof window.openPoDemandReviewModal !== "function") {
+        return;
+      }
+      window.openPoDemandReviewModal(item);
+    });
+  }
+
   function bindPagination(total) {
     var $list = $("#top5List");
     $list.find(".js-show-all").on("click", function () {
@@ -292,6 +320,7 @@
     html += renderPagination(total);
     $("#top5List").html(html);
     bindZentaoLinks($("#top5List"));
+    bindReviewButtons($("#top5List"));
     bindPagination(total);
   }
 
@@ -303,12 +332,18 @@
   function refreshDemands(status) {
     state.status = status || "all";
     state.page = 1;
+    return reloadDemands();
+  }
+
+  function reloadDemands() {
     return loadDemands(state.status).then(function (items) {
       state.items = items;
       renderList();
       return items;
     });
   }
+
+  window.refreshPoHomeDemands = reloadDemands;
 
   function initValueStreamLinkage() {
     $(".home-vs-mini-card").on("click", function () {

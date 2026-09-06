@@ -13,7 +13,7 @@
 {{ define "content" }}
 {{ $pending := 0 }}
 {{ range .ValueStreamStages }}{{ if eq .Status "all" }}{{ $pending = .Count }}{{ end }}{{ end }}
-<div class="po-home">
+<div class="po-home" id="poHomeRoot" data-current-account="{{ if .CurrentUser }}{{ .CurrentUser.Account }}{{ end }}">
   <div class="page-hdr">
     <h2 title="需求治理视角 · 受理→澄清→排期→提测→测试→验收→发起交付→发布→评价反馈">工作台首页</h2>
     <span class="page-hdr-meta">今日行动 · 价值流推进</span>
@@ -94,8 +94,44 @@
     <span><i class="fas fa-database"></i> 数据来源：禅道</span>
   </div>
 </div>
+
+<div class="po-review-overlay" id="poDemandReviewOverlay"></div>
+<div class="po-review-modal" id="poDemandReviewModal" role="dialog" aria-labelledby="poDemandReviewTitle">
+  <div class="po-review-hdr">
+    <h3 id="poDemandReviewTitle">
+      <span>评审需求</span>
+      <span class="po-review-req-name" id="poDemandReviewName"></span>
+      <span class="po-review-req-id" id="poDemandReviewId"></span>
+    </h3>
+    <button type="button" class="po-review-close" id="poDemandReviewCloseBtn" aria-label="关闭"><i class="fas fa-xmark"></i></button>
+  </div>
+  <form class="po-review-form" id="poDemandReviewForm">
+    <div class="po-review-field">
+      <label for="poDemandReviewResult"><span class="req">*</span>评审结果</label>
+      <select id="poDemandReviewResult" name="result" class="select" required>
+        <option value="pass">确认通过</option>
+        <option value="refuse">拒绝</option>
+      </select>
+    </div>
+    <div class="po-review-field">
+      <label for="poDemandReviewFocus"><span class="req">*</span>是否需要重点关注</label>
+      <select id="poDemandReviewFocus" name="isNeedFocus" class="select" required>
+        <option value="0">否</option>
+        <option value="1">是</option>
+      </select>
+    </div>
+    <div class="po-review-field po-review-field--editor">
+      <label for="poDemandReviewComment">备注</label>
+      <textarea id="poDemandReviewComment" name="comment" class="textarea po-review-comment" rows="8" placeholder="可以填写评审意见"></textarea>
+    </div>
+    <div class="po-review-actions">
+      <button type="submit" class="po-review-submit" id="poDemandReviewSubmitBtn">评审需求</button>
+    </div>
+  </form>
+</div>
 {{ end }}
 
 {{ define "page_js" }}
+<script src="{{ asset "/static/js/po/homereview.js" }}"></script>
 <script src="{{ asset "/static/js/po/home.js" }}"></script>
 {{ end }}

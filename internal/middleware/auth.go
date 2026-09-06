@@ -50,7 +50,8 @@ func RequireLogin(mgr *scs.SessionManager, db *gorm.DB) gin.HandlerFunc {
 		}
 
 		userPerms := map[string]bool{
-			perm.AuthLogout.String(): true,
+			perm.AuthLogout.String():     true,
+			perm.PoDemandReview.String(): true, // 评审资格以禅道指派为准，登录用户即可调接口
 		}
 		if user.IsSuperAdmin {
 			for _, p := range perm.All() {
