@@ -1,7 +1,7 @@
 # 工作台 × 禅道共享数据库优化 PLAN
 
 日期：2026-09-06
-状态：P0 只读核验完成（`P0-AUDIT.md`）；P1a 已落地（`P1a-remove-runtime-ddl`）；**P1b-code 已落地**（PO 读 RO/写 RW + config 占位）。**P1b-vm 未做**（不执行 GRANT）。生产拓扑仍未验证。本 Agent **未**对目标库执行 DDL/DML/GRANT。
+状态：P0 / P1a / P1b-code **CLOSED**。**P1b-vm Preflight** 文档已产出（权限矩阵 + GRANT 模板 + Runbook）；**未执行** CREATE USER / GRANT / REVOKE。生产拓扑仍未验证。
 代码基线：Claude-PO / 见 GitHub HEAD；P0 接手时工作区仅本目录未跟踪。
 
 ## 1. 目标与本次边界
@@ -20,7 +20,7 @@
 | 排期直写不止两张表 | 成立。P0 全仓清单见 P0-AUDIT.md §3：另含 user/dept/role/menu/login/PO。排期写见 repo_scheduling_write.go、repo_story_link.go、service.go 窗口路径。 |
 | 跨产权混合事务 | 成立：service_scheduling_save.go:76、131；窗口 Create/Update service.go:331、366；任务弹窗 service_story_tasks.go:259。 |
 | 已有 API Client 可直接复用 | 成立（不能复用）。internal/pkg/zentao 只拼页面 URL。配置 zentao.api 无 Go 调用方。 |
-| 生产同用户、root、RR、没有备库 | 跟踪 YAML 不能证明生产。本机有效链是 WORKBENCH_MODE=dev → gitignore 的 config.dev.yaml。经 SSH 隧道的 **PD VM**（非生产）为 MySQL 8.0.46、RR、ROW binlog、账号全局 ALL。生产未连。 |
+| 生产同用户、root、RR、没有备库 | 跟踪 YAML 不能证明生产。本机有效链是 WORKBENCH_MODE=dev → gitignore 的 config.dev.yaml。经 SSH 隧道的 **PD VM**（非生产）为 MySQL 8.0.46、RR、ROW binlog；探测账号 `zentao@127.0.0.1` 现为 **`ALL PRIVILEGES` on `zentaopms.*` + `workbench.*`**（非 `*.*` 全局 ALL）。生产未连。 |
 | 已发生 AB-BA 死锁 | 仍不能认定。任务路径有 SELECT FOR UPDATE；story/demand 更新无 version CAS。 |
 | AutoMigrate 阻塞同 schema 所有查询 | 原始诊断过度；P1a 后已无运行期 AutoMigrate。若目标库尚缺表，由迁移账号执行 install 增量（评估该表 MDL），不是应用启动建表。 |
 | 切 RC 可立即解决并发 | 仍不成立。VM 当前 RR+ROW，P1d 另判。 |
@@ -48,7 +48,7 @@
 | P0 事实及产权盘点 | 全仓 Repo/Model/SQL；configs 加载链；禅道实际部署版；本目录后续 evidence 文档 | 逐动作盘点所有 DML、表产权、事务、写权限、API 覆盖；只读核验运行拓扑及数据库参数 | 完整动作→Service→Repo→表→owner→权限矩阵；未知项列出，禁止仅凭 zt_ 前缀分类 | 只读，无业务回退；诊断采样限时限量 | 2–4 |
 | P1a 去运行期 DDL | bootstrap schema 检查；middleware；db/install.sql（zt_operation_logs） | **已完成。** 见切片。原始问题为两处 AutoMigrate + install 缺表；现为只读启动检查 + install 已含表。 | 无 DDL 账号启动+写审计；缺列启动失败 | 切片 ID P1a-remove-runtime-ddl；不恢复 AutoMigrate | 1–2 |
 | P1b-code PO 读写 + 凭据占位 | `po.NewRepo(read, write)`；`configs/config.yaml` 占位 | 见切片。**读 RO / 写 RW**；不整模块切主库。不执行 GRANT。 | 写路径单测；config 无真实秘密；`WORKBENCH_*` 仍可覆盖 | 切片 ID P1b-code-po-rw-config | 0.5–1 |
-| P1b-vm 逐表授权 | DBA GRANT 脚本 | 见切片。禁止 REVOKE 禅道共用账号。依赖 P1b-code 已上线。 | 逐表授权+越权拒绝；禅道原账号不受影响 | 切片 ID P1b-runtime-grants；补 GRANT 不恢复 ALL | 1–2 |
+| P1b-vm 逐表授权 | DBA GRANT 脚本 + Runbook | **Preflight 已写**：`P1B-VM-PERMISSIONS.md`、`P1B-VM-RUNBOOK.md`、`grants-workbench-runtime.sql`。禁止 REVOKE 禅道共用账号。执行须另开 Review。 | 逐表授权+越权拒绝；禅道原账号不受影响 | 切片 ID P1b-runtime-grants；补 GRANT 不恢复 ALL | 1–2 |
 | P1c 写边界防新增 | docs/engineering/database.md；scripts 现有质量入口及精确基线 | P0 后另行治理切片，冻结现有直写位置及用途；扫描 GORM Model 映射和原生 SQL，未知候选人工审查 | 新直写与迁移 DDL 回归样例被阻止；删除旧项同步收缩清单 | 可回退检测器缺陷修复，不扩大 legacy 目录豁免；无禅道数据变更 | 1–2 |
 | P1d RC 对照实验 | internal/pkg/database/database.go:95 配置入口；配置模板；tests/integration/ 对照用例 | 核验引擎版本、binlog_format、会话参数；审查依赖事务稳定快照的路径 | 多个新建物理连接读回隔离级别；RR/RC 并发业务断言通过；等待和延迟无不可接受回归 | 单独恢复原隔离配置并更换连接池；不改禅道全局隔离级别；测试失败则保留原值 | 1–3 |
 | P2a API 能力与契约 | 禅道部署源码/API 路由；schedule 请求/Service；internal/pkg/zentao | 对照完整业务动作检验现有 API、权限及事务；仅缺失时新增业务端点；架构确认后实现 | 字段、权限、对象范围、原子边界、冲突、幂等、查询结果协议全部可测试 | 契约阶段不导流；不能仅根据一个 story.php 缺 POST 推断全站不支持创建 | 2–4 |
