@@ -419,5 +419,23 @@
     initFromUrl();
     syncUrl();
     refresh();
+
+    var tbody = $("todosTbody");
+    if (tbody) {
+      tbody.addEventListener("click", function (e) {
+        var target = e.target.closest("a.table-id-link, a.table-title-link");
+        if (!target) { return; }
+        var row = target.closest("tr");
+        if (!row) { return; }
+        var idEl = row.querySelector(".todos-item-id");
+        if (idEl && window.DemandDetail) {
+          var raw = (idEl.textContent || "").trim();
+          if (/^US\d+/i.test(raw) || /^\d+$/.test(raw)) {
+            e.preventDefault();
+            window.DemandDetail.open(raw);
+          }
+        }
+      });
+    }
   });
 })();

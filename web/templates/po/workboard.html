@@ -6,7 +6,10 @@
 全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
 页面字段: .Title (string), .PageTitle (string), .BaseUrl (string)
 ========================================================================== */}}
-{{ define "page_css" }}<link rel="stylesheet" href="{{ asset "/static/css/po/board.css" }}">{{ end }}
+{{ define "page_css" }}
+<link rel="stylesheet" href="{{ asset "/static/css/po/board.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/demand-detail.css" }}">
+{{ end }}
 
 {{ define "content" }}
 <div class="po-board">
@@ -128,4 +131,8 @@
 </div>
 {{ end }}
 
-{{ define "page_js" }}<script src="{{ asset "/static/js/po/workboard.js" }}"></script>{{ end }}
+{{ define "page_js" }}
+<script src="{{ asset "/static/js/po/demand-detail-render.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail.js" }}"></script>
+<script src="{{ asset "/static/js/po/workboard.js" }}"></script>
+{{ end }}

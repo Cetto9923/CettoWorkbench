@@ -1,7 +1,7 @@
 const assert = require("assert");
 global.window = global;
 
-const PersonalList = require("../../web/static/js/po/personal-list.js");
+const PersonalList = require("../../../web/static/js/po/personal-list.js");
 
 console.log("=== Running PersonalList unit & behavioral tests ===");
 
@@ -125,4 +125,30 @@ console.log("PASS: escapeHtml escapes special characters securely");
   assert.ok(container.innerHTML.includes('data-page="1"'));
   assert.ok(container.innerHTML.includes('data-page="10"'));
   console.log("PASS: Pagination renders ellipsis window for large page counts");
+})();
+
+// 5. Callback arity (1-arg vs 2-arg onDone) test
+(function testCallbackArity() {
+  global.window.fetch = () => Promise.resolve({
+    ok: true,
+    status: 200,
+    json: async () => ({ success: true, items: [1, 2, 3], total: 3 })
+  });
+
+  // 1-arg callback: function(payload)
+  const controller1 = PersonalList.createController({});
+  controller1.fetch("/api/test-1", {}, function (payload) {
+    assert.ok(payload !== null, "1-arg callback must receive payload");
+    assert.strictEqual(payload.total, 3);
+    console.log("PASS: 1-arg onDone(payload) correctly receives response payload");
+  });
+
+  // 2-arg callback: function(err, payload)
+  const controller2 = PersonalList.createController({});
+  controller2.fetch("/api/test-2", {}, function (err, payload) {
+    assert.strictEqual(err, null, "2-arg callback err must be null on success");
+    assert.ok(payload !== null, "2-arg callback must receive payload");
+    assert.strictEqual(payload.total, 3);
+    console.log("PASS: 2-arg onDone(err, payload) correctly receives err and payload");
+  });
 })();

@@ -1,5 +1,5 @@
 const assert = require("assert");
-const { getCsrfToken, scheduleFetch, isSessionExpired } = require("../../web/static/js/schedule/schedulefetch.js");
+const { getCsrfToken, scheduleFetch, isSessionExpired } = require("../../../web/static/js/schedule/schedulefetch.js");
 
 console.log("=== Running CSRF token propagation tests (Phase X0) ===");
 

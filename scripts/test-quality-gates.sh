@@ -78,8 +78,31 @@ printf '# comment\n' >scripts/quality-baseline/file-length.tsv
 assert_result fail 'file-length 501 lines with comment baseline rejected' bash scripts/check-file-length.sh
 printf 'large.go\t501\n' >scripts/quality-baseline/file-length.tsv
 assert_result pass 'file-length exact legacy baseline' bash scripts/check-file-length.sh
+git add scripts/quality-baseline/file-length.tsv large.go
+git -c user.name='Test' -c user.email='test@example.com' commit -q -m "initial baseline with large.go"
+
 printf '// growth\n' >>large.go
 assert_result fail 'file-length growth rejected' bash scripts/check-file-length.sh
+
+# Anti-loosening test: simulating 660->728 expansion + concurrent baseline edit
+printf 'large.go\t502\n' >scripts/quality-baseline/file-length.tsv
+assert_result fail 'file-length baseline loosening rejected' bash scripts/check-file-length.sh
+
+# Anti-expansion test: adding a new over-500 file and adding to baseline
+awk 'BEGIN { for (i=0; i<501; i++) print "// fixture2" }' >new_large.go
+printf 'large.go\t501\nnew_large.go\t501\n' >scripts/quality-baseline/file-length.tsv
+assert_result fail 'file-length baseline expansion rejected' bash scripts/check-file-length.sh
+rm new_large.go
+
+# Reset baseline to committed state for stale debt check
+git checkout scripts/quality-baseline/file-length.tsv
 rm large.go
 assert_result fail 'file-length stale debt rejected' bash scripts/check-file-length.sh
+
+# Ratchet down test: file shrank to <=500 lines and removed from baseline
+awk 'BEGIN { for (i=0; i<400; i++) print "// fixture" }' >large.go
+: >scripts/quality-baseline/file-length.tsv
+assert_result pass 'file-length debt eliminated and baseline ratcheted' bash scripts/check-file-length.sh
+rm large.go
+
 printf 'Quality gate regression tests: %s passed\n' "$passed"

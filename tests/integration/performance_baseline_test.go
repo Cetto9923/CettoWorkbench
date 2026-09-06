@@ -37,10 +37,9 @@ func openIsolatedTestDB(t *testing.T) *gorm.DB {
 		t.Skip("WB_TEST_MYSQL_DSN not set: isolated live MySQL performance execution skipped")
 	}
 
-	// 严格安全校验：绝对禁止指向 zentaopms 生产/业务库
-	lowerDSN := strings.ToLower(dsn)
-	if strings.Contains(lowerDSN, "/zentaopms") || strings.Contains(lowerDSN, "dbname=zentaopms") {
-		t.Fatalf("SAFETY VIOLATION: WB_TEST_MYSQL_DSN points to business database zentaopms")
+	// 严格白名单与前置安全校验：拦截非法实例、非 _test 库及缺少 DDL opt-in
+	if err := ValidateTestDSN(dsn, true); err != nil {
+		t.Fatalf("SAFETY VIOLATION: %v", err)
 	}
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})

@@ -26,13 +26,18 @@ import (
 
 // Handler 处理 PO 工作台页面请求。
 type Handler struct {
-	svc    *Service
-	logger *zap.Logger
+	svc       *Service
+	detailSvc *DetailService
+	logger    *zap.Logger
 }
 
 // NewHandler 创建 PO 模块 Handler。
 func NewHandler(svc *Service, logger *zap.Logger) *Handler {
-	return &Handler{svc: svc, logger: logger}
+	var detailSvc *DetailService
+	if svc != nil {
+		detailSvc = svc.DetailService()
+	}
+	return &Handler{svc: svc, detailSvc: detailSvc, logger: logger}
 }
 
 // RegisterRoutes 注册 PO 工作台路由（挂载在已配置登录与操作日志的中间件组上）。
@@ -42,6 +47,8 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 
 	g.GET("/home", middleware.RequirePerm(perm.PoHomeList), h.Home)
 	g.GET("/demands", middleware.RequirePerm(perm.PoHomeList), h.Demands)
+	g.GET("/demands/:id/detail", middleware.RequirePerm(perm.PoHomeList), h.DemandDetail)
+	g.GET("/demands/:id", middleware.RequirePerm(perm.PoHomeList), h.DemandDetailView)
 	g.GET("/todos", middleware.RequirePerm(perm.PoTodoList), h.Todos)
 	g.GET("/todos/items", middleware.RequirePerm(perm.PoTodoList), h.TodosItems)
 	g.GET("/done", middleware.RequirePerm(perm.PoDoneList), h.Done)

@@ -3,14 +3,17 @@ body.po-workbench-shell {
   --sidebar-width: 200px;
   --topbar-height: 56px;
   --topbar-stack-height: 56px;
-  background: #f5f6f8;
+  background: #f8fafc;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  color: #0f172a;
 }
 
 body.po-workbench-shell .topbar {
   left: var(--sidebar-width);
   min-height: 56px;
   height: 56px;
-  border-bottom-color: #e5e7eb;
+  border-bottom: 1px solid #e2e8f0;
+  background: #ffffff;
 }
 
 body.po-workbench-shell .topbar-row {
@@ -140,9 +143,10 @@ body.po-workbench-shell .sidebar {
   gap: 8px;
   height: 56px;
   padding: 0 16px;
-  border-bottom: 1px solid #e5e7eb;
-  color: #1f2937;
+  border-bottom: 1px solid #e2e8f0;
+  color: #0f172a;
   font-size: 14px;
+  font-weight: 700;
 }
 
 .po-brand-logo {
@@ -152,7 +156,7 @@ body.po-workbench-shell .sidebar {
   width: 24px;
   height: 24px;
   border-radius: 6px;
-  background: #1e40af;
+  background: #2563eb;
   color: #fff;
   font-size: 12px;
   font-weight: 700;
@@ -165,7 +169,7 @@ body.po-workbench-shell .sidebar {
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: #98a2b3;
+  color: #94a3b8;
   cursor: pointer;
   opacity: 0;
   transition: opacity .15s ease;
@@ -179,44 +183,61 @@ body.po-workbench-shell .sidebar-body {
 }
 
 body.po-workbench-shell .po-sidebar-nav {
-  gap: 0;
+  gap: 2px;
   padding: 8px;
 }
 
 body.po-workbench-shell .sidebar .nav-section-label {
-  height: 28px;
+  height: 26px;
   margin: 0;
-  padding: 8px 12px 4px;
-  color: #98a2b3;
-  font-size: 10px;
-  font-weight: 700;
+  padding: 6px 12px 2px;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 body.po-workbench-shell .sidebar .nav-item {
-  min-height: 34px;
-  padding: 8px 12px;
+  min-height: 32px;
+  padding: 6px 12px;
   border-radius: 6px;
-  color: #667085;
+  color: #475569;
   font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.15s ease;
+}
+
+body.po-workbench-shell .sidebar .nav-item:hover {
+  background: #f8fafc;
+  color: #0f172a;
 }
 
 body.po-workbench-shell .sidebar .nav-item.active {
-  background: #eef3ff;
-  color: #1e40af;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 600;
 }
 
 body.po-workbench-shell .sidebar .nav-divider {
-  margin: 8px 0;
-  background: #e5e7eb;
+  margin: 6px 0;
+  background: #e2e8f0;
 }
 
 body.po-workbench-shell .sidebar .nav-badge {
-  color: #1e40af;
-  background: #eef3ff;
+  color: #1d4ed8;
+  background: #eff6ff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 body.po-workbench-shell .sidebar .badge {
-  background: #dc2626;
+  background: #ef4444;
 }
 
 body.po-workbench-shell .main {
@@ -224,7 +245,7 @@ body.po-workbench-shell .main {
   min-height: calc(100vh - 56px);
   padding: 12px 20px 40px;
   overflow-y: auto;
-  background: #f5f6f8;
+  background: #f8fafc;
 }
 
 body.po-workbench-shell .main::-webkit-scrollbar { width: 8px; }
