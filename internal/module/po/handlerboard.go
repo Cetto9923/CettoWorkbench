@@ -16,6 +16,7 @@ import (
 
 	"workbench/internal/constants"
 	"workbench/internal/middleware"
+	"workbench/internal/pkg/errorx"
 	"workbench/internal/pkg/perm"
 	"workbench/internal/pkg/render"
 )
@@ -151,6 +152,16 @@ func (h *BoardHandler) BoardTaskItems(c *gin.Context) {
 	}
 	resp, err := h.svc.BoardTask(c.Request.Context(), actor, req)
 	if err != nil {
+		if bizErr, ok := errorx.IsBizError(err); ok {
+			switch bizErr.Code {
+			case errorx.ErrCodeNotFound:
+				c.JSON(http.StatusNotFound, gin.H{"message": bizErr.Msg})
+				return
+			case errorx.ErrCodeForbidden:
+				c.JSON(http.StatusForbidden, gin.H{"message": bizErr.Msg})
+				return
+			}
+		}
 		h.logger.Error("po board task", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取任务看板失败"})
 		return

@@ -103,7 +103,13 @@
           if (typeof opts.onSuccess === "function") {
             opts.onSuccess(payload);
           }
-          if (typeof onDone === "function") { onDone(null, payload); }
+          if (typeof onDone === "function") {
+            if (onDone.length >= 2) {
+              onDone(null, payload);
+            } else {
+              onDone(payload);
+            }
+          }
         })
         .catch(function (err) {
           if (err && err.name === "AbortError") { return; } // 用户主动取消/切换，不报错
@@ -129,7 +135,13 @@
           if (typeof opts.onError === "function") {
             opts.onError(err);
           }
-          if (typeof onDone === "function") { onDone(err, null); }
+          if (typeof onDone === "function") {
+            if (onDone.length >= 2) {
+              onDone(err, null);
+            } else {
+              onDone(null);
+            }
+          }
         });
     }
 

@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"workbench/internal/model"
+	"workbench/internal/pkg/errorx"
 )
 
 // BoardDemand 我的需求看板（PO 视角工作对象树）。
@@ -85,6 +86,16 @@ func (s *Service) BoardGroupMetrics(ctx context.Context, actor *model.User, req 
 func (s *Service) BoardTask(ctx context.Context, actor *model.User, req BoardTaskReq) (*BoardTaskResp, error) {
 	if actor == nil || strings.TrimSpace(actor.Account) == "" {
 		return &BoardTaskResp{Columns: nil}, nil
+	}
+	// 对象级鉴权：通过故事抽屉查看特定故事任务时，必须校验当前账号对该故事的对象级访问权限
+	if req.StoryID > 0 && !actor.IsSuperAdmin {
+		allowed, err := s.repo.CheckStoryAccess(ctx, actor.Account, uint(req.StoryID))
+		if err != nil {
+			return nil, err
+		}
+		if !allowed {
+			return nil, errorx.New(errorx.ErrCodeForbidden, "无权访问该研发需求任务")
+		}
 	}
 	teams, err := s.repo.FindBoardTeamgroups(ctx, actor.Account)
 	if err != nil {

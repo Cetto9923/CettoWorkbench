@@ -27,13 +27,14 @@ const (
 
 	TEMPLATE_DEBUG_SQLPERF = "web/templates/debug/sqlperf.html"
 
-	TEMPLATE_PO_HOME         = "po/home"
-	TEMPLATE_PO_TODOS        = "po/todos"
-	TEMPLATE_PO_DONE         = "po/done"
-	TEMPLATE_PO_NOTICE       = "po/notice"
-	TEMPLATE_PO_FOLLOW       = "po/follow"
-	TEMPLATE_PO_BOARD_DEMAND = "po/workboard"
-	TEMPLATE_PO_BOARD_TASK   = "po/workboard"
+	TEMPLATE_PO_HOME          = "po/home"
+	TEMPLATE_PO_TODOS         = "po/todos"
+	TEMPLATE_PO_DONE          = "po/done"
+	TEMPLATE_PO_NOTICE        = "po/notice"
+	TEMPLATE_PO_FOLLOW        = "po/follow"
+	TEMPLATE_PO_BOARD_DEMAND  = "po/workboard"
+	TEMPLATE_PO_BOARD_TASK    = "po/workboard"
+	TEMPLATE_PO_DEMAND_DETAIL = "po/demand-detail"
 
 	TEMPLATE_SCHEDULE_INDEX = "schedule/index"
 )

@@ -1,5 +1,5 @@
 const assert = require("assert");
-const { isSessionExpired } = require("../../web/static/js/schedule/schedulefetch.js");
+const { isSessionExpired } = require("../../../web/static/js/schedule/schedulefetch.js");
 
 console.log("=== Running auth error & session expiry tests (Phase H0) ===");
 

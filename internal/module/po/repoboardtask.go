@@ -9,6 +9,7 @@ package po
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -208,4 +209,68 @@ func (r *Repo) FindBoardTaskOwners(ctx context.Context, teamgroupID uint, displa
 		out = append(out, BoardOwnerOption{Account: row.AssignedTo, Display: display, Count: row.Count})
 	}
 	return out, nil
+}
+
+// CheckStoryAccess 校验指定账号对故事是否具备访问权限（对象级鉴权）。
+// 适用范围：
+// 1. 故事指派给该用户或由该用户创建；
+// 2. 故事派生自需求：用户为该需求的 PM / QD / RD / BRA / assignedTo 或需求所属敏捷小组成员；
+// 3. 用户承接或创建了该故事下的任意任务。
+func (r *Repo) CheckStoryAccess(ctx context.Context, account string, storyID uint) (bool, error) {
+	if r == nil || r.db == nil || account == "" || storyID == 0 {
+		return false, nil
+	}
+
+	var story struct {
+		ID         int64  `gorm:"column:id"`
+		FromDemand int64  `gorm:"column:fromDemand"`
+		AssignedTo string `gorm:"column:assignedTo"`
+		OpenedBy   string `gorm:"column:openedBy"`
+	}
+	err := r.db.WithContext(ctx).Table("zt_story").
+		Where("id = ? AND deleted = ?", storyID, "0").
+		Select("id, fromDemand, assignedTo, openedBy").
+		Take(&story).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	if story.AssignedTo == account || story.OpenedBy == account {
+		return true, nil
+	}
+
+	if story.FromDemand > 0 {
+		var demandCount int64
+		err = r.db.WithContext(ctx).Table("zt_demand AS d").
+			Where("d.id = ? AND d.deleted = ?", story.FromDemand, "0").
+			Where(`d.assignedTo = ? OR d.QD = ? OR d.RD = ? OR d.BRA = ?
+				OR d.id IN (SELECT demand FROM zt_demandclarify WHERE PM = ?)
+				OR (d.teamGroup > 0 AND d.teamGroup IN (
+					SELECT root FROM zt_team WHERE type = 'teamgroup' AND account = ?
+				))`, account, account, account, account, account, account).
+			Count(&demandCount).Error
+		if err != nil {
+			return false, err
+		}
+		if demandCount > 0 {
+			return true, nil
+		}
+	}
+
+	var taskCount int64
+	err = r.db.WithContext(ctx).Table("zt_task").
+		Where("story = ? AND deleted = ?", storyID, "0").
+		Where("assignedTo = ? OR openedBy = ?", account, account).
+		Count(&taskCount).Error
+	if err != nil {
+		return false, err
+	}
+	if taskCount > 0 {
+		return true, nil
+	}
+
+	return false, nil
 }

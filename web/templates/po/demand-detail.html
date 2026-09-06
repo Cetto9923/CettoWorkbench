@@ -1,0 +1,65 @@
+{{/* ==========================================================================
+文件: web/templates/po/demand-detail.html
+模块: PO 工作台
+职责: 业务需求统一详情独立访问页面（五大 Tab、父子导航、去重优化）
+全局字段: .CurrentUser, .CSRFToken, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .PageTitle (string), .DemandID (string)
+========================================================================== */}}
+{{ define "page_css" }}
+<link rel="stylesheet" href="{{ asset "/static/css/po/demand-detail.css" }}">
+{{ end }}
+
+{{ define "content" }}
+<div class="dd-standalone-page">
+  <div style="margin-bottom: 12px;">
+    <a href="/home" class="dd-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px;">
+      <span>←</span> 返回工作台
+    </a>
+  </div>
+  <div class="dd-card" style="box-shadow: 0 4px 20px rgba(0,0,0,0.06); border-radius: 10px; overflow:hidden;">
+    <header class="dd-head" id="ddHead"></header>
+    <nav id="ddRelationNav"></nav>
+    <nav class="dd-tabs" id="ddTabs">
+      <button class="dd-tab active" data-tab="overview" onclick="DemandDetail.switchTab('overview')">整体概览</button>
+      <button class="dd-tab" data-tab="requirement" onclick="DemandDetail.switchTab('requirement')">需求与澄清 <span class="dd-tab-count" id="ddTabCountReq"></span></button>
+      <button class="dd-tab" data-tab="execution" onclick="DemandDetail.switchTab('execution')">研发与测试 <span class="dd-tab-count" id="ddTabCountExec"></span></button>
+      <button class="dd-tab" data-tab="delivery" onclick="DemandDetail.switchTab('delivery')">交付上线</button>
+      <button class="dd-tab" data-tab="history" onclick="DemandDetail.switchTab('history')">过程记录</button>
+    </nav>
+    <main class="dd-body" id="ddBody" style="min-height: 500px;"></main>
+  </div>
+</div>
+{{ end }}
+
+{{ define "page_js" }}
+<script src="{{ asset "/static/js/po/demand-detail-render.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail.js" }}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var did = "{{ .DemandID }}";
+  if (did) {
+    // 独立页面模式：直接挂在当前容器
+    var cleanId = did.replace(/^US/i, "");
+    fetch("/demands/" + cleanId + "/detail", {
+      headers: { "Accept": "application/json" }
+    })
+      .then(function (res) {
+        if (!res.ok) throw new Error("加载失败 (" + res.status + ")");
+        return res.json();
+      })
+      .then(function (data) {
+        if (!data || !data.success) throw new Error((data && data.message) || "加载异常");
+        window.DemandDetail.renderContentWithData = function() {
+          // reuse logic
+        };
+        // 触发 DemandDetail 内部打开
+        DemandDetail.open(did);
+      })
+      .catch(function (err) {
+        var el = document.getElementById("ddBody");
+        if (el) el.innerHTML = '<div style="text-align:center;padding:40px;color:#d32f2f;">' + err.message + '</div>';
+      });
+  }
+});
+</script>
+{{ end }}

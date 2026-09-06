@@ -41,15 +41,28 @@ var valueStreamStages = []struct {
 
 // Service PO 工作台业务逻辑。
 type Service struct {
-	repo     *Repo
-	schedule *schedule.Service
-	userSvc  *user.Service
-	logger   *zap.Logger
+	repo      *Repo
+	detailSvc *DetailService
+	schedule  *schedule.Service
+	userSvc   *user.Service
+	logger    *zap.Logger
 }
 
 // NewService 创建 Service。
 func NewService(repo *Repo, scheduleSvc *schedule.Service, userSvc *user.Service, logger *zap.Logger) *Service {
-	return &Service{repo: repo, schedule: scheduleSvc, userSvc: userSvc, logger: logger}
+	var detailSvc *DetailService
+	if repo != nil && repo.db != nil {
+		detailSvc = NewDetailService(NewDemandDetailRepo(repo.db))
+	}
+	return &Service{repo: repo, detailSvc: detailSvc, schedule: scheduleSvc, userSvc: userSvc, logger: logger}
+}
+
+// DetailService 返回统一详情服务。
+func (s *Service) DetailService() *DetailService {
+	if s == nil {
+		return nil
+	}
+	return s.detailSvc
 }
 
 // Home 加载首页价值流阶段统计。

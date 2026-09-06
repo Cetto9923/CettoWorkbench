@@ -9,39 +9,56 @@
 {{ define "page_css" }}
 <link rel="stylesheet" href="{{ asset "/static/css/po/personal-workspace.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/po/home.css" }}">
-<link rel="stylesheet" href="{{ asset "/static/css/po/homecompact.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/demand-detail.css" }}">
 {{ end }}
 
 {{ define "content" }}
-{{ $total := 0 }}
-{{ range .ValueStreamStages }}{{ if eq .Status "all" }}{{ $total = .Count }}{{ end }}{{ end }}
 <div class="po-personal-workspace po-home">
-  <div class="workspace-header">
+  <!-- 1. 紧凑页头与右上角焦点 Chips — 统一外框：workspace-header (同 todos/done/notice/follow) -->
+  <header class="workspace-header">
     <div class="workspace-header-left">
       <h2>工作台首页</h2>
-      <p>今日行动 · 价值流推进</p>
+      <p>今日行动 · 全流程价值流推进</p>
     </div>
-    <div class="header-quick-filters" id="homeFocusChips" role="group" aria-label="快捷焦点">
-      <button type="button" class="header-quick-chip active" data-focus="all" aria-pressed="true">全部 <em>{{ if .PageError }}—{{ else }}{{ $total }}{{ end }}</em></button>
-      <button type="button" class="header-quick-chip" data-focus="today" aria-pressed="false" title="待业务决策 (WAIT DECISION)">今日必推 <em>{{ if .PageError }}—{{ else }}{{ .KPI.Today }}{{ end }}</em></button>
-      <button type="button" class="header-quick-chip warning" data-focus="blocked" aria-pressed="false" title="缺少阻塞事实数据源 (BLOCKED)">阻塞 <em>{{ if .PageError }}—{{ else }}{{ .KPI.Blocked }}{{ end }}</em></button>
-      <button type="button" class="header-quick-chip danger" data-focus="overdue" aria-pressed="false" title="待业务决策 (WAIT DECISION)">超期 <em>{{ if .PageError }}—{{ else }}{{ .KPI.Overdue }}{{ end }}</em></button>
-      <button type="button" class="header-quick-chip warning" data-focus="suspended" aria-pressed="false" title="缺少挂起数据源 (BLOCKED)">挂起 <em>{{ if .PageError }}—{{ else }}{{ .KPI.Suspended }}{{ end }}</em></button>
+    <div class="header-quick-filters" id="homeQuickChips" role="group" aria-label="快捷焦点">
+      <button type="button" class="header-quick-chip active" data-home-focus="all" aria-pressed="true">
+        <span>全部</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.MyPending }}{{ end }}</em>
+      </button>
+      <a href="/todos?focus=today" class="header-quick-chip" title="进入今日到期待办">
+        <span>今日必推</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.Today }}{{ end }}</em>
+      </a>
+      <a href="/todos?focus=blocked" class="header-quick-chip warning" title="进入阻塞待办">
+        <i class="fas fa-circle-exclamation" aria-hidden="true"></i>
+        <span>阻塞</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.Blocked }}{{ end }}</em>
+      </a>
+      <a href="/todos?focus=overdue" class="header-quick-chip danger" title="进入超期待办">
+        <span>超期</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.Overdue }}{{ end }}</em>
+      </a>
+      <a href="/todos?focus=suspended" class="header-quick-chip" title="查看挂起事项">
+        <span>挂起</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.Suspended }}{{ end }}</em>
+      </a>
     </div>
-  </div>
+  </header>
 
   {{ if .PageError }}
-  <div class="workspace-alert workspace-alert-error" role="alert" style="margin-bottom:12px;padding:8px 12px;background:#fef2f2;border:1px solid #fca5a5;border-radius:4px;color:#991b1b;font-size:13px;display:flex;align-items:center;gap:8px;">
+  <div class="workspace-alert workspace-alert-error" role="alert" style="margin-bottom:10px;padding:8px 12px;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;color:#991b1b;font-size:12px;display:flex;align-items:center;gap:8px;">
     <i class="fas fa-circle-exclamation"></i>
     <span>{{ .PageError }}，统计数据暂不可用</span>
   </div>
   {{ end }}
 
-  <div class="home-vs-section home-vs-section--primary" id="homeValueStreamSection">
+  <!-- 2. 精炼价值流管道轨 (Value Stream Pipeline) - 10 阶段彩色徽标卡片 -->
+  <div class="home-page-card home-vs-section" id="homeValueStreamSection">
     <div class="home-vs-hdr">
-      <div>
-        <div class="home-vs-title"><i class="fas fa-route"></i> 需求价值流</div>
-        <div class="home-vs-desc">生命周期全景 · 点击阶段筛选行动列表</div>
+      <div class="home-vs-title-group">
+        <i class="fas fa-route text-blue"></i>
+        <span class="home-vs-title">需求价值全景流</span>
+        <span class="home-vs-desc">点击阶段卡片联动筛选下方行动列表</span>
+      </div>
+      <div class="home-vs-meta">
+        {{ range $i, $stage := .ValueStreamStages }}{{ if eq $stage.Status "all" }}
+        <span>业务需求共 <strong class="text-mono">{{ if $.PageError }}—{{ else }}{{ $stage.DemandCount }}{{ end }}</strong> 条 · 研发需求共 <strong class="text-mono">{{ if $.PageError }}—{{ else }}{{ $stage.StoryCount }}{{ end }}</strong> 条</span>
+        {{ end }}{{ end }}
       </div>
     </div>
     <div class="home-vs-compact-scroll" id="homeVsCompactScroll">
@@ -49,13 +66,19 @@
         <div class="home-vs-compact-row">
           {{ range $i, $stage := .ValueStreamStages }}
           <button type="button"
-            class="home-vs-mini-card{{ if eq $i 0 }} active{{ else if eq $stage.Count 0 }} empty{{ end }}"
+            class="home-vs-mini-card stage-{{ $stage.Status }}{{ if eq $i 0 }} active{{ else if eq $stage.Count 0 }} empty{{ end }}"
             data-vs-status="{{ $stage.Status }}"
             aria-pressed="{{ if eq $i 0 }}true{{ else }}false{{ end }}"
             title="{{ $stage.Label }} · 共 {{ $stage.Count }} 条">
-            <span class="vs-mini-name">{{ $stage.Label }}</span>
-            <span class="vs-mini-count">{{ if $.PageError }}暂不可用{{ else }}{{ $stage.Count }}{{ end }}</span>
-            <span class="vs-mini-meta">{{ if $.PageError }}暂不可用{{ else }}业需 {{ $stage.DemandCount }} · 研需 {{ $stage.StoryCount }}{{ end }}</span>
+            <div class="vs-card-top">
+              <span class="vs-mini-name">{{ $stage.Label }}</span>
+              {{ if eq $stage.Status "all" }}<i class="fas fa-check vs-status-icon"></i>
+              {{ else if eq $stage.Status "schedule" }}<span class="vs-status-dot dot-amber"></span>
+              {{ else if eq $stage.Status "waitacceptance" }}<span class="vs-status-dot dot-blue"></span>
+              {{ end }}
+            </div>
+            <div class="vs-mini-count">{{ if $.PageError }}—{{ else }}{{ $stage.Count }}{{ end }}</div>
+            <div class="vs-mini-meta">{{ if $.PageError }}暂不可用{{ else if eq $stage.Status "all" }}全量汇总{{ else }}业{{ $stage.DemandCount }} · 研{{ $stage.StoryCount }}{{ end }}</div>
           </button>
           {{ end }}
         </div>
@@ -63,67 +86,182 @@
     </div>
   </div>
 
-  <div class="top5-section workspace-panel" id="top5Section">
-    <div class="home-section-hdr">
-      <div class="section-title" id="top5Title"><i class="fas fa-list-check"></i>统一行动列表 · 全部生命周期</div>
-    </div>
-    <div class="table-scroll-container" id="top5List">
-      <table class="workspace-table home-action-table">
-        <thead>
-          <tr>
-            <th class="c-id">ID</th>
-            <th class="c-title">事项</th>
-            <th class="c-stage">当前阶段</th>
-            <th class="c-zt-status">原始状态</th>
-            <th class="c-next">下一步</th>
-            <th class="c-owner">下一责任人</th>
-            <th class="c-actions">操作</th>
-          </tr>
-        </thead>
-        <tbody id="top5Tbody">
-          <tr><td colspan="7" class="state-placeholder">正在加载行动列表…</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="state-placeholder" id="top5Empty" hidden>当前阶段暂无待推进事项</div>
-    <div class="state-placeholder error" id="top5Error" hidden>
-      加载行动列表失败，请检查网络或刷新重试
-      <button type="button" class="retry-btn" id="homeRetryBtn">重试</button>
-    </div>
-    <div class="workspace-pagination" id="homePagination" hidden></div>
-  </div>
+  <!-- 3. 主体工作双栏布局（左侧行动列表 + 右侧聚焦专区与版本窗口） -->
+  <div class="home-content-grid">
+    <!-- 左侧主行动工作区 -->
+    <section class="top5-section home-page-card" id="top5Section">
+      <!-- 统一标准筛选工具栏 -->
+      <div class="workspace-toolbar home-toolbar">
+        <div class="toolbar-left-group">
+          <label class="workspace-search">
+            <span aria-hidden="true">⌕</span>
+            <input type="search" id="homeKeyword" placeholder="搜索 ID、标题或负责人" aria-label="关键词">
+          </label>
+          <div class="relation-segment" id="homeRelationSegment" aria-label="我的关系">
+            <button type="button" class="active" data-relation="all">全部</button>
+            <button type="button" data-relation="in_charge">我负责</button>
+            <button type="button" data-relation="cooperate">我配合</button>
+            <button type="button" data-relation="follow">我关注</button>
+          </div>
+          <select id="homeObjectType" aria-label="具体对象">
+            <option value="all">具体对象：全部</option>
+            <option value="demand">业务需求 (US)</option>
+            <option value="story">研发需求 (Story)</option>
+          </select>
+          <select id="homePriority" aria-label="优先级">
+            <option value="all">优先级：全部</option>
+            <option value="p1">P1 高优</option>
+            <option value="p2">P2 中优</option>
+            <option value="p3">P3/P4 一般</option>
+          </select>
+          <button type="button" id="homeResetBtn" class="workspace-btn">重置</button>
+        </div>
+        <div class="toolbar-right-group">
+          <span class="toolbar-count-caption" id="homeToolbarCount">显示 <b class="text-mono" id="homeShowingCount">1-15</b> / 共 <span id="homeTotalCount">0</span> 条</span>
+          <button type="button" class="home-refresh" id="homeRefreshBtn" aria-label="刷新列表">
+            <i class="fas fa-rotate-right" aria-hidden="true"></i> 刷新
+          </button>
+        </div>
+      </div>
 
-  <div class="home-version-dock workspace-panel" id="homeVersionDock">
-    <div class="home-version-dock-hdr">
-      <div class="home-version-dock-title"><i class="fas fa-code-branch"></i> 版本窗口</div>
-      <a class="table-action-btn" href="/schedule">进入排期与规划</a>
-    </div>
-    <div class="home-version-panel">
-      {{ if .VersionWindowsError }}
-        <div class="workspace-alert workspace-alert-error" role="alert" style="margin:8px 0;padding:8px 12px;background:#fef2f2;border:1px solid #fca5a5;border-radius:4px;color:#991b1b;font-size:13px;display:flex;align-items:center;gap:8px;">
-          <i class="fas fa-circle-exclamation"></i>
-          <span>版本窗口暂不可用（{{ .VersionWindowsError }}）</span>
+      <!-- 表格内容 -->
+      <div class="table-scroll-container" id="top5List">
+        <table class="workspace-table home-action-table">
+          <thead>
+            <tr>
+              <th class="c-id">需求编号</th>
+              <th class="c-title">事项标题</th>
+              <th class="c-type">类型</th>
+              <th class="c-pri">优先级</th>
+              <th class="c-stage">当前阶段</th>
+              <th class="c-zt-status">状态</th>
+              <th class="c-owner">当前负责人</th>
+              <th class="c-actions">操作</th>
+            </tr>
+          </thead>
+          <tbody id="top5Tbody">
+            <tr><td colspan="8" class="state-placeholder">正在加载行动列表…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="state-placeholder" id="top5Empty" hidden>当前阶段暂无匹配需求，可切换阶段或清空筛选条件</div>
+      <div class="state-placeholder error" id="top5Error" hidden>
+        加载行动列表失败，请检查网络或刷新重试
+        <button type="button" class="retry-btn" id="homeRetryBtn">重试</button>
+      </div>
+      <div class="workspace-pagination" id="homePagination" hidden></div>
+    </section>
+
+    <!-- 右侧辅助侧栏：结构倒置！固定顶部 4 宫格小块 + 底部自适应版本窗口 -->
+    <aside class="home-side-column" aria-label="PO聚焦与版本窗口">
+      <!-- 【置顶】PO 聚焦与风险专区 (固定 4 宫格，防抖动) -->
+      <section class="home-page-card home-focus-box" aria-label="PO 聚焦与风险专区">
+        <div class="home-side-hdr">
+          <div class="home-side-title"><i class="fas fa-shield-halved text-blue"></i> PO 聚焦与风险专区</div>
+          <a class="side-link" href="/todos">进入待办 <i class="fas fa-angle-right" aria-hidden="true"></i></a>
         </div>
-      {{ else if .VersionWindows }}
-        {{ range .VersionWindows }}
-        <div class="home-version-card">
-          <div class="home-version-card-hdr">
-            <div class="home-version-name">{{ .Name }}</div>
-            <span class="home-version-badge">{{ .Range }}</span>
-          </div>
-          <div class="summary-sub">{{ .AgileGroup }}</div>
-          <div class="summary-stats">
-            <div class="summary-stat">待发需求 <strong>{{ .DemandCount }}</strong></div>
-            <div class="summary-stat">研发中 <strong>{{ .DevCount }}</strong></div>
-            <div class="summary-stat">测试中 <strong>{{ .TestCount }}</strong></div>
-            <div class="summary-stat">待交付 <strong>{{ .DeliverCount }}</strong></div>
-          </div>
+        <div class="home-focus-grid">
+          <a href="/board/demand" class="focus-card danger" title="查看我负责的问题与风险">
+            <div class="focus-card-hdr">
+              <span>负责问题/风险</span>
+              <i class="fas fa-triangle-exclamation text-red"></i>
+            </div>
+            <div class="focus-card-num">
+              <strong>{{ if .PageError }}—{{ else }}{{ .KPI.Blocked }}{{ end }}</strong>
+              <small>项待推进</small>
+            </div>
+            <div class="focus-card-hint">看板问题专区</div>
+          </a>
+
+          <button type="button" class="focus-card vs-trigger" data-stage-target="clarify" title="筛选待澄清梳理阶段需求">
+            <div class="focus-card-hdr">
+              <span>待澄清梳理</span>
+              <i class="fas fa-clipboard-list text-muted"></i>
+            </div>
+            <div class="focus-card-num">
+              {{ range .ValueStreamStages }}{{ if eq .Status "clarify" }}
+              <strong class="text-primary">{{ if $.PageError }}—{{ else }}{{ .Count }}{{ end }}</strong>
+              {{ end }}{{ end }}
+              <small>条需求池</small>
+            </div>
+            <div class="focus-card-hint">点击联动筛选</div>
+          </button>
+
+          <button type="button" class="focus-card vs-trigger" data-stage-target="schedule" title="筛选待排期阶段需求">
+            <div class="focus-card-hdr">
+              <span>待规划排期</span>
+              <i class="fas fa-calendar-check text-muted"></i>
+            </div>
+            <div class="focus-card-num">
+              {{ range .ValueStreamStages }}{{ if eq .Status "schedule" }}
+              <strong class="text-amber">{{ if $.PageError }}—{{ else }}{{ .Count }}{{ end }}</strong>
+              {{ end }}{{ end }}
+              <small>条待进窗口</small>
+            </div>
+            <div class="focus-card-hint">去排期工作台</div>
+          </button>
+
+          <button type="button" class="focus-card vs-trigger" data-stage-target="waitacceptance" title="筛选待验收阶段需求">
+            <div class="focus-card-hdr">
+              <span>待验收交付</span>
+              <i class="fas fa-circle-check text-muted"></i>
+            </div>
+            <div class="focus-card-num">
+              {{ range .ValueStreamStages }}{{ if eq .Status "waitacceptance" }}
+              <strong class="text-emerald">{{ if $.PageError }}—{{ else }}{{ .Count }}{{ end }}</strong>
+              {{ end }}{{ end }}
+              <small>条待确认</small>
+            </div>
+            <div class="focus-card-hint">按期上线保障</div>
+          </button>
         </div>
-        {{ end }}
-      {{ else }}
-        <div class="home-version-empty">暂无活跃版本窗口</div>
-      {{ end }}
-    </div>
+      </section>
+
+      <!-- 【底部自适应】版本窗口 (向下延展，数量变化绝不推挤上方聚焦小块) -->
+      <div class="home-page-card home-version-dock" id="homeVersionDock">
+        <div class="home-side-hdr">
+          <div class="home-side-title"><i class="fas fa-code-branch text-blue"></i> 当前活跃版本窗口</div>
+          <a class="side-link" href="/schedule">排期总览 <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+        </div>
+        <div class="home-version-panel">
+          {{ if .VersionWindowsError }}
+            <div class="workspace-alert workspace-alert-error" role="alert" style="margin:8px 0;padding:8px 12px;background:#fef2f2;border:1px solid #fca5a5;border-radius:4px;color:#991b1b;font-size:12px;display:flex;align-items:center;gap:8px;">
+              <i class="fas fa-circle-exclamation"></i>
+              <span>版本窗口暂不可用（{{ .VersionWindowsError }}）</span>
+            </div>
+          {{ else if .VersionWindows }}
+            {{ range .VersionWindows }}
+            <div class="home-version-card">
+              <div class="home-version-card-hdr">
+                <div class="home-version-name" title="{{ .Name }}">
+                  <i class="fas fa-calendar-day text-blue"></i>
+                  <span>{{ .Name }}</span>
+                </div>
+                <span class="home-version-badge">{{ .Range }}</span>
+              </div>
+              <div class="summary-sub">{{ .AgileGroup }}</div>
+              <div class="summary-stats">
+                <div class="summary-stat"><span>待发需求</span> <strong>{{ .DemandCount }}</strong></div>
+                <div class="summary-stat"><span>研发中</span> <strong>{{ .DevCount }}</strong></div>
+                <div class="summary-stat"><span>测试中</span> <strong>{{ .TestCount }}</strong></div>
+                <div class="summary-stat"><span>待交付</span> <strong>{{ .DeliverCount }}</strong></div>
+              </div>
+              <div class="version-card-footer">
+                <a href="/schedule" class="version-enter-link">进入排期维护 <i class="fas fa-angle-right"></i></a>
+              </div>
+            </div>
+            {{ end }}
+          {{ else }}
+            <div class="home-version-empty">暂无活跃版本窗口</div>
+          {{ end }}
+        </div>
+        <div class="version-dock-bottom">
+          <a href="/schedule" class="version-manage-link">
+            <i class="fas fa-plus-circle"></i> 去新建或管理发版窗口
+          </a>
+        </div>
+      </div>
+    </aside>
   </div>
 
   <div class="data-info">
@@ -135,5 +273,7 @@
 
 {{ define "page_js" }}
 <script src="{{ asset "/static/js/po/personal-list.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail-render.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail.js" }}"></script>
 <script src="{{ asset "/static/js/po/home.js" }}"></script>
 {{ end }}

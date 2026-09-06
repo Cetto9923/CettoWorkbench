@@ -3,9 +3,9 @@ BINARY := workbench
 DIST := dist/workbench
 GOCACHE_DIR := $(CURDIR)/tmp/gocache
 
-.PHONY: build check check-gofmt check-test check-vet check-whitespace check-file-length check-patterns check-secrets check-architecture
+.PHONY: build check check-gofmt check-test check-frontend-test check-vet check-whitespace check-file-length check-patterns check-secrets check-architecture
 
-check: check-gofmt check-test check-vet check-whitespace check-file-length check-patterns check-secrets check-architecture
+check: check-gofmt check-test check-frontend-test check-vet check-whitespace check-file-length check-patterns check-secrets check-architecture
 	@echo "required regression gates passed; inspect the printed existing-debt counts"
 
 check-gofmt:
@@ -14,6 +14,13 @@ check-gofmt:
 check-test:
 	@mkdir -p $(GOCACHE_DIR)
 	@GOCACHE=$(GOCACHE_DIR) go test ./...
+
+check-frontend-test:
+	@node tests/unit/frontend/auth-errors.test.js
+	@node tests/unit/frontend/csrf-tokens.test.js
+	@node tests/unit/frontend/personal-list.test.js
+	@node tests/unit/frontend/demand-detail.test.js
+	@echo "frontend unit/behavior tests passed"
 
 check-vet:
 	@./scripts/check-go-vet.sh
