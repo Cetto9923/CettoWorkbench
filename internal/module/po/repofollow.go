@@ -201,22 +201,22 @@ func (r *Repo) FindFollowedProjectReports(ctx context.Context, req RepoFindFollo
 // V10.1 04 节：取消关注只解除关注关系，不关闭业务对象。
 // 写入策略：upsert zt_starinfo(objectType='demand', objectID=?, account=?, followed='1'/'0')。
 func (r *Repo) SaveDemandFollow(ctx context.Context, req RepoSaveDemandFollowReq) error {
-	if r == nil || r.db == nil || strings.TrimSpace(req.Account) == "" || req.DemandID <= 0 {
+	if r == nil || r.writeDB == nil || strings.TrimSpace(req.Account) == "" || req.DemandID <= 0 {
 		return nil
 	}
 	followedStr := "0"
 	if req.Followed {
 		followedStr = "1"
 	}
-	// 检查是否已存在
+	// upsert 全程走主库写连接，避免只读副本滞后导致误判。
 	var count int64
-	if err := r.db.WithContext(ctx).Table("zt_starinfo").
+	if err := r.writeDB.WithContext(ctx).Table("zt_starinfo").
 		Where("objectType = ? AND objectID = ? AND account = ?", "demand", req.DemandID, req.Account).
 		Count(&count).Error; err != nil {
 		return err
 	}
 	if count > 0 {
-		return r.db.WithContext(ctx).Table("zt_starinfo").
+		return r.writeDB.WithContext(ctx).Table("zt_starinfo").
 			Where("objectType = ? AND objectID = ? AND account = ?", "demand", req.DemandID, req.Account).
 			Update("followed", followedStr).Error
 	}
@@ -224,7 +224,7 @@ func (r *Repo) SaveDemandFollow(ctx context.Context, req RepoSaveDemandFollowReq
 		// 之前未关注、现在要取消关注 — 无需操作
 		return nil
 	}
-	return r.db.WithContext(ctx).Table("zt_starinfo").Create(map[string]any{
+	return r.writeDB.WithContext(ctx).Table("zt_starinfo").Create(map[string]any{
 		"objectType": "demand", "objectID": req.DemandID, "account": req.Account, "followed": "1",
 	}).Error
 }

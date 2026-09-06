@@ -129,7 +129,8 @@ func Run() error {
 	scheduleRepo := schedule.NewRepo(db)
 	scheduleSvc := schedule.NewService(scheduleRepo, zapLog)
 	scheduleHandler := schedule.NewHandler(rend, zapLog, scheduleSvc, strings.TrimRight(cfg.Zentao.URL, "/"))
-	poRepo := po.NewRepo(dbReadonly)
+	// PO 查询走只读池（可 nil 降级）；关注/已读写入必须走主库。
+	poRepo := po.NewRepo(dbReadonly, db)
 	poSvc := po.NewService(poRepo, scheduleSvc, userSvc, zapLog)
 	poHandler := po.NewHandler(poSvc, zapLog)
 	sqlPerfRepo := debug.NewRepo(cfg.Log.Dir)

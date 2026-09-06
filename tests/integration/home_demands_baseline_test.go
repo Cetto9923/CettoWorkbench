@@ -31,7 +31,7 @@ func TestHomeAndDemandsBaseline(t *testing.T) {
 
 	dbWithCounter, qc := AttachQueryCounter(db)
 
-	poRepo := po.NewRepo(dbWithCounter)
+	poRepo := po.NewRepo(dbWithCounter, dbWithCounter)
 	scheduleRepo := schedule.NewRepo(dbWithCounter)
 	scheduleSvc := schedule.NewService(scheduleRepo, nil)
 	userRepo := user.NewRepo(dbWithCounter)

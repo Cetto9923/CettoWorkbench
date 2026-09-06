@@ -172,7 +172,7 @@ func TestServiceHome_RepoNilReturnsError(t *testing.T) {
 
 func TestServiceHome_DBErrorPropagated(t *testing.T) {
 	gormDB, mock := setupMockDB(t)
-	repo := NewRepo(gormDB)
+	repo := NewRepo(gormDB, gormDB)
 	svc := NewService(repo, nil, nil, nil)
 
 	mock.ExpectQuery(".+").WillReturnError(errors.New("db disconnect"))

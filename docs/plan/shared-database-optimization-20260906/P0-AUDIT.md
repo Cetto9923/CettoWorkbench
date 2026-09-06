@@ -1,8 +1,8 @@
 # P0 只读核验：工作台 × 禅道共享数据库
 
-日期：2026-09-06  
-状态：**partial**（只读盘点完成；生产拓扑未验证；未实施）  
-审计人：接手 Cursor 会话  
+日期：2026-09-06
+状态：**partial**（只读盘点完成；生产拓扑未验证；未实施）
+审计人：接手 Cursor 会话
 授权：只读核验；可新增本目录文档；不改业务代码/配置/规则/数据库；不轮换凭据；不 DDL/DML/GRANT；不建分支、不提交。
 
 ## 1. 当前基线与范围
@@ -33,12 +33,12 @@ cmd/server/main.go:18
          否则 → configs/config.yaml
          Viper prefix workbench；AutomaticEnv；键名 `.` → `_`
     → database.New(cfg)                     // 主库；DSN 含 sessionVariables
-    → db.AutoMigrate(&model.OperationLog{}) // bootstrap.go:77  运行期 DDL
+    → ensureOperationLogSchema(db)          // P1a：只读检查，无 AutoMigrate
     → 若 databaseReadonly.host 非空：database.Open(cfg.DatabaseReadonly)
          失败只打 Warn，价值流降级
-    → po.NewRepo(dbReadonly)                // bootstrap.go:133  PO 读写都走只读连接
+    → po.NewRepo(dbReadonly, db)            // P1b-code：读只读池 / 写主库
     → schedule.NewRepo(db)                  // 主库
-    → RecordOperationLog(db, ...)           // 首次写请求再 AutoMigrate  // operationlog.go:56
+    → RecordOperationLog(db, ...)           // 中间件不再 AutoMigrate
 ```
 
 有效运行配置 = 文件 + `WORKBENCH_*` 环境覆盖 + 启动时实际连上的实例。Git 中的 YAML **不能**证明生产账号、隔离级别或主备拓扑。
@@ -47,7 +47,7 @@ cmd/server/main.go:18
 
 | 对象 | 结论 | 证据 |
 |---|---|---|
-| 跟踪的 `configs/config.yaml` | 含非占位凭据（债务，P1b 处理）。本文件不复制密码/DSN。`app.env=prod`；主库与只读库键均指向本机 `127.0.0.1:3306`；注释掉的 OceanBase 主机不能当生产拓扑。`zentao.api` 指向公网禅道云，不是行内实例。 | 文件存在；本轮用其凭据连本机 3306 → **Access denied** |
+| 跟踪的 `configs/config.yaml` | **P1b-code**：`user`/`account` 为 `CHANGE_ME`，`password` 为扫描器认可占位 `changeme`。运行时用 `WORKBENCH_*`。本文件不复制历史密码/DSN。注释掉的 OceanBase 主机不能当生产拓扑。`zentao.api` 指向公网禅道云，不是行内实例。 | 占位化后的文件；loader 仍 BindEnv |
 | `configs/config.dev.yaml` | 存在且 gitignore。`WORKBENCH_MODE=dev` 时这才是本机有效文件。主库与只读库 **同一 endpoint**（本机 `127.0.0.1:13306`），`sessionVariables` 空。 | 文件存在；探测成功 |
 | 本机 `mysqld :3306` | 在监听。跟踪配置的账号连不上。 | lsof；Access denied |
 | SSH 隧道 `127.0.0.1:13306` | 在监听，对应手册中的 PD VM `vm-zentao`。 | lsof；`ps` 可见 ssh 隧道（不记录密钥） |
@@ -106,9 +106,9 @@ cmd/server/main.go:18
 
 `zt_permissions`：仅有 Model（`permission.go:21`），**无生产写路径**。VM 上表存在。产权 UNVERIFIED（工作台 Model + 无 install.sql）。
 
-### 3.4 PO 工作台写（走 databaseReadonly 连接）
+### 3.4 PO 工作台写（P1b-code：写走主库）
 
-`bootstrap.go:133`：`poRepo := po.NewRepo(dbReadonly)`。本机 dev 主/只读同一实例，写入能成功。若生产只读库是副本，关注/已读会写到副本或失败。**生产只读拓扑未验证。**
+`bootstrap.go`：`poRepo := po.NewRepo(dbReadonly, db)`（**P1b-code**）。查询走只读池；`SaveDemandFollow` / 已读写入走主库。**过期口径「整模块改回主库」已废弃。** 生产只读拓扑仍未验证。
 
 | 业务动作 | 路由 | Handler | Service | Repo | 表 | DML | 产权 | 授权 | 事务 |
 |---|---|---|---|---|---|---|---|---|---|
@@ -131,12 +131,12 @@ cmd/server/main.go:18
 
 排期授权：
 
-- 路由：`RequirePerm(ScheduleUpdate/Create/Delete)`  
-- 窗口 Update/Delete：Service 校验 `CreatedBy == account`（`service.go:349,386`）  
-- 排期保存：事务前 `loadDemandStoryScopeAndWindow` + `validateSaveSchedulingStoryScope`（伪造 story ID → 403）+ `precheckDemandSchedulingProducts` / `precheckSchedulingProducts`（产品访问）  
-- 产品预校验走 `validateProductsAccess` → **仅** `GetUserProducts`（`service_scheduling_precheck.go:132–138`），**不**走 `UserCanAccessProduct` 的 `IsAdmin` 短路（`repo_scheduling_write.go:211–224`）。窗口列表的小组查询才用 `IsAdmin`（`service.go:43`）。  
-- 任务：事务内 `SELECT ... FOR UPDATE` + `UpdateTaskForStory` 带 `id AND story AND deleted='0'`（`task_authorization_repo.go:16–88`）  
-- **不是** CAS：`zt_story.version` 只用于 spec/项目关联版本，更新 story **不**比较 version。  
+- 路由：`RequirePerm(ScheduleUpdate/Create/Delete)`
+- 窗口 Update/Delete：Service 校验 `CreatedBy == account`（`service.go:349,386`）
+- 排期保存：事务前 `loadDemandStoryScopeAndWindow` + `validateSaveSchedulingStoryScope`（伪造 story ID → 403）+ `precheckDemandSchedulingProducts` / `precheckSchedulingProducts`（产品访问）
+- 产品预校验走 `validateProductsAccess` → **仅** `GetUserProducts`（`service_scheduling_precheck.go:132–138`），**不**走 `UserCanAccessProduct` 的 `IsAdmin` 短路（`repo_scheduling_write.go:211–224`）。窗口列表的小组查询才用 `IsAdmin`（`service.go:43`）。
+- 任务：事务内 `SELECT ... FOR UPDATE` + `UpdateTaskForStory` 带 `id AND story AND deleted='0'`（`task_authorization_repo.go:16–88`）
+- **不是** CAS：`zt_story.version` 只用于 spec/项目关联版本，更新 story **不**比较 version。
 
 生产写函数中无调用方（死代码，P1 不删）：`CleanOldFailures`；`CreatePlanStory`（已被 `EnsurePlanStoryRelation` 替代）；`UpdateTask` / `CloseTask`（生产用 `*ForStory`）。
 
@@ -203,9 +203,9 @@ Handler SaveScheduling (handler_demand.go:463)
 
 关联：
 
-- `LinkStoryToPlan`：`INSERT IGNORE zt_planstory`；仅首次写 `linked2plan` / `linkstory` action（`repo_story_link.go:199`）  
-- `UnlinkStoryFromPlan`：`DELETE zt_planstory` + unlinked actions（`:247`）  
-- `ReplaceProjectStory`：`INSERT ... ON DUPLICATE KEY UPDATE`（`:78`）。注释：行内为 `zt_projectstory` 加了自增 PK，不能用 REPLACE  
+- `LinkStoryToPlan`：`INSERT IGNORE zt_planstory`；仅首次写 `linked2plan` / `linkstory` action（`repo_story_link.go:199`）
+- `UnlinkStoryFromPlan`：`DELETE zt_planstory` + unlinked actions（`:247`）
+- `ReplaceProjectStory`：`INSERT ... ON DUPLICATE KEY UPDATE`（`:78`）。注释：行内为 `zt_projectstory` 加了自增 PK，不能用 REPLACE
 
 **并发：** 预校验在事务外。任务路径有 `FOR UPDATE`（story/task 行锁）。Story/demand/窗口更新只有 `deleted='0'` / `id=?`，**没有** version CAS。幂等关联 ≠ 防两人互覆盖。InnoDB 锁仍在；绕过的是禅道业务层。无死锁图，**不宣称已发生死锁。**
 
@@ -240,54 +240,54 @@ Delete：无事务；只软删 `zt_versionwindow`。
 
 ### 5.2 不能直接承接排期的原因（已证明缺口，不是「没有 POST」误判）
 
-1. **完整业务动作是「业需转研需 + 计划/项目关联 + 任务 + 业需字段 + 窗口」**，不是单表 CRUD。禅道真源动作是 `demand/tostory` → `batchCreateStory`（`extension/custom/demand/ext/control/tostory.php:35`；`changshu.php` 约 1844 行写 `fromDemand`、`sourceType=demandpool`、`developFinish`/`testFinish`/`verifyFinish`、`isMainSystemAssociation`，并 `action->create('demand', ..., 'tostory')`）。工作台直写 **绕过** 该动作。  
-2. 基础包 `stories.php` POST 字段（`title,spec,verify,...`）**不含** `fromDemand` / `isMainSystemAssociation` / `sourceType=demandpool` / 三个 Finish 日期；默认 status 还是 `draft`，工作台写的是 `active`+`stage=planned`。  
-3. 定制 `story.php` PUT 字段列表同样不含上述定制列。  
-4. 定制 `demand.php` **只有 GET**，没有 PUT 可写 RD/QD/accepter/日期。`demandcreate.php` 是 OA 创建/删除，不是排期。  
-5. 基础包 task/plan API 调 `task/create`、`productplan/create`、`linkStory`，会走禅道通知/日志/校验；工作台只写部分列 + 少量 `zt_action`，**副作用覆盖未证明等价**。  
-6. **`zt_projectstory` 项目/执行关联没有 REST 写路由**（`ZentaoPMS/config/routes.php` 仅 GET list）。工作台 `LinkStoryToProjectAndExecution` 目前无现成 API 对位。  
-7. 身份：API 用禅道 token/账号；工作台用 session。映射方案未定（PLAN §6）。  
+1. **完整业务动作是「业需转研需 + 计划/项目关联 + 任务 + 业需字段 + 窗口」**，不是单表 CRUD。禅道真源动作是 `demand/tostory` → `batchCreateStory`（`extension/custom/demand/ext/control/tostory.php:35`；`changshu.php` 约 1844 行写 `fromDemand`、`sourceType=demandpool`、`developFinish`/`testFinish`/`verifyFinish`、`isMainSystemAssociation`，并 `action->create('demand', ..., 'tostory')`）。工作台直写 **绕过** 该动作。
+2. 基础包 `stories.php` POST 字段（`title,spec,verify,...`）**不含** `fromDemand` / `isMainSystemAssociation` / `sourceType=demandpool` / 三个 Finish 日期；默认 status 还是 `draft`，工作台写的是 `active`+`stage=planned`。
+3. 定制 `story.php` PUT 字段列表同样不含上述定制列。
+4. 定制 `demand.php` **只有 GET**，没有 PUT 可写 RD/QD/accepter/日期。`demandcreate.php` 是 OA 创建/删除，不是排期。
+5. 基础包 task/plan API 调 `task/create`、`productplan/create`、`linkStory`，会走禅道通知/日志/校验；工作台只写部分列 + 少量 `zt_action`，**副作用覆盖未证明等价**。
+6. **`zt_projectstory` 项目/执行关联没有 REST 写路由**（`ZentaoPMS/config/routes.php` 仅 GET list）。工作台 `LinkStoryToProjectAndExecution` 目前无现成 API 对位。
+7. 身份：API 用禅道 token/账号；工作台用 session。映射方案未定（PLAN §6）。
 8. HTTP 不能放进 GORM 事务；现有混合事务一旦改 API 必须先有本地 operation 记录。
 
 **结论：尚未证明可复用现有 API 直接承接排期。P2 前必须先确认部署树是否含基础包 REST，再按完整动作对照 tostory/create/edit，而不是逐表替换。**
 
 ### 5.3 工作台直写相对禅道 tostory 的已知缺口（代码对比，非生产事故）
 
-- 不写 demand 的 `tostory` action  
-- 不跑澄清/评审拦截（`tostory.php` 前半）  
-- `CreateProductPlan` 无计划 Opened action  
-- 无通知、无文件、无 workflow 扩展字段  
-- Story close 用 `closedReason=done`，未证明等于禅道 close 流程  
+- 不写 demand 的 `tostory` action
+- 不跑澄清/评审拦截（`tostory.php` 前半）
+- `CreateProductPlan` 无计划 Opened action
+- 无通知、无文件、无 workflow 扩展字段
+- Story close 用 `closedReason=done`，未证明等于禅道 close 流程
 
 ## 6. 已验证 / 未验证 / 待决策
 
 ### 已验证（代码或本机 VM）
 
-- 两处 AutoMigrate 行号仍成立。  
-- 排期写入远不止 `projectstory`/`planstory`。  
-- 禅道表与 WB 表可在同一 GORM 事务。  
-- `internal/pkg/zentao` 不是写 Client。  
-- 全仓生产写入口见 §3（含 user/dept/role/menu/login/PO）。  
-- 任务路径有 `FOR UPDATE` + 归属谓词；排期主对象无 version CAS。  
-- 本机 dev 有效库：隧道 VM MySQL 8.0.46、RR、ROW binlog、账号全局 ALL。  
-- 定制源码树缺标准 stories/tasks/plans POST；基础包有。  
+- 两处 AutoMigrate 行号仍成立。
+- 排期写入远不止 `projectstory`/`planstory`。
+- 禅道表与 WB 表可在同一 GORM 事务。
+- `internal/pkg/zentao` 不是写 Client。
+- 全仓生产写入口见 §3（含 user/dept/role/menu/login/PO）。
+- 任务路径有 `FOR UPDATE` + 归属谓词；排期主对象无 version CAS。
+- 本机 dev 有效库：隧道 VM MySQL 8.0.46、RR、ROW binlog、账号全局 ALL。
+- 定制源码树缺标准 stories/tasks/plans POST；基础包有。
 
 ### 未验证
 
-- 生产主机、账号是否即 VM 的 `zentao@127.0.0.1`、是否 root、是否有备库。  
-- 生产是否 OceanBase（跟踪配置有注释主机）。  
-- 禅道 Web 进程使用的数据库账号是否与工作台相同。  
-- 部署实例的 API 文件集合、是否启用 `api.php/v1`、版本是否等于 max5.6.1。  
-- `zt_demandwindow.plan/product` 列的写入者。  
-- AutoMigrate 在已存在表上是否仍发 ALTER（本轮未开 SQL 日志跟一次启动）。  
+- 生产主机、账号是否即 VM 的 `zentao@127.0.0.1`、是否 root、是否有备库。
+- 生产是否 OceanBase（跟踪配置有注释主机）。
+- 禅道 Web 进程使用的数据库账号是否与工作台相同。
+- 部署实例的 API 文件集合、是否启用 `api.php/v1`、版本是否等于 max5.6.1。
+- `zt_demandwindow.plan/product` 列的写入者。
+- AutoMigrate 在已存在表上是否仍发 ALTER（本轮未开 SQL 日志跟一次启动）。
 
 ### 待你决策（进入 P1 前）
 
-1. P1a/P1b 是否针对 **本 VM** 演练，还是必须等生产只读核验？  
-2. 生产有效配置来源（环境变量 / 未入库文件 / 密钥系统）？  
-3. PO 关注/已读是否允许继续走「只读」连接？若只读将变成真副本，这两条写必须先改回主库。  
-4. `zt_user` 管理工作台直写是否纳入后续 API 化（P2c），还是长期 legacy。  
-5. 排期冲突产品策略：拒绝 / 覆盖 / 合并（影响 P2，不影响 P1a）。  
+1. P1a/P1b 是否针对 **本 VM** 演练，还是必须等生产只读核验？
+2. 生产有效配置来源（环境变量 / 未入库文件 / 密钥系统）？
+3. PO 关注/已读：**现行口径为读 RO / 写 RW**，不是整模块改回主库。
+4. `zt_user` 管理工作台直写是否纳入后续 API 化（P2c），还是长期 legacy。
+5. 排期冲突产品策略：拒绝 / 覆盖 / 合并（影响 P2，不影响 P1a）。
 
 ## 7. P1a / P1b 最小实施切片
 
@@ -295,23 +295,23 @@ Delete：无事务；只软删 `zt_versionwindow`。
 
 **P1a 去运行期 DDL（先于 P1b 收权）**
 
-- 改：`bootstrap.go:77` 改为只读结构检查（表+必需列，缺则启动失败）；`operationlog.go:54–56` 删除 AutoMigrate。  
-- 补：`db/install.sql` 增加与 VM 已存在列一致的 `zt_operation_logs`（GORM 不会补 install.sql）。  
-- 迁移账号在目标环境执行一次 IF NOT EXISTS（VM 已有表则 no-op）。  
-- 不恢复 DDL 权限；不删审计表。  
-- 审计失败策略保持「业务已返回后 goroutine 吞错」——本切片不改语义。  
+- 改：`bootstrap.go:77` 改为只读结构检查（表+必需列，缺则启动失败）；`operationlog.go:54–56` 删除 AutoMigrate。
+- 补：`db/install.sql` 增加与 VM 已存在列一致的 `zt_operation_logs`（GORM 不会补 install.sql）。
+- 迁移账号在目标环境执行一次 IF NOT EXISTS（VM 已有表则 no-op）。
+- 不恢复 DDL 权限；不删审计表。
+- 审计失败策略保持「业务已返回后 goroutine 吞错」——本切片不改语义。
 
 **P1b 凭据与权限（P1a 之后）**
 
-- 跟踪配置含非占位秘密：协调是否轮换；Git 改为占位。  
-- 为工作台建专用账号；**逐表**授权见切片清单。  
-- **不**直接撤销可能仍被禅道使用的 `zentao` 账号。  
-- VM 上该账号现为全局 ALL，收权前必须证明不影响禅道自身。  
-- 隔离库用新账号测：无 DDL、无未授权表 DML。  
+- 跟踪配置含非占位秘密：协调是否轮换；Git 改为占位。
+- 为工作台建专用账号；**逐表**授权见切片清单。
+- **不**直接撤销可能仍被禅道使用的 `zentao` 账号。
+- VM 上该账号现为全局 ALL，收权前必须证明不影响禅道自身。
+- 隔离库用新账号测：无 DDL、无未授权表 DML。
 
 **明确不做（本两切片）**
 
-- 不拆连接池、不改隔离级别、不接 API、不引入框架、不改 workboard.js 基线。  
+- 不拆连接池、不改隔离级别、不接 API、不引入框架、不改 workboard.js 基线。
 
 ## 8. 检查结果
 

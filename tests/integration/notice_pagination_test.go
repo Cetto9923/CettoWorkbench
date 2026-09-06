@@ -33,7 +33,7 @@ func TestNoticePagination(t *testing.T) {
 	}
 
 	dbWithCounter, qc := AttachQueryCounter(db)
-	repo := po.NewRepo(dbWithCounter)
+	repo := po.NewRepo(dbWithCounter, dbWithCounter)
 
 	t.Run("NoticeFilterEquivalence", func(t *testing.T) {
 		qc.Reset()

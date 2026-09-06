@@ -185,7 +185,7 @@ func TestNewNoticeItemZeroObjectIDHasEmptyURL(t *testing.T) {
 
 func TestCheckNoticeAccess(t *testing.T) {
 	db, mock := setupMockDB(t)
-	repo := NewRepo(db)
+	repo := NewRepo(db, db)
 	ctx := context.Background()
 
 	// 1. Notice does not exist
@@ -230,7 +230,7 @@ func TestCheckNoticeAccess(t *testing.T) {
 
 func TestMarkNoticeRead_ObjectAuth(t *testing.T) {
 	db, mock := setupMockDB(t)
-	repo := NewRepo(db)
+	repo := NewRepo(db, db)
 	svc := NewService(repo, nil, nil, nil)
 	ctx := context.Background()
 	actor := &model.User{Account: "alice"}

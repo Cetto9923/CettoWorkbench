@@ -313,19 +313,19 @@ func (r *Repo) CheckNoticeAccess(ctx context.Context, account string, notifyID i
 }
 
 func (r *Repo) SaveNoticeRead(ctx context.Context, account string, notifyID int64) error {
-	if r == nil || r.db == nil || strings.TrimSpace(account) == "" || notifyID <= 0 {
+	if r == nil || r.writeDB == nil || strings.TrimSpace(account) == "" || notifyID <= 0 {
 		return nil
 	}
-	return r.db.WithContext(ctx).Exec(`INSERT INTO zt_workbench_notify_reads (notify, account, readAt)
+	return r.writeDB.WithContext(ctx).Exec(`INSERT INTO zt_workbench_notify_reads (notify, account, readAt)
 		SELECT n.id, ?, NOW() FROM zt_notify n LEFT JOIN zt_workbench_notify_reads nr ON nr.notify = n.id AND nr.account = ?
 		WHERE n.id = ? AND FIND_IN_SET(?, REPLACE(n.toList, ' ', '')) > 0 AND nr.id IS NULL`, account, account, notifyID, account).Error
 }
 
 func (r *Repo) SaveAllNoticeReads(ctx context.Context, account string) (int64, error) {
-	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
+	if r == nil || r.writeDB == nil || strings.TrimSpace(account) == "" {
 		return 0, nil
 	}
-	result := r.db.WithContext(ctx).Exec(`INSERT INTO zt_workbench_notify_reads (notify, account, readAt)
+	result := r.writeDB.WithContext(ctx).Exec(`INSERT INTO zt_workbench_notify_reads (notify, account, readAt)
 		SELECT n.id, ?, NOW() FROM zt_notify n LEFT JOIN zt_workbench_notify_reads nr ON nr.notify = n.id AND nr.account = ?
 		WHERE FIND_IN_SET(?, REPLACE(n.toList, ' ', '')) > 0 AND nr.id IS NULL`, account, account, account)
 	return result.RowsAffected, result.Error

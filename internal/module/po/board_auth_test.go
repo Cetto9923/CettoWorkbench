@@ -24,7 +24,7 @@ import (
 // TestBoardTask_UnauthorizedStoryAccess 验证无权用户尝试通过故事 ID 查看任务抽屉时，Service 返回 403 Forbidden 业务错误。
 func TestBoardTask_UnauthorizedStoryAccess(t *testing.T) {
 	gormDB, mock := setupMockDB(t)
-	repo := NewRepo(gormDB)
+	repo := NewRepo(gormDB, gormDB)
 	svc := NewService(repo, nil, nil, zap.NewNop())
 
 	actor := &model.User{
@@ -78,7 +78,7 @@ func TestBoardTask_UnauthorizedStoryAccess(t *testing.T) {
 // TestBoardTask_AuthorizedDirectAssignee 验证需求/任务负责人可正常访问抽屉。
 func TestBoardTask_AuthorizedDirectAssignee(t *testing.T) {
 	gormDB, mock := setupMockDB(t)
-	repo := NewRepo(gormDB)
+	repo := NewRepo(gormDB, gormDB)
 	svc := NewService(repo, nil, nil, zap.NewNop())
 
 	actor := &model.User{
@@ -132,7 +132,7 @@ func TestBoardTask_AuthorizedDirectAssignee(t *testing.T) {
 // TestBoardTask_SuperAdminBypass 验证超级管理员跳过对象级鉴权。
 func TestBoardTask_SuperAdminBypass(t *testing.T) {
 	gormDB, mock := setupMockDB(t)
-	repo := NewRepo(gormDB)
+	repo := NewRepo(gormDB, gormDB)
 	svc := NewService(repo, nil, nil, zap.NewNop())
 
 	actor := &model.User{
@@ -176,7 +176,7 @@ func TestBoardTask_SuperAdminBypass(t *testing.T) {
 func TestBoardHandler_BoardTaskItems_ForbiddenHTTPStatus(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	gormDB, mock := setupMockDB(t)
-	repo := NewRepo(gormDB)
+	repo := NewRepo(gormDB, gormDB)
 	svc := NewService(repo, nil, nil, zap.NewNop())
 	handler := NewBoardHandler(svc, zap.NewNop())
 

@@ -33,7 +33,7 @@ func TestTodoPagination(t *testing.T) {
 	}
 
 	dbWithCounter, qc := AttachQueryCounter(db)
-	repo := po.NewRepo(dbWithCounter)
+	repo := po.NewRepo(dbWithCounter, dbWithCounter)
 	svc := po.NewService(repo, nil, nil, nil)
 	actor := &model.User{ID: 1, Account: "user_a"}
 

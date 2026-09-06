@@ -17,11 +17,16 @@ import (
 )
 
 // Repo PO 工作台数据访问。
+// 读路径使用 db（只读池，可 nil 降级）；写路径使用 writeDB（主库）。
+// 禁止把关注/已读等写操作发到只读连接。
 type Repo struct {
-	db *gorm.DB
+	db      *gorm.DB
+	writeDB *gorm.DB
 }
 
 // NewRepo 创建 Repo。
-func NewRepo(db *gorm.DB) *Repo {
-	return &Repo{db: db}
+// readDB 供查询；writeDB 供 SaveDemandFollow / SaveNoticeRead 等写入。
+// 单测可用同一句柄：NewRepo(db, db)。
+func NewRepo(readDB, writeDB *gorm.DB) *Repo {
+	return &Repo{db: readDB, writeDB: writeDB}
 }

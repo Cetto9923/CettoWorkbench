@@ -8,8 +8,8 @@ database:
   # port: "2881"
   host: "127.0.0.1"
   port: "3306"
-  user: "root"
-  password: "zentao"
+  user: "CHANGE_ME"
+  password: "changeme"
   dbname: "zentao_changshu"
   charset: "utf8mb4"
   parseTime: true
@@ -21,8 +21,8 @@ databaseReadonly:
   # port: 2881
   host: "127.0.0.1"
   port: "3306"
-  user: "root"
-  password: "zentao"
+  user: "CHANGE_ME"
+  password: "changeme"
   dbname: "zentao_changshu"
   charset: "utf8mb4"
   parseTime: true
@@ -36,9 +36,8 @@ zentao:
   requestType: PATH_INFO
   # 禅道 API 地址
   api: "https://customer.chandao.net/api.php/v1"
-  account: "encrypt"
-  password: "Asd123456"
-
+  account: "CHANGE_ME"
+  password: "changeme"
 session:
   cookieName: workbench_sid
   lifetimeHours: 2

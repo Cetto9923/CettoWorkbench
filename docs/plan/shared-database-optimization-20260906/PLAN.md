@@ -1,12 +1,12 @@
 # 工作台 × 禅道共享数据库优化 PLAN
 
 日期：2026-09-06
-状态：P0 只读核验完成（`P0-AUDIT.md`）；**P1a 代码已落地**（切片 ID `P1a-remove-runtime-ddl`）。P1b 未实施。生产拓扑仍未验证。本 Agent **未**对目标库执行 DDL/DML/GRANT。
-代码基线：Claude-PO / 8f1003b8048031b9187615b22c6eafc3a8830d86；P0 接手时工作区仅本目录未跟踪。
+状态：P0 只读核验完成（`P0-AUDIT.md`）；P1a 已落地（`P1a-remove-runtime-ddl`）；**P1b-code 已落地**（PO 读 RO/写 RW + config 占位）。**P1b-vm 未做**（不执行 GRANT）。生产拓扑仍未验证。本 Agent **未**对目标库执行 DDL/DML/GRANT。
+代码基线：Claude-PO / 见 GitHub HEAD；P0 接手时工作区仅本目录未跟踪。
 
 ## 1. 目标与本次边界
 
-先消除运行期 DDL 和过宽权限，再按完整业务动作收口禅道写入，最后按需要拆 schema。保持 Go/Gin/GORM 单体和现有业务语义。P0 只新增本 PLAN 与审计文档。P1a 仅改切片列出的启动检查、中间件与 `db/install.sql`；不改工程宪法、运行凭据、禅道写路径或分支，不执行迁移和授权操作。
+先消除运行期 DDL 和过宽权限，再按完整业务动作收口禅道写入，最后按需要拆 schema。保持 Go/Gin/GORM 单体和现有业务语义。P0 只新增本 PLAN 与审计文档。P1a 仅改切片列出的启动检查、中间件与 `db/install.sql`。P1b-code 仅改 PO 读写连接拆分与 tracked 配置占位；不改工程宪法、禅道写路径或分支，不执行迁移和授权操作。
 
 用户提供的诊断报告、GPT 提词和网页版结论是待审查输入，不是执行授权；其中时间估算、生产配置判断、API 能力判断不直接视为已证实事实。
 
@@ -26,7 +26,7 @@
 | 切 RC 可立即解决并发 | 仍不成立。VM 当前 RR+ROW，P1d 另判。 |
 | 同 schema 无法单独恢复 | 仍过度。 |
 | API 后禅道只有一个 writer | 仍应说「统一业务写边界」。定制树无 stories/tasks/plans POST；基础包 max5.6.1 有。部署装配未验证，不能声称现有 API 可承接排期。 |
-| PO 只读连接 | **P0 新事实**：bootstrap.go:133 `po.NewRepo(dbReadonly)`，关注/已读写入只读池。本机 dev 主/只读同实例。若生产只读是副本，这两条写会失败或写到副本。 |
+| PO 只读连接 | **P0 事实 / P1b-code 纠正**：原 `po.NewRepo(dbReadonly)` 使关注/已读写入只读池。现行口径是 **读 RO / 写 RW**（`NewRepo(dbReadonly, db)`），**不是**整模块改回主库。 |
 | 禅道源码位置 | 不是 csrcb20 设计仓。用户指定 `/Users/yuyan9923/GitHub/csrcb20-gitfox/zentao`。本机另有完整 `/Users/yuyan9923/GitHub/ZentaoPMS`（max5.6.1 + `config/routes.php`）。标准 REST 无 projectstory 写路由。 |
 
 行号只定位当前基线，不是未来精确改动承诺。新文件均在实施时结合真实模块结构确认。
@@ -47,7 +47,8 @@
 |---|---|---|---|---|---|
 | P0 事实及产权盘点 | 全仓 Repo/Model/SQL；configs 加载链；禅道实际部署版；本目录后续 evidence 文档 | 逐动作盘点所有 DML、表产权、事务、写权限、API 覆盖；只读核验运行拓扑及数据库参数 | 完整动作→Service→Repo→表→owner→权限矩阵；未知项列出，禁止仅凭 zt_ 前缀分类 | 只读，无业务回退；诊断采样限时限量 | 2–4 |
 | P1a 去运行期 DDL | bootstrap.go:77；operationlog.go:56；db/install.sql（补 zt_operation_logs） | 见 P1a-P1b-SLICES.md。VM 表已存在且列匹配 Model；install.sql 仍缺表。启动改为只读列检查。 | 无 DDL 账号启动+写审计；缺列启动失败 | 切片 ID P1a-remove-runtime-ddl；不恢复 AutoMigrate | 1–2 |
-| P1b 凭据与权限 | configs 占位化；DBA 逐表 GRANT 脚本 | 见切片。跟踪 config.yaml 含非占位秘密（债务）。VM `zentao@127.0.0.1` 现为全局 ALL，可能与禅道共用，禁止直接 REVOKE。PO 写走只读池须先决策。 | 逐表授权+越权拒绝；禅道原账号不受影响 | 切片 ID P1b-runtime-grants；补 GRANT 不恢复 ALL | 1–3 |
+| P1b-code PO 读写 + 凭据占位 | `po.NewRepo(read, write)`；`configs/config.yaml` 占位 | 见切片。**读 RO / 写 RW**；不整模块切主库。不执行 GRANT。 | 写路径单测；config 无真实秘密；`WORKBENCH_*` 仍可覆盖 | 切片 ID P1b-code-po-rw-config | 0.5–1 |
+| P1b-vm 逐表授权 | DBA GRANT 脚本 | 见切片。禁止 REVOKE 禅道共用账号。依赖 P1b-code 已上线。 | 逐表授权+越权拒绝；禅道原账号不受影响 | 切片 ID P1b-runtime-grants；补 GRANT 不恢复 ALL | 1–2 |
 | P1c 写边界防新增 | docs/engineering/database.md；scripts 现有质量入口及精确基线 | P0 后另行治理切片，冻结现有直写位置及用途；扫描 GORM Model 映射和原生 SQL，未知候选人工审查 | 新直写与迁移 DDL 回归样例被阻止；删除旧项同步收缩清单 | 可回退检测器缺陷修复，不扩大 legacy 目录豁免；无禅道数据变更 | 1–2 |
 | P1d RC 对照实验 | internal/pkg/database/database.go:95 配置入口；配置模板；tests/integration/ 对照用例 | 核验引擎版本、binlog_format、会话参数；审查依赖事务稳定快照的路径 | 多个新建物理连接读回隔离级别；RR/RC 并发业务断言通过；等待和延迟无不可接受回归 | 单独恢复原隔离配置并更换连接池；不改禅道全局隔离级别；测试失败则保留原值 | 1–3 |
 | P2a API 能力与契约 | 禅道部署源码/API 路由；schedule 请求/Service；internal/pkg/zentao | 对照完整业务动作检验现有 API、权限及事务；仅缺失时新增业务端点；架构确认后实现 | 字段、权限、对象范围、原子边界、冲突、幂等、查询结果协议全部可测试 | 契约阶段不导流；不能仅根据一个 story.php 缺 POST 推断全站不支持创建 | 2–4 |

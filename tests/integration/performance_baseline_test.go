@@ -165,7 +165,7 @@ func TestPerformanceBaseline(t *testing.T) {
 		dbWithCounter, qc := AttachQueryCounter(db)
 
 		// 3. 生产路径测试 A: 通知
-		poRepo := po.NewRepo(dbWithCounter)
+		poRepo := po.NewRepo(dbWithCounter, dbWithCounter)
 		qc.Reset()
 		noticeResp, err := poRepo.FindNotices(ctx, "user_a", po.NoticeListReq{Page: 1, PageSize: 20})
 		if err != nil {

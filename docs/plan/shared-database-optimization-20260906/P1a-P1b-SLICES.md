@@ -1,8 +1,8 @@
 # P1a / P1b 可实施切片
 
-日期：2026-09-06  
-依赖：`P0-AUDIT.md`  
-状态：P1a 代码已落地（切片 ID `P1a-remove-runtime-ddl`）；P1b 仍待前置确认。回滚标识用切片 ID。本 Agent **未**对目标库执行 DDL/GRANT。
+日期：2026-09-06
+依赖：`P0-AUDIT.md`
+状态：P1a 已落地（`P1a-remove-runtime-ddl`）；**P1b-code 本轮实施**（PO 读写拆分 + tracked config 占位）。**P1b-vm（GRANT/建号）本轮禁止**。回滚标识用切片 ID。本 Agent **未**对目标库执行 DDL/GRANT。
 
 约束：不拆双连接事务；不改 RC；不接禅道 API；不引入通用框架；不扩大 file-length 基线；不顺手修无关文件。
 
@@ -27,61 +27,109 @@
 
 ### 依赖
 
-- 目标环境由 **迁移账号** 先执行 install 增量（VM 已有表则 IF NOT EXISTS 为 no-op）。  
-- 确认无其他 AutoMigrate（P0 仅这两处）。  
-- GORM AutoMigrate 可能加索引；本切片 **不**在启动时补索引。若以后缺索引，另开迁移。  
+- 目标环境由 **迁移账号** 先执行 install 增量（VM 已有表则 IF NOT EXISTS 为 no-op）。
+- 确认无其他 AutoMigrate（P0 仅这两处）。
+- GORM AutoMigrate 可能加索引；本切片 **不**在启动时补索引。若以后缺索引，另开迁移。
 
 ### 测试
 
-- 单元：结构检查在「缺表 / 缺列 / 列齐全」三态。见 `internal/bootstrap/operationlog_schema_test.go`。  
-- 若有集成库：无 DDL 权限账号启动成功（表已存在）；删列后启动失败。**本切片无隔离集成库，该门禁跳过**（不得连开发/生产实例冒充通过）。  
-- `git diff --check` + `make check`。不碰 `workboard.js`。  
+- 单元：结构检查在「缺表 / 缺列 / 列齐全」三态。见 `internal/bootstrap/operationlog_schema_test.go`。
+- 若有集成库：无 DDL 权限账号启动成功（表已存在）；删列后启动失败。**本切片无隔离集成库，该门禁跳过**（不得连开发/生产实例冒充通过）。
+- `git diff --check` + `make check`。不碰 `workboard.js`。
 
 ### 发布顺序
 
-1. 迁移账号在目标库执行 `zt_operation_logs` DDL（评估该表 MDL；该表很小，不是「锁住同 schema 所有查询」）。  
-2. 发应用。  
-3. 用无 DDL 权限账号验证启动与一次 POST（审计行可插入）。  
+1. 迁移账号在目标库执行 `zt_operation_logs` DDL（评估该表 MDL；该表很小，不是「锁住同 schema 所有查询」）。
+2. 发应用。
+3. 用无 DDL 权限账号验证启动与一次 POST（审计行可插入）。
 
 ### 验收
 
-- 无 CREATE/ALTER 权限下进程能起。  
-- 缺表或缺 `createdAt` 等必需列时启动明确失败。  
-- 已有 25 行级审计数据仍可读（VM 样例）；新写请求仍插入（权限足够时）。  
-- 日志/SQL 跟踪一次启动，确认无 `CREATE TABLE`/`ALTER`。  
+- 无 CREATE/ALTER 权限下进程能起。
+- 缺表或缺 `createdAt` 等必需列时启动明确失败。
+- 已有 25 行级审计数据仍可读（VM 样例）；新写请求仍插入（权限足够时）。
+- 日志/SQL 跟踪一次启动，确认无 `CREATE TABLE`/`ALTER`。
 
 ### 回滚
 
-- 切片 ID：**P1a-remove-runtime-ddl**。  
-- 回退到「仍禁止自动 DDL」的兼容构建：保留 install.sql 表，启动检查可暂时放宽为仅 HasTable——**仍不恢复 AutoMigrate、不恢复 DDL 权限、不 DROP 审计表**。  
-- 禅道影响：无。只动工作台审计表。  
+- 切片 ID：**P1a-remove-runtime-ddl**。
+- 回退到「仍禁止自动 DDL」的兼容构建：保留 install.sql 表，启动检查可暂时放宽为仅 HasTable——**仍不恢复 AutoMigrate、不恢复 DDL 权限、不 DROP 审计表**。
+- 禅道影响：无。只动工作台审计表。
 
 ### 风险
 
-- AutoMigrate 若曾隐式加过索引，去掉后不会再补。  
-- 中间件写失败本来就静默；缺表时审计丢数据但 HTTP 仍 200——启动检查就是为了避免这种长期丢审计。  
+- AutoMigrate 若曾隐式加过索引，去掉后不会再补。
+- 中间件写失败本来就静默；缺表时审计丢数据但 HTTP 仍 200——启动检查就是为了避免这种长期丢审计。
 
 ---
 
-## P1b — 凭据与逐表授权
+## P1b-code — PO 读写拆分与 tracked 凭据占位
 
 ### 目标
 
-工作台运行账号不再全局 ALL；Git 无真实秘密。不撤销禅道进程仍在用的账号。
+1. PO **读走只读池、写走主库**（最小补丁，不是整模块切回主库）。
+2. Git 跟踪的 `configs/config.yaml` 无真实秘密；运行时仍可用 `WORKBENCH_*` 覆盖。
+3. **不**在本切片执行 GRANT / 建号 / REVOKE（那是 **P1b-vm**）。
 
-### 前置（必须先确认）
+### 过期口径更正（相对 P0 草案）
 
-1. 生产有效配置从哪加载（本机 `config.dev.yaml` ≠ 生产）。  
-2. 禅道 PHP 用的 DB 用户名是否就是隧道里看到的 `zentao@127.0.0.1`。若是，**禁止**对该账号 REVOKE。  
-3. 跟踪的 `configs/config.yaml` 中非占位密码是否曾用于非本机环境 → 是否轮换（本切片只协调，不擅自改生产）。  
-4. PO 写是否继续允许与主库同实例；若只读将指向副本，必须先把 `po.NewRepo` 改回主库（**最小补丁，可并入 P1b 或作为 P1b-hotfix**，否则收权后关注/已读在副本上会失败）。  
+| 过期说法 | 现行口径 |
+|---|---|
+| 把整个 `po.NewRepo` 从 `dbReadonly` **改回主库** | `NewRepo(readDB, writeDB)`：**查询**用只读池，`SaveDemandFollow` / `SaveNoticeRead` / `SaveAllNoticeReads` **只用** `writeDB`（主库）。其它 PO 查询不得误走写连接。 |
+| P1b = 代码 + VM GRANT 一次做完 | 拆成 **P1b-code**（本切片）与 **P1b-vm**（DBA 脚本与授权演练，另开；本 Agent 不执行）。 |
 
-### 拟改（工作台仓）
+### 精确改动
 
 | 文件 | 拟改 |
 |---|---|
-| `configs/config.yaml` | 密码/账号改为明显占位（如 `CHANGE_ME`）。不提交真实值。 |
-| `docs/operations/` 或部署说明 | 仅在 gitignore 文档中说明环境变量名：`WORKBENCH_DATABASE_USER` 等。不写密码。 |
+| `internal/module/po/repo.go` | `Repo` 增加 `writeDB`；`NewRepo(readDB, writeDB *gorm.DB)`。 |
+| `internal/module/po/repofollow.go` / `reponotice.go` | 写路径改用 `writeDB`；读路径仍用 `db`。 |
+| `internal/bootstrap/bootstrap.go` | `po.NewRepo(dbReadonly, db)`。 |
+| `configs/config.yaml` | `user` / `zentao.account` 用 `CHANGE_ME`；`password` 用扫描器已认可的占位 `changeme`。不提交真实值。 |
+| 单测 | `repo_rw_test.go`：写只触 write mock；读只触 read mock。 |
+
+不改 `database.go` 连接池实现。不改隔离级别。不引入 DB manager / adapter / 事务框架。
+
+### 环境变量（运行时，不写密码进 Git）
+
+有效配置 = 文件 + `WORKBENCH_*`（`.` → `_`）。至少：
+
+- `WORKBENCH_DATABASE_USER` / `WORKBENCH_DATABASE_PASSWORD` / `WORKBENCH_DATABASE_HOST` / …
+- `WORKBENCH_DATABASEREADONLY_*`
+- `WORKBENCH_ZENTAO_ACCOUNT` / `WORKBENCH_ZENTAO_PASSWORD`（若使用）
+
+`WORKBENCH_MODE=dev` 仍加载 gitignore 的 `configs/config.dev.yaml`。
+
+### 测试 / 验收（P1b-code）
+
+- 单元：读写连接隔离断言通过。
+- `git diff --check` + `make check`（已知 `workboard.js` baseline 可能仍 BLOCKED）。
+- **不做** VM 上 GRANT 后的登录/排期写验收（属 P1b-vm）。
+
+### 回滚
+
+- 切片 ID：**P1b-code-po-rw-config**。
+- 可回退为单连接构造，但 **不要**把真实密码写回 Git。
+
+---
+
+## P1b-vm — 凭据与逐表授权（本轮不做）
+
+### 目标
+
+工作台运行账号不再全局 ALL。不撤销禅道进程仍在用的账号。
+
+### 前置
+
+1. 生产有效配置从哪加载（本机 `config.dev.yaml` ≠ 生产）。
+2. 禅道 PHP 用的 DB 用户名是否就是隧道里看到的 `zentao@127.0.0.1`。若是，**禁止**对该账号 REVOKE。
+3. 跟踪的 `configs/config.yaml` 中曾入库的非占位密码是否需轮换（另开变更窗口；本 Agent 不执行轮换）。
+4. P1b-code 已上线（PO 写已走主库）。
+
+### 拟改（工作台仓，供 DBA；Agent 不执行）
+
+| 文件 | 拟改 |
+|---|---|
 | 本目录 `grants-workbench-runtime.sql`（**新文件，供 DBA，本机不执行**） | 见下方 GRANT 清单。 |
 
 不改 `database.go` 连接池实现。不改隔离级别。
@@ -90,7 +138,7 @@
 
 专用用户例如 `wb_runtime@<host>`（名字待 DBA）。只授需要的表。MySQL 无单独 TRUNCATE 权限（依赖 DROP）——不授 DROP。
 
-`zt_depts`、`zt_workbench_notify_reads`、`zt_operation_logs` 均不在当前 `db/install.sql`，但 VM 上表已存在。P1b 仍按表授权；P1a 只补审计表 DDL，不顺手补部门/已读表。
+`zt_depts`、`zt_workbench_notify_reads`、`zt_operation_logs` 均不在当前 `db/install.sql`，但 VM 上表已存在。P1b-vm 仍按表授权；P1a 只补审计表 DDL，不顺手补部门/已读表。
 
 **Workbench 自有 DML**
 
@@ -131,25 +179,25 @@
 
 ### 测试 / 验收
 
-- 新账号：启动 + 登录 + 一次排期只读页 + 一次已读（若 PO 仍走只读连接，必须与主库同实例）。  
-- 故意对 `zt_product` 做 INSERT → 拒绝。  
-- 故意 CREATE TABLE → 拒绝。  
-- 回归：`make check`；排期保存/窗口创建在 **授权后的验收环境** 做一次（需你授权的环境，P0 未做浏览器写）。  
+- 新账号：启动 + 登录 + 一次排期只读页 + 一次已读。
+- 故意对 `zt_product` 做 INSERT → 拒绝。
+- 故意 CREATE TABLE → 拒绝。
+- 回归：`make check`；排期保存/窗口创建在 **授权后的验收环境** 做一次。
 
 ### 发布顺序
 
-1. P1a 已上线（无运行期 DDL）。  
-2. DBA 建用户、按表 GRANT；工作台改连接用户。  
-3. 观察禅道 Web 仍用原账号。  
-4. Git 占位化跟踪配置。轮换若需要，另开变更窗口。  
+1. P1a + P1b-code 已上线。
+2. DBA 建用户、按表 GRANT；工作台改连接用户。
+3. 观察禅道 Web 仍用原账号。
+4. 轮换若需要，另开变更窗口。
 
 ### 回滚
 
-- 切片 ID：**P1b-runtime-grants**。  
-- 连接改回仍可用的旧工作台账号（若未撤销）。  
-- **不**把 root / 已泄露密码写回 Git。  
-- 补漏 GRANT，而不是重新 ALL PRIVILEGES。  
-- 禅道：只要没动禅道自己的账号，无影响。  
+- 切片 ID：**P1b-runtime-grants**（= P1b-vm）。
+- 连接改回仍可用的旧工作台账号（若未撤销）。
+- **不**把 root / 已泄露密码写回 Git。
+- 补漏 GRANT，而不是重新 ALL PRIVILEGES。
+- 禅道：只要没动禅道自己的账号，无影响。
 
 ### 禅道影响
 
@@ -157,10 +205,11 @@
 
 ---
 
-## 进入实施前请确认
+## 进入实施确认
 
-- [x] 先做 P1a，再做 P1b（本轮只做 P1a）
-- [ ] P1b 是否包含把 `po.NewRepo` 从 `dbReadonly` 改回主库  
-- [ ] 实施环境：仅 VM / 含生产（生产需另开只读核验）  
-- [ ] `configs/config.yaml` 占位化是否本切片提交  
-- [ ] 是否授权轮换已入库的非占位密码（本 Agent 不执行轮换）  
+- [x] 先做 P1a，再做 P1b-code
+- [x] PO 采用 **读 RO / 写 RW**（不是整模块改回主库）
+- [x] tracked `configs/config.yaml` 占位化（P1b-code）
+- [ ] P1b-vm：实施环境仅 VM / 含生产
+- [ ] 是否授权轮换已入库的非占位密码（本 Agent 不执行轮换）
+- [ ] 本轮 **不做** P1b-vm / P1c
