@@ -19,3 +19,11 @@ alwaysApply: false
   an explicit requirement and `noopener` protection.
 - UI work is not verified until authenticated browser interaction, visual state,
   Console/network results, and loaded assets are checked.
+
+## Theme
+
+- Theme follows frontend.md Theme Contract
+- page CSS must use semantic tokens
+- no page-local dark system
+- materially modified UI must be checked in light and dark
+- hardcoded theme colors require justification
