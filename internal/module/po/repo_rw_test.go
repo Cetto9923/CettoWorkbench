@@ -74,6 +74,31 @@ func TestSaveNoticeRead_UsesWriteDB(t *testing.T) {
 	}
 }
 
+// TestSaveAllNoticeReads_UsesWriteDB 确认全部已读写入只走 writeDB，不触碰只读连接。
+func TestSaveAllNoticeReads_UsesWriteDB(t *testing.T) {
+	readDB, readMock := openSQLMock(t)
+	writeDB, writeMock := openSQLMock(t)
+	repo := NewRepo(readDB, writeDB)
+
+	writeMock.ExpectExec("(?s)INSERT INTO zt_workbench_notify_reads").
+		WithArgs("alice", "alice", "alice").
+		WillReturnResult(sqlmock.NewResult(0, 3))
+
+	rows, err := repo.SaveAllNoticeReads(context.Background(), "alice")
+	if err != nil {
+		t.Fatalf("SaveAllNoticeReads: %v", err)
+	}
+	if rows != 3 {
+		t.Fatalf("RowsAffected=%d want 3", rows)
+	}
+	if err := writeMock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("writeDB expectations: %v", err)
+	}
+	if err := readMock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("readDB must stay unused: %v", err)
+	}
+}
+
 // TestCheckNoticeAccess_UsesReadDB 确认授权查询仍走只读连接。
 func TestCheckNoticeAccess_UsesReadDB(t *testing.T) {
 	readDB, readMock := openSQLMock(t)

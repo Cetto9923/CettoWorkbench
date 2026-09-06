@@ -102,8 +102,8 @@
 
 ### 测试 / 验收（P1b-code）
 
-- 单元：读写连接隔离断言通过。
-- `git diff --check` + `make check`（已知 `workboard.js` baseline 可能仍 BLOCKED）。
+- 单元：读写连接隔离断言通过（含 `SaveAllNoticeReads` 写连接契约）。
+- `git diff --check` + `make check`。当前 P1b-code GitHub `regression-gates` 已通过。
 - **不做** VM 上 GRANT 后的登录/排期写验收（属 P1b-vm）。
 
 ### 回滚
@@ -138,7 +138,7 @@
 
 专用用户例如 `wb_runtime@<host>`（名字待 DBA）。只授需要的表。MySQL 无单独 TRUNCATE 权限（依赖 DROP）——不授 DROP。
 
-`zt_depts`、`zt_workbench_notify_reads`、`zt_operation_logs` 均不在当前 `db/install.sql`，但 VM 上表已存在。P1b-vm 仍按表授权；P1a 只补审计表 DDL，不顺手补部门/已读表。
+`zt_depts`、`zt_workbench_notify_reads` 当前仍未纳入 `db/install.sql`（VM 上表已存在）。`zt_operation_logs` 已由 P1a 纳入 `db/install.sql`，由受控迁移创建，运行账号不得执行 DDL。P1b-vm 仍按表授权；不顺手补部门/已读表 DDL。
 
 **Workbench 自有 DML**
 

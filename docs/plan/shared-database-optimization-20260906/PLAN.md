@@ -16,13 +16,13 @@
 
 | 判断 | 本轮结论与证据 |
 |---|---|
-| 两处运行期 DDL | P0 复核仍成立：internal/bootstrap/bootstrap.go:77；internal/middleware/operationlog.go:56。必须同时移除。VM 样例库表已存在，AutoMigrate 仍会在启动/首次写请求执行。 |
+| 两处运行期 DDL | **原始问题**：bootstrap AutoMigrate + middleware AutoMigrate（P0 行号定位）。**当前状态（P1a 已修复）**：两处 AutoMigrate 已移除；启动改为 `ensureOperationLogSchema` 只读检查；`zt_operation_logs` 已纳入 `db/install.sql`。全仓生产代码不再有运行期 DDL。 |
 | 排期直写不止两张表 | 成立。P0 全仓清单见 P0-AUDIT.md §3：另含 user/dept/role/menu/login/PO。排期写见 repo_scheduling_write.go、repo_story_link.go、service.go 窗口路径。 |
 | 跨产权混合事务 | 成立：service_scheduling_save.go:76、131；窗口 Create/Update service.go:331、366；任务弹窗 service_story_tasks.go:259。 |
 | 已有 API Client 可直接复用 | 成立（不能复用）。internal/pkg/zentao 只拼页面 URL。配置 zentao.api 无 Go 调用方。 |
 | 生产同用户、root、RR、没有备库 | 跟踪 YAML 不能证明生产。本机有效链是 WORKBENCH_MODE=dev → gitignore 的 config.dev.yaml。经 SSH 隧道的 **PD VM**（非生产）为 MySQL 8.0.46、RR、ROW binlog、账号全局 ALL。生产未连。 |
 | 已发生 AB-BA 死锁 | 仍不能认定。任务路径有 SELECT FOR UPDATE；story/demand 更新无 version CAS。 |
-| AutoMigrate 阻塞同 schema 所有查询 | 仍过度。P1a 只评估审计表 MDL。 |
+| AutoMigrate 阻塞同 schema 所有查询 | 原始诊断过度；P1a 后已无运行期 AutoMigrate。若目标库尚缺表，由迁移账号执行 install 增量（评估该表 MDL），不是应用启动建表。 |
 | 切 RC 可立即解决并发 | 仍不成立。VM 当前 RR+ROW，P1d 另判。 |
 | 同 schema 无法单独恢复 | 仍过度。 |
 | API 后禅道只有一个 writer | 仍应说「统一业务写边界」。定制树无 stories/tasks/plans POST；基础包 max5.6.1 有。部署装配未验证，不能声称现有 API 可承接排期。 |
@@ -46,7 +46,7 @@
 | 切片 | 文件/操作边界 | 前置与主要动作 | 验收 | 回退及禅道影响 | 估时 |
 |---|---|---|---|---|---|
 | P0 事实及产权盘点 | 全仓 Repo/Model/SQL；configs 加载链；禅道实际部署版；本目录后续 evidence 文档 | 逐动作盘点所有 DML、表产权、事务、写权限、API 覆盖；只读核验运行拓扑及数据库参数 | 完整动作→Service→Repo→表→owner→权限矩阵；未知项列出，禁止仅凭 zt_ 前缀分类 | 只读，无业务回退；诊断采样限时限量 | 2–4 |
-| P1a 去运行期 DDL | bootstrap.go:77；operationlog.go:56；db/install.sql（补 zt_operation_logs） | 见 P1a-P1b-SLICES.md。VM 表已存在且列匹配 Model；install.sql 仍缺表。启动改为只读列检查。 | 无 DDL 账号启动+写审计；缺列启动失败 | 切片 ID P1a-remove-runtime-ddl；不恢复 AutoMigrate | 1–2 |
+| P1a 去运行期 DDL | bootstrap schema 检查；middleware；db/install.sql（zt_operation_logs） | **已完成。** 见切片。原始问题为两处 AutoMigrate + install 缺表；现为只读启动检查 + install 已含表。 | 无 DDL 账号启动+写审计；缺列启动失败 | 切片 ID P1a-remove-runtime-ddl；不恢复 AutoMigrate | 1–2 |
 | P1b-code PO 读写 + 凭据占位 | `po.NewRepo(read, write)`；`configs/config.yaml` 占位 | 见切片。**读 RO / 写 RW**；不整模块切主库。不执行 GRANT。 | 写路径单测；config 无真实秘密；`WORKBENCH_*` 仍可覆盖 | 切片 ID P1b-code-po-rw-config | 0.5–1 |
 | P1b-vm 逐表授权 | DBA GRANT 脚本 | 见切片。禁止 REVOKE 禅道共用账号。依赖 P1b-code 已上线。 | 逐表授权+越权拒绝；禅道原账号不受影响 | 切片 ID P1b-runtime-grants；补 GRANT 不恢复 ALL | 1–2 |
 | P1c 写边界防新增 | docs/engineering/database.md；scripts 现有质量入口及精确基线 | P0 后另行治理切片，冻结现有直写位置及用途；扫描 GORM Model 映射和原生 SQL，未知候选人工审查 | 新直写与迁移 DDL 回归样例被阻止；删除旧项同步收缩清单 | 可回退检测器缺陷修复，不扩大 legacy 目录豁免；无禅道数据变更 | 1–2 |
@@ -173,4 +173,4 @@ RC 下事务内多次读取可见不同已提交数据，必须检查排期预�
 
 P0 已完成只读核验（P0-AUDIT.md）：含全仓写入口、排期事务、配置链、VM 样例库参数、禅道定制树与基础包 API 分层。未对部署实例发写请求，未改业务代码。
 
-本次检查结果（P0 接手复核）：`scripts/check-file-length.sh` 失败：`baseline loosening rejected: web/static/js/po/workboard.js (cannot increase baseline from 660 to 728 lines)`。trusted 基线来自 `merge-base HEAD origin/Claude-PO`（`17bd8e7d`）中的 660，HEAD 已提交 728。与本目录文档无关。状态 **BLOCKED BY EXISTING BASELINE**。`make check` 后续步骤未执行。不把上述称为全部检查通过。
+P0 接手时曾出现 `workboard.js` file-length baseline 历史摩擦；**当前状态**：P1b-code（`f2eaa592`）GitHub `regression-gates` / `integration-tests` 已通过，本地 `make check` 以当次执行为准，不再把旧 workboard.js blocker 当作现行阻塞。

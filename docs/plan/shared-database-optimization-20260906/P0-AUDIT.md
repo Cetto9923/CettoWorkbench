@@ -71,8 +71,8 @@ cmd/server/main.go:18
 
 | 动作 | 入口 | 文件:行 | 表 | DML | 产权 | 授权 | 事务 | 其他调用者 | 迁移依赖 |
 |---|---|---|---|---|---|---|---|---|---|
-| 启动保证审计表 | `bootstrap.Run` | `internal/bootstrap/bootstrap.go:77` | `zt_operation_logs` | DDL（GORM AutoMigrate） | WB | 无业务授权；启动即执行 | 无 | 中间件兜底 | **不在** `db/install.sql`。VM 上表已存在且列与 Model 一致 |
-| 首次写请求兜底建表 | `RecordOperationLog` | `internal/middleware/operationlog.go:54–56` | `zt_operation_logs` | DDL | WB | 无 | 无 | bootstrap 已迁仍会再调一次（sync.Once） | 同上 |
+| 启动保证审计表 | `bootstrap.Run` | `ensureOperationLogSchema`（P1a） | `zt_operation_logs` | 只读 schema 检查（非 DDL） | WB | 无业务授权；启动失败退出 | 无 | — | **已在** `db/install.sql`（P1a）。缺表/缺列则进程退出 |
+| 首次写请求兜底建表 | `RecordOperationLog` | middleware（P1a 已删 AutoMigrate） | `zt_operation_logs` | 无（仅 INSERT） | WB | 无 | 无 | — | 不再运行期建表 |
 | 登录列探测 | `login.Repo.hasColumn` | `internal/module/login/repo.go:102` | `zt_login_failures` / `zt_login_logs` | 非 DML（`Migrator().HasColumn`） | WB | 无 | 无 | RecordFailure / InsertLoginLog | install.sql 有这两表 |
 
 ### 3.2 中间件 / 登录（绕过部分 Handler→Service 形态）
@@ -150,7 +150,7 @@ cmd/server/main.go:18
 
 | 表 | 漂移 |
 |---|---|
-| `zt_operation_logs` | **install.sql 无此表**；靠 AutoMigrate。VM 列与 `OperationLog` 一致（含 `tenantId`、`createdAt` datetime(3)） |
+| `zt_operation_logs` | **P1a 已纳入** `db/install.sql`；启动只读检查列齐全。VM 列与 `OperationLog` 一致（含 `tenantId`、`createdAt` datetime(3)）。不宣称目标/生产库已执行该迁移。 |
 | `zt_demandwindow` | install.sql / Go Model **无** `plan`、`product`；VM **有** 这两列。工作台 `SaveDemandLevelWindow` 不写它们 |
 | `zt_depts` | **install.sql 无此表**。VM 同时有 `deletedAt` 与 `deleted`；Go Model 只有 `deletedAt` |
 | `zt_workbench_notify_reads` | **install.sql 无此表**；VM 存在 |
@@ -315,17 +315,14 @@ Delete：无事务；只软删 `zt_versionwindow`。
 
 ## 8. 检查结果
 
-本轮只新增本目录文档，无业务 diff。
+P0 当时只新增本目录文档，无业务 diff。以下为 **P0 当时**门禁记录；**现行状态**以 P1b-code（`f2eaa592`）及之后执行为准。
 
-| 门禁 | 结果 |
-|---|---|
-| `git diff --check` | 未作为独立步骤跑工作区（无已跟踪 diff）。新增 md 后应再跑 |
-| `scripts/check-file-length.sh` | **失败**：`baseline loosening rejected: web/static/js/po/workboard.js (cannot increase baseline from 660 to 728 lines)`。机制：工作区 baseline 文件相对 HEAD 干净时，脚本用 `merge-base HEAD origin/Claude-PO`（`17bd8e7d`）作 trusted 基线，该提交中该文件上限为 660；HEAD 已把基线写成 728。**与本 PLAN 无关。** 状态：**BLOCKED BY EXISTING BASELINE** |
-| `make check` 其余步骤 | **未执行**（文件长度门禁已失败；按质量文档不把后续当成通过） |
-| DB/API/浏览器验收 | P0 只读；API 未对部署实例发请求 |
-
-Codex 当时的 file-length 失败在本 HEAD 上 **复现**，原因比「工作区把文件改到 728 行」更准确：是 **已提交的 baseline 相对 origin merge-base 放宽**。当前 `workboard.js` 为 728 行，等于 HEAD baseline，不是本轮引入。
+| 门禁 | P0 当时 | 现行（closeout） |
+|---|---|---|
+| `git diff --check` | 新增 md 后应再跑 | 以当次执行为准 |
+| `scripts/check-file-length.sh` / `make check` | P0 曾 **BLOCKED BY EXISTING BASELINE**（`workboard.js` 660→728 与 merge-base 摩擦） | **不再传播为现行阻塞**。P1b-code GitHub `regression-gates` / `integration-tests` 已通过；本地以当次 `make check` 为准 |
+| DB/API/浏览器验收 | P0 只读；API 未对部署实例发请求 | 仍未宣称生产验收 |
 
 ## 9. 对 PLAN 的事实修正（依据见上）
 
-已写入 `PLAN.md` §2 / §11。要点：PO 写走只读池；`zt_demandwindow` 生产样例列多于 install.sql；禅道 API 分「定制树 / 基础包 / 未验证部署」三层；本机 RR+ROW 只描述 VM，不是生产。
+已写入 `PLAN.md` §2 / §11。要点：PO 写路径经 P1b-code 为读 RO/写 RW；`zt_demandwindow` 生产样例列多于 install.sql；禅道 API 分「定制树 / 基础包 / 未验证部署」三层；本机 RR+ROW 只描述 VM，不是生产。`zt_operation_logs` 已由 P1a 纳入 install.sql。
