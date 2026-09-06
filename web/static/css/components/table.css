@@ -220,11 +220,11 @@
 }
 
 .zen-icon-action.danger {
-  color: var(--color-danger-deep);
+  color: var(--color-danger-action);
 }
 
 .zen-icon-action.danger:hover {
-  color: var(--color-danger-deeper);
+  color: var(--color-danger-action-hover);
   transform: translateY(-1px);
 }
 
@@ -416,20 +416,20 @@
 
 .table .priority-tag.P1,
 .table.data-table .priority-tag.P1 {
-  background: var(--color-danger-accent);
-  color: #fff;
+  background: var(--color-danger-fill);
+  color: var(--color-text-on-accent);
 }
 
 .table .priority-tag.P2,
 .table.data-table .priority-tag.P2 {
-  background: var(--color-warning-light);
-  color: #fff;
+  background: var(--color-warning-fill);
+  color: var(--color-text-on-accent);
 }
 
 .table .priority-tag.P3,
 .table.data-table .priority-tag.P3 {
-  background: var(--color-info);
-  color: #fff;
+  background: var(--color-info-fill);
+  color: var(--color-text-on-accent);
 }
 
 .table .priority-tag.P4,

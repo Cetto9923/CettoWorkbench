@@ -228,13 +228,13 @@
 }
 
 .search-layout .search-btn-primary {
-  background: var(--color-info);
-  color: var(--color-surface);
+  background: var(--color-info-fill);
+  color: var(--color-text-on-accent);
   box-shadow: 0 1px 2px var(--color-shadow-05);
 }
 
 .search-layout .search-btn-primary:hover {
-  background: var(--color-info);
+  background: var(--color-info-fill);
   transform: translateY(-1px);
   box-shadow: 0 6px 14px var(--color-success-ring);
 }
