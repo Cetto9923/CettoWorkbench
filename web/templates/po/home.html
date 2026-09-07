@@ -1,7 +1,7 @@
 {{/* ==========================================================================
 文件: web/templates/po/home.html
 模块: PO工作台
-职责: PO 工作台首页（对齐 workbench_ui 首页布局，数据仍由现有接口提供）
+职责: PO 工作台首页（左行动列表 + 右聚焦专区/版本窗口，对齐原型布局）
 全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
 页面字段: .Title (string), .PageTitle (string), .ValueStreamStages ([]ValueStreamStage),
           .VersionWindows ([]schedule.HomeVersionWindowCard)
@@ -12,7 +12,15 @@
 
 {{ define "content" }}
 {{ $pending := 0 }}
-{{ range .ValueStreamStages }}{{ if eq .Status "all" }}{{ $pending = .Count }}{{ end }}{{ end }}
+{{ $clarify := 0 }}
+{{ $schedule := 0 }}
+{{ $waitacceptance := 0 }}
+{{ range .ValueStreamStages }}
+  {{ if eq .Status "all" }}{{ $pending = .Count }}{{ end }}
+  {{ if eq .Status "clarify" }}{{ $clarify = .Count }}{{ end }}
+  {{ if eq .Status "schedule" }}{{ $schedule = .Count }}{{ end }}
+  {{ if eq .Status "waitacceptance" }}{{ $waitacceptance = .Count }}{{ end }}
+{{ end }}
 <div class="po-home" id="poHomeRoot" data-current-account="{{ if .CurrentUser }}{{ .CurrentUser.Account }}{{ end }}">
   <div class="page-hdr">
     <h2 title="需求治理视角 · 受理→澄清→排期→提测→测试→验收→发起交付→发布→评价反馈">工作台首页</h2>
@@ -55,43 +63,103 @@
     </div>
   </div>
 
-  <div class="top5-section" id="top5Section">
-    <div class="section-title" id="top5Title"><i class="fas fa-list-check"></i> 统一行动列表 · 待我处理</div>
-    <div class="home-priority-strip home-blocker-strip" id="homeBlockerStrip" hidden></div>
-    <div class="top5-list" id="top5List"></div>
-    <div class="pager-footer" id="homePager" hidden></div>
-  </div>
-
-  <div class="home-version-dock" id="homeVersionCollapsible">
-    <div class="home-version-dock-hdr">
-      <div class="home-version-dock-title"><i class="fas fa-layer-group"></i> 版本窗口</div>
-      <a class="action-btn" href="/schedule">去规划窗口</a>
+  <div class="home-content-grid">
+    <div class="top5-section" id="top5Section">
+      <div class="section-title" id="top5Title"><i class="fas fa-list-check"></i> 统一行动列表 · 待我处理</div>
+      <div class="home-priority-strip home-blocker-strip" id="homeBlockerStrip" hidden></div>
+      <div class="top5-list" id="top5List"></div>
+      <div class="pager-footer" id="homePager" hidden></div>
     </div>
-    <div class="home-version-panel" id="homeCurrentVersionSummary">
-      {{ range .VersionWindows }}
-      <div class="home-version-mini">
-        <div class="summary-top">
-          <div>
-            <div class="summary-title" title="{{ .Name }}"><i class="fas fa-layer-group"></i>{{ .Name }}{{ if .AgileGroup }} <span class="agile-team-tag">{{ .AgileGroup }}</span>{{ end }}</div>
-            <div class="summary-sub">{{ .Range }}</div>
-          </div>
+
+    <aside class="home-side-column" aria-label="PO聚焦与版本窗口">
+      <section class="home-focus-box" aria-label="PO 聚焦与风险专区">
+        <div class="home-side-hdr">
+          <div class="home-side-title"><i class="fas fa-shield-halved"></i> PO 聚焦与风险专区</div>
+          <a class="side-link" href="#">进入待办 <i class="fas fa-angle-right" aria-hidden="true"></i></a>
         </div>
-        <div class="summary-stats">
-          <span class="summary-stat">需求 <strong>{{ .DemandCount }}</strong></span>
-          <span class="summary-stat">开发 <strong>{{ .DevCount }}</strong></span>
-          <span class="summary-stat">测试 <strong>{{ .TestCount }}</strong></span>
-          <span class="summary-stat">待交付 <strong>{{ .DeliverCount }}</strong></span>
+        <div class="home-focus-grid">
+          <a href="#" class="focus-card danger" title="查看我负责的问题与风险">
+            <div class="focus-card-hdr">
+              <span>负责问题/风险</span>
+              <i class="fas fa-triangle-exclamation text-red"></i>
+            </div>
+            <div class="focus-card-num">
+              <strong>0</strong>
+              <small>项待推进</small>
+            </div>
+            <div class="focus-card-hint">看板问题专区</div>
+          </a>
+
+          <button type="button" class="focus-card vs-trigger" data-stage-target="clarify" title="筛选待澄清梳理阶段需求">
+            <div class="focus-card-hdr">
+              <span>待澄清梳理</span>
+              <i class="fas fa-clipboard-list text-muted"></i>
+            </div>
+            <div class="focus-card-num">
+              <strong class="text-primary">{{ $clarify }}</strong>
+              <small>条需求池</small>
+            </div>
+            <div class="focus-card-hint">点击联动筛选</div>
+          </button>
+
+          <button type="button" class="focus-card vs-trigger" data-stage-target="schedule" title="筛选待排期阶段需求">
+            <div class="focus-card-hdr">
+              <span>待规划排期</span>
+              <i class="fas fa-calendar-check text-muted"></i>
+            </div>
+            <div class="focus-card-num">
+              <strong class="text-amber">{{ $schedule }}</strong>
+              <small>条待进窗口</small>
+            </div>
+            <div class="focus-card-hint">去排期工作台</div>
+          </button>
+
+          <button type="button" class="focus-card vs-trigger" data-stage-target="waitacceptance" title="筛选待验收阶段需求">
+            <div class="focus-card-hdr">
+              <span>待验收交付</span>
+              <i class="fas fa-circle-check text-muted"></i>
+            </div>
+            <div class="focus-card-num">
+              <strong class="text-emerald">{{ $waitacceptance }}</strong>
+              <small>条待确认</small>
+            </div>
+            <div class="focus-card-hint">按期上线保障</div>
+          </button>
+        </div>
+      </section>
+
+      <div class="home-version-dock" id="homeVersionCollapsible">
+        <div class="home-version-dock-hdr">
+          <div class="home-version-dock-title"><i class="fas fa-layer-group"></i> 版本窗口</div>
+          <a class="side-link" href="/schedule">排期总览 <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+        </div>
+        <div class="home-version-panel" id="homeCurrentVersionSummary">
+          {{ range .VersionWindows }}
+          <div class="home-version-mini">
+            <div class="summary-top">
+              <div>
+                <div class="summary-title" title="{{ .Name }}"><i class="fas fa-layer-group"></i>{{ .Name }}{{ if .AgileGroup }} <span class="agile-team-tag">{{ .AgileGroup }}</span>{{ end }}</div>
+                <div class="summary-sub">{{ .Range }}</div>
+              </div>
+            </div>
+            <div class="summary-stats">
+              <span class="summary-stat">需求 <strong>{{ .DemandCount }}</strong></span>
+              <span class="summary-stat">开发 <strong>{{ .DevCount }}</strong></span>
+              <span class="summary-stat">测试 <strong>{{ .TestCount }}</strong></span>
+              <span class="summary-stat">待交付 <strong>{{ .DeliverCount }}</strong></span>
+            </div>
+          </div>
+          {{ else }}
+          <div class="home-version-empty">当前无进行中等待发布的真实版本窗口</div>
+          {{ end }}
+        </div>
+        <div class="version-dock-bottom">
+          <a href="/schedule" class="version-manage-link">
+            <i class="fas fa-plus-circle"></i> 去新建或管理发版窗口
+          </a>
         </div>
       </div>
-      {{ else }}
-      <div class="home-version-empty">当前无进行中等待发布的真实版本窗口</div>
-      {{ end }}
-    </div>
-  </div>
-
-  <div class="data-info" id="homeDataInfo">
-    <span><i class="fas fa-clock"></i> 数据更新时间：<span id="lastUpdateTime"></span></span>
-    <span><i class="fas fa-database"></i> 数据来源：禅道</span>
+    </aside>
   </div>
 </div>
 

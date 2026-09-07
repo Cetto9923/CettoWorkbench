@@ -34,13 +34,20 @@
     return $("<div>").text(text == null ? "" : String(text)).html();
   }
 
-  function actionLabel(item) {
-    return (item.next || "").trim() || "跟进";
-  }
-
   function dash(value) {
     var text = (value || "").trim();
     return text || "—";
+  }
+
+  function objectTypeBadge(item) {
+    var isStory =
+      String((item && item.kind) || "") === "story" ||
+      Number(item && item.storyId) > 0 ||
+      /^U\d+$/i.test(String((item && item.id) || ""));
+    if (isStory) {
+      return '<span class="wb-type wb-type-story">研发需求</span>';
+    }
+    return '<span class="wb-type wb-type-business">业务需求</span>';
   }
 
   // 禅道业需 status → 中文（与原型 po-core.js ZENTAO_STATUS_LABELS 对齐）
@@ -187,7 +194,6 @@
     var idHtml = url
       ? "<a " + zentaoLinkAttrs(url, "row-id-link") + ">" + escapeHtml(id) + "</a>"
       : "<span class=\"row-id-link\">" + escapeHtml(id) + "</span>";
-    var action = actionLabel(item);
     var actionHtml = "";
     if (canShowReview(item)) {
       actionHtml =
@@ -208,13 +214,13 @@
       "<div class=\"row-title\" title=\"" + escapeHtml(item.title || "") + "\">" +
       titleHtml +
       "</div>" +
+      "<div class=\"row-type\">" + objectTypeBadge(item) + "</div>" +
       "<div class=\"row-stage\"><span class=\"stage-tag\">" + escapeHtml(item.valueStream || item.stage || "—") + "</span></div>" +
       "<div class=\"row-zt-status\"><span class=\"status-tag st-progress\" title=\"" +
       escapeHtml(item.zentaoStatus || "") +
       "\">" +
       escapeHtml(getHomeZentaoStatusLabel(item)) +
       "</span></div>" +
-      "<div class=\"row-next\">" + escapeHtml(action) + "</div>" +
       "<div class=\"row-owner\">" + escapeHtml(dash(item.nextOwner || item.owner)) + "</div>" +
       "<div class=\"row-actions\">" + actionHtml + "</div>" +
       "</div>"
@@ -413,7 +419,7 @@
       return;
     }
     var html =
-      "<div class=\"top5-cols\"><span>ID</span><span>标题</span><span>当前阶段</span><span>需求状态</span><span>下一步</span><span>下一责任人</span><span>操作</span></div>";
+      "<div class=\"top5-cols\"><span>ID</span><span>标题</span><span>类型</span><span>当前阶段</span><span>需求状态</span><span>当前负责人</span><span>操作</span></div>";
     html += $.map(state.items, renderRow).join("");
     $("#top5List").html(html);
     bindZentaoLinks($("#top5List"));
@@ -455,6 +461,18 @@
       setActiveCard($card);
       refreshDemands(status);
     });
+
+    $(".focus-card.vs-trigger").on("click", function () {
+      var targetStage = $(this).attr("data-stage-target");
+      if (!targetStage) {
+        return;
+      }
+      var $card = $('.home-vs-mini-card[data-vs-status="' + targetStage + '"]');
+      if ($card.length) {
+        setActiveCard($card);
+        refreshDemands(targetStage);
+      }
+    });
   }
 
   function initFocalChips() {
@@ -467,28 +485,9 @@
     });
   }
 
-  function fillUpdateTime() {
-    var now = new Date();
-    var pad = function (n) {
-      return n < 10 ? "0" + n : String(n);
-    };
-    $("#lastUpdateTime").text(
-      now.getFullYear() +
-        "-" +
-        pad(now.getMonth() + 1) +
-        "-" +
-        pad(now.getDate()) +
-        " " +
-        pad(now.getHours()) +
-        ":" +
-        pad(now.getMinutes())
-    );
-  }
-
   $(function () {
     initValueStreamLinkage();
     initFocalChips();
-    fillUpdateTime();
 
     var $active = $(".home-vs-mini-card.active").first();
     if (!$active.length) {
