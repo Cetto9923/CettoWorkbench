@@ -81,11 +81,11 @@ func TestTodoSummaryAndFocusUseSameDeadlineRule(t *testing.T) {
 }
 
 func TestTodoListReqValidate_RejectsUnsupportedObjectTypes(t *testing.T) {
-	// 验证 story 待办数据源暂未接入 (WAIT DECISION)
+	// 验证 story 待办数据源暂未接入（错误消息文案稳定供前端展示，不含协作术语）
 	reqStory := TodoListReq{ObjectType: "story"}
 	errs := reqStory.Validate()
-	if len(errs) != 1 || errs[0].Field != "objectType" || !strings.Contains(errs[0].Message, "WAIT DECISION") {
-		t.Fatalf("expected WAIT DECISION for story, got: %#v", errs)
+	if len(errs) != 1 || errs[0].Field != "objectType" || !strings.Contains(errs[0].Message, "故事待办数据源暂未接入") {
+		t.Fatalf("expected story unsupported message, got: %#v", errs)
 	}
 
 	// 验证其它占位类型返回明确错误，拒绝伪成功

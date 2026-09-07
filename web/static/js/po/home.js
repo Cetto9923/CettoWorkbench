@@ -36,6 +36,7 @@
   var rawItems = [];
   var VALID_STATUSES = ["all", "accept", "clarify", "schedule", "developing", "testing", "waitacceptance", "acceptanced", "publish", "released"];
   var currentSeq = 0;
+  var summarySeq = 0;
   var hasCorrectedPage = false;
 
   function demandsUrl(status, page, pageSize) {
@@ -44,6 +45,11 @@
     p.set("focus", state.focus);
     p.set("page", String(page || 1));
     p.set("pageSize", String(pageSize || 15));
+    // 透传工具栏筛选到服务端，由 SQL 过滤 + Count + 分页；前端不再二次过滤。
+    if (state.keyword) { p.set("keyword", state.keyword); }
+    if (state.objectType && state.objectType !== "all") { p.set("objectType", state.objectType); }
+    if (state.priority && state.priority !== "all") { p.set("priority", state.priority); }
+    if (state.relation && state.relation !== "all") { p.set("relation", state.relation); }
     return "/demands?" + p.toString();
   }
 
@@ -144,6 +150,42 @@
           pageSize: typeof payload.pageSize === "number" ? payload.pageSize : 15
         };
       });
+  }
+
+  // 右上角焦点是一级范围，价值流卡片必须显示该范围内各阶段的数量。
+  // 统计沿用 /demands 的服务端 SQL 口径，避免卡片显示全量而列表显示交集。
+  function refreshValueStreamSummary() {
+    var fetchFn = window.appFetch || fetch;
+    var seq = ++summarySeq;
+    var requests = VALID_STATUSES.map(function (status) {
+      return fetchFn(demandsUrl(status, 1, 1), { method: "GET" })
+        .then(function (res) {
+          if (!res.ok) { throw new Error("load stage summary failed (" + res.status + ")"); }
+          return res.json();
+        })
+        .then(function (payload) {
+          if (!payload || payload.success !== true) { throw new Error("invalid stage summary"); }
+          return { status: status, total: typeof payload.total === "number" ? payload.total : 0 };
+        });
+    });
+    return Promise.all(requests).then(function (rows) {
+      if (seq !== summarySeq || !document || !document.querySelectorAll) { return; }
+      var byStatus = {};
+      rows.forEach(function (row) { byStatus[row.status] = row.total; });
+      document.querySelectorAll(".home-vs-mini-card").forEach(function (card) {
+        var status = card.getAttribute("data-vs-status") || "";
+        var total = byStatus[status];
+        if (typeof total !== "number") { return; }
+        var count = card.querySelector(".vs-mini-count");
+        var meta = card.querySelector(".vs-mini-meta");
+        if (count) { count.textContent = String(total); }
+        if (meta) { meta.textContent = status === "all" ? "焦点汇总" : "焦点范围"; }
+        card.classList.toggle("empty", total === 0);
+        card.setAttribute("title", (card.querySelector(".vs-mini-name") || {}).textContent + " · 共 " + total + " 条");
+      });
+    }).catch(function () {
+      // 列表请求仍照常展示错误；统计卡保留服务端初始值，避免伪造为 0。
+    });
   }
 
   function updateTitle(count, displayedCount, pageItemCount) {
@@ -261,32 +303,12 @@
       '</tr>';
   }
 
+  // filterItems 保留为占位函数：工具栏筛选（keyword/objectType/priority/relation）
+  // 已由服务端 SQL 接管，Total / 分页与当前页保持一致；前端不再做同语义二次过滤。
+  // 该函数仅做空集合短路，避免 NPE。
   function filterItems(items) {
     if (!items || !items.length) { return []; }
-    var kw = (state.keyword || "").toLowerCase().trim();
-    var objType = state.objectType || "all";
-    var pri = state.priority || "all";
-
-    return items.filter(function (item) {
-      if (kw) {
-        var idMatch = String(item.id || "").toLowerCase().indexOf(kw) >= 0;
-        var titleMatch = String(item.title || "").toLowerCase().indexOf(kw) >= 0;
-        var ownerMatch = String(item.nextOwner || item.owner || "").toLowerCase().indexOf(kw) >= 0;
-        if (!idMatch && !titleMatch && !ownerMatch) { return false; }
-      }
-      if (objType !== "all") {
-        var isStory = isStoryItem(item);
-        if (objType === "demand" && isStory) { return false; }
-        if (objType === "story" && !isStory) { return false; }
-      }
-      if (pri !== "all") {
-        var p = String(item.pri || "").toLowerCase();
-        if (pri === "p1" && p !== "p1") { return false; }
-        if (pri === "p2" && p !== "p2") { return false; }
-        if (pri === "p3" && p !== "p3" && p !== "p4") { return false; }
-      }
-      return true;
-    });
+    return items.slice();
   }
 
   function renderList(total) {
@@ -389,25 +411,26 @@
       clearTimeout(searchTimer);
       searchTimer = setTimeout(function () {
         state.keyword = val;
-        renderList(rawItems.length);
+        // 工具栏筛选由服务端 SQL 接管：直接拉服务端，避免 Total / 分页与当前页不一致。
+        refreshDemands(state.status);
       }, 200);
     });
 
     $("#homeObjectType").on("change", function () {
       state.objectType = $(this).val();
-      renderList(rawItems.length);
+      refreshDemands(state.status);
     });
 
     $("#homePriority").on("change", function () {
       state.priority = $(this).val();
-      renderList(rawItems.length);
+      refreshDemands(state.status);
     });
 
     $("#homeRelationSegment button").on("click", function () {
       $("#homeRelationSegment button").removeClass("active");
       $(this).addClass("active");
       state.relation = $(this).data("relation") || "all";
-      renderList(rawItems.length);
+      refreshDemands(state.status);
     });
 
     $("#homeResetBtn").on("click", function () {
@@ -419,7 +442,7 @@
       state.objectType = "all";
       state.priority = "all";
       state.relation = "all";
-      renderList(rawItems.length);
+      refreshDemands(state.status);
     });
   }
 
@@ -432,6 +455,7 @@
       state.status = status;
       state.page = 1;
       syncUrl();
+      refreshValueStreamSummary();
       refreshDemands(status);
     });
 
@@ -445,6 +469,7 @@
         state.status = targetStage;
         state.page = 1;
         syncUrl();
+        refreshValueStreamSummary();
         refreshDemands(targetStage);
       }
     });
@@ -460,6 +485,7 @@
       $("#homeQuickChips [data-home-focus]").removeClass("active").attr("aria-pressed", "false");
       $(this).addClass("active").attr("aria-pressed", "true");
       syncUrl();
+      refreshValueStreamSummary();
       refreshDemands(state.status);
     });
     $("#homeQuickChips [data-home-focus]").removeClass("active").attr("aria-pressed", "false");
@@ -485,6 +511,9 @@
       }
     }
     syncUrl();
+    if (state.focus !== "all") {
+      refreshValueStreamSummary();
+    }
     refreshDemands(state.status);
   });
 })(jQuery);

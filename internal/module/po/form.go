@@ -54,10 +54,14 @@ type KPICounts struct {
 
 // DemandsReq 按价值流状态查询需求/故事详情。
 type DemandsReq struct {
-	Focus    string `form:"focus"`
-	Status   string `form:"status"`
-	Page     int    `form:"page"`
-	PageSize int    `form:"pageSize"`
+	Focus      string `form:"focus"`
+	Status     string `form:"status"`
+	Page       int    `form:"page"`
+	PageSize   int    `form:"pageSize"`
+	Keyword    string `form:"keyword"`
+	ObjectType string `form:"objectType"`
+	Priority   string `form:"priority"`
+	Relation   string `form:"relation"`
 }
 
 // Validate 校验查询参数。
@@ -72,6 +76,29 @@ func (r *DemandsReq) Validate() []FieldError {
 	r.Focus = noticeValue(r.Focus, "all")
 	if !isNoticeValue(r.Focus, "all", "today", "blocked", "overdue", "suspended") {
 		return []FieldError{{Field: "focus", Message: "无效的首页焦点"}}
+	}
+	// Toolbar filters: keyword/objectType/priority/relation. 透传到 SQL，
+	// 由 Repo 在 roleDemandBase 之上追加 WHERE；前端不得再做同语义二次过滤。
+	r.Keyword = strings.TrimSpace(r.Keyword)
+	r.ObjectType = strings.ToLower(strings.TrimSpace(r.ObjectType))
+	switch r.ObjectType {
+	case "", "all", "demand":
+	case "story":
+		// FindHomeFocus 当前只查业需；story 由其它入口负责；这里只允许通过，不报错。
+	default:
+		return []FieldError{{Field: "objectType", Message: "不支持的对象类型"}}
+	}
+	r.Priority = strings.ToLower(strings.TrimSpace(r.Priority))
+	switch r.Priority {
+	case "", "all", "p1", "p2", "p3":
+	default:
+		return []FieldError{{Field: "priority", Message: "无效的优先级"}}
+	}
+	r.Relation = strings.ToLower(strings.TrimSpace(r.Relation))
+	switch r.Relation {
+	case "", "all", "owner", "cooperate", "watch":
+	default:
+		return []FieldError{{Field: "relation", Message: "无效的关系"}}
 	}
 	r.Status = status
 	if r.Page <= 0 {
@@ -211,7 +238,7 @@ func (r *TodoListReq) Validate() []FieldError {
 	switch r.ObjectType {
 	case "all", "demand", "task", "bug":
 	case "story":
-		return []FieldError{{Field: "objectType", Message: "objectType=story 待办数据源暂未接入 (WAIT DECISION)"}}
+		return []FieldError{{Field: "objectType", Message: "业务需求的故事待办数据源暂未接入"}}
 	case "approval", "testtask", "issue", "risk", "todo":
 		return []FieldError{{Field: "objectType", Message: "待办数据源暂未接入"}}
 	default:

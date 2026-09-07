@@ -117,10 +117,30 @@
         <span class="workspace-result-hint">聚焦持续跟进的关键业务需求</span>
       </div>
 
-      <div class="follow-list-host" id="followListHost">
-        <div class="state-placeholder follow-empty" id="followEmpty" hidden>当前条件下暂无关注对象</div>
+      <div class="table-scroll-container">
+        <table class="workspace-table follow-table" id="followDemandTable">
+          <thead>
+            <tr>
+              <th style="width:100px">ID</th>
+              <th>标题</th>
+              <th style="width:90px">对象类型</th>
+              <th style="width:90px">当前阶段</th>
+              <th style="width:80px">我的关系</th>
+              <th style="width:140px">主系统</th>
+              <th style="width:80px">配合系统</th>
+              <th style="width:90px">风险标签</th>
+              <th style="width:90px">关注原因</th>
+              <th style="width:130px">操作</th>
+            </tr>
+          </thead>
+          <tbody id="followDemandTbody">
+            <tr><td colspan="10" class="state-placeholder">正在拉取关注业务需求…</td></tr>
+          </tbody>
+        </table>
       </div>
-      <footer class="follow-pagination" id="followPagination" hidden></footer>
+
+      <div class="state-placeholder follow-empty" id="followEmpty" hidden>当前条件下暂无关注对象</div>
+      <div class="workspace-pagination" id="followPagination" hidden></div>
     </div>
   </section>
 </div>

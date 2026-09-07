@@ -207,11 +207,23 @@ func deriveDemandPrimaryAction(actor *model.User, facts primaryActionFactsDemand
 
 // hasCapability 用 actor 字段的简化能力判定。
 //
-// 当前 Service 不引入 actor 角色 → capability 表查询（避免新增 DB 表 / 复杂依赖）；
-// 实际 capability 检查已由 middleware.RequirePerm 在入口保证。这里只在
-// actor 缺失 / 非超管场景下做"最小保守放行"。后续 Stage 6+ 可引入更精细的
+// 状态（2026-09-07 复核）：BLOCKED - CAPABILITY SOURCE NOT AVAILABLE IN SERVICE。
+// 仓库内 capability 真源在 middleware 的 gin.Context["userPerms"] map
+// （internal/middleware/permission.go:61-71，key = perm.Permission.String()）；
+// 当前 Service 签名是 (ctx context.Context, actor *model.User)，
+// 既拿不到 gin.Context，也拿不到 userPerms。*model.User 没有
+// GrantedCapabilities 字段（internal/model/user.go）。因此本函数体只能
+// 沿用"actor 缺失 / SuperAdmin / account 非空"三种放行；actor 非空并不等于
+// 拥有具体业务 capability（已认证 ≠ 拥有业务权限）。
 //
-//	actor.GrantedCapabilities 投影，本函数保持 1 行兼容。
+// 后续两条可选路径（不在本轮实施）：
+//  1. middleware 在 c.Set("currentUser", u) 时同步写入 actor.GrantedCapabilities
+//     字段；需要扩展 model.User 并在所有装载点同步。
+//  2. middleware 将 userPerms 沿 c.Request.WithContext(...) 透传到 ctx.Value(...)；
+//     Service 通过 ctx.Value("userPerms") 取出。需要在 agent-onboarding.md /
+//     architecture.md 评估 ctx 透传机制是否被允许。
+//
+// 两条路径都需要独立任务与产品/架构授权。
 func hasCapability(actor *model.User, _ ...perm.Permission) bool {
 	if actor == nil {
 		return false
@@ -220,6 +232,7 @@ func hasCapability(actor *model.User, _ ...perm.Permission) bool {
 		return true
 	}
 	// middleware 已 RequirePerm 通过；这里仅按 actor 非空放行。
+	// 注意：account 非空 ≠ 拥有目标 capability；本行为已知遗留，见 BLOCKED 说明。
 	return strings.TrimSpace(actor.Account) != ""
 }
 
@@ -278,13 +291,4 @@ func (s *Service) detailRepo() *DemandDetailRepo {
 		return nil
 	}
 	return s.detailSvc.repo
-}
-
-// toActionIDs 把列表页的 int64 行 ID 转成主操作派生的 uint 入参。
-func toActionIDs(ids []int) []uint {
-	out := make([]uint, 0, len(ids))
-	for _, id := range ids {
-		out = append(out, uint(id))
-	}
-	return out
 }

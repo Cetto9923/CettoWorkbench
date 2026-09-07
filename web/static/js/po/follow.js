@@ -248,19 +248,23 @@
     });
   }
 
-  /* ────────── 3. 业务需求逻辑 ────────── */
+  /* ────────── 3. 业务需求逻辑（对齐 CRCBWorkbench 10 列表格与真源展示） ────────── */
   async function loadDemandData() {
-    var host = document.getElementById("followListHost");
+    var tbody = document.getElementById("followDemandTbody");
     var empty = document.getElementById("followEmpty");
     var summary = document.getElementById("followSummary");
+    var pagEl = document.getElementById("followPagination");
+
+    if (tbody) tbody.innerHTML = '<tr><td colspan="10" class="state-placeholder">正在拉取关注业务需求…</td></tr>';
+    if (empty) empty.hidden = true;
     if (summary) summary.textContent = "加载中…";
 
     var params = new URLSearchParams({
       tab: "demand",
-      scope: demandState.scope,
-      keyword: demandState.keyword,
-      page: String(demandState.page),
-      pageSize: String(demandState.pageSize)
+      scope: demandState.scope || "all",
+      keyword: demandState.keyword || "",
+      page: String(demandState.page || 1),
+      pageSize: String(demandState.pageSize || 20)
     });
 
     try {
@@ -269,79 +273,97 @@
       if (!json || !json.success) throw new Error("fetch demand failed");
 
       var items = Array.isArray(json.items) ? json.items : [];
-      demandState.total = json.total || items.length;
+      demandState.total = typeof json.total === "number" ? json.total : items.length;
 
-      if (summary) summary.textContent = "共 " + demandState.total + " 条业务需求";
+      if (summary) {
+        summary.textContent = "共 " + demandState.total + " 条业务需求 · 聚焦持续跟进的关键业务需求";
+      }
 
       if (!items.length) {
-        if (host) host.innerHTML = "";
-        if (empty) { host.appendChild(empty); empty.hidden = false; }
-        renderDemandPagination();
+        if (tbody) tbody.innerHTML = "";
+        if (empty) empty.hidden = false;
+        if (pagEl) pagEl.hidden = true;
+        updateTabBadges();
         return;
       }
       if (empty) empty.hidden = true;
 
       var html = items.map(function (item) {
-        var tags = "";
-        if (item.isKey) tags += '<span class="follow-key">重点</span> ';
-        if (item.isClosed) tags += '<span class="follow-closed">已关闭</span> ';
+        var did = item.id;
+        var displayId = "US" + did;
+        var ztUrl = item.url || "";
+        var idCell = ztUrl
+          ? '<a class="table-id-link" href="' + esc(ztUrl) + '" target="_blank" rel="noopener noreferrer" title="在禅道中查看原始详情">' + esc(displayId) + '</a>'
+          : '<span class="table-id-link">' + esc(displayId) + '</span>';
+
+        var titleBtn = '<button type="button" class="table-title-link" data-open-demand="' + esc(did) + '" title="点击查看需求详情">' + esc(item.title || "—") + '</button>';
+
+        var typeBadge = '<span class="wb-type wb-type-business">业务需求</span>';
+        var stageTag = '<span class="status-tag st-progress">' + esc(item.stage || item.status || "—") + '</span>';
+
+        var risk = String(item.risk || "-").trim();
+        var riskHtml = (risk === "重点关注" || item.isKey)
+          ? '<span class="status-tag st-warning">重点关注</span>'
+          : '<span style="color:var(--po-t3, #94a3b8)">-</span>';
+
+        var reason = item.reason || (item.isKey ? "重点关注" : "主动关注");
+        var reasonHtml = '<span class="reason-tag">' + esc(reason) + '</span>';
 
         return (
-          '<div class="follow-item">' +
-          '  <div class="follow-main">' +
-          '    <div class="follow-title" data-open-demand="' + esc(item.id) + '" style="cursor:pointer">' +
-          '      <span style="color:var(--po-t2);margin-right:6px">US' + esc(item.id) + '</span>' +
-          esc(item.title) +
-          '    </div>' +
-          '    <div class="follow-meta">' +
-          priorityBadge(item.priority) + ' ' +
-          tags +
-          '状态: ' + esc(item.status) + ' · 负责人: ' + esc(item.owner || "—") +
-          (item.latestNote ? ' · 周报: ' + esc(item.latestNote) : '') +
-          '    </div>' +
+          '<tr>' +
+          '<td class="c-id" style="white-space:nowrap">' + idCell + '</td>' +
+          '<td class="c-title">' + titleBtn + '</td>' +
+          '<td>' + typeBadge + '</td>' +
+          '<td>' + stageTag + '</td>' +
+          '<td>' + esc(item.role || "我关注") + '</td>' +
+          '<td>' + esc(item.systemName || "—") + '</td>' +
+          '<td>' + esc(item.supportSystems || "-") + '</td>' +
+          '<td>' + riskHtml + '</td>' +
+          '<td>' + reasonHtml + '</td>' +
+          '<td class="c-action">' +
+          '  <div class="cell-actions" style="display:flex;gap:6px;align-items:center;">' +
+          '    <button type="button" class="action-btn small" data-open-demand="' + esc(did) + '">查看</button>' +
+          '    <button type="button" class="action-btn small ghost" data-unfollow-demand="' + esc(did) + '">取消关注</button>' +
           '  </div>' +
-          '  <div class="follow-actions">' +
-          '    <span class="follow-pa">' + primaryActionHtml(item, false) + '</span>' +
-          '    <button type="button" class="follow-btn" data-unfollow-demand="' + esc(item.id) + '">取消关注</button>' +
-          '  </div>' +
-          '</div>'
+          '</td>' +
+          '</tr>'
         );
       }).join("");
 
-      if (host) host.innerHTML = html;
-      renderDemandPagination();
+      if (tbody) tbody.innerHTML = html;
+
+      // 统一分页
+      if (pagEl && window.PersonalList && typeof window.PersonalList.renderPagination === "function") {
+        pagEl.hidden = false;
+        window.PersonalList.renderPagination({
+          container: pagEl,
+          page: demandState.page,
+          pageSize: demandState.pageSize,
+          total: demandState.total,
+          onPageChange: function (p) {
+            demandState.page = p;
+            loadDemandData();
+          },
+          onPageSizeChange: function (ps) {
+            demandState.pageSize = ps;
+            demandState.page = 1;
+            window.PersonalList.savePageSize("po.follow.pageSize", ps);
+            loadDemandData();
+          }
+        });
+      }
+
       bindDemandEvents();
       updateTabBadges();
     } catch (e) {
-      if (summary) summary.textContent = "加载失败";
+      if (tbody) tbody.innerHTML = "";
+      if (summary) summary.textContent = "加载失败，请重试";
+      if (empty) empty.hidden = false;
     }
   }
 
-  function renderDemandPagination() {
-    var host = document.getElementById("followPagination");
-    if (!host) return;
-    var pages = Math.max(1, Math.ceil(demandState.total / demandState.pageSize));
-    host.hidden = demandState.total === 0;
-    if (demandState.total === 0) { host.innerHTML = ""; return; }
-
-    var start = (demandState.page - 1) * demandState.pageSize + 1;
-    var end = Math.min(demandState.total, demandState.page * demandState.pageSize);
-    host.innerHTML =
-      "<span>显示 " + start + "–" + end + "，共 " + demandState.total + " 个</span>" +
-      '<div class="follow-pager-controls">' +
-      '<button type="button" class="follow-pager-btn" id="demandPrevBtn"' + (demandState.page === 1 ? " disabled" : "") + ">‹</button>" +
-      "<span>第 " + demandState.page + " / " + pages + " 页</span>" +
-      '<button type="button" class="follow-pager-btn" id="demandNextBtn"' + (demandState.page === pages ? " disabled" : "") + ">›</button>" +
-      "</div>";
-
-    var prev = document.getElementById("demandPrevBtn");
-    var next = document.getElementById("demandNextBtn");
-    if (prev) prev.addEventListener("click", function () { demandState.page--; loadDemandData(); });
-    if (next) next.addEventListener("click", function () { demandState.page++; loadDemandData(); });
-  }
-
   function bindDemandEvents() {
-    document.querySelectorAll("[data-open-demand]").forEach(function (btn) {
+    document.querySelectorAll("#demandSection [data-open-demand]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var id = btn.getAttribute("data-open-demand");
         if (window.DemandDetail && typeof window.DemandDetail.open === "function") {
@@ -349,10 +371,12 @@
         }
       });
     });
-    document.querySelectorAll("[data-unfollow-demand]").forEach(function (btn) {
+    document.querySelectorAll("#demandSection [data-unfollow-demand]").forEach(function (btn) {
       btn.addEventListener("click", async function () {
         var id = btn.getAttribute("data-unfollow-demand");
-        await unwatchItem("demand", id);
+        if (confirm("确认取消关注该业务需求？")) {
+          await unwatchItem("demand", id);
+        }
       });
     });
   }
