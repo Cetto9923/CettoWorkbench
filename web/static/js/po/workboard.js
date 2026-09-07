@@ -42,7 +42,7 @@
   }
   var NODE_TYPE_KIND = { business: "business", childBusiness: "sub_demand", rd: "story", independentRd: "independent_story", task: "task", unknown: "" };
   var objectTypeBadge = (window.PersonalList && window.PersonalList.objectTypeBadge) || function (kind) {
-    var labels = { business: "业务需求", sub_demand: "子需求", story: "研发需求", independent_story: "独立研发需求", task: "任务" };
+    var labels = { business: "业务需求", sub_demand: "子需求", story: "研发需求", independent_story: "独立研需", task: "任务" };
     var k = String(kind || "").trim().toLowerCase();
     if (!k || !labels[k]) { return '<span class="wb-type wb-type-unknown">' + (k ? esc(k) : "—") + "</span>"; }
     return '<span class="wb-type wb-type-' + k + '">' + labels[k] + "</span>";
@@ -260,7 +260,16 @@
     var metaBits = []; if (root.owner) metaBits.push(ownerBadge(root.owner, "PO "));
     metaBits.push(isIndy ? "<span>尚未纳入执行</span>" : "<span>研发需求 0</span>");
     if (root.deadline) metaBits.push('<span class="biz-date">目标上线 ' + esc(root.deadline) + "</span>");
-    var titleTag = '<button type="button" class="node-title is-link" data-open-demand="' + esc(root.id) + '" title="' + esc(root.title) + '">' + esc(root.title) + "</button>";
+    var titleTag;
+    if (isIndy) {
+      // 独立研需来自 zt_story，不能走业务需求详情接口（/demands/:id/detail）。
+      // 有禅道链接时按研发需求打开；缺少链接时保持文本展示，避免触发错误请求。
+      titleTag = root.url
+        ? '<a class="node-title is-link" href="' + esc(root.url) + '" title="' + esc(root.title) + '">' + esc(root.title) + "</a>"
+        : '<span class="node-title" title="' + esc(root.title) + '">' + esc(root.title) + "</span>";
+    } else {
+      titleTag = '<button type="button" class="node-title is-link" data-open-demand="' + esc(root.id) + '" title="' + esc(root.title) + '">' + esc(root.title) + "</button>";
+    }
     return '<div class="' + rowCls + '" data-owner="' + esc(root.owner || "") + '" data-flags="' + flags.join(" ") +
       '" data-stage="' + esc(root.stage || "") + '" data-status="' + esc(root.status || "") +
       '" data-deadline="' + esc(root.deadline || "") + '" data-rd="' + (isIndy ? esc(root.displayId) : "") + '" id="bg' + root.id + '">' +
@@ -324,7 +333,7 @@
     var html = "";
     tree.forEach(function (root) {
       var nodeType = nodeTypeOf(root, null);
-      var children = root.children || [];
+      var children = (root.children || []).filter(function (child) { return child.kind !== "story" || child.independent; });
       var hasChild = children.length > 0;
       var flags = [];
       if (isOverdue(root)) { flags.push("overdue"); }
@@ -362,10 +371,7 @@
       html += '<section class="biz-group is-collapsed" data-owner="' + esc(root.owner || "") + '" data-flags="' + flags.join(" ") + '" id="bg' + root.id + '">' + headHtml + '<div class="group-body">';
       children.forEach(function (child, ci) {
         var isLastChild = ci === children.length - 1;
-        // V2 收敛：仅独立研发需求（independentRd）作为子行展开；
-        // 非独立研需、子需求作为父业务需求聚合卡片的统计来源，不渲染子行。
-        if (child.kind === "sub_demand") { continue; }
-        if (child.kind === "story" && !child.independent) { continue; }
+        // 展示子业务需求；关联业务需求的研发交付行已在上方过滤。
         html += renderDemandRow(child, 1, isLastChild, root.owner);
       });
       html += "</div></section>";
@@ -708,5 +714,6 @@
       window.WorkboardIssue.loadIssues();
     }
   }
-  loadIssues(); switchMode(mode);
+  try { loadIssues(); switchMode(mode); }
+  catch (e) { console.error("[wb-debug] init", e && e.stack || e); }
 })();

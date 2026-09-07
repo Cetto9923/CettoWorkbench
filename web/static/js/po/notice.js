@@ -173,6 +173,7 @@
     if (!canon || canon === "mail" || !OBJECT_TYPE_LABELS[canon]) {
       var rk = reminderKindFromSubject(rawSubject);
       if (rk) { canon = rk; isReminderTemplate = true; }
+      else if (/^\s*TICKET\s*#/i.test(rawSubject)) { canon = "issue"; }
     }
     var badgeHtml = "";
     if (canon && canon !== "mail" && OBJECT_TYPE_LABELS[canon]) {

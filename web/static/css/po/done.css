@@ -199,21 +199,21 @@
   color: var(--po-t2, #4b5563);
   line-height: 1.35;
   font-family: ui-monospace, monospace;
+  white-space: nowrap;
 }
 .done-obj {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  white-space: nowrap;
   overflow: visible;
   text-overflow: clip;
 }
 .done-obj .wb-type {
-  align-self: flex-start;
+  vertical-align: middle;
 }
 .done-obj-code {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--po-t3, #9ca3af);
   font-family: ui-monospace, monospace;
+  margin-left: 4px;
 }
 .wb-done-title-link {
   border: 0;

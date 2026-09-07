@@ -54,7 +54,7 @@
       priorityBadge(summary.priority) +
       '<div class="dd-head-actions">' +
       '  <a class="dd-iconbtn" href="/demands/' + esc(summary.demandId) + '" target="_blank" title="在新页面打开">↗</a>' +
-      '  <button class="dd-iconbtn" onclick="DemandDetail.close()" title="关闭">×</button>' +
+      '  <button class="ui-close-btn" onclick="DemandDetail.close()" title="关闭" aria-label="关闭">×</button>' +
       '</div></div>' +
       '<div class="dd-title">' + esc(summary.title) + '</div>' +
       '<div class="dd-meta">' +

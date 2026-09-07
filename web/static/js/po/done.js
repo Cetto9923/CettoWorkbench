@@ -82,10 +82,10 @@
     return document.getElementById(id);
   }
 
-  function fmtTwoLines(value) {
+  function fmtDateTime(value) {
     if (!value) return "--";
     var m = String(value).match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})/);
-    return m ? m[1] + "<br>" + m[2] : esc(value);
+    return m ? m[1] + " " + m[2] : esc(value);
   }
 
   function tagClass(result) {
@@ -257,8 +257,8 @@
 
           return (
             '<tr>' +
-            '<td class="done-time">' + fmtTwoLines(it.handledAt || it.date) + '</td>' +
-            '<td class="done-obj">' + objectTypeBadgeFromKind(it.objectType) + '<span class="done-obj-code">' + esc(it.objectId) + '</span></td>' +
+            '<td class="done-time">' + fmtDateTime(it.handledAt || it.date) + '</td>' +
+            '<td class="done-obj">' + objectTypeBadgeFromKind(it.objectType) + '<span class="done-obj-code">#' + esc(it.objectId) + '</span></td>' +
             '<td class="done-title">' + titleCell + '</td>' +
             '<td class="done-action"><span class="done-action-name">' + esc(it.actionName || it.action) + '</span></td>' +
             '<td class="done-result"><span class="done-tag ' + tagClass(it.resultCode || it.result) + '">' + esc(it.resultText || it.result || "--") + '</span></td>' +

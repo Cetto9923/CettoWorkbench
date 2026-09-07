@@ -53,7 +53,7 @@
         (item.pmAccount ? " (" + esc(item.pmAccount) + ")" : "") +
         (item.pmDeptName ? " · 承建团队：" + esc(item.pmDeptName) : "") + '</div>' +
         '  </div>' +
-        '  <button type="button" class="pw-close" id="pwDrawerClose">×</button>' +
+        '  <button type="button" class="pw-close ui-close-btn" id="pwDrawerClose" aria-label="关闭">×</button>' +
         '</div>' +
         '<div class="pw-drawer-body">' +
         (item.warning ? '<div class="pw-warning">' + esc(item.warning) + '</div>' : '') +
@@ -114,7 +114,7 @@
       drawer.innerHTML =
         '<div class="pw-drawer-head">' +
         "  <h2>项目历史周报</h2>" +
-        '  <button type="button" class="pw-close" id="pwDrawerClose">×</button>' +
+        '  <button type="button" class="pw-close ui-close-btn" id="pwDrawerClose" aria-label="关闭">×</button>' +
         "</div>" +
         '<div class="pw-drawer-body">' +
         '  <table class="pw-history-table">' +

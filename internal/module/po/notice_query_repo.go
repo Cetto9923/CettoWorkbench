@@ -91,7 +91,11 @@ func applyNoticeFilters(query *gorm.DB, now time.Time, req NoticeListReq, includ
 	if req.ObjectType == "approval" {
 		query = query.Where(noticeCategorySQLExpr + " = 'approval'")
 	} else if req.ObjectType != "" && req.ObjectType != "all" {
-		query = query.Where("COALESCE(a.objectType, n.objectType) = ?", req.ObjectType)
+		if req.ObjectType == "demand" {
+			query = query.Where("COALESCE(a.objectType, n.objectType) IN ?", []string{"demand", "sub_demand", "business"})
+		} else {
+			query = query.Where("COALESCE(a.objectType, n.objectType) = ?", req.ObjectType)
+		}
 	}
 
 	switch req.TimeRange {

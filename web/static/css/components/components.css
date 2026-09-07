@@ -404,6 +404,27 @@
   opacity: 1;
 }
 
+/* Shared close affordance for drawers and modals. */
+.ui-close-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border, #d8e0eb);
+  border-radius: 6px;
+  padding: 0;
+  background: var(--white, #fff);
+  color: var(--t2, #64748b);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.ui-close-btn:hover { background: var(--hover, #f1f5f9); color: var(--t1, #1f2937); border-color: var(--primary, #2563eb); }
+.ui-close-btn:focus-visible { outline: 2px solid var(--primary, #2563eb); outline-offset: 2px; }
+
 .toast-success {
   background: var(--color-success-bg);
   color: var(--color-success);

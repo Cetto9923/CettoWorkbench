@@ -294,7 +294,7 @@
     business: "业务需求",
     sub_demand: "子需求",
     story: "研发需求",
-    independent_story: "独立研发需求",
+    independent_story: "独立研需",
     task: "任务",
     issue: "问题",
     bug: "Bug",
