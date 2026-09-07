@@ -1,0 +1,136 @@
+{{/* ==========================================================================
+文件: web/templates/follow/list.html
+模块: 我的关注
+职责: 我的关注列表静态快照页（对齐原型截图：对象 Tab + 阶段统计 + 筛选 + 表格）。
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .PageTitle (string)
+========================================================================== */}}
+{{ define "page_css" }}
+<link rel="stylesheet" href="{{ asset "/static/css/follow/list.css" }}">
+{{ end }}
+
+{{ define "content" }}
+<div class="follow-page" id="followPageRoot">
+  <div class="follow-page-hdr">
+    <h2>我的关注</h2>
+    <nav class="follow-obj-tabs" aria-label="对象类型">
+      <button type="button" class="follow-obj-tab" disabled>全部 <strong>6</strong></button>
+      <button type="button" class="follow-obj-tab active" disabled>业务需求 <strong>3</strong></button>
+      <button type="button" class="follow-obj-tab" disabled>项目周报 <strong>3</strong></button>
+      <button type="button" class="follow-obj-tab follow-obj-tab--muted" disabled>问题 <span class="follow-obj-phase">二期</span></button>
+      <button type="button" class="follow-obj-tab follow-obj-tab--muted" disabled>测试单 <span class="follow-obj-phase">二期</span></button>
+    </nav>
+  </div>
+
+  <section class="follow-stage-cards" aria-label="阶段统计">
+    <div class="follow-stage-card">
+      <div class="follow-stage-num">0</div>
+      <div class="follow-stage-label">处理中</div>
+      <div class="follow-stage-hint">受理+澄清阶段</div>
+    </div>
+    <div class="follow-stage-card">
+      <div class="follow-stage-num">0</div>
+      <div class="follow-stage-label">实施中</div>
+      <div class="follow-stage-hint">排期→发布前</div>
+    </div>
+    <div class="follow-stage-card">
+      <div class="follow-stage-num">0</div>
+      <div class="follow-stage-label">已发布</div>
+      <div class="follow-stage-hint">已上线</div>
+    </div>
+    <div class="follow-stage-card">
+      <div class="follow-stage-num follow-stage-num--danger">0</div>
+      <div class="follow-stage-label">已关闭</div>
+      <div class="follow-stage-hint">需求关闭</div>
+    </div>
+  </section>
+
+  <div class="follow-filter-row">
+    <div class="follow-scope" role="group" aria-label="二级筛选">
+      <button type="button" class="follow-scope-chip active" disabled>全部 <strong>3</strong></button>
+      <button type="button" class="follow-scope-chip" disabled>重点关注 <strong>0</strong></button>
+      <button type="button" class="follow-scope-chip" disabled>未关闭 + 重点关注 <strong>0</strong></button>
+      <button type="button" class="follow-scope-chip" disabled>已关闭 <strong>3</strong></button>
+      <button type="button" class="follow-scope-chip" disabled>未关闭 · 正常推进 <strong>0</strong></button>
+    </div>
+    <div class="follow-result-meta">关注业务需求 · 共 3 条</div>
+  </div>
+
+  <div class="follow-table-panel">
+    <div class="table-wrapper">
+      <table class="table data-table follow-table">
+        <thead>
+          <tr>
+            <th class="col-id">ID</th>
+            <th class="col-title">标题</th>
+            <th class="col-type">对象类型</th>
+            <th class="col-stage">当前阶段</th>
+            <th class="col-rel">我的关系</th>
+            <th class="col-sys">主系统</th>
+            <th class="col-sys">配合系统</th>
+            <th class="col-risk">风险标签</th>
+            <th class="col-reason">关注原因</th>
+            <th class="col-action">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-id">US25453</td>
+            <td class="col-title cell-ellipsis" title="变更单导出联动筛选需求">变更单导出联动筛选需求</td>
+            <td class="col-type"><span class="follow-type-tag">业务需求</span></td>
+            <td class="col-stage"><span class="follow-stage-badge">已关闭</span></td>
+            <td class="col-rel">我关注</td>
+            <td class="col-sys follow-empty-cell">—</td>
+            <td class="col-sys follow-empty-cell">—</td>
+            <td class="col-risk follow-empty-cell">—</td>
+            <td class="col-reason">抄送关注</td>
+            <td class="col-action">
+              <div class="follow-row-actions">
+                <button type="button" class="follow-act" disabled>查看</button>
+                <button type="button" class="follow-act follow-act--muted" disabled>取消关注</button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-id">US949</td>
+            <td class="col-title cell-ellipsis" title="需求池列表支持按主系统筛选">需求池列表支持按主系统筛选</td>
+            <td class="col-type"><span class="follow-type-tag">业务需求</span></td>
+            <td class="col-stage"><span class="follow-stage-badge">已关闭</span></td>
+            <td class="col-rel">我关注</td>
+            <td class="col-sys follow-empty-cell">—</td>
+            <td class="col-sys follow-empty-cell">—</td>
+            <td class="col-risk follow-empty-cell">—</td>
+            <td class="col-reason">抄送关注</td>
+            <td class="col-action">
+              <div class="follow-row-actions">
+                <button type="button" class="follow-act" disabled>查看</button>
+                <button type="button" class="follow-act follow-act--muted" disabled>取消关注</button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="col-id">US53</td>
+            <td class="col-title cell-ellipsis" title="业务需求关闭后同步关注状态">业务需求关闭后同步关注状态</td>
+            <td class="col-type"><span class="follow-type-tag">业务需求</span></td>
+            <td class="col-stage"><span class="follow-stage-badge">已关闭</span></td>
+            <td class="col-rel">我关注</td>
+            <td class="col-sys follow-empty-cell">—</td>
+            <td class="col-sys follow-empty-cell">—</td>
+            <td class="col-risk follow-empty-cell">—</td>
+            <td class="col-reason">抄送关注</td>
+            <td class="col-action">
+              <div class="follow-row-actions">
+                <button type="button" class="follow-act" disabled>查看</button>
+                <button type="button" class="follow-act follow-act--muted" disabled>取消关注</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{{ end }}
+
+{{ define "page_js" }}
+{{ end }}

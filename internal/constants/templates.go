@@ -29,5 +29,7 @@ const (
 
 	TEMPLATE_PO_HOME = "po/home"
 
+	TEMPLATE_FOLLOW_LIST = "follow/list"
+
 	TEMPLATE_SCHEDULE_INDEX = "schedule/index"
 )

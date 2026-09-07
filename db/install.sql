@@ -151,3 +151,6 @@ UPDATE `zt_menus` SET `title` = '需求排期' WHERE `title` = '排期工作台'
 INSERT IGNORE INTO `zt_menus` (`id`, `parentId`, `title`, `icon`, `path`, `perm`, `type`, `sort`) VALUES
  (4,	0,	'工作区',	'',	'',	'',	'M',	200);
 UPDATE `zt_menus` SET `parentId` = 4, `sort` = 1 WHERE `path` = '/schedule' AND `perm` = 'po:schedule';
+
+INSERT IGNORE INTO `zt_menus` (`parentId`, `title`, `icon`, `path`, `perm`, `type`, `sort`) VALUES
+ (1,	'我的关注',	'fa-star',	'/follow',	'follow:list',	'C',	5);

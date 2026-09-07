@@ -17,6 +17,7 @@ import (
 
 	"workbench/internal/module/debug"
 	"workbench/internal/module/dept"
+	"workbench/internal/module/follow"
 
 	loginmodule "workbench/internal/module/login"
 	"workbench/internal/module/loginlog"
@@ -44,6 +45,7 @@ type RouteDeps struct {
 	DeptHandler         *dept.Handler
 	RoleHandler         *role.Handler
 	PoHandler           *pomodule.Handler
+	FollowHandler       *follow.Handler
 	ScheduleHandler     *schedule.Handler
 	SqlPerfHandler      *debug.Handler
 }
@@ -86,6 +88,9 @@ func registerRoutes(r *gin.Engine, deps RouteDeps) {
 	{
 		if deps.PoHandler != nil {
 			deps.PoHandler.RegisterRoutes(po)
+		}
+		if deps.FollowHandler != nil {
+			deps.FollowHandler.RegisterRoutes(po)
 		}
 		if deps.ScheduleHandler != nil {
 			deps.ScheduleHandler.RegisterRoutes(po)

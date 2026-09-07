@@ -31,6 +31,7 @@ import (
 	"workbench/internal/module/debug"
 	"workbench/internal/module/dept"
 
+	"workbench/internal/module/follow"
 	"workbench/internal/module/login"
 	"workbench/internal/module/loginlog"
 	"workbench/internal/module/menu"
@@ -133,6 +134,7 @@ func Run() error {
 	poRepo := po.NewRepo(dbReadonly, db)
 	poSvc := po.NewService(poRepo, scheduleSvc, userSvc, zapLog)
 	poHandler := po.NewHandler(poSvc, zapLog)
+	followHandler := follow.NewHandler(zapLog)
 	sqlPerfRepo := debug.NewRepo(cfg.Log.Dir)
 	sqlPerfSvc := debug.NewService(sqlPerfRepo)
 	sqlPerfHandler := debug.NewHandler(sqlPerfSvc)
@@ -151,6 +153,7 @@ func Run() error {
 		DeptHandler:         deptHandler,
 		RoleHandler:         roleHandler,
 		PoHandler:           poHandler,
+		FollowHandler:       followHandler,
 		ScheduleHandler:     scheduleHandler,
 		SqlPerfHandler:      sqlPerfHandler,
 	}
