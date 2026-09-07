@@ -31,6 +31,9 @@ func (s *Service) FollowList(ctx context.Context, actor *model.User, req FollowL
 		if err != nil {
 			return nil, err
 		}
+		if err := s.attachFollowPrimaryActions(ctx, actor, items); err != nil {
+			return nil, err
+		}
 		return &FollowListResp{Items: items, Total: total, Page: req.Page, PageSize: req.PageSize}, nil
 	case FollowTabProjectReport:
 		items, total, err := s.repo.FindFollowedProjectReports(ctx, RepoFindFollowedProjectReportsReq{
@@ -42,6 +45,30 @@ func (s *Service) FollowList(ctx context.Context, actor *model.User, req FollowL
 		return &FollowListResp{Items: items, Total: total, Page: req.Page, PageSize: req.PageSize}, nil
 	}
 	return &FollowListResp{Items: []FollowItem{}, Page: req.Page, PageSize: req.PageSize}, nil
+}
+
+// attachFollowPrimaryActions 为关注列表业需批量挂主操作（Stage 5 单一真源）。
+func (s *Service) attachFollowPrimaryActions(ctx context.Context, actor *model.User, items []FollowItem) error {
+	if len(items) == 0 {
+		return nil
+	}
+	ids := make([]uint, 0, len(items))
+	for _, it := range items {
+		if it.ID > 0 {
+			ids = append(ids, uint(it.ID))
+		}
+	}
+	actions, err := s.DeriveDemandPrimaryActions(ctx, actor, ids)
+	if err != nil {
+		return err
+	}
+	for i := range items {
+		if pa, ok := actions[uint(items[i].ID)]; ok {
+			paCopy := pa
+			items[i].PrimaryAction = &paCopy
+		}
+	}
+	return nil
 }
 
 // FollowSetDemand 切换对业务需求的关注。
@@ -280,16 +307,38 @@ func (s *Service) populateWorkItems(ctx context.Context, actor *model.User, page
 		}
 	}
 
+	// Stage 5：批量派生主操作（避免行内 N+1）。
+	demandIDsUint := toUintSlice(demandIDs)
+	storyIDsUint := toUintSlice(storyIDs)
+	demandActions, err := s.DeriveDemandPrimaryActions(ctx, actor, demandIDsUint)
+	if err != nil {
+		return nil, err
+	}
+	storyActions, err := s.DeriveStoryPrimaryActions(ctx, actor, storyIDsUint, false)
+	if err != nil {
+		return nil, err
+	}
+
 	items := make([]WorkItemDetail, 0, len(pageRefs))
 	for _, ref := range pageRefs {
 		label := valueStreamLabelForStatus(ref.stageStatus)
 		if ref.kind == "demand" {
 			if row, ok := demandMap[ref.id]; ok {
-				items = append(items, buildDemandWorkItem(row, label, displayMap))
+				item := buildDemandWorkItem(row, label, displayMap)
+				if pa, ok := demandActions[uint(ref.id)]; ok {
+					paCopy := pa
+					item.PrimaryAction = &paCopy
+				}
+				items = append(items, item)
 			}
 		} else if ref.kind == "story" {
 			if row, ok := storyMap[ref.id]; ok {
-				items = append(items, buildStoryWorkItem(row, label, actor, displayMap))
+				item := buildStoryWorkItem(row, label, actor, displayMap)
+				if pa, ok := storyActions[uint(ref.id)]; ok {
+					paCopy := pa
+					item.PrimaryAction = &paCopy
+				}
+				items = append(items, item)
 			}
 		}
 	}
@@ -300,6 +349,20 @@ func (s *Service) populateWorkItems(ctx context.Context, actor *model.User, page
 		Page:     page,
 		PageSize: pageSize,
 	}, nil
+}
+
+// toUintSlice 把 []int 安全转为 []uint（ref.id 已经是正数）。
+func toUintSlice(in []int) []uint {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make([]uint, 0, len(in))
+	for _, v := range in {
+		if v > 0 {
+			out = append(out, uint(v))
+		}
+	}
+	return out
 }
 
 func buildDemandWorkItem(row DemandRow, label string, displayMap map[string]string) WorkItemDetail {
