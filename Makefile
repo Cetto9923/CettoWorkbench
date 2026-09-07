@@ -27,6 +27,7 @@ check-frontend-test:
 	@node tests/unit/frontend/navigation-primary-action.test.js
 	@node tests/unit/frontend/html-sanitize.test.js
 	@node tests/unit/frontend/render-row-isolated.test.js
+	@node tests/unit/frontend/done-status-labels.test.js
 	@echo "frontend unit/behavior tests passed"
 
 check-vet:

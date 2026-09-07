@@ -7,7 +7,6 @@
 
 (function () {
   "use strict";
-
   function esc(str) {
     if (str === null || str === undefined) return "";
     return String(str)
@@ -17,7 +16,6 @@
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
   }
-
   var PL = window.PersonalList || {};
   var objectTypeBadgeFromKind = PL.objectTypeBadgeFromKind || function (kind) {
     var map = { demand: "business", story: "story", task: "task", bug: "bug", issue: "issue", todo: "todo", testtask: "testtask", approval: "approval" };
@@ -26,11 +24,9 @@
     if (!k) { return '<span class="wb-type wb-type-unknown">' + esc(kind || "—") + "</span>"; }
     return '<span class="wb-type wb-type-' + k + '">' + labels[k] + "</span>";
   };
-
   var OBJECT_TYPE_ORDER = [
     "", "demand", "story", "task", "bug", "risk", "issue", "feedback", "release", "build", "todo"
   ];
-
   var OBJECT_TYPE_LABELS = {
     "": "全部已办",
     "demand": "业务需求",
@@ -44,7 +40,6 @@
     "build": "构建",
     "todo": "待办"
   };
-
   var OBJECT_TYPE_ICONS = {
     "demand": "fa-lightbulb",
     "task": "fa-list-check",
@@ -57,7 +52,6 @@
     "build": "fa-cube",
     "feedback": "fa-comments"
   };
-
   var state = {
     mode: "core",
     timeRange: "all",
@@ -107,6 +101,12 @@
     if (t.indexOf("驳回") >= 0 || t.indexOf("拒绝") >= 0 || t.indexOf("失败") >= 0) return "danger";
     if (t.indexOf("开发") >= 0 || t.indexOf("doing") >= 0 || t.indexOf("测试") >= 0 || t.indexOf("评审") >= 0) return "blue";
     return "gray";
+  }
+
+  function statusLabel(status) {
+    var raw = String(status || "").trim(), key = raw.toLowerCase();
+    var labels = { draft: "草稿", wait: "待处理", doing: "进行中", done: "已完成", pause: "已暂停", cancel: "已取消", closed: "已关闭", reviewing: "评审中", active: "已激活", changing: "变更中", clarified: "已澄清", developing: "开发中", testing: "测试中", waitacceptance: "待验收", acceptanced: "已验收", waitdeliver: "待交付", delivered: "已交付", released: "已发布", planned: "已排期", refuse: "已驳回", suspended: "已挂起", blocked: "已阻塞", opened: "处理中", resolved: "已解决", verified: "已验证", unconfirmed: "未确认" };
+    return labels[key] || raw || "--";
   }
 
   /* ────────── 1. 元数据加载与下拉渲染 ────────── */
@@ -250,7 +250,7 @@
           }
 
           var changeHtml = (it.beforeStatus && it.afterStatus)
-            ? '<span class="done-change-before">' + esc(it.beforeStatus) + '</span><span class="done-arrow">→</span><span class="done-change-after">' + esc(it.afterStatus) + '</span>'
+            ? '<span class="done-change-before">' + esc(statusLabel(it.beforeStatus)) + '</span><span class="done-arrow">→</span><span class="done-change-after">' + esc(statusLabel(it.afterStatus)) + '</span>'
             : '<span class="done-change-na">--</span>';
 
           var ctxHtml = '<div class="done-ctx-project">' + esc(it.projectName || "--") + '</div>' +
@@ -265,7 +265,7 @@
             '<td class="done-result"><span class="done-tag ' + tagClass(it.resultCode || it.result) + '">' + esc(it.resultText || it.result || "--") + '</span></td>' +
             '<td class="done-change">' + changeHtml + '</td>' +
             '<td class="done-ctx">' + ctxHtml + '</td>' +
-            '<td class="done-status"><span class="done-tag ' + statusClass(it.currentStatus) + '">' + esc(it.currentStatus || "--") + '</span></td>' +
+            '<td class="done-status"><span class="done-tag ' + statusClass(it.currentStatus) + '">' + esc(statusLabel(it.currentStatus)) + '</span></td>' +
             '<td class="done-op"><button type="button" class="action-btn small wb-done-detail-btn" data-action-id="' + it.id + '">查看记录</button></td>' +
             '</tr>'
           );
@@ -345,7 +345,7 @@
           }
         }
 
-        var changeText = (it.beforeStatus && it.afterStatus) ? (it.beforeStatus + " → " + it.afterStatus) : "--";
+        var changeText = (it.beforeStatus && it.afterStatus) ? (statusLabel(it.beforeStatus) + " → " + statusLabel(it.afterStatus)) : "--";
 
         var timelineHtml = tl.length ? tl.map(function (x) {
           return (
@@ -379,7 +379,7 @@
           '      <span class="done-kv-k">所属产品</span><span class="done-kv-v">' + esc(ctx.productName || "--") + '</span>' +
           '      <span class="done-kv-k">所属项目</span><span class="done-kv-v">' + esc(ctx.projectName || "--") + '</span>' +
           '      <span class="done-kv-k">执行 / 迭代</span><span class="done-kv-v">' + esc(ctx.executionName || "--") + '</span>' +
-          '      <span class="done-kv-k">当前状态</span><span class="done-kv-v">' + esc(ctx.currentStatus || "--") + '</span>' +
+          '      <span class="done-kv-k">当前状态</span><span class="done-kv-v">' + esc(statusLabel(ctx.currentStatus)) + '</span>' +
           '      <span class="done-kv-k">当前负责人</span><span class="done-kv-v">' + esc(ctx.currentOwner || "--") + '</span>' +
           '    </div>' +
           '  </div>' +
