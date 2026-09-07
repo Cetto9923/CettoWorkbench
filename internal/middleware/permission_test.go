@@ -129,3 +129,26 @@ func TestRequirePerm_SuperAdminAllowed(t *testing.T) {
 		t.Fatalf("status = %d, want %d", rr.Code, http.StatusOK)
 	}
 }
+
+func TestRequireAnyPerm_AllowsSecondPermission(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	user := &model.User{ID: 2, Account: "board_user", IsSuperAdmin: false}
+	r.Use(func(c *gin.Context) {
+		c.Set("currentUser", user)
+		c.Set("userPerms", map[string]bool{perm.PoBoardDemandList.String(): true})
+		c.Next()
+	})
+	r.GET("/detail", RequireAnyPerm(perm.PoHomeList, perm.PoBoardDemandList), func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"success": true})
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/detail", nil)
+	req.Header.Set("Accept", "application/json")
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d (board perm should satisfy RequireAnyPerm)", rr.Code, http.StatusOK)
+	}
+}

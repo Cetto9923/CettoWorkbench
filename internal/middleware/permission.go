@@ -22,6 +22,12 @@ const permissionDeniedHTML = "<!DOCTYPE html><html lang=\"zh-CN\"><head><meta ch
 // 策略：超级管理员短路通过；非超级管理员基于 userPerms 校验；
 // 自助动作 perm.AuthLogout 对所有已登录用户默认放行。
 func RequirePerm(p perm.Permission) gin.HandlerFunc {
+	return RequireAnyPerm(p)
+}
+
+// RequireAnyPerm 检查当前用户是否具备任一给定权限（OR）。
+// 用于跨页面共享读接口（如看板与首页均可打开需求详情）。
+func RequireAnyPerm(perms ...perm.Permission) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		u := CurrentUser(c)
 		if u == nil {
@@ -32,13 +38,11 @@ func RequirePerm(p perm.Permission) gin.HandlerFunc {
 			c.Next()
 			return
 		}
-		if p == perm.AuthLogout {
-			c.Next()
-			return
-		}
-		if hasPermission(c, p) {
-			c.Next()
-			return
+		for _, p := range perms {
+			if p == perm.AuthLogout || hasPermission(c, p) {
+				c.Next()
+				return
+			}
 		}
 		if expectsJSON(c) {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
