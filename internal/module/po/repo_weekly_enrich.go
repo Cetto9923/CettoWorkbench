@@ -208,10 +208,8 @@ WHERE br.project IN ?`, projectIDs).Scan(&baselineReleases).Error
 	}
 
 	var extraReleases []releaseDevRow
-	for _, pid := range projectIDs {
-		var rows []releaseDevRow
-		err := r.db.WithContext(ctx).Raw(`
-SELECT ? AS project_id,
+	err = r.db.WithContext(ctx).Raw(`
+SELECT p.id AS project_id,
        rl.id AS release_id,
        '' AS baseline_date,
        DATE_FORMAT(rl.date, '%Y-%m-%d') AS actual_date,
@@ -220,12 +218,11 @@ SELECT ? AS project_id,
        '' AS is_main_system,
        COALESCE(rl.deleted, '0') AS deleted,
        0 AS from_baseline
-FROM zt_release AS rl
-WHERE rl.deleted = '0' AND FIND_IN_SET(?, REPLACE(rl.project, ' ', '')) > 0`, pid, pid).Scan(&rows).Error
-		if err != nil {
-			return out, err
-		}
-		extraReleases = append(extraReleases, rows...)
+FROM zt_project AS p
+JOIN zt_release AS rl ON FIND_IN_SET(p.id, REPLACE(rl.project, ' ', '')) > 0
+WHERE p.id IN ? AND rl.deleted = '0'`, projectIDs).Scan(&extraReleases).Error
+	if err != nil {
+		return out, err
 	}
 
 	byProject := map[uint]map[uint]releaseDevRow{}

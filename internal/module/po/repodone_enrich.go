@@ -2,8 +2,9 @@
 // 文件: internal/module/po/repodone_enrich.go
 // 模块: PO 工作台
 // 类型: repo
-// 职责: 我的已办数据访问辅助：批量状态/项目/历史解析、Facet 聚合、动作详情。
-//       F01 的授权预查询方法已迁出至 repodone_authz.go。
+// 职责: 我的已办动作详情（F01）数据访问：对象上下文 / 历史 / 邻近时间线组装。
+//       授权预查询方法见 repodone_authz.go（FindDoneActionActor 等）。
+// 依赖: gorm.io/gorm
 // =============================================================================
 
 package po
@@ -75,7 +76,6 @@ func (r *Repo) fetchObjectContexts(ctx context.Context, rows []doneActionDBRow) 
 	taskIDs := make([]int64, 0)
 	bugIDs := make([]int64, 0)
 	todoIDs := make([]int64, 0)
-	projectIDs := make(map[int64]bool)
 
 	for _, row := range rows {
 		switch row.ObjectType {
@@ -226,7 +226,6 @@ func (r *Repo) fetchObjectContexts(ctx context.Context, rows []doneActionDBRow) 
 		}
 	}
 
-	_ = projectIDs
 	return out
 }
 
@@ -303,16 +302,20 @@ func (r *Repo) FindDoneProjects(ctx context.Context, account string) []DoneMetaO
 }
 
 // FindDoneActionDetail 查询单个已办动作详情、上下文及邻近时间线。
-func (r *Repo) FindDoneActionDetail(ctx context.Context, actionId int64) (*DoneDetailResp, error) {
-	if r == nil || r.db == nil || actionId <= 0 {
+// 已办动作按 ZenTao zt_action 真实 schema，过滤 deleted='0'。
+func (r *Repo) FindDoneActionDetail(ctx context.Context, actionID int64) (*DoneDetailResp, error) {
+	if r == nil || r.db == nil || actionID <= 0 {
 		return nil, fmt.Errorf("invalid action id")
 	}
 
 	var row doneActionDBRow
 	if err := r.db.WithContext(ctx).Table("zt_action").
-		Where("id = ?", actionId).
-		First(&row).Error; err != nil {
+		Where("id = ? AND deleted = ?", actionID, "0").
+		Find(&row).Error; err != nil {
 		return nil, err
+	}
+	if row.ID == 0 {
+		return nil, fmt.Errorf("done action %d not found", actionID)
 	}
 
 	ctxs := r.fetchObjectContexts(ctx, []doneActionDBRow{row})
@@ -323,39 +326,23 @@ func (r *Repo) FindDoneActionDetail(ctx context.Context, actionId int64) (*DoneD
 		actionLabel = row.Action
 	}
 
-	hists := r.fetchActionHistories(ctx, []int64{actionId})
-	chg := hists[actionId]
+	hists := r.fetchActionHistories(ctx, []int64{actionID})
+	_ = hists[actionID]
 
 	item := DoneAction{
 		ID:              row.ID,
-		SourceActionId:  row.ID,
-		SourceSystem:    "zentao",
 		Actor:           row.Actor,
-		ActorName:       row.Actor,
-		Action:          row.Action,
-		ActionName:      actionLabel,
+		Action:          actionLabel,
 		ObjectType:      row.ObjectType,
 		ObjectTypeLabel: doneObjectTypeLabel(row.ObjectType),
 		ObjectID:        row.ObjectID,
-		ObjectCode:      fmt.Sprintf("%s #%d", doneObjectTypeLabel(row.ObjectType), row.ObjectID),
 		ObjectName:      objCtx.Title,
-		ObjectTitle:     objCtx.Title,
 		Date:            row.Date.Format("2006-01-02 15:04:05"),
-		HandledAt:       row.Date.Format(time.RFC3339),
-		ResultCode:      meta.Result,
-		ResultText:      doneResultText(meta.Result),
-		BeforeStatus:    chg[0],
-		AfterStatus:     chg[1],
-		CurrentStatus:   objCtx.Status,
-		ProjectName:     objCtx.ProjectName,
-		ExecutionName:   objCtx.ExecutionName,
-		ProductName:     objCtx.ProductName,
-		NextOwnerName:   objCtx.CurrentOwner,
-		CanOpenObject:   true,
+		Result:          meta.Result,
 		URL:             objectViewURL(row.ObjectType, uint(row.ObjectID)),
 	}
 
-	// 历史时间线（前后 5 条）
+	// 历史时间线（前后 10 条）
 	type tlRow struct {
 		ID     int64     `gorm:"column:id"`
 		Action string    `gorm:"column:action"`
@@ -365,9 +352,8 @@ func (r *Repo) FindDoneActionDetail(ctx context.Context, actionId int64) (*DoneD
 	var nearby []tlRow
 	_ = r.db.WithContext(ctx).Table("zt_action").
 		Select("id, action, actor, date").
-		Where("objectType = ? AND objectID = ?", row.ObjectType, row.ObjectID).
+		Where("objectType = ? AND objectID = ? AND deleted = ?", row.ObjectType, row.ObjectID, "0").
 		Order("id DESC").
-		Limit(10).
 		Scan(&nearby).Error
 
 	timeline := make([]DoneDetailTimeline, 0, len(nearby))

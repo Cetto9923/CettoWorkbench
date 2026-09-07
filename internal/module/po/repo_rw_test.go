@@ -81,10 +81,10 @@ func TestSaveAllNoticeReads_UsesWriteDB(t *testing.T) {
 	repo := NewRepo(readDB, writeDB)
 
 	writeMock.ExpectExec("(?s)INSERT INTO zt_workbench_notify_reads").
-		WithArgs("alice", "alice", "alice").
+		WithArgs("alice", sqlmock.AnyArg(), "alice", "alice").
 		WillReturnResult(sqlmock.NewResult(0, 3))
 
-	rows, err := repo.SaveAllNoticeReads(context.Background(), "alice")
+	rows, err := repo.SaveAllNoticeReads(context.Background(), "alice", NoticeListReq{})
 	if err != nil {
 		t.Fatalf("SaveAllNoticeReads: %v", err)
 	}
