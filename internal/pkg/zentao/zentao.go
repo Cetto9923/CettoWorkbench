@@ -11,7 +11,9 @@ package zentao
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
+	"time"
 
 	"workbench/internal/config"
 )
@@ -123,6 +125,22 @@ func DemandViewURLWithBase(base string, demandID uint) string {
 	return URLWithBase(base, "demand", "view", fmt.Sprintf("demandID=%d", demandID))
 }
 
+// DemandClarifyURL 业需澄清办理页链接（直达澄清办理，非详情页）。
+func DemandClarifyURL(demandID uint) string {
+	if demandID == 0 {
+		return ""
+	}
+	return URL("demand", "clarify", fmt.Sprintf("demandID=%d", demandID))
+}
+
+// DemandClarifyURLWithBase 使用指定站点前缀拼接业需澄清办理页链接。
+func DemandClarifyURLWithBase(base string, demandID uint) string {
+	if demandID == 0 {
+		return ""
+	}
+	return URLWithBase(base, "demand", "clarify", fmt.Sprintf("demandID=%d", demandID))
+}
+
 // StoryViewURL 研发需求详情页链接。
 func StoryViewURL(storyID uint) string {
 	if storyID == 0 {
@@ -177,4 +195,49 @@ func TesttaskViewURL(testtaskID uint) string {
 		return ""
 	}
 	return URL("testtask", "view", fmt.Sprintf("taskID=%d", testtaskID))
+}
+
+// WeeklyIndexURL 项目周报主界面链接。
+func WeeklyIndexURL(projectID uint, weekStart string) string {
+	return WeeklyIndexURLWithBase(strings.TrimRight(zentaoCfg.URL, "/"), projectID, weekStart)
+}
+
+// WeeklyIndexURLWithBase 使用指定站点前缀拼接周报链接。
+func WeeklyIndexURLWithBase(base string, projectID uint, weekStart string) string {
+	base = strings.TrimRight(base, "/")
+	if base == "" {
+		base = strings.TrimRight(zentaoCfg.URL, "/")
+	}
+	if base == "" || projectID == 0 {
+		return ""
+	}
+	dateKey := compactDateYYYYMMDD(weekStart)
+	q := url.Values{}
+	q.Set("m", "weekly")
+	q.Set("f", "index")
+	q.Set("projectID", strconv.FormatUint(uint64(projectID), 10))
+	q.Set("date", dateKey)
+	q.Set("from", "projectweekly")
+	return base + indexPath + "?" + q.Encode()
+}
+
+func compactDateYYYYMMDD(raw string) string {
+	s := strings.TrimSpace(raw)
+	if s == "" {
+		return ""
+	}
+	if len(s) == 8 {
+		if _, err := time.ParseInLocation("20060102", s, time.Local); err == nil {
+			return s
+		}
+	}
+	for _, layout := range []string{"2006-01-02", time.RFC3339, "2006/01/02"} {
+		if t, err := time.ParseInLocation(layout, s, time.Local); err == nil {
+			return t.Format("20060102")
+		}
+	}
+	if t, err := time.ParseInLocation("2006-01-02 15:04:05", s, time.Local); err == nil {
+		return t.Format("20060102")
+	}
+	return ""
 }

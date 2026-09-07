@@ -14,6 +14,7 @@ func TestURLTempCheck(t *testing.T) {
 		want string
 	}{
 		{"demand", DemandViewURL(2215), "http://10.211.55.4:8080/index.php?m=demand&f=view&demandID=2215&id=2215#app=demandpool"},
+		{"demand_clarify", DemandClarifyURL(2215), "http://10.211.55.4:8080/index.php?m=demand&f=clarify&demandID=2215&id=2215"},
 		{"story", StoryViewURL(72111), "http://10.211.55.4:8080/index.php?m=story&f=view&storyID=72111&id=72111"},
 		{"task", TaskViewURL(190651), "http://10.211.55.4:8080/index.php?m=task&f=view&taskID=190651&id=190651"},
 		{"bug", BugViewURL(39501), "http://10.211.55.4:8080/index.php?m=bug&f=view&bugID=39501&id=39501"},
