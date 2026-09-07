@@ -9,6 +9,22 @@
   "use strict";
 
   var esc = (window.PersonalList && window.PersonalList.escapeHtml) || function (v) { return String(v == null ? "" : v); };
+  var PL = window.PersonalList || {};
+  var priorityBadge = PL.priorityBadge || function (raw) {
+    var n = parseInt(String(raw || "").replace(/^p/i, ""), 10);
+    if (isNaN(n) || n < 1 || n > 4) { return '<span class="wb-priority" data-priority="">—</span>'; }
+    return '<span class="wb-priority" data-priority="' + n + '">P' + n + "</span>";
+  };
+  var objectTypeBadgeFromKind = PL.objectTypeBadgeFromKind || function (kind) {
+    var map = { demand: "business", story: "story", task: "task", bug: "bug", test: "testtask", testtask: "testtask", approval: "approval", todo: "todo", issue: "issue" };
+    var labels = { business: "业务需求", story: "研发需求", task: "任务", bug: "Bug", testtask: "测试单", approval: "审批", todo: "待办", issue: "问题" };
+    var k = map[String(kind || "").toLowerCase()] || "";
+    if (!k) { return '<span class="wb-type wb-type-unknown">—</span>'; }
+    return '<span class="wb-type wb-type-' + k + '">' + (labels[k] || k) + "</span>";
+  };
+  var primaryActionHtml = (window.PrimaryAction && window.PrimaryAction.primaryActionHtml) || function () {
+    return '<span class="home-unavailable" title="等待服务端动作合同落地">—</span>';
+  };
   var $ = function (id) { return document.getElementById(id); };
 
   var state = {
@@ -167,25 +183,24 @@
   }
 
   function rowHtml(item) {
-    var pri = ["P1", "P2", "P3", "P4"].indexOf(item.priority) >= 0 ? item.priority.toLowerCase() : "normal";
     var id = esc(item.displayId || item.id);
     var title = esc(item.title || "—");
     var idContent = item.url ? '<a class="table-id-link" href="' + esc(item.url) + '" rel="noopener noreferrer">' + id + "</a>" : id;
     var titleContent = item.url ? '<a class="table-title-link" href="' + esc(item.url) + '" rel="noopener noreferrer">' + title + "</a>" : title;
-    var action = esc(item.action || "办理");
+    var isStory = String(item.kind || "").toLowerCase() === "story";
 
     return "<tr>" +
       '<td class="todos-col-item" title="' + title + '">' +
         '<div class="todos-item-title">' + titleContent + "</div>" +
         '<div class="todos-item-id">' + idContent + "</div>" +
       "</td>" +
-      '<td class="todos-col-type"><span class="type-tag">' + esc(item.type || "—") + "</span></td>" +
-      '<td class="todos-col-pri"><span class="inline-pri ' + pri + '">' + esc(item.priority || "—") + "</span></td>" +
+      '<td class="todos-col-type">' + objectTypeBadgeFromKind(item.kind) + "</td>" +
+      '<td class="todos-col-pri">' + priorityBadge(item.priority) + "</td>" +
       '<td class="todos-col-rel"><span class="relation-tag">' + esc(item.relation || "—") + "</span></td>" +
       '<td class="todos-col-stage" title="' + esc(stageLabel(item.reason)) + '">' + esc(stageLabel(item.reason)) + "</td>" +
       '<td class="todos-col-dead">' + esc(item.deadline || "—") + "</td>" +
       '<td class="todos-col-owner" title="' + esc(item.owner || "—") + '">' + esc(item.owner || "—") + "</td>" +
-      '<td class="todos-col-opt">' + (item.url ? '<a class="table-action-btn primary" href="' + esc(item.url) + '" rel="noopener noreferrer">' + action + "</a>" : "—") + "</td>" +
+      '<td class="todos-col-opt">' + primaryActionHtml(item, isStory) + "</td>" +
       "</tr>";
   }
 
@@ -427,7 +442,7 @@
     var tbody = $("todosTbody");
     if (tbody) {
       tbody.addEventListener("click", function (e) {
-        var target = e.target.closest("a.table-id-link, a.table-title-link");
+        var target = e.target.closest("a.table-title-link");
         if (!target) { return; }
         var row = target.closest("tr");
         if (!row) { return; }

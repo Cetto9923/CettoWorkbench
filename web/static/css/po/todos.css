@@ -10,10 +10,15 @@
   min-width: 220px;
 }
 .po-todos .todos-table .todos-col-type {
-  width: 88px;
+  width: 108px;
+  min-width: 108px;
+  overflow: visible;
+  text-overflow: clip;
 }
 .po-todos .todos-table .todos-col-pri {
-  width: 68px;
+  width: 72px;
+  overflow: visible;
+  text-overflow: clip;
 }
 .po-todos .todos-table .todos-col-rel {
   width: 80px;
@@ -70,10 +75,8 @@
   text-decoration: underline;
 }
 
-.po-todos .type-tag,
-.po-todos .relation-tag,
-.po-todos .pri-tag,
-.po-todos .inline-pri {
+/* 类型 / 优先级：统一走 wb-priority.css（.wb-type / .wb-priority）；勿在本页重写色板 */
+.po-todos .relation-tag {
   display: inline-flex;
   align-items: center;
   height: 20px;
@@ -82,52 +85,8 @@
   font-size: 11px;
   white-space: nowrap;
   box-sizing: border-box;
-}
-
-.po-todos .type-tag {
-  background: #eff6ff;
-  color: #1e40af;
-  border: 1px solid #bfdbfe;
-}
-
-.po-todos .relation-tag {
   background: #f3f4f6;
   color: #4b5563;
-}
-
-.po-todos .pri-tag,
-.po-todos .inline-pri {
-  font-weight: 600;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-}
-
-.po-todos .pri-tag.p1,
-.po-todos .inline-pri.p1 {
-  background: #fee2e2;
-  color: #b91c1c;
-  border: 1px solid #fecaca;
-}
-
-.po-todos .pri-tag.p2,
-.po-todos .inline-pri.p2 {
-  background: #ffedd5;
-  color: #c2410c;
-  border: 1px solid #fed7aa;
-}
-
-.po-todos .pri-tag.p3,
-.po-todos .pri-tag.p4,
-.po-todos .inline-pri.p3,
-.po-todos .inline-pri.p4 {
-  background: #f0fdf4;
-  color: #15803d;
-  border: 1px solid #bbf7d0;
-}
-
-.po-todos .pri-tag.normal,
-.po-todos .inline-pri.normal {
-  background: #f3f4f6;
-  color: #6b7280;
 }
 
 .po-todos .todo-action {
