@@ -11,6 +11,8 @@ package po
 import (
 	"strconv"
 	"strings"
+
+	"workbench/internal/module/po/primaryaction"
 )
 
 // DemandDetailReq 是需求详情查询入参。
@@ -40,18 +42,19 @@ func (r *DemandDetailReq) Validate() []FieldError {
 
 // DemandDetailResp 是业务需求统一详情输出。
 type DemandDetailResp struct {
-	Success         bool                 `json:"success"`
-	Mode            string               `json:"mode"` // parentAggregate | childUnit | selfUnit
-	Summary         DemandSummary        `json:"summary"`
-	ParentAggregate *ParentAggregateData `json:"parentAggregate,omitempty"`
-	RelationContext *RelationContextData `json:"relationContext,omitempty"`
-	ValueStream     *DetailValueStream   `json:"valueStream,omitempty"`
-	Spotlight       *DetailSpotlight     `json:"spotlight,omitempty"`
-	Requirement     *DetailRequirement   `json:"requirement,omitempty"`
-	Execution       *DetailExecution     `json:"execution,omitempty"`
-	Delivery        *DetailDelivery      `json:"delivery,omitempty"`
-	History         *DetailHistory       `json:"history,omitempty"`
-	Config          DetailConfig         `json:"config"`
+	Success         bool                         `json:"success"`
+	Mode            string                       `json:"mode"` // parentAggregate | childUnit | selfUnit
+	Summary         DemandSummary                `json:"summary"`
+	ParentAggregate *ParentAggregateData         `json:"parentAggregate,omitempty"`
+	RelationContext *RelationContextData         `json:"relationContext,omitempty"`
+	ValueStream     *DetailValueStream           `json:"valueStream,omitempty"`
+	Spotlight       *DetailSpotlight             `json:"spotlight,omitempty"`
+	Requirement     *DetailRequirement           `json:"requirement,omitempty"`
+	Execution       *DetailExecution             `json:"execution,omitempty"`
+	Delivery        *DetailDelivery              `json:"delivery,omitempty"`
+	History         *DetailHistory               `json:"history,omitempty"`
+	Config          DetailConfig                 `json:"config"`
+	PrimaryAction   *primaryaction.PrimaryAction `json:"primaryAction,omitempty"` // Stage 5: 服务端主操作
 }
 
 // DetailConfig 集中配置（前端禁止 hardcode）。
@@ -61,31 +64,49 @@ type DetailConfig struct {
 
 // DemandSummary 需求通用摘要。
 type DemandSummary struct {
-	ID              string `json:"id"`
-	Code            string `json:"code"`
-	DemandID        uint   `json:"demandId"`
-	Title           string `json:"title"`
-	Source          string `json:"source"`
-	SourceNote      string `json:"sourceNote"`
-	Category        string `json:"category"`
-	BSA             string `json:"bsa"`
-	Duration        string `json:"duration"`
-	FeedbackedBy    string `json:"feedbackedBy"`
-	ProposerName    string `json:"proposerName"`
-	ProposerDept    string `json:"proposerDept"`
-	Originator      string `json:"originator"`
-	OwnerName       string `json:"ownerName"`
-	TestOwner       string `json:"testOwner"`
-	Product         string `json:"product"`
-	PoolName        string `json:"poolName"`
-	Priority        string `json:"priority"`
-	Status          string `json:"status"`
-	ZentaoStatus    string `json:"zentaoStatus"`
-	ValueStage      string `json:"valueStage"`
-	ValueStageLabel string `json:"valueStageLabel"`
-	EstimateLaunch  string `json:"estimateLaunch"`
-	CreatedDate     string `json:"createdDate"`
-	EditedDate      string `json:"editedDate"`
+	ID               string `json:"id"`
+	Code             string `json:"code"`
+	DemandID         uint   `json:"demandId"`
+	Title            string `json:"title"`
+	Source           string `json:"source"`
+	SourceNote       string `json:"sourceNote"`
+	Category         string `json:"category"`
+	BSA              string `json:"bsa"`
+	Duration         string `json:"duration"`
+	FeedbackedBy     string `json:"feedbackedBy"`
+	ProposerName     string `json:"proposerName"`
+	ProposerDept     string `json:"proposerDept"`
+	Originator       string `json:"originator"`
+	OwnerName        string `json:"ownerName"`
+	TestOwner        string `json:"testOwner"`
+	Product          string `json:"product"`
+	PoolName         string `json:"poolName"`
+	Priority         string `json:"priority"`
+	Status           string `json:"status"`
+	ZentaoStatus     string `json:"zentaoStatus"`
+	ValueStage       string `json:"valueStage"`
+	ValueStageLabel  string `json:"valueStageLabel"`
+	EstimateLaunch   string `json:"estimateLaunch"`
+	AcceptOwner      string `json:"acceptOwner"`
+	Reviewer         string `json:"reviewer"`
+	CurrentOwner     string `json:"currentOwner"`
+	MainSystem       string `json:"mainSystem"`
+	MainSystemName   string `json:"mainSystemName"`
+	Desc             string `json:"desc"`
+	VerifyPlan       string `json:"verifyPlan"`
+	EstimateDelivery int    `json:"estimateDelivery"`
+	DevelopFinish    string `json:"developFinish"`
+	TestFinish       string `json:"testFinish"`
+	VerifyFinish     string `json:"verifyFinish"`
+	StoriesCount     int    `json:"storiesCount"`
+	TasksDone        int    `json:"tasksDone"`
+	TasksTotal       int    `json:"tasksTotal"`
+	CasesExecuted    int    `json:"casesExecuted"`
+	CasesTotal       int    `json:"casesTotal"`
+	BugsUnresolved   int    `json:"bugsUnresolved"`
+	AcceptanceStatus string `json:"acceptanceStatus"`
+	CreatedDate      string `json:"createdDate"`
+	EditedDate       string `json:"editedDate"`
 }
 
 // ParentAggregateData 父需求聚合专用视图数据。
@@ -178,6 +199,7 @@ type DetailRequirement struct {
 	Clarifications []ClarificationItem `json:"clarifications"`
 	UserStories    []UserStoryItem     `json:"userStories"`
 	Attachments    []AttachmentItem    `json:"attachments"`
+	ClarifyZtURL   string              `json:"clarifyZtUrl"`
 }
 
 // ClarificationItem 产品维度澄清说明。
@@ -210,10 +232,15 @@ type AttachmentItem struct {
 
 // DetailExecution Tab 3：研发与测试。
 type DetailExecution struct {
-	Stories         []StoryItem     `json:"stories"`
-	TestCaseSummary TestCaseSummary `json:"testCaseSummary"`
-	BugSummary      BugSummary      `json:"bugSummary"`
-	QualitySummary  QualitySummary  `json:"qualitySummary"`
+	Stories          []StoryItem         `json:"stories"`
+	TestOrders       []TestOrderItem     `json:"testOrders"`
+	TestOrderSummary TestOrderSummary    `json:"testOrderSummary"`
+	TestCaseSummary  TestCaseSummary     `json:"testCaseSummary"`
+	BugSummary       BugSummary          `json:"bugSummary"`
+	QualitySummary   QualitySummary      `json:"qualitySummary"`
+	QualityOverview  QualityGateOverview `json:"qualityOverview"`
+	AppQualityTree   []AppQualityNode    `json:"appQualityTree"`
+	LeadsMatrix      LeadsMatrix         `json:"leadsMatrix"`
 }
 
 // StoryItem 关联的研发需求。
@@ -226,15 +253,41 @@ type StoryItem struct {
 	Status     string `json:"status"`
 	TasksDone  int    `json:"tasksDone"`
 	TasksTotal int    `json:"tasksTotal"`
+	BugsTotal  int    `json:"bugsTotal"`
+	BugsActive int    `json:"bugsActive"`
+}
+
+// TestOrderItem 测试单。
+type TestOrderItem struct {
+	ID          uint   `json:"id"`
+	Code        string `json:"code"`
+	Title       string `json:"title"`
+	Stage       string `json:"stage"` // SIT | UAT
+	Status      string `json:"status"`
+	StatusLabel string `json:"statusLabel"`
+	Owner       string `json:"owner"`
+	BeginDate   string `json:"beginDate"`
+	EndDate     string `json:"endDate"`
+	ZtURL       string `json:"ztUrl"`
+}
+
+// TestOrderSummary 测试单统计。
+type TestOrderSummary struct {
+	TotalCount   int `json:"totalCount"`
+	DoingCount   int `json:"doingCount"`
+	DoneCount    int `json:"doneCount"`
+	StoriesCount int `json:"storiesCount"`
 }
 
 // TestCaseSummary 用例统计。
 type TestCaseSummary struct {
-	TotalCount    int     `json:"totalCount"`
-	ExecutedCount int     `json:"executedCount"`
-	ExecutionRate float64 `json:"executionRate"`
-	PassedCount   int     `json:"passedCount"`
-	PassRate      float64 `json:"passRate"`
+	TotalCount      int     `json:"totalCount"`
+	ExecutedCount   int     `json:"executedCount"`
+	UnexecutedCount int     `json:"unexecutedCount"`
+	PassedCount     int     `json:"passedCount"`
+	FailedCount     int     `json:"failedCount"`
+	ExecutionRate   float64 `json:"executionRate"`
+	PassRate        float64 `json:"passRate"`
 }
 
 // BugSummary 缺陷统计。
@@ -245,12 +298,59 @@ type BugSummary struct {
 	DeliveryBlocking int `json:"deliveryBlocking"`
 }
 
-// QualitySummary 代码质量统计。
+// QualitySummary 代码质量统计（保留向后兼容）。
+// Available=false 表示扫描源未接入，AvgScore/门禁数不得解读为真实结果。
 type QualitySummary struct {
+	Available     bool    `json:"available"`
+	Source        string  `json:"source"` // none | scanner
 	AvgScore      float64 `json:"avgScore"`
 	BranchesCount int     `json:"branchesCount"`
 	PassedGates   int     `json:"passedGates"`
 	TotalGates    int     `json:"totalGates"`
+}
+
+// QualityGateOverview 顶部卡片使用的应用门禁概况。
+// Available=false 时前端应展示「未接入」，不得把 0 当成「全部通过」。
+type QualityGateOverview struct {
+	Available     bool   `json:"available"`
+	Source        string `json:"source"`        // none | scanner
+	AppsCount     int    `json:"appsCount"`     // 涉及应用/系统数
+	BranchesCount int    `json:"branchesCount"` // 关联代码分支数
+	PassedGates   int    `json:"passedGates"`   // 最新 MR 门禁通过数
+	FailedGates   int    `json:"failedGates"`   // 最新 MR 门禁失败数
+}
+
+// AppQualityNode 按系统/应用组织的代码质量树节点。
+type AppQualityNode struct {
+	AppName     string              `json:"appName"`     // 系统/应用名称
+	AppCode     string              `json:"appCode"`     // 应用标识 (如 mobile-hall-client)
+	GatePassed  bool                `json:"gatePassed"`  // 整体门禁是否通过（仅 Available 时有效）
+	Available   bool                `json:"available"`   // 是否有真实扫描结果
+	BranchCount int                 `json:"branchCount"` // 分支数
+	Branches    []BranchQualityItem `json:"branches"`    // 该应用下研发需求对应的代码分支及最新 MR
+}
+
+// BranchQualityItem 研发需求分支及最新 MR 扫描明细。
+// GateStatus: pass | fail | unknown；Available=false 时分数/覆盖率无业务含义。
+type BranchQualityItem struct {
+	StoryCode  string  `json:"storyCode"`  // 关联研发需求 ST72111
+	StoryTitle string  `json:"storyTitle"` // 研需标题
+	BranchName string  `json:"branchName"` // 分支名称；未接入时为空
+	LatestMR   string  `json:"latestMr"`   // 最新 MR 编号；未接入时为空
+	GateStatus string  `json:"gateStatus"` // pass | fail | unknown
+	Available  bool    `json:"available"`
+	Score      float64 `json:"score"`
+	BugsCount  int     `json:"bugsCount"`
+	CodeSmells int     `json:"codeSmells"`
+	Coverage   float64 `json:"coverage"`
+	ScanTime   string  `json:"scanTime"`
+	Committer  string  `json:"committer"`
+}
+
+// LeadsMatrix 研发与测试负责人。
+type LeadsMatrix struct {
+	DevLeads []string `json:"devLeads"`
+	TestLead string   `json:"testLead"`
 }
 
 // DetailDelivery Tab 4：交付上线。

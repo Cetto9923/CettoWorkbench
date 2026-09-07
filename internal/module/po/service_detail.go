@@ -3,6 +3,8 @@
 // 模块: PO 工作台
 // 类型: service
 // 职责: 业务需求统一详情（入口、摘要、父需求聚合与父子同级关系处理）。
+//       F01 对象级授权与 F02 API 出口富文本净化集中在
+//       service_detail_authz.go；本文件保留组装与摘要/聚合逻辑。
 // 依赖: gorm.io/gorm
 // =============================================================================
 
@@ -10,14 +12,19 @@ package po
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"gorm.io/gorm"
+
 	"workbench/internal/model"
+	"workbench/internal/module/po/primaryaction"
 )
 
 // DetailService 业务需求详情服务。
 type DetailService struct {
-	repo *DemandDetailRepo
+	repo   *DemandDetailRepo
+	parent *Service // 用于复用 Service.DeriveDemandPrimaryActions 批量主操作派生
 }
 
 // NewDetailService 创建详情服务。
@@ -25,9 +32,23 @@ func NewDetailService(repo *DemandDetailRepo) *DetailService {
 	return &DetailService{repo: repo}
 }
 
+// attachParent 注入父 Service 引用（仅 Service 构造时调用）。
+//
+// 用于详情行复用 Service 内已经聚合的 primaryaction.Derive 路径，
+// 避免在 DetailService 重复构建 actor capability / 评价批量查询等逻辑。
+func (s *DetailService) attachParent(parent *Service) {
+	if s == nil {
+		return
+	}
+	s.parent = parent
+}
+
 // GetDemandDetail 组装业务需求详情完整结构。
+//
+// F01：入口通过 GetDemandDetailAuthZ 做对象级授权与 not-found 区分；
+// 父需求与子需求查询错误一律向上抛错，handler_detail.go 据此映射 500。
 func (s *DetailService) GetDemandDetail(ctx context.Context, actor *model.User, demandID uint) (*DemandDetailResp, error) {
-	row, err := s.repo.FindDemandDetailByID(ctx, demandID)
+	row, err := s.GetDemandDetailAuthZ(ctx, actor, demandID)
 	if err != nil {
 		return nil, err
 	}
@@ -38,14 +59,23 @@ func (s *DetailService) GetDemandDetail(ctx context.Context, actor *model.User, 
 	var siblings []DemandChildRow
 
 	if row.Parent == 0 {
-		childDemands, _ = s.repo.FindChildDemands(ctx, row.ID)
+		childDemands, err = s.repo.FindChildDemands(ctx, row.ID)
+		if err != nil {
+			return nil, err
+		}
 		if len(childDemands) > 0 {
 			mode = "parentAggregate"
 		}
 	} else {
 		mode = "childUnit"
-		parentDemand, _ = s.repo.FindDemandDetailByID(ctx, row.Parent)
-		siblings, _ = s.repo.FindChildDemands(ctx, row.Parent)
+		parentDemand, err = s.repo.FindDemandDetailByID(ctx, row.Parent)
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+		siblings, err = s.repo.FindChildDemands(ctx, row.Parent)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	summary := s.buildSummary(row)
@@ -60,19 +90,61 @@ func (s *DetailService) GetDemandDetail(ctx context.Context, actor *model.User, 
 	}
 
 	if mode == "parentAggregate" {
-		resp.ParentAggregate = s.buildParentAggregate(ctx, childDemands)
+		resp.ParentAggregate, err = s.buildParentAggregate(ctx, childDemands)
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		if mode == "childUnit" && parentDemand != nil {
 			resp.RelationContext = s.buildRelationContext(parentDemand, siblings, row.ID)
 		}
 		resp.ValueStream = s.buildValueStream(row)
 		resp.Spotlight = s.buildSpotlight(row.Stage, row.Status)
-		resp.Requirement = s.buildRequirement(ctx, row)
-		resp.Execution = s.buildExecution(ctx, row.ID)
+		reqTab, reqErr := s.buildRequirement(ctx, row)
+		if reqErr != nil {
+			return nil, reqErr
+		}
+		resp.Requirement = reqTab
+		exec, execErr := s.buildExecution(ctx, row.ID)
+		if execErr != nil {
+			return nil, execErr
+		}
+		resp.Execution = exec
 		resp.Delivery = s.buildDelivery(row, resp.Execution)
+
+		if resp.Execution != nil {
+			resp.Summary.StoriesCount = len(resp.Execution.Stories)
+			for _, st := range resp.Execution.Stories {
+				resp.Summary.TasksDone += st.TasksDone
+				resp.Summary.TasksTotal += st.TasksTotal
+			}
+			resp.Summary.CasesExecuted = resp.Execution.TestCaseSummary.ExecutedCount
+			resp.Summary.CasesTotal = resp.Execution.TestCaseSummary.TotalCount
+			resp.Summary.BugsUnresolved = resp.Execution.BugSummary.ActiveCount
+		}
 	}
 
-	resp.History = s.buildHistory(ctx, row)
+	history, histErr := s.buildHistory(ctx, row)
+	if histErr != nil {
+		return nil, histErr
+	}
+	resp.History = history
+
+	// Stage 5：单行详情主操作派生。
+	// 详情行已包含 stage/status/accepter/assignedTo，无需 IN 批量。
+	if actor != nil && row != nil {
+		pa := s.buildPrimaryActionForDetail(ctx, actor, row)
+		resp.PrimaryAction = &pa
+	}
+
+	// F02：API 出口对富文本字段做白名单净化，确保 specHtml / verifyHtml 即便
+	// 未来绕过 renderer 也不会带 script/on*/javascript: 等危险形态。
+	if resp.Requirement != nil {
+		resp.Requirement.SpecHtml = SanitizeRichTextHTML(resp.Requirement.SpecHtml)
+		resp.Requirement.VerifyHtml = SanitizeRichTextHTML(resp.Requirement.VerifyHtml)
+	}
+	resp.Summary.Desc = SanitizeRichTextHTML(resp.Summary.Desc)
+	resp.Summary.VerifyPlan = SanitizeRichTextHTML(resp.Summary.VerifyPlan)
 
 	return resp, nil
 }
@@ -92,42 +164,83 @@ func (s *DetailService) buildSummary(row *DemandDetailRow) DemandSummary {
 	if row.EstimateLaunch != nil {
 		launchStr = row.EstimateLaunch.Format("2006-01-02")
 	}
+	devFinishStr := "—"
+	if row.DevelopFinish != nil {
+		devFinishStr = row.DevelopFinish.Format("2006-01-02")
+	}
+	testFinishStr := "—"
+	if row.TestFinish != nil {
+		testFinishStr = row.TestFinish.Format("2006-01-02")
+	}
+	verifyFinishStr := "—"
+	if row.VerifyFinish != nil {
+		verifyFinishStr = row.VerifyFinish.Format("2006-01-02")
+	}
+	prodName := defaultDash(row.ProductName)
+	if prodName == "—" && row.MainSystemName != "" && row.MainSystemName != "—" {
+		prodName = row.MainSystemName
+	}
+	acceptStatus := "—"
+	if row.VerifyFinish != nil || row.Status == "acceptanced" || row.Status == "waitdeliver" || row.Status == "released" {
+		acceptStatus = "待发起"
+	}
 
 	return DemandSummary{
-		ID:              code,
-		Code:            code,
-		DemandID:        row.ID,
-		Title:           row.Name,
-		Source:          defaultDash(row.Source),
-		SourceNote:      defaultDash(row.SourceNote),
-		Category:        defaultDash(row.Category),
-		BSA:             defaultDash(row.BSA),
-		Duration:        defaultDash(row.Duration),
-		FeedbackedBy:    defaultDash(row.FeedbackedBy),
-		ProposerName:    defaultDash(row.OriginatorName),
-		ProposerDept:    defaultDash(row.OriginatorDept),
-		Originator:      row.Originator,
-		OwnerName:       defaultDash(row.BRAName),
-		TestOwner:       defaultDash(row.QDName),
-		Product:         defaultDash(row.ProductName),
-		PoolName:        defaultDash(row.PoolName),
-		Priority:        formatPriority(row.Pri),
-		Status:          defaultDash(row.Status),
-		ZentaoStatus:    defaultDash(row.Status),
-		ValueStage:      stageKey,
-		ValueStageLabel: stageLabel,
-		EstimateLaunch:  launchStr,
-		CreatedDate:     createdStr,
-		EditedDate:      editedStr,
+		ID:               code,
+		Code:             code,
+		DemandID:         row.ID,
+		Title:            row.Name,
+		Source:           defaultDash(row.Source),
+		SourceNote:       defaultDash(row.SourceNote),
+		Category:         defaultDash(row.Category),
+		BSA:              defaultDash(row.BSA),
+		Duration:         defaultDash(row.Duration),
+		FeedbackedBy:     defaultDash(row.FeedbackedBy),
+		ProposerName:     defaultDash(row.OriginatorName),
+		ProposerDept:     defaultDash(row.OriginatorDept),
+		Originator:       row.Originator,
+		OwnerName:        defaultDash(row.BRAName),
+		TestOwner:        defaultDash(row.QDName),
+		AcceptOwner:      defaultDash(firstNonEmpty(row.AccepterName, row.Accepter)),
+		Reviewer:         defaultDash(firstNonEmpty(row.ReviewerName, row.Reviewer)),
+		CurrentOwner:     defaultDash(firstNonEmpty(row.AssignedToName, row.AssignedTo)),
+		Product:          prodName,
+		MainSystem:       defaultDash(row.MainSystem),
+		MainSystemName:   defaultDash(firstNonEmpty(row.MainSystemName, row.MainSystem)),
+		PoolName:         defaultDash(row.PoolName),
+		Priority:         formatPriority(row.Pri),
+		Status:           defaultDash(row.Status),
+		ZentaoStatus:     defaultDash(row.Status),
+		ValueStage:       stageKey,
+		ValueStageLabel:  stageLabel,
+		EstimateLaunch:   launchStr,
+		DevelopFinish:    devFinishStr,
+		TestFinish:       testFinishStr,
+		VerifyFinish:     verifyFinishStr,
+		Desc:             row.Desc,
+		VerifyPlan:       row.VerifyPlan,
+		EstimateDelivery: row.EstimateDelivery,
+		AcceptanceStatus: acceptStatus,
+		CreatedDate:      createdStr,
+		EditedDate:       editedStr,
 	}
 }
 
-func (s *DetailService) buildParentAggregate(ctx context.Context, children []DemandChildRow) *ParentAggregateData {
+func (s *DetailService) buildParentAggregate(ctx context.Context, children []DemandChildRow) (*ParentAggregateData, error) {
 	total := len(children)
 	online := 0
 	risks := 0
 	attention := make([]AttentionItem, 0)
 	units := make([]DeliveryUnitItem, 0, total)
+
+	ids := make([]uint, 0, len(children))
+	for _, child := range children {
+		ids = append(ids, child.ID)
+	}
+	counts, err := s.repo.FindChildExecutionCounts(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
 
 	for _, c := range children {
 		code := fmt.Sprintf("US%d", c.ID)
@@ -143,23 +256,9 @@ func (s *DetailService) buildParentAggregate(ctx context.Context, children []Dem
 
 		_, stageLabel := mapValueStage(c.Stage, c.Status)
 
-		// 检查是否有严重未闭环缺陷
-		stories, _ := s.repo.FindDemandStories(ctx, c.ID)
-		storyIDs := make([]uint, 0, len(stories))
-		for _, st := range stories {
-			storyIDs = append(storyIDs, st.ID)
-		}
-		bugMap, _ := s.repo.FindStoryBugCounts(ctx, storyIDs)
-		taskMap, _ := s.repo.FindStoryTaskCounts(ctx, storyIDs)
-
-		blockingBugs := 0
-		tasksTotal := 0
-		for _, b := range bugMap {
-			blockingBugs += b.DeliveryBlocking
-		}
-		for _, t := range taskMap {
-			tasksTotal += t.Total
-		}
+		count := counts[c.ID]
+		blockingBugs := count.BlockingBugs
+		tasksTotal := count.Tasks
 
 		hasRisk := blockingBugs > 0
 		if hasRisk {
@@ -191,7 +290,7 @@ func (s *DetailService) buildParentAggregate(ctx context.Context, children []Dem
 			Title:      c.Name,
 			Stage:      stageLabel,
 			Owner:      defaultDash(c.AssignedToName),
-			StoriesNum: len(stories),
+			StoriesNum: count.Stories,
 			TasksNum:   tasksTotal,
 			LaunchDate: launch,
 			IsDone:     isDone,
@@ -205,7 +304,7 @@ func (s *DetailService) buildParentAggregate(ctx context.Context, children []Dem
 		RisksCount:     risks,
 		AttentionItems: attention,
 		DeliveryUnits:  units,
-	}
+	}, nil
 }
 
 func (s *DetailService) buildRelationContext(parent *DemandDetailRow, siblings []DemandChildRow, currentID uint) *RelationContextData {
@@ -245,4 +344,43 @@ func (s *DetailService) buildRelationContext(parent *DemandDetailRow, siblings [
 		Parent:   pDemand,
 		Siblings: sList,
 	}
+}
+
+// buildPrimaryActionForDetail 详情行主操作（Stage 5）。
+//
+// 复用 Service 内聚合函数 DeriveDemandPrimaryActions；单行 ID 走同样的批量
+// 路径，避免新增"单行特化"代码分支导致与批量派生结果不一致。
+//
+// 测试单与评价事实走 IN (?) 批量查询（即便 ID 数量为 1 也复用同一函数），保证
+//
+//	primaryAction.test_link / evaluate / view_evaluate 与列表页完全一致。
+func (s *DetailService) buildPrimaryActionForDetail(
+	ctx context.Context,
+	actor *model.User,
+	row *DemandDetailRow,
+) primaryaction.PrimaryAction {
+	if row == nil || row.ID == 0 {
+		return primaryaction.None()
+	}
+	svc := s.parentService()
+	if svc == nil {
+		return primaryaction.None()
+	}
+	out, err := svc.DeriveDemandPrimaryActions(ctx, actor, []uint{row.ID})
+	if err != nil {
+		return primaryaction.None()
+	}
+	if pa, ok := out[row.ID]; ok {
+		return pa
+	}
+	return primaryaction.None()
+}
+
+// parentService 返回 Service 提供的父服务（如未注入则返回 nil）。
+// service_detail.go 内不直接持有 Service 指针；构造时由 Service.NewService 注入。
+func (s *DetailService) parentService() *Service {
+	if s == nil {
+		return nil
+	}
+	return s.parent
 }

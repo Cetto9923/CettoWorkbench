@@ -10,6 +10,7 @@ package po
 
 import (
 	"html"
+	"strconv"
 	"strings"
 )
 
@@ -247,4 +248,119 @@ func isPotentialCSSSelector(s string) bool {
 func normalizeNoticeWhitespace(s string) string {
 	s = strings.ReplaceAll(s, "\u00a0", " ")
 	return strings.Join(strings.Fields(s), " ")
+}
+
+// parseNoticeSubject 解析通知主题中的对象类型与编号（如 "CHARTER #529 云销管理平台" -> "charter", 529, "云销管理平台"）。
+func parseNoticeSubject(subject string) (string, int64, string) {
+	s := strings.TrimSpace(subject)
+	if s == "" {
+		return "", 0, ""
+	}
+	parts := strings.SplitN(s, "#", 2)
+	if len(parts) == 2 {
+		typePart := strings.ToLower(strings.TrimSpace(parts[0]))
+		rest := strings.TrimSpace(parts[1])
+		numEnd := 0
+		for numEnd < len(rest) && rest[numEnd] >= '0' && rest[numEnd] <= '9' {
+			numEnd++
+		}
+		if numEnd > 0 {
+			if id, err := strconv.ParseInt(rest[:numEnd], 10, 64); err == nil && id > 0 {
+				cleanTitle := strings.TrimSpace(rest[numEnd:])
+				cleanTitle = strings.TrimLeft(cleanTitle, "-:：· ")
+				normType := normalizeNoticeObjectType(typePart)
+				if normType != "" {
+					return normType, id, cleanTitle
+				}
+			}
+		}
+	}
+	return "", 0, s
+}
+
+func normalizeNoticeObjectType(raw string) string {
+	raw = strings.ToLower(strings.TrimSpace(raw))
+	switch raw {
+	case "charter", "立项":
+		return "charter"
+	case "story", "研需", "研发需求":
+		return "story"
+	case "demand", "需求", "业务需求":
+		return "demand"
+	case "task", "任务":
+		return "task"
+	case "bug", "缺陷":
+		return "bug"
+	case "feedback", "反馈":
+		return "feedback"
+	case "project", "项目":
+		return "project"
+	case "testtask", "测试单", "测试":
+		return "testtask"
+	case "risk", "风险":
+		return "risk"
+	case "issue", "问题":
+		return "issue"
+	case "release", "发布":
+		return "release"
+	default:
+		return ""
+	}
+}
+
+// cleanNoticeSummary 剔除正文中重复的标题与 ZenTao 邮件模板路径前缀，提取有效通知摘要。
+func cleanNoticeSummary(title, rawData string, maxRunes int) string {
+	if rawData == "" {
+		return ""
+	}
+	cleaned := cleanNoticeText(rawData, 0)
+	if cleaned == "" {
+		return ""
+	}
+
+	title = strings.TrimSpace(title)
+	baseTitle := strings.TrimSpace(strings.Split(title, " - ")[0])
+	_, _, cleanTitle := parseNoticeSubject(title)
+
+	// 依次尝试剥离开头与标题、主标题、去对象前缀标题重合的片段
+	for _, t := range []string{title, baseTitle, cleanTitle} {
+		if t != "" && strings.HasPrefix(cleaned, t) {
+			cleaned = strings.TrimSpace(cleaned[len(t):])
+		}
+	}
+
+	// 剥离 ZenTao 邮件模板中的系统路径/面包屑前缀（如 "CRCB CHARTER #529 ..."）
+	if strings.HasPrefix(cleaned, "CRCB") {
+		cleaned = strings.TrimSpace(cleaned[4:])
+		for _, t := range []string{title, baseTitle, cleanTitle} {
+			if t != "" && strings.HasPrefix(cleaned, t) {
+				cleaned = strings.TrimSpace(cleaned[len(t):])
+			}
+		}
+		if _, _, rest := parseNoticeSubject(cleaned); rest != "" && rest != cleaned {
+			cleaned = rest
+			for _, t := range []string{title, baseTitle, cleanTitle} {
+				if t != "" && strings.HasPrefix(cleaned, t) {
+					cleaned = strings.TrimSpace(cleaned[len(t):])
+				}
+			}
+		}
+	}
+
+	// 剥离开头遗留的标点符号与无语义前缀
+	cleaned = strings.TrimLeft(cleaned, " \t\r\n-:：·●>，,。；;")
+	cleaned = strings.TrimSpace(cleaned)
+
+	// 若去重后内容与标题相同、无信息增量或过短，则置空不硬塞副标题
+	if cleaned == "" || cleaned == title || cleaned == baseTitle || cleaned == cleanTitle {
+		return ""
+	}
+
+	if maxRunes > 0 {
+		runes := []rune(cleaned)
+		if len(runes) > maxRunes {
+			cleaned = string(runes[:maxRunes]) + "…"
+		}
+	}
+	return cleaned
 }

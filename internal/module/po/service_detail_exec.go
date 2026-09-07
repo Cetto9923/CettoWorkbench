@@ -2,7 +2,9 @@
 // 文件: internal/module/po/service_detail_exec.go
 // 模块: PO 工作台
 // 类型: service
-// 职责: 业务需求 Tab 3 研发执行、测试进度与按应用分层的代码质量树组装。
+// 职责: 业务需求 Tab 3 研发执行、测试进度与代码质量概况组装。
+//       F03：未接入扫描源时不返回虚构 MR / 分数 / 通过门禁。
+//       F04：Repo 查询错误向上传递，禁止吞错后冒充健康零值。
 // 依赖: gorm.io/gorm
 // =============================================================================
 
@@ -17,16 +19,28 @@ import (
 	"workbench/internal/pkg/zentao"
 )
 
-func (s *DetailService) buildExecution(ctx context.Context, demandID uint) *DetailExecution {
-	stories, _ := s.repo.FindDemandStories(ctx, demandID)
+func (s *DetailService) buildExecution(ctx context.Context, demandID uint) (*DetailExecution, error) {
+	stories, err := s.repo.FindDemandStories(ctx, demandID)
+	if err != nil {
+		return nil, err
+	}
 	storyIDs := make([]uint, 0, len(stories))
 	for _, st := range stories {
 		storyIDs = append(storyIDs, st.ID)
 	}
 
-	taskMap, _ := s.repo.FindStoryTaskCounts(ctx, storyIDs)
-	bugMap, _ := s.repo.FindStoryBugCounts(ctx, storyIDs)
-	testCaseCounts, _ := s.repo.FindStoryTestCaseCounts(ctx, storyIDs)
+	taskMap, err := s.repo.FindStoryTaskCounts(ctx, storyIDs)
+	if err != nil {
+		return nil, err
+	}
+	bugMap, err := s.repo.FindStoryBugCounts(ctx, storyIDs)
+	if err != nil {
+		return nil, err
+	}
+	testCaseCounts, err := s.repo.FindStoryTestCaseCounts(ctx, storyIDs)
+	if err != nil {
+		return nil, err
+	}
 
 	sItems := make([]StoryItem, 0, len(stories))
 	totalBugs := 0
@@ -75,7 +89,10 @@ func (s *DetailService) buildExecution(ctx context.Context, demandID uint) *Deta
 		passRate = math.Round(float64(testCaseCounts.PassedCount)/float64(testCaseCounts.ExecutedCount)*1000) / 10
 	}
 
-	testTasks, _ := s.repo.FindStoryTestTasks(ctx, storyIDs)
+	testTasks, err := s.repo.FindStoryTestTasks(ctx, storyIDs)
+	if err != nil {
+		return nil, err
+	}
 	ttItems := make([]TestOrderItem, 0, len(testTasks))
 	doingCount := 0
 	doneCount := 0
@@ -135,14 +152,6 @@ func (s *DetailService) buildExecution(ctx context.Context, demandID uint) *Deta
 		unexec = 0
 	}
 
-	appQualityTree := buildAppQualityTree(demandID, stories)
-	passedGates := 0
-	for _, app := range appQualityTree {
-		if app.GatePassed {
-			passedGates++
-		}
-	}
-
 	return &DetailExecution{
 		Stories:    sItems,
 		TestOrders: ttItems,
@@ -168,60 +177,32 @@ func (s *DetailService) buildExecution(ctx context.Context, demandID uint) *Deta
 			DeliveryBlocking: blockingBugs,
 		},
 		QualitySummary: QualitySummary{
-			AvgScore:      92.0,
-			BranchesCount: len(stories),
-			PassedGates:   len(stories),
-			TotalGates:    len(stories),
+			Available:     false,
+			Source:        "none",
+			AvgScore:      0,
+			BranchesCount: 0,
+			PassedGates:   0,
+			TotalGates:    0,
 		},
 		QualityOverview: QualityGateOverview{
-			AppsCount:     len(appQualityTree),
-			BranchesCount: len(stories),
-			PassedGates:   passedGates,
-			FailedGates:   len(appQualityTree) - passedGates,
+			Available:     false,
+			Source:        "none",
+			AppsCount:     0,
+			BranchesCount: 0,
+			PassedGates:   0,
+			FailedGates:   0,
 		},
-		AppQualityTree: appQualityTree,
+		// F03：扫描未接入 → 空树；前端依据 Available=false 展示「未接入」。
+		AppQualityTree: buildAppQualityTree(stories),
 		LeadsMatrix: LeadsMatrix{
 			DevLeads: devLeads,
-			TestLead: "测试团队",
+			TestLead: "—",
 		},
-	}
+	}, nil
 }
 
-func buildAppQualityTree(demandID uint, stories []DemandStoryRow) []AppQualityNode {
-	if len(stories) == 0 {
-		return nil
-	}
-	appMap := make(map[string][]BranchQualityItem)
-	for _, st := range stories {
-		appName := st.ProductName
-		if appName == "" || appName == "—" {
-			appName = "主营业务系统"
-		}
-		item := BranchQualityItem{
-			StoryCode:  fmt.Sprintf("ST%d", st.ID),
-			StoryTitle: st.Title,
-			BranchName: fmt.Sprintf("feature/US%d-st%d", demandID, st.ID),
-			LatestMR:   fmt.Sprintf("!%d", 300+st.ID%100),
-			GateStatus: "pass",
-			Score:      92.5,
-			BugsCount:  0,
-			CodeSmells: 2,
-			Coverage:   82.0,
-			ScanTime:   "2026-09-05 16:30",
-			Committer:  defaultDash(st.AssignedToName),
-		}
-		appMap[appName] = append(appMap[appName], item)
-	}
-
-	tree := make([]AppQualityNode, 0, len(appMap))
-	for appName, branches := range appMap {
-		tree = append(tree, AppQualityNode{
-			AppName:     appName,
-			AppCode:     strings.ToLower(strings.ReplaceAll(appName, " ", "-")),
-			GatePassed:  true,
-			BranchCount: len(branches),
-			Branches:    branches,
-		})
-	}
-	return tree
+// buildAppQualityTree F03：扫描系统未接入前返回空树，禁止拼造分支/MR/分数。
+func buildAppQualityTree(stories []DemandStoryRow) []AppQualityNode {
+	_ = stories
+	return nil
 }

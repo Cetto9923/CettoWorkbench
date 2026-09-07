@@ -46,9 +46,13 @@ func TestMapValueStage(t *testing.T) {
 		{"incharter", "", "schedule", "排期中"},
 		{"developing", "", "developing", "研发中"},
 		{"testing", "", "testing", "测试中"},
-		{"delivered", "", "delivered", "上线完成"},
+		{"delivered", "", "publish", "发布"},
 		{"closed", "", "closed", "已关闭"},
 		{"", "clarify", "clarify", "澄清中"},
+		{"", "waitdeliver", "publish", "发布"},
+		{"", "released", "greyverify", "生产验证"},
+		{"", "closed", "closed", "已关闭"},
+		{"weird", "weird-status", "unknown", "未知"},
 	}
 
 	for _, tc := range cases {
@@ -84,8 +88,8 @@ func TestBuildValueStream(t *testing.T) {
 	if vs == nil {
 		t.Fatalf("buildValueStream returned nil")
 	}
-	if len(vs.Stages) != 9 {
-		t.Errorf("expected 9 stages, got %d", len(vs.Stages))
+	if len(vs.Stages) != 10 {
+		t.Errorf("expected 10 stages, got %d", len(vs.Stages))
 	}
 	if vs.TargetCycleDays != 28 {
 		t.Errorf("TargetCycleDays want 28, got %d", vs.TargetCycleDays)
@@ -95,9 +99,39 @@ func TestBuildValueStream(t *testing.T) {
 	if vs.Stages[1].Status != "current" {
 		t.Errorf("stage 1 status want current, got %s", vs.Stages[1].Status)
 	}
-	// 验证第一阶段（受理）为 done
+	// 验证第一阶段（受理）为 done，且不得伪造「实际 2 天」
 	if vs.Stages[0].Status != "done" {
 		t.Errorf("stage 0 status want done, got %s", vs.Stages[0].Status)
+	}
+	if vs.Stages[0].DurationText == "实际 2 天" {
+		t.Errorf("done stage must not fabricate actual duration")
+	}
+}
+
+func TestBuildValueStreamUnknownDoesNotFallbackClarify(t *testing.T) {
+	svc := &DetailService{}
+	vs := svc.buildValueStream(&DemandDetailRow{Status: "totally-unknown"})
+	if vs == nil {
+		t.Fatal("nil value stream")
+	}
+	foundUnknown := false
+	for _, st := range vs.Stages {
+		if st.Key == "unknown" && st.Status == "current" {
+			foundUnknown = true
+		}
+		if st.Key == "clarify" && st.Status == "current" {
+			t.Fatal("unknown status must not highlight clarify")
+		}
+	}
+	if !foundUnknown {
+		t.Fatal("expected unknown current stage")
+	}
+}
+
+func TestBuildAppQualityTreeNoFabrication(t *testing.T) {
+	tree := buildAppQualityTree([]DemandStoryRow{{ID: 1, Title: "x", ProductName: "app"}})
+	if tree != nil {
+		t.Fatalf("unconnected scanner must return nil tree, got %#v", tree)
 	}
 }
 

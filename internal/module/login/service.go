@@ -106,6 +106,9 @@ func (s *Service) checkLockout(ctx context.Context, account string) (reason stri
 	if err != nil {
 		return "", err
 	}
+	if user == nil {
+		return "", nil
+	}
 	if user.Locked != nil && user.Locked.Before(time.Now()) {
 		return "account_locked", errorx.New("auth.login.locked", "账号已被临时锁定，请 15 分钟后再试")
 	}

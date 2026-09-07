@@ -14,9 +14,12 @@ import (
 	"math"
 	"strings"
 	"time"
+
+	"workbench/internal/pkg/zentao"
 )
 
 func (s *DetailService) buildValueStream(row *DemandDetailRow) *DetailValueStream {
+	// F05：阶段集合与 mapValueStage 共用同一套 key，终态单独入列，禁止匹配失败回退澄清。
 	stagesDef := []struct {
 		key   string
 		label string
@@ -31,10 +34,11 @@ func (s *DetailService) buildValueStream(row *DemandDetailRow) *DetailValueStrea
 		{"acceptance", "验收", "业务部门 / PO"},
 		{"publish", "发布", "发布组"},
 		{"greyverify", "生产验证", "业务 / 运维"},
+		{"closed", "已关闭", "系统"},
 	}
 
 	currentStage, _ := mapValueStage(row.Stage, row.Status)
-	currentIdx := 1
+	currentIdx := -1
 	for idx, st := range stagesDef {
 		if st.key == currentStage {
 			currentIdx = idx
@@ -43,7 +47,7 @@ func (s *DetailService) buildValueStream(row *DemandDetailRow) *DetailValueStrea
 	}
 
 	now := time.Now()
-	items := make([]ValueStreamItem, 0, len(stagesDef))
+	items := make([]ValueStreamItem, 0, len(stagesDef)+1)
 	usedDays := 0
 
 	for idx, def := range stagesDef {
@@ -52,29 +56,48 @@ func (s *DetailService) buildValueStream(row *DemandDetailRow) *DetailValueStrea
 			Label: def.label,
 			Role:  def.role,
 		}
-		if idx < currentIdx {
+		if currentIdx < 0 {
+			item.Status = "future"
+			item.DurationKind = "未知"
+			item.DurationText = "时长未知"
+		} else if idx < currentIdx {
+			// F03：无阶段进入事件时不得伪造「实际 2 天」。
 			item.Status = "done"
-			item.DurationKind = "实际"
-			item.DurationText = "实际 2 天"
-			usedDays += 2
+			item.DurationKind = "未知"
+			item.DurationText = "时长未知"
 		} else if idx == currentIdx {
 			item.Status = "current"
 			item.DurationKind = "已持续"
-			elapsed := 3
 			if row.CreatedDate != nil {
-				elapsed = int(math.Max(1, now.Sub(*row.CreatedDate).Hours()/24))
+				elapsed := int(math.Max(1, now.Sub(*row.CreatedDate).Hours()/24))
+				item.DurationText = fmt.Sprintf("已持续约 %d 天（缺阶段进入时间，按创建日估算）", elapsed)
+				usedDays += elapsed
+			} else {
+				item.DurationText = "时长未知"
 			}
-			item.DurationText = fmt.Sprintf("已持续 %d 天", elapsed)
-			usedDays += elapsed
 		} else {
 			item.Status = "future"
 			item.DurationKind = "预计"
-			item.DurationText = "预计 3 天"
+			item.DurationText = "预计时长未知"
 		}
 		items = append(items, item)
 	}
 
-	estimatedDays := usedDays + (len(stagesDef)-currentIdx-1)*3
+	if currentIdx < 0 {
+		items = append(items, ValueStreamItem{
+			Key:          "unknown",
+			Label:        "未知阶段",
+			Role:         "—",
+			Status:       "current",
+			DurationKind: "未知",
+			DurationText: "状态未映射，请核对禅道 status/stage",
+		})
+	}
+
+	estimatedDays := row.EstimateDelivery
+	if estimatedDays <= 0 {
+		estimatedDays = usedDays
+	}
 	targetDays := 28
 	diff := estimatedDays - targetDays
 
@@ -83,7 +106,7 @@ func (s *DetailService) buildValueStream(row *DemandDetailRow) *DetailValueStrea
 		UsedCycleDays:      usedDays,
 		TargetCycleDays:    targetDays,
 		DiffCycleDays:      diff,
-		IsOverdue:          diff > 0,
+		IsOverdue:          estimatedDays > 0 && diff > 0,
 		Stages:             items,
 	}
 }
@@ -148,8 +171,11 @@ func (s *DetailService) buildSpotlight(stage, status string) *DetailSpotlight {
 	}
 }
 
-func (s *DetailService) buildRequirement(ctx context.Context, row *DemandDetailRow) *DetailRequirement {
-	clarifies, _ := s.repo.FindDemandClarifications(ctx, row.ID)
+func (s *DetailService) buildRequirement(ctx context.Context, row *DemandDetailRow) (*DetailRequirement, error) {
+	clarifies, err := s.repo.FindDemandClarifications(ctx, row.ID)
+	if err != nil {
+		return nil, err
+	}
 	cItems := make([]ClarificationItem, 0, len(clarifies))
 	for _, c := range clarifies {
 		devEnd := "—"
@@ -170,7 +196,10 @@ func (s *DetailService) buildRequirement(ctx context.Context, row *DemandDetailR
 		})
 	}
 
-	files, _ := s.repo.FindDemandFiles(ctx, row.ID)
+	files, err := s.repo.FindDemandFiles(ctx, row.ID)
+	if err != nil {
+		return nil, err
+	}
 	fItems := make([]AttachmentItem, 0, len(files))
 	for _, f := range files {
 		created := "—"
@@ -193,83 +222,8 @@ func (s *DetailService) buildRequirement(ctx context.Context, row *DemandDetailR
 		Clarifications: cItems,
 		UserStories:    []UserStoryItem{},
 		Attachments:    fItems,
-	}
-}
-
-func (s *DetailService) buildExecution(ctx context.Context, demandID uint) *DetailExecution {
-	stories, _ := s.repo.FindDemandStories(ctx, demandID)
-	storyIDs := make([]uint, 0, len(stories))
-	for _, st := range stories {
-		storyIDs = append(storyIDs, st.ID)
-	}
-
-	taskMap, _ := s.repo.FindStoryTaskCounts(ctx, storyIDs)
-	bugMap, _ := s.repo.FindStoryBugCounts(ctx, storyIDs)
-	testCaseCounts, _ := s.repo.FindStoryTestCaseCounts(ctx, storyIDs)
-
-	sItems := make([]StoryItem, 0, len(stories))
-	totalBugs := 0
-	activeBugs := 0
-	resolvedBugs := 0
-	blockingBugs := 0
-
-	for _, st := range stories {
-		tDone := 0
-		tTotal := 0
-		if t, ok := taskMap[st.ID]; ok {
-			tDone = t.Done
-			tTotal = t.Total
-		}
-		if b, ok := bugMap[st.ID]; ok {
-			totalBugs += b.Total
-			activeBugs += b.Active
-			resolvedBugs += b.Resolved
-			blockingBugs += b.DeliveryBlocking
-		}
-
-		sItems = append(sItems, StoryItem{
-			ID:         st.ID,
-			Code:       fmt.Sprintf("ST%d", st.ID),
-			Title:      st.Title,
-			Product:    defaultDash(st.ProductName),
-			Owner:      defaultDash(st.AssignedToName),
-			Status:     defaultDash(st.Status),
-			TasksDone:  tDone,
-			TasksTotal: tTotal,
-		})
-	}
-
-	execRate := 0.0
-	if testCaseCounts.TotalCount > 0 {
-		execRate = math.Round(float64(testCaseCounts.ExecutedCount)/float64(testCaseCounts.TotalCount)*1000) / 10
-	}
-	passRate := 0.0
-	if testCaseCounts.ExecutedCount > 0 {
-		passRate = math.Round(float64(testCaseCounts.PassedCount)/float64(testCaseCounts.ExecutedCount)*1000) / 10
-	}
-
-	return &DetailExecution{
-		Stories: sItems,
-		TestCaseSummary: TestCaseSummary{
-			TotalCount:    testCaseCounts.TotalCount,
-			ExecutedCount: testCaseCounts.ExecutedCount,
-			ExecutionRate: execRate,
-			PassedCount:   testCaseCounts.PassedCount,
-			PassRate:      passRate,
-		},
-		BugSummary: BugSummary{
-			TotalCount:       totalBugs,
-			ActiveCount:      activeBugs,
-			ResolvedCount:    resolvedBugs,
-			DeliveryBlocking: blockingBugs,
-		},
-		QualitySummary: QualitySummary{
-			AvgScore:      92.0,
-			BranchesCount: len(stories),
-			PassedGates:   len(stories),
-			TotalGates:    len(stories),
-		},
-	}
+		ClarifyZtURL:   zentao.DemandClarifyURL(row.ID),
+	}, nil
 }
 
 func (s *DetailService) buildDelivery(row *DemandDetailRow, exec *DetailExecution) *DetailDelivery {
@@ -314,8 +268,11 @@ func (s *DetailService) buildDelivery(row *DemandDetailRow, exec *DetailExecutio
 	}
 }
 
-func (s *DetailService) buildHistory(ctx context.Context, row *DemandDetailRow) *DetailHistory {
-	actions, _ := s.repo.FindDemandActions(ctx, row.ID)
+func (s *DetailService) buildHistory(ctx context.Context, row *DemandDetailRow) (*DetailHistory, error) {
+	actions, err := s.repo.FindDemandActions(ctx, row.ID)
+	if err != nil {
+		return nil, err
+	}
 	actItems := make([]ActionHistoryItem, 0, len(actions))
 	for _, a := range actions {
 		dStr := "—"
@@ -363,12 +320,37 @@ func (s *DetailService) buildHistory(ctx context.Context, row *DemandDetailRow) 
 			ClosedDate:     closedStr,
 			ClosedReason:   defaultDash(row.ClosedReason),
 		},
-	}
+	}, nil
 }
 
 func mapValueStage(stage, status string) (string, string) {
-	st := strings.ToLower(strings.TrimSpace(stage))
+	// F05：返回值必须落在 buildValueStream.stagesDef（含 closed）或 unknown；禁止默认回退 clarify。
+	st := strings.ToLower(strings.TrimSpace(status))
 	switch st {
+	case "closed":
+		return "closed", "已关闭"
+	case "released":
+		return "greyverify", "生产验证"
+	case "waitdeliver", "delivered":
+		return "publish", "发布"
+	case "acceptanced":
+		return "acceptance", "已验收"
+	case "waitacceptance":
+		return "acceptance", "待验收"
+	case "testing":
+		return "testing", "测试中"
+	case "developing":
+		return "developing", "研发中"
+	case "clarified":
+		return "schedule", "已排期"
+	case "active", "clarify":
+		return "clarify", "澄清中"
+	case "draft", "refuse", "wait":
+		return "accept", "已受理"
+	}
+
+	sg := strings.ToLower(strings.TrimSpace(stage))
+	switch sg {
 	case "wait":
 		return "accept", "已受理"
 	case "inroadmap", "clarify":
@@ -380,16 +362,27 @@ func mapValueStage(stage, status string) (string, string) {
 	case "delivering", "testing":
 		return "testing", "测试中"
 	case "delivered":
-		return "delivered", "上线完成"
+		return "publish", "发布"
 	case "closed":
 		return "closed", "已关闭"
 	default:
-		s := strings.ToLower(strings.TrimSpace(status))
-		if s == "clarify" {
-			return "clarify", "澄清中"
+		if st == "" && sg == "" {
+			return "unknown", "未知"
 		}
-		return "clarify", "澄清中"
+		if st != "" || sg != "" {
+			return "unknown", "未知"
+		}
+		return "unknown", "未知"
 	}
+}
+
+func firstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if strings.TrimSpace(v) != "" {
+			return strings.TrimSpace(v)
+		}
+	}
+	return ""
 }
 
 func defaultDash(v string) string {
