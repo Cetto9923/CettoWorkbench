@@ -76,7 +76,10 @@ function buildRowHtml(item, isStory) {
   var titleHtml = workbenchHref
     ? '<a class="table-title-link" href="' + esc(workbenchHref) + '">' + esc(item.title || "—") + '</a>'
     : esc(item.title || "—");
-  return { idHtml: idHtml, titleHtml: titleHtml, actionHtml: actionHtml };
+  var flags = sandbox.window.PersonalList.priorityBadge(item.pri);
+  if (item.suspended) flags += '<span class="home-inline-flag suspended">挂起</span>';
+  if (item.blocked) flags += '<span class="home-inline-flag blocked">阻塞</span>';
+  return { idHtml: idHtml, titleHtml: '<div class="home-title-line">' + flags + titleHtml + '</div>', actionHtml: actionHtml };
 }
 
 // Case 1: business demand with no primaryAction (placeholder path).
@@ -86,6 +89,7 @@ assert.ok(/class="table-title-link"/.test(row1.titleHtml), "Case1: title must ha
 assert.ok(/href="\/demands\/12345"/.test(row1.titleHtml), "Case1: title href should fall back to /demands/12345 (workbench internal)");
 assert.ok(/target="_blank"/.test(row1.idHtml), "Case1: id link must carry target=_blank");
 assert.ok(/rel="noopener noreferrer"/.test(row1.idHtml), "Case1: id link must carry rel=noopener noreferrer");
+assert.ok(/data-priority=""/.test(row1.titleHtml), "Case1: title keeps an inline priority badge");
 assert.ok(/home-unavailable/.test(row1.actionHtml), "Case1: action column must show home-unavailable placeholder");
 assert.ok(!/查看详情/.test(row1.actionHtml), "Case1: action must NOT show '查看详情' fallback");
 
@@ -126,4 +130,11 @@ var row5 = buildRowHtml({
 }, true);
 assert.ok(/href="\/schedule\/stories\/9999\/scheduling"/.test(row5.actionHtml), "Case5: independent story schedule action -> /schedule/stories/:id/scheduling");
 
-console.log("PASS: home row render produces correct title-link vs id-link and primaryAction HTML for 5 cases");
+// Case 6: suspension/blocking facts render beside priority before the title.
+var row6 = buildRowHtml({ id: "US7", title: "挂起且阻塞", pri: "P1", suspended: true, blocked: true }, false);
+assert.match(row6.titleHtml, /home-title-line/);
+assert.ok(row6.titleHtml.indexOf('data-priority="1"') < row6.titleHtml.indexOf('>挂起</span>'), "priority must precede risk flags");
+assert.ok(/home-inline-flag suspended/.test(row6.titleHtml), "suspended fact is visible");
+assert.ok(/home-inline-flag blocked/.test(row6.titleHtml), "blocked fact is visible");
+
+console.log("PASS: home row render keeps priority and current risk flags before the title");

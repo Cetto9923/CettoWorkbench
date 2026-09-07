@@ -223,6 +223,13 @@
     var actionHtml = primaryActionHtml(item, isStory);
 
     var priTag = priorityBadge(item.pri);
+    var inlineFlags = priTag;
+    if (item.suspended === true || String(item.suspended || "").toLowerCase() === "true" || String(item.suspended || "") === "1") {
+      inlineFlags += '<span class="home-inline-flag suspended">挂起</span>';
+    }
+    if (item.blocked === true || String(item.blocked || "").toLowerCase() === "true" || String(item.blocked || "") === "1") {
+      inlineFlags += '<span class="home-inline-flag blocked">阻塞</span>';
+    }
 
     var typeTag = isStory
       ? objectTypeBadge("story")
@@ -234,9 +241,10 @@
       var cleanId = String(id).replace(/^US/i, "");
       workbenchHref = cleanId ? "/demands/" + encodeURIComponent(cleanId) : "";
     }
-    var titleHtml = workbenchHref
+    var titleLink = workbenchHref
       ? '<a class="table-title-link" href="' + esc(workbenchHref) + '">' + esc(item.title || "—") + '</a>'
       : esc(item.title || "—");
+    var titleHtml = '<div class="home-title-line">' + inlineFlags + titleLink + '</div>';
 
     var statusText = getHomeZentaoStatusLabel(item);
     var dotClass = (statusText === "开发中" || statusText === "测试中" || statusText === "待验收") ? "active" :
@@ -246,7 +254,6 @@
       '<td class="c-id">' + idHtml + '</td>' +
       '<td class="c-title" title="' + esc(item.title || "") + '">' + titleHtml + '</td>' +
       '<td class="c-type">' + typeTag + '</td>' +
-      '<td class="c-pri">' + priTag + '</td>' +
       '<td class="c-stage"><span class="stage-tag">' + esc(item.valueStream || item.stage || "—") + '</span></td>' +
       '<td class="c-zt-status"><span class="status-tag"><i class="status-dot ' + dotClass + '"></i> ' + esc(statusText) + '</span></td>' +
       '<td class="c-owner">' + esc(dash(item.nextOwner || item.owner)) + '</td>' +
@@ -330,7 +337,7 @@
 
     $("#top5Empty").attr("hidden", true);
     $("#top5Error").attr("hidden", true);
-    $("#top5Tbody").html('<tr><td colspan="8" class="state-placeholder">正在加载行动列表…</td></tr>');
+    $("#top5Tbody").html('<tr><td colspan="7" class="state-placeholder">正在加载行动列表…</td></tr>');
 
     $("#top5List").attr("aria-busy", "true");
     $("#homeRefreshBtn").prop("disabled", true);

@@ -63,6 +63,7 @@ type DemandRow struct {
 	Name       string `gorm:"column:name"`
 	Pri        string `gorm:"column:pri"`
 	Status     string `gorm:"column:status"`
+	Hang       string `gorm:"column:hang"`
 	AssignedTo string `gorm:"column:assignedTo"`
 	QD         string `gorm:"column:QD"`
 	RD         string `gorm:"column:RD"`
@@ -229,7 +230,7 @@ func (r *Repo) FindRoleDemands(ctx context.Context, account string, filter mysql
 	}
 	var rows []DemandRow
 	err := r.roleDemandScope(ctx, account, filter).
-		Select(`zt_demand.id, zt_demand.name, zt_demand.pri, zt_demand.status,
+		Select(`zt_demand.id, zt_demand.name, zt_demand.pri, zt_demand.status, zt_demand.hang,
 			zt_demand.assignedTo, zt_demand.QD, zt_demand.RD, zt_demand.BRA,
 			clarify_pm.PM AS pm`).
 		Joins(`LEFT JOIN (
@@ -253,7 +254,7 @@ func (r *Repo) FindRoleDemandsPaged(ctx context.Context, account string, filter 
 	}
 	var rows []DemandRow
 	q := r.roleDemandScope(ctx, account, filter).
-		Select(`zt_demand.id, zt_demand.name, zt_demand.pri, zt_demand.status,
+		Select(`zt_demand.id, zt_demand.name, zt_demand.pri, zt_demand.status, zt_demand.hang,
 			zt_demand.assignedTo, zt_demand.QD, zt_demand.RD, zt_demand.BRA,
 			clarify_pm.PM AS pm`).
 		Joins(`LEFT JOIN (
@@ -365,7 +366,7 @@ func (r *Repo) FindRoleDemandsByIDs(ctx context.Context, ids []int) ([]DemandRow
 	}
 	var rows []DemandRow
 	err := r.db.WithContext(ctx).Table("zt_demand").
-		Select(`zt_demand.id, zt_demand.name, zt_demand.pri, zt_demand.status,
+		Select(`zt_demand.id, zt_demand.name, zt_demand.pri, zt_demand.status, zt_demand.hang,
 			zt_demand.assignedTo, zt_demand.QD, zt_demand.RD, zt_demand.BRA,
 			clarify_pm.PM AS pm`).
 		Joins(`LEFT JOIN (

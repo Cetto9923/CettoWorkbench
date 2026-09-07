@@ -87,6 +87,26 @@ func TestDemandsReqValidate(t *testing.T) {
 	}
 }
 
+func TestBuildDemandWorkItemCarriesCurrentRiskFacts(t *testing.T) {
+	item := buildDemandWorkItem(DemandRow{
+		ID:     2511,
+		Pri:    "1",
+		Name:   "挂起且驳回的需求",
+		Status: "refuse",
+		Hang:   "1",
+	}, "澄清", nil)
+
+	if !item.Suspended {
+		t.Fatal("hang='1' must render as a current suspension")
+	}
+	if !item.Blocked {
+		t.Fatal("status='refuse' must render as a current blocker")
+	}
+	if item.Pri != "P1" {
+		t.Fatalf("priority = %q, want P1", item.Pri)
+	}
+}
+
 func findRepoRoot(t *testing.T) string {
 	t.Helper()
 	dir, err := os.Getwd()

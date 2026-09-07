@@ -99,6 +99,8 @@ type WorkItemDetail struct {
 	ZentaoUrl     string                       `json:"zentaoUrl"`
 	ValueStream   string                       `json:"valueStream"`
 	ZentaoStatus  string                       `json:"zentaoStatus"`            // 禅道 status 原文，前端按业需/研需分别映射中文
+	Suspended     bool                         `json:"suspended"`               // 当前存在 hang='1' 的挂起事实
+	Blocked       bool                         `json:"blocked"`                 // 当前 status=refuse 的阻塞事实
 	PrimaryAction *primaryaction.PrimaryAction `json:"primaryAction,omitempty"` // Stage 5: 服务端主操作
 }
 
