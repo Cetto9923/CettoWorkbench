@@ -83,9 +83,10 @@
   }
 
   function fmtDateTime(value) {
-    if (!value) return "--";
+    if (!value) return '<span class="done-time-date">--</span>';
     var m = String(value).match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})/);
-    return m ? m[1] + " " + m[2] : esc(value);
+    if (!m) return '<span class="done-time-date">' + esc(value) + "</span>";
+    return '<span class="done-time-date">' + m[1] + '</span><span class="done-time-clock">' + m[2] + "</span>";
   }
 
   function tagClass(result) {

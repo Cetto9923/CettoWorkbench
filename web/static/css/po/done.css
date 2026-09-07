@@ -195,11 +195,17 @@
 }
 
 .done-time {
-  font-size: 11px;
-  color: var(--po-t2, #4b5563);
-  line-height: 1.35;
+  font-size: 10px;
+  color: var(--color-text-secondary, var(--po-t2, #4b5563));
+  line-height: 1.25;
   font-family: ui-monospace, monospace;
   white-space: nowrap;
+}
+.done-time-date,
+.done-time-clock { display: block; }
+.done-time-clock {
+  margin-top: 2px;
+  color: var(--color-text-disabled, var(--po-t3, #9ca3af));
 }
 .done-obj {
   white-space: nowrap;
