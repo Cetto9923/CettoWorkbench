@@ -1,5 +1,5 @@
 app:
-  name: 个人工作台
+  name: 研发工作台
   env: prod
   addr: ":8080"
 

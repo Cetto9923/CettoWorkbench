@@ -89,9 +89,10 @@ CREATE TABLE IF NOT EXISTS `zt_menus` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO `zt_menus` (`id`, `parentId`, `title`, `icon`, `path`, `perm`, `type`, `sort`) VALUES
- (1,	0,	'PO专属',	'',	'',	'',	'M',	100),
- (2,	1,	'工作台首页',	'fa-home',	'/home',	'po:home',	'C',	1),
- (3,	1,	'排期工作台',	'fa-calendar-check',	'/schedule',	'po:schedule',	'C',	2);
+ (1,	0,	'个人入口',	'',	'',	'',	'M',	100),
+ (2,	1,	'首页',	'fa-home',	'/home',	'po:home',	'C',	1),
+ (4,	0,	'工作区',	'',	'',	'',	'M',	200),
+ (3,	4,	'需求排期',	'fa-calendar-check',	'/schedule',	'po:schedule',	'C',	1);
 
 CREATE TABLE IF NOT EXISTS `zt_versionwindow` (
     `id`            BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -143,3 +144,10 @@ CREATE TABLE IF NOT EXISTS `zt_demandwindow` (
     INDEX `idx_versionWindow` (`versionWindow`),
     UNIQUE KEY `uk_demand_story` (`demand`, `story`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='业务需求-窗口关联（业需级单值：demand+story(=0) 唯一）';
+
+UPDATE `zt_menus` SET `title` = '个人入口' WHERE `title` = 'PO专属';
+UPDATE `zt_menus` SET `title` = '首页' WHERE `title` = '工作台首页';
+UPDATE `zt_menus` SET `title` = '需求排期' WHERE `title` = '排期工作台';
+INSERT IGNORE INTO `zt_menus` (`id`, `parentId`, `title`, `icon`, `path`, `perm`, `type`, `sort`) VALUES
+ (4,	0,	'工作区',	'',	'',	'',	'M',	200);
+UPDATE `zt_menus` SET `parentId` = 4, `sort` = 1 WHERE `path` = '/schedule' AND `perm` = 'po:schedule';

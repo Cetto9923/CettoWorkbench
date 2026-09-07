@@ -26,7 +26,6 @@ type mysqlStageFilter struct {
 	braRequired        bool // true：BRA 必须等于当前账号
 	noClarify          bool // true：无 zt_demandclarify 记录
 	acceptanceStage    bool // true：验收阶段复合条件
-	publishStage       bool // true：发布阶段复合条件（waitdeliver 或已发布未评价）
 	scheduleIncomplete bool // true：排期未完成（关键日期/QD/主研未填）
 	deliverStories     bool // true：合并交付阶段独立研发需求
 }
@@ -50,7 +49,7 @@ var mysqlStageFilters = map[string]mysqlStageFilter{
 		deliverDateDue: true,
 		deliverStories: true,
 	},
-	"publish": {publishStage: true},
+	"publish": {statuses: []string{"waitdeliver"}},
 	"released": {
 		statuses: []string{"released"},
 		overall:  &releasedOverallEmpty,
@@ -111,22 +110,6 @@ func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysql
 			(status = ? AND testFinish IS NOT NULL AND testFinish <= ?)
 			OR (status = ? AND (RD = ? OR BRA = ?))
 		)`, "testing", today, "waitacceptance", account, account)
-		return q
-	}
-	if filter.publishStage {
-		// status=waitdeliver OR (status=released AND 无有效评价记录)
-		q = q.Where(`(
-			status = ?
-			OR (
-				status = ?
-				AND NOT EXISTS (
-					SELECT 1 FROM zt_demandappraise
-					WHERE demand = zt_demand.id
-						AND appraiseBy <> '' AND appraiseBy IS NOT NULL
-						AND appraiseTime IS NOT NULL
-				)
-			)
-		)`, "waitdeliver", "released")
 		return q
 	}
 
@@ -195,7 +178,7 @@ func filterReady(account string, filter mysqlStageFilter) bool {
 	if strings.TrimSpace(account) == "" {
 		return false
 	}
-	if filter.acceptanceStage || filter.publishStage {
+	if filter.acceptanceStage {
 		return true
 	}
 	return len(filter.statuses) > 0
@@ -227,12 +210,12 @@ func (r *Repo) FindRoleDemandIDs(ctx context.Context, account string, filter mys
 }
 
 // FindRoleDemands 按阶段过滤条件查询业需列表（只取账号字段，不 JOIN zt_user）。
-func (r *Repo) FindRoleDemands(ctx context.Context, account string, filter mysqlStageFilter) ([]DemandRow, error) {
+// limit>0 时应用 LIMIT/OFFSET；limit<=0 表示不分页拉全量（供合并列表场景）。
+func (r *Repo) FindRoleDemands(ctx context.Context, account string, filter mysqlStageFilter, limit, offset int) ([]DemandRow, error) {
 	if r == nil || r.db == nil || !filterReady(account, filter) {
 		return nil, nil
 	}
-	var rows []DemandRow
-	err := r.roleDemandScope(ctx, account, filter).
+	q := r.roleDemandScope(ctx, account, filter).
 		Select(`zt_demand.id, zt_demand.name, zt_demand.pri, zt_demand.status,
 			zt_demand.assignedTo, zt_demand.QD, zt_demand.RD, zt_demand.BRA,
 			clarify_pm.PM AS pm`).
@@ -242,8 +225,15 @@ func (r *Repo) FindRoleDemands(ctx context.Context, account string, filter mysql
 			WHERE PM IS NOT NULL AND PM <> ''
 			GROUP BY demand
 		) AS clarify_pm ON clarify_pm.demand = zt_demand.id`).
-		Order("zt_demand.id DESC").
-		Find(&rows).Error
+		Order("zt_demand.id DESC")
+	if limit > 0 {
+		if offset < 0 {
+			offset = 0
+		}
+		q = q.Limit(limit).Offset(offset)
+	}
+	var rows []DemandRow
+	err := q.Find(&rows).Error
 	if err != nil {
 		return nil, err
 	}

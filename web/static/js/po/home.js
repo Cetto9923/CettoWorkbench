@@ -1,13 +1,15 @@
 (function ($) {
   "use strict";
 
-  var PAGE_SIZES = [4, 5, 6, 7, 8, 10];
+  // 与 components/pager 选项一致
+  var PAGE_SIZES = [10, 20, 50, 100];
   var state = {
     items: [],
+    total: 0,
     status: "all",
     focal: "myPending",
     page: 1,
-    pageSize: 6
+    pageSize: 10
   };
 
   var FOCAL_LABELS = {
@@ -17,8 +19,15 @@
     overdue: "超期"
   };
 
-  function demandsUrl(status) {
-    return "/demands?status=" + encodeURIComponent(status || "all");
+  function demandsUrl(status, page, pageSize) {
+    return (
+      "/demands?status=" +
+      encodeURIComponent(status || "all") +
+      "&page=" +
+      encodeURIComponent(String(page || 1)) +
+      "&pageSize=" +
+      encodeURIComponent(String(pageSize || 10))
+    );
   }
 
   function escapeHtml(text) {
@@ -98,9 +107,9 @@
     return "—";
   }
 
-  function loadDemands(status) {
+  function loadDemands(status, page, pageSize) {
     var fetchFn = window.appFetch || fetch;
-    return fetchFn(demandsUrl(status), { method: "GET" })
+    return fetchFn(demandsUrl(status, page, pageSize), { method: "GET" })
       .then(function (res) {
         if (!res.ok) {
           throw new Error("load demands failed");
@@ -111,13 +120,18 @@
         if (!payload || payload.success !== true) {
           throw new Error("invalid payload");
         }
-        return Array.isArray(payload.items) ? payload.items : [];
+        return {
+          items: Array.isArray(payload.items) ? payload.items : [],
+          total: Number(payload.total) || 0,
+          page: Number(payload.page) || page || 1,
+          pageSize: Number(payload.pageSize) || pageSize || 10
+        };
       })
       .catch(function () {
         if (typeof window.showToast === "function") {
           window.showToast("加载需求列表失败，请稍后重试", "danger");
         }
-        return [];
+        return { items: [], total: 0, page: 1, pageSize: pageSize || 10 };
       });
   }
 
@@ -207,32 +221,125 @@
     );
   }
 
+  // 对齐 internal/pkg/pagination.buildPages(current, total, around=2)
+  function buildPages(currentPage, totalPages, around) {
+    if (totalPages <= 0) {
+      return [];
+    }
+    var start = Math.max(1, currentPage - around);
+    var end = Math.min(totalPages, currentPage + around);
+    var pages = [];
+    for (var i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+
+  // DOM 对齐 web/templates/components/pager.html；翻页走后端查询
   function renderPagination(total) {
+    var $pager = $("#homePager");
+    if (!total) {
+      $pager.attr("hidden", true).empty();
+      return;
+    }
     var page = state.page;
     var ps = state.pageSize;
     var totalPages = Math.max(1, Math.ceil(total / Math.max(1, ps)));
-    var startIdx = total ? (page - 1) * ps + 1 : 0;
-    var endIdx = Math.min(page * ps, total);
-    var html = "<div class=\"pagination-container\"><div class=\"pagination\">";
-    html += "<span class=\"pagination-summary\">显示 " + startIdx + "-" + endIdx + " / 共 " + total + " 条</span>";
-    html += "<div class=\"pagination-controls\">";
-    html += "<button type=\"button\" class=\"action-btn js-show-all\">查看全部 " + total + " 条</button>";
-    html += "<select class=\"filter-select\" aria-label=\"每页条数\">";
-    PAGE_SIZES.forEach(function (n) {
-      html += "<option value=\"" + n + "\"" + (n === ps ? " selected" : "") + ">" + n + " 条/页</option>";
-    });
-    html += "</select>";
-    html += "<button type=\"button\" class=\"action-btn small js-page-prev\"" + (page <= 1 ? " disabled" : "") + ">上一页</button>";
-    for (var i = 1; i <= totalPages; i++) {
-      if (i === 1 || i === totalPages || (i >= page - 1 && i <= page + 1)) {
-        html += "<button type=\"button\" class=\"action-btn small js-page-num" + (i === page ? " primary" : "") + "\" data-page=\"" + i + "\">" + i + "</button>";
-      } else if (i === page - 2 || i === page + 2) {
-        html += "<span class=\"pagination-ellipsis\">...</span>";
-      }
+    var pages = buildPages(page, totalPages, 2);
+    var hasPrev = page > 1;
+    var hasNext = totalPages > 0 && page < totalPages;
+    var html = "<div class=\"pagination-container\" aria-label=\"分页\"><ul class=\"pagination\">";
+
+    if (hasPrev) {
+      html +=
+        "<li class=\"page-item\"><a class=\"page-link\" href=\"#\" data-page=\"" +
+        (page - 1) +
+        "\" aria-label=\"上一页\"><i class=\"bi bi-chevron-left\" aria-hidden=\"true\"></i></a></li>";
+    } else {
+      html +=
+        "<li class=\"page-item disabled\"><span class=\"page-link\" aria-hidden=\"true\"><i class=\"bi bi-chevron-left\"></i></span></li>";
     }
-    html += "<button type=\"button\" class=\"action-btn small js-page-next\"" + (page >= totalPages ? " disabled" : "") + ">下一页</button>";
-    html += "</div></div></div>";
-    return html;
+
+    if (totalPages > 1 && pages.length > 0) {
+      if (pages[0] > 1) {
+        html += "<li class=\"page-item\"><a class=\"page-link\" href=\"#\" data-page=\"1\">1</a></li>";
+      }
+      if (pages[0] > 2) {
+        html += "<li class=\"page-item disabled\"><span class=\"page-link\">•••</span></li>";
+      }
+      pages.forEach(function (p) {
+        if (p === page) {
+          html +=
+            "<li class=\"page-item active\"><span class=\"page-link\" aria-current=\"page\">" +
+            p +
+            "</span></li>";
+        } else {
+          html +=
+            "<li class=\"page-item\"><a class=\"page-link\" href=\"#\" data-page=\"" +
+            p +
+            "\">" +
+            p +
+            "</a></li>";
+        }
+      });
+      if (pages[pages.length - 1] < totalPages - 1) {
+        html += "<li class=\"page-item disabled\"><span class=\"page-link\">•••</span></li>";
+      }
+      if (pages[pages.length - 1] < totalPages) {
+        html +=
+          "<li class=\"page-item\"><a class=\"page-link\" href=\"#\" data-page=\"" +
+          totalPages +
+          "\">" +
+          totalPages +
+          "</a></li>";
+      }
+    } else {
+      html +=
+        "<li class=\"page-item active\"><span class=\"page-link\" aria-current=\"page\">" +
+        page +
+        "</span></li>";
+    }
+
+    if (hasNext) {
+      html +=
+        "<li class=\"page-item\"><a class=\"page-link\" href=\"#\" data-page=\"" +
+        (page + 1) +
+        "\" aria-label=\"下一页\"><i class=\"bi bi-chevron-right\" aria-hidden=\"true\"></i></a></li>";
+    } else {
+      html +=
+        "<li class=\"page-item disabled\"><span class=\"page-link\" aria-hidden=\"true\"><i class=\"bi bi-chevron-right\"></i></span></li>";
+    }
+
+    html += "</ul><div class=\"pagination-options\">";
+    html += "<span class=\"pagination-total\">共 " + total + " 条</span>";
+    html += "<form method=\"GET\" action=\"#\" class=\"pagination-size-form\">";
+    html += "<select name=\"pageSize\" class=\"select\" aria-label=\"每页条数\">";
+    PAGE_SIZES.forEach(function (n) {
+      html +=
+        "<option value=\"" +
+        n +
+        "\"" +
+        (n === ps ? " selected" : "") +
+        ">" +
+        n +
+        " 条/页</option>";
+    });
+    html += "</select></form>";
+    html += "<form method=\"GET\" action=\"#\" class=\"pagination-jump-form\">";
+    html += "<input type=\"hidden\" name=\"pageSize\" value=\"" + ps + "\">";
+    html += "<span>跳至</span>";
+    html +=
+      "<input type=\"number\" min=\"1\" max=\"" +
+      totalPages +
+      "\" name=\"page\" class=\"input\" value=\"" +
+      page +
+      "\">";
+    html += "<span>页</span>";
+    html += "<button type=\"submit\" class=\"btn btn-neutral btn-sm\">前往</button>";
+    html += "</form></div></div>";
+
+    $pager.html(html).removeAttr("hidden");
+    bindPagination(totalPages);
   }
 
   function bindZentaoLinks($list) {
@@ -263,57 +370,55 @@
     });
   }
 
-  function bindPagination(total) {
-    var $list = $("#top5List");
-    $list.find(".js-show-all").on("click", function () {
-      state.pageSize = Math.max(total, 1);
-      state.page = 1;
-      renderList();
-    });
-    $list.find(".filter-select").on("change", function () {
-      state.pageSize = parseInt($(this).val(), 10) || 6;
-      state.page = 1;
-      renderList();
-    });
-    $list.find(".js-page-prev").on("click", function () {
-      if (state.page > 1) {
-        state.page -= 1;
-        renderList();
+  function bindPagination(totalPages) {
+    var $pager = $("#homePager");
+    $pager.find("a.page-link[data-page]").on("click", function (e) {
+      e.preventDefault();
+      var next = parseInt($(this).attr("data-page"), 10) || 1;
+      if (next < 1 || next > totalPages || next === state.page) {
+        return;
       }
+      state.page = next;
+      reloadDemands();
     });
-    $list.find(".js-page-next").on("click", function () {
-      var totalPages = Math.max(1, Math.ceil(total / Math.max(1, state.pageSize)));
-      if (state.page < totalPages) {
-        state.page += 1;
-        renderList();
+    $pager.find(".pagination-size-form").on("submit", function (e) {
+      e.preventDefault();
+    });
+    $pager.find(".pagination-size-form select[name='pageSize']").on("change", function () {
+      state.pageSize = parseInt($(this).val(), 10) || 10;
+      state.page = 1;
+      reloadDemands();
+    });
+    $pager.find(".pagination-jump-form").on("submit", function (e) {
+      e.preventDefault();
+      var raw = $(this).find("input[name='page']").val();
+      var next = parseInt(raw, 10) || 1;
+      if (next < 1) {
+        next = 1;
       }
-    });
-    $list.find(".js-page-num").on("click", function () {
-      state.page = parseInt($(this).attr("data-page"), 10) || 1;
-      renderList();
+      if (next > totalPages) {
+        next = totalPages;
+      }
+      state.page = next;
+      reloadDemands();
     });
   }
 
   function renderList() {
-    var total = state.items.length;
+    var total = state.total;
     updateTitle(total);
     if (!total) {
       renderEmpty();
+      renderPagination(0);
       return;
     }
-    var totalPages = Math.max(1, Math.ceil(total / Math.max(1, state.pageSize)));
-    if (state.page > totalPages) {
-      state.page = totalPages;
-    }
-    var start = (state.page - 1) * state.pageSize;
-    var pageItems = state.items.slice(start, start + state.pageSize);
-    var html = "<div class=\"top5-cols\"><span>ID</span><span>标题</span><span>当前阶段</span><span>需求状态</span><span>下一步</span><span>下一责任人</span><span>操作</span></div>";
-    html += $.map(pageItems, renderRow).join("");
-    html += renderPagination(total);
+    var html =
+      "<div class=\"top5-cols\"><span>ID</span><span>标题</span><span>当前阶段</span><span>需求状态</span><span>下一步</span><span>下一责任人</span><span>操作</span></div>";
+    html += $.map(state.items, renderRow).join("");
     $("#top5List").html(html);
     bindZentaoLinks($("#top5List"));
     bindReviewButtons($("#top5List"));
-    bindPagination(total);
+    renderPagination(total);
   }
 
   function setActiveCard($card) {
@@ -328,10 +433,13 @@
   }
 
   function reloadDemands() {
-    return loadDemands(state.status).then(function (items) {
-      state.items = items;
+    return loadDemands(state.status, state.page, state.pageSize).then(function (payload) {
+      state.items = payload.items;
+      state.total = payload.total;
+      state.page = payload.page;
+      state.pageSize = payload.pageSize;
       renderList();
-      return items;
+      return payload.items;
     });
   }
 
@@ -355,7 +463,7 @@
       $(".home-hl-kpi").removeClass("active");
       $btn.addClass("active");
       state.focal = $btn.attr("data-focal") || "myPending";
-      updateTitle(state.items.length);
+      updateTitle(state.total);
     });
   }
 
