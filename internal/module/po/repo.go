@@ -210,12 +210,12 @@ func (r *Repo) FindRoleDemandIDs(ctx context.Context, account string, filter mys
 }
 
 // FindRoleDemands 按阶段过滤条件查询业需列表（只取账号字段，不 JOIN zt_user）。
-func (r *Repo) FindRoleDemands(ctx context.Context, account string, filter mysqlStageFilter) ([]DemandRow, error) {
+// limit>0 时应用 LIMIT/OFFSET；limit<=0 表示不分页拉全量（供合并列表场景）。
+func (r *Repo) FindRoleDemands(ctx context.Context, account string, filter mysqlStageFilter, limit, offset int) ([]DemandRow, error) {
 	if r == nil || r.db == nil || !filterReady(account, filter) {
 		return nil, nil
 	}
-	var rows []DemandRow
-	err := r.roleDemandScope(ctx, account, filter).
+	q := r.roleDemandScope(ctx, account, filter).
 		Select(`zt_demand.id, zt_demand.name, zt_demand.pri, zt_demand.status,
 			zt_demand.assignedTo, zt_demand.QD, zt_demand.RD, zt_demand.BRA,
 			clarify_pm.PM AS pm`).
@@ -225,8 +225,15 @@ func (r *Repo) FindRoleDemands(ctx context.Context, account string, filter mysql
 			WHERE PM IS NOT NULL AND PM <> ''
 			GROUP BY demand
 		) AS clarify_pm ON clarify_pm.demand = zt_demand.id`).
-		Order("zt_demand.id DESC").
-		Find(&rows).Error
+		Order("zt_demand.id DESC")
+	if limit > 0 {
+		if offset < 0 {
+			offset = 0
+		}
+		q = q.Limit(limit).Offset(offset)
+	}
+	var rows []DemandRow
+	err := q.Find(&rows).Error
 	if err != nil {
 		return nil, err
 	}

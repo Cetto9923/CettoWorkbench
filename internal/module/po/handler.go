@@ -73,7 +73,7 @@ func (h *Handler) Home(c *gin.Context) {
 	})
 }
 
-// Demands 按价值流状态返回当前用户的需求/故事详情（JSON）。
+// Demands 按价值流状态返回当前用户的需求/故事详情（JSON，后端分页）。
 func (h *Handler) Demands(c *gin.Context) {
 	var req DemandsReq
 	if err := c.ShouldBindQuery(&req); err != nil {
@@ -82,6 +82,7 @@ func (h *Handler) Demands(c *gin.Context) {
 		})
 		return
 	}
+	req.Normalize()
 	if errs := req.Validate(); len(errs) > 0 {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"message": "参数校验失败",
@@ -102,8 +103,11 @@ func (h *Handler) Demands(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"items":   resp.Items,
+		"success":  true,
+		"items":    resp.Items,
+		"total":    resp.Total,
+		"page":     resp.Page,
+		"pageSize": resp.PageSize,
 	})
 }
 
