@@ -1,71 +1,137 @@
-﻿{{/* ==========================================================================
-文件: web/templates/auth/login.html 模块: 认证 职责: 登录页面模板。 全局字段:
+{{/* ==========================================================================
+文件: web/templates/auth/login.html 模块: 认证 职责: 登录页面模板（新版 Hero 双栏视觉，
+对齐 CRCBWorkbench workbench/login.html 设计）。 全局字段:
 .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath 页面字段:
 .Title (string), .RedirectTo (string), .Form (*LoginForm), .Errors
 ([]FieldError)
 ========================================================================== */}}
+{{ define "page_css" }}
+<link rel="stylesheet" href="{{ asset "/static/css/auth/login.css" }}">
+{{ end }}
+{{ define "page_js" }}
+<script src="{{ asset "/static/js/auth/login.js" }}"></script>
+{{ end }}
 {{ define "content" }}
-<div
-  class="d-flex align-items-center justify-content-center"
-  style="min-height: 100vh"
->
-  <div class="w-100" style="max-width: 400px">
-    <div class="text-center mb-3">
-      <div class="d-inline-flex align-items-center gap-2">
-        <i class="bi bi-boxes fs-3 text-primary"></i>
-        <span class="fw-semibold fs-5">workbench</span>
-      </div>
-    </div>
-    <div class="card shadow-sm rounded-3 border-0">
-      <div class="card-body p-4 p-md-5">
-        <h1 class="h5 text-center mb-4">登录后台管理系统</h1>
+<div class="page">
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="kicker">Biz-DevOps</div>
+      <h1>让价值持续流动</h1>
 
-        <div id="login-error">
-        {{ range .Errors }} {{ if eq .Field "_form" }}
-        <div class="alert alert-danger">{{ .Message }}</div>
-        {{ end }} {{ end }}
+      <div class="value-stream">
+        <div class="rail"></div>
+        <div class="phases">
+          <div class="phase">
+            <div class="phase-head"><strong>Biz</strong><span>业务价值</span></div>
+            <div class="phase-node"></div>
+            <div class="tags">
+              <span>业务目标</span><span>需求池</span><span>用户故事</span>
+            </div>
+          </div>
+
+          <div class="phase">
+            <div class="phase-head"><strong>Dev</strong><span>研发交付</span></div>
+            <div class="phase-node"></div>
+            <div class="tags">
+              <span>研发需求</span><span>流水线门禁</span><span>测试验证</span>
+            </div>
+          </div>
+
+          <div class="phase">
+            <div class="phase-head"><strong>Ops</strong><span>运营闭环</span></div>
+            <div class="phase-node"></div>
+            <div class="tags">
+              <span>投产发布</span><span>运营反馈</span><span>价值复盘</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="loop">
+        <span class="arrow">↺</span>
+        <span>价值复盘 · 持续改进</span>
+      </div>
+
+      <div class="ai-strip"><span class="ai-star"></span>AI 辅助 · 风险识别 · 下一步建议</div>
+    </div>
+  </section>
+
+  <section class="login-side">
+    <div class="login-shell">
+      <div class="brand">
+        <img src="{{ asset "/static/img/csrcb-icon.png" }}" alt="常熟农商银行">
+        <div>
+          <div class="brand-name">科技研发智能工作台</div>
+          <div class="brand-sub">Biz-DevOps · AI 研发价值流</div>
+        </div>
+      </div>
+
+      <div id="login-error">
+      {{ range .Errors }} {{ if eq .Field "_form" }}
+      <div class="login-error">{{ .Message }}</div>
+      {{ end }} {{ end }}
+      </div>
+
+      <form action="/login" method="POST" autocomplete="off" id="login-form">
+        <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}" />
+        {{ if .RedirectTo }}
+        <input type="hidden" name="redirect" value="{{ .RedirectTo }}" />
+        {{ end }}
+
+        <div class="group">
+          <label for="account">账号</label>
+          <div class="field">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+              <circle cx="12" cy="8" r="4"></circle>
+              <path d="M4.5 20c.9-4 3.2-6 7.5-6s6.6 2 7.5 6"></path>
+            </svg>
+            <input id="account" name="account" autocomplete="username" placeholder="请输入账号" required autofocus value="{{ .Form.Account }}">
+          </div>
         </div>
 
-        <form id="login-form" action="/login" method="POST">
-          <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}" />
-          {{ if .RedirectTo }}
-          <input type="hidden" name="redirect" value="{{ .RedirectTo }}" />
-          {{ end }}
-          <div class="form-floating mb-3">
-            <input
-              type="text"
-              class="form-control"
-              id="account"
-              name="account"
-              placeholder="请输入账号"
-              autocomplete="username"
-              required
-              autofocus
-              value="{{ .Form.Account }}"
-            />
-            <label for="account">账号</label>
+        <div class="group">
+          <label for="password">密码</label>
+          <div class="field">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+              <rect x="5" y="10" width="14" height="10" rx="2"></rect>
+              <path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
+            </svg>
+            <input id="password" name="password" type="password" autocomplete="current-password" placeholder="请输入密码" required>
+            <button class="eye" type="button" id="togglePwd" aria-label="显示密码" title="显示密码">
+              <svg class="eye-icon eye-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <svg class="eye-icon eye-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"></path>
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"></path>
+                <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"></path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+              </svg>
+            </button>
           </div>
+        </div>
 
-          <div class="form-floating mb-3">
-            <input
-              type="password"
-              class="form-control"
-              id="password"
-              name="password"
-              placeholder="请输入密码"
-              autocomplete="current-password"
-              required
-            />
-            <label for="password">密码</label>
-          </div>
+        <div class="meta">
+          <label class="remember"><input type="checkbox" name="remember">记住账号</label>
+          <a class="forget" href="javascript:void(0)" onclick="return false;">忘记密码？</a>
+        </div>
 
-          <button type="submit" class="btn btn-primary w-100">登录</button>
-        </form>
-      </div>
-      <div class="card-footer bg-transparent border-0 pt-0 pb-4">
-        <p class="text-center text-muted small mb-0">© 2026 workbench</p>
-      </div>
+        <button class="primary" type="submit">进入工作台</button>
+
+        <div class="or">或</div>
+
+        <button class="sso" type="button" id="ssoBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+            <path d="M12 3l7 3v5c0 5-3.3 8.5-7 10-3.7-1.5-7-5-7-10V6l7-3z"></path>
+            <path d="M9.5 12l1.7 1.7 3.6-4"></path>
+          </svg>
+          统一认证登录
+        </button>
+      </form>
     </div>
-  </div>
+
+    <div class="footer-note">内部研发系统 · 建议使用 Chrome / Edge</div>
+  </section>
 </div>
 {{ end }}
