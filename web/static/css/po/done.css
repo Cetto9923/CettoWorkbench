@@ -5,6 +5,17 @@
    ============================================================================= */
 
 /* ---------- 1. 顶部 4 张 KPI 指标卡 ---------- */
+.po-done .workspace-header {
+  height: 50px;
+  min-height: 50px;
+  padding: 10px 16px;
+  box-sizing: border-box;
+}
+
+.po-done .workspace-header-left {
+  min-height: 22px;
+}
+
 .wb-done-summary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -69,13 +80,14 @@
 .wb-done-domains {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 20px;
   overflow-x: auto;
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  padding: 0;
-  margin-bottom: 8px;
+  height: 38px;
+  padding: 0 16px;
+  margin: 0;
+  border-bottom: 1px solid #e2e8f0;
+  background: #ffffff;
+  box-sizing: border-box;
 }
 .wb-done-domains::-webkit-scrollbar {
   height: 4px;
@@ -85,6 +97,7 @@
   border-radius: 2px;
 }
 .wb-done-tab {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -92,9 +105,9 @@
   border: 1px solid transparent;
   background: transparent;
   color: var(--po-t2, #667085);
-  padding: 4px 10px;
-  min-height: 0;
-  border-radius: 4px;
+  height: 38px;
+  padding: 0 2px;
+  border-radius: 0;
   box-shadow: none;
   font: inherit;
   font-size: 12px;
@@ -108,9 +121,16 @@
 }
 .wb-done-tab.active {
   color: #1e40af;
-  border-color: #bfdbfe;
-  background: #eef3ff;
   font-weight: 600;
+}
+.wb-done-tab.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: #2563eb;
 }
 .wb-done-tab i {
   font-size: 11px;
@@ -132,11 +152,7 @@
 
 /* ---------- 3. 工具栏与分段按钮 ---------- */
 .wb-done-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
+  margin-bottom: 0;
 }
 .wb-done-seg-set {
   display: inline-flex;
@@ -150,7 +166,8 @@
   background: transparent;
   color: var(--po-t2, #4b5563);
   font-size: 12px;
-  padding: 6px 12px;
+  height: 22px;
+  padding: 0 10px;
   cursor: pointer;
   transition: all .15s ease;
 }
@@ -161,7 +178,7 @@
   box-shadow: 0 1px 2px rgba(0,0,0,.06);
 }
 .wb-done-select {
-  height: 32px;
+  height: 28px;
   padding: 0 8px;
   border: 1px solid var(--po-border, #e5e7eb);
   border-radius: 4px;
@@ -180,12 +197,14 @@
   color: var(--po-t2, #4b5563);
   font-size: 11px;
   font-weight: 600;
-  padding: 8px 10px;
+  height: 32px;
+  padding: 7px 10px;
   border-bottom: 1px solid var(--po-border, #e5e7eb);
   text-align: left;
 }
 .wb-done-table td {
-  padding: 9px 10px;
+  height: 40px;
+  padding: 6px 10px;
   border-bottom: 1px solid #f1f5f9;
   font-size: 12px;
   vertical-align: middle;
