@@ -13,8 +13,6 @@ import (
 	"context"
 	"strings"
 
-	"gorm.io/gorm"
-
 	"workbench/internal/model"
 	"workbench/internal/module/po/primaryaction"
 	"workbench/internal/pkg/perm"
@@ -140,10 +138,16 @@ func (s *Service) DeriveStoryPrimaryActions(
 		return nil, err
 	}
 
+	// 批量取故事事实（单次 IN），避免行循环单查（N+1）。
+	metaMap, err := detailRepo.FindStoryMetaForAction(ctx, storyIDs)
+	if err != nil {
+		return nil, err
+	}
+
 	for _, id := range storyIDs {
-		row, err := detailRepo.findStoryMetaForAction(ctx, id)
-		if err != nil {
-			// 单行失败：返回 None 但不阻断整批（避免一个不可见 story 让整页失败）。
+		row, ok := metaMap[id]
+		if !ok {
+			// 单行不可见：返回 None 但不阻断整批（避免一个不可见 story 让整页失败）。
 			out[id] = primaryaction.None()
 			continue
 		}
@@ -219,34 +223,50 @@ func hasCapability(actor *model.User, _ ...perm.Permission) bool {
 	return strings.TrimSpace(actor.Account) != ""
 }
 
-// deriveStageKey 把数据库 stage+status 映射到 primaryaction.StageKey。
+// deriveStageKey 把业务需求的值流 status（或 zt_story.stage 列）映射到 primaryaction.StageKey。
 //
-// 与 service_detail_tabs.mapValueStage 保持同义；不复用是因为 primaryaction
-// StageKey 只覆盖 Derive 关心的子集，避免与 valueStreamStages 全表混淆。
+// 与 service.go 的 valueStreamStages / repovaluestream.go 的 mysqlStageFilters 的 status
+// 键保持一致（权威来源），使验收 / 发起交付 / 发布 / 评价反馈分支可被派生。
 func deriveStageKey(stage, status string) primaryaction.StageKey {
-	_, label := mapValueStage(stage, status)
-	switch label {
-	case "已受理", "已签出", "草稿", "驳回":
+	st := strings.ToLower(strings.TrimSpace(status))
+	switch st {
+	case "draft", "wait", "refuse":
 		return primaryaction.StageAccept
-	case "澄清中":
+	case "active", "clarify":
 		return primaryaction.StageClarify
-	case "排期中", "已排期":
+	case "clarified", "planned", "schedule":
 		return primaryaction.StageSchedule
-	case "研发中":
+	case "developing":
 		return primaryaction.StageDeveloping
-	case "测试中":
+	case "testing", "tested":
 		return primaryaction.StageTesting
-	case "待验收":
+	case "waitacceptance":
 		return primaryaction.StageAcceptance
-	case "发起交付":
+	case "acceptanced":
 		return primaryaction.StageDeliver
-	case "待发布":
+	case "waitdeliver", "publish", "publishing":
 		return primaryaction.StageRelease
-	case "评价反馈":
+	case "released":
 		return primaryaction.StageFeedback
-	case "已上线完成":
+	case "delivered", "verified":
 		return primaryaction.StageDelivered
-	case "已关闭":
+	case "closed":
+		return primaryaction.StageClosed
+	}
+	// 兜底：zt_story.stage 列的常见取值（与 status 未命中时）。
+	sg := strings.ToLower(strings.TrimSpace(stage))
+	switch sg {
+	case "wait", "draft":
+		return primaryaction.StageAccept
+	case "planned", "schedule":
+		return primaryaction.StageSchedule
+	case "developing":
+		return primaryaction.StageDeveloping
+	case "tested", "testing", "delivering":
+		return primaryaction.StageTesting
+	case "released":
+		return primaryaction.StageDelivered
+	case "closed":
 		return primaryaction.StageClosed
 	}
 	return primaryaction.StageOther
@@ -260,23 +280,11 @@ func (s *Service) detailRepo() *DemandDetailRepo {
 	return s.detailSvc.repo
 }
 
-// findStoryMetaForAction 派生 primaryAction 所需的 zt_story 最小列。
-// 复用现有 repo_detail.FindDemandStories 已经按 fromDemand 过滤；这里只取
-// 单行 stage/status（避免引入新 Repository）。
-func (r *DemandDetailRepo) findStoryMetaForAction(ctx context.Context, id uint) (*DemandStoryRow, error) {
-	if r == nil || r.db == nil || id == 0 {
-		return nil, gorm.ErrRecordNotFound
+// toActionIDs 把列表页的 int64 行 ID 转成主操作派生的 uint 入参。
+func toActionIDs(ids []int) []uint {
+	out := make([]uint, 0, len(ids))
+	for _, id := range ids {
+		out = append(out, uint(id))
 	}
-	var row DemandStoryRow
-	err := r.db.WithContext(ctx).Table("zt_story").
-		Select("id, status, stage").
-		Where("id = ? AND deleted = ?", id, "0").
-		Take(&row).Error
-	if err != nil {
-		return nil, err
-	}
-	if row.ID == 0 {
-		return nil, gorm.ErrRecordNotFound
-	}
-	return &row, nil
+	return out
 }

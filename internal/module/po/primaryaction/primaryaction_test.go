@@ -23,11 +23,11 @@ func TestDerive_AcceptStage(t *testing.T) {
 		HasAcceptCapability: true,
 	}
 	pa := Derive(in)
-	if pa.Key != string(KeyAccept) {
-		t.Fatalf("StageAccept key = %q, want %q", pa.Key, KeyAccept)
+	if pa.Key != string(KeyApprove) {
+		t.Fatalf("StageAccept key = %q, want %q", pa.Key, KeyApprove)
 	}
-	if pa.Kind != string(KindModal) {
-		t.Fatalf("StageAccept kind = %q, want %q", pa.Kind, KindModal)
+	if pa.Kind != string(KindDrawer) {
+		t.Fatalf("StageAccept kind = %q, want %q", pa.Kind, KindDrawer)
 	}
 	if pa.Enabled {
 		t.Fatal("StageAccept must be disabled (PLAN §4-1)")
@@ -118,7 +118,7 @@ func TestDerive_TestLinkStage(t *testing.T) {
 			Stage: StageTesting, Kind: ObjectStory, ObjectID: 500,
 			HasReadCapability: true,
 		})
-		if pa.Key != string(KeyTestLink) {
+		if pa.Key != string(KeyViewTestOrder) {
 			t.Fatalf("key = %q", pa.Key)
 		}
 		if pa.Enabled {
@@ -186,8 +186,8 @@ func TestDerive_AcceptanceStage(t *testing.T) {
 			Stage: StageAcceptance, Kind: ObjectBusinessDemand, ObjectID: 601,
 			HasUrgeCapability: true,
 		})
-		if pa.Key != string(KeyUrgeAccept) {
-			t.Fatalf("key = %q, want %q", pa.Key, KeyUrgeAccept)
+		if pa.Key != string(KeyRemindAccept) {
+			t.Fatalf("key = %q, want %q", pa.Key, KeyRemindAccept)
 		}
 		if !pa.Enabled {
 			t.Fatal("not-self with urge must be enabled")
@@ -199,7 +199,7 @@ func TestDerive_AcceptanceStage(t *testing.T) {
 			Stage: StageAcceptance, Kind: ObjectBusinessDemand, ObjectID: 602,
 			HasUrgeCapability: false,
 		})
-		if pa.Key != string(KeyUrgeAccept) {
+		if pa.Key != string(KeyRemindAccept) {
 			t.Fatalf("key = %q", pa.Key)
 		}
 		if pa.Enabled {

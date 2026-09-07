@@ -7,7 +7,11 @@
 
 package po
 
-import "strings"
+import (
+	"strings"
+
+	"workbench/internal/module/po/primaryaction"
+)
 
 // BoardDemandReq 是需求看板查询参数。
 type BoardDemandReq struct {
@@ -79,28 +83,29 @@ func (r *BoardDemandReq) Validate() []FieldError {
 // 研发需求(story)是"最细有效推进对象"：携带交付进展(Progress/TaskDone/TaskTotal)
 // 与当前执行负责人(CurrentOwner)，且可通过兄弟接口按 storyId 下钻任务。
 type BoardDemandItem struct {
-	Kind           string             `json:"kind"`
-	ID             int64              `json:"id"`
-	DisplayID      string             `json:"displayId"`
-	Title          string             `json:"title"`
-	Stage          string             `json:"stage"`
-	Status         string             `json:"status"`
-	Priority       string             `json:"priority"`
-	Owner          string             `json:"owner"`
-	SubDemandCount int                `json:"subDemandCount"`
-	StoryCount     int                `json:"storyCount"`
-	TaskOpenCount  int                `json:"taskOpenCount"`
-	Deadline       string             `json:"deadline"`
-	CurrentOwner   string             `json:"currentOwner"`
-	Progress       int                `json:"progress"`
-	TaskTotal      int                `json:"taskTotal"`
-	TaskDone       int                `json:"taskDone"`
-	ProductName    string             `json:"productName"`
-	Independent    bool               `json:"independent"`
-	Children       []*BoardDemandItem `json:"children,omitempty"`
-	Collapse       bool               `json:"collapse"`
-	ActionLabel    string             `json:"actionLabel"`
-	URL            string             `json:"url"`
+	Kind           string                       `json:"kind"`
+	ID             int64                        `json:"id"`
+	DisplayID      string                       `json:"displayId"`
+	Title          string                       `json:"title"`
+	Stage          string                       `json:"stage"`
+	Status         string                       `json:"status"`
+	Priority       string                       `json:"priority"`
+	Owner          string                       `json:"owner"`
+	SubDemandCount int                          `json:"subDemandCount"`
+	StoryCount     int                          `json:"storyCount"`
+	TaskOpenCount  int                          `json:"taskOpenCount"`
+	Deadline       string                       `json:"deadline"`
+	CurrentOwner   string                       `json:"currentOwner"`
+	Progress       int                          `json:"progress"`
+	TaskTotal      int                          `json:"taskTotal"`
+	TaskDone       int                          `json:"taskDone"`
+	ProductName    string                       `json:"productName"`
+	Independent    bool                         `json:"independent"`
+	Children       []*BoardDemandItem           `json:"children,omitempty"`
+	Collapse       bool                         `json:"collapse"`
+	ActionLabel    string                       `json:"actionLabel"`
+	URL            string                       `json:"url"`
+	PrimaryAction  *primaryaction.PrimaryAction `json:"primaryAction,omitempty"` // Stage 5: 服务端主操作
 }
 
 // BoardDemandResp 是需求看板响应。

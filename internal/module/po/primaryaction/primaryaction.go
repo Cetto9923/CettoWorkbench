@@ -23,23 +23,27 @@ type ActionKind string
 const (
 	KindInternal ActionKind = "internal" // 内部页面（相对 URL，当前页打开）
 	KindExternal ActionKind = "external" // 外部链接（禅道 / 外部系统，新窗打开）
-	KindModal    ActionKind = "modal"    // 触发后端 POST 办理并刷新列表
+	KindDrawer   ActionKind = "drawer"   // 当前页弹层 / 抽屉打开
+	KindSchedule ActionKind = "schedule" // 排期页跳转（同 KindInternal，但语义区分）
 )
 
 // ActionKey 是按价值流阶段派生的主操作标识。前端按 key 渲染对应按钮形态。
+//
+// 与 Stage 5 任务输入锁定的合同表一一对应（注意：受理与验收本人的 key 不同）。
 type ActionKey string
 
 const (
-	KeyAccept       ActionKey = "accept"        // 受理
-	KeyClarify      ActionKey = "clarify"       // 澄清
-	KeySchedule     ActionKey = "schedule"      // 排期
-	KeySubmitTest   ActionKey = "submit_test"   // 提测
-	KeyTestLink     ActionKey = "test_link"     // 联调测试 → 测试单
-	KeyAcceptDone   ActionKey = "accept_done"   // 验收（本人验收人）
-	KeyUrgeAccept   ActionKey = "urge_accept"   // 催办验收（非验收人）
-	KeyDeliver      ActionKey = "deliver"       // 发起交付
-	KeyEvaluate     ActionKey = "evaluate"      // 评价反馈（本人有未评任务）
-	KeyViewEvaluate ActionKey = "view_evaluate" // 评价反馈（已可读历史评价）
+	KeyApprove       ActionKey = "approve"         // 受理
+	KeyClarify       ActionKey = "clarify"         // 澄清
+	KeySchedule      ActionKey = "schedule"        // 排期
+	KeySubmitTest    ActionKey = "submit_test"     // 提测
+	KeyViewTestOrder ActionKey = "view_test_order" // 联调测试 → 测试单
+	KeyAcceptDone    ActionKey = "accept"          // 验收（本人验收人）
+	KeyRemindAccept  ActionKey = "remind_accept"   // 催办验收（非验收人）
+	KeyDeliver       ActionKey = "deliver"         // 发起交付
+	KeyPublish       ActionKey = "publish"         // 发布（暂留空）
+	KeyEvaluate      ActionKey = "evaluate"        // 评价反馈（本人有未评任务）
+	KeyViewEvaluate  ActionKey = "view_evaluate"   // 评价反馈（已可读历史评价）
 )
 
 // PrimaryAction 单一主操作的服务端合同字段；前端只读，不派生。
@@ -188,21 +192,21 @@ func Derive(in Input) PrimaryAction {
 		// 受理 / 审批：§4-1 阻塞 — 服务未配置独立审批路由。
 		// key 仍按合同返回（前端按钮存在），但 enabled=false + reason 写明。
 		if !in.HasAcceptCapability {
-			return DisabledWithReason(string(KeyAccept), "受理", string(KindModal),
+			return DisabledWithReason(string(KeyApprove), "受理", string(KindDrawer),
 				acceptURL(in),
 				"当前用户没有受理权限")
 		}
-		return DisabledWithReason(string(KeyAccept), "受理", string(KindModal),
+		return DisabledWithReason(string(KeyApprove), "受理", string(KindDrawer),
 			acceptURL(in),
 			"服务未配置审批路由（见 PLAN §4-1）")
 
 	case StageClarify:
 		if !in.HasClarifyCapability {
-			return DisabledWithReason(string(KeyClarify), "澄清", string(KindModal),
+			return DisabledWithReason(string(KeyClarify), "澄清", string(KindDrawer),
 				clarifyURL(in),
 				"当前用户没有澄清权限")
 		}
-		return Enabled(string(KeyClarify), "澄清", string(KindModal), clarifyURL(in))
+		return Enabled(string(KeyClarify), "澄清", string(KindDrawer), clarifyURL(in))
 
 	case StageSchedule:
 		if !in.HasScheduleCapability {
@@ -216,11 +220,11 @@ func Derive(in Input) PrimaryAction {
 		// 提测：业务需求 → 聚合提测；研发需求 → 单研需提测。
 		// 现有仓库无独立提测 endpoint（Stage 1 / PROGRESS 阻塞项 §4-2）。
 		if !in.HasSubmitTestCapability {
-			return DisabledWithReason(string(KeySubmitTest), "提测", string(KindModal),
+			return DisabledWithReason(string(KeySubmitTest), "提测", string(KindDrawer),
 				submitTestURL(in),
 				"当前用户没有提测权限")
 		}
-		return DisabledWithReason(string(KeySubmitTest), "提测", string(KindModal),
+		return DisabledWithReason(string(KeySubmitTest), "提测", string(KindDrawer),
 			submitTestURL(in),
 			"服务未配置提测 endpoint（PLAN §4-2）")
 
@@ -229,40 +233,40 @@ func Derive(in Input) PrimaryAction {
 		// §4-4 Stage 5 必须为 test_link 加 zt_testtask join；当前 Repo
 		// 已存在 FindStoryTestTasks，本函数消费其结果。
 		if !in.HasReadCapability {
-			return DisabledWithReason(string(KeyTestLink), "测试单", string(KindExternal),
+			return DisabledWithReason(string(KeyViewTestOrder), "测试单", string(KindExternal),
 				"", "当前用户没有读取权限")
 		}
 		switch {
 		case in.TestsCount == 0:
-			return DisabledWithReason(string(KeyTestLink), "测试单", string(KindExternal),
+			return DisabledWithReason(string(KeyViewTestOrder), "测试单", string(KindExternal),
 				"", "暂无关联测试单")
 		case in.TestsCount == 1:
-			return Enabled(string(KeyTestLink), "测试单", string(KindExternal), in.FirstTestURL)
+			return Enabled(string(KeyViewTestOrder), "测试单", string(KindExternal), in.FirstTestURL)
 		default:
-			return DisabledWithReason(string(KeyTestLink), "测试单", string(KindExternal),
+			return DisabledWithReason(string(KeyViewTestOrder), "测试单", string(KindExternal),
 				"", fmtNTestTasks(in.TestsCount))
 		}
 
 	case StageAcceptance:
 		if in.IsAcceptanceOwner {
 			if !in.HasAcceptCapability {
-				return DisabledWithReason(string(KeyAcceptDone), "验收", string(KindModal),
+				return DisabledWithReason(string(KeyAcceptDone), "验收", string(KindDrawer),
 					acceptDoneURL(in),
 					"当前用户没有验收权限")
 			}
-			return Enabled(string(KeyAcceptDone), "验收", string(KindModal), acceptDoneURL(in))
+			return Enabled(string(KeyAcceptDone), "验收", string(KindDrawer), acceptDoneURL(in))
 		}
 		// 非验收人催办。
 		if !in.HasUrgeCapability {
-			return DisabledWithReason(string(KeyUrgeAccept), "催办验收", string(KindModal),
+			return DisabledWithReason(string(KeyRemindAccept), "催办验收", string(KindDrawer),
 				urgeAcceptURL(in),
 				"当前用户没有催办权限")
 		}
-		return Enabled(string(KeyUrgeAccept), "催办验收", string(KindModal), urgeAcceptURL(in))
+		return Enabled(string(KeyRemindAccept), "催办验收", string(KindDrawer), urgeAcceptURL(in))
 
 	case StageDeliver:
 		if !in.HasDeliverCapability {
-			return DisabledWithReason(string(KeyDeliver), "发起交付", string(KindModal),
+			return DisabledWithReason(string(KeyDeliver), "发起交付", string(KindDrawer),
 				deliverURL(in),
 				"当前用户没有发起交付权限")
 		}
@@ -270,7 +274,7 @@ func Derive(in Input) PrimaryAction {
 		// Service 层校验后把 okDeliver 表达为 HasAcceptanceCompleted。
 		// 为避免在 Input 加冗余字段，这里用 stage 自身判定：
 		// StageDeliver 已表示 status==acceptanced，前置默认通过。
-		return Enabled(string(KeyDeliver), "发起交付", string(KindModal), deliverURL(in))
+		return Enabled(string(KeyDeliver), "发起交付", string(KindDrawer), deliverURL(in))
 
 	case StageRelease:
 		// 发布：plan §4 显式约定留空，不创建假按钮。
@@ -281,11 +285,11 @@ func Derive(in Input) PrimaryAction {
 		switch {
 		case in.HasPendingEvaluateTask:
 			if !in.HasEvaluateCapability {
-				return DisabledWithReason(string(KeyEvaluate), "评价", string(KindModal),
+				return DisabledWithReason(string(KeyEvaluate), "评价", string(KindDrawer),
 					evaluateURL(in),
 					"当前用户没有评价权限")
 			}
-			return Enabled(string(KeyEvaluate), "评价", string(KindModal), evaluateURL(in))
+			return Enabled(string(KeyEvaluate), "评价", string(KindDrawer), evaluateURL(in))
 		case in.HasHistoricalEvaluate:
 			if !in.HasReadCapability {
 				return DisabledWithReason(string(KeyViewEvaluate), "查看评价", string(KindInternal),

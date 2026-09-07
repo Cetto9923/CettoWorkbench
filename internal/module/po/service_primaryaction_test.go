@@ -32,7 +32,7 @@ func TestDeriveDemandPrimaryActions_BatchIN(t *testing.T) {
 
 	ids := []uint{10, 20, 30}
 
-	// 1. FindDemandPrimaryActions：单条 SELECT，WHERE id IN (?, ?, ?)。
+	// 1. FindDemandPrimaryActions：id IN (?)，deleted = '0' 字面量不占占位符。
 	mock.ExpectQuery(`SELECT id, stage, status, assignedTo, accepter`).
 		WithArgs(ids[0], ids[1], ids[2]).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "stage", "status", "assignedTo", "accepter"}).
@@ -40,16 +40,16 @@ func TestDeriveDemandPrimaryActions_BatchIN(t *testing.T) {
 			AddRow(20, "", "released", "user_x", "").
 			AddRow(30, "", "developing", "user_x", ""))
 
-	// 2. CountDemandTestTasks：单条 SELECT，需求 → 故事 → 测试单 子查询，IN (?, ?, ?)。
-	mock.ExpectQuery(`FROM \(SELECT id FROM zt_demand`).
+	// 2. CountDemandTestTasks：需求 IN + fromDemand IN，各绑定一次。
+	mock.ExpectQuery(`(?s)SELECT d\.id AS demand_id.*FROM zt_demand.*fromDemand IN`).
 		WithArgs(ids[0], ids[1], ids[2], ids[0], ids[1], ids[2]).
 		WillReturnRows(sqlmock.NewRows([]string{"demand_id", "count", "first_id"}).
 			AddRow(10, 0, 0).
 			AddRow(20, 0, 0).
 			AddRow(30, 0, 0))
 
-	// 3. FindDemandEvaluateStatus：单条 SELECT，IN (?, ?, ?)，含 EXISTS 子查询。
-	mock.ExpectQuery(`FROM zt_demand d`).
+	// 3. FindDemandEvaluateStatus：appraiseBy = ? 一次 + id IN (?) 一次。
+	mock.ExpectQuery(`(?s)SELECT d\.id AS demand_id.*zt_demandappraise`).
 		WithArgs("user_x", ids[0], ids[1], ids[2]).
 		WillReturnRows(sqlmock.NewRows([]string{"demand_id", "has_pending", "has_any"}).
 			AddRow(10, false, false).
@@ -119,20 +119,19 @@ func TestDeriveStoryPrimaryActions_BatchIN(t *testing.T) {
 
 	ids := []uint{100, 200}
 
-	// CountStoryTestTasks 一次性 IN 查询。
-	mock.ExpectQuery(`FROM \(SELECT id FROM zt_story`).
+	// CountStoryTestTasks：story IN + case.story IN，各绑定一次。
+	mock.ExpectQuery(`(?s)SELECT s\.id AS story.*FROM zt_testtask`).
 		WithArgs(ids[0], ids[1], ids[0], ids[1]).
 		WillReturnRows(sqlmock.NewRows([]string{"story", "count", "first_id"}).
 			AddRow(100, 0, 0).
 			AddRow(200, 0, 0))
 
-	// 2 个故事各自 findStoryMetaForAction 单行 Take 查询（不可避免；不是 N+1 over batch）。
-	mock.ExpectQuery(`SELECT id, status, stage FROM zt_story WHERE id`).
-		WithArgs(ids[0], "0").
-		WillReturnRows(sqlmock.NewRows([]string{"id", "status", "stage"}).AddRow(100, "developing", ""))
-	mock.ExpectQuery(`SELECT id, status, stage FROM zt_story WHERE id`).
-		WithArgs(ids[1], "0").
-		WillReturnRows(sqlmock.NewRows([]string{"id", "status", "stage"}).AddRow(200, "released", ""))
+	// 故事事实：FindStoryMetaForAction 单次 IN + deleted = ?。
+	mock.ExpectQuery(`SELECT id, status, stage FROM`).
+		WithArgs(ids[0], ids[1], "0").
+		WillReturnRows(sqlmock.NewRows([]string{"id", "status", "stage"}).
+			AddRow(100, "developing", "").
+			AddRow(200, "released", ""))
 
 	out, err := svc.DeriveStoryPrimaryActions(t.Context(), &model.User{Account: "u", IsSuperAdmin: true}, ids, true)
 	if err != nil {

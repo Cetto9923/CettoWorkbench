@@ -8,7 +8,11 @@
 
 package po
 
-import "strings"
+import (
+	"strings"
+
+	"workbench/internal/module/po/primaryaction"
+)
 
 // FollowTab 我的关注对象视图。
 type FollowTab string
@@ -68,16 +72,17 @@ func (r *FollowListReq) Validate() []FieldError {
 
 // FollowItem 我的关注单条。
 type FollowItem struct {
-	ID         int64  `json:"id"`
-	Title      string `json:"title"`
-	Status     string `json:"status"`
-	Priority   string `json:"priority"`
-	Owner      string `json:"owner"`
-	LatestNote string `json:"latestNote"`
-	Date       string `json:"date"`
-	IsKey      bool   `json:"isKey"`
-	IsClosed   bool   `json:"isClosed"`
-	URL        string `json:"url"`
+	ID            int64                        `json:"id"`
+	Title         string                       `json:"title"`
+	Status        string                       `json:"status"`
+	Priority      string                       `json:"priority"`
+	Owner         string                       `json:"owner"`
+	LatestNote    string                       `json:"latestNote"`
+	Date          string                       `json:"date"`
+	IsKey         bool                         `json:"isKey"`
+	IsClosed      bool                         `json:"isClosed"`
+	URL           string                       `json:"url"`
+	PrimaryAction *primaryaction.PrimaryAction `json:"primaryAction,omitempty"`
 }
 
 // FollowListResp 我的关注响应。
