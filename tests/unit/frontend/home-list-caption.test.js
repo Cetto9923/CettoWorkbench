@@ -40,7 +40,9 @@ async function loadHomeAndResolve({ search, loadPageSize, items, total }) {
   const texts = new Map();
   const $ = makeJQueryMock(texts);
   const requests = [];
+  const saveCalls = [];
   let resolveFetch;
+  let paginationOptions;
   const window = {
     location: { pathname: '/home', search },
     history: { replaceState() {} },
@@ -51,8 +53,8 @@ async function loadHomeAndResolve({ search, loadPageSize, items, total }) {
     PersonalList: {
       escapeHtml: (v) => String(v == null ? '' : v),
       loadPageSize,
-      savePageSize() {},
-      renderPagination() {},
+      savePageSize(key, value) { saveCalls.push([key, value]); },
+      renderPagination(options) { paginationOptions = options; },
       createController: () => ({ bind() {}, destroy() {} })
     }
   };
@@ -65,7 +67,7 @@ async function loadHomeAndResolve({ search, loadPageSize, items, total }) {
   for (let i = 0; i < 4; i += 1) {
     await new Promise((resolve) => setImmediate(resolve));
   }
-  return { texts, requests };
+  return { texts, requests, saveCalls, paginationOptions };
 }
 
 async function main() {
@@ -95,7 +97,20 @@ async function main() {
   const query = new URL(requests[0], 'http://localhost').searchParams;
   assert.equal(query.get('pageSize'), '50', 'initFromUrl must apply saved pageSize even without a query string');
 
-  console.log('PASS: home caption reflects real filtering and pageSize memory survives a query-less visit');
+  // Bug 3: all offered page sizes must be accepted, and a new choice must be
+  // persisted before the next refresh so it survives reopening /home.
+  const persisted = await loadHomeAndResolve({
+    search: '?pageSize=10',
+    loadPageSize: () => 15,
+    items,
+    total: 100
+  });
+  assert.equal(new URL(persisted.requests[0], 'http://localhost').searchParams.get('pageSize'), '10');
+  persisted.paginationOptions.onPageSizeChange(20);
+  assert.deepEqual(persisted.saveCalls, [['po.home.pageSize', 20]], 'page-size choice must be persisted');
+  assert.equal(new URL(persisted.requests.at(-1), 'http://localhost').searchParams.get('pageSize'), '20');
+
+  console.log('PASS: home caption reflects real filtering and pageSize memory persists across refreshes');
 }
 
 main().catch((err) => { console.error(err); process.exitCode = 1; });

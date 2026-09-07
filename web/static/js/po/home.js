@@ -1,7 +1,7 @@
 /* =============================================================================
    文件: web/static/js/po/home.js
    模块: PO 个人工作台 - 首页交互脚本
-   职责: 绑定需求价值流下钻、全站统一工具栏筛选、8列行动列表展示与分页保护
+   职责: 绑定需求价值流下钻、全站统一工具栏筛选、7列行动列表展示与分页保护
    依赖: personal-list.js, jQuery
    ============================================================================= */
 
@@ -74,11 +74,11 @@
       state.page = p;
     }
     var ps = parseInt(sp.get("pageSize"), 10);
-    if (!isNaN(ps) && [15, 30, 50, 100].indexOf(ps) >= 0) {
+    if (!isNaN(ps) && [10, 15, 20, 30, 50].indexOf(ps) >= 0) {
       state.pageSize = ps;
     } else {
       // URL 未带 pageSize 时，优先使用上次保存值，再退回默认值。
-      state.pageSize = window.PersonalList.loadPageSize("po.home.pageSize", state.pageSize, [15, 30, 50, 100]);
+      state.pageSize = window.PersonalList.loadPageSize("po.home.pageSize", state.pageSize, [10, 15, 20, 30, 50]);
     }
   }
 
@@ -318,6 +318,7 @@
         onPageSizeChange: function (s) {
           state.pageSize = s;
           state.page = 1;
+          window.PersonalList.savePageSize("po.home.pageSize", s);
           syncUrl();
           refreshDemands(state.status);
         }
