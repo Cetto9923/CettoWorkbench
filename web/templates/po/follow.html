@@ -1,55 +1,144 @@
 {{/* ==========================================================================
 文件: web/templates/po/follow.html
 模块: PO 工作台
-职责: 我的关注页面。V10.1 04 节：只有 2 个对象视图（业务需求默认 / 项目报告），删除"全部"对象 Tab。
+职责: 我的关注页面。对齐原型与基准监控：支持全部/业务需求/项目周报 Tab 切换、周报 4 监控卡、7 列表格与侧滑详情。
 全局字段: .CurrentUser, .CSRFToken, .Menus, .AppName, .CurrentPath
 页面字段: .Title (string), .PageTitle (string), .BaseUrl (string)
 ========================================================================== */}}
 {{ define "page_css" }}
 <link rel="stylesheet" href="{{ asset "/static/css/po/personal-workspace.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/po/follow.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/demand-detail.css" }}">
 {{ end }}
 
 {{ define "content" }}
 <div class="po-personal-workspace po-follow">
+  <input type="hidden" id="csrfToken" name="csrf_token" value="{{ .CSRFToken }}">
   <header class="workspace-header">
     <div class="workspace-header-left">
       <h2>我的关注</h2>
-      <p>只展示当前账号持续关注的对象</p>
+      <p>统一监控您重点跟进的各类关键研发对象与项目进度</p>
     </div>
   </header>
 
   <section class="workspace-panel">
     <nav class="category-tabs follow-tabs" role="tablist" aria-label="对象视图">
-      <button type="button" class="category-tab follow-tab active" data-tab="demand">业务需求</button>
-      <button type="button" class="category-tab follow-tab" data-tab="project_report">项目报告</button>
+      <button type="button" class="category-tab follow-tab" data-tab="all">全部 <span class="tab-badge" id="tabCountAll">0</span></button>
+      <button type="button" class="category-tab follow-tab" data-tab="demand">业务需求 <span class="tab-badge" id="tabCountDemand">0</span></button>
+      <button type="button" class="category-tab follow-tab active" data-tab="weekly">项目周报 <span class="tab-badge" id="tabCountWeekly">0</span></button>
+      <button type="button" class="category-tab follow-tab is-phase2" data-tab="risk" title="二期·本期不提供">风险 <span class="phase2-tag">二期</span></button>
+      <button type="button" class="category-tab follow-tab is-phase2" data-tab="testtask" title="二期·本期不提供">测试单 <span class="phase2-tag">二期</span></button>
     </nav>
 
-    <div class="workspace-toolbar follow-filter-bar">
-      <div class="follow-scope" id="followScope" role="tablist" aria-label="二级筛选">
-        <button type="button" class="header-quick-chip scope-chip active" data-scope="all">全部</button>
-        <button type="button" class="header-quick-chip scope-chip" data-scope="key">重点关注</button>
-        <button type="button" class="header-quick-chip scope-chip" data-scope="closed">已关闭</button>
+    <!-- ═══ 视图 A: 项目周报监控视图 ═══ -->
+    <div id="weeklySection" class="follow-section">
+      <!-- 4 顶部指标卡 -->
+      <div class="pw-summary" id="pwSummary">
+        <div class="pw-sum-card active" data-filter="all">
+          <div class="pw-sum-label">监控项目</div>
+          <div class="pw-sum-num" id="pwStatAll">0<span class="pw-sum-note">按项目聚合，每项目仅 1 行</span></div>
+        </div>
+        <div class="pw-sum-card" data-filter="submitted">
+          <div class="pw-sum-label">本周已报</div>
+          <div class="pw-sum-num" id="pwStatSubmitted">0<span class="pw-sum-note">最新周期已提交</span></div>
+        </div>
+        <div class="pw-sum-card" data-filter="waiting">
+          <div class="pw-sum-label">本周待报</div>
+          <div class="pw-sum-num warn" id="pwStatWaiting">0<span class="pw-sum-note">周报未提交/逾期</span></div>
+        </div>
+        <div class="pw-sum-card" data-filter="abnormal">
+          <div class="pw-sum-label">周报异常</div>
+          <div class="pw-sum-num danger" id="pwStatAbnormal">0<span class="pw-sum-note">风险/问题/计划偏离/上线异常</span></div>
+        </div>
       </div>
-      <label class="workspace-search">
-        <span aria-hidden="true">⌕</span>
-        <input type="search" id="followKeyword" placeholder="搜索标题或编号" aria-label="关键词">
-      </label>
+
+      <!-- 工具栏 -->
+      <div class="pw-toolbar">
+        <button type="button" class="pw-filter-btn active" data-filter="all">全部 <span class="n" id="pwBtnAll">0</span></button>
+        <button type="button" class="pw-filter-btn" data-filter="waiting">待提交 <span class="n" id="pwBtnWaiting">0</span></button>
+        <button type="button" class="pw-filter-btn" data-filter="attention">状态关注 <span class="n" id="pwBtnAttention">0</span></button>
+        <button type="button" class="pw-filter-btn" data-filter="risk">有问题/风险 <span class="n" id="pwBtnRisk">0</span></button>
+        <button type="button" class="pw-filter-btn" data-filter="deviation">有计划/上线偏离 <span class="n" id="pwBtnDeviation">0</span></button>
+        <div class="pw-spacer"></div>
+        <select class="pw-select" id="pwPeriodSelect" title="周期">
+          <option value="latest" selected>最新周报</option>
+        </select>
+        <input type="search" class="pw-search" id="pwSearchInput" placeholder="搜索项目编号 / 名称 / 项目经理" />
+        <button type="button" class="pw-reset-btn" id="pwResetBtn">重置</button>
+      </div>
+
+      <!-- 7 列表格 -->
+      <div class="pw-table-wrap">
+        <table class="pw-table">
+          <colgroup>
+            <col style="width:20%">
+            <col style="width:11%">
+            <col style="width:18%">
+            <col style="width:15%">
+            <col style="width:18%">
+            <col style="width:8%">
+            <col style="width:10%">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>项目</th>
+              <th>最新周报</th>
+              <th>项目状态 / 本周摘要</th>
+              <th>本周推进</th>
+              <th>问题风险 / 偏离</th>
+              <th>本周投入</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="pwTbody">
+            <tr><td colspan="7" class="pw-empty-row">加载中…</td></tr>
+          </tbody>
+        </table>
+        <div class="pw-footer">
+          <span id="pwCountText">显示 0 / 共 0 个关注项目</span>
+          <div class="pw-pager" id="pwPager"></div>
+        </div>
+      </div>
     </div>
 
-    <div class="workspace-result-bar follow-result-bar">
-      <span id="followSummary">加载中…</span>
-      <span class="workspace-result-hint">聚焦持续跟进的关键需求与项目</span>
-    </div>
+    <!-- ═══ 视图 B: 业务需求 / 全部 关注视图 ═══ -->
+    <div id="demandSection" class="follow-section" hidden>
+      <div class="workspace-toolbar follow-filter-bar">
+        <div class="follow-scope" id="followScope" role="tablist" aria-label="二级筛选">
+          <button type="button" class="header-quick-chip scope-chip active" data-scope="all">全部</button>
+          <button type="button" class="header-quick-chip scope-chip" data-scope="key">重点关注</button>
+          <button type="button" class="header-quick-chip scope-chip" data-scope="closed">已关闭</button>
+        </div>
+        <label class="workspace-search">
+          <span aria-hidden="true">⌕</span>
+          <input type="search" id="followKeyword" placeholder="搜索标题或编号" aria-label="关键词">
+        </label>
+      </div>
 
-    <div class="follow-list-host" id="followListHost">
-      <div class="state-placeholder follow-empty" id="followEmpty" hidden>当前条件下暂无关注对象</div>
+      <div class="workspace-result-bar follow-result-bar">
+        <span id="followSummary">加载中…</span>
+        <span class="workspace-result-hint">聚焦持续跟进的关键业务需求</span>
+      </div>
+
+      <div class="follow-list-host" id="followListHost">
+        <div class="state-placeholder follow-empty" id="followEmpty" hidden>当前条件下暂无关注对象</div>
+      </div>
+      <footer class="follow-pagination" id="followPagination" hidden></footer>
     </div>
-    <footer class="follow-pagination" id="followPagination" hidden></footer>
   </section>
+</div>
+
+<!-- ═══ 项目周报详情 / 历史侧滑抽屉 ═══ -->
+<div id="pwDrawerMask" class="pw-drawer-mask" hidden>
+  <div id="pwDrawer" class="pw-drawer"></div>
 </div>
 {{ end }}
 
 {{ define "page_js" }}
+<script src="{{ asset "/static/js/po/personal-list.js" }}"></script>
+<script src="{{ asset "/static/js/po/primary-action.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail-render.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail.js" }}"></script>
+<script src="{{ asset "/static/js/po/follow-drawer.js" }}"></script>
 <script src="{{ asset "/static/js/po/follow.js" }}"></script>
 {{ end }}
