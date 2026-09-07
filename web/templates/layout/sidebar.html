@@ -7,6 +7,7 @@
    title="{{ .Menu.Title }}">
   {{ if .Menu.Icon }}<i class="nav-icon fas {{ .Menu.Icon }}"></i>{{ else }}<i class="nav-icon fas fa-circle"></i>{{ end }}
   <span class="nav-text">{{ .Menu.Title }}</span>
+  {{ if eq .Path "/schedule" }}<span class="nav-badge">PO</span>{{ end }}
 </a>
 {{ end }}
 
