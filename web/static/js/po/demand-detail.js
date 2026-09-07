@@ -119,26 +119,43 @@
     }
 
     var cleanId = String(demandId).replace(/^US/i, "");
-    fetch("/demands/" + cleanId + "/detail", {
+    var fetchFn = (typeof window !== "undefined" && window.appFetch) ? window.appFetch : fetch;
+    fetchFn("/demands/" + cleanId + "/detail", {
+      method: "GET",
+      credentials: "same-origin",
       headers: { "Accept": "application/json" }
     })
       .then(function (res) {
+        if (res.status === 401) {
+          var authErr = new Error("登录已过期，请重新登录");
+          authErr.isAuth = true;
+          throw authErr;
+        }
+        if (res.status === 403) {
+          throw new Error("无权查看该业务需求");
+        }
+        if (res.status === 404) {
+          throw new Error("需求不存在");
+        }
         if (!res.ok) throw new Error("加载需求详情失败 (" + res.status + ")");
         return res.json();
       })
       .then(function (data) {
         if (!data || !data.success) {
-          throw new Error((data && data.message) || "需求详情加载异常");
+          throw new Error((data && (data.message || data.error)) || "需求详情加载异常");
         }
         currentData = data;
         renderContent();
       })
       .catch(function (err) {
         if (bodyEl) {
+          var actions = err && err.isAuth
+            ? '<a class="dd-btn" href="/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search) + '">去登录</a>'
+            : '<button class="dd-btn" onclick="DemandDetail.open(' + demandId + ')">点击重试</button>';
           bodyEl.innerHTML = [
             '<div style="text-align:center;padding:40px 0;">',
             '  <div style="color:#d32f2f;font-weight:600;margin-bottom:8px;">' + (err.message || "加载失败") + '</div>',
-            '  <button class="dd-btn" onclick="DemandDetail.open(' + demandId + ')">点击重试</button>',
+            '  ' + actions,
             '</div>'
           ].join("");
         }
@@ -184,10 +201,13 @@
     }
   });
 
-  // 全局事件委托：捕获页面中的业务需求卡片与链接点击
+  // 全局事件委托：业务需求卡片 / 按钮 / 看板标题行触发抽屉；显式带 href 的 <a>
+  // 视为内部 / 外部导航，不接管（避免标题被吞）。
   document.addEventListener("click", function (e) {
     var trigger = e.target.closest("[data-demand-id], [data-open-demand-detail]");
     if (trigger) {
+      var tag = (trigger.tagName || "").toUpperCase();
+      if (tag === "A" && trigger.getAttribute("href")) { return; }
       var did = trigger.getAttribute("data-demand-id") || trigger.getAttribute("data-open-demand-detail");
       if (did && (/^US\d+/i.test(did) || /^\d+$/.test(did))) {
         e.preventDefault();
@@ -196,11 +216,17 @@
       }
     }
 
+    // 看板标题行：仅业务/子需求（US…）打开详情抽屉。
+    // 研需 displayId 为纯数字且行上带 data-rd，不可误打 /demands/:storyId/detail。
     var node = e.target.closest(".demand-grid .node-title-line");
     if (node) {
+      var row = node.closest(".demand-row, .biz-collapsed-row, .biz-head, .biz-group");
+      if (row && row.getAttribute("data-rd")) {
+        return;
+      }
       var codeEl = node.querySelector(".code");
       var raw = codeEl ? (codeEl.textContent || "").trim() : "";
-      if (/^US\d+/i.test(raw) || /^\d+$/.test(raw)) {
+      if (/^US\d+/i.test(raw)) {
         e.preventDefault();
         open(raw);
         return;
