@@ -39,11 +39,12 @@ func (s *DetailService) GetDemandDetailAuthZ(ctx context.Context, actor *model.U
 // 不可见），再做对象级权限判断。授权失败统一返回 errorx.Forbidden；
 // 不存在返回 errorx.NotFound；存储错误原样向上抛。
 //
-// 可见性矩阵（与 docs/plan/architecture-review-20260906 F01 一致）：
+// 可见性矩阵（F01；并与需求看板 FindBoardDemandTree 口径对齐）：
 //
 //	超级管理员（actor.IsSuperAdmin == true）：全部可见。
 //	普通用户必须至少命中以下任一角色/关系：
 //	  - PO/BR：d.BRA == actor.Account
+//	  - 研发负责人：d.RD == actor.Account
 //	  - 业务提出人：d.originator == actor.Account
 //	  - 当前责任人：d.assignedTo == actor.Account
 //	  - 测试/验收人：d.QD == actor.Account || d.accepter == actor.Account
@@ -52,6 +53,7 @@ func (s *DetailService) GetDemandDetailAuthZ(ctx context.Context, actor *model.U
 //	  - 闭环人：d.closedBy == actor.Account
 //	  - 编辑人：d.editedBy == actor.Account
 //	  - 反馈接收人：d.feedbackedBy == actor.Account
+//	  - 澄清 PM：zt_demandclarify.PM == actor.Account
 //
 // 父需求沿用同一矩阵；子需求列表各自独立走 loadDemandIfVisible，避免父可见
 // 子不可见时的正文泄露（详见 service_detail.go 父/子聚合）。

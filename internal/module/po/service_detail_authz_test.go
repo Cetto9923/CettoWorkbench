@@ -159,7 +159,7 @@ func TestCheckDemandVisibility_RepoHelper(t *testing.T) {
 
 	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM zt_demand d`).
 		WithArgs(uint(123), "user_a", "user_a", "user_a", "user_a", "user_a",
-			"user_a", "user_a", "user_a", "user_a", "user_a").
+			"user_a", "user_a", "user_a", "user_a", "user_a", "user_a", "user_a").
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
 
 	ok, err := repo.CheckDemandVisibility(t.Context(), 123, "user_a")
