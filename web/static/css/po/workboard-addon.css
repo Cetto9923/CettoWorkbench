@@ -6,7 +6,7 @@
 /* ── 问题三态 Tab 与状态徽标 ── */
 .po-board .issue-tabs { display: flex; gap: 4px; padding: 8px 8px 6px; flex-shrink: 0; border-bottom: 1px solid var(--border-lt); }
 .po-board .issue-tab {
-  flex: 1; height: 24px; border: 1px solid var(--border); background: #fff; border-radius: 4px;
+  flex: 1; height: 24px; border: 1px solid var(--border); background: var(--color-surface); border-radius: 4px;
   padding: 0 4px; font-size: 11px; color: var(--t2); cursor: pointer; display: inline-flex;
   align-items: center; justify-content: center; gap: 3px; transition: all .15s;
 }
@@ -17,20 +17,20 @@
 .ki-status { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: 3px; font-size: 10px; font-weight: 700; white-space: nowrap; }
 .ki-status.is-open { background: var(--orange-bg); color: var(--orange); border: 1px solid var(--orange-bd); }
 .ki-status.is-resolved { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-bd); }
-.ki-status.is-closed { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; }
+.ki-status.is-closed { background: var(--color-surface-soft-3); color: var(--color-text-secondary); border: 1px solid var(--color-border-strong); }
 
 .po-board .issue-card {
   border: 1px solid var(--border-lt); border-left: 3px solid var(--navy); border-radius: 5px;
-  padding: 8px 10px; margin-bottom: 7px; background: #fff; cursor: pointer; transition: all .15s;
+  padding: 8px 10px; margin-bottom: 7px; background: var(--color-surface); cursor: pointer; transition: all .15s;
 }
 .po-board .issue-card:hover { border-color: var(--blue-bd); box-shadow: 0 2px 8px rgba(37,99,235,.08); }
 .po-board .issue-card.state-resolved { border-left-color: var(--green); }
-.po-board .issue-card.state-closed { border-left-color: #94a3b8; opacity: .88; }
+.po-board .issue-card.state-closed { border-left-color: var(--color-text-disabled); opacity: .88; }
 
 /* ── 问题详情抽屉 ── */
 .issue-drawer-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, .26); z-index: 850; transition: opacity .2s; }
 .issue-drawer {
-  position: fixed; top: 0; right: 0; bottom: 0; width: 520px; background: #fff;
+  position: fixed; top: 0; right: 0; bottom: 0; width: 520px; background: var(--color-surface);
   box-shadow: -6px 0 28px rgba(0, 0, 0, .16); z-index: 851; display: flex; flex-direction: column;
   transform: translateX(100%); transition: transform .25s cubic-bezier(.16, 1, .3, 1);
 }
@@ -39,8 +39,8 @@
 .issue-drawer-header { padding: 14px 18px 12px; border-bottom: 1px solid var(--border); background: #fafbfc; flex-shrink: 0; }
 .issue-drawer-topline { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
 .issue-drawer-title { font-size: 14px; font-weight: 700; color: var(--t1); line-height: 1.4; }
-.issue-drawer-body { flex: 1; overflow-y: auto; padding: 16px 18px; background: #f8fafc; min-height: 0; }
-.issue-detail-section { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 14px; margin-bottom: 14px; }
+.issue-drawer-body { flex: 1; overflow-y: auto; padding: 16px 18px; background: var(--color-surface-muted); min-height: 0; }
+.issue-detail-section { background: var(--color-surface); border: 1px solid var(--border); border-radius: 6px; padding: 14px; margin-bottom: 14px; }
 .issue-detail-section-title { font-size: 12px; font-weight: 700; color: var(--t2); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
 .issue-detail-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 14px; }
 .issue-detail-field { display: flex; flex-direction: column; gap: 2px; }
@@ -49,7 +49,7 @@
 .issue-detail-desc { font-size: 12px; line-height: 1.6; color: var(--t1); white-space: pre-wrap; word-break: break-word; }
 .issue-action-list { list-style: none; margin: 0; padding: 0; }
 .issue-action-row { position: relative; display: grid; grid-template-columns: 126px minmax(0, 1fr); gap: 10px; padding: 0 0 12px; }
-.issue-action-row:not(:last-child)::before { content: ""; position: absolute; top: 18px; bottom: -2px; left: 128px; border-left: 1px solid var(--color-border, var(--border)); }
+.issue-action-row:not(:last-child)::before { content: ""; position: absolute; top: 18px; bottom: -2px; left: 128px; border-left: 1px solid var(--color-border); }
 .issue-action-time { color: var(--t3); font-size: 10px; line-height: 18px; text-align: right; }
 .issue-action-main { position: relative; min-width: 0; font-size: 12px; color: var(--t1); line-height: 18px; }
 .issue-action-main::before { content: ""; position: absolute; top: 5px; left: -15px; width: 7px; height: 7px; border-radius: 50%; background: var(--navy); border: 2px solid var(--color-surface); }
@@ -58,13 +58,13 @@
 .issue-action-main p { margin: 2px 0 0; white-space: pre-wrap; word-break: break-word; }
 .issue-action-empty { color: var(--t3); font-size: 11px; line-height: 1.5; }
 .issue-action-more { margin-top: 2px; border: 0; background: transparent; color: var(--navy); cursor: pointer; font: inherit; font-size: 11px; padding: 0; }
-.issue-drawer-footer { padding: 12px 18px; border-top: 1px solid var(--border); background: #fff; display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-shrink: 0; }
+.issue-drawer-footer { padding: 12px 18px; border-top: 1px solid var(--border); background: var(--color-surface); display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-shrink: 0; }
 
 /* ── 通用模态弹窗（提问题 / 建任务 / 团队调整） ── */
 .kb-modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, .38); z-index: 900; opacity: 0; pointer-events: none; transition: opacity .2s; }
 .kb-modal-overlay.show { opacity: 1; pointer-events: auto; }
 .kb-modal {
-  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(.96); background: #fff;
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(.96); background: var(--color-surface);
   border-radius: 8px; box-shadow: 0 10px 32px rgba(0, 0, 0, .2); z-index: 901; width: min(92vw, 560px);
   max-height: 88vh; display: flex; flex-direction: column; opacity: 0; pointer-events: none;
   transition: opacity .2s, transform .2s cubic-bezier(.16, 1, .3, 1);
@@ -74,17 +74,17 @@
 .kb-modal-hdr { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); background: #fafbfc; }
 .kb-modal-hdr h3 { margin: 0; font-size: 15px; font-weight: 700; color: var(--t1); }
 .kb-modal-body { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 18px; }
-.kb-modal-footer { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--border); background: #fff; }
+.kb-modal-footer { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--border); background: var(--color-surface); }
 
 /* ── 抽屉与弹窗按钮样式 ── */
 .issue-drawer-footer .action, .kb-modal-footer .action {
-  height: 28px; border: 1px solid var(--border); background: #fff; border-radius: 4px; padding: 0 12px;
+  height: 28px; border: 1px solid var(--border); background: var(--color-surface); border-radius: 4px; padding: 0 12px;
   color: var(--t2); font-size: 11px; font-family: inherit; cursor: pointer; display: inline-flex;
   align-items: center; justify-content: center; transition: all .15s;
 }
 .issue-drawer-footer .action:hover, .kb-modal-footer .action:hover { border-color: var(--navy); color: var(--navy); }
-.issue-drawer-footer .action.primary, .kb-modal-footer .action.primary { background: var(--navy); border-color: var(--navy); color: #fff; font-weight: 700; }
-.issue-drawer-footer .action.primary:hover, .kb-modal-footer .action.primary:hover { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
+.issue-drawer-footer .action.primary, .kb-modal-footer .action.primary { background: var(--navy); border-color: var(--navy); color: var(--color-text-on-accent); font-weight: 700; }
+.issue-drawer-footer .action.primary:hover, .kb-modal-footer .action.primary:hover { background: #1d4ed8; border-color: #1d4ed8; color: var(--color-text-on-accent); }
 .issue-drawer-footer .action.soft, .kb-modal-footer .action.soft { border-color: var(--blue-bd); background: var(--blue-bg); color: var(--navy); font-weight: 700; }
 
 /* ── 表单组件与提示 ── */
@@ -95,11 +95,11 @@
 .kb-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .kb-input, .kb-select, .kb-textarea {
   width: 100%; height: 32px; padding: 0 9px; border: 1px solid var(--border); border-radius: 4px;
-  font-size: 12px; color: var(--t1); background: #fff; box-sizing: border-box;
+  font-size: 12px; color: var(--t1); background: var(--color-surface); box-sizing: border-box;
 }
 .kb-input:focus, .kb-select:focus, .kb-textarea:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 2px rgba(30, 64, 175, .12); }
 .kb-textarea { height: auto; padding: 7px 9px; }
-.kb-input:disabled { background: #f8fafc; color: var(--t3); cursor: not-allowed; }
+.kb-input:disabled { background: var(--color-surface-muted); color: var(--t3); cursor: not-allowed; }
 
 /* ── 团队调整模态专属组件 ── */
 .kb-team-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
@@ -108,24 +108,24 @@
 .kb-team-add-panel { border: 1px solid var(--border); border-radius: 6px; background: #fafbfc; padding: 10px; margin-bottom: 12px; }
 .kb-team-candidate-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; max-height: 150px; overflow-y: auto; margin-top: 8px; }
 .kb-team-candidate {
-  display: flex; align-items: center; justify-content: center; height: 30px; padding: 0 8px; border: 1px solid #cbd5e1;
-  border-radius: 4px; background: #ffffff; cursor: pointer; font-size: 11px; text-align: center; transition: all .15s;
-  color: #334155;
+  display: flex; align-items: center; justify-content: center; height: 30px; padding: 0 8px; border: 1px solid var(--color-border-strong);
+  border-radius: 4px; background: var(--color-surface); cursor: pointer; font-size: 11px; text-align: center; transition: all .15s;
+  color: var(--color-text-body);
 }
-.kb-team-candidate:hover { border-color: #3b82f6; background: #eff6ff; color: #1d4ed8; }
+.kb-team-candidate:hover { border-color: #3b82f6; background: var(--color-info-bg); color: #1d4ed8; }
 .kb-team-candidate span { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .kb-team-table { width: 100%; border-collapse: collapse; }
-.kb-team-table th { background: #f8fafc; font-size: 11px; font-weight: 700; color: var(--t2); text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+.kb-team-table th { background: var(--color-surface-muted); font-size: 11px; font-weight: 700; color: var(--t2); text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
 .kb-team-table td { padding: 7px 10px; border-bottom: 1px solid var(--border-lt); font-size: 12px; vertical-align: middle; }
-.kb-team-table select, .kb-team-table input { height: 28px; padding: 0 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; color: var(--t1); background: #fff; }
+.kb-team-table select, .kb-team-table input { height: 28px; padding: 0 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; color: var(--t1); background: var(--color-surface); }
 .kb-team-table input[type="number"] { width: 64px; }
 .kb-team-user { display: flex; align-items: center; gap: 8px; }
-.kb-team-user-avatar { width: 26px; height: 26px; border-radius: 50%; background: #dbeafe; color: #1e40af; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.kb-team-user-avatar { width: 26px; height: 26px; border-radius: 50%; background: #dbeafe; color: var(--navy); font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .kb-team-user-name { font-weight: 600; color: var(--t1); display: flex; align-items: center; gap: 5px; font-size: 12px; }
 .kb-team-user-account { font-size: 11px; color: var(--t3); margin-top: 1px; }
-.kb-team-status-tag { display: inline-block; padding: 0 4px; border-radius: 2px; background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; font-size: 10px; font-weight: 600; }
+.kb-team-status-tag { display: inline-block; padding: 0 4px; border-radius: 2px; background: var(--color-info-bg); color: var(--po-blue); border: 1px solid var(--color-info-border); font-size: 10px; font-weight: 600; }
 .kb-team-row-new { background: var(--blue-bg); }
-.kb-team-row-new-badge { display: inline-block; padding: 0 4px; border-radius: 2px; background: var(--navy); color: #fff; font-size: 9px; font-style: normal; font-weight: 700; }
+.kb-team-row-new-badge { display: inline-block; padding: 0 4px; border-radius: 2px; background: var(--navy); color: var(--color-text-on-accent); font-size: 9px; font-style: normal; font-weight: 700; }
 .kb-team-remove { border: 0; background: transparent; color: var(--red); font-size: 11px; cursor: pointer; padding: 2px 4px; }
 .kb-team-remove:hover { text-decoration: underline; }

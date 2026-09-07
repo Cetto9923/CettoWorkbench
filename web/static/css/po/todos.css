@@ -39,7 +39,7 @@
 
 .po-todos .todos-item-title {
   overflow: hidden;
-  color: var(--po-t1, #1f2937);
+  color: var(--po-t1, var(--color-text-deep, #1f2937));
   font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -48,7 +48,7 @@
 .po-todos .todos-item-id {
   overflow: hidden;
   margin-top: 1px;
-  color: var(--po-blue, #2563eb);
+  color: var(--po-blue, var(--color-info-fill, #2563eb));
   font-size: 11px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   text-overflow: ellipsis;
@@ -56,22 +56,22 @@
 }
 
 .po-todos .row-id-link {
-  color: var(--po-blue, #2563eb);
+  color: var(--po-blue, var(--color-info-fill, #2563eb));
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   text-decoration: none;
 }
 .po-todos .row-id-link:hover {
   text-decoration: underline;
-  color: #1d4ed8;
+  color: var(--color-info-fill, #1d4ed8);
 }
 
 .po-todos .row-title-link {
-  color: var(--po-t1, #1f2937);
+  color: var(--po-t1, var(--color-text-deep, #1f2937));
   text-decoration: none;
   font-weight: 500;
 }
 .po-todos .row-title-link:hover {
-  color: var(--po-blue, #2563eb);
+  color: var(--po-blue, var(--color-info-fill, #2563eb));
   text-decoration: underline;
 }
 
@@ -95,15 +95,15 @@
   justify-content: center;
   height: 26px;
   padding: 0 9px;
-  border: 1px solid var(--po-blue-bd, #bfdbfe);
+  border: 1px solid var(--po-blue-bd, var(--color-info-border, #bfdbfe));
   border-radius: 4px;
-  background: var(--po-blue-bg, #eff6ff);
-  color: var(--po-blue, #2563eb);
+  background: var(--po-blue-bg, var(--color-info-bg, #eff6ff));
+  color: var(--po-blue, var(--color-info-fill, #2563eb));
   font-size: 11px;
   text-decoration: none;
   cursor: pointer;
   white-space: nowrap;
 }
 .po-todos .todo-action:hover {
-  background: #dbeafe;
+  background: var(--color-info-bg, #dbeafe);
 }
