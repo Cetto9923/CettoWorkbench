@@ -181,54 +181,22 @@ func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) 
 	}
 
 	// 分页查询
-	type row struct {
-		ID         int64     `gorm:"column:id"`
-		ObjectType string    `gorm:"column:objectType"`
-		ObjectID   int64     `gorm:"column:objectID"`
-		Action     string    `gorm:"column:action"`
-		Date       time.Time `gorm:"column:date"`
-	}
-	var rows []row
+	var rows []doneActionDBRow
 	if err := q.
 		Order("a.id DESC").
 		Limit(req.PageSize).
 		Offset((req.Page - 1) * req.PageSize).
-		Select("a.id, a.objectType, a.objectID, a.action, a.date").
+		Select("a.id, a.objectType, a.objectID, a.action, a.actor, a.date").
 		Find(&rows).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// 批量加载对象标题
-	demandIDs := make([]int64, 0)
-	taskIDs := make([]int64, 0)
-	bugIDs := make([]int64, 0)
-	storyIDs := make([]int64, 0)
-	for _, row := range rows {
-		switch row.ObjectType {
-		case "demand":
-			demandIDs = append(demandIDs, row.ObjectID)
-		case "task":
-			taskIDs = append(taskIDs, row.ObjectID)
-		case "bug":
-			bugIDs = append(bugIDs, row.ObjectID)
-		case "story":
-			storyIDs = append(storyIDs, row.ObjectID)
-		}
+	actionIDs := make([]int64, len(rows))
+	for i, r := range rows {
+		actionIDs[i] = r.ID
 	}
-
-	nameByKey := make(map[string]string)
-	if err := r.fetchObjectNames(ctx, "zt_demand", "name", "demand", demandIDs, nameByKey); err != nil {
-		return nil, 0, err
-	}
-	if err := r.fetchObjectNames(ctx, "zt_task", "name", "task", taskIDs, nameByKey); err != nil {
-		return nil, 0, err
-	}
-	if err := r.fetchObjectNames(ctx, "zt_bug", "title", "bug", bugIDs, nameByKey); err != nil {
-		return nil, 0, err
-	}
-	if err := r.fetchObjectNames(ctx, "zt_story", "title", "story", storyIDs, nameByKey); err != nil {
-		return nil, 0, err
-	}
+	hists := r.fetchActionHistories(ctx, actionIDs)
+	objCtxs := r.fetchObjectContexts(ctx, rows)
 
 	displayMap, _ := r.loadAccountDisplayMap(ctx)
 	actor := displayMap[req.Account]
@@ -243,23 +211,41 @@ func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) 
 		if actionLabel == "" {
 			actionLabel = row.Action // 无 formal 定义（如 todo/release/feedback）时展示原始动作 code
 		}
-		objName := nameByKey[fmt.Sprintf("%s:%d", row.ObjectType, row.ObjectID)]
-		if objName == "" {
-			switch row.ObjectType {
-			case "demand", "task", "bug", "story":
-				objName = "原对象不可用"
-			}
+		chg := hists[row.ID]
+		ctx := objCtxs[fmt.Sprintf("%s:%d", row.ObjectType, row.ObjectID)]
+		title := ctx.Title
+		if title == "" {
+			title = fmt.Sprintf("%s #%d", doneObjectTypeLabel(row.ObjectType), row.ObjectID)
 		}
 		items = append(items, DoneAction{
 			ID:              row.ID,
+			SourceActionId:  row.ID,
+			SourceSystem:    "zentao",
 			Actor:           actor,
+			ActorName:       actor,
 			Action:          actionLabel,
+			ActionKey:       row.Action,
+			ActionName:      actionLabel,
+			IsCoreAction:    true,
 			ObjectType:      row.ObjectType,
 			ObjectTypeLabel: doneObjectTypeLabel(row.ObjectType),
 			ObjectID:        row.ObjectID,
-			ObjectName:      objName,
+			ObjectCode:      fmt.Sprintf("%s #%d", doneObjectTypeLabel(row.ObjectType), row.ObjectID),
+			ObjectName:      title,
+			ObjectTitle:     title,
 			Date:            row.Date.Format("2006-01-02 15:04:05"),
+			HandledAt:       row.Date.Format(time.RFC3339),
 			Result:          meta.Result,
+			ResultCode:      meta.Result,
+			ResultText:      doneResultText(meta.Result),
+			BeforeStatus:    chg[0],
+			AfterStatus:     chg[1],
+			CurrentStatus:   ctx.Status,
+			ProjectName:     ctx.ProjectName,
+			ExecutionName:   ctx.ExecutionName,
+			ProductName:     ctx.ProductName,
+			NextOwnerName:   ctx.CurrentOwner,
+			CanOpenObject:   true,
 			URL:             objectViewURL(row.ObjectType, uint(row.ObjectID)),
 		})
 	}
@@ -339,6 +325,7 @@ func (r *Repo) CountDoneActions(ctx context.Context, req RepoCountDoneActionsReq
 		Last30d int64 `gorm:"column:c_last30d"`
 		Month   int64 `gorm:"column:c_month"`
 		Quarter int64 `gorm:"column:c_quarter"`
+		Objects int64 `gorm:"column:c_objects"`
 	}
 	var out row
 	err := q.Select(`
@@ -348,15 +335,41 @@ func (r *Repo) CountDoneActions(ctx context.Context, req RepoCountDoneActionsReq
 		SUM(CASE WHEN YEARWEEK(a.date, 3) = YEARWEEK(CURDATE(), 3) THEN 1 ELSE 0 END) AS c_week,
 		SUM(CASE WHEN a.date >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) AS c_last30d,
 		SUM(CASE WHEN DATE_FORMAT(a.date, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m') THEN 1 ELSE 0 END) AS c_month,
-		SUM(CASE WHEN QUARTER(a.date) = QUARTER(CURDATE()) AND YEAR(a.date) = YEAR(CURDATE()) THEN 1 ELSE 0 END) AS c_quarter`).
+		SUM(CASE WHEN QUARTER(a.date) = QUARTER(CURDATE()) AND YEAR(a.date) = YEAR(CURDATE()) THEN 1 ELSE 0 END) AS c_quarter,
+		COUNT(DISTINCT CONCAT(a.objectType, ':', a.objectID)) AS c_objects`).
 		Scan(&out).Error
 	if err != nil {
 		return summary, err
 	}
 	return DoneSummary{
 		All: out.Total, Today: out.Today, Last7d: out.Last7d, Week: out.Week,
-		Last30d: out.Last30d, Month: out.Month, Quarter: out.Quarter,
+		Last30d: out.Last30d, Month: out.Month, Quarter: out.Quarter, Objects: out.Objects,
 	}, nil
+}
+
+func doneResultText(result string) string {
+	switch result {
+	case "done":
+		return "已完成"
+	case "approved":
+		return "已通过"
+	case "rejected":
+		return "已驳回"
+	case "closed":
+		return "已关闭"
+	case "activated":
+		return "已激活"
+	case "submitted":
+		return "已提交"
+	case "verified":
+		return "已验收"
+	case "resolved":
+		return "已解决"
+	case "returned":
+		return "已退回"
+	default:
+		return "已记录"
+	}
 }
 
 func formalDoneActionCodes(objectType string) []string {
@@ -465,22 +478,4 @@ func objectViewURL(objectType string, id uint) string {
 		return zentao.URL(objectType, "view", fmt.Sprintf("%sID=%d", objectType, id))
 	}
 	return ""
-}
-
-func (r *Repo) fetchObjectNames(ctx context.Context, table, col, prefix string, ids []int64, nameByKey map[string]string) error {
-	if len(ids) == 0 {
-		return nil
-	}
-	var rows []struct {
-		ID   int64  `gorm:"column:id"`
-		Name string `gorm:"column:name_col"`
-	}
-	if err := r.db.WithContext(ctx).Table(table).Where("id IN ?", ids).
-		Select("id, " + col + " AS name_col").Find(&rows).Error; err != nil {
-		return err
-	}
-	for _, row := range rows {
-		nameByKey[fmt.Sprintf("%s:%d", prefix, row.ID)] = row.Name
-	}
-	return nil
 }

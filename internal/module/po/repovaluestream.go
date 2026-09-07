@@ -46,7 +46,6 @@ var mysqlStageFilters = map[string]mysqlStageFilter{
 	"waitacceptance": {acceptanceStage: true},
 	"acceptanced": {
 		statuses:       []string{"acceptanced"},
-		braRequired:    true,
 		deliverDateDue: true,
 		deliverStories: true,
 	},
@@ -80,8 +79,7 @@ type StoryRow struct {
 }
 
 // roleDemandBase 返回当前账号可推动且未关闭的业务办理单元。
-// 个人责任包括指派、派单、质量、研发、验收和澄清 PM；存在有效子需求时父需求只汇总，不重复统计。
-// 价值流列表与 KPI 计数共用同一基础集，保证两处数字口径一致。
+// 个人责任包括指派、派单、质量、研发、验收和澄清 PM 及星标关注，剔除无个人责任的纯 BRA；存在有效子需求时父需求只汇总，不重复统计。
 func (r *Repo) roleDemandBase(ctx context.Context, account string) *gorm.DB {
 	return r.db.WithContext(ctx).Table("zt_demand").
 		Where("deleted = ?", "0").
@@ -92,9 +90,9 @@ func (r *Repo) roleDemandBase(ctx context.Context, account string) *gorm.DB {
 			OR distributedBy = ?
 			OR QD = ?
 			OR RD = ?
-			OR BRA = ?
 			OR accepter = ?
 			OR id IN (SELECT demand FROM zt_demandclarify WHERE PM = ?)
+			OR id IN (SELECT objectID FROM zt_starinfo WHERE objectType = 'demand' AND account = ? AND followed = '1')
 		)`, account, account, account, account, account, account, account)
 }
 
@@ -104,11 +102,11 @@ func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysql
 
 	if filter.acceptanceStage {
 		today := time.Now().Format("2006-01-02")
-		// (status=testing AND 今天>=testFinish) OR (status=waitacceptance AND (RD|BRA)=账号)
+		// (status=testing AND 今天>=testFinish) OR (status=waitacceptance AND RD=账号)
 		q = q.Where(`(
 			(status = ? AND testFinish IS NOT NULL AND testFinish <= ?)
-			OR (status = ? AND (RD = ? OR BRA = ?))
-		)`, "testing", today, "waitacceptance", account, account)
+			OR (status = ? AND RD = ?)
+		)`, "testing", today, "waitacceptance", account)
 		return q
 	}
 	if filter.publishStage {

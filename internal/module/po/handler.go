@@ -10,6 +10,8 @@
 package po
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -47,16 +49,33 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 
 	g.GET("/home", middleware.RequirePerm(perm.PoHomeList), h.Home)
 	g.GET("/demands", middleware.RequirePerm(perm.PoHomeList), h.Demands)
-	g.GET("/demands/:id/detail", middleware.RequirePerm(perm.PoHomeList), h.DemandDetail)
-	g.GET("/demands/:id", middleware.RequirePerm(perm.PoHomeList), h.DemandDetailView)
+	// 详情读接口：首页与需求看板均可打开；对象级授权仍由 DetailService 执行。
+	g.GET("/demands/:id/detail", middleware.RequireAnyPerm(perm.PoHomeList, perm.PoBoardDemandList), h.DemandDetail)
+	g.GET("/demands/:id", middleware.RequireAnyPerm(perm.PoHomeList, perm.PoBoardDemandList), h.DemandDetailView)
 	g.GET("/todos", middleware.RequirePerm(perm.PoTodoList), h.Todos)
 	g.GET("/todos/items", middleware.RequirePerm(perm.PoTodoList), h.TodosItems)
 	g.GET("/done", middleware.RequirePerm(perm.PoDoneList), h.Done)
 	g.GET("/done/items", middleware.RequirePerm(perm.PoDoneList), h.DoneItems)
+	g.GET("/done/meta", middleware.RequirePerm(perm.PoDoneList), h.DoneMeta)
+	g.GET("/done/detail/:actionId", middleware.RequirePerm(perm.PoDoneList), h.DoneDetail)
+
+	// 兼容老版本 API 路径
+	wbApi := rg.Group("/workbench/api")
+	wbApi.GET("/done", middleware.RequirePerm(perm.PoDoneList), h.DoneItems)
+	wbApi.GET("/done/meta", middleware.RequirePerm(perm.PoDoneList), h.DoneMeta)
+	wbApi.GET("/done/detail/:actionId", middleware.RequirePerm(perm.PoDoneList), h.DoneDetail)
+	wbApi.GET("/watches/project-weeklies", middleware.RequirePerm(perm.PoFollowList), h.ProjectWeeklies)
+	wbApi.GET("/watches/project-weeklies/teams", middleware.RequirePerm(perm.PoFollowList), h.ProjectWeeklyTeams)
+	wbApi.GET("/watches/project-weeklies/:id", middleware.RequirePerm(perm.PoFollowList), h.ProjectWeeklyDetail)
+	wbApi.GET("/watches/project-weeklies/:id/history", middleware.RequirePerm(perm.PoFollowList), h.ProjectWeeklyHistory)
 	g.GET("/notice", middleware.RequirePerm(perm.PoNoticeList), h.Notice)
 	g.GET("/notice/items", middleware.RequirePerm(perm.PoNoticeList), h.NoticeItems)
 	g.GET("/follow", middleware.RequirePerm(perm.PoFollowList), h.Follow)
 	g.GET("/follow/items", middleware.RequirePerm(perm.PoFollowList), h.FollowItems)
+	g.GET("/follow/project-weeklies", middleware.RequirePerm(perm.PoFollowList), h.ProjectWeeklies)
+	g.GET("/follow/project-weeklies/teams", middleware.RequirePerm(perm.PoFollowList), h.ProjectWeeklyTeams)
+	g.GET("/follow/project-weeklies/:id", middleware.RequirePerm(perm.PoFollowList), h.ProjectWeeklyDetail)
+	g.GET("/follow/project-weeklies/:id/history", middleware.RequirePerm(perm.PoFollowList), h.ProjectWeeklyHistory)
 
 	g.PUT("/notice/:id/read", middleware.RequirePerm(perm.PoNoticeUpdate), h.NoticeMarkRead)
 	g.PUT("/notice/read-all", middleware.RequirePerm(perm.PoNoticeUpdate), h.NoticeMarkAllRead)
@@ -131,6 +150,11 @@ func (h *Handler) Demands(c *gin.Context) {
 
 	resp, err := h.svc.Demands(c.Request.Context(), middleware.CurrentUser(c), req)
 	if err != nil {
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			// 客户端取消或服务端超时，不写 error 日志、不返回 5xx。
+			c.Status(499)
+			return
+		}
 		if h.logger != nil {
 			h.logger.Error("po demand details", zap.Error(err), zap.String("status", req.Status))
 		}
@@ -234,12 +258,68 @@ func (h *Handler) DoneItems(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"success":  true,
+		"data":     resp,
 		"items":    resp.Items,
 		"total":    resp.Total,
 		"summary":  resp.Summary,
+		"facets":   resp.Facets,
 		"page":     resp.Page,
 		"pageSize": resp.PageSize,
 	})
+}
+
+// DoneMeta 返回"我的已办"筛选项元数据 JSON。
+func (h *Handler) DoneMeta(c *gin.Context) {
+	actor := middleware.CurrentUser(c)
+	resp, err := h.svc.DoneMeta(c.Request.Context(), actor)
+	if err != nil {
+		h.logger.Error("po done meta", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "获取已办筛选项失败"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": resp})
+}
+
+// DoneDetail 返回单个已办动作详情及邻近时间线。
+//
+// F01：DoneDetail 在 Handler 出口区分 401/403/404/500，与 demand detail
+// 统一语义；不再把 DB 故障或权限拒绝都映射为 404。
+func (h *Handler) DoneDetail(c *gin.Context) {
+	actionIdStr := c.Param("actionId")
+	actionId, _ := strconv.ParseInt(actionIdStr, 10, 64)
+	if actionId <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "无效的动作ID"})
+		return
+	}
+	actor := middleware.CurrentUser(c)
+	resp, err := h.svc.DoneDetail(c.Request.Context(), actor, actionId)
+	if err != nil {
+		if bizErr, ok := errorx.IsBizError(err); ok {
+			switch bizErr.Code {
+			case errorx.ErrCodeInvalidParam:
+				c.JSON(http.StatusUnauthorized, gin.H{
+					"success": false, "message": bizErr.Msg,
+				})
+				return
+			case errorx.ErrCodeNotFound:
+				c.JSON(http.StatusNotFound, gin.H{
+					"success": false, "message": "未找到相关已办记录",
+				})
+				return
+			case errorx.ErrCodeForbidden:
+				c.JSON(http.StatusForbidden, gin.H{
+					"success": false, "message": "无权查看该已办动作",
+				})
+				return
+			}
+		}
+		h.logger.Error("po done detail", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false, "message": "已办详情查询失败",
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": resp})
 }
 
 // Notice 渲染"通知中心"页面。
@@ -316,7 +396,19 @@ func (h *Handler) NoticeMarkRead(c *gin.Context) {
 // NoticeMarkAllRead 全部标记已读。
 func (h *Handler) NoticeMarkAllRead(c *gin.Context) {
 	actor := middleware.CurrentUser(c)
-	n, err := h.svc.NoticeMarkAllRead(c.Request.Context(), actor)
+	var body struct {
+		Filters *NoticeListReq `json:"filters"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil || body.Filters == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "必须提供当前筛选条件"})
+		return
+	}
+	req := *body.Filters
+	if errs := req.Validate(); len(errs) > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "筛选条件无效", "errors": errs})
+		return
+	}
+	n, err := h.svc.NoticeMarkAllRead(c.Request.Context(), actor, req)
 	if err != nil {
 		h.logger.Error("po notice mark all read", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "全部标记已读失败"})

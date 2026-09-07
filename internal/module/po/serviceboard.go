@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"workbench/internal/model"
+	"workbench/internal/module/po/primaryaction"
 	"workbench/internal/pkg/errorx"
 )
 
@@ -31,6 +32,9 @@ func (s *Service) BoardDemand(ctx context.Context, actor *model.User, req BoardD
 	}
 	tree, summary, err := s.repo.FindBoardDemandTree(ctx, req, displayMap)
 	if err != nil {
+		return nil, err
+	}
+	if err := s.attachPrimaryActions(ctx, actor, tree); err != nil {
 		return nil, err
 	}
 	teams, err := s.repo.FindBoardTeamgroups(ctx, actor.Account)
@@ -127,4 +131,91 @@ func selectBoardTeamgroup(requested uint, teams []BoardTeamgroupOption) uint {
 		return teams[0].ID
 	}
 	return 0
+}
+
+// attachPrimaryActions 为需求树每个节点附加服务端 primaryAction（Stage 5）。
+//
+// 先遍历一次树收集需求 / 故事 ID（去重），再走 DeriveDemandPrimaryActions /
+// DeriveStoryPrimaryActions 的 IN (?) 批量派生，最后回填到每个节点。
+//
+// 子节点 demand/sub_demand 共用 demandIDs；独立研发需求走独立 storyIDs 标记。
+func (s *Service) attachPrimaryActions(
+	ctx context.Context,
+	actor *model.User,
+	tree []*BoardDemandItem,
+) error {
+	if len(tree) == 0 {
+		return nil
+	}
+
+	demandIDs := make([]uint, 0)
+	storyIDs := make([]uint, 0)
+	var walk func(node *BoardDemandItem)
+	walk = func(node *BoardDemandItem) {
+		if node == nil {
+			return
+		}
+		switch node.Kind {
+		case "demand", "sub_demand":
+			if node.ID > 0 {
+				demandIDs = append(demandIDs, uint(node.ID))
+			}
+		case "story":
+			if node.ID > 0 {
+				if node.Independent {
+					storyIDs = append(storyIDs, uint(node.ID))
+				} else {
+					// 树内研需独立派生（Independent=false），按非独立走。
+					storyIDs = append(storyIDs, uint(node.ID))
+				}
+			}
+		}
+		for _, child := range node.Children {
+			walk(child)
+		}
+	}
+	for _, root := range tree {
+		walk(root)
+	}
+
+	demandActions, err := s.DeriveDemandPrimaryActions(ctx, actor, demandIDs)
+	if err != nil {
+		return err
+	}
+	storyActions, err := s.DeriveStoryPrimaryActions(ctx, actor, storyIDs, false)
+	if err != nil {
+		return err
+	}
+
+	var fill func(node *BoardDemandItem)
+	fill = func(node *BoardDemandItem) {
+		if node == nil {
+			return
+		}
+		switch node.Kind {
+		case "demand", "sub_demand":
+			if pa, ok := demandActions[uint(node.ID)]; ok {
+				paCopy := pa
+				node.PrimaryAction = &paCopy
+			} else {
+				none := primaryaction.None()
+				node.PrimaryAction = &none
+			}
+		case "story":
+			if pa, ok := storyActions[uint(node.ID)]; ok {
+				paCopy := pa
+				node.PrimaryAction = &paCopy
+			} else {
+				none := primaryaction.None()
+				node.PrimaryAction = &none
+			}
+		}
+		for _, child := range node.Children {
+			fill(child)
+		}
+	}
+	for _, root := range tree {
+		fill(root)
+	}
+	return nil
 }

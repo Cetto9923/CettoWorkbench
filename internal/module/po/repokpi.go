@@ -54,35 +54,15 @@ func (r *Repo) CountKPISuspended(ctx context.Context, account string) (int64, er
 	return total, err
 }
 
-// CountKPIBlocked 统计阻塞：主管部门审批存在拒绝记录 ∪ 验收阶段测试超期。
-// V10.1 01 节：存在明确阻塞下一动作的事实。zentao 二开字段：
-//   - zt_demandmanagerreview.resultStatus（JSON,值 wait/pass/refuse）存在 refuse 即被拒
-//   - status='waitacceptance' AND testFinish < today 即验收阶段超期
-//
-// 挂起由 hang='1' 单独统计，不并入阻塞。
+// CountKPIBlocked 统计当前仍处于驳回状态的需求。
+// 与参考项目 deriveRisks 一致：历史拒绝及单纯超期不代表当前阻塞。
+// 尚无经确认的其他阻塞/解除事实源，不从历史审批 JSON 推断当前状态。
 func (r *Repo) CountKPIBlocked(ctx context.Context, account string) (int64, error) {
 	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
 		return 0, nil
 	}
-	today := time.Now().Format("2006-01-02")
 	var n int64
-	err := r.roleDemandBase(ctx, account).
-		Where(`(
-			EXISTS (
-				SELECT 1 FROM zt_demandmanagerreview mr
-				WHERE mr.demand = zt_demand.id
-				AND mr.resultStatus IS NOT NULL
-				AND mr.resultStatus != ''
-				AND JSON_SEARCH(mr.resultStatus, 'one', 'refuse') IS NOT NULL
-			)
-			OR (
-				status = ?
-				AND testFinish IS NOT NULL
-				AND testFinish != '0000-00-00'
-				AND testFinish < ?
-			)
-		)`, "waitacceptance", today).
-		Count(&n).Error
+	err := r.roleDemandBase(ctx, account).Where("status = ?", "refuse").Count(&n).Error
 	return n, err
 }
 

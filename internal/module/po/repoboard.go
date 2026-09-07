@@ -244,9 +244,9 @@ func (r *Repo) demandNode(row boardDemandRow, kind, owner string, displayMap map
 	if o := displayMap[owner]; o != "" {
 		owner = o
 	}
-	prefix := "BR"
+	prefix := "US"
 	return &BoardDemandItem{
-		Kind: kind, ID: row.ID, DisplayID: fmt.Sprintf("%s-%d", prefix, row.ID),
+		Kind: kind, ID: row.ID, DisplayID: fmt.Sprintf("%s%d", prefix, row.ID),
 		Title: row.Name, Stage: deriveStageFromStatus(row.Status), Status: row.Status,
 		Priority: priOf(row.Priority), Owner: owner, Deadline: dl,
 		ActionLabel: deriveActionLabel(row.Status), Children: []*BoardDemandItem{},
@@ -269,7 +269,7 @@ func (r *Repo) storyNode(s boardStoryRow, agg taskAgg, productName string, displ
 		progress = agg.Done * 100 / agg.Total
 	}
 	return &BoardDemandItem{
-		Kind: "story", ID: s.ID, DisplayID: fmt.Sprintf("RD-%d", s.ID),
+		Kind: "story", ID: s.ID, DisplayID: fmt.Sprintf("%d", s.ID),
 		Title: s.Title, Stage: stage, Status: s.Status,
 		Priority: priOf(s.Priority), Owner: owner, CurrentOwner: currOwner,
 		ProductName: productName, Progress: progress,

@@ -37,7 +37,7 @@ func (r *Repo) FindTodoItems(ctx context.Context, account string, req TodoListRe
 	return res.Items, res.Total, nil
 }
 
-// CountOpenTodos 仅返回当前账号待办总数（侧栏角标用）。
+// CountOpenTodos 仅返回当前账号待办总数（不取 items）。
 // 与 FindTodoItems 在空 req 下的总数等价，但避免 N 行 SQL 回传。
 func (r *Repo) CountOpenTodos(ctx context.Context, account string) (int64, error) {
 	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
