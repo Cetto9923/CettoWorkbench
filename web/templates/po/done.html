@@ -1,11 +1,12 @@
 {{/* ==========================================================================
 文件: web/templates/po/done.html
 模块: PO 工作台
-职责: 我的已办列表页（个人动作履历 + 统一工作台骨架）
+职责: 我的已办列表页（对齐 CRCBWorkbench 老版本视图，4 KPI 卡 + 11 芯片 + 9 列表格）
 全局字段: .CurrentUser, .CSRFToken, .Menus, .AppName, .CurrentPath
 页面字段: .Title (string), .PageTitle (string), .BaseUrl (string)
 ========================================================================== */}}
 {{ define "page_css" }}
+<link rel="stylesheet" href="{{ asset "/static/css/po/demand-detail.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/po/personal-workspace.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/po/done.css" }}">
 {{ end }}
@@ -15,61 +16,100 @@
   <header class="workspace-header">
     <div class="workspace-header-left">
       <h2>我的已办</h2>
-      <p>查看我已完成的业务操作记录</p>
-    </div>
-    <div class="header-quick-filters" id="doneTimeChips" role="group" aria-label="快捷时间范围">
-      <button type="button" class="header-quick-chip active" data-range="all" aria-pressed="true">全部</button>
-      <button type="button" class="header-quick-chip" data-range="today" aria-pressed="false">今天</button>
-      <button type="button" class="header-quick-chip" data-range="7d" aria-pressed="false">近7天</button>
-      <button type="button" class="header-quick-chip" data-range="week" aria-pressed="false">本周</button>
-      <button type="button" class="header-quick-chip" data-range="30d" aria-pressed="false">近30天</button>
-      <button type="button" class="header-quick-chip" data-range="month" aria-pressed="false">本月</button>
-      <button type="button" class="header-quick-chip" data-range="quarter" aria-pressed="false">本季度</button>
+      <p>查看由我推进、确认、流转或结项的历史事项及动作记录</p>
     </div>
   </header>
 
+  <!-- 1. 顶部 4 张 KPI 卡片 -->
+  <div class="wb-done-summary" id="doneSummaryCards" role="region" aria-label="已办指标统计">
+    <button type="button" class="wb-done-kpi" data-range="today">
+      <span class="wb-done-kpi-dot"></span>
+      <span class="wb-done-kpi-label">今日已办</span>
+      <strong id="kpiToday">0</strong>
+      <span class="wb-done-kpi-tip">今天实际完成的业务动作</span>
+    </button>
+    <button type="button" class="wb-done-kpi" data-range="week">
+      <span class="wb-done-kpi-dot"></span>
+      <span class="wb-done-kpi-label">本周已办</span>
+      <strong id="kpiWeek">0</strong>
+      <span class="wb-done-kpi-tip">本周累计办理</span>
+    </button>
+    <button type="button" class="wb-done-kpi" data-range="30d">
+      <span class="wb-done-kpi-dot"></span>
+      <span class="wb-done-kpi-label">近 30 天</span>
+      <strong id="kpiMonth">0</strong>
+      <span class="wb-done-kpi-tip">近 30 天累计办理</span>
+    </button>
+    <button type="button" class="wb-done-kpi" data-range="objects" style="cursor:default">
+      <span class="wb-done-kpi-dot"></span>
+      <span class="wb-done-kpi-label">涉及对象</span>
+      <strong id="kpiObjects">0</strong>
+      <span class="wb-done-kpi-tip">当前条件下去重对象数</span>
+    </button>
+  </div>
+
   <section class="workspace-panel">
-    <nav class="category-tabs" aria-label="已办场景分类">
-      <button type="button" class="category-tab active" data-tab="all" aria-current="page">全部已办</button>
-      <button type="button" class="category-tab" data-tab="approval">审批决策</button>
-      <button type="button" class="category-tab" data-tab="demand">需求治理</button>
-      <button type="button" class="category-tab" data-tab="execution">研发执行</button>
-      <button type="button" class="category-tab" data-tab="quality">测试质量</button>
-      <button type="button" class="category-tab" data-tab="risks">问题风险</button>
-    </nav>
-
-    <div class="workspace-toolbar">
-      <label class="workspace-search"><span aria-hidden="true">⌕</span><input type="search" id="doneKeyword" placeholder="搜索 ID、标题或操作内容" aria-label="关键词"></label>
-      <select id="doneObjectType" aria-label="对象类型"></select>
-      <select id="doneAction" aria-label="处理动作"><option value="all">处理动作：全部</option><option value="task:started">开始任务</option><option value="task:finished">完成任务</option><option value="task:activated">激活任务</option><option value="demand:plan">完成排期</option><option value="demand:deliver">发起交付</option><option value="demand:reviewed">需求评审</option><option value="demand:reviewpassed">审批通过</option><option value="demand:reviewrejected">审批驳回</option><option value="story:submitreview">提交评审</option><option value="bug:resolved">解决 Bug</option><option value="bug:closed">关闭 Bug</option></select>
-      <select id="doneResult" aria-label="处理结果"><option value="all">处理结果：全部</option><option value="done">完成</option><option value="approved">通过</option><option value="rejected">驳回</option><option value="closed">关闭</option><option value="activated">激活</option><option value="submitted">已提交</option><option value="verified">已验收</option><option value="resolved">已解决</option><option value="returned">已退回</option></select>
-      <button type="button" class="workspace-btn" id="doneResetBtn">重置筛选</button>
+    <!-- 2. 11 个对象 Chip 过滤栏 -->
+    <div class="wb-done-domains" id="doneObjectChips" role="group" aria-label="操作对象过滤">
+      <!-- 由 JS 动态渲染 11 个 Chip 并带徽标数量 -->
     </div>
 
-    <div class="workspace-result-bar" aria-live="polite">
-      <div>
-        <span id="doneSummary">加载中…</span>
-        <span class="done-range-meta" style="margin-left:8px;color:#64748b;font-size:11px;">
-          累计处理 <strong id="countRangeAll">—</strong> 件 · 当前区间处理 <strong id="countRangeCurrent">—</strong> 件
-        </span>
+    <!-- 3. 工具栏 -->
+    <div class="workspace-toolbar wb-done-toolbar">
+      <div class="wb-done-seg-set" role="group" aria-label="操作范围">
+        <button type="button" class="wb-done-seg active" data-mode="core">核心已办</button>
+        <button type="button" class="wb-done-seg" data-mode="all">全部操作</button>
       </div>
-      <span class="workspace-result-hint">基于正式业务动作记录</span>
+
+      <label class="workspace-search">
+        <span aria-hidden="true">⌕</span>
+        <input type="search" id="doneKeyword" placeholder="搜索标题、对象ID、操作内容..." aria-label="关键词">
+      </label>
+
+      <select id="doneTimeRange" class="wb-done-select" aria-label="处理时间">
+        <option value="all" selected>全部时间</option>
+        <option value="today">今天</option>
+        <option value="7d">近 7 天</option>
+        <option value="week">本周</option>
+        <option value="30d">近 30 天</option>
+        <option value="month">本月</option>
+        <option value="lastMonth">上月</option>
+        <option value="quarter">本季度</option>
+      </select>
+
+      <select id="doneAction" class="wb-done-select" aria-label="处理动作">
+        <option value="">全部操作</option>
+      </select>
+
+      <select id="doneResult" class="wb-done-select" aria-label="处理结果">
+        <option value="">全部结果</option>
+      </select>
+
+      <select id="doneProject" class="wb-done-select" aria-label="所属项目">
+        <option value="">全部项目</option>
+      </select>
+
+      <button type="button" class="workspace-btn" id="doneResetBtn">清除筛选</button>
     </div>
 
+    <!-- 4. 九列表格 -->
     <div class="table-scroll-container">
-      <table class="workspace-table done-table" id="doneTable">
+      <table class="workspace-table done-table wb-done-table" id="doneTable">
         <thead>
           <tr>
-            <th class="done-col-item">事项标题 / 对象ID</th>
-            <th class="done-col-type">对象类型</th>
-            <th class="done-col-action">我做了什么</th>
-            <th class="done-col-result">处理结果</th>
-            <th class="done-col-date">处理时间</th>
-            <th class="done-col-opt">操作</th>
+            <th style="width:130px">处理时间</th>
+            <th style="width:120px">对象</th>
+            <th>标题</th>
+            <th style="width:130px">我做了什么</th>
+            <th style="width:90px">处理结果</th>
+            <th style="width:150px">状态变化</th>
+            <th style="width:180px">所属项目 / 执行</th>
+            <th style="width:90px">当前状态</th>
+            <th style="width:90px">操作</th>
           </tr>
         </thead>
         <tbody id="doneTbody">
-          <tr><td colspan="6" class="state-placeholder">正在拉取已办记录…</td></tr>
+          <tr><td colspan="9" class="state-placeholder">正在拉取已办记录…</td></tr>
         </tbody>
       </table>
     </div>
@@ -82,9 +122,26 @@
     <div class="workspace-pagination" id="donePagination" hidden></div>
   </section>
 </div>
+
+<!-- 5. 查看记录详情抽屉 -->
+<div id="doneDrawerMask" class="wb-done-drawer-mask" hidden>
+  <aside class="wb-done-drawer" role="dialog" aria-modal="true" aria-label="处理记录">
+    <header class="wb-done-drawer-hdr">
+      <h2>处理记录</h2>
+      <button type="button" class="action-btn icon" id="doneDrawerClose" aria-label="关闭">✕</button>
+    </header>
+    <div class="wb-done-drawer-body" id="doneDrawerBody"></div>
+    <footer class="wb-detail-footer">
+      <a id="doneDrawerOpenObj" class="action-btn bar" href="#" target="_blank" rel="noopener noreferrer">在禅道打开对象 ↗</a>
+      <button type="button" class="action-btn bar" id="doneDrawerCloseBtn">关闭</button>
+    </footer>
+  </aside>
+</div>
 {{ end }}
 
 {{ define "page_js" }}
 <script src="{{ asset "/static/js/po/personal-list.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail-render.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail.js" }}"></script>
 <script src="{{ asset "/static/js/po/done.js" }}"></script>
 {{ end }}
