@@ -92,6 +92,7 @@ const expected = {
   independent_story: "独立研发需求",
   task: "任务",
   issue: "问题",
+  bug: "Bug",
   approval: "审批",
   todo: "待办",
   testtask: "测试单"
@@ -101,7 +102,17 @@ for (const key of Object.keys(expected)) {
   assert.match(html, new RegExp('class="wb-type wb-type-' + key + '"'), key + " must map to wb-type-" + key);
   assert.ok(html.indexOf(expected[key]) >= 0, key + " must render label '" + expected[key] + "'");
 }
-console.log("PASS: objectTypeBadge canonical mapping business/sub_demand/story/independent_story/task/issue/approval/todo/testtask");
+console.log("PASS: objectTypeBadge canonical mapping business/sub_demand/story/independent_story/task/issue/bug/approval/todo/testtask");
+
+// 3c. API kind → badge (todos etc.)
+const fromKind = PL.objectTypeBadgeFromKind;
+assert.strictEqual(typeof fromKind, "function");
+assert.match(fromKind("demand"), /wb-type-business/);
+assert.ok(fromKind("demand").indexOf("业务需求") >= 0);
+assert.match(fromKind("bug"), /wb-type-bug/);
+assert.ok(fromKind("bug").indexOf("Bug") >= 0);
+assert.match(fromKind("test"), /wb-type-testtask/);
+console.log("PASS: objectTypeBadgeFromKind maps API kind demand/bug/test");
 
 // 3b. unknown kind -> wb-type-unknown
 const unk = otb("totally-unknown");
@@ -127,12 +138,16 @@ console.log("PASS: follow.js consumer uses priorityBadge (no inline color)");
 const todosSrc = fs.readFileSync(path.join(__dirname, "../../../web/static/js/po/todos.js"), "utf8");
 assert.ok(!/class="inline-pri/.test(todosSrc), "todos.js must no longer emit inline-pri");
 assert.ok(/priorityBadge\(/.test(todosSrc), "todos.js must call priorityBadge()");
-console.log("PASS: todos.js consumer uses priorityBadge (no inline color)");
+assert.ok(/objectTypeBadgeFromKind\(/.test(todosSrc), "todos.js must call objectTypeBadgeFromKind()");
+assert.ok(!/wb-type-unknown/.test(todosSrc) || /objectTypeBadgeFromKind/.test(todosSrc), "todos.js must not hardcode wb-type-unknown for all rows");
+console.log("PASS: todos.js consumer uses priorityBadge + objectTypeBadgeFromKind");
 
 const wbSrc = fs.readFileSync(path.join(__dirname, "../../../web/static/js/po/workboard.js"), "utf8");
 assert.ok(/priorityBadge\(/.test(wbSrc), "workboard.js must call priorityBadge() (via priTag)");
-assert.ok(/objectTypeBadge\(/.test(wbSrc) || /type-biz|type-child|type-rd|type-task|type-unknown/.test(wbSrc), "workboard.js must call objectTypeBadge() OR emit aliased class (.type-biz etc. all aliased in wb-priority.css)");
-console.log("PASS: workboard.js consumer uses priorityBadge/objectTypeBadge (or aliased class)");
+assert.ok(/objectTypeBadge\(/.test(wbSrc), "workboard.js must call objectTypeBadge()");
+assert.ok(!/class="type-tag/.test(wbSrc), "workboard.js must no longer emit type-tag");
+assert.ok(!/type-biz|type-child|type-rd/.test(wbSrc), "workboard.js must no longer emit board type-* dual-track classes");
+console.log("PASS: workboard.js consumer uses priorityBadge/objectTypeBadge (no type-tag dual track)");
 
 const ddSrc = fs.readFileSync(path.join(__dirname, "../../../web/static/js/po/demand-detail-render.js"), "utf8");
 assert.ok(/priorityBadge\(/.test(ddSrc), "demand-detail-render.js must call priorityBadge() for header");

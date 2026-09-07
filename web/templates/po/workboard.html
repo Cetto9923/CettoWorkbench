@@ -9,6 +9,7 @@
 {{ define "page_css" }}
 <link rel="stylesheet" href="{{ asset "/static/css/po/board.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/po/demand-detail.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/workboard-addon.css" }}">
 {{ end }}
 
 {{ define "content" }}
@@ -19,7 +20,6 @@
       <button id="demandTab" type="button" class="active" data-mode="demand">需求看板</button>
       <button id="taskTab" type="button" data-mode="task">任务看板</button>
     </div>
-    <span id="modeNote" class="mode-note">PO视角：看我负责的需求是否持续向前推进</span>
     <div id="demandStats" class="stats">
       <button type="button" class="stat blue" data-flag="clarify">待澄清 <strong>—</strong></button>
       <button type="button" class="stat blue" data-flag="schedule">待排期 <strong>—</strong></button>
@@ -35,14 +35,14 @@
       <div class="chips" id="agileChips"></div>
     </div>
     <div id="demandActions" class="actions">
-      <button type="button" class="action" onclick="location.href='/demand'">需求查询</button>
+      <button type="button" id="demandToggleAll" class="action" hidden>展开研需</button>
       <button type="button" class="action soft" onclick="location.href='/schedule'">需求排期</button>
-      <button type="button" class="action primary" onclick="showToast('提问题')">+ 提问题</button>
+      <button type="button" class="action primary" onclick="openKanbanCreateModal('issue')">+ 提问题</button>
     </div>
     <div id="taskActions" class="actions hidden">
-      <button type="button" class="action primary" onclick="showToast('建任务')">+ 建任务</button>
-      <button type="button" class="action primary" onclick="showToast('提问题')">+ 提问题</button>
-      <button type="button" class="action" onclick="showToast('调整成员')">调整成员</button>
+      <button type="button" class="action" onclick="openKanbanTeamModal()">调整成员</button>
+      <button type="button" class="action primary" onclick="openKanbanCreateModal('task')">+ 建任务</button>
+      <button type="button" class="action primary" onclick="openKanbanCreateModal('issue')">+ 提问题</button>
     </div>
   </div>
 
@@ -50,7 +50,6 @@
     <span id="ownerTitle" class="owner-title">PO / 需求负责人</span>
     <div id="demandOwners" class="people"></div>
     <div id="taskOwners" class="people hidden"></div>
-    <span id="ownerHint" class="scope-hint">仅显示当前小组中实际拥有业务需求 / 独立研发需求的人；开发人员不会混进来</span>
   </div>
 
   <section class="team-metrics" aria-label="敏捷小组关键指标">
@@ -129,10 +128,156 @@
     <a id="drawerZtLink" class="action soft" href="#" target="_blank" rel="noopener noreferrer">在禅道打开研需 ↗</a>
   </div>
 </div>
+
+<!-- 问题详情抽屉 -->
+<div id="issueDrawerBackdrop" class="issue-drawer-backdrop hidden" aria-hidden="true"></div>
+<div id="issueDrawer" class="issue-drawer hidden" role="dialog" aria-modal="true" aria-label="问题详情">
+  <div class="issue-drawer-header">
+    <div class="issue-drawer-topline">
+      <span class="drawer-task-code" id="issueDrawerId">ISSUE-</span>
+      <button type="button" class="drawer-close" id="issueDrawerClose" aria-label="关闭">✕</button>
+    </div>
+    <div class="issue-drawer-title" id="issueDrawerTitle"></div>
+  </div>
+  <div class="issue-drawer-body" id="issueDrawerBody"></div>
+  <div class="issue-drawer-footer" id="issueDrawerFooter"></div>
+</div>
+
+<!-- 统一模态遮罩与弹窗 -->
+<div class="kb-modal-overlay" id="kanbanModalOverlay"></div>
+
+<!-- 1. 提问题 Modal -->
+<div class="kb-modal" id="kanbanIssueModalDialog" role="dialog" aria-modal="true" aria-label="提问题">
+  <div class="kb-modal-hdr">
+    <h3>提问题</h3>
+    <button type="button" class="drawer-close" onclick="WorkboardModal.closeIssueModal()">✕</button>
+  </div>
+  <div class="kb-modal-body">
+    <div class="kb-audit-note">
+      <i class="fas fa-circle-info"></i>
+      <div>所属项目由服务端按当前登录账号的可写项目确定；提出人由登录态确定。</div>
+    </div>
+    <div class="kb-form-group">
+      <label>问题名称<span class="kb-req">*</span></label>
+      <input type="text" class="kb-input" id="kbIssueName" placeholder="输入问题名称或简要概述" maxlength="255">
+    </div>
+    <div class="kb-form-row">
+      <div class="kb-form-group">
+        <label>指派给<span class="kb-req">*</span></label>
+        <select class="kb-select" id="kbIssueAssignee"></select>
+      </div>
+      <div class="kb-form-group">
+        <label>提出人</label>
+        <input type="text" class="kb-input" value="程统 (003030)" disabled title="提出人由服务端登录态确定">
+      </div>
+    </div>
+    <div class="kb-form-row">
+      <div class="kb-form-group">
+        <label>优先级</label>
+        <select class="kb-select" id="kbIssuePri">
+          <option value="1">P1 - 最高</option>
+          <option value="2" selected>P2 - 较高</option>
+          <option value="3">P3 - 普通</option>
+          <option value="4">P4 - 低</option>
+        </select>
+      </div>
+      <div class="kb-form-group">
+        <label>严重程度</label>
+        <select class="kb-select" id="kbIssueSev">
+          <option value="1">1级 - 致命</option>
+          <option value="2" selected>2级 - 严重</option>
+          <option value="3">3级 - 一般</option>
+          <option value="4">4级 - 提示</option>
+        </select>
+      </div>
+    </div>
+    <div class="kb-form-group">
+      <label>问题描述</label>
+      <textarea class="kb-textarea" id="kbIssueDesc" rows="3" placeholder="详细描述问题重现步骤、影响范围或期望结果"></textarea>
+    </div>
+    <div class="kb-form-group">
+      <label>附件</label>
+      <input type="file" class="kb-input" id="kbIssueFiles" multiple style="padding-top:4px">
+    </div>
+  </div>
+  <div class="kb-modal-footer">
+    <button type="button" class="action" onclick="WorkboardModal.closeIssueModal()">取消</button>
+    <button type="button" class="action primary" onclick="WorkboardModal.submitIssueModal()">确认登记</button>
+  </div>
+</div>
+
+<!-- 2. 建任务 Modal -->
+<div class="kb-modal" id="kanbanTaskModalDialog" role="dialog" aria-modal="true" aria-label="建任务">
+  <div class="kb-modal-hdr">
+    <h3>建任务</h3>
+    <button type="button" class="drawer-close" onclick="WorkboardModal.closeTaskModal()">✕</button>
+  </div>
+  <div class="kb-modal-body">
+    <div class="kb-audit-note">
+      <i class="fas fa-circle-info"></i>
+      <div>任务将创建到当前迭代执行中；敏捷小组仅用于看板筛选，不作为创建参数。</div>
+    </div>
+    <div class="kb-form-group">
+      <label>任务标题<span class="kb-req">*</span></label>
+      <input type="text" class="kb-input" id="kbTaskName" placeholder="输入任务名称" maxlength="255">
+    </div>
+    <div class="kb-form-row">
+      <div class="kb-form-group">
+        <label>指派人<span class="kb-req">*</span></label>
+        <select class="kb-select" id="kbTaskAssignee"></select>
+      </div>
+      <div class="kb-form-group">
+        <label>任务类型</label>
+        <select class="kb-select" id="kbTaskType">
+          <option value="开发" selected>开发</option>
+          <option value="测试">测试</option>
+          <option value="设计">设计</option>
+          <option value="上线">上线</option>
+        </select>
+      </div>
+    </div>
+    <div class="kb-form-row">
+      <div class="kb-form-group">
+        <label>截止日期</label>
+        <input type="date" class="kb-input" id="kbTaskDue">
+      </div>
+      <div class="kb-form-group">
+        <label>预估工时 (小时)</label>
+        <input type="number" class="kb-input" id="kbTaskHours" value="8" min="0.5" max="99" step="0.5">
+      </div>
+    </div>
+    <div class="kb-form-group">
+      <label>任务说明</label>
+      <textarea class="kb-textarea" id="kbTaskDesc" rows="2" placeholder="填写执行任务细节或要点"></textarea>
+    </div>
+  </div>
+  <div class="kb-modal-footer">
+    <button type="button" class="action" onclick="WorkboardModal.closeTaskModal()">取消</button>
+    <button type="button" class="action primary" onclick="WorkboardModal.submitTaskModal()">确认创建</button>
+  </div>
+</div>
+
+<!-- 3. 调整敏捷小组成员 Modal -->
+<div class="kb-modal kb-modal--lg" id="kanbanTeamModalDialog" role="dialog" aria-modal="true" aria-label="调整敏捷小组成员">
+  <div class="kb-modal-hdr">
+    <h3 id="kanbanTeamModalTitle">调整小组成员 · 组织变革团队</h3>
+    <button type="button" class="drawer-close" onclick="WorkboardModal.closeTeamModal()">✕</button>
+  </div>
+  <div class="kb-modal-body" id="kbTeamModalBody"></div>
+  <div class="kb-modal-footer">
+    <button type="button" class="action" onclick="WorkboardModal.closeTeamModal()">取消</button>
+    <button type="button" class="action primary" onclick="WorkboardModal.submitTeamModal()">提交调整</button>
+  </div>
+</div>
 {{ end }}
 
 {{ define "page_js" }}
+<script src="{{ asset "/static/js/po/personal-list.js" }}"></script>
+<script src="{{ asset "/static/js/po/primary-action.js" }}"></script>
 <script src="{{ asset "/static/js/po/demand-detail-render.js" }}"></script>
 <script src="{{ asset "/static/js/po/demand-detail.js" }}"></script>
+<script src="{{ asset "/static/js/po/schedule-link.js" }}"></script>
+<script src="{{ asset "/static/js/po/workboard-issue.js" }}"></script>
+<script src="{{ asset "/static/js/po/workboard-modal.js" }}"></script>
 <script src="{{ asset "/static/js/po/workboard.js" }}"></script>
 {{ end }}

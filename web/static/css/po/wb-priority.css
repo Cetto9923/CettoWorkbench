@@ -1,15 +1,13 @@
 /* =============================================================================
    文件: web/static/css/po/wb-priority.css
-   模块: PO 公共 UI - 优先级 / 对象类型 token-driven 样式 + 旧别名兼容
-   职责: 提供 .wb-priority[data-priority] / .wb-type[data-object-kind] 等统一视觉;
-         通过 --po-pri-{1..4}-{bg,fg,bd} 消费 layout/variables.css 中的 token。
-         同义旧 class (inline-pri / pri-tag / priority / follow-pri / type-biz ...
-         等) 在本文件以 alias 形式指向新 token, 旧消费者维持渲染直到 Stage 4+ 统一迁移。
-   加载顺序: 与 layout/components/page_css 一致; token 定义在 variables.css (先于
-             本文件加载), 所以本文件直接消费即可。
+   模块: PO 公共 UI - 优先级 / 对象类型 token-driven 样式 + 必要旧别名
+   职责: 唯一真源 — .wb-priority[data-priority] / .wb-type.wb-type-{kind}
+         消费 layout/variables.css 的 --po-pri-* token。
+         禁止页面私有色板覆写本文件；JS 真源为 PersonalList.priorityBadge /
+         objectTypeBadge。类型标签禁止 ellipsis 截断。
    ============================================================================= */
 
-/* -------- 1. 公共优先级基础尺寸 (.wb-priority[data-priority]) -------- */
+/* -------- 1. 公共优先级 (.wb-priority[data-priority]) -------- */
 .wb-priority {
   display: inline-flex;
   align-items: center;
@@ -25,6 +23,10 @@
   white-space: nowrap;
   box-sizing: border-box;
   border: 1px solid transparent;
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
+  flex-shrink: 0;
 }
 
 .wb-priority[data-priority="1"] {
@@ -47,7 +49,6 @@
   color: var(--po-pri-4-fg);
   border-color: var(--po-pri-4-bd);
 }
-/* 未设置 / 空值: 中性短横, 与 token 体系一致 */
 .wb-priority[data-priority=""],
 .wb-priority[data-priority="0"],
 .wb-priority:not([data-priority]) {
@@ -56,7 +57,6 @@
   border-color: var(--color-border);
 }
 
-/* 紧凑尺寸变体 (密集表格可选) */
 .wb-priority.is-compact {
   min-width: 22px;
   height: 18px;
@@ -65,7 +65,7 @@
   border-radius: 3px;
 }
 
-/* -------- 2. 公共对象类型 (.wb-type + .wb-type-XXX) -------- */
+/* -------- 2. 公共对象类型（class 与 PersonalList.OBJECT_TYPE_LABELS 对齐） -------- */
 .wb-type {
   display: inline-flex;
   align-items: center;
@@ -78,6 +78,10 @@
   box-sizing: border-box;
   border: 1px solid transparent;
   line-height: 1;
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
+  flex-shrink: 0;
 }
 
 .wb-type-business {
@@ -85,7 +89,7 @@
   color: var(--po-pri-3-fg);
   border-color: var(--po-pri-3-bd);
 }
-.wb-type-sub {
+.wb-type-sub_demand {
   background: #f5f3ff;
   color: #7c3aed;
   border-color: #ede9fe;
@@ -95,7 +99,7 @@
   color: #0e7490;
   border-color: #a5f3fc;
 }
-.wb-type-story-indep {
+.wb-type-independent_story {
   background: #ecfeff;
   color: #0e7490;
   border-color: #a5f3fc;
@@ -104,6 +108,11 @@
   background: #f0fdf4;
   color: #15803d;
   border-color: #bbf7d0;
+}
+.wb-type-bug {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
 }
 .wb-type-issue {
   background: #fffbeb;
@@ -120,7 +129,8 @@
   color: #1d4ed8;
   border-color: #bfdbfe;
 }
-.wb-type-test {
+.wb-type-test,
+.wb-type-testtask {
   background: #f0f9ff;
   color: #0369a1;
   border-color: #bae6fd;
@@ -132,15 +142,12 @@
 }
 
 /* =============================================================================
-   3. 旧 class 名 ALIAS (Stage 4+ 之前所有渲染必须继续正确, 不准静默退色)
-   全部消费新 token, 不要再写 hex 值。
+   3. 仍在用的旧 markup 别名（仅 schedule SSR .pri-tag / 详情抽屉 .drawer-task-pri）
+   已迁走的 inline-pri / type-pill / follow-pri / type-biz / schedule-type-badge
+   不再保留，避免双轨色板。
    ============================================================================= */
 
-/* ----- 3.1 inline-pri.* / pri-tag.* (home / todos / follow / schedule) ----- */
-.inline-pri,
 .pri-tag,
-.follow-pri,
-.priority,
 .priority-tag {
   display: inline-flex;
   align-items: center;
@@ -156,45 +163,35 @@
   white-space: nowrap;
   box-sizing: border-box;
   border: 1px solid transparent;
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
+  flex-shrink: 0;
 }
 
-/* P1 红 (各文件可能用 .p1 / .P1; 全部统一) */
-.inline-pri.p1, .inline-pri.P1,
+/* 工作台 / 排期 P1–P4（formatPriority → class p1..p4） */
 .pri-tag.p1, .pri-tag.P1,
-.follow-pri.p1, .follow-pri.P1,
 .priority-tag.P1,
 .table .priority-tag.P1 {
   background: var(--po-pri-1-bg);
   color: var(--po-pri-1-fg);
   border-color: var(--po-pri-1-bd);
 }
-
-/* P2 橙 */
-.inline-pri.p2, .inline-pri.P2,
 .pri-tag.p2, .pri-tag.P2,
-.follow-pri.p2, .follow-pri.P2,
 .priority-tag.P2,
 .table .priority-tag.P2 {
   background: var(--po-pri-2-bg);
   color: var(--po-pri-2-fg);
   border-color: var(--po-pri-2-bd);
 }
-
-/* P3 蓝 */
-.inline-pri.p3, .inline-pri.P3,
 .pri-tag.p3, .pri-tag.P3,
-.follow-pri.p3, .follow-pri.P3,
 .priority-tag.P3,
 .table .priority-tag.P3 {
   background: var(--po-pri-3-bg);
   color: var(--po-pri-3-fg);
   border-color: var(--po-pri-3-bd);
 }
-
-/* P4 中性灰 */
-.inline-pri.p4, .inline-pri.P4,
 .pri-tag.p4, .pri-tag.P4,
-.follow-pri.p4, .follow-pri.P4,
 .priority-tag.P4,
 .table .priority-tag.P4 {
   background: var(--po-pri-4-bg);
@@ -202,33 +199,6 @@
   border-color: var(--po-pri-4-bd);
 }
 
-/* 兼容 schedule 旧 p0/p1/p2 与正常态 */
-.pri-tag.p0 { background: var(--po-pri-1-bg); color: var(--po-pri-1-fg); border-color: var(--po-pri-1-bd); }
-.pri-tag.p1 { background: var(--po-pri-2-bg); color: var(--po-pri-2-fg); border-color: var(--po-pri-2-bd); }
-.pri-tag.p2 { background: var(--po-pri-3-bg); color: var(--po-pri-3-fg); border-color: var(--po-pri-3-bd); }
-
-/* 兼容 normal / unknown (home 空值套 p3 已废弃, Stage 3 已迁) */
-.inline-pri.normal, .follow-pri.normal {
-  background: var(--color-surface-muted);
-  color: var(--color-text-secondary);
-  border-color: var(--color-border);
-}
-
-/* follow.css 旧 .follow-pri 容器 (无后缀) — 同样指向中性态 */
-.follow-pri:not(.p1):not(.p2):not(.p3):not(.p4):not(.P1):not(.P2):not(.P3):not(.P4):not(.normal) {
-  background: var(--color-surface-muted);
-  color: var(--color-text-secondary);
-  border-color: var(--color-border);
-}
-
-/* ----- 3.2 board.css 旧 .priority (主优先级标签, 之前固定红) ----- */
-.po-board .priority {
-  background: var(--po-pri-1-bg);
-  color: var(--po-pri-1-fg);
-  border-color: var(--po-pri-1-bd);
-}
-
-/* drawer-task-pri 旧 .p1/.p2/.p3 (缺 P4) */
 .drawer-task-pri {
   display: inline-flex;
   align-items: center;
@@ -239,6 +209,10 @@
   background: var(--color-surface-muted);
   color: var(--color-text-secondary);
   border: 1px solid var(--color-border);
+  white-space: nowrap;
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
 }
 .drawer-task-pri.p1, .drawer-task-pri.P1 {
   background: var(--po-pri-1-bg);
@@ -261,73 +235,6 @@
   border-color: var(--po-pri-4-bd);
 }
 
-/* ----- 3.3 type-biz / type-child / type-rd / type-rd-indep / type-task / type-unknown ----- */
-.po-board .type-biz {
-  background: var(--po-pri-3-bg);
-  color: var(--po-pri-3-fg);
-  border-color: var(--po-pri-3-bd);
-}
-.po-board .type-child {
-  background: #f5f3ff;
-  color: #7c3aed;
-  border-color: #ede9fe;
-}
-.po-board .type-rd,
-.po-board .type-rd-indep {
-  background: #ecfeff;
-  color: #0e7490;
-  border-color: #a5f3fc;
-}
-.po-board .type-task {
-  background: #f0fdf4;
-  color: #15803d;
-  border-color: #bbf7d0;
-}
-.po-board .type-unknown {
-  background: var(--color-surface-muted);
-  color: var(--color-text-secondary);
-  border-color: var(--color-border);
-}
-
-/* ----- 3.4 schedule 旧 schedule-type-badge--* ----- */
-.schedule-type-badge--biz {
-  background: var(--po-pri-3-bg);
-  color: var(--po-pri-3-fg);
-  border-color: var(--po-pri-3-bd);
-}
-.schedule-type-badge--sub {
-  background: #f5f3ff;
-  color: #7c3aed;
-  border-color: #ede9fe;
-}
-.schedule-type-badge--rd {
-  background: #ecfeff;
-  color: #0e7490;
-  border-color: #a5f3fc;
-}
-
-/* ----- 3.5 home.css / todos.css 旧 .type-pill ----- */
-.po-home .type-pill,
-.po-todos .type-pill {
-  display: inline-flex;
-  align-items: center;
-  height: 18px;
-  padding: 0 6px;
-  border-radius: 3px;
-  font-size: 10px;
-  font-weight: 500;
-  background: var(--po-pri-3-bg);
-  color: var(--po-pri-3-fg);
-  border: 1px solid var(--po-pri-3-bd);
-}
-.po-home .type-pill.story,
-.po-todos .type-pill.story {
-  background: #ecfeff;
-  color: #0e7490;
-  border-color: #a5f3fc;
-}
-
-/* ----- 3.6 stage-tag (schedule / home 共用, 仅几何层; 颜色由状态 token 决定) ----- */
 .stage-tag {
   display: inline-block;
   padding: 2px 8px;

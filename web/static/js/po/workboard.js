@@ -4,17 +4,14 @@
   "use strict";
 
   var mode = location.pathname.indexOf("/board/task") >= 0 ? "task" : "demand";
-  // 小组选择：优先上次记录，其次主小组，最后才全部；teamgroup=0 表示"全部"。
+  // 小组选择：单选某小组，不再提供"全部"。teamgroup=0 仅作为"未选"占位，加载后会落到第一个实际小组。
   var state = { owner: "", teamgroup: loadTeamgroup(), storyFilter: 0, pendingFocus: 0 };
   var teams = [];
   var toastTimer = null;
-  var MAX_OWNERS = 6; // 直接展示人数（不含"全部"与"更多"）
+  var MAX_OWNERS = 6; // 直接展示人数（不含"更多"折叠）
 
   var TG_KEY = "po.board.teamgroup";
-  function loadTeamgroup() {
-    var v = parseInt(localStorage.getItem(TG_KEY), 10);
-    return isNaN(v) ? 0 : v;
-  }
+  function loadTeamgroup() { var v = parseInt(localStorage.getItem(TG_KEY), 10); return isNaN(v) ? 0 : v; }
   function saveTeamgroup(id) { localStorage.setItem(TG_KEY, String(id)); }
 
   function $(id) { return document.getElementById(id); }
@@ -23,6 +20,10 @@
       .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
+  var priorityBadge = (window.PersonalList && window.PersonalList.priorityBadge) || function (r) {
+    var n = parseInt(String(r || "").replace(/^p/i, ""), 10);
+    return (isNaN(n) || n < 1 || n > 4) ? '<span class="wb-priority" data-priority="">—</span>' : '<span class="wb-priority" data-priority="' + n + '">P' + n + "</span>";
+  };
   function showToast(msg) {
     var t = $("toast");
     if (!t) { return; }
@@ -33,23 +34,18 @@
   window.showToast = showToast;
   function onErr(hostId) {
     var host = $(hostId);
-    if (host) { host.innerHTML = '<div class="demand-empty">加载失败 · <button type="button" class="action soft" data-retry="1">重试</button></div>'; }
+    if (host) host.innerHTML = '<div class="demand-empty">加载失败 · <button type="button" class="action soft" data-retry="1">重试</button></div>';
   }
   function todayStr() {
-    var d = new Date();
-    var m = String(d.getMonth() + 1).padStart(2, "0");
-    var day = String(d.getDate()).padStart(2, "0");
+    var d = new Date(), m = String(d.getMonth() + 1).padStart(2, "0"), day = String(d.getDate()).padStart(2, "0");
     return d.getFullYear() + "-" + m + "-" + day;
   }
-  /* 四类需求节点类型（前端 ViewModel）：基于真实父子关系 + 树位置判定，不依赖 ID 前缀/标题。
-     business=业务需求根；childBusiness=子业务；rd=研发需求；independentRd=独立研发需求；unknown=未知（不 fallback）。 */
-  var NODE_TYPES = {
-    business: { label: "业务需求", cls: "type-biz" },
-    childBusiness: { label: "子需求", cls: "type-child" },
-    rd: { label: "研发需求", cls: "type-rd" },
-    independentRd: { label: "独立研发需求", cls: "type-rd type-rd-indep" },
-    task: { label: "任务", cls: "type-task" },
-    unknown: { label: "未知需求类型", cls: "type-unknown" }
+  var NODE_TYPE_KIND = { business: "business", childBusiness: "sub_demand", rd: "story", independentRd: "independent_story", task: "task", unknown: "" };
+  var objectTypeBadge = (window.PersonalList && window.PersonalList.objectTypeBadge) || function (kind) {
+    var labels = { business: "业务需求", sub_demand: "子需求", story: "研发需求", independent_story: "独立研发需求", task: "任务" };
+    var k = String(kind || "").trim().toLowerCase();
+    if (!k || !labels[k]) { return '<span class="wb-type wb-type-unknown">' + (k ? esc(k) : "—") + "</span>"; }
+    return '<span class="wb-type wb-type-' + k + '">' + labels[k] + "</span>";
   };
   function nodeTypeOf(node, parentKind) {
     if (node.kind === "story") { return node.independent ? "independentRd" : "rd"; }
@@ -58,35 +54,28 @@
     return "unknown";
   }
   function typeTag(nodeType) {
-    var t = NODE_TYPES[nodeType] || NODE_TYPES.unknown;
-    if (!NODE_TYPES[nodeType]) { console.warn("PO board: 未知需求节点类型", nodeType); }
-    return '<span class="type-tag ' + t.cls + '">' + t.label + "</span>";
+    if (!NODE_TYPE_KIND.hasOwnProperty(nodeType)) { console.warn("PO board: 未知需求节点类型", nodeType); }
+    return objectTypeBadge(NODE_TYPE_KIND[nodeType] || "");
   }
-  function priTag(p) {
-    if (!p) { return ""; }
-    return '<span class="priority">' + esc(p) + "</span>";
-  }
+  function priTag(p) { return p ? priorityBadge(p) : ""; }
   function ownerBadge(name, prefix) {
-    if (!name) { return ""; }
+    if (!name) return "";
     var p = prefix ? prefix : "";
     return '<span class="owner-badge"><span class="owner-dot">' + esc(name.charAt(0)) + "</span>" + p + esc(name) + "</span>";
   }
 
   /* ---------- mode switch ---------- */
   function switchMode(next) {
-    mode = next;
-    var demand = next === "demand";
+    mode = next; var demand = next === "demand";
     [["demandTab", demand], ["taskTab", !demand], ["demandBoard", !demand], ["taskBoard", demand],
      ["demandStats", !demand], ["taskStats", demand], ["demandOwners", !demand], ["taskOwners", demand],
      ["demandActions", !demand], ["taskActions", demand]].forEach(function (p) {
       if ($(p[0])) { $(p[0]).classList.toggle(p[0].endsWith("Tab") ? "active" : "hidden", p[1]); }
     });
-    if ($("demandRoleBanner")) { $("demandRoleBanner").classList.toggle("hidden", !demand); }
-    if ($("taskRoleBanner")) { $("taskRoleBanner").classList.toggle("hidden", demand); }
+    if ($("demandRoleBanner")) $("demandRoleBanner").classList.toggle("hidden", !demand);
+    if ($("taskRoleBanner")) $("taskRoleBanner").classList.toggle("hidden", demand);
     $("taskFilterTip").classList.toggle("hidden", demand || !state.storyFilter);
     $("ownerTitle").textContent = demand ? "PO / 需求负责人" : "任务负责人";
-    $("ownerHint").textContent = demand ? "仅显示当前小组中实际拥有业务需求 / 独立研发需求的人；开发人员不会混进来" : "仅显示当前小组中实际拥有任务的人；没有任务的 PO 不会混进来";
-    $("modeNote").textContent = demand ? "PO视角：看我负责的需求是否持续向前推进" : "研发执行视角：看开发/测试具体正在做什么";
     if (demand) { loadDemand(); } else { ensureTeamgroup(); loadTasks(); }
   }
   $("demandTab").addEventListener("click", function () { switchMode("demand"); });
@@ -94,13 +83,13 @@
 
   /* ---------- group / owners ---------- */
   function ensureTeamgroup() {
-    // 任务看板必须有真实小组；用户显式选"全部"时不强制改回
-    if (state.teamgroup === 0 && teams.length && !state.userPickedAll) { state.teamgroup = teams[0].id; }
+    // 看板必须有真实小组；首次进入无记录时落到第一个。
+    if (state.teamgroup === 0 && teams.length) { state.teamgroup = teams[0].id; }
   }
   function renderTeamChips() {
     var host = $("agileChips"); host.innerHTML = "";
     if (!teams.length) { return; }
-    if (state.teamgroup === 0 && !state.userPickedAll) {
+    if (state.teamgroup === 0) {
       var idx = teams.findIndex(function (t) { return t.id === loadTeamgroup(); });
       state.teamgroup = idx < 0 ? teams[0].id : teams[idx].id;
     }
@@ -111,17 +100,15 @@
       b.addEventListener("click", function () { onGroupPick(id, name); });
       host.appendChild(b);
     };
-    addBtn(0, "全部", state.teamgroup === 0);
     teams.forEach(function (t) { addBtn(t.id, t.name, state.teamgroup === t.id); });
   }
   function onGroupPick(id, name) {
     state.teamgroup = Number(id);
-    state.userPickedAll = state.teamgroup === 0;
     saveTeamgroup(id);
     document.querySelectorAll("#agileChips .chip").forEach(function (x) { x.classList.remove("active"); });
     var sel = document.querySelector('#agileChips .chip[data-tg="' + id + '"]');
     if (sel) { sel.classList.add("active"); }
-    $("metricsGroupName").textContent = id === 0 ? "全部" : name;
+    $("metricsGroupName").textContent = name;
     loadMetrics();
     if (mode === "task") { loadTasks(); } else { loadDemand(); }
   }
@@ -135,8 +122,13 @@
       b.type = "button";
       b.className = "person" + ((it.value === "" && state.owner === "") || state.owner === it.value ? " active" : "");
       b.dataset.value = it.value;
-      var count = '<span class="count">' + it.count + "</span>";
-      b.innerHTML = it.display ? '<span class="mini-avatar">' + esc(it.display.charAt(0)) + "</span>" + esc(it.display) + count : "全部" + count;
+      // "全部" chip 不带 count 角标，避免被读成"41 个负责人"。
+      if (it.display) {
+        var count = '<span class="count">' + it.count + "</span>";
+        b.innerHTML = '<span class="mini-avatar">' + esc(it.display.charAt(0)) + "</span>" + esc(it.display) + count;
+      } else {
+        b.textContent = "全部";
+      }
       b.addEventListener("click", function () { selectOwner(host, b); onSelect(it.value); });
       return b;
     };
@@ -175,11 +167,11 @@
   }
   // 研需阶段卡：查看任务仅 taskTotal>0；无任务时按阶段给"建任务/去排期"真实动作。
   function storyReason(it) {
-    if (it.taskTotal > 0) { return "任务 " + it.taskDone + "/" + it.taskTotal + (it.currentOwner ? " · " + it.currentOwner + "负责" : ""); }
-    if (/研发|提测/.test(it.stage)) { return "尚未创建研发任务"; }
-    if (/排期/.test(it.stage)) { return "未绑定版本窗口"; }
-    if (/受理|澄清/.test(it.stage)) { return "科技侧需求梳理尚未完成"; }
-    if (/联调|验收/.test(it.stage)) { return "测试完成 · 等待业务验收"; }
+    if (it.taskTotal > 0) return "任务 " + it.taskDone + "/" + it.taskTotal + (it.currentOwner ? " · " + it.currentOwner + "负责" : "");
+    if (/研发|提测/.test(it.stage)) return "尚未创建研发任务";
+    if (/排期/.test(it.stage)) return "未绑定版本窗口";
+    if (/受理|澄清/.test(it.stage)) return "科技侧需求梳理尚未完成";
+    if (/联调|验收/.test(it.stage)) return "测试完成 · 等待业务验收";
     return /交付|评价/.test(it.stage) ? "待交付 · 等待发起" : "尚未进入执行";
   }
   function storyAction(it) {
@@ -188,7 +180,8 @@
     for (var k in m) { if (it.stage && it.stage.indexOf(k) >= 0) { return { label: m[k], open: false }; } }
     return { label: "查看任务", open: true };
   }
-  function renderStageCards(object) {
+  function renderStageCards(object, nodeType) {
+    if (mode === "demand" && (nodeType === "rd" || nodeType === "childBusiness")) { var e = '<div class="stage-cell"></div>'; return e + e + e + e + e; }
     var html = "", col = stageColOf(object.stage), blocked = isBlocked(object), overdue = isOverdue(object);
     for (var c = 1; c <= 5; c++) {
       if (c !== col) { html += '<div class="stage-cell"></div>'; continue; }
@@ -197,9 +190,9 @@
         var pill = '<span class="stage-pill' + (object.status === "done" ? " green" : "") + '">' + esc(object.stage) + "</span>";
         if (object.progress > 0 && object.status !== "done") { pill = '<span class="stage-pill">开发中 ' + object.progress + '%</span>'; }
         var act = storyAction(object);
-        var actionBtn = act.open
-          ? '<button type="button" class="stage-action" data-open-tasks="' + object.id + '" data-rd-label="' + esc(object.displayId + " " + object.title) + '" data-story-url="' + esc(object.storyUrl || "") + '">' + esc(act.label) + "</button>"
-          : '<button type="button" class="stage-action" data-toast="' + esc(act.label + "：" + object.displayId) + '">' + esc(act.label) + "</button>";
+        var actionBtn = /排期/.test(object.stage || "")
+          ? window.ScheduleLink.scheduleStoryAction(object, act.label)
+          : (act.open ? window.ScheduleLink.openTasksButton(object, act.label) : window.ScheduleLink.toastButton(act.label, object.displayId));
         var mini = storyReason(object);
         var bar = (object.progress > 0 && object.status !== "done") ? '<div class="progress"><span style="width:' + object.progress + '%"></span></div>' : "";
         html += '<div class="stage-cell"><div class="' + cls + '"><div class="stage-top">' + pill + actionBtn + "</div>" +
@@ -213,7 +206,8 @@
         var reason = object.kind === "sub_demand" ? "待拆研发需求" : (/排期/.test(object.stage) ? "未绑定版本窗口" : (/受理|澄清/.test(object.stage) ? "科技侧需求梳理尚未完成" : ""));
         if (isBlocked(object)) { reason = "审批未通过 · 暂不可推进"; }
         var actLabel = object.actionLabel || "查看";
-        var btn = '<button type="button" class="stage-action" data-toast="' + esc(actLabel + "：" + object.displayId) + '">' + esc(actLabel) + "</button>";
+        var isSched = /排期/.test(object.stage || "") && (object.kind === "demand" || object.kind === "sub_demand");
+        var btn = isSched ? window.ScheduleLink.scheduleDemandAction(object, actLabel) : window.ScheduleLink.toastButton(actLabel, object.displayId);
         var m = reason ? '<div class="stage-mini">' + esc(reason) + "</div>" : "";
         html += '<div class="stage-cell"><div class="' + cls + '"><div class="stage-top"><span class="stage-name">' + nm + "</span>" + btn + "</div>" + m + "</div></div>";
       }
@@ -223,25 +217,28 @@
   function nodeMeta(object, nodeType) {
     var bits = [];
     if (nodeType === "rd" || nodeType === "independentRd") {
-      if (object.productName) { bits.push("产品：" + esc(object.productName)); }
-      if (object.currentOwner) { bits.push(esc(object.currentOwner) + " 负责"); }
+      if (object.productName) bits.push("产品：" + esc(object.productName));
+      if (object.currentOwner) bits.push(esc(object.currentOwner) + " 负责");
     } else if (nodeType === "childBusiness") {
       bits.push("交付单元");
-      if (object.owner) { bits.push(ownerBadge(object.owner)); }
-    } else {
-      if (object.owner) { bits.push(ownerBadge(object.owner)); }
+      if (object.owner) bits.push(ownerBadge(object.owner));
+    } else if (object.owner) {
+      bits.push(ownerBadge(object.owner));
     }
-    if (object.deadline) { bits.push("目标上线 " + esc(object.deadline)); }
+    if (object.deadline) bits.push("目标上线 " + esc(object.deadline));
     return bits.length ? '<span>' + bits.join(" · ") + "</span>" : "";
   }
-  // 子节点行（子需求 / 研发需求）：第一行 tag+ID+标题+P，第二行 meta。
+  // 子节点行（子需求 / 研发需求）：第一行 tag+ID+P+标题，第二行 meta。
   function renderDemandRow(object, depth, isLast, groupOwner) {
     var nodeType = nodeTypeOf(object, depth > 0 ? "childBusiness" : null);
     var branch = depth === 0 ? "" : (isLast ? "└" : "├");
-    var isIndy = !!object.independent;
-    var rowOwner = isIndy ? object.owner : (groupOwner || object.owner);
+    var isIndy = !!object.independent, rowOwner = isIndy ? object.owner : (groupOwner || object.owner);
     var ind = Math.min(depth, 2);
     var rowCls = "demand-row" + (isOverdue(object) ? " has-overdue" : "") + (isBlocked(object) ? " has-blocked" : "");
+    var isDemand = object.kind === "demand" || object.kind === "sub_demand";
+    var titleTag = isDemand
+      ? '<button type="button" class="node-title is-link" data-open-demand="' + esc(object.id) + '" title="' + esc(object.title) + '">' + esc(object.title) + "</button>"
+      : '<span class="node-title" title="' + esc(object.title) + '">' + esc(object.title) + "</span>";
     return (
       '<div class="' + rowCls + '" data-owner="' + esc(rowOwner || "") + '" data-stage="' + esc(object.stage || "") +
       '" data-status="' + esc(object.status || "") + '" data-deadline="' + esc(object.deadline || "") +
@@ -250,38 +247,39 @@
       (depth > 0 ? '<span class="branch">' + branch + "</span>" : "") +
       typeTag(nodeType) +
       '<div class="node-main"><div class="node-title-line"><span class="code">' + esc(object.displayId) + "</span>" +
-      '<span class="node-title" title="' + esc(object.title) + '">' + esc(object.title) + "</span>" + priTag(object.priority) + "</div>" +
+      priTag(object.priority) + titleTag + "</div>" +
       '<div class="node-meta">' + nodeMeta(object, nodeType) + "</div></div>" +
-      "</div>" + renderStageCards(object) + "</div>"
+      "</div>" + renderStageCards(object, nodeType) + "</div>"
     );
   }
   // 单独一行：无子需求/无子级的事项，直接单行展示（无折叠按钮、无缩进符号、左侧标签正确）
   function renderStandaloneRow(root) {
     var nodeType = nodeTypeOf(root, null), isIndy = !!root.independent;
     var rowCls = "demand-row is-standalone" + (isOverdue(root) ? " has-overdue" : "") + (isBlocked(root) ? " has-blocked" : "");
-    var flags = []; if (isOverdue(root)) { flags.push("overdue"); } if (isBlocked(root)) { flags.push("blocked"); }
-    var metaBits = []; if (root.owner) { metaBits.push(ownerBadge(root.owner, "PO ")); }
+    var flags = []; if (isOverdue(root)) flags.push("overdue"); if (isBlocked(root)) flags.push("blocked");
+    var metaBits = []; if (root.owner) metaBits.push(ownerBadge(root.owner, "PO "));
     metaBits.push(isIndy ? "<span>尚未纳入执行</span>" : "<span>研发需求 0</span>");
-    if (root.deadline) { metaBits.push('<span class="biz-date">目标上线 ' + esc(root.deadline) + "</span>"); }
+    if (root.deadline) metaBits.push('<span class="biz-date">目标上线 ' + esc(root.deadline) + "</span>");
+    var titleTag = '<button type="button" class="node-title is-link" data-open-demand="' + esc(root.id) + '" title="' + esc(root.title) + '">' + esc(root.title) + "</button>";
     return '<div class="' + rowCls + '" data-owner="' + esc(root.owner || "") + '" data-flags="' + flags.join(" ") +
       '" data-stage="' + esc(root.stage || "") + '" data-status="' + esc(root.status || "") +
       '" data-deadline="' + esc(root.deadline || "") + '" data-rd="' + (isIndy ? esc(root.displayId) : "") + '" id="bg' + root.id + '">' +
       '<div class="tree-cell ind0">' + typeTag(nodeType) +
       '<div class="node-main"><div class="node-title-line"><span class="code">' + esc(root.displayId) + "</span>" +
-      '<span class="node-title" title="' + esc(root.title) + '">' + esc(root.title) + "</span>" + priTag(root.priority) + "</div>" +
-      '<div class="node-meta">' + metaBits.join(" · ") + "</div></div></div>" + renderStageCards(root) + "</div>";
+      priTag(root.priority) + titleTag + "</div>" +
+      '<div class="node-meta">' + metaBits.join(" · ") + "</div></div></div>" + renderStageCards(root, nodeType) + "</div>";
   }
   function collectStories(root) {
     var s = [];
     (root.children || []).forEach(function (c) {
-      if (c.kind === "story") { s.push(c); }
-      (c.children || []).forEach(function (gc) { if (gc.kind === "story") { s.push(gc); } });
+      if (c.kind === "story") s.push(c);
+      (c.children || []).forEach(function (gc) { if (gc.kind === "story") s.push(gc); });
     });
     return s;
   }
   function deriveAggStage(root, stories) {
-    if (!stories.length) { return stageColOf(root.stage) || 1; }
-    var max = 1; stories.forEach(function (s) { var c = stageColOf(s.stage); if (c > max) { max = c; } });
+    if (!stories.length) return stageColOf(root.stage) || 1;
+    var max = 1; stories.forEach(function (s) { var c = stageColOf(s.stage); if (c > max) max = c; });
     return stories.every(function (s) { return s.status === "done" || /交付|评价/.test(s.stage); }) ? 5 : max;
   }
   function renderAggregatedCard(root, stories) {
@@ -315,7 +313,7 @@
     return '<div class="biz-collapsed-row" data-toggle-group="bg' + root.id + '">' +
       '<div class="tree-cell ind0"><button type="button" class="toggle">▶</button>' + typeTag(nodeType) +
       '<div class="node-main"><div class="node-title-line"><span class="code">' + esc(root.displayId) + '</span>' +
-      '<span class="node-title" title="' + esc(root.title) + '">' + esc(root.title) + '</span>' + priTag(root.priority) + '</div>' +
+      priTag(root.priority) + '<span class="node-title" title="' + esc(root.title) + '">' + esc(root.title) + '</span></div>' +
       '<div class="node-meta">' + metaBits.join(" · ") + '</div></div></div>' + renderAggregatedCard(root, stories) + '</div>';
   }
   // 需求树矩阵渲染（对齐原型 V1.3）
@@ -340,14 +338,12 @@
 
       var summaries = [];
       if (nodeType === "business") {
-        if (root.subDemandCount > 0) { summaries.push(root.subDemandCount + " 子需求"); }
-        if (root.storyCount > 0) { summaries.push(root.storyCount + " 研发需求"); }
-      } else {
-        summaries.push("无业务需求来源");
-      }
-      if (root.stage && root.stage.indexOf("排期") >= 0) { summaries.push("待排期"); }
-      if (isBlocked(root)) { summaries.push("阻塞"); }
-      if (isOverdue(root)) { summaries.push("超期"); }
+        if (root.subDemandCount > 0) summaries.push(root.subDemandCount + " 子需求");
+        if (root.storyCount > 0) summaries.push(root.storyCount + " 研发需求");
+      } else { summaries.push("无业务需求来源"); }
+      if (root.stage && root.stage.indexOf("排期") >= 0) summaries.push("待排期");
+      if (isBlocked(root)) summaries.push("阻塞");
+      if (isOverdue(root)) summaries.push("超期");
 
       var summaryHtml = summaries.map(function (s) {
         var cls = "summary" + (/阻塞|排期/.test(s) ? " warn" : (/超期/.test(s) ? " danger" : ""));
@@ -360,28 +356,17 @@
 
       var headHtml = '<div class="biz-head"><div class="biz-head-main" data-toggle-group="bg' + root.id + '">' +
         '<button type="button" class="toggle">▼</button>' + typeTag(nodeType) + '<span class="code">' + esc(root.displayId) + '</span>' +
-        '<span class="biz-title" title="' + esc(root.title) + '">' + esc(root.title) + '</span>' + priTag(root.priority) +
+        priTag(root.priority) + '<span class="biz-title" title="' + esc(root.title) + '">' + esc(root.title) + '</span>' +
         ownerDot + summaryHtml + dateHtml + '</div></div>' +
         renderCollapsedRow(root, nodeType, stories);
-      html += '<section class="biz-group" data-owner="' + esc(root.owner || "") + '" data-flags="' + flags.join(" ") + '" id="bg' + root.id + '">' + headHtml + '<div class="group-body">';
+      html += '<section class="biz-group is-collapsed" data-owner="' + esc(root.owner || "") + '" data-flags="' + flags.join(" ") + '" id="bg' + root.id + '">' + headHtml + '<div class="group-body">';
       children.forEach(function (child, ci) {
         var isLastChild = ci === children.length - 1;
-        if (child.kind === "sub_demand") {
-          // Layer 2: 子需求
-          var grandChildren = child.children || [];
-          var hasGrand = grandChildren.length > 0;
-          html += renderDemandRow(child, 1, isLastChild && !hasGrand, root.owner);
-          // Layer 3: 研发需求（挂在子需求下）
-          if (hasGrand) {
-            grandChildren.forEach(function (story, si) {
-              var isLastStory = isLastChild && (si === grandChildren.length - 1);
-              html += renderDemandRow(story, 2, isLastStory, root.owner);
-            });
-          }
-        } else {
-          // 根需求直接关联的研发需求
-          html += renderDemandRow(child, 1, isLastChild, root.owner);
-        }
+        // V2 收敛：仅独立研发需求（independentRd）作为子行展开；
+        // 非独立研需、子需求作为父业务需求聚合卡片的统计来源，不渲染子行。
+        if (child.kind === "sub_demand") { continue; }
+        if (child.kind === "story" && !child.independent) { continue; }
+        html += renderDemandRow(child, 1, isLastChild, root.owner);
       });
       html += "</div></section>";
     });
@@ -393,9 +378,33 @@
         var group = $(h.dataset.toggleGroup);
         if (!group) { return; }
         group.classList.toggle("is-collapsed");
+        refreshDemandToggleAll();
       });
     });
+    var allBtn = $("demandToggleAll");
+    if (allBtn) {
+      allBtn.onclick = function () {
+        var groups = host.querySelectorAll(".biz-group");
+        if (!groups.length) { return; }
+        var anyCollapsed = host.querySelectorAll(".biz-group.is-collapsed").length > 0;
+        groups.forEach(function (g) {
+          if (anyCollapsed) { g.classList.remove("is-collapsed"); }
+          else { g.classList.add("is-collapsed"); }
+        });
+        refreshDemandToggleAll();
+      };
+    }
+    refreshDemandToggleAll();
     applyDemandFilters();
+  }
+  function refreshDemandToggleAll() {
+    var btn = $("demandToggleAll");
+    if (!btn) { return; }
+    var groups = document.querySelectorAll("#demandGroups .biz-group");
+    if (!groups.length) { btn.hidden = true; return; }
+    btn.hidden = false;
+    var anyCollapsed = document.querySelectorAll("#demandGroups .biz-group.is-collapsed").length > 0;
+    btn.textContent = anyCollapsed ? "展开研需" : "折叠研需";
   }
   var activeFlag = "";
   function toggleFlag(flag) {
@@ -465,9 +474,6 @@
 
   /* ---------- metrics ---------- */
   function loadMetrics() {
-    if (state.teamgroup === 0) {
-      $("metricsGroupName").textContent = "全部"; $("metricsGrid").innerHTML = '<div class="metric-empty">请选择具体敏捷小组查看效能指标</div>'; return;
-    }
     $("metricsGrid").innerHTML = '<div class="metric-empty">加载中…</div>';
     fetch("/board/group/metrics?teamgroupId=" + state.teamgroup, { method: "GET" })
       .then(function (r) { return r.json(); })
@@ -520,13 +526,18 @@
     return Object.keys(owners).map(function (acc) { return { value: acc, display: acc, count: owners[acc] }; }).sort(function (a, b) { return b.count - a.count; });
   }
   function renderDemandOwners(tree) {
-    var opts = [{ value: "", display: "", count: (tree || []).length }];
+    // 首位的"全部"chip 不再带 count 角标，避免被读成"41 个负责人"。
+    // 总需求数已经在需求树/分页区有体现，这里只要"清空负责人筛选"的能力。
+    var opts = [{ value: "", display: "", count: 0 }];
     opts = opts.concat(seqOwners(tree));
     state.owner = "";
     renderOwnerChips("demandOwners", opts, applyDemandFilters);
   }
   function focusStoryRow(storyId) {
-    var row = document.querySelector('.demand-row[data-rd="RD-' + storyId + '"]');
+    // 研需 displayId 为纯数字；兼容历史 RD- 前缀与 data-rd 直接存数字两种写法。
+    var sid = String(storyId || "").replace(/^RD-/i, "");
+    var row = document.querySelector('.demand-row[data-rd="' + sid + '"]') ||
+      document.querySelector('.demand-row[data-rd="RD-' + sid + '"]');
     if (!row) { return; }
     var grp = row.closest(".biz-group");
     if (grp) { grp.classList.remove("is-collapsed"); }
@@ -548,8 +559,8 @@
         if (!payload || payload.success !== true) { throw new Error("payload"); }
         if (payload.teamgroups && payload.teamgroups.length) { teams = payload.teamgroups; renderTeamChips(); }
         if (payload.owners) {
-          var total = payload.owners.reduce(function (s, o) { return s + o.count; }, 0);
-          var opts = [{ value: "", display: "", count: total }];
+          // 与需求看板一致：首位"全部" chip 不带 count 角标，避免被读成"41 个负责人"。
+          var opts = [{ value: "", display: "", count: 0 }];
           payload.owners.forEach(function (o) { opts.push({ value: o.account, display: o.display, count: o.count }); });
           renderOwnerChips("taskOwners", opts, function () { loadTasks(); });
         }
@@ -570,7 +581,7 @@
   function taskCard(task) {
     var cls = "task-card" + (task.blocked ? " blocked" : "") + (task.overdue && task.status !== "done" ? " overdue" : "") + (task.status === "done" ? " done" : "");
     var due = (task.overdue && task.status !== "done") ? '<span class="task-due over">已超期</span>' : (task.deadline ? "截止 " + esc(task.deadline) : "");
-    var storyLink = task.storyId ? '<span class="task-link" data-back-rd="' + task.storyId + '" title="返回需求看板并定位研需">所属研需 ' + esc(task.storyTitle || ("RD-" + task.storyId)) + "</span>" : "";
+    var storyLink = task.storyId ? '<span class="task-link" data-back-rd="' + task.storyId + '" title="返回需求看板并定位研需">所属研需 ' + esc(task.storyTitle || String(task.storyId)) + "</span>" : "";
     return '<div class="' + cls + '" data-owner="' + esc(task.owner || "") + '">' +
       '<div class="task-head">' + typeTag("task") + '<span class="code">' + esc(task.displayId || task.id) + '</span><span class="task-title" title="' + esc(task.title) + '">' + esc(task.title) + "</span></div>" +
       '<div class="task-meta">' + storyLink + (task.type ? "<span>" + esc(task.type) + "</span>" : "") + (task.blocked ? '<span style="color:var(--orange);font-weight:700">阻塞</span>' : "") + "</div>" +
@@ -596,7 +607,7 @@
     drawerStoryId = storyId;
     var drawer = $("taskDrawer"), backdrop = $("taskDrawerBackdrop");
     $("drawerTitle").textContent = label;
-    $("drawerTagGroup").innerHTML = '<span class="type-tag type-rd">研发需求</span>';
+    $("drawerTagGroup").innerHTML = objectTypeBadge("story");
     $("drawerContext").innerHTML = "";
     $("drawerSummary").innerHTML = '<div class="drawer-stat"><div class="drawer-stat-label">加载中…</div><div class="drawer-stat-val" style="color:var(--t3)">—</div></div>';
     $("drawerTaskList").innerHTML = '<div class="drawer-loading">正在加载任务…</div>';
@@ -671,10 +682,10 @@
     setTimeout(function () { drawer.classList.add("hidden"); }, 260);
     drawerStoryId = 0;
   }
-  $("drawerClose").addEventListener("click", closeTaskDrawer);
-  $("drawerCloseBtn").addEventListener("click", closeTaskDrawer);
-  $("taskDrawerBackdrop").addEventListener("click", closeTaskDrawer);
-  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && drawerStoryId) { closeTaskDrawer(); } });
+  ["drawerClose", "drawerCloseBtn", "taskDrawerBackdrop"].forEach(function (id) {
+    if ($(id)) $(id).addEventListener("click", closeTaskDrawer);
+  });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && drawerStoryId) closeTaskDrawer(); });
 
   document.addEventListener("click", function (e) {
     var retry = e.target.closest("[data-retry]"); if (retry) { mode === "demand" ? loadDemand() : loadTasks(); return; }
@@ -684,45 +695,18 @@
       var sid = Number(open.dataset.openTasks), lbl = open.dataset.rdLabel || "研需", storyUrl = open.dataset.storyUrl || "";
       openTaskDrawer(sid, lbl, storyUrl); return;
     }
+    var demBtn = e.target.closest("[data-open-demand]");
+    if (demBtn && window.DemandDetail && typeof window.DemandDetail.open === "function") {
+      e.stopPropagation(); window.DemandDetail.open(demBtn.dataset.openDemand); return;
+    }
     var toastBtn = e.target.closest("[data-toast]"); if (toastBtn) { showToast(toastBtn.dataset.toast); return; }
   });
 
-
-  /* ---------- issue panel ---------- */
+  /* ---------- issue panel & init ---------- */
   function loadIssues() {
-    fetch("/board/issues", { method: "GET" })
-      .then(function (r) { if (!r.ok) { throw new Error("http"); } return r.json(); })
-      .then(function (p) { if (!p || p.success !== true) { throw new Error("p"); } renderIssues(p); })
-      .catch(function () { $("issueList").innerHTML = '<div class="demand-empty">加载失败</div>'; });
+    if (window.WorkboardIssue && typeof window.WorkboardIssue.loadIssues === "function") {
+      window.WorkboardIssue.loadIssues();
+    }
   }
-  var issueTabFilter = "open";
-  function renderIssues(payload) {
-    var items = payload.items || [], open = (payload.open || 0), closed = (payload.closed || 0);
-    $("issueCount").textContent = items.length || open + closed;
-    var tabs = $("issueTabs"); tabs.innerHTML = "";
-    var tabDefs = [{ key: "open", label: "未解决 " + open }];
-    if (closed > 0) { tabDefs.push({ key: "closed", label: "已关闭 " + closed }); }
-    tabDefs.forEach(function (td) {
-      var b = document.createElement("button"); b.type = "button"; b.className = "issue-tab" + (issueTabFilter === td.key ? " active" : "");
-      b.textContent = td.label; b.dataset.key = td.key;
-      b.addEventListener("click", function () {
-        issueTabFilter = td.key; tabs.querySelectorAll(".issue-tab").forEach(function (x) { x.classList.remove("active"); });
-        b.classList.add("active"); renderIssueCards(items, td.key);
-      });
-      tabs.appendChild(b);
-    });
-    renderIssueCards(items, issueTabFilter);
-  }
-  function renderIssueCards(items, filter) {
-    var list = $("issueList"), matched = items.filter(function (it) { return (it.status === "closed" ? "closed" : "open") === filter; });
-    if (!matched.length) { list.innerHTML = '<div class="demand-empty">暂无问题</div>'; return; }
-    list.innerHTML = matched.map(function (it) {
-      var isCls = it.status === "closed";
-      return '<div class="issue-card"><div class="issue-id">ISSUE-' + it.id + '</div><div class="issue-title" title="' + esc(it.title) + '">' + esc(it.title) +
-        '</div><div class="issue-meta"><span>' + esc(it.createdBy || "") + (it.priority ? " · P" + esc(it.priority) : "") + '</span><span class="' + (isCls ? "" : "issue-state") + '">' + (isCls ? "已关闭" : "未处理") + "</span></div></div>";
-    }).join("");
-  }
-
-  /* ---------- init ---------- */
   loadIssues(); switchMode(mode);
 })();
