@@ -231,8 +231,9 @@ func (r *Repo) fetchObjectContexts(ctx context.Context, rows []doneActionDBRow) 
 
 // CountDoneFacetCounts 按 11 种操作对象类型聚合已办数量。
 func (r *Repo) CountDoneFacetCounts(ctx context.Context, account string) []DoneFacet {
-	order := []string{"demand", "story", "task", "bug", "risk", "issue", "feedback", "release", "build", "todo"}
+	order := []string{"approval", "demand", "story", "task", "bug", "risk", "issue", "feedback", "release", "build", "todo"}
 	labels := map[string]string{
+		"approval": "审批",
 		"demand":   "业务需求",
 		"story":    "研发需求",
 		"task":     "任务",
@@ -262,6 +263,13 @@ func (r *Repo) CountDoneFacetCounts(ctx context.Context, account string) []DoneF
 		for _, row := range rows {
 			counts[row.ObjectType] = row.Cnt
 		}
+		var approvalCount int64
+		_ = r.db.WithContext(ctx).Table("zt_action AS a").
+			Where("a.actor = ?", account).
+			Where(scopeSQL, scopeArgs...).
+			Where(buildApprovalDoneScopeSQL()).
+			Count(&approvalCount).Error
+		counts["approval"] = approvalCount
 	}
 
 	facets := make([]DoneFacet, 0, len(order))

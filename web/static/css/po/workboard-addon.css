@@ -47,6 +47,17 @@
 .issue-detail-field .k { font-size: 10px; color: var(--t3); }
 .issue-detail-field .v { font-size: 12px; color: var(--t1); font-weight: 600; }
 .issue-detail-desc { font-size: 12px; line-height: 1.6; color: var(--t1); white-space: pre-wrap; word-break: break-word; }
+.issue-action-list { list-style: none; margin: 0; padding: 0; }
+.issue-action-row { position: relative; display: grid; grid-template-columns: 126px minmax(0, 1fr); gap: 10px; padding: 0 0 12px; }
+.issue-action-row:not(:last-child)::before { content: ""; position: absolute; top: 18px; bottom: -2px; left: 128px; border-left: 1px solid var(--color-border, var(--border)); }
+.issue-action-time { color: var(--t3); font-size: 10px; line-height: 18px; text-align: right; }
+.issue-action-main { position: relative; min-width: 0; font-size: 12px; color: var(--t1); line-height: 18px; }
+.issue-action-main::before { content: ""; position: absolute; top: 5px; left: -15px; width: 7px; height: 7px; border-radius: 50%; background: var(--navy); border: 2px solid var(--color-surface); }
+.issue-action-main strong { margin-right: 8px; }
+.issue-action-main span, .issue-action-main p { color: var(--t3); font-size: 11px; font-weight: 400; }
+.issue-action-main p { margin: 2px 0 0; white-space: pre-wrap; word-break: break-word; }
+.issue-action-empty { color: var(--t3); font-size: 11px; line-height: 1.5; }
+.issue-action-more { margin-top: 2px; border: 0; background: transparent; color: var(--navy); cursor: pointer; font: inherit; font-size: 11px; padding: 0; }
 .issue-drawer-footer { padding: 12px 18px; border-top: 1px solid var(--border); background: #fff; display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-shrink: 0; }
 
 /* ── 通用模态弹窗（提问题 / 建任务 / 团队调整） ── */

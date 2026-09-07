@@ -263,3 +263,21 @@ func TestDemandDetailHandler_401ForNilActor(t *testing.T) {
 		t.Fatalf("expected HTTP 401 for nil actor, got %d, body: %s", w.Code, w.Body.String())
 	}
 }
+
+func TestDemandDetailView_RedirectsToHomeDrawer(t *testing.T) {
+	handler, _ := setupDemandDetailHandler(t)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	req, _ := http.NewRequest(http.MethodGet, "/demands/US63319", nil)
+	c.Request = req
+	c.Params = gin.Params{gin.Param{Key: "id", Value: "US63319"}}
+
+	handler.DemandDetailView(c)
+
+	if w.Code != http.StatusFound {
+		t.Fatalf("expected HTTP 302, got %d", w.Code)
+	}
+	if got := w.Header().Get("Location"); got != "/home?openDemand=US63319" {
+		t.Errorf("redirect = %q, want home drawer URL", got)
+	}
+}

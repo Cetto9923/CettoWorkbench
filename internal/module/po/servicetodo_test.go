@@ -53,7 +53,7 @@ func TestSortTodoItemsUsesPriorityDeadlineAndID(t *testing.T) {
 func TestFilterTodoKeywordIncludesOwner(t *testing.T) {
 	items := []TodoItem{
 		{DisplayID: "US1", Title: "第一条", Owner: "王慧贤"},
-		{DisplayID: "TASK-2", Title: "第二条", Owner: "薛方舟"},
+		{DisplayID: "2", Title: "第二条", Owner: "薛方舟"},
 	}
 	got := filterTodoKeyword(items, "王慧贤")
 	if len(got) != 1 || got[0].DisplayID != "US1" {

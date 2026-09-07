@@ -10,6 +10,7 @@
   var currentData = null;
   var currentTab = "overview";
   var currentDemandId = null;
+  var requestSeq = 0;
 
   function $(id) {
     return document.getElementById(id);
@@ -48,7 +49,7 @@
   function renderContent() {
     if (!currentData) return;
     var R = window.DemandDetailRender;
-    if (!R) return;
+    if (!R) throw new Error("详情组件未加载，请刷新页面重试");
 
     // Header
     var headEl = $("ddHead");
@@ -106,19 +107,25 @@
   }
 
   function open(demandId) {
-    if (!demandId) return;
+    var cleanId = String(demandId || "").replace(/^US/i, "");
+    if (!/^\d+$/.test(cleanId) || Number(cleanId) <= 0) return;
+    var seq = ++requestSeq;
     currentDemandId = demandId;
     currentTab = "overview";
+    currentData = null;
 
     var drawer = getDrawer();
     drawer.classList.add("active");
+    $("ddHead").innerHTML = '<span>需求详情</span><button type="button" class="ui-close-btn" aria-label="关闭" onclick="DemandDetail.close()">×</button>';
+    $("ddRelationNav").innerHTML = "";
+    drawer.querySelectorAll(".dd-tab").forEach(function (tab) { tab.classList.toggle("active", tab.getAttribute("data-tab") === "overview"); });
+    ["ddTabCountReq", "ddTabCountExec"].forEach(function (id) { $(id).textContent = ""; $(id).hidden = true; });
 
     var bodyEl = $("ddBody");
     if (bodyEl) {
       bodyEl.innerHTML = '<div style="text-align:center;padding:60px 0;color:#8a99ad;font-size:13px;">正在加载需求详情...</div>';
     }
 
-    var cleanId = String(demandId).replace(/^US/i, "");
     var fetchFn = (typeof window !== "undefined" && window.appFetch) ? window.appFetch : fetch;
     fetchFn("/demands/" + cleanId + "/detail", {
       method: "GET",
@@ -141,6 +148,7 @@
         return res.json();
       })
       .then(function (data) {
+        if (seq !== requestSeq) return;
         if (!data || !data.success) {
           throw new Error((data && (data.message || data.error)) || "需求详情加载异常");
         }
@@ -148,21 +156,25 @@
         renderContent();
       })
       .catch(function (err) {
+        if (seq !== requestSeq) return;
         if (bodyEl) {
           var actions = err && err.isAuth
             ? '<a class="dd-btn" href="/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search) + '">去登录</a>'
-            : '<button class="dd-btn" onclick="DemandDetail.open(' + demandId + ')">点击重试</button>';
+            : '<button class="dd-btn" onclick="DemandDetail.open(' + cleanId + ')">点击重试</button>';
           bodyEl.innerHTML = [
             '<div style="text-align:center;padding:40px 0;">',
-            '  <div style="color:#d32f2f;font-weight:600;margin-bottom:8px;">' + (err.message || "加载失败") + '</div>',
+            '  <div class="dd-error-message"></div>',
             '  ' + actions,
             '</div>'
           ].join("");
+          bodyEl.querySelector(".dd-error-message").textContent = err.message || "加载失败";
         }
       });
   }
 
   function close() {
+    requestSeq++;
+    currentData = null;
     var drawer = $("demandDetailDrawer");
     if (drawer) {
       drawer.classList.remove("active");
@@ -201,14 +213,17 @@
     }
   });
 
-  // 全局事件委托：业务需求卡片 / 按钮 / 看板标题行触发抽屉；显式带 href 的 <a>
-  // 视为内部 / 外部导航，不接管（避免标题被吞）。
+  // 需求详情链接使用同一个抽屉；禅道原文和办理链接保留正常导航。
   document.addEventListener("click", function (e) {
-    var trigger = e.target.closest("[data-demand-id], [data-open-demand-detail]");
+    var trigger = e.target.closest("[data-demand-id], [data-open-demand-detail], a[href^='/demands/']");
     if (trigger) {
       var tag = (trigger.tagName || "").toUpperCase();
-      if (tag === "A" && trigger.getAttribute("href")) { return; }
+      var href = tag === "A" ? trigger.getAttribute("href") : "";
+      var detailMatch = href && href.match(/^\/demands\/((?:US)?\d+)(?:[?#].*)?$/i);
+      if (detailMatch && (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey)) { return; }
+      if (tag === "A" && href && !detailMatch) { return; }
       var did = trigger.getAttribute("data-demand-id") || trigger.getAttribute("data-open-demand-detail");
+      if (!did && detailMatch) { did = detailMatch[1]; }
       if (did && (/^US\d+/i.test(did) || /^\d+$/.test(did))) {
         e.preventDefault();
         open(did);
@@ -232,6 +247,11 @@
         return;
       }
     }
+  });
+
+  document.addEventListener("DOMContentLoaded", function () {
+    var did = new URLSearchParams(window.location.search).get("openDemand");
+    if (did && (/^US\d+$/i.test(did) || /^\d+$/.test(did))) { open(did); }
   });
 
   window.DemandDetail = {

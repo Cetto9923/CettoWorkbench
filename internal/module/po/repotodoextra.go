@@ -99,7 +99,7 @@ func (r *Repo) FindOwnedStories(ctx context.Context, req RepoFindTodoExtraReq) (
 	items := make([]TodoItem, 0, len(rows))
 	for _, row := range rows {
 		items = append(items, TodoItem{
-			Kind: "story", ID: row.ID, DisplayID: fmt.Sprintf("U%d", row.ID), Title: row.Title,
+			Kind: "story", ID: row.ID, DisplayID: fmt.Sprintf("%d", row.ID), Title: row.Title,
 			Type: "研发需求", Stage: row.Status, Priority: formatTodoPriority(row.Pri), Relation: "我负责",
 			Responsibility: "待我处理", Reason: row.Status, Deadline: formatTodoDeadline(row.Deadline),
 			Owner: displayMap[row.AssignedTo], URL: zentao.StoryViewURL(uint(row.ID)), Action: "办理",
@@ -138,7 +138,7 @@ func (r *Repo) FindPersonalTodos(ctx context.Context, req RepoFindTodoExtraReq) 
 			owner = req.Account
 		}
 		items = append(items, TodoItem{
-			Kind: "todo", ID: row.ID, DisplayID: fmt.Sprintf("TODO-%d", row.ID), Title: row.Name,
+			Kind: "todo", ID: row.ID, DisplayID: fmt.Sprintf("%d", row.ID), Title: row.Name,
 			Type: "个人待办", Stage: row.Status, Priority: formatTodoPriority(row.Pri), Relation: "我负责",
 			Responsibility: "待我处理", Reason: row.Status, Deadline: formatTodoDeadline(row.Date),
 			Owner: displayMap[owner], URL: zentao.URL("todo", "view", fmt.Sprintf("todoID=%d", row.ID)), Action: "办理",
@@ -170,7 +170,7 @@ func (r *Repo) FindOwnedTesttasks(ctx context.Context, req RepoFindTodoExtraReq)
 	items := make([]TodoItem, 0, len(rows))
 	for _, row := range rows {
 		items = append(items, TodoItem{
-			Kind: "testtask", ID: row.ID, DisplayID: fmt.Sprintf("TEST-%d", row.ID), Title: row.Name,
+			Kind: "testtask", ID: row.ID, DisplayID: fmt.Sprintf("%d", row.ID), Title: row.Name,
 			Type: "测试单", Stage: row.Status, Priority: formatTodoPriority(row.Pri), Relation: "我负责",
 			Responsibility: "待我处理", Reason: row.Status, Deadline: formatTodoDeadline(row.End),
 			Owner: displayMap[req.Account], URL: zentao.TesttaskViewURL(uint(row.ID)), Action: "处理",
@@ -248,7 +248,7 @@ func buildIssueRiskTodoItems(rows []todoIssueRiskRow, account string, displayMap
 			}
 		}
 		items = append(items, TodoItem{
-			Kind: meta.Kind, ID: row.ID, DisplayID: fmt.Sprintf("%s-%d", meta.Prefix, row.ID), Title: row.Title,
+			Kind: meta.Kind, ID: row.ID, DisplayID: fmt.Sprintf("%d", row.ID), Title: row.Title,
 			Type: meta.Label, Stage: row.Status, Priority: issueRiskPriLabel(row.Pri), Relation: relation,
 			Responsibility: responsibility, Reason: row.Status, Deadline: formatTodoDeadline(row.Deadline),
 			Owner: displayMap[ownerAccount], URL: zentao.URL(meta.Kind, "view", fmt.Sprintf("%sID=%d", meta.Kind, row.ID)),

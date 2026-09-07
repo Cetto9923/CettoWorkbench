@@ -82,7 +82,7 @@ func (s *Service) GetStoryTasks(ctx context.Context, actor *model.User, storyID 
 	demandID := detail.FromDemand
 	demandName := detail.DemandName
 	if demandName == "" && demandID > 0 {
-		demandName = fmt.Sprintf("REQ-%d", demandID)
+		demandName = fmt.Sprintf("US%d", demandID)
 	}
 
 	return &StoryTasksResp{

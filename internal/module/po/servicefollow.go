@@ -438,7 +438,7 @@ func buildStoryWorkItem(row StoryRow, label string, actor *model.User, displayMa
 	}
 	return WorkItemDetail{
 		Kind:         "story",
-		ID:           fmt.Sprintf("U%d", row.ID),
+		ID:           fmt.Sprintf("%d", row.ID),
 		Pri:          fmt.Sprintf("P%d", row.Pri),
 		Title:        row.Title,
 		Owner:        owner,

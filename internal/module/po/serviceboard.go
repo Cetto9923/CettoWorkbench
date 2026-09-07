@@ -16,6 +16,7 @@ import (
 	"workbench/internal/model"
 	"workbench/internal/module/po/primaryaction"
 	"workbench/internal/pkg/errorx"
+	"workbench/internal/pkg/zentao"
 )
 
 // BoardDemand 我的需求看板（PO 视角工作对象树）。
@@ -50,6 +51,35 @@ func (s *Service) BoardIssues(ctx context.Context, actor *model.User) (*BoardIss
 		return &BoardIssueResp{Items: []BoardIssueItem{}}, nil
 	}
 	return s.repo.FindBoardIssues(ctx, actor.Account)
+}
+
+// BoardIssueActions 读取当前用户可见问题的禅道审计记录。
+func (s *Service) BoardIssueActions(ctx context.Context, actor *model.User, issueID, afterID int64) (*BoardIssueActionPage, error) {
+	if actor == nil || strings.TrimSpace(actor.Account) == "" || issueID <= 0 {
+		return nil, errorx.New(errorx.ErrCodeForbidden, "无权查看该问题")
+	}
+	return s.repo.FindBoardIssueActions(ctx, actor.Account, issueID, afterID)
+}
+
+// TransitionBoardIssue 仅通过禅道原生动作网关变更问题状态，工作台不直接写 zt_issue。
+func (s *Service) TransitionBoardIssue(ctx context.Context, actor *model.User, issueID int64, action, sessionID string) error {
+	if actor == nil || strings.TrimSpace(actor.Account) == "" || issueID <= 0 {
+		return errorx.New(errorx.ErrCodeForbidden, "无权操作该问题")
+	}
+	issueAction, ok := zentao.ValidIssueAction(action)
+	if !ok {
+		return errorx.New(errorx.ErrCodeInvalidParam, "不支持的问题操作")
+	}
+	if err := s.repo.CheckBoardIssueAccess(ctx, actor.Account, issueID); err != nil {
+		return err
+	}
+	if strings.TrimSpace(sessionID) == "" {
+		return zentao.NewUnavailableIssueActionGateway("未检测到当前用户禅道会话，请先在同一站点登录禅道").ExecuteIssueAction(ctx, zentao.IssueActionRequest{IssueID: issueID, Action: issueAction})
+	}
+	if s == nil || s.issueActions == nil {
+		return zentao.NewUnavailableIssueActionGateway("当前禅道原生问题操作接口不可用").ExecuteIssueAction(ctx, zentao.IssueActionRequest{IssueID: issueID, Action: issueAction})
+	}
+	return s.issueActions.ExecuteIssueAction(ctx, zentao.IssueActionRequest{IssueID: issueID, Action: issueAction, SessionID: sessionID})
 }
 
 // BoardGroupMetrics 小组效能快照：选定具体敏捷小组时返回 8 项真实指标。

@@ -33,9 +33,6 @@
       <button type="button" class="category-tab" data-tab="demand">需求治理 <em id="groupDemand">—</em></button>
       <button type="button" class="category-tab" data-tab="execution">研发执行 <em id="groupExecution">—</em></button>
       <button type="button" class="category-tab" data-tab="testing">测试质量 <em id="groupTesting">—</em></button>
-      <button type="button" class="category-tab unsupported" data-tab="approval" disabled title="已具备查询适配器，统一分页与排序待接线 (available_not_wired)">审批决策 <span class="unsupported-tag">待接线</span></button>
-      <button type="button" class="category-tab unsupported" data-tab="risk" disabled title="已具备查询适配器，责任判定规则待业务裁决 (available_not_wired)">问题风险 <span class="unsupported-tag">待接线</span></button>
-      <button type="button" class="category-tab unsupported" data-tab="personal" disabled title="已具备查询适配器，个人待办边界待业务裁决 (available_not_wired)">个人事项 <span class="unsupported-tag">待接线</span></button>
     </nav>
 
     <div class="workspace-toolbar">
@@ -91,6 +88,8 @@
 {{ define "page_js" }}
 <script src="{{ asset "/static/js/po/personal-list.js" }}"></script>
 <script src="{{ asset "/static/js/po/primary-action.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail-richtext.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail-parent.js" }}"></script>
 <script src="{{ asset "/static/js/po/demand-detail-render.js" }}"></script>
 <script src="{{ asset "/static/js/po/demand-detail.js" }}"></script>
 <script src="{{ asset "/static/js/po/todos.js" }}"></script>

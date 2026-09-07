@@ -333,7 +333,7 @@ type AppQualityNode struct {
 // BranchQualityItem 研发需求分支及最新 MR 扫描明细。
 // GateStatus: pass | fail | unknown；Available=false 时分数/覆盖率无业务含义。
 type BranchQualityItem struct {
-	StoryCode  string  `json:"storyCode"`  // 关联研发需求 ST72111
+	StoryCode  string  `json:"storyCode"`  // 关联研发需求禅道原始 ID
 	StoryTitle string  `json:"storyTitle"` // 研需标题
 	BranchName string  `json:"branchName"` // 分支名称；未接入时为空
 	LatestMR   string  `json:"latestMr"`   // 最新 MR 编号；未接入时为空

@@ -41,12 +41,12 @@ assert.ok(
 );
 console.log("PASS: home.js title-link stays in current tab, id-link opens new tab with noopener");
 
-// 标题不应同时挂 data-demand-id（防止 demand-detail.js 全局委托误吞）
+// 标题链接由统一详情抽屉接管；ID 链接仍保留禅道原文导航。
 assert.ok(
-  !/table-title-link[^>]*data-demand-id/.test(homeSrc),
-  "home.js title-link must not carry data-demand-id (delegation would swallow navigation)"
+  /workbenchHref/.test(homeSrc) && homeSrc.indexOf('"/demands/" + encodeURIComponent(cleanId)') >= 0,
+  "home.js title-link must resolve to the workbench demand detail route"
 );
-console.log("PASS: home.js title-link is not intercepted by demand-detail delegation");
+console.log("PASS: home.js title-link targets the unified detail drawer route");
 
 // primaryAction 占位：缺失字段时显示 "—" 而非"查看详情"（PLAN §4 兜底禁止）
 assert.ok(
@@ -63,10 +63,10 @@ assert.ok(
 console.log("PASS: home.js primaryAction placeholder is em-dash, never '查看详情' fallback");
 
 // -----------------------------------------------------------------------------
-// 2. demand-detail.js 全局委托：不再吞掉 <a> 标题链接
+// 2. demand-detail.js 全局委托：仅接管 /demands/:id 详情直链。
 // -----------------------------------------------------------------------------
 const ddSrc = fs.readFileSync(path.join(__dirname, "../../../web/static/js/po/demand-detail.js"), "utf8");
-// 委托逻辑必须区分：A/AREA 元素有 href 时不 preventDefault
+// 委托逻辑必须识别 A 元素的详情 href，并保留其它链接。
 assert.ok(
   /tag\s*===\s*"A"/.test(ddSrc) || /A"\)/.test(ddSrc),
   "demand-detail.js click delegation must special-case A elements"
@@ -75,7 +75,11 @@ assert.ok(
   /trigger\.getAttribute\("href"\)/.test(ddSrc) || /href/.test(ddSrc),
   "demand-detail.js must inspect href attribute on A triggers"
 );
-console.log("PASS: demand-detail.js click delegation honors A element href (title navigation preserved)");
+assert.ok(
+  /a\[href\^='\/demands\/'\]/.test(ddSrc) && /detailMatch/.test(ddSrc),
+  "demand-detail.js must intercept only /demands/:id detail links"
+);
+console.log("PASS: demand-detail.js intercepts the unified detail route and preserves other links");
 
 // -----------------------------------------------------------------------------
 // 3. workboard.js 排期阶段直链：stage-action 应是 <a href="/schedule/{demands|stories}/:id/scheduling">

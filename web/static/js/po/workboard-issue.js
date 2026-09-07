@@ -1,6 +1,6 @@
 /**
  * 模块: PO 工作看板 - 问题三态与详情抽屉
- * 职责: 问题按「未解决 / 已解决 / 已关闭」三态划分、Tab 切换、卡片渲染与详情抽屉流转交互
+ * 职责: 问题按「未解决 / 已解决」筛选、卡片渲染与禅道审计记录展示。
  */
 (function () {
   "use strict";
@@ -49,7 +49,7 @@
       })
       .then(function (payload) {
         if (!payload || payload.success !== true) throw new Error("payload error");
-        allIssues = payload.items || [];
+        allIssues = (payload.items || []).filter(function (item) { return bucketIssue(item) !== "已关闭"; });
         renderIssuePanel();
       })
       .catch(function () {
@@ -59,7 +59,7 @@
   }
 
   function renderIssuePanel() {
-    var counts = { "未解决": 0, "已解决": 0, "已关闭": 0 };
+    var counts = { "未解决": 0, "已解决": 0 };
     allIssues.forEach(function (it) {
       var b = bucketIssue(it);
       counts[b] = (counts[b] || 0) + 1;
@@ -73,8 +73,7 @@
       tabsEl.innerHTML = "";
       var tabs = [
         { key: "未解决", label: "未解决", count: counts["未解决"] },
-        { key: "已解决", label: "已解决", count: counts["已解决"] },
-        { key: "已关闭", label: "已关闭", count: counts["已关闭"] }
+        { key: "已解决", label: "已解决", count: counts["已解决"] }
       ];
       tabs.forEach(function (t) {
         var btn = document.createElement("button");
@@ -108,7 +107,7 @@
 
     listEl.innerHTML = matched.map(function (it) {
       var b = bucketIssue(it);
-      var displayId = "ISSUE-" + it.id;
+      var displayId = String(it.id || "—");
       var lbl = statusLabel(b, it.status);
       var cls = statusClass(b);
       var handler = it.assignedTo || it.handler || it.createdBy || "待指派";
@@ -135,6 +134,56 @@
     });
   }
 
+  function actionLabel(action) {
+    var labels = {
+      opened: "创建问题", edited: "编辑问题", assigned: "指派问题", issueconfirmed: "确认问题",
+      resolved: "解决问题", closed: "关闭问题", activated: "重新激活问题", canceled: "取消问题",
+      comment: "添加备注"
+    };
+    return labels[String(action || "").toLowerCase()] || String(action || "操作记录");
+  }
+
+  function actionRow(item) {
+    var note = [item.extra, item.comment].filter(Boolean).join(" · ");
+    return '<li class="issue-action-row">' +
+      '<div class="issue-action-time">' + esc(item.date || "—") + '</div>' +
+      '<div class="issue-action-main"><strong>' + esc(actionLabel(item.action)) + '</strong>' +
+      '<span>' + esc(item.actorName || item.actor || "系统") + '</span>' +
+      (note ? '<p>' + esc(note) + '</p>' : "") + '</div></li>';
+  }
+
+  function loadIssueActionHistory(issueID, afterID, append) {
+    var section = document.querySelector('[data-issue-action-history="' + String(issueID) + '"]');
+    if (!section) return;
+    fetch("/board/issues/" + encodeURIComponent(issueID) + "/actions?afterId=" + encodeURIComponent(afterID || 0), { method: "GET" })
+      .then(function (r) {
+        if (!r.ok) throw new Error("http " + r.status);
+        return r.json();
+      })
+      .then(function (payload) {
+        if (!payload || payload.success !== true) throw new Error("payload error");
+        if (!document.querySelector('[data-issue-action-history="' + String(issueID) + '"]')) return;
+        var rows = payload.items || [];
+        var list = section.querySelector(".issue-action-list");
+        if (!append) list.innerHTML = "";
+        if (!rows.length && !append) {
+          list.innerHTML = '<li class="issue-action-empty">禅道未记录该问题的操作日志</li>';
+        } else if (rows.length) {
+          list.insertAdjacentHTML("beforeend", rows.map(actionRow).join(""));
+        }
+        var more = section.querySelector(".issue-action-more");
+        if (payload.nextAfterId) {
+          more.hidden = false;
+          more.dataset.afterId = payload.nextAfterId;
+        } else {
+          more.hidden = true;
+        }
+      })
+      .catch(function () {
+        if (!append) section.querySelector(".issue-action-list").innerHTML = '<li class="issue-action-empty">操作日志加载失败，请重试</li>';
+      });
+  }
+
   function openIssueDetailDrawer(idOrItem) {
     var issue = typeof idOrItem === "object" ? idOrItem : allIssues.find(function (x) {
       return String(x.id) === String(idOrItem);
@@ -146,7 +195,7 @@
     currentDrawerIssue = issue;
 
     var b = bucketIssue(issue);
-    var displayId = "ISSUE-" + issue.id;
+    var displayId = String(issue.id || "—");
     var lbl = statusLabel(b, issue.status);
     var cls = statusClass(b);
 
@@ -182,9 +231,17 @@
         '  <div class="issue-detail-desc">' + esc(issue.desc || issue.description || issue.title || "暂无详细描述信息") + '</div>' +
         '</div>' +
         '<div class="issue-detail-section">' +
-        '  <div class="issue-detail-section-title">处置与流转说明</div>' +
-        '  <div class="issue-detail-desc" style="color:var(--t3);font-size:11px">状态变更记录同步自禅道系统。看板中支持直接流转问题状态。</div>' +
+        '  <div class="issue-detail-section-title">禅道操作记录</div>' +
+        '  <div class="issue-action-history" data-issue-action-history="' + esc(issue.id) + '">' +
+        '    <ol class="issue-action-list"><li class="issue-action-empty">正在加载从创建开始的操作记录…</li></ol>' +
+        '    <button type="button" class="issue-action-more" hidden>加载更多</button>' +
+        '  </div>' +
         '</div>';
+      var moreButton = bodyEl.querySelector(".issue-action-more");
+      if (moreButton) moreButton.addEventListener("click", function () {
+        loadIssueActionHistory(issue.id, Number(moreButton.dataset.afterId || 0), true);
+      });
+      loadIssueActionHistory(issue.id, 0, false);
     }
 
     if (footerEl) {
@@ -194,8 +251,6 @@
       } else if (b === "已解决") {
         actionButtons.push({ key: "activate", label: "重新激活", cls: "action" });
         actionButtons.push({ key: "close", label: "关闭问题", cls: "action primary" });
-      } else if (b === "已关闭") {
-        actionButtons.push({ key: "activate", label: "重新激活", cls: "action" });
       }
       actionButtons.push({ key: "closeDrawer", label: "关闭", cls: "action soft" });
 
@@ -234,21 +289,23 @@
       closeIssueDetailDrawer();
       return;
     }
-    if (!currentDrawerIssue) return;
-
-    if (actionKey === "resolve") {
-      currentDrawerIssue.status = "resolved";
-      if (typeof window.showToast === "function") window.showToast("已解决问题 ISSUE-" + currentDrawerIssue.id);
-    } else if (actionKey === "close") {
-      currentDrawerIssue.status = "closed";
-      if (typeof window.showToast === "function") window.showToast("已关闭问题 ISSUE-" + currentDrawerIssue.id);
-    } else if (actionKey === "activate") {
-      currentDrawerIssue.status = "confirmed";
-      if (typeof window.showToast === "function") window.showToast("已重新激活问题 ISSUE-" + currentDrawerIssue.id);
-    }
-
-    renderIssuePanel();
-    openIssueDetailDrawer(currentDrawerIssue);
+    if (!currentDrawerIssue || !["resolve", "close", "activate"].includes(actionKey)) return;
+    var issueID = currentDrawerIssue.id;
+    var request = window.appFetch || window.fetch;
+    request("/board/issues/" + encodeURIComponent(issueID) + "/transition", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: actionKey })
+    }).then(function (response) {
+      return response.json().catch(function () { return {}; }).then(function (payload) {
+        if (!response.ok || !payload.success) throw new Error(payload.message || "禅道问题操作未完成");
+        if (typeof window.showToast === "function") window.showToast("禅道已完成问题操作，正在刷新状态");
+        closeIssueDetailDrawer();
+        loadIssues();
+      });
+    }).catch(function (err) {
+      if (typeof window.showToast === "function") window.showToast((err && err.message) || "禅道问题操作未完成，状态未变更", "error");
+    });
   }
 
   function init() {

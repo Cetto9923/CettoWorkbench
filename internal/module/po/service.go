@@ -21,6 +21,7 @@ import (
 	"workbench/internal/model"
 	"workbench/internal/module/schedule"
 	"workbench/internal/module/user"
+	"workbench/internal/pkg/zentao"
 )
 
 var valueStreamStages = []struct {
@@ -41,11 +42,12 @@ var valueStreamStages = []struct {
 
 // Service PO 工作台业务逻辑。
 type Service struct {
-	repo      *Repo
-	detailSvc *DetailService
-	schedule  *schedule.Service
-	userSvc   *user.Service
-	logger    *zap.Logger
+	repo         *Repo
+	detailSvc    *DetailService
+	schedule     *schedule.Service
+	userSvc      *user.Service
+	logger       *zap.Logger
+	issueActions zentao.IssueActionGateway
 }
 
 // NewService 创建 Service。
@@ -54,11 +56,23 @@ func NewService(repo *Repo, scheduleSvc *schedule.Service, userSvc *user.Service
 	if repo != nil && repo.db != nil {
 		detailSvc = NewDetailService(NewDemandDetailRepo(repo.db))
 	}
-	s := &Service{repo: repo, detailSvc: detailSvc, schedule: scheduleSvc, userSvc: userSvc, logger: logger}
+	s := &Service{repo: repo, detailSvc: detailSvc, schedule: scheduleSvc, userSvc: userSvc, logger: logger,
+		issueActions: zentao.NewUnavailableIssueActionGateway("当前禅道 API 未提供问题解决、关闭或重新激活动作接口")}
 	if detailSvc != nil {
 		detailSvc.attachParent(s)
 	}
 	return s
+}
+
+// SetIssueActionGateway 注入禅道问题原生动作网关；nil 始终失败关闭。
+func (s *Service) SetIssueActionGateway(gateway zentao.IssueActionGateway) {
+	if s == nil {
+		return
+	}
+	if gateway == nil {
+		gateway = zentao.NewUnavailableIssueActionGateway("当前禅道原生问题操作接口不可用")
+	}
+	s.issueActions = gateway
 }
 
 // DetailService 返回统一详情服务。

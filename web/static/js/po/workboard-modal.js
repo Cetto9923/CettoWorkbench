@@ -105,7 +105,7 @@
     }
 
     closeKanbanIssueModal();
-    toast("问题已登记 #ISSUE-" + newIssue.id);
+    toast("问题已登记 " + newIssue.id);
   }
 
   /* ────────── 2. 建任务 Modal ────────── */
@@ -166,7 +166,7 @@
     };
 
     closeKanbanTaskModal();
-    toast("任务已创建 #" + task.id + " (" + task.name + ")");
+    toast("任务已创建 " + task.id + " (" + task.name + ")");
   }
 
   /* ────────── 3. 调整小组成员 Modal ────────── */

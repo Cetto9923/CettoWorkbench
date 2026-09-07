@@ -68,7 +68,7 @@ func (s *DetailService) buildExecution(ctx context.Context, demandID uint) (*Det
 
 		sItems = append(sItems, StoryItem{
 			ID:         st.ID,
-			Code:       fmt.Sprintf("ST%d", st.ID),
+			Code:       fmt.Sprintf("%d", st.ID),
 			Title:      st.Title,
 			Product:    defaultDash(st.ProductName),
 			Owner:      defaultDash(st.AssignedToName),
@@ -124,7 +124,7 @@ func (s *DetailService) buildExecution(ctx context.Context, demandID uint) (*Det
 		}
 		ttItems = append(ttItems, TestOrderItem{
 			ID:          tt.ID,
-			Code:        fmt.Sprintf("TO-%d", tt.ID),
+			Code:        fmt.Sprintf("%d", tt.ID),
 			Title:       tt.Name,
 			Stage:       stage,
 			Status:      tt.Status,

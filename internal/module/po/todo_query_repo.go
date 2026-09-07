@@ -162,7 +162,7 @@ func buildTodoUnionSQL(account string, req TodoListReq) (string, []interface{}) 
 		parts = append(parts, demandSQL)
 	}
 	if includeTask {
-		taskSQL := `SELECT 'task' AS kind, t.id, CONCAT('TASK-', t.id) AS display_id, t.name AS title, t.status,
+		taskSQL := `SELECT 'task' AS kind, t.id, CAST(t.id AS CHAR) AS display_id, t.name AS title, t.status,
 			CASE WHEN t.pri = 1 THEN '1' WHEN t.pri = 2 THEN '2' WHEN t.pri = 3 THEN '3' WHEN t.pri = 4 THEN '4' ELSE '0' END AS pri_str,
 			CASE WHEN t.pri = 1 THEN 1 WHEN t.pri = 2 THEN 2 WHEN t.pri = 3 THEN 3 ELSE 4 END AS priority_rank,
 			CASE WHEN t.deadline IS NULL OR t.deadline = '0000-00-00' OR t.deadline = '0001-01-01' THEN '9999-12-31' ELSE DATE_FORMAT(t.deadline, '%Y-%m-%d') END AS deadline_str,
@@ -172,7 +172,7 @@ func buildTodoUnionSQL(account string, req TodoListReq) (string, []interface{}) 
 		parts = append(parts, taskSQL)
 	}
 	if includeBug {
-		bugSQL := `SELECT 'bug' AS kind, b.id, CONCAT('BUG-', b.id) AS display_id, b.title AS title, b.status,
+		bugSQL := `SELECT 'bug' AS kind, b.id, CAST(b.id AS CHAR) AS display_id, b.title AS title, b.status,
 			CASE WHEN b.pri = 1 THEN '1' WHEN b.pri = 2 THEN '2' WHEN b.pri = 3 THEN '3' WHEN b.pri = 4 THEN '4' ELSE '0' END AS pri_str,
 			CASE WHEN b.pri = 1 THEN 1 WHEN b.pri = 2 THEN 2 WHEN b.pri = 3 THEN 3 ELSE 4 END AS priority_rank,
 			'9999-12-31' AS deadline_str, b.assignedTo AS owner_account, '我负责' AS relation, '待我处理' AS responsibility, 0 AS blocked, 3 AS type_order

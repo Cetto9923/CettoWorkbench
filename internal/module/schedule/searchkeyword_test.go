@@ -11,7 +11,7 @@ func TestExtractScheduleSearchID(t *testing.T) {
 		want    string
 	}{
 		{name: "plain id", keyword: "37436", want: "37436"},
-		{name: "req display id", keyword: "REQ-37436", want: "37436"},
+		{name: "business display id", keyword: "US37436", want: "37436"},
 		{name: "req display id no hyphen", keyword: "REQ37436", want: "37436"},
 		{name: "rd display id", keyword: "RD-37448", want: "37448"},
 		{name: "sub display id", keyword: "SUB-123", want: "123"},

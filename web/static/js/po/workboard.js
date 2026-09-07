@@ -228,7 +228,7 @@
     if (object.deadline) bits.push("目标上线 " + esc(object.deadline));
     return bits.length ? '<span>' + bits.join(" · ") + "</span>" : "";
   }
-  // 子节点行（子需求 / 研发需求）：第一行 tag+ID+P+标题，第二行 meta。
+  // 子节点行（子需求 / 研发需求）：第一行类型+优先级+标题，第二行编号与交付上下文。
   function renderDemandRow(object, depth, isLast, groupOwner) {
     var nodeType = nodeTypeOf(object, depth > 0 ? "childBusiness" : null);
     var branch = depth === 0 ? "" : (isLast ? "└" : "├");
@@ -246,9 +246,8 @@
       '<div class="tree-cell ind' + ind + '">' +
       (depth > 0 ? '<span class="branch">' + branch + "</span>" : "") +
       typeTag(nodeType) +
-      '<div class="node-main"><div class="node-title-line"><span class="code">' + esc(object.displayId) + "</span>" +
-      priTag(object.priority) + titleTag + "</div>" +
-      '<div class="node-meta">' + nodeMeta(object, nodeType) + "</div></div>" +
+      '<div class="node-main"><div class="node-title-line">' + priTag(object.priority) + titleTag + "</div>" +
+      '<div class="node-meta"><span class="code"># ' + esc(object.displayId) + '</span>' + nodeMeta(object, nodeType) + "</div></div>" +
       "</div>" + renderStageCards(object, nodeType) + "</div>"
     );
   }
@@ -274,9 +273,8 @@
       '" data-stage="' + esc(root.stage || "") + '" data-status="' + esc(root.status || "") +
       '" data-deadline="' + esc(root.deadline || "") + '" data-rd="' + (isIndy ? esc(root.displayId) : "") + '" id="bg' + root.id + '">' +
       '<div class="tree-cell ind0">' + typeTag(nodeType) +
-      '<div class="node-main"><div class="node-title-line"><span class="code">' + esc(root.displayId) + "</span>" +
-      priTag(root.priority) + titleTag + "</div>" +
-      '<div class="node-meta">' + metaBits.join(" · ") + "</div></div></div>" + renderStageCards(root, nodeType) + "</div>";
+      '<div class="node-main"><div class="node-title-line">' + priTag(root.priority) + titleTag + "</div>" +
+      '<div class="node-meta"><span class="code"># ' + esc(root.displayId) + '</span>' + metaBits.join(" · ") + "</div></div></div>" + renderStageCards(root, nodeType) + "</div>";
   }
   function collectStories(root) {
     var s = [];
@@ -321,9 +319,8 @@
     if (root.deadline) { metaBits.push('<span class="biz-date">目标 ' + esc(root.deadline) + '</span>'); }
     return '<div class="biz-collapsed-row" data-toggle-group="bg' + root.id + '">' +
       '<div class="tree-cell ind0"><button type="button" class="toggle">▶</button>' + typeTag(nodeType) +
-      '<div class="node-main"><div class="node-title-line"><span class="code">' + esc(root.displayId) + '</span>' +
-      priTag(root.priority) + '<span class="node-title" title="' + esc(root.title) + '">' + esc(root.title) + '</span></div>' +
-      '<div class="node-meta">' + metaBits.join(" · ") + '</div></div></div>' + renderAggregatedCard(root, stories) + '</div>';
+      '<div class="node-main"><div class="node-title-line">' + priTag(root.priority) + '<span class="node-title" title="' + esc(root.title) + '">' + esc(root.title) + '</span></div>' +
+      '<div class="node-meta"><span class="code"># ' + esc(root.displayId) + '</span>' + metaBits.join(" · ") + '</div></div></div>' + renderAggregatedCard(root, stories) + '</div>';
   }
   // 需求树矩阵渲染（对齐原型 V1.3）
   function renderDemandMatrix(tree) {
@@ -364,8 +361,8 @@
       var stories = collectStories(root);
 
       var headHtml = '<div class="biz-head"><div class="biz-head-main" data-toggle-group="bg' + root.id + '">' +
-        '<button type="button" class="toggle">▼</button>' + typeTag(nodeType) + '<span class="code">' + esc(root.displayId) + '</span>' +
-        priTag(root.priority) + '<span class="biz-title" title="' + esc(root.title) + '">' + esc(root.title) + '</span>' +
+        '<button type="button" class="toggle">▼</button>' + typeTag(nodeType) + '<div class="node-main"><div class="node-title-line">' + priTag(root.priority) + '<span class="biz-title" title="' + esc(root.title) + '">' + esc(root.title) + '</span></div>' +
+        '<div class="node-meta"><span class="code"># ' + esc(root.displayId) + '</span></div></div>' +
         ownerDot + summaryHtml + dateHtml + '</div></div>' +
         renderCollapsedRow(root, nodeType, stories);
       html += '<section class="biz-group is-collapsed" data-owner="' + esc(root.owner || "") + '" data-flags="' + flags.join(" ") + '" id="bg' + root.id + '">' + headHtml + '<div class="group-body">';
@@ -674,7 +671,7 @@
     if (t.deadline) { dueH = '<span class="drawer-task-due' + (t.overdue ? " overdue" : "") + '">' + esc(t.deadline) + (t.overdue ? " 已超期" : "") + "</span>"; }
     var linkH = t.url ? '<a href="' + esc(t.url) + '" target="_blank" rel="noopener noreferrer" class="drawer-task-ztlink">在禅道打开 ↗</a>' : "";
     return '<div class="' + cardCls + '">' +
-      '<div class="drawer-task-top"><span class="drawer-task-code">' + esc(t.displayId || "TASK-" + t.id) + "</span>" +
+      '<div class="drawer-task-top"><span class="drawer-task-code">' + esc(t.displayId || t.id) + "</span>" +
       '<span class="drawer-task-type ' + typeC + '">' + esc(typN) + "</span>" + priH +
       '<span class="drawer-task-status ' + esc(t.status || "wait") + '">' + esc(stN) + "</span></div>" +
       '<div class="drawer-task-name">' + esc(t.title) + "</div>" +

@@ -171,7 +171,7 @@ func boardTaskItem(row boardTaskRow, stories map[int64]string, displayMap map[st
 		priority = fmt.Sprintf("P%d", row.Priority)
 	}
 	return &BoardTaskItem{
-		ID: row.ID, DisplayID: fmt.Sprintf("TASK-%d", row.ID), Title: row.Name, Type: row.Type,
+		ID: row.ID, DisplayID: fmt.Sprintf("%d", row.ID), Title: row.Name, Type: row.Type,
 		Status: row.Status, Priority: priority, StoryID: row.StoryID, StoryTitle: stories[row.StoryID],
 		StoryURL: zentao.StoryViewURL(uint(row.StoryID)), Owner: owner, Deadline: deadline,
 		Blocked: blocked, Overdue: overdue, URL: zentao.TaskViewURL(uint(row.ID)),

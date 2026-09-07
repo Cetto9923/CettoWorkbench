@@ -24,11 +24,10 @@
     if (!k) { return '<span class="wb-type wb-type-unknown">' + esc(kind || "—") + "</span>"; }
     return '<span class="wb-type wb-type-' + k + '">' + labels[k] + "</span>";
   };
-  var OBJECT_TYPE_ORDER = [
-    "", "demand", "story", "task", "bug", "risk", "issue", "feedback", "release", "build", "todo"
-  ];
+  var OBJECT_TYPE_ORDER = ["", "approval", "demand", "story", "task", "bug", "risk", "issue", "feedback", "release", "build", "todo"];
   var OBJECT_TYPE_LABELS = {
     "": "全部已办",
+    "approval": "审批",
     "demand": "业务需求",
     "story": "研发需求",
     "task": "任务",
@@ -42,6 +41,7 @@
   };
   var OBJECT_TYPE_ICONS = {
     "demand": "fa-lightbulb",
+    "approval": "fa-stamp",
     "task": "fa-list-check",
     "story": "fa-diagram-project",
     "bug": "fa-bug",
@@ -54,6 +54,7 @@
   };
   var state = {
     mode: "core",
+    tab: "all",
     timeRange: "all",
     objectType: "",
     action: "",
@@ -64,18 +65,10 @@
     pageSize: 20
   };
 
-  var metaData = {
-    actions: [],
-    results: [],
-    projects: []
-  };
-
+  var metaData = { actions: [], results: [], projects: [] };
   var requestSeq = 0;
 
-  function $(id) {
-    return document.getElementById(id);
-  }
-
+  function $(id) { return document.getElementById(id); }
   function fmtDateTime(value) {
     if (!value) return '<span class="done-time-date">--</span>';
     var m = String(value).match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})/);
@@ -109,7 +102,12 @@
     return labels[key] || raw || "--";
   }
 
-  /* ────────── 1. 元数据加载与下拉渲染 ────────── */
+  function objectCode(item) {
+    var id = String((item && item.objectId) || "").trim();
+    if (!id) return "--";
+    return String((item && item.objectType) || "").toLowerCase() === "demand" ? "US" + id : id;
+  }
+
   function loadMeta() {
     fetch("/done/meta", { credentials: "same-origin" })
       .then(function (r) { return r.json(); })
@@ -137,7 +135,6 @@
     el.innerHTML = html;
   }
 
-  /* ────────── 2. 指标卡与 11 芯片渲染 ────────── */
   function renderSummaryKPIs(sum) {
     sum = sum || {};
     var today = Number(sum.today || 0);
@@ -173,7 +170,7 @@
     });
 
     var html = OBJECT_TYPE_ORDER.map(function (key) {
-      var active = state.objectType === key;
+      var active = key === "approval" ? state.tab === "approval" : state.tab !== "approval" && state.objectType === key;
       var count = key === "" ? facetSum : (countMap[key] || 0);
       var icon = OBJECT_TYPE_ICONS[key] ? '<i class="fas ' + OBJECT_TYPE_ICONS[key] + '"></i>' : "";
       return (
@@ -187,7 +184,9 @@
 
     host.querySelectorAll(".wb-done-tab").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        state.objectType = btn.getAttribute("data-object-type") || "";
+        var key = btn.getAttribute("data-object-type") || "";
+        state.tab = key === "approval" ? "approval" : "all";
+        state.objectType = key === "approval" ? "" : key;
         state.page = 1;
         loadList();
       });
@@ -208,6 +207,7 @@
 
     var params = new URLSearchParams({
       mode: state.mode,
+      tab: state.tab,
       timeRange: state.timeRange,
       objectType: state.objectType,
       action: state.action,
@@ -259,7 +259,7 @@
           return (
             '<tr>' +
             '<td class="done-time">' + fmtDateTime(it.handledAt || it.date) + '</td>' +
-            '<td class="done-obj">' + objectTypeBadgeFromKind(it.objectType) + '<span class="done-obj-code">#' + esc(it.objectId) + '</span></td>' +
+            '<td class="done-obj">' + objectTypeBadgeFromKind(it.objectType) + '<span class="done-obj-code">' + esc(objectCode(it)) + '</span></td>' +
             '<td class="done-title">' + titleCell + '</td>' +
             '<td class="done-action"><span class="done-action-name">' + esc(it.actionName || it.action) + '</span></td>' +
             '<td class="done-result"><span class="done-tag ' + tagClass(it.resultCode || it.result) + '">' + esc(it.resultText || it.result || "--") + '</span></td>' +

@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"workbench/internal/pkg/errorx"
 	"workbench/internal/pkg/zentao"
 )
 
@@ -437,4 +438,58 @@ func (r *Repo) FindBoardIssues(ctx context.Context, account string) (*BoardIssue
 	}
 	resp.Total = int64(len(resp.Items))
 	return resp, nil
+}
+
+// FindBoardIssueActions 查询问题从创建开始的禅道审计记录，并在同一 scope 内校验读取权限。
+func (r *Repo) FindBoardIssueActions(ctx context.Context, account string, issueID, afterID int64) (*BoardIssueActionPage, error) {
+	if r == nil || r.db == nil || strings.TrimSpace(account) == "" || issueID <= 0 {
+		return nil, errorx.New(errorx.ErrCodeForbidden, "无权查看该问题")
+	}
+	var visible int64
+	if err := r.db.WithContext(ctx).Table("zt_issue").
+		Where("id = ? AND deleted = ?", issueID, "0").
+		Where("(createdBy = ? OR assignedTo = ?)", account, account).
+		Count(&visible).Error; err != nil {
+		return nil, err
+	}
+	if visible == 0 {
+		return nil, errorx.New(errorx.ErrCodeForbidden, "无权查看该问题")
+	}
+	rows := []struct {
+		ID        int64      `gorm:"column:id"`
+		Date      *time.Time `gorm:"column:date"`
+		Actor     string     `gorm:"column:actor"`
+		ActorName string     `gorm:"column:actor_name"`
+		Action    string     `gorm:"column:action"`
+		Extra     string     `gorm:"column:extra"`
+		Comment   string     `gorm:"column:comment"`
+	}{}
+	if err := r.db.WithContext(ctx).Raw(`
+SELECT a.id, a.date, a.actor, COALESCE(u.realname, a.actor) AS actor_name,
+       a.action, a.extra, a.comment
+FROM zt_action a
+LEFT JOIN zt_user u ON u.account = a.actor AND u.deleted = '0'
+WHERE a.objectType = 'issue' AND a.objectID = ?
+  AND a.id > ?
+ORDER BY a.date ASC, a.id ASC
+LIMIT 201`, issueID, afterID).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	hasMore := len(rows) > 200
+	if hasMore {
+		rows = rows[:200]
+	}
+	items := make([]BoardIssueAction, 0, len(rows))
+	for _, row := range rows {
+		date := ""
+		if row.Date != nil {
+			date = row.Date.Format("2006-01-02 15:04:05")
+		}
+		items = append(items, BoardIssueAction{ID: row.ID, Date: date, Actor: row.Actor, ActorName: row.ActorName, Action: row.Action, Extra: row.Extra, Comment: row.Comment})
+	}
+	page := &BoardIssueActionPage{Items: items}
+	if hasMore && len(items) > 0 {
+		page.NextAfterID = items[len(items)-1].ID
+	}
+	return page, nil
 }

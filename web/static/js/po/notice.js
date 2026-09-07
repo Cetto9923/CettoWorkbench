@@ -1,16 +1,7 @@
-/* =============================================================================
-   文件: web/static/js/po/notice.js
-   模块: PO 个人工作台 - 通知中心交互脚本
-   职责: 绑定通知分类、快捷焦点、筛选工具栏、列表渲染与已读状态管理
-   依赖: personal-list.js
-   ============================================================================= */
-
 (function () {
   "use strict";
 
   var esc = (window.PersonalList && window.PersonalList.escapeHtml) || function (v) { return String(v == null ? "" : v); };
-  // 暴露 objectTypeBadge 以满足 priority-helpers.test.js 的 parity 契约（页面实际
-  // 不直接消费，统一走 PersonalList.objectTypeBadge 入口）。
   var objectTypeBadge = (window.PersonalList && window.PersonalList.objectTypeBadge) || function (k) { return k; };
   var $ = function (id) { return document.getElementById(id); };
 
@@ -97,8 +88,6 @@
     else { state.pageSize = window.PersonalList.loadPageSize("po.notice.pageSize", state.pageSize, [10, 20, 50, 100]); }
   }
 
-  // 通知对象类型 / API 别名 / subject 历史前缀。demand 走 OBJECT_KIND_FROM_API
-  // 归一到 business，最终徽章显示「业务需求」，与首页 / 待办统一。
   var OBJECT_TYPE_LABELS = {
     business: "业务需求", sub_demand: "子需求", story: "研发需求",
     independent_story: "独立研发需求", task: "任务", bug: "Bug",
@@ -128,8 +117,12 @@
     var key = String(ot || "").trim().toLowerCase();
     return OBJECT_KIND_FROM_API[key] || key;
   }
+  function displayObjectID(kind, id) {
+    var value = String(id || "").trim();
+    if (!value || value === "0") return "";
+    return kind === "business" || kind === "sub_demand" ? "US" + value : value;
+  }
   function escapeRegExp(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
-  // 「您有 Bug(N)」类系统级模板提醒兜底；委托给 PersonalList 共享 helper。
   function reminderKindFromSubject(s) {
     var pl = window.PersonalList;
     return (pl && pl.reminderKindFromSubject) ? pl.reminderKindFromSubject(s) : "";
@@ -177,7 +170,8 @@
     }
     var badgeHtml = "";
     if (canon && canon !== "mail" && OBJECT_TYPE_LABELS[canon]) {
-      var badgeText = OBJECT_TYPE_LABELS[canon] + ((!isReminderTemplate && oid && oid !== "0") ? " #" + oid : "");
+      var displayID = !isReminderTemplate ? displayObjectID(canon, oid) : "";
+      var badgeText = OBJECT_TYPE_LABELS[canon] + (displayID ? " " + displayID : "");
       badgeHtml = '<span class="notice-tag notice-tag-' + esc(canon) + '">' + esc(badgeText) + "</span>";
     }
 
@@ -426,7 +420,9 @@
     var ot = String(item.objectType || "").trim().toLowerCase();
     var oid = String(item.objectId || "").trim();
     var canon = canonicalKind(ot);
-    var objName = (OBJECT_TYPE_LABELS[canon] || OBJECT_TYPE_LABELS[ot] || ot || "—") + (oid && oid !== "0" ? " #" + oid : "");
+    var objName = (OBJECT_TYPE_LABELS[canon] || OBJECT_TYPE_LABELS[ot] || ot || "—");
+    var objID = displayObjectID(canon, oid);
+    if (objID) { objName += " " + objID; }
     var rawSubject = item.subject || item.title || item.data || "通知详情";
     var content = item.data || item.summary || item.subject || "无具体内容";
 

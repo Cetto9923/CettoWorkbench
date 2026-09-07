@@ -434,7 +434,7 @@
 
   function extractRowContext($btn) {
     var $row = $btn.closest("tr");
-    var id = $.trim($row.find(".schedule-id-badge").first().text()) || "REQ-—";
+    var id = $.trim($row.find(".schedule-id-badge").first().text()) || "US—";
     var $titleEl = $row.find(".schedule-title-link").first();
     var title = $.trim($titleEl.attr("title") || $titleEl.text()) || "—";
     var owner = $.trim($row.find(".schedule-owner-line .name").first().text()) || "待分配";
@@ -686,7 +686,7 @@
         }
         fillSchedulingDetail(resp);
         if (resp.id) {
-          $("#scheduleIntegratedModalTitle").text("排期一体化办理 · REQ-" + resp.id);
+          $("#scheduleIntegratedModalTitle").text("排期一体化办理 · US" + resp.id);
           if (shared) {
             shared.currentDemandId = parsePositiveInt(resp.id);
             shared.currentStoryId = 0;
@@ -711,7 +711,7 @@
         }
         fillSchedulingDetail(resp);
         if (resp.id) {
-          $("#scheduleIntegratedModalTitle").text("排期一体化办理 · RD-" + resp.id);
+          $("#scheduleIntegratedModalTitle").text("排期一体化办理 · " + resp.id);
           if (shared) {
             shared.currentStoryId = parsePositiveInt(resp.id);
             shared.currentDemandId = 0;
@@ -787,7 +787,7 @@
       demandID = source.demandId || source.demandID || 0;
     } else {
       ctx = {
-        id: "REQ-—",
+        id: "US—",
         title: "—",
         owner: "待分配",
         system: "—",

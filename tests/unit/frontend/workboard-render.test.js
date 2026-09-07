@@ -4,8 +4,12 @@ const vm = require('node:vm');
 const path = require('node:path');
 
 const source = fs.readFileSync(path.join(__dirname, '../../../web/static/js/po/workboard.js'), 'utf8');
+const issueSource = fs.readFileSync(path.join(__dirname, '../../../web/static/js/po/workboard-issue.js'), 'utf8');
 // Parse the whole entry point: an invalid callback statement prevents every request.
 new vm.Script(source);
+new vm.Script(issueSource);
+assert.match(issueSource, /\/board\/issues\/" \+ encodeURIComponent\(issueID\) \+ "\/transition/);
+assert.doesNotMatch(issueSource, /currentDrawerIssue\.status\s*=/);
 const render = source.slice(source.indexOf('  function renderDemandMatrix('), source.indexOf('  function refreshDemandToggleAll('));
 const standalone = source.slice(source.indexOf('  function renderStandaloneRow('), source.indexOf('  function collectStories('));
 const host = { innerHTML: '', querySelectorAll: () => [] };
@@ -32,6 +36,8 @@ assert.match(independentWithoutURL, /<span class="node-title"/);
 context.nodeTypeOf = () => 'business';
 const demandHTML = context.renderStandaloneRow({ id: 100, displayId: 'US100', title: '业务需求', independent: false });
 assert.match(demandHTML, /data-open-demand="100"/);
+assert.match(demandHTML, /node-meta"><span class="code"># US100<\/span>/);
+assert.doesNotMatch(demandHTML, /node-title-line"><span class="code">/);
 context.renderStandaloneRow = node => 'root:' + node.id;
 context.renderDemandMatrix([{ id: 1, children: [
   { id: 2, kind: 'sub_demand' },

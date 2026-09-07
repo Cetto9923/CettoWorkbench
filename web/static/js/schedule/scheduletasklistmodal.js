@@ -120,7 +120,7 @@
         return Promise.reject(new Error((resp && resp.error) || "加载失败"));
       }
       var story = resp.story || {};
-      $("#taskListModalTitle").text("相关任务 · RD-" + (story.id || storyId));
+      $("#taskListModalTitle").text("相关任务 · " + (story.id || storyId));
       renderInfoBar(story);
       renderRows(resp.tasks || []);
       renderSummary(resp.summary || {});

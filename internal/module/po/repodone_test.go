@@ -41,13 +41,29 @@ func TestDoneListReqAllowsApprovalTab(t *testing.T) {
 
 func TestApprovalDoneScopeContainsOnlyReviewActions(t *testing.T) {
 	scope := buildApprovalDoneScopeSQL()
-	for _, action := range []string{"reviewed", "reviewpassed", "reviewrejected"} {
+	for _, action := range []string{"reviewed", "reviewpassed", "reviewrejected", "approvalreview"} {
 		if !strings.Contains(scope, action) {
 			t.Fatalf("approval scope missing %q", action)
 		}
 	}
 	if strings.Contains(scope, "demand:edit") {
 		t.Fatal("approval scope must not include ordinary edits")
+	}
+}
+
+func TestApprovalDoneScopeCoversProjectAndCaseReviews(t *testing.T) {
+	scope := buildApprovalDoneScopeSQL()
+	for _, objectType := range []string{"charter", "planchange", "buildguideline", "review", "case"} {
+		if !strings.Contains(scope, "a.objectType = '"+objectType+"'") {
+			t.Fatalf("approval scope missing %q: %s", objectType, scope)
+		}
+	}
+}
+
+func TestBuildDoneObjectScopeApprovalDoesNotFallBackToObjectType(t *testing.T) {
+	scope, args := buildDoneObjectScopeSQL(DoneTabApproval, "")
+	if scope != buildApprovalDoneScopeSQL() || len(args) != 0 {
+		t.Fatalf("approval scope = (%q, %#v)", scope, args)
 	}
 }
 

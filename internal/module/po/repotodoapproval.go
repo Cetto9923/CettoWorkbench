@@ -81,7 +81,7 @@ func (r *Repo) FindCurrentApprovalTodos(ctx context.Context, account string) ([]
 			continue
 		}
 		items = append(items, TodoItem{
-			Kind: "approval", ID: row.ApprovalID, DisplayID: fmt.Sprintf("APPROVAL-%d", row.ApprovalID),
+			Kind: "approval", ID: row.ApprovalID, DisplayID: fmt.Sprintf("%d", row.ApprovalID),
 			Title: row.Title, Type: approvalObjectLabel(row.ObjectType), Stage: "doing",
 			Relation: "我负责", Responsibility: "待我处理", Reason: approvalObjectReason(row.ObjectType),
 			Deadline: formatTodoDeadline(row.Deadline), Owner: owner,

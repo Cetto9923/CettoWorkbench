@@ -303,7 +303,6 @@
     var tabs = document.querySelectorAll(".po-todos .category-tab");
     tabs.forEach(function (btn) {
       btn.addEventListener("click", function () {
-        if (btn.disabled || btn.classList.contains("unsupported")) { return; }
         var tab = btn.getAttribute("data-tab");
         if (!tab || state.tab === tab) { return; }
         tabs.forEach(function (t) {

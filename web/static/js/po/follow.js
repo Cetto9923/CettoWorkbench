@@ -2,13 +2,13 @@
  * =============================================================================
  * 文件: web/static/js/po/follow.js
  * 模块: PO 工作台 - 我的关注主控制器
- * 职责: 全部 / 业务需求 / 项目周报多对象视图切换；4 KPI、快捷过滤、7 列表格与翻页
+ * 职责: 已接入的业务需求 / 项目周报视图切换；4 KPI、快捷过滤、7 列表格与翻页
  * =============================================================================
  */
 (function () {
   "use strict";
 
-  var currentTab = "weekly";
+  var currentTab = "demand";
   var weeklyItems = [];
   var weeklyStats = { watched: 0, submitted: 0, waiting: 0, abnormal: 0, attention: 0, risk: 0, deviation: 0 };
   var weeklyFilter = "all";
@@ -42,10 +42,7 @@
 
   /* ────────── 1. Tab 切换 ────────── */
   function switchTab(tab) {
-    if (tab === "risk" || tab === "testtask") {
-      if (typeof window.showToast === "function") window.showToast("该对象类型将在二期提供统一监控");
-      return;
-    }
+    if (tab !== "demand" && tab !== "weekly") return;
     currentTab = tab;
     document.querySelectorAll(".follow-tab").forEach(function (btn) {
       btn.classList.toggle("active", btn.getAttribute("data-tab") === tab);
@@ -380,14 +377,12 @@
   }
 
   function updateTabBadges() {
-    var allEl = document.getElementById("tabCountAll");
     var dEl = document.getElementById("tabCountDemand");
     var wEl = document.getElementById("tabCountWeekly");
     var dCount = demandState.total || 0;
     var wCount = weeklyStats.watched || weeklyItems.length || 0;
     if (dEl) dEl.textContent = String(dCount);
     if (wEl) wEl.textContent = String(wCount);
-    if (allEl) allEl.textContent = String(dCount + wCount);
   }
 
   function setWeeklyFilter(filter) {

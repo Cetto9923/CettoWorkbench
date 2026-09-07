@@ -230,3 +230,25 @@ type BoardIssueResp struct {
 	Closed int64            `json:"closed"`
 	Items  []BoardIssueItem `json:"items"`
 }
+
+// BoardIssueAction 是问题在禅道中的一条审计记录。字段均直接来自 zt_action。
+type BoardIssueAction struct {
+	ID        int64  `json:"id"`
+	Date      string `json:"date"`
+	Actor     string `json:"actor"`
+	ActorName string `json:"actorName"`
+	Action    string `json:"action"`
+	Extra     string `json:"extra"`
+	Comment   string `json:"comment"`
+}
+
+// BoardIssueActionPage 是有界加载的问题审计记录页，前端按 nextAfterID 继续加载至创建记录。
+type BoardIssueActionPage struct {
+	Items       []BoardIssueAction `json:"items"`
+	NextAfterID int64              `json:"nextAfterId"`
+}
+
+// BoardIssueTransitionReq 是工作台问题状态操作请求；实际状态写入由禅道原生接口完成。
+type BoardIssueTransitionReq struct {
+	Action string `json:"action" binding:"required"`
+}

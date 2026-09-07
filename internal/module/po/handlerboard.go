@@ -9,7 +9,9 @@
 package po
 
 import (
+	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -19,6 +21,7 @@ import (
 	"workbench/internal/pkg/errorx"
 	"workbench/internal/pkg/perm"
 	"workbench/internal/pkg/render"
+	"workbench/internal/pkg/zentao"
 )
 
 // RegisterRoutes 注册看板路由（需求 + 任务 + 各自 items）。
@@ -29,7 +32,71 @@ func (h *BoardHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	rg.GET("/board/task", middleware.RequirePerm(perm.PoBoardTaskList), h.BoardTask)
 	rg.GET("/board/task/items", middleware.RequirePerm(perm.PoBoardTaskList), h.BoardTaskItems)
 	rg.GET("/board/issues", middleware.RequirePerm(perm.PoBoardDemandList), h.BoardIssues)
+	rg.GET("/board/issues/:id/actions", middleware.RequirePerm(perm.PoBoardDemandList), h.BoardIssueActions)
+	rg.POST("/board/issues/:id/transition", middleware.RequirePerm(perm.PoBoardDemandList), h.TransitionBoardIssue)
 	rg.GET("/board/group/metrics", middleware.RequirePerm(perm.PoBoardDemandList), h.BoardGroupMetrics)
+}
+
+// TransitionBoardIssue 转发到禅道原生问题动作接口；不可用时明确返回，绝不修改本地展示状态。
+func (h *BoardHandler) TransitionBoardIssue(c *gin.Context) {
+	issueID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || issueID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "问题 ID 无效"})
+		return
+	}
+	var req BoardIssueTransitionReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "问题操作参数无效"})
+		return
+	}
+	sessionID := ""
+	if cookie, cookieErr := c.Request.Cookie(zentao.ZenTaoSessionCookieName); cookieErr == nil {
+		sessionID = cookie.Value
+	}
+	err = h.svc.TransitionBoardIssue(c.Request.Context(), middleware.CurrentUser(c), issueID, req.Action, sessionID)
+	if errors.Is(err, zentao.ErrIssueActionUnavailable) {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"success": false, "code": "zentao_unavailable", "message": "禅道原生问题操作暂不可用，问题状态未变更"})
+		return
+	}
+	if bizErr, ok := errorx.IsBizError(err); ok {
+		status := http.StatusUnprocessableEntity
+		if bizErr.Code == errorx.ErrCodeForbidden {
+			status = http.StatusForbidden
+		}
+		c.JSON(status, gin.H{"message": bizErr.Msg})
+		return
+	}
+	if err != nil {
+		h.logger.Error("po board issue transition", zap.Error(err))
+		c.JSON(http.StatusBadGateway, gin.H{"message": "禅道问题操作失败，问题状态未变更"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true})
+}
+
+// BoardIssueActions 返回当前用户可见问题从创建开始的禅道操作审计记录。
+func (h *BoardHandler) BoardIssueActions(c *gin.Context) {
+	issueID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || issueID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "问题 ID 无效"})
+		return
+	}
+	afterID, err := strconv.ParseInt(c.DefaultQuery("afterId", "0"), 10, 64)
+	if err != nil || afterID < 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "操作记录游标无效"})
+		return
+	}
+	page, err := h.svc.BoardIssueActions(c.Request.Context(), middleware.CurrentUser(c), issueID, afterID)
+	if err != nil {
+		if bizErr, ok := errorx.IsBizError(err); ok && bizErr.Code == errorx.ErrCodeForbidden {
+			c.JSON(http.StatusForbidden, gin.H{"message": bizErr.Msg})
+			return
+		}
+		h.logger.Error("po board issue actions", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取问题流转记录失败"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "items": page.Items, "nextAfterId": page.NextAfterID})
 }
 
 // BoardGroupMetrics 返回选定敏捷小组的真实效能指标 JSON。

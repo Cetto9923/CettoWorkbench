@@ -176,7 +176,7 @@ function testNoticeSubjectNotCharStripped() {
   // 2. The structured object badge must still be rendered from objectType/objectId.
   assert.ok(html.indexOf('notice-tag notice-tag-story') !== -1,
     'row HTML must still render the structured object badge from objectType/objectId');
-  assert.ok(html.indexOf('研发需求 #70526') !== -1,
+  assert.ok(html.indexOf('研发需求 70526') !== -1,
     'row HTML must render the canonical badge label (研发需求) with the object id');
   console.log('PASS: notice subject is not char-stripped; object badge remains from structured fields');
 }
@@ -235,7 +235,7 @@ function testNoticeFeedbackBadgeAndTitle() {
   console.log('PASS: feedback badge is rendered, title strips 反馈 #ID prefix once');
 }
 
-// demand #5418: 后端 objType=demand 必须归一到 business，徽章显示「业务需求 #5418」，
+// demand 5418: 后端 objType=demand 必须归一到 business，徽章显示「业务需求 US5418」，
 // 标题剥掉中文「需求 #5418 」前缀（与首页/待办统一）。
 function testNoticeDemandBadgeAndTitle() {
   const item = {
@@ -255,8 +255,8 @@ function testNoticeDemandBadgeAndTitle() {
   const html = String(nodes.get('noticeTbody').innerHTML || '');
   assert.ok(html.indexOf('notice-tag notice-tag-business') !== -1,
     'demand row must map to notice-tag-business (与首页/待办一致)');
-  assert.ok(html.indexOf('业务需求 #5418') !== -1,
-    'demand row badge text must be 业务需求 #5418');
+  assert.ok(html.indexOf('业务需求 US5418') !== -1,
+    'demand row badge text must be 业务需求 US5418');
   assert.ok(html.indexOf('notice-tag notice-tag-demand') === -1,
     'demand row must NOT render the legacy 需求 badge after canonicalisation');
   const title = extractButtonTitle(html);
@@ -267,7 +267,7 @@ function testNoticeDemandBadgeAndTitle() {
   console.log('PASS: demand objType maps to business badge; title strips 需求 #ID prefix once');
 }
 
-// STORY #4181 (story canon): 英文前缀同样命中时剥；徽章为「研发需求 #4181」。
+// STORY 4181 (story canon): 英文前缀同样命中时剥；徽章为「研发需求 4181」。
 function testNoticeStoryEngPrefixStripped() {
   const item = {
     id: 'n-story-1',
@@ -286,8 +286,8 @@ function testNoticeStoryEngPrefixStripped() {
   const html = String(nodes.get('noticeTbody').innerHTML || '');
   assert.ok(html.indexOf('notice-tag notice-tag-story') !== -1,
     'story row must render notice-tag-story class');
-  assert.ok(html.indexOf('研发需求 #4181') !== -1,
-    'story row badge text must be 研发需求 #4181 (not 研需)');
+  assert.ok(html.indexOf('研发需求 4181') !== -1,
+    'story row badge text must be 研发需求 4181 (not 研需)');
   const title = extractButtonTitle(html);
   assert.ok(title && title.indexOf('STORY #4181') === -1,
     `story title button must not repeat "STORY #4181" prefix; got: ${title}`);

@@ -19,7 +19,7 @@ import (
 
 // TodoList 我的待办列表服务。
 // V10.1 02 节：7 维 AND 公式。本期完整实现：Tab + 办理场景 + 阶段 + 对象 + 我的关系 + 办理责任 + 关键词。
-// 审批决策 Tab 占位（真实审批流后续接入），需求治理 / 全部 Tab 走 actor scope 聚合。
+// 仅已接入统一查询的数据域可通过页面进入，需求治理 / 全部 Tab 走 actor scope 聚合。
 func (s *Service) TodoList(ctx context.Context, actor *model.User, req TodoListReq) (*TodoListResp, error) {
 	if actor == nil || strings.TrimSpace(actor.Account) == "" {
 		return &TodoListResp{Items: []TodoItem{}, Page: req.Page, PageSize: req.PageSize}, nil

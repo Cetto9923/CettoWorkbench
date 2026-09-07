@@ -14,15 +14,14 @@ package po
 
 import (
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	"workbench/internal/constants"
 	"workbench/internal/middleware"
 	"workbench/internal/pkg/errorx"
-	"workbench/internal/pkg/render"
 )
 
 // DemandDetail 处理 GET /demands/:id/detail，返回去重优化后的业务需求完整聚合数据。
@@ -98,18 +97,15 @@ func (h *Handler) DemandDetail(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// DemandDetailView 处理 GET /demands/:id 独立页面查看请求。
-//
-// 独立页面只渲染壳，详情 JSON 由 demand-detail.js 异步拉取，因此
-// Service 层的对象级授权在此入口同样生效（参见 DemandDetail）。
+// DemandDetailView 将旧详情直链收敛到首页抽屉，避免独立页面与抽屉重复渲染。
 func (h *Handler) DemandDetailView(c *gin.Context) {
 	var req DemandDetailReq
 	if err := c.ShouldBindUri(&req); err != nil || req.ID == "" {
 		_ = c.ShouldBindQuery(&req)
 	}
-	render.Page(c, http.StatusOK, constants.TEMPLATE_PO_DEMAND_DETAIL, gin.H{
-		"Title":     "业务需求详情",
-		"PageTitle": "业务需求详情",
-		"DemandID":  req.ID,
-	})
+	if errs := req.Validate(); len(errs) > 0 {
+		c.Status(http.StatusNotFound)
+		return
+	}
+	c.Redirect(http.StatusFound, "/home?openDemand="+url.QueryEscape(req.ID))
 }

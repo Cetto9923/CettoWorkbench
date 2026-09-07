@@ -134,7 +134,7 @@ LIMIT 1`
 
 func (r *Repo) findDemandName(ctx context.Context, demandID uint) (string, error) {
 	const query = `
-SELECT CONCAT('REQ-', id, ' ', name) AS name
+SELECT CONCAT('US', id, ' ', name) AS name
 FROM zt_demand
 WHERE id = ?
   AND deleted = '0'

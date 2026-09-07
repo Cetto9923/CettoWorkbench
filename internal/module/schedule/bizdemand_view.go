@@ -181,15 +181,15 @@ func formatOwner(name string) string {
 }
 
 func formatBizID(id uint) string {
-	return "REQ-" + strconv.FormatUint(uint64(id), 10)
+	return "US" + strconv.FormatUint(uint64(id), 10)
 }
 
 func formatSubID(id uint) string {
-	return "SUB-" + strconv.FormatUint(uint64(id), 10)
+	return "US" + strconv.FormatUint(uint64(id), 10)
 }
 
 func formatStoryID(id uint) string {
-	return "RD-" + strconv.FormatUint(uint64(id), 10)
+	return strconv.FormatUint(uint64(id), 10)
 }
 
 // toIndependentRequirementsView 将独立研发需求列表转为页面树形行。

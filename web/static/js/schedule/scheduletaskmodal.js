@@ -325,7 +325,7 @@
       cachedProjects = resp.projects || [];
 
       var story = resp.story || {};
-      $("#taskModalTitle").text("拆任务 · RD-" + (story.id || storyId));
+      $("#taskModalTitle").text("拆任务 · " + (story.id || storyId));
       renderSpec(story);
       renderInfoBar(story);
 
@@ -473,8 +473,8 @@
     if (!storyId) {
       var $row = $(this).closest("tr");
       var badge = $.trim($row.find(".schedule-id-badge").first().text() || "");
-      if (badge.indexOf("RD-") === 0) {
-        storyId = parsePositiveInt(badge.replace("RD-", ""));
+      if (/^\d+$/.test(badge)) {
+        storyId = parsePositiveInt(badge);
       }
     }
     openTaskModal(storyId);

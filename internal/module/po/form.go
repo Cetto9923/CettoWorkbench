@@ -88,7 +88,7 @@ func (r *DemandsReq) Validate() []FieldError {
 // WorkItemDetail 单条需求或故事详情。
 type WorkItemDetail struct {
 	Kind          string                       `json:"kind"`
-	ID            string                       `json:"id"` // 展示编号：业需 US{id}，研需 U{id}
+	ID            string                       `json:"id"` // 展示编号：业需 US{id}，其余对象使用禅道原始数字 ID
 	Pri           string                       `json:"pri"`
 	Title         string                       `json:"title"`
 	Stage         string                       `json:"stage"`
@@ -112,8 +112,7 @@ type DemandsResp struct {
 	PageSize int              `json:"pageSize"`
 }
 
-// TodoTab 我的待办对象域 Tab。V10.1 02 节：6 类对象域，本期先打通审批决策 + 需求治理。
-// 其它 Tab（研发执行/测试质量/问题风险/个人事项）作为占位渲染，详细数据来源后续阶段接入。
+// TodoTab 我的待办对象域 Tab。当前页面只展示已接入统一查询的数据域。
 type TodoTab string
 
 const (
@@ -260,7 +259,7 @@ func (r *TodoListReq) Validate() []FieldError {
 type TodoItem struct {
 	Kind           string `json:"kind"`           // demand / story / task / bug / test
 	ID             int64  `json:"id"`             // 业务需求 ID（业需/任务/...各自主键）
-	DisplayID      string `json:"displayId"`      // 展示编号：业需 US{id}，研需 U{id}，任务/单据 TASK-{id} 等
+	DisplayID      string `json:"displayId"`      // 展示编号：业需 US{id}，其余对象使用禅道原始数字 ID
 	Title          string `json:"title"`          // 标题
 	Type           string `json:"type"`           // 对象类型中文标签（业务需求/任务/Bug/测试单...）
 	Stage          string `json:"stage"`          // 当前阶段（valueStream 标签或 zentao status 中文）

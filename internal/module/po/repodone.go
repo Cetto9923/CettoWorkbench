@@ -39,48 +39,55 @@ type doneActionMeta struct {
 }
 
 var formalDoneActions = map[string]doneActionMeta{
-	"demand:reviewed":             {Label: "需求评审", Result: "done"},
-	"demand:reviewpassed":         {Label: "需求审批通过", Result: "approved"},
-	"demand:reviewrejected":       {Label: "需求审批驳回", Result: "rejected"},
-	"demand:clarify":              {Label: "完成需求澄清", Result: "done"},
-	"demand:updateclarified":      {Label: "完成需求澄清", Result: "done"},
-	"demand:dispatch":             {Label: "需求派单", Result: "done"},
-	"demand:plan":                 {Label: "完成排期", Result: "done"},
-	"demand:demandplan":           {Label: "完成排期", Result: "done"},
-	"demand:updatedeveloping":     {Label: "推进至研发中", Result: "done"},
-	"demand:updatetesting":        {Label: "推进至测试中", Result: "done"},
-	"demand:tostory":              {Label: "转研发需求", Result: "done"},
-	"demand:hangup":               {Label: "挂起需求", Result: "done"},
-	"demand:closed":               {Label: "关闭需求", Result: "closed"},
-	"demand:activated":            {Label: "激活需求", Result: "activated"},
-	"demand:deliver":              {Label: "发起交付", Result: "submitted"},
-	"demand:withdrawdelivery":     {Label: "撤销交付", Result: "returned"},
-	"demand:acceptance":           {Label: "发起验收", Result: "submitted"},
-	"demand:startacceptance":      {Label: "发起验收", Result: "submitted"},
-	"demand:acceptanced":          {Label: "确认验收", Result: "verified"},
-	"demand:releasedbyallstories": {Label: "需求发布", Result: "done"},
-	"demand:releasedbyticket":     {Label: "需求发布", Result: "done"},
-	"story:submitreview":          {Label: "提交评审", Result: "submitted"},
-	"story:reviewed":              {Label: "评审研发需求", Result: "done"},
-	"story:reviewpassed":          {Label: "评审通过", Result: "approved"},
-	"story:reviewrejected":        {Label: "评审不通过", Result: "rejected"},
-	"story:verified":              {Label: "验收研发需求", Result: "verified"},
-	"story:releasedbyrelease":     {Label: "发布研发需求", Result: "done"},
-	"story:closed":                {Label: "关闭研发需求", Result: "closed"},
-	"story:activated":             {Label: "激活研发需求", Result: "activated"},
-	"task:started":                {Label: "开始任务", Result: "done"},
-	"task:finished":               {Label: "完成任务", Result: "done"},
-	"task:closed":                 {Label: "关闭任务", Result: "closed"},
-	"task:canceled":               {Label: "取消任务", Result: "done"},
-	"task:activated":              {Label: "激活任务", Result: "activated"},
-	"task:restarted":              {Label: "重启任务", Result: "activated"},
-	"task:paused":                 {Label: "暂停任务", Result: "done"},
-	"task:confirmed":              {Label: "确认任务", Result: "done"},
-	"bug:resolved":                {Label: "解决 Bug", Result: "resolved"},
-	"bug:closed":                  {Label: "关闭 Bug", Result: "closed"},
-	"bug:activated":               {Label: "激活 Bug", Result: "activated"},
-	"bug:bugconfirmed":            {Label: "确认 Bug", Result: "done"},
-	"bug:tostory":                 {Label: "转研发需求", Result: "done"},
+	"demand:reviewed":               {Label: "需求评审", Result: "done"},
+	"demand:reviewpassed":           {Label: "需求审批通过", Result: "approved"},
+	"demand:reviewrejected":         {Label: "需求审批驳回", Result: "rejected"},
+	"demand:reviewbymanager":        {Label: "主管部门审批", Result: "approved"},
+	"demand:reviewchange":           {Label: "需求变更评审", Result: "done"},
+	"demand:clarify":                {Label: "完成需求澄清", Result: "done"},
+	"demand:updateclarified":        {Label: "完成需求澄清", Result: "done"},
+	"demand:dispatch":               {Label: "需求派单", Result: "done"},
+	"demand:plan":                   {Label: "完成排期", Result: "done"},
+	"demand:demandplan":             {Label: "完成排期", Result: "done"},
+	"demand:updatedeveloping":       {Label: "推进至研发中", Result: "done"},
+	"demand:updatetesting":          {Label: "推进至测试中", Result: "done"},
+	"demand:tostory":                {Label: "转研发需求", Result: "done"},
+	"demand:hangup":                 {Label: "挂起需求", Result: "done"},
+	"demand:closed":                 {Label: "关闭需求", Result: "closed"},
+	"demand:activated":              {Label: "激活需求", Result: "activated"},
+	"demand:deliver":                {Label: "发起交付", Result: "submitted"},
+	"demand:withdrawdelivery":       {Label: "撤销交付", Result: "returned"},
+	"demand:acceptance":             {Label: "发起验收", Result: "submitted"},
+	"demand:startacceptance":        {Label: "发起验收", Result: "submitted"},
+	"demand:acceptanced":            {Label: "确认验收", Result: "verified"},
+	"demand:releasedbyallstories":   {Label: "需求发布", Result: "done"},
+	"demand:releasedbyticket":       {Label: "需求发布", Result: "done"},
+	"story:submitreview":            {Label: "提交评审", Result: "submitted"},
+	"story:reviewed":                {Label: "评审研发需求", Result: "done"},
+	"story:reviewpassed":            {Label: "评审通过", Result: "approved"},
+	"story:reviewrejected":          {Label: "评审不通过", Result: "rejected"},
+	"story:verified":                {Label: "验收研发需求", Result: "verified"},
+	"story:releasedbyrelease":       {Label: "发布研发需求", Result: "done"},
+	"story:closed":                  {Label: "关闭研发需求", Result: "closed"},
+	"story:activated":               {Label: "激活研发需求", Result: "activated"},
+	"charter:approvalreview":        {Label: "项目章程审批", Result: "approved"},
+	"planchange:approvalreview":     {Label: "计划变更审批", Result: "approved"},
+	"buildguideline:approvalreview": {Label: "项目建设指引审批", Result: "approved"},
+	"review:reviewed":               {Label: "项目评审", Result: "done"},
+	"case:reviewed":                 {Label: "用例评审", Result: "done"},
+	"task:started":                  {Label: "开始任务", Result: "done"},
+	"task:finished":                 {Label: "完成任务", Result: "done"},
+	"task:closed":                   {Label: "关闭任务", Result: "closed"},
+	"task:canceled":                 {Label: "取消任务", Result: "done"},
+	"task:activated":                {Label: "激活任务", Result: "activated"},
+	"task:restarted":                {Label: "重启任务", Result: "activated"},
+	"task:paused":                   {Label: "暂停任务", Result: "done"},
+	"task:confirmed":                {Label: "确认任务", Result: "done"},
+	"bug:resolved":                  {Label: "解决 Bug", Result: "resolved"},
+	"bug:closed":                    {Label: "关闭 Bug", Result: "closed"},
+	"bug:activated":                 {Label: "激活 Bug", Result: "activated"},
+	"bug:bugconfirmed":              {Label: "确认 Bug", Result: "done"},
+	"bug:tostory":                   {Label: "转研发需求", Result: "done"},
 
 	// 反馈/发布/待办等无 formal 明细对象的常用动作（中文展示，result 尽力归类）
 	"feedback:closed":   {Label: "关闭反馈", Result: "closed"},
@@ -119,21 +126,8 @@ func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) 
 	if req.Result != "" && req.Result != "all" {
 		q = q.Where("a.action IN ?", codesWithResult(req.Result))
 	}
-	if req.ObjectType != "" && req.ObjectType != "all" {
-		q = q.Where("a.objectType = ?", req.ObjectType)
-	} else {
-		switch req.Tab {
-		case DoneTabApproval:
-			q = q.Where(buildApprovalDoneScopeSQL())
-		case DoneTabDemand:
-			q = q.Where("a.objectType IN ?", []string{"demand", "story"})
-		case DoneTabExecution:
-			q = q.Where("a.objectType IN ?", []string{"task", "build", "release"})
-		case DoneTabQuality:
-			q = q.Where("a.objectType IN ?", []string{"bug", "testtask"})
-		case DoneTabRisks:
-			q = q.Where("a.objectType IN ?", []string{"risk", "issue"})
-		}
+	if objectScopeSQL, objectScopeArgs := buildDoneObjectScopeSQL(req.Tab, req.ObjectType); objectScopeSQL != "" {
+		q = q.Where(objectScopeSQL, objectScopeArgs...)
 	}
 	if req.Action != "" && req.Action != "all" {
 		sql, args := buildActionFilterSQL(req.Action)
@@ -215,7 +209,7 @@ func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) 
 		ctx := objCtxs[fmt.Sprintf("%s:%d", row.ObjectType, row.ObjectID)]
 		title := ctx.Title
 		if title == "" {
-			title = fmt.Sprintf("%s #%d", doneObjectTypeLabel(row.ObjectType), row.ObjectID)
+			title = strings.TrimSpace(doneObjectTypeLabel(row.ObjectType) + " " + doneObjectCode(row.ObjectType, row.ObjectID))
 		}
 		items = append(items, DoneAction{
 			ID:              row.ID,
@@ -230,7 +224,7 @@ func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) 
 			ObjectType:      row.ObjectType,
 			ObjectTypeLabel: doneObjectTypeLabel(row.ObjectType),
 			ObjectID:        row.ObjectID,
-			ObjectCode:      fmt.Sprintf("%s #%d", doneObjectTypeLabel(row.ObjectType), row.ObjectID),
+			ObjectCode:      doneObjectCode(row.ObjectType, row.ObjectID),
 			ObjectName:      title,
 			ObjectTitle:     title,
 			Date:            row.Date.Format("2006-01-02 15:04:05"),
@@ -251,13 +245,6 @@ func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) 
 	}
 
 	return items, total, nil
-}
-
-// buildApprovalDoneScopeSQL 返回真正构成审批决策的已办动作范围。
-// 审批决策不是独立对象表，需按需求和研发需求的正式评审动作筛选。
-func buildApprovalDoneScopeSQL() string {
-	return "((a.objectType = 'demand' AND a.action IN ('reviewed', 'reviewpassed', 'reviewrejected')) OR " +
-		"(a.objectType = 'story' AND a.action IN ('submitreview', 'reviewed', 'reviewpassed', 'reviewrejected')))"
 }
 
 // buildActionFilterSQL 处理动作筛选：req.Action 为 "objectType:action" 全键，逗号分隔。
@@ -299,6 +286,7 @@ func buildDoneKeywordFilterSQL() string {
 // RepoCountDoneActionsReq 已办时间段概览计数参数。
 type RepoCountDoneActionsReq struct {
 	Account    string
+	Tab        DoneTab
 	ObjectType string // 空 = 全部对象
 }
 
@@ -313,8 +301,8 @@ func (r *Repo) CountDoneActions(ctx context.Context, req RepoCountDoneActionsReq
 		Where("a.actor = ?", req.Account)
 	scopeSQL, scopeArgs := buildFormalDoneScopeSQL()
 	q = q.Where(scopeSQL, scopeArgs...)
-	if req.ObjectType != "" {
-		q = q.Where("a.objectType = ?", req.ObjectType)
+	if objectScopeSQL, objectScopeArgs := buildDoneObjectScopeSQL(req.Tab, req.ObjectType); objectScopeSQL != "" {
+		q = q.Where(objectScopeSQL, objectScopeArgs...)
 	}
 
 	type row struct {
@@ -417,8 +405,18 @@ func doneObjectTypeLabel(objectType string) string {
 	return objectType
 }
 
+func doneObjectCode(objectType string, objectID int64) string {
+	if objectID <= 0 {
+		return ""
+	}
+	if objectType == "demand" {
+		return fmt.Sprintf("US%d", objectID)
+	}
+	return fmt.Sprintf("%d", objectID)
+}
+
 // doneScopeObjectTypes 我的已办操作对象范围（顺序与 CRCBWorkbench objectTypeOrder 对齐）。
-var doneScopeObjectTypes = []string{"demand", "story", "task", "bug", "risk", "issue", "feedback", "release", "build", "todo", "testtask"}
+var doneScopeObjectTypes = []string{"demand", "story", "task", "bug", "risk", "issue", "feedback", "release", "build", "todo", "testtask", "charter", "planchange", "buildguideline", "review", "case"}
 
 // buildFormalDoneScopeSQL 构造已办正式动作范围 SQL：有 formal 白名单的对象按 action 过滤，
 // 其余对象类型（risk/issue/feedback/release/build/todo/testtask）按 objectType 放行（任何 action）。

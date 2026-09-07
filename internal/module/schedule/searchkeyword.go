@@ -2,7 +2,7 @@
 // 文件: internal/module/schedule/searchkeyword.go
 // 模块: 排期工作台
 // 类型: action
-// 职责: 解析排期页面搜索框中的展示编号，兼容 REQ/RD/SUB 前缀转真实 ID。
+// 职责: 解析排期页面搜索框中的展示编号；业务需求使用 US，兼容旧 REQ/RD/SUB 输入。
 // 依赖: 无
 // =============================================================================
 
@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-var scheduleDisplayIDPattern = regexp.MustCompile(`(?i)^(?:REQ|SUB|RD)\s*-?\s*(\d+)$`)
+var scheduleDisplayIDPattern = regexp.MustCompile(`(?i)^(?:US|REQ|SUB|RD)\s*-?\s*(\d+)$`)
 var schedulePlainIDPattern = regexp.MustCompile(`^\d+$`)
 
 func extractScheduleSearchID(keyword string) string {

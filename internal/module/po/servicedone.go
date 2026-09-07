@@ -50,6 +50,7 @@ func (s *Service) DoneList(ctx context.Context, actor *model.User, req DoneListR
 	}
 	summary, err := s.repo.CountDoneActions(ctx, RepoCountDoneActionsReq{
 		Account:    actor.Account,
+		Tab:        req.Tab,
 		ObjectType: objectType,
 	})
 	if err != nil {
