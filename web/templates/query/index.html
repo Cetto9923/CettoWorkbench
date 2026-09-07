@@ -1,0 +1,106 @@
+{{/* ==========================================================================
+文件: web/templates/query/index.html
+模块: PO 工作台
+职责: 需求查询页面（业务需求 / 研发需求 统一入口）
+========================================================================== */}}
+{{ define "page_css" }}
+<link rel="stylesheet" href="{{ asset "/static/css/po/personal-workspace.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/query/query.css" }}">
+{{ end }}
+
+{{ define "content" }}
+<div class="po-personal-workspace po-query">
+  <header class="workspace-header">
+    <div class="workspace-header-left">
+      <h2>需求查询</h2>
+      <p>统一检索业务需求与研发需求，按负责人 / 主系统 / 价值阶段过滤</p>
+    </div>
+  </header>
+
+  <section class="workspace-panel">
+    <nav class="category-tabs" aria-label="需求类型">
+      <button type="button" class="category-tab{{ if eq .Tab "biz" }} active{{ end }}" data-tab="biz" aria-current="page">业务需求</button>
+      <button type="button" class="category-tab{{ if eq .Tab "rd" }} active{{ end }}" data-tab="rd">研发需求</button>
+    </nav>
+
+    <div class="workspace-toolbar">
+      <label class="workspace-search">
+        <span aria-hidden="true">⌕</span>
+        <input type="search" id="queryKeyword" placeholder="编号 / 标题 / 负责人 / 主系统" aria-label="关键词" value="{{ .Keyword }}">
+      </label>
+      <select id="queryStatus" aria-label="状态">
+        <option value="">全部状态</option>
+        <option value="draft"{{ if eq .Status "draft" }} selected{{ end }}>暂存</option>
+        <option value="wait"{{ if eq .Status "wait" }} selected{{ end }}>待评审</option>
+        <option value="active"{{ if eq .Status "active" }} selected{{ end }}>已评审</option>
+        <option value="clarified"{{ if eq .Status "clarified" }} selected{{ end }}>已澄清</option>
+        <option value="developing"{{ if eq .Status "developing" }} selected{{ end }}>开发中</option>
+        <option value="testing"{{ if eq .Status "testing" }} selected{{ end }}>测试中</option>
+        <option value="waitacceptance"{{ if eq .Status "waitacceptance" }} selected{{ end }}>待验收</option>
+        <option value="acceptanced"{{ if eq .Status "acceptanced" }} selected{{ end }}>已验收</option>
+        <option value="waitdeliver"{{ if eq .Status "waitdeliver" }} selected{{ end }}>待交付</option>
+        <option value="delivered"{{ if eq .Status "delivered" }} selected{{ end }}>已交付</option>
+        <option value="released"{{ if eq .Status "released" }} selected{{ end }}>已发布</option>
+        <option value="closed"{{ if eq .Status "closed" }} selected{{ end }}>已关闭</option>
+        <option value="suspended"{{ if eq .Status "suspended" }} selected{{ end }}>已挂起</option>
+        <option value="refuse"{{ if eq .Status "refuse" }} selected{{ end }}>已驳回</option>
+      </select>
+      <select id="queryPriority" aria-label="优先级">
+        <option value="">全部优先级</option>
+        <option value="1"{{ if eq .Priority "1" }} selected{{ end }}>P1</option>
+        <option value="2"{{ if eq .Priority "2" }} selected{{ end }}>P2</option>
+        <option value="3"{{ if eq .Priority "3" }} selected{{ end }}>P3</option>
+        <option value="4"{{ if eq .Priority "4" }} selected{{ end }}>P4</option>
+      </select>
+      <label class="workspace-search query-owner-search">
+        <span aria-hidden="true">人</span>
+        <input type="search" id="queryOwner" placeholder="负责人" aria-label="负责人" value="{{ .Owner }}">
+      </label>
+      <label class="workspace-search query-system-search">
+        <span aria-hidden="true">系</span>
+        <input type="search" id="querySystem" placeholder="主系统" aria-label="主系统" value="{{ .System }}">
+      </label>
+      <button type="button" id="queryResetBtn" class="workspace-btn">重置筛选</button>
+    </div>
+
+    <div class="workspace-result-bar" aria-live="polite">
+      <span id="querySummary">加载中…</span>
+      <span class="workspace-result-hint">数据来自禅道业务需求 / 研发需求表</span>
+    </div>
+
+    <div class="table-scroll-container">
+      <table class="workspace-table query-table">
+        <thead>
+          <tr>
+            <th class="query-col-id">ID</th>
+            <th class="query-col-title">标题</th>
+            <th class="query-col-type">类型</th>
+            <th class="query-col-pri">优先级</th>
+            <th class="query-col-stage">当前阶段</th>
+            <th class="query-col-status">状态</th>
+            <th class="query-col-owner">负责人</th>
+            <th class="query-col-system">主系统</th>
+            <th class="query-col-dead">截止日期</th>
+            <th class="query-col-action">操作</th>
+          </tr>
+        </thead>
+        <tbody id="queryTbody">
+          <tr><td colspan="10" class="state-placeholder">正在拉取需求查询…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="state-placeholder" id="queryEmpty" hidden>当前条件下暂无需求</div>
+    <div class="state-placeholder error" id="queryError" hidden>
+      <span class="error-msg">拉取需求列表失败，请检查网络或重试</span>
+      <button type="button" class="retry-btn" id="queryRetryBtn">重试</button>
+    </div>
+    <div class="workspace-pagination" id="queryPager" hidden></div>
+  </section>
+</div>
+{{ end }}
+
+{{ define "page_js" }}
+<script src="{{ asset "/static/js/po/personal-list.js" }}"></script>
+<script src="{{ asset "/static/js/query/query.js" }}"></script>
+{{ end }}

@@ -1,0 +1,56 @@
+{{/* ==========================================================================
+文件: web/templates/metrics/radar.html
+模块: 指标雷达 (metrics)
+职责: /metrics/radar 页面骨架，承载 5 分类 KPI 卡 + 异常指标分组表格。
+     数据来自 /metrics/radar/data；客户端 JS = metrics-radar.js (IIFE + PersonalList)。
+全局字段: .CurrentUser, .CSRFToken, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .PageTitle (string)
+========================================================================== */}}
+{{ define "page_css" }}
+<link rel="stylesheet" href="{{ asset "/static/css/po/personal-workspace.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/metrics.css" }}">
+{{ end }}
+
+{{ define "content" }}
+<div class="po-personal-workspace po-metrics-radar">
+  <header class="workspace-header">
+    <div class="workspace-header-left">
+      <h2>指标雷达</h2>
+      <p>按分类查看质效得分与主要风险指标</p>
+    </div>
+    <div class="header-quick-filters" id="radarQuickMeta" role="group" aria-label="雷达元信息">
+      <span class="header-quick-chip" data-radar-meta="generatedAt">
+        <em>快照</em><span id="radarGeneratedAt">—</span>
+      </span>
+      <span class="header-quick-chip" data-radar-meta="abnormalCount">
+        <em>异常指标</em><span id="radarAbnormalCount">—</span>
+      </span>
+    </div>
+  </header>
+
+  <section class="workspace-panel">
+    <div class="workspace-result-bar metric-radar-summary" aria-label="5 分类 KPI">
+      <span class="metric-radar-card placeholder"><span class="state-placeholder">正在拉取指标雷达…</span></span>
+    </div>
+
+    <div class="workspace-result-bar" aria-live="polite">
+      <span id="radarSummary">加载中…</span>
+      <span class="workspace-result-hint">5 分类质效得分：正常(≥80) · 关注(60~79) · 风险(&lt;60) · 暂无数据(=0)</span>
+    </div>
+
+    <div class="metric-radar-groups" id="radarGroups">
+      <p class="state-placeholder">正在按分类整理指标…</p>
+    </div>
+
+    <div class="state-placeholder error" id="radarError" hidden>
+      <span class="error-msg">指标接口不可用，请稍后重试</span>
+      <button type="button" class="retry-btn" id="radarRetryBtn">重试</button>
+    </div>
+  </section>
+</div>
+{{ end }}
+
+{{ define "page_js" }}
+<script src="{{ asset "/static/js/po/personal-list.js" }}"></script>
+<script src="{{ asset "/static/js/metrics-radar.js" }}"></script>
+{{ end }}

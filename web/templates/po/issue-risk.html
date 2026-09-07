@@ -1,0 +1,98 @@
+{{ define "page_css" }}
+<link rel="stylesheet" href="{{ asset "/static/css/po/personal-workspace.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/issue-risk.css" }}">
+{{ end }}
+{{ define "content" }}
+<div class="po-personal-workspace po-issue-risk">
+  <header class="workspace-header">
+    <div class="workspace-header-left">
+      <h2>问题风险</h2>
+      <p>统一查看与我相关的问题和风险，跟进闭环进度</p>
+    </div>
+    <div class="header-quick-filters" id="irQuickChips" role="group" aria-label="存续与逾期">
+      <button type="button" class="header-quick-chip active" data-loop="all" aria-pressed="true">全部 <em id="irCountAll">—</em></button>
+      <button type="button" class="header-quick-chip" data-loop="open" aria-pressed="false">存续 <em id="irCountOpen">—</em></button>
+      <button type="button" class="header-quick-chip" data-loop="closed" aria-pressed="false">已闭环 <em id="irCountClosed">—</em></button>
+      <button type="button" class="header-quick-chip danger" data-overdue="true" aria-pressed="false">逾期 <em id="irCountOverdue">—</em></button>
+    </div>
+  </header>
+  <section class="workspace-panel">
+    <nav class="category-tabs" aria-label="问题风险类型">
+      <button class="category-tab active" data-kind="issue">问题 <em id="issueCount">—</em></button>
+      <button class="category-tab" data-kind="risk">风险 <em id="riskCount">—</em></button>
+    </nav>
+    <div class="workspace-toolbar ir-toolbar">
+      <select id="irRelation" aria-label="关联范围">
+        <option value="allRelated">全部相关</option>
+        <option value="myAction">待我处理</option>
+        <option value="mySubmit">我提出的</option>
+      </select>
+      <select id="irStatus" aria-label="状态"><option value="">状态：全部</option></select>
+      <select id="irProject" aria-label="所属项目"><option value="">项目：全部</option></select>
+      <label class="workspace-search"><span>⌕</span><input id="irKeyword" type="search" placeholder="搜索编号、标题或项目" aria-label="搜索问题风险"></label>
+      <button class="workspace-btn" id="irReset">重置筛选</button>
+    </div>
+    <div class="workspace-result-bar">
+      <span id="irSummary">加载中…</span>
+      <span class="workspace-result-hint">数据来自禅道问题/风险表</span>
+    </div>
+    <div class="workspace-detail ir-detail" id="irDetailView" hidden>
+      <header class="ir-detail-head">
+        <div>
+          <span class="ir-detail-id" id="irDetailId">—</span>
+          <h3 class="ir-detail-title" id="irDetailTitle">—</h3>
+          <div class="ir-detail-meta">
+            <span class="ir-detail-meta-item"><em>项目</em><span id="irDetailProject">—</span></span>
+            <span class="ir-detail-meta-item"><em>严重程度</em><span id="irDetailSeverity">—</span></span>
+            <span class="ir-detail-meta-item"><em>优先级</em><span id="irDetailPriority">—</span></span>
+            <span class="ir-detail-meta-item"><em>状态</em><span id="irDetailStatus">—</span></span>
+            <span class="ir-detail-meta-item"><em>处理人</em><span id="irDetailHandler">—</span></span>
+            <span class="ir-detail-meta-item"><em>提出人</em><span id="irDetailSubmitter">—</span></span>
+            <span class="ir-detail-meta-item"><em>提出日期</em><span id="irDetailCreated">—</span></span>
+            <span class="ir-detail-meta-item"><em>计划解决</em><span id="irDetailPlan">—</span></span>
+          </div>
+        </div>
+        <div class="ir-detail-actions">
+          <a class="ir-detail-external" id="irDetailExternal" href="#" target="_blank" rel="noopener noreferrer">在禅道中查看</a>
+          <button type="button" class="ir-detail-close" id="irDetailClose">返回列表</button>
+        </div>
+      </header>
+      <div class="ir-detail-body">
+        <p class="ir-detail-note">本视图展示行级派生字段；如需完整禅道详情，请使用“在禅道中查看”。后续将引入独立 /issues/risk/:id 详情接口。</p>
+      </div>
+    </div>
+    <div class="table-scroll-container" id="irListView">
+      <table class="workspace-table ir-table">
+        <thead>
+          <tr>
+            <th>编号</th>
+            <th class="ir-title">名称</th>
+            <th>所属项目</th>
+            <th>严重程度</th>
+            <th>优先级</th>
+            <th>处理人</th>
+            <th>提出人</th>
+            <th>计划解决</th>
+            <th>状态</th>
+            <th>存续/逾期</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="irTbody">
+          <tr><td colspan="11" class="state-placeholder">正在拉取问题风险…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="state-placeholder" id="irEmpty" hidden>当前条件下暂无问题/风险</div>
+    <div class="state-placeholder error" id="irError" hidden>
+      <span class="error-msg">加载失败，请重试</span>
+      <button type="button" class="retry-btn" id="irRetryBtn">重试</button>
+    </div>
+    <div class="workspace-pagination" id="irPager" hidden></div>
+  </section>
+</div>
+{{ end }}
+{{ define "page_js" }}
+<script src="{{ asset "/static/js/po/personal-list.js" }}"></script>
+<script src="{{ asset "/static/js/po/issue-risk.js" }}"></script>
+{{ end }}

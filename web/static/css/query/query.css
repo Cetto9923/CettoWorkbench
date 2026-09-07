@@ -1,0 +1,4 @@
+/* query.css —— 占位文件。
+ * /query 页面所有样式直接消费 po/personal-workspace.css 与 wb-priority.css，
+ * 避免在 page CSS 里重复 token；本文件保留为空，避免 page_css link 引用 404。
+ */

@@ -1,0 +1,142 @@
+{{/* ==========================================================================
+文件: web/templates/metrics/manage.html
+模块: 指标管理 (metrics)
+职责: /metrics/manage 页面骨架，承载 12 条指标定义、4 项摘要、筛选与详情抽屉。
+     数据来自 /metrics/api；客户端 JS = metrics-manage.js (IIFE + PersonalList)。
+全局字段: .CurrentUser, .CSRFToken, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .PageTitle (string)
+========================================================================== */}}
+{{ define "page_css" }}
+<link rel="stylesheet" href="{{ asset "/static/css/po/personal-workspace.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/metrics.css" }}">
+{{ end }}
+
+{{ define "content" }}
+<div class="po-personal-workspace po-metrics-manage">
+  <header class="workspace-header">
+    <div class="workspace-header-left">
+      <h2>指标管理</h2>
+      <p>指标定义 · 运行快照 · 阈值口径（只读）</p>
+    </div>
+  </header>
+
+  <section class="workspace-panel">
+    <div class="workspace-result-bar metric-summary-cards" aria-label="指标总览">
+      <span class="metric-summary-card" data-summary="totalItems">
+        <em>指标总数</em><strong id="mSummaryTotal">—</strong>
+      </span>
+      <span class="metric-summary-card" data-summary="withSnapshot">
+        <em>已有快照</em><strong id="mSummarySnapshot">—</strong>
+      </span>
+      <span class="metric-summary-card warn" data-summary="abnormal">
+        <em>异常指标</em><strong id="mSummaryAbnormal">—</strong>
+      </span>
+      <span class="metric-summary-card" data-summary="categoryCount">
+        <em>覆盖分类</em><strong id="mSummaryCategories">—</strong>
+      </span>
+    </div>
+
+    <div class="workspace-toolbar">
+      <select id="mCategory" aria-label="分类">
+        <option value="">全部分类</option>
+        <option value="需求治理">需求治理</option>
+        <option value="交付效率">交付效率</option>
+        <option value="研发质量">研发质量</option>
+        <option value="规范执行">规范执行</option>
+        <option value="效能管理">效能管理</option>
+      </select>
+      <select id="mStatus" aria-label="状态">
+        <option value="">状态：全部</option>
+        <option value="normal">正常</option>
+        <option value="warn">关注</option>
+        <option value="danger">风险</option>
+        <option value="unknown">暂无数据</option>
+      </select>
+      <label class="workspace-search"><span aria-hidden="true">⌕</span><input id="mKeyword" type="search" placeholder="搜索指标名 / 编码 / 数据来源" aria-label="搜索指标"></label>
+      <button type="button" class="workspace-btn" id="mReset">重置筛选</button>
+    </div>
+
+    <div class="workspace-result-bar" aria-live="polite">
+      <span id="mSummary">加载中…</span>
+      <span class="workspace-result-hint">运行数据来自禅道 / 门禁；异常阈值仅作展示，不影响写操作</span>
+    </div>
+
+    <div class="workspace-detail metric-detail" id="mDetailView" hidden>
+      <header class="metric-detail-head">
+        <div>
+          <span class="metric-detail-code" id="mDetailCode">—</span>
+          <h3 class="metric-detail-title" id="mDetailName">—</h3>
+          <div class="metric-detail-meta">
+            <span class="metric-detail-meta-item"><em>分类</em><span id="mDetailCategory">—</span></span>
+            <span class="metric-detail-meta-item"><em>责任角色</em><span id="mDetailOwnerRole">—</span></span>
+            <span class="metric-detail-meta-item"><em>当前值</em><span id="mDetailValue">—</span></span>
+            <span class="metric-detail-meta-item"><em>目标</em><span id="mDetailTarget">—</span></span>
+            <span class="metric-detail-meta-item"><em>状态</em><span id="mDetailStatus">—</span></span>
+            <span class="metric-detail-meta-item"><em>计算时间</em><span id="mDetailLastCalc">—</span></span>
+          </div>
+        </div>
+        <div class="metric-detail-actions">
+          <button type="button" class="metric-detail-close" id="mDetailClose">返回列表</button>
+        </div>
+      </header>
+      <div class="metric-detail-body">
+        <section class="metric-detail-section">
+          <h4>指标摘要</h4>
+          <p id="mDetailDescription">—</p>
+        </section>
+        <section class="metric-detail-section">
+          <h4>数据口径</h4>
+          <p><strong>数据来源</strong>：<span id="mDetailDataSource">—</span></p>
+          <p><strong>周期</strong>：<span id="mDetailPeriod">—</span></p>
+          <p><strong>单位</strong>：<span id="mDetailUnit">—</span></p>
+        </section>
+        <section class="metric-detail-section">
+          <h4>目标与预警</h4>
+          <p><strong>目标</strong>：<span id="mDetailTargetText">—</span></p>
+          <p><strong>关注阈值</strong>：<span id="mDetailWarning">—</span></p>
+          <p><strong>风险阈值</strong>：<span id="mDetailDanger">—</span></p>
+          <p><strong>方向</strong>：<span id="mDetailDirection">—</span></p>
+        </section>
+        <section class="metric-detail-section">
+          <h4>运行信息</h4>
+          <p><strong>计算公式</strong>：<code id="mDetailFormula">—</code></p>
+          <p class="metric-detail-note">本视图展示行级派生字段；配置写操作不在本期范围（只读）。</p>
+        </section>
+      </div>
+    </div>
+
+    <div class="table-scroll-container" id="mListView">
+      <table class="workspace-table metric-table">
+        <thead>
+          <tr>
+            <th class="metric-col-name">指标名</th>
+            <th>分类</th>
+            <th>数据来源</th>
+            <th>周期</th>
+            <th class="metric-col-target">目标 / 阈值</th>
+            <th>责任角色</th>
+            <th>状态</th>
+            <th>配置</th>
+            <th class="metric-col-opt">操作</th>
+          </tr>
+        </thead>
+        <tbody id="mTbody">
+          <tr><td colspan="9" class="state-placeholder">正在拉取指标…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="state-placeholder" id="mEmpty" hidden>当前条件下暂无指标</div>
+    <div class="state-placeholder error" id="mError" hidden>
+      <span class="error-msg">加载失败，请重试</span>
+      <button type="button" class="retry-btn" id="mRetryBtn">重试</button>
+    </div>
+    <div class="workspace-pagination" id="mPager" hidden></div>
+  </section>
+</div>
+{{ end }}
+
+{{ define "page_js" }}
+<script src="{{ asset "/static/js/po/personal-list.js" }}"></script>
+<script src="{{ asset "/static/js/metrics-manage.js" }}"></script>
+{{ end }}
