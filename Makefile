@@ -20,6 +20,13 @@ check-frontend-test:
 	@node tests/unit/frontend/csrf-tokens.test.js
 	@node tests/unit/frontend/personal-list.test.js
 	@node tests/unit/frontend/demand-detail.test.js
+	@node tests/unit/frontend/home-focus.test.js
+	@node tests/unit/frontend/home-list-caption.test.js
+	@node tests/unit/frontend/notice-filters.test.js
+	@node tests/unit/frontend/priority-helpers.test.js
+	@node tests/unit/frontend/navigation-primary-action.test.js
+	@node tests/unit/frontend/html-sanitize.test.js
+	@node tests/unit/frontend/render-row-isolated.test.js
 	@echo "frontend unit/behavior tests passed"
 
 check-vet:
