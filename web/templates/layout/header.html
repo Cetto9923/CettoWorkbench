@@ -25,6 +25,8 @@ web/templates/layout/header.html 模块: 布局 职责:
         <span>{{ if .CurrentUser }}{{ .CurrentUser.DisplayName }}{{ else }}用户{{ end }}</span>
       </button>
       <div class="dropdown-menu">
+        <a href="/profile" class="dropdown-item topbar-dropdown-item"><i class="bi bi-person-vcard"></i><span>个人资料</span></a>
+        <div class="dropdown-divider"></div>
         {{ template "layout/themepicker" }}
         <form action="/logout" method="POST">
           <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}">
