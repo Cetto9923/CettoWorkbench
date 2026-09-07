@@ -1,5 +1,6 @@
 /*
- * 登录页提交：用 fetch 拿 JSON，等浏览器收下 session cookie 后再跳转，
+ * 登录页交互：ajax 提交、密码显隐、SSO 占位。
+ * ajax 用 fetch 拿 JSON，等浏览器收下 session cookie 后再跳转，
  * 避免 POST 303 跟跳时 Chrome 还没带上新 cookie，又被送回登录页。
  */
 (function () {
@@ -17,7 +18,7 @@
     }
     box.innerHTML = "";
     var alert = document.createElement("div");
-    alert.className = "alert alert-danger";
+    alert.className = "login-error";
     alert.textContent = message || "登录失败";
     box.appendChild(alert);
   }
@@ -71,4 +72,26 @@
         }
       });
   });
+
+  var pwd = document.getElementById("password");
+  var toggle = document.getElementById("togglePwd");
+  if (toggle && pwd) {
+    toggle.addEventListener("click", function () {
+      var show = pwd.type === "password";
+      pwd.type = show ? "text" : "password";
+      toggle.classList.toggle("is-hidden", show);
+      toggle.setAttribute("aria-label", show ? "隐藏密码" : "显示密码");
+      toggle.setAttribute("title", show ? "隐藏密码" : "显示密码");
+    });
+  }
+
+  // 统一认证入口占位 — 后续接入 SSO 时替换。
+  var sso = document.getElementById("ssoBtn");
+  if (sso) {
+    sso.addEventListener("click", function () {
+      if (typeof window.showToast === "function") {
+        window.showToast("统一认证未开通，请使用账号密码登录", "info");
+      }
+    });
+  }
 })();
