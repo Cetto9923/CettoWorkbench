@@ -9,9 +9,22 @@
   "use strict";
 
   var esc = (window.PersonalList && window.PersonalList.escapeHtml) || function (v) { return String(v == null ? "" : v); };
+  var PL = window.PersonalList || {};
+  var priorityBadge = PL.priorityBadge || function (raw) {
+    var n = parseInt(String(raw || "").replace(/^p/i, ""), 10);
+    if (isNaN(n) || n < 1 || n > 4) { return '<span class="wb-priority" data-priority="">—</span>'; }
+    return '<span class="wb-priority" data-priority="' + n + '">P' + n + "</span>";
+  };
+  var objectTypeBadge = PL.objectTypeBadge || function (kind) {
+    var labels = { business: "业务需求", story: "研发需求" };
+    var k = String(kind || "").trim().toLowerCase();
+    var label = labels[k] || k || "—";
+    return '<span class="wb-type wb-type-' + (labels[k] ? k : "unknown") + '">' + label + "</span>";
+  };
 
   var state = {
     status: "all",
+    focus: "all",
     page: 1,
     pageSize: 15,
     keyword: "",
@@ -28,6 +41,7 @@
   function demandsUrl(status, page, pageSize) {
     var p = new URLSearchParams();
     p.set("status", status || "all");
+    p.set("focus", state.focus);
     p.set("page", String(page || 1));
     p.set("pageSize", String(pageSize || 15));
     return "/demands?" + p.toString();
@@ -36,6 +50,7 @@
   function syncUrl() {
     if (!window.history || !window.history.replaceState) { return; }
     var params = new URLSearchParams();
+    if (state.focus !== "all") { params.set("focus", state.focus); }
     if (state.status && state.status !== "all") { params.set("status", state.status); }
     if (state.page > 1) { params.set("page", String(state.page)); }
     if (state.pageSize && state.pageSize !== 15) { params.set("pageSize", String(state.pageSize)); }
@@ -45,8 +60,11 @@
   }
 
   function initFromUrl() {
-    if (!window.location.search) { return; }
-    var sp = new URLSearchParams(window.location.search);
+    // 不能在无 query 时提前 return：否则首次直接打开 /home（无任何参数）会跳过
+    // 下面的 pageSize 记忆读取，永远使用默认值，而不是用户上次保存的 pageSize。
+    var sp = new URLSearchParams(window.location.search || "");
+    var focus = sp.get("focus");
+    if (["all", "today", "blocked", "overdue", "suspended"].indexOf(focus) >= 0) { state.focus = focus; }
     var st = (sp.get("status") || "").trim();
     if (VALID_STATUSES.indexOf(st) >= 0) {
       state.status = st;
@@ -128,18 +146,45 @@
       });
   }
 
-  function updateTitle(count, displayedCount) {
+  function updateTitle(count, displayedCount, pageItemCount) {
     var $title = $("#top5Title");
-    if (!$title.length) { return; }
-    var stage = $(".home-vs-mini-card.active .vs-mini-name").first().text() || "全部";
-    $title.text(stage === "全部" ? "全部需求" : stage + "阶段");
-    if (count == null) {
-      $("#homeListCaption").text("当前列表暂不可用，请重试");
-    } else if (displayedCount != null && displayedCount !== count) {
-      $("#homeListCaption").text("已筛选 " + displayedCount + " 条 · 阶段总数 " + count + " 条 · 点击详情进入禅道");
-    } else {
-      $("#homeListCaption").text("共 " + count + " 条关联需求 · 按阶段查看，点击详情进入禅道");
+    if ($title.length) {
+      var stage = $(".home-vs-mini-card.active .vs-mini-name").first().text() || "全部";
+      $title.text(stage === "全部" ? "全部需求" : stage + "阶段");
     }
+
+    var $caption = $("#homeListCaption");
+    if ($caption.length) {
+      // 是否命中筛选：与"本页未筛选前的条数"比较，而非与跨页总数比较；
+      // 否则任何多页阶段（本页条数天然小于总数）都会被误报成"已筛选"。
+      var isFiltered = displayedCount != null && typeof pageItemCount === "number" && displayedCount !== pageItemCount;
+      if (count == null) {
+        $caption.text("当前列表暂不可用，请重试");
+      } else if (isFiltered) {
+        $caption.text("已筛选 " + displayedCount + " 条 · 阶段总数 " + count + " 条 · 点击详情进入禅道");
+      } else {
+        $caption.text("共 " + count + " 条关联需求 · 按阶段查看，点击详情进入禅道");
+      }
+    }
+
+    var $shown = $("#homeShowingCount");
+    var $total = $("#homeTotalCount");
+    if (!$shown.length && !$total.length) { return; }
+    if (count == null) {
+      if ($shown.length) { $shown.text("—"); }
+      if ($total.length) { $total.text("—"); }
+      return;
+    }
+    var first = count > 0 ? ((state.page - 1) * state.pageSize) + 1 : 0;
+    var pageBound = count > 0 ? Math.min(state.page * state.pageSize, count) : 0;
+    var displayed = typeof displayedCount === "number" ? displayedCount : pageBound;
+    if (displayed > 0) {
+      var last = Math.min(first - 1 + displayed, pageBound);
+      if ($shown.length) { $shown.text(first + "-" + last); }
+    } else {
+      if ($shown.length) { $shown.text("0"); }
+    }
+    if ($total.length) { $total.text(String(count)); }
   }
 
   function fillUpdateTime() {
@@ -151,35 +196,46 @@
     );
   }
 
+  // 阶段 → 主要动作渲染：消费 window.PrimaryAction（来自 primary-action.js）。
+  var primaryActionHtml = (window.PrimaryAction && window.PrimaryAction.primaryActionHtml) || function (item) {
+    return '<span class="home-unavailable">—</span>';
+  };
+
   function renderRow(item) {
     var id = item.id || "";
     var url = (item.zentaoUrl || "").trim();
     var pri = (item.pri || "").trim().toUpperCase();
     var isStory = isStoryItem(item);
     var isDemand = !isStory && (/^US\d+/i.test(id) || /^\d+$/.test(id));
+    // data-demand-id 只挂在"按钮 / 抽屉入口"上；标题 <a> 不再挂，避免被 demand-detail 全局委托吞掉。
     var dataAttr = isDemand ? ' data-demand-id="' + esc(id) + '"' : '';
 
+    // 研发需求只显示纯 ID（去掉服务端的 "U" 前缀），保持禅道侧链与渲染一致。
+    // 业务需求保留 "US{id}"；检测仍依赖原始 id，不影响 isStoryItem / 搜索逻辑。
+    var displayId = isStory ? String(id).replace(/^U/i, "") : id;
+
+    // ID 列：禅道原始详情（新页 / 保留办理上下文），无数据降级为纯文本。
     var idHtml = url
-      ? '<a class="table-id-link"' + dataAttr + ' href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(id) + '</a>'
-      : '<span class="table-id-link"' + dataAttr + '>' + esc(id) + '</span>';
+      ? '<a class="table-id-link" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(displayId) + '</a>'
+      : '<span class="table-id-link">' + esc(displayId) + '</span>';
 
-    var actionHtml = isDemand
-      ? '<button type="button" class="table-action-btn"' + dataAttr + '>查看详情</button>'
-      : (url
-        ? '<a class="table-action-btn" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">查看详情</a>'
-        : '<span class="home-unavailable">暂无详情</span>');
+    // 操作列：消费 Stage 5 的 primaryAction；当前不存在时显示 "—" 占位。
+    var actionHtml = primaryActionHtml(item, isStory);
 
-    var priClass = pri ? pri.toLowerCase() : "p3";
-    var priTag = pri
-      ? '<span class="inline-pri ' + esc(priClass) + '">' + esc(pri) + '</span>'
-      : '<span class="inline-pri p3">—</span>';
+    var priTag = priorityBadge(item.pri);
 
     var typeTag = isStory
-      ? '<span class="type-pill story">研需</span>'
-      : '<span class="type-pill demand">业需</span>';
+      ? objectTypeBadge("story")
+      : objectTypeBadge("business");
 
-    var titleHtml = url
-      ? '<a class="table-title-link"' + dataAttr + ' href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(item.title || "—") + '</a>'
+    // 标题：当前页打开工作台详情；href 优先使用 server workbenchUrl，否则退化到 /demands/:id。
+    var workbenchHref = String(item.workbenchUrl || "").trim();
+    if (!workbenchHref) {
+      var cleanId = String(id).replace(/^US/i, "");
+      workbenchHref = cleanId ? "/demands/" + encodeURIComponent(cleanId) : "";
+    }
+    var titleHtml = workbenchHref
+      ? '<a class="table-title-link" href="' + esc(workbenchHref) + '">' + esc(item.title || "—") + '</a>'
       : esc(item.title || "—");
 
     var statusText = getHomeZentaoStatusLabel(item);
@@ -228,7 +284,7 @@
 
   function renderList(total) {
     var filtered = filterItems(rawItems);
-    updateTitle(total, filtered.length);
+    updateTitle(total, filtered.length, rawItems.length);
     $("#top5Error").attr("hidden", true);
 
     if (!filtered.length) {
@@ -255,7 +311,6 @@
         onPageSizeChange: function (s) {
           state.pageSize = s;
           state.page = 1;
-          window.PersonalList.savePageSize("po.home.pageSize", s);
           syncUrl();
           refreshDemands(state.status);
         }
@@ -389,6 +444,18 @@
 
   $(function () {
     initFromUrl();
+    $("#homeQuickChips [data-home-focus]").on("click", function (event) {
+      event.preventDefault();
+      state.focus = $(this).attr("data-home-focus") || "all";
+      state.page = 1;
+      hasCorrectedPage = false;
+      $("#homeQuickChips [data-home-focus]").removeClass("active").attr("aria-pressed", "false");
+      $(this).addClass("active").attr("aria-pressed", "true");
+      syncUrl();
+      refreshDemands(state.status);
+    });
+    $("#homeQuickChips [data-home-focus]").removeClass("active").attr("aria-pressed", "false");
+    $('#homeQuickChips [data-home-focus="' + state.focus + '"]').addClass("active").attr("aria-pressed", "true");
     initToolbar();
     initValueStreamLinkage();
 

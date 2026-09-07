@@ -24,24 +24,24 @@
       <button type="button" class="header-quick-chip active" data-home-focus="all" aria-pressed="true">
         <span>全部</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.MyPending }}{{ end }}</em>
       </button>
-      <a href="/todos?focus=today" class="header-quick-chip" title="进入今日到期待办">
+      <button type="button" data-home-focus="today" class="header-quick-chip" title="在首页查看今天到期及已超期的需求" aria-pressed="false">
         <span>今日必推</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.Today }}{{ end }}</em>
-      </a>
-      <a href="/todos?focus=blocked" class="header-quick-chip warning" title="进入阻塞待办">
+      </button>
+      <button type="button" data-home-focus="blocked" class="header-quick-chip warning" title="在首页查看当前阻塞需求" aria-pressed="false">
         <i class="fas fa-circle-exclamation" aria-hidden="true"></i>
         <span>阻塞</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.Blocked }}{{ end }}</em>
-      </a>
-      <a href="/todos?focus=overdue" class="header-quick-chip danger" title="进入超期待办">
+      </button>
+      <button type="button" data-home-focus="overdue" class="header-quick-chip danger" title="在首页查看超期需求" aria-pressed="false">
         <span>超期</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.Overdue }}{{ end }}</em>
-      </a>
-      <a href="/todos?focus=suspended" class="header-quick-chip" title="查看挂起事项">
+      </button>
+      <button type="button" data-home-focus="suspended" class="header-quick-chip" title="查看挂起事项" aria-pressed="false">
         <span>挂起</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.Suspended }}{{ end }}</em>
-      </a>
+      </button>
     </div>
   </header>
 
   {{ if .PageError }}
-  <div class="workspace-alert workspace-alert-error" role="alert" style="margin-bottom:10px;padding:8px 12px;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;color:#991b1b;font-size:12px;display:flex;align-items:center;gap:8px;">
+  <div class="workspace-alert workspace-alert-error" role="alert" style="margin-bottom:10px;">
     <i class="fas fa-circle-exclamation"></i>
     <span>{{ .PageError }}，统计数据暂不可用</span>
   </div>
@@ -225,7 +225,7 @@
         </div>
         <div class="home-version-panel">
           {{ if .VersionWindowsError }}
-            <div class="workspace-alert workspace-alert-error" role="alert" style="margin:8px 0;padding:8px 12px;background:#fef2f2;border:1px solid #fca5a5;border-radius:4px;color:#991b1b;font-size:12px;display:flex;align-items:center;gap:8px;">
+            <div class="workspace-alert workspace-alert-error" role="alert" style="margin:8px 0;">
               <i class="fas fa-circle-exclamation"></i>
               <span>版本窗口暂不可用（{{ .VersionWindowsError }}）</span>
             </div>
@@ -273,6 +273,7 @@
 
 {{ define "page_js" }}
 <script src="{{ asset "/static/js/po/personal-list.js" }}"></script>
+<script src="{{ asset "/static/js/po/primary-action.js" }}"></script>
 <script src="{{ asset "/static/js/po/demand-detail-render.js" }}"></script>
 <script src="{{ asset "/static/js/po/demand-detail.js" }}"></script>
 <script src="{{ asset "/static/js/po/home.js" }}"></script>

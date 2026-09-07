@@ -26,7 +26,15 @@ function $(selector) {
 const window = {
   location: { pathname: '/home', search: '?status=testing&page=4' },
   history: { replaceState(_, __, url) { urls.push(url); } },
-  appFetch(url) { requests.push(url); return new Promise(() => {}); }
+  appFetch(url) { requests.push(url); return new Promise(() => {}); },
+  // pageSize 记忆（Stage 4）在沙箱中预装，避免 home.js 读取 loadPageSize 触发 TypeError。
+  PersonalList: {
+    escapeHtml: (v) => String(v == null ? '' : v),
+    loadPageSize: (_key, fallback) => fallback,
+    savePageSize() {},
+    renderPagination() {},
+    createController: () => ({ bind() {}, destroy() {} })
+  }
 };
 vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../../../web/static/js/po/home.js'), 'utf8'), {
   window, jQuery: $, URLSearchParams, document: {}

@@ -84,28 +84,13 @@
 .po-home .home-action-table tr:hover td { background: rgba(239, 246, 255, 0.4); }
 .po-home .home-action-table .c-id { width: 90px; }
 .po-home .home-action-table .c-title { width: auto; min-width: 240px; }
-.po-home .home-action-table .c-type { width: 80px; }
-.po-home .home-action-table .c-pri { width: 65px; }
+/* 容纳「业务需求」「研发需求」全文；样式由 wb-priority.css 的 .wb-type / .wb-priority 提供 */
+.po-home .home-action-table .c-type { width: 108px; min-width: 108px; overflow: visible; text-overflow: clip; }
+.po-home .home-action-table .c-pri { width: 72px; overflow: visible; text-overflow: clip; }
 .po-home .home-action-table .c-stage { width: 95px; }
 .po-home .home-action-table .c-zt-status { width: 90px; }
 .po-home .home-action-table .c-owner { width: 115px; }
 .po-home .home-action-table .c-actions { width: 90px; text-align: right; }
-
-.po-home .type-pill {
-  display: inline-flex; align-items: center; height: 18px; padding: 0 6px;
-  border-radius: 3px; font-size: 10px; font-weight: 500;
-}
-.po-home .type-pill.demand { background: #eff6ff; color: #1d4ed8; }
-.po-home .type-pill.story { background: #faf5ff; color: #7e22ce; }
-
-.po-home .inline-pri {
-  display: inline-flex; align-items: center; justify-content: center;
-  min-width: 22px; height: 18px; padding: 0 4px; border-radius: 3px;
-  font-size: 10px; font-weight: 700; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-}
-.po-home .inline-pri.p1 { background: #fee2e2; color: #b91c1c; }
-.po-home .inline-pri.p2 { background: #fef3c7; color: #b45309; }
-.po-home .inline-pri.p3, .po-home .inline-pri.p4 { background: #f1f5f9; color: #64748b; }
 
 .po-home .stage-tag, .po-home .status-tag {
   display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #475569;
@@ -191,6 +176,14 @@
 .po-home .text-emerald { color: #059669 !important; }
 .po-home .text-muted { color: #94a3b8 !important; }
 .po-home .text-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+/* 占位文字（无主操作 / 无办理权限） */
+.po-home .home-unavailable {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 24px; padding: 0 8px; border: 1px dashed #cbd5e1; border-radius: 4px;
+  color: #94a3b8; font-size: 11px; line-height: 1; white-space: nowrap;
+  background: #f8fafc;
+}
 
 @media (max-width: 1280px) {
   .po-home .home-content-grid { grid-template-columns: minmax(0, 1fr); }
