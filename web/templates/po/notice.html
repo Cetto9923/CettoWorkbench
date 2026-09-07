@@ -18,8 +18,8 @@
       <p>聚合与我有关的业务动态、待处理事项和风险提醒</p>
     </div>
     <div class="header-quick-filters" id="noticeQuickChips" role="group" aria-label="快捷焦点">
-      <button type="button" class="header-quick-chip active" data-qv="all" aria-pressed="true">全部通知 <em id="qvCountAll">—</em></button>
-      <button type="button" class="header-quick-chip" data-qv="unread" aria-pressed="false">未读 <em id="qvCountUnread">—</em></button>
+      <button type="button" class="header-quick-chip" data-qv="all" aria-pressed="false">全部通知 <em id="qvCountAll">—</em></button>
+      <button type="button" class="header-quick-chip active" data-qv="unread" aria-pressed="true">未读 <em id="qvCountUnread">—</em></button>
       <button type="button" class="header-quick-chip" data-qv="action" aria-pressed="false">需处理 <em id="qvCountAction">—</em></button>
       <button type="button" class="header-quick-chip warning" data-qv="abnormal" aria-pressed="false">异常提醒 <em id="qvCountAbnormal">—</em></button>
       <button type="button" class="header-quick-chip" data-qv="today" aria-pressed="false">今日新增 <em id="qvCountToday">—</em></button>
@@ -44,12 +44,12 @@
       <select id="noticeReadState" aria-label="已读状态"><option value="all">已读状态：全部</option><option value="unread">未读</option><option value="read">已读</option></select>
       <select id="noticeNeedAction" aria-label="处理状态"><option value="all">处理状态：全部</option><option value="required">需处理</option><option value="none">仅知会</option></select>
       <button type="button" class="workspace-btn" id="noticeResetBtn">重置筛选</button>
-      <button type="button" class="workspace-btn soft-primary" id="noticeMarkAllBtn" title="全部通知标为已读，非仅当前筛选">全部标为已读</button>
+      <button type="button" class="workspace-btn soft-primary" id="noticeMarkAllBtn" title="将当前筛选的全部未读通知标为已读（包含后续页）">全部标为已读</button>
     </div>
 
     <div class="workspace-result-bar" aria-live="polite">
       <span id="noticeSummary">加载中…</span>
-      <span class="workspace-result-hint">全部标为已读作用于所有通知 · 已读不影响业务待办状态</span>
+      <span class="workspace-result-hint">批量已读作用于当前筛选的所有页 · 已读不影响业务待办状态</span>
     </div>
 
     <div class="table-scroll-container">
@@ -57,7 +57,6 @@
         <thead>
           <tr>
             <th class="notice-subject">通知内容</th>
-            <th class="notice-object">关联对象</th>
             <th class="notice-actor">触发人</th>
             <th class="notice-date">时间</th>
             <th class="notice-state">状态</th>
@@ -65,7 +64,7 @@
           </tr>
         </thead>
         <tbody id="noticeTbody">
-          <tr><td colspan="6" class="state-placeholder">正在拉取通知记录…</td></tr>
+          <tr><td colspan="5" class="state-placeholder">正在拉取通知记录…</td></tr>
         </tbody>
       </table>
     </div>
@@ -77,6 +76,21 @@
     </div>
     <div class="workspace-pagination" id="noticePagination" hidden></div>
   </section>
+</div>
+
+<!-- 通知详情抽屉 -->
+<div id="noticeDrawerMask" class="notice-drawer-mask" hidden>
+  <aside class="notice-drawer" role="dialog" aria-modal="true" aria-label="通知详情">
+    <header class="notice-drawer-hdr">
+      <h2>通知详情</h2>
+      <button type="button" class="action-btn icon" id="noticeDrawerClose" aria-label="关闭">✕</button>
+    </header>
+    <div class="notice-drawer-body" id="noticeDrawerBody"></div>
+    <footer class="notice-drawer-footer">
+      <a id="noticeDrawerOpenObj" class="action-btn bar" href="#" target="_blank" rel="noopener noreferrer" hidden>前往关联对象 ↗</a>
+      <button type="button" class="action-btn bar" id="noticeDrawerCloseBtn">关闭</button>
+    </footer>
+  </aside>
 </div>
 {{ end }}
 
