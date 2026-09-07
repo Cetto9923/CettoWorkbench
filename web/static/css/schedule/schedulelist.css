@@ -3,7 +3,7 @@
    模块: 排期工作台
    职责: 业需/独立研发需求列表表格、行样式、排期阶段标签、优先级标签、窗口状态标签
 ========================================================================== */
-
+@import url("../po/wb-priority.css");
 /* 日期输入框：未填时占位（年/月/日）浅灰，有值后正常色 */
 #page-schedule input[type="date"].form-input {
   color: #333;
@@ -229,37 +229,7 @@
   background: var(--blue-bg);
 }
 
-.schedule-type-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  padding: 2px 8px;
-  border-radius: 3px;
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-  flex-shrink: 0;
-  line-height: 1.4;
-}
-
-.schedule-type-badge--biz {
-  background: #eff6ff;
-  color: #2563eb;
-  border: 1px solid #dbeafe;
-}
-
-.schedule-type-badge--sub {
-  background: #f5f3ff;
-  color: #7c3aed;
-  border: 1px solid #ede9fe;
-}
-
-.schedule-type-badge--rd {
-  background: #fef2f2;
-  color: #dc2626;
-  border: 1px solid #fee2e2;
-}
-
+/* 类型徽章：统一 .wb-type（色板在 wb-priority.css）；本页只保留主/配角标 */
 .rd-subtype {
   font-size: 10px;
   font-weight: 400;
@@ -305,23 +275,7 @@
   flex-shrink: 0;
 }
 
-.pri-tag {
-  font-size: 11px;
-  font-weight: 700;
-  font-family: "JetBrains Mono", monospace;
-}
-
-.pri-tag.p0 {
-  color: var(--red);
-}
-
-.pri-tag.p1 {
-  color: var(--orange);
-}
-
-.pri-tag.p2 {
-  color: var(--blue);
-}
+/* .pri-tag 色板唯一真源：wb-priority.css（禁止本页覆写） */
 
 .window-status-tag {
   display: inline-flex;

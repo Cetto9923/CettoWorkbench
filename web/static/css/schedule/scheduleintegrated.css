@@ -222,8 +222,7 @@
   font-size: 11px;
   font-weight: 600;
   color: var(--t3);
-  letter-spacing: 0.02em;
-  line-height: 1.2;
+  letter-spacing: 0.02em; line-height: 1.2; white-space: nowrap;
 }
 
 .schedule-integrated-label .req {
@@ -390,7 +389,7 @@
   background: var(--bg);
   font-size: 11px;
   color: var(--t3);
-  font-weight: 600;
+  font-weight: 600; white-space: nowrap;
 }
 
 /* ── 按钮尺寸（弹窗内） ── */

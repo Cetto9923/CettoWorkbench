@@ -288,7 +288,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
                   <button type="button" class="schedule-row-expand" data-target="{{ .ID }}" title="展开/收起子行"><i class="fas fa-chevron-down"></i></button>
                   {{ end }}
                 </span>
-                <span class="schedule-type-badge schedule-type-badge--biz">业务需求</span>
+                <span class="wb-type wb-type-business">业务需求</span>
                 <span class="schedule-id-badge">{{ .ID }}</span>
                 {{ if .DetailURL }}
                 <a href="{{ .DetailURL }}" target="_blank" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
@@ -321,7 +321,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             <td>
               <div class="schedule-title-cell schedule-title-cell--l2">
                 <span class="tree-guide"></span>
-                <span class="schedule-type-badge schedule-type-badge--sub">子业务需求</span>
+                <span class="wb-type wb-type-sub_demand">子业务需求</span>
                 <span class="schedule-id-badge">{{ .ID }}</span>
                 {{ if .DetailURL }}
                 <a href="{{ .DetailURL }}" target="_blank" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
@@ -354,7 +354,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             <td>
               <div class="schedule-title-cell schedule-title-cell--l3">
                 <span class="tree-guide"></span>
-                {{ if .IsMain }}<span class="schedule-type-badge schedule-type-badge--rd">研发需求<span class="rd-subtype">主</span></span>{{ else }}<span class="schedule-type-badge schedule-type-badge--rd">研发需求<span class="rd-subtype">配</span></span>{{ end }}
+                {{ if .IsMain }}<span class="wb-type wb-type-story">研发需求<span class="rd-subtype">主</span></span>{{ else }}<span class="wb-type wb-type-story">研发需求<span class="rd-subtype">配</span></span>{{ end }}
                 <span class="schedule-id-badge">{{ .ID }}</span>
                 {{ if .DetailURL }}
                 <a href="{{ .DetailURL }}" target="_blank" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
@@ -389,7 +389,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             <td>
               <div class="schedule-title-cell schedule-title-cell--l3">
                 <span class="tree-guide"></span>
-                {{ if .IsMain }}<span class="schedule-type-badge schedule-type-badge--rd">研发需求<span class="rd-subtype">主</span></span>{{ else }}<span class="schedule-type-badge schedule-type-badge--rd">研发需求<span class="rd-subtype">配</span></span>{{ end }}
+                {{ if .IsMain }}<span class="wb-type wb-type-story">研发需求<span class="rd-subtype">主</span></span>{{ else }}<span class="wb-type wb-type-story">研发需求<span class="rd-subtype">配</span></span>{{ end }}
                 <span class="schedule-id-badge">{{ .ID }}</span>
                 {{ if .DetailURL }}
                 <a href="{{ .DetailURL }}" target="_blank" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
@@ -457,7 +457,6 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
                 {{ if .HasChildren }}
                 <button type="button" class="schedule-row-expand" data-target="{{ .ID }}" title="展开/收起子行"><i class="fas fa-chevron-down"></i></button>
                 {{ end }}
-                <!-- <span class="schedule-type-badge schedule-type-badge--rd">独立研发</span> -->
                 <span class="schedule-id-badge">{{ .ID }}</span>
                 {{ if .DetailURL }}
                 <a href="{{ .DetailURL }}" target="_blank" rel="noopener noreferrer" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
@@ -495,7 +494,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             <td>
               <div class="schedule-title-cell schedule-title-cell--l2">
                 <span class="tree-guide"></span>
-                <span class="schedule-type-badge schedule-type-badge--rd">子研发</span>
+                <span class="wb-type wb-type-story">子研发</span>
                 <span class="schedule-id-badge">{{ .ID }}</span>
                 {{ if .DetailURL }}
                 <a href="{{ .DetailURL }}" target="_blank" rel="noopener noreferrer" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
