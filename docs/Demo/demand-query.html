@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="mock-csrf-token">
+  <title>需求查询 - 研发工作台</title>
+  <script src="js/layout/theme.js"></script>
+  <link rel="stylesheet" href="vendor/fonts/jetbrains-mono/fonts.css">
+  <link rel="stylesheet" href="vendor/bootstrap-icons/bootstrap-icons.css">
+  <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">
+  <link rel="stylesheet" href="css/layout/base.css">
+  <link rel="stylesheet" href="css/layout/variables.css">
+  <link rel="stylesheet" href="css/layout/app.css">
+  <link rel="stylesheet" href="css/layout/layout.css">
+  <link rel="stylesheet" href="css/po/shell.css">
+  <link rel="stylesheet" href="css/components/components.css">
+  <link rel="stylesheet" href="css/components/table.css">
+  <link rel="stylesheet" href="css/components/modal.css">
+  <link rel="stylesheet" href="css/po/personal-workspace.css">
+  <link rel="stylesheet" href="css/po/demand-detail.css">
+  
+  <!-- PRD Mock Engine -->
+  <script src="js/mock-data.js"></script>
+  <script src="js/mock-service.js"></script>
+  <script src="vendor/jquery/jquery.min.js"></script>
+</head>
+<body class="po-workbench-shell has-bottom-tabs">
+  <header class="topbar">
+    <div class="topbar-row">
+      <div class="po-role-switcher" role="tablist" aria-label="工作台角色">
+        <a class="po-role-tab active" role="tab" aria-selected="true" href="home.html">PO</a>
+        <button class="po-role-tab" role="tab" aria-selected="false" type="button">SM</button>
+        <button class="po-role-tab" role="tab" aria-selected="false" type="button">业务</button>
+        <button class="po-role-tab" role="tab" aria-selected="false" type="button">PMO</button>
+      </div>
+      <div class="po-header-right">
+        <label class="po-global-search">
+          <i class="fas fa-search" aria-hidden="true"></i>
+          <input type="search" aria-label="搜索需求、任务、Bug、MR、版本窗口、项目" placeholder="搜索需求 / 任务 / Bug / MR">
+        </label>
+        <button type="button" class="po-header-icon" aria-label="通知"><i class="fas fa-bell"></i></button>
+        <div class="dropdown">
+          <button class="po-user-info" type="button" onclick="return toggleDropdown(this);" aria-haspopup="menu">
+            <span class="po-user-avatar">程</span>
+            <span>程统(003030)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="sidebar" id="sidebar">
+      <div class="po-sidebar-brand">
+        <span class="po-brand-logo">研</span>
+        <strong class="nav-text">研发工作台</strong>
+        <button type="button" class="po-sidebar-collapse js-sidebar-collapse" id="sidebarToggle" title="收起菜单" aria-label="收起菜单"><i class="fas fa-chevron-left"></i></button>
+      </div>
+      <div class="sidebar-body">
+        <div class="sidebar-nav po-sidebar-nav">
+          <div class="nav-section-label">个人入口</div>
+          <a href="home.html" class="nav-item "><i class="nav-icon fas fa-home"></i><span class="nav-text">首页</span></a>
+          <a href="todos.html" class="nav-item "><i class="nav-icon fas fa-list-check"></i><span class="nav-text">我的待办</span><span class="nav-badge">107</span></a>
+          <a href="done.html" class="nav-item "><i class="nav-icon fas fa-clock-rotate-left"></i><span class="nav-text">我的已办</span></a>
+          <a href="notice.html" class="nav-item "><i class="nav-icon fas fa-bell"></i><span class="nav-text">通知中心</span><span class="nav-badge nav-badge--danger">205</span></a>
+          <a href="follow.html" class="nav-item "><i class="nav-icon fas fa-star"></i><span class="nav-text">我的关注</span></a>
+          <div class="nav-divider" role="separator"></div>
+          <div class="nav-section-label">工作区</div>
+          <a href="board-demand.html" class="nav-item "><i class="nav-icon fas fa-table-cells-large"></i><span class="nav-text">工作看板</span></a>
+          <a href="demand-query.html" class="nav-item active"><i class="nav-icon fas fa-briefcase"></i><span class="nav-text">需求查询</span></a>
+          <a href="schedule.html" class="nav-item "><i class="nav-icon fas fa-calendar-check"></i><span class="nav-text">需求排期</span><span class="nav-badge">PO</span></a>
+          <a href="version-follow.html" class="nav-item "><i class="nav-icon fas fa-vial-circle-check"></i><span class="nav-text">版本跟进</span></a>
+          <a href="acceptance-delivery.html" class="nav-item "><i class="nav-icon fas fa-clipboard-check"></i><span class="nav-text">验收交付</span></a>
+          <a href="issue-risk.html" class="nav-item "><i class="nav-icon fas fa-shield-halved"></i><span class="nav-text">问题风险</span></a>
+          <div class="nav-divider" role="separator"></div>
+          <div class="nav-section-label">专项分析</div>
+          <a href="quality-analysis.html#metrics" class="nav-item "><i class="nav-icon fas fa-sliders"></i><span class="nav-text">指标管理</span></a>
+          <a href="quality-analysis.html#radar" class="nav-item "><i class="nav-icon fas fa-chart-line"></i><span class="nav-text">指标雷达</span></a>
+          <a href="quality-analysis.html#warning" class="nav-item "><i class="nav-icon fas fa-triangle-exclamation"></i><span class="nav-text">质效预警</span></a>
+        </div>
+      </div>
+    </nav>
+
+    <main class="main">
+      <div class="po-personal-workspace po-demand-query">
+  <header class="workspace-header">
+    <div class="workspace-header-left">
+      <h2>需求查询</h2>
+      <p>跨产品/项目多维度需求检索 · 业务需求与研发需求全生命周期追踪</p>
+    </div>
+    <div class="workspace-header-right" style="display:flex;gap:10px;align-items:center">
+      <button type="button" class="action-btn" onclick="alert('已导出需求报表数据为Excel')"><i class="fas fa-download" style="margin-right:4px"></i>导出数据</button>
+      <button type="button" class="action-btn primary" onclick="DemandDetail.open('63407')"><i class="fas fa-plus" style="margin-right:4px"></i>新建需求</button>
+    </div>
+  </header>
+
+  <section class="workspace-panel" style="padding:16px;margin-bottom:16px">
+    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:12px">
+      <div style="flex:1;min-width:240px;position:relative">
+        <i class="fas fa-search" style="position:absolute;left:10px;top:10px;color:var(--text-tertiary)"></i>
+        <input type="search" id="dqKeyword" class="form-input" placeholder="搜索需求ID、名称、责任人、应用系统..." style="width:100%;padding-left:32px;" oninput="dqFilter()">
+      </div>
+      <div style="display:flex;gap:8px">
+        <select id="dqStage" class="form-select" onchange="dqFilter()" style="min-width:110px">
+          <option value="">全部阶段</option>
+          <option value="wait_accept">待受理</option>
+          <option value="clarifying">需求澄清</option>
+          <option value="scheduling">排期阶段</option>
+          <option value="dev_test">研发提测</option>
+          <option value="testing">联调测试</option>
+          <option value="acceptance">业务验收</option>
+          <option value="deliver">发起交付</option>
+          <option value="feedback">评价反馈</option>
+        </select>
+        <select id="dqPri" class="form-select" onchange="dqFilter()" style="min-width:90px">
+          <option value="">全部优先级</option>
+          <option value="P1">P1 (紧急)</option>
+          <option value="P2">P2 (高)</option>
+          <option value="P3">P3 (中)</option>
+          <option value="P4">P4 (低)</option>
+        </select>
+        <select id="dqType" class="form-select" onchange="dqFilter()" style="min-width:100px">
+          <option value="">全部对象</option>
+          <option value="demand">业务需求</option>
+          <option value="story">研发需求</option>
+        </select>
+        <button type="button" class="action-btn" onclick="dqReset()"><i class="fas fa-rotate-left" style="margin-right:4px"></i>重置</button>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-secondary);border-top:1px solid var(--border-subtle);padding-top:10px">
+      <span>快捷视图：</span>
+      <button type="button" class="header-quick-chip active" onclick="dqViewChip(this, '')">全部需求 (15)</button>
+      <button type="button" class="header-quick-chip" onclick="dqViewChip(this, 'my')">我负责的 (8)</button>
+      <button type="button" class="header-quick-chip warning" onclick="dqViewChip(this, 'blocked')">有阻断/风险 (2)</button>
+      <button type="button" class="header-quick-chip danger" onclick="dqViewChip(this, 'overdue')">延期未完成 (3)</button>
+    </div>
+  </section>
+
+  <section class="workspace-panel">
+    <div class="table-container">
+      <table class="table" id="dqTable">
+        <thead>
+          <tr>
+            <th style="width:90px">ID</th>
+            <th>需求标题</th>
+            <th style="width:90px">类型</th>
+            <th style="width:70px">优先级</th>
+            <th style="width:100px">价值流阶段</th>
+            <th style="width:100px">禅道状态</th>
+            <th style="width:120px">当前处理人</th>
+            <th style="width:110px;text-align:right">主要动作</th>
+          </tr>
+        </thead>
+        <tbody id="dqTbody"></tbody>
+      </table>
+    </div>
+    <div id="dqPagination" class="pagination-wrapper" style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-top:1px solid var(--border-subtle)">
+      <div id="dqSummary" style="font-size:12px;color:var(--text-secondary)">共 15 条</div>
+      <div style="display:flex;gap:4px">
+        <button class="btn btn-sm" disabled>上一页</button>
+        <button class="btn btn-sm btn-primary">1</button>
+        <button class="btn btn-sm" disabled>下一页</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+var rawData = [];
+function initDq() {
+  var d = (window.MOCK_DATA && window.MOCK_DATA.demands_all && window.MOCK_DATA.demands_all.items) || [];
+  rawData = d;
+  renderDq(rawData);
+}
+
+function renderDq(items) {
+  var tbody = document.getElementById('dqTbody');
+  if (!tbody) return;
+  if (!items.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-tertiary)"><i class="fas fa-inbox" style="font-size:24px;margin-bottom:8px;display:block"></i>未检索到符合条件的需求</td></tr>';
+    document.getElementById('dqSummary').innerText = '共 0 条';
+    return;
+  }
+  document.getElementById('dqSummary').innerText = '共 ' + items.length + ' 条';
+  tbody.innerHTML = items.map(function(it) {
+    var isStory = String(it.kind) === 'story' || /^U\d+$/i.test(it.id);
+    var typeBadge = isStory 
+      ? '<span class="badge badge-info">研发需求</span>' 
+      : '<span class="badge badge-primary">业务需求</span>';
+    var priClass = it.pri === 'P1' ? 'badge-danger' : (it.pri === 'P2' ? 'badge-warning' : 'badge-neutral');
+    var priBadge = '<span class="badge ' + priClass + '">' + (it.pri || 'P3') + '</span>';
+    
+    var act = it.primaryAction || {};
+    var actionBtn = '';
+    if (act.enabled) {
+      if (act.kind === 'schedule' || act.key === 'schedule') {
+        actionBtn = '<a href="schedule.html" class="table-action-btn primary">' + (act.label || '排期') + '</a>';
+      } else if (act.key === 'submit_test') {
+        actionBtn = '<a href="submit-test.html" class="table-action-btn primary">' + (act.label || '提测') + '</a>';
+      } else if (act.key === 'test_order') {
+        actionBtn = '<a href="#test-order" class="table-action-btn primary" onclick="alert(\'打开联调测试单详情\');return false">测试单 ↗</a>';
+      } else if (act.key === 'approve') {
+        actionBtn = '<button type="button" class="table-action-btn primary" onclick="DemandDetail.open(\'' + it.id + '\')">审批</button>';
+      } else if (act.key === 'clarify') {
+        actionBtn = '<button type="button" class="table-action-btn primary" onclick="DemandDetail.open(\'' + it.id + '\')">澄清</button>';
+      } else if (act.key === 'accept') {
+        actionBtn = '<button type="button" class="table-action-btn primary" onclick="alert(\'办理业务需求验收确认\')">验收</button>';
+      } else if (act.key === 'urge_accept') {
+        actionBtn = '<button type="button" class="table-action-btn" onclick="alert(\'催办通知已发送给业务验收人\')">催验收</button>';
+      } else if (act.key === 'deliver') {
+        actionBtn = '<button type="button" class="table-action-btn primary" onclick="alert(\'发起交付办理\')">发起交付</button>';
+      } else if (act.key === 'feedback') {
+        actionBtn = '<button type="button" class="table-action-btn primary" onclick="alert(\'提交需求上线后评价\')">评价</button>';
+      } else if (act.key === 'view_feedback') {
+        actionBtn = '<button type="button" class="table-action-btn" onclick="alert(\'查看需求历史评价与评分\')">查看评价</button>';
+      } else {
+        actionBtn = '<button type="button" class="table-action-btn primary" onclick="DemandDetail.open(\'' + it.id + '\')">' + (act.label || '查看') + '</button>';
+      }
+    } else {
+      actionBtn = '<span class="home-unavailable">' + (act.label || '—') + '</span>';
+    }
+
+    var did = it.id || '';
+    var titleHtml = '<a href="javascript:void(0)" class="table-title-link" onclick="DemandDetail.open(\'' + did + '\')">' + (it.title || '—') + '</a>';
+    var idHtml = it.zentaoUrl 
+      ? '<a href="' + it.zentaoUrl + '" target="_blank" class="table-id-link">' + did + '</a>' 
+      : '<span class="table-id-link">' + did + '</span>';
+
+    return '<tr>'
+      + '<td class="c-id">' + idHtml + '</td>'
+      + '<td class="c-title">' + titleHtml + '</td>'
+      + '<td class="c-type">' + typeBadge + '</td>'
+      + '<td class="c-pri">' + priBadge + '</td>'
+      + '<td class="c-stage"><span class="stage-tag">' + (it.stageName || it.valueStream || '—') + '</span></td>'
+      + '<td class="c-zt-status"><span class="status-tag">' + (it.zentaoStatus || '—') + '</span></td>'
+      + '<td class="c-owner">' + (it.nextOwner || it.owner || '—') + '</td>'
+      + '<td class="c-actions" style="text-align:right">' + actionBtn + '</td>'
+      + '</tr>';
+  }).join('');
+}
+
+function dqFilter() {
+  var kw = (document.getElementById('dqKeyword').value || '').toLowerCase().trim();
+  var st = document.getElementById('dqStage').value;
+  var pri = document.getElementById('dqPri').value;
+  var tp = document.getElementById('dqType').value;
+
+  var filtered = rawData.filter(function(it) {
+    if (kw) {
+      var idMatch = (it.id || '').toLowerCase().indexOf(kw) >= 0;
+      var titleMatch = (it.title || '').toLowerCase().indexOf(kw) >= 0;
+      var ownerMatch = (it.owner || it.nextOwner || '').toLowerCase().indexOf(kw) >= 0;
+      if (!idMatch && !titleMatch && !ownerMatch) return false;
+    }
+    if (st && it.stage !== st) return false;
+    if (pri && it.pri !== pri) return false;
+    if (tp === 'demand' && (it.kind === 'story' || /^U\d+$/i.test(it.id))) return false;
+    if (tp === 'story' && !(it.kind === 'story' || /^U\d+$/i.test(it.id))) return false;
+    return true;
+  });
+  renderDq(filtered);
+}
+
+function dqReset() {
+  document.getElementById('dqKeyword').value = '';
+  document.getElementById('dqStage').value = '';
+  document.getElementById('dqPri').value = '';
+  document.getElementById('dqType').value = '';
+  renderDq(rawData);
+}
+
+function dqViewChip(btn, mode) {
+  var chips = document.querySelectorAll('.header-quick-chip');
+  chips.forEach(function(c) { c.classList.remove('active'); });
+  btn.classList.add('active');
+  if (!mode) {
+    renderDq(rawData);
+  } else if (mode === 'my') {
+    renderDq(rawData.filter(function(i) { return (i.owner||'').indexOf('程统') >= 0 || (i.nextOwner||'').indexOf('程统') >= 0; }));
+  } else if (mode === 'blocked') {
+    renderDq(rawData.filter(function(i) { return i.pri === 'P1' || i.stage === 'clarifying'; }));
+  } else if (mode === 'overdue') {
+    renderDq(rawData.filter(function(i) { return i.stage === 'dev_test' || i.stage === 'wait_accept'; }));
+  }
+}
+
+window.addEventListener('DOMContentLoaded', initDq);
+</script>
+    </main>
+  </div>
+
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/layout/sidebar.js"></script>
+  <script src="js/po/demand-detail-render.js"></script>
+  <script src="js/po/demand-detail.js"></script>
+  
+</body>
+</html>

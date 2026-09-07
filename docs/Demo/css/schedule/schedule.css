@@ -1,0 +1,580 @@
+/* ==========================================================================
+   文件: web/static/css/schedule/schedule.css
+   模块: 排期工作台
+   职责: 页面布局、:root 变量、通用 action-btn、列表区框架与筛选栏、数据类型 Tab 切换
+========================================================================== */
+
+:root {
+  --bg: #f4f5f7;
+  --white: #fff;
+  --hover: #f7f8fa;
+  --active: #eef1f6;
+  --border: #e5e7eb;
+  --border-lt: #f0f0f0;
+  --t1: #1f2937;
+  --t2: #6b7280;
+  --t3: #9ca3af;
+  --blue: #2563eb;
+  --blue-bg: #eff6ff;
+  --blue-bd: #bfdbfe;
+  --red: #dc2626;
+  --red-bg: #fef2f2;
+  --red-bd: #fecaca;
+  --orange: #ea580c;
+  --orange-bg: #fff7ed;
+  --orange-bd: #fed7aa;
+  --green: #16a34a;
+  --green-bg: #f0fdf4;
+  --green-bd: #bbf7d0;
+  --gray: #6b7280;
+  --gray-bg: #f9fafb;
+  --purple: #7c3aed;
+  --purple-bg: #f5f3ff;
+  --purple-bd: #ddd6fe;
+  --r: 6px;
+}
+
+#page-schedule a.action-btn {
+  text-decoration: none;
+  color: inherit;
+}
+
+#page-schedule a.action-btn.primary,
+#page-schedule a.action-btn.success,
+#page-schedule a.action-btn.action-btn--primary,
+#page-schedule a.action-btn.action-btn--success {
+  color: #fff;
+}
+
+/* ── 通用按钮 ── */
+#page-schedule .action-btn,
+.batch-modal .action-btn,
+#manageVersionWindowsModal .action-btn {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--white);
+  font-size: 11px;
+  color: var(--t2);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+#page-schedule .action-btn:hover,
+.batch-modal .action-btn:hover,
+#manageVersionWindowsModal .action-btn:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+#page-schedule .action-btn.primary,
+#page-schedule .action-btn.action-btn--primary,
+.batch-modal .action-btn.primary,
+#manageVersionWindowsModal .action-btn.primary {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+}
+
+#page-schedule .action-btn.primary:hover,
+#page-schedule .action-btn.action-btn--primary:hover,
+.batch-modal .action-btn.primary:hover,
+#manageVersionWindowsModal .action-btn.primary:hover {
+  background: #1d4ed8;
+}
+
+#page-schedule .action-btn.success,
+#page-schedule .action-btn.action-btn--success,
+.batch-modal .action-btn.success {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+
+#page-schedule .action-btn.success:hover,
+#page-schedule .action-btn.action-btn--success:hover,
+.batch-modal .action-btn.success:hover {
+  background: #15803d;
+}
+
+.batch-modal .action-btn.danger {
+  background: var(--red);
+  border-color: var(--red);
+  color: #fff;
+}
+
+.batch-modal .action-btn.danger:hover {
+  background: #b91c1c;
+}
+
+#page-schedule .action-btn--disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: #f5f5f5;
+  border-style: dashed;
+  color: var(--t3) !important;
+}
+
+#page-schedule .action-btn--disabled:hover {
+  border-color: var(--border) !important;
+  color: var(--t3) !important;
+  background: #f5f5f5 !important;
+}
+/* ── 页面头部 ── */
+.schedule-page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 2px 0 10px;
+}
+
+.schedule-page-head h2 {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.schedule-page-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+/* ── 需求列表区 ── */
+.schedule-area {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03);
+}
+
+.schedule-quick-scope {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  background: #fff;
+  border-bottom: 1px solid var(--border-lt);
+  flex-wrap: wrap;
+}
+
+.schedule-scope-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  border-radius: 6px;
+  padding: 0 10px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  background: var(--white);
+  cursor: pointer;
+  color: var(--t2);
+  transition: all 0.15s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.schedule-scope-chip:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+.schedule-scope-chip.active {
+  background: var(--blue-bg);
+  border-color: var(--blue);
+  color: var(--blue);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px var(--blue);
+}
+
+.schedule-scope-chip i {
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+.schedule-scope-chip strong {
+  font-family: "JetBrains Mono", monospace;
+  margin-left: 4px;
+}
+
+.schedule-scope-chip--secondary {
+  border-style: dashed;
+  background: var(--bg);
+  color: var(--t2);
+}
+
+.schedule-suspended-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  margin-left: auto;
+  border-radius: 6px;
+  padding: 0 10px;
+  font-size: 12px;
+  border: 1px dashed var(--border);
+  background: var(--bg);
+  cursor: pointer;
+  color: var(--t2);
+  transition: all 0.15s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.schedule-suspended-toggle:hover {
+  border-color: var(--orange);
+  color: var(--orange);
+}
+
+.schedule-suspended-toggle.active {
+  background: #fff7ed;
+  border-color: var(--orange);
+  border-style: solid;
+  color: #c2410c;
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px rgba(234, 88, 12, 0.25);
+}
+
+.schedule-suspended-toggle-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.schedule-suspended-toggle-box i {
+  display: none;
+  font-size: 9px;
+  line-height: 1;
+}
+
+.schedule-suspended-toggle.active .schedule-suspended-toggle-box {
+  border-color: var(--orange);
+  background: var(--orange);
+  color: #fff;
+}
+
+.schedule-suspended-toggle.active .schedule-suspended-toggle-box i {
+  display: block;
+}
+
+.schedule-suspended-toggle strong {
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 700;
+}
+
+.schedule-clear-btn {
+  margin-left: 4px;
+}
+
+.schedule-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px 8px;
+  background: #fff;
+}
+
+.schedule-list-title {
+  font-size: 15px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.schedule-list-title span {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.schedule-list-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── 筛选栏 ── */
+.schedule-filter {
+  position: relative;
+  top: auto;
+  z-index: 1;
+}
+
+.schedule-filter--primary {
+  border-bottom: 1px solid var(--border-lt);
+}
+
+.schedule-filter-primary-inner {
+  padding: 8px 12px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  overflow: visible;
+  flex-wrap: wrap;
+  background: #fff;
+}
+
+.schedule-filter-core {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 640px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.schedule-filter-main {
+  display: grid;
+  grid-template-columns: 46px minmax(132px, 1fr) 60px minmax(132px, 1fr) 74px minmax(132px, 1fr) 74px minmax(132px, 1fr);
+  gap: 8px 10px;
+  align-items: center;
+  width: 100%;
+}
+
+.schedule-filter-main label {
+  font-size: 12px;
+  font-weight: 800;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.schedule-filter-main > .form-select,
+.schedule-filter-main > .form-input {
+  width: 100% !important;
+}
+
+.schedule-filter-main .form-select,
+.schedule-filter-main .form-input {
+  height: 30px;
+  padding: 5px 8px;
+  font-size: 12px;
+}
+
+.schedule-filter-search {
+  grid-column: span 3;
+}
+
+.schedule-search-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  min-width: 220px;
+  max-width: 360px;
+  flex: 1 1 260px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  box-sizing: border-box;
+}
+
+.schedule-search-inline i {
+  color: var(--t3);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.schedule-search-inline input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 12px;
+  color: var(--t1);
+  font-family: inherit;
+}
+
+.schedule-filter-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.schedule-filter-main .action-btn {
+  height: 30px;
+}
+
+.schedule-more-filter-btn,
+.schedule-apply-btn {
+  height: 30px;
+  font-weight: 700;
+}
+
+#page-schedule .schedule-more-filter-btn {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  color: #334155;
+}
+
+#page-schedule .schedule-more-filter-btn:hover,
+#page-schedule .schedule-more-filter-btn.active {
+  border-color: var(--blue);
+  background: var(--blue-bg);
+  color: var(--blue);
+}
+
+.schedule-filter-more {
+  display: none;
+  border-top: none;
+  padding: 7px 12px 10px;
+  gap: 8px 10px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: center;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border-lt);
+  box-sizing: border-box;
+}
+
+.schedule-filter-more.open {
+  display: grid;
+}
+
+.schedule-filter-more .form-select,
+.schedule-filter-more .form-input {
+  width: 100% !important;
+  min-width: 0;
+  height: 30px;
+  padding: 5px 8px;
+  font-size: 12px;
+}
+
+#page-schedule .form-input,
+#page-schedule .form-select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--t1);
+  background: var(--white);
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+#page-schedule .form-input:focus,
+#page-schedule .form-select:focus {
+  outline: none;
+  border-color: var(--blue);
+}
+
+#page-schedule .schedule-filter-main .form-input,
+#page-schedule .schedule-filter-main .form-select,
+#page-schedule .schedule-filter-more .form-input,
+#page-schedule .schedule-filter-more .form-select {
+  width: 100% !important;
+  min-width: 0;
+  height: 30px;
+  padding: 5px 8px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1400px) {
+  .schedule-filter-more {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 960px) {
+  .schedule-filter-more {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .schedule-filter-more {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── 数据类型 Tab ── */
+.schedule-data-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0 16px;
+  background: #fff;
+  border-bottom: 1px solid var(--border-lt);
+}
+
+.schedule-data-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--t2);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  position: relative;
+}
+
+.schedule-data-tab:hover {
+  color: var(--t1);
+  background: var(--hover);
+}
+
+.schedule-data-tab.active {
+  color: var(--blue);
+  border-bottom-color: var(--blue);
+  background: var(--blue-bg);
+}
+
+.schedule-data-tab i {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.schedule-data-tab.active i {
+  opacity: 1;
+}
+
+.schedule-data-tab.is-disabled,
+.schedule-data-tab.is-disabled:hover {
+  color: var(--t3);
+  background: transparent;
+  cursor: not-allowed;
+  border-bottom-color: transparent;
+}
+
+.schedule-data-tab.is-disabled i {
+  opacity: 0.4;
+}
+
+@media (max-width: 900px) {
+  .schedule-page-head {
+    flex-direction: column;
+  }
+}

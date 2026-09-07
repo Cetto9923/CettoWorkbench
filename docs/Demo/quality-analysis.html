@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="mock-csrf-token">
+  <title>专项分析 - 研发工作台</title>
+  <script src="js/layout/theme.js"></script>
+  <link rel="stylesheet" href="vendor/fonts/jetbrains-mono/fonts.css">
+  <link rel="stylesheet" href="vendor/bootstrap-icons/bootstrap-icons.css">
+  <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">
+  <link rel="stylesheet" href="css/layout/base.css">
+  <link rel="stylesheet" href="css/layout/variables.css">
+  <link rel="stylesheet" href="css/layout/app.css">
+  <link rel="stylesheet" href="css/layout/layout.css">
+  <link rel="stylesheet" href="css/po/shell.css">
+  <link rel="stylesheet" href="css/components/components.css">
+  <link rel="stylesheet" href="css/components/table.css">
+  <link rel="stylesheet" href="css/components/modal.css">
+  <link rel="stylesheet" href="css/po/personal-workspace.css">
+  <link rel="stylesheet" href="css/po/demand-detail.css">
+  
+  <!-- PRD Mock Engine -->
+  <script src="js/mock-data.js"></script>
+  <script src="js/mock-service.js"></script>
+  <script src="vendor/jquery/jquery.min.js"></script>
+</head>
+<body class="po-workbench-shell has-bottom-tabs">
+  <header class="topbar">
+    <div class="topbar-row">
+      <div class="po-role-switcher" role="tablist" aria-label="工作台角色">
+        <a class="po-role-tab active" role="tab" aria-selected="true" href="home.html">PO</a>
+        <button class="po-role-tab" role="tab" aria-selected="false" type="button">SM</button>
+        <button class="po-role-tab" role="tab" aria-selected="false" type="button">业务</button>
+        <button class="po-role-tab" role="tab" aria-selected="false" type="button">PMO</button>
+      </div>
+      <div class="po-header-right">
+        <label class="po-global-search">
+          <i class="fas fa-search" aria-hidden="true"></i>
+          <input type="search" aria-label="搜索需求、任务、Bug、MR、版本窗口、项目" placeholder="搜索需求 / 任务 / Bug / MR">
+        </label>
+        <button type="button" class="po-header-icon" aria-label="通知"><i class="fas fa-bell"></i></button>
+        <div class="dropdown">
+          <button class="po-user-info" type="button" onclick="return toggleDropdown(this);" aria-haspopup="menu">
+            <span class="po-user-avatar">程</span>
+            <span>程统(003030)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="sidebar" id="sidebar">
+      <div class="po-sidebar-brand">
+        <span class="po-brand-logo">研</span>
+        <strong class="nav-text">研发工作台</strong>
+        <button type="button" class="po-sidebar-collapse js-sidebar-collapse" id="sidebarToggle" title="收起菜单" aria-label="收起菜单"><i class="fas fa-chevron-left"></i></button>
+      </div>
+      <div class="sidebar-body">
+        <div class="sidebar-nav po-sidebar-nav">
+          <div class="nav-section-label">个人入口</div>
+          <a href="home.html" class="nav-item "><i class="nav-icon fas fa-home"></i><span class="nav-text">首页</span></a>
+          <a href="todos.html" class="nav-item "><i class="nav-icon fas fa-list-check"></i><span class="nav-text">我的待办</span><span class="nav-badge">107</span></a>
+          <a href="done.html" class="nav-item "><i class="nav-icon fas fa-clock-rotate-left"></i><span class="nav-text">我的已办</span></a>
+          <a href="notice.html" class="nav-item "><i class="nav-icon fas fa-bell"></i><span class="nav-text">通知中心</span><span class="nav-badge nav-badge--danger">205</span></a>
+          <a href="follow.html" class="nav-item "><i class="nav-icon fas fa-star"></i><span class="nav-text">我的关注</span></a>
+          <div class="nav-divider" role="separator"></div>
+          <div class="nav-section-label">工作区</div>
+          <a href="board-demand.html" class="nav-item "><i class="nav-icon fas fa-table-cells-large"></i><span class="nav-text">工作看板</span></a>
+          <a href="demand-query.html" class="nav-item "><i class="nav-icon fas fa-briefcase"></i><span class="nav-text">需求查询</span></a>
+          <a href="schedule.html" class="nav-item "><i class="nav-icon fas fa-calendar-check"></i><span class="nav-text">需求排期</span><span class="nav-badge">PO</span></a>
+          <a href="version-follow.html" class="nav-item "><i class="nav-icon fas fa-vial-circle-check"></i><span class="nav-text">版本跟进</span></a>
+          <a href="acceptance-delivery.html" class="nav-item "><i class="nav-icon fas fa-clipboard-check"></i><span class="nav-text">验收交付</span></a>
+          <a href="issue-risk.html" class="nav-item "><i class="nav-icon fas fa-shield-halved"></i><span class="nav-text">问题风险</span></a>
+          <div class="nav-divider" role="separator"></div>
+          <div class="nav-section-label">专项分析</div>
+          <a href="quality-analysis.html#metrics" class="nav-item active"><i class="nav-icon fas fa-sliders"></i><span class="nav-text">指标管理</span></a>
+          <a href="quality-analysis.html#radar" class="nav-item "><i class="nav-icon fas fa-chart-line"></i><span class="nav-text">指标雷达</span></a>
+          <a href="quality-analysis.html#warning" class="nav-item "><i class="nav-icon fas fa-triangle-exclamation"></i><span class="nav-text">质效预警</span></a>
+        </div>
+      </div>
+    </nav>
+
+    <main class="main">
+      <div class="po-personal-workspace po-quality-analysis">
+  <header class="workspace-header">
+    <div class="workspace-header-left">
+      <h2>专项分析与质效大盘</h2>
+      <p>研发交付效能、质量基线、雷达健康度与风险预警监控</p>
+    </div>
+    <div class="workspace-header-right" style="display:flex;gap:8px;align-items:center">
+      <button type="button" class="header-quick-chip active" id="chip-metrics" onclick="switchQaTab('metrics')"><i class="fas fa-sliders" style="margin-right:4px"></i>指标管理</button>
+      <button type="button" class="header-quick-chip" id="chip-radar" onclick="switchQaTab('radar')"><i class="fas fa-chart-line" style="margin-right:4px"></i>指标雷达</button>
+      <button type="button" class="header-quick-chip" id="chip-warning" onclick="switchQaTab('warning')"><i class="fas fa-triangle-exclamation" style="margin-right:4px"></i>质效预警</button>
+    </div>
+  </header>
+
+  <!-- 1. 指标管理 -->
+  <div id="qa-tab-metrics" class="qa-tab-pane">
+    <section class="workspace-panel" style="padding:16px 20px;margin-bottom:16px">
+      <div style="font-weight:600;font-size:14px;margin-bottom:12px">研发质效指标库与口径阈值设定</div>
+      <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:16px">
+        <div style="background:#f8fafc;padding:14px;border-radius:8px;border:1px solid var(--border-subtle)">
+          <div style="font-size:12px;color:var(--text-secondary)">需求交付周期 (Lead Time)</div>
+          <div style="font-size:24px;font-weight:700;color:var(--brand-primary);margin-top:6px">14.2 <span style="font-size:12px">天</span></div>
+          <div style="font-size:11px;color:var(--color-success);margin-top:4px"><i class="fas fa-arrow-down"></i> 较上季度缩短 1.8 天 (达标)</div>
+        </div>
+        <div style="background:#f8fafc;padding:14px;border-radius:8px;border:1px solid var(--border-subtle)">
+          <div style="font-size:12px;color:var(--text-secondary)">提测质量千行Bug率</div>
+          <div style="font-size:24px;font-weight:700;color:var(--brand-primary);margin-top:6px">1.12 <span style="font-size:12px">个/KLOC</span></div>
+          <div style="font-size:11px;color:var(--color-success);margin-top:4px"><i class="fas fa-check"></i> 低于控制线 (基线: 1.5)</div>
+        </div>
+        <div style="background:#f8fafc;padding:14px;border-radius:8px;border:1px solid var(--border-subtle)">
+          <div style="font-size:12px;color:var(--text-secondary)">版本窗口按期交付率</div>
+          <div style="font-size:24px;font-weight:700;color:var(--brand-primary);margin-top:6px">94.6%</div>
+          <div style="font-size:11px;color:var(--color-success);margin-top:4px"><i class="fas fa-arrow-up"></i> 连续3个月保持在90%以上</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="workspace-panel">
+      <div class="table-container">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>指标名称</th>
+              <th>分类</th>
+              <th>计算口径与统计维度</th>
+              <th>标准目标值</th>
+              <th>预警阈值</th>
+              <th>当前状态</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>需求交付前置时间</strong></td>
+              <td>交付效能</td>
+              <td>需求受理评审至生产投产完成的实际自然日</td>
+              <td>≤ 15 天</td>
+              <td>> 20 天</td>
+              <td><span class="badge badge-success">正常</span></td>
+            </tr>
+            <tr>
+              <td><strong>冒烟自测首次通过率</strong></td>
+              <td>工程质量</td>
+              <td>研发单元发起提测且冒烟用例全过的批次占比</td>
+              <td>≥ 90%</td>
+              <td>< 80%</td>
+              <td><span class="badge badge-success">正常 (92%)</span></td>
+            </tr>
+            <tr>
+              <td><strong>业务验收耗时占比</strong></td>
+              <td>协同效率</td>
+              <td>业务确认验收总耗时 / 需求整体研发周期</td>
+              <td>≤ 15%</td>
+              <td>> 25%</td>
+              <td><span class="badge badge-warning">注意 (18%)</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- 2. 指标雷达 -->
+  <div id="qa-tab-radar" class="qa-tab-pane" style="display:none">
+    <section class="workspace-panel" style="padding:20px;text-align:center">
+      <div style="font-weight:600;font-size:15px;margin-bottom:16px">产品团队研发效能与质量雷达评估 (得分: 88.5 / 100)</div>
+      <div style="display:flex;justify-content:center;gap:30px;flex-wrap:wrap">
+        <div style="background:#f8fafc;padding:16px 24px;border-radius:8px;border:1px solid var(--border-subtle);min-width:180px">
+          <div style="font-size:13px;color:var(--text-secondary)">需求流转速率</div>
+          <div style="font-size:22px;font-weight:700;color:var(--brand-primary);margin-top:6px">91 分</div>
+          <div style="font-size:11px;color:var(--color-success)">优秀</div>
+        </div>
+        <div style="background:#f8fafc;padding:16px 24px;border-radius:8px;border:1px solid var(--border-subtle);min-width:180px">
+          <div style="font-size:13px;color:var(--text-secondary)">测试质量稳定性</div>
+          <div style="font-size:22px;font-weight:700;color:var(--brand-primary);margin-top:6px">89 分</div>
+          <div style="font-size:11px;color:var(--color-success)">良好</div>
+        </div>
+        <div style="background:#f8fafc;padding:16px 24px;border-radius:8px;border:1px solid var(--border-subtle);min-width:180px">
+          <div style="font-size:13px;color:var(--text-secondary)">投产交付守时率</div>
+          <div style="font-size:22px;font-weight:700;color:var(--brand-primary);margin-top:6px">95 分</div>
+          <div style="font-size:11px;color:var(--color-success)">优秀</div>
+        </div>
+        <div style="background:#f8fafc;padding:16px 24px;border-radius:8px;border:1px solid var(--border-subtle);min-width:180px">
+          <div style="font-size:13px;color:var(--text-secondary)">技术债务与缺陷清零</div>
+          <div style="font-size:22px;font-weight:700;color:var(--color-warning);margin-top:6px">79 分</div>
+          <div style="font-size:11px;color:var(--color-warning)">需重点关注</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- 3. 质效预警 -->
+  <div id="qa-tab-warning" class="qa-tab-pane" style="display:none">
+    <section class="workspace-panel">
+      <div class="table-container">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>预警级别</th>
+              <th>触发规则</th>
+              <th>涉及对象</th>
+              <th>当前偏离值</th>
+              <th>处置建议</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-warning">黄色预警</span></td>
+              <td>业务验收超过48小时未签章</td>
+              <td><a href="javascript:void(0)" onclick="DemandDetail.open('61673')">US61673</a> 【禅道】主管部门审批</td>
+              <td>已超期 32 小时</td>
+              <td>发起钉钉催办提醒</td>
+              <td><button type="button" class="table-action-btn primary" onclick="alert('已发送预警催办')">催办</button></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-danger">红色预警</span></td>
+              <td>主工程分支提测时间临近且Sonar未通过</td>
+              <td><a href="javascript:void(0)" onclick="DemandDetail.open('56320')">US56320</a> 架构平台将文档审批同步</td>
+              <td>剩余 24 小时封板</td>
+              <td>锁定开发主干并组织专项缺陷清零</td>
+              <td><a href="submit-test.html" class="table-action-btn primary">提测办理</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+function switchQaTab(tab) {
+  var panes = document.querySelectorAll('.qa-tab-pane');
+  panes.forEach(function(p) { p.style.display = 'none'; });
+  var target = document.getElementById('qa-tab-' + tab);
+  if (target) target.style.display = 'block';
+
+  var chips = document.querySelectorAll('.header-quick-chip');
+  chips.forEach(function(c) { c.classList.remove('active'); });
+  var activeChip = document.getElementById('chip-' + tab);
+  if (activeChip) activeChip.classList.add('active');
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+  var hash = (window.location.hash || '').replace('#', '');
+  if (hash === 'radar' || hash === 'warning' || hash === 'metrics') {
+    switchQaTab(hash);
+  }
+});
+</script>
+    </main>
+  </div>
+
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/layout/sidebar.js"></script>
+  <script src="js/po/demand-detail-render.js"></script>
+  <script src="js/po/demand-detail.js"></script>
+  
+</body>
+</html>

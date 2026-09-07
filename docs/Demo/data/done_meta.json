@@ -1,0 +1,399 @@
+{
+  "data": {
+    "products": [],
+    "pageSizeOptions": [
+      20,
+      50,
+      100
+    ],
+    "objectTypes": [
+      {
+        "key": "demand",
+        "label": "业务需求"
+      },
+      {
+        "key": "story",
+        "label": "研发需求"
+      },
+      {
+        "key": "task",
+        "label": "任务"
+      },
+      {
+        "key": "bug",
+        "label": "Bug"
+      },
+      {
+        "key": "risk",
+        "label": "风险"
+      },
+      {
+        "key": "issue",
+        "label": "问题"
+      },
+      {
+        "key": "feedback",
+        "label": "反馈"
+      },
+      {
+        "key": "release",
+        "label": "发布"
+      },
+      {
+        "key": "build",
+        "label": "构建"
+      },
+      {
+        "key": "todo",
+        "label": "待办"
+      }
+    ],
+    "actionTypes": [
+      {
+        "key": "demand:reviewed",
+        "label": "需求评审",
+        "objectType": "demand"
+      },
+      {
+        "key": "demand:reviewpassed",
+        "label": "审批通过",
+        "objectType": "demand"
+      },
+      {
+        "key": "demand:reviewrejected",
+        "label": "审批驳回",
+        "objectType": "demand"
+      },
+      {
+        "key": "demand:plan",
+        "label": "完成排期",
+        "objectType": "demand"
+      },
+      {
+        "key": "demand:deliver",
+        "label": "发起交付",
+        "objectType": "demand"
+      },
+      {
+        "key": "story:submitreview",
+        "label": "提交评审",
+        "objectType": "story"
+      },
+      {
+        "key": "story:reviewed",
+        "label": "评审研发需求",
+        "objectType": "story"
+      },
+      {
+        "key": "task:started",
+        "label": "开始任务",
+        "objectType": "task"
+      },
+      {
+        "key": "task:finished",
+        "label": "完成任务",
+        "objectType": "task"
+      },
+      {
+        "key": "task:closed",
+        "label": "关闭任务",
+        "objectType": "task"
+      },
+      {
+        "key": "bug:resolved",
+        "label": "解决 Bug",
+        "objectType": "bug"
+      },
+      {
+        "key": "bug:closed",
+        "label": "关闭 Bug",
+        "objectType": "bug"
+      },
+      {
+        "key": "todo:finished",
+        "label": "完成待办",
+        "objectType": "todo"
+      }
+    ],
+    "results": [
+      {
+        "key": "done",
+        "label": "完成"
+      },
+      {
+        "key": "approved",
+        "label": "通过"
+      },
+      {
+        "key": "rejected",
+        "label": "驳回"
+      },
+      {
+        "key": "closed",
+        "label": "关闭"
+      },
+      {
+        "key": "activated",
+        "label": "激活"
+      },
+      {
+        "key": "submitted",
+        "label": "已提交"
+      },
+      {
+        "key": "verified",
+        "label": "已验收"
+      },
+      {
+        "key": "resolved",
+        "label": "已解决"
+      },
+      {
+        "key": "returned",
+        "label": "已退回"
+      }
+    ],
+    "timeRanges": [
+      {
+        "key": "all",
+        "label": "全部时间"
+      },
+      {
+        "key": "today",
+        "label": "今天"
+      },
+      {
+        "key": "7d",
+        "label": "近 7 天"
+      },
+      {
+        "key": "week",
+        "label": "本周"
+      },
+      {
+        "key": "30d",
+        "label": "近 30 天"
+      },
+      {
+        "key": "month",
+        "label": "本月"
+      },
+      {
+        "key": "lastMonth",
+        "label": "上月"
+      },
+      {
+        "key": "quarter",
+        "label": "本季度"
+      },
+      {
+        "key": "custom",
+        "label": "自定义"
+      }
+    ],
+    "projects": [
+      {
+        "key": "21087",
+        "label": "qqqqqqq"
+      },
+      {
+        "key": "21086",
+        "label": "test123"
+      },
+      {
+        "key": "21085",
+        "label": "77777"
+      },
+      {
+        "key": "21084",
+        "label": "11111"
+      },
+      {
+        "key": "20939",
+        "label": "催收管理中心项目"
+      },
+      {
+        "key": "20937",
+        "label": "财资好帮手2025升级项目"
+      },
+      {
+        "key": "20908",
+        "label": "自助设备系统信创升级项目"
+      },
+      {
+        "key": "20906",
+        "label": "兴福管家小程序项目"
+      },
+      {
+        "key": "20904",
+        "label": "进销存系统-管家婆项目"
+      },
+      {
+        "key": "20862",
+        "label": "润州长江村镇银行收购迁移项目"
+      },
+      {
+        "key": "20860",
+        "label": "五峰、远安村行系统迁移项目"
+      },
+      {
+        "key": "20859",
+        "label": "如东融兴村行收购项目"
+      },
+      {
+        "key": "20858",
+        "label": "架构管理系统二期项目"
+      },
+      {
+        "key": "20853",
+        "label": "代销理财货币T0快赎改造项目"
+      },
+      {
+        "key": "20852",
+        "label": "钟楼长江村行收购项目"
+      },
+      {
+        "key": "20851",
+        "label": "产品透镜-“技术+场景”双轮驱动，精准营销项目"
+      },
+      {
+        "key": "20849",
+        "label": "曲靖辖内兴福村镇银行合并项目"
+      },
+      {
+        "key": "20848",
+        "label": "绩效管理系统-2025年功能升级项目"
+      },
+      {
+        "key": "20847",
+        "label": "滨海兴福村行改总行分支机构项目"
+      },
+      {
+        "key": "20737",
+        "label": "授信审批AI自动化项目"
+      },
+      {
+        "key": "20398",
+        "label": "微信小程序“常票便利店”项目"
+      },
+      {
+        "key": "20192",
+        "label": "容器云平台-年度优化"
+      },
+      {
+        "key": "19925",
+        "label": "标签管理系统-年度优化"
+      },
+      {
+        "key": "19876",
+        "label": "test"
+      },
+      {
+        "key": "19786",
+        "label": "省联社清算系统2.0-年度优化"
+      },
+      {
+        "key": "19777",
+        "label": "珠峰-基于文本大模型的反洗钱可疑报告生成工具项目"
+      },
+      {
+        "key": "19776",
+        "label": "珠峰-后勤服务降本增效项目"
+      },
+      {
+        "key": "19775",
+        "label": "珠峰-探索落实应用软件“三用”新模式项目"
+      },
+      {
+        "key": "19774",
+        "label": "珠峰-服务器资源精细化管理项目"
+      },
+      {
+        "key": "19773",
+        "label": "珠峰-行内公共组件规范化治理项目"
+      },
+      {
+        "key": "19772",
+        "label": "珠峰-城投业务主体内评数据及流程自动化升级项目"
+      },
+      {
+        "key": "19771",
+        "label": "珠峰-基于chrome浏览器的押品库管系统读写器通讯解决方案"
+      },
+      {
+        "key": "19770",
+        "label": "珠峰-数据库DBaaS平台创新设计及降本增效应用实践项目"
+      },
+      {
+        "key": "19769",
+        "label": "珠峰-开源流量回放平台引入项目"
+      },
+      {
+        "key": "19768",
+        "label": "珠峰-分布式数据库OceanBase应急中心项目"
+      },
+      {
+        "key": "19767",
+        "label": "珠峰-数据专线带宽精细化管理项目"
+      },
+      {
+        "key": "19766",
+        "label": "珠峰-数据中心运维精细化管理项目"
+      },
+      {
+        "key": "19765",
+        "label": "珠峰-电子申报线上化机器人项目"
+      },
+      {
+        "key": "19764",
+        "label": "珠峰-通用资金监管模型项目"
+      },
+      {
+        "key": "19763",
+        "label": "珠峰-财务系统与科技运营平台打通促进流程优化实现降本增效项目"
+      },
+      {
+        "key": "19762",
+        "label": "珠峰-数字人民币代发归集提升项目"
+      },
+      {
+        "key": "19759",
+        "label": "珠峰-探索团队级财务化投入产出度量体系项目"
+      },
+      {
+        "key": "19757",
+        "label": "珠峰-环境管理自动化项目"
+      },
+      {
+        "key": "19756",
+        "label": "珠峰-网安逐鹿项目"
+      },
+      {
+        "key": "19753",
+        "label": "珠峰-图灵风控智库项目"
+      },
+      {
+        "key": "19752",
+        "label": "珠峰-双录视频智能审核项目"
+      },
+      {
+        "key": "19751",
+        "label": "珠峰计划-基于业务补录的核心数据迁移方案项目"
+      },
+      {
+        "key": "19750",
+        "label": "珠峰-任务中心项目"
+      },
+      {
+        "key": "19749",
+        "label": "珠峰-CFCA对公证书降本增效项目"
+      },
+      {
+        "key": "19748",
+        "label": "珠峰-行内前端技术框架升级"
+      }
+    ],
+    "executions": []
+  },
+  "success": true
+}

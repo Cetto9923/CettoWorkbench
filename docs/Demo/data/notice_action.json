@@ -1,0 +1,21 @@
+{
+  "abnormal": 0,
+  "action": 0,
+  "categories": {
+    "all": 0,
+    "approval": 0,
+    "business": 0,
+    "collaboration": 0,
+    "reminder": 0,
+    "risk": 0,
+    "system": 0
+  },
+  "filteredTotal": 0,
+  "items": [],
+  "page": 1,
+  "pageSize": 20,
+  "success": true,
+  "today": 0,
+  "total": 208,
+  "unread": 205
+}

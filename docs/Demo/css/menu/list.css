@@ -1,0 +1,52 @@
+.menu-table-panel .table-scroll-wrapper {
+  overflow-x: auto;
+}
+
+.menu-table {
+  min-width: 840px;
+}
+
+.menu-table .col-action {
+  width: 108px;
+}
+
+.menu-table .tree-row > td {
+  transition: background 0.15s ease;
+}
+
+.menu-table .tree-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding-left: calc(var(--depth, 0) * var(--space-5));
+}
+
+.menu-table .tree-toggle {
+  width: 16px;
+  min-width: 16px;
+  color: var(--color-text-disabled);
+  cursor: pointer;
+}
+
+.menu-table .tree-toggle:hover {
+  color: var(--color-text-secondary);
+}
+
+.menu-table .tree-toggle-placeholder {
+  cursor: default;
+  color: var(--color-border-strong);
+}
+
+.menu-table .tree-toggle-placeholder:hover {
+  color: var(--color-border-strong);
+}
+
+.menu-table .status-active {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.menu-table .status-success {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}

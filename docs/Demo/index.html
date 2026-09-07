@@ -1,0 +1,516 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="D4N2kxiLC0hkWzHP8mG2j97RDEytkWa93GOUgfw/1dh4TLfEo1sSuGF2wpM7PBRQevXZh4bE92u9G9Tw04majw==">
+  <title>工作台首页 - workbench</title>
+  <script src="js/layout/theme.js"></script>
+  <link rel="stylesheet" href="vendor/fonts/jetbrains-mono/fonts.css">
+  <link rel="stylesheet" href="vendor/bootstrap-icons/bootstrap-icons.css">
+  <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">
+  <link rel="stylesheet" href="vendor/quill/quill.snow.css">
+  <link rel="stylesheet" href="css/layout/base.css">
+  <link rel="stylesheet" href="css/layout/variables.css">
+  <link rel="stylesheet" href="css/layout/app.css">
+  <link rel="stylesheet" href="css/layout/layout.css">
+  <link rel="stylesheet" href="css/po/shell.css">
+  
+  <link rel="stylesheet" href="css/components/components.css">
+  
+<link rel="stylesheet" href="css/po/personal-workspace.css">
+<link rel="stylesheet" href="css/po/home.css">
+<link rel="stylesheet" href="css/po/demand-detail.css">
+
+  <!-- PRD Mock Engine -->
+  <script src="js/mock-data.js"></script>
+  <script src="js/mock-service.js"></script>
+</head>
+<body class="po-workbench-shell has-bottom-tabs">
+  
+  <header class="topbar">
+     
+<div class="topbar-row">
+  
+  <div class="po-role-switcher" role="tablist" aria-label="工作台角色">
+    <a class="po-role-tab active" role="tab" aria-selected="true" href="home.html">PO</a>
+    <button class="po-role-tab" role="tab" aria-selected="false" type="button">SM</button>
+    <button class="po-role-tab" role="tab" aria-selected="false" type="button">业务</button>
+    <button class="po-role-tab" role="tab" aria-selected="false" type="button">PMO</button>
+  </div>
+  <div class="po-header-right">
+    <label class="po-global-search">
+      <i class="fas fa-search" aria-hidden="true"></i>
+      <input type="search" aria-label="搜索需求、任务、Bug、MR、版本窗口、项目" placeholder="搜索需求 / 任务 / Bug / MR">
+    </label>
+    <button type="button" class="po-header-icon" aria-label="通知"><i class="fas fa-bell"></i></button>
+    <div class="dropdown">
+      <button class="po-user-info" type="button" onclick="return toggleDropdown(this);" aria-haspopup="menu">
+        <span class="po-user-avatar">程</span>
+        <span>程统(003030)</span>
+      </button>
+      <div class="dropdown-menu">
+        
+<div class="theme-picker-group" role="group" aria-label="外观设置">
+  <div class="dropdown-header">外观</div>
+  <button type="button" class="dropdown-item" role="menuitemradio" aria-checked="false" data-theme-value="system">
+    <i class="bi bi-circle-half"></i><span>跟随系统</span>
+    <i class="bi bi-check check-mark"></i>
+  </button>
+  <button type="button" class="dropdown-item" role="menuitemradio" aria-checked="false" data-theme-value="light">
+    <i class="bi bi-sun"></i><span>浅色</span>
+    <i class="bi bi-check check-mark"></i>
+  </button>
+  <button type="button" class="dropdown-item" role="menuitemradio" aria-checked="false" data-theme-value="dark">
+    <i class="bi bi-moon-stars"></i><span>深色</span>
+    <i class="bi bi-check check-mark"></i>
+  </button>
+</div>
+<div class="dropdown-divider"></div>
+
+        <form action="javascript:void(0);" method="POST">
+          <input type="hidden" name="csrf_token" value="D4N2kxiLC0hkWzHP8mG2j97RDEytkWa93GOUgfw/1dh4TLfEo1sSuGF2wpM7PBRQevXZh4bE92u9G9Tw04majw==">
+          <button type="submit" class="dropdown-item dropdown-item-danger topbar-dropdown-item"><i class="bi bi-box-arrow-right"></i><span>登出</span></button>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+</div>
+
+
+  </header>
+  
+
+  <div class="layout">
+    
+
+<nav class="sidebar" id="sidebar">
+  <div class="po-sidebar-brand">
+    <span class="po-brand-logo">研</span>
+    <strong class="nav-text">研发工作台</strong>
+    <button type="button" class="po-sidebar-collapse js-sidebar-collapse" id="sidebarToggle" title="收起菜单" aria-label="收起菜单"><i class="fas fa-chevron-left"></i></button>
+  </div>
+  <div class="sidebar-body">
+    <div class="sidebar-nav po-sidebar-nav">
+      <div class="nav-section-label">个人入口</div>
+      <a href="home.html" class="nav-item active"><i class="nav-icon fas fa-home"></i><span class="nav-text">首页</span></a>
+      <a href="todos.html" class="nav-item"><i class="nav-icon fas fa-list-check"></i><span class="nav-text">我的待办</span><span class="nav-badge">107</span></a>
+      <a href="done.html" class="nav-item"><i class="nav-icon fas fa-clock-rotate-left"></i><span class="nav-text">我的已办</span></a>
+      <a href="notice.html" class="nav-item"><i class="nav-icon fas fa-bell"></i><span class="nav-text">通知中心</span><span class="nav-badge nav-badge--danger">205</span></a>
+      <a href="follow.html" class="nav-item"><i class="nav-icon fas fa-star"></i><span class="nav-text">我的关注</span></a>
+      <div class="nav-divider" role="separator"></div>
+      <div class="nav-section-label">工作区</div>
+      <a href="board-demand.html" class="nav-item"><i class="nav-icon fas fa-table-cells-large"></i><span class="nav-text">工作看板</span></a>
+      <a href="demand-query.html" class="nav-item"><i class="nav-icon fas fa-briefcase"></i><span class="nav-text">需求查询</span></a>
+      <a href="schedule.html" class="nav-item"><i class="nav-icon fas fa-calendar-check"></i><span class="nav-text">需求排期</span><span class="nav-badge">PO</span></a>
+      <a href="version-follow.html" class="nav-item"><i class="nav-icon fas fa-vial-circle-check"></i><span class="nav-text">版本跟进</span></a>
+      <a href="acceptance-delivery.html" class="nav-item"><i class="nav-icon fas fa-clipboard-check"></i><span class="nav-text">验收交付</span></a>
+      <a href="issue-risk.html" class="nav-item"><i class="nav-icon fas fa-shield-halved"></i><span class="nav-text">问题风险</span></a>
+      <div class="nav-divider" role="separator"></div>
+      <div class="nav-section-label">专项分析</div>
+      <a href="quality-analysis.html#metrics" class="nav-item"><i class="nav-icon fas fa-sliders"></i><span class="nav-text">指标管理</span></a>
+      <a href="quality-analysis.html#radar" class="nav-item"><i class="nav-icon fas fa-chart-line"></i><span class="nav-text">指标雷达</span></a>
+      <a href="quality-analysis.html#warning" class="nav-item"><i class="nav-icon fas fa-triangle-exclamation"></i><span class="nav-text">质效预警</span></a>
+    </div>
+  </div>
+</nav>
+
+
+    <main class="main">
+      
+<div class="po-personal-workspace po-home">
+  
+  <header class="workspace-header">
+    <div class="workspace-header-left">
+      <h2>工作台首页</h2>
+      <p>今日行动 · 全流程价值流推进</p>
+    </div>
+    <div class="header-quick-filters" id="homeQuickChips" role="group" aria-label="快捷焦点">
+      <button type="button" class="header-quick-chip active" data-home-focus="all" aria-pressed="true">
+        <span>全部</span> <em>39</em>
+      </button>
+      <button type="button" data-home-focus="today" class="header-quick-chip" title="在首页查看今天到期及已超期的需求" aria-pressed="false">
+        <span>今日必推</span> <em>2</em>
+      </button>
+      <button type="button" data-home-focus="blocked" class="header-quick-chip warning" title="在首页查看当前阻塞需求" aria-pressed="false">
+        <i class="fas fa-circle-exclamation" aria-hidden="true"></i>
+        <span>阻塞</span> <em>0</em>
+      </button>
+      <button type="button" data-home-focus="overdue" class="header-quick-chip danger" title="在首页查看超期需求" aria-pressed="false">
+        <span>超期</span> <em>2</em>
+      </button>
+      <button type="button" data-home-focus="suspended" class="header-quick-chip" title="查看挂起事项" aria-pressed="false">
+        <span>挂起</span> <em>1</em>
+      </button>
+    </div>
+  </header>
+
+  
+
+  
+  <div class="home-page-card home-vs-section" id="homeValueStreamSection">
+    <div class="home-vs-hdr">
+      <div class="home-vs-title-group">
+        <i class="fas fa-route text-blue"></i>
+        <span class="home-vs-title">需求价值全景流</span>
+        <span class="home-vs-desc">点击阶段卡片联动筛选下方行动列表</span>
+      </div>
+      <div class="home-vs-meta">
+        
+        <span>业务需求共 <strong class="text-mono">15</strong> 条 · 研发需求共 <strong class="text-mono">24</strong> 条</span>
+        
+      </div>
+    </div>
+    <div class="home-vs-compact-scroll" id="homeVsCompactScroll">
+      <div class="home-vs-compact" id="homeVsCompact">
+        <div class="home-vs-compact-row">
+          
+          <button type="button"
+            class="home-vs-mini-card stage-all active"
+            data-vs-status="all"
+            aria-pressed="true"
+            title="全部 · 共 39 条">
+            <div class="vs-card-top">
+              <span class="vs-mini-name">全部</span>
+              <i class="fas fa-check vs-status-icon"></i>
+              
+            </div>
+            <div class="vs-mini-count">39</div>
+            <div class="vs-mini-meta">全量汇总</div>
+          </button>
+          
+          <button type="button"
+            class="home-vs-mini-card stage-accept"
+            data-vs-status="accept"
+            aria-pressed="false"
+            title="受理 · 共 5 条">
+            <div class="vs-card-top">
+              <span class="vs-mini-name">受理</span>
+              
+            </div>
+            <div class="vs-mini-count">5</div>
+            <div class="vs-mini-meta">业5 · 研0</div>
+          </button>
+          
+          <button type="button"
+            class="home-vs-mini-card stage-clarify"
+            data-vs-status="clarify"
+            aria-pressed="false"
+            title="澄清 · 共 2 条">
+            <div class="vs-card-top">
+              <span class="vs-mini-name">澄清</span>
+              
+            </div>
+            <div class="vs-mini-count">2</div>
+            <div class="vs-mini-meta">业2 · 研0</div>
+          </button>
+          
+          <button type="button"
+            class="home-vs-mini-card stage-schedule"
+            data-vs-status="schedule"
+            aria-pressed="false"
+            title="排期 · 共 29 条">
+            <div class="vs-card-top">
+              <span class="vs-mini-name">排期</span>
+              <span class="vs-status-dot dot-amber"></span>
+              
+            </div>
+            <div class="vs-mini-count">29</div>
+            <div class="vs-mini-meta">业5 · 研24</div>
+          </button>
+          
+          <button type="button"
+            class="home-vs-mini-card stage-developing"
+            data-vs-status="developing"
+            aria-pressed="false"
+            title="提测 · 共 1 条">
+            <div class="vs-card-top">
+              <span class="vs-mini-name">提测</span>
+              
+            </div>
+            <div class="vs-mini-count">1</div>
+            <div class="vs-mini-meta">业1 · 研0</div>
+          </button>
+          
+          <button type="button"
+            class="home-vs-mini-card stage-testing empty"
+            data-vs-status="testing"
+            aria-pressed="false"
+            title="联调测试 · 共 0 条">
+            <div class="vs-card-top">
+              <span class="vs-mini-name">联调测试</span>
+              
+            </div>
+            <div class="vs-mini-count">0</div>
+            <div class="vs-mini-meta">业0 · 研0</div>
+          </button>
+          
+          <button type="button"
+            class="home-vs-mini-card stage-waitacceptance empty"
+            data-vs-status="waitacceptance"
+            aria-pressed="false"
+            title="验收 · 共 0 条">
+            <div class="vs-card-top">
+              <span class="vs-mini-name">验收</span>
+              <span class="vs-status-dot dot-blue"></span>
+              
+            </div>
+            <div class="vs-mini-count">0</div>
+            <div class="vs-mini-meta">业0 · 研0</div>
+          </button>
+          
+          <button type="button"
+            class="home-vs-mini-card stage-acceptanced"
+            data-vs-status="acceptanced"
+            aria-pressed="false"
+            title="发起交付 · 共 1 条">
+            <div class="vs-card-top">
+              <span class="vs-mini-name">发起交付</span>
+              
+            </div>
+            <div class="vs-mini-count">1</div>
+            <div class="vs-mini-meta">业1 · 研0</div>
+          </button>
+          
+          <button type="button"
+            class="home-vs-mini-card stage-publish"
+            data-vs-status="publish"
+            aria-pressed="false"
+            title="发布 · 共 1 条">
+            <div class="vs-card-top">
+              <span class="vs-mini-name">发布</span>
+              
+            </div>
+            <div class="vs-mini-count">1</div>
+            <div class="vs-mini-meta">业1 · 研0</div>
+          </button>
+          
+          <button type="button"
+            class="home-vs-mini-card stage-released"
+            data-vs-status="released"
+            aria-pressed="false"
+            title="评价反馈 · 共 1 条">
+            <div class="vs-card-top">
+              <span class="vs-mini-name">评价反馈</span>
+              
+            </div>
+            <div class="vs-mini-count">1</div>
+            <div class="vs-mini-meta">业1 · 研0</div>
+          </button>
+          
+        </div>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="home-content-grid">
+    
+    <section class="top5-section home-page-card" id="top5Section">
+      
+      <div class="workspace-toolbar home-toolbar">
+        <div class="toolbar-left-group">
+          <label class="workspace-search">
+            <span aria-hidden="true">⌕</span>
+            <input type="search" id="homeKeyword" placeholder="搜索 ID、标题或负责人" aria-label="关键词">
+          </label>
+          <div class="relation-segment" id="homeRelationSegment" aria-label="我的关系">
+            <button type="button" class="active" data-relation="all">全部</button>
+            <button type="button" data-relation="in_charge">我负责</button>
+            <button type="button" data-relation="cooperate">我配合</button>
+            <button type="button" data-relation="follow">我关注</button>
+          </div>
+          <select id="homeObjectType" aria-label="具体对象">
+            <option value="all">具体对象：全部</option>
+            <option value="demand">业务需求 (US)</option>
+            <option value="story">研发需求 (Story)</option>
+          </select>
+          <select id="homePriority" aria-label="优先级">
+            <option value="all">优先级：全部</option>
+            <option value="p1">P1 高优</option>
+            <option value="p2">P2 中优</option>
+            <option value="p3">P3/P4 一般</option>
+          </select>
+          <button type="button" id="homeResetBtn" class="workspace-btn">重置</button>
+        </div>
+        <div class="toolbar-right-group">
+          <span class="toolbar-count-caption" id="homeToolbarCount">显示 <b class="text-mono" id="homeShowingCount">1-15</b> / 共 <span id="homeTotalCount">0</span> 条</span>
+          <button type="button" class="home-refresh" id="homeRefreshBtn" aria-label="刷新列表">
+            <i class="fas fa-rotate-right" aria-hidden="true"></i> 刷新
+          </button>
+        </div>
+      </div>
+
+      
+      <div class="table-scroll-container" id="top5List">
+        <table class="workspace-table home-action-table">
+          <thead>
+            <tr>
+              <th class="c-id">需求编号</th>
+              <th class="c-title">事项标题</th>
+              <th class="c-type">类型</th>
+              <th class="c-pri">优先级</th>
+              <th class="c-stage">当前阶段</th>
+              <th class="c-zt-status">状态</th>
+              <th class="c-owner">当前负责人</th>
+              <th class="c-actions">操作</th>
+            </tr>
+          </thead>
+          <tbody id="top5Tbody">
+            <tr><td colspan="8" class="state-placeholder">正在加载行动列表…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="state-placeholder" id="top5Empty" hidden>当前阶段暂无匹配需求，可切换阶段或清空筛选条件</div>
+      <div class="state-placeholder error" id="top5Error" hidden>
+        加载行动列表失败，请检查网络或刷新重试
+        <button type="button" class="retry-btn" id="homeRetryBtn">重试</button>
+      </div>
+      <div class="workspace-pagination" id="homePagination" hidden></div>
+    </section>
+
+    
+    <aside class="home-side-column" aria-label="PO聚焦与版本窗口">
+      
+      <section class="home-page-card home-focus-box" aria-label="PO 聚焦与风险专区">
+        <div class="home-side-hdr">
+          <div class="home-side-title"><i class="fas fa-shield-halved text-blue"></i> PO 聚焦与风险专区</div>
+          <a class="side-link" href="todos.html">进入待办 <i class="fas fa-angle-right" aria-hidden="true"></i></a>
+        </div>
+        <div class="home-focus-grid">
+          <a href="board-demand.html" class="focus-card danger" title="查看我负责的问题与风险">
+            <div class="focus-card-hdr">
+              <span>负责问题/风险</span>
+              <i class="fas fa-triangle-exclamation text-red"></i>
+            </div>
+            <div class="focus-card-num">
+              <strong>0</strong>
+              <small>项待推进</small>
+            </div>
+            <div class="focus-card-hint">看板问题专区</div>
+          </a>
+
+          <button type="button" class="focus-card vs-trigger" data-stage-target="clarify" title="筛选待澄清梳理阶段需求">
+            <div class="focus-card-hdr">
+              <span>待澄清梳理</span>
+              <i class="fas fa-clipboard-list text-muted"></i>
+            </div>
+            <div class="focus-card-num">
+              
+              <strong class="text-primary">2</strong>
+              
+              <small>条需求池</small>
+            </div>
+            <div class="focus-card-hint">点击联动筛选</div>
+          </button>
+
+          <button type="button" class="focus-card vs-trigger" data-stage-target="schedule" title="筛选待排期阶段需求">
+            <div class="focus-card-hdr">
+              <span>待规划排期</span>
+              <i class="fas fa-calendar-check text-muted"></i>
+            </div>
+            <div class="focus-card-num">
+              
+              <strong class="text-amber">29</strong>
+              
+              <small>条待进窗口</small>
+            </div>
+            <div class="focus-card-hint">去排期工作台</div>
+          </button>
+
+          <button type="button" class="focus-card vs-trigger" data-stage-target="waitacceptance" title="筛选待验收阶段需求">
+            <div class="focus-card-hdr">
+              <span>待验收交付</span>
+              <i class="fas fa-circle-check text-muted"></i>
+            </div>
+            <div class="focus-card-num">
+              
+              <strong class="text-emerald">0</strong>
+              
+              <small>条待确认</small>
+            </div>
+            <div class="focus-card-hint">按期上线保障</div>
+          </button>
+        </div>
+      </section>
+
+      
+      <div class="home-page-card home-version-dock" id="homeVersionDock">
+        <div class="home-side-hdr">
+          <div class="home-side-title"><i class="fas fa-code-branch text-blue"></i> 当前活跃版本窗口</div>
+          <a class="side-link" href="schedule.html">排期总览 <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+        </div>
+        <div class="home-version-panel">
+          
+            <div class="home-version-empty">暂无活跃版本窗口</div>
+          
+        </div>
+        <div class="version-dock-bottom">
+          <a href="schedule.html" class="version-manage-link">
+            <i class="fas fa-plus-circle"></i> 去新建或管理发版窗口
+          </a>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="data-info">
+    <span>列表获取时间：<span id="lastUpdateTime">—</span></span>
+    <span>数据来源：禅道研发协同库</span>
+  </div>
+</div>
+
+    </main>
+  </div>
+
+  
+  <nav class="bottom-tabbar" aria-label="已打开工作页签">
+    <a class="bottom-tab active" href="home.html"><i class="fas fa-home"></i><span>PO 首页</span></a>
+    
+  </nav>
+  
+
+  <div class="toast-container" id="toast-container"></div>
+  <div class="modal-backdrop" id="modal-delete">
+    <div class="modal modal-sm">
+      <div class="modal-header modal-header-danger">
+        <div class="modal-danger-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M8 6v4M8 11.5v.5"/>
+            <path d="M7 2.3L1.5 12A1 1 0 002.4 13.5h11.2a1 1 0 00.9-1.5L9 2.3a1 1 0 00-2 0z"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="modal-title">确认删除？</h2>
+          <p class="modal-subtitle">此操作不可撤销，删除后数据将永久移除。</p>
+        </div>
+      </div>
+      <div class="modal-impact">
+        请确认该数据不再被业务流程依赖后再执行删除操作。
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-neutral" type="button" onclick="closeModal('modal-delete')">取消</button>
+        <button class="btn btn-danger" type="button" onclick="submitDelete()">确认删除</button>
+      </div>
+    </div>
+  </div>
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/components/components.js"></script>
+  <script src="js/layout/sidebar.js"></script>
+  <script src="vendor/quill/quill.min.js"></script>
+  <script src="vendor/jquery/jquery.min.js"></script>
+  
+  
+<script src="js/po/personal-list.js"></script>
+<script src="js/po/primary-action.js"></script>
+<script src="js/po/demand-detail-render.js"></script>
+<script src="js/po/demand-detail.js"></script>
+<script src="js/po/home.js"></script>
+
+  
+
+</body>
+</html>

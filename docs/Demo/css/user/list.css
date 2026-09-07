@@ -1,0 +1,82 @@
+.data-table .account-text {
+  display: inline-block;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.data-table .email-text {
+  color: var(--color-text-link-muted);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-sans);
+  letter-spacing: 0.2px;
+  word-break: break-word;
+}
+
+.data-table .last-login {
+  display: inline-block;
+  padding: var(--space-1) var(--space-2);
+  border-radius: 999px;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-accent-muted);
+  background: var(--color-surface-soft-2);
+  letter-spacing: 0.3px;
+}
+
+.table-create-split {
+  display: inline-flex;
+  align-items: stretch;
+}
+
+.table-create-split .table-create-main {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 128px;
+  padding-right: 0;
+}
+
+.table-create-main .table-create-main-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.table-create-main .table-create-toggle {
+  position: relative;
+  height: 36px;
+  width: 34px;
+  border: 0;
+  border-left: 1px solid var(--color-white-35);
+  border-top-right-radius: 18px;
+  border-bottom-right-radius: 18px;
+  color: var(--color-surface);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.table-create-main .table-create-toggle i {
+  font-size: var(--font-size-xs);
+  line-height: 1;
+}
+
+.table-create-main .table-create-toggle:hover {
+  background: var(--color-white-08);
+}
+
+.table-create-menu {
+  min-width: 120px;
+  padding: var(--space-1_5) 0;
+}
+
+.table-create-menu .dropdown-item {
+  font-size: var(--font-size-md);
+}
+
+.table-create-menu .dropdown-item[aria-disabled="true"] {
+  color: var(--color-text-disabled);
+  pointer-events: none;
+}

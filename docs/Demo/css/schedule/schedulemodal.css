@@ -1,0 +1,645 @@
+/* ==========================================================================
+   文件: web/static/css/schedule/schedulemodal.css
+   模块: 排期工作台
+   职责: 弹窗公共样式（batch-modal 骨架、overlay）、新建/编辑窗口弹窗、管理窗口弹窗
+========================================================================== */
+
+/* 日期输入框：未填时占位（年/月/日）浅灰，有值后正常色 */
+#scheduleVersionWindowModal input[type="date"].form-input {
+  color: #333;
+}
+
+#scheduleVersionWindowModal input[type="date"].form-input::-webkit-datetime-edit {
+  color: #aaa;
+}
+
+#scheduleVersionWindowModal input[type="date"].form-input.has-value::-webkit-datetime-edit,
+#scheduleVersionWindowModal input[type="date"].form-input:focus::-webkit-datetime-edit {
+  color: #333;
+}
+
+#scheduleVersionWindowModal input[type="date"].form-input:invalid {
+  color: #aaa;
+}
+
+#scheduleVersionWindowModal input[type="date"].form-input:valid.has-value {
+  color: #333;
+}
+
+/* ── 版本窗口弹窗（完整复制 demo/personal-workbench.css 相关规则） ── */
+/* 弹窗在 #page-schedule 外，需独立 form / action-btn 基础样式 */
+#scheduleVersionWindowModal .form-group {
+  margin-bottom: 16px;
+}
+
+#scheduleVersionWindowModal .form-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--t2);
+  margin-bottom: 4px;
+}
+
+#scheduleVersionWindowModal .form-input,
+#scheduleVersionWindowModal .form-select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--t1);
+  background: var(--white);
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+#scheduleVersionWindowModal .form-input:focus,
+#scheduleVersionWindowModal .form-select:focus {
+  outline: none;
+  border-color: var(--blue);
+}
+
+.drawer-close {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--white);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--t2);
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.drawer-close:hover {
+  background: var(--bg);
+  color: var(--t1);
+  border-color: var(--t3);
+}
+
+.chk {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--t2);
+  cursor: pointer;
+}
+
+.chk input {
+  accent-color: var(--blue);
+}
+
+.batch-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 600;
+  display: none;
+}
+
+.batch-modal-overlay.show {
+  display: block;
+}
+
+.batch-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--white);
+  border-radius: var(--r);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  z-index: 601;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  display: none;
+}
+
+#scheduleVersionWindowModal.batch-modal {
+  width: min(94vw, 980px);
+  max-width: 980px;
+  height: 92vh;
+  max-height: 92vh;
+  overflow: hidden;
+}
+
+/* ── 窗口管理弹窗（遮罩与新建窗口弹窗一致：全屏 fixed） ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 600;
+  display: none;
+}
+
+.modal-overlay.show {
+  display: block;
+}
+
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--white);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  z-index: 601;
+  max-width: 560px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  display: none;
+}
+
+.modal.show {
+  display: block;
+}
+
+.modal-hdr {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  gap: 12px;
+}
+
+.modal-hdr h3 {
+  font-size: 14px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.modal-close {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--white);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--t2);
+  font-size: 12px;
+}
+
+.modal-close:hover {
+  background: var(--hover);
+  color: var(--t1);
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-footer {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+#manageVersionWindowsModal .action-btn--disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: #f5f5f5;
+  border-style: dashed;
+  color: var(--t3) !important;
+  pointer-events: none;
+}
+
+#manageVersionWindowsModal .action-btn--disabled:hover {
+  border-color: var(--border) !important;
+  color: var(--t3) !important;
+  background: #f5f5f5 !important;
+}
+
+/* 操作列：轻量图标按钮（对齐 user/list zen-icon-action） */
+#manageVersionWindowsModal .schedule-manage-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+#manageVersionWindowsModal .action-btn.zen-icon-action {
+  width: 1.65rem;
+  height: 1.65rem;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #999;
+  box-shadow: none;
+}
+
+#manageVersionWindowsModal .action-btn.zen-icon-action i {
+  font-size: 12px;
+  line-height: 1;
+}
+
+#manageVersionWindowsModal .action-btn.zen-icon-action.primary {
+  background: transparent;
+  border: none;
+  color: #999;
+}
+
+#manageVersionWindowsModal .action-btn.zen-icon-action.primary:hover:not(.action-btn--disabled) {
+  background: transparent;
+  border: none;
+  color: var(--blue);
+}
+
+#manageVersionWindowsModal .action-btn.zen-icon-action.danger {
+  background: transparent;
+  border: none;
+  color: #999;
+}
+
+#manageVersionWindowsModal .action-btn.zen-icon-action.danger:hover:not(.action-btn--disabled) {
+  background: transparent;
+  border: none;
+  color: var(--red);
+  transform: none;
+}
+
+#manageVersionWindowsModal .action-btn.zen-icon-action.action-btn--disabled,
+#manageVersionWindowsModal .action-btn.zen-icon-action.action-btn--disabled:hover {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: transparent;
+  border: none;
+  color: #ccc;
+  pointer-events: none;
+}
+
+.batch-modal.show {
+  display: block;
+}
+
+.batch-modal-hdr {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.batch-modal-hdr h3 {
+  font-size: 14px;
+  font-weight: 600;
+  flex: 1;
+  margin: 0;
+}
+
+.batch-modal-body {
+  padding: 20px;
+}
+
+#scheduleVersionWindowModal.show {
+  display: flex;
+  flex-direction: column;
+}
+
+#scheduleVersionWindowModal .batch-modal-hdr,
+#scheduleVersionWindowModal .batch-modal-footer {
+  flex: 0 0 auto;
+}
+
+#scheduleVersionWindowModal .batch-modal-hdr {
+  padding: 14px 18px;
+}
+
+#scheduleVersionWindowModal .batch-modal-hdr h3 {
+  font-size: 13px;
+}
+
+#scheduleVersionWindowModal .batch-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+  padding: 14px 18px 16px;
+}
+
+#scheduleVersionWindowModal .batch-modal-footer {
+  padding: 12px 18px;
+}
+
+.batch-modal-footer {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.schedule-create-modal {
+  font-size: 12px;
+}
+
+.schedule-create-modal .form-group {
+  margin: 0;
+}
+
+.schedule-create-modal .form-label {
+  font-size: 11px;
+  margin-bottom: 3px;
+}
+
+.schedule-create-modal .form-input,
+.schedule-create-modal .form-select {
+  padding: 7px 10px;
+  font-size: 12px;
+}
+
+.schedule-create-modal .chk {
+  font-size: 12px;
+}
+
+.schedule-create-modal .chk input {
+  width: 14px;
+  height: 14px;
+}
+
+.schedule-create-grid {
+  display: grid;
+  gap: 10px 12px;
+}
+
+.schedule-create-grid--4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.schedule-create-grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.schedule-create-grid--systems {
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px 12px;
+}
+
+.schedule-create-inline-row {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr auto;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 10px;
+}
+
+.schedule-create-section {
+  margin-top: 10px;
+}
+
+.schedule-create-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 6px;
+}
+
+.schedule-create-section-head strong {
+  font-size: 12px;
+  color: var(--t1);
+}
+
+.schedule-create-systems {
+  margin-bottom: 8px;
+}
+
+@media (max-width: 1080px) {
+  .schedule-create-grid--4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .schedule-create-inline-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  #scheduleVersionWindowModal.batch-modal {
+    width: 94vw;
+  }
+
+  .schedule-create-grid--3,
+  .schedule-create-plan-grid,
+  .schedule-create-inline-row,
+  .schedule-create-grid--4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── 维护任务弹窗 ── */
+#taskModal.batch-modal {
+  width: min(96vw, 1100px);
+  max-width: 1100px;
+  max-height: 92vh;
+  overflow: hidden;
+  display: none;
+}
+
+#taskModal.batch-modal.show {
+  display: flex;
+  flex-direction: column;
+}
+
+#taskModal .batch-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.task-modal-project-section {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+
+.task-modal-project-section label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--t2);
+  margin-bottom: 4px;
+}
+
+.task-modal-project-section .form-select {
+  min-width: 220px;
+  padding: 7px 10px;
+  font-size: 12px;
+}
+
+.task-modal-spec-block {
+  margin-bottom: 12px;
+}
+
+.task-modal-spec-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--t2);
+  margin-bottom: 4px;
+}
+
+.task-modal-spec-content {
+  font-size: 12px;
+  color: var(--t1);
+  line-height: 1.6;
+  white-space: normal;
+  word-break: break-word;
+  background: var(--bg);
+  border: 1px solid var(--border-lt);
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
+.task-modal-spec-content p {
+  margin: 0 0 8px;
+}
+
+.task-modal-spec-content p:last-child {
+  margin-bottom: 0;
+}
+
+.task-modal-spec-empty {
+  font-size: 12px;
+  color: var(--t3);
+  margin-bottom: 12px;
+}
+
+.task-modal-attachments {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: var(--t2);
+}
+
+.task-modal-type-cell {
+  font-size: 12px;
+  color: var(--t2);
+  white-space: nowrap;
+}
+
+#taskModal .req,
+.rd-task-table .req {
+  color: var(--red);
+  font-weight: 700;
+}
+
+#taskModal .rd-node-tasks {
+  padding: 0;
+}
+
+#taskModal .rd-task-table {
+  width: 100%;
+}
+
+/* ── 只读任务列表弹窗 ── */
+#taskListModal.batch-modal {
+  width: min(96vw, 1180px);
+  max-width: 1180px;
+  max-height: 88vh;
+  overflow: hidden;
+  display: none;
+}
+
+#taskListModal.batch-modal.show {
+  display: flex;
+  flex-direction: column;
+}
+
+#taskListModal .batch-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.task-list-modal-info {
+  font-size: 12px;
+  color: var(--t2);
+  margin-bottom: 12px;
+}
+
+.task-list-modal-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border-lt);
+  border-radius: 8px;
+}
+
+.task-list-modal-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1080px;
+  font-size: 12px;
+}
+
+.task-list-modal-table th,
+.task-list-modal-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-lt);
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.task-list-modal-table thead th {
+  background: #f8fafc;
+  color: var(--t2);
+  font-weight: 600;
+}
+
+.task-list-modal-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.task-list-modal-empty {
+  text-align: center !important;
+  color: var(--t3);
+  padding: 28px 12px !important;
+}
+
+.task-list-modal-summary {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--t2);
+}
+
+.task-list-modal-progress {
+  position: relative;
+  width: 72px;
+  height: 18px;
+  border-radius: 999px;
+  background: #eef2f7;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.task-list-modal-progress-bar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: #cfe0ff;
+}
+
+.task-list-modal-progress em {
+  position: relative;
+  z-index: 1;
+  font-style: normal;
+  font-size: 11px;
+  color: var(--t1);
+}

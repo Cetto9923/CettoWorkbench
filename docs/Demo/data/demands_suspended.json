@@ -1,0 +1,9 @@
+{
+  "errors": [
+    {
+      "field": "status",
+      "message": "无效的价值流状态"
+    }
+  ],
+  "message": "参数校验失败"
+}

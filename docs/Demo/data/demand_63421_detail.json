@@ -1,0 +1,394 @@
+{
+  "success": true,
+  "mode": "selfUnit",
+  "summary": {
+    "id": "US63421",
+    "code": "US63421",
+    "demandId": 63421,
+    "title": "qweweqwe",
+    "source": "—",
+    "sourceNote": "—",
+    "category": "feature",
+    "bsa": "—",
+    "duration": "—",
+    "feedbackedBy": "—",
+    "proposerName": "周鸿利(004861)",
+    "proposerDept": "投资管理行",
+    "originator": "004861",
+    "ownerName": "程统(003030)",
+    "testOwner": "—",
+    "product": "—",
+    "poolName": "科技工具链建设需求池",
+    "priority": "P3",
+    "status": "draft",
+    "zentaoStatus": "draft",
+    "valueStage": "accept",
+    "valueStageLabel": "已受理",
+    "estimateLaunch": "—",
+    "acceptOwner": "—",
+    "reviewer": "周鸿利(004861)",
+    "currentOwner": "崔梅(002940)",
+    "mainSystem": "—",
+    "mainSystemName": "—",
+    "desc": "<p><span>12321</span></p>",
+    "verifyPlan": "",
+    "estimateDelivery": 0,
+    "developFinish": "—",
+    "testFinish": "—",
+    "verifyFinish": "—",
+    "storiesCount": 0,
+    "tasksDone": 0,
+    "tasksTotal": 0,
+    "casesExecuted": 0,
+    "casesTotal": 0,
+    "bugsUnresolved": 0,
+    "acceptanceStatus": "—",
+    "createdDate": "2026-01-26 00:00",
+    "editedDate": "2026-01-26 00:00"
+  },
+  "valueStream": {
+    "estimatedCycleDays": 224,
+    "usedCycleDays": 224,
+    "targetCycleDays": 28,
+    "diffCycleDays": 196,
+    "isOverdue": true,
+    "stages": [
+      {
+        "key": "accept",
+        "label": "受理",
+        "role": "PO",
+        "status": "current",
+        "durationText": "已持续约 224 天（缺阶段进入时间，按创建日估算）",
+        "durationKind": "已持续"
+      },
+      {
+        "key": "clarify",
+        "label": "澄清",
+        "role": "需求分析 / PO",
+        "status": "future",
+        "durationText": "预计时长未知",
+        "durationKind": "预计"
+      },
+      {
+        "key": "schedule",
+        "label": "排期",
+        "role": "排期协同",
+        "status": "future",
+        "durationText": "预计时长未知",
+        "durationKind": "预计"
+      },
+      {
+        "key": "developing",
+        "label": "研发",
+        "role": "敏捷研发团队",
+        "status": "future",
+        "durationText": "预计时长未知",
+        "durationKind": "预计"
+      },
+      {
+        "key": "submittest",
+        "label": "提测",
+        "role": "研发 / 测试协同",
+        "status": "future",
+        "durationText": "预计时长未知",
+        "durationKind": "预计"
+      },
+      {
+        "key": "testing",
+        "label": "测试",
+        "role": "测试团队",
+        "status": "future",
+        "durationText": "预计时长未知",
+        "durationKind": "预计"
+      },
+      {
+        "key": "acceptance",
+        "label": "验收",
+        "role": "业务部门 / PO",
+        "status": "future",
+        "durationText": "预计时长未知",
+        "durationKind": "预计"
+      },
+      {
+        "key": "publish",
+        "label": "发布",
+        "role": "发布组",
+        "status": "future",
+        "durationText": "预计时长未知",
+        "durationKind": "预计"
+      },
+      {
+        "key": "greyverify",
+        "label": "生产验证",
+        "role": "业务 / 运维",
+        "status": "future",
+        "durationText": "预计时长未知",
+        "durationKind": "预计"
+      },
+      {
+        "key": "closed",
+        "label": "已关闭",
+        "role": "系统",
+        "status": "future",
+        "durationText": "预计时长未知",
+        "durationKind": "预计"
+      }
+    ]
+  },
+  "spotlight": {
+    "badge": "持续跟踪",
+    "title": "需求正常推进中",
+    "desc": "请关注各环节交付节奏与生命周期更新。",
+    "actionLabel": "查看流转记录 →",
+    "targetTab": "history",
+    "targetSection": "historySection"
+  },
+  "requirement": {
+    "specHtml": "<p><span>12321</span></p>",
+    "verifyHtml": "",
+    "clarifications": [],
+    "userStories": [],
+    "attachments": [],
+    "clarifyZtUrl": "http://10.211.55.4:8080/index.php?m=demand&f=clarify&demandID=63421&id=63421"
+  },
+  "execution": {
+    "stories": [],
+    "testOrders": [],
+    "testOrderSummary": {
+      "totalCount": 0,
+      "doingCount": 0,
+      "doneCount": 0,
+      "storiesCount": 0
+    },
+    "testCaseSummary": {
+      "totalCount": 0,
+      "executedCount": 0,
+      "unexecutedCount": 0,
+      "passedCount": 0,
+      "failedCount": 0,
+      "executionRate": 0,
+      "passRate": 0
+    },
+    "bugSummary": {
+      "totalCount": 0,
+      "activeCount": 0,
+      "resolvedCount": 0,
+      "deliveryBlocking": 0
+    },
+    "qualitySummary": {
+      "available": false,
+      "source": "none",
+      "avgScore": 0,
+      "branchesCount": 0,
+      "passedGates": 0,
+      "totalGates": 0
+    },
+    "qualityOverview": {
+      "available": false,
+      "source": "none",
+      "appsCount": 0,
+      "branchesCount": 0,
+      "passedGates": 0,
+      "failedGates": 0
+    },
+    "appQualityTree": null,
+    "leadsMatrix": {
+      "devLeads": [],
+      "testLead": "—"
+    }
+  },
+  "delivery": {
+    "devDone": false,
+    "testPassed": false,
+    "bugsResolved": true,
+    "acceptanceDone": false,
+    "estimateLaunch": "—",
+    "publishWindow": "—",
+    "verifyConclusion": "—"
+  },
+  "history": {
+    "actions": [
+      {
+        "date": "2026-01-27 15:31",
+        "actor": "周鸿利(004861)",
+        "action": "passreturned",
+        "extra": "—"
+      },
+      {
+        "date": "2026-01-27 15:31",
+        "actor": "周鸿利(004861)",
+        "action": "returned",
+        "extra": "—"
+      },
+      {
+        "date": "2026-01-27 15:31",
+        "actor": "周鸿利(004861)",
+        "action": "refusereturned",
+        "extra": "—"
+      },
+      {
+        "date": "2026-01-27 15:30",
+        "actor": "周鸿利(004861)",
+        "action": "returned",
+        "extra": "—"
+      },
+      {
+        "date": "2026-01-27 15:30",
+        "actor": "周鸿利(004861)",
+        "action": "returned",
+        "extra": "—"
+      },
+      {
+        "date": "2026-01-27 15:30",
+        "actor": "周鸿利(004861)",
+        "action": "reviewpassed",
+        "extra": "—"
+      },
+      {
+        "date": "2026-01-27 15:30",
+        "actor": "周鸿利(004861)",
+        "action": "reviewed",
+        "extra": "pass"
+      },
+      {
+        "date": "2026-01-27 15:30",
+        "actor": "周鸿利(004861)",
+        "action": "submited",
+        "extra": "—"
+      },
+      {
+        "date": "2026-01-27 15:23",
+        "actor": "周鸿利(004861)",
+        "action": "reviewreturned",
+        "extra": "—"
+      },
+      {
+        "date": "2026-01-27 14:42",
+        "actor": "周鸿利(004861)",
+        "action": "returned",
+        "extra": "—"
+      },
+      {
+        "date": "2026-01-27 14:42",
+        "actor": "周鸿利(004861)",
+        "action": "withdrawreturned",
+        "extra": "—"
+      },
+      {
+        "date": "2026-01-27 13:55",
+        "actor": "周鸿利(004861)",
+        "action": "returned",
+        "extra": "—"
+      },
+      {
+        "date": "2026-01-27 13:55",
+        "actor": "周鸿利(004861)",
+        "action": "withdrawreturned",
+        "extra": "—"
+      },
+      {
+        "date": "2026-01-27 13:54",
+        "actor": "周鸿利(004861)",
+        "action": "reboot",
+        "extra": "—"
+      },
+      {
+        "date": "2026-01-27 13:53",
+        "actor": "周鸿利(004861)",
+        "action": "hangup",
+        "extra": "—"
+      },
+      {
+        "date": "2026-01-27 13:48",
+        "actor": "周鸿利(004861)",
+        "action": "submitbymanager",
+        "extra": "—"
+      },
+      {
+        "date": "2026-01-27 13:29",
+        "actor": "周鸿利(004861)",
+        "action": "returned",
+        "extra": "—"
+      },
+      {
+        "date": "2026-01-27 10:40",
+        "actor": "周鸿利(004861)",
+        "action": "withdrawreturned",
+        "extra": "—"
+      },
+      {
+        "date": "2026-01-27 10:40",
+        "actor": "周鸿利(004861)",
+        "action": "returned",
+        "extra": "—"
+      },
+      {
+        "date": "2026-01-27 10:39",
+        "actor": "周鸿利(004861)",
+        "action": "withdrawreturned",
+        "extra": "—"
+      },
+      {
+        "date": "2026-01-27 10:39",
+        "actor": "周鸿利(004861)",
+        "action": "returned",
+        "extra": "—"
+      },
+      {
+        "date": "2026-01-27 10:39",
+        "actor": "周鸿利(004861)",
+        "action": "edited",
+        "extra": "bra changed! there is notify for new bra:oldBRA[]->newBRA[004861]"
+      },
+      {
+        "date": "2026-01-27 10:38",
+        "actor": "周鸿利(004861)",
+        "action": "reviewpassed",
+        "extra": "—"
+      },
+      {
+        "date": "2026-01-27 10:38",
+        "actor": "周鸿利(004861)",
+        "action": "reviewed",
+        "extra": "pass"
+      },
+      {
+        "date": "2026-01-26 17:06",
+        "actor": "周鸿利(004861)",
+        "action": "submited",
+        "extra": "—"
+      },
+      {
+        "date": "2026-01-26 17:06",
+        "actor": "周鸿利(004861)",
+        "action": "created",
+        "extra": "—"
+      }
+    ],
+    "stageDurations": [],
+    "lifecycle": {
+      "createdBy": "004861",
+      "createdDate": "2026-01-26",
+      "assignedTo": "崔梅(002940)",
+      "assignedDate": "2026-01-26",
+      "reviewer": "004861",
+      "reviewedDate": "2026-01-27",
+      "lastEditedBy": "—",
+      "lastEditedDate": "—",
+      "closedBy": "—",
+      "closedDate": "—",
+      "closedReason": "—"
+    }
+  },
+  "config": {
+    "deliveryCycleTargetDays": 28
+  },
+  "primaryAction": {
+    "key": "approve",
+    "label": "受理",
+    "kind": "drawer",
+    "url": "/demands/63421/accept",
+    "enabled": false,
+    "reason": "服务未配置审批路由（见 PLAN §4-1）"
+  }
+}

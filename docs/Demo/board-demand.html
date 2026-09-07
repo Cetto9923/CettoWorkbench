@@ -1,0 +1,429 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="tzSyTFIlJN9EU7u3wbs/2Y/SuV3hcfsxoxovrkt51NDA&#43;3Mb6fU9L0F&#43;SOsI5p0GK/ZslsokaufCYm/fZM&#43;bhw==">
+  <title>需求看板 - workbench</title>
+  <script src="js/layout/theme.js"></script>
+  <link rel="stylesheet" href="vendor/fonts/jetbrains-mono/fonts.css">
+  <link rel="stylesheet" href="vendor/bootstrap-icons/bootstrap-icons.css">
+  <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">
+  <link rel="stylesheet" href="vendor/quill/quill.snow.css">
+  <link rel="stylesheet" href="css/layout/base.css">
+  <link rel="stylesheet" href="css/layout/variables.css">
+  <link rel="stylesheet" href="css/layout/app.css">
+  <link rel="stylesheet" href="css/layout/layout.css">
+  <link rel="stylesheet" href="css/po/shell.css">
+  
+  <link rel="stylesheet" href="css/components/components.css">
+  
+<link rel="stylesheet" href="css/po/board.css">
+<link rel="stylesheet" href="css/po/demand-detail.css">
+<link rel="stylesheet" href="css/po/workboard-addon.css">
+
+  <!-- PRD Mock Engine -->
+  <script src="js/mock-data.js"></script>
+  <script src="js/mock-service.js"></script>
+</head>
+<body class="po-workbench-shell has-bottom-tabs">
+  
+  <header class="topbar">
+     
+<div class="topbar-row">
+  
+  <div class="po-role-switcher" role="tablist" aria-label="工作台角色">
+    <a class="po-role-tab active" role="tab" aria-selected="true" href="home.html">PO</a>
+    <button class="po-role-tab" role="tab" aria-selected="false" type="button">SM</button>
+    <button class="po-role-tab" role="tab" aria-selected="false" type="button">业务</button>
+    <button class="po-role-tab" role="tab" aria-selected="false" type="button">PMO</button>
+  </div>
+  <div class="po-header-right">
+    <label class="po-global-search">
+      <i class="fas fa-search" aria-hidden="true"></i>
+      <input type="search" aria-label="搜索需求、任务、Bug、MR、版本窗口、项目" placeholder="搜索需求 / 任务 / Bug / MR">
+    </label>
+    <button type="button" class="po-header-icon" aria-label="通知"><i class="fas fa-bell"></i></button>
+    <div class="dropdown">
+      <button class="po-user-info" type="button" onclick="return toggleDropdown(this);" aria-haspopup="menu">
+        <span class="po-user-avatar">程</span>
+        <span>程统(003030)</span>
+      </button>
+      <div class="dropdown-menu">
+        
+<div class="theme-picker-group" role="group" aria-label="外观设置">
+  <div class="dropdown-header">外观</div>
+  <button type="button" class="dropdown-item" role="menuitemradio" aria-checked="false" data-theme-value="system">
+    <i class="bi bi-circle-half"></i><span>跟随系统</span>
+    <i class="bi bi-check check-mark"></i>
+  </button>
+  <button type="button" class="dropdown-item" role="menuitemradio" aria-checked="false" data-theme-value="light">
+    <i class="bi bi-sun"></i><span>浅色</span>
+    <i class="bi bi-check check-mark"></i>
+  </button>
+  <button type="button" class="dropdown-item" role="menuitemradio" aria-checked="false" data-theme-value="dark">
+    <i class="bi bi-moon-stars"></i><span>深色</span>
+    <i class="bi bi-check check-mark"></i>
+  </button>
+</div>
+<div class="dropdown-divider"></div>
+
+        <form action="javascript:void(0);" method="POST">
+          <input type="hidden" name="csrf_token" value="tzSyTFIlJN9EU7u3wbs/2Y/SuV3hcfsxoxovrkt51NDA&#43;3Mb6fU9L0F&#43;SOsI5p0GK/ZslsokaufCYm/fZM&#43;bhw==">
+          <button type="submit" class="dropdown-item dropdown-item-danger topbar-dropdown-item"><i class="bi bi-box-arrow-right"></i><span>登出</span></button>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+</div>
+
+
+  </header>
+  
+
+  <div class="layout">
+    
+
+<nav class="sidebar" id="sidebar">
+  <div class="po-sidebar-brand">
+    <span class="po-brand-logo">研</span>
+    <strong class="nav-text">研发工作台</strong>
+    <button type="button" class="po-sidebar-collapse js-sidebar-collapse" id="sidebarToggle" title="收起菜单" aria-label="收起菜单"><i class="fas fa-chevron-left"></i></button>
+  </div>
+  <div class="sidebar-body">
+    <div class="sidebar-nav po-sidebar-nav">
+      <div class="nav-section-label">个人入口</div>
+      <a href="home.html" class="nav-item"><i class="nav-icon fas fa-home"></i><span class="nav-text">首页</span></a>
+      <a href="todos.html" class="nav-item"><i class="nav-icon fas fa-list-check"></i><span class="nav-text">我的待办</span><span class="nav-badge">107</span></a>
+      <a href="done.html" class="nav-item"><i class="nav-icon fas fa-clock-rotate-left"></i><span class="nav-text">我的已办</span></a>
+      <a href="notice.html" class="nav-item"><i class="nav-icon fas fa-bell"></i><span class="nav-text">通知中心</span><span class="nav-badge nav-badge--danger">205</span></a>
+      <a href="follow.html" class="nav-item"><i class="nav-icon fas fa-star"></i><span class="nav-text">我的关注</span></a>
+      <div class="nav-divider" role="separator"></div>
+      <div class="nav-section-label">工作区</div>
+      <a href="board-demand.html" class="nav-item active"><i class="nav-icon fas fa-table-cells-large"></i><span class="nav-text">工作看板</span></a>
+      <a href="demand-query.html" class="nav-item"><i class="nav-icon fas fa-briefcase"></i><span class="nav-text">需求查询</span></a>
+      <a href="schedule.html" class="nav-item"><i class="nav-icon fas fa-calendar-check"></i><span class="nav-text">需求排期</span><span class="nav-badge">PO</span></a>
+      <a href="version-follow.html" class="nav-item"><i class="nav-icon fas fa-vial-circle-check"></i><span class="nav-text">版本跟进</span></a>
+      <a href="acceptance-delivery.html" class="nav-item"><i class="nav-icon fas fa-clipboard-check"></i><span class="nav-text">验收交付</span></a>
+      <a href="issue-risk.html" class="nav-item"><i class="nav-icon fas fa-shield-halved"></i><span class="nav-text">问题风险</span></a>
+      <div class="nav-divider" role="separator"></div>
+      <div class="nav-section-label">专项分析</div>
+      <a href="quality-analysis.html#metrics" class="nav-item"><i class="nav-icon fas fa-sliders"></i><span class="nav-text">指标管理</span></a>
+      <a href="quality-analysis.html#radar" class="nav-item"><i class="nav-icon fas fa-chart-line"></i><span class="nav-text">指标雷达</span></a>
+      <a href="quality-analysis.html#warning" class="nav-item"><i class="nav-icon fas fa-triangle-exclamation"></i><span class="nav-text">质效预警</span></a>
+    </div>
+  </div>
+</nav>
+
+
+    <main class="main">
+      
+<div class="po-board">
+  <div class="page-hdr">
+    <h2>工作看板</h2>
+    <div class="board-switch">
+      <button id="demandTab" type="button" class="active" data-mode="demand">需求看板</button>
+      <button id="taskTab" type="button" data-mode="task">任务看板</button>
+    </div>
+    <div id="demandStats" class="stats">
+      <button type="button" class="stat blue" data-flag="clarify">待澄清 <strong>—</strong></button>
+      <button type="button" class="stat blue" data-flag="schedule">待排期 <strong>—</strong></button>
+      <button type="button" class="stat orange" data-flag="blocked">阻塞 <strong>—</strong></button>
+      <button type="button" class="stat red" data-flag="overdue">超期 <strong>—</strong></button>
+    </div>
+    <div id="taskStats" class="stats hidden">
+      <button type="button" class="stat orange" data-flag="blocked">阻塞 <strong>—</strong></button>
+      <button type="button" class="stat red" data-flag="overdue">超期 <strong>—</strong></button>
+    </div>
+    <div class="filter-stack">
+      <span class="filter-label">敏捷小组</span>
+      <div class="chips" id="agileChips"></div>
+    </div>
+    <div id="demandActions" class="actions">
+      <button type="button" id="demandToggleAll" class="action" hidden>展开研需</button>
+      <button type="button" class="action soft" onclick="location.href='/schedule'">需求排期</button>
+      <button type="button" class="action primary" onclick="openKanbanCreateModal('issue')">+ 提问题</button>
+    </div>
+    <div id="taskActions" class="actions hidden">
+      <button type="button" class="action" onclick="openKanbanTeamModal()">调整成员</button>
+      <button type="button" class="action primary" onclick="openKanbanCreateModal('task')">+ 建任务</button>
+      <button type="button" class="action primary" onclick="openKanbanCreateModal('issue')">+ 提问题</button>
+    </div>
+  </div>
+
+  <div class="owner-row">
+    <span id="ownerTitle" class="owner-title">PO / 需求负责人</span>
+    <div id="demandOwners" class="people"></div>
+    <div id="taskOwners" class="people hidden"></div>
+  </div>
+
+  <section class="team-metrics" aria-label="敏捷小组关键指标">
+    <div class="team-metrics-head">
+      <span class="team-metrics-title">小组效能快照</span>
+      <span class="team-metrics-group" id="metricsGroupName">—</span>
+      <span class="team-metrics-note">小组级 · 不随 PO / 任务负责人筛选变化</span>
+      <button type="button" class="team-metrics-more">全部指标 ›</button>
+    </div>
+    <div class="team-metrics-grid" id="metricsGrid"></div>
+  </section>
+
+  <div id="demandRoleBanner" class="role-banner">
+    <strong>需求看板</strong><span class="arrow">→</span>
+    <span>根节点是 <b>PO 的工作对象</b>（业务需求 / 独立研发需求）</span><span class="arrow">→</span>
+    <span>树下研发需求仅用于展示 <b>交付进展</b>，不代表它也是 PO 的个人任务</span>
+  </div>
+  <div id="taskRoleBanner" class="role-banner task hidden">
+    <strong>任务看板</strong><span class="arrow">→</span>
+    <span>卡片全部是 <b>开发/测试执行任务</b></span><span class="arrow">→</span>
+    <span>按任务负责人筛选；PO 没有任务时不会出现在负责人列表</span>
+  </div>
+
+  <div id="taskFilterTip" class="task-filter-tip hidden"></div>
+
+  <div class="standup">
+    <div class="board-main">
+      <div id="demandBoard" class="demand-board">
+        <div class="demand-grid">
+          <div class="grid-head">
+            <div>需求树（PO工作对象 / 交付上下文）</div><div>受理 / 澄清</div><div>排期</div><div>研发 / 提测</div><div>联调 / 验收</div><div>交付 / 评价</div>
+          </div>
+          <div id="demandGroups"></div>
+          <div id="demandEmpty" class="demand-empty">当前条件下没有需求</div>
+          <div class="legend">
+            <span><b>业务需求 / 独立研发需求</b> = PO 本人工作对象</span>
+            <span><b>子业务需求</b> = 交付单元</span>
+            <span><b>研发需求</b> = 下钻交付进展，不等于 PO 的“任务”</span>
+            <span>需求阶段由状态派生，不支持拖拽</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="taskBoard" class="task-board hidden">
+        <div class="task-col" data-col="wait"><div class="task-col-hdr">未开始 <span class="k-count">0</span></div><div class="task-col-body"></div></div>
+        <div class="task-col" data-col="doing"><div class="task-col-hdr">进行中 <span class="k-count">0</span></div><div class="task-col-body"></div></div>
+        <div class="task-col" data-col="done"><div class="task-col-hdr">已完成 <span class="k-count">0</span></div><div class="task-col-body"></div></div>
+      </div>
+    </div>
+
+    <aside class="issue-panel">
+      <div class="issue-hdr"><strong>问题</strong><span class="issue-count" id="issueCount">0</span><button type="button" class="issue-all">查看全部</button></div>
+      <div class="issue-tabs" id="issueTabs"></div>
+      <div class="issue-list" id="issueList"><div class="demand-empty">暂无问题</div></div>
+    </aside>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+<div id="taskDrawerBackdrop" class="task-drawer-backdrop hidden" aria-hidden="true"></div>
+<div id="taskDrawer" class="task-drawer hidden" role="dialog" aria-modal="true" aria-label="研发需求关联任务">
+  <div class="drawer-header">
+    <div class="drawer-topline">
+      <div class="drawer-tag-group" id="drawerTagGroup"></div>
+      <button type="button" class="drawer-close" id="drawerClose" aria-label="关闭">✕</button>
+    </div>
+    <div class="drawer-title" id="drawerTitle"></div>
+    <div class="drawer-context" id="drawerContext"></div>
+    <div class="drawer-summary-card" id="drawerSummary"></div>
+  </div>
+  <div class="drawer-body">
+    <div class="drawer-sec-title"><span>执行任务清单</span><span class="drawer-sec-note">实时同步自禅道系统</span></div>
+    <div id="drawerTaskList"></div>
+  </div>
+  <div class="drawer-footer">
+    <button type="button" class="action" id="drawerCloseBtn">关闭</button>
+    <a id="drawerZtLink" class="action soft" href="#" target="_blank" rel="noopener noreferrer">在禅道打开研需 ↗</a>
+  </div>
+</div>
+
+
+<div id="issueDrawerBackdrop" class="issue-drawer-backdrop hidden" aria-hidden="true"></div>
+<div id="issueDrawer" class="issue-drawer hidden" role="dialog" aria-modal="true" aria-label="问题详情">
+  <div class="issue-drawer-header">
+    <div class="issue-drawer-topline">
+      <span class="drawer-task-code" id="issueDrawerId">ISSUE-</span>
+      <button type="button" class="drawer-close" id="issueDrawerClose" aria-label="关闭">✕</button>
+    </div>
+    <div class="issue-drawer-title" id="issueDrawerTitle"></div>
+  </div>
+  <div class="issue-drawer-body" id="issueDrawerBody"></div>
+  <div class="issue-drawer-footer" id="issueDrawerFooter"></div>
+</div>
+
+
+<div class="kb-modal-overlay" id="kanbanModalOverlay"></div>
+
+
+<div class="kb-modal" id="kanbanIssueModalDialog" role="dialog" aria-modal="true" aria-label="提问题">
+  <div class="kb-modal-hdr">
+    <h3>提问题</h3>
+    <button type="button" class="drawer-close" onclick="WorkboardModal.closeIssueModal()">✕</button>
+  </div>
+  <div class="kb-modal-body">
+    <div class="kb-audit-note">
+      <i class="fas fa-circle-info"></i>
+      <div>所属项目由服务端按当前登录账号的可写项目确定；提出人由登录态确定。</div>
+    </div>
+    <div class="kb-form-group">
+      <label>问题名称<span class="kb-req">*</span></label>
+      <input type="text" class="kb-input" id="kbIssueName" placeholder="输入问题名称或简要概述" maxlength="255">
+    </div>
+    <div class="kb-form-row">
+      <div class="kb-form-group">
+        <label>指派给<span class="kb-req">*</span></label>
+        <select class="kb-select" id="kbIssueAssignee"></select>
+      </div>
+      <div class="kb-form-group">
+        <label>提出人</label>
+        <input type="text" class="kb-input" value="程统 (003030)" disabled title="提出人由服务端登录态确定">
+      </div>
+    </div>
+    <div class="kb-form-row">
+      <div class="kb-form-group">
+        <label>优先级</label>
+        <select class="kb-select" id="kbIssuePri">
+          <option value="1">P1 - 最高</option>
+          <option value="2" selected>P2 - 较高</option>
+          <option value="3">P3 - 普通</option>
+          <option value="4">P4 - 低</option>
+        </select>
+      </div>
+      <div class="kb-form-group">
+        <label>严重程度</label>
+        <select class="kb-select" id="kbIssueSev">
+          <option value="1">1级 - 致命</option>
+          <option value="2" selected>2级 - 严重</option>
+          <option value="3">3级 - 一般</option>
+          <option value="4">4级 - 提示</option>
+        </select>
+      </div>
+    </div>
+    <div class="kb-form-group">
+      <label>问题描述</label>
+      <textarea class="kb-textarea" id="kbIssueDesc" rows="3" placeholder="详细描述问题重现步骤、影响范围或期望结果"></textarea>
+    </div>
+    <div class="kb-form-group">
+      <label>附件</label>
+      <input type="file" class="kb-input" id="kbIssueFiles" multiple style="padding-top:4px">
+    </div>
+  </div>
+  <div class="kb-modal-footer">
+    <button type="button" class="action" onclick="WorkboardModal.closeIssueModal()">取消</button>
+    <button type="button" class="action primary" onclick="WorkboardModal.submitIssueModal()">确认登记</button>
+  </div>
+</div>
+
+
+<div class="kb-modal" id="kanbanTaskModalDialog" role="dialog" aria-modal="true" aria-label="建任务">
+  <div class="kb-modal-hdr">
+    <h3>建任务</h3>
+    <button type="button" class="drawer-close" onclick="WorkboardModal.closeTaskModal()">✕</button>
+  </div>
+  <div class="kb-modal-body">
+    <div class="kb-audit-note">
+      <i class="fas fa-circle-info"></i>
+      <div>任务将创建到当前迭代执行中；敏捷小组仅用于看板筛选，不作为创建参数。</div>
+    </div>
+    <div class="kb-form-group">
+      <label>任务标题<span class="kb-req">*</span></label>
+      <input type="text" class="kb-input" id="kbTaskName" placeholder="输入任务名称" maxlength="255">
+    </div>
+    <div class="kb-form-row">
+      <div class="kb-form-group">
+        <label>指派人<span class="kb-req">*</span></label>
+        <select class="kb-select" id="kbTaskAssignee"></select>
+      </div>
+      <div class="kb-form-group">
+        <label>任务类型</label>
+        <select class="kb-select" id="kbTaskType">
+          <option value="开发" selected>开发</option>
+          <option value="测试">测试</option>
+          <option value="设计">设计</option>
+          <option value="上线">上线</option>
+        </select>
+      </div>
+    </div>
+    <div class="kb-form-row">
+      <div class="kb-form-group">
+        <label>截止日期</label>
+        <input type="date" class="kb-input" id="kbTaskDue">
+      </div>
+      <div class="kb-form-group">
+        <label>预估工时 (小时)</label>
+        <input type="number" class="kb-input" id="kbTaskHours" value="8" min="0.5" max="99" step="0.5">
+      </div>
+    </div>
+    <div class="kb-form-group">
+      <label>任务说明</label>
+      <textarea class="kb-textarea" id="kbTaskDesc" rows="2" placeholder="填写执行任务细节或要点"></textarea>
+    </div>
+  </div>
+  <div class="kb-modal-footer">
+    <button type="button" class="action" onclick="WorkboardModal.closeTaskModal()">取消</button>
+    <button type="button" class="action primary" onclick="WorkboardModal.submitTaskModal()">确认创建</button>
+  </div>
+</div>
+
+
+<div class="kb-modal kb-modal--lg" id="kanbanTeamModalDialog" role="dialog" aria-modal="true" aria-label="调整敏捷小组成员">
+  <div class="kb-modal-hdr">
+    <h3 id="kanbanTeamModalTitle">调整小组成员 · 组织变革团队</h3>
+    <button type="button" class="drawer-close" onclick="WorkboardModal.closeTeamModal()">✕</button>
+  </div>
+  <div class="kb-modal-body" id="kbTeamModalBody"></div>
+  <div class="kb-modal-footer">
+    <button type="button" class="action" onclick="WorkboardModal.closeTeamModal()">取消</button>
+    <button type="button" class="action primary" onclick="WorkboardModal.submitTeamModal()">提交调整</button>
+  </div>
+</div>
+
+    </main>
+  </div>
+
+  
+
+  <div class="toast-container" id="toast-container"></div>
+  <div class="modal-backdrop" id="modal-delete">
+    <div class="modal modal-sm">
+      <div class="modal-header modal-header-danger">
+        <div class="modal-danger-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M8 6v4M8 11.5v.5"/>
+            <path d="M7 2.3L1.5 12A1 1 0 002.4 13.5h11.2a1 1 0 00.9-1.5L9 2.3a1 1 0 00-2 0z"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="modal-title">确认删除？</h2>
+          <p class="modal-subtitle">此操作不可撤销，删除后数据将永久移除。</p>
+        </div>
+      </div>
+      <div class="modal-impact">
+        请确认该数据不再被业务流程依赖后再执行删除操作。
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-neutral" type="button" onclick="closeModal('modal-delete')">取消</button>
+        <button class="btn btn-danger" type="button" onclick="submitDelete()">确认删除</button>
+      </div>
+    </div>
+  </div>
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/components/components.js"></script>
+  <script src="js/layout/sidebar.js"></script>
+  <script src="vendor/quill/quill.min.js"></script>
+  <script src="vendor/jquery/jquery.min.js"></script>
+  
+  
+<script src="js/po/personal-list.js"></script>
+<script src="js/po/primary-action.js"></script>
+<script src="js/po/demand-detail-render.js"></script>
+<script src="js/po/demand-detail.js"></script>
+<script src="js/po/schedule-link.js"></script>
+<script src="js/po/workboard-issue.js"></script>
+<script src="js/po/workboard-modal.js"></script>
+<script src="js/po/workboard.js"></script>
+
+  
+
+</body>
+</html>

@@ -1,0 +1,408 @@
+{
+  "closed": 23,
+  "items": [
+    {
+      "id": 4213,
+      "title": "工作台回归登记问题",
+      "priority": "3",
+      "severity": "3",
+      "status": "unconfirmed",
+      "createdBy": "003030"
+    },
+    {
+      "id": 4212,
+      "title": "图像处理平台oss桶申请",
+      "priority": "",
+      "severity": "3",
+      "status": "unconfirmed",
+      "createdBy": "002447"
+    },
+    {
+      "id": 4211,
+      "title": "第26周周报未上报",
+      "priority": "3",
+      "severity": "3",
+      "status": "unconfirmed",
+      "createdBy": "771642"
+    },
+    {
+      "id": 4210,
+      "title": "第27周周报未提交",
+      "priority": "3",
+      "severity": "3",
+      "status": "unconfirmed",
+      "createdBy": "771642"
+    },
+    {
+      "id": 4208,
+      "title": "第25周周报未提交",
+      "priority": "3",
+      "severity": "3",
+      "status": "unconfirmed",
+      "createdBy": "771642"
+    },
+    {
+      "id": 4206,
+      "title": "梳理人员变动跑数+推送 本周；岗位（主岗、兼岗）变动接口",
+      "priority": "",
+      "severity": "3",
+      "status": "unconfirmed",
+      "createdBy": "002668"
+    },
+    {
+      "id": 4205,
+      "title": "统一作战6/6",
+      "priority": "",
+      "severity": "3",
+      "status": "unconfirmed",
+      "createdBy": "002668"
+    },
+    {
+      "id": 4204,
+      "title": "二代反假",
+      "priority": "",
+      "severity": "3",
+      "status": "unconfirmed",
+      "createdBy": "002668"
+    },
+    {
+      "id": 4202,
+      "title": "优先循序：1.通用监管问题 2.e驾金问题 3.香仓开发",
+      "priority": "",
+      "severity": "3",
+      "status": "unconfirmed",
+      "createdBy": "003031"
+    },
+    {
+      "id": 4199,
+      "title": "图片、excel、pdf流水需要4天",
+      "priority": "",
+      "severity": "3",
+      "status": "unconfirmed",
+      "createdBy": "004490"
+    },
+    {
+      "id": 4197,
+      "title": "漏洞问题",
+      "priority": "",
+      "severity": "3",
+      "status": "unconfirmed",
+      "createdBy": "004482"
+    },
+    {
+      "id": 4196,
+      "title": "第24周周报未提交",
+      "priority": "3",
+      "severity": "3",
+      "status": "unconfirmed",
+      "createdBy": "771642"
+    },
+    {
+      "id": 4192,
+      "title": "结婚证、离婚证、合同、逻辑校验凭证、个人公积金、个人收入纳税",
+      "priority": "",
+      "severity": "3",
+      "status": "unconfirmed",
+      "createdBy": "004490"
+    },
+    {
+      "id": 4191,
+      "title": "身份提取接口识别营业执照",
+      "priority": "",
+      "severity": "3",
+      "status": "resolved",
+      "createdBy": "004490"
+    },
+    {
+      "id": 4190,
+      "title": "异常解析比较难，超时风险",
+      "priority": "",
+      "severity": "3",
+      "status": "resolved",
+      "createdBy": "004490"
+    },
+    {
+      "id": 4189,
+      "title": "村镇存款准备金数据还未提供",
+      "priority": "",
+      "severity": "3",
+      "status": "confirmed",
+      "createdBy": "KJ000170"
+    },
+    {
+      "id": 4188,
+      "title": "保理测试问题，有在途出账合同能否终止",
+      "priority": "",
+      "severity": "3",
+      "status": "unconfirmed",
+      "createdBy": "KJ000174"
+    },
+    {
+      "id": 4187,
+      "title": "H5页面上线需常银生意支持",
+      "priority": "",
+      "severity": "3",
+      "status": "unconfirmed",
+      "createdBy": "004482"
+    },
+    {
+      "id": 4185,
+      "title": "非柜面限制归集签约柜面报错",
+      "priority": "",
+      "severity": "3",
+      "status": "resolved",
+      "createdBy": "001201"
+    },
+    {
+      "id": 4181,
+      "title": "第23周周报未提交",
+      "priority": "3",
+      "severity": "3",
+      "status": "unconfirmed",
+      "createdBy": "771642"
+    },
+    {
+      "id": 4178,
+      "title": "多个阶段延期，请及时更新计划",
+      "priority": "3",
+      "severity": "3",
+      "status": "unconfirmed",
+      "createdBy": "771642"
+    },
+    {
+      "id": 4176,
+      "title": "DeepSeek满血版部署",
+      "priority": "",
+      "severity": "3",
+      "status": "resolved",
+      "createdBy": "004490"
+    },
+    {
+      "id": 4175,
+      "title": "comstar基金文件下行问题",
+      "priority": "",
+      "severity": "3",
+      "status": "unconfirmed",
+      "createdBy": "KJ000170"
+    },
+    {
+      "id": 4174,
+      "title": "组织架构调整验证问题较多",
+      "priority": "",
+      "severity": "3",
+      "status": "unconfirmed",
+      "createdBy": "KJ000170"
+    },
+    {
+      "id": 4172,
+      "title": "个人兑回建行非成功未当失败处理",
+      "priority": "",
+      "severity": "3",
+      "status": "resolved",
+      "createdBy": "001201"
+    },
+    {
+      "id": 4168,
+      "title": "阶段已延期，请及时调整计划",
+      "priority": "3",
+      "severity": "3",
+      "status": "unconfirmed",
+      "createdBy": "771642"
+    },
+    {
+      "id": 1933,
+      "title": "213321",
+      "priority": "",
+      "severity": "3",
+      "status": "closed",
+      "createdBy": "003030"
+    },
+    {
+      "id": 1929,
+      "title": "213",
+      "priority": "",
+      "severity": "3",
+      "status": "closed",
+      "createdBy": "003030"
+    },
+    {
+      "id": 1925,
+      "title": "验证",
+      "priority": "",
+      "severity": "3",
+      "status": "closed",
+      "createdBy": "003030"
+    },
+    {
+      "id": 1923,
+      "title": "验证",
+      "priority": "",
+      "severity": "3",
+      "status": "closed",
+      "createdBy": "003030"
+    },
+    {
+      "id": 1899,
+      "title": "程统",
+      "priority": "",
+      "severity": "3",
+      "status": "closed",
+      "createdBy": "003030"
+    },
+    {
+      "id": 1559,
+      "title": "团队问题目前只能由创建人关闭，影响使用",
+      "priority": "",
+      "severity": "3",
+      "status": "closed",
+      "createdBy": "003030"
+    },
+    {
+      "id": 1125,
+      "title": "迭代节奏尚未形成",
+      "priority": "3",
+      "severity": "1",
+      "status": "closed",
+      "createdBy": "003030"
+    },
+    {
+      "id": 1093,
+      "title": "大屏系统无法展示禅道到",
+      "priority": "3",
+      "severity": "3",
+      "status": "unconfirmed",
+      "createdBy": "003030"
+    },
+    {
+      "id": 1091,
+      "title": "交付的代码仓库需要经技术经理评审，能在行内完成部署才能结项",
+      "priority": "1",
+      "severity": "1",
+      "status": "closed",
+      "createdBy": "003030"
+    },
+    {
+      "id": 1001,
+      "title": "目前敏捷团队内有部分项目也在做，那部分的管理规则规范还可能是瀑布的，是否会和敏捷团队的原则冲突，从而带来额外工作受到团队排斥？",
+      "priority": "3",
+      "severity": "3",
+      "status": "closed",
+      "createdBy": "003030"
+    },
+    {
+      "id": 999,
+      "title": "团队缺陷未能在系统登记，导致质量数据失真",
+      "priority": "3",
+      "severity": "1",
+      "status": "closed",
+      "createdBy": "003030"
+    },
+    {
+      "id": 825,
+      "title": "需要和候选供应商沟通方案",
+      "priority": "3",
+      "severity": "3",
+      "status": "closed",
+      "createdBy": "003030"
+    },
+    {
+      "id": 193,
+      "title": "考试完成率不足一半，需跟进",
+      "priority": "3",
+      "severity": "3",
+      "status": "closed",
+      "createdBy": "003030"
+    },
+    {
+      "id": 151,
+      "title": "统一待办消息通知需优化",
+      "priority": "3",
+      "severity": "2",
+      "status": "closed",
+      "createdBy": "003030"
+    },
+    {
+      "id": 35,
+      "title": "统一认证接口改造-禅道适配修改",
+      "priority": "3",
+      "severity": "1",
+      "status": "closed",
+      "createdBy": "003030"
+    },
+    {
+      "id": 23,
+      "title": "上线评审方案需调整，生产管理部团队组织相关人员确认流程",
+      "priority": "1",
+      "severity": "3",
+      "status": "closed",
+      "createdBy": "003030"
+    },
+    {
+      "id": 21,
+      "title": "统一认证接口修改支持PHP",
+      "priority": "3",
+      "severity": "2",
+      "status": "closed",
+      "createdBy": "003030"
+    },
+    {
+      "id": 17,
+      "title": "工时PP和禅道不应该重复填报",
+      "priority": "3",
+      "severity": "3",
+      "status": "closed",
+      "createdBy": "003030"
+    },
+    {
+      "id": 13,
+      "title": "RC单和快速变更流程做调整",
+      "priority": "3",
+      "severity": "2",
+      "status": "closed",
+      "createdBy": "003030"
+    },
+    {
+      "id": 11,
+      "title": "产品架构规划事宜跟进",
+      "priority": "3",
+      "severity": "3",
+      "status": "closed",
+      "createdBy": "003030"
+    },
+    {
+      "id": 9,
+      "title": "需和需求管理团队再确认，如何管理需求发布时间和过程 管理时间不一致的问题",
+      "priority": "2",
+      "severity": "3",
+      "status": "closed",
+      "createdBy": "003030"
+    },
+    {
+      "id": 7,
+      "title": "禅道同步产品数据负责人不准确，需改成从科技运营平台获取",
+      "priority": "2",
+      "severity": "2",
+      "status": "closed",
+      "createdBy": "003030"
+    },
+    {
+      "id": 5,
+      "title": "禅道同步的人员有离职人员",
+      "priority": "2",
+      "severity": "3",
+      "status": "closed",
+      "createdBy": "003030"
+    },
+    {
+      "id": 3,
+      "title": "禅道对接统一待办业务验收和操作手册未完成",
+      "priority": "3",
+      "severity": "3",
+      "status": "closed",
+      "createdBy": "003030"
+    }
+  ],
+  "open": 27,
+  "success": true,
+  "total": 50
+}

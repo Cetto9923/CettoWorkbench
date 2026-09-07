@@ -1,0 +1,22 @@
+/* CRCBWorkbench platform shared quality components. */
+.wb-quality-shell {
+  --wbq-border: var(--border, #e5e7eb);
+  --wbq-muted: var(--t3, #94a3b8);
+  --wbq-card: #fff;
+}
+
+.wb-quality-shell .page-hdr {
+  align-items: center;
+  border-bottom: 1px solid var(--wbq-border);
+  padding-bottom: 12px;
+}
+
+.wb-quality-shell .tbl {
+  font-size: 12px;
+}
+
+.wb-quality-shell .tbl th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}

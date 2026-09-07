@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="mock-csrf-token">
+  <title>版本跟进 - 研发工作台</title>
+  <script src="js/layout/theme.js"></script>
+  <link rel="stylesheet" href="vendor/fonts/jetbrains-mono/fonts.css">
+  <link rel="stylesheet" href="vendor/bootstrap-icons/bootstrap-icons.css">
+  <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">
+  <link rel="stylesheet" href="css/layout/base.css">
+  <link rel="stylesheet" href="css/layout/variables.css">
+  <link rel="stylesheet" href="css/layout/app.css">
+  <link rel="stylesheet" href="css/layout/layout.css">
+  <link rel="stylesheet" href="css/po/shell.css">
+  <link rel="stylesheet" href="css/components/components.css">
+  <link rel="stylesheet" href="css/components/table.css">
+  <link rel="stylesheet" href="css/components/modal.css">
+  <link rel="stylesheet" href="css/po/personal-workspace.css">
+  <link rel="stylesheet" href="css/po/demand-detail.css">
+  
+  <!-- PRD Mock Engine -->
+  <script src="js/mock-data.js"></script>
+  <script src="js/mock-service.js"></script>
+  <script src="vendor/jquery/jquery.min.js"></script>
+</head>
+<body class="po-workbench-shell has-bottom-tabs">
+  <header class="topbar">
+    <div class="topbar-row">
+      <div class="po-role-switcher" role="tablist" aria-label="工作台角色">
+        <a class="po-role-tab active" role="tab" aria-selected="true" href="home.html">PO</a>
+        <button class="po-role-tab" role="tab" aria-selected="false" type="button">SM</button>
+        <button class="po-role-tab" role="tab" aria-selected="false" type="button">业务</button>
+        <button class="po-role-tab" role="tab" aria-selected="false" type="button">PMO</button>
+      </div>
+      <div class="po-header-right">
+        <label class="po-global-search">
+          <i class="fas fa-search" aria-hidden="true"></i>
+          <input type="search" aria-label="搜索需求、任务、Bug、MR、版本窗口、项目" placeholder="搜索需求 / 任务 / Bug / MR">
+        </label>
+        <button type="button" class="po-header-icon" aria-label="通知"><i class="fas fa-bell"></i></button>
+        <div class="dropdown">
+          <button class="po-user-info" type="button" onclick="return toggleDropdown(this);" aria-haspopup="menu">
+            <span class="po-user-avatar">程</span>
+            <span>程统(003030)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="sidebar" id="sidebar">
+      <div class="po-sidebar-brand">
+        <span class="po-brand-logo">研</span>
+        <strong class="nav-text">研发工作台</strong>
+        <button type="button" class="po-sidebar-collapse js-sidebar-collapse" id="sidebarToggle" title="收起菜单" aria-label="收起菜单"><i class="fas fa-chevron-left"></i></button>
+      </div>
+      <div class="sidebar-body">
+        <div class="sidebar-nav po-sidebar-nav">
+          <div class="nav-section-label">个人入口</div>
+          <a href="home.html" class="nav-item "><i class="nav-icon fas fa-home"></i><span class="nav-text">首页</span></a>
+          <a href="todos.html" class="nav-item "><i class="nav-icon fas fa-list-check"></i><span class="nav-text">我的待办</span><span class="nav-badge">107</span></a>
+          <a href="done.html" class="nav-item "><i class="nav-icon fas fa-clock-rotate-left"></i><span class="nav-text">我的已办</span></a>
+          <a href="notice.html" class="nav-item "><i class="nav-icon fas fa-bell"></i><span class="nav-text">通知中心</span><span class="nav-badge nav-badge--danger">205</span></a>
+          <a href="follow.html" class="nav-item "><i class="nav-icon fas fa-star"></i><span class="nav-text">我的关注</span></a>
+          <div class="nav-divider" role="separator"></div>
+          <div class="nav-section-label">工作区</div>
+          <a href="board-demand.html" class="nav-item "><i class="nav-icon fas fa-table-cells-large"></i><span class="nav-text">工作看板</span></a>
+          <a href="demand-query.html" class="nav-item "><i class="nav-icon fas fa-briefcase"></i><span class="nav-text">需求查询</span></a>
+          <a href="schedule.html" class="nav-item "><i class="nav-icon fas fa-calendar-check"></i><span class="nav-text">需求排期</span><span class="nav-badge">PO</span></a>
+          <a href="version-follow.html" class="nav-item active"><i class="nav-icon fas fa-vial-circle-check"></i><span class="nav-text">版本跟进</span></a>
+          <a href="acceptance-delivery.html" class="nav-item "><i class="nav-icon fas fa-clipboard-check"></i><span class="nav-text">验收交付</span></a>
+          <a href="issue-risk.html" class="nav-item "><i class="nav-icon fas fa-shield-halved"></i><span class="nav-text">问题风险</span></a>
+          <div class="nav-divider" role="separator"></div>
+          <div class="nav-section-label">专项分析</div>
+          <a href="quality-analysis.html#metrics" class="nav-item "><i class="nav-icon fas fa-sliders"></i><span class="nav-text">指标管理</span></a>
+          <a href="quality-analysis.html#radar" class="nav-item "><i class="nav-icon fas fa-chart-line"></i><span class="nav-text">指标雷达</span></a>
+          <a href="quality-analysis.html#warning" class="nav-item "><i class="nav-icon fas fa-triangle-exclamation"></i><span class="nav-text">质效预警</span></a>
+        </div>
+      </div>
+    </nav>
+
+    <main class="main">
+      <div class="po-personal-workspace po-version-follow">
+  <header class="workspace-header">
+    <div class="workspace-header-left">
+      <h2>版本跟进</h2>
+      <p>按版本发布窗口判断按期就绪度 · 关键时间对照、卡点阻断与跟进协同</p>
+    </div>
+    <div class="workspace-header-right" style="display:flex;gap:10px;align-items:center">
+      <a href="schedule.html" class="action-btn"><i class="fas fa-calendar-check" style="margin-right:4px"></i>查看排期视图</a>
+      <button type="button" class="action-btn primary" onclick="alert('已刷新版本发布健康度预测')"><i class="fas fa-sync" style="margin-right:4px"></i>刷新就绪度</button>
+    </div>
+  </header>
+
+  <section class="workspace-panel" style="padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+    <div style="display:flex;align-items:center;gap:12px">
+      <span style="font-weight:600;font-size:13px;color:var(--text-primary)"><i class="fas fa-box-archive" style="color:var(--brand-primary);margin-right:6px"></i>当前版本窗口：</span>
+      <div style="display:flex;gap:8px">
+        <button type="button" class="header-quick-chip active" onclick="switchWindow(this, '2026-09A')">2026-09A (投产日 09-15 · 正常)</button>
+        <button type="button" class="header-quick-chip" onclick="switchWindow(this, '2026-09B')">2026-09B (投产日 09-28 · 临期)</button>
+        <button type="button" class="header-quick-chip" onclick="switchWindow(this, '2026-10A')">2026-10A (投产日 10-15 · 规划中)</button>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--text-secondary)">距离发布投产封板还有 <strong style="color:var(--brand-primary);font-size:14px">8</strong> 天</div>
+  </section>
+
+  <section class="workspace-panel" style="padding:16px 20px;margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-weight:600;font-size:14px">版本需求价值流就绪度 (共 8 个业务需求)</div>
+      <div style="display:flex;gap:16px;font-size:12px">
+        <span style="color:var(--color-success)"><i class="fas fa-circle-check"></i> 正常推进 6</span>
+        <span style="color:var(--color-warning)"><i class="fas fa-circle-exclamation"></i> 存在风险 2</span>
+        <span style="color:var(--color-danger)"><i class="fas fa-circle-xmark"></i> 严重卡点 0</span>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(5, 1fr);gap:12px">
+      <div style="background:#f8fafc;padding:12px;border-radius:6px;border:1px solid var(--border-subtle)">
+        <div style="font-size:11px;color:var(--text-secondary)">1. 待提测 (2)</div>
+        <div style="font-weight:700;font-size:16px;color:var(--brand-primary);margin-top:4px">25%</div>
+        <div style="font-size:11px;color:var(--text-tertiary);margin-top:2px">预计 09-08 前完成</div>
+      </div>
+      <div style="background:#f8fafc;padding:12px;border-radius:6px;border:1px solid var(--border-subtle)">
+        <div style="font-size:11px;color:var(--text-secondary)">2. 联调测试中 (3)</div>
+        <div style="font-weight:700;font-size:16px;color:var(--brand-primary);margin-top:4px">37.5%</div>
+        <div style="font-size:11px;color:var(--text-tertiary);margin-top:2px">已执行用例 84%</div>
+      </div>
+      <div style="background:#f8fafc;padding:12px;border-radius:6px;border:1px solid var(--border-subtle)">
+        <div style="font-size:11px;color:var(--text-secondary)">3. 待验收 (2)</div>
+        <div style="font-weight:700;font-size:16px;color:var(--color-warning);margin-top:4px">25%</div>
+        <div style="font-size:11px;color:var(--text-tertiary);margin-top:2px">业务验收人跟进中</div>
+      </div>
+      <div style="background:#f8fafc;padding:12px;border-radius:6px;border:1px solid var(--border-subtle)">
+        <div style="font-size:11px;color:var(--text-secondary)">4. 待交付 (1)</div>
+        <div style="font-weight:700;font-size:16px;color:var(--brand-primary);margin-top:4px">12.5%</div>
+        <div style="font-size:11px;color:var(--text-tertiary);margin-top:2px">投产检查清单就绪</div>
+      </div>
+      <div style="background:#ecfdf5;padding:12px;border-radius:6px;border:1px solid #bbf7d0">
+        <div style="font-size:11px;color:#166534">5. 发布就绪度评估</div>
+        <div style="font-weight:700;font-size:16px;color:#16a34a;margin-top:4px">88 分</div>
+        <div style="font-size:11px;color:#166534;margin-top:2px">低风险按期发布</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="workspace-panel">
+    <div class="table-container">
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width:90px">ID</th>
+            <th>窗口需求名称</th>
+            <th style="width:120px">归属应用系统</th>
+            <th style="width:90px">优先级</th>
+            <th style="width:110px">当前阶段</th>
+            <th style="width:110px">关键卡点</th>
+            <th style="width:110px">责任人</th>
+            <th style="width:120px;text-align:right">跟进办理</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="c-id"><span class="table-id-link">US56320</span></td>
+            <td class="c-title"><a href="javascript:void(0)" class="table-title-link" onclick="DemandDetail.open('56320')">架构平台将文档审批信息同步给禅道</a></td>
+            <td>企业级微服务</td>
+            <td><span class="badge badge-warning">P2</span></td>
+            <td><span class="stage-tag">研发提测</span></td>
+            <td><span style="color:var(--text-tertiary)">无</span></td>
+            <td>程统 (003030)</td>
+            <td style="text-align:right"><a href="submit-test.html" class="table-action-btn primary">提测</a></td>
+          </tr>
+          <tr>
+            <td class="c-id"><span class="table-id-link">US51845</span></td>
+            <td class="c-title"><a href="javascript:void(0)" class="table-title-link" onclick="DemandDetail.open('51845')">测试需求流程改造及指标统计对接</a></td>
+            <td>质量控制中心</td>
+            <td><span class="badge badge-neutral">P3</span></td>
+            <td><span class="stage-tag">发起交付</span></td>
+            <td><span style="color:var(--text-tertiary)">无</span></td>
+            <td>张明 (002811)</td>
+            <td style="text-align:right"><button type="button" class="table-action-btn primary" onclick="alert('发起交付审批办理')">发起交付</button></td>
+          </tr>
+          <tr>
+            <td class="c-id"><span class="table-id-link">US61673</span></td>
+            <td class="c-title"><a href="javascript:void(0)" class="table-title-link" onclick="DemandDetail.open('61673')">【禅道】主管部门审批支持批量处理</a></td>
+            <td>项目管理协同</td>
+            <td><span class="badge badge-warning">P2</span></td>
+            <td><span class="stage-tag">业务验收</span></td>
+            <td><span style="color:var(--color-warning)"><i class="fas fa-triangle-exclamation"></i> 等待业务确认</span></td>
+            <td>王强 (001923)</td>
+            <td style="text-align:right"><button type="button" class="table-action-btn" onclick="alert('催办通知已发送至业务负责人')">催验收</button></td>
+          </tr>
+          <tr>
+            <td class="c-id"><span class="table-id-link">US59264</span></td>
+            <td class="c-title"><a href="javascript:void(0)" class="table-title-link" onclick="DemandDetail.open('59264')">关于豁免类计划变更类型改造</a></td>
+            <td>配置治理</td>
+            <td><span class="badge badge-neutral">P3</span></td>
+            <td><span class="stage-tag">联调测试</span></td>
+            <td><span style="color:var(--text-tertiary)">无</span></td>
+            <td>李四 (003411)</td>
+            <td style="text-align:right"><a href="#test-order" class="table-action-btn primary" onclick="alert('查看联调测试单');return false">测试单 ↗</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+<script>
+function switchWindow(btn, w) {
+  var chips = btn.parentElement.querySelectorAll('button');
+  chips.forEach(function(c) { c.classList.remove('active'); });
+  btn.classList.add('active');
+}
+</script>
+    </main>
+  </div>
+
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/layout/sidebar.js"></script>
+  <script src="js/po/demand-detail-render.js"></script>
+  <script src="js/po/demand-detail.js"></script>
+  
+</body>
+</html>
