@@ -1,7 +1,7 @@
 /* ==========================================================================
    文件: web/static/css/layout.css
    模块: 布局
-   职责: 顶部导航 + 侧边栏 + 主内容区的三栏骨架布局
+   职责: 顶部导航 + 侧边栏 + 主内容区 + 底部工作页签的骨架布局
          侧边栏支持多级展开/折叠与整体收起；主区占满侧栏以外剩余视口
    规范: 遵循 DESIGN_SYSTEM.md §1 变量 + §3 布局 + §4 导航
 ========================================================================== */
@@ -620,6 +620,102 @@ body.sidebar-collapsed .sidebar .sidebar-collapse-icon {
   margin-left: var(--main-gutter);
   width: calc(100vw - var(--main-gutter));
   max-width: none;
+}
+
+/* ── Bottom Tabbar ──
+   访问累积的工作页签；固定在主区底部，侧栏收起时 left 跟随 */
+
+body.has-bottom-tabs {
+  --bottom-tabbar-height: 40px;
+}
+
+.bottom-tabbar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: var(--sidebar-width);
+  z-index: 110;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: var(--bottom-tabbar-height);
+  padding: 5px 10px;
+  overflow-x: auto;
+  border-top: 1px solid #e5e7eb;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 -4px 14px rgba(15, 23, 42, 0.06);
+  transition: left 0.2s ease;
+}
+
+body.layout-nav-top .bottom-tabbar,
+body.layout-chrome-hidden .bottom-tabbar {
+  left: 0;
+}
+
+body.sidebar-collapsed .bottom-tabbar {
+  left: var(--sidebar-width-collapsed);
+}
+
+body.has-bottom-tabs .main {
+  padding-bottom: calc(var(--space-6) + var(--bottom-tabbar-height));
+}
+
+.bottom-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 180px;
+  height: 28px;
+  padding: 0 4px 0 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+  color: #667085;
+  font-size: 12px;
+  white-space: nowrap;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.bottom-tab:hover {
+  color: #475467;
+  border-color: #d0d5dd;
+}
+
+.bottom-tab.active {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1e3a5f;
+  font-weight: 700;
+}
+
+.bottom-tab > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bottom-tab-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 2px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.55;
+  flex-shrink: 0;
+}
+
+.bottom-tab-close:hover {
+  opacity: 1;
+  background: rgba(15, 23, 42, 0.06);
 }
 
 /* layout-chrome-hidden：无顶栏、无侧栏；主区占满整页视口（须写在 .main 之后以免被覆盖） */

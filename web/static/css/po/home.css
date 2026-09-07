@@ -6,6 +6,7 @@
 
 .main:has(.po-home) {
   padding: 12px 16px 16px;
+  padding-bottom: calc(16px + var(--bottom-tabbar-height, 0px));
 }
 
 .po-home {
