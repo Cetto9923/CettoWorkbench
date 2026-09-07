@@ -57,10 +57,13 @@ func (s *Service) NoticeMarkRead(ctx context.Context, actor *model.User, notifyI
 	return s.repo.SaveNoticeRead(ctx, actor.Account, notifyID)
 }
 
-// NoticeMarkAllRead 标记全部已读。
-func (s *Service) NoticeMarkAllRead(ctx context.Context, actor *model.User) (int64, error) {
+// NoticeMarkAllRead 标记当前筛选范围内所有页的未读通知。
+func (s *Service) NoticeMarkAllRead(ctx context.Context, actor *model.User, req NoticeListReq) (int64, error) {
 	if actor == nil || strings.TrimSpace(actor.Account) == "" {
-		return 0, nil
+		return 0, errorx.New(errorx.ErrCodeForbidden, "未登录")
 	}
-	return s.repo.SaveAllNoticeReads(ctx, actor.Account)
+	if errs := req.Validate(); len(errs) > 0 {
+		return 0, errorx.New(errorx.ErrCodeInvalidParam, "筛选条件无效")
+	}
+	return s.repo.SaveAllNoticeReads(ctx, actor.Account, req)
 }

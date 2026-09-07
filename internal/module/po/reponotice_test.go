@@ -42,7 +42,7 @@ func TestNoticeListReqValidate(t *testing.T) {
 	if errs := req.Validate(); len(errs) != 0 {
 		t.Fatalf("default request errors: %#v", errs)
 	}
-	if req.Category != "all" || req.Page != 1 || req.PageSize != 20 {
+	if req.QuickView != "unread" || req.Category != "all" || req.Page != 1 || req.PageSize != 20 {
 		t.Fatalf("defaults = %#v", req)
 	}
 	invalid := NoticeListReq{Category: "guessed"}
@@ -183,6 +183,80 @@ func TestNewNoticeItemZeroObjectIDHasEmptyURL(t *testing.T) {
 	}
 }
 
+// 「提醒：您有 Bug(9)」类系统级模板提醒：subject 不符合 TYPE #ID 形态，
+// parseNoticeSubject 解析不出来；必须从 row.Data 的 ZenTao 直链兜底出
+// objType / objID，从而补齐前端徽章与「去处理」按钮。
+func TestNewNoticeItemDerivesObjFromDataURLForReminder(t *testing.T) {
+	zentao.SetConfig(config.ZentaoConfig{URL: "http://zentao.test"})
+	cases := []struct {
+		name     string
+		subject  string
+		data     string
+		wantType string
+		wantID   int64
+		wantURL  bool
+	}{
+		{
+			name:     "reminder bug with timestamp + url",
+			subject:  "提醒：您有 Bug(9)",
+			data:     "2025-01-15 http://pms.csr.cmbchina.com/bug-view-7890.html",
+			wantType: "bug",
+			wantID:   7890,
+			wantURL:  true,
+		},
+		{
+			name:     "reminder task with url only",
+			subject:  "您有 Task(3)",
+			data:     "http://pms.csr.cmbchina.com/task-view-100.html",
+			wantType: "task",
+			wantID:   100,
+			wantURL:  true,
+		},
+		{
+			name:     "reminder story url",
+			subject:  "您有 Story(5)",
+			data:     "http://pms.csr.cmbchina.com/story-view-4181.html",
+			wantType: "story",
+			wantID:   4181,
+			wantURL:  true,
+		},
+		{
+			name:     "no url in data keeps empty url",
+			subject:  "提醒：您有 Bug(9)",
+			data:     "无直链",
+			wantType: "",
+			wantID:   0,
+			wantURL:  false,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			row := noticeRow{
+				ID:         100,
+				ObjectType: "",
+				ObjectID:   0,
+				Subject:    tc.subject,
+				Data:       tc.data,
+				ActionCode: "reminded",
+				CreatedBy:  "system",
+			}
+			item := newNoticeItem(row, nil)
+			if item.ObjectType != tc.wantType {
+				t.Fatalf("ObjectType = %q, want %q", item.ObjectType, tc.wantType)
+			}
+			if item.ObjectID != tc.wantID {
+				t.Fatalf("ObjectID = %d, want %d", item.ObjectID, tc.wantID)
+			}
+			if tc.wantURL && item.URL == "" {
+				t.Fatal("URL should be populated when ZenTao url is detected in Data")
+			}
+			if !tc.wantURL && item.URL != "" {
+				t.Fatalf("URL should remain empty without a url hint; got %q", item.URL)
+			}
+		})
+	}
+}
+
 func TestCheckNoticeAccess(t *testing.T) {
 	db, mock := setupMockDB(t)
 	repo := NewRepo(db, db)
@@ -302,5 +376,77 @@ func TestNewNoticeItem_DTOFieldsPopulated(t *testing.T) {
 	}
 	if item.Data != item.Content {
 		t.Fatalf("item.Data should match Content, got %q", item.Data)
+	}
+}
+
+func TestCleanNoticeSummary(t *testing.T) {
+	cases := []struct {
+		name     string
+		title    string
+		data     string
+		maxRunes int
+		want     string
+	}{
+		{
+			name:     "charter approval notice with breadcrumb",
+			title:    "CHARTER #529 云销管理平台",
+			data:     "CHARTER #529 云销管理平台 CRCB CHARTER #529 云销管理平台 尊敬的用户，您好！ [云销管理平台] 当前需要您进行审批，请前往禅道进行审批。",
+			maxRunes: 100,
+			want:     "尊敬的用户，您好！ [云销管理平台] 当前需要您进行审批，请前往禅道进行审批。",
+		},
+		{
+			name:     "task creation notice with breadcrumb",
+			title:    "TASK #217006 123456 - 20250723-CSRCBZentao V5.16",
+			data:     "TASK #217006 123456 CRCB TASK #217006 123456 任务描述 ● 2025-08-01 15:41:30, 由 周鸿利(004861) 创建。",
+			maxRunes: 100,
+			want:     "任务描述 ● 2025-08-01 15:41:30, 由 周鸿利(004861) 创建。",
+		},
+		{
+			name:     "identical title and data returns empty",
+			title:    "需求评审通知",
+			data:     "<p>需求评审通知</p>",
+			maxRunes: 100,
+			want:     "",
+		},
+		{
+			name:     "clean content with truncation",
+			title:    "系统维护通知",
+			data:     "今晚22:00将进行系统数据库优化维护，预计耗时30分钟，届时请各位同事提前保存正在编辑的需求与任务工作。",
+			maxRunes: 20,
+			want:     "今晚22:00将进行系统数据库优化维护，…",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := cleanNoticeSummary(tc.title, tc.data, tc.maxRunes)
+			if got != tc.want {
+				t.Fatalf("cleanNoticeSummary(%q, %q, %d) = %q, want %q", tc.title, tc.data, tc.maxRunes, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestParseNoticeSubject(t *testing.T) {
+	cases := []struct {
+		subject   string
+		wantType  string
+		wantID    int64
+		wantClean string
+	}{
+		{"CHARTER #529 云销管理平台", "charter", 529, "云销管理平台"},
+		{"TASK #217006 123456 - 20250723-CSRCBZentao V5.16", "task", 217006, "123456 - 20250723-CSRCBZentao V5.16"},
+		{"STORY #67393 业务需求池权限根据部门自动匹配人员", "story", 67393, "业务需求池权限根据部门自动匹配人员"},
+		{"BUG #473 页面显示异常", "bug", 473, "页面显示异常"},
+		{"反馈 #2556 用例搜索条件维持原来的选择", "feedback", 2556, "用例搜索条件维持原来的选择"},
+		{"普通广播通知", "", 0, "普通广播通知"},
+	}
+
+	for _, tc := range cases {
+		gotType, gotID, gotClean := parseNoticeSubject(tc.subject)
+		if gotType != tc.wantType || gotID != tc.wantID || gotClean != tc.wantClean {
+			t.Fatalf("parseNoticeSubject(%q) = (%q, %d, %q), want (%q, %d, %q)",
+				tc.subject, gotType, gotID, gotClean, tc.wantType, tc.wantID, tc.wantClean)
+		}
 	}
 }

@@ -11,19 +11,19 @@ package po
 import "strings"
 
 type NoticeListReq struct {
-	QuickView  string `form:"quickView"`
-	Category   string `form:"category"`
-	ObjectType string `form:"objectType"`
-	TimeRange  string `form:"timeRange"`
-	ReadState  string `form:"readState"`
-	NeedAction string `form:"needAction"`
-	Keyword    string `form:"keyword"`
-	Page       int    `form:"page"`
-	PageSize   int    `form:"pageSize"`
+	QuickView  string `form:"quickView" json:"quickView"`
+	Category   string `form:"category" json:"category"`
+	ObjectType string `form:"objectType" json:"objectType"`
+	TimeRange  string `form:"timeRange" json:"timeRange"`
+	ReadState  string `form:"readState" json:"readState"`
+	NeedAction string `form:"needAction" json:"needAction"`
+	Keyword    string `form:"keyword" json:"keyword"`
+	Page       int    `form:"page" json:"page"`
+	PageSize   int    `form:"pageSize" json:"pageSize"`
 }
 
 func (r *NoticeListReq) Validate() []FieldError {
-	r.QuickView = noticeValue(r.QuickView, "all")
+	r.QuickView = noticeValue(r.QuickView, "unread")
 	if !isNoticeValue(r.QuickView, "all", "unread", "action", "abnormal", "today") {
 		return []FieldError{{Field: "quickView", Message: "无效的快捷视图"}}
 	}

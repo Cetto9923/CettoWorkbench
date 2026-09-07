@@ -11,12 +11,40 @@ package po
 import (
 	"context"
 	"errors"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"gorm.io/gorm"
 )
+
+// noticeDataURLRe 解析 zt_notify.data 里 ZenTao 直链的视图类型与 ID，作为
+// 「您有 Bug(N)」类系统级模板提醒的 objType/objID 兜底来源。仅捕获视图路径段
+// 与数字 ID，避免匹配正文里的 bug 关键词。
+var noticeDataURLRe = regexp.MustCompile(`/(bug|story|task|product|project|demand|testcase|testtask)-view-(\d+)\.html`)
+
+// noticeObjectTypeFromURLKind 把 ZenTao 视图路径段归一到内部 objType。
+// testcase 与 testtask 共享 ZenTao 的「测试单」概念，统一归到 testtask。
+func noticeObjectTypeFromURLKind(kind string) string {
+	switch kind {
+	case "bug":
+		return "bug"
+	case "story":
+		return "story"
+	case "task":
+		return "task"
+	case "product":
+		return "product"
+	case "project":
+		return "project"
+	case "demand":
+		return "demand"
+	case "testcase", "testtask":
+		return "testtask"
+	}
+	return ""
+}
 
 type noticeRepoResp struct {
 	Items      []NoticeItem
@@ -225,19 +253,46 @@ func newNoticeItem(row noticeRow, displayMap map[string]string) NoticeItem {
 		actor = displayName
 	}
 	title := cleanNoticeText(row.Subject, 80)
-	summary := cleanNoticeText(row.Data, 80)
+	summary := cleanNoticeSummary(title, row.Data, 100)
 	content := cleanNoticeText(row.Data, 0)
 	if summary == title {
 		summary = ""
 	}
+
+	objType := row.ObjectType
+	objID := row.ObjectID
+	if objType == "mail" || objType == "" || objID == 0 {
+		if parsedType, parsedID, _ := parseNoticeSubject(row.Subject); parsedType != "" && parsedID > 0 {
+			objType = parsedType
+			objID = parsedID
+		}
+	}
+
+	// 兜底：「您有 Bug(N)」类系统级模板提醒的 subject 不符合 TYPE #ID 形态，
+	// parseNoticeSubject 无法归类；此时从 row.Data 中的 ZenTao 直链反推对象。
+	if objType == "" || objID == 0 {
+		if m := noticeDataURLRe.FindStringSubmatch(row.Data); m != nil {
+			viewKind := m[1]
+			parsedID, err := strconv.ParseInt(m[2], 10, 64)
+			if err == nil && parsedID > 0 {
+				if objType == "" {
+					objType = noticeObjectTypeFromURLKind(viewKind)
+				}
+				if objID == 0 {
+					objID = parsedID
+				}
+			}
+		}
+	}
+
 	var url string
-	if row.ObjectID > 0 {
-		url = objectViewURL(row.ObjectType, uint(row.ObjectID))
+	if objID > 0 {
+		url = objectViewURL(objType, uint(objID))
 	}
 	return NoticeItem{
 		ID:         row.ID,
-		ObjectType: row.ObjectType,
-		ObjectID:   row.ObjectID,
+		ObjectType: objType,
+		ObjectID:   objID,
 		Title:      title,
 		Summary:    summary,
 		Content:    content,
@@ -245,9 +300,9 @@ func newNoticeItem(row noticeRow, displayMap map[string]string) NoticeItem {
 		Data:       summary,
 		Actor:      actor,
 		Action:     row.ActionCode,
-		Category:   classifyNotice(row.ObjectType, row.ActionCode),
+		Category:   classifyNotice(objType, row.ActionCode),
 		NeedAction: noticeNeedsAction(row.ActionCode),
-		Anomaly:    classifyNotice(row.ObjectType, row.ActionCode) == "risk",
+		Anomaly:    classifyNotice(objType, row.ActionCode) == "risk",
 		Read:       row.IsRead != 0,
 		Date:       row.CreatedDate.Format("2006-01-02 15:04:05"),
 		URL:        url,
@@ -321,9 +376,29 @@ func (r *Repo) SaveNoticeRead(ctx context.Context, account string, notifyID int6
 		WHERE n.id = ? AND FIND_IN_SET(?, REPLACE(n.toList, ' ', '')) > 0 AND nr.id IS NULL`, account, account, notifyID, account).Error
 }
 
+// SaveAllNoticeReads 使用列表相同谓词，但不分页；仅插入当前账号尚未读的匹配项。
+func (r *Repo) SaveAllNoticeReads(ctx context.Context, account string, req NoticeListReq) (int64, error) {
+	if r == nil || r.writeDB == nil || strings.TrimSpace(account) == "" {
+		return 0, nil
+	}
+	now := time.Now()
+	query := applyNoticeFilters(noticeBaseQuery(ctx, r.writeDB, account), now, req, true).
+		Where("nr.id IS NULL").Select("n.id, ? AS account, ? AS readAt", account, now)
+	var rows []struct{ ID int64 }
+	stmt := query.Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
+	if stmt.Error != nil {
+		return 0, stmt.Error
+	}
+	// SQL 来自 GORM 构建器，筛选值全部保留绑定参数；并发重复标记不覆盖既有 readAt。
+	result := r.writeDB.WithContext(ctx).Exec("INSERT INTO zt_workbench_notify_reads (notify, account, readAt) "+
+		stmt.SQL.String()+" ON DUPLICATE KEY UPDATE readAt = zt_workbench_notify_reads.readAt", stmt.Vars...)
+	return result.RowsAffected, result.Error
+}
+
 // CountUnreadNotices 仅返回当前账号未读通知总数（侧栏角标用）。
 // 数据真源：zt_notify LEFT JOIN zt_workbench_notify_reads WHERE nr.id IS NULL。
-// 与 FindNotices 中 unread 计数的基准相同；不应用 QuickView / 类别等过滤器。
+// 与 FindNotices 中 unread 计数的基准相同；不应用 QuickView / 类别等过滤器，
+// 保持角标与底部未读提醒一致。
 func (r *Repo) CountUnreadNotices(ctx context.Context, account string) (int64, error) {
 	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
 		return 0, nil
@@ -336,14 +411,4 @@ func (r *Repo) CountUnreadNotices(ctx context.Context, account string) (int64, e
 		return 0, err
 	}
 	return n, nil
-}
-
-func (r *Repo) SaveAllNoticeReads(ctx context.Context, account string) (int64, error) {
-	if r == nil || r.writeDB == nil || strings.TrimSpace(account) == "" {
-		return 0, nil
-	}
-	result := r.writeDB.WithContext(ctx).Exec(`INSERT INTO zt_workbench_notify_reads (notify, account, readAt)
-		SELECT n.id, ?, NOW() FROM zt_notify n LEFT JOIN zt_workbench_notify_reads nr ON nr.notify = n.id AND nr.account = ?
-		WHERE FIND_IN_SET(?, REPLACE(n.toList, ' ', '')) > 0 AND nr.id IS NULL`, account, account, account)
-	return result.RowsAffected, result.Error
 }
