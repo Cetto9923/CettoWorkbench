@@ -34,7 +34,6 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
     <div class="schedule-page-actions">
       <button type="button" class="action-btn js-open-manage-version-windows"><i class="fas fa-gear"></i> 窗口维护</button>
       <button type="button" class="action-btn primary js-open-create-version-window"><i class="fas fa-plus"></i> 新建窗口</button>
-      <button type="button" class="action-btn">版本概览</button>
       <!-- <button type="button" class="action-btn js-schedule-reload" title="刷新" aria-label="刷新"><i class="fas fa-rotate"></i></button> -->
     </div>
   </div>
@@ -248,17 +247,6 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
     <div class="schedule-data-tabs">
       <button type="button" class="schedule-data-tab active" data-type="bizReq"><i class="fas fa-file-lines"></i>业务需求</button>
       <button type="button" class="schedule-data-tab" data-type="independentRD"><i class="fas fa-code-branch"></i>独立研发需求</button>
-    </div>
-
-    <div class="schedule-list-head">
-      <div class="schedule-list-title"><span id="scheduleListTitle">业务需求列表</span> <span id="scheduleListCountText" data-biz-total="{{ .BizTotal }}" data-independent-total="{{ .IndependentTotal }}">（共 {{ .BizTotal }} 条）</span></div>
-      <div class="schedule-list-tools">
-        <div class="view-tabs schedule-view-tabs">
-          <div class="view-tab active"><i class="fas fa-list"></i>列表</div>
-          <div class="view-tab action-btn--disabled" title="看板:待推出"><i class="fas fa-table-columns"></i>看板</div>
-          <div class="view-tab action-btn--disabled" title="分组:待推出"><i class="fas fa-border-all"></i>分组</div>
-        </div>
-      </div>
     </div>
 
     <div id="scheduleBizListPanel">
