@@ -54,7 +54,11 @@ func NewService(repo *Repo, scheduleSvc *schedule.Service, userSvc *user.Service
 	if repo != nil && repo.db != nil {
 		detailSvc = NewDetailService(NewDemandDetailRepo(repo.db))
 	}
-	return &Service{repo: repo, detailSvc: detailSvc, schedule: scheduleSvc, userSvc: userSvc, logger: logger}
+	s := &Service{repo: repo, detailSvc: detailSvc, schedule: scheduleSvc, userSvc: userSvc, logger: logger}
+	if detailSvc != nil {
+		detailSvc.attachParent(s)
+	}
+	return s
 }
 
 // DetailService 返回统一详情服务。
@@ -213,8 +217,20 @@ func (s *Service) Demands(ctx context.Context, actor *model.User, req DemandsReq
 	if err != nil {
 		return nil, err
 	}
-	if req.Status == "all" {
-		return s.listAllStageDemands(ctx, actor, req, displayMap)
+	// F06：首页「全部」与焦点筛选一律走 SQL 去重 + count + 分页，禁止无界 Pluck 后 Go 切片。
+	if req.Status == "all" || (req.Focus != "" && req.Focus != "all") {
+		if errs := req.Validate(); len(errs) > 0 {
+			return nil, fmt.Errorf("invalid home focus request")
+		}
+		account := ""
+		if actor != nil {
+			account = actor.Account
+		}
+		refs, total, err := s.repo.FindHomeFocus(ctx, account, req)
+		if err != nil {
+			return nil, err
+		}
+		return s.populateWorkItems(ctx, actor, refs, total, req.Page, req.PageSize, displayMap)
 	}
 	if filter, ok := mysqlStageFilters[req.Status]; ok {
 		return s.listMySQLDemands(ctx, actor, req.Status, filter, req, displayMap)

@@ -35,6 +35,11 @@ func (r *Repo) homeFocusQuery(ctx context.Context, account string, req DemandsRe
 		parts = append(parts, stmt.SQL.String())
 		args = append(args, stmt.Vars...)
 	}
+	if len(parts) == 0 {
+		// 无匹配阶段时返回空候选集，避免非法 SQL。
+		return r.db.WithContext(ctx).Table("(SELECT NULL AS id, 0 AS stage_index WHERE 1 = 0) AS candidates").
+			Select("id, stage_index")
+	}
 	return r.db.WithContext(ctx).Table("("+strings.Join(parts, " UNION ALL ")+") AS candidates", args...).
 		Select("id, MIN(stage_index) AS stage_index").Group("id")
 }

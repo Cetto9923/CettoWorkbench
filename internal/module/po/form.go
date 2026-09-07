@@ -11,6 +11,7 @@ package po
 import (
 	"strings"
 
+	"workbench/internal/module/po/primaryaction"
 	"workbench/internal/module/schedule"
 )
 
@@ -53,6 +54,7 @@ type KPICounts struct {
 
 // DemandsReq 按价值流状态查询需求/故事详情。
 type DemandsReq struct {
+	Focus    string `form:"focus"`
 	Status   string `form:"status"`
 	Page     int    `form:"page"`
 	PageSize int    `form:"pageSize"`
@@ -66,6 +68,10 @@ func (r *DemandsReq) Validate() []FieldError {
 	}
 	if !isValidValueStreamStatus(status) {
 		return []FieldError{{Field: "status", Message: "无效的价值流状态"}}
+	}
+	r.Focus = noticeValue(r.Focus, "all")
+	if !isNoticeValue(r.Focus, "all", "today", "blocked", "overdue", "suspended") {
+		return []FieldError{{Field: "focus", Message: "无效的首页焦点"}}
 	}
 	r.Status = status
 	if r.Page <= 0 {
@@ -81,18 +87,19 @@ func (r *DemandsReq) Validate() []FieldError {
 
 // WorkItemDetail 单条需求或故事详情。
 type WorkItemDetail struct {
-	Kind         string `json:"kind"`
-	ID           string `json:"id"` // 展示编号：业需 US{id}，研需 U{id}
-	Pri          string `json:"pri"`
-	Title        string `json:"title"`
-	Stage        string `json:"stage"`
-	Blocker      string `json:"blocker"`
-	Next         string `json:"next"`
-	Owner        string `json:"owner"`     // 与 NextOwner 同值，兼容旧字段
-	NextOwner    string `json:"nextOwner"` // 下一责任人展示名（DeriveCurrentHandler）
-	ZentaoUrl    string `json:"zentaoUrl"`
-	ValueStream  string `json:"valueStream"`
-	ZentaoStatus string `json:"zentaoStatus"` // 禅道 status 原文，前端按业需/研需分别映射中文
+	Kind          string                       `json:"kind"`
+	ID            string                       `json:"id"` // 展示编号：业需 US{id}，研需 U{id}
+	Pri           string                       `json:"pri"`
+	Title         string                       `json:"title"`
+	Stage         string                       `json:"stage"`
+	Blocker       string                       `json:"blocker"`
+	Next          string                       `json:"next"`
+	Owner         string                       `json:"owner"`     // 与 NextOwner 同值，兼容旧字段
+	NextOwner     string                       `json:"nextOwner"` // 下一责任人展示名（DeriveCurrentHandler）
+	ZentaoUrl     string                       `json:"zentaoUrl"`
+	ValueStream   string                       `json:"valueStream"`
+	ZentaoStatus  string                       `json:"zentaoStatus"`            // 禅道 status 原文，前端按业需/研需分别映射中文
+	PrimaryAction *primaryaction.PrimaryAction `json:"primaryAction,omitempty"` // Stage 5: 服务端主操作
 }
 
 // DemandsResp 价值流状态下的需求详情列表。
@@ -294,116 +301,4 @@ type TodoListResp struct {
 	PageSize int             `json:"pageSize"` // 每页条数
 	Summary  TodoSummary     `json:"summary"`
 	Groups   TodoGroupCounts `json:"groups"`
-}
-
-// DoneTab 已办的一级场景分类（业务场景维度）。
-// 对象类型由 ObjectType 二级筛选承载；一级场景固定为 6 个，不在 Tab 混入对象类型。
-type DoneTab string
-
-const (
-	DoneTabAll       DoneTab = "all"       // 全部已办
-	DoneTabApproval  DoneTab = "approval"  // 审批决策
-	DoneTabDemand    DoneTab = "demand"    // 需求治理
-	DoneTabExecution DoneTab = "execution" // 研发执行
-	DoneTabQuality   DoneTab = "quality"   // 测试质量
-	DoneTabRisks     DoneTab = "risks"     // 问题风险
-)
-
-// TimeRange 已办时间段。
-type TimeRange string
-
-const (
-	TimeRangeToday     TimeRange = "today"
-	TimeRange7d        TimeRange = "7d"
-	TimeRangeWeek      TimeRange = "week"
-	TimeRange30d       TimeRange = "30d"
-	TimeRangeMonth     TimeRange = "month"
-	TimeRangeLastMonth TimeRange = "last_month"
-	TimeRangeQuarter   TimeRange = "quarter"
-	TimeRangeCustom    TimeRange = "custom"
-	TimeRangeAll       TimeRange = "all"
-)
-
-// DoneListReq 我的已办列表请求。
-// V10.1 02 节：已办形成条件 = 本人真实执行的正式业务动作。来源 zt_action + Workbench 审计。
-// 严格定义：待办消失不能自动变成已办。
-type DoneListReq struct {
-	Tab        DoneTab   `form:"tab"`        // 一级场景分类；默认 all
-	TimeRange  TimeRange `form:"timeRange"`  // 时间段；默认 all
-	CustomFrom string    `form:"from"`       // 时间段=custom 时生效
-	CustomTo   string    `form:"to"`         // 时间段=custom 时生效
-	ObjectType string    `form:"objectType"` // 二级筛选：对象类型（业务需求/任务/Bug/测试单等）
-	Result     string    `form:"result"`     // 处理结果
-	Action     string    `form:"action"`     // 处理动作（"objectType:action" 全键，逗号可多选）
-	Keyword    string    `form:"keyword"`    // 搜索 ID / 标题 / 操作内容
-	Page       int       `form:"page"`
-	PageSize   int       `form:"pageSize"`
-}
-
-// Validate 校验 DoneListReq。
-func (r *DoneListReq) Validate() []FieldError {
-	r.Tab = DoneTab(strings.TrimSpace(string(r.Tab)))
-	if r.Tab == "" {
-		r.Tab = DoneTabAll
-	}
-	switch r.Tab {
-	case DoneTabAll, DoneTabApproval, DoneTabDemand, DoneTabExecution, DoneTabQuality, DoneTabRisks:
-	default:
-		return []FieldError{{Field: "tab", Message: "无效的场景 Tab"}}
-	}
-	r.TimeRange = TimeRange(strings.TrimSpace(string(r.TimeRange)))
-	if r.TimeRange == "" {
-		r.TimeRange = TimeRangeAll
-	}
-	switch r.TimeRange {
-	case TimeRangeToday, TimeRange7d, TimeRangeWeek, TimeRange30d, TimeRangeMonth,
-		TimeRangeLastMonth, TimeRangeQuarter, TimeRangeCustom, TimeRangeAll:
-	default:
-		return []FieldError{{Field: "timeRange", Message: "无效的时间段"}}
-	}
-	r.ObjectType = strings.TrimSpace(r.ObjectType)
-	r.Result = strings.TrimSpace(r.Result)
-	r.Action = strings.TrimSpace(r.Action)
-	r.Keyword = strings.TrimSpace(r.Keyword)
-	if r.Page < 1 {
-		r.Page = 1
-	}
-	if r.PageSize < 1 || r.PageSize > 100 {
-		r.PageSize = 20
-	}
-	return nil
-}
-
-// DoneAction 我的已办单条：zt_action 投影。
-type DoneAction struct {
-	ID              int64  `json:"id"`              // zt_action.id
-	Actor           string `json:"actor"`           // 操作人（应 = 当前账号）
-	Action          string `json:"action"`          // 操作代码（中文化见 DoneActionLabel）
-	ObjectType      string `json:"objectType"`      // 对象类型（demand/story/task/bug/testtask...）
-	ObjectTypeLabel string `json:"objectTypeLabel"` // 对象类型中文标签
-	ObjectID        int64  `json:"objectId"`        // 对象 ID
-	ObjectName      string `json:"objectName"`      // 对象标题
-	Date            string `json:"date"`            // 操作时间 YYYY-MM-DD HH:MM:SS
-	Result          string `json:"result"`          // 操作结果/前后状态
-	URL             string `json:"url"`             // 禅道详情 URL
-}
-
-// DoneListResp 我的已办列表响应。
-type DoneListResp struct {
-	Items    []DoneAction `json:"items"`
-	Total    int64        `json:"total"`
-	Summary  DoneSummary  `json:"summary"` // 时间段概览计数（与待办 focus 卡同构）
-	Page     int          `json:"page"`
-	PageSize int          `json:"pageSize"`
-}
-
-// DoneSummary 已办时间段概览计数。
-type DoneSummary struct {
-	All     int64 `json:"all"`
-	Today   int64 `json:"today"`
-	Last7d  int64 `json:"last7d"`
-	Week    int64 `json:"week"`
-	Last30d int64 `json:"last30d"`
-	Month   int64 `json:"month"`
-	Quarter int64 `json:"quarter"`
 }
