@@ -1,9 +1,14 @@
 /* =============================================================================
-   文件: web/static/css/po/personal-workspace.css
-   模块: PO 个人工作台 (UI-01 四页公共样式规范)
-   职责: 提供 /home, /todos, /done, /notice 四页的高密度统一骨架、视觉几何与交互样式
-   作用域: .po-personal-workspace
-   ============================================================================= */
+  文件: web/static/css/po/personal-workspace.css
+  模块: PO 个人工作台 (UI-01 四页公共样式规范)
+  职责: 提供 /home, /todos, /done, /notice 四页的高密度统一骨架、视觉几何与交互样式
+  作用域: .po-personal-workspace
+  ============================================================================= */
+
+/* 公共优先级 / 对象类型 token-driven 样式 + 旧 class 别名 (Stage 2 引入)
+   加载链: layout/variables.css 提供 --po-pri-* token, 本 css 直接消费。
+   @import 在 css 顶端, 浏览器支持, 不破坏现有 page_css 顺序。 */
+@import url("./wb-priority.css");
 
 .po-personal-workspace {
   min-height: calc(100vh - 56px);
@@ -251,6 +256,16 @@
   height: 40px; padding: 6px 10px; border-bottom: 1px solid #f1f5f9; color: #1e293b;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-sizing: border-box;
 }
+/* 类型 / 优先级徽章列：禁止 ellipsis 截成「业务需求…」 */
+.po-personal-workspace .workspace-table td.c-type,
+.po-personal-workspace .workspace-table td.c-pri,
+.po-personal-workspace .workspace-table td.todos-col-type,
+.po-personal-workspace .workspace-table td.todos-col-pri,
+.po-personal-workspace .workspace-table td.notice-object,
+.po-personal-workspace .workspace-table td.done-obj {
+  overflow: visible;
+  text-overflow: clip;
+}
 .po-personal-workspace .workspace-table tbody tr:hover td { background: rgba(239, 246, 255, 0.4); }
 
 /* 通用行标签与操作 */
@@ -311,4 +326,20 @@
   .po-personal-workspace .header-quick-filters { width: 100%; justify-content: flex-start; }
   .po-personal-workspace .workspace-pagination { flex-direction: column; align-items: flex-start; gap: 8px; padding-block: 8px; }
   .po-personal-workspace .pager-controls { flex-wrap: wrap; }
+}
+
+/* 错误提示条 (theme contract: semantic tokens only) */
+.po-personal-workspace .workspace-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 1px solid var(--color-danger-border);
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+.po-personal-workspace .workspace-alert-error { /* alias for current error styling */
+  border-radius: 4px;
 }

@@ -128,6 +128,23 @@ html[data-theme="light"] {
 
   --po-green: var(--color-success-accent); /* #16a34a = #16a34a */
 
+  /* Stage 2 公共优先级 token (P1-P4 bg/fg/bd) — 浅色, WCAG AA 对比 */
+  --po-pri-1-bg: var(--color-danger-bg);    /* #fee2e2 */
+  --po-pri-1-fg: var(--color-danger);       /* #991b1b */
+  --po-pri-1-bd: var(--color-danger-border);/* #fecaca */
+
+  --po-pri-2-bg: #fff7ed;                   /* 暖橙浅底 */
+  --po-pri-2-fg: var(--po-orange);          /* #ea580c */
+  --po-pri-2-bd: var(--po-orange-bd);       /* #fed7aa */
+
+  --po-pri-3-bg: var(--po-blue-bg);         /* #eff6ff */
+  --po-pri-3-fg: var(--po-blue);            /* #2563eb */
+  --po-pri-3-bd: var(--po-blue-bd);         /* #bfdbfe */
+
+  --po-pri-4-bg: var(--color-surface-muted);/* #f8fafc */
+  --po-pri-4-fg: var(--color-text-secondary);/* #64748b */
+  --po-pri-4-bd: var(--color-border);       /* #e2e8f0 */
+
   /* 间距基准（只允许使用这些值）*/
   --space-0_5: 2px;
   --space-1: 4px;
@@ -312,4 +329,21 @@ html[data-theme="dark"] {
   --po-red-bg: #450a0a;
   --po-orange: #f97316;
   --po-orange-bg: #422006;
+
+  /* Stage 2 公共优先级 token (P1-P4 bg/fg/bd) — 深色, WCAG AA 对比 */
+  --po-pri-1-bg: #450a0a;                    /* 深红底 */
+  --po-pri-1-fg: #fca5a5;                    /* 浅红字 (>4.5:1 on #450a0a) */
+  --po-pri-1-bd: #7f1d1d;
+
+  --po-pri-2-bg: #422006;
+  --po-pri-2-fg: #fdba74;                    /* 浅橙字 */
+  --po-pri-2-bd: #7c2d12;
+
+  --po-pri-3-bg: #1e3a8a;
+  --po-pri-3-fg: #93c5fd;                    /* 浅蓝字 */
+  --po-pri-3-bd: #1e40af;
+
+  --po-pri-4-bg: #1e293b;
+  --po-pri-4-fg: #cbd5e1;                    /* 浅灰字 */
+  --po-pri-4-bd: #334155;
 }

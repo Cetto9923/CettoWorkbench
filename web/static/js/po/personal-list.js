@@ -241,10 +241,133 @@
     });
   }
 
+  /**
+   * loadPageSize / savePageSize:
+   * 让每个列表页（/todos /done /notice /home /follow 等）的每页条数
+   * 在刷新页面和下次登录后保持一致。
+   * key 是命名空间前缀（如 "po.todos.pageSize"）；allowed 是允许值白名单；
+   * 不在白名单或解析失败时返回 fallback。
+   */
+  function loadPageSize(key, fallback, allowed) {
+    try {
+      var raw = window.localStorage.getItem(key);
+      var n = parseInt(raw, 10);
+      if (!Array.isArray(allowed)) { allowed = null; }
+      if (!isNaN(n) && (!allowed || allowed.indexOf(n) >= 0)) { return n; }
+    } catch (e) { /* localStorage 不可用 */ }
+    return fallback;
+  }
+  function savePageSize(key, value) {
+    try { window.localStorage.setItem(key, String(value)); } catch (e) { /* 静默忽略 */ }
+  }
+
+  /**
+   * Stage 3 公共优先级 / 对象类型 helpers。
+   * 入口 (handlers/services) 输出 P1–P4 字符串值 ("1","2","3","4") 或数字; 也可能
+   * 返回 null/undefined/"" / 越界值。规范:
+   *   - normalizePriority(raw) -> 1..4 数字 / null (无默认 fallback)
+   *   - priorityBadge(raw)    -> <span class="wb-priority" data-priority="N">P{N}</span>
+   *                              raw 无效时返回 <span class="wb-priority" data-priority="">—</span>
+   *   - objectTypeBadge(kind) -> <span class="wb-type wb-type-{kind}">中文 label</span>
+   *                              kind 未知时返回 wb-type-unknown。
+   */
+  function normalizePriority(raw) {
+    if (raw === null || raw === undefined) { return null; }
+    var s = String(raw).trim();
+    if (!s) { return null; }
+    var stripped = s.replace(/^p/i, "");
+    var n = parseInt(stripped, 10);
+    if (isNaN(n)) { return null; }
+    if (n < 1 || n > 4) { return null; }
+    return n;
+  }
+
+  function priorityBadge(raw) {
+    var n = normalizePriority(raw);
+    if (n === null) {
+      return '<span class="wb-priority" data-priority="">—</span>';
+    }
+    return '<span class="wb-priority" data-priority="' + n + '">P' + n + "</span>";
+  }
+
+  var OBJECT_TYPE_LABELS = {
+    business: "业务需求",
+    sub_demand: "子需求",
+    story: "研发需求",
+    independent_story: "独立研发需求",
+    task: "任务",
+    issue: "问题",
+    bug: "Bug",
+    approval: "审批",
+    todo: "待办",
+    testtask: "测试单"
+  };
+
+  /* 待办/列表 API 的 kind 字段 → objectTypeBadge 的 canonical key */
+  var OBJECT_KIND_FROM_API = {
+    demand: "business",
+    business: "business",
+    sub_demand: "sub_demand",
+    story: "story",
+    independent_story: "independent_story",
+    task: "task",
+    bug: "bug",
+    issue: "issue",
+    approval: "approval",
+    todo: "todo",
+    test: "testtask",
+    testtask: "testtask"
+  };
+
+  function objectTypeBadgeFromKind(kind) {
+    var k = String(kind || "").trim().toLowerCase();
+    return objectTypeBadge(OBJECT_KIND_FROM_API[k] || k);
+  }
+
+  function objectTypeBadge(kind) {
+    var k = String(kind || "").trim().toLowerCase();
+    if (!k) { return '<span class="wb-type wb-type-unknown">—</span>'; }
+    if (OBJECT_TYPE_LABELS[k]) {
+      return '<span class="wb-type wb-type-' + k + '">' + escapeHtml(OBJECT_TYPE_LABELS[k]) + "</span>";
+    }
+    return '<span class="wb-type wb-type-unknown">' + escapeHtml(k) + "</span>";
+  }
+
+  // 系统级模板提醒兜底：「提醒：您有 Bug(9)」「您有 Task(3)」「您有 需求(2)」
+  // 这类 subject 不符合 TYPE #ID 形态，后端 objType 可能仍为空。命中时返回
+  // 一个可渲染 notice-tag 的 canon kind；subject 文本保持原样。
+  var REMINDER_KIND_ALIASES = {
+    bug: "bug", task: "task",
+    story: "story", demand: "business", issue: "issue",
+    feedback: "feedback", charter: "charter", project: "project",
+    testtask: "testtask", risk: "risk",
+    "研发需求": "story", "业务需求": "business", "需求": "business",
+    "任务": "task", "缺陷": "bug", "测试": "testtask", "问题": "issue",
+    "风险": "risk", "反馈": "feedback", "立项": "charter", "项目": "project"
+  };
+  var REMINDER_PATTERN = /(?:Bug|Task|Story|Demand|Issue|Feedback|Charter|Project|TestTask|Risk|研发需求|业务需求|需求|任务|缺陷|测试|问题|风险|反馈|立项|项目)\s*[\(（]\s*\d+\s*[\)）]/i;
+  function reminderKindFromSubject(subject) {
+    var text = String(subject || "");
+    if (!text) { return ""; }
+    var m = text.match(REMINDER_PATTERN);
+    if (!m) { return ""; }
+    var token = String(m[0]).replace(/[\(（]\s*\d+\s*[\)）]/, "").trim();
+    return REMINDER_KIND_ALIASES[token] || REMINDER_KIND_ALIASES[token.toLowerCase()] || "";
+  }
+
   window.PersonalList = {
     escapeHtml: escapeHtml,
     createController: createController,
-    renderPagination: renderPagination
+    renderPagination: renderPagination,
+    loadPageSize: loadPageSize,
+    savePageSize: savePageSize,
+    normalizePriority: normalizePriority,
+    priorityBadge: priorityBadge,
+    objectTypeBadge: objectTypeBadge,
+    objectTypeBadgeFromKind: objectTypeBadgeFromKind,
+    reminderKindFromSubject: reminderKindFromSubject,
+    OBJECT_TYPE_LABELS: OBJECT_TYPE_LABELS,
+    OBJECT_KIND_FROM_API: OBJECT_KIND_FROM_API
   };
 
   if (typeof module !== "undefined" && module.exports) {
