@@ -47,8 +47,7 @@
             title="{{ $stage.Label }} · {{ $stage.Count }} 条">
             <span class="vs-mini-name">{{ $stage.Label }}</span>
             <span class="vs-mini-count">{{ $stage.Count }}</span>
-            <span class="vs-mini-meta">风险 <strong>0</strong></span>
-            <span class="vs-mini-meta">最长 —天</span>
+            <span class="vs-mini-meta">业需 {{ $stage.DemandCount }} · 研需 {{ $stage.StoryCount }}</span>
           </button>
           {{ end }}
         </div>
