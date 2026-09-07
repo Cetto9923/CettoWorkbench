@@ -90,6 +90,7 @@
     if (!isNaN(p) && p >= 1) { state.page = p; }
     var ps = parseInt(sp.get("pageSize"), 10);
     if (!isNaN(ps) && [10, 20, 50, 100].indexOf(ps) >= 0) { state.pageSize = ps; }
+    else { state.pageSize = window.PersonalList.loadPageSize("po.notice.pageSize", state.pageSize, [10, 20, 50, 100]); }
   }
 
   var OBJECT_TYPE_LABELS = {
@@ -235,6 +236,7 @@
             state.pageSize = s;
             state.page = 1;
             hasCorrectedPage = false;
+            window.PersonalList.savePageSize("po.notice.pageSize", s);
             syncUrl();
             loadData();
           }

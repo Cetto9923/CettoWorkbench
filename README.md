@@ -3,14 +3,17 @@
 当前以 PO 工作台为主要业务场景，采用 Go / Gin / GORM / MySQL 与服务端模板渲染。
 架构为模块化单体：HTTP → Handler → Service → Repo → 数据库。
 
-开发前先阅读 [AGENTS.md](AGENTS.md)，再阅读受影响的
-[架构](docs/engineering/architecture.md)、[数据库](docs/engineering/database.md)、
-[前端](docs/engineering/frontend.md)、[测试](docs/engineering/testing.md)及
-[质量门禁](docs/engineering/quality.md)。已有模块不是自动合格的参考实现。
+开发入口为 [AGENTS.md](AGENTS.md) → [Agent 启动流程](docs/engineering/agent-onboarding.md)
+→ [工程规范总目录](docs/engineering/spec-index.md)中的相关专题。
+总目录区分现行规范、共享能力目录、历史报告、任务计划与运维说明。
+已有模块不是自动合格的参考实现。
 
-当前治理工作按 [Astra 原计划](docs/engineering/governance-plan.md)执行，
-进度及未完成验收见 [执行记录](docs/engineering/governance-progress.md)。
-计划是执行顺序，工程规范仍以 `AGENTS.md` 为准。
+治理执行范围由当前任务指定。分卡合同见
+[Executable Plan](docs/plan/workbench-executable-plan-20260905/README-先读我.md)，
+后续任务见 [docs/plan/](docs/plan/)；不自动重跑 COMPLETE 卡。
+[原治理计划](docs/engineering/governance-plan.md)和
+[原执行记录](docs/engineering/governance-progress.md)保留用于历史追溯。
+计划约束任务范围，工程规范仍以 `AGENTS.md` 为准。
 
 从仓库根目录运行检查：
 
@@ -27,11 +30,19 @@ make check
 
 ## Agent 接入与导航
 
-各类 AI 编程智能体接入前请查阅对应入口：
+各类 AI 编程智能体接入前请查阅对应入口；文件存在不等于已实际加载：
 
 - **Claude Code**: 读取 [CLAUDE.md](CLAUDE.md)，通过 `@AGENTS.md` 自动加载工程真源。
 - **Gemini**: 读取 [GEMINI.md](GEMINI.md)。
 - **Cursor**: 自动应用 [.cursor/rules/engineering-entry.mdc](.cursor/rules/engineering-entry.mdc)。
+- **Codex / Jules / Windsurf**: 根目录 [AGENTS.md](AGENTS.md)。
+- **GitHub Copilot**: [.github/copilot-instructions.md](.github/copilot-instructions.md)。
+- **Cline**: [.clinerules/00-workbench.md](.clinerules/00-workbench.md)。
+- **工具覆盖与实际加载验证**: [agent-compatibility.md](docs/engineering/agent-compatibility.md)。
 - **通用接入指南**: 见 [docs/engineering/agent-onboarding.md](docs/engineering/agent-onboarding.md)。
 - **模块目录**: 见 [docs/engineering/module-index.md](docs/engineering/module-index.md)。
 - **前端共享能力**: 见 [docs/engineering/shared-frontend.md](docs/engineering/shared-frontend.md)。
+
+远端 Agent 使用前核对目标仓库、分支和规范版本；不要默认 GitHub 默认分支就是
+当前开发分支。本地未提交内容不属于远端交付，具体核验见
+[规范体系与 GitHub 发布核对](docs/plan/agent-governance-audit-20260907/SYSTEM-AND-PUBLICATION.md)。

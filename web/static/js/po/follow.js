@@ -1,12 +1,22 @@
 (function () {
   "use strict";
 
+  // 每页条数记忆：刷新和下次登录后保持一致。
+  // 与 todos/done/notice/home 一致；单独存 (follow 页有自己的分页渲染)。
+  var TG_KEY_PS = "po.follow.pageSize";
+  function loadFollowPageSize(fallback) {
+    try {
+      var n = parseInt(localStorage.getItem(TG_KEY_PS), 10);
+      return [10, 15, 20, 30, 50].indexOf(n) >= 0 ? n : fallback;
+    } catch (e) { return fallback; }
+  }
+
   var state = {
     tab: "demand",
     scope: "all",
     keyword: "",
     page: 1,
-    pageSize: 20,
+    pageSize: loadFollowPageSize(20),
   };
 
   function escapeHtml(s) {
@@ -184,6 +194,7 @@
       if (!event.target.matches(".follow-page-size")) { return; }
       state.pageSize = Number(event.target.value);
       state.page = 1;
+      try { localStorage.setItem(TG_KEY_PS, String(state.pageSize)); } catch (e) { /* 静默忽略 */ }
       refresh();
     });
   }

@@ -142,6 +142,9 @@
     var ps = parseInt(sp.get("pageSize"), 10);
     if (!isNaN(ps) && [15, 30, 50, 100].indexOf(ps) >= 0) {
       state.pageSize = ps;
+    } else {
+      // URL 未带 pageSize 时，优先使用上次保存值，再退回默认值。
+      state.pageSize = window.PersonalList.loadPageSize("po.todos.pageSize", state.pageSize, [15, 30, 50, 100]);
     }
   }
 
@@ -251,6 +254,7 @@
             state.pageSize = s;
             state.page = 1;
             hasCorrectedPage = false;
+            window.PersonalList.savePageSize("po.todos.pageSize", s);
             syncUrl();
             refresh();
           }

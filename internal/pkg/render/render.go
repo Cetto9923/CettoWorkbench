@@ -15,7 +15,6 @@ package render
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"html/template"
 	"io/fs"
@@ -48,14 +47,18 @@ var (
 	defaultRenderer   *Renderer
 )
 
+// SidebarBadgesProvider 与 SidebarBadges 类型定义见 sidebar_badges.go（独立文件以
+// 保持本文件在职责分离下不超过 500 行上限）。
+
 // Renderer 模板渲染器：dev 每次 ParseFiles，prod 启动时缓存 layout×page 组合。
 type Renderer struct {
-	templateDir string
-	staticDir   string
-	isDev       bool
-	cache       map[string]*template.Template
-	appName     string
-	layoutNav   string
+	templateDir   string
+	staticDir     string
+	isDev         bool
+	cache         map[string]*template.Template
+	appName       string
+	layoutNav     string
+	sidebarBadges SidebarBadgesProvider
 }
 
 // New 创建 Renderer。
@@ -85,6 +88,11 @@ func New(cfg *config.Config, isDev bool) (*Renderer, error) {
 		return nil, err
 	}
 	return r, nil
+}
+
+// SetSidebarBadgesProvider 注册侧栏角标数据源；不强制要求（缺省为 nil 表示不显示）。
+func (r *Renderer) SetSidebarBadgesProvider(p SidebarBadgesProvider) {
+	r.sidebarBadges = p
 }
 
 // SetDefault 注册默认渲染器实例。
@@ -367,6 +375,20 @@ func (r *Renderer) enrichData(c *gin.Context, page string, data gin.H) {
 			data["FlashMessages"] = []flash.Message{}
 		}
 	}
+	// 侧栏角标：每个页面渲染时拉一次，失败或未登录返零值。
+	if _, ok := data["SidebarBadges"]; !ok {
+		badges := SidebarBadges{}
+		if r.sidebarBadges != nil {
+			if v, exists := c.Get("currentUser"); exists {
+				if u, ok := v.(*model.User); ok && u != nil {
+					if b, err := r.sidebarBadges(c); err == nil {
+						badges = b
+					}
+				}
+			}
+		}
+		data["SidebarBadges"] = badges
+	}
 }
 
 func (r *Renderer) funcMap() template.FuncMap {
@@ -380,102 +402,5 @@ func (r *Renderer) funcMap() template.FuncMap {
 	}
 }
 
-func dict(values ...interface{}) (map[string]interface{}, error) {
-	if len(values)%2 != 0 {
-		return nil, errors.New("invalid dict call")
-	}
-	result := make(map[string]interface{}, len(values)/2)
-	for i := 0; i < len(values); i += 2 {
-		key, ok := values[i].(string)
-		if !ok {
-			return nil, errors.New("dict keys must be strings")
-		}
-		result[key] = values[i+1]
-	}
-	return result, nil
-}
-
-func (r *Renderer) asset(path string) string {
-	p := strings.TrimSpace(path)
-	if p == "" {
-		return path
-	}
-	rel := strings.TrimPrefix(p, "/")
-	rel = strings.TrimPrefix(rel, "static/")
-	rel = filepath.FromSlash(rel)
-	clean := filepath.Clean(rel)
-	if clean == "." || clean == ".." || strings.HasPrefix(clean, ".."+string(filepath.Separator)) {
-		return path
-	}
-	full := filepath.Join(r.staticDir, clean)
-	base := filepath.Clean(r.staticDir)
-	fullClean := filepath.Clean(full)
-	relFromBase, err := filepath.Rel(base, fullClean)
-	if err != nil || relFromBase == ".." || strings.HasPrefix(relFromBase, ".."+string(filepath.Separator)) {
-		return path
-	}
-	st, err := os.Stat(full)
-	if err != nil {
-		return path
-	}
-	v := st.ModTime().Unix()
-	if strings.HasPrefix(p, "/static/") {
-		return fmt.Sprintf("%s?v=%d", p, v)
-	}
-	return fmt.Sprintf("/static/%s?v=%d", filepath.ToSlash(clean), v)
-}
-
-func add(a, b interface{}) int {
-	return toInt(a) + toInt(b)
-}
-
-func sub(a, b interface{}) int {
-	return toInt(a) - toInt(b)
-}
-
-func alertClass(level interface{}) string {
-	s := strings.ToLower(strings.TrimSpace(fmt.Sprintf("%v", level)))
-	switch s {
-	case "success":
-		return "success"
-	case "error":
-		return "danger"
-	case "warning":
-		return "warning"
-	case "info":
-		return "info"
-	default:
-		return "secondary"
-	}
-}
-
-func toInt(v interface{}) int {
-	switch n := v.(type) {
-	case int:
-		return n
-	case int8:
-		return int(n)
-	case int16:
-		return int(n)
-	case int32:
-		return int(n)
-	case int64:
-		return int(n)
-	case uint:
-		return int(n)
-	case uint8:
-		return int(n)
-	case uint16:
-		return int(n)
-	case uint32:
-		return int(n)
-	case uint64:
-		return int(n)
-	case float64:
-		return int(n)
-	case float32:
-		return int(n)
-	default:
-		return 0
-	}
-}
+// asset / dict / add / sub / alertClass / toInt 的实现见 helpers.go（独立文件
+// 以保持 render.go 在职责分离下不超过 500 行上限）。

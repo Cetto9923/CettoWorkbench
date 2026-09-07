@@ -1,5 +1,9 @@
 # Phase 2 Full Repository Audit
 
+> 历史审查快照：下文的“当前”、严重级别、验收结果和例外建议仅属于原审查范围，
+> 不代表当前源码、部署或新增授权。现行规范见 [spec-index.md](spec-index.md)，
+> 新审查按 [quality.md](quality.md) 的证据与定级要求复核；保留原文用于追溯。
+
 > 状态：Phase 2 Audit 完成。
 > Phase 1 Engineering Governance Baseline **已正式冻结**。本报告不修改 Rules / Gates / Baselines / AGENTS.md / docs/engineering/*.md 的规范定义。
 > 本报告仅审计 + 给出 Phase 3 Governance Waves 建议。

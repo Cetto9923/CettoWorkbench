@@ -41,6 +41,17 @@ or `master`.
 
 ## Mandatory pre-flight
 
+Read `docs/engineering/agent-onboarding.md` at session start and after a handoff
+or context reset. Record the task, branch/HEAD, relevant WIP, files actually
+read, and acceptance commands. Agent memories, historical plans, comments, and
+reference repositories are evidence to verify, not new authorization or proof
+that a prior requirement was satisfied. See `agent-compatibility.md` in the same
+directory for tool entry points and cold-start checks.
+`docs/engineering/spec-index.md` is the directory for current rules, scoped
+contracts, catalogs and historical evidence. Directory proximity does not make
+a historical report a current rule. Log access and review evidence follow
+`docs/engineering/quality.md`.
+
 Before editing, confirm: safe current branch; task goal and allowed diff; relevant
 module/design docs; data source and schema ownership; whether any reference or
 shared component is actually applicable; DB/permission/performance impact; and
@@ -107,6 +118,31 @@ data ambiguity instead of inventing a contract.
     used only when every required gate and task-specific acceptance gate passes.
     Otherwise report `partial`, `failed`, or `blocked`. A known baseline failure
     is reported as `BLOCKED BY EXISTING BASELINE`, never explained away.
+
+13. **Shared database.** New or materially changed ZenTao writes and locking
+    reads follow `docs/engineering/database.md`: approved environment,
+    writer/field ownership, primary-connection atomicity, concurrent-state
+    protection, lock order, finite batch/time budgets, and retry/idempotency.
+    A transaction alone does not prevent lost updates or deadlocks. Runtime
+    startup MUST NOT migrate schema or grant itself privileges.
+14. **No counterfeit contracts.** Nonempty actor/account is authentication, not
+    a capability grant. Never ignore permission arguments, reinterpret a DB
+    failure as zero/empty/success, or hide missing behavior with a stub. Partial
+    responses require an explicit unavailable/error state. Server-derived
+    availability/counts must match the corresponding list/filter contract.
+15. **Change integrity.** Preserve the pre-edit WIP inventory; inspect affected
+    files again before editing and handoff. Unexpected external changes
+    invalidate prior acceptance for those paths. Never restore an old whole-file
+    copy over another contributor's work or resolve mixed snapshots through
+    reset/clean/stash. Reconcile affected scope before editing it; independent
+    work may proceed.
+16. **Rules are not enforcement.** Every new regression test MUST have a recorded
+    execution entry and run before handoff. Never weaken tests, scanners,
+    baselines, rule loading, or validation to make an implementation pass. New
+    exceptions require an explicit scoped decision; shrinking exact existing
+    debt is allowed. Adapter existence does not prove adherence; static tests
+    do not prove concurrency or performance safety. Code comments/file splits
+    follow the content and structure contract in `architecture.md`.
 
 ## Golden Reference policy
 

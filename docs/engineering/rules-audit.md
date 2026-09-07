@@ -1,5 +1,9 @@
 # Phase 1 rules audit
 
+> Historical Phase 1 evidence, not a current specification or current test result.
+> Use [spec-index.md](spec-index.md) for effective rules; revalidate findings
+> against the task's revision before copying them into a new repair plan.
+
 This conflict matrix records rule defects; it does not authorize business edits.
 
 | Priority | Conflict class | Confirmed old problem | Resolution |

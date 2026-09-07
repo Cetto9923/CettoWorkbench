@@ -1,5 +1,12 @@
 # Module Index
 
+Freshness note (2026-09-07): schema labels below are the original source-only
+inventory. The repository now contains
+[V0 evidence](../plan/workbench-executable-plan-20260905/evidence/schema-truth-20260905.md)
+for a dated instance; that is not proof for every later Mac/VM/production target.
+Use table-specific evidence and verify environment identity after migrations.
+Do not reopen V0 solely from an unchanged inventory label.
+
 This index provides a structural map of the modules under `internal/module/`.
 
 > [!NOTE]

@@ -152,9 +152,9 @@
     <div class="sidebar-nav po-sidebar-nav">
       <div class="nav-section-label">个人入口</div>
       <a href="/home" class="nav-item{{ if eq .CurrentPath "/home" }} active{{ end }}"><i class="nav-icon fas fa-home"></i><span class="nav-text">首页</span></a>
-      <a href="/todos" class="nav-item{{ if eq .CurrentPath "/todos" }} active{{ end }}"><i class="nav-icon fas fa-list-check"></i><span class="nav-text">我的待办</span></a>
-      <a href="/done" class="nav-item{{ if eq .CurrentPath "/done" }} active{{ end }}"><i class="nav-icon fas fa-clock-rotate-left"></i><span class="nav-text">我的已办</span></a>
-      <a href="/notice" class="nav-item{{ if eq .CurrentPath "/notice" }} active{{ end }}"><i class="nav-icon fas fa-bell"></i><span class="nav-text">通知中心</span></a>
+      <a href="/todos" class="nav-item{{ if eq .CurrentPath "/todos" }} active{{ end }}"><i class="nav-icon fas fa-list-check"></i><span class="nav-text">我的待办</span>{{ if gt .SidebarBadges.Todos 0 }}<span class="nav-badge" data-sidebar-badge="todos" title="待办条数">{{ .SidebarBadges.Todos }}</span>{{ end }}</a>
+      <a href="/done" class="nav-item{{ if eq .CurrentPath "/done" }} active{{ end }}"><i class="nav-icon fas fa-clock-rotate-left"></i><span class="nav-text">我的已办</span>{{ if gt .SidebarBadges.Done 0 }}<span class="nav-badge" data-sidebar-badge="done" title="已办条数">{{ .SidebarBadges.Done }}</span>{{ end }}</a>
+      <a href="/notice" class="nav-item{{ if eq .CurrentPath "/notice" }} active{{ end }}"><i class="nav-icon fas fa-bell"></i><span class="nav-text">通知中心</span>{{ if gt .SidebarBadges.Notice 0 }}<span class="nav-badge nav-badge--danger" data-sidebar-badge="notice" title="未读通知条数">{{ .SidebarBadges.Notice }}</span>{{ end }}</a>
       <a href="/follow" class="nav-item{{ if eq .CurrentPath "/follow" }} active{{ end }}"><i class="nav-icon fas fa-star"></i><span class="nav-text">我的关注</span></a>
       <div class="nav-divider" role="separator"></div>
       <div class="nav-section-label">工作区</div>

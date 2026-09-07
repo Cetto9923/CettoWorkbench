@@ -78,3 +78,49 @@ is a non-growth baseline; it is debt, not an exception for new files.
 Use the simplest current solution. Before adding a manager, engine, provider,
 adapter, framework, or common layer, record the repeated behavior or boundary it
 resolves. Bug fixes target root causes; fallback branches require evidence.
+
+## Content and structure contract
+
+- Comments MUST describe current behavior and its non-obvious reason, invariant
+  or source. Claims such as "batched", "atomic", "authorized", "no N+1",
+  "unique truth" and "verified" need matching call-path/test evidence. Copied
+  dates, task IDs and upstream filenames are not business confirmation.
+- Do not mandate banners in every file. Prefer concise Go doc comments on
+  exported contracts and local explanations for surprising logic. Update
+  comments affected by a change; remove orphan comments the change creates.
+  Do not clean unrelated comments or translate entire modules as a side task.
+- A file name declares responsibility. Repo receivers and SQL belong in Repo
+  files, even if used by one Service. Authorization/state decisions belong in
+  Service; Repo may apply a Service-selected scope predicate and return facts.
+  Renaming a file does not cure a layer violation. Service construction must not
+  reach through Repo DB fields; assemble dependencies at the composition boundary.
+- Split by capability/layer, including callers, script order, tests and exports.
+  Do not minify, delete useful comments, or make numbered chunks to pass the line
+  limit. New directories need a present responsibility. Do not rename legacy
+  files en masse. Small pure domain helpers are valid when they centralize
+  repeated behavior and have no DB/HTTP dependency.
+- "Single source" requires a consumer search: identify all callers, remove only
+  superseded in-scope code, and test parity. An unused helper beside independent
+  SQL/mapping implementations is not a completed consolidation.
+- Plans, execution logs and review evidence belong in the current `docs/plan/`
+  task directory; topology belongs in `docs/operations/`; fixtures in `testdata/`.
+  Generated local artifacts stay ignored. Do not put session narratives into
+  production code or duplicate business PRDs in tool memory folders.
+- Relevant design/status changes update their index and dated evidence.
+  Historical audits retain original scope; mark superseded claims explicitly.
+  `COMPLETE` refers to a revision/evidence scope, not later WIP, another DB, or
+  a running binary by default.
+
+## Capability facts and errors
+
+An authenticated route does not imply all actions on that page are authorized.
+Capability arguments MUST be used; use the existing permission source, then
+Service object/state checks. UI action descriptors project those rules and do
+not replace authorization. Do not invent capability codes or substitute a
+page-read capability for a mutation capability.
+
+DB/network failures propagate as errors or explicitly partial responses.
+Missing, forbidden, not applicable, empty, unavailable and zero are different
+states. Fallbacks require a contract and telemetry; `None` or `0` with nil error
+must not conceal infrastructure failure. Unknown business rules stay in task
+decision records; implementation labels such as WAIT DECISION are not normal UI.

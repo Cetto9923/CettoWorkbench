@@ -236,6 +236,16 @@ body.po-workbench-shell .sidebar .nav-badge {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
+/* 侧栏角标：未读通知强调红色，保持告警视觉 */
+body.po-workbench-shell .sidebar .nav-badge--danger {
+  color: #fff;
+  background: var(--color-danger, #dc2626);
+}
+
+/* 角标为 0 时不显示；hidden class 作为兜底 */
+body.po-workbench-shell .sidebar .nav-badge[hidden],
+body.po-workbench-shell .sidebar .nav-badge:empty { display: none; }
+
 body.po-workbench-shell .sidebar .badge {
   background: #ef4444;
 }

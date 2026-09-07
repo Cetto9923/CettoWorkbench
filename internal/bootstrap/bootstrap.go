@@ -21,11 +21,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"workbench/internal/config"
 	"workbench/internal/middleware"
+	"workbench/internal/model"
 
 	"workbench/internal/module/debug"
 	"workbench/internal/module/dept"
@@ -133,6 +135,23 @@ func Run() error {
 	poRepo := po.NewRepo(dbReadonly, db)
 	poSvc := po.NewService(poRepo, scheduleSvc, userSvc, zapLog)
 	poHandler := po.NewHandler(poSvc, zapLog)
+	// 侧栏角标：把 poSvc.SidebarBadges 适配为 render 包的 provider。
+	// render 包不反向 import po，避免循环依赖；只通过 provider 闭包注入。
+	rend.SetSidebarBadgesProvider(func(c *gin.Context) (render.SidebarBadges, error) {
+		v, ok := c.Get("currentUser")
+		if !ok {
+			return render.SidebarBadges{}, nil
+		}
+		u, ok := v.(*model.User)
+		if !ok || u == nil {
+			return render.SidebarBadges{}, nil
+		}
+		b, err := poSvc.SidebarBadges(c.Request.Context(), &po.SidebarActor{Account: u.Account, ID: u.ID})
+		if err != nil {
+			return render.SidebarBadges{Todos: b.Todos, Done: b.Done, Notice: b.Notice}, err
+		}
+		return render.SidebarBadges{Todos: b.Todos, Done: b.Done, Notice: b.Notice}, nil
+	})
 	sqlPerfRepo := debug.NewRepo(cfg.Log.Dir)
 	sqlPerfSvc := debug.NewService(sqlPerfRepo)
 	sqlPerfHandler := debug.NewHandler(sqlPerfSvc)

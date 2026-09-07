@@ -1,5 +1,29 @@
 # Existing engineering debt
 
+## Current reading note — 2026-09-07
+
+The Phase 1 table below is a **historical inventory**, not a current audit or an
+execution order. Do not reopen completed cards from this table alone. Revalidate
+each entry against the active task and exact working tree.
+
+Current findings and evidence: [Agent governance audit](../plan/agent-governance-audit-20260907/REPORT.md).
+Priority follow-up: reconcile mixed WIP/build failures; repair actual capability
+checking; restore reachable regression coverage; remove home unbounded ID
+pagination; define/test shared ZenTao write concurrency and runtime budgets.
+No business repair was performed by that audit.
+
+Known superseded inventory statements, verified from current source/gates:
+- Secret scanner has zero fingerprints; this does not prove credential rotation.
+- Explicit schedule capability middleware and corresponding tests now exist.
+- Isolated integration and frontend/E2E files exist; their coverage and execution
+  must be evaluated, not described as absent.
+- Todo/notice SQL query modules exist. Old in-memory helpers alone do not prove
+  that current request paths call them; trace callers before filing a regression.
+- Current gofmt baseline is zero. Vet/application compilation is blocked by
+  current WIP; do not repeat an old malformed-tag diagnosis without revalidation.
+
+## Historical Phase 1 inventory
+
 Phase 1 does not modify the business implementation below. Severity reflects
 risk, not authorization to repair. Machine-readable non-growth baselines live in
 `scripts/quality-baseline/`.

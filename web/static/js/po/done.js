@@ -115,6 +115,8 @@
     var ps = parseInt(sp.get("pageSize"), 10);
     if (!isNaN(ps) && [10, 20, 50, 100].indexOf(ps) >= 0) {
       state.pageSize = ps;
+    } else {
+      state.pageSize = window.PersonalList.loadPageSize("po.done.pageSize", state.pageSize, [10, 20, 50, 100]);
     }
   }
 
@@ -253,6 +255,7 @@
             state.pageSize = s;
             state.page = 1;
             hasCorrectedPage = false;
+            window.PersonalList.savePageSize("po.done.pageSize", s);
             syncUrl();
             loadData();
           }

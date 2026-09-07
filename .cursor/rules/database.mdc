@@ -9,10 +9,15 @@ alwaysApply: false
 - Read `AGENTS.md` and `docs/engineering/database.md` first.
 - Identify every touched table as Workbench-owned or existing ZenTao before
   applying model, audit, or soft-delete conventions.
-- Parameterize values; select only required columns; do not interpolate SQL.
+- Parameterize values; select only required columns. Never interpolate dynamic
+  values into SQL. Closed server-controlled structural fragments are allowed
+  under database.md; trace their builders and keep user values in placeholders.
 - List queries normally perform filter, sort, count, and pagination in SQL.
 - Reject unbounded load-then-page, looped per-row SQL, repeated same-request
   dictionary loads, and unevaluated metric query fan-out.
 - Keep business and authorization decisions in Service even when SQL helps derive
-  facts. Use transactions when one business write spans multiple repositories.
+  facts. Follow architecture.md for transaction ownership and cross-Repo approval.
+- Follow database.md for shared-writer lock order, state rechecks, idempotency,
+  batch/time budgets, read-after-write consistency and isolated concurrency tests.
+- A stored config is not DB access authorization; evidence must match the target.
 - Committed configuration contains placeholders only; secrets enter at runtime.

@@ -321,6 +321,23 @@ func (r *Repo) SaveNoticeRead(ctx context.Context, account string, notifyID int6
 		WHERE n.id = ? AND FIND_IN_SET(?, REPLACE(n.toList, ' ', '')) > 0 AND nr.id IS NULL`, account, account, notifyID, account).Error
 }
 
+// CountUnreadNotices 仅返回当前账号未读通知总数（侧栏角标用）。
+// 数据真源：zt_notify LEFT JOIN zt_workbench_notify_reads WHERE nr.id IS NULL。
+// 与 FindNotices 中 unread 计数的基准相同；不应用 QuickView / 类别等过滤器。
+func (r *Repo) CountUnreadNotices(ctx context.Context, account string) (int64, error) {
+	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
+		return 0, nil
+	}
+	var n int64
+	err := noticeBaseQuery(ctx, r.db, account).
+		Where("nr.id IS NULL").
+		Count(&n).Error
+	if err != nil {
+		return 0, err
+	}
+	return n, nil
+}
+
 func (r *Repo) SaveAllNoticeReads(ctx context.Context, account string) (int64, error) {
 	if r == nil || r.writeDB == nil || strings.TrimSpace(account) == "" {
 		return 0, nil
