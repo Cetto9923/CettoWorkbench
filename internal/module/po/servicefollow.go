@@ -387,7 +387,6 @@ func toUintSlice(in []int) []uint {
 	return out
 }
 
-
 // enrichDemandCanReview 为当前页业需批量标记 canReview（仅 status=wait 才查 zt_demandreview）。
 func (s *Service) enrichDemandCanReview(ctx context.Context, account string, items []WorkItemDetail, demandRows map[int]DemandRow) error {
 	if s == nil || s.repo == nil || strings.TrimSpace(account) == "" || len(items) == 0 {
