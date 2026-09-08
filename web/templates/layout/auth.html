@@ -16,10 +16,12 @@
   <link rel="stylesheet" href="{{ asset "/static/vendor/bootstrap-icons/bootstrap-icons.css" }}">
   <link rel="stylesheet" href="{{ asset "/static/css/layout/variables.css" }}">
   <link rel="stylesheet" href="{{ asset "/static/css/layout/app.css" }}">
+  {{ block "page_css" . }}{{ end }}
 </head>
 <body class="bg-light auth-page">
   {{ template "content" . }}
   <script src="{{ asset "/static/vendor/bootstrap/js/bootstrap.bundle.min.js" }}"></script>
   <script src="{{ asset "/static/js/app.js" }}"></script>
+  {{ block "page_js" . }}{{ end }}
 </body>
 </html>

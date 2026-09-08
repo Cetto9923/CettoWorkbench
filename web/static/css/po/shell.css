@@ -316,3 +316,70 @@ body.sidebar-collapsed.po-workbench-shell .po-sidebar-collapse i { transform: ro
   .po-role-switcher { width: 218px; }
   .po-role-tab { flex-basis: 53px; padding: 0 8px; }
 }
+
+
+/* Global search dropdown inside PO header (globalsearch.js) */
+.po-header-right .search-box {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.po-header-right .search-box > i.fa-search {
+  pointer-events: none;
+}
+.po-header-right .search-box input {
+  border: 0;
+  background: transparent;
+  outline: none;
+  min-width: 0;
+  flex: 1;
+}
+.po-header-right .search-box-clear {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.7;
+  padding: 0 4px;
+}
+.po-header-right .search-box-clear[hidden] {
+  display: none !important;
+}
+.po-header-right .search-results {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  max-height: 320px;
+  overflow: auto;
+  background: var(--surface, #fff);
+  color: var(--ink, #14233d);
+  border: 1px solid var(--line, #dbe3ef);
+  border-radius: 10px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
+}
+.po-header-right .search-results.show {
+  display: block;
+}
+.po-header-right .search-results .gs-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.po-header-right .search-results .gs-item:hover,
+.po-header-right .search-results .gs-item.is-active {
+  background: rgba(47, 111, 235, 0.08);
+}
+.po-header-right .search-results .gs-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+}

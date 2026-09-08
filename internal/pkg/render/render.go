@@ -52,13 +52,15 @@ var (
 
 // Renderer 模板渲染器：dev 每次 ParseFiles，prod 启动时缓存 layout×page 组合。
 type Renderer struct {
-	templateDir   string
-	staticDir     string
-	isDev         bool
-	cache         map[string]*template.Template
-	appName       string
-	layoutNav     string
-	sidebarBadges SidebarBadgesProvider
+	templateDir       string
+	staticDir         string
+	isDev             bool
+	cache             map[string]*template.Template
+	appName           string
+	layoutNav         string
+	zentaoURL         string
+	zentaoRequestType string
+	sidebarBadges     SidebarBadgesProvider
 }
 
 // New 创建 Renderer。
@@ -70,16 +72,22 @@ func New(cfg *config.Config, isDev bool) (*Renderer, error) {
 		appName = strings.TrimSpace(cfg.App.Name)
 	}
 	layoutNav := "sidebar"
+	zentaoURL := ""
+	zentaoRequestType := ""
 	if cfg != nil {
 		layoutNav = cfg.Layout.Nav
+		zentaoURL = strings.TrimRight(strings.TrimSpace(cfg.Zentao.URL), "/")
+		zentaoRequestType = strings.TrimSpace(cfg.Zentao.RequestType)
 	}
 	r := &Renderer{
-		templateDir: templateDir,
-		staticDir:   staticDir,
-		isDev:       isDev,
-		cache:       make(map[string]*template.Template),
-		appName:     appName,
-		layoutNav:   layoutNav,
+		templateDir:       templateDir,
+		staticDir:         staticDir,
+		isDev:             isDev,
+		cache:             make(map[string]*template.Template),
+		appName:           appName,
+		layoutNav:         layoutNav,
+		zentaoURL:         zentaoURL,
+		zentaoRequestType: zentaoRequestType,
 	}
 	if isDev {
 		return r, nil
@@ -363,6 +371,12 @@ func (r *Renderer) enrichData(c *gin.Context, page string, data gin.H) {
 		} else {
 			data["ActiveNavKey"] = ""
 		}
+	}
+	if _, ok := data["ZentaoURL"]; !ok {
+		data["ZentaoURL"] = r.zentaoURL
+	}
+	if _, ok := data["ZentaoRequestType"]; !ok {
+		data["ZentaoRequestType"] = r.zentaoRequestType
 	}
 	if _, ok := data["Flash"]; !ok {
 		data["Flash"] = flash.Pop(c)

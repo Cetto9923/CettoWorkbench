@@ -2,7 +2,7 @@
 文件: web/templates/layout/base.html
 模块: 布局
 职责: 后台主布局模板，负责导航、侧栏与页面容器结构。
-全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath, .LayoutNav (sidebar|top，来自配置 layout.nav), .HideChrome (bool，constants 全屏页表)
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath, .LayoutNav (sidebar|top，来自配置 layout.nav), .HideChrome (bool，constants 全屏页表), .ZentaoURL (string), .ZentaoRequestType (string)
 页面字段: .Title (string), .PageTitle (string), .CurrentMenus ([]menu.Menu)
 ========================================================================== */}}
 <!DOCTYPE html>
@@ -11,6 +11,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="csrf-token" content="{{ .CSRFToken }}">
+  <meta name="zentao-url" content="{{ .ZentaoURL }}">
+  <meta name="zentao-request-type" content="{{ .ZentaoRequestType }}">
   <title>{{ .Title }} - workbench</title>
   <script src="/static/js/layout/theme.js"></script>
   <link rel="stylesheet" href="{{ asset "/static/vendor/fonts/jetbrains-mono/fonts.css" }}">
@@ -76,6 +78,7 @@
   <script src="/static/js/app.js"></script>
   <script src="/static/js/components/components.js"></script>
   <script src="/static/js/layout/sidebar.js"></script>
+  <script src="{{ asset "/static/js/layout/globalsearch.js" }}"></script>
   <script src="{{ asset "/static/vendor/quill/quill.min.js" }}"></script>
   <script src="{{ asset "/static/vendor/jquery/jquery.min.js" }}"></script>
   {{ if and (not .HideChrome) (eq .LayoutNav "top") }}<script src="/static/js/layout/topnav.js"></script>{{ end }}
