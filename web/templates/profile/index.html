@@ -1,0 +1,107 @@
+{{ define "page_css" }}
+<link rel="stylesheet" href="{{ asset "/static/css/workbench/po/profile/po-profile.css" }}">
+{{ end }}
+
+{{ define "content" }}
+<div class="po-personal-workspace po-profile">
+  <header class="workspace-header">
+    <div class="workspace-header-left">
+      <h2>个人资料</h2>
+      <p>查看与维护当前登录用户的资料、默认小组与密码</p>
+    </div>
+  </header>
+  <section class="workspace-panel">
+    <div id="poProfileLoading" class="state-placeholder">正在加载个人资料…</div>
+
+    <div id="poProfileError" class="state-placeholder error" hidden>
+      <div id="poProfileErrorMsg"></div>
+      <button id="poProfileRetryBtn" type="button" class="workspace-btn">重试</button>
+    </div>
+
+    <form id="poProfileForm" autocomplete="off" hidden>
+      <div id="poProfileFormAlert" class="po-profile-alert" hidden></div>
+
+      <fieldset class="workspace-fieldset">
+        <legend>基本信息</legend>
+
+        <div class="po-profile-row">
+          <label>账号</label>
+          <input id="profileAccount" type="text" readonly>
+        </div>
+
+        <div class="po-profile-row">
+          <label for="profileDisplayName">姓名</label>
+          <input id="profileDisplayName" name="displayName" type="text" required>
+          <div id="profileDisplayNameError" class="po-profile-field-error"></div>
+        </div>
+
+        <div class="po-profile-row">
+          <label for="profileEmail">邮箱</label>
+          <input id="profileEmail" name="email" type="email">
+          <div id="profileEmailError" class="po-profile-field-error"></div>
+        </div>
+
+        <div class="po-profile-row">
+          <label for="profileMobile">手机</label>
+          <input id="profileMobile" name="mobile" type="tel">
+          <div id="profileMobileError" class="po-profile-field-error"></div>
+        </div>
+
+        <div class="po-profile-row">
+          <label>部门</label>
+          <input id="profileDept" type="text" readonly>
+        </div>
+
+        <div class="po-profile-row">
+          <label>性别</label>
+          <div class="po-profile-radio-group">
+            <label><input type="radio" name="gender" id="profileGenderM" value="m">男</label>
+            <label><input type="radio" name="gender" id="profileGenderF" value="f">女</label>
+            <label><input type="radio" name="gender" id="profileGenderU" value="u">未设置</label>
+          </div>
+        </div>
+
+        <div class="po-profile-row">
+          <label for="profileMainTeam">默认小组</label>
+          <select id="profileMainTeam" name="mainTeamId"></select>
+          <div id="profileMainTeamError" class="po-profile-field-error"></div>
+        </div>
+      </fieldset>
+
+      <div class="po-profile-actions">
+        <button type="submit" id="poProfileSaveBtn" class="workspace-btn workspace-btn-primary">保存</button>
+      </div>
+    </form>
+
+    <form id="poProfilePwdForm" autocomplete="off" hidden>
+      <fieldset class="workspace-fieldset">
+        <legend>修改密码</legend>
+        <div id="poProfilePwdAlert" class="po-profile-alert" hidden></div>
+
+        <div class="po-profile-row">
+          <label for="profileOldPwd">当前密码</label>
+          <input id="profileOldPwd" name="oldPassword" type="password" required autocomplete="current-password">
+        </div>
+
+        <div class="po-profile-row">
+          <label for="profileNewPwd">新密码</label>
+          <input id="profileNewPwd" name="newPassword" type="password" required autocomplete="new-password">
+        </div>
+
+        <div class="po-profile-row">
+          <label for="profileNewPwd2">确认新密码</label>
+          <input id="profileNewPwd2" name="confirmPassword" type="password" required autocomplete="new-password">
+        </div>
+      </fieldset>
+
+      <div class="po-profile-actions">
+        <button type="submit" id="poProfilePwdSaveBtn" class="workspace-btn workspace-btn-primary">更新密码</button>
+      </div>
+    </form>
+  </section>
+</div>
+{{ end }}
+
+{{ define "page_js" }}
+<script src="{{ asset "/static/js/workbench/po/profile/po-profile.js" }}"></script>
+{{ end }}
