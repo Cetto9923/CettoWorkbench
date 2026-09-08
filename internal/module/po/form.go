@@ -112,6 +112,49 @@ func (r *DemandsReq) Validate() []FieldError {
 	return nil
 }
 
+// ReviewDemandReq 业需评审提交（JSON Body，对应禅道 demand-review 表单）。
+//
+// 字段对照禅道 POST：
+//
+//	result      → 评审结果 pass=确认通过 / refuse=拒绝
+//	isNeedFocus → 是否重点关注 0=否 / 1=是
+//	mailto      → 通知人，逗号分隔账号
+//	comment     → 备注（纯文本）
+//
+// ID 不从 JSON 读，由 Handler 从 URL :id 填进来。
+type ReviewDemandReq struct {
+	ID          int64  `json:"-"`
+	Result      string `json:"result"`
+	IsNeedFocus string `json:"isNeedFocus"`
+	Mailto      string `json:"mailto"`
+	Comment     string `json:"comment"`
+}
+
+// Validate 校验评审表单。返回空切片表示通过。
+func (r *ReviewDemandReq) Validate() []FieldError {
+	var errs []FieldError
+	r.Result = strings.TrimSpace(r.Result)
+	r.IsNeedFocus = strings.TrimSpace(r.IsNeedFocus)
+	r.Mailto = strings.TrimSpace(r.Mailto)
+	r.Comment = strings.TrimSpace(r.Comment)
+
+	if r.ID <= 0 {
+		errs = append(errs, FieldError{Field: "id", Message: "需求 ID 无效"})
+	}
+	if r.Result != "pass" && r.Result != "refuse" {
+		errs = append(errs, FieldError{Field: "result", Message: "请选择评审结果"})
+	}
+	if r.IsNeedFocus != "0" && r.IsNeedFocus != "1" {
+		errs = append(errs, FieldError{Field: "isNeedFocus", Message: "请选择是否需要重点关注"})
+	}
+	return errs
+}
+
+// ReviewDemandResp 评审成功响应（目前只回 ID，方便以后加字段）。
+type ReviewDemandResp struct {
+	ID int64 `json:"id"`
+}
+
 // WorkItemDetail 单条需求或故事详情。
 type WorkItemDetail struct {
 	Kind          string                       `json:"kind"`
@@ -129,6 +172,7 @@ type WorkItemDetail struct {
 	Suspended     bool                         `json:"suspended"`               // 当前存在 hang='1' 的挂起事实
 	Blocked       bool                         `json:"blocked"`                 // 当前 status=refuse 的阻塞事实
 	PrimaryAction *primaryaction.PrimaryAction `json:"primaryAction,omitempty"` // Stage 5: 服务端主操作
+	CanReview     bool                         `json:"canReview"`               // 当前登录人是待评业务评审人（与指派给无关）
 }
 
 // DemandsResp 价值流状态下的需求详情列表。

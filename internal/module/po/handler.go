@@ -49,6 +49,8 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 
 	g.GET("/home", middleware.RequirePerm(perm.PoHomeList), h.Home)
 	g.GET("/demands", middleware.RequirePerm(perm.PoHomeList), h.Demands)
+	// 评审资格在 Service 按 zt_demandreview 业务评审人校验（与指派给无关）。
+	g.POST("/demands/:id/review", middleware.RequirePerm(perm.PoDemandReview), h.ReviewDemand)
 	// 详情读接口：首页与需求看板均可打开；对象级授权仍由 DetailService 执行。
 	g.GET("/demands/:id/detail", middleware.RequireAnyPerm(perm.PoHomeList, perm.PoBoardDemandList), h.DemandDetail)
 	g.GET("/demands/:id/submit-test", middleware.RequirePerm(perm.PoHomeList), h.SubmitTestView)

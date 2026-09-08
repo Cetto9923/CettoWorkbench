@@ -238,6 +238,21 @@
     );
   }
 
+  function canShowReview(item) {
+    if (!item || isStoryItem(item)) {
+      return false;
+    }
+    return !!item.canReview;
+  }
+
+  function reviewActionHtml(item) {
+    return (
+      '<button type="button" class="action-btn primary js-demand-review" data-demand-id="' +
+      esc(item.id || "") +
+      '">评审</button>'
+    );
+  }
+
   // 阶段 → 主要动作渲染：消费 window.PrimaryAction（来自 primary-action.js）。
   var primaryActionHtml = (window.PrimaryAction && window.PrimaryAction.primaryActionHtml) || function (item) {
     return '<span class="home-unavailable">—</span>';
@@ -261,8 +276,8 @@
       ? '<a class="table-id-link" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(displayId) + '</a>'
       : '<span class="table-id-link">' + esc(displayId) + '</span>';
 
-    // 操作列：消费 Stage 5 的 primaryAction；当前不存在时显示 "—" 占位。
-    var actionHtml = primaryActionHtml(item, isStory);
+    // 操作列：待评业务评审人优先显示「评审」；否则消费 Stage 5 primaryAction。
+    var actionHtml = canShowReview(item) ? reviewActionHtml(item) : primaryActionHtml(item, isStory);
 
     var priTag = priorityBadge(item.pri);
     var inlineFlags = priTag;
@@ -475,6 +490,10 @@
     });
   }
 
+  window.refreshPoHomeDemands = function () {
+    return refreshDemands(state.status);
+  };
+
   $(function () {
     initFromUrl();
     $("#homeQuickChips [data-home-focus]").on("click", function (event) {
@@ -495,6 +514,22 @@
 
     $("#homeRetryBtn, #homeRefreshBtn").on("click", function () {
       refreshDemands(state.status);
+    });
+
+    // 业需评审按钮（列表渲染后由 canReview 决定是否出现）
+    $("#top5Tbody").on("click", ".js-demand-review", function () {
+      var demandId = String($(this).attr("data-demand-id") || "").trim();
+      var item = null;
+      for (var i = 0; i < rawItems.length; i++) {
+        if (String(rawItems[i].id || "") === demandId) {
+          item = rawItems[i];
+          break;
+        }
+      }
+      if (!item || typeof window.openPoDemandReviewModal !== "function") {
+        return;
+      }
+      window.openPoDemandReviewModal(item);
     });
 
     var $targetCard = $('.home-vs-mini-card[data-vs-status="' + state.status + '"]');

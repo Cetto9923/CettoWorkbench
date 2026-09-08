@@ -11,6 +11,7 @@ package po
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"workbench/internal/model"
@@ -235,8 +236,13 @@ func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stage
 			return nil, err
 		}
 		items := make([]WorkItemDetail, 0, len(rows))
+		demandMap := make(map[int]DemandRow, len(rows))
 		for _, row := range rows {
 			items = append(items, buildDemandWorkItem(row, label, displayMap))
+			demandMap[row.ID] = row
+		}
+		if err := s.enrichDemandCanReview(ctx, account, items, demandMap); err != nil {
+			return nil, err
 		}
 		return &DemandsResp{Items: items, Total: int(total), Page: req.Page, PageSize: req.PageSize}, nil
 	}
@@ -351,6 +357,14 @@ func (s *Service) populateWorkItems(ctx context.Context, actor *model.User, page
 		}
 	}
 
+	account := ""
+	if actor != nil {
+		account = actor.Account
+	}
+	if err := s.enrichDemandCanReview(ctx, account, items, demandMap); err != nil {
+		return nil, err
+	}
+
 	return &DemandsResp{
 		Items:    items,
 		Total:    total,
@@ -371,6 +385,68 @@ func toUintSlice(in []int) []uint {
 		}
 	}
 	return out
+}
+
+
+// enrichDemandCanReview 为当前页业需批量标记 canReview（仅 status=wait 才查 zt_demandreview）。
+func (s *Service) enrichDemandCanReview(ctx context.Context, account string, items []WorkItemDetail, demandRows map[int]DemandRow) error {
+	if s == nil || s.repo == nil || strings.TrimSpace(account) == "" || len(items) == 0 {
+		return nil
+	}
+	waitIDs := make([]int, 0, len(items))
+	for i := range items {
+		if items[i].Kind != "demand" {
+			continue
+		}
+		// 优先用已加载行的 status；无 map 时退化为仅对 wait 展示字段已有值的项查询。
+		id := parseDemandNumericID(items[i].ID)
+		if id <= 0 {
+			continue
+		}
+		if demandRows != nil {
+			if row, ok := demandRows[id]; ok {
+				if strings.TrimSpace(row.Status) != "wait" {
+					continue
+				}
+			} else {
+				continue
+			}
+		} else if strings.TrimSpace(items[i].ZentaoStatus) != "wait" {
+			continue
+		}
+		waitIDs = append(waitIDs, id)
+	}
+	if len(waitIDs) == 0 {
+		return nil
+	}
+	pending, err := s.repo.FindPendingReviewDemandIDs(ctx, account, waitIDs)
+	if err != nil {
+		return err
+	}
+	for i := range items {
+		if items[i].Kind != "demand" {
+			continue
+		}
+		id := parseDemandNumericID(items[i].ID)
+		if id <= 0 {
+			continue
+		}
+		_, items[i].CanReview = pending[id]
+	}
+	return nil
+}
+
+// parseDemandNumericID 解析列表展示号 US{id} 或纯数字主键。
+func parseDemandNumericID(raw string) int {
+	raw = strings.TrimSpace(raw)
+	if len(raw) >= 2 && strings.EqualFold(raw[:2], "US") {
+		raw = raw[2:]
+	}
+	n, err := strconv.Atoi(raw)
+	if err != nil || n <= 0 {
+		return 0
+	}
+	return n
 }
 
 func buildDemandWorkItem(row DemandRow, label string, displayMap map[string]string) WorkItemDetail {
