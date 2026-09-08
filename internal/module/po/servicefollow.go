@@ -81,6 +81,14 @@ func (s *Service) FollowSetDemand(ctx context.Context, actor *model.User, req Fo
 	})
 }
 
+// FollowRemoveProjectReport 解除当前用户对项目周报的关注。
+func (s *Service) FollowRemoveProjectReport(ctx context.Context, actor *model.User, projectID int64) error {
+	if actor == nil || strings.TrimSpace(actor.Account) == "" || projectID <= 0 {
+		return nil
+	}
+	return s.repo.RemoveProjectReportFollow(ctx, RepoRemoveProjectReportFollowReq{Account: actor.Account, ProjectID: projectID})
+}
+
 func (s *Service) loadAccountDisplayMap(ctx context.Context, actor *model.User) (map[string]string, error) {
 	if s.userSvc == nil {
 		return map[string]string{}, nil

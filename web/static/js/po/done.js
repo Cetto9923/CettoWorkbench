@@ -17,12 +17,21 @@
       .replace(/'/g, "&#39;");
   }
   var PL = window.PersonalList || {};
-  var objectTypeBadgeFromKind = PL.objectTypeBadgeFromKind || function (kind) {
-    var map = { demand: "business", story: "story", task: "task", bug: "bug", issue: "issue", todo: "todo", testtask: "testtask", approval: "approval" };
-    var labels = { business: "业务需求", story: "研发需求", task: "任务", bug: "Bug", issue: "问题", todo: "待办", testtask: "测试单", approval: "审批" };
+  var fallbackObjectTypeBadge = function (kind) {
+    var map = { demand: "business", story: "story", task: "task", bug: "bug", issue: "issue", todo: "todo", testtask: "testtask", approval: "approval", charter: "approval", planchange: "approval", buildguideline: "approval", review: "approval", case: "testcase" };
+    var labels = { business: "业务需求", story: "研发需求", task: "任务", bug: "Bug", issue: "问题", todo: "待办", testtask: "测试单", approval: "审批", testcase: "用例" };
     var k = map[String(kind || "").toLowerCase()] || "";
     if (!k) { return '<span class="wb-type wb-type-unknown">' + esc(kind || "—") + "</span>"; }
-    return '<span class="wb-type wb-type-' + k + '">' + labels[k] + "</span>";
+    var cssKind = k === "testcase" ? "testtask" : k;
+    return '<span class="wb-type wb-type-' + cssKind + '">' + labels[k] + "</span>";
+  };
+  var objectTypeBadgeFromKind = function (kind) {
+    var normalized = String(kind || "").toLowerCase();
+    // PersonalList 的通用映射不包含审批对象；已办页必须保持 ZenTao 对象类型和中文标题。
+    if (["charter", "planchange", "buildguideline", "review", "case"].indexOf(normalized) >= 0) {
+      return fallbackObjectTypeBadge(normalized);
+    }
+    return PL.objectTypeBadgeFromKind ? PL.objectTypeBadgeFromKind(kind) : fallbackObjectTypeBadge(kind);
   };
   var OBJECT_TYPE_ORDER = ["", "approval", "demand", "story", "task", "bug", "risk", "issue", "feedback", "release", "build", "todo"];
   var OBJECT_TYPE_LABELS = {
@@ -259,7 +268,7 @@
           return (
             '<tr>' +
             '<td class="done-time">' + fmtDateTime(it.handledAt || it.date) + '</td>' +
-            '<td class="done-obj">' + objectTypeBadgeFromKind(it.objectType) + '<span class="done-obj-code">' + esc(objectCode(it)) + '</span></td>' +
+            '<td class="done-obj"><div class="done-obj-type">' + objectTypeBadgeFromKind(it.objectType) + '</div><div class="done-obj-code"># ' + esc(objectCode(it)) + '</div></td>' +
             '<td class="done-title">' + titleCell + '</td>' +
             '<td class="done-action"><span class="done-action-name">' + esc(it.actionName || it.action) + '</span></td>' +
             '<td class="done-result"><span class="done-tag ' + tagClass(it.resultCode || it.result) + '">' + esc(it.resultText || it.result || "--") + '</span></td>' +

@@ -34,6 +34,10 @@ const (
 	TEMPLATE_PO_FOLLOW       = "po/follow"
 	TEMPLATE_PO_BOARD_DEMAND = "po/workboard"
 	TEMPLATE_PO_BOARD_TASK   = "po/workboard"
+	TEMPLATE_PO_SUBMIT_TEST  = "po/submit_test"
 
 	TEMPLATE_SCHEDULE_INDEX = "schedule/index"
+	TEMPLATE_QUERY_INDEX    = "query/index"
+
+	TEMPLATE_PROFILE_INDEX = "profile/index"
 )

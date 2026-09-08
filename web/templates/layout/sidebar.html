@@ -142,7 +142,7 @@
   页面字段: .CurrentMenus ([]menu.Menu)
 ========================================================================== */}}
 <nav class="sidebar" id="sidebar">
-  {{ if or (eq .CurrentPath "/home") (eq .CurrentPath "/schedule") (eq .CurrentPath "/todos") (eq .CurrentPath "/done") (eq .CurrentPath "/notice") (eq .CurrentPath "/follow") (eq .CurrentPath "/board/demand") (eq .CurrentPath "/board/task") }}
+  {{ if or (eq .CurrentPath "/home") (eq .CurrentPath "/schedule") (eq .CurrentPath "/todos") (eq .CurrentPath "/done") (eq .CurrentPath "/notice") (eq .CurrentPath "/follow") (eq .CurrentPath "/board/demand") (eq .CurrentPath "/board/task") (eq .CurrentPath "/query") (eq .CurrentPath "/metrics/manage") (eq .CurrentPath "/metrics/radar") (eq .CurrentPath "/issues/risk") (eq .CurrentPath "/demands/submit-test") }}
   <div class="po-sidebar-brand">
     <span class="po-brand-logo">研</span>
     <strong class="nav-text">研发工作台</strong>
@@ -159,15 +159,15 @@
       <div class="nav-divider" role="separator"></div>
       <div class="nav-section-label">工作区</div>
       <a href="/board/demand" class="nav-item{{ if or (eq .CurrentPath "/board/demand") (eq .CurrentPath "/board/task") }} active{{ end }}"><i class="nav-icon fas fa-table-cells-large"></i><span class="nav-text">工作看板</span></a>
-      <a href="/schedule?tab=biz&filter=all_open" class="nav-item"><i class="nav-icon fas fa-briefcase"></i><span class="nav-text">需求查询</span></a>
+      <a href="/query" class="nav-item{{ if eq .CurrentPath "/query" }} active{{ end }}"><i class="nav-icon fas fa-briefcase"></i><span class="nav-text">需求查询</span></a>
       <a href="/schedule" class="nav-item{{ if eq .CurrentPath "/schedule" }} active{{ end }}"><i class="nav-icon fas fa-calendar-check"></i><span class="nav-text">需求排期</span><span class="nav-badge">PO</span></a>
       <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-vial-circle-check"></i><span class="nav-text">版本跟进</span></button>
       <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-clipboard-check"></i><span class="nav-text">验收交付</span></button>
-      <a href="/board/demand" class="nav-item"><i class="nav-icon fas fa-shield-halved"></i><span class="nav-text">问题风险</span></a>
+      <a href="/issues/risk" class="nav-item{{ if eq .CurrentPath "/issues/risk" }} active{{ end }}"><i class="nav-icon fas fa-shield-halved"></i><span class="nav-text">问题风险</span></a>
       <div class="nav-divider" role="separator"></div>
       <div class="nav-section-label">专项分析</div>
-      <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-sliders"></i><span class="nav-text">指标管理</span></button>
-      <a href="/board/demand" class="nav-item"><i class="nav-icon fas fa-chart-line"></i><span class="nav-text">指标雷达</span></a>
+      <a href="/metrics/manage" class="nav-item{{ if eq .CurrentPath "/metrics/manage" }} active{{ end }}"><i class="nav-icon fas fa-sliders"></i><span class="nav-text">指标管理</span></a>
+      <a href="/metrics/radar" class="nav-item{{ if eq .CurrentPath "/metrics/radar" }} active{{ end }}"><i class="nav-icon fas fa-chart-line"></i><span class="nav-text">指标雷达</span></a>
       <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-triangle-exclamation"></i><span class="nav-text">质效预警</span></button>
     </div>
   </div>

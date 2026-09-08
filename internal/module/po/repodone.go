@@ -211,6 +211,10 @@ func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) 
 		if title == "" {
 			title = strings.TrimSpace(doneObjectTypeLabel(row.ObjectType) + " " + doneObjectCode(row.ObjectType, row.ObjectID))
 		}
+		url := objectViewURL(row.ObjectType, uint(row.ObjectID))
+		if row.ObjectType == "charter" || row.ObjectType == "buildguideline" {
+			url = zentao.URL(row.ObjectType, "view", fmt.Sprintf("projectID=%d", ctx.ProjectID))
+		}
 		items = append(items, DoneAction{
 			ID:              row.ID,
 			SourceActionId:  row.ID,
@@ -234,13 +238,14 @@ func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) 
 			ResultText:      doneResultText(meta.Result),
 			BeforeStatus:    chg[0],
 			AfterStatus:     chg[1],
-			CurrentStatus:   ctx.Status,
-			ProjectName:     ctx.ProjectName,
-			ExecutionName:   ctx.ExecutionName,
-			ProductName:     ctx.ProductName,
-			NextOwnerName:   ctx.CurrentOwner,
-			CanOpenObject:   true,
-			URL:             objectViewURL(row.ObjectType, uint(row.ObjectID)),
+			// 当前状态只来自对象本身；已办动作结果不能冒充对象状态。
+			CurrentStatus: ctx.Status,
+			ProjectName:   ctx.ProjectName,
+			ExecutionName: ctx.ExecutionName,
+			ProductName:   ctx.ProductName,
+			NextOwnerName: ctx.CurrentOwner,
+			CanOpenObject: true,
+			URL:           url,
 		})
 	}
 
@@ -394,7 +399,8 @@ func objectTypePrefix(key string) string {
 var doneObjectTypeLabels = map[string]string{
 	"demand": "业务需求", "story": "研发需求", "task": "任务", "bug": "Bug",
 	"risk": "风险", "issue": "问题", "feedback": "反馈", "release": "发布",
-	"build": "构建", "todo": "待办", "testtask": "测试单",
+	"build": "构建", "todo": "待办", "testtask": "测试单", "charter": "项目章程",
+	"planchange": "计划变更", "buildguideline": "项目建设指引", "review": "项目评审", "case": "用例",
 }
 
 // doneObjectTypeLabel 对象类型中文标签；未知类型原样返回。
@@ -474,6 +480,13 @@ func objectViewURL(objectType string, id uint) string {
 		return zentao.TesttaskViewURL(id)
 	case "risk", "issue", "feedback", "release", "build", "todo", "case":
 		return zentao.URL(objectType, "view", fmt.Sprintf("%sID=%d", objectType, id))
+	case "charter", "buildguideline":
+		// 禅道这两个页面按 projectID 打开，objectID 不能直接拼成参数。
+		return ""
+	case "planchange":
+		return zentao.URL(objectType, "view", fmt.Sprintf("ID=%d", id))
+	case "review":
+		return zentao.URL(objectType, "view", fmt.Sprintf("reviewID=%d", id))
 	}
 	return ""
 }

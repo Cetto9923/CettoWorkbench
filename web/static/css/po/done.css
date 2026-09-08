@@ -227,18 +227,19 @@
   color: var(--color-text-disabled, var(--po-t3, var(--color-text-disabled, #9ca3af)));
 }
 .done-obj {
-  white-space: nowrap;
+  white-space: normal;
   overflow: visible;
   text-overflow: clip;
 }
-.done-obj .wb-type {
-  vertical-align: middle;
+.done-obj-type {
+  line-height: 1;
 }
 .done-obj-code {
-  font-size: 12px;
+  margin-top: 5px;
+  font-size: 11px;
   color: var(--po-t3, var(--color-text-disabled, #9ca3af));
   font-family: ui-monospace, monospace;
-  margin-left: 4px;
+  line-height: 1.2;
 }
 .wb-done-title-link {
   border: 0;

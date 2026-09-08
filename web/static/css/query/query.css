@@ -1,4 +1,22 @@
-/* query.css —— 占位文件。
- * /query 页面所有样式直接消费 po/personal-workspace.css 与 wb-priority.css，
- * 避免在 page CSS 里重复 token；本文件保留为空，避免 page_css link 引用 404。
- */
+/* 查询页操作按钮：覆盖 components/table.css 的圆形通用动作样式，
+ * 保持 PO 工作台列表中紧凑的矩形操作按钮视觉。 */
+.po-query .action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5rem;
+  height: 1.75rem;
+  padding: 0 0.55rem;
+  border: 1px solid var(--po-border, #d7dee8);
+  border-radius: 4px;
+  background: var(--po-surface, #fff);
+  color: var(--po-blue, #2563eb);
+  font-size: 0.75rem;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.po-query .action-btn:hover {
+  border-color: var(--po-blue, #2563eb);
+  background: var(--po-blue-soft, #eff6ff);
+}

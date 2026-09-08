@@ -245,8 +245,7 @@
       '" data-rd="' + (object.kind === "story" ? esc(object.displayId) : "") + '">' +
       '<div class="tree-cell ind' + ind + '">' +
       (depth > 0 ? '<span class="branch">' + branch + "</span>" : "") +
-      typeTag(nodeType) +
-      '<div class="node-main"><div class="node-title-line">' + priTag(object.priority) + titleTag + "</div>" +
+      '<div class="node-main"><div class="node-title-line">' + typeTag(nodeType) + priTag(object.priority) + titleTag + "</div>" +
       '<div class="node-meta"><span class="code"># ' + esc(object.displayId) + '</span>' + nodeMeta(object, nodeType) + "</div></div>" +
       "</div>" + renderStageCards(object, nodeType) + "</div>"
     );
@@ -272,8 +271,8 @@
     return '<div class="' + rowCls + '" data-owner="' + esc(root.owner || "") + '" data-flags="' + flags.join(" ") +
       '" data-stage="' + esc(root.stage || "") + '" data-status="' + esc(root.status || "") +
       '" data-deadline="' + esc(root.deadline || "") + '" data-rd="' + (isIndy ? esc(root.displayId) : "") + '" id="bg' + root.id + '">' +
-      '<div class="tree-cell ind0">' + typeTag(nodeType) +
-      '<div class="node-main"><div class="node-title-line">' + priTag(root.priority) + titleTag + "</div>" +
+      '<div class="tree-cell ind0">' +
+      '<div class="node-main"><div class="node-title-line">' + typeTag(nodeType) + priTag(root.priority) + titleTag + "</div>" +
       '<div class="node-meta"><span class="code"># ' + esc(root.displayId) + '</span>' + metaBits.join(" · ") + "</div></div></div>" + renderStageCards(root, nodeType) + "</div>";
   }
   function collectStories(root) {
@@ -318,8 +317,8 @@
     if (counts.length) { metaBits.push('<span class="summary">' + counts.join(" · ") + '</span>'); }
     if (root.deadline) { metaBits.push('<span class="biz-date">目标 ' + esc(root.deadline) + '</span>'); }
     return '<div class="biz-collapsed-row" data-toggle-group="bg' + root.id + '">' +
-      '<div class="tree-cell ind0"><button type="button" class="toggle">▶</button>' + typeTag(nodeType) +
-      '<div class="node-main"><div class="node-title-line">' + priTag(root.priority) + '<span class="node-title" title="' + esc(root.title) + '">' + esc(root.title) + '</span></div>' +
+      '<div class="tree-cell ind0"><button type="button" class="toggle">▶</button>' +
+      '<div class="node-main"><div class="node-title-line">' + typeTag(nodeType) + priTag(root.priority) + '<span class="node-title" title="' + esc(root.title) + '">' + esc(root.title) + '</span></div>' +
       '<div class="node-meta"><span class="code"># ' + esc(root.displayId) + '</span>' + metaBits.join(" · ") + '</div></div></div>' + renderAggregatedCard(root, stories) + '</div>';
   }
   // 需求树矩阵渲染（对齐原型 V1.3）
@@ -361,7 +360,7 @@
       var stories = collectStories(root);
 
       var headHtml = '<div class="biz-head"><div class="biz-head-main" data-toggle-group="bg' + root.id + '">' +
-        '<button type="button" class="toggle">▼</button>' + typeTag(nodeType) + '<div class="node-main"><div class="node-title-line">' + priTag(root.priority) + '<span class="biz-title" title="' + esc(root.title) + '">' + esc(root.title) + '</span></div>' +
+        '<button type="button" class="toggle">▼</button>' + '<div class="node-main"><div class="node-title-line">' + typeTag(nodeType) + priTag(root.priority) + '<span class="biz-title" title="' + esc(root.title) + '">' + esc(root.title) + '</span></div>' +
         '<div class="node-meta"><span class="code"># ' + esc(root.displayId) + '</span></div></div>' +
         ownerDot + summaryHtml + dateHtml + '</div></div>' +
         renderCollapsedRow(root, nodeType, stories);

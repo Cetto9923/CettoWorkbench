@@ -51,6 +51,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.GET("/demands", middleware.RequirePerm(perm.PoHomeList), h.Demands)
 	// 详情读接口：首页与需求看板均可打开；对象级授权仍由 DetailService 执行。
 	g.GET("/demands/:id/detail", middleware.RequireAnyPerm(perm.PoHomeList, perm.PoBoardDemandList), h.DemandDetail)
+	g.GET("/demands/:id/submit-test", middleware.RequirePerm(perm.PoHomeList), h.SubmitTestView)
 	g.GET("/demands/:id", middleware.RequireAnyPerm(perm.PoHomeList, perm.PoBoardDemandList), h.DemandDetailView)
 	g.GET("/todos", middleware.RequirePerm(perm.PoTodoList), h.Todos)
 	g.GET("/todos/items", middleware.RequirePerm(perm.PoTodoList), h.TodosItems)
@@ -76,10 +77,17 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.GET("/follow/project-weeklies/teams", middleware.RequirePerm(perm.PoFollowList), h.ProjectWeeklyTeams)
 	g.GET("/follow/project-weeklies/:id", middleware.RequirePerm(perm.PoFollowList), h.ProjectWeeklyDetail)
 	g.GET("/follow/project-weeklies/:id/history", middleware.RequirePerm(perm.PoFollowList), h.ProjectWeeklyHistory)
+	// Keep the sidebar's public path aligned with the page capability name.
+	// The singular path remains as a compatibility alias for existing links.
+	for _, path := range []string{"/issues/risk", "/issue-risk"} {
+		g.GET(path, middleware.RequirePerm(perm.PoBoardDemandList), h.IssueRisk)
+		g.GET(path+"/items", middleware.RequirePerm(perm.PoBoardDemandList), h.IssueRiskItems)
+	}
 
 	g.PUT("/notice/:id/read", middleware.RequirePerm(perm.PoNoticeUpdate), h.NoticeMarkRead)
 	g.PUT("/notice/read-all", middleware.RequirePerm(perm.PoNoticeUpdate), h.NoticeMarkAllRead)
 	g.PUT("/follow/demand/:id", middleware.RequirePerm(perm.PoFollowUpdate), h.FollowSetDemand)
+	g.PUT("/follow/project-report/:id", middleware.RequirePerm(perm.PoFollowUpdate), h.FollowRemoveProjectReport)
 
 	// PO 工作看板（V1.3 需求+任务双视图）
 	NewBoardHandler(h.svc, h.logger).RegisterRoutes(g)
@@ -479,4 +487,20 @@ func (h *Handler) FollowSetDemand(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "已更新关注", "redirectUrl": "/follow"})
+}
+
+// FollowRemoveProjectReport 解除当前用户对项目周报的关注。
+func (h *Handler) FollowRemoveProjectReport(c *gin.Context) {
+	actor := middleware.CurrentUser(c)
+	id, err := strconv.ParseInt(strings.TrimSpace(c.Param("id")), 10, 64)
+	if err != nil || id <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "无效的项目 ID"})
+		return
+	}
+	if err := h.svc.FollowRemoveProjectReport(c.Request.Context(), actor, id); err != nil {
+		h.logger.Error("po project report unfollow", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "取消项目周报关注失败"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "已取消项目周报关注", "redirectUrl": "/follow"})
 }

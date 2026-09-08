@@ -34,6 +34,12 @@ type RepoSaveDemandFollowReq struct {
 	Followed bool
 }
 
+// RepoRemoveProjectReportFollowReq 解除项目周报关注关系的数据参数。
+type RepoRemoveProjectReportFollowReq struct {
+	Account   string
+	ProjectID int64
+}
+
 // RepoFindFollowedProjectReportsReq 查询关注项目最新周报的数据参数。
 type RepoFindFollowedProjectReportsReq struct {
 	Account  string
@@ -43,7 +49,8 @@ type RepoFindFollowedProjectReportsReq struct {
 }
 
 // FindFollowedDemands 查询当前账号关注的业务需求（V10.1 04 节默认对象视图）。
-// 数据真源 zt_starinfo(objectType='demand', account=?, followed='1')。
+// 数据真源为 zt_starinfo(objectType='demand', account=?, followed='1')，
+// 并兼容禅道历史上通过需求 mailto 字段形成的关注关系；显式取消关注优先。
 // 二级筛选 (scope=key/closed) 走 zt_demand 自身字段过滤。
 func (r *Repo) FindFollowedDemands(ctx context.Context, req RepoFindFollowedDemandsReq) ([]FollowItem, int64, error) {
 	if r == nil || r.db == nil || strings.TrimSpace(req.Account) == "" {
@@ -56,17 +63,28 @@ func (r *Repo) FindFollowedDemands(ctx context.Context, req RepoFindFollowedDema
 		req.PageSize = 20
 	}
 
-	// 基础 query: zt_starinfo JOIN zt_demand
-	q := r.db.WithContext(ctx).Table("zt_starinfo si").
-		Joins("INNER JOIN zt_demand d ON d.id = si.objectID AND d.deleted = '0'").
-		Where("si.account = ?", req.Account).
-		Where("si.objectType = ?", "demand").
-		Where("si.followed = ?", "1")
+	// 关注关系兼容禅道历史数据：新关系来自 zt_starinfo，旧关系来自
+	// zt_demand.mailto。工作台显式取消（followed=0）必须压过旧 mailto。
+	q := r.db.WithContext(ctx).Table("zt_demand d").
+		Where("d.deleted = ?", "0").
+		Where(`(
+			EXISTS (
+				SELECT 1 FROM zt_starinfo s
+				WHERE s.objectType = 'demand' AND s.objectID = d.id AND s.account = ? AND s.followed = '1'
+			)
+			OR (
+				FIND_IN_SET(?, REPLACE(COALESCE(d.mailto, ''), ' ', '')) > 0
+				AND NOT EXISTS (
+					SELECT 1 FROM zt_starinfo s2
+					WHERE s2.objectType = 'demand' AND s2.objectID = d.id AND s2.account = ? AND s2.followed = '0'
+				)
+			)
+		)`, req.Account, req.Account, req.Account)
 
 	// 二级筛选
 	switch req.Scope {
 	case FollowScopeKey:
-		q = q.Where("d.status NOT IN ?", []string{"closed", "released"})
+		q = q.Where("d.isNeedFocus = ?", "1")
 	case FollowScopeClosed:
 		q = q.Where("d.status IN ?", []string{"closed", "released"})
 	}
@@ -82,18 +100,27 @@ func (r *Repo) FindFollowedDemands(ctx context.Context, req RepoFindFollowedDema
 	}
 
 	type row struct {
-		ID       int64      `gorm:"column:id"`
-		Name     string     `gorm:"column:name"`
-		Status   string     `gorm:"column:status"`
-		Pri      string     `gorm:"column:pri"`
-		BRA      string     `gorm:"column:BRA"`
-		QD       string     `gorm:"column:QD"`
-		RD       string     `gorm:"column:RD"`
-		Deadline *time.Time `gorm:"column:deadline"`
+		ID          int64      `gorm:"column:id"`
+		Name        string     `gorm:"column:name"`
+		Status      string     `gorm:"column:status"`
+		Pri         string     `gorm:"column:pri"`
+		BRA         string     `gorm:"column:BRA"`
+		QD          string     `gorm:"column:QD"`
+		RD          string     `gorm:"column:RD"`
+		NeedFocus   string     `gorm:"column:need_focus"`
+		SystemName  string     `gorm:"column:system_name"`
+		WatchSource string     `gorm:"column:watch_source"`
+		Deadline    *time.Time `gorm:"column:deadline"`
 	}
 	var rows []row
 	if err := q.
-		Select("d.id, d.name, d.status, d.pri, d.BRA, d.QD, d.RD, d.deadline").
+		Select(`d.id, d.name, d.status, d.pri, d.BRA, d.QD, d.RD, d.deadline,
+			d.isNeedFocus AS need_focus, COALESCE(p.name, d.mainSystem, '') AS system_name,
+			CASE WHEN EXISTS (
+				SELECT 1 FROM zt_starinfo s3
+				WHERE s3.objectType = 'demand' AND s3.objectID = d.id AND s3.account = ? AND s3.followed = '1'
+			) THEN 'star' ELSE 'mailto' END AS watch_source`, req.Account).
+		Joins("LEFT JOIN zt_product p ON p.id = CAST(NULLIF(d.mainSystem, '') AS UNSIGNED) AND p.deleted = '0'").
 		Order("d.id DESC").
 		Limit(req.PageSize).
 		Offset((req.Page - 1) * req.PageSize).
@@ -117,20 +144,51 @@ func (r *Repo) FindFollowedDemands(ctx context.Context, req RepoFindFollowedDema
 			priority = "P" + row.Pri
 		}
 		isClosed := row.Status == "closed" || row.Status == "released"
+		_, stage := mapValueStage("", row.Status)
+		risk := "无"
+		if row.NeedFocus == "1" {
+			risk = "重点关注"
+		}
+		reason := "抄送关注"
+		if row.WatchSource == "star" {
+			reason = "主动关注"
+		}
 		items = append(items, FollowItem{
-			ID:         row.ID,
-			Title:      row.Name,
-			Status:     row.Status,
-			Priority:   priority,
-			Owner:      owner,
-			LatestNote: "",
-			Date:       "",
-			IsKey:      !isClosed,
-			IsClosed:   isClosed,
-			URL:        zentao.DemandViewURL(uint(row.ID)),
+			ID:             row.ID,
+			Title:          row.Name,
+			Status:         row.Status,
+			Stage:          stage,
+			Role:           "我关注",
+			SystemName:     strings.TrimSpace(row.SystemName),
+			SupportSystems: "-",
+			Risk:           risk,
+			Reason:         reason,
+			Priority:       priority,
+			Owner:          owner,
+			LatestNote:     "",
+			Date:           "",
+			IsKey:          row.NeedFocus == "1",
+			IsClosed:       isClosed,
+			URL:            zentao.DemandViewURL(uint(row.ID)),
 		})
 	}
 	return items, total, nil
+}
+
+// RemoveProjectReportFollow 按禅道项目关注字段解除当前账号对项目周报的关注。
+func (r *Repo) RemoveProjectReportFollow(ctx context.Context, req RepoRemoveProjectReportFollowReq) error {
+	if r == nil || r.writeDB == nil || strings.TrimSpace(req.Account) == "" || req.ProjectID <= 0 {
+		return nil
+	}
+	return r.writeDB.WithContext(ctx).Exec(`
+UPDATE zt_project AS p
+INNER JOIN zt_user AS u ON u.account = ? AND u.deleted = '0'
+SET p.follow = CASE
+  WHEN REPLACE(COALESCE(p.follow, ''), CONCAT(',', u.id, ','), ',') = ',' THEN ''
+  ELSE REPLACE(COALESCE(p.follow, ''), CONCAT(',', u.id, ','), ',')
+END
+WHERE p.id = ? AND p.deleted = '0' AND p.type = 'project'
+  AND p.follow LIKE CONCAT('%,', u.id, ',%')`, req.Account, req.ProjectID).Error
 }
 
 // FindFollowedProjectReports 查询当前账号关注项目及每个项目的最新周报。

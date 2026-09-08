@@ -217,8 +217,7 @@ func Derive(in Input) PrimaryAction {
 		return Enabled(string(KeySchedule), "排期", string(KindInternal), scheduleURL(in))
 
 	case StageDeveloping:
-		// 提测：业务需求 → 聚合提测；研发需求 → 单研需提测。
-		// 现有仓库无独立提测 endpoint（Stage 1 / PROGRESS 阻塞项 §4-2）。
+		// 提测：业务需求 → 聚合提测；研发需求由所属业务需求统一办理。
 		if !in.HasSubmitTestCapability {
 			return DisabledWithReason(string(KeySubmitTest), "提测", string(KindDrawer),
 				submitTestURL(in),
@@ -226,7 +225,7 @@ func Derive(in Input) PrimaryAction {
 		}
 		return DisabledWithReason(string(KeySubmitTest), "提测", string(KindDrawer),
 			submitTestURL(in),
-			"服务未配置提测 endpoint（PLAN §4-2）")
+			"提测须通过禅道原生入口办理")
 
 	case StageTesting:
 		// 联调测试 → 禅道测试单。

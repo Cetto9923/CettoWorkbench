@@ -28,9 +28,9 @@ func (r *Repo) List(ctx context.Context, req ListReq) (ListResp, error) {
 // listDemands 业务需求列表：filter → sort → count → pagination 全在 SQL 完成。
 // Stage 派生走本地 queryStageLabel，与 po.service_detail.mapValueStage 同步维护。
 func (r *Repo) listDemands(ctx context.Context, req ListReq) (ListResp, error) {
-	base := `d.id, d.name, d.title, d.pri, d.status, d.stage,
+	base := `d.id, d.name, d.pri, d.status, d.stage,
 		COALESCE(cu.realname, d.BRA) AS owner,
-		COALESCE(p.name, d.mainSystem) AS system,
+		COALESCE(p.name, d.mainSystem) AS system_name,
 		d.estimateLaunch, d.source`
 
 	q := r.db.WithContext(ctx).Table("zt_demand d").
@@ -42,25 +42,25 @@ func (r *Repo) listDemands(ctx context.Context, req ListReq) (ListResp, error) {
 	// keyword 跨 id/name/owner/system 模糊匹配；LOWER LIKE 大小写不敏感。
 	if req.Keyword != "" {
 		like := "%" + strings.ToLower(req.Keyword) + "%"
-		q.Where("(LOWER(d.title) LIKE ? OR LOWER(d.name) LIKE ? OR LOWER(COALESCE(cu.realname, d.BRA)) LIKE ? OR LOWER(COALESCE(p.name, d.mainSystem)) LIKE ? OR CAST(d.id AS CHAR) = ?)",
-			like, like, like, like, req.Keyword)
+		q = q.Where("(LOWER(d.name) LIKE ? OR LOWER(COALESCE(cu.realname, d.BRA)) LIKE ? OR LOWER(COALESCE(p.name, d.mainSystem)) LIKE ? OR CAST(d.id AS CHAR) = ?)",
+			like, like, like, req.Keyword)
 	}
 	if req.Status != "" {
-		q.Where("d.status = ?", req.Status)
+		q = q.Where("d.status = ?", req.Status)
 	}
 	if req.Priority != "" {
-		q.Where("d.pri = ?", req.Priority)
+		q = q.Where("d.pri = ?", req.Priority)
 	}
 	// owner 输入可能为账号或姓名；两个字段都命中。
 	if req.Owner != "" {
-		q.Where("(cu.realname = ? OR d.BRA = ?)", req.Owner, req.Owner)
+		q = q.Where("(cu.realname = ? OR d.BRA = ?)", req.Owner, req.Owner)
 	}
 	// system 输入可能为产品名或主系统原始值。
 	if req.System != "" {
-		q.Where("(p.name = ? OR d.mainSystem = ?)", req.System, req.System)
+		q = q.Where("(p.name = ? OR d.mainSystem = ?)", req.System, req.System)
 	}
 	if req.Stage != "" {
-		q.Where("? IN (d.stage, d.status)", req.Stage)
+		q = q.Where("? IN (d.stage, d.status)", req.Stage)
 	}
 
 	var total int64
@@ -76,7 +76,7 @@ func (r *Repo) listDemands(ctx context.Context, req ListReq) (ListResp, error) {
 		Status         string
 		Stage          string
 		Owner          string
-		System         string
+		System         string `gorm:"column:system_name"`
 		EstimateLaunch *time.Time
 		Source         string
 	}
@@ -120,20 +120,20 @@ func (r *Repo) listStories(ctx context.Context, req ListReq) (ListResp, error) {
 
 	if req.Keyword != "" {
 		like := "%" + strings.ToLower(req.Keyword) + "%"
-		q.Where("(LOWER(s.title) LIKE ? OR LOWER(COALESCE(su.realname, s.assignedTo)) LIKE ? OR CAST(s.id AS CHAR) = ?)",
+		q = q.Where("(LOWER(s.title) LIKE ? OR LOWER(COALESCE(su.realname, s.assignedTo)) LIKE ? OR CAST(s.id AS CHAR) = ?)",
 			like, like, req.Keyword)
 	}
 	if req.Status != "" {
-		q.Where("s.status = ?", req.Status)
+		q = q.Where("s.status = ?", req.Status)
 	}
 	if req.Priority != "" {
-		q.Where("s.pri = ?", req.Priority)
+		q = q.Where("s.pri = ?", req.Priority)
 	}
 	if req.Owner != "" {
-		q.Where("(su.realname = ? OR s.assignedTo = ?)", req.Owner, req.Owner)
+		q = q.Where("(su.realname = ? OR s.assignedTo = ?)", req.Owner, req.Owner)
 	}
 	if req.Stage != "" {
-		q.Where("? IN (s.stage, s.status)", req.Stage)
+		q = q.Where("? IN (s.stage, s.status)", req.Stage)
 	}
 
 	var total int64

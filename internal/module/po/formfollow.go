@@ -72,17 +72,23 @@ func (r *FollowListReq) Validate() []FieldError {
 
 // FollowItem 我的关注单条。
 type FollowItem struct {
-	ID            int64                        `json:"id"`
-	Title         string                       `json:"title"`
-	Status        string                       `json:"status"`
-	Priority      string                       `json:"priority"`
-	Owner         string                       `json:"owner"`
-	LatestNote    string                       `json:"latestNote"`
-	Date          string                       `json:"date"`
-	IsKey         bool                         `json:"isKey"`
-	IsClosed      bool                         `json:"isClosed"`
-	URL           string                       `json:"url"`
-	PrimaryAction *primaryaction.PrimaryAction `json:"primaryAction,omitempty"`
+	ID             int64                        `json:"id"`
+	Title          string                       `json:"title"`
+	Status         string                       `json:"status"`
+	Stage          string                       `json:"stage"`
+	Role           string                       `json:"role"`
+	SystemName     string                       `json:"systemName"`
+	SupportSystems string                       `json:"supportSystems"`
+	Risk           string                       `json:"risk"`
+	Reason         string                       `json:"reason"`
+	Priority       string                       `json:"priority"`
+	Owner          string                       `json:"owner"`
+	LatestNote     string                       `json:"latestNote"`
+	Date           string                       `json:"date"`
+	IsKey          bool                         `json:"isKey"`
+	IsClosed       bool                         `json:"isClosed"`
+	URL            string                       `json:"url"`
+	PrimaryAction  *primaryaction.PrimaryAction `json:"primaryAction,omitempty"`
 }
 
 // FollowListResp 我的关注响应。

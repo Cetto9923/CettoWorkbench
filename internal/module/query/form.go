@@ -53,17 +53,17 @@ func (r *ListReq) Validate() error {
 }
 
 type Row struct {
-	ID       uint
-	Title    string
-	Kind     string
-	Priority string
-	Status   string
-	Stage    string
-	Owner    string
-	System   string
-	Deadline string
-	Source   string
-	URL      string
+	ID       uint   `json:"id"`
+	Title    string `json:"title"`
+	Kind     string `json:"kind"`
+	Priority string `json:"priority"`
+	Status   string `json:"status"`
+	Stage    string `json:"stage"`
+	Owner    string `json:"owner"`
+	System   string `json:"system"`
+	Deadline string `json:"deadline"`
+	Source   string `json:"source"`
+	URL      string `json:"url"`
 }
 
 type ListResp struct {

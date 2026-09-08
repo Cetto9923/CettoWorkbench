@@ -44,8 +44,7 @@ func ScheduleURL(objectID uint, kind ObjectKind) string {
 	return fmt.Sprintf("/schedule/demands/%d/scheduling", objectID)
 }
 
-// SubmitTestURL 提测办理端点。
-// §4-2 阻塞：当前无 endpoint，URL 仅作 contract 占位。
+// SubmitTestURL 提测办理页。业务需求统一办理其关联研发需求。
 func SubmitTestURL(objectID uint, kind ObjectKind) string {
 	if kind == ObjectStory || kind == ObjectIndependentStory {
 		return fmt.Sprintf("/demands/%d/submit-test?kind=story", objectID)

@@ -35,6 +35,12 @@
     return '<span class="home-unavailable" title="等待服务端动作合同落地">—</span>';
   };
 
+  function stageLabel(value) {
+    var labels = { wait: "已受理", draft: "草稿", active: "已澄清", clarified: "已澄清", developing: "研发中", testing: "测试中", waitacceptance: "待验收", acceptanced: "已验收", waitdeliver: "待交付", delivered: "已交付", released: "已发布", closed: "已关闭", suspended: "已挂起", refuse: "已驳回" };
+    var key = String(value == null ? "" : value).toLowerCase();
+    return labels[key] || (String(value || "").trim() || "—");
+  }
+
   function getCsrfToken() {
     var el = document.getElementById("csrfToken");
     return el ? el.value : "";
@@ -252,11 +258,13 @@
   async function loadDemandData() {
     var tbody = document.getElementById("followDemandTbody");
     var empty = document.getElementById("followEmpty");
+    var error = document.getElementById("followError");
     var summary = document.getElementById("followSummary");
     var pagEl = document.getElementById("followPagination");
 
     if (tbody) tbody.innerHTML = '<tr><td colspan="10" class="state-placeholder">正在拉取关注业务需求…</td></tr>';
     if (empty) empty.hidden = true;
+    if (error) error.hidden = true;
     if (summary) summary.textContent = "加载中…";
 
     var params = new URLSearchParams({
@@ -269,6 +277,7 @@
 
     try {
       var res = await fetch("/follow/items?" + params.toString());
+      if (!res.ok) throw new Error("fetch demand failed");
       var json = await res.json();
       if (!json || !json.success) throw new Error("fetch demand failed");
 
@@ -299,7 +308,7 @@
         var titleBtn = '<button type="button" class="table-title-link" data-open-demand="' + esc(did) + '" title="点击查看需求详情">' + esc(item.title || "—") + '</button>';
 
         var typeBadge = '<span class="wb-type wb-type-business">业务需求</span>';
-        var stageTag = '<span class="status-tag st-progress">' + esc(item.stage || item.status || "—") + '</span>';
+        var stageTag = '<span class="status-tag st-progress">' + esc(stageLabel(item.stage || item.status)) + '</span>';
 
         var risk = String(item.risk || "-").trim();
         var riskHtml = (risk === "重点关注" || item.isKey)
@@ -358,7 +367,8 @@
     } catch (e) {
       if (tbody) tbody.innerHTML = "";
       if (summary) summary.textContent = "加载失败，请重试";
-      if (empty) empty.hidden = false;
+      if (pagEl) pagEl.hidden = true;
+      if (error) error.hidden = false;
     }
   }
 
@@ -385,7 +395,8 @@
   async function unwatchItem(type, id) {
     try {
       var csrf = getCsrfToken();
-      var res = await fetch("/follow/demand/" + id, {
+      var endpoint = type === "project" ? "/follow/project-report/" + id : "/follow/demand/" + id;
+      var res = await fetch(endpoint, {
         method: "PUT",
         headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf },
         body: JSON.stringify({ followed: false })
@@ -485,7 +496,12 @@
       });
     }
 
+    var retry = document.getElementById("followRetryBtn");
+    if (retry) retry.addEventListener("click", loadDemandData);
+
     loadWeeklyData();
+    // 默认视图是业务需求；必须主动加载列表，避免表格永久停留在加载占位。
+    loadDemandData();
     fetch("/follow/items?tab=demand&pageSize=1").then(function (r) { return r.json(); }).then(function (json) {
       if (json && json.success) {
         demandState.total = json.total || 0;

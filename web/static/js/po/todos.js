@@ -448,7 +448,11 @@
         var idEl = row.querySelector(".todos-item-id");
         if (idEl && window.DemandDetail) {
           var raw = (idEl.textContent || "").trim();
-          if (/^US\d+/i.test(raw) || /^\d+$/.test(raw)) {
+          // Only business demands use the Workbench drawer.  Numeric IDs in
+          // this list may be stories, tasks, bugs, or approvals; opening them
+          // through /demands/:id/detail turns those valid ZenTao links into a
+          // misleading “需求不存在” response.
+          if (/^US\d+/i.test(raw)) {
             e.preventDefault();
             window.DemandDetail.open(raw);
           }

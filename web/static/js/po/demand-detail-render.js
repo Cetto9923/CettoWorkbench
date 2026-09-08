@@ -42,6 +42,18 @@
     return '<span class="wb-priority" data-priority="' + n + '">P' + n + "</span>";
   };
 
+  function categoryLabel(value) {
+    var key = String(value || "").trim().toLowerCase();
+    var labels = { experience: "体验优化", feature: "功能需求", request: "业务需求", business: "业务需求", research: "调研需求", other: "其他" };
+    return labels[key] || value || "—";
+  }
+
+  function zentaoStatusLabel(value) {
+    var raw = String(value || "").trim(), key = raw.toLowerCase();
+    var labels = { developing: "开发中", testing: "测试中", wait: "待处理", draft: "草稿", active: "已激活", closed: "已关闭", canceled: "已取消", cancelled: "已取消", suspended: "已挂起", blocked: "已阻塞", done: "已完成", resolved: "已解决", verified: "已验证", reviewing: "评审中", changed: "已变更", postponed: "已延期" };
+    return labels[key] || raw || "—";
+  }
+
   function renderHeader(summary, mode) {
     var tagText = mode === "parentAggregate" ? "父业务需求 · 聚合对象" : (mode === "childUnit" ? "子业务需求 · 交付单元" : "独立交付单元");
     var handler = summary.currentOwner || summary.ownerName || "待确认";
@@ -68,12 +80,12 @@
       '  <div class="dd-spot-card"><div class="lab">目标上线</div><div class="val">' + esc(launch) + '</div></div>' +
       '</div>' +
       '<div class="dd-core-strip">' +
-      '  <div class="dd-core-item"><div class="k">需求类别</div><div class="v">' + esc(summary.category) + '</div></div>' +
+      '  <div class="dd-core-item"><div class="k">需求类别</div><div class="v">' + esc(categoryLabel(summary.category)) + '</div></div>' +
       '  <div class="dd-core-item"><div class="k">需求来源</div><div class="v">' + esc(summary.source) + '</div></div>' +
       '  <div class="dd-core-item"><div class="k">所属产品</div><div class="v">' + esc(summary.product) + '</div></div>' +
       '  <div class="dd-core-item"><div class="k">所属需求池</div><div class="v">' + esc(summary.poolName) + '</div></div>' +
       '</div>' +
-      '<div class="dd-native-line"><b>禅道状态</b><span class="dd-native-state">' + esc(summary.zentaoStatus) + '</span><span style="color:#cbd5e1">•</span><span>原始状态仅用于追溯，工作台按价值流阶段统一展示与办理</span></div>';
+      '<div class="dd-native-line"><b>禅道状态</b><span class="dd-native-state">' + esc(zentaoStatusLabel(summary.zentaoStatus)) + '</span><span style="color:#cbd5e1">•</span><span>原始状态仅用于追溯，工作台按价值流阶段统一展示与办理</span></div>';
   }
 
   function renderRelationNav(ctx, currentId) {
@@ -136,7 +148,7 @@
         '<div class="dd-flow-stage ' + esc(s.status) + '">',
         '  <div class="nm">' + esc(s.label) + '</div>',
         '  <div class="who">' + esc(s.role) + '</div>',
-        '  <div class="duration">' + esc(s.durationText) + '</div>',
+        '  <div class="duration" title="' + esc(s.durationText) + '">' + esc(excerpt(s.durationText, 18)) + '</div>',
         '</div>'
       );
     }
@@ -200,7 +212,7 @@
       '      <div class="dd-aside-title">业务属性</div>',
       '      <div class="dd-kv-list compact">',
       '        <div class="k">交付形态</div><div class="v">独立交付单元</div>',
-      '        <div class="k">需求类别</div><div class="v">' + esc(summary.category) + '</div>',
+      '        <div class="k">需求类别</div><div class="v">' + esc(categoryLabel(summary.category)) + '</div>',
       '        <div class="k">需求来源</div><div class="v">' + esc(summary.source) + '</div>',
       '        <div class="k">优先级</div><div class="v">' + esc(summary.priority) + '</div>',
       '        <div class="k">主系统</div><div class="v">' + esc(summary.mainSystemName) + '</div>',

@@ -6,7 +6,7 @@ web/templates/layout/header.html 模块: 布局 职责:
 .PageTitle (string), .CurrentMenus ([]menu.Menu)
 ========================================================================== */}}
 <div class="topbar-row">
-  {{ if or (eq .CurrentPath "/home") (eq .CurrentPath "/schedule") (eq .CurrentPath "/todos") (eq .CurrentPath "/done") (eq .CurrentPath "/notice") (eq .CurrentPath "/follow") (eq .CurrentPath "/board/demand") (eq .CurrentPath "/board/task") }}
+  {{ if or (eq .CurrentPath "/home") (eq .CurrentPath "/schedule") (eq .CurrentPath "/todos") (eq .CurrentPath "/done") (eq .CurrentPath "/notice") (eq .CurrentPath "/follow") (eq .CurrentPath "/board/demand") (eq .CurrentPath "/board/task") (eq .CurrentPath "/query") (eq .CurrentPath "/issues/risk") (eq .CurrentPath "/metrics/manage") (eq .CurrentPath "/metrics/radar") (eq .CurrentPath "/demands/submit-test") }}
   <div class="po-role-switcher" role="tablist" aria-label="工作台角色">
     <a class="po-role-tab active" role="tab" aria-selected="true" href="/home">PO</a>
     <button class="po-role-tab" role="tab" aria-selected="false" type="button">SM</button>

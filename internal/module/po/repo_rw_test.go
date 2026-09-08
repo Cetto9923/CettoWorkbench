@@ -53,6 +53,30 @@ func TestSaveDemandFollow_UsesWriteDB(t *testing.T) {
 	}
 }
 
+// TestRemoveProjectReportFollow_UsesProjectFollowContract guards against the
+// former UI bug that sent a project ID to the demand-follow endpoint.
+func TestRemoveProjectReportFollow_UsesProjectFollowContract(t *testing.T) {
+	readDB, readMock := openSQLMock(t)
+	writeDB, writeMock := openSQLMock(t)
+	repo := NewRepo(readDB, writeDB)
+
+	writeMock.ExpectExec("(?s)UPDATE zt_project AS p.*INNER JOIN zt_user AS u.*SET p.follow").
+		WithArgs("alice", int64(42)).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	if err := repo.RemoveProjectReportFollow(context.Background(), RepoRemoveProjectReportFollowReq{
+		Account: "alice", ProjectID: 42,
+	}); err != nil {
+		t.Fatalf("RemoveProjectReportFollow: %v", err)
+	}
+	if err := writeMock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("writeDB expectations: %v", err)
+	}
+	if err := readMock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("readDB must stay unused: %v", err)
+	}
+}
+
 // TestSaveNoticeRead_UsesWriteDB 确认已读写入只走 writeDB。
 func TestSaveNoticeRead_UsesWriteDB(t *testing.T) {
 	readDB, readMock := openSQLMock(t)

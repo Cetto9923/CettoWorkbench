@@ -14,6 +14,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"workbench/internal/pkg/zentao"
 )
 
 type doneActionDBRow struct {
@@ -76,6 +78,11 @@ func (r *Repo) fetchObjectContexts(ctx context.Context, rows []doneActionDBRow) 
 	taskIDs := make([]int64, 0)
 	bugIDs := make([]int64, 0)
 	todoIDs := make([]int64, 0)
+	charterIDs := make([]int64, 0)
+	planchangeIDs := make([]int64, 0)
+	buildguidelineIDs := make([]int64, 0)
+	reviewIDs := make([]int64, 0)
+	caseIDs := make([]int64, 0)
 
 	for _, row := range rows {
 		switch row.ObjectType {
@@ -89,6 +96,16 @@ func (r *Repo) fetchObjectContexts(ctx context.Context, rows []doneActionDBRow) 
 			bugIDs = append(bugIDs, row.ObjectID)
 		case "todo":
 			todoIDs = append(todoIDs, row.ObjectID)
+		case "charter":
+			charterIDs = append(charterIDs, row.ObjectID)
+		case "planchange":
+			planchangeIDs = append(planchangeIDs, row.ObjectID)
+		case "buildguideline":
+			buildguidelineIDs = append(buildguidelineIDs, row.ObjectID)
+		case "review":
+			reviewIDs = append(reviewIDs, row.ObjectID)
+		case "case":
+			caseIDs = append(caseIDs, row.ObjectID)
 		}
 	}
 
@@ -226,6 +243,90 @@ func (r *Repo) fetchObjectContexts(ctx context.Context, rows []doneActionDBRow) 
 		}
 	}
 
+	// 6. 审批对象。禅道的章程和建设指引标题来自关联项目，objectID 仍保留对象自身编号。
+	if len(charterIDs) > 0 {
+		type cRow struct {
+			ID          int64  `gorm:"column:id"`
+			Project     int64  `gorm:"column:project"`
+			ProjectName string `gorm:"column:project_name"`
+		}
+		var list []cRow
+		_ = r.db.WithContext(ctx).Table("zt_charter AS c").
+			Select("c.id, c.project, COALESCE(p.name, '') AS project_name").
+			Joins("LEFT JOIN zt_project AS p ON p.id = c.project AND p.deleted = '0'").
+			Where("c.id IN ? AND c.deleted = '0'", charterIDs).Scan(&list).Error
+		for _, c := range list {
+			title := "项目章程"
+			if c.ProjectName != "" {
+				title = c.ProjectName + " / 项目章程"
+			}
+			out[fmt.Sprintf("charter:%d", c.ID)] = doneObjectContext{Title: title, ProjectID: c.Project, ProjectName: c.ProjectName}
+		}
+	}
+	if len(planchangeIDs) > 0 {
+		type pRow struct {
+			ID          int64  `gorm:"column:id"`
+			Title       string `gorm:"column:title"`
+			Project     int64  `gorm:"column:project"`
+			ProjectName string `gorm:"column:project_name"`
+		}
+		var list []pRow
+		_ = r.db.WithContext(ctx).Table("zt_planchange AS pc").Select("pc.id, pc.title, pc.project, COALESCE(p.name, '') AS project_name").Joins("LEFT JOIN zt_project AS p ON p.id = pc.project AND p.deleted = '0'").Where("pc.id IN ?", planchangeIDs).Scan(&list).Error
+		for _, p := range list {
+			title := p.Title
+			if title == "" {
+				title = "计划变更"
+			}
+			out[fmt.Sprintf("planchange:%d", p.ID)] = doneObjectContext{Title: title, ProjectID: p.Project, ProjectName: p.ProjectName}
+		}
+	}
+	if len(buildguidelineIDs) > 0 {
+		type bRow struct {
+			ID          int64  `gorm:"column:id"`
+			Project     int64  `gorm:"column:projectID"`
+			ProjectName string `gorm:"column:project_name"`
+		}
+		var list []bRow
+		_ = r.db.WithContext(ctx).Table("zt_projectbuildguide AS bg").Select("bg.id, bg.projectID, COALESCE(p.name, '') AS project_name").Joins("LEFT JOIN zt_project AS p ON p.id = bg.projectID AND p.deleted = '0'").Where("bg.id IN ? AND bg.deleted = '0'", buildguidelineIDs).Scan(&list).Error
+		for _, b := range list {
+			title := "项目建设指引"
+			if b.ProjectName != "" {
+				title = b.ProjectName + " / 项目建设指引"
+			}
+			out[fmt.Sprintf("buildguideline:%d", b.ID)] = doneObjectContext{Title: title, ProjectID: b.Project, ProjectName: b.ProjectName}
+		}
+	}
+	if len(reviewIDs) > 0 {
+		type rvRow struct {
+			ID          int64  `gorm:"column:id"`
+			Title       string `gorm:"column:title"`
+			Project     int64  `gorm:"column:project"`
+			ProjectName string `gorm:"column:project_name"`
+		}
+		var list []rvRow
+		_ = r.db.WithContext(ctx).Table("zt_review AS rv").Select("rv.id, rv.title, rv.project, COALESCE(p.name, '') AS project_name").Joins("LEFT JOIN zt_project AS p ON p.id = rv.project AND p.deleted = '0'").Where("rv.id IN ? AND rv.deleted = '0'", reviewIDs).Scan(&list).Error
+		for _, rv := range list {
+			title := rv.Title
+			if title == "" {
+				title = "项目评审"
+			}
+			out[fmt.Sprintf("review:%d", rv.ID)] = doneObjectContext{Title: title, ProjectID: rv.Project, ProjectName: rv.ProjectName}
+		}
+	}
+	if len(caseIDs) > 0 {
+		type caRow struct {
+			ID          int64  `gorm:"column:id"`
+			Title       string `gorm:"column:title"`
+			Project     int64  `gorm:"column:project"`
+			ProjectName string `gorm:"column:project_name"`
+		}
+		var list []caRow
+		_ = r.db.WithContext(ctx).Table("zt_case AS ca").Select("ca.id, ca.title, ca.project, COALESCE(p.name, '') AS project_name").Joins("LEFT JOIN zt_project AS p ON p.id = ca.project AND p.deleted = '0'").Where("ca.id IN ? AND ca.deleted = '0'", caseIDs).Scan(&list).Error
+		for _, ca := range list {
+			out[fmt.Sprintf("case:%d", ca.ID)] = doneObjectContext{Title: ca.Title, ProjectID: ca.Project, ProjectName: ca.ProjectName}
+		}
+	}
+
 	return out
 }
 
@@ -348,6 +449,9 @@ func (r *Repo) FindDoneActionDetail(ctx context.Context, actionID int64) (*DoneD
 		Date:            row.Date.Format("2006-01-02 15:04:05"),
 		Result:          meta.Result,
 		URL:             objectViewURL(row.ObjectType, uint(row.ObjectID)),
+	}
+	if row.ObjectType == "charter" || row.ObjectType == "buildguideline" {
+		item.URL = zentao.URL(row.ObjectType, "view", fmt.Sprintf("projectID=%d", objCtx.ProjectID))
 	}
 
 	// 历史时间线（前后 10 条）
