@@ -1,0 +1,92 @@
+// =============================================================================
+// 文件: internal/module/testtask/handler.go
+// 模块: 提测办理
+// 类型: action
+// 职责: 提测上下文 HTTP 接口。
+// 依赖: internal/pkg/errorx
+// =============================================================================
+
+package testtask
+
+import (
+	"net/http"
+	"strconv"
+	"strings"
+
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+
+	"workbench/internal/middleware"
+	"workbench/internal/pkg/errorx"
+)
+
+// Handler 提测办理 HTTP。
+type Handler struct {
+	svc    *Service
+	logger *zap.Logger
+}
+
+// NewHandler 创建 Handler。
+func NewHandler(svc *Service, logger *zap.Logger) *Handler {
+	return &Handler{svc: svc, logger: logger}
+}
+
+// RegisterRoutes 注册提测路由（挂载在已登录的根 group）。
+func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
+	g := rg.Group("")
+	g.GET("/demands/:id/testtask", h.GetContext)
+}
+
+// GetContext GET /demands/:id/testtask — 返回当前需求上下文 JSON。
+func (h *Handler) GetContext(c *gin.Context) {
+	id, err := parseDemandID(c.Param("id"))
+	if err != nil || id == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "需求 ID 无效"})
+		return
+	}
+
+	resp, svcErr := h.svc.GetContext(c.Request.Context(), middleware.CurrentUser(c), id)
+	if svcErr != nil {
+		if h.logger != nil {
+			h.logger.Error("testtask context", zap.Error(svcErr), zap.Uint("id", id))
+		}
+		status, msg := contextHTTPError(svcErr)
+		c.JSON(status, gin.H{"message": msg})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    resp,
+	})
+}
+
+func parseDemandID(raw string) (uint, error) {
+	raw = strings.TrimSpace(raw)
+	if len(raw) >= 2 && strings.EqualFold(raw[:2], "US") {
+		raw = raw[2:]
+	}
+	if strings.HasPrefix(raw, "#") {
+		raw = strings.TrimPrefix(raw, "#")
+	}
+	n, err := strconv.ParseUint(raw, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return uint(n), nil
+}
+
+func contextHTTPError(err error) (int, string) {
+	if biz, ok := errorx.IsBizError(err); ok {
+		switch biz.Code {
+		case errorx.ErrCodeNotFound:
+			return http.StatusNotFound, biz.Msg
+		case errorx.ErrCodeForbidden:
+			return http.StatusForbidden, biz.Msg
+		case errorx.ErrCodeInvalidParam:
+			return http.StatusBadRequest, biz.Msg
+		}
+		return http.StatusBadRequest, biz.Msg
+	}
+	return http.StatusInternalServerError, "获取提测上下文失败"
+}

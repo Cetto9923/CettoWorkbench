@@ -28,6 +28,7 @@ import (
 	"workbench/internal/module/query"
 	"workbench/internal/module/role"
 	"workbench/internal/module/schedule"
+	"workbench/internal/module/testtask"
 	"workbench/internal/module/user"
 	ratelimitpkg "workbench/internal/pkg/ratelimit"
 )
@@ -48,6 +49,7 @@ type RouteDeps struct {
 	RoleHandler         *role.Handler
 	PoHandler           *pomodule.Handler
 	ScheduleHandler     *schedule.Handler
+	TesttaskHandler     *testtask.Handler
 	QueryHandler        *query.Handler
 	MetricsHandler      *metrics.Handler
 	ProfileHandler      *profile.Handler
@@ -95,6 +97,9 @@ func registerRoutes(r *gin.Engine, deps RouteDeps) {
 		}
 		if deps.ScheduleHandler != nil {
 			deps.ScheduleHandler.RegisterRoutes(po)
+		}
+		if deps.TesttaskHandler != nil {
+			deps.TesttaskHandler.RegisterRoutes(po)
 		}
 		if deps.QueryHandler != nil {
 			deps.QueryHandler.RegisterRoutes(po)

@@ -1,0 +1,400 @@
+{{/* ==========================================================================
+文件: web/templates/components/po_testtask_modal.html
+模块: PO工作台
+职责: 提测办理向导弹窗片段（components 下自动参与所有页面模板编译）
+========================================================================== */}}
+
+
+{{ define "po/testtask_form" }}
+<div class="po-testtask-form" id="poTesttaskFormRoot">
+  <h2 class="po-testtask-title">
+    <span>提测办理</span>
+    <span class="po-testtask-req-id" data-tt-demand-id>#62658</span>
+    <span data-tt-demand-title>US61832-01-对前期"还款计划变更"需求进行优化</span>
+    <span class="po-testtask-stage-tag" data-tt-stage>当前阶段：排期</span>
+  </h2>
+
+  <div class="po-testtask-panel">
+    <div class="po-testtask-panel-title">
+      <span class="icon-badge"><i class="fas fa-clipboard-list"></i></span>
+      <span>当前需求上下文</span>
+    </div>
+    <div class="po-testtask-kv-grid">
+      <div>
+        <div class="label">业务需求ID</div>
+        <div data-tt-demand-id>#62658</div>
+      </div>
+      <div>
+        <div class="label">当前价值流阶段</div>
+        <div data-tt-stage-text>提测</div>
+      </div>
+      <div>
+        <div class="label">需求原始状态</div>
+        <div data-tt-raw-status>研发中</div>
+      </div>
+      <div>
+        <div class="label">主系统</div>
+        <div data-tt-main-system>信贷管理系统</div>
+      </div>
+      <div>
+        <div class="label">预计上线</div>
+        <div data-tt-estimate-launch>2025-09-04</div>
+      </div>
+      <div>
+        <div class="label">业务需求负责人</div>
+        <div data-tt-bra-name>程锐(003030)</div>
+      </div>
+      <div>
+        <div class="label">研发负责人 / 测试负责人</div>
+        <div data-tt-rd-qd-name>孙晓盼(008239)/KJ001735(KJ001735)</div>
+      </div>
+      <div>
+        <div class="label">提测办理人</div>
+        <div data-tt-handler-name>程锐(003030)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="po-testtask-panel">
+    <div class="po-testtask-steps" id="poTesttaskSteps">
+      <div class="po-testtask-step">
+        <div class="po-testtask-step-dot is-active" data-tt-step-dot="1">1</div>
+        <span>是否联调测试单</span>
+      </div>
+      <div class="po-testtask-step-line"></div>
+      <div class="po-testtask-step">
+        <div class="po-testtask-step-dot" data-tt-step-dot="2">2</div>
+        <span>配置系统版本</span>
+      </div>
+      <div class="po-testtask-step-line"></div>
+      <div class="po-testtask-step">
+        <div class="po-testtask-step-dot" data-tt-step-dot="3">3</div>
+        <span>版本关联需求</span>
+      </div>
+      <div class="po-testtask-step-line"></div>
+      <div class="po-testtask-step">
+        <div class="po-testtask-step-dot" data-tt-step-dot="4">4</div>
+        <span>配置测试单</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="po-testtask-step-panel" data-tt-panel="1">
+    <div class="po-testtask-panel">
+      <div class="po-testtask-panel-title">是否联调测试单</div>
+      <div class="po-testtask-radio-row">
+        <label><input type="radio" name="isJointTest" value="0" checked /> 否</label>
+        <label><input type="radio" name="isJointTest" value="1" /> 是</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="po-testtask-step-panel po-testtask-hidden" data-tt-panel="2">
+    <div class="po-testtask-panel">
+      <div class="po-testtask-panel-head-row">
+        <div class="po-testtask-panel-title" style="margin:0">按系统配置版本基础信息</div>
+        <div class="meta">共 2 个系统</div>
+      </div>
+
+      <div class="po-testtask-unit" data-tt-unit="1">
+        <div class="po-testtask-unit-head">
+          <div class="po-testtask-unit-name">
+            <i class="fas fa-folder-open"></i>
+            <span>打印中心</span>
+            <span class="po-testtask-sys-badge is-main">主</span>
+          </div>
+        </div>
+        <div class="po-testtask-unit-body">
+          <div class="po-testtask-field-label"><span class="req">*</span> 版本模式</div>
+          <div class="po-testtask-radio-row">
+            <label><input type="radio" name="ver1Mode" value="new" checked /> 创建新版本</label>
+            <label><input type="radio" name="ver1Mode" value="exist" /> 使用已有版本</label>
+          </div>
+          <div class="po-testtask-field">
+            <div class="po-testtask-field-label"><span class="req">*</span> 所属执行</div>
+            <select data-tt-exec="1">
+              <option value="">请选择执行</option>
+              <option value="P01/E-1001">信贷项目/执行-1001</option>
+              <option value="P01/E-1002">信贷项目/执行-1002</option>
+              <option value="P02/E-2001">打印中心项目/执行-2001</option>
+            </select>
+          </div>
+          <div data-tt-new-base="1">
+            <div class="po-testtask-grid-2">
+              <div class="po-testtask-field">
+                <div class="po-testtask-field-label"><span class="req">*</span> 新版本名称</div>
+                <input type="text" value="20260908-US62658-提测版本" />
+              </div>
+              <div class="po-testtask-field">
+                <div class="po-testtask-field-label"><span class="req">*</span> 计划上线日期</div>
+                <input type="date" value="2025-09-04" />
+              </div>
+            </div>
+            <div class="po-testtask-field">
+              <div class="po-testtask-field-label">版本说明 (可选)</div>
+              <input type="text" />
+            </div>
+          </div>
+          <div class="po-testtask-hidden" data-tt-exist-base="1">
+            <div class="po-testtask-grid-2">
+              <div class="po-testtask-field">
+                <div class="po-testtask-field-label"><span class="req">*</span> 已有版本名称</div>
+                <select data-tt-exist-ver="1">
+                  <option value="">请先选择所属执行，再选取版本</option>
+                  <option value="v1">20250801-已有版本-A</option>
+                  <option value="v2">20250815-已有版本-B</option>
+                </select>
+              </div>
+              <div class="po-testtask-field">
+                <div class="po-testtask-field-label">计划上线日期</div>
+                <input type="date" class="is-readonly" data-tt-exist-date="1" readonly />
+              </div>
+            </div>
+            <div class="po-testtask-field">
+              <div class="po-testtask-field-label">版本说明 (可选)</div>
+              <input type="text" class="is-readonly" data-tt-exist-desc="1" readonly />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="po-testtask-unit" data-tt-unit="2">
+        <div class="po-testtask-unit-head">
+          <div class="po-testtask-unit-name">
+            <i class="fas fa-folder-open"></i>
+            <span>信贷管理系统</span>
+            <span class="po-testtask-sys-badge is-sub">配</span>
+          </div>
+        </div>
+        <div class="po-testtask-unit-body">
+          <div class="po-testtask-field-label"><span class="req">*</span> 版本模式</div>
+          <div class="po-testtask-radio-row">
+            <label><input type="radio" name="ver2Mode" value="new" checked /> 创建新版本</label>
+            <label><input type="radio" name="ver2Mode" value="exist" /> 使用已有版本</label>
+          </div>
+          <div class="po-testtask-check-row" data-tt-integrate-wrap="2">
+            <label><input type="checkbox" name="ver2IsIntegrate" value="1" /> 集成版本</label>
+          </div>
+          <div class="po-testtask-field">
+            <div class="po-testtask-field-label"><span class="req">*</span> 所属执行</div>
+            <select data-tt-exec="2">
+              <option value="">请选择执行</option>
+              <option value="P01/E-1001">信贷项目/执行-1001</option>
+              <option value="P01/E-1002">信贷项目/执行-1002</option>
+              <option value="P02/E-2001">打印中心项目/执行-2001</option>
+            </select>
+          </div>
+          <div data-tt-new-base="2">
+            <div class="po-testtask-grid-2">
+              <div class="po-testtask-field">
+                <div class="po-testtask-field-label"><span class="req">*</span> 新版本名称</div>
+                <input type="text" value="20260908-US62658-提测版本" />
+              </div>
+              <div class="po-testtask-field">
+                <div class="po-testtask-field-label"><span class="req">*</span> 计划上线日期</div>
+                <input type="date" value="2025-09-04" />
+              </div>
+            </div>
+            <div class="po-testtask-field">
+              <div class="po-testtask-field-label">版本说明 (可选)</div>
+              <input type="text" />
+            </div>
+          </div>
+          <div class="po-testtask-hidden" data-tt-exist-base="2">
+            <div class="po-testtask-grid-2">
+              <div class="po-testtask-field">
+                <div class="po-testtask-field-label"><span class="req">*</span> 已有版本名称</div>
+                <select data-tt-exist-ver="2">
+                  <option value="">请先选择所属执行，再选取版本</option>
+                  <option value="v1">20250801-已有版本-A</option>
+                  <option value="v2">20250815-已有版本-B</option>
+                </select>
+              </div>
+              <div class="po-testtask-field">
+                <div class="po-testtask-field-label">计划上线日期</div>
+                <input type="date" class="is-readonly" data-tt-exist-date="2" readonly />
+              </div>
+            </div>
+            <div class="po-testtask-field">
+              <div class="po-testtask-field-label">版本说明 (可选)</div>
+              <input type="text" class="is-readonly" data-tt-exist-desc="2" readonly />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="po-testtask-step-panel po-testtask-hidden" data-tt-panel="3">
+    <div class="po-testtask-panel">
+      <div class="po-testtask-panel-title">各系统版本关联需求配置</div>
+
+      <div class="po-testtask-unit">
+        <div class="po-testtask-unit-name" style="margin-bottom:8px">
+          <i class="fas fa-folder-open"></i>
+          <span>打印中心</span>
+          <span class="po-testtask-sys-badge is-main">主</span>
+        </div>
+        <div class="po-testtask-unit-body">
+          <div data-tt-link-edit="1">
+            <div class="po-testtask-link-actions">
+              <div class="po-testtask-field-label">版本关联需求（可多选）</div>
+              <button type="button" class="po-testtask-link-add">+ 添加已有需求</button>
+            </div>
+            <div class="po-testtask-link-list">
+              <label><input type="checkbox" checked /> #62658 US61832-01-还款计划变更优化(当前需求)</label>
+              <label><input type="checkbox" /> #62100 US61220-01-利息计算调整</label>
+            </div>
+          </div>
+          <div class="po-testtask-hidden" data-tt-link-readonly="1">
+            <div class="po-testtask-field-label">版本已关联需求（只读，取自已有版本）</div>
+            <div class="po-testtask-link-readonly">
+              <div>#62658 US61832-01-还款计划变更优化</div>
+              <div>#62100 US61220-01-利息计算调整</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="po-testtask-unit">
+        <div class="po-testtask-unit-name" style="margin-bottom:8px">
+          <i class="fas fa-folder-open"></i>
+          <span>信贷管理系统</span>
+          <span class="po-testtask-sys-badge is-sub">配</span>
+        </div>
+        <div class="po-testtask-unit-body">
+          <div data-tt-link-edit="2">
+            <div class="po-testtask-link-actions">
+              <div class="po-testtask-field-label">版本关联需求（可多选）</div>
+              <button type="button" class="po-testtask-link-add">+ 添加已有需求</button>
+            </div>
+            <div class="po-testtask-link-list">
+              <label><input type="checkbox" checked /> #62658 US61832-01-还款计划变更优化(当前需求)</label>
+            </div>
+          </div>
+          <div class="po-testtask-hidden" data-tt-link-readonly="2">
+            <div class="po-testtask-field-label">版本已关联需求（只读，取自已有版本）</div>
+            <div class="po-testtask-link-readonly">
+              <div>#62658 US61832-01-还款计划变更优化</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="po-testtask-step-panel po-testtask-hidden" data-tt-panel="4">
+    <div data-tt-joint-single>
+      <div class="po-testtask-panel">
+        <div class="po-testtask-panel-title">各系统独立测试单</div>
+        <div class="po-testtask-unit">
+          <div class="po-testtask-unit-title">打印中心-测试单</div>
+          <div class="po-testtask-grid-4">
+            <div class="po-testtask-field">
+              <div class="po-testtask-field-label"><span class="req">*</span> 测试单名称</div>
+              <input type="text" value="20260908-US62658-提测版本-测试单" />
+            </div>
+            <div class="po-testtask-field">
+              <div class="po-testtask-field-label"><span class="req">*</span> 测试负责人</div>
+              <input type="text" value="KJ001735(KJ001735)" />
+            </div>
+            <div class="po-testtask-field">
+              <div class="po-testtask-field-label">开始日期</div>
+              <input type="date" value="2026-09-08" />
+            </div>
+            <div class="po-testtask-field">
+              <div class="po-testtask-field-label">结束日期</div>
+              <input type="date" value="2025-07-25" />
+            </div>
+          </div>
+          <div class="po-testtask-field">
+            <div class="po-testtask-field-label">测试说明 / 重点 (可选)</div>
+            <textarea></textarea>
+          </div>
+        </div>
+        <div class="po-testtask-unit">
+          <div class="po-testtask-unit-title">信贷管理系统-测试单</div>
+          <div class="po-testtask-grid-4">
+            <div class="po-testtask-field">
+              <div class="po-testtask-field-label"><span class="req">*</span> 测试单名称</div>
+              <input type="text" value="20260908-US62658-提测版本-测试单" />
+            </div>
+            <div class="po-testtask-field">
+              <div class="po-testtask-field-label"><span class="req">*</span> 测试负责人</div>
+              <input type="text" value="KJ001735(KJ001735)" />
+            </div>
+            <div class="po-testtask-field">
+              <div class="po-testtask-field-label">开始日期</div>
+              <input type="date" value="2026-09-08" />
+            </div>
+            <div class="po-testtask-field">
+              <div class="po-testtask-field-label">结束日期</div>
+              <input type="date" value="2025-07-25" />
+            </div>
+          </div>
+          <div class="po-testtask-field">
+            <div class="po-testtask-field-label">测试说明 / 重点 (可选)</div>
+            <textarea></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="po-testtask-hidden" data-tt-joint-global>
+      <div class="po-testtask-panel">
+        <div class="po-testtask-panel-title">联调总测试单</div>
+        <div class="po-testtask-unit">
+          <div class="po-testtask-grid-4">
+            <div class="po-testtask-field">
+              <div class="po-testtask-field-label"><span class="req">*</span> 测试单名称</div>
+              <input type="text" value="20260908-US62658-联调总测试单" />
+            </div>
+            <div class="po-testtask-field">
+              <div class="po-testtask-field-label"><span class="req">*</span> 测试负责人</div>
+              <input type="text" value="KJ001735(KJ001735)" />
+            </div>
+            <div class="po-testtask-field">
+              <div class="po-testtask-field-label">开始日期</div>
+              <input type="date" value="2026-09-08" />
+            </div>
+            <div class="po-testtask-field">
+              <div class="po-testtask-field-label">结束日期</div>
+              <input type="date" value="2025-07-25" />
+            </div>
+          </div>
+          <div class="po-testtask-field">
+            <div class="po-testtask-field-label">测试说明 / 重点 (可选)</div>
+            <textarea></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="po-testtask-actions">
+      <button type="button" class="po-testtask-btn" id="poTesttaskSaveDraftBtn">保存草稿</button>
+      <button type="button" class="po-testtask-btn is-primary" id="poTesttaskSubmitBtn">提交提测</button>
+    </div>
+  </div>
+
+  <div class="po-testtask-nav">
+    <button type="button" class="po-testtask-btn po-testtask-hidden" id="poTesttaskPrevBtn">上一步</button>
+    <button type="button" class="po-testtask-btn is-primary" id="poTesttaskNextBtn">下一步</button>
+  </div>
+</div>
+{{ end }}
+
+{{ define "po/testtask" }}
+<div class="po-testtask-overlay" id="poTesttaskOverlay"></div>
+<div class="po-testtask-modal" id="poTesttaskModal" role="dialog" aria-labelledby="poTesttaskModalTitle">
+  <div class="po-testtask-modal-hdr">
+    <h3 id="poTesttaskModalTitle">
+      <i class="fas fa-vial"></i>
+      <span>提测办理</span>
+      <span class="po-testtask-req-id" id="poTesttaskModalDemandId"></span>
+      <span id="poTesttaskModalDemandName"></span>
+    </h3>
+    <button type="button" class="po-testtask-modal-close" id="poTesttaskCloseBtn" aria-label="关闭"><i class="fas fa-xmark"></i></button>
+  </div>
+  <div class="po-testtask-modal-body">
+    {{ template "po/testtask_form" . }}
+  </div>
+</div>
+{{ end }}

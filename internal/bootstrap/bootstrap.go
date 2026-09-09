@@ -42,6 +42,7 @@ import (
 	"workbench/internal/module/query"
 	"workbench/internal/module/role"
 	"workbench/internal/module/schedule"
+	"workbench/internal/module/testtask"
 	"workbench/internal/module/user"
 	"workbench/internal/pkg/database"
 	"workbench/internal/pkg/flash"
@@ -164,6 +165,10 @@ func Run() error {
 	sqlPerfSvc := debug.NewService(sqlPerfRepo)
 	sqlPerfHandler := debug.NewHandler(sqlPerfSvc)
 
+	testtaskRepo := testtask.NewRepo(dbReadonlyOrPrimary(dbReadonly, db))
+	testtaskSvc := testtask.NewService(testtaskRepo, userSvc, zapLog)
+	testtaskHandler := testtask.NewHandler(testtaskSvc, zapLog)
+
 	routeDeps := server.RouteDeps{
 		SessionMgr:          sessionMgr,
 		DB:                  db,
@@ -179,6 +184,7 @@ func Run() error {
 		RoleHandler:         roleHandler,
 		PoHandler:           poHandler,
 		ScheduleHandler:     scheduleHandler,
+		TesttaskHandler:     testtaskHandler,
 		QueryHandler:        queryHandler,
 		MetricsHandler:      metricsHandler,
 		ProfileHandler:      profileHandler,

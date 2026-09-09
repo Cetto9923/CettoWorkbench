@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulemodal.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/scheduleintegrated.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedule-inline.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/testtask.css" }}">
 {{ end }}
 
 {{ define "content" }}
@@ -283,6 +284,7 @@
 {{ template "schedule/window_modal" . }}
 {{ template "schedule/integrated_rows" . }}
 {{ template "schedule/window_plans" . }}
+{{ template "po/testtask" . }}
 {{ end }}
 
 {{ define "page_js" }}
@@ -295,6 +297,7 @@
 <script src="{{ asset "/static/js/po/demand-detail.js" }}"></script>
 <script src="{{ asset "/static/js/po/demand-clarify.js" }}"></script>
 <script src="{{ asset "/static/js/po/homereview.js" }}"></script>
+<script src="{{ asset "/static/js/po/testtask.js" }}"></script>
 <script src="{{ asset "/static/js/po/home.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/schedulefetch.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/schedulewindowdraft.js" }}"></script>
