@@ -115,6 +115,7 @@ type DoneAction struct {
 	ProjectName     string `json:"projectName"`
 	ExecutionName   string `json:"executionName"`
 	ProductName     string `json:"productName"`
+	PoolName        string `json:"poolName"`
 	CommentSummary  string `json:"commentSummary"`
 	NextOwnerName   string `json:"nextOwnerName"`
 	CanOpenObject   bool   `json:"canOpenObject"`
@@ -199,6 +200,7 @@ type DoneDetailContext struct {
 	ProductName   string `json:"productName"`
 	ProjectName   string `json:"projectName"`
 	ExecutionName string `json:"executionName"`
+	PoolName      string `json:"poolName"`
 	CurrentStatus string `json:"currentStatus"`
 	CurrentOwner  string `json:"currentOwner"`
 }

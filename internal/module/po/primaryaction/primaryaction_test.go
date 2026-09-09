@@ -14,27 +14,101 @@ import (
 	"testing"
 )
 
-// TestDerive_AcceptStage 受理阶段：§4-1 阻塞，key 仍返回 + enabled=false + 中文 reason。
+// TestDerive_AcceptStage 评审阶段：待我评审、创建人撤回/提交评审、他人只读。
 func TestDerive_AcceptStage(t *testing.T) {
-	in := Input{
-		Stage:               StageAccept,
-		Kind:                ObjectBusinessDemand,
-		ObjectID:            100,
-		HasAcceptCapability: true,
-	}
-	pa := Derive(in)
-	if pa.Key != string(KeyApprove) {
-		t.Fatalf("StageAccept key = %q, want %q", pa.Key, KeyApprove)
-	}
-	if pa.Kind != string(KindDrawer) {
-		t.Fatalf("StageAccept kind = %q, want %q", pa.Kind, KindDrawer)
-	}
-	if pa.Enabled {
-		t.Fatal("StageAccept must be disabled (PLAN §4-1)")
-	}
-	if !strings.Contains(pa.Reason, "审批") {
-		t.Fatalf("StageAccept reason should mention '审批', got %q", pa.Reason)
-	}
+	// 1. 待评审 + 待我评审 -> 评审按钮
+	t.Run("wait_and_can_review", func(t *testing.T) {
+		in := Input{
+			Stage:               StageAccept,
+			Status:              "wait",
+			Kind:                ObjectBusinessDemand,
+			ObjectID:            100,
+			CanReview:           true,
+			HasAcceptCapability: true,
+		}
+		pa := Derive(in)
+		if pa.Key != string(KeyApprove) {
+			t.Fatalf("StageAccept key = %q, want %q", pa.Key, KeyApprove)
+		}
+		if pa.Label != "评审" {
+			t.Fatalf("StageAccept label = %q, want 评审", pa.Label)
+		}
+		if pa.Kind != string(KindDrawer) {
+			t.Fatalf("StageAccept kind = %q, want %q", pa.Kind, KindDrawer)
+		}
+		if !pa.Enabled {
+			t.Fatal("StageAccept must be enabled")
+		}
+		if pa.URL != "/demands/100/review" {
+			t.Fatalf("StageAccept URL = %q, want local review endpoint", pa.URL)
+		}
+	})
+
+	// 2. 待评审 + 非待我评审 + 创建人 -> 撤回评审按钮
+	t.Run("wait_and_is_creator", func(t *testing.T) {
+		in := Input{
+			Stage:     StageAccept,
+			Status:    "wait",
+			Kind:      ObjectBusinessDemand,
+			ObjectID:  101,
+			CanReview: false,
+			IsCreator: true,
+		}
+		pa := Derive(in)
+		if pa.Key != string(KeyWithdrawReview) {
+			t.Fatalf("key = %q, want %q", pa.Key, KeyWithdrawReview)
+		}
+		if pa.Label != "撤回" {
+			t.Fatalf("label = %q, want 撤回", pa.Label)
+		}
+		if !pa.Enabled {
+			t.Fatal("withdraw_review must be enabled")
+		}
+		if pa.URL != "/demands/101/withdraw-review" {
+			t.Fatalf("URL = %q, want /demands/101/withdraw-review", pa.URL)
+		}
+	})
+
+	// 3. 草稿/驳回 + 创建人 -> 提交评审按钮
+	t.Run("draft_or_refuse_and_is_creator", func(t *testing.T) {
+		for _, st := range []string{"draft", "refuse"} {
+			in := Input{
+				Stage:     StageAccept,
+				Status:    st,
+				Kind:      ObjectBusinessDemand,
+				ObjectID:  102,
+				IsCreator: true,
+			}
+			pa := Derive(in)
+			if pa.Key != string(KeySubmitReview) {
+				t.Fatalf("status %s key = %q, want %q", st, pa.Key, KeySubmitReview)
+			}
+			if pa.Label != "提交评审" {
+				t.Fatalf("status %s label = %q, want 提交评审", st, pa.Label)
+			}
+			if !pa.Enabled {
+				t.Fatalf("status %s submit_review must be enabled", st)
+			}
+		}
+	})
+
+	// 4. 草稿/驳回/非待我评审的待评审 + 他人 -> None (—)
+	t.Run("others_none", func(t *testing.T) {
+		for _, st := range []string{"draft", "refuse", "wait"} {
+			in := Input{
+				Stage:     StageAccept,
+				Status:    st,
+				Kind:      ObjectBusinessDemand,
+				ObjectID:  103,
+				CanReview: false,
+				IsCreator: false,
+			}
+			pa := Derive(in)
+			if pa.Key != "" || pa.Enabled {
+				t.Fatalf("status %s for others should be None, got %+v", st, pa)
+			}
+		}
+	})
 }
 
 // TestDerive_ClarifyStage 澄清：enabled 由 HasClarifyCapability 控制。
@@ -65,36 +139,36 @@ func TestDerive_ClarifyStage(t *testing.T) {
 			if !c.wantEnabled && !strings.Contains(pa.Reason, c.wantReasonHint) {
 				t.Fatalf("reason = %q, want contain %q", pa.Reason, c.wantReasonHint)
 			}
-			if !strings.Contains(pa.URL, "/demands/101/detail") {
-				t.Fatalf("url should target demand detail, got %q", pa.URL)
+			if pa.URL != "/demands/101/clarify" {
+				t.Fatalf("url = %q, want local clarify endpoint", pa.URL)
 			}
 		})
 	}
 }
 
-// TestDerive_ScheduleStage 排期：业务需求 → /schedule/demands/:id；独立研需 → /schedule/stories/:id。
+// TestDerive_ScheduleStage 排期：按对象类型进入 Workbench 排期办理页。
 func TestDerive_ScheduleStage(t *testing.T) {
 	biz := Derive(Input{
 		Stage: StageSchedule, Kind: ObjectBusinessDemand, ObjectID: 200,
 		HasScheduleCapability: true,
 	})
-	if biz.Enabled != true {
-		t.Fatal("biz schedule should be enabled")
+	if !biz.Enabled || biz.Kind != string(KindSchedule) {
+		t.Fatalf("biz schedule should be enabled, got %+v", biz)
 	}
 	if !strings.Contains(biz.URL, "/schedule/demands/200/scheduling") {
-		t.Fatalf("biz schedule url = %q", biz.URL)
+		t.Fatalf("url = %q", biz.URL)
 	}
 
 	story := Derive(Input{
 		Stage: StageSchedule, Kind: ObjectIndependentStory, ObjectID: 300,
 		HasScheduleCapability: true,
 	})
-	if !strings.Contains(story.URL, "/schedule/stories/300/scheduling") {
-		t.Fatalf("story schedule url = %q", story.URL)
+	if !story.Enabled || !strings.Contains(story.URL, "/schedule/stories/300/scheduling") {
+		t.Fatalf("story schedule should be enabled, got %+v", story)
 	}
 }
 
-// TestDerive_SubmitTestStage 提测：§4-2 阻塞，enabled=false + reason 提测 endpoint 未配置。
+// TestDerive_SubmitTestStage 提测：进入保留的 Workbench 办理页。
 func TestDerive_SubmitTestStage(t *testing.T) {
 	pa := Derive(Input{
 		Stage: StageDeveloping, Kind: ObjectBusinessDemand, ObjectID: 400,
@@ -103,11 +177,8 @@ func TestDerive_SubmitTestStage(t *testing.T) {
 	if pa.Key != string(KeySubmitTest) {
 		t.Fatalf("key = %q, want %q", pa.Key, KeySubmitTest)
 	}
-	if pa.Enabled {
-		t.Fatal("submit_test must be disabled (PLAN §4-2)")
-	}
-	if !strings.Contains(pa.Reason, "提测") {
-		t.Fatalf("reason = %q", pa.Reason)
+	if !pa.Enabled || pa.Kind != string(KindInternal) || !strings.Contains(pa.URL, "/demands/400/submit-test") {
+		t.Fatalf("submit_test should enter Workbench page, got %+v", pa)
 	}
 }
 
@@ -173,10 +244,10 @@ func TestDerive_AcceptanceStage(t *testing.T) {
 		if pa.Key != string(KeyAcceptDone) {
 			t.Fatalf("key = %q, want %q", pa.Key, KeyAcceptDone)
 		}
-		if !pa.Enabled {
-			t.Fatal("self acceptance must be enabled")
+		if !pa.Enabled || pa.Kind != string(KindDrawer) {
+			t.Fatalf("acceptance should use native drawer entry, got %+v", pa)
 		}
-		if !strings.Contains(pa.URL, "/demands/600/accept-done") {
+		if pa.URL != "/demands/600/acceptance" {
 			t.Fatalf("url = %q", pa.URL)
 		}
 	})
@@ -190,7 +261,7 @@ func TestDerive_AcceptanceStage(t *testing.T) {
 			t.Fatalf("key = %q, want %q", pa.Key, KeyRemindAccept)
 		}
 		if !pa.Enabled {
-			t.Fatal("not-self with urge must be enabled")
+			t.Fatal("urge must be enabled for the responsible user")
 		}
 	})
 
@@ -211,16 +282,16 @@ func TestDerive_AcceptanceStage(t *testing.T) {
 	})
 }
 
-// TestDerive_DeliverStage 发起交付：能力缺失则禁用。
+// TestDerive_DeliverStage 发起交付：有权限进入交付抽屉。
 func TestDerive_DeliverStage(t *testing.T) {
 	pa := Derive(Input{
 		Stage: StageDeliver, Kind: ObjectBusinessDemand, ObjectID: 700,
 		HasDeliverCapability: true,
 	})
-	if pa.Key != string(KeyDeliver) || !pa.Enabled {
-		t.Fatalf("deliver enabled = %v key = %q", pa.Enabled, pa.Key)
+	if pa.Key != string(KeyDeliver) || !pa.Enabled || pa.Kind != string(KindDrawer) {
+		t.Fatalf("deliver must open drawer: %+v", pa)
 	}
-	if !strings.Contains(pa.URL, "/demands/700/deliver") {
+	if pa.URL != "/demands/700/deliver" {
 		t.Fatalf("url = %q", pa.URL)
 	}
 }
@@ -244,7 +315,7 @@ func TestDerive_FeedbackStage(t *testing.T) {
 			HasEvaluateCapability:  true,
 			HasPendingEvaluateTask: true,
 		})
-		if pa.Key != string(KeyEvaluate) || !pa.Enabled {
+		if pa.Key != string(KeyEvaluate) || !pa.Enabled || pa.Kind != string(KindExternal) {
 			t.Fatalf("pending evaluate key/enabled = %q/%v", pa.Key, pa.Enabled)
 		}
 	})
@@ -254,11 +325,8 @@ func TestDerive_FeedbackStage(t *testing.T) {
 			HasReadCapability:     true,
 			HasHistoricalEvaluate: true,
 		})
-		if pa.Key != string(KeyViewEvaluate) || !pa.Enabled {
-			t.Fatalf("history evaluate key/enabled = %q/%v", pa.Key, pa.Enabled)
-		}
-		if !strings.Contains(pa.URL, "/demands/901/detail?tab=history") {
-			t.Fatalf("url = %q", pa.URL)
+		if pa.Key != "" || pa.Enabled {
+			t.Fatalf("historical evaluate must have no PO action, got %+v", pa)
 		}
 	})
 	t.Run("none", func(t *testing.T) {

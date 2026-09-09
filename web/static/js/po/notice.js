@@ -92,7 +92,7 @@
     business: "业务需求", sub_demand: "子需求", story: "研发需求",
     independent_story: "独立研发需求", task: "任务", bug: "Bug",
     testtask: "测试单", issue: "问题", risk: "风险", approval: "审批",
-    feedback: "反馈", charter: "立项", mail: "邮件", project: "项目",
+    feedback: "反馈", charter: "章程", mail: "邮件", project: "项目",
     demand: "需求"
   };
   var OBJECT_KIND_FROM_API = {
@@ -109,7 +109,7 @@
     task: ["任务", "task"], bug: ["Bug", "bug"],
     testtask: ["测试", "测试单", "test"], issue: ["问题", "issue"],
     risk: ["风险", "risk"], approval: ["审批", "approval"],
-    feedback: ["反馈", "feedback"], charter: ["立项", "charter"],
+    feedback: ["反馈", "feedback"], charter: ["章程", "charter"],
     project: ["项目", "project"], mail: ["邮件"]
   };
 
@@ -171,8 +171,11 @@
     var badgeHtml = "";
     if (canon && canon !== "mail" && OBJECT_TYPE_LABELS[canon]) {
       var displayID = !isReminderTemplate ? displayObjectID(canon, oid) : "";
-      var badgeText = OBJECT_TYPE_LABELS[canon] + (displayID ? " " + displayID : "");
-      badgeHtml = '<span class="notice-tag notice-tag-' + esc(canon) + '">' + esc(badgeText) + "</span>";
+      var idHtml = displayID ? '<span class="table-id-link">' + esc(displayID) + "</span>" : "";
+      var pl = window.PersonalList;
+      badgeHtml = (pl && pl.idChipHtml)
+        ? pl.idChipHtml(canon, idHtml)
+        : '<span class="wb-type wb-type-' + esc(canon) + '">' + esc((pl && pl.OBJECT_TYPE_SHORT_LABELS && pl.OBJECT_TYPE_SHORT_LABELS[canon]) || OBJECT_TYPE_LABELS[canon]) + (idHtml ? "#" + idHtml : "") + "</span>";
     }
 
     // 仅在 canon + oid 都能在 subject 文本里稳定命中时才剥前缀；reminder 模板不剥。
@@ -470,11 +473,7 @@
     if ($("noticeDrawerClose")) $("noticeDrawerClose").addEventListener("click", closeNoticeDrawer);
     if ($("noticeDrawerCloseBtn")) $("noticeDrawerCloseBtn").addEventListener("click", closeNoticeDrawer);
     var drawerMask = $("noticeDrawerMask");
-    if (drawerMask) {
-      drawerMask.addEventListener("click", function (e) {
-        if (e.target === drawerMask) closeNoticeDrawer();
-      });
-    }
+    if (drawerMask) drawerMask.addEventListener("click", function (e) { if (e.target === drawerMask) closeNoticeDrawer(); });
 
     var tbody = $("noticeTbody");
     if (tbody) {

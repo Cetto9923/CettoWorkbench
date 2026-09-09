@@ -1,0 +1,21 @@
+{{ define "page_css" }}
+<link rel="stylesheet" href="{{ asset "/static/css/po/personal-workspace.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/demand-detail.css" }}">
+{{ end }}
+{{ define "content" }}
+<main class="po-personal-workspace" id="demand-detail-page">
+  <header class="workspace-header"><div class="workspace-header-left">
+    <h2>需求详情</h2><p>业务需求 {{ .Demand.Summary.ID }} · {{ .Demand.Summary.Title }}</p>
+  </div></header>
+  <section class="home-page-card" aria-labelledby="demand-detail-title">
+    <h3 id="demand-detail-title">{{ .Demand.Summary.Title }}</h3>
+    <p>需求 ID：{{ .Demand.Summary.DemandID }}　价值流阶段：{{ .Demand.Summary.ValueStageLabel }}　原始状态：{{ .Demand.Summary.Status }}</p>
+    <p>主系统：{{ .Demand.Summary.MainSystemName }}　预计上线：{{ .Demand.Summary.EstimateLaunch }}</p>
+    <p>BRA：{{ .Demand.Summary.OwnerName }}　RD：{{ .Demand.Summary.CurrentOwner }}　QD：{{ .Demand.Summary.TestOwner }}</p>
+    {{ if .Demand.PrimaryAction }}<p>当前可执行操作：{{ .Demand.PrimaryAction.Label }}</p>{{ else }}<p>当前无可执行操作</p>{{ end }}
+  </section>
+  {{ if .Demand.Execution }}<section class="home-page-card"><h3>关联研发需求</h3>
+    <ul>{{ range .Demand.Execution.Stories }}<li>{{ .ID }}　{{ .Title }}　{{ .Status }}　任务进度：{{ .TasksDone }}/{{ .TasksTotal }}</li>{{ else }}<li>暂无关联研发需求</li>{{ end }}</ul>
+  </section>{{ end }}
+</main>
+{{ end }}

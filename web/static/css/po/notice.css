@@ -80,26 +80,9 @@
   flex-shrink: 0;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
-.po-notice .notice-tag-story { background: var(--color-info-bg, #eff6ff); color: var(--color-info-fill, #1d4ed8); border: 1px solid var(--color-info-border, #bfdbfe); }
-.po-notice .notice-tag-demand { background: var(--color-success-bg, #f0fdf4); color: var(--color-success-fill, #15803d); border: 1px solid var(--color-success-border, #bbf7d0); }
-.po-notice .notice-tag-task { background: #ecfeff; color: #0e7490; border: 1px solid #a5f3fc; }
-.po-notice .notice-tag-bug { background: var(--color-danger-bg, #fef2f2); color: var(--color-danger-strong, #b91c1c); border: 1px solid var(--color-danger-border, #fecaca); }
-.po-notice .notice-tag-charter { background: #f5f3ff; color: #6d28d9; border: 1px solid #ddd6fe; }
-.po-notice .notice-tag-feedback { background: var(--color-warning-bg, #fffbeb); color: var(--color-warning-fill, #b45309); border: 1px solid var(--color-warning-border, #fde68a); }
-.po-notice .notice-tag-project { background: var(--color-surface-muted, #f8fafc); color: var(--color-text-body, #475569); border: 1px solid var(--color-border-strong, #cbd5e1); }
-.po-notice .notice-tag-testtask { background: #fdf4ff; color: #a21caf; border: 1px solid #f5d0fe; }
-/* 与 OBJECT_KIND_FROM_API 归一后的 canon kind 对齐：
-   business/sub_demand/independent_story/issue/risk/approval/mail/unknown。
-   已知八种（story/demand/task/bug/charter/feedback/project/testtask）保留
-   原有色板不变；其余新增补齐，避免出现裸 span。 */
-.po-notice .notice-tag-business { background: var(--po-pri-3-bg); color: var(--po-pri-3-fg); border: 1px solid var(--po-pri-3-bd); }
-.po-notice .notice-tag-sub_demand { background: #f5f3ff; color: #7c3aed; border: 1px solid #ede9fe; }
-.po-notice .notice-tag-independent_story { background: #ecfeff; color: #0e7490; border: 1px solid #a5f3fc; }
-.po-notice .notice-tag-issue { background: var(--color-warning-bg, #fffbeb); color: var(--color-warning-fill, #b45309); border: 1px solid var(--color-warning-border, #fed7aa); }
-.po-notice .notice-tag-risk { background: var(--po-pri-1-bg); color: var(--po-pri-1-fg); border: 1px solid var(--po-pri-1-bd); }
-.po-notice .notice-tag-approval { background: var(--po-pri-1-bg); color: var(--po-pri-1-fg); border: 1px solid var(--po-pri-1-bd); }
-.po-notice .notice-tag-mail { background: var(--color-surface-muted, #f1f5f9); color: var(--color-text-body, #475569); border: 1px solid var(--color-border-strong, #cbd5e1); }
-.po-notice .notice-tag-unknown { background: var(--color-surface-muted, var(--color-surface-muted, #f1f5f9)); color: var(--color-text-secondary, var(--color-text-secondary, #64748b)); border: 1px solid var(--color-border, var(--color-border, #e2e8f0)); }
+/* 通知对象的「类型词 + 编号」chip 颜色已统一到 wb-priority.css 的
+   .wb-type / .wb-type-{kind}；此处不再维护独立的 .notice-tag-{kind} 色板，
+   避免双轨定义、忘记一处颜色漂移。 */
 
 .po-notice .notice-subject-sub {
   display: block;

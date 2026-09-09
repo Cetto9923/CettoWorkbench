@@ -127,7 +127,7 @@ const homeSrc = fs.readFileSync(path.join(__dirname, "../../../web/static/js/po/
 assert.ok(!/class="inline-pri/.test(homeSrc), "home.js must no longer emit inline-pri");
 assert.ok(!/class="type-pill/.test(homeSrc), "home.js must no longer emit type-pill");
 assert.ok(/priorityBadge\(/.test(homeSrc), "home.js must call priorityBadge()");
-assert.ok(/objectTypeBadge\(/.test(homeSrc), "home.js must call objectTypeBadge()");
+assert.ok(/objectTypeBadge\(|idChipHtml\(/.test(homeSrc), "home.js must call objectTypeBadge() or idChipHtml()");
 console.log("PASS: home.js consumer uses priorityBadge/objectTypeBadge (no inline color, no legacy class)");
 
 const followSrc = fs.readFileSync(path.join(__dirname, "../../../web/static/js/po/follow.js"), "utf8");

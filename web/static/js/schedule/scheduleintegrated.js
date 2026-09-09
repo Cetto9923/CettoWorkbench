@@ -422,7 +422,7 @@
       var $row = source.closest("tr");
       return $row.hasClass("schedule-indep-row") || $row.hasClass("schedule-indep-child-row");
     }
-    if (source && typeof source === "object" && source.isIndependent) {
+    if (source && typeof source === "object" && (source.isIndependent || source.fromIndependent || source.storyId || source.storyID)) {
       return true;
     }
     return false;
@@ -785,14 +785,9 @@
         detailUrl: source.detailUrl || "",
       };
       demandID = source.demandId || source.demandID || 0;
+      storyID = source.storyId || source.storyID || 0;
     } else {
-      ctx = {
-        id: "US—",
-        title: "—",
-        owner: "待分配",
-        system: "—",
-        detailUrl: "",
-      };
+      ctx = { id: "US—", title: "—", owner: "待分配", system: "—", detailUrl: "" };
     }
 
     resetIntegratedForm();

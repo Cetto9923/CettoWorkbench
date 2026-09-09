@@ -264,20 +264,17 @@ func TestDemandDetailHandler_401ForNilActor(t *testing.T) {
 	}
 }
 
-func TestDemandDetailView_RedirectsToHomeDrawer(t *testing.T) {
+func TestDemandDetailView_InvalidIDReturnsBadRequest(t *testing.T) {
 	handler, _ := setupDemandDetailHandler(t)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	req, _ := http.NewRequest(http.MethodGet, "/demands/US63319", nil)
+	req, _ := http.NewRequest(http.MethodGet, "/demands/not-a-number", nil)
 	c.Request = req
-	c.Params = gin.Params{gin.Param{Key: "id", Value: "US63319"}}
+	c.Params = gin.Params{gin.Param{Key: "id", Value: "not-a-number"}}
 
 	handler.DemandDetailView(c)
 
-	if w.Code != http.StatusFound {
-		t.Fatalf("expected HTTP 302, got %d", w.Code)
-	}
-	if got := w.Header().Get("Location"); got != "/home?openDemand=US63319" {
-		t.Errorf("redirect = %q, want home drawer URL", got)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected HTTP 400, got %d", w.Code)
 	}
 }

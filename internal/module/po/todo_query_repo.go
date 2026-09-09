@@ -22,6 +22,7 @@ type TodoPagedResult struct {
 	Total   int64
 	Summary TodoSummary
 	Groups  TodoGroupCounts
+	Facets  []TodoFacet
 }
 
 type todoUnifiedRow struct {
@@ -52,7 +53,7 @@ type todoCountsRow struct {
 }
 
 func (r *Repo) QueryTodoUnified(ctx context.Context, account string, req TodoListReq) (*TodoPagedResult, error) {
-	result := &TodoPagedResult{Items: []TodoItem{}, Summary: TodoSummary{}, Groups: TodoGroupCounts{}}
+	result := &TodoPagedResult{Items: []TodoItem{}, Summary: TodoSummary{}, Groups: TodoGroupCounts{}, Facets: buildTodoFacets(nil)}
 	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
 		return result, nil
 	}
@@ -87,6 +88,12 @@ func (r *Repo) QueryTodoUnified(ctx context.Context, account string, req TodoLis
 	}
 	result.Summary = TodoSummary{Pending: int(countRow.TotalPending), Today: int(countRow.TodayCount), Overdue: int(countRow.OverdueCount), Blocked: int(countRow.BlockedCount), P1: int(countRow.P1Count)}
 	result.Groups = TodoGroupCounts{All: int(countRow.TotalPending), Demand: int(countRow.DemandCount), Execution: int(countRow.TaskCount), Testing: int(countRow.BugCount)}
+
+	facets, err := r.countTodoFacets(ctx, account, req, displayMap, todayStr)
+	if err != nil {
+		return nil, err
+	}
+	result.Facets = facets
 
 	// 2. 统计应用 Tab 与 Focus 后的 Total
 	postTabWhere, postTabArgs := buildTodoOuterWhere(req, displayMap, true, todayStr)
@@ -138,8 +145,17 @@ func buildTodoUnionSQL(account string, req TodoListReq) (string, []interface{}) 
 	includeDemand := req.ObjectType == "" || req.ObjectType == "all" || req.ObjectType == "demand"
 	includeTask := req.ObjectType == "" || req.ObjectType == "all" || req.ObjectType == "task"
 	includeBug := req.ObjectType == "" || req.ObjectType == "all" || req.ObjectType == "bug"
+	includeApproval := req.ObjectType == "" || req.ObjectType == "all" || req.ObjectType == "approval"
+	includeStory := req.ObjectType == "" || req.ObjectType == "all" || req.ObjectType == "story"
+	includeRisk := req.ObjectType == "" || req.ObjectType == "all" || req.ObjectType == "risk"
+	includeIssue := req.ObjectType == "" || req.ObjectType == "all" || req.ObjectType == "issue"
+	includePersonal := req.ObjectType == "" || req.ObjectType == "all" || req.ObjectType == "todo"
+	includeTesttask := req.ObjectType == "" || req.ObjectType == "all" || req.ObjectType == "testtask"
+
 	if (req.Stage != "" && req.Stage != "all") || (req.Action != "" && req.Action != "all") {
 		includeTask, includeBug = false, false
+		includeApproval, includeStory = false, false
+		includeRisk, includeIssue, includePersonal, includeTesttask = false, false, false, false
 	}
 
 	var parts []string
@@ -180,10 +196,100 @@ func buildTodoUnionSQL(account string, req TodoListReq) (string, []interface{}) 
 		args = append(args, account)
 		parts = append(parts, bugSQL)
 	}
+	if includeApproval {
+		sql, a := buildTodoApprovalSQL(account)
+		parts = append(parts, sql)
+		args = append(args, a...)
+	}
+	if includeStory {
+		sql, a := buildTodoStorySQL(account)
+		parts = append(parts, sql)
+		args = append(args, a...)
+	}
+	if includeRisk {
+		sql, a := buildTodoRiskSQL(account)
+		parts = append(parts, sql)
+		args = append(args, a...)
+	}
+	if includeIssue {
+		sql, a := buildTodoIssueSQL(account)
+		parts = append(parts, sql)
+		args = append(args, a...)
+	}
+	if includePersonal {
+		sql, a := buildTodoPersonalSQL(account)
+		parts = append(parts, sql)
+		args = append(args, a...)
+	}
+	if includeTesttask {
+		sql, a := buildTodoTesttaskSQL(account)
+		parts = append(parts, sql)
+		args = append(args, a...)
+	}
 	if len(parts) == 0 {
 		return "", nil
 	}
 	return strings.Join(parts, " UNION ALL "), args
+}
+
+// todoFacetOrder / todoFacetLabels 覆盖全部接入对象类型（汇总所有审批）。
+var todoFacetOrder = []string{"approval", "demand", "story", "task", "bug", "risk", "issue", "todo", "testtask"}
+
+var todoFacetLabels = map[string]string{
+	"approval": "审批",
+	"demand":   "业务需求",
+	"story":    "研发需求",
+	"task":     "任务",
+	"bug":      "Bug",
+	"risk":     "风险",
+	"issue":    "问题",
+	"todo":     "待办",
+	"testtask": "测试单",
+}
+
+// buildTodoFacetSQL 构建按对象类型聚合的分面计数 SQL。
+// 分面维度自身（ObjectType）与对象域 Tab 不参与过滤，否则选中某个类型后其余芯片计数会归零、
+// 无法再切回去；其它维度（关系/责任/关键词/阶段/场景/焦点）保持与列表同一口径。
+func buildTodoFacetSQL(account string, req TodoListReq, displayMap map[string]string, todayStr string) (string, []interface{}) {
+	facetReq := req
+	facetReq.ObjectType = "all"
+	facetReq.Tab = TodoTabAll
+	unionSQL, unionArgs := buildTodoUnionSQL(account, facetReq)
+	if unionSQL == "" {
+		return "", nil
+	}
+	where, whereArgs := buildTodoOuterWhere(facetReq, displayMap, true, todayStr)
+	args := append(append([]interface{}{}, unionArgs...), whereArgs...)
+	return fmt.Sprintf("SELECT t.kind AS kind, COUNT(*) AS cnt FROM (%s) AS t %s GROUP BY t.kind", unionSQL, where), args
+}
+
+func buildTodoFacets(counts map[string]int64) []TodoFacet {
+	facets := make([]TodoFacet, 0, len(todoFacetOrder))
+	for _, key := range todoFacetOrder {
+		facets = append(facets, TodoFacet{Key: key, Label: todoFacetLabels[key], Count: counts[key]})
+	}
+	return facets
+}
+
+// countTodoFacets 用一次 GROUP BY 聚合得到全部对象类型芯片计数，不做全量加载后 Go 内计数。
+func (r *Repo) countTodoFacets(ctx context.Context, account string, req TodoListReq, displayMap map[string]string, todayStr string) ([]TodoFacet, error) {
+	facetSQL, facetArgs := buildTodoFacetSQL(account, req, displayMap, todayStr)
+	if facetSQL == "" {
+		return buildTodoFacets(nil), nil
+	}
+	type facetRow struct {
+		Kind string `gorm:"column:kind"`
+		Cnt  int64  `gorm:"column:cnt"`
+	}
+	var rows []facetRow
+	if err := r.db.WithContext(ctx).Raw(facetSQL, facetArgs...).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	counts := make(map[string]int64, len(rows))
+	for _, row := range rows {
+		counts[row.Kind] = row.Cnt
+	}
+	return buildTodoFacets(counts), nil
 }
 
 func getDemandFilterClauses(req TodoListReq) string {
@@ -328,6 +434,31 @@ func formatTodoUnifiedItem(row todoUnifiedRow, displayMap map[string]string) Tod
 		item.URL = zentao.BugViewURL(uint(row.ID))
 		item.Action = "处理"
 		item.Deadline = ""
+	case "approval":
+		item.Type = "审批"
+		item.URL = zentao.URL("approval", "view", fmt.Sprintf("approvalID=%d", row.ID))
+		item.Action = "审批"
+	case "story":
+		item.Type = "研发需求"
+		item.URL = zentao.StoryViewURL(uint(row.ID))
+		item.Action = "办理"
+	case "testtask":
+		item.Type = "测试单"
+		item.URL = zentao.TesttaskViewURL(uint(row.ID))
+		item.Action = "处理"
+		item.Blocked = row.Blocked == 1
+	case "issue":
+		item.Type = "问题"
+		item.URL = zentao.IssueViewURL(uint(row.ID))
+		item.Action = "处理"
+	case "risk":
+		item.Type = "风险"
+		item.URL = zentao.RiskViewURL(uint(row.ID))
+		item.Action = "跟进"
+	case "todo":
+		item.Type = "待办"
+		item.URL = zentao.URL("todo", "view", fmt.Sprintf("todoID=%d", row.ID))
+		item.Action = "办理"
 	}
 	return item
 }

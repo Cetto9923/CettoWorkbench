@@ -49,8 +49,15 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 
 	g.GET("/home", middleware.RequirePerm(perm.PoHomeList), h.Home)
 	g.GET("/demands", middleware.RequirePerm(perm.PoHomeList), h.Demands)
-	// 评审资格在 Service 按 zt_demandreview 业务评审人校验（与指派给无关）。
-	g.POST("/demands/:id/review", middleware.RequirePerm(perm.PoDemandReview), h.ReviewDemand)
+	g.POST("/demands/:id/review", middleware.RequirePerm(perm.PoHomeList), h.ReviewDemand)
+	g.POST("/demands/:id/withdraw-review", middleware.RequirePerm(perm.PoHomeList), h.WithdrawDemandReview)
+	g.POST("/demands/:id/submit-review", middleware.RequirePerm(perm.PoHomeList), h.SubmitDemandReview)
+	g.GET("/demands/:id/clarify", middleware.RequirePerm(perm.PoHomeList), h.GetDemandClarify)
+	g.POST("/demands/:id/clarify", middleware.RequirePerm(perm.PoHomeList), h.ClarifyDemand)
+	g.POST("/demands/:id/clarify/ai-generate", middleware.RequirePerm(perm.PoHomeList), h.GenerateAIUserStory)
+	g.POST("/demands/:id/acceptance", middleware.RequirePerm(perm.PoHomeList), h.AcceptHomeDemand)
+	g.POST("/demands/:id/urge", middleware.RequirePerm(perm.PoHomeList), h.UrgeHomeDemand)
+	g.POST("/demands/:id/deliver", middleware.RequirePerm(perm.PoHomeList), h.DeliverHomeDemand)
 	// 详情读接口：首页与需求看板均可打开；对象级授权仍由 DetailService 执行。
 	g.GET("/demands/:id/detail", middleware.RequireAnyPerm(perm.PoHomeList, perm.PoBoardDemandList), h.DemandDetail)
 	g.GET("/demands/:id/submit-test", middleware.RequirePerm(perm.PoHomeList), h.SubmitTestView)
@@ -132,6 +139,7 @@ func (h *Handler) Home(c *gin.Context) {
 	render.Page(c, http.StatusOK, constants.TEMPLATE_PO_HOME, gin.H{
 		"Title":               "工作台首页",
 		"PageTitle":           "工作台首页",
+		"AllCount":            resp.AllCount,
 		"ValueStreamStages":   resp.Stages,
 		"StagesValid":         resp.StagesValid,
 		"VersionWindows":      resp.VersionWindows,
@@ -175,11 +183,12 @@ func (h *Handler) Demands(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"success":  true,
-		"items":    resp.Items,
-		"total":    resp.Total,
-		"page":     resp.Page,
-		"pageSize": resp.PageSize,
+		"success":      true,
+		"items":        resp.Items,
+		"total":        resp.Total,
+		"page":         resp.Page,
+		"pageSize":     resp.PageSize,
+		"stageSummary": resp.StageSummary,
 	})
 }
 
@@ -233,6 +242,7 @@ func (h *Handler) TodosItems(c *gin.Context) {
 		"pageSize": resp.PageSize,
 		"summary":  resp.Summary,
 		"groups":   resp.Groups,
+		"facets":   resp.Facets,
 	})
 }
 
@@ -425,84 +435,4 @@ func (h *Handler) NoticeMarkAllRead(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "全部已读", "redirectUrl": "/notice", "affected": n})
-}
-
-// Follow 渲染"我的关注"页面。
-func (h *Handler) Follow(c *gin.Context) {
-	render.Page(c, http.StatusOK, constants.TEMPLATE_PO_FOLLOW, gin.H{
-		"Title":     "我的关注",
-		"PageTitle": "我的关注",
-		"BaseUrl":   "/follow",
-	})
-}
-
-// FollowItems 返回"我的关注"列表 JSON。
-func (h *Handler) FollowItems(c *gin.Context) {
-	actor := middleware.CurrentUser(c)
-	var req FollowListReq
-	if err := c.ShouldBindQuery(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "参数解析失败"})
-		return
-	}
-	if errs := req.Validate(); len(errs) > 0 {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"message": "参数校验失败",
-			"errors":  errs,
-		})
-		return
-	}
-	resp, err := h.svc.FollowList(c.Request.Context(), actor, req)
-	if err != nil {
-		h.logger.Error("po follow list", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取关注列表失败"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{
-		"success":  true,
-		"items":    resp.Items,
-		"total":    resp.Total,
-		"page":     resp.Page,
-		"pageSize": resp.PageSize,
-	})
-}
-
-// FollowSetDemand 切换对业务需求的关注状态。
-func (h *Handler) FollowSetDemand(c *gin.Context) {
-	actor := middleware.CurrentUser(c)
-	id, err := strconv.ParseInt(strings.TrimSpace(c.Param("id")), 10, 64)
-	if err != nil || id <= 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "无效的业务需求 ID"})
-		return
-	}
-	req := FollowSetReq{ID: id}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "参数解析失败"})
-		return
-	}
-	if errs := req.Validate(); len(errs) > 0 {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"message": "参数校验失败", "errors": errs})
-		return
-	}
-	if err := h.svc.FollowSetDemand(c.Request.Context(), actor, req); err != nil {
-		h.logger.Error("po follow set", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "更新关注失败"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"success": true, "message": "已更新关注", "redirectUrl": "/follow"})
-}
-
-// FollowRemoveProjectReport 解除当前用户对项目周报的关注。
-func (h *Handler) FollowRemoveProjectReport(c *gin.Context) {
-	actor := middleware.CurrentUser(c)
-	id, err := strconv.ParseInt(strings.TrimSpace(c.Param("id")), 10, 64)
-	if err != nil || id <= 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "无效的项目 ID"})
-		return
-	}
-	if err := h.svc.FollowRemoveProjectReport(c.Request.Context(), actor, id); err != nil {
-		h.logger.Error("po project report unfollow", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "取消项目周报关注失败"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"success": true, "message": "已取消项目周报关注", "redirectUrl": "/follow"})
 }

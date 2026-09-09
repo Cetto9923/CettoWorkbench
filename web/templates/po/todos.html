@@ -28,12 +28,9 @@
   </header>
 
   <section class="workspace-panel">
-    <nav class="category-tabs" aria-label="待办分类">
-      <button type="button" class="category-tab active" data-tab="all" aria-current="page">全部待办 <em id="groupAll">—</em></button>
-      <button type="button" class="category-tab" data-tab="demand">需求治理 <em id="groupDemand">—</em></button>
-      <button type="button" class="category-tab" data-tab="execution">研发执行 <em id="groupExecution">—</em></button>
-      <button type="button" class="category-tab" data-tab="testing">测试质量 <em id="groupTesting">—</em></button>
-    </nav>
+    <div class="wb-done-domains" id="todosObjectChips" role="group" aria-label="操作对象过滤">
+      <!-- 由 JS 按服务端 facets 动态渲染对象类型芯片与计数 -->
+    </div>
 
     <div class="workspace-toolbar">
       <label class="workspace-search"><span aria-hidden="true">⌕</span><input type="search" id="todosKeyword" placeholder="搜索 ID、标题或责任人" aria-label="关键词"></label>
@@ -41,11 +38,9 @@
         <button type="button" class="active" data-relation="all">全部</button>
         <button type="button" data-relation="in_charge">我负责</button>
         <button type="button" data-relation="cooperate">我配合</button>
-        <button type="button" data-relation="follow" title="关注数据源仍待业务规则裁决 (WAIT DECISION)" disabled>我关注 (待决策)</button>
       </div>
       <select id="todosAction" aria-label="办理场景"><option value="all">办理场景：全部</option><option value="todo_review">待受理 / 澄清</option><option value="todo_schedule">待排期</option><option value="todo_verify">待验收</option><option value="todo_deliver">待交付</option><option value="todo_follow">待跟进</option></select>
       <select id="todosStage" aria-label="价值阶段"><option value="all">价值阶段：全部</option><option value="accept">受理</option><option value="clarify">澄清</option><option value="schedule">排期</option><option value="developing">提测</option><option value="testing">联调测试</option><option value="waitacceptance">验收</option><option value="acceptanced">发起交付</option><option value="publish">发布</option><option value="released">评价反馈</option></select>
-      <select id="todosObjectType" aria-label="具体对象"></select>
       <select id="todosResponsibility" aria-label="办理责任"><option value="all">办理责任：全部</option><option value="my_action">待我处理</option><option value="my_follow_up">待我跟进</option></select>
       <button type="button" id="todosResetBtn" class="workspace-btn">重置筛选</button>
     </div>
@@ -59,8 +54,8 @@
       <table class="workspace-table todos-table" id="todosTable">
         <thead>
           <tr>
-            <th class="todos-col-item">事项标题 / 对象ID</th>
-            <th class="todos-col-type">对象类型</th>
+            <th class="todos-col-obj" style="width:130px">对象#ID</th>
+            <th class="todos-col-item">标题</th>
             <th class="todos-col-pri">优先级</th>
             <th class="todos-col-rel">关系 / 责任</th>
             <th class="todos-col-stage">阶段 / 形成原因</th>

@@ -18,35 +18,13 @@
       <h2>我的已办</h2>
       <p>查看由我推进、确认、流转或结项的历史事项及动作记录</p>
     </div>
+    <div class="header-quick-filters" id="doneQuickChips" role="group" aria-label="已办指标统计">
+      <button type="button" class="header-quick-chip wb-done-kpi" data-range="today" aria-pressed="false">今日已办 <em id="kpiToday">0</em></button>
+      <button type="button" class="header-quick-chip wb-done-kpi" data-range="week" aria-pressed="false">本周已办 <em id="kpiWeek">0</em></button>
+      <button type="button" class="header-quick-chip wb-done-kpi" data-range="30d" aria-pressed="false">近 30 天 <em id="kpiMonth">0</em></button>
+      <button type="button" class="header-quick-chip wb-done-kpi" data-range="objects" style="cursor:default" aria-pressed="false">涉及对象 <em id="kpiObjects">0</em></button>
+    </div>
   </header>
-
-  <!-- 1. 顶部 4 张 KPI 卡片 -->
-  <div class="wb-done-summary" id="doneSummaryCards" role="region" aria-label="已办指标统计">
-    <button type="button" class="wb-done-kpi" data-range="today">
-      <span class="wb-done-kpi-dot"></span>
-      <span class="wb-done-kpi-label">今日已办</span>
-      <strong id="kpiToday">0</strong>
-      <span class="wb-done-kpi-tip">今天实际完成的业务动作</span>
-    </button>
-    <button type="button" class="wb-done-kpi" data-range="week">
-      <span class="wb-done-kpi-dot"></span>
-      <span class="wb-done-kpi-label">本周已办</span>
-      <strong id="kpiWeek">0</strong>
-      <span class="wb-done-kpi-tip">本周累计办理</span>
-    </button>
-    <button type="button" class="wb-done-kpi" data-range="30d">
-      <span class="wb-done-kpi-dot"></span>
-      <span class="wb-done-kpi-label">近 30 天</span>
-      <strong id="kpiMonth">0</strong>
-      <span class="wb-done-kpi-tip">近 30 天累计办理</span>
-    </button>
-    <button type="button" class="wb-done-kpi" data-range="objects" style="cursor:default">
-      <span class="wb-done-kpi-dot"></span>
-      <span class="wb-done-kpi-label">涉及对象</span>
-      <strong id="kpiObjects">0</strong>
-      <span class="wb-done-kpi-tip">当前条件下去重对象数</span>
-    </button>
-  </div>
 
   <section class="workspace-panel">
     <!-- 2. 11 个对象 Chip 过滤栏 -->
@@ -97,13 +75,13 @@
       <table class="workspace-table done-table wb-done-table" id="doneTable">
         <thead>
           <tr>
-            <th style="width:130px">处理时间</th>
-            <th style="width:120px">对象</th>
+            <th style="width:104px">处理时间</th>
+            <th style="width:130px">对象#ID</th>
             <th>标题</th>
             <th style="width:130px">我做了什么</th>
             <th style="width:90px">处理结果</th>
             <th style="width:150px">状态变化</th>
-            <th style="width:180px">所属项目 / 执行</th>
+            <th style="width:200px">所属需求池 / 项目 / 执行</th>
             <th style="width:90px">当前状态</th>
             <th style="width:90px">操作</th>
           </tr>

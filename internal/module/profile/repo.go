@@ -32,15 +32,15 @@ func (r *Repo) DB() *gorm.DB {
 }
 
 type profileRow struct {
-	ID        int64  `gorm:"column:id"`
-	Account   string `gorm:"column:account"`
-	Realname  string `gorm:"column:realname"`
-	Email     string `gorm:"column:email"`
-	Mobile    string `gorm:"column:mobile"`
-	Gender    string `gorm:"column:gender"`
-	DeptID    uint64 `gorm:"column:dept"`
-	DeptName  string `gorm:"column:deptName"`
-	MainTeam  uint64 `gorm:"column:mainTeam"`
+	ID       int64  `gorm:"column:id"`
+	Account  string `gorm:"column:account"`
+	Realname string `gorm:"column:realname"`
+	Email    string `gorm:"column:email"`
+	Mobile   string `gorm:"column:mobile"`
+	Gender   string `gorm:"column:gender"`
+	DeptID   uint64 `gorm:"column:dept"`
+	DeptName string `gorm:"column:deptName"`
+	MainTeam uint64 `gorm:"column:mainTeam"`
 }
 
 // FindByID 读取用户资料（含部门名与默认小组）。

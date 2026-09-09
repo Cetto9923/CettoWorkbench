@@ -8,10 +8,29 @@ import (
 	"gorm.io/gorm"
 )
 
+// FindAccountPendingReviewDemandIDs 快速查询当前账号待评审的 demand ID 列表（~9ms 单次全表扫描），
+// 替代逐行在子查询中扫描 zt_demandreview。
+func (r *Repo) FindAccountPendingReviewDemandIDs(ctx context.Context, account string) ([]int, error) {
+	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
+		return nil, nil
+	}
+	var ids []int
+	err := r.db.WithContext(ctx).Table("zt_demandreview").
+		Where("reviewer = ? AND (result IS NULL OR result = '')", account).
+		Pluck("demand", &ids).Error
+	return ids, err
+}
+
 // homeFocusQuery intersects the existing stage scopes with the homepage focus.
-// Focus facts currently belong to demands; independent stories have no confirmed
-// deadline/blocking/hang mapping in the homepage KPI contract.
 func (r *Repo) homeFocusQuery(ctx context.Context, account string, req DemandsReq) *gorm.DB {
+	var reviewIDs []int
+	if req.Focus == "my_action" {
+		reviewIDs, _ = r.FindAccountPendingReviewDemandIDs(ctx, account)
+	}
+	return r.homeFocusQueryWithReviews(ctx, account, req, reviewIDs)
+}
+
+func (r *Repo) homeFocusQueryWithReviews(ctx context.Context, account string, req DemandsReq, reviewIDs []int) *gorm.DB {
 	parts := []string{}
 	args := []interface{}{}
 	today := time.Now().Format("2006-01-02")
@@ -20,50 +39,69 @@ func (r *Repo) homeFocusQuery(ctx context.Context, account string, req DemandsRe
 			continue
 		}
 		q := r.roleDemandScope(ctx, account, mysqlStageFilters[stage.status])
+		if req.Status == "all" {
+			q = r.roleDemandBase(ctx, account)
+		}
 		switch req.Focus {
+		case "my_action":
+			// 只把当前价值流步骤的正式办理人视为“待我处理”；创建人、评审人和关注人不是当前负责人。
+			where, whereArgs := currentHandlerDemandWhereWithReviews(account, reviewIDs)
+			q = q.Where(where, whereArgs...)
 		case "today":
 			q = q.Where("deadline IS NOT NULL AND deadline != '0000-00-00' AND deadline <= ?", today)
 		case "overdue":
 			q = q.Where("deadline IS NOT NULL AND deadline != '0000-00-00' AND deadline < ?", today)
 		case "blocked":
-			q = q.Where("status = ?", "refuse")
+			q = q.Where(`status = ? OR (
+				 developFinish IS NOT NULL AND developFinish != '0000-00-00' AND developFinish <= ?
+				AND (managerReviewers IS NOT NULL AND managerReviewers <> '' OR EXISTS (
+					SELECT 1 FROM zt_demandmanagerreview mr
+					WHERE mr.demand = zt_demand.id
+				))
+				AND COALESCE(isManagerReview, '') NOT IN ('pass', 'passed')
+			)`, "refuse", today)
 		case "suspended":
 			q = q.Where("hang = ?", "1")
 		}
 		var rows []struct{ ID int }
-		stmt := q.Select("id, ? AS stage_index", index).Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
+		stmt := q.Select("id, status, assignedTo, createdBy, ? AS stage_index", index).Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
+		if req.Status == "all" {
+			stageSQL, stageArgs := r.demandStageCase(ctx, account)
+			stmt = q.Select("id, status, assignedTo, createdBy, "+stageSQL+" AS stage_index", stageArgs...).Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
+			parts = append(parts, "SELECT id, status, assignedTo, createdBy, stage_index FROM ("+stmt.SQL.String()+") AS demand_stages WHERE stage_index IS NOT NULL")
+			args = append(args, stmt.Vars...)
+			break
+		}
 		parts = append(parts, stmt.SQL.String())
 		args = append(args, stmt.Vars...)
 	}
 	if len(parts) == 0 {
 		// 无匹配阶段时返回空候选集，避免非法 SQL。
-		return r.db.WithContext(ctx).Table("(SELECT NULL AS id, 0 AS stage_index WHERE 1 = 0) AS candidates").
-			Select("id, stage_index")
+		return r.db.WithContext(ctx).Table("(SELECT NULL AS id, NULL AS status, NULL AS assignedTo, NULL AS createdBy, 0 AS stage_index WHERE 1 = 0) AS candidates").
+			Select("id, status, assignedTo, createdBy, stage_index")
 	}
 	return r.db.WithContext(ctx).Table("("+strings.Join(parts, " UNION ALL ")+") AS candidates", args...).
-		Select("id, MIN(stage_index) AS stage_index").Group("id")
+		Select("id, MAX(status) AS status, MAX(assignedTo) AS assignedTo, MAX(createdBy) AS createdBy, MIN(stage_index) AS stage_index").Group("id")
 }
 
 // applyHomeFocusToolbarFilters 把 DemandsReq 的 keyword/objectType/priority/relation
-// 透传到 SQL（参数化）。FindHomeFocus 当前只查业务需求，因此：
-//   - objectType="story" 直接返回空候选集，避免返回与筛选语义不一致的数据；
-//   - keyword 在 id / 名称 / 责任账号上模糊匹配（MySQL LOWER）；
-//   - priority 映射到 zt_demand.pri 的 1/2/3/4；前端 p3 含义为 P3+P4；
-//   - relation 是 base scope 已经覆盖的"我负责/我配合/我关注"，这里只补默认 all。
-//
-// 设计依据：本仓库查询默认走 SQL filter → sort → count → 分页
-// （AGENTS.md MUST 5 / docs/engineering/database.md）。前端不得再做同语义二次过滤。
-func applyHomeFocusToolbarFilters(base *gorm.DB, req DemandsReq) *gorm.DB {
-	// objectType = story：FindHomeFocus 当前不查 story；返回空候选集。
-	if req.ObjectType == "story" {
-		return base.Where("1 = 0")
-	}
+// 透传到业务需求 SQL（研发需求由 findHomeFocusStoryRefs 单独使用同等过滤）。
+func applyHomeFocusToolbarFilters(base *gorm.DB, account string, req DemandsReq) *gorm.DB {
+	where, args := currentHandlerDemandWhere(account)
+	return applyHomeFocusToolbarFiltersWithClause(base, req, where, args)
+}
+
+func (r *Repo) applyHomeFocusToolbarFiltersWithReviews(base *gorm.DB, account string, req DemandsReq, reviewIDs []int) *gorm.DB {
+	where, args := currentHandlerDemandWhereWithReviews(account, reviewIDs)
+	return applyHomeFocusToolbarFiltersWithClause(base, req, where, args)
+}
+
+func applyHomeFocusToolbarFiltersWithClause(base *gorm.DB, req DemandsReq, where string, args []interface{}) *gorm.DB {
 	if kw := strings.ToLower(strings.TrimSpace(req.Keyword)); kw != "" {
 		pattern := "%" + kw + "%"
 		base = base.Where(
-			"id IN (SELECT id FROM zt_demand WHERE LOWER(CAST(id AS CHAR)) LIKE ? OR LOWER(name) LIKE ?) "+
-				"OR id IN (SELECT id FROM zt_demand WHERE LOWER(IFNULL(assignedTo, '')) LIKE ? OR LOWER(IFNULL(QD, '')) LIKE ? OR LOWER(IFNULL(RD, '')) LIKE ?)",
-			pattern, pattern, pattern, pattern, pattern,
+			"id IN (SELECT id FROM zt_demand WHERE LOWER(CAST(id AS CHAR)) LIKE ? OR LOWER(name) LIKE ? OR ("+currentHandlerDemandKeywordWhere()+"))",
+			pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern,
 		)
 	}
 	switch req.Priority {
@@ -74,34 +112,176 @@ func applyHomeFocusToolbarFilters(base *gorm.DB, req DemandsReq) *gorm.DB {
 	case "p3":
 		base = base.Where("id IN (SELECT id FROM zt_demand WHERE pri IN ('3', '4'))")
 	}
-	// relation: roleDemandBase 已覆盖 owner/cooperate/watch；当前只接受 all 透传。
-	_ = req.Relation
+	switch req.Relation {
+	case "handling":
+		base = base.Where("id IN (SELECT id FROM zt_demand WHERE "+where+")", args...)
+	case "following":
+		base = base.Where("id NOT IN (SELECT id FROM zt_demand WHERE "+where+")", args...)
+	}
 	return base
 }
 
-func (r *Repo) FindHomeFocus(ctx context.Context, account string, req DemandsReq) ([]itemRef, int, error) {
+// CountHomeFocus 只计算符合 focus 范围的条目总数，供首页 KPI 或分页计数使用。
+func (r *Repo) CountHomeFocus(ctx context.Context, account string, req DemandsReq) (int64, error) {
 	if strings.TrimSpace(account) == "" {
-		return nil, 0, nil
+		return 0, nil
 	}
-	base := r.homeFocusQuery(ctx, account, req)
-	base = applyHomeFocusToolbarFilters(base, req)
 	var total int64
-	if err := r.db.WithContext(ctx).Table("(?) AS focused", base).Count(&total).Error; err != nil {
-		return nil, 0, err
+	reviewIDs, _ := r.FindAccountPendingReviewDemandIDs(ctx, account)
+	if req.ObjectType != "story" {
+		base := r.homeFocusQueryWithReviews(ctx, account, req, reviewIDs)
+		base = r.applyHomeFocusToolbarFiltersWithReviews(base, account, req, reviewIDs)
+		if err := r.db.WithContext(ctx).Table("(?) AS focused", base).Count(&total).Error; err != nil {
+			return 0, err
+		}
 	}
+	if req.ObjectType != "demand" {
+		storyCount, storyErr := r.countHomeFocusStories(ctx, account, req)
+		if storyErr != nil {
+			return 0, storyErr
+		}
+		total += storyCount
+	}
+	return total, nil
+}
+
+// findHomeFocusStoryRefs 复用首页正式焦点的日期/挂起规则，为独立研发需求提供焦点列表。
+// 研发需求目前只在排期、交付及待我处理等有明确工作台责任的场景进入首页。
+func (r *Repo) homeFocusStoryQuery(ctx context.Context, account string, req DemandsReq) *gorm.DB {
+	q := r.db.WithContext(ctx).Table("zt_story").Where("deleted = ? AND status <> ? AND IFNULL(sourceType, '') <> ?", "0", "closed", "demandpool")
+	if req.ObjectType == "story" || req.Status == "all" || req.Status == "schedule" {
+		q = q.Where("((status IN ? AND (developFinish IS NULL OR developFinish = '0000-00-00' OR testFinish IS NULL OR testFinish = '0000-00-00')) OR (status IN ? AND deliverDate IS NOT NULL AND deliverDate != '0000-00-00'))", []string{"draft", "wait", "active", "clarified", "planned", "developing"}, []string{"acceptanced", "waitdeliver", "released"})
+	}
+	today := time.Now().Format("2006-01-02")
+	switch req.Focus {
+	case "today":
+		q = q.Where("COALESCE(NULLIF(developFinish, '0000-00-00'), NULLIF(testFinish, '0000-00-00'), NULLIF(deliverDate, '0000-00-00')) <= ?", today)
+	case "overdue":
+		q = q.Where("COALESCE(NULLIF(developFinish, '0000-00-00'), NULLIF(testFinish, '0000-00-00'), NULLIF(deliverDate, '0000-00-00')) < ?", today)
+	case "blocked":
+		q = q.Where("status = ?", "refuse")
+	case "suspended":
+		// 禅道研发需求（zt_story）无 hang 字段，挂起事实仅适用于业务需求。
+		q = q.Where("1 = 0")
+	case "my_action":
+		// assignedTo 是研发需求的正式办理责任字段；不把 openedBy/watch 视为待办。
+		q = q.Where("assignedTo = ?", account)
+	}
+	if kw := strings.ToLower(strings.TrimSpace(req.Keyword)); kw != "" {
+		pattern := "%" + kw + "%"
+		q = q.Where("(LOWER(CAST(id AS CHAR)) LIKE ? OR LOWER(title) LIKE ? OR LOWER(IFNULL(assignedTo, '')) LIKE ?)", pattern, pattern, pattern)
+	}
+	switch req.Priority {
+	case "p1":
+		q = q.Where("pri = ?", 1)
+	case "p2":
+		q = q.Where("pri = ?", 2)
+	case "p3":
+		q = q.Where("pri IN ?", []int{3, 4})
+	}
+	switch req.Relation {
+	case "handling":
+		q = q.Where("assignedTo = ?", account)
+	case "following":
+		q = q.Where("assignedTo <> ? OR assignedTo IS NULL OR assignedTo = ''", account)
+	}
+	stageSQL := homeFocusStoryStageSQL()
+	base := q.Select("id, " + stageSQL + " AS stage_index")
+	result := r.db.WithContext(ctx).Table("(?) AS focused_stories", base)
+	if req.Status != "all" && req.Status != "" {
+		result = result.Where("stage_index = ?", homeFocusStageIndex(req.Status))
+	}
+	return result
+}
+
+func homeStoryStage(status string) string {
+	switch strings.ToLower(strings.TrimSpace(status)) {
+	case "draft", "wait", "active":
+		return "clarify"
+	case "clarified", "planned", "projected", "designed", "designing":
+		return "schedule"
+	case "developing", "developed":
+		return "developing"
+	case "testing", "tested", "verified", "reviewing":
+		return "testing"
+	case "waitacceptance":
+		return "waitacceptance"
+	case "acceptanced", "delivering", "delivered", "waitdeliver":
+		return "acceptanced"
+	case "released", "releasing":
+		return "publish"
+	default:
+		return ""
+	}
+}
+
+func homeFocusStageIndex(status string) int {
+	for i, stage := range valueStreamStages {
+		if stage.status == status {
+			return i
+		}
+	}
+	return 99
+}
+
+func (r *Repo) countHomeFocusStories(ctx context.Context, account string, req DemandsReq) (int64, error) {
+	var total int64
+	err := r.homeFocusStoryQuery(ctx, account, req).Count(&total).Error
+	return total, err
+}
+
+// HomeFocusStageSummary partitions the exact same candidate set used by the
+// homepage list. Every object is already assigned its first matching stage by
+// homeFocusQuery, so the stage counts add up to the all-card count.
+func (r *Repo) HomeFocusStageSummary(ctx context.Context, account string, req DemandsReq) ([]ValueStreamStage, error) {
+	stages := make([]ValueStreamStage, len(valueStreamStages))
+	for i, stage := range valueStreamStages {
+		stages[i] = ValueStreamStage{Label: stage.label, Status: stage.status, Valid: true}
+	}
+	if strings.TrimSpace(account) == "" {
+		return stages, nil
+	}
+	req.Status = "all"
 	var rows []struct {
-		ID         int
-		StageIndex int
+		StageIndex int   `gorm:"column:stage_index"`
+		Count      int64 `gorm:"column:count"`
 	}
-	err := r.db.WithContext(ctx).Table("(?) AS focused", base).
-		Select("id, stage_index").Order("stage_index ASC, id DESC").
-		Offset((req.Page - 1) * req.PageSize).Limit(req.PageSize).Scan(&rows).Error
-	if err != nil {
-		return nil, 0, err
+	if req.ObjectType != "story" {
+		reviewIDs, _ := r.FindAccountPendingReviewDemandIDs(ctx, account)
+		base := r.applyHomeFocusToolbarFiltersWithReviews(r.homeFocusQueryWithReviews(ctx, account, req, reviewIDs), account, req, reviewIDs)
+		if err := r.db.WithContext(ctx).Table("(?) AS focused", base).
+			Select("stage_index, COUNT(*) AS count").Group("stage_index").Scan(&rows).Error; err != nil {
+			return nil, err
+		}
 	}
-	refs := make([]itemRef, 0, len(rows))
+	var all int64
 	for _, row := range rows {
-		refs = append(refs, itemRef{kind: "demand", id: row.ID, stageStatus: valueStreamStages[row.StageIndex].status})
+		if row.StageIndex <= 0 || row.StageIndex >= len(stages) {
+			continue
+		}
+		stages[row.StageIndex].Count = row.Count
+		stages[row.StageIndex].DemandCount = row.Count
+		all += row.Count
 	}
-	return refs, int(total), nil
+	if req.ObjectType != "demand" {
+		var storyRows []struct {
+			StageIndex int
+			Count      int64
+		}
+		if err := r.homeFocusStoryQuery(ctx, account, req).Select("stage_index, COUNT(*) AS count").Group("stage_index").Scan(&storyRows).Error; err != nil {
+			return nil, err
+		}
+		for _, row := range storyRows {
+			idx := row.StageIndex
+			if idx < 0 || idx >= len(stages) {
+				continue
+			}
+			stages[idx].Count += row.Count
+			stages[idx].StoryCount += row.Count
+			all += row.Count
+		}
+	}
+	stages[0].Count = all
+	stages[0].DemandCount = all
+	return stages, nil
 }

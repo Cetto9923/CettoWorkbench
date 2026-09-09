@@ -26,6 +26,9 @@
       .replace(/'/g, "&#39;");
   }
   var PL = window.PersonalList || {};
+  if (typeof PL.loadPageSize === "function") {
+    demandState.pageSize = PL.loadPageSize("po.follow.pageSize", demandState.pageSize, [10, 15, 20, 30, 50]);
+  }
   var priorityBadge = PL.priorityBadge || function (raw) {
     var n = parseInt(String(raw || "").replace(/^p/i, ""), 10);
     if (isNaN(n) || n < 1 || n > 4) { return '<span class="wb-priority" data-priority="">—</span>'; }
@@ -42,8 +45,7 @@
   }
 
   function getCsrfToken() {
-    var el = document.getElementById("csrfToken");
-    return el ? el.value : "";
+    var el = document.getElementById("csrfToken"); return el ? el.value : "";
   }
 
   /* ────────── 1. Tab 切换 ────────── */
@@ -57,15 +59,10 @@
     var weeklySec = document.getElementById("weeklySection");
     var demandSec = document.getElementById("demandSection");
 
-    if (tab === "weekly") {
-      if (weeklySec) weeklySec.hidden = false;
-      if (demandSec) demandSec.hidden = true;
-      loadWeeklyData();
-    } else {
-      if (weeklySec) weeklySec.hidden = true;
-      if (demandSec) demandSec.hidden = false;
-      loadDemandData();
-    }
+    if (weeklySec) weeklySec.hidden = (tab !== "weekly");
+    if (demandSec) demandSec.hidden = (tab === "weekly");
+    if (tab === "weekly") loadWeeklyData();
+    else loadDemandData();
   }
 
   /* ────────── 2. 项目周报逻辑 ────────── */
@@ -102,20 +99,12 @@
   }
 
   function updateWeeklyStatsUI() {
-    var setEl = function (id, val) {
-      var el = document.getElementById(id);
-      if (el) el.firstChild.textContent = String(val);
-    };
-    var setNum = function (id, val) {
-      var el = document.getElementById(id);
-      if (el) el.textContent = String(val);
-    };
-
+    var setEl = function (id, val) { var el = document.getElementById(id); if (el) el.firstChild.textContent = String(val); };
+    var setNum = function (id, val) { var el = document.getElementById(id); if (el) el.textContent = String(val); };
     setEl("pwStatAll", weeklyStats.watched);
     setEl("pwStatSubmitted", weeklyStats.submitted);
     setEl("pwStatWaiting", weeklyStats.waiting);
     setEl("pwStatAbnormal", weeklyStats.abnormal);
-
     setNum("pwBtnAll", weeklyStats.watched);
     setNum("pwBtnWaiting", weeklyStats.waiting);
     setNum("pwBtnAttention", weeklyStats.attention);
@@ -125,9 +114,7 @@
 
   function situationTag(item) {
     var label = item.overallSituationLabel || "正常";
-    var cls = "tag green";
-    if (item.overallSituation === 1) cls = "tag orange";
-    if (item.overallSituation === 2) cls = "tag red";
+    var cls = item.overallSituation === 1 ? "tag orange" : (item.overallSituation === 2 ? "tag red" : "tag green");
     return '<span class="' + cls + '">' + esc(label) + "</span>";
   }
 
@@ -247,9 +234,7 @@
     document.querySelectorAll("[data-unwatch-project]").forEach(function (btn) {
       btn.addEventListener("click", async function () {
         var pid = parseInt(btn.getAttribute("data-unwatch-project"), 10);
-        if (confirm("确认取消关注该项目周报？")) {
-          await unwatchItem("project", pid);
-        }
+        if (confirm("确认取消关注该项目周报？")) { await unwatchItem("project", pid); }
       });
     });
   }
@@ -262,7 +247,7 @@
     var summary = document.getElementById("followSummary");
     var pagEl = document.getElementById("followPagination");
 
-    if (tbody) tbody.innerHTML = '<tr><td colspan="10" class="state-placeholder">正在拉取关注业务需求…</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="9" class="state-placeholder">正在拉取关注业务需求…</td></tr>';
     if (empty) empty.hidden = true;
     if (error) error.hidden = true;
     if (summary) summary.textContent = "加载中…";
@@ -307,7 +292,11 @@
 
         var titleBtn = '<button type="button" class="table-title-link" data-open-demand="' + esc(did) + '" title="点击查看需求详情">' + esc(item.title || "—") + '</button>';
 
-        var typeBadge = '<span class="wb-type wb-type-business">业务需求</span>';
+        var idChip = (window.PersonalList && window.PersonalList.idChipHtml)
+          ? window.PersonalList.idChipHtml("business", idCell)
+          : '<span class="wb-type wb-type-business">业需#' + idCell + '</span>';
+        var priHtml = priorityBadge(item.pri);
+        var titleHtml = '<div style="display:inline-flex;align-items:center;gap:6px;">' + priHtml + titleBtn + '</div>';
         var stageTag = '<span class="status-tag st-progress">' + esc(stageLabel(item.stage || item.status)) + '</span>';
 
         var risk = String(item.risk || "-").trim();
@@ -320,9 +309,8 @@
 
         return (
           '<tr>' +
-          '<td class="c-id" style="white-space:nowrap">' + idCell + '</td>' +
-          '<td class="c-title">' + titleBtn + '</td>' +
-          '<td>' + typeBadge + '</td>' +
+          '<td class="c-id" style="white-space:nowrap">' + idChip + '</td>' +
+          '<td class="c-title">' + titleHtml + '</td>' +
           '<td>' + stageTag + '</td>' +
           '<td>' + esc(item.role || "我关注") + '</td>' +
           '<td>' + esc(item.systemName || "—") + '</td>' +
@@ -384,9 +372,7 @@
     document.querySelectorAll("#demandSection [data-unfollow-demand]").forEach(function (btn) {
       btn.addEventListener("click", async function () {
         var id = btn.getAttribute("data-unfollow-demand");
-        if (confirm("确认取消关注该业务需求？")) {
-          await unwatchItem("demand", id);
-        }
+        if (confirm("确认取消关注该业务需求？")) { await unwatchItem("demand", id); }
       });
     });
   }
@@ -488,11 +474,7 @@
       var dTimer = null;
       dSearch.addEventListener("input", function () {
         clearTimeout(dTimer);
-        dTimer = setTimeout(function () {
-          demandState.keyword = dSearch.value.trim();
-          demandState.page = 1;
-          loadDemandData();
-        }, 300);
+        dTimer = setTimeout(function () { demandState.keyword = dSearch.value.trim(); demandState.page = 1; loadDemandData(); }, 300);
       });
     }
 

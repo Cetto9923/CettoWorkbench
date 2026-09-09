@@ -1,0 +1,258 @@
+/* =============================================================================
+   文件: web/static/css/po/demand-clarify.css
+   模块: PO 工作台 - 需求澄清抽屉样式
+   职责: 高保真呈现需求澄清六大区块；右侧抽屉样式，顶部 + 左侧外框菜单始终露出；
+         视觉与工作台其它抽屉（详情/办理）一致。
+   ============================================================================= */
+
+.demand-clarify-modal {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  width: 100% !important; height: 100% !important; max-height: none !important;
+  background: transparent !important; border: none !important; border-radius: 0 !important;
+  z-index: 1050; display: block; overflow: hidden;
+  pointer-events: none; /* 仅抽屉本体接收点击，背景透传 */
+}
+.demand-clarify-backdrop {
+  position: fixed; top: 0; left: var(--sidebar-width, 200px); right: 0; bottom: 0;
+  background-color: rgba(15, 23, 42, 0.32);
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s ease-out, left 0.2s ease;
+}
+body.sidebar-collapsed .demand-clarify-backdrop {
+  left: var(--sidebar-width-collapsed, 56px);
+}
+.demand-clarify-modal.show .demand-clarify-backdrop { opacity: 1; pointer-events: auto; }
+.demand-clarify-dialog {
+  position: fixed; top: 0; left: var(--sidebar-width, 200px); right: 0; bottom: 0;
+  z-index: 2; width: auto; max-width: none; height: 100vh;
+  background: #fff; border-radius: 0;
+  box-shadow: -8px 0 28px rgba(15, 23, 42, 0.18);
+  display: flex; flex-direction: column; overflow: hidden;
+  pointer-events: auto;
+  transform: translateX(100%);
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), left 0.2s ease;
+}
+body.sidebar-collapsed .demand-clarify-dialog {
+  left: var(--sidebar-width-collapsed, 56px);
+}
+.demand-clarify-modal.show .demand-clarify-dialog {
+  display: flex;
+  transform: translateX(0);
+}
+@keyframes clarifyFadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* 弹窗头部 */
+.demand-clarify-header {
+  padding: 14px 24px; border-bottom: 1px solid #e2e8f0;
+  display: flex; align-items: center; justify-content: space-between; background: #fafbfc;
+}
+.demand-clarify-title-wrap { display: flex; align-items: center; gap: 10px; }
+.demand-clarify-badge {
+  padding: 2px 8px; font-size: 13px; font-weight: 600; color: #1d4ed8;
+  background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px;
+}
+.demand-clarify-title { margin: 0; font-size: 16px; font-weight: 600; color: #0f172a; }
+.demand-clarify-subtitle { font-size: 14px; color: #64748b; font-weight: 500; }
+.demand-clarify-close-btn {
+  border: none; background: transparent; font-size: 24px; line-height: 1;
+  color: #94a3b8; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: all 0.15s;
+}
+.demand-clarify-close-btn:hover { color: #334155; background: #f1f5f9; }
+
+/* 表单与正文滚动区 */
+.demand-clarify-form { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.demand-clarify-body { padding: 18px 24px; overflow-y: auto; flex: 1; }
+
+/* 区块通用 */
+.clarify-section { margin-bottom: 22px; background: #fff; }
+.clarify-section-title {
+  font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 10px; display: flex; align-items: center;
+}
+.clarify-title-bar {
+  display: inline-block; width: 4px; height: 14px; background: #2563eb;
+  border-radius: 2px; margin-right: 8px;
+}
+.clarify-title-req, .clarify-req { color: #ef4444; margin-left: 4px; }
+.clarify-section-tip { font-size: 12px; font-weight: normal; color: #64748b; margin-left: 12px; }
+
+/* 4列网格 */
+.clarify-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.clarify-form-group { display: flex; flex-direction: column; gap: 6px; }
+.clarify-label { font-size: 13px; font-weight: 500; color: #334155; }
+.clarify-label.required::after { content: " *"; color: #ef4444; }
+
+.clarify-select, .clarify-input, .clarify-textarea {
+  width: 100%; padding: 7px 10px; font-size: 13px; color: #0f172a; background-color: #fff;
+  border: 1px solid #cbd5e1; border-radius: 6px; outline: none; box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.clarify-select:focus, .clarify-input:focus, .clarify-textarea:focus {
+  border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+.clarify-input[readonly] { background-color: #f8fafc; cursor: not-allowed; }
+
+/* 需求描述折叠面板 */
+.clarify-desc-panel { margin-top: 12px; border: 1px solid #e2e8f0; border-radius: 6px; background: #f8fafc; overflow: hidden; }
+.clarify-desc-header { padding: 8px 14px; display: flex; align-items: center; cursor: pointer; user-select: none; }
+.clarify-desc-tag {
+  font-size: 12px; font-weight: 600; color: #475569; background: #e2e8f0;
+  padding: 2px 8px; border-radius: 4px; margin-right: 10px;
+}
+.clarify-desc-hint { font-size: 12px; color: #64748b; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.clarify-desc-arrow { font-size: 10px; color: #94a3b8; transition: transform 0.2s; }
+.clarify-desc-arrow.expanded { transform: rotate(180deg); }
+.clarify-desc-content {
+  padding: 12px 14px; border-top: 1px solid #e2e8f0; font-size: 13px; color: #334155;
+  line-height: 1.6; background: #fff; max-height: 240px; overflow-y: auto;
+}
+
+/* 表格通用 */
+.clarify-table-responsive { border: 1px solid #e2e8f0; border-radius: 6px; overflow-x: auto; }
+.clarify-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.clarify-table th {
+  background: #f8fafc; color: #475569; font-weight: 600; padding: 9px 8px;
+  border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; text-align: left;
+}
+.clarify-table th:last-child { border-right: none; }
+.clarify-table td { padding: 7px 8px; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; vertical-align: middle; }
+.clarify-table td:last-child { border-right: none; }
+.clarify-table tr:last-child td { border-bottom: none; }
+
+.clarify-action-btn {
+  display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px;
+  border: 1px solid #cbd5e1; background: #fff; border-radius: 4px; color: #64748b;
+  cursor: pointer; transition: all 0.15s; padding: 0; font-size: 16px; line-height: 1;
+}
+.clarify-action-btn:hover { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
+.clarify-action-btn.del:hover { border-color: #ef4444; color: #ef4444; background: #fef2f2; }
+
+/* 规模估算 & AI 头部工具栏 */
+.clarify-story-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.clarify-scale-box { display: flex; align-items: center; gap: 12px; }
+.clarify-scale-input-wrap { display: flex; align-items: center; gap: 6px; }
+.clarify-scale-input { width: 70px; text-align: center; font-weight: 600; font-size: 15px; color: #1d4ed8; padding: 5px 8px; }
+.clarify-scale-unit { font-size: 13px; color: #64748b; }
+.clarify-badge-tag {
+  display: inline-block; padding: 2px 8px; font-size: 12px; font-weight: 500;
+  color: #3b82f6; background: #eff6ff; border-radius: 4px;
+}
+
+.clarify-ai-btn {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px;
+  font-size: 13px; font-weight: 500; color: #7c3aed; background: #f5f3ff;
+  border: 1px solid #ddd6fe; border-radius: 6px; cursor: pointer; transition: all 0.15s;
+}
+.clarify-ai-btn:hover { background: #ede9fe; border-color: #c4b5fd; color: #6d28d9; }
+.clarify-ai-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* 重要工单识别表格 */
+.clarify-important-box { border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; }
+.clarify-important-table { width: 100%; border-collapse: collapse; }
+.imp-th {
+  width: 14%; background: #f8fafc; color: #475569; font-size: 13px;
+  font-weight: 600; padding: 10px 12px; border: 1px solid #e2e8f0; text-align: right;
+}
+.imp-td { padding: 10px 14px; border: 1px solid #e2e8f0; font-size: 13px; }
+.clarify-radio { display: inline-flex; align-items: center; gap: 6px; margin-right: 16px; cursor: pointer; user-select: none; }
+.clarify-finance-alert { margin-top: 6px; font-size: 12px; color: #dc2626; font-weight: 500; }
+
+/* 底部操作栏（统一在页面正下方，居中偏右） */
+.demand-clarify-footer {
+  padding: 14px 24px; border-top: 1px solid #e2e8f0; background: #fafbfc;
+  display: flex; align-items: center; justify-content: center;
+}
+.clarify-footer-actions { display: flex; align-items: center; gap: 16px; }
+.clarify-btn-primary {
+  padding: 8px 36px; font-size: 14px; font-weight: 500; color: #fff; background: #2563eb;
+  border: 1px solid #2563eb; border-radius: 6px; cursor: pointer; transition: all 0.15s; min-width: 120px;
+}
+.clarify-btn-primary:hover { background: #1d4ed8; border-color: #1d4ed8; }
+.clarify-btn-primary:disabled { background: #93c5fd; border-color: #93c5fd; cursor: not-allowed; }
+.clarify-btn-default {
+  padding: 8px 24px; font-size: 14px; color: #475569; background: #fff;
+  border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; transition: all 0.15s;
+}
+.clarify-btn-default:hover { background: #f8fafc; color: #1e293b; border-color: #94a3b8; }
+
+/* 加载中与错误状态 */
+.demand-clarify-loading {
+  padding: 60px 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; color: #64748b; font-size: 14px;
+}
+.clarify-spinner {
+  width: 32px; height: 32px; border: 3px solid #e2e8f0; border-top-color: #2563eb;
+  border-radius: 50%; animation: clarifySpin 0.7s linear infinite;
+}
+@keyframes clarifySpin { to { transform: rotate(360deg); } }
+.demand-clarify-error-state { padding: 50px 20px; text-align: center; color: #ef4444; }
+.mg-0 { margin: 0 !important; }
+.mg-t-10 { margin-top: 10px !important; }
+
+/* 人员自动补全统一搜索控件 */
+.demand-clarify-modal .ui-autocomplete {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+.demand-clarify-modal .ui-autocomplete-input-wrap .clarify-input {
+  padding-right: 28px;
+}
+
+/* 常用产品快捷选择栏 */
+.clarify-quick-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+}
+.clarify-quick-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.clarify-quick-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  font-size: 12px;
+  color: #1e40af;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.clarify-quick-chip:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+  transform: translateY(-1px);
+}
+.clarify-quick-chip-icon {
+  font-size: 11px;
+  color: #f59e0b;
+}
+.clarify-quick-chip-po {
+  font-size: 11px;
+  color: #64748b;
+}
+.clarify-quick-chip-plus {
+  font-size: 12px;
+  font-weight: 600;
+  color: #3b82f6;
+  margin-left: 2px;
+}

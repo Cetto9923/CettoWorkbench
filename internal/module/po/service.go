@@ -15,6 +15,8 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -94,56 +96,79 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 		return nil, fmt.Errorf("po repo is not configured")
 	}
 
-	stages := make([]ValueStreamStage, 0, len(valueStreamStages))
-	allIdx := -1
-	for _, def := range valueStreamStages {
-		if def.status == "all" {
-			allIdx = len(stages)
-			stages = append(stages, ValueStreamStage{Label: def.label, Status: def.status, Valid: true})
-			continue
-		}
+	t0 := time.Now()
+	var (
+		breakdown  []ValueStreamStage
+		allErr     error
+		windows    []schedule.HomeVersionWindowCard
+		winErr     error
+		myPending  int64
+		pendingErr error
+		kpiSummary KPISummaryResult
+		kpiErr     error
+		wg         sync.WaitGroup
+	)
 
-		var demand, story int64
-		if filter, ok := mysqlStageFilters[def.status]; ok {
-			n, countErr := s.repo.CountRoleDemands(ctx, account, filter)
-			if countErr != nil {
-				return nil, countErr
-			}
-			demand = n
-			if filter.scheduleIncomplete {
-				sn, storyErr := s.repo.CountScheduleStories(ctx, account)
-				if storyErr != nil {
-					return nil, storyErr
-				}
-				story = sn
-			}
-			if filter.deliverStories {
-				sn, storyErr := s.repo.CountDeliverStories(ctx, account)
-				if storyErr != nil {
-					return nil, storyErr
-				}
-				story = sn
-			}
-		}
-		stages = append(stages, ValueStreamStage{
-			Label:       def.label,
-			Status:      def.status,
-			Valid:       true,
-			Count:       demand + story,
-			DemandCount: demand,
-			StoryCount:  story,
-		})
+	// 并行加载价值流全景统计、版本窗口与 KPI 指标，大幅缩短首屏加载耗时。
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		breakdown, allErr = s.countAllStageBreakdown(ctx, account)
+	}()
+
+	if s.schedule != nil {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			windows, winErr = s.schedule.ListHomeVersionWindows(ctx, actor)
+		}()
 	}
 
-	// 「全部」= 各阶段 kind+id 去重并集；只拉 ID，不拉详情
-	if allIdx >= 0 {
-		demandSum, storySum, allErr := s.countAllStageUniq(ctx, account)
-		if allErr != nil {
-			return nil, allErr
+	if strings.TrimSpace(account) != "" {
+		wg.Add(2)
+		go func() {
+			defer wg.Done()
+			myPending, pendingErr = s.repo.CountHomeFocus(ctx, account, DemandsReq{Status: "all", Focus: "my_action"})
+		}()
+		go func() {
+			defer wg.Done()
+			kpiSummary, kpiErr = s.repo.CountKPISummary(ctx, account)
+		}()
+	}
+
+	wg.Wait()
+
+	if allErr != nil {
+		return nil, allErr
+	}
+	if pendingErr != nil {
+		return nil, pendingErr
+	}
+	if kpiErr != nil {
+		return nil, kpiErr
+	}
+
+	stages := make([]ValueStreamStage, len(breakdown))
+	copy(stages, breakdown)
+	allIdx := -1
+	for i, st := range stages {
+		if st.Status == "all" {
+			allIdx = i
+			break
 		}
-		stages[allIdx].DemandCount = demandSum
-		stages[allIdx].StoryCount = storySum
-		stages[allIdx].Count = demandSum + storySum
+	}
+	if allIdx >= 0 {
+		var allDemand, allStory int64
+		for i, stage := range stages {
+			if i == allIdx {
+				continue
+			}
+			allDemand += stage.DemandCount
+			allStory += stage.StoryCount
+		}
+		stages[allIdx].DemandCount = allDemand
+		stages[allIdx].StoryCount = allStory
+		stages[allIdx].Count = allDemand + allStory
 	}
 
 	versionWindows := []schedule.HomeVersionWindowCard{}
@@ -153,37 +178,44 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 		if s.logger != nil {
 			s.logger.Error("po home schedule service is nil, version windows skipped")
 		}
-	} else {
-		windows, winErr := s.schedule.ListHomeVersionWindows(ctx, actor)
-		if winErr != nil {
-			versionWindowsError = "版本窗口查询失败"
-			if s.logger != nil {
-				s.logger.Warn("po home version windows", zap.Error(winErr))
-			}
-		} else {
-			versionWindows = windows
+	} else if winErr != nil {
+		versionWindowsError = "版本窗口查询失败"
+		if s.logger != nil {
+			s.logger.Warn("po home version windows", zap.Error(winErr))
 		}
+	} else {
+		versionWindows = windows
 	}
 
-	// 5 个焦点摘要：MyPending 已包含在 all 阶段计数；其余 4 个由 Repo 真实统计。
-	kpi := KPICounts{MyPending: stages[allIdx].Count}
-	if strings.TrimSpace(account) != "" {
-		if err := s.fillKPICounts(ctx, account, &kpi); err != nil {
-			return nil, err
-		}
-		if s.logger != nil {
-			s.logger.Info("po home kpi",
-				zap.String("account", account),
-				zap.Int64("today", kpi.Today),
-				zap.Int64("overdue", kpi.Overdue),
-				zap.Int64("suspended", kpi.Suspended),
-				zap.Int64("blocked", kpi.Blocked),
-				zap.Int64("my_pending", kpi.MyPending),
-			)
-		}
+	// 全部与待我处理是两个独立口径。
+	allCount := int64(0)
+	if allIdx >= 0 {
+		allCount = stages[allIdx].Count
+	}
+	kpi := KPICounts{
+		Today:     kpiSummary.Today,
+		Overdue:   kpiSummary.Overdue,
+		Suspended: kpiSummary.Suspended,
+		Blocked:   kpiSummary.Blocked,
+		MyPending: myPending,
+	}
+
+	if s.logger != nil {
+		s.logger.Info("po home kpi",
+			zap.String("account", account),
+			zap.Int64("today", kpi.Today),
+			zap.Int64("overdue", kpi.Overdue),
+			zap.Int64("suspended", kpi.Suspended),
+			zap.Int64("blocked", kpi.Blocked),
+			zap.Int64("my_pending", kpi.MyPending),
+		)
+		s.logger.Info("po home parallel load completed",
+			zap.Duration("total_duration", time.Since(t0)),
+		)
 	}
 
 	return &HomeResp{
+		AllCount:            allCount,
 		Stages:              stages,
 		StagesValid:         true,
 		VersionWindows:      versionWindows,
@@ -192,28 +224,16 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 	}, nil
 }
 
-// kpiCountFn 适配 CountKPI* 方法的统一签名，便于在 fillKPICounts 中以 map 驱动循环。
-type kpiCountFn func(context.Context, string) (int64, error)
-
-// fillKPICounts 顺序调用 4 个 CountKPI* 方法并填充 KPICounts；任一失败即返回（首个错误包 label）。
+// fillKPICounts 通过单次 SQL 聚合填充今日必推/超期/挂起/阻塞，避免 4 次独立大表扫描。
 func (s *Service) fillKPICounts(ctx context.Context, account string, kpi *KPICounts) error {
-	fills := []struct {
-		label string
-		fn    kpiCountFn
-		dst   *int64
-	}{
-		{"today", s.repo.CountKPIToday, &kpi.Today},
-		{"overdue", s.repo.CountKPIOverdue, &kpi.Overdue},
-		{"suspended", s.repo.CountKPISuspended, &kpi.Suspended},
-		{"blocked", s.repo.CountKPIBlocked, &kpi.Blocked},
+	summary, err := s.repo.CountKPISummary(ctx, account)
+	if err != nil {
+		return fmt.Errorf("kpi summary: %w", err)
 	}
-	for _, f := range fills {
-		n, err := f.fn(ctx, account)
-		if err != nil {
-			return fmt.Errorf("kpi %s: %w", f.label, err)
-		}
-		*f.dst = n
-	}
+	kpi.Today = summary.Today
+	kpi.Overdue = summary.Overdue
+	kpi.Suspended = summary.Suspended
+	kpi.Blocked = summary.Blocked
 	return nil
 }
 
@@ -231,8 +251,11 @@ func (s *Service) Demands(ctx context.Context, actor *model.User, req DemandsReq
 	if err != nil {
 		return nil, err
 	}
-	// F06：首页「全部」与焦点筛选一律走 SQL 去重 + count + 分页，禁止无界 Pluck 后 Go 切片。
-	if req.Status == "all" || (req.Focus != "" && req.Focus != "all") {
+	// “全部”按 Main 口径合并业务需求与研发需求；带焦点筛选时使用 SQL 候选集。
+	if req.Status == "all" && (req.Focus == "" || req.Focus == "all") {
+		return s.listAllStageDemands(ctx, actor, req, displayMap)
+	}
+	if req.Focus != "" && req.Focus != "all" {
 		if errs := req.Validate(); len(errs) > 0 {
 			return nil, fmt.Errorf("invalid home focus request")
 		}
@@ -240,11 +263,36 @@ func (s *Service) Demands(ctx context.Context, actor *model.User, req DemandsReq
 		if actor != nil {
 			account = actor.Account
 		}
-		refs, total, err := s.repo.FindHomeFocus(ctx, account, req)
+		var (
+			refs     []itemRef
+			total    int
+			summary  []ValueStreamStage
+			focusErr error
+			sumErr   error
+			wg       sync.WaitGroup
+		)
+		wg.Add(2)
+		go func() {
+			defer wg.Done()
+			refs, total, focusErr = s.repo.FindHomeFocus(ctx, account, req)
+		}()
+		go func() {
+			defer wg.Done()
+			summary, sumErr = s.repo.HomeFocusStageSummary(ctx, account, req)
+		}()
+		wg.Wait()
+		if focusErr != nil {
+			return nil, focusErr
+		}
+		if sumErr != nil {
+			return nil, sumErr
+		}
+		resp, err := s.populateWorkItems(ctx, actor, refs, total, req.Page, req.PageSize, displayMap)
 		if err != nil {
 			return nil, err
 		}
-		return s.populateWorkItems(ctx, actor, refs, total, req.Page, req.PageSize, displayMap)
+		resp.StageSummary = summary
+		return resp, nil
 	}
 	if filter, ok := mysqlStageFilters[req.Status]; ok {
 		return s.listMySQLDemands(ctx, actor, req.Status, filter, req, displayMap)

@@ -14,11 +14,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"gorm.io/gorm"
 
 	"workbench/internal/model"
 	"workbench/internal/module/po/primaryaction"
+	"workbench/internal/pkg/zentao"
 )
 
 // DetailService 业务需求详情服务。
@@ -135,6 +137,14 @@ func (s *DetailService) GetDemandDetail(ctx context.Context, actor *model.User, 
 	if actor != nil && row != nil {
 		pa := s.buildPrimaryActionForDetail(ctx, actor, row)
 		resp.PrimaryAction = &pa
+		account := strings.TrimSpace(actor.Account)
+		if account != "" {
+			resp.Summary.IsCreator = strings.TrimSpace(row.CreatedBy) == account
+			resp.Summary.IsAssignee = strings.TrimSpace(row.AssignedTo) == account
+		}
+		if pa.Key == string(primaryaction.KeyApprove) && pa.Enabled {
+			resp.Summary.CanReview = true
+		}
 	}
 
 	// F02：API 出口对富文本字段做白名单净化，确保 specHtml / verifyHtml 即便
@@ -223,6 +233,10 @@ func (s *DetailService) buildSummary(row *DemandDetailRow) DemandSummary {
 		AcceptanceStatus: acceptStatus,
 		CreatedDate:      createdStr,
 		EditedDate:       editedStr,
+		CreatedBy:        row.CreatedBy,
+		CreatedName:      FormatAccountName(row.CreatedBy, row.CreatedByName),
+		ZentaoEditURL:    zentao.DemandEditURL(row.ID),
+		ZentaoURL:        zentao.DemandViewURL(row.ID),
 	}
 }
 

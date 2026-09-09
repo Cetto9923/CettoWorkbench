@@ -57,6 +57,7 @@ type DemandDetailRow struct {
 	OriginatorName   string     `gorm:"column:originator_name"`
 	OriginatorDept   string     `gorm:"column:originator_dept"`
 	CreatedBy        string     `gorm:"column:createdBy"`
+	CreatedByName    string     `gorm:"column:created_by_name"`
 	CreatedDate      *time.Time `gorm:"column:createdDate"`
 	ClosedBy         string     `gorm:"column:closedBy"`
 	ClosedDate       *time.Time `gorm:"column:closedDate"`
@@ -96,7 +97,10 @@ SELECT d.id, d.parent, d.pool, d.pri, d.category, d.source, d.sourceNote,
        COALESCE(u_qd.realname, d.QD) AS qd_name,
        COALESCE(u_orig.realname, d.originator) AS originator_name,
        COALESCE(u_acc.realname, d.accepter) AS accepter_name,
-       COALESCE(u_rev.realname, d.reviewer) AS reviewer_name,
+       COALESCE(u_creat.realname, '') AS created_by_name,
+       COALESCE(NULLIF((SELECT GROUP_CONCAT(COALESCE(u.realname, u.account) ORDER BY u.account SEPARATOR ', ')
+                        FROM zt_user u
+                        WHERE u.deleted = '0' AND FIND_IN_SET(u.account, REPLACE(d.reviewer, ' ', '')) > 0), ''), d.reviewer) AS reviewer_name,
        COALESCE(dept.name, '—') AS originator_dept,
        COALESCE(dp.name, '—') AS pool_name,
        COALESCE(prod.name, d.product) AS product_name,
@@ -107,7 +111,7 @@ LEFT JOIN zt_user u_bra ON d.BRA = u_bra.account AND u_bra.deleted = '0'
 LEFT JOIN zt_user u_qd ON d.QD = u_qd.account AND u_qd.deleted = '0'
 LEFT JOIN zt_user u_orig ON d.originator = u_orig.account AND u_orig.deleted = '0'
 LEFT JOIN zt_user u_acc ON d.accepter = u_acc.account AND u_acc.deleted = '0'
-LEFT JOIN zt_user u_rev ON d.reviewer = u_rev.account AND u_rev.deleted = '0'
+LEFT JOIN zt_user u_creat ON d.createdBy = u_creat.account AND u_creat.deleted = '0'
 LEFT JOIN zt_dept dept ON u_orig.dept = dept.id
 LEFT JOIN zt_demandpool dp ON d.pool = dp.id AND dp.deleted = '0'
 LEFT JOIN zt_product prod ON d.product = prod.id AND prod.deleted = '0'

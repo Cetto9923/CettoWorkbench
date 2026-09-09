@@ -1,0 +1,32 @@
+<?php
+$routes['/my']                         = 'my';
+$routes['/demand/:id']                 = 'demand';
+$routes['/demand/:id/review']          = 'demandReview';
+$routes['/demand/:id/reviewChange']    = 'demandReviewChange';
+$routes['/demand/:id/withdrawReview']  = 'demandWithdrawReview';
+$routes['/demand/:id/submitReview']    = 'demandSubmitReview';
+$routes['/demand/:id/clarify']         = 'demandClarify';
+$routes['/demand/:id/aiGenerate']      = 'demandAIGenerate';
+$routes['/demand/:id/assignTo']        = 'demandAssignTo';
+$routes['/demand/:id/close']           = 'demandClose';
+$routes['/demand/:id/acceptance']      = 'demandAcceptance';
+$routes['/demands']                    = 'demands';
+$routes['/demandlist']                 = 'demandList';
+$routes['/charter/:id']                = 'charter';
+$routes['/mystories']                  = 'mystories';
+$routes['/audits']                     = 'audits';
+$routes['/audittabs']                  = 'audittabs';
+$routes['/operates/:id/']              = 'operates';
+$routes['/operates']                   = 'operates';
+$routes['/review/:id']                 = 'review';
+$routes['/planchange/:id']             = 'planChangeReview';
+$routes['/releases/:id/review']        = 'releaseReview';
+$routes['/allprojects']                = 'allprojects';
+$routes['/feedbacksallinfo']           = 'feedbacksallinfo';
+$routes['/demand/:id/reviewByManager'] = 'demandReviewByManager';
+$routes['/demand/:id/appraise']        = 'demandAppraise';
+$routes['/checkBranch']                = 'checkBranch';
+$routes['/issuev2/:id']                = 'issuev2';
+$routes['/userinfo']                   = 'userInfo';
+
+$config->routes = $routes;

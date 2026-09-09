@@ -78,6 +78,9 @@ func RequireLogin(mgr *scs.SessionManager, db *gorm.DB) gin.HandlerFunc {
 		c.Set("currentUser", &user)
 		c.Set("userPerms", userPerms)
 		c.Set("currentMenus", currentMenus)
+		// Services derive visible actions from the same authenticated capability
+		// snapshot as RequirePerm. Do not treat a nonempty account as a grant.
+		c.Request = c.Request.WithContext(perm.WithGranted(c.Request.Context(), userPerms))
 		c.Next()
 	}
 }

@@ -37,7 +37,7 @@ func TestSubmitTestTemplateRendersZenTaoEntry(t *testing.T) {
 				DemandID:  63314,
 				Title:     "测试需求",
 				Stage:     "提测",
-				Eligible: true,
+				Eligible:  true,
 				ZentaoURL: "http://zentao.test/index.php?m=demand&f=view&demandID=63314",
 				Units: []SubmitTestUnit{{
 					ProductName:   "产品一",

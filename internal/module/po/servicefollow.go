@@ -11,10 +11,12 @@ package po
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
 	"workbench/internal/model"
+	"workbench/internal/module/po/primaryaction"
 	"workbench/internal/pkg/zentao"
 )
 
@@ -97,133 +99,36 @@ func (s *Service) loadAccountDisplayMap(ctx context.Context, actor *model.User) 
 	return s.userSvc.AccountDisplayMap(ctx, actor)
 }
 
-// countAllStageUniq 各阶段只查 ID，按 kind+id 去重后返回业需/研需数量（与 listAllStageDemands 并集语义一致）。
-func (s *Service) countAllStageUniq(ctx context.Context, account string) (demandSum, storySum int64, err error) {
-	seenDemand := make(map[int]struct{})
-	seenStory := make(map[int]struct{})
-	for _, def := range valueStreamStages {
-		if def.status == "all" {
-			continue
-		}
-		filter, ok := mysqlStageFilters[def.status]
-		if !ok {
-			continue
-		}
-		ids, idErr := s.repo.FindRoleDemandIDs(ctx, account, filter)
-		if idErr != nil {
-			return 0, 0, idErr
-		}
-		for _, id := range ids {
-			seenDemand[id] = struct{}{}
-		}
-		if filter.scheduleIncomplete {
-			storyIDs, storyErr := s.repo.FindScheduleStoryIDs(ctx, account)
-			if storyErr != nil {
-				return 0, 0, storyErr
-			}
-			for _, id := range storyIDs {
-				seenStory[id] = struct{}{}
-			}
-		}
-		if filter.deliverStories {
-			storyIDs, storyErr := s.repo.FindDeliverStoryIDs(ctx, account)
-			if storyErr != nil {
-				return 0, 0, storyErr
-			}
-			for _, id := range storyIDs {
-				seenStory[id] = struct{}{}
-			}
-		}
-	}
-	return int64(len(seenDemand)), int64(len(seenStory)), nil
-}
-
-type itemRef struct {
-	kind        string
-	id          int
-	stageStatus string
-}
-
-// listAllStageDemands 「全部」列表 = 其余各阶段列表按阶段顺序拼接，按 kind+id 去重（保留首次出现），并分页返回。
-func (s *Service) listAllStageDemands(ctx context.Context, actor *model.User, req DemandsReq, displayMap map[string]string) (*DemandsResp, error) {
-	account := ""
-	if actor != nil {
-		account = actor.Account
-	}
-	allRefs := make([]itemRef, 0)
-	seen := make(map[string]struct{})
-	for _, def := range valueStreamStages {
-		if def.status == "all" {
-			continue
-		}
-		filter, ok := mysqlStageFilters[def.status]
-		if !ok {
-			continue
-		}
-		demandIDs, err := s.repo.FindRoleDemandIDs(ctx, account, filter)
-		if err != nil {
-			return nil, err
-		}
-		for _, id := range demandIDs {
-			key := fmt.Sprintf("demand:%d", id)
-			if _, exists := seen[key]; !exists {
-				seen[key] = struct{}{}
-				allRefs = append(allRefs, itemRef{kind: "demand", id: id, stageStatus: def.status})
-			}
-		}
-		if filter.scheduleIncomplete {
-			storyIDs, sErr := s.repo.FindScheduleStoryIDs(ctx, account)
-			if sErr != nil {
-				return nil, sErr
-			}
-			for _, id := range storyIDs {
-				key := fmt.Sprintf("story:%d", id)
-				if _, exists := seen[key]; !exists {
-					seen[key] = struct{}{}
-					allRefs = append(allRefs, itemRef{kind: "story", id: id, stageStatus: def.status})
-				}
-			}
-		}
-		if filter.deliverStories {
-			storyIDs, sErr := s.repo.FindDeliverStoryIDs(ctx, account)
-			if sErr != nil {
-				return nil, sErr
-			}
-			for _, id := range storyIDs {
-				key := fmt.Sprintf("story:%d", id)
-				if _, exists := seen[key]; !exists {
-					seen[key] = struct{}{}
-					allRefs = append(allRefs, itemRef{kind: "story", id: id, stageStatus: def.status})
-				}
-			}
-		}
-	}
-
-	total := len(allRefs)
-	offset := (req.Page - 1) * req.PageSize
-	if offset >= total || total == 0 {
-		return &DemandsResp{Items: []WorkItemDetail{}, Total: total, Page: req.Page, PageSize: req.PageSize}, nil
-	}
-	end := offset + req.PageSize
-	if end > total {
-		end = total
-	}
-	pageRefs := allRefs[offset:end]
-
-	return s.populateWorkItems(ctx, actor, pageRefs, total, req.Page, req.PageSize, displayMap)
-}
-
 // listMySQLDemands 从 MySQL 加载指定价值流阶段的业需列表（排期/交付阶段额外合并独立研发需求），并分页返回。
 func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stageStatus string, filter mysqlStageFilter, req DemandsReq, displayMap map[string]string) (*DemandsResp, error) {
 	account := ""
 	if actor != nil {
 		account = actor.Account
 	}
+	includeDemand := req.ObjectType != "story"
+	includeStory := req.ObjectType != "demand"
 	label := valueStreamLabelForStatus(stageStatus)
 	offset := (req.Page - 1) * req.PageSize
 
+	// 受理阶段（accept）：SQL 中待我评审置顶，再分页。
+	// 受理阶段 status 跨 draft/wait/refuse，canReview 仅 wait 子集，
+	// 必须在分页前排好序，否则待我评审的需求可能散落在各页。
+	if stageStatus == "accept" && account != "" {
+		if !includeDemand {
+			return &DemandsResp{Items: []WorkItemDetail{}, Total: 0, Page: req.Page, PageSize: req.PageSize}, nil
+		}
+		refs, total, err := s.repo.acceptRefsPaged(ctx, account, req)
+		if err != nil {
+			return nil, err
+		}
+		return s.populateWorkItems(ctx, actor, refs, total, req.Page, req.PageSize, displayMap)
+	}
+
 	// 纯业需阶段：直接单 SQL Count + 单 SQL 分页查
 	if !filter.scheduleIncomplete && !filter.deliverStories {
+		if !includeDemand {
+			return &DemandsResp{Items: []WorkItemDetail{}, Total: 0, Page: req.Page, PageSize: req.PageSize}, nil
+		}
 		total, err := s.repo.CountRoleDemands(ctx, account, filter)
 		if err != nil {
 			return nil, err
@@ -237,9 +142,22 @@ func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stage
 		}
 		items := make([]WorkItemDetail, 0, len(rows))
 		demandMap := make(map[int]DemandRow, len(rows))
+		demandIDs := make([]uint, 0, len(rows))
 		for _, row := range rows {
 			items = append(items, buildDemandWorkItem(row, label, displayMap))
 			demandMap[row.ID] = row
+			demandIDs = append(demandIDs, uint(row.ID))
+		}
+		actions, actionErr := s.DeriveDemandPrimaryActions(ctx, actor, demandIDs)
+		if actionErr != nil {
+			return nil, actionErr
+		}
+		for i := range items {
+			id := parseDemandNumericID(items[i].ID)
+			if pa, ok := actions[uint(id)]; ok {
+				paCopy := pa
+				items[i].PrimaryAction = &paCopy
+			}
 		}
 		if err := s.enrichDemandCanReview(ctx, account, items, demandMap); err != nil {
 			return nil, err
@@ -248,15 +166,17 @@ func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stage
 	}
 
 	// 包含独立研发需求阶段（排期/交付）：按 ID 投影分页后按需加载详情
-	demandIDs, err := s.repo.FindRoleDemandIDs(ctx, account, filter)
-	if err != nil {
-		return nil, err
+	refs := make([]itemRef, 0)
+	if includeDemand {
+		demandIDs, err := s.repo.FindRoleDemandIDs(ctx, account, filter)
+		if err != nil {
+			return nil, err
+		}
+		for _, id := range demandIDs {
+			refs = append(refs, itemRef{kind: "demand", id: id, stageStatus: stageStatus})
+		}
 	}
-	refs := make([]itemRef, 0, len(demandIDs))
-	for _, id := range demandIDs {
-		refs = append(refs, itemRef{kind: "demand", id: id, stageStatus: stageStatus})
-	}
-	if filter.scheduleIncomplete {
+	if includeStory && filter.scheduleIncomplete {
 		storyIDs, sErr := s.repo.FindScheduleStoryIDs(ctx, account)
 		if sErr != nil {
 			return nil, sErr
@@ -265,7 +185,7 @@ func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stage
 			refs = append(refs, itemRef{kind: "story", id: id, stageStatus: stageStatus})
 		}
 	}
-	if filter.deliverStories {
+	if includeStory && filter.deliverStories {
 		storyIDs, sErr := s.repo.FindDeliverStoryIDs(ctx, account)
 		if sErr != nil {
 			return nil, sErr
@@ -364,6 +284,11 @@ func (s *Service) populateWorkItems(ctx context.Context, actor *model.User, page
 	if err := s.enrichDemandCanReview(ctx, account, items, demandMap); err != nil {
 		return nil, err
 	}
+	// 首页办理优先级：评审 > 提交 > 查看。只对当前页排序，保持前面的
+	// SQL 分页和阶段顺序不变，同时确保用户首先看到可直接办理的事项。
+	sort.SliceStable(items, func(i, j int) bool {
+		return homeActionPriority(items[i]) < homeActionPriority(items[j])
+	})
 
 	return &DemandsResp{
 		Items:    items,
@@ -371,6 +296,16 @@ func (s *Service) populateWorkItems(ctx context.Context, actor *model.User, page
 		Page:     page,
 		PageSize: pageSize,
 	}, nil
+}
+
+func homeActionPriority(item WorkItemDetail) int {
+	if item.CanReview || (item.PrimaryAction != nil && item.PrimaryAction.Key == string(primaryaction.KeyApprove)) {
+		return 0
+	}
+	if item.PrimaryAction != nil && item.PrimaryAction.Key == string(primaryaction.KeySubmitReview) {
+		return 1
+	}
+	return 2
 }
 
 // toUintSlice 把 []int 安全转为 []uint（ref.id 已经是正数）。

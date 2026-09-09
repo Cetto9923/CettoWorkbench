@@ -2,8 +2,6 @@
 // 文件: web/static/js/po/demand-detail-render.js
 // 模块: PO 工作台
 // 职责: 业务需求统一详情五大 Tab、父子导航与去重模板纯渲染函数。
-//       F02 富文本净化逻辑下沉到 demand-detail-richtext.js，本文件
-//       仅消费 sanitizeRichText / esc 接口。
 // =============================================================================
 
 (function (root, factory) {
@@ -50,22 +48,22 @@
 
   function zentaoStatusLabel(value) {
     var raw = String(value || "").trim(), key = raw.toLowerCase();
-    var labels = { developing: "开发中", testing: "测试中", wait: "待处理", draft: "草稿", active: "已激活", closed: "已关闭", canceled: "已取消", cancelled: "已取消", suspended: "已挂起", blocked: "已阻塞", done: "已完成", resolved: "已解决", verified: "已验证", reviewing: "评审中", changed: "已变更", postponed: "已延期" };
+    var labels = { developing: "开发中", testing: "测试中", wait: "待评审", draft: "草稿", active: "已评审", closed: "已关闭", canceled: "已取消", cancelled: "已取消", suspended: "已挂起", blocked: "已阻塞", done: "已完成", resolved: "已解决", verified: "已验证", reviewing: "评审中", changed: "已变更", postponed: "已延期" };
     return labels[key] || raw || "—";
   }
 
   function renderHeader(summary, mode) {
     var tagText = mode === "parentAggregate" ? "父业务需求 · 聚合对象" : (mode === "childUnit" ? "子业务需求 · 交付单元" : "独立交付单元");
-    var handler = summary.currentOwner || summary.ownerName || "待确认";
+    var reviewer = summary.reviewer || "待确认";
     var launch = summary.estimateLaunch || "—";
-    var stageLabel = summary.valueStageLabel || summary.valueStage || "—";
+    var stageLabel = String(summary.zentaoStatus || "").toLowerCase() === "wait" ? "待受理" : (summary.valueStageLabel || summary.valueStage || "—");
+    var zentaoUrl = summary.zentaoUrl || "";
 
     return '<div class="dd-idrow">' +
-      '<span class="dd-id">' + esc(summary.code) + '</span>' +
+      (zentaoUrl ? '<a class="dd-id table-id-link" href="' + esc(zentaoUrl) + '" target="_blank" rel="noopener noreferrer">' + esc(summary.code) + '</a>' : '<span class="dd-id">' + esc(summary.code) + '</span>') +
       '<span class="dd-tag blue">' + esc(tagText) + '</span>' +
       priorityBadge(summary.priority) +
       '<div class="dd-head-actions">' +
-      '  <a class="dd-iconbtn" href="/demands/' + esc(summary.demandId) + '" target="_blank" title="在新页面打开">↗</a>' +
       '  <button class="ui-close-btn" onclick="DemandDetail.close()" title="关闭" aria-label="关闭">×</button>' +
       '</div></div>' +
       '<div class="dd-title">' + esc(summary.title) + '</div>' +
@@ -75,8 +73,8 @@
       '  <span>最近更新：' + esc(summary.editedDate) + '</span>' +
       '</div>' +
       '<div class="dd-spot-cards-3">' +
-      '  <div class="dd-spot-card"><div class="lab">价值流阶段</div><div class="val blue">' + esc(stageLabel) + '</div></div>' +
-      '  <div class="dd-spot-card"><div class="lab">当前责任人</div><div class="val">' + esc(handler) + '</div></div>' +
+      '  <div class="dd-spot-card"><div class="lab">当前阶段</div><div class="val blue">' + esc(stageLabel) + '</div></div>' +
+      '  <div class="dd-spot-card"><div class="lab">业务评审人</div><div class="val">' + esc(reviewer) + '</div></div>' +
       '  <div class="dd-spot-card"><div class="lab">目标上线</div><div class="val">' + esc(launch) + '</div></div>' +
       '</div>' +
       '<div class="dd-core-strip">' +
@@ -261,11 +259,10 @@
       '<div class="dd-card" id="clarificationActionSection"><div class="dd-card-body">' +
       '<div class="dd-cardhead"><h3>需求澄清协同与办理动作</h3></div>' +
       '<div style="display:flex;align-items:center;justify-content:space-between;background:#f8fafc;padding:12px 16px;border-radius:6px;border:1px solid #e2e8f0;">' +
-      '  <div><div style="font-weight:600;font-size:13px;color:#1e293b;">禅道需求澄清办理通道</div><div style="font-size:12px;color:#64748b;margin-top:2px;">支持直接跳转至禅道澄清专区更新涉及系统、需求分析师与交付节点。</div></div>' +
+      '  <div><div style="font-weight:600;font-size:13px;color:#1e293b;">需求澄清办理</div><div style="font-size:12px;color:#64748b;margin-top:2px;">支持在工作台直接办理澄清并更新涉及系统与交付节点。</div></div>' +
       '  <div style="display:flex;gap:8px;">' +
-      (req.clarifyZtUrl ? '<a href="' + esc(req.clarifyZtUrl) + '" target="_blank" rel="noopener noreferrer" class="dd-btn" style="background:#2563eb;color:#fff;border-color:#2563eb;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">在禅道办理需求澄清 ↗</a>' : '<span style="font-size:12px;color:#94a3b8;">暂无澄清入口</span>') +
-      '  </div>' +
-      '</div></div></div>' +
+      (req.demandId ? '<button type="button" class="dd-btn js-drawer-clarify-btn" data-demand-id="' + esc(req.demandId) + '" style="background:#2563eb;color:#fff;border-color:#2563eb;cursor:pointer;">办理需求澄清</button>' : (req.clarifyZtUrl ? '<a href="' + esc(req.clarifyZtUrl) + '" target="_blank" rel="noopener noreferrer" class="dd-btn" style="background:#2563eb;color:#fff;border-color:#2563eb;text-decoration:none;">在禅道办理需求澄清 ↗</a>' : '<span style="font-size:12px;color:#94a3b8;">暂无澄清入口</span>')) +
+      '  </div></div></div>' +
       (filesRows ? '<div class="dd-card"><div class="dd-card-body"><div class="dd-cardhead"><h3>需求附件</h3></div><ul style="padding-left:18px;margin:0;font-size:12px;color:#2563eb;">' + filesRows + '</ul></div></div>' : '');
   }
 
@@ -490,8 +487,6 @@
       '<div class="k">关闭人</div><div class="v">' + esc(lc.closedBy) + '</div><div class="k">关闭原因</div><div class="v">' + esc(lc.closedReason) + '</div>' +
       '</div></div></div></aside></div>';
   }
-
-  // renderParentAggregate 拆分到 demand-detail-parent.js；保持本文件 ≤500 行硬性上限。
 
   return {
     esc: esc, sanitizeRichText: sanitizeRichText, renderHeader: renderHeader, renderRelationNav: renderRelationNav,

@@ -10,7 +10,9 @@
 package schedule
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -26,6 +28,13 @@ func (h *Handler) GetStoryScheduling(c *gin.Context) {
 			"success": false,
 			"error":   "研发需求 ID 无效",
 		})
+		return
+	}
+
+	// 浏览器直链访问（非 Ajax/JSON）重定向到工作台排期主页并自动弹出一体化弹窗
+	accept := c.GetHeader("Accept")
+	if !strings.Contains(accept, "application/json") && c.GetHeader("X-Requested-With") == "" && c.Query("format") != "json" {
+		c.Redirect(http.StatusFound, fmt.Sprintf("/schedule?openStory=%d", storyID))
 		return
 	}
 

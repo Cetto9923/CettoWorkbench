@@ -1,0 +1,235 @@
+{{ define "po/clarify_modal" }}
+<!-- 需求澄清全屏/大号模态弹窗 -->
+<div id="poDemandClarifyModal" class="demand-clarify-modal modal" style="display: none;" aria-hidden="true">
+  <div class="demand-clarify-backdrop" id="poDemandClarifyBackdrop"></div>
+  <div class="demand-clarify-dialog" role="dialog" aria-modal="true" aria-labelledby="poClarifyTitle">
+    
+    <!-- 弹窗头部 -->
+    <div class="demand-clarify-header">
+      <div class="demand-clarify-title-wrap">
+        <span class="demand-clarify-badge" id="poClarifyDemandBadge">US——</span>
+        <h3 class="demand-clarify-title" id="poClarifyDemandTitle">需求澄清</h3>
+        <span class="demand-clarify-subtitle">› 澄清需求</span>
+      </div>
+      <button type="button" class="demand-clarify-close-btn" id="poDemandClarifyCloseBtn" aria-label="关闭">&times;</button>
+    </div>
+
+    <!-- 加载与错误状态占位 -->
+    <div id="poClarifyLoadingState" class="demand-clarify-loading">
+      <div class="clarify-spinner"></div>
+      <p>正在加载澄清表单数据…</p>
+    </div>
+    <div id="poClarifyErrorState" class="demand-clarify-error-state" style="display: none;">
+      <p id="poClarifyErrorMsg">加载失败，请稍后重试</p>
+      <button type="button" class="table-action-btn primary" id="poClarifyRetryBtn">重新加载</button>
+    </div>
+
+    <!-- 表单正文 -->
+    <form id="poDemandClarifyForm" class="demand-clarify-form" style="display: none;" novalidate>
+      <input type="hidden" name="demandId" id="poClarifyDemandId" value="">
+
+      <div class="demand-clarify-body">
+        
+        <!-- 模块一：基本信息 -->
+        <div class="clarify-section">
+          <div class="clarify-section-title">
+            <span class="clarify-title-bar"></span>基本信息
+          </div>
+          <div class="clarify-grid-4">
+            <div class="clarify-form-group">
+              <label class="clarify-label required">需求类别</label>
+              <select class="clarify-select" name="category" id="poClarifyCategory" required>
+                <option value="">请选择需求类别</option>
+              </select>
+            </div>
+            <div class="clarify-form-group">
+              <label class="clarify-label required" for="poClarifyBRAInput">需求负责人</label>
+              <div class="ui-autocomplete">
+                <input
+                  type="text"
+                  id="poClarifyBRAInput"
+                  class="clarify-input"
+                  placeholder="输入姓名或工号搜索"
+                  autocomplete="off"
+                >
+                <input type="hidden" name="bra" id="poClarifyBRA" required>
+              </div>
+            </div>
+            <div class="clarify-form-group">
+              <label class="clarify-label" for="poClarifyQDInput">测试负责人</label>
+              <div class="ui-autocomplete">
+                <input
+                  type="text"
+                  id="poClarifyQDInput"
+                  class="clarify-input"
+                  placeholder="输入姓名或工号搜索"
+                  autocomplete="off"
+                >
+                <input type="hidden" name="qd" id="poClarifyQD">
+              </div>
+            </div>
+            <div class="clarify-form-group">
+              <label class="clarify-label" for="poClarifyRDInput">验收负责人</label>
+              <div class="ui-autocomplete">
+                <input
+                  type="text"
+                  id="poClarifyRDInput"
+                  class="clarify-input"
+                  placeholder="输入姓名或工号搜索"
+                  autocomplete="off"
+                >
+                <input type="hidden" name="rd" id="poClarifyRD">
+              </div>
+            </div>
+          </div>
+
+          <!-- 需求描述（只读折叠面板） -->
+          <div class="clarify-desc-panel">
+            <div class="clarify-desc-header" id="poClarifyDescToggle">
+              <span class="clarify-desc-tag">需求描述</span>
+              <span class="clarify-desc-hint" id="poClarifyDescPreview">点击展开查看原业务需求正文…</span>
+              <span class="clarify-desc-arrow" id="poClarifyDescArrow">▼</span>
+            </div>
+            <div class="clarify-desc-content" id="poClarifyDescContent" style="display: none;"></div>
+          </div>
+        </div>
+
+        <!-- 模块二：涉及产品/系统 -->
+        <div class="clarify-section">
+          <div class="clarify-section-title">
+            <span class="clarify-title-bar"></span>涉及产品/系统 <span class="clarify-title-req">*</span>
+            <span class="clarify-section-tip">需明确承建产品、需求分析人员及交付节点；必须且只能指定一个主系统。</span>
+          </div>
+          <div class="clarify-quick-bar" id="poClarifyQuickBar" style="display: none;"></div>
+          <div class="clarify-table-responsive">
+            <table class="clarify-table" id="poClarifyProductTable">
+              <thead>
+                <tr>
+                  <th style="width: 25%; min-width: 200px;">涉及产品 <span class="clarify-req">*</span></th>
+                  <th style="width: 16%; min-width: 140px;">需求分析人员 <span class="clarify-req">*</span></th>
+                  <th style="width: 120px;">需求完成时间</th>
+                  <th style="width: 22%; min-width: 160px;">系统澄清说明</th>
+                  <th style="width: 80px; text-align: center;">是否涉及总领</th>
+                  <th style="width: 120px;">总领文档链接</th>
+                  <th style="width: 70px; text-align: center;">主系统 <span class="clarify-req">*</span></th>
+                  <th style="width: 60px; text-align: center;">操作</th>
+                </tr>
+              </thead>
+              <tbody id="poClarifyProductTbody">
+                <!-- 动态行 -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 模块三 & 四：需求规模估算 & 用户故事条目 -->
+        <div class="clarify-section" id="poClarifyStorySection">
+          <div class="clarify-story-header">
+            <div class="clarify-scale-box">
+              <span class="clarify-section-title mg-0">
+                <span class="clarify-title-bar"></span>需求规模估算 <span class="clarify-title-req">*</span>
+              </span>
+              <div class="clarify-scale-input-wrap">
+                <input type="number" class="clarify-input clarify-scale-input" name="scaleEstimation" id="poClarifyScaleEstimation" readonly value="0">
+                <span class="clarify-scale-unit">故事点</span>
+              </div>
+            </div>
+            <div class="clarify-ai-actions">
+              <button type="button" class="clarify-ai-btn" id="poClarifyAiGenBtn" title="基于需求与涉及产品智能生成用户故事条目">
+                <svg class="clarify-ai-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                  <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.38-1 1.72V7h2a3 3 0 0 1 3 3v2h1.28c.74-.6 1.38-1 2.12-1a2 2 0 1 1 0 4c-.74 0-1.38-.4-2.12-1H18v2a3 3 0 0 1-3 3h-2v1.28c.6.74 1 1.38 1 2.12a2 2 0 1 1-4 0c0-.74.4-1.38 1-2.12V20H9a3 3 0 0 1-3-3v-2H4.72C3.98 15.6 3.34 16 2.6 16a2 2 0 1 1 0-4c.74 0 1.38.4 2.12 1H6v-2a3 3 0 0 1 3-3h2V5.72C10.4 5.38 10 4.74 10 4a2 2 0 0 1 2-2z"/>
+                </svg>
+                <span id="poClarifyAiBtnText">AI辅助生成条目</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="clarify-table-responsive mg-t-10">
+            <table class="clarify-table" id="poClarifyStoryTable">
+              <thead>
+                <tr>
+                  <th style="width: 50px; text-align: center;">采纳</th>
+                  <th style="width: 13%;">角色 <span class="clarify-req">*</span></th>
+                  <th style="width: 45%;">目标和价值 <span class="clarify-req">*</span></th>
+                  <th style="width: 18%;">涉及产品 <span class="clarify-req">*</span></th>
+                  <th style="width: 80px; text-align: center;">建议故事点</th>
+                  <th style="width: 90px; text-align: center;">校准故事点 <span class="clarify-req">*</span></th>
+                  <th style="width: 60px; text-align: center;">操作</th>
+                </tr>
+              </thead>
+              <tbody id="poClarifyStoryTbody">
+                <!-- 动态用户故事行 -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 模块五：澄清说明 -->
+        <div class="clarify-section">
+          <div class="clarify-section-title">
+            <span class="clarify-title-bar"></span>澄清说明
+            <span class="clarify-section-tip">可补充多方沟通共识、非功能要求及实施注意事项。</span>
+          </div>
+          <div class="clarify-form-group mg-0">
+            <textarea class="clarify-textarea" name="clarifyDesc" id="poClarifyDesc" rows="4" placeholder="请在此录入澄清备忘与具体说明…"></textarea>
+          </div>
+        </div>
+
+        <!-- 模块六：重要工单识别 -->
+        <div class="clarify-section">
+          <div class="clarify-section-title">
+            <span class="clarify-title-bar"></span>重要工单识别 <span class="clarify-title-req">*</span>
+          </div>
+          <div class="clarify-important-box">
+            <table class="clarify-important-table">
+              <tbody>
+                <tr>
+                  <th class="imp-th">是否新建产品</th>
+                  <td class="imp-td">
+                    <label class="clarify-radio"><input type="radio" name="isNewProduct" value="1"> 是</label>
+                    <label class="clarify-radio"><input type="radio" name="isNewProduct" value="0" checked> 否</label>
+                  </td>
+                  <th class="imp-th">涉及账务</th>
+                  <td class="imp-td">
+                    <label class="clarify-radio"><input type="radio" name="isRelatedAccounts" value="1"> 是</label>
+                    <label class="clarify-radio"><input type="radio" name="isRelatedAccounts" value="0" checked> 否</label>
+                    <div id="poClarifyFinanceAlert" class="clarify-finance-alert" style="display: none;">如涉及账务，请务必重点关注财务核对。</div>
+                  </td>
+                  <th class="imp-th">是否新增功能</th>
+                  <td class="imp-td">
+                    <label class="clarify-radio"><input type="radio" name="isNewFunction" value="1"> 是</label>
+                    <label class="clarify-radio"><input type="radio" name="isNewFunction" value="0" checked> 否</label>
+                  </td>
+                  <th class="imp-th">其他重要工单</th>
+                  <td class="imp-td">
+                    <label class="clarify-radio"><input type="radio" name="isOtherImportantOrder" value="1"> 是</label>
+                    <label class="clarify-radio"><input type="radio" name="isOtherImportantOrder" value="0" checked> 否</label>
+                  </td>
+                </tr>
+                <tr>
+                  <th class="imp-th">多法人标志</th>
+                  <td class="imp-td" colspan="7">
+                    <label class="clarify-radio"><input type="radio" name="multiLegalPersonLogo" value="changshu" checked> 常熟</label>
+                    <label class="clarify-radio"><input type="radio" name="multiLegalPersonLogo" value="village"> 村镇</label>
+                    <label class="clarify-radio"><input type="radio" name="multiLegalPersonLogo" value="changshu_village"> 常熟&村镇</label>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 底部固定操作栏（统一在页面最下方，居中偏右） -->
+      <div class="demand-clarify-footer">
+        <div class="clarify-footer-actions">
+          <button type="submit" class="clarify-btn-primary" id="poClarifySubmitBtn">保存澄清</button>
+          <button type="button" class="clarify-btn-default" id="poClarifyCancelBtn">返回</button>
+        </div>
+      </div>
+    </form>
+
+  </div>
+</div>
+{{ end }}

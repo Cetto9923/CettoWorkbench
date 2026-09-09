@@ -30,6 +30,7 @@ type demandReviewRow struct {
 	Status      string `gorm:"column:status"`
 	Deleted     string `gorm:"column:deleted"`
 	CreatedBy   string `gorm:"column:createdBy"`
+	AssignedTo  string `gorm:"column:assignedTo"`
 	ReviewedBy  string `gorm:"column:reviewedBy"`
 	Mailto      string `gorm:"column:mailto"`
 	IsNeedFocus string `gorm:"column:isNeedFocus"`
@@ -81,7 +82,7 @@ func (r *Repo) FindDemandForReview(ctx context.Context, id int64) (*demandReview
 	}
 	var row demandReviewRow
 	err = db.WithContext(ctx).
-		Select("id, status, deleted, createdBy, reviewedBy, mailto, isNeedFocus, product").
+		Select("id, status, deleted, createdBy, assignedTo, reviewedBy, mailto, isNeedFocus, product").
 		Where("id = ?", id).
 		Take(&row).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -156,7 +157,7 @@ func (r *Repo) SaveDemandReview(ctx context.Context, in saveDemandReviewIn) erro
 
 		var locked demandReviewRow
 		if err := q().Clauses(clause.Locking{Strength: "UPDATE"}).
-			Select("id, status, deleted, createdBy, reviewedBy, mailto, isNeedFocus, product").
+			Select("id, status, deleted, createdBy, assignedTo, reviewedBy, mailto, isNeedFocus, product").
 			Where("id = ?", in.DemandID).
 			Take(&locked).Error; err != nil {
 			return fmt.Errorf("lock demand %d: %w", in.DemandID, err)

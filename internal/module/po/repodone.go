@@ -14,8 +14,6 @@ import (
 	"fmt"
 	"strings"
 	"time"
-
-	"workbench/internal/pkg/zentao"
 )
 
 // RepoFindDoneActionsReq 查询正式已办动作的数据参数。
@@ -40,8 +38,6 @@ type doneActionMeta struct {
 
 var formalDoneActions = map[string]doneActionMeta{
 	"demand:reviewed":               {Label: "需求评审", Result: "done"},
-	"demand:reviewpassed":           {Label: "需求审批通过", Result: "approved"},
-	"demand:reviewrejected":         {Label: "需求审批驳回", Result: "rejected"},
 	"demand:reviewbymanager":        {Label: "主管部门审批", Result: "approved"},
 	"demand:reviewchange":           {Label: "需求变更评审", Result: "done"},
 	"demand:clarify":                {Label: "完成需求澄清", Result: "done"},
@@ -64,8 +60,6 @@ var formalDoneActions = map[string]doneActionMeta{
 	"demand:releasedbyticket":       {Label: "需求发布", Result: "done"},
 	"story:submitreview":            {Label: "提交评审", Result: "submitted"},
 	"story:reviewed":                {Label: "评审研发需求", Result: "done"},
-	"story:reviewpassed":            {Label: "评审通过", Result: "approved"},
-	"story:reviewrejected":          {Label: "评审不通过", Result: "rejected"},
 	"story:verified":                {Label: "验收研发需求", Result: "verified"},
 	"story:releasedbyrelease":       {Label: "发布研发需求", Result: "done"},
 	"story:closed":                  {Label: "关闭研发需求", Result: "closed"},
@@ -124,7 +118,8 @@ func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) 
 		Where("a.actor = ?", req.Account).
 		Where(scopeSQL, scopeArgs...)
 	if req.Result != "" && req.Result != "all" {
-		q = q.Where("a.action IN ?", codesWithResult(req.Result))
+		resSQL, resArgs := buildDoneResultFilterSQL(req.Result)
+		q = q.Where(resSQL, resArgs...)
 	}
 	if objectScopeSQL, objectScopeArgs := buildDoneObjectScopeSQL(req.Tab, req.ObjectType); objectScopeSQL != "" {
 		q = q.Where(objectScopeSQL, objectScopeArgs...)
@@ -180,7 +175,7 @@ func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) 
 		Order("a.id DESC").
 		Limit(req.PageSize).
 		Offset((req.Page - 1) * req.PageSize).
-		Select("a.id, a.objectType, a.objectID, a.action, a.actor, a.date").
+		Select("a.id, a.objectType, a.objectID, a.action, a.actor, a.date, a.extra, a.comment").
 		Find(&rows).Error; err != nil {
 		return nil, 0, err
 	}
@@ -190,7 +185,10 @@ func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) 
 		actionIDs[i] = r.ID
 	}
 	hists := r.fetchActionHistories(ctx, actionIDs)
-	objCtxs := r.fetchObjectContexts(ctx, rows)
+	objCtxs, err := r.fetchObjectContexts(ctx, rows)
+	if err != nil {
+		return nil, 0, err
+	}
 
 	displayMap, _ := r.loadAccountDisplayMap(ctx)
 	actor := displayMap[req.Account]
@@ -211,10 +209,8 @@ func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) 
 		if title == "" {
 			title = strings.TrimSpace(doneObjectTypeLabel(row.ObjectType) + " " + doneObjectCode(row.ObjectType, row.ObjectID))
 		}
-		url := objectViewURL(row.ObjectType, uint(row.ObjectID))
-		if row.ObjectType == "charter" || row.ObjectType == "buildguideline" {
-			url = zentao.URL(row.ObjectType, "view", fmt.Sprintf("projectID=%d", ctx.ProjectID))
-		}
+		url := objectViewURLWithProject(row.ObjectType, uint(row.ObjectID), uint(ctx.ProjectID))
+		resultCode, resultText := resolveDoneActionResult(row.Action, row.ObjectType, row.Extra, meta.Result)
 		items = append(items, DoneAction{
 			ID:              row.ID,
 			SourceActionId:  row.ID,
@@ -233,9 +229,9 @@ func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) 
 			ObjectTitle:     title,
 			Date:            row.Date.Format("2006-01-02 15:04:05"),
 			HandledAt:       row.Date.Format(time.RFC3339),
-			Result:          meta.Result,
-			ResultCode:      meta.Result,
-			ResultText:      doneResultText(meta.Result),
+			Result:          resultCode,
+			ResultCode:      resultCode,
+			ResultText:      resultText,
 			BeforeStatus:    chg[0],
 			AfterStatus:     chg[1],
 			// 当前状态只来自对象本身；已办动作结果不能冒充对象状态。
@@ -243,6 +239,7 @@ func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) 
 			ProjectName:   ctx.ProjectName,
 			ExecutionName: ctx.ExecutionName,
 			ProductName:   ctx.ProductName,
+			PoolName:      ctx.PoolName,
 			NextOwnerName: ctx.CurrentOwner,
 			CanOpenObject: true,
 			URL:           url,
@@ -462,31 +459,5 @@ func buildFormalDoneScopeSQL() (string, []interface{}) {
 	return b.String(), args
 }
 
-// objectViewURL 按 zentao 对象类型拼详情页链接。
-func objectViewURL(objectType string, id uint) string {
-	if id == 0 {
-		return ""
-	}
-	switch objectType {
-	case "demand":
-		return zentao.DemandViewURL(id)
-	case "story":
-		return zentao.StoryViewURL(id)
-	case "task":
-		return zentao.TaskViewURL(id)
-	case "bug":
-		return zentao.BugViewURL(id)
-	case "testtask":
-		return zentao.TesttaskViewURL(id)
-	case "risk", "issue", "feedback", "release", "build", "todo", "case":
-		return zentao.URL(objectType, "view", fmt.Sprintf("%sID=%d", objectType, id))
-	case "charter", "buildguideline":
-		// 禅道这两个页面按 projectID 打开，objectID 不能直接拼成参数。
-		return ""
-	case "planchange":
-		return zentao.URL(objectType, "view", fmt.Sprintf("ID=%d", id))
-	case "review":
-		return zentao.URL(objectType, "view", fmt.Sprintf("reviewID=%d", id))
-	}
-	return ""
-}
+// 对象 → 禅道详情页链接映射见 repodone_url.go（objectViewURL /
+// objectViewURLWithProject）。

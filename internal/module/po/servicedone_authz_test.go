@@ -105,7 +105,7 @@ func TestDoneDetail_AllowsActorAsActionActor(t *testing.T) {
 
 	// FindDoneActionDetail (First(&row) → GORM emits full row select against zt_action)
 	mock.ExpectQuery(`SELECT \* FROM .*zt_action.*`).
-		WithArgs(int64(200), sqlmock.AnyArg()).
+		WithArgs(int64(200)).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "objectType", "objectID", "action", "actor", "date",
 		}).AddRow(200, "demand", 100, "reviewed", "user_a", nowTime()))
@@ -124,7 +124,7 @@ func TestDoneDetail_AllowsActorAsActionActor(t *testing.T) {
 
 	// nearby timeline
 	mock.ExpectQuery(`SELECT id, action, actor, date[\s\S]*FROM .*zt_action.*`).
-		WithArgs("demand", int64(100), sqlmock.AnyArg()).
+		WithArgs("demand", int64(100)).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "action", "actor", "date"}))
 
 	_, err := svc.DoneDetail(t.Context(), actor, 200)
@@ -179,7 +179,7 @@ func TestDoneDetail_AllowsAccountRelatedToObject(t *testing.T) {
 
 	// FindDoneActionDetail (GORM First(&row) emits full-row scan SQL)
 	mock.ExpectQuery(`SELECT \* FROM .*zt_action.*`).
-		WithArgs(int64(400), sqlmock.AnyArg()).
+		WithArgs(int64(400)).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "objectType", "objectID", "action", "actor", "date",
 		}).AddRow(400, "demand", 700, "reviewed", "user_other", nowTime()))
@@ -193,7 +193,7 @@ func TestDoneDetail_AllowsAccountRelatedToObject(t *testing.T) {
 		WithArgs(sqlmock.AnyArg()).
 		WillReturnRows(sqlmock.NewRows([]string{"action", "field", "old", "new"}))
 	mock.ExpectQuery(`SELECT id, action, actor, date[\s\S]*FROM .*zt_action.*`).
-		WithArgs("demand", int64(700), sqlmock.AnyArg()).
+		WithArgs("demand", int64(700)).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "action", "actor", "date"}))
 
 	actor := &model.User{Account: "user_bra"} // 模拟 BRA 字段命中
@@ -217,7 +217,7 @@ func TestDoneDetail_SuperAdminBypassesObjectAuth(t *testing.T) {
 
 	// FindDoneActionDetail (GORM First(&row) emits full-row scan SQL)
 	mock.ExpectQuery(`SELECT \* FROM .*zt_action.*`).
-		WithArgs(int64(500), sqlmock.AnyArg()).
+		WithArgs(int64(500)).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "objectType", "objectID", "action", "actor", "date",
 		}).AddRow(500, "demand", 800, "reviewed", "user_other", nowTime()))
@@ -230,7 +230,7 @@ func TestDoneDetail_SuperAdminBypassesObjectAuth(t *testing.T) {
 		WithArgs(sqlmock.AnyArg()).
 		WillReturnRows(sqlmock.NewRows([]string{"action", "field", "old", "new"}))
 	mock.ExpectQuery(`SELECT id, action, actor, date[\s\S]*FROM .*zt_action.*`).
-		WithArgs("demand", int64(800), sqlmock.AnyArg()).
+		WithArgs("demand", int64(800)).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "action", "actor", "date"}))
 
 	_, err := svc.DoneDetail(t.Context(), actor, 500)

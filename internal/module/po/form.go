@@ -23,16 +23,17 @@ type FieldError struct {
 
 // ValueStreamStage 价值流阶段卡片数据（对应 homeVsCompact 单个阶段）。
 type ValueStreamStage struct {
-	Label       string
-	Status      string
-	Valid       bool // 真实统计有效标记，失败兜底时为 false (ERROR ≠ ZERO)
-	Count       int64
-	DemandCount int64
-	StoryCount  int64
+	Label       string `json:"label"`
+	Status      string `json:"status"`
+	Valid       bool   `json:"valid"` // 真实统计有效标记，失败兜底时为 false (ERROR ≠ ZERO)
+	Count       int64  `json:"count"`
+	DemandCount int64  `json:"demandCount"`
+	StoryCount  int64  `json:"storyCount"`
 }
 
 // HomeResp PO 工作台首页数据。
 type HomeResp struct {
+	AllCount            int64
 	Stages              []ValueStreamStage
 	StagesValid         bool
 	StagesError         string
@@ -74,7 +75,7 @@ func (r *DemandsReq) Validate() []FieldError {
 		return []FieldError{{Field: "status", Message: "无效的价值流状态"}}
 	}
 	r.Focus = noticeValue(r.Focus, "all")
-	if !isNoticeValue(r.Focus, "all", "today", "blocked", "overdue", "suspended") {
+	if !isNoticeValue(r.Focus, "all", "my_action", "today", "blocked", "overdue", "suspended") {
 		return []FieldError{{Field: "focus", Message: "无效的首页焦点"}}
 	}
 	// Toolbar filters: keyword/objectType/priority/relation. 透传到 SQL，
@@ -84,7 +85,7 @@ func (r *DemandsReq) Validate() []FieldError {
 	switch r.ObjectType {
 	case "", "all", "demand":
 	case "story":
-		// FindHomeFocus 当前只查业需；story 由其它入口负责；这里只允许通过，不报错。
+		// 首页焦点列表支持独立研发需求。
 	default:
 		return []FieldError{{Field: "objectType", Message: "不支持的对象类型"}}
 	}
@@ -96,7 +97,7 @@ func (r *DemandsReq) Validate() []FieldError {
 	}
 	r.Relation = strings.ToLower(strings.TrimSpace(r.Relation))
 	switch r.Relation {
-	case "", "all", "owner", "cooperate", "watch":
+	case "", "all", "handling", "following":
 	default:
 		return []FieldError{{Field: "relation", Message: "无效的关系"}}
 	}
@@ -155,6 +156,35 @@ type ReviewDemandResp struct {
 	ID int64 `json:"id"`
 }
 
+// WithdrawDemandReviewReq 撤回需求评审入参。
+type WithdrawDemandReviewReq struct {
+	ID      int64  `json:"-"`
+	Comment string `json:"comment"`
+}
+
+// Validate 校验撤回评审入参。
+func (r *WithdrawDemandReviewReq) Validate() []FieldError {
+	if r.ID <= 0 {
+		return []FieldError{{Field: "id", Message: "需求 ID 无效"}}
+	}
+	return nil
+}
+
+// SubmitDemandReviewReq 提交需求评审入参。
+type SubmitDemandReviewReq struct {
+	ID       int64    `json:"-"`
+	Reviewer []string `json:"reviewer"`
+	Comment  string   `json:"comment"`
+}
+
+// Validate 校验提交评审入参。
+func (r *SubmitDemandReviewReq) Validate() []FieldError {
+	if r.ID <= 0 {
+		return []FieldError{{Field: "id", Message: "需求 ID 无效"}}
+	}
+	return nil
+}
+
 // WorkItemDetail 单条需求或故事详情。
 type WorkItemDetail struct {
 	Kind          string                       `json:"kind"`
@@ -177,10 +207,11 @@ type WorkItemDetail struct {
 
 // DemandsResp 价值流状态下的需求详情列表。
 type DemandsResp struct {
-	Items    []WorkItemDetail `json:"items"`
-	Total    int              `json:"total"`
-	Page     int              `json:"page"`
-	PageSize int              `json:"pageSize"`
+	Items        []WorkItemDetail   `json:"items"`
+	Total        int                `json:"total"`
+	Page         int                `json:"page"`
+	PageSize     int                `json:"pageSize"`
+	StageSummary []ValueStreamStage `json:"stageSummary,omitempty"`
 }
 
 // TodoTab 我的待办对象域 Tab。当前页面只展示已接入统一查询的数据域。
@@ -280,11 +311,7 @@ func (r *TodoListReq) Validate() []FieldError {
 		r.ObjectType = "all"
 	}
 	switch r.ObjectType {
-	case "all", "demand", "task", "bug":
-	case "story":
-		return []FieldError{{Field: "objectType", Message: "业务需求的故事待办数据源暂未接入"}}
-	case "approval", "testtask", "issue", "risk", "todo":
-		return []FieldError{{Field: "objectType", Message: "待办数据源暂未接入"}}
+	case "all", "approval", "demand", "story", "task", "bug", "risk", "issue", "todo", "testtask":
 	default:
 		return []FieldError{{Field: "objectType", Message: "不支持的对象类型"}}
 	}
@@ -365,6 +392,14 @@ type TodoGroupCounts struct {
 	Personal  int `json:"personal"`
 }
 
+// TodoFacet 待办对象类型分面计数，与"我的已办"的 DoneFacet 芯片契约同形。
+// Key 取值必须落在 TodoListReq.ObjectType 允许的集合内，否则芯片点击会被校验拒绝。
+type TodoFacet struct {
+	Key   string `json:"key"`
+	Label string `json:"label"`
+	Count int64  `json:"count"`
+}
+
 // TodoListResp 我的待办列表响应。
 type TodoListResp struct {
 	Items    []TodoItem      `json:"items"`
@@ -373,4 +408,5 @@ type TodoListResp struct {
 	PageSize int             `json:"pageSize"` // 每页条数
 	Summary  TodoSummary     `json:"summary"`
 	Groups   TodoGroupCounts `json:"groups"`
+	Facets   []TodoFacet     `json:"facets"`
 }

@@ -35,11 +35,11 @@ import (
 	"workbench/internal/module/login"
 	"workbench/internal/module/loginlog"
 	"workbench/internal/module/menu"
-	"workbench/internal/module/operationlog"
-	"workbench/internal/module/query"
 	"workbench/internal/module/metrics"
+	"workbench/internal/module/operationlog"
 	"workbench/internal/module/po"
 	"workbench/internal/module/profile"
+	"workbench/internal/module/query"
 	"workbench/internal/module/role"
 	"workbench/internal/module/schedule"
 	"workbench/internal/module/user"
@@ -134,7 +134,9 @@ func Run() error {
 	scheduleRepo := schedule.NewRepo(db)
 	scheduleSvc := schedule.NewService(scheduleRepo, zapLog)
 	scheduleHandler := schedule.NewHandler(rend, zapLog, scheduleSvc, strings.TrimRight(cfg.Zentao.URL, "/"))
-	queryHandler := query.NewFromDB(rend, dbReadonlyOrPrimary(dbReadonly, db), zapLog)
+	queryRepo := query.NewRepo(dbReadonlyOrPrimary(dbReadonly, db))
+	querySvc := query.NewService(queryRepo)
+	queryHandler := query.NewHandler(rend, querySvc, zapLog)
 	metricsHandler := metrics.NewHandler(rend, metrics.NewService(metrics.NewRepo(dbReadonlyOrPrimary(dbReadonly, db))), zapLog)
 	profileHandler := profile.NewHandler(profile.NewService(profile.NewRepo(db)), zapLog)
 	// PO 查询走只读池（可 nil 降级）；关注/已读写入必须走主库。

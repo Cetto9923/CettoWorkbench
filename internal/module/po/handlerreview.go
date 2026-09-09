@@ -63,6 +63,80 @@ func (h *Handler) ReviewDemand(c *gin.Context) {
 	})
 }
 
+// WithdrawDemandReview 处理「撤回评审」提交。
+// 请求：POST /demands/:id/withdraw-review
+func (h *Handler) WithdrawDemandReview(c *gin.Context) {
+	id, err := parseReviewDemandID(c.Param("id"))
+	if err != nil || id <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "需求 ID 无效"})
+		return
+	}
+
+	var req WithdrawDemandReviewReq
+	_ = c.ShouldBindJSON(&req)
+	req.ID = id
+	if fieldErrs := req.Validate(); len(fieldErrs) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"message": "参数校验失败",
+			"errors":  fieldErrs,
+		})
+		return
+	}
+
+	actor := middleware.CurrentUser(c)
+	if svcErr := h.svc.WithdrawDemandReview(c.Request.Context(), actor, req); svcErr != nil {
+		if h.logger != nil {
+			h.logger.Error("po withdraw demand review", zap.Error(svcErr), zap.Int64("id", id))
+		}
+		status, msg := reviewHTTPError(svcErr)
+		c.JSON(status, gin.H{"message": msg})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":     true,
+		"message":     "撤回评审成功",
+		"redirectUrl": "/home",
+	})
+}
+
+// SubmitDemandReview 处理「提交评审」提交。
+// 请求：POST /demands/:id/submit-review
+func (h *Handler) SubmitDemandReview(c *gin.Context) {
+	id, err := parseReviewDemandID(c.Param("id"))
+	if err != nil || id <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "需求 ID 无效"})
+		return
+	}
+
+	var req SubmitDemandReviewReq
+	_ = c.ShouldBindJSON(&req)
+	req.ID = id
+	if fieldErrs := req.Validate(); len(fieldErrs) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"message": "参数校验失败",
+			"errors":  fieldErrs,
+		})
+		return
+	}
+
+	actor := middleware.CurrentUser(c)
+	if svcErr := h.svc.SubmitDemandReview(c.Request.Context(), actor, req); svcErr != nil {
+		if h.logger != nil {
+			h.logger.Error("po submit demand review", zap.Error(svcErr), zap.Int64("id", id))
+		}
+		status, msg := reviewHTTPError(svcErr)
+		c.JSON(status, gin.H{"message": msg})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":     true,
+		"message":     "提交评审成功",
+		"redirectUrl": "/home",
+	})
+}
+
 // parseReviewDemandID 接受数字主键，或列表展示用的 US{id}。
 func parseReviewDemandID(raw string) (int64, error) {
 	raw = strings.TrimSpace(raw)

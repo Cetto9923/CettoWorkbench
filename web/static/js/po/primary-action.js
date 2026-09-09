@@ -23,7 +23,8 @@
   }
 
   function renderEnabled(item, pa, isStory) {
-    var label = String(pa.label || "").trim();
+    // approve 的业务动作名称是“评审”；服务端旧缓存或旧接口响应不能把展示文案降回“受理”。
+    var label = String(pa.key || "") === "approve" ? "评审" : String(pa.label || "").trim();
     if (!label) { return '<span class="home-unavailable">—</span>'; }
     var kind = String(pa.kind || "").toLowerCase();
     var url = String(pa.url || "").trim();
@@ -36,7 +37,7 @@
     }
     if (kind === "drawer" || kind === "internal") {
       var did = String(pa.demandId || item.id || "").replace(/^US/i, "");
-      return '<button type="button" class="table-action-btn primary" data-demand-id="' + esc(did) + '">' + esc(label) + '</button>';
+      return '<button type="button" class="table-action-btn primary js-po-drawer-action" data-action-key="' + esc(pa.key) + '" data-action-url="' + esc(url) + '" data-demand-id="' + esc(did) + '">' + esc(label) + '</button>';
     }
     if (url) {
       return '<a class="table-action-btn primary" href="' + esc(url) + '">' + esc(label) + '</a>';

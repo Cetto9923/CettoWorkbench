@@ -3,7 +3,7 @@
 // 模块: PO 工作台
 // 类型: contract
 // 职责: primaryAction 各阶段的 URL 拼接。
-//       内部操作走相对路径；测试单为禅道外部链接，使用 TesttaskViewURL。
+//       可办理操作必须指向禅道原生页面/API；测试单使用 TesttaskViewURL。
 // 依赖: internal/pkg/zentao
 // =============================================================================
 
@@ -25,15 +25,24 @@ type inputShape interface {
 //
 // 用 struct 直接传参而不是引用 Input，避免 URL 派生逻辑被未来的能力字段污染。
 
-// AcceptURL 受理 / 审批 POST 端点（前端按 modal 形态提交）。
-// §4-1 当前未配置独立 endpoint，URL 仅作 contract 占位。
+// AcceptURL 评审站内提交端点（前端按 drawer 形态提交）。
 func AcceptURL(objectID uint, kind ObjectKind) string {
-	return fmt.Sprintf("/demands/%d/accept", objectID)
+	return fmt.Sprintf("/demands/%d/review", objectID)
 }
 
-// ClarifyURL 澄清办理页 — 内部页（直接走需求详情页 + requirement tab）。
+// WithdrawReviewURL 撤回评审站内提交端点。
+func WithdrawReviewURL(objectID uint, kind ObjectKind) string {
+	return fmt.Sprintf("/demands/%d/withdraw-review", objectID)
+}
+
+// SubmitReviewURL 提交评审站内端点。
+func SubmitReviewURL(objectID uint, kind ObjectKind) string {
+	return fmt.Sprintf("/demands/%d/submit-review", objectID)
+}
+
+// ClarifyURL 澄清站内提交端点。
 func ClarifyURL(objectID uint, kind ObjectKind) string {
-	return fmt.Sprintf("/demands/%d/detail?tab=requirement#clarificationSection", objectID)
+	return fmt.Sprintf("/demands/%d/clarify", objectID)
 }
 
 // ScheduleURL 排期入口；业务需求 vs 独立研发需求走不同路由。
@@ -52,20 +61,17 @@ func SubmitTestURL(objectID uint, kind ObjectKind) string {
 	return fmt.Sprintf("/demands/%d/submit-test", objectID)
 }
 
-// AcceptDoneURL 验收端点（本人验收人）。
-// §4-2 阻塞：当前无 endpoint。
+// AcceptDoneURL 验收站内提交端点（本人验收人）。
 func AcceptDoneURL(objectID uint, kind ObjectKind) string {
-	return fmt.Sprintf("/demands/%d/accept-done", objectID)
+	return fmt.Sprintf("/demands/%d/acceptance", objectID)
 }
 
-// UrgeAcceptURL 催办验收端点（非验收人）。
-// §4-2 阻塞：当前无 endpoint。
+// UrgeAcceptURL 催办验收站内提交端点（非验收人）。
 func UrgeAcceptURL(objectID uint, kind ObjectKind) string {
-	return fmt.Sprintf("/demands/%d/urge-accept", objectID)
+	return fmt.Sprintf("/demands/%d/urge", objectID)
 }
 
-// DeliverURL 发起交付端点。
-// §4-2 阻塞：当前无 endpoint。
+// DeliverURL 发起交付站内提交端点。
 func DeliverURL(objectID uint, kind ObjectKind) string {
 	return fmt.Sprintf("/demands/%d/deliver", objectID)
 }
@@ -73,7 +79,7 @@ func DeliverURL(objectID uint, kind ObjectKind) string {
 // EvaluateURL 评价端点。
 // §4-2 阻塞：当前无 endpoint。
 func EvaluateURL(objectID uint, kind ObjectKind) string {
-	return fmt.Sprintf("/demands/%d/evaluate", objectID)
+	return zentao.URL("demand", "appraise", fmt.Sprintf("demandID=%d", objectID))
 }
 
 // ViewEvaluateURL 查看历史评价 — 内部页（需求详情 history tab）。
@@ -93,6 +99,14 @@ func TesttaskURL(testtaskID uint) string {
 // acceptURL 包装 AcceptURL — 与 Derive Input 内部使用一致。
 func acceptURL(in Input) string {
 	return AcceptURL(in.ObjectID, in.Kind)
+}
+
+func withdrawReviewURL(in Input) string {
+	return WithdrawReviewURL(in.ObjectID, in.Kind)
+}
+
+func submitReviewURL(in Input) string {
+	return SubmitReviewURL(in.ObjectID, in.Kind)
 }
 
 // clarifyURL 包装 ClarifyURL。

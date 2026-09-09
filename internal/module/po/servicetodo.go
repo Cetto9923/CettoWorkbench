@@ -22,7 +22,7 @@ import (
 // 仅已接入统一查询的数据域可通过页面进入，需求治理 / 全部 Tab 走 actor scope 聚合。
 func (s *Service) TodoList(ctx context.Context, actor *model.User, req TodoListReq) (*TodoListResp, error) {
 	if actor == nil || strings.TrimSpace(actor.Account) == "" {
-		return &TodoListResp{Items: []TodoItem{}, Page: req.Page, PageSize: req.PageSize}, nil
+		return &TodoListResp{Items: []TodoItem{}, Page: req.Page, PageSize: req.PageSize, Facets: buildTodoFacets(nil)}, nil
 	}
 	pagedResult, err := s.repo.QueryTodoUnified(ctx, actor.Account, req)
 	if err != nil {
@@ -35,6 +35,7 @@ func (s *Service) TodoList(ctx context.Context, actor *model.User, req TodoListR
 		PageSize: req.PageSize,
 		Summary:  pagedResult.Summary,
 		Groups:   pagedResult.Groups,
+		Facets:   pagedResult.Facets,
 	}, nil
 }
 

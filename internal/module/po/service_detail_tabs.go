@@ -217,6 +217,7 @@ func (s *DetailService) buildRequirement(ctx context.Context, row *DemandDetailR
 	}
 
 	return &DetailRequirement{
+		DemandID:       row.ID,
 		SpecHtml:       row.Desc,
 		VerifyHtml:     row.VerifyPlan,
 		Clarifications: cItems,
@@ -308,7 +309,7 @@ func (s *DetailService) buildHistory(ctx context.Context, row *DemandDetailRow) 
 		Actions:        actItems,
 		StageDurations: []StageDurationItem{},
 		Lifecycle: DemandLifecycle{
-			CreatedBy:      defaultDash(row.CreatedBy),
+			CreatedBy:      defaultDash(FormatAccountName(row.CreatedBy, row.CreatedByName)),
 			CreatedDate:    createdStr,
 			AssignedTo:     defaultDash(row.AssignedToName),
 			AssignedDate:   createdStr,

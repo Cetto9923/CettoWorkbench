@@ -32,6 +32,11 @@ type primaryActionFactsDemand struct {
 	ObjectID              uint
 	Kind                  primaryaction.ObjectKind
 	Stage                 primaryaction.StageKey
+	Status                string
+	CreatedBy             string
+	IsCreator             bool
+	IsAssignee            bool
+	CanReview             bool
 	IsAcceptanceOwner     bool
 	TestsCount            int
 	FirstTestURL          string
@@ -83,15 +88,43 @@ func (s *Service) DeriveDemandPrimaryActions(
 		return nil, err
 	}
 
+	// 批量查询待评审需求中当前用户是否有待评审任务。
+	var waitIDs []int
+	for _, id := range demandIDs {
+		row := rows[id]
+		if strings.TrimSpace(row.Status) == "wait" {
+			waitIDs = append(waitIDs, int(id))
+		}
+	}
+	var pendingReviewMap map[int]struct{}
+	if len(waitIDs) > 0 && account != "" && s.repo != nil {
+		pendingReviewMap, _ = s.repo.FindPendingReviewDemandIDs(ctx, account, waitIDs)
+	}
+
 	for _, id := range demandIDs {
 		row := rows[id]
 		facts := primaryActionFactsDemand{
-			ObjectID: id,
-			Kind:     primaryaction.ObjectBusinessDemand,
-			Stage:    deriveStageKey(row.Stage, row.Status),
+			ObjectID:  id,
+			Kind:      primaryaction.ObjectBusinessDemand,
+			Stage:     deriveStageKey(row.Stage, row.Status),
+			Status:    row.Status,
+			CreatedBy: row.CreatedBy,
 		}
-		if account != "" && strings.TrimSpace(row.Accepter) == account {
-			facts.IsAcceptanceOwner = true
+		if account != "" {
+			if strings.TrimSpace(row.Accepter) == account {
+				facts.IsAcceptanceOwner = true
+			}
+			if strings.TrimSpace(row.CreatedBy) == account {
+				facts.IsCreator = true
+			}
+			if strings.TrimSpace(row.AssignedTo) == account {
+				facts.IsAssignee = true
+			}
+		}
+		if pendingReviewMap != nil {
+			if _, ok := pendingReviewMap[int(id)]; ok {
+				facts.CanReview = true
+			}
 		}
 		if tt, ok := ttMap[id]; ok {
 			facts.TestsCount = tt.Count
@@ -103,7 +136,7 @@ func (s *Service) DeriveDemandPrimaryActions(
 			facts.HasPendingEvaluate = eval.HasPendingEvaluateForAccount
 			facts.HasHistoricalEvaluate = eval.HasAnyEvaluate
 		}
-		out[id] = deriveDemandPrimaryAction(actor, facts)
+		out[id] = deriveDemandPrimaryAction(ctx, actor, facts)
 	}
 	return out, nil
 }
@@ -156,17 +189,17 @@ func (s *Service) DeriveStoryPrimaryActions(
 			kind = primaryaction.ObjectIndependentStory
 		}
 		in := primaryaction.Input{
-			Stage:                   deriveStageKey(row.Stage, row.Status),
+			Stage:                   deriveStoryStageKey(row.Stage, row.Status),
 			Kind:                    kind,
 			ObjectID:                id,
-			HasAcceptCapability:     hasCapability(actor, perm.PoHomeList, perm.PoBoardDemandList),
-			HasClarifyCapability:    hasCapability(actor, perm.PoHomeList),
-			HasScheduleCapability:   hasCapability(actor, perm.ScheduleList, perm.ScheduleUpdate),
-			HasSubmitTestCapability: hasCapability(actor, perm.PoHomeList),
-			HasUrgeCapability:       hasCapability(actor, perm.PoHomeList),
-			HasDeliverCapability:    hasCapability(actor, perm.PoHomeList),
-			HasEvaluateCapability:   hasCapability(actor, perm.PoHomeList),
-			HasReadCapability:       hasCapability(actor, perm.PoHomeList, perm.PoBoardDemandList),
+			HasAcceptCapability:     hasCapability(ctx, actor, perm.PoHomeList, perm.PoBoardDemandList),
+			HasClarifyCapability:    hasCapability(ctx, actor, perm.PoHomeList),
+			HasScheduleCapability:   hasCapability(ctx, actor, perm.ScheduleList, perm.ScheduleUpdate),
+			HasSubmitTestCapability: hasCapability(ctx, actor, perm.PoHomeList),
+			HasUrgeCapability:       hasCapability(ctx, actor, perm.PoHomeList),
+			HasDeliverCapability:    hasCapability(ctx, actor, perm.PoHomeList),
+			HasEvaluateCapability:   hasCapability(ctx, actor, perm.PoHomeList),
+			HasReadCapability:       hasCapability(ctx, actor, perm.PoHomeList, perm.PoBoardDemandList),
 			IsAcceptanceOwner:       false,
 			TestsCount:              0,
 			FirstTestURL:            "",
@@ -183,19 +216,24 @@ func (s *Service) DeriveStoryPrimaryActions(
 }
 
 // deriveDemandPrimaryAction 由 Service 在已聚合事实后调用 primaryaction.Derive。
-func deriveDemandPrimaryAction(actor *model.User, facts primaryActionFactsDemand) primaryaction.PrimaryAction {
+func deriveDemandPrimaryAction(ctx context.Context, actor *model.User, facts primaryActionFactsDemand) primaryaction.PrimaryAction {
 	in := primaryaction.Input{
 		Stage:                   facts.Stage,
+		Status:                  facts.Status,
 		Kind:                    facts.Kind,
 		ObjectID:                facts.ObjectID,
-		HasAcceptCapability:     hasCapability(actor, perm.PoHomeList, perm.PoBoardDemandList),
-		HasClarifyCapability:    hasCapability(actor, perm.PoHomeList),
-		HasScheduleCapability:   hasCapability(actor, perm.ScheduleList, perm.ScheduleUpdate),
-		HasSubmitTestCapability: hasCapability(actor, perm.PoHomeList),
-		HasUrgeCapability:       hasCapability(actor, perm.PoHomeList),
-		HasDeliverCapability:    hasCapability(actor, perm.PoHomeList),
-		HasEvaluateCapability:   hasCapability(actor, perm.PoHomeList),
-		HasReadCapability:       hasCapability(actor, perm.PoHomeList, perm.PoBoardDemandList),
+		CreatedBy:               facts.CreatedBy,
+		IsCreator:               facts.IsCreator,
+		IsAssignee:              facts.IsAssignee,
+		CanReview:               facts.CanReview,
+		HasAcceptCapability:     hasCapability(ctx, actor, perm.PoHomeList, perm.PoBoardDemandList),
+		HasClarifyCapability:    hasCapability(ctx, actor, perm.PoHomeList),
+		HasScheduleCapability:   hasCapability(ctx, actor, perm.ScheduleList, perm.ScheduleUpdate),
+		HasSubmitTestCapability: hasCapability(ctx, actor, perm.PoHomeList),
+		HasUrgeCapability:       hasCapability(ctx, actor, perm.PoHomeList),
+		HasDeliverCapability:    hasCapability(ctx, actor, perm.PoHomeList),
+		HasEvaluateCapability:   hasCapability(ctx, actor, perm.PoHomeList),
+		HasReadCapability:       hasCapability(ctx, actor, perm.PoHomeList, perm.PoBoardDemandList),
 		IsAcceptanceOwner:       facts.IsAcceptanceOwner,
 		TestsCount:              facts.TestsCount,
 		FirstTestURL:            facts.FirstTestURL,
@@ -205,35 +243,16 @@ func deriveDemandPrimaryAction(actor *model.User, facts primaryActionFactsDemand
 	return primaryaction.Derive(in)
 }
 
-// hasCapability 用 actor 字段的简化能力判定。
-//
-// 状态（2026-09-07 复核）：BLOCKED - CAPABILITY SOURCE NOT AVAILABLE IN SERVICE。
-// 仓库内 capability 真源在 middleware 的 gin.Context["userPerms"] map
-// （internal/middleware/permission.go:61-71，key = perm.Permission.String()）；
-// 当前 Service 签名是 (ctx context.Context, actor *model.User)，
-// 既拿不到 gin.Context，也拿不到 userPerms。*model.User 没有
-// GrantedCapabilities 字段（internal/model/user.go）。因此本函数体只能
-// 沿用"actor 缺失 / SuperAdmin / account 非空"三种放行；actor 非空并不等于
-// 拥有具体业务 capability（已认证 ≠ 拥有业务权限）。
-//
-// 后续两条可选路径（不在本轮实施）：
-//  1. middleware 在 c.Set("currentUser", u) 时同步写入 actor.GrantedCapabilities
-//     字段；需要扩展 model.User 并在所有装载点同步。
-//  2. middleware 将 userPerms 沿 c.Request.WithContext(...) 透传到 ctx.Value(...)；
-//     Service 通过 ctx.Value("userPerms") 取出。需要在 agent-onboarding.md /
-//     architecture.md 评估 ctx 透传机制是否被允许。
-//
-// 两条路径都需要独立任务与产品/架构授权。
-func hasCapability(actor *model.User, _ ...perm.Permission) bool {
+// hasCapability reads the request capability snapshot installed by RequireLogin.
+// Authentication alone is never a capability grant.
+func hasCapability(ctx context.Context, actor *model.User, perms ...perm.Permission) bool {
 	if actor == nil {
 		return false
 	}
 	if actor.IsSuperAdmin {
 		return true
 	}
-	// middleware 已 RequirePerm 通过；这里仅按 actor 非空放行。
-	// 注意：account 非空 ≠ 拥有目标 capability；本行为已知遗留，见 BLOCKED 说明。
-	return strings.TrimSpace(actor.Account) != ""
+	return perm.HasAnyGranted(ctx, perms...)
 }
 
 // deriveStageKey 把业务需求的值流 status（或 zt_story.stage 列）映射到 primaryaction.StageKey。
@@ -281,6 +300,39 @@ func deriveStageKey(stage, status string) primaryaction.StageKey {
 		return primaryaction.StageDelivered
 	case "closed":
 		return primaryaction.StageClosed
+	}
+	return primaryaction.StageOther
+}
+
+// deriveStoryStageKey 把研发需求（zt_story）的 stage 与 status 映射到 primaryaction.StageKey。
+// 研发需求没有需求澄清阶段；active 状态下由 stage 决定其生命周期（如 wait -> StageSchedule）。
+func deriveStoryStageKey(stage, status string) primaryaction.StageKey {
+	st := strings.ToLower(strings.TrimSpace(status))
+	if st == "closed" {
+		return primaryaction.StageClosed
+	}
+	sg := strings.ToLower(strings.TrimSpace(stage))
+	switch sg {
+	case "wait", "planned", "projected", "schedule":
+		return primaryaction.StageSchedule
+	case "developing", "developed":
+		return primaryaction.StageDeveloping
+	case "tested", "testing", "delivering":
+		return primaryaction.StageTesting
+	case "verified":
+		return primaryaction.StageAcceptance
+	case "released":
+		return primaryaction.StageDelivered
+	case "closed":
+		return primaryaction.StageClosed
+	}
+	switch st {
+	case "developing":
+		return primaryaction.StageDeveloping
+	case "testing", "tested":
+		return primaryaction.StageTesting
+	case "active":
+		return primaryaction.StageSchedule
 	}
 	return primaryaction.StageOther
 }

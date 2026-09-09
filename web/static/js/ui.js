@@ -236,7 +236,10 @@
     var matches = [];
     for (var i = 0; i < items.length; i++) {
       var item = items[i];
-      var haystack = (item.label + " " + item.value).toLowerCase();
+      if (item.isGroupHeader) {
+        continue;
+      }
+      var haystack = (item.label + " " + item.value + " " + (item.badge || "")).toLowerCase();
       if (haystack.indexOf(query) === -1) {
         continue;
       }
@@ -385,20 +388,44 @@
       return;
     }
 
-    matches.forEach(function (item, index) {
+    var selectableIndex = 0;
+    var selectableItems = [];
+    matches.forEach(function (item) {
+      if (item.isGroupHeader) {
+        var header = document.createElement("div");
+        header.className = "ui-autocomplete-group-header";
+        header.textContent = item.label;
+        dropdown.appendChild(header);
+        return;
+      }
+
+      var currentIndex = selectableIndex++;
+      selectableItems.push(item);
       var displayLabel = formatAutocompleteLabel(item);
+      var selectLabel = item.selectedLabel || displayLabel;
       var option = document.createElement("div");
       option.className = "ui-autocomplete-option";
       option.setAttribute("role", "option");
-      option.setAttribute("data-index", String(index));
+      option.setAttribute("data-index", String(currentIndex));
       option.setAttribute("data-value", item.value);
       option.setAttribute("data-label", displayLabel);
-      option.textContent = displayLabel;
+
+      var textSpan = document.createElement("span");
+      textSpan.textContent = displayLabel;
+      option.appendChild(textSpan);
+
+      if (item.badge) {
+        var badgeSpan = document.createElement("span");
+        badgeSpan.className = "ui-autocomplete-badge";
+        badgeSpan.textContent = item.badge;
+        option.appendChild(badgeSpan);
+      }
+
       option.addEventListener("mousedown", function (ev) {
         ev.preventDefault();
       });
       option.addEventListener("click", function () {
-        selectAutocompleteItem(state, item.value, displayLabel);
+        selectAutocompleteItem(state, item.value, selectLabel);
       });
       dropdown.appendChild(option);
     });
@@ -412,7 +439,7 @@
 
     dropdown.classList.add("is-open");
     state.open = true;
-    state.filteredItems = matches;
+    state.filteredItems = selectableItems;
     positionAutocompleteDropdown(state);
   }
 
@@ -435,6 +462,20 @@
     options[index].scrollIntoView({ block: "nearest" });
   }
 
+  function triggerChangeEvent(el) {
+    if (!el) {
+      return;
+    }
+    try {
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    } catch (e) {
+      var evt = document.createEvent("HTMLEvents");
+      evt.initEvent("change", true, true);
+      el.dispatchEvent(evt);
+    }
+  }
+
   function selectAutocompleteItem(state, value, label) {
     value = trimText(value);
     label = trimText(label) || value;
@@ -443,6 +484,7 @@
     state.items = ensureAutocompleteItem(state.items, value, label);
     updateAutocompleteClearButton(state);
     closeAutocomplete(state);
+    triggerChangeEvent(state.hidden);
   }
 
   function clearAutocompleteValue(state) {
@@ -450,6 +492,7 @@
     state.hidden.value = "";
     updateAutocompleteClearButton(state);
     closeAutocomplete(state);
+    triggerChangeEvent(state.hidden);
   }
 
   function ensureAutocompleteStructure(input, hidden) {
@@ -552,7 +595,8 @@
         if (state.activeIndex >= 0 && state.filteredItems[state.activeIndex]) {
           ev.preventDefault();
           var picked = state.filteredItems[state.activeIndex];
-          selectAutocompleteItem(state, picked.value, formatAutocompleteLabel(picked));
+          var selectLabel = picked.selectedLabel || formatAutocompleteLabel(picked);
+          selectAutocompleteItem(state, picked.value, selectLabel);
         }
         return;
       }

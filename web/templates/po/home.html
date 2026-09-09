@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="{{ asset "/static/css/po/personal-workspace.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/po/home.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/po/demand-detail.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/demand-clarify.css" }}">
 {{ end }}
 
 {{ define "content" }}
@@ -22,8 +23,9 @@
     </div>
     <div class="header-quick-filters" id="homeQuickChips" role="group" aria-label="快捷焦点">
       <button type="button" class="header-quick-chip active" data-home-focus="all" aria-pressed="true">
-        <span>全部</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.MyPending }}{{ end }}</em>
+        <span>全部</span> <em>{{ if .PageError }}—{{ else }}{{ .AllCount }}{{ end }}</em>
       </button>
+      <button type="button" data-home-focus="my_action" class="header-quick-chip" title="查看当前由我正式办理的事项" aria-pressed="false"><span>待我处理</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.MyPending }}{{ end }}</em></button>
       <button type="button" data-home-focus="today" class="header-quick-chip" title="在首页查看今天到期及已超期的需求" aria-pressed="false">
         <span>今日必推</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.Today }}{{ end }}</em>
       </button>
@@ -68,6 +70,8 @@
           <button type="button"
             class="home-vs-mini-card stage-{{ $stage.Status }}{{ if eq $i 0 }} active{{ else if eq $stage.Count 0 }} empty{{ end }}"
             data-vs-status="{{ $stage.Status }}"
+            data-base-count="{{ if $.PageError }}—{{ else }}{{ $stage.Count }}{{ end }}"
+            data-base-meta="{{ if $.PageError }}暂不可用{{ else if eq $stage.Status "all" }}全量汇总{{ else }}业{{ $stage.DemandCount }} · 研{{ $stage.StoryCount }}{{ end }}"
             aria-pressed="{{ if eq $i 0 }}true{{ else }}false{{ end }}"
             title="{{ $stage.Label }} · 共 {{ $stage.Count }} 条">
             <div class="vs-card-top">
@@ -95,32 +99,25 @@
         <div class="toolbar-left-group">
           <label class="workspace-search">
             <span aria-hidden="true">⌕</span>
-            <input type="search" id="homeKeyword" placeholder="搜索 ID、标题或负责人" aria-label="关键词">
+            <input type="search" id="homeKeyword" placeholder="搜索 ID、标题或当前步骤负责人" aria-label="关键词">
           </label>
           <div class="relation-segment" id="homeRelationSegment" aria-label="我的关系">
             <button type="button" class="active" data-relation="all">全部</button>
-            <button type="button" data-relation="in_charge">我负责</button>
-            <button type="button" data-relation="cooperate">我配合</button>
-            <button type="button" data-relation="follow">我关注</button>
+            <button type="button" data-relation="handling">我处理</button>
+            <button type="button" data-relation="following">我跟进</button>
           </div>
-          <select id="homeObjectType" aria-label="具体对象">
-            <option value="all">具体对象：全部</option>
-            <option value="demand">业务需求 (US)</option>
-            <option value="story">研发需求 (Story)</option>
-          </select>
-          <select id="homePriority" aria-label="优先级">
-            <option value="all">优先级：全部</option>
-            <option value="p1">P1 高优</option>
-            <option value="p2">P2 中优</option>
-            <option value="p3">P3/P4 一般</option>
-          </select>
+          <div class="relation-segment" id="homeObjectTypeSegment" aria-label="具体对象">
+            <button type="button" class="active" data-object-type="all">全部</button>
+            <button type="button" data-object-type="demand">业务需求</button>
+            <button type="button" data-object-type="story">研发需求</button>
+          </div>
+          <div class="relation-segment" id="homePrioritySegment" aria-label="优先级">
+            <button type="button" class="active" data-priority="all">全部</button>
+            <button type="button" data-priority="p1">P1 高优</button>
+            <button type="button" data-priority="p2">P2 中优</button>
+            <button type="button" data-priority="p3">P3/P4</button>
+          </div>
           <button type="button" id="homeResetBtn" class="workspace-btn">重置</button>
-        </div>
-        <div class="toolbar-right-group">
-          <span class="toolbar-count-caption" id="homeToolbarCount">显示 <b class="text-mono" id="homeShowingCount">1-15</b> / 共 <span id="homeTotalCount">0</span> 条</span>
-          <button type="button" class="home-refresh" id="homeRefreshBtn" aria-label="刷新列表">
-            <i class="fas fa-rotate-right" aria-hidden="true"></i> 刷新
-          </button>
         </div>
       </div>
 
@@ -129,9 +126,8 @@
         <table class="workspace-table home-action-table">
           <thead>
             <tr>
-              <th class="c-id">需求编号</th>
+              <th class="c-id" style="width:130px">对象#ID</th>
               <th class="c-title">事项标题</th>
-              <th class="c-type">类型</th>
               <th class="c-stage">当前阶段</th>
               <th class="c-zt-status">状态</th>
               <th class="c-owner">当前负责人</th>
@@ -139,7 +135,7 @@
             </tr>
           </thead>
           <tbody id="top5Tbody">
-            <tr><td colspan="7" class="state-placeholder">正在加载行动列表…</td></tr>
+            <tr><td colspan="6" class="state-placeholder">正在加载行动列表…</td></tr>
           </tbody>
         </table>
       </div>
@@ -160,9 +156,9 @@
           <a class="side-link" href="/todos">进入待办 <i class="fas fa-angle-right" aria-hidden="true"></i></a>
         </div>
         <div class="home-focus-grid">
-          <a href="/board/demand" class="focus-card danger" title="查看我负责的问题与风险">
+          <a href="/issues/risk" class="focus-card danger" title="查看我的问题与风险">
             <div class="focus-card-hdr">
-              <span>负责问题/风险</span>
+              <span>我的问题/风险</span>
               <i class="fas fa-triangle-exclamation text-red"></i>
             </div>
             <div class="focus-card-num">
@@ -269,40 +265,17 @@
   </div>
 </div>
 
-<div class="po-review-overlay" id="poDemandReviewOverlay"></div>
-<div class="po-review-modal" id="poDemandReviewModal" role="dialog" aria-labelledby="poDemandReviewTitle">
-  <div class="po-review-hdr">
-    <h3 id="poDemandReviewTitle">
-      <span>评审需求</span>
-      <span class="po-review-req-name" id="poDemandReviewName"></span>
-      <span class="po-review-req-id" id="poDemandReviewId"></span>
-    </h3>
-    <button type="button" class="po-review-close" id="poDemandReviewCloseBtn" aria-label="关闭"><i class="fas fa-xmark"></i></button>
-  </div>
-  <form class="po-review-form" id="poDemandReviewForm">
-    <div class="po-review-field">
-      <label for="poDemandReviewResult"><span class="req">*</span>评审结果</label>
-      <select id="poDemandReviewResult" name="result" class="select" required>
-        <option value="pass">确认通过</option>
-        <option value="refuse">拒绝</option>
-      </select>
-    </div>
-    <div class="po-review-field">
-      <label for="poDemandReviewFocus"><span class="req">*</span>是否需要重点关注</label>
-      <select id="poDemandReviewFocus" name="isNeedFocus" class="select" required>
-        <option value="0">否</option>
-        <option value="1">是</option>
-      </select>
-    </div>
-    <div class="po-review-field po-review-field--editor">
-      <label for="poDemandReviewComment">备注</label>
-      <textarea id="poDemandReviewComment" name="comment" class="textarea po-review-comment" rows="8" placeholder="可以填写评审意见"></textarea>
-    </div>
-    <div class="po-review-actions">
-      <button type="submit" class="po-review-submit" id="poDemandReviewSubmitBtn">评审需求</button>
-    </div>
-  </form>
-</div>
+<div class="po-review-overlay" id="poDemandAcceptanceOverlay" aria-hidden="true"></div>
+<aside class="po-review-modal" id="poDemandAcceptanceModal" role="dialog" aria-modal="true" aria-labelledby="poDemandAcceptanceTitle" aria-hidden="true">
+  <div class="po-review-hdr"><h3 id="poDemandAcceptanceTitle">验收需求</h3><button type="button" class="po-review-close" id="poDemandAcceptanceCloseBtn" aria-label="关闭"><i class="fas fa-xmark"></i></button></div>
+  <div class="po-review-form"><p class="po-review-context">请核对验收上下文并在工作台完成验收。</p><p id="poDemandAcceptanceContext">—</p><dl class="po-review-summary"><div><dt>测试用例</dt><dd id="poAcceptanceCases">加载中</dd></div><div><dt>未解决缺陷</dt><dd id="poAcceptanceBugs">加载中</dd></div></dl><form id="poDemandAcceptanceForm"><label>验收意见 <textarea name="comment" rows="4" maxlength="2000" placeholder="请输入验收意见（可选）"></textarea></label><button class="po-review-submit" type="submit">确认验收</button></form></div>
+</aside>
+<div class="po-review-overlay" id="poActionDrawerOverlay" aria-hidden="true"></div>
+<aside class="po-review-modal" id="poActionDrawer" role="dialog" aria-modal="true" aria-labelledby="poActionDrawerTitle" aria-hidden="true">
+  <div class="po-review-hdr"><h3 id="poActionDrawerTitle">办理</h3><button type="button" class="po-review-close" id="poActionDrawerCloseBtn" aria-label="关闭"><i class="fas fa-xmark"></i></button></div>
+  <div class="po-review-form"><p class="po-review-context" id="poActionDrawerContext">—</p><dl class="po-review-summary"><div><dt>当前阶段</dt><dd id="poActionDrawerStage">—</dd></div><div><dt>当前负责人</dt><dd id="poActionDrawerOwner">—</dd></div><div><dt>需求摘要</dt><dd id="poActionDrawerSummary">—</dd></div></dl><form id="poActionForm"><label>办理意见 <textarea name="comment" rows="4" maxlength="2000" placeholder="请输入办理意见（可选）"></textarea></label><button class="po-review-submit" type="submit">确认办理</button></form><a class="po-review-submit" id="poActionOpenPage" href="#" style="display:none">进入工作台办理页</a><p id="poActionDrawerUnavailable" style="display:none">该操作页面暂不可用</p></div>
+</aside>
+{{ template "po/clarify_modal" . }}
 {{ end }}
 
 {{ define "page_js" }}
@@ -311,7 +284,9 @@
 <script src="{{ asset "/static/js/po/demand-detail-richtext.js" }}"></script>
 <script src="{{ asset "/static/js/po/demand-detail-parent.js" }}"></script>
 <script src="{{ asset "/static/js/po/demand-detail-render.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail-review.js" }}"></script>
 <script src="{{ asset "/static/js/po/demand-detail.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-clarify.js" }}"></script>
 <script src="{{ asset "/static/js/po/homereview.js" }}"></script>
 <script src="{{ asset "/static/js/po/home.js" }}"></script>
 {{ end }}

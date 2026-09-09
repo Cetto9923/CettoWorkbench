@@ -2,9 +2,10 @@
    文件: web/static/css/po/wb-priority.css
    模块: PO 公共 UI - 优先级 / 对象类型 token-driven 样式 + 必要旧别名
    职责: 唯一真源 — .wb-priority[data-priority] / .wb-type.wb-type-{kind}
-         消费 layout/variables.css 的 --po-pri-* token。
+         对象标签采用方案3：极简圆点微标 (Minimal Dot + Slate)。
+         统一冷灰微底 #f8fafc + 细边框 #e2e8f0 + 深色字 #1e293b + ::before 6px 语义彩色微圆点。
          禁止页面私有色板覆写本文件；JS 真源为 PersonalList.priorityBadge /
-         objectTypeBadge。类型标签禁止 ellipsis 截断。
+         objectTypeBadge / idChipHtml。类型标签禁止 ellipsis 截断。
    ============================================================================= */
 
 /* -------- 1. 公共优先级 (.wb-priority[data-priority]) -------- */
@@ -65,80 +66,108 @@
   border-radius: 3px;
 }
 
-/* -------- 2. 公共对象类型（class 与 PersonalList.OBJECT_TYPE_LABELS 对齐） -------- */
+/* -------- 2. 公共对象类型：方案3 极简圆点微标 (Minimal Dot + Slate) --------
+   设计原则：
+   1. 统一微底：底色 #f8fafc，细边框 #e2e8f0，深色字体 #1e293b，圆角 5px，精致内边距；
+   2. 极简微标：使用 ::before 渲染 6px 语义彩色状态微圆点，一眼识别对象类别；
+   3. ID 链接：采用浅深适中的等宽/清晰字色 #64748b，hover 时呈现清晰下划线。
+   ----------------------------------------------------------------------------- */
 .wb-type {
   display: inline-flex;
   align-items: center;
   height: 20px;
   padding: 0 6px;
-  border-radius: 4px;
+  border-radius: 5px;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
+  line-height: 1;
   white-space: nowrap;
   box-sizing: border-box;
-  border: 1px solid transparent;
-  line-height: 1;
+  background: #f8fafc;
+  color: #1e293b;
+  border: 1px solid #e2e8f0;
   max-width: none;
   overflow: visible;
   text-overflow: clip;
   flex-shrink: 0;
 }
 
-.wb-type-business {
-  background: var(--po-pri-3-bg);
-  color: var(--po-pri-3-fg);
-  border-color: var(--po-pri-3-bd);
+/* 6px 语义彩色微圆点 */
+.wb-type::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-right: 4.5px;
+  flex-shrink: 0;
+  background: #94a3b8; /* 兜底灰色微圆点 */
 }
-.wb-type-sub_demand {
-  background: #f5f3ff;
-  color: #7c3aed;
-  border-color: #ede9fe;
+
+/* 语义微圆点色彩映射 */
+.wb-type-business::before {
+  background: #2563eb; /* 蓝 · 业需 */
 }
-.wb-type-story {
-  background: #ecfeff;
-  color: #0e7490;
-  border-color: #a5f3fc;
+.wb-type-sub_demand::before {
+  background: #8b5cf6; /* 紫 · 子需 */
 }
-.wb-type-independent_story {
-  background: #ecfeff;
-  color: #0e7490;
-  border-color: #a5f3fc;
+.wb-type-story::before,
+.wb-type-independent_story::before {
+  background: #0d9488; /* 青 · 研需 */
 }
-.wb-type-task {
-  background: #f0fdf4;
-  color: #15803d;
-  border-color: #bbf7d0;
+.wb-type-approval::before {
+  background: #7c3aed; /* 紫 · 审批 */
 }
-.wb-type-bug {
-  background: #fef2f2;
-  color: #b91c1c;
-  border-color: #fecaca;
+.wb-type-charter::before {
+  background: #a21caf; /* 玫紫 · 章程 */
 }
-.wb-type-issue {
-  background: #fffbeb;
-  color: #b45309;
-  border-color: #fed7aa;
+.wb-type-task::before {
+  background: #10b981; /* 绿 · 任务 */
 }
-.wb-type-approval {
-  background: var(--po-pri-1-bg);
-  color: var(--po-pri-1-fg);
-  border-color: var(--po-pri-1-bd);
+.wb-type-bug::before {
+  background: #e11d48; /* 红 · Bug */
 }
-.wb-type-todo {
-  background: #eff6ff;
-  color: #1d4ed8;
-  border-color: #bfdbfe;
+.wb-type-test::before,
+.wb-type-testtask::before {
+  background: #0284c7; /* 天蓝 · 测单 */
 }
-.wb-type-test,
-.wb-type-testtask {
-  background: #f0f9ff;
-  color: #0369a1;
-  border-color: #bae6fd;
+.wb-type-risk::before {
+  background: #ea580c; /* 橙红 · 风险 */
 }
-.wb-type-unknown {
-  background: var(--color-surface-muted);
-  color: var(--color-text-secondary);
-  border-color: var(--color-border);
+.wb-type-issue::before {
+  background: #d97706; /* 琥珀 · 问题 */
+}
+.wb-type-feedback::before {
+  background: #f97316; /* 橙 · 反馈 */
+}
+.wb-type-todo::before {
+  background: #3b82f6; /* 蓝 · 待办 */
+}
+.wb-type-project::before {
+  background: #64748b; /* 灰 · 项目 */
+}
+.wb-type-mail::before {
+  background: #64748b; /* 灰 · 邮件 */
+}
+.wb-type-unknown::before {
+  background: #94a3b8; /* 灰 · 未知 */
+}
+
+/* chip 内 ID 链接：清晰等宽字体、适度对比色 #64748b、hover 时蓝亮色 */
+.wb-type a,
+.wb-type .table-id-link {
+  color: #64748b;
+  text-decoration: none;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+.wb-type a:hover,
+.wb-type .table-id-link:hover {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.wb-type:has(a:hover) {
+  text-decoration: none;
 }
 
 /* =============================================================================

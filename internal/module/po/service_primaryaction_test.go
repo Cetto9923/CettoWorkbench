@@ -64,13 +64,13 @@ func TestDeriveDemandPrimaryActions_BatchIN(t *testing.T) {
 		t.Fatalf("len(out)=%d, want 3", len(out))
 	}
 
-	// 阶段断言：30 应该是 developing（提测，§4-2 disabled）。
+	// 阶段断言：30 是 developing，进入保留的 Workbench 提测页面。
 	if pa, ok := out[30]; ok {
 		if pa.Key != string(primaryaction.KeySubmitTest) {
 			t.Errorf("demand 30 key = %q, want %q", pa.Key, primaryaction.KeySubmitTest)
 		}
-		if pa.Enabled {
-			t.Error("demand 30 must be disabled (PLAN §4-2)")
+		if !pa.Enabled || pa.URL == "" {
+			t.Errorf("demand 30 submit-test must be enabled, got %+v", pa)
 		}
 	}
 
@@ -117,28 +117,33 @@ func TestDeriveStoryPrimaryActions_BatchIN(t *testing.T) {
 	repo := NewRepo(gormDB, gormDB)
 	svc := NewService(repo, nil, nil, zap.NewNop())
 
-	ids := []uint{100, 200}
+	ids := []uint{100, 200, 300}
 
 	// CountStoryTestTasks：story IN + case.story IN，各绑定一次。
 	mock.ExpectQuery(`(?s)SELECT s\.id AS story.*FROM zt_testtask`).
-		WithArgs(ids[0], ids[1], ids[0], ids[1]).
+		WithArgs(ids[0], ids[1], ids[2], ids[0], ids[1], ids[2]).
 		WillReturnRows(sqlmock.NewRows([]string{"story", "count", "first_id"}).
 			AddRow(100, 0, 0).
-			AddRow(200, 0, 0))
+			AddRow(200, 0, 0).
+			AddRow(300, 0, 0))
 
 	// 故事事实：FindStoryMetaForAction 单次 IN + deleted = ?。
 	mock.ExpectQuery(`SELECT id, status, stage FROM`).
-		WithArgs(ids[0], ids[1], "0").
+		WithArgs(ids[0], ids[1], ids[2], "0").
 		WillReturnRows(sqlmock.NewRows([]string{"id", "status", "stage"}).
 			AddRow(100, "developing", "").
-			AddRow(200, "released", ""))
+			AddRow(200, "released", "").
+			AddRow(300, "active", "wait"))
 
 	out, err := svc.DeriveStoryPrimaryActions(t.Context(), &model.User{Account: "u", IsSuperAdmin: true}, ids, true)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(out) != 2 {
-		t.Fatalf("len(out)=%d, want 2", len(out))
+	if len(out) != 3 {
+		t.Fatalf("len(out)=%d, want 3", len(out))
+	}
+	if pa, ok := out[300]; !ok || pa.Key != string(primaryaction.KeySchedule) {
+		t.Fatalf("story 300 key = %q, want %q", pa.Key, primaryaction.KeySchedule)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -168,5 +173,77 @@ func TestAttachPrimaryActions_EmptyTree(t *testing.T) {
 	}
 	if err := svc.attachPrimaryActions(t.Context(), &model.User{Account: "u"}, []*BoardDemandItem{}); err != nil {
 		t.Fatalf("empty tree error: %v", err)
+	}
+}
+
+// TestDeriveDemandPrimaryActions_ReviewWorkflow 验证评审流：
+// 1. 待评审 + 待我评审 -> KeyApprove ("评审")
+// 2. 待评审 + 非待我评审 + 我创建 -> KeyWithdrawReview ("撤回评审")
+// 3. 草稿 + 我创建 -> KeySubmitReview ("提交评审")
+// 4. 草稿 + 他人创建 -> None ("—")
+func TestDeriveDemandPrimaryActions_ReviewWorkflow(t *testing.T) {
+	gormDB, mock := setupMockDB(t)
+	repo := NewRepo(gormDB, gormDB)
+	svc := NewService(repo, nil, nil, zap.NewNop())
+
+	ids := []uint{1, 2, 3, 4}
+	// 1: wait, createdBy=other, pending reviewer=user_a -> approve
+	// 2: wait, createdBy=user_a, not pending reviewer -> withdraw_review
+	// 3: draft, createdBy=user_a -> submit_review
+	// 4: draft, createdBy=other -> none
+
+	mock.ExpectQuery(`SELECT id, stage, status, assignedTo, accepter, createdBy`).
+		WithArgs(ids[0], ids[1], ids[2], ids[3]).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "stage", "status", "assignedTo", "accepter", "createdBy"}).
+			AddRow(1, "wait", "wait", "user_x", "", "other").
+			AddRow(2, "wait", "wait", "user_x", "", "user_a").
+			AddRow(3, "draft", "draft", "user_x", "", "user_a").
+			AddRow(4, "draft", "draft", "user_x", "", "other"))
+
+	mock.ExpectQuery(`(?s)SELECT d\.id AS demand_id.*FROM zt_demand.*fromDemand IN`).
+		WithArgs(ids[0], ids[1], ids[2], ids[3], ids[0], ids[1], ids[2], ids[3]).
+		WillReturnRows(sqlmock.NewRows([]string{"demand_id", "count", "first_id"}).
+			AddRow(1, 0, 0).
+			AddRow(2, 0, 0).
+			AddRow(3, 0, 0).
+			AddRow(4, 0, 0))
+
+	mock.ExpectQuery(`(?s)SELECT d\.id AS demand_id.*zt_demandappraise`).
+		WithArgs("user_a", ids[0], ids[1], ids[2], ids[3]).
+		WillReturnRows(sqlmock.NewRows([]string{"demand_id", "has_pending", "has_any"}).
+			AddRow(1, false, false).
+			AddRow(2, false, false).
+			AddRow(3, false, false).
+			AddRow(4, false, false))
+
+	// FindPendingReviewDemandIDs: 只有 status=wait 的 id: 1, 2
+	mock.ExpectQuery(`SELECT .*demand.* FROM .*zt_demandreview.* WHERE demand IN \(\?,\s*\?\)`).
+		WithArgs(1, 2, "user_a", "").
+		WillReturnRows(sqlmock.NewRows([]string{"demand"}).AddRow(1))
+
+	out, err := svc.DeriveDemandPrimaryActions(t.Context(), &model.User{Account: "user_a", IsSuperAdmin: false}, ids)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// 1 -> approve
+	if pa := out[1]; pa.Key != string(primaryaction.KeyApprove) {
+		t.Errorf("demand 1 key = %q, want %q", pa.Key, primaryaction.KeyApprove)
+	}
+	// 2 -> withdraw_review
+	if pa := out[2]; pa.Key != string(primaryaction.KeyWithdrawReview) {
+		t.Errorf("demand 2 key = %q, want %q", pa.Key, primaryaction.KeyWithdrawReview)
+	}
+	// 3 -> submit_review
+	if pa := out[3]; pa.Key != string(primaryaction.KeySubmitReview) {
+		t.Errorf("demand 3 key = %q, want %q", pa.Key, primaryaction.KeySubmitReview)
+	}
+	// 4 -> none
+	if pa := out[4]; pa.Key != "" || pa.Enabled {
+		t.Errorf("demand 4 should be none, got %+v", pa)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet sql expectations: %v", err)
 	}
 }

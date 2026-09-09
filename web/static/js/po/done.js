@@ -17,50 +17,16 @@
       .replace(/'/g, "&#39;");
   }
   var PL = window.PersonalList || {};
-  var fallbackObjectTypeBadge = function (kind) {
-    var map = { demand: "business", story: "story", task: "task", bug: "bug", issue: "issue", todo: "todo", testtask: "testtask", approval: "approval", charter: "approval", planchange: "approval", buildguideline: "approval", review: "approval", case: "testcase" };
-    var labels = { business: "业务需求", story: "研发需求", task: "任务", bug: "Bug", issue: "问题", todo: "待办", testtask: "测试单", approval: "审批", testcase: "用例" };
-    var k = map[String(kind || "").toLowerCase()] || "";
-    if (!k) { return '<span class="wb-type wb-type-unknown">' + esc(kind || "—") + "</span>"; }
-    var cssKind = k === "testcase" ? "testtask" : k;
-    return '<span class="wb-type wb-type-' + cssKind + '">' + labels[k] + "</span>";
-  };
-  var objectTypeBadgeFromKind = function (kind) {
-    var normalized = String(kind || "").toLowerCase();
-    // PersonalList 的通用映射不包含审批对象；已办页必须保持 ZenTao 对象类型和中文标题。
-    if (["charter", "planchange", "buildguideline", "review", "case"].indexOf(normalized) >= 0) {
-      return fallbackObjectTypeBadge(normalized);
-    }
-    return PL.objectTypeBadgeFromKind ? PL.objectTypeBadgeFromKind(kind) : fallbackObjectTypeBadge(kind);
+  // 把 ZenTao API kind（demand/story/task/bug/charter/...）映射成 wb-type CSS kind
+  // （business/story/...），与 PersonalList.OBJECT_KIND_FROM_API / wb-priority.css 色板对齐。
+  var objectChipKindFromApi = function (apiKind) {
+    var map = { demand: "business", business: "business", story: "story", independent_story: "independent_story", task: "task", bug: "bug", issue: "issue", todo: "todo", testtask: "testtask", test: "testtask", approval: "approval", charter: "charter", planchange: "approval", buildguideline: "approval", review: "approval", case: "testcase", feedback: "feedback", release: "charter", build: "charter", risk: "risk", project: "project", mail: "mail" };
+    var k = map[String(apiKind || "").toLowerCase()] || "";
+    return k === "testcase" ? "testtask" : k;
   };
   var OBJECT_TYPE_ORDER = ["", "approval", "demand", "story", "task", "bug", "risk", "issue", "feedback", "release", "build", "todo"];
-  var OBJECT_TYPE_LABELS = {
-    "": "全部已办",
-    "approval": "审批",
-    "demand": "业务需求",
-    "story": "研发需求",
-    "task": "任务",
-    "bug": "Bug",
-    "risk": "风险",
-    "issue": "问题",
-    "feedback": "反馈",
-    "release": "发布",
-    "build": "构建",
-    "todo": "待办"
-  };
-  var OBJECT_TYPE_ICONS = {
-    "demand": "fa-lightbulb",
-    "approval": "fa-stamp",
-    "task": "fa-list-check",
-    "story": "fa-diagram-project",
-    "bug": "fa-bug",
-    "issue": "fa-circle-exclamation",
-    "risk": "fa-triangle-exclamation",
-    "todo": "fa-circle-check",
-    "release": "fa-rocket",
-    "build": "fa-cube",
-    "feedback": "fa-comments"
-  };
+  var OBJECT_TYPE_LABELS = { "": "全部已办", approval: "审批", demand: "业务需求", story: "研发需求", task: "任务", bug: "Bug", risk: "风险", issue: "问题", feedback: "反馈", release: "发布", build: "构建", todo: "待办", charter: "章程" };
+  var OBJECT_TYPE_ICONS = { demand: "fa-lightbulb", approval: "fa-stamp", task: "fa-list-check", story: "fa-diagram-project", bug: "fa-bug", issue: "fa-circle-exclamation", risk: "fa-triangle-exclamation", todo: "fa-circle-check", release: "fa-rocket", build: "fa-cube", feedback: "fa-comments", charter: "fa-file-contract" };
   var state = {
     mode: "core",
     tab: "all",
@@ -86,28 +52,31 @@
   }
 
   function tagClass(result) {
-    var map = {
-      approved: "success", done: "success", resolved: "success", verified: "success",
-      rejected: "danger", returned: "warning",
-      closed: "gray",
-      activated: "blue", submitted: "blue"
-    };
+    var map = { approved: "success", done: "success", resolved: "success", verified: "success", rejected: "danger", returned: "warning", closed: "gray", activated: "blue", submitted: "blue" };
     return map[result] || "gray";
   }
 
   function statusClass(s) {
-    var t = String(s || "");
+    var t = String(s || "").toLowerCase();
     if (t.indexOf("关闭") >= 0 || t.indexOf("closed") >= 0) return "gray";
     if (t.indexOf("完成") >= 0 || t.indexOf("done") >= 0 || t.indexOf("验收") >= 0 || t.indexOf("发布") >= 0 || t.indexOf("通过") >= 0) return "success";
     if (t.indexOf("待") >= 0 || t.indexOf("wait") >= 0 || t.indexOf("暂停") >= 0) return "warning";
     if (t.indexOf("驳回") >= 0 || t.indexOf("拒绝") >= 0 || t.indexOf("失败") >= 0) return "danger";
-    if (t.indexOf("开发") >= 0 || t.indexOf("doing") >= 0 || t.indexOf("测试") >= 0 || t.indexOf("评审") >= 0) return "blue";
+    if (t.indexOf("开发") >= 0 || t.indexOf("doing") >= 0 || t.indexOf("测试") >= 0 || t.indexOf("评审") >= 0 || t.indexOf("active") >= 0) return "blue";
     return "gray";
   }
 
-  function statusLabel(status) {
-    var raw = String(status || "").trim(), key = raw.toLowerCase();
-    var labels = { draft: "草稿", wait: "待处理", doing: "进行中", done: "已完成", pause: "已暂停", cancel: "已取消", closed: "已关闭", reviewing: "评审中", active: "已激活", changing: "变更中", clarified: "已澄清", developing: "开发中", testing: "测试中", waitacceptance: "待验收", acceptanced: "已验收", waitdeliver: "待交付", delivered: "已交付", released: "已发布", planned: "已排期", refuse: "已驳回", suspended: "已挂起", blocked: "已阻塞", opened: "处理中", resolved: "已解决", verified: "已验证", unconfirmed: "未确认" };
+  function statusLabel(status, objectType) {
+    var raw = String(status || "").trim(), key = raw.toLowerCase(), obj = String(objectType || "").toLowerCase();
+    var storyLabels = { draft: "草稿", reviewing: "评审中", active: "激活", changing: "变更中", closed: "已关闭" };
+    var demandLabels = { draft: "暂存", wait: "待评审", active: "已评审", clarified: "已澄清", developing: "开发中", testing: "测试中", waitacceptance: "待验收", acceptanced: "已验收", waitdeliver: "待交付", delivered: "已交付", released: "已发布", closed: "已关闭", refuse: "已挂起" };
+    var charterLabels = { wait: "待审批", doing: "审批中", reviewed: "已审批", reject: "已驳回", closed: "已关闭" };
+    var approvalLabels = { wait: "待审批", doing: "审批中", reviewed: "已审批", approve: "已通过", reject: "已驳回", closed: "已关闭" };
+    var labels = { draft: "草稿", wait: "待处理", doing: "进行中", done: "已完成", pause: "已暂停", cancel: "已取消", closed: "已关闭", reviewing: "评审中", active: "已评审", changing: "变更中", clarified: "已澄清", developing: "开发中", testing: "测试中", waitacceptance: "待验收", acceptanced: "已验收", waitdeliver: "待交付", delivered: "已交付", released: "已发布", planned: "已排期", refuse: "已驳回", suspended: "已挂起", blocked: "已阻塞", opened: "处理中", resolved: "已解决", verified: "已验证", unconfirmed: "未确认" };
+    if (obj === "story" && storyLabels[key]) return storyLabels[key];
+    if ((obj === "demand" || !obj) && demandLabels[key]) return demandLabels[key];
+    if (obj === "charter" && charterLabels[key]) return charterLabels[key];
+    if ((obj === "buildguideline" || obj === "planchange" || obj === "review") && approvalLabels[key]) return approvalLabels[key];
     return labels[key] || raw || "--";
   }
 
@@ -163,7 +132,9 @@
 
     document.querySelectorAll(".wb-done-kpi").forEach(function (card) {
       var r = card.getAttribute("data-range");
-      card.classList.toggle("active", r === state.timeRange);
+      var isActive = r === state.timeRange;
+      card.classList.toggle("active", isActive);
+      card.setAttribute("aria-pressed", isActive ? "true" : "false");
     });
   }
 
@@ -248,33 +219,61 @@
           return;
         }
 
+        var APPROVAL_OBJECT_TYPES = ["charter", "planchange", "buildguideline", "review", "case"];
         var html = items.map(function (it) {
+          var displayTitle = it.objectTitle || it.objectName || "";
+          if (!displayTitle) {
+            // 审批类对象即便 URL 为空也必须保持非空显示，避免 "--"
+            if (APPROVAL_OBJECT_TYPES.indexOf(String(it.objectType || "").toLowerCase()) >= 0) {
+              var label = OBJECT_TYPE_LABELS[it.objectType] || it.objectType || "";
+              var code = objectCode(it);
+              displayTitle = (label && code !== "--") ? (label + " " + code) : (label || code || "");
+            }
+          }
+          if (!displayTitle) displayTitle = "--";
           var titleCell = "";
           if (it.objectType === "demand" && window.DemandDetail && typeof window.DemandDetail.open === "function") {
-            titleCell = '<button type="button" class="wb-done-title-link" data-open-demand="' + it.objectId + '">' + esc(it.objectTitle || it.objectName || "--") + '</button>';
+            titleCell = '<button type="button" class="wb-done-title-link" data-open-demand="' + it.objectId + '">' + esc(displayTitle) + '</button>';
           } else if (it.url) {
-            titleCell = '<a class="wb-done-title-link" href="' + esc(it.url) + '" target="_blank" rel="noopener noreferrer">' + esc(it.objectTitle || it.objectName || "--") + '</a>';
+            titleCell = '<a class="wb-done-title-link" href="' + esc(it.url) + '" target="_blank" rel="noopener noreferrer">' + esc(displayTitle) + '</a>';
           } else {
-            titleCell = '<span class="wb-done-title-plain">' + esc(it.objectTitle || it.objectName || "--") + '</span>';
+            titleCell = '<span class="wb-done-title-plain">' + esc(displayTitle) + '</span>';
           }
 
           var changeHtml = (it.beforeStatus && it.afterStatus)
-            ? '<span class="done-change-before">' + esc(statusLabel(it.beforeStatus)) + '</span><span class="done-arrow">→</span><span class="done-change-after">' + esc(statusLabel(it.afterStatus)) + '</span>'
+            ? '<span class="done-change-before">' + esc(statusLabel(it.beforeStatus, it.objectType)) + '</span><span class="done-arrow">→</span><span class="done-change-after">' + esc(statusLabel(it.afterStatus, it.objectType)) + '</span>'
             : '<span class="done-change-na">--</span>';
 
-          var ctxHtml = '<div class="done-ctx-project">' + esc(it.projectName || "--") + '</div>' +
+          var ctxHtml = '<div class="done-ctx-pool">' + esc(it.poolName || "--") + '</div>' +
+            '<div class="done-ctx-project">' + esc(it.projectName || "--") + '</div>' +
             (it.executionName ? '<div class="done-ctx-exec">' + esc(it.executionName) + '</div>' : "");
+
+          var rawCode = objectCode(it);
+          var idHtml = rawCode === "--"
+            ? '<span class="done-obj-id-plain">--</span>'
+            : (it.url
+                ? '<a class="done-obj-id-link" href="' + esc(it.url) + '" target="_blank" rel="noopener noreferrer">' + esc(rawCode) + '</a>'
+                : '<span class="done-obj-id-plain">' + esc(rawCode) + '</span>');
+          // 对象 + ID 单 chip：复用 PersonalList.idChipHtml（与首页/通知中心同款），走
+          // OBJECT_TYPE_SHORT_LABELS 缩写 + "#" 分隔符；不再走本地 .done-obj-chip-* 别名。
+          var chipKind = objectChipKindFromApi(it.objectType);
+          var objCell = (PL && PL.idChipHtml)
+            ? PL.idChipHtml(chipKind, idHtml)
+            : '<span class="done-obj-chip done-obj-chip-' + esc(chipKind || "unknown") + '">' +
+                '<span class="done-obj-chip-label">' + esc(it.objectType || "—") + '</span> ' +
+                idHtml +
+                '</span>';
 
           return (
             '<tr>' +
             '<td class="done-time">' + fmtDateTime(it.handledAt || it.date) + '</td>' +
-            '<td class="done-obj"><div class="done-obj-type">' + objectTypeBadgeFromKind(it.objectType) + '</div><div class="done-obj-code"># ' + esc(objectCode(it)) + '</div></td>' +
+            '<td class="done-obj">' + objCell + '</td>' +
             '<td class="done-title">' + titleCell + '</td>' +
             '<td class="done-action"><span class="done-action-name">' + esc(it.actionName || it.action) + '</span></td>' +
             '<td class="done-result"><span class="done-tag ' + tagClass(it.resultCode || it.result) + '">' + esc(it.resultText || it.result || "--") + '</span></td>' +
             '<td class="done-change">' + changeHtml + '</td>' +
             '<td class="done-ctx">' + ctxHtml + '</td>' +
-            '<td class="done-status"><span class="done-tag ' + statusClass(it.currentStatus) + '">' + esc(statusLabel(it.currentStatus)) + '</span></td>' +
+            '<td class="done-status"><span class="done-tag ' + statusClass(it.currentStatus) + '">' + esc(statusLabel(it.currentStatus, it.objectType)) + '</span></td>' +
             '<td class="done-op"><button type="button" class="action-btn small wb-done-detail-btn" data-action-id="' + it.id + '">查看记录</button></td>' +
             '</tr>'
           );
@@ -354,7 +353,7 @@
           }
         }
 
-        var changeText = (it.beforeStatus && it.afterStatus) ? (statusLabel(it.beforeStatus) + " → " + statusLabel(it.afterStatus)) : "--";
+        var changeText = (it.beforeStatus && it.afterStatus) ? (statusLabel(it.beforeStatus, it.objectType) + " → " + statusLabel(it.afterStatus, it.objectType)) : "--";
 
         var timelineHtml = tl.length ? tl.map(function (x) {
           return (
@@ -366,37 +365,25 @@
         }).join("") : '<div class="done-tl-na">暂无历史时间线</div>';
 
         body.innerHTML =
-          '<section class="done-section">' +
-          '  <div class="done-section-title">本次办理摘要</div>' +
-          '  <div class="done-summary-box">' +
-          '    <div class="done-kv">' +
-          '      <span class="done-kv-k">业务对象</span><span class="done-kv-v done-kv-wide">' + esc(it.objectCode) + ' · ' + esc(it.objectTitle || it.objectName || "--") + '</span>' +
-          '      <span class="done-kv-k">来源</span><span class="done-kv-v">禅道</span>' +
-          '      <span class="done-kv-k">我做了什么</span><span class="done-kv-v done-kv-action">' + esc(it.actionName) + '</span>' +
-          '      <span class="done-kv-k">处理结果</span><span class="done-kv-v">' + esc(it.resultText) + '</span>' +
-          '      <span class="done-kv-k">办理人</span><span class="done-kv-v">' + esc(it.actorName) + '</span>' +
-          '      <span class="done-kv-k">处理时间</span><span class="done-kv-v">' + esc(it.date || it.handledAt) + '</span>' +
-          '      <span class="done-kv-k">状态变化</span><span class="done-kv-v">' + esc(changeText) + '</span>' +
-          '      <span class="done-kv-k">下一责任人</span><span class="done-kv-v">' + esc(it.nextOwnerName || "--") + '</span>' +
-          '    </div>' +
-          '  </div>' +
-          '</section>' +
-          '<section class="done-section">' +
-          '  <div class="done-section-title">对象上下文</div>' +
-          '  <div class="done-summary-box">' +
-          '    <div class="done-kv">' +
-          '      <span class="done-kv-k">所属产品</span><span class="done-kv-v">' + esc(ctx.productName || "--") + '</span>' +
-          '      <span class="done-kv-k">所属项目</span><span class="done-kv-v">' + esc(ctx.projectName || "--") + '</span>' +
-          '      <span class="done-kv-k">执行 / 迭代</span><span class="done-kv-v">' + esc(ctx.executionName || "--") + '</span>' +
-          '      <span class="done-kv-k">当前状态</span><span class="done-kv-v">' + esc(statusLabel(ctx.currentStatus)) + '</span>' +
-          '      <span class="done-kv-k">当前负责人</span><span class="done-kv-v">' + esc(ctx.currentOwner || "--") + '</span>' +
-          '    </div>' +
-          '  </div>' +
-          '</section>' +
-          '<section class="done-section">' +
-          '  <div class="done-section-title">邻近历史</div>' +
-          '  <div class="done-timeline">' + timelineHtml + '</div>' +
-          '</section>';
+          '<section class="done-section"><div class="done-section-title">本次办理摘要</div><div class="done-summary-box"><div class="done-kv">' +
+          '<span class="done-kv-k">业务对象</span><span class="done-kv-v done-kv-wide">' + esc(it.objectCode) + ' · ' + esc(it.objectTitle || it.objectName || "--") + '</span>' +
+          '<span class="done-kv-k">来源</span><span class="done-kv-v">禅道</span>' +
+          '<span class="done-kv-k">我做了什么</span><span class="done-kv-v done-kv-action">' + esc(it.actionName) + '</span>' +
+          '<span class="done-kv-k">处理结果</span><span class="done-kv-v">' + esc(it.resultText) + '</span>' +
+          '<span class="done-kv-k">办理人</span><span class="done-kv-v">' + esc(it.actorName) + '</span>' +
+          '<span class="done-kv-k">处理时间</span><span class="done-kv-v">' + esc(it.date || it.handledAt) + '</span>' +
+          '<span class="done-kv-k">状态变化</span><span class="done-kv-v">' + esc(changeText) + '</span>' +
+          '<span class="done-kv-k">下一责任人</span><span class="done-kv-v">' + esc(it.nextOwnerName || "--") + '</span>' +
+          '</div></div></section>' +
+          '<section class="done-section"><div class="done-section-title">对象上下文</div><div class="done-summary-box"><div class="done-kv">' +
+          '<span class="done-kv-k">所属产品</span><span class="done-kv-v">' + esc(ctx.productName || "--") + '</span>' +
+          '<span class="done-kv-k">所属需求池</span><span class="done-kv-v">' + esc(ctx.poolName || "--") + '</span>' +
+          '<span class="done-kv-k">所属项目</span><span class="done-kv-v">' + esc(ctx.projectName || "--") + '</span>' +
+          '<span class="done-kv-k">执行 / 迭代</span><span class="done-kv-v">' + esc(ctx.executionName || "--") + '</span>' +
+          '<span class="done-kv-k">当前状态</span><span class="done-kv-v">' + esc(statusLabel(ctx.currentStatus, it.objectType)) + '</span>' +
+          '<span class="done-kv-k">当前负责人</span><span class="done-kv-v">' + esc(ctx.currentOwner || "--") + '</span>' +
+          '</div></div></section>' +
+          '<section class="done-section"><div class="done-section-title">邻近历史</div><div class="done-timeline">' + timelineHtml + '</div></section>';
       })
       .catch(function () {
         body.innerHTML = '<div class="state-placeholder error">加载详情失败，请稍后重试</div>';
@@ -415,9 +402,9 @@
       card.addEventListener("click", function () {
         var r = card.getAttribute("data-range");
         if (!r || r === "objects") return;
-        state.timeRange = r;
+        state.timeRange = (state.timeRange === r ? "all" : r);
         var sel = $("doneTimeRange");
-        if (sel) sel.value = r;
+        if (sel) sel.value = state.timeRange;
         state.page = 1;
         loadList();
       });

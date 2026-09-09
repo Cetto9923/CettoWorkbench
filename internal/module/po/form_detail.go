@@ -107,6 +107,13 @@ type DemandSummary struct {
 	AcceptanceStatus string `json:"acceptanceStatus"`
 	CreatedDate      string `json:"createdDate"`
 	EditedDate       string `json:"editedDate"`
+	CreatedBy        string `json:"createdBy"`
+	CreatedName      string `json:"createdName"`
+	IsCreator        bool   `json:"isCreator"`
+	IsAssignee       bool   `json:"isAssignee"`
+	CanReview        bool   `json:"canReview"`
+	ZentaoEditURL    string `json:"zentaoEditUrl"`
+	ZentaoURL        string `json:"zentaoUrl"`
 }
 
 // ParentAggregateData 父需求聚合专用视图数据。
@@ -194,6 +201,7 @@ type DetailSpotlight struct {
 
 // DetailRequirement Tab 2：需求与澄清。
 type DetailRequirement struct {
+	DemandID       uint                `json:"demandId"`
 	SpecHtml       string              `json:"specHtml"`
 	VerifyHtml     string              `json:"verifyHtml"`
 	Clarifications []ClarificationItem `json:"clarifications"`
@@ -392,6 +400,7 @@ type StageDurationItem struct {
 // DemandLifecycle 需求生命周期经办人。
 type DemandLifecycle struct {
 	CreatedBy      string `json:"createdBy"`
+	CreatedName    string `json:"createdName"`
 	CreatedDate    string `json:"createdDate"`
 	AssignedTo     string `json:"assignedTo"`
 	AssignedDate   string `json:"assignedDate"`

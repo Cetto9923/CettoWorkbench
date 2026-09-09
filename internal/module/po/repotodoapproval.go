@@ -115,13 +115,13 @@ func approvalObjectReason(objectType string) string {
 func approvalObjectURL(objectType string, objectID, projectID int64) string {
 	switch objectType {
 	case "charter":
-		return zentao.URL("charter", "view", fmt.Sprintf("projectID=%d", projectID))
+		return zentao.CharterViewURL(uint(objectID), uint(projectID))
 	case "planchange":
-		return zentao.URL("planchange", "view", fmt.Sprintf("ID=%d", objectID))
+		return zentao.PlanchangeViewURL(uint(objectID))
 	case "buildguideline":
-		return zentao.URL("buildguideline", "view", fmt.Sprintf("projectID=%d", projectID))
+		return zentao.BuildguidelineViewURL(uint(objectID), uint(projectID))
 	case "review":
-		return zentao.URL("review", "view", fmt.Sprintf("reviewID=%d", objectID))
+		return zentao.ReviewViewURL(uint(objectID))
 	}
 	return ""
 }

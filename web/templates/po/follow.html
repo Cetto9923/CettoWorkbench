@@ -117,13 +117,13 @@
         <span class="workspace-result-hint">聚焦持续跟进的关键业务需求</span>
       </div>
 
-      <div class="table-scroll-container">
-        <table class="workspace-table follow-table" id="followDemandTable">
+      <div class="pw-table-wrap follow-demand-table-wrap">
+        <div class="table-scroll-container">
+        <table class="pw-table follow-table" id="followDemandTable">
           <thead>
             <tr>
-              <th style="width:100px">ID</th>
+              <th style="width:130px">对象#ID</th>
               <th>标题</th>
-              <th style="width:90px">对象类型</th>
               <th style="width:90px">当前阶段</th>
               <th style="width:80px">我的关系</th>
               <th style="width:140px">主系统</th>
@@ -134,9 +134,10 @@
             </tr>
           </thead>
           <tbody id="followDemandTbody">
-            <tr><td colspan="10" class="state-placeholder">正在拉取关注业务需求…</td></tr>
+            <tr><td colspan="9" class="state-placeholder">正在拉取关注业务需求…</td></tr>
           </tbody>
         </table>
+        </div>
       </div>
 
       <div class="state-placeholder follow-empty" id="followEmpty" hidden>当前条件下暂无关注对象</div>
@@ -144,7 +145,7 @@
         获取关注业务需求失败，请稍后重试。
         <button type="button" class="follow-btn" id="followRetryBtn">重试</button>
       </div>
-      <div class="workspace-pagination" id="followPagination" hidden></div>
+      <div class="pw-footer follow-demand-footer"><div class="workspace-pagination" id="followPagination" hidden></div></div>
     </div>
   </section>
 </div>

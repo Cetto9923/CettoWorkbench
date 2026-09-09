@@ -300,7 +300,32 @@
     bug: "Bug",
     approval: "审批",
     todo: "待办",
-    testtask: "测试单"
+    testtask: "测试单",
+    charter: "章程",
+    feedback: "反馈",
+    project: "项目",
+    mail: "邮件",
+    risk: "风险"
+  };
+
+  /* chip 内「对象 #ID」单色标签使用的缩写版标签。
+     只在 chip 上下文使用；独立 badge / tab 标题仍走 OBJECT_TYPE_LABELS 全称。 */
+  var OBJECT_TYPE_SHORT_LABELS = {
+    business: "业需",
+    sub_demand: "子需",
+    story: "研需",
+    independent_story: "独立研需",
+    task: "任务",
+    issue: "问题",
+    bug: "Bug",
+    approval: "审批",
+    todo: "待办",
+    testtask: "测单",
+    charter: "章程",
+    feedback: "反馈",
+    project: "项目",
+    mail: "邮件",
+    risk: "风险"
   };
 
   /* 待办/列表 API 的 kind 字段 → objectTypeBadge 的 canonical key */
@@ -316,21 +341,65 @@
     approval: "approval",
     todo: "todo",
     test: "testtask",
-    testtask: "testtask"
+    testtask: "testtask",
+    charter: "charter",
+    feedback: "feedback",
+    project: "project",
+    mail: "mail",
+    risk: "risk"
   };
 
+  var REVERSE_CHINESE_MAP = {
+    "业务需求": "business", "业需": "business",
+    "子需求": "sub_demand", "子需": "sub_demand",
+    "研发需求": "story", "研需": "story", "独立研需": "independent_story",
+    "任务": "task", "问题": "issue", "缺陷": "bug", "bug": "bug",
+    "审批": "approval", "待办": "todo",
+    "测试单": "testtask", "测单": "testtask", "测试": "testtask",
+    "章程": "charter", "反馈": "feedback", "项目": "project",
+    "邮件": "mail", "风险": "risk"
+  };
+
+  function normalizeKind(kind) {
+    var raw = String(kind || "").trim();
+    var lower = raw.toLowerCase();
+    return OBJECT_KIND_FROM_API[lower] || REVERSE_CHINESE_MAP[raw] || REVERSE_CHINESE_MAP[lower] || lower;
+  }
+
   function objectTypeBadgeFromKind(kind) {
-    var k = String(kind || "").trim().toLowerCase();
-    return objectTypeBadge(OBJECT_KIND_FROM_API[k] || k);
+    return objectTypeBadge(normalizeKind(kind));
   }
 
   function objectTypeBadge(kind) {
-    var k = String(kind || "").trim().toLowerCase();
+    var k = normalizeKind(kind);
     if (!k) { return '<span class="wb-type wb-type-unknown">—</span>'; }
     if (OBJECT_TYPE_LABELS[k]) {
       return '<span class="wb-type wb-type-' + k + '">' + escapeHtml(OBJECT_TYPE_LABELS[k]) + "</span>";
     }
     return '<span class="wb-type wb-type-unknown">' + escapeHtml(k) + "</span>";
+  }
+
+  /**
+   * idChipHtml: 渲染「对象 #ID」单色 chip（颜色统一在 wb-priority.css）。
+   *   - kind   : canon key / API 字段 / 中文类型，统一由 normalizeKind 解析
+   *   - idHtml : 已经构造好的 ID HTML（典型为 <a class="table-id-link"> 或 <span>）。
+   *   chip 内文本使用 OBJECT_TYPE_SHORT_LABELS 缩写版（业需/研需/测单/子需/...），
+   *   ID 之间用 "#" 分隔。未知 kind 回退到 wb-type-unknown。
+   */
+  function idChipHtml(kind, idHtml) {
+    var k = normalizeKind(kind);
+    var safeId = typeof idHtml === "string" ? idHtml : "";
+    var sep = safeId ? "#" : "";
+    if (!k || !OBJECT_TYPE_LABELS[k]) {
+      return '<span class="wb-type wb-type-unknown">' +
+        (OBJECT_TYPE_LABELS[k] ? escapeHtml(OBJECT_TYPE_LABELS[k]) : escapeHtml(k || "—")) +
+        sep + safeId +
+        "</span>";
+    }
+    return '<span class="wb-type wb-type-' + k + '">' +
+      escapeHtml(OBJECT_TYPE_SHORT_LABELS[k] || OBJECT_TYPE_LABELS[k]) +
+      sep + safeId +
+      "</span>";
   }
 
   // 系统级模板提醒兜底：「提醒：您有 Bug(9)」「您有 Task(3)」「您有 需求(2)」
@@ -343,9 +412,9 @@
     testtask: "testtask", risk: "risk",
     "研发需求": "story", "业务需求": "business", "需求": "business",
     "任务": "task", "缺陷": "bug", "测试": "testtask", "问题": "issue",
-    "风险": "risk", "反馈": "feedback", "立项": "charter", "项目": "project"
+    "风险": "risk", "反馈": "feedback", "章程": "charter", "项目": "project"
   };
-  var REMINDER_PATTERN = /(?:Bug|Task|Story|Demand|Issue|Feedback|Charter|Project|TestTask|Risk|研发需求|业务需求|需求|任务|缺陷|测试|问题|风险|反馈|立项|项目)\s*[\(（]\s*\d+\s*[\)）]/i;
+  var REMINDER_PATTERN = /(?:Bug|Task|Story|Demand|Issue|Feedback|Charter|Project|TestTask|Risk|研发需求|业务需求|需求|任务|缺陷|测试|问题|风险|反馈|章程|立项|项目)\s*[\(（]\s*\d+\s*[\)）]/i;
   function reminderKindFromSubject(subject) {
     var text = String(subject || "");
     if (!text) { return ""; }
@@ -365,8 +434,10 @@
     priorityBadge: priorityBadge,
     objectTypeBadge: objectTypeBadge,
     objectTypeBadgeFromKind: objectTypeBadgeFromKind,
+    idChipHtml: idChipHtml,
     reminderKindFromSubject: reminderKindFromSubject,
     OBJECT_TYPE_LABELS: OBJECT_TYPE_LABELS,
+    OBJECT_TYPE_SHORT_LABELS: OBJECT_TYPE_SHORT_LABELS,
     OBJECT_KIND_FROM_API: OBJECT_KIND_FROM_API
   };
 

@@ -9,8 +9,8 @@ package po
 // buildApprovalDoneScopeSQL 返回真正构成审批或评审决策的已办动作范围。
 // 同时覆盖项目章程、计划变更、建设指引、项目评审、需求/研发需求和用例评审。
 func buildApprovalDoneScopeSQL() string {
-	return "((a.objectType = 'demand' AND a.action IN ('reviewed', 'reviewpassed', 'reviewrejected')) OR " +
-		"(a.objectType = 'story' AND a.action IN ('submitreview', 'reviewed', 'reviewpassed', 'reviewrejected')) OR " +
+	return "((a.objectType = 'demand' AND a.action IN ('reviewed', 'reviewchange', 'reviewbymanager')) OR " +
+		"(a.objectType = 'story' AND a.action IN ('submitreview', 'reviewed')) OR " +
 		"(a.objectType = 'case' AND a.action = 'reviewed') OR " +
 		"(a.objectType = 'charter' AND a.action = 'approvalreview') OR " +
 		"(a.objectType = 'planchange' AND a.action = 'approvalreview') OR " +

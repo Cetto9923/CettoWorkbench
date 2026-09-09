@@ -366,7 +366,7 @@
   $("#scheduleClearFilters").on("click", clearFilters);
 
   var params = readURLParams();
-  if (params.get("tab") === "indep") {
+  if (params.get("tab") === "indep" || params.get("openStory")) {
     var $indepTab = $root.find('.schedule-data-tab[data-type="independentRD"]');
     if ($indepTab.length) {
       setDataTab($indepTab, false);
@@ -374,4 +374,20 @@
   } else {
     syncFilterTabUI();
   }
+
+  $(function () {
+    var openDemand = params.get("openDemand");
+    var openStory = params.get("openStory");
+    if (openDemand) {
+      var demId = parseInt(openDemand, 10);
+      if (!isNaN(demId) && demId > 0 && typeof window.openScheduleIntegratedModal === "function") {
+        window.openScheduleIntegratedModal({ id: "US" + demId, demandId: demId, title: "需求 #" + demId });
+      }
+    } else if (openStory) {
+      var stId = parseInt(openStory, 10);
+      if (!isNaN(stId) && stId > 0 && typeof window.openScheduleIntegratedModal === "function") {
+        window.openScheduleIntegratedModal({ id: String(stId), storyId: stId, title: "研发需求 #" + stId, fromIndependent: true, isIndependent: true });
+      }
+    }
+  });
 })(jQuery);

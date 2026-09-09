@@ -17,6 +17,8 @@
 
 package primaryaction
 
+import "strings"
+
 // ActionKind 行为类型，与前端按钮形态对应。
 type ActionKind string
 
@@ -33,17 +35,20 @@ const (
 type ActionKey string
 
 const (
-	KeyApprove       ActionKey = "approve"         // 受理
-	KeyClarify       ActionKey = "clarify"         // 澄清
-	KeySchedule      ActionKey = "schedule"        // 排期
-	KeySubmitTest    ActionKey = "submit_test"     // 提测
-	KeyViewTestOrder ActionKey = "view_test_order" // 联调测试 → 测试单
-	KeyAcceptDone    ActionKey = "accept"          // 验收（本人验收人）
-	KeyRemindAccept  ActionKey = "remind_accept"   // 催办验收（非验收人）
-	KeyDeliver       ActionKey = "deliver"         // 发起交付
-	KeyPublish       ActionKey = "publish"         // 发布（暂留空）
-	KeyEvaluate      ActionKey = "evaluate"        // 评价反馈（本人有未评任务）
-	KeyViewEvaluate  ActionKey = "view_evaluate"   // 评价反馈（已可读历史评价）
+	KeyApprove        ActionKey = "approve"         // 评审（待我评审）
+	KeyWithdrawReview ActionKey = "withdraw_review" // 撤回评审（待评审+本人创建）
+	KeySubmitReview   ActionKey = "submit_review"   // 提交评审（草稿/驳回+本人创建）
+	KeyEdit           ActionKey = "edit"            // 编辑需求
+	KeyClarify        ActionKey = "clarify"         // 澄清
+	KeySchedule       ActionKey = "schedule"        // 排期
+	KeySubmitTest     ActionKey = "submit_test"     // 提测
+	KeyViewTestOrder  ActionKey = "view_test_order" // 联调测试 → 测试单
+	KeyAcceptDone     ActionKey = "accept"          // 验收（本人验收人）
+	KeyRemindAccept   ActionKey = "remind_accept"   // 催办验收（非验收人）
+	KeyDeliver        ActionKey = "deliver"         // 发起交付
+	KeyPublish        ActionKey = "publish"         // 发布（暂留空）
+	KeyEvaluate       ActionKey = "evaluate"        // 评价反馈（本人有未评任务）
+	KeyViewEvaluate   ActionKey = "view_evaluate"   // 评价反馈（已可读历史评价）
 )
 
 // PrimaryAction 单一主操作的服务端合同字段；前端只读，不派生。
@@ -130,8 +135,15 @@ const (
 // Repo 不做授权决策，仅提供事实投影（HasTests / AcceptanceOwner 等）。
 type Input struct {
 	Stage    StageKey
+	Status   string
 	Kind     ObjectKind
 	ObjectID uint
+
+	// 需求创建人与当前账号关系
+	CreatedBy  string
+	IsCreator  bool
+	IsAssignee bool
+	CanReview  bool
 
 	// 当前用户对当前行的能力事实（由 Service 检查后传入）：
 	HasAcceptCapability     bool
@@ -189,18 +201,49 @@ func Derive(in Input) PrimaryAction {
 
 	switch in.Stage {
 	case StageAccept:
-		// 受理 / 审批：§4-1 阻塞 — 服务未配置独立审批路由。
-		// key 仍按合同返回（前端按钮存在），但 enabled=false + reason 写明。
-		if !in.HasAcceptCapability {
-			return DisabledWithReason(string(KeyApprove), "受理", string(KindDrawer),
-				acceptURL(in),
-				"当前用户没有受理权限")
+		if in.Kind == ObjectStory || in.Kind == ObjectIndependentStory {
+			return None()
 		}
-		return DisabledWithReason(string(KeyApprove), "受理", string(KindDrawer),
-			acceptURL(in),
-			"服务未配置审批路由（见 PLAN §4-1）")
+		st := strings.ToLower(strings.TrimSpace(in.Status))
+		switch st {
+		case "wait":
+			if in.CanReview {
+				if !in.HasAcceptCapability {
+					return DisabledWithReason(string(KeyApprove), "评审", string(KindDrawer),
+						acceptURL(in),
+						"当前用户没有评审权限")
+				}
+				return Enabled(string(KeyApprove), "评审", string(KindDrawer), acceptURL(in))
+			}
+			if in.IsCreator {
+				return Enabled(string(KeyWithdrawReview), "撤回", string(KindDrawer), withdrawReviewURL(in))
+			}
+			return None()
+		case "draft", "refuse":
+			if in.IsCreator || in.IsAssignee {
+				return Enabled(string(KeySubmitReview), "提交评审", string(KindDrawer), submitReviewURL(in))
+			}
+			return None()
+		default:
+			// 兜底：未显式传 status 但标记了 CanReview（如单测或旧兼容）
+			if in.CanReview {
+				if !in.HasAcceptCapability {
+					return DisabledWithReason(string(KeyApprove), "评审", string(KindDrawer),
+						acceptURL(in),
+						"当前用户没有评审权限")
+				}
+				return Enabled(string(KeyApprove), "评审", string(KindDrawer), acceptURL(in))
+			}
+			if in.IsCreator {
+				return Enabled(string(KeyWithdrawReview), "撤回", string(KindDrawer), withdrawReviewURL(in))
+			}
+			return None()
+		}
 
 	case StageClarify:
+		if in.Kind == ObjectStory || in.Kind == ObjectIndependentStory {
+			return None()
+		}
 		if !in.HasClarifyCapability {
 			return DisabledWithReason(string(KeyClarify), "澄清", string(KindDrawer),
 				clarifyURL(in),
@@ -214,18 +257,16 @@ func Derive(in Input) PrimaryAction {
 				scheduleURL(in),
 				"当前用户没有排期权限")
 		}
-		return Enabled(string(KeySchedule), "排期", string(KindInternal), scheduleURL(in))
+		return Enabled(string(KeySchedule), "排期", string(KindSchedule), scheduleURL(in))
 
 	case StageDeveloping:
 		// 提测：业务需求 → 聚合提测；研发需求由所属业务需求统一办理。
 		if !in.HasSubmitTestCapability {
-			return DisabledWithReason(string(KeySubmitTest), "提测", string(KindDrawer),
+			return DisabledWithReason(string(KeySubmitTest), "提测", string(KindInternal),
 				submitTestURL(in),
 				"当前用户没有提测权限")
 		}
-		return DisabledWithReason(string(KeySubmitTest), "提测", string(KindDrawer),
-			submitTestURL(in),
-			"提测须通过禅道原生入口办理")
+		return Enabled(string(KeySubmitTest), "提测", string(KindInternal), submitTestURL(in))
 
 	case StageTesting:
 		// 联调测试 → 禅道测试单。
@@ -248,18 +289,14 @@ func Derive(in Input) PrimaryAction {
 
 	case StageAcceptance:
 		if in.IsAcceptanceOwner {
-			if !in.HasAcceptCapability {
-				return DisabledWithReason(string(KeyAcceptDone), "验收", string(KindDrawer),
-					acceptDoneURL(in),
-					"当前用户没有验收权限")
+			if in.HasAcceptCapability {
+				return Enabled(string(KeyAcceptDone), "验收", string(KindDrawer), acceptDoneURL(in))
 			}
-			return Enabled(string(KeyAcceptDone), "验收", string(KindDrawer), acceptDoneURL(in))
+			return DisabledWithReason(string(KeyAcceptDone), "验收", string(KindDrawer),
+				acceptDoneURL(in), "验收办理页尚未接入真实禅道写链")
 		}
-		// 非验收人催办。
 		if !in.HasUrgeCapability {
-			return DisabledWithReason(string(KeyRemindAccept), "催办验收", string(KindDrawer),
-				urgeAcceptURL(in),
-				"当前用户没有催办权限")
+			return DisabledWithReason(string(KeyRemindAccept), "催办验收", string(KindDrawer), urgeAcceptURL(in), "当前用户没有催办验收权限")
 		}
 		return Enabled(string(KeyRemindAccept), "催办验收", string(KindDrawer), urgeAcceptURL(in))
 
@@ -283,20 +320,14 @@ func Derive(in Input) PrimaryAction {
 		// 评价反馈：未评 + 已评价两种入口并存，PLAN §4-3 / Stage 1 阻塞。
 		switch {
 		case in.HasPendingEvaluateTask:
-			if !in.HasEvaluateCapability {
-				return DisabledWithReason(string(KeyEvaluate), "评价", string(KindDrawer),
-					evaluateURL(in),
-					"当前用户没有评价权限")
+			if in.HasEvaluateCapability {
+				return Enabled(string(KeyEvaluate), "评价", string(KindExternal), evaluateURL(in))
 			}
-			return Enabled(string(KeyEvaluate), "评价", string(KindDrawer), evaluateURL(in))
+			return DisabledWithReason(string(KeyEvaluate), "评价", string(KindDrawer),
+				evaluateURL(in), "评价办理页尚未接入真实禅道写链")
 		case in.HasHistoricalEvaluate:
-			if !in.HasReadCapability {
-				return DisabledWithReason(string(KeyViewEvaluate), "查看评价", string(KindInternal),
-					viewEvaluateURL(in),
-					"当前用户没有读取权限")
-			}
-			return Enabled(string(KeyViewEvaluate), "查看评价", string(KindInternal),
-				viewEvaluateURL(in))
+			// PRD explicitly excludes a historical-evaluation action from PO flow.
+			return None()
 		default:
 			return None()
 		}

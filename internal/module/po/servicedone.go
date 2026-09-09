@@ -115,8 +115,8 @@ func (s *Service) DoneMeta(ctx context.Context, actor *model.User) (*DoneMetaRes
 
 	actionTypes := []DoneMetaAction{
 		{Key: "demand:reviewed", Label: "需求评审", ObjectType: "demand"},
-		{Key: "demand:reviewpassed", Label: "审批通过", ObjectType: "demand"},
-		{Key: "demand:reviewrejected", Label: "审批驳回", ObjectType: "demand"},
+		{Key: "demand:reviewchange", Label: "变更评审", ObjectType: "demand"},
+		{Key: "demand:reviewbymanager", Label: "主管审批", ObjectType: "demand"},
 		{Key: "demand:plan", Label: "完成排期", ObjectType: "demand"},
 		{Key: "demand:deliver", Label: "发起交付", ObjectType: "demand"},
 		{Key: "story:submitreview", Label: "提交评审", ObjectType: "story"},

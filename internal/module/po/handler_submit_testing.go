@@ -6,8 +6,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
-
 	"workbench/internal/constants"
 	"workbench/internal/middleware"
 	"workbench/internal/pkg/errorx"
@@ -53,7 +51,7 @@ func submitTestErrorStatus(err error) (int, string) {
 		}
 	}
 	switch {
-	case errors.Is(err, errSubmitTestNotFound), errors.Is(err, gorm.ErrRecordNotFound):
+	case errors.Is(err, errSubmitTestNotFound):
 		return http.StatusNotFound, "业务需求不存在"
 	case errors.Is(err, errSubmitTestForbidden):
 		return http.StatusForbidden, "无权办理该需求的提测"

@@ -16,23 +16,29 @@
     return '<span class="wb-priority" data-priority="' + n + '">P' + n + "</span>";
   };
   var objectTypeBadgeFromKind = PL.objectTypeBadgeFromKind || function (kind) {
-    var map = { demand: "business", story: "story", task: "task", bug: "bug", test: "testtask", testtask: "testtask", approval: "approval", todo: "todo", issue: "issue" };
-    var labels = { business: "业务需求", story: "研发需求", task: "任务", bug: "Bug", testtask: "测试单", approval: "审批", todo: "待办", issue: "问题" };
+    var map = { demand: "business", story: "story", task: "task", bug: "bug", test: "testtask", testtask: "testtask", approval: "approval", todo: "todo", issue: "issue", risk: "risk" };
+    var labels = { business: "业务需求", story: "研发需求", task: "任务", bug: "Bug", testtask: "测试单", approval: "审批", todo: "待办", issue: "问题", risk: "风险" };
     var k = map[String(kind || "").toLowerCase()] || "";
     if (!k) { return '<span class="wb-type wb-type-unknown">—</span>'; }
     return '<span class="wb-type wb-type-' + k + '">' + (labels[k] || k) + "</span>";
+  };
+  // API kind → wb-type cssKind（与 PersonalList.idChipHtml 期望对齐）。
+  var chipKindFromApi = function (apiKind) {
+    var map = { demand: "business", business: "business", story: "story", task: "task", bug: "bug",
+                test: "testtask", testtask: "testtask", approval: "approval", todo: "todo", issue: "issue", risk: "risk" };
+    return map[String(apiKind || "").toLowerCase()] || "";
   };
   var primaryActionHtml = (window.PrimaryAction && window.PrimaryAction.primaryActionHtml) || function () {
     return '<span class="home-unavailable" title="等待服务端动作合同落地">—</span>';
   };
   var $ = function (id) { return document.getElementById(id); };
 
+  // 分类芯片直接就是对象类型，因此 objectType 是唯一的对象维度状态，不再另存 tab。
   var state = {
-    tab: "all",
     focus: "pending",
     action: "all",
     stage: "all",
-    objectType: "all",
+    objectType: "",
     relation: "all",
     responsibility: "all",
     keyword: "",
@@ -40,7 +46,11 @@
     pageSize: 15
   };
 
-  var VALID_TABS = ["all", "demand", "execution", "testing"];
+  // 支持全量对象类型（汇总所有审批），与"我的已办"同款芯片风格。
+  var OBJECT_TYPE_ORDER = ["", "approval", "demand", "story", "task", "bug", "risk", "issue", "todo", "testtask"];
+  var OBJECT_TYPE_LABELS = { "": "全部待办", approval: "审批", demand: "业务需求", story: "研发需求", task: "任务", bug: "Bug", risk: "风险", issue: "问题", todo: "待办", testtask: "测试单" };
+  var OBJECT_TYPE_ICONS = { approval: "fa-stamp", demand: "fa-lightbulb", story: "fa-diagram-project", task: "fa-list-check", bug: "fa-bug", risk: "fa-triangle-exclamation", issue: "fa-circle-exclamation", todo: "fa-circle-check", testtask: "fa-vial" };
+
   var VALID_FOCUSES = ["pending", "today", "overdue", "blocked", "p1"];
   var VALID_RELATIONS = ["all", "in_charge", "cooperate"];
   var VALID_ACTIONS = ["all", "todo_review", "todo_schedule", "todo_verify", "todo_deliver", "todo_follow"];
@@ -50,29 +60,15 @@
 
   var searchTimer = null;
   var summaryMap = { countPending: "pending", countToday: "today", countOverdue: "overdue", countBlocked: "blocked", countP1: "p1" };
-  var groupMap = { groupAll: "all", groupDemand: "demand", groupExecution: "execution", groupTesting: "testing" };
   var controller = null;
-
-  var TAB_OBJECT_OPTIONS = {
-    all: [
-      { value: "all", label: "具体对象：全部" },
-      { value: "demand", label: "业务需求" },
-      { value: "task", label: "任务" },
-      { value: "bug", label: "Bug" }
-    ],
-    demand: [{ value: "all", label: "具体对象：全部" }, { value: "demand", label: "业务需求" }],
-    execution: [{ value: "all", label: "具体对象：全部" }, { value: "task", label: "任务" }],
-    testing: [{ value: "all", label: "具体对象：全部" }, { value: "bug", label: "Bug" }]
-  };
 
   function syncUrl() {
     if (!window.history || !window.history.replaceState) { return; }
     var p = new URLSearchParams();
-    if (state.tab !== "all") { p.set("tab", state.tab); }
     if (state.focus !== "pending") { p.set("focus", state.focus); }
     if (state.action !== "all") { p.set("action", state.action); }
     if (state.stage !== "all") { p.set("stage", state.stage); }
-    if (state.objectType !== "all") { p.set("objectType", state.objectType); }
+    if (state.objectType !== "") { p.set("objectType", state.objectType); }
     if (state.relation !== "all") { p.set("relation", state.relation); }
     if (state.responsibility !== "all") { p.set("responsibility", state.responsibility); }
     if (state.keyword) { p.set("keyword", state.keyword); }
@@ -86,16 +82,6 @@
   function initFromUrl() {
     if (!window.location.search) { return; }
     var sp = new URLSearchParams(window.location.search);
-    var tab = (sp.get("tab") || "").trim();
-    if (VALID_TABS.indexOf(tab) >= 0) {
-      state.tab = tab;
-      document.querySelectorAll(".po-todos .category-tab").forEach(function (t) {
-        var isCurrent = (t.getAttribute("data-tab") || "all") === tab;
-        t.classList.toggle("active", isCurrent);
-        if (isCurrent) { t.setAttribute("aria-current", "page"); } else { t.removeAttribute("aria-current"); }
-      });
-    }
-
     var focus = (sp.get("focus") || "").trim();
     if (VALID_FOCUSES.indexOf(focus) >= 0) {
       state.focus = focus;
@@ -114,17 +100,10 @@
       });
     }
 
-    syncObjectTypeOptions(state.tab);
     var ot = (sp.get("objectType") || "").trim();
-    var selOt = $("todosObjectType");
-    if (ot && selOt) {
-      for (var i = 0; i < selOt.options.length; i++) {
-        if (selOt.options[i].value === ot) {
-          state.objectType = ot;
-          selOt.value = ot;
-          break;
-        }
-      }
+    if (ot === "all") { ot = ""; }
+    if (OBJECT_TYPE_ORDER.indexOf(ot) >= 0) {
+      state.objectType = ot;
     }
 
     var act = (sp.get("action") || "").trim();
@@ -189,12 +168,17 @@
     var titleContent = item.url ? '<a class="table-title-link" href="' + esc(item.url) + '" rel="noopener noreferrer">' + title + "</a>" : title;
     var isStory = String(item.kind || "").toLowerCase() === "story";
 
+    // 对象 + ID 单 chip：与通知中心 / 首页 / 已办同款（wb-type / wb-type-{kind}），
+    // 走 PersonalList.idChipHtml（OBJECT_TYPE_SHORT_LABELS 缩写 + "#" 分隔符）。
+    var idChip = PL.idChipHtml
+      ? PL.idChipHtml(chipKindFromApi(item.kind), idContent)
+      : objectTypeBadgeFromKind(item.kind);
+
     return "<tr>" +
+      '<td class="todos-col-obj">' + idChip + "</td>" +
       '<td class="todos-col-item" title="' + title + '">' +
         '<div class="todos-item-title">' + titleContent + "</div>" +
-        '<div class="todos-item-id">' + idContent + "</div>" +
       "</td>" +
-      '<td class="todos-col-type">' + objectTypeBadgeFromKind(item.kind) + "</td>" +
       '<td class="todos-col-pri">' + priorityBadge(item.priority) + "</td>" +
       '<td class="todos-col-rel"><span class="relation-tag">' + esc(item.relation || "—") + "</span></td>" +
       '<td class="todos-col-stage" title="' + esc(stageLabel(item.reason)) + '">' + esc(stageLabel(item.reason)) + "</td>" +
@@ -204,29 +188,56 @@
       "</tr>";
   }
 
-  function renderCounts(summary, groups) {
+  function renderCounts(summary) {
     Object.keys(summaryMap).forEach(function (id) {
       var el = $(id);
       if (el) { el.textContent = (summary && summary[summaryMap[id]] != null) ? summary[summaryMap[id]] : "—"; }
     });
-    Object.keys(groupMap).forEach(function (id) {
-      var el = $(id);
-      if (el) { el.textContent = (groups && groups[groupMap[id]] != null) ? groups[groupMap[id]] : "—"; }
-    });
   }
 
   function resetCounts() {
-    renderCounts({}, {});
+    renderCounts({});
   }
 
-  function syncObjectTypeOptions(tab) {
-    var select = $("todosObjectType");
-    if (!select) { return; }
-    var opts = TAB_OBJECT_OPTIONS[tab] || TAB_OBJECT_OPTIONS.all;
-    select.innerHTML = opts.map(function (o) {
-      return '<option value="' + esc(o.value) + '">' + esc(o.label) + "</option>";
+  // 与 done.js 的 renderObjectChips 同款契约：服务端 facets 提供每个对象类型的 SQL 聚合计数，
+  // 空 key 芯片展示各类型之和（后端分面口径已排除对象类型维度自身）。
+  function renderObjectChips(facets) {
+    var host = $("todosObjectChips");
+    if (!host) { return; }
+
+    var countMap = {};
+    var facetSum = 0;
+    (facets || []).forEach(function (f) {
+      countMap[f.key] = Number(f.count) || 0;
+      facetSum += countMap[f.key];
+    });
+
+    var visibleKeys = OBJECT_TYPE_ORDER.filter(function (key) {
+      if (key === "") { return true; }
+      if (state.objectType && state.objectType === key) { return true; }
+      return (countMap[key] || 0) > 0;
+    });
+
+    host.innerHTML = visibleKeys.map(function (key) {
+      var active = state.objectType === key;
+      var count = key === "" ? facetSum : (countMap[key] || 0);
+      var icon = OBJECT_TYPE_ICONS[key] ? '<i class="fas ' + OBJECT_TYPE_ICONS[key] + '"></i>' : "";
+      return '<button type="button" class="wb-done-tab' + (active ? " active" : "") + '" data-object-type="' + esc(key) + '" aria-pressed="' + (active ? "true" : "false") + '">' +
+        icon + esc(OBJECT_TYPE_LABELS[key] || key) + '<span class="wb-done-tab-count">' + count + "</span>" +
+        "</button>";
     }).join("");
-    state.objectType = "all";
+
+    host.querySelectorAll(".wb-done-tab").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var key = btn.getAttribute("data-object-type") || "";
+        if (state.objectType === key) { return; }
+        state.objectType = key;
+        state.page = 1;
+        hasCorrectedPage = false;
+        syncUrl();
+        refresh();
+      });
+    });
   }
 
   function refresh() {
@@ -249,9 +260,10 @@
       var tbody = $("todosTbody");
       if (tbody) { tbody.innerHTML = items.map(rowHtml).join(""); }
       if ($("todosSummary")) { $("todosSummary").textContent = "共 " + total + " 条待办事项"; }
-      if (payload && payload.summary && payload.groups) {
-        renderCounts(payload.summary, payload.groups);
+      if (payload && payload.summary) {
+        renderCounts(payload.summary);
       }
+      renderObjectChips(payload && payload.facets);
 
       if (window.PersonalList) {
         window.PersonalList.renderPagination({
@@ -299,32 +311,6 @@
     });
   }
 
-  function initTabs() {
-    var tabs = document.querySelectorAll(".po-todos .category-tab");
-    tabs.forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var tab = btn.getAttribute("data-tab");
-        if (!tab || state.tab === tab) { return; }
-        tabs.forEach(function (t) {
-          t.classList.remove("active");
-          t.removeAttribute("aria-current");
-        });
-        btn.classList.add("active");
-        btn.setAttribute("aria-current", "page");
-        state.tab = tab;
-        state.page = 1;
-        state.stage = "all";
-        state.action = "all";
-        if ($("todosStage")) { $("todosStage").value = "all"; }
-        if ($("todosAction")) { $("todosAction").value = "all"; }
-        syncObjectTypeOptions(tab);
-        hasCorrectedPage = false;
-        syncUrl();
-        refresh();
-      });
-    });
-  }
-
   function initToolbar() {
     var kwInput = $("todosKeyword");
     if (kwInput) {
@@ -356,7 +342,7 @@
       });
     });
 
-    ["todosAction:action", "todosStage:stage", "todosObjectType:objectType", "todosResponsibility:responsibility"].forEach(function (pair) {
+    ["todosAction:action", "todosStage:stage", "todosResponsibility:responsibility"].forEach(function (pair) {
       var parts = pair.split(":");
       var sel = $(parts[0]);
       if (sel) {
@@ -373,11 +359,10 @@
     var resetBtn = $("todosResetBtn");
     if (resetBtn) {
       resetBtn.addEventListener("click", function () {
-        state.tab = "all";
         state.focus = "pending";
         state.action = "all";
         state.stage = "all";
-        state.objectType = "all";
+        state.objectType = "";
         state.relation = "all";
         state.responsibility = "all";
         state.keyword = "";
@@ -388,15 +373,6 @@
           c.classList.toggle("active", isPending);
           c.setAttribute("aria-pressed", isPending ? "true" : "false");
         });
-        document.querySelectorAll(".po-todos .category-tab").forEach(function (t) {
-          var isAll = (t.getAttribute("data-tab") || "all") === "all";
-          t.classList.toggle("active", isAll);
-          if (isAll) {
-            t.setAttribute("aria-current", "page");
-          } else {
-            t.removeAttribute("aria-current");
-          }
-        });
         relationBtns.forEach(function (b) {
           b.classList.toggle("active", (b.getAttribute("data-relation") || "all") === "all");
         });
@@ -405,7 +381,6 @@
         if ($("todosAction")) { $("todosAction").value = "all"; }
         if ($("todosStage")) { $("todosStage").value = "all"; }
         if ($("todosResponsibility")) { $("todosResponsibility").value = "all"; }
-        syncObjectTypeOptions("all");
         hasCorrectedPage = false;
         syncUrl();
         refresh();
@@ -430,9 +405,7 @@
       });
     }
 
-    syncObjectTypeOptions("all");
     initQuickChips();
-    initTabs();
     initToolbar();
     initFromUrl();
     syncUrl();

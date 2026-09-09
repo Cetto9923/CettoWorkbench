@@ -182,6 +182,8 @@
 }
 .dd-btn.primary { background: var(--dd-blue); color: var(--color-surface, #fff); border-color: var(--dd-blue); }
 .dd-btn.primary:hover { background: var(--dd-blue-dark); }
+.dd-btn.danger { background: #ef4444; color: #fff; border-color: #ef4444; }
+.dd-btn.danger:hover { background: #dc2626; }
 
 /* 价值流周期区域（紧凑条，去重） */
 .dd-cycle-chips-4 {
@@ -295,4 +297,68 @@
 @media (max-width: 960px) {
   .dd-grid { grid-template-columns: 1fr; }
   .dd-flow { grid-template-columns: repeat(3, 1fr); row-gap: 8px; }
+}
+
+/* 待评审减法视图专享样式 */
+.dd-review-container {
+  display: flex; flex-direction: column; height: 100%; min-height: calc(100vh - 240px);
+}
+.dd-review-banner {
+  background: #f0f7ff; border: 1px solid #c8ddfa; border-radius: 8px;
+  padding: 10px 16px; margin-bottom: 14px;
+}
+.dd-review-banner-text {
+  display: flex; align-items: center; gap: 10px; font-size: 13px; color: #1e429f;
+}
+.dd-review-badge {
+  background: #2563eb; color: #fff; font-size: 11px; font-weight: 700;
+  padding: 2px 8px; border-radius: 4px; white-space: nowrap;
+}
+.dd-review-grid {
+  flex: 1; margin-bottom: 16px;
+}
+.dd-review-richtext {
+  font-size: 13px; line-height: 1.7; color: var(--color-text-body, #334155);
+}
+.dd-file-list {
+  padding-left: 18px; margin: 0; font-size: 12px; color: #2563eb;
+}
+.dd-review-footer {
+  position: sticky; bottom: 0; background: var(--color-surface, #fff);
+  border-top: 1px solid var(--dd-line); padding: 14px 20px;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05); z-index: 10;
+  border-radius: 0 0 8px 8px; margin-top: auto;
+}
+.dd-review-form {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px;
+  max-width: none;
+}
+.dd-review-form-row {
+  grid-column: 1 / -1;
+  display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+}
+.dd-review-form-item {
+  display: flex; align-items: center; gap: 8px;
+}
+.dd-review-label {
+  font-size: 13px; font-weight: 600; color: var(--color-text-strong, #1e293b);
+}
+.dd-radio-label {
+  font-size: 13px; color: var(--color-text-body, #334155); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 4px; user-select: none;
+}
+.dd-review-input {
+  width: 100%; border: 1px solid #cbd5e1; border-radius: 6px;
+  padding: 7px 12px; font-size: 13px; color: var(--color-text-body, #334155);
+  outline: none; transition: border-color 0.15s;
+}
+.dd-review-input:focus {
+  border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+.dd-review-submit-btn {
+  min-height: 34px; padding: 7px 20px; font-size: 13px; font-weight: 600; white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .dd-review-form { grid-template-columns: 1fr; }
+  .dd-review-submit-btn { width: 100%; }
 }

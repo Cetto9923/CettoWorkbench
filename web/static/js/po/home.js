@@ -56,7 +56,7 @@
   function syncUrl() {
     if (!window.history || !window.history.replaceState) { return; }
     var params = new URLSearchParams();
-    if (state.focus !== "all") { params.set("focus", state.focus); }
+    if (state.focus && state.focus !== "all") { params.set("focus", state.focus); }
     if (state.status && state.status !== "all") { params.set("status", state.status); }
     if (state.page > 1) { params.set("page", String(state.page)); }
     if (state.pageSize && state.pageSize !== 15) { params.set("pageSize", String(state.pageSize)); }
@@ -70,7 +70,7 @@
     // 下面的 pageSize 记忆读取，永远使用默认值，而不是用户上次保存的 pageSize。
     var sp = new URLSearchParams(window.location.search || "");
     var focus = sp.get("focus");
-    if (["all", "today", "blocked", "overdue", "suspended"].indexOf(focus) >= 0) { state.focus = focus; }
+    if (["all", "my_action", "today", "blocked", "overdue", "suspended"].indexOf(focus) >= 0) { state.focus = focus; }
     var st = (sp.get("status") || "").trim();
     if (VALID_STATUSES.indexOf(st) >= 0) {
       state.status = st;
@@ -147,42 +147,56 @@
           items: Array.isArray(payload.items) ? payload.items : [],
           total: typeof payload.total === "number" ? payload.total : 0,
           page: typeof payload.page === "number" ? payload.page : 1,
-          pageSize: typeof payload.pageSize === "number" ? payload.pageSize : 15
+          pageSize: typeof payload.pageSize === "number" ? payload.pageSize : 15,
+          stageSummary: Array.isArray(payload.stageSummary) ? payload.stageSummary : []
         };
       });
   }
 
   // 右上角焦点是一级范围，价值流卡片必须显示该范围内各阶段的数量。
-  // 统计沿用 /demands 的服务端 SQL 口径，避免卡片显示全量而列表显示交集。
-  function refreshValueStreamSummary() {
-    var fetchFn = window.appFetch || fetch;
-    var seq = ++summarySeq;
-    var requests = VALID_STATUSES.map(function (status) {
-      return fetchFn(demandsUrl(status, 1, 1), { method: "GET" })
-        .then(function (res) {
-          if (!res.ok) { throw new Error("load stage summary failed (" + res.status + ")"); }
-          return res.json();
-        })
-        .then(function (payload) {
-          if (!payload || payload.success !== true) { throw new Error("invalid stage summary"); }
-          return { status: status, total: typeof payload.total === "number" ? payload.total : 0 };
-        });
-    });
-    return Promise.all(requests).then(function (rows) {
-      if (seq !== summarySeq || !document || !document.querySelectorAll) { return; }
-      var byStatus = {};
-      rows.forEach(function (row) { byStatus[row.status] = row.total; });
+  // 当焦点为全部 (all) 或未提供 stageSummary 时，恢复全景流的服务端基线统计。
+  function renderValueStreamSummary(rows) {
+    if (!document || !document.querySelectorAll) { return; }
+    var isAllFocus = !state.focus || state.focus === "all";
+    if (isAllFocus || !rows || !rows.length) {
       document.querySelectorAll(".home-vs-mini-card").forEach(function (card) {
-        var status = card.getAttribute("data-vs-status") || "";
-        var total = byStatus[status];
-        if (typeof total !== "number") { return; }
+        var baseCount = card.getAttribute("data-base-count");
+        var baseMeta = card.getAttribute("data-base-meta");
         var count = card.querySelector(".vs-mini-count");
         var meta = card.querySelector(".vs-mini-meta");
-        if (count) { count.textContent = String(total); }
-        if (meta) { meta.textContent = status === "all" ? "焦点汇总" : "焦点范围"; }
-        card.classList.toggle("empty", total === 0);
-        card.setAttribute("title", (card.querySelector(".vs-mini-name") || {}).textContent + " · 共 " + total + " 条");
+        if (baseCount && count) { count.textContent = baseCount; }
+        if (baseMeta && meta) { meta.textContent = baseMeta; }
+        var totalNum = parseInt(baseCount, 10);
+        card.classList.toggle("empty", !isNaN(totalNum) && totalNum === 0);
+        card.setAttribute("title", (card.querySelector(".vs-mini-name") || {}).textContent + " · 共 " + (baseCount || "0") + " 条");
       });
+      return;
+    }
+    var byStatus = {};
+    rows.forEach(function (row) { byStatus[row.status] = Number(row.count || 0); });
+    document.querySelectorAll(".home-vs-mini-card").forEach(function (card) {
+      var status = card.getAttribute("data-vs-status") || "";
+      var total = byStatus[status];
+      if (typeof total !== "number") { return; }
+      var count = card.querySelector(".vs-mini-count");
+      var meta = card.querySelector(".vs-mini-meta");
+      if (count) { count.textContent = String(total); }
+      if (meta) { meta.textContent = status === "all" ? "焦点汇总" : "焦点范围"; }
+      card.classList.toggle("empty", total === 0);
+      card.setAttribute("title", (card.querySelector(".vs-mini-name") || {}).textContent + " · 共 " + total + " 条");
+    });
+  }
+
+  function refreshValueStreamSummary() {
+    if (state.focus === "all") {
+      renderValueStreamSummary([]);
+      return Promise.resolve();
+    }
+    var fetchFn = window.appFetch || fetch;
+    var seq = ++summarySeq;
+    return loadDemands("all", 1, 1).then(function (res) {
+      if (seq !== summarySeq) { return; }
+      renderValueStreamSummary(res.stageSummary || []);
     }).catch(function () {
       // 列表请求仍照常展示错误；统计卡保留服务端初始值，避免伪造为 0。
     });
@@ -247,7 +261,7 @@
 
   function reviewActionHtml(item) {
     return (
-      '<button type="button" class="action-btn primary js-demand-review" data-demand-id="' +
+      '<button type="button" class="table-action-btn primary js-demand-review" data-review-demand-id="' +
       esc(item.id || "") +
       '">评审</button>'
     );
@@ -288,19 +302,21 @@
       inlineFlags += '<span class="home-inline-flag blocked">阻塞</span>';
     }
 
-    var typeTag = isStory
-      ? objectTypeBadge("story")
-      : objectTypeBadge("business");
+    var typeKind = isStory ? "story" : "business";
+    // ID 列：单色 chip 把"类型词 + 编号"合成一个标签（样式统一在 wb-priority.css），
+    // 整 chip 同色，编号维持禅道原始链接。
+    var idChip = PL.idChipHtml ? PL.idChipHtml(typeKind, idHtml) :
+      '<span class="wb-type wb-type-' + typeKind + '">' + (isStory ? "研发需求" : "业务需求") + " " + idHtml + "</span>";
 
     // 标题：当前页打开工作台详情；href 优先使用 server workbenchUrl，否则退化到 /demands/:id。
     var workbenchHref = String(item.workbenchUrl || "").trim();
-    if (!workbenchHref) {
+    if (!workbenchHref && !isStory) {
       var cleanId = String(id).replace(/^US/i, "");
       workbenchHref = cleanId ? "/demands/" + encodeURIComponent(cleanId) : "";
     }
     var titleLink = workbenchHref
       ? '<a class="table-title-link" href="' + esc(workbenchHref) + '">' + esc(item.title || "—") + '</a>'
-      : esc(item.title || "—");
+      : (url ? '<a class="table-title-story" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(item.title || "—") + '</a>' : esc(item.title || "—"));
     var titleHtml = '<div class="home-title-line">' + inlineFlags + titleLink + '</div>';
 
     var statusText = getHomeZentaoStatusLabel(item);
@@ -308,9 +324,8 @@
       (statusText === "已挂起" || statusText === "已驳回") ? "danger" : "default";
 
     return '<tr>' +
-      '<td class="c-id">' + idHtml + '</td>' +
+      '<td class="c-id">' + idChip + '</td>' +
       '<td class="c-title" title="' + esc(item.title || "") + '">' + titleHtml + '</td>' +
-      '<td class="c-type">' + typeTag + '</td>' +
       '<td class="c-stage"><span class="stage-tag">' + esc(item.valueStream || item.stage || "—") + '</span></td>' +
       '<td class="c-zt-status"><span class="status-tag"><i class="status-dot ' + dotClass + '"></i> ' + esc(statusText) + '</span></td>' +
       '<td class="c-owner">' + esc(dash(item.nextOwner || item.owner)) + '</td>' +
@@ -375,10 +390,9 @@
 
     $("#top5Empty").attr("hidden", true);
     $("#top5Error").attr("hidden", true);
-    $("#top5Tbody").html('<tr><td colspan="7" class="state-placeholder">正在加载行动列表…</td></tr>');
+    $("#top5Tbody").html('<tr><td colspan="6" class="state-placeholder">正在加载行动列表…</td></tr>');
 
     $("#top5List").attr("aria-busy", "true");
-    $("#homeRefreshBtn").prop("disabled", true);
     $("#homeListCaption").text("正在获取当前阶段数据…");
 
     return loadDemands(state.status, state.page, state.pageSize)
@@ -398,15 +412,16 @@
         hasCorrectedPage = false;
 
         $("#top5List").attr("aria-busy", "false");
-        $("#homeRefreshBtn").prop("disabled", false);
         renderList(total);
+        if (res.stageSummary && res.stageSummary.length) {
+          renderValueStreamSummary(res.stageSummary);
+        }
         fillUpdateTime();
       })
       .catch(function (err) {
         if (reqSeq !== currentSeq) { return; }
         hasCorrectedPage = false;
         $("#top5List").attr("aria-busy", "false");
-        $("#homeRefreshBtn").prop("disabled", false);
         $("#lastUpdateTime").text("—");
         updateTitle(null);
         $("#top5Tbody").empty();
@@ -426,18 +441,31 @@
       clearTimeout(searchTimer);
       searchTimer = setTimeout(function () {
         state.keyword = val;
+        state.page = 1;
         // 工具栏筛选由服务端 SQL 接管：直接拉服务端，避免 Total / 分页与当前页不一致。
         refreshDemands(state.status);
       }, 200);
     });
 
-    $("#homeObjectType").on("change", function () {
-      state.objectType = $(this).val();
+    $("#homeObjectTypeSegment").on("click", "button[data-object-type]", function () {
+      var btn = $(this);
+      var next = String(btn.attr("data-object-type") || "all");
+      if (next === state.objectType) { return; }
+      $("#homeObjectTypeSegment button").removeClass("active");
+      btn.addClass("active");
+      state.objectType = next;
+      state.page = 1;
       refreshDemands(state.status);
     });
 
-    $("#homePriority").on("change", function () {
-      state.priority = $(this).val();
+    $("#homePrioritySegment").on("click", "button[data-priority]", function () {
+      var btn = $(this);
+      var next = String(btn.attr("data-priority") || "all");
+      if (next === state.priority) { return; }
+      $("#homePrioritySegment button").removeClass("active");
+      btn.addClass("active");
+      state.priority = next;
+      state.page = 1;
       refreshDemands(state.status);
     });
 
@@ -445,18 +473,20 @@
       $("#homeRelationSegment button").removeClass("active");
       $(this).addClass("active");
       state.relation = $(this).data("relation") || "all";
+      state.page = 1;
       refreshDemands(state.status);
     });
 
     $("#homeResetBtn").on("click", function () {
       $("#homeKeyword").val("");
-      $("#homeObjectType").val("all");
-      $("#homePriority").val("all");
+      $("#homeObjectTypeSegment button").removeClass("active").first().addClass("active");
+      $("#homePrioritySegment button").removeClass("active").first().addClass("active");
       $("#homeRelationSegment button").removeClass("active").first().addClass("active");
       state.keyword = "";
       state.objectType = "all";
       state.priority = "all";
       state.relation = "all";
+      state.page = 1;
       refreshDemands(state.status);
     });
   }
@@ -470,7 +500,6 @@
       state.status = status;
       state.page = 1;
       syncUrl();
-      refreshValueStreamSummary();
       refreshDemands(status);
     });
 
@@ -484,14 +513,13 @@
         state.status = targetStage;
         state.page = 1;
         syncUrl();
-        refreshValueStreamSummary();
         refreshDemands(targetStage);
       }
     });
   }
 
   window.refreshPoHomeDemands = function () {
-    return refreshDemands(state.status);
+    refreshValueStreamSummary(); return refreshDemands(state.status);
   };
 
   $(function () {
@@ -512,24 +540,19 @@
     initToolbar();
     initValueStreamLinkage();
 
-    $("#homeRetryBtn, #homeRefreshBtn").on("click", function () {
+    $("#homeRetryBtn").on("click", function () {
       refreshDemands(state.status);
     });
 
-    // 业需评审按钮（列表渲染后由 canReview 决定是否出现）
-    $("#top5Tbody").on("click", ".js-demand-review", function () {
-      var demandId = String($(this).attr("data-demand-id") || "").trim();
-      var item = null;
-      for (var i = 0; i < rawItems.length; i++) {
-        if (String(rawItems[i].id || "") === demandId) {
-          item = rawItems[i];
-          break;
-        }
+    // 业需评审按钮：直接打开精简评审抽屉（做减法，内嵌通过/驳回操作）
+    $("#top5Tbody").on("click", ".js-demand-review", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var demandId = String($(this).attr("data-review-demand-id") || $(this).attr("data-demand-id") || "").trim();
+      if (!demandId) return;
+      if (window.DemandDetail && typeof window.DemandDetail.open === "function") {
+        window.DemandDetail.open(demandId, { mode: "review" });
       }
-      if (!item || typeof window.openPoDemandReviewModal !== "function") {
-        return;
-      }
-      window.openPoDemandReviewModal(item);
     });
 
     var $targetCard = $('.home-vs-mini-card[data-vs-status="' + state.status + '"]');

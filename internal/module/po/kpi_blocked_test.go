@@ -13,12 +13,12 @@ import (
 
 func TestBlockedKPI_UsesCurrentStateWithinActorScope(t *testing.T) {
 	matcher := sqlmock.QueryMatcherFunc(func(_, query string) error {
-		for _, required := range []string{"status = ?", "assignedTo = ?", "deleted = ?", "NOT EXISTS"} {
+		for _, required := range []string{"status = ?", "developFinish", "isManagerReview", "zt_demandreview", "zt_demandmanagerreview", "accepter = ?", "deleted = ?", "NOT EXISTS"} {
 			if !strings.Contains(query, required) {
 				return fmt.Errorf("missing %s", required)
 			}
 		}
-		for _, forbidden := range []string{"resultStatus", "demandmanagerreview", "testFinish", "deadline"} {
+		for _, forbidden := range []string{"resultStatus", "testFinish", "deadline"} {
 			if strings.Contains(query, forbidden) {
 				return fmt.Errorf("historical/overdue source %s must not imply current blocking", forbidden)
 			}
@@ -34,7 +34,7 @@ func TestBlockedKPI_UsesCurrentStateWithinActorScope(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	mock.ExpectQuery("current blocking").WithArgs("0", "closed", "0", "alice", "alice", "alice", "alice", "alice", "alice", "alice", "refuse").WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(2))
+	mock.ExpectQuery("current blocking").WithArgs("0", "closed", "0", "alice", "alice", "alice", "alice", "alice", "alice", "alice", "refuse", sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(2))
 	count, err := NewRepo(db, nil).CountKPIBlocked(context.Background(), "alice")
 	if err != nil || count != 2 {
 		t.Fatalf("count=%d err=%v", count, err)

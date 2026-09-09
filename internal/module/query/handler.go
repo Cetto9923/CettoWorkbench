@@ -6,7 +6,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 	"workbench/internal/constants"
 	"workbench/internal/middleware"
 	"workbench/internal/pkg/perm"
@@ -21,10 +20,6 @@ type Handler struct {
 
 func NewHandler(renderer *render.Renderer, svc *Service, logger *zap.Logger) *Handler {
 	return &Handler{renderer: renderer, svc: svc, logger: logger}
-}
-
-func NewFromDB(renderer *render.Renderer, db *gorm.DB, logger *zap.Logger) *Handler {
-	return NewHandler(renderer, NewService(NewRepo(db)), logger)
 }
 
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {

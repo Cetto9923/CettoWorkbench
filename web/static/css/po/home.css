@@ -28,16 +28,45 @@
 .po-home .home-vs-mini-card .vs-mini-meta { font-size: 10px; color: var(--color-text-disabled, #94a3b8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* 各阶段特异色彩强化 (对齐 Proposal A 原型) */
-.po-home .home-vs-mini-card.active, .po-home .home-vs-mini-card.stage-all.active {
-  border-color: var(--color-info-fill, #3b82f6); background: rgba(239, 246, 255, 0.85); box-shadow: 0 1px 2px rgba(59, 130, 246, 0.15);
-}
-.po-home .home-vs-mini-card.active .vs-mini-name, .po-home .home-vs-mini-card.active .vs-mini-count { color: var(--color-info-fill, #1d4ed8); }
-.po-home .home-vs-mini-card.active .vs-status-icon { font-size: 9px; color: var(--color-info-fill, #2563eb); }
 .po-home .home-vs-mini-card.stage-schedule { border-color: var(--color-warning-border, #fde68a); background: rgba(254, 252, 232, 0.55); }
 .po-home .home-vs-mini-card.stage-schedule .vs-mini-name, .po-home .home-vs-mini-card.stage-schedule .vs-mini-count { color: var(--color-warning-fill, #b45309); }
 .po-home .home-vs-mini-card.stage-waitacceptance { border-color: var(--color-info-border, #bfdbfe); background: rgba(239, 246, 255, 0.5); }
 .po-home .home-vs-mini-card.stage-waitacceptance .vs-mini-name, .po-home .home-vs-mini-card.stage-waitacceptance .vs-mini-count { color: var(--color-info-fill, #1d4ed8); }
 .po-home .home-vs-mini-card.stage-publish .vs-mini-name, .po-home .home-vs-mini-card.stage-publish .vs-mini-count { color: #047857; }
+
+/* 选中阶段高亮样式：清晰的主题色边框与浅蓝底色，深色文字确保极佳对比度与可读性 */
+.po-home .home-vs-mini-card.active {
+  border: 1.5px solid #2563eb !important;
+  background: #eff6ff !important;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.2);
+}
+.po-home .home-vs-mini-card.active .vs-mini-name {
+  color: #1d4ed8 !important;
+  font-weight: 700;
+}
+.po-home .home-vs-mini-card.active .vs-mini-count {
+  color: #1e40af !important;
+  font-weight: 800;
+}
+.po-home .home-vs-mini-card.active .vs-mini-meta {
+  color: #2563eb !important;
+  font-weight: 500;
+}
+.po-home .home-vs-mini-card.active .vs-status-icon {
+  font-size: 9px;
+  color: #2563eb !important;
+}
+.po-home .home-vs-mini-card.active .vs-status-dot {
+  background: #2563eb !important;
+}
+
+/* 空阶段弱化 */
+.po-home .home-vs-mini-card.empty:not(.active) {
+  opacity: 0.65;
+}
+.po-home .home-vs-mini-card.empty:not(.active):hover {
+  opacity: 1;
+}
 .po-home .vs-status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
 .po-home .dot-amber { background: var(--color-warning-strong, #f59e0b); }
 .po-home .dot-blue { background: var(--color-info-fill, #3b82f6); }
@@ -82,10 +111,9 @@
   padding: 8px 12px; height: 42px; font-size: 12px; border-bottom: 1px solid var(--color-surface-muted, #f1f5f9);
 }
 .po-home .home-action-table tr:hover td { background: rgba(239, 246, 255, 0.4); }
-.po-home .home-action-table .c-id { width: 90px; }
+.po-home .home-action-table .c-id { width: 140px; }
 .po-home .home-action-table .c-title { width: auto; min-width: 240px; }
-/* 容纳「业务需求」「研发需求」全文；样式由 wb-priority.css 的 .wb-type / .wb-priority 提供 */
-.po-home .home-action-table .c-type { width: 108px; min-width: 108px; overflow: visible; text-overflow: clip; }
+/* ID 列 chip 已统一到 wb-priority.css 的 .wb-type 单色样式（与通知中心共用）。 */
 .po-home .home-action-table .c-stage { width: 95px; }
 .po-home .home-action-table .c-zt-status { width: 90px; }
 .po-home .home-action-table .c-owner { width: 115px; }
@@ -193,6 +221,23 @@
   color: var(--color-text-disabled, #94a3b8); font-size: 11px; line-height: 1; white-space: nowrap;
   background: var(--color-surface-muted, #f8fafc);
 }
+
+/* 首页评审抽屉：默认不可见，避免表单落在列表末尾。 */
+.po-review-overlay { position: fixed; inset: 0; z-index: 900; background: rgba(15, 23, 42, .32); opacity: 0; pointer-events: none; transition: opacity .2s; }
+.po-review-overlay.show { opacity: 1; pointer-events: auto; }
+.po-review-modal { position: fixed; z-index: 901; top: 0; right: 0; bottom: 0; width: min(460px, 100vw); display: flex; flex-direction: column; background: var(--color-surface); box-shadow: -8px 0 28px rgba(15, 23, 42, .18); transform: translateX(100%); transition: transform .2s; }
+.po-review-modal.show { transform: translateX(0); }
+.po-review-hdr { display: flex; align-items: center; justify-content: space-between; padding: 18px; border-bottom: 1px solid var(--color-border); }
+.po-review-hdr h3 { margin: 0; font-size: 16px; color: var(--color-text-primary); }
+.po-review-req-name, .po-review-req-id { display: block; margin-top: 5px; font-size: 12px; font-weight: 400; color: var(--color-text-secondary); }
+.po-review-close { border: 0; background: transparent; color: var(--color-text-secondary); font-size: 18px; cursor: pointer; }
+.po-review-form { flex: 1; padding: 20px; overflow: auto; }
+.po-review-context { margin: 0 0 18px; color: var(--color-text-secondary); line-height: 1.6; }
+.po-review-summary { margin: 0 0 22px; padding: 0; border: 1px solid var(--color-border); border-radius: 6px; }
+.po-review-summary div { display: flex; justify-content: space-between; gap: 16px; padding: 12px; border-bottom: 1px solid var(--color-border); }
+.po-review-summary div:last-child { border-bottom: 0; }
+.po-review-summary dt { color: var(--color-text-secondary); }.po-review-summary dd { margin: 0; color: var(--color-text-primary); font-weight: 600; text-align: right; }
+.po-review-submit { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; width: 100%; min-height: 36px; border-radius: 5px; background: var(--color-primary); color: var(--color-text-on-accent); font-weight: 700; text-decoration: none; }
 
 @media (max-width: 1280px) {
   .po-home .home-content-grid { grid-template-columns: minmax(0, 1fr); }

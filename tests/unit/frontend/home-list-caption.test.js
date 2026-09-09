@@ -94,7 +94,10 @@ async function main() {
     items,
     total: 100
   });
-  const query = new URL(requests[0], 'http://localhost').searchParams;
+  // After WIP switched state.focus default to "my_action", the page now also
+  // fires a summary probe (pageSize=1, fixed) before the real demands fetch;
+  // assert the demands request specifically, which is the last call issued.
+  const query = new URL(requests.at(-1), 'http://localhost').searchParams;
   assert.equal(query.get('pageSize'), '50', 'initFromUrl must apply saved pageSize even without a query string');
 
   // Bug 3: all offered page sizes must be accepted, and a new choice must be
@@ -105,7 +108,7 @@ async function main() {
     items,
     total: 100
   });
-  assert.equal(new URL(persisted.requests[0], 'http://localhost').searchParams.get('pageSize'), '10');
+  assert.equal(new URL(persisted.requests.at(-1), 'http://localhost').searchParams.get('pageSize'), '10');
   persisted.paginationOptions.onPageSizeChange(20);
   assert.deepEqual(persisted.saveCalls, [['po.home.pageSize', 20]], 'page-size choice must be persisted');
   assert.equal(new URL(persisted.requests.at(-1), 'http://localhost').searchParams.get('pageSize'), '20');

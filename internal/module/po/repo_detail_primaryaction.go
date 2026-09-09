@@ -27,6 +27,7 @@ type DemandPrimaryActionRow struct {
 	Status     string `gorm:"column:status"`
 	AssignedTo string `gorm:"column:assignedTo"`
 	Accepter   string `gorm:"column:accepter"`
+	CreatedBy  string `gorm:"column:createdBy"`
 }
 
 // FindDemandPrimaryActions 批量查询一批业务需求的 primaryAction 事实。
@@ -40,7 +41,7 @@ func (r *DemandDetailRepo) FindDemandPrimaryActions(ctx context.Context, ids []u
 	}
 	var rows []DemandPrimaryActionRow
 	err := r.db.WithContext(ctx).Raw(`
-SELECT id, stage, status, assignedTo, accepter
+SELECT id, stage, status, assignedTo, accepter, createdBy
 FROM zt_demand
 WHERE id IN ? AND deleted = '0'`, ids).Scan(&rows).Error
 	if err != nil {

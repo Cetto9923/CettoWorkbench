@@ -25,9 +25,9 @@ function loadNoticeScript(windowOverrides, documentOverrides) {
     testtask: "testtask", risk: "risk",
     "研发需求": "story", "业务需求": "business", "需求": "business",
     "任务": "task", "缺陷": "bug", "测试": "testtask", "问题": "issue",
-    "风险": "risk", "反馈": "feedback", "立项": "charter", "项目": "project"
+    "风险": "risk", "反馈": "feedback", "章程": "charter", "项目": "project"
   };
-  const reminderPattern = /(?:Bug|Task|Story|Demand|Issue|Feedback|Charter|Project|TestTask|Risk|研发需求|业务需求|需求|任务|缺陷|测试|问题|风险|反馈|立项|项目)\s*[\(（]\s*\d+\s*[\)）]/i;
+  const reminderPattern = /(?:Bug|Task|Story|Demand|Issue|Feedback|Charter|Project|TestTask|Risk|研发需求|业务需求|需求|任务|缺陷|测试|问题|风险|反馈|章程|立项|项目)\s*[\(（]\s*\d+\s*[\)）]/i;
   function reminderKindFromSubject(subject) {
     const text = String(subject || "");
     if (!text) { return ""; }
@@ -42,6 +42,31 @@ function loadNoticeScript(windowOverrides, documentOverrides) {
     savePageSize() {},
     renderPagination() {},
     reminderKindFromSubject,
+    // 与 PersonalList.OBJECT_TYPE_SHORT_LABELS 保持一致：chip 上下文使用缩写 + "#" 分隔符。
+    OBJECT_TYPE_SHORT_LABELS: {
+      business: "业需", sub_demand: "子需", story: "研需",
+      independent_story: "独立研需", task: "任务", bug: "Bug",
+      testtask: "测单", issue: "问题", risk: "风险", approval: "审批",
+      feedback: "反馈", charter: "章程", mail: "邮件", project: "项目"
+    },
+    idChipHtml(kind, idHtml) {
+      var SHORT = this.OBJECT_TYPE_SHORT_LABELS;
+      var LABEL = {
+        business: "业务需求", sub_demand: "子需求", story: "研发需求",
+        independent_story: "独立研发需求", task: "任务", bug: "Bug",
+        testtask: "测试单", issue: "问题", risk: "风险", approval: "审批",
+        feedback: "反馈", charter: "章程", mail: "邮件", project: "项目"
+      };
+      var k = String(kind || "").trim().toLowerCase();
+      var safeId = typeof idHtml === "string" ? idHtml : "";
+      var sep = safeId ? "#" : "";
+      if (!k || !LABEL[k]) {
+        return '<span class="wb-type wb-type-unknown">' +
+          (LABEL[k] ? LABEL[k] : (k || "—")) + sep + safeId + "</span>";
+      }
+      return '<span class="wb-type wb-type-' + k + '">' +
+        (SHORT[k] || LABEL[k]) + sep + safeId + "</span>";
+    },
     createController: () => ({
       bind() {},
       destroy() {},
@@ -174,10 +199,10 @@ function testNoticeSubjectNotCharStripped() {
   assert.equal(visibleTitle, '父需求挂起逻辑优化 - 项目管理系统2.0',
     'visible title must equal the raw backend subject; frontend must not strip anything beyond canon+oid prefix match');
   // 2. The structured object badge must still be rendered from objectType/objectId.
-  assert.ok(html.indexOf('notice-tag notice-tag-story') !== -1,
+  assert.ok(html.indexOf('wb-type wb-type-story') !== -1,
     'row HTML must still render the structured object badge from objectType/objectId');
-  assert.ok(html.indexOf('研发需求 70526') !== -1,
-    'row HTML must render the canonical badge label (研发需求) with the object id');
+  assert.ok(/研发需求[\s\S]*?70526|研需[\s\S]*?70526/.test(html),
+    'row HTML must contain the badge label (研发需求 or 研需) and the object id 70526 (id may be wrapped in <span>)');
   console.log('PASS: notice subject is not char-stripped; object badge remains from structured fields');
 }
 
@@ -223,10 +248,10 @@ function testNoticeFeedbackBadgeAndTitle() {
   const { nodes, ready } = loadSingleItem(item);
   ready();
   const html = String(nodes.get('noticeTbody').innerHTML || '');
-  assert.ok(html.indexOf('notice-tag notice-tag-feedback') !== -1,
-    'feedback row must render notice-tag-feedback class');
-  assert.ok(html.indexOf('反馈 #2556') !== -1,
-    'feedback row must render the badge text 反馈 #2556');
+  assert.ok(html.indexOf('wb-type wb-type-feedback') !== -1,
+    'feedback row must render wb-type-feedback class');
+  assert.ok(/反馈[\s\S]*?2556/.test(html),
+    'feedback row must render the badge text (反馈 + 2556 with possible <span> wrap)');
   const title = extractButtonTitle(html);
   assert.ok(title && title.indexOf('反馈 #2556') === -1,
     `feedback title button must not repeat "反馈 #2556" prefix; got: ${title}`);
@@ -235,7 +260,7 @@ function testNoticeFeedbackBadgeAndTitle() {
   console.log('PASS: feedback badge is rendered, title strips 反馈 #ID prefix once');
 }
 
-// demand 5418: 后端 objType=demand 必须归一到 business，徽章显示「业务需求 US5418」，
+// demand 5418: 后端 objType=demand 必须归一到 business，徽章显示「业需#US5418」，
 // 标题剥掉中文「需求 #5418 」前缀（与首页/待办统一）。
 function testNoticeDemandBadgeAndTitle() {
   const item = {
@@ -253,11 +278,11 @@ function testNoticeDemandBadgeAndTitle() {
   const { nodes, ready } = loadSingleItem(item);
   ready();
   const html = String(nodes.get('noticeTbody').innerHTML || '');
-  assert.ok(html.indexOf('notice-tag notice-tag-business') !== -1,
-    'demand row must map to notice-tag-business (与首页/待办一致)');
-  assert.ok(html.indexOf('业务需求 US5418') !== -1,
-    'demand row badge text must be 业务需求 US5418');
-  assert.ok(html.indexOf('notice-tag notice-tag-demand') === -1,
+  assert.ok(html.indexOf('wb-type wb-type-business') !== -1,
+    'demand row must map to wb-type-business (与首页/待办一致)');
+  assert.ok(/业需[\s\S]*?US5418/.test(html),
+    'demand row badge text must be 业需 + US5418 (chip 上下文缩写 + "#" 分隔符)');
+  assert.ok(html.indexOf('wb-type wb-type-demand') === -1,
     'demand row must NOT render the legacy 需求 badge after canonicalisation');
   const title = extractButtonTitle(html);
   assert.ok(title && title.indexOf('需求 #5418') === -1,
@@ -284,10 +309,10 @@ function testNoticeStoryEngPrefixStripped() {
   const { nodes, ready } = loadSingleItem(item);
   ready();
   const html = String(nodes.get('noticeTbody').innerHTML || '');
-  assert.ok(html.indexOf('notice-tag notice-tag-story') !== -1,
-    'story row must render notice-tag-story class');
-  assert.ok(html.indexOf('研发需求 4181') !== -1,
-    'story row badge text must be 研发需求 4181 (not 研需)');
+  assert.ok(html.indexOf('wb-type wb-type-story') !== -1,
+    'story row must render wb-type-story class');
+  assert.ok(/研发需求[\s\S]*?4181|研需[\s\S]*?4181/.test(html),
+    'story row badge text must be (研发需求 or 研需) + 4181 (with possible <span> wrap)');
   const title = extractButtonTitle(html);
   assert.ok(title && title.indexOf('STORY #4181') === -1,
     `story title button must not repeat "STORY #4181" prefix; got: ${title}`);
@@ -313,11 +338,11 @@ function testNoticeUnknownKindKeepsRawSubject() {
   const { nodes, ready } = loadSingleItem(item);
   ready();
   const html = String(nodes.get('noticeTbody').innerHTML || '');
-  assert.ok(html.indexOf('notice-tag notice-tag-system') === -1,
-    'system kind must not render a notice-tag-system badge (unknown canon)');
+  assert.ok(html.indexOf('wb-type wb-type-system') === -1,
+    'system kind must not render a wb-type-system badge (unknown canon)');
   // 只有 mail 是 canon，但 mail 也不该出徽章；这里测的是另一种 unknown。
-  assert.ok(html.indexOf('class="notice-tag') === -1,
-    'unknown objectType must not emit any notice-tag badge span');
+  assert.ok(html.indexOf('class="wb-type') === -1,
+    'unknown objectType must not emit any wb-type badge span');
   const title = extractButtonTitle(html);
   assert.equal(title, '系统通知：今日定时任务已完成',
     'unknown objectType must render the raw backend subject verbatim, no prefix stripping');
@@ -343,8 +368,8 @@ function testNoticeReminderBugBadge() {
   const { nodes, ready } = loadSingleItem(item);
   ready();
   const html = String(nodes.get('noticeTbody').innerHTML || '');
-  assert.ok(html.indexOf('notice-tag notice-tag-bug') !== -1,
-    'reminder template must render notice-tag-bug class');
+  assert.ok(html.indexOf('wb-type wb-type-bug') !== -1,
+    'reminder template must render wb-type-bug class');
   assert.ok(html.indexOf('>Bug<') !== -1,
     'reminder badge text must be exactly "Bug" (no trailing #ID)');
   assert.ok(html.indexOf('Bug #7890') === -1,
@@ -373,8 +398,8 @@ function testNoticeReminderTaskBadge() {
   const { nodes, ready } = loadSingleItem(item);
   ready();
   const html = String(nodes.get('noticeTbody').innerHTML || '');
-  assert.ok(html.indexOf('notice-tag notice-tag-task') !== -1,
-    'reminder template must render notice-tag-task class');
+  assert.ok(html.indexOf('wb-type wb-type-task') !== -1,
+    'reminder template must render wb-type-task class');
   assert.ok(html.indexOf('>任务<') !== -1,
     'reminder badge text must be the canonical task label "任务" (no id)');
   const title = extractButtonTitle(html);
@@ -401,10 +426,10 @@ function testNoticeReminderDemandBadge() {
   const { nodes, ready } = loadSingleItem(item);
   ready();
   const html = String(nodes.get('noticeTbody').innerHTML || '');
-  assert.ok(html.indexOf('notice-tag notice-tag-business') !== -1,
+  assert.ok(html.indexOf('wb-type wb-type-business') !== -1,
     'reminder template 需求(N) must fall back to business badge (与首页/待办一致)');
-  assert.ok(html.indexOf('>业务需求<') !== -1,
-    'reminder badge text must be the canonical "业务需求" label');
+  assert.ok(html.indexOf('>业需<') !== -1,
+    'reminder badge text must be the abbreviated "业需" label (chip 上下文使用 OBJECT_TYPE_SHORT_LABELS)');
   const title = extractButtonTitle(html);
   assert.equal(title, '您有 需求(2)',
     'reminder subject must remain verbatim as the button text');

@@ -79,35 +79,38 @@ type StoryRow struct {
 	Status string `gorm:"column:status"`
 }
 
-// roleDemandBase 返回当前账号可推动且未关闭的业务办理单元。
-// 个人责任包括指派、派单、质量、研发、验收和澄清 PM 及星标关注，剔除无个人责任的纯 BRA；存在有效子需求时父需求只汇总，不重复统计。
+// roleDemandBase 返回当前账号在 Main 口径下可见且未关闭的业务办理单元。
+// 范围为澄清 PM、QD、RD、BRA、业需评审人、主管审批人或验收人；存在有效子需求时父需求只做汇总，不重复各算一次。
 func (r *Repo) roleDemandBase(ctx context.Context, account string) *gorm.DB {
 	return r.db.WithContext(ctx).Table("zt_demand").
 		Where("deleted = ?", "0").
 		Where("status NOT IN ?", []string{"closed"}).
 		Where("NOT EXISTS (SELECT 1 FROM zt_demand child WHERE child.deleted = ? AND child.parent = zt_demand.id)", "0").
 		Where(`(
-			assignedTo = ?
-			OR distributedBy = ?
+			id IN (SELECT demand FROM zt_demandclarify WHERE PM = ?)
 			OR QD = ?
 			OR RD = ?
+			OR BRA = ?
+			OR id IN (SELECT demand FROM zt_demandreview WHERE reviewer = ?)
+			OR id IN (SELECT demand FROM zt_demandmanagerreview WHERE reviewer = ?)
 			OR accepter = ?
-			OR id IN (SELECT demand FROM zt_demandclarify WHERE PM = ?)
-			OR id IN (SELECT objectID FROM zt_starinfo WHERE objectType = 'demand' AND account = ? AND followed = '1')
 		)`, account, account, account, account, account, account, account)
 }
 
 func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysqlStageFilter) *gorm.DB {
 	// 业需个人行动范围由 roleDemandBase 统一限定。
 	q := r.roleDemandBase(ctx, account)
+	return applyDemandStage(q, account, filter)
+}
 
+func applyDemandStage(q *gorm.DB, account string, filter mysqlStageFilter) *gorm.DB {
 	if filter.acceptanceStage {
 		today := time.Now().Format("2006-01-02")
-		// (status=testing AND 今天>=testFinish) OR (status=waitacceptance AND RD=账号)
+		// (status=testing AND 今天>=testFinish) OR (status=waitacceptance AND (RD|BRA)=账号)
 		q = q.Where(`(
 			(status = ? AND testFinish IS NOT NULL AND testFinish <= ?)
-			OR (status = ? AND RD = ?)
-		)`, "testing", today, "waitacceptance", account)
+			OR (status = ? AND (RD = ? OR BRA = ?))
+		)`, "testing", today, "waitacceptance", account, account)
 		return q
 	}
 	if filter.publishStage {
@@ -116,9 +119,9 @@ func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysql
 			status = ?
 			OR (
 				status = ?
-				AND NOT EXISTS (
-					SELECT 1 FROM zt_demandappraise
-					WHERE demand = zt_demand.id
+				AND id NOT IN (
+					SELECT demand FROM zt_demandappraise
+					WHERE demand IS NOT NULL
 						AND appraiseBy <> '' AND appraiseBy IS NOT NULL
 						AND appraiseTime IS NOT NULL
 				)
@@ -221,6 +224,43 @@ func (r *Repo) FindRoleDemandIDs(ctx context.Context, account string, filter mys
 		return nil, err
 	}
 	return ids, nil
+}
+
+// FindAllStageRefsPaged keeps the "all" list's first-stage de-duplication in
+// MySQL. It counts and fetches only the requested page instead of materializing
+// every eligible demand/story ID in the application process.
+func (r *Repo) FindAllStageRefsPaged(ctx context.Context, account string, req DemandsReq) ([]itemRef, int, error) {
+	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
+		return nil, 0, nil
+	}
+	base := r.allStageRefQuery(ctx, account, req)
+	var total int64
+	if err := r.db.WithContext(ctx).Table("(?) AS all_stages", base).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	offset := (req.Page - 1) * req.PageSize
+	if total == 0 || int64(offset) >= total {
+		return nil, int(total), nil
+	}
+	var rows []struct {
+		ID         int    `gorm:"column:id"`
+		Kind       string `gorm:"column:kind"`
+		StageIndex int    `gorm:"column:stage_index"`
+	}
+	if err := r.db.WithContext(ctx).Table("(?) AS all_stages", base).
+		Select("id, kind, stage_index").
+		Order("stage_index ASC, kind_rank ASC, id DESC").
+		Offset(offset).Limit(req.PageSize).Scan(&rows).Error; err != nil {
+		return nil, 0, err
+	}
+	refs := make([]itemRef, 0, len(rows))
+	for _, row := range rows {
+		if row.StageIndex <= 0 || row.StageIndex >= len(valueStreamStages) {
+			continue
+		}
+		refs = append(refs, itemRef{kind: row.Kind, id: row.ID, stageStatus: valueStreamStages[row.StageIndex].status})
+	}
+	return refs, int(total), nil
 }
 
 // FindRoleDemands 按阶段过滤条件查询业需列表（只取账号字段，不 JOIN zt_user）。

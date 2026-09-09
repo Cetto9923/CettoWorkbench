@@ -125,6 +125,22 @@ func DemandViewURLWithBase(base string, demandID uint) string {
 	return URLWithBase(base, "demand", "view", fmt.Sprintf("demandID=%d", demandID))
 }
 
+// DemandEditURL 业需编辑页链接。
+func DemandEditURL(demandID uint) string {
+	if demandID == 0 {
+		return ""
+	}
+	return URL("demand", "edit", fmt.Sprintf("demandID=%d", demandID))
+}
+
+// DemandEditURLWithBase 使用指定站点前缀拼接业需编辑页链接。
+func DemandEditURLWithBase(base string, demandID uint) string {
+	if demandID == 0 {
+		return ""
+	}
+	return URLWithBase(base, "demand", "edit", fmt.Sprintf("demandID=%d", demandID))
+}
+
 // DemandClarifyURL 业需澄清办理页链接（直达澄清办理，非详情页）。
 func DemandClarifyURL(demandID uint) string {
 	if demandID == 0 {
@@ -189,12 +205,140 @@ func BugViewURL(bugID uint) string {
 	return URL("bug", "view", fmt.Sprintf("bugID=%d", bugID))
 }
 
+// CharterViewURL 项目章程详情页链接。
+// 禅道章程页以对象自身 ID 为首选参数（m=charter&f=view&id=N）；
+// 当 objectID 缺失时回退到 projectID，避免页面因双 0 跳到禅道首页。
+func CharterViewURL(objectID, projectID uint) string {
+	if objectID == 0 && projectID == 0 {
+		return ""
+	}
+	if objectID > 0 {
+		return URL("charter", "view", fmt.Sprintf("id=%d", objectID))
+	}
+	return URL("charter", "view", fmt.Sprintf("projectID=%d", projectID))
+}
+
+// CharterViewURLWithBase 使用指定站点前缀拼接项目章程详情页链接。
+func CharterViewURLWithBase(base string, objectID, projectID uint) string {
+	if objectID == 0 && projectID == 0 {
+		return ""
+	}
+	if objectID > 0 {
+		return URLWithBase(base, "charter", "view", fmt.Sprintf("id=%d", objectID))
+	}
+	return URLWithBase(base, "charter", "view", fmt.Sprintf("projectID=%d", projectID))
+}
+
+// BuildguidelineViewURL 项目建设指引详情页链接。
+// 禅道建设指引页以对象自身 ID 为首选参数（m=buildguideline&f=view&id=N）；
+// 当 objectID 缺失时回退到 projectID，避免页面因双 0 跳到禅道首页。
+func BuildguidelineViewURL(objectID, projectID uint) string {
+	if objectID == 0 && projectID == 0 {
+		return ""
+	}
+	if objectID > 0 {
+		return URL("buildguideline", "view", fmt.Sprintf("id=%d", objectID))
+	}
+	return URL("buildguideline", "view", fmt.Sprintf("projectID=%d", projectID))
+}
+
+// BuildguidelineViewURLWithBase 使用指定站点前缀拼接项目建设指引详情页链接。
+func BuildguidelineViewURLWithBase(base string, objectID, projectID uint) string {
+	if objectID == 0 && projectID == 0 {
+		return ""
+	}
+	if objectID > 0 {
+		return URLWithBase(base, "buildguideline", "view", fmt.Sprintf("id=%d", objectID))
+	}
+	return URLWithBase(base, "buildguideline", "view", fmt.Sprintf("projectID=%d", projectID))
+}
+
+// PlanchangeViewURL 计划变更详情页链接。
+func PlanchangeViewURL(objectID uint) string {
+	if objectID == 0 {
+		return ""
+	}
+	return URL("planchange", "view", fmt.Sprintf("ID=%d", objectID))
+}
+
+// PlanchangeViewURLWithBase 使用指定站点前缀拼接计划变更详情页链接。
+func PlanchangeViewURLWithBase(base string, objectID uint) string {
+	if objectID == 0 {
+		return ""
+	}
+	return URLWithBase(base, "planchange", "view", fmt.Sprintf("ID=%d", objectID))
+}
+
+// ReviewViewURL 项目评审详情页链接。
+func ReviewViewURL(objectID uint) string {
+	if objectID == 0 {
+		return ""
+	}
+	return URL("review", "view", fmt.Sprintf("reviewID=%d", objectID))
+}
+
+// ReviewViewURLWithBase 使用指定站点前缀拼接项目评审详情页链接。
+func ReviewViewURLWithBase(base string, objectID uint) string {
+	if objectID == 0 {
+		return ""
+	}
+	return URLWithBase(base, "review", "view", fmt.Sprintf("reviewID=%d", objectID))
+}
+
+// CaseViewURL 用例详情页链接。
+func CaseViewURL(objectID uint) string {
+	if objectID == 0 {
+		return ""
+	}
+	return URL("case", "view", fmt.Sprintf("caseID=%d", objectID))
+}
+
+// CaseViewURLWithBase 使用指定站点前缀拼接用例详情页链接。
+func CaseViewURLWithBase(base string, objectID uint) string {
+	if objectID == 0 {
+		return ""
+	}
+	return URLWithBase(base, "case", "view", fmt.Sprintf("caseID=%d", objectID))
+}
+
 // TesttaskViewURL 测试单详情页链接。
 func TesttaskViewURL(testtaskID uint) string {
 	if testtaskID == 0 {
 		return ""
 	}
 	return URL("testtask", "view", fmt.Sprintf("taskID=%d", testtaskID))
+}
+
+// IssueViewURL 问题详情页链接。
+func IssueViewURL(issueID uint) string {
+	if issueID == 0 {
+		return ""
+	}
+	return URL("issue", "view", fmt.Sprintf("issueID=%d", issueID))
+}
+
+// IssueViewURLWithBase 使用指定站点前缀拼接问题详情页链接。
+func IssueViewURLWithBase(base string, issueID uint) string {
+	if issueID == 0 {
+		return ""
+	}
+	return URLWithBase(base, "issue", "view", fmt.Sprintf("issueID=%d", issueID))
+}
+
+// RiskViewURL 风险详情页链接。
+func RiskViewURL(riskID uint) string {
+	if riskID == 0 {
+		return ""
+	}
+	return URL("risk", "view", fmt.Sprintf("riskID=%d", riskID))
+}
+
+// RiskViewURLWithBase 使用指定站点前缀拼接风险详情页链接。
+func RiskViewURLWithBase(base string, riskID uint) string {
+	if riskID == 0 {
+		return ""
+	}
+	return URLWithBase(base, "risk", "view", fmt.Sprintf("riskID=%d", riskID))
 }
 
 // WeeklyIndexURL 项目周报主界面链接。

@@ -11,19 +11,19 @@ package po
 
 import (
 	"context"
-	"errors"
 	"strings"
 
 	"workbench/internal/model"
 	"workbench/internal/pkg/errorx"
+	"workbench/internal/pkg/zentao"
 )
 
 // ReviewDemand 提交业需评审。
 //
-// 读代码时可按 PHP/Java 这样理解：
-//  1. actor 就是当前登录用户（Service 里不碰 gin.Context）
-//  2. 先校验「待评审 + 当前账号是未出结果的业务评审人」（与 assignedTo 无关）
-//  3. 再按禅道规则改三张表：评审人结果、需求字段、操作历史
+// 业务逻辑与系统联动说明：
+//  1. actor 为当前登录用户，执行对象级授权前置校验（待评审 + 业务评审人未出结果）；
+//  2. 实际业务流转（状态扭转、转工单流转、OA 待办消息推送等）统一走禅道原生 API，
+//     确保逻辑与禅道原版行为完全一致。
 func (s *Service) ReviewDemand(ctx context.Context, actor *model.User, req ReviewDemandReq) (ReviewDemandResp, error) {
 	empty := ReviewDemandResp{}
 	if actor == nil || strings.TrimSpace(actor.Account) == "" {
@@ -53,88 +53,87 @@ func (s *Service) ReviewDemand(ctx context.Context, actor *model.User, req Revie
 		return empty, errorx.New(errorx.ErrCodeConflict, "您已评审过该需求")
 	}
 
-	reviewedBy := appendUniqueAccount(demand.ReviewedBy, account)
-	mailto := normalizeMailto(req.Mailto)
-
-	// 拒绝：立刻变成 refuse，并指派回创建人。
-	// 通过：事务里锁需求行，再统计尚未 pass 的评审人（含 NULL）；为 0 才改成 active。
-	newStatus := ""
-	statusAction := ""
-	assignBack := ""
-	if req.Result == "refuse" {
-		newStatus = "refuse"
-		statusAction = "reviewrejected"
-		assignBack = strings.TrimSpace(demand.CreatedBy)
-	}
-
-	if err := s.repo.SaveDemandReview(ctx, saveDemandReviewIn{
-		DemandID:     req.ID,
-		Account:      account,
-		Result:       req.Result,
-		IsNeedFocus:  req.IsNeedFocus,
-		Mailto:       mailto,
-		ReviewedBy:   reviewedBy,
-		Comment:      req.Comment,
-		Product:      demand.Product,
-		NewStatus:    newStatus,
-		StatusAction: statusAction,
-		AssignBackTo: assignBack,
-	}); err != nil {
-		if errors.Is(err, errDemandNotReviewable) || errors.Is(err, errAlreadyReviewed) {
-			return empty, errorx.New(errorx.ErrCodeConflict, err.Error())
-		}
-		if isLockWait(err) {
-			return empty, errorx.New(errorx.ErrCodeConflict, "该需求正在被他人编辑，请稍后重试")
-		}
-		return empty, err
+	// 统一调用禅道原生接口，让禅道处理转工单、状态流转及 OA 消息同步
+	ztClient := zentao.DefaultClient()
+	ztErr := ztClient.ReviewDemand(ctx, zentao.DemandReviewParams{
+		DemandID:    uint(req.ID),
+		Account:     account,
+		Result:      req.Result,
+		IsNeedFocus: req.IsNeedFocus,
+		Comment:     req.Comment,
+		Mailto:      req.Mailto,
+	})
+	if ztErr != nil {
+		return empty, errorx.New(errorx.ErrCodeInternal, "禅道评审执行失败: "+ztErr.Error())
 	}
 
 	return ReviewDemandResp{ID: req.ID}, nil
 }
 
-// appendUniqueAccount 把当前账号追加进 reviewedBy（逗号分隔，去重）。
-func appendUniqueAccount(old, account string) string {
-	seen := map[string]bool{}
-	var out []string
-	for _, part := range strings.Split(old, ",") {
-		p := strings.TrimSpace(part)
-		if p == "" || seen[p] {
-			continue
-		}
-		seen[p] = true
-		out = append(out, p)
+// WithdrawDemandReview 撤回业需评审申请（仅创建人或超级管理员可操作）。
+func (s *Service) WithdrawDemandReview(ctx context.Context, actor *model.User, req WithdrawDemandReviewReq) error {
+	if actor == nil || strings.TrimSpace(actor.Account) == "" {
+		return errorx.New(errorx.ErrCodeForbidden, "请先登录")
 	}
-	account = strings.TrimSpace(account)
-	if account != "" && !seen[account] {
-		out = append(out, account)
+	account := strings.TrimSpace(actor.Account)
+
+	demand, err := s.repo.FindDemandForReview(ctx, req.ID)
+	if err != nil {
+		return err
 	}
-	return strings.Join(out, ",")
+	if demand == nil || demand.Deleted != "0" {
+		return errorx.New(errorx.ErrCodeNotFound, "需求不存在")
+	}
+	if strings.TrimSpace(demand.Status) != "wait" {
+		return errorx.New(errorx.ErrCodeConflict, "该需求不是待评审状态")
+	}
+	if !actor.IsSuperAdmin && strings.TrimSpace(demand.CreatedBy) != account {
+		return errorx.New(errorx.ErrCodeForbidden, "只有创建人可以撤回评审")
+	}
+
+	ztClient := zentao.DefaultClient()
+	ztErr := ztClient.WithdrawDemandReview(ctx, zentao.WithdrawDemandReviewParams{
+		DemandID: uint(req.ID),
+		Account:  account,
+		Comment:  req.Comment,
+	})
+	if ztErr != nil {
+		return errorx.New(errorx.ErrCodeInternal, "禅道撤回评审执行失败: "+ztErr.Error())
+	}
+	return nil
 }
 
-// normalizeMailto 把「张三, 004861」收成禅道常用的逗号串；空则不改库。
-func normalizeMailto(raw string) *string {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return nil
+// SubmitDemandReview 提交业需评审（草稿/已驳回状态下，创建人或指派人可操作）。
+func (s *Service) SubmitDemandReview(ctx context.Context, actor *model.User, req SubmitDemandReviewReq) error {
+	if actor == nil || strings.TrimSpace(actor.Account) == "" {
+		return errorx.New(errorx.ErrCodeForbidden, "请先登录")
 	}
-	var parts []string
-	for _, p := range strings.Split(raw, ",") {
-		p = strings.TrimSpace(p)
-		if p != "" {
-			parts = append(parts, p)
-		}
-	}
-	if len(parts) == 0 {
-		return nil
-	}
-	joined := strings.Join(parts, ",")
-	return &joined
-}
+	account := strings.TrimSpace(actor.Account)
 
-func isLockWait(err error) bool {
-	if err == nil {
-		return false
+	demand, err := s.repo.FindDemandForReview(ctx, req.ID)
+	if err != nil {
+		return err
 	}
-	msg := strings.ToLower(err.Error())
-	return strings.Contains(msg, "lock wait timeout") || strings.Contains(msg, "deadlock")
+	if demand == nil || demand.Deleted != "0" {
+		return errorx.New(errorx.ErrCodeNotFound, "需求不存在")
+	}
+	st := strings.TrimSpace(demand.Status)
+	if st != "draft" && st != "refuse" {
+		return errorx.New(errorx.ErrCodeConflict, "当前状态不允许提交评审")
+	}
+	if !actor.IsSuperAdmin && strings.TrimSpace(demand.CreatedBy) != account && strings.TrimSpace(demand.AssignedTo) != account {
+		return errorx.New(errorx.ErrCodeForbidden, "只有创建人或指派人可以提交评审")
+	}
+
+	ztClient := zentao.DefaultClient()
+	ztErr := ztClient.SubmitDemandReview(ctx, zentao.SubmitDemandReviewParams{
+		DemandID: uint(req.ID),
+		Account:  account,
+		Reviewer: req.Reviewer,
+		Comment:  req.Comment,
+	})
+	if ztErr != nil {
+		return errorx.New(errorx.ErrCodeInternal, "禅道提交评审执行失败: "+ztErr.Error())
+	}
+	return nil
 }

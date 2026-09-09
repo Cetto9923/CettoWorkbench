@@ -189,6 +189,81 @@
   border: 1px solid #fecaca; color: #dc2626; font-style: normal;
 }
 
+/* 对象类型芯片过滤栏 - 我的已办与我的待办共用（分面计数 + 下划线选中态），高 38px。
+   选择器保持无页面前缀，两页模板直接复用同一组几何与状态，不各自复制色板。 */
+.wb-done-domains {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  overflow-x: auto;
+  height: 38px;
+  padding: 0 16px;
+  margin: 0;
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
+  background: var(--color-surface, #ffffff);
+  box-sizing: border-box;
+}
+.wb-done-domains::-webkit-scrollbar {
+  height: 4px;
+}
+.wb-done-domains::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 2px;
+}
+.wb-done-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--po-t2, #667085);
+  height: 38px;
+  padding: 0 2px;
+  border-radius: 0;
+  box-shadow: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.wb-done-tab:hover {
+  color: var(--po-t1, var(--color-text-deep, #1f2937));
+  background: #f7f8fa;
+}
+.wb-done-tab.active {
+  color: #1e40af;
+  font-weight: 600;
+}
+.wb-done-tab.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--color-info-fill, #2563eb);
+}
+.wb-done-tab i {
+  font-size: 11px;
+  opacity: .8;
+}
+.wb-done-tab-count {
+  font-size: 11px;
+  color: #98a2b3;
+  margin-left: 3px;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+.wb-done-tab.active .wb-done-tab-count {
+  color: #1e40af;
+  background: transparent;
+  font-weight: 600;
+}
+
 /* 工具栏 (Toolbar) - 高度统一 28px 紧凑高密控件 */
 .po-personal-workspace .workspace-toolbar {
   display: flex; align-items: center; gap: 8px; padding: 10px 12px;
@@ -281,6 +356,12 @@
   text-decoration: none; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
 }
 .po-personal-workspace .table-action-btn:hover { background: #dbeafe; }
+.po-personal-workspace .table-action-btn.primary {
+  border-color: #2563eb; background: #2563eb; color: #fff;
+}
+.po-personal-workspace .table-action-btn.primary:hover {
+  border-color: #1d4ed8; background: #1d4ed8; color: #fff;
+}
 
 /* 状态占位：Loading / Empty / Error */
 .po-personal-workspace .state-placeholder {

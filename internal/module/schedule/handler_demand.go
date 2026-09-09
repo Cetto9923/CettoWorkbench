@@ -12,6 +12,7 @@ package schedule
 
 import (
 	"errors"
+	"fmt"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -367,18 +368,20 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 	}, true
 }
 
-func parseDemandID(c *gin.Context) (uint, bool) {
-	return parseStoryID(c)
-}
+func parseDemandID(c *gin.Context) (uint, bool) { return parseStoryID(c) }
 
 // GetDemandScheduling 返回排期一体化弹窗业需详情（JSON）。
 func (h *Handler) GetDemandScheduling(c *gin.Context) {
 	demandID, ok := parseDemandID(c)
 	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"error":   "业需 ID 无效",
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "业需 ID 无效"})
+		return
+	}
+
+	// 浏览器直链访问（非 Ajax/JSON）重定向到工作台排期主页并自动弹出一体化弹窗
+	accept := c.GetHeader("Accept")
+	if !strings.Contains(accept, "application/json") && c.GetHeader("X-Requested-With") == "" && c.Query("format") != "json" {
+		c.Redirect(http.StatusFound, fmt.Sprintf("/schedule?openDemand=%d", demandID))
 		return
 	}
 
@@ -386,15 +389,9 @@ func (h *Handler) GetDemandScheduling(c *gin.Context) {
 	resp, err := h.svc.GetDemandScheduling(c.Request.Context(), actor, demandID)
 	if err != nil {
 		if h.logger != nil {
-			h.logger.Error("get demand scheduling detail failed",
-				zap.Error(err),
-				zap.Uint("demand_id", demandID),
-			)
+			h.logger.Error("get demand scheduling detail failed", zap.Error(err), zap.Uint("demand_id", demandID))
 		}
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"error":   err.Error(),
-		})
+		c.JSON(http.StatusOK, gin.H{"success": false, "error": err.Error()})
 		return
 	}
 

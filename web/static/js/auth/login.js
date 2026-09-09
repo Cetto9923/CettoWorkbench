@@ -36,6 +36,7 @@
       headers: {
         "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
         Accept: "application/json",
+        "X-CSRF-Token": form.elements.csrf_token ? form.elements.csrf_token.value : "",
         "X-Requested-With": "XMLHttpRequest"
       },
       credentials: "same-origin",

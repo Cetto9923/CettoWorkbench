@@ -92,6 +92,63 @@ func TestBuildTodoOuterWhereKeywords(t *testing.T) {
 	}
 }
 
+func TestBuildTodoFacetSQLIgnoresObjectTypeDimension(t *testing.T) {
+	// 已选中 demand 时分面仍必须统计 task / bug，否则芯片计数归零后无法切回。
+	facetSQL, args := buildTodoFacetSQL("user_a", TodoListReq{ObjectType: "demand", Tab: TodoTabDemand}, nil, "2026-09-05")
+	for _, kind := range []string{"'demand' AS kind", "'task' AS kind", "'bug' AS kind"} {
+		if !strings.Contains(facetSQL, kind) {
+			t.Fatalf("expected facet union to keep %s, got: %s", kind, facetSQL)
+		}
+	}
+	if !strings.Contains(facetSQL, "GROUP BY t.kind") {
+		t.Fatalf("expected facet count to aggregate in SQL, got: %s", facetSQL)
+	}
+	if strings.Contains(facetSQL, "t.kind = 'demand'") {
+		t.Fatalf("expected facet SQL to drop the object-domain tab condition, got: %s", facetSQL)
+	}
+	for _, arg := range args {
+		if s, ok := arg.(string); ok && s != "user_a" && s != "2026-09-05" {
+			t.Fatalf("unexpected literal argument %q in facet args %#v", s, args)
+		}
+	}
+
+	// 其它维度仍与列表同口径：焦点、关系与关键词都必须进入分面 WHERE。
+	facetFiltered, _ := buildTodoFacetSQL("user_a", TodoListReq{Focus: "overdue", Relation: RelationInCharge}, nil, "2026-09-05")
+	if !strings.Contains(facetFiltered, "t.relation = '我负责'") || !strings.Contains(facetFiltered, "t.deadline_str <") {
+		t.Fatalf("expected facet SQL to keep relation and focus conditions, got: %s", facetFiltered)
+	}
+}
+
+func TestBuildTodoFacetsCoversOnlyWiredObjectTypes(t *testing.T) {
+	facets := buildTodoFacets(map[string]int64{"demand": 7, "task": 2})
+	if len(facets) != 9 {
+		t.Fatalf("facets = %#v, want 9 facets", facets)
+	}
+	want := []TodoFacet{
+		{Key: "approval", Label: "审批", Count: 0},
+		{Key: "demand", Label: "业务需求", Count: 7},
+		{Key: "story", Label: "研发需求", Count: 0},
+		{Key: "task", Label: "任务", Count: 2},
+		{Key: "bug", Label: "Bug", Count: 0},
+		{Key: "risk", Label: "风险", Count: 0},
+		{Key: "issue", Label: "问题", Count: 0},
+		{Key: "todo", Label: "待办", Count: 0},
+		{Key: "testtask", Label: "测试单", Count: 0},
+	}
+	for i, expected := range want {
+		if facets[i] != expected {
+			t.Fatalf("facets[%d] = %#v, want %#v", i, facets[i], expected)
+		}
+	}
+	// 芯片 key 必须能通过 TodoListReq 校验，否则点击后是必然 422。
+	for _, facet := range facets {
+		req := TodoListReq{ObjectType: facet.Key}
+		if errs := req.Validate(); len(errs) != 0 {
+			t.Fatalf("facet key %q rejected by Validate: %#v", facet.Key, errs)
+		}
+	}
+}
+
 func TestBuildTodoOuterWhereDimensions(t *testing.T) {
 	// Relation
 	whereRel, _ := buildTodoOuterWhere(TodoListReq{Relation: RelationInCharge}, nil, false, "2026-09-05")

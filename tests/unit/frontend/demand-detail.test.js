@@ -118,6 +118,10 @@ assert.ok(reqHtml.includes("业务需求正文与描述"), "Requirement text mus
 assert.ok(reqHtml.includes("信贷业务平台"), "Clarification product must be present");
 assert.ok(reqHtml.includes("在禅道办理需求澄清 ↗"), "Clarification action button must be present");
 assert.ok(reqHtml.includes("demandID=63442"), "Clarification URL must be present");
+
+const reqHtmlWithId = R.renderTabRequirement(Object.assign({}, mockReqData, { demandId: 63442 }));
+assert.ok(reqHtmlWithId.includes("js-drawer-clarify-btn"), "Workbench clarify modal button must be present");
+assert.ok(reqHtmlWithId.includes('data-demand-id="63442"'), "Demand ID must be attached to clarify button");
 console.log("PASS: renderTabRequirement includes spec, clarification table and action CTA");
 
 // 7. renderTabExecution & Testing Progress & App Quality Tree test

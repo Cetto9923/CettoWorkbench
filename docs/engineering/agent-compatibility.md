@@ -1,6 +1,6 @@
 # Agent entry points and verification
 
-Updated 2026-09-07. Authority remains `AGENTS.md`; this is a loading guide.
+Updated 2026-09-09. Authority remains `AGENTS.md`; this is a loading guide.
 Settings can disable/override discovery. File existence is not compliance.
 
 ## Repository coverage
@@ -23,7 +23,19 @@ Settings can disable/override discovery. File existence is not compliance.
   [Official discovery](https://docs.windsurf.com/zh/windsurf/cascade/agents-md).
 - **Cline:** `.clinerules/00-workbench.md`; verify the workspace rule is enabled.
   [Official rules](https://docs.cline.bot/customization/cline-rules).
-- **Antigravity, WorkBuddy, other tools:** installed-version automatic loading
+- **Antigravity:** `.agents/rules/workbench-engineering.md` uses
+  `trigger: always_on` to route preflight, concurrent-WIP protection and delivery
+  checks to the existing constitution. The local Antigravity 2.12.2 bundled
+  customization guide describes unconditional loading for this trigger and
+  hierarchical discovery of `AGENTS.md` / `GEMINI.md`; the project rule is an
+  explicit execution reminder, not a replacement constitution.
+  [Official workspace rules](https://antigravity.google/docs/rules-workflows/).
+  Configuration verified 2026-09-09; current-session loading and cold-start
+  behavior remain unverified. Do not restart or interrupt an active developer
+  merely to test discovery. At its next safe checkpoint, ask it to read this
+  rule and complete the read-only preflight below; verify observed file reads
+  and the Rules panel, not just an assurance of compliance.
+- **WorkBuddy, other tools:** installed-version automatic loading
   was not established here. Use the startup instruction below and verify actual
   reads. Add a thin adapter only after verifying its documented mechanism.
   `.workbuddy/memory/` is historical context, not the engineering entry.
