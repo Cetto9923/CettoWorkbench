@@ -180,6 +180,18 @@
     return !!item.canReview;
   }
 
+  // 提测阶段占位按钮：业需且禅道状态 developing，或价值流标签为「提测」
+  function canShowSubmitTest(item) {
+    if (!item || String(item.kind || "") === "story") {
+      return false;
+    }
+    var zt = String(item.zentaoStatus || "").trim().toLowerCase();
+    if (zt === "developing") {
+      return true;
+    }
+    return String(item.valueStream || item.stage || "").trim() === "提测";
+  }
+
   function renderRow(item) {
     var id = item.id || "";
     var url = (item.zentaoUrl || "").trim();
@@ -191,9 +203,14 @@
     var actionHtml = "";
     if (canShowReview(item)) {
       actionHtml =
-        "<button type=\"button\" class=\"action-btn primary js-demand-review\" data-demand-id=\"" +
+        "<button type=\"button\" class=\"table-action-btn primary js-demand-review\" data-demand-id=\"" +
         escapeHtml(item.id || "") +
         "\">评审</button>";
+    } else if (canShowSubmitTest(item)) {
+      actionHtml =
+        "<button type=\"button\" class=\"table-action-btn primary\" data-demand-id=\"" +
+        escapeHtml(item.id || "") +
+        "\">提测</button>";
     }
     var titleInner =
       (pri ? "<span class=\"inline-pri " + escapeHtml(pri) + "\">" + escapeHtml(pri) + "</span>" : "") +

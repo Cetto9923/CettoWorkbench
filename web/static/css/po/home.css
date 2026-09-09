@@ -237,7 +237,7 @@
 .po-home .top5-cols,
 .po-home .top5-row {
   display: grid;
-  grid-template-columns: 88px minmax(0, 1.8fr) 88px 88px 88px 110px 88px;
+  grid-template-columns: 88px minmax(0, 1.8fr) 88px 88px 88px 110px 96px;
   gap: 8px;
   align-items: center;
 }
@@ -345,6 +345,8 @@
 }
 
 .po-home .row-actions {
+  min-width: 0;
+  overflow: visible;
   text-align: right;
 }
 
@@ -377,6 +379,36 @@
 .po-home .action-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+/* 对齐原型 personal-workspace .table-action-btn / .primary */
+.po-home .table-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 24px;
+  padding: 2px 10px;
+  border: 1px solid #bfdbfe;
+  border-radius: 4px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 12px;
+  line-height: 1.2;
+  font-family: inherit;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.po-home .table-action-btn:hover {
+  background: #dbeafe;
+}
+
+.po-home .table-action-btn.primary {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
 }
 
 .po-home .empty-state {
@@ -450,10 +482,6 @@
   font-size: 12px;
   color: var(--po-t3);
   padding: 4px 2px 0;
-}
-
-.po-home .row-actions {
-  text-align: right;
 }
 
 .po-review-overlay {
