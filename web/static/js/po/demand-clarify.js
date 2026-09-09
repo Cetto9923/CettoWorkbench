@@ -6,9 +6,7 @@
   var currentDemandId = null, currentFormData = null, productRowIndex = 0, storyRowIndex = 0, isSubmitting = false;
 
   function esc(s) {
-    return String(s == null ? "" : s)
-      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
   function showToast(msg, type) {
@@ -48,15 +46,11 @@
 
   function findUserLabel(users, val) {
     if (!val) return "";
-    for (var i = 0; i < (users || []).length; i++) {
-      if (String(users[i].value) === String(val)) return users[i].label;
-    }
+    for (var i = 0; i < (users || []).length; i++) { if (String(users[i].value) === String(val)) return users[i].label; }
     return val;
   }
   function findProduct(products, pId) {
-    for (var i = 0; i < (products || []).length; i++) {
-      if (String(products[i].id) === String(pId)) return products[i];
-    }
+    for (var i = 0; i < (products || []).length; i++) { if (String(products[i].id) === String(pId)) return products[i]; }
     return null;
   }
   function buildPmOptionsForProduct(pId) {
@@ -76,17 +70,12 @@
   }
   function bindUserAutocomplete(inputId, hiddenId, users, selectedVal) {
     if (typeof window.initAutocomplete !== "function") return;
-    window.initAutocomplete(inputId, hiddenId, users || [], {
-      value: selectedVal || "", label: findUserLabel(users, selectedVal), placeholder: "输入姓名或工号搜索"
-    });
+    window.initAutocomplete(inputId, hiddenId, users || [], { value: selectedVal || "", label: findUserLabel(users, selectedVal), placeholder: "输入姓名或工号搜索" });
   }
   function bindProductAutocomplete(inputId, hiddenId, products, selectedVal) {
     if (typeof window.initAutocomplete !== "function") return;
-    var items = (products || []).map(function (p) { return { value: String(p.id), label: p.name || String(p.id) }; });
-    var found = findProduct(products, selectedVal);
-    window.initAutocomplete(inputId, hiddenId, items, {
-      value: selectedVal || "", label: found ? (found.name || String(found.id)) : "", placeholder: "搜索产品名称或 ID"
-    });
+    var items = (products || []).map(function (p) { return { value: String(p.id), label: p.name || String(p.id) }; }), found = findProduct(products, selectedVal);
+    window.initAutocomplete(inputId, hiddenId, items, { value: selectedVal || "", label: found ? (found.name || String(found.id)) : "", placeholder: "搜索产品名称或 ID" });
   }
   function loadClarifyData(id) {
     (window.appFetch || window.fetch)("/demands/" + encodeURIComponent(id) + "/clarify", { method: "GET", headers: { Accept: "application/json" } })
@@ -102,6 +91,13 @@
         $("#poClarifyLoadingState").hide(); $("#poClarifyErrorMsg").text(err.message || "加载失败，请稍后重试"); $("#poClarifyErrorState").show();
       });
   }
+  function normalizeLegalPersonLogo(val) {
+    if (val === "changshu" || val === "0") return "0";
+    if (val === "village" || val === "1") return "1";
+    if (val === "changshu_village" || val === "2") return "2";
+    return "0";
+  }
+
   function renderForm(data) {
     $("#poClarifyDemandId").val(data.id);
     $("#poClarifyDemandBadge").text(data.code || ("US" + data.id));
@@ -119,10 +115,8 @@
     $("#poClarifyStoryTbody").empty(); storyRowIndex = 0;
     (data.userStories && data.userStories.length ? data.userStories : [{}]).forEach(addStoryRow);
     $("#poClarifyDesc").val(data.clarifyDesc || "");
-    ["isNewProduct", "isRelatedAccounts", "isNewFunction", "isOtherImportantOrder"].forEach(function (k) {
-      setRadioValue(k, data[k] === "1" ? "1" : "0");
-    });
-    setRadioValue("multiLegalPersonLogo", data.multiLegalPersonLogo || "changshu");
+    ["isNewProduct", "isRelatedAccounts", "isNewFunction", "isOtherImportantOrder"].forEach(function (k) { setRadioValue(k, data[k] === "1" ? "1" : "0"); });
+    setRadioValue("multiLegalPersonLogo", normalizeLegalPersonLogo(data.multiLegalPersonLogo));
     toggleFinanceAlert(); toggleCategoryRule(); updateTotalScale();
   }
   function renderQuickProductBar(frequentList) {
@@ -149,8 +143,7 @@
 
   function addProductRow(item) {
     item = item || {};
-    var idx = productRowIndex++;
-    var products = (currentFormData && currentFormData.productOptions) || [];
+    var idx = productRowIndex++, products = (currentFormData && currentFormData.productOptions) || [];
     var isMain = item.isMainSystem ? " checked" : "", isAdd = item.isAdditionalInfo === "1" ? " checked" : "";
     var reqCls = item.isAdditionalInfo === "1" ? " required" : "";
     var html = '<tr class="clarify-prod-row" data-row-idx="' + idx + '">' +
@@ -190,8 +183,8 @@
       '<input type="hidden" name="aiCode[' + idx + ']" value="' + esc(aiCode) + '">' +
       '<input type="hidden" name="point[' + idx + ']" value="' + esc(ptVal) + '">' +
       '<td style="text-align:center;"><input type="checkbox" class="js-story-check" name="userStoryChecked[' + idx + ']" value="1"' + isChecked + '></td>' +
-      '<td><input type="text" class="clarify-input" name="role[' + idx + ']" placeholder="如：系统用户" value="' + esc(roleVal) + '" required></td>' +
-      '<td><textarea class="clarify-textarea" name="gv[' + idx + ']" rows="1" placeholder="用户目标与业务价值" required>' + esc(gvVal) + '</textarea></td>' +
+      '<td><input type="text" class="clarify-input" name="role[' + idx + ']" placeholder="输入角色名称（如：系统用户）" value="' + esc(roleVal) + '" required></td>' +
+      '<td><textarea class="clarify-textarea" name="gv[' + idx + ']" rows="1" placeholder="输入用户目标与业务价值" required>' + esc(gvVal) + '</textarea></td>' +
       '<td><select class="clarify-select js-story-prod-select" name="entryProductID[' + idx + ']" data-saved-val="' + esc(prodVal) + '" required><option value="">请选择产品</option></select></td>' +
       '<td style="text-align:center;"><span class="clarify-badge-tag">' + esc(ptKw) + '</span></td>' +
       '<td style="text-align:center;"><select class="clarify-select js-story-revpoint" name="revpoint[' + idx + ']">' + revOpts + '</select></td>' +
@@ -305,12 +298,8 @@
       }
     });
 
-    $(document).on("change", ".js-clarify-is-add", function () {
-      $(this).closest("tr").find(".js-clarify-add-info").toggleClass("required", $(this).is(":checked"));
-    });
-    $(document).on("change", ".js-clarify-main-radio", function () {
-      $(this).closest("tr").find(".js-clarify-is-add").prop("checked", true).trigger("change");
-    });
+    $(document).on("change", ".js-clarify-is-add", function () { $(this).closest("tr").find(".js-clarify-add-info").toggleClass("required", $(this).is(":checked")); });
+    $(document).on("change", ".js-clarify-main-radio", function () { $(this).closest("tr").find(".js-clarify-is-add").prop("checked", true).trigger("change"); });
     $(document).on("click", ".js-add-prod-row", function () { addProductRow(); });
     $(document).on("click", ".js-del-prod-row", function () {
       if ($("#poClarifyProductTbody tr").length <= 1) { showToast("涉及产品至少保留一行", "error"); return; }
@@ -390,6 +379,16 @@
   function parseAndAppendAiStories(csvContent, aiCodes) {
     var lines = csvContent.split("EOF"), dataLines = (lines.length >= 2 ? lines[1] : csvContent).trim().split("\n");
     var firstPid = $("#poClarifyProductTbody tr:first .js-clarify-prod-select").val() || "";
+
+    // 若当前只有一行且未填任何内容（空白默认行），先移除该行以避免残留空行导致提交校验失败
+    var $existingRows = $("#poClarifyStoryTbody tr");
+    if ($existingRows.length === 1) {
+      var $firstRow = $existingRows.first();
+      if (!$firstRow.find('input[name^="role["]').val().trim() && !$firstRow.find('textarea[name^="gv["]').val().trim()) {
+        $firstRow.remove();
+      }
+    }
+
     for (var i = 0; i < dataLines.length; i++) {
       var line = dataLines[i].trim();
       if (!line || line.indexOf("|") < 0) continue;

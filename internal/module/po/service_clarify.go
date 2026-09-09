@@ -190,6 +190,28 @@ func (s *Service) ClarifyDemand(ctx context.Context, actor *model.User, req Dema
 		isAddNested[i] = []string{v}
 	}
 
+	logo := strings.TrimSpace(req.MultiLegalPersonLogo)
+	switch logo {
+	case "changshu", "0":
+		logo = "0"
+	case "village", "1":
+		logo = "1"
+	case "changshu_village", "2":
+		logo = "2"
+	default:
+		logo = "0"
+	}
+
+	cleanIDs := make([]string, len(req.ClarifyIDList))
+	for i, v := range req.ClarifyIDList {
+		v = strings.TrimSpace(v)
+		if idNum, err := strconv.ParseInt(v, 10, 64); err == nil && idNum > 0 {
+			cleanIDs[i] = strconv.FormatInt(idNum, 10)
+		} else {
+			cleanIDs[i] = ""
+		}
+	}
+
 	ztClient := zentao.DefaultClient()
 	ztErr := ztClient.ClarifyDemand(ctx, zentao.DemandClarifyParams{
 		DemandID:              uint(req.ID),
@@ -204,7 +226,7 @@ func (s *Service) ClarifyDemand(ctx context.Context, actor *model.User, req Dema
 		IsRelatedAccounts:     req.IsRelatedAccounts,
 		IsNewFunction:         req.IsNewFunction,
 		IsOtherImportantOrder: req.IsOtherImportantOrder,
-		MultiLegalPersonLogo:  req.MultiLegalPersonLogo,
+		MultiLegalPersonLogo:  logo,
 		Status:                "clarified",
 		Comment:               req.Comment,
 		Products:              req.Products,
@@ -214,7 +236,7 @@ func (s *Service) ClarifyDemand(ctx context.Context, actor *model.User, req Dema
 		IsAdditionalInfo:      isAddNested,
 		AdditionalInfo:        req.AdditionalInfo,
 		IsMainSystem:          req.IsMainSystem,
-		ClarifyIDList:         req.ClarifyIDList,
+		ClarifyIDList:         cleanIDs,
 		UserStoryNO:           req.UserStoryNO,
 		UserStoryChecked:      req.UserStoryChecked,
 		UserStoryID:           req.UserStoryID,
@@ -270,10 +292,18 @@ func (s *Service) GenerateAIUserStory(ctx context.Context, actor *model.User, re
 	bytes, _ := json.Marshal(inputMap)
 
 	ztClient := zentao.DefaultClient()
-	return ztClient.GenerateAIUserStory(ctx, zentao.GenerateAIUserStoryParams{
+	resp, ztErr := ztClient.GenerateAIUserStory(ctx, zentao.GenerateAIUserStoryParams{
 		DemandID:     req.DemandID,
 		Account:      actor.Account,
 		InputContent: string(bytes),
 		Source:       "clarify",
 	})
+	if ztErr != nil {
+		// 遵守 AGENTS.md MUST 14：真实返回未配置/不可用状态，严禁以假数据假冒
+		return nil, errorx.New(errorx.ErrCodeInvalidParam, ztErr.Error())
+	}
+	if resp == nil || strings.TrimSpace(resp.Content) == "" {
+		return nil, errorx.New(errorx.ErrCodeInvalidParam, "禅道未配置大模型或未生成有效用户故事内容")
+	}
+	return resp, nil
 }

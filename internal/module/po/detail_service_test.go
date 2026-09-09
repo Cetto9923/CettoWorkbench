@@ -10,6 +10,8 @@ package po
 import (
 	"testing"
 	"time"
+
+	"workbench/internal/module/po/primaryaction"
 )
 
 func TestExtractDemandID(t *testing.T) {
@@ -31,6 +33,29 @@ func TestExtractDemandID(t *testing.T) {
 		if got != tc.want {
 			t.Errorf("ExtractDemandID(%q) = %d; want %d", tc.input, got, tc.want)
 		}
+	}
+}
+
+func TestBindScheduleSpotlightUsesServerPrimaryAction(t *testing.T) {
+	spotlight := &DetailSpotlight{ActionLabel: "排期"}
+	bindScheduleSpotlight(spotlight, primaryaction.PrimaryAction{
+		Key:     string(primaryaction.KeySchedule),
+		Label:   "排期",
+		URL:     "/schedule/demands/42/scheduling",
+		Enabled: true,
+	})
+	if spotlight.ActionURL != "/schedule/demands/42/scheduling" {
+		t.Fatalf("schedule spotlight URL = %q", spotlight.ActionURL)
+	}
+
+	spotlight.ActionURL = ""
+	bindScheduleSpotlight(spotlight, primaryaction.PrimaryAction{
+		Key:     string(primaryaction.KeySchedule),
+		URL:     "/schedule/demands/42/scheduling",
+		Enabled: false,
+	})
+	if spotlight.ActionURL != "" {
+		t.Fatal("disabled schedule action must not create a clickable spotlight")
 	}
 }
 

@@ -373,19 +373,7 @@ func (c *Client) ClarifyDemand(ctx context.Context, p DemandClarifyParams) error
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		var errObj struct {
-			Message string `json:"message"`
-			Error   string `json:"error"`
-		}
-		_ = json.Unmarshal(respBytes, &errObj)
-		errMsg := errObj.Message
-		if errMsg == "" {
-			errMsg = errObj.Error
-		}
-		if errMsg == "" {
-			errMsg = string(respBytes)
-		}
-		return fmt.Errorf("%w (%d): %s", ErrZentaoAPIError, resp.StatusCode, errMsg)
+		return parseZentaoAPIError(respBytes, resp.StatusCode)
 	}
 	return nil
 }
@@ -445,19 +433,7 @@ func (c *Client) GenerateAIUserStory(ctx context.Context, p GenerateAIUserStoryP
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		var errObj struct {
-			Message string `json:"message"`
-			Error   string `json:"error"`
-		}
-		_ = json.Unmarshal(respBytes, &errObj)
-		errMsg := errObj.Message
-		if errMsg == "" {
-			errMsg = errObj.Error
-		}
-		if errMsg == "" {
-			errMsg = string(respBytes)
-		}
-		return nil, fmt.Errorf("%w (%d): %s", ErrZentaoAPIError, resp.StatusCode, errMsg)
+		return nil, parseZentaoAPIError(respBytes, resp.StatusCode)
 	}
 
 	var out AIUserStoryResp
@@ -465,4 +441,40 @@ func (c *Client) GenerateAIUserStory(ctx context.Context, p GenerateAIUserStoryP
 		return nil, fmt.Errorf("decode ai resp failed: %w", err)
 	}
 	return &out, nil
+}
+
+func parseZentaoAPIError(respBytes []byte, statusCode int) error {
+	var errObj struct {
+		Message string `json:"message"`
+		Error   any    `json:"error"`
+	}
+	_ = json.Unmarshal(respBytes, &errObj)
+	errMsg := strings.TrimSpace(errObj.Message)
+	if errMsg == "" && errObj.Error != nil {
+		switch e := errObj.Error.(type) {
+		case string:
+			errMsg = strings.TrimSpace(e)
+		case []any:
+			var parts []string
+			for _, item := range e {
+				parts = append(parts, fmt.Sprintf("%v", item))
+			}
+			errMsg = strings.Join(parts, "; ")
+		case map[string]any:
+			var parts []string
+			for k, v := range e {
+				parts = append(parts, fmt.Sprintf("%s: %v", k, v))
+			}
+			errMsg = strings.Join(parts, "; ")
+		default:
+			errMsg = fmt.Sprintf("%v", e)
+		}
+	}
+	if errMsg == "" {
+		errMsg = string(respBytes)
+	}
+	if errMsg == "Array" {
+		errMsg = "数据校验失败，请检查表单各项必填项与输入格式"
+	}
+	return fmt.Errorf("%w (%d): %s", ErrZentaoAPIError, statusCode, errMsg)
 }

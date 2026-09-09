@@ -84,6 +84,21 @@ assert.ok(overviewHtml.includes("预计交付周期"), "Value stream cycle bar m
 assert.ok(overviewHtml.includes("+3 天"), "Overdue diff must be formatted with plus sign");
 console.log("PASS: renderTabOverview includes spotlight and deduplicated value stream");
 
+const scheduleOverviewHtml = R.renderTabOverview(Object.assign({}, mockOverviewData, {
+  spotlight: {
+    badge: "排期中",
+    title: "版本窗口规划",
+    desc: "说明",
+    actionLabel: "排期",
+    actionUrl: "/schedule/demands/63442/scheduling",
+    targetTab: "overview",
+    targetSection: "spotlightSection"
+  }
+}));
+assert.ok(scheduleOverviewHtml.includes('href="/schedule/demands/63442/scheduling"'), "Schedule spotlight must use the shared schedule endpoint");
+assert.ok(scheduleOverviewHtml.includes(">排期</a>"), "Schedule spotlight must render the action label");
+console.log("PASS: schedule spotlight opens the scheduling flow rather than a detail tab");
+
 // 5. renderParentAggregate test
 const mockParentData = {
   unitTotal: 4,

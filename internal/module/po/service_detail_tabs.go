@@ -128,7 +128,7 @@ func (s *DetailService) buildSpotlight(stage, status string) *DetailSpotlight {
 			Badge:         "排期中",
 			Title:         "当前阶段：版本窗口规划与研发排期协同",
 			Desc:          "请确认所属版本发布窗口，组织敏捷小组进行工时评估与依赖对齐。",
-			ActionLabel:   "进入排期工作台 →",
+			ActionLabel:   "排期",
 			TargetTab:     "overview",
 			TargetSection: "spotlightSection",
 		}

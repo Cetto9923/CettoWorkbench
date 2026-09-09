@@ -33,7 +33,7 @@
     }
     if (kind === "schedule") {
       var schedUrl = url || scheduleUrl(item, isStory);
-      return '<a class="table-action-btn primary" href="' + esc(schedUrl) + '">' + esc(label) + '</a>';
+      return '<button type="button" class="table-action-btn primary js-home-schedule-action" data-demand-id="' + esc(isStory ? '' : String(item && item.id || '').replace(/^US/i, '')) + '" data-story-id="' + esc(isStory ? String(item && item.id || '').replace(/^U/i, '') : '') + '" data-schedule-url="' + esc(schedUrl) + '">' + esc(label) + '</button>';
     }
     if (kind === "drawer" || kind === "internal") {
       var did = String(pa.demandId || item.id || "").replace(/^US/i, "");

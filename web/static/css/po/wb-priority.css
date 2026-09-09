@@ -66,102 +66,83 @@
   border-radius: 3px;
 }
 
-/* -------- 2. 公共对象类型：方案3 极简圆点微标 (Minimal Dot + Slate) --------
-   设计原则：
-   1. 统一微底：底色 #f8fafc，细边框 #e2e8f0，深色字体 #1e293b，圆角 5px，精致内边距；
-   2. 极简微标：使用 ::before 渲染 6px 语义彩色状态微圆点，一眼识别对象类别；
-   3. ID 链接：采用浅深适中的等宽/清晰字色 #64748b，hover 时呈现清晰下划线。
+/* -------- 2. 公共对象类型：方案 B 双段式工程微标 (Linear Two-tone Badges) --------
+   唯一真源：.wb-type.wb-type-{kind}
+   结构：
+   - 左段 .wb-type-tag: 实色背景 + 白色加粗字体 (font-weight: 600)；
+   - 右段 .wb-type-id: 纯白背景 #ffffff + 深色等宽加粗字体 #1e293b；
+   - 外框 .wb-type: 细边框，颜色与左段实色呼应，圆角 5px，整体 overflow: hidden。
    ----------------------------------------------------------------------------- */
 .wb-type {
   display: inline-flex;
   align-items: center;
   height: 20px;
-  padding: 0 6px;
   border-radius: 5px;
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1;
   white-space: nowrap;
   box-sizing: border-box;
-  background: #f8fafc;
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  padding: 0;
   color: #1e293b;
-  border: 1px solid #e2e8f0;
   max-width: none;
-  overflow: visible;
   text-overflow: clip;
   flex-shrink: 0;
 }
 
-/* 6px 语义彩色微圆点 */
-.wb-type::before {
-  content: "";
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  margin-right: 4.5px;
-  flex-shrink: 0;
-  background: #94a3b8; /* 兜底灰色微圆点 */
+/* 独立类型 badge（如 objectTypeBadge 无 ID 上下文）自身提供内边距与居中 */
+.wb-type:not(:has(.wb-type-tag)) {
+  padding: 0 6px;
+  background: #f8fafc;
 }
 
-/* 语义微圆点色彩映射 */
-.wb-type-business::before {
-  background: #2563eb; /* 蓝 · 业需 */
-}
-.wb-type-sub_demand::before {
-  background: #8b5cf6; /* 紫 · 子需 */
-}
-.wb-type-story::before,
-.wb-type-independent_story::before {
-  background: #0d9488; /* 青 · 研需 */
-}
-.wb-type-approval::before {
-  background: #7c3aed; /* 紫 · 审批 */
-}
-.wb-type-charter::before {
-  background: #a21caf; /* 玫紫 · 章程 */
-}
-.wb-type-task::before {
-  background: #10b981; /* 绿 · 任务 */
-}
-.wb-type-bug::before {
-  background: #e11d48; /* 红 · Bug */
-}
-.wb-type-test::before,
-.wb-type-testtask::before {
-  background: #0284c7; /* 天蓝 · 测单 */
-}
-.wb-type-risk::before {
-  background: #ea580c; /* 橙红 · 风险 */
-}
-.wb-type-issue::before {
-  background: #d97706; /* 琥珀 · 问题 */
-}
-.wb-type-feedback::before {
-  background: #f97316; /* 橙 · 反馈 */
-}
-.wb-type-todo::before {
-  background: #3b82f6; /* 蓝 · 待办 */
-}
-.wb-type-project::before {
-  background: #64748b; /* 灰 · 项目 */
-}
-.wb-type-mail::before {
-  background: #64748b; /* 灰 · 邮件 */
-}
-.wb-type-unknown::before {
-  background: #94a3b8; /* 灰 · 未知 */
+/* 左段：实色底 + 白字 */
+.wb-type .wb-type-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  height: 100%;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
 }
 
-/* chip 内 ID 链接：清晰等宽字体、适度对比色 #64748b、hover 时蓝亮色 */
+/* 右段：白底 + 深色等宽编号 */
+.wb-type .wb-type-id {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 6px;
+  color: #1e293b;
+  background: #ffffff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* 右段 ID 内链接：继承字色、hover 变蓝与下划线 */
+.wb-type .wb-type-id a,
 .wb-type a,
-.wb-type .table-id-link {
-  color: #64748b;
+.wb-type .table-id-link,
+.wb-type .done-obj-id-link {
+  color: #1e293b;
   text-decoration: none;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 600;
 }
+.wb-type .wb-type-id a:hover,
 .wb-type a:hover,
-.wb-type .table-id-link:hover {
+.wb-type .table-id-link:hover,
+.wb-type .done-obj-id-link:hover {
   color: #2563eb;
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -169,6 +150,73 @@
 .wb-type:has(a:hover) {
   text-decoration: none;
 }
+
+/* --- 语义类别双段配色映射（按用户选定的 Option B 视觉规范） --- */
+.wb-type-business { border-color: #2563eb; }
+.wb-type-business .wb-type-tag { background: #2563eb; }
+.wb-type-business:not(:has(.wb-type-tag)) { background: #eff6ff; color: #1d4ed8; }
+
+.wb-type-story,
+.wb-type-independent_story { border-color: #0d9488; }
+.wb-type-story .wb-type-tag,
+.wb-type-independent_story .wb-type-tag { background: #0d9488; }
+.wb-type-story:not(:has(.wb-type-tag)),
+.wb-type-independent_story:not(:has(.wb-type-tag)) { background: #f0fdfa; color: #0f766e; }
+
+.wb-type-approval { border-color: #7c3aed; }
+.wb-type-approval .wb-type-tag { background: #7c3aed; }
+.wb-type-approval:not(:has(.wb-type-tag)) { background: #f5f3ff; color: #6d28d9; }
+
+.wb-type-charter { border-color: #a21caf; }
+.wb-type-charter .wb-type-tag { background: #a21caf; }
+.wb-type-charter:not(:has(.wb-type-tag)) { background: #fdf4ff; color: #86198f; }
+
+.wb-type-task { border-color: #16a34a; }
+.wb-type-task .wb-type-tag { background: #16a34a; }
+.wb-type-task:not(:has(.wb-type-tag)) { background: #ecfdf5; color: #047857; }
+
+.wb-type-bug { border-color: #dc2626; }
+.wb-type-bug .wb-type-tag { background: #dc2626; }
+.wb-type-bug:not(:has(.wb-type-tag)) { background: #fff1f2; color: #be123c; }
+
+.wb-type-test,
+.wb-type-testtask { border-color: #0284c7; }
+.wb-type-test .wb-type-tag,
+.wb-type-testtask .wb-type-tag { background: #0284c7; }
+.wb-type-test:not(:has(.wb-type-tag)),
+.wb-type-testtask:not(:has(.wb-type-tag)) { background: #f0f9ff; color: #0284c7; }
+
+.wb-type-risk { border-color: #ea580c; }
+.wb-type-risk .wb-type-tag { background: #ea580c; }
+.wb-type-risk:not(:has(.wb-type-tag)) { background: #fff7ed; color: #c2410c; }
+
+.wb-type-issue { border-color: #d97706; }
+.wb-type-issue .wb-type-tag { background: #d97706; }
+.wb-type-issue:not(:has(.wb-type-tag)) { background: #fffbeb; color: #b45309; }
+
+.wb-type-sub_demand { border-color: #8b5cf6; }
+.wb-type-sub_demand .wb-type-tag { background: #8b5cf6; }
+.wb-type-sub_demand:not(:has(.wb-type-tag)) { background: #f5f3ff; color: #7c3aed; }
+
+.wb-type-feedback { border-color: #f97316; }
+.wb-type-feedback .wb-type-tag { background: #f97316; }
+.wb-type-feedback:not(:has(.wb-type-tag)) { background: #fff7ed; color: #c2410c; }
+
+.wb-type-todo { border-color: #2563eb; }
+.wb-type-todo .wb-type-tag { background: #2563eb; }
+.wb-type-todo:not(:has(.wb-type-tag)) { background: #eff6ff; color: #1d4ed8; }
+
+.wb-type-project { border-color: #64748b; }
+.wb-type-project .wb-type-tag { background: #64748b; }
+.wb-type-project:not(:has(.wb-type-tag)) { background: #f8fafc; color: #475569; }
+
+.wb-type-mail { border-color: #64748b; }
+.wb-type-mail .wb-type-tag { background: #64748b; }
+.wb-type-mail:not(:has(.wb-type-tag)) { background: #f8fafc; color: #475569; }
+
+.wb-type-unknown { border-color: #94a3b8; }
+.wb-type-unknown .wb-type-tag { background: #94a3b8; }
+.wb-type-unknown:not(:has(.wb-type-tag)) { background: #f8fafc; color: #64748b; }
 
 /* =============================================================================
    3. 仍在用的旧 markup 别名（仅 schedule SSR .pri-tag / 详情抽屉 .drawer-task-pri）

@@ -93,7 +93,7 @@ assert.ok(/data-priority=""/.test(row1.titleHtml), "Case1: title keeps an inline
 assert.ok(/home-unavailable/.test(row1.actionHtml), "Case1: action column must show home-unavailable placeholder");
 assert.ok(!/查看详情/.test(row1.actionHtml), "Case1: action must NOT show '查看详情' fallback");
 
-// Case 2: business demand WITH primaryAction.enabled=true schedule (rendered as same-tab <a>)
+// Case 2: scheduling opens an inline dialog with an unambiguous object ID.
 var row2 = buildRowHtml({
   id: "US12345",
   title: "信贷影像采集",
@@ -102,8 +102,13 @@ var row2 = buildRowHtml({
   primaryAction: { key: "schedule", label: "排期", kind: "schedule", enabled: true }
 }, false);
 assert.ok(!/target="_blank"/.test(row2.actionHtml), "Case2: schedule action must open same-tab");
-assert.ok(/href="\/schedule\/demands\/12345\/scheduling"/.test(row2.actionHtml), "Case2: schedule action href");
+assert.ok(/<button[^>]*js-home-schedule-action/.test(row2.actionHtml), "Case2: schedule opens a dialog");
+assert.ok(/data-demand-id="12345"/.test(row2.actionHtml), "Case2: demand ID is normalized");
+assert.ok(!/href=/.test(row2.actionHtml), "Case2: schedule must not navigate");
 assert.ok(/>排期</.test(row2.actionHtml), "Case2: action label must be 排期");
+const storySchedule = PA.primaryActionHtml({ id: "U9999", primaryAction: { key: "schedule", label: "排期", kind: "schedule", enabled: true } }, true);
+assert.ok(/data-story-id="9999"/.test(storySchedule), "Story schedule carries the story ID");
+assert.ok(/data-demand-id=""/.test(storySchedule), "Story schedule must not load a same-numbered demand");
 
 // Case 3: business demand WITH primaryAction.enabled=false (待审批人处理 state)
 var row3 = buildRowHtml({
@@ -128,7 +133,8 @@ var row5 = buildRowHtml({
   id: "U9999", title: "活体前端校验", zentaoUrl: "http://zentao/story-view-9999.html",
   primaryAction: { key: "schedule", label: "去排期", kind: "schedule", enabled: true }
 }, true);
-assert.ok(/href="\/schedule\/stories\/9999\/scheduling"/.test(row5.actionHtml), "Case5: independent story schedule action -> /schedule/stories/:id/scheduling");
+assert.ok(/data-story-id="9999"/.test(row5.actionHtml), "Case5: independent story opens story scheduling dialog");
+assert.ok(!/href=/.test(row5.actionHtml), "Case5: independent story stays on the current page");
 
 // Case 6: suspension/blocking facts render beside priority before the title.
 var row6 = buildRowHtml({ id: "US7", title: "挂起且阻塞", pri: "P1", suspended: true, blocked: true }, false);

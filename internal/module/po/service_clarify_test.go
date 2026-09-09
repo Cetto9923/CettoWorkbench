@@ -187,6 +187,48 @@ func TestDemandClarifySubmitReq_Validate(t *testing.T) {
 		}
 	})
 
+	t.Run("multiLegalPersonLogo valid and invalid values", func(t *testing.T) {
+		validLogos := []string{"0", "1", "2", "changshu", "village", "changshu_village"}
+		for _, logo := range validLogos {
+			req := DemandClarifySubmitReq{
+				Category:              "management",
+				BRA:                   "user01",
+				Products:              []string{"101"},
+				PM:                    []string{"user01"},
+				IsMainSystem:          map[string]string{"0": "1"},
+				IsNewProduct:          "0",
+				IsRelatedAccounts:     "0",
+				IsNewFunction:         "0",
+				IsOtherImportantOrder: "0",
+				MultiLegalPersonLogo:  logo,
+			}
+			errs := req.Validate(noAiCategories, aiCategories)
+			if errs["importantOrder"] != "" {
+				t.Errorf("expected logo %q to pass validation, got %v", logo, errs["importantOrder"])
+			}
+		}
+
+		invalidLogos := []string{"", "-1"}
+		for _, logo := range invalidLogos {
+			req := DemandClarifySubmitReq{
+				Category:              "management",
+				BRA:                   "user01",
+				Products:              []string{"101"},
+				PM:                    []string{"user01"},
+				IsMainSystem:          map[string]string{"0": "1"},
+				IsNewProduct:          "0",
+				IsRelatedAccounts:     "0",
+				IsNewFunction:         "0",
+				IsOtherImportantOrder: "0",
+				MultiLegalPersonLogo:  logo,
+			}
+			errs := req.Validate(noAiCategories, aiCategories)
+			if errs["importantOrder"] == "" {
+				t.Errorf("expected logo %q to fail validation, got none", logo)
+			}
+		}
+	})
+
 	t.Run("user options formatting does not duplicate account suffix", func(t *testing.T) {
 		tests := []struct {
 			account  string

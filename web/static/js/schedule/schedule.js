@@ -334,21 +334,6 @@
     closeAllScheduleWindowCardMenus();
   });
 
-  $("#scheduleVersionWindowModalOverlay").on("click", function () {
-    if (typeof window.closeScheduleVersionWindowModal === "function") {
-      window.closeScheduleVersionWindowModal();
-    }
-  });
-  $("#scheduleVersionWindowModalCloseBtn, #scheduleVersionWindowModalDismissBtn").on("click", function () {
-    if (typeof window.closeScheduleVersionWindowModal === "function") {
-      window.closeScheduleVersionWindowModal();
-    }
-  });
-  $("#scheduleVersionWindowModalSaveBtn").on("click", function () {
-    if (typeof window.saveScheduleVersionWindowModal === "function") {
-      window.saveScheduleVersionWindowModal();
-    }
-  });
 
   $("#manageVersionWindowsOverlay").on("click", function () {
     window.closeShowModals(["manageVersionWindowsModal", "manageVersionWindowsOverlay"]);

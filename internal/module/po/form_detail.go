@@ -195,6 +195,7 @@ type DetailSpotlight struct {
 	Title         string `json:"title"`
 	Desc          string `json:"desc"`
 	ActionLabel   string `json:"actionLabel"`
+	ActionURL     string `json:"actionUrl,omitempty"`
 	TargetTab     string `json:"targetTab"`
 	TargetSection string `json:"targetSection"`
 }

@@ -17,30 +17,37 @@ const PL = global.PersonalList;
 assert.ok(PL, "PersonalList must be exported");
 assert.strictEqual(typeof PL.idChipHtml, "function", "idChipHtml must be a function");
 
-// 1. 测试 idChipHtml 健壮解析与短标签映射
+// 1. 测试 idChipHtml 健壮解析、短标签映射与方案 B 双段式工程微标结构 (Linear Two-tone Badges)
 const cases = [
-  { kind: "business", id: "123", expectedClass: "wb-type-business", expectedLabel: "业需#123" },
-  { kind: "demand", id: "456", expectedClass: "wb-type-business", expectedLabel: "业需#456" },
-  { kind: "业务需求", id: "789", expectedClass: "wb-type-business", expectedLabel: "业需#789" },
-  { kind: "story", id: "101", expectedClass: "wb-type-story", expectedLabel: "研需#101" },
-  { kind: "研发需求", id: "102", expectedClass: "wb-type-story", expectedLabel: "研需#102" },
-  { kind: "sub_demand", id: "103", expectedClass: "wb-type-sub_demand", expectedLabel: "子需#103" },
-  { kind: "task", id: "201", expectedClass: "wb-type-task", expectedLabel: "任务#201" },
-  { kind: "bug", id: "301", expectedClass: "wb-type-bug", expectedLabel: "Bug#301" },
-  { kind: "testtask", id: "401", expectedClass: "wb-type-testtask", expectedLabel: "测单#401" },
-  { kind: "test", id: "402", expectedClass: "wb-type-testtask", expectedLabel: "测单#402" },
-  { kind: "approval", id: "501", expectedClass: "wb-type-approval", expectedLabel: "审批#501" },
-  { kind: "charter", id: "601", expectedClass: "wb-type-charter", expectedLabel: "章程#601" },
-  { kind: "feedback", id: "701", expectedClass: "wb-type-feedback", expectedLabel: "反馈#701" },
-  { kind: "issue", id: "801", expectedClass: "wb-type-issue", expectedLabel: "问题#801" }
+  { kind: "business", id: "123", expectedClass: "wb-type-business", expectedTag: "业需" },
+  { kind: "demand", id: "456", expectedClass: "wb-type-business", expectedTag: "业需" },
+  { kind: "业务需求", id: "789", expectedClass: "wb-type-business", expectedTag: "业需" },
+  { kind: "story", id: "101", expectedClass: "wb-type-story", expectedTag: "研需" },
+  { kind: "研发需求", id: "102", expectedClass: "wb-type-story", expectedTag: "研需" },
+  { kind: "sub_demand", id: "103", expectedClass: "wb-type-sub_demand", expectedTag: "子需" },
+  { kind: "task", id: "201", expectedClass: "wb-type-task", expectedTag: "任务" },
+  { kind: "bug", id: "301", expectedClass: "wb-type-bug", expectedTag: "Bug" },
+  { kind: "testtask", id: "401", expectedClass: "wb-type-testtask", expectedTag: "测单" },
+  { kind: "test", id: "402", expectedClass: "wb-type-testtask", expectedTag: "测单" },
+  { kind: "approval", id: "501", expectedClass: "wb-type-approval", expectedTag: "审批" },
+  { kind: "charter", id: "601", expectedClass: "wb-type-charter", expectedTag: "章程" },
+  { kind: "feedback", id: "701", expectedClass: "wb-type-feedback", expectedTag: "反馈" },
+  { kind: "issue", id: "801", expectedClass: "wb-type-issue", expectedTag: "问题" }
 ];
 
 for (const c of cases) {
   const html = PL.idChipHtml(c.kind, c.id);
   assert.ok(html.includes(c.expectedClass), `kind ${c.kind} must contain class ${c.expectedClass}`);
-  assert.ok(html.includes(c.expectedLabel), `kind ${c.kind} must contain label ${c.expectedLabel}`);
+  assert.ok(html.includes('<span class="wb-type-tag">' + c.expectedTag + '</span>'), `kind ${c.kind} must contain tag ${c.expectedTag}`);
+  assert.ok(html.includes('<span class="wb-type-id">#' + c.id + '</span>'), `kind ${c.kind} must contain id #${c.id}`);
 }
-console.log("PASS: PersonalList.idChipHtml normalizes canonical keys, API kinds, and Chinese labels correctly");
+
+// 1b. 验证链接 ID 场景（格式化 # 自动置于链接内部）
+const linkHtml = PL.idChipHtml("business", '<a class="table-id-link" href="/demands/123">US6319</a>');
+assert.ok(linkHtml.includes('<span class="wb-type-tag">业需</span>'));
+assert.ok(linkHtml.includes('<span class="wb-type-id"><a class="table-id-link" href="/demands/123">#US6319</a></span>'));
+
+console.log("PASS: PersonalList.idChipHtml renders Option B linear two-tone badges with correct tags and IDs");
 
 // 2. 检查 HTML 模板表头契约
 const homeHtml = fs.readFileSync(path.join(root, "web/templates/po/home.html"), "utf8");

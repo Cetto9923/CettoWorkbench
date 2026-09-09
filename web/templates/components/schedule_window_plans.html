@@ -1,0 +1,57 @@
+{{ define "schedule/window_plans" }}
+<template id="schedulePlanCardLoading">
+  <div class="schedule-create-plan-card">
+    <div class="schedule-create-plan-title">
+      <span data-field="productName"></span>
+      <span>查询中</span>
+    </div>
+    <div class="schedule-create-plan-summary">
+      <i class="fas fa-spinner fa-spin"></i>
+      <span>正在匹配系统计划…</span>
+    </div>
+  </div>
+</template>
+
+<template id="schedulePlanCardPending">
+  <div class="schedule-create-plan-card">
+    <div class="schedule-create-plan-title">
+      <span data-field="productName"></span>
+      <span>待匹配</span>
+    </div>
+    <div class="schedule-create-plan-meta">请先填写预计上线日期，再匹配系统计划。</div>
+  </div>
+</template>
+
+<template id="schedulePlanCardExisting">
+  <div class="schedule-create-plan-card schedule-create-plan-card--existing">
+    <div class="schedule-create-plan-title">
+      <span data-field="productName"></span>
+      <span class="schedule-create-plan-tag">已有计划</span>
+    </div>
+    <div class="schedule-create-plan-summary">
+      <i class="fas fa-check-circle"></i>
+      <span>已有系统计划</span>
+      <strong class="schedule-create-plan-name" data-field="planTitle"></strong>
+      <span>上线 <span data-field="planOnline"></span></span>
+    </div>
+  </div>
+</template>
+
+<template id="schedulePlanCardDraft">
+  <div class="schedule-create-plan-card" data-field="planCard">
+    <div class="schedule-create-plan-title">
+      <span data-field="productName"></span>
+      <span>待建计划</span>
+    </div>
+    <label class="chk schedule-create-plan-toggle">
+      <input type="checkbox" data-field="syncCreate">
+      <span>同步创建对应系统计划（日期与本窗口一致）</span>
+    </label>
+    <div class="form-group" data-field="planNameGroup" style="margin:0">
+      <label class="form-label">计划名称</label>
+      <input type="text" class="form-input" data-field="planName" placeholder="默认与窗口名称一致，可修改">
+    </div>
+    <div class="schedule-create-plan-meta" data-field="planMeta"></div>
+  </div>
+</template>
+{{ end }}

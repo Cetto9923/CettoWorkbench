@@ -114,6 +114,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 		g.GET("/stories/:id/tasks", middleware.RequirePerm(perm.ScheduleList), h.GetStoryTasks)
 		g.POST("/stories/:id/save-tasks", middleware.RequirePerm(perm.ScheduleUpdate), h.SaveStoryTasks)
 		g.POST("/windows", middleware.RequirePerm(perm.ScheduleCreate), h.CreateWindow)
+		g.GET("/window-options", middleware.RequirePerm(perm.ScheduleCreate), h.WindowOptions)
 		g.GET("/windows", middleware.RequirePerm(perm.ScheduleList), h.ListWindows)
 		g.GET("/windows/:id", middleware.RequirePerm(perm.ScheduleList), h.GetWindow)
 		g.PUT("/windows/:id", middleware.RequirePerm(perm.ScheduleUpdate), h.UpdateWindow)

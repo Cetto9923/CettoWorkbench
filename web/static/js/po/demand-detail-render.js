@@ -108,6 +108,9 @@
 
   function renderSpotlight(spotlight) {
     if (!spotlight) return "";
+    var action = spotlight.actionUrl
+      ? '<a class="dd-btn primary" href="' + esc(spotlight.actionUrl) + '">' + esc(spotlight.actionLabel) + '</a>'
+      : '<button class="dd-btn primary" onclick="DemandDetail.switchTab(\'' + esc(spotlight.targetTab) + '\',\'' + esc(spotlight.targetSection) + '\')">' + esc(spotlight.actionLabel) + '</button>';
     return [
       '<div class="dd-card dd-spot" id="spotlightSection">',
       '  <div>',
@@ -115,9 +118,7 @@
       '    <div class="dd-spot-title">' + esc(spotlight.title) + '</div>',
       '    <div class="dd-spot-desc">' + esc(spotlight.desc) + '</div>',
       '  </div>',
-      '  <div>',
-      '    <button class="dd-btn primary" onclick="DemandDetail.switchTab(\'' + esc(spotlight.targetTab) + '\',\'' + esc(spotlight.targetSection) + '\')">' + esc(spotlight.actionLabel) + '</button>',
-      '  </div>',
+      '  <div>' + action + '</div>',
       '</div>'
     ].join("");
   }

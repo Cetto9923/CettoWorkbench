@@ -3,6 +3,7 @@
 
   var scheduleVersionWindowModalMode = "idle";
   var scheduleEditingWindowId = null;
+  var onWindowSaved = null;
   var draftApi = window.ScheduleWindowDraft;
 
   var SCHEDULE_CREATE_WINDOW_URL = "/schedule/windows";
@@ -21,7 +22,8 @@
     return id ? SCHEDULE_CREATE_WINDOW_URL + "/" + id : SCHEDULE_CREATE_WINDOW_URL;
   }
 
-  function openScheduleCreateVersionWindowModal() {
+  function openScheduleCreateVersionWindowModal(onSaved) {
+    onWindowSaved = typeof onSaved === "function" ? onSaved : null;
     scheduleVersionWindowModalMode = "create";
     scheduleEditingWindowId = null;
     draftApi.setDraft(draftApi.createDraft());
@@ -90,6 +92,7 @@
     window.closeShowModals(VERSION_WINDOW_MODAL_IDS);
     scheduleVersionWindowModalMode = "idle";
     scheduleEditingWindowId = null;
+    onWindowSaved = null;
     draftApi.resetDraft();
     $("#scheduleVersionWindowModalSaveBtn").text("保存");
   }
@@ -361,7 +364,12 @@
           if (typeof window.showToast === "function") {
             window.showToast(result.data.message || successMessage, "success");
           }
+          var afterSave = onWindowSaved;
           closeScheduleVersionWindowModal();
+          if (afterSave) {
+            afterSave(payload);
+            return;
+          }
           if (result.data.redirectUrl) {
             window.location.href = result.data.redirectUrl;
           }
@@ -445,4 +453,7 @@
   window.deleteScheduleVersionWindow = deleteScheduleVersionWindow;
 
   bindScheduleVersionWindowForm();
+  $("#scheduleVersionWindowModalOverlay, #scheduleVersionWindowModalCloseBtn, #scheduleVersionWindowModalDismissBtn")
+    .on("click", closeScheduleVersionWindowModal);
+  $("#scheduleVersionWindowModalSaveBtn").on("click", saveScheduleVersionWindowModal);
 })(jQuery);

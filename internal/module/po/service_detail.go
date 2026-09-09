@@ -137,6 +137,7 @@ func (s *DetailService) GetDemandDetail(ctx context.Context, actor *model.User, 
 	if actor != nil && row != nil {
 		pa := s.buildPrimaryActionForDetail(ctx, actor, row)
 		resp.PrimaryAction = &pa
+		bindScheduleSpotlight(resp.Spotlight, pa)
 		account := strings.TrimSpace(actor.Account)
 		if account != "" {
 			resp.Summary.IsCreator = strings.TrimSpace(row.CreatedBy) == account
@@ -157,6 +158,17 @@ func (s *DetailService) GetDemandDetail(ctx context.Context, actor *model.User, 
 	resp.Summary.VerifyPlan = SanitizeRichTextHTML(resp.Summary.VerifyPlan)
 
 	return resp, nil
+}
+
+// bindScheduleSpotlight keeps the detail-page schedule entry on the same
+// server-derived action contract as the list. The schedule endpoint redirects
+// to the scheduling page and opens its integrated scheduling modal.
+func bindScheduleSpotlight(spotlight *DetailSpotlight, action primaryaction.PrimaryAction) {
+	if spotlight == nil || action.Key != string(primaryaction.KeySchedule) || !action.Enabled || action.URL == "" {
+		return
+	}
+	spotlight.ActionLabel = action.Label
+	spotlight.ActionURL = action.URL
 }
 
 func (s *DetailService) buildSummary(row *DemandDetailRow) DemandSummary {

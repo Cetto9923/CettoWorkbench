@@ -379,26 +379,38 @@
     return '<span class="wb-type wb-type-unknown">' + escapeHtml(k) + "</span>";
   }
 
+  function formatChipId(safeId) {
+    if (!safeId) { return ""; }
+    if (safeId.charAt(0) === "#") { return safeId; }
+    if (/^<([a-zA-Z0-9]+)\b([^>]*)>(\s*[-—]+\s*)<\/\1>$/i.test(safeId) || /^\s*[-—]+\s*$/.test(safeId)) {
+      return safeId;
+    }
+    if (/^<([a-zA-Z0-9]+)\b[^>]*>\s*#/.test(safeId)) {
+      return safeId;
+    }
+    if (/^<([a-zA-Z0-9]+)\b([^>]*)>(.*)$/s.test(safeId)) {
+      return safeId.replace(/^<([a-zA-Z0-9]+)\b([^>]*)>(.*)$/s, "<$1$2>#$3");
+    }
+    return "#" + safeId;
+  }
+
   /**
-   * idChipHtml: 渲染「对象 #ID」单色 chip（颜色统一在 wb-priority.css）。
+   * idChipHtml: 渲染「对象 #ID」双段式工程微标（Option B: Linear Two-tone Badge）。
    *   - kind   : canon key / API 字段 / 中文类型，统一由 normalizeKind 解析
    *   - idHtml : 已经构造好的 ID HTML（典型为 <a class="table-id-link"> 或 <span>）。
-   *   chip 内文本使用 OBJECT_TYPE_SHORT_LABELS 缩写版（业需/研需/测单/子需/...），
-   *   ID 之间用 "#" 分隔。未知 kind 回退到 wb-type-unknown。
+   *   左段 .wb-type-tag 包裹缩写类型（白字实底），右段 .wb-type-id 包裹带 # 编号（白底深色等宽）。
    */
   function idChipHtml(kind, idHtml) {
     var k = normalizeKind(kind);
-    var safeId = typeof idHtml === "string" ? idHtml : "";
-    var sep = safeId ? "#" : "";
-    if (!k || !OBJECT_TYPE_LABELS[k]) {
-      return '<span class="wb-type wb-type-unknown">' +
-        (OBJECT_TYPE_LABELS[k] ? escapeHtml(OBJECT_TYPE_LABELS[k]) : escapeHtml(k || "—")) +
-        sep + safeId +
-        "</span>";
+    var safeId = typeof idHtml === "string" ? idHtml.trim() : (idHtml != null ? String(idHtml).trim() : "");
+    var label = OBJECT_TYPE_SHORT_LABELS[k] || OBJECT_TYPE_LABELS[k] || k || "—";
+    var cls = k && OBJECT_TYPE_LABELS[k] ? ("wb-type-" + k) : "wb-type-unknown";
+    if (!safeId) {
+      return '<span class="wb-type ' + cls + '"><span class="wb-type-tag">' + escapeHtml(label) + "</span></span>";
     }
-    return '<span class="wb-type wb-type-' + k + '">' +
-      escapeHtml(OBJECT_TYPE_SHORT_LABELS[k] || OBJECT_TYPE_LABELS[k]) +
-      sep + safeId +
+    return '<span class="wb-type ' + cls + '">' +
+      '<span class="wb-type-tag">' + escapeHtml(label) + "</span>" +
+      '<span class="wb-type-id">' + formatChipId(safeId) + "</span>" +
       "</span>";
   }
 
