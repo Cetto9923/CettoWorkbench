@@ -208,7 +208,7 @@
         "\">评审</button>";
     } else if (canShowSubmitTest(item)) {
       actionHtml =
-        "<button type=\"button\" class=\"table-action-btn primary\" data-demand-id=\"" +
+        "<button type=\"button\" class=\"table-action-btn primary js-submit-test\" data-demand-id=\"" +
         escapeHtml(item.id || "") +
         "\">提测</button>";
     }
@@ -370,20 +370,34 @@
     });
   }
 
+  function findListItemByDemandId(demandId) {
+    for (var i = 0; i < state.items.length; i++) {
+      if (String(state.items[i].id || "") === demandId) {
+        return state.items[i];
+      }
+    }
+    return null;
+  }
+
   function bindReviewButtons($list) {
     $list.find(".js-demand-review").on("click", function () {
       var demandId = String($(this).attr("data-demand-id") || "").trim();
-      var item = null;
-      for (var i = 0; i < state.items.length; i++) {
-        if (String(state.items[i].id || "") === demandId) {
-          item = state.items[i];
-          break;
-        }
-      }
+      var item = findListItemByDemandId(demandId);
       if (!item || typeof window.openPoDemandReviewModal !== "function") {
         return;
       }
       window.openPoDemandReviewModal(item);
+    });
+  }
+
+  function bindSubmitTestButtons($list) {
+    $list.find(".js-submit-test").on("click", function () {
+      var demandId = String($(this).attr("data-demand-id") || "").trim();
+      var item = findListItemByDemandId(demandId);
+      if (!item || typeof window.openPoSubmitTestModal !== "function") {
+        return;
+      }
+      window.openPoSubmitTestModal(item);
     });
   }
 
@@ -435,6 +449,7 @@
     $("#top5List").html(html);
     bindZentaoLinks($("#top5List"));
     bindReviewButtons($("#top5List"));
+    bindSubmitTestButtons($("#top5List"));
     renderPagination(total);
   }
 

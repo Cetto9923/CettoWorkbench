@@ -37,7 +37,22 @@ type HomeResp struct {
 
 // DemandsReq 按价值流状态查询需求/故事详情。
 type DemandsReq struct {
-	Status string `form:"status"`
+	Status   string `form:"status"`
+	Page     int    `form:"page"`
+	PageSize int    `form:"pageSize"`
+}
+
+// Normalize 规范化分页参数（默认 page=1、pageSize=10，上限 100）。
+func (r *DemandsReq) Normalize() {
+	if r.Page < 1 {
+		r.Page = 1
+	}
+	if r.PageSize < 1 {
+		r.PageSize = 10
+	}
+	if r.PageSize > 100 {
+		r.PageSize = 100
+	}
 }
 
 // Validate 校验查询参数。
@@ -115,5 +130,8 @@ type WorkItemDetail struct {
 
 // DemandsResp 价值流状态下的需求详情列表。
 type DemandsResp struct {
-	Items []WorkItemDetail `json:"items"`
+	Items    []WorkItemDetail `json:"items"`
+	Total    int64            `json:"total"`
+	Page     int              `json:"page"`
+	PageSize int              `json:"pageSize"`
 }

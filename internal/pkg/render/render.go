@@ -203,7 +203,23 @@ func (r *Renderer) parseTemplates(page string) (*template.Template, error) {
 	layout := resolveLayout(page)
 	layoutFile := filepath.Join(r.templateDir, layoutDir, layout+".html")
 	pageFile := filepath.Join(r.templateDir, filepath.FromSlash(page)+".html")
-	files := []string{layoutFile, pageFile}
+	// 同模块兄弟模板先于当前页加载，使当前页的 content/page_* 覆盖兄弟页同名 define；
+	// 兄弟页中的片段 define（如 po/testtask）仍可供 {{ template }} 引用。
+	files := []string{layoutFile}
+	if moduleDir := filepath.Dir(filepath.FromSlash(page)); moduleDir != "." && moduleDir != layoutDir && moduleDir != "components" {
+		siblingFiles, err := collectTemplateFiles(filepath.Join(r.templateDir, moduleDir))
+		if err != nil {
+			return nil, err
+		}
+		pageClean := filepath.Clean(pageFile)
+		for _, f := range siblingFiles {
+			if filepath.Clean(f) == pageClean {
+				continue
+			}
+			files = append(files, f)
+		}
+	}
+	files = append(files, pageFile)
 	layoutFiles, err := collectTemplateFiles(filepath.Join(r.templateDir, layoutDir))
 	if err != nil {
 		return nil, err

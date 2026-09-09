@@ -38,6 +38,7 @@ import (
 	"workbench/internal/module/po"
 	"workbench/internal/module/role"
 	"workbench/internal/module/schedule"
+	"workbench/internal/module/testtask"
 	"workbench/internal/module/user"
 	"workbench/internal/pkg/database"
 	"workbench/internal/pkg/flash"
@@ -133,6 +134,13 @@ func Run() error {
 	poRepo := po.NewRepo(dbReadonly, db)
 	poSvc := po.NewService(poRepo, scheduleSvc, userSvc, zapLog)
 	poHandler := po.NewHandler(poSvc, zapLog)
+	testtaskReadDB := dbReadonly
+	if testtaskReadDB == nil {
+		testtaskReadDB = db
+	}
+	testtaskRepo := testtask.NewRepo(testtaskReadDB)
+	testtaskSvc := testtask.NewService(testtaskRepo, userSvc, zapLog)
+	testtaskHandler := testtask.NewHandler(testtaskSvc, zapLog)
 	sqlPerfRepo := debug.NewRepo(cfg.Log.Dir)
 	sqlPerfSvc := debug.NewService(sqlPerfRepo)
 	sqlPerfHandler := debug.NewHandler(sqlPerfSvc)
@@ -152,6 +160,7 @@ func Run() error {
 		RoleHandler:         roleHandler,
 		PoHandler:           poHandler,
 		ScheduleHandler:     scheduleHandler,
+		TesttaskHandler:     testtaskHandler,
 		SqlPerfHandler:      sqlPerfHandler,
 	}
 
