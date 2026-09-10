@@ -28,7 +28,7 @@
   <link rel="stylesheet" href="/static/css/components/components.css">
   {{ block "page_css" . }}{{ end }}
 </head>
-<body{{ if .HideChrome }} class="layout-chrome-hidden"{{ else if or (eq .CurrentPath "/home") (eq .CurrentPath "/schedule") (eq .CurrentPath "/todos") (eq .CurrentPath "/done") (eq .CurrentPath "/notice") (eq .CurrentPath "/follow") (eq .CurrentPath "/board/demand") (eq .CurrentPath "/board/task") (eq .CurrentPath "/query") (eq .CurrentPath "/issues/risk") (eq .CurrentPath "/metrics/manage") (eq .CurrentPath "/metrics/radar") }} class="po-workbench-shell has-bottom-tabs"{{ else if eq .LayoutNav "top" }} class="layout-nav-top"{{ end }}>
+<body{{ if .HideChrome }} class="layout-chrome-hidden"{{ else if or (eq .CurrentPath "/home") (eq .CurrentPath "/schedule") (eq .CurrentPath "/todos") (eq .CurrentPath "/done") (eq .CurrentPath "/notice") (eq .CurrentPath "/follow") (eq .CurrentPath "/board/demand") (eq .CurrentPath "/board/task") (eq .CurrentPath "/query") (eq .CurrentPath "/issues/risk") (eq .CurrentPath "/metrics/manage") (eq .CurrentPath "/metrics/radar") }} class="po-workbench-shell has-bottom-tabs"{{ else if eq .LayoutNav "top" }} class="has-bottom-tabs layout-nav-top"{{ else }} class="has-bottom-tabs"{{ end }}>
   {{ if not .HideChrome }}
   <header class="topbar">
     {{ template "layout/header" . }}
@@ -43,11 +43,8 @@
     </main>
   </div>
 
-  {{ if and (not .HideChrome) (or (eq .CurrentPath "/home") (eq .CurrentPath "/schedule")) }}
-  <nav class="bottom-tabbar" aria-label="已打开工作页签">
-    <a class="bottom-tab{{ if eq .CurrentPath "/home" }} active{{ end }}" href="/home"><i class="fas fa-home"></i><span>PO 首页</span></a>
-    {{ if eq .CurrentPath "/schedule" }}<a class="bottom-tab active" href="/schedule"><i class="fas fa-calendar-check"></i><span>需求排期</span></a>{{ end }}
-  </nav>
+  {{ if not .HideChrome }}
+  <nav class="bottom-tabbar" id="bottom-tabbar" aria-label="已打开工作页签"></nav>
   {{ end }}
 
   <div class="toast-container" id="toast-container"></div>
@@ -79,6 +76,7 @@
   <script src="/static/js/components/components.js"></script>
   <script src="/static/js/layout/sidebar.js"></script>
   <script src="{{ asset "/static/js/layout/globalsearch.js" }}"></script>
+  {{ if not .HideChrome }}<script src="{{ asset "/static/js/layout/bottomtabbar.js" }}"></script>{{ end }}
   <script src="{{ asset "/static/vendor/quill/quill.min.js" }}"></script>
   <script src="{{ asset "/static/vendor/jquery/jquery.min.js" }}"></script>
   {{ if and (not .HideChrome) (eq .LayoutNav "top") }}<script src="/static/js/layout/topnav.js"></script>{{ end }}
