@@ -63,5 +63,7 @@ advisory	WEAK_PASSWORD_HASH	internal/module/login/service.go	28267fb599ca62f3fc0
 advisory	WEAK_PASSWORD_HASH	internal/module/user/service.go	001403c972cf63388be0431b528aedc07da7bd44
 advisory	WEAK_PASSWORD_HASH	internal/module/user/service.go	697e7074eb074640ec0d1295cd2fe4f77a5cdf37
 advisory	WEAK_PASSWORD_HASH	internal/module/user/service.go	70cf2a220a2b32b45105c091957b11d5d455552b
+advisory	WEAK_PASSWORD_HASH	internal/module/profile/service.go	94a3e2c3dd6f9b6222270593e101ddee25a70ebd
+advisory	WEAK_PASSWORD_HASH	internal/module/profile/service.go	4bacf258e07e9736729d4c834a63ea402ded3407
 advisory	WEAK_PASSWORD_HASH	internal/pkg/encode/encode.go	167b6cfabf183890714a9331de857d62a0be3584
 advisory	WEAK_PASSWORD_HASH	internal/pkg/encode/encode.go	6b5c93ed34b0d9cb15bd8fa49f56a78c5f3ccb66

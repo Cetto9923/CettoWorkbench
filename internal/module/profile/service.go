@@ -107,6 +107,11 @@ func (s *Service) Update(ctx context.Context, actor *model.User, req UpdateReq) 
 //
 // 与禅道 max5 兼容：旧密码以 MD5 hex 形式存储在 zt_user.password；
 // 验证 + 重写都走同一种哈希，确保改密后仍能用旧密码登录。
+//
+// ADR-0001 profile-md5 isolation: 这两个 encode.MD5 调用点是当前隔离
+// 范围内唯一允许保留的密码写入；任何其它位置的密码写入必须使用
+// AGENTS.md MUST 7 允许的方式。参见
+// docs/engineering/decisions/0001-password-md5-exemption.md。
 func (s *Service) ChangePassword(ctx context.Context, actor *model.User, req ChangePasswordReq) error {
 	if actor == nil || actor.ID <= 0 {
 		return errorx.New("unauthorized", "请先登录")
@@ -118,9 +123,11 @@ func (s *Service) ChangePassword(ctx context.Context, actor *model.User, req Cha
 		}
 		return err
 	}
+	// ADR-0001 profile-md5 isolation: zt_user.password round-trip with ZenTao.
 	if hash != encode.MD5(req.OldPassword) {
 		return errorx.New("bad_password", "当前密码不正确")
 	}
+	// ADR-0001 profile-md5 isolation: write must stay MD5 hex for ZenTao auth.
 	return s.repo.UpdatePassword(ctx, actor.ID, encode.MD5(req.NewPassword))
 }
 
