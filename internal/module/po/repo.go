@@ -30,3 +30,17 @@ type Repo struct {
 func NewRepo(readDB, writeDB *gorm.DB) *Repo {
 	return &Repo{db: readDB, writeDB: writeDB}
 }
+
+// reader 返回读库句柄；当只读池未配置或为 nil 时降级返回主库 writeDB。
+func (r *Repo) reader() (*gorm.DB, error) {
+	if r == nil {
+		return nil, gorm.ErrInvalidDB
+	}
+	if r.db != nil {
+		return r.db, nil
+	}
+	if r.writeDB != nil {
+		return r.writeDB, nil
+	}
+	return nil, gorm.ErrInvalidDB
+}

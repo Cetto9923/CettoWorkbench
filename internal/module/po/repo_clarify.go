@@ -116,13 +116,17 @@ func (r *Repo) FindDemandUserStories(ctx context.Context, demandID int64) ([]dem
 // FindCandidateProducts 读取全部可选产品（过滤禅道项目生成的影子产品 shadow = 0）。
 // 当前用户作为产品、需求、发布、反馈负责人或产品白名单成员时，该产品排在前面。
 func (r *Repo) FindCandidateProducts(ctx context.Context, account string) ([]ClarifyProductOption, error) {
+	db, err := r.reader()
+	if err != nil {
+		return nil, err
+	}
 	var rows []struct {
 		ID            int64  `gorm:"column:id"`
 		Name          string `gorm:"column:name"`
 		PO            string `gorm:"column:PO"`
 		Participating bool   `gorm:"column:participating"`
 	}
-	err := r.db.WithContext(ctx).Table("zt_product").
+	err = db.WithContext(ctx).Table("zt_product").
 		Where("deleted = '0' AND status != 'closed' AND shadow = '0'").
 		Order("participating DESC, `order` DESC, id DESC").
 		Select(`id, name, PO,
@@ -150,6 +154,10 @@ func (r *Repo) FindFrequentProducts(ctx context.Context, account string, limit i
 	if limit <= 0 {
 		limit = 8
 	}
+	db, err := r.reader()
+	if err != nil {
+		return nil, err
+	}
 	var rows []struct {
 		ID           int64  `gorm:"column:id"`
 		Name         string `gorm:"column:name"`
@@ -165,7 +173,7 @@ WHERE p.deleted = '0' AND p.status != 'closed' AND p.shadow = '0'
 GROUP BY p.id, p.name, p.PO
 ORDER BY clarify_count DESC, p.id DESC
 LIMIT ?`
-	if err := r.db.WithContext(ctx).Raw(q, account, account, account, limit).Scan(&rows).Error; err != nil {
+	if err := db.WithContext(ctx).Raw(q, account, account, account, limit).Scan(&rows).Error; err != nil {
 		return nil, err
 	}
 	out := make([]ClarifyProductOption, 0, len(rows))
@@ -187,6 +195,10 @@ func (r *Repo) FindProductMembers(ctx context.Context, productIDs []int64) (map[
 	if len(productIDs) == 0 {
 		return result, nil
 	}
+	db, err := r.reader()
+	if err != nil {
+		return result, nil
+	}
 
 	var prodRows []struct {
 		ID        int64  `gorm:"column:id"`
@@ -198,7 +210,7 @@ func (r *Repo) FindProductMembers(ctx context.Context, productIDs []int64) (map[
 		CreatedBy string `gorm:"column:createdBy"`
 		Whitelist string `gorm:"column:whitelist"`
 	}
-	if err := r.db.WithContext(ctx).Table("zt_product").
+	if err := db.WithContext(ctx).Table("zt_product").
 		Where("id IN ? AND deleted = '0'", productIDs).
 		Select("id, PO, QD, RD, feedback, ticket, createdBy, whitelist").
 		Find(&prodRows).Error; err != nil {
@@ -213,7 +225,7 @@ func (r *Repo) FindProductMembers(ctx context.Context, productIDs []int64) (map[
 	for i, id := range productIDs {
 		idStrs[i] = fmt.Sprintf("%d", id)
 	}
-	_ = r.db.WithContext(ctx).Table("zt_demandclarify").
+	_ = db.WithContext(ctx).Table("zt_demandclarify").
 		Where("product IN ? AND PM != ''", idStrs).
 		Select("DISTINCT product, PM").
 		Find(&pmRows).Error
@@ -249,7 +261,7 @@ func (r *Repo) FindProductMembers(ctx context.Context, productIDs []int64) (map[
 			Account  string `gorm:"column:account"`
 			Realname string `gorm:"column:realname"`
 		}
-		if err := r.db.WithContext(ctx).Table("zt_user").
+		if err := db.WithContext(ctx).Table("zt_user").
 			Where("account IN ?", accounts).
 			Select("account, realname").
 			Find(&users).Error; err == nil {
@@ -310,10 +322,14 @@ func (r *Repo) findFirstLevelDeptIDs(ctx context.Context, actorAccount string) [
 	if strings.TrimSpace(actorAccount) == "" {
 		return nil
 	}
+	db, err := r.reader()
+	if err != nil {
+		return nil
+	}
 	var u struct {
 		Dept uint `gorm:"column:dept"`
 	}
-	if err := r.db.WithContext(ctx).Table("zt_user").
+	if err := db.WithContext(ctx).Table("zt_user").
 		Select("dept").Where("account = ? AND deleted = '0'", actorAccount).
 		Take(&u).Error; err != nil || u.Dept == 0 {
 		return nil
@@ -325,7 +341,7 @@ func (r *Repo) findFirstLevelDeptIDs(ctx context.Context, actorAccount string) [
 		Path   string `gorm:"column:path"`
 		Grade  uint   `gorm:"column:grade"`
 	}
-	if err := r.db.WithContext(ctx).Table("zt_dept").
+	if err := db.WithContext(ctx).Table("zt_dept").
 		Select("id, parent, path, grade").Where("id = ?", u.Dept).
 		Take(&actorDept).Error; err != nil {
 		return nil
@@ -352,7 +368,7 @@ func (r *Repo) findFirstLevelDeptIDs(ctx context.Context, actorAccount string) [
 		ID   uint   `gorm:"column:id"`
 		Path string `gorm:"column:path"`
 	}
-	if err := r.db.WithContext(ctx).Table("zt_dept").
+	if err := db.WithContext(ctx).Table("zt_dept").
 		Select("id, path").Where("id = ?", targetDeptID).
 		Take(&targetDept).Error; err != nil {
 		return []uint{targetDeptID}
@@ -370,7 +386,7 @@ func (r *Repo) findFirstLevelDeptIDs(ctx context.Context, actorAccount string) [
 			targetPath = targetPath + ","
 		}
 	}
-	_ = r.db.WithContext(ctx).Table("zt_dept").
+	_ = db.WithContext(ctx).Table("zt_dept").
 		Where("id = ? OR path LIKE ?", targetDeptID, targetPath+"%").
 		Pluck("id", &deptIDs).Error
 	if len(deptIDs) == 0 {
@@ -381,9 +397,13 @@ func (r *Repo) findFirstLevelDeptIDs(ctx context.Context, actorAccount string) [
 
 // FindCandidateUsers 读取全部可选人员（优先把本一级部门排在前面，且工号倒序）。
 func (r *Repo) FindCandidateUsers(ctx context.Context, actorAccount string) ([]ClarifyOption, error) {
+	db, err := r.reader()
+	if err != nil {
+		return nil, err
+	}
 	firstLevelDeptIDs := r.findFirstLevelDeptIDs(ctx, actorAccount)
 
-	query := r.db.WithContext(ctx).Table("zt_user").Where("deleted = '0'")
+	query := db.WithContext(ctx).Table("zt_user").Where("deleted = '0'")
 	if len(firstLevelDeptIDs) > 0 {
 		deptIDStrs := make([]string, len(firstLevelDeptIDs))
 		for i, id := range firstLevelDeptIDs {
@@ -408,10 +428,7 @@ func (r *Repo) FindCandidateUsers(ctx context.Context, actorAccount string) ([]C
 		if account == "" {
 			continue
 		}
-		out = append(out, ClarifyOption{
-			Value: account,
-			Label: FormatAccountName(account, row.Realname),
-		})
+		out = append(out, ClarifyOption{Value: account, Label: FormatAccountName(account, row.Realname)})
 	}
 	return out, nil
 }
@@ -443,19 +460,14 @@ func (r *Repo) LoadClarifyConfig(ctx context.Context) ClarifyConfigData {
 		},
 		NoAICategories: []string{"datachange", "dataexport", "safe"},
 		AICategories:   []string{"feature", "feature_1", "feature_2", "feature_3", "experience", "tecopt"},
-		PointToKeyword: map[string]string{
-			"2": "微型",
-			"3": "小型",
-			"5": "中型",
-			"8": "大型",
-		},
-		RevpointList: map[string][]int{
-			"2": {2, 3},
-			"3": {2, 3, 5},
-			"5": {3, 5, 8},
-			"8": {5, 8},
-		},
-		AllPointList: []int{2, 3, 5, 8},
+		PointToKeyword: map[string]string{"2": "微型", "3": "小型", "5": "中型", "8": "大型"},
+		RevpointList:   map[string][]int{"2": {2, 3}, "3": {2, 3, 5}, "5": {3, 5, 8}, "8": {5, 8}},
+		AllPointList:   []int{2, 3, 5, 8},
+	}
+
+	db, err := r.reader()
+	if err != nil {
+		return cfg
 	}
 
 	// 尝试从 zt_config 读取系统后台配置
@@ -463,7 +475,7 @@ func (r *Repo) LoadClarifyConfig(ctx context.Context) ClarifyConfigData {
 		Key   string `gorm:"column:key"`
 		Value string `gorm:"column:value"`
 	}
-	if err := r.db.WithContext(ctx).Table("zt_config").
+	if err := db.WithContext(ctx).Table("zt_config").
 		Where("module = 'custom' AND section = 'clarifyCategoryAIConfig'").
 		Find(&confRows).Error; err == nil {
 		for _, cr := range confRows {

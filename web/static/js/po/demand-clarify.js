@@ -24,6 +24,7 @@
   function openModal(demandId) {
     if (!demandId) return;
     currentDemandId = String(demandId).replace(/^US/i, "").trim();
+    $("#poClarifyDemandBadge").text("US" + currentDemandId);
     $("#poDemandClarifyModal").addClass("show").css("display", "block").attr("aria-hidden", "false");
     $("#poClarifyLoadingState").show();
     $("#poClarifyErrorState, #poDemandClarifyForm").hide();
@@ -249,7 +250,13 @@
       var id = String($(this).attr("data-demand-id") || "").replace(/^US/i, "").trim();
       if (id) openModal(id);
     });
-    $(document).on("click", "#poClarifyRetryBtn", function () { if (currentDemandId) loadClarifyData(currentDemandId); });
+    $(document).on("click", "#poClarifyRetryBtn", function () {
+      if (currentDemandId) {
+        $("#poClarifyLoadingState").show();
+        $("#poClarifyErrorState, #poDemandClarifyForm").hide();
+        loadClarifyData(currentDemandId);
+      }
+    });
     $(document).on("click", "#poClarifyDescToggle", function () {
       $("#poClarifyDescContent").slideToggle(150);
       $("#poClarifyDescArrow").toggleClass("expanded");
