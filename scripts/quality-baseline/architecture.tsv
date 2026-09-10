@@ -1,1 +1,2 @@
 SERVICE_DATABASE_ACCESS	internal/module/dept/service.go	53ca983c21be7ceac1d35c683eca3c9fefd6bbab0d4784b614f045c914930365
+HANDLER_DATABASE_ACCESS	internal/module/testtask/handler_test.go	c30608465b10630f3d68c62afc9bc204f851723ab18d002d114d4eae6ef2710b
