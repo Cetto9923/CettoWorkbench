@@ -351,11 +351,19 @@ func (r *Repo) findFirstLevelDeptIDs(ctx context.Context, actorAccount string) [
 	parts := strings.Split(strings.Trim(actorDept.Path, ","), ",")
 	var targetDeptID uint
 	if len(parts) >= 2 {
-		id, _ := strconv.ParseUint(parts[1], 10, 32)
-		targetDeptID = uint(id)
+		// L-3: ParseUint 失败时不静默 dept=0；path 数据异常时退回 actor 自身部门。
+		// Repo 层没有 logger，靠调用方收到 actorDept.ID 作为非零值来判断。
+		if id, parseErr := strconv.ParseUint(parts[1], 10, 32); parseErr == nil {
+			targetDeptID = uint(id)
+		} else {
+			targetDeptID = actorDept.ID
+		}
 	} else if len(parts) == 1 && parts[0] != "" {
-		id, _ := strconv.ParseUint(parts[0], 10, 32)
-		targetDeptID = uint(id)
+		if id, parseErr := strconv.ParseUint(parts[0], 10, 32); parseErr == nil {
+			targetDeptID = uint(id)
+		} else {
+			targetDeptID = actorDept.ID
+		}
 	} else {
 		targetDeptID = actorDept.ID
 	}

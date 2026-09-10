@@ -73,7 +73,10 @@ func (h *Handler) WithdrawDemandReview(c *gin.Context) {
 	}
 
 	var req WithdrawDemandReviewReq
-	_ = c.ShouldBindJSON(&req)
+	if bindErr := c.ShouldBindJSON(&req); bindErr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "参数解析失败"})
+		return
+	}
 	req.ID = id
 	if fieldErrs := req.Validate(); len(fieldErrs) > 0 {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
@@ -110,7 +113,10 @@ func (h *Handler) SubmitDemandReview(c *gin.Context) {
 	}
 
 	var req SubmitDemandReviewReq
-	_ = c.ShouldBindJSON(&req)
+	if bindErr := c.ShouldBindJSON(&req); bindErr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "参数解析失败"})
+		return
+	}
 	req.ID = id
 	if fieldErrs := req.Validate(); len(fieldErrs) > 0 {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
