@@ -10,7 +10,6 @@ web/static/css/schedule/schedulemodal.css	645
 web/static/js/components/form.js	513
 web/static/js/debug/sqlperf.js	550
 web/static/js/dept/list.js	655
-web/static/js/po/workboard.js	712
 web/static/js/schedule/scheduleintegrated.js	837
 web/static/js/schedule/scheduleintegratedtasks.js	556
 web/static/js/ui.js	775

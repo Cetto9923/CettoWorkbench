@@ -2,25 +2,12 @@
    文件: web/static/js/po/home.js
    模块: PO 个人工作台 - 首页交互脚本
    职责: 绑定需求价值流下钻、全站统一工具栏筛选、7列行动列表展示与分页保护
-   依赖: personal-list.js, jQuery
+   依赖: personal-list.js, home-render.js, jQuery
    ============================================================================= */
 
 (function ($) {
   "use strict";
 
-  var esc = (window.PersonalList && window.PersonalList.escapeHtml) || function (v) { return String(v == null ? "" : v); };
-  var PL = window.PersonalList || {};
-  var priorityBadge = PL.priorityBadge || function (raw) {
-    var n = parseInt(String(raw || "").replace(/^p/i, ""), 10);
-    if (isNaN(n) || n < 1 || n > 4) { return '<span class="wb-priority" data-priority="">—</span>'; }
-    return '<span class="wb-priority" data-priority="' + n + '">P' + n + "</span>";
-  };
-  var objectTypeBadge = PL.objectTypeBadge || function (kind) {
-    var labels = { business: "业务需求", story: "研发需求" };
-    var k = String(kind || "").trim().toLowerCase();
-    var label = labels[k] || k || "—";
-    return '<span class="wb-type wb-type-' + (labels[k] ? k : "unknown") + '">' + label + "</span>";
-  };
 
   var state = {
     status: "all",
@@ -88,50 +75,6 @@
     }
   }
 
-  function dash(value) {
-    var text = (value || "").trim();
-    return text || "—";
-  }
-
-  var ZENTAO_STATUS_LABELS = {
-    draft: "暂存", wait: "待评审", active: "已评审", clarified: "已澄清",
-    changed: "已变更", developing: "开发中", testing: "测试中", waitacceptance: "待验收",
-    acceptanced: "已验收", waitdeliver: "待交付", delivered: "已交付", released: "已发布",
-    closed: "已关闭", suspended: "已挂起", refuse: "已驳回"
-  };
-
-  var STORY_STATUS_LABELS = {
-    draft: "草稿", reviewing: "评审中", active: "激活", changing: "变更中", closed: "已关闭"
-  };
-
-  function getZentaoStatusLabel(key) {
-    var k = String(key || "").trim().toLowerCase();
-    return ZENTAO_STATUS_LABELS[k] || key || "—";
-  }
-
-  function getStoryZentaoStatusLabel(key) {
-    var k = String(key || "").trim().toLowerCase();
-    return STORY_STATUS_LABELS[k] || key || "—";
-  }
-
-  function isStoryItem(item) {
-    return (item && String(item.kind || "") === "story") ||
-      Number(item && item.storyId) > 0 ||
-      /^U\d+$/i.test(String((item && item.id) || ""));
-  }
-
-  function getHomeZentaoStatusLabel(item) {
-    var raw = String((item && item.zentaoStatus) || "").trim();
-    if (raw) {
-      return isStoryItem(item) ? getStoryZentaoStatusLabel(raw) : getZentaoStatusLabel(raw);
-    }
-    var label = String((item && (item.zentaoStatusLabel || item.statusLabel)) || "").trim();
-    if (label && !/^待(受理|澄清|排期)$/.test(label)) {
-      return label;
-    }
-    return "—";
-  }
-
   function loadDemands(status, page, pageSize) {
     var fetchFn = window.appFetch || fetch;
     return fetchFn(demandsUrl(status, page, pageSize), { method: "GET" })
@@ -153,38 +96,10 @@
       });
   }
 
-  // 右上角焦点是一级范围，价值流卡片必须显示该范围内各阶段的数量。
-  // 当焦点为全部 (all) 或未提供 stageSummary 时，恢复全景流的服务端基线统计。
   function renderValueStreamSummary(rows) {
-    if (!document || !document.querySelectorAll) { return; }
-    var isAllFocus = !state.focus || state.focus === "all";
-    if (isAllFocus || !rows || !rows.length) {
-      document.querySelectorAll(".home-vs-mini-card").forEach(function (card) {
-        var baseCount = card.getAttribute("data-base-count");
-        var baseMeta = card.getAttribute("data-base-meta");
-        var count = card.querySelector(".vs-mini-count");
-        var meta = card.querySelector(".vs-mini-meta");
-        if (baseCount && count) { count.textContent = baseCount; }
-        if (baseMeta && meta) { meta.textContent = baseMeta; }
-        var totalNum = parseInt(baseCount, 10);
-        card.classList.toggle("empty", !isNaN(totalNum) && totalNum === 0);
-        card.setAttribute("title", (card.querySelector(".vs-mini-name") || {}).textContent + " · 共 " + (baseCount || "0") + " 条");
-      });
-      return;
+    if (window.PoHomeRender) {
+      window.PoHomeRender.renderValueStreamSummary(rows, state.focus);
     }
-    var byStatus = {};
-    rows.forEach(function (row) { byStatus[row.status] = Number(row.count || 0); });
-    document.querySelectorAll(".home-vs-mini-card").forEach(function (card) {
-      var status = card.getAttribute("data-vs-status") || "";
-      var total = byStatus[status];
-      if (typeof total !== "number") { return; }
-      var count = card.querySelector(".vs-mini-count");
-      var meta = card.querySelector(".vs-mini-meta");
-      if (count) { count.textContent = String(total); }
-      if (meta) { meta.textContent = status === "all" ? "焦点汇总" : "焦点范围"; }
-      card.classList.toggle("empty", total === 0);
-      card.setAttribute("title", (card.querySelector(".vs-mini-name") || {}).textContent + " · 共 " + total + " 条");
-    });
   }
 
   function refreshValueStreamSummary() {
@@ -203,142 +118,23 @@
   }
 
   function updateTitle(count, displayedCount, pageItemCount) {
-    var $title = $("#top5Title");
-    if ($title.length) {
-      var stage = $(".home-vs-mini-card.active .vs-mini-name").first().text() || "全部";
-      $title.text(stage === "全部" ? "全部需求" : stage + "阶段");
+    if (window.PoHomeRender) {
+      window.PoHomeRender.updateTitle($, state, count, displayedCount, pageItemCount);
     }
-
-    var $caption = $("#homeListCaption");
-    if ($caption.length) {
-      // 是否命中筛选：与"本页未筛选前的条数"比较，而非与跨页总数比较；
-      // 否则任何多页阶段（本页条数天然小于总数）都会被误报成"已筛选"。
-      var isFiltered = displayedCount != null && typeof pageItemCount === "number" && displayedCount !== pageItemCount;
-      if (count == null) {
-        $caption.text("当前列表暂不可用，请重试");
-      } else if (isFiltered) {
-        $caption.text("已筛选 " + displayedCount + " 条 · 阶段总数 " + count + " 条 · 点击详情进入禅道");
-      } else {
-        $caption.text("共 " + count + " 条关联需求 · 按阶段查看，点击详情进入禅道");
-      }
-    }
-
-    var $shown = $("#homeShowingCount");
-    var $total = $("#homeTotalCount");
-    if (!$shown.length && !$total.length) { return; }
-    if (count == null) {
-      if ($shown.length) { $shown.text("—"); }
-      if ($total.length) { $total.text("—"); }
-      return;
-    }
-    var first = count > 0 ? ((state.page - 1) * state.pageSize) + 1 : 0;
-    var pageBound = count > 0 ? Math.min(state.page * state.pageSize, count) : 0;
-    var displayed = typeof displayedCount === "number" ? displayedCount : pageBound;
-    if (displayed > 0) {
-      var last = Math.min(first - 1 + displayed, pageBound);
-      if ($shown.length) { $shown.text(first + "-" + last); }
-    } else {
-      if ($shown.length) { $shown.text("0"); }
-    }
-    if ($total.length) { $total.text(String(count)); }
   }
 
   function fillUpdateTime() {
-    var now = new Date();
-    var pad = function (n) { return n < 10 ? "0" + n : String(n); };
-    $("#lastUpdateTime").text(
-      now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate()) + " " +
-      pad(now.getHours()) + ":" + pad(now.getMinutes())
-    );
-  }
-
-  function canShowReview(item) {
-    if (!item || isStoryItem(item)) {
-      return false;
+    if (window.PoHomeRender) {
+      window.PoHomeRender.fillUpdateTime($);
     }
-    return !!item.canReview;
   }
 
-  function reviewActionHtml(item) {
-    return (
-      '<button type="button" class="table-action-btn primary js-demand-review" data-review-demand-id="' +
-      esc(item.id || "") +
-      '">评审</button>'
-    );
+  function filterItems(items) {
+    return window.PoHomeRender ? window.PoHomeRender.filterItems(items) : (items || []).slice();
   }
-
-  // 阶段 → 主要动作渲染：消费 window.PrimaryAction（来自 primary-action.js）。
-  var primaryActionHtml = (window.PrimaryAction && window.PrimaryAction.primaryActionHtml) || function (item) {
-    return '<span class="home-unavailable">—</span>';
-  };
 
   function renderRow(item) {
-    var id = item.id || "";
-    var url = (item.zentaoUrl || "").trim();
-    var pri = (item.pri || "").trim().toUpperCase();
-    var isStory = isStoryItem(item);
-    var isDemand = !isStory && (/^US\d+/i.test(id) || /^\d+$/.test(id));
-    // data-demand-id 只挂在"按钮 / 抽屉入口"上；标题 <a> 不再挂，避免被 demand-detail 全局委托吞掉。
-    var dataAttr = isDemand ? ' data-demand-id="' + esc(id) + '"' : '';
-
-    // 研发需求只显示纯 ID（去掉服务端的 "U" 前缀），保持禅道侧链与渲染一致。
-    // 业务需求保留 "US{id}"；检测仍依赖原始 id，不影响 isStoryItem / 搜索逻辑。
-    var displayId = isStory ? String(id).replace(/^U/i, "") : id;
-
-    // ID 列：禅道原始详情（新页 / 保留办理上下文），无数据降级为纯文本。
-    var idHtml = url
-      ? '<a class="table-id-link" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(displayId) + '</a>'
-      : '<span class="table-id-link">' + esc(displayId) + '</span>';
-
-    // 操作列：待评业务评审人优先显示「评审」；否则消费 Stage 5 primaryAction。
-    var actionHtml = canShowReview(item) ? reviewActionHtml(item) : primaryActionHtml(item, isStory);
-
-    var priTag = priorityBadge(item.pri);
-    var inlineFlags = priTag;
-    if (item.suspended === true || String(item.suspended || "").toLowerCase() === "true" || String(item.suspended || "") === "1") {
-      inlineFlags += '<span class="home-inline-flag suspended">挂起</span>';
-    }
-    if (item.blocked === true || String(item.blocked || "").toLowerCase() === "true" || String(item.blocked || "") === "1") {
-      inlineFlags += '<span class="home-inline-flag blocked">阻塞</span>';
-    }
-
-    var typeKind = isStory ? "story" : "business";
-    // ID 列：单色 chip 把"类型词 + 编号"合成一个标签（样式统一在 wb-priority.css），
-    // 整 chip 同色，编号维持禅道原始链接。
-    var idChip = PL.idChipHtml ? PL.idChipHtml(typeKind, idHtml) :
-      '<span class="wb-type wb-type-' + typeKind + '">' + (isStory ? "研发需求" : "业务需求") + " " + idHtml + "</span>";
-
-    // 标题：当前页打开工作台详情；href 优先使用 server workbenchUrl，否则退化到 /demands/:id。
-    var workbenchHref = String(item.workbenchUrl || "").trim();
-    if (!workbenchHref && !isStory) {
-      var cleanId = String(id).replace(/^US/i, "");
-      workbenchHref = cleanId ? "/demands/" + encodeURIComponent(cleanId) : "";
-    }
-    var titleLink = workbenchHref
-      ? '<a class="table-title-link" href="' + esc(workbenchHref) + '">' + esc(item.title || "—") + '</a>'
-      : (url ? '<a class="table-title-story" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(item.title || "—") + '</a>' : esc(item.title || "—"));
-    var titleHtml = '<div class="home-title-line">' + inlineFlags + titleLink + '</div>';
-
-    var statusText = getHomeZentaoStatusLabel(item);
-    var dotClass = (statusText === "开发中" || statusText === "测试中" || statusText === "待验收") ? "active" :
-      (statusText === "已挂起" || statusText === "已驳回") ? "danger" : "default";
-
-    return '<tr>' +
-      '<td class="c-id">' + idChip + '</td>' +
-      '<td class="c-title" title="' + esc(item.title || "") + '">' + titleHtml + '</td>' +
-      '<td class="c-stage"><span class="stage-tag">' + esc(item.valueStream || item.stage || "—") + '</span></td>' +
-      '<td class="c-zt-status"><span class="status-tag"><i class="status-dot ' + dotClass + '"></i> ' + esc(statusText) + '</span></td>' +
-      '<td class="c-owner">' + esc(dash(item.nextOwner || item.owner)) + '</td>' +
-      '<td class="c-actions">' + actionHtml + '</td>' +
-      '</tr>';
-  }
-
-  // filterItems 保留为占位函数：工具栏筛选（keyword/objectType/priority/relation）
-  // 已由服务端 SQL 接管，Total / 分页与当前页保持一致；前端不再做同语义二次过滤。
-  // 该函数仅做空集合短路，避免 NPE。
-  function filterItems(items) {
-    if (!items || !items.length) { return []; }
-    return items.slice();
+    return window.PoHomeRender ? window.PoHomeRender.renderRow(item) : "";
   }
 
   function renderList(total) {
