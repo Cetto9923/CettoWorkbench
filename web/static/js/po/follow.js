@@ -220,6 +220,26 @@
   }
 
   window.FollowUnwatchDemand = function (id) { return unwatchItem("demand", id); };
+  window.FollowSetDemand = async function (id, followed) {
+    id = String(id || "").replace(/^US/i, "");
+    if (!id) return false;
+    try {
+      var res = await fetch("/follow/demand/" + encodeURIComponent(id), {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" },
+        body: JSON.stringify({ followed: !!followed })
+      });
+      if (!res.ok) throw new Error("set follow failed");
+      if (typeof window.showToast === "function") {
+        window.showToast(followed ? "已关注" : "已取消关注", "success");
+      }
+      return true;
+    } catch (e) {
+      if (typeof window.showToast === "function") window.showToast(followed ? "关注失败" : "取消关注失败", "error");
+      return false;
+    }
+  };
   window.FollowUpdateDemandBadge = function (n) {
     var dEl = document.getElementById("tabCountDemand");
     if (dEl) dEl.textContent = String(n || 0);

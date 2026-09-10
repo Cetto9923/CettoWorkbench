@@ -2,7 +2,7 @@
  * =============================================================================
  * 文件: web/static/js/po/follow-demand.js
  * 模块: PO 工作台 - 我的关注 · 业务需求
- * 职责: 统计卡、关注维度筛选、列表行（对象#ID+标题最多两行，复用 PersonalList.idChipHtml）、导出
+ * 职责: 统计卡、关注维度筛选、单行列表（对象#ID + 星标关注/取关 + 标题，复用 PersonalList.idChipHtml）、导出
  * =============================================================================
  */
 (function (root) {
@@ -135,21 +135,21 @@
 
       var priTag = priorityBadge(item.priority || item.pri);
       var titleText = item.title || "—";
-      var titleBtn = '<button type="button" class="table-title-link" data-open-demand="' + esc(did) + '" title="' + esc(titleText) + '">' + esc(titleText) + "</button>";
-      // 最多两行：1) 优先级+标题  2) 可选关注原因（单行截断）
-      var reasonLine = "";
-      if (item.reason || item.isKey) {
-        var reason = String(item.reason || "").trim();
-        if (item.isKey) reason = reason ? (reason + " · 重点关注") : "重点关注";
-        if (reason) {
-          reasonLine = '<div class="fd-title-sub" title="' + esc(reason) + '">' + esc(reason) + "</div>";
-        }
-      }
-      var titleHtml = '<div class="home-title-line fd-title-line">' + priTag + titleBtn + "</div>" + reasonLine;
+      var tipParts = [];
+      if (item.owner) tipParts.push("负责人：" + String(item.owner));
+      if (item.reason) tipParts.push(String(item.reason));
+      if (item.isKey) tipParts.push("重点关注");
+      var tip = tipParts.length ? tipParts.join(" · ") : titleText;
+      // 禅道同款五角星：本页默认已关注（实心），点击切换关注/取关
+      var starBtn = '<button type="button" class="fd-watch-toggle is-watched" data-watch-demand="' + esc(did) + '" data-watched="1" title="取消关注" aria-label="取消关注" aria-pressed="true">' +
+        '<i class="fas fa-star" aria-hidden="true"></i></button>';
+      var titleBtn = '<button type="button" class="table-title-link" data-open-demand="' + esc(did) + '" title="' + esc(tip) + '">' + esc(titleText) + "</button>";
+      // 单行：星 + 优先级 + 标题
+      var titleHtml = '<div class="home-title-line fd-title-line">' + starBtn + priTag + titleBtn + "</div>";
 
       var stage = '<span class="stage-tag">' + esc(stageLabel(item.stage || item.status)) + "</span>";
       var schedule = '<span class="fd-schedule-inline" title="' + esc(dash(item.scheduleSummary)) + '">' + esc(dash(item.scheduleSummary)) + "</span>";
-      return "<tr>" +
+      return '<tr data-demand-row="' + esc(did) + '">' +
         '<td class="c-id">' + idChip + "</td>" +
         '<td class="c-title">' + titleHtml + "</td>" +
         "<td>" + stage + "</td>" +
@@ -158,7 +158,6 @@
         "<td>" + schedule + "</td>" +
         '<td><div class="pw-actions">' +
         '<button type="button" class="link-btn" data-open-demand="' + esc(did) + '">查看详情</button>' +
-        '<button type="button" class="link-btn muted" data-unfollow-demand="' + esc(did) + '">取消关注</button>' +
         "</div></td></tr>";
     }).join("");
 
@@ -184,6 +183,19 @@
     bindRowEvents();
   }
 
+  function setStarUI(btn, watched) {
+    if (!btn) return;
+    btn.classList.toggle("is-watched", !!watched);
+    btn.setAttribute("data-watched", watched ? "1" : "0");
+    btn.setAttribute("title", watched ? "取消关注" : "关注");
+    btn.setAttribute("aria-label", watched ? "取消关注" : "关注");
+    btn.setAttribute("aria-pressed", watched ? "true" : "false");
+    var icon = btn.querySelector("i");
+    if (icon) {
+      icon.className = watched ? "fas fa-star" : "far fa-star";
+    }
+  }
+
   function bindRowEvents() {
     document.querySelectorAll("#demandSection [data-open-demand]").forEach(function (btn) {
       btn.addEventListener("click", function () {
@@ -193,12 +205,28 @@
         }
       });
     });
-    document.querySelectorAll("#demandSection [data-unfollow-demand]").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var id = btn.getAttribute("data-unfollow-demand");
-        if (!confirm("确认取消关注该业务需求？")) return;
-        if (typeof root.FollowUnwatchDemand === "function") {
-          root.FollowUnwatchDemand(id);
+    document.querySelectorAll("#demandSection [data-watch-demand]").forEach(function (btn) {
+      btn.addEventListener("click", async function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (btn.disabled) return;
+        var id = btn.getAttribute("data-watch-demand");
+        var watched = btn.getAttribute("data-watched") === "1";
+        var next = !watched;
+        btn.disabled = true;
+        var ok = false;
+        if (typeof root.FollowSetDemand === "function") {
+          ok = await root.FollowSetDemand(id, next);
+        } else if (!next && typeof root.FollowUnwatchDemand === "function") {
+          await root.FollowUnwatchDemand(id);
+          ok = true;
+        }
+        btn.disabled = false;
+        if (!ok) return;
+        setStarUI(btn, next);
+        // 取关后从本页列表移除并刷新统计；再关注仅改星标（本页默认全是已关注）
+        if (!next) {
+          load();
         }
       });
     });
@@ -209,7 +237,7 @@
     var empty = document.getElementById("followEmpty");
     var error = document.getElementById("followError");
     var summary = document.getElementById("followSummary");
-    if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="pw-empty-row">正在拉取关注业务需求…</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="pw-empty-row">正在拉取关注业务需求…</td></tr>';
     if (empty) empty.hidden = true;
     if (error) error.hidden = true;
     if (summary) summary.textContent = "关注业务需求 · 加载中…";

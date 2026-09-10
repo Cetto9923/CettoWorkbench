@@ -439,3 +439,212 @@
   font-size: 12px;
   color: var(--color-text-secondary, #64748b);
 }
+
+/* =============================================================================
+   9. 深色模式精细化配色适配 (Dark Mode Polish)
+   优化卡片层级、标签反差、高亮选中态与表格文字易读性
+   ============================================================================= */
+html[data-theme="dark"] .pw-sum-card {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+html[data-theme="dark"] .pw-sum-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--color-primary-border, #4338ca);
+}
+html[data-theme="dark"] .pw-sum-card.active {
+  background: rgba(99, 102, 241, 0.12);
+  border-color: var(--color-primary, #818cf8);
+  box-shadow: 0 0 0 1px var(--color-primary, #818cf8);
+}
+html[data-theme="dark"] .pw-sum-label {
+  color: var(--color-text-secondary, #94a3b8);
+}
+html[data-theme="dark"] .pw-sum-num {
+  color: var(--color-text-strong, #ffffff);
+}
+html[data-theme="dark"] .pw-sum-num.warn {
+  color: var(--color-warning, #fbbf24);
+}
+html[data-theme="dark"] .pw-sum-num.danger {
+  color: var(--color-danger, #f87171);
+}
+html[data-theme="dark"] .pw-sum-note {
+  color: var(--color-text-disabled, #64748b);
+}
+
+/* 工具栏与过滤按钮 */
+html[data-theme="dark"] .pw-toolbar {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+html[data-theme="dark"] .pw-filter-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--color-text-secondary, #94a3b8);
+}
+html[data-theme="dark"] .pw-filter-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-text-primary, #f8fafc);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+html[data-theme="dark"] .pw-filter-btn.active {
+  background: rgba(99, 102, 241, 0.18);
+  border-color: var(--color-primary, #818cf8);
+  color: #c7d2fe;
+}
+html[data-theme="dark"] .pw-filter-btn .n {
+  color: var(--color-text-disabled, #64748b);
+}
+html[data-theme="dark"] .pw-filter-btn.active .n {
+  color: #e0e7ff;
+  background: rgba(99, 102, 241, 0.4);
+  padding: 0 6px;
+  border-radius: 9999px;
+  font-weight: 600;
+}
+html[data-theme="dark"] .pw-search {
+  background: var(--color-surface-muted, #0f172a);
+  border-color: var(--color-border, #334155);
+  color: var(--color-text-primary, #f8fafc);
+}
+html[data-theme="dark"] .pw-search:focus {
+  border-color: var(--color-primary, #818cf8);
+  box-shadow: 0 0 0 2px var(--color-primary-ring-soft);
+}
+html[data-theme="dark"] .pw-reset-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--color-text-secondary, #94a3b8);
+}
+html[data-theme="dark"] .pw-reset-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-text-primary, #f8fafc);
+}
+html[data-theme="dark"] #demandSection .fd-export-btn {
+  border-color: var(--color-primary-border, #4338ca);
+  color: var(--color-primary, #818cf8);
+  background: rgba(99, 102, 241, 0.08);
+}
+html[data-theme="dark"] #demandSection .fd-export-btn:hover {
+  background: rgba(99, 102, 241, 0.18);
+  color: #c7d2fe;
+}
+
+/* 表格与文字 */
+html[data-theme="dark"] .pw-table-wrap {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+html[data-theme="dark"] .pw-table thead th {
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--color-text-secondary, #94a3b8);
+}
+html[data-theme="dark"] .pw-table tbody td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: var(--color-text-body, #cbd5e1);
+}
+html[data-theme="dark"] .pw-table tbody tr:hover td {
+  background: rgba(255, 255, 255, 0.035);
+}
+html[data-theme="dark"] .pw-name,
+html[data-theme="dark"] #demandSection .fd-title-line .table-title-link,
+html[data-theme="dark"] .po-follow .follow-table .table-title-link {
+  color: #93c5fd;
+  font-weight: 500;
+}
+html[data-theme="dark"] .pw-name:hover,
+html[data-theme="dark"] #demandSection .fd-title-line .table-title-link:hover,
+html[data-theme="dark"] .po-follow .follow-table .table-title-link:hover {
+  color: #bfdbfe;
+  text-decoration: underline;
+}
+html[data-theme="dark"] #demandSection .fd-title-sub {
+  color: var(--color-text-secondary, #94a3b8);
+}
+html[data-theme="dark"] #demandSection .fd-keytimes-inline,
+html[data-theme="dark"] #demandSection .fd-schedule-inline {
+  color: var(--color-text-secondary, #94a3b8);
+}
+
+/* 标签半透明通透质感 */
+html[data-theme="dark"] .tag.green {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+html[data-theme="dark"] .tag.orange {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+html[data-theme="dark"] .tag.red {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+html[data-theme="dark"] .tag.blue {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+/* 操作列链接 */
+html[data-theme="dark"] .pw-actions .link-btn {
+  color: #818cf8;
+}
+html[data-theme="dark"] .pw-actions .link-btn:hover {
+  color: #a5b4fc;
+  text-decoration: underline;
+}
+html[data-theme="dark"] .pw-actions .link-btn.muted {
+  color: var(--color-text-disabled, #64748b);
+}
+html[data-theme="dark"] .pw-actions .link-btn.muted:hover {
+  color: var(--color-danger, #f87171);
+  text-decoration: underline;
+}
+
+/* 分页条 */
+html[data-theme="dark"] .pw-footer {
+  background: rgba(255, 255, 255, 0.02);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--color-text-secondary, #94a3b8);
+}
+html[data-theme="dark"] .pw-page-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--color-text-secondary, #94a3b8);
+}
+html[data-theme="dark"] .pw-page-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+html[data-theme="dark"] .pw-page-btn.active {
+  background: var(--color-primary, #818cf8);
+  color: #ffffff;
+  border-color: var(--color-primary, #818cf8);
+}
+
+#demandSection .fd-watch-toggle {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #cbd5e1;
+  cursor: pointer;
+  line-height: 1;
+  border-radius: 4px;
+}
+#demandSection .fd-watch-toggle:hover { color: #f59e0b; background: rgba(245, 158, 11, 0.08); }
+#demandSection .fd-watch-toggle.is-watched { color: #2563eb; }
+#demandSection .fd-watch-toggle.is-watched:hover { color: #1d4ed8; }
+#demandSection .fd-watch-toggle:disabled { opacity: 0.55; cursor: wait; }
+#demandSection .fd-watch-toggle i { font-size: 14px; }
+#demandSection .fd-title-line { flex-wrap: nowrap; }
+#demandSection .fd-title-sub { display: none; }
