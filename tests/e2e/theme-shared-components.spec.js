@@ -222,4 +222,33 @@ assert(baseCss.includes('accent-color: var(--color-primary);'),
   "base.css must define accent-color for checkbox/radio");
 console.log("PASS: base.css accent-color verified.");
 
+// Check PO shell owns legacy page aliases used by mature PO modules such as schedule.
+const poShellCss = fs.readFileSync(path.join(cssDir, 'po/shell.css'), 'utf8');
+for (const token of [
+  '--bg', '--white', '--hover', '--active', '--border', '--border-lt',
+  '--t1', '--t2', '--t3', '--blue', '--blue-bg', '--blue-bd',
+  '--red', '--red-bg', '--red-bd', '--orange', '--orange-bg', '--orange-bd',
+  '--green', '--green-bg', '--green-bd', '--gray', '--gray-bg',
+  '--purple', '--purple-bg', '--purple-bd'
+]) {
+  assert(poShellCss.includes(`${token}: var(--color-`) || poShellCss.includes(`${token}: var(--po-`),
+    `po/shell.css must define ${token} from a semantic token`);
+}
+
+const scheduleCssFiles = [
+  'schedule/schedule.css',
+  'schedule/schedulefilter.css',
+  'schedule/scheduleintegrated.css',
+  'schedule/schedulelist.css',
+  'schedule/schedulemodal.css',
+  'schedule/schedulewindow.css'
+];
+const prohibitedScheduleUiColors = /#(?:fff|ffffff|f8fafc|f9fafb|fafbfc|f3f4f6|f1f5f9|e2e8f0|e5e7eb|cbd5e1|94a3b8|64748b|475569|334155|1e293b|0f172a)\b/i;
+for (const relPath of scheduleCssFiles) {
+  const content = fs.readFileSync(path.join(cssDir, relPath), 'utf8');
+  assert(!content.includes(':root {'), `${relPath} must not redefine the PO theme alias palette`);
+  assert(!prohibitedScheduleUiColors.test(content), `${relPath} must use PO shell/theme tokens instead of hardcoded UI colors`);
+}
+console.log("PASS: PO shell owns schedule theme aliases and schedule CSS avoids hardcoded UI colors.");
+
 console.log("All Shared Component Theme Contracts Passed Successfully!");

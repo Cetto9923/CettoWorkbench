@@ -6,7 +6,7 @@
 
 /* ── 版本窗口概览（默认偏紧凑，把首屏留给需求列表） ── */
 .schedule-version-overview {
-  background: #fff;
+  background: var(--color-surface);
   border: 1px solid var(--border);
   border-radius: 8px;
   margin-bottom: 8px;
@@ -17,14 +17,14 @@
 .schedule-section-title {
   font-size: 12px;
   font-weight: 900;
-  color: #0f172a;
+  color: var(--color-text-primary);
   margin-bottom: 6px;
 }
 
 .schedule-section-title span {
   font-size: 11px;
   font-weight: 600;
-  color: #64748b;
+  color: var(--color-text-secondary);
   margin-left: 8px;
 }
 
@@ -46,9 +46,9 @@
   min-height: 72px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--color-surface);
   font-size: 13px;
-  color: #999;
+  color: var(--color-text-disabled);
   padding: 0;
   margin: 0;
 }
@@ -57,7 +57,7 @@
   position: relative;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--color-surface);
   text-align: left;
   padding: 0;
   cursor: default;
@@ -117,7 +117,7 @@
   top: 26px;
   right: 0;
   min-width: 120px;
-  background: #fff;
+  background: var(--color-surface);
   border: 1px solid var(--border);
   border-radius: 6px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
@@ -159,19 +159,19 @@
 }
 
 .schedule-version-card.red {
-  background: linear-gradient(180deg, #fff 0%, #fff7f7 100%);
+  background: var(--color-danger-bg);
 }
 
 .schedule-version-card.blue {
-  background: linear-gradient(180deg, #fff 0%, #f8fbff 100%);
+  background: var(--color-info-bg);
 }
 
 .schedule-version-card.green {
-  background: linear-gradient(180deg, #fff 0%, #f7fff9 100%);
+  background: var(--color-success-bg);
 }
 
 .schedule-version-card.purple {
-  background: linear-gradient(180deg, #fff 0%, #faf8ff 100%);
+  background: var(--color-primary-light);
 }
 
 .schedule-version-top {
@@ -184,7 +184,7 @@
 .schedule-version-name {
   font-size: 12px;
   font-weight: 900;
-  color: #0f172a;
+  color: var(--color-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -202,9 +202,9 @@
   font-size: 9px;
   padding: 0 4px;
   border-radius: 3px;
-  background: #e8f4fd;
-  color: #1a73e8;
-  border: 1px solid #c5e1fb;
+  background: var(--color-info-bg);
+  color: var(--color-info);
+  border: 1px solid var(--color-info-border);
   font-weight: 500;
   line-height: 1.35;
   margin-left: 4px;
@@ -214,18 +214,18 @@
 .schedule-version-top strong {
   font-size: 15px;
   font-family: "JetBrains Mono", monospace;
-  color: #0f172a;
+  color: var(--color-text-primary);
 }
 
 .schedule-version-range {
   font-size: 10px;
-  color: #64748b;
+  color: var(--color-text-secondary);
   margin-top: 2px;
 }
 
 .schedule-version-bar {
   height: 4px;
-  background: #e5e7eb;
+  background: var(--color-border);
   border-radius: 999px;
   overflow: hidden;
   margin-top: 5px;
@@ -257,7 +257,7 @@
   flex-wrap: nowrap;
   margin-top: 5px;
   font-size: 10px;
-  color: #475569;
+  color: var(--color-text-body);
   overflow: hidden;
 }
 
@@ -270,14 +270,14 @@
 .schedule-version-meta i {
   width: 1px;
   height: 10px;
-  background: #cbd5e1;
+  background: var(--color-border-strong);
   margin: 0 6px;
   flex-shrink: 0;
 }
 
 .schedule-version-meta b {
   font-family: "JetBrains Mono", monospace;
-  color: #0f172a;
+  color: var(--color-text-primary);
 }
 
 .schedule-version-meta b.schedule-remaining-over {
@@ -287,10 +287,10 @@
 .schedule-version-extra {
   grid-column: 4;
   grid-row: 1;
-  border: 1px dashed #cbd5e1;
+  border: 1px dashed var(--color-border-strong);
   border-radius: 8px;
-  background: #fff;
-  color: #475569;
+  background: var(--color-surface);
+  color: var(--color-text-body);
   display: flex;
   flex-direction: column;
   gap: 6px;

@@ -6,6 +6,35 @@ body.po-workbench-shell {
   background: var(--color-page-bg);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
   color: var(--color-text-primary);
+
+  /* PO UI architecture: legacy page aliases resolve to semantic theme tokens here. */
+  --bg: var(--color-page-bg);
+  --white: var(--color-surface);
+  --hover: var(--color-surface-hover);
+  --active: var(--color-surface-muted);
+  --border: var(--color-border);
+  --border-lt: var(--color-border-soft);
+  --t1: var(--color-text-deep);
+  --t2: var(--color-text-secondary);
+  --t3: var(--color-text-disabled);
+  --blue: var(--color-info);
+  --blue-bg: var(--color-info-bg);
+  --blue-bd: var(--color-info-border);
+  --red: var(--color-danger-fill);
+  --red-bg: var(--color-danger-bg);
+  --red-bd: var(--color-danger-border);
+  --orange: var(--color-warning);
+  --orange-bg: var(--color-warning-bg);
+  --orange-bd: var(--color-warning-border);
+  --green: var(--color-success-accent);
+  --green-bg: var(--color-success-bg);
+  --green-bd: var(--color-success-border);
+  --gray: var(--color-text-secondary);
+  --gray-bg: var(--color-surface-muted);
+  --purple: var(--color-primary-active-deep);
+  --purple-bg: var(--color-primary-light);
+  --purple-bd: var(--color-primary-border);
+  --r: 6px;
 }
 
 body.po-workbench-shell .topbar {

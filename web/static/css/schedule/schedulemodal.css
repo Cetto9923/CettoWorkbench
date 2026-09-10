@@ -6,24 +6,24 @@
 
 /* 日期输入框：未填时占位（年/月/日）浅灰，有值后正常色 */
 #scheduleVersionWindowModal input[type="date"].form-input {
-  color: #333;
+  color: var(--color-text-deep);
 }
 
 #scheduleVersionWindowModal input[type="date"].form-input::-webkit-datetime-edit {
-  color: #aaa;
+  color: var(--color-text-disabled);
 }
 
 #scheduleVersionWindowModal input[type="date"].form-input.has-value::-webkit-datetime-edit,
 #scheduleVersionWindowModal input[type="date"].form-input:focus::-webkit-datetime-edit {
-  color: #333;
+  color: var(--color-text-deep);
 }
 
 #scheduleVersionWindowModal input[type="date"].form-input:invalid {
-  color: #aaa;
+  color: var(--color-text-disabled);
 }
 
 #scheduleVersionWindowModal input[type="date"].form-input:valid.has-value {
-  color: #333;
+  color: var(--color-text-deep);
 }
 
 /* ── 版本窗口弹窗（完整复制 demo/personal-workbench.css 相关规则） ── */
@@ -211,7 +211,7 @@
 #manageVersionWindowsModal .action-btn--disabled {
   opacity: 0.55;
   cursor: not-allowed;
-  background: #f5f5f5;
+  background: var(--color-surface-muted);
   border-style: dashed;
   color: var(--t3) !important;
   pointer-events: none;
@@ -220,7 +220,7 @@
 #manageVersionWindowsModal .action-btn--disabled:hover {
   border-color: var(--border) !important;
   color: var(--t3) !important;
-  background: #f5f5f5 !important;
+  background: var(--color-surface-muted) !important;
 }
 
 /* 操作列：轻量图标按钮（对齐 user/list zen-icon-action） */
@@ -239,7 +239,7 @@
   border: none;
   border-radius: 4px;
   background: transparent;
-  color: #999;
+  color: var(--color-text-disabled);
   box-shadow: none;
 }
 
@@ -251,7 +251,7 @@
 #manageVersionWindowsModal .action-btn.zen-icon-action.primary {
   background: transparent;
   border: none;
-  color: #999;
+  color: var(--color-text-disabled);
 }
 
 #manageVersionWindowsModal .action-btn.zen-icon-action.primary:hover:not(.action-btn--disabled) {
@@ -263,7 +263,7 @@
 #manageVersionWindowsModal .action-btn.zen-icon-action.danger {
   background: transparent;
   border: none;
-  color: #999;
+  color: var(--color-text-disabled);
 }
 
 #manageVersionWindowsModal .action-btn.zen-icon-action.danger:hover:not(.action-btn--disabled) {
@@ -279,7 +279,7 @@
   cursor: not-allowed;
   background: transparent;
   border: none;
-  color: #ccc;
+  color: var(--color-border-strong);
   pointer-events: none;
 }
 
@@ -463,8 +463,8 @@
 }
 
 .task-modal-project-section {
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
+  background: var(--color-info-bg);
+  border: 1px solid var(--color-info-border);
   border-radius: 8px;
   padding: 14px 16px;
   margin-bottom: 12px;
@@ -597,7 +597,7 @@
 }
 
 .task-list-modal-table thead th {
-  background: #f8fafc;
+  background: var(--color-surface-muted);
   color: var(--t2);
   font-weight: 600;
 }
@@ -623,7 +623,7 @@
   width: 72px;
   height: 18px;
   border-radius: 999px;
-  background: #eef2f7;
+  background: var(--color-surface-soft-4);
   overflow: hidden;
   display: inline-flex;
   align-items: center;
@@ -633,7 +633,7 @@
 .task-list-modal-progress-bar {
   position: absolute;
   inset: 0 auto 0 0;
-  background: #cfe0ff;
+  background: var(--color-info-bg);
 }
 
 .task-list-modal-progress em {
