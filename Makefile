@@ -16,6 +16,7 @@ check-test:
 	@GOCACHE=$(GOCACHE_DIR) go test ./...
 
 check-frontend-test:
+	@node tests/unit/frontend/user-picker.test.js
 	@node tests/unit/frontend/auth-errors.test.js
 	@node tests/unit/frontend/csrf-tokens.test.js
 	@node tests/unit/frontend/personal-list.test.js

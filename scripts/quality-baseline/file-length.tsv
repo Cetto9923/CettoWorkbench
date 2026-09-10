@@ -12,6 +12,6 @@ web/static/js/debug/sqlperf.js	550
 web/static/js/dept/list.js	655
 web/static/js/schedule/scheduleintegrated.js	837
 web/static/js/schedule/scheduleintegratedtasks.js	556
-web/static/js/ui.js	775
+web/static/js/ui.js	738
 web/templates/dept/edit.html	513
 web/templates/schedule/index.html	742

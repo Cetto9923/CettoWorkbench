@@ -12,11 +12,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 // demandClarifyRawRow 需求主表字段。
@@ -315,130 +313,6 @@ func (r *Repo) FindProductMembers(ctx context.Context, productIDs []int64) (map[
 	}
 
 	return result, nil
-}
-
-// findFirstLevelDeptIDs 查找操作人所在的一级部门（例如总行-金融科技总部这个级别）及其所有下属部门 ID。
-func (r *Repo) findFirstLevelDeptIDs(ctx context.Context, actorAccount string) []uint {
-	if strings.TrimSpace(actorAccount) == "" {
-		return nil
-	}
-	db, err := r.reader()
-	if err != nil {
-		return nil
-	}
-	var u struct {
-		Dept uint `gorm:"column:dept"`
-	}
-	if err := db.WithContext(ctx).Table("zt_user").
-		Select("dept").Where("account = ? AND deleted = '0'", actorAccount).
-		Take(&u).Error; err != nil || u.Dept == 0 {
-		return nil
-	}
-
-	var actorDept struct {
-		ID     uint   `gorm:"column:id"`
-		Parent uint   `gorm:"column:parent"`
-		Path   string `gorm:"column:path"`
-		Grade  uint   `gorm:"column:grade"`
-	}
-	if err := db.WithContext(ctx).Table("zt_dept").
-		Select("id, parent, path, grade").Where("id = ?", u.Dept).
-		Take(&actorDept).Error; err != nil {
-		return nil
-	}
-
-	// 禅道 path 如 ",1,5,18,"，找出对应的一级部门（总行下一级，如金融科技总部）
-	parts := strings.Split(strings.Trim(actorDept.Path, ","), ",")
-	var targetDeptID uint
-	if len(parts) >= 2 {
-		// L-3: ParseUint 失败时不静默 dept=0；path 数据异常时退回 actor 自身部门。
-		// Repo 层没有 logger，靠调用方收到 actorDept.ID 作为非零值来判断。
-		if id, parseErr := strconv.ParseUint(parts[1], 10, 32); parseErr == nil {
-			targetDeptID = uint(id)
-		} else {
-			targetDeptID = actorDept.ID
-		}
-	} else if len(parts) == 1 && parts[0] != "" {
-		if id, parseErr := strconv.ParseUint(parts[0], 10, 32); parseErr == nil {
-			targetDeptID = uint(id)
-		} else {
-			targetDeptID = actorDept.ID
-		}
-	} else {
-		targetDeptID = actorDept.ID
-	}
-
-	if targetDeptID == 0 {
-		return nil
-	}
-
-	var targetDept struct {
-		ID   uint   `gorm:"column:id"`
-		Path string `gorm:"column:path"`
-	}
-	if err := db.WithContext(ctx).Table("zt_dept").
-		Select("id, path").Where("id = ?", targetDeptID).
-		Take(&targetDept).Error; err != nil {
-		return []uint{targetDeptID}
-	}
-
-	var deptIDs []uint
-	targetPath := targetDept.Path
-	if targetPath == "" {
-		targetPath = fmt.Sprintf(",%d,", targetDeptID)
-	} else {
-		if !strings.HasPrefix(targetPath, ",") {
-			targetPath = "," + targetPath
-		}
-		if !strings.HasSuffix(targetPath, ",") {
-			targetPath = targetPath + ","
-		}
-	}
-	_ = db.WithContext(ctx).Table("zt_dept").
-		Where("id = ? OR path LIKE ?", targetDeptID, targetPath+"%").
-		Pluck("id", &deptIDs).Error
-	if len(deptIDs) == 0 {
-		return []uint{targetDeptID}
-	}
-	return deptIDs
-}
-
-// FindCandidateUsers 读取全部可选人员（优先把本一级部门排在前面，且工号倒序）。
-func (r *Repo) FindCandidateUsers(ctx context.Context, actorAccount string) ([]ClarifyOption, error) {
-	db, err := r.reader()
-	if err != nil {
-		return nil, err
-	}
-	firstLevelDeptIDs := r.findFirstLevelDeptIDs(ctx, actorAccount)
-
-	query := db.WithContext(ctx).Table("zt_user").Where("deleted = '0'")
-	if len(firstLevelDeptIDs) > 0 {
-		deptIDStrs := make([]string, len(firstLevelDeptIDs))
-		for i, id := range firstLevelDeptIDs {
-			deptIDStrs[i] = strconv.FormatUint(uint64(id), 10)
-		}
-		orderExpr := fmt.Sprintf("CASE WHEN dept IN (%s) THEN 0 ELSE 1 END, account DESC", strings.Join(deptIDStrs, ","))
-		query = query.Order(clause.OrderByColumn{Column: clause.Column{Name: orderExpr, Raw: true}})
-	} else {
-		query = query.Order("account DESC")
-	}
-
-	var rows []struct {
-		Account  string `gorm:"column:account"`
-		Realname string `gorm:"column:realname"`
-	}
-	if err := query.Select("account, realname").Find(&rows).Error; err != nil {
-		return nil, err
-	}
-	out := make([]ClarifyOption, 0, len(rows))
-	for _, row := range rows {
-		account := strings.TrimSpace(row.Account)
-		if account == "" {
-			continue
-		}
-		out = append(out, ClarifyOption{Value: account, Label: FormatAccountName(account, row.Realname)})
-	}
-	return out, nil
 }
 
 // ClarifyConfigData 配置数据。

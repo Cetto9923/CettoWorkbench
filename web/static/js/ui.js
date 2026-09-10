@@ -160,99 +160,12 @@
     return (value || "").trim();
   }
 
-  function normalizeAutocompleteItems(items) {
-    var seen = {};
-    var out = [];
-    (items || []).forEach(function (item) {
-      var value = trimText(item && item.value);
-      if (!value || seen[value]) {
-        return;
-      }
-      seen[value] = true;
-      out.push({
-        value: value,
-        label: trimText(item.label) || value,
-      });
-    });
-    return out;
-  }
-
-  function findAutocompleteItem(items, value) {
-    value = trimText(value);
-    if (!value) {
-      return null;
-    }
-    for (var i = 0; i < items.length; i++) {
-      if (items[i].value === value) {
-        return items[i];
-      }
-    }
-    return null;
-  }
-
-  function ensureAutocompleteItem(items, value, label) {
-    value = trimText(value);
-    if (!value) {
-      return items;
-    }
-    if (findAutocompleteItem(items, value)) {
-      return items;
-    }
-    return items.concat([
-      {
-        value: value,
-        label: trimText(label) || value,
-      },
-    ]);
-  }
-
-  function formatAutocompleteLabel(item) {
-    var label = trimText(item.label);
-    var value = trimText(item.value);
-    if (!value) {
-      return label;
-    }
-    if (!label || label === value) {
-      return value;
-    }
-    if (label.indexOf(value) >= 0) {
-      return label;
-    }
-    return label + "(" + value + ")";
-  }
-
-  function filterAutocompleteItems(items, query, maxShow) {
-    query = trimText(query).toLowerCase();
-    if (!query) {
-      var total = items.length;
-      return {
-        items: items.slice(0, maxShow),
-        showHint: total > maxShow,
-        remainingCount: total > maxShow ? total - maxShow : 0,
-        hasQuery: false,
-      };
-    }
-
-    var matches = [];
-    for (var i = 0; i < items.length; i++) {
-      var item = items[i];
-      if (item.isGroupHeader) {
-        continue;
-      }
-      var haystack = (item.label + " " + item.value + " " + (item.badge || "")).toLowerCase();
-      if (haystack.indexOf(query) === -1) {
-        continue;
-      }
-      matches.push(item);
-    }
-
-    return {
-      items: matches.slice(0, maxShow),
-      showHint: matches.length > maxShow,
-      remainingCount: matches.length > maxShow ? matches.length - maxShow : 0,
-      hasQuery: true,
-    };
-  }
+  var autocompleteOptions = window.AutocompleteOptions;
+  var normalizeAutocompleteItems = autocompleteOptions.normalize;
+  var findAutocompleteItem = autocompleteOptions.find;
+  var ensureAutocompleteItem = autocompleteOptions.ensure;
+  var formatAutocompleteLabel = autocompleteOptions.label;
+  var filterAutocompleteItems = autocompleteOptions.filter;
 
   function updateAutocompleteClearButton(state) {
     if (!state.clearBtn) {
@@ -369,7 +282,7 @@
 
   function renderAutocompleteDropdown(state) {
     var query = state.input.value;
-    var result = filterAutocompleteItems(state.items, query, state.maxShow);
+    var result = filterAutocompleteItems(state.items, query, state.maxShow, state.mode);
     var matches = result.items;
     var dropdown = state.dropdown;
 
@@ -410,16 +323,8 @@
       option.setAttribute("data-value", item.value);
       option.setAttribute("data-label", displayLabel);
 
-      var textSpan = document.createElement("span");
-      textSpan.textContent = displayLabel;
-      option.appendChild(textSpan);
-
-      if (item.badge) {
-        var badgeSpan = document.createElement("span");
-        badgeSpan.className = "ui-autocomplete-badge";
-        badgeSpan.textContent = item.badge;
-        option.appendChild(badgeSpan);
-      }
+      autocompleteOptions.render(option, item, displayLabel, state.mode);
+      option.setAttribute("aria-selected", String(state.hidden.value === item.value));
 
       option.addEventListener("mousedown", function (ev) {
         ev.preventDefault();
@@ -433,7 +338,8 @@
     if (result.showHint) {
       var hint = document.createElement("div");
       hint.className = "ui-autocomplete-hint";
-      hint.textContent = "还有 " + result.remainingCount + " 条，输入关键词缩小范围";
+      hint.textContent = "还有 " + result.remainingCount + (state.mode === "user"
+        ? " 个选项没有显示，可尝试搜索来查找" : " 条，输入关键词缩小范围");
       dropdown.appendChild(hint);
     }
 
@@ -540,32 +446,37 @@
     renderAutocompleteDropdown(state);
   }
 
+  function listenAutocomplete(state, target, event, handler) {
+    target.addEventListener(event, handler);
+    state.listeners.push(function () { target.removeEventListener(event, handler); });
+  }
+
   function bindAutocompleteEvents(state) {
     if (state.bound) {
       return;
     }
     state.bound = true;
 
-    state.host.addEventListener("mousedown", function (ev) {
+    listenAutocomplete(state, state.host, "mousedown", function (ev) {
       ev.stopPropagation();
     });
 
-    state.input.addEventListener("focus", function () {
+    listenAutocomplete(state, state.input, "focus", function () {
       positionAutocompleteDropdown(state);
       openAutocompleteDropdown(state);
     });
 
-    state.input.addEventListener("mousedown", function () {
+    listenAutocomplete(state, state.input, "mousedown", function () {
       openAutocompleteDropdown(state);
     });
 
-    state.input.addEventListener("input", function () {
+    listenAutocomplete(state, state.input, "input", function () {
       state.hidden.value = "";
       updateAutocompleteClearButton(state);
       renderAutocompleteDropdown(state);
     });
 
-    state.input.addEventListener("keydown", function (ev) {
+    listenAutocomplete(state, state.input, "keydown", function (ev) {
       if (!state.open) {
         if (ev.key === "ArrowDown" || ev.key === "ArrowUp") {
           openAutocompleteDropdown(state);
@@ -606,7 +517,7 @@
       }
     });
 
-    state.clearBtn.addEventListener("click", function (ev) {
+    listenAutocomplete(state, state.clearBtn, "click", function (ev) {
       ev.preventDefault();
       ev.stopPropagation();
       clearAutocompleteValue(state);
@@ -634,6 +545,7 @@
       activeIndex: -1,
       open: false,
       bound: false,
+      listeners: [],
       repositionBound: false,
       repositionHandler: null,
       modalScrollHandler: null,
@@ -658,10 +570,7 @@
     var state = autocompleteInstances[inputId];
     if (!state || state.input !== input || state.hidden !== hidden) {
       if (state) {
-        unbindAutocompleteReposition(state);
-        if (state.dropdown && state.dropdown.parentElement) {
-          state.dropdown.remove();
-        }
+        destroyAutocomplete(inputId);
       }
       state = createAutocompleteState(input, hidden, inputId);
       if (!state) {
@@ -672,8 +581,10 @@
       bindAutocompleteReposition(state);
     }
 
+    state.mode = options.mode || "";
+    state.dropdown.classList.toggle("ui-autocomplete-dropdown--user", state.mode === "user");
     state.items = normalizeAutocompleteItems(items);
-    state.maxShow = options.maxShow > 0 ? options.maxShow : 1000;
+    state.maxShow = options.maxShow > 0 ? options.maxShow : (state.mode === "user" ? 20 : 1000);
     if (options.placeholder) {
       state.input.placeholder = options.placeholder;
     }
@@ -683,7 +594,7 @@
         state.items = ensureAutocompleteItem(state.items, options.value, options.label);
         var selectedItem = findAutocompleteItem(state.items, options.value);
         var displayLabel = selectedItem
-          ? formatAutocompleteLabel(selectedItem)
+          ? (selectedItem.selectedLabel || formatAutocompleteLabel(selectedItem))
           : formatAutocompleteLabel({ value: options.value, label: options.label });
         selectAutocompleteItem(state, options.value, displayLabel);
       } else {
@@ -708,6 +619,7 @@
       return;
     }
     closeAutocomplete(state);
+    state.listeners.forEach(function (remove) { remove(); });
     unbindAutocompleteReposition(state);
     if (state.dropdown && state.dropdown.parentElement) {
       state.dropdown.remove();
@@ -813,6 +725,13 @@
   window.submitDelete = submitDelete;
   window.toggleDropdown = toggleDropdown;
   window.closeAllDropdowns = closeAllDropdowns;
+  // Local items today. opts.fetcher(query) => Promise<items> is reserved for
+  // a future debounced remote source in the shared autocomplete lifecycle.
+  // Next consumers: schedule RD/QD/acceptance, demand_edit, urge, multi-select.
+  window.initUserPicker = function (inputId, hiddenId, items, opts) {
+    return initAutocomplete(inputId, hiddenId, items, Object.assign({}, opts, { mode: "user" }));
+  };
+  window.destroyUserPicker = destroyAutocomplete;
   window.initAutocomplete = initAutocomplete;
   window.clearAutocomplete = clearAutocomplete;
   window.destroyAutocomplete = destroyAutocomplete;

@@ -118,14 +118,15 @@ func TestFindCandidateUsers_PrimaryDeptFirstAndAccountDesc(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).
 			AddRow(5).AddRow(18).AddRow(19))
 
-	// 5. 候选人排序查询：本一级部门置顶 (CASE WHEN dept IN (5,18,19) THEN 0 ELSE 1 END), 工号倒序 (account DESC)
-	mock.ExpectQuery("SELECT account, realname FROM `zt_user` WHERE deleted = '0' ORDER BY CASE WHEN dept IN \\(5,18,19\\) THEN 0 ELSE 1 END, account DESC").
-		WillReturnRows(sqlmock.NewRows([]string{"account", "realname"}).
-			AddRow("003000", "张三").
-			AddRow("002000", "李四").
-			AddRow("001000", "王五").
-			AddRow("009999", "赵六").
-			AddRow("008888", "钱七"))
+	// 5. 候选人排序查询：本一级部门置顶，工号倒序，并带回所在部门。
+	mock.ExpectQuery("SELECT u\\.account, u\\.realname, COALESCE\\(d\\.name, ''\\) AS dept FROM zt_user AS u LEFT JOIN zt_dept AS d ON d\\.id = u\\.dept WHERE u\\.deleted = '0' ORDER BY CASE WHEN u\\.dept IN \\(\\?,\\?,\\?\\) THEN 0 ELSE 1 END, u\\.account DESC").
+		WithArgs(5, 18, 19).
+		WillReturnRows(sqlmock.NewRows([]string{"account", "realname", "dept"}).
+			AddRow("003000", "张三", "金融科技总部").
+			AddRow("002000", "李四", "软件开发一处").
+			AddRow("001000", "王五", "软件开发二处").
+			AddRow("009999", "赵六", "业务部门").
+			AddRow("008888", "钱七", ""))
 
 	users, err := repo.FindCandidateUsers(context.Background(), "002000")
 	if err != nil {
@@ -146,6 +147,9 @@ func TestFindCandidateUsers_PrimaryDeptFirstAndAccountDesc(t *testing.T) {
 	if users[0].Label != "张三(003000)" {
 		t.Errorf("user[0].Label = %q, want %q", users[0].Label, "张三(003000)")
 	}
+	if users[0].Dept != "金融科技总部" || users[4].Dept != "" {
+		t.Errorf("unexpected user departments: first=%q last=%q", users[0].Dept, users[4].Dept)
+	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet SQL expectations: %v", err)
@@ -161,11 +165,11 @@ func TestFindCandidateUsers_FallbackToAccountDescWhenNoDept(t *testing.T) {
 		WithArgs("009999", 1).
 		WillReturnRows(sqlmock.NewRows([]string{"dept"}).AddRow(0))
 
-	// 回退到纯工号倒序
-	mock.ExpectQuery("SELECT account, realname FROM `zt_user` WHERE deleted = '0' ORDER BY account DESC").
-		WillReturnRows(sqlmock.NewRows([]string{"account", "realname"}).
-			AddRow("009999", "赵六").
-			AddRow("001000", "张三"))
+	// 回退到纯工号倒序，仍带回部门字段。
+	mock.ExpectQuery("SELECT u\\.account, u\\.realname, COALESCE\\(d\\.name, ''\\) AS dept FROM zt_user AS u LEFT JOIN zt_dept AS d ON d\\.id = u\\.dept WHERE u\\.deleted = '0' ORDER BY u\\.account DESC").
+		WillReturnRows(sqlmock.NewRows([]string{"account", "realname", "dept"}).
+			AddRow("009999", "赵六", "业务部门").
+			AddRow("001000", "张三", ""))
 
 	users, err := repo.FindCandidateUsers(context.Background(), "009999")
 	if err != nil {
@@ -174,6 +178,9 @@ func TestFindCandidateUsers_FallbackToAccountDescWhenNoDept(t *testing.T) {
 
 	if len(users) != 2 || users[0].Value != "009999" || users[1].Value != "001000" {
 		t.Fatalf("unexpected users ordering: %#v", users)
+	}
+	if users[0].Dept != "业务部门" || users[1].Dept != "" {
+		t.Fatalf("unexpected user departments: %#v", users)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {

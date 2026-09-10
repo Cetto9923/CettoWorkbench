@@ -38,9 +38,9 @@
     if (typeof window.destroyAutocomplete === "function") {
       $("#poClarifyProductTbody tr").each(function () {
         window.destroyAutocomplete("poClarifyProductInput_" + $(this).attr("data-row-idx"));
-        window.destroyAutocomplete("poClarifyPmInput_" + $(this).attr("data-row-idx"));
+        window.destroyUserPicker("poClarifyPmInput_" + $(this).attr("data-row-idx"));
       });
-      ["poClarifyBRAInput", "poClarifyQDInput", "poClarifyRDInput"].forEach(window.destroyAutocomplete);
+      ["poClarifyBRAInput", "poClarifyQDInput", "poClarifyRDInput"].forEach(window.destroyUserPicker);
     }
     currentDemandId = null; currentFormData = null;
   }
@@ -62,16 +62,16 @@
     members.forEach(function (m) {
       memberMap[m.account] = true;
       var name = m.realname || m.account;
-      recItems.push({ value: m.account, label: name, badge: m.role || "相关人员", selectedLabel: name + "(" + m.account + ")" });
+      recItems.push(Object.assign({}, allUsers.find(function (u) { return u.value === m.account; }), { value: m.account, label: name, badge: m.role || "相关人员" }));
     });
     allUsers.forEach(function (u) { if (!memberMap[u.value]) otherUsers.push(u); });
     var items = [{ label: "★ 本产品相关人员 (推荐)", value: "", isGroupHeader: true }].concat(recItems);
     if (otherUsers.length) items = items.concat([{ label: "全部人员", value: "", isGroupHeader: true }]).concat(otherUsers);
     return items;
   }
-  function bindUserAutocomplete(inputId, hiddenId, users, selectedVal) {
-    if (typeof window.initAutocomplete !== "function") return;
-    window.initAutocomplete(inputId, hiddenId, users || [], { value: selectedVal || "", label: findUserLabel(users, selectedVal), placeholder: "输入姓名或工号搜索" });
+  function bindUserPicker(inputId, hiddenId, users, selectedVal) {
+    if (typeof window.initUserPicker !== "function") return;
+    window.initUserPicker(inputId, hiddenId, users || [], { value: selectedVal || "", label: findUserLabel(users, selectedVal), placeholder: "输入姓名或工号搜索" });
   }
   function bindProductAutocomplete(inputId, hiddenId, products, selectedVal) {
     if (typeof window.initAutocomplete !== "function") return;
@@ -104,9 +104,9 @@
     $("#poClarifyDemandBadge").text(data.code || ("US" + data.id));
     $("#poClarifyDemandTitle").text(data.name || "需求澄清");
     populateSelect("#poClarifyCategory", data.categoryOptions, data.category);
-    bindUserAutocomplete("poClarifyBRAInput", "poClarifyBRA", data.userOptions, data.bra);
-    bindUserAutocomplete("poClarifyQDInput", "poClarifyQD", data.userOptions, data.qd);
-    bindUserAutocomplete("poClarifyRDInput", "poClarifyRD", data.userOptions, data.rd);
+    bindUserPicker("poClarifyBRAInput", "poClarifyBRA", data.userOptions, data.bra);
+    bindUserPicker("poClarifyQDInput", "poClarifyQD", data.userOptions, data.qd);
+    bindUserPicker("poClarifyRDInput", "poClarifyRD", data.userOptions, data.rd);
     $("#poClarifyDescContent").html(data.desc || "<em>暂无描述</em>").hide();
     $("#poClarifyDescPreview").text(data.desc ? data.desc.replace(/<[^>]+>/g, "").slice(0, 40) + "…" : "暂无描述");
     $("#poClarifyDescArrow").removeClass("expanded");
@@ -159,7 +159,7 @@
       '<td style="text-align:center;"><button type="button" class="clarify-action-btn js-add-prod-row" title="添加产品">+</button> <button type="button" class="clarify-action-btn del js-del-prod-row" title="删除产品">&minus;</button></td></tr>';
     $("#poClarifyProductTbody").append(html);
     bindProductAutocomplete("poClarifyProductInput_" + idx, "poClarifyProductValue_" + idx, products, item.productId);
-    bindUserAutocomplete("poClarifyPmInput_" + idx, "poClarifyPmValue_" + idx, buildPmOptionsForProduct(item.productId), item.pm);
+    bindUserPicker("poClarifyPmInput_" + idx, "poClarifyPmValue_" + idx, buildPmOptionsForProduct(item.productId), item.pm);
     syncStoryProductOptions();
   }
 
@@ -271,7 +271,7 @@
       var pmOptions = buildPmOptionsForProduct(pId);
       var defaultPm = (selectedProduct && selectedProduct.po) || "";
       var currentPm = $row.find(".js-clarify-pm-value").val();
-      bindUserAutocomplete("poClarifyPmInput_" + idx, "poClarifyPmValue_" + idx, pmOptions, currentPm || defaultPm);
+      bindUserPicker("poClarifyPmInput_" + idx, "poClarifyPmValue_" + idx, pmOptions, currentPm || defaultPm);
       syncStoryProductOptions();
     }
 
@@ -306,7 +306,7 @@
         var products = (currentFormData && currentFormData.productOptions) || [];
         bindProductAutocomplete("poClarifyProductInput_" + emptyRowIdx, "poClarifyProductValue_" + emptyRowIdx, products, pId);
         var pmOptions = buildPmOptionsForProduct(pId);
-        bindUserAutocomplete("poClarifyPmInput_" + emptyRowIdx, "poClarifyPmValue_" + emptyRowIdx, pmOptions, pPo);
+        bindUserPicker("poClarifyPmInput_" + emptyRowIdx, "poClarifyPmValue_" + emptyRowIdx, pmOptions, pPo);
         syncStoryProductOptions();
       } else {
         addProductRow({ productId: pId, pm: pPo });
@@ -321,7 +321,7 @@
       var $tr = $(this).closest("tr"), idx = $tr.attr("data-row-idx");
       if (typeof window.destroyAutocomplete === "function") {
         window.destroyAutocomplete("poClarifyProductInput_" + idx);
-        window.destroyAutocomplete("poClarifyPmInput_" + idx);
+        window.destroyUserPicker("poClarifyPmInput_" + idx);
       }
       $tr.remove(); syncStoryProductOptions();
     });

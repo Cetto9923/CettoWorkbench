@@ -135,3 +135,72 @@
   border-top: none;
   cursor: default;
 }
+
+/* User mode shares the autocomplete portal and option interaction. */
+.ui-autocomplete-dropdown--user { max-height: 280px; }
+.ui-autocomplete-option--user { justify-content: flex-start; }
+.ui-autocomplete-option--user .ui-autocomplete-content { min-width: 0; }
+.ui-autocomplete-main {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.ui-autocomplete-dept {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+.ui-autocomplete-meta {
+  display: block;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.ui-autocomplete-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 30px;
+  height: 30px;
+  border-radius: 4px;
+  font-size: 14px;
+  background: var(--color-info-bg);
+  color: var(--color-info);
+}
+.ui-autocomplete-avatar[data-tone="1"] {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+.ui-autocomplete-avatar[data-tone="2"] {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+.ui-autocomplete-avatar[data-tone="3"] {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+.ui-autocomplete-option--user:hover,
+.ui-autocomplete-option--user.is-active,
+.ui-autocomplete-option--user[aria-selected="true"] {
+  background: var(--color-info-fill);
+  color: var(--color-text-on-accent);
+}
+.ui-autocomplete-option--user:hover .ui-autocomplete-meta,
+.ui-autocomplete-option--user.is-active .ui-autocomplete-meta,
+.ui-autocomplete-option--user[aria-selected="true"] .ui-autocomplete-meta,
+.ui-autocomplete-option--user:hover .ui-autocomplete-dept,
+.ui-autocomplete-option--user.is-active .ui-autocomplete-dept,
+.ui-autocomplete-option--user[aria-selected="true"] .ui-autocomplete-dept {
+  color: var(--color-text-on-accent);
+}
+.ui-autocomplete-option--user:hover .ui-autocomplete-avatar,
+.ui-autocomplete-option--user.is-active .ui-autocomplete-avatar,
+.ui-autocomplete-option--user[aria-selected="true"] .ui-autocomplete-avatar {
+  background: var(--color-info-fill-hover);
+  color: var(--color-text-on-accent);
+}
+.ui-autocomplete-dropdown--user .ui-autocomplete-hint {
+  position: sticky;
+  bottom: 0;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  border-top: 1px solid var(--color-border);
+}
