@@ -76,13 +76,29 @@ func (s *Service) attachFollowPrimaryActions(ctx context.Context, actor *model.U
 }
 
 // FollowSetDemand 切换对业务需求的关注。
+// 写入走禅道原生 ajaxFollowObject / ajaxUnfollowObject（common::followObject），
+// 不在工作台另写一套关注语义；取消关注后补写 followed=0，以压制历史 mailto 抄送关注。
 func (s *Service) FollowSetDemand(ctx context.Context, actor *model.User, req FollowSetReq) error {
-	if actor == nil || strings.TrimSpace(actor.Account) == "" {
+	if actor == nil || strings.TrimSpace(actor.Account) == "" || req.Followed == nil || req.ID <= 0 {
 		return nil
 	}
-	return s.repo.SaveDemandFollow(ctx, RepoSaveDemandFollowReq{
-		Account: actor.Account, DemandID: req.ID, Followed: *req.Followed,
-	})
+	zt := zentao.SiteClient()
+	var err error
+	if *req.Followed {
+		err = zt.FollowDemandObject(ctx, actor.Account, req.ID)
+	} else {
+		err = zt.UnfollowDemandObject(ctx, actor.Account, req.ID)
+		// 禅道 unfollowObject 在无 starinfo 行时直接返回 0（mailto 历史关注），
+		// 需显式写入 followed=0，列表 WHERE 才能排除抄送关注。
+		if err == nil {
+			if ensureErr := s.repo.EnsureDemandUnfollowed(ctx, RepoSaveDemandFollowReq{
+				Account: actor.Account, DemandID: req.ID, Followed: false,
+			}); ensureErr != nil {
+				return ensureErr
+			}
+		}
+	}
+	return err
 }
 
 // FollowRemoveProjectReport 解除当前用户对项目周报的关注。

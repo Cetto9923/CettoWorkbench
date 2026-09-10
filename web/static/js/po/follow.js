@@ -202,20 +202,23 @@
 
   async function unwatchItem(type, id) {
     try {
-      var csrf = getCsrfToken();
       var endpoint = type === "project" ? "/follow/project-report/" + id : "/follow/demand/" + id;
-      var res = await fetch(endpoint, {
+      var fetchFn = window.appFetch || fetch;
+      var res = await fetchFn(endpoint, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf },
+        credentials: "include",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
         body: JSON.stringify({ followed: false })
       });
       if (res.ok) {
         if (typeof window.showToast === "function") window.showToast("已取消关注");
         if (currentTab === "weekly") loadWeeklyData();
         else if (window.FollowDemand) window.FollowDemand.load();
+      } else {
+        if (typeof window.showToast === "function") window.showToast("取消关注失败", "error");
       }
     } catch (e) {
-      if (typeof window.showToast === "function") window.showToast("取消关注失败");
+      if (typeof window.showToast === "function") window.showToast("取消关注失败", "error");
     }
   }
 
@@ -224,10 +227,11 @@
     id = String(id || "").replace(/^US/i, "");
     if (!id) return false;
     try {
-      var res = await fetch("/follow/demand/" + encodeURIComponent(id), {
+      var fetchFn = window.appFetch || fetch;
+      var res = await fetchFn("/follow/demand/" + encodeURIComponent(id), {
         method: "PUT",
         credentials: "include",
-        headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" },
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
         body: JSON.stringify({ followed: !!followed })
       });
       if (!res.ok) throw new Error("set follow failed");

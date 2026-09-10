@@ -404,6 +404,29 @@ func (r *Repo) FindFollowedProjectReports(ctx context.Context, req RepoFindFollo
 	return items, total, nil
 }
 
+// EnsureDemandUnfollowed 确保 starinfo 存在 followed=0 行（压制 mailto 历史关注）。
+// 禅道 unfollowObject 在无行时 no-op，工作台列表依赖显式 followed=0 才能排除抄送。
+func (r *Repo) EnsureDemandUnfollowed(ctx context.Context, req RepoSaveDemandFollowReq) error {
+	req.Followed = false
+	if r == nil || r.writeDB == nil || strings.TrimSpace(req.Account) == "" || req.DemandID <= 0 {
+		return nil
+	}
+	var count int64
+	if err := r.writeDB.WithContext(ctx).Table("zt_starinfo").
+		Where("objectType = ? AND objectID = ? AND account = ?", "demand", req.DemandID, req.Account).
+		Count(&count).Error; err != nil {
+		return err
+	}
+	if count > 0 {
+		return r.writeDB.WithContext(ctx).Table("zt_starinfo").
+			Where("objectType = ? AND objectID = ? AND account = ?", "demand", req.DemandID, req.Account).
+			Update("followed", "0").Error
+	}
+	return r.writeDB.WithContext(ctx).Table("zt_starinfo").Create(map[string]any{
+		"objectType": "demand", "objectID": req.DemandID, "account": req.Account, "followed": "0",
+	}).Error
+}
+
 // SaveDemandFollow 切换对业务需求的关注状态。
 // V10.1 04 节：取消关注只解除关注关系，不关闭业务对象。
 // 写入策略：upsert zt_starinfo(objectType='demand', objectID=?, account=?, followed='1'/'0')。

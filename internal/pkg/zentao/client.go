@@ -481,3 +481,73 @@ func parseZentaoAPIError(respBytes []byte, statusCode int) error {
 	}
 	return fmt.Errorf("%w (%d): %s", ErrZentaoAPIError, statusCode, errMsg)
 }
+
+// SiteClient 返回面向禅道站点页（zentao.url）的客户端，用于 PATH_INFO 控制层动作。
+// DefaultClient 面向 REST API（zentao.api）；关注切换等自定义 ajax 只在站点侧可用。
+func SiteClient() *Client {
+	return NewClient(zentaoCfg.URL)
+}
+
+// FollowDemandObject 调用禅道 demand::ajaxFollowObject（common::followObject），
+// 会同步关注子需求，返回正文为 followed 状态 "0"|"1"。
+func (c *Client) FollowDemandObject(ctx context.Context, account string, demandID int64) error {
+	return c.toggleDemandFollow(ctx, account, demandID, true)
+}
+
+// UnfollowDemandObject 调用禅道 demand::ajaxUnfollowObject（common::unfollowObject）。
+func (c *Client) UnfollowDemandObject(ctx context.Context, account string, demandID int64) error {
+	return c.toggleDemandFollow(ctx, account, demandID, false)
+}
+
+func (c *Client) toggleDemandFollow(ctx context.Context, account string, demandID int64, follow bool) error {
+	account = strings.TrimSpace(account)
+	if account == "" || demandID <= 0 {
+		return fmt.Errorf("%w: invalid follow request", ErrZentaoAPIError)
+	}
+	token, err := c.GetUserToken(ctx, account)
+	if err != nil {
+		return err
+	}
+	method := "ajaxUnfollowObject"
+	if follow {
+		method = "ajaxFollowObject"
+	}
+	// PATH_INFO: /demand-ajaxFollowObject-demand-{id}.html （objectType + objectID）
+	reqURL := fmt.Sprintf("%s/demand-%s-demand-%d.html", strings.TrimRight(c.baseURL, "/"), method, demandID)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Token", token)
+	req.Header.Set("X-Requested-With", "XMLHttpRequest")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("%w: %v", ErrZentaoUnreachable, err)
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("%w (%d): %s", ErrZentaoAPIError, resp.StatusCode, strings.TrimSpace(string(body)))
+	}
+	// 成功正文通常为 "0" / "1"；登录页 HTML 视为失败。
+	out := strings.TrimSpace(string(body))
+	if out != "0" && out != "1" {
+		if strings.Contains(out, "<html") || strings.Contains(out, "<!DOCTYPE") {
+			return fmt.Errorf("%w: zenTao session rejected follow ajax", ErrZentaoAuthFailed)
+		}
+		return fmt.Errorf("%w: unexpected follow response: %s", ErrZentaoAPIError, truncateRunes(out, 120))
+	}
+	return nil
+}
+
+func truncateRunes(s string, n int) string {
+	r := []rune(s)
+	if len(r) <= n {
+		return s
+	}
+	return string(r[:n]) + "…"
+}
