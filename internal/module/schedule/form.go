@@ -26,6 +26,14 @@ const (
 
 	WindowPhaseInitial = "初排"
 	WindowPhaseFinal   = "终排"
+
+	// 排期保存请求的批量上限（数据库写作合同）。超过即拒绝，不开事务，
+	// 避免长事务锁竞争 / 行锁耗尽。N=50 / M=50 为初值，依据：
+	// 现网单业需下的研发需求与单研发需求下的执行任务典型量级（PoC 阶段
+	// 校准），后续按审计证据在 quality.md 流程中调整。
+	MaxSchedulingStories        = 50
+	MaxSchedulingTasksPerStory  = 50
+	MaxStoryTasks               = 50
 )
 
 // 列表高级筛选排期阶段 URL 参数值。
@@ -661,6 +669,16 @@ func (r *SaveSchedulingReq) Validate() []FieldError {
 	if r.WindowID == 0 {
 		errs = append(errs, FieldError{Field: "windowId", Message: "版本窗口不能为空"})
 	}
+	// DB-R1 批量上限：超过则 422 拒绝，不开事务。
+	if len(r.Stories) > MaxSchedulingStories {
+		errs = append(errs, FieldError{Field: "stories", Message: "单次排期最多支持 " + strconv.Itoa(MaxSchedulingStories) + " 条研发需求"})
+	}
+	for i, story := range r.Stories {
+		if len(story.Tasks) > MaxSchedulingTasksPerStory {
+			prefix := "stories[" + strconv.Itoa(i) + "].tasks"
+			errs = append(errs, FieldError{Field: prefix, Message: "单研发需求任务最多 " + strconv.Itoa(MaxSchedulingTasksPerStory) + " 条"})
+		}
+	}
 	for i, story := range r.Stories {
 		prefix := "stories[" + strconv.Itoa(i) + "]"
 		action := strings.TrimSpace(story.Action)
@@ -832,6 +850,10 @@ type SaveStoryTasksReq struct {
 // Validate 校验维护任务保存请求。
 func (r *SaveStoryTasksReq) Validate() []FieldError {
 	var errs []FieldError
+	// DB-R1 批量上限：超过则 422 拒绝，不开事务。
+	if len(r.Tasks) > MaxStoryTasks {
+		errs = append(errs, FieldError{Field: "tasks", Message: "单次保存最多 " + strconv.Itoa(MaxStoryTasks) + " 条任务"})
+	}
 	for i, task := range r.Tasks {
 		prefix := "tasks[" + strconv.Itoa(i) + "]"
 		action := strings.TrimSpace(task.Action)
