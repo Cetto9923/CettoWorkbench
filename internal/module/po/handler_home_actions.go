@@ -41,18 +41,10 @@ func (h *Handler) homeAction(c *gin.Context, fn func(uint, string) error, succes
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": success, "redirectUrl": "/home"})
 }
 
-func (h *Handler) ClarifyHomeDemand(c *gin.Context) {
-	h.homeAction(c, func(id uint, comment string) error {
-		return h.svc.ClarifyHomeDemand(c.Request.Context(), middleware.CurrentUser(c), id, comment)
-	}, "澄清成功")
-}
 func (h *Handler) AcceptHomeDemand(c *gin.Context) {
 	h.homeAction(c, func(id uint, comment string) error {
 		return h.svc.AcceptHomeDemand(c.Request.Context(), middleware.CurrentUser(c), id, comment)
 	}, "验收成功")
-}
-func (h *Handler) DeliverHomeDemand(c *gin.Context) {
-	h.DeliverDemand(c)
 }
 
 func (h *Handler) UrgeHomeDemandPreview(c *gin.Context) {

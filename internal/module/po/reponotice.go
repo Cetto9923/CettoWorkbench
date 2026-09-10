@@ -149,25 +149,6 @@ func (r *Repo) FindNotices(ctx context.Context, account string, req NoticeListRe
 	return resp, nil
 }
 
-func noticeQuickCounts(rows []noticeRow) (int64, int64, int64, int64, int64) {
-	var unread, action, abnormal, today int64
-	for _, row := range rows {
-		if row.IsRead == 0 {
-			unread++
-		}
-		if noticeNeedsAction(row.ActionCode) {
-			action++
-		}
-		if classifyNotice(row.ObjectType, row.ActionCode) == "risk" {
-			abnormal++
-		}
-		if sameNoticeDay(row.CreatedDate, time.Now()) {
-			today++
-		}
-	}
-	return int64(len(rows)), unread, action, abnormal, today
-}
-
 func noticeCategoryCounts() map[string]int64 {
 	return map[string]int64{"all": 0, "business": 0, "approval": 0, "reminder": 0, "collaboration": 0, "risk": 0, "system": 0}
 }

@@ -52,7 +52,6 @@ func TestAcceptanceUrgeIsDuplicate(t *testing.T) {
 
 }
 
-
 func TestBuildAcceptanceUrgeMessage(t *testing.T) {
 	msg := buildAcceptanceUrgeMessage(&homeActionDemandRow{ID: 63411, Name: "测试0819", Status: "waitacceptance"}, []string{"张三(001)"}, "优先处理")
 	for _, part := range []string{"US63411", "测试0819", "待验收", "张三(001)", "优先处理", "催办验收"} {

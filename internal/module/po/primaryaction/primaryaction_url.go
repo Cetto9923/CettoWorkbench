@@ -82,20 +82,6 @@ func EvaluateURL(objectID uint, kind ObjectKind) string {
 	return zentao.URL("demand", "appraise", fmt.Sprintf("demandID=%d", objectID))
 }
 
-// ViewEvaluateURL 查看历史评价 — 内部页（需求详情 history tab）。
-func ViewEvaluateURL(objectID uint, kind ObjectKind) string {
-	return fmt.Sprintf("/demands/%d/detail?tab=history#historySection", objectID)
-}
-
-// TesttaskURL 单个测试单禅道 URL（由 Repo 提供的真实 FirstTestURL 优先）。
-// 这里提供 fallback 给上层 Derive 调用。
-func TesttaskURL(testtaskID uint) string {
-	if testtaskID == 0 {
-		return ""
-	}
-	return zentao.TesttaskViewURL(testtaskID)
-}
-
 // acceptURL 包装 AcceptURL — 与 Derive Input 内部使用一致。
 func acceptURL(in Input) string {
 	return AcceptURL(in.ObjectID, in.Kind)
@@ -142,9 +128,4 @@ func deliverURL(in Input) string {
 // evaluateURL 包装 EvaluateURL。
 func evaluateURL(in Input) string {
 	return EvaluateURL(in.ObjectID, in.Kind)
-}
-
-// viewEvaluateURL 包装 ViewEvaluateURL。
-func viewEvaluateURL(in Input) string {
-	return ViewEvaluateURL(in.ObjectID, in.Kind)
 }

@@ -38,11 +38,6 @@ func (s *Service) homeAction(ctx context.Context, actor *model.User, id uint, ac
 		return errHomeActionForbidden
 	}
 	switch action {
-	case "clarify":
-		if row.Status != "active" {
-			return errHomeActionConflict
-		}
-		return s.repo.updateHomeDemandStatus(ctx, id, "active", "clarified", account, "clarify", homeActionComment(comment, "工作台澄清完成"), false)
 	case "acceptance":
 		if row.Status != "testing" && row.Status != "waitacceptance" {
 			return errHomeActionConflict
@@ -67,9 +62,6 @@ func homeActionComment(comment, fallback string) string {
 	return strings.TrimSpace(comment)
 }
 
-func (s *Service) ClarifyHomeDemand(ctx context.Context, actor *model.User, id uint, comment string) error {
-	return s.homeAction(ctx, actor, id, "clarify", comment)
-}
 func (s *Service) AcceptHomeDemand(ctx context.Context, actor *model.User, id uint, comment string) error {
 	return s.homeAction(ctx, actor, id, "acceptance", comment)
 }
@@ -85,14 +77,14 @@ type UrgePreviewRecipient struct {
 
 // UrgePreview 催办弹窗预填数据。
 type UrgePreview struct {
-	DemandID      uint                   `json:"demandId"`
-	Title         string                 `json:"title"`
-	Status        string                 `json:"status"`
-	StatusLabel   string                 `json:"statusLabel"`
-	StageLabel    string                 `json:"stageLabel"`
-	Reason        string                 `json:"reason"`
-	Recipients    []UrgePreviewRecipient `json:"recipients"`
-	MessagePreview string                `json:"messagePreview"`
+	DemandID       uint                   `json:"demandId"`
+	Title          string                 `json:"title"`
+	Status         string                 `json:"status"`
+	StatusLabel    string                 `json:"statusLabel"`
+	StageLabel     string                 `json:"stageLabel"`
+	Reason         string                 `json:"reason"`
+	Recipients     []UrgePreviewRecipient `json:"recipients"`
+	MessagePreview string                 `json:"messagePreview"`
 }
 
 func homeAcceptanceStatusLabel(status string) string {
@@ -233,9 +225,9 @@ func (r *Repo) canUrgeHomeAcceptance(row *homeActionDemandRow, account string) b
 type homeAcceptanceRecipientSource string
 
 const (
-	homeAcceptSrcOwner     homeAcceptanceRecipientSource = "accepter"
+	homeAcceptSrcOwner      homeAcceptanceRecipientSource = "accepter"
 	homeAcceptSrcOriginator homeAcceptanceRecipientSource = "originator"
-	homeAcceptSrcCreatedBy homeAcceptanceRecipientSource = "createdBy"
+	homeAcceptSrcCreatedBy  homeAcceptanceRecipientSource = "createdBy"
 )
 
 func homeAcceptanceUrgeReason(src homeAcceptanceRecipientSource) string {

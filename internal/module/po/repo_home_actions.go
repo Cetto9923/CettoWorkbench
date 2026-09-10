@@ -80,8 +80,6 @@ func (r *Repo) homeActionAuthorized(row *homeActionDemandRow, account, action st
 	submit := hasHomeAccount(row.CreatedBy, account) || hasHomeAccount(row.SubmitedBy, account) || hasHomeCSV(row.SubmitBy, account)
 	accept := hasHomeAccount(row.Accepter, account) || hasHomeCSV(row.VeriFier, account)
 	switch action {
-	case "clarify":
-		return owner || hasHomeAccount(row.QD, account) || hasHomeAccount(row.RD, account) || hasHomeAccount(row.BRA, account)
 	case "acceptance":
 		return accept
 	case "deliver":
@@ -253,4 +251,3 @@ func (r *Repo) homeUserLabels(ctx context.Context, accounts []string) (map[strin
 	}
 	return out, nil
 }
-
