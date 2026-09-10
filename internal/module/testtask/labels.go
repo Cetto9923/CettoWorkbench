@@ -81,7 +81,11 @@ func lookupDisplay(displayMap map[string]string, account string) string {
 
 // BuildContextResp 将查询行装配为前端上下文响应。
 // stage 固定为「提测」；handlerAccount/handlerName 为当前登录用户。
-func BuildContextResp(row DemandContextRow, displayMap map[string]string, handlerAccount, handlerName string) *ContextResp {
+// systems 为主系统优先的涉及产品列表（调用方已标 isMain）。
+func BuildContextResp(row DemandContextRow, displayMap map[string]string, handlerAccount, handlerName string, systems []SystemItem) *ContextResp {
+	if systems == nil {
+		systems = []SystemItem{}
+	}
 	return &ContextResp{
 		DemandID:       row.ID,
 		Title:          strings.TrimSpace(row.Name),
@@ -93,5 +97,47 @@ func BuildContextResp(row DemandContextRow, displayMap map[string]string, handle
 		RDName:         lookupDisplay(displayMap, row.RD),
 		QDName:         lookupDisplay(displayMap, row.QD),
 		HandlerName:    dash(FormatPersonName(handlerAccount, handlerName)),
+		Systems:        systems,
 	}
+}
+
+// BuildSystemItems 将澄清涉及产品标主系统并保证主系统在列表中（主系统优先）。
+func BuildSystemItems(products []productRow, mainSystemID uint, mainSystemName string) []SystemItem {
+	seen := make(map[uint]struct{}, len(products)+1)
+	items := make([]SystemItem, 0, len(products)+1)
+	for _, p := range products {
+		if p.ID == 0 {
+			continue
+		}
+		if _, ok := seen[p.ID]; ok {
+			continue
+		}
+		seen[p.ID] = struct{}{}
+		items = append(items, SystemItem{
+			ID:     p.ID,
+			Name:   strings.TrimSpace(p.Name),
+			IsMain: mainSystemID > 0 && p.ID == mainSystemID,
+		})
+	}
+	if mainSystemID > 0 {
+		if _, ok := seen[mainSystemID]; !ok {
+			items = append([]SystemItem{{
+				ID:     mainSystemID,
+				Name:   dash(mainSystemName),
+				IsMain: true,
+			}}, items...)
+		}
+	}
+	// 主系统置顶
+	for i, it := range items {
+		if !it.IsMain {
+			continue
+		}
+		if i == 0 {
+			break
+		}
+		items = append([]SystemItem{it}, append(items[:i], items[i+1:]...)...)
+		break
+	}
+	return items
 }

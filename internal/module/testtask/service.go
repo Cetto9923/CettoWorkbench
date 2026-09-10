@@ -56,10 +56,16 @@ func (s *Service) GetContext(ctx context.Context, actor *model.User, demandID ui
 		}
 	}
 
+	products, err := s.repo.FindDemandInvolvedProducts(ctx, demandID)
+	if err != nil {
+		return nil, err
+	}
+	systems := BuildSystemItems(products, row.MainSystemID, row.MainSystemName)
+
 	account, name := "", ""
 	if actor != nil {
 		account = actor.Account
 		name = actor.DisplayName
 	}
-	return BuildContextResp(*row, displayMap, account, name), nil
+	return BuildContextResp(*row, displayMap, account, name, systems), nil
 }

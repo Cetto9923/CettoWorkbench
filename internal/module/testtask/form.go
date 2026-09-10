@@ -17,20 +17,29 @@ type DemandContextRow struct {
 	BRA            string `gorm:"column:BRA"`
 	RD             string `gorm:"column:RD"`
 	QD             string `gorm:"column:QD"`
+	MainSystemID   uint   `gorm:"column:main_system_id"`
 	MainSystemName string `gorm:"column:product_name"`
 	EstimateLaunch string `gorm:"column:estimate_launch"`
 }
 
+// SystemItem 需求涉及产品/系统（选择系统列表项）。
+type SystemItem struct {
+	ID     uint   `json:"id"`
+	Name   string `json:"name"`
+	IsMain bool   `json:"isMain"`
+}
+
 // ContextResp 提测弹窗「当前需求上下文」JSON。
 type ContextResp struct {
-	DemandID       uint   `json:"demandId"`
-	Title          string `json:"title"`
-	Stage          string `json:"stage"`
-	RawStatus      string `json:"rawStatus"`
-	MainSystemName string `json:"mainSystemName"`
-	EstimateLaunch string `json:"estimateLaunch"`
-	BRAName        string `json:"braName"`
-	RDName         string `json:"rdName"`
-	QDName         string `json:"qdName"`
-	HandlerName    string `json:"handlerName"`
+	DemandID       uint         `json:"demandId"`
+	Title          string       `json:"title"`
+	Stage          string       `json:"stage"`
+	RawStatus      string       `json:"rawStatus"`
+	MainSystemName string       `json:"mainSystemName"`
+	EstimateLaunch string       `json:"estimateLaunch"`
+	BRAName        string       `json:"braName"`
+	RDName         string       `json:"rdName"`
+	QDName         string       `json:"qdName"`
+	HandlerName    string       `json:"handlerName"`
+	Systems        []SystemItem `json:"systems"`
 }

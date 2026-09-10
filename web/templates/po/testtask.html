@@ -23,9 +23,9 @@
 <div class="po-testtask-form" id="poTesttaskFormRoot">
   <h2 class="po-testtask-title">
     <span>提测办理</span>
-    <span class="po-testtask-req-id" data-tt-demand-id>#62658</span>
-    <span data-tt-demand-title>US61832-01-对前期"还款计划变更"需求进行优化</span>
-    <span class="po-testtask-stage-tag" data-tt-stage>当前阶段：排期</span>
+    <span class="po-testtask-req-id" data-tt-demand-id>—</span>
+    <span data-tt-demand-title>—</span>
+    <span class="po-testtask-stage-tag" data-tt-stage>当前阶段：—</span>
   </h2>
 
   <div class="po-testtask-panel">
@@ -36,35 +36,35 @@
     <div class="po-testtask-kv-grid">
       <div>
         <div class="label">业务需求ID</div>
-        <div data-tt-demand-id>#62658</div>
+        <div data-tt-demand-id>—</div>
       </div>
       <div>
         <div class="label">当前价值流阶段</div>
-        <div data-tt-stage-text>提测</div>
+        <div data-tt-stage-text>—</div>
       </div>
       <div>
         <div class="label">需求原始状态</div>
-        <div data-tt-raw-status>研发中</div>
+        <div data-tt-raw-status>—</div>
       </div>
       <div>
         <div class="label">主系统</div>
-        <div data-tt-main-system>信贷管理系统</div>
+        <div data-tt-main-system>—</div>
       </div>
       <div>
         <div class="label">预计上线</div>
-        <div data-tt-estimate-launch>2025-09-04</div>
+        <div data-tt-estimate-launch>—</div>
       </div>
       <div>
         <div class="label">业务需求负责人</div>
-        <div data-tt-bra-name>程锐(003030)</div>
+        <div data-tt-bra-name>—</div>
       </div>
       <div>
         <div class="label">研发负责人 / 测试负责人</div>
-        <div data-tt-rd-qd-name>孙晓盼(008239)/KJ001735(KJ001735)</div>
+        <div data-tt-rd-qd-name>—</div>
       </div>
       <div>
         <div class="label">提测办理人</div>
-        <div data-tt-handler-name>程锐(003030)</div>
+        <div data-tt-handler-name>—</div>
       </div>
     </div>
   </div>
@@ -108,266 +108,15 @@
   <div class="po-testtask-step-panel po-testtask-hidden" data-tt-panel="2">
     <div class="po-testtask-panel">
       <div class="po-testtask-field-label">选择系统</div>
-      <div class="po-testtask-check-row" data-tt-sys-list>
-        <label>
-          <input type="checkbox" data-tt-sys="1" data-tt-sys-main checked disabled />
-          打印中心
-          <span class="po-testtask-sys-badge is-main">主</span>
-        </label>
-        <label>
-          <input type="checkbox" data-tt-sys="2" />
-          信贷管理系统
-          <span class="po-testtask-sys-badge is-sub">配</span>
-        </label>
-      </div>
-
-      <div class="po-testtask-unit" data-tt-unit="1">
-        <div class="po-testtask-unit-head">
-          <div class="po-testtask-unit-name">
-            <i class="fas fa-folder-open"></i>
-            <span>打印中心</span>
-            <span class="po-testtask-sys-badge is-main">主</span>
-          </div>
-        </div>
-        <div class="po-testtask-unit-body">
-          <div class="po-testtask-field-label"><span class="req">*</span> 版本模式</div>
-          <div class="po-testtask-radio-row">
-            <label><input type="radio" name="ver1Mode" value="new" checked /> 创建新版本</label>
-            <label><input type="radio" name="ver1Mode" value="exist" /> 使用已有版本</label>
-          </div>
-          <div data-tt-new-base="1">
-            <div class="po-testtask-field">
-              <div class="po-testtask-field-label"><span class="req">*</span> 所属执行</div>
-              <div class="ui-autocomplete">
-                <input type="text" id="poTtExecInput_1" class="po-testtask-ac-input" placeholder="搜索执行" autocomplete="off" />
-                <input type="hidden" id="poTtExecValue_1" data-tt-exec="1" value="" />
-              </div>
-            </div>
-            <div class="po-testtask-grid-2">
-              <div class="po-testtask-field">
-                <div class="po-testtask-field-label"><span class="req">*</span> 新版本名称</div>
-                <input type="text" value="20260908-US62658-提测版本" />
-              </div>
-              <div class="po-testtask-field">
-                <div class="po-testtask-field-label"><span class="req">*</span> 计划上线日期</div>
-                <input type="date" value="2025-09-04" />
-              </div>
-            </div>
-            <div class="po-testtask-field">
-              <div class="po-testtask-field-label">版本说明 (可选)</div>
-              <input type="text" />
-            </div>
-          </div>
-          <div class="po-testtask-hidden" data-tt-exist-base="1">
-            <div class="po-testtask-field">
-              <div class="po-testtask-field-label"><span class="req">*</span> 已有版本名称</div>
-              <div data-tt-exist-single="1">
-                <div class="ui-autocomplete">
-                  <input type="text" id="poTtExistVerInput_1" class="po-testtask-ac-input" placeholder="搜索已有版本" autocomplete="off" />
-                  <input type="hidden" id="poTtExistVerValue_1" data-tt-exist-ver="1" value="" />
-                </div>
-              </div>
-              <div class="po-testtask-hidden" data-tt-exist-multi="1">
-                <div class="dropdown form-multiselect" data-role-dropdown data-multiselect-keep-placeholder="true">
-                  <div class="form-input-clear-wrap">
-                    <div class="form-multiselect-display" data-role-display>
-                      <div class="form-multiselect-tags" data-role-tags></div>
-                      <input
-                        type="text"
-                        class="input form-multiselect-input"
-                        data-multiselect-filter
-                        placeholder="搜索并选择已有版本（可多选）"
-                        data-placeholder-empty="搜索并选择已有版本（可多选）"
-                        autocomplete="off"
-                        aria-autocomplete="list"
-                        aria-label="检索已有版本"
-                      />
-                    </div>
-                    <button type="button" class="form-dropdown-chevron" aria-label="展开已有版本" onclick="return toggleDropdown(this);">
-                      <i class="bi bi-chevron-down" aria-hidden="true"></i>
-                    </button>
-                    <button type="button" class="form-dropdown-clear" data-form-multiselect-clear aria-label="清除已有版本" hidden>×</button>
-                  </div>
-                  <div class="dropdown-menu form-multiselect-menu">
-                    <div class="form-multiselect-scroll">
-                      <div class="form-multiselect-list">
-                        <label class="checkbox-label form-multiselect-option">
-                          <input name="existVer1" value="v1" type="checkbox" class="checkbox form-multiselect-checkbox">
-                          <span class="checkbox-box"></span>
-                          <span class="form-multiselect-name">20250801-已有版本-A</span>
-                        </label>
-                        <label class="checkbox-label form-multiselect-option">
-                          <input name="existVer1" value="v2" type="checkbox" class="checkbox form-multiselect-checkbox">
-                          <span class="checkbox-box"></span>
-                          <span class="form-multiselect-name">20250815-已有版本-B</span>
-                        </label>
-                        <label class="checkbox-label form-multiselect-option">
-                          <input name="existVer1" value="v3" type="checkbox" class="checkbox form-multiselect-checkbox">
-                          <span class="checkbox-box"></span>
-                          <span class="form-multiselect-name">20250901-已有版本-C</span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="po-testtask-unit po-testtask-hidden" data-tt-unit="2">
-        <div class="po-testtask-unit-head">
-          <div class="po-testtask-unit-name">
-            <i class="fas fa-folder-open"></i>
-            <span>信贷管理系统</span>
-            <span class="po-testtask-sys-badge is-sub">配</span>
-          </div>
-        </div>
-        <div class="po-testtask-unit-body">
-          <div class="po-testtask-field-label"><span class="req">*</span> 版本模式</div>
-          <div class="po-testtask-radio-row">
-            <label><input type="radio" name="ver2Mode" value="new" checked /> 创建新版本</label>
-            <label><input type="radio" name="ver2Mode" value="exist" /> 使用已有版本</label>
-          </div>
-          <div data-tt-new-base="2">
-            <div class="po-testtask-field">
-              <div class="po-testtask-field-label"><span class="req">*</span> 所属执行</div>
-              <div class="ui-autocomplete">
-                <input type="text" id="poTtExecInput_2" class="po-testtask-ac-input" placeholder="搜索执行" autocomplete="off" />
-                <input type="hidden" id="poTtExecValue_2" data-tt-exec="2" value="" />
-              </div>
-            </div>
-            <div class="po-testtask-grid-2">
-              <div class="po-testtask-field">
-                <div class="po-testtask-field-label"><span class="req">*</span> 新版本名称</div>
-                <input type="text" value="20260908-US62658-提测版本" />
-              </div>
-              <div class="po-testtask-field">
-                <div class="po-testtask-field-label"><span class="req">*</span> 计划上线日期</div>
-                <input type="date" value="2025-09-04" />
-              </div>
-            </div>
-            <div class="po-testtask-field">
-              <div class="po-testtask-field-label">版本说明 (可选)</div>
-              <input type="text" />
-            </div>
-          </div>
-          <div class="po-testtask-hidden" data-tt-exist-base="2">
-            <div class="po-testtask-field">
-              <div class="po-testtask-field-label"><span class="req">*</span> 已有版本名称</div>
-              <div data-tt-exist-single="2">
-                <div class="ui-autocomplete">
-                  <input type="text" id="poTtExistVerInput_2" class="po-testtask-ac-input" placeholder="搜索已有版本" autocomplete="off" />
-                  <input type="hidden" id="poTtExistVerValue_2" data-tt-exist-ver="2" value="" />
-                </div>
-              </div>
-              <div class="po-testtask-hidden" data-tt-exist-multi="2">
-                <div class="dropdown form-multiselect" data-role-dropdown data-multiselect-keep-placeholder="true">
-                  <div class="form-input-clear-wrap">
-                    <div class="form-multiselect-display" data-role-display>
-                      <div class="form-multiselect-tags" data-role-tags></div>
-                      <input
-                        type="text"
-                        class="input form-multiselect-input"
-                        data-multiselect-filter
-                        placeholder="搜索并选择已有版本（可多选）"
-                        data-placeholder-empty="搜索并选择已有版本（可多选）"
-                        autocomplete="off"
-                        aria-autocomplete="list"
-                        aria-label="检索已有版本"
-                      />
-                    </div>
-                    <button type="button" class="form-dropdown-chevron" aria-label="展开已有版本" onclick="return toggleDropdown(this);">
-                      <i class="bi bi-chevron-down" aria-hidden="true"></i>
-                    </button>
-                    <button type="button" class="form-dropdown-clear" data-form-multiselect-clear aria-label="清除已有版本" hidden>×</button>
-                  </div>
-                  <div class="dropdown-menu form-multiselect-menu">
-                    <div class="form-multiselect-scroll">
-                      <div class="form-multiselect-list">
-                        <label class="checkbox-label form-multiselect-option">
-                          <input name="existVer2" value="v1" type="checkbox" class="checkbox form-multiselect-checkbox">
-                          <span class="checkbox-box"></span>
-                          <span class="form-multiselect-name">20250801-已有版本-A</span>
-                        </label>
-                        <label class="checkbox-label form-multiselect-option">
-                          <input name="existVer2" value="v2" type="checkbox" class="checkbox form-multiselect-checkbox">
-                          <span class="checkbox-box"></span>
-                          <span class="form-multiselect-name">20250815-已有版本-B</span>
-                        </label>
-                        <label class="checkbox-label form-multiselect-option">
-                          <input name="existVer2" value="v3" type="checkbox" class="checkbox form-multiselect-checkbox">
-                          <span class="checkbox-box"></span>
-                          <span class="form-multiselect-name">20250901-已有版本-C</span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <div class="po-testtask-check-row" data-tt-sys-list></div>
+      <div data-tt-sys-units></div>
     </div>
   </div>
 
   <div class="po-testtask-step-panel po-testtask-hidden" data-tt-panel="3">
     <div class="po-testtask-panel">
       <div class="po-testtask-panel-title">各系统版本关联需求配置</div>
-
-      <div class="po-testtask-unit">
-        <div class="po-testtask-unit-name" style="margin-bottom:8px">
-          <i class="fas fa-folder-open"></i>
-          <span>打印中心</span>
-          <span class="po-testtask-sys-badge is-main">主</span>
-        </div>
-        <div class="po-testtask-unit-body">
-          <div data-tt-link-edit="1">
-            <div class="po-testtask-link-actions">
-              <div class="po-testtask-field-label">版本关联需求（可多选）</div>
-              <button type="button" class="po-testtask-link-add">+ 添加已有需求</button>
-            </div>
-            <div class="po-testtask-link-list">
-              <label><input type="checkbox" checked /> #62658 US61832-01-还款计划变更优化(当前需求)</label>
-              <label><input type="checkbox" /> #62100 US61220-01-利息计算调整</label>
-            </div>
-          </div>
-          <div class="po-testtask-hidden" data-tt-link-readonly="1">
-            <div class="po-testtask-field-label">版本已关联需求（只读，取自已有版本）</div>
-            <div class="po-testtask-link-readonly">
-              <div>#62658 US61832-01-还款计划变更优化</div>
-              <div>#62100 US61220-01-利息计算调整</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="po-testtask-unit">
-        <div class="po-testtask-unit-name" style="margin-bottom:8px">
-          <i class="fas fa-folder-open"></i>
-          <span>信贷管理系统</span>
-          <span class="po-testtask-sys-badge is-sub">配</span>
-        </div>
-        <div class="po-testtask-unit-body">
-          <div data-tt-link-edit="2">
-            <div class="po-testtask-link-actions">
-              <div class="po-testtask-field-label">版本关联需求（可多选）</div>
-              <button type="button" class="po-testtask-link-add">+ 添加已有需求</button>
-            </div>
-            <div class="po-testtask-link-list">
-              <label><input type="checkbox" checked /> #62658 US61832-01-还款计划变更优化(当前需求)</label>
-            </div>
-          </div>
-          <div class="po-testtask-hidden" data-tt-link-readonly="2">
-            <div class="po-testtask-field-label">版本已关联需求（只读，取自已有版本）</div>
-            <div class="po-testtask-link-readonly">
-              <div>#62658 US61832-01-还款计划变更优化</div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <div data-tt-link-units></div>
     </div>
   </div>
 
@@ -375,56 +124,7 @@
     <div data-tt-joint-single>
       <div class="po-testtask-panel">
         <div class="po-testtask-panel-title">各系统独立测试单</div>
-        <div class="po-testtask-unit">
-          <div class="po-testtask-unit-title">打印中心-测试单</div>
-          <div class="po-testtask-grid-4">
-            <div class="po-testtask-field">
-              <div class="po-testtask-field-label"><span class="req">*</span> 测试单名称</div>
-              <input type="text" value="20260908-US62658-提测版本-测试单" />
-            </div>
-            <div class="po-testtask-field">
-              <div class="po-testtask-field-label"><span class="req">*</span> 测试负责人</div>
-              <input type="text" value="KJ001735(KJ001735)" />
-            </div>
-            <div class="po-testtask-field">
-              <div class="po-testtask-field-label">开始日期</div>
-              <input type="date" value="2026-09-08" />
-            </div>
-            <div class="po-testtask-field">
-              <div class="po-testtask-field-label">结束日期</div>
-              <input type="date" value="2025-07-25" />
-            </div>
-          </div>
-          <div class="po-testtask-field">
-            <div class="po-testtask-field-label">测试说明 / 重点 (可选)</div>
-            <textarea></textarea>
-          </div>
-        </div>
-        <div class="po-testtask-unit">
-          <div class="po-testtask-unit-title">信贷管理系统-测试单</div>
-          <div class="po-testtask-grid-4">
-            <div class="po-testtask-field">
-              <div class="po-testtask-field-label"><span class="req">*</span> 测试单名称</div>
-              <input type="text" value="20260908-US62658-提测版本-测试单" />
-            </div>
-            <div class="po-testtask-field">
-              <div class="po-testtask-field-label"><span class="req">*</span> 测试负责人</div>
-              <input type="text" value="KJ001735(KJ001735)" />
-            </div>
-            <div class="po-testtask-field">
-              <div class="po-testtask-field-label">开始日期</div>
-              <input type="date" value="2026-09-08" />
-            </div>
-            <div class="po-testtask-field">
-              <div class="po-testtask-field-label">结束日期</div>
-              <input type="date" value="2025-07-25" />
-            </div>
-          </div>
-          <div class="po-testtask-field">
-            <div class="po-testtask-field-label">测试说明 / 重点 (可选)</div>
-            <textarea></textarea>
-          </div>
-        </div>
+        <div data-tt-test-units></div>
       </div>
     </div>
     <div class="po-testtask-hidden" data-tt-joint-global>
@@ -434,19 +134,19 @@
           <div class="po-testtask-grid-4">
             <div class="po-testtask-field">
               <div class="po-testtask-field-label"><span class="req">*</span> 测试单名称</div>
-              <input type="text" value="20260908-US62658-联调总测试单" />
+              <input type="text" data-tt-joint-name value="" />
             </div>
             <div class="po-testtask-field">
               <div class="po-testtask-field-label"><span class="req">*</span> 测试负责人</div>
-              <input type="text" value="KJ001735(KJ001735)" />
+              <input type="text" data-tt-joint-qd value="" />
             </div>
             <div class="po-testtask-field">
               <div class="po-testtask-field-label">开始日期</div>
-              <input type="date" value="2026-09-08" />
+              <input type="date" data-tt-joint-start value="" />
             </div>
             <div class="po-testtask-field">
               <div class="po-testtask-field-label">结束日期</div>
-              <input type="date" value="2025-07-25" />
+              <input type="date" data-tt-joint-end value="" />
             </div>
           </div>
           <div class="po-testtask-field">
