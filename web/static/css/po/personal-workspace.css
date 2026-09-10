@@ -166,8 +166,9 @@
 /* 分类标签栏 (Tabs) - 统一下划线风格，高 38px */
 .po-personal-workspace .category-tabs {
   display: flex; gap: 20px; height: 38px; padding: 0 16px;
-  border-bottom: 1px solid var(--color-border); background: var(--color-surface); overflow-x: auto; scrollbar-width: thin;
+  border-bottom: 1px solid var(--color-border); background: var(--color-surface); overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none;
 }
+.po-personal-workspace .category-tabs::-webkit-scrollbar { display: none; }
 .po-personal-workspace .category-tab {
   position: relative; display: inline-flex; align-items: center; gap: 5px; height: 38px;
   padding: 0 2px; border: 0; background: transparent; color: var(--color-text-secondary); font-size: 12px;

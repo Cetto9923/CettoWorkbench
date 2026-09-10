@@ -160,8 +160,8 @@
   border: 1px solid var(--color-border, #e2e8f0); background: var(--color-surface-muted, #f8fafc); cursor: pointer; text-decoration: none; transition: all 0.15s ease;
 }
 .po-home .focus-card:hover { border-color: var(--color-info-border, #93c5fd); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); }
-.po-home .focus-card.danger { background: var(--color-danger-bg); border-color: var(--color-danger-border, #fecaca); }
-.po-home .focus-card.danger:hover { border-color: var(--color-danger); }
+.po-home .focus-card.danger { background: var(--color-surface); border-color: var(--color-danger-border); }
+.po-home .focus-card.danger:hover { background: var(--color-danger-bg); border-color: var(--color-danger); }
 .po-home .focus-card-hdr { display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 500; color: var(--color-text-body, #334155); }
 .po-home .focus-card.danger .focus-card-hdr { color: var(--color-danger, #991b1b); }
 .po-home .focus-card-num { display: flex; align-items: baseline; gap: 3px; margin: 4px 0 2px; }
@@ -170,7 +170,7 @@
 }
 .po-home .focus-card.danger .focus-card-num strong { color: var(--color-danger-strong, #b91c1c); }
 .po-home .focus-card-num small { font-size: 10px; color: var(--color-text-secondary, #64748b); }
-.po-home .focus-card.danger .focus-card-num small { color: var(--color-danger-fill, #dc2626); }
+.po-home .focus-card.danger .focus-card-num small { color: var(--color-danger); }
 .po-home .focus-card-hint { font-size: 10px; color: var(--color-text-disabled, #94a3b8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .po-home .focus-card.danger .focus-card-hint { color: var(--color-danger); }
 

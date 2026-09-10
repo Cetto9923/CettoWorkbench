@@ -35,6 +35,12 @@ body.po-workbench-shell {
   --purple-bg: var(--color-primary-light);
   --purple-bd: var(--color-primary-border);
   --r: 6px;
+
+  --po-scrollbar-size: 8px;
+  --po-scrollbar-track: transparent;
+  --po-scrollbar-thumb: var(--color-border-strong);
+  --po-scrollbar-thumb-hover: var(--color-text-disabled);
+  --po-scrollbar-corner: var(--color-surface);
 }
 
 body.po-workbench-shell .topbar {
@@ -286,10 +292,6 @@ body.po-workbench-shell .main {
   overflow-y: auto;
   background: var(--color-page-bg);
 }
-
-body.po-workbench-shell .main::-webkit-scrollbar { width: 8px; }
-body.po-workbench-shell .main::-webkit-scrollbar-thumb { border-radius: 4px; background: var(--color-border-strong); }
-body.po-workbench-shell .main::-webkit-scrollbar-track { background: transparent; }
 
 .bottom-tabbar {
   position: fixed;

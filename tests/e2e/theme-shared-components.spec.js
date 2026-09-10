@@ -251,4 +251,38 @@ for (const relPath of scheduleCssFiles) {
 }
 console.log("PASS: PO shell owns schedule theme aliases and schedule CSS avoids hardcoded UI colors.");
 
+const poSharedComponentsCss = fs.readFileSync(path.join(cssDir, 'po/shared-components.css'), 'utf8');
+const poBaseTemplate = fs.readFileSync(path.join(__dirname, '../../web/templates/layout/base.html'), 'utf8');
+
+assert(poShellCss.includes('--po-scrollbar-thumb: var(--color-border-strong)'),
+  "po/shell.css must define shared PO scrollbar tokens");
+assert(poBaseTemplate.includes('/static/css/po/shell.css') &&
+  poBaseTemplate.includes('/static/css/po/shared-components.css'),
+  "PO base layout must load shared component theme states after the shell tokens");
+assert(poSharedComponentsCss.includes('body.po-workbench-shell *::-webkit-scrollbar-thumb'),
+  "po/shared-components.css must apply shared scrollbar styling to all PO descendants");
+assert(poSharedComponentsCss.includes('.po-header-right .dropdown-menu') &&
+  poSharedComponentsCss.includes('.theme-picker-group .dropdown-item[aria-checked="true"]'),
+  "po/shared-components.css must own PO header dropdown and theme picker states");
+assert(poSharedComponentsCss.includes('.action.primary') && poSharedComponentsCss.includes('var(--color-info-fill)'),
+  "po/shared-components.css must map PO primary action buttons to semantic fill tokens");
+
+const personalWorkspaceCss = fs.readFileSync(path.join(cssDir, 'po/personal-workspace.css'), 'utf8');
+assert(personalWorkspaceCss.includes('.category-tabs::-webkit-scrollbar') &&
+  personalWorkspaceCss.includes('scrollbar-width: none'),
+  "personal-workspace category tabs must hide their incidental scrollbar");
+
+const doneCss = fs.readFileSync(path.join(cssDir, 'po/done.css'), 'utf8');
+assert(doneCss.includes('.done-tag.gray') &&
+  doneCss.includes('background: var(--color-surface-muted)') &&
+  !doneCss.includes('.done-tag.gray { background: #'),
+  "done gray status tag must use semantic theme tokens");
+
+const boardCss = fs.readFileSync(path.join(cssDir, 'po/board.css'), 'utf8');
+assert(boardCss.includes('.po-board .action.primary') &&
+  boardCss.includes('background:var(--color-info-fill)'),
+  "board primary action buttons must use semantic fill tokens");
+
+console.log("PASS: PO shared shell, tabs, done tags and board actions adapt through semantic tokens.");
+
 console.log("All Shared Component Theme Contracts Passed Successfully!");

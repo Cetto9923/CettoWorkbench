@@ -83,7 +83,7 @@
   align-items: center; justify-content: center; transition: all .15s;
 }
 .issue-drawer-footer .action:hover, .kb-modal-footer .action:hover { border-color: var(--navy); color: var(--navy); }
-.issue-drawer-footer .action.primary, .kb-modal-footer .action.primary { background: var(--navy); border-color: var(--navy); color: var(--color-text-on-accent); font-weight: 700; }
+.issue-drawer-footer .action.primary, .kb-modal-footer .action.primary { background: var(--color-info-fill); border-color: var(--color-info-fill); color: var(--color-text-on-accent); font-weight: 700; }
 .issue-drawer-footer .action.primary:hover, .kb-modal-footer .action.primary:hover { background: var(--color-info-fill-hover); border-color: var(--color-info-fill-hover); color: var(--color-text-on-accent); }
 .issue-drawer-footer .action.soft, .kb-modal-footer .action.soft { border-color: var(--blue-bd); background: var(--blue-bg); color: var(--navy); font-weight: 700; }
 
