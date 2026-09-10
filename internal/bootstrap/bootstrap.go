@@ -8,6 +8,7 @@
 //       internal/pkg/flash
 //       internal/pkg/logger
 //       internal/pkg/sqllog
+//       internal/pkg/zentao
 //       internal/pkg/menu
 //       internal/pkg/ratelimit
 //       internal/pkg/render
@@ -69,6 +70,11 @@ func Run() error {
 		return fmt.Errorf("init sql log: %w", err)
 	}
 	defer func() { _ = sqllog.Sync() }()
+
+	if err := zentaopkg.InitAPILog(cfg); err != nil {
+		return fmt.Errorf("init zentao api log: %w", err)
+	}
+	defer func() { _ = zentaopkg.SyncAPILog() }()
 
 	db, err := database.New(cfg)
 	if err != nil {
@@ -139,7 +145,7 @@ func Run() error {
 		testtaskReadDB = db
 	}
 	testtaskRepo := testtask.NewRepo(testtaskReadDB)
-	testtaskSvc := testtask.NewService(testtaskRepo, userSvc, zapLog)
+	testtaskSvc := testtask.NewService(testtaskRepo, userSvc, zentaopkg.API(), zapLog)
 	testtaskHandler := testtask.NewHandler(testtaskSvc, zapLog)
 	sqlPerfRepo := debug.NewRepo(cfg.Log.Dir)
 	sqlPerfSvc := debug.NewService(sqlPerfRepo)

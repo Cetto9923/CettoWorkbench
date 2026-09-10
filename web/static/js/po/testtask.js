@@ -11,6 +11,7 @@
   var isJointTest = 0;
   var bound = false;
   var currentSystems = [];
+  var createdBuildsByProduct = {};
   var contextMeta = {
     demandId: "",
     title: "",
@@ -211,6 +212,172 @@
         }
         return { ok: res.ok, data: data, status: res.status };
       });
+    });
+  }
+
+  function postJSON(url, payload) {
+    var fetchFn = window.appFetch || fetch;
+    return fetchFn(url, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "X-Requested-With": "XMLHttpRequest"
+      },
+      body: JSON.stringify(payload || {})
+    }).then(function (res) {
+      return res.text().then(function (text) {
+        var data = {};
+        try {
+          data = text ? JSON.parse(text) : {};
+        } catch (ignore) {
+          data = {};
+        }
+        return { ok: res.ok, data: data, status: res.status };
+      });
+    });
+  }
+
+  function checkedSystemIds($r) {
+    var ids = [];
+    $r.find("[data-tt-sys]:checked").each(function () {
+      var id = String($(this).attr("data-tt-sys") || "").trim();
+      if (id) {
+        ids.push(id);
+      }
+    });
+    return ids;
+  }
+
+  function parseExecValue(raw) {
+    var s = String(raw || "").trim();
+    var parts = s.split("-");
+    if (parts.length < 2) {
+      return null;
+    }
+    var projectId = parseInt(parts[0], 10);
+    var executionId = parseInt(parts[1], 10);
+    if (!projectId || !executionId) {
+      return null;
+    }
+    return { projectId: projectId, executionId: executionId };
+  }
+
+  function collectExistVerIds($r, unit, joint) {
+    if (joint) {
+      var multi = [];
+      $r.find('input[name="existVer' + unit + '"]:checked').each(function () {
+        var v = String($(this).val() || "").trim();
+        if (v) {
+          multi.push(v);
+        }
+      });
+      return multi;
+    }
+    var single = String($r.find('[data-tt-exist-ver="' + unit + '"]').val() || "").trim();
+    return single ? [single] : [];
+  }
+
+  // 校验第 2 步；返回 { ok, builds }，builds 仅为「创建新版本」项。
+  function validateAndCollectBuilds($r) {
+    var joint = readJointFlag($r) === 1;
+    var ids = checkedSystemIds($r);
+    if (!ids.length) {
+      showToast("请至少选择一个系统", "error");
+      return { ok: false, builds: [] };
+    }
+    var builds = [];
+    for (var i = 0; i < ids.length; i++) {
+      var unit = ids[i];
+      var mode = $r.find('input[name="ver' + unit + 'Mode"]:checked').val();
+      if (mode === "exist") {
+        var existIds = collectExistVerIds($r, unit, joint);
+        if (!existIds.length) {
+          showToast("请选择已有版本", "error");
+          return { ok: false, builds: [] };
+        }
+        continue;
+      }
+      var execRaw = $r.find('[data-tt-exec="' + unit + '"]').val();
+      var exec = parseExecValue(execRaw);
+      if (!exec) {
+        showToast("请选择所属执行", "error");
+        return { ok: false, builds: [] };
+      }
+      var name = String($r.find('[data-tt-unit="' + unit + '"] [data-tt-fill="ver-name"]').val() || "").trim();
+      if (!name) {
+        showToast("请填写新版本名称", "error");
+        return { ok: false, builds: [] };
+      }
+      var date = String($r.find('[data-tt-unit="' + unit + '"] [data-tt-fill="launch"]').val() || "").trim();
+      if (!date) {
+        showToast("请填写计划上线日期", "error");
+        return { ok: false, builds: [] };
+      }
+      var desc = String($r.find('[data-tt-unit="' + unit + '"] [data-tt-fill="ver-desc"]').val() || "").trim();
+      builds.push({
+        productId: parseInt(unit, 10),
+        projectId: exec.projectId,
+        executionId: exec.executionId,
+        name: name,
+        date: date,
+        desc: desc
+      });
+    }
+    return { ok: true, builds: builds };
+  }
+
+  function saveNewBuilds(demandId, builds) {
+    return postJSON("/demands/" + encodeURIComponent(demandId) + "/testtask/builds", {
+      builds: builds
+    }).then(function (wrap) {
+      if (wrap.ok && wrap.data && wrap.data.success) {
+        var list = (wrap.data.data && wrap.data.data.builds) || [];
+        createdBuildsByProduct = {};
+        list.forEach(function (item) {
+          if (!item) {
+            return;
+          }
+          createdBuildsByProduct[String(item.productId)] = {
+            buildId: item.buildId,
+            name: item.name || ""
+          };
+        });
+        return true;
+      }
+      var msg = String((wrap.data && (wrap.data.message || wrap.data.error)) || "").trim();
+      if (!msg && wrap.data && Array.isArray(wrap.data.errors) && wrap.data.errors.length) {
+        msg = String(wrap.data.errors[0].message || "").trim();
+      }
+      showToast(msg || "保存版本失败", "error");
+      return false;
+    }).catch(function () {
+      showToast("保存版本失败，请稍后重试", "error");
+      return false;
+    });
+  }
+
+  function goNextFromStep2($btn) {
+    var $r = $root();
+    var collected = validateAndCollectBuilds($r);
+    if (!collected.ok) {
+      return;
+    }
+    if (!collected.builds.length) {
+      switchPanel(3);
+      return;
+    }
+    var demandId = contextMeta.demandId;
+    if (!demandId) {
+      showToast("需求 ID 无效", "error");
+      return;
+    }
+    $btn.prop("disabled", true);
+    saveNewBuilds(demandId, collected.builds).then(function (ok) {
+      $btn.prop("disabled", false);
+      if (ok) {
+        switchPanel(3);
+      }
     });
   }
 
@@ -647,6 +814,7 @@
 
   function openModal(item) {
     execOptionsCache = {};
+    createdBuildsByProduct = {};
     fillDemandHeader(item || null);
     switchPanel(1);
     if (typeof window.openShowModals === "function") {
@@ -657,12 +825,19 @@
 
   function bindWizard($scope) {
     $scope.on("click", "#poTesttaskNextBtn", function () {
-      if (currentStep < 4) {
-        if (currentStep === 1) {
-          isJointTest = readJointFlag($root());
-        }
-        switchPanel(currentStep + 1);
+      if (currentStep >= 4) {
+        return;
       }
+      if (currentStep === 1) {
+        isJointTest = readJointFlag($root());
+        switchPanel(2);
+        return;
+      }
+      if (currentStep === 2) {
+        goNextFromStep2($(this));
+        return;
+      }
+      switchPanel(currentStep + 1);
     });
     $scope.on("click", "#poTesttaskPrevBtn", function () {
       if (currentStep > 1) {

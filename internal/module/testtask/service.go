@@ -5,6 +5,7 @@
 // 职责: 提测上下文与产品执行列表业务装配。
 // 依赖: internal/module/user
 //       internal/pkg/errorx
+//       internal/pkg/zentao
 // =============================================================================
 
 package testtask
@@ -12,24 +13,28 @@ package testtask
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 
 	"go.uber.org/zap"
 
 	"workbench/internal/model"
 	"workbench/internal/module/user"
 	"workbench/internal/pkg/errorx"
+	"workbench/internal/pkg/zentao"
 )
 
 // Service 提测办理业务逻辑。
 type Service struct {
 	repo    *Repo
 	userSvc *user.Service
+	ztAPI   *zentao.Client
 	logger  *zap.Logger
 }
 
-// NewService 创建 Service。
-func NewService(repo *Repo, userSvc *user.Service, logger *zap.Logger) *Service {
-	return &Service{repo: repo, userSvc: userSvc, logger: logger}
+// NewService 创建 Service。ztAPI 可为空，写入禅道时回退 zentao.API()。
+func NewService(repo *Repo, userSvc *user.Service, ztAPI *zentao.Client, logger *zap.Logger) *Service {
+	return &Service{repo: repo, userSvc: userSvc, ztAPI: ztAPI, logger: logger}
 }
 
 // GetContext 获取业需提测上下文。提测办理人为当前登录用户。
@@ -90,4 +95,49 @@ func (s *Service) ListProductExecutions(ctx context.Context, actor *model.User, 
 	}
 	noClosed := crExec == 0
 	return BuildExecutionOptions(rows, noClosed), nil
+}
+
+// CreateBuilds 将「创建新版本」项同步到禅道 POST /projects/:id/builds；builder 为当前用户 account。
+func (s *Service) CreateBuilds(ctx context.Context, actor *model.User, demandID uint, req CreateBuildsReq) (*CreateBuildsResp, error) {
+	_ = demandID // 路由上下文，便于日志与后续扩展校验
+	if actor == nil || strings.TrimSpace(actor.Account) == "" {
+		return nil, errorx.New(errorx.ErrCodeForbidden, "请先登录")
+	}
+	client := s.ztAPI
+	if client == nil {
+		client = zentao.API()
+	}
+	if client == nil {
+		return nil, errorx.New(errorx.ErrCodeInternal, "禅道 API 未配置")
+	}
+
+	out := &CreateBuildsResp{Builds: make([]CreateBuildResult, 0, len(req.Builds))}
+	for _, item := range req.Builds {
+		build, err := createProjectBuild(ctx, client, createProjectBuildReq{
+			ProjectID:   item.ProjectID,
+			ExecutionID: item.ExecutionID,
+			ProductID:   item.ProductID,
+			Name:        strings.TrimSpace(item.Name),
+			Builder:     strings.TrimSpace(actor.Account),
+			Date:        strings.TrimSpace(item.Date),
+			Desc:        item.Desc,
+		})
+		if err != nil {
+			if s.logger != nil {
+				s.logger.Error("zentao create build",
+					zap.Error(err),
+					zap.Uint("productId", item.ProductID),
+					zap.Uint("projectId", item.ProjectID),
+					zap.String("name", item.Name),
+				)
+			}
+			return nil, errorx.Wrap(errorx.ErrCodeInvalidParam, fmt.Sprintf("保存版本失败：%s", err.Error()), err)
+		}
+		out.Builds = append(out.Builds, CreateBuildResult{
+			ProductID: item.ProductID,
+			BuildID:   build.ID,
+			Name:      build.Name,
+		})
+	}
+	return out, nil
 }

@@ -19,10 +19,18 @@ import (
 const indexPath = "/index.php"
 
 var zentaoCfg config.ZentaoConfig
+var defaultAPIClient *Client
 
 // SetConfig 注册禅道配置，应在应用启动时调用（bootstrap 中传入 cfg.Zentao）。
+// 同时初始化默认 REST API 客户端，供各模块通过 API() 复用。
 func SetConfig(cfg config.ZentaoConfig) {
 	zentaoCfg = cfg
+	defaultAPIClient = NewClient(cfg)
+}
+
+// API 返回启动时注册的默认禅道 REST 客户端；未 SetConfig 时为 nil。
+func API() *Client {
+	return defaultAPIClient
 }
 
 // URL 拼接禅道页面链接，站点前缀取自 config.Zentao.URL（zentao.url）。

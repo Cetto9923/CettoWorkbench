@@ -2,11 +2,17 @@
 // 文件: internal/module/testtask/form.go
 // 模块: 提测办理
 // 类型: action
-// 职责: 提测上下文请求/响应结构。
+// 职责: 提测上下文与创建版本请求/响应结构。
 // 依赖: 无
 // =============================================================================
 
 package testtask
+
+import (
+	"strconv"
+	"strings"
+	"time"
+)
 
 // DemandContextRow 业需上下文查询行（zt_demand + 主系统名；人员为账号，展示名由 user map 解析）。
 type DemandContextRow struct {
@@ -51,4 +57,73 @@ type ContextResp struct {
 	QDName         string       `json:"qdName"`
 	HandlerName    string       `json:"handlerName"`
 	Systems        []SystemItem `json:"systems"`
+}
+
+// FieldError 表单字段级错误。
+type FieldError struct {
+	Field   string `json:"field"`
+	Message string `json:"message"`
+}
+
+// CreateBuildItem 单个「创建新版本」提交项。
+type CreateBuildItem struct {
+	ProductID   uint   `json:"productId"`
+	ProjectID   uint   `json:"projectId"`
+	ExecutionID uint   `json:"executionId"`
+	Name        string `json:"name"`
+	Date        string `json:"date"`
+	Desc        string `json:"desc"`
+}
+
+// CreateBuildsReq 第 2 步保存新版本（仅创建新版本项）。
+type CreateBuildsReq struct {
+	Builds []CreateBuildItem `json:"builds"`
+}
+
+// CreateBuildResult 单个版本创建结果。
+type CreateBuildResult struct {
+	ProductID uint   `json:"productId"`
+	BuildID   uint   `json:"buildId"`
+	Name      string `json:"name"`
+}
+
+// CreateBuildsResp 批量创建版本响应。
+type CreateBuildsResp struct {
+	Builds []CreateBuildResult `json:"builds"`
+}
+
+// Validate 校验创建版本请求。
+func (r *CreateBuildsReq) Validate() []FieldError {
+	var errs []FieldError
+	if r == nil || len(r.Builds) == 0 {
+		errs = append(errs, FieldError{Field: "_form", Message: "请至少创建一个系统版本"})
+		return errs
+	}
+	for i, item := range r.Builds {
+		prefix := "builds." + strconv.Itoa(i)
+		if item.ProductID == 0 {
+			errs = append(errs, FieldError{Field: prefix + ".productId", Message: "产品无效"})
+		}
+		if item.ProjectID == 0 {
+			errs = append(errs, FieldError{Field: prefix + ".projectId", Message: "所属执行的项目无效"})
+		}
+		if item.ExecutionID == 0 {
+			errs = append(errs, FieldError{Field: prefix + ".executionId", Message: "所属执行不能为空"})
+		}
+		if strings.TrimSpace(item.Name) == "" {
+			errs = append(errs, FieldError{Field: prefix + ".name", Message: "版本名称不能为空"})
+		}
+		date := strings.TrimSpace(item.Date)
+		if date == "" {
+			errs = append(errs, FieldError{Field: prefix + ".date", Message: "计划上线日期不能为空"})
+		} else if !isYMD(date) {
+			errs = append(errs, FieldError{Field: prefix + ".date", Message: "计划上线日期格式应为 YYYY-MM-DD"})
+		}
+	}
+	return errs
+}
+
+func isYMD(s string) bool {
+	_, err := time.ParseInLocation("2006-01-02", s, time.Local)
+	return err == nil
 }
