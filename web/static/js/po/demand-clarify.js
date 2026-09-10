@@ -241,6 +241,14 @@
 
   function bindEvents() {
     $(document).on("click", "#poDemandClarifyCloseBtn, #poClarifyCancelBtn, #poDemandClarifyBackdrop", closeModal);
+    $(document).on("keydown", function (e) {
+      if (e.key === "Escape" && $("#poDemandClarifyModal").hasClass("show")) { closeModal(); }
+    });
+    $(document).on("click", ".js-po-drawer-action[data-action-key='clarify'], .js-drawer-clarify-btn", function (e) {
+      e.preventDefault();
+      var id = String($(this).attr("data-demand-id") || "").replace(/^US/i, "").trim();
+      if (id) openModal(id);
+    });
     $(document).on("click", "#poClarifyRetryBtn", function () { if (currentDemandId) loadClarifyData(currentDemandId); });
     $(document).on("click", "#poClarifyDescToggle", function () {
       $("#poClarifyDescContent").slideToggle(150);
@@ -452,12 +460,9 @@
     var isMain = {}, mainRadioVal = $('input[name="isMainSystemRadio"]:checked').val();
     $("#poClarifyProductTbody tr").each(function (arrIdx) {
       var $r = $(this);
-      prods.push($r.find(".js-clarify-prod-select").val() || "");
-      pms.push($r.find(".js-clarify-pm-value").val() || "");
-      dates.push($r.find('input[name^="demandCompletionDate["]').val() || "");
-      descs.push($r.find('input[name^="systemClarifyDesc["]').val() || "");
-      isAdds.push($r.find(".js-clarify-is-add").is(":checked") ? "1" : "0");
-      addInfos.push($r.find(".js-clarify-add-info").val() || "");
+      prods.push($r.find(".js-clarify-prod-select").val() || ""); pms.push($r.find(".js-clarify-pm-value").val() || "");
+      dates.push($r.find('input[name^="demandCompletionDate["]').val() || ""); descs.push($r.find('input[name^="systemClarifyDesc["]').val() || "");
+      isAdds.push($r.find(".js-clarify-is-add").is(":checked") ? "1" : "0"); addInfos.push($r.find(".js-clarify-add-info").val() || "");
       clarifyIds.push($r.find('input[name^="clarifyIds["]').val() || "");
       if (String($r.attr("data-row-idx")) === String(mainRadioVal)) isMain[String(arrIdx)] = "1";
     });
@@ -465,29 +470,19 @@
     var sIds = [], sNos = [], sChecked = {}, roles = [], gvs = [], eProds = [], pts = [], revs = [], srcs = [], aiCodes = [];
     $("#poClarifyStoryTbody tr").each(function (arrIdx) {
       var $r = $(this);
-      sIds.push($r.find('input[name^="userStoryId["]').val() || "");
-      sNos.push(arrIdx + 1);
-      roles.push($r.find('input[name^="role["]').val() || "");
-      gvs.push($r.find('textarea[name^="gv["]').val() || "");
-      eProds.push($r.find(".js-story-prod-select").val() || "");
-      pts.push($r.find('input[name^="point["]').val() || "2");
-      revs.push($r.find(".js-story-revpoint").val() || "2");
-      srcs.push($r.find('input[name^="sourceType["]').val() || "MANUAL");
+      sIds.push($r.find('input[name^="userStoryId["]').val() || ""); sNos.push(arrIdx + 1);
+      roles.push($r.find('input[name^="role["]').val() || ""); gvs.push($r.find('textarea[name^="gv["]').val() || "");
+      eProds.push($r.find(".js-story-prod-select").val() || ""); pts.push($r.find('input[name^="point["]').val() || "2");
+      revs.push($r.find(".js-story-revpoint").val() || "2"); srcs.push($r.find('input[name^="sourceType["]').val() || "MANUAL");
       aiCodes.push($r.find('input[name^="aiCode["]').val() || null);
       if ($r.find(".js-story-check").is(":checked")) sChecked[String(arrIdx)] = "1";
     });
 
     return {
-      id: parseInt(currentDemandId, 10), category: $("#poClarifyCategory").val(),
-      bra: $("#poClarifyBRA").val(), qd: $("#poClarifyQD").val(), rd: $("#poClarifyRD").val(),
-      clarifyDesc: $("#poClarifyDesc").val(), scaleEstimation: parseInt($("#poClarifyScaleEstimation").val(), 10) || 0,
-      isNewProduct: getRadioValue("isNewProduct"), isRelatedAccounts: getRadioValue("isRelatedAccounts"),
-      isNewFunction: getRadioValue("isNewFunction"), isOtherImportantOrder: getRadioValue("isOtherImportantOrder"),
-      multiLegalPersonLogo: getRadioValue("multiLegalPersonLogo"), comment: "工作台需求澄清",
-      products: prods, pm: pms, demandCompletionDate: dates, systemClarifyDesc: descs,
-      isAdditionalInfo: isAdds, additionalInfo: addInfos, isMainSystem: isMain, clarifyIds: clarifyIds,
-      userStoryNo: sNos, userStoryChecked: sChecked, userStoryId: sIds, role: roles, gv: gvs,
-      entryProductID: eProds, point: pts, revpoint: revs, sourceType: srcs, aiCode: aiCodes
+      id: parseInt(currentDemandId, 10), category: $("#poClarifyCategory").val(), bra: $("#poClarifyBRA").val(), qd: $("#poClarifyQD").val(), rd: $("#poClarifyRD").val(), clarifyDesc: $("#poClarifyDesc").val(), scaleEstimation: parseInt($("#poClarifyScaleEstimation").val(), 10) || 0,
+      isNewProduct: getRadioValue("isNewProduct"), isRelatedAccounts: getRadioValue("isRelatedAccounts"), isNewFunction: getRadioValue("isNewFunction"), isOtherImportantOrder: getRadioValue("isOtherImportantOrder"), multiLegalPersonLogo: getRadioValue("multiLegalPersonLogo"), comment: "工作台需求澄清",
+      products: prods, pm: pms, demandCompletionDate: dates, systemClarifyDesc: descs, isAdditionalInfo: isAdds, additionalInfo: addInfos, isMainSystem: isMain, clarifyIds: clarifyIds,
+      userStoryNo: sNos, userStoryChecked: sChecked, userStoryId: sIds, role: roles, gv: gvs, entryProductID: eProds, point: pts, revpoint: revs, sourceType: srcs, aiCode: aiCodes
     };
   }
 

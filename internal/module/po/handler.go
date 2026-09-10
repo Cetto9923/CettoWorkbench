@@ -57,7 +57,8 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.POST("/demands/:id/clarify/ai-generate", middleware.RequirePerm(perm.PoHomeList), h.GenerateAIUserStory)
 	g.POST("/demands/:id/acceptance", middleware.RequirePerm(perm.PoHomeList), h.AcceptHomeDemand)
 	g.POST("/demands/:id/urge", middleware.RequirePerm(perm.PoHomeList), h.UrgeHomeDemand)
-	g.POST("/demands/:id/deliver", middleware.RequirePerm(perm.PoHomeList), h.DeliverHomeDemand)
+	g.GET("/demands/:id/deliver", middleware.RequirePerm(perm.PoHomeList), h.GetDemandDeliver)
+	g.POST("/demands/:id/deliver", middleware.RequirePerm(perm.PoHomeList), h.DeliverDemand)
 	// 详情读接口：首页与需求看板均可打开；对象级授权仍由 DetailService 执行。
 	g.GET("/demands/:id/detail", middleware.RequireAnyPerm(perm.PoHomeList, perm.PoBoardDemandList), h.DemandDetail)
 	g.GET("/demands/:id/submit-test", middleware.RequirePerm(perm.PoHomeList), h.SubmitTestView)

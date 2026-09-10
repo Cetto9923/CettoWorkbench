@@ -28,8 +28,10 @@ func NewDemandDetailRepo(db *gorm.DB) *DemandDetailRepo {
 
 // DemandDetailRow 需求主记录及关联扩展字段。
 type DemandDetailRow struct {
-	ID               uint       `gorm:"column:id"`
-	Parent           uint       `gorm:"column:parent"`
+	ID uint `gorm:"column:id"`
+	// ZenTao uses -1 for a top-level demand. Keep the source value signed so a
+	// valid top-level record cannot make detail loading fail during row scanning.
+	Parent           int64      `gorm:"column:parent"`
 	Pool             uint       `gorm:"column:pool"`
 	PoolName         string     `gorm:"column:pool_name"`
 	Pri              string     `gorm:"column:pri"`

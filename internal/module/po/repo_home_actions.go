@@ -83,7 +83,7 @@ func (r *Repo) homeActionAuthorized(row *homeActionDemandRow, account, action st
 	case "acceptance":
 		return accept
 	case "deliver":
-		return owner
+		return owner || hasHomeAccount(row.BRA, account)
 	case "urge":
 		return owner || submit || accept || hasHomeAccount(row.QD, account) || hasHomeAccount(row.RD, account) || hasHomeAccount(row.BRA, account) || hasHomeCSV(row.MainDevelopers, account)
 	default:

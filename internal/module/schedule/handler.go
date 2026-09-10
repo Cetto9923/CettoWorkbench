@@ -261,7 +261,8 @@ func (h *Handler) CreateWindow(c *gin.Context) {
 		return
 	}
 
-	if err := h.svc.Create(c.Request.Context(), actor, req); err != nil {
+	createdWindow, err := h.svc.Create(c.Request.Context(), actor, req)
+	if err != nil {
 		if h.logger != nil {
 			h.logger.Error("save version window failed", zap.Error(err), zap.String("name", strings.TrimSpace(req.Name)))
 		}
@@ -269,7 +270,14 @@ func (h *Handler) CreateWindow(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"success": true, "message": "版本窗口保存成功", "redirectUrl": scheduleRedirectURL})
+	c.JSON(http.StatusOK, gin.H{
+		"success":     true,
+		"message":     "版本窗口保存成功",
+		"windowId":    createdWindow.ID,
+		"name":        createdWindow.Name,
+		"releaseDate": createdWindow.ReleaseDate.Format("2006-01-02"),
+		"redirectUrl": scheduleRedirectURL,
+	})
 }
 
 // GetWindow 获取版本窗口详情（JSON）。

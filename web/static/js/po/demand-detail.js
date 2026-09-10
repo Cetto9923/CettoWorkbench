@@ -231,7 +231,8 @@
 
   // 需求详情链接使用同一个抽屉；禅道原文和办理链接保留正常导航。
   document.addEventListener("click", function (e) {
-    if (e.target.closest(".js-po-drawer-action, [data-action-key], .table-action-btn, .js-demand-review, [data-review-demand-id]") && !e.target.closest("[data-open-demand-detail]")) {
+    if (e.target.closest(".js-po-drawer-action, [data-action-key], .table-action-btn, .js-demand-review, [data-review-demand-id]") &&
+        !e.target.closest("[data-open-demand-detail], .js-drawer-schedule-btn, [data-action-key='schedule'], a[href*='/scheduling']")) {
       return;
     }
 
@@ -243,6 +244,49 @@
         window.openPoDemandClarifyModal(cDid);
       }
       return;
+    }
+
+    var deliverBtn = e.target.closest(".js-drawer-deliver-btn");
+    if (deliverBtn) {
+      e.preventDefault();
+      var dDid = deliverBtn.getAttribute("data-demand-id");
+      if (dDid && typeof window.openPoDeliverModal === "function") {
+        window.openPoDeliverModal(dDid);
+      }
+      return;
+    }
+
+    var schedLink = e.target.closest(".js-drawer-schedule-btn, a[href*='/scheduling'], button[data-action-key='schedule']");
+    if (schedLink) {
+      var sHref = (schedLink.getAttribute("href") || "").trim();
+      var sDid = schedLink.getAttribute("data-demand-id") || "";
+      var sSid = schedLink.getAttribute("data-story-id") || "";
+      if (!sDid && !sSid && sHref) {
+        var dMatch = sHref.match(/\/demands\/(\d+)\/scheduling/i);
+        var sMatch = sHref.match(/\/stories\/(\d+)\/scheduling/i);
+        if (dMatch) sDid = dMatch[1];
+        if (sMatch) sSid = sMatch[1];
+      }
+      if (!sDid && currentDemandId) {
+        sDid = String(currentDemandId).replace(/^US/i, "");
+      }
+      if (sDid || sSid) {
+        e.preventDefault();
+        var numDid = Number(sDid) || 0;
+        var numSid = Number(sSid) || 0;
+        if (typeof window.openScheduleIntegratedModal === "function") {
+          window.openScheduleIntegratedModal({
+            id: numSid ? String(numSid) : "US" + numDid,
+            demandId: numDid,
+            storyId: numSid,
+            isIndependent: numSid > 0
+          });
+          return;
+        } else {
+          window.location.href = "/schedule?" + (numSid ? "openStory=" + numSid : "openDemand=" + numDid);
+          return;
+        }
+      }
     }
 
     var trigger = e.target.closest("[data-demand-id], [data-open-demand-detail], a[href^='/demands/']");
@@ -289,6 +333,9 @@
     close: close,
     switchTab: switchTab,
     renderContent: renderContent,
+    refresh: function () {
+      if (currentDemandId) { open(currentDemandId, { mode: currentMode }); }
+    },
     getCurrentDemandId: function () {
       return currentDemandId;
     }

@@ -60,7 +60,7 @@ func (s *DetailService) GetDemandDetail(ctx context.Context, actor *model.User, 
 	var parentDemand *DemandDetailRow
 	var siblings []DemandChildRow
 
-	if row.Parent == 0 {
+	if row.Parent <= 0 {
 		childDemands, err = s.repo.FindChildDemands(ctx, row.ID)
 		if err != nil {
 			return nil, err
@@ -70,11 +70,11 @@ func (s *DetailService) GetDemandDetail(ctx context.Context, actor *model.User, 
 		}
 	} else {
 		mode = "childUnit"
-		parentDemand, err = s.repo.FindDemandDetailByID(ctx, row.Parent)
+		parentDemand, err = s.repo.FindDemandDetailByID(ctx, uint(row.Parent))
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, err
 		}
-		siblings, err = s.repo.FindChildDemands(ctx, row.Parent)
+		siblings, err = s.repo.FindChildDemands(ctx, uint(row.Parent))
 		if err != nil {
 			return nil, err
 		}

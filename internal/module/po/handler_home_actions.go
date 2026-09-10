@@ -52,9 +52,7 @@ func (h *Handler) AcceptHomeDemand(c *gin.Context) {
 	}, "验收成功")
 }
 func (h *Handler) DeliverHomeDemand(c *gin.Context) {
-	h.homeAction(c, func(id uint, comment string) error {
-		return h.svc.DeliverHomeDemand(c.Request.Context(), middleware.CurrentUser(c), id, comment)
-	}, "发起交付成功")
+	h.DeliverDemand(c)
 }
 func (h *Handler) UrgeHomeDemand(c *gin.Context) {
 	h.homeAction(c, func(id uint, comment string) error {

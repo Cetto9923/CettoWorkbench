@@ -59,9 +59,24 @@ CREATE TABLE IF NOT EXISTS `zt_depts` (
   `deletedAt` DATETIME(3) DEFAULT NULL,
   `deleted` TINYINT(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
-  KEY `idx_zt_depts_parent` (`parentId`),
-  KEY `idx_zt_depts_status` (`status`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='工作台部门管理';
+  KEY `idx_tenant_parent` (`tenantId`, `parentId`),
+  KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='工作台部门管理表';
+
+-- 3.1 Workbench 自有版本窗口基础里程碑表（不修改禅道原表 zt_versionwindow）
+CREATE TABLE IF NOT EXISTS `zt_wb_versionwindow_milestone` (
+  `versionWindow` BIGINT UNSIGNED NOT NULL COMMENT '版本窗口ID，对应 zt_versionwindow.id',
+  `planTestDone`  DATE DEFAULT NULL COMMENT '预计提测/开发完成日期',
+  `testDone`      DATE DEFAULT NULL COMMENT '预计测试完成日期',
+  `acceptDone`    DATE DEFAULT NULL COMMENT '预计验收完成日期',
+  `createdBy`     VARCHAR(30) NOT NULL DEFAULT '' COMMENT '创建人账号',
+  `updatedBy`     VARCHAR(30) NOT NULL DEFAULT '' COMMENT '最后更新人账号',
+  `createdDate`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedDate`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deletedAt`     DATETIME(3) DEFAULT NULL,
+  PRIMARY KEY (`versionWindow`),
+  INDEX `idx_deletedAt` (`deletedAt`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Workbench版本窗口基础里程碑';
 
 -- 4. 初始化 PO（产品负责人）角色定义
 INSERT INTO `zt_roles` (`id`, `code`, `name`, `description`, `isBuiltin`, `isActive`, `sortOrder`, `createdBy`) VALUES

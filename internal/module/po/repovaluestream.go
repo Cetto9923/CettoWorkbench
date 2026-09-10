@@ -203,27 +203,12 @@ func filterReady(account string, filter mysqlStageFilter) bool {
 
 // CountRoleDemands 按阶段过滤条件统计业需数量。
 func (r *Repo) CountRoleDemands(ctx context.Context, account string, filter mysqlStageFilter) (int64, error) {
-	if r == nil || r.db == nil || !filterReady(account, filter) {
-		return 0, nil
-	}
-	var total int64
-	err := r.roleDemandScope(ctx, account, filter).Count(&total).Error
-	return total, err
+	return r.CountRoleDemandsWithFilters(ctx, account, filter, DemandsReq{})
 }
 
 // FindRoleDemandIDs 按阶段过滤条件只查业需 ID（供「全部」去重计数，避免拉全字段）。
 func (r *Repo) FindRoleDemandIDs(ctx context.Context, account string, filter mysqlStageFilter) ([]int, error) {
-	if r == nil || r.db == nil || !filterReady(account, filter) {
-		return nil, nil
-	}
-	var ids []int
-	err := r.roleDemandScope(ctx, account, filter).
-		Order("zt_demand.id DESC").
-		Pluck("zt_demand.id", &ids).Error
-	if err != nil {
-		return nil, err
-	}
-	return ids, nil
+	return r.FindRoleDemandIDsWithFilters(ctx, account, filter, DemandsReq{})
 }
 
 // FindAllStageRefsPaged keeps the "all" list's first-stage de-duplication in
@@ -289,32 +274,7 @@ func (r *Repo) FindRoleDemands(ctx context.Context, account string, filter mysql
 
 // FindRoleDemandsPaged 按阶段过滤条件分页查询业需列表（只取账号字段，不 JOIN zt_user）。
 func (r *Repo) FindRoleDemandsPaged(ctx context.Context, account string, filter mysqlStageFilter, offset, limit int) ([]DemandRow, error) {
-	if r == nil || r.db == nil || !filterReady(account, filter) {
-		return nil, nil
-	}
-	var rows []DemandRow
-	q := r.roleDemandScope(ctx, account, filter).
-		Select(`zt_demand.id, zt_demand.name, zt_demand.pri, zt_demand.status, zt_demand.hang,
-			zt_demand.assignedTo, zt_demand.QD, zt_demand.RD, zt_demand.BRA,
-			clarify_pm.PM AS pm`).
-		Joins(`LEFT JOIN (
-			SELECT demand, GROUP_CONCAT(PM) AS PM
-			FROM zt_demandclarify
-			WHERE PM IS NOT NULL AND PM <> ''
-			GROUP BY demand
-		) AS clarify_pm ON clarify_pm.demand = zt_demand.id`).
-		Order("zt_demand.id DESC")
-	if offset > 0 {
-		q = q.Offset(offset)
-	}
-	if limit > 0 {
-		q = q.Limit(limit)
-	}
-	err := q.Find(&rows).Error
-	if err != nil {
-		return nil, err
-	}
-	return rows, nil
+	return r.FindRoleDemandsPagedWithFilters(ctx, account, filter, DemandsReq{}, offset, limit)
 }
 
 // CountScheduleStories 统计排期阶段独立研发需求数量。
@@ -329,17 +289,7 @@ func (r *Repo) CountScheduleStories(ctx context.Context, account string) (int64,
 
 // FindScheduleStoryIDs 查询排期阶段独立研发需求 ID。
 func (r *Repo) FindScheduleStoryIDs(ctx context.Context, account string) ([]int, error) {
-	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
-		return nil, nil
-	}
-	var ids []int
-	err := r.scheduleStoryScope(ctx, account).
-		Order("id DESC").
-		Pluck("id", &ids).Error
-	if err != nil {
-		return nil, err
-	}
-	return ids, nil
+	return r.FindScheduleStoryIDsWithFilters(ctx, account, DemandsReq{})
 }
 
 // FindScheduleStories 查询排期阶段独立研发需求列表。
@@ -370,17 +320,7 @@ func (r *Repo) CountDeliverStories(ctx context.Context, account string) (int64, 
 
 // FindDeliverStoryIDs 查询交付阶段独立研发需求 ID。
 func (r *Repo) FindDeliverStoryIDs(ctx context.Context, account string) ([]int, error) {
-	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
-		return nil, nil
-	}
-	var ids []int
-	err := r.deliverStoryScope(ctx, account).
-		Order("id DESC").
-		Pluck("id", &ids).Error
-	if err != nil {
-		return nil, err
-	}
-	return ids, nil
+	return r.FindDeliverStoryIDsWithFilters(ctx, account, DemandsReq{})
 }
 
 // FindDeliverStories 查询交付阶段独立研发需求列表。

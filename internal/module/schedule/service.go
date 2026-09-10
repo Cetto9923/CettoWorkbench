@@ -33,72 +33,6 @@ func NewService(repo *Repo, logger *zap.Logger) *Service {
 	return &Service{repo: repo, logger: logger}
 }
 
-// GetUserTeamgroups 查询用户所属敏捷小组并拼接展示名称。
-func (s *Service) GetUserTeamgroups(ctx context.Context, account string) ([]TeamgroupOption, error) {
-	account = strings.TrimSpace(account)
-	if account == "" {
-		return []TeamgroupOption{}, nil
-	}
-
-	isAdmin, err := s.repo.IsAdmin(ctx, account)
-	if err != nil {
-		return nil, err
-	}
-
-	var groups []ZtTeamgroup
-	if isAdmin {
-		groups, err = s.repo.ListAllTeamgroups(ctx)
-	} else {
-		groups, err = s.repo.GetUserTeamgroups(ctx, account)
-	}
-	if err != nil {
-		return nil, err
-	}
-	if len(groups) == 0 {
-		return []TeamgroupOption{}, nil
-	}
-
-	parentIDs := make([]uint, 0)
-	parentSeen := make(map[uint]struct{})
-	for _, group := range groups {
-		if group.Parent == 0 {
-			continue
-		}
-		if _, ok := parentSeen[group.Parent]; ok {
-			continue
-		}
-		parentSeen[group.Parent] = struct{}{}
-		parentIDs = append(parentIDs, group.Parent)
-	}
-
-	parentNameByID := make(map[uint]string, len(parentIDs))
-	if len(parentIDs) > 0 {
-		parents, err := s.repo.FindTeamgroupsByIDs(ctx, parentIDs)
-		if err != nil {
-			return nil, err
-		}
-		for _, parent := range parents {
-			parentNameByID[parent.ID] = strings.TrimSpace(parent.Name)
-		}
-	}
-
-	options := make([]TeamgroupOption, 0, len(groups))
-	for _, group := range groups {
-		displayName := strings.TrimSpace(group.Name)
-		if group.Parent > 0 {
-			parentName := parentNameByID[group.Parent]
-			if parentName != "" {
-				displayName = fmt.Sprintf("%s / %s", parentName, displayName)
-			}
-		}
-		options = append(options, TeamgroupOption{
-			ID:          group.ID,
-			DisplayName: displayName,
-		})
-	}
-	return options, nil
-}
-
 func actorAccount(actor *model.User) string {
 	if actor == nil {
 		return ""
@@ -169,12 +103,6 @@ func (s *Service) ListScheduleUsers(ctx context.Context) ([]SchedulingUserOption
 	return users, nil
 }
 
-func computeWindowPermissions(createdBy, account string, demandCount int) (canEdit, canDelete, hasLinkedDemands bool) {
-	hasLinkedDemands = demandCount > 0
-	canEdit = strings.TrimSpace(createdBy) == strings.TrimSpace(account)
-	canDelete = canEdit && !hasLinkedDemands
-	return
-}
 func dateOnly(value time.Time) time.Time {
 	value = value.In(time.Local)
 	return time.Date(value.Year(), value.Month(), value.Day(), 0, 0, 0, 0, value.Location())
@@ -237,6 +165,42 @@ func applyUpdateReqToVersionWindow(window *model.VersionWindow, req UpdateReq) e
 	return nil
 }
 
+func parseOptionalWindowMilestoneDate(value string) (*time.Time, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return nil, nil
+	}
+	parsed, err := time.ParseInLocation("2006-01-02", value, time.Local)
+	if err != nil {
+		return nil, err
+	}
+	d := time.Date(parsed.Year(), parsed.Month(), parsed.Day(), 0, 0, 0, 0, parsed.Location())
+	return &d, nil
+}
+
+func buildVersionWindowMilestone(windowID uint64, account, planTestDone, testDone, acceptDone string) (*model.VersionWindowMilestone, error) {
+	planTest, err := parseOptionalWindowMilestoneDate(planTestDone)
+	if err != nil {
+		return nil, fmt.Errorf("invalid plan test done date")
+	}
+	test, err := parseOptionalWindowMilestoneDate(testDone)
+	if err != nil {
+		return nil, fmt.Errorf("invalid test done date")
+	}
+	accept, err := parseOptionalWindowMilestoneDate(acceptDone)
+	if err != nil {
+		return nil, fmt.Errorf("invalid accept done date")
+	}
+	return &model.VersionWindowMilestone{
+		WindowID:     windowID,
+		PlanTestDone: planTest,
+		TestDone:     test,
+		AcceptDone:   accept,
+		CreatedBy:    account,
+		UpdatedBy:    account,
+	}, nil
+}
+
 // GetByID 查询版本窗口详情。
 func (s *Service) GetByID(ctx context.Context, actor *model.User, id uint64) (*WindowDetailResp, error) {
 	_ = actor
@@ -246,6 +210,11 @@ func (s *Service) GetByID(ctx context.Context, actor *model.User, id uint64) (*W
 	}
 	if window == nil {
 		return nil, errors.New("窗口不存在")
+	}
+
+	milestone, err := s.repo.GetWindowMilestone(ctx, id)
+	if err != nil {
+		return nil, err
 	}
 
 	products, err := s.repo.GetWindowProducts(ctx, id)
@@ -266,6 +235,11 @@ func (s *Service) GetByID(ctx context.Context, actor *model.User, id uint64) (*W
 		TeamgroupID: window.TeamgroupID,
 		GroupSize:   window.GroupSize,
 		Products:    make([]WindowProductDetail, 0, len(products)),
+	}
+	if milestone != nil {
+		detail.PlanTestDone = milestone.PlanTestDone
+		detail.TestDone = milestone.TestDone
+		detail.AcceptDone = milestone.AcceptDone
 	}
 
 	for _, row := range products {
@@ -310,10 +284,10 @@ func collectWindowProductIDs(products []WindowProductInput) []uint {
 }
 
 // Create 保存版本窗口并按需同步禅道产品计划。
-func (s *Service) Create(ctx context.Context, actor *model.User, req CreateReq) error {
+func (s *Service) Create(ctx context.Context, actor *model.User, req CreateReq) (*model.VersionWindow, error) {
 	window, err := buildVersionWindowFromCreateReq(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	account := actorAccount(actor)
 	window.CreatedBy = account
@@ -322,18 +296,29 @@ func (s *Service) Create(ctx context.Context, actor *model.User, req CreateReq) 
 	productIDs := collectWindowProductIDs(req.Products)
 	notice, err := s.validateProductsAccess(ctx, productIDs, account)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if notice != nil {
-		return notice
+		return nil, notice
 	}
 
-	return s.repo.Transaction(ctx, func(txRepo *Repo) error {
+	err = s.repo.Transaction(ctx, func(txRepo *Repo) error {
 		if err := txRepo.Create(ctx, window); err != nil {
 			return fmt.Errorf("create version window: %w", err)
 		}
+		milestone, err := buildVersionWindowMilestone(window.ID, account, req.PlanTestDone, req.TestDone, req.AcceptDone)
+		if err != nil {
+			return err
+		}
+		if err := txRepo.UpsertWindowMilestone(ctx, milestone); err != nil {
+			return fmt.Errorf("save version window milestone: %w", err)
+		}
 		return s.saveWindowProducts(ctx, txRepo, window.ID, window, req.Products, account)
 	})
+	if err != nil {
+		return nil, err
+	}
+	return window, nil
 }
 
 // Update 更新版本窗口并重建关联产品及计划。
@@ -366,6 +351,13 @@ func (s *Service) Update(ctx context.Context, actor *model.User, req UpdateReq) 
 	return s.repo.Transaction(ctx, func(txRepo *Repo) error {
 		if err := txRepo.Update(ctx, window); err != nil {
 			return fmt.Errorf("update version window: %w", err)
+		}
+		milestone, err := buildVersionWindowMilestone(window.ID, account, req.PlanTestDone, req.TestDone, req.AcceptDone)
+		if err != nil {
+			return err
+		}
+		if err := txRepo.UpsertWindowMilestone(ctx, milestone); err != nil {
+			return fmt.Errorf("save version window milestone: %w", err)
 		}
 		if err := txRepo.DeleteWindowProducts(ctx, window.ID); err != nil {
 			return fmt.Errorf("delete window products: %w", err)

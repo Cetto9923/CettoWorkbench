@@ -37,6 +37,10 @@ assert.ok(headerHtml.includes("子业务需求 · 交付单元"), "Header must s
 assert.ok(headerHtml.includes("已评审 / 待澄清"), "Header must show native zentao status");
 console.log("PASS: renderHeader correctly renders header attributes");
 
+const dataExportHeaderHtml = R.renderHeader(Object.assign({}, mockSummary, { category: "dataexport" }), "childUnit");
+assert.ok(dataExportHeaderHtml.includes("数据导出"), "Header must localize the dataexport category");
+console.log("PASS: renderHeader localizes ZenTao demand categories");
+
 // 3. renderRelationNav test
 const mockRelCtx = {
   parent: { demandId: 63439, code: "US63439", title: "父需求标题" },

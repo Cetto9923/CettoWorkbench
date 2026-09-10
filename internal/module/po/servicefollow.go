@@ -129,14 +129,14 @@ func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stage
 		if !includeDemand {
 			return &DemandsResp{Items: []WorkItemDetail{}, Total: 0, Page: req.Page, PageSize: req.PageSize}, nil
 		}
-		total, err := s.repo.CountRoleDemands(ctx, account, filter)
+		total, err := s.repo.CountRoleDemandsWithFilters(ctx, account, filter, req)
 		if err != nil {
 			return nil, err
 		}
 		if total == 0 || int64(offset) >= total {
 			return &DemandsResp{Items: []WorkItemDetail{}, Total: int(total), Page: req.Page, PageSize: req.PageSize}, nil
 		}
-		rows, err := s.repo.FindRoleDemandsPaged(ctx, account, filter, offset, req.PageSize)
+		rows, err := s.repo.FindRoleDemandsPagedWithFilters(ctx, account, filter, req, offset, req.PageSize)
 		if err != nil {
 			return nil, err
 		}
@@ -168,7 +168,7 @@ func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stage
 	// 包含独立研发需求阶段（排期/交付）：按 ID 投影分页后按需加载详情
 	refs := make([]itemRef, 0)
 	if includeDemand {
-		demandIDs, err := s.repo.FindRoleDemandIDs(ctx, account, filter)
+		demandIDs, err := s.repo.FindRoleDemandIDsWithFilters(ctx, account, filter, req)
 		if err != nil {
 			return nil, err
 		}
@@ -177,7 +177,7 @@ func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stage
 		}
 	}
 	if includeStory && filter.scheduleIncomplete {
-		storyIDs, sErr := s.repo.FindScheduleStoryIDs(ctx, account)
+		storyIDs, sErr := s.repo.FindScheduleStoryIDsWithFilters(ctx, account, req)
 		if sErr != nil {
 			return nil, sErr
 		}
@@ -186,7 +186,7 @@ func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stage
 		}
 	}
 	if includeStory && filter.deliverStories {
-		storyIDs, sErr := s.repo.FindDeliverStoryIDs(ctx, account)
+		storyIDs, sErr := s.repo.FindDeliverStoryIDsWithFilters(ctx, account, req)
 		if sErr != nil {
 			return nil, sErr
 		}

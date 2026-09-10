@@ -201,10 +201,18 @@
           return;
         }
         var msg = String((wrap.data && (wrap.data.message || wrap.data.error)) || "").trim();
+        if (!msg && wrap.status === 401) {
+          msg = "未登录或登录已过期，请重新登录";
+        } else if (!msg && wrap.status === 403) {
+          msg = "您暂无权限办理该需求的提测";
+        } else if (!msg && wrap.status === 404) {
+          msg = "未找到该需求的提测信息";
+        }
         showToast(msg || "获取提测上下文失败", "error");
       })
-      .catch(function () {
-        showToast("获取提测上下文失败，请稍后重试", "error");
+      .catch(function (err) {
+        var msg = (err && err.message) ? ("获取提测上下文失败: " + err.message) : "获取提测上下文失败，请稍后重试";
+        showToast(msg, "error");
       });
   }
 

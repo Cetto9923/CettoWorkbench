@@ -1,5 +1,5 @@
 # path<TAB>current debt line count; every shrink must ratchet this number down
-internal/module/schedule/form.go	1126
+internal/module/schedule/form.go	914
 internal/module/schedule/handler_demand.go	665
 internal/module/user/handler.go	544
 web/static/css/components/components.css	595

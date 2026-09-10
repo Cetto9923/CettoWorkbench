@@ -30,7 +30,7 @@ import (
 	"workbench/internal/pkg/errorx"
 )
 
-func newDemandDetailMockRow(id uint, parent uint) *sqlmock.Rows {
+func newDemandDetailMockRow(id uint, parent int64) *sqlmock.Rows {
 	return sqlmock.NewRows([]string{
 		"id", "parent", "pool", "pri", "category", "source", "sourceNote",
 		"name", "desc", "verifyPlan", "feedbackBy", "feedbackedBy",
@@ -53,6 +53,25 @@ func newDemandDetailMockRow(id uint, parent uint) *sqlmock.Rows {
 		"acc-name", "rev-name", "—", "pool-name",
 		"product-name", "system-name",
 	)
+}
+
+func TestFindDemandDetailByID_AllowsZenTaoTopLevelParentSentinel(t *testing.T) {
+	gormDB, mock := setupMockDB(t)
+	repo := NewDemandDetailRepo(gormDB)
+	mock.ExpectQuery(`SELECT[\s\S]*FROM zt_demand d[\s\S]*WHERE d\.id = \?`).
+		WithArgs(uint(700)).
+		WillReturnRows(newDemandDetailMockRow(700, -1))
+
+	row, err := repo.FindDemandDetailByID(t.Context(), 700)
+	if err != nil {
+		t.Fatalf("FindDemandDetailByID() error = %v", err)
+	}
+	if row.Parent != -1 {
+		t.Fatalf("parent = %d, want ZenTao top-level sentinel -1", row.Parent)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestGetDemandDetail_RejectsNilActor(t *testing.T) {

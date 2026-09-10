@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="{{ asset "/static/css/po/demand-detail.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/po/personal-workspace.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/po/done.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/demand-clarify.css" }}">
 {{ end }}
 
 {{ define "content" }}
@@ -115,6 +116,7 @@
     </footer>
   </aside>
 </div>
+{{ template "po/clarify_modal" . }}
 {{ end }}
 
 {{ define "page_js" }}
@@ -123,5 +125,6 @@
 <script src="{{ asset "/static/js/po/demand-detail-parent.js" }}"></script>
 <script src="{{ asset "/static/js/po/demand-detail-render.js" }}"></script>
 <script src="{{ asset "/static/js/po/demand-detail.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-clarify.js" }}"></script>
 <script src="{{ asset "/static/js/po/done.js" }}"></script>
 {{ end }}

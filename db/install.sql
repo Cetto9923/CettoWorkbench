@@ -208,6 +208,21 @@ CREATE TABLE IF NOT EXISTS `zt_versionwindowproduct` (
     UNIQUE KEY `uk_versionWindow_product` (`versionWindow`, `product`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='版本窗口关联产品/系统';
 
+-- 10.1 Workbench 自有版本窗口基础里程碑表
+CREATE TABLE IF NOT EXISTS `zt_wb_versionwindow_milestone` (
+    `versionWindow` BIGINT UNSIGNED NOT NULL COMMENT '版本窗口ID，对应 zt_versionwindow.id',
+    `planTestDone`  DATE DEFAULT NULL COMMENT '预计提测/开发完成日期',
+    `testDone`      DATE DEFAULT NULL COMMENT '预计测试完成日期',
+    `acceptDone`    DATE DEFAULT NULL COMMENT '预计验收完成日期',
+    `createdBy`     VARCHAR(30) NOT NULL DEFAULT '' COMMENT '创建人账号',
+    `updatedBy`     VARCHAR(30) NOT NULL DEFAULT '' COMMENT '最后更新人账号',
+    `createdDate`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updatedDate`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `deletedAt`     DATETIME(3) DEFAULT NULL,
+    PRIMARY KEY (`versionWindow`),
+    INDEX `idx_deletedAt` (`deletedAt`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Workbench版本窗口基础里程碑';
+
 -- 11. 业务需求-窗口关联表
 CREATE TABLE IF NOT EXISTS `zt_demandwindow` (
     `id`            BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

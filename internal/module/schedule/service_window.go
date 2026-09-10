@@ -339,3 +339,10 @@ func (s *Service) ListWindows(ctx context.Context, actor *model.User) (ListWindo
 	}
 	return ListWindowsResp{Windows: items}, nil
 }
+
+func computeWindowPermissions(createdBy, account string, demandCount int) (canEdit, canDelete, hasLinkedDemands bool) {
+	hasLinkedDemands = demandCount > 0
+	canEdit = strings.TrimSpace(createdBy) == strings.TrimSpace(account)
+	canDelete = canEdit && !hasLinkedDemands
+	return
+}

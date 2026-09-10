@@ -42,19 +42,49 @@
     if (!data.products.length) $("<div>").addClass("schedule-create-empty").text("暂无关联系统").appendTo($products);
   }
 
-  function refreshWindows(url, previousIDs, payload) {
+  function refreshWindows(url, previousIDs, payload, resData) {
     return readJSON(url).then(function (data) {
       var $select = $("#scheduleIntegratedWindowSelect");
       var candidates = [];
+      var createdId = resData && resData.windowId ? String(resData.windowId) : "";
       (data.windows || []).forEach(function (item) {
-        if (!previousIDs.has(String(item.id))) {
+        var strId = String(item.id);
+        if (!previousIDs.has(strId)) {
           $("<option>").val(item.id).text(item.name).attr("data-release-date", item.releaseDate).appendTo($select);
-          if (item.name === payload.name && item.releaseDate === payload.releaseDate) candidates.push(item.id);
+          if (createdId && strId === createdId) {
+            candidates.push(item.id);
+          } else if (item.name === payload.name && item.releaseDate === payload.releaseDate) {
+            candidates.push(item.id);
+          }
         }
       });
-      if (candidates.length === 1) $select.val(candidates[0]).trigger("change");
+      if (candidates.length > 0) {
+        $select.val(candidates[0]).trigger("change");
+      } else if (createdId) {
+        if (!$select.find("option[value='" + createdId + "']").length) {
+          $("<option>")
+            .val(createdId)
+            .text(payload.name)
+            .attr("data-release-date", payload.releaseDate)
+            .appendTo($select);
+        }
+        $select.val(createdId).trigger("change");
+      }
     }).catch(function () {
-      window.showToast("窗口已保存，但窗口列表刷新失败；请重新打开排期后选择", "error");
+      if (resData && resData.windowId) {
+        var $select = $("#scheduleIntegratedWindowSelect");
+        var createdId = String(resData.windowId);
+        if (!$select.find("option[value='" + createdId + "']").length) {
+          $("<option>")
+            .val(createdId)
+            .text(payload.name)
+            .attr("data-release-date", payload.releaseDate)
+            .appendTo($select);
+        }
+        $select.val(createdId).trigger("change");
+      } else {
+        window.showToast("窗口已保存，但窗口列表刷新失败；请重新打开排期后选择", "error");
+      }
     });
   }
 
@@ -72,8 +102,8 @@
     readJSON("/schedule/window-options").then(function (data) {
       fillOptions(data);
       if (!data.teamgroups.length) throw new Error("暂无可用敏捷小组，无法创建窗口");
-      window.openScheduleCreateVersionWindowModal(function (payload) {
-        return refreshWindows(url, previousIDs, payload);
+      window.openScheduleCreateVersionWindowModal(function (payload, resData) {
+        return refreshWindows(url, previousIDs, payload, resData);
       });
     }).catch(showError).finally(function () { $button.prop("disabled", false); });
   });

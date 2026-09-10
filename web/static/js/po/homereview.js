@@ -109,6 +109,13 @@
         window.openPoDemandClarifyModal(id);
       }
     });
+    $(document).on("click", ".js-po-drawer-action[data-action-key='deliver']", function (e) {
+      e.preventDefault();
+      var btn = $(this), id = String(btn.attr("data-demand-id") || "").replace(/^US/i, "");
+      if (typeof window.openPoDeliverModal === "function") {
+        window.openPoDeliverModal(id);
+      }
+    });
     $(document).on("click", ".js-po-drawer-action[data-action-key='submit_test'], .js-submit-test", function (e) {
       e.preventDefault();
       var btn = $(this), id = String(btn.attr("data-demand-id") || "").replace(/^US/i, "");
@@ -123,7 +130,7 @@
     $("#poDemandAcceptanceCloseBtn, #poDemandAcceptanceOverlay").on("click", function () {
       if (typeof window.closeShowModals === "function") { window.closeShowModals(ACCEPTANCE_IDS); }
     });
-    $(document).on("click", ".js-po-drawer-action:not([data-action-key='accept']):not([data-action-key='approve']):not([data-action-key='withdraw_review']):not([data-action-key='submit_review']):not([data-action-key='clarify']):not([data-action-key='submit_test'])", function () {
+    $(document).on("click", ".js-po-drawer-action:not([data-action-key='accept']):not([data-action-key='approve']):not([data-action-key='withdraw_review']):not([data-action-key='submit_review']):not([data-action-key='clarify']):not([data-action-key='submit_test']):not([data-action-key='deliver'])", function () {
       var btn = $(this), url = String(btn.attr("data-action-url") || "");
       var key = String(btn.attr("data-action-key") || "");
       var ctx = fillActionContext({ id: btn.attr("data-demand-id"), title: String(btn.closest("tr").find("td").eq(1).text() || "").trim(), valueStream: String(btn.closest("tr").find("td").eq(3).text() || "").trim(), owner: String(btn.closest("tr").find("td").eq(5).text() || "").trim() }, key);

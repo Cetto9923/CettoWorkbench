@@ -104,7 +104,7 @@ func applyHomeFocusToolbarFiltersWithClause(base *gorm.DB, req DemandsReq, where
 			pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern,
 		)
 	}
-	switch req.Priority {
+	switch strings.ToLower(strings.TrimSpace(req.Priority)) {
 	case "p1":
 		base = base.Where("id IN (SELECT id FROM zt_demand WHERE pri = '1')")
 	case "p2":
@@ -167,24 +167,7 @@ func (r *Repo) homeFocusStoryQuery(ctx context.Context, account string, req Dema
 		// assignedTo 是研发需求的正式办理责任字段；不把 openedBy/watch 视为待办。
 		q = q.Where("assignedTo = ?", account)
 	}
-	if kw := strings.ToLower(strings.TrimSpace(req.Keyword)); kw != "" {
-		pattern := "%" + kw + "%"
-		q = q.Where("(LOWER(CAST(id AS CHAR)) LIKE ? OR LOWER(title) LIKE ? OR LOWER(IFNULL(assignedTo, '')) LIKE ?)", pattern, pattern, pattern)
-	}
-	switch req.Priority {
-	case "p1":
-		q = q.Where("pri = ?", 1)
-	case "p2":
-		q = q.Where("pri = ?", 2)
-	case "p3":
-		q = q.Where("pri IN ?", []int{3, 4})
-	}
-	switch req.Relation {
-	case "handling":
-		q = q.Where("assignedTo = ?", account)
-	case "following":
-		q = q.Where("assignedTo <> ? OR assignedTo IS NULL OR assignedTo = ''", account)
-	}
+	q = applyStoryToolbarFilters(q, account, req)
 	stageSQL := homeFocusStoryStageSQL()
 	base := q.Select("id, " + stageSQL + " AS stage_index")
 	result := r.db.WithContext(ctx).Table("(?) AS focused_stories", base)

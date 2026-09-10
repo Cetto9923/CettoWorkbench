@@ -51,7 +51,7 @@ func TestVersionWindow_CreateUnauthorizedProductRejected(t *testing.T) {
 		},
 	}
 
-	err := svc.Create(ctx, actor, req)
+	_, err := svc.Create(ctx, actor, req)
 	if err == nil {
 		t.Fatal("expected error for unauthorized product create, got nil")
 	}
@@ -96,6 +96,8 @@ func TestVersionWindow_CreateAuthorizedProductsStillWorks(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectExec("(?s)INSERT INTO `zt_versionwindow`").
 		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec("(?s)INSERT INTO zt_wb_versionwindow_milestone").
+		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	mock.ExpectQuery(testGetMatchingPlansRegex).
 		WithArgs(100, "2026-10-01").
@@ -119,7 +121,7 @@ func TestVersionWindow_CreateAuthorizedProductsStillWorks(t *testing.T) {
 		},
 	}
 
-	err := svc.Create(ctx, actor, req)
+	_, err := svc.Create(ctx, actor, req)
 	if err != nil {
 		t.Fatalf("expected nil error for authorized product create, got: %v", err)
 	}
@@ -268,6 +270,9 @@ func TestVersionWindow_UpdateAuthorizedProductsStillWorks(t *testing.T) {
 	mock.ExpectExec("(?s)UPDATE `zt_versionwindow`").
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
+	mock.ExpectExec("(?s)INSERT INTO zt_wb_versionwindow_milestone").
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
 	mock.ExpectExec("(?s)DELETE FROM `zt_versionwindowproduct` WHERE versionWindow = \\?").
 		WithArgs(1).
 		WillReturnResult(sqlmock.NewResult(0, 1))
@@ -339,7 +344,7 @@ func TestVersionWindow_MultipleProductsOneUnauthorizedRejectsWholeRequest(t *tes
 			},
 		}
 
-		err := svc.Create(ctx, actor, req)
+		_, err := svc.Create(ctx, actor, req)
 		if err == nil {
 			t.Fatal("expected rejection when one product of multiple is unauthorized, got nil")
 		}

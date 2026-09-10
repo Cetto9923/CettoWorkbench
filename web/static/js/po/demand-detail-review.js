@@ -28,7 +28,7 @@
 
   function categoryLabel(value) {
     var key = String(value || "").trim().toLowerCase();
-    var labels = { experience: "体验优化", feature: "功能需求", request: "业务需求", business: "业务需求", research: "调研需求", other: "其他" };
+    var labels = { experience: "体验优化", feature: "功能需求", request: "业务需求", business: "业务需求", research: "调研需求", bug: "BUG", tecopt: "技术优化", performance: "性能", safe: "安全", datacg: "数据变更", datachange: "数据变更", dataexport: "数据导出", other: "其他" };
     return labels[key] || value || "—";
   }
 

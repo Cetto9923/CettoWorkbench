@@ -59,14 +59,23 @@ func getURL(base, m, f string, params ...string) string {
 	if len(params) > 0 && params[0] != "" {
 		query += "&" + params[0]
 		// 禅道 max5 需要 id 参数与业务 ID 参数并存（CRCBWorkbench buildZentaoURL 双设）。
-		if val, ok := extractParamsValue(params[0]); ok && !strings.Contains(params[0], "id=") {
-			query += "&id=" + url.QueryEscape(val)
+		if val, ok := extractParamsValue(params[0]); ok {
+			if !strings.Contains(params[0], "id=") {
+				query += "&id=" + url.QueryEscape(val)
+			}
+			if m == "story" && !strings.Contains(params[0], "storyID=") {
+				query += "&storyID=" + url.QueryEscape(val)
+			}
 		}
 	}
 	u := base + indexPath + "?" + query
 	// 禅道 max5 需求池应用壳：demand view 缺 #app=demandpool 会回落"地盘/首页"。
 	if m == "demand" && f == "view" {
 		u += "#app=demandpool"
+	}
+	// 禅道 max5 项目应用壳：story view 缺 #app=project 会回落"地盘/首页"。
+	if m == "story" && f == "view" {
+		u += "#app=project"
 	}
 	return u
 }

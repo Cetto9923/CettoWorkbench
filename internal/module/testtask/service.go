@@ -48,8 +48,8 @@ func (s *Service) GetContext(ctx context.Context, actor *model.User, demandID ui
 	displayMap := map[string]string{}
 	if s.userSvc != nil {
 		m, mapErr := s.userSvc.AccountDisplayMap(ctx, actor)
-		if mapErr != nil {
-			return nil, mapErr
+		if mapErr != nil && s.logger != nil {
+			s.logger.Warn("testtask: failed to load account display map, fallback to account", zap.Error(mapErr))
 		}
 		if m != nil {
 			displayMap = m

@@ -9,6 +9,8 @@
 <link rel="stylesheet" href="{{ asset "/static/css/po/personal-workspace.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/po/todos.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/po/demand-detail.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/demand-clarify.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/po-deliver.css" }}">
 {{ end }}
 
 {{ define "content" }}
@@ -78,6 +80,8 @@
     <div class="workspace-pagination" id="todosPagination" hidden></div>
   </section>
 </div>
+{{ template "po/clarify_modal" . }}
+{{ template "po/deliver_modal" . }}
 {{ end }}
 
 {{ define "page_js" }}
@@ -87,5 +91,7 @@
 <script src="{{ asset "/static/js/po/demand-detail-parent.js" }}"></script>
 <script src="{{ asset "/static/js/po/demand-detail-render.js" }}"></script>
 <script src="{{ asset "/static/js/po/demand-detail.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-clarify.js" }}"></script>
+<script src="{{ asset "/static/js/po/po-deliver.js" }}"></script>
 <script src="{{ asset "/static/js/po/todos.js" }}"></script>
 {{ end }}

@@ -5,51 +5,84 @@
          视觉与工作台其它抽屉（详情/办理）一致。
    ============================================================================= */
 
-.demand-clarify-modal {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  width: 100% !important; height: 100% !important; max-height: none !important;
-  background: transparent !important; border: none !important; border-radius: 0 !important;
-  z-index: 1050; display: block; overflow: hidden;
-  pointer-events: none; /* 仅抽屉本体接收点击，背景透传 */
+.demand-clarify-modal,
+#poDemandClarifyModal {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  transform: none !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  z-index: 1050 !important;
+  overflow: hidden !important;
+  pointer-events: none; /* 仅抽屉本体接收点击，背景遮罩透传给 backdrop */
 }
+
+.demand-clarify-modal.show,
+#poDemandClarifyModal.show {
+  display: block !important;
+}
+
 .demand-clarify-backdrop {
-  position: fixed; top: 0; left: var(--sidebar-width, 200px); right: 0; bottom: 0;
-  background-color: rgba(15, 23, 42, 0.32);
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(2px);
   z-index: 1;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.18s ease-out, left 0.2s ease;
+  transition: opacity 0.2s ease-out;
 }
-body.sidebar-collapsed .demand-clarify-backdrop {
-  left: var(--sidebar-width-collapsed, 56px);
+
+.demand-clarify-modal.show .demand-clarify-backdrop {
+  opacity: 1;
+  pointer-events: auto;
 }
-.demand-clarify-modal.show .demand-clarify-backdrop { opacity: 1; pointer-events: auto; }
+
 .demand-clarify-dialog {
-  position: fixed; top: 0; left: var(--sidebar-width, 200px); right: 0; bottom: 0;
-  z-index: 2; width: auto; max-width: none; height: 100vh;
-  background: #fff; border-radius: 0;
-  box-shadow: -8px 0 28px rgba(15, 23, 42, 0.18);
-  display: flex; flex-direction: column; overflow: hidden;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: auto !important;
+  z-index: 2;
+  width: clamp(1100px, 92vw, 1600px);
+  max-width: 96vw;
+  height: 100vh;
+  max-height: none !important;
+  margin: 0 !important;
+  background: #fff;
+  border-radius: 0 !important;
+  border: none !important;
+  box-shadow: -8px 0 32px rgba(15, 23, 42, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   pointer-events: auto;
   transform: translateX(100%);
-  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), left 0.2s ease;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
-body.sidebar-collapsed .demand-clarify-dialog {
-  left: var(--sidebar-width-collapsed, 56px);
-}
+
 .demand-clarify-modal.show .demand-clarify-dialog {
   display: flex;
   transform: translateX(0);
-}
-@keyframes clarifyFadeIn {
-  from { opacity: 0; transform: scale(0.98); }
-  to { opacity: 1; transform: scale(1); }
 }
 
 /* 弹窗头部 */
 .demand-clarify-header {
   padding: 14px 24px; border-bottom: 1px solid #e2e8f0;
   display: flex; align-items: center; justify-content: space-between; background: #fafbfc;
+  flex-shrink: 0;
 }
 .demand-clarify-title-wrap { display: flex; align-items: center; gap: 10px; }
 .demand-clarify-badge {
@@ -66,7 +99,7 @@ body.sidebar-collapsed .demand-clarify-dialog {
 
 /* 表单与正文滚动区 */
 .demand-clarify-form { display: flex; flex-direction: column; flex: 1; min-height: 0; }
-.demand-clarify-body { padding: 18px 24px; overflow-y: auto; flex: 1; }
+.demand-clarify-body { padding: 18px 24px; overflow-y: auto; flex: 1; min-height: 0; }
 
 /* 区块通用 */
 .clarify-section { margin-bottom: 22px; background: #fff; }
@@ -81,7 +114,13 @@ body.sidebar-collapsed .demand-clarify-dialog {
 .clarify-section-tip { font-size: 12px; font-weight: normal; color: #64748b; margin-left: 12px; }
 
 /* 4列网格 */
-.clarify-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.clarify-grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 1024px) {
+  .clarify-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .clarify-grid-4 { grid-template-columns: 1fr; }
+}
 .clarify-form-group { display: flex; flex-direction: column; gap: 6px; }
 .clarify-label { font-size: 13px; font-weight: 500; color: #334155; }
 .clarify-label.required::after { content: " *"; color: #ef4444; }
@@ -113,7 +152,7 @@ body.sidebar-collapsed .demand-clarify-dialog {
 
 /* 表格通用 */
 .clarify-table-responsive { border: 1px solid #e2e8f0; border-radius: 6px; overflow-x: auto; }
-.clarify-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.clarify-table { width: 100%; min-width: 860px; border-collapse: collapse; font-size: 13px; }
 .clarify-table th {
   background: #f8fafc; color: #475569; font-weight: 600; padding: 9px 8px;
   border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; text-align: left;
@@ -163,8 +202,8 @@ body.sidebar-collapsed .demand-clarify-dialog {
 
 /* 底部操作栏（统一在页面正下方，居中偏右） */
 .demand-clarify-footer {
-  padding: 14px 24px; border-top: 1px solid #e2e8f0; background: #fafbfc;
-  display: flex; align-items: center; justify-content: center;
+  padding: 14px 28px; border-top: 1px solid #e2e8f0; background: #fafbfc;
+  display: flex; align-items: center; justify-content: flex-end; flex-shrink: 0;
 }
 .clarify-footer-actions { display: flex; align-items: center; gap: 16px; }
 .clarify-btn-primary {

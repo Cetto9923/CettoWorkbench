@@ -54,3 +54,21 @@ type VersionWindowProduct struct {
 func (VersionWindowProduct) TableName() string {
 	return "zt_versionwindowproduct"
 }
+
+// VersionWindowMilestone 表示 Workbench 自有版本窗口里程碑。
+type VersionWindowMilestone struct {
+	WindowID     uint64         `gorm:"column:versionWindow;primaryKey" json:"windowId"`
+	PlanTestDone *time.Time     `gorm:"column:planTestDone;type:date" json:"planTestDone"`
+	TestDone     *time.Time     `gorm:"column:testDone;type:date" json:"testDone"`
+	AcceptDone   *time.Time     `gorm:"column:acceptDone;type:date" json:"acceptDone"`
+	CreatedBy    string         `gorm:"column:createdBy;size:30;not null;default:''" json:"createdBy"`
+	UpdatedBy    string         `gorm:"column:updatedBy;size:30;not null;default:''" json:"updatedBy"`
+	CreatedDate  time.Time      `gorm:"column:createdDate;autoCreateTime" json:"createdDate"`
+	UpdatedDate  time.Time      `gorm:"column:updatedDate;autoUpdateTime" json:"updatedDate"`
+	DeletedAt    gorm.DeletedAt `gorm:"column:deletedAt;index" json:"-"`
+}
+
+// TableName 指定 Workbench 自有窗口里程碑表。
+func (VersionWindowMilestone) TableName() string {
+	return "zt_wb_versionwindow_milestone"
+}
