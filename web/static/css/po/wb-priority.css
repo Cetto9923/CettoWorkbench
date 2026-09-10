@@ -2,8 +2,7 @@
    文件: web/static/css/po/wb-priority.css
    模块: PO 公共 UI - 优先级 / 对象类型 token-driven 样式 + 必要旧别名
    职责: 唯一真源 — .wb-priority[data-priority] / .wb-type.wb-type-{kind}
-         对象标签采用方案3：极简圆点微标 (Minimal Dot + Slate)。
-         统一冷灰微底 #f8fafc + 细边框 #e2e8f0 + 深色字 #1e293b + ::before 6px 语义彩色微圆点。
+         对象标签采用双段式工程微标，颜色来自 light/dark 主题 token。
          禁止页面私有色板覆写本文件；JS 真源为 PersonalList.priorityBadge /
          objectTypeBadge / idChipHtml。类型标签禁止 ellipsis 截断。
    ============================================================================= */
@@ -70,7 +69,7 @@
    唯一真源：.wb-type.wb-type-{kind}
    结构：
    - 左段 .wb-type-tag: 实色背景 + 白色加粗字体 (font-weight: 600)；
-   - 右段 .wb-type-id: 纯白背景 #ffffff + 深色等宽加粗字体 #1e293b；
+   - 右段 .wb-type-id: 使用 --color-badge-id-bg / --color-badge-id-text；
    - 外框 .wb-type: 细边框，颜色与左段实色呼应，圆角 5px，整体 overflow: hidden。
    ----------------------------------------------------------------------------- */
 .wb-type {
@@ -84,10 +83,10 @@
   white-space: nowrap;
   box-sizing: border-box;
   overflow: hidden;
-  border: 1px solid #cbd5e1;
-  background: #ffffff;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-badge-id-bg);
   padding: 0;
-  color: #1e293b;
+  color: var(--color-badge-id-text);
   max-width: none;
   text-overflow: clip;
   flex-shrink: 0;
@@ -96,7 +95,7 @@
 /* 独立类型 badge（如 objectTypeBadge 无 ID 上下文）自身提供内边距与居中 */
 .wb-type:not(:has(.wb-type-tag)) {
   padding: 0 6px;
-  background: #f8fafc;
+  background: var(--color-surface-muted);
 }
 
 /* 左段：实色底 + 白字 */
@@ -106,7 +105,7 @@
   justify-content: center;
   padding: 0 6px;
   height: 100%;
-  color: #ffffff;
+  color: var(--color-text-on-accent);
   font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
@@ -119,8 +118,8 @@
   align-items: center;
   height: 100%;
   padding: 0 6px;
-  color: #1e293b;
-  background: #ffffff;
+  color: var(--color-badge-id-text);
+  background: var(--color-badge-id-bg);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 11px;
   font-weight: 600;
@@ -133,7 +132,7 @@
 .wb-type a,
 .wb-type .table-id-link,
 .wb-type .done-obj-id-link {
-  color: #1e293b;
+  color: var(--color-badge-id-text);
   text-decoration: none;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 11px;
@@ -143,7 +142,7 @@
 .wb-type a:hover,
 .wb-type .table-id-link:hover,
 .wb-type .done-obj-id-link:hover {
-  color: #2563eb;
+  color: var(--color-info);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -152,71 +151,71 @@
 }
 
 /* --- 语义类别双段配色映射（按用户选定的 Option B 视觉规范） --- */
-.wb-type-business { border-color: #2563eb; }
-.wb-type-business .wb-type-tag { background: #2563eb; }
-.wb-type-business:not(:has(.wb-type-tag)) { background: #eff6ff; color: #1d4ed8; }
+.wb-type-business { border-color: var(--color-info-fill); }
+.wb-type-business .wb-type-tag { background: var(--color-info-fill); }
+.wb-type-business:not(:has(.wb-type-tag)) { background: var(--color-business-bg); color: var(--color-business-text); }
 
 .wb-type-story,
 .wb-type-independent_story { border-color: #0d9488; }
 .wb-type-story .wb-type-tag,
 .wb-type-independent_story .wb-type-tag { background: #0d9488; }
 .wb-type-story:not(:has(.wb-type-tag)),
-.wb-type-independent_story:not(:has(.wb-type-tag)) { background: #f0fdfa; color: #0f766e; }
+.wb-type-independent_story:not(:has(.wb-type-tag)) { background: var(--color-story-bg); color: var(--color-story-text); }
 
 .wb-type-approval { border-color: #7c3aed; }
 .wb-type-approval .wb-type-tag { background: #7c3aed; }
-.wb-type-approval:not(:has(.wb-type-tag)) { background: #f5f3ff; color: #6d28d9; }
+.wb-type-approval:not(:has(.wb-type-tag)) { background: var(--color-approval-bg); color: var(--color-approval-text); }
 
 .wb-type-charter { border-color: #a21caf; }
 .wb-type-charter .wb-type-tag { background: #a21caf; }
-.wb-type-charter:not(:has(.wb-type-tag)) { background: #fdf4ff; color: #86198f; }
+.wb-type-charter:not(:has(.wb-type-tag)) { background: var(--color-charter-bg); color: var(--color-charter-text); }
 
-.wb-type-task { border-color: #16a34a; }
-.wb-type-task .wb-type-tag { background: #16a34a; }
-.wb-type-task:not(:has(.wb-type-tag)) { background: #ecfdf5; color: #047857; }
+.wb-type-task { border-color: var(--color-success-fill); }
+.wb-type-task .wb-type-tag { background: var(--color-success-fill); }
+.wb-type-task:not(:has(.wb-type-tag)) { background: var(--color-task-bg); color: var(--color-task-text); }
 
-.wb-type-bug { border-color: #dc2626; }
-.wb-type-bug .wb-type-tag { background: #dc2626; }
-.wb-type-bug:not(:has(.wb-type-tag)) { background: #fff1f2; color: #be123c; }
+.wb-type-bug { border-color: var(--color-danger-fill); }
+.wb-type-bug .wb-type-tag { background: var(--color-danger-fill); }
+.wb-type-bug:not(:has(.wb-type-tag)) { background: var(--color-bug-bg); color: var(--color-bug-text); }
 
 .wb-type-test,
 .wb-type-testtask { border-color: #0284c7; }
 .wb-type-test .wb-type-tag,
 .wb-type-testtask .wb-type-tag { background: #0284c7; }
 .wb-type-test:not(:has(.wb-type-tag)),
-.wb-type-testtask:not(:has(.wb-type-tag)) { background: #f0f9ff; color: #0284c7; }
+.wb-type-testtask:not(:has(.wb-type-tag)) { background: var(--color-test-bg); color: var(--color-test-text); }
 
 .wb-type-risk { border-color: #ea580c; }
 .wb-type-risk .wb-type-tag { background: #ea580c; }
-.wb-type-risk:not(:has(.wb-type-tag)) { background: #fff7ed; color: #c2410c; }
+.wb-type-risk:not(:has(.wb-type-tag)) { background: var(--color-risk-bg); color: var(--color-risk-text); }
 
 .wb-type-issue { border-color: #d97706; }
 .wb-type-issue .wb-type-tag { background: #d97706; }
-.wb-type-issue:not(:has(.wb-type-tag)) { background: #fffbeb; color: #b45309; }
+.wb-type-issue:not(:has(.wb-type-tag)) { background: var(--color-issue-bg); color: var(--color-issue-text); }
 
 .wb-type-sub_demand { border-color: #8b5cf6; }
 .wb-type-sub_demand .wb-type-tag { background: #8b5cf6; }
-.wb-type-sub_demand:not(:has(.wb-type-tag)) { background: #f5f3ff; color: #7c3aed; }
+.wb-type-sub_demand:not(:has(.wb-type-tag)) { background: var(--color-sub-demand-bg); color: var(--color-sub-demand-text); }
 
 .wb-type-feedback { border-color: #f97316; }
 .wb-type-feedback .wb-type-tag { background: #f97316; }
-.wb-type-feedback:not(:has(.wb-type-tag)) { background: #fff7ed; color: #c2410c; }
+.wb-type-feedback:not(:has(.wb-type-tag)) { background: var(--color-feedback-bg); color: var(--color-feedback-text); }
 
-.wb-type-todo { border-color: #2563eb; }
-.wb-type-todo .wb-type-tag { background: #2563eb; }
-.wb-type-todo:not(:has(.wb-type-tag)) { background: #eff6ff; color: #1d4ed8; }
+.wb-type-todo { border-color: var(--color-info-fill); }
+.wb-type-todo .wb-type-tag { background: var(--color-info-fill); }
+.wb-type-todo:not(:has(.wb-type-tag)) { background: var(--color-business-bg); color: var(--color-business-text); }
 
-.wb-type-project { border-color: #64748b; }
-.wb-type-project .wb-type-tag { background: #64748b; }
-.wb-type-project:not(:has(.wb-type-tag)) { background: #f8fafc; color: #475569; }
+.wb-type-project { border-color: var(--color-text-secondary); }
+.wb-type-project .wb-type-tag { background: var(--color-text-secondary); }
+.wb-type-project:not(:has(.wb-type-tag)) { background: var(--color-surface-muted); color: var(--color-text-body); }
 
-.wb-type-mail { border-color: #64748b; }
-.wb-type-mail .wb-type-tag { background: #64748b; }
-.wb-type-mail:not(:has(.wb-type-tag)) { background: #f8fafc; color: #475569; }
+.wb-type-mail { border-color: var(--color-text-secondary); }
+.wb-type-mail .wb-type-tag { background: var(--color-text-secondary); }
+.wb-type-mail:not(:has(.wb-type-tag)) { background: var(--color-surface-muted); color: var(--color-text-body); }
 
-.wb-type-unknown { border-color: #94a3b8; }
-.wb-type-unknown .wb-type-tag { background: #94a3b8; }
-.wb-type-unknown:not(:has(.wb-type-tag)) { background: #f8fafc; color: #64748b; }
+.wb-type-unknown { border-color: var(--color-text-disabled); }
+.wb-type-unknown .wb-type-tag { background: var(--color-text-disabled); }
+.wb-type-unknown:not(:has(.wb-type-tag)) { background: var(--color-surface-muted); color: var(--color-text-secondary); }
 
 /* =============================================================================
    3. 仍在用的旧 markup 别名（仅 schedule SSR .pri-tag / 详情抽屉 .drawer-task-pri）

@@ -18,7 +18,7 @@
 .po-home .home-vs-compact-row { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 6px; }
 .po-home .home-vs-mini-card {
   display: flex; flex-direction: column; justify-content: space-between; height: 68px;
-  padding: 7px 8px; border-radius: 6px; border: 1px solid var(--color-border, #e2e8f0); background: rgba(248, 250, 252, 0.6);
+  padding: 7px 8px; border-radius: 6px; border: 1px solid var(--color-border, #e2e8f0); background: var(--color-surface-muted);
   cursor: pointer; transition: all 0.15s ease; text-align: left;
 }
 .po-home .home-vs-mini-card:hover { border-color: var(--color-info-border, #93c5fd); background: var(--color-info-bg, #eff6ff); }
@@ -28,36 +28,36 @@
 .po-home .home-vs-mini-card .vs-mini-meta { font-size: 10px; color: var(--color-text-disabled, #94a3b8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* 各阶段特异色彩强化 (对齐 Proposal A 原型) */
-.po-home .home-vs-mini-card.stage-schedule { border-color: var(--color-warning-border, #fde68a); background: rgba(254, 252, 232, 0.55); }
-.po-home .home-vs-mini-card.stage-schedule .vs-mini-name, .po-home .home-vs-mini-card.stage-schedule .vs-mini-count { color: var(--color-warning-fill, #b45309); }
-.po-home .home-vs-mini-card.stage-waitacceptance { border-color: var(--color-info-border, #bfdbfe); background: rgba(239, 246, 255, 0.5); }
-.po-home .home-vs-mini-card.stage-waitacceptance .vs-mini-name, .po-home .home-vs-mini-card.stage-waitacceptance .vs-mini-count { color: var(--color-info-fill, #1d4ed8); }
-.po-home .home-vs-mini-card.stage-publish .vs-mini-name, .po-home .home-vs-mini-card.stage-publish .vs-mini-count { color: #047857; }
+.po-home .home-vs-mini-card.stage-schedule { border-color: var(--color-warning-border, #fde68a); background: var(--color-warning-bg); }
+.po-home .home-vs-mini-card.stage-schedule .vs-mini-name, .po-home .home-vs-mini-card.stage-schedule .vs-mini-count { color: var(--color-warning); }
+.po-home .home-vs-mini-card.stage-waitacceptance { border-color: var(--color-info-border, #bfdbfe); background: var(--color-info-bg); }
+.po-home .home-vs-mini-card.stage-waitacceptance .vs-mini-name, .po-home .home-vs-mini-card.stage-waitacceptance .vs-mini-count { color: var(--color-info); }
+.po-home .home-vs-mini-card.stage-publish .vs-mini-name, .po-home .home-vs-mini-card.stage-publish .vs-mini-count { color: var(--color-success); }
 
 /* 选中阶段高亮样式：清晰的主题色边框与浅蓝底色，深色文字确保极佳对比度与可读性 */
 .po-home .home-vs-mini-card.active {
-  border: 1.5px solid #2563eb !important;
-  background: #eff6ff !important;
-  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.2);
+  border: 1.5px solid var(--color-info) !important;
+  background: var(--color-info-bg) !important;
+  box-shadow: 0 1px 3px var(--color-primary-ring-soft);
 }
 .po-home .home-vs-mini-card.active .vs-mini-name {
-  color: #1d4ed8 !important;
+  color: var(--color-info) !important;
   font-weight: 700;
 }
 .po-home .home-vs-mini-card.active .vs-mini-count {
-  color: #1e40af !important;
+  color: var(--color-info) !important;
   font-weight: 800;
 }
 .po-home .home-vs-mini-card.active .vs-mini-meta {
-  color: #2563eb !important;
+  color: var(--color-info) !important;
   font-weight: 500;
 }
 .po-home .home-vs-mini-card.active .vs-status-icon {
   font-size: 9px;
-  color: #2563eb !important;
+  color: var(--color-info) !important;
 }
 .po-home .home-vs-mini-card.active .vs-status-dot {
-  background: #2563eb !important;
+  background: var(--color-info) !important;
 }
 
 /* 空阶段弱化 */
@@ -68,7 +68,7 @@
   opacity: 1;
 }
 .po-home .vs-status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
-.po-home .dot-amber { background: var(--color-warning-strong, #f59e0b); }
+.po-home .dot-amber { background: var(--color-warning-light); }
 .po-home .dot-blue { background: var(--color-info-fill, #3b82f6); }
 
 /* 3. 主体工作区网格 */
@@ -80,7 +80,7 @@
 /* 工具栏 */
 .po-home .home-toolbar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 12px; background: rgba(248, 250, 252, 0.9); border-bottom: 1px solid var(--color-border, #e2e8f0);
+  padding: 10px 12px; background: var(--color-surface-muted); border-bottom: 1px solid var(--color-border, #e2e8f0);
   flex-wrap: wrap; gap: 8px;
 }
 .po-home .toolbar-left-group, .po-home .toolbar-right-group {
@@ -110,7 +110,7 @@
 .po-home .home-action-table td {
   padding: 8px 12px; height: 42px; font-size: 12px; border-bottom: 1px solid var(--color-surface-muted, #f1f5f9);
 }
-.po-home .home-action-table tr:hover td { background: rgba(239, 246, 255, 0.4); }
+.po-home .home-action-table tr:hover td { background: var(--color-surface-hover); }
 .po-home .home-action-table .c-id { width: 140px; }
 .po-home .home-action-table .c-title { width: auto; min-width: 240px; }
 /* ID 列 chip 已统一到 wb-priority.css 的 .wb-type 单色样式（与通知中心共用）。 */
@@ -126,7 +126,7 @@
   width: 6px; height: 6px; border-radius: 50%; display: inline-block; background: var(--color-text-disabled, #94a3b8);
 }
 .po-home .status-dot.active { background: var(--color-info-fill, #3b82f6); }
-.po-home .status-dot.warning { background: var(--color-warning-strong, #f59e0b); }
+.po-home .status-dot.warning { background: var(--color-warning-light); }
 .po-home .status-dot.danger { background: var(--color-danger-bright, #ef4444); }
 
 .po-home .home-title-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
@@ -160,8 +160,8 @@
   border: 1px solid var(--color-border, #e2e8f0); background: var(--color-surface-muted, #f8fafc); cursor: pointer; text-decoration: none; transition: all 0.15s ease;
 }
 .po-home .focus-card:hover { border-color: var(--color-info-border, #93c5fd); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); }
-.po-home .focus-card.danger { background: rgba(254, 242, 242, 0.7); border-color: var(--color-danger-border, #fecaca); }
-.po-home .focus-card.danger:hover { border-color: #f87171; }
+.po-home .focus-card.danger { background: var(--color-danger-bg); border-color: var(--color-danger-border, #fecaca); }
+.po-home .focus-card.danger:hover { border-color: var(--color-danger); }
 .po-home .focus-card-hdr { display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 500; color: var(--color-text-body, #334155); }
 .po-home .focus-card.danger .focus-card-hdr { color: var(--color-danger, #991b1b); }
 .po-home .focus-card-num { display: flex; align-items: baseline; gap: 3px; margin: 4px 0 2px; }
@@ -172,12 +172,12 @@
 .po-home .focus-card-num small { font-size: 10px; color: var(--color-text-secondary, #64748b); }
 .po-home .focus-card.danger .focus-card-num small { color: var(--color-danger-fill, #dc2626); }
 .po-home .focus-card-hint { font-size: 10px; color: var(--color-text-disabled, #94a3b8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.po-home .focus-card.danger .focus-card-hint { color: rgba(185, 28, 28, 0.8); }
+.po-home .focus-card.danger .focus-card-hint { color: var(--color-danger); }
 
 /* 版本窗口 */
 .po-home .home-version-panel { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; }
 .po-home .home-version-card {
-  padding: 10px; border-radius: 6px; border: 1px solid var(--color-info-border, #bfdbfe); background: rgba(239, 246, 255, 0.3);
+  padding: 10px; border-radius: 6px; border: 1px solid var(--color-info-border, #bfdbfe); background: var(--color-info-bg);
 }
 .po-home .home-version-card-hdr { display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 700; }
 .po-home .home-version-name { color: var(--color-text-primary, #0f172a); display: inline-flex; align-items: center; gap: 4px; }
@@ -210,7 +210,7 @@
 .po-home .text-red { color: var(--color-danger-bright, #ef4444) !important; }
 .po-home .text-primary { color: var(--color-info-fill, #2563eb) !important; }
 .po-home .text-amber { color: var(--color-warning-fill, #d97706) !important; }
-.po-home .text-emerald { color: #059669 !important; }
+.po-home .text-emerald { color: var(--color-success) !important; }
 .po-home .text-muted { color: var(--color-text-disabled, #94a3b8) !important; }
 .po-home .text-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 

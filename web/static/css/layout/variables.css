@@ -69,6 +69,32 @@ html[data-theme="light"] {
   --color-surface-soft-6: #f1f1f3;
   --color-surface-soft-7: #f5f9ff;
 
+  /* PO badge and muted state surfaces */
+  --color-badge-id-bg: #ffffff;
+  --color-badge-id-text: #1e293b;
+  --color-business-bg: #eff6ff;
+  --color-business-text: #1d4ed8;
+  --color-story-bg: #f0fdfa;
+  --color-story-text: #0f766e;
+  --color-approval-bg: #f5f3ff;
+  --color-approval-text: #6d28d9;
+  --color-charter-bg: #fdf4ff;
+  --color-charter-text: #86198f;
+  --color-task-bg: #ecfdf5;
+  --color-task-text: #047857;
+  --color-bug-bg: #fff1f2;
+  --color-bug-text: #be123c;
+  --color-test-bg: #f0f9ff;
+  --color-test-text: #0284c7;
+  --color-risk-bg: #fff7ed;
+  --color-risk-text: #c2410c;
+  --color-issue-bg: #fffbeb;
+  --color-issue-text: #b45309;
+  --color-sub-demand-bg: #f5f3ff;
+  --color-sub-demand-text: #7c3aed;
+  --color-feedback-bg: #fff7ed;
+  --color-feedback-text: #c2410c;
+
   --color-success-strong: #0b5e42;
   --color-success-accent: #16a34a;
   --color-success-border: #a7f3d0;
@@ -306,6 +332,32 @@ html[data-theme="dark"] {
   --color-surface-soft-5: #1e293b;
   --color-surface-soft-6: #334155;
   --color-surface-soft-7: #1e293b;
+
+  /* PO badge and muted state surfaces */
+  --color-badge-id-bg: #0f172a;
+  --color-badge-id-text: #e2e8f0;
+  --color-business-bg: #1e3a8a;
+  --color-business-text: #bfdbfe;
+  --color-story-bg: #134e4a;
+  --color-story-text: #99f6e4;
+  --color-approval-bg: #4c1d95;
+  --color-approval-text: #ddd6fe;
+  --color-charter-bg: #701a75;
+  --color-charter-text: #f5d0fe;
+  --color-task-bg: #064e3b;
+  --color-task-text: #bbf7d0;
+  --color-bug-bg: #7f1d1d;
+  --color-bug-text: #fecaca;
+  --color-test-bg: #0c4a6e;
+  --color-test-text: #bae6fd;
+  --color-risk-bg: #7c2d12;
+  --color-risk-text: #fed7aa;
+  --color-issue-bg: #713f12;
+  --color-issue-text: #fde68a;
+  --color-sub-demand-bg: #4c1d95;
+  --color-sub-demand-text: #ddd6fe;
+  --color-feedback-bg: #7c2d12;
+  --color-feedback-text: #fed7aa;
 
   --color-primary-gradient-start: #6366f1;
   --color-primary-gradient-end: #818cf8;

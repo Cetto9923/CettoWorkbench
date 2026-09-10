@@ -92,8 +92,9 @@
   font-size: 11px;
   white-space: nowrap;
   box-sizing: border-box;
-  background: #f3f4f6;
-  color: #4b5563;
+  background: var(--color-surface-muted);
+  color: var(--color-text-body);
+  border: 1px solid var(--color-border);
 }
 
 .po-todos .todo-action {

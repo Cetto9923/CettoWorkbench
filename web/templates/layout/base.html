@@ -23,7 +23,7 @@
   <link rel="stylesheet" href="/static/css/layout/variables.css">
   <link rel="stylesheet" href="/static/css/layout/app.css">
   <link rel="stylesheet" href="/static/css/layout/layout.css">
-  {{ if or (eq .CurrentPath "/home") (eq .CurrentPath "/schedule") (eq .CurrentPath "/todos") (eq .CurrentPath "/done") (eq .CurrentPath "/notice") (eq .CurrentPath "/follow") (eq .CurrentPath "/board/demand") (eq .CurrentPath "/board/task") (eq .CurrentPath "/query") (eq .CurrentPath "/issues/risk") (eq .CurrentPath "/metrics/manage") (eq .CurrentPath "/metrics/radar") }}<link rel="stylesheet" href="{{ asset "/static/css/po/shell.css" }}">{{ end }}
+  {{ if or (eq .CurrentPath "/home") (eq .CurrentPath "/schedule") (eq .CurrentPath "/todos") (eq .CurrentPath "/done") (eq .CurrentPath "/notice") (eq .CurrentPath "/follow") (eq .CurrentPath "/board/demand") (eq .CurrentPath "/board/task") (eq .CurrentPath "/query") (eq .CurrentPath "/issues/risk") (eq .CurrentPath "/metrics/manage") (eq .CurrentPath "/metrics/radar") }}<link rel="stylesheet" href="{{ asset "/static/css/po/shell.css" }}"><link rel="stylesheet" href="{{ asset "/static/css/po/wb-priority.css" }}">{{ end }}
   {{ if and (not .HideChrome) (eq .LayoutNav "top") }}<link rel="stylesheet" href="/static/css/layout/topnav.css">{{ end }}
   <link rel="stylesheet" href="/static/css/components/components.css">
   {{ block "page_css" . }}{{ end }}
