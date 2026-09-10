@@ -1,18 +1,70 @@
 {{ define "po/urge_modal" }}
 <div class="batch-modal-overlay po-urge-modal-overlay" id="poUrgeOverlay" aria-hidden="true">
   <section class="batch-modal po-urge-modal" id="poUrgeModal" role="dialog" aria-modal="true" aria-labelledby="poUrgeTitle" tabindex="-1">
-    <div class="batch-modal-hdr"><h3 id="poUrgeTitle">催办验收</h3><button type="button" class="po-urge-close" id="poUrgeClose" aria-label="关闭">&times;</button></div>
+    <div class="batch-modal-hdr">
+      <h3 id="poUrgeTitle">催办验收</h3>
+      <button type="button" class="po-urge-close" id="poUrgeClose" aria-label="关闭">&times;</button>
+    </div>
     <form id="poUrgeForm" novalidate>
       <div class="batch-modal-body">
-        <div class="vf-section"><div class="vf-section-title">当前事项</div><div class="form-control readonly" id="poUrgeContext">—</div></div>
-        <div class="vf-section"><div class="vf-section-title">催办对象</div><div class="form-control readonly po-urge-recipient" id="poUrgeRecipient">正在解析验收责任人…</div><p class="hint">默认取验收人/验证人；若未配置则依次推荐提出人、创建人。本轮由服务端解析，暂不支持手动改选。</p></div>
-        <div class="vf-section"><div class="vf-section-title">催办原因</div><div class="form-control readonly" id="poUrgeReason">验收待办理，请及时处理</div></div>
-        <div class="vf-section"><div class="vf-section-title">通知渠道</div><div class="checks"><label><input type="checkbox" disabled> 燕讯（暂未接入）</label><label><input type="checkbox" name="inapp" checked> 站内通知</label></div><p class="error" id="poUrgeChannelError" hidden>请至少选择站内通知。</p></div>
-        <div class="vf-section"><div class="vf-section-title">消息预览</div><div class="form-control readonly po-urge-preview" id="poUrgePreview">—</div><label class="po-urge-note">补充说明（可选）<input class="form-control" name="comment" maxlength="2000" placeholder="补充催办说明将附在通知中"></label></div>
+        <!-- 1. 催什么：需求摘要条（次高层级） -->
+        <div class="po-urge-summary-card">
+          <div class="po-urge-summary-head">
+            <span class="po-urge-demand-code" id="poUrgeDemandCode">US—</span>
+            <span class="po-urge-status-badge" id="poUrgeStatusTag">待验收</span>
+          </div>
+          <div class="po-urge-demand-title" id="poUrgeDemandTitle">—</div>
+          <span id="poUrgeContext" class="po-urge-sr-only" hidden>—</span>
+        </div>
+
+        <!-- 2. 催谁：催办对象（最高视觉层级：大号高对比，兜底提示单列于下方） -->
+        <div class="vf-section po-urge-recipient-section">
+          <div class="vf-section-title po-urge-section-title">
+            <span>催办对象</span>
+            <span class="po-urge-badge-rec" id="poUrgeRecipientBadge" hidden>系统推荐</span>
+          </div>
+          <div class="po-urge-recipient-body">
+            <div class="po-urge-recipient-main" id="poUrgeRecipient">正在解析验收责任人…</div>
+            <div class="po-urge-recipient-tip" id="poUrgeRecipientTip" hidden>
+              <i class="fas fa-info-circle" aria-hidden="true"></i>
+              <span id="poUrgeRecipientTipText"></span>
+            </div>
+            <p class="po-urge-hint">默认取需求验收人/验证人；若未配置则依次推荐提出人、创建人。暂不支持手动改选。</p>
+          </div>
+        </div>
+
+        <!-- 3. 消息预览：发出去的正文（独立预览卡片，左边框强调，只读） -->
+        <div class="vf-section po-urge-preview-section">
+          <div class="vf-section-title po-urge-preview-hdr">
+            <span>消息预览</span>
+            <span class="po-urge-readonly-tag">站内通知 · 只读</span>
+          </div>
+          <div class="po-urge-preview-card">
+            <div class="po-urge-preview-text" id="poUrgePreview">—</div>
+          </div>
+        </div>
+
+        <!-- 4. 补充说明：用户可编辑业务说明 -->
+        <div class="vf-section po-urge-comment-section">
+          <div class="vf-section-title">补充说明（可选）</div>
+          <div class="po-urge-comment-body">
+            <input type="text" class="form-control po-urge-comment-input" name="comment" id="poUrgeComment" maxlength="2000" placeholder="补充催办说明将附在通知中（可选）">
+          </div>
+        </div>
+
+        <!-- 5. 通知渠道：次要信息，紧凑横排 -->
+        <div class="po-urge-channel-bar">
+          <span class="po-urge-channel-title">通知渠道：</span>
+          <div class="checks po-urge-channel-checks">
+            <label class="po-urge-channel-label"><input type="checkbox" name="inapp" checked> 站内通知</label>
+            <label class="po-urge-channel-label disabled" title="暂未接入"><input type="checkbox" disabled> 燕讯（暂未接入）</label>
+          </div>
+          <p class="error" id="poUrgeChannelError" hidden>请至少选择站内通知。</p>
+        </div>
       </div>
       <div class="batch-modal-footer">
         <button type="button" class="action-btn" id="poUrgeCancel">取消</button>
-        <button type="submit" class="action-btn primary write-action">确认催办</button>
+        <button type="submit" class="action-btn primary write-action" id="poUrgeSubmitBtn">确认催办</button>
       </div>
     </form>
   </section>

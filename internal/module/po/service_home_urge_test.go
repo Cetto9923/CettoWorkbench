@@ -75,3 +75,18 @@ func TestHomeAcceptanceRecipientsFallback(t *testing.T) {
 		t.Fatalf("exclude = %#v", got)
 	}
 }
+
+func TestHomeAcceptanceRecipientTipAndReason(t *testing.T) {
+	if tip := homeAcceptanceRecipientTip(homeAcceptSrcOwner); tip != "" {
+		t.Fatalf("owner tip = %q, want empty", tip)
+	}
+	if tip := homeAcceptanceRecipientTip(homeAcceptSrcOriginator); tip != "未配置验收人，已按提出人推荐催办" {
+		t.Fatalf("originator tip = %q", tip)
+	}
+	if tip := homeAcceptanceRecipientTip(homeAcceptSrcCreatedBy); tip != "未配置验收人/提出人，已按创建人推荐催办" {
+		t.Fatalf("createdBy tip = %q", tip)
+	}
+	if reason := homeAcceptanceUrgeReason(homeAcceptSrcOriginator); reason != "请尽快完成验收" {
+		t.Fatalf("reason should be business semantic, got %q", reason)
+	}
+}

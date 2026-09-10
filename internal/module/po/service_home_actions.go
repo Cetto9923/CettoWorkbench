@@ -83,6 +83,8 @@ type UrgePreview struct {
 	StatusLabel    string                 `json:"statusLabel"`
 	StageLabel     string                 `json:"stageLabel"`
 	Reason         string                 `json:"reason"`
+	RecipientTip   string                 `json:"recipientTip"`
+	RecipientSrc   string                 `json:"recipientSrc"`
 	Recipients     []UrgePreviewRecipient `json:"recipients"`
 	MessagePreview string                 `json:"messagePreview"`
 }
@@ -152,6 +154,7 @@ func (s *Service) UrgeHomeDemandPreview(ctx context.Context, actor *model.User, 
 		labelList = append(labelList, lb)
 	}
 	reason := homeAcceptanceUrgeReason(source)
+	recipientTip := homeAcceptanceRecipientTip(source)
 	preview := buildAcceptanceUrgeMessage(row, labelList, "")
 	return &UrgePreview{
 		DemandID:       row.ID,
@@ -160,6 +163,8 @@ func (s *Service) UrgeHomeDemandPreview(ctx context.Context, actor *model.User, 
 		StatusLabel:    homeAcceptanceStatusLabel(row.Status),
 		StageLabel:     "验收",
 		Reason:         reason,
+		RecipientTip:   recipientTip,
+		RecipientSrc:   string(source),
 		Recipients:     recs,
 		MessagePreview: preview,
 	}, nil
@@ -230,15 +235,19 @@ const (
 	homeAcceptSrcCreatedBy  homeAcceptanceRecipientSource = "createdBy"
 )
 
-func homeAcceptanceUrgeReason(src homeAcceptanceRecipientSource) string {
+func homeAcceptanceRecipientTip(src homeAcceptanceRecipientSource) string {
 	switch src {
 	case homeAcceptSrcOriginator:
 		return "未配置验收人，已按提出人推荐催办"
 	case homeAcceptSrcCreatedBy:
 		return "未配置验收人/提出人，已按创建人推荐催办"
 	default:
-		return "验收待办理，请及时处理"
+		return ""
 	}
+}
+
+func homeAcceptanceUrgeReason(src homeAcceptanceRecipientSource) string {
+	return "请尽快完成验收"
 }
 
 func excludeHomeAccount(accounts []string, account string) []string {
