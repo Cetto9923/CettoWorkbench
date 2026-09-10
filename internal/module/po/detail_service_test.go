@@ -57,6 +57,20 @@ func TestBindScheduleSpotlightUsesServerPrimaryAction(t *testing.T) {
 	if spotlight.ActionURL != "" {
 		t.Fatal("disabled schedule action must not create a clickable spotlight")
 	}
+
+	spotlight = &DetailSpotlight{ActionLabel: "去提测 →"}
+	bindPrimaryActionSpotlight(spotlight, primaryaction.PrimaryAction{
+		Key:     string(primaryaction.KeySubmitTest),
+		Label:   "提测",
+		URL:     "/demands/42/submit-test",
+		Enabled: true,
+	})
+	if spotlight.ActionLabel != "提测" {
+		t.Fatalf("submit_test spotlight label = %q", spotlight.ActionLabel)
+	}
+	if spotlight.ActionURL != "" {
+		t.Fatalf("submit_test must not bind old /submit-test page URL, got %q", spotlight.ActionURL)
+	}
 }
 
 func TestMapValueStage(t *testing.T) {
@@ -69,7 +83,7 @@ func TestMapValueStage(t *testing.T) {
 		{"wait", "", "accept", "已受理"},
 		{"inroadmap", "", "clarify", "澄清中"},
 		{"incharter", "", "schedule", "排期中"},
-		{"developing", "", "developing", "研发中"},
+		{"developing", "", "submittest", "提测"},
 		{"testing", "", "testing", "测试中"},
 		{"delivered", "", "publish", "发布"},
 		{"closed", "", "closed", "已关闭"},
@@ -171,5 +185,13 @@ func TestBuildSpotlight(t *testing.T) {
 	}
 	if sp.ActionLabel != "进入澄清办理区 →" {
 		t.Errorf("spotlight action label want 进入澄清办理区 →, got %s", sp.ActionLabel)
+	}
+
+	sp = svc.buildSpotlight("developing", "developing")
+	if sp == nil || sp.Badge != "待提测" {
+		t.Fatalf("developing spotlight badge = %#v", sp)
+	}
+	if sp.ActionLabel != "去提测 →" {
+		t.Errorf("developing spotlight action = %q", sp.ActionLabel)
 	}
 }

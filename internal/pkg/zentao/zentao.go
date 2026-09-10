@@ -23,6 +23,7 @@ const indexPath = "/index.php"
 var zentaoCfg config.ZentaoConfig
 
 // SetConfig 注册禅道配置，应在应用启动时调用（bootstrap 中传入 cfg.Zentao）。
+// URL 是浏览器跳转基址；API 是原生 API 基址，空时客户端回退 URL。
 func SetConfig(cfg config.ZentaoConfig) {
 	zentaoCfg = cfg
 }
@@ -34,10 +35,10 @@ func URL(m, f string, params ...string) string {
 
 // URLWithBase 使用指定站点前缀拼接禅道页面链接（base 为空时回退全局配置）。
 //
-// 禅道 max5 前端壳下 PATH_INFO 伪静态（base/m-f-N.html）会被 rewrite 回首页
-// （CRCBWorkbench 实测 /task-view-142.html → "首页 - 禅道"），故一律走 GET 入口
-// index.php?m=X&f=view&key=N&id=N；demand view 另加 #app=demandpool，
-// 缺少该壳上下文时会被前端壳回落到"地盘/首页"。
+// requestType=PATH_INFO 时优先输出伪静态 /m-f-N.html，以便未登录跳转登录时
+// referer 能保留目标路径（GET 的 index.php?m=&f= 会被禅道收成 referer=/，登录后丢详情）。
+// 业需/研发需求仍附加 #app=… 壳上下文。无法安全提取数字 ID 时回退 GET。
+// requestType=GET（或未识别）时保持 index.php?m=&f= 形态。
 func URLWithBase(base, m, f string, params ...string) string {
 	base = strings.TrimRight(base, "/")
 	if base == "" {
@@ -47,11 +48,16 @@ func URLWithBase(base, m, f string, params ...string) string {
 		return ""
 	}
 
+	if usePathInfo() {
+		if u := pathInfoURL(base, m, f, params...); u != "" {
+			return u
+		}
+	}
 	return getURL(base, m, f, params...)
 }
 
-func isPathInfo(requestType string) bool {
-	return strings.EqualFold(strings.TrimSpace(requestType), "PATH_INFO")
+func usePathInfo() bool {
+	return strings.EqualFold(strings.TrimSpace(zentaoCfg.RequestType), "PATH_INFO")
 }
 
 func getURL(base, m, f string, params ...string) string {
@@ -69,20 +75,134 @@ func getURL(base, m, f string, params ...string) string {
 		}
 	}
 	u := base + indexPath + "?" + query
+	return appendAppHash(u, m, f)
+}
+
+// pathInfoURL 生成 base/m-f-N.html[#app=…]；ID 非纯数字时返回空以回退 GET。
+func pathInfoURL(base, m, f string, params ...string) string {
+	raw := ""
+	if len(params) > 0 {
+		raw = params[0]
+	}
+	id := extractObjectID(m, raw)
+	if id == "" || !isAllDigits(id) {
+		return ""
+	}
+	u := fmt.Sprintf("%s/%s-%s-%s.html", base, m, f, id)
+	return appendAppHash(u, m, f)
+}
+
+func appendAppHash(u, m, f string) string {
 	// 禅道 max5 需求池应用壳：demand view 缺 #app=demandpool 会回落"地盘/首页"。
 	if m == "demand" && f == "view" {
-		u += "#app=demandpool"
+		return u + "#app=demandpool"
 	}
 	// 禅道 max5 项目应用壳：story view 缺 #app=project 会回落"地盘/首页"。
 	if m == "story" && f == "view" {
-		u += "#app=project"
+		return u + "#app=project"
 	}
 	return u
 }
 
-// extractParamsValue 从 "key=value" 形式的参数串中取出 value；无 "=" 时返回 false。
+func isAllDigits(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, r := range s {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+// extractObjectID 从查询参数串提取对象 ID，优先模块业务键（demandID 等），否则 id。
+func extractObjectID(m, raw string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return ""
+	}
+	values, err := url.ParseQuery(raw)
+	if err != nil {
+		if val, ok := extractParamsValue(raw); ok {
+			return val
+		}
+		return ""
+	}
+	keys := objectIDKeys(m)
+	for _, k := range keys {
+		if v := strings.TrimSpace(values.Get(k)); v != "" {
+			return v
+		}
+	}
+	// ParseQuery 对无编码的单对 key=value 仍可用；兜底扫一遍
+	for _, k := range keys {
+		for qk, vs := range values {
+			if strings.EqualFold(qk, k) && len(vs) > 0 && strings.TrimSpace(vs[0]) != "" {
+				return strings.TrimSpace(vs[0])
+			}
+		}
+	}
+	return ""
+}
+
+func objectIDKeys(m string) []string {
+	switch strings.ToLower(strings.TrimSpace(m)) {
+	case "demand":
+		return []string{"demandID", "id"}
+	case "story":
+		return []string{"storyID", "id"}
+	case "task":
+		return []string{"taskID", "id"}
+	case "bug":
+		return []string{"bugID", "id"}
+	case "product":
+		return []string{"productID", "id"}
+	case "todo":
+		return []string{"todoID", "id"}
+	case "project":
+		return []string{"projectID", "id"}
+	case "execution":
+		return []string{"executionID", "id"}
+	case "testtask":
+		return []string{"testtaskID", "taskID", "id"}
+	case "caselib", "testcase", "case":
+		return []string{"caseID", "id"}
+	case "doc":
+		return []string{"docID", "id"}
+	case "issue":
+		return []string{"issueID", "id"}
+	case "risk":
+		return []string{"riskID", "id"}
+	case "feedback":
+		return []string{"feedbackID", "id"}
+	case "ticket":
+		return []string{"ticketID", "id"}
+	case "review":
+		return []string{"reviewID", "id"}
+	case "approval":
+		return []string{"approvalID", "id"}
+	case "charter":
+		return []string{"id", "projectID"}
+	case "build":
+		return []string{"buildID", "id"}
+	case "release":
+		return []string{"releaseID", "id"}
+	case "productplan":
+		return []string{"planID", "id"}
+	default:
+		return []string{"id", m + "ID"}
+	}
+}
+
+// extractParamsValue 从 "key=value" 形式的参数串中取出第一个 value；无 "=" 时返回 false。
 func extractParamsValue(raw string) (string, bool) {
-	_, val, found := strings.Cut(raw, "=")
+	// 仅取第一对，兼容历史 getURL 双设逻辑
+	part := raw
+	if i := strings.IndexByte(raw, '&'); i >= 0 {
+		part = raw[:i]
+	}
+	_, val, found := strings.Cut(part, "=")
 	if !found {
 		return "", false
 	}
@@ -91,31 +211,6 @@ func extractParamsValue(raw string) (string, bool) {
 		return "", false
 	}
 	return val, true
-}
-
-func pathInfoURL(base, m, f string, params ...string) string {
-	parts := []string{m, f}
-	if len(params) > 0 && params[0] != "" {
-		parts = append(parts, pathInfoValues(params[0])...)
-	}
-	return base + "/" + strings.Join(parts, "-") + ".html"
-}
-
-// pathInfoValues 从 GET 风格参数中取出值序列，对齐禅道 createLink 的 PATH_INFO 拼法。
-func pathInfoValues(raw string) []string {
-	var values []string
-	for _, pair := range strings.Split(raw, "&") {
-		if pair == "" {
-			continue
-		}
-		_, val, found := strings.Cut(pair, "=")
-		if found {
-			values = append(values, val)
-			continue
-		}
-		values = append(values, pair)
-	}
-	return values
 }
 
 // DemandViewURL 业需详情页链接。

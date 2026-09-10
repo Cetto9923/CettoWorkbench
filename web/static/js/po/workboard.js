@@ -263,7 +263,7 @@
       // 独立研需来自 zt_story，不能走业务需求详情接口（/demands/:id/detail）。
       // 有禅道链接时按研发需求打开；缺少链接时保持文本展示，避免触发错误请求。
       titleTag = root.url
-        ? '<a class="node-title is-link" href="' + esc(root.url) + '" title="' + esc(root.title) + '">' + esc(root.title) + "</a>"
+        ? '<a class="node-title is-link" href="' + esc(root.url) + '" target="_blank" rel="noopener noreferrer" title="' + esc(root.title) + '">' + esc(root.title) + "</a>"
         : '<span class="node-title" title="' + esc(root.title) + '">' + esc(root.title) + "</span>";
     } else {
       titleTag = '<button type="button" class="node-title is-link" data-open-demand="' + esc(root.id) + '" title="' + esc(root.title) + '">' + esc(root.title) + "</button>";

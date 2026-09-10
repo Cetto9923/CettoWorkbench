@@ -356,4 +356,34 @@
   bindAsyncSearch();
   bindBatchActions();
   bindShellPlaceholderNotice();
+  bindZentaoNewTabGuard();
+
+  // 禅道外链一律新标签打开，避免工作台当前页被带走。
+  function bindZentaoNewTabGuard() {
+    document.addEventListener("click", function (event) {
+      if (event.defaultPrevented) return;
+      if (event.button != null && event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      var a = event.target && event.target.closest ? event.target.closest("a[href]") : null;
+      if (!a) return;
+      var href = a.getAttribute("href") || "";
+      if (!href || href.charAt(0) === "#" || href.toLowerCase().indexOf("javascript:") === 0) return;
+      var meta = document.querySelector('meta[name="zentao-url"]');
+      var base = meta ? String(meta.getAttribute("content") || "").replace(/\/+$/, "") : "";
+      if (!base) return;
+      var abs;
+      var zt;
+      try {
+        abs = new URL(href, window.location.href);
+        zt = new URL(base);
+      } catch (err) {
+        return;
+      }
+      if (abs.origin !== zt.origin) return;
+      if (String(a.target || "").toLowerCase() === "_blank") return;
+      event.preventDefault();
+      window.open(abs.href, "_blank", "noopener,noreferrer");
+    }, true);
+  }
 })();
+

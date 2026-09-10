@@ -36,7 +36,10 @@ type Client struct {
 func NewClient(baseURL string) *Client {
 	baseURL = strings.TrimRight(baseURL, "/")
 	if baseURL == "" {
-		baseURL = strings.TrimRight(zentaoCfg.URL, "/")
+		baseURL = strings.TrimRight(zentaoCfg.API, "/")
+		if baseURL == "" {
+			baseURL = strings.TrimRight(zentaoCfg.URL, "/")
+		}
 	}
 	return &Client{
 		baseURL: baseURL,
@@ -48,7 +51,7 @@ func NewClient(baseURL string) *Client {
 
 // DefaultClient 返回基于全局配置的默认客户端。
 func DefaultClient() *Client {
-	return NewClient(zentaoCfg.URL)
+	return NewClient(zentaoCfg.API)
 }
 
 type tokenResponse struct {

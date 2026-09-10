@@ -13,3 +13,18 @@ backups/*.sql.gz
 /demo2
 /docs/demo-analysis.md
 /docs/design
+
+# Local runtime / verification artifacts.
+/.run/
+/.verify/
+/.visual/
+/verify-output/
+/visual-output/
+/test-results/
+/playwright-report/
+**/screenshots/
+/.agents/
+/.workbuddy/
+
+# Local PRD sources (large HTML/screenshots) — never commit
+/docs/PRD/

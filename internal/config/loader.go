@@ -11,6 +11,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 
@@ -126,6 +127,16 @@ func Validate(cfg *Config) error {
 	}
 	if strings.TrimSpace(cfg.Database.DBName) == "" {
 		return errors.New("missing required config: database.dbname")
+	}
+	zentaoURL, err := url.ParseRequestURI(strings.TrimSpace(cfg.Zentao.URL))
+	if err != nil || zentaoURL.Scheme == "" || zentaoURL.Host == "" || (zentaoURL.Scheme != "http" && zentaoURL.Scheme != "https") {
+		return errors.New("invalid required config: zentao.url must be an absolute http(s) URL")
+	}
+	if api := strings.TrimSpace(cfg.Zentao.API); api != "" {
+		apiURL, err := url.ParseRequestURI(api)
+		if err != nil || apiURL.Scheme == "" || apiURL.Host == "" || (apiURL.Scheme != "http" && apiURL.Scheme != "https") {
+			return errors.New("invalid config: zentao.api must be an absolute http(s) URL when set")
+		}
 	}
 
 	// Optional replica connection errors are handled by bootstrap degradation.

@@ -105,4 +105,35 @@ awk 'BEGIN { for (i=0; i<400; i++) print "// fixture" }' >large.go
 assert_result pass 'file-length debt eliminated and baseline ratcheted' bash scripts/check-file-length.sh
 rm large.go
 
+# Host literals must fail in production, including untracked and Unicode paths.
+: >scripts/quality-baseline/patterns.tsv
+mkdir -p internal/example web/static/css web/static/vendor tests docs/Demo web/templates
+for host in 127.0.0.1:8080 10.211.55.4 changshu.wrk.oop.cc customer.chandao.net pms.csr.cmbchina.com; do
+  printf '// http://%s\n' "$host" >internal/example/host.go
+  assert_result fail "production host rejected: $host" bash scripts/check-patterns.sh
+  rm internal/example/host.go
+done
+printf '/* http://10.211.55.4:8080 */\n' >web/static/css/host.css
+assert_result fail 'CSS host rejected' bash scripts/check-patterns.sh
+rm web/static/css/host.css
+printf '<!-- http://10.211.55.4:8080 -->\n' >web/templates/主机.html
+assert_result fail 'Unicode template host rejected' bash scripts/check-patterns.sh
+rm web/templates/主机.html
+for file in internal/example/host_test.go web/static/vendor/host.js tests/host.js docs/Demo/host.html; do
+  printf '// http://10.211.55.4:8080\n' >"$file"
+done
+assert_result pass 'tests and Demo/vendor host fixtures allowed' bash scripts/check-patterns.sh
+
+assert_result pass 'local artifact index clean' bash scripts/check-local-artifacts.sh
+mkdir -p .run docs/PRD/fixture/screenshots
+printf 'synthetic\n' >.run/result.log
+printf '<html>synthetic</html>\n' >docs/PRD/fixture/large.html
+printf 'synthetic\n' >docs/PRD/fixture/screenshots/example.png
+for file in .run/result.log docs/PRD/fixture/large.html docs/PRD/fixture/screenshots/example.png; do
+  git add -f "$file"
+  assert_result fail "force-added artifact rejected: $file" bash scripts/check-local-artifacts.sh
+  git rm --cached -q "$file"
+done
+assert_result pass 'unstaged artifacts retained on disk allowed' bash scripts/check-local-artifacts.sh
+
 printf 'Quality gate regression tests: %s passed\n' "$passed"

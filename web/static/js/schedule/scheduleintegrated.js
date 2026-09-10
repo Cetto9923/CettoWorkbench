@@ -668,7 +668,7 @@
 
     fillStoryItems(data.userStories || []);
     if (rdApi) {
-      rdApi.render(data.stories, users, involvedProducts, mainSystemId, data.productProjects);
+      rdApi.render(data.stories, users, involvedProducts, mainSystemId, data.productProjects, { title: data.name, assignee: data.bra, assigneeName: data.braName });
     }
     syncAllIntegratedDateInputs();
   }

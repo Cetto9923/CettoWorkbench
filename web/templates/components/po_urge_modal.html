@@ -1,0 +1,20 @@
+{{ define "po/urge_modal" }}
+<div class="batch-modal-overlay po-urge-modal-overlay" id="poUrgeOverlay" aria-hidden="true">
+  <section class="batch-modal po-urge-modal" id="poUrgeModal" role="dialog" aria-modal="true" aria-labelledby="poUrgeTitle" tabindex="-1">
+    <div class="batch-modal-hdr"><h3 id="poUrgeTitle">催办验收</h3><button type="button" class="po-urge-close" id="poUrgeClose" aria-label="关闭">&times;</button></div>
+    <form id="poUrgeForm" novalidate>
+      <div class="batch-modal-body">
+        <div class="vf-section"><div class="vf-section-title">当前事项</div><div class="form-control readonly" id="poUrgeContext">—</div></div>
+        <div class="vf-section"><div class="vf-section-title">催办对象</div><div class="form-control readonly po-urge-recipient" id="poUrgeRecipient">正在解析验收责任人…</div><p class="hint">默认取验收人/验证人；若未配置则依次推荐提出人、创建人。本轮由服务端解析，暂不支持手动改选。</p></div>
+        <div class="vf-section"><div class="vf-section-title">催办原因</div><div class="form-control readonly" id="poUrgeReason">验收待办理，请及时处理</div></div>
+        <div class="vf-section"><div class="vf-section-title">通知渠道</div><div class="checks"><label><input type="checkbox" disabled> 燕讯（暂未接入）</label><label><input type="checkbox" name="inapp" checked> 站内通知</label></div><p class="error" id="poUrgeChannelError" hidden>请至少选择站内通知。</p></div>
+        <div class="vf-section"><div class="vf-section-title">消息预览</div><div class="form-control readonly po-urge-preview" id="poUrgePreview">—</div><label class="po-urge-note">补充说明（可选）<input class="form-control" name="comment" maxlength="2000" placeholder="补充催办说明将附在通知中"></label></div>
+      </div>
+      <div class="batch-modal-footer">
+        <button type="button" class="action-btn" id="poUrgeCancel">取消</button>
+        <button type="submit" class="action-btn primary write-action">确认催办</button>
+      </div>
+    </form>
+  </section>
+</div>
+{{ end }}

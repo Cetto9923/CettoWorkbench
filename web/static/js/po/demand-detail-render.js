@@ -106,11 +106,26 @@
     return html + '</div>';
   }
 
-  function renderSpotlight(spotlight) {
+  function renderSpotlight(spotlight, data) {
     if (!spotlight) return "";
-    var action = spotlight.actionUrl
-      ? '<a class="dd-btn primary" href="' + esc(spotlight.actionUrl) + '">' + esc(spotlight.actionLabel) + '</a>'
-      : '<button class="dd-btn primary" onclick="DemandDetail.switchTab(\'' + esc(spotlight.targetTab) + '\',\'' + esc(spotlight.targetSection) + '\')">' + esc(spotlight.actionLabel) + '</button>';
+    data = data || {};
+    var pa = data.primaryAction || {};
+    var summary = data.summary || {};
+    var action;
+    var isSubmitTest = String(pa.key || "") === "submit_test" && pa.enabled !== false;
+    if (isSubmitTest) {
+      var did = String(summary.demandId || summary.id || "").replace(/^US/i, "");
+      var title = String(summary.title || "").replace(/"/g, "&quot;");
+      action = '<button type="button" class="dd-btn primary js-submit-test" data-demand-id="' + esc(did) + '" data-demand-title="' + esc(summary.title || "") + '">' + esc(pa.label || spotlight.actionLabel || "提测") + '</button>';
+    } else if (spotlight.actionUrl) {
+      var href = String(spotlight.actionUrl || "");
+      var external = /^https?:\/\//i.test(href);
+      action = external
+        ? '<a class="dd-btn primary" href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' + esc(spotlight.actionLabel) + '</a>'
+        : '<a class="dd-btn primary" href="' + esc(href) + '">' + esc(spotlight.actionLabel) + '</a>';
+    } else {
+      action = '<button class="dd-btn primary" onclick="DemandDetail.switchTab(\'' + esc(spotlight.targetTab) + '\',\'' + esc(spotlight.targetSection) + '\')">' + esc(spotlight.actionLabel) + '</button>';
+    }
     return [
       '<div class="dd-card dd-spot" id="spotlightSection">',
       '  <div>',
@@ -122,6 +137,7 @@
       '</div>'
     ].join("");
   }
+
 
   function renderValueStream(vs) {
     if (!vs || !vs.stages) return "";
@@ -160,7 +176,7 @@
 
   function renderTabOverview(data) {
     var vsHtml = renderValueStream(data.valueStream);
-    var spHtml = renderSpotlight(data.spotlight);
+    var spHtml = renderSpotlight(data.spotlight, data);
     var summary = data.summary;
     var descTxt = excerpt(summary.desc, 160) || "暂无需求描述";
     var verifyTxt = excerpt(summary.verifyPlan, 160) || "暂无验收标准摘要";

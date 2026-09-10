@@ -27,8 +27,16 @@ governance change removes them. Directory-wide ignores are forbidden. New hard
 entries require an explicit debt decision, not a green-CI excuse.
 
 Pattern severity reflects scanner certainty, not the importance of the
-underlying rule. Only `SQL_WILDCARD` is currently a hard pattern: its match maps
-directly to the unconditional `SELECT *` prohibition. The following are
+underlying rule. `SQL_WILDCARD` is a hard pattern: its match maps directly to the unconditional
+`SELECT *` prohibition. `ZENTAO_HOST_LITERAL` rejects known ZenTao environment
+hosts in `internal/`, `web/static/`, and `web/templates/` (excluding vendor and
+`*_test.go`); tests and Demo are outside that host rule. This rule has no baseline
+escape: URLs must come from configuration or server data. The known-host list
+is explicit in `check-patterns.sh`, not a detector for every possible hostname.
+`check-local-artifacts.sh` rejects newly staged/modified local runtime, screenshot,
+verification and PRD HTML artifacts, including force-added ignored files. Existing
+committed historical evidence is retained. This gate runs through `make check`;
+it is not an installed Git hook. The following are
 advisory/debt detectors because text matching cannot establish the necessary
 context or exception:
 

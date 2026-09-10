@@ -53,12 +53,12 @@ func ScheduleURL(objectID uint, kind ObjectKind) string {
 	return fmt.Sprintf("/schedule/demands/%d/scheduling", objectID)
 }
 
-// SubmitTestURL 提测办理页。业务需求统一办理其关联研发需求。
+// SubmitTestURL 提测改走四步弹窗，不再返回旧整页 /submit-test URL。
+// 保留函数签名供 Derive/单测调用；空串表示前端按 key=submit_test 开 modal。
 func SubmitTestURL(objectID uint, kind ObjectKind) string {
-	if kind == ObjectStory || kind == ObjectIndependentStory {
-		return fmt.Sprintf("/demands/%d/submit-test?kind=story", objectID)
-	}
-	return fmt.Sprintf("/demands/%d/submit-test", objectID)
+	_ = objectID
+	_ = kind
+	return ""
 }
 
 // AcceptDoneURL 验收站内提交端点（本人验收人）。

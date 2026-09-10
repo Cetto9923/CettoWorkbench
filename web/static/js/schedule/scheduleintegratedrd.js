@@ -59,6 +59,9 @@
     shared.manualNodeSeq += 1;
     var nodeId = shared.manualNodeSeq;
     var defaultProductId = shared.mainSystemId || "";
+    var defaultTitle = $.trim(shared.draftStoryTitle || "");
+    var defaultAssignee = $.trim(shared.draftStoryAssignee || "");
+    var defaultAssigneeName = $.trim(shared.draftStoryAssigneeName || "");
 
     var node = shared.cloneTemplateElement("tplRdNodeDraft", ".rd-node");
     if (!node) {
@@ -68,10 +71,14 @@
     $node.attr("data-node-id", nodeId);
     $node.attr("data-new", "true");
     $node.attr("data-product-id", defaultProductId || "");
+    $node.attr("data-story-title", defaultTitle);
+    $node.attr("data-assigned-to", defaultAssignee);
+    $node.attr("data-assigned-to-name", defaultAssigneeName);
 
     var $header = $node.find(".rd-node-header").first();
     $header.find(".rd-node-role-badge").replaceWith(shared.buildRoleBadge(defaultProductId, shared.mainSystemId));
     shared.fillProductSelect($header.find(".rd-node-product"), shared.involvedProducts, defaultProductId);
+    $header.find(".rd-node-title").val(defaultTitle);
 
     var inputId = "rdNodeOwnerInput" + nodeId;
     var hiddenId = "rdNodeOwnerValue" + nodeId;
@@ -89,7 +96,12 @@
   function initDraftNodePickers($node) {
     var inputId = $node.find(".rd-node-assignee-input").attr("id");
     var hiddenId = $node.find(".rd-node-assignee-value").attr("id");
-    shared.initStoryAssigneePicker(inputId, hiddenId, "", "");
+    shared.initStoryAssigneePicker(
+      inputId,
+      hiddenId,
+      $node.attr("data-assigned-to") || "",
+      $node.attr("data-assigned-to-name") || ""
+    );
   }
 
   function assigneeDisplayText(assignedToName, assignedTo) {
@@ -240,10 +252,13 @@
     $("#rdTreeEmpty").toggle(!hasNodes);
   }
 
-  function renderRdTree(stories, users, involvedProducts, mainSystemId, productProjects) {
+  function renderRdTree(stories, users, involvedProducts, mainSystemId, productProjects, draftDefaults) {
     shared.schedulingUsers = users || shared.schedulingUsers;
     shared.involvedProducts = involvedProducts || [];
     shared.mainSystemId = mainSystemId || 0;
+    shared.draftStoryTitle = $.trim((draftDefaults && draftDefaults.title) || "");
+    shared.draftStoryAssignee = $.trim((draftDefaults && draftDefaults.assignee) || "");
+    shared.draftStoryAssigneeName = $.trim((draftDefaults && draftDefaults.assigneeName) || "");
     shared.productProjectsMap = shared.buildProductProjectsMap(productProjects);
 
     var $container = $("#rdTreeNodes");
@@ -265,6 +280,9 @@
   }
 
   function resetRdTree() {
+    shared.draftStoryTitle = "";
+    shared.draftStoryAssignee = "";
+    shared.draftStoryAssigneeName = "";
     shared.productProjectsMap = {};
     shared.manualNodeSeq = 0;
     shared.taskRowSeq = 0;

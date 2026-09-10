@@ -40,14 +40,21 @@
       return '<button type="button" class="table-action-btn primary js-po-drawer-action" data-action-key="' + esc(pa.key) + '" data-action-url="' + esc(url) + '" data-demand-id="' + esc(did) + '">' + esc(label) + '</button>';
     }
     if (url) {
+      if (/^https?:\/\//i.test(url)) {
+        return '<a class="table-action-btn primary" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(label) + ' ↗</a>';
+      }
       return '<a class="table-action-btn primary" href="' + esc(url) + '">' + esc(label) + '</a>';
     }
     return '<span class="home-unavailable">' + esc(label) + '</span>';
   }
 
-  function primaryActionHtml(item, isStory) {
+  function primaryActionHtml(item, isStory, availableKeys) {
     var pa = item && item.primaryAction;
     if (pa && typeof pa === "object") {
+      // 页面可进一步禁用未接线的交互，不能提升服务端权限。
+      if (pa.enabled !== false && pa.kind !== "external" && availableKeys && availableKeys.indexOf(pa.key) < 0) {
+        pa = Object.assign({}, pa, { enabled: false, reason: "当前待办页尚未接入此操作，请前往工作台办理" });
+      }
       if (pa.enabled === false) {
         var reason = String(pa.reason || "无办理权限").trim();
         var label = String(pa.label || "").trim() || "待审批人处理";

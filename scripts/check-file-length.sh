@@ -64,13 +64,13 @@ if [[ -n "$trusted_ref" ]] && git cat-file -e "${trusted_ref}:${baseline}" 2>/de
   fi
 fi
 
-while IFS= read -r file; do
+while IFS= read -r -d '' file; do
   [[ "$file" == web/static/vendor/* ]] && continue
   lines=$(awk 'END { print NR }' "$file")
   if ((lines > 500)); then
     printf '%s\t%s\n' "$file" "$lines" >>"$current"
   fi
-done < <(git ls-files --cached --others --exclude-standard -- '*.go' '*.js' '*.css' '*.html')
+done < <(git ls-files -z --cached --others --exclude-standard -- '*.go' '*.js' '*.css' '*.html')
 sort -o "$current" "$current"
 
 if ! awk -F '\t' '

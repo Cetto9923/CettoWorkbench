@@ -65,37 +65,47 @@
     window.alert(message);
   }
 
-  function isPathInfo() {
-    return meta("zentao-request-type").toUpperCase() === "PATH_INFO";
-  }
-
   function zentaoBase() {
     return meta("zentao-url").replace(/\/+$/, "");
   }
 
-  function pathInfoValues(raw) {
-    var values = [];
-    raw.split("&").forEach(function (pair) {
-      if (!pair) return;
-      var cut = pair.indexOf("=");
-      values.push(cut >= 0 ? pair.slice(cut + 1) : pair);
-    });
-    return values;
+  // 对齐 internal/pkg/zentao.URL：PATH_INFO 时用 /m-f-N.html，避免未登录
+  // 经 GET 进登录后 referer 被收成 /、丢详情；并保留 #app 壳。
+  function zentaoRequestType() {
+    return (meta("zentao-request-type") || "GET").trim().toUpperCase();
   }
 
-  // 对齐 internal/pkg/zentao.URL
+  function appendAppHash(url, module, method) {
+    if (module === "demand" && method === "view") return url + "#app=demandpool";
+    if (module === "story" && method === "view") return url + "#app=project";
+    return url;
+  }
+
+  function extractId(params) {
+    params = String(params || "");
+    if (!params) return "";
+    var pairs = params.split("&");
+    var map = {};
+    for (var i = 0; i < pairs.length; i++) {
+      var kv = pairs[i].split("=");
+      if (kv.length >= 2 && kv[0]) map[decodeURIComponent(kv[0])] = decodeURIComponent(kv.slice(1).join("="));
+    }
+    return map.id || map.demandID || map.storyID || map.bugID || map.taskID || map.productID || "";
+  }
+
   function createLink(module, method, params) {
     var base = zentaoBase();
     if (!base || !module || !method) return "";
     params = params || "";
-    if (isPathInfo()) {
-      var parts = [module, method];
-      if (params) parts = parts.concat(pathInfoValues(params));
-      return base + "/" + parts.join("-") + ".html";
+    if (zentaoRequestType() === "PATH_INFO") {
+      var id = extractId(params);
+      if (/^\d+$/.test(id)) {
+        return appendAppHash(base + "/" + module + "-" + method + "-" + id + ".html", module, method);
+      }
     }
     var query = "m=" + encodeURIComponent(module) + "&f=" + encodeURIComponent(method);
     if (params) query += "&" + params;
-    return base + "/index.php?" + query;
+    return appendAppHash(base + "/index.php?" + query, module, method);
   }
 
   function resolveType(type) {

@@ -168,7 +168,7 @@ func TestDerive_ScheduleStage(t *testing.T) {
 	}
 }
 
-// TestDerive_SubmitTestStage 提测：进入保留的 Workbench 办理页。
+// TestDerive_SubmitTestStage 提测：弹窗语义，不下发旧整页 URL。
 func TestDerive_SubmitTestStage(t *testing.T) {
 	pa := Derive(Input{
 		Stage: StageDeveloping, Kind: ObjectBusinessDemand, ObjectID: 400,
@@ -177,8 +177,11 @@ func TestDerive_SubmitTestStage(t *testing.T) {
 	if pa.Key != string(KeySubmitTest) {
 		t.Fatalf("key = %q, want %q", pa.Key, KeySubmitTest)
 	}
-	if !pa.Enabled || pa.Kind != string(KindInternal) || !strings.Contains(pa.URL, "/demands/400/submit-test") {
-		t.Fatalf("submit_test should enter Workbench page, got %+v", pa)
+	if !pa.Enabled || pa.Kind != string(KindDrawer) || pa.URL != "" {
+		t.Fatalf("submit_test should be drawer modal with empty URL, got %+v", pa)
+	}
+	if got := SubmitTestURL(400, ObjectBusinessDemand); got != "" {
+		t.Fatalf("SubmitTestURL must be empty, got %q", got)
 	}
 }
 

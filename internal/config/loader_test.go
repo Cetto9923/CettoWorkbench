@@ -9,6 +9,9 @@ import (
 
 func createTestConfigFile(t *testing.T, content string) string {
 	t.Helper()
+	if !strings.Contains(content, "zentao:") {
+		content += "\nzentao:\n  url: https://zentao.test\n"
+	}
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.test.yaml")
 	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
@@ -57,6 +60,31 @@ session:
 	}
 	if cfg.Session.LifetimeHours != 8 {
 		t.Fatalf("Session.LifetimeHours = %d, want %d", cfg.Session.LifetimeHours, 8)
+	}
+}
+
+func TestConfig_ZentaoURLValidationAndEnvOverride(t *testing.T) {
+	base := reviewValidConfig + "zentao:\n  url: https://zentao.file.test\n"
+	t.Setenv("WORKBENCH_ZENTAO_URL", "https://zentao.env.test")
+	cfg, err := LoadFromPath(createTestConfigFile(t, base))
+	if err != nil || cfg.Zentao.URL != "https://zentao.env.test" {
+		t.Fatalf("zentao URL env override = %#v, %v", cfg, err)
+	}
+	for _, invalid := range []string{"", "zentao.local", "ftp://zentao.local"} {
+		cfg := &Config{App: App{Env: "dev"}, Database: Database{Host: "db", Port: 3306, User: "u", DBName: "d"}, Session: Session{CookieName: "sid", LifetimeHours: 1}, Zentao: ZentaoConfig{URL: invalid}}
+		if err := Validate(cfg); err == nil {
+			t.Fatalf("Validate accepted zentao.url %q", invalid)
+		}
+	}
+}
+
+func TestConfig_MissingZentaoURLStopsStartup(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "missing-zentao.yaml")
+	if err := os.WriteFile(path, []byte(reviewValidConfig), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := LoadFromPath(path); err == nil {
+		t.Fatal("LoadFromPath accepted missing zentao.url")
 	}
 }
 

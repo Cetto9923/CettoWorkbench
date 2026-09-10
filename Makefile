@@ -5,7 +5,7 @@ GOCACHE_DIR := $(CURDIR)/tmp/gocache
 
 .PHONY: build check check-gofmt check-test check-frontend-test check-vet check-whitespace check-file-length check-patterns check-secrets check-architecture
 
-check: check-gofmt check-test check-frontend-test check-vet check-whitespace check-file-length check-patterns check-secrets check-architecture
+check: check-local-artifacts check-gofmt check-test check-frontend-test check-vet check-whitespace check-file-length check-patterns check-secrets check-architecture
 	@echo "required regression gates passed; inspect the printed existing-debt counts"
 
 check-gofmt:
@@ -25,6 +25,7 @@ check-frontend-test:
 	@node tests/unit/frontend/notice-filters.test.js
 	@node tests/unit/frontend/priority-helpers.test.js
 	@node tests/unit/frontend/navigation-primary-action.test.js
+	@node tests/unit/frontend/primary-action-availability.test.js
 	@node tests/unit/frontend/html-sanitize.test.js
 	@node tests/unit/frontend/render-row-isolated.test.js
 	@node tests/unit/frontend/done-status-labels.test.js
@@ -61,3 +62,7 @@ build: ## Build a self-contained deployment directory under $(DIST)
 	CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o $(DIST)/$(BINARY) ./cmd/server
 	@echo ""
 	@echo "deployment directory generated: $(DIST)"
+
+.PHONY: check-local-artifacts
+check-local-artifacts:
+	@bash scripts/check-local-artifacts.sh

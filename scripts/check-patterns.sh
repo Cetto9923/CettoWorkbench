@@ -55,6 +55,18 @@ if ((${#sources[@]} > 0)); then
   scan hard SQL_WILDCARD 'SELECT[[:space:]]+([A-Za-z_][A-Za-z0-9_]*\.)?\*([[:space:],]|$)' "${sources[@]}"
 fi
 
+# Production browser and server code must derive ZenTao hosts from configuration
+# or server-provided URLs. Tests and Demo fixtures intentionally remain outside
+# this scope so environment examples do not become production contracts.
+zentao_host_sources=()
+while IFS= read -r -d '' file; do
+  [[ "$file" == *_test.go || "$file" == */vendor/* || "$file" == docs/Demo/* || "$file" == */Demo/* ]] && continue
+  zentao_host_sources+=("$file")
+done < <(git ls-files -z --cached --others --exclude-standard -- internal/ web/static/ web/templates/)
+if ((${#zentao_host_sources[@]} > 0)); then
+  scan hard ZENTAO_HOST_LITERAL '(127\.0\.0\.1:8080|10\.211\.55\.4(:8080)?|changshu\.wrk\.oop\.cc|customer\.chandao\.net|pms\.csr)' "${zentao_host_sources[@]}"
+fi
+
 # Only run the *.sql variant of SQL_WILDCARD when SQL files actually exist;
 # otherwise grep would be invoked with no path arguments and could read stdin.
 if ((${#sql_sources[@]} > 0)); then
@@ -114,7 +126,7 @@ fi
 
 while IFS=$'\t' read -r severity rule path line fingerprint; do
   key=$(printf '%s\t%s\t%s\t%s' "$severity" "$rule" "$path" "$fingerprint")
-  grep -Fxq "$key" "$expected" && continue
+  [[ "$rule" != ZENTAO_HOST_LITERAL ]] && grep -Fxq "$key" "$expected" && continue
   if [[ "$severity" == hard ]]; then
     printf '%s\t%s\t%s\t%s\n' "$rule" "$path" "$line" "$fingerprint" >>"$new_hard"
   else

@@ -120,17 +120,22 @@
       e.preventDefault();
       var btn = $(this), id = String(btn.attr("data-demand-id") || "").replace(/^US/i, "");
       var row = btn.closest("tr");
-      var title = String(row.find("td").eq(1).text() || "").trim();
-      var stage = String(row.find("td").eq(3).text() || "").trim();
+      var title = String(btn.attr("data-demand-title") || row.find("td").eq(1).text() || "").trim();
+      var stage = String(btn.attr("data-demand-stage") || row.find("td").eq(3).text() || "提测").trim();
       var item = { id: id ? "US" + id : "", title: title, stage: stage };
       if (typeof window.openPoSubmitTestModal === "function") {
         window.openPoSubmitTestModal(item);
+      } else {
+        // 无弹窗脚本时不回落到旧整页壳
+        if (typeof window.showToast === "function") {
+          window.showToast("提测弹窗未加载，请刷新首页后重试", "error");
+        }
       }
     });
     $("#poDemandAcceptanceCloseBtn, #poDemandAcceptanceOverlay").on("click", function () {
       if (typeof window.closeShowModals === "function") { window.closeShowModals(ACCEPTANCE_IDS); }
     });
-    $(document).on("click", ".js-po-drawer-action:not([data-action-key='accept']):not([data-action-key='approve']):not([data-action-key='withdraw_review']):not([data-action-key='submit_review']):not([data-action-key='clarify']):not([data-action-key='submit_test']):not([data-action-key='deliver'])", function () {
+    $(document).on("click", ".js-po-drawer-action:not([data-action-key='accept']):not([data-action-key='approve']):not([data-action-key='withdraw_review']):not([data-action-key='submit_review']):not([data-action-key='clarify']):not([data-action-key='submit_test']):not([data-action-key='deliver']):not([data-action-key='remind_accept'])", function () {
       var btn = $(this), url = String(btn.attr("data-action-url") || "");
       var key = String(btn.attr("data-action-key") || "");
       var ctx = fillActionContext({ id: btn.attr("data-demand-id"), title: String(btn.closest("tr").find("td").eq(1).text() || "").trim(), valueStream: String(btn.closest("tr").find("td").eq(3).text() || "").trim(), owner: String(btn.closest("tr").find("td").eq(5).text() || "").trim() }, key);

@@ -56,12 +56,13 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.POST("/demands/:id/clarify", middleware.RequirePerm(perm.PoHomeList), h.ClarifyDemand)
 	g.POST("/demands/:id/clarify/ai-generate", middleware.RequirePerm(perm.PoHomeList), h.GenerateAIUserStory)
 	g.POST("/demands/:id/acceptance", middleware.RequirePerm(perm.PoHomeList), h.AcceptHomeDemand)
+	// 催办暂复用首页可见权限；服务层再校验需求阶段与参与关系。独立 po:urge 能力待权限目录补齐后拆分。
+	g.GET("/demands/:id/urge-preview", middleware.RequirePerm(perm.PoHomeList), h.UrgeHomeDemandPreview)
 	g.POST("/demands/:id/urge", middleware.RequirePerm(perm.PoHomeList), h.UrgeHomeDemand)
 	g.GET("/demands/:id/deliver", middleware.RequirePerm(perm.PoHomeList), h.GetDemandDeliver)
 	g.POST("/demands/:id/deliver", middleware.RequirePerm(perm.PoHomeList), h.DeliverDemand)
 	// 详情读接口：首页与需求看板均可打开；对象级授权仍由 DetailService 执行。
 	g.GET("/demands/:id/detail", middleware.RequireAnyPerm(perm.PoHomeList, perm.PoBoardDemandList), h.DemandDetail)
-	g.GET("/demands/:id/submit-test", middleware.RequirePerm(perm.PoHomeList), h.SubmitTestView)
 	g.GET("/demands/:id", middleware.RequireAnyPerm(perm.PoHomeList, perm.PoBoardDemandList), h.DemandDetailView)
 	g.GET("/todos", middleware.RequirePerm(perm.PoTodoList), h.Todos)
 	g.GET("/todos/items", middleware.RequirePerm(perm.PoTodoList), h.TodosItems)

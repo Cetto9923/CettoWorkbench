@@ -182,7 +182,7 @@ type Input struct {
 //	clarify            modal clarify     /demands/:id/detail?tab=req capability
 //	schedule + biz     internal schedule /schedule/demands/:id/sched  capability
 //	schedule + story   internal schedule /schedule/stories/:id/sched capability
-//	developing         modal submit_test POST /demands/:id/submit-test capability
+//	developing         modal submit_test （无整页 URL；前端 openPoSubmitTestModal） capability
 //	testing            external test_link 禅道测试单 URL / "暂无测试单"  capability (always false: 未配置)
 //	acceptance+本人    modal accept_done POST /demands/:id/accept-done IsAcceptanceOwner
 //	acceptance+他人    modal urge_accept POST /demands/:id/urge-accept capability
@@ -260,13 +260,13 @@ func Derive(in Input) PrimaryAction {
 		return Enabled(string(KeySchedule), "排期", string(KindSchedule), scheduleURL(in))
 
 	case StageDeveloping:
-		// 提测：业务需求 → 聚合提测；研发需求由所属业务需求统一办理。
+		// 提测：四步弹窗（testtask 模块）；不再挂旧整页 /submit-test。
 		if !in.HasSubmitTestCapability {
-			return DisabledWithReason(string(KeySubmitTest), "提测", string(KindInternal),
+			return DisabledWithReason(string(KeySubmitTest), "提测", string(KindDrawer),
 				submitTestURL(in),
 				"当前用户没有提测权限")
 		}
-		return Enabled(string(KeySubmitTest), "提测", string(KindInternal), submitTestURL(in))
+		return Enabled(string(KeySubmitTest), "提测", string(KindDrawer), submitTestURL(in))
 
 	case StageTesting:
 		// 联调测试 → 禅道测试单。

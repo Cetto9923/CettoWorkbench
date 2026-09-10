@@ -132,12 +132,12 @@ func (s *DetailService) buildSpotlight(stage, status string) *DetailSpotlight {
 			TargetTab:     "overview",
 			TargetSection: "spotlightSection",
 		}
-	case "developing":
+	case "developing", "submittest":
 		return &DetailSpotlight{
-			Badge:         "研发中",
-			Title:         "当前执行：研发需求与任务开发进行中",
-			Desc:          "研发人员正在执行具体开发任务，请关注任务完成率与阻塞问题。",
-			ActionLabel:   "查看研发执行 →",
+			Badge:         "待提测",
+			Title:         "当前待办：提交测试，推动进入联调测试",
+			Desc:          "需求已进入提测阶段。请确认关联研发需求与交付单元后发起提测；提测完成后将同步集成/验收测试单。",
+			ActionLabel:   "去提测 →",
 			TargetTab:     "execution",
 			TargetSection: "storiesSection",
 		}
@@ -341,7 +341,8 @@ func mapValueStage(stage, status string) (string, string) {
 	case "testing":
 		return "testing", "测试中"
 	case "developing":
-		return "developing", "研发中"
+		// 与首页阶段卡「提测」对齐：禅道 developing 在价值流上落在提测节点。
+		return "submittest", "提测"
 	case "clarified":
 		return "schedule", "已排期"
 	case "active", "clarify":
@@ -359,7 +360,7 @@ func mapValueStage(stage, status string) (string, string) {
 	case "incharter", "schedule":
 		return "schedule", "排期中"
 	case "developing":
-		return "developing", "研发中"
+		return "submittest", "提测"
 	case "delivering", "testing":
 		return "testing", "测试中"
 	case "delivered":

@@ -4,7 +4,20 @@ import (
 	"errors"
 	"strings"
 	"testing"
+
+	"workbench/internal/config"
 )
+
+func TestDefaultClientUsesAPIAndFallsBackToURL(t *testing.T) {
+	SetConfig(config.ZentaoConfig{URL: "https://web.test", API: "https://api.test/v1"})
+	if got := DefaultClient().baseURL; got != "https://api.test/v1" {
+		t.Fatalf("DefaultClient baseURL = %q", got)
+	}
+	SetConfig(config.ZentaoConfig{URL: "https://web.test"})
+	if got := DefaultClient().baseURL; got != "https://web.test" {
+		t.Fatalf("DefaultClient fallback baseURL = %q", got)
+	}
+}
 
 func TestParseZentaoAPIError(t *testing.T) {
 	t.Run("plain error string", func(t *testing.T) {

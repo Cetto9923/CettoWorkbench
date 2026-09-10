@@ -1,0 +1,70 @@
+/* PO homepage acceptance urge modal; aligns with the delivery batch-modal. */
+#poUrgeOverlay.po-urge-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 12160;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+  background: var(--color-overlay);
+  backdrop-filter: blur(2px);
+}
+#poUrgeOverlay.po-urge-modal-overlay.show { display: flex; }
+#poUrgeModal.po-urge-modal {
+  width: min(92vw, 520px);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--color-surface);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px var(--color-shadow-05);
+}
+#poUrgeModal .batch-modal-hdr { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--color-border); }
+#poUrgeModal .batch-modal-hdr h3 { margin: 0; font-size: 15px; color: var(--color-text-strong); }
+#poUrgeModal .batch-modal-body { display: flex; flex-direction: column; gap: 10px; padding: 14px 18px; overflow: auto; }
+#poUrgeModal .batch-modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 12px 18px; border-top: 1px solid var(--color-border); }
+#poUrgeModal .vf-section { overflow: hidden; border: 1px solid var(--color-border); border-radius: 6px; background: var(--color-surface); }
+#poUrgeModal .vf-section-title { padding: 8px 12px; border-bottom: 1px solid var(--color-border); background: var(--color-surface-muted); color: var(--color-text-secondary); font-size: 12px; font-weight: 700; }
+#poUrgeModal .form-control { box-sizing: border-box; width: calc(100% - 20px); min-height: 32px; margin: 10px; padding: 7px 9px; border: 1px solid var(--color-border); border-radius: 6px; font-size: 13px; }
+#poUrgeModal .form-control.readonly { background: var(--color-surface-muted); color: var(--color-text-secondary); }
+#poUrgeModal .po-urge-preview { min-height: 40px; line-height: 1.5; white-space: pre-wrap; }
+#poUrgeModal .po-urge-recipient { padding-top: 1px; }
+#poUrgeModal .po-urge-recipient .form-control { margin-bottom: 0; }
+#poUrgeModal .po-urge-search { color: var(--color-text-disabled); }
+#poUrgeModal .hint, #poUrgeModal .error { margin: 8px 10px 10px; font-size: 11px; line-height: 1.45; }
+#poUrgeModal .hint { color: var(--color-text-disabled); }
+#poUrgeModal .error { color: var(--color-danger); }
+#poUrgeModal .checks { display: flex; gap: 18px; margin: 10px; }
+#poUrgeModal .checks label { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; }
+#poUrgeModal .checks input:disabled { cursor: not-allowed; }
+#poUrgeModal .po-urge-note { display: block; margin: 0 0 10px 10px; color: var(--color-text-secondary); font-size: 12px; }
+#poUrgeModal .po-urge-note .form-control { margin: 5px 0 0; width: calc(100% - 10px); }
+.po-urge-close { padding: 2px 6px; border: 0; background: transparent; color: var(--color-text-disabled); cursor: pointer; font-size: 22px; line-height: 1; }
+
+#poUrgeModal .action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 88px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border, #e2e8f0);
+  background: var(--color-surface, #fff);
+  color: var(--color-text-strong, #1f2937);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+#poUrgeModal .action-btn:hover { border-color: var(--color-primary, #3b82f6); color: var(--color-primary, #1d4ed8); }
+#poUrgeModal .action-btn.primary {
+  background: var(--color-primary, #2563eb);
+  border-color: var(--color-primary, #2563eb);
+  color: #fff;
+}
+#poUrgeModal .action-btn.primary:hover { filter: brightness(0.96); }
+#poUrgeModal .action-btn.primary:disabled { opacity: .55; cursor: not-allowed; }
+#poUrgeModal .po-urge-recipient { margin: 10px; width: calc(100% - 20px); min-height: 32px; }

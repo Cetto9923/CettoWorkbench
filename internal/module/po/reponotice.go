@@ -149,55 +149,6 @@ func (r *Repo) FindNotices(ctx context.Context, account string, req NoticeListRe
 	return resp, nil
 }
 
-func filterNoticeRows(rows []noticeRow, req NoticeListReq) []noticeRow {
-	filtered := make([]noticeRow, 0, len(rows))
-	for _, row := range rows {
-		category := classifyNotice(row.ObjectType, row.ActionCode)
-		needAction := noticeNeedsAction(row.ActionCode)
-		if req.Keyword != "" && !noticeMatchesKeyword(row, req.Keyword) {
-			continue
-		}
-		if req.ObjectType == "approval" && category != "approval" {
-			continue
-		}
-		if req.ObjectType != "" && req.ObjectType != "all" && req.ObjectType != "approval" && row.ObjectType != req.ObjectType {
-			continue
-		}
-		if !noticeMatchesTimeRange(row.CreatedDate, req.TimeRange) {
-			continue
-		}
-		if req.ReadState == "unread" && row.IsRead != 0 {
-			continue
-		}
-		if req.ReadState == "read" && row.IsRead == 0 {
-			continue
-		}
-		if req.Category != "" && req.Category != "all" && category != req.Category {
-			continue
-		}
-		if req.QuickView == "unread" && row.IsRead != 0 {
-			continue
-		}
-		if req.QuickView == "action" && !needAction {
-			continue
-		}
-		if req.QuickView == "abnormal" && category != "risk" {
-			continue
-		}
-		if req.QuickView == "today" && !sameNoticeDay(row.CreatedDate, time.Now()) {
-			continue
-		}
-		if req.NeedAction == "required" && !needAction {
-			continue
-		}
-		if req.NeedAction == "none" && needAction {
-			continue
-		}
-		filtered = append(filtered, row)
-	}
-	return filtered
-}
-
 func noticeQuickCounts(rows []noticeRow) (int64, int64, int64, int64, int64) {
 	var unread, action, abnormal, today int64
 	for _, row := range rows {
@@ -215,29 +166,6 @@ func noticeQuickCounts(rows []noticeRow) (int64, int64, int64, int64, int64) {
 		}
 	}
 	return int64(len(rows)), unread, action, abnormal, today
-}
-
-func noticeMatchesKeyword(row noticeRow, keyword string) bool {
-	keyword = strings.ToLower(strings.TrimSpace(keyword))
-	if keyword == "" {
-		return true
-	}
-	return strings.Contains(strings.ToLower(row.Subject), keyword) || strings.Contains(strings.ToLower(row.Data), keyword) || strings.Contains(strconv.FormatInt(row.ObjectID, 10), keyword)
-}
-
-func noticeMatchesTimeRange(date time.Time, timeRange string) bool {
-	switch timeRange {
-	case "today":
-		return sameNoticeDay(date, time.Now())
-	case "3d":
-		return !date.Before(time.Now().AddDate(0, 0, -3))
-	case "7d":
-		return !date.Before(time.Now().AddDate(0, 0, -7))
-	case "30d":
-		return !date.Before(time.Now().AddDate(0, 0, -30))
-	default:
-		return true
-	}
 }
 
 func noticeCategoryCounts() map[string]int64 {

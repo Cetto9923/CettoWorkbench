@@ -164,8 +164,8 @@
   function rowHtml(item) {
     var id = esc(item.displayId || item.id);
     var title = esc(item.title || "—");
-    var idContent = item.url ? '<a class="table-id-link" href="' + esc(item.url) + '" rel="noopener noreferrer">' + id + "</a>" : id;
-    var titleContent = item.url ? '<a class="table-title-link" href="' + esc(item.url) + '" rel="noopener noreferrer">' + title + "</a>" : title;
+    var idContent = item.url ? '<a class="table-id-link" href="' + esc(item.url) + '" target="_blank" rel="noopener noreferrer">' + id + "</a>" : id;
+    var titleContent = item.url ? '<a class="table-title-link" href="' + esc(item.url) + '" target="_blank" rel="noopener noreferrer">' + title + "</a>" : title;
     var isStory = String(item.kind || "").toLowerCase() === "story";
 
     // 对象 + ID 单 chip：与通知中心 / 首页 / 已办同款（wb-type / wb-type-{kind}），
@@ -184,7 +184,7 @@
       '<td class="todos-col-stage" title="' + esc(stageLabel(item.reason)) + '">' + esc(stageLabel(item.reason)) + "</td>" +
       '<td class="todos-col-dead">' + esc(item.deadline || "—") + "</td>" +
       '<td class="todos-col-owner" title="' + esc(item.owner || "—") + '">' + esc(item.owner || "—") + "</td>" +
-      '<td class="todos-col-opt">' + primaryActionHtml(item, isStory) + "</td>" +
+      '<td class="todos-col-opt">' + primaryActionHtml(item, isStory, ["clarify"]) + "</td>" +
       "</tr>";
   }
 

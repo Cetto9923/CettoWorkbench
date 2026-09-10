@@ -43,7 +43,7 @@
     var canWithdrawReview = pa.key === "withdraw_review" && pa.enabled !== false;
     var isCreator = !!summary.isCreator || canWithdrawReview || canSubmitReview;
     var cleanId = String(summary.demandId || summary.id || "").replace(/^US/i, "");
-    var zentaoEditUrl = summary.zentaoEditUrl || ("/demand-edit-" + cleanId + ".html");
+    var zentaoEditUrl = String(summary.zentaoEditUrl || "").trim();
 
     var safeSpecHtml = sanitizeRichText(req.specHtml || summary.desc);
     var safeVerifyHtml = sanitizeRichText(req.verifyHtml || summary.verifyPlan);
@@ -125,7 +125,7 @@
         '<div class="dd-review-footer" style="display:flex;align-items:center;justify-content:space-between;">',
         '  <span style="color:#595959;font-size:13px;">您可以编辑完善需求，或直接提交给业务评审人进行评审：</span>',
         '  <div style="display:flex;gap:12px;">',
-        '    <a href="' + esc(zentaoEditUrl) + '" target="_blank" rel="noopener noreferrer" class="dd-btn">编辑需求 ↗</a>',
+        (zentaoEditUrl ? '    <a href="' + esc(zentaoEditUrl) + '" target="_blank" rel="noopener noreferrer" class="dd-btn">编辑需求 ↗</a>' : ''),
         '    <button type="button" class="dd-btn primary dd-submit-review-btn" id="ddSubmitReviewBtn" onclick="DemandDetailReview.handleSubmitReview(\'' + esc(cleanId) + '\')">提交评审</button>',
         '  </div>',
         '</div>'

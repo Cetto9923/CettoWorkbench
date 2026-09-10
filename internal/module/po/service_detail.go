@@ -136,8 +136,12 @@ func (s *DetailService) GetDemandDetail(ctx context.Context, actor *model.User, 
 	// 详情行已包含 stage/status/accepter/assignedTo，无需 IN 批量。
 	if actor != nil && row != nil {
 		pa := s.buildPrimaryActionForDetail(ctx, actor, row)
+		// 提测改走四步弹窗：详情 JSON 不再下发旧整页 URL，避免任何入口误跳 submit_test.html。
+		if pa.Key == string(primaryaction.KeySubmitTest) {
+			pa.URL = ""
+		}
 		resp.PrimaryAction = &pa
-		bindScheduleSpotlight(resp.Spotlight, pa)
+		bindPrimaryActionSpotlight(resp.Spotlight, pa)
 		account := strings.TrimSpace(actor.Account)
 		if account != "" {
 			resp.Summary.IsCreator = strings.TrimSpace(row.CreatedBy) == account
@@ -160,15 +164,36 @@ func (s *DetailService) GetDemandDetail(ctx context.Context, actor *model.User, 
 	return resp, nil
 }
 
-// bindScheduleSpotlight keeps the detail-page schedule entry on the same
-// server-derived action contract as the list. The schedule endpoint redirects
-// to the scheduling page and opens its integrated scheduling modal.
-func bindScheduleSpotlight(spotlight *DetailSpotlight, action primaryaction.PrimaryAction) {
-	if spotlight == nil || action.Key != string(primaryaction.KeySchedule) || !action.Enabled || action.URL == "" {
+// bindPrimaryActionSpotlight 将列表同源的主操作挂到详情 spotlight。
+// 排期：挂站内 URL（跳转排期页）。
+// 提测：只刷新文案，不挂 /submit-test 旧整页 URL——前端应打开四步弹窗（与首页一致）。
+func bindPrimaryActionSpotlight(spotlight *DetailSpotlight, action primaryaction.PrimaryAction) {
+	if spotlight == nil || !action.Enabled {
 		return
 	}
-	spotlight.ActionLabel = action.Label
-	spotlight.ActionURL = action.URL
+	label := strings.TrimSpace(action.Label)
+	switch action.Key {
+	case string(primaryaction.KeySchedule):
+		if label == "" || strings.TrimSpace(action.URL) == "" {
+			return
+		}
+		spotlight.ActionLabel = label
+		spotlight.ActionURL = strings.TrimSpace(action.URL)
+	case string(primaryaction.KeySubmitTest):
+		if label == "" {
+			return
+		}
+		spotlight.ActionLabel = label
+		// 故意不写 ActionURL，避免详情误链到 submit_test.html 旧壳。
+		spotlight.ActionURL = ""
+	default:
+		return
+	}
+}
+
+// bindScheduleSpotlight 保留旧名给历史单测调用；等价于 bindPrimaryActionSpotlight。
+func bindScheduleSpotlight(spotlight *DetailSpotlight, action primaryaction.PrimaryAction) {
+	bindPrimaryActionSpotlight(spotlight, action)
 }
 
 func (s *DetailService) buildSummary(row *DemandDetailRow) DemandSummary {

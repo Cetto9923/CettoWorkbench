@@ -11,6 +11,7 @@ package po
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"gorm.io/gorm"
@@ -51,11 +52,18 @@ func TestNoticeListReqValidate(t *testing.T) {
 	}
 }
 
-func TestFilterNoticeRowsTreatsApprovalAsAnObjectFilter(t *testing.T) {
-	rows := []noticeRow{{ObjectType: "demand", ActionCode: "reviewed"}, {ObjectType: "demand", ActionCode: "activated"}}
-	filtered := filterNoticeRows(rows, NoticeListReq{ObjectType: "approval"})
-	if len(filtered) != 1 || filtered[0].ActionCode != "reviewed" {
-		t.Fatalf("approval filter = %#v", filtered)
+func TestPagedNoticeRowsTreatsApprovalAsAnObjectFilter(t *testing.T) {
+	db, mock := setupMockDB(t)
+	repo := NewRepo(db, db)
+	mock.ExpectQuery(`SELECT .* FROM zt_notify AS n .*FIND_IN_SET\(\?, REPLACE\(n.toList, ' ', ''\)\) > 0.*CASE.*END = 'approval'.*ORDER BY n.createdDate DESC, n.id DESC LIMIT \? OFFSET \?`).
+		WithArgs("alice", "alice", 20, 20).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "objectType", "actionCode"}).AddRow(42, "demand", "reviewed"))
+	rows, err := repo.queryPagedNoticeRows(t.Context(), "alice", time.Date(2026, 9, 10, 12, 0, 0, 0, time.UTC), NoticeListReq{ObjectType: "approval"}, 20, 20)
+	if err != nil || len(rows) != 1 || rows[0].ID != 42 {
+		t.Fatalf("SQL approval page = %#v, err = %v", rows, err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatal(err)
 	}
 }
 

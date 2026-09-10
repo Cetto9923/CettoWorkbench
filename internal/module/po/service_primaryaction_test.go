@@ -64,13 +64,13 @@ func TestDeriveDemandPrimaryActions_BatchIN(t *testing.T) {
 		t.Fatalf("len(out)=%d, want 3", len(out))
 	}
 
-	// 阶段断言：30 是 developing，进入保留的 Workbench 提测页面。
+	// 阶段断言：30 是 developing → 提测弹窗（空 URL + drawer）。
 	if pa, ok := out[30]; ok {
 		if pa.Key != string(primaryaction.KeySubmitTest) {
 			t.Errorf("demand 30 key = %q, want %q", pa.Key, primaryaction.KeySubmitTest)
 		}
-		if !pa.Enabled || pa.URL == "" {
-			t.Errorf("demand 30 submit-test must be enabled, got %+v", pa)
+		if !pa.Enabled || pa.Kind != string(primaryaction.KindDrawer) || pa.URL != "" {
+			t.Errorf("demand 30 submit-test must be enabled drawer with empty URL, got %+v", pa)
 		}
 	}
 
