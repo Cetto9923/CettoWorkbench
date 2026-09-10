@@ -2,7 +2,7 @@
    文件: web/static/js/po/home.js
    模块: PO 个人工作台 - 首页交互脚本
    职责: 绑定需求价值流下钻、全站统一工具栏筛选、7列行动列表展示与分页保护
-   依赖: personal-list.js, home-render.js, jQuery
+   依赖: personal-list.js (priorityBadge(), objectTypeBadge(), idChipHtml()), home-render.js, jQuery
    ============================================================================= */
 
 (function ($) {
