@@ -10,6 +10,23 @@
   var currentStep = 1;
   var isJointTest = 0;
   var bound = false;
+  var autocompleteBound = false;
+
+  var EXEC_OPTIONS = [
+    { value: "P01/E-1001", label: "信贷项目/执行-1001" },
+    { value: "P01/E-1002", label: "信贷项目/执行-1002" },
+    { value: "P02/E-2001", label: "打印中心项目/执行-2001" }
+  ];
+  var EXIST_VER_OPTIONS = [
+    { value: "v1", label: "20250801-已有版本-A" },
+    { value: "v2", label: "20250815-已有版本-B" }
+  ];
+  var AUTOCOMPLETE_FIELDS = [
+    { inputId: "poTtExecInput_1", hiddenId: "poTtExecValue_1", items: EXEC_OPTIONS, placeholder: "搜索执行" },
+    { inputId: "poTtExecInput_2", hiddenId: "poTtExecValue_2", items: EXEC_OPTIONS, placeholder: "搜索执行" },
+    { inputId: "poTtExistVerInput_1", hiddenId: "poTtExistVerValue_1", items: EXIST_VER_OPTIONS, placeholder: "搜索已有版本" },
+    { inputId: "poTtExistVerInput_2", hiddenId: "poTtExistVerValue_2", items: EXIST_VER_OPTIONS, placeholder: "搜索已有版本" }
+  ];
 
   function showToast(message, level) {
     if (typeof window.showToast === "function") {
@@ -59,9 +76,14 @@
 
     $r.find("#poTesttaskPrevBtn").toggleClass("po-testtask-hidden", step === 1);
     $r.find("#poTesttaskNextBtn").toggleClass("po-testtask-hidden", step === 4);
+    $r.find("#poTesttaskSubmitBtn").toggleClass("po-testtask-hidden", step !== 4);
 
     if (step === 1) {
       isJointTest = readJointFlag($r);
+    }
+    if (step === 2) {
+      syncSysUnits($r);
+      syncVersionModeOptions($r);
     }
     if (step === 4) {
       isJointTest = readJointFlag($r);
@@ -78,6 +100,86 @@
     $r.find('[data-tt-integrate-wrap="' + unit + '"]').toggleClass("po-testtask-hidden", !isNew);
     $r.find('[data-tt-link-edit="' + unit + '"]').toggleClass("po-testtask-hidden", !isNew);
     $r.find('[data-tt-link-readonly="' + unit + '"]').toggleClass("po-testtask-hidden", isNew);
+  }
+
+  // 联调模式仅允许「使用已有版本」；非联调恢复「创建新版本 / 使用已有版本」。
+  function syncVersionModeOptions($r) {
+    $r = $r && $r.length ? $r : $root();
+    if (!$r.length) {
+      return;
+    }
+    var joint = readJointFlag($r) === 1;
+    [1, 2].forEach(function (unit) {
+      var $newRadio = $r.find('input[name="ver' + unit + 'Mode"][value="new"]');
+      var $newLabel = $newRadio.closest("label");
+      var wasHidden = $newLabel.hasClass("po-testtask-hidden");
+      $newLabel.toggleClass("po-testtask-hidden", joint);
+      if (joint) {
+        $r.find('input[name="ver' + unit + 'Mode"][value="exist"]').prop("checked", true);
+        setVersionMode(unit, false);
+      } else if (wasHidden) {
+        // 刚从联调切回：恢复默认「创建新版本」
+        $newRadio.prop("checked", true);
+        setVersionMode(unit, true);
+      } else {
+        var isNew = $r.find('input[name="ver' + unit + 'Mode"]:checked').val() !== "exist";
+        setVersionMode(unit, isNew);
+      }
+    });
+    syncExistVerPicker($r, joint);
+  }
+
+  // 联调：已有版本为标签多选；非联调：单选检索下拉。
+  function syncExistVerPicker($r, joint) {
+    $r = $r && $r.length ? $r : $root();
+    if (!$r.length) {
+      return;
+    }
+    if (typeof joint !== "boolean") {
+      joint = readJointFlag($r) === 1;
+    }
+    [1, 2].forEach(function (unit) {
+      $r.find('[data-tt-exist-single="' + unit + '"]').toggleClass("po-testtask-hidden", joint);
+      $r.find('[data-tt-exist-multi="' + unit + '"]').toggleClass("po-testtask-hidden", !joint);
+    });
+  }
+
+  function initTesttaskMultiselects($r) {
+    $r = $r && $r.length ? $r : $root();
+    if (!$r.length || typeof window.initFormComponents !== "function") {
+      return;
+    }
+    window.initFormComponents($r[0]);
+  }
+
+  function syncSysUnits($r) {
+    $r = $r && $r.length ? $r : $root();
+    if (!$r.length) {
+      return;
+    }
+    $r.find("[data-tt-sys]").each(function () {
+      var unit = $(this).attr("data-tt-sys");
+      var on = !!$(this).prop("checked");
+      $r.find('[data-tt-unit="' + unit + '"]').toggleClass("po-testtask-hidden", !on);
+    });
+  }
+
+  function initTesttaskAutocompletes() {
+    if (typeof window.initAutocomplete !== "function" || autocompleteBound) {
+      return;
+    }
+    // 表单可能同时存在于页面与弹窗；仅对当前文档中已存在的 input 初始化。
+    AUTOCOMPLETE_FIELDS.forEach(function (field) {
+      if (!document.getElementById(field.inputId) || !document.getElementById(field.hiddenId)) {
+        return;
+      }
+      window.initAutocomplete(field.inputId, field.hiddenId, field.items, {
+        value: "",
+        label: "",
+        placeholder: field.placeholder
+      });
+    });
+    autocompleteBound = true;
   }
 
   function fillDemandHeader(item) {
@@ -237,22 +339,18 @@
         switchPanel(currentStep - 1);
       }
     });
+    $scope.on("change", "[data-tt-sys]", function () {
+      var $cb = $(this);
+      if ($cb.is("[data-tt-sys-main]") && !$cb.prop("checked")) {
+        $cb.prop("checked", true);
+      }
+      syncSysUnits($root());
+    });
     $scope.on("change", 'input[name="ver1Mode"]', function () {
       setVersionMode(1, $(this).val() === "new");
     });
     $scope.on("change", 'input[name="ver2Mode"]', function () {
       setVersionMode(2, $(this).val() === "new");
-    });
-    $scope.on("change", "[data-tt-exist-ver]", function () {
-      var unit = $(this).attr("data-tt-exist-ver");
-      if (!$(this).val()) {
-        return;
-      }
-      $scope.find('[data-tt-exist-date="' + unit + '"]').val("2025-09-01");
-      $scope.find('[data-tt-exist-desc="' + unit + '"]').val("复用已有版本");
-    });
-    $scope.on("click", "#poTesttaskSaveDraftBtn", function () {
-      showToast("保存草稿（静态演示，未提交后端）", "info");
     });
     $scope.on("click", "#poTesttaskSubmitBtn", function () {
       showToast("提交提测（静态演示，未提交后端）", "success");
@@ -275,6 +373,11 @@
     bound = true;
     bindModalChrome();
     bindWizard($(document));
+    initTesttaskAutocompletes();
+    initTesttaskMultiselects($("#poTesttaskFormRoot").first());
+    if ($("#poTesttaskModal #poTesttaskFormRoot").length) {
+      initTesttaskMultiselects($("#poTesttaskModal #poTesttaskFormRoot"));
+    }
     if ($(".po-testtask-page #poTesttaskFormRoot").length) {
       switchPanel(1);
     }

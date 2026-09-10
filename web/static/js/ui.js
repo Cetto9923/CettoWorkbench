@@ -366,6 +366,13 @@
 
   function renderAutocompleteDropdown(state) {
     var query = state.input.value;
+    var selectedValue = trimText(state.hidden.value);
+    if (selectedValue) {
+      var selectedItem = findAutocompleteItem(state.items, selectedValue);
+      if (selectedItem && trimText(query) === formatAutocompleteLabel(selectedItem)) {
+        query = "";
+      }
+    }
     var result = filterAutocompleteItems(state.items, query, state.maxShow);
     var matches = result.items;
     var dropdown = state.dropdown;
@@ -414,6 +421,15 @@
     state.open = true;
     state.filteredItems = matches;
     positionAutocompleteDropdown(state);
+
+    if (selectedValue) {
+      for (var i = 0; i < matches.length; i++) {
+        if (matches[i].value === selectedValue) {
+          setActiveAutocompleteOption(state, i);
+          break;
+        }
+      }
+    }
   }
 
   function setActiveAutocompleteOption(state, index) {
