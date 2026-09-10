@@ -18,30 +18,17 @@
     qdName: ""
   };
 
-  var EXEC_OPTIONS = [
-    { value: "P01/E-1001", label: "信贷项目/执行-1001" },
-    { value: "P01/E-1002", label: "信贷项目/执行-1002" },
-    { value: "P02/E-2001", label: "打印中心项目/执行-2001" }
-  ];
   var EXIST_VER_OPTIONS = [
     { value: "v1", label: "20250801-已有版本-A" },
     { value: "v2", label: "20250815-已有版本-B" },
     { value: "v3", label: "20250901-已有版本-C" }
   ];
+  var execOptionsCache = {};
 
   function showToast(message, level) {
     if (typeof window.showToast === "function") {
       window.showToast(message, level || "info");
     }
-  }
-
-  function esc(s) {
-    return String(s == null ? "" : s)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
   }
 
   function $root() {
@@ -67,9 +54,10 @@
     return todayYMD().replace(/-/g, "");
   }
 
-  function defaultVersionName() {
-    var id = contextMeta.demandId || "";
-    return compactToday() + (id ? "-US" + id : "") + "-提测版本";
+  function defaultVersionName(productName) {
+    var name = String(productName || "").trim();
+    var ymd = compactToday();
+    return name ? name + " - " + ymd : ymd;
   }
 
   function defaultTesttaskName(joint) {
@@ -205,6 +193,68 @@
     });
   }
 
+  function fetchJSON(url) {
+    var fetchFn = window.appFetch || fetch;
+    return fetchFn(url, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "X-Requested-With": "XMLHttpRequest"
+      }
+    }).then(function (res) {
+      return res.text().then(function (text) {
+        var data = {};
+        try {
+          data = text ? JSON.parse(text) : {};
+        } catch (ignore) {
+          data = {};
+        }
+        return { ok: res.ok, data: data, status: res.status };
+      });
+    });
+  }
+
+  function normalizeExecOptions(list) {
+    if (!Array.isArray(list)) {
+      return [];
+    }
+    return list
+      .map(function (item) {
+        var value = String((item && item.value) || "").trim();
+        var label = String((item && item.label) || "").trim();
+        if (!value) {
+          return null;
+        }
+        return { value: value, label: label || value };
+      })
+      .filter(Boolean);
+  }
+
+  function loadProductExecutions(productId) {
+    var key = String(productId || "");
+    if (!key) {
+      return Promise.resolve([]);
+    }
+    if (Object.prototype.hasOwnProperty.call(execOptionsCache, key)) {
+      return Promise.resolve(execOptionsCache[key]);
+    }
+    return fetchJSON("/products/" + encodeURIComponent(key) + "/executions").then(function (wrap) {
+      var list = [];
+      if (wrap.ok && wrap.data && wrap.data.success) {
+        list = normalizeExecOptions(wrap.data.data);
+      } else {
+        var msg = String((wrap.data && (wrap.data.message || wrap.data.error)) || "").trim();
+        showToast(msg || "获取所属执行失败", "error");
+      }
+      execOptionsCache[key] = list;
+      return list;
+    }).catch(function () {
+      showToast("获取所属执行失败，请稍后重试", "error");
+      execOptionsCache[key] = [];
+      return [];
+    });
+  }
+
   function initUnitAutocompletes($r) {
     if (typeof window.initAutocomplete !== "function" || !$r || !$r.length) {
       return;
@@ -215,10 +265,20 @@
       var verInput = "poTtExistVerInput_" + unit;
       var verHidden = "poTtExistVerValue_" + unit;
       if ($r.find("#" + execInput).length && $r.find("#" + execHidden).length) {
-        window.initAutocomplete(execInput, execHidden, EXEC_OPTIONS, {
+        window.initAutocomplete(execInput, execHidden, [], {
           value: "",
           label: "",
-          placeholder: "搜索执行"
+          placeholder: "加载执行中…"
+        });
+        loadProductExecutions(unit).then(function (items) {
+          if (!$r.find("#" + execInput).length) {
+            return;
+          }
+          window.initAutocomplete(execInput, execHidden, items, {
+            value: "",
+            label: "",
+            placeholder: items.length ? "搜索执行" : "暂无可用执行"
+          });
         });
       }
       if ($r.find("#" + verInput).length && $r.find("#" + verHidden).length) {
@@ -231,222 +291,179 @@
     });
   }
 
-  function existVerMultiHTML(unit) {
-    var name = "existVer" + unit;
-    var opts = EXIST_VER_OPTIONS.map(function (o) {
-      return (
-        '<label class="checkbox-label form-multiselect-option">' +
-        '<input name="' +
-        esc(name) +
-        '" value="' +
-        esc(o.value) +
-        '" type="checkbox" class="checkbox form-multiselect-checkbox">' +
-        '<span class="checkbox-box"></span>' +
-        '<span class="form-multiselect-name">' +
-        esc(o.label) +
-        "</span>" +
-        "</label>"
-      );
-    }).join("");
-    return (
-      '<div class="dropdown form-multiselect" data-role-dropdown data-multiselect-keep-placeholder="true">' +
-      '<div class="form-input-clear-wrap">' +
-      '<div class="form-multiselect-display" data-role-display>' +
-      '<div class="form-multiselect-tags" data-role-tags></div>' +
-      '<input type="text" class="input form-multiselect-input" data-multiselect-filter' +
-      ' placeholder="搜索并选择已有版本（可多选）"' +
-      ' data-placeholder-empty="搜索并选择已有版本（可多选）"' +
-      ' autocomplete="off" aria-autocomplete="list" aria-label="检索已有版本" />' +
-      "</div>" +
-      '<button type="button" class="form-dropdown-chevron" aria-label="展开已有版本" onclick="return toggleDropdown(this);">' +
-      '<i class="bi bi-chevron-down" aria-hidden="true"></i></button>' +
-      '<button type="button" class="form-dropdown-clear" data-form-multiselect-clear aria-label="清除已有版本" hidden>×</button>' +
-      "</div>" +
-      '<div class="dropdown-menu form-multiselect-menu"><div class="form-multiselect-scroll">' +
-      '<div class="form-multiselect-list">' +
-      opts +
-      "</div></div></div></div>"
-    );
-  }
-
-  function versionUnitHTML(sys) {
-    var id = String(sys.id);
-    var name = String(sys.name || "");
-    var isMain = !!sys.isMain;
-    var badgeClass = isMain ? "is-main" : "is-sub";
-    var badgeText = isMain ? "主" : "配";
-    var hiddenClass = isMain ? "" : " po-testtask-hidden";
-    var verName = defaultVersionName();
-    var launch = contextMeta.estimateLaunch && contextMeta.estimateLaunch !== "—" ? contextMeta.estimateLaunch : todayYMD();
-    return (
-      '<div class="po-testtask-unit' +
-      hiddenClass +
-      '" data-tt-unit="' +
-      esc(id) +
-      '">' +
-      '<div class="po-testtask-unit-head"><div class="po-testtask-unit-name">' +
-      '<i class="fas fa-folder-open"></i><span>' +
-      esc(name) +
-      '</span><span class="po-testtask-sys-badge ' +
-      badgeClass +
-      '">' +
-      badgeText +
-      "</span></div></div>" +
-      '<div class="po-testtask-unit-body">' +
-      '<div class="po-testtask-field-label"><span class="req">*</span> 版本模式</div>' +
-      '<div class="po-testtask-radio-row">' +
-      '<label><input type="radio" name="ver' +
-      esc(id) +
-      'Mode" value="new" data-tt-ver-mode="' +
-      esc(id) +
-      '" checked /> 创建新版本</label>' +
-      '<label><input type="radio" name="ver' +
-      esc(id) +
-      'Mode" value="exist" data-tt-ver-mode="' +
-      esc(id) +
-      '" /> 使用已有版本</label>' +
-      "</div>" +
-      '<div data-tt-new-base="' +
-      esc(id) +
-      '">' +
-      '<div class="po-testtask-field"><div class="po-testtask-field-label"><span class="req">*</span> 所属执行</div>' +
-      '<div class="ui-autocomplete">' +
-      '<input type="text" id="poTtExecInput_' +
-      esc(id) +
-      '" class="po-testtask-ac-input" placeholder="搜索执行" autocomplete="off" />' +
-      '<input type="hidden" id="poTtExecValue_' +
-      esc(id) +
-      '" data-tt-exec="' +
-      esc(id) +
-      '" value="" />' +
-      "</div></div>" +
-      '<div class="po-testtask-grid-2">' +
-      '<div class="po-testtask-field"><div class="po-testtask-field-label"><span class="req">*</span> 新版本名称</div>' +
-      '<input type="text" value="' +
-      esc(verName) +
-      '" /></div>' +
-      '<div class="po-testtask-field"><div class="po-testtask-field-label"><span class="req">*</span> 计划上线日期</div>' +
-      '<input type="date" value="' +
-      esc(launch) +
-      '" /></div></div>' +
-      '<div class="po-testtask-field"><div class="po-testtask-field-label">版本说明 (可选)</div><input type="text" /></div>' +
-      "</div>" +
-      '<div class="po-testtask-hidden" data-tt-exist-base="' +
-      esc(id) +
-      '">' +
-      '<div class="po-testtask-field"><div class="po-testtask-field-label"><span class="req">*</span> 已有版本名称</div>' +
-      '<div data-tt-exist-single="' +
-      esc(id) +
-      '"><div class="ui-autocomplete">' +
-      '<input type="text" id="poTtExistVerInput_' +
-      esc(id) +
-      '" class="po-testtask-ac-input" placeholder="搜索已有版本" autocomplete="off" />' +
-      '<input type="hidden" id="poTtExistVerValue_' +
-      esc(id) +
-      '" data-tt-exist-ver="' +
-      esc(id) +
-      '" value="" />' +
-      "</div></div>" +
-      '<div class="po-testtask-hidden" data-tt-exist-multi="' +
-      esc(id) +
-      '">' +
-      existVerMultiHTML(id) +
-      "</div></div></div>" +
-      "</div></div>"
-    );
-  }
-
-  function linkUnitHTML(sys) {
-    var id = String(sys.id);
-    var name = String(sys.name || "");
-    var isMain = !!sys.isMain;
-    var badgeClass = isMain ? "is-main" : "is-sub";
-    var badgeText = isMain ? "主" : "配";
-    var hiddenClass = isMain ? "" : " po-testtask-hidden";
-    var demandLabel = "";
-    if (contextMeta.demandId) {
-      demandLabel =
-        "#" +
-        esc(contextMeta.demandId) +
-        " " +
-        esc(contextMeta.title || "") +
-        "(当前需求)";
+  function cloneTpl(id) {
+    var tpl = document.getElementById(id);
+    if (!tpl || !tpl.content) {
+      return null;
     }
-    return (
-      '<div class="po-testtask-unit' +
-      hiddenClass +
-      '" data-tt-link-unit="' +
-      esc(id) +
-      '">' +
-      '<div class="po-testtask-unit-name" style="margin-bottom:8px">' +
-      '<i class="fas fa-folder-open"></i><span>' +
-      esc(name) +
-      '</span><span class="po-testtask-sys-badge ' +
-      badgeClass +
-      '">' +
-      badgeText +
-      "</span></div>" +
-      '<div class="po-testtask-unit-body">' +
-      '<div data-tt-link-edit="' +
-      esc(id) +
-      '">' +
-      '<div class="po-testtask-link-actions">' +
-      '<div class="po-testtask-field-label">版本关联需求（可多选）</div>' +
-      '<button type="button" class="po-testtask-link-add">+ 添加已有需求</button></div>' +
-      '<div class="po-testtask-link-list">' +
-      (demandLabel
-        ? '<label><input type="checkbox" checked /> ' + demandLabel + "</label>"
-        : "") +
-      "</div></div>" +
-      '<div class="po-testtask-hidden" data-tt-link-readonly="' +
-      esc(id) +
-      '">' +
-      '<div class="po-testtask-field-label">版本已关联需求（只读，取自已有版本）</div>' +
-      '<div class="po-testtask-link-readonly">' +
-      (demandLabel ? "<div>" + demandLabel.replace("(当前需求)", "") + "</div>" : "") +
-      "</div></div>" +
-      "</div></div>"
-    );
+    return tpl.content.cloneNode(true);
   }
 
-  function testUnitHTML(sys) {
+  function setBadge($el, isMain) {
+    $el
+      .text(isMain ? "主" : "配")
+      .removeClass("is-main is-sub")
+      .addClass(isMain ? "is-main" : "is-sub");
+  }
+
+  function fillExistVerOptions($list, unit) {
+    var optTpl = document.getElementById("poTtExistVerOptTpl");
+    if (!$list.length || !optTpl || !optTpl.content) {
+      return;
+    }
+    var name = "existVer" + unit;
+    $list.empty();
+    EXIST_VER_OPTIONS.forEach(function (o) {
+      var frag = optTpl.content.cloneNode(true);
+      var label = frag.querySelector("label");
+      if (!label) {
+        return;
+      }
+      var input = label.querySelector('input[type="checkbox"]');
+      if (input) {
+        input.name = name;
+        input.value = o.value;
+      }
+      var labelEl = label.querySelector('[data-tt-fill="label"]');
+      if (labelEl) {
+        labelEl.textContent = o.label;
+      }
+      $list.append(frag);
+    });
+  }
+
+  function versionUnitNode(sys) {
+    var frag = cloneTpl("poTtVersionUnitTpl");
+    if (!frag) {
+      return null;
+    }
     var id = String(sys.id);
     var name = String(sys.name || "");
     var isMain = !!sys.isMain;
-    var hiddenClass = isMain ? "" : " po-testtask-hidden";
-    var ttName = defaultTesttaskName(false);
-    var qd = contextMeta.qdName && contextMeta.qdName !== "—" ? contextMeta.qdName : "";
-    var start = todayYMD();
-    var end = contextMeta.estimateLaunch && contextMeta.estimateLaunch !== "—" ? contextMeta.estimateLaunch : "";
-    return (
-      '<div class="po-testtask-unit' +
-      hiddenClass +
-      '" data-tt-test-unit="' +
-      esc(id) +
-      '">' +
-      '<div class="po-testtask-unit-title">' +
-      esc(name) +
-      "-测试单</div>" +
-      '<div class="po-testtask-grid-4">' +
-      '<div class="po-testtask-field"><div class="po-testtask-field-label"><span class="req">*</span> 测试单名称</div>' +
-      '<input type="text" value="' +
-      esc(ttName) +
-      '" /></div>' +
-      '<div class="po-testtask-field"><div class="po-testtask-field-label"><span class="req">*</span> 测试负责人</div>' +
-      '<input type="text" value="' +
-      esc(qd) +
-      '" /></div>' +
-      '<div class="po-testtask-field"><div class="po-testtask-field-label">开始日期</div>' +
-      '<input type="date" value="' +
-      esc(start) +
-      '" /></div>' +
-      '<div class="po-testtask-field"><div class="po-testtask-field-label">结束日期</div>' +
-      '<input type="date" value="' +
-      esc(end) +
-      '" /></div></div>' +
-      '<div class="po-testtask-field"><div class="po-testtask-field-label">测试说明 / 重点 (可选)</div><textarea></textarea></div>' +
-      "</div>"
-    );
+    var $root = $(frag.querySelector("[data-tt-unit]"));
+    $root.attr("data-tt-unit", id);
+    if (!isMain) {
+      $root.addClass("po-testtask-hidden");
+    }
+    $root.find('[data-tt-fill="sys-name"]').text(name);
+    setBadge($root.find('[data-tt-fill="sys-badge"]'), isMain);
+
+    $root.find("input[data-tt-ver-mode]").each(function () {
+      $(this)
+        .attr("name", "ver" + id + "Mode")
+        .attr("data-tt-ver-mode", id);
+    });
+    $root.find("[data-tt-new-base]").attr("data-tt-new-base", id);
+    $root.find("[data-tt-exist-base]").attr("data-tt-exist-base", id);
+    $root.find("[data-tt-exist-single]").attr("data-tt-exist-single", id);
+    $root.find("[data-tt-exist-multi]").attr("data-tt-exist-multi", id);
+
+    $root.find('[data-tt-fill-id="execInput"]').attr("id", "poTtExecInput_" + id);
+    $root
+      .find('[data-tt-fill-id="execValue"]')
+      .attr("id", "poTtExecValue_" + id)
+      .attr("data-tt-exec", id);
+    $root.find('[data-tt-fill-id="existVerInput"]').attr("id", "poTtExistVerInput_" + id);
+    $root
+      .find('[data-tt-fill-id="existVerValue"]')
+      .attr("id", "poTtExistVerValue_" + id)
+      .attr("data-tt-exist-ver", id);
+
+    $root.find('[data-tt-fill="ver-name"]').val(defaultVersionName(name));
+    $root.find('[data-tt-fill="launch"]').val(todayYMD());
+    fillExistVerOptions($root.find("[data-tt-exist-opt-list]"), id);
+    return frag;
+  }
+
+  function linkUnitNode(sys) {
+    var frag = cloneTpl("poTtLinkUnitTpl");
+    if (!frag) {
+      return null;
+    }
+    var id = String(sys.id);
+    var name = String(sys.name || "");
+    var isMain = !!sys.isMain;
+    var $root = $(frag.querySelector("[data-tt-link-unit]"));
+    $root.attr("data-tt-link-unit", id);
+    if (!isMain) {
+      $root.addClass("po-testtask-hidden");
+    }
+    $root.find('[data-tt-fill="sys-name"]').text(name);
+    setBadge($root.find('[data-tt-fill="sys-badge"]'), isMain);
+    $root.find("[data-tt-link-edit]").attr("data-tt-link-edit", id);
+    $root.find("[data-tt-link-readonly]").attr("data-tt-link-readonly", id);
+
+    var $list = $root.find('[data-tt-fill="link-list"]');
+    var $readonly = $root.find('[data-tt-fill="link-readonly"]');
+    $list.empty();
+    $readonly.empty();
+    if (contextMeta.demandId) {
+      var demandText =
+        "#" + contextMeta.demandId + " " + (contextMeta.title || "") + "(当前需求)";
+      var readonlyText = "#" + contextMeta.demandId + " " + (contextMeta.title || "");
+      $list.append(
+        $("<label>").append($('<input type="checkbox" checked />'), document.createTextNode(" " + demandText))
+      );
+      $readonly.append($("<div>").text(readonlyText));
+    }
+    return frag;
+  }
+
+  function testUnitNode(sys) {
+    var frag = cloneTpl("poTtTestUnitTpl");
+    if (!frag) {
+      return null;
+    }
+    var id = String(sys.id);
+    var name = String(sys.name || "");
+    var isMain = !!sys.isMain;
+    var $root = $(frag.querySelector("[data-tt-test-unit]"));
+    $root.attr("data-tt-test-unit", id);
+    if (!isMain) {
+      $root.addClass("po-testtask-hidden");
+    }
+    $root.find('[data-tt-fill="test-title"]').text(name + "-测试单");
+    $root.find('[data-tt-fill="tt-name"]').val(defaultTesttaskName(false));
+    $root
+      .find('[data-tt-fill="qd"]')
+      .val(contextMeta.qdName && contextMeta.qdName !== "—" ? contextMeta.qdName : "");
+    $root.find('[data-tt-fill="start"]').val(todayYMD());
+    $root
+      .find('[data-tt-fill="end"]')
+      .val(
+        contextMeta.estimateLaunch && contextMeta.estimateLaunch !== "—"
+          ? contextMeta.estimateLaunch
+          : ""
+      );
+    return frag;
+  }
+
+  function sysCheckNode(sys) {
+    var frag = cloneTpl("poTtSysCheckTpl");
+    if (!frag) {
+      return null;
+    }
+    var id = String(sys.id);
+    var name = String(sys.name || "");
+    var isMain = !!sys.isMain;
+    var $label = $(frag.querySelector("label"));
+    var $input = $label.find("[data-tt-sys]");
+    $input.attr("data-tt-sys", id);
+    if (isMain) {
+      $input.attr("data-tt-sys-main", "").prop("checked", true).prop("disabled", true);
+    }
+    $label.find('[data-tt-fill="sys-name"]').text(name);
+    setBadge($label.find('[data-tt-fill="sys-badge"]'), isMain);
+    return frag;
+  }
+
+  function appendNodes($container, nodes) {
+    $container.empty();
+    nodes.forEach(function (node) {
+      if (node) {
+        $container.append(node);
+      }
+    });
   }
 
   function renderSystems($r, systems) {
@@ -468,35 +485,22 @@
       return;
     }
 
-    var checks = currentSystems
-      .map(function (sys) {
-        var id = String(sys.id);
-        var name = String(sys.name || "");
-        var isMain = !!sys.isMain;
-        var badgeClass = isMain ? "is-main" : "is-sub";
-        var badgeText = isMain ? "主" : "配";
-        var attrs = 'type="checkbox" data-tt-sys="' + esc(id) + '"';
-        if (isMain) {
-          attrs += " data-tt-sys-main checked disabled";
-        }
-        return (
-          "<label><input " +
-          attrs +
-          " /> " +
-          esc(name) +
-          ' <span class="po-testtask-sys-badge ' +
-          badgeClass +
-          '">' +
-          badgeText +
-          "</span></label>"
-        );
-      })
-      .join("");
-
-    $list.html(checks);
-    $units.html(currentSystems.map(versionUnitHTML).join(""));
-    $links.html(currentSystems.map(linkUnitHTML).join(""));
-    $tests.html(currentSystems.map(testUnitHTML).join(""));
+    appendNodes(
+      $list,
+      currentSystems.map(sysCheckNode)
+    );
+    appendNodes(
+      $units,
+      currentSystems.map(versionUnitNode)
+    );
+    appendNodes(
+      $links,
+      currentSystems.map(linkUnitNode)
+    );
+    appendNodes(
+      $tests,
+      currentSystems.map(testUnitNode)
+    );
 
     $r.find("[data-tt-joint-name]").val(defaultTesttaskName(true));
     $r.find("[data-tt-joint-qd]").val(
@@ -621,25 +625,7 @@
       return;
     }
     setContextLoading($r);
-    var fetchFn = window.appFetch || fetch;
-    fetchFn("/demands/" + encodeURIComponent(id) + "/testtask", {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-        "X-Requested-With": "XMLHttpRequest"
-      }
-    })
-      .then(function (res) {
-        return res.text().then(function (text) {
-          var data = {};
-          try {
-            data = text ? JSON.parse(text) : {};
-          } catch (ignore) {
-            data = {};
-          }
-          return { ok: res.ok, data: data, status: res.status };
-        });
-      })
+    fetchJSON("/demands/" + encodeURIComponent(id) + "/testtask")
       .then(function (wrap) {
         if (wrap.ok && wrap.data && wrap.data.success && wrap.data.data) {
           fillContextData(wrap.data.data);
@@ -660,6 +646,7 @@
   }
 
   function openModal(item) {
+    execOptionsCache = {};
     fillDemandHeader(item || null);
     switchPanel(1);
     if (typeof window.openShowModals === "function") {

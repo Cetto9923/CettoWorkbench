@@ -2,7 +2,7 @@
 // 文件: internal/module/testtask/service.go
 // 模块: 提测办理
 // 类型: action
-// 职责: 提测上下文业务装配（人员展示名走 user.AccountDisplayMap）。
+// 职责: 提测上下文与产品执行列表业务装配。
 // 依赖: internal/module/user
 //       internal/pkg/errorx
 // =============================================================================
@@ -68,4 +68,26 @@ func (s *Service) GetContext(ctx context.Context, actor *model.User, demandID ui
 		name = actor.DisplayName
 	}
 	return BuildContextResp(*row, displayMap, account, name, systems), nil
+}
+
+// ListProductExecutions 当前产品下执行列表（对齐禅道版本创建 stagefilter|leaf|order_asc[+noclosed]）。
+func (s *Service) ListProductExecutions(ctx context.Context, actor *model.User, productID uint) ([]ExecutionOption, error) {
+	_ = actor // 预留：后续可按可见执行权限过滤
+	if productID == 0 {
+		return nil, errorx.New(errorx.ErrCodeInvalidParam, "产品 ID 无效")
+	}
+	projectIDs, err := s.repo.FindProductProjectIDs(ctx, productID)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := s.repo.FindExecutionsByProjectIDs(ctx, projectIDs)
+	if err != nil {
+		return nil, err
+	}
+	crExec, err := s.repo.FindCRExecution(ctx)
+	if err != nil {
+		return nil, err
+	}
+	noClosed := crExec == 0
+	return BuildExecutionOptions(rows, noClosed), nil
 }

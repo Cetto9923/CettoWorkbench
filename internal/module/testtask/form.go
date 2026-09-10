@@ -29,6 +29,15 @@ type SystemItem struct {
 	IsMain bool   `json:"isMain"`
 }
 
+// ExecutionOption 所属执行下拉项（创建新版本）。
+// Value 为「项目id-执行id」，Label 为「项目名称/执行名称」。
+type ExecutionOption struct {
+	Value       string `json:"value"`
+	Label       string `json:"label"`
+	ProjectID   uint   `json:"projectId"`
+	ExecutionID uint   `json:"executionId"`
+}
+
 // ContextResp 提测弹窗「当前需求上下文」JSON。
 type ContextResp struct {
 	DemandID       uint         `json:"demandId"`

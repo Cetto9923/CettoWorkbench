@@ -13,6 +13,7 @@
 <div class="po-testtask-page">
   {{ template "po/testtask_form" . }}
 </div>
+{{ template "po/testtask_tpls" . }}
 {{ end }}
 
 {{ define "page_js" }}
@@ -182,4 +183,149 @@
     {{ template "po/testtask_form" . }}
   </div>
 </div>
+{{ template "po/testtask_tpls" . }}
+{{ end }}
+
+{{ define "po/testtask_tpls" }}
+<template id="poTtSysCheckTpl">
+  <label>
+    <input type="checkbox" data-tt-sys="" />
+    <span data-tt-fill="sys-name"></span>
+    <span class="po-testtask-sys-badge" data-tt-fill="sys-badge"></span>
+  </label>
+</template>
+
+<template id="poTtExistVerOptTpl">
+  <label class="checkbox-label form-multiselect-option">
+    <input name="" value="" type="checkbox" class="checkbox form-multiselect-checkbox">
+    <span class="checkbox-box"></span>
+    <span class="form-multiselect-name" data-tt-fill="label"></span>
+  </label>
+</template>
+
+<template id="poTtVersionUnitTpl">
+  <div class="po-testtask-unit" data-tt-unit="">
+    <div class="po-testtask-unit-head">
+      <div class="po-testtask-unit-name">
+        <i class="fas fa-folder-open"></i>
+        <span data-tt-fill="sys-name"></span>
+        <span class="po-testtask-sys-badge" data-tt-fill="sys-badge"></span>
+      </div>
+    </div>
+    <div class="po-testtask-unit-body">
+      <div class="po-testtask-field-label"><span class="req">*</span> 版本模式</div>
+      <div class="po-testtask-radio-row">
+        <label><input type="radio" name="verMode" value="new" data-tt-ver-mode="" checked /> 创建新版本</label>
+        <label><input type="radio" name="verMode" value="exist" data-tt-ver-mode="" /> 使用已有版本</label>
+      </div>
+      <div data-tt-new-base="">
+        <div class="po-testtask-field">
+          <div class="po-testtask-field-label"><span class="req">*</span> 所属执行</div>
+          <div class="ui-autocomplete">
+            <input type="text" class="po-testtask-ac-input" data-tt-fill-id="execInput" placeholder="搜索执行" autocomplete="off" />
+            <input type="hidden" data-tt-fill-id="execValue" data-tt-exec="" value="" />
+          </div>
+        </div>
+        <div class="po-testtask-grid-2">
+          <div class="po-testtask-field">
+            <div class="po-testtask-field-label"><span class="req">*</span> 新版本名称</div>
+            <input type="text" data-tt-fill="ver-name" value="" />
+          </div>
+          <div class="po-testtask-field">
+            <div class="po-testtask-field-label"><span class="req">*</span> 计划上线日期</div>
+            <input type="date" data-tt-fill="launch" value="" />
+          </div>
+        </div>
+        <div class="po-testtask-field">
+          <div class="po-testtask-field-label">版本说明</div>
+          <input type="text" />
+        </div>
+      </div>
+      <div class="po-testtask-hidden" data-tt-exist-base="">
+        <div class="po-testtask-field">
+          <div class="po-testtask-field-label"><span class="req">*</span> 已有版本名称</div>
+          <div data-tt-exist-single="">
+            <div class="ui-autocomplete">
+              <input type="text" class="po-testtask-ac-input" data-tt-fill-id="existVerInput" placeholder="搜索已有版本" autocomplete="off" />
+              <input type="hidden" data-tt-fill-id="existVerValue" data-tt-exist-ver="" value="" />
+            </div>
+          </div>
+          <div class="po-testtask-hidden" data-tt-exist-multi="">
+            <div class="dropdown form-multiselect" data-role-dropdown data-multiselect-keep-placeholder="true">
+              <div class="form-input-clear-wrap">
+                <div class="form-multiselect-display" data-role-display>
+                  <div class="form-multiselect-tags" data-role-tags></div>
+                  <input type="text" class="input form-multiselect-input" data-multiselect-filter
+                    placeholder="搜索并选择已有版本（可多选）"
+                    data-placeholder-empty="搜索并选择已有版本（可多选）"
+                    autocomplete="off" aria-autocomplete="list" aria-label="检索已有版本" />
+                </div>
+                <button type="button" class="form-dropdown-chevron" aria-label="展开已有版本" onclick="return toggleDropdown(this);">
+                  <i class="bi bi-chevron-down" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="form-dropdown-clear" data-form-multiselect-clear aria-label="清除已有版本" hidden>×</button>
+              </div>
+              <div class="dropdown-menu form-multiselect-menu">
+                <div class="form-multiselect-scroll">
+                  <div class="form-multiselect-list" data-tt-exist-opt-list></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template id="poTtLinkUnitTpl">
+  <div class="po-testtask-unit" data-tt-link-unit="">
+    <div class="po-testtask-unit-name" style="margin-bottom:8px">
+      <i class="fas fa-folder-open"></i>
+      <span data-tt-fill="sys-name"></span>
+      <span class="po-testtask-sys-badge" data-tt-fill="sys-badge"></span>
+    </div>
+    <div class="po-testtask-unit-body">
+      <div data-tt-link-edit="">
+        <div class="po-testtask-link-actions">
+          <div class="po-testtask-field-label">版本关联需求（可多选）</div>
+          <button type="button" class="po-testtask-link-add">+ 添加已有需求</button>
+        </div>
+        <div class="po-testtask-link-list" data-tt-fill="link-list"></div>
+      </div>
+      <div class="po-testtask-hidden" data-tt-link-readonly="">
+        <div class="po-testtask-field-label">版本已关联需求（只读，取自已有版本）</div>
+        <div class="po-testtask-link-readonly" data-tt-fill="link-readonly"></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template id="poTtTestUnitTpl">
+  <div class="po-testtask-unit" data-tt-test-unit="">
+    <div class="po-testtask-unit-title" data-tt-fill="test-title"></div>
+    <div class="po-testtask-grid-4">
+      <div class="po-testtask-field">
+        <div class="po-testtask-field-label"><span class="req">*</span> 测试单名称</div>
+        <input type="text" data-tt-fill="tt-name" value="" />
+      </div>
+      <div class="po-testtask-field">
+        <div class="po-testtask-field-label"><span class="req">*</span> 测试负责人</div>
+        <input type="text" data-tt-fill="qd" value="" />
+      </div>
+      <div class="po-testtask-field">
+        <div class="po-testtask-field-label">开始日期</div>
+        <input type="date" data-tt-fill="start" value="" />
+      </div>
+      <div class="po-testtask-field">
+        <div class="po-testtask-field-label">结束日期</div>
+        <input type="date" data-tt-fill="end" value="" />
+      </div>
+    </div>
+    <div class="po-testtask-field">
+      <div class="po-testtask-field-label">测试说明 / 重点 (可选)</div>
+      <textarea></textarea>
+    </div>
+  </div>
+</template>
 {{ end }}
