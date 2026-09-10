@@ -2,7 +2,8 @@
  * =============================================================================
  * 文件: web/static/js/po/follow.js
  * 模块: PO 工作台 - 我的关注主控制器
- * 职责: 已接入的业务需求 / 项目周报视图切换；4 KPI、快捷过滤、7 列表格与翻页
+ * 职责: 业务需求 / 项目周报视图切换；周报 4 KPI、快捷过滤、7 列表格与翻页
+ *       业务需求逻辑见 follow-demand.js
  * =============================================================================
  */
 (function () {
@@ -15,8 +16,6 @@
   var weeklyKeyword = "";
   var weeklyPager = { page: 1, pageSize: 10, total: 0 };
 
-  var demandState = { scope: "all", keyword: "", page: 1, pageSize: 20, total: 0 };
-
   function esc(s) {
     return String(s == null ? "" : s)
       .replace(/&/g, "&amp;")
@@ -25,58 +24,34 @@
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
   }
-  var PL = window.PersonalList || {};
-  if (typeof PL.loadPageSize === "function") {
-    demandState.pageSize = PL.loadPageSize("po.follow.pageSize", demandState.pageSize, [10, 15, 20, 30, 50]);
-  }
-  var priorityBadge = PL.priorityBadge || function (raw) {
-    var n = parseInt(String(raw || "").replace(/^p/i, ""), 10);
-    if (isNaN(n) || n < 1 || n > 4) { return '<span class="wb-priority" data-priority="">—</span>'; }
-    return '<span class="wb-priority" data-priority="' + n + '">P' + n + "</span>";
-  };
-  var primaryActionHtml = (window.PrimaryAction && window.PrimaryAction.primaryActionHtml) || function () {
-    return '<span class="home-unavailable" title="等待服务端动作合同落地">—</span>';
-  };
-
-  function stageLabel(value) {
-    var labels = { wait: "已受理", draft: "草稿", active: "已澄清", clarified: "已澄清", developing: "研发中", testing: "测试中", waitacceptance: "待验收", acceptanced: "已验收", waitdeliver: "待交付", delivered: "已交付", released: "已发布", closed: "已关闭", suspended: "已挂起", refuse: "已驳回" };
-    var key = String(value == null ? "" : value).toLowerCase();
-    return labels[key] || (String(value || "").trim() || "—");
-  }
 
   function getCsrfToken() {
     var el = document.getElementById("csrfToken"); return el ? el.value : "";
   }
 
-  /* ────────── 1. Tab 切换 ────────── */
   function switchTab(tab) {
     if (tab !== "demand" && tab !== "weekly") return;
     currentTab = tab;
     document.querySelectorAll(".follow-tab").forEach(function (btn) {
       btn.classList.toggle("active", btn.getAttribute("data-tab") === tab);
     });
-
     var weeklySec = document.getElementById("weeklySection");
     var demandSec = document.getElementById("demandSection");
-
     if (weeklySec) weeklySec.hidden = (tab !== "weekly");
     if (demandSec) demandSec.hidden = (tab === "weekly");
     if (tab === "weekly") loadWeeklyData();
-    else loadDemandData();
+    else if (window.FollowDemand) window.FollowDemand.load();
   }
 
-  /* ────────── 2. 项目周报逻辑 ────────── */
   async function loadWeeklyData() {
     var tbody = document.getElementById("pwTbody");
     if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="pw-empty-row">加载周报数据中…</td></tr>';
-
     var params = new URLSearchParams({
       filter: weeklyFilter || "all",
       keyword: weeklyKeyword || "",
       limit: "500",
       scope: "watched"
     });
-
     try {
       var res = await fetch("/follow/project-weeklies?" + params.toString(), {
         credentials: "include",
@@ -85,11 +60,9 @@
       if (!res.ok) throw new Error("fetch weeklies failed");
       var json = await res.json();
       if (!json || !json.success || !json.data) throw new Error("invalid weeklies payload");
-
       weeklyItems = Array.isArray(json.data.items) ? json.data.items : [];
       weeklyStats = json.data.stats || weeklyStats;
       weeklyPager.total = weeklyItems.length;
-
       updateWeeklyStatsUI();
       renderWeeklyRows();
       updateTabBadges();
@@ -152,16 +125,13 @@
   function renderWeeklyRows() {
     var tbody = document.getElementById("pwTbody");
     if (!tbody) return;
-
     var start = (weeklyPager.page - 1) * weeklyPager.pageSize;
     var pageItems = weeklyItems.slice(start, start + weeklyPager.pageSize);
-
     if (!pageItems.length) {
       tbody.innerHTML = '<tr><td colspan="7" class="pw-empty-row">当前条件下暂无关注项目周报</td></tr>';
       renderWeeklyPager();
       return;
     }
-
     var html = pageItems.map(function (item) {
       var pid = item.projectId;
       var desc = item.overallSituationDesc ? '<div class="pw-desc">' + esc(item.overallSituationDesc) + "</div>" : '<div class="pw-desc muted">—</div>';
@@ -175,7 +145,6 @@
         '<td><div class="pw-actions"><button type="button" class="link-btn" data-open-detail="' + pid + '">查看周报</button><button type="button" class="ghost-btn" data-open-history="' + pid + '">历史记录</button><button type="button" class="link-btn muted" data-unwatch-project="' + pid + '">取消关注</button></div></td>' +
         "</tr>";
     }).join("");
-
     tbody.innerHTML = html;
     renderWeeklyPager();
     bindWeeklyRowEvents();
@@ -185,27 +154,19 @@
     var countText = document.getElementById("pwCountText");
     var pager = document.getElementById("pwPager");
     if (!pager) return;
-
     var total = weeklyItems.length;
     var totalPages = Math.max(1, Math.ceil(total / weeklyPager.pageSize));
     if (weeklyPager.page > totalPages) weeklyPager.page = totalPages;
-
     var start = total === 0 ? 0 : (weeklyPager.page - 1) * weeklyPager.pageSize + 1;
     var end = Math.min(total, weeklyPager.page * weeklyPager.pageSize);
     if (countText) countText.textContent = "显示 " + start + "-" + end + " / 共 " + total + " 个关注项目";
-
-    if (totalPages <= 1) {
-      pager.innerHTML = "";
-      return;
-    }
-
+    if (totalPages <= 1) { pager.innerHTML = ""; return; }
     var html = '<button type="button" class="pw-page-btn" id="pwPrevPage"' + (weeklyPager.page === 1 ? " disabled" : "") + ">‹</button>";
     for (var i = 1; i <= totalPages; i++) {
       html += '<button type="button" class="pw-page-btn' + (weeklyPager.page === i ? " active" : "") + '" data-page="' + i + '">' + i + "</button>";
     }
     html += '<button type="button" class="pw-page-btn" id="pwNextPage"' + (weeklyPager.page === totalPages ? " disabled" : "") + ">›</button>";
     pager.innerHTML = html;
-
     pager.querySelectorAll("[data-page]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         weeklyPager.page = parseInt(btn.getAttribute("data-page"), 10);
@@ -219,19 +180,19 @@
   }
 
   function bindWeeklyRowEvents() {
-    document.querySelectorAll("[data-open-detail]").forEach(function (btn) {
+    document.querySelectorAll("#weeklySection [data-open-detail]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var pid = parseInt(btn.getAttribute("data-open-detail"), 10);
         if (window.FollowDrawer) window.FollowDrawer.openDetail(pid, riskLineHtml);
       });
     });
-    document.querySelectorAll("[data-open-history]").forEach(function (btn) {
+    document.querySelectorAll("#weeklySection [data-open-history]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var pid = parseInt(btn.getAttribute("data-open-history"), 10);
         if (window.FollowDrawer) window.FollowDrawer.openHistory(pid);
       });
     });
-    document.querySelectorAll("[data-unwatch-project]").forEach(function (btn) {
+    document.querySelectorAll("#weeklySection [data-unwatch-project]").forEach(function (btn) {
       btn.addEventListener("click", async function () {
         var pid = parseInt(btn.getAttribute("data-unwatch-project"), 10);
         if (confirm("确认取消关注该项目周报？")) { await unwatchItem("project", pid); }
@@ -239,145 +200,6 @@
     });
   }
 
-  /* ────────── 3. 业务需求逻辑（对齐 CRCBWorkbench 10 列表格与真源展示） ────────── */
-  async function loadDemandData() {
-    var tbody = document.getElementById("followDemandTbody");
-    var empty = document.getElementById("followEmpty");
-    var error = document.getElementById("followError");
-    var summary = document.getElementById("followSummary");
-    var pagEl = document.getElementById("followPagination");
-
-    if (tbody) tbody.innerHTML = '<tr><td colspan="9" class="state-placeholder">正在拉取关注业务需求…</td></tr>';
-    if (empty) empty.hidden = true;
-    if (error) error.hidden = true;
-    if (summary) summary.textContent = "加载中…";
-
-    var params = new URLSearchParams({
-      tab: "demand",
-      scope: demandState.scope || "all",
-      keyword: demandState.keyword || "",
-      page: String(demandState.page || 1),
-      pageSize: String(demandState.pageSize || 20)
-    });
-
-    try {
-      var res = await fetch("/follow/items?" + params.toString());
-      if (!res.ok) throw new Error("fetch demand failed");
-      var json = await res.json();
-      if (!json || !json.success) throw new Error("fetch demand failed");
-
-      var items = Array.isArray(json.items) ? json.items : [];
-      demandState.total = typeof json.total === "number" ? json.total : items.length;
-
-      if (summary) {
-        summary.textContent = "共 " + demandState.total + " 条业务需求 · 聚焦持续跟进的关键业务需求";
-      }
-
-      if (!items.length) {
-        if (tbody) tbody.innerHTML = "";
-        if (empty) empty.hidden = false;
-        if (pagEl) pagEl.hidden = true;
-        updateTabBadges();
-        return;
-      }
-      if (empty) empty.hidden = true;
-
-      var html = items.map(function (item) {
-        var did = item.id;
-        var displayId = "US" + did;
-        var ztUrl = item.url || "";
-        var idCell = ztUrl
-          ? '<a class="table-id-link" href="' + esc(ztUrl) + '" target="_blank" rel="noopener noreferrer" title="在禅道中查看原始详情">' + esc(displayId) + '</a>'
-          : '<span class="table-id-link">' + esc(displayId) + '</span>';
-
-        var titleBtn = '<button type="button" class="table-title-link" data-open-demand="' + esc(did) + '" title="点击查看需求详情">' + esc(item.title || "—") + '</button>';
-
-        var idChip = (window.PersonalList && window.PersonalList.idChipHtml)
-          ? window.PersonalList.idChipHtml("business", idCell)
-          : '<span class="wb-type wb-type-business">业需#' + idCell + '</span>';
-        var priHtml = priorityBadge(item.pri);
-        var titleHtml = '<div style="display:inline-flex;align-items:center;gap:6px;">' + priHtml + titleBtn + '</div>';
-        var stageTag = '<span class="status-tag st-progress">' + esc(stageLabel(item.stage || item.status)) + '</span>';
-
-        var risk = String(item.risk || "-").trim();
-        var riskHtml = (risk === "重点关注" || item.isKey)
-          ? '<span class="status-tag st-warning">重点关注</span>'
-          : '<span style="color:var(--po-t3, #94a3b8)">-</span>';
-
-        var reason = item.reason || (item.isKey ? "重点关注" : "主动关注");
-        var reasonHtml = '<span class="reason-tag">' + esc(reason) + '</span>';
-
-        return (
-          '<tr>' +
-          '<td class="c-id" style="white-space:nowrap">' + idChip + '</td>' +
-          '<td class="c-title">' + titleHtml + '</td>' +
-          '<td>' + stageTag + '</td>' +
-          '<td>' + esc(item.role || "我关注") + '</td>' +
-          '<td>' + esc(item.systemName || "—") + '</td>' +
-          '<td>' + esc(item.supportSystems || "-") + '</td>' +
-          '<td>' + riskHtml + '</td>' +
-          '<td>' + reasonHtml + '</td>' +
-          '<td class="c-action">' +
-          '  <div class="cell-actions" style="display:flex;gap:6px;align-items:center;">' +
-          '    <button type="button" class="action-btn small" data-open-demand="' + esc(did) + '">查看</button>' +
-          '    <button type="button" class="action-btn small ghost" data-unfollow-demand="' + esc(did) + '">取消关注</button>' +
-          '  </div>' +
-          '</td>' +
-          '</tr>'
-        );
-      }).join("");
-
-      if (tbody) tbody.innerHTML = html;
-
-      // 统一分页
-      if (pagEl && window.PersonalList && typeof window.PersonalList.renderPagination === "function") {
-        pagEl.hidden = false;
-        window.PersonalList.renderPagination({
-          container: pagEl,
-          page: demandState.page,
-          pageSize: demandState.pageSize,
-          total: demandState.total,
-          onPageChange: function (p) {
-            demandState.page = p;
-            loadDemandData();
-          },
-          onPageSizeChange: function (ps) {
-            demandState.pageSize = ps;
-            demandState.page = 1;
-            window.PersonalList.savePageSize("po.follow.pageSize", ps);
-            loadDemandData();
-          }
-        });
-      }
-
-      bindDemandEvents();
-      updateTabBadges();
-    } catch (e) {
-      if (tbody) tbody.innerHTML = "";
-      if (summary) summary.textContent = "加载失败，请重试";
-      if (pagEl) pagEl.hidden = true;
-      if (error) error.hidden = false;
-    }
-  }
-
-  function bindDemandEvents() {
-    document.querySelectorAll("#demandSection [data-open-demand]").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var id = btn.getAttribute("data-open-demand");
-        if (window.DemandDetail && typeof window.DemandDetail.open === "function") {
-          window.DemandDetail.open(id);
-        }
-      });
-    });
-    document.querySelectorAll("#demandSection [data-unfollow-demand]").forEach(function (btn) {
-      btn.addEventListener("click", async function () {
-        var id = btn.getAttribute("data-unfollow-demand");
-        if (confirm("确认取消关注该业务需求？")) { await unwatchItem("demand", id); }
-      });
-    });
-  }
-
-  /* ────────── 4. 通用关注操作 ────────── */
   async function unwatchItem(type, id) {
     try {
       var csrf = getCsrfToken();
@@ -390,17 +212,23 @@
       if (res.ok) {
         if (typeof window.showToast === "function") window.showToast("已取消关注");
         if (currentTab === "weekly") loadWeeklyData();
-        else loadDemandData();
+        else if (window.FollowDemand) window.FollowDemand.load();
       }
     } catch (e) {
       if (typeof window.showToast === "function") window.showToast("取消关注失败");
     }
   }
 
+  window.FollowUnwatchDemand = function (id) { return unwatchItem("demand", id); };
+  window.FollowUpdateDemandBadge = function (n) {
+    var dEl = document.getElementById("tabCountDemand");
+    if (dEl) dEl.textContent = String(n || 0);
+  };
+
   function updateTabBadges() {
     var dEl = document.getElementById("tabCountDemand");
     var wEl = document.getElementById("tabCountWeekly");
-    var dCount = demandState.total || 0;
+    var dCount = (window.FollowDemand && window.FollowDemand.getTotal) ? window.FollowDemand.getTotal() : 0;
     var wCount = weeklyStats.watched || weeklyItems.length || 0;
     if (dEl) dEl.textContent = String(dCount);
     if (wEl) wEl.textContent = String(wCount);
@@ -409,22 +237,21 @@
   function setWeeklyFilter(filter) {
     weeklyFilter = filter || "all";
     weeklyPager.page = 1;
-    document.querySelectorAll(".pw-sum-card").forEach(function (c) {
+    document.querySelectorAll("#weeklySection .pw-sum-card").forEach(function (c) {
       c.classList.toggle("active", (c.getAttribute("data-filter") || "all") === weeklyFilter);
     });
-    document.querySelectorAll(".pw-filter-btn").forEach(function (b) {
+    document.querySelectorAll("#weeklySection .pw-filter-btn").forEach(function (b) {
       b.classList.toggle("active", (b.getAttribute("data-filter") || "all") === weeklyFilter);
     });
     loadWeeklyData();
   }
 
-  /* ────────── 5. 初始化 ────────── */
   function init() {
     document.querySelectorAll(".follow-tab").forEach(function (btn) {
       btn.addEventListener("click", function () { switchTab(btn.getAttribute("data-tab")); });
     });
 
-    document.querySelectorAll(".pw-sum-card, .pw-filter-btn").forEach(function (el) {
+    document.querySelectorAll("#weeklySection .pw-sum-card, #weeklySection .pw-filter-btn").forEach(function (el) {
       el.addEventListener("click", function () {
         setWeeklyFilter(el.getAttribute("data-filter"));
       });
@@ -459,37 +286,11 @@
       });
     }
 
-    document.querySelectorAll(".scope-chip").forEach(function (chip) {
-      chip.addEventListener("click", function () {
-        demandState.scope = chip.getAttribute("data-scope");
-        demandState.page = 1;
-        document.querySelectorAll(".scope-chip").forEach(function (c) { c.classList.remove("active"); });
-        chip.classList.add("active");
-        loadDemandData();
-      });
-    });
-
-    var dSearch = document.getElementById("followKeyword");
-    if (dSearch) {
-      var dTimer = null;
-      dSearch.addEventListener("input", function () {
-        clearTimeout(dTimer);
-        dTimer = setTimeout(function () { demandState.keyword = dSearch.value.trim(); demandState.page = 1; loadDemandData(); }, 300);
-      });
+    if (window.FollowDemand) {
+      window.FollowDemand.bind();
+      window.FollowDemand.load();
     }
-
-    var retry = document.getElementById("followRetryBtn");
-    if (retry) retry.addEventListener("click", loadDemandData);
-
     loadWeeklyData();
-    // 默认视图是业务需求；必须主动加载列表，避免表格永久停留在加载占位。
-    loadDemandData();
-    fetch("/follow/items?tab=demand&pageSize=1").then(function (r) { return r.json(); }).then(function (json) {
-      if (json && json.success) {
-        demandState.total = json.total || 0;
-        updateTabBadges();
-      }
-    }).catch(function () {});
   }
 
   if (document.readyState === "loading") {

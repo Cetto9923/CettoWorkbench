@@ -28,8 +28,9 @@ func (s *Service) FollowList(ctx context.Context, actor *model.User, req FollowL
 	}
 	switch req.Tab {
 	case FollowTabDemand:
-		items, total, err := s.repo.FindFollowedDemands(ctx, RepoFindFollowedDemandsReq{
-			Account: actor.Account, Scope: req.Scope, Keyword: req.Keyword, Page: req.Page, PageSize: req.PageSize,
+		items, total, stats, err := s.repo.FindFollowedDemands(ctx, RepoFindFollowedDemandsReq{
+			Account: actor.Account, Scope: req.Scope, Lifecycle: req.Lifecycle,
+			Keyword: req.Keyword, Page: req.Page, PageSize: req.PageSize,
 		})
 		if err != nil {
 			return nil, err
@@ -37,7 +38,7 @@ func (s *Service) FollowList(ctx context.Context, actor *model.User, req FollowL
 		if err := s.attachFollowPrimaryActions(ctx, actor, items); err != nil {
 			return nil, err
 		}
-		return &FollowListResp{Items: items, Total: total, Page: req.Page, PageSize: req.PageSize}, nil
+		return &FollowListResp{Items: items, Total: total, Page: req.Page, PageSize: req.PageSize, Stats: stats}, nil
 	case FollowTabProjectReport:
 		items, total, err := s.repo.FindFollowedProjectReports(ctx, RepoFindFollowedProjectReportsReq{
 			Account: actor.Account, Keyword: req.Keyword, Page: req.Page, PageSize: req.PageSize,

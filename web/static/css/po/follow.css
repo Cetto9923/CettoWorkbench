@@ -365,3 +365,35 @@
   border-color: var(--color-danger-border, #fecaca);
   background: var(--color-danger-bg, #fef2f2);
 }
+
+/* ─── 8. 业务需求关注：高密度列与工具栏增量 ─── */
+#demandSection .pw-toolbar-hint {
+  font-size: 12px; color: var(--color-text-secondary, #64748b); white-space: nowrap;
+}
+#demandSection .fd-export-btn {
+  border-color: var(--color-info-border, #93c5fd);
+  color: var(--color-info-fill, #1d4ed8);
+}
+#demandSection .fd-export-btn:hover {
+  background: var(--color-info-bg, #eff6ff);
+}
+#demandSection .follow-table { min-width: 960px; }
+#demandSection .fd-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+#demandSection .fd-info .wb-priority { align-self: flex-start; }
+#demandSection .fd-info .pw-name {
+  text-align: left; background: none; border: 0; padding: 0; font: inherit;
+}
+#demandSection .fd-keytimes { display: flex; flex-direction: column; gap: 2px; font-size: 11px; }
+#demandSection .fd-kt-k {
+  display: inline-block; min-width: 56px; color: var(--color-text-disabled, #94a3b8); margin-right: 6px;
+}
+#demandSection .fd-kt-v { color: var(--color-text-body, #334155); }
+#demandSection .fd-schedule {
+  font-size: 11px; color: var(--color-text-secondary, #64748b); line-height: 1.45;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+#demandSection .follow-demand-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 8px 12px; border-top: 1px solid var(--color-border, #e2e8f0);
+}
+#demandSection #fdCountText { font-size: 12px; color: var(--color-text-secondary, #64748b); }

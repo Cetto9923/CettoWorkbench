@@ -84,6 +84,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.GET("/notice/items", middleware.RequirePerm(perm.PoNoticeList), h.NoticeItems)
 	g.GET("/follow", middleware.RequirePerm(perm.PoFollowList), h.Follow)
 	g.GET("/follow/items", middleware.RequirePerm(perm.PoFollowList), h.FollowItems)
+	g.GET("/follow/demands/export", middleware.RequirePerm(perm.PoFollowList), h.FollowDemandExport)
 	g.GET("/follow/project-weeklies", middleware.RequirePerm(perm.PoFollowList), h.ProjectWeeklies)
 	g.GET("/follow/project-weeklies/teams", middleware.RequirePerm(perm.PoFollowList), h.ProjectWeeklyTeams)
 	g.GET("/follow/project-weeklies/:id", middleware.RequirePerm(perm.PoFollowList), h.ProjectWeeklyDetail)

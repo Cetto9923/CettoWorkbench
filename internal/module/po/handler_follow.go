@@ -8,6 +8,7 @@
 package po
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -50,13 +51,64 @@ func (h *Handler) FollowItems(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取关注列表失败"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	payload := gin.H{
 		"success":  true,
 		"items":    resp.Items,
 		"total":    resp.Total,
 		"page":     resp.Page,
 		"pageSize": resp.PageSize,
-	})
+	}
+	if resp.Stats != nil {
+		payload["stats"] = resp.Stats
+	}
+	c.JSON(http.StatusOK, payload)
+}
+
+// FollowDemandExport 导出当前筛选条件下的关注业务需求（CSV，最多 100 条）。
+func (h *Handler) FollowDemandExport(c *gin.Context) {
+	actor := middleware.CurrentUser(c)
+	var req FollowListReq
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "参数解析失败"})
+		return
+	}
+	req.Tab = FollowTabDemand
+	req.Page = 1
+	req.PageSize = 100
+	if errs := req.Validate(); len(errs) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"message": "参数校验失败", "errors": errs})
+		return
+	}
+	resp, err := h.svc.FollowList(c.Request.Context(), actor, req)
+	if err != nil {
+		h.logger.Error("po follow demand export", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "导出失败"})
+		return
+	}
+	c.Header("Content-Type", "text/csv; charset=utf-8")
+	c.Header("Content-Disposition", "attachment; filename=follow-demands.csv")
+	_, _ = c.Writer.Write([]byte("\xEF\xBB\xBF"))
+	_, _ = c.Writer.Write([]byte("编号,标题,负责人,研发阶段,进度摘要,开发完成,测试完成,截止,关注原因\n"))
+	for _, it := range resp.Items {
+		line := followCSVEscape(fmt.Sprintf("US%d", it.ID)) + "," +
+			followCSVEscape(it.Title) + "," +
+			followCSVEscape(it.Owner) + "," +
+			followCSVEscape(it.Stage) + "," +
+			followCSVEscape(it.ProgressLabel) + "," +
+			followCSVEscape(it.DevelopFinish) + "," +
+			followCSVEscape(it.TestFinish) + "," +
+			followCSVEscape(it.Deadline) + "," +
+			followCSVEscape(it.Reason) + "\n"
+		_, _ = c.Writer.Write([]byte(line))
+	}
+}
+
+func followCSVEscape(v string) string {
+	s := strings.ReplaceAll(v, "\"", "\"\"")
+	if strings.ContainsAny(s, ",\"\n\r") {
+		return "\"" + s + "\""
+	}
+	return s
 }
 
 // FollowSetDemand 切换对业务需求的关注状态。
