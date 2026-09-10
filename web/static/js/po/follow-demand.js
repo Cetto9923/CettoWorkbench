@@ -2,7 +2,7 @@
  * =============================================================================
  * 文件: web/static/js/po/follow-demand.js
  * 模块: PO 工作台 - 我的关注 · 业务需求
- * 职责: 统计卡、关注维度筛选、高密度列表、导出；样式复用周报区 pw-* 组件
+ * 职责: 统计卡、关注维度筛选、列表行（对象#ID+标题最多两行，复用 PersonalList.idChipHtml）、导出
  * =============================================================================
  */
 (function (root) {
@@ -61,14 +61,12 @@
   }
 
   function keyTimesHtml(item) {
-    var rows = [
-      ["开发完成", item.developFinish],
-      ["测试完成", item.testFinish],
-      ["截止", item.deadline]
-    ];
-    return '<div class="fd-keytimes">' + rows.map(function (r) {
-      return '<div><span class="fd-kt-k">' + esc(r[0]) + '</span><span class="fd-kt-v">' + esc(dash(r[1])) + "</span></div>";
-    }).join("") + "</div>";
+    // 单行列表：只拼有值的关键日期，避免多行撑高
+    var parts = [];
+    if (String(item.developFinish || "").trim()) parts.push("开发 " + String(item.developFinish).trim());
+    if (String(item.testFinish || "").trim()) parts.push("测试 " + String(item.testFinish).trim());
+    if (String(item.deadline || "").trim()) parts.push("截止 " + String(item.deadline).trim());
+    return '<span class="fd-keytimes-inline" title="' + esc(parts.join(" · ")) + '">' + esc(parts.length ? parts.join(" · ") : "—") + "</span>";
   }
 
   function setNumText(id, val) {
@@ -126,18 +124,34 @@
     tbody.innerHTML = items.map(function (item) {
       var did = item.id;
       var displayId = "US" + did;
-      var ztUrl = item.url || "";
+      var ztUrl = String(item.url || "").trim();
       var idLink = ztUrl
-        ? '<a class="pw-code table-id-link" href="' + esc(ztUrl) + '" target="_blank" rel="noopener noreferrer" title="在禅道中查看原始详情">' + esc(displayId) + "</a>"
-        : '<span class="pw-code">' + esc(displayId) + "</span>";
-      var titleBtn = '<button type="button" class="pw-name" data-open-demand="' + esc(did) + '" title="查看需求详情">' + esc(item.title || "—") + "</button>";
-      var owner = '<div class="pw-meta">负责人：' + esc(dash(item.owner)) + "</div>";
-      var reason = item.reason ? '<div class="pw-subtle">' + esc(item.reason) + (item.isKey ? " · 重点关注" : "") + "</div>" : "";
-      var info = '<div class="fd-info">' + priorityBadge(item.priority || item.pri) + idLink + titleBtn + owner + reason + "</div>";
-      var stage = '<span class="status-tag st-progress">' + esc(stageLabel(item.stage || item.status)) + "</span>";
-      var schedule = '<div class="fd-schedule">' + esc(dash(item.scheduleSummary)) + "</div>";
+        ? '<a class="table-id-link" href="' + esc(ztUrl) + '" target="_blank" rel="noopener noreferrer" title="在禅道中查看原始详情">' + esc(displayId) + "</a>"
+        : '<span class="table-id-link">' + esc(displayId) + "</span>";
+      // 与首页价值流同款：PersonalList.idChipHtml（业务需求 + #US…）
+      var idChip = (PL.idChipHtml)
+        ? PL.idChipHtml("business", idLink)
+        : '<span class="wb-type wb-type-business"><span class="wb-type-tag">业务</span><span class="wb-type-id">#' + esc(displayId) + "</span></span>";
+
+      var priTag = priorityBadge(item.priority || item.pri);
+      var titleText = item.title || "—";
+      var titleBtn = '<button type="button" class="table-title-link" data-open-demand="' + esc(did) + '" title="' + esc(titleText) + '">' + esc(titleText) + "</button>";
+      // 最多两行：1) 优先级+标题  2) 可选关注原因（单行截断）
+      var reasonLine = "";
+      if (item.reason || item.isKey) {
+        var reason = String(item.reason || "").trim();
+        if (item.isKey) reason = reason ? (reason + " · 重点关注") : "重点关注";
+        if (reason) {
+          reasonLine = '<div class="fd-title-sub" title="' + esc(reason) + '">' + esc(reason) + "</div>";
+        }
+      }
+      var titleHtml = '<div class="home-title-line fd-title-line">' + priTag + titleBtn + "</div>" + reasonLine;
+
+      var stage = '<span class="stage-tag">' + esc(stageLabel(item.stage || item.status)) + "</span>";
+      var schedule = '<span class="fd-schedule-inline" title="' + esc(dash(item.scheduleSummary)) + '">' + esc(dash(item.scheduleSummary)) + "</span>";
       return "<tr>" +
-        "<td>" + info + "</td>" +
+        '<td class="c-id">' + idChip + "</td>" +
+        '<td class="c-title">' + titleHtml + "</td>" +
         "<td>" + stage + "</td>" +
         "<td>" + progressTag(item) + "</td>" +
         "<td>" + keyTimesHtml(item) + "</td>" +

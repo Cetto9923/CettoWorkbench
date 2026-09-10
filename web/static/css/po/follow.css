@@ -378,7 +378,7 @@
   background: var(--color-info-bg, #eff6ff);
 }
 #demandSection .follow-table { min-width: 960px; }
-#demandSection .fd-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+
 #demandSection .fd-info .wb-priority { align-self: flex-start; }
 #demandSection .fd-info .pw-name {
   text-align: left; background: none; border: 0; padding: 0; font: inherit;
@@ -397,3 +397,45 @@
   gap: 12px; padding: 8px 12px; border-top: 1px solid var(--color-border, #e2e8f0);
 }
 #demandSection #fdCountText { font-size: 12px; color: var(--color-text-secondary, #64748b); }
+
+/* 关注·业务需求：列表行压缩（对齐首页价值流对象#ID + 标题） */
+#demandSection .c-id { white-space: nowrap; vertical-align: middle; }
+#demandSection .c-title { vertical-align: middle; max-width: 0; }
+#demandSection .fd-title-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+#demandSection .fd-title-line .table-title-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+#demandSection .fd-title-line .table-title-link:hover { color: var(--color-primary, #2563eb); text-decoration: underline; }
+#demandSection .fd-title-sub {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--color-text-secondary, #64748b);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#demandSection .fd-keytimes-inline,
+#demandSection .fd-schedule-inline {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--color-text-secondary, #64748b);
+}
