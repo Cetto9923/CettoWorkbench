@@ -64,6 +64,18 @@
         credentials: "include",
         headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" }
       });
+      if (!res.ok && res.status === 422 && weeklyScope === "mine") {
+        var fallbackParams = new URLSearchParams({
+          filter: weeklyFilter || "all",
+          keyword: weeklyKeyword || "",
+          limit: "500",
+          scope: "watched"
+        });
+        res = await fetch("/follow/project-weeklies?" + fallbackParams.toString(), {
+          credentials: "include",
+          headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" }
+        });
+      }
       if (!res.ok) throw new Error("fetch weeklies failed");
       var json = await res.json();
       if (!json || !json.success || !json.data) throw new Error("invalid weeklies payload");

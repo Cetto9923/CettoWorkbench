@@ -268,12 +268,39 @@
         credentials: "include",
         headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" }
       });
+      var isFallback = false;
+      if (!res.ok && res.status === 422 && (state.scope === "open" || !state.scope)) {
+        // 后端尚未重启生效时的向下兼容降级
+        var fallbackParams = new URLSearchParams({
+          tab: "demand",
+          scope: "all",
+          lifecycle: state.lifecycle || "all",
+          keyword: state.keyword || "",
+          page: String(state.page || 1),
+          pageSize: String(state.pageSize || 20)
+        });
+        res = await fetch("/follow/items?" + fallbackParams.toString(), {
+          credentials: "include",
+          headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" }
+        });
+        isFallback = true;
+      }
       if (!res.ok) throw new Error("fetch demand failed");
       var json = await res.json();
       if (!json || !json.success) throw new Error("fetch demand failed");
       var items = Array.isArray(json.items) ? json.items : [];
-      state.total = typeof json.total === "number" ? json.total : items.length;
-      if (json.stats) state.stats = json.stats;
+      if (isFallback && state.scope === "open" && state.lifecycle === "all") {
+        items = items.filter(function (it) {
+          return it.status !== "closed" && !it.isClosed;
+        });
+      }
+      state.total = typeof json.total === "number" ? (isFallback && state.scope === "open" ? items.length : json.total) : items.length;
+      if (json.stats) {
+        state.stats = json.stats;
+        if (typeof state.stats.open !== "number") {
+          state.stats.open = Math.max(0, (state.stats.all || 0) - (state.stats.closed || 0));
+        }
+      }
       updateStatsUI();
       if (summary) summary.textContent = "关注业务需求 · 共 " + state.total + " 条";
       renderRows(items);
