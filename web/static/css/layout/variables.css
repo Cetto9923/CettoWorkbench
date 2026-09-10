@@ -20,6 +20,7 @@ html[data-theme="light"] {
   --color-warning-light: #f5cd2d;
   --color-warning-bg: #fef3c7;
   --color-info-fill: #2563eb;
+  --color-info-fill-hover: #1d4ed8;
 
   /* 页面层级色 */
   --color-page-bg: #f8f9fc;
@@ -257,6 +258,7 @@ html[data-theme="dark"] {
   --color-warning-border: #92400e; /* explicitly mapped */
 
   --color-info-fill: #2563eb; /* darker blue for fill */
+  --color-info-fill-hover: #1d4ed8;
 
   /* 页面层级色 */
   --color-page-bg: #0f172a;
@@ -279,7 +281,7 @@ html[data-theme="dark"] {
   --color-text-placeholder: #475569;
   --color-text-on-accent: #ffffff;
 
-  --color-info: #60a5fa; /* lighter blue for readability */
+  --color-info: #93c5fd; /* readable on dark info backgrounds */
   --color-info-bg: #1e3a8a;
   --color-info-border: #1e40af;
 
