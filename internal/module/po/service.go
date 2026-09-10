@@ -224,19 +224,6 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 	}, nil
 }
 
-// fillKPICounts 通过单次 SQL 聚合填充今日必推/超期/挂起/阻塞，避免 4 次独立大表扫描。
-func (s *Service) fillKPICounts(ctx context.Context, account string, kpi *KPICounts) error {
-	summary, err := s.repo.CountKPISummary(ctx, account)
-	if err != nil {
-		return fmt.Errorf("kpi summary: %w", err)
-	}
-	kpi.Today = summary.Today
-	kpi.Overdue = summary.Overdue
-	kpi.Suspended = summary.Suspended
-	kpi.Blocked = summary.Blocked
-	return nil
-}
-
 // Demands 按价值流状态返回当前用户关联的需求/故事详情。
 func (s *Service) Demands(ctx context.Context, actor *model.User, req DemandsReq) (*DemandsResp, error) {
 	if req.Page <= 0 {

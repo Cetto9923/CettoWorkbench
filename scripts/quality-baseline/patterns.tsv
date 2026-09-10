@@ -16,7 +16,6 @@ advisory	DIRECT_PAGE_FETCH	web/static/js/po/workboard.js	cfe725e2d365b0cf1bbb32e
 advisory	DIRECT_PAGE_FETCH	web/static/js/po/workboard.js	d6501e8759a70fc1bd803f6fe7bd425b4c3730ec
 advisory	DIRECT_PAGE_FETCH	web/static/js/user/batchcreate.js	11e4f4704c4dc8555b986a8565c2317feae672de
 advisory	IN_MEMORY_PAGINATION	internal/module/po/reponotice.go	2588a424b1333e879c384272a8f752699cced9b4
-advisory	IN_MEMORY_PAGINATION	internal/module/po/servicetodo.go	b704b21f7ead1926da03e5c5f0a1782ce85ec87a
 advisory	INIT_FUNCTION	internal/pkg/logger/logger.go	a01f6877859800025d6eebf9738b404cd0c5470a
 advisory	INIT_FUNCTION	internal/pkg/sqllog/sqllog.go	caebcfaa8d94aabae6c1170edbb0b33e49a4d91d
 advisory	LOCAL_ESCAPE_HTML	web/static/js/po/done.js	56389e08f1df6a53ab84608c9262ab3b5b3c0816

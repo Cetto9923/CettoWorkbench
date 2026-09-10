@@ -2,8 +2,8 @@
 // 文件: internal/module/po/repotodo.go
 // 模块: PO 工作台
 // 类型: action
-// 职责: 我的待办聚合查询（V10.1 02 节 7 维 AND）。本期打通业务需求 + 任务 + Bug；
-//       研发需求/测试单/审批作为扩展点预留。
+// 职责: 待办共用辅助（CountOpenTodos、关系/截止日/优先级标签、账号展示名映射）。
+//       列表真源已迁至 QueryTodoUnified / todo_query_*.go。
 // 依赖: 无
 // =============================================================================
 
@@ -13,29 +13,7 @@ import (
 	"context"
 	"strings"
 	"time"
-
-	"gorm.io/gorm"
 )
-
-// FindTodoItems 查询我的待办列表（V10.1 02 节 7 维 AND 公式）。
-// 数据真源:
-//   - 业务需求 zt_demand (个人责任 scope: assignedTo/distributedBy/QD/RD/accepter/澄清 PM)
-//   - 任务 zt_task (assignedTo=account)
-//   - Bug zt_bug (assignedTo=account)
-//
-// 排序: 优先级 P1>P2>P3, deadline ASC NULLS LAST (zentao 用 '0000-00-00' 表示无 deadline,
-//
-//	用 '9999-12-31' 占位确保排最后), id DESC。
-func (r *Repo) FindTodoItems(ctx context.Context, account string, req TodoListReq) ([]TodoItem, int64, error) {
-	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
-		return nil, 0, nil
-	}
-	res, err := r.QueryTodoUnified(ctx, account, req)
-	if err != nil {
-		return nil, 0, err
-	}
-	return res.Items, res.Total, nil
-}
 
 // CountOpenTodos 仅返回当前账号待办总数（不取 items）。
 // 与 FindTodoItems 在空 req 下的总数等价，但避免 N 行 SQL 回传。
@@ -86,66 +64,6 @@ func formatTodoDeadline(deadline *time.Time) string {
 	return deadline.Format("2006-01-02")
 }
 
-// applyDemandStageFilter 把 V10.1 价值流 9 阶段映射到 zt_demand.status SQL。
-func applyDemandStageFilter(q *gorm.DB, stage string) *gorm.DB {
-	switch stage {
-	case "accept":
-		return q.Where("status IN ?", []string{"draft", "wait", "refuse"})
-	case "clarify":
-		return q.Where("status = ? AND NOT EXISTS (SELECT 1 FROM zt_demandclarify dc WHERE dc.demand = zt_demand.id)", "active")
-	case "schedule":
-		return q.Where(`status = 'clarified' AND (
-			developFinish IS NULL OR developFinish = '0000-00-00'
-			OR testFinish IS NULL OR testFinish = '0000-00-00'
-			OR verifyFinish IS NULL OR verifyFinish = '0000-00-00'
-			OR estimateLaunch IS NULL OR estimateLaunch = '0000-00-00'
-			OR QD = '' OR mainDevelopers = ''
-		)`)
-	case "developing":
-		return q.Where("status = ?", "developing")
-	case "testing":
-		return q.Where("status = ?", "testing")
-	case "waitacceptance":
-		return q.Where(`(
-			(status = 'testing')
-			OR (status = 'waitacceptance')
-		)`)
-	case "acceptanced":
-		return q.Where("status = ?", "acceptanced")
-	case "publish":
-		return q.Where(`(status = 'waitdeliver' OR (status = 'released' AND NOT EXISTS (
-			SELECT 1 FROM zt_demandappraise
-			WHERE demand = zt_demand.id
-				AND appraiseBy <> '' AND appraiseBy IS NOT NULL
-				AND appraiseTime IS NOT NULL
-		)))`)
-	case "released":
-		return q.Where("status = ? AND overall = '0' AND parent != '-1'", "released")
-	}
-	return q
-}
-
-// applyTodoActionFilter 把 V10.1 办理场景映射到 zt_demand SQL。
-func applyTodoActionFilter(q *gorm.DB, action TodoAction) *gorm.DB {
-	switch action {
-	case TodoActionReview:
-		return q.Where("status IN ?", []string{"draft", "wait", "active", "refuse"})
-	case TodoActionSchedule:
-		return q.Where(`status = 'clarified' AND (
-			developFinish IS NULL OR developFinish = '0000-00-00'
-			OR testFinish IS NULL OR testFinish = '0000-00-00'
-			OR verifyFinish IS NULL OR verifyFinish = '0000-00-00'
-			OR estimateLaunch IS NULL OR estimateLaunch = '0000-00-00'
-			OR QD = '' OR mainDevelopers = ''
-		)`)
-	case TodoActionVerify:
-		return q.Where("status IN ?", []string{"testing", "waitacceptance"})
-	case TodoActionDeliver:
-		return q.Where("status = ?", "acceptanced")
-	}
-	return q
-}
-
 // loadAccountDisplayMap 加载 account → 展示名映射（zhentao 兼容）。
 func (r *Repo) loadAccountDisplayMap(ctx context.Context) (map[string]string, error) {
 	type row struct {
@@ -171,4 +89,20 @@ func (r *Repo) loadAccountDisplayMap(ctx context.Context) (map[string]string, er
 		}
 	}
 	return out, nil
+}
+
+// issueRiskPriLabel 把 zt_issue/zt_risk.pri（char(30)，混存数字串与 low/middle/high/urgent）映射为 P1..P4。
+// zentao 优先级语义: 1/urgent 最高 → P1，4/low 最低 → P4；无法识别返回空。
+func issueRiskPriLabel(pri string) string {
+	switch strings.ToLower(strings.TrimSpace(pri)) {
+	case "1", "urgent", "immediate":
+		return "P1"
+	case "2", "high":
+		return "P2"
+	case "3", "middle", "medium":
+		return "P3"
+	case "4", "low":
+		return "P4"
+	}
+	return ""
 }

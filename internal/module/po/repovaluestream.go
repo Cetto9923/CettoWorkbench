@@ -201,11 +201,6 @@ func filterReady(account string, filter mysqlStageFilter) bool {
 	return len(filter.statuses) > 0
 }
 
-// CountRoleDemands 按阶段过滤条件统计业需数量。
-func (r *Repo) CountRoleDemands(ctx context.Context, account string, filter mysqlStageFilter) (int64, error) {
-	return r.CountRoleDemandsWithFilters(ctx, account, filter, DemandsReq{})
-}
-
 // FindRoleDemandIDs 按阶段过滤条件只查业需 ID（供「全部」去重计数，避免拉全字段）。
 func (r *Repo) FindRoleDemandIDs(ctx context.Context, account string, filter mysqlStageFilter) ([]int, error) {
 	return r.FindRoleDemandIDsWithFilters(ctx, account, filter, DemandsReq{})
@@ -248,95 +243,14 @@ func (r *Repo) FindAllStageRefsPaged(ctx context.Context, account string, req De
 	return refs, int(total), nil
 }
 
-// FindRoleDemands 按阶段过滤条件查询业需列表（只取账号字段，不 JOIN zt_user）。
-func (r *Repo) FindRoleDemands(ctx context.Context, account string, filter mysqlStageFilter) ([]DemandRow, error) {
-	if r == nil || r.db == nil || !filterReady(account, filter) {
-		return nil, nil
-	}
-	var rows []DemandRow
-	err := r.roleDemandScope(ctx, account, filter).
-		Select(`zt_demand.id, zt_demand.name, zt_demand.pri, zt_demand.status, zt_demand.hang,
-			zt_demand.assignedTo, zt_demand.QD, zt_demand.RD, zt_demand.BRA,
-			clarify_pm.PM AS pm`).
-		Joins(`LEFT JOIN (
-			SELECT demand, GROUP_CONCAT(PM) AS PM
-			FROM zt_demandclarify
-			WHERE PM IS NOT NULL AND PM <> ''
-			GROUP BY demand
-		) AS clarify_pm ON clarify_pm.demand = zt_demand.id`).
-		Order("zt_demand.id DESC").
-		Find(&rows).Error
-	if err != nil {
-		return nil, err
-	}
-	return rows, nil
-}
-
-// FindRoleDemandsPaged 按阶段过滤条件分页查询业需列表（只取账号字段，不 JOIN zt_user）。
-func (r *Repo) FindRoleDemandsPaged(ctx context.Context, account string, filter mysqlStageFilter, offset, limit int) ([]DemandRow, error) {
-	return r.FindRoleDemandsPagedWithFilters(ctx, account, filter, DemandsReq{}, offset, limit)
-}
-
-// CountScheduleStories 统计排期阶段独立研发需求数量。
-func (r *Repo) CountScheduleStories(ctx context.Context, account string) (int64, error) {
-	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
-		return 0, nil
-	}
-	var total int64
-	err := r.scheduleStoryScope(ctx, account).Count(&total).Error
-	return total, err
-}
-
 // FindScheduleStoryIDs 查询排期阶段独立研发需求 ID。
 func (r *Repo) FindScheduleStoryIDs(ctx context.Context, account string) ([]int, error) {
 	return r.FindScheduleStoryIDsWithFilters(ctx, account, DemandsReq{})
 }
 
-// FindScheduleStories 查询排期阶段独立研发需求列表。
-func (r *Repo) FindScheduleStories(ctx context.Context, account string) ([]StoryRow, error) {
-	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
-		return nil, nil
-	}
-	var rows []StoryRow
-	err := r.scheduleStoryScope(ctx, account).
-		Select("id", "title", "pri", "status").
-		Order("id DESC").
-		Find(&rows).Error
-	if err != nil {
-		return nil, err
-	}
-	return rows, nil
-}
-
-// CountDeliverStories 统计交付阶段独立研发需求数量。
-func (r *Repo) CountDeliverStories(ctx context.Context, account string) (int64, error) {
-	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
-		return 0, nil
-	}
-	var total int64
-	err := r.deliverStoryScope(ctx, account).Count(&total).Error
-	return total, err
-}
-
 // FindDeliverStoryIDs 查询交付阶段独立研发需求 ID。
 func (r *Repo) FindDeliverStoryIDs(ctx context.Context, account string) ([]int, error) {
 	return r.FindDeliverStoryIDsWithFilters(ctx, account, DemandsReq{})
-}
-
-// FindDeliverStories 查询交付阶段独立研发需求列表。
-func (r *Repo) FindDeliverStories(ctx context.Context, account string) ([]StoryRow, error) {
-	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
-		return nil, nil
-	}
-	var rows []StoryRow
-	err := r.deliverStoryScope(ctx, account).
-		Select("id", "title", "pri", "status").
-		Order("id DESC").
-		Find(&rows).Error
-	if err != nil {
-		return nil, err
-	}
-	return rows, nil
 }
 
 // FindRoleDemandsByIDs 按 ID 列表批量查询业需详情。
@@ -378,6 +292,3 @@ func (r *Repo) FindStoriesByIDs(ctx context.Context, ids []int) ([]StoryRow, err
 	}
 	return rows, nil
 }
-
-// CountKPIToday 统计今日必推：今日到期 OR 已逾期 且未完成（业务需求）。
-// V10.1 01 节：今日到期 OR 已逾期 且未完成。actor role scope 与 value stream 一致。

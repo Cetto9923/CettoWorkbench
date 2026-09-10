@@ -5,19 +5,6 @@ import (
 	"workbench/internal/model"
 )
 
-// countAllStageUniq 各阶段只查 ID，按 kind+id 去重后返回业需/研需数量（与 listAllStageDemands 并集语义一致）。
-func (s *Service) countAllStageUniq(ctx context.Context, account string) (demandSum, storySum int64, err error) {
-	breakdown, err := s.countAllStageBreakdown(ctx, account)
-	if err != nil {
-		return 0, 0, err
-	}
-	for _, stage := range breakdown {
-		demandSum += stage.DemandCount
-		storySum += stage.StoryCount
-	}
-	return demandSum, storySum, nil
-}
-
 // countAllStageBreakdown assigns each demand/story to its first matching stage.
 // This keeps the stage cards and the deduplicated "all" card on one partition.
 func (s *Service) countAllStageBreakdown(ctx context.Context, account string) ([]ValueStreamStage, error) {
