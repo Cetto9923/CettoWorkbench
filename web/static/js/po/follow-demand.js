@@ -2,20 +2,20 @@
  * =============================================================================
  * 文件: web/static/js/po/follow-demand.js
  * 模块: PO 工作台 - 我的关注 · 业务需求
- * 职责: 统计卡、关注维度筛选、单行列表（对象#ID + 星标关注/取关 + 标题，复用 PersonalList.idChipHtml）、导出
+ * 职责: 统计卡、关注维度筛选（默认全部未关闭）、单行列表（对象#ID + 星标关注/取关 + 标题）、导出
  * =============================================================================
  */
 (function (root) {
   "use strict";
 
   var state = {
-    scope: "all",
+    scope: "open",
     lifecycle: "all",
     keyword: "",
     page: 1,
     pageSize: 20,
     total: 0,
-    stats: { all: 0, clarifying: 0, implementing: 0, released: 0, closed: 0, key: 0, keyOpen: 0, openClean: 0 }
+    stats: { open: 0, all: 0, clarifying: 0, implementing: 0, released: 0, closed: 0 }
   };
 
   var esc = (root.PersonalList && root.PersonalList.escapeHtml) || function (s) {
@@ -61,7 +61,6 @@
   }
 
   function keyTimesHtml(item) {
-    // 单行列表：只拼有值的关键日期，避免多行撑高
     var parts = [];
     if (String(item.developFinish || "").trim()) parts.push("开发 " + String(item.developFinish).trim());
     if (String(item.testFinish || "").trim()) parts.push("测试 " + String(item.testFinish).trim());
@@ -88,20 +87,37 @@
     setNumText("fdStatReleased", s.released || 0);
     setNumText("fdStatClosed", s.closed || 0);
     var setBtn = function (id, val) { var el = document.getElementById(id); if (el) el.textContent = String(val); };
-    setBtn("fdBtnAll", s.all || 0);
-    setBtn("fdBtnKey", s.key || 0);
-    setBtn("fdBtnKeyOpen", s.keyOpen || 0);
+    var openCount = (typeof s.open === "number") ? s.open : Math.max(0, (s.all || 0) - (s.closed || 0));
+    setBtn("fdBtnOpen", openCount);
+    setBtn("fdBtnClarifying", s.clarifying || 0);
+    setBtn("fdBtnImplementing", s.implementing || 0);
+    setBtn("fdBtnReleased", s.released || 0);
     setBtn("fdBtnClosed", s.closed || 0);
-    setBtn("fdBtnOpenClean", s.openClean || 0);
   }
 
   function syncFilterActive() {
     document.querySelectorAll("#fdSummary .pw-sum-card").forEach(function (c) {
-      var lc = c.getAttribute("data-lifecycle") || "all";
-      c.classList.toggle("active", state.lifecycle !== "all" && lc === state.lifecycle);
+      var lc = c.getAttribute("data-lifecycle");
+      var active = false;
+      if (state.scope === "closed") {
+        active = (lc === "closed");
+      } else if (state.lifecycle !== "all") {
+        active = (lc === state.lifecycle);
+      }
+      c.classList.toggle("active", active);
     });
     document.querySelectorAll("#fdToolbar .pw-filter-btn").forEach(function (b) {
-      b.classList.toggle("active", (b.getAttribute("data-scope") || "all") === state.scope);
+      var sc = b.getAttribute("data-scope");
+      var lc = b.getAttribute("data-lifecycle");
+      var active = false;
+      if (sc === "closed") {
+        active = (state.scope === "closed");
+      } else if (sc === "open") {
+        active = (state.scope === "open" && state.lifecycle === "all");
+      } else if (lc) {
+        active = (state.scope !== "closed" && state.lifecycle === lc);
+      }
+      b.classList.toggle("active", active);
     });
   }
 
@@ -128,7 +144,6 @@
       var idLink = ztUrl
         ? '<a class="table-id-link" href="' + esc(ztUrl) + '" target="_blank" rel="noopener noreferrer" title="在禅道中查看原始详情">' + esc(displayId) + "</a>"
         : '<span class="table-id-link">' + esc(displayId) + "</span>";
-      // 与首页价值流同款：PersonalList.idChipHtml（业务需求 + #US…）
       var idChip = (PL.idChipHtml)
         ? PL.idChipHtml("business", idLink)
         : '<span class="wb-type wb-type-business"><span class="wb-type-tag">业务</span><span class="wb-type-id">#' + esc(displayId) + "</span></span>";
@@ -140,11 +155,9 @@
       if (item.reason) tipParts.push(String(item.reason));
       if (item.isKey) tipParts.push("重点关注");
       var tip = tipParts.length ? tipParts.join(" · ") : titleText;
-      // 禅道同款五角星：本页默认已关注（实心），点击切换关注/取关
       var starBtn = '<button type="button" class="fd-watch-toggle is-watched" data-watch-demand="' + esc(did) + '" data-watched="1" title="取消关注" aria-label="取消关注" aria-pressed="true">' +
         '<i class="fas fa-star" aria-hidden="true"></i></button>';
       var titleBtn = '<button type="button" class="table-title-link" data-open-demand="' + esc(did) + '" title="' + esc(tip) + '">' + esc(titleText) + "</button>";
-      // 单行：星 + 优先级 + 标题
       var titleHtml = '<div class="home-title-line fd-title-line">' + starBtn + priTag + titleBtn + "</div>";
 
       var stage = '<span class="stage-tag">' + esc(stageLabel(item.stage || item.status)) + "</span>";
@@ -224,7 +237,6 @@
         btn.disabled = false;
         if (!ok) return;
         setStarUI(btn, next);
-        // 取关后从本页列表移除并刷新统计；再关注仅改星标（本页默认全是已关注）
         if (!next) {
           load();
         }
@@ -245,7 +257,7 @@
 
     var params = new URLSearchParams({
       tab: "demand",
-      scope: state.scope || "all",
+      scope: state.scope || "open",
       lifecycle: state.lifecycle || "all",
       keyword: state.keyword || "",
       page: String(state.page || 1),
@@ -263,10 +275,11 @@
       state.total = typeof json.total === "number" ? json.total : items.length;
       if (json.stats) state.stats = json.stats;
       updateStatsUI();
-      if (summary) summary.textContent = "关注业务需求 · 共 " + (state.stats.all || state.total) + " 条";
+      if (summary) summary.textContent = "关注业务需求 · 共 " + state.total + " 条";
       renderRows(items);
       if (typeof root.FollowUpdateDemandBadge === "function") {
-        root.FollowUpdateDemandBadge(state.stats.all || state.total);
+        var badgeNum = (typeof state.stats.open === "number") ? state.stats.open : state.total;
+        root.FollowUpdateDemandBadge(badgeNum);
       }
     } catch (e) {
       if (tbody) tbody.innerHTML = "";
@@ -276,22 +289,30 @@
   }
 
   function setScope(scope) {
-    state.scope = scope || "all";
+    state.scope = scope || "open";
+    if (state.scope === "closed") {
+      state.lifecycle = "all";
+    }
     state.page = 1;
     load();
   }
 
   function setLifecycle(lifecycle) {
     var next = lifecycle || "all";
-    // 再次点击同一生命周期卡 → 回到全部
-    if (state.lifecycle === next) next = "all";
-    state.lifecycle = next;
+    if (next === "closed") {
+      state.scope = "closed";
+      state.lifecycle = "all";
+    } else {
+      state.scope = "open";
+      if (state.lifecycle === next) next = "all";
+      state.lifecycle = next;
+    }
     state.page = 1;
     load();
   }
 
   function reset() {
-    state.scope = "all";
+    state.scope = "open";
     state.lifecycle = "all";
     state.keyword = "";
     state.page = 1;
@@ -303,7 +324,7 @@
   function exportCsv() {
     var params = new URLSearchParams({
       tab: "demand",
-      scope: state.scope || "all",
+      scope: state.scope || "open",
       lifecycle: state.lifecycle || "all",
       keyword: state.keyword || ""
     });
@@ -318,7 +339,13 @@
     });
     document.querySelectorAll("#fdToolbar .pw-filter-btn").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        setScope(btn.getAttribute("data-scope") || "all");
+        var sc = btn.getAttribute("data-scope");
+        var lc = btn.getAttribute("data-lifecycle");
+        if (sc) {
+          setScope(sc);
+        } else if (lc) {
+          setLifecycle(lc);
+        }
       });
     });
     var search = document.getElementById("followKeyword");
@@ -344,7 +371,9 @@
   root.FollowDemand = {
     bind: bind,
     load: load,
-    getTotal: function () { return state.stats.all || state.total || 0; },
+    getTotal: function () {
+      return (typeof state.stats.open === "number") ? state.stats.open : state.total || 0;
+    },
     reset: reset
   };
 })(window);

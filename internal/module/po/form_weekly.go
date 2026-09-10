@@ -40,10 +40,10 @@ func (r *ProjectWeeklyListReq) Validate() []FieldError {
 	}
 	r.Scope = strings.TrimSpace(strings.ToLower(r.Scope))
 	if r.Scope == "" {
-		r.Scope = "watched"
+		r.Scope = "mine"
 	}
 	switch r.Scope {
-	case "watched", "all":
+	case "mine", "participated", "watched", "all":
 	default:
 		return []FieldError{{Field: "scope", Message: "不支持的范围"}}
 	}
@@ -130,6 +130,9 @@ type ProjectWeeklyListItem struct {
 	Staff                 int     `json:"staff"`
 	WorkloadHours         float64 `json:"workloadHours"`
 	HasAbnormal           bool    `json:"hasAbnormal"`
+	Source                string  `json:"source"` // participated|watched|both
+	IsParticipated        bool    `json:"isParticipated"`
+	IsWatched             bool    `json:"isWatched"`
 	URL                   string  `json:"url"`
 }
 
@@ -170,17 +173,17 @@ type ProjectWeeklyHistoryItem struct {
 
 // ProjectWeeklyItemReq 详情/历史查询（scope 与列表一致）。
 type ProjectWeeklyItemReq struct {
-	Scope string `form:"scope"` // watched|all
+	Scope string `form:"scope"` // mine|participated|watched|all
 }
 
 // Validate 规范化 scope。
 func (r *ProjectWeeklyItemReq) Validate() []FieldError {
 	r.Scope = strings.TrimSpace(strings.ToLower(r.Scope))
 	if r.Scope == "" {
-		r.Scope = "watched"
+		r.Scope = "mine"
 	}
 	switch r.Scope {
-	case "watched", "all":
+	case "mine", "participated", "watched", "all":
 		return nil
 	default:
 		return []FieldError{{Field: "scope", Message: "不支持的范围"}}

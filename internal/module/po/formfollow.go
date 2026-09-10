@@ -26,11 +26,12 @@ const (
 type FollowScope string
 
 const (
-	FollowScopeAll       FollowScope = "all"
-	FollowScopeKey       FollowScope = "key"        // 重点关注
-	FollowScopeKeyOpen   FollowScope = "key_open"   // 未关闭 + 重点关注
+	FollowScopeOpen      FollowScope = "open"       // 全部未关闭（默认）
+	FollowScopeAll       FollowScope = "all"        // 全量（含关闭）
+	FollowScopeKey       FollowScope = "key"        // 重点关注（保留兼容）
+	FollowScopeKeyOpen   FollowScope = "key_open"   // 未关闭 + 重点关注（保留兼容）
 	FollowScopeClosed    FollowScope = "closed"     // 已关闭（仅 closed）
-	FollowScopeOpenClean FollowScope = "open_clean" // 未关闭 · 正常推进
+	FollowScopeOpenClean FollowScope = "open_clean" // 未关闭 · 正常推进（保留兼容）
 )
 
 // FollowLifecycle 业务需求生命周期桶（统计卡口径）。
@@ -67,10 +68,10 @@ func (r *FollowListReq) Validate() []FieldError {
 	}
 	r.Scope = FollowScope(strings.TrimSpace(string(r.Scope)))
 	if r.Scope == "" {
-		r.Scope = FollowScopeAll
+		r.Scope = FollowScopeOpen
 	}
 	switch r.Scope {
-	case FollowScopeAll, FollowScopeKey, FollowScopeKeyOpen, FollowScopeClosed, FollowScopeOpenClean:
+	case FollowScopeOpen, FollowScopeAll, FollowScopeKey, FollowScopeKeyOpen, FollowScopeClosed, FollowScopeOpenClean:
 	default:
 		return []FieldError{{Field: "scope", Message: "无效的二级筛选"}}
 	}
@@ -123,6 +124,7 @@ type FollowItem struct {
 
 // FollowDemandStats 业务需求关注统计（统计卡 + 工具栏计数同源）。
 type FollowDemandStats struct {
+	Open         int64 `json:"open"`
 	All          int64 `json:"all"`
 	Clarifying   int64 `json:"clarifying"`
 	Implementing int64 `json:"implementing"`

@@ -64,7 +64,7 @@ func (s *Service) ProjectWeeklies(ctx context.Context, actor *model.User, req Pr
 	if req.Scope == "all" {
 		projects, err = s.repo.FindAllProjectWeeklyProjects(ctx, teamIDs, req.Limit)
 	} else {
-		projects, err = s.repo.FindWatchedProjectWeeklyProjects(ctx, strings.TrimSpace(actor.Account), teamIDs, req.Limit)
+		projects, err = s.repo.FindMineProjectWeeklyProjects(ctx, strings.TrimSpace(actor.Account), req.Scope, teamIDs, req.Limit)
 	}
 	if err != nil {
 		return resp, err
@@ -156,7 +156,7 @@ func (s *Service) ProjectWeeklyDetail(ctx context.Context, actor *model.User, pr
 		return out, fmt.Errorf("project weekly not found")
 	}
 	if scope == "" {
-		scope = "watched"
+		scope = "mine"
 	}
 	list, err := s.ProjectWeeklies(ctx, actor, ProjectWeeklyListReq{Filter: "all", Limit: 500, Scope: scope})
 	if err != nil {
@@ -208,7 +208,7 @@ func (s *Service) ProjectWeeklyHistory(ctx context.Context, actor *model.User, p
 		return nil, fmt.Errorf("project weekly not found")
 	}
 	if scope == "" {
-		scope = "watched"
+		scope = "mine"
 	}
 	var proj *projectWeeklyProjectRow
 	var err error
@@ -341,6 +341,9 @@ func (s *Service) buildProjectWeeklyItem(
 		ReleaseRiskLabel:      releaseRiskLabel(releaseRisk),
 		Staff:                 staffVal,
 		WorkloadHours:         workload,
+		Source:                p.Source,
+		IsParticipated:        p.Source == "participated" || p.Source == "both",
+		IsWatched:             p.Source == "watched" || p.Source == "both",
 		URL:                   zentaoURL,
 	}
 	item.HasAbnormal = projectWeeklyAbnormal(item)

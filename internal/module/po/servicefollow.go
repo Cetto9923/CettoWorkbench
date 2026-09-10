@@ -43,10 +43,7 @@ func (s *Service) FollowList(ctx context.Context, actor *model.User, req FollowL
 		items, total, err := s.repo.FindFollowedProjectReports(ctx, RepoFindFollowedProjectReportsReq{
 			Account: actor.Account, Keyword: req.Keyword, Page: req.Page, PageSize: req.PageSize,
 		})
-		if err != nil {
-			return nil, err
-		}
-		return &FollowListResp{Items: items, Total: total, Page: req.Page, PageSize: req.PageSize}, nil
+		return &FollowListResp{Items: items, Total: total, Page: req.Page, PageSize: req.PageSize}, err
 	}
 	return &FollowListResp{Items: []FollowItem{}, Page: req.Page, PageSize: req.PageSize}, nil
 }
@@ -78,6 +75,10 @@ func (s *Service) attachFollowPrimaryActions(ctx context.Context, actor *model.U
 // FollowSetDemand 切换对业务需求的关注。
 // 写入走禅道原生 ajaxFollowObject / ajaxUnfollowObject（common::followObject），
 // 不在工作台另写一套关注语义；取消关注后补写 followed=0，以压制历史 mailto 抄送关注。
+// 下期自动关注规划（按设计最小集落地，本期仅定义入口不写库）：
+// 1. 我创建 / 我是 BRA·QD·RD / 我受理时自动 ajaxFollowObject；
+// 2. 我完成评审（通过或驳回）自动 ajaxFollowObject；
+// 3. 我发起催办或提测时自动 ajaxFollowObject；失败均不影响主流程。
 func (s *Service) FollowSetDemand(ctx context.Context, actor *model.User, req FollowSetReq) error {
 	if actor == nil || strings.TrimSpace(actor.Account) == "" || req.Followed == nil || req.ID <= 0 {
 		return nil
@@ -485,12 +486,7 @@ func buildStoryWorkItem(row StoryRow, label string, actor *model.User, displayMa
 }
 
 func isValidValueStreamStatus(status string) bool {
-	for _, def := range valueStreamStages {
-		if def.status == status {
-			return true
-		}
-	}
-	return false
+	return valueStreamLabelForStatus(status) != ""
 }
 
 func valueStreamLabelForStatus(status string) string {

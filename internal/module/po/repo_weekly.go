@@ -27,6 +27,8 @@ type projectWeeklyProjectRow struct {
 	Begin      string `gorm:"column:begin"`
 	Status     string `gorm:"column:status"`
 	Model      string `gorm:"column:model"`
+	Source     string `gorm:"column:source"`
+	SortGroup  int    `gorm:"column:sort_group"`
 }
 
 type projectWeeklyTeamRow struct {
@@ -88,24 +90,73 @@ func projectWeeklyTeamFilterSQL(teamIDs []uint, args *[]any) string {
   )`
 }
 
-// FindWatchedProjectWeeklyProjects 关注且存在 zt_projectweekly 的项目。
-func (r *Repo) FindWatchedProjectWeeklyProjects(ctx context.Context, account string, teamIDs []uint, limit int) ([]projectWeeklyProjectRow, error) {
+const projectWeeklyProjectSelectWithSource = `
+SELECT DISTINCT p.id AS id,
+       COALESCE(p.code, '') AS code,
+       COALESCE(p.name, '') AS name,
+       COALESCE(p.PM, '') AS pm,
+       COALESCE(u.realname, p.PM, '') AS pm_name,
+       COALESCE(u.dept, 0) AS pm_dept_id,
+       COALESCE(d.name, '') AS pm_dept_name,
+       COALESCE(DATE_FORMAT(p.begin, '%Y-%m-%d'), '') AS begin,
+       COALESCE(p.status, '') AS status,
+       COALESCE(p.model, '') AS model,
+       CASE
+         WHEN (p.PM = me.account OR EXISTS (SELECT 1 FROM zt_team AS tm WHERE tm.root = p.id AND tm.type = 'project' AND tm.account = me.account))
+              AND p.follow LIKE CONCAT('%,', me.id, ',%') THEN 'both'
+         WHEN (p.PM = me.account OR EXISTS (SELECT 1 FROM zt_team AS tm WHERE tm.root = p.id AND tm.type = 'project' AND tm.account = me.account)) THEN 'participated'
+         ELSE 'watched'
+       END AS source,
+       CASE
+         WHEN (p.PM = me.account OR EXISTS (SELECT 1 FROM zt_team AS tm WHERE tm.root = p.id AND tm.type = 'project' AND tm.account = me.account)) THEN 0
+         ELSE 1
+       END AS sort_group
+FROM zt_project AS p
+INNER JOIN zt_user AS me ON me.account = ? AND me.deleted = '0'
+LEFT JOIN zt_user AS u ON u.account = p.PM AND u.deleted = '0'
+LEFT JOIN zt_dept AS d ON d.id = u.dept
+`
+
+// FindMineProjectWeeklyProjects 查询参与（PM或团队成员）或关注的项目。
+// 参与定义：zt_project.PM = me.account OR zt_team(root=p.id AND type='project' AND account=me.account)
+// 关注定义：p.follow LIKE '%,{me.id},%'
+// 排序：参与优先（sort_group=0），仅关注在后（sort_group=1），同组内 p.id DESC
+func (r *Repo) FindMineProjectWeeklyProjects(ctx context.Context, account string, scope string, teamIDs []uint, limit int) ([]projectWeeklyProjectRow, error) {
 	if limit <= 0 {
 		limit = 200
 	}
 	args := []any{account}
 	teamSQL := projectWeeklyTeamFilterSQL(teamIDs, &args)
 	args = append(args, limit)
+
+	whereScope := `(
+    p.PM = me.account
+    OR EXISTS (SELECT 1 FROM zt_team AS tm WHERE tm.root = p.id AND tm.type = 'project' AND tm.account = me.account)
+    OR p.follow LIKE CONCAT('%,', me.id, ',%')
+  )`
+	if scope == "participated" {
+		whereScope = `(
+    p.PM = me.account
+    OR EXISTS (SELECT 1 FROM zt_team AS tm WHERE tm.root = p.id AND tm.type = 'project' AND tm.account = me.account)
+  )`
+	} else if scope == "watched" {
+		whereScope = `p.follow LIKE CONCAT('%,', me.id, ',%')`
+	}
+
 	var rows []projectWeeklyProjectRow
-	err := r.db.WithContext(ctx).Raw(projectWeeklyProjectSelect+`
-INNER JOIN zt_user AS me ON me.account = ? AND me.deleted = '0'
+	err := r.db.WithContext(ctx).Raw(projectWeeklyProjectSelectWithSource+`
 WHERE p.deleted = '0'
   AND p.type = 'project'
-  AND p.follow LIKE CONCAT('%,', me.id, ',%')
+  AND `+whereScope+`
   AND EXISTS (SELECT 1 FROM zt_projectweekly AS pw WHERE pw.project = p.id)`+teamSQL+`
-ORDER BY p.id DESC
+ORDER BY sort_group ASC, p.id DESC
 LIMIT ?`, args...).Scan(&rows).Error
 	return rows, err
+}
+
+// FindWatchedProjectWeeklyProjects 关注且存在 zt_projectweekly 的项目。
+func (r *Repo) FindWatchedProjectWeeklyProjects(ctx context.Context, account string, teamIDs []uint, limit int) ([]projectWeeklyProjectRow, error) {
+	return r.FindMineProjectWeeklyProjects(ctx, account, "watched", teamIDs, limit)
 }
 
 // FindAllProjectWeeklyProjects 全量存在 zt_projectweekly 的项目。
@@ -200,15 +251,18 @@ LIMIT ?`, projectID, limit).Scan(&rows).Error
 	return rows, err
 }
 
-// FindProjectWeeklyByID 单个关注项目壳（校验 follow）。
+// FindProjectWeeklyByID 单个参与或关注项目壳（校验 参与 或 follow）。
 func (r *Repo) FindProjectWeeklyByID(ctx context.Context, account string, projectID uint) (*projectWeeklyProjectRow, error) {
 	var row projectWeeklyProjectRow
-	err := r.db.WithContext(ctx).Raw(projectWeeklyProjectSelect+`
-INNER JOIN zt_user AS me ON me.account = ? AND me.deleted = '0'
+	err := r.db.WithContext(ctx).Raw(projectWeeklyProjectSelectWithSource+`
 WHERE p.deleted = '0'
   AND p.type = 'project'
   AND p.id = ?
-  AND p.follow LIKE CONCAT('%,', me.id, ',%')
+  AND (
+    p.PM = me.account
+    OR EXISTS (SELECT 1 FROM zt_team AS tm WHERE tm.root = p.id AND tm.type = 'project' AND tm.account = me.account)
+    OR p.follow LIKE CONCAT('%,', me.id, ',%')
+  )
   AND EXISTS (SELECT 1 FROM zt_projectweekly AS pw WHERE pw.project = p.id)
 LIMIT 1`, account, projectID).Scan(&row).Error
 	if err != nil {

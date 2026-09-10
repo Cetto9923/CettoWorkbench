@@ -50,12 +50,51 @@ func TestFollowScheduleSummary(t *testing.T) {
 }
 
 func TestFollowListReqValidateScopes(t *testing.T) {
-	req := FollowListReq{Scope: "key_open", Lifecycle: "implementing"}
+	// 默认未传 scope 应规范化为 open
+	reqDefault := FollowListReq{}
+	if errs := reqDefault.Validate(); len(errs) != 0 {
+		t.Fatalf("unexpected errs: %+v", errs)
+	}
+	if reqDefault.Scope != FollowScopeOpen {
+		t.Fatalf("default scope want=%s got=%s", FollowScopeOpen, reqDefault.Scope)
+	}
+
+	req := FollowListReq{Scope: "open", Lifecycle: "implementing"}
 	if errs := req.Validate(); len(errs) != 0 {
 		t.Fatalf("unexpected errs: %+v", errs)
 	}
-	req = FollowListReq{Scope: "need_focus"}
-	if errs := req.Validate(); len(errs) == 0 {
+
+	reqCompat := FollowListReq{Scope: "key_open", Lifecycle: "implementing"}
+	if errs := reqCompat.Validate(); len(errs) != 0 {
+		t.Fatalf("unexpected errs: %+v", errs)
+	}
+
+	reqInvalid := FollowListReq{Scope: "need_focus"}
+	if errs := reqInvalid.Validate(); len(errs) == 0 {
 		t.Fatal("expected invalid scope error")
+	}
+}
+
+func TestProjectWeeklyListReqValidateScopes(t *testing.T) {
+	// 默认未传 scope 应规范化为 mine
+	reqDefault := ProjectWeeklyListReq{}
+	if errs := reqDefault.Validate(); len(errs) != 0 {
+		t.Fatalf("unexpected errs: %+v", errs)
+	}
+	if reqDefault.Scope != "mine" {
+		t.Fatalf("default weekly scope want=mine got=%s", reqDefault.Scope)
+	}
+
+	validScopes := []string{"mine", "participated", "watched", "all"}
+	for _, sc := range validScopes {
+		req := ProjectWeeklyListReq{Scope: sc}
+		if errs := req.Validate(); len(errs) != 0 {
+			t.Fatalf("valid scope %s returned unexpected errs: %+v", sc, errs)
+		}
+	}
+
+	reqInvalid := ProjectWeeklyListReq{Scope: "invalid_scope"}
+	if errs := reqInvalid.Validate(); len(errs) == 0 {
+		t.Fatal("expected invalid scope error for invalid_scope")
 	}
 }

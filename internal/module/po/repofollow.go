@@ -98,6 +98,8 @@ func (r *Repo) FindFollowedDemands(ctx context.Context, req RepoFindFollowedDema
 
 	filtered := base
 	switch req.Scope {
+	case FollowScopeOpen, "":
+		filtered = filtered.Where("d.status <> ?", "closed")
 	case FollowScopeKey:
 		filtered = filtered.Where("d.isNeedFocus = ?", "1")
 	case FollowScopeKeyOpen:
@@ -106,6 +108,8 @@ func (r *Repo) FindFollowedDemands(ctx context.Context, req RepoFindFollowedDema
 		filtered = filtered.Where("d.status = ?", "closed")
 	case FollowScopeOpenClean:
 		filtered = filtered.Where("(d.isNeedFocus IS NULL OR d.isNeedFocus <> ?) AND d.status <> ?", "1", "closed")
+	case FollowScopeAll:
+		// 全量（含关闭）
 	}
 	switch req.Lifecycle {
 	case FollowLifecycleClarifying:
@@ -235,6 +239,7 @@ func (r *Repo) countFollowDemandStats(ctx context.Context, account, keyword stri
 		args = append(args, "%"+keyword+"%", keyword)
 	}
 	type agg struct {
+		Open         int64 `gorm:"column:c_open"`
 		All          int64 `gorm:"column:c_all"`
 		Clarifying   int64 `gorm:"column:c_clarifying"`
 		Implementing int64 `gorm:"column:c_implementing"`
@@ -247,6 +252,7 @@ func (r *Repo) countFollowDemandStats(ctx context.Context, account, keyword stri
 	var row agg
 	sql := `
 SELECT
+  SUM(CASE WHEN d.status <> 'closed' THEN 1 ELSE 0 END) AS c_open,
   COUNT(*) AS c_all,
   SUM(CASE WHEN d.status IN ('draft','wait','refuse','active') THEN 1 ELSE 0 END) AS c_clarifying,
   SUM(CASE WHEN d.status IN ('clarified','developing','testing','waitacceptance','acceptanced','waitdeliver','delivered') THEN 1 ELSE 0 END) AS c_implementing,
@@ -260,6 +266,7 @@ WHERE d.deleted = '0' AND ` + watchSQL + keywordSQL
 	if err := r.db.WithContext(ctx).Raw(sql, args...).Scan(&row).Error; err != nil {
 		return nil, err
 	}
+	stats.Open = row.Open
 	stats.All = row.All
 	stats.Clarifying = row.Clarifying
 	stats.Implementing = row.Implementing
