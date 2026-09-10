@@ -32,6 +32,7 @@ check-frontend-test:
 	@node tests/unit/frontend/done-status-labels.test.js
 	@node tests/unit/frontend/unified-object-id-ui.test.js
 	@node tests/unit/frontend/todos-object-chips.test.js
+	@node tests/unit/frontend/urge-modal.test.js
 	@echo "frontend unit/behavior tests passed"
 
 check-vet:
