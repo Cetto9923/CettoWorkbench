@@ -1,5 +1,49 @@
 # Existing engineering debt
 
+## Baseline snapshot — 2026-09-10
+
+`scripts/check-file-length.sh` was probed on commit `cc564036` (branch
+`release/po-integrate-main-202609`) before any edits in this debt-cleanup
+wave. It **exited with code 1** and printed 38 issues. This commit only
+records the snapshot; the gate remains `BLOCKED BY EXISTING BASELINE` until a
+follow-up wave either shrinks files below 500 lines or the
+`file-length.tsv` baseline mechanism is amended (currently rejected as
+"baseline expansion rejected: new over-500-line files cannot be added to
+baseline").
+
+Issue categories as captured by the probe:
+
+1. **New over-limit files (7)** — never registered in the historical
+   baseline. None are touched by this wave.
+   - `internal/module/po/servicefollow.go` (507)
+   - `internal/pkg/zentao/client.go` (553)
+   - `web/static/css/metrics.css` (683)
+   - `web/static/css/po/demand-detail.css` (667)
+   - `web/static/css/po/follow.css` (691)
+   - `web/static/css/po/personal-workspace.css` (598)
+   - `web/static/js/po/notice.js` (568)
+2. **Baseline files that grew during WIP (4)** — present in
+   `file-length.tsv` but currently larger than the recorded count. These
+   are existing-WIP files (per the pre-flight `git status`): the wave does
+   not modify them.
+   - `web/static/css/components/components.css` (595 → 616)
+   - `web/static/css/layout/layout.css` (531 → 643)
+   - `web/static/css/schedule/schedule.css` (580 → 596)
+   - `web/static/js/ui.js` (775 → 819)
+3. **Baseline files that shrank (2)** — `scheduleintegrated.css`
+   (879 → 878) and `web/templates/schedule/index.html` (742 → 741).
+   The wave deliberately does not ratchet the baseline; shrink without
+   lowering the number keeps the gate failing until the owning change is
+   ready.
+4. **`docs/Demo/` artifacts (≈22)** — the script scans the Demo tree
+   unfiltered; every Demo HTML/JS/CSS over 500 lines reports here. Demo
+   is explicitly out of scope for this wave (see Plan §6 "明确不做").
+
+This snapshot is the only artifact produced by commit `chore(debt):
+register 2026-09-10 file-length baseline failure`. The next wave must
+either fix files, amend the baseline mechanism, or carve out a tracked
+ignore — none of which is authorized by the current task.
+
 ## Current reading note — 2026-09-07
 
 The Phase 1 table below is a **historical inventory**, not a current audit or an
