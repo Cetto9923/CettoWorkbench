@@ -16,6 +16,8 @@ import (
 type fakeTaskStatusGateway struct {
 	called bool
 	params zentao.TaskStatusParams
+	updateCalled bool
+	updateParams zentao.UpdateTaskParams
 }
 
 func (f *fakeTaskStatusGateway) UpdateTaskStatus(ctx context.Context, p zentao.TaskStatusParams) error {
@@ -23,7 +25,11 @@ func (f *fakeTaskStatusGateway) UpdateTaskStatus(ctx context.Context, p zentao.T
 	f.params = p
 	return nil
 }
-
+func (f *fakeTaskStatusGateway) UpdateTask(ctx context.Context, p zentao.UpdateTaskParams) error {
+	f.updateCalled = true
+	f.updateParams = p
+	return nil
+}
 func newBoardTaskTransitionService(t *testing.T) (*Service, sqlmock.Sqlmock, *fakeTaskStatusGateway) {
 	t.Helper()
 	sqlDB, mock, err := sqlmock.New()
@@ -51,18 +57,22 @@ func TestTransitionBoardTaskDoneDefaultsFinisherToCurrentAssignee(t *testing.T) 
 	if err != nil {
 		t.Fatalf("TransitionBoardTask returned error: %v", err)
 	}
-	if !gateway.called {
-		t.Fatal("expected zentao task status gateway call")
+	if !gateway.updateCalled {
+		t.Fatal("expected zentao task update gateway call")
 	}
-	if gateway.params.FinishedBy != "dev_a" {
-		t.Fatalf("FinishedBy = %q, want current assignee", gateway.params.FinishedBy)
+	if gateway.updateParams.FinishedBy == nil || *gateway.updateParams.FinishedBy != "dev_a" {
+		t.Fatalf("FinishedBy = %v, want current assignee", gateway.updateParams.FinishedBy)
 	}
-	if gateway.params.Status != "done" || gateway.params.TaskID != 216573 || gateway.params.Account != "003030" {
-		t.Fatalf("unexpected params: %+v", gateway.params)
+	if gateway.updateParams.Status == nil || *gateway.updateParams.Status != "done" {
+		t.Fatalf("Status = %v, want done", gateway.updateParams.Status)
 	}
-	if gateway.params.FinishedDate == "" {
+	if gateway.updateParams.TaskID != 216573 || gateway.updateParams.Account != "003030" {
+		t.Fatalf("unexpected params: %+v", gateway.updateParams)
+	}
+	if gateway.updateParams.FinishedDate == nil || *gateway.updateParams.FinishedDate == "" {
 		t.Fatal("FinishedDate should default to current time")
 	}
+
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatal(err)
 	}

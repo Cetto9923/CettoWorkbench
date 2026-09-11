@@ -133,16 +133,22 @@ func (s *Service) TransitionBoardTask(ctx context.Context, actor *model.User, ta
 			finishedDate = parsed.Format("2006-01-02 15:04:05")
 		}
 	}
-	if s == nil || s.taskActions == nil {
-		return zentao.ErrZentaoAPIError
-	}
-	return s.taskActions.UpdateTaskStatus(ctx, zentao.TaskStatusParams{
-		TaskID:       taskID,
-		Account:      actor.Account,
-		Status:       req.Status,
-		FinishedBy:   finishedBy,
-		FinishedDate: finishedDate,
-	})
+    if s == nil || s.taskActions == nil {
+        return zentao.ErrZentaoAPIError
+    }
+    // 构造更新参数，仅传递必要字段
+    params := zentao.UpdateTaskParams{
+        TaskID:  taskID,
+        Account: actor.Account,
+        Status:  &req.Status,
+    }
+    if finishedBy != "" {
+        params.FinishedBy = &finishedBy
+    }
+    if finishedDate != "" {
+        params.FinishedDate = &finishedDate
+    }
+    return s.taskActions.UpdateTask(ctx, params)
 }
 
 func stringInSlice(value string, values []string) bool {

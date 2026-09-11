@@ -70,6 +70,7 @@ func NewService(repo *Repo, scheduleSvc *schedule.Service, userSvc *user.Service
 
 type taskStatusGateway interface {
 	UpdateTaskStatus(ctx context.Context, p zentao.TaskStatusParams) error
+	UpdateTask(ctx context.Context, p zentao.UpdateTaskParams) error
 }
 
 // SetTaskStatusGateway 注入禅道任务状态网关，供测试替换。

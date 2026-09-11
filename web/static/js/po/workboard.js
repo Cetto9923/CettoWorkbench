@@ -144,7 +144,8 @@
     var codeText = esc(task.displayId || task.id);
     var titleText = esc(task.title);
     var codeHtml = task.url ? '<a class="code task-code-link" href="' + esc(task.url) + '" target="_blank" rel="noopener noreferrer" title="在禅道打开任务详情">' + codeText + '</a>' : '<span class="code">' + codeText + '</span>';
-    var titleHtml = task.url ? '<a class="task-title task-title-link" href="' + esc(task.url) + '" target="_blank" rel="noopener noreferrer" title="' + titleText + '">' + titleText + '</a>' : '<span class="task-title" title="' + titleText + '">' + titleText + '</span>';
+    var taskDetailUrl = task.id ? ('/workbench/task/' + encodeURIComponent(task.id)) : (task.url || '');
+    var titleHtml = taskDetailUrl ? '<a class="task-title task-title-link" href="' + esc(taskDetailUrl) + '" title="' + titleText + '">' + titleText + '</a>' : '<span class="task-title" title="' + titleText + '">' + titleText + '</span>';
     return '<div class="' + cls + '" draggable="true" data-task-id="' + esc(task.id) + '" data-task-status="' + esc(task.status || "wait") + '" data-task-title="' + titleText + '" data-task-owner="' + esc(task.owner || "") + '" data-task-owner-account="' + esc(task.ownerAccount || "") + '" data-owner="' + esc(task.owner || "") + '">' +
       '<div class="task-head">' + typeTag("task") + codeHtml + titleHtml + "</div>" +
       '<div class="task-meta">' + storyLink + (task.type ? "<span>" + esc(task.type) + "</span>" : "") + (task.blocked ? '<span style="color:var(--orange);font-weight:700">阻塞</span>' : "") + "</div>" +
@@ -344,7 +345,7 @@
       '<div class="drawer-task-top"><span class="drawer-task-code">' + esc(t.displayId || t.id) + "</span>" +
       '<span class="drawer-task-type ' + typeC + '">' + esc(typN) + "</span>" + priH +
       '<span class="drawer-task-status ' + esc(t.status || "wait") + '">' + esc(stN) + "</span></div>" +
-      '<div class="drawer-task-name">' + esc(t.title) + "</div>" +
+      '<div class="drawer-task-name">' + (t.id ? ('<a class="drawer-task-name-link" href="/workbench/task/' + encodeURIComponent(t.id) + '" title="' + esc(t.title) + '">' + esc(t.title) + '</a>') : esc(t.title)) + "</div>" +
       '<div class="drawer-task-footer"><span class="drawer-task-assignee">' + avatar + esc(t.owner || "未指派") + "</span>" +
       dueH + linkH + "</div></div>";
   }
