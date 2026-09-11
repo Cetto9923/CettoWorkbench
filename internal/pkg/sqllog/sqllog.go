@@ -2,7 +2,7 @@
 // 文件: internal/pkg/sqllog/sqllog.go
 // 模块: 基础设施
 // 类型: infra
-// 职责: 以 JSON 行格式记录 SQL 查询日志（sql.log），支持按 request_id 聚合。
+// 职责: 以 JSON 行格式记录 SQL 查询日志（sql.log），dev 环境同时彩色输出到控制台。
 // 依赖: internal/config
 // =============================================================================
 
@@ -60,6 +60,7 @@ func LogQuery(ctx context.Context, sql string, elapsed time.Duration, rows int64
 		state.markQuery(err, slow)
 	}
 
+	file := callerLocation()
 	entry := queryEntry{
 		Time:      formatTime(time.Now()),
 		RequestID: requestID,
@@ -67,13 +68,14 @@ func LogQuery(ctx context.Context, sql string, elapsed time.Duration, rows int64
 		SQL:       sql,
 		Elapsed:   formatDuration(elapsed),
 		Rows:      rows,
-		File:      callerLocation(),
+		File:      file,
 	}
 	if err != nil {
 		entry.Error = err.Error()
 	}
 
 	defaultWriter.write(entry)
+	defaultWriter.printConsoleSQL(sql, elapsed, rows, file, err)
 }
 
 // LogRequestSummary 记录请求级 SQL 汇总。
@@ -105,15 +107,25 @@ func LogRequestSummary(state *RequestState, route string, elapsed time.Duration)
 }
 
 type Writer struct {
-	mu      sync.Mutex
-	enabled bool
-	file    *os.File
+	mu             sync.Mutex
+	enabled        bool
+	consoleEnabled bool
+	file           *os.File
 }
 
 func (w *Writer) open(cfg *config.Config) error {
-	dir := strings.TrimSpace(cfg.Log.Dir)
+	w.mu.Lock()
+	w.consoleEnabled = cfg != nil && !strings.EqualFold(strings.TrimSpace(cfg.App.Env), "prod")
+	w.mu.Unlock()
+
+	dir := ""
+	if cfg != nil {
+		dir = strings.TrimSpace(cfg.Log.Dir)
+	}
 	if dir == "" {
+		w.mu.Lock()
 		w.enabled = false
+		w.mu.Unlock()
 		return nil
 	}
 
