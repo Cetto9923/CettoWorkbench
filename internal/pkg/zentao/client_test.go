@@ -1,8 +1,14 @@
 package zentao
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"workbench/internal/config"
@@ -118,4 +124,77 @@ func TestParseZentaoAPIError(t *testing.T) {
 			t.Fatalf("expected message parsed, got %v", err)
 		}
 	})
+}
+
+func TestDoAsSuccessAndUnauthorizedRetry(t *testing.T) {
+	clearUserToken("u-doas")
+	var businessHits atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/tokens"):
+			_ = json.NewEncoder(w).Encode(map[string]string{"token": "tok-1"})
+		case r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/build/1/linkstories"):
+			n := businessHits.Add(1)
+			if n == 1 {
+				w.WriteHeader(http.StatusUnauthorized)
+				_, _ = io.WriteString(w, `{"message":"Unauthorized"}`)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
+			_, _ = io.WriteString(w, `{}`)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	c := NewClient(srv.URL)
+	err := c.DoAs(context.Background(), "u-doas", http.MethodPost, "/build/1/linkstories", map[string]any{"stories": "1"}, nil)
+	if err != nil {
+		t.Fatalf("DoAs retry expected success, got %v", err)
+	}
+	if n := businessHits.Load(); n != 2 {
+		t.Fatalf("expected 2 business hits with 401 retry, got %d", n)
+	}
+}
+
+func TestDoAsHTTP200JSON(t *testing.T) {
+	clearUserToken("u-ok")
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/tokens") {
+			_ = json.NewEncoder(w).Encode(map[string]string{"token": "tok-ok"})
+			return
+		}
+		if r.Header.Get("Token") != "tok-ok" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"id": 9})
+	}))
+	t.Cleanup(srv.Close)
+
+	c := NewClient(srv.URL)
+	var out struct {
+		ID int `json:"id"`
+	}
+	if err := c.DoAs(context.Background(), "u-ok", http.MethodGet, "/builds/9", nil, &out); err != nil {
+		t.Fatalf("DoAs: %v", err)
+	}
+	if out.ID != 9 {
+		t.Fatalf("out.ID = %d", out.ID)
+	}
+}
+
+func TestEncodeRequestBodyRedactsPassword(t *testing.T) {
+	got := encodeRequestBody(map[string]any{"account": "a", "password": "secret"})
+	m, ok := got.(map[string]any)
+	if !ok {
+		t.Fatalf("expected map, got %T", got)
+	}
+	if m["password"] != "***" {
+		t.Fatalf("password not redacted: %#v", m["password"])
+	}
+	if m["account"] != "a" {
+		t.Fatalf("account mutated: %#v", m["account"])
+	}
 }
