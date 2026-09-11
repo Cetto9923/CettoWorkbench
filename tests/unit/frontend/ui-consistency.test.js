@@ -154,5 +154,21 @@ function cssRead(rel) { return read(path.join("web/static/css", rel)); }
   assert.match(urge, /#poUrgeModal\.po-urge-modal\s*\{[\s\S]*position: relative !important[\s\S]*top: auto !important[\s\S]*left: auto !important/, "urge modal must opt out of the legacy fixed-position offset");
   assert.match(urge, /#poUrgeModal > #poUrgeForm\s*\{[\s\S]*display: flex[\s\S]*flex-direction: column[\s\S]*min-height: 0[\s\S]*overflow: hidden/, "urge modal form must constrain the scrollable body so footer stays in view");
   assert.match(urge, /#poUrgeModal \.batch-modal-body\s*\{[\s\S]*overflow-y: auto[\s\S]*flex: 1[\s\S]*min-height: 0/, "urge modal body must own overflow scrolling");
+  const schedule = read("web/static/js/schedule/scheduleintegrated.js");
+  const scheduleShared = read("web/static/js/schedule/scheduleintegratedshared.js");
+  assert.match(schedule, /initUserPicker\("scheduleIntRDInput"/);
+  assert.match(schedule, /initUserPicker\("scheduleIntQDInput"/);
+  assert.match(schedule, /initUserPicker\("scheduleIntAccepterInput"/);
+  assert.doesNotMatch(schedule, /initAutocomplete\("scheduleInt(?:RD|QD|Accepter)Input"/);
+  assert.match(scheduleShared, /initUserPicker\(inputId, hiddenId/);
+  const profile = cssRead("po/po-profile.css");
+  assert.doesNotMatch(profile, /(^|\n)\.action-btn\s*\{/);
+  for (const rel of ["query/index.html", "po/home.html", "po/follow.html", "po/done.html", "po/workboard.html", "po/todos.html"]) {
+    const html = read("web/templates/" + rel);
+    const sanitizerIndex = html.indexOf("/static/js/po/html-sanitize.js");
+    const richTextIndex = html.indexOf("/static/js/po/demand-detail-richtext.js");
+    assert.ok(sanitizerIndex >= 0 && sanitizerIndex < richTextIndex, rel + " must load html-sanitize.js before rich text rendering");
+  }
+  assert.ok(!fs.existsSync(path.join(root, "web/static/workbench")), "duplicate web/static/workbench resource tree must be removed");
   console.log("PASS: buttons use one shared semantic system and modal footer geometry");
 })();

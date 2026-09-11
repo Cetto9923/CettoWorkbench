@@ -453,24 +453,24 @@
   }
 
   function initSchedulingOwnerPickers(users, data) {
-    if (typeof window.initAutocomplete !== "function" || !shared) {
+    if (typeof window.initUserPicker !== "function" || !shared) {
       return;
     }
 
     var items = shared.toAutocompleteItems(users);
     var placeholder = "输入姓名或工号搜索";
 
-    window.initAutocomplete("scheduleIntRDInput", "scheduleIntRDValue", items, {
+    window.initUserPicker("scheduleIntRDInput", "scheduleIntRDValue", items, {
       placeholder: placeholder,
       value: data.rd,
       label: data.rdName,
     });
-    window.initAutocomplete("scheduleIntQDInput", "scheduleIntQDValue", items, {
+    window.initUserPicker("scheduleIntQDInput", "scheduleIntQDValue", items, {
       placeholder: placeholder,
       value: data.qd,
       label: data.qdName,
     });
-    window.initAutocomplete("scheduleIntAccepterInput", "scheduleIntAccepterValue", items, {
+    window.initUserPicker("scheduleIntAccepterInput", "scheduleIntAccepterValue", items, {
       placeholder: placeholder,
       value: data.accepter,
       label: data.accepterName,

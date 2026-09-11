@@ -125,11 +125,11 @@
     },
 
     initStoryAssigneePicker: function (inputId, hiddenId, assignedTo, assignedToName) {
-      if (typeof window.initAutocomplete !== "function" || !inputId || !hiddenId) {
+      if (typeof window.initUserPicker !== "function" || !inputId || !hiddenId) {
         return;
       }
       this.destroyStoryAssigneePicker(inputId);
-      window.initAutocomplete(inputId, hiddenId, this.toAutocompleteItems(this.schedulingUsers), {
+      window.initUserPicker(inputId, hiddenId, this.toAutocompleteItems(this.schedulingUsers), {
         placeholder: "输入姓名或工号搜索",
         value: assignedTo || "",
         label: assignedToName || "",

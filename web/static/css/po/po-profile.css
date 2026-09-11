@@ -257,7 +257,7 @@
 }
 
 /* 操作按钮 */
-.action-btn {
+.po-profile .action-btn {
   height: 36px;
   padding: 0 16px;
   border-radius: 6px;
@@ -275,23 +275,23 @@
   white-space: nowrap;
 }
 
-.action-btn:hover:not(:disabled) {
+.po-profile .action-btn:hover:not(:disabled) {
   border-color: var(--color-text-secondary, #64748b);
   background: var(--color-page-bg, #f8f9fc);
 }
 
-.action-btn.primary {
+.po-profile .action-btn.primary {
   background: var(--color-primary, #6366f1);
   border-color: var(--color-primary, #6366f1);
   color: #ffffff;
 }
 
-.action-btn.primary:hover:not(:disabled) {
+.po-profile .action-btn.primary:hover:not(:disabled) {
   background: var(--color-primary-hover, #4f46e5);
   border-color: var(--color-primary-hover, #4f46e5);
 }
 
-.action-btn:disabled {
+.po-profile .action-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
