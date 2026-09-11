@@ -169,6 +169,32 @@ ON DUPLICATE KEY UPDATE preferredRoles = VALUES(preferredRoles), updatedDate = C
 		account, joined).Error
 }
 
+// FindUserOrgRoles retrieves organization-assigned roles for a user.
+func (r *Repo) FindUserOrgRoles(ctx context.Context, account string) ([]RoleOption, error) {
+	if r == nil || r.db == nil || account == "" {
+		return []RoleOption{}, nil
+	}
+	var rows []struct {
+		Key   string `gorm:"column:key"`
+		Label string `gorm:"column:label"`
+	}
+	err := r.db.WithContext(ctx).Raw(`
+SELECT r.code AS key, r.name AS label
+FROM zt_user u
+JOIN zt_gf_user_roles ur ON ur.userId = u.id
+JOIN zt_roles r ON r.id = ur.roleId
+WHERE u.account = ? AND u.deleted = '0' AND ur.deleted = '0' AND r.deleted = '0' AND r.isActive = '1'
+ORDER BY r.sortOrder ASC, r.id ASC`, account).Scan(&rows).Error
+	if err != nil {
+		return nil, fmt.Errorf("find org roles: %w", err)
+	}
+	opts := make([]RoleOption, len(rows))
+	for i, row := range rows {
+		opts[i] = RoleOption{Key: row.Key, Label: row.Label}
+	}
+	return opts, nil
+}
+
 // FindPasswordHash 读取密码哈希（MD5 hex，32 字符）。
 func (r *Repo) FindPasswordHash(ctx context.Context, id int64) (string, error) {
 	if r == nil || r.db == nil {

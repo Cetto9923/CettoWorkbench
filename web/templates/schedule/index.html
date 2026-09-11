@@ -143,6 +143,11 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
     <div class="schedule-filter schedule-filter--primary">
       <div class="schedule-filter-primary-inner" id="scheduleMultiselectRow">
         <div class="schedule-filter-core">
+          <label class="schedule-search-inline" for="scheduleSearch">
+            <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+            <input id="scheduleSearch" name="keyword" value="{{ .SelectedKeyword }}" placeholder="编号 / 名称 / 责任人 / 系统">
+          </label>
+
           <div class="schedule-ms" data-filter-key="groups" data-filter-label="敏捷小组">
             <button type="button" class="form-select schedule-ms-trigger" aria-haspopup="listbox" aria-expanded="false">
               <span class="schedule-ms-text">敏捷小组</span>
@@ -216,11 +221,6 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
               </div>
             </div>
           </div>
-
-          <label class="schedule-search-inline" for="scheduleSearch">
-            <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
-            <input id="scheduleSearch" name="keyword" value="{{ .SelectedKeyword }}" placeholder="编号 / 名称 / 责任人 / 系统">
-          </label>
         </div>
         <div class="schedule-filter-actions">
           <button type="button" class="action-btn schedule-more-filter-btn" id="scheduleMoreFilterToggle" aria-expanded="false" aria-controls="scheduleMoreFilters"><i class="fas fa-sliders"></i> 更多筛选</button>

@@ -43,7 +43,7 @@
     responsibility: "all",
     keyword: "",
     page: 1,
-    pageSize: 15
+    pageSize: 20
   };
 
   // 支持全量对象类型（汇总所有审批），与"我的已办"同款芯片风格。
@@ -73,7 +73,7 @@
     if (state.responsibility !== "all") { p.set("responsibility", state.responsibility); }
     if (state.keyword) { p.set("keyword", state.keyword); }
     if (state.page > 1) { p.set("page", String(state.page)); }
-    if (state.pageSize !== 15) { p.set("pageSize", String(state.pageSize)); }
+    if (state.pageSize !== 20) { p.set("pageSize", String(state.pageSize)); }
     var qs = p.toString();
     var newUrl = window.location.pathname + (qs ? "?" + qs : "");
     window.history.replaceState(null, "", newUrl);
@@ -135,11 +135,12 @@
       state.page = p;
     }
     var ps = parseInt(sp.get("pageSize"), 10);
-    if (!isNaN(ps) && [15, 30, 50, 100].indexOf(ps) >= 0) {
+    var pageSizes = window.PersonalList.PAGE_SIZE_OPTIONS || [10, 20, 50, 100];
+    if (!isNaN(ps) && pageSizes.indexOf(ps) >= 0) {
       state.pageSize = ps;
     } else {
       // URL 未带 pageSize 时，优先使用上次保存值，再退回默认值。
-      state.pageSize = window.PersonalList.loadPageSize("po.todos.pageSize", state.pageSize, [15, 30, 50, 100]);
+      state.pageSize = window.PersonalList.loadPageSize("po.todos.pageSize", state.pageSize, pageSizes);
     }
   }
 

@@ -5,9 +5,7 @@
 
   var currentDemandId = null, currentFormData = null, productRowIndex = 0, storyRowIndex = 0, isSubmitting = false;
 
-  function esc(s) {
-    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-  }
+  var esc = (window.PersonalList && window.PersonalList.escapeHtml) || function (s) { return String(s == null ? "" : s); };
 
   function showToast(msg, type) {
     if (typeof window.showToast === "function") window.showToast(msg, type); else alert(msg);

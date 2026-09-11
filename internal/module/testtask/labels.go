@@ -121,21 +121,86 @@ func BuildSystemItems(products []productRow, mainSystemID uint, mainSystemName s
 		}
 		seen[p.ID] = struct{}{}
 		items = append(items, SystemItem{
-			ID:     p.ID,
-			Name:   strings.TrimSpace(p.Name),
-			IsMain: mainSystemID > 0 && p.ID == mainSystemID,
+			ID:      p.ID,
+			Name:    strings.TrimSpace(p.Name),
+			IsMain:  mainSystemID > 0 && p.ID == mainSystemID,
+			Stories: []StoryItem{},
 		})
 	}
 	if mainSystemID > 0 {
 		if _, ok := seen[mainSystemID]; !ok {
 			items = append([]SystemItem{{
-				ID:     mainSystemID,
-				Name:   dash(mainSystemName),
-				IsMain: true,
+				ID:      mainSystemID,
+				Name:    dash(mainSystemName),
+				IsMain:  true,
+				Stories: []StoryItem{},
 			}}, items...)
 		}
 	}
 	// 主系统置顶
+	for i, it := range items {
+		if !it.IsMain {
+			continue
+		}
+		if i == 0 {
+			break
+		}
+		items = append([]SystemItem{it}, append(items[:i], items[i+1:]...)...)
+		break
+	}
+	return items
+}
+
+// BuildSystemItemsWithStories 按实际转出的研发需求构建系统列表，并装配每个系统包含的实际研发需求。
+func BuildSystemItemsWithStories(stories []storyRow, products []productRow, mainSystemID uint, mainSystemName string) []SystemItem {
+	if len(stories) == 0 {
+		return BuildSystemItems(products, mainSystemID, mainSystemName)
+	}
+
+	productStories := make(map[uint][]StoryItem)
+	productNames := make(map[uint]string)
+	productOrder := make([]uint, 0)
+	seenProducts := make(map[uint]struct{})
+
+	for _, s := range stories {
+		if s.ProductID == 0 {
+			continue
+		}
+		if _, ok := seenProducts[s.ProductID]; !ok {
+			seenProducts[s.ProductID] = struct{}{}
+			productOrder = append(productOrder, s.ProductID)
+			productNames[s.ProductID] = s.ProductName
+		}
+		productStories[s.ProductID] = append(productStories[s.ProductID], StoryItem{
+			ID:        s.ID,
+			Title:     s.Title,
+			Pri:       s.Pri,
+			Status:    s.Status,
+			Stage:     s.Stage,
+			ProductID: s.ProductID,
+		})
+	}
+
+	// 如果主系统未在研发需求列表中（但需求有主系统），补充主系统
+	if mainSystemID > 0 {
+		if _, ok := seenProducts[mainSystemID]; !ok {
+			seenProducts[mainSystemID] = struct{}{}
+			productOrder = append([]uint{mainSystemID}, productOrder...)
+			productNames[mainSystemID] = dash(mainSystemName)
+		}
+	}
+
+	items := make([]SystemItem, 0, len(productOrder))
+	for _, pid := range productOrder {
+		items = append(items, SystemItem{
+			ID:      pid,
+			Name:    strings.TrimSpace(productNames[pid]),
+			IsMain:  mainSystemID > 0 && pid == mainSystemID,
+			Stories: productStories[pid],
+		})
+	}
+
+	// 确保主系统置顶
 	for i, it := range items {
 		if !it.IsMain {
 			continue

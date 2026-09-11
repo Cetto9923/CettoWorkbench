@@ -7,38 +7,18 @@
 (function () {
   "use strict";
 
-  var currentAgileMembers = [
-    { name: "崔梅", account: "002940", role: "研发", hours: 0, status: "formal", isNew: false },
-    { name: "程统", account: "003030", role: "研发", hours: 0, status: "formal", isNew: false }
-  ];
+  // 成员必须来自服务端真实小组数据；未接入时保持空态，禁止展示假成员。
+  var currentAgileMembers = [];
 
-  var candidatePool = [
-    { name: "毕雪玲", account: "002961", role: "研发" },
-    { name: "陈天麒", account: "772259", role: "研发" },
-    { name: "丁杰", account: "KJ000687", role: "研发" },
-    { name: "陈伏", account: "KJ001003", role: "研发" },
-    { name: "陈文斌", account: "KJ000826", role: "研发" },
-    { name: "丁麟杰", account: "002399", role: "研发" },
-    { name: "陈国宇", account: "772194", role: "研发" },
-    { name: "陈永进", account: "KJ000180", role: "研发" },
-    { name: "孙研", account: "dev_sun", role: "研发" },
-    { name: "周测", account: "qa_zhou", role: "测试" },
-    { name: "吴运", account: "ops_wu", role: "运维" },
-    { name: "郑设", account: "ui_zheng", role: "美工" },
-    { name: "刘研", account: "dev_liu", role: "研发" },
-    { name: "陈敏", account: "sm_chen", role: "敏捷教练" }
-  ];
+  var candidatePool = [];
 
   var teamRoles = ["研发", "测试", "PO", "SM", "架构", "运维", "美工", "产品经理"];
   var teamDraft = [];
   var teamSearchTerm = "";
 
-  function esc(s) {
-    if (s == null) return "";
-    return String(s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
+  var esc = (window.PersonalList && window.PersonalList.escapeHtml) || function (s) {
+    return String(s == null ? "" : s);
+  };
 
   function toast(msg) {
     if (typeof window.showToast === "function") window.showToast(msg);
@@ -75,37 +55,8 @@
   }
 
   function submitKanbanIssueModal() {
-    var nameInput = document.getElementById("kbIssueName");
-    var descInput = document.getElementById("kbIssueDesc");
-    var assigneeSel = document.getElementById("kbIssueAssignee");
-    var priSel = document.getElementById("kbIssuePri");
-
-    var name = nameInput ? nameInput.value.trim() : "";
-    if (!name) {
-      toast("请填写问题名称");
-      if (nameInput) nameInput.focus();
-      return;
-    }
-
-    var newIssue = {
-      id: String(Math.floor(1000 + Math.random() * 9000)),
-      title: name,
-      status: "unconfirmed",
-      priority: priSel ? priSel.value : "2",
-      severity: "2级",
-      assignedTo: assigneeSel ? assigneeSel.value : "崔梅",
-      createdBy: "程统 (003030)",
-      project: "核心业务系统研发",
-      execution: "敏捷迭代2026-09",
-      desc: descInput ? descInput.value.trim() : ""
-    };
-
-    if (window.WorkboardIssue && typeof window.WorkboardIssue.addIssueMock === "function") {
-      window.WorkboardIssue.addIssueMock(newIssue);
-    }
-
-    closeKanbanIssueModal();
-    toast("问题已登记 " + newIssue.id);
+    toast("问题登记尚未接入服务端，当前操作不可用");
+    return;
   }
 
   /* ────────── 2. 建任务 Modal ────────── */
@@ -144,29 +95,8 @@
   }
 
   function submitKanbanTaskModal() {
-    var nameInput = document.getElementById("kbTaskName");
-    var assigneeSel = document.getElementById("kbTaskAssignee");
-    var typeSel = document.getElementById("kbTaskType");
-    var dueInput = document.getElementById("kbTaskDue");
-
-    var name = nameInput ? nameInput.value.trim() : "";
-    if (!name) {
-      toast("请填写任务标题");
-      if (nameInput) nameInput.focus();
-      return;
-    }
-
-    var taskId = Math.floor(10000 + Math.random() * 90000);
-    var task = {
-      id: taskId,
-      name: name,
-      type: typeSel ? typeSel.value : "开发",
-      assignedTo: assigneeSel ? assigneeSel.value : "崔梅",
-      deadline: dueInput ? dueInput.value : ""
-    };
-
-    closeKanbanTaskModal();
-    toast("任务已创建 " + task.id + " (" + task.name + ")");
+    toast("任务创建尚未接入服务端，当前操作不可用");
+    return;
   }
 
   /* ────────── 3. 调整小组成员 Modal ────────── */
@@ -382,4 +312,35 @@
     closeTeamModal: closeKanbanTeamModal,
     submitTeamModal: submitKanbanTeamModal
   };
+
+  // 全局键盘 Escape 与遮罩点击关闭交互契约支持
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      closeKanbanIssueModal();
+      closeKanbanTaskModal();
+      closeKanbanTeamModal();
+    }
+  });
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () {
+      var kbOverlay = document.getElementById("kanbanModalOverlay");
+      if (kbOverlay) {
+        kbOverlay.addEventListener("click", function () {
+          closeKanbanIssueModal();
+          closeKanbanTaskModal();
+          closeKanbanTeamModal();
+        });
+      }
+    });
+  } else {
+    var kbOverlay = document.getElementById("kanbanModalOverlay");
+    if (kbOverlay) {
+      kbOverlay.addEventListener("click", function () {
+        closeKanbanIssueModal();
+        closeKanbanTaskModal();
+        closeKanbanTeamModal();
+      });
+    }
+  }
 })();

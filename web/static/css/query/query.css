@@ -3,3 +3,18 @@
   color: var(--color-text-disabled);
   cursor: not-allowed;
 }
+
+.po-query .query-col-id {
+  width: 140px;
+  white-space: nowrap;
+}
+
+.po-query .query-col-title {
+  min-width: 260px;
+  word-break: break-word;
+}
+
+.po-query .query-col-title .wb-priority {
+  margin-right: 6px;
+  vertical-align: middle;
+}

@@ -186,6 +186,43 @@ ORDER BY p.id ASC`
 	return out, nil
 }
 
+// storyRow 业务需求实际转出的研发需求查询行。
+type storyRow struct {
+	ID          uint   `gorm:"column:id"`
+	Title       string `gorm:"column:title"`
+	Pri         int    `gorm:"column:pri"`
+	Status      string `gorm:"column:status"`
+	Stage       string `gorm:"column:stage"`
+	ProductID   uint   `gorm:"column:product"`
+	ProductName string `gorm:"column:product_name"`
+}
+
+// FindDemandConvertedStories 查询当前业务需求实际转出的研发需求及所属系统。
+func (r *Repo) FindDemandConvertedStories(ctx context.Context, demandID uint) ([]storyRow, error) {
+	if r == nil || r.db == nil || demandID == 0 {
+		return []storyRow{}, nil
+	}
+	const query = `
+SELECT 
+  s.id, s.title, s.pri, s.status, s.stage, s.product,
+  COALESCE(p.name, '') AS product_name
+FROM zt_story s
+JOIN zt_product p ON p.id = s.product AND p.deleted = '0'
+WHERE s.fromDemand = ? AND s.deleted = '0'
+ORDER BY s.id ASC`
+	var rows []storyRow
+	if err := r.db.WithContext(ctx).Raw(query, demandID).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	for i := range rows {
+		rows[i].Title = strings.TrimSpace(rows[i].Title)
+		rows[i].Status = strings.TrimSpace(rows[i].Status)
+		rows[i].Stage = strings.TrimSpace(rows[i].Stage)
+		rows[i].ProductName = strings.TrimSpace(rows[i].ProductName)
+	}
+	return rows, nil
+}
+
 // ListInsideUsers 查询内部用户列表（测试负责人检索下拉，对齐排期）。
 func (r *Repo) ListInsideUsers(ctx context.Context) ([]UserOption, error) {
 	if r == nil || r.db == nil {

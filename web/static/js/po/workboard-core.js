@@ -14,23 +14,23 @@
   function saveTeamgroup(id) { localStorage.setItem(TG_KEY, String(id)); }
 
   function $(id) { return document.getElementById(id); }
-  function esc(v) {
-    return String(v == null ? "" : v)
-      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-  }
+  var esc = (window.PersonalList && window.PersonalList.escapeHtml) || function (v) { return String(v == null ? "" : v); };
   var priorityBadge = (window.PersonalList && window.PersonalList.priorityBadge) || function (r) {
     var n = parseInt(String(r || "").replace(/^p/i, ""), 10);
     return (isNaN(n) || n < 1 || n > 4) ? '<span class="wb-priority" data-priority="">—</span>' : '<span class="wb-priority" data-priority="' + n + '">P' + n + "</span>";
   };
-  function showToast(msg) {
+  function showToast(msg, type) {
+    if (typeof window.showToast === "function" && window.showToast !== showToast) {
+      window.showToast(msg, type || "info");
+      return;
+    }
     var t = $("toast");
     if (!t) { return; }
     t.textContent = msg; t.classList.add("show");
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { t.classList.remove("show"); }, 1800);
   }
-  window.showToast = showToast;
+  if (!window.showToast) window.showToast = showToast;
   function onErr(hostId) {
     var host = $(hostId);
     if (host) host.innerHTML = '<div class="demand-empty">加载失败 · <button type="button" class="action soft" data-retry="1">重试</button></div>';

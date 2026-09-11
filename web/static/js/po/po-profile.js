@@ -82,19 +82,15 @@
       return 'po';
     },
 
-    getOrgRoles: function (account) {
-      var acc = String(account || (profileCache && profileCache.account) || (window.currentUser && window.currentUser.account) || '').trim();
-      // 003030 账号属于组织授权 PMO 视图的账号
-      if (acc === '003030') {
-        return ['pmo'];
-      }
-      return [];
+    getOrgRoles: function () {
+      var roles = profileCache && profileCache.orgRoles;
+      return Array.isArray(roles) ? roles.map(function (r) { return typeof r === 'string' ? r : r.key; }) : [];
     },
 
     setPreferredRoles: function (roles, account) {
       var list = Array.isArray(roles) ? roles.map(function (r) { return String(r || '').toLowerCase(); }) : [];
       var acc = String(account || (profileCache && profileCache.account) || (window.currentUser && window.currentUser.account) || '').trim();
-      var orgRoles = this.getOrgRoles(acc);
+      var orgRoles = this.getOrgRoles();
 
       // 有效可见角色 = 用户勾选的自选角色 + 组织授权的角色
       var activeMap = {};
@@ -249,8 +245,8 @@
       );
     });
 
-    // 2. 组织固定授权角色：对 003030 账号显示 PMO（已由管理员授权，置灰只读锁定，不可在个人资料自主修改）
-    var orgRoles = window.RoleSwitcher ? window.RoleSwitcher.getOrgRoles(account) : (account === '003030' ? ['pmo'] : []);
+    // 2. 组织固定授权角色：服务端返回的组织角色只读展示，不可在个人资料自主修改。
+    var orgRoles = window.RoleSwitcher ? window.RoleSwitcher.getOrgRoles() : [];
     orgRoles.forEach(function (key) {
       var label = key === 'pmo' ? 'PMO' : (key === 'lead' ? '团队管理' : key.toUpperCase());
       boxes.push(

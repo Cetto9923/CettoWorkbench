@@ -25,14 +25,7 @@
     total: 0
   };
 
-  function esc(s) {
-    return String(s == null ? "" : s)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  }
+  var esc = (window.PersonalList && window.PersonalList.escapeHtml) || function (s) { return String(s == null ? "" : s); };
 
   function getCsrfToken() {
     var el = document.getElementById("csrfToken"); return el ? el.value : "";
@@ -136,8 +129,9 @@
 
   function situationTag(item) {
     var label = item.overallSituationLabel || "正常";
-    var cls = item.overallSituation === 1 ? "tag orange" : (item.overallSituation === 2 ? "tag red" : "tag green");
-    return '<span class="' + cls + '">' + esc(label) + "</span>";
+    return window.PersonalList && window.PersonalList.statusTagHtml
+      ? window.PersonalList.statusTagHtml(label)
+      : '<span class="tag">' + esc(label) + "</span>";
   }
 
   function submitStatusHtml(status) {

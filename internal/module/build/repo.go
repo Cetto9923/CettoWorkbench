@@ -70,6 +70,22 @@ func (r *Repo) FindChildBuildStories(ctx context.Context, childIDs []uint) ([]st
 	return out, nil
 }
 
+// FindStoryTitlesByIDs 批量读取研发需求标题。
+func (r *Repo) FindStoryTitlesByIDs(ctx context.Context, ids []uint) ([]storyTitleRow, error) {
+	if r == nil || r.db == nil || len(ids) == 0 {
+		return nil, nil
+	}
+	var rows []storyTitleRow
+	err := r.db.WithContext(ctx).Model(&ztmodel.ZtStory{}).
+		Select("id", "title").Where("id IN ? AND deleted = ? AND type = ?", ids, "0", "story").Find(&rows).Error
+	return rows, err
+}
+
+type storyTitleRow struct {
+	ID    uint   `gorm:"column:id"`
+	Title string `gorm:"column:title"`
+}
+
 // FindParentStoryIDs 产品下父需求 ID（isParent=1），对齐 getExcludeStoryIdList。
 func (r *Repo) FindParentStoryIDs(ctx context.Context, productID uint) ([]uint, error) {
 	if r == nil || r.db == nil || productID == 0 {

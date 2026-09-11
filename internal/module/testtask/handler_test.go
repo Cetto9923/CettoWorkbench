@@ -43,6 +43,10 @@ func TestGetContext_Success(t *testing.T) {
 		WithArgs(63411, 1).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "status", "stage", "BRA", "RD", "QD", "product_name", "estimate_launch"}).
 			AddRow(63411, "测试需求", "developing", "wait", "003030", "771349", "004481", "主系统A", "2026-10-01"))
+	mock.ExpectQuery("(?s)SELECT DISTINCT p\\.id, p\\.name.*FROM zt_demandclarify").WithArgs(63411).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name"}))
+	mock.ExpectQuery("(?s)SELECT account, realname.*FROM zt_user").
+		WillReturnRows(sqlmock.NewRows([]string{"account", "realname"}))
 
 	resp, err := svc.GetContext(context.Background(), &model.User{Account: "admin", DisplayName: "管理员"}, 63411)
 	if err != nil {
@@ -91,6 +95,10 @@ func TestHandler_GetContext(t *testing.T) {
 		WithArgs(63411, 1).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "status", "stage", "BRA", "RD", "QD", "product_name", "estimate_launch"}).
 			AddRow(63411, "测试需求", "developing", "wait", "003030", "771349", "004481", "系统2", "2026-10-01"))
+	mock.ExpectQuery("(?s)SELECT DISTINCT p\\.id, p\\.name.*FROM zt_demandclarify").WithArgs(63411).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name"}))
+	mock.ExpectQuery("(?s)SELECT account, realname.*FROM zt_user").
+		WillReturnRows(sqlmock.NewRows([]string{"account", "realname"}))
 
 	req := httptest.NewRequest(http.MethodGet, "/demands/63411/testtask", nil)
 	w := httptest.NewRecorder()

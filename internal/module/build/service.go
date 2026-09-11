@@ -178,6 +178,48 @@ func (s *Service) LinkStory(ctx context.Context, actor *model.User, buildID uint
 	}, pager, nil
 }
 
+// ListLinkedStories 返回版本及其子版本已关联的研发需求。
+func (s *Service) ListLinkedStories(ctx context.Context, actor *model.User, buildID uint) ([]LinkedStoryItem, error) {
+	if actor == nil || strings.TrimSpace(actor.Account) == "" {
+		return nil, errorx.New(errorx.ErrCodeForbidden, "请先登录")
+	}
+	if buildID == 0 {
+		return nil, errorx.New(errorx.ErrCodeInvalidParam, "版本 ID 无效")
+	}
+	build, err := s.repo.FindBuildByID(ctx, buildID)
+	if err != nil {
+		if errors.Is(err, errBuildNotFound) {
+			return nil, errorx.New(errorx.ErrCodeNotFound, "版本不存在")
+		}
+		return nil, err
+	}
+	child, err := s.repo.FindChildBuildStories(ctx, ParseCSVUintIDs(build.Builds))
+	if err != nil {
+		return nil, err
+	}
+	ids := MergeAllStoriesCSV(build.Stories, child)
+	if len(ids) == 0 {
+		return []LinkedStoryItem{}, nil
+	}
+	rows, err := s.repo.FindStoryTitlesByIDs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	byID := make(map[uint]storyTitleRow, len(rows))
+	for _, row := range rows {
+		byID[row.ID] = row
+	}
+	out := make([]LinkedStoryItem, 0, len(ids))
+	for _, id := range ids {
+		title := ""
+		if row, ok := byID[id]; ok {
+			title = row.Title
+		}
+		out = append(out, LinkedStoryItem{ID: id, Title: title, ZentaoUrl: zentao.StoryViewURL(id)})
+	}
+	return out, nil
+}
+
 // LinkStories 将勾选的研发需求关联到版本（POST 禅道 /build/:id/linkstories）。
 func (s *Service) LinkStories(ctx context.Context, actor *model.User, buildID uint, req LinkStoriesReq) error {
 	if buildID == 0 {

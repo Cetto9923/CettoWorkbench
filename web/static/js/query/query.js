@@ -121,11 +121,14 @@
       actionHtml = '<button type="button" class="action-btn table-action-btn secondary" data-demand-id="' + esc(rawId) + '">查看</button>';
     }
 
+    var idChip = (PL && PL.idChipHtml)
+      ? PL.idChipHtml(TAB_KIND_MAP[kind] || kind, idHtml)
+      : ('<span class="wb-type wb-type-' + (TAB_KIND_MAP[kind] || "unknown") + '">' + idHtml + '</span>');
+    var priHtml = priorityBadge(row.priority);
+
     return '<tr>' +
-      '<td class="query-col-id">' + idHtml + '</td>' +
-      '<td class="query-col-title" title="' + esc(row.title || "") + '">' + titleLink + '</td>' +
-      '<td class="query-col-type">' + typeTag + '</td>' +
-      '<td class="query-col-pri">' + priorityBadge(row.priority) + '</td>' +
+      '<td class="query-col-id">' + idChip + '</td>' +
+      '<td class="query-col-title" title="' + esc(row.title || "") + '">' + priHtml + ' ' + titleLink + '</td>' +
       '<td class="query-col-stage">' + stageHtml + '</td>' +
       '<td class="query-col-status">' + statusHtml + '</td>' +
       '<td class="query-col-owner">' + ownerText + '</td>' +
@@ -170,7 +173,7 @@
     if (!tbody) { return; }
 
     if (total === 0 || rows.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="10" class="state-placeholder">当前条件下暂无需求</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="state-placeholder">当前条件下暂无需求</td></tr>';
       var pager = $("queryPager");
       if (pager) { pager.hidden = true; pager.innerHTML = ""; }
       return;

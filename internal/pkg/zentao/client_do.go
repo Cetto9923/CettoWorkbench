@@ -179,7 +179,8 @@ func (c *Client) doRaw(ctx context.Context, method, path, token string, body any
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		callErr = fmt.Errorf("%w: %v", ErrZentaoUnreachable, err)
+		// 双层 %w，让 errors.Is(returnedErr, context.DeadlineExceeded) / context.Canceled 仍可命中。
+		callErr = fmt.Errorf("%w: %w", ErrZentaoUnreachable, err)
 		return callErr
 	}
 	defer resp.Body.Close()

@@ -11,15 +11,7 @@
   // 每页条数选项：与分页组件（PersonalList / components/pager.html）同一套取值。
   var PAGE_SIZE_OPTIONS = (window.PersonalList && window.PersonalList.PAGE_SIZE_OPTIONS) || [10, 20, 50, 100];
 
-  function esc(str) {
-    if (str === null || str === undefined) return "";
-    return String(str)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  }
+  var esc = (window.PersonalList && window.PersonalList.escapeHtml) || function (s) { return String(s == null ? "" : s); };
   var PL = window.PersonalList || {};
   // 把 ZenTao API kind（demand/story/task/bug/charter/...）映射成 wb-type CSS kind
   // （business/story/...），与 PersonalList.OBJECT_KIND_FROM_API / wb-priority.css 色板对齐。

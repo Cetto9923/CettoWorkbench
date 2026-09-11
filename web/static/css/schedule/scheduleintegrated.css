@@ -907,9 +907,23 @@ html[data-theme="dark"] #scheduleIntegratedModal .schedule-modal-summary strong 
   flex: 0 0 auto !important;
   flex-shrink: 0 !important;
   white-space: nowrap !important;
-  padding: 0 10px;
+  padding: 0 12px;
   height: 100%;
+  border: none;
+  border-left: 1px solid var(--border);
+  border-radius: 0;
+  background: var(--color-surface-muted);
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  transition: all .15s;
+}
+
+#scheduleIntegratedModal .schedule-integrated-cell .schedule-window-combo .js-schedule-inline-create:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-primary-hover);
 }

@@ -460,3 +460,39 @@
     width: 24px;
   }
 }
+
+/* 提测系统动态勾选与联动跳过样式 */
+.po-testtask-unit-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--color-surface-muted);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.po-testtask-sys-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.po-testtask-sys-toggle input[type="checkbox"] {
+  cursor: pointer;
+}
+
+.po-testtask-unit-skipped {
+  padding: 12px 14px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-surface);
+  border-radius: 0 0 6px 6px;
+}

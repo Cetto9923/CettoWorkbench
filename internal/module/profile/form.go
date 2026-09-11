@@ -45,6 +45,7 @@ type GetResp struct {
 	PreferredRoles []string           `json:"preferredRoles"` // 已勾选自选角色
 	AgileGroups    []AgileGroupOption `json:"agileGroups"`
 	MainTeamID     uint64             `json:"mainTeamId"` // 禅道 zt_user.mainTeam
+	OrgRoles       []RoleOption       `json:"orgRoles"`   // 组织授权角色（如 PMO、Lead）
 }
 
 // UpdateReq 更新个人资料。

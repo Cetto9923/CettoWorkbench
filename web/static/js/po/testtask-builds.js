@@ -13,6 +13,7 @@
   var executionState = {};
   // 已加载过的产品执行下拉缓存（避免 step 2 重复请求）；key=productId。
   var executionCache = {};
+  var buildCache = {};
   // 防止步骤切换时重复触发执行加载。
   var executionsLoaded = false;
   // 每次新打开弹窗都要重置。
@@ -71,7 +72,32 @@
         return;
       }
       loadExecutionsForUnit(unitNo, productId);
+      loadBuildsForUnit(unitNo, productId);
     });
+  }
+
+  function loadBuildsForUnit(unitNo, productId) {
+    if (buildCache[productId]) { renderBuildsForUnit(unitNo, buildCache[productId]); return; }
+    var $select = $root().find('[data-tt-exist-ver="' + unitNo + '"]');
+    if (!$select.length) return;
+    $select.empty().append($('<option></option>').val('').text('加载中…')).prop('disabled', true);
+    (window.appFetch || fetch)("/products/" + encodeURIComponent(productId) + "/builds", { method: "GET", headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" } })
+      .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, status: res.status, body: body }; }); })
+      .then(function (wrap) {
+        if (!wrap.ok || !wrap.body || !wrap.body.success) throw new Error((wrap.body && wrap.body.message) || ("获取版本列表失败 (HTTP " + wrap.status + ")"));
+        buildCache[productId] = Array.isArray(wrap.body.data) ? wrap.body.data : [];
+        renderBuildsForUnit(unitNo, buildCache[productId]);
+      })
+      .catch(function (err) { $select.empty().append($('<option></option>').val('').text('加载失败，请重试')).prop('disabled', true); toast((err && err.message) || '获取版本列表失败', 'error'); });
+  }
+
+  function renderBuildsForUnit(unitNo, list) {
+    var $select = $root().find('[data-tt-exist-ver="' + unitNo + '"]'); if (!$select.length) return;
+    $select.empty();
+    if (!list.length) { $select.append($('<option></option>').val('').text('暂无已有版本')).prop('disabled', true); return; }
+    $select.append($('<option></option>').val('').text('请选择已有版本'));
+    list.forEach(function (item) { $select.append($('<option></option>').val(String(item.value || '')).text(String(item.label || item.value || ''))); });
+    $select.prop('disabled', false);
   }
 
   function loadExecutionsForUnit(unitNo, productId) {
@@ -238,6 +264,11 @@
     $r.find("[data-tt-unit]").each(function () {
       var unitNo = parseInt($(this).attr("data-tt-unit"), 10) || 0;
       if (!unitNo) {
+        return;
+      }
+      var isMain = $(this).find(".po-testtask-sys-badge.is-main").length > 0;
+      var $check = $r.find('input[name="sys' + unitNo + 'Enable"]');
+      if (!isMain && $check.length && !$check.is(":checked")) {
         return;
       }
       var $verRadio = $r.find('input[name="ver' + unitNo + 'Mode"]:checked');

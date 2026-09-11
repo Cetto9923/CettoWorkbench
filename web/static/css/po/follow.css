@@ -652,10 +652,10 @@ html[data-theme="dark"] .pw-action-btn.pw-watch-btn.is-watched:hover:not(:disabl
 
 /* 操作列链接 */
 html[data-theme="dark"] .pw-actions .link-btn {
-  color: #818cf8;
+  color: var(--color-primary, #3b82f6);
 }
 html[data-theme="dark"] .pw-actions .link-btn:hover {
-  color: #a5b4fc;
+  color: #60a5fa;
   text-decoration: underline;
 }
 html[data-theme="dark"] .pw-actions .link-btn.muted:hover {

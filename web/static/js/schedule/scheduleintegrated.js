@@ -568,6 +568,9 @@
 
   function setDateInputValue($input, value) {
     var date = $.trim(value || "");
+    if (!date || date.indexOf("0001") === 0 || date.indexOf("0000") === 0) {
+      date = "";
+    }
     $input.val(date);
     if (shared) {
       shared.syncIntegratedDateInputState($input[0]);

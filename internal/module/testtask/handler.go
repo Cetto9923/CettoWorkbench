@@ -9,6 +9,7 @@
 package testtask
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -36,8 +37,29 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g := rg.Group("")
 	g.GET("/demands/:id/testtask", h.GetContext)
 	g.GET("/products/:id/executions", h.ListProductExecutions)
+	g.GET("/products/:id/builds", h.ListProductBuilds)
 
 	g.POST("/demands/:id/testtask/builds", h.CreateBuilds)
+	g.POST("/demands/:id/testtask/tasks", h.CreateTesttasks)
+}
+
+// ListProductBuilds GET /products/:id/builds。
+func (h *Handler) ListProductBuilds(c *gin.Context) {
+	id, err := parseUintParam(c.Param("id"))
+	if err != nil || id == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "产品 ID 无效"})
+		return
+	}
+	items, svcErr := h.svc.ListProductBuilds(c.Request.Context(), middleware.CurrentUser(c), id)
+	if svcErr != nil {
+		status, msg := contextHTTPError(svcErr)
+		c.JSON(status, gin.H{"success": false, "message": msg})
+		return
+	}
+	if items == nil {
+		items = []BuildOption{}
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": items})
 }
 
 // GetContext GET /demands/:id/testtask — 返回当前需求上下文 JSON。
@@ -125,6 +147,79 @@ func (h *Handler) CreateBuilds(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "版本保存成功",
+		"data":    resp,
+	})
+}
+
+// CreateTesttasks POST /demands/:id/testtask/tasks — 将非联调测试单同步到禅道。
+//
+// 区分两类失败：
+//   - 业务校验失败（参数、归属校验）：返回 400 + message，不进入远程写入。
+//   - 业务规则通过但部分条目远程失败：Service 返回 *PartialTesttaskError，
+//     Handler 通过 errors.As 取回已成功 ID + 失败原因，HTTP 207 + succeeded + cause；
+//     前端必须显式提示并禁止自动重发（避免重复创建）。
+func (h *Handler) CreateTesttasks(c *gin.Context) {
+	id, err := parseDemandID(c.Param("id"))
+	if err != nil || id == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "需求 ID 无效"})
+		return
+	}
+
+	var req CreateTesttasksReq
+	if bindErr := c.ShouldBindJSON(&req); bindErr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "参数解析失败"})
+		return
+	}
+	if fieldErrs := req.Validate(); len(fieldErrs) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"success": false,
+			"message": "参数校验失败",
+			"errors":  fieldErrs,
+		})
+		return
+	}
+
+	resp, svcErr := h.svc.CreateTesttasks(c.Request.Context(), middleware.CurrentUser(c), id, req)
+	if svcErr != nil {
+		var partial *PartialTesttaskError
+		if errors.As(svcErr, &partial) {
+			if h.logger != nil {
+				h.logger.Warn("testtask create partial",
+					zap.Error(svcErr),
+					zap.Uint("id", id),
+					zap.Int("succeeded", len(partial.Succeeded)),
+					zap.String("cause", partial.Cause),
+				)
+			}
+			if resp == nil {
+				resp = &CreateTesttasksResp{Tasks: partial.Succeeded}
+			} else if resp.Tasks == nil {
+				resp.Tasks = partial.Succeeded
+			}
+			tasks := resp.Tasks
+			if tasks == nil {
+				tasks = []CreateTesttaskResult{}
+			}
+			c.JSON(http.StatusMultiStatus, gin.H{
+				"success":   false,
+				"message":   partial.Cause,
+				"cause":     partial.Cause,
+				"succeeded": tasks,
+				"data":      gin.H{"tasks": tasks},
+			})
+			return
+		}
+		if h.logger != nil {
+			h.logger.Error("testtask create tasks", zap.Error(svcErr), zap.Uint("id", id))
+		}
+		status, msg := contextHTTPError(svcErr)
+		c.JSON(status, gin.H{"success": false, "message": msg})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "测试单保存成功",
 		"data":    resp,
 	})
 }

@@ -43,9 +43,29 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g := rg.Group("/builds")
 
 	g.GET("/:id/linkstory", middleware.RequirePerm(perm.BuildLinkStory), h.LinkStory)
+	g.GET("/:id/linkedstories", middleware.RequirePerm(perm.BuildLinkStory), h.ListLinkedStories)
 
 	g.POST("/:id/linkstories", middleware.RequirePerm(perm.BuildLinkStory), h.LinkStories)
 	g.POST("/:id/unlinkstories", middleware.RequirePerm(perm.BuildLinkStory), h.UnlinkStories)
+}
+
+// ListLinkedStories GET /builds/:id/linkedstories。
+func (h *Handler) ListLinkedStories(c *gin.Context) {
+	id, err := parseUintParam(c.Param("id"))
+	if err != nil || id == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "版本 ID 无效"})
+		return
+	}
+	items, svcErr := h.svc.ListLinkedStories(c.Request.Context(), middleware.CurrentUser(c), id)
+	if svcErr != nil {
+		status, msg := linkStoryHTTPError(svcErr)
+		c.JSON(status, gin.H{"success": false, "message": msg})
+		return
+	}
+	if items == nil {
+		items = []LinkedStoryItem{}
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": items})
 }
 
 // LinkStory GET /builds/:id/linkstory — 返回关联需求弹窗 body HTML 片段。

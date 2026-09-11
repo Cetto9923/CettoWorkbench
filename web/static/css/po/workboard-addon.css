@@ -129,3 +129,84 @@
 .kb-team-row-new-badge { display: inline-block; padding: 0 4px; border-radius: 2px; background: var(--navy); color: var(--color-text-on-accent); font-size: 9px; font-style: normal; font-weight: 700; }
 .kb-team-remove { border: 0; background: transparent; color: var(--red); font-size: 11px; cursor: pointer; padding: 2px 4px; }
 .kb-team-remove:hover { text-decoration: underline; }
+
+/* =============================================================================
+   看板扩展与弹窗夜间模式（Dark Mode）增强
+   ============================================================================= */
+html[data-theme="dark"] .issue-drawer {
+  background: #111827;
+  border-left-color: #243048;
+}
+
+html[data-theme="dark"] .issue-drawer-header,
+html[data-theme="dark"] .issue-drawer-footer {
+  background: #172033;
+  border-color: #243048;
+}
+
+html[data-theme="dark"] .issue-drawer-body {
+  background: #0b1120;
+}
+
+html[data-theme="dark"] .issue-detail-section {
+  background: #111827;
+  border-color: #243048;
+}
+
+html[data-theme="dark"] .kb-modal {
+  background: #111827;
+  border: 1px solid #243048;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6);
+}
+
+html[data-theme="dark"] .kb-modal-hdr,
+html[data-theme="dark"] .kb-modal-footer {
+  background: #172033;
+  border-color: #243048;
+}
+
+html[data-theme="dark"] .kb-modal-body {
+  background: #111827;
+}
+
+html[data-theme="dark"] .kb-input,
+html[data-theme="dark"] .kb-select,
+html[data-theme="dark"] .kb-textarea {
+  background: #172033;
+  border-color: #334155;
+  color: #f8fafc;
+}
+
+html[data-theme="dark"] .kb-input:disabled {
+  background: rgba(255, 255, 255, 0.04);
+  color: #64748b;
+  border-color: #243048;
+}
+
+html[data-theme="dark"] .kb-team-add-panel {
+  background: #172033;
+  border-color: #243048;
+}
+
+html[data-theme="dark"] .kb-team-candidate {
+  background: #111827;
+  border-color: #334155;
+  color: #cbd5e1;
+}
+
+html[data-theme="dark"] .kb-team-table th {
+  background: #172033;
+  border-color: #243048;
+  color: #cbd5e1;
+}
+
+html[data-theme="dark"] .kb-team-table td {
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+html[data-theme="dark"] .kb-team-table select,
+html[data-theme="dark"] .kb-team-table input {
+  background: #172033;
+  border-color: #334155;
+  color: #f8fafc;
+}

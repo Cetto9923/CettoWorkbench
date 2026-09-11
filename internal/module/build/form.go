@@ -87,6 +87,13 @@ type LinkStoryItem struct {
 	DefaultChecked bool
 }
 
+// LinkedStoryItem 是版本已关联研发需求的轻量回显项。
+type LinkedStoryItem struct {
+	ID        uint   `json:"id"`
+	Title     string `json:"title"`
+	ZentaoUrl string `json:"zentaoUrl"`
+}
+
 // SearchOption 下拉选项。
 type SearchOption struct {
 	Value string `json:"value"`

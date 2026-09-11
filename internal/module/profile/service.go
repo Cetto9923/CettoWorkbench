@@ -59,6 +59,10 @@ func (s *Service) Get(ctx context.Context, actor *model.User) (GetResp, error) {
 		preferred = []string{}
 	}
 	preferred = filterPreferred(preferred, allowed)
+	orgRoles, err := s.repo.FindUserOrgRoles(ctx, actor.Account)
+	if err != nil {
+		return GetResp{}, err
+	}
 
 	return GetResp{
 		Account:        row.Account,
@@ -72,6 +76,7 @@ func (s *Service) Get(ctx context.Context, actor *model.User) (GetResp, error) {
 		PreferredRoles: preferred,
 		AgileGroups:    groups,
 		MainTeamID:     row.MainTeam,
+		OrgRoles:       orgRoles,
 	}, nil
 }
 

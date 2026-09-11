@@ -26,6 +26,33 @@
     return fetch(input, options);
   }
 
+  // JSON 请求统一入口；保留 appFetch 的原始 Response 契约供旧调用方使用。
+  function appJson(input, init) {
+    var options = Object.assign({}, init || {});
+    options.headers = Object.assign({ "Accept": "application/json" }, options.headers || {});
+    if (options.body && typeof options.body !== "string" && !(options.body instanceof FormData)) {
+      options.headers["Content-Type"] = "application/json";
+      options.body = JSON.stringify(options.body);
+    }
+    return appFetch(input, options).then(function (response) {
+      if (response.status === 401 || (response.redirected && String(response.url || "").indexOf("/login") >= 0)) {
+        window.location.href = "/login?redirect=" + encodeURIComponent(window.location.pathname);
+        throw new Error("session expired");
+      }
+      return response.text().then(function (text) {
+        var payload = null;
+        try { payload = text ? JSON.parse(text) : null; } catch (e) { throw new Error("数据格式解析失败"); }
+        if (!response.ok) {
+          var error = new Error((payload && (payload.error || payload.message)) || "请求失败 (" + response.status + ")");
+          error.status = response.status;
+          error.payload = payload;
+          throw error;
+        }
+        return payload;
+      });
+    });
+  }
+
   function setSubmittingState(form) {
     var submitBtn = form.querySelector('button[type="submit"],input[type="submit"]');
     if (!submitBtn || submitBtn.dataset.loading === "1") {
@@ -323,7 +350,30 @@
       return;
     }
     modal.classList.add("open");
+    if (!document.body.dataset.modalOverflow) document.body.dataset.modalOverflow = document.body.style.overflow || "";
+    document.body.style.overflow = "hidden";
+    modal.setAttribute("aria-hidden", "false");
   }
+
+  function closeModal(id) {
+    var modal = document.getElementById(id);
+    if (!modal) return;
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden", "true");
+    if (!document.querySelector(".modal.open, .batch-modal.open")) {
+      document.body.style.overflow = document.body.dataset.modalOverflow || "";
+      delete document.body.dataset.modalOverflow;
+    }
+  }
+
+  document.addEventListener("keydown", function (event) {
+    if (event.key !== "Escape") return;
+    var open = document.querySelectorAll(".modal.open, .batch-modal.open");
+    if (!open.length) return;
+    var modal = open[open.length - 1];
+    if (modal.getAttribute("data-static") === "true") return;
+    closeModal(modal.id);
+  });
 
   function bindShellPlaceholderNotice() {
     document.addEventListener("click", function (event) {
@@ -346,8 +396,10 @@
   }
 
   window.appFetch = appFetch;
+  window.appJson = appJson;
   window.getCsrfToken = getCsrfToken;
   window.openModal = openModal;
+  window.closeModal = closeModal;
   bindFormLoading();
   bindConfirmAction();
   bindPagerPageSize();
@@ -386,4 +438,3 @@
     }, true);
   }
 })();
-

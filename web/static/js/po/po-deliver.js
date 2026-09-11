@@ -6,10 +6,7 @@
   var LAUNCH_WINDOW_OTHER = "__launch_other__";
   var currentCtx = null, isSubmitting = false;
 
-  function esc(s) {
-    return String(s == null ? "" : s)
-      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-  }
+  var esc = (window.PersonalList && window.PersonalList.escapeHtml) || function (s) { return String(s == null ? "" : s); };
 
   function demandIdOf(value) {
     var m = String(value == null ? "" : value).trim().match(/(?:US|REQ|DEMAND)?[-#]?(\d+)/i);

@@ -196,7 +196,7 @@
       </div>
       <div class="kb-form-group">
         <label>提出人</label>
-        <input type="text" class="kb-input" value="程统 (003030)" disabled title="提出人由服务端登录态确定">
+        <input type="text" class="kb-input" value="{{ if .CurrentUser }}{{ .CurrentUser.DisplayName }} ({{ .CurrentUser.Account }}){{ else }}—{{ end }}" disabled title="提出人由服务端登录态确定">
       </div>
     </div>
     <div class="kb-form-row">
