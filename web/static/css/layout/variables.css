@@ -263,6 +263,7 @@ html[data-theme="light"] {
   --color-version-badge-border: rgba(37, 99, 235, 0);
   --color-version-link: var(--color-info-fill);
   --color-review-overlay: rgba(15, 23, 42, 0.32);
+  --color-notice-unread-bg: rgba(37, 99, 235, 0);
   --color-review-modal-shadow: -8px 0 28px rgba(15, 23, 42, 0.18);
 
   /* 布局尺寸 */
@@ -434,6 +435,7 @@ html[data-theme="dark"] {
   --color-version-badge-border: rgba(56, 189, 248, 0.25);
   --color-version-link: #38bdf8;
   --color-review-overlay: rgba(2, 6, 23, 0.6);
+  --color-notice-unread-bg: rgba(37, 99, 235, 0.06);
   --color-review-modal-shadow: -8px 0 28px rgba(2, 6, 23, 0.55);
 
   /* Stage 2 公共优先级 token (P1-P4 bg/fg/bd) — 深色, WCAG AA 对比 */

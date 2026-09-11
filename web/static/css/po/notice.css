@@ -88,14 +88,11 @@
   display: block;
   overflow: hidden;
   margin-top: 3px;
-  color: var(--color-text-secondary);
+  color: var(--color-text-body);
   font-size: 12px;
   line-height: 1.4;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-html[data-theme="dark"] .po-notice .notice-subject-sub {
-  color: var(--color-text-body);
 }
 .po-notice .notice-sub-icon {
   margin-right: 2px;
@@ -124,9 +121,6 @@ html[data-theme="dark"] .po-notice .notice-subject-sub {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--color-info-fill);
-}
-html[data-theme="dark"] .po-notice .notice-unread-dot {
   background: var(--color-info);
 }
 
@@ -263,38 +257,7 @@ html[data-theme="dark"] .po-notice .notice-unread-dot {
   white-space: pre-wrap;
 }
 
-/* 深色模式适配 */
-html[data-theme="dark"] .po-notice .workspace-table tr.is-unread td {
-  background: rgba(37, 99, 235, 0.06);
-}
-html[data-theme="dark"] .notice-drawer {
-  background: var(--color-surface);
-  color: var(--color-text-primary);
-  border-left: 1px solid var(--color-border);
-}
-html[data-theme="dark"] .notice-drawer-hdr {
-  border-bottom-color: var(--color-border);
-}
-html[data-theme="dark"] .notice-drawer-hdr h2,
-html[data-theme="dark"] .notice-drawer .notice-detail-title {
-  color: var(--color-text-primary);
-}
-html[data-theme="dark"] .notice-drawer .notice-detail-meta {
-  background: var(--color-surface-muted);
-  border-color: var(--color-border);
-}
-html[data-theme="dark"] .notice-drawer .notice-meta-label {
-  color: var(--color-text-secondary);
-}
-html[data-theme="dark"] .notice-drawer .notice-meta-value {
-  color: var(--color-text-strong);
-}
-html[data-theme="dark"] .notice-drawer .notice-detail-body {
-  background: var(--color-surface-muted);
-  border-color: var(--color-border);
-  color: var(--color-text-body);
-}
-html[data-theme="dark"] .notice-drawer-footer {
-  background: var(--color-surface-muted);
-  border-top-color: var(--color-border);
+/* 未读行高亮（dark-only）；light token 是透明，dark 是淡蓝高亮 */
+.po-notice .workspace-table tr.is-unread td {
+  background: var(--color-notice-unread-bg);
 }
