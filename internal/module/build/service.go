@@ -2,7 +2,7 @@
 // 文件: internal/module/build/service.go
 // 模块: 版本管理
 // 类型: action
-// 职责: 关联研发需求默认列表、bySearch 与写入禅道关联。
+// 职责: 关联研发需求默认列表、bySearch、已关联列表与写入禅道关联。
 // 依赖: internal/module/user
 //       internal/pkg/errorx
 //       internal/pkg/pagination
@@ -176,6 +176,43 @@ func (s *Service) LinkStory(ctx context.Context, actor *model.User, buildID uint
 		SearchForm:  searchForm,
 		QuerySuffix: querySuffix,
 	}, pager, nil
+}
+
+// ListLinkedStories 返回版本已关联研发需求（含合并子版本 stories）。
+func (s *Service) ListLinkedStories(ctx context.Context, actor *model.User, buildID uint) ([]LinkedStoryItem, error) {
+	_ = actor
+	if buildID == 0 {
+		return nil, errorx.New(errorx.ErrCodeInvalidParam, "版本 ID 无效")
+	}
+	build, err := s.repo.FindBuildByID(ctx, buildID)
+	if err != nil {
+		if errors.Is(err, errBuildNotFound) {
+			return nil, errorx.New(errorx.ErrCodeNotFound, "版本不存在")
+		}
+		return nil, err
+	}
+	childIDs := ParseCSVUintIDs(build.Builds)
+	childStories, err := s.repo.FindChildBuildStories(ctx, childIDs)
+	if err != nil {
+		return nil, err
+	}
+	linkedIDs := MergeAllStoriesCSV(build.Stories, childStories)
+	if len(linkedIDs) == 0 {
+		return []LinkedStoryItem{}, nil
+	}
+	rows, err := s.repo.FindStoryTitlesByIDs(ctx, linkedIDs)
+	if err != nil {
+		return nil, err
+	}
+	byID := make(map[uint]storyTitleRow, len(rows))
+	for _, row := range rows {
+		byID[row.ID] = row
+	}
+	items := BuildLinkedStoryItems(linkedIDs, byID)
+	for i := range items {
+		items[i].ZentaoUrl = zentao.StoryViewURL(items[i].ID)
+	}
+	return items, nil
 }
 
 // LinkStories 将勾选的研发需求关联到版本（POST 禅道 /build/:id/linkstories）。

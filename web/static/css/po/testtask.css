@@ -485,6 +485,12 @@
   font-size: 12px;
 }
 
+.po-testtask-link-build + .po-testtask-link-build {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--tt-border);
+}
+
 .po-testtask-link-item {
   display: flex;
   align-items: center;

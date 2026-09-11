@@ -2,7 +2,7 @@
 // 文件: internal/module/build/handler.go
 // 模块: 版本管理
 // 类型: action
-// 职责: 版本关联/解除研发需求 HTML 片段与写入接口。
+// 职责: 版本关联/解除研发需求 HTML 片段、已关联列表与写入接口。
 // 依赖: internal/middleware
 //       internal/pkg/errorx
 //       internal/pkg/perm
@@ -43,6 +43,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g := rg.Group("/builds")
 
 	g.GET("/:id/linkstory", middleware.RequirePerm(perm.BuildLinkStory), h.LinkStory)
+	g.GET("/:id/linkedstories", middleware.RequirePerm(perm.BuildLinkStory), h.ListLinkedStories)
 
 	g.POST("/:id/linkstories", middleware.RequirePerm(perm.BuildLinkStory), h.LinkStories)
 	g.POST("/:id/unlinkstories", middleware.RequirePerm(perm.BuildLinkStory), h.UnlinkStories)
@@ -81,6 +82,32 @@ func (h *Handler) LinkStory(c *gin.Context) {
 		"SearchForm":     resp.SearchForm,
 		"SearchMetaJSON": SearchMetaJSON(resp.SearchForm),
 		"QuerySuffix":    resp.QuerySuffix,
+	})
+}
+
+// ListLinkedStories GET /builds/:id/linkedstories — 版本已关联研发需求 JSON。
+func (h *Handler) ListLinkedStories(c *gin.Context) {
+	id, err := parseUintParam(c.Param("id"))
+	if err != nil || id == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "版本 ID 无效"})
+		return
+	}
+
+	list, svcErr := h.svc.ListLinkedStories(c.Request.Context(), middleware.CurrentUser(c), id)
+	if svcErr != nil {
+		if h.logger != nil {
+			h.logger.Error("build linkedstories", zap.Error(svcErr), zap.Uint("buildId", id))
+		}
+		status, msg := linkStoryHTTPError(svcErr)
+		c.JSON(status, gin.H{"message": msg})
+		return
+	}
+	if list == nil {
+		list = []LinkedStoryItem{}
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    list,
 	})
 }
 

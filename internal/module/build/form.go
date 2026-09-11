@@ -139,6 +139,13 @@ type LinkStoriesReq struct {
 	Stories string `json:"stories"`
 }
 
+// LinkedStoryItem 版本已关联研发需求（JSON）。
+type LinkedStoryItem struct {
+	ID        uint   `json:"id"`
+	Title     string `json:"title"`
+	ZentaoUrl string `json:"zentaoUrl,omitempty"`
+}
+
 // Validate 校验 stories 为逗号分隔正整数。
 func (r *LinkStoriesReq) Validate() []FieldError {
 	var errs []FieldError

@@ -313,15 +313,17 @@
       <span data-tt-fill="sys-name"></span>
       <span class="po-testtask-sys-badge" data-tt-fill="sys-badge"></span>
     </div>
-    <div class="po-testtask-unit-body">
-      <div data-tt-link-edit="">
-        <div class="po-testtask-link-actions">
-          <div class="po-testtask-field-label">版本关联需求（可多选）</div>
-          <button type="button" class="po-testtask-link-add">+ 关联研发需求</button>
-        </div>
-        <div class="po-testtask-link-list" data-tt-fill="link-list"></div>
-      </div>
+    <div class="po-testtask-unit-body" data-tt-link-builds></div>
+  </div>
+</template>
+
+<template id="poTtLinkBuildTpl">
+  <div class="po-testtask-link-build" data-tt-link-build="">
+    <div class="po-testtask-link-actions">
+      <div class="po-testtask-field-label" data-tt-fill="build-label">版本关联需求（可多选）</div>
+      <button type="button" class="po-testtask-link-add">+ 关联研发需求</button>
     </div>
+    <div class="po-testtask-link-list" data-tt-fill="link-list"></div>
   </div>
 </template>
 

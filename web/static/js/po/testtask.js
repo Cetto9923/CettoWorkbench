@@ -154,6 +154,9 @@
     if (step === 3 || step === 4) {
       syncSysUnits($r);
     }
+    if (step === 3) {
+      refreshLinkUnits($r);
+    }
     if (step === 4) {
       isJointTest = readJointFlag($r);
       var joint = isJointTest === 1;
@@ -719,9 +722,98 @@
     }
     $root.find('[data-tt-fill="sys-name"]').text(name);
     setBadge($root.find('[data-tt-fill="sys-badge"]'), isMain);
-    $root.find("[data-tt-link-edit]").attr("data-tt-link-edit", id);
-    $root.find('[data-tt-fill="link-list"]').empty();
+    $root.find("[data-tt-link-builds]").empty();
     return frag;
+  }
+
+  function resolveBuildLabel(unit, buildId) {
+    var key = String(unit || "");
+    var bid = String(buildId || "").trim();
+    var cached = buildOptionsCache[key];
+    if (Array.isArray(cached)) {
+      for (var i = 0; i < cached.length; i++) {
+        if (String(cached[i].value) === bid) {
+          return cached[i].label || bid;
+        }
+      }
+    }
+    var created = createdBuildsByProduct[key];
+    if (created && String(created.buildId) === bid && created.name) {
+      return created.name;
+    }
+    return bid ? "版本 #" + bid : "版本关联需求（可多选）";
+  }
+
+  function collectLinkTargetsForUnit($r, unit) {
+    var mode = $r.find('input[name="ver' + unit + 'Mode"]:checked').val();
+    var joint = readJointFlag($r) === 1;
+    var targets = [];
+    if (mode === "exist") {
+      var ids = collectExistVerIds($r, unit, joint);
+      ids.forEach(function (bid) {
+        targets.push({
+          buildId: String(bid),
+          label: resolveBuildLabel(unit, bid)
+        });
+      });
+      return targets;
+    }
+    var created = createdBuildsByProduct[String(unit)];
+    if (created && created.buildId) {
+      targets.push({
+        buildId: String(created.buildId),
+        label: created.name || resolveBuildLabel(unit, created.buildId)
+      });
+    }
+    return targets;
+  }
+
+  function linkBuildNode(target) {
+    var frag = cloneTpl("poTtLinkBuildTpl");
+    if (!frag) {
+      return null;
+    }
+    var buildId = String((target && target.buildId) || "").trim();
+    var label = String((target && target.label) || "").trim() || "版本关联需求（可多选）";
+    var $root = $(frag.querySelector("[data-tt-link-build]"));
+    $root.attr("data-tt-link-build", buildId).attr("data-tt-build-id", buildId);
+    $root.find('[data-tt-fill="build-label"]').text(label);
+    var $list = $root.find('[data-tt-fill="link-list"]');
+    $list.attr("data-tt-build-id", buildId).empty();
+    return frag;
+  }
+
+  function refreshLinkUnits($r) {
+    $r = $r && $r.length ? $r : $root();
+    if (!$r.length) {
+      return;
+    }
+    unitIds().forEach(function (unit) {
+      var $unit = $r.find('[data-tt-link-unit="' + unit + '"]');
+      if (!$unit.length) {
+        return;
+      }
+      var $body = $unit.find("[data-tt-link-builds]");
+      var targets = collectLinkTargetsForUnit($r, unit);
+      $body.empty();
+      if (!targets.length) {
+        $body.append(
+          $('<div class="po-testtask-link-readonly">').text("请先在上一步完成系统版本配置")
+        );
+        return;
+      }
+      targets.forEach(function (target) {
+        var node = linkBuildNode(target);
+        if (!node) {
+          return;
+        }
+        $body.append(node);
+        var $list = $body.find('[data-tt-link-build="' + target.buildId + '"] [data-tt-fill="link-list"]').last();
+        if (typeof window.refreshPoLinkList === "function") {
+          window.refreshPoLinkList($list, target.buildId);
+        }
+      });
+    });
   }
 
   function testUnitNode(sys) {
@@ -1023,15 +1115,15 @@
       showToast("提交提测（静态演示，未提交后端）", "success");
     });
     $scope.on("click", ".po-testtask-link-add", function () {
-      var $unit = $(this).closest("[data-tt-link-unit]");
-      var unitId = String($unit.attr("data-tt-link-unit") || "");
-      var $list = $unit.find('[data-tt-fill="link-list"]');
-      var buildId = "";
-      var created = createdBuildsByProduct[unitId];
-      if (created && created.buildId) {
-        buildId = String(created.buildId);
-      } else {
-        buildId = String($root().find('[data-tt-exist-ver="' + unitId + '"]').val() || "").trim();
+      var $block = $(this).closest("[data-tt-link-build]");
+      var unitId = String($(this).closest("[data-tt-link-unit]").attr("data-tt-link-unit") || "");
+      var $list = $block.find('[data-tt-fill="link-list"]');
+      var buildId = String($block.attr("data-tt-build-id") || $list.attr("data-tt-build-id") || "").trim();
+      if (!buildId) {
+        var created = createdBuildsByProduct[unitId];
+        if (created && created.buildId) {
+          buildId = String(created.buildId);
+        }
       }
       if (typeof window.openPoLinkstoryModal === "function") {
         window.openPoLinkstoryModal({ unitId: unitId, buildId: buildId, $list: $list });

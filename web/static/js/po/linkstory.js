@@ -91,21 +91,21 @@
     syncHeaderCheck();
   }
 
-  function applyToLinkList(items) {
-    var $list = targetCtx.$list;
+  function fillLinkList($list, items, buildId) {
     if (!$list || !$list.length) {
       return;
     }
-    if (targetCtx.buildId) {
-      $list.attr("data-tt-build-id", targetCtx.buildId);
+    var bid = String(buildId || "").trim();
+    if (bid) {
+      $list.attr("data-tt-build-id", bid);
     }
     $list.empty();
-    items.forEach(function (item) {
-      var id = String(item.id || "").trim();
+    (items || []).forEach(function (item) {
+      var id = String((item && item.id) || "").trim();
       if (!id) {
         return;
       }
-      var title = item.title || "";
+      var title = (item && item.title) || "";
       var label = "#" + id + (title ? " " + title : "");
       var $row = $('<div class="po-testtask-link-item">').attr({
         "data-story-id": id,
@@ -117,6 +117,53 @@
         .html('<i class="fas fa-link-slash" aria-hidden="true"></i>')
         .appendTo($row);
       $list.append($row);
+    });
+  }
+
+  function applyToLinkList(items) {
+    fillLinkList(targetCtx.$list, items, targetCtx.buildId);
+  }
+
+  function getJSON(url) {
+    var fetchFn = window.appFetch || fetch;
+    return fetchFn(url, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "X-Requested-With": "XMLHttpRequest"
+      }
+    }).then(function (res) {
+      return res.text().then(function (text) {
+        var data = {};
+        try {
+          data = text ? JSON.parse(text) : {};
+        } catch (ignore) {
+          data = {};
+        }
+        return { ok: res.ok, data: data, status: res.status };
+      });
+    });
+  }
+
+  function refreshLinkList($list, buildId) {
+    var bid = String(buildId || "").trim();
+    if (!$list || !$list.length || !/^\d+$/.test(bid) || bid === "0") {
+      return Promise.resolve([]);
+    }
+    return getJSON("/builds/" + encodeURIComponent(bid) + "/linkedstories").then(function (wrap) {
+      var list = [];
+      if (wrap.ok && wrap.data && wrap.data.success) {
+        list = Array.isArray(wrap.data.data) ? wrap.data.data : [];
+      } else {
+        var msg = String((wrap.data && (wrap.data.message || wrap.data.error)) || "").trim();
+        showToast(msg || "获取已关联需求失败", "error");
+      }
+      fillLinkList($list, list, bid);
+      return list;
+    }).catch(function () {
+      showToast("获取已关联需求失败，请稍后重试", "error");
+      fillLinkList($list, [], bid);
+      return [];
     });
   }
 
@@ -475,13 +522,14 @@
           var msg = String((res.data && res.data.message) || "").trim();
           throw new Error(msg || "关联需求失败");
         }
-        applyToLinkList(items);
-        closeModal();
-        showToast(
-          String((res.data && res.data.message) || "").trim() ||
-            "已关联 " + items.length + " 条研发需求",
-          "success"
-        );
+        return refreshLinkList(targetCtx.$list, targetCtx.buildId).then(function () {
+          closeModal();
+          showToast(
+            String((res.data && res.data.message) || "").trim() ||
+              "已关联 " + items.length + " 条研发需求",
+            "success"
+          );
+        });
       })
       .catch(function (err) {
         showToast((err && err.message) || "关联需求失败", "error");
@@ -616,6 +664,8 @@
 
   window.openPoLinkstoryModal = openModal;
   window.closePoLinkstoryModal = closeModal;
+  window.fillPoLinkList = fillLinkList;
+  window.refreshPoLinkList = refreshLinkList;
 
   $(init);
 })(jQuery);
