@@ -32,13 +32,13 @@ import (
 	"workbench/internal/module/debug"
 	"workbench/internal/module/dept"
 
+	"workbench/internal/module/build"
 	"workbench/internal/module/login"
 	"workbench/internal/module/loginlog"
 	"workbench/internal/module/menu"
 	"workbench/internal/module/metrics"
 	"workbench/internal/module/operationlog"
 	"workbench/internal/module/po"
-	"workbench/internal/module/profile"
 	"workbench/internal/module/query"
 	"workbench/internal/module/role"
 	"workbench/internal/module/schedule"
@@ -73,6 +73,11 @@ func Run() error {
 		return fmt.Errorf("init sql log: %w", err)
 	}
 	defer func() { _ = sqllog.Sync() }()
+
+	if err := zentaopkg.InitAPILog(cfg); err != nil {
+		return fmt.Errorf("init zentao api log: %w", err)
+	}
+	defer func() { _ = zentaopkg.SyncAPILog() }()
 
 	db, err := database.New(cfg)
 	if err != nil {
@@ -139,7 +144,6 @@ func Run() error {
 	querySvc := query.NewService(queryRepo)
 	queryHandler := query.NewHandler(rend, querySvc, zapLog)
 	metricsHandler := metrics.NewHandler(rend, metrics.NewService(metrics.NewRepo(dbReadonlyOrPrimary(dbReadonly, db))), zapLog)
-	profileHandler := profile.NewHandler(profile.NewService(profile.NewRepo(db)), zapLog)
 	// PO 查询走只读池（可 nil 降级）；关注/已读写入必须走主库。
 	poRepo := po.NewRepo(dbReadonly, db)
 	poSvc := po.NewService(poRepo, scheduleSvc, userSvc, zapLog)
@@ -169,6 +173,10 @@ func Run() error {
 	testtaskSvc := testtask.NewService(testtaskRepo, userSvc, zapLog)
 	testtaskHandler := testtask.NewHandler(testtaskSvc, zapLog)
 
+	buildRepo := build.NewRepo(dbReadonlyOrPrimary(dbReadonly, db))
+	buildSvc := build.NewService(buildRepo, userSvc, zentaopkg.DefaultClient(), zapLog)
+	buildHandler := build.NewHandler(buildSvc, zapLog)
+
 	routeDeps := server.RouteDeps{
 		SessionMgr:          sessionMgr,
 		DB:                  db,
@@ -185,9 +193,9 @@ func Run() error {
 		PoHandler:           poHandler,
 		ScheduleHandler:     scheduleHandler,
 		TesttaskHandler:     testtaskHandler,
+		BuildHandler:        buildHandler,
 		QueryHandler:        queryHandler,
 		MetricsHandler:      metricsHandler,
-		ProfileHandler:      profileHandler,
 		SqlPerfHandler:      sqlPerfHandler,
 	}
 

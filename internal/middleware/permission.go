@@ -20,8 +20,8 @@ const permissionDeniedHTML = "<!DOCTYPE html><html lang=\"zh-CN\"><head><meta ch
 
 // RequirePerm 检查当前用户是否具备权限。
 // 策略：超级管理员短路通过；非超级管理员基于 userPerms 校验；
-// 自助动作 perm.AuthLogout、系统权限 perm.PoDemandReview 对所有已登录用户默认放行
-// （评审对象级授权仍由 Service 按 zt_demandreview 校验）。
+// 自助动作 perm.AuthLogout、系统权限 perm.PoDemandReview / perm.BuildLinkStory
+// 对所有已登录用户默认放行（对象级授权仍由 Service / 禅道校验）。
 func RequirePerm(p perm.Permission) gin.HandlerFunc {
 	return RequireAnyPerm(p)
 }
@@ -40,7 +40,7 @@ func RequireAnyPerm(perms ...perm.Permission) gin.HandlerFunc {
 			return
 		}
 		for _, p := range perms {
-			if p == perm.AuthLogout || p == perm.PoDemandReview || hasPermission(c, p) {
+			if p == perm.AuthLogout || p == perm.PoDemandReview || p == perm.BuildLinkStory || hasPermission(c, p) {
 				c.Next()
 				return
 			}

@@ -35,9 +35,9 @@ const (
 	TEMPLATE_PO_BOARD_DEMAND  = "po/workboard"
 	TEMPLATE_PO_BOARD_TASK    = "po/workboard"
 	TEMPLATE_PO_DEMAND_DETAIL = "po/demand_detail"
+	TEMPLATE_PO_LINKSTORY     = "po/linkstory"
 
 	TEMPLATE_SCHEDULE_INDEX = "schedule/index"
 	TEMPLATE_QUERY_INDEX    = "query/index"
 
-	TEMPLATE_PROFILE_INDEX = "profile/index"
 )

@@ -18,6 +18,7 @@ import (
 	"workbench/internal/module/debug"
 	"workbench/internal/module/dept"
 
+	"workbench/internal/module/build"
 	loginmodule "workbench/internal/module/login"
 	"workbench/internal/module/loginlog"
 	menumodule "workbench/internal/module/menu"
@@ -50,6 +51,7 @@ type RouteDeps struct {
 	PoHandler           *pomodule.Handler
 	ScheduleHandler     *schedule.Handler
 	TesttaskHandler     *testtask.Handler
+	BuildHandler        *build.Handler
 	QueryHandler        *query.Handler
 	MetricsHandler      *metrics.Handler
 	ProfileHandler      *profile.Handler
@@ -100,6 +102,9 @@ func registerRoutes(r *gin.Engine, deps RouteDeps) {
 		}
 		if deps.TesttaskHandler != nil {
 			deps.TesttaskHandler.RegisterRoutes(po)
+		}
+		if deps.BuildHandler != nil {
+			deps.BuildHandler.RegisterRoutes(po)
 		}
 		if deps.QueryHandler != nil {
 			deps.QueryHandler.RegisterRoutes(po)

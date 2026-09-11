@@ -1,0 +1,200 @@
+{{/* ==========================================================================
+文件: web/templates/po/linkstory.html
+模块: PO工作台
+职责: 关联研发需求弹窗（壳静态；body 可由 GET /builds/:id/linkstory 片段刷新）
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: .Stories ([]module/build.LinkStoryItem)
+          .Pager (*pkg/pagination.Pager)
+          .BaseUrl (string)
+          .BuildID (uint)
+          .SearchForm (module/build.LinkStorySearchForm)
+          .SearchMetaJSON (string)
+          .QuerySuffix (string)
+========================================================================== */}}
+{{ define "po/linkstory" }}
+<div class="po-linkstory-overlay" id="poLinkstoryOverlay"></div>
+<div class="po-linkstory-modal" id="poLinkstoryModal" role="dialog" aria-labelledby="poLinkstoryModalTitle" aria-modal="true">
+  <div class="po-linkstory-modal-hdr">
+    <h3 id="poLinkstoryModalTitle">
+      <i class="fas fa-link"></i>
+      <span>关联研发需求</span>
+    </h3>
+    <button type="button" class="po-linkstory-modal-close" id="poLinkstoryCloseBtn" aria-label="关闭"><i class="fas fa-xmark"></i></button>
+  </div>
+  <div class="po-linkstory-modal-body" id="poLinkstoryModalBody">
+    {{ template "po/linkstory_body" . }}
+  </div>
+</div>
+{{ end }}
+
+{{ define "po/linkstory_body" }}
+{{ $sf := .SearchForm }}
+<div class="po-linkstory" id="poLinkstoryRoot" data-base-url="{{ .BaseUrl }}" data-query-suffix="{{ .QuerySuffix }}">
+  <textarea id="poLinkstorySearchMeta" hidden>{{ .SearchMetaJSON }}</textarea>
+  <div class="search-layout">
+    <div class="search-panel">
+      <div class="search-fields" id="poLinkstorySearchFields">
+        <span class="search-label">第一组</span>
+        <div class="ui-autocomplete po-linkstory-field-ac" data-group="1">
+          <input type="text" id="poLinkstoryField1Input" class="search-input" placeholder="搜索字段" autocomplete="off" aria-label="第一组字段" />
+          <input type="hidden" id="poLinkstoryField1" class="po-linkstory-field" data-group="1" value="{{ if $sf.Field1 }}{{ $sf.Field1 }}{{ else }}title{{ end }}" />
+        </div>
+        <select id="poLinkstoryOp1" class="select" aria-label="第一组运算符">
+          {{ if $sf.Options }}
+            {{ range index $sf.Options "operators" }}
+          <option value="{{ .Value }}"{{ if eq $sf.Operator1 .Value }} selected{{ end }}>{{ .Label }}</option>
+            {{ end }}
+          {{ else }}
+          <option value="include" selected>包含</option>
+          <option value="=">=</option>
+          <option value="!=">!=</option>
+          {{ end }}
+        </select>
+        <span id="poLinkstoryValueBox1" class="po-linkstory-value-box" data-group="1"></span>
+
+        <select id="poLinkstoryAndOr" class="select" aria-label="条件组合">
+          <option value="and"{{ if ne $sf.AndOr "or" }} selected{{ end }}>并且</option>
+          <option value="or"{{ if eq $sf.AndOr "or" }} selected{{ end }}>或者</option>
+        </select>
+
+        <span class="search-label">第二组</span>
+        <div class="ui-autocomplete po-linkstory-field-ac" data-group="2">
+          <input type="text" id="poLinkstoryField2Input" class="search-input" placeholder="搜索字段" autocomplete="off" aria-label="第二组字段" />
+          <input type="hidden" id="poLinkstoryField2" class="po-linkstory-field" data-group="2" value="{{ if $sf.Field2 }}{{ $sf.Field2 }}{{ else }}status{{ end }}" />
+        </div>
+        <select id="poLinkstoryOp2" class="select" aria-label="第二组运算符">
+          {{ if $sf.Options }}
+            {{ range index $sf.Options "operators" }}
+          <option value="{{ .Value }}"{{ if eq $sf.Operator2 .Value }} selected{{ end }}>{{ .Label }}</option>
+            {{ end }}
+          {{ else }}
+          <option value="=" selected>=</option>
+          <option value="!=">!=</option>
+          <option value="include">包含</option>
+          {{ end }}
+        </select>
+        <span id="poLinkstoryValueBox2" class="po-linkstory-value-box" data-group="2"></span>
+
+        <button type="button" class="action-btn primary search-btn search-btn-primary" id="poLinkstorySearchBtn">
+          <span>搜索</span>
+        </button>
+      </div>
+      <input type="hidden" id="poLinkstoryValue1Init" value="{{ $sf.Value1 }}">
+      <input type="hidden" id="poLinkstoryValue2Init" value="{{ $sf.Value2 }}">
+    </div>
+  </div>
+
+  <div class="table-panel table-container po-linkstory-table-panel">
+    <div class="table-wrapper table-scroll-wrapper">
+      <table class="table data-table zen-table" id="poLinkstoryTable">
+        <thead>
+          <tr>
+            <th class="col-check">
+              <input type="checkbox" id="poLinkstoryCheckAll" aria-label="全选">
+            </th>
+            <th class="col-id">ID</th>
+            <th>P</th>
+            <th class="col-title">研发需求名称</th>
+            <th>创建者</th>
+            <th>指派给</th>
+            <th>预计</th>
+            <th>状态</th>
+            <th>阶段</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{ range .Stories }}
+          <tr>
+            <td class="col-check"><input type="checkbox" name="storyId" value="{{ .ID }}" aria-label="选择 {{ .ID }}"{{ if .DefaultChecked }} checked{{ end }}></td>
+            <td class="col-id text-muted">{{ .ID }}</td>
+            <td><span class="priority-tag {{ .PriClass }}">{{ .Pri }}</span></td>
+            <td class="col-title"><a href="{{ .ZentaoUrl }}" class="po-linkstory-title" title="{{ .Title }}" target="_blank" rel="noopener noreferrer">{{ .Title }}</a></td>
+            <td>{{ .OpenedBy }}</td>
+            <td>{{ .AssignedTo }}</td>
+            <td>{{ .EstimateText }}</td>
+            <td>{{ .StatusLabel }}</td>
+            <td>{{ .StageLabel }}</td>
+          </tr>
+          {{ else }}
+          <tr>
+            <td colspan="9" class="text-center text-muted">暂无可关联的研发需求</td>
+          </tr>
+          {{ end }}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="po-linkstory-footer">
+      <div class="po-linkstory-footer-left">
+        <input type="checkbox" id="poLinkstoryFooterCheck" aria-label="全选当前页">
+        <button type="button" class="action-btn primary po-linkstory-link-btn" id="poLinkstoryLinkBtn" hidden>关联需求</button>
+        <button type="button" class="action-btn" id="poLinkstoryBackBtn">返回</button>
+      </div>
+      <div class="pager-footer" id="poLinkstoryPager">
+        {{ if .Pager }}
+        {{ $base := .BaseUrl }}
+        {{ $suffix := .QuerySuffix }}
+        {{ $pageSize := .Pager.PageSize }}
+        {{ $currentPage := .Pager.CurrentPage }}
+        {{ $totalPages := .Pager.TotalPages }}
+        <div class="pagination-container" aria-label="分页">
+          <ul class="pagination">
+            {{ if .Pager.HasPrev }}
+            <li class="page-item">
+              <a class="page-link po-linkstory-page" href="{{ $base }}?page={{ sub $currentPage 1 }}&pageSize={{ $pageSize }}{{ $suffix }}" data-page="{{ sub $currentPage 1 }}" aria-label="上一页">
+                <i class="bi bi-chevron-left" aria-hidden="true"></i>
+              </a>
+            </li>
+            {{ else }}
+            <li class="page-item disabled">
+              <span class="page-link" aria-hidden="true"><i class="bi bi-chevron-left"></i></span>
+            </li>
+            {{ end }}
+
+            {{ if and (gt $totalPages 1) (gt (len .Pager.Pages) 0) }}
+              {{ range .Pager.Pages }}
+              <li class="page-item{{ if eq . $currentPage }} active{{ end }}">
+                {{ if eq . $currentPage }}
+                <span class="page-link" aria-current="page">{{ . }}</span>
+                {{ else }}
+                <a class="page-link po-linkstory-page" href="{{ $base }}?page={{ . }}&pageSize={{ $pageSize }}{{ $suffix }}" data-page="{{ . }}">{{ . }}</a>
+                {{ end }}
+              </li>
+              {{ end }}
+            {{ else }}
+            <li class="page-item active">
+              <span class="page-link" aria-current="page">{{ $currentPage }}</span>
+            </li>
+            {{ end }}
+
+            {{ if .Pager.HasNext }}
+            <li class="page-item">
+              <a class="page-link po-linkstory-page" href="{{ $base }}?page={{ add $currentPage 1 }}&pageSize={{ $pageSize }}{{ $suffix }}" data-page="{{ add $currentPage 1 }}" aria-label="下一页">
+                <i class="bi bi-chevron-right" aria-hidden="true"></i>
+              </a>
+            </li>
+            {{ else }}
+            <li class="page-item disabled">
+              <span class="page-link" aria-hidden="true"><i class="bi bi-chevron-right"></i></span>
+            </li>
+            {{ end }}
+          </ul>
+          <div class="pagination-options">
+            <span class="pagination-total">共 {{ .Pager.TotalItems }} 条</span>
+            <form method="GET" action="{{ $base }}" class="pagination-size-form po-linkstory-size-form">
+              <input type="hidden" name="page" value="1">
+              <select name="pageSize" class="select" aria-label="每页条数">
+                <option value="10"{{ if eq $pageSize 10 }} selected{{ end }}>10 条/页</option>
+                <option value="20"{{ if eq $pageSize 20 }} selected{{ end }}>20 条/页</option>
+                <option value="50"{{ if eq $pageSize 50 }} selected{{ end }}>50 条/页</option>
+                <option value="100"{{ if eq $pageSize 100 }} selected{{ end }}>100 条/页</option>
+              </select>
+            </form>
+          </div>
+        </div>
+        {{ end }}
+      </div>
+    </div>
+  </div>
+</div>
+{{ end }}

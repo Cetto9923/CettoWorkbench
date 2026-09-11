@@ -69,6 +69,9 @@ const (
 
 	// PO 工作台：业需评审（对应禅道 demand-review；对象级仍由 Service 校验）
 	PoDemandReview Permission = "po:demandreview"
+
+	// 版本：关联研发需求（登录用户默认可访问；对象级由 Service/禅道校验）
+	BuildLinkStory Permission = "build:linkstory"
 )
 
 // allPermInfos 必须与上方 const 块中的所有 Permission 常量保持一一对应。
@@ -109,12 +112,14 @@ var allPermInfos = []PermInfo{
 	{Code: PoBoardDemandList, Name: "PO 工作台-需求看板", Module: "po"},
 	{Code: PoBoardTaskList, Name: "PO 工作台-任务看板", Module: "po"},
 	{Code: PoDemandReview, Name: "工作台-业需评审", Module: "po"},
+	{Code: BuildLinkStory, Name: "版本-关联研发需求", Module: "build"},
 }
 
 // systemPerms 是系统内置放行权限，不对外暴露到权限配置 UI。
 var systemPerms = map[Permission]bool{
 	AuthLogout:     true,
 	PoDemandReview: true, // 已登录即可调评审接口；对象级授权在 Service
+	BuildLinkStory: true, // 已登录即可打开关联需求；禅道侧鉴权走用户 Token
 }
 
 // Configurable 返回可分配给角色的权限列表（排除系统内置权限）。
