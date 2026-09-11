@@ -240,6 +240,31 @@ html[data-theme="light"] {
   --focus-ring: 0 0 0 3px rgba(99, 102, 241, 0.25);
   --color-primary-ring-soft: rgba(79, 70, 229, 0.16);
 
+  /* PO value-stream stage palette (consumed by home.css 等) */
+  --color-stage-schedule-border: #fed7aa;
+  --color-stage-schedule-bg: rgba(254, 243, 199, 0.45);
+  --color-stage-schedule-fg: #d97706;
+  --color-stage-waitacceptance-border: #bae6fd;
+  --color-stage-waitacceptance-bg: rgba(224, 242, 254, 0.45);
+  --color-stage-waitacceptance-fg: #0284c7;
+  --color-stage-publish-border: #bbf7d0;
+  --color-stage-publish-bg: rgba(240, 253, 244, 0.45);
+  --color-stage-publish-fg: #16a34a;
+  --color-stage-active-border: #2563eb;
+  --color-stage-active-bg: #eff6ff;
+  --color-stage-active-fg: #1d4ed8;
+  --color-stage-active-fg-emphasis: #1e40af;
+  --color-stage-active-fg-meta: #2563eb;
+  --color-stage-active-dot: #2563eb;
+  --color-stage-active-ring: rgba(37, 99, 235, 0.22);
+  --color-stage-active-glow: rgba(37, 99, 235, 0.22);
+  --color-version-card-bg: var(--color-info-bg);
+  --color-version-badge-bg: var(--color-info-bg);
+  --color-version-badge-border: rgba(37, 99, 235, 0);
+  --color-version-link: var(--color-info-fill);
+  --color-review-overlay: rgba(15, 23, 42, 0.32);
+  --color-review-modal-shadow: -8px 0 28px rgba(15, 23, 42, 0.18);
+
   /* 布局尺寸 */
   --sidebar-width: 200px;
   --sidebar-width-collapsed: calc(var(--size-10) + var(--space-5));
@@ -385,6 +410,31 @@ html[data-theme="dark"] {
   --po-red-bg: #450a0a;
   --po-orange: #f97316;
   --po-orange-bg: #422006;
+
+  /* PO value-stream stage palette — dark overrides */
+  --color-stage-schedule-border: rgba(245, 158, 11, 0.25);
+  --color-stage-schedule-bg: rgba(245, 158, 11, 0.08);
+  --color-stage-schedule-fg: #fbbf24;
+  --color-stage-waitacceptance-border: rgba(56, 189, 248, 0.28);
+  --color-stage-waitacceptance-bg: rgba(56, 189, 248, 0.08);
+  --color-stage-waitacceptance-fg: #38bdf8;
+  --color-stage-publish-border: rgba(16, 185, 129, 0.25);
+  --color-stage-publish-bg: rgba(16, 185, 129, 0.08);
+  --color-stage-publish-fg: #34d399;
+  --color-stage-active-border: #3b82f6;
+  --color-stage-active-bg: rgba(59, 130, 246, 0.22);
+  --color-stage-active-fg: #ffffff;
+  --color-stage-active-fg-emphasis: #ffffff;
+  --color-stage-active-fg-meta: #93c5fd;
+  --color-stage-active-dot: #60a5fa;
+  --color-stage-active-ring: rgba(59, 130, 246, 0.8);
+  --color-stage-active-glow: rgba(59, 130, 246, 0.45);
+  --color-version-card-bg: rgba(30, 41, 59, 0.7);
+  --color-version-badge-bg: rgba(30, 58, 138, 0.45);
+  --color-version-badge-border: rgba(56, 189, 248, 0.25);
+  --color-version-link: #38bdf8;
+  --color-review-overlay: rgba(2, 6, 23, 0.6);
+  --color-review-modal-shadow: -8px 0 28px rgba(2, 6, 23, 0.55);
 
   /* Stage 2 公共优先级 token (P1-P4 bg/fg/bd) — 深色, WCAG AA 对比 */
   --po-pri-1-bg: #450a0a;                    /* 深红底 */

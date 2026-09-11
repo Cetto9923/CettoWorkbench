@@ -6,7 +6,7 @@
 
 /* home-page-card: 内容区卡片底座（值流、表格等）—— 头部外框已统一到 personal-workspace.css .workspace-header */
 .po-home .home-page-card {
-  background: var(--color-surface, #ffffff); border: 1px solid var(--color-border, #e2e8f0); border-radius: 8px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  background: var(--color-surface, #ffffff); border: 1px solid var(--color-border, #e2e8f0); border-radius: 8px; box-shadow: 0 1px 2px var(--color-shadow-05);
 }
 
 /* 2. 价值流管道轨 (Value Stream Pipeline) */
@@ -29,59 +29,59 @@
 
 /* 各阶段特异色彩强化：未激活态轻量半透明，不喧宾夺主 */
 .po-home .home-vs-mini-card.stage-schedule:not(.active) {
-  border-color: #fed7aa;
-  background: rgba(254, 243, 199, 0.45);
+  border-color: var(--color-stage-schedule-border);
+  background: var(--color-stage-schedule-bg);
 }
 .po-home .home-vs-mini-card.stage-schedule:not(.active) .vs-mini-name,
 .po-home .home-vs-mini-card.stage-schedule:not(.active) .vs-mini-count {
-  color: #d97706;
+  color: var(--color-stage-schedule-fg);
 }
 
 /* 验收框（未选中态）：采用清爽天青蓝，消除与焦点框撞色问题，禁止使用深实底 */
 .po-home .home-vs-mini-card.stage-waitacceptance:not(.active) {
-  border-color: #bae6fd;
-  background: rgba(224, 242, 254, 0.45);
+  border-color: var(--color-stage-waitacceptance-border);
+  background: var(--color-stage-waitacceptance-bg);
 }
 .po-home .home-vs-mini-card.stage-waitacceptance:not(.active) .vs-mini-name,
 .po-home .home-vs-mini-card.stage-waitacceptance:not(.active) .vs-mini-count {
-  color: #0284c7;
+  color: var(--color-stage-waitacceptance-fg);
 }
 
 .po-home .home-vs-mini-card.stage-publish:not(.active) {
-  border-color: #bbf7d0;
-  background: rgba(240, 253, 244, 0.45);
+  border-color: var(--color-stage-publish-border);
+  background: var(--color-stage-publish-bg);
 }
 .po-home .home-vs-mini-card.stage-publish:not(.active) .vs-mini-name,
 .po-home .home-vs-mini-card.stage-publish:not(.active) .vs-mini-count {
-  color: #16a34a;
+  color: var(--color-stage-publish-fg);
 }
 
 /* 选中阶段高亮样式：强化为统治级品牌焦点（高对比度双环光晕 + 高清字色） */
 .po-home .home-vs-mini-card.active {
   position: relative;
   z-index: 2;
-  border: 2px solid #2563eb !important;
-  background: #eff6ff !important;
-  box-shadow: 0 0 0 1.5px #2563eb, 0 3px 10px rgba(37, 99, 235, 0.22) !important;
+  border: 2px solid var(--color-stage-active-border) !important;
+  background: var(--color-stage-active-bg) !important;
+  box-shadow: 0 0 0 1.5px var(--color-stage-active-border), 0 3px 10px var(--color-stage-active-ring) !important;
 }
 .po-home .home-vs-mini-card.active .vs-mini-name {
-  color: #1d4ed8 !important;
+  color: var(--color-stage-active-fg) !important;
   font-weight: 700;
 }
 .po-home .home-vs-mini-card.active .vs-mini-count {
-  color: #1e40af !important;
+  color: var(--color-stage-active-fg-emphasis) !important;
   font-weight: 800;
 }
 .po-home .home-vs-mini-card.active .vs-mini-meta {
-  color: #2563eb !important;
+  color: var(--color-stage-active-fg-meta) !important;
   font-weight: 500;
 }
 .po-home .home-vs-mini-card.active .vs-status-icon {
   font-size: 9px;
-  color: #2563eb !important;
+  color: var(--color-stage-active-fg-meta) !important;
 }
 .po-home .home-vs-mini-card.active .vs-status-dot {
-  background: #2563eb !important;
+  background: var(--color-stage-active-dot) !important;
 }
 
 /* 空阶段弱化 */
@@ -188,7 +188,7 @@
   display: flex; flex-direction: column; padding: 8px; border-radius: 6px;
   border: 1px solid var(--color-border, #e2e8f0); background: var(--color-surface-muted, #f8fafc); cursor: pointer; text-decoration: none; transition: all 0.15s ease;
 }
-.po-home .focus-card:hover { border-color: var(--color-info-border, #93c5fd); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); }
+.po-home .focus-card:hover { border-color: var(--color-info-border, #93c5fd); box-shadow: 0 1px 2px var(--color-shadow-05); }
 .po-home .focus-card.danger { background: var(--color-surface); border-color: var(--color-danger-border); }
 .po-home .focus-card.danger:hover { background: var(--color-danger-bg); border-color: var(--color-danger); }
 .po-home .focus-card-hdr { display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 500; color: var(--color-text-body, #334155); }
@@ -206,12 +206,12 @@
 /* 版本窗口 */
 .po-home .home-version-panel { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; }
 .po-home .home-version-card {
-  padding: 10px; border-radius: 6px; border: 1px solid var(--color-info-border, #bfdbfe); background: var(--color-info-bg);
+  padding: 10px; border-radius: 6px; border: 1px solid var(--color-stage-active-border); background: var(--color-version-card-bg);
 }
 .po-home .home-version-card-hdr { display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 700; }
 .po-home .home-version-name { color: var(--color-text-primary, #0f172a); display: inline-flex; align-items: center; gap: 4px; }
 .po-home .home-version-badge {
-  font-size: 10px; padding: 1px 6px; border-radius: 3px; background: var(--color-info-bg, #dbeafe); color: var(--color-info-fill, #1d4ed8); font-weight: 500;
+  font-size: 10px; padding: 1px 6px; border-radius: 3px; background: var(--color-version-badge-bg); color: var(--color-version-link); border: 1px solid var(--color-version-badge-border); font-weight: 500;
 }
 .po-home .summary-sub { font-size: 11px; color: var(--color-text-secondary, #64748b); margin-top: 4px; }
 .po-home .summary-stats {
@@ -252,9 +252,9 @@
 }
 
 /* 首页评审抽屉：默认不可见，避免表单落在列表末尾。 */
-.po-review-overlay { position: fixed; inset: 0; z-index: 900; background: rgba(15, 23, 42, .32); opacity: 0; pointer-events: none; transition: opacity .2s; }
+.po-review-overlay { position: fixed; inset: 0; z-index: 900; background: var(--color-review-overlay); opacity: 0; pointer-events: none; transition: opacity .2s; }
 .po-review-overlay.show { opacity: 1; pointer-events: auto; }
-.po-review-modal { position: fixed; z-index: 901; top: 0; right: 0; bottom: 0; width: min(460px, 100vw); display: flex; flex-direction: column; background: var(--color-surface); box-shadow: -8px 0 28px rgba(15, 23, 42, .18); transform: translateX(100%); transition: transform .2s; }
+.po-review-modal { position: fixed; z-index: 901; top: 0; right: 0; bottom: 0; width: min(460px, 100vw); display: flex; flex-direction: column; background: var(--color-surface); box-shadow: var(--color-review-modal-shadow); transform: translateX(100%); transition: transform .2s; }
 .po-review-modal.show { transform: translateX(0); }
 .po-review-hdr { display: flex; align-items: center; justify-content: space-between; padding: 18px; border-bottom: 1px solid var(--color-border); }
 .po-review-hdr h3 { margin: 0; font-size: 16px; color: var(--color-text-primary); }
@@ -275,90 +275,4 @@
 @media (max-width: 800px) {
   .po-home .home-vs-compact-row { grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .po-home .home-side-column { grid-template-columns: 1fr; }
-}
-
-/* =============================================================================
-   深色模式精细适配 (Dark Mode Value Stream Polish)
-   解决焦点框与验收框色彩过于接近、混淆视觉重心的严重体验问题
-   ============================================================================= */
-html[data-theme="dark"] .po-home .home-vs-mini-card.stage-schedule:not(.active) {
-  background: rgba(245, 158, 11, 0.08) !important;
-  border-color: rgba(245, 158, 11, 0.25) !important;
-}
-html[data-theme="dark"] .po-home .home-vs-mini-card.stage-schedule:not(.active) .vs-mini-name,
-html[data-theme="dark"] .po-home .home-vs-mini-card.stage-schedule:not(.active) .vs-mini-count {
-  color: #fbbf24 !important;
-}
-
-/* 验收框（未选中态）：半透明清爽天青蓝微色，彻底消除深蓝实底，绝不与焦点框混淆 */
-html[data-theme="dark"] .po-home .home-vs-mini-card.stage-waitacceptance:not(.active) {
-  background: rgba(56, 189, 248, 0.08) !important;
-  border-color: rgba(56, 189, 248, 0.28) !important;
-}
-html[data-theme="dark"] .po-home .home-vs-mini-card.stage-waitacceptance:not(.active) .vs-mini-name,
-html[data-theme="dark"] .po-home .home-vs-mini-card.stage-waitacceptance:not(.active) .vs-mini-count {
-  color: #38bdf8 !important;
-}
-
-html[data-theme="dark"] .po-home .home-vs-mini-card.stage-publish:not(.active) {
-  background: rgba(16, 185, 129, 0.08) !important;
-  border-color: rgba(16, 185, 129, 0.25) !important;
-}
-html[data-theme="dark"] .po-home .home-vs-mini-card.stage-publish:not(.active) .vs-mini-name,
-html[data-theme="dark"] .po-home .home-vs-mini-card.stage-publish:not(.active) .vs-mini-count {
-  color: #34d399 !important;
-}
-
-/* 焦点框（选中激活态）：醒目高饱和亮蓝 2px 边框 + 外圈双层光晕 + 高清纯白文字 */
-html[data-theme="dark"] .po-home .home-vs-mini-card.active {
-  border: 2px solid #3b82f6 !important;
-  background: rgba(59, 130, 246, 0.22) !important;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.8), 0 0 16px rgba(59, 130, 246, 0.45) !important;
-}
-html[data-theme="dark"] .po-home .home-vs-mini-card.active .vs-mini-name {
-  color: #ffffff !important;
-  font-weight: 700;
-}
-html[data-theme="dark"] .po-home .home-vs-mini-card.active .vs-mini-count {
-  color: #ffffff !important;
-  font-weight: 800;
-}
-html[data-theme="dark"] .po-home .home-vs-mini-card.active .vs-mini-meta {
-  color: #93c5fd !important;
-}
-html[data-theme="dark"] .po-home .home-vs-mini-card.active .vs-status-icon {
-  color: #93c5fd !important;
-}
-html[data-theme="dark"] .po-home .home-vs-mini-card.active .vs-status-dot {
-  background: #60a5fa !important;
-}
-
-/* 活跃版本窗口卡片深色模式精细适配：柔和 Slate 层次，解决颜色灰暗深蓝混浊问题 */
-html[data-theme="dark"] .po-home .home-version-card {
-  background: rgba(30, 41, 59, 0.7);
-  border-color: var(--color-border, #334155);
-}
-html[data-theme="dark"] .po-home .home-version-name {
-  color: var(--color-text-primary, #f8fafc);
-}
-html[data-theme="dark"] .po-home .home-version-badge {
-  background: rgba(30, 58, 138, 0.45);
-  color: #38bdf8;
-  border: 1px solid rgba(56, 189, 248, 0.25);
-}
-html[data-theme="dark"] .po-home .summary-sub {
-  color: var(--color-text-secondary, #94a3b8);
-}
-html[data-theme="dark"] .po-home .summary-stats {
-  border-top-color: var(--color-border, #334155);
-  color: var(--color-text-secondary, #94a3b8);
-}
-html[data-theme="dark"] .po-home .summary-stat strong {
-  color: var(--color-text-primary, #f8fafc);
-}
-html[data-theme="dark"] .po-home .version-enter-link {
-  color: #38bdf8;
-}
-html[data-theme="dark"] .po-home .version-manage-link:hover {
-  color: #38bdf8;
 }
