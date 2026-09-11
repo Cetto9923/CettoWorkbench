@@ -125,15 +125,32 @@ func (s *Service) SubmitDemandReview(ctx context.Context, actor *model.User, req
 		return errorx.New(errorx.ErrCodeForbidden, "只有创建人或指派人可以提交评审")
 	}
 
+	reviewers := req.Reviewer
+	if len(reviewers) == 0 {
+		reviewers = splitReviewerAccounts(demand.Reviewer)
+	}
+
 	ztClient := zentao.DefaultClient()
 	ztErr := ztClient.SubmitDemandReview(ctx, zentao.SubmitDemandReviewParams{
 		DemandID: uint(req.ID),
 		Account:  account,
-		Reviewer: req.Reviewer,
+		Reviewer: reviewers,
 		Comment:  req.Comment,
 	})
 	if ztErr != nil {
 		return errorx.New(errorx.ErrCodeInternal, "禅道提交评审执行失败: "+ztErr.Error())
 	}
 	return nil
+}
+
+// splitReviewerAccounts 把 zt_demand.reviewer 的逗号分隔账号拆成去空串切片。
+func splitReviewerAccounts(raw string) []string {
+	var out []string
+	for _, part := range strings.Split(raw, ",") {
+		p := strings.TrimSpace(part)
+		if p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
 }

@@ -32,6 +32,7 @@ type demandReviewRow struct {
 	CreatedBy   string `gorm:"column:createdBy"`
 	AssignedTo  string `gorm:"column:assignedTo"`
 	ReviewedBy  string `gorm:"column:reviewedBy"`
+	Reviewer    string `gorm:"column:reviewer"`
 	Mailto      string `gorm:"column:mailto"`
 	IsNeedFocus string `gorm:"column:isNeedFocus"`
 	Product     string `gorm:"column:product"`
@@ -82,7 +83,7 @@ func (r *Repo) FindDemandForReview(ctx context.Context, id int64) (*demandReview
 	}
 	var row demandReviewRow
 	err = db.WithContext(ctx).
-		Select("id, status, deleted, createdBy, assignedTo, reviewedBy, mailto, isNeedFocus, product").
+		Select("id, status, deleted, createdBy, assignedTo, reviewedBy, reviewer, mailto, isNeedFocus, product").
 		Where("id = ?", id).
 		Take(&row).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {

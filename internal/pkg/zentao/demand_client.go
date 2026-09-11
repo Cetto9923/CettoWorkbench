@@ -68,11 +68,7 @@ func (c *Client) ReviewDemand(ctx context.Context, p DemandReviewParams) error {
 		return err
 	}
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return parseZentaoAPIError(respBytes, resp.StatusCode)
-	}
-
-	return nil
+	return validateDemandReviewResponse(respBytes, resp.StatusCode)
 }
 
 // WithdrawDemandReviewParams 撤回需求评审参数。
@@ -116,10 +112,7 @@ func (c *Client) WithdrawDemandReview(ctx context.Context, p WithdrawDemandRevie
 		return err
 	}
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return parseZentaoAPIError(respBytes, resp.StatusCode)
-	}
-	return nil
+	return validateDemandReviewResponse(respBytes, resp.StatusCode)
 }
 
 // SubmitDemandReviewParams 提交需求评审参数。
@@ -167,10 +160,7 @@ func (c *Client) SubmitDemandReview(ctx context.Context, p SubmitDemandReviewPar
 		return err
 	}
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return parseZentaoAPIError(respBytes, resp.StatusCode)
-	}
-	return nil
+	return validateDemandReviewResponse(respBytes, resp.StatusCode)
 }
 
 // DemandClarifyParams 需求澄清请求参数。
