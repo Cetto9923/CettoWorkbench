@@ -2,13 +2,16 @@
 // 文件: internal/module/build/form.go
 // 模块: 版本管理
 // 类型: action
-// 职责: 关联研发需求列表 Req/Resp。
+// 职责: 关联研发需求列表与写入 Req/Resp。
 // 依赖: 无
 // =============================================================================
 
 package build
 
-import "strings"
+import (
+	"strconv"
+	"strings"
+)
 
 // LinkStoryListReq 关联需求列表查询（GET query；含 bySearch）。
 type LinkStoryListReq struct {
@@ -115,12 +118,74 @@ type LinkStorySearchForm struct {
 
 // LinkStoryListResp 关联需求列表响应（供模板）。
 type LinkStoryListResp struct {
-	BuildID    uint
-	BaseUrl    string
-	Stories    []LinkStoryItem
-	Total      int64
-	Page       int
-	PageSize   int
-	SearchForm LinkStorySearchForm
+	BuildID     uint
+	BaseUrl     string
+	Stories     []LinkStoryItem
+	Total       int64
+	Page        int
+	PageSize    int
+	SearchForm  LinkStorySearchForm
 	QuerySuffix string // 分页链接附加查询串（含前置 &）
+}
+
+// FieldError 表单字段级错误。
+type FieldError struct {
+	Field   string `json:"field"`
+	Message string `json:"message"`
+}
+
+// LinkStoriesReq 关联研发需求写入（POST JSON；对齐禅道 stories CSV）。
+type LinkStoriesReq struct {
+	Stories string `json:"stories"`
+}
+
+// Validate 校验 stories 为逗号分隔正整数。
+func (r *LinkStoriesReq) Validate() []FieldError {
+	var errs []FieldError
+	if r == nil || strings.TrimSpace(r.Stories) == "" {
+		return append(errs, FieldError{Field: "stories", Message: "请选择要关联的研发需求"})
+	}
+	parts := strings.Split(r.Stories, ",")
+	seen := false
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		n, err := strconv.ParseUint(p, 10, 64)
+		if err != nil || n == 0 {
+			return append(errs, FieldError{Field: "stories", Message: "研发需求 ID 无效"})
+		}
+		seen = true
+	}
+	if !seen {
+		return append(errs, FieldError{Field: "stories", Message: "请选择要关联的研发需求"})
+	}
+	return errs
+}
+
+// NormalizedStories 去空、去重后的 CSV（保序）。Validate 通过后调用。
+func (r *LinkStoriesReq) NormalizedStories() string {
+	if r == nil {
+		return ""
+	}
+	parts := strings.Split(r.Stories, ",")
+	out := make([]string, 0, len(parts))
+	seen := map[uint64]struct{}{}
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		n, err := strconv.ParseUint(p, 10, 64)
+		if err != nil || n == 0 {
+			continue
+		}
+		if _, ok := seen[n]; ok {
+			continue
+		}
+		seen[n] = struct{}{}
+		out = append(out, strconv.FormatUint(n, 10))
+	}
+	return strings.Join(out, ",")
 }

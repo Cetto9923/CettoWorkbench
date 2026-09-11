@@ -1,7 +1,7 @@
 /*
  * 文件: web/static/js/po/linkstory.js
  * 模块: PO工作台
- * 职责: 关联研发需求弹窗：按版本拉取 HTML 片段、搜索（bySearch）、勾选同步，确认后回填提测 link-list。
+ * 职责: 关联研发需求弹窗：按版本拉取 HTML 片段、搜索（bySearch）、勾选同步；确认后调后端关联禅道并回填提测 link-list。
  */
 (function ($) {
   "use strict";
@@ -393,15 +393,87 @@
     loadFragment(fragmentUrl(targetCtx.buildId, 1, 100));
   }
 
+  function postJSON(url, payload) {
+    var fetchFn = window.appFetch || fetch;
+    return fetchFn(url, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "X-Requested-With": "XMLHttpRequest"
+      },
+      body: JSON.stringify(payload || {})
+    }).then(function (res) {
+      return res.text().then(function (text) {
+        var data = {};
+        try {
+          data = text ? JSON.parse(text) : {};
+        } catch (ignore) {
+          data = {};
+        }
+        return { ok: res.ok, data: data, status: res.status };
+      });
+    });
+  }
+
+  function setLinkBtnBusy($btn, busy) {
+    if (!$btn || !$btn.length) {
+      return;
+    }
+    if (busy) {
+      $btn.data("busy", "1").prop("disabled", true);
+    } else {
+      $btn.removeData("busy").prop("disabled", false);
+    }
+  }
+
   function confirmAndClose() {
     var items = selectedStories();
     if (!items.length) {
       showToast("请先勾选要关联的研发需求", "info");
       return;
     }
-    applyToLinkList(items);
-    closeModal();
-    showToast("已关联 " + items.length + " 条研发需求", "success");
+    if (!targetCtx.buildId) {
+      showToast("版本无效", "error");
+      return;
+    }
+    var $btn = $("#poLinkstoryLinkBtn");
+    if ($btn.data("busy") === "1" || loading) {
+      return;
+    }
+
+    var storyIds = items
+      .map(function (it) {
+        return it.id;
+      })
+      .join(",");
+    setLinkBtnBusy($btn, true);
+    loading = true;
+
+    postJSON("/builds/" + encodeURIComponent(targetCtx.buildId) + "/linkstories", {
+      stories: storyIds
+    })
+      .then(function (res) {
+        if (!res.ok || !(res.data && res.data.success)) {
+          var msg = String((res.data && res.data.message) || "").trim();
+          throw new Error(msg || "关联需求失败");
+        }
+        applyToLinkList(items);
+        closeModal();
+        showToast(
+          String((res.data && res.data.message) || "").trim() ||
+            "已关联 " + items.length + " 条研发需求",
+          "success"
+        );
+      })
+      .catch(function (err) {
+        showToast((err && err.message) || "关联需求失败", "error");
+      })
+      .then(function () {
+        loading = false;
+        setLinkBtnBusy($btn, false);
+      });
   }
 
   function runSearch() {

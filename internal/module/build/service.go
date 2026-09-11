@@ -2,7 +2,7 @@
 // 文件: internal/module/build/service.go
 // 模块: 版本管理
 // 类型: action
-// 职责: 关联研发需求默认列表与 bySearch 业务装配。
+// 职责: 关联研发需求默认列表、bySearch 与写入禅道关联。
 // 依赖: internal/module/user
 //       internal/pkg/errorx
 //       internal/pkg/pagination
@@ -31,12 +31,13 @@ import (
 type Service struct {
 	repo    *Repo
 	userSvc *user.Service
+	ztAPI   *zentao.Client
 	logger  *zap.Logger
 }
 
-// NewService 创建 Service。
-func NewService(repo *Repo, userSvc *user.Service, logger *zap.Logger) *Service {
-	return &Service{repo: repo, userSvc: userSvc, logger: logger}
+// NewService 创建 Service。ztAPI 可为空，写入禅道时回退 zentao.API()。
+func NewService(repo *Repo, userSvc *user.Service, ztAPI *zentao.Client, logger *zap.Logger) *Service {
+	return &Service{repo: repo, userSvc: userSvc, ztAPI: ztAPI, logger: logger}
 }
 
 // LinkStory 对齐禅道 projectbuild-linkStory（默认列表或 bySearch）。
@@ -175,6 +176,49 @@ func (s *Service) LinkStory(ctx context.Context, actor *model.User, buildID uint
 		SearchForm:  searchForm,
 		QuerySuffix: querySuffix,
 	}, pager, nil
+}
+
+// LinkStories 将勾选的研发需求关联到版本（POST 禅道 /build/:id/linkstories）。
+func (s *Service) LinkStories(ctx context.Context, actor *model.User, buildID uint, req LinkStoriesReq) error {
+	_ = actor // 预留：对象级权限 / 操作人审计
+	if buildID == 0 {
+		return errorx.New(errorx.ErrCodeInvalidParam, "版本 ID 无效")
+	}
+	stories := req.NormalizedStories()
+	if stories == "" {
+		return errorx.New(errorx.ErrCodeInvalidParam, "请选择要关联的研发需求")
+	}
+
+	_, err := s.repo.FindBuildByID(ctx, buildID)
+	if err != nil {
+		if errors.Is(err, errBuildNotFound) {
+			return errorx.New(errorx.ErrCodeNotFound, "版本不存在")
+		}
+		return err
+	}
+
+	client := s.ztAPI
+	if client == nil {
+		client = zentao.API()
+	}
+	if client == nil {
+		return errorx.New(errorx.ErrCodeInternal, "禅道 API 未配置")
+	}
+
+	if err := linkBuildStories(ctx, client, linkBuildStoriesReq{
+		BuildID: buildID,
+		Stories: stories,
+	}); err != nil {
+		if s.logger != nil {
+			s.logger.Error("zentao link stories",
+				zap.Error(err),
+				zap.Uint("buildId", buildID),
+				zap.String("stories", stories),
+			)
+		}
+		return errorx.Wrap(errorx.ErrCodeInvalidParam, fmt.Sprintf("关联需求失败：%s", err.Error()), err)
+	}
+	return nil
 }
 
 func (s *Service) buildSearchForm(ctx context.Context, actor *model.User, productID uint, includeBranch bool, defs []SearchFieldDef, req LinkStoryListReq) (LinkStorySearchForm, error) {

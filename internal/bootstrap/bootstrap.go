@@ -153,7 +153,7 @@ func Run() error {
 		buildReadDB = db
 	}
 	buildRepo := build.NewRepo(buildReadDB)
-	buildSvc := build.NewService(buildRepo, userSvc, zapLog)
+	buildSvc := build.NewService(buildRepo, userSvc, zentaopkg.API(), zapLog)
 	buildHandler := build.NewHandler(buildSvc, zapLog)
 	sqlPerfRepo := debug.NewRepo(cfg.Log.Dir)
 	sqlPerfSvc := debug.NewService(sqlPerfRepo)
