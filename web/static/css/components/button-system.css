@@ -1,0 +1,107 @@
+/* 全局按钮契约：页面按钮只通过语义 class 表达主次，不再依赖浏览器默认外观。 */
+button,
+a.btn,
+a.action-btn,
+input[type="button"],
+input[type="submit"] {
+  font-family: var(--font-sans);
+}
+
+.btn,
+.action-btn:not(.zen-icon-action):not(.action-btn--sm):not(.action-btn--xs),
+.clarify-btn-primary,
+.po-testtask-btn,
+.pw-filter-btn {
+  min-height: var(--size-8);
+  height: var(--size-8);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  box-sizing: border-box;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.btn:hover:not(:disabled),
+.action-btn:not(.primary):not(.success):not(.danger):not(.zen-icon-action):not(:disabled):hover,
+.clarify-btn-primary:hover:not(:disabled),
+.po-testtask-btn:hover:not(:disabled),
+.pw-filter-btn:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+  border-color: var(--color-info);
+  color: var(--color-info);
+}
+
+.btn-primary,
+.action-btn.primary:not(.zen-icon-action):not(.action-btn--sm):not(.action-btn--xs),
+.action-btn.action-btn--primary:not(.zen-icon-action):not(.action-btn--sm):not(.action-btn--xs),
+.clarify-btn-primary,
+.clarify-btn-primary.is-primary,
+.po-testtask-btn.is-primary {
+  border-color: var(--color-info-fill);
+  background: var(--color-info-fill);
+  color: var(--color-text-on-accent);
+}
+
+.btn-primary:hover:not(:disabled),
+.action-btn.primary:not(.zen-icon-action):not(.action-btn--sm):not(.action-btn--xs):hover:not(:disabled),
+.action-btn.action-btn--primary:not(.zen-icon-action):not(.action-btn--sm):not(.action-btn--xs):hover:not(:disabled),
+.clarify-btn-primary:hover:not(:disabled),
+.clarify-btn-primary.is-primary:hover:not(:disabled),
+.po-testtask-btn.is-primary:hover:not(:disabled) {
+  border-color: var(--color-info-fill-hover);
+  background: var(--color-info-fill-hover);
+  color: var(--color-text-on-accent);
+}
+
+.action-btn.success:not(.zen-icon-action):not(.action-btn--sm):not(.action-btn--xs),
+.action-btn.action-btn--success:not(.zen-icon-action):not(.action-btn--sm):not(.action-btn--xs) {
+  border-color: var(--color-success-fill);
+  background: var(--color-success-fill);
+  color: var(--color-text-on-accent);
+}
+
+.btn-danger,
+.action-btn.danger:not(.zen-icon-action):not(.action-btn--sm):not(.action-btn--xs) {
+  border-color: var(--color-danger-fill);
+  background: var(--color-danger-fill);
+  color: var(--color-text-on-accent);
+}
+
+.btn-neutral,
+.action-btn:not(.primary):not(.success):not(.danger).secondary:not(.zen-icon-action):not(.action-btn--sm):not(.action-btn--xs) {
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+}
+
+.btn:disabled,
+.action-btn:disabled,
+.clarify-btn-primary:disabled,
+.po-testtask-btn:disabled,
+.pw-filter-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.po-workbench-shell .table-action-btn,
+.po-workbench-shell .workspace-btn,
+.po-workbench-shell .pw-filter-btn {
+  min-height: var(--size-7);
+  height: var(--size-7);
+  font-size: var(--font-size-xs);
+}
+
+.po-workbench-shell .batch-modal-footer .action-btn,
+.po-workbench-shell .modal-footer .btn {
+  min-width: 72px;
+}

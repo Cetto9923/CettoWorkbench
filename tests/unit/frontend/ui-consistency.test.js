@@ -140,3 +140,15 @@ function cssRead(rel) { return read(path.join("web/static/css", rel)); }
   }
   console.log("PASS: filter reset label is unified to 重置筛选 across PO pages");
 })();
+
+// 6. 所有页面最后加载同一套按钮语义与弹窗底部尺寸。
+(function testButtonSystem() {
+  const base = read("web/templates/layout/base.html");
+  const buttons = cssRead("components/button-system.css");
+  assert.match(base, /components\/button-system\.css/, "base layout must load the shared button system");
+  assert.match(buttons, /\.action-btn\.primary/, "shared button system must define primary action buttons");
+  assert.match(buttons, /\.btn-neutral/, "shared button system must define neutral buttons");
+  assert.match(buttons, /\.batch-modal-footer \.action-btn/, "modal footer actions must share a minimum width");
+  assert.match(buttons, /height: var\(--size-8\)/, "base buttons must share a 32px control height");
+  console.log("PASS: buttons use one shared semantic system and modal footer geometry");
+})();
