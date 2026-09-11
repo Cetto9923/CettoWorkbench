@@ -66,18 +66,23 @@ body.po-workbench-shell .topbar-row {
 }
 
 .po-role-switcher {
-  display: flex;
-  width: 254px;
+  display: inline-flex;
+  align-items: center;
+  width: auto;
+  max-width: 100%;
   height: 34px;
   padding: 2px;
   border: 1px solid var(--color-border);
   border-radius: 8px;
   background: var(--color-surface-muted);
+  gap: 2px;
+  box-sizing: border-box;
 }
 
 .po-role-tab {
   display: inline-flex;
-  flex: 0 0 62px;
+  flex: 0 0 auto;
+  min-width: 56px;
   align-items: center;
   justify-content: center;
   height: 28px;
@@ -88,6 +93,9 @@ body.po-workbench-shell .topbar-row {
   color: var(--color-text-secondary);
   font: 500 13px/1 var(--font-sans);
   cursor: pointer;
+  white-space: nowrap;
+  box-sizing: border-box;
+  transition: all 0.15s ease;
 }
 
 .po-role-tab.active {
@@ -426,8 +434,8 @@ body.sidebar-collapsed.po-workbench-shell .po-sidebar-collapse i { transform: ro
 
 @media (max-width: 900px) {
   .po-global-search { width: 200px; }
-  .po-role-switcher { width: 218px; }
-  .po-role-tab { flex-basis: 53px; padding: 0 8px; }
+  .po-role-switcher { width: auto; }
+  .po-role-tab { min-width: 48px; padding: 0 8px; }
 }
 
 

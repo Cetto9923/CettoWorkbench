@@ -3,8 +3,9 @@
 // 模块: PO 工作台 / 个人资料（/profile 与 shared profile modal）
 // 职责: 对接 /api/profile 与 /profile/data；
 //       支持查看账号信息、编辑邮箱/性别/工作台视图/默认敏捷小组、修改密码；
-//       采用宽幅双栏大弹窗设计，无多余滚动，操作吸底常驻；
-//       支持页面模式渲染与 openProfileModal 弹窗模式。
+//       采用双栏无滚动宽幅大弹窗美化设计，操作吸底常驻；
+//       支持页面模式渲染与 openProfileModal 弹窗模式；
+//       支持 RoleSwitcher 联动顶部导航栏视图 Tab（隐藏未勾选/未授权视图）。
 // =============================================================================
 
 (function () {
@@ -18,8 +19,6 @@
   var profileCache = null;
   var profileLoading = false;
   var ORG_ONLY_ROLES = { lead: 1, pmo: 1 };
-  // 系统当前实际开放的视图白名单：严格以实际开放为准，当前仅开放 PO
-  var OPEN_VIEWS_WHITELIST = { po: 1 };
 
   function esc(s) {
     return String(s == null ? '' : s)
@@ -69,6 +68,91 @@
       btn.innerHTML = btn.dataset.prevHtml;
     }
   }
+
+  // =============================================================================
+  // 工作台角色切换联动器 (RoleSwitcher)
+  // 负责顶部导航栏角色 tab 的显隐联动与本地持久化
+  // =============================================================================
+  window.RoleSwitcher = {
+    detectRole: function () {
+      var activeTab = document.querySelector('.po-role-tab.active');
+      if (activeTab) {
+        return (activeTab.getAttribute('data-role') || activeTab.textContent || '').trim().toLowerCase();
+      }
+      return 'po';
+    },
+
+    getOrgRoles: function (account) {
+      var acc = String(account || (profileCache && profileCache.account) || (window.currentUser && window.currentUser.account) || '').trim();
+      // 003030 账号属于组织授权 PMO 视图的账号
+      if (acc === '003030') {
+        return ['pmo'];
+      }
+      return [];
+    },
+
+    setPreferredRoles: function (roles, account) {
+      var list = Array.isArray(roles) ? roles.map(function (r) { return String(r || '').toLowerCase(); }) : [];
+      var acc = String(account || (profileCache && profileCache.account) || (window.currentUser && window.currentUser.account) || '').trim();
+      var orgRoles = this.getOrgRoles(acc);
+
+      // 有效可见角色 = 用户勾选的自选角色 + 组织授权的角色
+      var activeMap = {};
+      list.forEach(function (r) {
+        if (r && !ORG_ONLY_ROLES[r]) activeMap[r] = true;
+      });
+      orgRoles.forEach(function (r) {
+        if (r) activeMap[r] = true;
+      });
+
+      // 如果未选择任何视图，至少保留 PO
+      if (!Object.keys(activeMap).length) {
+        activeMap['po'] = true;
+      }
+
+      try {
+        localStorage.setItem('wb_preferred_roles_v1', JSON.stringify({
+          preferredRoles: list,
+          effectiveRoles: Object.keys(activeMap)
+        }));
+      } catch (e) { /* ignore */ }
+
+      // 联动顶部 tab 的显隐
+      var switcher = document.getElementById('poRoleSwitcher') || document.querySelector('.po-role-switcher');
+      if (!switcher) return;
+
+      var tabs = switcher.querySelectorAll('.po-role-tab');
+      tabs.forEach(function (tab) {
+        var roleKey = (tab.getAttribute('data-role') || '').toLowerCase();
+        if (!roleKey) {
+          var text = (tab.textContent || '').trim().toLowerCase();
+          if (text === 'po' || text.indexOf('产品') >= 0) roleKey = 'po';
+          else if (text === 'sm') roleKey = 'sm';
+          else if (text === '业务' || text === 'biz') roleKey = 'biz';
+          else if (text === 'pmo') roleKey = 'pmo';
+          else if (text === '团队' || text === 'lead') roleKey = 'lead';
+        }
+
+        if (activeMap[roleKey]) {
+          tab.style.display = '';
+        } else {
+          tab.style.display = 'none';
+        }
+      });
+    },
+
+    init: function () {
+      var acc = String((window.currentUser && window.currentUser.account) || '').trim();
+      var stored = null;
+      try {
+        var raw = localStorage.getItem('wb_preferred_roles_v1');
+        if (raw) stored = JSON.parse(raw);
+      } catch (e) {}
+
+      var prefList = (stored && Array.isArray(stored.preferredRoles)) ? stored.preferredRoles : ['po'];
+      this.setPreferredRoles(prefList, acc);
+    }
+  };
 
   function detectWorkRole() {
     if (window.RoleSwitcher && typeof window.RoleSwitcher.detectRole === 'function') {
@@ -146,31 +230,42 @@
   }
 
   function roleCheckboxesHtml(p) {
-    var selectable = Array.isArray(p.allowedRoles) ? p.allowedRoles : [];
-    // 严格按照用户指示：以实际开放的视图为准，当前只开放了 PO，所以只展示 PO
-    selectable = selectable.filter(function (r) {
-      var key = String((r && r.key) || '').toLowerCase();
-      return !!OPEN_VIEWS_WHITELIST[key];
-    });
-    if (!selectable.length) {
-      selectable = [{ key: 'po', label: '产品负责人 (PO)' }];
-    }
-
+    var account = String((p && p.account) || (window.currentUser && window.currentUser.account) || '').trim();
     var checked = preferredSet(p);
-    var boxes = selectable.map(function (r) {
-      var key = String((r && r.key) || '').toLowerCase();
-      var label = (r && r.label) || (key === 'po' ? '产品负责人 (PO)' : key);
-      // 当前系统唯一定位：PO 默认保持勾选
-      var isOn = checked[key] !== false;
-      return '<label class="role-box-card' + (isOn ? ' is-checked' : '') + '">' +
-        '<input type="checkbox" name="profilePreferredRole" value="' + esc(key) + '"' +
-        (isOn ? ' checked' : '') + ' onchange="this.parentElement.classList.toggle(\'is-checked\', this.checked)"> ' +
-        '<span>' + esc(label) + '</span>' +
-        '</label>';
-    }).join('');
 
-    return '<div class="profile-check-row" id="profileRoleCheckRow">' + boxes + '</div>' +
-      '<div class="profile-hint">当前系统已开放「产品负责人 (PO)」工作台。团队管理 / PMO 须组织统一配置。</div>';
+    // 1. 自选工作台角色：产品负责人 (PO)，用户可自主勾选或取消
+    var selfSelectable = [
+      { key: 'po', label: '产品负责人 (PO)', checked: checked['po'] !== false }
+    ];
+
+    var boxes = [];
+    selfSelectable.forEach(function (r) {
+      boxes.push(
+        '<label class="role-checkbox-card' + (r.checked ? ' selected' : '') + '">' +
+          '<input type="checkbox" name="profilePreferredRole" value="' + esc(r.key) + '"' +
+          (r.checked ? ' checked' : '') + '> ' +
+          '<span>' + esc(r.label) + '</span>' +
+        '</label>'
+      );
+    });
+
+    // 2. 组织固定授权角色：对 003030 账号显示 PMO（已由管理员授权，置灰只读锁定，不可在个人资料自主修改）
+    var orgRoles = window.RoleSwitcher ? window.RoleSwitcher.getOrgRoles(account) : (account === '003030' ? ['pmo'] : []);
+    orgRoles.forEach(function (key) {
+      var label = key === 'pmo' ? 'PMO' : (key === 'lead' ? '团队管理' : key.toUpperCase());
+      boxes.push(
+        '<label class="role-checkbox-card selected is-disabled" title="组织已授权视图，须由 PMO 或管理员统一配置，个人不可修改">' +
+          '<input type="checkbox" checked disabled />' +
+          '<span>' + esc(label) + '</span>' +
+          '<span class="readonly-tag" style="color:var(--color-primary);font-size:11px;font-weight:500;margin-left:auto;">（组织已授权 · 只读）</span>' +
+        '</label>'
+      );
+    });
+
+    return '<div class="role-cards-grid" style="grid-template-columns: 1fr;" id="profileRoleCheckRow">' + boxes.join('') + '</div>' +
+      '<span class="field-tip" style="margin-top:6px; display:inline-block; line-height:1.4;">' +
+        '提示：产品负责人 (PO) 可由个人自主选择开启或关闭；PMO 与团队管理视图属于组织固定授权，须由 PMO 或管理员在后台统一授权配置，个人不可在此更改。' +
+      '</span>';
   }
 
   function roleFieldHtml(p) {
@@ -179,8 +274,8 @@
     var orgNote = '';
     if (orgLocked) {
       var label = currentRole === 'pmo' ? 'PMO' : '团队管理';
-      orgNote = '<div class="profile-hint" style="margin-bottom:8px;color:var(--color-primary)">当前视图为「' + esc(label) +
-        '」（组织授权），不在自选范围内；下方仍可勾选其他已授权自选角色。</div>';
+      orgNote = '<div class="field-tip" style="margin-bottom:8px;color:var(--color-primary);font-weight:500;">当前正处于「' + esc(label) +
+        '」视图（组织授权）；下方自选视图设置将与顶部视图栏联动。</div>';
     }
     return orgNote + roleCheckboxesHtml(p);
   }
@@ -191,7 +286,7 @@
       return '<span class="profile-empty-text">暂无从禅道团队成员关系识别到已加入的敏捷小组</span>';
     }
     return groups.map(function (g) {
-      return '<span class="profile-scope-chip"><i class="fas fa-users" style="font-size:10px;margin-right:4px;"></i>' + esc(g.name || ('小组#' + g.id)) + '</span>';
+      return '<span class="agile-chip-pill"><i class="fas fa-user-group"></i> ' + esc(g.name || ('小组#' + g.id)) + '</span>';
     }).join('');
   }
 
@@ -202,7 +297,7 @@
     groups.forEach(function (g) {
       var id = Number(g.id || 0);
       opts.push('<option value="' + id + '"' + (selected === id ? ' selected' : '') + '>' +
-        esc(g.name || ('小组#' + id)) + '</option>');
+        esc(g.name || ('小组#' + id)) + (id ? (' (ID: ' + id + ')') : '') + '</option>');
     });
     return opts.join('');
   }
@@ -218,6 +313,17 @@
     }
   }
 
+  function syncThemeLabel() {
+    var lbl = document.getElementById('profileThemeLabel');
+    if (!lbl) return;
+    var cur = (document.documentElement.getAttribute('data-theme') || '').toLowerCase();
+    if (cur === 'dark') {
+      lbl.textContent = '深色';
+    } else {
+      lbl.textContent = '浅色';
+    }
+  }
+
   function renderBody(host, p, errHtml) {
     var rawName = String(p.displayName || p.account || '用户').trim();
     var account = String(p.account || '').trim();
@@ -227,130 +333,192 @@
 
     host.innerHTML =
       (errHtml || '') +
-      '<div class="profile-content-grid">' +
-        '<!-- 左栏：基本身份与账号信息 -->' +
-        '<div class="profile-col profile-col-main">' +
-          '<div class="profile-card">' +
-            '<div class="profile-card-h"><i class="fas fa-user-shield"></i>账号身份与基本资料</div>' +
-            '<div class="profile-avatar-row">' +
-              '<div class="profile-avatar-lg">' + esc(initial) + '</div>' +
-              '<div class="profile-avatar-meta">' +
-                '<div class="profile-avatar-name-line">' +
-                  '<strong>' + esc(cleanName) + '</strong>' +
-                  '<span class="profile-account-chip">' + esc(account) + '</span>' +
-                  '<span class="profile-dept-badge">' + esc(deptText) + '</span>' +
-                '</div>' +
-                '<div class="profile-avatar-sub">来自禅道同步账号 · 头像取姓名首字</div>' +
+      '<div class="modal-content-grid">' +
+        '<!-- 左栏：基本账号与身份信息 -->' +
+        '<div class="section-panel">' +
+          '<div class="section-panel-header">' +
+            '<span><i class="fas fa-user-shield"></i> 账号身份与基本信息</span>' +
+            '<span style="font-size: 11px; font-weight: 400; color: var(--color-text-muted);">部分字段来自禅道同步</span>' +
+          '</div>' +
+
+          '<!-- 用户名片区（清晰展示姓名、工号、部门、首字大头像） -->' +
+          '<div class="user-identity-card">' +
+            '<div class="user-avatar-big">' + esc(initial) + '</div>' +
+            '<div class="user-info-text">' +
+              '<div class="user-info-name-line">' +
+                '<span class="user-name-title">' + esc(cleanName) + '</span>' +
+                '<span class="user-account-badge">' + esc(account) + '</span>' +
+                '<span class="user-dept-badge">' + esc(deptText) + '</span>' +
+              '</div>' +
+              '<div class="user-source-hint">' +
+                '<i class="fas fa-check-circle" style="color:var(--color-success)"></i> 禅道同步账号 · 头像取姓名首字' +
               '</div>' +
             '</div>' +
-            '<div class="profile-grid">' +
-              '<div class="form-group"><label class="form-label">真实姓名 <span class="readonly-badge">（只读）</span></label>' +
-                '<input class="form-input" id="profileRealname" value="' + esc(cleanName) + '" readonly disabled>' +
-                '<div class="profile-hint">来自禅道账号，不可在此修改</div></div>' +
-              '<div class="form-group"><label class="form-label">用户名 / 工号 <span class="readonly-badge">（只读）</span></label>' +
-                '<input class="form-input" id="profileAccount" value="' + esc(account) + '" readonly disabled>' +
-                '<div class="profile-hint">系统登录主键</div></div>' +
-              '<div class="form-group"><label class="form-label">手机 <span class="readonly-badge">（只读）</span></label>' +
-                '<input class="form-input" id="profileMobile" value="' + esc(p.mobile || '') + '" readonly disabled>' +
-                '<div class="profile-hint">来自禅道通讯录</div></div>' +
-              '<div class="form-group"><label class="form-label">所属部门 <span class="readonly-badge">（只读）</span></label>' +
-                '<input class="form-input" id="profileDept" value="' + esc(deptText) + '" readonly disabled>' +
-                '<div class="profile-hint">来自银行组织架构</div></div>' +
-              '<div class="form-group"><label class="form-label" for="profileEmail">个人邮箱 <span class="editable-badge">（可维护）</span></label>' +
-                '<input class="form-input" id="profileEmail" type="email" value="' + esc(p.email || '') + '" placeholder="暂未设置邮箱（可在此填写绑定）">' +
-                '<div class="profile-hint">用于接收工作台动态与任务提醒</div></div>' +
-              '<div class="form-group"><label class="form-label" for="profileGender">性别偏好 <span class="editable-badge">（可维护）</span></label>' +
-                '<select class="form-input" id="profileGender">' + genderOptions(p.gender || '') + '</select>' +
-                '<div class="profile-hint">当前账号性别偏好</div></div>' +
+          '</div>' +
+
+          '<!-- 字段表单网格 -->' +
+          '<div class="fields-grid-2">' +
+            '<div class="field-item">' +
+              '<label class="field-label">真实姓名 <span class="readonly-tag">（只读）</span></label>' +
+              '<input class="field-control" id="profileRealname" type="text" value="' + esc(cleanName) + '" readonly disabled />' +
+              '<span class="field-tip">来自禅道账号，不可在此修改</span>' +
+            '</div>' +
+
+            '<div class="field-item">' +
+              '<label class="field-label">登录工号 / 用户名 <span class="readonly-tag">（只读）</span></label>' +
+              '<input class="field-control" id="profileAccount" type="text" value="' + esc(account) + '" readonly disabled />' +
+              '<span class="field-tip">系统登录主键</span>' +
+            '</div>' +
+
+            '<div class="field-item">' +
+              '<label class="field-label">绑定手机 <span class="readonly-tag">（只读）</span></label>' +
+              '<input class="field-control" id="profileMobile" type="text" value="' + esc(p.mobile || '') + '" readonly disabled />' +
+              '<span class="field-tip">来自禅道通讯录</span>' +
+            '</div>' +
+
+            '<div class="field-item">' +
+              '<label class="field-label">所属部门 <span class="readonly-tag">（只读）</span></label>' +
+              '<input class="field-control" id="profileDept" type="text" value="' + esc(deptText) + '" readonly disabled />' +
+              '<span class="field-tip">来自银行组织架构</span>' +
+            '</div>' +
+
+            '<div class="field-item">' +
+              '<label class="field-label">个人邮箱 <span style="color:var(--color-primary); font-size:11px;">（可维护）</span></label>' +
+              '<input class="field-control" id="profileEmail" type="email" value="' + esc(p.email || '') + '" placeholder="暂未设置邮箱（可在此填写绑定）" />' +
+              '<span class="field-tip">用于接收工作台动态与任务提醒</span>' +
+            '</div>' +
+
+            '<div class="field-item">' +
+              '<label class="field-label">性别偏好 <span style="color:var(--color-primary); font-size:11px;">（可维护）</span></label>' +
+              '<select class="field-control" id="profileGender">' + genderOptions(p.gender || '') + '</select>' +
+              '<span class="field-tip">当前账号性别偏好</span>' +
             '</div>' +
           '</div>' +
         '</div>' +
 
         '<!-- 右栏：敏捷团队归属 + 自选角色视图 + 安全改密 -->' +
-        '<div class="profile-col profile-col-side">' +
-          '<div class="profile-card">' +
-            '<div class="profile-card-h"><i class="fas fa-users-gear"></i>敏捷小组归属</div>' +
-            '<div class="form-group">' +
-              '<label class="form-label">参与的敏捷小组</label>' +
-              '<div class="profile-scope-row" id="profileAgileCheckRow">' + agileGroupsHtml(p) + '</div>' +
+        '<div style="display:flex; flex-direction:column; gap: 14px;">' +
+          '<!-- 敏捷小组卡片 -->' +
+          '<div class="section-panel" style="padding: 14px 16px;">' +
+            '<div class="section-panel-header">' +
+              '<span><i class="fas fa-users-gear"></i> 敏捷小组归属</span>' +
             '</div>' +
-            '<div class="form-group" style="margin-top:8px;">' +
-              '<label class="form-label" for="profileMainTeam">默认敏捷小组</label>' +
-              '<select class="form-input" id="profileMainTeam">' + mainTeamOptionsHtml(p) + '</select>' +
-              '<div class="profile-hint">须选自本人已加入的小组；对应禅道 zt_user.mainTeam</div>' +
+            '<div style="display:flex; flex-direction:column; gap: 8px;">' +
+              '<label class="field-label">本人已加入的小组</label>' +
+              '<div class="agile-chips-wrap" id="profileAgileCheckRow">' + agileGroupsHtml(p) + '</div>' +
+            '</div>' +
+            '<div class="field-item" style="margin-top: 4px;">' +
+              '<label class="field-label" for="profileMainTeam">默认敏捷小组（对应禅道 mainTeam）</label>' +
+              '<select class="field-control" id="profileMainTeam">' + mainTeamOptionsHtml(p) + '</select>' +
+              '<span class="field-tip">须选自本人已加入的敏捷小组</span>' +
             '</div>' +
           '</div>' +
 
-          '<div class="profile-card">' +
-            '<div class="profile-card-h"><i class="fas fa-layer-group"></i>工作台角色（自选多视图）</div>' +
+          '<!-- 工作台角色多选卡片 -->' +
+          '<div class="section-panel" style="padding: 14px 16px;">' +
+            '<div class="section-panel-header">' +
+              '<span><i class="fas fa-layer-group"></i> 工作台角色（自选多视图）</span>' +
+            '</div>' +
             roleFieldHtml(p) +
           '</div>' +
 
-          '<div class="profile-card profile-pwd-card">' +
-            '<div class="profile-card-h profile-pwd-hdr">' +
-              '<span><i class="fas fa-key"></i>修改密码</span>' +
-              '<button type="button" class="profile-card-toggle" data-toggle-target="profilePwdBlock" aria-expanded="false" aria-controls="profilePwdBlock">' +
-                '<span>展开设置</span> <i class="fas fa-chevron-down profile-card-toggle-caret" aria-hidden="true"></i>' +
-              '</button>' +
+          '<!-- 修改密码轻量折叠卡 -->' +
+          '<div class="section-panel" style="padding: 12px 16px;">' +
+            '<div class="password-toggle-header" id="pwdToggleHeader">' +
+              '<span style="font-size: 13px; font-weight: 700; color: var(--color-text-primary); display:flex; align-items:center; gap:6px;">' +
+                '<i class="fas fa-key" style="color:var(--color-primary)"></i> 安全修改密码' +
+              '</span>' +
+              '<span style="font-size: 12px; color: var(--color-primary); cursor: pointer;" id="pwdToggleText">' +
+                '展开设置 <i class="fas fa-chevron-down" id="pwdToggleIcon"></i>' +
+              '</span>' +
             '</div>' +
-            '<div id="profilePwdBlock" class="profile-pwd-content" hidden>' +
-              '<div class="form-group"><label class="form-label" for="profileOldPwd">当前密码</label>' +
+            '<div id="pwdExpandBox" class="password-expand-box" style="display: none;">' +
+              '<div class="field-item">' +
+                '<label class="field-label" for="profileOldPwd">当前原密码</label>' +
                 '<div class="pwd-input-wrap">' +
-                  '<input class="form-input" id="profileOldPwd" type="password" autocomplete="current-password" placeholder="请输入当前密码">' +
-                  '<button type="button" class="pwd-toggle-btn" data-target="profileOldPwd" aria-label="切换密码可见性"><i class="fas fa-eye"></i></button>' +
-                '</div></div>' +
-              '<div class="pwd-row-2">' +
-                '<div class="form-group"><label class="form-label" for="profileNewPwd">新密码</label>' +
-                  '<div class="pwd-input-wrap">' +
-                    '<input class="form-input" id="profileNewPwd" type="password" autocomplete="new-password" placeholder="8-64位含字母数字">' +
-                    '<button type="button" class="pwd-toggle-btn" data-target="profileNewPwd" aria-label="切换密码可见性"><i class="fas fa-eye"></i></button>' +
-                  '</div></div>' +
-                '<div class="form-group"><label class="form-label" for="profileNewPwd2">确认新密码</label>' +
-                  '<div class="pwd-input-wrap">' +
-                    '<input class="form-input" id="profileNewPwd2" type="password" autocomplete="new-password" placeholder="再次输入新密码">' +
-                    '<button type="button" class="pwd-toggle-btn" data-target="profileNewPwd2" aria-label="切换密码可见性"><i class="fas fa-eye"></i></button>' +
-                  '</div></div>' +
+                  '<input class="field-control" type="password" id="profileOldPwd" placeholder="请输入当前密码" autocomplete="current-password" />' +
+                  '<button class="pwd-eye-btn" type="button" data-target="profileOldPwd" title="查看密码"><i class="fas fa-eye"></i></button>' +
+                '</div>' +
               '</div>' +
-              '<div class="pwd-action-row">' +
-                '<button type="button" class="btn-pwd-save" id="profilePwdSaveBtn"><i class="fas fa-shield"></i> 更新密码</button>' +
+              '<div class="pwd-row">' +
+                '<div class="field-item">' +
+                  '<label class="field-label" for="profileNewPwd">新密码</label>' +
+                  '<div class="pwd-input-wrap">' +
+                    '<input class="field-control" type="password" id="profileNewPwd" placeholder="8-64位，含字母数字" autocomplete="new-password" />' +
+                    '<button class="pwd-eye-btn" type="button" data-target="profileNewPwd" title="查看密码"><i class="fas fa-eye"></i></button>' +
+                  '</div>' +
+                '</div>' +
+                '<div class="field-item">' +
+                  '<label class="field-label" for="profileNewPwd2">确认新密码</label>' +
+                  '<div class="pwd-input-wrap">' +
+                    '<input class="field-control" type="password" id="profileNewPwd2" placeholder="再次输入新密码" autocomplete="new-password" />' +
+                    '<button class="pwd-eye-btn" type="button" data-target="profileNewPwd2" title="查看密码"><i class="fas fa-eye"></i></button>' +
+                  '</div>' +
+                '</div>' +
               '</div>' +
+              '<button class="btn-pwd-commit" id="profilePwdSaveBtn" type="button">' +
+                '<i class="fas fa-shield"></i> 更新密码' +
+              '</button>' +
             '</div>' +
           '</div>' +
         '</div>' +
       '</div>';
 
-    // 如果非弹窗模式（独立页面 /profile），底部追加常规保存操作条
+    // 如果非弹窗模式（独立页面 /profile），底部追加保存操作栏
     if (!document.getElementById('profileModalFooter')) {
       host.innerHTML +=
-        '<div class="profile-actions">' +
-          '<button type="button" class="action-btn primary" id="profileSaveBtn"><i class="fas fa-check"></i> 保存资料</button>' +
+        '<div class="modal-bottom-bar" style="margin-top:16px; border-radius:8px; border:1px solid var(--color-border);">' +
+          '<div class="modal-bottom-hint"><i class="fas fa-shield-halved"></i> <span>资料直接同步生效至禅道与研发工作台</span></div>' +
+          '<div class="modal-bottom-btns">' +
+            '<button type="button" class="btn-modal-save" id="profileSaveBtn"><i class="fas fa-check"></i> 保存资料</button>' +
+          '</div>' +
         '</div>';
     }
 
+    // 绑定角色卡片点击交互（置灰项不响应点击）
+    host.querySelectorAll('.role-checkbox-card').forEach(function (card) {
+      if (card.classList.contains('is-disabled')) {
+        return;
+      }
+      var cb = card.querySelector('input[type="checkbox"]');
+      if (!cb || cb.disabled) return;
+      card.addEventListener('click', function (e) {
+        if (e.target !== cb) {
+          cb.checked = !cb.checked;
+        }
+        card.classList.toggle('selected', cb.checked);
+      });
+      cb.addEventListener('change', function () {
+        card.classList.toggle('selected', cb.checked);
+      });
+    });
+
     // 绑定密码可见性切换
-    host.querySelectorAll('.pwd-toggle-btn').forEach(function (b) {
+    host.querySelectorAll('.pwd-eye-btn').forEach(function (b) {
       b.addEventListener('click', function () {
         togglePasswordVisibility(b, b.getAttribute('data-target'));
       });
     });
 
     // 绑定修改密码折叠展开
-    host.querySelectorAll('[data-toggle-target]').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var target = document.getElementById(b.getAttribute('data-toggle-target'));
-        if (!target) return;
-        var expanded = b.getAttribute('aria-expanded') === 'true';
-        if (expanded) {
-          target.setAttribute('hidden', '');
-          b.setAttribute('aria-expanded', 'false');
-          b.querySelector('span').textContent = '展开设置';
+    var pwdHeader = host.querySelector('#pwdToggleHeader');
+    if (pwdHeader) {
+      pwdHeader.addEventListener('click', function () {
+        var box = host.querySelector('#pwdExpandBox');
+        var text = host.querySelector('#pwdToggleText');
+        if (!box) return;
+        var isHidden = box.style.display === 'none' || box.hasAttribute('hidden');
+        if (isHidden) {
+          box.style.display = 'flex';
+          box.removeAttribute('hidden');
+          if (text) text.innerHTML = '收起 <i class="fas fa-chevron-up"></i>';
         } else {
-          target.removeAttribute('hidden');
-          b.setAttribute('aria-expanded', 'true');
-          b.querySelector('span').textContent = '收起设置';
+          box.style.display = 'none';
+          box.setAttribute('hidden', '');
+          if (text) text.innerHTML = '展开设置 <i class="fas fa-chevron-down"></i>';
         }
       });
-    });
+    }
 
     var saveBtn = document.getElementById('profileSaveBtn');
     if (saveBtn) {
@@ -366,6 +534,7 @@
     var nodes = document.querySelectorAll('input[name="profilePreferredRole"]:checked');
     var out = [];
     nodes.forEach(function (el) {
+      if (el.disabled) return;
       var key = String(el.value || '').toLowerCase();
       if (key && !ORG_ONLY_ROLES[key]) out.push(key);
     });
@@ -376,10 +545,11 @@
     return out;
   }
 
-  function syncPreferredToSwitcher(roles) {
+  function syncPreferredToSwitcher(roles, account) {
     var list = Array.isArray(roles) ? roles : [];
+    var acc = account || (profileCache && profileCache.account) || '';
     if (window.RoleSwitcher && typeof window.RoleSwitcher.setPreferredRoles === 'function') {
-      window.RoleSwitcher.setPreferredRoles(list);
+      window.RoleSwitcher.setPreferredRoles(list, acc);
       return;
     }
     try {
@@ -398,7 +568,7 @@
       throw new Error((json && json.message) || '加载个人资料失败');
     }
     profileCache = json.data;
-    syncPreferredToSwitcher(profileCache.preferredRoles || []);
+    syncPreferredToSwitcher(profileCache.preferredRoles || [], profileCache.account);
     return profileCache;
   }
 
@@ -430,12 +600,20 @@
     var errorMsg = document.getElementById('poProfileErrorMsg');
     if (!host) return;
 
+    // 若已有缓存数据，先行秒开渲染，杜绝空白等待
+    if (profileCache) {
+      renderBody(host, profileCache, '');
+      host.hidden = false;
+    } else {
+      host.innerHTML =
+        '<div class="state-placeholder" style="display:flex;align-items:center;justify-content:center;min-height:300px;gap:10px;color:var(--color-text-secondary);font-size:14px;">' +
+          '<i class="fas fa-circle-notch fa-spin"></i> 正在加载个人资料…' +
+        '</div>';
+      host.hidden = false;
+    }
+
     if (profileLoading) return;
     profileLoading = true;
-
-    if (loadingEl) loadingEl.hidden = false;
-    if (errorEl) errorEl.hidden = true;
-    host.hidden = true;
 
     try {
       var data = await loadProfile();
@@ -447,6 +625,13 @@
       if (errorEl) {
         errorEl.hidden = false;
         if (errorMsg) errorMsg.textContent = (e && e.message) || '加载个人资料失败';
+      }
+      if (!profileCache) {
+        host.innerHTML =
+          '<div class="state-placeholder error" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:12px;color:var(--color-danger);font-size:14px;">' +
+            '<div><i class="fas fa-circle-exclamation"></i> ' + esc((e && e.message) || '加载个人资料失败') + '</div>' +
+            '<button type="button" class="btn-modal-save" style="height:32px;font-size:12px;padding:0 14px;" onclick="window.renderProfilePage()"><i class="fas fa-rotate-right"></i> 重试</button>' +
+          '</div>';
       }
       showToast((e && e.message) || '加载个人资料失败', 'danger');
     } finally {
@@ -497,13 +682,13 @@
 
       var savedRoles = (json.data && json.data.preferredRoles) || payload.preferredRoles;
       var savedTeam = Number(json.data && json.data.mainTeamId != null ? json.data.mainTeamId : payload.mainTeamId);
-      syncPreferredToSwitcher(savedRoles);
       if (profileCache) {
         profileCache.preferredRoles = savedRoles;
         profileCache.mainTeamId = savedTeam;
         profileCache.email = payload.email;
         profileCache.gender = payload.gender;
       }
+      syncPreferredToSwitcher(savedRoles, (profileCache && profileCache.account) || '');
       showToast(json.message || '个人资料已保存', 'success');
 
       var note = document.getElementById('profileAuditNote');
@@ -599,43 +784,76 @@
     if (modal) modal.remove();
 
     overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
+    overlay.className = 'modal-overlay prototype-backdrop';
     overlay.id = 'profileModalOverlay';
     overlay.addEventListener('click', onProfileOverlayClick);
 
     modal = document.createElement('div');
-    modal.className = 'modal profile-modal';
+    modal.className = 'modal profile-modal profile-modal-window';
     modal.id = 'profileModal';
     modal.setAttribute('role', 'dialog');
     modal.setAttribute('aria-modal', 'true');
     modal.setAttribute('aria-labelledby', 'profileModalTitle');
     modal.innerHTML =
-      '<div class="modal-hdr">' +
-        '<h3 id="profileModalTitle"><i class="fas fa-id-card"></i> 个人资料与偏好设置</h3>' +
-        '<button type="button" class="modal-close" aria-label="关闭" onclick="window.closeProfileModal()"><i class="fas fa-times"></i></button>' +
+      '<div class="modal-head">' +
+        '<div class="modal-head-title">' +
+          '<i class="fas fa-id-card"></i>' +
+          '<span id="profileModalTitle">个人资料与偏好设置</span>' +
+        '</div>' +
+        '<div class="modal-head-actions">' +
+          '<button class="theme-pill-btn" id="profileThemeToggleBtn" type="button" title="切换深浅主题">' +
+            '<i class="fas fa-circle-half-stroke"></i>' +
+            '<span id="profileThemeLabel">浅色</span>' +
+          '</button>' +
+          '<button type="button" class="modal-close-icon" aria-label="关闭" title="关闭" onclick="window.closeProfileModal()"><i class="fas fa-times"></i></button>' +
+        '</div>' +
       '</div>' +
       '<div class="modal-body" id="profileModalBody"></div>' +
-      '<div class="modal-footer" id="profileModalFooter">' +
-        '<div class="modal-footer-hint"><i class="fas fa-shield-halved"></i> 资料直接同步生效至禅道与研发工作台</div>' +
-        '<div class="modal-footer-actions">' +
+      '<div class="modal-bottom-bar" id="profileModalFooter">' +
+        '<div class="modal-bottom-hint"><i class="fas fa-shield-halved"></i> <span>资料直接同步生效至禅道与研发工作台</span></div>' +
+        '<div class="modal-bottom-btns">' +
           '<button type="button" class="btn-modal-cancel" onclick="window.closeProfileModal()">取消</button>' +
-          '<button type="button" class="action-btn primary" id="profileSaveBtn"><i class="fas fa-check"></i> 保存资料</button>' +
+          '<button type="button" class="btn-modal-save" id="profileSaveBtn"><i class="fas fa-check"></i> 保存资料</button>' +
         '</div>' +
       '</div>';
 
     document.body.appendChild(overlay);
     document.body.appendChild(modal);
+
+    // 绑定主题切换按钮事件
+    var themeBtn = modal.querySelector('#profileThemeToggleBtn');
+    if (themeBtn) {
+      themeBtn.addEventListener('click', function () {
+        var curTheme = document.documentElement.getAttribute('data-theme') || 'light';
+        var nextTheme = curTheme === 'dark' ? 'light' : 'dark';
+        if (window.WorkbenchTheme && typeof window.WorkbenchTheme.setPreference === 'function') {
+          window.WorkbenchTheme.setPreference(nextTheme);
+        } else {
+          document.documentElement.setAttribute('data-theme', nextTheme);
+        }
+        syncThemeLabel();
+      });
+    }
+
     return { overlay: overlay, modal: modal };
   };
 
   window.openProfileModal = function openProfileModal(e) {
     if (e && e.preventDefault) e.preventDefault();
-    var nodes = window.ensureProfileModalDom();
-    window.renderProfilePage();
-    requestAnimationFrame(function () {
-      nodes.overlay.classList.add('show');
-      nodes.modal.classList.add('show');
+    if (e && e.stopPropagation) e.stopPropagation();
+
+    // 关闭已展开的用户下拉菜单
+    document.querySelectorAll('.dropdown.open, .dropdown.show').forEach(function (d) {
+      d.classList.remove('open', 'show');
     });
+
+    var nodes = window.ensureProfileModalDom();
+    syncThemeLabel();
+    window.renderProfilePage();
+
+    nodes.overlay.classList.add('show');
+    nodes.modal.classList.add('show');
+    return false;
   };
 
   window.closeProfileModal = function closeProfileModal() {
@@ -658,13 +876,26 @@
     }
   });
 
+  // 页面加载阶段初始化角色 tab 显隐
+  if (window.RoleSwitcher && typeof window.RoleSwitcher.init === 'function') {
+    window.RoleSwitcher.init();
+  }
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function () {
+      if (window.RoleSwitcher && typeof window.RoleSwitcher.init === 'function') {
+        window.RoleSwitcher.init();
+      }
       if (document.getElementById('profilePageBody')) {
         window.renderProfilePage();
       }
     });
-  } else if (document.getElementById('profilePageBody')) {
-    window.renderProfilePage();
+  } else {
+    if (window.RoleSwitcher && typeof window.RoleSwitcher.init === 'function') {
+      window.RoleSwitcher.init();
+    }
+    if (document.getElementById('profilePageBody')) {
+      window.renderProfilePage();
+    }
   }
 })();
