@@ -322,7 +322,9 @@
             : "版本已同步禅道";
           toast(wrap.body.message || summary, "success");
           try { window.sessionStorage.removeItem(draftKey()); } catch (ignore) {}
-          if (typeof window.closeShowModals === "function") {
+          if (builds.length > 0) {
+            showPostBuildActions(builds);
+          } else if (typeof window.closeShowModals === "function") {
             window.closeShowModals(["poTesttaskModal", "poTesttaskOverlay"]);
           }
           return;
@@ -361,6 +363,48 @@
     executionState = {};
     executionsLoaded = false;
   };
+
+  function showPostBuildActions(builds) {
+    var $modal = $('#poTesttaskModal');
+    var $actions = $modal.find('.po-testtask-actions');
+    if (!$actions.length) {
+      if (typeof window.closeShowModals === 'function') {
+        window.closeShowModals(['poTesttaskModal', 'poTesttaskOverlay']);
+      }
+      return;
+    }
+    var primary = builds[0];
+    var $summary = $('<div class="po-testtask-post-build-summary"></div>');
+    var $msg = $('<div class="po-testtask-post-build-msg"></div>');
+    $msg.append($('<i class="fas fa-check-circle"></i> '));
+    $msg.append(document.createTextNode(
+      builds.map(function (b) { return '#' + b.buildId + ' ' + b.name; }).join('，') + ' 已写入禅道'
+    ));
+    $summary.append($msg);
+    var $btnRow = $('<div class="po-testtask-post-build-actions"></div>');
+    if (primary && primary.buildId && typeof window.openPoLinkstoryModal === 'function') {
+      var $linkBtn = $('<button type="button" class="action-btn primary" id="poTesttaskLinkstoryBtn"></button>');
+      $linkBtn.append('<i class="fas fa-link"></i> 关联研发需求');
+      $btnRow.append($linkBtn);
+    }
+    var $closeBtn = $('<button type="button" class="action-btn" id="poTesttaskPostBuildCloseBtn">关闭</button>');
+    $btnRow.append($closeBtn);
+    $summary.append($btnRow);
+    $actions.empty().append($summary);
+    $modal.off('click.postbuild').on('click.postbuild', '#poTesttaskLinkstoryBtn', function () {
+      if (typeof window.closeShowModals === 'function') {
+        window.closeShowModals(['poTesttaskModal', 'poTesttaskOverlay']);
+      }
+      if (typeof window.openPoLinkstoryModal === 'function' && primary) {
+        window.openPoLinkstoryModal({ buildId: primary.buildId });
+      }
+    });
+    $modal.off('click.postbuildclose').on('click.postbuildclose', '#poTesttaskPostBuildCloseBtn', function () {
+      if (typeof window.closeShowModals === 'function') {
+        window.closeShowModals(['poTesttaskModal', 'poTesttaskOverlay']);
+      }
+    });
+  }
 
   // ===== 自身绑定 =====
 
