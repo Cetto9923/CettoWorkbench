@@ -31,15 +31,6 @@ type projectWeeklyProjectRow struct {
 	SortGroup  int    `gorm:"column:sort_group"`
 }
 
-type projectWeeklyTeamRow struct {
-	ID       uint   `gorm:"column:id"`
-	Name     string `gorm:"column:name"`
-	ParentID uint   `gorm:"column:parent"`
-	Grade    int    `gorm:"column:grade"`
-	Path     string `gorm:"column:path"`
-	Order    int    `gorm:"column:order"`
-}
-
 type projectWeeklyReportRow struct {
 	ID                   uint   `gorm:"column:id"`
 	Project              uint   `gorm:"column:project"`
@@ -161,11 +152,6 @@ WHERE p.deleted = '0'
 ORDER BY sort_group ASC, p.id DESC
 LIMIT ?`, args...).Scan(&rows).Error
 	return rows, err
-}
-
-// FindWatchedProjectWeeklyProjects 关注且存在 zt_projectweekly 的项目。
-func (r *Repo) FindWatchedProjectWeeklyProjects(ctx context.Context, account string, teamIDs []uint, limit int) ([]projectWeeklyProjectRow, error) {
-	return r.FindMineProjectWeeklyProjects(ctx, account, "watched", teamIDs, limit)
 }
 
 // FindAllProjectWeeklyProjects 全量存在 zt_projectweekly 的项目。
@@ -301,52 +287,6 @@ LIMIT 1`, projectID).Scan(&row).Error
 		return nil, nil
 	}
 	return &row, nil
-}
-
-// FindProjectWeeklyTeamLeaves 有周报管理对象的项目 → PM 所在部门（叶子）去重。
-func (r *Repo) FindProjectWeeklyTeamLeaves(ctx context.Context) ([]projectWeeklyTeamRow, error) {
-	var rows []projectWeeklyTeamRow
-	err := r.db.WithContext(ctx).Raw(`
-SELECT DISTINCT d.id AS id, COALESCE(d.name, '') AS name,
-       COALESCE(d.parent, 0) AS parent, COALESCE(d.grade, 0) AS grade,
-       COALESCE(d.path, '') AS path, COALESCE(d.` + "`order`" + `, 0) AS ` + "`order`" + `
-FROM zt_project AS p
-INNER JOIN zt_user AS u ON u.account = p.PM AND u.deleted = '0' AND u.dept > 0
-INNER JOIN zt_dept AS d ON d.id = u.dept
-WHERE p.deleted = '0'
-  AND p.type = 'project'
-  AND EXISTS (SELECT 1 FROM zt_projectweekly AS pw WHERE pw.project = p.id)
-ORDER BY d.path ASC, d.` + "`order`" + ` ASC, d.id ASC`).Scan(&rows).Error
-	return rows, err
-}
-
-// FindDeptsByIDs 按 id 批量取部门（含 parent/grade/path，供建树）。
-func (r *Repo) FindDeptsByIDs(ctx context.Context, ids []uint) ([]projectWeeklyTeamRow, error) {
-	ids = uniquePositiveUints(ids)
-	if len(ids) == 0 {
-		return nil, nil
-	}
-	var rows []projectWeeklyTeamRow
-	err := r.db.WithContext(ctx).Raw(`
-SELECT id, COALESCE(name, '') AS name, COALESCE(parent, 0) AS parent,
-       COALESCE(grade, 0) AS grade, COALESCE(path, '') AS path,
-       COALESCE(`+"`order`"+`, 0) AS `+"`order`"+`
-FROM zt_dept
-WHERE id IN ?
-ORDER BY path ASC, `+"`order`"+` ASC, id ASC`, ids).Scan(&rows).Error
-	return rows, err
-}
-
-// FindUserDeptID 当前账号所属部门（zt_user.dept）。
-func (r *Repo) FindUserDeptID(ctx context.Context, account string) (uint, error) {
-	account = strings.TrimSpace(account)
-	if account == "" {
-		return 0, nil
-	}
-	var deptID uint
-	err := r.db.WithContext(ctx).Raw(`
-SELECT dept FROM zt_user WHERE account = ? AND deleted = '0' LIMIT 1`, account).Scan(&deptID).Error
-	return deptID, err
 }
 
 func (r *Repo) scanProjectCounts(ctx context.Context, query string, args ...any) (map[uint]int, error) {

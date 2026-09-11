@@ -127,16 +127,16 @@ func TestNoticeTimeRangeBoundaries(t *testing.T) {
 
 	// today
 	tToday := now.Add(-2 * time.Hour)
-	if !sameNoticeDay(tToday, now) {
+	if tToday.Year() != now.Year() || tToday.YearDay() != now.YearDay() {
 		t.Errorf("expected tToday to be same day as now")
 	}
 	if tToday.Before(startOfToday) || !tToday.Before(endOfToday) {
-		t.Errorf("SQL range for today did not match Go sameNoticeDay")
+		t.Errorf("SQL range for today did not match calendar-day boundaries")
 	}
 
 	// yesterday
 	tYesterday := now.AddDate(0, 0, -1)
-	if sameNoticeDay(tYesterday, now) {
+	if tYesterday.Year() == now.Year() && tYesterday.YearDay() == now.YearDay() {
 		t.Errorf("expected tYesterday not to be same day as now")
 	}
 	if !tYesterday.Before(startOfToday) {

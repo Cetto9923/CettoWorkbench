@@ -30,23 +30,6 @@ func TestTodoListReqValidate_RejectsUnsupportedObjectTypes(t *testing.T) {
 	}
 }
 
-func TestTodoListReqValidate_RejectsUnsupportedTabs(t *testing.T) {
-	for _, unsupported := range []string{"approval", "risk", "personal"} {
-		req := TodoListReq{Tab: TodoTab(unsupported)}
-		errs := req.Validate()
-		if len(errs) != 1 || errs[0].Field != "tab" || !strings.Contains(errs[0].Message, "待办数据源暂未接入") {
-			t.Fatalf("expected unsupported message for tab %s, got: %#v", unsupported, errs)
-		}
-	}
-
-	for _, valid := range []string{"", "all", "demand", "execution", "testing"} {
-		req := TodoListReq{Tab: TodoTab(valid)}
-		if errs := req.Validate(); len(errs) != 0 {
-			t.Fatalf("expected valid for tab %q, got: %#v", valid, errs)
-		}
-	}
-}
-
 func TestTodoListReqValidate_AcceptsPublishStage(t *testing.T) {
 	req := TodoListReq{Stage: "publish"}
 	if errs := req.Validate(); len(errs) != 0 {

@@ -66,7 +66,7 @@ func (r *Repo) QueryTodoUnified(ctx context.Context, account string, req TodoLis
 		return result, nil
 	}
 
-	// 1. 统计 Summary 与 Groups (Tab 与 Focus 之前)
+	// 1. 统计 Summary 与 Groups（Focus 之前）
 	preTabWhere, preTabArgs := buildTodoOuterWhere(req, displayMap, false, todayStr)
 	summarySQL := fmt.Sprintf(`SELECT
 		COUNT(*) AS total_pending,
@@ -99,7 +99,7 @@ func (r *Repo) QueryTodoUnified(ctx context.Context, account string, req TodoLis
 	postTabWhere, postTabArgs := buildTodoOuterWhere(req, displayMap, true, todayStr)
 	totalArgs := append(append([]interface{}{}, unionArgs...), postTabArgs...)
 
-	if (req.Tab == "" || req.Tab == TodoTabAll) && (req.Focus == "" || req.Focus == "pending") {
+	if req.Focus == "" || req.Focus == "pending" {
 		result.Total = int64(result.Summary.Pending)
 	} else {
 		totalSQL := fmt.Sprintf(`SELECT COUNT(*) FROM (%s) AS t %s`, unionSQL, postTabWhere)
@@ -253,7 +253,6 @@ var todoFacetLabels = map[string]string{
 func buildTodoFacetSQL(account string, req TodoListReq, displayMap map[string]string, todayStr string) (string, []interface{}) {
 	facetReq := req
 	facetReq.ObjectType = "all"
-	facetReq.Tab = TodoTabAll
 	unionSQL, unionArgs := buildTodoUnionSQL(account, facetReq)
 	if unionSQL == "" {
 		return "", nil
@@ -367,18 +366,6 @@ func buildTodoOuterWhere(req TodoListReq, displayMap map[string]string, includeT
 		} else {
 			conds = append(conds, "(LOWER(t.display_id) LIKE ? OR LOWER(t.title) LIKE ?)")
 			args = append(args, escaped, escaped)
-		}
-	}
-	if includeTabAndFocus && req.Tab != TodoTabAll && req.Tab != "" {
-		switch req.Tab {
-		case TodoTabDemand:
-			conds = append(conds, "t.kind = 'demand'")
-		case TodoTabExecution:
-			conds = append(conds, "t.kind = 'task'")
-		case TodoTabTesting:
-			conds = append(conds, "t.kind = 'bug'")
-		default:
-			conds = append(conds, "1 = 0")
 		}
 	}
 	if includeTabAndFocus && req.Focus != "" && req.Focus != "pending" {

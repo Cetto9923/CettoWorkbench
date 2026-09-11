@@ -216,19 +216,6 @@ type DemandsResp struct {
 	StageSummary []ValueStreamStage `json:"stageSummary,omitempty"`
 }
 
-// TodoTab 我的待办对象域 Tab。当前页面只展示已接入统一查询的数据域。
-type TodoTab string
-
-const (
-	TodoTabApproval  TodoTab = "approval" // 审批决策
-	TodoTabDemand    TodoTab = "demand"   // 需求治理（业务需求 + 研发需求 + 反馈）
-	TodoTabAll       TodoTab = "all"      // 全部（跨 Tab 汇总）
-	TodoTabExecution TodoTab = "execution"
-	TodoTabTesting   TodoTab = "testing"
-	TodoTabRisk      TodoTab = "risk"
-	TodoTabPersonal  TodoTab = "personal"
-)
-
 // Relation 我的关系 V10.1 02 节。
 type Relation string
 
@@ -249,10 +236,8 @@ const (
 )
 
 // TodoListReq 我的待办列表请求。
-// V10.1 02 节：7 维 AND = Tab ∩ 办理场景 ∩ 阶段 ∩ 对象 ∩ 我的关系 ∩ 办理责任 ∩ 关键词。
-// 本期实现全部 7 维；具体对象 objectType 过滤只展示当前 Tab 实际有数据的对象类型。
+// V10.1 02 节：办理场景 ∩ 阶段 ∩ 对象 ∩ 我的关系 ∩ 办理责任 ∩ 关键词。
 type TodoListReq struct {
-	Tab            TodoTab        `form:"tab"`            // 对象域 Tab；默认 all
 	Action         TodoAction     `form:"action"`         // 办理场景；默认 all
 	Stage          string         `form:"stage"`          // 阶段（仅 demand 生效）；默认 all
 	ObjectType     string         `form:"objectType"`     // 对象类型 demand/story/task/bug/testtask；默认 all
@@ -279,17 +264,6 @@ const (
 
 // Validate 校验 TodoListReq。
 func (r *TodoListReq) Validate() []FieldError {
-	r.Tab = TodoTab(strings.TrimSpace(string(r.Tab)))
-	if r.Tab == "" {
-		r.Tab = TodoTabAll
-	}
-	switch r.Tab {
-	case TodoTabAll, TodoTabDemand, TodoTabExecution, TodoTabTesting:
-	case TodoTabApproval, TodoTabRisk, TodoTabPersonal:
-		return []FieldError{{Field: "tab", Message: "该对象域待办数据源暂未接入"}}
-	default:
-		return []FieldError{{Field: "tab", Message: "无效的对象域 Tab"}}
-	}
 	r.Action = TodoAction(strings.TrimSpace(string(r.Action)))
 	if r.Action == "" {
 		r.Action = TodoActionAll

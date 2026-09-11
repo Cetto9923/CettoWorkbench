@@ -39,7 +39,7 @@ func TestHomePerformanceReadOnlyParity(t *testing.T) {
 		if !ok {
 			continue
 		}
-		ids, err := r.FindRoleDemandIDs(ctx, account, filter)
+		ids, err := r.FindRoleDemandIDsWithFilters(ctx, account, filter, DemandsReq{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -54,9 +54,9 @@ func TestHomePerformanceReadOnlyParity(t *testing.T) {
 		}
 		appendIDs("demand", ids)
 		if filter.scheduleIncomplete {
-			ids, err = r.FindScheduleStoryIDs(ctx, account)
+			ids, err = r.FindScheduleStoryIDsWithFilters(ctx, account, DemandsReq{})
 		} else if filter.deliverStories {
-			ids, err = r.FindDeliverStoryIDs(ctx, account)
+			ids, err = r.FindDeliverStoryIDsWithFilters(ctx, account, DemandsReq{})
 		} else {
 			ids = nil
 		}
@@ -99,7 +99,7 @@ func TestHomePerformanceReadOnlyParity(t *testing.T) {
 	if !reflect.DeepEqual(wantCounts, gotCounts) {
 		t.Fatal("stage aggregate differs from legacy partition")
 	}
-	ids, err := r.FindRoleDemandIDs(ctx, account, mysqlStageFilters["accept"])
+	ids, err := r.FindRoleDemandIDsWithFilters(ctx, account, mysqlStageFilters["accept"], DemandsReq{})
 	if err != nil {
 		t.Fatal(err)
 	}

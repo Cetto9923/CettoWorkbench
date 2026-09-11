@@ -25,25 +25,24 @@ func openSQLMock(t *testing.T) (*gorm.DB, sqlmock.Sqlmock) {
 	return gdb, mock
 }
 
-// TestSaveDemandFollow_UsesWriteDB 确认关注写入只走 writeDB，不触碰只读连接。
-func TestSaveDemandFollow_UsesWriteDB(t *testing.T) {
+// TestEnsureDemandUnfollowed_UsesWriteDB 确认取消关注补写只走 writeDB，不触碰只读连接。
+func TestEnsureDemandUnfollowed_UsesWriteDB(t *testing.T) {
 	readDB, readMock := openSQLMock(t)
 	writeDB, writeMock := openSQLMock(t)
 	repo := NewRepo(readDB, writeDB)
 
 	writeMock.ExpectQuery("(?i)SELECT count\\(\\*\\) FROM `zt_starinfo`").
 		WithArgs("demand", int64(42), "alice").
-		WillReturnRows(sqlmock.NewRows([]string{"count(*)"}).AddRow(0))
+		WillReturnRows(sqlmock.NewRows([]string{"count(*)"}).AddRow(1))
 	writeMock.ExpectBegin()
-	writeMock.ExpectExec("(?i)INSERT INTO `zt_starinfo`").
-		WillReturnResult(sqlmock.NewResult(1, 1))
+	writeMock.ExpectExec("(?i)UPDATE `zt_starinfo`").
+		WillReturnResult(sqlmock.NewResult(0, 1))
 	writeMock.ExpectCommit()
 
-	followed := true
-	if err := repo.SaveDemandFollow(context.Background(), RepoSaveDemandFollowReq{
-		Account: "alice", DemandID: 42, Followed: followed,
+	if err := repo.EnsureDemandUnfollowed(context.Background(), RepoSaveDemandFollowReq{
+		Account: "alice", DemandID: 42,
 	}); err != nil {
-		t.Fatalf("SaveDemandFollow: %v", err)
+		t.Fatalf("EnsureDemandUnfollowed: %v", err)
 	}
 	if err := writeMock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("writeDB expectations: %v", err)

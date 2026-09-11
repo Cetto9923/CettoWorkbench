@@ -42,24 +42,6 @@ func (h *Handler) ProjectWeeklies(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": resp})
 }
 
-// ProjectWeeklyTeams 承建团队树；defaultMine=1 时默认当前用户部门。
-func (h *Handler) ProjectWeeklyTeams(c *gin.Context) {
-	var req ProjectWeeklyTeamsReq
-	if err := c.ShouldBindQuery(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "参数解析失败"})
-		return
-	}
-	resp, err := h.svc.ProjectWeeklyTeams(c.Request.Context(), middleware.CurrentUser(c), req)
-	if err != nil {
-		if h.logger != nil {
-			h.logger.Error("project weekly teams", zap.Error(err))
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "获取承建团队失败"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"success": true, "data": resp})
-}
-
 // ProjectWeeklyDetail 侧滑详情。
 func (h *Handler) ProjectWeeklyDetail(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)

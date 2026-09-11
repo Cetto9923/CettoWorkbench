@@ -18,8 +18,7 @@ import (
 type FollowTab string
 
 const (
-	FollowTabDemand        FollowTab = "demand"
-	FollowTabProjectReport FollowTab = "project_report"
+	FollowTabDemand FollowTab = "demand"
 )
 
 // FollowScope 业务需求关注视图的二级关注维度筛选（对齐 CRCBWorkbench）。
@@ -62,7 +61,7 @@ func (r *FollowListReq) Validate() []FieldError {
 		r.Tab = FollowTabDemand
 	}
 	switch r.Tab {
-	case FollowTabDemand, FollowTabProjectReport:
+	case FollowTabDemand:
 	default:
 		return []FieldError{{Field: "tab", Message: "无效的对象视图"}}
 	}

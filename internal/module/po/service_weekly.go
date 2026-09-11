@@ -174,34 +174,6 @@ func (s *Service) ProjectWeeklyDetail(ctx context.Context, actor *model.User, pr
 	return out, fmt.Errorf("project weekly not found")
 }
 
-// ProjectWeeklyTeams 承建团队树。
-func (s *Service) ProjectWeeklyTeams(ctx context.Context, actor *model.User, req ProjectWeeklyTeamsReq) (ProjectWeeklyTeamsResp, error) {
-	out := ProjectWeeklyTeamsResp{Teams: []ProjectWeeklyTeamNode{}}
-	if s.repo == nil || actor == nil {
-		return out, nil
-	}
-	leaves, err := s.repo.FindProjectWeeklyTeamLeaves(ctx)
-	if err != nil {
-		return out, err
-	}
-	ids := collectDeptIDsFromPaths(leaves)
-	rows, err := s.repo.FindDeptsByIDs(ctx, ids)
-	if err != nil {
-		return out, err
-	}
-	out.Teams = buildProjectWeeklyDeptTree(rows)
-	deptID, err := s.repo.FindUserDeptID(ctx, strings.TrimSpace(actor.Account))
-	if err != nil {
-		return out, err
-	}
-	out.ActorDeptID = deptID
-	if req.PreferDefaultMine() && deptID > 0 {
-		out.DefaultTeamID = deptID
-		out.Teams = ensureDeptInTree(out.Teams, deptID, "我的团队")
-	}
-	return out, nil
-}
-
 // ProjectWeeklyHistory 历史周报。
 func (s *Service) ProjectWeeklyHistory(ctx context.Context, actor *model.User, projectID uint, scope string) ([]ProjectWeeklyHistoryItem, error) {
 	if s.repo == nil || actor == nil || projectID == 0 {

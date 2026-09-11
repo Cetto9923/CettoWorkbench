@@ -20,8 +20,7 @@ import (
 	"workbench/internal/pkg/zentao"
 )
 
-// FollowList 我的关注列表服务。V10.1 04 节：只有 2 个对象视图（业务需求默认 / 项目报告）。
-// 项目报告本期占位（数据源待后续接入）。
+// FollowList 我的关注列表服务，当前仅提供业务需求与周报列表两条独立接口。
 func (s *Service) FollowList(ctx context.Context, actor *model.User, req FollowListReq) (*FollowListResp, error) {
 	if actor == nil || strings.TrimSpace(actor.Account) == "" {
 		return &FollowListResp{Items: []FollowItem{}, Page: req.Page, PageSize: req.PageSize}, nil
@@ -39,11 +38,6 @@ func (s *Service) FollowList(ctx context.Context, actor *model.User, req FollowL
 			return nil, err
 		}
 		return &FollowListResp{Items: items, Total: total, Page: req.Page, PageSize: req.PageSize, Stats: stats}, nil
-	case FollowTabProjectReport:
-		items, total, err := s.repo.FindFollowedProjectReports(ctx, RepoFindFollowedProjectReportsReq{
-			Account: actor.Account, Keyword: req.Keyword, Page: req.Page, PageSize: req.PageSize,
-		})
-		return &FollowListResp{Items: items, Total: total, Page: req.Page, PageSize: req.PageSize}, err
 	}
 	return &FollowListResp{Items: []FollowItem{}, Page: req.Page, PageSize: req.PageSize}, nil
 }

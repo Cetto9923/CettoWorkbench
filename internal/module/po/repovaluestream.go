@@ -201,11 +201,6 @@ func filterReady(account string, filter mysqlStageFilter) bool {
 	return len(filter.statuses) > 0
 }
 
-// FindRoleDemandIDs 按阶段过滤条件只查业需 ID（供「全部」去重计数，避免拉全字段）。
-func (r *Repo) FindRoleDemandIDs(ctx context.Context, account string, filter mysqlStageFilter) ([]int, error) {
-	return r.FindRoleDemandIDsWithFilters(ctx, account, filter, DemandsReq{})
-}
-
 // FindAllStageRefsPaged keeps the "all" list's first-stage de-duplication in
 // MySQL. It counts and fetches only the requested page instead of materializing
 // every eligible demand/story ID in the application process.
@@ -241,16 +236,6 @@ func (r *Repo) FindAllStageRefsPaged(ctx context.Context, account string, req De
 		refs = append(refs, itemRef{kind: row.Kind, id: row.ID, stageStatus: valueStreamStages[row.StageIndex].status})
 	}
 	return refs, int(total), nil
-}
-
-// FindScheduleStoryIDs 查询排期阶段独立研发需求 ID。
-func (r *Repo) FindScheduleStoryIDs(ctx context.Context, account string) ([]int, error) {
-	return r.FindScheduleStoryIDsWithFilters(ctx, account, DemandsReq{})
-}
-
-// FindDeliverStoryIDs 查询交付阶段独立研发需求 ID。
-func (r *Repo) FindDeliverStoryIDs(ctx context.Context, account string) ([]int, error) {
-	return r.FindDeliverStoryIDsWithFilters(ctx, account, DemandsReq{})
 }
 
 // FindRoleDemandsByIDs 按 ID 列表批量查询业需详情。

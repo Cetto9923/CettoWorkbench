@@ -31,15 +31,6 @@ func TestFormatAccountNameDoesNotDuplicateExistingAccount(t *testing.T) {
 	}
 }
 
-func TestDemandTodoRelationUsesCurrentAssignee(t *testing.T) {
-	if relation, responsibility := demandTodoRelation("003030", "003030"); relation != "我负责" || responsibility != "待我处理" {
-		t.Fatalf("current assignee = %q/%q", relation, responsibility)
-	}
-	if relation, responsibility := demandTodoRelation("004861", "003030"); relation != "我配合" || responsibility != "待我跟进" {
-		t.Fatalf("supporting participant = %q/%q", relation, responsibility)
-	}
-}
-
 func TestIssueRiskPriLabel(t *testing.T) {
 	// zt_issue/zt_risk.pri 为 char(30)，混存数字串与 low/middle/high/urgent，须统一映射到 P1..P4。
 	cases := map[string]string{

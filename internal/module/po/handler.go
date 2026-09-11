@@ -71,22 +71,12 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.GET("/done/meta", middleware.RequirePerm(perm.PoDoneList), h.DoneMeta)
 	g.GET("/done/detail/:actionId", middleware.RequirePerm(perm.PoDoneList), h.DoneDetail)
 
-	// 兼容老版本 API 路径
-	wbApi := rg.Group("/workbench/api")
-	wbApi.GET("/done", middleware.RequirePerm(perm.PoDoneList), h.DoneItems)
-	wbApi.GET("/done/meta", middleware.RequirePerm(perm.PoDoneList), h.DoneMeta)
-	wbApi.GET("/done/detail/:actionId", middleware.RequirePerm(perm.PoDoneList), h.DoneDetail)
-	wbApi.GET("/watches/project-weeklies", middleware.RequirePerm(perm.PoFollowList), h.ProjectWeeklies)
-	wbApi.GET("/watches/project-weeklies/teams", middleware.RequirePerm(perm.PoFollowList), h.ProjectWeeklyTeams)
-	wbApi.GET("/watches/project-weeklies/:id", middleware.RequirePerm(perm.PoFollowList), h.ProjectWeeklyDetail)
-	wbApi.GET("/watches/project-weeklies/:id/history", middleware.RequirePerm(perm.PoFollowList), h.ProjectWeeklyHistory)
 	g.GET("/notice", middleware.RequirePerm(perm.PoNoticeList), h.Notice)
 	g.GET("/notice/items", middleware.RequirePerm(perm.PoNoticeList), h.NoticeItems)
 	g.GET("/follow", middleware.RequirePerm(perm.PoFollowList), h.Follow)
 	g.GET("/follow/items", middleware.RequirePerm(perm.PoFollowList), h.FollowItems)
 	g.GET("/follow/demands/export", middleware.RequirePerm(perm.PoFollowList), h.FollowDemandExport)
 	g.GET("/follow/project-weeklies", middleware.RequirePerm(perm.PoFollowList), h.ProjectWeeklies)
-	g.GET("/follow/project-weeklies/teams", middleware.RequirePerm(perm.PoFollowList), h.ProjectWeeklyTeams)
 	g.GET("/follow/project-weeklies/:id", middleware.RequirePerm(perm.PoFollowList), h.ProjectWeeklyDetail)
 	g.GET("/follow/project-weeklies/:id/history", middleware.RequirePerm(perm.PoFollowList), h.ProjectWeeklyHistory)
 	// Keep the sidebar's public path aligned with the page capability name.

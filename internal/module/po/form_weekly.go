@@ -63,34 +63,6 @@ func (r ProjectWeeklyListReq) TeamIDList() []uint {
 	return r.teamIDList
 }
 
-// ProjectWeeklyTeamNode 承建团队树节点（zt_dept）。
-type ProjectWeeklyTeamNode struct {
-	ID       uint                    `json:"id"`
-	Name     string                  `json:"name"`
-	ParentID uint                    `json:"parentId"`
-	Grade    int                     `json:"grade"`
-	Path     string                  `json:"path"`
-	Children []ProjectWeeklyTeamNode `json:"children,omitempty"`
-}
-
-// ProjectWeeklyTeamsResp 承建团队树 + 默认团队。
-type ProjectWeeklyTeamsResp struct {
-	Teams         []ProjectWeeklyTeamNode `json:"teams"`
-	DefaultTeamID uint                    `json:"defaultTeamId"`
-	ActorDeptID   uint                    `json:"actorDeptId"`
-}
-
-// ProjectWeeklyTeamsReq 承建团队选项查询。
-type ProjectWeeklyTeamsReq struct {
-	DefaultMine string `form:"defaultMine"` // 1/true → 默认当前用户部门
-}
-
-// PreferDefaultMine 是否默认当前用户团队。
-func (r ProjectWeeklyTeamsReq) PreferDefaultMine() bool {
-	v := strings.TrimSpace(strings.ToLower(r.DefaultMine))
-	return v == "1" || v == "true" || v == "yes"
-}
-
 // ProjectWeeklyStats 顶部统计（与筛选同源）。
 type ProjectWeeklyStats struct {
 	Watched   int `json:"watched"`

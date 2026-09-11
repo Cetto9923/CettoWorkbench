@@ -94,7 +94,7 @@ func TestBuildTodoOuterWhereKeywords(t *testing.T) {
 
 func TestBuildTodoFacetSQLIgnoresObjectTypeDimension(t *testing.T) {
 	// 已选中 demand 时分面仍必须统计 task / bug，否则芯片计数归零后无法切回。
-	facetSQL, args := buildTodoFacetSQL("user_a", TodoListReq{ObjectType: "demand", Tab: TodoTabDemand}, nil, "2026-09-05")
+	facetSQL, args := buildTodoFacetSQL("user_a", TodoListReq{ObjectType: "demand"}, nil, "2026-09-05")
 	for _, kind := range []string{"'demand' AS kind", "'task' AS kind", "'bug' AS kind"} {
 		if !strings.Contains(facetSQL, kind) {
 			t.Fatalf("expected facet union to keep %s, got: %s", kind, facetSQL)
@@ -160,12 +160,6 @@ func TestBuildTodoOuterWhereDimensions(t *testing.T) {
 	whereResp, _ := buildTodoOuterWhere(TodoListReq{Responsibility: ResponsibilityMyAction}, nil, false, "2026-09-05")
 	if !strings.Contains(whereResp, "t.responsibility = '待我处理'") {
 		t.Errorf("expected responsibility condition, got: %s", whereResp)
-	}
-
-	// Tab
-	whereTab, _ := buildTodoOuterWhere(TodoListReq{Tab: TodoTabDemand}, nil, true, "2026-09-05")
-	if !strings.Contains(whereTab, "t.kind = 'demand'") {
-		t.Errorf("expected tab condition, got: %s", whereTab)
 	}
 
 	// Focus

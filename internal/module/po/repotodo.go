@@ -28,13 +28,6 @@ func (r *Repo) CountOpenTodos(ctx context.Context, account string) (int64, error
 	return res.Total, nil
 }
 
-func demandTodoRelation(assignedTo, account string) (string, string) {
-	if strings.TrimSpace(assignedTo) == strings.TrimSpace(account) {
-		return "我负责", "待我处理"
-	}
-	return "我配合", "待我跟进"
-}
-
 func todoActionLabel(status string) string {
 	switch status {
 	case "draft", "wait", "refuse":

@@ -243,9 +243,6 @@ func noticeNeedsAction(action string) bool {
 	}
 	return false
 }
-func sameNoticeDay(left, right time.Time) bool {
-	return left.Year() == right.Year() && left.YearDay() == right.YearDay()
-}
 
 // CheckNoticeAccess 校验用户对通知项的归属与存在性（Service 对象级授权）。
 func (r *Repo) CheckNoticeAccess(ctx context.Context, account string, notifyID int64) (exists bool, authorized bool, err error) {

@@ -12,7 +12,6 @@ package po
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -40,14 +39,6 @@ type RepoSaveDemandFollowReq struct {
 type RepoRemoveProjectReportFollowReq struct {
 	Account   string
 	ProjectID int64
-}
-
-// RepoFindFollowedProjectReportsReq 查询关注项目最新周报的数据参数。
-type RepoFindFollowedProjectReportsReq struct {
-	Account  string
-	Keyword  string
-	Page     int
-	PageSize int
 }
 
 func followDemandWatchWhere(account string) (string, []any) {
@@ -347,70 +338,6 @@ WHERE p.id = ? AND p.deleted = '0' AND p.type = 'project'
   AND p.follow LIKE CONCAT('%,', u.id, ',%')`, req.Account, req.ProjectID).Error
 }
 
-// FindFollowedProjectReports 查询当前账号关注项目及每个项目的最新周报。
-func (r *Repo) FindFollowedProjectReports(ctx context.Context, req RepoFindFollowedProjectReportsReq) ([]FollowItem, int64, error) {
-	if r == nil || r.db == nil || strings.TrimSpace(req.Account) == "" {
-		return nil, 0, nil
-	}
-	if req.Page < 1 {
-		req.Page = 1
-	}
-	if req.PageSize < 1 || req.PageSize > 100 {
-		req.PageSize = 20
-	}
-
-	base := r.db.WithContext(ctx).Table("zt_project AS p").
-		Joins("INNER JOIN zt_user AS u ON u.account = ? AND u.deleted = ?", req.Account, "0").
-		Where("p.deleted = ?", "0").
-		Where("FIND_IN_SET(u.id, TRIM(BOTH ',' FROM p.follow)) > 0")
-	if req.Keyword != "" {
-		base = base.Where("p.name LIKE ? OR CAST(p.id AS CHAR) LIKE ?", "%"+req.Keyword+"%", "%"+req.Keyword+"%")
-	}
-
-	var total int64
-	if err := base.Count(&total).Error; err != nil {
-		return nil, 0, err
-	}
-
-	type row struct {
-		ID               int64      `gorm:"column:id"`
-		Name             string     `gorm:"column:name"`
-		Status           string     `gorm:"column:status"`
-		PM               string     `gorm:"column:PM"`
-		ImportantProject string     `gorm:"column:importantProject"`
-		Cycle            string     `gorm:"column:cycle"`
-		Sunday           *time.Time `gorm:"column:sunday"`
-	}
-	var rows []row
-	if err := base.
-		Joins(`LEFT JOIN zt_projectweekly AS pw ON pw.id = (
-			SELECT MAX(pw2.id) FROM zt_projectweekly AS pw2 WHERE pw2.project = p.id
-		)`).
-		Select("p.id, p.name, p.status, p.PM, p.importantProject, pw.cycle, pw.sunday").
-		Order("p.id DESC").
-		Limit(req.PageSize).
-		Offset((req.Page - 1) * req.PageSize).
-		Find(&rows).Error; err != nil {
-		return nil, 0, err
-	}
-
-	displayMap, _ := r.loadAccountDisplayMap(ctx)
-	items := make([]FollowItem, 0, len(rows))
-	for _, row := range rows {
-		date := ""
-		if row.Sunday != nil && row.Sunday.Year() > 1 {
-			date = row.Sunday.Format("2006-01-02")
-		}
-		items = append(items, FollowItem{
-			ID: row.ID, Title: row.Name, Status: row.Status, Owner: displayMap[row.PM],
-			LatestNote: strings.TrimSpace(row.Cycle), Date: date,
-			IsKey: strings.TrimSpace(row.ImportantProject) != "", IsClosed: row.Status == "closed",
-			URL: zentao.URL("project", "view", fmt.Sprintf("projectID=%d", row.ID)),
-		})
-	}
-	return items, total, nil
-}
-
 // EnsureDemandUnfollowed 确保 starinfo 存在 followed=0 行（压制 mailto 历史关注）。
 // 禅道 unfollowObject 在无行时 no-op，工作台列表依赖显式 followed=0 才能排除抄送。
 func (r *Repo) EnsureDemandUnfollowed(ctx context.Context, req RepoSaveDemandFollowReq) error {
@@ -431,35 +358,5 @@ func (r *Repo) EnsureDemandUnfollowed(ctx context.Context, req RepoSaveDemandFol
 	}
 	return r.writeDB.WithContext(ctx).Table("zt_starinfo").Create(map[string]any{
 		"objectType": "demand", "objectID": req.DemandID, "account": req.Account, "followed": "0",
-	}).Error
-}
-
-// SaveDemandFollow 切换对业务需求的关注状态。
-// V10.1 04 节：取消关注只解除关注关系，不关闭业务对象。
-// 写入策略：upsert zt_starinfo(objectType='demand', objectID=?, account=?, followed='1'/'0')。
-func (r *Repo) SaveDemandFollow(ctx context.Context, req RepoSaveDemandFollowReq) error {
-	if r == nil || r.writeDB == nil || strings.TrimSpace(req.Account) == "" || req.DemandID <= 0 {
-		return nil
-	}
-	followedStr := "0"
-	if req.Followed {
-		followedStr = "1"
-	}
-	var count int64
-	if err := r.writeDB.WithContext(ctx).Table("zt_starinfo").
-		Where("objectType = ? AND objectID = ? AND account = ?", "demand", req.DemandID, req.Account).
-		Count(&count).Error; err != nil {
-		return err
-	}
-	if count > 0 {
-		return r.writeDB.WithContext(ctx).Table("zt_starinfo").
-			Where("objectType = ? AND objectID = ? AND account = ?", "demand", req.DemandID, req.Account).
-			Update("followed", followedStr).Error
-	}
-	if !req.Followed {
-		return nil
-	}
-	return r.writeDB.WithContext(ctx).Table("zt_starinfo").Create(map[string]any{
-		"objectType": "demand", "objectID": req.DemandID, "account": req.Account, "followed": "1",
 	}).Error
 }
