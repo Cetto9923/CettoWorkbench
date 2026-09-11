@@ -28,8 +28,13 @@
 }
 
 #poUrgeModal.po-urge-modal {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  margin: auto !important;
   width: min(92vw, 540px);
   max-height: 88vh;
+  box-sizing: border-box;
   display: flex !important;
   flex-direction: column;
   overflow: hidden;
@@ -42,6 +47,13 @@
 }
 #poUrgeOverlay.po-urge-modal-overlay.show > #poUrgeModal.po-urge-modal {
   transform: translateY(0);
+}
+#poUrgeModal > #poUrgeForm {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* 2. 弹窗头部与关闭按钮 */

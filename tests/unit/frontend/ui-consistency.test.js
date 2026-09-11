@@ -150,5 +150,9 @@ function cssRead(rel) { return read(path.join("web/static/css", rel)); }
   assert.match(buttons, /\.btn-neutral/, "shared button system must define neutral buttons");
   assert.match(buttons, /\.batch-modal-footer \.action-btn/, "modal footer actions must share a minimum width");
   assert.match(buttons, /height: var\(--size-8\)/, "base buttons must share a 32px control height");
+  const urge = cssRead("po/po-urge.css");
+  assert.match(urge, /#poUrgeModal\.po-urge-modal\s*\{[\s\S]*position: relative !important[\s\S]*top: auto !important[\s\S]*left: auto !important/, "urge modal must opt out of the legacy fixed-position offset");
+  assert.match(urge, /#poUrgeModal > #poUrgeForm\s*\{[\s\S]*display: flex[\s\S]*flex-direction: column[\s\S]*min-height: 0[\s\S]*overflow: hidden/, "urge modal form must constrain the scrollable body so footer stays in view");
+  assert.match(urge, /#poUrgeModal \.batch-modal-body\s*\{[\s\S]*overflow-y: auto[\s\S]*flex: 1[\s\S]*min-height: 0/, "urge modal body must own overflow scrolling");
   console.log("PASS: buttons use one shared semantic system and modal footer geometry");
 })();
