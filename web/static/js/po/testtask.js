@@ -421,6 +421,123 @@
     });
   }
 
+  // 校验第 4 步非联调测试单；返回 { ok, joint, tasks }。
+  function validateAndCollectTesttasks($r) {
+    var joint = readJointFlag($r);
+    if (joint === 1) {
+      showToast("联调测试单暂不支持，请选择否", "error");
+      return { ok: false, joint: joint, tasks: [] };
+    }
+    var ids = checkedSystemIds($r);
+    if (!ids.length) {
+      showToast("请至少选择一个系统", "error");
+      return { ok: false, joint: joint, tasks: [] };
+    }
+    var tasks = [];
+    for (var i = 0; i < ids.length; i++) {
+      var unit = ids[i];
+      var $unit = $r.find('[data-tt-test-unit="' + unit + '"]');
+      if (!$unit.length) {
+        showToast("测试单配置不完整", "error");
+        return { ok: false, joint: joint, tasks: [] };
+      }
+      var targets = collectLinkTargetsForUnit($r, unit);
+      if (!targets.length || !targets[0].buildId) {
+        showToast("请先完成系统版本配置", "error");
+        return { ok: false, joint: joint, tasks: [] };
+      }
+      var name = String($unit.find('[data-tt-fill="tt-name"]').val() || "").trim();
+      if (!name) {
+        showToast("请填写测试单名称", "error");
+        return { ok: false, joint: joint, tasks: [] };
+      }
+      var owner = String($unit.find('[data-tt-qd="' + unit + '"]').val() || "").trim();
+      if (!owner) {
+        showToast("请选择测试负责人", "error");
+        return { ok: false, joint: joint, tasks: [] };
+      }
+      var begin = String($unit.find('[data-tt-fill="start"]').val() || "").trim();
+      if (!begin) {
+        showToast("请填写开始日期", "error");
+        return { ok: false, joint: joint, tasks: [] };
+      }
+      var end = String($unit.find('[data-tt-fill="end"]').val() || "").trim();
+      if (!end) {
+        showToast("请填写结束日期", "error");
+        return { ok: false, joint: joint, tasks: [] };
+      }
+      if (end < begin) {
+        showToast("结束日期不能早于开始日期", "error");
+        return { ok: false, joint: joint, tasks: [] };
+      }
+      var type = String($unit.find('[data-tt-type="' + unit + '"]').val() || "").trim();
+      if (!type) {
+        showToast("请选择测试类型", "error");
+        return { ok: false, joint: joint, tasks: [] };
+      }
+      var priRaw = String($unit.find('[data-tt-pri="' + unit + '"]').val() || "").trim();
+      var pri = parseInt(priRaw, 10);
+      if (!(pri >= 1 && pri <= 4)) {
+        showToast("请选择优先级", "error");
+        return { ok: false, joint: joint, tasks: [] };
+      }
+      var desc = String($unit.find('[data-tt-fill="desc"]').val() || "").trim();
+      tasks.push({
+        productId: parseInt(unit, 10),
+        buildId: parseInt(String(targets[0].buildId), 10),
+        name: name,
+        begin: begin,
+        end: end,
+        owner: owner,
+        type: type,
+        pri: pri,
+        desc: desc
+      });
+    }
+    return { ok: true, joint: joint, tasks: tasks };
+  }
+
+  function saveTesttasks(demandId, joint, tasks) {
+    return postJSON("/demands/" + encodeURIComponent(demandId) + "/testtask/tasks", {
+      joint: joint,
+      tasks: tasks
+    }).then(function (wrap) {
+      if (wrap.ok && wrap.data && wrap.data.success) {
+        showToast(String(wrap.data.message || "测试单保存成功"), "success");
+        return true;
+      }
+      var msg = String((wrap.data && (wrap.data.message || wrap.data.error)) || "").trim();
+      if (!msg && wrap.data && Array.isArray(wrap.data.errors) && wrap.data.errors.length) {
+        msg = String(wrap.data.errors[0].message || "").trim();
+      }
+      showToast(msg || "保存测试单失败", "error");
+      return false;
+    }).catch(function () {
+      showToast("保存测试单失败，请稍后重试", "error");
+      return false;
+    });
+  }
+
+  function submitTesttasks($btn) {
+    var $r = $root();
+    var collected = validateAndCollectTesttasks($r);
+    if (!collected.ok) {
+      return;
+    }
+    var demandId = contextMeta.demandId;
+    if (!demandId) {
+      showToast("需求 ID 无效", "error");
+      return;
+    }
+    $btn.prop("disabled", true);
+    saveTesttasks(demandId, collected.joint, collected.tasks).then(function (ok) {
+      $btn.prop("disabled", false);
+      if (ok) {
+        closeModal();
+      }
+    });
+  }
+
   function normalizeExecOptions(list) {
     if (!Array.isArray(list)) {
       return [];
@@ -1112,7 +1229,7 @@
       syncDateDisplay(this);
     });
     $scope.on("click", "#poTesttaskSubmitBtn", function () {
-      showToast("提交提测（静态演示，未提交后端）", "success");
+      submitTesttasks($(this));
     });
     $scope.on("click", ".po-testtask-link-add", function () {
       var $block = $(this).closest("[data-tt-link-build]");

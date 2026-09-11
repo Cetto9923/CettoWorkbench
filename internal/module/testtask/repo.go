@@ -120,3 +120,61 @@ ORDER BY account ASC`
 	}
 	return out, nil
 }
+
+// buildMeta 版本所属项目/执行（用于创建测试单）。
+type buildMeta struct {
+	ID        uint
+	ProductID uint
+	ProjectID uint
+	Execution uint
+	Name      string
+}
+
+// FindBuildsByIDs 按版本 ID 批量读取所属项目与执行。
+func (r *Repo) FindBuildsByIDs(ctx context.Context, ids []uint) (map[uint]buildMeta, error) {
+	out := make(map[uint]buildMeta)
+	if r == nil || r.db == nil || len(ids) == 0 {
+		return out, nil
+	}
+	uniq := make([]uint, 0, len(ids))
+	seen := make(map[uint]struct{}, len(ids))
+	for _, id := range ids {
+		if id == 0 {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		uniq = append(uniq, id)
+	}
+	if len(uniq) == 0 {
+		return out, nil
+	}
+
+	type row struct {
+		ID        uint   `gorm:"column:id"`
+		ProductID uint   `gorm:"column:product"`
+		ProjectID uint   `gorm:"column:project"`
+		Execution uint   `gorm:"column:execution"`
+		Name      string `gorm:"column:name"`
+	}
+	var rows []row
+	err := r.db.WithContext(ctx).Table("zt_build").
+		Select("id, product, project, execution, name").
+		Where("id IN ? AND deleted = '0'", uniq).
+		Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	for _, row := range rows {
+		out[row.ID] = buildMeta{
+			ID:        row.ID,
+			ProductID: row.ProductID,
+			ProjectID: row.ProjectID,
+			Execution: row.Execution,
+			Name:      strings.TrimSpace(row.Name),
+		}
+	}
+	return out, nil
+}

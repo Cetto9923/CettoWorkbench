@@ -2,7 +2,7 @@
 // 文件: internal/module/testtask/gateway.go
 // 模块: 提测办理
 // 类型: action
-// 职责: 出站适配层（对称于 Repo）：封装提测相关禅道 REST 调用。
+// 职责: 出站适配层（对称于 Repo）：封装版本列表/创建与测试单创建的禅道 REST 调用。
 // 依赖: internal/pkg/zentao
 // =============================================================================
 
@@ -87,4 +87,80 @@ func listProductBuilds(ctx context.Context, client *zentao.Client, productID uin
 		return []productBuild{}, nil
 	}
 	return resp.Builds, nil
+}
+
+// createTesttaskReq 创建测试单（POST /testtasks）。
+type createTesttaskReq struct {
+	ProjectID   uint
+	ProductID   uint
+	ExecutionID uint
+	BuildID     uint
+	Name        string
+	Begin       string
+	End         string
+	Owner       string
+	Type        string
+	Pri         int
+	Status      string
+	Desc        string
+	Joint       string
+}
+
+// createdTesttask 禅道测试单创建响应的必要字段。
+type createdTesttask struct {
+	ID   uint   `json:"id"`
+	Name string `json:"name"`
+}
+
+// createTesttask 调用禅道创建测试单接口 POST /testtasks。
+func createTesttask(ctx context.Context, client *zentao.Client, req createTesttaskReq) (*createdTesttask, error) {
+	if client == nil {
+		return nil, fmt.Errorf("禅道 API 未配置")
+	}
+	if req.ProjectID == 0 {
+		return nil, fmt.Errorf("projectId 无效")
+	}
+	if req.ProductID == 0 {
+		return nil, fmt.Errorf("productId 无效")
+	}
+	if req.ExecutionID == 0 {
+		return nil, fmt.Errorf("executionId 无效")
+	}
+	if req.BuildID == 0 {
+		return nil, fmt.Errorf("buildId 无效")
+	}
+
+	status := strings.TrimSpace(req.Status)
+	if status == "" {
+		status = "wait"
+	}
+	joint := strings.TrimSpace(req.Joint)
+	if joint == "" {
+		joint = "0"
+	}
+
+	payload := map[string]any{
+		"project":   req.ProjectID,
+		"product":   req.ProductID,
+		"execution": req.ExecutionID,
+		"build":     req.BuildID,
+		"name":      strings.TrimSpace(req.Name),
+		"begin":     strings.TrimSpace(req.Begin),
+		"end":       strings.TrimSpace(req.End),
+		"owner":     strings.TrimSpace(req.Owner),
+		"type":      strings.TrimSpace(req.Type),
+		"pri":       req.Pri,
+		"status":    status,
+		"desc":      req.Desc,
+		"joint":     joint,
+	}
+	var out createdTesttask
+	path := fmt.Sprintf("/projects/%d/testtasks", req.ProjectID)
+	if err := client.Do(ctx, http.MethodPost, path, payload, &out); err != nil {
+		return nil, err
+	}
+	if out.ID == 0 {
+		return nil, fmt.Errorf("禅道未返回测试单 ID")
+	}
+	return &out, nil
 }

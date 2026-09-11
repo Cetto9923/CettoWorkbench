@@ -2,7 +2,7 @@
 // 文件: internal/module/testtask/service.go
 // 模块: 提测办理
 // 类型: action
-// 职责: 提测上下文、产品执行/已有版本列表与创建版本业务装配。
+// 职责: 提测上下文、产品执行/已有版本列表、创建版本与创建测试单业务装配。
 // 依赖: internal/module/user
 //       internal/pkg/errorx
 //       internal/pkg/zentao
@@ -165,6 +165,86 @@ func (s *Service) CreateBuilds(ctx context.Context, actor *model.User, demandID 
 			ProductID: item.ProductID,
 			BuildID:   build.ID,
 			Name:      build.Name,
+		})
+	}
+	return out, nil
+}
+
+// CreateTesttasks 将非联调测试单同步到禅道 POST /testtasks；所属执行取版本上的 execution。
+func (s *Service) CreateTesttasks(ctx context.Context, actor *model.User, demandID uint, req CreateTesttasksReq) (*CreateTesttasksResp, error) {
+	_ = demandID
+	_ = actor
+	if req.Joint == 1 {
+		return nil, errorx.New(errorx.ErrCodeInvalidParam, "联调测试单暂不支持")
+	}
+	client := s.ztAPI
+	if client == nil {
+		client = zentao.API()
+	}
+	if client == nil {
+		return nil, errorx.New(errorx.ErrCodeInternal, "禅道 API 未配置")
+	}
+
+	buildIDs := make([]uint, 0, len(req.Tasks))
+	for _, item := range req.Tasks {
+		if item.BuildID > 0 {
+			buildIDs = append(buildIDs, item.BuildID)
+		}
+	}
+	builds, err := s.repo.FindBuildsByIDs(ctx, buildIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	out := &CreateTesttasksResp{Tasks: make([]CreateTesttaskResult, 0, len(req.Tasks))}
+	for _, item := range req.Tasks {
+		meta, ok := builds[item.BuildID]
+		if !ok || meta.ID == 0 {
+			return nil, errorx.New(errorx.ErrCodeInvalidParam, fmt.Sprintf("版本 %d 不存在", item.BuildID))
+		}
+		if item.ProductID > 0 && meta.ProductID > 0 && item.ProductID != meta.ProductID {
+			return nil, errorx.New(errorx.ErrCodeInvalidParam, fmt.Sprintf("版本 %d 不属于所选产品", item.BuildID))
+		}
+		productID := item.ProductID
+		if productID == 0 {
+			productID = meta.ProductID
+		}
+
+		if meta.Execution == 0 {
+			return nil, errorx.New(errorx.ErrCodeInvalidParam, fmt.Sprintf("版本 %d 缺少所属执行", item.BuildID))
+		}
+
+		created, createErr := createTesttask(ctx, client, createTesttaskReq{
+			ProjectID:   meta.ProjectID,
+			ProductID:   productID,
+			ExecutionID: meta.Execution,
+			BuildID:     item.BuildID,
+			Name:        strings.TrimSpace(item.Name),
+			Begin:       strings.TrimSpace(item.Begin),
+			End:         strings.TrimSpace(item.End),
+			Owner:       strings.TrimSpace(item.Owner),
+			Type:        strings.TrimSpace(item.Type),
+			Pri:         item.Pri,
+			Status:      "wait",
+			Desc:        item.Desc,
+			Joint:       "0",
+		})
+		if createErr != nil {
+			if s.logger != nil {
+				s.logger.Error("zentao create testtask",
+					zap.Error(createErr),
+					zap.Uint("productId", productID),
+					zap.Uint("buildId", item.BuildID),
+					zap.String("name", item.Name),
+				)
+			}
+			return nil, errorx.Wrap(errorx.ErrCodeInvalidParam, fmt.Sprintf("保存测试单失败：%s", createErr.Error()), createErr)
+		}
+		out.Tasks = append(out.Tasks, CreateTesttaskResult{
+			ProductID:  productID,
+			BuildID:    item.BuildID,
+			TesttaskID: created.ID,
+			Name:       created.Name,
 		})
 	}
 	return out, nil
