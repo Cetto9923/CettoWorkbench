@@ -127,7 +127,16 @@
   width: 72px;
 }
 
+.po-linkstory-table-panel .col-title {
+  max-width: 280px;
+}
+
 .po-linkstory-title {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--ls-primary);
   text-decoration: none;
 }
@@ -166,4 +175,29 @@
 
 .po-linkstory-footer .pagination-container {
   padding: 0;
+}
+
+/* 取值控件外包一层，用 contents 让内部 select/input 参与 search-fields 布局 */
+.po-linkstory-value-box {
+  display: contents;
+}
+
+/* 点击整块 date input 即可弹出日历（与提测弹窗同款） */
+.po-linkstory input[type="date"].search-input {
+  position: relative;
+  cursor: pointer;
+}
+
+.po-linkstory input[type="date"].search-input::-webkit-calendar-picker-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
 }
