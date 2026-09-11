@@ -9,7 +9,7 @@
 .po-notice .notice-table .notice-actor { width: 100px; }
 .po-notice .notice-table .notice-date { width: 150px; }
 .po-notice .notice-table .notice-state { width: 80px; }
-.po-notice .notice-table .notice-opt { width: 180px; text-align: right; }
+.po-notice .notice-table .notice-opt { width: 220px; text-align: right; }
 
 .po-notice .workspace-table td {
   height: 48px;

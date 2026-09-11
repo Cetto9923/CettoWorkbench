@@ -115,7 +115,7 @@
         leftActions.push('<a href="' + esc(zentaoEditUrl) + '" target="_blank" rel="noopener noreferrer" class="dd-btn dd-btn-edit">✏️ 编辑需求 ↗</a>');
       }
       if (canWithdrawReview) {
-        leftActions.push('<button type="button" class="dd-btn dd-btn-ghost-danger dd-withdraw-btn" id="ddWithdrawBtn" onclick="DemandDetailReview.handleWithdraw(\'' + esc(cleanId) + '\')">撤回评审</button>');
+        leftActions.push('<button type="button" class="dd-btn dd-btn-ghost-danger dd-withdraw-btn" id="ddWithdrawBtn" onclick="DemandDetailReview.openWithdrawModal(\'' + esc(cleanId) + '\')">撤销评审</button>');
       }
     }
 
@@ -151,6 +151,26 @@
       '    <div class="dd-reject-modal-footer">',
       '      <button type="button" class="dd-btn" onclick="DemandDetailReview.closeRejectModal()">取消</button>',
       '      <button type="button" class="dd-btn danger" id="ddConfirmRejectBtn" onclick="DemandDetailReview.confirmReject(\'' + esc(cleanId) + '\')">确认驳回</button>',
+      '    </div>',
+      '  </div>',
+      '</div>'
+    ].join("");
+
+    var withdrawModalHtml = [
+      '<div id="ddWithdrawModal" class="dd-reject-modal-overlay" style="display:none;">',
+      '  <div class="dd-reject-modal-dialog">',
+      '    <div class="dd-reject-modal-header">',
+      '      <h3>撤销需求评审</h3>',
+      '      <button type="button" class="ui-close-btn" onclick="DemandDetailReview.closeWithdrawModal()">×</button>',
+      '    </div>',
+      '    <div class="dd-reject-modal-body">',
+      '      <p style="margin:0 0 12px;font-size:13px;color:#475569;line-height:1.5;">确定要撤销该业务需求的评审申请吗？撤销后需求将退回<strong>草稿</strong>状态，评审流程中止。</p>',
+      '      <label class="dd-reject-label">撤销原因 / 说明（选填）：</label>',
+      '      <textarea id="ddWithdrawComment" class="dd-reject-textarea" rows="3" placeholder="选填，默认为“创建人撤销评审”，将作为评审记录同步至禅道..."></textarea>',
+      '    </div>',
+      '    <div class="dd-reject-modal-footer">',
+      '      <button type="button" class="dd-btn" onclick="DemandDetailReview.closeWithdrawModal()">取消</button>',
+      '      <button type="button" class="dd-btn danger" id="ddConfirmWithdrawBtn" onclick="DemandDetailReview.confirmWithdraw(\'' + esc(cleanId) + '\')">确认撤销</button>',
       '    </div>',
       '  </div>',
       '</div>'
@@ -202,6 +222,7 @@
       '  </div>',
       footerHtml,
       rejectModalHtml,
+      withdrawModalHtml,
       '</div>'
     ].join("");
   }
@@ -270,6 +291,10 @@
         }
         if (typeof window.refreshPoHomeDemands === "function") {
           window.refreshPoHomeDemands();
+        } else if (window.QueryList && typeof window.QueryList.search === "function") {
+          window.QueryList.search();
+        } else if (window.PersonalList && typeof window.PersonalList.refresh === "function") {
+          window.PersonalList.refresh();
         }
       })
       .catch(function (err) {
@@ -288,16 +313,39 @@
     handlePass(demandId);
   }
 
-  function handleWithdraw(demandId) {
-    var cleanId = String(demandId || (window.DemandDetail && window.DemandDetail.getCurrentDemandId ? window.DemandDetail.getCurrentDemandId() : "")).replace(/^US/i, "");
-    if (!cleanId) return;
-    if (!window.confirm("确定要撤回该需求的评审申请吗？撤回后需求将退回草稿状态。")) {
+  function openWithdrawModal(demandId) {
+    var modal = document.getElementById("ddWithdrawModal");
+    if (!modal) {
+      handleWithdrawFallback(demandId);
       return;
     }
-    var btn = document.getElementById("ddWithdrawBtn");
+    modal.style.display = "flex";
+    var ta = document.getElementById("ddWithdrawComment");
+    if (ta) {
+      ta.value = "";
+      ta.focus();
+    }
+  }
+
+  function closeWithdrawModal() {
+    var modal = document.getElementById("ddWithdrawModal");
+    if (modal) modal.style.display = "none";
+  }
+
+  function confirmWithdraw(demandId) {
+    var cleanId = String(demandId || (window.DemandDetail && window.DemandDetail.getCurrentDemandId ? window.DemandDetail.getCurrentDemandId() : "")).replace(/^US/i, "");
+    if (!cleanId) return;
+    var ta = document.getElementById("ddWithdrawComment");
+    var comment = (ta && ta.value || "").trim();
+    var btn = document.getElementById("ddConfirmWithdrawBtn");
     if (btn) {
       btn.disabled = true;
-      btn.textContent = "撤回中…";
+      btn.textContent = "撤销中…";
+    }
+    var actionBtn = document.getElementById("ddWithdrawBtn");
+    if (actionBtn) {
+      actionBtn.disabled = true;
+      actionBtn.textContent = "撤销中…";
     }
     var fetchFn = (typeof window !== "undefined" && window.appFetch) ? window.appFetch : fetch;
     fetchFn("/demands/" + encodeURIComponent(cleanId) + "/withdraw-review", {
@@ -307,37 +355,59 @@
         "Accept": "application/json"
       },
       body: JSON.stringify({
-        comment: "工作台创建人撤回评审"
+        comment: comment || "工作台创建人撤销评审"
       })
     })
       .then(function (res) {
         return res.json().then(function (data) {
-          if (!res.ok) throw new Error((data && data.message) || "撤回评审失败");
+          if (!res.ok) throw new Error((data && data.message) || "撤销评审失败");
           return data;
         });
       })
       .then(function (data) {
+        closeWithdrawModal();
         if (typeof window.showToast === "function") {
-          window.showToast((data && data.message) || "撤回评审成功", "success");
+          window.showToast((data && data.message) || "撤销评审成功，需求已退回草稿状态", "success");
         }
-        if (window.DemandDetail && typeof window.DemandDetail.close === "function") {
-          window.DemandDetail.close();
+        if (window.DemandDetail && typeof window.DemandDetail.open === "function") {
+          window.DemandDetail.open(cleanId);
         }
         if (typeof window.refreshPoHomeDemands === "function") {
           window.refreshPoHomeDemands();
+        } else if (window.QueryList && typeof window.QueryList.search === "function") {
+          window.QueryList.search();
+        } else if (window.PersonalList && typeof window.PersonalList.refresh === "function") {
+          window.PersonalList.refresh();
         }
       })
       .catch(function (err) {
         if (typeof window.showToast === "function") {
-          window.showToast(err.message || "撤回评审失败", "error");
+          window.showToast(err.message || "撤销评审失败", "error");
         }
       })
       .then(function () {
         if (btn) {
           btn.disabled = false;
-          btn.textContent = "撤回评审";
+          btn.textContent = "确认撤销";
+        }
+        if (actionBtn) {
+          actionBtn.disabled = false;
+          actionBtn.textContent = "撤销评审";
         }
       });
+  }
+
+  function handleWithdrawFallback(demandId) {
+    var cleanId = String(demandId || (window.DemandDetail && window.DemandDetail.getCurrentDemandId ? window.DemandDetail.getCurrentDemandId() : "")).replace(/^US/i, "");
+    if (!cleanId) return;
+    if (!window.confirm("确定要撤销该需求的评审申请吗？撤销后需求将退回草稿状态。")) {
+      return;
+    }
+    confirmWithdraw(cleanId);
+  }
+
+  function handleWithdraw(demandId) {
+    openWithdrawModal(demandId);
   }
 
   function handleSubmitReview(demandId) {
@@ -372,11 +442,15 @@
         if (typeof window.showToast === "function") {
           window.showToast((data && data.message) || "提交评审成功", "success");
         }
-        if (window.DemandDetail && typeof window.DemandDetail.close === "function") {
-          window.DemandDetail.close();
+        if (window.DemandDetail && typeof window.DemandDetail.open === "function") {
+          window.DemandDetail.open(cleanId);
         }
         if (typeof window.refreshPoHomeDemands === "function") {
           window.refreshPoHomeDemands();
+        } else if (window.QueryList && typeof window.QueryList.search === "function") {
+          window.QueryList.search();
+        } else if (window.PersonalList && typeof window.PersonalList.refresh === "function") {
+          window.PersonalList.refresh();
         }
       })
       .catch(function (err) {
@@ -399,6 +473,9 @@
     openRejectModal: openRejectModal,
     closeRejectModal: closeRejectModal,
     confirmReject: confirmReject,
+    openWithdrawModal: openWithdrawModal,
+    closeWithdrawModal: closeWithdrawModal,
+    confirmWithdraw: confirmWithdraw,
     handleWithdraw: handleWithdraw,
     handleSubmitReview: handleSubmitReview
   };

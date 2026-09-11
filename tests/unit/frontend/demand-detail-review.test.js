@@ -36,6 +36,11 @@ assert.ok(bothActionsHtml.includes('id="ddPassBtn"'), "pass button must render w
 assert.ok(bothActionsHtml.includes('id="ddRejectBtn"'), "reject button must render when current user can review");
 assert.ok(bothActionsHtml.includes('id="ddRejectModal"'), "reject modal overlay must render");
 assert.ok(bothActionsHtml.includes('id="ddWithdrawBtn"'), "withdraw button must also render when current user can withdraw");
+assert.ok(bothActionsHtml.includes("撤销评审"), "withdraw button label must be 撤销评审");
+assert.ok(bothActionsHtml.includes('id="ddWithdrawModal"'), "withdraw modal overlay must render");
+assert.ok(typeof Review.openWithdrawModal === "function", "openWithdrawModal must be exported");
+assert.ok(typeof Review.closeWithdrawModal === "function", "closeWithdrawModal must be exported");
+assert.ok(typeof Review.confirmWithdraw === "function", "confirmWithdraw must be exported");
 assert.ok(bothActionsHtml.includes("也是创建人"), "banner must explain the combined reviewer and creator state");
 console.log("PASS: reviewer+creator sees both review decision buttons and withdraw action");
 

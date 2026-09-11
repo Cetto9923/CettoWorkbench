@@ -120,6 +120,7 @@
     var action;
     var isSubmitTest = String(pa.key || "") === "submit_test" && pa.enabled !== false;
     var isRemindAccept = String(pa.key || "") === "remind_accept" && pa.enabled !== false;
+    var isWithdrawReview = (String(pa.key || "") === "withdraw_review" && pa.enabled !== false) || (summary && summary.canWithdrawReview);
     if (isSubmitTest) {
       var did = String(summary.demandId || summary.id || "").replace(/^US/i, "");
       var title = String(summary.title || "").replace(/"/g, "&quot;");
@@ -128,6 +129,9 @@
       var did = String(summary.demandId || summary.id || "").replace(/^US/i, "");
       var title = String(summary.title || "").replace(/"/g, "&quot;");
       action = '<button type="button" class="dd-btn primary js-po-drawer-action" data-action-key="remind_accept" data-demand-id="' + esc(did) + '" data-demand-title="' + esc(summary.title || "") + '">' + esc(pa.label || spotlight.actionLabel || "催办验收") + '</button>';
+    } else if (isWithdrawReview) {
+      var did = String(summary.demandId || summary.id || "").replace(/^US/i, "");
+      action = '<button type="button" class="dd-btn dd-btn-ghost-danger js-withdraw-review" onclick="if(window.DemandDetailReview){DemandDetailReview.openWithdrawModal(\'' + esc(did) + '\');}">撤销评审</button>';
     } else if (spotlight.actionUrl) {
       var href = String(spotlight.actionUrl || "");
       var external = /^https?:\/\//i.test(href);

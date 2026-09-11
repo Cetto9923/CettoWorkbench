@@ -114,6 +114,15 @@ func (s *DetailService) buildValueStream(row *DemandDetailRow) *DetailValueStrea
 func (s *DetailService) buildSpotlight(stage, status string) *DetailSpotlight {
 	stageKey, _ := mapValueStage(stage, status)
 	switch stageKey {
+	case "accept":
+		return &DetailSpotlight{
+			Badge:         "待评审",
+			Title:         "当前待办：业务需求评审",
+			Desc:          "需求处于受理评审阶段，业务评审人出具结论后将进入澄清排期。",
+			ActionLabel:   "查看评审",
+			TargetTab:     "overview",
+			TargetSection: "spotlightSection",
+		}
 	case "clarify":
 		return &DetailSpotlight{
 			Badge:         "待你处理",

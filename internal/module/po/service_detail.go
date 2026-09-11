@@ -188,6 +188,9 @@ func bindPrimaryActionSpotlight(spotlight *DetailSpotlight, action primaryaction
 		spotlight.ActionLabel = label
 		// 故意不写 ActionURL，避免详情误链到 submit_test.html 旧壳。
 		spotlight.ActionURL = ""
+	case string(primaryaction.KeyWithdrawReview):
+		spotlight.ActionLabel = "撤销评审"
+		spotlight.ActionURL = ""
 	default:
 		return
 	}

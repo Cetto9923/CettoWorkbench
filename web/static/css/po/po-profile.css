@@ -6,9 +6,22 @@
  * ============================================================================= */
 
 .po-profile-panel {
-  max-width: 960px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+/* 资料内容保持可读行长，外层面板跟随工作台全宽布局。 */
+.po-profile-panel > #profilePageBody {
+  width: min(100%, 1200px);
   margin: 0 auto;
-  padding: 20px 24px;
+}
+
+/* 组件状态由 hidden 属性控制，不能被状态布局规则重新显示。 */
+.po-profile [hidden] {
+  display: none !important;
 }
 
 /* 状态占位符 (加载中 / 错误) */
