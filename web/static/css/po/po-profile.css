@@ -1,23 +1,9 @@
 /* =============================================================================
  * 文件: web/static/css/po/po-profile.css
  * 模块: PO 工作台 / 个人资料（/profile 与 shared profile modal）
- * 职责: 提供账号信息卡片、修改密码卡片、敏捷小组卡片及模态弹窗的统一视觉样式，
- *       全面适配暗黑模式与明亮模式设计令牌。
+ * 职责: 提供个人资料宽幅双栏大弹窗、账号名片、工作台角色与密码修改等现代化美化样式，
+ *       支持零滚动一屏掌控、深浅双色主题完全自适应。
  * ============================================================================= */
-
-.po-profile-panel {
-  width: 100%;
-  max-width: none;
-  margin: 0;
-  padding: 16px;
-  box-sizing: border-box;
-}
-
-/* 资料内容保持可读行长，外层面板跟随工作台全宽布局。 */
-.po-profile-panel > #profilePageBody {
-  width: min(100%, 1200px);
-  margin: 0 auto;
-}
 
 /* 组件状态由 hidden 属性控制，不能被状态布局规则重新显示。 */
 .po-profile [hidden] {
@@ -40,95 +26,134 @@
   color: var(--color-danger, #dc2626);
 }
 
-/* 个人资料卡片 */
+/* 个人资料卡片底座 */
 .profile-card {
-  margin-bottom: 20px;
-  padding: 18px 20px;
+  margin-bottom: 0;
+  padding: 16px 18px;
   border-radius: 8px;
   border: 1px solid var(--color-border, #e2e8f0);
   background: var(--color-surface, #ffffff);
-  box-shadow: var(--shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05));
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.profile-card:last-child {
-  margin-bottom: 0;
 }
 
 .profile-card-h {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 16px;
-  font-size: 14px;
+  margin-bottom: 12px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--color-text-primary, #0f172a);
 }
 
 .profile-card-h i {
-  color: var(--color-primary, #6366f1);
-  font-size: 15px;
+  color: var(--color-primary, #2563eb);
+  font-size: 14px;
 }
 
-/* 头像展示行 */
+/* 双栏自适应网格主体（做大做宽，彻底杜绝滚动条） */
+.profile-content-grid {
+  display: grid;
+  grid-template-columns: 1.12fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 840px) {
+  .profile-content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.profile-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 头像名片行 */
 .profile-avatar-row {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-bottom: 18px;
-  padding: 12px 16px;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 10px 14px;
   border-radius: 6px;
   background: var(--color-page-bg, #f8f9fc);
   border: 1px solid var(--color-border, #e2e8f0);
 }
 
 .profile-avatar-lg {
-  width: 46px;
-  height: 46px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  background: var(--color-primary, #6366f1);
+  background: linear-gradient(135deg, var(--color-primary, #2563eb), #3b82f6);
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+  box-shadow: 0 3px 10px rgba(37, 99, 235, 0.25);
   user-select: none;
 }
 
 .profile-avatar-meta {
+  flex: 1;
+  min-width: 0;
   font-size: 12px;
-  color: var(--color-text-secondary, #64748b);
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
-.profile-avatar-meta strong {
+.profile-avatar-name-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 3px;
+}
+
+.profile-avatar-name-line strong {
+  font-size: 14px;
   color: var(--color-text-primary, #0f172a);
-  font-weight: 600;
+  font-weight: 700;
 }
 
-/* 两列自适应网格 */
+.profile-account-chip {
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--color-primary-light, #eff6ff);
+  color: var(--color-primary, #2563eb);
+  border: 1px solid var(--color-primary-border, #bfdbfe);
+}
+
+.profile-dept-badge {
+  font-size: 11px;
+  color: var(--color-text-secondary, #64748b);
+  font-weight: 500;
+}
+
+.profile-avatar-sub {
+  font-size: 11px;
+  color: var(--color-text-muted, #94a3b8);
+}
+
+/* 两列紧凑字段网格 */
 .profile-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px 18px;
-}
-
-@media (max-width: 768px) {
-  .profile-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
+  gap: 10px 14px;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   min-width: 0;
-  position: relative;
 }
 
 .form-group.col-span-full {
@@ -144,17 +169,25 @@
   gap: 4px;
 }
 
-.form-label .required-dot {
-  color: var(--color-danger, #ef4444);
+.readonly-badge {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--color-text-muted, #94a3b8);
 }
 
-/* 输入框与选择框 */
+.editable-badge {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--color-primary, #2563eb);
+}
+
+/* 输入框与下拉选择框 */
 .form-input {
-  height: 36px;
-  padding: 0 12px;
+  height: 32px;
+  padding: 0 10px;
   border: 1px solid var(--color-border, #e2e8f0);
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--color-text-primary, #0f172a);
   background: var(--color-surface, #ffffff);
   box-sizing: border-box;
@@ -164,28 +197,143 @@
 
 .form-input:focus {
   outline: none;
-  border-color: var(--color-primary, #6366f1);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  border-color: var(--color-primary, #2563eb);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
 }
 
 .form-input:disabled,
 .form-input[readonly] {
   background: var(--color-page-bg, #f8f9fc);
-  color: var(--color-text-disabled, #94a3b8);
+  color: var(--color-text-muted, #94a3b8);
   border-color: var(--color-border, #e2e8f0);
   cursor: not-allowed;
   user-select: text;
 }
 
-/* 提示文案 */
 .profile-hint {
   font-size: 11px;
-  color: var(--color-text-disabled, #94a3b8);
-  line-height: 1.4;
-  margin-top: 2px;
+  color: var(--color-text-muted, #94a3b8);
+  line-height: 1.3;
 }
 
-/* 密码输入框与可见性切换 */
+/* 工作台角色卡片式 Checkbox */
+.profile-check-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 2px 0 4px;
+}
+
+.role-box-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border, #e2e8f0);
+  background: var(--color-surface-muted, #f8fafc);
+  cursor: pointer;
+  user-select: none;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-body, #334155);
+  transition: all 0.15s ease;
+}
+
+.role-box-card:hover {
+  border-color: var(--color-primary-border, #bfdbfe);
+  background: var(--color-surface-hover, #f1f5f9);
+}
+
+.role-box-card.is-checked {
+  background: var(--color-primary-light, #eff6ff);
+  border-color: var(--color-primary, #2563eb);
+  color: var(--color-primary, #2563eb);
+  font-weight: 600;
+}
+
+.role-box-card input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--color-primary, #2563eb);
+  cursor: pointer;
+}
+
+/* 敏捷小组 Chips */
+.profile-scope-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 26px;
+  align-items: center;
+}
+
+.profile-scope-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--color-primary-light, #eff6ff);
+  color: var(--color-primary, #2563eb);
+  border: 1px solid var(--color-primary-border, #bfdbfe);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.profile-empty-text {
+  font-size: 11px;
+  color: var(--color-text-muted, #94a3b8);
+}
+
+/* 修改密码轻量折叠卡片 */
+.profile-pwd-card {
+  border: 1px dashed var(--color-border-strong, #cbd5e1);
+  background: var(--color-surface-muted, #f8fafc);
+}
+
+.profile-pwd-hdr {
+  margin-bottom: 0;
+  justify-content: space-between;
+}
+
+.profile-card-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--color-primary, #2563eb);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.profile-card-toggle-caret {
+  transition: transform 0.15s ease;
+  font-size: 11px;
+}
+
+.profile-card-toggle[aria-expanded="true"] .profile-card-toggle-caret {
+  transform: rotate(180deg);
+}
+
+.profile-pwd-content {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--color-border, #e2e8f0);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pwd-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
 .pwd-input-wrap {
   position: relative;
   display: flex;
@@ -193,18 +341,18 @@
 }
 
 .pwd-input-wrap .form-input {
-  padding-right: 36px;
+  padding-right: 30px;
 }
 
 .pwd-toggle-btn {
   position: absolute;
-  right: 8px;
-  width: 24px;
-  height: 24px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
   padding: 0;
   border: 0;
   background: transparent;
-  color: var(--color-text-disabled, #94a3b8);
+  color: var(--color-text-muted, #94a3b8);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -216,106 +364,41 @@
   color: var(--color-text-secondary, #64748b);
 }
 
-/* 角色多选复选框列表 */
-.profile-check-row {
+.pwd-action-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px 18px;
-  font-size: 13px;
-  color: var(--color-text-primary, #0f172a);
-  padding: 4px 0;
+  justify-content: flex-end;
+  margin-top: 4px;
 }
 
-.profile-check-row label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  user-select: none;
-  font-weight: 500;
-}
-
-.profile-check-row input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--color-primary, #6366f1);
-  cursor: pointer;
-}
-
-/* 敏捷小组 Chips */
-.profile-scope-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 10px;
-  min-height: 28px;
-  align-items: center;
-}
-
-.profile-scope-chip {
-  display: inline-flex;
-  align-items: center;
-  height: 26px;
-  padding: 0 10px;
-  border-radius: 999px;
-  background: var(--color-primary-light, #eef2ff);
-  color: var(--color-primary, #6366f1);
-  border: 1px solid var(--color-primary-border, #c7d2fe);
+.btn-pwd-save {
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 4px;
+  border: 1px solid var(--color-primary, #2563eb);
+  background: transparent;
+  color: var(--color-primary, #2563eb);
   font-size: 12px;
-  font-weight: 500;
-}
-
-.profile-empty-text {
-  font-size: 12px;
-  color: var(--color-text-disabled, #94a3b8);
-}
-
-/* 操作按钮 */
-.po-profile .action-btn {
-  height: 36px;
-  padding: 0 16px;
-  border-radius: 6px;
-  border: 1px solid var(--color-border, #e2e8f0);
-  background: var(--color-surface, #ffffff);
-  color: var(--color-text-primary, #0f172a);
-  font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  transition: all 0.15s ease;
-  white-space: nowrap;
+  gap: 4px;
+  transition: all 0.15s;
 }
 
-.po-profile .action-btn:hover:not(:disabled) {
-  border-color: var(--color-text-secondary, #64748b);
-  background: var(--color-page-bg, #f8f9fc);
-}
-
-.po-profile .action-btn.primary {
-  background: var(--color-primary, #6366f1);
-  border-color: var(--color-primary, #6366f1);
+.btn-pwd-save:hover {
+  background: var(--color-primary, #2563eb);
   color: #ffffff;
 }
 
-.po-profile .action-btn.primary:hover:not(:disabled) {
-  background: var(--color-primary-hover, #4f46e5);
-  border-color: var(--color-primary-hover, #4f46e5);
-}
-
-.po-profile .action-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
+/* 页面模式的保存区 (当非弹窗模式时) */
 .profile-actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
-  margin-top: 24px;
-  padding-top: 16px;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 14px;
   border-top: 1px solid var(--color-border, #e2e8f0);
 }
 
@@ -324,14 +407,14 @@
   display: flex;
   gap: 10px;
   align-items: flex-start;
-  padding: 10px 14px;
+  padding: 8px 12px;
   border-radius: 6px;
   border: 1px solid var(--color-danger-border, #fca5a5);
   background: var(--color-danger-bg, #fef2f2);
   color: var(--color-danger, #991b1b);
-  font-size: 13px;
-  line-height: 1.45;
-  margin-bottom: 16px;
+  font-size: 12px;
+  line-height: 1.4;
+  margin-bottom: 12px;
 }
 
 .audit-note i {
@@ -339,14 +422,14 @@
   flex-shrink: 0;
 }
 
-/* 弹窗模式模态框 (支持 openProfileModal) */
+/* 弹窗模式模态框 (全面放大、宽幅大弹窗，彻底杜绝纵向滚动) */
 .modal-overlay {
   position: fixed;
   inset: 0;
   z-index: 1300;
   display: none;
-  background: rgba(15, 23, 42, 0.48);
-  backdrop-filter: blur(2px);
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(3px);
 }
 
 .modal-overlay.show {
@@ -361,11 +444,11 @@
   transform: translate(-50%, -50%);
   background: var(--color-surface, #ffffff);
   border: 1px solid var(--color-border, #e2e8f0);
-  border-radius: 10px;
-  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.22);
-  width: min(620px, calc(100vw - 24px));
-  max-width: 620px;
-  max-height: calc(100vh - 32px);
+  border-radius: 12px;
+  box-shadow: 0 20px 48px -10px rgba(15, 23, 42, 0.28);
+  width: min(920px, calc(100vw - 32px));
+  max-width: 920px;
+  max-height: calc(100vh - 40px);
   overflow: hidden;
   display: none;
   flex-direction: column;
@@ -381,7 +464,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 12px 18px;
+  padding: 14px 22px;
   border-bottom: 1px solid var(--color-border, #e2e8f0);
   flex-shrink: 0;
   background: var(--color-surface, #ffffff);
@@ -392,6 +475,13 @@
   font-size: 15px;
   font-weight: 700;
   color: var(--color-text-primary, #0f172a);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.profile-modal .modal-hdr h3 i {
+  color: var(--color-primary, #2563eb);
 }
 
 .profile-modal .modal-close {
@@ -400,11 +490,12 @@
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: var(--color-text-disabled, #94a3b8);
+  color: var(--color-text-muted, #94a3b8);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 15px;
 }
 
 .profile-modal .modal-close:hover {
@@ -413,18 +504,94 @@
 }
 
 .profile-modal .modal-body {
-  padding: 16px 18px;
+  padding: 16px 20px;
   overflow-y: auto;
   flex: 1;
   min-height: 0;
 }
 
+/* 弹窗底部吸底操作栏（常驻吸底，无论何种屏幕尺寸都不需要滚动即可保存） */
 .profile-modal .modal-footer {
   display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  padding: 12px 18px;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 22px;
   border-top: 1px solid var(--color-border, #e2e8f0);
   flex-shrink: 0;
+  background: var(--color-surface-muted, #f8fafc);
+}
+
+.modal-footer-hint {
+  font-size: 11px;
+  color: var(--color-text-secondary, #64748b);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.modal-footer-hint i {
+  color: var(--color-success, #16a34a);
+}
+
+.modal-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-modal-cancel {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border-strong, #cbd5e1);
   background: var(--color-surface, #ffffff);
+  color: var(--color-text-secondary, #64748b);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-modal-cancel:hover {
+  background: var(--color-surface-hover, #f1f5f9);
+  color: var(--color-text-primary, #0f172a);
+}
+
+/* 暗色模式适配 */
+html[data-theme="dark"] .profile-avatar-row {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+html[data-theme="dark"] .role-box-card {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+}
+
+html[data-theme="dark"] .role-box-card:hover {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+html[data-theme="dark"] .role-box-card.is-checked {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: #3b82f6;
+  color: #60a5fa;
+}
+
+html[data-theme="dark"] .profile-pwd-card {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+html[data-theme="dark"] .btn-modal-cancel {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #94a3b8;
+}
+
+html[data-theme="dark"] .btn-modal-cancel:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
 }
