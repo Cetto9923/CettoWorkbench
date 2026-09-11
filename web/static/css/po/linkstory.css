@@ -1,0 +1,169 @@
+/* ==========================================================================
+ * 文件: web/static/css/po/linkstory.css
+ * 模块: PO工作台
+ * 职责: 关联研发需求弹窗样式（对齐禅道 linkStory 筛选+表格布局）
+ * ========================================================================== */
+
+:root {
+  --ls-primary: #165dff;
+  --ls-border: #e5e6eb;
+  --ls-text: #1d2129;
+  --ls-secondary: #86909c;
+  --ls-page: #fff;
+}
+
+.po-linkstory-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 710;
+  display: none;
+}
+
+.po-linkstory-overlay.show {
+  display: block;
+}
+
+.po-linkstory-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 711;
+  display: none;
+  width: min(96vw, 1080px);
+  max-height: 90vh;
+  overflow: hidden;
+  background: var(--ls-page);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  color: var(--ls-text);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.po-linkstory-modal.show {
+  display: flex;
+  flex-direction: column;
+}
+
+.po-linkstory-modal-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0px 12px;
+  border-bottom: 1px solid var(--ls-border);
+  flex-shrink: 0;
+}
+
+.po-linkstory-modal-hdr h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.po-linkstory-modal-close {
+  border: 0;
+  background: none;
+  color: #98a2b3;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+}
+
+.po-linkstory-modal-body {
+  overflow: auto;
+  padding: 12px 16px 16px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.po-linkstory {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+.po-linkstory-table-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  border: 1px solid var(--ls-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.po-linkstory-table-panel .table-wrapper {
+  flex: 1;
+  min-height: 0;
+  max-height: min(48vh, 420px);
+  overflow: auto;
+}
+
+.po-linkstory-table-panel .table {
+  margin: 0;
+}
+
+.po-linkstory-table-panel .table th,
+.po-linkstory-table-panel .table td {
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.po-linkstory-table-panel .col-check {
+  width: 36px;
+  text-align: center;
+}
+
+.po-linkstory-table-panel .col-id {
+  width: 72px;
+}
+
+.po-linkstory-title {
+  color: var(--ls-primary);
+  text-decoration: none;
+}
+
+.po-linkstory-title:hover {
+  text-decoration: underline;
+}
+
+.po-linkstory-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  border-top: 1px solid var(--ls-border);
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.po-linkstory-footer-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.po-linkstory-link-btn[hidden] {
+  display: none !important;
+}
+
+.po-linkstory-footer .pager-footer {
+  border-top: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.po-linkstory-footer .pagination-container {
+  padding: 0;
+}

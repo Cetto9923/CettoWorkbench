@@ -158,9 +158,14 @@
 
 /* 主按钮：每页只允许出现一个 */
 .btn-primary {
+  height: var(--size-8);
+  padding: 0 var(--space-4);
   background: var(--color-primary);
   color: var(--color-surface);
   border-color: var(--color-primary);
+}
+.btn-primary:hover {
+  filter: brightness(0.95);
 }
 .btn-primary:active {
   background: var(--color-primary-active);

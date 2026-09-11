@@ -7,6 +7,7 @@
 ========================================================================== */}}
 {{ define "page_css" }}
 <link rel="stylesheet" href="{{ asset "/static/css/po/testtask.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/linkstory.css" }}">
 {{ end }}
 
 {{ define "content" }}
@@ -14,10 +15,12 @@
   {{ template "po/testtask_form" . }}
 </div>
 {{ template "po/testtask_tpls" . }}
+{{ template "po/linkstory" . }}
 {{ end }}
 
 {{ define "page_js" }}
 <script src="{{ asset "/static/js/po/testtask.js" }}"></script>
+<script src="{{ asset "/static/js/po/linkstory.js" }}"></script>
 {{ end }}
 
 {{ define "po/testtask_form" }}
@@ -289,13 +292,9 @@
       <div data-tt-link-edit="">
         <div class="po-testtask-link-actions">
           <div class="po-testtask-field-label">版本关联需求（可多选）</div>
-          <button type="button" class="po-testtask-link-add">+ 添加已有需求</button>
+          <button type="button" class="po-testtask-link-add">+ 关联研发需求</button>
         </div>
         <div class="po-testtask-link-list" data-tt-fill="link-list"></div>
-      </div>
-      <div class="po-testtask-hidden" data-tt-link-readonly="">
-        <div class="po-testtask-field-label">版本已关联需求（只读，取自已有版本）</div>
-        <div class="po-testtask-link-readonly" data-tt-fill="link-readonly"></div>
       </div>
     </div>
   </div>

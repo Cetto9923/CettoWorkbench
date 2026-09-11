@@ -1,0 +1,165 @@
+{{/* ==========================================================================
+文件: web/templates/po/linkstory.html
+模块: PO工作台
+职责: 关联研发需求弹窗静态片段（供提测办理等场景引入）
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: 无（纯静态 mock）
+========================================================================== */}}
+{{ define "po/linkstory" }}
+<div class="po-linkstory-overlay" id="poLinkstoryOverlay"></div>
+<div class="po-linkstory-modal" id="poLinkstoryModal" role="dialog" aria-labelledby="poLinkstoryModalTitle" aria-modal="true">
+  <div class="po-linkstory-modal-hdr">
+    <h3 id="poLinkstoryModalTitle">
+      <i class="fas fa-link"></i>
+      <span>关联研发需求</span>
+    </h3>
+    <button type="button" class="po-linkstory-modal-close" id="poLinkstoryCloseBtn" aria-label="关闭"><i class="fas fa-xmark"></i></button>
+  </div>
+  <div class="po-linkstory-modal-body">
+    {{ template "po/linkstory_body" . }}
+  </div>
+</div>
+{{ end }}
+
+{{ define "po/linkstory_body" }}
+<div class="po-linkstory" id="poLinkstoryRoot">
+  <div class="search-layout">
+    <div class="search-panel">
+      <div class="search-fields">
+        <span class="search-label">第一组</span>
+        <select id="poLinkstoryField1" class="select" aria-label="第一组字段">
+          <option value="title" selected>需求名称</option>
+          <option value="pri">优先级</option>
+          <option value="status">当前状态</option>
+          <option value="openedBy">创建者</option>
+          <option value="assignedTo">指派给</option>
+        </select>
+        <select id="poLinkstoryOp1" class="select" aria-label="第一组运算符">
+          <option value="include" selected>包含</option>
+          <option value="=">=</option>
+          <option value="!=">!=</option>
+        </select>
+        <input id="poLinkstoryValue1" type="text" class="search-input" aria-label="第一组取值" autocomplete="off" />
+
+        <select id="poLinkstoryAndOr" class="select" aria-label="条件组合">
+          <option value="and" selected>并且</option>
+          <option value="or">或者</option>
+        </select>
+
+        <span class="search-label">第二组</span>
+        <select id="poLinkstoryField2" class="select" aria-label="第二组字段">
+          <option value="status" selected>当前状态</option>
+          <option value="title">需求名称</option>
+          <option value="pri">优先级</option>
+          <option value="openedBy">创建者</option>
+          <option value="assignedTo">指派给</option>
+        </select>
+        <select id="poLinkstoryOp2" class="select" aria-label="第二组运算符">
+          <option value="=" selected>=</option>
+          <option value="!=">!=</option>
+          <option value="include">包含</option>
+        </select>
+        <select id="poLinkstoryValue2" class="select" aria-label="第二组取值">
+          <option value=""></option>
+          <option value="active">激活</option>
+          <option value="draft">草稿</option>
+          <option value="closed">已关闭</option>
+        </select>
+
+        <button type="button" class="search-btn search-btn-primary" id="poLinkstorySearchBtn">
+          <span>搜索</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-panel table-container po-linkstory-table-panel">
+    <div class="table-wrapper table-scroll-wrapper">
+      <table class="table data-table zen-table" id="poLinkstoryTable">
+        <thead>
+          <tr>
+            <th class="col-check">
+              <input type="checkbox" id="poLinkstoryCheckAll" aria-label="全选">
+            </th>
+            <th class="col-id">ID</th>
+            <th>P</th>
+            <th>研发需求名称</th>
+            <th>创建者</th>
+            <th>指派给</th>
+            <th>预计</th>
+            <th>状态</th>
+            <th>阶段</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-check"><input type="checkbox" name="storyId" value="37440" aria-label="选择 37440"></td>
+            <td class="col-id text-muted">37440</td>
+            <td><span class="priority-tag P3">3</span></td>
+            <td><a href="#" class="po-linkstory-title">ces2</a></td>
+            <td>admin(admin)</td>
+            <td></td>
+            <td>0h</td>
+            <td>激活</td>
+            <td>研发立项</td>
+          </tr>
+          <tr>
+            <td class="col-check"><input type="checkbox" name="storyId" value="37436" aria-label="选择 37436"></td>
+            <td class="col-id text-muted">37436</td>
+            <td><span class="priority-tag P4">0</span></td>
+            <td><a href="#" class="po-linkstory-title">17</a></td>
+            <td>admin(admin)</td>
+            <td>毛熠璋(001196)</td>
+            <td>1h</td>
+            <td>激活</td>
+            <td>研发立项</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="po-linkstory-footer">
+      <div class="po-linkstory-footer-left">
+        <input type="checkbox" id="poLinkstoryFooterCheck" aria-label="全选当前页">
+        <button type="button" class="po-testtask-btn is-primary po-linkstory-link-btn" id="poLinkstoryLinkBtn" hidden>关联需求</button>
+        <button type="button" class="po-testtask-btn" id="poLinkstoryBackBtn">返回</button>
+      </div>
+      <div class="pager-footer" id="poLinkstoryPager">
+        {{/* 静态 mock，DOM 对齐 components/pager */}}
+        <div class="pagination-container" aria-label="分页">
+          <ul class="pagination">
+            <li class="page-item disabled">
+              <span class="page-link" aria-hidden="true"><i class="bi bi-chevron-left"></i></span>
+            </li>
+            <li class="page-item active">
+              <span class="page-link" aria-current="page">1</span>
+            </li>
+            <li class="page-item disabled">
+              <span class="page-link" aria-hidden="true"><i class="bi bi-chevron-right"></i></span>
+            </li>
+          </ul>
+          <div class="pagination-options">
+            <span class="pagination-total">共 2 条</span>
+            <form method="GET" action="#" class="pagination-size-form" onsubmit="return false;">
+              <input type="hidden" name="page" value="1">
+              <select name="pageSize" class="select" aria-label="每页条数">
+                <option value="10">10 条/页</option>
+                <option value="20">20 条/页</option>
+                <option value="50">50 条/页</option>
+                <option value="100" selected>100 条/页</option>
+              </select>
+            </form>
+            <form method="GET" action="#" class="pagination-jump-form" onsubmit="return false;">
+              <input type="hidden" name="pageSize" value="100">
+              <span>跳至</span>
+              <input type="number" min="1" max="1" name="page" class="input" value="1">
+              <span>页</span>
+              <button type="submit" class="btn btn-neutral btn-sm">前往</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{{ end }}

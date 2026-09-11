@@ -10,6 +10,15 @@
   padding: var(--space-3) var(--space-4);
 }
 
+/* 无标题栏时为单行简洁条（如关联需求弹窗） */
+.search-layout .search-panel:not(:has(.search-panel-header)) {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  padding: var(--space-1) 0;
+}
+
 .search-layout .search-panel-header {
   display: flex;
   align-items: center;
@@ -72,16 +81,17 @@
 .search-panel .search-label {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
+  flex: 0 0 auto;
   margin-bottom: 0;
-  background: var(--color-surface-soft);
-  border: 1px solid var(--color-border-soft-2);
-  border-radius: 999px;
-  padding: var(--space-1) var(--space-4);
-  font-weight: 600;
-  color: var(--color-text-brand);
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  font-weight: 700;
+  color: var(--color-text-primary);
   font-size: var(--font-size-sm);
   line-height: 1.2;
+  white-space: nowrap;
 }
 
 .search-panel .filter-count {
@@ -89,10 +99,20 @@
   font-weight: 600;
 }
 
+/* 默认单行检索（第一组 | 并且 | 第二组 | 搜索）；含 .search-field 时仍走网格 */
 .search-layout .search-fields {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--size-11);
+}
+
+.search-layout .search-fields:has(.search-field) {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: var(--space-3);
+  min-height: 0;
 }
 
 .search-layout .search-field {
@@ -108,8 +128,10 @@
 }
 
 .search-layout .user-search-fields {
+  display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-4);
+  min-height: 0;
 }
 
 .search-layout .user-search-fields .search-field {
@@ -149,6 +171,35 @@
     transform 0.2s ease;
 }
 
+/* 单行检索：控件按内容收缩，取值框拉宽 */
+.search-layout .search-fields:not(:has(.search-field)) > .select {
+  width: 7.5rem;
+  min-width: 5.5rem;
+  flex: 0 0 auto;
+  padding-left: var(--space-2);
+  padding-right: 1.1rem;
+  text-overflow: ellipsis;
+}
+
+.search-layout .search-fields:not(:has(.search-field)) > .search-input {
+  width: auto;
+  min-width: 8rem;
+  flex: 1 1 10rem;
+}
+
+.search-layout .search-fields:not(:has(.search-field)) > .select:last-of-type {
+  width: auto;
+  min-width: 8rem;
+  flex: 1 1 8rem;
+}
+
+.search-layout .search-fields:not(:has(.search-field)) > .search-btn {
+  flex: 0 0 auto;
+  min-width: 4.5rem;
+  height: var(--size-9);
+  border-radius: var(--radius-sm);
+}
+
 .search-layout .search-input {
   -webkit-appearance: none;
   appearance: none;
@@ -159,7 +210,7 @@
 }
 
 .search-layout .select {
-  padding-right: var(--size-11);
+  padding-right: 1.25rem;
   color: var(--color-text-secondary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
@@ -168,11 +219,11 @@
     linear-gradient(45deg, transparent 50%, var(--color-text-secondary) 50%),
     linear-gradient(135deg, var(--color-text-secondary) 50%, transparent 50%);
   background-position:
-    calc(100% - 20px) calc(50% - 3px),
-    calc(100% - 14px) calc(50% - 3px);
+    calc(100% - 10px) calc(50% - 2px),
+    calc(100% - 6px) calc(50% - 2px);
   background-size:
-    6px 6px,
-    6px 6px;
+    4px 4px,
+    4px 4px;
   background-repeat: no-repeat;
   appearance: none;
   -webkit-appearance: none;
@@ -187,7 +238,7 @@
 .search-layout .select:focus {
   border: 2px solid var(--color-border-focus);
   box-shadow: var(--focus-ring);
-  padding-right: calc(var(--size-11) - var(--size-0_5));
+  padding-right: 1.15rem;
 }
 
 .search-layout .search-actions {
@@ -231,12 +282,6 @@
   background: var(--color-info);
   color: var(--color-surface);
   box-shadow: 0 1px 2px var(--color-shadow-05);
-}
-
-.search-layout .search-btn-primary:hover {
-  background: var(--color-info);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 14px var(--color-success-ring);
 }
 
 .search-layout .search-btn-secondary {
@@ -307,6 +352,14 @@
   .search-layout .search-panel {
     border-radius: var(--radius-sm);
     padding: var(--space-4);
+  }
+
+  .search-layout .search-panel:not(:has(.search-panel-header)) {
+    padding: var(--space-1) 0;
+  }
+
+  .search-layout .search-fields:not(:has(.search-field)) {
+    flex-wrap: wrap;
   }
 
   .search-layout .user-search-fields {

@@ -127,8 +127,6 @@
     var $r = $root();
     $r.find('[data-tt-new-base="' + unit + '"]').toggleClass("po-testtask-hidden", !isNew);
     $r.find('[data-tt-exist-base="' + unit + '"]').toggleClass("po-testtask-hidden", isNew);
-    $r.find('[data-tt-link-edit="' + unit + '"]').toggleClass("po-testtask-hidden", !isNew);
-    $r.find('[data-tt-link-readonly="' + unit + '"]').toggleClass("po-testtask-hidden", isNew);
   }
 
   // 联调模式仅允许「使用已有版本」；非联调恢复「创建新版本 / 使用已有版本」。
@@ -558,21 +556,7 @@
     $root.find('[data-tt-fill="sys-name"]').text(name);
     setBadge($root.find('[data-tt-fill="sys-badge"]'), isMain);
     $root.find("[data-tt-link-edit]").attr("data-tt-link-edit", id);
-    $root.find("[data-tt-link-readonly]").attr("data-tt-link-readonly", id);
-
-    var $list = $root.find('[data-tt-fill="link-list"]');
-    var $readonly = $root.find('[data-tt-fill="link-readonly"]');
-    $list.empty();
-    $readonly.empty();
-    if (contextMeta.demandId) {
-      var demandText =
-        "#" + contextMeta.demandId + " " + (contextMeta.title || "") + "(当前需求)";
-      var readonlyText = "#" + contextMeta.demandId + " " + (contextMeta.title || "");
-      $list.append(
-        $("<label>").append($('<input type="checkbox" checked />'), document.createTextNode(" " + demandText))
-      );
-      $readonly.append($("<div>").text(readonlyText));
-    }
+    $root.find('[data-tt-fill="link-list"]').empty();
     return frag;
   }
 
@@ -859,7 +843,14 @@
       showToast("提交提测（静态演示，未提交后端）", "success");
     });
     $scope.on("click", ".po-testtask-link-add", function () {
-      showToast("添加已有需求（静态演示）", "info");
+      var $unit = $(this).closest("[data-tt-link-unit]");
+      var unitId = String($unit.attr("data-tt-link-unit") || "");
+      var $list = $unit.find('[data-tt-fill="link-list"]');
+      if (typeof window.openPoLinkstoryModal === "function") {
+        window.openPoLinkstoryModal({ unitId: unitId, $list: $list });
+        return;
+      }
+      showToast("关联研发需求弹窗未加载", "error");
     });
   }
 
