@@ -121,7 +121,7 @@
   font-size: 13px;
   font-weight: 700;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  color: var(--color-primary, #2563eb);
+  color: var(--color-info);
 }
 .po-urge-status-badge {
   font-size: 11px;
@@ -135,7 +135,7 @@
 .po-urge-demand-title {
   font-size: 13px;
   font-weight: 600;
-  color: var(--color-text-primary, #1e293b);
+  color: var(--color-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -372,12 +372,6 @@ html[data-theme="dark"] #poUrgeModal .vf-section-title {
   border-color: rgba(255, 255, 255, 0.08);
   color: var(--color-text-secondary, #94a3b8);
 }
-html[data-theme="dark"] .po-urge-demand-code {
-  color: #93c5fd;
-}
-html[data-theme="dark"] .po-urge-demand-title {
-  color: #f1f5f9;
-}
 html[data-theme="dark"] .po-urge-recipient-chip {
   background: rgba(99, 102, 241, 0.2);
   color: #c7d2fe;
@@ -394,24 +388,13 @@ html[data-theme="dark"] .po-urge-preview-card {
   border-color: rgba(255, 255, 255, 0.08);
   border-left-color: var(--color-primary, #818cf8);
 }
-html[data-theme="dark"] .po-urge-preview-text {
-  color: var(--color-text-body, #cbd5e1);
-}
 html[data-theme="dark"] .po-urge-comment-input {
   background: rgba(255, 255, 255, 0.04);
   border-color: rgba(255, 255, 255, 0.12);
   color: #f8fafc;
 }
-html[data-theme="dark"] .po-urge-channel-label {
-  color: var(--color-text-body, #cbd5e1);
-}
 html[data-theme="dark"] #poUrgeModal .action-btn:not(.primary) {
   background: rgba(255, 255, 255, 0.04);
   border-color: rgba(255, 255, 255, 0.12);
   color: #e2e8f0;
-}
-html[data-theme="dark"] #poUrgeModal .action-btn.primary {
-  background: var(--color-primary, #818cf8);
-  border-color: var(--color-primary, #818cf8);
-  color: #ffffff;
 }
