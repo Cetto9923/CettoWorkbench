@@ -332,3 +332,33 @@ html[data-theme="dark"] .po-home .home-vs-mini-card.active .vs-status-icon {
 html[data-theme="dark"] .po-home .home-vs-mini-card.active .vs-status-dot {
   background: #60a5fa !important;
 }
+
+/* 活跃版本窗口卡片深色模式精细适配：柔和 Slate 层次，解决颜色灰暗深蓝混浊问题 */
+html[data-theme="dark"] .po-home .home-version-card {
+  background: rgba(30, 41, 59, 0.7);
+  border-color: var(--color-border, #334155);
+}
+html[data-theme="dark"] .po-home .home-version-name {
+  color: var(--color-text-primary, #f8fafc);
+}
+html[data-theme="dark"] .po-home .home-version-badge {
+  background: rgba(30, 58, 138, 0.45);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+}
+html[data-theme="dark"] .po-home .summary-sub {
+  color: var(--color-text-secondary, #94a3b8);
+}
+html[data-theme="dark"] .po-home .summary-stats {
+  border-top-color: var(--color-border, #334155);
+  color: var(--color-text-secondary, #94a3b8);
+}
+html[data-theme="dark"] .po-home .summary-stat strong {
+  color: var(--color-text-primary, #f8fafc);
+}
+html[data-theme="dark"] .po-home .version-enter-link {
+  color: #38bdf8;
+}
+html[data-theme="dark"] .po-home .version-manage-link:hover {
+  color: #38bdf8;
+}

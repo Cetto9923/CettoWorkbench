@@ -128,9 +128,9 @@
   font-weight: 600;
   padding: 2px 7px;
   border-radius: 4px;
-  background: var(--color-warning-bg, #fef3c7);
-  color: var(--color-warning-fill, #b45309);
-  border: 1px solid var(--color-warning-border, #fde68a);
+  background: var(--color-warning-bg, #fffbeb);
+  color: var(--color-warning, #92400e);
+  border: 1px solid var(--color-warning-border, #fed7aa);
 }
 .po-urge-demand-title {
   font-size: 13px;
@@ -192,12 +192,12 @@
 }
 .po-urge-badge-rec {
   font-size: 10px;
-  font-weight: 500;
+  font-weight: 600;
   padding: 1px 6px;
   border-radius: 3px;
   background: var(--color-warning-bg, #fffbeb);
-  color: var(--color-warning-fill, #b45309);
-  border: 1px solid var(--color-warning-border, #fef3c7);
+  color: var(--color-warning, #92400e);
+  border: 1px solid var(--color-warning-border, #fed7aa);
 }
 .po-urge-recipient-tip {
   display: flex;
@@ -207,8 +207,8 @@
   padding: 6px 10px;
   border-radius: 4px;
   background: var(--color-warning-bg, #fffbeb);
-  color: var(--color-warning-fill, #b45309);
-  border: 1px solid var(--color-warning-border, #fef3c7);
+  color: var(--color-warning, #92400e);
+  border: 1px solid var(--color-warning-border, #fed7aa);
   line-height: 1.4;
 }
 .po-urge-hint {
