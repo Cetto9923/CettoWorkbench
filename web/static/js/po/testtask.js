@@ -21,11 +21,6 @@
     users: []
   };
 
-  var EXIST_VER_OPTIONS = [
-    { value: "v1", label: "20250801-已有版本-A" },
-    { value: "v2", label: "20250815-已有版本-B" },
-    { value: "v3", label: "20250901-已有版本-C" }
-  ];
   var TYPE_OPTIONS = [
     { value: "integrate", label: "SIT测试" },
     { value: "system", label: "UAT测试" },
@@ -41,6 +36,7 @@
     { value: "4", label: "4" }
   ];
   var execOptionsCache = {};
+  var buildOptionsCache = {};
 
   function showToast(message, level) {
     if (typeof window.showToast === "function") {
@@ -463,6 +459,47 @@
     });
   }
 
+  function loadProductBuilds(productId) {
+    var key = String(productId || "");
+    if (!key) {
+      return Promise.resolve([]);
+    }
+    if (Object.prototype.hasOwnProperty.call(buildOptionsCache, key)) {
+      return Promise.resolve(buildOptionsCache[key]);
+    }
+    return fetchJSON("/products/" + encodeURIComponent(key) + "/builds").then(function (wrap) {
+      var list = [];
+      if (wrap.ok && wrap.data && wrap.data.success) {
+        list = normalizeExecOptions(wrap.data.data);
+      } else {
+        var msg = String((wrap.data && (wrap.data.message || wrap.data.error)) || "").trim();
+        showToast(msg || "获取已有版本失败", "error");
+      }
+      buildOptionsCache[key] = list;
+      return list;
+    }).catch(function () {
+      showToast("获取已有版本失败，请稍后重试", "error");
+      buildOptionsCache[key] = [];
+      return [];
+    });
+  }
+
+  function applyExistVerOptions($r, unit, items) {
+    if (!$r || !$r.length) {
+      return;
+    }
+    var verInput = "poTtExistVerInput_" + unit;
+    var verHidden = "poTtExistVerValue_" + unit;
+    if (typeof window.initAutocomplete === "function" && $r.find("#" + verInput).length && $r.find("#" + verHidden).length) {
+      window.initAutocomplete(verInput, verHidden, items, {
+        value: "",
+        label: "",
+        placeholder: items.length ? "搜索已有版本" : "暂无可用版本"
+      });
+    }
+    fillExistVerOptions($r.find('[data-tt-unit="' + unit + '"] [data-tt-exist-opt-list]'), unit, items);
+  }
+
   function initUnitAutocompletes($r) {
     if (typeof window.initAutocomplete !== "function" || !$r || !$r.length) {
       return;
@@ -490,12 +527,19 @@
         });
       }
       if ($r.find("#" + verInput).length && $r.find("#" + verHidden).length) {
-        window.initAutocomplete(verInput, verHidden, EXIST_VER_OPTIONS, {
+        window.initAutocomplete(verInput, verHidden, [], {
           value: "",
           label: "",
-          placeholder: "搜索已有版本"
+          placeholder: "加载版本中…"
         });
       }
+      loadProductBuilds(unit).then(function (items) {
+        if (!$r.find('[data-tt-unit="' + unit + '"]').length) {
+          return;
+        }
+        applyExistVerOptions($r, unit, items);
+        initTesttaskMultiselects($r.find('[data-tt-unit="' + unit + '"]'));
+      });
     });
   }
 
@@ -590,14 +634,15 @@
       .addClass(isMain ? "is-main" : "is-sub");
   }
 
-  function fillExistVerOptions($list, unit) {
+  function fillExistVerOptions($list, unit, options) {
     var optTpl = document.getElementById("poTtExistVerOptTpl");
     if (!$list.length || !optTpl || !optTpl.content) {
       return;
     }
     var name = "existVer" + unit;
+    var items = Array.isArray(options) ? options : [];
     $list.empty();
-    EXIST_VER_OPTIONS.forEach(function (o) {
+    items.forEach(function (o) {
       var frag = optTpl.content.cloneNode(true);
       var label = frag.querySelector("label");
       if (!label) {
@@ -655,7 +700,7 @@
 
     $root.find('[data-tt-fill="ver-name"]').val(defaultVersionName(name));
     setDateValue($root.find('[data-tt-fill="launch"]'), todayYMD());
-    fillExistVerOptions($root.find("[data-tt-exist-opt-list]"), id);
+    fillExistVerOptions($root.find("[data-tt-exist-opt-list]"), id, []);
     return frag;
   }
 

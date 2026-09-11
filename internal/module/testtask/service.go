@@ -2,7 +2,7 @@
 // 文件: internal/module/testtask/service.go
 // 模块: 提测办理
 // 类型: action
-// 职责: 提测上下文与产品执行列表业务装配。
+// 职责: 提测上下文、产品执行/已有版本列表与创建版本业务装配。
 // 依赖: internal/module/user
 //       internal/pkg/errorx
 //       internal/pkg/zentao
@@ -100,6 +100,29 @@ func (s *Service) ListProductExecutions(ctx context.Context, actor *model.User, 
 	}
 	noClosed := crExec == 0
 	return BuildExecutionOptions(rows, noClosed), nil
+}
+
+// ListProductBuilds 当前产品下已有版本列表（代理禅道 GET /products/:id/builds）。
+func (s *Service) ListProductBuilds(ctx context.Context, actor *model.User, productID uint) ([]BuildOption, error) {
+	_ = actor // 预留：后续可按可见版本权限过滤
+	if productID == 0 {
+		return nil, errorx.New(errorx.ErrCodeInvalidParam, "产品 ID 无效")
+	}
+	client := s.ztAPI
+	if client == nil {
+		client = zentao.API()
+	}
+	if client == nil {
+		return nil, errorx.New(errorx.ErrCodeInternal, "禅道 API 未配置")
+	}
+	items, err := listProductBuilds(ctx, client, productID)
+	if err != nil {
+		if s.logger != nil {
+			s.logger.Error("zentao list product builds", zap.Error(err), zap.Uint("productId", productID))
+		}
+		return nil, errorx.Wrap(errorx.ErrCodeInvalidParam, fmt.Sprintf("获取已有版本失败：%s", err.Error()), err)
+	}
+	return BuildBuildOptions(items), nil
 }
 
 // CreateBuilds 将「创建新版本」项同步到禅道 POST /projects/:id/builds；builder 为当前用户 account。

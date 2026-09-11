@@ -44,6 +44,13 @@ type ExecutionOption struct {
 	ExecutionID uint   `json:"executionId"`
 }
 
+// BuildOption 已有版本下拉项（使用已有版本）。
+// Value 为版本 id，Label 为版本名称。
+type BuildOption struct {
+	Value string `json:"value"`
+	Label string `json:"label"`
+}
+
 // UserOption 测试负责人检索下拉项（内部用户）。
 type UserOption struct {
 	Account  string `json:"account"`

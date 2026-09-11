@@ -2,7 +2,7 @@
 // 文件: internal/module/testtask/handler.go
 // 模块: 提测办理
 // 类型: action
-// 职责: 提测上下文、产品执行列表与创建版本 HTTP 接口。
+// 职责: 提测上下文、产品执行/版本列表与创建版本 HTTP 接口。
 // 依赖: internal/pkg/errorx
 // =============================================================================
 
@@ -36,6 +36,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g := rg.Group("")
 	g.GET("/demands/:id/testtask", h.GetContext)
 	g.GET("/products/:id/executions", h.ListProductExecutions)
+	g.GET("/products/:id/builds", h.ListProductBuilds)
 
 	g.POST("/demands/:id/testtask/builds", h.CreateBuilds)
 }
@@ -83,6 +84,32 @@ func (h *Handler) ListProductExecutions(c *gin.Context) {
 	}
 	if list == nil {
 		list = []ExecutionOption{}
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    list,
+	})
+}
+
+// ListProductBuilds GET /products/:id/builds — 产品下已有版本下拉。
+func (h *Handler) ListProductBuilds(c *gin.Context) {
+	id, err := parseUintParam(c.Param("id"))
+	if err != nil || id == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "产品 ID 无效"})
+		return
+	}
+
+	list, svcErr := h.svc.ListProductBuilds(c.Request.Context(), middleware.CurrentUser(c), id)
+	if svcErr != nil {
+		if h.logger != nil {
+			h.logger.Error("testtask product builds", zap.Error(svcErr), zap.Uint("productId", id))
+		}
+		status, msg := contextHTTPError(svcErr)
+		c.JSON(status, gin.H{"message": msg})
+		return
+	}
+	if list == nil {
+		list = []BuildOption{}
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
