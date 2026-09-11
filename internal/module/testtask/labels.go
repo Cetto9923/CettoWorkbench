@@ -82,10 +82,15 @@ func lookupDisplay(displayMap map[string]string, account string) string {
 // BuildContextResp 将查询行装配为前端上下文响应。
 // stage 固定为「提测」；handlerAccount/handlerName 为当前登录用户。
 // systems 为主系统优先的涉及产品列表（调用方已标 isMain）。
-func BuildContextResp(row DemandContextRow, displayMap map[string]string, handlerAccount, handlerName string, systems []SystemItem) *ContextResp {
+// users 为测试负责人检索下拉；nil 时输出空切片。
+func BuildContextResp(row DemandContextRow, displayMap map[string]string, handlerAccount, handlerName string, systems []SystemItem, users []UserOption) *ContextResp {
 	if systems == nil {
 		systems = []SystemItem{}
 	}
+	if users == nil {
+		users = []UserOption{}
+	}
+	qd := strings.TrimSpace(row.QD)
 	return &ContextResp{
 		DemandID:       row.ID,
 		Title:          strings.TrimSpace(row.Name),
@@ -95,9 +100,11 @@ func BuildContextResp(row DemandContextRow, displayMap map[string]string, handle
 		EstimateLaunch: dash(row.EstimateLaunch),
 		BRAName:        lookupDisplay(displayMap, row.BRA),
 		RDName:         lookupDisplay(displayMap, row.RD),
-		QDName:         lookupDisplay(displayMap, row.QD),
+		QD:             qd,
+		QDName:         lookupDisplay(displayMap, qd),
 		HandlerName:    dash(FormatPersonName(handlerAccount, handlerName)),
 		Systems:        systems,
+		Users:          users,
 	}
 }
 

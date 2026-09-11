@@ -16,13 +16,29 @@
     demandId: "",
     title: "",
     estimateLaunch: "",
-    qdName: ""
+    qd: "",
+    qdName: "",
+    users: []
   };
 
   var EXIST_VER_OPTIONS = [
     { value: "v1", label: "20250801-已有版本-A" },
     { value: "v2", label: "20250815-已有版本-B" },
     { value: "v3", label: "20250901-已有版本-C" }
+  ];
+  var TYPE_OPTIONS = [
+    { value: "integrate", label: "SIT测试" },
+    { value: "system", label: "UAT测试" },
+    { value: "check", label: "验收测试" },
+    { value: "performance", label: "性能测试" },
+    { value: "safety", label: "安全测试" },
+    { value: "automat", label: "自动化测试" }
+  ];
+  var PRI_OPTIONS = [
+    { value: "1", label: "1" },
+    { value: "2", label: "2" },
+    { value: "3", label: "3" },
+    { value: "4", label: "4" }
   ];
   var execOptionsCache = {};
 
@@ -44,11 +60,38 @@
     return $("#poTesttaskFormRoot").first();
   }
 
+  var DATE_PLACEHOLDER = "y-m-d";
+
   function todayYMD() {
     var d = new Date();
     var m = String(d.getMonth() + 1).padStart(2, "0");
     var day = String(d.getDate()).padStart(2, "0");
     return d.getFullYear() + "-" + m + "-" + day;
+  }
+
+  function normalizeYMD(s) {
+    var v = String(s || "").trim();
+    if (!v || v === "—") {
+      return "";
+    }
+    return v;
+  }
+
+  function syncDateDisplay($input) {
+    var $el = $($input);
+    var $wrap = $el.closest(".po-testtask-date");
+    if (!$wrap.length) {
+      return;
+    }
+    var v = normalizeYMD($el.val());
+    $wrap.attr("data-date", v || DATE_PLACEHOLDER);
+    $wrap.toggleClass("is-empty", !v);
+  }
+
+  function setDateValue($input, ymd) {
+    var $el = $($input);
+    $el.val(normalizeYMD(ymd));
+    syncDateDisplay($el);
   }
 
   function compactToday() {
@@ -456,6 +499,82 @@
     });
   }
 
+  function toUserItems(users) {
+    return (users || [])
+      .map(function (u) {
+        return {
+          value: String((u && u.account) || "").trim(),
+          label: String((u && u.realname) || "").trim() || String((u && u.account) || "").trim()
+        };
+      })
+      .filter(function (item) {
+        return !!item.value;
+      });
+  }
+
+  function initStep4Autocompletes($r) {
+    if (typeof window.initAutocomplete !== "function" || !$r || !$r.length) {
+      return;
+    }
+    var userItems = toUserItems(contextMeta.users);
+    var qdValue = contextMeta.qd || "";
+    var qdLabel =
+      contextMeta.qdName && contextMeta.qdName !== "—" ? contextMeta.qdName : "";
+
+    if ($r.find("#poTtJointQdInput").length) {
+      window.initAutocomplete("poTtJointQdInput", "poTtJointQdValue", userItems, {
+        placeholder: "输入姓名或工号搜索",
+        value: qdValue,
+        label: qdLabel
+      });
+    }
+    if ($r.find("#poTtJointTypeInput").length) {
+      window.initAutocomplete("poTtJointTypeInput", "poTtJointTypeValue", TYPE_OPTIONS, {
+        value: "",
+        label: "",
+        labelOnly: true
+      });
+    }
+    if ($r.find("#poTtJointPriInput").length) {
+      window.initAutocomplete("poTtJointPriInput", "poTtJointPriValue", PRI_OPTIONS, {
+        placeholder: "搜索优先级",
+        value: "3",
+        label: "3",
+        labelOnly: true
+      });
+    }
+
+    unitIds().forEach(function (unit) {
+      var qdInput = "poTtQdInput_" + unit;
+      var qdHidden = "poTtQdValue_" + unit;
+      var typeInput = "poTtTypeInput_" + unit;
+      var typeHidden = "poTtTypeValue_" + unit;
+      var priInput = "poTtPriInput_" + unit;
+      var priHidden = "poTtPriValue_" + unit;
+      if ($r.find("#" + qdInput).length) {
+        window.initAutocomplete(qdInput, qdHidden, userItems, {
+          placeholder: "输入姓名或工号搜索",
+          value: qdValue,
+          label: qdLabel
+        });
+      }
+      if ($r.find("#" + typeInput).length) {
+        window.initAutocomplete(typeInput, typeHidden, TYPE_OPTIONS, {
+          value: "",
+          label: "",
+          labelOnly: true
+        });
+      }
+      if ($r.find("#" + priInput).length) {
+        window.initAutocomplete(priInput, priHidden, PRI_OPTIONS, {
+          value: "3",
+          label: "3",
+          labelOnly: true
+        });
+      }
+    });
+  }
+
   function cloneTpl(id) {
     var tpl = document.getElementById(id);
     if (!tpl || !tpl.content) {
@@ -535,7 +654,7 @@
       .attr("data-tt-exist-ver", id);
 
     $root.find('[data-tt-fill="ver-name"]').val(defaultVersionName(name));
-    $root.find('[data-tt-fill="launch"]').val(todayYMD());
+    setDateValue($root.find('[data-tt-fill="launch"]'), todayYMD());
     fillExistVerOptions($root.find("[data-tt-exist-opt-list]"), id);
     return frag;
   }
@@ -575,17 +694,29 @@
     }
     $root.find('[data-tt-fill="test-title"]').text(name + "-测试单");
     $root.find('[data-tt-fill="tt-name"]').val(defaultTesttaskName(false));
+    $root.find('[data-tt-fill-id="qdInput"]').attr("id", "poTtQdInput_" + id);
     $root
-      .find('[data-tt-fill="qd"]')
-      .val(contextMeta.qdName && contextMeta.qdName !== "—" ? contextMeta.qdName : "");
-    $root.find('[data-tt-fill="start"]').val(todayYMD());
+      .find('[data-tt-fill-id="qdValue"]')
+      .attr("id", "poTtQdValue_" + id)
+      .attr("data-tt-qd", id);
+    $root.find('[data-tt-fill-id="typeInput"]').attr("id", "poTtTypeInput_" + id);
     $root
-      .find('[data-tt-fill="end"]')
-      .val(
-        contextMeta.estimateLaunch && contextMeta.estimateLaunch !== "—"
-          ? contextMeta.estimateLaunch
-          : ""
-      );
+      .find('[data-tt-fill-id="typeValue"]')
+      .attr("id", "poTtTypeValue_" + id)
+      .attr("data-tt-type", id);
+    $root.find('[data-tt-fill-id="priInput"]').attr("id", "poTtPriInput_" + id);
+    $root
+      .find('[data-tt-fill-id="priValue"]')
+      .attr("id", "poTtPriValue_" + id)
+      .attr("data-tt-pri", id)
+      .val("3");
+    setDateValue($root.find('[data-tt-fill="start"]'), todayYMD());
+    setDateValue(
+      $root.find('[data-tt-fill="end"]'),
+      contextMeta.estimateLaunch && contextMeta.estimateLaunch !== "—"
+        ? contextMeta.estimateLaunch
+        : ""
+    );
     return frag;
   }
 
@@ -654,11 +785,9 @@
     );
 
     $r.find("[data-tt-joint-name]").val(defaultTesttaskName(true));
-    $r.find("[data-tt-joint-qd]").val(
-      contextMeta.qdName && contextMeta.qdName !== "—" ? contextMeta.qdName : ""
-    );
-    $r.find("[data-tt-joint-start]").val(todayYMD());
-    $r.find("[data-tt-joint-end]").val(
+    setDateValue($r.find("[data-tt-joint-start]"), todayYMD());
+    setDateValue(
+      $r.find("[data-tt-joint-end]"),
       contextMeta.estimateLaunch && contextMeta.estimateLaunch !== "—"
         ? contextMeta.estimateLaunch
         : ""
@@ -667,6 +796,7 @@
     syncSysUnits($r);
     syncVersionModeOptions($r);
     initUnitAutocompletes($r);
+    initStep4Autocompletes($r);
     initTesttaskMultiselects($r);
   }
 
@@ -763,7 +893,9 @@
     contextMeta.demandId = demandId;
     contextMeta.title = title;
     contextMeta.estimateLaunch = String(data.estimateLaunch || "").trim();
+    contextMeta.qd = String(data.qd || "").trim();
     contextMeta.qdName = qd;
+    contextMeta.users = Array.isArray(data.users) ? data.users.slice() : [];
 
     renderSystems($r, data.systems || []);
   }
@@ -838,6 +970,9 @@
     $scope.on("change", "input[data-tt-ver-mode]", function () {
       var unit = $(this).attr("data-tt-ver-mode");
       setVersionMode(unit, $(this).val() === "new");
+    });
+    $scope.on("change input", ".po-testtask-date input[type='date']", function () {
+      syncDateDisplay(this);
     });
     $scope.on("click", "#poTesttaskSubmitBtn", function () {
       showToast("提交提测（静态演示，未提交后端）", "success");

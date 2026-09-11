@@ -360,6 +360,36 @@
   box-sizing: border-box;
 }
 
+/* 日期展示固定为 y-m-d，隐藏浏览器本地化「年/月/日」 */
+.po-testtask-date {
+  position: relative;
+}
+
+.po-testtask-date::after {
+  content: attr(data-date);
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--tt-text);
+  font-size: 12px;
+  font-family: inherit;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.po-testtask-date.is-empty::after {
+  color: var(--tt-secondary);
+}
+
+.po-testtask-date input[type="date"] {
+  color: transparent;
+}
+
+.po-testtask-date input[type="date"]::-webkit-datetime-edit {
+  color: transparent;
+}
+
 /* 点击整块 date input 即可弹出日历（与排期页同款） */
 .po-testtask-field input[type="date"]:not([readonly]) {
   position: relative;

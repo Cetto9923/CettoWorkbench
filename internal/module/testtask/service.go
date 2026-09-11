@@ -67,12 +67,17 @@ func (s *Service) GetContext(ctx context.Context, actor *model.User, demandID ui
 	}
 	systems := BuildSystemItems(products, row.MainSystemID, row.MainSystemName)
 
+	users, err := s.repo.ListInsideUsers(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	account, name := "", ""
 	if actor != nil {
 		account = actor.Account
 		name = actor.DisplayName
 	}
-	return BuildContextResp(*row, displayMap, account, name, systems), nil
+	return BuildContextResp(*row, displayMap, account, name, systems, users), nil
 }
 
 // ListProductExecutions 当前产品下执行列表（对齐禅道版本创建 stagefilter|leaf|order_asc[+noclosed]）。

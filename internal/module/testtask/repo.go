@@ -85,3 +85,38 @@ ORDER BY p.id ASC`
 	}
 	return out, nil
 }
+
+type insideUserRow struct {
+	Account  string `gorm:"column:account"`
+	Realname string `gorm:"column:realname"`
+}
+
+// ListInsideUsers 查询内部用户列表（测试负责人检索下拉，对齐排期）。
+func (r *Repo) ListInsideUsers(ctx context.Context) ([]UserOption, error) {
+	if r == nil || r.db == nil {
+		return []UserOption{}, nil
+	}
+	const query = `
+SELECT account, realname
+FROM zt_user
+WHERE deleted = '0'
+  AND type = 'inside'
+ORDER BY account ASC`
+	var rows []insideUserRow
+	if err := r.db.WithContext(ctx).Raw(query).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	out := make([]UserOption, 0, len(rows))
+	for _, row := range rows {
+		account := strings.TrimSpace(row.Account)
+		if account == "" {
+			continue
+		}
+		realname := strings.TrimSpace(row.Realname)
+		if realname == "" {
+			realname = account
+		}
+		out = append(out, UserOption{Account: account, Realname: realname})
+	}
+	return out, nil
+}

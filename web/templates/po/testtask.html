@@ -142,15 +142,38 @@
             </div>
             <div class="po-testtask-field">
               <div class="po-testtask-field-label"><span class="req">*</span> 测试负责人</div>
-              <input type="text" data-tt-joint-qd value="" />
+              <div class="ui-autocomplete">
+                <input type="text" class="po-testtask-ac-input" id="poTtJointQdInput" placeholder="输入姓名或工号搜索" autocomplete="off" />
+                <input type="hidden" id="poTtJointQdValue" data-tt-joint-qd value="" />
+              </div>
             </div>
             <div class="po-testtask-field">
-              <div class="po-testtask-field-label">开始日期</div>
-              <input type="date" data-tt-joint-start value="" />
+              <div class="po-testtask-field-label"><span class="req">*</span> 开始日期</div>
+              <div class="po-testtask-date is-empty" data-date="y-m-d">
+                <input type="date" data-tt-joint-start value="" />
+              </div>
             </div>
             <div class="po-testtask-field">
-              <div class="po-testtask-field-label">结束日期</div>
-              <input type="date" data-tt-joint-end value="" />
+              <div class="po-testtask-field-label"><span class="req">*</span> 结束日期</div>
+              <div class="po-testtask-date is-empty" data-date="y-m-d">
+                <input type="date" data-tt-joint-end value="" />
+              </div>
+            </div>
+          </div>
+          <div class="po-testtask-grid-2">
+            <div class="po-testtask-field">
+              <div class="po-testtask-field-label"><span class="req">*</span> 测试类型</div>
+              <div class="ui-autocomplete">
+                <input type="text" class="po-testtask-ac-input" id="poTtJointTypeInput" autocomplete="off" />
+                <input type="hidden" id="poTtJointTypeValue" data-tt-joint-type value="" />
+              </div>
+            </div>
+            <div class="po-testtask-field">
+              <div class="po-testtask-field-label"><span class="req">*</span> 优先级</div>
+              <div class="ui-autocomplete">
+                <input type="text" class="po-testtask-ac-input" id="poTtJointPriInput" placeholder="搜索优先级" autocomplete="off" />
+                <input type="hidden" id="poTtJointPriValue" data-tt-joint-pri value="3" />
+              </div>
             </div>
           </div>
           <div class="po-testtask-field">
@@ -236,7 +259,9 @@
           </div>
           <div class="po-testtask-field">
             <div class="po-testtask-field-label"><span class="req">*</span> 计划上线日期</div>
-            <input type="date" data-tt-fill="launch" value="" />
+            <div class="po-testtask-date is-empty" data-date="y-m-d">
+              <input type="date" data-tt-fill="launch" value="" />
+            </div>
           </div>
         </div>
         <div class="po-testtask-field">
@@ -310,15 +335,38 @@
       </div>
       <div class="po-testtask-field">
         <div class="po-testtask-field-label"><span class="req">*</span> 测试负责人</div>
-        <input type="text" data-tt-fill="qd" value="" />
+        <div class="ui-autocomplete">
+          <input type="text" class="po-testtask-ac-input" data-tt-fill-id="qdInput" placeholder="输入姓名或工号搜索" autocomplete="off" />
+          <input type="hidden" data-tt-fill-id="qdValue" data-tt-qd="" value="" />
+        </div>
       </div>
       <div class="po-testtask-field">
-        <div class="po-testtask-field-label">开始日期</div>
-        <input type="date" data-tt-fill="start" value="" />
+        <div class="po-testtask-field-label"><span class="req">*</span> 开始日期</div>
+        <div class="po-testtask-date is-empty" data-date="y-m-d">
+          <input type="date" data-tt-fill="start" value="" />
+        </div>
       </div>
       <div class="po-testtask-field">
-        <div class="po-testtask-field-label">结束日期</div>
-        <input type="date" data-tt-fill="end" value="" />
+        <div class="po-testtask-field-label"><span class="req">*</span> 结束日期</div>
+        <div class="po-testtask-date is-empty" data-date="y-m-d">
+          <input type="date" data-tt-fill="end" value="" />
+        </div>
+      </div>
+    </div>
+    <div class="po-testtask-grid-2">
+      <div class="po-testtask-field">
+        <div class="po-testtask-field-label"><span class="req">*</span> 测试类型</div>
+        <div class="ui-autocomplete">
+          <input type="text" class="po-testtask-ac-input" data-tt-fill-id="typeInput" autocomplete="off" />
+          <input type="hidden" data-tt-fill-id="typeValue" data-tt-type="" value="" />
+        </div>
+      </div>
+      <div class="po-testtask-field">
+        <div class="po-testtask-field-label"><span class="req">*</span> 优先级</div>
+        <div class="ui-autocomplete">
+          <input type="text" class="po-testtask-ac-input" data-tt-fill-id="priInput" placeholder="搜索优先级" autocomplete="off" />
+          <input type="hidden" data-tt-fill-id="priValue" data-tt-pri="" value="3" />
+        </div>
       </div>
     </div>
     <div class="po-testtask-field">

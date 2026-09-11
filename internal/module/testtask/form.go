@@ -44,6 +44,12 @@ type ExecutionOption struct {
 	ExecutionID uint   `json:"executionId"`
 }
 
+// UserOption 测试负责人检索下拉项（内部用户）。
+type UserOption struct {
+	Account  string `json:"account"`
+	Realname string `json:"realname"`
+}
+
 // ContextResp 提测弹窗「当前需求上下文」JSON。
 type ContextResp struct {
 	DemandID       uint         `json:"demandId"`
@@ -54,9 +60,11 @@ type ContextResp struct {
 	EstimateLaunch string       `json:"estimateLaunch"`
 	BRAName        string       `json:"braName"`
 	RDName         string       `json:"rdName"`
+	QD             string       `json:"qd"`
 	QDName         string       `json:"qdName"`
 	HandlerName    string       `json:"handlerName"`
 	Systems        []SystemItem `json:"systems"`
+	Users          []UserOption `json:"users"`
 }
 
 // FieldError 表单字段级错误。
