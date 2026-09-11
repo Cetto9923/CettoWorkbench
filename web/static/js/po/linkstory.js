@@ -136,17 +136,80 @@
     return { key: key, control: "input", operator: "=", optionsKey: "" };
   }
 
+  function fieldItems(meta) {
+    var items = ((meta && meta.fields) || [])
+      .filter(function (f) {
+        return f && f.key;
+      })
+      .map(function (f) {
+        return { value: f.key, label: f.label || f.key };
+      });
+    return items.length
+      ? items
+      : [
+          { value: "title", label: "需求名称" },
+          { value: "status", label: "当前状态" }
+        ];
+  }
+
+  function fieldLabel(items, value) {
+    var key = String(value || "");
+    for (var i = 0; i < items.length; i++) {
+      if (String(items[i].value) === key) {
+        return items[i].label || key;
+      }
+    }
+    return key;
+  }
+
+  function syncFieldChange(group) {
+    var $hidden = $("#poLinkstoryField" + group);
+    if (!$hidden.length) {
+      return;
+    }
+    var cur = String($hidden.val() || "");
+    var prev = String($hidden.data("prevField") || "");
+    if (cur === prev) {
+      return;
+    }
+    $hidden.data("prevField", cur);
+    if (!cur) {
+      return;
+    }
+    applyDefaultOperator(group, true);
+    $("#poLinkstoryValue" + group + "Init").val("");
+    renderValueBox(group, false);
+  }
+
+  function initFieldAutocompletes() {
+    if (typeof window.initAutocomplete !== "function") {
+      return;
+    }
+    var items = fieldItems(parseSearchMeta());
+    [1, 2].forEach(function (group) {
+      var inputId = "poLinkstoryField" + group + "Input";
+      var hiddenId = "poLinkstoryField" + group;
+      var $hidden = $("#" + hiddenId);
+      if (!$("#" + inputId).length || !$hidden.length) {
+        return;
+      }
+      var val = String($hidden.val() || (group === 1 ? "title" : "status"));
+      $hidden.val(val).data("prevField", val);
+      window.initAutocomplete(inputId, hiddenId, items, {
+        value: val,
+        label: fieldLabel(items, val),
+        placeholder: "搜索字段",
+        labelOnly: true
+      });
+    });
+  }
+
   function renderValueBox(group, keepValue) {
     var meta = parseSearchMeta();
-    var fieldKey = $("#poLinkstoryField" + group).val() || "";
-    var def = fieldDef(meta, fieldKey);
+    var def = fieldDef(meta, $("#poLinkstoryField" + group).val() || "");
     var $box = $("#poLinkstoryValueBox" + group);
-    var prev = keepValue
-      ? String($box.find("[name='value" + group + "']").val() || $("#poLinkstoryValue" + group + "Init").val() || "")
-      : String($("#poLinkstoryValue" + group + "Init").val() || "");
-    if (!keepValue) {
-      prev = String($("#poLinkstoryValue" + group + "Init").val() || "");
-    } else {
+    var prev = String($("#poLinkstoryValue" + group + "Init").val() || "");
+    if (keepValue) {
       var live = $box.find("[name='value" + group + "']").val();
       if (typeof live !== "undefined") {
         prev = String(live || "");
@@ -228,6 +291,7 @@
     if (!$("#poLinkstoryField1").length) {
       return;
     }
+    initFieldAutocompletes();
     applyDefaultOperator(1, false);
     applyDefaultOperator(2, false);
     renderValueBox(1, false);
@@ -360,11 +424,27 @@
     $(document).on("click", "#poLinkstorySearchBtn", function () {
       runSearch();
     });
-    $(document).on("change", "#poLinkstoryField1, #poLinkstoryField2", function () {
-      var group = $(this).data("group");
-      applyDefaultOperator(group, true);
-      $("#poLinkstoryValue" + group + "Init").val("");
-      renderValueBox(group, false);
+    $(document).on(
+      "click",
+      '.ui-autocomplete-dropdown[data-autocomplete-for="poLinkstoryField1Input"] .ui-autocomplete-option,'.concat(
+        '.ui-autocomplete-dropdown[data-autocomplete-for="poLinkstoryField2Input"] .ui-autocomplete-option'
+      ),
+      function () {
+        var forId = $(this).closest("[data-autocomplete-for]").attr("data-autocomplete-for") || "";
+        var group = forId.indexOf("Field1") >= 0 ? 1 : 2;
+        setTimeout(function () {
+          syncFieldChange(group);
+        }, 0);
+      }
+    );
+    $(document).on("keydown", "#poLinkstoryField1Input, #poLinkstoryField2Input", function (e) {
+      if (e.key !== "Enter") {
+        return;
+      }
+      var group = this.id.indexOf("Field1") >= 0 ? 1 : 2;
+      setTimeout(function () {
+        syncFieldChange(group);
+      }, 0);
     });
     $(document).on("change", "#poLinkstoryCheckAll, #poLinkstoryFooterCheck", function () {
       setAllChecks($(this).prop("checked"));

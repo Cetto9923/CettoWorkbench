@@ -206,7 +206,7 @@
     ]);
   }
 
-  function formatAutocompleteLabel(item) {
+  function formatAutocompleteLabel(item, labelOnly) {
     var label = trimText(item.label);
     var value = trimText(item.value);
     if (!value) {
@@ -215,7 +215,7 @@
     if (!label || label === value) {
       return value;
     }
-    if (label.indexOf(value) >= 0) {
+    if (labelOnly || label.indexOf(value) >= 0) {
       return label;
     }
     return label + "(" + value + ")";
@@ -369,7 +369,7 @@
     var selectedValue = trimText(state.hidden.value);
     if (selectedValue) {
       var selectedItem = findAutocompleteItem(state.items, selectedValue);
-      if (selectedItem && trimText(query) === formatAutocompleteLabel(selectedItem)) {
+      if (selectedItem && trimText(query) === formatAutocompleteLabel(selectedItem, state.labelOnly)) {
         query = "";
       }
     }
@@ -393,7 +393,7 @@
     }
 
     matches.forEach(function (item, index) {
-      var displayLabel = formatAutocompleteLabel(item);
+      var displayLabel = formatAutocompleteLabel(item, state.labelOnly);
       var option = document.createElement("div");
       option.className = "ui-autocomplete-option";
       option.setAttribute("role", "option");
@@ -568,7 +568,7 @@
         if (state.activeIndex >= 0 && state.filteredItems[state.activeIndex]) {
           ev.preventDefault();
           var picked = state.filteredItems[state.activeIndex];
-          selectAutocompleteItem(state, picked.value, formatAutocompleteLabel(picked));
+          selectAutocompleteItem(state, picked.value, formatAutocompleteLabel(picked, state.labelOnly));
         }
         return;
       }
@@ -603,6 +603,7 @@
       items: [],
       filteredItems: [],
       maxShow: 1000,
+      labelOnly: false,
       activeIndex: -1,
       open: false,
       bound: false,
@@ -617,7 +618,7 @@
    * @param {string} inputId 可见输入框 ID
    * @param {string} hiddenId 隐藏字段 ID（存 value）
    * @param {Array<{value:string,label:string}>} items 选项列表
-   * @param {{placeholder?:string,maxShow?:number,value?:string,label?:string}} options
+   * @param {{placeholder?:string,maxShow?:number,value?:string,label?:string,labelOnly?:boolean}} options
    */
   function initAutocomplete(inputId, hiddenId, items, options) {
     var input = document.getElementById(inputId);
@@ -646,6 +647,7 @@
 
     state.items = normalizeAutocompleteItems(items);
     state.maxShow = options.maxShow > 0 ? options.maxShow : 1000;
+    state.labelOnly = !!options.labelOnly;
     if (options.placeholder) {
       state.input.placeholder = options.placeholder;
     }
@@ -655,8 +657,8 @@
         state.items = ensureAutocompleteItem(state.items, options.value, options.label);
         var selectedItem = findAutocompleteItem(state.items, options.value);
         var displayLabel = selectedItem
-          ? formatAutocompleteLabel(selectedItem)
-          : formatAutocompleteLabel({ value: options.value, label: options.label });
+          ? formatAutocompleteLabel(selectedItem, state.labelOnly)
+          : formatAutocompleteLabel({ value: options.value, label: options.label }, state.labelOnly);
         selectAutocompleteItem(state, options.value, displayLabel);
       } else {
         clearAutocompleteValue(state);

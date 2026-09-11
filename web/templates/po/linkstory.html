@@ -35,13 +35,10 @@
     <div class="search-panel">
       <div class="search-fields" id="poLinkstorySearchFields">
         <span class="search-label">第一组</span>
-        <select id="poLinkstoryField1" class="select po-linkstory-field" data-group="1" aria-label="第一组字段">
-          {{ range $sf.Fields }}
-          <option value="{{ .Key }}"{{ if eq $sf.Field1 .Key }} selected{{ end }}>{{ .Label }}</option>
-          {{ else }}
-          <option value="title" selected>需求名称</option>
-          {{ end }}
-        </select>
+        <div class="ui-autocomplete po-linkstory-field-ac" data-group="1">
+          <input type="text" id="poLinkstoryField1Input" class="search-input" placeholder="搜索字段" autocomplete="off" aria-label="第一组字段" />
+          <input type="hidden" id="poLinkstoryField1" class="po-linkstory-field" data-group="1" value="{{ if $sf.Field1 }}{{ $sf.Field1 }}{{ else }}title{{ end }}" />
+        </div>
         <select id="poLinkstoryOp1" class="select" aria-label="第一组运算符">
           {{ if $sf.Options }}
             {{ range index $sf.Options "operators" }}
@@ -61,13 +58,10 @@
         </select>
 
         <span class="search-label">第二组</span>
-        <select id="poLinkstoryField2" class="select po-linkstory-field" data-group="2" aria-label="第二组字段">
-          {{ range $sf.Fields }}
-          <option value="{{ .Key }}"{{ if eq $sf.Field2 .Key }} selected{{ end }}>{{ .Label }}</option>
-          {{ else }}
-          <option value="status" selected>当前状态</option>
-          {{ end }}
-        </select>
+        <div class="ui-autocomplete po-linkstory-field-ac" data-group="2">
+          <input type="text" id="poLinkstoryField2Input" class="search-input" placeholder="搜索字段" autocomplete="off" aria-label="第二组字段" />
+          <input type="hidden" id="poLinkstoryField2" class="po-linkstory-field" data-group="2" value="{{ if $sf.Field2 }}{{ $sf.Field2 }}{{ else }}status{{ end }}" />
+        </div>
         <select id="poLinkstoryOp2" class="select" aria-label="第二组运算符">
           {{ if $sf.Options }}
             {{ range index $sf.Options "operators" }}

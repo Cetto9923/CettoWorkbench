@@ -182,6 +182,24 @@
   display: contents;
 }
 
+/* 字段检索下拉：对齐原 select 宽度 */
+.po-linkstory .search-fields > .po-linkstory-field-ac {
+  width: 7.5rem;
+  min-width: 5.5rem;
+  flex: 0 0 auto;
+}
+
+.po-linkstory .search-fields > .po-linkstory-field-ac .ui-autocomplete-input-wrap {
+  width: 100%;
+}
+
+.po-linkstory .search-fields > .po-linkstory-field-ac .ui-autocomplete-input {
+  width: 100%;
+  height: var(--size-9);
+  padding-right: 30px;
+  box-sizing: border-box;
+}
+
 /* 点击整块 date input 即可弹出日历（与提测弹窗同款） */
 .po-linkstory input[type="date"].search-input {
   position: relative;
