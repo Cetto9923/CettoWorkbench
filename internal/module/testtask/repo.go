@@ -28,6 +28,7 @@ func NewRepo(db *gorm.DB) *Repo {
 }
 
 // FindDemandContext 按业需 ID 读取上下文行（账号字段；展示名由 Service 用用户 map 解析）。
+// 多返回 main_system_id 用于把主系统放在 systems 列表首位。
 func (r *Repo) FindDemandContext(ctx context.Context, demandID uint) (*DemandContextRow, error) {
 	if r == nil || r.db == nil || demandID == 0 {
 		return nil, errDemandNotFound
@@ -35,6 +36,7 @@ func (r *Repo) FindDemandContext(ctx context.Context, demandID uint) (*DemandCon
 	var row DemandContextRow
 	err := r.db.WithContext(ctx).Table("zt_demand AS d").
 		Select(`d.id, d.name, d.status, d.stage, d.BRA, d.RD, d.QD,
+			CAST(NULLIF(d.mainSystem, '') AS UNSIGNED) AS main_system_id,
 			COALESCE(p.name, d.mainSystem, '') AS product_name,
 			COALESCE(DATE_FORMAT(d.estimateLaunch, '%Y-%m-%d'), '') AS estimate_launch`).
 		Joins("LEFT JOIN zt_product p ON p.id = CAST(NULLIF(d.mainSystem, '') AS UNSIGNED) AND p.deleted = '0'").

@@ -39,6 +39,7 @@ import (
 	"workbench/internal/module/metrics"
 	"workbench/internal/module/operationlog"
 	"workbench/internal/module/po"
+	"workbench/internal/module/profile"
 	"workbench/internal/module/query"
 	"workbench/internal/module/role"
 	"workbench/internal/module/schedule"
@@ -170,11 +171,14 @@ func Run() error {
 	sqlPerfHandler := debug.NewHandler(sqlPerfSvc)
 
 	testtaskRepo := testtask.NewRepo(dbReadonlyOrPrimary(dbReadonly, db))
-	testtaskSvc := testtask.NewService(testtaskRepo, userSvc, zapLog)
+	testtaskSvc := testtask.NewService(testtaskRepo, userSvc, zentaopkg.DefaultClient(), zapLog)
 	testtaskHandler := testtask.NewHandler(testtaskSvc, zapLog)
 
 	buildRepo := build.NewRepo(dbReadonlyOrPrimary(dbReadonly, db))
 	buildSvc := build.NewService(buildRepo, userSvc, zentaopkg.DefaultClient(), zapLog)
+
+	// 个人资料：仅 API（弹窗读写）；整页入口已迁到顶栏 openProfileModal。
+	profileHandler := profile.NewHandler(profile.NewService(profile.NewRepo(db)), zapLog)
 	buildHandler := build.NewHandler(buildSvc, zapLog)
 
 	routeDeps := server.RouteDeps{
@@ -196,6 +200,7 @@ func Run() error {
 		BuildHandler:        buildHandler,
 		QueryHandler:        queryHandler,
 		MetricsHandler:      metricsHandler,
+		ProfileHandler:      profileHandler,
 		SqlPerfHandler:      sqlPerfHandler,
 	}
 

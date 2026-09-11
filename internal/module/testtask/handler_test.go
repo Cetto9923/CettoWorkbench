@@ -37,7 +37,7 @@ func setupMockTesttaskDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock) {
 func TestGetContext_Success(t *testing.T) {
 	db, mock := setupMockTesttaskDB(t)
 	repo := NewRepo(db)
-	svc := NewService(repo, nil, nil)
+	svc := NewService(repo, nil, nil, nil)
 
 	mock.ExpectQuery("(?s)SELECT d\\.id, d\\.name.*FROM zt_demand AS d.*WHERE d\\.id = \\? AND d\\.deleted = '0' LIMIT \\?").
 		WithArgs(63411, 1).
@@ -65,7 +65,7 @@ func TestGetContext_Success(t *testing.T) {
 func TestGetContext_DemandNotFound(t *testing.T) {
 	db, mock := setupMockTesttaskDB(t)
 	repo := NewRepo(db)
-	svc := NewService(repo, nil, nil)
+	svc := NewService(repo, nil, nil, nil)
 
 	mock.ExpectQuery("(?s)SELECT d\\.id, d\\.name.*FROM zt_demand AS d.*WHERE d\\.id = \\? AND d\\.deleted = '0' LIMIT \\?").
 		WithArgs(99999, 1).
@@ -81,7 +81,7 @@ func TestHandler_GetContext(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	db, mock := setupMockTesttaskDB(t)
 	repo := NewRepo(db)
-	svc := NewService(repo, nil, nil)
+	svc := NewService(repo, nil, nil, nil)
 	h := NewHandler(svc, nil)
 
 	r := gin.New()
