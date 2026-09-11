@@ -31,9 +31,9 @@ const (
 	// 避免长事务锁竞争 / 行锁耗尽。N=50 / M=50 为初值，依据：
 	// 现网单业需下的研发需求与单研发需求下的执行任务典型量级（PoC 阶段
 	// 校准），后续按审计证据在 quality.md 流程中调整。
-	MaxSchedulingStories        = 50
-	MaxSchedulingTasksPerStory  = 50
-	MaxStoryTasks               = 50
+	MaxSchedulingStories       = 50
+	MaxSchedulingTasksPerStory = 50
+	MaxStoryTasks              = 50
 )
 
 // 列表高级筛选排期阶段 URL 参数值。
