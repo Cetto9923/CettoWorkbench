@@ -264,6 +264,23 @@ html[data-theme="light"] {
   --color-version-link: var(--color-info-fill);
   --color-review-overlay: rgba(15, 23, 42, 0.32);
   --color-notice-unread-bg: rgba(37, 99, 235, 0);
+  /* PO done tag palette (light: solid bg, dark: translucent bg + light fg) */
+  --color-badge-success-bg: var(--color-success-bg);
+  --color-badge-success-fg: var(--color-success-fill);
+  --color-badge-success-border: var(--color-success-border);
+  --color-badge-info-bg: var(--color-info-bg);
+  --color-badge-info-fg: var(--color-info-fill);
+  --color-badge-info-border: var(--color-info-border);
+  --color-badge-warning-bg: var(--color-warning-bg);
+  --color-badge-warning-fg: var(--color-warning-fill);
+  --color-badge-warning-border: var(--color-warning-border);
+  --color-badge-danger-bg: var(--color-danger-bg);
+  --color-badge-danger-fg: var(--color-danger-strong);
+  --color-badge-danger-border: var(--color-danger-border);
+  --color-badge-neutral-bg: var(--color-surface-muted);
+  --color-badge-neutral-fg: var(--color-text-secondary);
+  --color-badge-neutral-border: var(--color-border);
+
   --color-review-modal-shadow: -8px 0 28px rgba(15, 23, 42, 0.18);
 
   /* 布局尺寸 */
@@ -436,6 +453,23 @@ html[data-theme="dark"] {
   --color-version-link: #38bdf8;
   --color-review-overlay: rgba(2, 6, 23, 0.6);
   --color-notice-unread-bg: rgba(37, 99, 235, 0.06);
+  /* PO done tag palette — dark translucent overrides */
+  --color-badge-success-bg: rgba(16, 185, 129, 0.15);
+  --color-badge-success-fg: #34d399;
+  --color-badge-success-border: rgba(16, 185, 129, 0.35);
+  --color-badge-info-bg: rgba(59, 130, 246, 0.18);
+  --color-badge-info-fg: #93c5fd;
+  --color-badge-info-border: rgba(59, 130, 246, 0.38);
+  --color-badge-warning-bg: rgba(245, 158, 11, 0.15);
+  --color-badge-warning-fg: #fbbf24;
+  --color-badge-warning-border: rgba(245, 158, 11, 0.35);
+  --color-badge-danger-bg: rgba(239, 68, 68, 0.15);
+  --color-badge-danger-fg: #f87171;
+  --color-badge-danger-border: rgba(239, 68, 68, 0.35);
+  --color-badge-neutral-bg: rgba(255, 255, 255, 0.05);
+  --color-badge-neutral-fg: #cbd5e1;
+  --color-badge-neutral-border: rgba(255, 255, 255, 0.12);
+
   --color-review-modal-shadow: -8px 0 28px rgba(2, 6, 23, 0.55);
 
   /* Stage 2 公共优先级 token (P1-P4 bg/fg/bd) — 深色, WCAG AA 对比 */
