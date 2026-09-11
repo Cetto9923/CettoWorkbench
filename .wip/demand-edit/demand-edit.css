@@ -1,0 +1,190 @@
+/* =============================================================================
+   文件: web/static/css/po/demand-edit.css
+   模块: PO 个人工作台 - 业务需求编辑抽屉与删除确认弹窗
+   规范: 符合 Semantic Theme Tokens 规范，严格 <= 300 行
+   ============================================================================= */
+
+/* 1. 编辑抽屉布局与面板 */
+.dd-edit-mask {
+  position: fixed; inset: 0; z-index: 1050;
+  background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(2px);
+  display: flex; justify-content: flex-end;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+}
+.dd-edit-mask.active { opacity: 1; pointer-events: auto; }
+
+.dd-edit-panel {
+  width: min(880px, 96vw); height: 100vh;
+  background: var(--color-surface, #ffffff);
+  box-shadow: -8px 0 32px rgba(15, 23, 42, 0.2);
+  display: flex; flex-direction: column; overflow: hidden;
+  transform: translateX(100%); transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.dd-edit-mask.active .dd-edit-panel { transform: translateX(0); }
+
+/* 抽屉头部 */
+.dd-edit-head {
+  padding: 14px 20px; border-bottom: 1px solid var(--color-border, #e2e8f0);
+  background: var(--color-surface, #ffffff);
+  display: flex; align-items: center; justify-content: space-between; flex: 0 0 auto;
+}
+.dd-edit-title-box { display: flex; align-items: center; gap: 10px; }
+.dd-edit-title-box h3 {
+  margin: 0; font-size: 16px; font-weight: 700; color: var(--color-text-primary, #0f172a);
+}
+.dd-edit-close {
+  border: 0; background: transparent; color: var(--color-text-secondary, #64748b);
+  font-size: 20px; width: 32px; height: 32px; border-radius: 6px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s ease;
+}
+.dd-edit-close:hover { background: var(--color-surface-hover, #f1f5f9); color: var(--color-text-primary, #0f172a); }
+
+/* 提示条 */
+.dd-edit-banner {
+  padding: 8px 20px; font-size: 12px; line-height: 1.5;
+  background: var(--color-warning-bg, #fffbeb); color: var(--color-warning-fill, #b45309);
+  border-bottom: 1px solid var(--color-warning-border, #fef3c7);
+  display: flex; align-items: center; gap: 8px; flex: 0 0 auto;
+}
+
+/* 编辑表单双栏区 */
+.dd-edit-body {
+  flex: 1 1 0; min-height: 0; overflow-y: auto; padding: 18px 20px;
+  background: var(--color-page-bg, #f8fafc);
+}
+.dd-edit-grid {
+  display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 16px; align-items: start;
+}
+.dd-edit-main { display: flex; flex-direction: column; gap: 14px; }
+.dd-edit-aside { display: flex; flex-direction: column; gap: 14px; }
+
+.dd-edit-card {
+  background: var(--color-surface, #ffffff); border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 8px; padding: 16px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.dd-edit-card-title {
+  font-size: 13px; font-weight: 700; color: var(--color-text-primary, #0f172a);
+  margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
+}
+
+.dd-edit-field { margin-bottom: 14px; }
+.dd-edit-field:last-child { margin-bottom: 0; }
+.dd-edit-label {
+  display: block; font-size: 12px; font-weight: 600; color: var(--color-text-body, #334155);
+  margin-bottom: 6px;
+}
+.dd-edit-label .req { color: var(--color-danger, #ef4444); margin-left: 2px; }
+.dd-edit-input, .dd-edit-select, .dd-edit-textarea {
+  width: 100%; box-sizing: border-box; border: 1px solid var(--color-border-strong, #cbd5e1);
+  border-radius: 6px; padding: 7px 10px; font-size: 12px;
+  color: var(--color-text-primary, #0f172a); background: var(--color-surface, #ffffff);
+  outline: none; transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.dd-edit-input:focus, .dd-edit-select:focus, .dd-edit-textarea:focus {
+  border-color: var(--color-primary, #2563eb);
+  box-shadow: 0 0 0 2px var(--color-primary-light, rgba(37, 99, 235, 0.15));
+}
+.dd-edit-textarea { min-height: 120px; resize: vertical; line-height: 1.6; font-family: inherit; }
+
+/* 底部操作栏 */
+.dd-edit-footer {
+  padding: 12px 20px; border-top: 1px solid var(--color-border, #e2e8f0);
+  background: var(--color-surface, #ffffff);
+  display: flex; align-items: center; justify-content: space-between; flex: 0 0 auto;
+}
+.dd-edit-footer-right { display: flex; align-items: center; gap: 10px; }
+
+/* 2. 删除二次确认模态弹窗 */
+.dd-delete-modal-overlay {
+  position: fixed; inset: 0; z-index: 1100;
+  background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(2px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+}
+.dd-delete-modal-overlay.show { opacity: 1; pointer-events: auto; }
+
+.dd-delete-modal {
+  width: min(480px, 92vw); background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #e2e8f0); border-radius: 10px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22); overflow: hidden;
+  transform: scale(0.96); transition: transform 0.2s ease;
+}
+.dd-delete-modal-overlay.show .dd-delete-modal { transform: scale(1); }
+
+.dd-del-hdr {
+  padding: 14px 18px; border-bottom: 1px solid var(--color-border, #e2e8f0);
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--color-surface-muted, #f8fafc);
+}
+.dd-del-title {
+  margin: 0; font-size: 14px; font-weight: 700; color: var(--color-danger, #b91c1c);
+  display: flex; align-items: center; gap: 6px;
+}
+.dd-del-close {
+  border: 0; background: transparent; color: var(--color-text-secondary, #64748b);
+  font-size: 18px; cursor: pointer; border-radius: 4px; padding: 2px 6px;
+}
+.dd-del-close:hover { background: var(--color-surface-hover, #e2e8f0); }
+
+.dd-del-body { padding: 18px; font-size: 13px; color: var(--color-text-body, #334155); }
+.dd-del-target-box {
+  margin: 10px 0 14px; padding: 10px 12px; border-radius: 6px;
+  background: var(--color-surface-muted, #f8fafc); border: 1px solid var(--color-border, #e2e8f0);
+}
+.dd-del-target-code {
+  font-weight: 700; color: var(--color-primary, #2563eb);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.dd-del-warning {
+  padding: 10px 12px; border-radius: 6px;
+  background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25);
+  color: var(--color-danger, #b91c1c); font-size: 12px; line-height: 1.5;
+}
+
+.dd-del-footer {
+  padding: 12px 18px; border-top: 1px solid var(--color-border, #e2e8f0);
+  display: flex; justify-content: flex-end; gap: 10px;
+  background: var(--color-surface, #ffffff);
+}
+
+/* 3. 深色模式全面适配 (Dark Mode) */
+html[data-theme="dark"] .dd-edit-panel,
+html[data-theme="dark"] .dd-edit-head,
+html[data-theme="dark"] .dd-edit-footer,
+html[data-theme="dark"] .dd-delete-modal,
+html[data-theme="dark"] .dd-del-footer {
+  background: var(--color-surface, #1e293b);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+html[data-theme="dark"] .dd-edit-banner {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.25);
+}
+html[data-theme="dark"] .dd-edit-body {
+  background: var(--color-page-bg, #0f172a);
+}
+html[data-theme="dark"] .dd-edit-card {
+  background: var(--color-surface, #1e293b);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+html[data-theme="dark"] .dd-edit-input,
+html[data-theme="dark"] .dd-edit-select,
+html[data-theme="dark"] .dd-edit-textarea {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: var(--color-text-primary, #f8fafc);
+}
+html[data-theme="dark"] .dd-del-hdr {
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+html[data-theme="dark"] .dd-del-target-box {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+html[data-theme="dark"] .dd-del-warning {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+}

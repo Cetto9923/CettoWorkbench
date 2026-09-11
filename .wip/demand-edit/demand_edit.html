@@ -1,0 +1,195 @@
+{{ define "page_css" }}
+<link rel="stylesheet" href="{{ asset "/static/css/po/personal-workspace.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/demand-detail.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/demand-edit.css" }}">
+{{ end }}
+
+{{ define "content" }}
+<main class="po-personal-workspace" id="demand-edit-page">
+  <header class="workspace-header">
+    <div class="workspace-header-left">
+      <h2>编辑业务需求</h2>
+      <p>业务需求 {{ .Data.Demand.Code }} · {{ .Data.Demand.Name }}</p>
+    </div>
+    <div class="header-quick-actions">
+      <a href="/home" class="workspace-btn"><i class="fas fa-arrow-left"></i> 返回工作台</a>
+    </div>
+  </header>
+
+  <div class="workspace-panel" style="padding: 0; overflow-y: auto;">
+    <div class="dd-edit-banner">
+      <i class="fas fa-info-circle" aria-hidden="true"></i>
+      <span>您正在编辑业务需求草稿，修改后可随时暂存，或完善后直接提交业务评审。</span>
+    </div>
+
+    <form class="dd-edit-body" id="ddeStandaloneForm" onsubmit="return false;" style="background: transparent;">
+      <div class="dd-edit-grid">
+        <div class="dd-edit-main">
+          <div class="dd-edit-card">
+            <div class="dd-edit-card-title"><i class="fas fa-file-alt"></i> 需求核心信息</div>
+            <div class="dd-edit-field">
+              <label class="dd-edit-label" for="ddePageName">需求名称 / 标题 <span class="req">*</span></label>
+              <input type="text" class="dd-edit-input" id="ddePageName" value="{{ .Data.Demand.Name }}" maxlength="200" required>
+            </div>
+            <div class="dd-edit-field">
+              <label class="dd-edit-label" for="ddePageDesc">业务需求描述 <span class="req">*</span></label>
+              <textarea class="dd-edit-textarea" id="ddePageDesc" style="min-height: 200px;" required>{{ .Data.Demand.Desc }}</textarea>
+            </div>
+            <div class="dd-edit-field">
+              <label class="dd-edit-label" for="ddePageVerifyPlan">验收标准 (Verify Plan)</label>
+              <textarea class="dd-edit-textarea" id="ddePageVerifyPlan" style="min-height: 120px;">{{ .Data.Demand.VerifyPlan }}</textarea>
+            </div>
+          </div>
+        </div>
+
+        <aside class="dd-edit-aside">
+          <div class="dd-edit-card">
+            <div class="dd-edit-card-title"><i class="fas fa-sliders-h"></i> 业务属性</div>
+            <div class="dd-edit-field">
+              <label class="dd-edit-label" for="ddePageCategory">需求类别</label>
+              <select class="dd-edit-select" id="ddePageCategory">
+                {{ $curCat := .Data.Demand.Category }}
+                {{ range .Data.Options.Categories }}
+                <option value="{{ .Value }}" {{ if eq .Value $curCat }}selected{{ end }}>{{ .Label }}</option>
+                {{ end }}
+              </select>
+            </div>
+            <div class="dd-edit-field">
+              <label class="dd-edit-label" for="ddePagePri">优先级</label>
+              <select class="dd-edit-select" id="ddePagePri">
+                {{ $curPri := .Data.Demand.Pri }}
+                {{ range .Data.Options.Priorities }}
+                <option value="{{ .Value }}" {{ if eq .Value $curPri }}selected{{ end }}>{{ .Label }}</option>
+                {{ end }}
+              </select>
+            </div>
+            <div class="dd-edit-field">
+              <label class="dd-edit-label" for="ddePagePool">所属需求池</label>
+              <select class="dd-edit-select" id="ddePagePool">
+                <option value="0">请选择需求池</option>
+                {{ $curPool := .Data.Demand.Pool }}
+                {{ range .Data.Options.Pools }}
+                <option value="{{ .Value }}" {{ if eq .Value (printf "%d" $curPool) }}selected{{ end }}>{{ .Label }}</option>
+                {{ end }}
+              </select>
+            </div>
+            <div class="dd-edit-field">
+              <label class="dd-edit-label" for="ddePageProduct">所属产品</label>
+              <select class="dd-edit-select" id="ddePageProduct">
+                <option value="">请选择所属产品</option>
+                {{ $curProd := .Data.Demand.Product }}
+                {{ range .Data.Options.Products }}
+                <option value="{{ .Value }}" {{ if eq .Value $curProd }}selected{{ end }}>{{ .Label }}</option>
+                {{ end }}
+              </select>
+            </div>
+            <div class="dd-edit-field">
+              <label class="dd-edit-label" for="ddePageEstimateLaunch">期望上线日期</label>
+              <input type="date" class="dd-edit-input" id="ddePageEstimateLaunch" value="{{ .Data.Demand.EstimateLaunch }}">
+            </div>
+            <div class="dd-edit-field">
+              <label class="dd-edit-label" for="ddePageSource">需求来源</label>
+              <select class="dd-edit-select" id="ddePageSource">
+                {{ $curSrc := .Data.Demand.Source }}
+                {{ range .Data.Options.Sources }}
+                <option value="{{ .Value }}" {{ if eq .Value $curSrc }}selected{{ end }}>{{ .Label }}</option>
+                {{ end }}
+              </select>
+            </div>
+            <div class="dd-edit-field">
+              <label class="dd-edit-label" for="ddePageSourceNote">来源备注</label>
+              <input type="text" class="dd-edit-input" id="ddePageSourceNote" value="{{ .Data.Demand.SourceNote }}" placeholder="补充来源单号或说明">
+            </div>
+          </div>
+
+          <div class="dd-edit-card">
+            <div class="dd-edit-card-title"><i class="fas fa-user-check"></i> 评审人</div>
+            <div class="dd-edit-field">
+              <label class="dd-edit-label" for="ddePageReviewer">业务评审人 <span class="req">*</span></label>
+              <select class="dd-edit-select" id="ddePageReviewer" required>
+                <option value="">请选择业务评审人</option>
+                {{ $curRev := .Data.Demand.Reviewer }}
+                {{ range .Data.Options.Reviewers }}
+                <option value="{{ .Value }}" {{ if eq .Value $curRev }}selected{{ end }}>{{ .Label }}</option>
+                {{ end }}
+              </select>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <footer class="dd-edit-footer" style="margin-top: 20px; border-radius: 8px;">
+        <button type="button" class="dd-btn danger dd-delete-btn" onclick="DemandDetailEdit.openDeleteConfirm('{{ .Data.Demand.ID }}', '{{ .Data.Demand.Name }}')">
+          <i class="fas fa-trash-alt"></i> 删除需求
+        </button>
+        <div class="dd-edit-footer-right">
+          <a href="/home" class="dd-btn">取消</a>
+          <button type="button" class="dd-btn" id="ddePageSaveBtn" onclick="handlePageSave(false)"><i class="fas fa-save"></i> 暂存修改</button>
+          <button type="button" class="dd-btn primary" id="ddePageSubmitBtn" onclick="handlePageSave(true)"><i class="fas fa-paper-plane"></i> 保存并提交评审</button>
+        </div>
+      </footer>
+    </form>
+  </div>
+</main>
+{{ end }}
+
+{{ define "page_js" }}
+<script src="{{ asset "/static/js/po/demand-detail-edit.js" }}"></script>
+<script>
+function handlePageSave(submitReview) {
+  var name = document.getElementById("ddePageName").value.trim();
+  var desc = document.getElementById("ddePageDesc").value.trim();
+  var reviewer = document.getElementById("ddePageReviewer").value.trim();
+  if (!name) {
+    if (typeof window.showToast === "function") window.showToast("需求名称不能为空", "warning");
+    document.getElementById("ddePageName").focus();
+    return;
+  }
+  if (submitReview && (!desc || !reviewer)) {
+    if (typeof window.showToast === "function") window.showToast("提交评审前必须填写需求描述与业务评审人", "warning");
+    return;
+  }
+  var btn = submitReview ? document.getElementById("ddePageSubmitBtn") : document.getElementById("ddePageSaveBtn");
+  btn.disabled = true;
+  btn.textContent = "提交中…";
+
+  var payload = {
+    id: {{ .Data.Demand.ID }},
+    name: name,
+    desc: document.getElementById("ddePageDesc").value,
+    verifyPlan: document.getElementById("ddePageVerifyPlan").value,
+    category: document.getElementById("ddePageCategory").value,
+    pri: document.getElementById("ddePagePri").value,
+    pool: parseInt(document.getElementById("ddePagePool").value, 10) || 0,
+    product: document.getElementById("ddePageProduct").value,
+    estimateLaunch: document.getElementById("ddePageEstimateLaunch").value,
+    source: document.getElementById("ddePageSource").value,
+    sourceNote: document.getElementById("ddePageSourceNote").value,
+    reviewer: reviewer,
+    submitReview: submitReview,
+    comment: submitReview ? "独立编辑页提交业务评审" : "独立编辑页保存草稿修改"
+  };
+
+  fetch("/demands/{{ .Data.Demand.ID }}/edit", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Accept": "application/json" },
+    body: JSON.stringify(payload)
+  })
+    .then(function(res) {
+      return res.json().then(function(d) {
+        if (!res.ok) throw new Error((d && d.message) || "保存失败");
+        return d;
+      });
+    })
+    .then(function(data) {
+      if (typeof window.showToast === "function") window.showToast((data && data.message) || "保存成功", "success");
+      setTimeout(function() { window.location.href = "/home"; }, 600);
+    })
+    .catch(function(err) {
+      if (typeof window.showToast === "function") window.showToast(err.message || "保存失败", "error");
+      btn.disabled = false;
+      btn.textContent = submitReview ? "保存并提交评审" : "暂存修改";
+    });
+}
+</script>
+{{ end }}
