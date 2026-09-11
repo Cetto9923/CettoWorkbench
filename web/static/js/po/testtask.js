@@ -1,7 +1,10 @@
 /*
  * 文件: web/static/js/po/testtask.js
  * 模块: PO工作台
- * 职责: 提测办理四步向导静态交互；首页弹窗打开/关闭。
+ * 职责: 提测办理四步向导 UI 与上下文加载（不直接发新版本提交请求；该部分见 testtask-builds.js）。
+ * 边界: 本阶段只同步版本（POST /demands/:id/testtask/builds），由 testtask-builds.js 处理；
+ *       测试单 zt_testtask 不创建，留到 Phase D。
+ * 协议: appFetch 自动附带 X-CSRF-Token / X-Requested-With，与 LinkStory 一致。
  */
 (function ($) {
   "use strict";
@@ -10,6 +13,9 @@
   var currentStep = 1;
   var isJointTest = 0;
   var bound = false;
+  // 当前需求上下文：id / systems 由 loadContext 写入；执行加载与提交复用。
+  var currentDemandId = "";
+  var currentSystems = [];
 
   function showToast(message, level) {
     if (typeof window.showToast === "function") {
@@ -62,6 +68,9 @@
 
     if (step === 1) {
       isJointTest = readJointFlag($r);
+    }
+    if (step === 2 && typeof window.PoTesttaskBuilds_onEnterStep2 === "function") {
+      window.PoTesttaskBuilds_onEnterStep2();
     }
     if (step === 4) {
       isJointTest = readJointFlag($r);
@@ -166,6 +175,13 @@
     }
     $r.find("[data-tt-rd-qd-name]").text(rdQd);
     $r.find("[data-tt-handler-name]").text(data.handlerName || "—");
+
+    // 写入当前上下文（执行拉取与提交时使用）。
+    currentDemandId = demandId;
+    currentSystems = Array.isArray(data.systems) ? data.systems.slice() : [];
+    if (typeof window.PoTesttaskBuilds_onContextLoaded === "function") {
+      window.PoTesttaskBuilds_onContextLoaded($r);
+    }
   }
 
   function loadContext(item) {
@@ -224,6 +240,11 @@
 
   function openModal(item) {
     fillDemandHeader(item || null);
+    currentDemandId = demandNumericId(item || null);
+    currentSystems = [];
+    if (typeof window.PoTesttaskBuilds_reset === "function") {
+      window.PoTesttaskBuilds_reset();
+    }
     switchPanel(1);
     if (typeof window.openShowModals === "function") {
       window.openShowModals(MODAL_IDS);
@@ -259,14 +280,8 @@
       $scope.find('[data-tt-exist-date="' + unit + '"]').val("2025-09-01");
       $scope.find('[data-tt-exist-desc="' + unit + '"]').val("复用已有版本");
     });
-    $scope.on("click", "#poTesttaskSaveDraftBtn", function () {
-      showToast("保存草稿（静态演示，未提交后端）", "info");
-    });
-    $scope.on("click", "#poTesttaskSubmitBtn", function () {
-      showToast("提交提测（静态演示，未提交后端）", "success");
-    });
     $scope.on("click", ".po-testtask-link-add", function () {
-      showToast("添加已有需求（静态演示）", "info");
+      showToast("添加已有需求（Phase D 接入）", "info");
     });
   }
 
@@ -287,6 +302,15 @@
       switchPanel(1);
     }
   }
+
+  // 暴露给 testtask-builds.js 的上下文接口
+  window.PoTesttaskCore = {
+    getDemandId: function () { return currentDemandId; },
+    getSystems: function () { return currentSystems.slice(); },
+    showToast: showToast,
+    $root: $root,
+    formatDemandId: formatDemandId
+  };
 
   window.openPoSubmitTestModal = openModal;
 
