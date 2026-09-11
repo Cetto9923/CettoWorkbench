@@ -138,9 +138,11 @@
     var due = (task.overdue && task.status !== "done") ? '<span class="task-due over">已超期</span>' : (task.deadline ? "截止 " + esc(task.deadline) : "");
     var storyLink = task.storyId ? '<span class="task-link" data-back-rd="' + task.storyId + '" title="返回需求看板并定位研需">所属研需 ' + esc(task.storyTitle || String(task.storyId)) + "</span>" : "";
     var codeText = esc(task.displayId || task.id);
+    var titleText = esc(task.title);
     var codeHtml = task.url ? '<a class="code task-code-link" href="' + esc(task.url) + '" target="_blank" rel="noopener noreferrer" title="在禅道打开任务详情">' + codeText + '</a>' : '<span class="code">' + codeText + '</span>';
+    var titleHtml = task.url ? '<a class="task-title task-title-link" href="' + esc(task.url) + '" target="_blank" rel="noopener noreferrer" title="' + titleText + '">' + titleText + '</a>' : '<span class="task-title" title="' + titleText + '">' + titleText + '</span>';
     return '<div class="' + cls + '" data-owner="' + esc(task.owner || "") + '">' +
-      '<div class="task-head">' + typeTag("task") + codeHtml + '<span class="task-title" title="' + esc(task.title) + '">' + esc(task.title) + "</span></div>" +
+      '<div class="task-head">' + typeTag("task") + codeHtml + titleHtml + "</div>" +
       '<div class="task-meta">' + storyLink + (task.type ? "<span>" + esc(task.type) + "</span>" : "") + (task.blocked ? '<span style="color:var(--orange);font-weight:700">阻塞</span>' : "") + "</div>" +
       '<div class="task-footer"><span class="task-due">' + due + '</span><span class="assignee">' + (task.owner ? '<span class="mini-avatar">' + esc(task.owner.charAt(0)) + "</span>" + esc(task.owner) : "") + "</span></div></div>";
   }
