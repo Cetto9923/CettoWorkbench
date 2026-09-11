@@ -177,7 +177,7 @@ func Run() error {
 	buildRepo := build.NewRepo(dbReadonlyOrPrimary(dbReadonly, db))
 	buildSvc := build.NewService(buildRepo, userSvc, zentaopkg.DefaultClient(), zapLog)
 
-	// 个人资料：仅 API（弹窗读写）；整页入口已迁到顶栏 openProfileModal。
+	// 个人资料：GET /profile 渲染深链页；顶栏入口同时挂 openProfileModal 弹窗；与整页共用 po-profile.js。
 	profileHandler := profile.NewHandler(profile.NewService(profile.NewRepo(db)), zapLog)
 	buildHandler := build.NewHandler(buildSvc, zapLog)
 

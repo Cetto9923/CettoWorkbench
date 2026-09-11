@@ -96,11 +96,7 @@
       }
     }
     if (path === "/profile") {
-      return {
-        path: "/profile",
-        title: "个人资料",
-        icon: "bi bi-person-vcard",
-      };
+      return null;
     }
     return null;
   }

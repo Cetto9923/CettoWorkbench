@@ -40,4 +40,5 @@ const (
 	TEMPLATE_SCHEDULE_INDEX = "schedule/index"
 	TEMPLATE_QUERY_INDEX    = "query/index"
 
+	TEMPLATE_PROFILE_INDEX = "profile/index"
 )
