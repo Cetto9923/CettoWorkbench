@@ -141,7 +141,7 @@
       "<td>" + esc(item.handler || "—") + "</td>" +
       "<td>" + esc(item.submitter || "—") + "</td>" +
       "<td>" + esc(item.planDate || "—") + "</td>" +
-      "<td>" + esc(item.status || "—") + "</td>" +
+      "<td>" + ((PL && PL.statusTagHtml) ? PL.statusTagHtml(item.status) : esc(item.status || "—")) + "</td>" +
       "<td>" + overdueTag + "</td>" +
       "<td>" + actionBtn + "</td>" +
       "</tr>";

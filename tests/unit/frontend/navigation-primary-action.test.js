@@ -17,7 +17,8 @@ const path = require("node:path");
 // -----------------------------------------------------------------------------
 // 1. 解析 home.js 的 renderRow 源码：验证标题/ID/action 的契约标记
 // -----------------------------------------------------------------------------
-const homeSrc = fs.readFileSync(path.join(__dirname, "../../../web/static/js/po/home.js"), "utf8");
+const homeSrc = fs.readFileSync(path.join(__dirname, "../../../web/static/js/po/home.js"), "utf8") +
+  fs.readFileSync(path.join(__dirname, "../../../web/static/js/po/home-render.js"), "utf8");
 
 // 标题不应携带 target="_blank"（PLAN §4：标题进工作台详情，当前页打开）
 assert.ok(
@@ -84,7 +85,8 @@ console.log("PASS: demand-detail.js intercepts the unified detail route and pres
 // -----------------------------------------------------------------------------
 // 3. workboard.js 排期阶段直链：stage-action 应是 <a href="/schedule/{demands|stories}/:id/scheduling">
 // -----------------------------------------------------------------------------
-const wbSrc = fs.readFileSync(path.join(__dirname, "../../../web/static/js/po/workboard.js"), "utf8");
+const wbSrc = fs.readFileSync(path.join(__dirname, "../../../web/static/js/po/workboard.js"), "utf8") +
+  fs.readFileSync(path.join(__dirname, "../../../web/static/js/po/workboard-demand.js"), "utf8");
 assert.ok(
   /window\.ScheduleLink\.scheduleStoryAction\(/.test(wbSrc),
   "workboard.js must call ScheduleLink.scheduleStoryAction for stories in schedule stage"

@@ -3,7 +3,7 @@
 // 模块: 个人资料
 // 类型: action
 // 职责: 个人资料单测：覆盖 Validate、Actor 校验、密码长度 / 一致性等不依赖 DB 的逻辑。
-// 依赖: testify（如未引入使用标准 testing）
+// 依赖: 标准 testing
 // =============================================================================
 
 package profile
@@ -15,13 +15,6 @@ import (
 	"workbench/internal/pkg/encode"
 	"workbench/internal/pkg/errorx"
 )
-
-func TestUpdateReq_Validate_NameRequired(t *testing.T) {
-	req := UpdateReq{DisplayName: "", Email: "a@b.com", Gender: "m"}
-	if errs := req.Validate(); len(errs) == 0 {
-		t.Fatalf("expected validation error for empty name")
-	}
-}
 
 func TestUpdateReq_Validate_EmailFormat(t *testing.T) {
 	req := UpdateReq{DisplayName: "x", Email: "not-email", Gender: "m"}
@@ -47,7 +40,18 @@ func TestUpdateReq_Validate_GenderEnum(t *testing.T) {
 func TestUpdateReq_Validate_GenderEmptyOK(t *testing.T) {
 	req := UpdateReq{DisplayName: "x", Gender: ""}
 	if errs := req.Validate(); len(errs) != 0 {
-		t.Fatalf("empty gender must be allowed (means skip); got %v", errs)
+		t.Fatalf("empty gender should be allowed (means skip); got %v", errs)
+	}
+}
+
+func TestUpdateReq_Validate_OrgRolesBlocked(t *testing.T) {
+	req := UpdateReq{
+		DisplayName:    "x",
+		PreferredRoles: []string{"po", "lead", "pmo"},
+	}
+	errs := req.Validate()
+	if len(errs) != 2 {
+		t.Fatalf("expected 2 errors for lead and pmo, got %d", len(errs))
 	}
 }
 

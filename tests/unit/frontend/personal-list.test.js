@@ -1,4 +1,6 @@
 const assert = require("assert");
+const fs = require("fs");
+const path = require("path");
 global.window = global;
 
 const PersonalList = require("../../../web/static/js/po/personal-list.js");
@@ -125,6 +127,51 @@ console.log("PASS: escapeHtml escapes special characters securely");
   assert.ok(container.innerHTML.includes('data-page="1"'));
   assert.ok(container.innerHTML.includes('data-page="10"'));
   console.log("PASS: Pagination renders ellipsis window for large page counts");
+
+  // Case 4.4: offered page sizes must equal the server pager contract
+  // (web/templates/components/pager.html offers 10/20/50/100).
+  const serverPagerSource = fs.readFileSync(
+    path.join(__dirname, "../../../web/templates/components/pager.html"),
+    "utf8"
+  );
+  const serverSizes = [...serverPagerSource.matchAll(/<option value="(\d+)"[^>]*>\d+ 条\/页/g)].map((m) => Number(m[1]));
+  PersonalList.renderPagination({ container, total: 30, pageSize: 10, page: 2 });
+  const clientSizes = [...container.innerHTML.matchAll(/<option value="(\d+)"/g)].map((m) => Number(m[1]));
+  assert.deepEqual(clientSizes, serverSizes, "client pager page sizes must match components/pager.html");
+  assert.deepEqual(PersonalList.PAGE_SIZE_OPTIONS, serverSizes, "PAGE_SIZE_OPTIONS must be the shared source");
+  console.log("PASS: Pagination offers the same page sizes as components/pager.html");
+
+  // Case 4.5: jump-to-page control replaces the missing "跳至 N 页" capability
+  // that only the server pager had.
+  (function testJumpToPage() {
+    const nodes = {};
+    const jumpContainer = {
+      hidden: false,
+      innerHTML: "",
+      querySelector: (sel) => nodes[sel] || null,
+      querySelectorAll: () => []
+    };
+    nodes[".pager-jump-input"] = { value: "3", addEventListener: () => {} };
+    nodes[".pager-jump-btn"] = { addEventListener: (_evt, fn) => { nodes.click = fn; } };
+    const jumped = [];
+    PersonalList.renderPagination({
+      container: jumpContainer,
+      total: 100,
+      pageSize: 10,
+      page: 2,
+      onPageChange: (p) => { jumped.push(p); }
+    });
+    assert.ok(jumpContainer.innerHTML.includes('class="pager-jump-input"'), "jump input must render");
+    assert.ok(jumpContainer.innerHTML.includes('class="pager-jump-btn"'), "jump button must render");
+    nodes.click();
+    assert.deepEqual(jumped, [3], "jump control must call onPageChange with the typed page");
+    nodes[".pager-jump-input"].value = "99";
+    nodes.click();
+    nodes[".pager-jump-input"].value = "2";
+    nodes.click();
+    assert.deepEqual(jumped, [3], "out-of-range and current-page jumps must be ignored");
+    console.log("PASS: Pagination jump control drives onPageChange with a range guard");
+  })();
 })();
 
 // 5. Callback arity (1-arg vs 2-arg onDone) test
@@ -152,3 +199,12 @@ console.log("PASS: escapeHtml escapes special characters securely");
     console.log("PASS: 2-arg onDone(err, payload) correctly receives err and payload");
   });
 })();
+
+// 6. statusTagHtml tests
+assert.ok(PersonalList.statusTagHtml("待评审").includes("wb-status-warning"), "待评审 must map to warning");
+assert.ok(PersonalList.statusTagHtml("已评审").includes("wb-status-processing"), "已评审 must map to processing");
+assert.ok(PersonalList.statusTagHtml("已澄清").includes("wb-status-success"), "已澄清 must map to success");
+assert.ok(PersonalList.statusTagHtml("已挂起").includes("wb-status-danger"), "已挂起 must map to danger");
+assert.ok(PersonalList.statusTagHtml("暂存").includes("wb-status-neutral"), "暂存 must map to neutral");
+assert.ok(PersonalList.statusTagHtml("").includes("wb-status-neutral"), "empty must map to neutral");
+console.log("PASS: statusTagHtml maps statuses to unified semantic badges");

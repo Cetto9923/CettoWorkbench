@@ -84,7 +84,7 @@
 #scheduleMultiselectRow .schedule-ms-empty {
   padding: 8px 10px;
   font-size: 12px;
-  color: var(--color-text-disabled);
+  color: var(--color-text-secondary);
 }
 
 #scheduleMultiselectRow > .action-btn {

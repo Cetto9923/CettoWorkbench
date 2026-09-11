@@ -41,7 +41,7 @@
   };
 
   var PAGE_SIZE_KEY = "po.metrics.manage.pageSize";
-  var PAGE_SIZE_ALLOWED = [10, 15, 20, 30, 50];
+  var PAGE_SIZE_ALLOWED = PL.PAGE_SIZE_OPTIONS || [10, 20, 50, 100];
 
   var state = {
     category: "",

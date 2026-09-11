@@ -12,6 +12,8 @@
   var selectOwner = WB.selectOwner;
   var switchMode = WB.switchMode;
   var MAX_OWNERS = WB.MAX_OWNERS;
+  var priorityBadge = WB.priorityBadge || function (r) { return window.PersonalList ? window.PersonalList.priorityBadge(r) : ""; };
+  var objectTypeBadge = WB.objectTypeBadge || function (k, id) { return window.PersonalList ? window.PersonalList.objectTypeBadge(k, id) : ""; };
 
   function getMode() { return WB.mode(); }
   function renderDemandMatrix(tree) { return WB.renderDemandMatrix(tree); }

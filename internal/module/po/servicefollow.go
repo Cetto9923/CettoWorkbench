@@ -408,17 +408,18 @@ func buildDemandWorkItem(row DemandRow, label string, displayMap map[string]stri
 	}
 	ownerDisp := resolveNextOwnerDisplay(row, displayMap)
 	return WorkItemDetail{
-		Kind:         "demand",
-		ID:           fmt.Sprintf("US%d", row.ID),
-		Pri:          pri,
-		Title:        row.Name,
-		Owner:        ownerDisp,
-		NextOwner:    ownerDisp,
-		ZentaoUrl:    zentao.URL("demand", "view", fmt.Sprintf("demandID=%d", row.ID)),
-		ValueStream:  label,
-		ZentaoStatus: row.Status,
-		Suspended:    strings.EqualFold(strings.TrimSpace(row.Hang), "1") || strings.EqualFold(strings.TrimSpace(row.Hang), "true"),
-		Blocked:      strings.EqualFold(strings.TrimSpace(row.Status), "refuse"),
+		Kind:          "demand",
+		ID:            fmt.Sprintf("US%d", row.ID),
+		Pri:           pri,
+		Title:         row.Name,
+		Owner:         ownerDisp,
+		NextOwner:     ownerDisp,
+		ZentaoUrl:     zentao.URL("demand", "view", fmt.Sprintf("demandID=%d", row.ID)),
+		ZentaoEditUrl: zentao.DemandEditURL(uint(row.ID)),
+		ValueStream:   label,
+		ZentaoStatus:  row.Status,
+		Suspended:     strings.EqualFold(strings.TrimSpace(row.Hang), "1") || strings.EqualFold(strings.TrimSpace(row.Hang), "true"),
+		Blocked:       strings.EqualFold(strings.TrimSpace(row.Status), "refuse"),
 	}
 }
 

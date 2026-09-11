@@ -93,8 +93,8 @@ func pathInfoURL(base, m, f string, params ...string) string {
 }
 
 func appendAppHash(u, m, f string) string {
-	// 禅道 max5 需求池应用壳：demand view 缺 #app=demandpool 会回落"地盘/首页"。
-	if m == "demand" && f == "view" {
+	// 禅道 max5 需求池应用壳：demand view/edit 缺 #app=demandpool 会回落"地盘/首页"。
+	if m == "demand" && (f == "view" || f == "edit") {
 		return u + "#app=demandpool"
 	}
 	// 禅道 max5 项目应用壳：story view 缺 #app=project 会回落"地盘/首页"。

@@ -102,13 +102,22 @@ SELECT DISTINCT p.id AS id,
        COALESCE(p.status, '') AS status,
        COALESCE(p.model, '') AS model,
        CASE
-         WHEN (p.PM = me.account OR EXISTS (SELECT 1 FROM zt_team AS tm WHERE tm.root = p.id AND tm.type = 'project' AND tm.account = me.account))
+         WHEN (p.PM = me.account
+               OR EXISTS (SELECT 1 FROM zt_team AS tm WHERE tm.root = p.id AND tm.type = 'project' AND tm.account = me.account)
+               OR EXISTS (SELECT 1 FROM zt_project AS ep JOIN zt_team AS tm ON tm.root = ep.id AND tm.type = 'execution' AND tm.account = me.account WHERE ep.project = p.id AND ep.deleted = '0')
+               OR p.openedBy = me.account)
               AND p.follow LIKE CONCAT('%,', me.id, ',%') THEN 'both'
-         WHEN (p.PM = me.account OR EXISTS (SELECT 1 FROM zt_team AS tm WHERE tm.root = p.id AND tm.type = 'project' AND tm.account = me.account)) THEN 'participated'
+         WHEN (p.PM = me.account
+               OR EXISTS (SELECT 1 FROM zt_team AS tm WHERE tm.root = p.id AND tm.type = 'project' AND tm.account = me.account)
+               OR EXISTS (SELECT 1 FROM zt_project AS ep JOIN zt_team AS tm ON tm.root = ep.id AND tm.type = 'execution' AND tm.account = me.account WHERE ep.project = p.id AND ep.deleted = '0')
+               OR p.openedBy = me.account) THEN 'participated'
          ELSE 'watched'
        END AS source,
        CASE
-         WHEN (p.PM = me.account OR EXISTS (SELECT 1 FROM zt_team AS tm WHERE tm.root = p.id AND tm.type = 'project' AND tm.account = me.account)) THEN 0
+         WHEN (p.PM = me.account
+               OR EXISTS (SELECT 1 FROM zt_team AS tm WHERE tm.root = p.id AND tm.type = 'project' AND tm.account = me.account)
+               OR EXISTS (SELECT 1 FROM zt_project AS ep JOIN zt_team AS tm ON tm.root = ep.id AND tm.type = 'execution' AND tm.account = me.account WHERE ep.project = p.id AND ep.deleted = '0')
+               OR p.openedBy = me.account) THEN 0
          ELSE 1
        END AS sort_group
 FROM zt_project AS p
@@ -129,16 +138,16 @@ func (r *Repo) FindMineProjectWeeklyProjects(ctx context.Context, account string
 	teamSQL := projectWeeklyTeamFilterSQL(teamIDs, &args)
 	args = append(args, limit)
 
-	whereScope := `(
+	whereParticipated := `(
     p.PM = me.account
     OR EXISTS (SELECT 1 FROM zt_team AS tm WHERE tm.root = p.id AND tm.type = 'project' AND tm.account = me.account)
-    OR p.follow LIKE CONCAT('%,', me.id, ',%')
+    OR EXISTS (SELECT 1 FROM zt_project AS ep JOIN zt_team AS tm ON tm.root = ep.id AND tm.type = 'execution' AND tm.account = me.account WHERE ep.project = p.id AND ep.deleted = '0')
+    OR p.openedBy = me.account
   )`
+
+	whereScope := `(` + whereParticipated + ` OR p.follow LIKE CONCAT('%,', me.id, ',%'))`
 	if scope == "participated" {
-		whereScope = `(
-    p.PM = me.account
-    OR EXISTS (SELECT 1 FROM zt_team AS tm WHERE tm.root = p.id AND tm.type = 'project' AND tm.account = me.account)
-  )`
+		whereScope = whereParticipated
 	} else if scope == "watched" {
 		whereScope = `p.follow LIKE CONCAT('%,', me.id, ',%')`
 	}
@@ -261,6 +270,8 @@ WHERE p.deleted = '0'
   AND (
     p.PM = me.account
     OR EXISTS (SELECT 1 FROM zt_team AS tm WHERE tm.root = p.id AND tm.type = 'project' AND tm.account = me.account)
+    OR EXISTS (SELECT 1 FROM zt_project AS ep JOIN zt_team AS tm ON tm.root = ep.id AND tm.type = 'execution' AND tm.account = me.account WHERE ep.project = p.id AND ep.deleted = '0')
+    OR p.openedBy = me.account
     OR p.follow LIKE CONCAT('%,', me.id, ',%')
   )
   AND EXISTS (SELECT 1 FROM zt_projectweekly AS pw WHERE pw.project = p.id)

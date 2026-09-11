@@ -413,3 +413,15 @@ WHERE d.id = ? AND d.deleted = '0'
 	}
 	return hits > 0, nil
 }
+
+// CountReviewedReviewers 统计已给出评审结论（非空）的评审人数量。
+func (r *DemandDetailRepo) CountReviewedReviewers(ctx context.Context, demandID uint) (int64, error) {
+	if r == nil || r.db == nil || demandID == 0 {
+		return 0, nil
+	}
+	var count int64
+	err := r.db.WithContext(ctx).Table("zt_demandreview").
+		Where("demand = ? AND result IS NOT NULL AND result <> ''", demandID).
+		Count(&count).Error
+	return count, err
+}

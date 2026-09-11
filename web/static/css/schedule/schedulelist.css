@@ -10,7 +10,7 @@
 }
 
 #page-schedule input[type="date"].form-input::-webkit-datetime-edit {
-  color: var(--color-text-disabled);
+  color: var(--color-text-secondary);
 }
 
 #page-schedule input[type="date"].form-input.has-value::-webkit-datetime-edit,
@@ -19,7 +19,7 @@
 }
 
 #page-schedule input[type="date"].form-input:invalid {
-  color: var(--color-text-disabled);
+  color: var(--color-text-secondary);
 }
 
 #page-schedule input[type="date"].form-input:valid.has-value {
@@ -64,8 +64,8 @@
 .schedule-table {
   width: 100%;
   border-collapse: collapse;
-  background: var(--white);
-  border: 1px solid var(--border);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: var(--r);
   overflow: hidden;
 }
@@ -73,24 +73,31 @@
 .schedule-table th,
 .schedule-table td {
   padding: 6px 8px;
-  border-bottom: 1px solid var(--border-lt);
+  border-bottom: 1px solid var(--color-border);
   font-size: 12px;
   text-align: left;
   vertical-align: middle;
 }
 
 .schedule-table thead th {
-  background: var(--bg);
+  background: var(--color-surface-muted);
   font-size: 11px;
   font-weight: 600;
-  color: var(--t3);
+  color: var(--color-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.3px;
   white-space: nowrap;
 }
 
 .schedule-table tbody tr:hover {
-  background: var(--hover);
+  background: var(--color-surface-hover);
+}
+
+#page-schedule .table-scroll-container {
+  flex: 1 1 auto;
+  min-height: 220px;
+  overflow-y: auto;
+  overflow-x: auto;
 }
 
 #page-schedule .schedule-table {
@@ -104,7 +111,17 @@
   white-space: nowrap;
 }
 
+#page-schedule .schedule-table .schedule-col-id {
+  width: 140px;
+  min-width: 140px;
+  white-space: nowrap;
+  padding-left: 10px;
+}
+
 #page-schedule .schedule-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   background: var(--color-surface-muted);
   color: var(--color-text-secondary);
   text-transform: none;
@@ -112,6 +129,7 @@
   font-size: 12px;
   padding: 7px 10px;
   font-weight: 600;
+  border-bottom: 1px solid var(--color-border);
 }
 
 #page-schedule .schedule-table td {
@@ -140,6 +158,19 @@
 .schedule-tree-l3 {
   background: var(--color-info-bg);
 }
+
+.schedule-id-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.schedule-id-cell--l1 { padding-left: 0; }
+.schedule-id-cell--l2 { padding-left: 14px; }
+.schedule-id-cell--l3 { padding-left: 28px; }
 
 .schedule-title-cell {
   display: flex;
@@ -181,6 +212,8 @@
   position: relative;
 }
 
+.schedule-id-cell--l2 .tree-guide::before,
+.schedule-id-cell--l3 .tree-guide::before,
 .schedule-title-cell--l2 .tree-guide::before,
 .schedule-title-cell--l3 .tree-guide::before {
   content: "";
@@ -403,7 +436,7 @@
 }
 
 .schedule-col-title {
-  padding-left: 20px;
+  padding-left: 10px;
 }
 
 .schedule-rd-row td {

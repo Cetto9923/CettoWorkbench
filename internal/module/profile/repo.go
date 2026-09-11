@@ -2,8 +2,7 @@
 // 文件: internal/module/profile/repo.go
 // 模块: 个人资料
 // 类型: action
-// 职责: 读写 zt_user 资料字段、mainTeam，加载本人已加入的敏捷小组。
-//       本轮不实现自选视图（preferredRoles / AllowedRoles）等高级字段。
+// 职责: 读写 zt_user 资料字段、mainTeam，加载本人已加入的敏捷小组，以及读写 zt_wb_profile_prefs 自选视图偏好。
 // 依赖: gorm.io/gorm
 // =============================================================================
 
@@ -12,6 +11,8 @@ package profile
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"gorm.io/gorm"
 	"workbench/internal/model"
 )
@@ -88,7 +89,7 @@ ORDER BY tg.id ASC`, account).Scan(&rows).Error
 }
 
 // UpdateSelfContact 更新邮箱与性别。
-// gender 传 "" 表示前端"未设置"，Service 层应当跳过 gender 字段更新。
+// gender 传 "" 且 genderSkip 为 true 时，跳过 gender 字段更新。
 func (r *Repo) UpdateSelfContact(ctx context.Context, id int64, email, gender string, genderSkip bool) error {
 	if r == nil || r.db == nil {
 		return fmt.Errorf("profile repo is not configured")
@@ -114,7 +115,7 @@ func (r *Repo) UpdateMainTeam(ctx context.Context, id int64, mainTeamID uint64) 
 		Updates(map[string]any{"mainTeam": mainTeamID}).Error
 }
 
-// UpdateMobile 更新手机号（gender / email / displayName 走 UpdateSelfContact）。
+// UpdateMobile 更新手机号。
 func (r *Repo) UpdateMobile(ctx context.Context, id int64, mobile string) error {
 	if r == nil || r.db == nil {
 		return fmt.Errorf("profile repo is not configured")
@@ -134,6 +135,38 @@ func (r *Repo) UpdateDisplayName(ctx context.Context, id int64, realname string)
 		Model(&model.User{}).
 		Where("id = ? AND deleted = ?", id, "0").
 		Updates(map[string]any{"realname": realname}).Error
+}
+
+// FindPreferredRoles 读取自选视图偏好。
+func (r *Repo) FindPreferredRoles(ctx context.Context, account string) ([]string, error) {
+	if r == nil || r.db == nil || account == "" {
+		return []string{}, nil
+	}
+	var raw string
+	err := r.db.WithContext(ctx).
+		Table("zt_wb_profile_prefs").
+		Select("preferredRoles").
+		Where("account = ?", account).
+		Limit(1).
+		Scan(&raw).Error
+	if err != nil {
+		// 降级返回空切片，保证在迁移未完成时界面正常加载
+		return []string{}, nil
+	}
+	return splitRoles(raw), nil
+}
+
+// UpsertPreferredRoles 写入自选视图偏好。
+func (r *Repo) UpsertPreferredRoles(ctx context.Context, account string, roles []string) error {
+	if r == nil || r.db == nil || account == "" {
+		return nil
+	}
+	joined := strings.Join(roles, ",")
+	return r.db.WithContext(ctx).Exec(`
+INSERT INTO zt_wb_profile_prefs (account, preferredRoles)
+VALUES (?, ?)
+ON DUPLICATE KEY UPDATE preferredRoles = VALUES(preferredRoles), updatedDate = CURRENT_TIMESTAMP`,
+		account, joined).Error
 }
 
 // FindPasswordHash 读取密码哈希（MD5 hex，32 字符）。
@@ -165,4 +198,19 @@ func (r *Repo) UpdatePassword(ctx context.Context, id int64, hashed string) erro
 		Model(&model.User{}).
 		Where("id = ? AND deleted = ?", id, "0").
 		Updates(map[string]any{"password": hashed}).Error
+}
+
+func splitRoles(raw string) []string {
+	parts := strings.Split(raw, ",")
+	out := make([]string, 0, len(parts))
+	seen := map[string]bool{}
+	for _, p := range parts {
+		key := strings.ToLower(strings.TrimSpace(p))
+		if key == "" || seen[key] {
+			continue
+		}
+		seen[key] = true
+		out = append(out, key)
+	}
+	return out
 }

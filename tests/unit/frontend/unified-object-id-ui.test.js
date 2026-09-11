@@ -70,12 +70,19 @@ assert.ok(followHtml.includes(">对象#ID<"), "follow.html header must contain �
 assert.ok(!followHtml.includes(">对象类型<"), "follow.html must not have separate 对象类型 column");
 console.log("PASS: follow.html merges ID and object type into 对象#ID");
 
+const scheduleHtml = fs.readFileSync(path.join(root, "web/templates/schedule/index.html"), "utf8");
+assert.ok(scheduleHtml.includes("对象#ID"), "schedule/index.html header must contain 对象#ID");
+assert.ok(scheduleHtml.includes("需求标题"), "schedule/index.html header must contain 需求标题");
+assert.ok(scheduleHtml.includes("table-scroll-container"), "schedule/index.html must use table-scroll-container");
+console.log("PASS: schedule/index.html unifies to 对象#ID and 需求标题 with table-scroll-container");
+
 // 3. 检查 JS 实现中消费 idChipHtml
 const todosJs = fs.readFileSync(path.join(root, "web/static/js/po/todos.js"), "utf8");
 assert.ok(todosJs.includes("todos-col-obj"), "todos.js must render todos-col-obj cell");
 assert.ok(todosJs.includes("idChipHtml"), "todos.js must use idChipHtml");
 
-const followJs = fs.readFileSync(path.join(root, "web/static/js/po/follow.js"), "utf8");
+const followJs = fs.readFileSync(path.join(root, "web/static/js/po/follow.js"), "utf8") +
+  fs.readFileSync(path.join(root, "web/static/js/po/follow-demand.js"), "utf8");
 assert.ok(followJs.includes("idChipHtml"), "follow.js must use idChipHtml");
 
 console.log("PASS: todos.js and follow.js use idChipHtml for single-source-of-truth rendering");

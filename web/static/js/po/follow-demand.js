@@ -24,8 +24,9 @@
       .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   };
   var PL = root.PersonalList || {};
+  var PAGE_SIZE_OPTIONS = PL.PAGE_SIZE_OPTIONS || [10, 20, 50, 100];
   if (typeof PL.loadPageSize === "function") {
-    state.pageSize = PL.loadPageSize("po.follow.pageSize", state.pageSize, [10, 15, 20, 30, 50]);
+    state.pageSize = PL.loadPageSize("po.follow.pageSize", state.pageSize, PAGE_SIZE_OPTIONS);
   }
   var priorityBadge = PL.priorityBadge || function (raw) {
     var n = parseInt(String(raw || "").replace(/^p/i, ""), 10);
@@ -155,12 +156,10 @@
       if (item.reason) tipParts.push(String(item.reason));
       if (item.isKey) tipParts.push("重点关注");
       var tip = tipParts.length ? tipParts.join(" · ") : titleText;
-      var starBtn = '<button type="button" class="fd-watch-toggle is-watched" data-watch-demand="' + esc(did) + '" data-watched="1" title="取消关注" aria-label="取消关注" aria-pressed="true">' +
-        '<i class="fas fa-star" aria-hidden="true"></i></button>';
       var titleBtn = '<button type="button" class="table-title-link" data-open-demand="' + esc(did) + '" title="' + esc(tip) + '">' + esc(titleText) + "</button>";
-      var titleHtml = '<div class="home-title-line fd-title-line">' + starBtn + priTag + titleBtn + "</div>";
+      var titleHtml = '<div class="home-title-line fd-title-line">' + priTag + titleBtn + "</div>";
 
-      var stage = '<span class="stage-tag">' + esc(stageLabel(item.stage || item.status)) + "</span>";
+      var stage = (PL && PL.statusTagHtml) ? PL.statusTagHtml(stageLabel(item.stage || item.status)) : ('<span class="stage-tag">' + esc(stageLabel(item.stage || item.status)) + '</span>');
       var schedule = '<span class="fd-schedule-inline" title="' + esc(dash(item.scheduleSummary)) + '">' + esc(dash(item.scheduleSummary)) + "</span>";
       return '<tr data-demand-row="' + esc(did) + '">' +
         '<td class="c-id">' + idChip + "</td>" +
@@ -170,7 +169,8 @@
         "<td>" + keyTimesHtml(item) + "</td>" +
         "<td>" + schedule + "</td>" +
         '<td><div class="pw-actions">' +
-        '<button type="button" class="link-btn" data-open-demand="' + esc(did) + '">查看详情</button>' +
+        '<button type="button" class="pw-action-btn" data-open-demand="' + esc(did) + '" title="查看详情" aria-label="查看详情"><i class="fas fa-eye" aria-hidden="true"></i></button>' +
+        '<button type="button" class="pw-action-btn pw-watch-btn is-watched" data-watch-demand="' + esc(did) + '" data-watched="1" title="取消关注" aria-label="取消关注" aria-pressed="true"><i class="fas fa-star" aria-hidden="true"></i></button>' +
         "</div></td></tr>";
     }).join("");
 

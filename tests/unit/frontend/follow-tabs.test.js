@@ -32,4 +32,12 @@ assert.doesNotMatch(template, /data-filter="attention"/, "DOM 不得有状态关
 assert.doesNotMatch(template, /id="pwPeriodSelect"/, "DOM 不得有周期空下拉");
 assert.doesNotMatch(template, /<th>本周投入<\/th>/, "DOM 不得有本周投入列");
 
+// 关注动作与操作列样式统一断言
+assert.doesNotMatch(script, /<span class=\\"tag\\"[^>]*>关注<\/span>/, "周报项目名旁不得再加关注标签");
+assert.doesNotMatch(demandScript, /home-title-line[^"]*">\s*'\s*\+\s*starBtn/, "业务需求标题列不得放置关注星星按钮");
+assert.match(demandScript, /data-watch-demand/, "业务需求操作列必须放置关注动作按钮");
+assert.match(demandScript, /class="pw-action-btn pw-watch-btn/, "业务需求操作列按钮样式需统一");
+assert.match(script, /class="pw-action-btn pw-watch-btn/, "周报操作列按钮样式需统一");
+assert.match(script, /weeklyScope === "participated"/, "周报必须兼容处理我参与的项目");
+
 console.log("PASS: follow tabs and semantic controls verified successfully");

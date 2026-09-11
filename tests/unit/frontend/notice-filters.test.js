@@ -192,17 +192,21 @@ function testNoticeSubjectNotCharStripped() {
   ready();
   const tbody = nodes.get('noticeTbody');
   const html = tbody && tbody.innerHTML ? String(tbody.innerHTML) : '';
-  // 1. The visible button text must be the raw subject, not a regex-stripped version.
-  const buttonMatch = html.match(/<button[^>]*class="notice-title-main"[^>]*>([^<]*)<\/button>/);
-  assert.ok(buttonMatch, 'row HTML must contain the title button');
-  const visibleTitle = buttonMatch[1];
+  // 1. The visible title text must be the raw subject, not a regex-stripped version.
+  const titleMatch = html.match(/(?:<button|<a)[^>]*class="[^"]*notice-title-main[^"]*"[^>]*>([^<]*)(?:<\/button>|<\/a>)/);
+  assert.ok(titleMatch, 'row HTML must contain the title link or button');
+  const visibleTitle = titleMatch[1];
   assert.equal(visibleTitle, '父需求挂起逻辑优化 - 项目管理系统2.0',
     'visible title must equal the raw backend subject; frontend must not strip anything beyond canon+oid prefix match');
   // 2. The structured object badge must still be rendered from objectType/objectId.
   assert.ok(html.indexOf('wb-type wb-type-story') !== -1,
     'row HTML must still render the structured object badge from objectType/objectId');
   assert.ok(/研发需求[\s\S]*?70526|研需[\s\S]*?70526/.test(html),
-    'row HTML must contain the badge label (研发需求 or 研需) and the object id 70526 (id may be wrapped in <span>)');
+    'row HTML must contain the badge label (研发需求 or 研需) and the object id 70526 (id may be wrapped in <span> or <a>)');
+  assert.ok(/<a class="table-id-link" href="http:\/\/example\.com\/story\/70526" target="_blank" rel="noopener noreferrer">#?70526<\/a>/.test(html),
+    'row HTML must render clickable ID hyperlink when item.url is present');
+  assert.ok(/<a class="table-title-link notice-title-main" href="http:\/\/example\.com\/story\/70526" target="_blank" rel="noopener noreferrer">/.test(html),
+    'row HTML must render clickable title hyperlink when item.url is present');
   console.log('PASS: notice subject is not char-stripped; object badge remains from structured fields');
 }
 
@@ -226,7 +230,7 @@ function loadSingleItem(item) {
 }
 
 function extractButtonTitle(html) {
-  const m = html.match(/<button[^>]*class="notice-title-main"[^>]*>([^<]*)<\/button>/);
+  const m = html.match(/(?:<button|<a)[^>]*class="[^"]*notice-title-main[^"]*"[^>]*>([^<]*)(?:<\/button>|<\/a>)/);
   return m ? m[1] : null;
 }
 

@@ -119,10 +119,15 @@
     var summary = data.summary || {};
     var action;
     var isSubmitTest = String(pa.key || "") === "submit_test" && pa.enabled !== false;
+    var isRemindAccept = String(pa.key || "") === "remind_accept" && pa.enabled !== false;
     if (isSubmitTest) {
       var did = String(summary.demandId || summary.id || "").replace(/^US/i, "");
       var title = String(summary.title || "").replace(/"/g, "&quot;");
       action = '<button type="button" class="dd-btn primary js-submit-test" data-demand-id="' + esc(did) + '" data-demand-title="' + esc(summary.title || "") + '">' + esc(pa.label || spotlight.actionLabel || "提测") + '</button>';
+    } else if (isRemindAccept) {
+      var did = String(summary.demandId || summary.id || "").replace(/^US/i, "");
+      var title = String(summary.title || "").replace(/"/g, "&quot;");
+      action = '<button type="button" class="dd-btn primary js-po-drawer-action" data-action-key="remind_accept" data-demand-id="' + esc(did) + '" data-demand-title="' + esc(summary.title || "") + '">' + esc(pa.label || spotlight.actionLabel || "催办验收") + '</button>';
     } else if (spotlight.actionUrl) {
       var href = String(spotlight.actionUrl || "");
       var external = /^https?:\/\//i.test(href);

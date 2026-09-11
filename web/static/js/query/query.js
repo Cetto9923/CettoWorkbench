@@ -10,6 +10,7 @@
   "use strict";
 
   var PL = window.PersonalList || {};
+  var PAGE_SIZE_OPTIONS = PL.PAGE_SIZE_OPTIONS || [10, 20, 50, 100];
   var esc = PL.escapeHtml || function (v) { return String(v == null ? "" : v); };
   var priorityBadge = PL.priorityBadge || function (raw) {
     var n = parseInt(String(raw || "").replace(/^p/i, ""), 10);
@@ -108,16 +109,16 @@
     var deadline = esc(row.deadline || "—");
     var stageHtml = '<span class="stage-tag">' + esc(row.stage || "—") + '</span>';
     var statusText = deriveStatusLabel(row, kind);
-    var statusHtml = '<span class="status-tag">' + esc(statusText) + '</span>';
+    var statusHtml = (PL && PL.statusTagHtml) ? PL.statusTagHtml(statusText) : ('<span class="status-tag">' + esc(statusText) + '</span>');
 
     // 操作列：业务需求按钮触发 DemandDetail.open 抽屉，研发需求走禅道详情新窗口。
     var actionHtml;
     if (isStory) {
       actionHtml = zentaoUrl
-        ? '<a class="action-btn" href="' + zentaoUrl + '" target="_blank" rel="noopener noreferrer">详情</a>'
-        : '<span class="action-btn action-btn-disabled">无外链</span>';
+        ? '<a class="action-btn table-action-btn secondary" href="' + zentaoUrl + '" target="_blank" rel="noopener noreferrer">详情</a>'
+        : '<span class="action-btn table-action-btn secondary action-btn-disabled">无外链</span>';
     } else {
-      actionHtml = '<button type="button" class="action-btn" data-demand-id="' + esc(rawId) + '">查看</button>';
+      actionHtml = '<button type="button" class="action-btn table-action-btn secondary" data-demand-id="' + esc(rawId) + '">查看</button>';
     }
 
     return '<tr>' +
@@ -224,10 +225,10 @@
     var p = parseInt(sp.get("page"), 10);
     if (!isNaN(p) && p >= 1) { state.page = p; }
     var ps = parseInt(sp.get("pageSize"), 10);
-    if (!isNaN(ps) && [10, 15, 20, 30, 50].indexOf(ps) >= 0) {
+    if (!isNaN(ps) && PAGE_SIZE_OPTIONS.indexOf(ps) >= 0) {
       state.pageSize = ps;
     } else {
-      state.pageSize = PL.loadPageSize("po.query.pageSize", state.pageSize, [10, 15, 20, 30, 50]);
+      state.pageSize = PL.loadPageSize("po.query.pageSize", state.pageSize, PAGE_SIZE_OPTIONS);
     }
     if ($("queryKeyword")) { $("queryKeyword").value = state.keyword; }
     if ($("queryStatus")) { $("queryStatus").value = state.status; }

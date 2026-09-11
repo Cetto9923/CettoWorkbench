@@ -7,6 +7,10 @@
 
 (function () {
   "use strict";
+
+  // 每页条数选项：与分页组件（PersonalList / components/pager.html）同一套取值。
+  var PAGE_SIZE_OPTIONS = (window.PersonalList && window.PersonalList.PAGE_SIZE_OPTIONS) || [10, 20, 50, 100];
+
   function esc(str) {
     if (str === null || str === undefined) return "";
     return String(str)
@@ -264,6 +268,9 @@
                 idHtml +
                 '</span>';
 
+          var stLabel = statusLabel(it.currentStatus, it.objectType);
+          var stHtml = (PL && PL.statusTagHtml) ? PL.statusTagHtml(stLabel) : ('<span class="done-tag ' + statusClass(it.currentStatus) + '">' + esc(stLabel) + '</span>');
+
           return (
             '<tr>' +
             '<td class="done-time">' + fmtDateTime(it.handledAt || it.date) + '</td>' +
@@ -273,7 +280,7 @@
             '<td class="done-result"><span class="done-tag ' + tagClass(it.resultCode || it.result) + '">' + esc(it.resultText || it.result || "--") + '</span></td>' +
             '<td class="done-change">' + changeHtml + '</td>' +
             '<td class="done-ctx">' + ctxHtml + '</td>' +
-            '<td class="done-status"><span class="done-tag ' + statusClass(it.currentStatus) + '">' + esc(statusLabel(it.currentStatus, it.objectType)) + '</span></td>' +
+            '<td class="done-status">' + stHtml + '</td>' +
             '<td class="done-op"><button type="button" class="action-btn small wb-done-detail-btn" data-action-id="' + it.id + '">查看记录</button></td>' +
             '</tr>'
           );
@@ -488,7 +495,7 @@
   }
 
   document.addEventListener("DOMContentLoaded", function () {
-    state.pageSize = window.PersonalList.loadPageSize("po.done.pageSize", state.pageSize, [10, 15, 20, 30, 50]);
+    state.pageSize = window.PersonalList.loadPageSize("po.done.pageSize", state.pageSize, PAGE_SIZE_OPTIONS);
     initEvents();
     loadMeta();
     loadList();

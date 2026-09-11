@@ -15,6 +15,7 @@
 {{ define "content" }}
 <div class="po-personal-workspace po-follow">
   <input type="hidden" id="csrfToken" name="csrf_token" value="{{ .CSRFToken }}">
+  <input type="hidden" id="currentUserAccount" value="{{ if .CurrentUser }}{{ .CurrentUser.Account }}{{ end }}">
   <header class="workspace-header">
     <div class="workspace-header-left">
       <h2>我的关注</h2>
@@ -63,7 +64,7 @@
         <button type="button" class="pw-filter-btn" data-filter="deviation">有计划/上线偏离 <span class="n" id="pwBtnDeviation">0</span></button>
         <div class="pw-spacer"></div>
         <input type="search" class="pw-search" id="pwSearchInput" placeholder="搜索项目编号 / 名称 / 项目经理" />
-        <button type="button" class="pw-reset-btn" id="pwResetBtn">重置</button>
+        <button type="button" class="pw-reset-btn" id="pwResetBtn">重置筛选</button>
       </div>
 
       <!-- 6 列表格 -->
@@ -127,7 +128,7 @@
         <div class="pw-spacer"></div>
         <span class="pw-toolbar-hint" id="followSummary">关注业务需求 · 加载中…</span>
         <input type="search" class="pw-search" id="followKeyword" placeholder="搜索标题或编号" aria-label="关键词" />
-        <button type="button" class="pw-reset-btn" id="fdResetBtn">重置</button>
+        <button type="button" class="pw-reset-btn" id="fdResetBtn">重置筛选</button>
         <button type="button" class="pw-reset-btn fd-export-btn" id="fdExportBtn" title="导出当前筛选结果">导出</button>
       </div>
 

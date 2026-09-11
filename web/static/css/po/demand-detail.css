@@ -194,7 +194,7 @@
 }
 .dd-cycle-chip .k { font-size: 11px; color: var(--dd-muted); margin-bottom: 2px; }
 .dd-cycle-chip .v { font-size: 13px; font-weight: 700; color: var(--color-text-strong, #1e293b); }
-.dd-cycle-chip .s { font-size: 10px; color: var(--color-text-disabled, #94a3b8); margin-top: 2px; }
+.dd-cycle-chip .s { font-size: 10px; color: var(--color-text-secondary); margin-top: 2px; }
 .dd-cycle-chip.overdue .v { color: var(--dd-red); }
 
 /* 9 阶段价值流（无横向滚动） */
@@ -237,7 +237,7 @@
 }
 .dd-ms .k { font-size: 11px; color: var(--dd-muted); }
 .dd-ms .v { font-size: 13px; font-weight: 600; color: var(--color-text-strong, #1e293b); margin: 2px 0; }
-.dd-ms .sub { font-size: 10px; color: var(--color-text-disabled, #94a3b8); }
+.dd-ms .sub { font-size: 10px; color: var(--color-text-secondary); }
 
 .dd-aside-title {
   font-size: 12px; font-weight: 700; color: var(--color-text-body, #475569); margin-bottom: 8px;
@@ -266,7 +266,7 @@
   display: flex; align-items: baseline; justify-content: space-between; gap: 4px; flex-wrap: nowrap;
 }
 .dd-kpi-sub { font-size: 11px; color: var(--color-text-secondary, #64748b); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dd-kpi-note { font-size: 10px; color: var(--color-text-disabled, #94a3b8); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dd-kpi-note { font-size: 10px; color: var(--color-text-secondary); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dd-progress-bar { height: 6px; background: var(--color-border, #e2e8f0); border-radius: 3px; overflow: hidden; margin-top: 5px; }
 .dd-progress-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
 .dd-tag.red { background: var(--color-danger-bg, #fef2f2); color: var(--color-danger-fill, #dc2626); border: 1px solid var(--color-danger-border, #fecaca); }
@@ -356,7 +356,96 @@
 .dd-review-submit-btn {
   min-height: 34px; padding: 7px 20px; font-size: 13px; font-weight: 600; white-space: nowrap;
 }
+.dd-review-withdraw,
+.dd-review-submit-review-footer {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.dd-review-action-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.dd-review-footer-left,
+.dd-review-footer-right {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.dd-btn-edit {
+  color: var(--color-info, #2563eb); border: 1px solid var(--color-info, #2563eb);
+  background: var(--color-info-subtle, #eff6ff); text-decoration: none;
+  font-weight: 500; font-size: 13px; padding: 6px 14px; border-radius: 6px;
+  display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s;
+}
+.dd-btn-edit:hover {
+  background: var(--color-info, #2563eb); color: #fff; text-decoration: none;
+}
+.dd-btn.danger-outline {
+  color: var(--color-danger, #ef4444); border: 1px solid var(--color-danger, #ef4444);
+  background: transparent; font-weight: 500; font-size: 13px; padding: 6px 16px;
+  border-radius: 6px; cursor: pointer; transition: all 0.15s;
+}
+.dd-btn.danger-outline:hover {
+  background: rgba(239, 68, 68, 0.08);
+}
+.dd-btn.dd-btn-ghost-danger {
+  color: var(--color-text-secondary, #64748b); border: 1px solid var(--color-border, #cbd5e1);
+  background: transparent; font-size: 13px; padding: 6px 12px; border-radius: 6px;
+  cursor: pointer; transition: all 0.15s;
+}
+.dd-btn.dd-btn-ghost-danger:hover {
+  color: var(--color-danger, #ef4444); border-color: var(--color-danger, #ef4444);
+}
+.dd-btn.disabled {
+  opacity: 0.55; cursor: not-allowed;
+}
+
+/* 驳回独立输入弹窗 */
+.dd-reject-modal-overlay {
+  position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5);
+  z-index: 1050; display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(2px);
+}
+.dd-reject-modal-dialog {
+  background: var(--color-surface, #fff); border: 1px solid var(--color-border);
+  border-radius: 12px; width: 460px; max-width: 92vw;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15); overflow: hidden;
+}
+.dd-reject-modal-header {
+  padding: 14px 20px; border-bottom: 1px solid var(--color-border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.dd-reject-modal-header h3 {
+  margin: 0; font-size: 15px; font-weight: 600; color: var(--color-text-strong);
+}
+.dd-reject-modal-body {
+  padding: 18px 20px;
+}
+.dd-reject-label {
+  display: block; font-size: 13px; font-weight: 500; color: var(--color-text-strong);
+  margin-bottom: 8px;
+}
+.dd-reject-textarea {
+  width: 100%; border: 1px solid var(--color-border-strong); border-radius: 6px;
+  padding: 8px 12px; font-size: 13px; color: var(--color-text-body);
+  outline: none; box-sizing: border-box; resize: vertical;
+}
+.dd-reject-textarea:focus {
+  border-color: var(--color-danger, #ef4444); box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+.dd-reject-modal-footer {
+  padding: 12px 20px; background: var(--color-surface-muted, #f8fafc);
+  border-top: 1px solid var(--color-border); display: flex; justify-content: flex-end; gap: 10px;
+}
+.dd-review-withdraw {
+  margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--color-border-subtle);
+}
+.dd-review-withdraw-text,
+.dd-review-submit-review-text {
+  color: var(--color-text-muted); font-size: 13px;
+}
+.dd-review-submit-review-actions {
+  display: flex; gap: 12px;
+}
 @media (max-width: 640px) {
+  .dd-review-action-bar { flex-direction: column; align-items: stretch; }
+  .dd-review-footer-left, .dd-review-footer-right { width: 100%; justify-content: flex-end; }
   .dd-review-form { grid-template-columns: 1fr; }
   .dd-review-submit-btn { width: 100%; }
 }

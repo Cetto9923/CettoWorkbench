@@ -147,9 +147,11 @@ func (s *DetailService) GetDemandDetail(ctx context.Context, actor *model.User, 
 			resp.Summary.IsCreator = strings.TrimSpace(row.CreatedBy) == account
 			resp.Summary.IsAssignee = strings.TrimSpace(row.AssignedTo) == account
 		}
+		resp.Summary.CanWithdrawReview = canWithdrawReviewForDetail(actor, row)
 		if pa.Key == string(primaryaction.KeyApprove) && pa.Enabled {
 			resp.Summary.CanReview = true
 		}
+		s.populateDemandEditability(ctx, actor, row, &resp.Summary)
 	}
 
 	// F02：API 出口对富文本字段做白名单净化，确保 specHtml / verifyHtml 即便
@@ -194,6 +196,20 @@ func bindPrimaryActionSpotlight(spotlight *DetailSpotlight, action primaryaction
 // bindScheduleSpotlight 保留旧名给历史单测调用；等价于 bindPrimaryActionSpotlight。
 func bindScheduleSpotlight(spotlight *DetailSpotlight, action primaryaction.PrimaryAction) {
 	bindPrimaryActionSpotlight(spotlight, action)
+}
+
+func canWithdrawReviewForDetail(actor *model.User, row *DemandDetailRow) bool {
+	if actor == nil || row == nil {
+		return false
+	}
+	if strings.TrimSpace(row.Status) != "wait" {
+		return false
+	}
+	account := strings.TrimSpace(actor.Account)
+	if account == "" {
+		return false
+	}
+	return actor.IsSuperAdmin || strings.TrimSpace(row.CreatedBy) == account
 }
 
 func (s *DetailService) buildSummary(row *DemandDetailRow) DemandSummary {

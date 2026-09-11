@@ -181,7 +181,7 @@
       "</td>" +
       '<td class="todos-col-pri">' + priorityBadge(item.priority) + "</td>" +
       '<td class="todos-col-rel"><span class="relation-tag">' + esc(item.relation || "—") + "</span></td>" +
-      '<td class="todos-col-stage" title="' + esc(stageLabel(item.reason)) + '">' + esc(stageLabel(item.reason)) + "</td>" +
+      '<td class="todos-col-stage" title="' + esc(stageLabel(item.reason)) + '">' + ((PL && PL.statusTagHtml) ? PL.statusTagHtml(stageLabel(item.reason)) : esc(stageLabel(item.reason))) + "</td>" +
       '<td class="todos-col-dead">' + esc(item.deadline || "—") + "</td>" +
       '<td class="todos-col-owner" title="' + esc(item.owner || "—") + '">' + esc(item.owner || "—") + "</td>" +
       '<td class="todos-col-opt">' + primaryActionHtml(item, isStory, ["clarify"]) + "</td>" +

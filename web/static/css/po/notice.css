@@ -9,7 +9,7 @@
 .po-notice .notice-table .notice-actor { width: 100px; }
 .po-notice .notice-table .notice-date { width: 150px; }
 .po-notice .notice-table .notice-state { width: 80px; }
-.po-notice .notice-table .notice-opt { width: 160px; text-align: right; }
+.po-notice .notice-table .notice-opt { width: 180px; text-align: right; }
 
 .po-notice .workspace-table td {
   height: 48px;
@@ -19,10 +19,9 @@
 .po-notice .notice-subject-text {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   overflow: hidden;
-  color: var(--color-text-primary, #0f172a);
-  font-weight: 600;
+  color: var(--color-text-strong);
   font-size: 13px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -40,7 +39,8 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: pointer;
-  color: var(--color-text-primary, #0f172a);
+  color: var(--color-text-strong);
+  font-weight: 500;
   text-decoration: none;
   transition: color 0.15s ease;
 }
@@ -61,10 +61,10 @@
   line-height: 1;
   transition: background .15s ease, color .15s ease, border-color .15s ease;
 }
-.ui-close-btn:hover { background: var(--color-surface-muted, var(--color-surface-muted, #f1f5f9)); color: var(--color-text-primary, var(--color-text-deep, #1f2937)); border-color: var(--po-blue, var(--color-info-fill, #2563eb)); }
-.ui-close-btn:focus-visible { outline: 2px solid var(--po-blue, var(--color-info-fill, #2563eb)); outline-offset: 2px; }
+.ui-close-btn:hover { background: var(--color-surface-muted, var(--color-surface-muted, #f1f5f9)); color: var(--color-text-primary, var(--color-text-deep, #1f2937)); border-color: var(--color-info); }
+.ui-close-btn:focus-visible { outline: 2px solid var(--color-info); outline-offset: 2px; }
 .po-notice .notice-title-main:hover {
-  color: var(--po-blue, var(--color-info-fill, #2563eb));
+  color: var(--color-info);
   text-decoration: underline;
 }
 
@@ -88,11 +88,14 @@
   display: block;
   overflow: hidden;
   margin-top: 3px;
-  color: var(--color-text-secondary, #64748b);
+  color: var(--color-text-secondary);
   font-size: 12px;
   line-height: 1.4;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+html[data-theme="dark"] .po-notice .notice-subject-sub {
+  color: var(--color-text-body);
 }
 .po-notice .notice-sub-icon {
   margin-right: 2px;
@@ -107,10 +110,10 @@
 }
 
 .po-notice .notice-read-state {
-  color: var(--color-text-disabled, var(--color-text-disabled, #94a3b8));
+  color: var(--color-text-secondary);
 }
 .po-notice .notice-unread-state {
-  color: var(--po-blue, var(--color-info-fill, #2563eb));
+  color: var(--color-info);
   font-weight: 600;
   display: inline-flex;
   align-items: center;
@@ -121,47 +124,57 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--po-blue, var(--color-info-fill, #2563eb));
+  background: var(--color-info-fill);
+}
+html[data-theme="dark"] .po-notice .notice-unread-dot {
+  background: var(--color-info);
 }
 
+/* 行内操作按钮与 .table-action-btn 对齐（28px / 12px，同一行高度一致） */
 .po-notice .notice-read-btn {
-  height: 24px;
-  padding: 0 6px;
-  border: 1px solid var(--po-border, var(--color-border-strong, #cbd5e1));
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border-strong);
   border-radius: 4px;
-  background: var(--color-surface, #ffffff);
-  color: var(--color-text-secondary, var(--color-text-secondary, #64748b));
-  font-size: 11px;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: 12px;
   cursor: pointer;
   white-space: nowrap;
   box-sizing: border-box;
 }
 .po-notice .notice-read-btn:hover:not(:disabled) {
-  border-color: var(--po-blue, var(--color-info-fill, #2563eb));
-  color: var(--po-blue, var(--color-info-fill, #2563eb));
-  background: var(--color-surface-muted, #f8fafc);
+  border-color: var(--color-info);
+  color: var(--color-info);
+  background: var(--color-surface-hover);
 }
 .po-notice .notice-missing-rel {
-  color: var(--color-text-disabled, var(--color-text-disabled, #94a3b8));
+  color: var(--color-text-secondary);
   font-size: 11px;
 }
 .po-notice .notice-no-op {
-  color: var(--color-text-disabled, var(--color-text-disabled, #94a3b8));
+  color: var(--color-text-secondary);
 }
 .po-notice .notice-view-btn {
-  color: var(--po-blue, var(--color-info-fill, #2563eb));
+  color: var(--color-info);
   cursor: pointer;
-  border: none;
-  background: transparent;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 4px 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 0 10px;
+  height: 28px;
   text-decoration: none;
   border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
 }
 .po-notice .notice-view-btn:hover {
-  background: var(--color-info-bg, #eff6ff);
-  text-decoration: underline;
+  background: var(--color-surface-hover);
+  border-color: var(--color-info);
+  color: var(--color-info);
+  text-decoration: none;
 }
 
 /* 通知详情抽屉 */
@@ -248,4 +261,40 @@
   padding: 16px;
   word-break: break-word;
   white-space: pre-wrap;
+}
+
+/* 深色模式适配 */
+html[data-theme="dark"] .po-notice .workspace-table tr.is-unread td {
+  background: rgba(37, 99, 235, 0.06);
+}
+html[data-theme="dark"] .notice-drawer {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border-left: 1px solid var(--color-border);
+}
+html[data-theme="dark"] .notice-drawer-hdr {
+  border-bottom-color: var(--color-border);
+}
+html[data-theme="dark"] .notice-drawer-hdr h2,
+html[data-theme="dark"] .notice-drawer .notice-detail-title {
+  color: var(--color-text-primary);
+}
+html[data-theme="dark"] .notice-drawer .notice-detail-meta {
+  background: var(--color-surface-muted);
+  border-color: var(--color-border);
+}
+html[data-theme="dark"] .notice-drawer .notice-meta-label {
+  color: var(--color-text-secondary);
+}
+html[data-theme="dark"] .notice-drawer .notice-meta-value {
+  color: var(--color-text-strong);
+}
+html[data-theme="dark"] .notice-drawer .notice-detail-body {
+  background: var(--color-surface-muted);
+  border-color: var(--color-border);
+  color: var(--color-text-body);
+}
+html[data-theme="dark"] .notice-drawer-footer {
+  background: var(--color-surface-muted);
+  border-top-color: var(--color-border);
 }

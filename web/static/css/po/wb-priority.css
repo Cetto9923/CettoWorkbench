@@ -326,3 +326,164 @@
   color: var(--po-pri-1-fg);
   border-color: var(--po-pri-1-bd);
 }
+
+/* =============================================================================
+   4. 公共统一状态微标 (.wb-status-tag / .wb-status-{semantic})
+   规范：
+   - 统一采用精炼胶囊微标 + 状态小圆点 (.wb-status-dot) + 状态文字
+   - 5 类通用语义：success, processing, warning, danger, neutral
+   - 适配深色与浅色模式，彻底杜绝暗色下深蓝底暗蓝字/灰底灰字
+   ============================================================================= */
+
+.wb-status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  flex-shrink: 0;
+}
+
+.wb-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* 1. Success (绿色系：澄清、完成、通过、验收、正常、激活) */
+.wb-status-tag.wb-status-success,
+.wb-status-tag.wb-status-green,
+.done-tag.success {
+  background: var(--color-success-bg, #f0fdf4);
+  color: var(--color-success-fill, #15803d);
+  border-color: var(--color-success-border, #bbf7d0);
+}
+.wb-status-tag.wb-status-success .wb-status-dot,
+.wb-status-tag.wb-status-green .wb-status-dot {
+  background: var(--color-success-accent, #16a34a);
+}
+
+/* 2. Processing (蓝色系：开发中、测试中、评审、进行中) */
+.wb-status-tag.wb-status-processing,
+.wb-status-tag.wb-status-blue,
+.done-tag.blue {
+  background: var(--color-info-bg, #eff6ff);
+  color: var(--color-info-fill, #1d4ed8);
+  border-color: var(--color-info-border, #bfdbfe);
+}
+.wb-status-tag.wb-status-processing .wb-status-dot,
+.wb-status-tag.wb-status-blue .wb-status-dot {
+  background: var(--color-info-fill, #2563eb);
+}
+
+/* 3. Warning (琥珀/橙黄色系：待评审、待澄清、待排期、待处理、审批中) */
+.wb-status-tag.wb-status-warning,
+.wb-status-tag.wb-status-amber,
+.done-tag.warning {
+  background: var(--color-warning-bg, #fffbeb);
+  color: var(--color-warning-fill, #b45309);
+  border-color: var(--color-warning-border, #fde68a);
+}
+.wb-status-tag.wb-status-warning .wb-status-dot,
+.wb-status-tag.wb-status-amber .wb-status-dot {
+  background: var(--color-warning-fill, #d97706);
+}
+
+/* 4. Danger (红色系：挂起、驳回、阻塞、超期、异常、风险) */
+.wb-status-tag.wb-status-danger,
+.wb-status-tag.wb-status-red,
+.done-tag.danger {
+  background: var(--color-danger-bg, #fef2f2);
+  color: var(--color-danger-strong, #b91c1c);
+  border-color: var(--color-danger-border, #fecaca);
+}
+.wb-status-tag.wb-status-danger .wb-status-dot,
+.wb-status-tag.wb-status-red .wb-status-dot {
+  background: var(--color-danger-accent, #dc2626);
+}
+
+/* 5. Neutral (灰色系：暂存、草稿、已关闭、未确认) */
+.wb-status-tag.wb-status-neutral,
+.wb-status-tag.wb-status-gray,
+.done-tag.gray {
+  background: var(--color-surface-muted, #f8fafc);
+  color: var(--color-text-secondary, #64748b);
+  border-color: var(--color-border, #e2e8f0);
+}
+.wb-status-tag.wb-status-neutral .wb-status-dot,
+.wb-status-tag.wb-status-gray .wb-status-dot {
+  background: var(--color-text-disabled, #94a3b8);
+}
+
+/* ---------------- 深色模式精细化反差适配 ---------------- */
+html[data-theme="dark"] .wb-status-tag.wb-status-success,
+html[data-theme="dark"] .wb-status-tag.wb-status-green,
+html[data-theme="dark"] .done-tag.success {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #34d399 !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+}
+html[data-theme="dark"] .wb-status-tag.wb-status-success .wb-status-dot,
+html[data-theme="dark"] .wb-status-tag.wb-status-green .wb-status-dot {
+  background: #10b981 !important;
+}
+
+/* 彻底解决图 5 中「已评审」蓝底暗蓝字无法辨识的缺陷：
+   使用通透半透蓝背景，文字使用高亮天蓝 #93c5fd，小圆点高亮 */
+html[data-theme="dark"] .wb-status-tag.wb-status-processing,
+html[data-theme="dark"] .wb-status-tag.wb-status-blue,
+html[data-theme="dark"] .done-tag.blue {
+  background: rgba(59, 130, 246, 0.18) !important;
+  color: #93c5fd !important;
+  border-color: rgba(59, 130, 246, 0.38) !important;
+}
+html[data-theme="dark"] .wb-status-tag.wb-status-processing .wb-status-dot,
+html[data-theme="dark"] .wb-status-tag.wb-status-blue .wb-status-dot {
+  background: #60a5fa !important;
+}
+
+/* 彻底解决图 7 中「待评审」灰色暗淡无辨识度缺陷：高亮琥珀黄 */
+html[data-theme="dark"] .wb-status-tag.wb-status-warning,
+html[data-theme="dark"] .wb-status-tag.wb-status-amber,
+html[data-theme="dark"] .done-tag.warning {
+  background: rgba(245, 158, 11, 0.15) !important;
+  color: #fbbf24 !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+}
+html[data-theme="dark"] .wb-status-tag.wb-status-warning .wb-status-dot,
+html[data-theme="dark"] .wb-status-tag.wb-status-amber .wb-status-dot {
+  background: #f59e0b !important;
+}
+
+html[data-theme="dark"] .wb-status-tag.wb-status-danger,
+html[data-theme="dark"] .wb-status-tag.wb-status-red,
+html[data-theme="dark"] .done-tag.danger {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #f87171 !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
+}
+html[data-theme="dark"] .wb-status-tag.wb-status-danger .wb-status-dot,
+html[data-theme="dark"] .wb-status-tag.wb-status-red .wb-status-dot {
+  background: #ef4444 !important;
+}
+
+html[data-theme="dark"] .wb-status-tag.wb-status-neutral,
+html[data-theme="dark"] .wb-status-tag.wb-status-gray,
+html[data-theme="dark"] .done-tag.gray {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: #cbd5e1 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+html[data-theme="dark"] .wb-status-tag.wb-status-neutral .wb-status-dot,
+html[data-theme="dark"] .wb-status-tag.wb-status-gray .wb-status-dot {
+  background: #94a3b8 !important;
+}

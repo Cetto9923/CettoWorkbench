@@ -4,7 +4,7 @@ internal/module/schedule/handler_demand.go	662
 internal/module/user/handler.go	544
 web/static/css/components/components.css	595
 web/static/css/layout/layout.css	531
-web/static/css/schedule/schedule.css	580
+web/static/css/schedule/schedule.css	539
 web/static/css/schedule/scheduleintegrated.css	879
 web/static/css/schedule/schedulemodal.css	645
 web/static/js/components/form.js	513

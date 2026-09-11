@@ -6,80 +6,94 @@
 
 /* Shared PO theme aliases are defined by web/static/css/po/shell.css. */
 
-#page-schedule a.action-btn {
-  text-decoration: none;
-  color: inherit;
+/* 页面满高与内部滚动布局（遵守所有列表页准则，防止整体页面滚动） */
+body.po-workbench-shell:has(#page-schedule) .main,
+body.po-workbench-shell .main:has(#page-schedule) {
+  overflow: hidden;
 }
 
+#page-schedule {
+  height: calc(100vh - var(--po-shell-topbar-height) - var(--po-shell-pad-top) - var(--po-shell-pad-bottom));
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+#page-schedule .schedule-page-head,
+#page-schedule .schedule-version-overview,
+#page-schedule .schedule-filter {
+  flex-shrink: 0;
+}
+
+#page-schedule a.action-btn { text-decoration: none; color: inherit; }
 #page-schedule a.action-btn.primary,
 #page-schedule a.action-btn.success,
 #page-schedule a.action-btn.action-btn--primary,
-#page-schedule a.action-btn.action-btn--success {
-  color: var(--color-text-on-accent);
-}
+#page-schedule a.action-btn.action-btn--success { color: var(--color-text-on-accent); }
 
 /* ── 通用按钮 ── */
 #page-schedule .action-btn,
 .batch-modal .action-btn,
 #manageVersionWindowsModal .action-btn {
-  padding: 4px 10px;
-  border: 1px solid var(--border);
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
-  background: var(--white);
-  font-size: 11px;
-  color: var(--t2);
+  background: var(--color-surface);
+  font-size: 12px;
+  color: var(--color-text-primary);
   cursor: pointer;
   font-family: inherit;
   transition: all 0.15s;
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  box-sizing: border-box;
 }
 
 #page-schedule .action-btn:hover,
 .batch-modal .action-btn:hover,
 #manageVersionWindowsModal .action-btn:hover {
-  border-color: var(--blue);
-  color: var(--blue);
+  border-color: var(--color-info-fill);
+  color: var(--color-info-fill);
+  background: var(--color-surface-hover);
 }
 
 #page-schedule .action-btn.primary,
 #page-schedule .action-btn.action-btn--primary,
 .batch-modal .action-btn.primary,
 #manageVersionWindowsModal .action-btn.primary {
-  background: var(--blue);
-  border-color: var(--blue);
+  background: var(--color-info-fill);
+  border-color: var(--color-info-fill);
   color: var(--color-text-on-accent);
 }
-
 #page-schedule .action-btn.primary:hover,
 #page-schedule .action-btn.action-btn--primary:hover,
 .batch-modal .action-btn.primary:hover,
 #manageVersionWindowsModal .action-btn.primary:hover {
   background: var(--color-info-fill-hover);
+  border-color: var(--color-info-fill-hover);
+  color: var(--color-text-on-accent);
 }
-
 #page-schedule .action-btn.success,
 #page-schedule .action-btn.action-btn--success,
 .batch-modal .action-btn.success {
-  background: var(--green);
-  border-color: var(--green);
+  background: var(--color-success-fill);
+  border-color: var(--color-success-fill);
   color: var(--color-text-on-accent);
 }
-
 #page-schedule .action-btn.success:hover,
 #page-schedule .action-btn.action-btn--success:hover,
 .batch-modal .action-btn.success:hover {
   background: var(--color-success);
 }
-
 .batch-modal .action-btn.danger {
-  background: var(--red);
-  border-color: var(--red);
+  background: var(--color-danger-fill);
+  border-color: var(--color-danger-fill);
   color: var(--color-text-on-accent);
 }
-
 .batch-modal .action-btn.danger:hover {
   background: var(--color-danger-strong);
 }
@@ -89,28 +103,14 @@
   cursor: not-allowed;
   background: var(--color-surface-muted);
   border-style: dashed;
-  color: var(--t3) !important;
+  color: var(--color-text-disabled) !important;
 }
 
-#page-schedule .action-btn--disabled:hover {
-  border-color: var(--border) !important;
-  color: var(--t3) !important;
-  background: var(--color-surface-muted) !important;
-}
-/* ── 页面头部 ── */
-.schedule-page-head {
+/* ── 页面头部：卡片底座由 shell.css 的 .workspace-header 统一提供，这里只保留排期页特有排版 ── */
+.schedule-page-head h2 {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin: 0 0 8px;
-}
-
-.schedule-page-head h2 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 900;
-  color: var(--color-text-primary);
+  gap: 8px;
 }
 
 .schedule-page-actions {
@@ -119,64 +119,103 @@
   gap: 8px;
   flex-wrap: wrap;
 }
+
 /* ── 需求列表区 ── */
 .schedule-area {
-  background: var(--white);
-  border: 1px solid var(--border);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  margin-bottom: 16px;
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03);
+  box-shadow: var(--shadow-sm);
+}
+
+#scheduleListViewWrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-bottom: 0;
+}
+
+#scheduleBizListPanel,
+#scheduleIndependentListPanel {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.schedule-toolbar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 12px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  flex-wrap: wrap;
 }
 
 .schedule-quick-scope {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 10px;
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--border-lt);
+  padding: 0;
+  background: transparent;
+  border-bottom: none;
   flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.schedule-quick-scope-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-right: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.schedule-quick-scope-label i {
+  color: var(--color-warning);
 }
 
 .schedule-scope-chip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  height: 26px;
-  border-radius: 6px;
-  padding: 0 8px;
+  gap: 6px;
+  height: 28px;
+  border-radius: 4px;
+  padding: 0 10px;
   font-size: 12px;
-  border: 1px solid var(--border);
-  background: var(--white);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
   cursor: pointer;
-  color: var(--t2);
+  color: var(--color-text-secondary);
   transition: all 0.15s;
   font-family: inherit;
   white-space: nowrap;
 }
 
 .schedule-scope-chip:hover {
-  border-color: var(--blue);
-  color: var(--blue);
+  background: var(--color-surface-muted);
+  border-color: var(--color-border-strong);
+  color: var(--color-text-primary);
 }
 
 .schedule-scope-chip.active {
-  background: var(--blue-bg);
-  border-color: var(--blue);
-  color: var(--blue);
+  background: var(--color-info-bg);
+  border-color: var(--color-info-fill);
+  color: var(--color-info-fill);
   font-weight: 600;
-  box-shadow: inset 0 0 0 1px var(--blue);
-}
-
-.schedule-scope-chip i {
-  font-size: 10px;
-  opacity: 0.7;
 }
 
 .schedule-scope-chip strong {
-  font-family: "JetBrains Mono", monospace;
-  margin-left: 4px;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 11px;
 }
 
 .schedule-scope-chip--secondary {
@@ -248,37 +287,6 @@
 .schedule-suspended-toggle strong {
   font-family: "JetBrains Mono", monospace;
   font-weight: 700;
-}
-
-.schedule-clear-btn {
-  margin-left: 4px;
-}
-
-.schedule-list-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 16px 8px;
-  background: var(--color-surface);
-}
-
-.schedule-list-title {
-  font-size: 15px;
-  font-weight: 900;
-  color: var(--color-text-primary);
-}
-
-.schedule-list-title span {
-  font-size: 12px;
-  color: var(--color-text-secondary);
-  font-weight: 700;
-}
-
-.schedule-list-tools {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 /* ── 筛选栏 ── */
@@ -355,14 +363,14 @@
   max-width: 360px;
   flex: 1 1 260px;
   padding: 0 8px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
   border-radius: 4px;
-  background: var(--bg);
+  background: var(--color-surface);
   box-sizing: border-box;
 }
 
 .schedule-search-inline i {
-  color: var(--t3);
+  color: var(--color-text-secondary);
   font-size: 11px;
   flex-shrink: 0;
 }
@@ -374,7 +382,7 @@
   outline: 0;
   background: transparent;
   font-size: 12px;
-  color: var(--t1);
+  color: var(--color-text-primary);
   font-family: inherit;
 }
 
@@ -404,9 +412,9 @@
 
 #page-schedule .schedule-more-filter-btn:hover,
 #page-schedule .schedule-more-filter-btn.active {
-  border-color: var(--blue);
-  background: var(--blue-bg);
-  color: var(--blue);
+  border-color: var(--color-info-fill);
+  background: var(--color-info-bg);
+  color: var(--color-info-fill);
 }
 
 .schedule-filter-more {
@@ -434,24 +442,10 @@
   font-size: 12px;
 }
 
-#page-schedule .form-input,
-#page-schedule .form-select {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  font-size: 13px;
-  font-family: inherit;
-  color: var(--t1);
-  background: var(--white);
-  transition: border-color 0.15s;
-  box-sizing: border-box;
-}
-
 #page-schedule .form-input:focus,
 #page-schedule .form-select:focus {
   outline: none;
-  border-color: var(--blue);
+  border-color: var(--color-info-fill);
 }
 
 #page-schedule .schedule-filter-main .form-input,
@@ -463,70 +457,62 @@
   height: 30px;
   padding: 5px 8px;
   font-size: 12px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
   border-radius: 4px;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
   box-sizing: border-box;
 }
 
-@media (max-width: 1400px) {
-  .schedule-filter-more {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 960px) {
-  .schedule-filter-more {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 640px) {
-  .schedule-filter-more {
-    grid-template-columns: 1fr;
-  }
-}
+@media (max-width: 1400px) { .schedule-filter-more { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 960px) { .schedule-filter-more { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .schedule-filter-more { grid-template-columns: 1fr; } }
 
 /* ── 数据类型 Tab ── */
 .schedule-data-tabs {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0;
-  padding: 0 16px;
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--border-lt);
+  gap: 2px;
+  padding: 3px;
+  background: var(--color-surface-muted);
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  flex-shrink: 0;
 }
 
 .schedule-data-tab {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 14px;
-  font-size: 13px;
+  padding: 5px 12px;
+  font-size: 12px;
   font-weight: 600;
-  color: var(--t2);
+  color: var(--color-text-secondary);
   background: transparent;
   border: none;
-  border-bottom: 2px solid transparent;
+  border-radius: 4px;
   cursor: pointer;
   font-family: inherit;
   transition: all 0.15s;
   position: relative;
+  white-space: nowrap;
 }
 
 .schedule-data-tab:hover {
-  color: var(--t1);
-  background: var(--hover);
+  color: var(--color-text-primary);
+  background: rgba(0, 0, 0, 0.04);
 }
 
 .schedule-data-tab.active {
-  color: var(--blue);
-  border-bottom-color: var(--blue);
-  background: var(--blue-bg);
+  color: var(--color-info-fill);
+  background: var(--color-surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  font-weight: 700;
 }
 
 .schedule-data-tab i {
-  font-size: 12px;
-  opacity: 0.7;
+  font-size: 11px;
+  opacity: 0.8;
 }
 
 .schedule-data-tab.active i {
@@ -535,7 +521,7 @@
 
 .schedule-data-tab.is-disabled,
 .schedule-data-tab.is-disabled:hover {
-  color: var(--t3);
+  color: var(--color-text-disabled);
   background: transparent;
   cursor: not-allowed;
   border-bottom-color: transparent;
@@ -548,41 +534,6 @@
 @media (max-width: 900px) {
   .schedule-page-head {
     flex-direction: column;
-  }
-}
-
-/* 矮视口：再压筛选条与页头，把高度让给需求列表 */
-@media (max-height: 900px) {
-  .schedule-page-head {
-    margin-bottom: 4px;
-  }
-
-  .schedule-page-head h2 {
-    font-size: 16px;
-  }
-
-  .schedule-quick-scope {
-    padding: 4px 8px;
-    gap: 4px;
-  }
-
-  .schedule-scope-chip,
-  .schedule-suspended-toggle {
-    height: 24px;
-    padding: 0 7px;
-    font-size: 11px;
-  }
-
-  .schedule-filter-primary-inner {
-    padding: 4px 8px;
-  }
-
-  .schedule-data-tabs {
-    padding: 0 10px;
-  }
-
-  .schedule-data-tab {
-    padding: 5px 12px;
-    font-size: 12px;
+    align-items: flex-start;
   }
 }

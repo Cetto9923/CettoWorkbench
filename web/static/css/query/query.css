@@ -1,22 +1,5 @@
-/* 查询页操作按钮：覆盖 components/table.css 的圆形通用动作样式，
- * 保持 PO 工作台列表中紧凑的矩形操作按钮视觉。 */
-.po-query .action-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 2.5rem;
-  height: 1.75rem;
-  padding: 0 0.55rem;
-  border: 1px solid var(--po-border, #d7dee8);
-  border-radius: 4px;
-  background: var(--po-surface, #fff);
-  color: var(--po-blue, #2563eb);
-  font-size: 0.75rem;
-  line-height: 1;
-  text-decoration: none;
-}
-
-.po-query .action-btn:hover {
-  border-color: var(--po-blue, #2563eb);
-  background: var(--po-blue-soft, #eff6ff);
+/* 查询页复用个人工作区的操作按钮，事件仍由 action-btn 标记识别。 */
+.po-query .action-btn-disabled {
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
 }

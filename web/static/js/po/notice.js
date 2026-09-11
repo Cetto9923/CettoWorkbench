@@ -3,6 +3,7 @@
 
   var esc = (window.PersonalList && window.PersonalList.escapeHtml) || function (v) { return String(v == null ? "" : v); };
   var objectTypeBadge = (window.PersonalList && window.PersonalList.objectTypeBadge) || function (k) { return k; };
+  var PAGE_SIZE_OPTIONS = (window.PersonalList && window.PersonalList.PAGE_SIZE_OPTIONS) || [10, 20, 50, 100];
   var $ = function (id) { return document.getElementById(id); };
 
   var state = {
@@ -69,23 +70,15 @@
       { key: "needAction", list: VALID_ACTION_STATES, id: "noticeNeedAction" }
     ].forEach(function (item) {
       var val = (sp.get(item.key) || "").trim();
-      if (item.list.indexOf(val) >= 0 && $(item.id)) {
-        state[item.key] = val;
-        $(item.id).value = val;
-      }
+      if (item.list.indexOf(val) >= 0 && $(item.id)) { state[item.key] = val; $(item.id).value = val; }
     });
-
     var kw = (sp.get("keyword") || "").trim();
-    if (kw && $("noticeKeyword")) {
-      state.keyword = kw;
-      $("noticeKeyword").value = kw;
-    }
-
+    if (kw && $("noticeKeyword")) { state.keyword = kw; $("noticeKeyword").value = kw; }
     var p = parseInt(sp.get("page"), 10);
     if (!isNaN(p) && p >= 1) { state.page = p; }
     var ps = parseInt(sp.get("pageSize"), 10);
-    if (!isNaN(ps) && [10, 20, 50, 100].indexOf(ps) >= 0) { state.pageSize = ps; }
-    else { state.pageSize = window.PersonalList.loadPageSize("po.notice.pageSize", state.pageSize, [10, 20, 50, 100]); }
+    if (!isNaN(ps) && PAGE_SIZE_OPTIONS.indexOf(ps) >= 0) { state.pageSize = ps; }
+    else { state.pageSize = window.PersonalList.loadPageSize("po.notice.pageSize", state.pageSize, PAGE_SIZE_OPTIONS); }
   }
 
   var OBJECT_TYPE_LABELS = {
@@ -171,14 +164,18 @@
     var badgeHtml = "";
     if (canon && canon !== "mail" && OBJECT_TYPE_LABELS[canon]) {
       var displayID = !isReminderTemplate ? displayObjectID(canon, oid) : "";
-      var idHtml = displayID ? '<span class="table-id-link">' + esc(displayID) + "</span>" : "";
+      var idHtml = "";
+      if (displayID) {
+        idHtml = item.url
+          ? '<a class="table-id-link" href="' + esc(item.url) + '" target="_blank" rel="noopener noreferrer">' + esc(displayID) + "</a>"
+          : '<span class="table-id-link">' + esc(displayID) + "</span>";
+      }
       var pl = window.PersonalList;
       badgeHtml = (pl && pl.idChipHtml)
         ? pl.idChipHtml(canon, idHtml)
         : '<span class="wb-type wb-type-' + esc(canon) + '">' + esc((pl && pl.OBJECT_TYPE_SHORT_LABELS && pl.OBJECT_TYPE_SHORT_LABELS[canon]) || OBJECT_TYPE_LABELS[canon]) + (idHtml ? "#" + idHtml : "") + "</span>";
     }
 
-    // 仅在 canon + oid 都能在 subject 文本里稳定命中时才剥前缀；reminder 模板不剥。
     var displayTitle = (canon && OBJECT_TYPE_LABELS[canon] && !isReminderTemplate)
       ? stripSubjectPrefix(rawSubject, canon, oid)
       : rawSubject;
@@ -194,8 +191,14 @@
         '<span class="notice-sub-icon">' + icon + "</span>" + esc(rawSummary) + "</div>";
     }
 
+    var titleTag = item.url ? "a" : "button";
+    var titleAttrs = item.url
+      ? ' href="' + esc(item.url) + '" target="_blank" rel="noopener noreferrer"'
+      : ' type="button" data-notice-open="' + esc(item.id) + '"';
+    var titleHtml = '<' + titleTag + ' class="table-title-link notice-title-main"' + titleAttrs + '>' + esc(displayTitle) + "</" + titleTag + ">";
+
     return '<div class="notice-subject-text" title="' + esc(rawSubject) + '">' +
-      badgeHtml + '<button type="button" class="notice-title-main" data-notice-open="' + esc(item.id) + '">' + esc(displayTitle) + "</button></div>" + subText;
+      badgeHtml + titleHtml + "</div>" + subText;
   }
 
   function rowHtml(item) {
@@ -207,9 +210,8 @@
     var actions = [];
     if (item.url) {
       actions.push('<a class="table-action-btn primary" href="' + esc(item.url) + '" target="_blank" rel="noopener noreferrer">去处理</a>');
-    } else {
-      actions.push('<button type="button" class="notice-view-btn" data-notice-open="' + esc(item.id) + '">查看详情</button>');
     }
+    actions.push('<button type="button" class="notice-view-btn" data-notice-open="' + esc(item.id) + '">详情</button>');
     if (!item.read) {
       actions.push('<button type="button" class="notice-read-btn" data-notice-id="' + esc(item.id) + '">标为已读</button>');
     }
@@ -230,17 +232,12 @@
       categoryCollaboration: "collaboration", categoryRisk: "risk", categorySystem: "system"
     };
     Object.keys(quick).forEach(function (id) {
-      var el = $(id);
-      if (el) { el.textContent = payload[quick[id]] != null ? payload[quick[id]] : "—"; }
+      var el = $(id); if (el) { el.textContent = payload[quick[id]] != null ? payload[quick[id]] : "—"; }
     });
     var catAll = $("categoryAll");
     if (catAll) { catAll.textContent = (payload.categories && payload.categories.all != null) ? payload.categories.all : "—"; }
     Object.keys(categories).forEach(function (id) {
-      var el = $(id);
-      if (el) {
-        var key = categories[id];
-        el.textContent = (payload.categories && payload.categories[key] != null) ? payload.categories[key] : "—";
-      }
+      var el = $(id); if (el) { el.textContent = (payload.categories && payload.categories[categories[id]] != null) ? payload.categories[categories[id]] : "—"; }
     });
   }
 
@@ -248,8 +245,7 @@
     ["qvCountAll", "qvCountUnread", "qvCountAction", "qvCountAbnormal", "qvCountToday",
      "categoryAll", "categoryBusiness", "categoryApproval", "categoryReminder",
      "categoryCollaboration", "categoryRisk", "categorySystem"].forEach(function (id) {
-      var el = $(id);
-      if (el) { el.textContent = "—"; }
+      var el = $(id); if (el) { el.textContent = "—"; }
     });
   }
 
@@ -442,13 +438,9 @@
 
     if (openObjBtn) {
       if (item.url) {
-        openObjBtn.href = item.url;
-        openObjBtn.hidden = false;
-      } else {
-        openObjBtn.hidden = true;
-      }
+        openObjBtn.href = item.url; openObjBtn.hidden = false;
+      } else { openObjBtn.hidden = true; }
     }
-
     mask.hidden = false;
     if (!item.read) markSingleRead(item.id);
   }
@@ -479,9 +471,15 @@
     if (tbody) {
       tbody.addEventListener("click", function (e) {
         var openBtn = e.target.closest("[data-notice-open]");
-        if (openBtn) {
-          var nid = openBtn.getAttribute("data-notice-open");
-          if (nid) openNoticeDrawer(nid);
+        if (openBtn) { var nid = openBtn.getAttribute("data-notice-open"); if (nid) openNoticeDrawer(nid); return; }
+        var link = e.target.closest("a.table-title-link, a.table-id-link, a.table-action-btn");
+        if (link) {
+          var tr = link.closest("tr");
+          if (tr && tr.classList.contains("is-unread")) {
+            var rBtn = tr.querySelector(".notice-read-btn");
+            var id = rBtn && rBtn.getAttribute("data-notice-id");
+            if (id) markSingleRead(id);
+          }
         }
       });
     }

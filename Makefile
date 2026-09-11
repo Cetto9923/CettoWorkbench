@@ -21,6 +21,7 @@ check-frontend-test:
 	@node tests/unit/frontend/csrf-tokens.test.js
 	@node tests/unit/frontend/personal-list.test.js
 	@node tests/unit/frontend/demand-detail.test.js
+	@node tests/unit/frontend/demand-detail-review.test.js
 	@node tests/unit/frontend/home-focus.test.js
 	@node tests/unit/frontend/home-list-caption.test.js
 	@node tests/unit/frontend/notice-filters.test.js
@@ -33,6 +34,7 @@ check-frontend-test:
 	@node tests/unit/frontend/unified-object-id-ui.test.js
 	@node tests/unit/frontend/todos-object-chips.test.js
 	@node tests/unit/frontend/urge-modal.test.js
+	@node tests/unit/frontend/ui-consistency.test.js
 	@echo "frontend unit/behavior tests passed"
 
 check-vet:

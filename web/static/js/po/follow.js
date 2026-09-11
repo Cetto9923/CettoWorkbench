@@ -17,9 +17,11 @@
   var weeklyScope = "mine";
   var weeklyKeyword = "";
   var PL = window.PersonalList || {};
+  var PAGE_SIZE_OPTIONS = PL.PAGE_SIZE_OPTIONS || [10, 20, 50, 100];
+  var priorityBadge = function(raw) { return PL.priorityBadge ? PL.priorityBadge(raw) : ""; };
   var weeklyPager = {
     page: 1,
-    pageSize: (typeof PL.loadPageSize === "function") ? PL.loadPageSize("po.follow.weekly.pageSize", 10, [10, 15, 20, 30, 50]) : 10,
+    pageSize: (typeof PL.loadPageSize === "function") ? PL.loadPageSize("po.follow.weekly.pageSize", 10, PAGE_SIZE_OPTIONS) : 10,
     total: 0
   };
 
@@ -64,23 +66,51 @@
         credentials: "include",
         headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" }
       });
-      if (!res.ok && res.status === 422 && weeklyScope === "mine") {
+      var isFallback = false;
+      if (!res.ok && res.status === 422 && (weeklyScope === "mine" || weeklyScope === "participated")) {
+        // 向下兼容：后端未重启生效时，降级取 all 数据并在前端按参与/关注过滤
         var fallbackParams = new URLSearchParams({
           filter: weeklyFilter || "all",
           keyword: weeklyKeyword || "",
           limit: "500",
-          scope: "watched"
+          scope: "all"
         });
         res = await fetch("/follow/project-weeklies?" + fallbackParams.toString(), {
           credentials: "include",
           headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" }
         });
+        isFallback = true;
       }
       if (!res.ok) throw new Error("fetch weeklies failed");
       var json = await res.json();
       if (!json || !json.success || !json.data) throw new Error("invalid weeklies payload");
       weeklyItems = Array.isArray(json.data.items) ? json.data.items : [];
       weeklyStats = json.data.stats || weeklyStats;
+
+      if (isFallback) {
+        var curAccount = (document.getElementById("currentUserAccount") ? document.getElementById("currentUserAccount").value.trim() : "");
+        if (weeklyScope === "participated") {
+          weeklyItems = weeklyItems.filter(function (it) {
+            return it.isParticipated || it.source === "participated" || it.source === "both" ||
+              (curAccount && (it.pmAccount === curAccount || it.pm === curAccount));
+          });
+        } else if (weeklyScope === "mine") {
+          weeklyItems = weeklyItems.filter(function (it) {
+            return it.isWatched || it.source === "watched" || it.source === "both" ||
+              it.isParticipated || it.source === "participated" ||
+              (curAccount && (it.pmAccount === curAccount || it.pm === curAccount));
+          });
+        }
+        weeklyStats = {
+          watched: weeklyItems.length,
+          submitted: weeklyItems.filter(function (it) { return it.submitStatus === "submitted"; }).length,
+          waiting: weeklyItems.filter(function (it) { return it.submitStatus !== "submitted"; }).length,
+          abnormal: weeklyItems.filter(function (it) { return it.hasAbnormal; }).length,
+          risk: weeklyItems.filter(function (it) { return (it.openIssueCount > 0 || it.openRiskCount > 0); }).length,
+          deviation: weeklyItems.filter(function (it) { return (it.planDeviationDays > 0 || (it.releaseRisk && it.releaseRisk !== "normal")); }).length
+        };
+      }
+
       weeklyPager.total = weeklyItems.length;
       updateWeeklyStatsUI();
       renderWeeklyRows();
@@ -147,19 +177,18 @@
       var pmAccount = item.pmAccount ? " (" + esc(item.pmAccount) + ")" : "";
 
       var sourceBadge = "";
-      if (item.source === "both") {
-        sourceBadge = '<span class="tag blue" style="margin-left:6px;font-size:11px;">参与·关注</span>';
-      } else if (item.source === "participated" || item.isParticipated) {
+      if (item.isParticipated || item.source === "participated" || item.source === "both") {
         sourceBadge = '<span class="tag blue" style="margin-left:6px;font-size:11px;">参与</span>';
-      } else {
-        sourceBadge = '<span class="tag" style="margin-left:6px;font-size:11px;">关注</span>';
       }
 
-      var unwatchBtn = "";
-      if (item.isWatched || item.source === "watched" || item.source === "both") {
-        unwatchBtn = '<button type="button" class="link-btn muted" data-unwatch-project="' + pid + '">取消关注</button>';
+      var isWatched = !!(item.isWatched || item.source === "watched" || item.source === "both");
+      var watchBtn = "";
+      if (isWatched) {
+        watchBtn = '<button type="button" class="pw-action-btn pw-watch-btn is-watched" data-unwatch-project="' + pid + '" data-watched="1" title="取消关注" aria-label="取消关注" aria-pressed="true">' +
+          '<i class="fas fa-star" aria-hidden="true"></i></button>';
       } else {
-        unwatchBtn = '<button type="button" class="link-btn muted" disabled title="参与项目请在禅道团队管理，不在此取关" style="opacity:0.4;cursor:not-allowed;">取消关注</button>';
+        watchBtn = '<button type="button" class="pw-action-btn pw-watch-btn" data-unwatch-project="' + pid + '" data-watched="0" disabled title="参与项目请在禅道团队管理，不在此取关" aria-label="参与项目" style="opacity:0.35;cursor:not-allowed;">' +
+          '<i class="far fa-star" aria-hidden="true"></i></button>';
       }
 
       return "<tr>" +
@@ -168,7 +197,11 @@
         '<td><div class="pw-situation">' + situationTag(item) + '</div>' + desc + '</td>' +
         '<td><div class="pw-progress"><div class="pw-pbox"><b>' + (item.finishedCount || 0) + '</b><span>完成</span></div><div class="pw-pbox"><b>' + (item.unfinishedCount || 0) + '</b><span>未完成</span></div><div class="pw-pbox"><b>' + (item.nextWeekCount || 0) + '</b><span>下周</span></div></div></td>' +
         '<td>' + riskLineHtml(item) + '</td>' +
-        '<td><div class="pw-actions"><button type="button" class="link-btn" data-open-detail="' + pid + '">查看周报</button><button type="button" class="ghost-btn" data-open-history="' + pid + '">历史记录</button>' + unwatchBtn + '</div></td>' +
+        '<td><div class="pw-actions">' +
+        '<button type="button" class="pw-action-btn" data-open-detail="' + pid + '" title="查看周报" aria-label="查看周报"><i class="fas fa-file-lines" aria-hidden="true"></i></button>' +
+        '<button type="button" class="pw-action-btn" data-open-history="' + pid + '" title="历史记录" aria-label="历史记录"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i></button>' +
+        watchBtn +
+        '</div></td>' +
         "</tr>";
     }).join("");
     tbody.innerHTML = html;

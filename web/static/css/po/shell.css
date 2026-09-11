@@ -41,6 +41,12 @@ body.po-workbench-shell {
   --po-scrollbar-thumb: var(--color-border-strong);
   --po-scrollbar-thumb-hover: var(--color-text-disabled);
   --po-scrollbar-corner: var(--color-surface);
+
+  /* 页面节奏：所有 PO 列表页共用同一套内外边距契约（滚动容器按这些值计算高度） */
+  --po-shell-topbar-height: 56px;
+  --po-shell-pad-top: 12px;
+  --po-shell-pad-x: 20px;
+  --po-shell-pad-bottom: 46px;
 }
 
 body.po-workbench-shell .topbar {
@@ -286,11 +292,50 @@ body.po-workbench-shell .sidebar .badge {
 }
 
 body.po-workbench-shell .main {
-  height: calc(100vh - 56px);
-  min-height: calc(100vh - 56px);
-  padding: 12px 20px 40px;
+  height: calc(100vh - var(--po-shell-topbar-height));
+  min-height: calc(100vh - var(--po-shell-topbar-height));
+  padding: var(--po-shell-pad-top) var(--po-shell-pad-x) var(--po-shell-pad-bottom);
   overflow-y: auto;
   background: var(--color-page-bg);
+}
+
+body.po-workbench-shell .workspace-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0 0 10px;
+  padding: 10px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  box-sizing: border-box;
+}
+body.po-workbench-shell .workspace-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+body.po-workbench-shell .workspace-header-left h2 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+body.po-workbench-shell .workspace-header-left p {
+  margin: 0;
+  padding-left: 12px;
+  border-left: 1px solid var(--color-border);
+  font-size: 12px;
+  line-height: 14px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .bottom-tabbar {
@@ -369,7 +414,7 @@ body.po-workbench-shell .main {
   background: var(--color-surface-hover);
 }
 
-body.po-workbench-shell.has-bottom-tabs .main { padding-bottom: 56px; }
+body.po-workbench-shell.has-bottom-tabs { --po-shell-pad-bottom: 56px; }
 
 body.sidebar-collapsed.po-workbench-shell .sidebar { width: var(--sidebar-width-collapsed); }
 body.sidebar-collapsed.po-workbench-shell .topbar { left: var(--sidebar-width-collapsed); }

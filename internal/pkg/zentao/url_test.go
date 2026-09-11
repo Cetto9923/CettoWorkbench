@@ -14,6 +14,7 @@ func TestURLPathInfoWhenConfigured(t *testing.T) {
 		want string
 	}{
 		{"demand", DemandViewURL(2215), "http://10.211.55.4:8080/demand-view-2215.html#app=demandpool"},
+		{"demand_edit", DemandEditURL(2215), "http://10.211.55.4:8080/demand-edit-2215.html#app=demandpool"},
 		{"demand_clarify", DemandClarifyURL(2215), "http://10.211.55.4:8080/demand-clarify-2215.html"},
 		{"story", StoryViewURL(72111), "http://10.211.55.4:8080/story-view-72111.html#app=project"},
 		{"task", TaskViewURL(190651), "http://10.211.55.4:8080/task-view-190651.html"},
@@ -35,6 +36,7 @@ func TestURLGetWhenConfigured(t *testing.T) {
 		want string
 	}{
 		{"demand", DemandViewURL(2215), "http://10.211.55.4:8080/index.php?m=demand&f=view&demandID=2215&id=2215#app=demandpool"},
+		{"demand_edit", DemandEditURL(2215), "http://10.211.55.4:8080/index.php?m=demand&f=edit&demandID=2215&id=2215#app=demandpool"},
 		{"demand_clarify", DemandClarifyURL(2215), "http://10.211.55.4:8080/index.php?m=demand&f=clarify&demandID=2215&id=2215"},
 		{"story", StoryViewURL(72111), "http://10.211.55.4:8080/index.php?m=story&f=view&storyID=72111&id=72111#app=project"},
 		{"task", TaskViewURL(190651), "http://10.211.55.4:8080/index.php?m=task&f=view&taskID=190651&id=190651"},

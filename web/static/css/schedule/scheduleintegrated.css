@@ -77,7 +77,7 @@
 #scheduleIntegratedModal input[type="date"]::-webkit-datetime-edit,
 #taskModal input[type="date"].form-input::-webkit-datetime-edit,
 #taskModal input[type="date"]::-webkit-datetime-edit {
-  color: var(--color-text-disabled);
+  color: var(--color-text-secondary);
 }
 
 #scheduleIntegratedModal input[type="date"].form-input:focus::-webkit-datetime-edit,
@@ -470,7 +470,7 @@
 }
 
 .rd-node-assignee-display {
-  color: var(--color-text-disabled);
+  color: var(--color-text-secondary);
   font-size: 11px;
   white-space: nowrap;
   flex-shrink: 0;
@@ -668,7 +668,7 @@
   background: none;
   padding: 8px;
   cursor: pointer;
-  color: var(--color-text-disabled);
+  color: var(--color-text-secondary);
   line-height: 1;
   display: inline-flex;
   align-items: center;
@@ -779,7 +779,7 @@
 
 #scheduleIntegratedModal .rd-node-tasks input[type="date"]::-webkit-datetime-edit,
 #taskModal .rd-node-tasks input[type="date"]::-webkit-datetime-edit {
-  color: var(--color-text-disabled);
+  color: var(--color-text-secondary);
 }
 
 #scheduleIntegratedModal .rd-node-tasks input[type="date"]:focus::-webkit-datetime-edit,

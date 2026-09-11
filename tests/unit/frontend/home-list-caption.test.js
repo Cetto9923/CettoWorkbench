@@ -58,9 +58,11 @@ async function loadHomeAndResolve({ search, loadPageSize, items, total }) {
       createController: () => ({ bind() {}, destroy() {} })
     }
   };
-  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../../../web/static/js/po/home.js'), 'utf8'), {
+  const ctx = {
     window, jQuery: $, URLSearchParams, document: { getElementById: () => null }
-  });
+  };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../../../web/static/js/po/home-render.js'), 'utf8'), ctx);
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../../../web/static/js/po/home.js'), 'utf8'), ctx);
   $._ready();
   assert.equal(typeof resolveFetch, 'function', 'initial refreshDemands must call appFetch');
   resolveFetch({ ok: true, json: () => Promise.resolve({ success: true, items, total, page: 1, pageSize: 15 }) });

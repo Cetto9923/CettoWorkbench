@@ -40,10 +40,26 @@
     var status = String(summary.status || "").trim().toLowerCase();
     var canReview = !!summary.canReview || (pa.key === "approve" && pa.enabled !== false);
     var canSubmitReview = pa.key === "submit_review" && pa.enabled !== false;
-    var canWithdrawReview = pa.key === "withdraw_review" && pa.enabled !== false;
+    var canWithdrawReview = !!summary.canWithdrawReview || (pa.key === "withdraw_review" && pa.enabled !== false);
     var isCreator = !!summary.isCreator || canWithdrawReview || canSubmitReview;
     var cleanId = String(summary.demandId || summary.id || "").replace(/^US/i, "");
     var zentaoEditUrl = String(summary.zentaoEditUrl || "").trim();
+    var zentaoUrl = String(summary.zentaoUrl || "").trim();
+    if (!/^https?:\/\//i.test(zentaoEditUrl)) {
+      if (zentaoUrl) {
+        var derivedEdit = zentaoUrl.replace(/\/demand-view-(\d+)\.html/i, "/demand-edit-$1.html")
+                                   .replace(/([?&]f=)view(&|$)/i, "$1edit$2");
+        if (derivedEdit !== zentaoUrl) {
+          zentaoEditUrl = derivedEdit;
+        } else if (zentaoEditUrl && zentaoEditUrl.charAt(0) === "/" && /^https?:\/\//i.test(zentaoUrl)) {
+          try {
+            var parsedUrl = new URL(zentaoUrl);
+            var hash = zentaoEditUrl.indexOf("#") === -1 ? "#app=demandpool" : "";
+            zentaoEditUrl = parsedUrl.origin + zentaoEditUrl + hash;
+          } catch (e) {}
+        }
+      }
+    }
 
     var safeSpecHtml = sanitizeRichText(req.specHtml || summary.desc);
     var safeVerifyHtml = sanitizeRichText(req.verifyHtml || summary.verifyPlan);
@@ -59,11 +75,13 @@
     if (status === "wait") {
       if (canReview) {
         bannerBadge = "待我评审";
-        bannerText = "该需求处于待业务评审阶段，您是业务评审人。请核对需求背景、业务描述与验收标准后，在底部进行评审通过或驳回。";
+        bannerText = isCreator
+          ? "该需求处于待业务评审阶段。您是业务评审人，也是创建人。可在底部统一办理（评审通过、驳回拒绝、编辑或撤回）。"
+          : "该需求处于待业务评审阶段，您是业务评审人。请核对需求背景与验收标准后，在底部进行评审通过或驳回。";
       } else if (isCreator) {
         bannerBadge = "待业务评审";
         badgeStyle = "background:#e6f7ff;color:#096dd9;border:1px solid #91d5ff;";
-        bannerText = "该需求已提交业务评审，正在等待业务评审人出具评审结果。您是该需求的创建人，如有需要可撤回评审。";
+        bannerText = "该需求已提交业务评审，正在等待业务评审人出具评审结果。您是该需求的创建人，可在底部编辑需求或撤回评审。";
       } else {
         bannerBadge = "待业务评审";
         badgeStyle = "background:#f5f5f5;color:#595959;border:1px solid #d9d9d9;";
@@ -72,65 +90,71 @@
     } else if (status === "refuse") {
       bannerBadge = "已驳回";
       badgeStyle = "background:#fff2f0;color:#cf1322;border:1px solid #ffa39e;";
-      if (isCreator) {
-        bannerText = "该需求已被评审驳回。您是该需求的创建人，可点击编辑前往修改需求内容，或重新提交业务评审。";
-      } else {
-        bannerText = "该需求已被评审驳回。当前仅支持查看。";
-      }
+      bannerText = isCreator
+        ? "该需求已被评审驳回。您是该需求的创建人，可在底部点击编辑前往修改需求内容，或重新提交业务评审。"
+        : "该需求已被评审驳回。当前仅支持查看。";
     } else {
       bannerBadge = "草稿 / 暂存";
       badgeStyle = "background:#fffbe6;color:#d46b08;border:1px solid #ffe58f;";
-      if (isCreator) {
-        bannerText = "该需求处于草稿/暂存状态。您是该需求的创建人，核对信息无误后可直接提交业务评审，或前往编辑。";
-      } else {
-        bannerText = "该需求处于草稿/暂存状态。当前仅支持查看。";
+      bannerText = isCreator
+        ? "该需求处于草稿/暂存状态。您是该需求的创建人，核对信息无误后可在底部提交业务评审，或前往编辑。"
+        : "该需求处于草稿/暂存状态。当前仅支持查看。";
+    }
+
+    var leftActions = [];
+    var rightActions = [];
+
+    // 发起人/创建人操作组 (左侧)
+    if (isCreator || canWithdrawReview) {
+      if (summary.canEdit && zentaoEditUrl) {
+        leftActions.push('<a href="' + esc(zentaoEditUrl) + '" target="_blank" rel="noopener noreferrer" class="dd-btn dd-btn-edit">✏️ 编辑需求 ↗</a>');
+      } else if (summary.hasReviewed || summary.reviewedCount > 0) {
+        var lockTip = summary.editDisabledReason || "已有评审人出具评审意见，需求已锁定修改；如需修改请先撤回评审申请";
+        leftActions.push('<button type="button" class="dd-btn disabled" disabled title="' + esc(lockTip) + '">🔒 编辑已锁定 ↗</button>');
+      } else if (zentaoEditUrl && (status === "draft" || status === "refuse")) {
+        leftActions.push('<a href="' + esc(zentaoEditUrl) + '" target="_blank" rel="noopener noreferrer" class="dd-btn dd-btn-edit">✏️ 编辑需求 ↗</a>');
+      }
+      if (canWithdrawReview) {
+        leftActions.push('<button type="button" class="dd-btn dd-btn-ghost-danger dd-withdraw-btn" id="ddWithdrawBtn" onclick="DemandDetailReview.handleWithdraw(\'' + esc(cleanId) + '\')">撤回评审</button>');
       }
     }
 
-    var footerHtml = "";
+    // 审批人/决断操作组 (右侧)
     if (status === "wait" && canReview) {
-      footerHtml = [
-        '<div class="dd-review-footer">',
-        '  <form class="dd-review-form" id="ddReviewInlineForm" onsubmit="DemandDetailReview.handleSubmit(event)">',
-        '    <div class="dd-review-form-row">',
-        '      <div class="dd-review-form-item">',
-        '        <span class="dd-review-label">评审结果：</span>',
-        '        <label class="dd-radio-label"><input type="radio" name="result" value="pass" checked> 确认通过</label>',
-        '        <label class="dd-radio-label"><input type="radio" name="result" value="refuse"> 驳回拒绝</label>',
-        '      </div>',
-        '      <div class="dd-review-form-item">',
-        '        <span class="dd-review-label">重点关注：</span>',
-        '        <label class="dd-radio-label"><input type="radio" name="isNeedFocus" value="0" checked> 否</label>',
-        '        <label class="dd-radio-label"><input type="radio" name="isNeedFocus" value="1"> 是</label>',
-        '      </div>',
-        '    </div>',
-        '    <div class="dd-review-form-row">',
-        '      <div class="dd-review-form-item" style="flex:1;">',
-        '        <input type="text" name="comment" class="dd-review-input" placeholder="输入评审意见 / 备注（驳回必填，通过可选）" maxlength="1000">',
-        '      </div>',
-        '      <button type="submit" class="dd-btn primary dd-review-submit-btn" id="ddReviewSubmitBtn">评审需求</button>',
-        '    </div>',
-        '  </form>',
-        '</div>'
-      ].join("");
-    } else if (status === "wait" && canWithdrawReview) {
-      footerHtml = [
-        '<div class="dd-review-footer" style="display:flex;align-items:center;justify-content:space-between;">',
-        '  <span style="color:#595959;font-size:13px;">如需修改需求内容或暂停推进，您可以撤回当前评审申请：</span>',
-        '  <button type="button" class="dd-btn danger dd-withdraw-btn" id="ddWithdrawBtn" onclick="DemandDetailReview.handleWithdraw(\'' + esc(cleanId) + '\')">撤回评审</button>',
-        '</div>'
-      ].join("");
+      rightActions.push('<button type="button" class="dd-btn danger-outline dd-reject-btn" id="ddRejectBtn" onclick="DemandDetailReview.openRejectModal(\'' + esc(cleanId) + '\')">驳回拒绝</button>');
+      rightActions.push('<button type="button" class="dd-btn primary dd-pass-btn" id="ddPassBtn" onclick="DemandDetailReview.handlePass(\'' + esc(cleanId) + '\')">评审通过</button>');
     } else if ((status === "draft" || status === "refuse") && canSubmitReview) {
+      rightActions.push('<button type="button" class="dd-btn primary dd-submit-review-btn" id="ddSubmitReviewBtn" onclick="DemandDetailReview.handleSubmitReview(\'' + esc(cleanId) + '\')">提交评审</button>');
+    }
+
+    var footerHtml = "";
+    if (leftActions.length > 0 || rightActions.length > 0) {
       footerHtml = [
-        '<div class="dd-review-footer" style="display:flex;align-items:center;justify-content:space-between;">',
-        '  <span style="color:#595959;font-size:13px;">您可以编辑完善需求，或直接提交给业务评审人进行评审：</span>',
-        '  <div style="display:flex;gap:12px;">',
-        (zentaoEditUrl ? '    <a href="' + esc(zentaoEditUrl) + '" target="_blank" rel="noopener noreferrer" class="dd-btn">编辑需求 ↗</a>' : ''),
-        '    <button type="button" class="dd-btn primary dd-submit-review-btn" id="ddSubmitReviewBtn" onclick="DemandDetailReview.handleSubmitReview(\'' + esc(cleanId) + '\')">提交评审</button>',
-        '  </div>',
+        '<div class="dd-review-footer dd-review-action-bar">',
+        '  <div class="dd-review-footer-left">' + leftActions.join("") + '</div>',
+        '  <div class="dd-review-footer-right">' + rightActions.join("") + '</div>',
         '</div>'
       ].join("");
     }
+
+    var rejectModalHtml = [
+      '<div id="ddRejectModal" class="dd-reject-modal-overlay" style="display:none;">',
+      '  <div class="dd-reject-modal-dialog">',
+      '    <div class="dd-reject-modal-header">',
+      '      <h3>驳回需求评审</h3>',
+      '      <button type="button" class="ui-close-btn" onclick="DemandDetailReview.closeRejectModal()">×</button>',
+      '    </div>',
+      '    <div class="dd-reject-modal-body">',
+      '      <label class="dd-reject-label"><span style="color:#ef4444;">*</span> 请输入驳回原因 / 意见（必填）：</label>',
+      '      <textarea id="ddRejectComment" class="dd-reject-textarea" rows="4" placeholder="请详细说明驳回原因，将作为评审记录同步至禅道并通知创建人..."></textarea>',
+      '    </div>',
+      '    <div class="dd-reject-modal-footer">',
+      '      <button type="button" class="dd-btn" onclick="DemandDetailReview.closeRejectModal()">取消</button>',
+      '      <button type="button" class="dd-btn danger" id="ddConfirmRejectBtn" onclick="DemandDetailReview.confirmReject(\'' + esc(cleanId) + '\')">确认驳回</button>',
+      '    </div>',
+      '  </div>',
+      '</div>'
+    ].join("");
 
     return [
       '<div class="dd-review-container">',
@@ -177,50 +201,59 @@
       '    </aside>',
       '  </div>',
       footerHtml,
+      rejectModalHtml,
       '</div>'
     ].join("");
   }
 
-  function handleSubmit(event) {
-    if (event && event.preventDefault) event.preventDefault();
-    var form = document.getElementById("ddReviewInlineForm");
-    if (!form) return;
-    var btn = document.getElementById("ddReviewSubmitBtn");
-    var demandId = window.DemandDetail && window.DemandDetail.getCurrentDemandId ? window.DemandDetail.getCurrentDemandId() : null;
-    var cleanId = String(demandId || "").replace(/^US/i, "");
-    if (!cleanId) {
-      if (typeof window.showToast === "function") window.showToast("需求信息不可用", "error");
-      return;
-    }
+  function handlePass(demandId) {
+    var cleanId = String(demandId || (window.DemandDetail && window.DemandDetail.getCurrentDemandId ? window.DemandDetail.getCurrentDemandId() : "")).replace(/^US/i, "");
+    if (!cleanId) return;
+    if (!window.confirm("确认评审通过该需求吗？")) return;
+    var btn = document.getElementById("ddPassBtn");
+    if (btn) { btn.disabled = true; btn.textContent = "通过中…"; }
+    submitReviewAction(cleanId, "pass", "确认通过", function () {
+      if (btn) { btn.disabled = false; btn.textContent = "评审通过"; }
+    });
+  }
 
-    var result = (form.querySelector("input[name='result']:checked") || {}).value || "pass";
-    var isNeedFocus = (form.querySelector("input[name='isNeedFocus']:checked") || {}).value || "0";
-    var comment = (form.querySelector("input[name='comment']") || {}).value || "";
+  function openRejectModal(demandId) {
+    var modal = document.getElementById("ddRejectModal");
+    if (!modal) return;
+    modal.style.display = "flex";
+    var ta = document.getElementById("ddRejectComment");
+    if (ta) { ta.value = ""; ta.focus(); }
+  }
 
-    if (result === "refuse" && !comment.trim()) {
+  function closeRejectModal() {
+    var modal = document.getElementById("ddRejectModal");
+    if (modal) modal.style.display = "none";
+  }
+
+  function confirmReject(demandId) {
+    var cleanId = String(demandId || (window.DemandDetail && window.DemandDetail.getCurrentDemandId ? window.DemandDetail.getCurrentDemandId() : "")).replace(/^US/i, "");
+    if (!cleanId) return;
+    var ta = document.getElementById("ddRejectComment");
+    var comment = (ta && ta.value || "").trim();
+    if (!comment) {
       if (typeof window.showToast === "function") window.showToast("驳回时请输入评审意见", "warning");
-      var commentInput = form.querySelector("input[name='comment']");
-      if (commentInput) commentInput.focus();
+      if (ta) ta.focus();
       return;
     }
+    var btn = document.getElementById("ddConfirmRejectBtn");
+    if (btn) { btn.disabled = true; btn.textContent = "驳回中…"; }
+    submitReviewAction(cleanId, "refuse", comment, function () {
+      if (btn) { btn.disabled = false; btn.textContent = "确认驳回"; }
+      closeRejectModal();
+    });
+  }
 
-    if (btn) {
-      btn.disabled = true;
-      btn.textContent = "评审中…";
-    }
-
+  function submitReviewAction(cleanId, result, comment, onDone) {
     var fetchFn = (typeof window !== "undefined" && window.appFetch) ? window.appFetch : fetch;
     fetchFn("/demands/" + encodeURIComponent(cleanId) + "/review", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json"
-      },
-      body: JSON.stringify({
-        result: result,
-        isNeedFocus: isNeedFocus,
-        comment: comment
-      })
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify({ result: result, isNeedFocus: "0", comment: comment })
     })
       .then(function (res) {
         return res.json().then(function (data) {
@@ -230,7 +263,7 @@
       })
       .then(function (data) {
         if (typeof window.showToast === "function") {
-          window.showToast((data && data.message) || "评审成功", "success");
+          window.showToast((data && data.message) || (result === "pass" ? "评审通过成功" : "驳回成功"), "success");
         }
         if (window.DemandDetail && typeof window.DemandDetail.close === "function") {
           window.DemandDetail.close();
@@ -245,11 +278,14 @@
         }
       })
       .then(function () {
-        if (btn) {
-          btn.disabled = false;
-          btn.textContent = "评审需求";
-        }
+        if (typeof onDone === "function") onDone();
       });
+  }
+
+  function handleSubmit(event) {
+    if (event && event.preventDefault) event.preventDefault();
+    var demandId = window.DemandDetail && window.DemandDetail.getCurrentDemandId ? window.DemandDetail.getCurrentDemandId() : null;
+    handlePass(demandId);
   }
 
   function handleWithdraw(demandId) {
@@ -359,6 +395,10 @@
   return {
     renderReviewView: renderReviewView,
     handleSubmit: handleSubmit,
+    handlePass: handlePass,
+    openRejectModal: openRejectModal,
+    closeRejectModal: closeRejectModal,
+    confirmReject: confirmReject,
     handleWithdraw: handleWithdraw,
     handleSubmitReview: handleSubmitReview
   };

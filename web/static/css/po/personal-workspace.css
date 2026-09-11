@@ -11,50 +11,11 @@
 @import url("./wb-priority.css");
 
 .po-personal-workspace {
-  min-height: calc(100vh - 56px);
-  padding: 12px 16px 24px;
+  min-height: 0;
+  padding: 0;
   background: var(--color-page-bg);
   color: var(--color-text-strong);
   box-sizing: border-box;
-}
-
-/* 页面标题头卡片 (Proposal A 规范: 统一卡片底座 + 内联标题副标) */
-.po-personal-workspace .workspace-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-  padding: 10px 16px;
-  margin-bottom: 10px;
-  border-radius: 8px;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-sm);
-}
-.po-personal-workspace .workspace-header-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.po-personal-workspace .workspace-header-left h2 {
-  margin: 0;
-  font-size: 16px;
-  line-height: 22px;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  letter-spacing: -0.02em;
-}
-.po-personal-workspace .workspace-header-left p {
-  margin: 0;
-  font-size: 12px;
-  line-height: 14px;
-  color: var(--color-text-disabled);
-  border-left: 1px solid var(--color-border);
-  padding-left: 12px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* 统一右上角紧凑快捷筛选 Chips (高度 28px，精细对齐) */
@@ -253,7 +214,7 @@
 }
 .wb-done-tab-count {
   font-size: 11px;
-  color: var(--color-text-disabled);
+  color: var(--color-text-secondary);
   margin-left: 3px;
   background: transparent;
   padding: 0;
@@ -272,7 +233,7 @@
 }
 .po-personal-workspace .workspace-search {
   display: inline-flex; align-items: center; width: 220px; height: 28px; padding: 0 8px;
-  border: 1px solid var(--color-border-strong); border-radius: 4px; background: var(--color-surface); color: var(--color-text-disabled); box-sizing: border-box;
+  border: 1px solid var(--color-border-strong); border-radius: 4px; background: var(--color-surface); color: var(--color-text-secondary); box-sizing: border-box;
 }
 .po-personal-workspace .workspace-search input {
   width: 100%; min-width: 0; border: 0; outline: 0; padding-left: 6px; font-size: 11px;
@@ -298,7 +259,7 @@
   background: var(--color-surface); color: var(--color-text-secondary); font-size: 11px; cursor: pointer; display: inline-flex;
   align-items: center; gap: 4px; white-space: nowrap; box-sizing: border-box;
 }
-.po-personal-workspace .workspace-btn:hover { border-color: var(--color-text-disabled); color: var(--color-text-primary); background: var(--color-surface-muted); }
+.po-personal-workspace .workspace-btn:hover { border-color: var(--color-text-secondary); color: var(--color-text-primary); background: var(--color-surface-muted); }
 .po-personal-workspace .workspace-btn.primary { border-color: var(--color-info-fill); background: var(--color-info-fill); color: var(--color-text-on-accent); }
 .po-personal-workspace .workspace-btn.primary:hover { background: var(--color-info-fill-hover); border-color: var(--color-info-fill-hover); }
 .po-personal-workspace .workspace-btn.soft-primary {
@@ -309,12 +270,12 @@
 /* 结果状态栏 (Result Bar) */
 .po-personal-workspace .workspace-result-bar {
   display: flex; align-items: center; justify-content: space-between; min-height: 26px;
-  padding: 6px 12px; color: var(--color-text-disabled); font-size: 11px; background: var(--color-surface); border-bottom: 1px solid var(--color-surface-muted);
+  padding: 6px 12px; color: var(--color-text-secondary); font-size: 11px; background: var(--color-surface); border-bottom: 1px solid var(--color-surface-muted);
 }
 .po-personal-workspace .workspace-result-bar strong {
   color: var(--color-text-primary); font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
-.po-personal-workspace .workspace-result-hint { font-size: 11px; color: var(--color-text-disabled); }
+.po-personal-workspace .workspace-result-hint { font-size: 11px; color: var(--color-text-secondary); }
 
 /* 表格包装与定义 */
 .po-personal-workspace .table-scroll-container {
@@ -346,15 +307,28 @@
 
 /* 通用行标签与操作 */
 .po-personal-workspace .table-id-link {
-  color: var(--color-info-fill); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; text-decoration: none;
+  color: var(--color-info); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; text-decoration: none;
+}
+.po-personal-workspace .wb-type .table-id-link,
+.po-personal-workspace .wb-type .done-obj-id-link {
+  color: var(--color-badge-id-text);
+}
+.po-personal-workspace .wb-type .table-id-link:hover,
+.po-personal-workspace .wb-type .done-obj-id-link:hover {
+  color: var(--color-info);
+  text-decoration: underline;
 }
 .po-personal-workspace .table-title-link { color: var(--color-text-strong); text-decoration: none; font-weight: 500; }
 .po-personal-workspace .table-title-link:hover,
 .po-personal-workspace .table-id-link:hover { text-decoration: underline; color: var(--color-info); }
+.po-personal-workspace .table-action-group {
+  display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end; white-space: nowrap;
+}
 .po-personal-workspace .table-action-btn {
-  height: 24px; padding: 0 8px; border: 1px solid var(--color-info-border); border-radius: 4px;
-  background: var(--color-info-bg); color: var(--color-info); font-size: 11px; cursor: pointer;
+  height: 28px; padding: 0 10px; border: 1px solid var(--color-info-border); border-radius: 4px;
+  background: var(--color-info-bg); color: var(--color-info); font-size: 12px; cursor: pointer;
   text-decoration: none; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
+  white-space: nowrap; flex-shrink: 0;
 }
 .po-personal-workspace .table-action-btn:hover { background: var(--color-info-bg); }
 .po-personal-workspace .table-action-btn.primary {
@@ -363,10 +337,16 @@
 .po-personal-workspace .table-action-btn.primary:hover {
   border-color: var(--color-info-fill-hover); background: var(--color-info-fill-hover); color: var(--color-text-on-accent);
 }
+.po-personal-workspace .table-action-btn.secondary {
+  border-color: var(--color-info-border); background: var(--color-surface); color: var(--color-info);
+}
+.po-personal-workspace .table-action-btn.secondary:hover {
+  background: var(--color-info-bg); border-color: var(--color-info);
+}
 
 /* 状态占位：Loading / Empty / Error */
 .po-personal-workspace .state-placeholder {
-  padding: 50px 20px; text-align: center; color: var(--color-text-disabled); font-size: 13px;
+  padding: 50px 20px; text-align: center; color: var(--color-text-secondary); font-size: 13px;
 }
 .po-personal-workspace .state-placeholder.error { color: var(--color-danger-fill); }
 .po-personal-workspace .state-placeholder .retry-btn {
@@ -387,7 +367,7 @@
 }
 .po-personal-workspace .data-info {
   display: flex; align-items: center; gap: 8px; margin-top: 6px;
-  color: var(--color-text-disabled); font-size: 11px; line-height: 18px;
+  color: var(--color-text-secondary); font-size: 11px; line-height: 18px;
 }
 .po-personal-workspace .pager-btn {
   min-width: 26px; height: 26px; padding: 0 6px; border: 1px solid var(--color-border);
@@ -399,16 +379,30 @@
   border-color: var(--color-info-fill); background: var(--color-info-bg); color: var(--color-info); font-weight: 600;
 }
 .po-personal-workspace .pager-btn:disabled { cursor: not-allowed; opacity: .4; }
-.po-personal-workspace .pager-ellipsis { padding: 0 4px; color: var(--color-text-disabled); }
+.po-personal-workspace .pager-ellipsis { padding: 0 4px; color: var(--color-text-secondary); }
+/* 跳页控件：与 components/pager.html 的“跳至 N 页”同一交互 */
+.po-personal-workspace .pager-jump-label { color: var(--color-text-secondary); font-size: 11px; }
+.po-personal-workspace .pager-jump-input {
+  width: 48px; height: 26px; padding: 0 6px; border: 1px solid var(--color-border); border-radius: 4px;
+  background: var(--color-surface); color: var(--color-text-primary); font-size: 11px; text-align: center; box-sizing: border-box;
+}
+.po-personal-workspace .pager-jump-input:focus { outline: none; border-color: var(--color-border-focus); }
+.po-personal-workspace .pager-jump-btn {
+  height: 26px; padding: 0 8px; border: 1px solid var(--color-border); border-radius: 4px;
+  background: var(--color-surface); color: var(--color-text-secondary); font-size: 11px; cursor: pointer;
+}
+.po-personal-workspace .pager-jump-btn:hover {
+  border-color: var(--color-info-fill); color: var(--color-info); background: var(--color-surface-muted);
+}
 
 /* 响应式适配 */
 @media (max-width: 980px) {
-  .po-personal-workspace { padding: 10px 12px 20px; }
+  .po-personal-workspace { padding: 0; }
   .po-personal-workspace .workspace-search { width: 100%; }
   .po-personal-workspace .workspace-toolbar select { flex: 1 1 120px; }
 }
 @media (max-width: 620px) {
-  .po-personal-workspace { padding: 8px 8px 16px; }
+  .po-personal-workspace { padding: 0; }
   .po-personal-workspace .header-quick-filters { width: 100%; justify-content: flex-start; }
   .po-personal-workspace .workspace-pagination { flex-direction: column; align-items: flex-start; gap: 8px; padding-block: 8px; }
   .po-personal-workspace .pager-controls { flex-wrap: wrap; }

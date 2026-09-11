@@ -70,11 +70,50 @@
     return !!item.canReview;
   }
 
+  function resolveDemandEditUrl(item) {
+    if (!item || isStoryItem(item)) {
+      return "";
+    }
+    var editUrl = (item.zentaoEditUrl || "").trim();
+    if (/^https?:\/\//i.test(editUrl)) {
+      if (editUrl.indexOf("#") === -1 && editUrl.indexOf("demand") !== -1) {
+        editUrl += "#app=demandpool";
+      }
+      return editUrl;
+    }
+    var viewUrl = (item.zentaoUrl || "").trim();
+    if (viewUrl) {
+      var derived = viewUrl.replace(/\/demand-view-(\d+)\.html/i, "/demand-edit-$1.html");
+      if (derived !== viewUrl) {
+        return derived;
+      }
+      derived = viewUrl.replace(/([?&]f=)view(&|$)/i, "$1edit$2");
+      if (derived !== viewUrl) {
+        return derived;
+      }
+      if (editUrl && editUrl.charAt(0) === "/" && /^https?:\/\//i.test(viewUrl)) {
+        try {
+          var parsed = new URL(viewUrl);
+          var hash = editUrl.indexOf("#") === -1 ? "#app=demandpool" : "";
+          return parsed.origin + editUrl + hash;
+        } catch (e) {}
+      }
+    }
+    return "";
+  }
+
   function reviewActionHtml(item) {
+    var editUrl = resolveDemandEditUrl(item);
+    var editBtn = editUrl
+      ? '<a class="table-action-btn secondary" href="' + esc(editUrl) + '" target="_blank" rel="noopener noreferrer">编辑 ↗</a>'
+      : "";
     return (
+      '<div class="table-action-group">' +
       '<button type="button" class="table-action-btn primary js-demand-review" data-review-demand-id="' +
       esc(item.id || "") +
-      '">评审</button>'
+      '">评审</button>' +
+      editBtn +
+      '</div>'
     );
   }
 
@@ -117,14 +156,13 @@
     var titleHtml = '<div class="home-title-line">' + inlineFlags + titleLink + '</div>';
 
     var statusText = getHomeZentaoStatusLabel(item);
-    var dotClass = (statusText === "开发中" || statusText === "测试中" || statusText === "待验收") ? "active" :
-      (statusText === "已挂起" || statusText === "已驳回") ? "danger" : "default";
+    var statusHtml = (PL && PL.statusTagHtml) ? PL.statusTagHtml(statusText) : ('<span class="status-tag">' + esc(statusText) + '</span>');
 
     return '<tr>' +
       '<td class="c-id">' + idChip + '</td>' +
       '<td class="c-title" title="' + esc(item.title || "") + '">' + titleHtml + '</td>' +
       '<td class="c-stage"><span class="stage-tag">' + esc(item.valueStream || item.stage || "—") + '</span></td>' +
-      '<td class="c-zt-status"><span class="status-tag"><i class="status-dot ' + dotClass + '"></i> ' + esc(statusText) + '</span></td>' +
+      '<td class="c-zt-status">' + statusHtml + '</td>' +
       '<td class="c-owner">' + esc(dash(item.nextOwner || item.owner)) + '</td>' +
       '<td class="c-actions">' + actionHtml + '</td>' +
       '</tr>';

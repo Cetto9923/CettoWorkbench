@@ -9,6 +9,9 @@
 (function () {
   "use strict";
 
+  // 每页条数选项：与 components/pager.html 的 <select name="pageSize"> 保持同一套取值。
+  var PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+
   function escapeHtml(value) {
     return String(value == null ? "" : value)
       .replace(/&/g, "&amp;")
@@ -166,7 +169,7 @@
     var host = opts.container;
     if (!host) { return; }
     var total = opts.total || 0;
-    var pageSize = opts.pageSize || 15;
+    var pageSize = opts.pageSize || 20;
     var page = opts.page || 1;
     var pages = Math.max(1, Math.ceil(total / pageSize));
 
@@ -183,7 +186,7 @@
     var html = '<div class="pager-meta"><span>显示 ' + start + "–" + end + "，共 " + total + " 条</span></div>";
     html += '<div class="pager-controls">';
     html += '<select class="pager-size-select" aria-label="每页条数">';
-    [10, 15, 20, 30, 50].forEach(function (size) {
+    PAGE_SIZE_OPTIONS.forEach(function (size) {
       html += '<option value="' + size + '"' + (size === pageSize ? " selected" : "") + ">" + size + " 条/页</option>";
     });
     html += "</select>";
@@ -217,6 +220,7 @@
 
     // 下一页
     html += '<button type="button" class="pager-btn" data-page="' + (page + 1) + '"' + (page >= pages ? " disabled" : "") + " aria-label=\"下一页\">›</button>";
+    html += '<span class="pager-jump-label">跳至</span><input type="number" class="pager-jump-input" min="1" max="' + pages + '" value="' + page + '" aria-label="跳至页码"><span class="pager-jump-label">页</span><button type="button" class="pager-jump-btn">前往</button>';
     html += "</div>";
 
     host.innerHTML = html;
@@ -239,6 +243,16 @@
         }
       });
     });
+
+    var jumpInput = host.querySelector(".pager-jump-input");
+    var jumpBtn = host.querySelector(".pager-jump-btn");
+    function jumpToPage() {
+      if (!jumpInput) { return; }
+      var t = Number(jumpInput.value);
+      if (t >= 1 && t <= pages && t !== page && typeof opts.onPageChange === "function") { opts.onPageChange(t); }
+    }
+    if (jumpBtn) { jumpBtn.addEventListener("click", jumpToPage); }
+    if (jumpInput) { jumpInput.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); jumpToPage(); } }); }
   }
 
   /**
@@ -436,17 +450,44 @@
     return REMINDER_KIND_ALIASES[token] || REMINDER_KIND_ALIASES[token.toLowerCase()] || "";
   }
 
+  /**
+   * statusTagHtml: 统一渲染状态微标（微圆点 + 语义文字）。
+   * 自动按关键词识别五大语义：success, processing, warning, danger, neutral。
+   */
+  function statusTagHtml(text) {
+    var raw = String(text == null ? "" : text).trim();
+    if (!raw || raw === "—" || raw === "--") {
+      return '<span class="wb-status-tag wb-status-neutral">—</span>';
+    }
+    var lower = raw.toLowerCase();
+    var semantic = "neutral";
+    if (lower.indexOf("关闭") >= 0 || lower.indexOf("closed") >= 0 || lower.indexOf("暂存") >= 0 || lower.indexOf("草稿") >= 0 || lower.indexOf("draft") >= 0 || lower.indexOf("取消") >= 0) {
+      semantic = "neutral";
+    } else if (lower.indexOf("澄清") >= 0 || lower.indexOf("完成") >= 0 || lower.indexOf("done") >= 0 || lower.indexOf("验收") >= 0 || lower.indexOf("发布") >= 0 || lower.indexOf("通过") >= 0 || lower.indexOf("正常") >= 0 || lower.indexOf("已解决") >= 0 || lower.indexOf("已闭环") >= 0 || lower.indexOf("激活") >= 0) {
+      semantic = "success";
+    } else if (lower.indexOf("待") >= 0 || lower.indexOf("wait") >= 0 || lower.indexOf("排期") >= 0 || lower.indexOf("评审中") >= 0 || lower.indexOf("审批中") >= 0 || lower.indexOf("预警") >= 0 || lower.indexOf("关注") >= 0) {
+      semantic = "warning";
+    } else if (lower.indexOf("挂起") >= 0 || lower.indexOf("驳回") >= 0 || lower.indexOf("阻塞") >= 0 || lower.indexOf("超期") >= 0 || lower.indexOf("逾期") >= 0 || lower.indexOf("失败") >= 0 || lower.indexOf("风险") >= 0 || lower.indexOf("异常") >= 0 || lower.indexOf("延期") >= 0) {
+      semantic = "danger";
+    } else if (lower.indexOf("开发") >= 0 || lower.indexOf("doing") >= 0 || lower.indexOf("测试") >= 0 || lower.indexOf("处理") >= 0 || lower.indexOf("进行") >= 0 || lower.indexOf("评审") >= 0 || lower.indexOf("active") >= 0) {
+      semantic = "processing";
+    }
+    return '<span class="wb-status-tag wb-status-' + semantic + '"><i class="wb-status-dot"></i>' + escapeHtml(raw) + '</span>';
+  }
+
   window.PersonalList = {
     escapeHtml: escapeHtml,
     createController: createController,
     renderPagination: renderPagination,
     loadPageSize: loadPageSize,
     savePageSize: savePageSize,
+    PAGE_SIZE_OPTIONS: PAGE_SIZE_OPTIONS,
     normalizePriority: normalizePriority,
     priorityBadge: priorityBadge,
     objectTypeBadge: objectTypeBadge,
     objectTypeBadgeFromKind: objectTypeBadgeFromKind,
     idChipHtml: idChipHtml,
+    statusTagHtml: statusTagHtml,
     reminderKindFromSubject: reminderKindFromSubject,
     OBJECT_TYPE_LABELS: OBJECT_TYPE_LABELS,
     OBJECT_TYPE_SHORT_LABELS: OBJECT_TYPE_SHORT_LABELS,

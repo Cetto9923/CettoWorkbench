@@ -295,7 +295,7 @@ html[data-theme="dark"] {
   /* 文字色阶 */
   --color-text-primary: #f8fafc;
   --color-text-secondary: #94a3b8;
-  --color-text-disabled: #94a3b8;
+  --color-text-disabled: #475569;
 
   /* 扩展文本/背景色 */
   --color-text-body: #cbd5e1;
@@ -372,8 +372,10 @@ html[data-theme="dark"] {
   --color-ink-15-23-42-02: rgba(0, 0, 0, 0.4);
   --color-ink-15-23-42-03: rgba(0, 0, 0, 0.2);
   --color-ink-15-23-42-08: rgba(0, 0, 0, 0.5);
-  --color-success-ring: rgba(16, 185, 129, 0.2);
-  --color-danger-ring: rgba(239, 68, 68, 0.2);
+  --color-success-ring: rgba(16, 185, 129, 0.35);
+  --color-danger-ring: rgba(239, 68, 68, 0.35);
+  --focus-ring: 0 0 0 3px rgba(129, 140, 248, 0.45);
+  --color-primary-ring-soft: rgba(129, 140, 248, 0.30);
 
   /* Legacy aliases with no safe equivalent remain hex */
   --po-bg: #111827;

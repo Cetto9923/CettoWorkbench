@@ -203,6 +203,8 @@ type WorkItemDetail struct {
 	Blocked       bool                         `json:"blocked"`                 // 当前 status=refuse 的阻塞事实
 	PrimaryAction *primaryaction.PrimaryAction `json:"primaryAction,omitempty"` // Stage 5: 服务端主操作
 	CanReview     bool                         `json:"canReview"`               // 当前登录人是待评业务评审人（与指派给无关）
+	CanEdit       bool                         `json:"canEdit,omitempty"`       // 当前登录人可直接编辑（未被评审且为创建人）
+	ZentaoEditUrl string                       `json:"zentaoEditUrl,omitempty"` // 禅道原生编辑页直达链接
 }
 
 // DemandsResp 价值流状态下的需求详情列表。

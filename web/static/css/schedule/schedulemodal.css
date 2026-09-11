@@ -10,7 +10,7 @@
 }
 
 #scheduleVersionWindowModal input[type="date"].form-input::-webkit-datetime-edit {
-  color: var(--color-text-disabled);
+  color: var(--color-text-secondary);
 }
 
 #scheduleVersionWindowModal input[type="date"].form-input.has-value::-webkit-datetime-edit,
@@ -19,7 +19,7 @@
 }
 
 #scheduleVersionWindowModal input[type="date"].form-input:invalid {
-  color: var(--color-text-disabled);
+  color: var(--color-text-secondary);
 }
 
 #scheduleVersionWindowModal input[type="date"].form-input:valid.has-value {
@@ -239,7 +239,7 @@
   border: none;
   border-radius: 4px;
   background: transparent;
-  color: var(--color-text-disabled);
+  color: var(--color-text-secondary);
   box-shadow: none;
 }
 
@@ -251,7 +251,7 @@
 #manageVersionWindowsModal .action-btn.zen-icon-action.primary {
   background: transparent;
   border: none;
-  color: var(--color-text-disabled);
+  color: var(--color-text-secondary);
 }
 
 #manageVersionWindowsModal .action-btn.zen-icon-action.primary:hover:not(.action-btn--disabled) {
@@ -263,7 +263,7 @@
 #manageVersionWindowsModal .action-btn.zen-icon-action.danger {
   background: transparent;
   border: none;
-  color: var(--color-text-disabled);
+  color: var(--color-text-secondary);
 }
 
 #manageVersionWindowsModal .action-btn.zen-icon-action.danger:hover:not(.action-btn--disabled) {

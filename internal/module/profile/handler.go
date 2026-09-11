@@ -2,8 +2,8 @@
 // 文件: internal/module/profile/handler.go
 // 模块: 个人资料
 // 类型: action
-// 职责: 个人资料 HTTP 入口：GET /profile 渲染模板，GET /profile/data 返回 JSON，
-//       PUT /profile 与 PUT /profile/password 为写接口。
+// 职责: 个人资料 HTTP 入口：GET /profile 渲染模板，GET /profile/data 与 GET /api/profile
+//       返回 JSON，PUT /profile 与 PUT /api/profile 为写接口。
 // 依赖: internal/middleware
 //       internal/pkg/errorx
 //       internal/pkg/perm
@@ -37,31 +37,30 @@ func NewHandler(svc *Service, logger *zap.Logger) *Handler {
 }
 
 // RegisterRoutes 注册 /profile 与 API 路由。
-//
-// 权限：沿用现有 PoHomeList（个人资料任何已登录用户可访问，不新增 perm）。
+// 同时提供 /api/profile 路径，保持与 CRCBWorkbench 的前端调用契约一致。
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g := rg.Group("/profile")
 	g.GET("", middleware.RequirePerm(perm.PoHomeList), h.Index)
 	g.GET("/data", middleware.RequirePerm(perm.PoHomeList), h.GetData)
 	g.PUT("", middleware.RequirePerm(perm.PoHomeList), h.Update)
 	g.PUT("/password", middleware.RequirePerm(perm.PoHomeList), h.ChangePassword)
+
+	api := rg.Group("/api/profile")
+	api.GET("", middleware.RequirePerm(perm.PoHomeList), h.GetData)
+	api.PUT("", middleware.RequirePerm(perm.PoHomeList), h.Update)
+	api.PUT("/password", middleware.RequirePerm(perm.PoHomeList), h.ChangePassword)
 }
 
 // Index 渲染个人资料页模板。
-//
-// Service 失败时仍渲染模板（空数据 + 页面错误提示），避免 500。
 func (h *Handler) Index(c *gin.Context) {
 	actor := middleware.CurrentUser(c)
-	resp, pageErr := "", ""
+	pageErr := ""
 	if actor != nil && actor.ID > 0 {
 		if _, err := h.svc.Get(c.Request.Context(), actor); err != nil {
 			if h.logger != nil {
 				h.logger.Warn("profile index get failed", zap.Error(err))
 			}
 			pageErr = "个人资料暂不可用"
-		} else {
-			// Index 不需要把数据塞进模板；前端 JS 走 /profile/data 异步加载。
-			_ = resp
 		}
 	}
 	render.Page(c, http.StatusOK, constants.TEMPLATE_PROFILE_INDEX, gin.H{
@@ -108,13 +107,16 @@ func (h *Handler) Update(c *gin.Context) {
 		return
 	}
 	actor := middleware.CurrentUser(c)
-	if err := h.svc.Update(c.Request.Context(), actor, req); err != nil {
+	resp, err := h.svc.Update(c.Request.Context(), actor, req)
+	if err != nil {
 		writeProfileErr(c, h.logger, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "个人资料已保存",
+		"success":        true,
+		"message":        "个人资料已保存",
+		"preferredRoles": resp.PreferredRoles,
+		"mainTeamId":     resp.MainTeamID,
 	})
 }
 
@@ -155,6 +157,8 @@ func writeProfileErr(c *gin.Context, logger *zap.Logger, err error) {
 			status = http.StatusUnauthorized
 		case "not_found":
 			status = http.StatusNotFound
+		case "forbidden_role":
+			status = http.StatusForbidden
 		case "invalid_team", "bad_password":
 			status = http.StatusBadRequest
 		}

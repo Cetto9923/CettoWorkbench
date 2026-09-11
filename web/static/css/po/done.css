@@ -87,7 +87,7 @@
 .done-time-clock { display: block; }
 .done-time-clock {
   margin-top: 2px;
-  color: var(--color-text-disabled, var(--po-t3, var(--color-text-disabled, #9ca3af)));
+  color: var(--color-text-secondary);
 }
 .done-obj {
   white-space: normal;
@@ -179,10 +179,10 @@
 }
 .done-arrow {
   margin: 0 4px;
-  color: var(--color-text-disabled, #94a3b8);
+  color: var(--color-text-secondary);
 }
 .done-change-na {
-  color: var(--color-text-disabled, #94a3b8);
+  color: var(--color-text-secondary);
 }
 
 /* 需求池 / 项目 / 执行 三行：统一字号 + 颜色阶梯（pool 强调 → project 中性 → exec 弱），
@@ -202,7 +202,7 @@
 .done-ctx-exec { color: var(--po-t3, var(--color-text-secondary, #6b7280)); }
 .done-ctx-pool.done-ctx-na,
 .done-ctx-project.done-ctx-na,
-.done-ctx-exec.done-ctx-na { color: var(--po-t3, var(--color-text-disabled, #9ca3af)); }
+.done-ctx-exec.done-ctx-na { color: var(--color-text-secondary); }
 
 .wb-done-detail-btn {
   border: 1px solid var(--po-border, var(--color-border, #e5e7eb));
@@ -314,4 +314,32 @@
   padding: 12px 20px;
   border-top: 1px solid var(--po-border, var(--color-border, #e5e7eb));
   background: var(--color-surface-muted, #f8fafc);
+}
+
+
+/* ---------- 6. 深色模式状态徽章适配 (Dark Mode Status Polish) ---------- */
+html[data-theme="dark"] .done-tag.gray {
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbd5e1 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+html[data-theme="dark"] .done-tag.success {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #34d399 !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+}
+html[data-theme="dark"] .done-tag.blue {
+  background: rgba(59, 130, 246, 0.18) !important;
+  color: #93c5fd !important;
+  border-color: rgba(59, 130, 246, 0.38) !important;
+}
+html[data-theme="dark"] .done-tag.warning {
+  background: rgba(245, 158, 11, 0.15) !important;
+  color: #fbbf24 !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+}
+html[data-theme="dark"] .done-tag.danger {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #f87171 !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
 }

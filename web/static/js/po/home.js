@@ -8,12 +8,14 @@
 (function ($) {
   "use strict";
 
+  // 每页条数选项：与分页组件（PersonalList / components/pager.html）同一套取值。
+  var PAGE_SIZE_OPTIONS = (window.PersonalList && window.PersonalList.PAGE_SIZE_OPTIONS) || [10, 20, 50, 100];
 
   var state = {
     status: "all",
     focus: "all",
     page: 1,
-    pageSize: 15,
+    pageSize: 20,
     keyword: "",
     relation: "all",
     objectType: "all",
@@ -31,7 +33,7 @@
     p.set("status", status || "all");
     p.set("focus", state.focus);
     p.set("page", String(page || 1));
-    p.set("pageSize", String(pageSize || 15));
+    p.set("pageSize", String(pageSize || 20));
     // 透传工具栏筛选到服务端，由 SQL 过滤 + Count + 分页；前端不再二次过滤。
     if (state.keyword) { p.set("keyword", state.keyword); }
     if (state.objectType && state.objectType !== "all") { p.set("objectType", state.objectType); }
@@ -67,11 +69,11 @@
       state.page = p;
     }
     var ps = parseInt(sp.get("pageSize"), 10);
-    if (!isNaN(ps) && [10, 15, 20, 30, 50].indexOf(ps) >= 0) {
+    if (!isNaN(ps) && PAGE_SIZE_OPTIONS.indexOf(ps) >= 0) {
       state.pageSize = ps;
     } else {
       // URL 未带 pageSize 时，优先使用上次保存值，再退回默认值。
-      state.pageSize = window.PersonalList.loadPageSize("po.home.pageSize", state.pageSize, [10, 15, 20, 30, 50]);
+      state.pageSize = window.PersonalList.loadPageSize("po.home.pageSize", state.pageSize, PAGE_SIZE_OPTIONS);
     }
   }
 
