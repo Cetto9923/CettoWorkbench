@@ -1,9 +1,12 @@
 {{/* ==========================================================================
 文件: web/templates/po/linkstory.html
 模块: PO工作台
-职责: 关联研发需求弹窗静态片段（供提测办理等场景引入）
+职责: 关联研发需求弹窗（壳静态；body 可由 GET /builds/:id/linkstory 片段刷新）
 全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
-页面字段: 无（纯静态 mock）
+页面字段: .Stories ([]module/build.LinkStoryItem)
+          .Pager (*pkg/pagination.Pager)
+          .BaseUrl (string)
+          .BuildID (uint)
 ========================================================================== */}}
 {{ define "po/linkstory" }}
 <div class="po-linkstory-overlay" id="poLinkstoryOverlay"></div>
@@ -15,14 +18,14 @@
     </h3>
     <button type="button" class="po-linkstory-modal-close" id="poLinkstoryCloseBtn" aria-label="关闭"><i class="fas fa-xmark"></i></button>
   </div>
-  <div class="po-linkstory-modal-body">
+  <div class="po-linkstory-modal-body" id="poLinkstoryModalBody">
     {{ template "po/linkstory_body" . }}
   </div>
 </div>
 {{ end }}
 
 {{ define "po/linkstory_body" }}
-<div class="po-linkstory" id="poLinkstoryRoot">
+<div class="po-linkstory" id="poLinkstoryRoot" data-base-url="{{ .BaseUrl }}">
   <div class="search-layout">
     <div class="search-panel">
       <div class="search-fields">
@@ -92,28 +95,23 @@
           </tr>
         </thead>
         <tbody>
+          {{ range .Stories }}
           <tr>
-            <td class="col-check"><input type="checkbox" name="storyId" value="37440" aria-label="选择 37440"></td>
-            <td class="col-id text-muted">37440</td>
-            <td><span class="priority-tag P3">3</span></td>
-            <td><a href="#" class="po-linkstory-title">ces2</a></td>
-            <td>admin(admin)</td>
-            <td></td>
-            <td>0h</td>
-            <td>激活</td>
-            <td>研发立项</td>
+            <td class="col-check"><input type="checkbox" name="storyId" value="{{ .ID }}" aria-label="选择 {{ .ID }}"{{ if .DefaultChecked }} checked{{ end }}></td>
+            <td class="col-id text-muted">{{ .ID }}</td>
+            <td><span class="priority-tag {{ .PriClass }}">{{ .Pri }}</span></td>
+            <td><a href="#" class="po-linkstory-title">{{ .Title }}</a></td>
+            <td>{{ .OpenedBy }}</td>
+            <td>{{ .AssignedTo }}</td>
+            <td>{{ .EstimateText }}</td>
+            <td>{{ .StatusLabel }}</td>
+            <td>{{ .StageLabel }}</td>
           </tr>
+          {{ else }}
           <tr>
-            <td class="col-check"><input type="checkbox" name="storyId" value="37436" aria-label="选择 37436"></td>
-            <td class="col-id text-muted">37436</td>
-            <td><span class="priority-tag P4">0</span></td>
-            <td><a href="#" class="po-linkstory-title">17</a></td>
-            <td>admin(admin)</td>
-            <td>毛熠璋(001196)</td>
-            <td>1h</td>
-            <td>激活</td>
-            <td>研发立项</td>
+            <td colspan="9" class="text-center text-muted">暂无可关联的研发需求</td>
           </tr>
+          {{ end }}
         </tbody>
       </table>
     </div>
@@ -125,39 +123,67 @@
         <button type="button" class="po-testtask-btn" id="poLinkstoryBackBtn">返回</button>
       </div>
       <div class="pager-footer" id="poLinkstoryPager">
-        {{/* 静态 mock，DOM 对齐 components/pager */}}
+        {{ if .Pager }}
+        {{ $base := .BaseUrl }}
+        {{ $pageSize := .Pager.PageSize }}
+        {{ $currentPage := .Pager.CurrentPage }}
+        {{ $totalPages := .Pager.TotalPages }}
         <div class="pagination-container" aria-label="分页">
           <ul class="pagination">
+            {{ if .Pager.HasPrev }}
+            <li class="page-item">
+              <a class="page-link po-linkstory-page" href="{{ $base }}?page={{ sub $currentPage 1 }}&pageSize={{ $pageSize }}" data-page="{{ sub $currentPage 1 }}" aria-label="上一页">
+                <i class="bi bi-chevron-left" aria-hidden="true"></i>
+              </a>
+            </li>
+            {{ else }}
             <li class="page-item disabled">
               <span class="page-link" aria-hidden="true"><i class="bi bi-chevron-left"></i></span>
             </li>
+            {{ end }}
+
+            {{ if and (gt $totalPages 1) (gt (len .Pager.Pages) 0) }}
+              {{ range .Pager.Pages }}
+              <li class="page-item{{ if eq . $currentPage }} active{{ end }}">
+                {{ if eq . $currentPage }}
+                <span class="page-link" aria-current="page">{{ . }}</span>
+                {{ else }}
+                <a class="page-link po-linkstory-page" href="{{ $base }}?page={{ . }}&pageSize={{ $pageSize }}" data-page="{{ . }}">{{ . }}</a>
+                {{ end }}
+              </li>
+              {{ end }}
+            {{ else }}
             <li class="page-item active">
-              <span class="page-link" aria-current="page">1</span>
+              <span class="page-link" aria-current="page">{{ $currentPage }}</span>
             </li>
+            {{ end }}
+
+            {{ if .Pager.HasNext }}
+            <li class="page-item">
+              <a class="page-link po-linkstory-page" href="{{ $base }}?page={{ add $currentPage 1 }}&pageSize={{ $pageSize }}" data-page="{{ add $currentPage 1 }}" aria-label="下一页">
+                <i class="bi bi-chevron-right" aria-hidden="true"></i>
+              </a>
+            </li>
+            {{ else }}
             <li class="page-item disabled">
               <span class="page-link" aria-hidden="true"><i class="bi bi-chevron-right"></i></span>
             </li>
+            {{ end }}
           </ul>
           <div class="pagination-options">
-            <span class="pagination-total">共 2 条</span>
-            <form method="GET" action="#" class="pagination-size-form" onsubmit="return false;">
+            <span class="pagination-total">共 {{ .Pager.TotalItems }} 条</span>
+            <form method="GET" action="{{ $base }}" class="pagination-size-form po-linkstory-size-form">
               <input type="hidden" name="page" value="1">
               <select name="pageSize" class="select" aria-label="每页条数">
-                <option value="10">10 条/页</option>
-                <option value="20">20 条/页</option>
-                <option value="50">50 条/页</option>
-                <option value="100" selected>100 条/页</option>
+                <option value="10"{{ if eq $pageSize 10 }} selected{{ end }}>10 条/页</option>
+                <option value="20"{{ if eq $pageSize 20 }} selected{{ end }}>20 条/页</option>
+                <option value="50"{{ if eq $pageSize 50 }} selected{{ end }}>50 条/页</option>
+                <option value="100"{{ if eq $pageSize 100 }} selected{{ end }}>100 条/页</option>
               </select>
-            </form>
-            <form method="GET" action="#" class="pagination-jump-form" onsubmit="return false;">
-              <input type="hidden" name="pageSize" value="100">
-              <span>跳至</span>
-              <input type="number" min="1" max="1" name="page" class="input" value="1">
-              <span>页</span>
-              <button type="submit" class="btn btn-neutral btn-sm">前往</button>
             </form>
           </div>
         </div>
+        {{ end }}
       </div>
     </div>
   </div>

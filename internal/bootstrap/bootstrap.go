@@ -32,6 +32,7 @@ import (
 	"workbench/internal/module/debug"
 	"workbench/internal/module/dept"
 
+	"workbench/internal/module/build"
 	"workbench/internal/module/login"
 	"workbench/internal/module/loginlog"
 	"workbench/internal/module/menu"
@@ -147,6 +148,13 @@ func Run() error {
 	testtaskRepo := testtask.NewRepo(testtaskReadDB)
 	testtaskSvc := testtask.NewService(testtaskRepo, userSvc, zentaopkg.API(), zapLog)
 	testtaskHandler := testtask.NewHandler(testtaskSvc, zapLog)
+	buildReadDB := dbReadonly
+	if buildReadDB == nil {
+		buildReadDB = db
+	}
+	buildRepo := build.NewRepo(buildReadDB)
+	buildSvc := build.NewService(buildRepo, userSvc, zapLog)
+	buildHandler := build.NewHandler(buildSvc, zapLog)
 	sqlPerfRepo := debug.NewRepo(cfg.Log.Dir)
 	sqlPerfSvc := debug.NewService(sqlPerfRepo)
 	sqlPerfHandler := debug.NewHandler(sqlPerfSvc)
@@ -167,6 +175,7 @@ func Run() error {
 		PoHandler:           poHandler,
 		ScheduleHandler:     scheduleHandler,
 		TesttaskHandler:     testtaskHandler,
+		BuildHandler:        buildHandler,
 		SqlPerfHandler:      sqlPerfHandler,
 	}
 

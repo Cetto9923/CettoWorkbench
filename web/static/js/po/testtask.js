@@ -846,8 +846,15 @@
       var $unit = $(this).closest("[data-tt-link-unit]");
       var unitId = String($unit.attr("data-tt-link-unit") || "");
       var $list = $unit.find('[data-tt-fill="link-list"]');
+      var buildId = "";
+      var created = createdBuildsByProduct[unitId];
+      if (created && created.buildId) {
+        buildId = String(created.buildId);
+      } else {
+        buildId = String($root().find('[data-tt-exist-ver="' + unitId + '"]').val() || "").trim();
+      }
       if (typeof window.openPoLinkstoryModal === "function") {
-        window.openPoLinkstoryModal({ unitId: unitId, $list: $list });
+        window.openPoLinkstoryModal({ unitId: unitId, buildId: buildId, $list: $list });
         return;
       }
       showToast("关联研发需求弹窗未加载", "error");

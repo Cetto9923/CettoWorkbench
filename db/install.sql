@@ -147,7 +147,11 @@ CREATE TABLE IF NOT EXISTS `zt_demandwindow` (
 
 UPDATE `zt_menus` SET `title` = '个人入口' WHERE `title` = 'PO专属';
 UPDATE `zt_menus` SET `title` = '首页' WHERE `title` = '工作台首页';
-UPDATE `zt_menus` SET `title` = '需求排期' WHERE `title` = '排期工作台';
+UPDATE `zt_menus` SET `title` = '需求排期', `sort` = 5 WHERE `title` = '排期工作台';
 INSERT IGNORE INTO `zt_menus` (`id`, `parentId`, `title`, `icon`, `path`, `perm`, `type`, `sort`) VALUES
  (4,	0,	'工作区',	'',	'',	'',	'M',	200);
 UPDATE `zt_menus` SET `parentId` = 4, `sort` = 1 WHERE `path` = '/schedule' AND `perm` = 'po:schedule';
+
+INSERT INTO `zt_menus` (`parentId`, `title`, `icon`, `path`, `perm`, `type`, `sort`) VALUES
+(1,	'我的关注',	'fa-star',	'/follow',	'follow:list',	'C',	5),
+(4,	'工作看板',	'fa-table-cells-large',	'/kanban',	'kanban:list',	'C',	1);

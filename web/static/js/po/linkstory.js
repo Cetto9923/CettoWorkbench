@@ -1,15 +1,17 @@
 /*
  * 文件: web/static/js/po/linkstory.js
  * 模块: PO工作台
- * 职责: 关联研发需求弹窗开关、勾选同步，确认后回填提测 link-list。
+ * 职责: 关联研发需求弹窗：按版本拉取 HTML 片段、勾选同步，确认后回填提测 link-list。
  */
 (function ($) {
   "use strict";
 
   var MODAL_IDS = ["poLinkstoryModal", "poLinkstoryOverlay"];
   var bound = false;
+  var loading = false;
   var targetCtx = {
     unitId: "",
+    buildId: "",
     $list: null
   };
 
@@ -69,7 +71,6 @@
   }
 
   function precheckFromList($list) {
-    setAllChecks(false);
     if (!$list || !$list.length) {
       syncHeaderCheck();
       return;
@@ -83,7 +84,9 @@
     });
     rowChecks().each(function () {
       var id = String($(this).val() || "").trim();
-      $(this).prop("checked", !!ids[id]);
+      if (ids[id]) {
+        $(this).prop("checked", true);
+      }
     });
     syncHeaderCheck();
   }
@@ -111,14 +114,72 @@
     }
   }
 
+  function fragmentUrl(buildId, page, pageSize) {
+    var url = "/builds/" + encodeURIComponent(buildId) + "/linkstory";
+    var q = [];
+    if (page) {
+      q.push("page=" + encodeURIComponent(page));
+    }
+    if (pageSize) {
+      q.push("pageSize=" + encodeURIComponent(pageSize));
+    }
+    return q.length ? url + "?" + q.join("&") : url;
+  }
+
+  function loadFragment(url) {
+    if (loading) {
+      return Promise.resolve(false);
+    }
+    loading = true;
+    var $body = $("#poLinkstoryModalBody");
+    $body.css("opacity", "0.55");
+    return fetch(url, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: { Accept: "text/html" }
+    })
+      .then(function (res) {
+        if (!res.ok) {
+          return res.json().catch(function () {
+            return {};
+          }).then(function (data) {
+            var msg = String((data && data.message) || "").trim();
+            throw new Error(msg || "加载关联需求失败");
+          });
+        }
+        return res.text();
+      })
+      .then(function (html) {
+        $body.html(html);
+        precheckFromList(targetCtx.$list);
+        return true;
+      })
+      .catch(function (err) {
+        showToast((err && err.message) || "加载关联需求失败", "error");
+        return false;
+      })
+      .then(function (ok) {
+        loading = false;
+        $body.css("opacity", "");
+        return ok;
+      });
+  }
+
   function openModal(opts) {
     opts = opts || {};
     targetCtx.unitId = String(opts.unitId || "");
+    targetCtx.buildId = String(opts.buildId || "").trim();
     targetCtx.$list = opts.$list && opts.$list.length ? opts.$list : null;
-    precheckFromList(targetCtx.$list);
+
+    if (!/^\d+$/.test(targetCtx.buildId) || targetCtx.buildId === "0") {
+      showToast("请先选择或创建有效版本", "info");
+      return;
+    }
+
     if (typeof window.openShowModals === "function") {
       window.openShowModals(MODAL_IDS);
     }
+    loadFragment(fragmentUrl(targetCtx.buildId, 1, 100));
   }
 
   function confirmAndClose() {
@@ -133,26 +194,40 @@
   }
 
   function bindEvents() {
-    $("#poLinkstoryCloseBtn, #poLinkstoryOverlay").on("click", function () {
+    $(document).on("click", "#poLinkstoryCloseBtn, #poLinkstoryOverlay", function () {
       closeModal();
     });
-    $("#poLinkstoryBackBtn").on("click", function () {
+    $(document).on("click", "#poLinkstoryBackBtn", function () {
       closeModal();
     });
-    $("#poLinkstoryLinkBtn").on("click", function () {
+    $(document).on("click", "#poLinkstoryLinkBtn", function () {
       confirmAndClose();
     });
-    $("#poLinkstorySearchBtn").on("click", function () {
-      showToast("搜索（静态演示，未请求后端）", "info");
+    $(document).on("click", "#poLinkstorySearchBtn", function () {
+      showToast("搜索（尚未接入）", "info");
     });
-    $("#poLinkstoryCheckAll, #poLinkstoryFooterCheck").on("change", function () {
+    $(document).on("change", "#poLinkstoryCheckAll, #poLinkstoryFooterCheck", function () {
       setAllChecks($(this).prop("checked"));
     });
-    $root().on("change", '#poLinkstoryTable tbody input[name="storyId"]', function () {
+    $(document).on("change", '#poLinkstoryTable tbody input[name="storyId"]', function () {
       syncHeaderCheck();
     });
-    $root().on("click", ".po-linkstory-title", function (e) {
+    $(document).on("click", ".po-linkstory-title", function (e) {
       e.preventDefault();
+    });
+    $(document).on("click", "#poLinkstoryRoot a.po-linkstory-page", function (e) {
+      e.preventDefault();
+      var href = $(this).attr("href");
+      if (href) {
+        loadFragment(href);
+      }
+    });
+    $(document).on("change", "#poLinkstoryRoot .po-linkstory-size-form select[name='pageSize']", function () {
+      var size = $(this).val() || "100";
+      if (!targetCtx.buildId) {
+        return;
+      }
+      loadFragment(fragmentUrl(targetCtx.buildId, 1, size));
     });
   }
 

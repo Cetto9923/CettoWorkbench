@@ -114,6 +114,18 @@ func Page(c *gin.Context, status int, page string, data gin.H) {
 	}
 }
 
+// Fragment 渲染无 layout 的命名模板片段（用于弹窗 ajax 局部刷新）。
+func Fragment(c *gin.Context, status int, page, defineName string, data gin.H) {
+	r := rendererFromContext(c)
+	if r == nil {
+		c.String(http.StatusInternalServerError, "renderer not initialized")
+		return
+	}
+	if err := r.renderFragment(c, status, page, defineName, data); err != nil {
+		r.failRender(c, err)
+	}
+}
+
 // Error 渲染统一错误页。
 func Error(c *gin.Context, status int, userMsg string, err error) {
 	r := rendererFromContext(c)
@@ -299,6 +311,37 @@ func (r *Renderer) renderPage(c *gin.Context, status int, page string, data gin.
 	layoutName := resolveLayout(page) + ".html"
 	var buf bytes.Buffer
 	if err := tpl.ExecuteTemplate(&buf, layoutName, data); err != nil {
+		return err
+	}
+	c.Status(status)
+	c.Writer.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_, _ = buf.WriteTo(c.Writer)
+	return nil
+}
+
+func (r *Renderer) renderFragment(c *gin.Context, status int, page, defineName string, data gin.H) error {
+	if data == nil {
+		data = gin.H{}
+	}
+	r.enrichData(c, page, data)
+
+	var (
+		tpl *template.Template
+		err error
+	)
+	if r.isDev {
+		tpl, err = r.parseTemplates(page)
+	} else {
+		tpl = r.cache[page]
+		if tpl == nil {
+			tpl, err = r.parseTemplates(page)
+		}
+	}
+	if err != nil {
+		return err
+	}
+	var buf bytes.Buffer
+	if err := tpl.ExecuteTemplate(&buf, defineName, data); err != nil {
 		return err
 	}
 	c.Status(status)
