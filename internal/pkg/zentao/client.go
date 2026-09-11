@@ -2,7 +2,7 @@
 // 文件: internal/pkg/zentao/client.go
 // 模块: 基础设施
 // 类型: infra
-// 职责: 封装禅道原生 REST API 客户端，负责身份凭证换取与原生业务接口代理。
+// 职责: 封装禅道原生 REST API 客户端核心，负责身份凭证换取、URL 构建与错误解析。
 // 依赖: net/http
 // =============================================================================
 
@@ -54,6 +54,38 @@ func DefaultClient() *Client {
 	return NewClient(zentaoCfg.API)
 }
 
+// SiteClient 返回面向禅道站点页（zentao.url）的客户端，用于 PATH_INFO 控制层动作。
+// DefaultClient 面向 REST API（zentao.api）；关注切换等自定义 ajax 只在站点侧可用。
+func SiteClient() *Client {
+	return NewClient(zentaoCfg.URL)
+}
+
+// apiURL 构造禅道原生 REST API 完整 URL，自动防御 baseURL 重复包含 /api.php/v1 或 /v1 的情况。
+func (c *Client) apiURL(path string) string {
+	base := strings.TrimRight(c.baseURL, "/")
+	base = strings.TrimSuffix(base, "/api.php/v1")
+	base = strings.TrimSuffix(base, "/v1")
+	base = strings.TrimSuffix(base, "/api.php")
+	base = strings.TrimRight(base, "/")
+	if !strings.HasPrefix(path, "/") {
+		path = "/" + path
+	}
+	return base + "/api.php/v1" + path
+}
+
+// webURL 构造禅道 Web 页面完整 URL，去除可能混入的 API 后缀。
+func (c *Client) webURL(path string) string {
+	base := strings.TrimRight(c.baseURL, "/")
+	base = strings.TrimSuffix(base, "/api.php/v1")
+	base = strings.TrimSuffix(base, "/v1")
+	base = strings.TrimSuffix(base, "/api.php")
+	base = strings.TrimRight(base, "/")
+	if !strings.HasPrefix(path, "/") {
+		path = "/" + path
+	}
+	return base + path
+}
+
 type tokenResponse struct {
 	Token   string `json:"token"`
 	Message string `json:"message"`
@@ -79,7 +111,7 @@ func (c *Client) GetUserToken(ctx context.Context, account string) (string, erro
 		return "", err
 	}
 
-	reqURL := fmt.Sprintf("%s/api.php/v1/tokens", c.baseURL)
+	reqURL := c.apiURL("/tokens")
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewReader(bodyBytes))
 	if err != nil {
 		return "", err
@@ -116,336 +148,6 @@ func (c *Client) GetUserToken(ctx context.Context, account string) (string, erro
 	return tokenResp.Token, nil
 }
 
-// DemandReviewParams 需求评审请求参数。
-type DemandReviewParams struct {
-	DemandID    uint   `json:"demandId"`
-	Account     string `json:"account"`
-	Result      string `json:"result"`      // pass | refuse
-	IsNeedFocus string `json:"isNeedFocus"` // 是否重点关注 0 | 1
-	Comment     string `json:"comment"`     // 评审意见
-	Mailto      string `json:"mailto"`      // 抄送通知人
-}
-
-// ReviewDemand 调用禅道原生 demandReview 接口完成业务需求评审。
-func (c *Client) ReviewDemand(ctx context.Context, p DemandReviewParams) error {
-	token, err := c.GetUserToken(ctx, p.Account)
-	if err != nil {
-		return err
-	}
-
-	reqURL := fmt.Sprintf("%s/api.php/v1/demand/%d/review", c.baseURL, p.DemandID)
-	postData := map[string]string{
-		"result":      p.Result,
-		"isNeedFocus": p.IsNeedFocus,
-		"comment":     p.Comment,
-	}
-	if strings.TrimSpace(p.Mailto) != "" {
-		postData["mailto"] = strings.TrimSpace(p.Mailto)
-	}
-
-	dataBytes, err := json.Marshal(postData)
-	if err != nil {
-		return err
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewReader(dataBytes))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Token", token)
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("%w: %v", ErrZentaoUnreachable, err)
-	}
-	defer resp.Body.Close()
-
-	respBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		var errObj struct {
-			Message string `json:"message"`
-			Error   string `json:"error"`
-		}
-		_ = json.Unmarshal(respBytes, &errObj)
-		errMsg := errObj.Message
-		if errMsg == "" {
-			errMsg = errObj.Error
-		}
-		if errMsg == "" {
-			errMsg = string(respBytes)
-		}
-		return fmt.Errorf("%w (%d): %s", ErrZentaoAPIError, resp.StatusCode, errMsg)
-	}
-
-	return nil
-}
-
-// WithdrawDemandReviewParams 撤回需求评审参数。
-type WithdrawDemandReviewParams struct {
-	DemandID uint   `json:"demandId"`
-	Account  string `json:"account"`
-	Comment  string `json:"comment"`
-}
-
-// WithdrawDemandReview 调用禅道原生 demandWithdrawReview 接口撤回评审。
-func (c *Client) WithdrawDemandReview(ctx context.Context, p WithdrawDemandReviewParams) error {
-	token, err := c.GetUserToken(ctx, p.Account)
-	if err != nil {
-		return err
-	}
-
-	reqURL := fmt.Sprintf("%s/api.php/v1/demand/%d/withdrawReview", c.baseURL, p.DemandID)
-	postData := map[string]string{
-		"comment": p.Comment,
-	}
-	dataBytes, err := json.Marshal(postData)
-	if err != nil {
-		return err
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewReader(dataBytes))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Token", token)
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("%w: %v", ErrZentaoUnreachable, err)
-	}
-	defer resp.Body.Close()
-
-	respBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		var errObj struct {
-			Message string `json:"message"`
-			Error   string `json:"error"`
-		}
-		_ = json.Unmarshal(respBytes, &errObj)
-		errMsg := errObj.Message
-		if errMsg == "" {
-			errMsg = errObj.Error
-		}
-		if errMsg == "" {
-			errMsg = string(respBytes)
-		}
-		return fmt.Errorf("%w (%d): %s", ErrZentaoAPIError, resp.StatusCode, errMsg)
-	}
-	return nil
-}
-
-// SubmitDemandReviewParams 提交需求评审参数。
-type SubmitDemandReviewParams struct {
-	DemandID uint     `json:"demandId"`
-	Account  string   `json:"account"`
-	Reviewer []string `json:"reviewer"`
-	Comment  string   `json:"comment"`
-}
-
-// SubmitDemandReview 调用禅道原生 demandSubmitReview 接口提交评审。
-func (c *Client) SubmitDemandReview(ctx context.Context, p SubmitDemandReviewParams) error {
-	token, err := c.GetUserToken(ctx, p.Account)
-	if err != nil {
-		return err
-	}
-
-	reqURL := fmt.Sprintf("%s/api.php/v1/demand/%d/submitReview", c.baseURL, p.DemandID)
-	postData := map[string]any{
-		"comment": p.Comment,
-	}
-	if len(p.Reviewer) > 0 {
-		postData["reviewer"] = p.Reviewer
-	}
-	dataBytes, err := json.Marshal(postData)
-	if err != nil {
-		return err
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewReader(dataBytes))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Token", token)
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("%w: %v", ErrZentaoUnreachable, err)
-	}
-	defer resp.Body.Close()
-
-	respBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		var errObj struct {
-			Message string `json:"message"`
-			Error   string `json:"error"`
-		}
-		_ = json.Unmarshal(respBytes, &errObj)
-		errMsg := errObj.Message
-		if errMsg == "" {
-			errMsg = errObj.Error
-		}
-		if errMsg == "" {
-			errMsg = string(respBytes)
-		}
-		return fmt.Errorf("%w (%d): %s", ErrZentaoAPIError, resp.StatusCode, errMsg)
-	}
-	return nil
-}
-
-// DemandClarifyParams 需求澄清请求参数。
-type DemandClarifyParams struct {
-	DemandID              uint              `json:"demandId"`
-	Account               string            `json:"account"`
-	Category              string            `json:"category"`
-	BRA                   string            `json:"BRA"`
-	QD                    string            `json:"QD"`
-	RD                    string            `json:"RD"`
-	ClarifyDesc           string            `json:"clarifyDesc"`
-	ScaleEstimation       int               `json:"scaleEstimation"`
-	IsNewProduct          string            `json:"isNewProduct"`
-	IsRelatedAccounts     string            `json:"isRelatedAccounts"`
-	IsNewFunction         string            `json:"isNewFunction"`
-	IsOtherImportantOrder string            `json:"isOtherImportantOrder"`
-	MultiLegalPersonLogo  string            `json:"multiLegalPersonLogo"`
-	Status                string            `json:"status"`
-	Comment               string            `json:"comment"`
-	Products              []string          `json:"products"`
-	PM                    []string          `json:"PM"`
-	DemandCompletionDate  []string          `json:"demandCompletionDate"`
-	SystemClarifyDesc     []string          `json:"systemClarifyDesc"`
-	IsAdditionalInfo      [][]string        `json:"isAdditionalInfo"`
-	AdditionalInfo        []string          `json:"additionalInfo"`
-	IsMainSystem          map[string]string `json:"isMainSystem"`
-	ClarifyIDList         []string          `json:"id"`
-	UserStoryNO           []int             `json:"userStoryNO"`
-	UserStoryChecked      map[string]string `json:"userStoryChecked"`
-	UserStoryID           []string          `json:"userStoryID"`
-	Role                  []string          `json:"role"`
-	GV                    []string          `json:"gv"`
-	EntryProductID        []string          `json:"entryProductID"`
-	Point                 []string          `json:"point"`
-	Revpoint              []string          `json:"revpoint"`
-	SourceType            []string          `json:"sourceType"`
-	AICode                []any             `json:"aiCode"`
-}
-
-// ClarifyDemand 调用禅道原生 demandClarify 接口完成需求澄清。
-func (c *Client) ClarifyDemand(ctx context.Context, p DemandClarifyParams) error {
-	token, err := c.GetUserToken(ctx, p.Account)
-	if err != nil {
-		return err
-	}
-
-	reqURL := fmt.Sprintf("%s/api.php/v1/demand/%d/clarify", c.baseURL, p.DemandID)
-	dataBytes, err := json.Marshal(p)
-	if err != nil {
-		return err
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewReader(dataBytes))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Token", token)
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("%w: %v", ErrZentaoUnreachable, err)
-	}
-	defer resp.Body.Close()
-
-	respBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return parseZentaoAPIError(respBytes, resp.StatusCode)
-	}
-	return nil
-}
-
-// GenerateAIUserStoryParams AI 用户故事生成参数。
-type GenerateAIUserStoryParams struct {
-	DemandID     uint   `json:"demandId"`
-	Account      string `json:"account"`
-	InputContent string `json:"inputContent"`
-	Source       string `json:"source"`
-}
-
-// AIUserStoryResp AI 生成用户故事响应。
-type AIUserStoryResp struct {
-	Result       string `json:"result"`
-	Content      string `json:"content"`
-	ThinkContent string `json:"thinkContent"`
-	AICodes      []int  `json:"aiCodes"`
-}
-
-// GenerateAIUserStory 调用禅道原生 demandAIGenerate 接口生成用户故事。
-func (c *Client) GenerateAIUserStory(ctx context.Context, p GenerateAIUserStoryParams) (*AIUserStoryResp, error) {
-	token, err := c.GetUserToken(ctx, p.Account)
-	if err != nil {
-		return nil, err
-	}
-
-	reqURL := fmt.Sprintf("%s/api.php/v1/demand/%d/aiGenerate", c.baseURL, p.DemandID)
-	payload := map[string]string{
-		"inputContent": p.InputContent,
-		"source":       p.Source,
-	}
-	if payload["source"] == "" {
-		payload["source"] = "clarify"
-	}
-	dataBytes, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewReader(dataBytes))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Token", token)
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrZentaoUnreachable, err)
-	}
-	defer resp.Body.Close()
-
-	respBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, parseZentaoAPIError(respBytes, resp.StatusCode)
-	}
-
-	var out AIUserStoryResp
-	if err := json.Unmarshal(respBytes, &out); err != nil {
-		return nil, fmt.Errorf("decode ai resp failed: %w", err)
-	}
-	return &out, nil
-}
-
 func parseZentaoAPIError(respBytes []byte, statusCode int) error {
 	var errObj struct {
 		Message string `json:"message"`
@@ -480,68 +182,6 @@ func parseZentaoAPIError(respBytes []byte, statusCode int) error {
 		errMsg = "数据校验失败，请检查表单各项必填项与输入格式"
 	}
 	return fmt.Errorf("%w (%d): %s", ErrZentaoAPIError, statusCode, errMsg)
-}
-
-// SiteClient 返回面向禅道站点页（zentao.url）的客户端，用于 PATH_INFO 控制层动作。
-// DefaultClient 面向 REST API（zentao.api）；关注切换等自定义 ajax 只在站点侧可用。
-func SiteClient() *Client {
-	return NewClient(zentaoCfg.URL)
-}
-
-// FollowDemandObject 调用禅道 demand::ajaxFollowObject（common::followObject），
-// 会同步关注子需求，返回正文为 followed 状态 "0"|"1"。
-func (c *Client) FollowDemandObject(ctx context.Context, account string, demandID int64) error {
-	return c.toggleDemandFollow(ctx, account, demandID, true)
-}
-
-// UnfollowDemandObject 调用禅道 demand::ajaxUnfollowObject（common::unfollowObject）。
-func (c *Client) UnfollowDemandObject(ctx context.Context, account string, demandID int64) error {
-	return c.toggleDemandFollow(ctx, account, demandID, false)
-}
-
-func (c *Client) toggleDemandFollow(ctx context.Context, account string, demandID int64, follow bool) error {
-	account = strings.TrimSpace(account)
-	if account == "" || demandID <= 0 {
-		return fmt.Errorf("%w: invalid follow request", ErrZentaoAPIError)
-	}
-	token, err := c.GetUserToken(ctx, account)
-	if err != nil {
-		return err
-	}
-	method := "ajaxUnfollowObject"
-	if follow {
-		method = "ajaxFollowObject"
-	}
-	// PATH_INFO: /demand-ajaxFollowObject-demand-{id}.html （objectType + objectID）
-	reqURL := fmt.Sprintf("%s/demand-%s-demand-%d.html", strings.TrimRight(c.baseURL, "/"), method, demandID)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Token", token)
-	req.Header.Set("X-Requested-With", "XMLHttpRequest")
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("%w: %v", ErrZentaoUnreachable, err)
-	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("%w (%d): %s", ErrZentaoAPIError, resp.StatusCode, strings.TrimSpace(string(body)))
-	}
-	// 成功正文通常为 "0" / "1"；登录页 HTML 视为失败。
-	out := strings.TrimSpace(string(body))
-	if out != "0" && out != "1" {
-		if strings.Contains(out, "<html") || strings.Contains(out, "<!DOCTYPE") {
-			return fmt.Errorf("%w: zenTao session rejected follow ajax", ErrZentaoAuthFailed)
-		}
-		return fmt.Errorf("%w: unexpected follow response: %s", ErrZentaoAPIError, truncateRunes(out, 120))
-	}
-	return nil
 }
 
 func truncateRunes(s string, n int) string {

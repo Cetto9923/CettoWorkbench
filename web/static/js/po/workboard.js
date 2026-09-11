@@ -12,6 +12,7 @@
   var selectOwner = WB.selectOwner;
   var switchMode = WB.switchMode;
   var MAX_OWNERS = WB.MAX_OWNERS;
+  var typeTag = WB.typeTag;
   var priorityBadge = WB.priorityBadge || function (r) { return window.PersonalList ? window.PersonalList.priorityBadge(r) : ""; };
   var objectTypeBadge = WB.objectTypeBadge || function (k, id) { return window.PersonalList ? window.PersonalList.objectTypeBadge(k, id) : ""; };
 
@@ -95,16 +96,23 @@
   function loadTasks() {
     document.querySelectorAll("#taskBoard .task-col-body").forEach(function (c) { c.innerHTML = ""; });
     ensureTeamgroup();
-    if (!state.teamgroup) { return; }
     var params = new URLSearchParams();
-    params.set("teamgroupId", state.teamgroup);
+    // 首次直达任务看板时可能还没有本地小组选择，交给服务端按当前账号选择首个可用小组。
+    if (state.teamgroup) { params.set("teamgroupId", state.teamgroup); }
     if (state.storyFilter) { params.set("storyId", state.storyFilter); }
     if (state.owner) { params.set("ownerAccount", state.owner); }
     fetch("/board/task/items?" + params.toString(), { method: "GET" })
       .then(function (r) { if (!r.ok) { throw new Error("http"); } return r.json(); })
       .then(function (payload) {
         if (!payload || payload.success !== true) { throw new Error("payload"); }
-        if (payload.teamgroups && payload.teamgroups.length) { WB.setTeams(payload.teamgroups); WB.renderTeamChips(); }
+        if (payload.teamgroups && payload.teamgroups.length) {
+          WB.setTeams(payload.teamgroups);
+          if (payload.selectedTeamgroupId) {
+            state.teamgroup = Number(payload.selectedTeamgroupId);
+            WB.saveTeamgroup(state.teamgroup);
+          }
+          WB.renderTeamChips();
+        }
         if (payload.owners) {
           // 与需求看板一致：首位"全部" chip 不带 count 角标，避免被读成"41 个负责人"。
           var opts = [{ value: "", display: "", count: 0 }];

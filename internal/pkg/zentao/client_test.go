@@ -19,6 +19,62 @@ func TestDefaultClientUsesAPIAndFallsBackToURL(t *testing.T) {
 	}
 }
 
+func TestClientURLBuilding(t *testing.T) {
+	tests := []struct {
+		name        string
+		baseURL     string
+		apiPath     string
+		expectedAPI string
+		webPath     string
+		expectedWeb string
+	}{
+		{
+			name:        "bare domain",
+			baseURL:     "http://127.0.0.1:8080",
+			apiPath:     "/tokens",
+			expectedAPI: "http://127.0.0.1:8080/api.php/v1/tokens",
+			webPath:     "/demand-view-1.html",
+			expectedWeb: "http://127.0.0.1:8080/demand-view-1.html",
+		},
+		{
+			name:        "with trailing slash",
+			baseURL:     "http://127.0.0.1:8080/",
+			apiPath:     "tokens",
+			expectedAPI: "http://127.0.0.1:8080/api.php/v1/tokens",
+			webPath:     "demand-view-1.html",
+			expectedWeb: "http://127.0.0.1:8080/demand-view-1.html",
+		},
+		{
+			name:        "with /api.php/v1 suffix",
+			baseURL:     "https://customer.chandao.net/api.php/v1",
+			apiPath:     "/demand/1/withdrawReview",
+			expectedAPI: "https://customer.chandao.net/api.php/v1/demand/1/withdrawReview",
+			webPath:     "/demand-view-1.html",
+			expectedWeb: "https://customer.chandao.net/demand-view-1.html",
+		},
+		{
+			name:        "with /v1 suffix",
+			baseURL:     "https://api.test/v1",
+			apiPath:     "/tokens",
+			expectedAPI: "https://api.test/api.php/v1/tokens",
+			webPath:     "/home",
+			expectedWeb: "https://api.test/home",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			c := NewClient(tc.baseURL)
+			if got := c.apiURL(tc.apiPath); got != tc.expectedAPI {
+				t.Errorf("apiURL(%q) = %q, want %q", tc.apiPath, got, tc.expectedAPI)
+			}
+			if got := c.webURL(tc.webPath); got != tc.expectedWeb {
+				t.Errorf("webURL(%q) = %q, want %q", tc.webPath, got, tc.expectedWeb)
+			}
+		})
+	}
+}
+
 func TestParseZentaoAPIError(t *testing.T) {
 	t.Run("plain error string", func(t *testing.T) {
 		body := []byte(`{"error":"需求不存在"}`)
