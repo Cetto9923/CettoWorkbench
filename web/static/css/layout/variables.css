@@ -292,13 +292,13 @@ html[data-theme="light"] {
 }
 
 html[data-theme="dark"] {
-  /* 品牌主色 */
-  --color-primary: #818cf8;
-  --color-primary-hover: #6366f1;
-  --color-primary-active: #4f46e5;
-  --color-primary-active-deep: #4338ca;
-  --color-primary-light: #312e81;
-  --color-primary-border: #4338ca;
+  /* 品牌主色：由偏紫 Indigo 修正为纯正科技蓝，实现简洁大方 */
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+  --color-primary-active: #1d4ed8;
+  --color-primary-active-deep: #1e40af;
+  --color-primary-light: rgba(59, 130, 246, 0.12);
+  --color-primary-border: rgba(59, 130, 246, 0.35);
 
   /* 语义功能色 (Status bg/foreground combinations must have readable contrast, > 4.5:1) */
   --color-success: #34d399; /* lighter for text readability against dark */
@@ -357,7 +357,7 @@ html[data-theme="dark"] {
   /* 边框色阶 */
   --color-border: #334155;
   --color-border-strong: #475569;
-  --color-border-focus: #818cf8;
+  --color-border-focus: #3b82f6;
   --color-border-soft: #1e293b;
   --color-border-soft-2: #1e293b;
   --color-border-soft-3: #334155;
@@ -383,10 +383,10 @@ html[data-theme="dark"] {
   --color-business-text: #bfdbfe;
   --color-story-bg: #134e4a;
   --color-story-text: #99f6e4;
-  --color-approval-bg: #4c1d95;
-  --color-approval-text: #ddd6fe;
-  --color-charter-bg: #701a75;
-  --color-charter-text: #f5d0fe;
+  --color-approval-bg: rgba(245, 158, 11, 0.15);
+  --color-approval-text: #fde68a;
+  --color-charter-bg: rgba(13, 148, 136, 0.15);
+  --color-charter-text: #99f6e4;
   --color-task-bg: #064e3b;
   --color-task-text: #bbf7d0;
   --color-bug-bg: #7f1d1d;
@@ -397,13 +397,13 @@ html[data-theme="dark"] {
   --color-risk-text: #fed7aa;
   --color-issue-bg: #713f12;
   --color-issue-text: #fde68a;
-  --color-sub-demand-bg: #4c1d95;
-  --color-sub-demand-text: #ddd6fe;
+  --color-sub-demand-bg: rgba(59, 130, 246, 0.12);
+  --color-sub-demand-text: #93c5fd;
   --color-feedback-bg: #7c2d12;
   --color-feedback-text: #fed7aa;
 
-  --color-primary-gradient-start: #6366f1;
-  --color-primary-gradient-end: #818cf8;
+  --color-primary-gradient-start: #2563eb;
+  --color-primary-gradient-end: #3b82f6;
 
   /* 透明色 */
   --color-white-35: rgba(255, 255, 255, 0.15);
@@ -417,8 +417,8 @@ html[data-theme="dark"] {
   --color-ink-15-23-42-08: rgba(0, 0, 0, 0.5);
   --color-success-ring: rgba(16, 185, 129, 0.35);
   --color-danger-ring: rgba(239, 68, 68, 0.35);
-  --focus-ring: 0 0 0 3px rgba(129, 140, 248, 0.45);
-  --color-primary-ring-soft: rgba(129, 140, 248, 0.30);
+  --focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.35);
+  --color-primary-ring-soft: rgba(59, 130, 246, 0.20);
 
   /* Legacy aliases with no safe equivalent remain hex */
   --po-bg: #111827;

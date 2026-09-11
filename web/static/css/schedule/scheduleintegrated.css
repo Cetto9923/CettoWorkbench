@@ -877,3 +877,39 @@
   word-break: break-word;
   white-space: pre-wrap;
 }
+
+/* =============================================================================
+   排期一体化弹窗暗色模式专属优化（彻底去紫、半透明微发光高质感、防挤压）
+   ============================================================================= */
+html[data-theme="dark"] #scheduleIntegratedModal .schedule-modal-info {
+  background: rgba(59, 130, 246, 0.08) !important;
+  border: 1px solid rgba(59, 130, 246, 0.28) !important;
+  color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] #scheduleIntegratedModal .schedule-modal-title {
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] #scheduleIntegratedModal .schedule-modal-summary strong {
+  color: #f8fafc !important;
+}
+
+/* 彻底杜绝版本窗口下拉组合框内“新建窗口”按钮被长文本挤压折叠 */
+#scheduleIntegratedModal .schedule-integrated-cell .schedule-window-combo .schedule-window-combo-select {
+  flex: 1 1 0%;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#scheduleIntegratedModal .schedule-integrated-cell .schedule-window-combo .js-schedule-inline-create {
+  flex: 0 0 auto !important;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+  padding: 0 10px;
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}

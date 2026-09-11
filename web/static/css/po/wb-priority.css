@@ -487,3 +487,18 @@ html[data-theme="dark"] .wb-status-tag.wb-status-neutral .wb-status-dot,
 html[data-theme="dark"] .wb-status-tag.wb-status-gray .wb-status-dot {
   background: #94a3b8 !important;
 }
+
+/* 暗色模式专属：审批与子需求双色药丸徽标去紫化，回归沉稳商务琥珀金与纯正科技蓝 */
+html[data-theme="dark"] .wb-type-approval {
+  border-color: #d97706;
+}
+html[data-theme="dark"] .wb-type-approval .wb-type-tag {
+  background: #d97706;
+}
+
+html[data-theme="dark"] .wb-type-sub_demand {
+  border-color: #2563eb;
+}
+html[data-theme="dark"] .wb-type-sub_demand .wb-type-tag {
+  background: #2563eb;
+}
