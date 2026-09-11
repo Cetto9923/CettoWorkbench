@@ -221,6 +221,49 @@ func (s *Service) LinkStories(ctx context.Context, actor *model.User, buildID ui
 	return nil
 }
 
+// UnlinkStories 将研发需求从版本解除关联（POST 禅道 /build/:id/unlinkstories）。
+func (s *Service) UnlinkStories(ctx context.Context, actor *model.User, buildID uint, req LinkStoriesReq) error {
+	_ = actor // 预留：对象级权限 / 操作人审计
+	if buildID == 0 {
+		return errorx.New(errorx.ErrCodeInvalidParam, "版本 ID 无效")
+	}
+	stories := req.NormalizedStories()
+	if stories == "" {
+		return errorx.New(errorx.ErrCodeInvalidParam, "请选择要解除关联的研发需求")
+	}
+
+	_, err := s.repo.FindBuildByID(ctx, buildID)
+	if err != nil {
+		if errors.Is(err, errBuildNotFound) {
+			return errorx.New(errorx.ErrCodeNotFound, "版本不存在")
+		}
+		return err
+	}
+
+	client := s.ztAPI
+	if client == nil {
+		client = zentao.API()
+	}
+	if client == nil {
+		return errorx.New(errorx.ErrCodeInternal, "禅道 API 未配置")
+	}
+
+	if err := unlinkBuildStories(ctx, client, linkBuildStoriesReq{
+		BuildID: buildID,
+		Stories: stories,
+	}); err != nil {
+		if s.logger != nil {
+			s.logger.Error("zentao unlink stories",
+				zap.Error(err),
+				zap.Uint("buildId", buildID),
+				zap.String("stories", stories),
+			)
+		}
+		return errorx.Wrap(errorx.ErrCodeInvalidParam, fmt.Sprintf("解除关联失败：%s", err.Error()), err)
+	}
+	return nil
+}
+
 func (s *Service) buildSearchForm(ctx context.Context, actor *model.User, productID uint, includeBranch bool, defs []SearchFieldDef, req LinkStoryListReq) (LinkStorySearchForm, error) {
 	opts := StaticSearchOptions()
 	modules, err := s.repo.FindModuleOptions(ctx, productID)

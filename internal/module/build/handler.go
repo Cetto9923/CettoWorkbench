@@ -2,7 +2,7 @@
 // 文件: internal/module/build/handler.go
 // 模块: 版本管理
 // 类型: action
-// 职责: 版本关联研发需求 HTML 片段与写入接口。
+// 职责: 版本关联/解除研发需求 HTML 片段与写入接口。
 // 依赖: internal/middleware
 //       internal/pkg/errorx
 //       internal/pkg/perm
@@ -45,6 +45,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.GET("/:id/linkstory", middleware.RequirePerm(perm.BuildLinkStory), h.LinkStory)
 
 	g.POST("/:id/linkstories", middleware.RequirePerm(perm.BuildLinkStory), h.LinkStories)
+	g.POST("/:id/unlinkstories", middleware.RequirePerm(perm.BuildLinkStory), h.UnlinkStories)
 }
 
 // LinkStory GET /builds/:id/linkstory — 返回关联需求弹窗 body HTML 片段。
@@ -117,6 +118,44 @@ func (h *Handler) LinkStories(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success":     true,
 		"message":     "关联需求成功",
+		"redirectUrl": "",
+	})
+}
+
+// UnlinkStories POST /builds/:id/unlinkstories — 解除版本与研发需求关联（代理禅道 API）。
+func (h *Handler) UnlinkStories(c *gin.Context) {
+	id, err := parseUintParam(c.Param("id"))
+	if err != nil || id == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "版本 ID 无效"})
+		return
+	}
+
+	var req LinkStoriesReq
+	if bindErr := c.ShouldBindJSON(&req); bindErr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "参数解析失败"})
+		return
+	}
+	if fieldErrs := req.Validate(); len(fieldErrs) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"success": false,
+			"message": "参数校验失败",
+			"errors":  fieldErrs,
+		})
+		return
+	}
+
+	if svcErr := h.svc.UnlinkStories(c.Request.Context(), middleware.CurrentUser(c), id, req); svcErr != nil {
+		if h.logger != nil {
+			h.logger.Error("build unlinkstories", zap.Error(svcErr), zap.Uint("buildId", id))
+		}
+		status, msg := linkStoryHTTPError(svcErr)
+		c.JSON(status, gin.H{"success": false, "message": msg})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":     true,
+		"message":     "解除关联成功",
 		"redirectUrl": "",
 	})
 }

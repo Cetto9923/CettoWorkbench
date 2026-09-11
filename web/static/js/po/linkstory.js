@@ -1,7 +1,7 @@
 /*
  * 文件: web/static/js/po/linkstory.js
  * 模块: PO工作台
- * 职责: 关联研发需求弹窗：按版本拉取 HTML 片段、搜索（bySearch）、勾选同步；确认后调后端关联禅道并回填提测 link-list。
+ * 职责: 关联研发需求弹窗：按版本拉取 HTML 片段、搜索（bySearch）、勾选同步；确认后调后端关联禅道并回填提测 link-list；支持解除关联。
  */
 (function ($) {
   "use strict";
@@ -76,8 +76,8 @@
       return;
     }
     var ids = {};
-    $list.find('input[type="checkbox"]').each(function () {
-      var id = String($(this).val() || "").trim();
+    $list.find("[data-story-id]").each(function () {
+      var id = String($(this).attr("data-story-id") || "").trim();
       if (id) {
         ids[id] = true;
       }
@@ -96,15 +96,27 @@
     if (!$list || !$list.length) {
       return;
     }
+    if (targetCtx.buildId) {
+      $list.attr("data-tt-build-id", targetCtx.buildId);
+    }
     $list.empty();
     items.forEach(function (item) {
-      var label = "#" + item.id + (item.title ? " " + item.title : "");
-      var $label = $("<label>");
-      $("<input>")
-        .attr({ type: "checkbox", name: "linkedStoryId", value: item.id, checked: true })
-        .appendTo($label);
-      $label.append(document.createTextNode(" " + label));
-      $list.append($label);
+      var id = String(item.id || "").trim();
+      if (!id) {
+        return;
+      }
+      var title = item.title || "";
+      var label = "#" + id + (title ? " " + title : "");
+      var $row = $('<div class="po-testtask-link-item">').attr({
+        "data-story-id": id,
+        "data-story-title": title
+      });
+      $('<span class="po-testtask-link-item-text">').text(label).appendTo($row);
+      $('<button type="button" class="po-testtask-link-unlink">')
+        .attr({ title: "解除关联", "aria-label": "解除关联 " + id })
+        .html('<i class="fas fa-link-slash" aria-hidden="true"></i>')
+        .appendTo($row);
+      $list.append($row);
     });
   }
 
@@ -387,6 +399,10 @@
       return;
     }
 
+    if (targetCtx.$list) {
+      targetCtx.$list.attr("data-tt-build-id", targetCtx.buildId);
+    }
+
     if (typeof window.openShowModals === "function") {
       window.openShowModals(MODAL_IDS);
     }
@@ -476,6 +492,44 @@
       });
   }
 
+  function unlinkStory($btn) {
+    var $row = $btn.closest(".po-testtask-link-item");
+    var $list = $btn.closest('[data-tt-fill="link-list"]');
+    var storyId = String($row.attr("data-story-id") || "").trim();
+    var buildId = String($list.attr("data-tt-build-id") || "").trim();
+    if (!storyId) {
+      showToast("需求无效", "error");
+      return;
+    }
+    if (!/^\d+$/.test(buildId) || buildId === "0") {
+      showToast("版本无效", "error");
+      return;
+    }
+    if ($btn.data("busy") === "1" || loading) {
+      return;
+    }
+
+    setLinkBtnBusy($btn, true);
+    postJSON("/builds/" + encodeURIComponent(buildId) + "/unlinkstories", {
+      stories: storyId
+    })
+      .then(function (res) {
+        if (!res.ok || !(res.data && res.data.success)) {
+          var msg = String((res.data && res.data.message) || "").trim();
+          throw new Error(msg || "解除关联失败");
+        }
+        $row.remove();
+        showToast(
+          String((res.data && res.data.message) || "").trim() || "解除关联成功",
+          "success"
+        );
+      })
+      .catch(function (err) {
+        showToast((err && err.message) || "解除关联失败", "error");
+        setLinkBtnBusy($btn, false);
+      });
+  }
+
   function runSearch() {
     if (!targetCtx.buildId) {
       return;
@@ -492,6 +546,9 @@
     });
     $(document).on("click", "#poLinkstoryLinkBtn", function () {
       confirmAndClose();
+    });
+    $(document).on("click", ".po-testtask-link-unlink", function () {
+      unlinkStory($(this));
     });
     $(document).on("click", "#poLinkstorySearchBtn", function () {
       runSearch();
