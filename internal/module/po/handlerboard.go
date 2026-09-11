@@ -31,10 +31,43 @@ func (h *BoardHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	rg.GET("/board/demand/items", middleware.RequirePerm(perm.PoBoardDemandList), h.BoardDemandItems)
 	rg.GET("/board/task", middleware.RequirePerm(perm.PoBoardTaskList), h.BoardTask)
 	rg.GET("/board/task/items", middleware.RequirePerm(perm.PoBoardTaskList), h.BoardTaskItems)
+	rg.PUT("/board/tasks/:id/status", middleware.RequirePerm(perm.PoBoardTaskList), h.TransitionBoardTask)
 	rg.GET("/board/issues", middleware.RequirePerm(perm.PoBoardDemandList), h.BoardIssues)
 	rg.GET("/board/issues/:id/actions", middleware.RequirePerm(perm.PoBoardDemandList), h.BoardIssueActions)
 	rg.POST("/board/issues/:id/transition", middleware.RequirePerm(perm.PoBoardDemandList), h.TransitionBoardIssue)
 	rg.GET("/board/group/metrics", middleware.RequirePerm(perm.PoBoardDemandList), h.BoardGroupMetrics)
+}
+
+// TransitionBoardTask 处理任务看板拖拽状态变更。
+func (h *BoardHandler) TransitionBoardTask(c *gin.Context) {
+	taskID64, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil || taskID64 == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "任务 ID 无效"})
+		return
+	}
+	var req BoardTaskTransitionReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "任务状态参数无效"})
+		return
+	}
+	err = h.svc.TransitionBoardTask(c.Request.Context(), middleware.CurrentUser(c), uint(taskID64), req)
+	if bizErr, ok := errorx.IsBizError(err); ok {
+		status := http.StatusUnprocessableEntity
+		if bizErr.Code == errorx.ErrCodeForbidden {
+			status = http.StatusForbidden
+		}
+		if bizErr.Code == errorx.ErrCodeNotFound {
+			status = http.StatusNotFound
+		}
+		c.JSON(status, gin.H{"message": bizErr.Msg})
+		return
+	}
+	if err != nil {
+		h.logger.Error("po board task transition", zap.Error(err))
+		c.JSON(http.StatusBadGateway, gin.H{"message": "禅道任务状态更新失败，任务状态未变更"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 
 // TransitionBoardIssue 转发到禅道原生问题动作接口；不可用时明确返回，绝不修改本地展示状态。

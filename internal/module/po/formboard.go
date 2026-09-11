@@ -8,7 +8,9 @@
 package po
 
 import (
+	"errors"
 	"strings"
+	"time"
 
 	"workbench/internal/module/po/primaryaction"
 )
@@ -167,20 +169,68 @@ func (r *BoardTaskReq) Validate() []FieldError {
 
 // BoardTaskItem 是一张真实任务卡。
 type BoardTaskItem struct {
-	ID         int64  `json:"id"`
-	DisplayID  string `json:"displayId"`
-	Title      string `json:"title"`
-	Status     string `json:"status"`
-	Priority   string `json:"priority"`
-	Type       string `json:"type"`
-	StoryID    int64  `json:"storyId"`
-	StoryTitle string `json:"storyTitle"`
-	StoryURL   string `json:"storyUrl"`
-	Owner      string `json:"owner"`
-	Deadline   string `json:"deadline"`
-	Blocked    bool   `json:"blocked"`
-	Overdue    bool   `json:"overdue"`
-	URL        string `json:"url"`
+	ID           int64  `json:"id"`
+	DisplayID    string `json:"displayId"`
+	Title        string `json:"title"`
+	Status       string `json:"status"`
+	Priority     string `json:"priority"`
+	Type         string `json:"type"`
+	StoryID      int64  `json:"storyId"`
+	StoryTitle   string `json:"storyTitle"`
+	StoryURL     string `json:"storyUrl"`
+	Owner        string `json:"owner"`
+	OwnerAccount string `json:"ownerAccount"`
+	Deadline     string `json:"deadline"`
+	Blocked      bool   `json:"blocked"`
+	Overdue      bool   `json:"overdue"`
+	URL          string `json:"url"`
+}
+
+// BoardTaskTransitionReq 是任务看板拖拽状态变更请求。
+type BoardTaskTransitionReq struct {
+	Status       string `json:"status"`
+	TeamgroupID  uint   `json:"teamgroupId"`
+	FinishedBy   string `json:"finishedBy"`
+	FinishedDate string `json:"finishedDate"`
+}
+
+// Validate 校验任务拖拽状态变更。
+func (r *BoardTaskTransitionReq) Validate() []FieldError {
+	r.Status = normalizeBoardTaskStatus(r.Status)
+	r.FinishedBy = strings.TrimSpace(r.FinishedBy)
+	r.FinishedDate = strings.TrimSpace(r.FinishedDate)
+	if r.Status != "wait" && r.Status != "doing" && r.Status != "done" {
+		return []FieldError{{Field: "status", Message: "无效的目标状态"}}
+	}
+	if r.Status == "done" && r.FinishedDate != "" {
+		if _, err := parseBoardTaskFinishedDate(r.FinishedDate); err != nil {
+			return []FieldError{{Field: "finishedDate", Message: "完成时间格式无效"}}
+		}
+	}
+	return nil
+}
+
+func normalizeBoardTaskStatus(status string) string {
+	switch strings.TrimSpace(status) {
+	case "wait", "未开始":
+		return "wait"
+	case "doing", "进行中":
+		return "doing"
+	case "done", "已完成", "完成":
+		return "done"
+	default:
+		return strings.TrimSpace(status)
+	}
+}
+
+func parseBoardTaskFinishedDate(value string) (time.Time, error) {
+	value = strings.TrimSpace(value)
+	for _, layout := range []string{"2006-01-02 15:04:05", "2006-01-02 15:04", "2006-01-02T15:04", "2006-01-02"} {
+		if t, err := time.ParseInLocation(layout, value, time.Local); err == nil {
+			return t, nil
+		}
+	}
+	return time.Time{}, errors.New("invalid time format")
 }
 
 // BoardTaskColumn 是任务看板三列之一。

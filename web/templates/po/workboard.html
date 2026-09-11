@@ -108,6 +108,34 @@
   </div>
 </div>
 <div id="toast" class="toast"></div>
+
+<div id="taskDoneModal" class="task-done-modal hidden" role="dialog" aria-modal="true" aria-label="确认完成任务">
+  <div class="task-done-card">
+    <div class="task-done-hdr">
+      <div>确认完成任务</div>
+      <button type="button" class="ui-close-btn" id="taskDoneCancelX" aria-label="关闭">✕</button>
+    </div>
+    <div class="task-done-body">
+      <div class="task-done-title" id="taskDoneTitle">—</div>
+      <div class="kb-form-row">
+        <div class="kb-form-group">
+          <label>完成人账号</label>
+          <input type="text" class="kb-input" id="taskDoneFinishedBy" autocomplete="off">
+        </div>
+        <div class="kb-form-group">
+          <label>完成时间</label>
+          <input type="datetime-local" class="kb-input" id="taskDoneFinishedDate">
+        </div>
+      </div>
+      <div class="task-done-note">默认使用任务当前指派人和当前时间；提交后通过禅道接口写入任务状态。</div>
+    </div>
+    <div class="task-done-footer">
+      <button type="button" class="action" id="taskDoneCancel">取消</button>
+      <button type="button" class="action primary" id="taskDoneConfirm">确认完成</button>
+    </div>
+  </div>
+</div>
+
 <div id="taskDrawerBackdrop" class="task-drawer-backdrop hidden" aria-hidden="true"></div>
 <div id="taskDrawer" class="task-drawer hidden" role="dialog" aria-modal="true" aria-label="研发需求关联任务">
   <div class="drawer-header">

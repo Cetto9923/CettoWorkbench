@@ -15,6 +15,8 @@
   var typeTag = WB.typeTag;
   var priorityBadge = WB.priorityBadge || function (r) { return window.PersonalList ? window.PersonalList.priorityBadge(r) : ""; };
   var objectTypeBadge = WB.objectTypeBadge || function (k, id) { return window.PersonalList ? window.PersonalList.objectTypeBadge(k, id) : ""; };
+  var draggedTask = null;
+  var pendingDoneTask = null;
 
   function getMode() { return WB.mode(); }
   function renderDemandMatrix(tree) { return WB.renderDemandMatrix(tree); }
@@ -101,6 +103,7 @@
     if (state.teamgroup) { params.set("teamgroupId", state.teamgroup); }
     if (state.storyFilter) { params.set("storyId", state.storyFilter); }
     if (state.owner) { params.set("ownerAccount", state.owner); }
+    if (state.focus) { params.set("focus", state.focus); }
     fetch("/board/task/items?" + params.toString(), { method: "GET" })
       .then(function (r) { if (!r.ok) { throw new Error("http"); } return r.json(); })
       .then(function (payload) {
@@ -120,6 +123,7 @@
           renderOwnerChips("taskOwners", opts, function () { loadTasks(); });
         }
         renderTaskColumns(payload.columns || []);
+        bindTaskDrag();
         loadMetrics();
       })
       .catch(function () { onErr("taskBoard"); });
@@ -141,11 +145,122 @@
     var titleText = esc(task.title);
     var codeHtml = task.url ? '<a class="code task-code-link" href="' + esc(task.url) + '" target="_blank" rel="noopener noreferrer" title="在禅道打开任务详情">' + codeText + '</a>' : '<span class="code">' + codeText + '</span>';
     var titleHtml = task.url ? '<a class="task-title task-title-link" href="' + esc(task.url) + '" target="_blank" rel="noopener noreferrer" title="' + titleText + '">' + titleText + '</a>' : '<span class="task-title" title="' + titleText + '">' + titleText + '</span>';
-    return '<div class="' + cls + '" data-owner="' + esc(task.owner || "") + '">' +
+    return '<div class="' + cls + '" draggable="true" data-task-id="' + esc(task.id) + '" data-task-status="' + esc(task.status || "wait") + '" data-task-title="' + titleText + '" data-task-owner="' + esc(task.owner || "") + '" data-task-owner-account="' + esc(task.ownerAccount || "") + '" data-owner="' + esc(task.owner || "") + '">' +
       '<div class="task-head">' + typeTag("task") + codeHtml + titleHtml + "</div>" +
       '<div class="task-meta">' + storyLink + (task.type ? "<span>" + esc(task.type) + "</span>" : "") + (task.blocked ? '<span style="color:var(--orange);font-weight:700">阻塞</span>' : "") + "</div>" +
       '<div class="task-footer"><span class="task-due">' + due + '</span><span class="assignee">' + (task.owner ? '<span class="mini-avatar">' + esc(task.owner.charAt(0)) + "</span>" + esc(task.owner) : "") + "</span></div></div>";
   }
+
+
+  function nowForDatetimeLocal() {
+    var d = new Date();
+    d.setSeconds(0, 0);
+    var pad = function (n) { return String(n).padStart(2, "0"); };
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + "T" + pad(d.getHours()) + ":" + pad(d.getMinutes());
+  }
+  function datetimeLocalToServer(v) { return (v || "").replace("T", " ") + ((v || "").length === 16 ? ":00" : ""); }
+  function taskFromCard(card) {
+    return {
+      id: card.dataset.taskId,
+      status: card.dataset.taskStatus || "wait",
+      title: card.dataset.taskTitle || "",
+      owner: card.dataset.taskOwner || "",
+      ownerAccount: card.dataset.taskOwnerAccount || ""
+    };
+  }
+  function submitTaskStatus(task, target, extra) {
+    extra = extra || {};
+    var body = {
+      status: target,
+      teamgroupId: Number(state.teamgroup || 0),
+      finishedBy: extra.finishedBy || "",
+      finishedDate: extra.finishedDate || ""
+    };
+    var appFetch = window.appFetch || window.fetch;
+    showToast("正在更新任务状态…");
+    return appFetch("/board/tasks/" + encodeURIComponent(task.id) + "/status", {
+      method: "PUT",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify(body)
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (p) {
+        if (!r.ok || !p || p.success !== true) { throw new Error((p && p.message) || "任务状态更新失败"); }
+        showToast("任务状态已更新");
+        loadTasks();
+      });
+    }).catch(function (err) {
+      showToast(err && err.message ? err.message : "任务状态更新失败");
+      loadTasks();
+    });
+  }
+  function openDoneModal(task) {
+    pendingDoneTask = task;
+    $("taskDoneTitle").textContent = (task.id ? "#" + task.id + " " : "") + (task.title || "任务");
+    $("taskDoneFinishedBy").value = task.ownerAccount || "";
+    $("taskDoneFinishedBy").placeholder = task.owner || "默认当前指派人";
+    $("taskDoneFinishedDate").value = nowForDatetimeLocal();
+    $("taskDoneModal").classList.remove("hidden");
+  }
+  function closeDoneModal() {
+    pendingDoneTask = null;
+    if ($("taskDoneModal")) { $("taskDoneModal").classList.add("hidden"); }
+  }
+  function confirmDoneModal() {
+    if (!pendingDoneTask) { closeDoneModal(); return; }
+    var task = pendingDoneTask;
+    var finishedBy = $("taskDoneFinishedBy").value.trim();
+    var finishedDate = datetimeLocalToServer($("taskDoneFinishedDate").value.trim());
+    closeDoneModal();
+    submitTaskStatus(task, "done", { finishedBy: finishedBy, finishedDate: finishedDate });
+  }
+  function bindTaskDrag() {
+    var board = $("taskBoard");
+    if (!board || board.dataset.dragBound === "1") { return; }
+    board.dataset.dragBound = "1";
+    board.addEventListener("dragstart", function (e) {
+      var card = e.target.closest(".task-card");
+      if (!card || !board.contains(card)) { return; }
+      draggedTask = taskFromCard(card);
+      card.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", draggedTask.id || "");
+    });
+    board.addEventListener("dragend", function () {
+      document.querySelectorAll("#taskBoard .dragging,#taskBoard .drag-over").forEach(function (el) { el.classList.remove("dragging", "drag-over"); });
+      draggedTask = null;
+    });
+    board.addEventListener("dragover", function (e) {
+      var body = e.target.closest(".task-col-body");
+      if (!body || !draggedTask) { return; }
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      body.classList.add("drag-over");
+      var col = body.closest(".task-col"); if (col) { col.classList.add("drag-over"); }
+    });
+    board.addEventListener("dragleave", function (e) {
+      var body = e.target.closest(".task-col-body");
+      if (!body || body.contains(e.relatedTarget)) { return; }
+      body.classList.remove("drag-over");
+      var col = body.closest(".task-col"); if (col) { col.classList.remove("drag-over"); }
+    });
+    board.addEventListener("drop", function (e) {
+      var body = e.target.closest(".task-col-body");
+      if (!body || !draggedTask) { return; }
+      e.preventDefault();
+      document.querySelectorAll("#taskBoard .drag-over").forEach(function (el) { el.classList.remove("drag-over"); });
+      var col = body.closest(".task-col");
+      var target = col ? col.dataset.col : "";
+      var task = draggedTask;
+      draggedTask = null;
+      if (!target || target === task.status || (target === "doing" && task.status === "pause")) { return; }
+      if (target === "done") { openDoneModal(task); return; }
+      submitTaskStatus(task, target);
+    });
+  }
+  ["taskDoneCancel", "taskDoneCancelX"].forEach(function (id) { if ($(id)) { $(id).addEventListener("click", closeDoneModal); } });
+  if ($("taskDoneConfirm")) { $("taskDoneConfirm").addEventListener("click", confirmDoneModal); }
+
   function updateTaskStats() {
     var blocked = 0, overdue = 0, visible = 0;
     document.querySelectorAll("#taskBoard .task-card").forEach(function (r) {

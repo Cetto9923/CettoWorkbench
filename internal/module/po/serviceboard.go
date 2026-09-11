@@ -11,7 +11,11 @@ package po
 
 import (
 	"context"
+	"errors"
 	"strings"
+	"time"
+
+	"gorm.io/gorm"
 
 	"workbench/internal/model"
 	"workbench/internal/module/po/primaryaction"
@@ -80,6 +84,75 @@ func (s *Service) TransitionBoardIssue(ctx context.Context, actor *model.User, i
 		return zentao.NewUnavailableIssueActionGateway("当前禅道原生问题操作接口不可用").ExecuteIssueAction(ctx, zentao.IssueActionRequest{IssueID: issueID, Action: issueAction})
 	}
 	return s.issueActions.ExecuteIssueAction(ctx, zentao.IssueActionRequest{IssueID: issueID, Action: issueAction, SessionID: sessionID})
+}
+
+// TransitionBoardTask 通过禅道 REST entry 变更任务状态；Workbench 只做可见范围鉴权和参数兜底。
+func (s *Service) TransitionBoardTask(ctx context.Context, actor *model.User, taskID uint, req BoardTaskTransitionReq) error {
+	if actor == nil || strings.TrimSpace(actor.Account) == "" || taskID == 0 {
+		return errorx.New(errorx.ErrCodeForbidden, "无权操作该任务")
+	}
+	if errs := req.Validate(); len(errs) > 0 {
+		return errorx.New(errorx.ErrCodeInvalidParam, errs[0].Message)
+	}
+	row, err := s.repo.FindBoardTaskForTransition(ctx, taskID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errorx.New(errorx.ErrCodeNotFound, "任务不存在或已删除")
+		}
+		return err
+	}
+	if !actor.IsSuperAdmin {
+		teams, err := s.repo.FindBoardTeamgroups(ctx, actor.Account)
+		if err != nil {
+			return err
+		}
+		teamID := selectBoardTeamgroup(req.TeamgroupID, teams)
+		if teamID == 0 {
+			return errorx.New(errorx.ErrCodeForbidden, "无权操作该任务")
+		}
+		members, err := s.repo.FindBoardTeamgroupMembers(ctx, teamID)
+		if err != nil {
+			return err
+		}
+		if !stringInSlice(row.AssignedTo, members) {
+			return errorx.New(errorx.ErrCodeForbidden, "无权操作当前敏捷小组外的任务")
+		}
+	}
+	finishedBy := strings.TrimSpace(req.FinishedBy)
+	finishedDate := strings.TrimSpace(req.FinishedDate)
+	if req.Status == "done" {
+		if finishedBy == "" {
+			finishedBy = strings.TrimSpace(row.AssignedTo)
+		}
+		if finishedBy == "" {
+			finishedBy = strings.TrimSpace(actor.Account)
+		}
+		if finishedDate == "" {
+			finishedDate = time.Now().Format("2006-01-02 15:04:05")
+		} else if parsed, err := parseBoardTaskFinishedDate(finishedDate); err == nil {
+			finishedDate = parsed.Format("2006-01-02 15:04:05")
+		}
+	}
+	if s == nil || s.taskActions == nil {
+		return zentao.ErrZentaoAPIError
+	}
+	return s.taskActions.UpdateTaskStatus(ctx, zentao.TaskStatusParams{
+		TaskID:       taskID,
+		Account:      actor.Account,
+		Status:       req.Status,
+		FinishedBy:   finishedBy,
+		FinishedDate: finishedDate,
+	})
+}
+
+func stringInSlice(value string, values []string) bool {
+	value = strings.TrimSpace(value)
+	for _, item := range values {
+		if strings.TrimSpace(item) == value {
+			return true
+		}
+	}
+	return false
 }
 
 // BoardGroupMetrics 小组效能快照：选定具体敏捷小组时返回 8 项真实指标。

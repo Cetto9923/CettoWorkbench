@@ -173,9 +173,31 @@ func boardTaskItem(row boardTaskRow, stories map[int64]string, displayMap map[st
 	return &BoardTaskItem{
 		ID: row.ID, DisplayID: fmt.Sprintf("%d", row.ID), Title: row.Name, Type: row.Type,
 		Status: row.Status, Priority: priority, StoryID: row.StoryID, StoryTitle: stories[row.StoryID],
-		StoryURL: zentao.StoryViewURL(uint(row.StoryID)), Owner: owner, Deadline: deadline,
+		StoryURL: zentao.StoryViewURL(uint(row.StoryID)), Owner: owner, OwnerAccount: row.AssignedTo, Deadline: deadline,
 		Blocked: blocked, Overdue: overdue, URL: zentao.TaskViewURL(uint(row.ID)),
 	}
+}
+
+// FindBoardTaskForTransition 返回任务拖拽状态变更所需的最小 ZenTao 字段。
+func (r *Repo) FindBoardTaskForTransition(ctx context.Context, taskID uint) (*boardTaskTransitionRow, error) {
+	if r == nil || r.db == nil || taskID == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+	var row boardTaskTransitionRow
+	err := r.db.WithContext(ctx).Table("zt_task").
+		Where("id = ? AND deleted = ?", taskID, "0").
+		Select("id, status, assignedTo").
+		Take(&row).Error
+	if err != nil {
+		return nil, err
+	}
+	return &row, nil
+}
+
+type boardTaskTransitionRow struct {
+	ID         uint   `gorm:"column:id"`
+	Status     string `gorm:"column:status"`
+	AssignedTo string `gorm:"column:assignedTo"`
 }
 
 // FindBoardTaskOwners 查询当前小组实际拥有任务的负责人及各自任务数。

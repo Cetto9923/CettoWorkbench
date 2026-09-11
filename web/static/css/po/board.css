@@ -291,3 +291,19 @@
 .drawer-footer{padding:11px 18px;border-top:1px solid var(--border);background:var(--color-surface);display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-shrink:0}
 .drawer-footer .action{height:28px;border:1px solid var(--border);background:var(--color-surface);border-radius:4px;padding:0 12px;color:var(--t2);font-size:11px;cursor:pointer;display:inline-flex;align-items:center;text-decoration:none}
 .drawer-footer .action.soft{border-color:var(--blue-bd);background:var(--blue-bg);color:var(--navy);font-weight:700}
+
+/* 任务拖拽状态变更 */
+.po-board .task-card{cursor:grab;transition:border-color .12s,box-shadow .12s,opacity .12s,transform .12s}
+.po-board .task-card:active{cursor:grabbing}
+.po-board .task-card.dragging{opacity:.55;box-shadow:var(--shadow);transform:scale(.99)}
+.po-board .task-col.drag-over{border-color:var(--blue-bd);background:var(--color-info-bg)}
+.po-board .task-col.drag-over .task-col-hdr{color:var(--navy)}
+.po-board .task-col-body.drag-over{outline:1px dashed var(--blue-bd);outline-offset:-5px}
+.task-done-modal.hidden{display:none!important}
+.task-done-modal{position:fixed;inset:0;z-index:1000;background:rgba(15,23,42,.34);display:flex;align-items:center;justify-content:center;padding:20px}
+.task-done-card{width:min(560px,calc(100vw - 40px));background:var(--color-surface);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-lg);overflow:hidden}
+.task-done-hdr{height:48px;padding:0 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-size:15px;font-weight:700;color:var(--t1)}
+.task-done-body{padding:16px;background:var(--color-surface-muted)}
+.task-done-title{padding:10px 12px;border:1px solid var(--border);border-radius:6px;background:var(--color-surface);font-size:12px;font-weight:700;color:var(--t1);line-height:1.45;margin-bottom:12px}
+.task-done-note{margin-top:8px;font-size:11px;color:var(--t3)}
+.task-done-footer{height:52px;padding:0 16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:flex-end;gap:8px;background:var(--color-surface)}

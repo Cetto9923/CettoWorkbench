@@ -50,6 +50,7 @@ type Service struct {
 	userSvc      *user.Service
 	logger       *zap.Logger
 	issueActions zentao.IssueActionGateway
+	taskActions  taskStatusGateway
 }
 
 // NewService 创建 Service。
@@ -59,11 +60,24 @@ func NewService(repo *Repo, scheduleSvc *schedule.Service, userSvc *user.Service
 		detailSvc = NewDetailService(NewDemandDetailRepo(repo.db))
 	}
 	s := &Service{repo: repo, detailSvc: detailSvc, schedule: scheduleSvc, userSvc: userSvc, logger: logger,
-		issueActions: zentao.NewUnavailableIssueActionGateway("当前禅道 API 未提供问题解决、关闭或重新激活动作接口")}
+		issueActions: zentao.NewUnavailableIssueActionGateway("当前禅道 API 未提供问题解决、关闭或重新激活动作接口"),
+		taskActions:  zentao.DefaultClient()}
 	if detailSvc != nil {
 		detailSvc.attachParent(s)
 	}
 	return s
+}
+
+type taskStatusGateway interface {
+	UpdateTaskStatus(ctx context.Context, p zentao.TaskStatusParams) error
+}
+
+// SetTaskStatusGateway 注入禅道任务状态网关，供测试替换。
+func (s *Service) SetTaskStatusGateway(gateway taskStatusGateway) {
+	if s == nil {
+		return
+	}
+	s.taskActions = gateway
 }
 
 // SetIssueActionGateway 注入禅道问题原生动作网关；nil 始终失败关闭。
