@@ -1,12 +1,12 @@
 {{/* ==========================================================================
-文件: web/templates/kanban/story.html
+文件: web/templates/kanban/task.html
 模块: 工作看板
-职责: 需求看板静态壳；demandGroups 由 story.js ajax 填充业需/研需行。
+职责: 任务看板静态壳；三列任务板空态，小组/成员由 task.js 切换。
 全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
-页面字段: .Title (string), .PageTitle (string), .BaseUrl (string), .IssueCreateURL (string), .Teamgroups ([]module/kanban.TeamgroupItem)
+页面字段: .Title (string), .PageTitle (string), .BaseUrl (string), .IssueCreateURL (string), .TaskCreateURL (string), .Teamgroups ([]module/kanban.TeamgroupItem)
 ========================================================================== */}}
 {{ define "page_css" }}
-<link rel="stylesheet" href="{{ asset "/static/css/kanban/story.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/kanban/task.css" }}">
 {{ end }}
 
 {{ define "content" }}
@@ -14,12 +14,10 @@
   <div class="page-hdr">
     <h2>工作看板</h2>
     <div class="board-switch" role="tablist" aria-label="看板类型">
-      <a href="/kanban/story" class="active" role="tab" aria-selected="true">需求看板</a>
-      <a href="/kanban/task" role="tab" aria-selected="false">任务看板</a>
+      <a href="/kanban/story" role="tab" aria-selected="false">需求看板</a>
+      <a href="/kanban/task" class="active" role="tab" aria-selected="true">任务看板</a>
     </div>
-    <div class="stats" aria-label="需求统计">
-      <button type="button" class="stat blue" disabled>待澄清 <strong>—</strong></button>
-      <button type="button" class="stat blue" disabled>待排期 <strong>—</strong></button>
+    <div class="stats" aria-label="任务统计">
       <button type="button" class="stat orange" disabled>阻塞 <strong>—</strong></button>
       <button type="button" class="stat red" disabled>超期 <strong>—</strong></button>
     </div>
@@ -36,13 +34,14 @@
       </div>
     </div>
     <div class="actions">
-      <a class="action soft" href="/schedule">需求排期</a>
+      <button type="button" class="action" disabled>调整成员</button>
+      <a class="action primary" href="{{ .TaskCreateURL }}" target="_blank" rel="noopener noreferrer">+ 建任务</a>
       <a class="action primary" href="{{ .IssueCreateURL }}" target="_blank" rel="noopener noreferrer">+ 提问题</a>
     </div>
   </div>
 
   <div class="owner-row">
-    <span class="owner-title">PO / 需求负责人</span>
+    <span class="owner-title">任务负责人</span>
     <div class="people" data-people{{ if .CurrentUser }} data-current-account="{{ .CurrentUser.Account }}"{{ end }}>
       {{ if .Teamgroups }}
         {{ range $i, $g := .Teamgroups }}
@@ -69,19 +68,18 @@
 
   <div class="standup">
     <div class="board-main">
-      <div class="demand-board">
-        <div class="demand-grid">
-          <div class="grid-head">
-            <div>需求树（PO工作对象 / 交付上下文）</div>
-            <div>受理 / 澄清</div>
-            <div>排期</div>
-            <div>研发 / 提测</div>
-            <div>联调 / 验收</div>
-            <div>交付 / 评价</div>
-          </div>
-          <div id="demandGroups">
-            <div class="demand-empty demand-empty--visible">加载中…</div>
-          </div>
+      <div class="task-board">
+        <div class="task-col" data-col="wait">
+          <div class="task-col-hdr">未开始 <span class="k-count">0</span></div>
+          <div class="task-col-body"></div>
+        </div>
+        <div class="task-col" data-col="doing">
+          <div class="task-col-hdr">进行中 <span class="k-count">0</span></div>
+          <div class="task-col-body"></div>
+        </div>
+        <div class="task-col" data-col="done">
+          <div class="task-col-hdr">已完成 <span class="k-count">0</span></div>
+          <div class="task-col-body"></div>
         </div>
       </div>
     </div>
@@ -105,5 +103,5 @@
 </div>
 {{ end }}
 {{ define "page_js" }}
-<script src="{{ asset "/static/js/kanban/story.js" }}"></script>
+<script src="{{ asset "/static/js/kanban/task.js" }}"></script>
 {{ end }}

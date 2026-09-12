@@ -2,7 +2,7 @@
 // 文件: internal/module/kanban/handler.go
 // 模块: 工作看板
 // 类型: readonly
-// 职责: 需求看板静态页与需求树（业需+研需）JSON HTTP 请求。
+// 职责: 需求/任务看板静态页与需求树（业需+研需）JSON HTTP 请求。
 // 依赖: internal/middleware
 //       internal/pkg/errorx
 //       internal/pkg/perm
@@ -43,6 +43,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.Use(middleware.ActiveNav("/kanban/story"))
 	g.GET("/story", middleware.RequirePerm(perm.KanbanStory), h.Story)
 	g.GET("/story/demands", middleware.RequirePerm(perm.KanbanStory), h.Demands)
+	g.GET("/task", middleware.RequirePerm(perm.KanbanStory), h.Task)
 }
 
 // Story 渲染需求看板静态页。
@@ -61,6 +62,27 @@ func (h *Handler) Story(c *gin.Context) {
 		"PageTitle":      "工作看板",
 		"BaseUrl":        "/kanban/story",
 		"IssueCreateURL": zentao.URL("issue", "create"),
+		"Teamgroups":     teamgroups,
+	})
+}
+
+// Task 渲染任务看板静态页。
+func (h *Handler) Task(c *gin.Context) {
+	actor := middleware.CurrentUser(c)
+	teamgroups, err := h.svc.ListMyTeamgroups(c.Request.Context(), actor)
+	if err != nil {
+		if h.logger != nil {
+			h.logger.Error("list kanban teamgroups failed", zap.Error(err))
+		}
+		teamgroups = []TeamgroupItem{}
+	}
+
+	render.Page(c, http.StatusOK, constants.TEMPLATE_KANBAN_TASK, gin.H{
+		"Title":          "工作看板",
+		"PageTitle":      "工作看板",
+		"BaseUrl":        "/kanban/task",
+		"IssueCreateURL": zentao.URL("issue", "create"),
+		"TaskCreateURL":  zentao.URL("task", "create", "executionID=0&storyID=0&moduleID=0"),
 		"Teamgroups":     teamgroups,
 	})
 }
