@@ -335,6 +335,18 @@
     });
     $("#homeQuickChips [data-home-focus]").removeClass("active").attr("aria-pressed", "false");
     $('#homeQuickChips [data-home-focus="' + state.focus + '"]').addClass("active").attr("aria-pressed", "true");
+
+    // 首页本地工作视角切换（当前仅 PO 生效，其余提示规划中）
+    $(".po-perspective-tabs").on("click", ".po-perspective-tab", function (e) {
+      e.preventDefault();
+      var p = $(this).attr("data-perspective");
+      if (p === "po") return;
+      var text = $(this).contents().filter(function () { return this.nodeType === 3; }).text().trim() || "该工作视角";
+      if (typeof window.showToast === "function") {
+        window.showToast(text + "工作视角规划中，敬请期待", "info");
+      }
+    });
+
     initToolbar();
     initValueStreamLinkage();
 

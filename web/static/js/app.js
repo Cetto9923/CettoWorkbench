@@ -390,7 +390,11 @@
         label = textEl ? textEl.textContent.trim() : (btn.getAttribute("data-upcoming-page") || "该功能");
       }
       if (typeof window.showToast === "function") {
-        window.showToast(label + " 正在规划建设中", "info");
+        if (btn.getAttribute("data-placeholder-type") === "migration") {
+          window.showToast(label + "能力建设中，敬请期待。", "info");
+        } else {
+          window.showToast(label + "规划建设中，敬请期待", "info");
+        }
       }
     });
   }

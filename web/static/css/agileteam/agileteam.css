@@ -88,9 +88,10 @@
 .at-page-btn{min-width:30px;height:28px;border:1px solid var(--color-border);background:var(--color-surface);border-radius:5px;color:var(--color-text-secondary);font-size:12px;cursor:pointer}
 .at-page-btn.active{background:var(--color-primary);border-color:var(--color-primary);color:var(--color-text-inverse, #fff)}
 .at-page-btn:disabled{opacity:.45;cursor:default}
-.at-page-size{height:28px;border:1px solid var(--color-border);border-radius:5px;font-size:12px;color:var(--color-text-secondary)}
+.at-page-size{height:28px;border:1px solid var(--color-border);background:var(--color-surface);border-radius:5px;font-size:12px;color:var(--color-text-primary)}
+.at-page-size:focus{outline:none;border-color:var(--color-primary)}
 .at-page-size-custom{display:inline-flex;align-items:center;gap:6px;margin-left:6px}
-.at-page-size-custom-input{width:64px;height:28px;border:1px solid var(--color-border);border-radius:5px;padding:0 8px;font-size:12px;color:var(--color-text-primary);text-align:center}
+.at-page-size-custom-input{width:64px;height:28px;border:1px solid var(--color-border);background:var(--color-surface);border-radius:5px;padding:0 8px;font-size:12px;color:var(--color-text-primary);text-align:center}
 .at-page-size-custom-input:focus{outline:none;border-color:var(--color-primary)}
 .at-page-size-custom-tip{font-size:11px;color:var(--color-text-secondary)}
 .at-readonly-banner{background:var(--color-surface-muted);border-bottom:1px solid var(--color-border);padding:9px 18px;color:var(--color-text-secondary);font-size:11px}

@@ -65,44 +65,51 @@ body.po-workbench-shell .topbar-row {
   align-items: center;
 }
 
-.po-role-switcher {
+/* 首页工作视角切换器（Perspective Tabs） */
+.po-perspective-tabs {
   display: inline-flex;
   align-items: center;
-  width: auto;
-  max-width: 100%;
-  height: 34px;
+  height: 28px;
   padding: 2px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: 6px;
   background: var(--color-surface-muted);
   gap: 2px;
   box-sizing: border-box;
 }
 
-.po-role-tab {
+.po-perspective-tab {
   display: inline-flex;
-  flex: 0 0 auto;
-  min-width: 56px;
   align-items: center;
-  justify-content: center;
-  height: 28px;
-  padding: 0 14px;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 4px;
   background: transparent;
   color: var(--color-text-secondary);
-  font: 500 13px/1 var(--font-sans);
+  font: 500 12px/1 var(--font-sans);
   cursor: pointer;
   white-space: nowrap;
   box-sizing: border-box;
   transition: all 0.15s ease;
 }
 
-.po-role-tab.active {
+.po-perspective-tab.active {
   background: var(--color-surface);
   color: var(--color-info);
-  font-weight: 700;
+  font-weight: 600;
   box-shadow: var(--shadow-sm);
+}
+
+.po-perspective-tab .perspective-badge {
+  font-size: 10px;
+  padding: 0 4px;
+  border-radius: 9999px;
+  background: var(--color-border);
+  color: var(--color-text-secondary);
+  font-weight: 400;
+  line-height: 14px;
 }
 
 .po-header-right {
@@ -289,6 +296,16 @@ body.po-workbench-shell .sidebar .nav-badge {
 body.po-workbench-shell .sidebar .nav-badge--danger {
   color: var(--color-text-on-accent);
   background: var(--color-danger-fill);
+}
+
+/* 侧栏角标：规划中/迁移中微徽标（低调灰度） */
+body.po-workbench-shell .sidebar .nav-badge--muted {
+  color: var(--color-text-secondary);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  font-weight: 400;
+  font-size: 10px;
+  padding: 0 4px;
 }
 
 /* 角标为 0 时不显示；hidden class 作为兜底 */

@@ -138,7 +138,7 @@
   职责: 渲染左侧菜单。支持PO角色与PMO管理员视图动态切换。
 ========================================================================== */}}
 <nav class="sidebar" id="sidebar">
-  {{ if or (eq .CurrentPath "/home") (eq .CurrentPath "/schedule") (eq .CurrentPath "/todos") (eq .CurrentPath "/done") (eq .CurrentPath "/notice") (eq .CurrentPath "/follow") (eq .CurrentPath "/board/demand") (eq .CurrentPath "/board/task") (eq .CurrentPath "/query") (eq .CurrentPath "/metrics/manage") (eq .CurrentPath "/metrics/radar") (eq .CurrentPath "/issues/risk") (eq .CurrentPath "/agileteam") (eq .CurrentPath "/pmo") }}
+  {{ if or (eq .CurrentPath "/home") (eq .CurrentPath "/schedule") (eq .CurrentPath "/todos") (eq .CurrentPath "/done") (eq .CurrentPath "/notice") (eq .CurrentPath "/follow") (eq .CurrentPath "/board/demand") (eq .CurrentPath "/board/task") (eq .CurrentPath "/query") (eq .CurrentPath "/metrics/manage") (eq .CurrentPath "/metrics/radar") (eq .CurrentPath "/issues/risk") (eq .CurrentPath "/issue-risk") (eq .CurrentPath "/agileteam") (eq .CurrentPath "/pmo") }}
   <div class="po-sidebar-brand">
     <span class="po-brand-logo">研</span>
     <strong class="nav-text">研发工作台</strong>
@@ -146,7 +146,7 @@
   </div>
   <div class="sidebar-body">
     <div class="sidebar-nav po-sidebar-nav">
-      <div class="nav-section-label">个人入口</div>
+      <div class="nav-section-label">个人工作</div>
       <a href="/home" class="nav-item{{ if eq .CurrentPath "/home" }} active{{ end }}"><i class="nav-icon fas fa-home"></i><span class="nav-text">首页</span></a>
       <a href="/todos" class="nav-item{{ if eq .CurrentPath "/todos" }} active{{ end }}"><i class="nav-icon fas fa-list-check"></i><span class="nav-text">我的待办</span>{{ if gt .SidebarBadges.Todos 0 }}<span class="nav-badge" data-sidebar-badge="todos" title="待办条数">{{ .SidebarBadges.Todos }}</span>{{ end }}</a>
       <a href="/done" class="nav-item{{ if eq .CurrentPath "/done" }} active{{ end }}"><i class="nav-icon fas fa-clock-rotate-left"></i><span class="nav-text">我的已办</span></a>
@@ -154,23 +154,29 @@
       <a href="/follow" class="nav-item{{ if eq .CurrentPath "/follow" }} active{{ end }}"><i class="nav-icon fas fa-star"></i><span class="nav-text">我的关注</span></a>
 
       <div class="nav-divider" role="separator"></div>
-      <div class="nav-section-label">工作区</div>
+      <div class="nav-section-label">需求交付</div>
       <a href="/board/demand" class="nav-item{{ if or (eq .CurrentPath "/board/demand") (eq .CurrentPath "/board/task") }} active{{ end }}"><i class="nav-icon fas fa-table-cells-large"></i><span class="nav-text">工作看板</span></a>
       <a href="/query" class="nav-item{{ if eq .CurrentPath "/query" }} active{{ end }}"><i class="nav-icon fas fa-magnifying-glass"></i><span class="nav-text">需求查询</span></a>
       <a href="/schedule" class="nav-item{{ if eq .CurrentPath "/schedule" }} active{{ end }}"><i class="nav-icon fas fa-calendar-check"></i><span class="nav-text">需求排期</span><span class="nav-badge">PO</span></a>
-      <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-code-branch"></i><span class="nav-text">版本跟进</span></button>
-      <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-clipboard-check"></i><span class="nav-text">验收交付</span></button>
-      <a href="/issues/risk" class="nav-item{{ if eq .CurrentPath "/issues/risk" }} active{{ end }}"><i class="nav-icon fas fa-shield-alt"></i><span class="nav-text">问题风险</span></a>
+      <button type="button" class="nav-item po-shell-placeholder" data-placeholder-type="migration"><i class="nav-icon fas fa-boxes-packing"></i><span class="nav-text">版本交付</span><span class="nav-badge nav-badge--muted">建设中</span></button>
 
       <div class="nav-divider" role="separator"></div>
-      <div class="nav-section-label">团队治理</div>
+      <div class="nav-section-label">团队协作</div>
       <a href="/agileteam" class="nav-item{{ if or (eq .CurrentPath "/agileteam") (eq .CurrentPath "/pmo") }} active{{ end }}"><i class="nav-icon fas fa-people-group"></i><span class="nav-text">敏捷小组</span></a>
+      <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-arrows-spin"></i><span class="nav-text">迭代管理</span><span class="nav-badge nav-badge--muted">规划中</span></button>
+      <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-heart-pulse"></i><span class="nav-text">团队健康</span><span class="nav-badge nav-badge--muted">规划中</span></button>
 
       <div class="nav-divider" role="separator"></div>
-      <div class="nav-section-label">专项分析</div>
+      <div class="nav-section-label">项目管理</div>
+      <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-diagram-project"></i><span class="nav-text">项目总览</span><span class="nav-badge nav-badge--muted">规划中</span></button>
+      <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-flag-checkered"></i><span class="nav-text">计划里程碑</span><span class="nav-badge nav-badge--muted">规划中</span></button>
+
+      <div class="nav-divider" role="separator"></div>
+      <div class="nav-section-label">治理分析</div>
+      <a href="/issues/risk" class="nav-item{{ if or (eq .CurrentPath "/issues/risk") (eq .CurrentPath "/issue-risk") }} active{{ end }}"><i class="nav-icon fas fa-shield-alt"></i><span class="nav-text">问题风险</span></a>
       <a href="/metrics/radar" class="nav-item{{ if eq .CurrentPath "/metrics/radar" }} active{{ end }}"><i class="nav-icon fas fa-chart-line"></i><span class="nav-text">指标雷达</span></a>
       <a href="/metrics/manage" class="nav-item{{ if eq .CurrentPath "/metrics/manage" }} active{{ end }}"><i class="nav-icon fas fa-sliders"></i><span class="nav-text">指标管理</span></a>
-      <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-triangle-exclamation"></i><span class="nav-text">质效预警</span></button>
+      <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-triangle-exclamation"></i><span class="nav-text">质效预警</span><span class="nav-badge nav-badge--muted">规划中</span></button>
 
       {{ if and .CurrentUser .CurrentUser.IsSuperAdmin }}
       <div class="nav-divider" role="separator"></div>

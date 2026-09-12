@@ -105,28 +105,7 @@
         }));
       } catch (e) { /* ignore */ }
 
-      // 联动顶部 tab 的显隐
-      var switcher = document.getElementById('poRoleSwitcher') || document.querySelector('.po-role-switcher');
-      if (!switcher) return;
-
-      var tabs = switcher.querySelectorAll('.po-role-tab');
-      tabs.forEach(function (tab) {
-        var roleKey = (tab.getAttribute('data-role') || '').toLowerCase();
-        if (!roleKey) {
-          var text = (tab.textContent || '').trim().toLowerCase();
-          if (text === 'po' || text.indexOf('产品') >= 0) roleKey = 'po';
-          else if (text === 'sm') roleKey = 'sm';
-          else if (text === '业务' || text === 'biz') roleKey = 'biz';
-          else if (text === 'pmo') roleKey = 'pmo';
-          else if (text === '团队' || text === 'lead') roleKey = 'lead';
-        }
-
-        if (activeMap[roleKey]) {
-          tab.style.display = '';
-        } else {
-          tab.style.display = 'none';
-        }
-      });
+      // 顶部切换栏已解耦收口，此处保留角色偏好持久化供后续视角/能力加载使用
     },
 
     init: function () {
@@ -263,7 +242,7 @@
     if (orgLocked) {
       var label = currentRole === 'pmo' ? 'PMO' : '团队管理';
       orgNote = '<div class="field-tip" style="margin-bottom:8px;color:var(--color-primary);font-weight:500;">当前正处于「' + esc(label) +
-        '」视图（组织授权）；下方自选视图设置将与顶部视图栏联动。</div>';
+        '」工作视角（组织固定授权）。</div>';
     }
     return orgNote + roleCheckboxesHtml(p);
   }

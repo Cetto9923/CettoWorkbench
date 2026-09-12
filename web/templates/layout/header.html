@@ -6,13 +6,7 @@ web/templates/layout/header.html 模块: 布局 职责:
 .PageTitle (string), .CurrentMenus ([]menu.Menu)
 ========================================================================== */}}
 <div class="topbar-row">
-  {{ if or (eq .CurrentPath "/home") (eq .CurrentPath "/schedule") (eq .CurrentPath "/todos") (eq .CurrentPath "/done") (eq .CurrentPath "/notice") (eq .CurrentPath "/follow") (eq .CurrentPath "/board/demand") (eq .CurrentPath "/board/task") (eq .CurrentPath "/query") (eq .CurrentPath "/issues/risk") (eq .CurrentPath "/metrics/manage") (eq .CurrentPath "/metrics/radar") (eq .CurrentPath "/agileteam") }}
-  <div class="po-role-switcher" id="poRoleSwitcher" role="tablist" aria-label="工作台角色">
-    <a class="po-role-tab{{ if not (or (eq .CurrentPath "/agileteam") (eq .CurrentPath "/pmo")) }} active{{ end }}" data-role="po" role="tab" aria-selected="{{ if not (or (eq .CurrentPath "/agileteam") (eq .CurrentPath "/pmo")) }}true{{ else }}false{{ end }}" href="/home">PO</a>
-    <button class="po-role-tab" data-role="sm" role="tab" aria-selected="false" type="button" style="display:none;">SM</button>
-    <button class="po-role-tab" data-role="biz" role="tab" aria-selected="false" type="button" style="display:none;">业务</button>
-    <a class="po-role-tab{{ if or (eq .CurrentPath "/agileteam") (eq .CurrentPath "/pmo") }} active{{ end }}" data-role="pmo" role="tab" aria-selected="{{ if or (eq .CurrentPath "/agileteam") (eq .CurrentPath "/pmo") }}true{{ else }}false{{ end }}" href="/agileteam">PMO</a>
-  </div>
+  {{ if or (eq .CurrentPath "/home") (eq .CurrentPath "/schedule") (eq .CurrentPath "/todos") (eq .CurrentPath "/done") (eq .CurrentPath "/notice") (eq .CurrentPath "/follow") (eq .CurrentPath "/board/demand") (eq .CurrentPath "/board/task") (eq .CurrentPath "/query") (eq .CurrentPath "/issues/risk") (eq .CurrentPath "/issue-risk") (eq .CurrentPath "/metrics/manage") (eq .CurrentPath "/metrics/radar") (eq .CurrentPath "/agileteam") }}
   <div class="po-header-right">
     <div class="search-box po-global-search" id="searchBox">
       <i class="fas fa-search" aria-hidden="true"></i>
