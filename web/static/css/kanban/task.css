@@ -1,7 +1,7 @@
 /* ==========================================================================
    文件: web/static/css/kanban/task.css
    模块: 工作看板
-   职责: 任务看板样式（复用需求看板页头/筛选/问题栏，补三列任务板与卡片）
+   职责: 任务看板样式（复用需求看板页头/筛选/问题栏，补三列任务板、卡片与拖拽态）
 ========================================================================== */
 
 @import url("./story.css");
@@ -84,6 +84,35 @@
   margin-bottom: 6px;
   background: var(--white);
   cursor: default;
+  transition: border-color 0.12s, box-shadow 0.12s, opacity 0.12s, transform 0.12s;
+}
+
+.po-board .task-card.is-draggable {
+  cursor: grab;
+}
+
+.po-board .task-card.is-draggable:active {
+  cursor: grabbing;
+}
+
+.po-board .task-card.dragging {
+  opacity: 0.55;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+  transform: scale(0.99);
+}
+
+.po-board .task-col.drag-over {
+  border-color: var(--blue-bd);
+  background: var(--color-info-bg, #eff6ff);
+}
+
+.po-board .task-col.drag-over .task-col-hdr {
+  color: var(--navy);
+}
+
+.po-board .task-col-body.drag-over {
+  outline: 1px dashed var(--blue-bd);
+  outline-offset: -5px;
 }
 
 .po-board .task-card.blocked {

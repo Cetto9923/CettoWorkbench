@@ -61,8 +61,10 @@
 
   function taskCard(task) {
     var status = String((task && task.status) || "wait");
+    var canDrag = status === "wait" || status === "doing";
     var cls =
       "task-card" +
+      (canDrag ? " is-draggable" : "") +
       (task && task.blocked ? " blocked" : "") +
       (task && task.overdue && status !== "done" ? " overdue" : "") +
       (status === "done" ? " done" : "");
@@ -85,14 +87,14 @@
     var codeHtml = task && task.url
       ? '<a class="code task-code-link" href="' +
         escapeHtml(task.url) +
-        '" target="_blank" rel="noopener noreferrer" title="在禅道打开任务详情">' +
+        '" target="_blank" rel="noopener noreferrer" draggable="false" title="在禅道打开任务详情">' +
         codeText +
         "</a>"
       : '<span class="code">' + codeText + "</span>";
     var titleHtml = task && task.url
       ? '<a class="task-title task-title-link" href="' +
         escapeHtml(task.url) +
-        '" target="_blank" rel="noopener noreferrer" title="' +
+        '" target="_blank" rel="noopener noreferrer" draggable="false" title="' +
         titleText +
         '">' +
         titleText +
@@ -109,7 +111,9 @@
     return (
       '<div class="' +
       cls +
-      '" data-task-id="' +
+      '"' +
+      (canDrag ? ' draggable="true"' : "") +
+      ' data-task-id="' +
       escapeHtml((task && task.id) || "") +
       '" data-task-status="' +
       escapeHtml(status) +
