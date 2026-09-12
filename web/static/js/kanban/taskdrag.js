@@ -1,16 +1,30 @@
 /* =============================================================================
    文件: web/static/js/kanban/taskdrag.js
    模块: 工作看板
-   职责: 任务看板未开始↔进行中前端拖拽（仅 DOM，不持久化）。
+   职责: 任务看板未开始↔进行中拖拽，成功后 PUT /kanban/tasks/:id 持久化。
 ============================================================================= */
 (function () {
   "use strict";
 
-  var taskBoard = document.querySelector(".po-board .task-board");
+  var root = document.querySelector(".po-board");
+  var taskBoard = root ? root.querySelector(".task-board") : null;
   if (!taskBoard || taskBoard.dataset.dragBound === "1") return;
   taskBoard.dataset.dragBound = "1";
 
   var draggedCard = null;
+  var pending = false;
+
+  function toast(msg, type) {
+    if (typeof window.showToast === "function") {
+      window.showToast(msg, type || "danger");
+    }
+  }
+
+  function reloadTasks() {
+    if (root) {
+      root.dispatchEvent(new CustomEvent("kanban:tasks-reload"));
+    }
+  }
 
   function clearDragOver() {
     taskBoard.querySelectorAll(".drag-over").forEach(function (el) {
@@ -37,27 +51,58 @@
   }
 
   function moveCardToColumn(card, targetKey) {
-    if (!card || !targetKey) return;
+    if (!card || !targetKey) return false;
     var fromStatus = card.getAttribute("data-task-status") || "";
-    if (fromStatus === targetKey) return;
-    if (targetKey !== "wait" && targetKey !== "doing") return;
-    if (fromStatus !== "wait" && fromStatus !== "doing") return;
+    if (fromStatus === targetKey) return false;
+    if (targetKey !== "wait" && targetKey !== "doing") return false;
+    if (fromStatus !== "wait" && fromStatus !== "doing") return false;
 
     var targetCol = taskBoard.querySelector(
       '.task-col[data-col="' + targetKey + '"]'
     );
     var sourceCol = card.closest(".task-col");
-    if (!targetCol) return;
+    if (!targetCol) return false;
     var targetBody = targetCol.querySelector(".task-col-body");
-    if (!targetBody) return;
+    if (!targetBody) return false;
 
     card.setAttribute("data-task-status", targetKey);
     targetBody.appendChild(card);
     refreshColMeta(sourceCol);
     refreshColMeta(targetCol);
+    return true;
+  }
+
+  function submitStatus(taskId, status) {
+    var fetchFn =
+      typeof window.appFetch === "function" ? window.appFetch : fetch;
+    return fetchFn("/kanban/tasks/" + encodeURIComponent(taskId), {
+      method: "PUT",
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ status: status }),
+    }).then(function (r) {
+      return r
+        .json()
+        .catch(function () {
+          return {};
+        })
+        .then(function (p) {
+          if (!r.ok || !p || p.success !== true) {
+            throw new Error((p && p.message) || "任务状态更新失败");
+          }
+          return p;
+        });
+    });
   }
 
   taskBoard.addEventListener("dragstart", function (e) {
+    if (pending) {
+      e.preventDefault();
+      return;
+    }
     var card = e.target.closest(".task-card.is-draggable");
     if (!card || !taskBoard.contains(card)) return;
     var status = card.getAttribute("data-task-status") || "";
@@ -83,7 +128,7 @@
   });
 
   taskBoard.addEventListener("dragover", function (e) {
-    if (!draggedCard) return;
+    if (!draggedCard || pending) return;
     var body = e.target.closest(".task-col-body");
     if (!body || !taskBoard.contains(body)) return;
     var col = body.closest(".task-col");
@@ -106,7 +151,7 @@
   });
 
   taskBoard.addEventListener("drop", function (e) {
-    if (!draggedCard) return;
+    if (!draggedCard || pending) return;
     var body = e.target.closest(".task-col-body");
     if (!body || !taskBoard.contains(body)) return;
     e.preventDefault();
@@ -116,6 +161,24 @@
     var card = draggedCard;
     draggedCard = null;
     card.classList.remove("dragging");
-    moveCardToColumn(card, target);
+
+    var fromStatus = card.getAttribute("data-task-status") || "";
+    var taskId = card.getAttribute("data-task-id") || "";
+    if (!taskId || !target || target === fromStatus) return;
+    if (!moveCardToColumn(card, target)) return;
+
+    pending = true;
+    toast("正在更新任务状态…", "success");
+    submitStatus(taskId, target)
+      .then(function () {
+        toast("任务状态已更新", "success");
+      })
+      .catch(function (err) {
+        toast(err && err.message ? err.message : "任务状态更新失败", "danger");
+        reloadTasks();
+      })
+      .then(function () {
+        pending = false;
+      });
   });
 })();

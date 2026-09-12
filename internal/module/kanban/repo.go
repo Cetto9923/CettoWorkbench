@@ -1,8 +1,8 @@
 // =============================================================================
 // 文件: internal/module/kanban/repo.go
 // 模块: 工作看板
-// 类型: readonly
-// 职责: 看板只读数据访问（敏捷小组与成员）。
+// 类型: action
+// 职责: 看板数据访问（敏捷小组/成员、任务三列查询、任务状态读取）。
 // 依赖: internal/model/zentao
 // =============================================================================
 
@@ -11,13 +11,16 @@ package kanban
 import (
 	"context"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 
 	ztmodel "workbench/internal/model/zentao"
 )
 
-// Repo 封装看板只读查询。
+const kanbanTaskLimit = 200
+
+// Repo 封装看板数据访问。
 type Repo struct {
 	db *gorm.DB
 }
@@ -86,4 +89,95 @@ func (r *Repo) ListTeamMembersByRoots(ctx context.Context, roots []uint) ([]team
 		return []teamMemberRow{}, nil
 	}
 	return rows, nil
+}
+
+// FindKanbanTasks 查询选中账号的看板任务。
+// wait/doing：assignedTo=account；done：finishedBy=account；不含 pause。
+func (r *Repo) FindKanbanTasks(ctx context.Context, account string) ([]taskRow, error) {
+	account = strings.TrimSpace(account)
+	if account == "" || r == nil || r.db == nil {
+		return []taskRow{}, nil
+	}
+
+	type rawRow struct {
+		ID         int64      `gorm:"column:id"`
+		Name       string     `gorm:"column:name"`
+		Type       string     `gorm:"column:type"`
+		Status     string     `gorm:"column:status"`
+		StoryID    int64      `gorm:"column:story"`
+		AssignedTo string     `gorm:"column:assignedTo"`
+		FinishedBy string     `gorm:"column:finishedBy"`
+		Deadline   *time.Time `gorm:"column:deadline"`
+		StoryTitle string     `gorm:"column:storyTitle"`
+	}
+
+	var rows []rawRow
+	err := r.db.WithContext(ctx).
+		Table("zt_task AS t").
+		Select(`t.id, t.name, t.type, t.status, t.story, t.assignedTo, t.finishedBy, t.deadline,
+			IFNULL(s.title, '') AS storyTitle`).
+		Joins("LEFT JOIN zt_story AS s ON s.id = t.story AND s.deleted = ?", "0").
+		Where("t.deleted = ?", "0").
+		Where(`(
+			(t.assignedTo = ? AND t.status IN (?, ?))
+			OR (t.finishedBy = ? AND t.status = ?)
+		)`, account, "wait", "doing", account, "done").
+		Order("t.id DESC").
+		Limit(kanbanTaskLimit).
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	if len(rows) == 0 {
+		return []taskRow{}, nil
+	}
+
+	out := make([]taskRow, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, taskRow{
+			ID:         row.ID,
+			Name:       row.Name,
+			Type:       row.Type,
+			Status:     row.Status,
+			StoryID:    row.StoryID,
+			AssignedTo: row.AssignedTo,
+			FinishedBy: row.FinishedBy,
+			Deadline:   row.Deadline,
+			StoryTitle: row.StoryTitle,
+		})
+	}
+	return out, nil
+}
+
+// taskStatusRow 任务状态更新所需最小字段。
+type taskStatusRow struct {
+	ID         int64
+	Status     string
+	AssignedTo string
+}
+
+// FindTaskStatusByID 按 ID 查询未删除任务的 status / assignedTo。
+func (r *Repo) FindTaskStatusByID(ctx context.Context, id int64) (*taskStatusRow, error) {
+	if r == nil || r.db == nil || id <= 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+	type rawRow struct {
+		ID         int64  `gorm:"column:id"`
+		Status     string `gorm:"column:status"`
+		AssignedTo string `gorm:"column:assignedTo"`
+	}
+	var row rawRow
+	err := r.db.WithContext(ctx).
+		Table("zt_task").
+		Select("id, status, assignedTo").
+		Where("id = ? AND deleted = ?", id, "0").
+		Take(&row).Error
+	if err != nil {
+		return nil, err
+	}
+	return &taskStatusRow{
+		ID:         row.ID,
+		Status:     row.Status,
+		AssignedTo: row.AssignedTo,
+	}, nil
 }

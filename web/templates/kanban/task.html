@@ -2,7 +2,7 @@
 文件: web/templates/kanban/task.html
 模块: 工作看板
 职责: 任务看板静态壳；三列任务由 task.js ajax 填充，小组/成员切换驱动刷新；
-      wait/doing 卡片可前端拖拽（taskdrag.js）。
+      wait/doing 拖拽经 taskdrag.js 调用 PUT /kanban/tasks/:id 写禅道。
 全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
 页面字段: .Title (string), .PageTitle (string), .BaseUrl (string), .IssueCreateURL (string), .TaskCreateURL (string), .Teamgroups ([]module/kanban.TeamgroupItem)
 ========================================================================== */}}

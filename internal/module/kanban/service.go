@@ -6,6 +6,7 @@
 // 依赖: internal/model
 //       internal/module/po
 //       internal/module/user
+//       internal/pkg/zentao
 // =============================================================================
 
 package kanban
@@ -18,6 +19,7 @@ import (
 	"workbench/internal/model"
 	"workbench/internal/module/po"
 	"workbench/internal/module/user"
+	"workbench/internal/pkg/zentao"
 )
 
 // Service 看板业务服务。
@@ -25,11 +27,12 @@ type Service struct {
 	repo    *Repo
 	userSvc *user.Service
 	poSvc   *po.Service
+	ztAPI   *zentao.Client
 }
 
 // NewService 创建 Service。
-func NewService(repo *Repo, userSvc *user.Service, poSvc *po.Service) *Service {
-	return &Service{repo: repo, userSvc: userSvc, poSvc: poSvc}
+func NewService(repo *Repo, userSvc *user.Service, poSvc *po.Service, ztAPI *zentao.Client) *Service {
+	return &Service{repo: repo, userSvc: userSvc, poSvc: poSvc, ztAPI: ztAPI}
 }
 
 // ListMyTeamgroups 返回当前用户所属敏捷小组（含排序后的成员）。

@@ -1,8 +1,8 @@
 // =============================================================================
 // 文件: internal/module/kanban/handler.go
 // 模块: 工作看板
-// 类型: readonly
-// 职责: 需求/任务看板静态页与业需/任务 JSON HTTP 请求。
+// 类型: action
+// 职责: 需求/任务看板静态页、业需/任务 JSON，及任务状态拖拽更新。
 // 依赖: internal/middleware
 //       internal/pkg/errorx
 //       internal/pkg/perm
@@ -14,6 +14,8 @@ package kanban
 
 import (
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -45,6 +47,8 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.GET("/story/demands", middleware.RequirePerm(perm.KanbanStory), h.Demands)
 	g.GET("/task", middleware.RequirePerm(perm.KanbanStory), h.Task)
 	g.GET("/task/items", middleware.RequirePerm(perm.KanbanStory), h.Tasks)
+
+	g.PUT("/tasks/:id", middleware.RequirePerm(perm.KanbanStory), h.UpdateTaskStatus)
 }
 
 // Story 渲染需求看板静态页。
@@ -158,5 +162,57 @@ func (h *Handler) Tasks(c *gin.Context) {
 		"success": true,
 		"columns": resp.Columns,
 		"summary": resp.Summary,
+	})
+}
+
+// UpdateTaskStatus 拖拽更新任务状态（wait↔doing），成功返回 JSON。
+func (h *Handler) UpdateTaskStatus(c *gin.Context) {
+	id, err := strconv.ParseInt(strings.TrimSpace(c.Param("id")), 10, 64)
+	if err != nil || id <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "任务 ID 无效"})
+		return
+	}
+
+	var req UpdateTaskStatusReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "请求格式错误"})
+		return
+	}
+	req.ID = id
+	if errs := req.Validate(); len(errs) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"success": false, "errors": errs})
+		return
+	}
+
+	if err := h.svc.UpdateTaskStatus(c.Request.Context(), middleware.CurrentUser(c), req); err != nil {
+		if biz, ok := errorx.IsBizError(err); ok {
+			status := http.StatusBadRequest
+			switch biz.Code {
+			case errorx.ErrCodeForbidden:
+				status = http.StatusForbidden
+			case errorx.ErrCodeNotFound:
+				status = http.StatusNotFound
+			case errorx.ErrCodeInvalidParam:
+				status = http.StatusBadRequest
+			case errorx.ErrCodeInternal:
+				status = http.StatusInternalServerError
+			}
+			c.JSON(status, gin.H{"success": false, "message": biz.Msg})
+			return
+		}
+		if h.logger != nil {
+			h.logger.Error("update kanban task status failed", zap.Error(err), zap.Int64("taskId", id))
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "更新任务状态失败",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":     true,
+		"message":     "任务状态已更新",
+		"redirectUrl": "/kanban/task",
 	})
 }

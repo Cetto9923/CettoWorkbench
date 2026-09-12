@@ -1,12 +1,14 @@
 // =============================================================================
 // 文件: internal/module/kanban/form.go
 // 模块: 工作看板
-// 类型: readonly
-// 职责: 需求/任务看板页展示与查询用结构体。
+// 类型: action
+// 职责: 需求/任务看板页展示、查询与任务状态更新用结构体。
 // 依赖: 无
 // =============================================================================
 
 package kanban
+
+import "strings"
 
 // MemberRole 小组成员角色（展示排序与底色）。
 const (
@@ -14,6 +16,34 @@ const (
 	MemberRoleCoach  = "coach"
 	MemberRoleMember = "member"
 )
+
+// FieldError 字段级验证错误。
+type FieldError struct {
+	Field   string `json:"field"`
+	Message string `json:"message"`
+}
+
+// UpdateTaskStatusReq 看板拖拽更新任务状态（仅 wait↔doing）。
+type UpdateTaskStatusReq struct {
+	ID     int64  `json:"-"`
+	Status string `json:"status"`
+}
+
+// Validate 校验目标状态仅允许 wait / doing。
+func (r *UpdateTaskStatusReq) Validate() []FieldError {
+	var errs []FieldError
+	st := strings.TrimSpace(r.Status)
+	if st == "" {
+		errs = append(errs, FieldError{Field: "status", Message: "状态不能为空"})
+		return errs
+	}
+	if st != "wait" && st != "doing" {
+		errs = append(errs, FieldError{Field: "status", Message: "仅支持未开始与进行中互转"})
+		return errs
+	}
+	r.Status = st
+	return errs
+}
 
 // MemberItem 敏捷小组成员（PO / 需求负责人行）。
 type MemberItem struct {

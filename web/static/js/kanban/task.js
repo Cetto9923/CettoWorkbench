@@ -117,6 +117,8 @@
       escapeHtml((task && task.id) || "") +
       '" data-task-status="' +
       escapeHtml(status) +
+      '" data-task-owner-account="' +
+      escapeHtml((task && task.ownerAccount) || "") +
       '">' +
       '<div class="task-head">' +
       '<span class="kb-type kb-type-task">任务</span>' +
@@ -399,6 +401,10 @@
       selectPerson(group, person);
     });
   }
+
+  root.addEventListener("kanban:tasks-reload", function () {
+    loadTasks(selectedAccount);
+  });
 
   ensureDefaultTeamgroup();
 })();
