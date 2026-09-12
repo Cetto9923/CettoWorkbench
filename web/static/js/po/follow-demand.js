@@ -94,6 +94,13 @@
     setBtn("fdBtnImplementing", s.implementing || 0);
     setBtn("fdBtnReleased", s.released || 0);
     setBtn("fdBtnClosed", s.closed || 0);
+
+    // 同步更新统一的标题栏右侧快捷焦点 (header-quick-filters)
+    setBtn("kpiOpen", openCount);
+    setBtn("kpiClarifying", s.clarifying || 0);
+    setBtn("kpiImplementing", s.implementing || 0);
+    setBtn("kpiReleased", s.released || 0);
+    setBtn("kpiClosed", s.closed || 0);
   }
 
   function syncFilterActive() {
@@ -119,6 +126,20 @@
         active = (state.scope !== "closed" && state.lifecycle === lc);
       }
       b.classList.toggle("active", active);
+    });
+    document.querySelectorAll("#followQuickChips .header-quick-chip").forEach(function (chip) {
+      var sc = chip.getAttribute("data-scope");
+      var lc = chip.getAttribute("data-lifecycle");
+      var active = false;
+      if (sc === "closed") {
+        active = (state.scope === "closed");
+      } else if (sc === "open") {
+        active = (state.scope === "open" && state.lifecycle === "all");
+      } else if (lc) {
+        active = (state.scope !== "closed" && state.lifecycle === lc);
+      }
+      chip.classList.toggle("active", active);
+      chip.setAttribute("aria-pressed", active ? "true" : "false");
     });
   }
 
@@ -359,6 +380,17 @@
   }
 
   function bind() {
+    document.querySelectorAll("#followQuickChips .header-quick-chip").forEach(function (chip) {
+      chip.addEventListener("click", function () {
+        var sc = chip.getAttribute("data-scope");
+        var lc = chip.getAttribute("data-lifecycle");
+        if (sc) {
+          setScope(sc);
+        } else if (lc) {
+          setLifecycle(lc);
+        }
+      });
+    });
     document.querySelectorAll("#fdSummary .pw-sum-card").forEach(function (card) {
       card.addEventListener("click", function () {
         setLifecycle(card.getAttribute("data-lifecycle") || "all");

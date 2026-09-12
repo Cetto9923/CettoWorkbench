@@ -1,8 +1,9 @@
 {{/* ==========================================================================
 文件: web/templates/metrics/radar.html
-模块: 指标雷达 (metrics)
-职责: /metrics/radar 页面骨架，承载 5 分类 KPI 卡 + 异常指标分组表格。
-     数据来自 /metrics/radar/data；客户端 JS = metrics-radar.js (IIFE + PersonalList)。
+模块: 指标雷达 (metrics) - 质效大屏驾驶舱
+职责: 质效计算结果展示大屏：
+     1. 敏捷小组视角（看板团队）与团队管理角度（组织架构团队层级）自由切换
+     2. 紧凑高信息密度排版，内容一次显示全，0 页面级与内部滚动条，一眼到底
 全局字段: .CurrentUser, .CSRFToken, .Menus, .AppName, .CurrentPath
 页面字段: .Title (string), .PageTitle (string)
 ========================================================================== */}}
@@ -12,41 +13,181 @@
 {{ end }}
 
 {{ define "content" }}
-<div class="po-personal-workspace po-metrics-radar">
-  <header class="workspace-header">
-    <div class="workspace-header-left">
-      <h2>指标雷达</h2>
-      <p>按分类查看质效得分与主要风险指标</p>
+<div class="po-personal-workspace po-metrics-radar radar-screen-container">
+  <!-- 1. 大屏顶栏控制器：视角切换 + 小组选择 + 组织团队选择 + 月度选择 -->
+  <header class="radar-screen-header">
+    <div class="radar-header-title-box">
+      <h2 class="radar-screen-title">
+        <span class="radar-title-badge">质效大屏</span>
+        指标雷达监控驾驶舱
+      </h2>
+      <span class="radar-subtitle" id="radarHeaderMeta">按月度切片 · 敏捷小组与团队管理多重视角一眼到底</span>
     </div>
-    <div class="header-quick-filters" id="radarQuickMeta" role="group" aria-label="雷达元信息">
-      <span class="header-quick-chip" data-radar-meta="generatedAt">
-        <em>快照</em><span id="radarGeneratedAt">—</span>
-      </span>
-      <span class="header-quick-chip" data-radar-meta="abnormalCount">
-        <em>异常指标</em><span id="radarAbnormalCount">—</span>
-      </span>
+
+    <div class="radar-screen-controls">
+      <!-- 视角切换：敏捷小组视角 VS 团队管理角度 -->
+      <div class="radar-view-mode-tabs" role="tablist" aria-label="观察视角">
+        <button type="button" class="radar-mode-btn active" id="btnModeGroup" data-mode="group">敏捷小组视角</button>
+        <button type="button" class="radar-mode-btn" id="btnModeTeam" data-mode="team">团队管理角度</button>
+      </div>
+
+      <!-- 1) 敏捷小组下拉（看板敏捷团队口径 zt_teamgroup） -->
+      <div class="radar-select-group" id="radarTeamgroupWrap">
+        <span class="ctrl-label">敏捷小组:</span>
+        <select id="radarTeamgroupSelect" aria-label="看板敏捷小组">
+          <option value="0">全部敏捷小组（汇总）</option>
+        </select>
+      </div>
+
+      <!-- 2) 团队管理维度下拉（组织架构层级团队，如项目赋能团队等） -->
+      <div class="radar-select-group" id="radarOrgTeamWrap" style="display: none;">
+        <span class="ctrl-label">管理团队:</span>
+        <select id="radarOrgTeamSelect" aria-label="组织架构团队">
+          <option value="all" selected>全团队管理汇总 (全行)</option>
+          <option value="项目赋能团队">项目赋能团队 (科技支撑团队)</option>
+          <option value="需求&效能团队">需求&效能团队 (卓越中心)</option>
+          <option value="组织变革团队">组织变革团队</option>
+          <option value="架构&质量团队">架构&质量团队</option>
+          <option value="安全&合规团队">安全&合规团队</option>
+          <option value="核心专项团队">核心专项团队 (产品一部)</option>
+          <option value="信贷专项团队">信贷专项团队 (产品二部)</option>
+          <option value="小微专项团队">小微专项团队</option>
+          <option value="零售专项团队">零售专项团队 (产品三部)</option>
+          <option value="业务中台团队">业务中台团队</option>
+          <option value="线下渠道团队">线下渠道团队</option>
+          <option value="计财专项团队">计财专项团队</option>
+          <option value="AI实验室">AI实验室</option>
+          <option value="技术测试团队">技术测试团队</option>
+        </select>
+      </div>
+
+      <!-- 统计月份下拉 -->
+      <div class="radar-select-group">
+        <span class="ctrl-label">统计月份:</span>
+        <select id="radarMonthSelect" aria-label="统计月份">
+          <option value="2026-09" selected>2026年09月（本月）</option>
+          <option value="2026-08">2026年08月</option>
+          <option value="2026-07">2026年07月</option>
+          <option value="2026-06">2026年06月</option>
+          <option value="2026-05">2026年05月</option>
+          <option value="2026-04">2026年04月</option>
+          <option value="">全部累计（实时）</option>
+        </select>
+      </div>
+
+      <a href="/metrics/manage" class="workspace-btn pmo-link-btn" title="进入PMO指标元数据与阈值配置管理" style="text-decoration:none;">
+        <span class="pmo-tag">PMO</span> ⚙️ 配置管理
+      </a>
     </div>
   </header>
 
-  <section class="workspace-panel">
-    <div class="workspace-result-bar metric-radar-summary" aria-label="5 分类 KPI">
-      <span class="metric-radar-card placeholder"><span class="state-placeholder">正在拉取指标雷达…</span></span>
+  <!-- 2. 大屏总览 KPI 跑道（极简横向等宽条） -->
+  <section class="radar-kpi-bar">
+    <div class="radar-kpi-block highlight">
+      <span class="kpi-label">综合质效得分</span>
+      <div class="kpi-num-box">
+        <strong id="kpiScore">—</strong>
+        <span class="kpi-sub" id="kpiScoreRank">质效优秀 ↑</span>
+      </div>
     </div>
-
-    <div class="workspace-result-bar" aria-live="polite">
-      <span id="radarSummary">加载中…</span>
-      <span class="workspace-result-hint">5 分类质效得分：正常(≥80) · 关注(60~79) · 风险(&lt;60) · 暂无数据(=0)</span>
+    <div class="radar-kpi-block success">
+      <span class="kpi-label">达标指标项</span>
+      <div class="kpi-num-box">
+        <strong id="kpiNormalCount">—</strong>
+        <span class="kpi-sub" id="kpiNormalRate">达标率 —%</span>
+      </div>
     </div>
-
-    <div class="metric-radar-groups" id="radarGroups">
-      <p class="state-placeholder">正在按分类整理指标…</p>
+    <div class="radar-kpi-block warn">
+      <span class="kpi-label">预警关注项</span>
+      <div class="kpi-num-box">
+        <strong id="kpiWarnCount">—</strong>
+        <span class="kpi-sub">接近预警红线</span>
+      </div>
     </div>
-
-    <div class="state-placeholder error" id="radarError" hidden>
-      <span class="error-msg">指标接口不可用，请稍后重试</span>
-      <button type="button" class="retry-btn" id="radarRetryBtn">重试</button>
+    <div class="radar-kpi-block danger">
+      <span class="kpi-label">高危风险项</span>
+      <div class="kpi-num-box">
+        <strong id="kpiDangerCount">—</strong>
+        <span class="kpi-sub" id="kpiDangerHint">急需排查治理</span>
+      </div>
+    </div>
+    <div class="radar-kpi-block info">
+      <span class="kpi-label">当前观察对象</span>
+      <div class="kpi-num-box">
+        <strong id="kpiCurrentTarget" style="font-size:13px; font-weight:700;">—</strong>
+        <span class="kpi-sub" id="kpiSnapshotTime">2026年09月</span>
+      </div>
     </div>
   </section>
+
+  <!-- 3. 大屏主体：左侧五维雷达图与分类健康条，右侧高信息密度紧凑卡片矩阵与下钻Dock（一眼到底，0滚动条） -->
+  <main class="radar-dashboard-body">
+    <!-- 左侧分栏：五维雷达盘 + 5分类健康卡片 -->
+    <section class="radar-panel-left">
+      <!-- 五维雷达图卡片 -->
+      <div class="radar-chart-card">
+        <div class="card-head">
+          <span class="card-title">五维质效平衡雷达</span>
+          <span class="radar-chart-legend">
+            <span class="leg-dot score"></span>当前得分
+            <span class="leg-dot benchmark"></span>达标线(80分)
+          </span>
+        </div>
+        <div class="radar-svg-wrapper" id="radarSvgHost">
+          <!-- 动态渲染内联 SVG 雷达盘 -->
+        </div>
+      </div>
+
+      <!-- 5分类健康状态行 -->
+      <div class="radar-categories-box" id="radarCategoryCards">
+        <!-- 动态生成 5 个分类健康行 -->
+      </div>
+    </section>
+
+    <!-- 右侧分栏：核心指标紧凑运行矩阵 + 底部下钻透视 Dock -->
+    <section class="radar-panel-right">
+      <!-- 核心指标栅格矩阵（卡片做小，紧凑高密度，内容一次全部显示全） -->
+      <div class="radar-metrics-matrix-card">
+        <div class="card-head">
+          <div class="card-title-group">
+            <span class="card-title">核心指标运行矩阵</span>
+            <span class="card-sub-hint" id="matrixViewCaption">点击卡片可在底部下钻查看计算公式与样本单据</span>
+          </div>
+          <div class="matrix-filter-tags" id="matrixCategoryFilters">
+            <button type="button" class="matrix-tag-btn active" data-cat="">全部 (13)</button>
+            <button type="button" class="matrix-tag-btn" data-cat="交付效率">交付效率</button>
+            <button type="button" class="matrix-tag-btn" data-cat="需求治理">需求治理</button>
+            <button type="button" class="matrix-tag-btn" data-cat="研发质量">研发质量</button>
+            <button type="button" class="matrix-tag-btn" data-cat="效能管理">效能管理</button>
+          </div>
+        </div>
+
+        <!-- 4列紧凑卡片排布，高密度一次显示全 -->
+        <div class="radar-matrix-grid compact-grid" id="radarMatrixGrid">
+          <div class="state-placeholder">正在测算核心质效指标…</div>
+        </div>
+      </div>
+
+      <!-- 底部透视 Dock（紧凑单行胶囊栏） -->
+      <div class="radar-detail-dock compact-dock" id="radarDetailDock">
+        <div class="dock-row-primary">
+          <span class="dock-badge" id="dockMetricCategory">交付效率</span>
+          <strong class="dock-title" id="dockMetricTitle">交付周期 (delivery.cycle)</strong>
+          <span class="metric-status normal" id="dockMetricStatus">正常达标</span>
+          <span class="dock-divider">|</span>
+          <span class="dock-val-item">实测: <strong id="dockCurrentVal">28.5 天</strong></span>
+          <span class="dock-target-item" id="dockTargetVal">(目标 ≤30天 | 关注 40天 | 风险 50天)</span>
+        </div>
+        <div class="dock-row-secondary">
+          <span class="dock-label">公式:</span>
+          <code id="dockFormula">AVG((实际发布时间 - 业务评审通过时间) - 挂起天数)</code>
+          <span class="dock-divider">·</span>
+          <span class="dock-label">口径:</span>
+          <span class="dock-sample-text" id="dockSample">统计当期业务需求完成发布样本，自动扣除监管要求与全行重要会议等外部合规挂起天数。</span>
+        </div>
+      </div>
+    </section>
+  </main>
 </div>
 {{ end }}
 

@@ -1,0 +1,117 @@
+{{/* ==========================================================================
+  文件: web/templates/agileteam/index.html
+  模块: 敏捷小组治理
+  职责: 敏捷小组列表、详情与成员调整流转管理界面（符合 PO 工作台架构规范）。
+  全局字段: .CurrentUser, .CSRFToken, .CurrentPath
+  页面字段: .Title (string), .PageTitle (string)
+========================================================================== */}}
+{{ define "page_css" }}
+<link rel="stylesheet" href="{{ asset "/static/css/po/personal-workspace.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/picker/wb-picker.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/agileteam/agileteam.css" }}">
+{{ end }}
+
+{{ define "content" }}
+<div class="po-personal-workspace po-agileteam">
+  <input type="hidden" id="csrfToken" name="csrf_token" value="{{ .CSRFToken }}">
+  <input type="hidden" id="currentUserAccount" value="{{ if .CurrentUser }}{{ .CurrentUser.Account }}{{ end }}">
+
+  <!-- 1. 敏捷小组列表视图 -->
+  <section class="page active" id="page-agileteam" data-page="agileteam">
+    <header class="workspace-header">
+      <div class="workspace-header-left">
+        <h2>敏捷小组</h2>
+        <p>查看和管理敏捷小组、成员及人员调整情况</p>
+      </div>
+      <div class="workspace-header-right">
+        <button type="button" class="action-btn action-btn-secondary" onclick="atShowList()">
+          <i class="fas fa-rotate-right" aria-hidden="true"></i> 刷新
+        </button>
+      </div>
+    </header>
+
+    <div class="workspace-panel">
+      <!-- 范围筛选卡片 (团队管理视角) -->
+      <div class="at-scope-card" id="atScopeCard" style="display:none;">
+        <span class="at-scope-label">团队范围：</span>
+        <div class="at-scope-tabs">
+          <button type="button" class="at-scope-tab active" data-scope="team" onclick="atSetScope('team')">按团队</button>
+          <button type="button" class="at-scope-tab" data-scope="dept" onclick="atSetScope('dept')">按部门</button>
+        </div>
+        <select id="atScopeSelect" class="at-field w160" onchange="atSetScopeId(this.value)"></select>
+        <span class="at-scope-tip">团队长/部室负责人视图</span>
+      </div>
+
+      <!-- 统计指标与快速过滤 -->
+      <div class="at-summary" id="atSummaryStrip"></div>
+
+      <!-- 过滤器工具栏 -->
+      <div class="at-filters">
+        <input id="atFilterName" class="at-field w160" placeholder="小组名称" />
+        <input id="atFilterParent" class="at-field w160" placeholder="父级小组" />
+        <input id="atFilterCoach" class="at-field w140" placeholder="敏捷教练" />
+        <input id="atFilterPO" class="at-field w140" placeholder="产品负责人" />
+        <input id="atFilterMember" class="at-field w140" placeholder="团队成员" />
+        <select id="atFilterAdjust" class="at-field w160">
+          <option value="all">调整状态：全部</option>
+          <option value="pending">待确认</option>
+          <option value="none">无待确认</option>
+        </select>
+        <button type="button" class="action-btn action-btn-primary" onclick="atSearch()">查询</button>
+        <button type="button" class="action-btn action-btn-secondary" onclick="atReset()">重置</button>
+      </div>
+
+      <!-- 小组主表 -->
+      <div class="at-table-wrap">
+        <table class="at-table">
+          <thead>
+            <tr>
+              <th style="width:22%">敏捷小组</th>
+              <th>父级小组</th>
+              <th>敏捷教练</th>
+              <th>产品负责人</th>
+              <th style="width:78px">正式成员</th>
+              <th>成员调整</th>
+              <th>状态</th>
+              <th>最近调整</th>
+              <th style="width:92px">操作</th>
+            </tr>
+          </thead>
+          <tbody id="atListBody">
+            <tr><td colspan="9" class="at-empty">正在拉取敏捷小组…</td></tr>
+          </tbody>
+        </table>
+        <div class="at-pagination" id="atPager"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. 敏捷小组详情视图 -->
+  <section class="page" id="page-agileteam-detail" data-page="agileteam-detail">
+    <div id="atDetailRoot"><div class="at-empty">请从列表进入详情</div></div>
+  </section>
+</div>
+
+<!-- 成员调整审批抽屉 -->
+<div id="atReviewMask" class="at-drawer-mask" onclick="if(event.target===this)atCloseReview()">
+  <div class="at-drawer" role="dialog" aria-label="成员调整确认">
+    <div class="at-drawer-head">
+      <h3>成员调整确认</h3>
+      <button type="button" class="close" onclick="atCloseReview()" aria-label="关闭">×</button>
+    </div>
+    <div class="at-drawer-body" id="atReviewBody"></div>
+    <div class="at-drawer-foot" id="atReviewFoot"></div>
+  </div>
+</div>
+{{ end }}
+
+{{ define "page_js" }}
+<script src="{{ asset "/static/js/picker/vendor/pinyin-lite.js" }}"></script>
+<script src="{{ asset "/static/js/picker/wb-picker-search.js" }}"></script>
+<script src="{{ asset "/static/js/picker/wb-directory.js" }}"></script>
+<script src="{{ asset "/static/js/picker/wb-picker.js" }}"></script>
+<script src="{{ asset "/static/js/picker/adapters/wb-person-picker.js" }}"></script>
+<script src="{{ asset "/static/js/agileteam/agileteam.js" }}"></script>
+<script src="{{ asset "/static/js/agileteam/agileteam-detail.js" }}"></script>
+<script src="{{ asset "/static/js/agileteam/agileteam-members.js" }}"></script>
+{{ end }}

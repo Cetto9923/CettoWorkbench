@@ -284,20 +284,10 @@
     }
   }
 
-  function escapeAttr(s) {
-    return String(s == null ? "" : s)
-      .replace(/&/g, "&amp;")
-      .replace(/"/g, "&quot;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
-  }
-
-  function escapeHtml(s) {
-    return String(s == null ? "" : s)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
-  }
+  var escapeHtml = (window.PersonalList && window.PersonalList.escapeHtml) || window.escapeHtml || function (s) {
+    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  };
+  var escapeAttr = escapeHtml;
 
   function initSearchControls() {
     if (!$("#poLinkstoryField1").length) {

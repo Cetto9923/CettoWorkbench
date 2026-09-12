@@ -15,10 +15,10 @@ import (
 
 	"workbench/internal/middleware"
 
+	"workbench/internal/module/agileteam"
+	"workbench/internal/module/build"
 	"workbench/internal/module/debug"
 	"workbench/internal/module/dept"
-
-	"workbench/internal/module/build"
 	loginmodule "workbench/internal/module/login"
 	"workbench/internal/module/loginlog"
 	menumodule "workbench/internal/module/menu"
@@ -55,6 +55,7 @@ type RouteDeps struct {
 	QueryHandler        *query.Handler
 	MetricsHandler      *metrics.Handler
 	ProfileHandler      *profile.Handler
+	AgileTeamHandler    *agileteam.Handler
 	SqlPerfHandler      *debug.Handler
 }
 
@@ -114,6 +115,9 @@ func registerRoutes(r *gin.Engine, deps RouteDeps) {
 		}
 		if deps.ProfileHandler != nil {
 			deps.ProfileHandler.RegisterRoutes(po)
+		}
+		if deps.AgileTeamHandler != nil {
+			deps.AgileTeamHandler.RegisterRoutes(po)
 		}
 	}
 

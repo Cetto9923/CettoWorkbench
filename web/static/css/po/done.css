@@ -294,7 +294,7 @@
 }
 .done-tl.current {
   border-left-color: var(--po-blue, var(--color-info-fill, #2563eb));
-  background: #f0f9ff;
+  background: var(--color-primary-light);
   border-radius: 0 4px 4px 0;
 }
 .done-tl-title {

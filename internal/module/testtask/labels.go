@@ -152,11 +152,8 @@ func BuildSystemItems(products []productRow, mainSystemID uint, mainSystemName s
 }
 
 // BuildSystemItemsWithStories 按实际转出的研发需求构建系统列表，并装配每个系统包含的实际研发需求。
-func BuildSystemItemsWithStories(stories []storyRow, products []productRow, mainSystemID uint, mainSystemName string) []SystemItem {
-	if len(stories) == 0 {
-		return BuildSystemItems(products, mainSystemID, mainSystemName)
-	}
-
+// 仅包含实际转出研发需求的系统以及当前业务需求的主系统，彻底去掉非真实的 mock 或澄清无关系统。
+func BuildSystemItemsWithStories(stories []storyRow, mainSystemID uint, mainSystemName string) []SystemItem {
 	productStories := make(map[uint][]StoryItem)
 	productNames := make(map[uint]string)
 	productOrder := make([]uint, 0)
@@ -181,13 +178,20 @@ func BuildSystemItemsWithStories(stories []storyRow, products []productRow, main
 		})
 	}
 
-	// 如果主系统未在研发需求列表中（但需求有主系统），补充主系统
+	// 主系统必须包含并置顶（来自业务需求本身的真实主系统）
 	if mainSystemID > 0 {
 		if _, ok := seenProducts[mainSystemID]; !ok {
 			seenProducts[mainSystemID] = struct{}{}
 			productOrder = append([]uint{mainSystemID}, productOrder...)
 			productNames[mainSystemID] = dash(mainSystemName)
 		}
+	} else if len(productOrder) == 0 && strings.TrimSpace(mainSystemName) != "" && strings.TrimSpace(mainSystemName) != "—" {
+		return []SystemItem{{
+			ID:      0,
+			Name:    strings.TrimSpace(mainSystemName),
+			IsMain:  true,
+			Stories: []StoryItem{},
+		}}
 	}
 
 	items := make([]SystemItem, 0, len(productOrder))

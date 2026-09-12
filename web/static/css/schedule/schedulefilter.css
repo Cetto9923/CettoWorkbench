@@ -18,16 +18,36 @@
 }
 
 #scheduleMultiselectRow .schedule-ms-trigger {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: space-between;
   gap: 6px;
   width: 132px;
   height: 30px;
-  padding: 5px 8px;
+  padding: 0 8px;
+  border: 1px solid var(--color-border-strong) !important;
+  border-radius: 4px !important;
+  background: var(--color-surface) !important;
+  background-image: none !important;
+  color: var(--color-text-body) !important;
   font-size: 12px;
+  font-weight: 500;
   text-align: left;
   cursor: pointer;
+  box-sizing: border-box;
+  transition: all 0.15s ease;
+}
+
+#scheduleMultiselectRow .schedule-ms-trigger:hover {
+  border-color: var(--color-primary) !important;
+  color: var(--color-text-primary) !important;
+}
+
+#scheduleMultiselectRow .schedule-ms.open .schedule-ms-trigger,
+#scheduleMultiselectRow .schedule-ms-trigger:focus {
+  border-color: var(--color-primary) !important;
+  box-shadow: var(--focus-ring) !important;
+  outline: none;
 }
 
 #scheduleMultiselectRow .schedule-ms-text {

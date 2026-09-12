@@ -7,6 +7,18 @@
   var pendingDeleteUrl = "";
   var pendingDeleteMode = "";
 
+  function escapeHtml(value) {
+    if (window.PersonalList && typeof window.PersonalList.escapeHtml === "function") {
+      return window.PersonalList.escapeHtml(value);
+    }
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
   function getCsrfToken() {
     var el = document.querySelector('meta[name="csrf-token"]');
     return el ? (el.getAttribute("content") || "").trim() : "";
@@ -718,6 +730,7 @@
   }
 
   window.showToast = showToast;
+  window.escapeHtml = escapeHtml;
   window.confirmDelete = confirmDelete;
   window.closeModal = closeModal;
   window.openShowModals = openShowModals;

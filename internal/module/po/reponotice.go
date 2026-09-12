@@ -170,6 +170,21 @@ func newNoticeItem(row noticeRow, displayMap map[string]string) NoticeItem {
 
 	objType := row.ObjectType
 	objID := row.ObjectID
+	var related []NoticeObjectLink
+	if objType == "mail" || objType == "" || objID == 0 {
+		seen := map[int64]bool{}
+		for _, m := range noticeDataURLRe.FindAllStringSubmatch(row.Data, -1) {
+			id, err := strconv.ParseInt(m[2], 10, 64)
+			if m[1] != "bug" || err != nil || id <= 0 || seen[id] {
+				continue
+			}
+			seen[id] = true
+			related = append(related, NoticeObjectLink{ObjectType: "bug", ObjectID: id, URL: objectViewURL("bug", uint(id))})
+		}
+		if len(related) > 0 {
+			objType, objID = related[0].ObjectType, related[0].ObjectID
+		}
+	}
 	if objType == "mail" || objType == "" || objID == 0 {
 		if parsedType, parsedID, _ := parseNoticeSubject(row.Subject); parsedType != "" && parsedID > 0 {
 			objType = parsedType
@@ -199,22 +214,23 @@ func newNoticeItem(row noticeRow, displayMap map[string]string) NoticeItem {
 		url = objectViewURL(objType, uint(objID))
 	}
 	return NoticeItem{
-		ID:         row.ID,
-		ObjectType: objType,
-		ObjectID:   objID,
-		Title:      title,
-		Summary:    summary,
-		Content:    content,
-		Subject:    title,
-		Data:       summary,
-		Actor:      actor,
-		Action:     row.ActionCode,
-		Category:   classifyNotice(objType, row.ActionCode),
-		NeedAction: noticeNeedsAction(row.ActionCode),
-		Anomaly:    classifyNotice(objType, row.ActionCode) == "risk",
-		Read:       row.IsRead != 0,
-		Date:       row.CreatedDate.Format("2006-01-02 15:04:05"),
-		URL:        url,
+		RelatedObjects: related,
+		ID:             row.ID,
+		ObjectType:     objType,
+		ObjectID:       objID,
+		Title:          title,
+		Summary:        summary,
+		Content:        content,
+		Subject:        title,
+		Data:           summary,
+		Actor:          actor,
+		Action:         row.ActionCode,
+		Category:       classifyNotice(objType, row.ActionCode),
+		NeedAction:     noticeNeedsAction(row.ActionCode),
+		Anomaly:        classifyNotice(objType, row.ActionCode) == "risk",
+		Read:           row.IsRead != 0,
+		Date:           row.CreatedDate.Format("2006-01-02 15:04:05"),
+		URL:            url,
 	}
 }
 

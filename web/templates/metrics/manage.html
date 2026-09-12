@@ -1,8 +1,8 @@
 {{/* ==========================================================================
 文件: web/templates/metrics/manage.html
 模块: 指标管理 (metrics)
-职责: /metrics/manage 页面骨架，承载 12 条指标定义、4 项摘要、筛选与详情抽屉。
-     数据来自 /metrics/api；客户端 JS = metrics-manage.js (IIFE + PersonalList)。
+职责: 指标元数据与考核标准的配置中心，负责指标的增、删、改、阈值与口径维护。
+     采用企业级右侧标准滑出抽屉，拒绝半成品排版。
 全局字段: .CurrentUser, .CSRFToken, .Menus, .AppName, .CurrentPath
 页面字段: .Title (string), .PageTitle (string)
 ========================================================================== */}}
@@ -13,126 +13,263 @@
 
 {{ define "content" }}
 <div class="po-personal-workspace po-metrics-manage">
+  <!-- 头部信息 -->
   <header class="workspace-header">
     <div class="workspace-header-left">
       <h2>指标管理</h2>
-      <p>指标定义 · 运行快照 · 阈值口径（只读）</p>
+      <p>指标元数据维护 · 考核目标与阈值配置 · 计算口径定义（增删改配）</p>
+    </div>
+    <div class="workspace-header-right">
+      <a href="/metrics/radar" class="workspace-btn" style="text-decoration:none; margin-right:8px; display:inline-flex; align-items:center; gap:4px;">
+        <span aria-hidden="true">📊</span> 进入指标雷达大屏
+      </a>
+      <button type="button" class="workspace-btn primary" id="mCreateBtn">+ 新增指标</button>
     </div>
   </header>
 
   <section class="workspace-panel">
-    <div class="workspace-result-bar metric-summary-cards" aria-label="指标总览">
-      <span class="metric-summary-card" data-summary="totalItems">
-        <em>指标总数</em><strong id="mSummaryTotal">—</strong>
+    <!-- 1. 顶部配置概览卡片 -->
+    <div class="workspace-result-bar metric-summary-cards" aria-label="配置概览">
+      <span class="metric-summary-card" data-summary="total">
+        <em>指标总数</em><strong id="mSummaryTotal">14</strong>
       </span>
-      <span class="metric-summary-card" data-summary="withSnapshot">
-        <em>已有快照</em><strong id="mSummarySnapshot">—</strong>
+      <span class="metric-summary-card success" data-summary="enabled">
+        <em>已启用指标</em><strong id="mSummaryEnabled" style="color: var(--color-success, #059669);">14</strong>
       </span>
-      <span class="metric-summary-card warn" data-summary="abnormal">
-        <em>异常指标</em><strong id="mSummaryAbnormal">—</strong>
+      <span class="metric-summary-card warn" data-summary="warning">
+        <em>已设关注阈值</em><strong id="mSummaryWarnThreshold" style="color: var(--color-warning, #d97706);">13</strong>
       </span>
-      <span class="metric-summary-card" data-summary="categoryCount">
-        <em>覆盖分类</em><strong id="mSummaryCategories">—</strong>
+      <span class="metric-summary-card danger" data-summary="danger">
+        <em>已设风险红线</em><strong id="mSummaryDangerThreshold" style="color: var(--color-danger, #dc2626);">13</strong>
+      </span>
+      <span class="metric-summary-card" data-summary="category">
+        <em>覆盖业务分类</em><strong id="mSummaryCategories">5</strong>
       </span>
     </div>
 
+    <!-- 2. 工具栏（分类 + 状态 + 搜索） -->
     <div class="workspace-toolbar">
-      <select id="mCategory" aria-label="分类">
-        <option value="">全部分类</option>
-        <option value="需求治理">需求治理</option>
-        <option value="交付效率">交付效率</option>
-        <option value="研发质量">研发质量</option>
-        <option value="规范执行">规范执行</option>
-        <option value="效能管理">效能管理</option>
-      </select>
-      <select id="mStatus" aria-label="状态">
-        <option value="">状态：全部</option>
-        <option value="normal">正常</option>
-        <option value="warn">关注</option>
-        <option value="danger">风险</option>
-        <option value="unknown">暂无数据</option>
-      </select>
-      <label class="workspace-search"><span aria-hidden="true">⌕</span><input id="mKeyword" type="search" placeholder="搜索指标名 / 编码 / 数据来源" aria-label="搜索指标"></label>
+      <label class="filter-group" for="mCategory">
+        <span class="filter-label">分类:</span>
+        <select id="mCategory" aria-label="分类">
+          <option value="">全部分类</option>
+          <option value="需求治理">需求治理</option>
+          <option value="交付效率">交付效率</option>
+          <option value="研发质量">研发质量</option>
+          <option value="规范执行">规范执行</option>
+          <option value="效能管理">效能管理</option>
+        </select>
+      </label>
+
+      <label class="filter-group" for="mRole">
+        <span class="filter-label">责任角色:</span>
+        <select id="mRole" aria-label="责任角色">
+          <option value="">全部角色</option>
+          <option value="PO">PO</option>
+          <option value="SM">SM</option>
+          <option value="开发组长">开发组长</option>
+          <option value="测试负责人">测试负责人</option>
+          <option value="PMO">PMO</option>
+        </select>
+      </label>
+
+      <label class="filter-group" for="mState">
+        <span class="filter-label">启停状态:</span>
+        <select id="mState" aria-label="启停状态">
+          <option value="">全部状态</option>
+          <option value="enabled" selected>启用中</option>
+          <option value="disabled">已停用</option>
+        </select>
+      </label>
+
+      <label class="workspace-search">
+        <span aria-hidden="true">⌕</span>
+        <input id="mKeyword" type="search" placeholder="搜索指标名 / 编码 / 数据来源 / 算法" aria-label="搜索指标">
+      </label>
+
       <button type="button" class="workspace-btn" id="mReset">重置筛选</button>
     </div>
 
+    <!-- 结果统计与提示 -->
     <div class="workspace-result-bar" aria-live="polite">
-      <span id="mSummary">加载中…</span>
-      <span class="workspace-result-hint">运行数据来自禅道 / 门禁；异常阈值仅作展示，不影响写操作</span>
+      <span id="mSummary">共 14 条指标定义</span>
+      <span class="workspace-result-hint">指标规则定义将作为敏捷团队质效基准；计算结果请查看「指标雷达」大屏</span>
     </div>
 
-    <div class="workspace-detail metric-detail" id="mDetailView" hidden>
-      <header class="metric-detail-head">
-        <div>
-          <span class="metric-detail-code" id="mDetailCode">—</span>
-          <h3 class="metric-detail-title" id="mDetailName">—</h3>
-          <div class="metric-detail-meta">
-            <span class="metric-detail-meta-item"><em>分类</em><span id="mDetailCategory">—</span></span>
-            <span class="metric-detail-meta-item"><em>责任角色</em><span id="mDetailOwnerRole">—</span></span>
-            <span class="metric-detail-meta-item"><em>当前值</em><span id="mDetailValue">—</span></span>
-            <span class="metric-detail-meta-item"><em>目标</em><span id="mDetailTarget">—</span></span>
-            <span class="metric-detail-meta-item"><em>状态</em><span id="mDetailStatus">—</span></span>
-            <span class="metric-detail-meta-item"><em>计算时间</em><span id="mDetailLastCalc">—</span></span>
-          </div>
-        </div>
-        <div class="metric-detail-actions">
-          <button type="button" class="metric-detail-close" id="mDetailClose">返回列表</button>
-        </div>
-      </header>
-      <div class="metric-detail-body">
-        <section class="metric-detail-section">
-          <h4>指标摘要</h4>
-          <p id="mDetailDescription">—</p>
-        </section>
-        <section class="metric-detail-section">
-          <h4>数据口径</h4>
-          <p><strong>数据来源</strong>：<span id="mDetailDataSource">—</span></p>
-          <p><strong>周期</strong>：<span id="mDetailPeriod">—</span></p>
-          <p><strong>单位</strong>：<span id="mDetailUnit">—</span></p>
-        </section>
-        <section class="metric-detail-section">
-          <h4>目标与预警</h4>
-          <p><strong>目标</strong>：<span id="mDetailTargetText">—</span></p>
-          <p><strong>关注阈值</strong>：<span id="mDetailWarning">—</span></p>
-          <p><strong>风险阈值</strong>：<span id="mDetailDanger">—</span></p>
-          <p><strong>方向</strong>：<span id="mDetailDirection">—</span></p>
-        </section>
-        <section class="metric-detail-section">
-          <h4>运行信息</h4>
-          <p><strong>计算公式</strong>：<code id="mDetailFormula">—</code></p>
-          <p class="metric-detail-note">本视图展示行级派生字段；配置写操作不在本期范围（只读）。</p>
-        </section>
-      </div>
-    </div>
-
+    <!-- 3. 指标元数据管理主表 -->
     <div class="table-scroll-container" id="mListView">
       <table class="workspace-table metric-table">
         <thead>
           <tr>
-            <th class="metric-col-name">指标名</th>
-            <th>分类</th>
+            <th class="metric-col-name">指标名称 / 编码</th>
+            <th>业务分类</th>
             <th>数据来源</th>
-            <th>周期</th>
-            <th class="metric-col-target">目标 / 阈值</th>
+            <th>考核目标</th>
+            <th class="metric-col-target">阈值配置 (关注/风险)</th>
             <th>责任角色</th>
+            <th>极性方向</th>
             <th>状态</th>
-            <th>配置</th>
-            <th class="metric-col-opt">操作</th>
+            <th class="metric-col-opt">管理操作</th>
           </tr>
         </thead>
         <tbody id="mTbody">
-          <tr><td colspan="9" class="state-placeholder">正在拉取指标…</td></tr>
+          <tr><td colspan="9" class="state-placeholder">正在加载指标元数据…</td></tr>
         </tbody>
       </table>
     </div>
 
     <div class="state-placeholder" id="mEmpty" hidden>当前条件下暂无指标</div>
-    <div class="state-placeholder error" id="mError" hidden>
-      <span class="error-msg">加载失败，请重试</span>
-      <button type="button" class="retry-btn" id="mRetryBtn">重试</button>
-    </div>
-    <div class="workspace-pagination" id="mPager" hidden></div>
   </section>
+
+  <!-- 4. 高保真右侧标准配置抽屉 (Drawer Modal) -->
+  <div id="mDrawerModal" class="metric-drawer-modal" aria-hidden="true">
+    <div class="metric-drawer-backdrop" id="mDrawerBackdrop"></div>
+    <div class="metric-drawer-dialog" role="dialog" aria-modal="true" aria-labelledby="mDrawerTitle">
+
+      <!-- 抽屉头部 -->
+      <header class="metric-drawer-header">
+        <div class="drawer-title-box">
+          <div class="drawer-title-row">
+            <span class="metric-drawer-badge" id="mDrawerBadge">编辑指标</span>
+            <h3 class="metric-drawer-title" id="mDrawerTitle">配置指标标准与口径</h3>
+          </div>
+          <p class="metric-drawer-sub" id="mDrawerSub">指标编码、考核阈值及统计口径维护</p>
+        </div>
+        <button type="button" class="metric-drawer-close" id="mDrawerCloseBtn" aria-label="关闭">&times;</button>
+      </header>
+
+      <!-- 抽屉滚动表单正文 -->
+      <div class="metric-drawer-body">
+        <form id="mMetricForm" novalidate onsubmit="return false;">
+          <input type="hidden" id="fIsEdit" value="0">
+
+          <!-- 模块一：基本属性 -->
+          <div class="form-section">
+            <div class="form-section-title">
+              <span class="title-bar"></span>基本属性
+            </div>
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label class="form-label required" for="fCodeInput">指标编码</label>
+                <input type="text" id="fCodeInput" class="form-input" placeholder="如 delivery.cycle" required autocomplete="off">
+                <span class="form-tip">唯一英文标识符</span>
+              </div>
+              <div class="form-group">
+                <label class="form-label required" for="fName">指标名称</label>
+                <input type="text" id="fName" class="form-input" placeholder="如 交付周期" required autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label class="form-label required" for="fCategory">业务分类</label>
+                <select id="fCategory" class="form-select" required>
+                  <option value="需求治理">需求治理</option>
+                  <option value="交付效率">交付效率</option>
+                  <option value="研发质量">研发质量</option>
+                  <option value="规范执行">规范执行</option>
+                  <option value="效能管理">效能管理</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label class="form-label required" for="fOwnerRole">责任角色</label>
+                <select id="fOwnerRole" class="form-select">
+                  <option value="PO">PO</option>
+                  <option value="SM">SM</option>
+                  <option value="开发组长">开发组长</option>
+                  <option value="测试负责人">测试负责人</option>
+                  <option value="PMO">PMO</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="fUnit">度量单位</label>
+                <input type="text" id="fUnit" class="form-input" placeholder="如 天 / % / 个">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="fPeriod">度量周期</label>
+                <select id="fPeriod" class="form-select">
+                  <option value="月度">月度 (按自然月考核)</option>
+                  <option value="实时">实时 (即时存量快照)</option>
+                  <option value="季度">季度 (周期聚合)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- 模块二：考核目标与预警阈值 -->
+          <div class="form-section">
+            <div class="form-section-title">
+              <span class="title-bar"></span>考核目标与阈值红线
+            </div>
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label class="form-label required" for="fTarget">考核达标目标</label>
+                <input type="text" id="fTarget" class="form-input target-input" placeholder="如 ≤30天 或 ≥90%" required>
+                <span class="form-tip">评定为「正常/达标」标准</span>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="fWarning">关注阈值 (Warn)</label>
+                <input type="text" id="fWarning" class="form-input warn-input" placeholder="如 40天 或 85%">
+                <span class="form-tip">评定为「关注」的缓冲线</span>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="fDanger">风险红线 (Danger)</label>
+                <input type="text" id="fDanger" class="form-input danger-input" placeholder="如 50天 或 80%">
+                <span class="form-tip">触发「高危风险」警报</span>
+              </div>
+            </div>
+
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label required" for="fDirection">极性方向 (指标导向)</label>
+                <select id="fDirection" class="form-select">
+                  <option value="down">越小越好 ↓（周期短、延期少、Bug 少即达标）</option>
+                  <option value="up">越大越好 ↑（通过率高、关闭率高、完成率高即达标）</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="fDataSource">底层数据源</label>
+                <input type="text" id="fDataSource" class="form-input" placeholder="如 禅道 zt_demand.teamGroup / FineReport">
+              </div>
+            </div>
+          </div>
+
+          <!-- 模块三：算法逻辑与口径描述 -->
+          <div class="form-section">
+            <div class="form-section-title">
+              <span class="title-bar"></span>算法逻辑与取数口径
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="fFormula">计算公式 / SQL 取数表达式</label>
+              <textarea id="fFormula" class="form-textarea code-font" rows="2" placeholder="如 AVG((实际发布时间 - 业务评审通过时间) - 挂起天数)"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="fDescription">业务定义与考核说明</label>
+              <textarea id="fDescription" class="form-textarea" rows="3" placeholder="请详细描述该指标面向敏捷小组的考核场景、统计口径以及挂起扣除规则等"></textarea>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- 抽屉底部悬浮操作栏 -->
+      <footer class="metric-drawer-footer">
+        <div class="drawer-footer-left">
+          <label class="toggle-control" title="切换指标是否在系统和雷达中启用">
+            <input type="checkbox" id="fEnabledCheck" checked>
+            <span class="toggle-slider"></span>
+            <span class="toggle-text" id="fEnabledText">状态：启用中</span>
+          </label>
+        </div>
+        <div class="drawer-footer-right">
+          <button type="button" class="workspace-btn" id="mDrawerCancelBtn">取消</button>
+          <button type="button" class="workspace-btn primary" id="mDrawerSaveBtn">保存配置</button>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- 轻量全局 Toast 提示 -->
+  <div id="mToast" class="metric-toast" hidden></div>
 </div>
 {{ end }}
 

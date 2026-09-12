@@ -22,17 +22,11 @@
   var currentID = "";
   var basePreview = "";
 
-  function esc(s) {
-    return String(s == null ? "" : s)
-      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-  }
+  var esc = (window.PersonalList && window.PersonalList.escapeHtml) || window.escapeHtml || function (s) { return String(s == null ? "" : s); };
 
   function toast(message, level) {
     if (typeof window.showToast === "function") {
       window.showToast(message, level || "info");
-    } else if (typeof alert === "function") {
-      alert(message);
     }
   }
 

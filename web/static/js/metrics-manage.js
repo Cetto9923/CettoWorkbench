@@ -1,11 +1,8 @@
 /* =============================================================================
    文件: web/static/js/metrics-manage.js
-   模块: 指标管理 (metrics) - /metrics/manage 交互脚本
-   职责: 12 条指标定义列表 + 筛选 + 分页 + 单页内详情派生。
-         状态/分类/周期/角色/单位全部走 metric 自定义中文 label，
-         不输出 raw 英文状态；占位 "—" 由 backend 保证。
-   依赖: personal-list.js (escapeHtml / createController / renderPagination /
-         loadPageSize / savePageSize)
+   模块: 指标管理 (metrics) - /metrics/manage
+   职责: 指标元数据维护控制台：指标定义、考核目标、关注与风险阈值、计算口径的增删改配。
+         采用高保真右侧标准滑出抽屉，支持完整的数据回显、表单校验与持久化。
    ============================================================================= */
 (function () {
   "use strict";
@@ -21,17 +18,6 @@
   };
   var $ = function (id) { return document.getElementById(id); };
 
-  // 与 backend service.go ValidCategories + MetricStatusLabel 同步。
-  var STATUS_LABEL = { normal: "正常", warn: "关注", danger: "风险", unknown: "暂无数据" };
-  var CATEGORY_LABEL = {
-    "需求治理": "需求治理",
-    "交付效率": "交付效率",
-    "研发质量": "研发质量",
-    "规范执行": "规范执行",
-    "效能管理": "效能管理"
-  };
-  var ROLE_LABEL = { "PO": "PO", "SM": "SM", "PMO": "PMO", "测试": "测试" };
-  // 与 backend CategoryColorClass 同步；CSS 把 .cat-* 着色到 semantic token。
   var CATEGORY_COLOR_CLASS = {
     "需求治理": "cat-demand",
     "交付效率": "cat-delivery",
@@ -40,254 +26,575 @@
     "效能管理": "cat-performance"
   };
 
-  var PAGE_SIZE_KEY = "po.metrics.manage.pageSize";
-  var PAGE_SIZE_ALLOWED = PL.PAGE_SIZE_OPTIONS || [10, 20, 50, 100];
+  // 14 项基线指标定义全景元数据
+  var defaultMetrics = [
+    {
+      code: "delivery.cycle",
+      name: "交付周期",
+      category: "交付效率",
+      unit: "天",
+      dataSource: "FineReport (JbuB) / 禅道 zt_demand.teamGroup",
+      period: "月度",
+      target: "≤30天",
+      warningThreshold: "40天",
+      dangerThreshold: "50天",
+      goodDirection: "down",
+      enabled: true,
+      ownerRole: "PO",
+      description: "业务需求从业务评审通过到完成上线的天数，扣除外部挂起天数（归属看板敏捷小组）",
+      formula: "AVG((实际发布时间 - 业务评审通过时间) - 挂起天数)"
+    },
+    {
+      code: "implement.cycle",
+      name: "实施周期",
+      category: "交付效率",
+      unit: "天",
+      dataSource: "FineReport (JbuB) / 禅道 zt_demand.teamGroup",
+      period: "月度",
+      target: "≤20天",
+      warningThreshold: "28天",
+      dangerThreshold: "35天",
+      goodDirection: "down",
+      enabled: true,
+      ownerRole: "PO / SM",
+      description: "业务需求从首次需求澄清到完成上线的天数，扣除挂起天数（归属看板敏捷小组）",
+      formula: "AVG((实际发布时间 - 首次需求澄清时间) - 挂起天数)"
+    },
+    {
+      code: "story.overIteration",
+      name: "超两个迭代周期占比",
+      category: "需求治理",
+      unit: "%",
+      dataSource: "FineReport (hNBB) / 禅道看板",
+      period: "月度",
+      target: "≤10%",
+      warningThreshold: "15%",
+      dangerThreshold: "20%",
+      goodDirection: "down",
+      enabled: true,
+      ownerRole: "PO",
+      description: "实施周期超过42天的工单数占该看板小组当前进行中工单数的比例",
+      formula: "实施周期>42天的业务需求数 ÷ 看板进行中需求数 * 100%"
+    },
+    {
+      code: "story.unscheduled",
+      name: "超2周未排期单数",
+      category: "需求治理",
+      unit: "个",
+      dataSource: "FineReport (hNBB) / 禅道 zt_demand",
+      period: "月度",
+      target: "≤3个",
+      warningThreshold: "5个",
+      dangerThreshold: "8个",
+      goodDirection: "down",
+      enabled: true,
+      ownerRole: "PO",
+      description: "距离业务评审通过超过2周（14天）仍未在看板进行需求澄清的单数",
+      formula: "COUNT(zt_demand WHERE teamGroup=? AND 评审通过超14天未澄清)"
+    },
+    {
+      code: "gate.passRate",
+      name: "质量门禁通过率",
+      category: "开发质量",
+      unit: "%",
+      dataSource: "DevOps / 门禁平台",
+      period: "月度",
+      target: "≥90%",
+      warningThreshold: "85%",
+      dangerThreshold: "80%",
+      goodDirection: "up",
+      enabled: true,
+      ownerRole: "开发组长",
+      description: "通过质量门禁检查的研发需求占需要质量门禁的研发需求比例",
+      formula: "质量门禁通过数 ÷ 需质量门禁的研发需求总数 * 100%"
+    },
+    {
+      code: "bug.closeRate",
+      name: "缺陷关闭率",
+      category: "研发质量",
+      unit: "%",
+      dataSource: "禅道 zt_bug / 看板团队成员",
+      period: "月度",
+      target: "≥90%",
+      warningThreshold: "85%",
+      dangerThreshold: "80%",
+      goodDirection: "up",
+      enabled: true,
+      ownerRole: "测试负责人",
+      description: "该看板敏捷小组名下处理的缺陷关闭完成情况",
+      formula: "关闭的缺陷数 ÷ 缺陷总数 * 100%"
+    },
+    {
+      code: "bug.responseRate",
+      name: "缺陷响应效率",
+      category: "研发质量",
+      unit: "%",
+      dataSource: "禅道 zt_bug",
+      period: "月度",
+      target: "≥85%",
+      warningThreshold: "80%",
+      dangerThreshold: "75%",
+      goodDirection: "up",
+      enabled: true,
+      ownerRole: "开发组长",
+      description: "致命缺陷1天内（24h）、严重3天内、一般5天内解决响应效率",
+      formula: "各等级限期内解决缺陷数 ÷ 对应等级缺陷总数 * 100%"
+    },
+    {
+      code: "story.delayedLaunch",
+      name: "上线延期数",
+      category: "需求治理",
+      unit: "个",
+      dataSource: "FineReport (hNBB) / 禅道需求",
+      period: "月度",
+      target: "0个",
+      warningThreshold: "1个",
+      dangerThreshold: "2个",
+      goodDirection: "down",
+      enabled: true,
+      ownerRole: "PO",
+      description: "实际发布时间晚于预计上线时间的业务需求单数",
+      formula: "COUNT(releasedDate > estimateLaunch)"
+    },
+    {
+      code: "sp.deviationRate",
+      name: "SP偏差率",
+      category: "效能管理",
+      unit: "%",
+      dataSource: "FineReport (Y3VO) / 禅道工时",
+      period: "月度",
+      target: "≤15%",
+      warningThreshold: "25%",
+      dangerThreshold: "35%",
+      goodDirection: "down",
+      enabled: true,
+      ownerRole: "SM",
+      description: "看板小组业务需求规模（故事点）与实际人力投入偏差率（2026新增）",
+      formula: "|实际工时 - 理论工时| ÷ 理论工时 = |实际工时 - (故事点 × 7小时)| ÷ (故事点 × 7小时)"
+    },
+    {
+      code: "story.total",
+      name: "研发需求总量",
+      category: "需求治理",
+      unit: "个",
+      dataSource: "禅道 zt_demand / zt_story",
+      period: "实时",
+      target: "—",
+      warningThreshold: "—",
+      dangerThreshold: "—",
+      goodDirection: "up",
+      enabled: true,
+      ownerRole: "PO",
+      description: "研发需求累计总数，反映团队在承接需求池规模",
+      formula: "COUNT(zt_story WHERE deleted='0')"
+    },
+    {
+      code: "story.active",
+      name: "进行中研发需求",
+      category: "需求治理",
+      unit: "个",
+      dataSource: "禅道 zt_demand.teamGroup",
+      period: "实时",
+      target: "≤30个",
+      warningThreshold: "30个",
+      dangerThreshold: "45个",
+      goodDirection: "down",
+      enabled: true,
+      ownerRole: "PO",
+      description: "该看板敏捷小组当前未关闭、未发布的在研需求总数",
+      formula: "COUNT(zt_demand WHERE teamGroup=? AND status NOT IN ('closed','released'))"
+    },
+    {
+      code: "story.doneRate",
+      name: "研发需求完成率",
+      category: "交付效率",
+      unit: "%",
+      dataSource: "禅道 zt_demand.teamGroup",
+      period: "月度",
+      target: "≥90%",
+      warningThreshold: "70%",
+      dangerThreshold: "60%",
+      goodDirection: "up",
+      enabled: true,
+      ownerRole: "PO",
+      description: "已关闭/已发布需求占小组总需求池的比例",
+      formula: "(closed + released) ÷ total"
+    },
+    {
+      code: "bug.open",
+      name: "未关闭缺陷",
+      category: "研发质量",
+      unit: "个",
+      dataSource: "禅道 zt_bug / 看板团队成员",
+      period: "实时",
+      target: "≤5个",
+      warningThreshold: "5个",
+      dangerThreshold: "10个",
+      goodDirection: "down",
+      enabled: true,
+      ownerRole: "测试负责人",
+      description: "看板小组名下未关闭、未取消的缺陷存量",
+      formula: "COUNT(zt_bug WHERE status NOT IN ('closed','cancelled'))"
+    },
+    {
+      code: "norm.completeness",
+      name: "业务需求富文本完整性",
+      category: "规范执行",
+      unit: "%",
+      dataSource: "门禁数据待同步",
+      period: "月度",
+      target: "≥95%",
+      warningThreshold: "80%",
+      dangerThreshold: "95%",
+      goodDirection: "up",
+      enabled: true,
+      ownerRole: "PMO",
+      description: "业务需求富文本正文（非空描述+字段完整）的覆盖率；门禁数据待同步",
+      formula: "COUNT(demand WHERE description!='') ÷ COUNT(demand)"
+    }
+  ];
+
+  var STORAGE_KEY = "crcb_metrics_meta_config_v2";
+  var metricsList = [];
+
+  function loadLocalMetrics() {
+    try {
+      var saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        var parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.warn("loadLocalMetrics error:", e);
+    }
+    return JSON.parse(JSON.stringify(defaultMetrics));
+  }
+
+  function saveLocalMetrics() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(metricsList));
+    } catch (e) {
+      console.warn("saveLocalMetrics error:", e);
+    }
+  }
 
   var state = {
     category: "",
-    status: "",
+    role: "",
+    status: "enabled",
     keyword: "",
     page: 1,
-    pageSize: PL.loadPageSize ? PL.loadPageSize(PAGE_SIZE_KEY, 15, PAGE_SIZE_ALLOWED) : 15
+    pageSize: 15
   };
 
-  var controller = null;
-  var lastItems = [];
   var searchTimer = null;
 
-  function buildUrl() {
-    var p = new URLSearchParams();
-    if (state.category) { p.set("category", state.category); }
-    if (state.status) { p.set("status", state.status); }
-    if (state.keyword) { p.set("keyword", state.keyword); }
-    p.set("page", String(state.page));
-    p.set("pageSize", String(state.pageSize));
-    return "/metrics/api?" + p.toString();
+  function showToast(msg) {
+    var toast = $("mToast");
+    if (!toast) return;
+    toast.textContent = msg;
+    toast.hidden = false;
+    setTimeout(function () { toast.hidden = true; }, 2200);
   }
 
-  function renderTargetCell(m) {
-    var targetText = esc(m.target || "—");
-    var warnText = esc(m.warningThreshold || "—");
-    var dangerText = esc(m.dangerThreshold || "—");
-    return '<div class="metric-target-cell">' +
-      '<span class="metric-target-row" data-tone="t2">' +
-      '<em>目标</em><span>' + targetText + "</span></span>" +
-      '<span class="metric-target-row" data-tone="warn">' +
-      '<em>关注</em><span>' + warnText + "</span></span>" +
-      '<span class="metric-target-row" data-tone="danger">' +
-      '<em>风险</em><span>' + dangerText + "</span></span>" +
-      "</div>";
+  function renderSummary() {
+    var total = metricsList.length;
+    var enabledCount = metricsList.filter(function (m) { return m.enabled !== false; }).length;
+    var warnCount = metricsList.filter(function (m) { return m.warningThreshold && m.warningThreshold !== "—"; }).length;
+    var dangerCount = metricsList.filter(function (m) { return m.dangerThreshold && m.dangerThreshold !== "—"; }).length;
+    var catMap = {};
+    metricsList.forEach(function (m) { if (m.category) { catMap[m.category] = true; } });
+
+    if ($("mSummaryTotal")) { $("mSummaryTotal").textContent = String(total); }
+    if ($("mSummaryEnabled")) { $("mSummaryEnabled").textContent = String(enabledCount); }
+    if ($("mSummaryWarnThreshold")) { $("mSummaryWarnThreshold").textContent = String(warnCount); }
+    if ($("mSummaryDangerThreshold")) { $("mSummaryDangerThreshold").textContent = String(dangerCount); }
+    if ($("mSummaryCategories")) { $("mSummaryCategories").textContent = String(Object.keys(catMap).length); }
   }
 
   function renderRow(m, idx) {
     var categoryCls = CATEGORY_COLOR_CLASS[m.category] || "cat-default";
-    var categoryText = CATEGORY_LABEL[m.category] || m.category || "—";
-    var statusText = STATUS_LABEL[m.status] || "—";
-    var roleText = ROLE_LABEL[m.ownerRole] || m.ownerRole || "—";
-    var dataSource = esc(m.dataSource || m.source || "—");
-    var period = esc(m.period || "—");
-    var nameHtml = '<button type="button" class="table-title-link metric-name" ' +
-      'data-metric-detail="' + esc(m.code) + '" ' +
-      'title="' + esc(m.description || m.name) + '">' +
-      esc(m.name) + "</button>" +
-      '<small class="metric-code">' + esc(m.code) + "</small>";
-    var statusHtml = '<span class="metric-status ' + esc(m.status || "unknown") + '">' + statusText + "</span>";
-    var configTag = '<span class="state-tag">只读</span>';
-    var actionBtn = '<button type="button" class="action-btn metric-action-detail" data-metric-detail="' + esc(m.code) + '">详情</button>';
-    return "<tr data-row-idx=\"" + idx + "\">" +
-      '<td class="metric-col-name">' + nameHtml + "</td>" +
-      '<td><span class="metric-category ' + categoryCls + '">' + categoryText + "</span></td>" +
-      "<td>" + dataSource + "</td>" +
-      "<td>" + period + "</td>" +
-      '<td class="metric-col-target">' + renderTargetCell(m) + "</td>" +
-      "<td>" + roleText + "</td>" +
-      "<td>" + statusHtml + "</td>" +
-      "<td>" + configTag + "</td>" +
-      '<td class="metric-col-opt">' + actionBtn + "</td>" +
-      "</tr>";
+    var isEnabled = m.enabled !== false;
+
+    var nameHtml = '<strong class="metric-name" style="cursor:pointer; color:var(--po-blue, #2563eb);" data-metric-edit="' + esc(m.code) + '">' + esc(m.name) + '</strong>' +
+      '<small class="metric-code">' + esc(m.code) + (m.unit ? ' · ' + esc(m.unit) : '') + '</small>';
+
+    var targetHtml = '<span class="metric-target-val" style="font-weight:700; color:#0f172a; font-family:ui-monospace, monospace;">' + esc(m.target || "—") + '</span>';
+
+    var warnText = esc(m.warningThreshold || "—");
+    var dangerText = esc(m.dangerThreshold || "—");
+    var thresholdHtml = '<div class="metric-target-cell">' +
+      '<span class="metric-target-row" data-tone="warn"><em>关注</em><span>' + warnText + '</span></span>' +
+      '<span class="metric-target-row" data-tone="danger"><em>风险</em><span>' + dangerText + '</span></span>' +
+      '</div>';
+
+    var dirText = m.goodDirection === "up"
+      ? '<span style="color:#059669; font-weight:600;">越大越好 ↑</span>'
+      : '<span style="color:#2563eb; font-weight:600;">越小越好 ↓</span>';
+
+    var statusBadge = isEnabled
+      ? '<span class="metric-status normal">启用中</span>'
+      : '<span class="metric-status unknown">已停用</span>';
+
+    var toggleBtn = isEnabled
+      ? '<button type="button" class="action-btn text-danger" data-metric-toggle="' + esc(m.code) + '" title="停用该指标">停用</button>'
+      : '<button type="button" class="action-btn text-success" data-metric-toggle="' + esc(m.code) + '" title="启用该指标">启用</button>';
+
+    var editBtn = '<button type="button" class="action-btn primary" data-metric-edit="' + esc(m.code) + '" style="font-weight:600;">配置编辑</button>';
+
+    return '<tr data-code="' + esc(m.code) + '">' +
+      '<td class="metric-col-name">' + nameHtml + '</td>' +
+      '<td><span class="metric-category ' + categoryCls + '">' + esc(m.category) + '</span></td>' +
+      '<td style="font-size:12px; color:#475569; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="' + esc(m.dataSource || "") + '">' + esc(m.dataSource || "—") + '</td>' +
+      '<td>' + targetHtml + '</td>' +
+      '<td class="metric-col-target">' + thresholdHtml + '</td>' +
+      '<td><span class="state-tag">' + esc(m.ownerRole || "—") + '</span></td>' +
+      '<td style="font-size:11px;">' + dirText + '</td>' +
+      '<td>' + statusBadge + '</td>' +
+      '<td class="metric-col-opt" style="white-space:nowrap;">' + editBtn + ' ' + toggleBtn + '</td>' +
+      '</tr>';
   }
 
-  function renderSummary(payload) {
-    var s = (payload && payload.summary) || {};
-    var totalItems = s.totalItems != null ? s.totalItems : "—";
-    var withSnapshot = s.withSnapshot != null ? s.withSnapshot : "—";
-    var abnormal = s.abnormal != null ? s.abnormal : "—";
-    var catMap = s.categoryCount || {};
-    var catCount = 0;
-    for (var k in catMap) {
-      if (Object.prototype.hasOwnProperty.call(catMap, k) && Number(catMap[k]) > 0) {
-        catCount++;
+  function applyFilterAndRender() {
+    var kw = (state.keyword || "").toLowerCase();
+    var filtered = metricsList.filter(function (m) {
+      if (state.category && m.category !== state.category) { return false; }
+      if (state.role && m.ownerRole !== state.role) { return false; }
+      if (state.status === "enabled" && m.enabled === false) { return false; }
+      if (state.status === "disabled" && m.enabled !== false) { return false; }
+      if (kw) {
+        var str = (m.name + " " + m.code + " " + m.dataSource + " " + m.formula + " " + m.ownerRole).toLowerCase();
+        if (str.indexOf(kw) === -1) { return false; }
       }
-    }
-    if ($("mSummaryTotal")) { $("mSummaryTotal").textContent = String(totalItems); }
-    if ($("mSummarySnapshot")) { $("mSummarySnapshot").textContent = String(withSnapshot); }
-    if ($("mSummaryAbnormal")) { $("mSummaryAbnormal").textContent = String(abnormal); }
-    if ($("mSummaryCategories")) { $("mSummaryCategories").textContent = String(catCount); }
-  }
-
-  function hideDetail() {
-    var detail = $("mDetailView");
-    var list = $("mListView");
-    if (detail) { detail.hidden = true; }
-    if (list) { list.hidden = false; }
-  }
-
-  function showDetail(m) {
-    var list = $("mListView");
-    if (list) { list.hidden = true; }
-    var detail = $("mDetailView");
-    if (!detail || !m) { return; }
-    detail.hidden = false;
-    setText("mDetailCode", m.code || "—");
-    setText("mDetailName", m.name || "—");
-    setText("mDetailCategory", CATEGORY_LABEL[m.category] || m.category || "—");
-    setText("mDetailOwnerRole", ROLE_LABEL[m.ownerRole] || m.ownerRole || "—");
-    setText("mDetailValue", m.value || "—");
-    setText("mDetailTarget", m.target || "—");
-    setText("mDetailTargetText", m.target || "—");
-    setText("mDetailWarning", m.warningThreshold || "—");
-    setText("mDetailDanger", m.dangerThreshold || "—");
-    setText("mDetailDirection", m.goodDirection === "up" ? "越大越好" : (m.goodDirection === "down" ? "越小越好" : "—"));
-    setText("mDetailDataSource", m.dataSource || m.source || "—");
-    setText("mDetailPeriod", m.period || "—");
-    setText("mDetailUnit", m.unit || "—");
-    setText("mDetailFormula", m.formula || "—");
-    setText("mDetailLastCalc", m.lastCalcTime || "—");
-    var statusEl = $("mDetailStatus");
-    if (statusEl) {
-      var cls = m.status || "unknown";
-      statusEl.innerHTML = '<span class="metric-status ' + esc(cls) + '">' + esc(STATUS_LABEL[cls] || "—") + "</span>";
-    }
-    setText("mDetailDescription", m.description || "—");
-  }
-
-  function setText(id, value) {
-    var el = $(id);
-    if (el) { el.textContent = value; }
-  }
-
-  function findItem(code) {
-    for (var i = 0; i < lastItems.length; i++) {
-      if (String(lastItems[i].code) === String(code)) { return lastItems[i]; }
-    }
-    return null;
-  }
-
-  function refresh() {
-    if (!controller) { return; }
-    controller.fetch(buildUrl(), state, function (payload) {
-      lastItems = (payload && Array.isArray(payload.items)) ? payload.items : [];
-      renderSummary(payload);
-      var total = (payload && typeof payload.total === "number") ? payload.total : 0;
-      var tbody = $("mTbody");
-      if (tbody) { tbody.innerHTML = lastItems.map(function (m, i) { return renderRow(m, i); }).join(""); }
-      if ($("mSummary")) {
-        $("mSummary").textContent = "共 " + total + " 条指标";
-      }
-      hideDetail();
-      if (PL.renderPagination) {
-        PL.renderPagination({
-          container: $("mPager"),
-          page: state.page,
-          pageSize: state.pageSize,
-          total: total,
-          onPageChange: function (next) {
-            state.page = next;
-            refresh();
-          },
-          onPageSizeChange: function (next) {
-            state.pageSize = next;
-            state.page = 1;
-            if (PL.savePageSize) { PL.savePageSize(PAGE_SIZE_KEY, next); }
-            refresh();
-          }
-        });
-      }
+      return true;
     });
-  }
 
-  function initToolbar() {
-    var cat = $("mCategory");
-    if (cat) {
-      cat.addEventListener("change", function () {
-        state.category = cat.value;
-        state.page = 1;
-        refresh();
-      });
-    }
-    var status = $("mStatus");
-    if (status) {
-      status.addEventListener("change", function () {
-        state.status = status.value;
-        state.page = 1;
-        refresh();
-      });
-    }
-    var kw = $("mKeyword");
-    if (kw) {
-      kw.addEventListener("input", function () {
-        clearTimeout(searchTimer);
-        searchTimer = setTimeout(function () {
-          state.keyword = (kw.value || "").trim();
-          state.page = 1;
-          refresh();
-        }, 300);
-      });
-    }
-    var resetBtn = $("mReset");
-    if (resetBtn) {
-      resetBtn.addEventListener("click", function () {
-        state.category = "";
-        state.status = "";
-        state.keyword = "";
-        state.page = 1;
-        if (cat) { cat.value = ""; }
-        if (status) { status.value = ""; }
-        if (kw) { kw.value = ""; }
-        refresh();
-      });
-    }
-    var retryBtn = $("mRetryBtn");
-    if (retryBtn) {
-      retryBtn.addEventListener("click", function () { refresh(); });
-    }
-    var closeBtn = $("mDetailClose");
-    if (closeBtn) {
-      closeBtn.addEventListener("click", function () { hideDetail(); });
-    }
-  }
+    renderSummary();
 
-  function initTableClicks() {
+    var total = filtered.length;
     var tbody = $("mTbody");
-    if (!tbody) { return; }
-    tbody.addEventListener("click", function (e) {
-      var trigger = e.target.closest("[data-metric-detail]");
-      if (!trigger) { return; }
-      e.preventDefault();
-      var code = trigger.getAttribute("data-metric-detail");
-      var item = findItem(code);
-      if (item) { showDetail(item); }
-    });
+    if (tbody) {
+      if (total === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="state-placeholder">当前筛选条件下暂无指标配置</td></tr>';
+      } else {
+        tbody.innerHTML = filtered.map(function (m, i) { return renderRow(m, i); }).join("");
+      }
+    }
+
+    if ($("mSummary")) {
+      $("mSummary").textContent = "共 " + total + " 条指标定义 (总数 " + metricsList.length + " 项)";
+    }
   }
 
-  document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape" || e.keyCode === 27) {
-      var detail = $("mDetailView");
-      if (detail && !detail.hidden) { hideDetail(); }
+  // 打开右侧滑出抽屉
+  function openDrawer(metric) {
+    var modal = $("mDrawerModal");
+    if (!modal) return;
+
+    var isEdit = !!metric;
+    $("fIsEdit").value = isEdit ? "1" : "0";
+    $("mDrawerBadge").textContent = isEdit ? "编辑指标" : "新增指标";
+    $("mDrawerTitle").textContent = isEdit ? "配置指标 [" + metric.name + "]" : "新增科技研发质效指标";
+    $("mDrawerSub").textContent = isEdit
+      ? "修改考核目标、关注与风险阈值红线及取数公式"
+      : "创建新的指标元数据定义，用于敏捷团队度量考核";
+
+    $("fCodeInput").value = isEdit ? metric.code : "";
+    $("fCodeInput").disabled = isEdit;
+    $("fName").value = isEdit ? metric.name : "";
+    $("fCategory").value = isEdit ? metric.category : "需求治理";
+    $("fOwnerRole").value = isEdit ? (metric.ownerRole || "PO") : "PO";
+    $("fUnit").value = isEdit ? (metric.unit || "") : "";
+    $("fPeriod").value = isEdit ? (metric.period || "月度") : "月度";
+
+    $("fTarget").value = isEdit ? (metric.target || "") : "";
+    $("fWarning").value = isEdit ? (metric.warningThreshold || "") : "";
+    $("fDanger").value = isEdit ? (metric.dangerThreshold || "") : "";
+    $("fDirection").value = isEdit ? (metric.goodDirection || "down") : "down";
+    $("fDataSource").value = isEdit ? (metric.dataSource || "") : "";
+
+    $("fFormula").value = isEdit ? (metric.formula || "") : "";
+    $("fDescription").value = isEdit ? (metric.description || "") : "";
+
+    var isEnabled = isEdit ? (metric.enabled !== false) : true;
+    $("fEnabledCheck").checked = isEnabled;
+    $("fEnabledText").textContent = isEnabled ? "状态：启用中" : "状态：已停用";
+
+    modal.classList.add("show");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+
+    setTimeout(function () {
+      if (isEdit) {
+        $("fTarget").focus();
+      } else {
+        $("fCodeInput").focus();
+      }
+    }, 150);
+  }
+
+  // 关闭右侧滑出抽屉
+  function closeDrawer() {
+    var modal = $("mDrawerModal");
+    if (!modal) return;
+    modal.classList.remove("show");
+    modal.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+  }
+
+  // 保存表单
+  function saveForm() {
+    var code = $("fCodeInput").value.trim();
+    var name = $("fName").value.trim();
+    var target = $("fTarget").value.trim();
+
+    if (!code) {
+      alert("请输入指标编码！");
+      $("fCodeInput").focus();
+      return;
     }
-  });
+    if (!name) {
+      alert("请输入指标名称！");
+      $("fName").focus();
+      return;
+    }
+    if (!target) {
+      alert("请输入考核达标目标值！");
+      $("fTarget").focus();
+      return;
+    }
+
+    var isEdit = $("fIsEdit").value === "1";
+    var targetObj = null;
+
+    if (isEdit) {
+      targetObj = metricsList.find(function (m) { return m.code === code; });
+      if (!targetObj) {
+        alert("未找到原指标对象！");
+        return;
+      }
+    } else {
+      var exists = metricsList.some(function (m) { return m.code === code; });
+      if (exists) {
+        alert("指标编码 [" + code + "] 已存在，请勿重复添加！");
+        $("fCodeInput").focus();
+        return;
+      }
+      targetObj = { code: code };
+      metricsList.unshift(targetObj);
+    }
+
+    targetObj.name = name;
+    targetObj.category = $("fCategory").value;
+    targetObj.ownerRole = $("fOwnerRole").value;
+    targetObj.unit = $("fUnit").value.trim();
+    targetObj.period = $("fPeriod").value;
+
+    targetObj.target = target;
+    targetObj.warningThreshold = $("fWarning").value.trim();
+    targetObj.dangerThreshold = $("fDanger").value.trim();
+    targetObj.goodDirection = $("fDirection").value;
+    targetObj.dataSource = $("fDataSource").value.trim();
+
+    targetObj.formula = $("fFormula").value.trim();
+    targetObj.description = $("fDescription").value.trim();
+    targetObj.enabled = $("fEnabledCheck").checked;
+
+    saveLocalMetrics();
+    closeDrawer();
+    applyFilterAndRender();
+    showToast("✓ 指标 [" + name + "] 配置已成功保存并生效！");
+  }
+
+  // 一键切换启用/停用
+  function toggleMetricStatus(code) {
+    var m = metricsList.find(function (item) { return item.code === code; });
+    if (m) {
+      m.enabled = !m.enabled;
+      saveLocalMetrics();
+      applyFilterAndRender();
+      showToast("指标 [" + m.name + "] 已" + (m.enabled ? "启用" : "停用"));
+    }
+  }
+
+  function initEvents() {
+    $("mCreateBtn").addEventListener("click", function () {
+      openDrawer(null);
+    });
+
+    $("mDrawerCloseBtn").addEventListener("click", closeDrawer);
+    $("mDrawerCancelBtn").addEventListener("click", closeDrawer);
+    $("mDrawerBackdrop").addEventListener("click", closeDrawer);
+
+    $("mDrawerSaveBtn").addEventListener("click", saveForm);
+
+    $("fEnabledCheck").addEventListener("change", function () {
+      $("fEnabledText").textContent = this.checked ? "状态：启用中" : "状态：已停用";
+    });
+
+    $("mCategory").addEventListener("change", function () {
+      state.category = this.value;
+      applyFilterAndRender();
+    });
+
+    $("mRole").addEventListener("change", function () {
+      state.role = this.value;
+      applyFilterAndRender();
+    });
+
+    $("mState").addEventListener("change", function () {
+      state.status = this.value;
+      applyFilterAndRender();
+    });
+
+    $("mKeyword").addEventListener("input", function () {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(function () {
+        state.keyword = $("mKeyword").value.trim();
+        applyFilterAndRender();
+      }, 300);
+    });
+
+    $("mReset").addEventListener("click", function () {
+      state.category = "";
+      state.role = "";
+      state.status = "enabled";
+      state.keyword = "";
+      $("mCategory").value = "";
+      $("mRole").value = "";
+      $("mState").value = "enabled";
+      $("mKeyword").value = "";
+      applyFilterAndRender();
+    });
+
+    $("mTbody").addEventListener("click", function (e) {
+      var editBtn = e.target.closest("[data-metric-edit]");
+      if (editBtn) {
+        var code = editBtn.getAttribute("data-metric-edit");
+        var m = metricsList.find(function (item) { return item.code === code; });
+        if (m) { openDrawer(m); }
+        return;
+      }
+      var toggleBtn = e.target.closest("[data-metric-toggle]");
+      if (toggleBtn) {
+        var c = toggleBtn.getAttribute("data-metric-toggle");
+        toggleMetricStatus(c);
+        return;
+      }
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" || e.keyCode === 27) {
+        closeDrawer();
+      }
+    });
+  }
 
   document.addEventListener("DOMContentLoaded", function () {
-    if (PL.createController) {
-      controller = PL.createController({
-        summaryEl: $("mSummary"),
-        emptyEl: $("mEmpty"),
-        errorEl: $("mError"),
-        tbodyEl: $("mTbody")
-      });
-    }
-    initToolbar();
-    initTableClicks();
-    refresh();
+    metricsList = loadLocalMetrics();
+    initEvents();
+    applyFilterAndRender();
   });
 })();

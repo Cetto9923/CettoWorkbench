@@ -20,14 +20,7 @@
   var profileLoading = false;
   var ORG_ONLY_ROLES = { lead: 1, pmo: 1 };
 
-  function esc(s) {
-    return String(s == null ? '' : s)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
-  }
+  var esc = (window.PersonalList && window.PersonalList.escapeHtml) || window.escapeHtml || function (s) { return String(s == null ? '' : s); };
 
   function cleanAccountName(rawName, account) {
     var name = String(rawName || '').trim();
@@ -101,10 +94,9 @@
         if (r) activeMap[r] = true;
       });
 
-      // 如果未选择任何视图，至少保留 PO
-      if (!Object.keys(activeMap).length) {
-        activeMap['po'] = true;
-      }
+      // 默认开放 PO 与 PMO 视图
+      activeMap['po'] = true;
+      activeMap['pmo'] = true;
 
       try {
         localStorage.setItem('wb_preferred_roles_v1', JSON.stringify({

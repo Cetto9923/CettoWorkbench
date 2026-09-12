@@ -97,6 +97,9 @@ INSERT INTO `zt_role_permissions` (`roleId`, `permCode`, `createdBy`) VALUES
  (1, 'po:boarddemand:list', '1'),
  (1, 'po:boardtask:list', '1'),
  (1, 'po:demandreview', '1'),
+ (1, 'agileteam:list', '1'),
+ (1, 'agileteam:update', '1'),
+ (1, 'agileteam:confirm', '1'),
  -- PO 角色专属业务权限
  (2, 'auth:logout', '1'),
  (2, 'po:home', '1'),
@@ -110,7 +113,9 @@ INSERT INTO `zt_role_permissions` (`roleId`, `permCode`, `createdBy`) VALUES
  (2, 'po:boardtask:list', '1'),
  (2, 'po:demandreview', '1'),
  (2, 'po:schedule', '1'),
- (2, 'schedule:list', '1')
+ (2, 'schedule:list', '1'),
+ (2, 'agileteam:list', '1'),
+ (2, 'agileteam:update', '1')
 ON DUPLICATE KEY UPDATE `updatedDate` = NOW();
 
 -- 确保示例 PO 用户 wangweijia 处于启用状态 (deleted = '0')
@@ -142,5 +147,59 @@ ON DUPLICATE KEY UPDATE
  `perm`     = VALUES(`perm`),
  `type`     = VALUES(`type`),
  `sort`     = VALUES(`sort`);
+
+-- 7. 敏捷小组成员调整治理（Workbench 自有；禅道 zt_teamgroup/zt_team 为正式真源）
+CREATE TABLE IF NOT EXISTS `zt_wb_agileteam_adjustment` (
+    `id`            BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `teamgroupId`   MEDIUMINT UNSIGNED NOT NULL COMMENT '敏捷小组 ID，对应 zt_teamgroup.id',
+    `adjustNo`      VARCHAR(32) NOT NULL COMMENT '调整单号',
+    `status`        VARCHAR(20) NOT NULL DEFAULT 'pending' COMMENT 'pending/confirmed/rejected/withdrawn',
+    `reason`        VARCHAR(500) NOT NULL DEFAULT '' COMMENT '调整说明',
+    `submittedBy`   VARCHAR(30) NOT NULL COMMENT '发起人账号',
+    `confirmedBy`   VARCHAR(30) NOT NULL DEFAULT '' COMMENT '确认人账号',
+    `confirmedDate` DATETIME DEFAULT NULL COMMENT '确认时间',
+    `rejectedBy`    VARCHAR(30) NOT NULL DEFAULT '' COMMENT '驳回人账号',
+    `rejectedDate`  DATETIME DEFAULT NULL COMMENT '驳回时间',
+    `rejectReason`  VARCHAR(500) NOT NULL DEFAULT '' COMMENT '驳回原因',
+    `createdBy`     VARCHAR(30) NOT NULL DEFAULT '' COMMENT '创建人账号',
+    `updatedBy`     VARCHAR(30) NOT NULL DEFAULT '' COMMENT '最后更新人账号',
+    `createdDate`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updatedDate`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `deletedAt`     DATETIME(3) DEFAULT NULL,
+    UNIQUE KEY `uk_adjustNo` (`adjustNo`),
+    INDEX `idx_teamgroupId` (`teamgroupId`),
+    INDEX `idx_status` (`status`),
+    INDEX `idx_submittedBy` (`submittedBy`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='敏捷小组成员调整单';
+
+CREATE TABLE IF NOT EXISTS `zt_wb_agileteam_adjustment_item` (
+    `id`             BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `adjustmentId`   BIGINT UNSIGNED NOT NULL COMMENT '调整单 ID，对应 zt_wb_agileteam_adjustment.id',
+    `account`        VARCHAR(30) NOT NULL COMMENT '成员账号',
+    `actionType`     VARCHAR(20) NOT NULL COMMENT 'add/remove/roleChange',
+    `role`           VARCHAR(64) NOT NULL DEFAULT '' COMMENT '角色（新增/变更后）',
+    `prevRole`       VARCHAR(64) NOT NULL DEFAULT '' COMMENT '变更前角色',
+    `availableHours` DECIMAL(4,1) NOT NULL DEFAULT 0 COMMENT '可用工时/天',
+    `prevHours`      DECIMAL(4,1) NOT NULL DEFAULT 0 COMMENT '变更前工时',
+    `createdBy`      VARCHAR(30) NOT NULL DEFAULT '',
+    `updatedBy`      VARCHAR(30) NOT NULL DEFAULT '',
+    `createdDate`    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updatedDate`    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `deletedAt`      DATETIME(3) DEFAULT NULL,
+    INDEX `idx_adjustmentId` (`adjustmentId`),
+    INDEX `idx_account` (`account`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='敏捷小组成员调整明细';
+
+CREATE TABLE IF NOT EXISTS `zt_wb_agileteam_history` (
+    `id`           BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `teamgroupId`  MEDIUMINT UNSIGNED NOT NULL,
+    `eventType`    VARCHAR(32) NOT NULL COMMENT 'create/update/submit/confirm/reject/withdraw',
+    `adjustmentId` BIGINT UNSIGNED DEFAULT NULL,
+    `summary`      VARCHAR(500) NOT NULL DEFAULT '',
+    `actor`        VARCHAR(30) NOT NULL DEFAULT '',
+    `createdDate`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX `idx_teamgroupId` (`teamgroupId`),
+    INDEX `idx_adjustmentId` (`adjustmentId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='敏捷小组操作历史';
 
 SET FOREIGN_KEY_CHECKS = 1;

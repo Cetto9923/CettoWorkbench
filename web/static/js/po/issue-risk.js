@@ -128,22 +128,32 @@
     var url = esc(item.url || "#");
     var titleBtn = '<button type="button" class="table-title-link" data-ir-detail="' + esc(item.kind) + '|' + esc(item.id) + '">' + title + "</button>";
     var idLink = '<a class="table-id-link" href="' + url + '" target="_blank" rel="noopener noreferrer">' + idText + "</a>";
+    var idChip = (PL && PL.idChipHtml)
+      ? PL.idChipHtml(item.kind || state.kind, idLink)
+      : ('<span class="wb-type wb-type-' + esc(item.kind || state.kind) + '">' + idLink + '</span>');
     var overdueTag = item.isOverdue
       ? '<span class="ir-tag danger">逾期 ' + esc(String(item.overdueDays || 1)) + " 天</span>"
       : '<span class="ir-tag">' + esc(String(item.days || 0)) + " 天</span>";
     var actionBtn = '<button type="button" class="action-btn ir-action-view" data-ir-detail="' + esc(item.kind) + '|' + esc(item.id) + '">查看</button>';
+    var statusHtml = (PL && PL.statusTagHtml) ? PL.statusTagHtml(item.status) : ('<span class="wb-status-tag">' + esc(item.status || "—") + '</span>');
+    var levelHtml = '<span class="ir-tag ' + sevClass + '">' + esc(severity) + '</span> ' + priorityBadge(item.priority);
+
+    var handlerText = String(item.handler || "").trim();
+    if (handlerText.toLowerCase() === "closed" || !handlerText) {
+      var isClosed = (item.status === "已关闭" || item.status === "已解决" || item.status === "已取消" || item.statusCode === "closed" || item.statusCode === "resolved");
+      handlerText = isClosed ? (String(item.submitter || "—").trim()) : "待分配";
+    }
+
     return "<tr data-row-idx=\"" + idx + "\">" +
-      '<td>' + idLink + "</td>" +
+      '<td class="ir-col-id">' + idChip + "</td>" +
       '<td class="ir-title">' + titleBtn + "</td>" +
-      "<td>" + esc(item.project || "—") + "</td>" +
-      '<td><span class="ir-tag ' + sevClass + '">' + esc(severity) + "</span></td>" +
-      "<td>" + priorityBadge(item.priority) + "</td>" +
-      "<td>" + esc(item.handler || "—") + "</td>" +
-      "<td>" + esc(item.submitter || "—") + "</td>" +
-      "<td>" + esc(item.planDate || "—") + "</td>" +
-      "<td>" + ((PL && PL.statusTagHtml) ? PL.statusTagHtml(item.status) : esc(item.status || "—")) + "</td>" +
-      "<td>" + overdueTag + "</td>" +
-      "<td>" + actionBtn + "</td>" +
+      '<td class="ir-col-project" title="' + esc(item.project || "") + '">' + esc(item.project || "—") + "</td>" +
+      '<td class="ir-col-level">' + levelHtml + "</td>" +
+      '<td class="ir-col-status">' + statusHtml + ' ' + overdueTag + "</td>" +
+      '<td class="ir-col-handler">' + esc(handlerText) + "</td>" +
+      '<td class="ir-col-plan">' + esc(item.planDate || "—") + "</td>" +
+      '<td class="ir-col-creator">' + esc(item.submitter || "—") + "</td>" +
+      '<td class="ir-col-opt">' + actionBtn + "</td>" +
       "</tr>";
   }
 
@@ -219,14 +229,24 @@
     var detail = $("irDetailView");
     if (!detail || !item) { return; }
     detail.hidden = false;
-    setText("irDetailId", item.displayId || item.id || "—");
+    var idText = item.displayId || item.id || "—";
+    var idChip = (PL && PL.idChipHtml)
+      ? PL.idChipHtml(item.kind || state.kind, idText)
+      : idText;
+    var idEl = $("irDetailId");
+    if (idEl) { idEl.innerHTML = idChip; }
     setText("irDetailTitle", item.title || "—");
     setText("irDetailProject", item.project || "—");
     setText("irDetailSeverity", item.severity || "—");
     var priBox = $("irDetailPriority");
     if (priBox) { priBox.innerHTML = priorityBadge(item.priority); }
     setText("irDetailStatus", item.status || "—");
-    setText("irDetailHandler", item.handler || "—");
+    var detailHandler = String(item.handler || "").trim();
+    if (detailHandler.toLowerCase() === "closed" || !detailHandler) {
+      var isClosed = (item.status === "已关闭" || item.status === "已解决" || item.status === "已取消" || item.statusCode === "closed" || item.statusCode === "resolved");
+      detailHandler = isClosed ? (String(item.submitter || "—").trim()) : "待分配";
+    }
+    setText("irDetailHandler", detailHandler);
     setText("irDetailSubmitter", item.submitter || "—");
     setText("irDetailCreated", item.createdDate || "—");
     setText("irDetailPlan", item.planDate || "—");

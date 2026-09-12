@@ -504,3 +504,7 @@ body.sidebar-collapsed.po-workbench-shell .po-sidebar-collapse i { transform: ro
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0;
 }
+
+/* FontAwesome 图标兼容兜底（解决特定 FA6 别名在部分构建版本中未内嵌的问题） */
+.fa-shield-halved:before { content: "\f3ed" !important; }
+.fa-vial-circle-check:before { content: "\f126" !important; }

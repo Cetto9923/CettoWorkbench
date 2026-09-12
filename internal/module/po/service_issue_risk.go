@@ -104,7 +104,29 @@ func mapIssueRiskRow(row issueRiskRow, kind string) IssueRiskItem {
 			od = 1
 		}
 	}
-	return IssueRiskItem{ID: row.ID, DisplayID: strconv.FormatInt(row.ID, 10), Kind: kind, Title: row.Title, Project: row.ProjectName, Severity: issueRiskSeverity(row.Severity), Priority: priorityLabel(row.Pri), Handler: row.HandlerName, Submitter: row.CreatorName, Status: issueRiskStatusLabel(row.Status), StatusCode: row.Status, CreatedDate: created, PlanDate: plan, Days: days, IsOverdue: overdue, OverdueDays: od, URL: url}
+	handler := row.HandlerName
+	if issueRiskClosed(kind, row.Status) {
+		if r := strings.TrimSpace(row.ResolvedName); r != "" && !strings.EqualFold(r, "closed") {
+			handler = r
+		} else if c := strings.TrimSpace(row.ClosedName); c != "" && !strings.EqualFold(c, "closed") {
+			handler = c
+		} else if h := strings.TrimSpace(row.HandlerName); h != "" && !strings.EqualFold(h, "closed") {
+			handler = h
+		} else if cr := strings.TrimSpace(row.CreatorName); cr != "" {
+			handler = cr
+		} else {
+			handler = "—"
+		}
+	} else {
+		if strings.EqualFold(strings.TrimSpace(handler), "closed") {
+			handler = "待分配"
+		}
+	}
+	if strings.EqualFold(strings.TrimSpace(handler), "closed") {
+		handler = "—"
+	}
+
+	return IssueRiskItem{ID: row.ID, DisplayID: strconv.FormatInt(row.ID, 10), Kind: kind, Title: row.Title, Project: row.ProjectName, Severity: issueRiskSeverity(row.Severity), Priority: priorityLabel(row.Pri), Handler: handler, Submitter: row.CreatorName, Status: issueRiskStatusLabel(row.Status), StatusCode: row.Status, CreatedDate: created, PlanDate: plan, Days: days, IsOverdue: overdue, OverdueDays: od, URL: url}
 }
 func normalizeIssueRiskDate(raw string) string {
 	if len(raw) >= 10 && raw[:10] != "0000-00-00" {

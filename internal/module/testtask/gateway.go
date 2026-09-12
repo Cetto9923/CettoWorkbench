@@ -95,6 +95,7 @@ func createProjectBuild(ctx context.Context, client *zentao.Client, req createPr
 // createTesttaskReq 创建测试单请求参数。
 // 走用户态 DoAs(actor.Account, …)，与 createProjectBuild、linkBuildStories 保持一致。
 type createTesttaskReq struct {
+	Account     string
 	ProjectID   uint
 	ProductID   uint
 	ExecutionID uint
@@ -158,7 +159,7 @@ func createTesttask(ctx context.Context, client *zentao.Client, req createTestta
 	}
 	var out createdTesttask
 	path := fmt.Sprintf("/projects/%d/testtasks", req.ProjectID)
-	if err := client.DoAs(ctx, strings.TrimSpace(req.Owner), http.MethodPost, path, payload, &out); err != nil {
+	if err := client.DoAs(ctx, strings.TrimSpace(req.Account), http.MethodPost, path, payload, &out); err != nil {
 		return nil, err
 	}
 	if out.ID == 0 {

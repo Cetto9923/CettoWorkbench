@@ -4,7 +4,7 @@
  * 职责: 提测办理「按系统拉执行 + 草稿本地缓存 + 提交新版本到禅道」后端交互。
  *       UI / 上下文 / 步骤导航在 testtask.js；本文件通过 window.PoTesttaskCore 复用其状态/工具。
  * 协议: 所有写操作用 appFetch（自动 X-CSRF-Token / X-Requested-With）。
- * 边界: 本阶段只同步版本（POST /demands/:id/testtask/builds）；zt_testtask 不创建（Phase D）。
+ * 写入流程见 testtask-submit.js；此文件负责查询与本地草稿。
  */
 (function ($) {
   "use strict";
@@ -256,130 +256,12 @@
     }
   }
 
-  // ===== 收集提交项（仅 verMode=new 的单位）=====
-
-  function collectNewBuildItems() {
-    var $r = $root();
-    var items = [];
-    $r.find("[data-tt-unit]").each(function () {
-      var unitNo = parseInt($(this).attr("data-tt-unit"), 10) || 0;
-      if (!unitNo) {
-        return;
-      }
-      var isMain = $(this).find(".po-testtask-sys-badge.is-main").length > 0;
-      var $check = $r.find('input[name="sys' + unitNo + 'Enable"]');
-      if (!isMain && $check.length && !$check.is(":checked")) {
-        return;
-      }
-      var $verRadio = $r.find('input[name="ver' + unitNo + 'Mode"]:checked');
-      var mode = $verRadio.length ? $verRadio.val() : "new";
-      if (mode !== "new") {
-        return;
-      }
-      var productId = parseInt($(this).attr("data-tt-unit-product"), 10) || 0;
-      var $exec = $r.find('[data-tt-exec="' + unitNo + '"]');
-      var rawExec = $exec.length ? String($exec.val() || "") : "";
-      var projectId = 0;
-      var executionId = 0;
-      if (rawExec) {
-        var parts = rawExec.split("-");
-        if (parts.length >= 2) {
-          projectId = parseInt(parts[0], 10) || 0;
-          executionId = parseInt(parts[1], 10) || 0;
-        }
-      }
-      var name = ($r.find('[data-tt-ver-name="' + unitNo + '"]').val() || "").trim();
-      var date = ($r.find('[data-tt-ver-date="' + unitNo + '"]').val() || "").trim();
-      var desc = ($r.find('[data-tt-ver-desc="' + unitNo + '"]').val() || "").trim();
-      if (!productId) {
-        return;
-      }
-      items.push({
-        productId: productId,
-        projectId: projectId,
-        executionId: executionId,
-        name: name,
-        date: date,
-        desc: desc
-      });
-    });
-    return items;
-  }
-
-  function handleSubmit() {
-    var id = demandId();
-    if (!id) {
-      toast("缺少需求上下文，无法提交", "error");
-      return;
-    }
-    var items = collectNewBuildItems();
-    if (!items.length) {
-      toast("请至少选择一个系统版本模式为「创建新版本」并补齐必填项", "error");
-      return;
-    }
-    var missing = [];
-    items.forEach(function (it, idx) {
-      var prefix = "第" + (idx + 1) + "个版本";
-      if (!it.executionId) { missing.push(prefix + "：未选择所属执行"); }
-      if (!it.name) { missing.push(prefix + "：版本名称为空"); }
-      if (!it.date) { missing.push(prefix + "：计划上线日期为空"); }
-    });
-    if (missing.length) {
-      toast(missing.join("；"), "error");
-      return;
-    }
-    var $submitBtn = $("#poTesttaskSubmitBtn");
-    var originalHtml = $submitBtn.html();
-    $submitBtn.prop("disabled", true).html('<span class="spinner-border spinner-border-sm me-2"></span>同步中…');
-    var fetchFn = window.appFetch || fetch;
-    fetchFn("/demands/" + encodeURIComponent(id) + "/testtask/builds", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({ builds: items })
-    })
-      .then(function (res) {
-        return res.text().then(function (text) {
-          var body = {};
-          try { body = text ? JSON.parse(text) : {}; } catch (ignore) { body = {}; }
-          return { ok: res.ok, status: res.status, body: body };
-        });
-      })
-      .then(function (wrap) {
-        if (wrap.ok && wrap.body && wrap.body.success) {
-          var data = wrap.body.data || {};
-          var builds = Array.isArray(data.builds) ? data.builds : [];
-          var summary = builds.length
-            ? ("已同步 " + builds.length + " 个版本到禅道：" + builds.map(function (b) { return "#" + b.buildId + " " + b.name; }).join(", "))
-            : "版本已同步禅道";
-          toast(wrap.body.message || summary, "success");
-          try { window.sessionStorage.removeItem(draftKey()); } catch (ignore) {}
-          if (builds.length > 0) {
-            showPostBuildActions(builds);
-          } else if (typeof window.closeShowModals === "function") {
-            window.closeShowModals(["poTesttaskModal", "poTesttaskOverlay"]);
-          }
-          return;
-        }
-        var errs = (wrap.body && Array.isArray(wrap.body.errors)) ? wrap.body.errors : [];
-        var errMsg = (wrap.body && wrap.body.message) ? wrap.body.message : "";
-        var msg = errMsg || (errs.length
-          ? errs.map(function (e) { return e.message; }).join("；")
-          : ("提交失败 (HTTP " + wrap.status + ")"));
-        throw new Error(msg);
-      })
-      .catch(function (err) {
-        toast((err && err.message) ? err.message : "提交失败，请稍后重试", "error");
-      })
-      .then(function () {
-        $submitBtn.prop("disabled", false).html(originalHtml);
-      });
-  }
-
   // ===== 暴露给 testtask.js 的钩子 =====
 
   window.PoTesttaskBuilds_onContextLoaded = function ($r) {
     assignSystemToUnits($r);
     executionsLoaded = false;
+    buildCache = {};
     executionCache = {};
     executionState = {};
     restoreDraftIfAny();
@@ -390,52 +272,12 @@
   };
 
   window.PoTesttaskBuilds_reset = function () {
+    if (window.PoTesttaskSubmit) window.PoTesttaskSubmit.reset();
+    buildCache = {};
     executionCache = {};
     executionState = {};
     executionsLoaded = false;
   };
-
-  function showPostBuildActions(builds) {
-    var $modal = $('#poTesttaskModal');
-    var $actions = $modal.find('.po-testtask-actions');
-    if (!$actions.length) {
-      if (typeof window.closeShowModals === 'function') {
-        window.closeShowModals(['poTesttaskModal', 'poTesttaskOverlay']);
-      }
-      return;
-    }
-    var primary = builds[0];
-    var $summary = $('<div class="po-testtask-post-build-summary"></div>');
-    var $msg = $('<div class="po-testtask-post-build-msg"></div>');
-    $msg.append($('<i class="fas fa-check-circle"></i> '));
-    $msg.append(document.createTextNode(
-      builds.map(function (b) { return '#' + b.buildId + ' ' + b.name; }).join('，') + ' 已写入禅道'
-    ));
-    $summary.append($msg);
-    var $btnRow = $('<div class="po-testtask-post-build-actions"></div>');
-    if (primary && primary.buildId && typeof window.openPoLinkstoryModal === 'function') {
-      var $linkBtn = $('<button type="button" class="action-btn primary" id="poTesttaskLinkstoryBtn"></button>');
-      $linkBtn.append('<i class="fas fa-link"></i> 关联研发需求');
-      $btnRow.append($linkBtn);
-    }
-    var $closeBtn = $('<button type="button" class="action-btn" id="poTesttaskPostBuildCloseBtn">关闭</button>');
-    $btnRow.append($closeBtn);
-    $summary.append($btnRow);
-    $actions.empty().append($summary);
-    $modal.off('click.postbuild').on('click.postbuild', '#poTesttaskLinkstoryBtn', function () {
-      if (typeof window.closeShowModals === 'function') {
-        window.closeShowModals(['poTesttaskModal', 'poTesttaskOverlay']);
-      }
-      if (typeof window.openPoLinkstoryModal === 'function' && primary) {
-        window.openPoLinkstoryModal({ buildId: primary.buildId });
-      }
-    });
-    $modal.off('click.postbuildclose').on('click.postbuildclose', '#poTesttaskPostBuildCloseBtn', function () {
-      if (typeof window.closeShowModals === 'function') {
-        window.closeShowModals(['poTesttaskModal', 'poTesttaskOverlay']);
-      }
-    });
-  }
 
   // ===== 自身绑定 =====
 
@@ -445,7 +287,7 @@
     }
     initialized = true;
     $(document).on("click", "#poTesttaskSaveDraftBtn", handleSaveDraft);
-    $(document).on("click", "#poTesttaskSubmitBtn", handleSubmit);
+
   }
 
   $(bindHandlers);

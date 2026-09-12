@@ -203,7 +203,7 @@ func (r *Repo) FindDemandConvertedStories(ctx context.Context, demandID uint) ([
 		return []storyRow{}, nil
 	}
 	const query = `
-SELECT 
+SELECT
   s.id, s.title, s.pri, s.status, s.stage, s.product,
   COALESCE(p.name, '') AS product_name
 FROM zt_story s

@@ -14,8 +14,8 @@ import (
 )
 
 type fakeTaskStatusGateway struct {
-	called bool
-	params zentao.TaskStatusParams
+	called       bool
+	params       zentao.TaskStatusParams
 	updateCalled bool
 	updateParams zentao.UpdateTaskParams
 }

@@ -108,7 +108,7 @@ func applyDemandStage(q *gorm.DB, account string, filter mysqlStageFilter) *gorm
 		today := time.Now().Format("2006-01-02")
 		// (status=testing AND 今天>=testFinish) OR (status=waitacceptance AND (RD|BRA)=账号)
 		q = q.Where(`(
-			(status = ? AND testFinish IS NOT NULL AND testFinish <= ?)
+			(status = ? AND `+dateSetExpr("testFinish")+` AND testFinish <= ?)
 			OR (status = ? AND (RD = ? OR BRA = ?))
 		)`, "testing", today, "waitacceptance", account, account)
 		return q
@@ -139,11 +139,11 @@ func applyDemandStage(q *gorm.DB, account string, filter mysqlStageFilter) *gorm
 	}
 	if filter.developFinishDue {
 		today := time.Now().Format("2006-01-02")
-		q = q.Where("developFinish IS NOT NULL AND developFinish <= ?", today)
+		q = q.Where(dateSetExpr("developFinish")+" AND developFinish <= ?", today)
 	}
 	if filter.deliverDateDue {
 		today := time.Now().Format("2006-01-02")
-		q = q.Where("deliverDate IS NOT NULL AND deliverDate != '0000-00-00' AND deliverDate <= ?", today)
+		q = q.Where(dateSetExpr("deliverDate")+" AND deliverDate <= ?", today)
 	}
 	if filter.braRequired {
 		q = q.Where("BRA = ?", account)
@@ -153,15 +153,15 @@ func applyDemandStage(q *gorm.DB, account string, filter mysqlStageFilter) *gorm
 		q = q.Where("NOT EXISTS (SELECT 1 FROM zt_demandclarify dc WHERE dc.demand = zt_demand.id)")
 	}
 	if filter.scheduleIncomplete {
-		// 日期未填：NULL / 0000-00-00（DATE 不可与 '' 比较，会触发 Error 1525）；或 QD、mainDevelopers 为空
-		q = q.Where(`(
-			developFinish IS NULL OR developFinish = '0000-00-00'
-			OR testFinish IS NULL OR testFinish = '0000-00-00'
-			OR verifyFinish IS NULL OR verifyFinish = '0000-00-00'
-			OR estimateLaunch IS NULL OR estimateLaunch = '0000-00-00'
-			OR QD = ''
-			OR mainDevelopers = ''
-		)`)
+		// 日期未填：NULL / 零日期；或 QD、mainDevelopers 为空
+		q = q.Where("(" + strings.Join([]string{
+			dateUnsetExpr("developFinish"),
+			dateUnsetExpr("testFinish"),
+			dateUnsetExpr("verifyFinish"),
+			dateUnsetExpr("estimateLaunch"),
+			"QD = ''",
+			"mainDevelopers = ''",
+		}, " OR ") + ")")
 	}
 	return q
 }
@@ -173,11 +173,11 @@ func (r *Repo) scheduleStoryScope(ctx context.Context, account string) *gorm.DB 
 		Where("IFNULL(sourceType, '') != ?", "demandpool").
 		Where("type = ?", "story").
 		Where("assignedTo = ?", account).
-		Where(`(
-			developFinish IS NULL OR developFinish = '0000-00-00'
-			OR testFinish IS NULL OR testFinish = '0000-00-00'
-			OR verifyFinish IS NULL OR verifyFinish = '0000-00-00'
-		)`)
+		Where("(" + strings.Join([]string{
+			dateUnsetExpr("developFinish"),
+			dateUnsetExpr("testFinish"),
+			dateUnsetExpr("verifyFinish"),
+		}, " OR ") + ")")
 }
 
 // deliverStoryScope 交付阶段独立研发需求：非需求池、指派给当前用户、今天 >= deliverDate。
@@ -188,7 +188,7 @@ func (r *Repo) deliverStoryScope(ctx context.Context, account string) *gorm.DB {
 		Where("IFNULL(sourceType, '') != ?", "demandpool").
 		Where("type = ?", "story").
 		Where("assignedTo = ?", account).
-		Where("deliverDate IS NOT NULL AND deliverDate != '0000-00-00' AND deliverDate <= ?", today)
+		Where(dateSetExpr("deliverDate")+" AND deliverDate <= ?", today)
 }
 
 func filterReady(account string, filter mysqlStageFilter) bool {
@@ -276,4 +276,15 @@ func (r *Repo) FindStoriesByIDs(ctx context.Context, ids []int) ([]StoryRow, err
 		return nil, err
 	}
 	return rows, nil
+}
+
+// dateUnsetExpr 判断 DATE 列未填（NULL 或零日期）。
+// 不能写 col = '0000-00-00'：MySQL 8 / OceanBase 在 NO_ZERO_DATE 下会把字面量转 DATE，触发 Error 1525。
+func dateUnsetExpr(col string) string {
+	return col + " IS NULL OR CAST(" + col + " AS CHAR) LIKE '0000-00-00%'"
+}
+
+// dateSetExpr 判断 DATE 列已填有效日期（非 NULL、非零日期）。
+func dateSetExpr(col string) string {
+	return col + " IS NOT NULL AND CAST(" + col + " AS CHAR) NOT LIKE '0000-00-00%'"
 }

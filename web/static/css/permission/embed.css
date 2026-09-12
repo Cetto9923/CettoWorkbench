@@ -1,0 +1,24 @@
+/* =============================================================================
+ * 文件: web/static/css/permission/embed.css
+ * 模块: 权限配置
+ * 职责: PMO 工作台内嵌微调
+ * ============================================================================= */
+
+.permission-page.permission-embed {
+  padding: 0 0 16px;
+}
+
+.permission-page.permission-embed .at-page-head {
+  margin-bottom: 12px;
+}
+
+.permission-page.permission-embed .at-page-head h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+}
+
+.permission-page.permission-embed .at-page-head p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--perm-t3, #94a3b8);
+}

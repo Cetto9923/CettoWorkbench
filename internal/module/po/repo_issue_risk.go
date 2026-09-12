@@ -15,7 +15,14 @@ func (r *Repo) FindIssueRiskList(ctx context.Context, account string, req IssueR
 	if req.Kind == "risk" {
 		a, table, title, plan, severity = "k", "zt_risk AS k", "k.name", "k.plannedClosedDate", "k.impact"
 	}
-	q := r.db.WithContext(ctx).Table(table).Joins(fmt.Sprintf("LEFT JOIN zt_user cu ON cu.account = %s.createdBy AND cu.deleted = '0'", a)).Joins(fmt.Sprintf("LEFT JOIN zt_user au ON au.account = %s.assignedTo AND au.deleted = '0'", a)).Joins(fmt.Sprintf("LEFT JOIN zt_project p ON p.id = CAST(NULLIF(%s.project, '') AS UNSIGNED) AND p.deleted = '0'", a)).Where(fmt.Sprintf("%s.deleted = '0'", a)).Where(fmt.Sprintf("(%s.createdBy = ? OR %s.assignedTo = ?)", a, a), account, account)
+	q := r.db.WithContext(ctx).Table(table).
+		Joins(fmt.Sprintf("LEFT JOIN zt_user cu ON cu.account = %s.createdBy AND cu.deleted = '0'", a)).
+		Joins(fmt.Sprintf("LEFT JOIN zt_user au ON au.account = %s.assignedTo AND au.deleted = '0'", a)).
+		Joins(fmt.Sprintf("LEFT JOIN zt_user ru ON ru.account = %s.resolvedBy AND ru.deleted = '0'", a)).
+		Joins(fmt.Sprintf("LEFT JOIN zt_user clu ON clu.account = %s.closedBy AND clu.deleted = '0'", a)).
+		Joins(fmt.Sprintf("LEFT JOIN zt_project p ON p.id = CAST(NULLIF(%s.project, '') AS UNSIGNED) AND p.deleted = '0'", a)).
+		Where(fmt.Sprintf("%s.deleted = '0'", a)).
+		Where(fmt.Sprintf("(%s.createdBy = ? OR %s.assignedTo = ?)", a, a), account, account)
 	if req.Relation == "myAction" {
 		q = q.Where(fmt.Sprintf("%s.assignedTo = ?", a), account)
 	}
@@ -47,7 +54,7 @@ func (r *Repo) FindIssueRiskList(ctx context.Context, account string, req IssueR
 		return nil, 0, err
 	}
 	rows := []issueRiskRow{}
-	sel := fmt.Sprintf("%s.id AS id, %s AS title, %s.pri AS pri, %s AS severity, %s.status AS status, %s.createdDate AS created_date, %s AS plan_date, %s.createdBy AS created_by, %s.assignedTo AS assigned_to, COALESCE(cu.realname,%s.createdBy) AS creator_name, COALESCE(au.realname,%s.assignedTo) AS handler_name, COALESCE(p.name,'') AS project_name", a, title, a, severity, a, a, plan, a, a, a, a)
+	sel := fmt.Sprintf("%s.id AS id, %s AS title, %s.pri AS pri, %s AS severity, %s.status AS status, %s.createdDate AS created_date, %s AS plan_date, %s.createdBy AS created_by, %s.assignedTo AS assigned_to, COALESCE(cu.realname,%s.createdBy) AS creator_name, COALESCE(au.realname,%s.assignedTo) AS handler_name, COALESCE(ru.realname,%s.resolvedBy,'') AS resolved_name, COALESCE(clu.realname,%s.closedBy,'') AS closed_name, COALESCE(p.name,'') AS project_name", a, title, a, severity, a, a, plan, a, a, a, a, a, a)
 	err := q.Select(sel).Order(fmt.Sprintf("%s.id DESC", a)).Offset((req.Page - 1) * req.PageSize).Limit(req.PageSize).Scan(&rows).Error
 	return rows, total, err
 }

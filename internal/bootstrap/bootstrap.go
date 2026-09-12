@@ -29,6 +29,7 @@ import (
 	"workbench/internal/middleware"
 	"workbench/internal/model"
 
+	"workbench/internal/module/agileteam"
 	"workbench/internal/module/debug"
 	"workbench/internal/module/dept"
 
@@ -181,6 +182,10 @@ func Run() error {
 	profileHandler := profile.NewHandler(profile.NewService(profile.NewRepo(db)), zapLog)
 	buildHandler := build.NewHandler(buildSvc, zapLog)
 
+	agileTeamRepo := agileteam.NewRepo(db, dbReadonlyOrPrimary(dbReadonly, db))
+	agileTeamSvc := agileteam.NewService(agileTeamRepo, zapLog)
+	agileTeamHandler := agileteam.NewHandler(agileTeamSvc, zapLog)
+
 	routeDeps := server.RouteDeps{
 		SessionMgr:          sessionMgr,
 		DB:                  db,
@@ -201,6 +206,7 @@ func Run() error {
 		QueryHandler:        queryHandler,
 		MetricsHandler:      metricsHandler,
 		ProfileHandler:      profileHandler,
+		AgileTeamHandler:    agileTeamHandler,
 		SqlPerfHandler:      sqlPerfHandler,
 	}
 

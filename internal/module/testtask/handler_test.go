@@ -8,31 +8,9 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/gin-gonic/gin"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
 
 	"workbench/internal/model"
 )
-
-func setupMockTesttaskDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock) {
-	t.Helper()
-	sqlDB, mock, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("failed to create sqlmock: %v", err)
-	}
-	t.Cleanup(func() {
-		_ = sqlDB.Close()
-	})
-	dialector := mysql.New(mysql.Config{
-		Conn:                      sqlDB,
-		SkipInitializeWithVersion: true,
-	})
-	db, err := gorm.Open(dialector, &gorm.Config{})
-	if err != nil {
-		t.Fatalf("failed to open gorm: %v", err)
-	}
-	return db, mock
-}
 
 func TestGetContext_Success(t *testing.T) {
 	db, mock := setupMockTesttaskDB(t)
@@ -43,8 +21,7 @@ func TestGetContext_Success(t *testing.T) {
 		WithArgs(63411, 1).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "status", "stage", "BRA", "RD", "QD", "product_name", "estimate_launch"}).
 			AddRow(63411, "测试需求", "developing", "wait", "003030", "771349", "004481", "主系统A", "2026-10-01"))
-	mock.ExpectQuery("(?s)SELECT DISTINCT p\\.id, p\\.name.*FROM zt_demandclarify").WithArgs(63411).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "name"}))
+	mock.ExpectQuery("(?s)SELECT s\\.id, s\\.title.*FROM zt_story s.*WHERE s\\.fromDemand = \\?").WithArgs(63411).WillReturnRows(sqlmock.NewRows([]string{"id", "title", "pri", "status", "stage", "product", "product_name"}))
 	mock.ExpectQuery("(?s)SELECT account, realname.*FROM zt_user").
 		WillReturnRows(sqlmock.NewRows([]string{"account", "realname"}))
 
@@ -95,8 +72,7 @@ func TestHandler_GetContext(t *testing.T) {
 		WithArgs(63411, 1).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "status", "stage", "BRA", "RD", "QD", "product_name", "estimate_launch"}).
 			AddRow(63411, "测试需求", "developing", "wait", "003030", "771349", "004481", "系统2", "2026-10-01"))
-	mock.ExpectQuery("(?s)SELECT DISTINCT p\\.id, p\\.name.*FROM zt_demandclarify").WithArgs(63411).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "name"}))
+	mock.ExpectQuery("(?s)SELECT s\\.id, s\\.title.*FROM zt_story s.*WHERE s\\.fromDemand = \\?").WithArgs(63411).WillReturnRows(sqlmock.NewRows([]string{"id", "title", "pri", "status", "stage", "product", "product_name"}))
 	mock.ExpectQuery("(?s)SELECT account, realname.*FROM zt_user").
 		WillReturnRows(sqlmock.NewRows([]string{"account", "realname"}))
 

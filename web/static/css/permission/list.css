@@ -1,0 +1,514 @@
+/* =============================================================================
+ * 文件: web/static/css/permission/list.css
+ * 模块: 权限配置
+ * 职责: PMO 内嵌「角色成员」页面视觉与列表交互
+ * ============================================================================= */
+
+:root {
+  --perm-card: #fff;
+  --perm-border: #e5e7eb;
+  --perm-border2: #eef1f5;
+  --perm-t1: #111827;
+  --perm-t2: #475569;
+  --perm-t3: #94a3b8;
+  --perm-navy: #1e40af;
+  --perm-blue: #2563eb;
+  --perm-bluebg: #eef3ff;
+  --perm-green: #15803d;
+  --perm-greenbg: #eefaf2;
+  --perm-orange: #b86500;
+  --perm-orangebg: #fff7ed;
+  --perm-danger: #b42318;
+  --perm-dangerbg: #fff3f2;
+}
+
+.permission-page {
+  width: 100%;
+  color: var(--perm-t1);
+}
+
+.permission-page.permission-embed {
+  padding: 0 0 22px;
+}
+
+/* ===== 页头 / Tab ===== */
+.permission-page .at-page-head {
+  margin-bottom: 12px;
+}
+
+.permission-page .at-page-head h2 {
+  margin: 0 0 4px;
+  font-size: 20px;
+  line-height: 1.35;
+}
+
+.permission-page .at-page-head p {
+  margin: 0;
+  color: var(--perm-t3);
+  font-size: 12px;
+}
+
+.permission-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 44px;
+  padding: 0 14px;
+  margin-bottom: 12px;
+  background: #fff;
+  border: 1px solid var(--perm-border);
+  border-radius: 8px;
+}
+
+.permission-tabs button {
+  position: relative;
+  height: 43px;
+  padding: 0 14px;
+  border: 0;
+  background: transparent;
+  color: var(--perm-t2);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.permission-tabs button:hover {
+  color: var(--perm-navy);
+}
+
+.permission-tabs button.active {
+  color: var(--perm-navy);
+  font-weight: 700;
+}
+
+.permission-tabs button.active::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: -1px;
+  height: 2px;
+  background: var(--perm-navy);
+  border-radius: 2px 2px 0 0;
+}
+
+.permission-tab-panel { display: none; }
+.permission-tab-panel.active { display: block; }
+
+/* ===== 8 角色卡：单行、紧凑、只表达角色和人数 ===== */
+.permission-summary {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(108px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.permission-summary .sum-card {
+  position: relative;
+  min-height: 82px;
+  padding: 11px 12px 10px;
+  background: #fff;
+  border: 1px solid var(--perm-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease, transform .15s ease;
+}
+
+.permission-summary .sum-card:hover {
+  border-color: #b8c7ef;
+  box-shadow: 0 4px 12px rgba(30, 64, 175, .06);
+  transform: translateY(-1px);
+}
+
+.permission-summary .sum-card.active {
+  background: #f7f9ff;
+  border-color: #9db3ee;
+  box-shadow: inset 0 0 0 1px rgba(30, 64, 175, .04);
+}
+
+.permission-summary .sum-card.active::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  background: var(--perm-navy);
+  border-radius: 0 3px 3px 0;
+}
+
+.permission-summary .sum-label {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.permission-summary .sum-card.active .sum-label {
+  color: var(--perm-navy);
+}
+
+.permission-summary .sum-value {
+  margin-top: 4px;
+  color: #0f172a;
+  font-size: 22px;
+  line-height: 1.15;
+  font-weight: 760;
+  letter-spacing: -.02em;
+}
+
+.permission-summary .sum-tip {
+  margin-top: 4px;
+  color: var(--perm-t3);
+  font-size: 9px;
+}
+
+/* ===== 成员卡 ===== */
+.permission-card {
+  overflow: hidden;
+  margin-bottom: 12px;
+  background: #fff;
+  border: 1px solid var(--perm-border);
+  border-radius: 8px;
+}
+
+.permission-card .card-hd {
+  min-height: 58px;
+  padding: 11px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--perm-border2);
+}
+
+.permission-card .card-hd > div:first-child {
+  min-width: 0;
+  flex: 1;
+}
+
+.permission-card .card-hd h3 {
+  margin: 0;
+  color: var(--perm-t1);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.permission-card .card-hd p {
+  margin: 3px 0 0;
+  color: var(--perm-t3);
+  font-size: 10px;
+}
+
+.permission-card .card-bd {
+  padding: 10px 14px;
+}
+
+.permission-page .filter-block {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.permission-page .filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.permission-page .field {
+  min-width: 0;
+  width: 220px;
+  height: 32px;
+  padding: 0 10px;
+  color: var(--perm-t2);
+  background: #fff;
+  border: 1px solid var(--perm-border);
+  border-radius: 6px;
+  outline: 0;
+}
+
+.permission-page .field:focus {
+  border-color: #9db3ee;
+  box-shadow: 0 0 0 2px rgba(30,64,175,.08);
+}
+
+.permission-page .btn {
+  height: 32px;
+  padding: 0 12px;
+  color: var(--perm-t2);
+  background: #fff;
+  border: 1px solid var(--perm-border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.permission-page .btn:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.permission-page .btn.primary {
+  color: #fff;
+  background: var(--perm-navy);
+  border-color: var(--perm-navy);
+}
+
+.permission-page .btn.primary:hover:not(:disabled) {
+  background: #17388f;
+  border-color: #17388f;
+}
+
+.permission-page .btn:disabled,
+.permission-page .link:disabled {
+  cursor: not-allowed;
+  opacity: .46;
+}
+
+/* ===== 批量操作条 ===== */
+.member-batch-bar {
+  min-height: 42px;
+  padding: 7px 12px;
+  align-items: center;
+  gap: 8px;
+  color: var(--perm-t2);
+  background: #f5f8ff;
+  border-top: 1px solid #e1e8fb;
+  border-bottom: 1px solid #e1e8fb;
+  font-size: 11px;
+}
+
+.member-batch-bar strong {
+  color: var(--perm-navy);
+  font-size: 12px;
+}
+
+#memberBatchRemove {
+  color: var(--perm-danger);
+  border-color: #efceca;
+}
+
+/* ===== 表格 ===== */
+.permission-page .table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.permission-page table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.permission-page th,
+.permission-page td {
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--perm-border2);
+}
+
+.permission-page th {
+  height: 38px;
+  color: #64748b;
+  background: #fafbfc;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.permission-page td {
+  height: 52px;
+  color: #334155;
+  background: #fff;
+  font-size: 11px;
+}
+
+.permission-page tbody tr:hover td {
+  background: #fcfdff;
+}
+
+.permission-page tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.permission-page input[type="checkbox"] {
+  accent-color: var(--perm-navy);
+}
+
+.permission-page .person {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.permission-page .mini-avatar {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  color: var(--perm-navy);
+  background: #e8eefc;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.permission-page .name {
+  overflow: hidden;
+  color: #1e293b;
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.permission-page .sub {
+  margin-top: 1px;
+  color: var(--perm-t3);
+  font-size: 9px;
+}
+
+.permission-page .tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 21px;
+  padding: 0 7px;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.permission-page .tag.green {
+  color: var(--perm-green);
+  background: var(--perm-greenbg);
+  border-color: #d5f0dc;
+}
+
+.permission-page .tag.blue {
+  color: var(--perm-navy);
+  background: var(--perm-bluebg);
+  border-color: #dbe6ff;
+}
+
+.permission-page .tag.orange {
+  color: var(--perm-orange);
+  background: var(--perm-orangebg);
+  border-color: #f5d8b2;
+}
+
+.permission-page .link {
+  padding: 0;
+  color: var(--perm-navy);
+  background: transparent;
+  border: 0;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.permission-page .link + .link {
+  margin-left: 10px;
+}
+
+.permission-page .link:hover:not(:disabled) {
+  color: #17388f;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.permission-page .empty,
+.permission-page .loading {
+  padding: 34px 16px;
+  color: var(--perm-t3);
+  text-align: center;
+  font-size: 11px;
+}
+
+/* ===== 分页 ===== */
+.permission-page .pager {
+  min-height: 46px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #64748b;
+  background: #fff;
+  border-top: 1px solid var(--perm-border2);
+  font-size: 10px;
+}
+
+.permission-page .pager select {
+  height: 28px;
+  padding: 0 6px;
+  color: var(--perm-t2);
+  background: #fff;
+  border: 1px solid var(--perm-border);
+  border-radius: 5px;
+}
+
+.permission-page .pager .pager-spacer {
+  flex: 1;
+}
+
+.permission-page .pager .page-btn,
+.permission-page .pager .btn {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  font-size: 10px;
+}
+
+.permission-page .pager .page-btn {
+  color: var(--perm-t2);
+  background: #fff;
+  border: 1px solid var(--perm-border);
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.permission-page .pager .page-btn:hover:not(:disabled) {
+  color: var(--perm-navy);
+  border-color: #b7c6ec;
+}
+
+.permission-page .pager .page-btn.active {
+  color: #fff;
+  background: var(--perm-navy);
+  border-color: var(--perm-navy);
+}
+
+.permission-page .pager .page-btn:disabled {
+  cursor: not-allowed;
+  opacity: .42;
+}
+
+.permission-page .pager-cur {
+  min-width: 72px;
+  text-align: center;
+}
+
+/* ===== 操作记录 ===== */
+.permission-page .info {
+  padding: 9px 11px;
+  color: var(--perm-t2);
+  background: #f8fafc;
+  border: 1px solid var(--perm-border2);
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+#auditLogsBody table { min-width: 860px; }
+
+@media (max-width: 1450px) {
+  .permission-summary { grid-template-columns: repeat(4, minmax(120px, 1fr)); }
+}
+
+@media (max-width: 980px) {
+  .permission-summary { grid-template-columns: repeat(2, minmax(140px, 1fr)); }
+  .permission-page .filters .field { width: 180px; }
+}

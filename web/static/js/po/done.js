@@ -352,7 +352,7 @@
           }
         }
 
-        var changeText = (it.beforeStatus && it.afterStatus) ? (statusLabel(it.beforeStatus, it.objectType) + " → " + statusLabel(it.afterStatus, it.objectType)) : "--";
+        var changeText = (it.beforeStatus && it.afterStatus) ? (statusLabel(it.beforeStatus, it.objectType) + " → " + statusLabel(it.afterStatus, it.objectType)) : "未记录状态变化";
 
         var timelineHtml = tl.length ? tl.map(function (x) {
           return (

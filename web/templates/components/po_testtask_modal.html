@@ -9,8 +9,8 @@
 <div class="po-testtask-form" id="poTesttaskFormRoot">
   <h2 class="po-testtask-title">
     <span>提测办理</span>
-    <span class="po-testtask-req-id" data-tt-demand-id>#62658</span>
-    <span data-tt-demand-title>US61832-01-对前期"还款计划变更"需求进行优化</span>
+    <span class="po-testtask-req-id" data-tt-demand-id>—</span>
+    <span data-tt-demand-title>加载中…</span>
     <span class="po-testtask-stage-tag" data-tt-stage>当前阶段：排期</span>
   </h2>
 
@@ -22,7 +22,7 @@
     <div class="po-testtask-kv-grid">
       <div>
         <div class="label">业务需求ID</div>
-        <div data-tt-demand-id>#62658</div>
+        <div data-tt-demand-id>—</div>
       </div>
       <div>
         <div class="label">当前价值流阶段</div>
@@ -30,15 +30,15 @@
       </div>
       <div>
         <div class="label">需求原始状态</div>
-        <div data-tt-raw-status>研发中</div>
+        <div data-tt-raw-status>—</div>
       </div>
       <div>
         <div class="label">主系统</div>
-        <div data-tt-main-system>信贷管理系统</div>
+        <div data-tt-main-system>—</div>
       </div>
       <div>
         <div class="label">预计上线</div>
-        <div data-tt-estimate-launch>2025-09-04</div>
+        <div data-tt-estimate-launch>—</div>
       </div>
       <div>
         <div class="label">业务需求负责人</div>
@@ -46,7 +46,7 @@
       </div>
       <div>
         <div class="label">研发负责人 / 测试负责人</div>
-        <div data-tt-rd-qd-name>孙晓盼(008239)/KJ001735(KJ001735)</div>
+        <div data-tt-rd-qd-name>—</div>
       </div>
       <div>
         <div class="label">提测办理人</div>
@@ -124,29 +124,30 @@
           <div class="po-testtask-grid-4">
             <div class="po-testtask-field">
               <div class="po-testtask-field-label"><span class="req">*</span> 测试单名称</div>
-              <input type="text" value="20260908-US62658-联调总测试单" />
+              <input type="text" id="poTesttaskJointName" data-tt-task-name="joint" placeholder="自动生成或输入联调总测试单名称" />
             </div>
             <div class="po-testtask-field">
               <div class="po-testtask-field-label"><span class="req">*</span> 测试负责人</div>
-              <input type="text" value="KJ001735(KJ001735)" />
+              <input type="text" data-tt-task-owner="joint" placeholder="输入姓名或工号搜索" />
             </div>
             <div class="po-testtask-field">
               <div class="po-testtask-field-label">开始日期</div>
-              <input type="date" value="2026-09-08" />
+              <input type="date" data-tt-task-begin="joint" />
             </div>
             <div class="po-testtask-field">
               <div class="po-testtask-field-label">结束日期</div>
-              <input type="date" value="2025-07-25" />
+              <input type="date" data-tt-task-end="joint" />
             </div>
           </div>
           <div class="po-testtask-field">
             <div class="po-testtask-field-label">测试说明 / 重点 (可选)</div>
-            <textarea></textarea>
+            <textarea data-tt-task-desc="joint"></textarea>
           </div>
         </div>
       </div>
     </div>
-    <div class="po-testtask-meta">本阶段同步系统版本到禅道（POST /demands/:id/testtask/builds）；测试单 zt_testtask 创建列入 Phase D。</div>
+    <div class="po-testtask-meta">第二步保存版本，第三步关联研发需求，第四步创建禅道测试单。</div>
+    <div id="poTesttaskResult" role="status"></div>
     <div class="po-testtask-actions">
       <button type="button" class="action-btn" id="poTesttaskSaveDraftBtn">保存草稿</button>
       <button type="button" class="action-btn primary" id="poTesttaskSubmitBtn">提交提测</button>

@@ -20,7 +20,7 @@
 
   var VALID_QUICKVIEWS = ["all", "unread", "action", "abnormal", "today"];
   var VALID_CATEGORIES = ["all", "business", "approval", "reminder", "collaboration", "risk", "system"];
-  var VALID_OBJECT_TYPES = ["all", "demand", "story", "project", "task", "bug", "testtask", "issue", "risk", "approval", "mail"];
+  var VALID_OBJECT_TYPES = ["all", "demand", "story", "feedback", "project", "task", "bug", "testtask", "issue", "risk", "approval", "mail"];
   var VALID_TIME_RANGES = ["all", "today", "3d", "7d", "30d"];
   var VALID_READ_STATES = ["all", "unread", "read"];
   var VALID_ACTION_STATES = ["all", "required", "none"];
@@ -149,6 +149,14 @@
 
   var currentItemsMap = {};
 
+  function relatedBugLinks(item, limit) {
+    var links = item.relatedObjects || [];
+    return links.slice(0, limit || links.length).map(function (obj) {
+      var id = '<a class="table-id-link" href="' + esc(obj.url) + '" target="_blank" rel="noopener noreferrer">#' + esc(obj.objectId) + '</a>';
+      return window.PersonalList.idChipHtml(obj.objectType, id);
+    }).join(' ');
+  }
+
   function formatNoticeSubject(item) {
     var ot = String(item.objectType || "").trim().toLowerCase();
     var oid = String(item.objectId || "").trim();
@@ -176,6 +184,10 @@
         : '<span class="wb-type wb-type-' + esc(canon) + '">' + esc((pl && pl.OBJECT_TYPE_SHORT_LABELS && pl.OBJECT_TYPE_SHORT_LABELS[canon]) || OBJECT_TYPE_LABELS[canon]) + (idHtml ? "#" + idHtml : "") + "</span>";
     }
 
+    if (item.relatedObjects && item.relatedObjects.length) {
+      badgeHtml = relatedBugLinks(item, 3);
+      if (item.relatedObjects.length > 3) badgeHtml += '<span>等 ' + item.relatedObjects.length + ' 个 Bug</span>';
+    }
     var displayTitle = (canon && OBJECT_TYPE_LABELS[canon] && !isReminderTemplate)
       ? stripSubjectPrefix(rawSubject, canon, oid)
       : rawSubject;
@@ -423,7 +435,7 @@
     var objID = displayObjectID(canon, oid);
     if (objID) { objName += " " + objID; }
     var rawSubject = item.subject || item.title || item.data || "通知详情";
-    var content = item.data || item.summary || item.subject || "无具体内容";
+    var content = item.content || item.data || item.summary || item.subject || "无具体内容";
 
     body.innerHTML = '<div class="notice-detail-section">' +
       '<div class="notice-detail-title">' + esc(rawSubject) + '</div>' +
@@ -433,12 +445,14 @@
       '<span class="notice-meta-label">关联对象</span><span class="notice-meta-value">' + esc(objName) + '</span>' +
       '<span class="notice-meta-label">通知状态</span><span class="notice-meta-value">' + (item.read ? "已读" : "未读") + '</span>' +
       '</div>' +
+      (item.relatedObjects && item.relatedObjects.length ? '<div class="notice-detail-section">关联 Bug（点击编号前往禅道）<div>' + relatedBugLinks(item) + '</div></div>' : '') +
       '<div class="notice-detail-body">' + esc(content) + '</div>' +
       '</div>';
 
     if (openObjBtn) {
       if (item.url) {
         openObjBtn.href = item.url; openObjBtn.hidden = false;
+        openObjBtn.title = '前往禅道查看 ' + objName;
       } else { openObjBtn.hidden = true; }
     }
     mask.hidden = false;

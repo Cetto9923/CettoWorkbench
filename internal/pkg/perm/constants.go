@@ -72,6 +72,11 @@ const (
 
 	// 版本：关联研发需求（登录用户默认可访问；对象级由 Service/禅道校验）
 	BuildLinkStory Permission = "build:linkstory"
+
+	// 敏捷小组治理
+	AgileTeamList    Permission = "agileteam:list"
+	AgileTeamUpdate  Permission = "agileteam:update"
+	AgileTeamConfirm Permission = "agileteam:confirm"
 )
 
 // allPermInfos 必须与上方 const 块中的所有 Permission 常量保持一一对应。
@@ -113,6 +118,9 @@ var allPermInfos = []PermInfo{
 	{Code: PoBoardTaskList, Name: "PO 工作台-任务看板", Module: "po"},
 	{Code: PoDemandReview, Name: "工作台-业需评审", Module: "po"},
 	{Code: BuildLinkStory, Name: "版本-关联研发需求", Module: "build"},
+	{Code: AgileTeamList, Name: "敏捷小组-列表", Module: "agileteam"},
+	{Code: AgileTeamUpdate, Name: "敏捷小组-调整提交", Module: "agileteam"},
+	{Code: AgileTeamConfirm, Name: "敏捷小组-调整确认", Module: "agileteam"},
 }
 
 // systemPerms 是系统内置放行权限，不对外暴露到权限配置 UI。

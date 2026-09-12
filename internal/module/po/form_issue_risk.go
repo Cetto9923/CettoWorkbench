@@ -78,16 +78,18 @@ type IssueRiskListResp struct {
 	Projects     []IssueRiskProject `json:"projects"`
 }
 type issueRiskRow struct {
-	ID          int64  `gorm:"column:id"`
-	Title       string `gorm:"column:title"`
-	Pri         string `gorm:"column:pri"`
-	Severity    string `gorm:"column:severity"`
-	Status      string `gorm:"column:status"`
-	CreatedDate string `gorm:"column:created_date"`
-	PlanDate    string `gorm:"column:plan_date"`
-	CreatedBy   string `gorm:"column:created_by"`
-	AssignedTo  string `gorm:"column:assigned_to"`
-	CreatorName string `gorm:"column:creator_name"`
-	HandlerName string `gorm:"column:handler_name"`
-	ProjectName string `gorm:"column:project_name"`
+	ID           int64  `gorm:"column:id"`
+	Title        string `gorm:"column:title"`
+	Pri          string `gorm:"column:pri"`
+	Severity     string `gorm:"column:severity"`
+	Status       string `gorm:"column:status"`
+	CreatedDate  string `gorm:"column:created_date"`
+	PlanDate     string `gorm:"column:plan_date"`
+	CreatedBy    string `gorm:"column:created_by"`
+	AssignedTo   string `gorm:"column:assigned_to"`
+	CreatorName  string `gorm:"column:creator_name"`
+	HandlerName  string `gorm:"column:handler_name"`
+	ResolvedName string `gorm:"column:resolved_name"`
+	ClosedName   string `gorm:"column:closed_name"`
+	ProjectName  string `gorm:"column:project_name"`
 }

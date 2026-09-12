@@ -35,7 +35,6 @@
 
       {{ if $hasNavChild }}
       {{ if gt $ctx.Depth 0 }}
-      {{/* 嵌套层：可展开父级 */}}
       <div class="nav-group-collapsible" data-depth="{{ $ctx.Depth }}">
         <div class="nav-item-header">
           <a href="{{ if .Path }}{{ .Path }}{{ else }}{{ $firstPath }}{{ end }}"
@@ -65,7 +64,6 @@
         </div>
       </div>
       {{ else }}
-      {{/* 分区直子项：扁平链接；含子级的目录在下一层展开 */}}
       {{ range .Children }}
         {{ if or (eq .Type "directory") (eq .Type "menu") }}
           {{ if .Path }}
@@ -137,12 +135,10 @@
 {{/* ==========================================================================
   文件: web/templates/layout/sidebar.html
   模块: 布局
-  职责: 渲染后台左侧菜单导航，分区标签 + 分隔线样式，支持多级展开/折叠与整体收起
-  全局字段: .CurrentUser, .CSRFToken, .Menus, .AppName, .CurrentPath, .ActiveNavKey
-  页面字段: .CurrentMenus ([]menu.Menu)
+  职责: 渲染左侧菜单。支持PO角色与PMO管理员视图动态切换。
 ========================================================================== */}}
 <nav class="sidebar" id="sidebar">
-  {{ if or (eq .CurrentPath "/home") (eq .CurrentPath "/schedule") (eq .CurrentPath "/todos") (eq .CurrentPath "/done") (eq .CurrentPath "/notice") (eq .CurrentPath "/follow") (eq .CurrentPath "/board/demand") (eq .CurrentPath "/board/task") (eq .CurrentPath "/query") (eq .CurrentPath "/metrics/manage") (eq .CurrentPath "/metrics/radar") (eq .CurrentPath "/issues/risk") }}
+  {{ if or (eq .CurrentPath "/home") (eq .CurrentPath "/schedule") (eq .CurrentPath "/todos") (eq .CurrentPath "/done") (eq .CurrentPath "/notice") (eq .CurrentPath "/follow") (eq .CurrentPath "/board/demand") (eq .CurrentPath "/board/task") (eq .CurrentPath "/query") (eq .CurrentPath "/metrics/manage") (eq .CurrentPath "/metrics/radar") (eq .CurrentPath "/issues/risk") (eq .CurrentPath "/agileteam") (eq .CurrentPath "/pmo") }}
   <div class="po-sidebar-brand">
     <span class="po-brand-logo">研</span>
     <strong class="nav-text">研发工作台</strong>
@@ -156,22 +152,39 @@
       <a href="/done" class="nav-item{{ if eq .CurrentPath "/done" }} active{{ end }}"><i class="nav-icon fas fa-clock-rotate-left"></i><span class="nav-text">我的已办</span></a>
       <a href="/notice" class="nav-item{{ if eq .CurrentPath "/notice" }} active{{ end }}"><i class="nav-icon fas fa-bell"></i><span class="nav-text">通知中心</span>{{ if gt .SidebarBadges.Notice 0 }}<span class="nav-badge nav-badge--danger" data-sidebar-badge="notice" title="未读通知条数">{{ .SidebarBadges.Notice }}</span>{{ end }}</a>
       <a href="/follow" class="nav-item{{ if eq .CurrentPath "/follow" }} active{{ end }}"><i class="nav-icon fas fa-star"></i><span class="nav-text">我的关注</span></a>
+
       <div class="nav-divider" role="separator"></div>
       <div class="nav-section-label">工作区</div>
       <a href="/board/demand" class="nav-item{{ if or (eq .CurrentPath "/board/demand") (eq .CurrentPath "/board/task") }} active{{ end }}"><i class="nav-icon fas fa-table-cells-large"></i><span class="nav-text">工作看板</span></a>
-      <a href="/query" class="nav-item{{ if eq .CurrentPath "/query" }} active{{ end }}"><i class="nav-icon fas fa-briefcase"></i><span class="nav-text">需求查询</span></a>
+      <a href="/query" class="nav-item{{ if eq .CurrentPath "/query" }} active{{ end }}"><i class="nav-icon fas fa-magnifying-glass"></i><span class="nav-text">需求查询</span></a>
       <a href="/schedule" class="nav-item{{ if eq .CurrentPath "/schedule" }} active{{ end }}"><i class="nav-icon fas fa-calendar-check"></i><span class="nav-text">需求排期</span><span class="nav-badge">PO</span></a>
-      <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-vial-circle-check"></i><span class="nav-text">版本跟进</span></button>
+      <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-code-branch"></i><span class="nav-text">版本跟进</span></button>
       <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-clipboard-check"></i><span class="nav-text">验收交付</span></button>
-      <a href="/issues/risk" class="nav-item{{ if eq .CurrentPath "/issues/risk" }} active{{ end }}"><i class="nav-icon fas fa-shield-halved"></i><span class="nav-text">问题风险</span></a>
+      <a href="/issues/risk" class="nav-item{{ if eq .CurrentPath "/issues/risk" }} active{{ end }}"><i class="nav-icon fas fa-shield-alt"></i><span class="nav-text">问题风险</span></a>
+
+      <div class="nav-divider" role="separator"></div>
+      <div class="nav-section-label">团队治理</div>
+      <a href="/agileteam" class="nav-item{{ if or (eq .CurrentPath "/agileteam") (eq .CurrentPath "/pmo") }} active{{ end }}"><i class="nav-icon fas fa-people-group"></i><span class="nav-text">敏捷小组</span></a>
+
       <div class="nav-divider" role="separator"></div>
       <div class="nav-section-label">专项分析</div>
-      <a href="/metrics/manage" class="nav-item{{ if eq .CurrentPath "/metrics/manage" }} active{{ end }}"><i class="nav-icon fas fa-sliders"></i><span class="nav-text">指标管理</span></a>
       <a href="/metrics/radar" class="nav-item{{ if eq .CurrentPath "/metrics/radar" }} active{{ end }}"><i class="nav-icon fas fa-chart-line"></i><span class="nav-text">指标雷达</span></a>
+      <a href="/metrics/manage" class="nav-item{{ if eq .CurrentPath "/metrics/manage" }} active{{ end }}"><i class="nav-icon fas fa-sliders"></i><span class="nav-text">指标管理</span></a>
       <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-triangle-exclamation"></i><span class="nav-text">质效预警</span></button>
+
+      {{ if and .CurrentUser .CurrentUser.IsSuperAdmin }}
+      <div class="nav-divider" role="separator"></div>
+      <div class="nav-section-label">组织管理</div>
+      <a href="/admin/roles" class="nav-item{{ if or (eq .CurrentPath "/admin/roles") (eq .CurrentPath "/admin/users") }} active{{ end }}"><i class="nav-icon fas fa-user-shield"></i><span class="nav-text">后台管理</span></a>
+      {{ end }}
     </div>
   </div>
   {{ else }}
+  <div class="po-sidebar-brand">
+    <span class="po-brand-logo">研</span>
+    <strong class="nav-text">研发工作台</strong>
+    <button type="button" class="po-sidebar-collapse js-sidebar-collapse" id="sidebarToggle" title="收起菜单" aria-label="收起菜单"><i class="fas fa-chevron-left"></i></button>
+  </div>
   <div class="sidebar-body">
     <div class="sidebar-nav">
       {{ if .CurrentMenus }}

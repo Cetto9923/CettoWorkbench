@@ -704,3 +704,8 @@ html[data-theme="dark"] .pw-page-btn.active {
 #demandSection .fd-watch-toggle i { font-size: 14px; }
 #demandSection .fd-title-line { flex-wrap: nowrap; }
 #demandSection .fd-title-sub { display: none; }
+
+/* 统一全站标题布局规范：指标收敛至右上角 header-quick-filters，隐藏主体内冗余大指标卡 */
+.po-follow .pw-summary {
+  display: none !important;
+}

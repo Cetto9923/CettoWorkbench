@@ -22,6 +22,7 @@ type doneActionDBRow struct {
 	ObjectID   int64     `gorm:"column:objectID"`
 	Action     string    `gorm:"column:action"`
 	Actor      string    `gorm:"column:actor"`
+	ActorName  string    `gorm:"column:actor_name"`
 	Date       time.Time `gorm:"column:date"`
 	Extra      string    `gorm:"column:extra"`
 	Comment    string    `gorm:"column:comment"`
@@ -349,8 +350,10 @@ func (r *Repo) FindDoneActionDetail(ctx context.Context, actionID int64) (*DoneD
 	}
 
 	var row doneActionDBRow
-	if err := r.db.WithContext(ctx).Table("zt_action").
-		Where("id = ?", actionID).
+	if err := r.db.WithContext(ctx).Table("zt_action AS a").
+		Select("a.id, a.objectType, a.objectID, a.action, a.actor, a.date, a.extra, a.comment, COALESCE(NULLIF(u.realname, ''), a.actor) AS actor_name").
+		Joins("LEFT JOIN zt_user u ON u.account = a.actor").
+		Where("a.id = ?", actionID).
 		Find(&row).Error; err != nil {
 		return nil, err
 	}
@@ -364,15 +367,24 @@ func (r *Repo) FindDoneActionDetail(ctx context.Context, actionID int64) (*DoneD
 	}
 	objCtx := ctxs[fmt.Sprintf("%s:%d", row.ObjectType, row.ObjectID)]
 	meta := formalDoneActions[row.ObjectType+":"+row.Action]
-	actionLabel := meta.Label
-	if actionLabel == "" {
-		actionLabel = row.Action
+	actionLabel := doneHistoryActionLabel(row.ObjectType, row.Action)
+	var histories []doneHistoryRow
+	if err := r.db.WithContext(ctx).Table("zt_history").Select("action, field, `old`, `new`").Where("action IN ? AND field IN ('status', 'stage')", []int64{actionID}).Order("id ASC").Scan(&histories).Error; err != nil {
+		return nil, err
 	}
-	_ = r.fetchActionHistories(ctx, []int64{actionID})
+	var before, after string
+	for _, h := range histories {
+		if before == "" || h.Field == "status" {
+			before, after = h.Old, h.New
+		}
+	}
 	resultCode, resultText := resolveDoneActionResult(row.Action, row.ObjectType, row.Extra, meta.Result)
 
 	item := DoneAction{
-		ID:              row.ID,
+		ID:             row.ID,
+		SourceActionId: row.ID, SourceSystem: "zentao", ActionName: actionLabel, ActionKey: row.Action,
+		ActorName: FormatAccountName(row.Actor, row.ActorName), ObjectCode: doneObjectCode(row.ObjectType, row.ObjectID), ObjectTitle: objCtx.Title,
+		BeforeStatus: before, AfterStatus: after, CurrentStatus: objCtx.Status, NextOwnerName: objCtx.CurrentOwner,
 		Actor:           row.Actor,
 		Action:          actionLabel,
 		ObjectType:      row.ObjectType,
@@ -388,28 +400,28 @@ func (r *Repo) FindDoneActionDetail(ctx context.Context, actionID int64) (*DoneD
 
 	// 历史时间线（前后 10 条）
 	type tlRow struct {
-		ID     int64     `gorm:"column:id"`
-		Action string    `gorm:"column:action"`
-		Actor  string    `gorm:"column:actor"`
-		Date   time.Time `gorm:"column:date"`
+		ID        int64     `gorm:"column:id"`
+		Action    string    `gorm:"column:action"`
+		Actor     string    `gorm:"column:actor"`
+		ActorName string    `gorm:"column:actor_name"`
+		Date      time.Time `gorm:"column:date"`
 	}
 	var nearby []tlRow
-	_ = r.db.WithContext(ctx).Table("zt_action").
-		Select("id, action, actor, date").
-		Where("objectType = ? AND objectID = ?", row.ObjectType, row.ObjectID).
-		Order("id DESC").
-		Scan(&nearby).Error
+	err = r.db.WithContext(ctx).Table("zt_action AS a").
+		Select("a.id, a.action, a.actor, a.date, COALESCE(NULLIF(u.realname, ''), a.actor) AS actor_name").
+		Joins("LEFT JOIN zt_user u ON u.account = a.actor").
+		Where("a.objectType = ? AND a.objectID = ? AND a.id <= ?", row.ObjectType, row.ObjectID, actionID).
+		Order("a.id DESC").Limit(20).Scan(&nearby).Error
+	if err != nil {
+		return nil, err
+	}
 
 	timeline := make([]DoneDetailTimeline, 0, len(nearby))
 	for _, n := range nearby {
-		nMeta := formalDoneActions[row.ObjectType+":"+n.Action]
-		lbl := nMeta.Label
-		if lbl == "" {
-			lbl = n.Action
-		}
+		lbl := doneHistoryActionLabel(row.ObjectType, n.Action)
 		timeline = append(timeline, DoneDetailTimeline{
 			ActionName: lbl,
-			ActorName:  n.Actor,
+			ActorName:  FormatAccountName(n.Actor, n.ActorName),
 			OccurredAt: n.Date.Format("2006-01-02 15:04:05"),
 			IsCurrent:  n.ID == row.ID,
 		})

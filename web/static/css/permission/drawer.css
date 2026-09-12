@@ -1,0 +1,307 @@
+/* =============================================================================
+ * 文件: web/static/css/permission/drawer.css
+ * 模块: 权限配置
+ * 职责: 页面权限 / 添加成员 Drawer
+ * ============================================================================= */
+
+#permissionDrawer.drawer-mask,
+#permAddDrawer.drawer-mask,
+.permission-page .drawer-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: none;
+  background: rgba(15, 23, 42, .38);
+  backdrop-filter: blur(1px);
+}
+
+#permissionDrawer.drawer-mask.show,
+#permAddDrawer.drawer-mask.show,
+.permission-page .drawer-mask.show {
+  display: block;
+}
+
+#permissionDrawer .drawer,
+#permAddDrawer .drawer,
+.permission-page .drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 520px;
+  max-width: 94vw;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  box-shadow: -18px 0 48px rgba(15, 23, 42, .15);
+  animation: permDrawerIn .18s ease-out;
+}
+
+@keyframes permDrawerIn {
+  from { transform: translateX(16px); opacity: .72; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+#permissionDrawer .drawer-hd,
+#permAddDrawer .drawer-hd,
+.permission-page .drawer-hd {
+  min-height: 68px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--perm-border, #e5e7eb);
+}
+
+#permissionDrawer .drawer-hd h3,
+#permAddDrawer .drawer-hd h3,
+.permission-page .drawer-hd h3 {
+  margin: 0;
+  color: #111827;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+#permissionDrawer .drawer-hd .sub,
+#permAddDrawer .drawer-hd .sub,
+.permission-page .drawer-hd .sub {
+  margin-top: 5px;
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+#permissionDrawer .drawer-bd,
+#permAddDrawer .drawer-bd,
+.permission-page .drawer-bd {
+  flex: 1;
+  overflow: auto;
+  padding: 16px 18px 24px;
+}
+
+#permissionDrawer .drawer-ft,
+#permAddDrawer .drawer-ft,
+.permission-page .drawer-ft {
+  min-height: 58px;
+  padding: 11px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  background: #fff;
+  border-top: 1px solid var(--perm-border, #e5e7eb);
+}
+
+#permissionDrawer .drawer .close,
+#permAddDrawer .drawer .close,
+.permission-page .drawer .close {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  color: #64748b;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+#permissionDrawer .drawer .close:hover,
+#permAddDrawer .drawer .close:hover {
+  background: #f1f5f9;
+}
+
+#permissionDrawer .loading,
+#permAddDrawer .loading {
+  padding: 44px 16px;
+  color: #94a3b8;
+  text-align: center;
+  font-size: 12px;
+}
+
+/* ===== 页面权限：一页一行，checkbox 只表达显示 / 隐藏 ===== */
+#permissionDrawer .page-access-note {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  color: #475569;
+  background: #f8fafc;
+  border: 1px solid #eef1f5;
+  border-radius: 7px;
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+#permissionDrawer .page-access-list {
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+#permissionDrawer .page-access-row {
+  min-height: 54px;
+  padding: 9px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #eef1f5;
+  transition: background .14s ease;
+}
+
+#permissionDrawer .page-access-row:last-child {
+  border-bottom: 0;
+}
+
+#permissionDrawer .page-access-row:hover {
+  background: #fbfcff;
+}
+
+#permissionDrawer .page-access-row.is-locked {
+  cursor: default;
+  background: #fafbfc;
+}
+
+#permissionDrawer .page-access-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+#permissionDrawer .page-access-name {
+  color: #1e293b;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+#permissionDrawer .page-access-desc {
+  margin-top: 2px;
+  color: #94a3b8;
+  font-size: 9px;
+}
+
+#permissionDrawer .page-access-meta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 7px;
+  color: #1e40af;
+  background: #eef3ff;
+  border: 1px solid #dbe6ff;
+  border-radius: 999px;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+#permissionDrawer .page-access-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  accent-color: #1e40af;
+}
+
+#permissionDrawer .page-access-row input[type="checkbox"]:disabled {
+  opacity: .58;
+}
+
+/* 兼容旧 page-list 输出，避免缓存期间出现“文字挤成一行” */
+#permissionDrawer .page-list {
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+#permissionDrawer .page-row {
+  min-height: 52px;
+  padding: 9px 12px;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #eef1f5;
+}
+
+#permissionDrawer .page-row:last-child { border-bottom: 0; }
+#permissionDrawer .page-row .page-name { font-size: 12px; font-weight: 650; color: #1e293b; }
+#permissionDrawer .page-row .page-code { display: none; }
+
+/* ===== 添加成员 ===== */
+#permAddDrawer .info,
+#permissionDrawer .info {
+  padding: 10px 12px;
+  color: #475569;
+  background: #f8fafc;
+  border: 1px solid #eef1f5;
+  border-radius: 7px;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+#permAddPickerHost {
+  margin-bottom: 14px;
+}
+
+#permAddDrawer .scope-card {
+  margin-top: 14px;
+  padding: 12px;
+  background: #fafbfc;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+#permAddDrawer .scope-title {
+  margin-bottom: 9px;
+  color: #334155;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+#permAddDrawer .scope-type {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 10px;
+  color: #475569;
+  font-size: 11px;
+}
+
+#permAddDrawer .scope-type label,
+#permAddDrawer .scope-children {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+#permAddDrawer .scope-picker-host {
+  margin-bottom: 10px;
+}
+
+#permAddDrawer input[type="checkbox"],
+#permAddDrawer input[type="radio"] {
+  accent-color: #1e40af;
+}
+
+/* ===== 旧详情兼容，防止历史缓存把布局打散 ===== */
+#permissionDrawer .role-line {
+  display: grid;
+  grid-template-columns: 90px 1fr 100px;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 0;
+  border-bottom: 1px solid #eef1f5;
+}
+
+#permissionDrawer .detail-title {
+  margin: 0 0 7px;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+#permissionDrawer .detail-section { margin-bottom: 16px; }
+
+@media (max-width: 760px) {
+  #permissionDrawer .drawer,
+  #permAddDrawer .drawer { width: 100%; max-width: 100vw; }
+}
