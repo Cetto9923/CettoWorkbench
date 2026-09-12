@@ -2,7 +2,7 @@
 // 文件: internal/module/kanban/handler.go
 // 模块: 工作看板
 // 类型: readonly
-// 职责: 需求/任务看板静态页与需求树（业需+研需）JSON HTTP 请求。
+// 职责: 需求/任务看板静态页与业需/任务 JSON HTTP 请求。
 // 依赖: internal/middleware
 //       internal/pkg/errorx
 //       internal/pkg/perm
@@ -44,6 +44,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.GET("/story", middleware.RequirePerm(perm.KanbanStory), h.Story)
 	g.GET("/story/demands", middleware.RequirePerm(perm.KanbanStory), h.Demands)
 	g.GET("/task", middleware.RequirePerm(perm.KanbanStory), h.Task)
+	g.GET("/task/items", middleware.RequirePerm(perm.KanbanStory), h.Tasks)
 }
 
 // Story 渲染需求看板静态页。
@@ -120,5 +121,42 @@ func (h *Handler) Demands(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"items":   resp.Items,
+	})
+}
+
+// Tasks 按选中负责人返回任务看板三列（JSON）。
+func (h *Handler) Tasks(c *gin.Context) {
+	var req ListTasksReq
+	_ = c.ShouldBindQuery(&req)
+
+	resp, err := h.svc.ListTasks(c.Request.Context(), middleware.CurrentUser(c), req)
+	if err != nil {
+		if biz, ok := errorx.IsBizError(err); ok {
+			status := http.StatusBadRequest
+			switch biz.Code {
+			case errorx.ErrCodeForbidden:
+				status = http.StatusForbidden
+			case errorx.ErrCodeInvalidParam:
+				status = http.StatusBadRequest
+			}
+			c.JSON(status, gin.H{"success": false, "message": biz.Msg})
+			return
+		}
+		if h.logger != nil {
+			h.logger.Error("list kanban tasks failed", zap.Error(err))
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "获取任务失败",
+		})
+		return
+	}
+	if resp.Columns == nil {
+		resp.Columns = newEmptyTaskColumns()
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"columns": resp.Columns,
+		"summary": resp.Summary,
 	})
 }

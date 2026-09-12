@@ -1,7 +1,7 @@
 {{/* ==========================================================================
 文件: web/templates/kanban/task.html
 模块: 工作看板
-职责: 任务看板静态壳；三列任务板空态，小组/成员由 task.js 切换。
+职责: 任务看板静态壳；三列任务由 task.js ajax 填充，小组/成员切换驱动刷新。
 全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
 页面字段: .Title (string), .PageTitle (string), .BaseUrl (string), .IssueCreateURL (string), .TaskCreateURL (string), .Teamgroups ([]module/kanban.TeamgroupItem)
 ========================================================================== */}}
@@ -18,8 +18,8 @@
       <a href="/kanban/task" class="active" role="tab" aria-selected="true">任务看板</a>
     </div>
     <div class="stats" aria-label="任务统计">
-      <button type="button" class="stat orange" disabled>阻塞 <strong>—</strong></button>
-      <button type="button" class="stat red" disabled>超期 <strong>—</strong></button>
+      <button type="button" class="stat orange" disabled>阻塞 <strong data-stat="blocked">0</strong></button>
+      <button type="button" class="stat red" disabled>超期 <strong data-stat="overdue">0</strong></button>
     </div>
     <div class="filter-stack">
       <span class="filter-label">敏捷小组</span>

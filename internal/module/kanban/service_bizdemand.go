@@ -103,7 +103,7 @@ func resolveDemandAccount(actorAccount, reqAccount string, allowed map[string]st
 		return acc, nil
 	}
 	if _, ok := allowed[acc]; !ok {
-		return "", errorx.New(errorx.ErrCodeForbidden, "无权查看该成员需求")
+		return "", errorx.New(errorx.ErrCodeForbidden, "无权查看该成员")
 	}
 	return acc, nil
 }

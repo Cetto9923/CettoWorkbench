@@ -2,7 +2,7 @@
 // 文件: internal/module/kanban/form.go
 // 模块: 工作看板
 // 类型: readonly
-// 职责: 需求看板页展示用结构体。
+// 职责: 需求/任务看板页展示与查询用结构体。
 // 依赖: 无
 // =============================================================================
 
@@ -50,4 +50,45 @@ type ListBizDemandsResp struct {
 // ListDemandsReq 需求树查询（按选中负责人账号过滤价值流）。
 type ListDemandsReq struct {
 	Account string `form:"account"`
+}
+
+// ListTasksReq 任务看板查询（按选中负责人账号过滤）。
+type ListTasksReq struct {
+	Account string `form:"account"`
+}
+
+// TaskItem 任务看板单卡。
+type TaskItem struct {
+	ID           int64  `json:"id"`
+	DisplayID    string `json:"displayId"`
+	Title        string `json:"title"`
+	Status       string `json:"status"`
+	Type         string `json:"type"`
+	StoryID      int64  `json:"storyId"`
+	StoryTitle   string `json:"storyTitle"`
+	Owner        string `json:"owner"`
+	OwnerAccount string `json:"ownerAccount"`
+	Deadline     string `json:"deadline"`
+	Blocked      bool   `json:"blocked"`
+	Overdue      bool   `json:"overdue"`
+	URL          string `json:"url"`
+}
+
+// TaskColumn 任务看板三列之一。
+type TaskColumn struct {
+	Key   string     `json:"key"`
+	Name  string     `json:"name"`
+	Items []TaskItem `json:"items"`
+}
+
+// TaskSummary 页头阻塞/超期计数。
+type TaskSummary struct {
+	Blocked int64 `json:"blocked"`
+	Overdue int64 `json:"overdue"`
+}
+
+// ListTasksResp 任务看板三列响应。
+type ListTasksResp struct {
+	Columns []TaskColumn `json:"columns"`
+	Summary TaskSummary  `json:"summary"`
 }

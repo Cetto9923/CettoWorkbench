@@ -2,7 +2,7 @@
 // 文件: internal/module/kanban/service.go
 // 模块: 工作看板
 // 类型: readonly
-// 职责: 需求看板业务编排（所属小组 + 成员排序展示）。
+// 职责: 看板业务编排（所属小组 + 成员排序展示）。
 // 依赖: internal/model
 //       internal/module/po
 //       internal/module/user
