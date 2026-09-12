@@ -157,7 +157,7 @@ func (h *Handler) CreateBuilds(c *gin.Context) {
 	})
 }
 
-// CreateTesttasks POST /demands/:id/testtask/tasks — 将非联调测试单同步到禅道。
+// CreateTesttasks POST /demands/:id/testtask/tasks — 将测试单同步到禅道（含联调总单）。
 func (h *Handler) CreateTesttasks(c *gin.Context) {
 	id, err := parseDemandID(c.Param("id"))
 	if err != nil || id == 0 {

@@ -28,7 +28,6 @@
     var multiselectClearBtn = dropdown.querySelector(
       "[data-form-multiselect-clear]"
     );
-    var checkboxes = dropdown.querySelectorAll(".form-multiselect-checkbox");
     if (!tagsWrap || !filterInput) {
       return;
     }
@@ -38,8 +37,14 @@
       "请选择"
     ).trim();
 
+    // 每次现场查询：提测等场景会在 init 后异步重建 checkbox 列表。
+    function listCheckboxes() {
+      return dropdown.querySelectorAll(".form-multiselect-checkbox");
+    }
+
     function getSelectedRoles() {
       var selected = [];
+      var checkboxes = listCheckboxes();
       for (var i = 0; i < checkboxes.length; i++) {
         if (!checkboxes[i].checked) {
           continue;
@@ -115,9 +120,17 @@
       filterRoleOptions(filterInput.value || "");
     }
 
-    for (var i = 0; i < checkboxes.length; i++) {
-      checkboxes[i].addEventListener("change", syncRoleInputState);
-    }
+    // 事件委托：异步追加的 option checkbox 也能刷新标签。
+    dropdown.addEventListener("change", function (event) {
+      var t = event.target;
+      if (
+        t &&
+        t.classList &&
+        t.classList.contains("form-multiselect-checkbox")
+      ) {
+        syncRoleInputState();
+      }
+    });
 
     tagsWrap.addEventListener("click", function (event) {
       var target = event.target;
@@ -129,6 +142,7 @@
         return;
       }
       var value = removeEl.getAttribute("data-role-remove");
+      var checkboxes = listCheckboxes();
       for (var i = 0; i < checkboxes.length; i++) {
         if (checkboxes[i].value === value) {
           checkboxes[i].checked = false;
@@ -186,6 +200,7 @@
         event.preventDefault();
         event.stopPropagation();
         if (getSelectedRoles().length > 0) {
+          var checkboxes = listCheckboxes();
           for (var i = 0; i < checkboxes.length; i++) {
             checkboxes[i].checked = false;
           }

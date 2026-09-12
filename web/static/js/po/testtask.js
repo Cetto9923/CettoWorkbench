@@ -217,6 +217,15 @@
     if (!$r.length || typeof window.initFormComponents !== "function") {
       return;
     }
+    // 选项异步重建后仍需可再次挂载；已 init 的节点用克隆丢掉旧监听再初始化。
+    $r.find("div.dropdown.form-multiselect[data-role-dropdown]").each(function () {
+      if (this.dataset.formMultiselectInit !== "1") {
+        return;
+      }
+      var clone = this.cloneNode(true);
+      clone.removeAttribute("data-form-multiselect-init");
+      this.parentNode.replaceChild(clone, this);
+    });
     window.initFormComponents($r[0]);
   }
 
@@ -421,17 +430,104 @@
     });
   }
 
-  // 校验第 4 步非联调测试单；返回 { ok, joint, tasks }。
+  // 校验第 4 步测试单；返回 { ok, payload }。
   function validateAndCollectTesttasks($r) {
     var joint = readJointFlag($r);
     if (joint === 1) {
-      showToast("联调测试单暂不支持，请选择否", "error");
-      return { ok: false, joint: joint, tasks: [] };
+      return collectJointTesttask($r);
     }
+    return collectIndependentTesttasks($r);
+  }
+
+  function collectJointTesttask($r) {
     var ids = checkedSystemIds($r);
     if (!ids.length) {
       showToast("请至少选择一个系统", "error");
-      return { ok: false, joint: joint, tasks: [] };
+      return { ok: false, payload: null };
+    }
+    var products = [];
+    var builds = [];
+    for (var i = 0; i < ids.length; i++) {
+      var unit = ids[i];
+      var targets = collectLinkTargetsForUnit($r, unit);
+      var buildIds = [];
+      for (var j = 0; j < targets.length; j++) {
+        var bid = parseInt(String(targets[j].buildId || ""), 10);
+        if (bid > 0) {
+          buildIds.push(bid);
+        }
+      }
+      if (!buildIds.length) {
+        showToast("请先完成系统版本配置", "error");
+        return { ok: false, payload: null };
+      }
+      var productId = parseInt(unit, 10);
+      if (!productId) {
+        showToast("产品无效", "error");
+        return { ok: false, payload: null };
+      }
+      products.push(productId);
+      builds.push(buildIds);
+    }
+    var name = String($r.find("[data-tt-joint-name]").val() || "").trim();
+    if (!name) {
+      showToast("请填写测试单名称", "error");
+      return { ok: false, payload: null };
+    }
+    var owner = String($r.find("[data-tt-joint-qd]").val() || "").trim();
+    if (!owner) {
+      showToast("请选择测试负责人", "error");
+      return { ok: false, payload: null };
+    }
+    var begin = String($r.find("[data-tt-joint-start]").val() || "").trim();
+    if (!begin) {
+      showToast("请填写开始日期", "error");
+      return { ok: false, payload: null };
+    }
+    var end = String($r.find("[data-tt-joint-end]").val() || "").trim();
+    if (!end) {
+      showToast("请填写结束日期", "error");
+      return { ok: false, payload: null };
+    }
+    if (end < begin) {
+      showToast("结束日期不能早于开始日期", "error");
+      return { ok: false, payload: null };
+    }
+    var type = String($r.find("[data-tt-joint-type]").val() || "").trim();
+    if (!type) {
+      showToast("请选择测试类型", "error");
+      return { ok: false, payload: null };
+    }
+    var priRaw = String($r.find("[data-tt-joint-pri]").val() || "").trim();
+    var pri = parseInt(priRaw, 10);
+    if (!(pri >= 1 && pri <= 4)) {
+      showToast("请选择优先级", "error");
+      return { ok: false, payload: null };
+    }
+    var desc = String($r.find("[data-tt-joint-desc]").val() || "").trim();
+    return {
+      ok: true,
+      payload: {
+        joint: 1,
+        name: name,
+        begin: begin,
+        end: end,
+        owner: owner,
+        members: [owner],
+        type: type,
+        pri: pri,
+        desc: desc,
+        products: products,
+        builds: builds
+      }
+    };
+  }
+
+  function collectIndependentTesttasks($r) {
+    var ids = checkedSystemIds($r);
+    if (!ids.length) {
+      showToast("请至少选择一个系统", "error");
+      return { ok: false, payload: null };
     }
     var tasks = [];
     for (var i = 0; i < ids.length; i++) {
@@ -439,47 +535,47 @@
       var $unit = $r.find('[data-tt-test-unit="' + unit + '"]');
       if (!$unit.length) {
         showToast("测试单配置不完整", "error");
-        return { ok: false, joint: joint, tasks: [] };
+        return { ok: false, payload: null };
       }
       var targets = collectLinkTargetsForUnit($r, unit);
       if (!targets.length || !targets[0].buildId) {
         showToast("请先完成系统版本配置", "error");
-        return { ok: false, joint: joint, tasks: [] };
+        return { ok: false, payload: null };
       }
       var name = String($unit.find('[data-tt-fill="tt-name"]').val() || "").trim();
       if (!name) {
         showToast("请填写测试单名称", "error");
-        return { ok: false, joint: joint, tasks: [] };
+        return { ok: false, payload: null };
       }
       var owner = String($unit.find('[data-tt-qd="' + unit + '"]').val() || "").trim();
       if (!owner) {
         showToast("请选择测试负责人", "error");
-        return { ok: false, joint: joint, tasks: [] };
+        return { ok: false, payload: null };
       }
       var begin = String($unit.find('[data-tt-fill="start"]').val() || "").trim();
       if (!begin) {
         showToast("请填写开始日期", "error");
-        return { ok: false, joint: joint, tasks: [] };
+        return { ok: false, payload: null };
       }
       var end = String($unit.find('[data-tt-fill="end"]').val() || "").trim();
       if (!end) {
         showToast("请填写结束日期", "error");
-        return { ok: false, joint: joint, tasks: [] };
+        return { ok: false, payload: null };
       }
       if (end < begin) {
         showToast("结束日期不能早于开始日期", "error");
-        return { ok: false, joint: joint, tasks: [] };
+        return { ok: false, payload: null };
       }
       var type = String($unit.find('[data-tt-type="' + unit + '"]').val() || "").trim();
       if (!type) {
         showToast("请选择测试类型", "error");
-        return { ok: false, joint: joint, tasks: [] };
+        return { ok: false, payload: null };
       }
       var priRaw = String($unit.find('[data-tt-pri="' + unit + '"]').val() || "").trim();
       var pri = parseInt(priRaw, 10);
       if (!(pri >= 1 && pri <= 4)) {
         showToast("请选择优先级", "error");
-        return { ok: false, joint: joint, tasks: [] };
+        return { ok: false, payload: null };
       }
       var desc = String($unit.find('[data-tt-fill="desc"]').val() || "").trim();
       tasks.push({
@@ -494,14 +590,11 @@
         desc: desc
       });
     }
-    return { ok: true, joint: joint, tasks: tasks };
+    return { ok: true, payload: { joint: 0, tasks: tasks } };
   }
 
-  function saveTesttasks(demandId, joint, tasks) {
-    return postJSON("/demands/" + encodeURIComponent(demandId) + "/testtask/tasks", {
-      joint: joint,
-      tasks: tasks
-    }).then(function (wrap) {
+  function saveTesttasks(demandId, payload) {
+    return postJSON("/demands/" + encodeURIComponent(demandId) + "/testtask/tasks", payload || {}).then(function (wrap) {
       if (wrap.ok && wrap.data && wrap.data.success) {
         showToast(String(wrap.data.message || "测试单保存成功"), "success");
         return true;
@@ -530,7 +623,7 @@
       return;
     }
     $btn.prop("disabled", true);
-    saveTesttasks(demandId, collected.joint, collected.tasks).then(function (ok) {
+    saveTesttasks(demandId, collected.payload).then(function (ok) {
       $btn.prop("disabled", false);
       if (ok) {
         closeModal();

@@ -156,10 +156,21 @@ type CreateTesttaskItem struct {
 	Desc      string `json:"desc"`
 }
 
-// CreateTesttasksReq 第 4 步保存测试单（当前仅支持非联调）。
+// CreateTesttasksReq 第 4 步保存测试单。
+// Joint=0 走 Tasks；Joint=1 走联调总单（products 与 builds 按下标对齐）。
 type CreateTesttasksReq struct {
-	Joint int                  `json:"joint"`
-	Tasks []CreateTesttaskItem `json:"tasks"`
+	Joint    int                  `json:"joint"`
+	Tasks    []CreateTesttaskItem `json:"tasks"`
+	Name     string               `json:"name"`
+	Begin    string               `json:"begin"`
+	End      string               `json:"end"`
+	Owner    string               `json:"owner"`
+	Members  []string             `json:"members"`
+	Type     string               `json:"type"`
+	Pri      int                  `json:"pri"`
+	Desc     string               `json:"desc"`
+	Products []uint               `json:"products"`
+	Builds   [][]uint             `json:"builds"`
 }
 
 // CreateTesttaskResult 单个测试单创建结果。
@@ -175,21 +186,24 @@ type CreateTesttasksResp struct {
 	Tasks []CreateTesttaskResult `json:"tasks"`
 }
 
-// Validate 校验创建测试单请求（联调暂不支持）。
+// Validate 校验创建测试单请求。
 func (r *CreateTesttasksReq) Validate() []FieldError {
-	var errs []FieldError
 	if r == nil {
-		errs = append(errs, FieldError{Field: "_form", Message: "请至少配置一个测试单"})
-		return errs
+		return []FieldError{{Field: "_form", Message: "请至少配置一个测试单"}}
 	}
 	if r.Joint == 1 {
-		errs = append(errs, FieldError{Field: "joint", Message: "联调测试单暂不支持，请选择否"})
+		return validateJointTesttask(*r)
 	}
-	if len(r.Tasks) == 0 {
+	return validateIndependentTesttasks(r.Tasks)
+}
+
+func validateIndependentTesttasks(tasks []CreateTesttaskItem) []FieldError {
+	var errs []FieldError
+	if len(tasks) == 0 {
 		errs = append(errs, FieldError{Field: "_form", Message: "请至少配置一个测试单"})
 		return errs
 	}
-	for i, item := range r.Tasks {
+	for i, item := range tasks {
 		prefix := "tasks." + strconv.Itoa(i)
 		if item.ProductID == 0 {
 			errs = append(errs, FieldError{Field: prefix + ".productId", Message: "产品无效"})
@@ -197,33 +211,67 @@ func (r *CreateTesttasksReq) Validate() []FieldError {
 		if item.BuildID == 0 {
 			errs = append(errs, FieldError{Field: prefix + ".buildId", Message: "所属版本不能为空"})
 		}
-		if strings.TrimSpace(item.Name) == "" {
-			errs = append(errs, FieldError{Field: prefix + ".name", Message: "测试单名称不能为空"})
+		errs = appendTesttaskFieldErrs(errs, prefix+".", item.Name, item.Begin, item.End, item.Owner, item.Type, item.Pri)
+	}
+	return errs
+}
+
+func validateJointTesttask(r CreateTesttasksReq) []FieldError {
+	var errs []FieldError
+	errs = appendTesttaskFieldErrs(errs, "", r.Name, r.Begin, r.End, r.Owner, r.Type, r.Pri)
+	if len(r.Products) == 0 {
+		errs = append(errs, FieldError{Field: "products", Message: "请至少选择一个系统"})
+		return errs
+	}
+	if len(r.Builds) != len(r.Products) {
+		errs = append(errs, FieldError{Field: "builds", Message: "各系统版本不能为空"})
+		return errs
+	}
+	for i, productID := range r.Products {
+		prefix := "products." + strconv.Itoa(i)
+		if productID == 0 {
+			errs = append(errs, FieldError{Field: prefix, Message: "产品无效"})
 		}
-		begin := strings.TrimSpace(item.Begin)
-		if begin == "" {
-			errs = append(errs, FieldError{Field: prefix + ".begin", Message: "开始日期不能为空"})
-		} else if !isYMD(begin) {
-			errs = append(errs, FieldError{Field: prefix + ".begin", Message: "开始日期格式应为 YYYY-MM-DD"})
+		if len(r.Builds[i]) == 0 {
+			errs = append(errs, FieldError{Field: "builds." + strconv.Itoa(i), Message: "所属版本不能为空"})
+			continue
 		}
-		end := strings.TrimSpace(item.End)
-		if end == "" {
-			errs = append(errs, FieldError{Field: prefix + ".end", Message: "结束日期不能为空"})
-		} else if !isYMD(end) {
-			errs = append(errs, FieldError{Field: prefix + ".end", Message: "结束日期格式应为 YYYY-MM-DD"})
+		for j, buildID := range r.Builds[i] {
+			if buildID == 0 {
+				errs = append(errs, FieldError{Field: "builds." + strconv.Itoa(i) + "." + strconv.Itoa(j), Message: "所属版本不能为空"})
+			}
 		}
-		if begin != "" && end != "" && isYMD(begin) && isYMD(end) && end < begin {
-			errs = append(errs, FieldError{Field: prefix + ".end", Message: "结束日期不能早于开始日期"})
-		}
-		if strings.TrimSpace(item.Owner) == "" {
-			errs = append(errs, FieldError{Field: prefix + ".owner", Message: "测试负责人不能为空"})
-		}
-		if strings.TrimSpace(item.Type) == "" {
-			errs = append(errs, FieldError{Field: prefix + ".type", Message: "测试类型不能为空"})
-		}
-		if item.Pri < 1 || item.Pri > 4 {
-			errs = append(errs, FieldError{Field: prefix + ".pri", Message: "优先级无效"})
-		}
+	}
+	return errs
+}
+
+func appendTesttaskFieldErrs(errs []FieldError, prefix, name, begin, end, owner, typ string, pri int) []FieldError {
+	if strings.TrimSpace(name) == "" {
+		errs = append(errs, FieldError{Field: prefix + "name", Message: "测试单名称不能为空"})
+	}
+	begin = strings.TrimSpace(begin)
+	if begin == "" {
+		errs = append(errs, FieldError{Field: prefix + "begin", Message: "开始日期不能为空"})
+	} else if !isYMD(begin) {
+		errs = append(errs, FieldError{Field: prefix + "begin", Message: "开始日期格式应为 YYYY-MM-DD"})
+	}
+	end = strings.TrimSpace(end)
+	if end == "" {
+		errs = append(errs, FieldError{Field: prefix + "end", Message: "结束日期不能为空"})
+	} else if !isYMD(end) {
+		errs = append(errs, FieldError{Field: prefix + "end", Message: "结束日期格式应为 YYYY-MM-DD"})
+	}
+	if begin != "" && end != "" && isYMD(begin) && isYMD(end) && end < begin {
+		errs = append(errs, FieldError{Field: prefix + "end", Message: "结束日期不能早于开始日期"})
+	}
+	if strings.TrimSpace(owner) == "" {
+		errs = append(errs, FieldError{Field: prefix + "owner", Message: "测试负责人不能为空"})
+	}
+	if strings.TrimSpace(typ) == "" {
+		errs = append(errs, FieldError{Field: prefix + "type", Message: "测试类型不能为空"})
+	}
+	if pri < 1 || pri > 4 {
+		errs = append(errs, FieldError{Field: prefix + "pri", Message: "优先级无效"})
 	}
 	return errs
 }
