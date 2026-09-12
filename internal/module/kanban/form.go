@@ -30,8 +30,9 @@ type TeamgroupItem struct {
 	Members []MemberItem
 }
 
-// BizDemandItem 看板需求树单条业务需求（字段对齐首页价值流 WorkItemDetail）。
+// BizDemandItem 看板需求树单条（字段对齐首页价值流 WorkItemDetail；含业需与研需）。
 type BizDemandItem struct {
+	Kind         string `json:"kind"` // demand | story
 	ID           string `json:"id"`
 	Pri          string `json:"pri"`
 	Title        string `json:"title"`
@@ -41,7 +42,12 @@ type BizDemandItem struct {
 	ZentaoStatus string `json:"zentaoStatus"`
 }
 
-// ListBizDemandsResp 看板业务需求列表响应。
+// ListBizDemandsResp 看板需求树列表响应（业需 + 独立研需）。
 type ListBizDemandsResp struct {
 	Items []BizDemandItem `json:"items"`
+}
+
+// ListDemandsReq 需求树查询（按选中负责人账号过滤价值流）。
+type ListDemandsReq struct {
+	Account string `form:"account"`
 }

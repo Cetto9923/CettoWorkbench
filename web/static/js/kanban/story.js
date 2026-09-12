@@ -1,7 +1,7 @@
 /* =============================================================================
    文件: web/static/js/kanban/story.js
    模块: 工作看板
-   职责: 需求看板页交互（敏捷小组、成员折叠）+ ajax 加载价值流业务需求。
+   职责: 需求看板页交互（敏捷小组、成员必选）+ 按选中负责人加载价值流业需/研需。
 ============================================================================= */
 (function () {
   "use strict";
@@ -18,6 +18,8 @@
   var currentAccount = peopleWrap
     ? (peopleWrap.getAttribute("data-current-account") || "").trim()
     : "";
+  var selectedAccount = "";
+  var loadSeq = 0;
 
   function escapeHtml(text) {
     return String(text == null ? "" : text)
@@ -50,6 +52,15 @@
     return 1;
   }
 
+  // 业需 stage-mini：对齐原型 workboard-demand.js 文案
+  function demandStageMini(label) {
+    var stage = String(label || "");
+    if (/受理|澄清/.test(stage)) return "科技侧需求梳理尚未完成";
+    if (/排期/.test(stage)) return "未绑定版本窗口";
+    if (/联调|验收/.test(stage)) return "测试完成 · 等待业务验收";
+    return "";
+  }
+
   function ownerBadgeHtml(owner) {
     var name = String(owner || "").trim();
     if (!name) return "";
@@ -57,15 +68,20 @@
       '<span class="meta-sep">·</span><span class="owner-badge">' +
       '<span class="owner-dot">' +
       escapeHtml(firstRune(name)) +
-      "</span>PO " +
+      "</span>" +
       escapeHtml(name) +
       "</span>"
     );
   }
 
   function stageCellsHtml(item) {
-    var col = stageColOf(item && item.valueStream);
-    var name = escapeHtml((item && item.valueStream) || "受理");
+    var stream = (item && item.valueStream) || "";
+    var col = stageColOf(stream);
+    var name = escapeHtml(stream || "受理");
+    var mini = demandStageMini(stream);
+    var miniHtml = mini
+      ? '<div class="stage-mini">' + escapeHtml(mini) + "</div>"
+      : "";
     var html = "";
     for (var c = 1; c <= 5; c++) {
       if (c !== col) {
@@ -77,9 +93,20 @@
         '<div class="stage-top"><span class="stage-name">' +
         name +
         '</span><button type="button" class="stage-action" disabled>查看</button></div>' +
-        '<div class="stage-mini">价值流推进中</div></div></div>';
+        miniHtml +
+        "</div></div>";
     }
     return html;
+  }
+
+  function typeBadgeHtml(item) {
+    var isStory =
+      String((item && item.kind) || "") === "story" ||
+      /^U\d+$/i.test(String((item && item.id) || ""));
+    if (isStory) {
+      return '<span class="kb-type kb-type-indy">研发需求</span>';
+    }
+    return '<span class="kb-type kb-type-biz">业务需求</span>';
   }
 
   function renderDemandRow(item) {
@@ -101,10 +128,12 @@
     return (
       '<div class="demand-row is-standalone" data-demand-id="' +
       id +
+      '" data-kind="' +
+      escapeHtml(item.kind || "") +
       '">' +
       '<div class="tree-cell ind0"><div class="node-main">' +
       '<div class="node-title-line">' +
-      '<span class="kb-type kb-type-biz">业务需求</span>' +
+      typeBadgeHtml(item) +
       (pri
         ? '<span class="wb-priority is-compact"' +
           priAttr +
@@ -135,28 +164,52 @@
   function renderDemands(items) {
     if (!demandHost) return;
     if (!items || !items.length) {
-      showDemandEmpty("暂无业务需求");
+      showDemandEmpty("暂无需求");
       return;
     }
     demandHost.innerHTML = items.map(renderDemandRow).join("");
   }
 
-  function loadDemands() {
+  function demandsUrl(account) {
+    var acc = String(account || "").trim();
+    if (!acc) return DEMANDS_URL;
+    return DEMANDS_URL + "?account=" + encodeURIComponent(acc);
+  }
+
+  function loadDemands(account) {
     if (!demandHost) return;
+    var acc = String(account || "").trim();
+    if (!acc) {
+      showDemandEmpty("暂无成员");
+      return;
+    }
+    var seq = ++loadSeq;
     showDemandEmpty("加载中…");
     var fetchFn = typeof window.appFetch === "function" ? window.appFetch : fetch;
-    fetchFn(DEMANDS_URL, { method: "GET", credentials: "same-origin" })
+    fetchFn(demandsUrl(acc), { method: "GET", credentials: "same-origin" })
       .then(function (r) {
         if (!r.ok) throw new Error("http");
         return r.json();
       })
       .then(function (payload) {
+        if (seq !== loadSeq) return;
         if (!payload || payload.success !== true) throw new Error("payload");
         renderDemands(payload.items || []);
       })
       .catch(function () {
-        showDemandEmpty("业务需求加载失败");
+        if (seq !== loadSeq) return;
+        showDemandEmpty("需求加载失败");
       });
+  }
+
+  function setSelectedAccount(account, reload) {
+    var next = String(account || "").trim();
+    if (!next) return;
+    var changed = next !== selectedAccount;
+    selectedAccount = next;
+    if (reload || changed) {
+      loadDemands(selectedAccount);
+    }
   }
 
   function showPeopleGroup(teamgroupID) {
@@ -166,7 +219,7 @@
       group.classList.toggle("is-hidden", !match);
       if (match) {
         group.removeAttribute("hidden");
-        selectCurrentUser(group, true);
+        selectDefaultPerson(group, true);
       } else {
         group.setAttribute("hidden", "hidden");
         group.querySelectorAll(".person.active").forEach(function (el) {
@@ -176,22 +229,43 @@
     });
   }
 
-  function selectCurrentUser(group, allowExpand) {
+  // 必选一人：优先当前登录用户，否则组内第一人；不可取消选中。
+  function selectDefaultPerson(group, allowExpand) {
     group.querySelectorAll(".person.active").forEach(function (el) {
       el.classList.remove("active");
     });
-    if (!currentAccount) return;
 
-    var person = group.querySelector(
-      '.person[data-account="' + cssEscape(currentAccount) + '"]'
-    );
-    if (!person) return;
+    var person = null;
+    if (currentAccount) {
+      person = group.querySelector(
+        '.person[data-account="' + cssEscape(currentAccount) + '"]'
+      );
+    }
+    if (!person) {
+      person = group.querySelector(".person[data-account]");
+    }
+    if (!person) {
+      selectedAccount = "";
+      showDemandEmpty("暂无成员");
+      return;
+    }
 
     if (person.classList.contains("is-overflow")) {
-      if (!allowExpand) return;
-      expandPeople(group);
+      if (allowExpand) {
+        expandPeople(group);
+      }
     }
     person.classList.add("active");
+    setSelectedAccount(person.getAttribute("data-account"), true);
+  }
+
+  function selectPerson(group, person) {
+    if (!group || !person) return;
+    group.querySelectorAll(".person.active").forEach(function (el) {
+      el.classList.remove("active");
+    });
+    person.classList.add("active");
+    setSelectedAccount(person.getAttribute("data-account"), true);
   }
 
   function cssEscape(value) {
@@ -230,6 +304,11 @@
 
   function collapsePeople(group) {
     var hidden = 0;
+    var activeAccount = "";
+    var active = group.querySelector(".person.active[data-account]");
+    if (active) {
+      activeAccount = active.getAttribute("data-account") || "";
+    }
     group.querySelectorAll(".person[data-account]").forEach(function (el, idx) {
       if (idx < VISIBLE_COUNT) {
         el.classList.remove("is-overflow");
@@ -248,13 +327,39 @@
     if (hidden > 0) {
       group.appendChild(makeToggleBtn(false, hidden));
     }
-    selectCurrentUser(group, false);
+    // 收起后若选中人被藏起，保持选中账号并展开回选中；否则重新点亮可见选中人
+    if (activeAccount) {
+      var still = group.querySelector(
+        '.person[data-account="' + cssEscape(activeAccount) + '"]'
+      );
+      if (still && still.classList.contains("is-overflow")) {
+        expandPeople(group);
+        still = group.querySelector(
+          '.person[data-account="' + cssEscape(activeAccount) + '"]'
+        );
+      }
+      if (still) {
+        group.querySelectorAll(".person.active").forEach(function (el) {
+          el.classList.remove("active");
+        });
+        still.classList.add("active");
+      }
+    }
   }
 
   function ensureDefaultTeamgroup() {
-    if (!chipsWrap) return;
+    if (!chipsWrap) {
+      if (peopleWrap) {
+        var only = peopleWrap.querySelector(".people-group:not(.is-hidden)");
+        if (only) selectDefaultPerson(only, true);
+      }
+      return;
+    }
     var chips = chipsWrap.querySelectorAll(".chip[data-teamgroup-id]");
-    if (!chips.length) return;
+    if (!chips.length) {
+      showDemandEmpty("暂无所属敏捷小组");
+      return;
+    }
     var active = chipsWrap.querySelector(".chip.active");
     if (!active) {
       chips[0].classList.add("active");
@@ -303,16 +408,11 @@
       var group = person.closest(".people-group");
       if (!group || group.classList.contains("is-hidden")) return;
 
-      var wasActive = person.classList.contains("active");
-      group.querySelectorAll(".person.active").forEach(function (el) {
-        el.classList.remove("active");
-      });
-      if (!wasActive) {
-        person.classList.add("active");
-      }
+      // 不可取消选中：已选中再点仍保持选中，不重复请求
+      if (person.classList.contains("active")) return;
+      selectPerson(group, person);
     });
   }
 
   ensureDefaultTeamgroup();
-  loadDemands();
 })();

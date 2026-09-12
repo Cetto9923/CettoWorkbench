@@ -2,8 +2,9 @@
 // 文件: internal/module/kanban/handler.go
 // 模块: 工作看板
 // 类型: readonly
-// 职责: 需求看板静态页与业务需求 JSON HTTP 请求。
+// 职责: 需求看板静态页与需求树（业需+研需）JSON HTTP 请求。
 // 依赖: internal/middleware
+//       internal/pkg/errorx
 //       internal/pkg/perm
 //       internal/pkg/render
 //       internal/pkg/zentao
@@ -19,6 +20,7 @@ import (
 
 	"workbench/internal/constants"
 	"workbench/internal/middleware"
+	"workbench/internal/pkg/errorx"
 	"workbench/internal/pkg/perm"
 	"workbench/internal/pkg/render"
 	"workbench/internal/pkg/zentao"
@@ -63,16 +65,30 @@ func (h *Handler) Story(c *gin.Context) {
 	})
 }
 
-// Demands 返回首页价值流范围内的业务需求列表（JSON）。
+// Demands 按选中负责人返回价值流业需与研需列表（JSON）。
 func (h *Handler) Demands(c *gin.Context) {
-	resp, err := h.svc.ListValueStreamBizDemands(c.Request.Context(), middleware.CurrentUser(c))
+	var req ListDemandsReq
+	_ = c.ShouldBindQuery(&req)
+
+	resp, err := h.svc.ListValueStreamBizDemands(c.Request.Context(), middleware.CurrentUser(c), req)
 	if err != nil {
+		if biz, ok := errorx.IsBizError(err); ok {
+			status := http.StatusBadRequest
+			switch biz.Code {
+			case errorx.ErrCodeForbidden:
+				status = http.StatusForbidden
+			case errorx.ErrCodeInvalidParam:
+				status = http.StatusBadRequest
+			}
+			c.JSON(status, gin.H{"success": false, "message": biz.Msg})
+			return
+		}
 		if h.logger != nil {
-			h.logger.Error("list kanban biz demands failed", zap.Error(err))
+			h.logger.Error("list kanban value stream demands failed", zap.Error(err))
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
-			"message": "获取业务需求失败",
+			"message": "获取需求失败",
 		})
 		return
 	}
