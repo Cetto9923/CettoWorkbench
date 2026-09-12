@@ -4,6 +4,7 @@
 // 类型: readonly
 // 职责: 需求看板业务编排（所属小组 + 成员排序展示）。
 // 依赖: internal/model
+//       internal/module/po
 //       internal/module/user
 // =============================================================================
 
@@ -15,6 +16,7 @@ import (
 	"unicode/utf8"
 
 	"workbench/internal/model"
+	"workbench/internal/module/po"
 	"workbench/internal/module/user"
 )
 
@@ -22,11 +24,12 @@ import (
 type Service struct {
 	repo    *Repo
 	userSvc *user.Service
+	poSvc   *po.Service
 }
 
 // NewService 创建 Service。
-func NewService(repo *Repo, userSvc *user.Service) *Service {
-	return &Service{repo: repo, userSvc: userSvc}
+func NewService(repo *Repo, userSvc *user.Service, poSvc *po.Service) *Service {
+	return &Service{repo: repo, userSvc: userSvc, poSvc: poSvc}
 }
 
 // ListMyTeamgroups 返回当前用户所属敏捷小组（含排序后的成员）。

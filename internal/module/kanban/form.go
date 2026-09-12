@@ -29,3 +29,19 @@ type TeamgroupItem struct {
 	Name    string
 	Members []MemberItem
 }
+
+// BizDemandItem 看板需求树单条业务需求（字段对齐首页价值流 WorkItemDetail）。
+type BizDemandItem struct {
+	ID           string `json:"id"`
+	Pri          string `json:"pri"`
+	Title        string `json:"title"`
+	Owner        string `json:"owner"`
+	ValueStream  string `json:"valueStream"`
+	ZentaoUrl    string `json:"zentaoUrl"`
+	ZentaoStatus string `json:"zentaoStatus"`
+}
+
+// ListBizDemandsResp 看板业务需求列表响应。
+type ListBizDemandsResp struct {
+	Items []BizDemandItem `json:"items"`
+}

@@ -2,7 +2,7 @@
 // 文件: internal/module/kanban/handler.go
 // 模块: 工作看板
 // 类型: readonly
-// 职责: 需求看板静态页 HTTP 请求。
+// 职责: 需求看板静态页与业务需求 JSON HTTP 请求。
 // 依赖: internal/middleware
 //       internal/pkg/perm
 //       internal/pkg/render
@@ -40,6 +40,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g := rg.Group("/kanban")
 	g.Use(middleware.ActiveNav("/kanban/story"))
 	g.GET("/story", middleware.RequirePerm(perm.KanbanStory), h.Story)
+	g.GET("/story/demands", middleware.RequirePerm(perm.KanbanStory), h.Demands)
 }
 
 // Story 渲染需求看板静态页。
@@ -59,5 +60,27 @@ func (h *Handler) Story(c *gin.Context) {
 		"BaseUrl":        "/kanban/story",
 		"IssueCreateURL": zentao.URL("issue", "create"),
 		"Teamgroups":     teamgroups,
+	})
+}
+
+// Demands 返回首页价值流范围内的业务需求列表（JSON）。
+func (h *Handler) Demands(c *gin.Context) {
+	resp, err := h.svc.ListValueStreamBizDemands(c.Request.Context(), middleware.CurrentUser(c))
+	if err != nil {
+		if h.logger != nil {
+			h.logger.Error("list kanban biz demands failed", zap.Error(err))
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "获取业务需求失败",
+		})
+		return
+	}
+	if resp.Items == nil {
+		resp.Items = []BizDemandItem{}
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"items":   resp.Items,
 	})
 }

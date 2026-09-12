@@ -218,8 +218,16 @@
         escapeHtml(item.id || "") +
         "\">提测</button>";
     }
+    var priNumMatch = String(pri).match(/(\d+)/);
+    var priNum = priNumMatch ? priNumMatch[1] : "";
     var titleInner =
-      (pri ? "<span class=\"inline-pri " + escapeHtml(pri) + "\">" + escapeHtml(pri) + "</span>" : "") +
+      (pri
+        ? '<span class="wb-priority" data-priority="' +
+          escapeHtml(priNum) +
+          '">' +
+          escapeHtml(pri) +
+          "</span> "
+        : "") +
       escapeHtml(item.title || "");
     var titleHtml = url
       ? "<a " + zentaoLinkAttrs(url, "row-title-link") + ">" + titleInner + "</a>"

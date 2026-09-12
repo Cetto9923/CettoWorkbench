@@ -1,0 +1,142 @@
+/* =============================================================================
+   文件: web/static/css/components/priority.css
+   模块: 公共 UI - 优先级
+   职责: 全站唯一优先级色板真源。.wb-priority[data-priority] 为规范写法；
+         .pri-tag / .priority-tag / .inline-pri / .kb-pri 为存量别名，禁止页面私有覆写色板。
+   ============================================================================= */
+
+/* -------- 1. 规范写法：.wb-priority[data-priority] -------- */
+.wb-priority {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  line-height: 1;
+  white-space: nowrap;
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
+  flex-shrink: 0;
+}
+
+.wb-priority[data-priority="1"] {
+  background: var(--po-pri-1-bg);
+  color: var(--po-pri-1-fg);
+  border-color: var(--po-pri-1-bd);
+}
+
+.wb-priority[data-priority="2"] {
+  background: var(--po-pri-2-bg);
+  color: var(--po-pri-2-fg);
+  border-color: var(--po-pri-2-bd);
+}
+
+.wb-priority[data-priority="3"] {
+  background: var(--po-pri-3-bg);
+  color: var(--po-pri-3-fg);
+  border-color: var(--po-pri-3-bd);
+}
+
+.wb-priority[data-priority="4"] {
+  background: var(--po-pri-4-bg);
+  color: var(--po-pri-4-fg);
+  border-color: var(--po-pri-4-bd);
+}
+
+.wb-priority[data-priority=""],
+.wb-priority[data-priority="0"],
+.wb-priority:not([data-priority]) {
+  background: transparent;
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+}
+
+.wb-priority.is-compact {
+  min-width: 22px;
+  height: 18px;
+  padding: 0 4px;
+  font-size: 10px;
+  border-radius: 3px;
+}
+
+/* -------- 2. 存量别名：排期 .pri-tag / 关联需求 .priority-tag / 首页 .inline-pri / 看板 .kb-pri -------- */
+.pri-tag,
+.priority-tag,
+.inline-pri,
+.kb-pri {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  line-height: 1;
+  white-space: nowrap;
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
+  flex-shrink: 0;
+}
+
+.pri-tag.p1,
+.pri-tag.P1,
+.priority-tag.P1,
+.inline-pri.P1,
+.kb-pri[data-priority="1"] {
+  background: var(--po-pri-1-bg);
+  color: var(--po-pri-1-fg);
+  border-color: var(--po-pri-1-bd);
+}
+
+.pri-tag.p2,
+.pri-tag.P2,
+.priority-tag.P2,
+.inline-pri.P2,
+.kb-pri[data-priority="2"] {
+  background: var(--po-pri-2-bg);
+  color: var(--po-pri-2-fg);
+  border-color: var(--po-pri-2-bd);
+}
+
+.pri-tag.p3,
+.pri-tag.P3,
+.priority-tag.P3,
+.inline-pri.P3,
+.kb-pri[data-priority="3"] {
+  background: var(--po-pri-3-bg);
+  color: var(--po-pri-3-fg);
+  border-color: var(--po-pri-3-bd);
+}
+
+.pri-tag.p4,
+.pri-tag.P4,
+.priority-tag.P4,
+.inline-pri.P4,
+.kb-pri[data-priority="4"] {
+  background: var(--po-pri-4-bg);
+  color: var(--po-pri-4-fg);
+  border-color: var(--po-pri-4-bd);
+}
+
+.pri-tag.p0,
+.kb-pri[data-priority=""],
+.kb-pri[data-priority="0"],
+.kb-pri:not([data-priority]) {
+  background: transparent;
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+}

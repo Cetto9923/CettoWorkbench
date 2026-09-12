@@ -81,8 +81,9 @@
   --color-ink-15-23-42-03: rgba(15, 23, 42, 0.03);
   --color-ink-15-23-42-08: rgba(15, 23, 42, 0.08);
   --color-success-ring: rgba(34, 197, 94, 0.2);
-  --color-dange--po-bg: #f4f5f7;
+  --color-danger-ring: rgba(220, 38, 38, 0.2);
 
+  --po-bg: #f4f5f7;
   --po-white: #fff;
   --po-border: #e5e7eb;
   --po-t1: #1f2937;
@@ -97,7 +98,21 @@
   --po-orange: #ea580c;
   --po-orange-bg: #fff7ed;
   --po-orange-bd: #fed7aa;
-  --po-green: #16a34a;r-ring: rgba(220, 38, 38, 0.2);
+  --po-green: #16a34a;
+
+  /* 公共优先级 P1–P4（浅底+深字，全站唯一色板） */
+  --po-pri-1-bg: var(--color-danger-bg);
+  --po-pri-1-fg: var(--color-danger);
+  --po-pri-1-bd: var(--color-danger-border);
+  --po-pri-2-bg: var(--po-orange-bg);
+  --po-pri-2-fg: var(--po-orange);
+  --po-pri-2-bd: var(--po-orange-bd);
+  --po-pri-3-bg: var(--po-blue-bg);
+  --po-pri-3-fg: var(--po-blue);
+  --po-pri-3-bd: var(--po-blue-bd);
+  --po-pri-4-bg: var(--color-surface-muted);
+  --po-pri-4-fg: var(--color-text-secondary);
+  --po-pri-4-bd: var(--color-border);
 
   /* 间距基准（只允许使用这些值）*/
   --space-0_5: 2px;
