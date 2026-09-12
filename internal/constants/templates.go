@@ -32,5 +32,7 @@ const (
 
 	TEMPLATE_FOLLOW_LIST = "follow/list"
 
+	TEMPLATE_KANBAN_STORY = "kanban/story"
+
 	TEMPLATE_SCHEDULE_INDEX = "schedule/index"
 )

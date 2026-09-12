@@ -1,0 +1,244 @@
+{{/* ==========================================================================
+文件: web/templates/kanban/story.html
+模块: 工作看板
+职责: 需求看板静态壳 + demand-board 示例行（对齐原型截图：独立研需行 + 受理/澄清阶段卡）。
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .PageTitle (string), .BaseUrl (string), .IssueCreateURL (string), .Teamgroups ([]TeamgroupItem)
+========================================================================== */}}
+{{ define "page_css" }}
+<link rel="stylesheet" href="{{ asset "/static/css/kanban/story.css" }}">
+{{ end }}
+
+{{ define "content" }}
+<div class="po-board">
+  <div class="page-hdr">
+    <h2>工作看板</h2>
+    <div class="board-switch" role="tablist" aria-label="看板类型">
+      <button type="button" class="active" role="tab" aria-selected="true" disabled>需求看板</button>
+      <button type="button" role="tab" aria-selected="false" disabled>任务看板</button>
+    </div>
+    <div class="stats" aria-label="需求统计">
+      <button type="button" class="stat blue" disabled>待澄清 <strong>—</strong></button>
+      <button type="button" class="stat blue" disabled>待排期 <strong>—</strong></button>
+      <button type="button" class="stat orange" disabled>阻塞 <strong>—</strong></button>
+      <button type="button" class="stat red" disabled>超期 <strong>—</strong></button>
+    </div>
+    <div class="filter-stack">
+      <span class="filter-label">敏捷小组</span>
+      <div class="chips" data-teamgroup-chips>
+        {{ if .Teamgroups }}
+          {{ range .Teamgroups }}
+        <button type="button" class="chip" data-teamgroup-id="{{ .ID }}">{{ .Name }}</button>
+          {{ end }}
+        {{ else }}
+        <span class="chips-empty">暂无所属敏捷小组</span>
+        {{ end }}
+      </div>
+    </div>
+    <div class="actions">
+      <a class="action soft" href="/schedule">需求排期</a>
+      <a class="action primary" href="{{ .IssueCreateURL }}" target="_blank" rel="noopener noreferrer">+ 提问题</a>
+    </div>
+  </div>
+
+  <div class="owner-row">
+    <span class="owner-title">PO / 需求负责人</span>
+    <div class="people">
+      <span class="people-placeholder">暂无负责人筛选</span>
+    </div>
+  </div>
+
+  <div class="standup">
+    <div class="board-main">
+      <div class="demand-board">
+        <div class="demand-grid">
+          <div class="grid-head">
+            <div>需求树（PO工作对象 / 交付上下文）</div>
+            <div>受理 / 澄清</div>
+            <div>排期</div>
+            <div>研发 / 提测</div>
+            <div>联调 / 验收</div>
+            <div>交付 / 评价</div>
+          </div>
+          <div id="demandGroups">
+            <div class="demand-row is-standalone">
+              <div class="tree-cell ind0">
+                <div class="node-main">
+                  <div class="node-title-line">
+                    <span class="kb-type kb-type-indy">独立研发</span>
+                    <span class="kb-pri" data-priority="3">P3</span>
+                    <span class="node-title" title="未评审">未评审</span>
+                  </div>
+                  <div class="node-meta"><span class="code"># 37450</span><span class="meta-sep">·</span><span>尚未纳入执行</span></div>
+                </div>
+              </div>
+              <div class="stage-cell">
+                <div class="stage-card actionable">
+                  <div class="stage-top">
+                    <span class="stage-name">整理/澄清</span>
+                    <button type="button" class="stage-action" disabled>查看任务</button>
+                  </div>
+                  <div class="stage-mini">任务 0/1 - admin(admin) 负责</div>
+                </div>
+              </div>
+              <div class="stage-cell"></div>
+              <div class="stage-cell"></div>
+              <div class="stage-cell"></div>
+              <div class="stage-cell"></div>
+            </div>
+
+            <div class="demand-row is-standalone">
+              <div class="tree-cell ind0">
+                <div class="node-main">
+                  <div class="node-title-line">
+                    <span class="kb-type kb-type-indy">独立研发</span>
+                    <span class="kb-pri" data-priority="3">P3</span>
+                    <span class="node-title" title="需求测试">需求测试</span>
+                  </div>
+                  <div class="node-meta"><span class="code"># 37447</span><span class="meta-sep">·</span><span class="owner-badge"><span class="owner-dot">a</span>PO admin(admin)</span><span class="meta-sep">·</span><span>尚未纳入执行</span></div>
+                </div>
+              </div>
+              <div class="stage-cell">
+                <div class="stage-card actionable">
+                  <div class="stage-top">
+                    <span class="stage-name">整理/澄清</span>
+                    <button type="button" class="stage-action" disabled>去处理</button>
+                  </div>
+                  <div class="stage-mini">构建需求优先级跟进负责完成</div>
+                </div>
+              </div>
+              <div class="stage-cell"></div>
+              <div class="stage-cell"></div>
+              <div class="stage-cell"></div>
+              <div class="stage-cell"></div>
+            </div>
+
+            <div class="demand-row is-standalone">
+              <div class="tree-cell ind0">
+                <div class="node-main">
+                  <div class="node-title-line">
+                    <span class="kb-type kb-type-indy">独立研发</span>
+                    <span class="kb-pri" data-priority="3">P3</span>
+                    <span class="node-title" title="生物识别……">生物识别……</span>
+                  </div>
+                  <div class="node-meta"><span class="code"># 37442</span><span class="meta-sep">·</span><span>尚未纳入执行</span></div>
+                </div>
+              </div>
+              <div class="stage-cell">
+                <div class="stage-card actionable">
+                  <div class="stage-top">
+                    <span class="stage-name">整理/澄清</span>
+                    <button type="button" class="stage-action" disabled>去处理</button>
+                  </div>
+                  <div class="stage-mini">构建需求优先级跟进负责完成</div>
+                </div>
+              </div>
+              <div class="stage-cell"></div>
+              <div class="stage-cell"></div>
+              <div class="stage-cell"></div>
+              <div class="stage-cell"></div>
+            </div>
+
+            <div class="demand-row is-standalone">
+              <div class="tree-cell ind0">
+                <div class="node-main">
+                  <div class="node-title-line">
+                    <span class="kb-type kb-type-indy">独立研发</span>
+                    <span class="kb-pri" data-priority="2">P2</span>
+                    <span class="node-title" title="村镇的需求1">村镇的需求1</span>
+                  </div>
+                  <div class="node-meta"><span class="code"># 37441</span><span class="meta-sep">·</span><span>尚未纳入执行</span></div>
+                </div>
+              </div>
+              <div class="stage-cell">
+                <div class="stage-card actionable">
+                  <div class="stage-top">
+                    <span class="stage-name">整理/澄清</span>
+                    <button type="button" class="stage-action" disabled>去处理</button>
+                  </div>
+                  <div class="stage-mini">构建需求优先级跟进负责完成</div>
+                </div>
+              </div>
+              <div class="stage-cell"></div>
+              <div class="stage-cell"></div>
+              <div class="stage-cell"></div>
+              <div class="stage-cell"></div>
+            </div>
+
+            <div class="demand-row is-standalone">
+              <div class="tree-cell ind0">
+                <div class="node-main">
+                  <div class="node-title-line">
+                    <span class="kb-type kb-type-indy">独立研发</span>
+                    <span class="kb-pri" data-priority="3">P3</span>
+                    <span class="node-title" title="cms2">cms2</span>
+                  </div>
+                  <div class="node-meta"><span class="code"># 37440</span><span class="meta-sep">·</span><span>尚未纳入执行</span></div>
+                </div>
+              </div>
+              <div class="stage-cell">
+                <div class="stage-card actionable">
+                  <div class="stage-top">
+                    <span class="stage-name">整理/澄清</span>
+                    <button type="button" class="stage-action" disabled>去处理</button>
+                  </div>
+                  <div class="stage-mini">构建需求优先级跟进负责完成</div>
+                </div>
+              </div>
+              <div class="stage-cell"></div>
+              <div class="stage-cell"></div>
+              <div class="stage-cell"></div>
+              <div class="stage-cell"></div>
+            </div>
+
+            <div class="demand-row is-standalone">
+              <div class="tree-cell ind0">
+                <div class="node-main">
+                  <div class="node-title-line">
+                    <span class="kb-type kb-type-indy">独立研发</span>
+                    <span class="kb-pri" data-priority="3">P3</span>
+                    <span class="node-title" title="www">www</span>
+                  </div>
+                  <div class="node-meta"><span class="code"># 37439</span><span class="meta-sep">·</span><span>尚未纳入执行</span></div>
+                </div>
+              </div>
+              <div class="stage-cell">
+                <div class="stage-card actionable">
+                  <div class="stage-top">
+                    <span class="stage-name">整理/澄清</span>
+                    <button type="button" class="stage-action" disabled>去处理</button>
+                  </div>
+                  <div class="stage-mini">构建需求优先级跟进负责完成</div>
+                </div>
+              </div>
+              <div class="stage-cell"></div>
+              <div class="stage-cell"></div>
+              <div class="stage-cell"></div>
+              <div class="stage-cell"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="issue-panel">
+      <div class="issue-hdr">
+        <strong>问题</strong>
+        <span class="issue-count">0</span>
+        <button type="button" class="issue-all" disabled>查看全部</button>
+      </div>
+      <div class="issue-tabs">
+        <button type="button" class="issue-tab active" disabled>全部</button>
+        <button type="button" class="issue-tab" disabled>待处理</button>
+        <button type="button" class="issue-tab" disabled>处理中</button>
+      </div>
+      <div class="issue-list">
+        <div class="demand-empty demand-empty--visible">暂无问题</div>
+      </div>
+    </aside>
+  </div>
+</div>
+{{ end }}
+{{ define "page_js" }}
+<script src="{{ asset "/static/js/kanban/story.js" }}"></script>
+{{ end }}

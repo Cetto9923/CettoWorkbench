@@ -58,8 +58,11 @@ const (
 	// PO 工作台：业需评审（对应禅道 demand-review）
 	PoDemandReview Permission = "po:demandreview"
 
-	// 版本：关联研发需求（提测办理弹窗，登录用户默认可访问）
+	// 版本：关联研发需求
 	BuildLinkStory Permission = "build:linkstory"
+
+	// 工作看板：需求看板
+	KanbanStory Permission = "kanban:story"
 )
 
 // allPermInfos 必须与上方 const 块中的所有 Permission 常量保持一一对应。
@@ -92,6 +95,7 @@ var allPermInfos = []PermInfo{
 	{Code: ScheduleDelete, Name: "排期-删除", Module: "schedule"},
 	{Code: PoDemandReview, Name: "工作台-业需评审", Module: "po"},
 	{Code: BuildLinkStory, Name: "版本-关联研发需求", Module: "build"},
+	{Code: KanbanStory, Name: "工作看板-需求看板", Module: "kanban"},
 }
 
 // systemPerms 是系统内置放行权限，不对外暴露到权限配置 UI。
@@ -99,6 +103,7 @@ var systemPerms = map[Permission]bool{
 	AuthLogout:     true,
 	PoDemandReview: true,
 	BuildLinkStory: true,
+	KanbanStory:    true,
 }
 
 // Configurable 返回可分配给角色的权限列表（排除系统内置权限）。

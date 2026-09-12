@@ -53,6 +53,7 @@ func RequireLogin(mgr *scs.SessionManager, db *gorm.DB) gin.HandlerFunc {
 			perm.AuthLogout.String():     true,
 			perm.PoDemandReview.String(): true, // 评审资格以禅道指派为准，登录用户即可调接口
 			perm.BuildLinkStory.String(): true, // 提测关联需求，登录用户即可拉列表
+			perm.KanbanStory.String():    true, // 需求看板静态页，登录用户即可访问
 		}
 		if user.IsSuperAdmin {
 			for _, p := range perm.All() {
