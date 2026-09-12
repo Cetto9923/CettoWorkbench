@@ -3,7 +3,7 @@
 模块: 工作看板
 职责: 需求看板静态壳 + demand-board 示例行（对齐原型截图：独立研需行 + 受理/澄清阶段卡）。
 全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
-页面字段: .Title (string), .PageTitle (string), .BaseUrl (string), .IssueCreateURL (string), .Teamgroups ([]TeamgroupItem)
+页面字段: .Title (string), .PageTitle (string), .BaseUrl (string), .IssueCreateURL (string), .Teamgroups ([]module/kanban.TeamgroupItem)
 ========================================================================== */}}
 {{ define "page_css" }}
 <link rel="stylesheet" href="{{ asset "/static/css/kanban/story.css" }}">
@@ -27,8 +27,8 @@
       <span class="filter-label">敏捷小组</span>
       <div class="chips" data-teamgroup-chips>
         {{ if .Teamgroups }}
-          {{ range .Teamgroups }}
-        <button type="button" class="chip" data-teamgroup-id="{{ .ID }}">{{ .Name }}</button>
+          {{ range $i, $g := .Teamgroups }}
+        <button type="button" class="chip{{ if eq $i 0 }} active{{ end }}" data-teamgroup-id="{{ $g.ID }}">{{ $g.Name }}</button>
           {{ end }}
         {{ else }}
         <span class="chips-empty">暂无所属敏捷小组</span>
@@ -43,8 +43,27 @@
 
   <div class="owner-row">
     <span class="owner-title">PO / 需求负责人</span>
-    <div class="people">
-      <span class="people-placeholder">暂无负责人筛选</span>
+    <div class="people" data-people>
+      {{ if .Teamgroups }}
+        {{ range $i, $g := .Teamgroups }}
+      <div class="people-group{{ if ne $i 0 }} is-hidden{{ end }}" data-teamgroup-id="{{ $g.ID }}"{{ if ne $i 0 }} hidden{{ end }}>
+          {{ if $g.Members }}
+            {{ range $j, $m := $g.Members }}
+        <button type="button" class="person role-{{ $m.Role }}{{ if ge $j 5 }} is-overflow{{ end }}" data-account="{{ $m.Account }}" title="{{ $m.Display }}"{{ if ge $j 5 }} hidden{{ end }}>
+          <span class="mini-avatar">{{ $m.Initial }}</span>{{ $m.Display }}
+        </button>
+            {{ end }}
+            {{ if gt (len $g.Members) 5 }}
+        <button type="button" class="person more" data-people-more>更多 {{ sub (len $g.Members) 5 }} ›</button>
+            {{ end }}
+          {{ else }}
+        <span class="people-placeholder">暂无成员</span>
+          {{ end }}
+      </div>
+        {{ end }}
+      {{ else }}
+      <span class="people-placeholder">暂无所属敏捷小组</span>
+      {{ end }}
     </div>
   </div>
 

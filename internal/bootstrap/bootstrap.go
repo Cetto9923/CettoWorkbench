@@ -163,7 +163,7 @@ func Run() error {
 		kanbanReadDB = db
 	}
 	kanbanRepo := kanban.NewRepo(kanbanReadDB)
-	kanbanSvc := kanban.NewService(kanbanRepo)
+	kanbanSvc := kanban.NewService(kanbanRepo, userSvc)
 	kanbanHandler := kanban.NewHandler(kanbanSvc, zapLog)
 	sqlPerfRepo := debug.NewRepo(cfg.Log.Dir)
 	sqlPerfSvc := debug.NewService(sqlPerfRepo)

@@ -253,11 +253,104 @@
   align-items: center;
   gap: 5px;
   min-width: 0;
+  overflow: hidden;
+}
+
+.po-board .people-group {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.po-board .people-group.is-hidden {
+  display: none;
+}
+
+.po-board .person.is-overflow {
+  display: none;
+}
+
+.po-board .person.more {
+  color: var(--navy);
+  font-weight: 700;
+  border-color: var(--blue-bd);
+  background: var(--blue-bg);
 }
 
 .po-board .people-placeholder {
   font-size: 11px;
   color: var(--t3);
+}
+
+.po-board .person {
+  height: 26px;
+  border: 1px solid var(--border);
+  background: var(--white);
+  border-radius: 4px;
+  padding: 0 9px;
+  color: var(--t2);
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.po-board .person:hover {
+  border-color: var(--blue-bd);
+  color: var(--navy);
+}
+
+/* 角色底色：未选中时区分 PO / 敏捷教练 */
+.po-board .person.role-po {
+  border-color: var(--blue-bd);
+  background: var(--blue-bg);
+  color: var(--navy);
+}
+
+.po-board .person.role-coach {
+  border-color: var(--green-bd);
+  background: var(--green-bg);
+  color: var(--green);
+}
+
+/* 选中态：深蓝实底 + 白字，与 PO 浅蓝底明确区分 */
+.po-board .person.active,
+.po-board .person.role-po.active,
+.po-board .person.role-coach.active {
+  border-color: var(--navy);
+  background: var(--navy);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: none;
+}
+
+.po-board .mini-avatar {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.12);
+  color: var(--navy);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8.5px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.po-board .person.role-coach .mini-avatar {
+  background: rgba(22, 163, 74, 0.14);
+  color: var(--green);
+}
+
+.po-board .person.active .mini-avatar {
+  background: #fff;
+  color: var(--navy);
 }
 
 .po-board .standup {

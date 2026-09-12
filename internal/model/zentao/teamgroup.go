@@ -16,6 +16,7 @@ type ZtTeamgroup struct {
 	Type          string     `gorm:"column:type" json:"type"`
 	Name          string     `gorm:"column:name" json:"name"`
 	PO            string     `gorm:"column:PO" json:"PO"`
+	Manager       string     `gorm:"column:manager" json:"manager"` // 敏捷教练，可多人逗号分隔
 	Parent        uint       `gorm:"column:parent" json:"parent"`
 	Grade         int        `gorm:"column:grade" json:"grade"`
 	Path          string     `gorm:"column:path" json:"path"`
