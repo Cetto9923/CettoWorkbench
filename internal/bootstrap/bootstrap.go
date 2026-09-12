@@ -33,6 +33,7 @@ import (
 	"workbench/internal/module/dept"
 
 	"workbench/internal/module/build"
+	"workbench/internal/module/follow"
 	"workbench/internal/module/login"
 	"workbench/internal/module/loginlog"
 	"workbench/internal/module/menu"
@@ -155,6 +156,7 @@ func Run() error {
 	buildRepo := build.NewRepo(buildReadDB)
 	buildSvc := build.NewService(buildRepo, userSvc, zentaopkg.API(), zapLog)
 	buildHandler := build.NewHandler(buildSvc, zapLog)
+	followHandler := follow.NewHandler(zapLog)
 	sqlPerfRepo := debug.NewRepo(cfg.Log.Dir)
 	sqlPerfSvc := debug.NewService(sqlPerfRepo)
 	sqlPerfHandler := debug.NewHandler(sqlPerfSvc)
@@ -173,6 +175,7 @@ func Run() error {
 		DeptHandler:         deptHandler,
 		RoleHandler:         roleHandler,
 		PoHandler:           poHandler,
+		FollowHandler:       followHandler,
 		ScheduleHandler:     scheduleHandler,
 		TesttaskHandler:     testtaskHandler,
 		BuildHandler:        buildHandler,
