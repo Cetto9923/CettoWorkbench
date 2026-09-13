@@ -161,6 +161,7 @@ func loadTemplates(templatesDir string) (*template.Template, error) {
 			}
 		},
 		"menuNavActive": menu.MenuNavActive,
+		"hasPrefix":     strings.HasPrefix,
 	}
 	return template.New("").Funcs(funcMap).ParseFiles(files...)
 }

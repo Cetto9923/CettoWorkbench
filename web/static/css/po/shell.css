@@ -65,6 +65,47 @@ body.po-workbench-shell .topbar-row {
   align-items: center;
 }
 
+/* 全局统一 Page Header 标识区（单行紧凑布局：标题 │ 描述） */
+.topbar-identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: calc(100% - 440px);
+  white-space: nowrap;
+}
+
+.topbar-page-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.topbar-divider {
+  font-size: 14px;
+  color: var(--color-border-strong);
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.topbar-page-desc {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 992px) {
+  .topbar-page-desc,
+  .topbar-divider {
+    display: none;
+  }
+}
+
 /* 首页工作视角切换器（Perspective Tabs） */
 .po-perspective-tabs {
   display: inline-flex;
@@ -326,17 +367,20 @@ body.po-workbench-shell .main {
 
 body.po-workbench-shell .workspace-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   flex-wrap: wrap;
   gap: 12px;
   margin: 0 0 10px;
-  padding: 10px 16px;
+  padding: 8px 12px;
   border: 1px solid var(--color-border);
   border-radius: 8px;
   background: var(--color-surface);
   box-shadow: var(--shadow-sm);
   box-sizing: border-box;
+}
+body.po-workbench-shell .workspace-header:has(.workspace-header-left) {
+  justify-content: space-between;
 }
 body.po-workbench-shell .workspace-header-left {
   display: flex;

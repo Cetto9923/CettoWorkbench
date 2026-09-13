@@ -24,9 +24,10 @@ import (
 // Follow 渲染"我的关注"页面。
 func (h *Handler) Follow(c *gin.Context) {
 	render.Page(c, http.StatusOK, constants.TEMPLATE_PO_FOLLOW, gin.H{
-		"Title":     "我的关注",
-		"PageTitle": "我的关注",
-		"BaseUrl":   "/follow",
+		"Title":           "我的关注",
+		"PageTitle":       "我的关注",
+		"PageDescription": "统一监控您重点跟进的各类关键研发对象与项目进度",
+		"BaseUrl":         "/follow",
 	})
 }
 

@@ -11,13 +11,6 @@
 
 {{ define "content" }}
 <div class="po-personal-workspace po-query">
-  <header class="workspace-header">
-    <div class="workspace-header-left">
-      <h2>需求查询</h2>
-      <p>统一检索业务需求与研发需求，按负责人 / 主系统 / 价值阶段过滤</p>
-    </div>
-  </header>
-
   <section class="workspace-panel">
     <nav class="category-tabs" aria-label="需求类型">
       <button type="button" class="category-tab{{ if eq .Tab "biz" }} active{{ end }}" data-tab="biz" aria-current="page">业务需求</button>

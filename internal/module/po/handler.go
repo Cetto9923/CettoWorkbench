@@ -132,6 +132,7 @@ func (h *Handler) Home(c *gin.Context) {
 	render.Page(c, http.StatusOK, constants.TEMPLATE_PO_HOME, gin.H{
 		"Title":               "工作台首页",
 		"PageTitle":           "工作台首页",
+		"PageDescription":     "今日行动 · 全流程价值流推进",
 		"AllCount":            resp.AllCount,
 		"ValueStreamStages":   resp.Stages,
 		"StagesValid":         resp.StagesValid,
@@ -200,9 +201,10 @@ func emptyValueStreamStages() []ValueStreamStage {
 // Todos 渲染"我的待办"页面。
 func (h *Handler) Todos(c *gin.Context) {
 	render.Page(c, http.StatusOK, constants.TEMPLATE_PO_TODOS, gin.H{
-		"Title":     "我的待办",
-		"PageTitle": "我的待办",
-		"BaseUrl":   "/todos",
+		"Title":           "我的待办",
+		"PageTitle":       "我的待办",
+		"PageDescription": "个人责任事项 · 办理与跟进",
+		"BaseUrl":         "/todos",
 	})
 }
 
@@ -242,9 +244,10 @@ func (h *Handler) TodosItems(c *gin.Context) {
 // Done 渲染"我的已办"页面。
 func (h *Handler) Done(c *gin.Context) {
 	render.Page(c, http.StatusOK, constants.TEMPLATE_PO_DONE, gin.H{
-		"Title":     "我的已办",
-		"PageTitle": "我的已办",
-		"BaseUrl":   "/done",
+		"Title":           "我的已办",
+		"PageTitle":       "我的已办",
+		"PageDescription": "查看由我推进、确认、流转或结项的历史事项及动作记录",
+		"BaseUrl":         "/done",
 	})
 }
 
@@ -338,9 +341,10 @@ func (h *Handler) DoneDetail(c *gin.Context) {
 // Notice 渲染"通知中心"页面。
 func (h *Handler) Notice(c *gin.Context) {
 	render.Page(c, http.StatusOK, constants.TEMPLATE_PO_NOTICE, gin.H{
-		"Title":     "通知中心",
-		"PageTitle": "通知中心",
-		"BaseUrl":   "/notice",
+		"Title":           "通知中心",
+		"PageTitle":       "通知中心",
+		"PageDescription": "聚合与我有关的业务动态、待处理事项和风险提醒",
+		"BaseUrl":         "/notice",
 	})
 }
 

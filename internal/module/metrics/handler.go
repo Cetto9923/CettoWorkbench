@@ -49,17 +49,21 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 }
 
 // Manage 渲染指标管理页面（占位骨架在 metrics/manage.html）。
-func (h *Handler) Manage(c *gin.Context) { h.page(c, "指标管理", "metrics/manage") }
+func (h *Handler) Manage(c *gin.Context) {
+	h.page(c, "指标管理", "业务与研发效能度量指标配置与生命周期管理", "metrics/manage")
+}
 
 // Radar 渲染指标雷达页面（雷达页 agent 维护）。
-func (h *Handler) Radar(c *gin.Context) { h.page(c, "指标雷达", "metrics/radar") }
+func (h *Handler) Radar(c *gin.Context) {
+	h.page(c, "指标雷达", "多维度敏捷研发效能雷达大屏与异常监控", "metrics/radar")
+}
 
-func (h *Handler) page(c *gin.Context, title, template string) {
+func (h *Handler) page(c *gin.Context, title, desc, template string) {
 	if h.renderer == nil {
 		c.Status(http.StatusInternalServerError)
 		return
 	}
-	render.Page(c, http.StatusOK, template, gin.H{"Title": title, "PageTitle": title})
+	render.Page(c, http.StatusOK, template, gin.H{"Title": title, "PageTitle": title, "PageDescription": desc})
 }
 
 // API 返回指标管理列表 JSON：success/summary/items/filter/total/page/pageSize。

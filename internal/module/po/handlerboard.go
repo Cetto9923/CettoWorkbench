@@ -191,9 +191,10 @@ func NewBoardHandler(svc *Service, logger *zap.Logger) *BoardHandler {
 // BoardDemand 渲染需求看板页。
 func (h *BoardHandler) BoardDemand(c *gin.Context) {
 	render.Page(c, http.StatusOK, constants.TEMPLATE_PO_BOARD_DEMAND, gin.H{
-		"Title":     "需求看板",
-		"PageTitle": "需求看板",
-		"BaseUrl":   "/board/demand",
+		"Title":           "需求看板",
+		"PageTitle":       "需求看板",
+		"PageDescription": "按需求/故事阶段流转与状态推进看板",
+		"BaseUrl":         "/board/demand",
 	})
 }
 
@@ -229,9 +230,10 @@ func (h *BoardHandler) BoardDemandItems(c *gin.Context) {
 // BoardTask 渲染任务看板页。
 func (h *BoardHandler) BoardTask(c *gin.Context) {
 	render.Page(c, http.StatusOK, constants.TEMPLATE_PO_BOARD_TASK, gin.H{
-		"Title":     "任务看板",
-		"PageTitle": "任务看板",
-		"BaseUrl":   "/board/task",
+		"Title":           "任务看板",
+		"PageTitle":       "任务看板",
+		"PageDescription": "按任务状态与敏捷小组执行跟进看板",
+		"BaseUrl":         "/board/task",
 	})
 }
 

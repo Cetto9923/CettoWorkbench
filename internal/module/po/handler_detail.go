@@ -13,6 +13,7 @@
 package po
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -136,8 +137,9 @@ func (h *Handler) DemandDetailView(c *gin.Context) {
 		return
 	}
 	render.Page(c, http.StatusOK, constants.TEMPLATE_PO_DEMAND_DETAIL, gin.H{
-		"Title":     "需求详情 - " + resp.Summary.Title,
-		"PageTitle": "需求详情",
-		"Demand":    resp,
+		"Title":           "需求详情 - " + resp.Summary.Title,
+		"PageTitle":       "需求详情",
+		"PageDescription": fmt.Sprintf("业务需求 %s · %s", resp.Summary.ID, resp.Summary.Title),
+		"Demand":          resp,
 	})
 }

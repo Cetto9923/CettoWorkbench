@@ -18,18 +18,6 @@
 
   <!-- 1. 敏捷小组列表视图 -->
   <section class="page active" id="page-agileteam" data-page="agileteam">
-    <header class="workspace-header">
-      <div class="workspace-header-left">
-        <h2>敏捷小组</h2>
-        <p>查看和管理敏捷小组、成员及人员调整情况</p>
-      </div>
-      <div class="workspace-header-right">
-        <button type="button" class="action-btn action-btn-secondary" onclick="atShowList()">
-          <i class="fas fa-rotate-right" aria-hidden="true"></i> 刷新
-        </button>
-      </div>
-    </header>
-
     <div class="workspace-panel">
       <!-- 范围筛选卡片 (团队管理视角) -->
       <div class="at-scope-card" id="atScopeCard" style="display:none;">
@@ -59,6 +47,9 @@
         </select>
         <button type="button" class="action-btn action-btn-primary" onclick="atSearch()">查询</button>
         <button type="button" class="action-btn action-btn-secondary" onclick="atReset()">重置</button>
+        <button type="button" class="action-btn action-btn-secondary" onclick="atShowList()">
+          <i class="fas fa-rotate-right" aria-hidden="true"></i> 刷新
+        </button>
       </div>
 
       <!-- 小组主表 -->

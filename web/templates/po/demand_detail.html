@@ -4,9 +4,6 @@
 {{ end }}
 {{ define "content" }}
 <main class="po-personal-workspace" id="demand-detail-page">
-  <header class="workspace-header"><div class="workspace-header-left">
-    <h2>需求详情</h2><p>业务需求 {{ .Demand.Summary.ID }} · {{ .Demand.Summary.Title }}</p>
-  </div></header>
   <section class="home-page-card" aria-labelledby="demand-detail-title">
     <h3 id="demand-detail-title">{{ .Demand.Summary.Title }}</h3>
     <p>需求 ID：<a class="table-id-link" href="{{ .Demand.Summary.ZentaoURL }}" target="_blank" rel="noopener noreferrer">{{ .Demand.Summary.ID }}</a>　价值流阶段：{{ .Demand.Summary.ValueStageLabel }}　原始状态：{{ .Demand.Summary.Status }}</p>

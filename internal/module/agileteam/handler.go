@@ -64,8 +64,9 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 // AgileTeamView 渲染敏捷小组治理页面。
 func (h *Handler) AgileTeamView(c *gin.Context) {
 	render.Page(c, http.StatusOK, "agileteam/index", gin.H{
-		"Title":     "敏捷小组",
-		"PageTitle": "敏捷小组",
+		"Title":           "敏捷小组",
+		"PageTitle":       "敏捷小组",
+		"PageDescription": "敏捷团队编制、人员分工与组织架构治理",
 	})
 }
 

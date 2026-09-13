@@ -39,16 +39,17 @@ func (h *Handler) Index(c *gin.Context) {
 		resp = ListResp{Kind: req.Tab, Rows: []Row{}}
 	}
 	render.Page(c, http.StatusOK, constants.TEMPLATE_QUERY_INDEX, gin.H{
-		"Title":     "需求查询",
-		"PageTitle": "需求查询",
-		"Tab":       resp.Kind,
-		"Keyword":   req.Keyword,
-		"Status":    req.Status,
-		"Priority":  req.Priority,
-		"Owner":     req.Owner,
-		"System":    req.System,
-		"Rows":      resp.Rows,
-		"Total":     resp.Total,
+		"Title":           "需求查询",
+		"PageTitle":       "需求查询",
+		"PageDescription": "全局业务需求与研发需求检索、过滤及追踪",
+		"Tab":             resp.Kind,
+		"Keyword":         req.Keyword,
+		"Status":          req.Status,
+		"Priority":        req.Priority,
+		"Owner":           req.Owner,
+		"System":          req.System,
+		"Rows":            resp.Rows,
+		"Total":           resp.Total,
 	})
 }
 

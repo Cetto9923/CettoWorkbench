@@ -17,10 +17,6 @@
   <input type="hidden" id="csrfToken" name="csrf_token" value="{{ .CSRFToken }}">
   <input type="hidden" id="currentUserAccount" value="{{ if .CurrentUser }}{{ .CurrentUser.Account }}{{ end }}">
   <header class="workspace-header">
-    <div class="workspace-header-left">
-      <h2>我的关注</h2>
-      <p>统一监控您重点跟进的各类关键研发对象与项目进度</p>
-    </div>
     <div class="header-quick-filters" id="followQuickChips" role="group" aria-label="关注快捷焦点">
       <button type="button" class="header-quick-chip active" data-scope="open" aria-pressed="true">全部未关闭 <em id="kpiOpen">0</em></button>
       <button type="button" class="header-quick-chip" data-lifecycle="clarifying" aria-pressed="false">梳理中 <em id="kpiClarifying">0</em></button>

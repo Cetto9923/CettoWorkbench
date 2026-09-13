@@ -9,7 +9,11 @@ import (
 )
 
 func (h *Handler) IssueRisk(c *gin.Context) {
-	render.Page(c, http.StatusOK, "po/issue-risk", gin.H{"Title": "问题风险", "PageTitle": "问题风险"})
+	render.Page(c, http.StatusOK, "po/issue-risk", gin.H{
+		"Title":           "问题风险",
+		"PageTitle":       "问题风险",
+		"PageDescription": "统一跟踪和治理跨需求、跨团队的问题与风险项",
+	})
 }
 func (h *Handler) IssueRiskItems(c *gin.Context) {
 	var req IssueRiskListReq

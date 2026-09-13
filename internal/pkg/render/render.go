@@ -429,6 +429,16 @@ func (r *Renderer) enrichData(c *gin.Context, page string, data gin.H) {
 			data["ActiveNavKey"] = ""
 		}
 	}
+	if _, ok := data["PageTitle"]; !ok {
+		if v, ok := data["Title"]; ok {
+			data["PageTitle"] = v
+		} else {
+			data["PageTitle"] = ""
+		}
+	}
+	if _, ok := data["PageDescription"]; !ok {
+		data["PageDescription"] = ""
+	}
 	if _, ok := data["ZentaoURL"]; !ok {
 		data["ZentaoURL"] = r.zentaoURL
 	}
@@ -470,6 +480,7 @@ func (r *Renderer) funcMap() template.FuncMap {
 		"alertclass":    alertClass,
 		"dict":          dict,
 		"menuNavActive": menu.MenuNavActive,
+		"hasPrefix":     strings.HasPrefix,
 	}
 }
 

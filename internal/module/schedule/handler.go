@@ -181,6 +181,7 @@ func (h *Handler) Index(c *gin.Context) {
 	render.Page(c, http.StatusOK, constants.TEMPLATE_SCHEDULE_INDEX, gin.H{
 		"Title":                   "排期工作台",
 		"PageTitle":               "排期工作台",
+		"PageDescription":         "业务需求与敏捷团队迭代排期工作台",
 		"Windows":                 windows,
 		"BizRequirements":         demandData.BizRequirements,
 		"BizTotal":                demandData.BizTotal,

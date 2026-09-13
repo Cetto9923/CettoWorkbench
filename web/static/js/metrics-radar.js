@@ -5,8 +5,8 @@
          1. 敏捷小组视角（看板敏捷团队）VS 团队管理角度（组织架构层级团队）自由切换
          2. 组织架构团队下拉筛选（如项目赋能团队、需求&效能团队等）
          3. 按月度时间维度切片统计
-         4. 紧凑高密度微磁贴排布（内容一次显示全，0 滚动条，一眼到底）
-         5. 自适应五维质效雷达盘 + 底部单行下钻透视 Dock
+         4. 现代科技质感高密度排布（完美兼容浅色与深色主题，0 滚动条，一眼到底）
+         5. 自适应五维质效雷达盘 + 底部透视下钻控制台
    ============================================================================= */
 (function () {
   "use strict";
@@ -331,37 +331,51 @@
     if ($("kpiScoreRank")) {
       $("kpiScoreRank").textContent = overallScore >= 85 ? "质效优秀 ↑" : (overallScore >= 75 ? "质效良好" : "质效警示 ↓");
     }
-    if ($("kpiNormalCount")) $("kpiNormalCount").textContent = totalNormal + " 项";
+    if ($("kpiNormalCount")) $("kpiNormalCount").textContent = totalNormal;
     if ($("kpiNormalRate")) {
       var rate = Math.round(totalNormal / Math.max(1, totalAll) * 100);
       $("kpiNormalRate").textContent = "达标率 " + rate + "%";
+      if ($("kpiNormalBar")) $("kpiNormalBar").style.width = rate + "%";
     }
-    if ($("kpiWarnCount")) $("kpiWarnCount").textContent = totalWarn + " 项";
-    if ($("kpiDangerCount")) $("kpiDangerCount").textContent = totalDanger + " 项";
+    if ($("kpiWarnCount")) $("kpiWarnCount").textContent = totalWarn;
+    if ($("kpiDangerCount")) $("kpiDangerCount").textContent = totalDanger;
+    if ($("kpiDangerHint")) {
+      $("kpiDangerHint").innerHTML = totalDanger > 0
+        ? '<i class="fas fa-triangle-exclamation"></i> ' + totalDanger + ' 项高危需治理'
+        : '<i class="fas fa-check"></i> 运行平稳 · 暂无阻断';
+    }
 
     var targetName = "";
     if (state.viewMode === "team") {
-      targetName = state.orgTeamName === "all" ? "全团队管理汇总 (全行)" : ("组织团队: " + state.orgTeamName);
+      targetName = state.orgTeamName === "all" ? "全团队管理汇总 (全行)" : state.orgTeamName;
     } else {
       targetName = boardTeamMap[state.teamgroupId] || "看板敏捷小组";
     }
 
     if ($("kpiCurrentTarget")) $("kpiCurrentTarget").textContent = targetName;
-    if ($("kpiSnapshotTime")) $("kpiSnapshotTime").textContent = formatMonthText(state.month);
+    if ($("kpiSnapshotTime")) $("kpiSnapshotTime").innerHTML = '<i class="fas fa-database"></i> ' + esc(formatMonthText(state.month)) + ' 实时快照';
 
-    if ($("radarHeaderMeta")) {
-      $("radarHeaderMeta").textContent = state.viewMode === "team"
-        ? "团队管理角度 · " + targetName + " · " + formatMonthText(state.month) + " 运行快照"
-        : "看板敏捷小组视角 · " + targetName + " · " + formatMonthText(state.month) + " 运行快照";
+    if ($("radarScopeBadge")) {
+      $("radarScopeBadge").innerHTML = state.viewMode === "team"
+        ? '<i class="fas fa-sitemap"></i> 团队管理维度'
+        : '<i class="fas fa-users-viewfinder"></i> 敏捷小组视角';
+    }
+    if ($("radarTargetBadge")) {
+      $("radarTargetBadge").innerHTML = '<i class="fas fa-layer-group"></i> ' + esc(targetName);
+    }
+    if ($("radarTimeBadge")) {
+      $("radarTimeBadge").innerHTML = '<i class="fas fa-calendar-alt"></i> ' + esc(formatMonthText(state.month)) + ' 运行快照';
     }
   }
 
-  // 4. 自适应 SVG 五维雷达盘 (140px 精致盘面)
+  // 4. 自适应 SVG 五维雷达盘 (双模式主题响应)
   function renderRadarSvg() {
     var host = $("radarSvgHost");
     if (!host) return;
 
-    var size = 160, cx = 80, cy = 80, r = 58;
+    var isDark = (document.documentElement.getAttribute("data-theme") || "").toLowerCase() === "dark";
+
+    var sizeW = 240, sizeH = 216, cx = 120, cy = 106, r = 70;
     var angles = [-90, -18, 54, 126, 198];
 
     function getCoord(score, angleDeg) {
@@ -370,20 +384,38 @@
       return { x: cx + dist * Math.cos(rad), y: cy + dist * Math.sin(rad) };
     }
 
+    var defs = '<defs>' +
+      '<linearGradient id="radarFillGrad" x1="0%" y1="0%" x2="100%" y2="100%">' +
+      (isDark
+        ? '<stop offset="0%" stop-color="#3b82f6" stop-opacity="0.40" /><stop offset="100%" stop-color="#2563eb" stop-opacity="0.10" />'
+        : '<stop offset="0%" stop-color="#3b82f6" stop-opacity="0.25" /><stop offset="100%" stop-color="#2563eb" stop-opacity="0.05" />'
+      ) +
+      '</linearGradient>' +
+      (isDark ? '<filter id="radarGlow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.5" result="blur" /><feComposite in="SourceGraphic" in2="blur" operator="over" /></filter>' : '') +
+      '</defs>';
+
     var rings = [20, 40, 60, 80, 100];
+    var ringStroke = isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(15, 23, 42, 0.12)";
+    var axisStroke = isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(15, 23, 42, 0.12)";
+    var benchmarkColor = isDark ? "#10b981" : "#059669";
+    var polygonStroke = isDark ? "#3b82f6" : "#2563eb";
+    var dotColor = isDark ? "#60a5fa" : "#2563eb";
+    var dotHalo = isDark ? "rgba(59, 130, 246, 0.35)" : "rgba(37, 99, 235, 0.25)";
+    var textColor = isDark ? "#cbd5e1" : "#1e293b";
+
     var ringPaths = rings.map(function (val) {
       var pts = angles.map(function (deg) {
         var p = getCoord(val, deg);
         return p.x.toFixed(1) + "," + p.y.toFixed(1);
       }).join(" ");
-      var stroke = val === 80 ? "var(--color-success)" : (val === 60 ? "var(--color-warning)" : "var(--color-border)");
-      var dash = val === 80 ? 'stroke-dasharray="2,2"' : "";
-      return '<polygon points="' + pts + '" fill="none" stroke="' + stroke + '" stroke-width="' + (val === 80 ? "1.2" : "0.7") + '" ' + dash + '/>';
+      var stroke = val === 80 ? benchmarkColor : ringStroke;
+      var dash = val === 80 ? 'stroke-dasharray="3,3" stroke-width="1.3"' : 'stroke-width="0.8"';
+      return '<polygon points="' + pts + '" fill="none" stroke="' + stroke + '" ' + dash + '/>';
     }).join("");
 
     var axisLines = angles.map(function (deg) {
       var p = getCoord(100, deg);
-      return '<line x1="' + cx + '" y1="' + cy + '" x2="' + p.x.toFixed(1) + '" y2="' + p.y.toFixed(1) + '" stroke="var(--color-border)" stroke-width="0.7"/>';
+      return '<line x1="' + cx + '" y1="' + cy + '" x2="' + p.x.toFixed(1) + '" y2="' + p.y.toFixed(1) + '" stroke="' + axisStroke + '" stroke-width="0.8"/>';
     }).join("");
 
     var scoreCoords = CATEGORY_NAMES.map(function (cat, i) {
@@ -392,54 +424,84 @@
     });
     var scorePts = scoreCoords.map(function (p) { return p.x.toFixed(1) + "," + p.y.toFixed(1); }).join(" ");
 
-    var scorePolygon = '<polygon points="' + scorePts + '" fill="var(--color-primary-light)" stroke="var(--color-primary)" stroke-width="1.8"/>';
+    var filterAttr = isDark ? 'filter="url(#radarGlow)"' : '';
+    var scorePolygon = '<polygon points="' + scorePts + '" fill="url(#radarFillGrad)" stroke="' + polygonStroke + '" stroke-width="2" ' + filterAttr + '/>';
 
     var scoreDots = scoreCoords.map(function (p) {
-      return '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="2.8" fill="var(--color-primary)" stroke="var(--color-surface)" stroke-width="1.2"/>';
+      return '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="4" fill="' + dotHalo + '"/>' +
+        '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="2.5" fill="' + dotColor + '" stroke="#ffffff" stroke-width="1"/>';
     }).join("");
 
     var labels = CATEGORY_NAMES.map(function (cat, i) {
       var s = categoryScores[cat] ? categoryScores[cat].score : 0;
-      var p = getCoord(118, angles[i]);
+      var p = getCoord(124, angles[i]);
       var anchor = "middle";
-      if (angles[i] > -90 && angles[i] < 90) anchor = "start";
-      else if (angles[i] > 90 || angles[i] < -90) anchor = "end";
-      return '<text x="' + p.x.toFixed(1) + '" y="' + (p.y + 3).toFixed(1) + '" font-size="8.5" fill="var(--color-text-secondary)" font-weight="600" text-anchor="' + anchor + '">' +
-        esc(cat) + ' ' + s + '</text>';
+      var offsetY = 3;
+
+      if (angles[i] === -90) {
+        anchor = "middle";
+        offsetY = -2;
+      } else if (angles[i] > -90 && angles[i] < 90) {
+        anchor = "start";
+        offsetY = 3;
+      } else {
+        anchor = "end";
+        offsetY = 3;
+      }
+
+      var scoreColor = isDark
+        ? (s >= 80 ? "#34d399" : (s >= 60 ? "#fbbf24" : "#f87171"))
+        : (s >= 80 ? "#059669" : (s >= 60 ? "#d97706" : "#dc2626"));
+
+      return '<text x="' + p.x.toFixed(1) + '" y="' + (p.y + offsetY).toFixed(1) + '" font-size="9.5" fill="' + textColor + '" font-weight="600" text-anchor="' + anchor + '">' +
+        esc(cat) + ' <tspan fill="' + scoreColor + '" font-weight="700">' + s + '</tspan></text>';
     }).join("");
 
-    host.innerHTML = '<svg viewBox="0 0 ' + size + ' ' + size + '">' +
-      ringPaths + axisLines + scorePolygon + scoreDots + labels +
+    host.innerHTML = '<svg viewBox="0 0 ' + sizeW + ' ' + sizeH + '" preserveAspectRatio="xMidYMid meet">' +
+      defs + ringPaths + axisLines + scorePolygon + scoreDots + labels +
       '</svg>';
   }
 
-  // 5. 5分类健康条 (紧凑单行高24px)
+  // 5. 5分类健康条 (现代质感分割卡片)
   function renderCategoryCards() {
     var host = $("radarCategoryCards");
     if (!host) return;
 
     var html = CATEGORY_NAMES.map(function (cat) {
-      var data = categoryScores[cat] || { score: 0, severity: "unknown", normal: 0, warn: 0, danger: 0 };
+      var data = categoryScores[cat] || { score: 0, severity: "unknown", normal: 0, warn: 0, danger: 0, total: 0 };
       var cls = CATEGORY_COLOR_CLASS[cat] || "cat-default";
       var scoreCls = data.score >= 80 ? "score-ok" : (data.score >= 60 ? "score-warn" : "score-danger");
+      var isActive = state.matrixCategory === cat ? "active" : "";
 
-      return '<div class="radar-cat-card" data-cat="' + esc(cat) + '">' +
-        '<div class="radar-cat-left">' +
-        '<span class="metric-category ' + cls + '" style="height:18px; padding:0 5px; font-size:10px;">' + esc(cat) + '</span>' +
-        '<span class="radar-cat-score ' + scoreCls + '">' + data.score + '分</span>' +
+      var tot = data.total || 1;
+      var pOk = Math.round((data.normal / tot) * 100);
+      var pWarn = Math.round((data.warn / tot) * 100);
+      var pDanger = Math.round((data.danger / tot) * 100);
+
+      return '<div class="radar-cat-card ' + isActive + '" data-cat="' + esc(cat) + '" title="点击筛选右侧' + esc(cat) + '指标">' +
+        '<div class="radar-cat-row-top">' +
+          '<div class="radar-cat-left">' +
+            '<span class="metric-category ' + cls + '" style="height:18px; padding:0 6px; font-size:10px; font-weight:600;">' + esc(cat) + '</span>' +
+            '<span class="radar-cat-score ' + scoreCls + '">' + data.score + '分</span>' +
+          '</div>' +
+          '<div class="radar-cat-counts-tag">' +
+            '<span class="c-ok">' + data.normal + '达标</span>' +
+            (data.warn > 0 ? ' · <span class="c-warn">' + data.warn + '关注</span>' : '') +
+            (data.danger > 0 ? ' · <span class="c-danger">' + data.danger + '风险</span>' : '') +
+          '</div>' +
         '</div>' +
-        '<div class="radar-cat-right">' +
-        '<span class="radar-cat-pill ok" title="达标项">' + data.normal + '</span>' +
-        '<span class="radar-cat-pill warn" title="关注项">' + data.warn + '</span>' +
-        '<span class="radar-cat-pill danger" title="风险项">' + data.danger + '</span>' +
+        '<div class="radar-cat-track">' +
+          '<div class="trk-seg ok" style="width:' + pOk + '%"></div>' +
+          (pWarn > 0 ? '<div class="trk-seg warn" style="width:' + pWarn + '%"></div>' : '') +
+          (pDanger > 0 ? '<div class="trk-seg danger" style="width:' + pDanger + '%"></div>' : '') +
         '</div>' +
-        '</div>';
+      '</div>';
     }).join("");
 
     host.innerHTML = html;
   }
 
-  // 6. 核心指标紧凑微磁贴网格 (4列紧凑排布，13个指标4行全展现，0滚动条)
+  // 6. 核心指标微磁贴网格 (4列优雅排布，自适应充满，卡片做丰满)
   function renderMatrixGrid() {
     var host = $("radarMatrixGrid");
     if (!host) return;
@@ -458,24 +520,47 @@
       var isSel = m.code === state.selectedCode;
       var statusCls = m.status || "unknown";
       var statusText = statusCls === "normal" ? "达标" : (statusCls === "warn" ? "关注" : (statusCls === "danger" ? "风险" : "—"));
+      var statusIcon = statusCls === "normal" ? "fa-circle-check" : (statusCls === "warn" ? "fa-triangle-exclamation" : (statusCls === "danger" ? "fa-circle-xmark" : "fa-circle-question"));
+      var catCls = CATEGORY_COLOR_CLASS[m.category] || "cat-delivery";
+
+      var gaugePct = 0;
+      if (m.unit === "%") {
+        gaugePct = Math.min(100, Math.max(0, m.valueNum || 0));
+      } else if (m.unit === "天") {
+        var targetNum = parseFloat(m.target.replace(/[^0-9.]/g, "")) || 30;
+        gaugePct = Math.min(100, Math.max(10, Math.round(((m.valueNum || 0) / (targetNum * 1.3)) * 100)));
+      } else {
+        gaugePct = m.status === "normal" ? 100 : (m.status === "warn" ? 60 : 30);
+      }
 
       return '<div class="radar-m-compact-tile ' + (isSel ? 'selected' : '') + '" data-code="' + esc(m.code) + '">' +
         '<div class="tile-row-top">' +
-        '<span class="m-name-text" title="' + esc(m.name) + '">' + esc(m.name) + '</span>' +
-        '<span class="m-badge-pill ' + statusCls + '">' + statusText + '</span>' +
+          '<div class="tile-title-group">' +
+            '<span class="cat-dot ' + catCls + '"></span>' +
+            '<span class="m-name-text" title="' + esc(m.name) + '">' + esc(m.name) + '</span>' +
+          '</div>' +
+          '<span class="m-badge-pill ' + statusCls + '">' +
+            '<i class="fas ' + statusIcon + '"></i> ' + statusText +
+          '</span>' +
+        '</div>' +
+        '<div class="tile-row-middle">' +
+          '<strong class="m-val-text">' + esc(m.value) + '</strong>' +
+          '<div class="m-mini-gauge">' +
+            '<div class="m-gauge-bar ' + statusCls + '" style="width:' + gaugePct + '%"></div>' +
+          '</div>' +
         '</div>' +
         '<div class="tile-row-bottom">' +
-        '<strong class="m-val-text">' + esc(m.value) + '</strong>' +
-        '<span class="m-target-text">目标 ' + esc(m.target) + '</span>' +
+          '<span class="m-target-text"><i class="fas fa-bullseye" style="font-size:9px; margin-right:3px; opacity:0.7;"></i>目标 ' + esc(m.target) + '</span>' +
+          '<span class="m-code-text">' + esc(m.code) + '</span>' +
         '</div>' +
-        '</div>';
+      '</div>';
     }).join("");
 
     host.innerHTML = html;
     updateDetailDock();
   }
 
-  // 7. 底部透视单行 Dock
+  // 7. 底部透视控制台 Dock
   function updateDetailDock() {
     var target = allCalculatedMetrics.find(function (m) { return m.code === state.selectedCode; });
     if (!target && allCalculatedMetrics.length > 0) {
@@ -484,18 +569,25 @@
     }
     if (!target) return;
 
-    if ($("dockMetricCategory")) $("dockMetricCategory").textContent = target.category;
-    if ($("dockMetricTitle")) $("dockMetricTitle").textContent = target.name + " (" + target.code + ")";
+    var catCls = CATEGORY_COLOR_CLASS[target.category] || "cat-delivery";
+    var dockCat = $("dockMetricCategory");
+    if (dockCat) {
+      dockCat.className = "dock-badge " + catCls;
+      dockCat.textContent = target.category;
+    }
+    if ($("dockMetricTitle")) $("dockMetricTitle").textContent = target.name;
+    if ($("dockMetricCode")) $("dockMetricCode").textContent = target.code;
     var statusEl = $("dockMetricStatus");
     if (statusEl) {
-      statusEl.className = "metric-status " + (target.status || "unknown");
-      statusEl.textContent = STATUS_LABEL[target.status] || "—";
+      statusEl.className = "dock-status-badge " + (target.status || "unknown");
+      var icon = target.status === "normal" ? "fa-circle-check" : (target.status === "warn" ? "fa-triangle-exclamation" : "fa-shield-virus");
+      statusEl.innerHTML = '<i class="fas ' + icon + '"></i> ' + (STATUS_LABEL[target.status] || "—");
     }
     if ($("dockCurrentVal")) $("dockCurrentVal").textContent = target.value;
     if ($("dockTargetVal")) {
-      $("dockTargetVal").textContent = "(目标: " + (target.target || "—") +
-        " | 关注: " + (target.warningThreshold || "—") +
-        " | 风险: " + (target.dangerThreshold || "—") + ")";
+      $("dockTargetVal").textContent = "目标 " + (target.target || "—") +
+        " · 关注 " + (target.warningThreshold || "—") +
+        " · 风险 " + (target.dangerThreshold || "—");
     }
     if ($("dockFormula")) $("dockFormula").textContent = target.formula || "标准计算规则";
     if ($("dockSample")) $("dockSample").textContent = target.sample || "基于当前时间窗口下看板单据实测值";
@@ -547,7 +639,7 @@
       refresh();
     });
 
-    // 矩阵分类筛选
+    // 矩阵分类筛选按钮
     var tagContainer = $("matrixCategoryFilters");
     if (tagContainer) {
       tagContainer.addEventListener("click", function (e) {
@@ -556,6 +648,27 @@
         tagContainer.querySelectorAll(".matrix-tag-btn").forEach(function (b) { b.classList.remove("active"); });
         btn.classList.add("active");
         state.matrixCategory = btn.getAttribute("data-cat") || "";
+        renderCategoryCards();
+        renderMatrixGrid();
+      });
+    }
+
+    // 5分类健康卡片点击联动筛选
+    var catBox = $("radarCategoryCards");
+    if (catBox) {
+      catBox.addEventListener("click", function (e) {
+        var card = e.target.closest(".radar-cat-card");
+        if (!card) return;
+        var cat = card.getAttribute("data-cat");
+        state.matrixCategory = (state.matrixCategory === cat) ? "" : cat;
+        if (tagContainer) {
+          tagContainer.querySelectorAll(".matrix-tag-btn").forEach(function (b) {
+            var bCat = b.getAttribute("data-cat") || "";
+            if (bCat === state.matrixCategory) b.classList.add("active");
+            else b.classList.remove("active");
+          });
+        }
+        renderCategoryCards();
         renderMatrixGrid();
       });
     }
@@ -570,6 +683,20 @@
       tile.classList.add("selected");
       updateDetailDock();
     });
+
+    // 监听全局主题 (Dark / Light) 动态切换，无缝刷新雷达 SVG
+    try {
+      var themeObserver = new MutationObserver(function (mutations) {
+        mutations.forEach(function (mutation) {
+          if (mutation.attributeName === "data-theme") {
+            renderRadarSvg();
+          }
+        });
+      });
+      themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    } catch (e) {
+      console.warn("Theme observer not supported", e);
+    }
   }
 
   document.addEventListener("DOMContentLoaded", function () {

@@ -13,79 +13,100 @@
 
 {{ define "content" }}
 <div class="po-personal-workspace po-metrics-manage">
-  <!-- 头部信息 -->
+  <!-- 头部信息：与个人工作台骨架严格对齐 (h2 标题 + p 描述 │ 右侧操作按钮) -->
   <header class="workspace-header">
     <div class="workspace-header-left">
       <h2>指标管理</h2>
-      <p>指标元数据维护 · 考核目标与阈值配置 · 计算口径定义（增删改配）</p>
+      <p>指标元数据维护 · 考核达标目标与预警阈值配置 · 计算口径定义</p>
     </div>
     <div class="workspace-header-right">
-      <a href="/metrics/radar" class="workspace-btn" style="text-decoration:none; margin-right:8px; display:inline-flex; align-items:center; gap:4px;">
-        <span aria-hidden="true">📊</span> 进入指标雷达大屏
+      <a href="/metrics/radar" class="workspace-btn" style="text-decoration:none; margin-right:8px; display:inline-flex; align-items:center; gap:6px;">
+        <i class="fas fa-chart-pie"></i> 进入指标雷达大屏
       </a>
       <button type="button" class="workspace-btn primary" id="mCreateBtn">+ 新增指标</button>
     </div>
   </header>
 
-  <section class="workspace-panel">
-    <!-- 1. 顶部配置概览卡片 -->
-    <div class="workspace-result-bar metric-summary-cards" aria-label="配置概览">
-      <span class="metric-summary-card" data-summary="total">
-        <em>指标总数</em><strong id="mSummaryTotal">14</strong>
-      </span>
-      <span class="metric-summary-card success" data-summary="enabled">
-        <em>已启用指标</em><strong id="mSummaryEnabled" style="color: var(--color-success, #059669);">14</strong>
-      </span>
-      <span class="metric-summary-card warn" data-summary="warning">
-        <em>已设关注阈值</em><strong id="mSummaryWarnThreshold" style="color: var(--color-warning, #d97706);">13</strong>
-      </span>
-      <span class="metric-summary-card danger" data-summary="danger">
-        <em>已设风险红线</em><strong id="mSummaryDangerThreshold" style="color: var(--color-danger, #dc2626);">13</strong>
-      </span>
-      <span class="metric-summary-card" data-summary="category">
-        <em>覆盖业务分类</em><strong id="mSummaryCategories">5</strong>
-      </span>
+  <!-- 1. 顶部 5 项配置概览指标卡（独立置顶，严格遵循系统卡片几何与统一表面规范） -->
+  <div class="metric-summary-cards" aria-label="配置概览">
+    <div class="metric-summary-card" data-summary="total">
+      <span class="m-sum-label">指标总数</span>
+      <strong class="m-sum-num" id="mSummaryTotal">14</strong>
+      <span class="m-sum-desc">度量体系元数据池</span>
     </div>
+    <div class="metric-summary-card c-enabled" data-summary="enabled">
+      <span class="m-sum-label">已启用指标</span>
+      <strong class="m-sum-num" id="mSummaryEnabled">14</strong>
+      <span class="m-sum-desc">大屏驾驶舱实时测算</span>
+    </div>
+    <div class="metric-summary-card c-warn" data-summary="warning">
+      <span class="m-sum-label">已设关注阈值</span>
+      <strong class="m-sum-num" id="mSummaryWarnThreshold">13</strong>
+      <span class="m-sum-desc">偏离达标线预警防护</span>
+    </div>
+    <div class="metric-summary-card c-danger" data-summary="danger">
+      <span class="m-sum-label">已设风险红线</span>
+      <strong class="m-sum-num" id="mSummaryDangerThreshold">13</strong>
+      <span class="m-sum-desc">触碰高危自动标红</span>
+    </div>
+    <div class="metric-summary-card" data-summary="category">
+      <span class="m-sum-label">覆盖业务分类</span>
+      <strong class="m-sum-num" id="mSummaryCategories">5</strong>
+      <span class="m-sum-desc">五维全方位平衡度量</span>
+    </div>
+  </div>
 
+  <section class="workspace-panel">
     <!-- 2. 工具栏（分类 + 状态 + 搜索） -->
     <div class="workspace-toolbar">
-      <label class="filter-group" for="mCategory">
-        <span class="filter-label">分类:</span>
-        <select id="mCategory" aria-label="分类">
-          <option value="">全部分类</option>
-          <option value="需求治理">需求治理</option>
-          <option value="交付效率">交付效率</option>
-          <option value="研发质量">研发质量</option>
-          <option value="规范执行">规范执行</option>
-          <option value="效能管理">效能管理</option>
-        </select>
-      </label>
+      <div class="toolbar-filters-group">
+        <label class="filter-group" for="mCategory">
+          <span class="filter-label">分类:</span>
+          <div class="custom-select-box">
+            <select id="mCategory" aria-label="分类">
+              <option value="">全部分类</option>
+              <option value="需求治理">需求治理</option>
+              <option value="交付效率">交付效率</option>
+              <option value="研发质量">研发质量</option>
+              <option value="规范执行">规范执行</option>
+              <option value="效能管理">效能管理</option>
+            </select>
+            <i class="fas fa-chevron-down select-arrow"></i>
+          </div>
+        </label>
 
-      <label class="filter-group" for="mRole">
-        <span class="filter-label">责任角色:</span>
-        <select id="mRole" aria-label="责任角色">
-          <option value="">全部角色</option>
-          <option value="PO">PO</option>
-          <option value="SM">SM</option>
-          <option value="开发组长">开发组长</option>
-          <option value="测试负责人">测试负责人</option>
-          <option value="PMO">PMO</option>
-        </select>
-      </label>
+        <label class="filter-group" for="mRole">
+          <span class="filter-label">责任角色:</span>
+          <div class="custom-select-box">
+            <select id="mRole" aria-label="责任角色">
+              <option value="">全部角色</option>
+              <option value="PO">PO</option>
+              <option value="SM">SM</option>
+              <option value="开发组长">开发组长</option>
+              <option value="测试负责人">测试负责人</option>
+              <option value="PMO">PMO</option>
+            </select>
+            <i class="fas fa-chevron-down select-arrow"></i>
+          </div>
+        </label>
 
-      <label class="filter-group" for="mState">
-        <span class="filter-label">启停状态:</span>
-        <select id="mState" aria-label="启停状态">
-          <option value="">全部状态</option>
-          <option value="enabled" selected>启用中</option>
-          <option value="disabled">已停用</option>
-        </select>
-      </label>
+        <label class="filter-group" for="mState">
+          <span class="filter-label">启停状态:</span>
+          <div class="custom-select-box">
+            <select id="mState" aria-label="启停状态">
+              <option value="">全部状态</option>
+              <option value="enabled" selected>启用中</option>
+              <option value="disabled">已停用</option>
+            </select>
+            <i class="fas fa-chevron-down select-arrow"></i>
+          </div>
+        </label>
 
-      <label class="workspace-search">
-        <span aria-hidden="true">⌕</span>
-        <input id="mKeyword" type="search" placeholder="搜索指标名 / 编码 / 数据来源 / 算法" aria-label="搜索指标">
-      </label>
+        <div class="workspace-search">
+          <i class="fas fa-search search-icon"></i>
+          <input id="mKeyword" type="search" placeholder="搜索指标名 / 编码 / 数据来源 / 算法" aria-label="搜索指标">
+        </div>
+      </div>
 
       <button type="button" class="workspace-btn" id="mReset">重置筛选</button>
     </div>
