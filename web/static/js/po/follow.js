@@ -17,15 +17,14 @@
   var weeklyScope = "mine";
   var weeklyKeyword = "";
   var PL = window.PersonalList || {};
-  var PAGE_SIZE_OPTIONS = PL.PAGE_SIZE_OPTIONS || [10, 20, 50, 100];
-  var priorityBadge = function(raw) { return PL.priorityBadge ? PL.priorityBadge(raw) : ""; };
+  var PAGE_SIZE_OPTIONS = PL.PAGE_SIZE_OPTIONS;
   var weeklyPager = {
     page: 1,
     pageSize: (typeof PL.loadPageSize === "function") ? PL.loadPageSize("po.follow.weekly.pageSize", 10, PAGE_SIZE_OPTIONS) : 10,
     total: 0
   };
 
-  var esc = (window.PersonalList && window.PersonalList.escapeHtml) || function (s) { return String(s == null ? "" : s); };
+  var esc = window.escapeHtml;
 
   function getCsrfToken() {
     var el = document.getElementById("csrfToken"); return el ? el.value : "";
@@ -129,9 +128,7 @@
 
   function situationTag(item) {
     var label = item.overallSituationLabel || "正常";
-    return window.PersonalList && window.PersonalList.statusTagHtml
-      ? window.PersonalList.statusTagHtml(label)
-      : '<span class="tag">' + esc(label) + "</span>";
+    return window.PersonalList.statusTagHtml(label);
   }
 
   function submitStatusHtml(status) {
@@ -286,14 +283,14 @@
         body: JSON.stringify({ followed: false })
       });
       if (res.ok) {
-        if (typeof window.showToast === "function") window.showToast("已取消关注");
+        window.showToast("已取消关注");
         if (currentTab === "weekly") loadWeeklyData();
         else if (window.FollowDemand) window.FollowDemand.load();
       } else {
-        if (typeof window.showToast === "function") window.showToast("取消关注失败", "error");
+        window.showToast("取消关注失败", "error");
       }
     } catch (e) {
-      if (typeof window.showToast === "function") window.showToast("取消关注失败", "error");
+      window.showToast("取消关注失败", "error");
     }
   }
 
@@ -310,12 +307,10 @@
         body: JSON.stringify({ followed: !!followed })
       });
       if (!res.ok) throw new Error("set follow failed");
-      if (typeof window.showToast === "function") {
-        window.showToast(followed ? "已关注" : "已取消关注", "success");
-      }
+      window.showToast(followed ? "已关注" : "已取消关注", "success");
       return true;
     } catch (e) {
-      if (typeof window.showToast === "function") window.showToast(followed ? "关注失败" : "取消关注失败", "error");
+      window.showToast(followed ? "关注失败" : "取消关注失败", "error");
       return false;
     }
   };

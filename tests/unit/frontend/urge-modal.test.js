@@ -66,6 +66,8 @@ global.document = {
   addEventListener: function () {}
 };
 global.window = global;
+// 真源桩：production 由 ui.js 提供 window.escapeHtml（base.html 全站加载）。
+global.escapeHtml = v => String(v == null ? "" : v);
 
 // 加载 urge.js
 const urgeCode = fs.readFileSync(path.join(__dirname, "../../../web/static/js/po/urge.js"), "utf8");

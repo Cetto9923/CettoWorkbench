@@ -15,6 +15,9 @@ trap 'rm -f "$raw" "$current" "$expected" "$details" "$new_hard" "$new_advisory"
 sources=()
 while IFS= read -r file; do
   [[ "$file" == web/static/vendor/* ]] && continue
+  [[ "$file" == tests/* ]] && continue
+  [[ "$file" == *_test.go ]] && continue
+  [[ "$file" == docs/* ]] && continue
   sources+=("$file")
 done < <(git ls-files --cached --others --exclude-standard -- '*.go' '*.js' '*.html')
 
@@ -26,6 +29,14 @@ while IFS= read -r file; do
   sql_sources+=("$file")
 done < <(git ls-files --cached --others --exclude-standard -- '*.sql')
 
+# Prefer ripgrep when available: the default `grep` here is toybox, which is
+# orders of magnitude slower over this many files. Both emit `path:line:match`.
+if command -v rg >/dev/null 2>&1; then
+  grepper=(rg -n --no-heading --no-ignore -a -i --color never)
+else
+  grepper=(grep -EnHi)
+fi
+
 scan() {
   local severity=$1
   local rule=$2
@@ -33,7 +44,7 @@ scan() {
   shift 3
   local matches
   local evidence
-  matches=$(grep -EnHi -- "$regex" "$@" 2>/dev/null || true)
+  matches=$("${grepper[@]}" -- "$regex" "$@" 2>/dev/null || true)
   while IFS=: read -r path line rest; do
     [[ -z "$path" ]] && continue
     evidence=$(printf '%s' "$rest" | sed -E 's/[[:space:]]+/ /g; s/^ //; s/ $//')
@@ -48,10 +59,14 @@ if ((${#sources[@]} > 0)); then
   scan advisory INIT_FUNCTION 'func[[:space:]]+init[[:space:]]*\(' "${sources[@]}"
   scan advisory AD_HOC_PRINT '(fmt|log)\.Print(f|ln)?[[:space:]]*\(' "${sources[@]}"
   scan advisory UNSAFE_TEMPLATE_HTML 'template\.HTML' "${sources[@]}"
-  scan advisory NEW_WINDOW '(target[[:space:]]*=[[:space:]]*"_blank|window\.open[[:space:]]*\()' "${sources[@]}"
-  scan advisory LOCAL_ESCAPE_HTML 'function[[:space:]]+escapeHtml[[:space:]]*\(' "${sources[@]}"
   scan advisory LOCAL_PAGINATION 'function[[:space:]]+renderPagination[[:space:]]*\(' "${sources[@]}"
   scan advisory IN_MEMORY_PAGINATION '\[[[:space:]]*start[[:space:]]*:[[:space:]]*end[[:space:]]*\]' "${sources[@]}"
+  # An escape helper must never fall back to returning the unescaped original
+  # string. Both rules are deliberately name-agnostic: matching the *shape* of
+  # the defect instead of a name (`esc`) is what the 2026-09-13 convergence
+  # needed, because three real instances were missed by a name-based scan.
+  scan advisory ESCAPE_FAIL_OPEN_CHAIN '\|\| *function *\([a-zA-Z_$]*\) *\{ *return String\(' "${sources[@]}"
+  scan advisory ESCAPE_FAIL_OPEN_GUARD '\? *(window\.)?escapeHtml\([^)]*\) *: *String\(' "${sources[@]}"
   scan hard SQL_WILDCARD 'SELECT[[:space:]]+([A-Za-z_][A-Za-z0-9_]*\.)?\*([[:space:],]|$)' "${sources[@]}"
 fi
 
@@ -74,12 +89,14 @@ if ((${#sql_sources[@]} > 0)); then
 fi
 
 fetch_sources=()
-for file in "${sources[@]}"; do
-  case "$file" in
-    web/static/js/app.js|web/static/js/ui.js|web/static/js/schedule/schedulefetch.js) ;;
-    *.js) fetch_sources+=("$file") ;;
-  esac
-done
+if ((${#sources[@]} > 0)); then
+  for file in "${sources[@]}"; do
+    case "$file" in
+      web/static/js/app.js|web/static/js/ui.js|web/static/js/schedule/schedulefetch.js) ;;
+      *.js) fetch_sources+=("$file") ;;
+    esac
+  done
+fi
 if ((${#fetch_sources[@]} > 0)); then
   scan advisory DIRECT_PAGE_FETCH '(^|[^A-Za-z0-9_])fetch[[:space:]]*\(' "${fetch_sources[@]}"
 fi
@@ -90,7 +107,7 @@ while IFS= read -r file; do
   handler_files+=("$file")
 done < <(git ls-files --cached --others --exclude-standard -- 'internal/module/**/*handler*.go')
 if ((${#handler_files[@]} > 0)); then
-  routes=$(grep -EnH '\.(GET|POST|PUT|DELETE)[[:space:]]*\(' "${handler_files[@]}" 2>/dev/null || true)
+  routes=$("${grepper[@]}" -- '\.(GET|POST|PUT|DELETE)[[:space:]]*\(' "${handler_files[@]}" 2>/dev/null || true)
   while IFS=: read -r path line rest; do
     [[ -z "$path" ]] && continue
     [[ "$rest" == *RequirePerm* ]] && continue

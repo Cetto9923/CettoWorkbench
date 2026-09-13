@@ -60,7 +60,7 @@ func TestHomeFocusRequestValidation(t *testing.T) {
 	if len(req.Validate()) == 0 {
 		t.Fatal("unknown focus must not silently show all")
 	}
-	for _, relation := range []string{"all", "handling", "following"} {
+	for _, relation := range []string{"all", "lead", "participate", "handling", "following"} {
 		req := DemandsReq{Status: "all", Relation: relation}
 		if errs := req.Validate(); len(errs) > 0 {
 			t.Fatalf("relation %s: %v", relation, errs)
@@ -68,6 +68,41 @@ func TestHomeFocusRequestValidation(t *testing.T) {
 	}
 	if errs := (&DemandsReq{Status: "all", Relation: "owner"}).Validate(); len(errs) == 0 {
 		t.Fatal("legacy relation must not silently acquire the new semantics")
+	}
+}
+
+func TestHomeFocusToolbarRelationLeadAndParticipate(t *testing.T) {
+	db, _ := openSQLMock(t)
+	repo := NewRepo(db, nil)
+	base := repo.homeFocusQuery(context.Background(), "alice", DemandsReq{Status: "developing", Page: 1, PageSize: 15})
+
+	// lead: 我作为需求负责人 (BRA = account)
+	queryLead := applyHomeFocusToolbarFilters(base, "alice", DemandsReq{Relation: "lead"})
+	var rows []struct{ ID int }
+	stmtLead := db.Table("(?) AS focused", queryLead).Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
+	if !strings.Contains(stmtLead.SQL.String(), "id IN (SELECT id FROM zt_demand WHERE BRA = ?)") {
+		t.Fatalf("lead must filter by BRA = ?: %s", stmtLead.SQL.String())
+	}
+
+	// participate: 需求池业务需求 + 非当前负责人 + 当前用户是需求分析人
+	queryPart := applyHomeFocusToolbarFilters(base, "alice", DemandsReq{Relation: "participate"})
+	stmtPart := db.Table("(?) AS focused", queryPart).Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
+	if !strings.Contains(stmtPart.SQL.String(), "d.pool IS NOT NULL AND d.pool <> 0") ||
+		!strings.Contains(stmtPart.SQL.String(), "zt_demandpool") ||
+		!strings.Contains(stmtPart.SQL.String(), "FIND_IN_SET") ||
+		!strings.Contains(stmtPart.SQL.String(), "d.BRA <> ? OR d.BRA IS NULL OR d.BRA = ''") {
+		t.Fatalf("participate must require demand-pool source, non-lead and analyst: %s", stmtPart.SQL.String())
+	}
+}
+
+func TestHomeFocusStoryParticipateExcludesStories(t *testing.T) {
+	db, _ := openSQLMock(t)
+	query := applyStoryToolbarFilters(db.Table("zt_story"), "alice", DemandsReq{Relation: "participate"})
+	var rows []struct{ ID int }
+	stmt := query.Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
+	sql := stmt.SQL.String()
+	if !strings.Contains(sql, "1 = 0") {
+		t.Fatalf("participate must not expose story rows: %s", sql)
 	}
 }
 

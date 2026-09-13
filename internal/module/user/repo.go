@@ -16,6 +16,7 @@ import (
 	"gorm.io/gorm"
 
 	"workbench/internal/model"
+	"workbench/internal/pkg/personlabel"
 )
 
 // Repo 封装用户数据访问。
@@ -117,26 +118,9 @@ func (r *Repo) FindAccountDisplayMap(ctx context.Context) (map[string]string, er
 		if acc == "" {
 			continue
 		}
-		out[acc] = formatAccountDisplay(acc, row.Realname)
+		out[acc] = personlabel.Format(acc, row.Realname)
 	}
 	return out, nil
-}
-
-// formatAccountDisplay 账号 + realname →「姓名(工号)」；无 realname 时回退裸账号。
-func formatAccountDisplay(account, realname string) string {
-	v := strings.TrimSpace(account)
-	if v == "" {
-		return ""
-	}
-	n := strings.TrimSpace(realname)
-	if n == "" {
-		return v
-	}
-	suffix := "(" + v + ")"
-	if n == v || strings.HasSuffix(n, suffix) || strings.Contains(n, suffix) {
-		return n
-	}
-	return n + suffix
 }
 
 // FindByID 按 ID 查询用户详情。

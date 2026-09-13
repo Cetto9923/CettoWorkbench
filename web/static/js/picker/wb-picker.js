@@ -8,10 +8,8 @@
   var EMPTY_LAZY_THRESHOLD = 60;
   var SEARCH_DEBOUNCE_MS = 100;
 
-  function esc(s) {
-    return WBUtils.escapeHtml(s);
-  }
-  function arr(v) { return WBUtils.safeArray(v); }
+  var esc = global.escapeHtml;
+  function arr(v) { return Array.isArray(v) ? v : []; }
   function text(v) { return String(v == null ? '' : v).trim(); }
   function avatarHtml(option) {
     var meta = (option && option.meta) || {};

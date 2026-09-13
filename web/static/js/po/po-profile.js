@@ -20,7 +20,7 @@
   var profileLoading = false;
   var ORG_ONLY_ROLES = { lead: 1, pmo: 1 };
 
-  var esc = (window.PersonalList && window.PersonalList.escapeHtml) || window.escapeHtml || function (s) { return String(s == null ? '' : s); };
+  var esc = window.escapeHtml;
 
   function cleanAccountName(rawName, account) {
     var name = String(rawName || '').trim();
@@ -37,19 +37,7 @@
     return el ? String(el.getAttribute('content') || '').trim() : '';
   }
 
-  function showToast(msg, type) {
-    if (typeof window.showToast === 'function') {
-      window.showToast(msg, type || 'info');
-      return;
-    }
-    try {
-      if (type === 'danger' || type === 'error') {
-        console.error('[toast]', msg);
-      } else {
-        console.info('[toast]', msg);
-      }
-    } catch (e) { /* ignore */ }
-  }
+  function showToast(msg, type) { window.showToast(msg, type || 'info'); }
 
   function setBusy(btn, busy, defaultText, busyText) {
     if (!btn) return;
@@ -137,7 +125,7 @@
       'Content-Type': 'application/json',
       'Accept': 'application/json',
       'X-Requested-With': 'XMLHttpRequest',
-      'X-CSRF-Token': readMeta('csrf-token')
+      'X-CSRF-Token': (typeof window.getCsrfToken === 'function') ? window.getCsrfToken() : readMeta('csrf-token')
     };
     if (options.headers) {
       Object.keys(options.headers).forEach(function (k) {

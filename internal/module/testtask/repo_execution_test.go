@@ -161,7 +161,7 @@ func TestListInsideUsers_FiltersEmptyAndDefaultsRealname(t *testing.T) {
 	db, mock := setupMockTesttaskDB(t)
 	repo := NewRepo(db)
 
-	mock.ExpectQuery(`(?s)SELECT account, realname\s+FROM zt_user\s+WHERE deleted = '0'\s+AND type = 'inside'`).
+	mock.ExpectQuery(`(?s)SELECT account, realname, pinyin\s+FROM zt_user\s+WHERE deleted = '0'\s+AND type = 'inside'`).
 		WillReturnRows(sqlmock.NewRows([]string{"account", "realname"}).
 			AddRow("", "no-account").
 			AddRow("  003030  ", "  程锐  ").

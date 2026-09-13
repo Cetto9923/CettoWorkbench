@@ -32,15 +32,16 @@ type WindowProductRow struct {
 
 // ZtProduct 表示禅道 zt_product 表只读字段。
 type ZtProduct struct {
-	ID        uint   `gorm:"column:id"`
-	Name      string `gorm:"column:name"`
-	Code      string `gorm:"column:code"`
-	Status    string `gorm:"column:status"`
-	PO        string `gorm:"column:PO"`
-	QD        string `gorm:"column:QD"`
-	RD        string `gorm:"column:RD"`
-	CreatedBy string `gorm:"column:createdBy"`
-	Whitelist string `gorm:"column:whitelist"`
+	ID          uint   `gorm:"column:id"`
+	Name        string `gorm:"column:name"`
+	Code        string `gorm:"column:code"`
+	Status      string `gorm:"column:status"`
+	PO          string `gorm:"column:PO"`
+	QD          string `gorm:"column:QD"`
+	RD          string `gorm:"column:RD"`
+	CreatedBy   string `gorm:"column:createdBy"`
+	Whitelist   string `gorm:"column:whitelist"`
+	IsMyProduct bool   `gorm:"-" json:"isMyProduct,omitempty"`
 }
 
 // TableName 指定 zt_product 表。
@@ -352,6 +353,28 @@ func (r *Repo) DeleteWindowProducts(ctx context.Context, windowID uint64) error 
 		Unscoped().
 		Where("versionWindow = ?", windowID).
 		Delete(&model.VersionWindowProduct{}).Error
+}
+
+// CountWindowAssociations 统计窗口的业务关联记录数：
+// zt_demandwindow（业需级窗口归属）+ zt_versionwindowproduct（窗口-系统/计划关联）。
+// 任一关联 > 0 即表示窗口已被需求/产品占用，删除会破坏排期数据完整性。
+// 两张表均走 gorm 软删除过滤（deletedAt IS NULL）。
+func (r *Repo) CountWindowAssociations(ctx context.Context, windowID uint64) (int, error) {
+	var demandCount int64
+	if err := r.db.WithContext(ctx).
+		Model(&model.DemandWindow{}).
+		Where("versionWindow = ?", windowID).
+		Count(&demandCount).Error; err != nil {
+		return 0, err
+	}
+	var productCount int64
+	if err := r.db.WithContext(ctx).
+		Model(&model.VersionWindowProduct{}).
+		Where("versionWindow = ?", windowID).
+		Count(&productCount).Error; err != nil {
+		return 0, err
+	}
+	return int(demandCount + productCount), nil
 }
 
 // Delete 软删除版本窗口。

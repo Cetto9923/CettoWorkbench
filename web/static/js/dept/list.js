@@ -381,11 +381,11 @@
   }
 
   const getCsrfToken = () => {
-    const tokenEl = document.querySelector('meta[name="csrf-token"]');
-    if (!tokenEl) {
-      return "";
+    if (typeof window !== "undefined" && typeof window.getCsrfToken === "function") {
+      return window.getCsrfToken();
     }
-    return (tokenEl.getAttribute("content") || "").trim();
+    const tokenEl = document.querySelector('meta[name="csrf-token"]');
+    return tokenEl ? (tokenEl.getAttribute("content") || "").trim() : "";
   };
 
   const updateLocalStatus = (id, status) => {
@@ -484,18 +484,13 @@
       for (const targetID of uniqueTargets) {
         await requestStatusUpdate(targetID, requestedStatus, csrfToken);
       }
-      if (typeof window.showToast === "function") {
-        window.showToast("修改成功", "success");
-      }
+      window.showToast("修改成功", "success");
     } catch (err) {
       snapshot.forEach((statusValue, targetID) => {
         updateLocalStatus(targetID, statusValue);
       });
       const message = err && err.message ? err.message : "网络异常，状态更新失败";
-      if (typeof window.showToast === "function") {
-        window.showToast(message, "error");
-      }
-      alert(message);
+      window.showToast(message, "error");
     } finally {
       uniqueTargets.forEach((targetID) => {
         setSwitchDisabled(targetID, false);
@@ -519,7 +514,7 @@
         if (nameInput) {
           nameInput.focus();
         }
-        alert("请输入部门名称");
+        window.showToast("请输入部门名称", "warning");
         return;
       }
       quickSaveBtn.disabled = true;
@@ -559,7 +554,7 @@
           redirect: "follow",
         });
         if (!response.ok) {
-          alert("创建失败，请稍后重试");
+          window.showToast("创建失败，请稍后重试", "error");
           return;
         }
         let createdID = Date.now();
@@ -604,7 +599,7 @@
         removeQuickInputRow();
         activateNode(currentSelectedDeptId);
       } catch (_) {
-        alert("创建失败，请检查网络后重试");
+        window.showToast("创建失败，请检查网络后重试", "error");
       } finally {
         quickSaveBtn.disabled = false;
       }

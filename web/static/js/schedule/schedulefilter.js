@@ -39,7 +39,34 @@
       $ms.removeClass("open");
       $ms.find(".schedule-ms-panel").prop("hidden", true);
       $ms.find(".schedule-ms-trigger").attr("aria-expanded", "false");
+      $ms.find(".schedule-ms-search-input").val("");
+      $ms.find(".schedule-ms-search-clear").prop("hidden", true);
+      $ms.find(".schedule-ms-option").show();
+      $ms.find(".schedule-ms-no-match").prop("hidden", true);
     });
+  }
+
+  function filterMultiselectOptions($ms) {
+    var $input = $ms.find(".schedule-ms-search-input");
+    if (!$input.length) {
+      return;
+    }
+    var query = $.trim($input.val() || "").toLowerCase();
+    var $options = $ms.find(".schedule-ms-option");
+    var $clearBtn = $ms.find(".schedule-ms-search-clear");
+    $clearBtn.prop("hidden", !query);
+
+    var visibleCount = 0;
+    $options.each(function () {
+      var $opt = $(this);
+      var label = String($opt.attr("data-label") || $opt.text() || "").toLowerCase();
+      var match = !query || label.indexOf(query) !== -1;
+      $opt.toggle(match);
+      if (match) {
+        visibleCount++;
+      }
+    });
+    $ms.find(".schedule-ms-no-match").prop("hidden", visibleCount > 0 || $options.length === 0);
   }
 
   function getSelectedValues($multiselect) {
@@ -151,10 +178,37 @@
     $ms.addClass("open");
     $ms.find(".schedule-ms-panel").prop("hidden", false);
     $(this).attr("aria-expanded", "true");
+    var $searchInput = $ms.find(".schedule-ms-search-input");
+    if ($searchInput.length) {
+      setTimeout(function () {
+        $searchInput.trigger("focus");
+      }, 50);
+    }
   });
 
   $row.on("click", ".schedule-ms-panel", function (e) {
     e.stopPropagation();
+  });
+
+  $row.on("input", ".schedule-ms-search-input", function () {
+    filterMultiselectOptions($(this).closest(".schedule-ms"));
+  });
+
+  $row.on("click", ".schedule-ms-search-clear", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    var $ms = $(this).closest(".schedule-ms");
+    $ms.find(".schedule-ms-search-input").val("").trigger("focus");
+    filterMultiselectOptions($ms);
+  });
+
+  $row.on("keydown", ".schedule-ms-search-input", function (e) {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      closeAllScheduleMultiselects();
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+    }
   });
 
   $row.on("change", ".schedule-ms-checkbox", function () {

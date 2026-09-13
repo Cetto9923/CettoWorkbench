@@ -22,6 +22,9 @@ while IFS= read -r file; do
   case "$file" in
     scripts/check-secrets.sh|scripts/quality-baseline/*|web/static/vendor/*) continue ;;
   esac
+  # A tracked path whose worktree copy is gone (e.g. a pending deletion) has no
+  # content to scan; skip it explicitly instead of letting awk emit an open error.
+  [[ -f "$file" ]] || continue
   all_files+=("$file")
 done < <(git ls-files --cached --others --exclude-standard -- \
   '*.yaml' '*.yml' '*.json' '*.toml' '*.env' '.env*' \

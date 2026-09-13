@@ -88,15 +88,15 @@ func (r *Repo) homeFocusQueryWithReviews(ctx context.Context, account string, re
 // 透传到业务需求 SQL（研发需求由 findHomeFocusStoryRefs 单独使用同等过滤）。
 func applyHomeFocusToolbarFilters(base *gorm.DB, account string, req DemandsReq) *gorm.DB {
 	where, args := currentHandlerDemandWhere(account)
-	return applyHomeFocusToolbarFiltersWithClause(base, req, where, args)
+	return applyHomeFocusToolbarFiltersWithClause(base, account, req, where, args)
 }
 
 func (r *Repo) applyHomeFocusToolbarFiltersWithReviews(base *gorm.DB, account string, req DemandsReq, reviewIDs []int) *gorm.DB {
 	where, args := currentHandlerDemandWhereWithReviews(account, reviewIDs)
-	return applyHomeFocusToolbarFiltersWithClause(base, req, where, args)
+	return applyHomeFocusToolbarFiltersWithClause(base, account, req, where, args)
 }
 
-func applyHomeFocusToolbarFiltersWithClause(base *gorm.DB, req DemandsReq, where string, args []interface{}) *gorm.DB {
+func applyHomeFocusToolbarFiltersWithClause(base *gorm.DB, account string, req DemandsReq, where string, args []interface{}) *gorm.DB {
 	if kw := strings.ToLower(strings.TrimSpace(req.Keyword)); kw != "" {
 		pattern := "%" + kw + "%"
 		base = base.Where(
@@ -113,6 +113,32 @@ func applyHomeFocusToolbarFiltersWithClause(base *gorm.DB, req DemandsReq, where
 		base = base.Where("id IN (SELECT id FROM zt_demand WHERE pri IN ('3', '4'))")
 	}
 	switch req.Relation {
+	case "lead":
+		if account == "" {
+			base = base.Where("1 = 0")
+		} else {
+			base = base.Where("id IN (SELECT id FROM zt_demand WHERE BRA = ?)", account)
+		}
+	case "participate":
+		if account == "" {
+			base = base.Where("1 = 0")
+		} else {
+			base = base.Where(`id IN (
+				SELECT d.id
+				FROM zt_demand d
+				WHERE d.pool IS NOT NULL AND d.pool <> 0
+				  AND EXISTS (
+					SELECT 1 FROM zt_demandpool dp
+					WHERE dp.id = d.pool AND dp.deleted = '0'
+				  )
+				  AND (d.BRA <> ? OR d.BRA IS NULL OR d.BRA = '')
+				  AND EXISTS (
+					SELECT 1 FROM zt_demandclarify dc
+					WHERE dc.demand = d.id
+					  AND FIND_IN_SET(?, REPLACE(dc.PM, ' ', '')) > 0
+				  )
+			)`, account, account)
+		}
 	case "handling":
 		base = base.Where("id IN (SELECT id FROM zt_demand WHERE "+where+")", args...)
 	case "following":

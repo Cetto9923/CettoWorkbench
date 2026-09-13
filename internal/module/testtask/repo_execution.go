@@ -44,6 +44,7 @@ type productRow struct {
 type insideUserRow struct {
 	Account  string `gorm:"column:account"`
 	Realname string `gorm:"column:realname"`
+	Pinyin   string `gorm:"column:pinyin"`
 }
 
 // FindProductProjectIDs 通过 zt_projectproduct 解析产品关联的项目 ID。
@@ -229,7 +230,7 @@ func (r *Repo) ListInsideUsers(ctx context.Context) ([]UserOption, error) {
 		return []UserOption{}, nil
 	}
 	const query = `
-SELECT account, realname
+SELECT account, realname, pinyin
 FROM zt_user
 WHERE deleted = '0'
   AND type = 'inside'
@@ -248,7 +249,7 @@ ORDER BY account ASC`
 		if realname == "" {
 			realname = account
 		}
-		out = append(out, UserOption{Account: account, Realname: realname})
+		out = append(out, UserOption{Account: account, Realname: realname, Pinyin: strings.TrimSpace(row.Pinyin)})
 	}
 	return out, nil
 }

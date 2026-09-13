@@ -2,7 +2,7 @@
 // 文件: internal/module/po/issue_risk_test.go
 // 模块: PO 工作台
 // 类型: test
-// 职责: 验证 /issues/risk 表单校验、存续/逾期状态集与服务层映射一致性。
+// 职责: 验证 /issues/risk 表单校验、未关闭/逾期状态集与服务层映射一致性。
 // 依赖: 无
 // =============================================================================
 
@@ -23,8 +23,8 @@ func TestIssueRiskListReqValidateDefaults(t *testing.T) {
 	if r.Relation != "allRelated" {
 		t.Errorf("expected default relation=allRelated, got %q", r.Relation)
 	}
-	if r.Loop != "all" {
-		t.Errorf("expected default loop=all, got %q", r.Loop)
+	if r.Loop != "open" {
+		t.Errorf("expected default loop=open, got %q", r.Loop)
 	}
 	if r.Page != 1 || r.PageSize != 20 {
 		t.Errorf("expected default pagination (1,20), got (%d,%d)", r.Page, r.PageSize)

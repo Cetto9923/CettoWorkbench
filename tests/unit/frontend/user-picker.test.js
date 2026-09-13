@@ -42,10 +42,10 @@ doc.body = body; doc.createElement = tag => new Element(tag);
 doc.getElementById = id => ({ picker: input, account: hidden }[id]);
 const win = new Element();
 const sandbox = { window: win, document: doc, Event: class { constructor(type) { this.type = type; } } };
-for (const file of ['components/autocomplete-options.js', 'ui.js']) {
+for (const file of ['picker/vendor/pinyin-lite.js', 'components/autocomplete-options.js', 'ui.js']) {
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../../../web/static/js', file), 'utf8'), sandbox);
 }
-const people = [{ value: '003030', label: '程统', dept: '组织变革团队', title: '项目管理岗', badge: '相关人员' },
+const people = [{ value: '003030', label: '程统', pinyin: 'cheng tong ct', dept: '组织变革团队', title: '项目管理岗', badge: '相关人员' },
   ...Array.from({ length: 24 }, (_, i) => ({ value: 'u' + i, label: '用户' + i }))];
 const dropdown = () => body.querySelector('.ui-autocomplete-dropdown');
 const options = () => dropdown().querySelectorAll('.ui-autocomplete-option');
@@ -59,7 +59,7 @@ assert.equal(options()[0].querySelector('.ui-autocomplete-main').textContent, '�
 assert.equal(options()[0].querySelector('.ui-autocomplete-dept').textContent, ' 组织变革团队');
 assert.equal(options()[0].querySelector('.ui-autocomplete-meta').textContent, '项目管理岗 相关人员');
 const tone = options()[0].querySelector('.ui-autocomplete-avatar').attrs['data-tone'];
-for (const query of ['程统', '003030', '组织变革', '项目管理', '相关人员']) {
+for (const query of ['程统', '003030', 'cheng tong', 'ct', '组织变革', '项目管理', '相关人员']) {
   input.value = query; input.fire('input'); assert.equal(options().length, 1, query);
 }
 input.fire('keydown', 'ArrowDown'); input.fire('keydown', 'ArrowUp'); input.fire('keydown', 'Enter');

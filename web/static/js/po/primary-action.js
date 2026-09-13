@@ -2,16 +2,16 @@
    文件: web/static/js/po/primary-action.js
    模块: PO 个人工作台 - 主操作按钮渲染
    职责: 为每行需求 / 研发需求 / 测试单派生"主要阶段动作"。动作合同由服务端
-         primaryAction 字段提供（key/label/kind/url/enabled/reason）；后端未
-         落地时按 PLAN §4 显示 "—" 占位，不使用"查看详情"兜底。
-   依赖: PersonalList.escapeHtml（来自 personal-list.js）
+         primaryAction 字段提供（key/label/kind/url/enabled/reason）；缺失时显示
+         "—" 占位，不使用"查看详情"兜底。
+   依赖: window.escapeHtml（ui.js，base 全站加载）
    挂载: window.PrimaryAction.primaryActionHtml(item, isStory)
    ============================================================================= */
 
 (function () {
   "use strict";
 
-  var esc = (window.PersonalList && window.PersonalList.escapeHtml) || function (v) { return String(v == null ? "" : v); };
+  var esc = window.escapeHtml;
 
   // 排期入口 URL：与 schedule handler 已注册的路由对齐（不允许硬编码）。
   function scheduleUrl(item, isStory) {
@@ -62,8 +62,8 @@
       }
       return renderEnabled(item, pa, isStory);
     }
-    // 占位：等待 Stage 5 primaryAction 合同落地；不显示"查看详情"伪动作。
-    return '<span class="home-unavailable" title="等待服务端动作合同落地">—</span>';
+    // 无服务端 primaryAction 时占位，不显示「查看详情」伪动作。
+    return '<span class="home-unavailable" title="暂无可用主操作">—</span>';
   }
 
   window.PrimaryAction = {

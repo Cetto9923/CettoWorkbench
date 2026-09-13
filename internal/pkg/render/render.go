@@ -47,8 +47,7 @@ var (
 	defaultRenderer   *Renderer
 )
 
-// SidebarBadgesProvider 与 SidebarBadges 类型定义见 sidebar_badges.go（独立文件以
-// 保持本文件在职责分离下不超过 500 行上限）。
+// SidebarBadgesProvider 与 SidebarBadges 见 sidebar_badges.go。
 
 // Renderer 模板渲染器：dev 每次 ParseFiles，prod 启动时缓存 layout×page 组合。
 type Renderer struct {
@@ -484,5 +483,4 @@ func (r *Renderer) funcMap() template.FuncMap {
 	}
 }
 
-// asset / dict / add / sub / alertClass / toInt 的实现见 helpers.go（独立文件
-// 以保持 render.go 在职责分离下不超过 500 行上限）。
+// asset / dict / add / sub / alertClass / toInt 见 helpers.go。

@@ -2,8 +2,8 @@
 // 文件: internal/module/metrics/service_test.go
 // 模块: 指标管理 (metrics)
 // 类型: test
-// 职责: 状态判定 / 文本格式化 / 分类映射 helper 的单元测试；
-//       覆盖 PRD §14/§15 "无数据显示 — 而非 0%" 的边界。
+// 职责: 指标目录（catalog）、两阈值状态判定、组装逻辑的单元测试；
+//       覆盖 PRD §14/§15 "无数据显示 — 而非 0%" 与 unavailable 不参与评分的边界。
 // 依赖: 无
 // =============================================================================
 
@@ -13,108 +13,145 @@ import (
 	"testing"
 )
 
-func TestMetricStatusByRate_EmptyDenominatorReturnsUnknown(t *testing.T) {
-	if got := MetricStatusByRate(0, 0, "up"); got != "unknown" {
-		t.Errorf("MetricStatusByRate(0,0,up) = %q, want unknown", got)
-	}
-	if got := MetricStatusByRate(5, 0, "down"); got != "unknown" {
-		t.Errorf("MetricStatusByRate(5,0,down) = %q, want unknown", got)
-	}
-}
-
-func TestMetricStatusByRate_UpDirection(t *testing.T) {
+func TestEvaluateStatus_UpDirection(t *testing.T) {
+	// story.doneRate 语义：target=90（达标线）、danger=60（危险线）、direction=up。
+	d := metricDef{Direction: "up", TargetValue: 90, DangerValue: 60}
 	cases := []struct {
-		value, total int64
-		want         string
+		value   float64
+		hasData bool
+		want    string
 	}{
-		{95, 100, "normal"}, // 0.95 >= 0.9
-		{90, 100, "normal"}, // 0.90 >= 0.9
-		{80, 100, "warn"},   // 0.80 >= 0.7
-		{70, 100, "warn"},   // 0.70 >= 0.7
-		{50, 100, "danger"}, // 0.50 < 0.7
+		{95, true, "normal"},  // >= 90
+		{90, true, "normal"},  // == target 边界
+		{85, true, "warn"},    // [60,90)
+		{60, true, "warn"},    // == danger 边界
+		{59, true, "danger"},  // < 60
+		{0, false, "unknown"}, // unavailable
 	}
 	for _, tc := range cases {
-		if got := MetricStatusByRate(tc.value, tc.total, "up"); got != tc.want {
-			t.Errorf("MetricStatusByRate(%d,%d,up) = %q, want %q", tc.value, tc.total, got, tc.want)
+		if got := evaluateStatus(d, tc.value, tc.hasData); got != tc.want {
+			t.Errorf("evaluateStatus(up, %.0f, %v) = %q, want %q", tc.value, tc.hasData, got, tc.want)
 		}
 	}
 }
 
-func TestMetricStatusByRate_DownDirection(t *testing.T) {
+func TestEvaluateStatus_DownDirection(t *testing.T) {
+	d := metricDef{Direction: "down", TargetValue: 30, DangerValue: 60}
 	cases := []struct {
-		value, total int64
-		want         string
+		value float64
+		want  string
 	}{
-		{5, 100, "normal"},  // 0.05 <= 0.1
-		{10, 100, "normal"}, // 0.10 <= 0.1
-		{20, 100, "warn"},   // 0.20 <= 0.3
-		{30, 100, "warn"},   // 0.30 <= 0.3
-		{50, 100, "danger"}, // 0.50 > 0.3
+		{20, "normal"}, // <= 30
+		{30, "normal"}, // == target 边界
+		{45, "warn"},   // (30,60]
+		{60, "warn"},   // == danger 边界
+		{80, "danger"}, // > 60
 	}
 	for _, tc := range cases {
-		if got := MetricStatusByRate(tc.value, tc.total, "down"); got != tc.want {
-			t.Errorf("MetricStatusByRate(%d,%d,down) = %q, want %q", tc.value, tc.total, got, tc.want)
+		if got := evaluateStatus(d, tc.value, true); got != tc.want {
+			t.Errorf("evaluateStatus(down, %.0f) = %q, want %q", tc.value, got, tc.want)
 		}
 	}
 }
 
-func TestMetricStatusByCount_UpDirection(t *testing.T) {
-	// up: 越大越好（达标 = danger 表示「最少」也要达到的数）
-	cases := []struct {
-		value, warning, danger int64
-		want                   string
-	}{
-		{100, 30, 50, "normal"}, // >= danger
-		{50, 30, 50, "normal"},  // >= danger
-		{40, 30, 50, "warn"},    // >= warning, < danger
-		{20, 30, 50, "danger"},  // < warning
+func TestEvaluateStatus_NoTargetIsNormal(t *testing.T) {
+	d := metricDef{Direction: "up", TargetValue: -1, DangerValue: -1}
+	if got := evaluateStatus(d, 100, true); got != "normal" {
+		t.Errorf("no-target metric should be normal, got %q", got)
 	}
-	for _, tc := range cases {
-		if got := MetricStatusByCount(tc.value, tc.warning, tc.danger, "up"); got != tc.want {
-			t.Errorf("MetricStatusByCount(%d,w=%d,d=%d,up) = %q, want %q",
-				tc.value, tc.warning, tc.danger, got, tc.want)
+}
+
+func TestCatalog_UniqueCodesAndSize(t *testing.T) {
+	if len(metricCatalog) != 21 {
+		t.Fatalf("metricCatalog has %d entries, want 21", len(metricCatalog))
+	}
+	seen := make(map[string]bool, len(metricCatalog))
+	for _, d := range metricCatalog {
+		if d.Code == "" {
+			t.Error("catalog entry has empty code")
+		}
+		if seen[d.Code] {
+			t.Errorf("duplicate code %q in catalog", d.Code)
+		}
+		seen[d.Code] = true
+		if !IsValidCategory(d.Category) {
+			t.Errorf("code %q has invalid category %q", d.Code, d.Category)
 		}
 	}
 }
 
-func TestMetricStatusByCount_DownDirection(t *testing.T) {
-	// down: 越小越好（<=warning normal / <=danger warn / >danger danger）
-	cases := []struct {
-		value, warning, danger int64
-		want                   string
-	}{
-		{3, 5, 10, "normal"},  // <= warning
-		{5, 5, 10, "normal"},  // == warning
-		{7, 5, 10, "warn"},    // <= danger, > warning
-		{10, 5, 10, "warn"},   // == danger
-		{15, 5, 10, "danger"}, // > danger
-	}
-	for _, tc := range cases {
-		if got := MetricStatusByCount(tc.value, tc.warning, tc.danger, "down"); got != tc.want {
-			t.Errorf("MetricStatusByCount(%d,w=%d,d=%d,down) = %q, want %q",
-				tc.value, tc.warning, tc.danger, got, tc.want)
+func TestCatalog_SourceTypeDistribution(t *testing.T) {
+	zentao, external := 0, 0
+	for _, d := range metricCatalog {
+		switch d.SourceType {
+		case SourceZentao:
+			zentao++
+		case SourceExternal:
+			external++
+		default:
+			t.Errorf("code %q has unknown sourceType %q", d.Code, d.SourceType)
 		}
 	}
-}
-
-func TestMetricTextForRate_DashOnZero(t *testing.T) {
-	if got := MetricTextForRate(0, 0); got != "—" {
-		t.Errorf("MetricTextForRate(0,0) = %q, want —", got)
-	}
-	if got := MetricTextForRate(85, 100); got != "85%" {
-		t.Errorf("MetricTextForRate(85,100) = %q, want 85%%", got)
+	if zentao != 10 || external != 11 {
+		t.Errorf("sourceType distribution = zentao %d / external %d, want 10 / 11", zentao, external)
 	}
 }
 
-func TestMetricTextForCount_AllowDash(t *testing.T) {
-	if got := MetricTextForCount(0, true); got != "—" {
-		t.Errorf("MetricTextForCount(0,allowDash) = %q, want —", got)
+func TestCatalog_DoneRateSemantics(t *testing.T) {
+	for _, d := range metricCatalog {
+		if d.Code == "story.doneRate" {
+			if d.Direction != "up" || d.TargetValue != 90 || d.DangerValue != 60 {
+				t.Errorf("story.doneRate semantics = dir %q target %.0f danger %.0f, want up/90/60",
+					d.Direction, d.TargetValue, d.DangerValue)
+			}
+			return
+		}
 	}
-	if got := MetricTextForCount(0, false); got != "0" {
-		t.Errorf("MetricTextForCount(0,!allowDash) = %q, want 0", got)
+	t.Fatal("story.doneRate not found in catalog")
+}
+
+func TestValueFor_DoneRate(t *testing.T) {
+	snap := snapshot{Stories: 100, StoriesDone: 85}
+	v, ok := valueFor(metricDef{Code: "story.doneRate", SourceType: SourceZentao}, snap)
+	if !ok || v != 85 {
+		t.Errorf("valueFor(doneRate, 85/100) = (%v, %v), want (85, true)", v, ok)
 	}
-	if got := MetricTextForCount(42, true); got != "42" {
-		t.Errorf("MetricTextForCount(42,allowDash) = %q, want 42", got)
+	// 分母为 0 → unavailable
+	if _, ok := valueFor(metricDef{Code: "story.doneRate", SourceType: SourceZentao}, snapshot{}); ok {
+		t.Error("valueFor(doneRate, 0/0) should be unavailable")
+	}
+}
+
+func TestValueFor_ExternalIsUnavailable(t *testing.T) {
+	if _, ok := valueFor(metricDef{Code: "delivery.cycle", SourceType: SourceExternal}, snapshot{Stories: 1}); ok {
+		t.Error("external metric should be unavailable regardless of snapshot")
+	}
+}
+
+func TestBuildItems_AssemblesCatalog(t *testing.T) {
+	s := &Service{}
+	items := s.buildItems(snapshot{Stories: 10, StoriesActive: 3, StoriesDone: 9}, "now")
+	if len(items) != 21 {
+		t.Fatalf("buildItems produced %d items, want 21", len(items))
+	}
+	byCode := make(map[string]MetricItem, len(items))
+	for _, m := range items {
+		byCode[m.Code] = m
+	}
+	// 外部指标必须 unavailable
+	for _, code := range []string{"delivery.cycle", "gate.passRate", "sp.deviationRate", "norm.completeness"} {
+		m, ok := byCode[code]
+		if !ok {
+			t.Errorf("code %q missing from items", code)
+			continue
+		}
+		if m.Value != "—" || m.Status != "unknown" {
+			t.Errorf("external metric %q = value %q status %q, want —/unknown", code, m.Value, m.Status)
+		}
+	}
+	// 禅道指标有真实值：story.doneRate = 9/10 = 90% → normal
+	if m := byCode["story.doneRate"]; m.Value != "90%" || m.Status != "normal" {
+		t.Errorf("story.doneRate = value %q status %q, want 90%%/normal", m.Value, m.Status)
 	}
 }
 
@@ -247,93 +284,4 @@ func codes(items []MetricItem) []string {
 		out = append(out, m.Code)
 	}
 	return out
-}
-
-func TestComputeCategoryScore_EmptyTotalIsUnknown(t *testing.T) {
-	score, sev := computeCategoryScore(&RadarCategoryScore{Total: 0})
-	if score != 0 || sev != "unknown" {
-		t.Errorf("empty total: score=%d sev=%q want 0/unknown", score, sev)
-	}
-}
-
-func TestComputeCategoryScore_SeverityBands(t *testing.T) {
-	cases := []struct {
-		name                 string
-		normal, warn, danger int
-		wantScore            int
-		wantSev              string
-	}{
-		{"all_normal", 10, 0, 0, 100, "normal"},
-		{"all_warn", 0, 10, 0, 50, "danger"},
-		{"all_danger", 0, 0, 10, 0, "danger"},
-		{"mixed_high", 8, 2, 0, 90, "normal"},   // (8+1)/10*100=90
-		{"mixed_mid", 7, 2, 1, 80, "normal"},    // (7+1)/10*100=80 → boundary
-		{"mixed_low_warn", 6, 3, 1, 75, "warn"}, // (6+1.5)/10*100=75
-		{"mixed_danger", 4, 2, 4, 50, "danger"}, // (4+1)/10*100=50
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			b := &RadarCategoryScore{
-				NormalCount: tc.normal, WarnCount: tc.warn, DangerCount: tc.danger,
-				Total: tc.normal + tc.warn + tc.danger,
-			}
-			gotScore, gotSev := computeCategoryScore(b)
-			if gotScore != tc.wantScore || gotSev != tc.wantSev {
-				t.Errorf("got (score=%d, sev=%q), want (score=%d, sev=%q)",
-					gotScore, gotSev, tc.wantScore, tc.wantSev)
-			}
-		})
-	}
-}
-
-func TestTopRiskOf_PicksFirstByCodeAscending(t *testing.T) {
-	b := &RadarCategoryScore{Items: []MetricItem{
-		{Code: "z.danger", Name: "Z", Status: "danger"},
-		{Code: "a.danger", Name: "A", Status: "danger"},
-		{Code: "m.normal", Name: "M", Status: "normal"},
-	}}
-	code, name := topRiskOf(b)
-	if code != "a.danger" || name != "A" {
-		t.Errorf("topRiskOf = (%q, %q), want (a.danger, A)", code, name)
-	}
-}
-
-func TestTopRiskOf_NoDangerIsEmpty(t *testing.T) {
-	b := &RadarCategoryScore{Items: []MetricItem{
-		{Code: "x.normal", Status: "normal"},
-		{Code: "y.warn", Status: "warn"},
-	}}
-	code, name := topRiskOf(b)
-	if code != "" || name != "" {
-		t.Errorf("expected empty, got (%q, %q)", code, name)
-	}
-}
-
-func TestRadarScore_Boundary60IsWarn(t *testing.T) {
-	// 5 normal + 5 warn / 10 total → (5+2.5)/10*100 = 75 → warn
-	b := &RadarCategoryScore{NormalCount: 5, WarnCount: 5, Total: 10}
-	score, sev := computeCategoryScore(b)
-	if score != 75 || sev != "warn" {
-		t.Errorf("got (%d, %q), want (75, warn)", score, sev)
-	}
-}
-
-func TestRadarScore_Boundary80IsNormal(t *testing.T) {
-	// 8 normal + 0 warn / 10 → 80 → normal (>=80)
-	b := &RadarCategoryScore{NormalCount: 8, WarnCount: 1, DangerCount: 1, Total: 10}
-	score, sev := computeCategoryScore(b)
-	if score != 85 || sev != "normal" {
-		t.Errorf("got (%d, %q), want (85, normal)", score, sev)
-	}
-}
-
-func TestCategoryOrder_ReturnsValidIndex(t *testing.T) {
-	idx := categoryOrder(CategoryDemand)
-	if idx != 0 {
-		t.Errorf("CategoryDemand order = %d, want 0", idx)
-	}
-	idx = categoryOrder("未知")
-	if idx != len(ValidCategories) {
-		t.Errorf("unknown category order = %d, want %d", idx, len(ValidCategories))
-	}
 }

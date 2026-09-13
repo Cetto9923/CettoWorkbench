@@ -15,11 +15,7 @@
     $list: null
   };
 
-  function showToast(message, level) {
-    if (typeof window.showToast === "function") {
-      window.showToast(message, level || "info");
-    }
-  }
+  function showToast(message, level) { window.showToast(message, level || "info"); }
 
   function $root() {
     return $("#poLinkstoryRoot");
@@ -284,9 +280,7 @@
     }
   }
 
-  var escapeHtml = (window.PersonalList && window.PersonalList.escapeHtml) || window.escapeHtml || function (s) {
-    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  };
+  var escapeHtml = window.escapeHtml;
   var escapeAttr = escapeHtml;
 
   function initSearchControls() {

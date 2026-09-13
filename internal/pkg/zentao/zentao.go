@@ -1,11 +1,4 @@
-// =============================================================================
-// 文件: internal/pkg/zentao/zentao.go
-// 模块: 基础设施
-// 类型: infra
-// 职责: 根据禅道站点地址、requestType 与 m、f 等参数拼接页面链接。
-// 依赖: internal/config
-// =============================================================================
-
+// Package zentao 根据禅道站点地址、requestType 与 m、f 等参数拼接页面链接。
 package zentao
 
 import (
@@ -309,50 +302,34 @@ func BugViewURL(bugID uint) string {
 	return URL("bug", "view", fmt.Sprintf("bugID=%d", bugID))
 }
 
-// CharterViewURL 项目章程详情页链接。
-// 禅道章程页以对象自身 ID 为首选参数（m=charter&f=view&id=N）；
-// 当 objectID 缺失时回退到 projectID，避免页面因双 0 跳到禅道首页。
+// CharterViewURL 项目章程详情页链接。禅道 charter::view 按项目打开，必须使用 projectID。
 func CharterViewURL(objectID, projectID uint) string {
-	if objectID == 0 && projectID == 0 {
+	if projectID == 0 {
 		return ""
-	}
-	if objectID > 0 {
-		return URL("charter", "view", fmt.Sprintf("id=%d", objectID))
 	}
 	return URL("charter", "view", fmt.Sprintf("projectID=%d", projectID))
 }
 
 // CharterViewURLWithBase 使用指定站点前缀拼接项目章程详情页链接。
 func CharterViewURLWithBase(base string, objectID, projectID uint) string {
-	if objectID == 0 && projectID == 0 {
+	if projectID == 0 {
 		return ""
-	}
-	if objectID > 0 {
-		return URLWithBase(base, "charter", "view", fmt.Sprintf("id=%d", objectID))
 	}
 	return URLWithBase(base, "charter", "view", fmt.Sprintf("projectID=%d", projectID))
 }
 
-// BuildguidelineViewURL 项目建设指引详情页链接。
-// 禅道建设指引页以对象自身 ID 为首选参数（m=buildguideline&f=view&id=N）；
-// 当 objectID 缺失时回退到 projectID，避免页面因双 0 跳到禅道首页。
+// BuildguidelineViewURL 项目建设指引详情页链接。禅道 buildguideline::view 按项目打开，必须使用 projectID。
 func BuildguidelineViewURL(objectID, projectID uint) string {
-	if objectID == 0 && projectID == 0 {
+	if projectID == 0 {
 		return ""
-	}
-	if objectID > 0 {
-		return URL("buildguideline", "view", fmt.Sprintf("id=%d", objectID))
 	}
 	return URL("buildguideline", "view", fmt.Sprintf("projectID=%d", projectID))
 }
 
 // BuildguidelineViewURLWithBase 使用指定站点前缀拼接项目建设指引详情页链接。
 func BuildguidelineViewURLWithBase(base string, objectID, projectID uint) string {
-	if objectID == 0 && projectID == 0 {
+	if projectID == 0 {
 		return ""
-	}
-	if objectID > 0 {
-		return URLWithBase(base, "buildguideline", "view", fmt.Sprintf("id=%d", objectID))
 	}
 	return URLWithBase(base, "buildguideline", "view", fmt.Sprintf("projectID=%d", projectID))
 }

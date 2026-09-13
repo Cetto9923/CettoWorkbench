@@ -37,7 +37,9 @@ function loadNoticeScript(windowOverrides, documentOverrides) {
     return reminderAliases[token] || reminderAliases[token.toLowerCase()] || "";
   }
   const defaultPersonalList = {
+    PAGE_SIZE_OPTIONS: [10, 15, 20, 50, 100],
     escapeHtml: (v) => String(v == null ? '' : v),
+    objectTypeBadge: (k) => String(k || ''),
     loadPageSize: (_key, fallback) => fallback,
     savePageSize() {},
     renderPagination() {},
@@ -79,6 +81,8 @@ function loadNoticeScript(windowOverrides, documentOverrides) {
   const baseWindow = {
     location: { pathname: '/notice', search: '' },
     history: { replaceState(_s, _t, url) { window.location.search = String(url).includes('?') ? '?' + String(url).split('?')[1] : ''; } },
+    escapeHtml: (v) => String(v == null ? '' : v),
+    showToast() {},
     appFetch(url, options) {
       listCalls.push({ url, options });
       return Promise.resolve({

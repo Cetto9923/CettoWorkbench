@@ -1,4 +1,4 @@
-/* PO 工作看板 - 指标/任务抽屉与初始化。零行为搬家。 */
+/* PO 工作看板 - 指标/任务抽屉与初始化。 */
 (function (WB) {
   "use strict";
   var $ = WB.$;
@@ -13,10 +13,10 @@
   var switchMode = WB.switchMode;
   var MAX_OWNERS = WB.MAX_OWNERS;
   var typeTag = WB.typeTag;
-  var priorityBadge = WB.priorityBadge || function (r) { return window.PersonalList ? window.PersonalList.priorityBadge(r) : ""; };
-  var objectTypeBadge = WB.objectTypeBadge || function (k, id) { return window.PersonalList ? window.PersonalList.objectTypeBadge(k, id) : ""; };
+  var objectTypeBadge = WB.objectTypeBadge;
   var draggedTask = null;
   var pendingDoneTask = null;
+  var activeTaskFlag = "";
 
   function getMode() { return WB.mode(); }
   function renderDemandMatrix(tree) { return WB.renderDemandMatrix(tree); }
@@ -36,6 +36,9 @@
       .catch(function () { $("metricsGrid").innerHTML = '<div class="metric-empty">效能指标加载失败</div>'; });
   }
   function renderMetrics(metrics) {
+    // 看板暂时只展示交付节奏类指标；质量门禁/缺陷/上线延期指标保留在接口与指标中心。
+    var visibleMetricKeys = { delivery: true, implement: true, overIteration: true, unscheduled: true };
+    metrics = (metrics || []).filter(function (m) { return visibleMetricKeys[m.key]; });
     var details = {
       "交付周期": "端到端流动速度：需求从进入研发到完成交付用了多久。", "实施周期": "研发实施效率：进入实施后到完成研发交付用了多久。",
       "超预迭代周期占比": "交付可预测性：有多少工作超过预期迭代节奏。", "超2周未排期": "需求入口健康度：识别长期未进入时间盒的需求积压。",
@@ -63,7 +66,6 @@
         if (payload.teamgroups && payload.teamgroups.length) { WB.setTeams(payload.teamgroups); WB.renderTeamChips(); }
         renderDemandMatrix(payload.tree || []); renderDemandOwners(payload.tree || []);
         if (state.pendingFocus) { focusStoryRow(state.pendingFocus); state.pendingFocus = 0; }
-        loadMetrics();
       })
       .catch(function () { onErr("demandGroups"); });
   }
@@ -123,7 +125,9 @@
           renderOwnerChips("taskOwners", opts, function () { loadTasks(); });
         }
         renderTaskColumns(payload.columns || []);
+        applyTaskFilters();
         bindTaskDrag();
+        // 任务接口可能在首次进入时才确定默认小组，必须使用服务端返回的小组 ID。
         loadMetrics();
       })
       .catch(function () { onErr("taskBoard"); });
@@ -134,6 +138,20 @@
       var colEl = document.querySelector('#taskBoard .task-col[data-col="' + key + '"]'); if (!colEl) { return; }
       var items = colMap[key] || []; colEl.querySelector(".task-col-body").innerHTML = items.map(taskCard).join("");
       colEl.querySelector(".k-count").textContent = items.length;
+    });
+    updateTaskStats();
+  }
+  function toggleTaskFlag(flag) {
+    activeTaskFlag = activeTaskFlag === flag ? "" : flag;
+    document.querySelectorAll("#taskStats .stat").forEach(function (el) {
+      el.classList.toggle("active", el.dataset.flag === activeTaskFlag);
+    });
+    applyTaskFilters();
+  }
+  function applyTaskFilters() {
+    document.querySelectorAll("#taskBoard .task-card").forEach(function (card) {
+      var match = !activeTaskFlag || card.classList.contains(activeTaskFlag);
+      card.classList.toggle("hidden", !match);
     });
     updateTaskStats();
   }
@@ -265,15 +283,20 @@
   function updateTaskStats() {
     var blocked = 0, overdue = 0, visible = 0;
     document.querySelectorAll("#taskBoard .task-card").forEach(function (r) {
+      if (r.classList.contains("hidden")) { return; }
       visible++; if (r.classList.contains("blocked")) { blocked++; } if (r.classList.contains("overdue")) { overdue++; }
     });
     $("taskStats").querySelector('[data-flag="blocked"] strong').textContent = blocked;
     $("taskStats").querySelector('[data-flag="overdue"] strong').textContent = overdue;
-    if (visible === 0) {
-      document.querySelectorAll("#taskBoard .task-col-body").forEach(function (c) {
-        if (!c.children.length) { c.innerHTML = '<div class="demand-empty" style="display:block">当前条件下没有任务</div>'; }
-      });
-    }
+    document.querySelectorAll("#taskBoard .task-col-body").forEach(function (c) {
+      var empty = c.querySelector(".task-filter-empty");
+      var hasVisible = Array.prototype.some.call(c.querySelectorAll(".task-card"), function (card) { return !card.classList.contains("hidden"); });
+      if (!hasVisible && activeTaskFlag) {
+        if (!empty) { c.insertAdjacentHTML("beforeend", '<div class="demand-empty task-filter-empty">当前条件下没有任务</div>'); }
+      } else if (empty) {
+        empty.remove();
+      }
+    });
   }
 
   /* ---------- 任务抽屉（方案1：右侧滑出，不离开需求看板） ---------- */
@@ -364,6 +387,7 @@
   document.addEventListener("click", function (e) {
     var retry = e.target.closest("[data-retry]"); if (retry) { getMode() === "demand" ? loadDemand() : loadTasks(); return; }
     var flagBtn = e.target.closest("#demandStats [data-flag]"); if (flagBtn) { toggleFlag(flagBtn.dataset.flag); return; }
+    var taskFlagBtn = e.target.closest("#taskStats [data-flag]"); if (taskFlagBtn) { toggleTaskFlag(taskFlagBtn.dataset.flag); return; }
     var open = e.target.closest("[data-open-tasks]");
     if (open) {
       var sid = Number(open.dataset.openTasks), lbl = open.dataset.rdLabel || "研需", storyUrl = open.dataset.storyUrl || "";
@@ -394,6 +418,6 @@
   WB.renderDemandOwners = renderDemandOwners;
   window.fetchDrawerTasks = function (id) { fetchDrawerTasks(id); };
 
-  try { loadIssues(); switchMode(getMode()); }
+  try { switchMode(getMode()); }
   catch (e) { console.error("[wb-debug] init", e && e.stack || e); }
 })(window.PoWB = window.PoWB || {});

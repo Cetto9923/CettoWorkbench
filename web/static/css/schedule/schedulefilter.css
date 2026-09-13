@@ -107,6 +107,85 @@
   color: var(--color-text-secondary);
 }
 
+#scheduleMultiselectRow .schedule-ms[data-filter-key="products"] .schedule-ms-panel {
+  min-width: 240px;
+  max-width: 320px;
+}
+
+#scheduleMultiselectRow .schedule-ms-search {
+  position: relative;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+}
+
+#scheduleMultiselectRow .schedule-ms-search-icon {
+  position: absolute;
+  left: 15px;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  pointer-events: none;
+}
+
+#scheduleMultiselectRow .schedule-ms-search-input {
+  width: 100%;
+  height: 26px;
+  padding: 2px 22px 2px 24px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--white);
+  color: var(--color-text-primary);
+  outline: none;
+  box-sizing: border-box;
+}
+
+#scheduleMultiselectRow .schedule-ms-search-input:focus {
+  border-color: var(--color-primary);
+}
+
+#scheduleMultiselectRow .schedule-ms-search-clear {
+  position: absolute;
+  right: 14px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+#scheduleMultiselectRow .schedule-ms-search-clear:hover {
+  color: var(--color-text-primary);
+}
+
+#scheduleMultiselectRow .schedule-ms-option-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#scheduleMultiselectRow .schedule-ms-tag {
+  margin-left: auto;
+  font-size: 11px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(24, 144, 255, 0.12);
+  color: var(--color-primary, #1890ff);
+  flex-shrink: 0;
+  line-height: 1.3;
+}
+
+#scheduleMultiselectRow .schedule-ms-no-match {
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
 #scheduleMultiselectRow > .action-btn {
   height: 30px;
 }

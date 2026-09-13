@@ -46,7 +46,6 @@ func WriteTable(w http.ResponseWriter, fileName string, fileType string, headers
 	switch fileType {
 	case "xlsx":
 		return writeXLSXFile(w, fileName, headers, rows)
-		// return excel.Export(w, fileName, headers, toAnyRows(rows))
 	case "csv":
 		return writeCSVFile(w, fileName, headers, rows)
 	case "xls":

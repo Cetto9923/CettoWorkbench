@@ -39,6 +39,9 @@ type todoUnifiedRow struct {
 	Responsibility string `gorm:"column:responsibility"`
 	Blocked        int    `gorm:"column:blocked"`
 	TypeOrder      int    `gorm:"column:type_order"`
+	ObjectType     string `gorm:"column:object_type"`
+	ObjectID       int64  `gorm:"column:object_id"`
+	ProjectID      int64  `gorm:"column:project_id"`
 }
 
 type todoCountsRow struct {
@@ -157,6 +160,13 @@ func buildTodoUnionSQL(account string, req TodoListReq) (string, []interface{}) 
 		includeApproval, includeStory = false, false
 		includeRisk, includeIssue, includePersonal, includeTesttask = false, false, false, false
 	}
+	if req.ApprovalType != "" && req.ApprovalType != "all" {
+		includeDemand = false
+		includeTask, includeBug = false, false
+		includeApproval = true
+		includeStory = false
+		includeRisk, includeIssue, includePersonal, includeTesttask = false, false, false, false
+	}
 
 	var parts []string
 	var args []interface{}
@@ -168,7 +178,8 @@ func buildTodoUnionSQL(account string, req TodoListReq) (string, []interface{}) 
 			CASE WHEN TRIM(d.assignedTo) != '' THEN d.assignedTo WHEN TRIM(d.QD) != '' THEN d.QD WHEN TRIM(d.RD) != '' THEN d.RD ELSE '' END AS owner_account,
 			CASE WHEN d.assignedTo = ? THEN '我负责' ELSE '我配合' END AS relation,
 			CASE WHEN d.assignedTo = ? THEN '待我处理' ELSE '待我跟进' END AS responsibility,
-			CASE WHEN d.status = 'refuse' THEN 1 ELSE 0 END AS blocked, 1 AS type_order
+			CASE WHEN d.status = 'refuse' THEN 1 ELSE 0 END AS blocked, 1 AS type_order,
+			'' AS object_type, 0 AS object_id, 0 AS project_id
 		FROM zt_demand AS d
 		WHERE d.deleted = '0' AND d.status IN ('draft','wait','refuse','active','clarified','developing','testing','waitacceptance','waitdeliver','acceptanced')
 		  AND NOT EXISTS (SELECT 1 FROM zt_demand child WHERE child.deleted = '0' AND child.parent = d.id)
@@ -182,7 +193,8 @@ func buildTodoUnionSQL(account string, req TodoListReq) (string, []interface{}) 
 			CASE WHEN t.pri = 1 THEN '1' WHEN t.pri = 2 THEN '2' WHEN t.pri = 3 THEN '3' WHEN t.pri = 4 THEN '4' ELSE '0' END AS pri_str,
 			CASE WHEN t.pri = 1 THEN 1 WHEN t.pri = 2 THEN 2 WHEN t.pri = 3 THEN 3 ELSE 4 END AS priority_rank,
 			CASE WHEN t.deadline IS NULL OR t.deadline = '0000-00-00' OR t.deadline = '0001-01-01' THEN '9999-12-31' ELSE DATE_FORMAT(t.deadline, '%Y-%m-%d') END AS deadline_str,
-			t.assignedTo AS owner_account, '我负责' AS relation, '待我处理' AS responsibility, 0 AS blocked, 2 AS type_order
+			t.assignedTo AS owner_account, '我负责' AS relation, '待我处理' AS responsibility, 0 AS blocked, 2 AS type_order,
+			'' AS object_type, 0 AS object_id, 0 AS project_id
 		FROM zt_task AS t WHERE t.deleted = '0' AND t.assignedTo = ? AND t.status NOT IN ('done', 'closed', 'cancel')`
 		args = append(args, account)
 		parts = append(parts, taskSQL)
@@ -191,13 +203,14 @@ func buildTodoUnionSQL(account string, req TodoListReq) (string, []interface{}) 
 		bugSQL := `SELECT 'bug' AS kind, b.id, CAST(b.id AS CHAR) AS display_id, b.title AS title, b.status,
 			CASE WHEN b.pri = 1 THEN '1' WHEN b.pri = 2 THEN '2' WHEN b.pri = 3 THEN '3' WHEN b.pri = 4 THEN '4' ELSE '0' END AS pri_str,
 			CASE WHEN b.pri = 1 THEN 1 WHEN b.pri = 2 THEN 2 WHEN b.pri = 3 THEN 3 ELSE 4 END AS priority_rank,
-			'9999-12-31' AS deadline_str, b.assignedTo AS owner_account, '我负责' AS relation, '待我处理' AS responsibility, 0 AS blocked, 3 AS type_order
+			'9999-12-31' AS deadline_str, b.assignedTo AS owner_account, '我负责' AS relation, '待我处理' AS responsibility, 0 AS blocked, 3 AS type_order,
+			'' AS object_type, 0 AS object_id, 0 AS project_id
 		FROM zt_bug AS b WHERE b.deleted = '0' AND b.assignedTo = ? AND b.status NOT IN ('resolved', 'closed')`
 		args = append(args, account)
 		parts = append(parts, bugSQL)
 	}
 	if includeApproval {
-		sql, a := buildTodoApprovalSQL(account)
+		sql, a := buildTodoApprovalSQL(account, req.ApprovalType)
 		parts = append(parts, sql)
 		args = append(args, a...)
 	}
@@ -423,7 +436,10 @@ func formatTodoUnifiedItem(row todoUnifiedRow, displayMap map[string]string) Tod
 		item.Deadline = ""
 	case "approval":
 		item.Type = "审批"
-		item.URL = zentao.URL("approval", "view", fmt.Sprintf("approvalID=%d", row.ID))
+		item.URL = objectViewURLWithProject(row.ObjectType, uint(row.ObjectID), uint(row.ProjectID))
+		if item.URL == "" && row.ObjectType != "charter" && row.ObjectType != "buildguideline" {
+			item.URL = zentao.URL("approval", "view", fmt.Sprintf("approvalID=%d", row.ID))
+		}
 		item.Action = "审批"
 	case "story":
 		item.Type = "研发需求"

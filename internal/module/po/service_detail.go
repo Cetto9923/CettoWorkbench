@@ -20,6 +20,7 @@ import (
 
 	"workbench/internal/model"
 	"workbench/internal/module/po/primaryaction"
+	"workbench/internal/pkg/personlabel"
 	"workbench/internal/pkg/zentao"
 )
 
@@ -132,7 +133,7 @@ func (s *DetailService) GetDemandDetail(ctx context.Context, actor *model.User, 
 	}
 	resp.History = history
 
-	// Stage 5：单行详情主操作派生。
+	// 单行详情主操作派生。
 	// 详情行已包含 stage/status/accepter/assignedTo，无需 IN 批量。
 	if actor != nil && row != nil {
 		pa := s.buildPrimaryActionForDetail(ctx, actor, row)
@@ -186,7 +187,7 @@ func bindPrimaryActionSpotlight(spotlight *DetailSpotlight, action primaryaction
 			return
 		}
 		spotlight.ActionLabel = label
-		// 故意不写 ActionURL，避免详情误链到 submit_test.html 旧壳。
+		// ActionURL 留空：详情打开提测弹窗，不链到旧整页。
 		spotlight.ActionURL = ""
 	case string(primaryaction.KeyWithdrawReview):
 		spotlight.ActionLabel = "撤销评审"
@@ -194,11 +195,6 @@ func bindPrimaryActionSpotlight(spotlight *DetailSpotlight, action primaryaction
 	default:
 		return
 	}
-}
-
-// bindScheduleSpotlight 保留旧名给历史单测调用；等价于 bindPrimaryActionSpotlight。
-func bindScheduleSpotlight(spotlight *DetailSpotlight, action primaryaction.PrimaryAction) {
-	bindPrimaryActionSpotlight(spotlight, action)
 }
 
 func canWithdrawReviewForDetail(actor *model.User, row *DemandDetailRow) bool {
@@ -290,7 +286,7 @@ func (s *DetailService) buildSummary(row *DemandDetailRow) DemandSummary {
 		CreatedDate:      createdStr,
 		EditedDate:       editedStr,
 		CreatedBy:        row.CreatedBy,
-		CreatedName:      FormatAccountName(row.CreatedBy, row.CreatedByName),
+		CreatedName:      personlabel.Format(row.CreatedBy, row.CreatedByName),
 		ZentaoEditURL:    zentao.DemandEditURL(row.ID),
 		ZentaoURL:        zentao.DemandViewURL(row.ID),
 	}
@@ -416,7 +412,7 @@ func (s *DetailService) buildRelationContext(parent *DemandDetailRow, siblings [
 	}
 }
 
-// buildPrimaryActionForDetail 详情行主操作（Stage 5）。
+// buildPrimaryActionForDetail 详情行主操作。
 //
 // 复用 Service 内聚合函数 DeriveDemandPrimaryActions；单行 ID 走同样的批量
 // 路径，避免新增"单行特化"代码分支导致与批量派生结果不一致。

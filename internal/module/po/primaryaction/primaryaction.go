@@ -38,7 +38,6 @@ const (
 	KeyApprove        ActionKey = "approve"         // 评审（待我评审）
 	KeyWithdrawReview ActionKey = "withdraw_review" // 撤回评审（待评审+本人创建）
 	KeySubmitReview   ActionKey = "submit_review"   // 提交评审（草稿/驳回+本人创建）
-	KeyEdit           ActionKey = "edit"            // 编辑需求
 	KeyClarify        ActionKey = "clarify"         // 澄清
 	KeySchedule       ActionKey = "schedule"        // 排期
 	KeySubmitTest     ActionKey = "submit_test"     // 提测
@@ -46,9 +45,7 @@ const (
 	KeyAcceptDone     ActionKey = "accept"          // 验收（本人验收人）
 	KeyRemindAccept   ActionKey = "remind_accept"   // 催办验收（非验收人）
 	KeyDeliver        ActionKey = "deliver"         // 发起交付
-	KeyPublish        ActionKey = "publish"         // 发布（暂留空）
 	KeyEvaluate       ActionKey = "evaluate"        // 评价反馈（本人有未评任务）
-	KeyViewEvaluate   ActionKey = "view_evaluate"   // 评价反馈（已可读历史评价）
 )
 
 // PrimaryAction 单一主操作的服务端合同字段；前端只读，不派生。
@@ -124,7 +121,6 @@ type ObjectKind string
 
 const (
 	ObjectBusinessDemand   ObjectKind = "business_demand"
-	ObjectSubDemand        ObjectKind = "sub_demand"
 	ObjectStory            ObjectKind = "story"
 	ObjectIndependentStory ObjectKind = "independent_story"
 )
@@ -174,22 +170,22 @@ type Input struct {
 
 // Derive 由 Input 派生单一主操作。
 //
-// 决策矩阵（与 PLAN §4 + Stage 5 任务输入锁定的"阶段 → primaryAction 合同表"一致）：
+// 决策矩阵概览；具体对象、状态和能力分支见下方实现：
 //
 //	Stage / Kind       Action            默认 URL                  Enabled 默认值
 //	───────────────────────────────────────────────────────────────────────────
-//	accept             modal accept      POST /demands/:id/accept  capability
-//	clarify            modal clarify     /demands/:id/detail?tab=req capability
-//	schedule + biz     internal schedule /schedule/demands/:id/sched  capability
-//	schedule + story   internal schedule /schedule/stories/:id/sched capability
+//	accept             drawer approve/withdraw_review/submit_review 对应 review 端点，按状态和角色派生
+//	clarify            drawer clarify    /demands/:id/clarify      capability
+//	schedule + biz     schedule          /schedule/demands/:id/scheduling capability
+//	schedule + story   schedule          /schedule/stories/:id/scheduling capability
 //	developing         modal submit_test （无整页 URL；前端 openPoSubmitTestModal） capability
-//	testing            external test_link 禅道测试单 URL / "暂无测试单"  capability (always false: 未配置)
-//	acceptance+本人    modal accept_done POST /demands/:id/accept-done IsAcceptanceOwner
-//	acceptance+他人    modal urge_accept POST /demands/:id/urge-accept capability
+//	testing            external view_test_order 禅道测试单 URL     capability + 唯一测试单
+//	acceptance+本人    drawer accept_done /demands/:id/acceptance  capability + IsAcceptanceOwner
+//	acceptance+他人    drawer remind_accept /demands/:id/urge     capability
 //	deliver            modal deliver    POST /demands/:id/deliver  capability+前置
 //	release            "" 留空          —                         永远 None
-//	feedback+未评      modal evaluate   POST /demands/:id/evaluate HasPendingEvaluateTask
-//	feedback+有评价    internal view_evaluate /demands/:id/detail?tab=history capability
+//	feedback+未评      external evaluate 禅道评价页面              capability + HasPendingEvaluateTask
+//	feedback+有评价    "" 留空          —                         None
 //	closed/delivered/  ""               —                         None
 //	other / 兜底
 //
@@ -317,7 +313,7 @@ func Derive(in Input) PrimaryAction {
 		return None()
 
 	case StageFeedback:
-		// 评价反馈：未评 + 已评价两种入口并存，PLAN §4-3 / Stage 1 阻塞。
+		// 有待评价任务时派生评价入口；仅有历史评价时不增加主操作。
 		switch {
 		case in.HasPendingEvaluateTask:
 			if in.HasEvaluateCapability {

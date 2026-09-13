@@ -14,6 +14,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // RepoFindDoneActionsReq 查询正式已办动作的数据参数。
@@ -133,35 +135,7 @@ func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) 
 		q = q.Where(buildDoneKeywordFilterSQL(), kw, kw, kw, kw, kw, kw)
 	}
 
-	// 时间段 bound
-	now := time.Now()
-	switch req.TimeRange {
-	case TimeRangeToday:
-		q = q.Where("DATE(a.date) = CURDATE()")
-	case TimeRange7d:
-		q = q.Where("a.date >= ?", now.AddDate(0, 0, -7))
-	case TimeRangeWeek:
-		q = q.Where("YEARWEEK(a.date, 3) = YEARWEEK(CURDATE(), 3)")
-	case TimeRange30d:
-		q = q.Where("a.date >= ?", now.AddDate(0, 0, -30))
-	case TimeRangeMonth:
-		q = q.Where("DATE_FORMAT(a.date, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m')")
-	case TimeRangeLastMonth:
-		q = q.Where("DATE_FORMAT(a.date, '%Y-%m') = DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 MONTH), '%Y-%m')")
-	case TimeRangeQuarter:
-		q = q.Where("QUARTER(a.date) = QUARTER(CURDATE()) AND YEAR(a.date) = YEAR(CURDATE())")
-	case TimeRangeCustom:
-		if req.CustomFrom != "" {
-			q = q.Where("a.date >= ?", req.CustomFrom)
-		}
-		if req.CustomTo != "" {
-			q = q.Where("a.date <= ?", req.CustomTo)
-		}
-	case TimeRangeAll:
-		// 不加时间过滤
-	default:
-		// 兜底：当作 all
-	}
+	q = applyDoneTimeRange(q, req, time.Now())
 
 	// 总数
 	var total int64
@@ -247,6 +221,49 @@ func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) 
 	}
 
 	return items, total, nil
+}
+
+// applyDoneTimeRange converts calendar filters to half-open timestamp ranges so
+// MySQL can use an index on zt_action.date. The custom range keeps the existing
+// inclusive upper-bound contract.
+func applyDoneTimeRange(q *gorm.DB, req RepoFindDoneActionsReq, now time.Time) *gorm.DB {
+	startOfDay := func(t time.Time) time.Time {
+		return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+	}
+	dayStart := startOfDay(now)
+	switch req.TimeRange {
+	case TimeRangeToday:
+		return q.Where("a.date >= ? AND a.date < ?", dayStart, dayStart.AddDate(0, 0, 1))
+	case TimeRange7d:
+		return q.Where("a.date >= ?", now.AddDate(0, 0, -7))
+	case TimeRangeWeek:
+		weekday := int(dayStart.Weekday())
+		if weekday == 0 {
+			weekday = 7
+		}
+		weekStart := dayStart.AddDate(0, 0, 1-weekday)
+		return q.Where("a.date >= ? AND a.date < ?", weekStart, weekStart.AddDate(0, 0, 7))
+	case TimeRange30d:
+		return q.Where("a.date >= ?", now.AddDate(0, 0, -30))
+	case TimeRangeMonth:
+		monthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+		return q.Where("a.date >= ? AND a.date < ?", monthStart, monthStart.AddDate(0, 1, 0))
+	case TimeRangeLastMonth:
+		monthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location()).AddDate(0, -1, 0)
+		return q.Where("a.date >= ? AND a.date < ?", monthStart, monthStart.AddDate(0, 1, 0))
+	case TimeRangeQuarter:
+		quarterMonth := ((int(now.Month())-1)/3)*3 + 1
+		quarterStart := time.Date(now.Year(), time.Month(quarterMonth), 1, 0, 0, 0, 0, now.Location())
+		return q.Where("a.date >= ? AND a.date < ?", quarterStart, quarterStart.AddDate(0, 3, 0))
+	case TimeRangeCustom:
+		if req.CustomFrom != "" {
+			q = q.Where("a.date >= ?", req.CustomFrom)
+		}
+		if req.CustomTo != "" {
+			q = q.Where("a.date <= ?", req.CustomTo)
+		}
+	}
+	return q
 }
 
 // buildActionFilterSQL 处理动作筛选：req.Action 为 "objectType:action" 全键，逗号分隔。

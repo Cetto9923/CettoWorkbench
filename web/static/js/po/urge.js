@@ -22,13 +22,7 @@
   var currentID = "";
   var basePreview = "";
 
-  var esc = (window.PersonalList && window.PersonalList.escapeHtml) || window.escapeHtml || function (s) { return String(s == null ? "" : s); };
-
-  function toast(message, level) {
-    if (typeof window.showToast === "function") {
-      window.showToast(message, level || "info");
-    }
-  }
+  var esc = window.escapeHtml;
 
   function close() {
     overlay.classList.remove("show");
@@ -123,7 +117,7 @@
       });
     }).then(applyPreview).catch(function (error) {
       if (recipient) { recipient.innerHTML = '<span class="po-urge-no-recipient">加载失败</span>'; }
-      toast(error.message || "加载催办信息失败", "error");
+      window.showToast(error.message || "加载催办信息失败", "error");
     });
   }
 
@@ -208,11 +202,11 @@
         return body;
       });
     }).then(function (body) {
-      toast(body.message || "已发起催办", body.duplicate ? "info" : "success");
+      window.showToast(body.message || "已发起催办", body.duplicate ? "info" : "success");
       close();
       if (typeof window.refreshPoHomeDemands === "function") { return window.refreshPoHomeDemands(); }
     }).catch(function (error) {
-      toast(error.message || "催办失败", "error");
+      window.showToast(error.message || "催办失败", "error");
     }).then(function () {
       if (submit) {
         submit.disabled = false;

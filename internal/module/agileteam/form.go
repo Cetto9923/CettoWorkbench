@@ -76,7 +76,8 @@ func (r *ListReq) Normalize() {
 
 // CandidateSearchReq 成员候选人搜索。
 type CandidateSearchReq struct {
-	Q string `form:"q"`
+	Q           string `form:"q"`
+	TeamgroupID uint   `form:"teamgroupId"`
 }
 
 func (r *CandidateSearchReq) Normalize() {
@@ -87,6 +88,7 @@ func (r *CandidateSearchReq) Normalize() {
 type CandidateItem struct {
 	Account string `json:"account"`
 	Name    string `json:"name"`
+	Pinyin  string `json:"pinyin,omitempty"`
 }
 
 // MemberItem 正式/待加入成员展示行。

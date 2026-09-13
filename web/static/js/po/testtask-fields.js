@@ -5,7 +5,7 @@
     var now = new Date();
     var today = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
     var users = (data.users || []).map(function (u) {
-      return { value: u.account, label: (u.realname || u.account) + "(" + u.account + ")" };
+      return { value: u.account, label: (u.realname || u.account) + "(" + u.account + ")", pinyin: u.pinyin || "" };
     });
     $r.find('[data-tt-task-name="joint"]').val(today.replace(/-/g, "") + "-US" + data.demandId + "-联调总测试单");
     $r.find('[data-tt-task-begin="joint"]').val(today);

@@ -97,7 +97,7 @@ func (r *DemandsReq) Validate() []FieldError {
 	}
 	r.Relation = strings.ToLower(strings.TrimSpace(r.Relation))
 	switch r.Relation {
-	case "", "all", "handling", "following":
+	case "", "all", "lead", "participate", "handling", "following":
 	default:
 		return []FieldError{{Field: "relation", Message: "无效的关系"}}
 	}
@@ -201,7 +201,7 @@ type WorkItemDetail struct {
 	ZentaoStatus  string                       `json:"zentaoStatus"`            // 禅道 status 原文，前端按业需/研需分别映射中文
 	Suspended     bool                         `json:"suspended"`               // 当前存在 hang='1' 的挂起事实
 	Blocked       bool                         `json:"blocked"`                 // 当前 status=refuse 的阻塞事实
-	PrimaryAction *primaryaction.PrimaryAction `json:"primaryAction,omitempty"` // Stage 5: 服务端主操作
+	PrimaryAction *primaryaction.PrimaryAction `json:"primaryAction,omitempty"` // 服务端主操作
 	CanReview     bool                         `json:"canReview"`               // 当前登录人是待评业务评审人（与指派给无关）
 	CanEdit       bool                         `json:"canEdit,omitempty"`       // 当前登录人可直接编辑（未被评审且为创建人）
 	ZentaoEditUrl string                       `json:"zentaoEditUrl,omitempty"` // 禅道原生编辑页直达链接
@@ -239,6 +239,7 @@ const (
 // V10.1 02 节：办理场景 ∩ 阶段 ∩ 对象 ∩ 我的关系 ∩ 办理责任 ∩ 关键词。
 type TodoListReq struct {
 	Action         TodoAction     `form:"action"`         // 办理场景；默认 all
+	ApprovalType   string         `form:"approvalType"`   // 审批场景（仅 approval 生效）；默认 all
 	Stage          string         `form:"stage"`          // 阶段（仅 demand 生效）；默认 all
 	ObjectType     string         `form:"objectType"`     // 对象类型 demand/story/task/bug/testtask；默认 all
 	Relation       Relation       `form:"relation"`       // 我的关系；默认 all
@@ -272,6 +273,15 @@ func (r *TodoListReq) Validate() []FieldError {
 	case TodoActionAll, TodoActionReview, TodoActionSchedule, TodoActionVerify, TodoActionDeliver, TodoActionFollow:
 	default:
 		return []FieldError{{Field: "action", Message: "无效的办理场景"}}
+	}
+	r.ApprovalType = strings.TrimSpace(r.ApprovalType)
+	if r.ApprovalType == "" {
+		r.ApprovalType = "all"
+	}
+	switch r.ApprovalType {
+	case "all", "charter", "buildguideline", "planchange", "review", "reviewchange", "reviewbymanager":
+	default:
+		return []FieldError{{Field: "approvalType", Message: "无效的审批场景"}}
 	}
 	r.Stage = strings.TrimSpace(r.Stage)
 	if r.Stage == "" {

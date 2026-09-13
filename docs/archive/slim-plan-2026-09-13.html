@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>技术债清理与代码库瘦身设计方案 · workbench-claude-po</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --panel:#fff; --ink:#1a1d21; --ink2:#4a5158; --ink3:#7a828b;
+    --line:#e3e6ea; --line2:#eef1f4; --code:#f3f4f6;
+    --p0:#c0392b; --p0bg:#fdf2f1; --p1:#b7791f; --p1bg:#fdf8ec; --p2:#2c6fa8; --p2bg:#eff5fb;
+    --ok:#1e7c4a; --okbg:#eef8f2; --t0:#1e7c4a; --t1:#2c6fa8; --t2:#b7791f; --t3:#6b46a8;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1100px;margin:0 auto;padding:40px 28px 80px}
+  header{border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:30px}
+  h1{margin:0 0 10px;font-size:27px;letter-spacing:-.02em}
+  .meta{color:var(--ink2);font-size:13.5px;line-height:1.9}
+  .meta b{color:var(--ink);font-weight:600}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em;
+    background:var(--code);padding:1px 5px;border-radius:3px;border:1px solid var(--line2);color:#2d3339}
+  h2{font-size:20px;margin:42px 0 14px;padding-bottom:9px;border-bottom:1px solid var(--line)}
+  h3{font-size:16px;margin:26px 0 10px}
+  h4{font-size:14.5px;margin:18px 0 8px}
+  p{margin:10px 0}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px;background:var(--panel);
+    border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  th{background:#f0f2f5;text-align:left;padding:9px 12px;font-weight:600;font-size:12.5px;
+    color:var(--ink2);border-bottom:1px solid var(--line);white-space:nowrap}
+  td{padding:9px 12px;border-bottom:1px solid var(--line2);vertical-align:top;line-height:1.65}
+  tr:last-child td{border-bottom:none}
+  .num{text-align:right;font-variant-numeric:tabular-nums}
+  .sev{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11.5px;font-weight:700;white-space:nowrap}
+  .t0{background:var(--okbg);color:var(--t0);border:1px solid #c2e3d1}
+  .t1{background:var(--p2bg);color:var(--t1);border:1px solid #c7ddf1}
+  .t2{background:var(--p1bg);color:var(--t2);border:1px solid #eedcae}
+  .t3{background:#f3eefc;color:var(--t3);border:1px solid #d9cbf2}
+  .pth{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:#2d3339}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px 19px;margin:15px 0}
+  .card.t0b{border-left:4px solid var(--t0)}
+  .card.t1b{border-left:4px solid var(--t1)}
+  .card.t2b{border-left:4px solid var(--t2)}
+  .card.t3b{border-left:4px solid var(--t3)}
+  .ev{background:var(--code);border:1px solid var(--line2);border-radius:5px;padding:11px 13px;margin:10px 0;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.8;
+    overflow-x:auto;white-space:pre;color:#2d3339}
+  ul{margin:10px 0;padding-left:22px} li{margin:5px 0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:11px;margin:18px 0}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:13px 14px}
+  .stat .n{font-size:23px;font-weight:700;letter-spacing:-.02em;line-height:1.2;font-variant-numeric:tabular-nums}
+  .stat .l{font-size:12px;color:var(--ink3);margin-top:3px}
+  .note{background:#fffbeb;border:1px solid #f5e2ab;border-radius:6px;padding:13px 15px;margin:16px 0;font-size:13.5px}
+  .note b{color:#8a6416}
+  .good{background:var(--okbg);border:1px solid #c2e3d1;border-radius:6px;padding:13px 15px;margin:16px 0;font-size:13.5px}
+  .good b{color:#186b40}
+  .bar{display:flex;align-items:center;gap:10px;margin:5px 0;font-size:13px}
+  .bar .lbl{width:172px;flex:0 0 172px;color:var(--ink2)}
+  .bar .track{flex:1;background:#eceff2;border-radius:3px;height:19px;position:relative;overflow:hidden}
+  .bar .fill{height:100%;border-radius:3px}
+  .bar .v{width:78px;flex:0 0 78px;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink2)}
+  footer{margin-top:54px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>技术债清理与代码库瘦身设计方案</h1>
+  <div class="meta">
+    <b>仓库</b> workbench-claude-po &nbsp;·&nbsp; <b>分支</b> release/po-integrate-main-202609 &nbsp;·&nbsp; <b>HEAD</b> <code>3507193e</code><br>
+    <b>分析对象</b> 当前工作树（含未提交的 76 个收口改动）&nbsp;·&nbsp; <b>方式</b> 全量静态测量，未修改任何文件<br>
+    <b>硬约束</b> 不影响功能 · 架构 · 性能 · UI
+  </div>
+</header>
+
+<div class="good">
+  <b>先说三个测量结论，其中两个否决了预设前提：</b>
+  <ul style="margin:8px 0 0">
+    <li><b>「GPT 防御性编程把 Go 写肿了」——测量不支持这个判断。</b>纯委托包装函数仅 5 / 1630 个（0.3%），空实现函数 1 个，接口共 6 个且都是单实现测试接缝，<code>Validate</code> 定义 50 个对 117 处真实调用、<b>未发现一个死校验</b>。Go 生产代码 82.6% 是实打实的代码行。</li>
+    <li><b>真正的体积大头不在代码质量，在非代码资产。</b><code>docs/Demo</code> 一个目录 <b>135,902 行 / 175 文件 / 8.1M</b>，比全部一等公民代码（125,611 行）还多，占全仓 <b>52%</b>。</li>
+    <li><b>「防御性编程」确实存在，但在前端。</b>78 个跨文件同名 JS 函数（<code>esc()</code> 相关 33 份、<code>toast()</code> 11 份、<code>showToast()</code> 9 份…），而 <code>ui.js</code> 里已有共享实现却被绕过。这是 MUST 规则 9 的复用违反。<span style="color:var(--ok)">2026-09-13 复核实测修正：<code>esc()</code> 的准确形态是 <b>9 份算法拷贝 + 24 条 <code>var esc = A || B || …</code> 兜底链</b>，其中仅 3 条把 <code>window.escapeHtml</code> 列为兜底级别；兜底末级多为 <code>String(v == null ? "" : v)</code>，即 <b>fail-open 返回未转义原串</b>。</span></li>
+  </ul>
+</div>
+
+<h2>一、规模基线（实测，非估算）</h2>
+<table>
+  <thead><tr><th>区域</th><th class="num">文件</th><th class="num">行数</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td class="pth">internal</td><td class="num">377</td><td class="num">65,468</td><td>Go 生产 285 文件 / 50,952 行 + 测试</td></tr>
+    <tr><td class="pth">cmd</td><td class="num">1</td><td class="num">21</td><td>入口</td></tr>
+    <tr><td class="pth">web/static/js</td><td class="num">81</td><td class="num">26,140</td><td>前端交互层</td></tr>
+    <tr><td class="pth">web/static/css</td><td class="num">56</td><td class="num">19,316</td><td>样式层</td></tr>
+    <tr><td class="pth">web/templates</td><td class="num">56</td><td class="num">8,046</td><td>SSR 模板</td></tr>
+    <tr><td class="pth">tests</td><td class="num">42</td><td class="num">6,620</td><td>测试</td></tr>
+    <tr><td><b>一等公民合计</b></td><td class="num"><b>613</b></td><td class="num"><b>125,611</b></td><td>真正承载功能的代码</td></tr>
+    <tr><td class="pth">docs/Demo</td><td class="num">175</td><td class="num">135,902</td><td><b>原型/演示资产，非代码资产</b></td></tr>
+    <tr><td class="pth">design-evidence</td><td class="num">29</td><td class="num">—</td><td>4.9 M 截图</td></tr>
+  </tbody>
+</table>
+
+<h3>体积构成可视化</h3>
+<div class="bar"><span class="lbl">docs/Demo（非代码）</span><span class="track"><span class="fill" style="width:100%;background:#9aa3ad"></span></span><span class="v">135,902</span></div>
+<div class="bar"><span class="lbl">internal（Go）</span><span class="track"><span class="fill" style="width:48.2%;background:#2c6fa8"></span></span><span class="v">65,468</span></div>
+<div class="bar"><span class="lbl">web/static/js</span><span class="track"><span class="fill" style="width:19.2%;background:#3a86c8"></span></span><span class="v">26,140</span></div>
+<div class="bar"><span class="lbl">web/static/css</span><span class="track"><span class="fill" style="width:14.2%;background:#5a9ad4"></span></span><span class="v">19,316</span></div>
+<div class="bar"><span class="lbl">web/templates</span><span class="track"><span class="fill" style="width:5.9%;background:#7fb1dd"></span></span><span class="v">8,046</span></div>
+<div class="bar"><span class="lbl">tests</span><span class="track"><span class="fill" style="width:4.9%;background:#a3c8e6"></span></span><span class="v">6,620</span></div>
+
+<h3>Go 生产代码行构成（285 文件 / 50,952 行）</h3>
+<div class="bar"><span class="lbl">代码行</span><span class="track"><span class="fill" style="width:82.6%;background:#1e7c4a"></span></span><span class="v">42,110</span></div>
+<div class="bar"><span class="lbl">空行</span><span class="track"><span class="fill" style="width:8.9%;background:#c9cdd2"></span></span><span class="v">4,551</span></div>
+<div class="bar"><span class="lbl">注释合计</span><span class="track"><span class="fill" style="width:8.6%;background:#b7791f"></span></span><span class="v">4,364</span></div>
+<div class="bar"><span class="lbl">&nbsp;&nbsp;└ 文件头模板</span><span class="track"><span class="fill" style="width:3.3%;background:#d9a441"></span></span><span class="v">1,657</span></div>
+<div class="bar"><span class="lbl">&nbsp;&nbsp;└ 文档注释</span><span class="track"><span class="fill" style="width:4.5%;background:#c9a45e"></span></span><span class="v">2,270</span></div>
+<div class="bar"><span class="lbl">&nbsp;&nbsp;└ 行内/框线</span><span class="track"><span class="fill" style="width:0.9%;background:#ddc79a"></span></span><span class="v">437</span></div>
+
+<div class="note">
+  <b>7 行文件头模板独占 1,657 行</b>，覆盖 289 个文件中的 285 个（<code>// ==== / 文件: / 模块: / 类型: / 职责: / 依赖: / ====</code>）。
+  这是全仓最大的一块纯样板，且 <code>文件:</code> 行还会随改名腐烂——本次审计已抓到 3 处失真。
+</div>
+
+<h2>二、三个预设前提的验证结果</h2>
+<table>
+  <thead><tr><th style="width:32%">预设</th><th style="width:40%">实测证据</th><th>判定</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>防御性编程导致 Go 层膨胀</td>
+      <td>纯委托包装 <b>5 / 1630</b>（0.3%）、空实现 <b>1</b>、接口 <b>6</b>（均单实现且为测试接缝）、<code>_ =</code> 显式丢弃 78 处</td>
+      <td><span class="sev t2">不成立</span></td>
+    </tr>
+    <tr>
+      <td>表单校验层存在大量死代码</td>
+      <td><code>Validate</code> 定义 50 / 调用点 117；<code>Normalize</code> 定义 10 / 调用 4；<b>未发现任何未被调用的 Validate</b>。仅 4 个类型同时有 Validate+Normalize</td>
+      <td><span class="sev t2">不成立</span></td>
+    </tr>
+    <tr>
+      <td>前端重复造轮子、绕过共享层</td>
+      <td>78 个跨文件同名函数；<code>ui.js</code> 已有 <code>showToast</code>/<code>closeModal</code>/<code>getCsrfToken</code>/<code>escapeHtml</code> 却被 4~8 个模块各自重写</td>
+      <td><span class="sev t1">成立</span></td>
+    </tr>
+  </tbody>
+</table>
+<p class="meta">方法论说明：以上均为对全量源码的机械测量（声明计数 + 全仓引用计数 + 逐函数体比对），非抽样估计。核心结论「Go 不臃肿」是在假设被否证后得出的，而非预设。</p>
+
+<h2>三、瘦身空间分级</h2>
+<p>分级依据是<b>行为风险的种类</b>，不是工作量。T0 不改任何逻辑，T3 需要你拍板口径。</p>
+
+<h3><span class="sev t0">T0</span> 零行为风险 —— 纯删除，不触碰任何逻辑</h3>
+<table>
+  <thead><tr><th>#</th><th>动作</th><th class="num">可减</th><th>依据</th><th>风险</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td><code>docs/Demo</code> 迁出仓库</td><td class="num">135,902 行<br>8.1 M</td>
+        <td>Go 源码引用 <b>0</b>、测试引用 <b>0</b>、Makefile 引用 <b>0</b>；<code>make build</code> 只拷 <code>web db</code>；仅 2 个文档顺带提及</td><td>无运行时风险</td></tr>
+    <tr><td>2</td><td>删除 <code>web/static/js/components/batchform.js</code></td><td class="num">147 行</td>
+        <td>全站唯一「既未被模板引用、也无动态拼接痕迹」的 JS 文件</td><td>无</td></tr>
+    <tr><td>3</td><td>清理死 CSS 类（<b>需先建动态类白名单</b>）</td><td class="num">≈233 类<br>≈400 行</td>
+        <td>2,407 个类名中静态未引用 257（11%），剔除 <code>wb-type-*</code>/<code>wb-status-*</code> 等拼接类后约 233</td><td>无（有白名单）</td></tr>
+    <tr><td>4</td><td>删除 <code>docs/Demo/vendor</code>（如保留 Demo）</td><td class="num">3.4 M</td>
+        <td>与 <code>web/static/vendor</code> 内容重复（bootstrap/echarts/fontawesome/quill 等）</td><td>无</td></tr>
+    <tr><td>5</td><td>压缩 7 行文件头为 1 行职责注释</td><td class="num">≈1,657 行</td>
+        <td>纯注释改动；保留 <code>职责</code> 语义，去掉重复的路径/模块/依赖行</td><td>无（仅可读性）</td></tr>
+  </tbody>
+</table>
+
+<h3><span class="sev t1">T1</span> 低风险收敛 —— 需 UI 回归</h3>
+<div class="card t1b">
+  <h4>共享能力收敛：让前端回到 <code>ui.js</code> 单一真源</h4>
+  <p><code>ui.js</code>（749 行，经 <code>base.html</code> 全站加载）已提供这些能力，但模块各自重写：</p>
+  <table>
+    <thead><tr><th>能力</th><th class="num">总处数</th><th class="num">自建</th><th class="num">自建行数</th><th>ui.js 已有</th></tr></thead>
+    <tbody>
+      <tr><td><code>esc()</code></td><td class="num">27</td><td class="num">27</td><td class="num">90</td><td>否（与 <code>escapeHtml</code> 语义重复）</td></tr>
+      <tr><td><code>openModal()</code></td><td class="num">5</td><td class="num">5</td><td class="num">69</td><td>否</td></tr>
+      <tr><td><code>showToast()</code></td><td class="num">9</td><td class="num">8</td><td class="num">60</td><td><b>是</b></td></tr>
+      <tr><td><code>toast()</code></td><td class="num">11</td><td class="num">11</td><td class="num">59</td><td>否</td></tr>
+      <tr><td><code>closeModal()</code></td><td class="num">6</td><td class="num">5</td><td class="num">43</td><td><b>是</b></td></tr>
+      <tr><td><code>getCsrfToken()</code></td><td class="num">5</td><td class="num">4</td><td class="num">31</td><td><b>是</b></td></tr>
+      <tr><td><code>escapeHtml()</code></td><td class="num">6</td><td class="num">5</td><td class="num">26</td><td><b>是</b></td></tr>
+    </tbody>
+  </table>
+  <p><b>行数收益有限（净约 −278 行），真正的价值是消除分歧风险：</b><code>esc()</code> 相关的 9 份算法拷贝 + 24 条兜底链若转义规则不一致，就是一批潜在的 XSS 缺口或显示错乱点。更严重的是兜底链末级 fail-open（真源缺失时返回未转义原串），所以这是<b>安全一致性收益</b>，不是瘦身收益——务必按这个理由立项，否则会被当成纯美化而排到队尾。</p>
+  <p style="font-size:13px;color:var(--ink2)"><b>2026-09-13 复核修正（3 处）：</b>①「27 份 <code>esc()</code>」的准确拆解是 <b>9 份 <code>function esc(</code> 算法定义 + 24 条 <code>var esc = …</code> 兜底链</b>（合计 33 个文件含 <code>esc</code>），原计数把两类混为一谈；②「ui.js 已有：否」有误，<code>ui.js:10</code> 定义并在 <code>L730</code> 导出 <code>window.escapeHtml</code>，<b>就是真源</b>，只是被 21 条链绕过；③<code>function escapeHtml(</code> 实测 <b>5</b> 处（与原文一致）。另：<code>closeModal()</code>/<code>getCsrfToken()</code> 的"真源"实为 <code>app.js</code>（base.html L78 在 <code>ui.js</code> L77 之后加载，覆盖同名 <code>window.*</code>:<code>ui.js:731/733</code> vs <code>app.js:404/406</code>），标注「ui.js 已有」时需一并说明；<code>escapeHtml</code>/<code>showToast</code> 无此覆盖，<code>ui.js</code> 是唯一提供方。</p>
+</div>
+
+<h3><span class="sev t2">T2</span> 中风险 —— 需等价性证明</h3>
+<div class="card t2b">
+  <h4>21 个超长文件按职责拆分</h4>
+  <p>门禁 <code>check-file-length</code> 当前 <b>exit 1</b>，21 项违规（13 新增 + 8 已基线仍在增长）：</p>
+  <div class="ev">新增（web/static，13 项）
+  2326  web/static/css/metrics.css          868  web/static/js/po/po-profile.js
+   733  web/static/css/po/po-profile.css    711  web/static/css/po/follow.css
+   708  web/static/js/metrics-radar.js      636  web/static/js/metrics-manage.js
+   611  web/static/js/po/linkstory.js       581  web/static/js/permission/members.js
+   571  web/static/css/po/shell.css         519  web/static/css/po/board.css
+   514  web/static/css/permission/list.css  508  web/static/js/po/notice.js
+   504  web/static/css/po/wb-priority.css
+
+已基线但增长（违反 non-growth，8 项）
+internal/module/schedule/form.go               913 → 935
+web/static/css/layout/layout.css               531 → 643   (+112)
+web/static/css/schedule/scheduleintegrated.css 879 → 929   (+50)
+web/static/css/components/components.css       595 → 616   (+21)
+web/static/js/ui.js                            738 → 749   (+11)
+web/templates/schedule/index.html              742 → 751   (+9)
+web/static/css/schedule/schedule.css           539 → 545   (+6)
+web/static/js/schedule/scheduleintegrated.js   837 → 840   (+3)</div>
+  <p><b>拆分方式必须是纯移动：</b>不改函数体、不改选择器、不改加载顺序。CSS 拆分要按稳定前缀切（如 <code>metric-radar-*</code> 单独成文件），JS 按能力域切。验收靠模板 <code>&lt;link&gt;</code>/<code>&lt;script&gt;</code> 补全 + 视觉/交互回归，<b>不能靠「测试通过」充当等价性证明</b>。</p>
+</div>
+
+<div class="card t2b">
+  <h4>CSS 一致性债（建议与拆分同批处理）</h4>
+  <table>
+    <thead><tr><th>指标</th><th class="num">实测</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><code>!important</code></td><td class="num">213</td><td>跨 56 个文件；需逐个判断是否真有必要</td></tr>
+      <tr><td>硬编码 hex 色值</td><td class="num">1,776</td><td>其中 <code>var(--x, #fallback)</code> 的 fallback 占 1,177（28%）</td></tr>
+      <tr><td>跨文件重复定义选择器</td><td class="num">42</td><td><code>.form-group</code> / <code>.form-label</code> / <code>body</code> 各在 3 个文件定义</td></tr>
+      <tr><td>重复声明（同/跨文件 &gt;1 次）</td><td class="num">152</td><td>后定义静默覆盖前定义，属潜在样式陷阱</td></tr>
+    </tbody>
+  </table>
+  <p class="meta">注意：42 个跨文件重复选择器里含 <code>body</code>、<code>html</code>、<code>.modal</code> 这类全局基元，合并它们会改变层叠结果 → <b>必须逐条视觉回归，不能批量合并</b>。</p>
+</div>
+
+<h3><span class="sev t3">T3</span> 结构性决策 —— 需你拍板</h3>
+<div class="card t3b">
+  <h4>决策 1：<code>check-file-length.sh</code> 的白名单口径</h4>
+  <p>本轮收口已把扫描范围收窄为显式路径白名单：</p>
+  <div class="ev">scripts/check-file-length.sh（工作树改动）
+  [[ "$file" == */testdata/* ]] && continue
+  [[ -f "$file" ]] || continue
+  case "$file" in
+    cmd/*|internal/*|web/templates/*|web/static/js/*|web/static/css/*|tests/*|large.go|new_large.go) ;;
+    *) continue ;;      # ← docs/Demo 等一律跳过
+  esac</div>
+  <p>效果：违规从 52 项降到 21 项。<b>这需要你明确背书</b>，因为它改变的是门禁判定范围：</p>
+  <ul>
+    <li><b>支持理由：</b>AGENTS.md 规则 8 的原话是「<b>First-party</b> Go/JS/CSS/HTML files MUST not exceed 500」，Demo 树不属于 first-party 生产文件，排除它才是对齐规则原文。</li>
+    <li><b>需要防范：</b>白名单意味着今后新增的一等公民目录（如新顶层目录、或 <code>scripts/</code> 下的新 JS）会被<b>静默跳过</b>。建议改为「排除清单」（排除 <code>docs/*</code>、<code>*/vendor/*</code>、<code>design-evidence/*</code>），默认纳入，避免漏扫。</li>
+  </ul>
+</div>
+<div class="card t3b">
+  <h4>决策 2：<code>docs/Demo</code> 的去向</h4>
+  <p>三条路线，取决于它是否仍是有效设计参考：</p>
+  <table>
+    <thead><tr><th>方案</th><th>效果</th><th>代价</th></tr></thead>
+    <tbody>
+      <tr><td><b>A. 迁到独立仓库</b>（推荐）</td><td>主库 −8.1 M / −135,902 行，历史完整保留</td><td>需 1 次跨仓搬迁；引用文档改链接</td></tr>
+      <tr><td>B. 移到 orphan 归档分支</td><td>主库工作树立即变干净</td><td>日常 <code>git log</code> 不可见，检索成本高</td></tr>
+      <tr><td>C. <code>.gitignore</code> + 保留本地</td><td>改动最小</td><td>169 个已跟踪文件需 <code>git rm --cached</code>，团队成员本地仍占 8.1 M</td></tr>
+    </tbody>
+  </table>
+  <p><b>不建议直接删除</b>：Demo 承载 2026-09 之前的设计演进证据，属「历史证据」而非垃圾，删除会损失可追溯性。</p>
+</div>
+
+<div class="card t3b">
+  <h4>决策 3：新增 <code>esc()</code> 与既有 <code>escapeHtml()</code> 的关系</h4>
+  <p>27 份 <code>esc()</code> 与 5 份 <code>escapeHtml()</code> 是<b>两套命名做同一件事</b>。<code>ui.js:10</code> 的 <code>escapeHtml</code> 是既有共享真源。收敛时必须先定：保留一个名字（建议 <code>escapeHtml</code>），还是保留两个别名。这决定调用点改写量。</p>
+  <p style="background:var(--okbg);border-left:3px solid var(--ok);padding:9px 12px;margin:12px 0 0;font-size:13.5px"><b>✅ 已定（2026-09-13）：保留单一名字 <code>escapeHtml</code>，不改 <code>esc</code> 调用点。</b><br>
+  <b>约定：</b>HTML 转义只有一个名字 <code>escapeHtml</code>，只有一个真源 <code>ui.js</code> 的 <code>window.escapeHtml</code>（base.html L77 全站加载）。<code>esc</code> 仅允许作「模块公共 API 名 + 一行薄委托 <code>return window.escapeHtml(v);</code>」；<b>禁止</b>第二份算法、<b>禁止</b> <code>A || B || …</code> 多级兜底链、<b>禁止</b>新建 <code>WBUtils</code> 式工具层（本仓结构是扁平 <code>web/static/js/</code>，新加层就是"引入新工具层"）。<br>
+  <b>依据（三条独立证据同向）：</b>① 主干代码事实只有 <code>escapeHtml</code> 一个名字（<code>ui.js:10</code> 定义 / <code>L730</code> 导出），主干<b>不存在</b> <code>function esc(</code>；② 本项目门禁 <code>check-patterns.sh:52</code> 已把 <code>LOCAL_ESCAPE_HTML 'function escapeHtml('</code> 登记为 advisory，隐含"真源不在本地"；③ 本仓 <code>docs/plan/code-health-20260913/README.md:36-37</code> 已就 picker 同一问题明确授权"改用 <code>window.escapeHtml</code>，<b>不引入新的工具层</b>"。<br>
+  <b>为什么不照抄 CRCBWorkbench 的 <code>WBUtils</code>：</b>那是另一套血缘（<code>web/static/workbench/shared/</code> 分层，<code>po-v2</code> / <code>main</code> 才具备）；本仓与主干同为扁平布局，无 shared 层。可借鉴其结论（单源 + 薄委托 compat alias），不可照抄其结构。<br>
+  <b>实测修正：</b><code>esc</code> 相关共 <b>33 个文件</b> = 9 份 <code>function esc(</code> 算法拷贝 + 24 条 <code>var esc = …</code> 兜底链；仅 <b>3/24</b> 条把 <code>window.escapeHtml</code> 列为兜底级别，另 21 条只依赖 <code>PersonalList.escapeHtml</code>（18）或 <code>RichText.esc</code>/<code>WB.esc</code>/<code>PL.escapeHtml</code>，即真源被绕过。兜底末级多为 <b>fail-open</b>（<code>String(v == null ? "" : v)</code>，返回未转义原串）——这是安全缺陷，应独立立项优先处理。<br>
+  <b>落地建议（4 步）：</b>① 先改 fail-open 兜底（安全优先、量最小）；② 9 处 <code>esc</code> 算法体改薄委托；③ 消掉 24 条兜底链（<code>var esc = window.escapeHtml;</code>）；④ 可选：给 <code>check-patterns.sh:52</code> 补两条 advisory（<code>function esc(</code> 与 fail-open 末级），因为现有门禁只看得见 5 处 <code>escapeHtml</code>、看不见 9+24 处 <code>esc</code>，口径不自洽。<br>
+  <b>详见</b> <code>docs/plan/code-health-20260913/frontend-escape-html-convention.md</code>。</p>
+</div>
+
+<h2>四、执行护栏（保证不破坏功能/架构/性能/UI）</h2>
+<table>
+  <thead><tr><th style="width:14%">层级</th><th>前置条件</th><th>验收命令 / 方法</th><th>必须留证</th></tr></thead>
+  <tbody>
+    <tr><td><span class="sev t0">T0</span></td>
+      <td>确认目标确无引用（<code>rg</code> 全仓 + 模板 + Go 常量）</td>
+      <td><code>go build ./... && go vet ./...</code>；<code>make check-patterns check-secrets check-architecture</code>；<code>git diff --stat</code></td>
+      <td>删除清单 + 每个目标的零引用检索输出</td></tr>
+    <tr><td><span class="sev t1">T1</span></td>
+      <td>先建「动态类名/动态函数名」白名单，再定保留名</td>
+      <td>21 个前端测试入口全部 <code>node</code> 执行；6 条主流程真实浏览器回归（加载/空态/错误/弹窗/Console/network）</td>
+      <td>前后 DOM 对比或截图；Console 无新增报错</td></tr>
+    <tr><td><span class="sev t2">T2</span></td>
+      <td>先冻结文件、固定基线 SHA</td>
+      <td>拆分前后 <code>git diff --color-moved</code> 证明「只移动未改」；模板引用补全；视觉回归</td>
+      <td><code>--color-moved</code> 输出 + 模板 <code>link/script</code> 差异</td></tr>
+  </tbody>
+</table>
+<div class="note">
+  <b>三条铁律（沿用本仓既有治理要求）：</b>
+  <ol style="margin:8px 0 0">
+    <li><b>不得削弱扫描器、不得扩展基线、不得为通过而暂存删除。</b></li>
+    <li><b>不得以「测试通过」证明行为等价</b>——Go 单测覆盖不到 CSS 层叠与 JS 渲染结果，等价性必须靠浏览器证据。</li>
+    <li><b>每批结束必须让 <code>check-file-length</code> 保持单调下降</b>，否则「拆分」会变成把违规从 A 文件搬到 B 文件。</li>
+  </ol>
+</div>
+
+<h2>五、防复发：为什么会长胖，以及怎么真正止住</h2>
+<p>清理是一次性的，长胖是过程性的。观察到的三个生成机制：</p>
+<table>
+  <thead><tr><th>机制</th><th>证据</th><th>最小干预</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><b>缺「先查共享层」步骤</b></td>
+      <td>27 份 <code>esc()</code>、11 份 <code>toast()</code> 的出现顺序无法归因于单次疏忽，而是没人被要求先查 <code>ui.js</code></td>
+      <td>新增前端能力前，在任务模板里强制一行「已检索 <code>ui.js</code>：无同类实现」并附检索输出</td>
+    </tr>
+    <tr>
+      <td><b>文件长度门禁长期红着</b></td>
+      <td>门禁 exit 1 已持续（<code>debt.md</code> 记为 BLOCKED BY EXISTING BASELINE），红着的门禁等于没有门禁——文件从 500 涨到 2326 行无人拦截</td>
+      <td>先把 21 项清零让门禁转绿，之后新超标立即失败。<b>这是所有防复发措施的前置条件</b></td>
+    </tr>
+    <tr>
+      <td><b>注释模板化膨胀</b></td>
+      <td>7 行文件头 × 285 文件；其中 <code>文件:</code> 行已腐烂 3 处</td>
+      <td>压缩为 1 行职责注释；<code>文件:</code> 行可由门禁校验一致性，或直接取消</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>六、明确不做（划清边界，防止过度清理）</h2>
+<table>
+  <thead><tr><th>不做</th><th>原因</th></tr></thead>
+  <tbody>
+    <tr><td>不动 Go 分层、接口、DI 结构</td><td>实测仅 6 个接口且均为单实现测试接缝，无过度抽象可删；动它只增加回归面，0 收益</td></tr>
+    <tr><td>不为凑 500 行而机械拆分</td><td>AGENTS.md 规则 8 要求「split by responsibility, not arbitrary line chunks」</td></tr>
+    <tr><td>不批量 token 化 1,776 处 hex</td><td>其中 1,177 处是 <code>var()</code> 的 fallback，批量替换会改变解析结果 → 视觉风险 &gt; 收益</td></tr>
+    <tr><td>不批量合并 42 个重复选择器</td><td>含 <code>body</code>/<code>html</code>/<code>.modal</code> 全局基元，合并会改变层叠与优先级</td></tr>
+    <tr><td>不删 <code>docs/Demo</code> 内容</td><td>是历史设计证据，只应迁出/归档，不应销毁</td></tr>
+    <tr><td>不动 <code>Validate</code>/<code>Normalize</code> 层</td><td>实测 50 定义对 117 调用，无死校验；「双轨」仅 4 例，不构成模式</td></tr>
+  </tbody>
+</table>
+
+<h2>七、建议执行顺序</h2>
+<table>
+  <thead><tr><th style="width:56px">批次</th><th>内容</th><th style="width:22%">前置决策</th><th>完成判据</th></tr></thead>
+  <tbody>
+    <tr><td><span class="sev t0">第 1 批</span></td>
+      <td>先把 <code>po_work_scope.go</code> 的事实与计划文档对齐；确认白名单口径；确认 Demo 去向</td>
+      <td><b>需你拍板</b>（决策 1、2）</td>
+      <td>文档与工作树一致；口径书面确认</td></tr>
+    <tr><td><span class="sev t0">第 2 批</span></td>
+      <td>Demo 迁出 + <code>batchform.js</code> 删除 + 文件头压缩 → <code>check-file-length</code> 违规降到 8 项（仅剩增长的）</td>
+      <td>决策 1、2 已定</td>
+      <td>门禁违规 ≤ 8；<code>go build</code>/<code>vet</code> 全绿</td></tr>
+    <tr><td><span class="sev t2">第 3 批</span></td>
+      <td>拆 13 个新增超长文件 + 把 8 个增长文件回落到基线 → <b>门禁首次转绿</b></td>
+      <td>无（但工作量大，需逐文件做）</td>
+      <td><code>check-file-length</code> exit 0</td></tr>
+    <tr><td><span class="sev t1">第 4 批</span></td>
+      <td>前端共享层收敛（含动态类名白名单）+ 死 CSS 清理</td>
+      <td>决策 3（保留名）</td>
+      <td>21 个前端测试全绿 + 浏览器回归证据</td></tr>
+    <tr><td><span class="sev t3">第 5 批</span></td>
+      <td>安装防复发门禁：复用优先检查 + 文件头一致性 + 保持长度门禁绿</td>
+      <td>前 4 批已收敛</td>
+      <td>新超标文件立即失败（用 fixture 反向验证）</td></tr>
+  </tbody>
+</table>
+
+<div class="note">
+  <b>必须先处理的一项一致性问题：</b>计划文档 <span class="pth">docs/plan/code-health-20260913/README.md</span> 第 28 行记载
+  「删除 <code>po_work_scope.go</code>」，但实测该文件<b>在磁盘上、在 index 中、与 HEAD 完全一致（未修改）</b>，mtime 为 09-13 09:26，
+  即删除动作已被还原，而文档未同步。同一文档还记载 <code>make check</code> exit 2 的原因是长度扫描读取「已删除但 index 仍记录」的该文件——
+  该症状与「文件已还原」的事实不符。建议先核实并修正文档，否则后续所有批次会建立在错误的前置事实上。
+</div>
+
+<h2>八、预期收益与现实判断</h2>
+<div class="grid">
+  <div class="stat"><div class="n">−135,902</div><div class="l">Demo 迁出（非代码资产）</div></div>
+  <div class="stat"><div class="n">−1,657</div><div class="l">文件头模板压缩</div></div>
+  <div class="stat"><div class="n">−547</div><div class="l">死 JS + 死 CSS 类</div></div>
+  <div class="stat"><div class="n">−278</div><div class="l">前端共享层收敛（净）</div></div>
+  <div class="stat"><div class="n">21→0</div><div class="l">门禁违规项</div></div>
+</div>
+<p><b>诚实的量级判断：</b>一等公民代码 125,611 行里，<b>真正可删的只有约 2,300 行（1.8%）</b>，加上注释压缩约 4,000 行（3.2%）。
+换句话说，<b>「代码库瘦身」在行数意义上没有大肉可割</b>——这个库的主体代码是实打实的功能代码，不是臃肿。</p>
+<p>真正值得投入的是三件不属于「删代码」的事：</p>
+<ol>
+  <li><b>把 8.1 M / 135,902 行的非代码资产搬出主库</b>——这是唯一的大数字，收益是 clone 速度、检索信噪比和 diff 可读性。</li>
+  <li><b>把长期红着的长度门禁修绿</b>——红门禁不产生约束力，文件才能从 500 涨到 2326 行。</li>
+  <li><b>消除 27 份 <code>esc()</code> 的分歧风险</b>——这不是瘦身，是安全一致性。</li>
+</ol>
+
+<footer>
+  本方案基于工作树实测（含 76 个未提交改动），所有数字来自机械测量而非抽样估计；未修改任何文件。<br>
+  HEAD <code>3507193e</code> · 生成于 2026-09-13
+</footer>
+
+</div>
+</body>
+</html>

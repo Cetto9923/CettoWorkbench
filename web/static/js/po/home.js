@@ -8,8 +8,7 @@
 (function ($) {
   "use strict";
 
-  // 每页条数选项：与分页组件（PersonalList / components/pager.html）同一套取值。
-  var PAGE_SIZE_OPTIONS = (window.PersonalList && window.PersonalList.PAGE_SIZE_OPTIONS) || [10, 20, 50, 100];
+  var PAGE_SIZE_OPTIONS = window.PersonalList.PAGE_SIZE_OPTIONS;
 
   var state = {
     status: "all",
@@ -25,7 +24,6 @@
   var rawItems = [];
   var VALID_STATUSES = ["all", "accept", "clarify", "schedule", "developing", "testing", "waitacceptance", "acceptanced", "publish", "released"];
   var currentSeq = 0;
-  var summarySeq = 0;
   var hasCorrectedPage = false;
 
   function demandsUrl(status, page, pageSize) {
@@ -105,18 +103,9 @@
   }
 
   function refreshValueStreamSummary() {
-    if (state.focus === "all") {
-      renderValueStreamSummary([]);
-      return Promise.resolve();
-    }
-    var fetchFn = window.appFetch || fetch;
-    var seq = ++summarySeq;
-    return loadDemands("all", 1, 1).then(function (res) {
-      if (seq !== summarySeq) { return; }
-      renderValueStreamSummary(res.stageSummary || []);
-    }).catch(function () {
-      // 列表请求仍照常展示错误；统计卡保留服务端初始值，避免伪造为 0。
-    });
+    // 阶段汇总随正式列表请求返回。这里不再额外发起 pageSize=1 的探测请求，
+    // 避免同一筛选条件重复执行 count/page 查询。
+    return Promise.resolve();
   }
 
   function updateTitle(count, displayedCount, pageItemCount) {
@@ -226,9 +215,7 @@
         $("#top5Empty").attr("hidden", true);
         $("#top5Error").removeAttr("hidden");
         $("#homePagination").attr("hidden", true);
-        if (typeof window.showToast === "function") {
-          window.showToast("加载需求列表失败，请稍后重试", "danger");
-        }
+        window.showToast("加载需求列表失败，请稍后重试", "danger");
       });
   }
 
@@ -342,9 +329,7 @@
       var p = $(this).attr("data-perspective");
       if (p === "po") return;
       var text = $(this).contents().filter(function () { return this.nodeType === 3; }).text().trim() || "该工作视角";
-      if (typeof window.showToast === "function") {
-        window.showToast(text + "工作视角规划中，敬请期待", "info");
-      }
+      window.showToast(text + "工作视角规划中，敬请期待", "info");
     });
 
     initToolbar();

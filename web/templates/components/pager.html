@@ -93,6 +93,7 @@ Pager.PageParam 自定义页码参数名（默认 page）；Pager.PreserveParams
       <input type="hidden" name="{{ $pageParam }}" value="1">
       <select name="pageSize" class="select" onchange="this.form.submit()">
         <option value="10"{{ if eq $pageSize 10 }} selected{{ end }}>10 条/页</option>
+        <option value="15"{{ if eq $pageSize 15 }} selected{{ end }}>15 条/页</option>
         <option value="20"{{ if eq $pageSize 20 }} selected{{ end }}>20 条/页</option>
         <option value="50"{{ if eq $pageSize 50 }} selected{{ end }}>50 条/页</option>
         <option value="100"{{ if eq $pageSize 100 }} selected{{ end }}>100 条/页</option>

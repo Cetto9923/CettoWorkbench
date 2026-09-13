@@ -1,11 +1,4 @@
-// =============================================================================
-// 文件: internal/middleware/requestlogger.go
-// 模块: 中间件
-// 类型: middleware
-// 职责: 记录请求日志。
-// 依赖: internal/pkg/logger
-// =============================================================================
-
+// Package middleware 记录请求日志。
 package middleware
 
 import (

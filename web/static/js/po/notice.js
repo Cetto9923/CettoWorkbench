@@ -1,9 +1,8 @@
 (function () {
   "use strict";
 
-  var esc = (window.PersonalList && window.PersonalList.escapeHtml) || function (v) { return String(v == null ? "" : v); };
-  var objectTypeBadge = (window.PersonalList && window.PersonalList.objectTypeBadge) || function (k) { return k; };
-  var PAGE_SIZE_OPTIONS = (window.PersonalList && window.PersonalList.PAGE_SIZE_OPTIONS) || [10, 20, 50, 100];
+  var esc = window.escapeHtml;
+  var PAGE_SIZE_OPTIONS = window.PersonalList.PAGE_SIZE_OPTIONS;
   var $ = function (id) { return document.getElementById(id); };
 
   var state = {
@@ -307,7 +306,7 @@
     })
       .then(function (res) { if (!res.ok) throw new Error("HTTP " + res.status); return res.json().catch(function () { throw new Error("Invalid response format"); }); })
       .then(function (p) { if (!p || p.success !== true) throw new Error((p && p.error) || "mark read failed"); loadData(); })
-      .catch(function () { if (typeof window.showToast === "function") window.showToast("标为已读可能未生效，请刷新重试", "danger"); });
+      .catch(function () { window.showToast("标为已读可能未生效，请刷新重试", "danger"); });
   }
 
   function markAllRead() {
@@ -322,10 +321,10 @@
       .then(function (res) { if (!res.ok) throw new Error("HTTP " + res.status); return res.json().catch(function () { throw new Error("Invalid response format"); }); })
       .then(function (p) {
         if (!p || p.success !== true) throw new Error((p && p.error) || "mark all read failed");
-        if (typeof window.showToast === "function") window.showToast("已将当前筛选的全部未读通知标为已读", "success");
+        window.showToast("已将当前筛选的全部未读通知标为已读", "success");
         loadData();
       })
-      .catch(function () { if (typeof window.showToast === "function") window.showToast("全部标为已读可能未生效，请刷新重试", "danger"); })
+      .catch(function () { window.showToast("全部标为已读可能未生效，请刷新重试", "danger"); })
       .finally(function () { button.disabled = false; });
   }
 

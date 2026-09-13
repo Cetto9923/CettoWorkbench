@@ -75,7 +75,6 @@ func RequireLogin(mgr *scs.SessionManager, db *gorm.DB) gin.HandlerFunc {
 		}
 		// 当前系统不做权限过滤
 		currentMenus := menus
-		// currentMenus := menu.Filter(menus, userPerms, user.IsSuperAdmin)
 
 		c.Set("currentUser", &user)
 		c.Set("userPerms", userPerms)
@@ -112,7 +111,6 @@ func loadUserByID(ctx context.Context, db *gorm.DB, userID int64, user *model.Us
 		First(user).Error
 }
 
-// TODO 返回用户信息、权限
 // CurrentUser 获取当前已登录用户，未登录返回 nil。
 func CurrentUser(c *gin.Context) *model.User {
 	v, ok := c.Get("currentUser")

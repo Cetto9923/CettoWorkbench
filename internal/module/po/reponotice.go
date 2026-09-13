@@ -22,7 +22,7 @@ import (
 // noticeDataURLRe 解析 zt_notify.data 里 ZenTao 直链的视图类型与 ID，作为
 // 「您有 Bug(N)」类系统级模板提醒的 objType/objID 兜底来源。仅捕获视图路径段
 // 与数字 ID，避免匹配正文里的 bug 关键词。
-var noticeDataURLRe = regexp.MustCompile(`/(bug|story|task|product|project|demand|testcase|testtask)-view-(\d+)\.html`)
+var noticeDataURLRe = regexp.MustCompile(`/(bug|story|task|product|project|demand|testcase|testtask|charter|guideline|buildguideline|review|feedback|issue|risk)-view-(\d+)\.html`)
 
 // noticeObjectTypeFromURLKind 把 ZenTao 视图路径段归一到内部 objType。
 // testcase 与 testtask 共享 ZenTao 的「测试单」概念，统一归到 testtask。
@@ -42,6 +42,18 @@ func noticeObjectTypeFromURLKind(kind string) string {
 		return "demand"
 	case "testcase", "testtask":
 		return "testtask"
+	case "charter":
+		return "charter"
+	case "guideline", "buildguideline":
+		return "buildguideline"
+	case "review":
+		return "review"
+	case "feedback":
+		return "feedback"
+	case "issue":
+		return "issue"
+	case "risk":
+		return "risk"
 	}
 	return ""
 }
@@ -171,6 +183,17 @@ func newNoticeItem(row noticeRow, displayMap map[string]string) NoticeItem {
 	objType := row.ObjectType
 	objID := row.ObjectID
 	var related []NoticeObjectLink
+
+	// 1. 如果有明确的 Subject 前缀（例如 "STORY #56220", "DEMAND #10", "BUG #139", "CHARTER #529"），
+	// 优先以 Subject 声明的主对象为准
+	if objType == "mail" || objType == "" || objID == 0 {
+		if parsedType, parsedID, _ := parseNoticeSubject(row.Subject); parsedType != "" && parsedID > 0 {
+			objType = parsedType
+			objID = parsedID
+		}
+	}
+
+	// 2. 如果是 Bug 提醒邮件（如「提醒：您有 Bug(13)」），提取 data 中的相关 Bug 链接
 	if objType == "mail" || objType == "" || objID == 0 {
 		seen := map[int64]bool{}
 		for _, m := range noticeDataURLRe.FindAllStringSubmatch(row.Data, -1) {
@@ -185,21 +208,14 @@ func newNoticeItem(row noticeRow, displayMap map[string]string) NoticeItem {
 			objType, objID = related[0].ObjectType, related[0].ObjectID
 		}
 	}
-	if objType == "mail" || objType == "" || objID == 0 {
-		if parsedType, parsedID, _ := parseNoticeSubject(row.Subject); parsedType != "" && parsedID > 0 {
-			objType = parsedType
-			objID = parsedID
-		}
-	}
 
-	// 兜底：「您有 Bug(N)」类系统级模板提醒的 subject 不符合 TYPE #ID 形态，
-	// parseNoticeSubject 无法归类；此时从 row.Data 中的 ZenTao 直链反推对象。
-	if objType == "" || objID == 0 {
+	// 3. 兜底：从 row.Data 中的 ZenTao 直链反推对象
+	if objType == "mail" || objType == "" || objID == 0 {
 		if m := noticeDataURLRe.FindStringSubmatch(row.Data); m != nil {
 			viewKind := m[1]
 			parsedID, err := strconv.ParseInt(m[2], 10, 64)
 			if err == nil && parsedID > 0 {
-				if objType == "" {
+				if objType == "mail" || objType == "" {
 					objType = noticeObjectTypeFromURLKind(viewKind)
 				}
 				if objID == 0 {
@@ -208,6 +224,9 @@ func newNoticeItem(row noticeRow, displayMap map[string]string) NoticeItem {
 			}
 		}
 	}
+
+	category := classifyNotice(objType, row.ActionCode, row.Subject, row.Data)
+	needAction := noticeNeedsAction(row.ActionCode, row.Subject, row.Data)
 
 	var url string
 	if objID > 0 {
@@ -225,36 +244,92 @@ func newNoticeItem(row noticeRow, displayMap map[string]string) NoticeItem {
 		Data:           summary,
 		Actor:          actor,
 		Action:         row.ActionCode,
-		Category:       classifyNotice(objType, row.ActionCode),
-		NeedAction:     noticeNeedsAction(row.ActionCode),
-		Anomaly:        classifyNotice(objType, row.ActionCode) == "risk",
+		Category:       category,
+		NeedAction:     needAction,
+		Anomaly:        category == "risk",
 		Read:           row.IsRead != 0,
 		Date:           row.CreatedDate.Format("2006-01-02 15:04:05"),
 		URL:            url,
 	}
 }
 
-// classifyNotice 只按事件 action 和对象类型映射，浏览器不参与猜测分类。
-func classifyNotice(objectType, action string) string {
+// classifyNotice 支持事件 action、对象类型与文本关键词兜底映射。
+func classifyNotice(objectType, action string, extra ...string) string {
 	switch action {
-	case "reviewed", "reviewpassed", "reviewrejected", "submitreview", "submit", "submitted", "returned", "withdraw":
+	case "reviewed", "reviewpassed", "reviewrejected", "submitreview", "submit", "submitted", "returned", "withdraw", "approvalreview":
 		return "approval"
 	case "reminded", "overdue", "due", "delay", "delayed", "soon":
 		return "reminder"
 	case "assigned", "assignedTo", "transfer", "cc", "commented", "remark", "mentioned":
 		return "collaboration"
-	case "rejected", "bugconfirmed", "paused", "suspended", "hangup", "archive", "blocked", "gatefailed":
+	case "rejected", "bugconfirmed", "paused", "suspended", "hangup", "archive", "archived", "blocked", "gatefailed":
 		return "risk"
 	}
 	switch objectType {
+	case "approval", "charter", "guideline", "buildguideline", "review", "planchange":
+		return "approval"
 	case "doc", "release", "system", "sync", "account":
+		return "system"
+	}
+	var subject, data string
+	if len(extra) > 0 {
+		subject = extra[0]
+	}
+	if len(extra) > 1 {
+		data = extra[1]
+	}
+	sUpper := strings.ToUpper(subject)
+	if strings.HasPrefix(sUpper, "CHARTER ") || strings.HasPrefix(sUpper, "GUIDELINE ") ||
+		strings.HasPrefix(sUpper, "REVIEW ") || strings.HasPrefix(sUpper, "APPROVAL ") ||
+		strings.Contains(subject, "审批") || strings.Contains(subject, "评审") ||
+		strings.Contains(data, "当前需要您进行审批") || strings.Contains(data, "/charter-view-") ||
+		strings.Contains(data, "/guideline-view-") || strings.Contains(data, "/review-view-") {
+		return "approval"
+	}
+	if strings.Contains(subject, "提醒：您有") || strings.Contains(subject, "催办") ||
+		strings.Contains(subject, "到期") || strings.Contains(subject, "逾期") ||
+		strings.Contains(subject, "延期") || strings.Contains(data, "催办") ||
+		strings.Contains(data, "到期") || strings.Contains(data, "逾期") || strings.Contains(data, "延期") {
+		return "reminder"
+	}
+	if strings.Contains(subject, "指派") || strings.Contains(subject, "转交") ||
+		strings.Contains(subject, "抄送") || strings.Contains(data, "指派给") ||
+		strings.Contains(data, "转交") || strings.Contains(data, "抄送") ||
+		strings.Contains(data, "评论") || strings.Contains(data, "备注") {
+		return "collaboration"
+	}
+	if strings.Contains(subject, "挂起") || strings.Contains(subject, "阻塞") ||
+		strings.Contains(subject, "异常") || strings.Contains(subject, "驳回") ||
+		strings.Contains(subject, "拒绝") || strings.Contains(subject, "终止") ||
+		strings.Contains(data, "挂起") || strings.Contains(data, "阻塞") ||
+		strings.Contains(data, "异常") || strings.Contains(data, "驳回") ||
+		strings.Contains(data, "拒绝") || strings.Contains(data, "终止") {
+		return "risk"
+	}
+	if strings.Contains(subject, "系统通知") || strings.Contains(subject, "系统公告") ||
+		strings.Contains(data, "系统通知") || strings.Contains(data, "系统公告") {
 		return "system"
 	}
 	return "business"
 }
-func noticeNeedsAction(action string) bool {
+
+func noticeNeedsAction(action string, extra ...string) bool {
 	switch action {
 	case "reviewed", "clarify", "assigned", "assignedTo", "submitted", "submit", "returned", "reminded":
+		return true
+	}
+	var subject, data string
+	if len(extra) > 0 {
+		subject = extra[0]
+	}
+	if len(extra) > 1 {
+		data = extra[1]
+	}
+	sUpper := strings.ToUpper(subject)
+	if strings.HasPrefix(sUpper, "CHARTER ") || strings.HasPrefix(sUpper, "GUIDELINE ") ||
+		strings.HasPrefix(sUpper, "REVIEW ") || strings.HasPrefix(sUpper, "APPROVAL ") ||
+		strings.Contains(subject, "提醒：您有") || strings.Contains(subject, "催办") ||
+		strings.Contains(data, "当前需要您进行审批") || strings.Contains(data, "指派给") {
 		return true
 	}
 	return false

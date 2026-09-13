@@ -1,6 +1,6 @@
 (function ($) {
   "use strict";
-  var esc = (window.PersonalList && window.PersonalList.escapeHtml) || window.escapeHtml || function (v) { return String(v == null ? "" : v); };
+  var esc = window.escapeHtml;
 
   function renderDynamicForm(data) {
     var $r = window.PoTesttaskCore.$root();

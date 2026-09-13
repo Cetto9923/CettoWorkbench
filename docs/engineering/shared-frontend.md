@@ -3,7 +3,7 @@
 This document catalogs the shared client-side capabilities, network abstractions, and token conventions in Workbench.
 
 > [!IMPORTANT]
-> **Evidence status**: Source inspection and Node mock / Go handler tests cover only the bounded contracts listed below. Real authenticated browser acceptance is **RUNTIME ACCEPTANCE PENDING**; these capabilities are not yet certified. Legacy modules (such as `internal/module/user/` or legacy scripts in `ui.js`) are **not** certified as global golden references.
+> **Evidence status**: Source inspection and Node mock / Go handler tests cover only the bounded contracts listed below. Real authenticated browser acceptance is **RUNTIME ACCEPTANCE PENDING**; these capabilities are not yet certified. Legacy modules (such as `internal/module/user/` or legacy scripts in `ui.js`) are **not** certified as global golden references. Certification in this document is **capability-level, not file-level**: a capability listed below (for example `window.escapeHtml` in section 3) is certified as the canonical source **for that capability**, without certifying the file that currently provides it.
 
 ---
 
@@ -105,3 +105,4 @@ To prevent CSRF vulnerabilities while maintaining compatibility across form PRG 
 - **Modal Dialogs**: `openModal(id)` and `closeModal(id)` in `app.js` toggle `.open` CSS class.
 - **Form Loading States**: `bindFormLoading()` in `app.js` disables the submit button and applies a spinner, restoring it after 3 seconds; it does not cancel repeated submit events or provide server-side idempotency.
 - **Action Confirmations**: Handled via `[data-confirm]` attribute and native confirmation.
+- **HTML Escaping**: `window.escapeHtml(value)` — provided by `ui.js`, loaded globally by `layout/base.html` — is the **capability-level canonical source** for HTML escaping. Per the Evidence status note above, this capability-level certification does **not** extend to the `ui.js` file as a whole, which remains not certified as a global golden reference. Call `window.escapeHtml` directly; a pre-existing module-level compatibility API may survive only as a one-line delegation (`function escapeHtml(v) { return window.escapeHtml(v); }`) for real external consumers. Do not introduce a new shared utility layer, and do not relocate the implementation (for example into `app.js`).

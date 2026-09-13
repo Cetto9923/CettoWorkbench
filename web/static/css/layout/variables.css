@@ -16,9 +16,9 @@ html[data-theme="light"] {
   --color-danger-fill: #dc2626;
   --color-danger-bg: #fee2e2;
   --color-warning: #92400e;
-  --color-warning-fill: #f5cd2d;
-  --color-warning-light: #f5cd2d;
-  --color-warning-bg: #fef3c7;
+  --color-warning-fill: #b45309;
+  --color-warning-light: #f59e0b;
+  --color-warning-bg: #fffbeb;
   --color-info-fill: #2563eb;
   --color-info-fill-hover: #1d4ed8;
 
@@ -128,7 +128,7 @@ html[data-theme="light"] {
   --color-info-border: #bfdbfe;
 
   /* Explicit warning border to allow alias mapping without changing light values */
-  --color-warning-border: #fed7aa;
+  --color-warning-border: #fde68a;
 
   /* PO Aliases mapped to semantic tokens ensuring Light value remains identical */
   --po-bg: #f4f5f7; /* Cannot map to --color-page-bg (#f8f9fc) as values differ */

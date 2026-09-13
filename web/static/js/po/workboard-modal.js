@@ -12,17 +12,13 @@
 
   var candidatePool = [];
 
-  var teamRoles = ["研发", "测试", "PO", "SM", "架构", "运维", "美工", "产品经理"];
+  var agileTeamRoles = ["研发", "测试", "PO", "SM", "架构", "运维", "美工", "产品经理"];
   var teamDraft = [];
   var teamSearchTerm = "";
+  var teamDataRevision = 0;
+  var currentTeamgroupID = 0;
 
-  var esc = (window.PersonalList && window.PersonalList.escapeHtml) || function (s) {
-    return String(s == null ? "" : s);
-  };
-
-  function toast(msg) {
-    if (typeof window.showToast === "function") window.showToast(msg);
-  }
+  var esc = window.escapeHtml;
 
   /* ────────── 1. 提问题 Modal ────────── */
   function openKanbanCreateIssueModal() {
@@ -55,7 +51,7 @@
   }
 
   function submitKanbanIssueModal() {
-    toast("问题登记尚未接入服务端，当前操作不可用");
+    window.showToast("问题登记尚未接入服务端，当前操作不可用", "error");
     return;
   }
 
@@ -95,7 +91,7 @@
   }
 
   function submitKanbanTaskModal() {
-    toast("任务创建尚未接入服务端，当前操作不可用");
+    window.showToast("任务创建尚未接入服务端，当前操作不可用", "error");
     return;
   }
 
@@ -105,22 +101,78 @@
     var overlay = document.getElementById("kanbanModalOverlay");
     if (!modal || !overlay) return;
 
+    var teamId = window.PoWB && typeof window.PoWB.getSelectedTeamgroupId === "function"
+      ? window.PoWB.getSelectedTeamgroupId() : 0;
+    currentTeamgroupID = teamId;
     var titleEl = document.getElementById("kanbanTeamModalTitle");
-    if (titleEl) {
-      var teamName = "组织变革团队";
-      var activeGroup = document.querySelector(".group-tab.active");
-      if (activeGroup) teamName = activeGroup.textContent.trim() || teamName;
-      titleEl.textContent = "调整小组成员 · " + teamName;
-    }
+    var activeGroup = document.querySelector('#agileChips .chip.active');
+    var teamName = activeGroup ? activeGroup.textContent.trim() : "当前敏捷小组";
+    if (titleEl) titleEl.textContent = "调整小组成员 · " + teamName;
 
-    teamDraft = currentAgileMembers.map(function (m) {
-      return Object.assign({}, m);
-    });
+    currentAgileMembers = [];
+    candidatePool = [];
+    teamDraft = [];
     teamSearchTerm = "";
 
     renderTeamModal();
     overlay.classList.add("show");
     modal.classList.add("show");
+    loadTeamDetail(teamId);
+  }
+
+  function jsonFetch(path) {
+    if (typeof window.appJson !== "function") return Promise.reject(new Error("页面请求能力未加载"));
+    return window.appJson(path, { method: "GET" }).then(function (json) {
+      if (!json || json.success !== true) throw new Error((json && json.message) || "小组数据加载失败");
+      return json;
+    });
+  }
+
+  function loadTeamDetail(teamId) {
+    var revision = ++teamDataRevision;
+    if (!teamId) {
+      renderTeamModal();
+      window.showToast("当前未选择敏捷小组，请先选择小组", "warning");
+      return;
+    }
+    jsonFetch("/workbench/api/agile-teams/" + encodeURIComponent(teamId)).then(function (json) {
+      if (revision !== teamDataRevision) return;
+      var data = json.data || {};
+      currentAgileMembers = (data.formal || []).map(function (m) {
+        return { name: m.name || m.account, account: m.account, role: m.role || "研发", status: m.status || "formal" };
+      });
+      teamDraft = currentAgileMembers.map(function (m) { return Object.assign({}, m); });
+      var titleEl = document.getElementById("kanbanTeamModalTitle");
+      if (titleEl) titleEl.textContent = "调整小组成员 · " + (data.name || "当前敏捷小组");
+      renderTeamModal();
+      searchCandidates("", teamId);
+    }).catch(function (err) {
+      if (revision !== teamDataRevision) return;
+      renderTeamModal();
+      window.showToast(err.message || "小组数据加载失败", "error");
+    });
+  }
+
+  function searchCandidates(query, teamgroupID) {
+    var revision = ++teamDataRevision;
+    teamgroupID = Number(teamgroupID || currentTeamgroupID || 0);
+    if (!query && !teamgroupID) {
+      candidatePool = [];
+      renderTeamModal();
+      return;
+    }
+    jsonFetch("/workbench/api/agile-teams/candidates?q=" + encodeURIComponent(query) +
+      "&teamgroupId=" + encodeURIComponent(teamgroupID)).then(function (json) {
+      if (revision !== teamDataRevision) return;
+      candidatePool = (json.data || []).map(function (c) {
+        return { name: c.name || c.account, account: c.account, role: "研发" };
+      });
+      renderTeamModal();
+      var input = document.getElementById("kbTeamSearch");
+      if (input) { input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
+    }).catch(function (err) {
+      if (revision === teamDataRevision) window.showToast(err.message || "候选人搜索失败", "error");
+    });
   }
 
   function closeKanbanTeamModal() {
@@ -139,22 +191,22 @@
 
     var matchedCandidates = candidatePool.filter(function (c) {
       if (existingAccounts[c.account]) return false;
-      if (!teamSearchTerm) return true;
-      var term = teamSearchTerm.toLowerCase();
-      return c.name.toLowerCase().indexOf(term) >= 0 || c.account.toLowerCase().indexOf(term) >= 0;
+      // 候选人已经由服务端按姓名、账号或拼音过滤；这里不能再按可见姓名二次过滤。
+      return true;
     });
 
+    var candidateEmpty = teamSearchTerm ? "无匹配候选人" : "请输入姓名或账号搜索候选人";
     var candidatesHtml = matchedCandidates.length ? matchedCandidates.map(function (c) {
       return (
         '<button type="button" class="kb-team-candidate" data-account="' + esc(c.account) + '" title="点击加入团队">' +
         '  <span>' + esc(c.name) + '（' + esc(c.account) + '）</span>' +
         '</button>'
       );
-    }).join("") : '<div style="grid-column:1/-1;color:var(--t3);font-size:11px;padding:6px 0">无匹配候选人</div>';
+    }).join("") : '<div class="kb-team-candidate-empty">' + esc(candidateEmpty) + "</div>";
 
     var rowsHtml = teamDraft.map(function (m, idx) {
       var isNew = !!m.isNew;
-      var roleOptions = teamRoles.map(function (r) {
+      var roleOptions = agileTeamRoles.map(function (r) {
         return '<option value="' + esc(r) + '"' + (m.role === r ? " selected" : "") + '>' + esc(r) + '</option>';
       }).join("");
 
@@ -178,9 +230,6 @@
         '    </select>' +
         '  </td>' +
         '  <td>' +
-        '    <input type="number" class="kb-input" style="height:28px;width:64px" min="0" max="24" step="0.5" value="' + m.hours + '" data-idx="' + idx + '" data-field="hours">' +
-        '  </td>' +
-        '  <td>' +
         '    <button type="button" class="kb-team-remove" data-remove-idx="' + idx + '">移除</button>' +
         '  </td>' +
         '</tr>'
@@ -189,10 +238,10 @@
 
     body.innerHTML =
       '<div class="kb-team-toolbar">' +
-      '  <button type="button" class="action-btn" id="kbTeamCopyBtn" style="height:28px;padding:0 10px;border:1px solid #cbd5e1;border-radius:4px;background:#fff;cursor:pointer;font-size:12px;color:#334155;display:inline-flex;align-items:center;gap:4px">' +
+      '  <button type="button" class="action-btn kb-team-copy" id="kbTeamCopyBtn">' +
       '    <i class="fas fa-copy"></i>复制项目团队' +
       '  </button>' +
-      '  <span class="kb-team-hint">当前身份：PO · 可提交调整；团队角色仅 PMO 可调整</span>' +
+      '  <span class="kb-team-hint">当前身份：PO · 可提交调整；敏捷小组角色仅 PMO 可调整</span>' +
       '</div>' +
       '<div class="kb-team-confirm-tip">成员调整需组织级敏捷教练确认后正式生效</div>' +
       '<div class="kb-team-add-panel">' +
@@ -204,10 +253,9 @@
       '<table class="kb-team-table">' +
       '  <thead>' +
       '    <tr>' +
-      '      <th style="width:38%">用户</th>' +
-      '      <th style="width:24%">角色</th>' +
-      '      <th style="width:22%">可用工时/天</th>' +
-      '      <th style="width:16%">操作</th>' +
+      '      <th style="width:52%">用户</th>' +
+      '      <th style="width:30%">敏捷小组角色</th>' +
+      '      <th style="width:18%">操作</th>' +
       '    </tr>' +
       '  </thead>' +
       '  <tbody>' + rowsHtml + '</tbody>' +
@@ -222,24 +270,27 @@
       copyBtn.addEventListener("click", function () {
         candidatePool.slice(0, 3).forEach(function (cand) {
           if (!teamDraft.some(function (m) { return m.account === cand.account; })) {
-            teamDraft.push({ name: cand.name, account: cand.account, role: cand.role, hours: 0, status: "formal", isNew: true });
+            teamDraft.push({ name: cand.name, account: cand.account, role: cand.role, status: "formal", isNew: true });
           }
         });
-        toast("已从项目团队同步导入成员");
+        window.showToast("已从项目团队同步导入成员", "success");
         renderTeamModal();
       });
     }
 
     var searchInput = document.getElementById("kbTeamSearch");
     if (searchInput) {
-      searchInput.addEventListener("input", function () {
+      var composing = false;
+      searchInput.addEventListener("compositionstart", function () { composing = true; });
+      searchInput.addEventListener("compositionend", function () {
+        composing = false;
         teamSearchTerm = searchInput.value.trim();
-        renderTeamModal();
-        var refreshed = document.getElementById("kbTeamSearch");
-        if (refreshed) {
-          refreshed.focus();
-          refreshed.setSelectionRange(refreshed.value.length, refreshed.value.length);
-        }
+        searchCandidates(teamSearchTerm);
+      });
+      searchInput.addEventListener("input", function () {
+        if (composing) return;
+        teamSearchTerm = searchInput.value.trim();
+        searchCandidates(teamSearchTerm, currentTeamgroupID);
       });
     }
 
@@ -252,7 +303,6 @@
             name: cand.name,
             account: cand.account,
             role: cand.role,
-            hours: 0,
             status: "formal",
             isNew: true
           });
@@ -265,13 +315,6 @@
       sel.addEventListener("change", function () {
         var idx = parseInt(sel.getAttribute("data-idx"), 10);
         if (teamDraft[idx]) teamDraft[idx].role = sel.value;
-      });
-    });
-
-    body.querySelectorAll("input[data-field='hours']").forEach(function (inp) {
-      inp.addEventListener("change", function () {
-        var idx = parseInt(inp.getAttribute("data-idx"), 10);
-        if (teamDraft[idx]) teamDraft[idx].hours = parseFloat(inp.value) || 0;
       });
     });
 
@@ -292,7 +335,7 @@
     });
 
     closeKanbanTeamModal();
-    toast("团队调整申请已提交成功，待组织级敏捷教练审批生效");
+    window.showToast("团队调整申请已提交成功，待组织级敏捷教练审批生效", "success");
   }
 
   window.openKanbanCreateModal = function (mode) {

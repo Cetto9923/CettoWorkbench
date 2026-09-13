@@ -153,7 +153,7 @@ func (r *Repo) ListInsideUsersForDeliver(ctx context.Context) ([]ClarifyOption, 
 		return nil, err
 	}
 	const query = `
-SELECT account AS value, CONCAT(realname, ' (', account, ')') AS label
+SELECT account AS value, CONCAT(realname, ' (', account, ')') AS label, pinyin
 FROM zt_user
 WHERE deleted = '0' AND type = 'inside'
 ORDER BY account ASC`

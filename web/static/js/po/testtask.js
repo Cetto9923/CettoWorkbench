@@ -1,10 +1,9 @@
 /*
  * 文件: web/static/js/po/testtask.js
  * 模块: PO工作台
- * 职责: 提测办理四步向导 UI 与上下文加载（不直接发新版本提交请求；该部分见 testtask-builds.js）。
- * 边界: 本阶段只同步版本（POST /demands/:id/testtask/builds），由 testtask-builds.js 处理；
- *       测试单 zt_testtask 不创建，留到 Phase D。
- * 协议: appFetch 自动附带 X-CSRF-Token / X-Requested-With，与 LinkStory 一致。
+ * 职责: 提测办理四步向导 UI 与上下文加载（新版本提交见 testtask-builds.js）。
+ * 边界: 本阶段只同步版本（POST /demands/:id/testtask/builds）；不创建 zt_testtask。
+ * 协议: appFetch 自动附带 X-CSRF-Token / X-Requested-With。
  */
 (function ($) {
   "use strict";
@@ -17,11 +16,7 @@
   var currentDemandId = "";
   var currentSystems = [];
 
-  function showToast(message, level) {
-    if (typeof window.showToast === "function") {
-      window.showToast(message, level || "info");
-    }
-  }
+  function showToast(message, level) { window.showToast(message, level || "info"); }
 
   function $root() {
     var $modal = $("#poTesttaskModal");
@@ -331,7 +326,7 @@
       $scope.find('[data-tt-exist-desc="' + unit + '"]').val("复用已有版本");
     });
     $scope.on("click", ".po-testtask-link-add", function () {
-      showToast("添加已有需求（Phase D 接入）", "info");
+      showToast("添加已有需求功能尚未开放", "info");
     });
   }
 

@@ -14,7 +14,7 @@ import (
 )
 
 // MetricItem 是指标管理 / 雷达页面统一返回的展示契约。
-// Service 通过 MetricStatusByRate / MetricStatusByCount 给出 Status，
+// Service 通过 catalog.go 的 evaluateStatus 给出 Status，
 // 前端在 workspace-table 中按 status 渲染颜色 token。
 type MetricItem struct {
 	Code             string `json:"code"`
@@ -29,6 +29,7 @@ type MetricItem struct {
 	DangerThreshold  string `json:"dangerThreshold"`  // 风险阈值（与 Unit 一致）
 	GoodDirection    string `json:"goodDirection"`    // up = 越大越好；down = 越小越好
 	Status           string `json:"status"`           // normal / warn / danger / unknown
+	Enabled          bool   `json:"enabled"`          // 是否启用（catalog.Enabled）
 	OwnerRole        string `json:"ownerRole"`        // PO / SM / PMO / 测试
 	Description      string `json:"description"`      // 指标口径（人类可读）
 	Formula          string `json:"formula"`          // 派生公式 / SQL 摘要
@@ -43,8 +44,7 @@ type MetricItem struct {
 //	WithSnapshot  = value 不为 "—" 的指标条数（有真实数据）
 //	Abnormal      = status 为 warn 或 danger 的指标条数
 //
-// 4 项摘要由 Service.computeSummary(items) 一次循环计算，
-// 不引入 query-per-metric fan-out（database.md）。
+// 由 Service.computeSummary(items) 一次循环计算。
 type ManageSummary struct {
 	TotalItems    int64            `json:"totalItems"`
 	CategoryCount map[string]int64 `json:"categoryCount"`
@@ -96,51 +96,4 @@ type ManageListResp struct {
 	Total    int64         `json:"total"`
 	Page     int           `json:"page"`
 	PageSize int           `json:"pageSize"`
-}
-
-// RadarCategoryItem 是指标雷达页面 5 分类 KPI 卡 + 分组表格的双用契约。
-//
-// Score      = (NormalCount*1.0 + WarnCount*0.5) / TotalCount * 100
-//
-//	（PRD §14/§15：TotalCount==0 → 0 + Severity="unknown"）
-//
-// Severity   = normal(>=80) / warn([60,80)) / danger(<60) / unknown(=0)
-//
-// TopRiskCode / TopRiskName 仅当该分类存在 danger 指标时按 code 升序取首条；否则为空。
-type RadarCategoryItem struct {
-	Category     string `json:"category"`     // 5 分类中文 label
-	Score        string `json:"score"`        // 渲染文本："85" / "—"（无数据）
-	ScoreValue   int    `json:"scoreValue"`   // 数字（用于 CSS / sparkline 拼接）
-	Severity     string `json:"severity"`     // normal / warn / danger / unknown
-	TotalCount   int    `json:"totalCount"`   // 该分类指标总数
-	NormalCount  int    `json:"normalCount"`  // 状态 normal
-	WarnCount    int    `json:"warnCount"`    // 状态 warn
-	DangerCount  int    `json:"dangerCount"`  // 状态 danger
-	UnknownCount int    `json:"unknownCount"` // 状态 unknown
-	TopRiskCode  string `json:"topRiskCode"`  // 主要风险指标编码（仅 danger 时填）
-	TopRiskName  string `json:"topRiskName"`  // 主要风险指标名（仅 danger 时填）
-}
-
-// RadarCategoryScore 是按分类的聚合中间态（Service 内部使用，不外露 JSON）。
-// 复用 Snapshot 的 11 个原子计数；不在前端再 fan-out。
-type RadarCategoryScore struct {
-	Category     string
-	Items        []MetricItem
-	NormalCount  int
-	WarnCount    int
-	DangerCount  int
-	UnknownCount int
-	Total        int
-	Score        int
-	Severity     string
-}
-
-// RadarResp 是 /metrics/radar 的完整响应。
-// Categories 是固定 5 个分类 KPI（顺序：需求治理 / 交付效率 / 研发质量 / 规范执行 / 效能管理）；
-// AbnormalItems 是状态为 warn / danger 的指标全集（按 Category → Code 排序，供下方分组表格展示）。
-// GeneratedAt 用于前端展示"快照计算时间"。
-type RadarResp struct {
-	Categories    []RadarCategoryItem `json:"categories"`
-	AbnormalItems []MetricItem        `json:"abnormalItems"`
-	GeneratedAt   string              `json:"generatedAt"`
 }

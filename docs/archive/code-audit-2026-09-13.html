@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="shjekwaNnKneQqZmWMgJA3">
+<head data-page-node-id="AfP0oAEDv6XjOXzN0GQ9sH">
+<meta charset="UTF-8" data-page-node-id="JSIRgRlwhczs3QeTBj2dNu">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="boqzZK0oOFhkPrFw8A9Igo">
+<title>代码库技术债审计 · workbench-claude-po · 2026-09-13</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --panel:#ffffff; --ink:#1a1d21; --ink2:#4a5158; --ink3:#7a828b;
+    --line:#e3e6ea; --line2:#eef1f4;
+    --p0:#c0392b; --p0bg:#fdf2f1; --p1:#b7791f; --p1bg:#fdf8ec; --p2:#2c6fa8; --p2bg:#eff5fb;
+    --ok:#1e7c4a; --okbg:#eef8f2; --code:#f3f4f6;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:40px 28px 80px}
+  header{border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:32px}
+  h1{margin:0 0 10px;font-size:27px;letter-spacing:-.02em}
+  .meta{color:var(--ink2);font-size:13.5px;line-height:1.9}
+  .meta b{color:var(--ink);font-weight:600}
+  code,kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em;
+    background:var(--code);padding:1px 5px;border-radius:3px;border:1px solid var(--line2);color:#2d3339}
+  h2{font-size:20px;margin:44px 0 14px;padding-bottom:9px;border-bottom:1px solid var(--line)}
+  h3{font-size:16px;margin:26px 0 10px;color:var(--ink)}
+  p{margin:10px 0}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px;background:var(--panel);
+    border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  th{background:#f0f2f5;text-align:left;padding:10px 12px;font-weight:600;font-size:12.5px;
+    color:var(--ink2);text-transform:none;border-bottom:1px solid var(--line);white-space:nowrap}
+  td{padding:10px 12px;border-bottom:1px solid var(--line2);vertical-align:top;line-height:1.65}
+  tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:#fafbfc}
+  .sev{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11.5px;font-weight:700;
+    letter-spacing:.02em;white-space:nowrap}
+  .s-p0{background:var(--p0bg);color:var(--p0);border:1px solid #f0c8c3}
+  .s-p1{background:var(--p1bg);color:var(--p1);border:1px solid #eedcae}
+  .s-p2{background:var(--p2bg);color:var(--p2);border:1px solid #c7ddf1}
+  .s-ok{background:var(--okbg);color:var(--ok);border:1px solid #c2e3d1}
+  .path{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:#2d3339}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:18px 20px;margin:16px 0}
+  .card.p0{border-left:4px solid var(--p0)}
+  .card.p1{border-left:4px solid var(--p1)}
+  .card.p2{border-left:4px solid var(--p2)}
+  .card h4{margin:0 0 8px;font-size:15.5px}
+  .ev{background:var(--code);border:1px solid var(--line2);border-radius:5px;padding:11px 13px;
+    margin:10px 0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:12.5px;line-height:1.8;overflow-x:auto;white-space:pre;color:#2d3339}
+  ul{margin:10px 0;padding-left:22px}
+  li{margin:6px 0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:12px;margin:18px 0}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:14px 15px}
+  .stat .n{font-size:24px;font-weight:700;letter-spacing:-.02em;line-height:1.2}
+  .stat .l{font-size:12px;color:var(--ink3);margin-top:3px}
+  .n-bad{color:var(--p0)} .n-warn{color:var(--p1)} .n-good{color:var(--ok)}
+  .note{background:#fffbeb;border:1px solid #f5e2ab;border-radius:6px;padding:13px 15px;margin:16px 0;font-size:13.5px}
+  .note b{color:#8a6416}
+  footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+  .tag{display:inline-block;padding:1px 7px;border-radius:3px;font-size:11.5px;background:#eef1f4;
+    color:var(--ink2);margin-right:5px;border:1px solid var(--line)}
+</style>
+</head>
+<body data-page-node-id="gFUHFr3GP1L5i5We0OAj8i">
+<div class="wrap" data-page-node-id="TweeOMO0RVP31CioKA7x6k">
+
+<header data-page-node-id="btBW8LAnaic1rzKllDCzU1">
+  <h1 data-page-node-id="NAu5zt6Y7OFazx7HcHD0l9">代码库技术债审计报告</h1>
+  <div class="meta" data-page-node-id="IzxxkOKAGuSKEd2od22B0b">
+    <b data-page-node-id="ItV1daTdAErrcvTQg4Sdcs">仓库</b> workbench-claude-po &nbsp;·&nbsp; <b data-page-node-id="J2o207HeYt2knutNuDAPKu">分支</b> release/po-integrate-main-202609 &nbsp;·&nbsp; <b data-page-node-id="CJlvVdImhHT6w84oVOeWDT">HEAD</b> <code data-page-node-id="TcMDgBopm1hTtOSByabyGr">3507193e</code><br data-page-node-id="Wdag4YS2MKwUdWe3BC3O55">
+    <b data-page-node-id="GPvfUOfYa8PpeTYREDbW1E">审计时间</b> 2026-09-13 &nbsp;·&nbsp; <b data-page-node-id="gVinkTQEIcm5AkEu7MrLHK">规模</b> 378 个 Go 文件 / 65,758 行 · 208 个前端文件<br data-page-node-id="RaKEwUYTot6JscaPZDluYL">
+    <b data-page-node-id="0ozujNFBX4qmLDZTAXzCZQ">审计方式</b> 只读静态分析 + 仓库自带质量门禁实测 + 依赖源码交叉验证；<b data-page-node-id="OTH6ZCltbAyaP73Z3wyagN">未修改任何代码</b><br data-page-node-id="NTRmypzPUrcabWEnMRIZnf">
+    <b data-page-node-id="SGNDD4WhOo0WeEKqu2mdnM">检索范围</b> 技术债 · 死代码 · 非法注释 · 无效注释
+  </div>
+</header>
+
+<h2 data-page-node-id="hREED9V6jTEyd1DAbPUeOV">一、门禁实测结果</h2>
+<p data-page-node-id="qnvItbxoWD6y6RfIvp9fR2">直接运行仓库自带门禁脚本，取其退出码作为事实基线（不依赖任何估算）：</p>
+<table data-page-node-id="EIsMxmVdpH1gDIt05GLTJC">
+  <thead data-page-node-id="ekHPaP0EqmBSP9XX0DTUiT"><tr data-page-node-id="rbcQ8wfi0GUJTFEM3uwC5v"><th data-page-node-id="YiOB6nedziZmuTNFK5O3rC">门禁</th><th data-page-node-id="YE5JNki9PCDbNpjCWdbOLi">退出码</th><th data-page-node-id="HeKnfHoM2EwlpAx6A3h2Hs">结果</th><th data-page-node-id="m6GrZqyllnQcU0ku3xdHjB">说明</th></tr></thead>
+  <tbody data-page-node-id="exx5zgBZrcfLBlA2HROIKR">
+    <tr data-page-node-id="gEmn6P0oz7CPXGEPDih9GY"><td data-page-node-id="CzzZrXjiVStdI7rECJfjq2"><code data-page-node-id="YCCjSDCn0JeNKps492RStz">go build ./...</code></td><td data-page-node-id="CyV2loLuz6YknTjQuNuv8p">0</td><td data-page-node-id="829VsE2iGNwf0E8S6TevXH"><span class="sev s-ok" data-page-node-id="2gidyh84FAT2SDFZHaspes">通过</span></td><td data-page-node-id="D278FZwBh5ALe9CqUuVkVo">全量编译无误</td></tr>
+    <tr data-page-node-id="OJe8HRVQ4UIu9w3CkNJpW5"><td data-page-node-id="IJ9j9Hhmwcom1GmLHlV4pn"><code data-page-node-id="7k1ETEAr2ezwdP59Z5FApe">go vet ./...</code></td><td data-page-node-id="S1a23Mc8kIYd7sY38DRArx">0</td><td data-page-node-id="VuFnZkO7zD8FL03Rz6MmHO"><span class="sev s-ok" data-page-node-id="ddqkd9AOjpvJTsdp4g3iMr">通过</span></td><td data-page-node-id="lWiFFfxAyR3LXwiTf6VsbE">debt.md 记录的 basemodel 畸形 tag 已修复</td></tr>
+    <tr data-page-node-id="Bvhb4NGUuzAfv8icHlZjTz"><td data-page-node-id="tCRTxzKIYLLm6fdBepPD5T"><code data-page-node-id="cVvGJFMfv5baW4YCVMLHOJ">check-gofmt</code></td><td data-page-node-id="ZHTYVfnY6fVBEIqiqqkO3w">0</td><td data-page-node-id="63xlkUapqxwxVvmxlBtB3c"><span class="sev s-ok" data-page-node-id="HCDF17DlZ1TilZnr51Nuam">通过</span></td><td data-page-node-id="ZAczsJUZhXGnKAzkghmqHs">历史债 0 个文件</td></tr>
+    <tr data-page-node-id="ZtCXbDOesmmFjubJeGJixH"><td data-page-node-id="cmrXaAeKJMdaufS2M1q38K"><code data-page-node-id="AWMJ0xZq2Q7GHOLn9xXKi4">check-secrets</code></td><td data-page-node-id="UsvmnkkGOXXF4rI5IuHUm8">0</td><td data-page-node-id="d4LINR0TQspYUmbdOiuv4i"><span class="sev s-ok" data-page-node-id="TdNWnpiCYHoXe2Dp85RVep">通过</span></td><td data-page-node-id="lVk09ji5mvPQ9DihzrrOXr">0 指纹（不证明凭据已轮转）</td></tr>
+    <tr data-page-node-id="S2KiKvg3jDLYvuR67xKFab"><td data-page-node-id="DOfodfn4sDqx7AOWp4l0LW"><code data-page-node-id="aPRhcDMbD8EODWjfTjdE9T">check-architecture</code></td><td data-page-node-id="GzxWsVbuEZcDOmF9rhLXIx">0</td><td data-page-node-id="zitvT5S65AnOduLWvNR4Pa"><span class="sev s-ok" data-page-node-id="azGOBaM2kUXcQKQ7KfQ4NE">通过</span></td><td data-page-node-id="vK0h1qan3KoSglOj9hMvgd">历史债 1 个文件</td></tr>
+    <tr data-page-node-id="oFQFRPuAOx3eDpwFbXfejP"><td data-page-node-id="GUokT8BCPJpwDGlKxcJ0Ah"><code data-page-node-id="9LP2e7fIHiKlPJl8y0EIIL">check-patterns</code>（硬项）</td><td data-page-node-id="SVT3fQL6Eu3mn2ttHYCAlo">0</td><td data-page-node-id="IQdEV5QY6ZMmI1r3u6rgZE"><span class="sev s-ok" data-page-node-id="q0wEFi0JbsGpHRd7sQaoTX">通过</span></td><td data-page-node-id="hubExaWUHQHGNCEnaCNjwQ">advisory 发现 <b data-page-node-id="VFu9hbPmDz5MvSoBVdh8T7">251 条，其中 223 条为新增</b></td></tr>
+    <tr data-page-node-id="GAMhNG6KO4FDNJpPt2JpOa"><td data-page-node-id="vrbqIiZPrmXhnrdDLb1bQr"><code data-page-node-id="nkUCfGFNiaHMTDMXfepfWd">check-local-artifacts</code></td><td data-page-node-id="fyKOkQWKj6qJAo0XRabtKb">0</td><td data-page-node-id="lCVq7vIdRPwKOMlgIOHKwo"><span class="sev s-ok" data-page-node-id="ztGWOX4BOBILSYJMA1k0n1">通过</span></td><td data-page-node-id="NXCJrmP6Vs269PMUP3nb1g">本地产物索引正常</td></tr>
+    <tr data-page-node-id="oCyRzxVMv4K8jOxTKgLCrc"><td data-page-node-id="Rts9eR4v9dXKyciBdDhLJh"><code data-page-node-id="mnXTUploC6yO1YBM29Rq0h">check-file-length</code></td><td data-page-node-id="e33OBiMj2aEBONnbxMDyrW"><b data-page-node-id="ahrVCdENosG1jVMBYmuBUi">1</b></td><td data-page-node-id="54I5sFmvjiMWU21jj4z90b"><span class="sev s-p0" data-page-node-id="hl2JeNLZoN4nLE7zVixBiJ">失败</span></td><td data-page-node-id="7M1dclOFfhRbBQHrHGJKe7"><b data-page-node-id="hl3inIUFWm1bIELiir5NH5">52 项违规</b>，较 2026-09-10 快照（38 项）恶化</td></tr>
+  </tbody>
+</table>
+
+<div class="grid" data-page-node-id="Cdv8zXBHFWF9o8t4qVQXSJ">
+  <div class="stat" data-page-node-id="HXEpzJmNb2vvyiw476UjkJ"><div class="n n-bad" data-page-node-id="c6H2yxJfIfFqCFvBbzqSII">1</div><div class="l" data-page-node-id="O2WJHRSoAtyh6t0jabvrcc">门禁处于失败状态</div></div>
+  <div class="stat" data-page-node-id="D0i4nYIpNLRWSEPH2iYOC3"><div class="n n-warn" data-page-node-id="2JvAdZUPIGkn3tHppXBtCu">52</div><div class="l" data-page-node-id="Y5D4TN8FbPshCaK6rcXmte">文件长度违规项</div></div>
+  <div class="stat" data-page-node-id="JzaWaiKEiX9kCAqficr0Fk"><div class="n n-warn" data-page-node-id="nu2fWSsFP9AWXp3cTqC7ti">251</div><div class="l" data-page-node-id="c2mvsznnVSBeoIvNpyMKSX">advisory 发现（223 新增）</div></div>
+  <div class="stat" data-page-node-id="nxej0avhs9yZ26k9pFVCoA"><div class="n n-bad" data-page-node-id="pbqpbvxeG5K7DoHAWnKmWV">8</div><div class="l" data-page-node-id="2balxq4Gh3gNmdF070le8h">已确认死代码（Go）</div></div>
+  <div class="stat" data-page-node-id="Eb90VOJPoQQxMb1dlyjmO4"><div class="n n-bad" data-page-node-id="bLiTh3tVpvRtLHP71Vvlqd">5</div><div class="l" data-page-node-id="uAh3DnsP6FmaKIbEUwsE9i">无效/失真注释</div></div>
+</div>
+
+<h2 data-page-node-id="a9MrE3kPvjFtoMTMX9efpz">二、发现分级总表</h2>
+<table data-page-node-id="OYh7lQPP20CZAU7A9RKval">
+  <thead data-page-node-id="iHH3R32w61ODArXXqmFCT9"><tr data-page-node-id="ytZF4pNZycpGCrZvtzrJGP"><th style="width:52px" data-page-node-id="sc37dcIjp29Qlq7A6buVUC">级别</th><th style="width:74px" data-page-node-id="r7xgLklhMGLRInWOL9wAwk">类别</th><th data-page-node-id="LrF2B0c4ChScj4CynJcdcB">问题</th><th style="width:26%" data-page-node-id="1WI6DSN8mlzwGQfLNiLuLk">证据位置</th></tr></thead>
+  <tbody data-page-node-id="SDz047e0kzjvGH539n8ahE">
+    <tr data-page-node-id="xAGiT0jkBqv2GQGsaQv7zH"><td data-page-node-id="FEbFzYlpgIXH3QGPtAoub2"><span class="sev s-p0" data-page-node-id="T2TAr2mNTxL7FHHyIn1LQz">P0</span></td><td data-page-node-id="LbQq86b6UVzQUsSdGLwo28">技术债</td>
+      <td data-page-node-id="RVF4VSvf9mtTlaE2bXIuRQ">MD5 密码写入仍然存活，且 4 条写路径全部路由可达，违反 AGENTS.md MUST 规则 7</td>
+      <td class="path" data-page-node-id="71E3kSBRihCbztEBH81P1J">user/service.go:74,144,188<br data-page-node-id="7DLgWeWgKNVPj6WK7b5mcp">profile/service.go:170</td></tr>
+    <tr data-page-node-id="2jNuYSxIjdW6g3zBfA0SdT"><td data-page-node-id="cl7WLNQzYAKKugWaA15jh8"><span class="sev s-p0" data-page-node-id="2EEir00WAda4HN4wcWAH36">P0</span></td><td data-page-node-id="EsMJnPvUkC0FyoJ0HkRLt8">技术债</td>
+      <td data-page-node-id="SFvmQMbT2xXhoZkKBBHzWp">文件长度门禁失败（52 项）；已基线文件仍在增长，违反 non-growth 约定</td>
+      <td class="path" data-page-node-id="FSi6sFQibFEBDBXsYMfmkI">scripts/check-file-length.sh</td></tr>
+    <tr data-page-node-id="n1yj3YxSey0C5ucaeQSb2g"><td data-page-node-id="g5DgFUMnLbf4NuzeeXWpfs"><span class="sev s-p1" data-page-node-id="ICnFFGsTD7OEYGxbdHluVx">P1</span></td><td data-page-node-id="YR4TDr8pebvDJu68rkFUfx">技术债</td>
+      <td data-page-node-id="16JhYDNTRLKWNK6EJkGxDv">两处已声明但未接入的前置校验，构成数据一致性缺口</td>
+      <td class="path" data-page-node-id="VCPDGKj0jHU561kmQUYrhE">schedule/service.go:382<br data-page-node-id="NIeUJeLYq3RjdEFNVSeAGs">dept/service.go:195</td></tr>
+    <tr data-page-node-id="tK3CVbO9M7pEW4jErIHz0U"><td data-page-node-id="ew22A3FDVTr3i2MpQwoKka"><span class="sev s-p1" data-page-node-id="929D62dmggLhgZ86AgAWnU">P1</span></td><td data-page-node-id="Z5hwA0J3xNHHO5dSdZZ8BB">死代码</td>
+      <td data-page-node-id="AnEuQ9MCiLG2DlHw48yEDD">4 个测试文件提交在生产静态目录，经无鉴权 <code data-page-node-id="GzGGCKfJ14l5PRb0kXtQge">/static</code> 可被公开下载</td>
+      <td class="path" data-page-node-id="LsUvXadbu1ih9bx36SQBXg">web/static/js/picker/*.test.js<br data-page-node-id="Pz7qGYhegXeXVgkP9hgB8b">web/static/js/agileteam/*.test.js</td></tr>
+    <tr data-page-node-id="TnYQkDUQgOnVLrxxEWk3Xt"><td data-page-node-id="53CJQAeCcvxEt2YNfqhvB5"><span class="sev s-p1" data-page-node-id="hCXvdbTCRZGosH2bV3WAbf">P1</span></td><td data-page-node-id="1VDsfhZmPGUObDRF1OFDrV">死代码</td>
+      <td data-page-node-id="LeZ8rQFz4ks3RxCHTZxdkA">最大 CSS 文件 <code data-page-node-id="Bk5RjD0fpdbEWZhdnmNENC">metrics.css</code> 含 37 个零引用类（整块 radar / detail 样式残留）</td>
+      <td class="path" data-page-node-id="adt1kgDQpNh7bGYvXZGteN">web/static/css/metrics.css</td></tr>
+    <tr data-page-node-id="ZJtoeBNlICCMgZhn2Ij8IV"><td data-page-node-id="yHoDuEKueQMELtFEv8lPsU"><span class="sev s-p1" data-page-node-id="cW2O8sVzaHvBP0YGxmM6D5">P1</span></td><td data-page-node-id="G3OZvTDA7j22meKmXba8LO">无效注释</td>
+      <td data-page-node-id="BtpjPcHHgF1HmlVbSuLROF">3 处文件头路径失真（文件已改名/移动，头部注释未同步）</td>
+      <td class="path" data-page-node-id="rQmtvGSPhsh6AFtyt8w8Bo">debug/service.go · debug/repo.go<br data-page-node-id="tX4vzFBZGkHY9CQ5PgolCh">pkg/encode/encode.go</td></tr>
+    <tr data-page-node-id="wIShc4Kap7bOkI9lqXnK3n"><td data-page-node-id="iHawv2ev2QKjrIXSvPELyV"><span class="sev s-p2" data-page-node-id="VmN4qs47WSjNkcbwxQFA9o">P2</span></td><td data-page-node-id="Oix39HskEw6AgLKXB2npL2">死代码</td>
+      <td data-page-node-id="mRzbn8KeLDCZLDXVbCCaPD">8 个 Go 包级声明零引用（含未使用的错误值、常量、接口）</td>
+      <td class="path" data-page-node-id="FR9C3dKaMBfHewjYjzQ6Qs">primaryaction.go · service_deliver.go<br data-page-node-id="orwqBeL4aCaWjyTUMJdLY2">form_done.go · primaryaction_url.go</td></tr>
+    <tr data-page-node-id="QxxJfaMEQiDmR8DiypgHBu"><td data-page-node-id="HW3uUYn2nC9Jij9JbNxYR0"><span class="sev s-p2" data-page-node-id="K14VdrMzuiABLLVrIdpERi">P2</span></td><td data-page-node-id="NH6HSqZLXbiAov9D2hCB94">技术债</td>
+      <td data-page-node-id="ipwfwc4p7tudFFguhuwKbE">跨模块三处逐字节相同的展示名拼接实现，未抽公共层</td>
+      <td class="path" data-page-node-id="iKo3Q6dfKKrUJ6CLy8zOHA">user/repo.go:126<br data-page-node-id="wckkg7cv4T6HrJPKE3yHw2">testtask/labels.go:45 · po/owner.go:14</td></tr>
+    <tr data-page-node-id="6U8ZpL22yFx271y0e5AF4s"><td data-page-node-id="5NAPyvyF29E9e6L2afOF9w"><span class="sev s-p2" data-page-node-id="JHNlZEFVg5eYb7iibwuoj3">P2</span></td><td data-page-node-id="kbaufS6yAwgDrYt0dDiqAw">技术债</td>
+      <td data-page-node-id="RbJ9NsWvbaHuwP0w2kwGc6"><code data-page-node-id="0Pd8TG41F40ZGoz9xpRMRw">/static</code> 未获得 Setup() 注册的全局中间件（gin 注册时序陷阱）</td>
+      <td class="path" data-page-node-id="hWYWsdMMQmQWYtjDJHARac">server.go:70 vs :172-184</td></tr>
+    <tr data-page-node-id="zJ4HA4j5qcPus2X7Su3wuB"><td data-page-node-id="wiOO8PiR30qlgqUBfBmEPB"><span class="sev s-p2" data-page-node-id="wDsmjISSTAhj9IzT5pJmsO">P2</span></td><td data-page-node-id="BtMsWOTWtv8F3wJC7ybla9">无效注释</td>
+      <td data-page-node-id="belTjZPRJYgGZQKSEEA3fj">1 处 doc comment 与函数名不符；1 处契约表注释与实现矛盾；2 处僵尸 TODO</td>
+      <td class="path" data-page-node-id="lDOcZCOtv4Hdpwyl7B4D99">user/handler.go:147<br data-page-node-id="DKlOFwKobRaih87W5FAEI7">primaryaction.go:192<br data-page-node-id="Z824VBz6uMN0PTrPVHisO3">auth.go:115 · basemodel.go:18</td></tr>
+    <tr data-page-node-id="pXBqI7XJF2DxpNsGgRHncb"><td data-page-node-id="CchWZCNx8GmaCdQVqNyS0Z"><span class="sev s-p2" data-page-node-id="8dDhMHbPGH3IcIyQyiba5O">P2</span></td><td data-page-node-id="glaCncnRdAGGZ5WiFszgyz">技术债</td>
+      <td data-page-node-id="6g9nVfPqrEYCnepXocPQ35"><code data-page-node-id="AJzsrxubeBmtkppF2YNaUY">go.mod</code> 残留外部开发者绝对路径 replace</td>
+      <td class="path" data-page-node-id="JLKFdWGVM2Zqc44yfL1uDC">go.mod:75</td></tr>
+    <tr data-page-node-id="aefZZxGQmcF0Jm7IVHBpDb"><td data-page-node-id="bLb2VHVDKanyZcBkG6FKx5"><span class="sev s-p2" data-page-node-id="5HEHGvmrM83m5hPKLmOKDs">P2</span></td><td data-page-node-id="PhbZgHMgEoPaUtNQpwMGcc">技术债</td>
+      <td data-page-node-id="Gbv0WqPRmVZLpbcj2HuVYO"><code data-page-node-id="EkQIqA4NV7kG7tM68FKDst">docs/Demo</code> 已提交 169 文件（8.1M）且被门禁无差别扫描，使门禁永久无法转绿</td>
+      <td class="path" data-page-node-id="mqDMuqBoFce7KyPw1Nt2fh">docs/Demo/ · check-file-length.sh</td></tr>
+  </tbody>
+</table>
+
+<h2 data-page-node-id="o5CmbqC4bBGOvMjTSOiKCw">三、技术债详述</h2>
+
+<div class="card p0" data-page-node-id="GaqBz6IJKmIevvBKOBlAC7">
+  <h4 data-page-node-id="D4VAwTYK9jXBrOEYgR11yY">P0-1 &nbsp;MD5 密码写入仍然存活（MUST 规则 7 违反）</h4>
+  <p data-page-node-id="CXnzYKbEHlO4XgBkJeD8ZC"><code data-page-node-id="IFx9UR7EQyCTFszmWPoGog">debt.md</code> 将其登记为 P0「User create/reset uses MD5 for password writes」，<b data-page-node-id="qgYkKVxfPMKdsCnqaSvFPY">至今未见修复</b>。实测确认 4 条写入路径全部可达：</p>
+  <div class="ev" data-page-node-id="o2RVAGdaf5ikye5tOrXqDQ">internal/module/user/service.go:74    PasswordHash: encode.MD5(req.Password)        ← POST /admin/users
+internal/module/user/service.go:144   PasswordHash: encode.MD5(item.Password)       ← POST /admin/users/batch/create
+internal/module/user/service.go:188   UpdatePassword(..., encode.MD5(req.NewPassword)) ← POST /admin/users/:id/reset-password
+internal/module/profile/service.go:170 UpdatePassword(..., encode.MD5(req.NewPassword)) ← PUT /profile/password
+                                                                                    ← PUT /api/profile/password</div>
+  <p data-page-node-id="homyT07SXIcq7kKFkRB8kz">路由可达性已核实：<span class="path" data-page-node-id="ih77CzoNI2rgonWWtv07yU">user/handler.go:60,62,65</span> 与 <span class="path" data-page-node-id="2FhRw1croEpB8IYqReqHBC">profile/handler.go:46,51</span> 均注册在真实分组下。</p>
+  <p data-page-node-id="XDpiWKCNl8UAGcmt6uU4eI"><b data-page-node-id="2HCG0KjJHRExw5KTN8KfEV">需与允许项区分：</b>校验用途属规范允许的「隔离的禅道兼容层」——<span class="path" data-page-node-id="tyD6EaNk9IPa6FLpL272gN">login/service.go:87</span>、<span class="path" data-page-node-id="gN7R04IEtvjK4PNKgraFB6">profile/service.go:167</span> 是读取比对，不是写入，不构成本条违规。</p>
+  <p data-page-node-id="WH6uyZZGkr5BtfKHqTYy7a"><b data-page-node-id="x5qKgkjQEnwAyoc8vMI7pB">另注：</b><span class="path" data-page-node-id="CXkaEds31H6kjlN6DrUPdc">internal/pkg/encode/encode.go</span> 的文件头仍写 <code data-page-node-id="cqUu2yXLK79OlJfqYBoSku">internal/pkg/password/md5.go</code>，包名已改而注释未改（见第五章）。</p>
+</div>
+
+<div class="card p0" data-page-node-id="5zJ5Jv1omvLLr2ejSYfqnR">
+  <h4 data-page-node-id="CBRXpMOu5AG0SzsMLwR7Um">P0-2 &nbsp;文件长度门禁失败，且较基线快照恶化</h4>
+  <p data-page-node-id="o210bC6RZSDaqLWwdpAeaJ"><code data-page-node-id="Kpg8NGwFDWBCs3W1gvcGQH">check-file-length.sh</code> 退出码 <b data-page-node-id="uZVBBCTTihtcg9Lr9aKxhd">1</b>，输出 52 项违规。<code data-page-node-id="26qsY2dDMqCFSGBWIS0p1F">debt.md</code> 记录的 2026-09-10 快照为 38 项，当前为 52 项。</p>
+  <table data-page-node-id="2xEhXPaCgABXYkSc2z700d">
+    <thead data-page-node-id="28QQN1gouTF56WGELP9y0r"><tr data-page-node-id="dmVtpaKY8pTgsahwB8eUKt"><th data-page-node-id="5YxVcDTz4xNiSUWOsGAoRB">分类</th><th data-page-node-id="b0HMkjeJB0CfzrRksC13Sq">数量</th><th data-page-node-id="g7beheOaBnStEvWcYNO4oT">说明</th></tr></thead>
+    <tbody data-page-node-id="F7R6McY8HJpMa6CBtWu9Gn">
+      <tr data-page-node-id="ic120yeMNEWolwwJG28vVD"><td data-page-node-id="svEzM0CYfSdM9xG9jNDsEg">new over-limit（从未登记）</td><td data-page-node-id="apNh3lWkQA5jHtzdltgRmH">44</td><td data-page-node-id="7pDkz2EKRbEFlYkhCdfaZw">其中 <code data-page-node-id="KKQsoBAsMh3I4v6m9g2pIE">docs/Demo</code> 31 项、<code data-page-node-id="h7qcOOBuZNJhIGBXIdYfVL">web/static</code> 13 项、<code data-page-node-id="B3SFZQpYK4rKwiwJGC0DsQ">internal</code> 0 项</td></tr>
+      <tr data-page-node-id="LraoghLQqR1wtzDBR5C0VH"><td data-page-node-id="WCpHmwwuE2iXtOyc0EgcrD">over-limit file grew（已基线但变长）</td><td data-page-node-id="X8l400PJe8K2CgonxWvGye">8</td><td data-page-node-id="Wzemlo5tQyfsddEMN1SUDg">违反 non-growth 约定</td></tr>
+      <tr data-page-node-id="Rh0AyFrE5eXISXHOSxJdGA"><td data-page-node-id="DoGwyXDFYmDKI2ihcH0DzZ"><b data-page-node-id="cjCrrGFnSd2Auzs9IFDLbc">生产代码违规合计（不含 Demo）</b></td><td data-page-node-id="HQBhTP6C0zDm7K9Gr0wXqL"><b data-page-node-id="idtpCmdE0FBMsWPSMhQFmr">21</b></td><td data-page-node-id="LXITPewV7JGaFWEXtAkCmL">13 新增 + 8 增长</td></tr>
+    </tbody>
+  </table>
+  <p data-page-node-id="vNfcMVxAfAHbC07eLM3kP7"><b data-page-node-id="9gHaM6mRV4UK31yCMCu4fA">生产代码新增超标（web/static，13 项）按行数排序：</b></p>
+  <div class="ev" data-page-node-id="fzs6rA61ndNDQpwOSS0oDT">2326  web/static/css/metrics.css
+ 868  web/static/js/po/po-profile.js
+ 733  web/static/css/po/po-profile.css
+ 711  web/static/css/po/follow.css
+ 708  web/static/js/metrics-radar.js
+ 611  web/static/js/po/linkstory.js
+ 600  web/static/js/metrics-manage.js
+ 580  web/static/js/permission/members.js
+ 571  web/static/css/po/shell.css
+ 519  web/static/css/po/board.css
+ 514  web/static/css/permission/list.css
+ 508  web/static/js/po/notice.js
+ 504  web/static/css/po/wb-priority.css</div>
+  <p data-page-node-id="f6OTE3Mo6A2nMhpFhAO7t3"><b data-page-node-id="Iy7Ec42NRhJ7OwQhaRmUHY">已基线但仍在增长（8 项）——AGENTS.md 明确「exact legacy exceptions may shrink but may not grow」：</b></p>
+  <div class="ev" data-page-node-id="FJcawXU8iG82q9CSAvO11Z">internal/module/schedule/form.go              913 → 935
+web/static/css/layout/layout.css              531 → 643   (+112)
+web/static/css/schedule/scheduleintegrated.css 879 → 929   (+50)
+web/static/css/components/components.css      595 → 616   (+21)
+web/static/js/ui.js                           738 → 751   (+13)
+web/templates/schedule/index.html             742 → 751   (+9)
+web/static/css/schedule/schedule.css          539 → 545   (+6)
+web/static/js/schedule/scheduleintegrated.js  837 → 840   (+3)</div>
+</div>
+
+<div class="card p2" data-page-node-id="OsEaIjcynJMTSWmwyB61sq">
+  <h4 data-page-node-id="tqzRYVBuERx46YPEqqiyGb">P2 &nbsp;<code data-page-node-id="wygTu3pW3CNWk9SoTQOFDS">docs/Demo</code> 使文件长度门禁永久无法转绿</h4>
+  <p data-page-node-id="aLI6D1vl6chT4CD4PxcwgY">实测：<code data-page-node-id="SxrEK1SUnpd2YDoEEra85A">docs/Demo</code> 有 <b data-page-node-id="6mSjUeFyHK7zMmzAcMRcv1">169 个文件已被 git 跟踪</b>（磁盘 175 个，共 8.1M），且 <code data-page-node-id="NlfvivCKVfEVJJgKhntFDv">.gitignore</code> <b data-page-node-id="U7ZBNVTFzCbC1AOmu28HT4">不覆盖</b>该目录。</p>
+  <div class="ev" data-page-node-id="tbnrJiPhLRnXgz2GlUEnVv">36944  docs/Demo/schedule.html
+15299  docs/Demo/js/mock-data.js
+ 9773  docs/Demo/data/board_demand.json</div>
+  <p data-page-node-id="7wirAaPqF8BP77XeWZreoQ"><code data-page-node-id="0CWAIgbovxUzYfaS5vrU8F">debt.md</code> 明确写「Demo 显式不在本轮范围内」，但 <code data-page-node-id="La1BPzWjZCzH4KmdqdGhi2">check-file-length.sh</code> 无差别扫描该树，把 31 项 Demo 违规计入门禁。结果是：<b data-page-node-id="Qs7THywlh3ge22fvJAT5ZO">无论生产代码如何整改，门禁都无法转绿</b>。这是门禁设计问题（缺 carve-out），不是单纯的代码债。</p>
+</div>
+
+<div class="card p1" data-page-node-id="o4jUoisSBMTZSbph0Gkoct">
+  <h4 data-page-node-id="QcGN4aj389nIMQ3hIMu7Co">P1 &nbsp;两处已声明但未接入的前置校验</h4>
+  <p data-page-node-id="QfeWOPwFFncmkvM6HcQB9g"><b data-page-node-id="5tUF10LXElT7XIe7ccHbAf">① 版本窗口删除缺少「已关联需求」校验</b></p>
+  <div class="ev" data-page-node-id="zHoJPX6iaWsmHnHXc3UND7">internal/module/schedule/service.go:370-384
+func (s *Service) Delete(ctx, actor, req) error {
+    window, err := s.repo.FindByID(ctx, req.ID)
+    ...
+    if window.CreatedBy != account {
+        return errors.New("只有创建人可以删除")   // 仅校验创建人
+    }
+    // TODO: 如果窗口已关联需求，不允许删除        // ← 校验缺失
+    return s.repo.Delete(ctx, req.ID)
+}</div>
+  <p data-page-node-id="o0HFrGu8wUhiNtoou1iveK">全仓检索 <code data-page-node-id="7ZWhFYIDPcc7C8kk8TwtlB">WindowDemand</code> / <code data-page-node-id="0VgzWKHllucEvZ6479fR0B">CountDemandByWindow</code> / <code data-page-node-id="utGZzZzG1ACoSA8q2ha25u">FindDemandsByWindow</code> <b data-page-node-id="p0tENcEonLYUZKVF0CT3WW">均为 0 命中</b>——不是「有查询没接」，而是<b data-page-node-id="9UtVsnIO9mfxNp9BsrlGmF">该查询能力根本不存在</b>，属真实功能缺口。</p>
+  <p data-page-node-id="0s5T4coCuxSCNKEoHL2GJ3"><b data-page-node-id="hrQJMTNyF3ep8j1g0vnDoM">② 部门删除主动跳过关联用户校验，且校验能力已实现却从未调用</b></p>
+  <div class="ev" data-page-node-id="oE70N93fjSTJZzfjSuspU4">internal/module/dept/service.go:195-198
+    // TODO: 待用户模块完善后补充关联校验（含跨环境字段差异兼容）。
+    // 当前先放开关联用户校验，避免因历史库字段不一致阻塞部门树删除联调。
+
+    return s.repo.Delete(ctx, req.ID)          // 直接删除
+
+internal/module/dept/repo.go:116-117
+// CountUsers 统计部门下关联用户数量。
+func (r *Repo) CountUsers(ctx context.Context, id uint64) (int64, error) {</div>
+  <p data-page-node-id="RHtkiBhWJGPKVGSIqirMmp"><b data-page-node-id="2ag69rRZxKqWuWSslQvQlZ">全仓 <code data-page-node-id="kFNuFolXv6qoTD1wy4HJGD">CountUsers</code> 仅 2 处命中，均为声明与注释本身，0 处调用。</b>即校验函数已写好、却被旁路——属「能力存在但未接线」，与 ① 性质不同，修复成本极低。</p>
+</div>
+
+<div class="card p2" data-page-node-id="XFcLf4dnKKRUVdd8nmskRW">
+  <h4 data-page-node-id="tbaIm6GruVU7nrOl6wMnPh">P2 &nbsp;跨模块三处逐字节相同的展示名拼接</h4>
+  <p data-page-node-id="XALSCAksk5grhcrB72WepV">三个模块各自实现了完全相同的 <code data-page-node-id="cGy7mBWPi5rDhO9cRBnOMw">「姓名(账号)」</code> 拼接逻辑，函数体逐字节一致：</p>
+  <div class="ev" data-page-node-id="qTnd7wA7sKKNc9L2dHmlT7">internal/module/user/repo.go:126    func formatAccountDisplay(account, realname string) string
+internal/module/testtask/labels.go:45 func FormatPersonName(account, realname string) string
+internal/module/po/owner.go:14        func FormatAccountName(account, realname string) string
+
+（三处函数体 15 行完全相同：TrimSpace → 空值回退 → suffix := "(" + v + ")" →
+  n == v || HasSuffix || Contains → 返回 n 或 n + suffix）</div>
+  <p data-page-node-id="2E4sbEV2bjETZYTv0hzpTG"><code data-page-node-id="ejsPceMANaNj1OaKrzYrLV">internal/pkg/</code> 下<b data-page-node-id="6YTZh8x1GAwZyi3EloBDGh">不存在</b>对应公共实现（已核 encoder/flash/pagination/render/... 全部 20 个子包）。AGENTS.md 规则「Extract a shared abstraction only after a stable repeated pattern exists」——三份稳定相同的实现已构成抽取条件。</p>
+  <p data-page-node-id="ZN6SOzxqXX2JvEkVnJCull">三处 doc comment 用词还不统一：「姓名(工号)」/「姓名(账号)」/「realname 已带账号后缀时不重复拼接」，同一概念三种表述。</p>
+  <p data-page-node-id="XGErnUfG1lTdVtPMBbMn0O"><b data-page-node-id="kiqhNmq61uVPzx6qGAzL9Q">其余重复实现（已实测确认）：</b></p>
+  <ul data-page-node-id="BhwChFj61NKZoBCgZaYYKi">
+    <li data-page-node-id="YErnVofd8jwYpRXSnyYzKp"><span class="path" data-page-node-id="rXldFwiINORysoGufXdIaQ">pkg/sqllog/sqllog.go:194 formatDuration</span> ≡ <span class="path" data-page-node-id="yeh6gydY2UBXhURAAMJpos">pkg/zentao/apilog.go:154 formatAPILogDuration</span>（8 行）</li>
+    <li data-page-node-id="r40pXR9N6d6or6bdHJu9M4"><span class="path" data-page-node-id="97GJHHmmBaZgeHcOKcZmFw">testtask/handler.go:247 contextHTTPError</span> ≡ <span class="path" data-page-node-id="QvvWNDUBxs0vcXMzYe3PCz">build/handler.go:192 linkStoryHTTPError</span>（13 行）</li>
+    <li data-page-node-id="xGaTA5qlcnwJLKnRgXDGPr"><span class="path" data-page-node-id="ZkoYXG1dK4FCCyqE2AJizZ">schedule/form.go:281 Validate</span> ≡ <span class="path" data-page-node-id="Mk4qEIsVnfs2Jw6cKxZenz">schedule/form.go:430 Validate</span>（9 行，同文件两处）</li>
+    <li data-page-node-id="EebGaK9M8SsM8CFyrLqkUA"><span class="path" data-page-node-id="oZ2llG9HG7XDR13RVAumX1">schedule/bizdemand_view.go:153 deriveBizStageClass</span> ≡ <span class="path" data-page-node-id="B9ggHyMF7kPjx6R9PR8XYC">:270 deriveIndependentStageClass</span>（9 行）</li>
+    <li data-page-node-id="KG8sSMw2D1kt4ADV7cBbJS">高度相似：<span class="path" data-page-node-id="G6u5Q6Ts1jfKFa2sDZ4xnM">po/handlerreview.go:155 reviewHTTPError</span> ≈ <span class="path" data-page-node-id="GhkUKkYsgseqn3agJuoPyN">po/handler_clarify.go:116 clarifyHTTPError</span>；<span class="path" data-page-node-id="BmITyJLABCTE9P2vHp6aSX">role/handler.go:109 Create</span> ≈ <span class="path" data-page-node-id="nOdeF93EGH2tVq4pamVkkE">user/handler.go:170 Create</span></li>
+  </ul>
+</div>
+
+<div class="card p2" data-page-node-id="vOAvs1rKdZwIvJCEwoEF2E">
+  <h4 data-page-node-id="06y1QKcqFbTNde2Ojgc3rM">P2 &nbsp;<code data-page-node-id="lyFnTEBDGg21KVaAARVVNZ">/static</code> 未获得 Setup() 注册的全局中间件（gin 注册时序陷阱）</h4>
+  <p data-page-node-id="7O3WnUdeKld4h0nBLOLBEI"><code data-page-node-id="EFZbDpTvqh1GJeceAmYrCr">/static</code> 在 <code data-page-node-id="VyVteWDvGY2EdalsvYogDP">New()</code> 中注册，而全局中间件在 <code data-page-node-id="3Nn5AXJ0BBusFdRVy6y1FF">Setup()</code> 中通过 <code data-page-node-id="2oPSQIpU0hENHN1SEcTP8K">Use()</code> 追加，<b data-page-node-id="cOUZuLAKJ23VvI7GAPuZas">时序倒置</b>：</p>
+  <div class="ev" data-page-node-id="Mu6fQubhpIA5D9ZCDtmaEi">internal/server/server.go:70        r.Static("/static", "web/static")          ← New() 中，先注册
+internal/server/server.go:172-184  s.engine.Use(...)                          ← Setup() 中，后 Use
+                                   172 SQLRequestContext
+                                   180 Recovery
+                                   181 ratelimitpkg.NewGlobalLimiter
+                                   182 RequestLogger
+                                   183 SecureHeaders
+                                   184 MethodOverride</div>
+  <p data-page-node-id="pMNSCaHmXkGFCDNqCJ5UnS"><b data-page-node-id="n54MHMdCjrxwZQK4yv8OWm">机制已由依赖源码确证</b>（gin v1.12.0，非推测）：</p>
+  <div class="ev" data-page-node-id="P8Qw8k9Hlk9islWzYv13tH">routergroup.go:65-68   func (group *RouterGroup) Use(middleware ...HandlerFunc) IRoutes {
+                          group.Handlers = append(group.Handlers, middleware...)   // 仅影响此后注册的路由
+                      }
+
+routergroup.go:86-91   func (group *RouterGroup) handle(httpMethod, relativePath string, handlers HandlersChain) IRoutes {
+                          handlers = group.combineHandlers(handlers)               // ← 注册时快照
+                      }
+
+routergroup.go:241-248 func (group *RouterGroup) combineHandlers(handlers HandlersChain) HandlersChain {
+                          copy(mergedHandlers, group.Handlers)                     // ← 复制当时的切片
+                      }</div>
+  <p data-page-node-id="YSOVxC82GDRHYLkKEK3xQB"><b data-page-node-id="PEuOoQYoXlg1VEQbiqfJ6l">后果：</b><code data-page-node-id="DLpjS9JVowKzOUr7ECGKV4">/static/*filepath</code> 的 handler 链在注册时已固化为仅 gin 静态处理器，不含 Recovery / GlobalLimiter / RequestLogger / SecureHeaders / MethodOverride。<b data-page-node-id="5TGtXGlwlhOVcTvTbuE3bK">这是隐性陷阱</b>——今后任何加入 <code data-page-node-id="a1rTZ61xgEaG9Xki1pNgp2">Setup()</code> 的中间件都不会保护 <code data-page-node-id="mkCSYxwBOFdiOYRzFISCAl">New()</code> 中注册的路由。</p>
+  <p class="meta" data-page-node-id="8z4Vk9roPmyIexa5zYscHq">严重度说明：当前 <code data-page-node-id="mF4NsfIpFFOY6HXplCgtE6">/static</code> 本就无鉴权（静态资源属预期），实际影响面为「限流/安全响应头/恢复中间件未覆盖」，非授权绕过。但把注册顺序写反属结构性缺陷，建议把 <code data-page-node-id="XFPJCjhEQ96dxhWMbDRWVJ">Static</code> 移入 <code data-page-node-id="Z06TcpmrhTtIwFLFVPI2vb">Setup()</code> 的 <code data-page-node-id="28jWwbbu7RabL9Jq85yPYH">Use</code> 之后。</p>
+</div>
+
+<div class="card p2" data-page-node-id="rDPUGInz6RCEtiSNoqN5DI">
+  <h4 data-page-node-id="qYDKkz7SbWl7NZ5UOOazuC">P2 &nbsp;<code data-page-node-id="WBTlqpYBkRRAy2stlbohdH">go.mod</code> 残留外部开发者绝对路径</h4>
+  <div class="ev" data-page-node-id="ldif5RJfHfB4a9MHyB32sQ">go.mod:75
+replace workbench => /home/wds/repo/workbench</div>
+  <p data-page-node-id="vYKMqBBkNjbtFfHDmHNueG">实测该路径在本机<b data-page-node-id="oeqY580HL5e3O7TIbIzQt2">不存在</b>（<code data-page-node-id="LZJyhJMtt8MEvcvkaPvYGP">/home/wds/repo/workbench</code> 非 macOS 路径），但因替换目标是主模块自身，Go 不予应用，故 <code data-page-node-id="qsIJmVWZnhJVys3aTVSNBm">go build</code> / <code data-page-node-id="Grorn95lkfuO8SGDGdIm0X">go vet</code> / <code data-page-node-id="q11wPTYjojlmgRTxxnQcNj">go mod verify</code> 均通过——<b data-page-node-id="myIsWcmlAHWynX21InyILR">属惰性配置而非当前构障</b>。风险在于这是他人机器路径入库，对非本机环境是噪声与误导。</p>
+</div>
+
+<h2 data-page-node-id="kCwGLBEba7rurXE42PQK8r">四、死代码</h2>
+
+<h3 data-page-node-id="SlU3G1nRPWD9ElLMLGlRw3">4.1 Go 包级声明零引用（已确认 8 项）</h3>
+<p data-page-node-id="Fr9l9csFAGxIXfB19cRiAE">方法：解析全部生产 Go 文件的顶层声明，在全仓（含 <code data-page-node-id="S3heXtq68BM2ox3W93oEJe">_test.go</code>、模板、前端）做词边界引用计数，取引用数 ≤ 1 者为候选，再逐条读源码排除接口实现等假阳性。</p>
+<table data-page-node-id="9sAlEAU5TASRhPfPi02cXZ">
+  <thead data-page-node-id="Bba673psZ6xXAGTP8PEv1X"><tr data-page-node-id="2Yc0m3mWX2OnpyPmBzzBPk"><th data-page-node-id="1ngDFkxC7Nx9QAXs5rLNbz">位置</th><th data-page-node-id="fvCoWgIFH37k9o4gFfRveb">类型</th><th data-page-node-id="mAOGKWaXa5je8TiDLjxy68">标识符</th><th data-page-node-id="NDsrJYe1tjyibCejS5FuzR">判定依据</th></tr></thead>
+  <tbody data-page-node-id="U8pYG8fogsjAFUll52OqxA">
+    <tr data-page-node-id="luAJdm4UA0ZNAi5BccskAe"><td class="path" data-page-node-id="VFjegCBlwGp2Jb57CH3DWi">po/primaryaction/primaryaction_url.go:19</td><td data-page-node-id="FFJKR6BZW4AasnAKcsi7oF">type</td><td data-page-node-id="x4Qr1hWreVsTwJ4xXiZEbc"><code data-page-node-id="rArUUrWBn5lik4eF09P96k">inputShape</code></td><td data-page-node-id="mdiq2lj1VTdLSJFlN0eD76">接口零实现、零引用；下方注释所述与实际取参不符</td></tr>
+    <tr data-page-node-id="wuEtA6nxL6qA4yY3q5tsg4"><td class="path" data-page-node-id="x6yt8AxrXjvHbS3steIO0F">po/primaryaction/primaryaction.go:41</td><td data-page-node-id="uHZNALtZlhtiSi0r2Wmq85">const</td><td data-page-node-id="89m1csw0agL5eoGfLEJpGK"><code data-page-node-id="w8jLF4GGQwOwXAAOR5hQtY">KeyEdit</code></td><td data-page-node-id="AELBjZDkR8gCdaCzF037wI">Derive 决策矩阵未使用</td></tr>
+    <tr data-page-node-id="mcZo7MFfX3LoqRwGkcUS19"><td class="path" data-page-node-id="B7WWFaH0WSQJJD0g0r0Ty5">po/primaryaction/primaryaction.go:49</td><td data-page-node-id="q9HA0kc9N87OFw7Bfv8tKy">const</td><td data-page-node-id="Qz96jFRIcoiV5Z60mEimVG"><code data-page-node-id="6uPx0HWPRZMwJZJFAU8qh8">KeyPublish</code></td><td data-page-node-id="Mqe2wHh5HL65AFxQ3OpoVL">StageRelease 直接 <code data-page-node-id="5ARvaEGKtXdNayHNnqPfPO">return None()</code>，常量永不产出</td></tr>
+    <tr data-page-node-id="YqyEHlSLnGayF4jg82nOPJ"><td class="path" data-page-node-id="lOeFhdLs3yEf7DENuBGrr2">po/primaryaction/primaryaction.go:51</td><td data-page-node-id="AvPAxIkZULuiReY4g3cW3b">const</td><td data-page-node-id="LHzOkyOuhFb6ONgzPF8Es2"><code data-page-node-id="zNglZF2Un2FqQaHEkbrjxn">KeyViewEvaluate</code></td><td data-page-node-id="mgxaAHNTJ0P0aP4QyBvGmw">StageFeedback 历史评价分支 <code data-page-node-id="eVATqWFvy1ABTnRNPtTXxt">return None()</code>，常量永不产出</td></tr>
+    <tr data-page-node-id="cn9B4HBAd6umvWgI8VO4Pe"><td class="path" data-page-node-id="2yKAMmA9iQnOUEYzHIEswc">po/primaryaction/primaryaction.go:127</td><td data-page-node-id="9nrcE1PLwArOX9UDFhWItd">const</td><td data-page-node-id="akvpRWeC2bqexb7fY0rE9I"><code data-page-node-id="QGkMOD2tPHu3ptRR1kAvpu">ObjectSubDemand</code></td><td data-page-node-id="Cnhwy6FgpMLIqqTVkCyMQ0">Derive 只判断 Story / IndependentStory</td></tr>
+    <tr data-page-node-id="WWI9VFwYYGDVucWOfkfNEp"><td class="path" data-page-node-id="2Qp5vtXSvd3901AxAsTCRV">po/service_deliver.go:20</td><td data-page-node-id="YnfzzHCKKgXNLjF7l4AcIX">var</td><td data-page-node-id="dUVTMQySSPCVPBlZgQwYme"><code data-page-node-id="p9A7PMtkF3p7bSAn1WL3g1">errDeliverNotAcceptanced</code></td><td data-page-node-id="WHAJZS2fKU1WbG3x47HI7b">声明后全仓 0 引用；<b data-page-node-id="0OphaNJgDiQ3rTuzV1NfzJ">另含拼写错误</b>（Acceptanced → Accepted）</td></tr>
+    <tr data-page-node-id="0YDKIrY0BDF3BpBa4kZek7"><td class="path" data-page-node-id="jps2E4pbbDTzdzcGKRQa2h">po/service_deliver.go:21</td><td data-page-node-id="Of5tJ4q8nDrLaZmsBTF7Zn">var</td><td data-page-node-id="KslFC5oXecTK3dMAxcW42R"><code data-page-node-id="4IZSGBf8B2DY4ES8kmmm2p">errDeliverAlreadyWait</code></td><td data-page-node-id="Gpp4mUmBqx2q2jP0wk5gJE">声明后全仓 0 引用</td></tr>
+    <tr data-page-node-id="yPHwSPe9TdHTuFtrmOBYS1"><td class="path" data-page-node-id="DL1tGmxneyQRidDSY0qpGv">po/form_done.go:33,36</td><td data-page-node-id="obyO7FeqA4Ig4QTbBUmizS">const</td><td data-page-node-id="OUQ67MlSjI74Ew3x61uAXn"><code data-page-node-id="K4JzXjK1oKGsBST07B3VU9">TimeRangeThisWeek</code><br data-page-node-id="OH6gThw6i3WGcGYpppYQjW"><code data-page-node-id="DBEBVO4mVqGQSeBDOoH7Cz">TimeRangeThisMonth</code></td><td data-page-node-id="aEREV2cxlE7rVhcp9Vo6FQ">与既有 <code data-page-node-id="1P9zrD9y109pAoFbGdt5To">TimeRangeWeek</code>/<code data-page-node-id="s6LBfjisd4zKDXCTRHWnvI">TimeRangeMonth</code> 语义重复，两者均零引用</td></tr>
+  </tbody>
+</table>
+
+<div class="note" data-page-node-id="lPdHjaE4swABGt5V7EGdcp">
+  <b data-page-node-id="oCPMMfOYBKnb7183RssC74">已排除的假阳性（重要）：</b><br data-page-node-id="EypgAzGKTVjkg0j6WC3DRK">
+  ① <code data-page-node-id="p7UfH3SWUECtZlrPDE6ezH">internal/pkg/database/database.go:157</code> 的 <code data-page-node-id="czNsEYdK5pPbjIy8rXWrNM">ParamsFilter</code> 方法——自动扫描判为「零引用」，但实际是 <code data-page-node-id="H7LxNAERwg7G1jroZAwYk5">gormSQLLogger</code> 实现 <code data-page-node-id="oGVQvMRRTESHIQ6s0kTnpM">gormlogger.Interface</code> 所必需，<b data-page-node-id="wOVK3a78lUoYxqlghGDseF">删除会破坏编译，非死代码</b>。同类的接口实现方法须人工复核，不能仅凭静态引用计数处置。<br data-page-node-id="n1Ni0POrRcP2MET7oOHGCy">
+  ② 早期脚本曾把 <code data-page-node-id="ZmJb40dVyXXcTJykaFxTMw">errDeliverNotAcceptance</code> 一类误报为「376 项」，其中 368 项是 <code data-page-node-id="LSWLzTXuVITjXEKYmvH4NK">Test*</code> 测试函数——由 <code data-page-node-id="edQBy45kGho6LBPmMujiCm">go test</code> 反射调用，属正常。已按生产/测试分离重算。
+</div>
+
+<h3 data-page-node-id="b3T37ABFX7LfswyDnqpsAg">4.2 死参数：9 个 URL helper 中 8 个未使用 <code data-page-node-id="zEbseJN9qBYnzdnOC9Bh4w">kind</code></h3>
+<div class="ev" data-page-node-id="FzkoXvPFy4uCfnAuLa1J7W">internal/module/po/primaryaction/primaryaction_url.go
+AcceptURL(objectID uint, kind ObjectKind)        // kind 未使用
+WithdrawReviewURL(objectID uint, kind ObjectKind) // kind 未使用
+SubmitReviewURL(objectID uint, kind ObjectKind)   // kind 未使用
+ClarifyURL(objectID uint, kind ObjectKind)        // kind 未使用
+AcceptDoneURL(objectID uint, kind ObjectKind)     // kind 未使用
+UrgeAcceptURL(objectID uint, kind ObjectKind)     // kind 未使用
+DeliverURL(objectID uint, kind ObjectKind)        // kind 未使用
+EvaluateURL(objectID uint, kind ObjectKind)       // kind 未使用
+ScheduleURL(objectID uint, kind ObjectKind)       // ← 唯一真正使用 kind 的函数
+
+SubmitTestURL(objectID uint, kind ObjectKind) {
+    _ = objectID        // 显式丢弃
+    _ = kind            // 显式丢弃
+    return ""
+}</div>
+<p data-page-node-id="coTp9RWPrPjQylMpydfN22">Go 不报未使用函数参数，故长期潜伏。<code data-page-node-id="5ZmTBldST8E8SFGMhZf83O">SubmitTestURL</code> 用 <code data-page-node-id="6NZr5lSfsdFB5s8ROYTbEc">_ =</code> 显式丢弃并注释「保留函数签名供 Derive/单测调用」——属有意识的兼容负债，但造成 8/9 参数虚设。</p>
+
+<h3 data-page-node-id="MQzKkZAd0s7USj0VBaiZtt">4.3 测试文件提交在生产静态目录（可公开下载）</h3>
+<p data-page-node-id="2YGRUHwhU5hi35wv0rtgJz"><code data-page-node-id="FmgoEDCBN7JrkmbGP4tazr">internal/server/server.go:70</code> 的 <code data-page-node-id="CTCqjlgL5WJO86iHSKPALO">r.Static("/static", "web/static")</code> 使整棵静态树对外提供；以下 4 个文件<b data-page-node-id="oJw0QwaoUh8UZaSepEmW22">已被 git 跟踪</b>且全仓零引用，即无鉴权可直接 GET：</p>
+<div class="ev" data-page-node-id="DCiW2QMyg6uFcbSKDKWQuv">web/static/js/picker/wb-picker-core.regression.test.js      9.6 KB
+web/static/js/picker/wb-picker-search.regression.test.js    6.3 KB
+web/static/js/picker/wb-picker-phase-a.regression.test.js   3.2 KB
+web/static/js/agileteam/agileteam-adjustment.regression.test.js  5.0 KB
+
+→ 可公开访问：/static/js/picker/wb-picker-core.regression.test.js 等</div>
+<p data-page-node-id="9VmDtxOEC9mPthMYfLWEbp">仓库已有正确的测试位置 <span class="path" data-page-node-id="1eb1oBuhaUzWrH3zQz8Ai2">tests/unit/frontend/</span>（23 个文件），此 4 个属错置。AGENTS.md 规则 10 要求浏览器流程用 E2E、fixture 用 <code data-page-node-id="R5Z1OXdt1SSeFbEpQUVua3">testdata/</code>，测试不应进生产静态目录。</p>
+
+<h3 data-page-node-id="BFmG2PsgntAOdiLKanIzxZ">4.4 死样式：<code data-page-node-id="1jgOsafaRWYn1F1FxGoUJz">metrics.css</code> 37 个零引用类</h3>
+<p data-page-node-id="1BOT32PgJMYZUKSV4aDivh">对 <code data-page-node-id="ciD8bnvuxv5jEefIwX2KiA">web/static/css/metrics.css</code>（2326 行，仓库最大 CSS）逐类检索 <code data-page-node-id="YAfMf4DIE9CPigQ8NKKH5m">internal</code> 与 <code data-page-node-id="KT0ALUs1ojLNYOcaBp8Cfr">web</code> 下所有非 CSS 文件，以下类<b data-page-node-id="0IuHq07YYiH2BBSa53jvpp">零命中</b>：</p>
+<div class="ev" data-page-node-id="12hf1hzAzhFiaHJSd3fvrv">metric-radar-card      metric-radar-card-foot  metric-radar-card-head  metric-radar-count
+metric-radar-counts    metric-radar-group      metric-radar-group-count metric-radar-group-head
+metric-radar-groups    metric-radar-jump       metric-radar-score      metric-radar-spark
+metric-radar-summary   metric-radar-table      metric-radar-toprisk    metric-radar-toprisk-row
+metric-radar-total     metric-radar-trend      metric-radar-value      metric-sparkline
+radar-screen-title     tone-danger             tone-muted              tone-success
+tone-warning           metric-detail           metric-detail-actions   metric-detail-body
+metric-detail-close    metric-detail-code      metric-detail-head      metric-detail-meta
+metric-detail-meta-item metric-detail-note     metric-detail-section   metric-detail-title
+metric-action-detail</div>
+<p data-page-node-id="kEpTZTE8WakWKXfgLaA0sX">呈现两个<b data-page-node-id="2qKSu9ZG7HCGBnTkwy7zfO">完整功能块残留</b>：<code data-page-node-id="vCDRTOy2wD9YAxjj7nIgaz">metric-radar-*</code>（20 类）与 <code data-page-node-id="HYaoOHVQdaCZiyp2SS4J83">metric-detail-*</code>（13 类）+ <code data-page-node-id="pZdZ3oixxVc5vFVuUN7AMI">tone-*</code>（4 类）。结合 <code data-page-node-id="pwH5xeqQIYbdtnC62bCtZx">metrics-radar.js</code>（708 行）中亦无对应类名，可判断为「UI 块已移除/未建成，样式未清理」。</p>
+<p data-page-node-id="PEE7ORYXToQryGgYMPx2H2"><b data-page-node-id="4z2YJGRyz4EHDhlQCV0Wno">其余 CSS 未引用类分布（前几名）：</b>follow.css 31 · po-profile.css 21 · layout/app.css 18 · demand-detail.css 15 · schedulelist.css 13 · board.css 10 · permission/list.css 9 …</p>
+
+<div class="note" data-page-node-id="8HyRnTLnSuRCWq7FmTyIM1">
+  <b data-page-node-id="Lwef85RA6eVR7tautOQGoV">已从死样式清单中剔除的假阳性（重要）：</b><br data-page-node-id="yaUnHjcXrqjMIiVtCVgqCI">
+  <code data-page-node-id="iQmZB1eUI0iz7fOCVFQG7v">wb-priority.css</code> 的 14 个 <code data-page-node-id="9k3CD1lzPlsg4wYpihVcz2">wb-type-*</code> 与 10 个 <code data-page-node-id="m4BRfLOQgURvCyJRWxF6aI">wb-status-*</code> 类，静态检索为「零命中」，但实为<b data-page-node-id="ohmnyF1VGt8BwXeLMOpRM0">动态拼接</b>生成，必须保留：<br data-page-node-id="PMFYXSkwV3wLfMO5gKkgfz">
+  <code class="path" data-page-node-id="w6heeyMsr9H27a1LCc0kAp">web/static/js/po/personal-list.js:391</code> → <code data-page-node-id="eoeLfUhyMVEdaSeYE9PLEH">'&lt;span class="wb-type wb-type-' + k + '"&gt;'</code><br data-page-node-id="7MnMyG6MzPTf9LtVwoGztI">
+  <code class="path" data-page-node-id="DSudy8gOXUFgIg7GzDGbXj">web/static/js/po/personal-list.js:475</code> → <code data-page-node-id="pcnE8CjUYdVj3X0JoxcHDO">'&lt;span class="wb-status-tag wb-status-' + semantic + '"&gt;'</code><br data-page-node-id="U268YTBlcyftlNDVBhntrf">
+  <code class="path" data-page-node-id="lhAE1RVX8FYo910qD9CYhW">web/static/js/po/notice.js:184</code> → <code data-page-node-id="tZDA50UNt070GdpIl3MVvH">'&lt;span class="wb-type wb-type-' + esc(canon) + '"&gt;'</code><br data-page-node-id="SRisINyeGboYFwYBWonffz">
+  <b data-page-node-id="XAIGyzUIsHk7KO0ZTqivDc">结论：任何 CSS 死代码清理都必须先排除字符串拼接构造的类名，否则会误删在用样式。</b>
+</div>
+
+<h2 data-page-node-id="tLg4R0MAh2LEpfSQqqrALA">五、非法注释 / 无效注释</h2>
+
+<h3 data-page-node-id="ktttxOWpFJWOCuItkliih0">5.1 文件头路径失真（3 处）</h3>
+<p data-page-node-id="6qkcBJ8Ka69F4gMQItW0Se">仓库统一使用 <code data-page-node-id="IyyBoZRjRvKONLTJqtSsfT">// 文件: &lt;path&gt;</code> 头注释（289 个文件带此头）。逐文件比对实际路径后发现 3 处失真——文件已改名或移动，头部注释未同步：</p>
+<table data-page-node-id="a3RRkcxZsRW1TD8qViWfL6">
+  <thead data-page-node-id="6wKixvJCC87VjYGU9nF5ZR"><tr data-page-node-id="6IyxDJr4ODo0zdh9FJWj8f"><th data-page-node-id="wBVYrcADrFWxdw7ZXGrE1e">实际文件</th><th data-page-node-id="xhzwwaDAaHLGKfHTUiDYlp">头注释所写</th><th data-page-node-id="Oo5osXn7Ut9T1FiqtHicTE">性质</th></tr></thead>
+  <tbody data-page-node-id="VG9CqXADiN6Hlh4P4h687S">
+    <tr data-page-node-id="O4vxXRpLAG02Fb9LkxDhTR"><td class="path" data-page-node-id="lvRCMwrjCzwVkKu7GnJ4UW">internal/module/debug/service.go</td><td class="path" data-page-node-id="SPjLmU10TAlvgK9uAMgGbA">internal/module/sqlperf/service.go</td><td data-page-node-id="3qir6CYBohkoYQSVu7nl0N">目录已由 sqlperf 改名为 debug</td></tr>
+    <tr data-page-node-id="ZwtEha7ynyGu67ndbURd8p"><td class="path" data-page-node-id="iNWXsKo18XyayhStysd6gs">internal/module/debug/repo.go</td><td class="path" data-page-node-id="LjfV5laKlzjc5GMTItVSAX">internal/module/sqlperf/repo.go</td><td data-page-node-id="eJ2py9nUShO1y1wzDUmqDa">同上</td></tr>
+    <tr data-page-node-id="UiY5XefKVrW2cERKIvv4FG"><td class="path" data-page-node-id="Wo7eLrBnnNPwEIalyLk9y4">internal/pkg/encode/encode.go</td><td class="path" data-page-node-id="0WxSW1Ex7OGsC8jSkIA7xp">internal/pkg/password/md5.go</td><td data-page-node-id="5auojpoFXFlzVncgV26oRl">包名 <code data-page-node-id="MIHsBMXQ2hKF9IF5f23HUn">encode</code>，头注释仍指向已不存在的路径</td></tr>
+  </tbody>
+</table>
+<div class="ev" data-page-node-id="WYU3W698yCpqveONhYo8KX">internal/module/debug/service.go:1-6
+// =============================================================================
+// 文件: internal/module/sqlperf/service.go      ← 与实际路径不符
+// 模块: SQL 性能分析
+// 类型: readonly
+// 职责: 编排 SQL 性能分析数据查询。
+// 依赖: 无
+// =============================================================================
+
+package debug                                  ← 实际包名</div>
+<p data-page-node-id="cHiHRdf1DFPXBojqru43Tr">误导性最强的是 <code data-page-node-id="HBEsCr4EZutJI9NvOkFUJT">encode.go</code>：头注释同时承载「文件路径」与「职责」两项，而职责描述的 MD5 兼容语义恰好是 P0-1 的关键背景，路径错误会让人找不到真源。</p>
+
+<h3 data-page-node-id="rTr9Uk3Cce7o6vAEpfsqPs">5.2 文档注释与标识符不符（1 处）</h3>
+<div class="ev" data-page-node-id="aTYlBzE0Fb0NzBBZiMPpbF">internal/module/user/handler.go:147-148
+// BatchCreate 渲染批量创建用户表单页。        ← 注释首词是 BatchCreate
+func (h *Handler) BatchPage(c *gin.Context) {   ← 实际函数名是 BatchPage</div>
+<p data-page-node-id="6gZUyLjCWp0JysH6Mm38qa">同文件另有真实的 <code data-page-node-id="vwU3JbFgPSmRYHWMiqzJqI">BatchCreate</code>（POST 提交处理，注册于 <span class="path" data-page-node-id="Zm3i23besKGcYDUJTB6jRF">handler.go:62</span>），因此该注释不仅名字错，还会在 IDE 跳转/godoc 中<b data-page-node-id="IE59zzRs8eeelAGNcAPDOt">指向错误函数</b>。修正为「BatchPage 渲染批量创建用户表单页。」即可。</p>
+
+<h3 data-page-node-id="oaXQGDGv135EP4T4DHeSSp">5.3 契约表注释与实现相互矛盾（1 处）</h3>
+<p data-page-node-id="zMpGMDS4iNQVPbR8JINqny"><code data-page-node-id="6NvzKMygaE3KhWA9YP2IHa">primaryaction.go</code> 用一张注释表声明「阶段 → primaryAction 合同」，其中一行与实现直接冲突：</p>
+<div class="ev" data-page-node-id="SbkLyLSZff8TsMjR5oNEYp">internal/module/po/primaryaction/primaryaction.go:192
+//	feedback+有评价    internal view_evaluate /demands/:id/detail?tab=history capability
+
+internal/module/po/primaryaction/primaryaction.go:319-333（实际实现）
+	case StageFeedback:
+		switch {
+		case in.HasPendingEvaluateTask:
+			... Enabled(KeyEvaluate, ...)
+		case in.HasHistoricalEvaluate:
+			// PRD explicitly excludes a historical-evaluation action from PO flow.
+			return None()          ← 与上表注释相反：不产出 view_evaluate
+		default:
+			return None()
+		}</div>
+<p data-page-node-id="PupTxjPBsWyn7TRibePygn">三处证据闭环：① 契约表写有 <code data-page-node-id="Z5sZjMRMWHr3P9tEce3zU6">view_evaluate</code>；② 实现在 <code data-page-node-id="9e5rOfhJYFPPc6K4kUhq55">HasHistoricalEvaluate</code> 分支直接返回 <code data-page-node-id="cDiGyDY6EcXl0a57oVMmsx">None()</code>；③ 常量 <code data-page-node-id="ZGzjkq29HYFvao3PIwSnjl">KeyViewEvaluate</code> 全仓零引用。<b data-page-node-id="lM4dZXZrrQq46qWaG2JtFJ">契约表已过期</b>，且它正是下游前端与测试的行为依据——属高误导性注释，应同步删除该行或标注「已由 PRD 排除」。</p>
+
+<h3 data-page-node-id="oWRA9lDLgChhaJblpMWncz">5.4 僵尸 TODO 与已满足的 TODO（2 处）</h3>
+<p data-page-node-id="YG0FYqDVxWpySMDlLIyDKL">全仓 Go 代码真 TODO 仅 4 条，其中 2 条为无效应清理项：</p>
+<div class="ev" data-page-node-id="fZeiHpfe6K4JZJjFtNtzf9">internal/middleware/auth.go:115-117
+// TODO 返回用户信息、权限              ← 无具体待办内容，且函数已完整实现该职责
+// CurrentUser 获取当前已登录用户，未登录返回 nil。
+func CurrentUser(c *gin.Context) *model.User {
+	v, ok := c.Get("currentUser")
+	if !ok { return nil }
+	u, _ := v.(*model.User)
+	return u                          ← 就是「返回用户信息」
+}</div>
+<div class="ev" data-page-node-id="SAMbOSwObDw2lNneaNH7Gl">internal/model/basemodel.go:16-25
+type BaseModel struct {
+	ID int64 `gorm:"column:id;primaryKey;autoIncrement"`
+	// TODO 后续删除，修改为DeletedAt
+	// Deleted     uint8 `gorm:"column:deleted;not null;default:0;index"`   ← 注释掉的代码
+	CreatedBy   string         `gorm:"column:createdBy;size:30;not null"`
+	...
+	DeletedAt   gorm.DeletedAt `gorm:"column:deletedAt"`                   ← TODO 要求的目标已在此
+}</div>
+<p data-page-node-id="0D5XPIG4AZETXeZpAyBcQ0"><code data-page-node-id="jkTm9FVeKHoIwWYlHQFYNS">basemodel.go</code> 是<b data-page-node-id="vcXCwGAZxDKFy4R5aHYQ2B">全仓唯一一处注释掉的代码</b>（注释掉的结构体字段声明），且其 TODO 所述目标「修改为 DeletedAt」在第 24 行<b data-page-node-id="0nrUGFRBZfD2yyLsY9BX2K">已经达成</b>——TODO 与残留代码应一并删除。</p>
+<p data-page-node-id="pGqhzAnYYXfl3e6GWlN2Yt">另外 2 条 TODO 属有效技术债记录（已归入第三章 P1）：<span class="path" data-page-node-id="LzE9tJvsaWkNobnwsz2MTt">dept/service.go:195</span>、<span class="path" data-page-node-id="fVcLITqPRVUDJBB3X5FwiM">schedule/service.go:382</span>。</p>
+
+<div class="note" data-page-node-id="f7JqNLJBOjJ5bRIWCZHmkQ">
+  <b data-page-node-id="ZDTb9XmecLj5nMX2DRFzNN">不构成问题的注释（已排除，避免误报）：</b>
+  <ul style="margin:8px 0 0" data-page-node-id="AbTvAryytFH9VXuN34dXvc">
+    <li data-page-node-id="Y2XIZNR9lmLxvDCtXHAMXj">测试函数上方的 <code data-page-node-id="eSVdoVioLWGpLPbqgIrUlQ">// CASE 1: …</code>（<span class="path" data-page-node-id="vVz24UjCDgA1LKffWzX6cK">pkg/perm/loader_test.go</span>）、<code data-page-node-id="XOrzD7yFsTYOM9ugyj6b6k">// T-1：…</code>（<span class="path" data-page-node-id="ASfvVck6vsI0Ek9FtNzAdk">agileteam/repo_basic_atomic_concurrency_test.go</span>）属惯用场景说明，不是「注释首词不符」。</li>
+    <li data-page-node-id="kmlH9qAwrU7p8lZ4ov02h5">带缩进的 <code data-page-node-id="MNc3iDYMVSWijFQCGxJleU">//\tTotalItems = …</code> 形式（<span class="path" data-page-node-id="PtureHUATJFnrqlVhAT9SO">metrics/form.go:41-44</span>）是 godoc 列表续行，被自动脚本误判为「注释掉的代码」，实为文档。</li>
+    <li data-page-node-id="TkZVzHegl07i38dzzzJn8v">全仓<b data-page-node-id="uZUxHGFx9OdAtpGTrzfyQA">未发现</b>成块被注释掉的 Go 生产代码（除 5.4 的单行）。注释纪律总体良好。</li>
+  </ul>
+</div>
+
+<h2 data-page-node-id="8bf6Wt3k7o8ODLzbNvsyHs">六、对并行 Agent 审计产物的复核</h2>
+<p data-page-node-id="KchGAh52ub3ftuTdD7B0z6">审计期间发现另一 Agent 于<b data-page-node-id="BIEpQOuYHf2CyYV8UwUKhS">同一日上午 08:12</b> 产出的 <span class="path" data-page-node-id="tMw5nmMBHPLjzVNAlIfR1Y">.hermes-cache/metrics-tech-debt-audit.md</span>（指标模块专项，文末明确请求复核）。对其结论逐条复现后的结果：</p>
+<table data-page-node-id="QXfBcGMMCeVFrE4hqXzWyN">
+  <thead data-page-node-id="mECEmPgbLZ7GxisJeJRNMQ"><tr data-page-node-id="11gEwq3ZwKgaKTB8cjCzEq"><th data-page-node-id="4B4ZW05iYRfXgCgMchJ4Iq">其结论</th><th data-page-node-id="TJCDYFldUGoXTfpW28LK92">复核判定</th><th data-page-node-id="68FmA7dCzSHH0dmEDCsA4v">依据</th></tr></thead>
+  <tbody data-page-node-id="s9A0JKDOTo7VmBiTWYrxAi">
+    <tr data-page-node-id="cfEImXiWYowMhd2boSpgOB"><td data-page-node-id="q3QJoRlmth9dsf7dj7RLcA">A1 <code data-page-node-id="gP4C0zWX0tvgmNxDITSXHE">radar-header-badge</code> 等类不存在 → 假阳性</td><td data-page-node-id="vBWmpooH8zxcDN4uFXPXVm"><span class="sev s-ok" data-page-node-id="fenPf1h2O0BQVMsfAN1DIF">成立</span></td><td data-page-node-id="X03cugybSDqaWIOReA0mTF">5 个类名逐个单查均为 0，确认不存在</td></tr>
+    <tr data-page-node-id="oEDitLJLUl2bJZQF1WErBJ"><td data-page-node-id="JoEm7nJ3AZexhQvm2QjuYS">A4 <code data-page-node-id="nW6Vvx5nmBF7l69VlIRDjA">transform 0.15s</code> 重复手写不存在 → 假阳性</td><td data-page-node-id="H4TA9FCtkVJpif4MlXnqBr"><span class="sev s-ok" data-page-node-id="gTEjGH7HCyfRKNBzXjnmEs">成立</span></td><td data-page-node-id="DyTs2hkdxgEWZlfiepnGUE">实测 0 处；<code data-page-node-id="7FH3t8zZg3aNm4Eb6koLf7">transition:</code> 19 处无重复模式</td></tr>
+    <tr data-page-node-id="gm0EovYLESw2DJhLKWXpDS"><td data-page-node-id="nU3AWeViLyw0vRCSX0kb4e">B1 <code data-page-node-id="GTlYegff38Qz7TcxBchQ3x">MutationObserver</code> 无 <code data-page-node-id="M6BuLgIlXEwsikyMKmX9Rt">disconnect</code></td><td data-page-node-id="mtuGyuzDHIbdhVxaAJnNVl"><span class="sev s-ok" data-page-node-id="dTduuBUUCD2JU4Ew1mPRO9">成立</span></td><td data-page-node-id="vcef7xl0AiWTTlW5jVUm0X"><span class="path" data-page-node-id="p5Vonf7hOpVzKmYEnIlzSS">metrics-radar.js:689</span> 确为 <code data-page-node-id="ajqVUoC3fFaKYvzyq9JAu0">new MutationObserver</code>，全文件无 disconnect</td></tr>
+    <tr data-page-node-id="SAAla1MjbHhZdxE827iNoD"><td data-page-node-id="922rPVTUCl2WlddwXcTrQn">C2 a11y「<b data-page-node-id="qJoCobhCGTtjnX0PUS3rLK">确实全部缺失</b>」（0 处）</td><td data-page-node-id="132fO1X8hrkok8oE70fevf"><span class="sev s-p1" data-page-node-id="NPTzFBHzGIDIJWErq9Zbi2">不成立</span></td><td data-page-node-id="zPBcjRmRBlqDpQV1kDZvFU">见下方说明</td></tr>
+    <tr data-page-node-id="1MtCBOVXBpv4n5nwp4J9IR"><td data-page-node-id="7PfdYe3E0oX8Oc01H0dk2f">遗漏项</td><td data-page-node-id="aUvtLw6vWHZcAVVL20fGG4"><span class="sev s-p1" data-page-node-id="5vTV4eKtGDja2g2sxOHBIy">漏报</span></td><td data-page-node-id="1bFf1OWTtvYKKBt1YziQsX"><code data-page-node-id="7HY87zPr4eW2vRFgcOjGQJ">metrics.css</code> 37 个真实零引用类未被发现（见 4.4）</td></tr>
+  </tbody>
+</table>
+<div class="card p1" data-page-node-id="9ZZlTByD1x3NngQwhomm63">
+  <h4 data-page-node-id="MagD9vaseDOxSTzkxaigne">C2 的准确表述</h4>
+  <p data-page-node-id="QdA1MmFZpFdkXvXCBwZ8Bf">被审文件<b data-page-node-id="pIIrGWAk0MJCr54DGD3658">并非 devoid of a11y 标记</b>，实测：</p>
+  <div class="ev" data-page-node-id="AFHPTQfKGaLTAtMBfeQEXX">web/templates/metrics/radar.html    role= 1 处   aria- 4 处   tabindex= 0 处
+web/templates/metrics/manage.html   role= 1 处   aria- 9 处   tabindex= 0 处
+
+manage.html 实有：aria-label（分类/责任角色/启停状态/搜索指标/关闭）
+                 role="dialog" aria-modal="true" aria-labelledby="mDrawerTitle"
+                 aria-live="polite"  aria-hidden="true"</div>
+  <p data-page-node-id="KDns54ABudxJwaTw3o1P7H">其 grep 目标 <code data-page-node-id="khRYa8zOfZsOGuyhQr55Hr">role="(button|tab|tabpanel)"</code> 确为 0，<b data-page-node-id="BpOyBpzUZWdp1ByjISEdn2">该子断言正确</b>；但据此得出「a11y 标签确实全部缺失」属以偏概全。准确结论应是：<b data-page-node-id="wRylvnvua50aCsXt4faygn">缺少交互语义</b>（<code data-page-node-id="L2fCCLWmJlupfOQNAh77dd">role="button|tab"</code>、<code data-page-node-id="C6vpEkaj42gxwalZW8kOOf">tabindex="0"</code>、<code data-page-node-id="1PKZMweoathWEDO5Sibiof">aria-selected</code>），而已有表单标签与对话框语义。</p>
+</div>
+<p class="meta" data-page-node-id="QzUYDEUIDwlyY0fPZCjmJY">方法论差异提示：该审计自称「仅静态 grep / search，未读完整文件内容」。本次复核覆盖到其未检索的类名与文件范围后，结论出现分歧——说明该模块的结论在采信前需要扩大检索面。</p>
+
+<h2 data-page-node-id="LD3JeMapKOWa8W6p3d1E8N">七、工具环境坑（复现本报告时必读）</h2>
+<div class="note" data-page-node-id="qSIp8uGvjRRSUirVUadgls">
+  <b data-page-node-id="YLbJHRybG3g3vvuBskiezJ">本机 <code data-page-node-id="3ubNigPFFnMFpD8KbL7xbg">grep</code> 是 toybox 0.8.13，不是 GNU grep 9.0</b>，行为差异会导致「0 处」假阴性：<br data-page-node-id="6YPtgsWXlqO6weES7lTblC"><br data-page-node-id="UBjc6hzrd96Z76bu6NvM3B">
+  <table style="margin:8px 0" data-page-node-id="GTHmqj1qv1umiHrtOHIFid">
+    <thead data-page-node-id="4C5RSGOcExwIgfe22jqdRH"><tr data-page-node-id="E711MHmHpJ7cWz1YNSRkBV"><th data-page-node-id="YhHcxeIEt6uVICjaJUHe3I">写法</th><th data-page-node-id="RoibOz61rEfCMMpxBHSSiW">实测</th><th data-page-node-id="NH0MsgvMyVIbdQYhZ2oqbB">结论</th></tr></thead>
+    <tbody data-page-node-id="zqF6D7bFXtiYtz4Kp5wijE">
+      <tr data-page-node-id="XHrfRo7atQDMhWJ0lxBrUZ"><td data-page-node-id="61sonqUH9XwAP7i4dijuag"><code data-page-node-id="ITumUGGJZdLYpgtcZtlFUO">grep -c '\bTODO\b' file</code>（BRE）</td><td data-page-node-id="F75orh1jsgwWRVbx9j8BCe">0（实际应 1）</td><td data-page-node-id="ZPu4JujMiS0AistL7RbLKW"><span class="sev s-p0" data-page-node-id="sAWSQ1w51GPCJaPJLEUCAc">\b 失效</span></td></tr>
+      <tr data-page-node-id="GIV4ZTp0cdgTAvkBmBIYj9"><td data-page-node-id="eELfRbZDzOV2IYyK8TSG3D"><code data-page-node-id="58iQWcU2bAsWNNHX2Wq02M">grep -cE '\bTODO\b' file</code>（ERE）</td><td data-page-node-id="j9tG10IfikHEfLgdBFcyw4">0（实际应 1）</td><td data-page-node-id="PZ9888YmE4yE0gtNqudb0g"><span class="sev s-p0" data-page-node-id="1BinZICFyX2LSBUCnri6lF">\b 失效</span></td></tr>
+      <tr data-page-node-id="xdQH4rGivTd3fR5HElE4cJ"><td data-page-node-id="0v58RAEGab9UnGfARoVj7D"><code data-page-node-id="I9jhwgSUCX5HFpkmUxFP19">grep -c 'TODO' file</code>（裸串）</td><td data-page-node-id="5DOWRfeSm6DHaXyO6O8lBd">1 ✓</td><td data-page-node-id="oSpXDgtvYgbu4rRA0Xp7nh">正确</td></tr>
+      <tr data-page-node-id="nkXDwBSw0FBywefyj6RAfN"><td data-page-node-id="Um4oqBGsdqWEEnJB7eCBqA"><code data-page-node-id="yeYHo3l9TXRMEHxLfUx3Zh">grep -cE 'transition:|zzz' file</code></td><td data-page-node-id="QM8D5NGy8j9hunb3nK90HG">19 ✓</td><td data-page-node-id="UunyITArFc4Pu8ft3fffR6"><span class="sev s-ok" data-page-node-id="iRQssm7KO7NnB3xSVGoX2l">-E 交替可用</span></td></tr>
+      <tr data-page-node-id="Y8FWiujxK6rnkj0PCWwAlh"><td data-page-node-id="Ic1ilrt5MaUihEDVOLqPpN"><code data-page-node-id="Mb9PQ53rrG3XW3ywc69Slv">grep -c 'a\|b' file</code>（BRE 交替）</td><td data-page-node-id="J1wjzNMbYbnBKv8xmxCbSb">0（假阴性）</td><td data-page-node-id="g9AKOQYSaLB9iE3yrv9N2p"><span class="sev s-p0" data-page-node-id="WEeudWYxiijBebOiVvIXYg">BRE \| 失效</span></td></tr>
+    </tbody>
+  </table>
+  <b data-page-node-id="NlYLd9IJgnU16F2vfEi3Z4">本次教训：</b>初次扫描用 <code data-page-node-id="3GWFErGYY3DKDS94OAaKJ4">grep -rnoE '...\b'</code> 得出「全仓 0 条 TODO」，与随后裸串检索出的 28 个文件命中互相矛盾，才定位到此坑。凡以 grep 的「0 处」作为「不存在」的判定，必须先用确定存在的字符串做对照实验，或改用 ripgrep。
+</div>
+
+<h2 data-page-node-id="LuKQgyTiJ2D3pHsaP0C3TV">八、建议修复顺序</h2>
+<div class="card p0" data-page-node-id="HIoRVaxWKBYYEoHUt1fGte">
+  <h4 data-page-node-id="BgZQNGgQUwHFlXsXsPDnXL">第一批 · 高风险与门禁恢复（务必优先）</h4>
+  <ul data-page-node-id="gA1mh5ICbss2hMWSDmfW6a">
+    <li data-page-node-id="Y7PFtu3M9ayjwuEB0MBu4n"><b data-page-node-id="VOVJJ07yUqtTaLs6RqkfwF">MD5 密码写入（P0-1）</b>——先确认禅道 <code data-page-node-id="eZlWrAB7BG1PkLFPrafbDM">zt_user</code> 鉴权契约与迁移方案，再隔离兼容层、禁止新写入；校验路径保持不变。需安全侧授权，不宜单独动手。</li>
+    <li data-page-node-id="W9mdkiA9WvlaATJu6K1ASA"><b data-page-node-id="yoFNEn1AqEyyS0xrW33YXB">测试文件出静态目录（4.3）</b>——迁至 <code data-page-node-id="TziQ5GFTug0YMauMHE9zUr">tests/unit/frontend/</code>，零业务影响，同时消除公开可下载面。</li>
+    <li data-page-node-id="EIdGZRiTavnjD6Vv10MsGH"><b data-page-node-id="4cMJREs5WPh79z8hAYp5r2">文件长度门禁（P0-2 / Demo 问题）</b>——先就 <code data-page-node-id="OyYe7t5vrciLEEdESXzGGx">docs/Demo</code> 是否纳入扫描做决策（carve-out 或移出）；否则门禁无法转绿，也就无法作为下一阶段的前置门槛。8 个已基线增长文件应停止增长并逐步回落。</li>
+  </ul>
+</div>
+<div class="card p1" data-page-node-id="xmNa3Od2ha8L1KFkwPjrk3">
+  <h4 data-page-node-id="nE2xAgstN8JFeVOGPmzLCM">第二批 · 低成本高收益</h4>
+  <ul data-page-node-id="etDhBSpQYdSIZKsp8pZh97">
+    <li data-page-node-id="2JWYDfIhmY1ujQLGa45C13"><b data-page-node-id="OaEqUPbq7FAzJpEdW263lz">接入 <code data-page-node-id="EWs7tXFiw1MmQnn2Ihsqap">dept/repo.go:117 CountUsers</code>（P1-②）</b>——函数已实现，仅需接一行校验，补一条测试即可闭合。</li>
+    <li data-page-node-id="bAJCOdiEwspb3nKLJIL8bH"><b data-page-node-id="oVuuCZHi1CTciFHJkIav46">清理 8 项零引用 Go 声明 + <code data-page-node-id="r2MU2xGqkVoCLmjQyONcHB">Acceptanced</code> 拼写（P2）</b>——纯删除，编译期即可验证。</li>
+    <li data-page-node-id="Rwj7nuXltUShMqxUDEgHKs"><b data-page-node-id="zUNFSjkbO7EvZ0P5oqDj0r">修正 3 处文件头路径 + <code data-page-node-id="GrzG8m2w5C7Q5vQUjRglS5">BatchPage</code> 注释（5.1 / 5.2）</b>——纯文本修正。</li>
+    <li data-page-node-id="QcwKNMXZZfCkCZsKrs57lQ"><b data-page-node-id="R7Cij45XElePQSxamgpDTC">删除 <code data-page-node-id="VFU4uRoKInbsKDDPFBwK0v">basemodel.go:18-19</code> 僵尸 TODO 与注释代码（5.4）</b>——TODO 目标已达成。</li>
+    <li data-page-node-id="4h4P6hLQMWEKxXk8L0HwAS"><b data-page-node-id="U8iDrS75jSbwH71WE31VSk">同步 <code data-page-node-id="mZMPXFmm3wkhaW7FNvRFN1">primaryaction.go:192</code> 契约表（5.3）</b>——消除前后端行为依据矛盾。</li>
+  </ul>
+</div>
+<div class="card p2" data-page-node-id="CgQAlycRwDQbfPCr9io7Vu">
+  <h4 data-page-node-id="iWDOPAo7F4nKJpuxqGrcrt">第三批 · 需单独立项</h4>
+  <ul data-page-node-id="0pbHy2ArebIxPFxaoPM5In">
+    <li data-page-node-id="Ejx6qDgC7D3LQZwfKVTgCI"><b data-page-node-id="oEbCvNsVF1ocbO0uTRBIer"><code data-page-node-id="n0X3faYFrDbJ3FOKmkDgwa">metrics.css</code> 死样式清理（4.4）</b>——<b data-page-node-id="FHN3wEbZSusbGacq17Qg52">前提是先把动态拼接类名做成白名单</b>，否则会误删 <code data-page-node-id="vs7DIuMExz0MaRZhl4FoAW">wb-type-*</code> 等在用样式。</li>
+    <li data-page-node-id="ypCHDxGt2EDizPHR7DpWsD"><b data-page-node-id="xXAZfKrTEIsUcp8mb01HZd">抽取「姓名(账号)」公共实现（P2）</b>——三处逐字节相同，具备抽取条件；同批处理 <code data-page-node-id="ultKTkmrtbwZMYwDR9W9Wv">formatDuration</code> / <code data-page-node-id="TCd41zOmVXPvNANAx13SbL">contextHTTPError</code> 等重复。</li>
+    <li data-page-node-id="Dwzu12wMUKfuUJGHhPnF9T"><b data-page-node-id="a132GjY1QQ5AsFlGKOb8HR"><code data-page-node-id="U8HBxOGdTQwr5avjhcyeVw">/static</code> 中间件时序（P2）</b>——将 <code data-page-node-id="X1ajJp7kOaUlLmSDZuha3Y">Static</code> 移入 <code data-page-node-id="mybePkatyjhnhDQLvlNgxx">Setup()</code> 的 <code data-page-node-id="XXmod4wM8QWQrjBAKIzPsq">Use</code> 之后，并补一条断言中间件链的测试防回归。</li>
+    <li data-page-node-id="AAc2FlQ34vlI9p476MbMT5"><b data-page-node-id="cfdfUGNew2qIq8j5pTVVQs"><code data-page-node-id="CldboBz23WqbMCvziTC48I">schedule</code> 窗口删除前置校验（P1-①）</b>——需先新增「窗口已关联需求」的查询能力，属功能开发。</li>
+    <li data-page-node-id="eC0cD8fYBqfb89h9fgvWxr"><b data-page-node-id="d9vieS4vfSqEX8EAUwEfqd"><code data-page-node-id="sL2R9uF1rz2yuZyGfSvdYB">go.mod:75</code> replace（P2）</b>——确认存在原因后移除。</li>
+  </ul>
+</div>
+
+<h2 data-page-node-id="0j9cELI2cfn3YZGsbmIuIr">九、门禁盲区（本次审计覆盖、但门禁未覆盖）</h2>
+<table data-page-node-id="esqXf0WCICOGjWO4CHq1P8">
+  <thead data-page-node-id="RHzxchOH4x4hL16XOcrqtP"><tr data-page-node-id="A3Ai3HXuWrRz9vIx3zULdg"><th data-page-node-id="sjharEfMFk8tNxr46XRban">盲区</th><th data-page-node-id="ZomqfaiRwiU53rIKF5jMO9">本次发现</th><th data-page-node-id="Wh8f6FlRIREY0FJwkLcqMb">建议</th></tr></thead>
+  <tbody data-page-node-id="nkUiDNDpMoVw2mli2jzBOx">
+    <tr data-page-node-id="1UhmoTtShoCMOn0nEquTyF"><td data-page-node-id="nTq3RYlktSZGq6HdiYX0WJ">无 TODO/FIXME 治理检查</td><td data-page-node-id="I3x9ytmxo6BEAie3cdvlEx">4 条 TODO，其中 2 条为僵尸/已满足</td><td data-page-node-id="yx51d4P8jHr3XOOkqSFt5N">门禁内加入 TODO 格式与归属校验</td></tr>
+    <tr data-page-node-id="CvlBOCbGcBupJf9loC8kZ6"><td data-page-node-id="S57nnnhAL27ccTFLr33N9u">无死代码检测</td><td data-page-node-id="qsmxGKp3bC4ZoKD9Jz1f7L">8 项 Go 零引用声明、4 个错置测试文件、37 个死 CSS 类</td><td data-page-node-id="geBYby3HpQZh6DkIif7moT">引入 <code data-page-node-id="UxBiFv8YxC8pjtTEErlcp5">staticcheck</code>/<code data-page-node-id="kvhzazVm8QLu5IujO1q6q9">deadcode</code>（当前未安装）</td></tr>
+    <tr data-page-node-id="aK3x5fF3gGMHie5XmcFrVE"><td data-page-node-id="TnAH2mkHQsFv5UjYKmFnaM">无注释一致性检查</td><td data-page-node-id="507VWAGMzFmooXV6cAqlLy">3 处文件头路径失真、1 处 doc comment 名不符、1 处契约表过期</td><td data-page-node-id="Vb8O0b9c4AU7isrmW99y6x">加入「文件头路径 == 实际路径」与「doc comment 首词 == 标识符」校验</td></tr>
+    <tr data-page-node-id="yKF8rP7f3YxyXcg60NN0UU"><td data-page-node-id="HVHVSqRZEBwazelPd0rYYG">无中间件链顺序断言</td><td data-page-node-id="QyRXy9aipsvDb3uKT2aqa1"><code data-page-node-id="6abwimsyo1Jk5xBBhhJKZC">/static</code> 漏挂 5 个全局中间件</td><td data-page-node-id="OfkCunsoYahJCX7V17jVCk">测试中断言关键路由的 handler 链长度/成员</td></tr>
+    <tr data-page-node-id="1oDEYJKDjaaoElEBXRlCCy"><td data-page-node-id="MMKAvtRYU0POV6NwM4uCZq">patterns 门禁为 advisory</td><td data-page-node-id="Rg4FQUj9YO2wG1iqrwYhcZ">251 条发现、223 条新增，全部不阻塞</td><td data-page-node-id="7TUuR4GxHPzKMHAPFv54fE">按规则分批收敛，避免存量持续累积</td></tr>
+  </tbody>
+</table>
+
+<footer data-page-node-id="jVK6ZTihynMDKIQ09akLLk">
+  本报告为只读审计产物。所有结论基于 HEAD <code data-page-node-id="dczNEEzsuB6BtBPHdoUob1">3507193e</code> 的工作树实测、仓库自带门禁退出码、以及 gin v1.12.0 依赖源码交叉验证；未修改任何被跟踪文件。<br data-page-node-id="Mj8O94LI7UONNnXqceYLEI">
+  生成时间 2026-09-13 · 审计范围 技术债 / 死代码 / 非法注释 / 无效注释
+</footer>
+
+</div>
+</body>
+</html>

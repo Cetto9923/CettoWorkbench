@@ -293,11 +293,7 @@
 
   function addDraftRdNode() {
     if (!shared.isSchedulingDetailLoaded) {
-      if (typeof window.showToast === "function") {
-        window.showToast("业需详情加载中，请稍后再试", "error");
-      } else {
-        window.alert("业需详情加载中，请稍后再试");
-      }
+      window.showToast("业需详情加载中，请稍后再试", "error");
       return;
     }
     if (!shared.involvedProducts.length) {

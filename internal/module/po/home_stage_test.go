@@ -93,6 +93,33 @@ func TestAllStageRefQuery_ToolbarFilters_KeywordAndRelation(t *testing.T) {
 	if !strings.Contains(sqlRel, "assignedTo = ?") {
 		t.Fatalf("expected assignedTo = ? in story SQL: %s", sqlRel)
 	}
+
+	// Relation lead filter (我牵头: BRA = account, assignedTo = account)
+	queryLead := repo.allStageRefQuery(context.Background(), "alice", DemandsReq{Relation: "lead"})
+	stmtLead := db.Table("(?) AS all_stages", queryLead).Select("kind, id").
+		Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
+	sqlLead := stmtLead.SQL.String()
+	if !strings.Contains(sqlLead, "BRA = ?") {
+		t.Fatalf("expected BRA = ? in demand SQL: %s", sqlLead)
+	}
+	if !strings.Contains(sqlLead, "assignedTo = ?") {
+		t.Fatalf("expected assignedTo = ? in story SQL: %s", sqlLead)
+	}
+
+	// Relation participate filter (我参与: 需求池业务需求 + 非当前负责人 + 需求分析人)
+	queryPart := repo.allStageRefQuery(context.Background(), "alice", DemandsReq{Relation: "participate"})
+	stmtPart := db.Table("(?) AS all_stages", queryPart).Select("kind, id").
+		Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
+	sqlPart := stmtPart.SQL.String()
+	if !strings.Contains(sqlPart, "d.BRA <> ?") ||
+		!strings.Contains(sqlPart, "d.pool IS NOT NULL AND d.pool <> 0") ||
+		!strings.Contains(sqlPart, "zt_demandpool") ||
+		!strings.Contains(sqlPart, "FIND_IN_SET") {
+		t.Fatalf("expected demand-pool analyst participation in demand SQL: %s", sqlPart)
+	}
+	if strings.Contains(sqlPart, "assignedTo = ? OR EXISTS") {
+		t.Fatalf("participate must not classify story rows as participation: %s", sqlPart)
+	}
 }
 
 func TestSingleStage_CountAndPagedWithFilters_Priority(t *testing.T) {

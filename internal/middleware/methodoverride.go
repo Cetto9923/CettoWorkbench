@@ -1,11 +1,4 @@
-// =============================================================================
-// 文件: internal/middleware/methodoverride.go
-// 模块: 中间件
-// 类型: middleware
-// 职责: 将表单 _method 转换为真实 HTTP 方法。
-// 依赖: 无
-// =============================================================================
-
+// Package middleware 将表单 _method 转换为真实 HTTP 方法。
 package middleware
 
 import (

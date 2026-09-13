@@ -125,33 +125,20 @@ func TestObjectViewURLValidID(t *testing.T) {
 	}
 }
 
-// 验证 charter 使用对象自身 ID 作为首选参数，projectID 仅在 objectID 缺失时回退。
-func TestObjectViewURLCharterUsesObjectIDPrimary(t *testing.T) {
+// 章程详情必须有所属项目上下文，不能用 charter objectID 伪造详情链接。
+func TestObjectViewURLCharterRequiresProject(t *testing.T) {
 	zentao.SetConfig(config.ZentaoConfig{URL: "http://zentao.test"})
 	url := objectViewURL("charter", 42)
-	if !strings.Contains(url, "m=charter") || !strings.Contains(url, "f=view") {
-		t.Fatalf("charter url must use m=charter&f=view, got %q", url)
-	}
-	if !strings.Contains(url, "id=42") {
-		t.Fatalf("charter url must use id={ID}, got %q", url)
-	}
-	if strings.Contains(url, "projectID=0") {
-		t.Fatalf("charter url must not carry projectID=0 fallback, got %q", url)
+	if url != "" {
+		t.Fatalf("charter without project must not emit a URL, got %q", url)
 	}
 }
 
-// 验证 buildguideline 使用对象自身 ID 作为首选参数，projectID 仅在 objectID 缺失时回退。
-func TestObjectViewURLBuildguidelineUsesObjectIDPrimary(t *testing.T) {
+func TestObjectViewURLBuildguidelineRequiresProject(t *testing.T) {
 	zentao.SetConfig(config.ZentaoConfig{URL: "http://zentao.test"})
 	url := objectViewURL("buildguideline", 42)
-	if !strings.Contains(url, "m=buildguideline") || !strings.Contains(url, "f=view") {
-		t.Fatalf("buildguideline url must use m=buildguideline&f=view, got %q", url)
-	}
-	if !strings.Contains(url, "id=42") {
-		t.Fatalf("buildguideline url must use id={ID}, got %q", url)
-	}
-	if strings.Contains(url, "projectID=0") {
-		t.Fatalf("buildguideline url must not carry projectID=0 fallback, got %q", url)
+	if url != "" {
+		t.Fatalf("buildguideline without project must not emit a URL, got %q", url)
 	}
 }
 
@@ -243,9 +230,9 @@ func TestZentaoApprovalHelpersURLShape(t *testing.T) {
 		wantSubstrs []string
 	}{
 		{
-			name:        "CharterViewURL_objectID_wins",
+			name:        "CharterViewURL_uses_projectID",
 			got:         zentao.CharterViewURL(11, 99),
-			wantSubstrs: []string{"m=charter", "f=view", "id=11"},
+			wantSubstrs: []string{"m=charter", "f=view", "projectID=99"},
 		},
 		{
 			name:        "CharterViewURL_fallback_projectID",
@@ -253,14 +240,14 @@ func TestZentaoApprovalHelpersURLShape(t *testing.T) {
 			wantSubstrs: []string{"m=charter", "f=view", "projectID=99"},
 		},
 		{
-			name:        "CharterViewURL_both_zero_returns_empty",
+			name:        "CharterViewURL_without_project_returns_empty",
 			got:         zentao.CharterViewURL(0, 0),
 			wantSubstrs: nil,
 		},
 		{
-			name:        "BuildguidelineViewURL_objectID_wins",
+			name:        "BuildguidelineViewURL_uses_projectID",
 			got:         zentao.BuildguidelineViewURL(22, 88),
-			wantSubstrs: []string{"m=buildguideline", "f=view", "id=22"},
+			wantSubstrs: []string{"m=buildguideline", "f=view", "projectID=88"},
 		},
 		{
 			name:        "BuildguidelineViewURL_fallback_projectID",
@@ -268,7 +255,7 @@ func TestZentaoApprovalHelpersURLShape(t *testing.T) {
 			wantSubstrs: []string{"m=buildguideline", "f=view", "projectID=88"},
 		},
 		{
-			name:        "BuildguidelineViewURL_both_zero_returns_empty",
+			name:        "BuildguidelineViewURL_without_project_returns_empty",
 			got:         zentao.BuildguidelineViewURL(0, 0),
 			wantSubstrs: nil,
 		},
@@ -308,15 +295,14 @@ func TestZentaoApprovalHelpersURLShape(t *testing.T) {
 	}
 }
 
-// 验证 charter 走 objectViewURLWithProject 时优先使用对象自身 ID，与 done 列表
-// 实际 URL 拼接路径一致，避免出现禅道首页双 0 链接。
-func TestObjectViewURLWithProjectCharterPrefersObjectID(t *testing.T) {
+// 验证 charter 走 objectViewURLWithProject 时使用所属项目 ID，避免白屏。
+func TestObjectViewURLWithProjectCharterUsesProjectID(t *testing.T) {
 	zentao.SetConfig(config.ZentaoConfig{URL: "http://zentao.test"})
 	url := objectViewURLWithProject("charter", 7, 99)
-	if !strings.Contains(url, "id=7") {
-		t.Fatalf("charter must prefer object id=7, got %q", url)
+	if !strings.Contains(url, "projectID=99") {
+		t.Fatalf("charter must use project id=99, got %q", url)
 	}
-	if strings.Contains(url, "projectID=") {
-		t.Fatalf("charter must not fall back to projectID when objectID is non-zero, got %q", url)
+	if strings.Contains(url, "id=7") {
+		t.Fatalf("charter must not use charter object id=7, got %q", url)
 	}
 }

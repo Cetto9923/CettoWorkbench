@@ -61,10 +61,22 @@ func applyStoryToolbarFilters(q *gorm.DB, account string, req DemandsReq) *gorm.
 		q = q.Where("pri IN ?", []int{3, 4})
 	}
 	switch req.Relation {
-	case "handling":
-		q = q.Where("assignedTo = ?", account)
+	case "lead", "handling":
+		if account == "" {
+			q = q.Where("1 = 0")
+		} else {
+			q = q.Where("assignedTo = ?", account)
+		}
+	case "participate":
+		// 研发需求没有业务需求维度的“配合”关系；无业务需求且指派给
+		// 当前用户的研发需求仍由 lead/handling 归入“我负责”。
+		q = q.Where("1 = 0")
 	case "following":
-		q = q.Where("assignedTo <> ? OR assignedTo IS NULL OR assignedTo = ''", account)
+		if account == "" {
+			q = q.Where("1 = 0")
+		} else {
+			q = q.Where("assignedTo <> ? OR assignedTo IS NULL OR assignedTo = ''", account)
+		}
 	}
 	return q
 }

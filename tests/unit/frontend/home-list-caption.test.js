@@ -46,12 +46,15 @@ async function loadHomeAndResolve({ search, loadPageSize, items, total }) {
   const window = {
     location: { pathname: '/home', search },
     history: { replaceState() {} },
+    escapeHtml: (v) => String(v == null ? '' : v),
     appFetch(url) {
       requests.push(url);
       return new Promise((resolve) => { resolveFetch = resolve; });
     },
     PersonalList: {
+      PAGE_SIZE_OPTIONS: [10, 15, 20, 50, 100],
       escapeHtml: (v) => String(v == null ? '' : v),
+      priorityBadge: () => '',
       loadPageSize,
       savePageSize(key, value) { saveCalls.push([key, value]); },
       renderPagination(options) { paginationOptions = options; },

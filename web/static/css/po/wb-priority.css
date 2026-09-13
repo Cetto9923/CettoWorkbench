@@ -363,52 +363,52 @@
 .wb-status-tag.wb-status-success,
 .wb-status-tag.wb-status-green,
 .done-tag.success {
-  background: var(--color-success-bg, #f0fdf4);
-  color: var(--color-success-fill, #15803d);
-  border-color: var(--color-success-border, #bbf7d0);
+  background: #f0fdf4;
+  color: #15803d;
+  border-color: #bbf7d0;
 }
 .wb-status-tag.wb-status-success .wb-status-dot,
 .wb-status-tag.wb-status-green .wb-status-dot {
-  background: var(--color-success-accent, #16a34a);
+  background: #16a34a;
 }
 
 /* 2. Processing (蓝色系：开发中、测试中、评审、进行中) */
 .wb-status-tag.wb-status-processing,
 .wb-status-tag.wb-status-blue,
 .done-tag.blue {
-  background: var(--color-info-bg, #eff6ff);
-  color: var(--color-info-fill, #1d4ed8);
-  border-color: var(--color-info-border, #bfdbfe);
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
 }
 .wb-status-tag.wb-status-processing .wb-status-dot,
 .wb-status-tag.wb-status-blue .wb-status-dot {
-  background: var(--color-info-fill, #2563eb);
+  background: #2563eb;
 }
 
-/* 3. Warning (琥珀/橙黄色系：待评审、待澄清、待排期、待处理、审批中) */
+/* 3. Warning (琥珀/暖橙系：待评审、待澄清、待排期、待处理、审批中 · 解决亮黄泛白失真缺陷) */
 .wb-status-tag.wb-status-warning,
 .wb-status-tag.wb-status-amber,
 .done-tag.warning {
-  background: var(--color-warning-bg, #fffbeb);
-  color: var(--color-warning-fill, #b45309);
-  border-color: var(--color-warning-border, #fde68a);
+  background: #fffbeb;
+  color: #b45309;
+  border-color: #fde68a;
 }
 .wb-status-tag.wb-status-warning .wb-status-dot,
 .wb-status-tag.wb-status-amber .wb-status-dot {
-  background: var(--color-warning-fill, #d97706);
+  background: #d97706;
 }
 
 /* 4. Danger (红色系：挂起、驳回、阻塞、超期、异常、风险) */
 .wb-status-tag.wb-status-danger,
 .wb-status-tag.wb-status-red,
 .done-tag.danger {
-  background: var(--color-danger-bg, #fef2f2);
-  color: var(--color-danger-strong, #b91c1c);
-  border-color: var(--color-danger-border, #fecaca);
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
 }
 .wb-status-tag.wb-status-danger .wb-status-dot,
 .wb-status-tag.wb-status-red .wb-status-dot {
-  background: var(--color-danger-accent, #dc2626);
+  background: #dc2626;
 }
 
 /* 5. Neutral (灰色系：暂存、草稿、已关闭、未确认) */

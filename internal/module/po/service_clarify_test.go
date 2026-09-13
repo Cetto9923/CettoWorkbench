@@ -2,6 +2,8 @@ package po
 
 import (
 	"testing"
+
+	"workbench/internal/pkg/personlabel"
 )
 
 func TestDemandClarifySubmitReq_Validate(t *testing.T) {
@@ -242,9 +244,9 @@ func TestDemandClarifySubmitReq_Validate(t *testing.T) {
 			{"002345", "", "002345"},
 		}
 		for _, tt := range tests {
-			got := FormatAccountName(tt.account, tt.realname)
+			got := personlabel.Format(tt.account, tt.realname)
 			if got != tt.want {
-				t.Errorf("FormatAccountName(%q, %q) = %q, want %q", tt.account, tt.realname, got, tt.want)
+				t.Errorf("personlabel.Format(%q, %q) = %q, want %q", tt.account, tt.realname, got, tt.want)
 			}
 		}
 	})

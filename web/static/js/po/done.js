@@ -8,10 +8,9 @@
 (function () {
   "use strict";
 
-  // 每页条数选项：与分页组件（PersonalList / components/pager.html）同一套取值。
-  var PAGE_SIZE_OPTIONS = (window.PersonalList && window.PersonalList.PAGE_SIZE_OPTIONS) || [10, 20, 50, 100];
+  var PAGE_SIZE_OPTIONS = window.PersonalList.PAGE_SIZE_OPTIONS;
 
-  var esc = (window.PersonalList && window.PersonalList.escapeHtml) || function (s) { return String(s == null ? "" : s); };
+  var esc = window.escapeHtml;
   var PL = window.PersonalList || {};
   // 把 ZenTao API kind（demand/story/task/bug/charter/...）映射成 wb-type CSS kind
   // （business/story/...），与 PersonalList.OBJECT_KIND_FROM_API / wb-priority.css 色板对齐。
@@ -83,20 +82,24 @@
   }
 
   function loadMeta() {
+    function setEnabled(on) {
+      ["doneAction", "doneResult", "doneProject"].forEach(function (id) { var el = $(id); if (el) el.disabled = !on; });
+    }
     fetch("/done/meta", { credentials: "same-origin" })
-      .then(function (r) { return r.json(); })
+      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
       .then(function (res) {
-        if (!res || !res.data) return;
+        if (!res || !res.data) throw new Error("empty meta");
         var d = res.data;
-        metaData.actions = d.actionTypes || [];
-        metaData.results = d.results || [];
-        metaData.projects = d.projects || [];
-
+        metaData.actions = d.actionTypes || []; metaData.results = d.results || []; metaData.projects = d.projects || [];
         renderSelectOptions("doneAction", metaData.actions, "全部操作");
         renderSelectOptions("doneResult", metaData.results, "全部结果");
         renderSelectOptions("doneProject", metaData.projects, "全部项目");
+        setEnabled(true);
       })
-      .catch(function () {});
+      .catch(function () {
+        setEnabled(false);
+        window.showToast("筛选条件加载失败，请稍后重试", "error");
+      });
   }
 
   function renderSelectOptions(selectId, list, defaultLabel) {

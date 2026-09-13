@@ -33,6 +33,8 @@ const sandbox = {
 };
 sandbox.global = sandbox;
 sandbox.global.jQuery = sandbox.jQuery;
+// 真源桩：production 由 ui.js 提供 window.escapeHtml（base.html 全站加载，早于页面 page_js）。
+sandbox.window.escapeHtml = (v) => String(v == null ? "" : v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 
 // Load personal-list.js (provides escapeHtml, priorityBadge, objectTypeBadge)
 vm.runInNewContext(

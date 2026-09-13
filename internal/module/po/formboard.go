@@ -107,7 +107,7 @@ type BoardDemandItem struct {
 	Collapse       bool                         `json:"collapse"`
 	ActionLabel    string                       `json:"actionLabel"`
 	URL            string                       `json:"url"`
-	PrimaryAction  *primaryaction.PrimaryAction `json:"primaryAction,omitempty"` // Stage 5: 服务端主操作
+	PrimaryAction  *primaryaction.PrimaryAction `json:"primaryAction,omitempty"` // 服务端主操作
 }
 
 // BoardDemandResp 是需求看板响应。

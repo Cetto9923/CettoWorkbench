@@ -15,6 +15,8 @@ import (
 	"strings"
 	"time"
 
+	"workbench/internal/pkg/demandstage"
+	"workbench/internal/pkg/personlabel"
 	"workbench/internal/pkg/zentao"
 )
 
@@ -318,7 +320,7 @@ func (s *DetailService) buildHistory(ctx context.Context, row *DemandDetailRow) 
 		Actions:        actItems,
 		StageDurations: []StageDurationItem{},
 		Lifecycle: DemandLifecycle{
-			CreatedBy:      defaultDash(FormatAccountName(row.CreatedBy, row.CreatedByName)),
+			CreatedBy:      defaultDash(personlabel.Format(row.CreatedBy, row.CreatedByName)),
 			CreatedDate:    createdStr,
 			AssignedTo:     defaultDash(row.AssignedToName),
 			AssignedDate:   createdStr,
@@ -335,56 +337,7 @@ func (s *DetailService) buildHistory(ctx context.Context, row *DemandDetailRow) 
 
 func mapValueStage(stage, status string) (string, string) {
 	// F05：返回值必须落在 buildValueStream.stagesDef（含 closed）或 unknown；禁止默认回退 clarify。
-	st := strings.ToLower(strings.TrimSpace(status))
-	switch st {
-	case "closed":
-		return "closed", "已关闭"
-	case "released":
-		return "greyverify", "生产验证"
-	case "waitdeliver", "delivered":
-		return "publish", "发布"
-	case "acceptanced":
-		return "acceptance", "已验收"
-	case "waitacceptance":
-		return "acceptance", "待验收"
-	case "testing":
-		return "testing", "测试中"
-	case "developing":
-		// 与首页阶段卡「提测」对齐：禅道 developing 在价值流上落在提测节点。
-		return "submittest", "提测"
-	case "clarified":
-		return "schedule", "已排期"
-	case "active", "clarify":
-		return "clarify", "澄清中"
-	case "draft", "refuse", "wait":
-		return "accept", "已受理"
-	}
-
-	sg := strings.ToLower(strings.TrimSpace(stage))
-	switch sg {
-	case "wait":
-		return "accept", "已受理"
-	case "inroadmap", "clarify":
-		return "clarify", "澄清中"
-	case "incharter", "schedule":
-		return "schedule", "排期中"
-	case "developing":
-		return "submittest", "提测"
-	case "delivering", "testing":
-		return "testing", "测试中"
-	case "delivered":
-		return "publish", "发布"
-	case "closed":
-		return "closed", "已关闭"
-	default:
-		if st == "" && sg == "" {
-			return "unknown", "未知"
-		}
-		if st != "" || sg != "" {
-			return "unknown", "未知"
-		}
-		return "unknown", "未知"
-	}
+	return demandstage.Map(stage, status)
 }
 
 func firstNonEmpty(vals ...string) string {

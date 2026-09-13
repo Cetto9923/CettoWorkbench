@@ -1,4 +1,4 @@
-/* 敏捷小组列表 / 详情 / 确认 Drawer — 复用工作台色板，不引入新框架 */
+/* 敏捷小组列表 / 详情 / 确认 Drawer */
 .at-page-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px}
 .at-page-head h2{margin:0 0 4px;font-size:18px;font-weight:720}
 .at-page-head p{margin:0;color:var(--color-text-secondary);font-size:12px}

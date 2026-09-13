@@ -14,17 +14,10 @@ import (
 )
 
 type fakeTaskStatusGateway struct {
-	called       bool
-	params       zentao.TaskStatusParams
 	updateCalled bool
 	updateParams zentao.UpdateTaskParams
 }
 
-func (f *fakeTaskStatusGateway) UpdateTaskStatus(ctx context.Context, p zentao.TaskStatusParams) error {
-	f.called = true
-	f.params = p
-	return nil
-}
 func (f *fakeTaskStatusGateway) UpdateTask(ctx context.Context, p zentao.UpdateTaskParams) error {
 	f.updateCalled = true
 	f.updateParams = p

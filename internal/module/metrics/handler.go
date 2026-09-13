@@ -22,9 +22,7 @@ import (
 	"workbench/internal/pkg/render"
 )
 
-// Handler 处理 /metrics/{manage,radar,api} 三条路由。
-// 三条路由均挂 middleware.RequirePerm(perm.PoHomeList) 复用现有 capability，
-// 不新增 perm 常量（避免破坏 TestAllPermissionsComplete）。
+// Handler 处理 /metrics/{manage,radar,api} 等路由；capability 复用 perm.PoHomeList。
 type Handler struct {
 	renderer *render.Renderer
 	service  *Service
@@ -37,15 +35,12 @@ func NewHandler(renderer *render.Renderer, service *Service, logger *zap.Logger)
 }
 
 // RegisterRoutes 注册路由到 rg（已带 RequireLogin + RecordOperationLog）。
-// 注意：模板名以字符串形式直接传入（与 handler_issue_risk.go 一致），
-// 未走 constants/templates.go，符合"不触碰 constants/templates.go"边界。
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g := rg.Group("/metrics")
 	permMW := middleware.RequirePerm(perm.PoHomeList)
 	g.GET("/manage", permMW, h.Manage)
 	g.GET("/radar", permMW, h.Radar)
 	g.GET("/api", permMW, h.API)
-	g.GET("/radar/data", permMW, h.RadarData)
 }
 
 // Manage 渲染指标管理页面（占位骨架在 metrics/manage.html）。
@@ -97,27 +92,5 @@ func (h *Handler) API(c *gin.Context) {
 		"total":    resp.Total,
 		"page":     resp.Page,
 		"pageSize": resp.PageSize,
-	})
-}
-
-// RadarData 返回 /metrics/radar 的 JSON 数据：5 分类 KPI + 异常指标分组列表。
-// 失败统一 503 + 短消息，与 API 行为一致。
-func (h *Handler) RadarData(c *gin.Context) {
-	resp, err := h.service.Radar(c.Request.Context())
-	if err != nil {
-		if h.logger != nil {
-			h.logger.Warn("metrics radar failed", zap.Error(err))
-		}
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"success": false,
-			"message": "禅道指标数据暂不可用",
-		})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{
-		"success":       true,
-		"categories":    resp.Categories,
-		"abnormalItems": resp.AbnormalItems,
-		"generatedAt":   resp.GeneratedAt,
 	})
 }

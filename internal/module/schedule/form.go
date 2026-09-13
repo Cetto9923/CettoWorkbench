@@ -29,8 +29,7 @@ const (
 
 	// 排期保存请求的批量上限（数据库写作合同）。超过即拒绝，不开事务，
 	// 避免长事务锁竞争 / 行锁耗尽。N=50 / M=50 为初值，依据：
-	// 现网单业需下的研发需求与单研发需求下的执行任务典型量级（PoC 阶段
-	// 校准），后续按审计证据在 quality.md 流程中调整。
+	// 现网单业需下的研发需求与单研发需求下的执行任务典型量级（PoC 阶段校准），后续按审计证据在 quality.md 流程中调整。
 	MaxSchedulingStories       = 50
 	MaxSchedulingTasksPerStory = 50
 	MaxStoryTasks              = 50
@@ -517,6 +516,7 @@ type SchedulingWindowOption struct {
 type SchedulingUserOption struct {
 	Account  string `json:"account"`
 	Realname string `json:"realname"`
+	Pinyin   string `json:"pinyin,omitempty"`
 }
 
 // ZtProductOption 禅道产品/系统下拉选项。

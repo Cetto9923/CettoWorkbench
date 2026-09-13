@@ -144,7 +144,7 @@ func (h *Handler) NewForm(c *gin.Context) {
 	})
 }
 
-// BatchCreate 渲染批量创建用户表单页。
+// BatchPage 渲染批量创建用户表单页。
 func (h *Handler) BatchPage(c *gin.Context) {
 	actor := middleware.CurrentUser(c)
 	roles, err := h.svc.GetRoles(c.Request.Context(), actor)

@@ -22,10 +22,8 @@ import (
 // primaryActionFactsDemand  业务需求行派生主操作所需的服务层事实。
 //
 // 计算规则与矩阵 / 工程 约束一致：
-//   - capabilities 由 perm.GrantedCapabilities 查询；当前 Service 不直接查 DB，
-//     用 service 拥有的 actor 信息（最简形式：actor.IsSuperAdmin → 放行；否则假定
-//     middleware 已 RequirePerm(PoHomeList|ScheduleList|PoBoardDemandList) 等）。
-//     后续 Stage 6+ 可接入真正的 capability 检查；当前先按 actor 字段硬判定。
+//   - capabilities 由 hasCapability 读取认证中间件放入请求上下文的权限快照；
+//     超级管理员放行，普通用户通过 perm.HasAnyGranted 检查实际能力。
 //   - 对象级授权：IsAcceptanceOwner = (accepter == actor.Account)。
 //   - 评价 / 测试单事实：批量 IN 查询一次性 fetch。
 type primaryActionFactsDemand struct {

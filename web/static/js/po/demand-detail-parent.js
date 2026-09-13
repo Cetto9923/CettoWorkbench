@@ -1,8 +1,7 @@
 // =============================================================================
 // 文件: web/static/js/po/demand-detail-parent.js
 // 模块: PO 工作台
-// 职责: 父业务需求聚合视图渲染（renderParentAggregate）；与 detail 其他
-//       Tab 拆分以保持主渲染器在 500 行硬性上限内。
+// 职责: 父业务需求聚合视图渲染（renderParentAggregate）。
 // =============================================================================
 
 (function (root, factory) {
@@ -16,7 +15,7 @@
 })(typeof self !== "undefined" ? self : this, function (RichText) {
   "use strict";
 
-  var esc = (RichText && RichText.esc) || function (s) { return String(s == null ? "" : s); };
+  var esc = window.escapeHtml;
 
   function renderParentAggregate(pa) {
     if (!pa) return '<div class="dd-card dd-card-body">暂无子需求数据</div>';

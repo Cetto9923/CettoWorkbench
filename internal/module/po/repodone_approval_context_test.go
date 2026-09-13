@@ -3,7 +3,7 @@
 // 模块: PO 工作台
 // 类型: test
 // 职责: 回归审批对象（章程 / 建设指引 / 计划变更）的禅道跳转链接与上下文加载：
-//       1. 链接必须用对象自身 ID，绝不出现 projectID=0&id=0 的禅道首页链接；
+//       1. 章程 / 建设指引链接必须用所属 projectID，缺失上下文时不生成链接；
 //       2. 上下文查询失败必须报错，不能被当成"对象不存在"静默降级。
 // 依赖: github.com/DATA-DOG/go-sqlmock, gorm.io/gorm
 // =============================================================================
@@ -21,8 +21,7 @@ import (
 )
 
 // 复现用户上报的 "项目建设指引 28 → 禅道首页" 链接形态：
-// 旧实现固定拼 projectID=%d，上下文缺失时产出 projectID=0&id=0。
-// zt_action.objectID 实测非 0，因此三类审批对象都必须落在 id={objectID}。
+// charter / buildguideline 的禅道 view 入口按项目打开，不能把对象 ID 当 projectID。
 func TestApprovalObjectURLNeverEmitsZeroIDHomepageLink(t *testing.T) {
 	zentao.SetConfig(config.ZentaoConfig{URL: "http://127.0.0.1:8080"})
 
@@ -32,12 +31,18 @@ func TestApprovalObjectURLNeverEmitsZeroIDHomepageLink(t *testing.T) {
 		projectID  uint
 		wantID     string
 	}{
-		{"buildguideline", 28, 0, "id=28"},
-		{"charter", 261, 239, "id=261"},
+		{"buildguideline", 28, 0, ""},
+		{"charter", 261, 239, "projectID=239"},
 		{"planchange", 21, 0, "id=21"},
 	}
 	for _, tc := range cases {
 		url := objectViewURLWithProject(tc.objectType, tc.objectID, tc.projectID)
+		if tc.wantID == "" {
+			if url != "" {
+				t.Fatalf("%s without project must not emit URL, got %q", tc.objectType, url)
+			}
+			continue
+		}
 		if !strings.Contains(url, "m="+tc.objectType) || !strings.Contains(url, "f=view") {
 			t.Fatalf("%s url = %q, want m=%s&f=view", tc.objectType, url, tc.objectType)
 		}

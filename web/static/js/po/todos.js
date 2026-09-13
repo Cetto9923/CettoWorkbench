@@ -8,20 +8,10 @@
 (function () {
   "use strict";
 
-  var esc = (window.PersonalList && window.PersonalList.escapeHtml) || function (v) { return String(v == null ? "" : v); };
+  var esc = window.escapeHtml;
   var PL = window.PersonalList || {};
-  var priorityBadge = PL.priorityBadge || function (raw) {
-    var n = parseInt(String(raw || "").replace(/^p/i, ""), 10);
-    if (isNaN(n) || n < 1 || n > 4) { return '<span class="wb-priority" data-priority="">—</span>'; }
-    return '<span class="wb-priority" data-priority="' + n + '">P' + n + "</span>";
-  };
-  var objectTypeBadgeFromKind = PL.objectTypeBadgeFromKind || function (kind) {
-    var map = { demand: "business", story: "story", task: "task", bug: "bug", test: "testtask", testtask: "testtask", approval: "approval", todo: "todo", issue: "issue", risk: "risk" };
-    var labels = { business: "业务需求", story: "研发需求", task: "任务", bug: "Bug", testtask: "测试单", approval: "审批", todo: "待办", issue: "问题", risk: "风险" };
-    var k = map[String(kind || "").toLowerCase()] || "";
-    if (!k) { return '<span class="wb-type wb-type-unknown">—</span>'; }
-    return '<span class="wb-type wb-type-' + k + '">' + (labels[k] || k) + "</span>";
-  };
+  var priorityBadge = PL.priorityBadge;
+  var objectTypeBadgeFromKind = PL.objectTypeBadgeFromKind;
   // API kind → wb-type cssKind（与 PersonalList.idChipHtml 期望对齐）。
   var chipKindFromApi = function (apiKind) {
     var map = { demand: "business", business: "business", story: "story", task: "task", bug: "bug",
@@ -37,6 +27,7 @@
   var state = {
     focus: "pending",
     action: "all",
+    approvalType: "all",
     stage: "all",
     objectType: "",
     relation: "all",
@@ -54,9 +45,18 @@
   var VALID_FOCUSES = ["pending", "today", "overdue", "blocked", "p1"];
   var VALID_RELATIONS = ["all", "in_charge", "cooperate"];
   var VALID_ACTIONS = ["all", "todo_review", "todo_schedule", "todo_verify", "todo_deliver", "todo_follow"];
+  var VALID_APPROVAL_TYPES = ["all", "charter", "buildguideline", "planchange", "review", "reviewchange", "reviewbymanager"];
   var VALID_STAGES = ["all", "accept", "clarify", "schedule", "developing", "testing", "waitacceptance", "acceptanced", "publish", "released"];
   var VALID_RESPONSIBILITIES = ["all", "my_action", "my_follow_up"];
   var hasCorrectedPage = false;
+
+  function updateToolbarVisibility() {
+    var ot = state.objectType, isDemand = ot === "demand", isStory = ot === "story", isApproval = ot === "approval";
+    if ($("todosAction")) { $("todosAction").hidden = !isDemand; }
+    if ($("todosStage")) { $("todosStage").hidden = !isDemand; }
+    if ($("todosResponsibility")) { $("todosResponsibility").hidden = !(isDemand || isStory); }
+    if ($("todosApprovalType")) { $("todosApprovalType").hidden = !isApproval; }
+  }
 
   var searchTimer = null;
   var summaryMap = { countPending: "pending", countToday: "today", countOverdue: "overdue", countBlocked: "blocked", countP1: "p1" };
@@ -66,11 +66,18 @@
     if (!window.history || !window.history.replaceState) { return; }
     var p = new URLSearchParams();
     if (state.focus !== "pending") { p.set("focus", state.focus); }
-    if (state.action !== "all") { p.set("action", state.action); }
-    if (state.stage !== "all") { p.set("stage", state.stage); }
     if (state.objectType !== "") { p.set("objectType", state.objectType); }
+    if (state.objectType === "demand") {
+      if (state.action !== "all") { p.set("action", state.action); }
+      if (state.stage !== "all") { p.set("stage", state.stage); }
+    }
+    if (state.objectType === "demand" || state.objectType === "story") {
+      if (state.responsibility !== "all") { p.set("responsibility", state.responsibility); }
+    }
+    if (state.objectType === "approval") {
+      if (state.approvalType !== "all") { p.set("approvalType", state.approvalType); }
+    }
     if (state.relation !== "all") { p.set("relation", state.relation); }
-    if (state.responsibility !== "all") { p.set("responsibility", state.responsibility); }
     if (state.keyword) { p.set("keyword", state.keyword); }
     if (state.page > 1) { p.set("page", String(state.page)); }
     if (state.pageSize !== 20) { p.set("pageSize", String(state.pageSize)); }
@@ -80,7 +87,10 @@
   }
 
   function initFromUrl() {
-    if (!window.location.search) { return; }
+    if (!window.location.search) {
+      updateToolbarVisibility();
+      return;
+    }
     var sp = new URLSearchParams(window.location.search);
     var focus = (sp.get("focus") || "").trim();
     if (VALID_FOCUSES.indexOf(focus) >= 0) {
@@ -106,22 +116,18 @@
       state.objectType = ot;
     }
 
-    var act = (sp.get("action") || "").trim();
-    if (VALID_ACTIONS.indexOf(act) >= 0 && $("todosAction")) {
-      state.action = act;
-      $("todosAction").value = act;
+    if (state.objectType === "demand") {
+      var act = (sp.get("action") || "").trim(), stg = (sp.get("stage") || "").trim();
+      if (VALID_ACTIONS.indexOf(act) >= 0 && $("todosAction")) { state.action = act; $("todosAction").value = act; }
+      if (VALID_STAGES.indexOf(stg) >= 0 && $("todosStage")) { state.stage = stg; $("todosStage").value = stg; }
     }
-
-    var stg = (sp.get("stage") || "").trim();
-    if (VALID_STAGES.indexOf(stg) >= 0 && $("todosStage")) {
-      state.stage = stg;
-      $("todosStage").value = stg;
+    if (state.objectType === "demand" || state.objectType === "story") {
+      var resp = (sp.get("responsibility") || "").trim();
+      if (VALID_RESPONSIBILITIES.indexOf(resp) >= 0 && $("todosResponsibility")) { state.responsibility = resp; $("todosResponsibility").value = resp; }
     }
-
-    var resp = (sp.get("responsibility") || "").trim();
-    if (VALID_RESPONSIBILITIES.indexOf(resp) >= 0 && $("todosResponsibility")) {
-      state.responsibility = resp;
-      $("todosResponsibility").value = resp;
+    if (state.objectType === "approval") {
+      var app = (sp.get("approvalType") || "").trim();
+      if (VALID_APPROVAL_TYPES.indexOf(app) >= 0 && $("todosApprovalType")) { state.approvalType = app; $("todosApprovalType").value = app; }
     }
 
     var kw = (sp.get("keyword") || "").trim();
@@ -135,20 +141,34 @@
       state.page = p;
     }
     var ps = parseInt(sp.get("pageSize"), 10);
-    var pageSizes = window.PersonalList.PAGE_SIZE_OPTIONS || [10, 20, 50, 100];
+    var pageSizes = window.PersonalList.PAGE_SIZE_OPTIONS;
     if (!isNaN(ps) && pageSizes.indexOf(ps) >= 0) {
       state.pageSize = ps;
     } else {
       // URL 未带 pageSize 时，优先使用上次保存值，再退回默认值。
       state.pageSize = window.PersonalList.loadPageSize("po.todos.pageSize", state.pageSize, pageSizes);
     }
+    updateToolbarVisibility();
   }
 
   function buildUrl() {
     var params = new URLSearchParams();
-    Object.keys(state).forEach(function (key) {
-      if (state[key] !== "") { params.set(key, String(state[key])); }
-    });
+    if (state.focus !== "") { params.set("focus", state.focus); }
+    if (state.objectType !== "") { params.set("objectType", state.objectType); }
+    if (state.objectType === "demand") {
+      if (state.action !== "all") { params.set("action", state.action); }
+      if (state.stage !== "all") { params.set("stage", state.stage); }
+    }
+    if (state.objectType === "demand" || state.objectType === "story") {
+      if (state.responsibility !== "all") { params.set("responsibility", state.responsibility); }
+    }
+    if (state.objectType === "approval") {
+      if (state.approvalType !== "all") { params.set("approvalType", state.approvalType); }
+    }
+    if (state.relation !== "all") { params.set("relation", state.relation); }
+    if (state.keyword !== "") { params.set("keyword", state.keyword); }
+    params.set("page", String(state.page));
+    params.set("pageSize", String(state.pageSize));
     return "/todos/items?" + params.toString();
   }
 
@@ -233,6 +253,23 @@
         var key = btn.getAttribute("data-object-type") || "";
         if (state.objectType === key) { return; }
         state.objectType = key;
+
+        // 切换对象 TAB 时，清除不兼容的专有筛选条件
+        if (state.objectType !== "demand") {
+          state.action = "all"; state.stage = "all";
+          if ($("todosAction")) { $("todosAction").value = "all"; }
+          if ($("todosStage")) { $("todosStage").value = "all"; }
+        }
+        if (state.objectType !== "demand" && state.objectType !== "story") {
+          state.responsibility = "all";
+          if ($("todosResponsibility")) { $("todosResponsibility").value = "all"; }
+        }
+        if (state.objectType !== "approval") {
+          state.approvalType = "all";
+          if ($("todosApprovalType")) { $("todosApprovalType").value = "all"; }
+        }
+        updateToolbarVisibility();
+
         state.page = 1;
         hasCorrectedPage = false;
         syncUrl();
@@ -343,7 +380,7 @@
       });
     });
 
-    ["todosAction:action", "todosStage:stage", "todosResponsibility:responsibility"].forEach(function (pair) {
+    ["todosAction:action", "todosStage:stage", "todosResponsibility:responsibility", "todosApprovalType:approvalType"].forEach(function (pair) {
       var parts = pair.split(":");
       var sel = $(parts[0]);
       if (sel) {
@@ -360,14 +397,9 @@
     var resetBtn = $("todosResetBtn");
     if (resetBtn) {
       resetBtn.addEventListener("click", function () {
-        state.focus = "pending";
-        state.action = "all";
-        state.stage = "all";
-        state.objectType = "";
-        state.relation = "all";
-        state.responsibility = "all";
-        state.keyword = "";
-        state.page = 1;
+        state.focus = "pending"; state.action = "all"; state.approvalType = "all";
+        state.stage = "all"; state.objectType = ""; state.relation = "all";
+        state.responsibility = "all"; state.keyword = ""; state.page = 1;
 
         document.querySelectorAll("#todosQuickChips .header-quick-chip").forEach(function (c) {
           var isPending = c.getAttribute("data-focus") === "pending";
@@ -379,9 +411,10 @@
         });
 
         if (kwInput) { kwInput.value = ""; }
-        if ($("todosAction")) { $("todosAction").value = "all"; }
-        if ($("todosStage")) { $("todosStage").value = "all"; }
-        if ($("todosResponsibility")) { $("todosResponsibility").value = "all"; }
+        ["todosAction", "todosStage", "todosResponsibility", "todosApprovalType"].forEach(function (id) {
+          if ($(id)) { $(id).value = "all"; }
+        });
+        updateToolbarVisibility();
         hasCorrectedPage = false;
         syncUrl();
         refresh();

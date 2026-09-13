@@ -130,9 +130,8 @@
   text-underline-offset: 2px;
 }
 .done-obj-id-plain { color: inherit; }
-/* 死代码：.done-obj-chip-* 旧别名（Agent 202fb4b6 留下，done.js 行渲染已改走
-   PersonalList.idChipHtml 公共 helper，直接产出 .wb-type.wb-type-{kind}），
-   现已无任何 HTML 在使用这些 class。色板全部以 wb-priority.css 的 .wb-type-* 为真源。 */
+/* 正常渲染使用 PersonalList.idChipHtml 的 .wb-type-* 色板。
+   helper 缺失时 done.js 仍生成 .done-obj-chip 及旧类型别名，基础样式保留。 */
 .wb-done-title-link {
   border: 0;
   background: transparent;

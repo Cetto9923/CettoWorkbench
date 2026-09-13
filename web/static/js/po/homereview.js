@@ -10,11 +10,7 @@
   var ACCEPTANCE_IDS = ["poDemandAcceptanceModal", "poDemandAcceptanceOverlay"];
   var ACTION_IDS = ["poActionDrawer", "poActionDrawerOverlay"];
 
-  function showToast(message, level) {
-    if (typeof window.showToast === "function") {
-      window.showToast(message, level || "info");
-    }
-  }
+  function showToast(message, level) { window.showToast(message, level || "info"); }
 
   var currentItem = null;
   var currentAction = null;
@@ -126,10 +122,7 @@
       if (typeof window.openPoSubmitTestModal === "function") {
         window.openPoSubmitTestModal(item);
       } else {
-        // 无弹窗脚本时不回落到旧整页壳
-        if (typeof window.showToast === "function") {
-          window.showToast("提测弹窗未加载，请刷新首页后重试", "error");
-        }
+        window.showToast("提测弹窗未加载，请刷新首页后重试", "error");
       }
     });
     $("#poDemandAcceptanceCloseBtn, #poDemandAcceptanceOverlay").on("click", function () {

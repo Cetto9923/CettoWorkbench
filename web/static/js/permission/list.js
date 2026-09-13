@@ -2,7 +2,7 @@
  * 文件: web/static/js/permission/list.js
  * 模块: 权限配置
  * 职责: 工作台内嵌权限配置 — 4 分类 + 8 角色 Tag OR/跨维 AND + Drawer + 角色页面 ACL
- * 模式: embedded（PMO 组织管理）优先；兼容旧独立页（若仍加载）
+ * 模式: embedded（PMO 组织管理）
  */
 (function () {
   const ROLE_LABELS = {

@@ -10,19 +10,10 @@
   "use strict";
 
   var PL = window.PersonalList || {};
-  var PAGE_SIZE_OPTIONS = PL.PAGE_SIZE_OPTIONS || [10, 20, 50, 100];
-  var esc = PL.escapeHtml || function (v) { return String(v == null ? "" : v); };
-  var priorityBadge = PL.priorityBadge || function (raw) {
-    var n = parseInt(String(raw || "").replace(/^p/i, ""), 10);
-    if (isNaN(n) || n < 1 || n > 4) { return '<span class="wb-priority" data-priority="">—</span>'; }
-    return '<span class="wb-priority" data-priority="' + n + '">P' + n + "</span>";
-  };
-  var objectTypeBadge = PL.objectTypeBadge || function (kind) {
-    var labels = { business: "业务需求", story: "研发需求" };
-    var k = String(kind || "").trim().toLowerCase();
-    var label = labels[k] || k || "—";
-    return '<span class="wb-type wb-type-' + (labels[k] ? k : "unknown") + '">' + label + "</span>";
-  };
+  var PAGE_SIZE_OPTIONS = PL.PAGE_SIZE_OPTIONS;
+  var esc = window.escapeHtml;
+  var priorityBadge = PL.priorityBadge;
+  var objectTypeBadge = PL.objectTypeBadge;
 
   var TAB_KIND_MAP = { biz: "business", rd: "story" };
 

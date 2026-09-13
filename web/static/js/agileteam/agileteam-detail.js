@@ -3,8 +3,7 @@
  */
 (function () {
   function S() { return window.__at || {}; }
-  function esc(s) { return S().esc(s); }
-  function toast(m) { return S().toast(m); }
+  var esc = window.escapeHtml;
   function val(id) { return S().val(id); }
   function apiFetch(p, o) { return S().apiFetch(p, o); }
   function isLeadView() { return S().isLeadView(); }
@@ -188,10 +187,10 @@
     if (parentEl) body.parentId = Number(parentEl.value || 0);
     try {
       await apiFetch(S().API + "/" + id + "/basic", { method: "PUT", body: body });
-      toast("基本信息已保存");
+      window.showToast("基本信息已保存");
       window.atLoadDetail(id);
     } catch (e) {
-      toast(e.message || "保存失败");
+      window.showToast(e.message || "保存失败");
     }
   };
 
@@ -265,12 +264,12 @@
   window.atConfirm = async function (id) {
     try {
       await apiFetch(S().API + "/adjustments/" + id + "/confirm", { method: "PUT", body: {} });
-      toast("成员调整已确认生效");
+      window.showToast("成员调整已确认生效");
       atCloseReview();
       if (st().detailId) window.atLoadDetail(st().detailId);
       else S().loadList();
     } catch (e) {
-      toast(e.message || "确认失败");
+      window.showToast(e.message || "确认失败");
     }
   };
 
@@ -278,17 +277,17 @@
     const reason = window.prompt("请填写驳回原因");
     if (reason == null) return;
     if (!String(reason).trim()) {
-      toast("驳回原因不能为空");
+      window.showToast("驳回原因不能为空");
       return;
     }
     try {
       await apiFetch(S().API + "/adjustments/" + id + "/reject", { method: "PUT", body: { reason: String(reason).trim() } });
-      toast("成员调整已驳回");
+      window.showToast("成员调整已驳回");
       atCloseReview();
       if (st().detailId) window.atLoadDetail(st().detailId);
       else S().loadList();
     } catch (e) {
-      toast(e.message || "驳回失败");
+      window.showToast(e.message || "驳回失败");
     }
   };
 

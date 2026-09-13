@@ -22,13 +22,13 @@ function cssRead(rel) { return read(path.join("web/static/css", rel)); }
   const PersonalList = require("../../../web/static/js/po/personal-list.js");
   assert.deepEqual(
     PersonalList.PAGE_SIZE_OPTIONS,
-    [10, 20, 50, 100],
-    "PersonalList.PAGE_SIZE_OPTIONS must be the unified contract [10,20,50,100]"
+    [10, 15, 20, 50, 100],
+    "PersonalList.PAGE_SIZE_OPTIONS must be the unified contract [10,15,20,50,100]"
   );
   const pagerTpl = read("web/templates/components/pager.html");
   const serverSizes = [...pagerTpl.matchAll(/<option value="(\d+)"[^>]*>\d+ 条\/页/g)].map((m) => Number(m[1]));
-  assert.deepEqual(serverSizes, [10, 20, 50, 100], "components/pager.html must offer [10,20,50,100]");
-  console.log("PASS: pagination page-size options are the shared 10/20/50/100 contract");
+  assert.deepEqual(serverSizes, [10, 15, 20, 50, 100], "components/pager.html must offer [10,15,20,50,100]");
+  console.log("PASS: pagination page-size options are the shared 10/15/20/50/100 contract");
 })();
 
 // 2. 页面标题头卡片规格仅由 shell.css 一处定义。

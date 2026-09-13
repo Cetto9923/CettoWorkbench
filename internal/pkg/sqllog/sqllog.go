@@ -1,11 +1,4 @@
-// =============================================================================
-// 文件: internal/pkg/sqllog/sqllog.go
-// 模块: 基础设施
-// 类型: infra
-// 职责: 以 JSON 行格式记录 SQL 查询日志（sql.log），支持按 request_id 聚合。
-// 依赖: internal/config
-// =============================================================================
-
+// Package sqllog 以 JSON 行格式记录 SQL 查询日志（sql.log），支持按 request_id 聚合。
 package sqllog
 
 import (

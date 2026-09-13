@@ -9,12 +9,7 @@
   var currentTab = "未解决";
   var currentDrawerIssue = null;
 
-  function esc(s) {
-    if (s == null) return "";
-    return String(s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
+  var esc = window.escapeHtml;
 
   function bucketIssue(it) {
     var code = String((it && it.status) || "").trim().toLowerCase();
@@ -189,7 +184,7 @@
       return String(x.id) === String(idOrItem);
     });
     if (!issue) {
-      if (typeof window.showToast === "function") window.showToast("未找到该问题详情");
+      window.showToast("未找到该问题详情");
       return;
     }
     currentDrawerIssue = issue;
@@ -299,12 +294,12 @@
     }).then(function (response) {
       return response.json().catch(function () { return {}; }).then(function (payload) {
         if (!response.ok || !payload.success) throw new Error(payload.message || "禅道问题操作未完成");
-        if (typeof window.showToast === "function") window.showToast("禅道已完成问题操作，正在刷新状态");
+        window.showToast("禅道已完成问题操作，正在刷新状态");
         closeIssueDetailDrawer();
         loadIssues();
       });
     }).catch(function (err) {
-      if (typeof window.showToast === "function") window.showToast((err && err.message) || "禅道问题操作未完成，状态未变更", "error");
+      window.showToast((err && err.message) || "禅道问题操作未完成，状态未变更", "error");
     });
   }
 

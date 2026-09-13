@@ -12,8 +12,7 @@
  */
 (function () {
   function S() { return window.__at || {}; }
-  function esc(s) { return S().esc(s); }
-  function toast(m) { return S().toast(m); }
+  var esc = window.escapeHtml;
   function apiFetch(p, o) { return S().apiFetch(p, o); }
   function isLeadView() { return S().isLeadView(); }
   function person(n, a) { return S().person(n, a); }
@@ -92,11 +91,11 @@
           if (current !== revision || !input.isConnected) return;
           var items = (json.data || []).map(function (u) {
             directoryByAccount[u.account] = u;
-            return {value:u.account, label:u.name + "(" + u.account + ")"};
+            return {value:u.account, label:u.name + "(" + u.account + ")", pinyin:u.pinyin || ""};
           });
           window.initUserPicker(input.id, hidden.id, items);
           if (document.activeElement === input) input.dispatchEvent(new Event("focus"));
-        }).catch(function (err) { if (current === revision) toast(err.message); });
+        }).catch(function (err) { if (current === revision) window.showToast(err.message); });
       }, 250);
     });
     hidden.addEventListener("change", function () {
@@ -196,10 +195,10 @@
     if (existing) {
       if (existing.actionType === "remove") {
         existing.actionType = calcFormalAction(Object.assign({}, existing, { actionType: "keep" }));
-        toast("已撤销该成员的移除操作");
+        window.showToast("已撤销该成员的移除操作");
         renderDraft();
       } else {
-        toast("该成员已在当前成员名单中");
+        window.showToast("该成员已在当前成员名单中");
       }
       return;
     }
@@ -333,7 +332,7 @@
       });
     });
     if (!items.length) {
-      toast("请先添加、移除成员，或修改成员角色 / 工时");
+      window.showToast("请先添加、移除成员，或修改成员角色 / 工时");
       return;
     }
     var reason = (document.getElementById("atAdjustReason") || {}).value || "";
@@ -342,11 +341,11 @@
         method: "POST",
         body: { reason: reason, items: items }
       });
-      toast("成员调整已提交，待组织级敏捷教练确认");
+      window.showToast("成员调整已提交，待组织级敏捷教练确认");
       window.atCloseMemberEdit();
       if (typeof window.atLoadDetail === "function") window.atLoadDetail(teamId);
     } catch (e) {
-      toast(e.message || "提交失败");
+      window.showToast(e.message || "提交失败");
     }
   };
 })();

@@ -69,7 +69,6 @@ func NewService(repo *Repo, scheduleSvc *schedule.Service, userSvc *user.Service
 }
 
 type taskStatusGateway interface {
-	UpdateTaskStatus(ctx context.Context, p zentao.TaskStatusParams) error
 	UpdateTask(ctx context.Context, p zentao.UpdateTaskParams) error
 }
 
@@ -289,7 +288,7 @@ func (s *Service) Demands(ctx context.Context, actor *model.User, req DemandsReq
 		if sumErr != nil {
 			return nil, sumErr
 		}
-		resp, err := s.populateWorkItems(ctx, actor, refs, total, req.Page, req.PageSize, displayMap)
+		resp, err := s.populateWorkItems(ctx, actor, refs, total, req.Page, req.PageSize, displayMap, req)
 		if err != nil {
 			return nil, err
 		}

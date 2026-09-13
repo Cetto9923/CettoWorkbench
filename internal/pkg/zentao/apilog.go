@@ -1,11 +1,4 @@
-// =============================================================================
-// 文件: internal/pkg/zentao/apilog.go
-// 模块: 基础设施
-// 类型: infra
-// 职责: 禅道 REST 请求日志，按日写入 api-YYYY-MM-DD.log。
-// 依赖: internal/config
-// =============================================================================
-
+// Package zentao 禅道 REST 请求日志，按日写入 api-YYYY-MM-DD.log。
 package zentao
 
 import (

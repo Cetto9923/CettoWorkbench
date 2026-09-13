@@ -120,6 +120,14 @@ func TestNoticeNeedsActionConsistency(t *testing.T) {
 	}
 }
 
+func TestNoticeCategorySQLCoversMailBodyActionFallbacks(t *testing.T) {
+	for _, marker := range []string{"n.data LIKE '%指派给%'", "n.data LIKE '%催办%'", "n.data LIKE '%挂起%'", "n.data LIKE '%系统通知%'"} {
+		if !strings.Contains(noticeCategorySQLExpr, marker) {
+			t.Errorf("notice category SQL must classify mail body marker %q", marker)
+		}
+	}
+}
+
 func TestNoticeTimeRangeBoundaries(t *testing.T) {
 	now, _ := time.Parse(time.RFC3339, "2026-09-05T12:00:00Z")
 	startOfToday := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())

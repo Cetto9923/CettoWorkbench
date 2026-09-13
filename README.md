@@ -3,16 +3,16 @@
 当前以 PO 工作台为主要业务场景，采用 Go / Gin / GORM / MySQL 与服务端模板渲染。
 架构为模块化单体：HTTP → Handler → Service → Repo → 数据库。
 
-开发入口为 [AGENTS.md](AGENTS.md) → [Agent 启动流程](docs/engineering/agent-onboarding.md)
-→ [工程规范总目录](docs/engineering/spec-index.md)中的相关专题。
-总目录区分现行规范、共享能力目录、历史报告、任务计划与运维说明。
+开发入口为 [AGENTS.md](AGENTS.md)；按任务加载其指定的
+`docs/engineering/` 专题（architecture / database / frontend / testing / quality）。
+历史报告、任务计划与运维说明在 `docs/archive/`、`docs/plan/`、`docs/operations/`。
 已有模块不是自动合格的参考实现。
 
 治理执行范围由当前任务指定。分卡合同见
 [Executable Plan](docs/plan/workbench-executable-plan-20260905/README-先读我.md)，
 后续任务见 [docs/plan/](docs/plan/)；不自动重跑 COMPLETE 卡。
-[原治理计划](docs/engineering/governance-plan.md)和
-[原执行记录](docs/engineering/governance-progress.md)保留用于历史追溯。
+[原治理计划](docs/archive/governance-plan.md)和
+[原执行记录](docs/archive/governance-progress.md)保留用于历史追溯。
 计划约束任务范围，工程规范仍以 `AGENTS.md` 为准。
 
 从仓库根目录运行检查：
@@ -39,7 +39,6 @@ make check
 - **GitHub Copilot**: [.github/copilot-instructions.md](.github/copilot-instructions.md)。
 - **Cline**: [.clinerules/00-workbench.md](.clinerules/00-workbench.md)。
 - **工具覆盖与实际加载验证**: [agent-compatibility.md](docs/engineering/agent-compatibility.md)。
-- **通用接入指南**: 见 [docs/engineering/agent-onboarding.md](docs/engineering/agent-onboarding.md)。
 - **模块目录**: 见 [docs/engineering/module-index.md](docs/engineering/module-index.md)。
 - **前端共享能力**: 见 [docs/engineering/shared-frontend.md](docs/engineering/shared-frontend.md)。
 

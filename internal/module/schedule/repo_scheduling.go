@@ -207,6 +207,7 @@ type schedulingWindowRow struct {
 type schedulingUserRow struct {
 	Account  string `gorm:"column:account"`
 	Realname string `gorm:"column:realname"`
+	Pinyin   string `gorm:"column:pinyin"`
 }
 
 // ListUpcomingSchedulingWindows 查询未过期的版本窗口列表。
@@ -239,7 +240,7 @@ ORDER BY releaseDate ASC`
 // ListInsideUsersForScheduling 查询内部用户列表（负责人下拉）。
 func (r *Repo) ListInsideUsersForScheduling(ctx context.Context) ([]SchedulingUserOption, error) {
 	const query = `
-SELECT account, realname
+SELECT account, realname, pinyin
 FROM zt_user
 WHERE deleted = '0'
   AND type = 'inside'
@@ -262,6 +263,7 @@ ORDER BY account ASC`
 		out = append(out, SchedulingUserOption{
 			Account:  account,
 			Realname: realname,
+			Pinyin:   strings.TrimSpace(row.Pinyin),
 		})
 	}
 	return out, nil

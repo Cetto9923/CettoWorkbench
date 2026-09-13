@@ -9,17 +9,7 @@
     return isNaN(num) || num <= 0 ? 0 : num;
   }
 
-  function escapeHtml(text) {
-    return $("<div>").text(text == null ? "" : String(text)).html();
-  }
-
-  function toast(message, type) {
-    if (typeof window.showToast === "function") {
-      window.showToast(message, type || "error");
-      return;
-    }
-    window.alert(message);
-  }
+  var escapeHtml = window.escapeHtml;
 
   function scheduleGetJSON(url) {
     if (window.scheduleFetch) {
@@ -138,7 +128,7 @@
   window.openTaskListModal = function (storyId) {
     storyId = parsePositiveInt(storyId);
     if (!storyId) {
-      toast("研发需求 ID 无效");
+      window.showToast("研发需求 ID 无效", "error");
       return;
     }
     currentStoryId = storyId;
@@ -149,7 +139,7 @@
       $(MODAL_IDS.map(function (id) { return "#" + id; }).join(",")).addClass("show");
     }
     loadTaskListData(storyId).catch(function (err) {
-      toast((err && err.message) || "加载失败");
+      window.showToast((err && err.message) || "加载失败", "error");
       window.closeTaskListModal();
     });
   };

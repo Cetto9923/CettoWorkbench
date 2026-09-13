@@ -33,7 +33,7 @@
   };
 
   function ensureStyles() {
-    // 不改模板也强制刷新本轮权限样式，避免旧 query string 命中浏览器缓存。
+    // 刷新本轮权限样式，避免旧 query string 命中缓存。
     [['/static/css/permission/list.css', '20260827-perm-ui3'], ['/static/css/permission/drawer.css', '20260827-perm-ui3']].forEach(function (pair) {
       const link = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).find(function (l) { return (l.getAttribute('href') || '').indexOf(pair[0]) >= 0; });
       if (link) link.setAttribute('href', pair[0] + '?v=' + pair[1]);
@@ -47,18 +47,10 @@
   }
 
   function apiHeaders() {
-    return { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' };
-  }
-
-  function escapeHtml(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function (ch) {
-      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
-    });
-  }
-
-  function toast(msg, kind) {
-    if (typeof window.showToast === 'function') window.showToast(msg, kind || 'info');
-    else console[kind === 'error' ? 'error' : 'log'](msg);
+    var headers = { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' };
+    var csrf = typeof window.getCsrfToken === 'function' ? window.getCsrfToken() : '';
+    if (csrf) headers['X-CSRF-Token'] = csrf;
+    return headers;
   }
 
   function isManaged() {
@@ -80,7 +72,7 @@
         state.roles = ROLE_ORDER.map(function (code) { return byCode[code]; }).filter(Boolean);
         renderRoleCards();
       })
-      .catch(function (err) { toast(err.message || '加载角色失败', 'error'); });
+      .catch(function (err) { window.showToast(err.message || '加载角色失败', 'error'); });
   }
 
   function renderRoleCards() {
@@ -94,7 +86,7 @@
       card.setAttribute('role', 'button');
       card.tabIndex = 0;
       card.innerHTML =
-        '<div class="sum-label">' + escapeHtml(r.label || ROLE_LABELS[r.code] || r.code) + '</div>' +
+        '<div class="sum-label">' + window.escapeHtml(r.label || ROLE_LABELS[r.code] || r.code) + '</div>' +
         '<div class="sum-value">' + Number(r.memberCount || 0).toLocaleString('zh-CN') + '</div>' +
         '<div class="sum-tip">' + (MANAGED_ROLES.has(r.code) ? '受控角色' : '当前成员') + '</div>';
       function pick() { selectRole(r.code); }
@@ -118,7 +110,7 @@
   function loadMembers() {
     const body = document.getElementById('userRows');
     if (!body) return;
-    body.innerHTML = '<tr><td colspan="5"><div class="loading">加载 ' + escapeHtml(ROLE_LABELS[state.roleCode] || state.roleCode) + ' 成员…</div></td></tr>';
+    body.innerHTML = '<tr><td colspan="5"><div class="loading">加载 ' + window.escapeHtml(ROLE_LABELS[state.roleCode] || state.roleCode) + ' 成员…</div></td></tr>';
     const qs = 'page=' + state.page + '&pageSize=' + state.pageSize + '&keyword=' + encodeURIComponent(state.keyword || '');
     return fetch('/admin/permissions/roles/' + encodeURIComponent(state.roleCode) + '/members?' + qs, { headers: apiHeaders() })
       .then(function (r) { return r.json(); })
@@ -132,7 +124,7 @@
         updateHeadTitle();
       })
       .catch(function (err) {
-        body.innerHTML = '<tr><td colspan="5"><div class="empty">' + escapeHtml(err.message || '加载成员失败') + '</div></td></tr>';
+        body.innerHTML = '<tr><td colspan="5"><div class="empty">' + window.escapeHtml(err.message || '加载成员失败') + '</div></td></tr>';
       });
   }
 
@@ -172,13 +164,13 @@
       const removable = m.removable !== false && !!state.data.isManaged;
       const source = sourceView(m);
       const first = String(m.realname || m.account || '?').slice(0, 1);
-      html += '<tr data-account="' + escapeHtml(m.account) + '">' +
-        '<td class="check"><input type="checkbox" class="perm-member-cb" data-account="' + escapeHtml(m.account) + '"' + (removable ? '' : ' disabled title="仅手工授权成员可批量移除"') + '></td>' +
-        '<td><div class="person"><div class="mini-avatar">' + escapeHtml(first) + '</div><div style="min-width:0"><div class="name">' + escapeHtml(m.realname || m.account) + '</div><div class="sub">' + escapeHtml(m.account) + '</div></div></div></td>' +
-        '<td>' + escapeHtml(m.deptName || '—') + '</td>' +
-        '<td><span class="tag ' + source.cls + '">' + escapeHtml(source.label) + '</span></td>' +
-        '<td><button type="button" class="link" data-act="edit" data-account="' + escapeHtml(m.account) + '" data-name="' + escapeHtml(m.realname || m.account) + '">编辑</button>' +
-        '<button type="button" class="link" data-act="remove" data-account="' + escapeHtml(m.account) + '"' + (removable ? '' : ' disabled title="该成员来自组织映射/个人资料，不能在这里移除"') + '>移除</button></td>' +
+      html += '<tr data-account="' + window.escapeHtml(m.account) + '">' +
+        '<td class="check"><input type="checkbox" class="perm-member-cb" data-account="' + window.escapeHtml(m.account) + '"' + (removable ? '' : ' disabled title="仅手工授权成员可批量移除"') + '></td>' +
+        '<td><div class="person"><div class="mini-avatar">' + window.escapeHtml(first) + '</div><div style="min-width:0"><div class="name">' + window.escapeHtml(m.realname || m.account) + '</div><div class="sub">' + window.escapeHtml(m.account) + '</div></div></div></td>' +
+        '<td>' + window.escapeHtml(m.deptName || '—') + '</td>' +
+        '<td><span class="tag ' + source.cls + '">' + window.escapeHtml(source.label) + '</span></td>' +
+        '<td><button type="button" class="link" data-act="edit" data-account="' + window.escapeHtml(m.account) + '" data-name="' + window.escapeHtml(m.realname || m.account) + '">编辑</button>' +
+        '<button type="button" class="link" data-act="remove" data-account="' + window.escapeHtml(m.account) + '"' + (removable ? '' : ' disabled title="该成员来自组织映射/个人资料，不能在这里移除"') + '>移除</button></td>' +
         '</tr>';
     });
     body.innerHTML = html;
@@ -295,10 +287,10 @@
         const rows = json.data || [];
         if (!rows.length) { host.innerHTML = '<div class="info">暂无操作记录</div>'; return; }
         host.innerHTML = '<table><thead><tr><th>时间</th><th>操作人</th><th>角色</th><th>操作</th><th>目标</th><th>结果</th></tr></thead><tbody>' + rows.map(function (r) {
-          return '<tr><td>' + escapeHtml(r.createdAt || '') + '</td><td>' + escapeHtml(r.operatorAccount || '') + '</td><td>' + escapeHtml(ROLE_LABELS[r.roleCode] || r.roleCode || '') + '</td><td>' + escapeHtml(r.actionType || '') + '</td><td>' + escapeHtml(r.targetName || r.targetType || '') + '</td><td>' + escapeHtml(r.remark || '成功') + '</td></tr>';
+          return '<tr><td>' + window.escapeHtml(r.createdAt || '') + '</td><td>' + window.escapeHtml(r.operatorAccount || '') + '</td><td>' + window.escapeHtml(ROLE_LABELS[r.roleCode] || r.roleCode || '') + '</td><td>' + window.escapeHtml(r.actionType || '') + '</td><td>' + window.escapeHtml(r.targetName || r.targetType || '') + '</td><td>' + window.escapeHtml(r.remark || '成功') + '</td></tr>';
         }).join('') + '</tbody></table>';
       })
-      .catch(function (err) { host.innerHTML = '<div class="info">' + escapeHtml(err.message) + '</div>'; });
+      .catch(function (err) { host.innerHTML = '<div class="info">' + window.escapeHtml(err.message) + '</div>'; });
   }
 
   function normalizeDirectory(items) {
@@ -338,13 +330,13 @@
         emptyLabel: '请选择管理范围'
       });
     }).catch(function (err) {
-      host.innerHTML = '<div class="info">范围加载失败：' + escapeHtml(err.message || '加载失败') + '</div>';
+      host.innerHTML = '<div class="info">范围加载失败：' + window.escapeHtml(err.message || '加载失败') + '</div>';
     });
   }
 
   function openAddDrawer() {
     if (!state.data || !state.data.isManaged) {
-      toast('当前角色由用户个人资料维护，暂不支持管理员添加', 'info');
+      window.showToast('当前角色由用户个人资料维护，暂不支持管理员添加', 'info');
       return;
     }
     const drawer = document.getElementById('permAddDrawer');
@@ -402,13 +394,13 @@
     if (!addPicker) return;
     const values = addPicker.getValue();
     const accounts = Array.isArray(values) ? values : (values ? [values] : []);
-    if (!accounts.length) { toast('请选择至少 1 名人员', 'error'); return; }
+    if (!accounts.length) { window.showToast('请选择至少 1 名人员', 'error'); return; }
     const body = { accounts: accounts };
     if (state.roleCode === 'lead') {
-      if (!scopePicker) { toast('请选择团队管理范围', 'error'); return; }
+      if (!scopePicker) { window.showToast('请选择团队管理范围', 'error'); return; }
       const v = scopePicker.getValue();
       const id = Number(Array.isArray(v) ? v[0] : v);
-      if (!id) { toast('请选择团队管理范围', 'error'); return; }
+      if (!id) { window.showToast('请选择团队管理范围', 'error'); return; }
       if (scopeKind === 'team') body.scopeTeamId = id;
       else body.scopeDeptId = id;
       body.scopeIncludeChildren = scopeKind === 'dept' && !!(document.getElementById('permAddIncludeChildren') && document.getElementById('permAddIncludeChildren').checked);
@@ -417,17 +409,17 @@
       method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, apiHeaders()), body: JSON.stringify(body)
     }).then(function (r) { return r.json(); }).then(function (json) {
       if (!json.success) throw new Error(json.message || '添加失败');
-      toast('已添加 ' + ((json.data && json.data.affected) || accounts.length) + ' 人', 'success');
+      window.showToast('已添加 ' + ((json.data && json.data.affected) || accounts.length) + ' 人', 'success');
       permissionCloseAdd();
       state.page = 1;
       state.selected = {};
       return loadRoles().then(loadMembers);
-    }).catch(function (err) { toast(err.message || '添加失败', 'error'); });
+    }).catch(function (err) { window.showToast(err.message || '添加失败', 'error'); });
   }
 
   function removeMembers(accounts) {
     if (!accounts || !accounts.length) return;
-    if (!state.data || !state.data.isManaged) { toast('当前角色由用户个人资料维护，无法移除', 'error'); return; }
+    if (!state.data || !state.data.isManaged) { window.showToast('当前角色由用户个人资料维护，无法移除', 'error'); return; }
     if (!window.confirm('确认将 ' + accounts.length + ' 人移出「' + roleLabel() + '」？\n这里只移除当前角色，不会删除用户账号。')) return;
     fetch('/admin/permissions/roles/' + encodeURIComponent(state.roleCode) + '/members/remove', {
       method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, apiHeaders()), body: JSON.stringify({ accounts: accounts })
@@ -435,13 +427,13 @@
       if (!json.success) throw new Error(json.message || '移除失败');
       const affected = (json.data && json.data.affected) || 0;
       const skipped = (json.data && json.data.skippedAccounts) || [];
-      toast('已移除 ' + affected + ' 人' + (skipped.length ? '，跳过 ' + skipped.length + ' 人' : ''), skipped.length ? 'info' : 'success');
+      window.showToast('已移除 ' + affected + ' 人' + (skipped.length ? '，跳过 ' + skipped.length + ' 人' : ''), skipped.length ? 'info' : 'success');
       const totalAfter = Math.max(0, Number(state.data.total || 0) - affected);
       const newPages = Math.max(1, Math.ceil(totalAfter / state.pageSize));
       if (state.page > newPages) state.page = newPages;
       state.selected = {};
       return loadRoles().then(loadMembers);
-    }).catch(function (err) { toast(err.message || '移除失败', 'error'); });
+    }).catch(function (err) { window.showToast(err.message || '移除失败', 'error'); });
   }
 
   function openUserPagesDrawer(account, displayName) {
@@ -460,7 +452,7 @@
         if (!json.success) throw new Error(json.message || '加载失败');
         renderUserPages(json.data || {}, account);
       })
-      .catch(function (err) { body.innerHTML = '<div class="info">' + escapeHtml(err.message || '加载失败') + '</div>'; });
+      .catch(function (err) { body.innerHTML = '<div class="info">' + window.escapeHtml(err.message || '加载失败') + '</div>'; });
   }
 
   function renderUserPages(data, account) {
@@ -468,15 +460,15 @@
     if (!body) return;
     const pages = data.pages || [];
     if (!pages.length) { body.innerHTML = '<div class="info">当前角色暂无可配置页面。</div>'; return; }
-    body.innerHTML = '<div class="page-access-note">勾选 = 该用户在「' + escapeHtml(data.roleLabel || roleLabel()) + '」下可以看到该页面；取消勾选 = 隐藏入口。写操作仍由系统角色权限与业务规则校验。</div>' +
+    body.innerHTML = '<div class="page-access-note">勾选 = 该用户在「' + window.escapeHtml(data.roleLabel || roleLabel()) + '」下可以看到该页面；取消勾选 = 隐藏入口。写操作仍由系统角色权限与业务规则校验。</div>' +
       '<div class="page-access-list">' + pages.map(function (p) {
         const locked = !!p.locked;
         const checked = !!p.enabled || locked;
         const source = p.source === 'override' ? '个人设置' : '角色默认';
         return '<label class="page-access-row' + (locked ? ' is-locked' : '') + '">' +
-          '<span class="page-access-copy"><span class="page-access-name">' + escapeHtml(p.pageName || p.pageCode) + '</span><span class="page-access-desc">' + escapeHtml(source) + '</span></span>' +
+          '<span class="page-access-copy"><span class="page-access-name">' + window.escapeHtml(p.pageName || p.pageCode) + '</span><span class="page-access-desc">' + window.escapeHtml(source) + '</span></span>' +
           (locked ? '<span class="page-access-meta">系统保底</span>' : '') +
-          '<input type="checkbox" class="perm-page-cb" data-page="' + escapeHtml(p.pageCode) + '"' + (checked ? ' checked' : '') + (locked ? ' disabled title="系统保底页面不可关闭"' : '') + '>' +
+          '<input type="checkbox" class="perm-page-cb" data-page="' + window.escapeHtml(p.pageCode) + '"' + (checked ? ' checked' : '') + (locked ? ' disabled title="系统保底页面不可关闭"' : '') + '>' +
         '</label>';
       }).join('') + '</div>';
     const btn = document.getElementById('permUserPagesSave');
@@ -494,9 +486,9 @@
       method: 'PUT', headers: Object.assign({ 'Content-Type': 'application/json' }, apiHeaders()), body: JSON.stringify({ pages: pages })
     }).then(function (r) { return r.json(); }).then(function (json) {
       if (!json.success) throw new Error(json.message || '保存失败');
-      toast('页面权限已保存', 'success');
+      window.showToast('页面权限已保存', 'success');
       permissionCloseDetail();
-    }).catch(function (err) { toast(err.message || '保存失败', 'error'); });
+    }).catch(function (err) { window.showToast(err.message || '保存失败', 'error'); });
   }
 
   function permissionCloseDetail() {

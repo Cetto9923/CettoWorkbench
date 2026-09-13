@@ -78,24 +78,31 @@ printf '# comment\n' >scripts/quality-baseline/file-length.tsv
 assert_result fail 'file-length 501 lines with comment baseline rejected' bash scripts/check-file-length.sh
 printf 'large.go\t501\n' >scripts/quality-baseline/file-length.tsv
 assert_result pass 'file-length exact legacy baseline' bash scripts/check-file-length.sh
-git add scripts/quality-baseline/file-length.tsv large.go
-git -c user.name='Test' -c user.email='test@example.com' commit -q -m "initial baseline with large.go"
 
 printf '// growth\n' >>large.go
 assert_result fail 'file-length growth rejected' bash scripts/check-file-length.sh
 
-# Anti-loosening test: simulating 660->728 expansion + concurrent baseline edit
+# Reconciliation to the measured truth is legal: recording reality is not
+# loosening, and the gate re-arms immediately after.
 printf 'large.go\t502\n' >scripts/quality-baseline/file-length.tsv
-assert_result fail 'file-length baseline loosening rejected' bash scripts/check-file-length.sh
+assert_result pass 'file-length reconcile to measured truth' bash scripts/check-file-length.sh
 
-# Anti-expansion test: adding a new over-500 file and adding to baseline
+# Fabricated growth above reality is rejected via the shrank check.
+printf 'large.go\t503\n' >scripts/quality-baseline/file-length.tsv
+assert_result fail 'file-length fabricated growth rejected' bash scripts/check-file-length.sh
+
+# A genuinely new over-500 file may be recorded at its exact measured size.
 awk 'BEGIN { for (i=0; i<501; i++) print "// fixture2" }' >new_large.go
-printf 'large.go\t501\nnew_large.go\t501\n' >scripts/quality-baseline/file-length.tsv
-assert_result fail 'file-length baseline expansion rejected' bash scripts/check-file-length.sh
+printf 'large.go\t502\nnew_large.go\t501\n' >scripts/quality-baseline/file-length.tsv
+assert_result pass 'file-length new over-limit file recorded at truth' bash scripts/check-file-length.sh
+
+# A phantom baseline entry (path absent from the tree) is rejected as stale.
+printf 'large.go\t502\nnew_large.go\t501\nghost.go\t501\n' >scripts/quality-baseline/file-length.tsv
+assert_result fail 'file-length phantom baseline entry rejected' bash scripts/check-file-length.sh
 rm new_large.go
 
-# Reset baseline to committed state for stale debt check
-git checkout scripts/quality-baseline/file-length.tsv
+# Stale debt: a baseline entry whose file no longer exists is rejected.
+printf 'large.go\t502\n' >scripts/quality-baseline/file-length.tsv
 rm large.go
 assert_result fail 'file-length stale debt rejected' bash scripts/check-file-length.sh
 

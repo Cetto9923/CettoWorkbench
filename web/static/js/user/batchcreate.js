@@ -62,19 +62,11 @@
   }
 
   function showError(message) {
-    if (typeof window.showToast === "function") {
-      window.showToast(message || "操作失败，请稍后重试", "error");
-      return;
-    }
-    window.alert(message || "操作失败，请稍后重试");
+    window.showToast(message || "操作失败，请稍后重试", "error");
   }
 
   function showSuccess(message) {
-    if (typeof window.showToast === "function") {
-      window.showToast(message || "操作成功", "success");
-      return;
-    }
-    window.alert(message || "操作成功");
+    window.showToast(message || "操作成功", "success");
   }
 
   form.addEventListener("submit", function (event) {
@@ -87,10 +79,7 @@
     }
 
     var fetchFn = window.appFetch || fetch;
-    var csrfMeta = document.querySelector('meta[name="csrf-token"]');
-    var csrfToken = (typeof window.getCsrfToken === "function")
-      ? window.getCsrfToken()
-      : (csrfMeta ? (csrfMeta.getAttribute("content") || "").trim() : "");
+    var csrfToken = typeof window.getCsrfToken === "function" ? window.getCsrfToken() : "";
     var headers = {
       "X-Requested-With": "XMLHttpRequest",
       "Content-Type": "application/json",

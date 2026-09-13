@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PO 工作台深度代码评审报告 · 2026-09-10</title>
+<style>
+  :root {
+    --page-bg: #f6f7f9; --surface: #ffffff; --surface-muted: #f1f3f6;
+    --text-1: #1a2233; --text-2: #5a6478; --text-3: #8b93a7;
+    --border: #e3e7ee; --border-strong: #c9d1de;
+    --primary: #2b5fd9; --primary-weak: #e8eefb;
+    --danger: #d0342c; --danger-weak: #fbeae9;
+    --warning: #b25e09; --warning-weak: #fdf3e3;
+    --success: #1d7a4d; --success-weak: #e7f4ed;
+    --code-bg: #f4f5f8;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: var(--page-bg); color: var(--text-1); line-height: 1.65; font-size: 14.5px; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 32px 24px 80px; }
+  header.hero { background: linear-gradient(135deg, #1e2f55 0%, #2b5fd9 100%); color: #fff; border-radius: 14px; padding: 34px 38px; margin-bottom: 28px; }
+  header.hero h1 { font-size: 24px; margin-bottom: 10px; }
+  header.hero .meta { font-size: 13px; opacity: .85; }
+  header.hero .meta span { margin-right: 22px; display: inline-block; }
+  .stat-row { display: flex; gap: 14px; margin: 22px 0 6px; flex-wrap: wrap; }
+  .stat { background: rgba(255,255,255,.13); border-radius: 10px; padding: 10px 18px; min-width: 96px; }
+  .stat b { font-size: 22px; display: block; }
+  .stat span { font-size: 12px; opacity: .85; }
+  nav.toc { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 24px; margin-bottom: 26px; }
+  nav.toc b { display: block; margin-bottom: 8px; font-size: 13px; color: var(--text-2); }
+  nav.toc a { color: var(--primary); text-decoration: none; margin-right: 18px; font-size: 13.5px; }
+  nav.toc a:hover { text-decoration: underline; }
+  section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 26px 30px; margin-bottom: 24px; }
+  section h2 { font-size: 19px; padding-bottom: 12px; border-bottom: 2px solid var(--primary-weak); margin-bottom: 18px; display: flex; align-items: center; gap: 10px; }
+  section h2 .idx { background: var(--primary); color: #fff; font-size: 13px; width: 26px; height: 26px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+  section h3 { font-size: 15.5px; margin: 20px 0 10px; color: var(--text-1); }
+  p { margin-bottom: 10px; color: var(--text-2); }
+  p strong, li strong { color: var(--text-1); }
+  ul, ol { padding-left: 22px; margin-bottom: 10px; color: var(--text-2); }
+  li { margin-bottom: 6px; }
+  code { background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; font-family: "JetBrains Mono", Menlo, monospace; font-size: 12.5px; color: #33415e; }
+  .finding { border: 1px solid var(--border); border-left: 4px solid var(--border-strong); border-radius: 10px; padding: 14px 18px; margin-bottom: 14px; background: #fdfdfe; }
+  .finding.p0 { border-left-color: var(--danger); }
+  .finding.p1 { border-left-color: var(--warning); }
+  .finding.p2 { border-left-color: var(--primary); }
+  .finding .head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+  .badge { font-size: 11.5px; font-weight: 700; padding: 2px 10px; border-radius: 20px; letter-spacing: .5px; }
+  .b-p0 { background: var(--danger-weak); color: var(--danger); }
+  .b-p1 { background: var(--warning-weak); color: var(--warning); }
+  .b-p2 { background: var(--primary-weak); color: var(--primary); }
+  .b-ok { background: var(--success-weak); color: var(--success); }
+  .finding .head b { font-size: 14.5px; }
+  .loc { font-size: 12.5px; color: var(--text-3); font-family: Menlo, monospace; }
+  .finding p { margin-bottom: 6px; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: 13px; }
+  th { background: var(--surface-muted); text-align: left; padding: 8px 12px; border: 1px solid var(--border); color: var(--text-2); font-size: 12.5px; white-space: nowrap; }
+  td { padding: 8px 12px; border: 1px solid var(--border); color: var(--text-2); vertical-align: top; }
+  td:first-child { white-space: nowrap; }
+  tr:hover td { background: #fafbfd; }
+  .note { background: var(--warning-weak); border: 1px solid #f0d9b5; border-radius: 8px; padding: 10px 16px; font-size: 13px; color: var(--warning); margin: 12px 0; }
+  .note.good { background: var(--success-weak); border-color: #bfe3cf; color: var(--success); }
+  .fp { background: var(--surface-muted); border: 1px dashed var(--border-strong); border-radius: 8px; padding: 10px 16px; font-size: 13px; margin: 12px 0; color: var(--text-2); }
+  .fp b { color: var(--text-1); }
+  pre { background: #232936; color: #d5dbe8; border-radius: 8px; padding: 14px 18px; overflow-x: auto; font-size: 12.5px; line-height: 1.6; margin: 10px 0; font-family: "JetBrains Mono", Menlo, monospace; }
+  pre .c { color: #7e8aa0; }
+  footer { text-align: center; color: var(--text-3); font-size: 12.5px; margin-top: 10px; }
+  .legend { font-size: 12.5px; color: var(--text-3); margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>PO 工作台深度代码评审报告</h1>
+  <div class="meta">
+    <span>仓库：workbench-claude-po</span>
+    <span>分支：release/po-integrate-main-202609</span>
+    <span>HEAD：49801427</span>
+    <span>日期：2026-09-10</span>
+  </div>
+  <div class="stat-row">
+    <div class="stat"><b style="color:#ff9d97">2</b><span>门禁失败</span></div>
+    <div class="stat"><b style="color:#ffce8f">11</b><span>P1 问题</span></div>
+    <div class="stat"><b style="color:#a9c4ff">20+</b><span>P2 问题</span></div>
+    <div class="stat"><b style="color:#9fe3bd">4</b><span>DB 结构性风险</span></div>
+  </div>
+  <div class="meta" style="margin-top:10px">评审方式：本人专项审查（数据库风险 / 门禁 / 核心写路径）＋ 3 个并行只读子代理（前后端契约 / 死代码与逻辑漏洞 / 性能），子代理结论全部经本人逐条二次验证，误报已剔除。</div>
+</header>
+
+<nav class="toc">
+  <b>目录</b>
+  <a href="#s1">1. 总览与结论</a>
+  <a href="#s2">2. 门禁与规范合规</a>
+  <a href="#s3">3. 数据库风险专项（重点）</a>
+  <a href="#s4">4. 前后端契约匹配（分角色）</a>
+  <a href="#s5">5. 逻辑漏洞与 BUG</a>
+  <a href="#s6">6. 死代码与过期代码</a>
+  <a href="#s7">7. 性能问题</a>
+  <a href="#s8">8. UI 问题</a>
+  <a href="#s9">9. 修复优先级建议</a>
+</nav>
+
+<section id="s1">
+  <h2><span class="idx">1</span>总览与结论</h2>
+  <p><strong>最需要立即处理的三件事：</strong></p>
+  <ol>
+    <li><strong><code>make check</code> 当前是红的</strong>（前端单测 + 行数门禁两个 gate 失败），且前端单测失败自 commit <code>58806358</code> 就已存在——此后所有提交的「门禁已过」声明不可信（违反规则 16）。</li>
+    <li><strong>共库写路径存在 4 个结构性数据库风险</strong>：排期保存事务规模客户端可控无上限、跨模块锁序反转（schedule 与 po 两个入口加锁顺序相反，存在死锁环）、多行更新按客户端数组顺序加锁、story 更新无归属谓词。</li>
+    <li><strong>改密功能直接写 MD5</strong>（<code>profile/service.go:124</code>），与 AGENTS.md 规则 7 的 MUST 冲突，属于需要上报决策的工程/业务冲突点，不能静默保留。</li>
+  </ol>
+  <p><strong>整体判断（务实结论）：</strong>分层架构（Handler→Service→Repo）、capability 权限接线、事务内「锁读+状态复核+条件更新」的模式总体是合格的，明显好于常见共库集成项目；主要问题集中在 <strong>门禁失守、schedule 模块的并发写设计、看板/已办页的查询扇出</strong>。未发现前端调用不存在的后端接口（无「假按钮」），未发现 SQL 注入，未发现密钥泄漏，未发现运行时 DDL。</p>
+  <p class="legend">严重度定义：P0 = 阻断交付或数据安全事故级；P1 = 本迭代应修（正确性/死锁/合规 MUST）；P2 = 排期处理。DB 类死锁/副本延迟结论为源码级推演，已标注「需 DB 证据」的未做并发实测。</p>
+</section>
+
+<section id="s2">
+  <h2><span class="idx">2</span>门禁与规范合规（make check 实测）</h2>
+
+  <h3>2.1 门禁执行结果（当前工作树）</h3>
+  <table>
+    <tr><th>门禁</th><th>结果</th><th>说明</th></tr>
+    <tr><td>check-local-artifacts / gofmt / go test / vet / whitespace</td><td><span class="badge b-ok">PASS</span></td><td>Go 侧全绿</td></tr>
+    <tr><td>check-frontend-test</td><td><span class="badge b-p0">FAIL</span></td><td><code>home-list-caption.test.js:86</code> 断言失败</td></tr>
+    <tr><td>check-file-length</td><td><span class="badge b-p0">FAIL</span></td><td>4 个新超限 + 4 个超基线增长（HEAD）+ 3 个 WIP 推过线</td></tr>
+    <tr><td>check-architecture</td><td><span class="badge b-p0">FAIL</span></td><td>新增 1 条 Handler 直连 DB；基线内存量 1 条 Service 直连 DB</td></tr>
+    <tr><td>check-patterns（硬模式）/ check-secrets</td><td><span class="badge b-ok">PASS</span></td><td>硬模式 0 违规；密钥 0 指纹</td></tr>
+    <tr><td>advisory 扫描</td><td><span class="badge b-p1">178 新增</span></td><td>共 208 条：NEW_WINDOW 92 / DIRECT_PAGE_FETCH 53 / DIRECT_GIN_SCALAR 11 / ROUTE_PERMISSION_REVIEW 9 / LOCAL_ESCAPE_HTML 6 / WEAK_PASSWORD_HASH 3 等</td></tr>
+  </table>
+
+  <div class="finding p0">
+    <div class="head"><span class="badge b-p0">P0</span><b>前端单测失败：首页列表 caption 应显示真实阶段总数，实际停留在加载文案</b></div>
+    <div class="loc">tests/unit/frontend/home-list-caption.test.js:61 · web/static/js/po/home.js:192 · web/static/js/po/home-render.js:174</div>
+    <p><strong>根因</strong>：commit <code>58806358</code>（声称 "without behavior change"）把 home.js 拆出 home-render.js，但测试夹具（第 61 行）只加载 <code>home.js</code>，未加载 <code>home-render.js</code>。真实浏览器正常（home.html:308 先加载 home-render.js），单测夹具中 <code>updateTitle</code> 不存在，caption 停留在「正在获取当前阶段数据…」。</p>
+    <p><strong>影响</strong>：自该提交起 <code>make check</code> 持续红；后续 12+ 个提交在红基线上继续交付，违反规则 16（回归测试必须有执行记录）。该测试本身是历史 bug（caption 误标「已筛选」）的回归保护，当前等于保护失效。</p>
+    <p><strong>修复</strong>：夹具脚本数组补 <code>home-render.js</code>；顺带审视其余前端测试夹具是否有同类拆分遗漏。</p>
+  </div>
+
+  <div class="finding p0">
+    <div class="head"><span class="badge b-p0">P0</span><b>行数门禁（MUST ≤500）被多个提交突破且未走基线决策</b></div>
+    <table>
+      <tr><th>类别</th><th>文件</th><th>行数</th></tr>
+      <tr><td rowspan="4">HEAD 新超限（一级代码）</td><td>internal/module/po/servicefollow.go</td><td>503</td></tr>
+      <tr><td>internal/pkg/zentao/client.go</td><td>553</td></tr>
+      <tr><td>web/static/css/metrics.css</td><td>683</td></tr>
+      <tr><td>web/static/css/po/follow.css</td><td>691</td></tr>
+      <tr><td rowspan="4">HEAD 超基线增长</td><td>web/static/css/layout/layout.css</td><td>531 → 643</td></tr>
+      <tr><td>web/static/css/components/components.css</td><td>595 → 616</td></tr>
+      <tr><td>web/static/css/schedule/schedule.css</td><td>580 → 616</td></tr>
+      <tr><td>web/static/js/ui.js</td><td>775 → 819</td></tr>
+      <tr><td rowspan="3">未提交 WIP 推过线</td><td>web/static/css/po/demand-detail.css</td><td>364 → 667</td></tr>
+      <tr><td>web/static/css/po/personal-workspace.css</td><td>430 → 598</td></tr>
+      <tr><td>web/static/js/po/notice.js</td><td>496 → 568</td></tr>
+    </table>
+    <p>quality.md 规定新超限需要显式 debt 决策并更新精确基线，这些提交既没拆分也没进基线。<code>schedule/index.html</code>（742→741）属债务收缩，可顺势 ratchet 基线。WIP 三个文件建议提交前拆分，否则把 WIP 也变成基线违规。</p>
+  </div>
+
+  <div class="finding p1">
+    <div class="head"><span class="badge b-p1">P1</span><b>架构边界门禁失败：新增 Handler 直连 DB + 存量 Service 直连 DB</b></div>
+    <div class="loc">internal/module/testtask/handler_test.go:25-37（新增） · internal/module/dept/service.go:80（基线存量）</div>
+    <p><code>dept/service.go:80</code> Service 直接持有并操作 <code>s.repo.db</code> 开事务，违反架构红线「Service MUST NOT 持有/操作 *gorm.DB」。事务执行应下沉到 Repo（参照 schedule 模块的 <code>repo.Transaction(ctx, fn(txRepo))</code> 模式）。</p>
+    <p><code>testtask/handler_test.go</code> 在测试夹具中直接 <code>gorm.Open</code> 触发扫描器 HANDLER_DATABASE_ACCESS，属测试放置问题——夹具应移到 repo 侧测试或按门禁流程进基线。</p>
+  </div>
+
+  <div class="finding p1">
+    <div class="head"><span class="badge b-p1">P1</span><b>改密写入 MD5，与 MUST 规则 7 冲突（需上报决策，不得静默保留）</b></div>
+    <div class="loc">internal/module/profile/service.go:121,124</div>
+    <pre>if hash != encode.MD5(req.OldPassword) { ... }
+return s.repo.UpdatePassword(ctx, actor.ID, encode.MD5(req.NewPassword))</pre>
+    <p>AGENTS.md 规则 7：「新密码写入 MUST NOT 使用 MD5/SHA 系哈希；禅道旧校验兼容必须隔离」。此处旧密码校验（读侧兼容）可辩解，但<strong>新密码明文 MD5 落库是完整的新写入</strong>，不在豁免范围。因工作台与禅道共用 <code>zt_user.password</code>，这是真实的业务约束冲突——正确动作是显式上报冲突并决策（例如改走禅道原生改密接口、或推动账号体系隔离），而不是维持现状。advisory 扫描已标 WEAK_PASSWORD_HASH ×3。</p>
+  </div>
+</section>
+
+<section id="s3">
+  <h2><span class="idx">3</span>数据库风险专项（工作台 ⇄ 禅道共库）</h2>
+
+  <h3>3.1 写面盘点与合格项</h3>
+  <p>共库写入面：po 模块（受理/交付状态机、催办、评审、星标、通知已读）＋ schedule 模块（排期保存写 zt_story/zt_task/zt_planstory/zt_productplan、版本窗口 CRUD）＋ operationlog 中间件（每次变更一条）。testtask、query、metrics、clarify 均为只读。</p>
+  <div class="note good">合格项：事务内无 HTTP/LLM/文件 IO；<code>updateHomeDemandStatus</code>、<code>SaveDemandReview</code>、<code>UpdateDemandDeliverFull</code> 采用「FOR UPDATE 锁读 → 状态复核 → 带状态谓词的条件更新 → 同事务写 zt_action 审计」的正确模式；催办用 zt_demand 行锁串行化去重判断；无 AutoMigrate/运行时 DDL/权限自授；锁内事务都很短。</div>
+
+  <h3>3.2 结构性风险（按严重度）</h3>
+
+  <div class="finding p1">
+    <div class="head"><span class="badge b-p1">P1</span><b>DB-R1 · 排期保存事务规模客户端可控，无服务端上限 → 长事务/锁堆积</b></div>
+    <div class="loc">internal/module/schedule/service_scheduling_save.go:76-95 · form.go:647-656（Validate 无数量校验）</div>
+    <pre>// SaveScheduling：一个事务内循环处理全部 stories × tasks
+return s.repo.Transaction(ctx, func(txRepo *Repo) error {
+    for _, storyReq := range req.Stories {          <span class="c">// ← 无 len 上限</span>
+        storyID, ... := s.applySchedulingStory(...)  <span class="c">// CreateStory+Spec+Action+LinkStoryToPlan</span>
+        s.applySchedulingTasks(...)                  <span class="c">// 每任务 CreateTask+Spec+Action+Link...，任务数也无上限</span>
+    }
+    txRepo.UpdateDemandScheduling(...)               <span class="c">// zt_demand 收尾</span>
+})</pre>
+    <p>一个请求可驱动 <strong>stories × tasks × (2~4 表)</strong> 的行写入全部落在一个事务：100 story × 20 task ≈ 数千行写 + 数千行 zt_action 插入。后果：长事务（undo 膨胀、purge 受阻）、zt_story/zt_task/zt_planstory 行锁长时间持有，禅道侧正常操作被阻塞。违反 database.md 规则 5「开事务前服务端强制批量上限」。</p>
+    <p><strong>修复</strong>：Validate 增加 <code>len(Stories) ≤ N</code>、<code>len(Tasks) ≤ M</code>（按真实环境数据定值并记录依据）；超限直接 422，不开事务。<code>SaveStoryTasks</code>（service_story_tasks.go:259）同理。</p>
+  </div>
+
+  <div class="finding p1">
+    <div class="head"><span class="badge b-p1">P1</span><b>DB-R2 · 跨模块锁序反转 → 死锁环（需 DB 证据定级）</b></div>
+    <div class="loc">schedule：repo_scheduling_write.go:334（story 先锁）→ service_scheduling_save.go:90（demand 后锁）<br>po：repo_deliver.go:192（demand 先锁）→ :244（story 批量锁） · reporeview.go:159（demand 先锁）</div>
+    <pre>T1 排期保存：  锁 zt_story 行 …… 最后锁 zt_demand 行
+T2 发起交付：  锁 zt_demand 行(FOR UPDATE) …… 再批量锁 zt_story 行</pre>
+    <p>两个 Workbench 入口对同一需求的加锁顺序<strong>相反</strong>。并发交叉时形成 T1 持 story 等 demand、T2 持 demand 等 story 的等待环 → InnoDB 检测死锁回滚其一（error 1213）。当前代码无 1213 识别与重试，用户直接收到失败。违反 database.md 规则 4「跨入口锁序必须文档化并统一」。</p>
+    <p><strong>修复</strong>：统一约定「先锁 zt_demand 再动 zt_story」（排期保存在事务开头先 FOR UPDATE 目标 demand 行）；对 1213/1205 定义显式响应。同时按规则 8 在隔离 MySQL 套件补 reverse-order 重叠写用例验证。</p>
+  </div>
+
+  <div class="finding p1">
+    <div class="head"><span class="badge b-p1">P1</span><b>DB-R3 · 多行更新按客户端数组顺序加锁</b></div>
+    <div class="loc">service_scheduling_save.go:77-88（stories 循环）· :283-287（tasks 循环）</div>
+    <p>两个并发排期请求包含重叠 story 集但数组顺序不同时，行锁获取顺序相反 → 互等死锁。database.md 规则 4 明确「Do not lock in arbitrary client order」。</p>
+    <p><strong>修复</strong>：进事务前对 storyID/taskID 集合排序去重（canonicalize），再按固定顺序处理；同时可顺带拒绝同一请求中矛盾重复的 story 动作。</p>
+  </div>
+
+  <div class="finding p2">
+    <div class="head"><span class="badge b-p2">P2</span><b>DB-R4 · UpdateStory 无归属谓词、不检查 RowsAffected → 重挂载竞态 + 零行静默成功</b></div>
+    <div class="loc">internal/module/schedule/repo_scheduling_write.go:334-345 · service_scheduling_save.go:46-57</div>
+    <pre>return r.db.WithContext(ctx).Table("zt_story").
+    Where("id = ? AND deleted = '0'", storyID).   <span class="c">// ← 无 fromDemand 归属谓词，无 RowsAffected 判断</span>
+    Updates(updates).Error</pre>
+    <p>story 归属校验（<code>allowedStoryByID</code>）在<strong>事务外</strong>加载；事务内 edit/delete story 不做锁读复核（任务路径有 <code>ValidateStoryForTaskMutation</code>，story 路径没有）。story 被禅道侧并发改挂到其他 demand 时，排期保存仍会写入。且 <code>deleted='0'</code> 谓词下零行更新（story 已删/不存在）被当作成功。违反规则 3「事务外校验不是写时保证」「必须定义零影响行」。</p>
+    <p><strong>修复</strong>：edit/delete 分支复用 <code>ValidateStoryForTaskMutation</code> 锁读复核 fromDemand；或 Update 带 <code>fromDemand = ?</code> 谓词并检查 RowsAffected==0 返回冲突。</p>
+  </div>
+
+  <div class="finding p2">
+    <div class="head"><span class="badge b-p2">P2</span><b>DB-R5 · 取消关注 SELECT→INSERT 竞态 → zt_starinfo 重复行</b></div>
+    <div class="loc">internal/module/po/repofollow.go:409-428</div>
+    <p>Count 查询与 Create 之间无事务无唯一键处理：并发双击取关时两个请求都看到 count=0、都插入 followed=0 行。后续 Update 无 LIMIT 会同时更新重复行（状态最终一致但产生脏数据）。违反规则 6「SELECT-before-INSERT 不是幂等」。</p>
+    <p><strong>修复</strong>：改 <code>INSERT ... ON DUPLICATE KEY UPDATE followed='0'</code>（前提：确认 (objectType,objectID,account) 唯一键；没有则先决策补键，不得自动改共库 schema）。</p>
+  </div>
+
+  <div class="finding p2">
+    <div class="head"><span class="badge b-p2">P2</span><b>DB-R6 · 读写双池的读后写一致性未定义（需部署证据）</b></div>
+    <div class="loc">internal/module/po/repo.go:22-46（db=只读池，writeDB=主库） · internal/bootstrap/bootstrap.go:198（dbReadonlyOrPrimary）</div>
+    <p>列表/角标/详情走只读池，写入走主库。<code>SaveNoticeRead</code>（标记已读，写主库）后前端立即刷新 <code>CountUnreadNotices</code>（读只读池）——若只读池为复制副本且存在延迟，用户看到「标记已读但角标未减」。同理影响关注列表刷新。违反 database.md 规则 7「follows/notice 读后写一致性先定义再使用副本」。若生产只读池实际指向同实例则降级为无风险，需部署配置证据确认。</p>
+    <p><strong>修复</strong>：写后短窗口内的自读（角标、本人列表首页）固定走主库，或在响应里带回新计数。</p>
+  </div>
+
+  <div class="finding p2">
+    <div class="head"><span class="badge b-p2">P2</span><b>DB-R7 · 无效入参静默返回成功的「假成功」模式</b></div>
+    <div class="loc">servicefollow.go:82-84 · repofollow.go:434-436 · reponotice.go:280-282 · repo_home_actions.go:213-216</div>
+    <p>多个写方法对 actor 为空/参数非法直接 <code>return nil</code>，客户端收到 success 但什么都没写。规则 14 要求无效请求不得伪装成功。另 <code>homeUserLabels</code>（:213）吞掉读库错误返回空 map，DB 故障渲染成「无标签」而非错误态。建议统一：鉴权缺失返回错误；降级场景显式标注 unavailable。</p>
+  </div>
+
+  <div class="finding p2">
+    <div class="head"><span class="badge b-p2">P2</span><b>DB-R8 · 观察项（低概率，记录备查）</b></div>
+    <ul>
+      <li><code>reporeview.go:184-191</code>：zt_demandreview 更新无 RowsAffected 检查，评审行被禅道侧并发删除时静默成功。</li>
+      <li><code>reponotice.go:283-285</code>：SaveNoticeRead 用 <code>WHERE nr.id IS NULL</code> 防重，无 ON DUPLICATE，并发双击可能 1062 报错（仅体验问题）。SaveAllNoticeReads 的 ON DUPLICATE 版本是正确写法，可对齐。</li>
+      <li><code>repo_deliver.go:244-247</code>：按 fromDemand 批量更新 zt_story 的行锁顺序依赖执行计划，与禅道编辑 story 并发时的间隙锁行为需按规则 8 用隔离套件验证（标注：需 DB 证据）。</li>
+    </ul>
+  </div>
+</section>
+
+<section id="s4">
+  <h2><span class="idx">4</span>前后端契约匹配（分角色视图）</h2>
+
+  <h3>4.1 PO 主视图（home / todos / done / follow / notice / workboard / issue-risk / demand_detail）</h3>
+  <div class="note good"><strong>结论 A（前端占位后端未实现）：<code>0</code> 条。</strong>全部前端 fetch 调用均有对应后端路由与真实实现，未发现桩接口、假按钮。此前怀疑的 <code>/board/issues/:id/transition</code>（workboard-issue.js:295 调用）与 <code>/demands/:id/submit-review</code>（demand-detail-review.js:320 调用）均实际在用。</div>
+
+  <div class="finding p2">
+    <div class="head"><span class="badge b-p2">P2</span><b>C-1 · 死兼容路由：/workbench/api/* 与 /watches/*（前端零调用）</b></div>
+    <div class="loc">internal/module/po/handler.go:74-82</div>
+    <p><code>/workbench/api/done*</code>、<code>/watches/project-weeklies*</code> 为「兼容老版本 API 路径」，前端全部改走 <code>/done/*</code>、<code>/follow/project-weeklies*</code>，全仓库无任何调用点。建议确认无外部系统依赖后下线（减少攻击面与维护面）。</p>
+  </div>
+
+  <div class="finding p2">
+    <div class="head"><span class="badge b-p2">P2</span><b>C-2 · 待办 tab 契约残留：后端保留 tab 参数与「暂未接入」分支，前端已改用 objectType</b></div>
+    <div class="loc">internal/module/po/form.go:253-289 · web/static/js/po/todos.js:36,146-151</div>
+    <p>前端注释明确「分类芯片直接就是对象类型……不再另存 tab」，请求只带 objectType；后端 <code>TodoListReq.tab</code> 校验分支（含「该对象域待办数据源暂未接入」的占位错误文案）永不可达。属过期契约，建议连分支一起清理。</p>
+  </div>
+
+  <div class="finding p2">
+    <div class="head"><span class="badge b-p2">P2</span><b>C-3 · 关注列表 tab 契约残留</b></div>
+    <div class="loc">internal/module/po/formfollow.go:48-63 · follow-demand.js:11-18</div>
+    <p>前端不发送 <code>tab</code>，后端默认 demand；周报 tab 实际走独立的 <code>/follow/project-weeklies</code>（scope=watched 走 form_weekly.go 独立表单，校验合法）。参数可删，当前无功能影响。</p>
+  </div>
+
+  <h3>4.2 测试角色视图</h3>
+  <p><code>testtask.js</code> ⇄ <code>GET /demands/:id/testtask</code> 契约匹配，字段裁剪明确，无发现问题。提测上下文只读。</p>
+
+  <h3>4.3 通用视图（profile / schedule / query / metrics）</h3>
+  <p>接口匹配正常。子代理报告的「/home、/done、/notice、/follow、/issue-risk、/profile、/schedule、/query、/metrics/manage 等后端路由前端不调用」<strong>均为误报</strong>——这些是 SSR 页面导航入口（菜单/链接直达），不走 JS fetch。真实的不调用集合只有 4.1 的兼容路由。</p>
+
+  <div class="fp"><b>已剔除的误报（供参考，避免重复排查）：</b>/demands/:id（home-render.js:112 作为行链接在用）、/board/demand、/board/task（SSR 导航）、scope=watched 枚举不匹配（比对了错误的表单）、metrics 前后缀路径（页面路由 vs 数据路由）。</div>
+</section>
+
+<section id="s5">
+  <h2><span class="idx">5</span>逻辑漏洞与 BUG</h2>
+
+  <div class="finding p2">
+    <div class="head"><span class="badge b-p2">P2</span><b>L-1 · JSON 绑定错误被忽略（提交/撤回评审）</b></div>
+    <div class="loc">internal/module/po/handlerreview.go:76,113</div>
+    <pre>var req WithdrawDemandReviewReq
+_ = c.ShouldBindJSON(&req)   <span class="c">// 非法 JSON 静默当作空请求</span></pre>
+    <p>有 <code>req.Validate()</code> 兜底必填字段，故降级 P2；但非法 JSON 应返回 400 而非进入业务流。<code>handler_detail.go:30-33,104-107</code> 的 URI→Query 静默 fallback 同理（fallback 意图可保留，错误应处理）。</p>
+  </div>
+
+  <div class="finding p2">
+    <div class="head"><span class="badge b-p2">P2</span><b>L-2 · DoneDetail 错误码语义不一致：参数无效返回 401</b></div>
+    <div class="loc">internal/module/po/handler.go:318-325</div>
+    <p>service 返回 <code>ErrCodeInvalidParam</code> 时直接映射 401，而 detail 接口（handler_detail.go:59-73）已正确区分「未登录 401 / 参数无效 422」。前端会把参数错误当登录态处理，可能触发不必要的重新登录跳转。</p>
+  </div>
+
+  <div class="finding p2">
+    <div class="head"><span class="badge b-p2">P2</span><b>L-3 · 澄清候选人部门解析忽略错误</b></div>
+    <div class="loc">internal/module/po/repo_clarify.go:354-358</div>
+    <p><code>strconv.ParseUint</code> 错误被忽略，畸形 path 段静默变成 deptID=0，可能扩大或错偏人员候选范围。应返回错误或跳过并留痕。</p>
+  </div>
+
+  <div class="finding p2">
+    <div class="head"><span class="badge b-p2">P2</span><b>L-4 · Owner / NextOwner 双字段同值</b></div>
+    <div class="loc">internal/module/po/form.go:197-198</div>
+    <p>注释自认「与 NextOwner 同值，兼容旧字段」。前端依赖面广，保留可接受；建议标记 deprecated 并排期收敛，避免新代码继续读 owner。</p>
+  </div>
+</section>
+
+<section id="s6">
+  <h2><span class="idx">6</span>死代码与过期代码</h2>
+
+  <div class="finding p2">
+    <div class="head"><span class="badge b-p2">P2</span><b>D-1 · SaveDemandFollow：零生产调用的写方法</b></div>
+    <div class="loc">internal/module/po/repofollow.go:433-457</div>
+    <p>星标关注已迁移禅道原生 ajax（commit 49801427），该方法只剩注释引用。<strong>连带注意</strong>：它正是 DB-R5 同款 SELECT→INSERT 竞态代码，删除即可消掉一份风险。</p>
+  </div>
+
+  <div class="finding p2">
+    <div class="head"><span class="badge b-p2">P2</span><b>D-2 · homecompact.css：唯一确认真死的静态文件</b></div>
+    <div class="loc">web/static/css/po/homecompact.css</div>
+    <p>模板、JS、CSS @import 全链路零引用，可删。</p>
+  </div>
+
+  <div class="finding p2">
+    <div class="head"><span class="badge b-p2">P2</span><b>D-3 · html-sanitize.js：浏览器端不加载，仅测试可达</b></div>
+    <div class="loc">web/static/js/po/html-sanitize.js · demand-detail-richtext.js:20-25 · html_sanitize.go</div>
+    <p>无模板加载它；richtext 在浏览器走本地内联实现，Node 测试 require 它。结果是同一套白名单语义存在 <strong>3 份实现</strong>（后端 Go、html-sanitize.js、richtext 内联）。非死代码但属重复实现，规则 9 要求共享能力收敛——建议 richtext 直接加载共享模块，删内联副本。</p>
+  </div>
+
+  <div class="finding p2">
+    <div class="head"><span class="badge b-p2">P2</span><b>D-4 · 其余过期项</b></div>
+    <ul>
+      <li><code>/workbench/api/*、/watches/*</code> 兼容路由（见 C-1）。</li>
+      <li><code>TodoListReq.tab / FollowListReq.tab</code> 死参数（见 C-2/C-3）。</li>
+      <li><code>web/templates/components/po_testtask_modal.html</code>：文件名叫 modal，实际定义 <code>po/testtask</code> 与 <code>po/testtask_form</code> 两个模板且被 home.html 使用——非死代码，仅命名误导，建议改名。</li>
+    </ul>
+  </div>
+
+  <div class="fp"><b>已剔除的误报：</b>子代理报的 components/{form,search,batchform}.js「未引用」不成立——base.html:76 加载 components.js，其第 8 行动态加载这三个文件；components/{search,pager,table,form,modal,autocomplete}.css 被 components.css @import（1-6 行）；<strong>wb-priority.css 被 schedule/schedulelist.css:6 @import，且当前 WIP 正在修改它，不是死文件</strong>。</div>
+</section>
+
+<section id="s7">
+  <h2><span class="idx">7</span>性能问题</h2>
+
+  <div class="finding p0">
+    <div class="head"><span class="badge b-p0">P0</span><b>PERF-1 · 看板效能指标：每小组约 5 条 SQL，随小组数线性扇出</b></div>
+    <div class="loc">internal/module/po/repoboardmetrics.go:61-192</div>
+    <p><code>FindBoardTeamMetrics</code> 对每个小组依次执行 computeCycles / computeUnscheduled / computeBug / computeOnlineDelay + 成员查询，约 5 条 SQL/组。N 个小组的页面 = 5N 条查询，8 个指标展示。违反 database.md「一个指标一条 SQL 的扇出未审查」禁令。<strong>修复</strong>：合并为按小组 GROUP BY 的 1-2 条聚合 SQL（成员 IN 条件批量化）。</p>
+  </div>
+
+  <div class="finding p0">
+    <div class="head"><span class="badge b-p0">P0</span><b>PERF-2 · 已办页每页约 12 条 SQL，负载随对象类型波动</b></div>
+    <div class="loc">internal/module/po/repodone.go · repodone_enrich.go:1-260 · repodone_sidebar.go</div>
+    <p>主列表 + 历史 + 各对象类型上下文分批 + 审批上下文 + facet + 侧栏。单页 12 条且按页内对象类型数增长。建议对象上下文合并批量查询，审批与 facet 并入或缓存化。</p>
+  </div>
+
+  <div class="finding p1">
+    <div class="head"><span class="badge b-p1">P1</span><b>PERF-3 · 看板需求树两处无界查询</b></div>
+    <div class="loc">internal/module/po/repoboard.go:99（children 无 Limit） · :133（stories 无 Limit）</div>
+    <p>roots 有 Limit(200)、独立需求有 Limit(100)，但 200 个根的子需求查询和每个需求的 story 查询无上限，最坏 200 × 全量子需求。补 Limit 并在页面契约中记录上界理由。</p>
+  </div>
+
+  <div class="finding p1">
+    <div class="head"><span class="badge b-p1">P1</span><b>PERF-4 · 函数包裹列导致索引失效的高危模式（需 DB 执行计划确认）</b></div>
+    <table>
+      <tr><th>位置</th><th>模式</th></tr>
+      <tr><td>repo_detail.go:103-106</td><td>FIND_IN_SET(reviewer CSV) 子查询关联 zt_user</td></tr>
+      <tr><td>repo_weekly_enrich.go:220-223</td><td>JOIN ON FIND_IN_SET(p.id, rl.project)（周报上线风险）</td></tr>
+      <tr><td>repodone.go（时间筛选）</td><td>DATE_FORMAT / QUARTER(a.date) 包裹列</td></tr>
+      <tr><td>query/repo.go:42-47 · repo_issue_risk.go:37-40 · repoboardtask.go:105-106</td><td>前导通配 LIKE + CAST(id AS CHAR)</td></tr>
+    </table>
+    <p>这些都是 ZenTao CSV 字段的历史形态，短期可用（数据量小）；数据增长后是第一批劣化点。修复方向：时间条件改为范围比较（date &gt;= ? AND date &lt; ?）；关键词 ID 精确匹配优先、LIKE 兜底。</p>
+  </div>
+
+  <div class="finding p2">
+    <div class="head"><span class="badge b-p2">P2</span><b>PERF-5 · 其余性能观察项</b></div>
+    <ul>
+      <li><code>service.go:112-139</code> 首页 goroutine 并行 4 负载：并行合法但会推高连接池并发水位，database.md 明确不得以并行掩盖扇出——统计口径应按「总 SQL 数」评审。</li>
+      <li><code>todo_query_repo.go:55-233</code>：同一大 UNION ALL 为 summary/facets/分页各构建一遍并执行多次，可考虑一次物化或收紧子查询。</li>
+      <li><code>repo_detail_children.go:20-58</code>：3 条独立统计 SQL 可合并为单条聚合。</li>
+      <li><code>repo_weekly*.go</code> 周报列表指标辅助查询固定多条（任务/问题/风险/工时/偏离/上线风险各一批）。</li>
+    </ul>
+  </div>
+
+  <h3>各页 SQL 数量级（源码推演，未经 trace 实测）</h3>
+  <table>
+    <tr><th>页面</th><th>SQL 数量级</th><th>主要构成</th></tr>
+    <tr><td>看板-需求树</td><td>中（3+无界项）</td><td>树 1+2、子查询无 Limit</td></tr>
+    <tr><td>看板-效能指标</td><td><strong>5 × 小组数</strong></td><td>PERF-1 扇出</td></tr>
+    <tr><td>看板-任务列表</td><td>低（1-2）</td><td>单查询 + 标题批查</td></tr>
+    <tr><td>已办页</td><td><strong>≈12/页</strong></td><td>PERF-2</td></tr>
+    <tr><td>待办页</td><td>中高</td><td>UNION ALL × (summary+facets+page)</td></tr>
+    <tr><td>首页</td><td>中</td><td>并行 4 负载（价值流/窗口/焦点/KPI）</td></tr>
+    <tr><td>需求详情</td><td>中</td><td>主查询 1 + 统计 3 + 历史等</td></tr>
+    <tr><td>周报列表</td><td>中高</td><td>指标辅助查询按项目批量</td></tr>
+  </table>
+</section>
+
+<section id="s8">
+  <h2><span class="idx">8</span>UI 问题</h2>
+
+  <div class="finding p2">
+    <div class="head"><span class="badge b-p2">P2</span><b>U-1 · window.open 缺 noopener/noreferrer ×2</b></div>
+    <div class="loc">web/static/js/schedule/scheduleintegrated.js:383 · scheduleintegratedrd.js:307</div>
+    <p>新窗口打开禅道页面未带 <code>noopener,noreferrer</code>，被打开页可通过 window.opener 反向操作工作台页。规则 9 明确要求。注意 todos.js:167 等处已正确使用，仅这两处遗漏。</p>
+  </div>
+
+  <div class="finding p2">
+    <div class="head"><span class="badge b-p2">P2</span><b>U-2 · workboard.js 内联样式硬编码颜色 / 引用未定义 token</b></div>
+    <div class="loc">web/static/js/po/workboard.js:90（#fffbea） · :132（var(--orange)） · :157（var(--t3)）</div>
+    <p>违反 frontend.md 主题契约（semantic token / 禁止硬编码色）。<code>--orange、--t3</code> 若无定义则 dark 主题下渲染异常。建议改用既有语义 token 或补 token 定义并验证 light/dark 双主题。</p>
+  </div>
+
+  <div class="finding p2">
+    <div class="head"><span class="badge b-p2">P2</span><b>U-3 · advisory 面上的模式性 UI 债</b></div>
+    <p>NEW_WINDOW 92 处、LOCAL_ESCAPE_HTML 6 处、DIRECT_PAGE_FETCH 53 处为候选清单（非违规判定），建议按 quality.md 的人工确认流程批量过一遍，聚焦新增代码。</p>
+  </div>
+</section>
+
+<section id="s9">
+  <h2><span class="idx">9</span>修复优先级建议</h2>
+  <table>
+    <tr><th>优先级</th><th>事项</th><th>对应发现</th></tr>
+    <tr><td rowspan="3"><span class="badge b-p0">P0 立即</span></td><td>修前端测试夹具（补 home-render.js），恢复 make check 绿</td><td>2.1</td></tr>
+    <tr><td>行数超限文件拆分（servicefollow.go / zentao/client.go / follow.css / metrics.css + 4 个增长文件）；WIP 三个文件提交前拆</td><td>2.1</td></tr>
+    <tr><td>看板效能指标 SQL 合并；已办页上下文批量化</td><td>PERF-1/2</td></tr>
+    <tr><td rowspan="4"><span class="badge b-p1">P1 本迭代</span></td><td>SaveScheduling/SaveStoryTasks 增加请求规模上限（stories/tasks 数量）</td><td>DB-R1</td></tr>
+    <tr><td>统一锁序（先 demand 后 story）+ storyID 排序去重 + 1213 显式响应；隔离套件补 reverse-order 用例</td><td>DB-R2/R3</td></tr>
+    <tr><td>UpdateStory 归属谓词 + RowsAffected；edit/delete story 事务内锁读复核</td><td>DB-R4</td></tr>
+    <tr><td>MD5 改密上报冲突决策；dept Service 事务下沉 Repo；看板树补 Limit</td><td>2.2 / DB · PERF-3</td></tr>
+    <tr><td rowspan="4"><span class="badge b-p2">P2 排期</span></td><td>死代码清理：SaveDemandFollow、homecompact.css、兼容路由、tab 死参数</td><td>D-1~4 / C-1~3</td></tr>
+    <tr><td>函数包裹列优化（时间范围化、ID 精确匹配）；读写池一致性策略确认</td><td>PERF-4 / DB-R6</td></tr>
+    <tr><td>绑定错误处理、DoneDetail 错误码、澄清解析错误（L-1~3）</td><td>第 5 节</td></tr>
+    <tr><td>noopener ×2、workboard 内联色 token 化（U-1/2）</td><td>第 8 节</td></tr>
+  </table>
+
+  <h3>评审边界与声明</h3>
+  <ul>
+    <li>基线：HEAD <code>49801427</code> + 14 个未提交 WIP 文件（CSS/notice.js/demand-detail-review.js/themepicker/notice.html）。WIP 未改动任何评审涉及的行为代码，行数门禁除外（已单列）。</li>
+    <li>死锁（DB-R2/R3）与只读池延迟（DB-R6）为源码级风险推演，标注「需 DB 证据」，未做并发实测；修复后应按 database.md 规则 8 在隔离 MySQL 套件补反向顺序重叠写用例。</li>
+    <li><code>internal/module/user/</code> 按仓库规则（legacy/reference-not-authoritative）未评审；docs/Demo 目录不评。</li>
+    <li>本次为只读评审，未修改任何代码。按规则 12：当前 <code>make check</code> 状态为 <strong>BLOCKED BY EXISTING BASELINE（前端单测 + 行数 + 架构门禁红）</strong>，任何「可交付」声明在此之前均不成立。</li>
+  </ul>
+</section>
+
+<footer>PO 工作台深度代码评审报告 · 2026-09-10 · 只读评审，未改动代码</footer>
+</div>
+</body>
+</html>

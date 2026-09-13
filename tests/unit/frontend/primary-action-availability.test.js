@@ -2,7 +2,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
-const window = { PersonalList: { escapeHtml: value => String(value) } };
+const window = { escapeHtml: value => String(value) };
 vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../../../web/static/js/po/primary-action.js"), "utf8"), { window });
 const render = window.PrimaryAction.primaryActionHtml;
 for (const key of ["approve", "withdraw_review", "submit_review", "schedule", "submit_test", "accept", "remind_accept", "deliver"]) {

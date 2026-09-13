@@ -150,8 +150,7 @@ func Run() error {
 	poRepo := po.NewRepo(dbReadonly, db)
 	poSvc := po.NewService(poRepo, scheduleSvc, userSvc, zapLog)
 	poHandler := po.NewHandler(poSvc, zapLog)
-	// 侧栏角标：把 poSvc.SidebarBadges 适配为 render 包的 provider。
-	// render 包不反向 import po，避免循环依赖；只通过 provider 闭包注入。
+	// 侧栏角标：注入 poSvc.SidebarBadges 为 render provider。
 	rend.SetSidebarBadgesProvider(func(c *gin.Context) (render.SidebarBadges, error) {
 		v, ok := c.Get("currentUser")
 		if !ok {
@@ -176,7 +175,8 @@ func Run() error {
 	testtaskHandler := testtask.NewHandler(testtaskSvc, zapLog)
 
 	buildRepo := build.NewRepo(dbReadonlyOrPrimary(dbReadonly, db))
-	buildSvc := build.NewService(buildRepo, userSvc, zentaopkg.DefaultClient(), zapLog)
+	// 版本关联/解除研发需求走禅道站点控制层（未注册 REST entry），故注入站点客户端。
+	buildSvc := build.NewService(buildRepo, userSvc, zentaopkg.SiteClient(), zapLog)
 
 	// 个人资料：GET /profile 渲染深链页；顶栏入口同时挂 openProfileModal 弹窗；与整页共用 po-profile.js。
 	profileHandler := profile.NewHandler(profile.NewService(profile.NewRepo(db)), zapLog)

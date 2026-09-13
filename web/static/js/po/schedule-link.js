@@ -14,11 +14,7 @@
 (function () {
   "use strict";
 
-  function esc(v) {
-    return String(v == null ? "" : v)
-      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-  }
+  var esc = window.escapeHtml;
 
   // 业务需求 / 独立研发需求 各一条已注册的 GET 入口。
   function url(object) {

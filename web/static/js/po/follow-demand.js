@@ -18,21 +18,13 @@
     stats: { open: 0, all: 0, clarifying: 0, implementing: 0, released: 0, closed: 0 }
   };
 
-  var esc = (root.PersonalList && root.PersonalList.escapeHtml) || function (s) {
-    return String(s == null ? "" : s)
-      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-  };
+  var esc = root.escapeHtml;
   var PL = root.PersonalList || {};
-  var PAGE_SIZE_OPTIONS = PL.PAGE_SIZE_OPTIONS || [10, 20, 50, 100];
+  var PAGE_SIZE_OPTIONS = PL.PAGE_SIZE_OPTIONS;
   if (typeof PL.loadPageSize === "function") {
     state.pageSize = PL.loadPageSize("po.follow.pageSize", state.pageSize, PAGE_SIZE_OPTIONS);
   }
-  var priorityBadge = PL.priorityBadge || function (raw) {
-    var n = parseInt(String(raw || "").replace(/^p/i, ""), 10);
-    if (isNaN(n) || n < 1 || n > 4) { return '<span class="wb-priority" data-priority="">—</span>'; }
-    return '<span class="wb-priority" data-priority="' + n + '">P' + n + "</span>";
-  };
+  var priorityBadge = PL.priorityBadge;
 
   function dash(v) {
     var t = String(v == null ? "" : v).trim();

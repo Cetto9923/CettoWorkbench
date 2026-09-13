@@ -27,10 +27,10 @@ type FollowScope string
 const (
 	FollowScopeOpen      FollowScope = "open"       // 全部未关闭（默认）
 	FollowScopeAll       FollowScope = "all"        // 全量（含关闭）
-	FollowScopeKey       FollowScope = "key"        // 重点关注（保留兼容）
-	FollowScopeKeyOpen   FollowScope = "key_open"   // 未关闭 + 重点关注（保留兼容）
+	FollowScopeKey       FollowScope = "key"        // 重点关注
+	FollowScopeKeyOpen   FollowScope = "key_open"   // 未关闭 + 重点关注
 	FollowScopeClosed    FollowScope = "closed"     // 已关闭（仅 closed）
-	FollowScopeOpenClean FollowScope = "open_clean" // 未关闭 · 正常推进（保留兼容）
+	FollowScopeOpenClean FollowScope = "open_clean" // 未关闭 · 正常推进
 )
 
 // FollowLifecycle 业务需求生命周期桶（统计卡口径）。

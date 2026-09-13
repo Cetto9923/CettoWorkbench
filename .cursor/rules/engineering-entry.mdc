@@ -4,7 +4,5 @@ globs: "*"
 alwaysApply: true
 ---
 
-Read `AGENTS.md` at the repository root in full before editing. Follow its
-pre-flight, relevant `docs/engineering/` references, and handoff gates.
-Use `docs/engineering/agent-onboarding.md` for the loading checklist.
-This adapter does not redefine engineering rules or business requirements.
+Read `AGENTS.md` in full before editing. It is the only normative rule source.
+This adapter defines no independent engineering or business rules.

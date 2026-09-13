@@ -8,9 +8,6 @@
   var pendingDeleteMode = "";
 
   function escapeHtml(value) {
-    if (window.PersonalList && typeof window.PersonalList.escapeHtml === "function") {
-      return window.PersonalList.escapeHtml(value);
-    }
     return String(value == null ? "" : value)
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
@@ -731,6 +728,7 @@
 
   window.showToast = showToast;
   window.escapeHtml = escapeHtml;
+  window.getCsrfToken = getCsrfToken;
   window.confirmDelete = confirmDelete;
   window.closeModal = closeModal;
   window.openShowModals = openShowModals;

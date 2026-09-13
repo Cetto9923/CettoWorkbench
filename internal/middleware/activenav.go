@@ -1,11 +1,4 @@
-// =============================================================================
-// 文件: internal/middleware/activenav.go
-// 模块: 中间件
-// 类型: middleware
-// 职责: 将当前请求所属侧栏菜单（与 zt_menus.path 一致）写入 Gin 上下文，供模板 ActiveNavKey 与 Menu.Key 对齐高亮。
-// 依赖: internal/pkg/menu
-// =============================================================================
-
+// Package middleware 将当前请求所属侧栏菜单（与 zt_menus.path 一致）写入 Gin 上下文，供模板 ActiveNavKey 与 Menu.Key 对齐高亮。
 package middleware
 
 import (

@@ -8,9 +8,7 @@
   var optionsCache = { key: '', value: null };
 
   function text(v) { return String(v == null ? '' : v).trim(); }
-  function esc(s) {
-    return WBUtils.escapeHtml(s);
-  }
+  var esc = global.escapeHtml;
   function userLabel(u) {
     var account = text(u && u.account);
     var name = text(u && (u.realname || u.name || u.label || account));
@@ -276,7 +274,12 @@
   }
   function prefetchUsers() {
     if (global.WbDirectory && typeof global.WbDirectory.users === 'function') {
-      return global.WbDirectory.users().catch(function () { return []; });
+      return global.WbDirectory.users().catch(function (err) {
+        if (typeof global.showToast === 'function') {
+          global.showToast('人员目录加载失败，请稍后重试', 'error');
+        }
+        throw err || new Error('人员目录加载失败');
+      });
     }
     return Promise.resolve([]);
   }

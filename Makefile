@@ -3,9 +3,9 @@ BINARY := workbench
 DIST := dist/workbench
 GOCACHE_DIR := $(CURDIR)/tmp/gocache
 
-.PHONY: build check check-gofmt check-test check-frontend-test check-vet check-whitespace check-file-length check-patterns check-secrets check-architecture
+.PHONY: build check check-gofmt check-test check-frontend-test check-vet check-whitespace check-file-length check-patterns check-secrets check-architecture check-root-artifacts check-gates
 
-check: check-local-artifacts check-gofmt check-test check-frontend-test check-vet check-whitespace check-file-length check-patterns check-secrets check-architecture
+check: check-local-artifacts check-root-artifacts check-gofmt check-test check-frontend-test check-vet check-whitespace check-file-length check-patterns check-secrets check-architecture
 	@echo "required regression gates passed; inspect the printed existing-debt counts"
 
 check-gofmt:
@@ -16,6 +16,10 @@ check-test:
 	@GOCACHE=$(GOCACHE_DIR) go test ./...
 
 check-frontend-test:
+	@node tests/unit/frontend/wb-picker-core.regression.test.js
+	@node tests/unit/frontend/wb-picker-search.regression.test.js
+	@node tests/unit/frontend/wb-picker-phase-a.regression.test.js
+	@node tests/unit/frontend/agileteam-adjustment.regression.test.js
 	@node tests/unit/frontend/user-picker.test.js
 	@node tests/unit/frontend/auth-errors.test.js
 	@node tests/unit/frontend/csrf-tokens.test.js
@@ -57,6 +61,12 @@ check-secrets:
 
 check-architecture:
 	@./scripts/check-architecture.sh
+
+check-root-artifacts:
+	@bash scripts/check-root-artifacts.sh
+
+check-gates:
+	@bash scripts/test-quality-gates.sh
 
 build: ## Build a self-contained deployment directory under $(DIST)
 	@rm -rf $(DIST)

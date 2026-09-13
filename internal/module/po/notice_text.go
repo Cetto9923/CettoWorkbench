@@ -259,6 +259,21 @@ func parseNoticeSubject(subject string) (string, int64, string) {
 	parts := strings.SplitN(s, "#", 2)
 	if len(parts) == 2 {
 		typePart := strings.ToLower(strings.TrimSpace(parts[0]))
+		for {
+			if strings.HasPrefix(typePart, "[") {
+				if idx := strings.Index(typePart, "]"); idx >= 0 {
+					typePart = strings.TrimSpace(typePart[idx+1:])
+					continue
+				}
+			}
+			if strings.HasPrefix(typePart, "【") {
+				if idx := strings.Index(typePart, "】"); idx >= 0 {
+					typePart = strings.TrimSpace(typePart[idx+len("】"):])
+					continue
+				}
+			}
+			break
+		}
 		rest := strings.TrimSpace(parts[1])
 		numEnd := 0
 		for numEnd < len(rest) && rest[numEnd] >= '0' && rest[numEnd] <= '9' {
@@ -281,8 +296,16 @@ func parseNoticeSubject(subject string) (string, int64, string) {
 func normalizeNoticeObjectType(raw string) string {
 	raw = strings.ToLower(strings.TrimSpace(raw))
 	switch raw {
-	case "charter", "立项":
+	case "charter", "立项", "章程", "项目章程":
 		return "charter"
+	case "guideline", "建设指引", "指引", "buildguideline":
+		return "guideline"
+	case "review", "评审", "需求评审":
+		return "review"
+	case "approval", "审批":
+		return "approval"
+	case "planchange", "计划变更":
+		return "planchange"
 	case "story", "研需", "研发需求":
 		return "story"
 	case "demand", "需求", "业务需求":
@@ -295,7 +318,7 @@ func normalizeNoticeObjectType(raw string) string {
 		return "feedback"
 	case "project", "项目":
 		return "project"
-	case "testtask", "测试单", "测试":
+	case "testtask", "testcase", "测试单", "测试":
 		return "testtask"
 	case "risk", "风险":
 		return "risk"
@@ -303,6 +326,10 @@ func normalizeNoticeObjectType(raw string) string {
 		return "issue"
 	case "release", "发布":
 		return "release"
+	case "kanbancard", "看板", "看板卡片":
+		return "kanbancard"
+	case "ticket", "工单":
+		return "ticket"
 	default:
 		return ""
 	}

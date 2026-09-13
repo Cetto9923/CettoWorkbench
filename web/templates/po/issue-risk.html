@@ -5,9 +5,9 @@
 {{ define "content" }}
 <div class="po-personal-workspace po-issue-risk">
   <header class="workspace-header">
-    <div class="header-quick-filters" id="irQuickChips" role="group" aria-label="存续与逾期">
-      <button type="button" class="header-quick-chip active" data-loop="all" aria-pressed="true">全部 <em id="irCountAll">—</em></button>
-      <button type="button" class="header-quick-chip" data-loop="open" aria-pressed="false">存续 <em id="irCountOpen">—</em></button>
+    <div class="header-quick-filters" id="irQuickChips" role="group" aria-label="未关闭与逾期">
+      <button type="button" class="header-quick-chip" data-loop="all" aria-pressed="false">全部 <em id="irCountAll">—</em></button>
+      <button type="button" class="header-quick-chip active" data-loop="open" aria-pressed="true">未关闭 <em id="irCountOpen">—</em></button>
       <button type="button" class="header-quick-chip" data-loop="closed" aria-pressed="false">已闭环 <em id="irCountClosed">—</em></button>
       <button type="button" class="header-quick-chip danger" data-overdue="true" aria-pressed="false">逾期 <em id="irCountOverdue">—</em></button>
     </div>

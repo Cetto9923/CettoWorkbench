@@ -20,7 +20,7 @@
     <div class="workspace-toolbar">
       <label class="workspace-search">
         <span aria-hidden="true">⌕</span>
-        <input type="search" id="queryKeyword" placeholder="编号 / 标题 / 负责人 / 主系统" aria-label="关键词" value="{{ .Keyword }}">
+        <input type="search" id="queryKeyword" placeholder="编号 / 标题 / 负责人 / 涉及系统" aria-label="关键词" value="{{ .Keyword }}">
       </label>
       <select id="queryStatus" aria-label="状态">
         <option value="">全部状态</option>
@@ -52,7 +52,7 @@
       </label>
       <label class="workspace-search query-system-search">
         <span aria-hidden="true">系</span>
-        <input type="search" id="querySystem" placeholder="主系统" aria-label="主系统" value="{{ .System }}">
+        <input type="search" id="querySystem" placeholder="涉及系统" aria-label="涉及系统" value="{{ .System }}">
       </label>
       <button type="button" id="queryResetBtn" class="workspace-btn">重置筛选</button>
     </div>
@@ -71,7 +71,7 @@
             <th class="query-col-stage" style="width:90px">当前阶段</th>
             <th class="query-col-status" style="width:90px">状态</th>
             <th class="query-col-owner" style="width:130px">负责人</th>
-            <th class="query-col-system" style="width:140px">主系统</th>
+            <th class="query-col-system" style="width:140px">涉及系统</th>
             <th class="query-col-dead" style="width:110px">截止日期</th>
             <th class="query-col-action" style="width:80px">操作</th>
           </tr>

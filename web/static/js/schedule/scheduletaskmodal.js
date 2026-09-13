@@ -27,20 +27,7 @@
     return num <= 0 ? "3" : String(num);
   }
 
-  function escapeHtml(text) {
-    if (shared && shared.escapeHtml) {
-      return shared.escapeHtml(text);
-    }
-    return $("<div>").text(text == null ? "" : String(text)).html();
-  }
-
-  function toast(message, type) {
-    if (typeof window.showToast === "function") {
-      window.showToast(message, type || "success");
-      return;
-    }
-    window.alert(message);
-  }
+  var escapeHtml = window.escapeHtml;
 
   function scheduleGetJSON(url) {
     if (window.scheduleFetch) {
@@ -395,7 +382,7 @@
       return item.action === "new" && item.create && !item.executionId;
     });
     if (missingExecution) {
-      toast("请选择执行", "error");
+      window.showToast("请选择执行", "error");
       return;
     }
 
@@ -407,15 +394,15 @@
       .then(function (result) {
         var data = result.data || result;
         if (!data.success) {
-          toast(data.message || data.error || "保存失败", "error");
+          window.showToast(data.message || data.error || "保存失败", "error");
           return;
         }
-        toast("任务保存成功", "success");
+        window.showToast("任务保存成功", "success");
         closeTaskModal();
         window.location.reload();
       })
       .catch(function () {
-        toast("保存失败", "error");
+        window.showToast("保存失败", "error");
       })
       .finally(function () {
         $btn.prop("disabled", false);
@@ -425,7 +412,7 @@
   window.openTaskModal = function (storyId) {
     storyId = parsePositiveInt(storyId);
     if (!storyId) {
-      toast("研发需求 ID 无效", "error");
+      window.showToast("研发需求 ID 无效", "error");
       return;
     }
     currentStoryId = storyId;
@@ -436,7 +423,7 @@
       $(MODAL_IDS.map(function (id) { return "#" + id; }).join(",")).addClass("show");
     }
     loadTaskModalData(storyId).catch(function (err) {
-      toast((err && err.message) || "加载失败", "error");
+      window.showToast((err && err.message) || "加载失败", "error");
       closeTaskModal();
     });
   };

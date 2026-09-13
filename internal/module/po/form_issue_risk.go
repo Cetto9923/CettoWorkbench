@@ -33,13 +33,13 @@ func (r *IssueRiskListReq) Validate() []FieldError {
 	r.Keyword = strings.TrimSpace(r.Keyword)
 	r.Loop = strings.TrimSpace(r.Loop)
 	if r.Loop == "" {
-		r.Loop = "all"
+		r.Loop = "open"
 	}
 	if r.Loop != "all" && r.Loop != "open" && r.Loop != "closed" {
-		return []FieldError{{Field: "loop", Message: "无效的存续范围"}}
+		return []FieldError{{Field: "loop", Message: "无效的未关闭范围"}}
 	}
 	if r.Loop != "open" && r.Overdue {
-		return []FieldError{{Field: "overdue", Message: "逾期筛选仅在存续为 open 时有效"}}
+		return []FieldError{{Field: "overdue", Message: "逾期筛选仅在未关闭为 open 时有效"}}
 	}
 	if r.Page < 1 {
 		r.Page = 1

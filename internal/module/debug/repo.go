@@ -1,5 +1,5 @@
 // =============================================================================
-// 文件: internal/module/sqlperf/repo.go
+// 文件: internal/module/debug/repo.go
 // 模块: SQL 性能分析
 // 类型: readonly
 // 职责: 从 sql.log 读取请求级 SQL 汇总数据。

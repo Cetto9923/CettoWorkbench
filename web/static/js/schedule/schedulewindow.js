@@ -65,9 +65,7 @@
       })
       .then(function (result) {
         if (!result.data || !result.data.success) {
-          if (typeof window.showToast === "function") {
-            window.showToast((result.data && result.data.error) || "加载窗口详情失败", "error");
-          }
+          window.showToast((result.data && result.data.error) || "加载窗口详情失败", "error");
           return;
         }
         scheduleVersionWindowModalMode = "edit";
@@ -82,9 +80,7 @@
         if (isSessionExpiredError(err)) {
           return;
         }
-        if (typeof window.showToast === "function") {
-          window.showToast("加载窗口详情失败，请稍后重试", "error");
-        }
+        window.showToast("加载窗口详情失败，请稍后重试", "error");
       });
   }
 
@@ -356,9 +352,7 @@
     var payload = collectScheduleCreateSavePayload();
     var validationError = validateScheduleCreateSavePayload(payload);
     if (validationError) {
-      if (typeof window.showToast === "function") {
-        window.showToast(validationError, "error");
-      }
+      window.showToast(validationError, "error");
       return null;
     }
     var isEdit = scheduleVersionWindowModalMode === "edit" && Number(scheduleEditingWindowId) > 0;
@@ -369,9 +363,7 @@
     submitScheduleWindowRequest(method, url, payload)
       .then(function (result) {
         if (result.data && result.data.success) {
-          if (typeof window.showToast === "function") {
-            window.showToast(result.data.message || successMessage, "success");
-          }
+          window.showToast(result.data.message || successMessage, "success");
           var afterSave = onWindowSaved;
           closeScheduleVersionWindowModal();
           if (afterSave) {
@@ -383,20 +375,16 @@
           }
           return;
         }
-        if (typeof window.showToast === "function") {
-          window.showToast(
+        window.showToast(
             (result.data && result.data.error) || (result.ok ? "保存失败" : "保存失败，请稍后重试"),
             "error"
           );
-        }
       })
       .catch(function (err) {
         if (isSessionExpiredError(err)) {
           return;
         }
-        if (typeof window.showToast === "function") {
-          window.showToast("保存失败，请稍后重试", "error");
-        }
+        window.showToast("保存失败，请稍后重试", "error");
       });
     return payload;
   }
@@ -429,28 +417,22 @@
       })
       .then(function (result) {
         if (result.data && result.data.success) {
-          if (typeof window.showToast === "function") {
-            window.showToast(result.data.message || "版本窗口已删除", "success");
-          }
+          window.showToast(result.data.message || "版本窗口已删除", "success");
           if (result.data.redirectUrl) {
             window.location.href = result.data.redirectUrl;
           }
           return;
         }
-        if (typeof window.showToast === "function") {
-          window.showToast(
+        window.showToast(
             (result.data && result.data.error) || (result.ok ? "删除失败" : "删除失败，请稍后重试"),
             "error"
           );
-        }
       })
       .catch(function (err) {
         if (isSessionExpiredError(err)) {
           return;
         }
-        if (typeof window.showToast === "function") {
-          window.showToast("删除失败，请稍后重试", "error");
-        }
+        window.showToast("删除失败，请稍后重试", "error");
       });
   }
 

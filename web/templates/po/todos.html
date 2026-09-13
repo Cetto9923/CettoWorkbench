@@ -37,9 +37,10 @@
         <button type="button" data-relation="in_charge">我负责</button>
         <button type="button" data-relation="cooperate">我配合</button>
       </div>
-      <select id="todosAction" aria-label="办理场景"><option value="all">办理场景：全部</option><option value="todo_review">待受理 / 澄清</option><option value="todo_schedule">待排期</option><option value="todo_verify">待验收</option><option value="todo_deliver">待交付</option><option value="todo_follow">待跟进</option></select>
-      <select id="todosStage" aria-label="价值阶段"><option value="all">价值阶段：全部</option><option value="accept">受理</option><option value="clarify">澄清</option><option value="schedule">排期</option><option value="developing">提测</option><option value="testing">联调测试</option><option value="waitacceptance">验收</option><option value="acceptanced">发起交付</option><option value="publish">发布</option><option value="released">评价反馈</option></select>
-      <select id="todosResponsibility" aria-label="办理责任"><option value="all">办理责任：全部</option><option value="my_action">待我处理</option><option value="my_follow_up">待我跟进</option></select>
+      <select id="todosAction" aria-label="办理场景" hidden><option value="all">办理场景：全部</option><option value="todo_review">待受理 / 澄清</option><option value="todo_schedule">待排期</option><option value="todo_verify">待验收</option><option value="todo_deliver">待交付</option><option value="todo_follow">待跟进</option></select>
+      <select id="todosStage" aria-label="价值阶段" hidden><option value="all">价值阶段：全部</option><option value="accept">受理</option><option value="clarify">澄清</option><option value="schedule">排期</option><option value="developing">提测</option><option value="testing">联调测试</option><option value="waitacceptance">验收</option><option value="acceptanced">发起交付</option><option value="publish">发布</option><option value="released">评价反馈</option></select>
+      <select id="todosResponsibility" aria-label="办理责任" hidden><option value="all">办理责任：全部</option><option value="my_action">待我处理</option><option value="my_follow_up">待我跟进</option></select>
+      <select id="todosApprovalType" aria-label="审批场景" hidden><option value="all">审批场景：全部</option><option value="charter">项目章程</option><option value="buildguideline">建设指引</option><option value="planchange">计划变更</option><option value="review">需求评审</option><option value="reviewchange">需求变更</option><option value="reviewbymanager">主管审批</option></select>
       <button type="button" id="todosResetBtn" class="workspace-btn">重置筛选</button>
     </div>
 

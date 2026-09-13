@@ -20,6 +20,7 @@
         title: trimText(item.title),
         avatarText: trimText(item.avatarText),
         badge: trimText(item.badge),
+        pinyin: trimText(item.pinyin),
       });
     });
     return out;
@@ -87,8 +88,11 @@
       if (item.isGroupHeader) {
         continue;
       }
-      var fields = [item.label, item.value, item.badge];
+      var fields = [item.label, item.value, item.badge, item.pinyin];
       if (mode === "user") fields.push(item.dept, item.title, item.selectedLabel || formatAutocompleteLabel(item));
+      if (mode === "user" && window.PinyinLite) {
+        fields.push(window.PinyinLite.fullPinyin(item.label), window.PinyinLite.initials(item.label));
+      }
       var haystack = fields.join(" ").toLowerCase();
       if (haystack.indexOf(query) === -1) {
         continue;

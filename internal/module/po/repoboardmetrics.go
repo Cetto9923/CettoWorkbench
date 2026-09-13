@@ -2,7 +2,7 @@
 // 文件: internal/module/po/repoboardmetrics.go
 // 模块: PO 工作台
 // 类型: action
-// 职责: 小组效能快照，8 个紧凑指标，按敏捷小组成员真实聚合。
+// 职责: 小组效能快照，当前看板展示的 4 个交付节奏指标，按敏捷小组成员真实聚合。
 //       禁止 mock：无真实数据源的指标返回空值"-"，由前端展示为 "—"。
 //       SQL 一律参数化（IN (?) 占位，不拼接成员账号）。
 // 依赖: 无
@@ -31,7 +31,7 @@ type boardTeamMetric struct {
 	hasValue       bool
 }
 
-// boardGroupMetrics 每组返回的 8 项指标（顺序即界面 1..8）。
+// boardGroupMetrics 返回当前看板展示的 4 项指标。
 func boardGroupMetrics() []*BoardMetric {
 	defs := []struct {
 		key, name, target string
@@ -41,10 +41,6 @@ func boardGroupMetrics() []*BoardMetric {
 		{"implement", "实施周期", "≤20天", false},
 		{"overIteration", "超预迭代周期占比", "≤10%", false},
 		{"unscheduled", "超2周未排期", "≤3个", false},
-		{"gate", "质量门禁通过率", "≥90%", true},
-		{"bugClose", "缺陷关闭率", "≥90%", true},
-		{"bugResponse", "缺陷响应效率", "≥85%", true},
-		{"onlineDelay", "上线延期数", "0个", false},
 	}
 	out := make([]*BoardMetric, 0, len(defs))
 	for _, d := range defs {
@@ -72,8 +68,6 @@ func (r *Repo) FindBoardTeamMetrics(ctx context.Context, teamgroupID uint) ([]*B
 	ms := boardGroupMetrics()
 	r.computeCycles(ctx, ms, members)
 	r.computeUnscheduled(ctx, ms, members)
-	r.computeBug(ctx, ms, members)
-	r.computeOnlineDelay(ctx, ms, members)
 	return ms, nil
 }
 

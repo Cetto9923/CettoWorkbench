@@ -29,12 +29,6 @@
   function demandId() {
     return core().getDemandId ? core().getDemandId() : "";
   }
-  function toast(message, level) {
-    if (core().showToast) {
-      core().showToast(message, level);
-    }
-  }
-
   // ===== 系统 / 单位映射（context 加载完成后）=====
 
   function assignSystemToUnits($r) {
@@ -88,7 +82,7 @@
         buildCache[productId] = Array.isArray(wrap.body.data) ? wrap.body.data : [];
         renderBuildsForUnit(unitNo, buildCache[productId]);
       })
-      .catch(function (err) { $select.empty().append($('<option></option>').val('').text('加载失败，请重试')).prop('disabled', true); toast((err && err.message) || '获取版本列表失败', 'error'); });
+      .catch(function (err) { $select.empty().append($('<option></option>').val('').text('加载失败，请重试')).prop('disabled', true); window.showToast((err && err.message) || '获取版本列表失败', 'error'); });
   }
 
   function renderBuildsForUnit(unitNo, list) {
@@ -138,7 +132,7 @@
         $exec.empty().append($("<option></option>").attr("value", "").text("加载失败，请稍后重试"));
         $exec.prop("disabled", true);
         var msg = (err && err.message) ? ("执行下拉加载失败：" + err.message) : "执行下拉加载失败";
-        toast(msg, "error");
+        window.showToast(msg, "error");
       });
   }
 
@@ -239,20 +233,20 @@
       return;
     }
     applyDraft(d);
-    toast("已恢复本需求的本地草稿（" + (d.savedAt || "") + "）", "info");
+    window.showToast("已恢复本需求的本地草稿（" + (d.savedAt || "") + "）", "info");
   }
 
   function handleSaveDraft() {
     if (!demandId()) {
-      toast("缺少需求上下文，无法保存草稿", "error");
+      window.showToast("缺少需求上下文，无法保存草稿", "error");
       return;
     }
     var draft = collectDraft();
     try {
       window.sessionStorage.setItem(draftKey(), JSON.stringify(draft));
-      toast("草稿已存到本地（key: " + draftKey() + "）", "success");
+      window.showToast("草稿已存到本地（key: " + draftKey() + "）", "success");
     } catch (err) {
-      toast("草稿保存失败：" + (err && err.message ? err.message : "未知错误"), "error");
+      window.showToast("草稿保存失败：" + (err && err.message ? err.message : "未知错误"), "error");
     }
   }
 

@@ -11,6 +11,8 @@ const path = require("node:path");
 const root = path.join(__dirname, "../../..");
 const plPath = path.join(root, "web/static/js/po/personal-list.js");
 global.window = global;
+// 真源桩：production 由 ui.js 提供 window.escapeHtml（base.html 全站加载，早于页面 page_js）。
+global.escapeHtml = (v) => String(v == null ? "" : v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 require(plPath);
 
 const PL = global.PersonalList;

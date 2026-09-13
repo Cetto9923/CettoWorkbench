@@ -2,8 +2,7 @@
 // 文件: internal/module/metrics/repo.go
 // 模块: 指标管理 (metrics)
 // 类型: repo
-// 职责: 禅道只读聚合；一次 SQL 拉取所有指标的运行快照，
-//       不引入 query-per-metric fan-out（database.md）。
+// 职责: 禅道只读聚合；单次 SQL 拉取指标运行快照。
 // 依赖: 无
 // =============================================================================
 
@@ -16,15 +15,13 @@ import (
 	"gorm.io/gorm"
 )
 
-// Repo 是 metrics 模块的只读仓储：全部数据来自禅道 zt_story / zt_bug / zt_task。
-// 不写本地状态；不引入 schema 变更；不重新解释业务。
+// Repo 是 metrics 模块的只读仓储：数据来自禅道 zt_story / zt_bug / zt_task。
 type Repo struct{ db *gorm.DB }
 
 // NewRepo 装配 Repo；db 为 nil 时 Snapshot 返回明确错误。
 func NewRepo(db *gorm.DB) *Repo { return &Repo{db: db} }
 
-// snapshot 是 12 条指标派生所需的全部原子计数。
-// 一行 SQL 拉齐（11 个 COUNT 子查询），避免 query-per-metric fan-out。
+// snapshot 是 12 条指标派生所需的原子计数（单 SQL、11 个 COUNT 子查询）。
 type snapshot struct {
 	// 需求治理
 	Stories             int64 `gorm:"column:stories"`                // 研发需求总量（deleted='0'）
@@ -66,14 +63,4 @@ func (r *Repo) Snapshot(ctx context.Context) (snapshot, error) {
 		(SELECT COUNT(*) FROM zt_task WHERE deleted='0' AND status NOT IN ('closed','cancel') AND deadline IS NOT NULL AND deadline != '0000-00-00' AND DATE(deadline) < CURDATE()) AS tasks_overdue`
 	err := r.db.WithContext(ctx).Raw(query).Scan(&out).Error
 	return out, err
-}
-
-// RadarSummary 直接复用 Snapshot（一次 SQL），不引入第二次查询。
-//
-// 设计依据（database.md）：radar 与 manage 共享同一份指标定义与运行快照，
-// 仅派生逻辑不同（manage = 单条维度；radar = 5 分类聚合）。第二次 fan-out
-// 不会带来新信息，只会把 11 个 COUNT 重算一遍，因此 RadarSummary = Snapshot
-// + 明确语义的别名，让 Handler/Service 拿到「这是给 radar 用的快照」的契约。
-func (r *Repo) RadarSummary(ctx context.Context) (snapshot, error) {
-	return r.Snapshot(ctx)
 }

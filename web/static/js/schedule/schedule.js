@@ -216,6 +216,7 @@
       return;
     }
     e.preventDefault();
+    e.stopPropagation();
     if (typeof window.openScheduleIntegratedModal === "function") {
       window.openScheduleIntegratedModal($(this));
     }

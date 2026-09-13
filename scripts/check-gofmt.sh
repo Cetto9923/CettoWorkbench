@@ -18,6 +18,7 @@ hash_file() {
 
 files=()
 while IFS= read -r file; do
+  [[ -f "$file" ]] || continue
   files+=("$file")
 done < <(git ls-files --cached --others --exclude-standard -- '*.go')
 

@@ -8,7 +8,11 @@
 
 package testtask
 
-import "strings"
+import (
+	"strings"
+
+	"workbench/internal/pkg/personlabel"
+)
 
 // 业需 zt_demand.status → 中文（与首页 home.js ZENTAO_STATUS_LABELS 对齐）。
 var demandStatusLabels = map[string]string{
@@ -39,23 +43,6 @@ func DemandStatusLabel(status string) string {
 		return label
 	}
 	return strings.TrimSpace(status)
-}
-
-// FormatPersonName 账号 + 姓名 →「姓名(账号)」；无姓名回退账号。
-func FormatPersonName(account, realname string) string {
-	v := strings.TrimSpace(account)
-	if v == "" {
-		return ""
-	}
-	n := strings.TrimSpace(realname)
-	if n == "" {
-		return v
-	}
-	suffix := "(" + v + ")"
-	if n == v || strings.HasSuffix(n, suffix) || strings.Contains(n, suffix) {
-		return n
-	}
-	return n + suffix
 }
 
 func dash(v string) string {
@@ -102,7 +89,7 @@ func BuildContextResp(row DemandContextRow, displayMap map[string]string, handle
 		RDName:         lookupDisplay(displayMap, row.RD),
 		QD:             qd,
 		QDName:         lookupDisplay(displayMap, qd),
-		HandlerName:    dash(FormatPersonName(handlerAccount, handlerName)),
+		HandlerName:    dash(personlabel.Format(handlerAccount, handlerName)),
 		Systems:        systems,
 		Users:          users,
 	}

@@ -80,9 +80,7 @@
   flex-shrink: 0;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
-/* 通知对象的「类型词 + 编号」chip 颜色已统一到 wb-priority.css 的
-   .wb-type / .wb-type-{kind}；此处不再维护独立的 .notice-tag-{kind} 色板，
-   避免双轨定义、忘记一处颜色漂移。 */
+/* 通知对象 chip 颜色见 wb-priority.css 的 .wb-type / .wb-type-{kind}。 */
 
 .po-notice .notice-subject-sub {
   display: block;

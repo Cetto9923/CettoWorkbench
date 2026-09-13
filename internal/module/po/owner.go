@@ -8,24 +8,9 @@
 
 package po
 
-import "strings"
-
-// FormatAccountName 账号 + realname 展示名；realname 已带账号后缀时不重复拼接。
-func FormatAccountName(account, realname string) string {
-	v := strings.TrimSpace(account)
-	if v == "" {
-		return ""
-	}
-	n := strings.TrimSpace(realname)
-	if n == "" {
-		return v
-	}
-	suffix := "(" + v + ")"
-	if n == v || strings.HasSuffix(n, suffix) || strings.Contains(n, suffix) {
-		return n
-	}
-	return n + suffix
-}
+import (
+	"strings"
+)
 
 // DeriveCurrentHandler 按禅道 status 推导当前办理人（账号 + 显示名）。
 //
@@ -36,7 +21,7 @@ func FormatAccountName(account, realname string) string {
 //	waitdeliver/acceptanced → 待确认（不用 BRA）
 //	其它 → 待分配
 //
-// bra/braNm 仅保留签名兼容，内部不使用。
+// bra/braNm 保留于签名，内部未使用。
 func DeriveCurrentHandler(status, assignedTo, qd, rd, bra, pm, pmNm,
 	assignedToNm, qdNm, rdNm, braNm string) (account, display string) {
 	_ = bra

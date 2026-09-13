@@ -1,11 +1,4 @@
-// =============================================================================
-// 文件: internal/middleware/sqlrequest.go
-// 模块: 中间件
-// 类型: middleware
-// 职责: 为每个 HTTP 请求注入 request_id 并在结束时写入 SQL 汇总日志。
-// 依赖: internal/pkg/sqllog
-// =============================================================================
-
+// Package middleware 为每个 HTTP 请求注入 request_id 并在结束时写入 SQL 汇总日志。
 package middleware
 
 import (

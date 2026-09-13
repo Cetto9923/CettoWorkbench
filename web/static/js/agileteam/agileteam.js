@@ -72,24 +72,13 @@
     return state.view === "lead";
   }
 
-  function esc(s) {
-    return String(s == null ? "" : s)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-  }
-
-  function toast(msg) {
-    if (typeof showToast === "function") showToast(msg);
-    else if (window.console) console.log("[agileteam]", msg);
-  }
+  var esc = window.escapeHtml;
 
   async function apiFetch(path, opts) {
     opts = opts || {};
     const headers = Object.assign({ "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" }, opts.headers || {});
-    const csrf = document.querySelector('meta[name="csrf-token"]');
-    if (csrf && !headers["X-CSRF-Token"]) headers["X-CSRF-Token"] = csrf.getAttribute("content") || "";
+    const csrf = typeof window.getCsrfToken === "function" ? window.getCsrfToken() : "";
+    if (csrf && !headers["X-CSRF-Token"]) headers["X-CSRF-Token"] = csrf;
     const res = await fetch(path, {
       method: opts.method || "GET",
       credentials: "include",
@@ -361,15 +350,14 @@
     const raw = String(input.value || "").trim();
     const n = Number(raw);
     if (!Number.isFinite(n) || n <= 0) {
-      if (typeof showToast === "function") showToast("请输入合法的每页条数", "error");
-      else if (window.console) console.warn("[agileteam] invalid pageSize", raw);
+      window.showToast("请输入合法的每页条数", "error");
       try { input.focus(); } catch (e) {}
       return;
     }
     const clamped = clampPageSize(n);
     if (clamped !== n) {
       const note = "每页条数已自动夹逼到 " + AT_PAGE_SIZE_MIN + "~" + AT_PAGE_SIZE_MAX + " 范围：" + clamped;
-      if (typeof showToast === "function") showToast(note, "info");
+      window.showToast(note, "info");
     }
     state.pageSize = clamped;
     state.pageSizeCustom = clamped;
@@ -439,7 +427,6 @@
     API: API,
     state: state,
     esc: esc,
-    toast: toast,
     val: val,
     apiFetch: apiFetch,
     isLeadView: isLeadView,

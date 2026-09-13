@@ -2,6 +2,15 @@ const assert = require("assert");
 const fs = require("fs");
 const path = require("path");
 global.window = global;
+global.document = {
+  querySelector: () => null,
+  addEventListener: () => {},
+  removeEventListener: () => {}
+};
+const vm = require("node:vm");
+// Load base shared scripts matching base.html load order
+vm.runInThisContext(fs.readFileSync(path.join(__dirname, "../../../web/static/js/components/autocomplete-options.js"), "utf8"));
+vm.runInThisContext(fs.readFileSync(path.join(__dirname, "../../../web/static/js/ui.js"), "utf8"));
 
 const PersonalList = require("../../../web/static/js/po/personal-list.js");
 
@@ -129,7 +138,7 @@ console.log("PASS: escapeHtml escapes special characters securely");
   console.log("PASS: Pagination renders ellipsis window for large page counts");
 
   // Case 4.4: offered page sizes must equal the server pager contract
-  // (web/templates/components/pager.html offers 10/20/50/100).
+  // (web/templates/components/pager.html offers 10/15/20/50/100).
   const serverPagerSource = fs.readFileSync(
     path.join(__dirname, "../../../web/templates/components/pager.html"),
     "utf8"

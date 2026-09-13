@@ -1,16 +1,13 @@
 # Quality gates and completion
 
-`make check` is the common local and CI regression entry. It executes:
-
-1. tracked-Go `gofmt` verification;
-2. `go test ./...`;
-   plus frontend tests explicitly enumerated in `Makefile`;
-3. `go vet ./...` with an exact diagnostic baseline;
-4. `git diff --check`;
-5. the 500-line first-party file limit with exact non-growth baseline;
-6. hard-pattern regression gating plus advisory pattern scanning;
-7. secret scanning without printing values; and
-8. Handler/Repo architecture-boundary scanning.
+`make check` is the common local and CI regression entry. It executes the gates
+enumerated in the `Makefile` `check` target: local-artifact and root-artifact
+index checks, tracked-Go `gofmt`, `go test ./...` plus the frontend tests
+enumerated in the `Makefile`, `go vet ./...` with an exact diagnostic baseline,
+`git diff --check`, the 500-line first-party file limit with exact non-growth
+baseline, hard-pattern regression gating plus advisory pattern scanning, secret
+scanning without printing values, and Handler/Repo architecture-boundary
+scanning.
 
 The **regression gate** blocks new violations, growth, changed secret findings,
 stale baseline, failed tests, or unexpected vet diagnostics. The **debt report**
@@ -40,10 +37,8 @@ it is not an installed Git hook. The following are
 advisory/debt detectors because text matching cannot establish the necessary
 context or exception:
 
-- `DIRECT_GIN_SCALAR`, `DIRECT_PAGE_FETCH`, `LOCAL_ESCAPE_HTML`, and
-  `LOCAL_PAGINATION` flag local consistency/reuse review;
-- `NEW_WINDOW` requires a product reason and safe opener handling, so the token
-  alone is not a violation;
+- `DIRECT_GIN_SCALAR`, `DIRECT_PAGE_FETCH`, and `LOCAL_PAGINATION` flag local
+  consistency/reuse review;
 - `INIT_FUNCTION` and `AD_HOC_PRINT` require lifecycle/logging context;
 - `WEAK_PASSWORD_HASH` requires distinguishing password writes from isolated
   legacy verification compatibility;
@@ -73,15 +68,15 @@ not browser verification.
 
 ## Effective gates and limits
 
-- The frontend Make target enumerates four files, not every frontend test.
-  Until a separately scoped runner change, explicitly run all added/affected
-  tests and report exit codes. File existence and a green subset are not coverage.
+- The frontend Make target enumerates tests explicitly, not every test file.
+  Explicitly run all added/affected tests and report exit codes. File existence
+  and a green subset are not coverage.
 - The workflow has a separate isolated MySQL integration job. Its existence
   does not certify concurrency, production schema, grants or latency; inspect
   actual executed cases. `make check` does not run tagged DB tests.
-- `bash scripts/test-quality-gates.sh` is required for rules/gates/baselines.
-  It uses a temporary fixture repository and tests scanners, not semantic
-  authorization, lock order or page query budgets.
+- `make check-gates` (which runs `scripts/test-quality-gates.sh`) is required
+  for rules/gates/baselines. It uses a temporary fixture repository and tests
+  scanners, not semantic authorization, lock order or page query budgets.
 - Scanners use text/file-name heuristics. Inspect findings; never move SQL into
   unscanned names to pass. Repo SQL inside a Service file is a placement defect,
   not necessarily a Service receiver executing SQL. Neither is acceptable.

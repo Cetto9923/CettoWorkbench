@@ -7,7 +7,23 @@
 
 package po
 
-func buildTodoApprovalSQL(account string) (string, []interface{}) {
+func buildTodoApprovalSQL(account string, approvalType string) (string, []interface{}) {
+	approvalTypeClause := "ao.objectType IN ('charter', 'planchange', 'buildguideline', 'review')"
+	switch approvalType {
+	case "charter":
+		approvalTypeClause = "ao.objectType = 'charter'"
+	case "planchange":
+		approvalTypeClause = "ao.objectType = 'planchange'"
+	case "buildguideline":
+		approvalTypeClause = "ao.objectType = 'buildguideline'"
+	case "review":
+		approvalTypeClause = "ao.objectType = 'review'"
+	case "reviewchange":
+		approvalTypeClause = "ao.objectType = 'reviewchange'"
+	case "reviewbymanager":
+		approvalTypeClause = "ao.objectType = 'reviewbymanager'"
+	}
+
 	sql := `SELECT 'approval' AS kind, ao.approval AS id, CAST(ao.approval AS CHAR) AS display_id,
 		CASE
 			WHEN ao.objectType = 'charter' THEN COALESCE(NULLIF(p1.name, ''), '项目章程')
@@ -19,7 +35,8 @@ func buildTodoApprovalSQL(account string) (string, []interface{}) {
 		'doing' AS status,
 		'2' AS pri_str, 2 AS priority_rank,
 		CASE WHEN ao.objectType = 'review' AND rv.deadline IS NOT NULL AND rv.deadline <> '0000-00-00' THEN DATE_FORMAT(rv.deadline, '%Y-%m-%d') ELSE '9999-12-31' END AS deadline_str,
-		n.account AS owner_account, '我负责' AS relation, '待我处理' AS responsibility, 0 AS blocked, 4 AS type_order
+		n.account AS owner_account, '我负责' AS relation, '待我处理' AS responsibility, 0 AS blocked, 4 AS type_order,
+		ao.objectType AS object_type, ao.objectID AS object_id, COALESCE(c.project, pc.project, bg.projectID, rv.project, 0) AS project_id
 	FROM zt_approvalnode AS n
 	INNER JOIN zt_approvalobject AS ao ON ao.approval = n.approval
 	LEFT JOIN zt_charter AS c ON ao.objectType = 'charter' AND c.id = ao.objectID AND c.deleted = '0'
@@ -33,7 +50,7 @@ func buildTodoApprovalSQL(account string) (string, []interface{}) {
 	WHERE n.account = ?
 	  AND n.status = 'doing'
 	  AND n.type = 'review'
-	  AND ao.objectType IN ('charter', 'planchange', 'buildguideline', 'review')
+	  AND ` + approvalTypeClause + `
 	  AND ao.objectID > 0
 	GROUP BY ao.approval, ao.objectType, ao.objectID, c.project, pc.project, bg.projectID,
 	         rv.project, p1.name, pc.title, p2.name, p3.name, rv.title, p4.name, rv.deadline, n.account`
@@ -45,7 +62,8 @@ func buildTodoStorySQL(account string) (string, []interface{}) {
 		CASE WHEN s.pri = 1 THEN '1' WHEN s.pri = 2 THEN '2' WHEN s.pri = 3 THEN '3' WHEN s.pri = 4 THEN '4' ELSE '0' END AS pri_str,
 		CASE WHEN s.pri = 1 THEN 1 WHEN s.pri = 2 THEN 2 WHEN s.pri = 3 THEN 3 ELSE 4 END AS priority_rank,
 		CASE WHEN s.deliverDate IS NULL OR s.deliverDate = '0000-00-00' THEN '9999-12-31' ELSE DATE_FORMAT(s.deliverDate, '%Y-%m-%d') END AS deadline_str,
-		s.assignedTo AS owner_account, '我负责' AS relation, '待我处理' AS responsibility, 0 AS blocked, 5 AS type_order
+		s.assignedTo AS owner_account, '我负责' AS relation, '待我处理' AS responsibility, 0 AS blocked, 5 AS type_order,
+		'' AS object_type, 0 AS object_id, 0 AS project_id
 	FROM zt_story AS s
 	WHERE s.deleted = '0' AND s.assignedTo = ? AND s.status NOT IN ('closed', 'released')
 	  AND IFNULL(s.sourceType, '') <> 'demandpool'`
@@ -55,9 +73,10 @@ func buildTodoStorySQL(account string) (string, []interface{}) {
 func buildTodoRiskSQL(account string) (string, []interface{}) {
 	sql := `SELECT 'risk' AS kind, rk.id, CAST(rk.id AS CHAR) AS display_id, rk.name AS title, rk.status,
 		CASE WHEN rk.pri = '1' THEN '1' WHEN rk.pri = '2' THEN '2' WHEN rk.pri = '3' THEN '3' WHEN rk.pri = '4' THEN '4' ELSE '0' END AS pri_str,
-		CASE WHEN rk.pri = '1' THEN 1 WHEN rk.pri = '2' THEN 2 WHEN rk.pri = '3' THEN 3 ELSE 4 END AS priority_rank,
+		CASE WHEN rk.pri = '1' THEN 1 WHEN rk.pri = 2 THEN 2 WHEN rk.pri = 3 THEN 3 ELSE 4 END AS priority_rank,
 		'9999-12-31' AS deadline_str,
-		rk.assignedTo AS owner_account, '我负责' AS relation, '待我处理' AS responsibility, 0 AS blocked, 6 AS type_order
+		rk.assignedTo AS owner_account, '我负责' AS relation, '待我处理' AS responsibility, 0 AS blocked, 6 AS type_order,
+		'' AS object_type, 0 AS object_id, 0 AS project_id
 	FROM zt_risk AS rk
 	WHERE rk.deleted = '0' AND (rk.assignedTo = ? OR rk.createdBy = ?) AND rk.status NOT IN ('closed', 'cancel')`
 	return sql, []interface{}{account, account}
@@ -66,9 +85,10 @@ func buildTodoRiskSQL(account string) (string, []interface{}) {
 func buildTodoIssueSQL(account string) (string, []interface{}) {
 	sql := `SELECT 'issue' AS kind, iss.id, CAST(iss.id AS CHAR) AS display_id, iss.title AS title, iss.status,
 		CASE WHEN iss.pri = '1' THEN '1' WHEN iss.pri = '2' THEN '2' WHEN iss.pri = '3' THEN '3' WHEN iss.pri = '4' THEN '4' ELSE '0' END AS pri_str,
-		CASE WHEN iss.pri = '1' THEN 1 WHEN iss.pri = '2' THEN 2 WHEN iss.pri = '3' THEN 3 ELSE 4 END AS priority_rank,
+		CASE WHEN iss.pri = '1' THEN 1 WHEN iss.pri = 2 THEN 2 WHEN iss.pri = 3 THEN 3 ELSE 4 END AS priority_rank,
 		CASE WHEN iss.deadline IS NULL OR iss.deadline = '0000-00-00' THEN '9999-12-31' ELSE DATE_FORMAT(iss.deadline, '%Y-%m-%d') END AS deadline_str,
-		iss.assignedTo AS owner_account, '我负责' AS relation, '待我处理' AS responsibility, 0 AS blocked, 7 AS type_order
+		iss.assignedTo AS owner_account, '我负责' AS relation, '待我处理' AS responsibility, 0 AS blocked, 7 AS type_order,
+		'' AS object_type, 0 AS object_id, 0 AS project_id
 	FROM zt_issue AS iss
 	WHERE iss.deleted = '0' AND (iss.assignedTo = ? OR iss.createdBy = ?) AND iss.status NOT IN ('closed', 'cancel')`
 	return sql, []interface{}{account, account}
@@ -80,7 +100,8 @@ func buildTodoPersonalSQL(account string) (string, []interface{}) {
 		CASE WHEN td.pri = 1 THEN 1 WHEN td.pri = 2 THEN 2 WHEN td.pri = 3 THEN 3 ELSE 4 END AS priority_rank,
 		CASE WHEN td.date IS NULL OR td.date = '0000-00-00' THEN '9999-12-31' ELSE DATE_FORMAT(td.date, '%Y-%m-%d') END AS deadline_str,
 		CASE WHEN TRIM(td.assignedTo) <> '' THEN td.assignedTo ELSE td.account END AS owner_account,
-		'我负责' AS relation, '待我处理' AS responsibility, 0 AS blocked, 8 AS type_order
+		'我负责' AS relation, '待我处理' AS responsibility, 0 AS blocked, 8 AS type_order,
+		'' AS object_type, 0 AS object_id, 0 AS project_id
 	FROM zt_todo AS td
 	WHERE td.deleted = '0' AND (td.account = ? OR td.assignedTo = ?) AND td.status NOT IN ('done', 'closed')`
 	return sql, []interface{}{account, account}
@@ -92,7 +113,8 @@ func buildTodoTesttaskSQL(account string) (string, []interface{}) {
 		CASE WHEN tt.pri = 1 THEN 1 WHEN tt.pri = 2 THEN 2 WHEN tt.pri = 3 THEN 3 ELSE 4 END AS priority_rank,
 		CASE WHEN tt.end IS NULL OR tt.end = '0000-00-00' THEN '9999-12-31' ELSE DATE_FORMAT(tt.end, '%Y-%m-%d') END AS deadline_str,
 		tt.owner AS owner_account, '我负责' AS relation, '待我处理' AS responsibility,
-		CASE WHEN tt.status = 'blocked' THEN 1 ELSE 0 END AS blocked, 9 AS type_order
+		CASE WHEN tt.status = 'blocked' THEN 1 ELSE 0 END AS blocked, 9 AS type_order,
+		'' AS object_type, 0 AS object_id, 0 AS project_id
 	FROM zt_testtask AS tt
 	WHERE tt.deleted = '0' AND tt.owner = ? AND tt.status <> 'done'`
 	return sql, []interface{}{account}

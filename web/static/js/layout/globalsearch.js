@@ -57,14 +57,6 @@
     return el ? (el.getAttribute("content") || "").trim() : "";
   }
 
-  function toast(message) {
-    if (typeof window.showToast === "function") {
-      window.showToast(message, "error");
-      return;
-    }
-    window.alert(message);
-  }
-
   function zentaoBase() {
     return meta("zentao-url").replace(/\/+$/, "");
   }
@@ -144,7 +136,7 @@
 
   function openUrl(url) {
     if (!url) {
-      toast("禅道地址未配置");
+      window.showToast("禅道地址未配置", "error");
       return;
     }
     window.open(url, "_blank", "noopener,noreferrer");
@@ -236,7 +228,7 @@
       e.preventDefault();
       if (!value) return;
       if (!isDigits(value)) {
-        toast(MSG_ID_ONLY);
+        window.showToast(MSG_ID_ONLY, "error");
         return;
       }
       if (!results || !results.classList.contains("show")) {

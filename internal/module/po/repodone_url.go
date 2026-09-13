@@ -2,8 +2,7 @@
 // 文件: internal/module/po/repodone_url.go
 // 模块: PO 工作台
 // 类型: repo
-// 职责: 我的已办对象 → 禅道详情页链接映射。从 repodone.go 拆出，使其回到
-//       500 行硬上限之内，并把"对象类型 → 链接参数"这一项职责集中到一处。
+// 职责: 我的已办对象 → 禅道详情页链接映射。
 // 依赖: internal/pkg/zentao
 // =============================================================================
 
@@ -16,8 +15,8 @@ import (
 )
 
 // objectViewURL 按 zentao 对象类型拼详情页链接。
-// 对 charter / buildguideline 等审批对象，使用对象自身 ID 作为首选参数，
-// 与禅道 max5 实际链接 m=<m>&f=view&id=N 一致；缺失时回退到 projectID。
+// 对 charter / buildguideline 等审批对象，入口由 objectViewURLWithProject
+// 按所属项目生成；无项目上下文时不生成可能导致白屏的伪详情链接。
 func objectViewURL(objectType string, id uint) string {
 	if id == 0 {
 		return ""
@@ -39,7 +38,7 @@ func objectViewURL(objectType string, id uint) string {
 		return zentao.CaseViewURL(id)
 	case "charter":
 		return zentao.CharterViewURL(id, 0)
-	case "buildguideline":
+	case "buildguideline", "guideline":
 		return zentao.BuildguidelineViewURL(id, 0)
 	case "planchange":
 		return zentao.PlanchangeViewURL(id)
@@ -49,9 +48,7 @@ func objectViewURL(objectType string, id uint) string {
 	return ""
 }
 
-// objectViewURLWithProject 按 zentao 对象类型拼详情页链接；审批对象可携带 projectID 回退。
-// zt_action.objectID 实测非 0，因此正常路径走 id={objectID}；projectID 仅在对象自身
-// ID 缺失时兜底，两者都为 0 时返回空串，由前端渲染不可点标题而不是跳禅道首页。
+// objectViewURLWithProject 按 zentao 对象类型拼详情页链接；章程和建设指引必须携带 projectID。
 func objectViewURLWithProject(objectType string, objectID, projectID uint) string {
 	if objectType == "charter" {
 		return zentao.CharterViewURL(objectID, projectID)

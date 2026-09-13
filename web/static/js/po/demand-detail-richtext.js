@@ -1,9 +1,8 @@
 // =============================================================================
 // 文件: web/static/js/po/demand-detail-richtext.js
 // 模块: PO 工作台
-// 职责: F02 详情富文本净化辅助：sanitizeRichText / esc / 内联 DOMParser
-//       白名单兜底，独立成文件以保持 demand-detail-render.js 的职责
-//       边界与 500 行硬性上限；与 html-sanitize.js 共享同一组白名单语义。
+// 职责: 详情富文本净化辅助（sanitizeRichText / esc / DOMParser 白名单兜底）；
+//       与 html-sanitize.js 共享白名单语义。
 // =============================================================================
 
 (function (root, factory) {
@@ -24,15 +23,7 @@
     try { sanitizer = require("./html-sanitize.js"); } catch (e) { /* ignore */ }
   }
 
-  function esc(str) {
-    if (str === null || str === undefined) return "";
-    return String(str)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  }
+  var esc = window.escapeHtml;
 
   function escapeTextNode(v) {
     return String(v)

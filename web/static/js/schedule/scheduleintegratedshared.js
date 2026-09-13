@@ -86,9 +86,7 @@
     cloneTemplate: cloneTemplate,
     cloneTemplateElement: cloneTemplateElement,
 
-    escapeHtml: function (text) {
-      return $("<div>").text(text == null ? "" : String(text)).html();
-    },
+    escapeHtml: function (text) { return window.escapeHtml(text); },
 
     formatStoryEstimate: function (value) {
       if (value === undefined || value === null || value === "") {
@@ -110,6 +108,7 @@
           return {
             value: $.trim(user.account || ""),
             label: $.trim(user.realname || "") || $.trim(user.account || ""),
+            pinyin: $.trim(user.pinyin || ""),
           };
         })
         .filter(function (item) {

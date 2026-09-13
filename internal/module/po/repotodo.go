@@ -3,7 +3,7 @@
 // 模块: PO 工作台
 // 类型: action
 // 职责: 待办共用辅助（CountOpenTodos、关系/截止日/优先级标签、账号展示名映射）。
-//       列表真源已迁至 QueryTodoUnified / todo_query_*.go。
+//       列表查询见 QueryTodoUnified / todo_query_*.go。
 // 依赖: 无
 // =============================================================================
 
@@ -13,10 +13,10 @@ import (
 	"context"
 	"strings"
 	"time"
+	"workbench/internal/pkg/personlabel"
 )
 
-// CountOpenTodos 仅返回当前账号待办总数（不取 items）。
-// 与 FindTodoItems 在空 req 下的总数等价，但避免 N 行 SQL 回传。
+// CountOpenTodos 返回当前账号待办总数（不取 items）。
 func (r *Repo) CountOpenTodos(ctx context.Context, account string) (int64, error) {
 	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
 		return 0, nil
@@ -78,7 +78,7 @@ func (r *Repo) loadAccountDisplayMap(ctx context.Context) (map[string]string, er
 		if strings.TrimSpace(row.Realname) == "" {
 			out[row.Account] = row.Account
 		} else {
-			out[row.Account] = FormatAccountName(row.Account, row.Realname)
+			out[row.Account] = personlabel.Format(row.Account, row.Realname)
 		}
 	}
 	return out, nil

@@ -1,11 +1,4 @@
-// =============================================================================
-// 文件: internal/middleware/ratelimit.go
-// 模块: 中间件
-// 类型: middleware
-// 职责: 按 IP 执行请求限流。
-// 依赖: internal/pkg/ratelimit
-// =============================================================================
-
+// Package middleware 按 IP 执行请求限流。
 package middleware
 
 import (

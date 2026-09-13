@@ -1,5 +1,5 @@
 // =============================================================================
-// 文件: internal/module/sqlperf/service.go
+// 文件: internal/module/debug/service.go
 // 模块: SQL 性能分析
 // 类型: readonly
 // 职责: 编排 SQL 性能分析数据查询。

@@ -17,6 +17,7 @@ import (
 
 	"workbench/internal/model"
 	"workbench/internal/module/po/primaryaction"
+	"workbench/internal/pkg/personlabel"
 	"workbench/internal/pkg/zentao"
 )
 
@@ -42,7 +43,7 @@ func (s *Service) FollowList(ctx context.Context, actor *model.User, req FollowL
 	return &FollowListResp{Items: []FollowItem{}, Page: req.Page, PageSize: req.PageSize}, nil
 }
 
-// attachFollowPrimaryActions 为关注列表业需批量挂主操作（Stage 5 单一真源）。
+// attachFollowPrimaryActions 为关注列表业需批量挂主操作。
 func (s *Service) attachFollowPrimaryActions(ctx context.Context, actor *model.User, items []FollowItem) error {
 	if len(items) == 0 {
 		return nil
@@ -67,12 +68,7 @@ func (s *Service) attachFollowPrimaryActions(ctx context.Context, actor *model.U
 }
 
 // FollowSetDemand 切换对业务需求的关注。
-// 写入走禅道原生 ajaxFollowObject / ajaxUnfollowObject（common::followObject），
-// 不在工作台另写一套关注语义；取消关注后补写 followed=0，以压制历史 mailto 抄送关注。
-// 下期自动关注规划（按设计最小集落地，本期仅定义入口不写库）：
-// 1. 我创建 / 我是 BRA·QD·RD / 我受理时自动 ajaxFollowObject；
-// 2. 我完成评审（通过或驳回）自动 ajaxFollowObject；
-// 3. 我发起催办或提测时自动 ajaxFollowObject；失败均不影响主流程。
+// 写入走禅道 ajaxFollowObject / ajaxUnfollowObject；取消关注后补写 followed=0，压制历史 mailto 抄送关注。
 func (s *Service) FollowSetDemand(ctx context.Context, actor *model.User, req FollowSetReq) error {
 	if actor == nil || strings.TrimSpace(actor.Account) == "" || req.Followed == nil || req.ID <= 0 {
 		return nil
@@ -133,7 +129,7 @@ func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stage
 		if err != nil {
 			return nil, err
 		}
-		return s.populateWorkItems(ctx, actor, refs, total, req.Page, req.PageSize, displayMap)
+		return s.populateWorkItems(ctx, actor, refs, total, req.Page, req.PageSize, displayMap, req)
 	}
 
 	// 纯业需阶段：直接单 SQL Count + 单 SQL 分页查
@@ -217,10 +213,10 @@ func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stage
 	}
 	pageRefs := refs[offset:end]
 
-	return s.populateWorkItems(ctx, actor, pageRefs, total, req.Page, req.PageSize, displayMap)
+	return s.populateWorkItems(ctx, actor, pageRefs, total, req.Page, req.PageSize, displayMap, req)
 }
 
-func (s *Service) populateWorkItems(ctx context.Context, actor *model.User, pageRefs []itemRef, total, page, pageSize int, displayMap map[string]string) (*DemandsResp, error) {
+func (s *Service) populateWorkItems(ctx context.Context, actor *model.User, pageRefs []itemRef, total, page, pageSize int, displayMap map[string]string, req DemandsReq) (*DemandsResp, error) {
 	var demandIDs []int
 	var storyIDs []int
 	for _, ref := range pageRefs {
@@ -253,7 +249,7 @@ func (s *Service) populateWorkItems(ctx context.Context, actor *model.User, page
 		}
 	}
 
-	// Stage 5：批量派生主操作（避免行内 N+1）。
+	// 批量派生主操作，避免行内 N+1。
 	demandIDsUint := toUintSlice(demandIDs)
 	storyIDsUint := toUintSlice(storyIDs)
 	demandActions, err := s.DeriveDemandPrimaryActions(ctx, actor, demandIDsUint)
@@ -261,6 +257,10 @@ func (s *Service) populateWorkItems(ctx context.Context, actor *model.User, page
 		return nil, err
 	}
 	storyActions, err := s.DeriveStoryPrimaryActions(ctx, actor, storyIDsUint, false)
+	if err != nil {
+		return nil, err
+	}
+	participateStoryIDs, err := s.prepareParticipateStoryActions(ctx, actor, pageRefs, req, storyActions)
 	if err != nil {
 		return nil, err
 	}
@@ -275,6 +275,7 @@ func (s *Service) populateWorkItems(ctx context.Context, actor *model.User, page
 					paCopy := pa
 					item.PrimaryAction = &paCopy
 				}
+				item.PrimaryAction = replaceParticipateScheduleAction(item.PrimaryAction, participateStoryIDs[ref.id], storyActions)
 				items = append(items, item)
 			}
 		} else if ref.kind == "story" {
@@ -465,7 +466,7 @@ func buildStoryWorkItem(row StoryRow, label string, actor *model.User, displayMa
 	}
 	owner := lookupAccountDisplay(displayMap, account)
 	if owner == "" && actor != nil {
-		owner = FormatAccountName(actor.Account, actor.DisplayName)
+		owner = personlabel.Format(actor.Account, actor.DisplayName)
 	}
 	return WorkItemDetail{
 		Kind:         "story",

@@ -1,25 +1,15 @@
 /* =============================================================================
    文件: web/static/js/po/personal-list.js
-   模块: PO 个人工作台 (UI-02 列表请求与分页共享原语)
-   职责: 提供三列表（/todos, /done, /notice）有界且纯粹的 JSON 异步请求时序保护、
-         统一状态（loading/empty/error）切换与统一分页组件渲染。
-   禁止: 框架化、通用列表引擎、跨模块数据总线或业务逻辑接管。
+   模块: PO 个人工作台 (列表请求与分页共享原语)
+   职责: 三列表（/todos, /done, /notice）有界 JSON 请求、时序保护、
+         loading/empty/error 状态与统一分页渲染。
    ============================================================================= */
 
 (function () {
   "use strict";
 
   // 每页条数选项：与 components/pager.html 的 <select name="pageSize"> 保持同一套取值。
-  var PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
-
-  function escapeHtml(value) {
-    return String(value == null ? "" : value)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  }
+  var PAGE_SIZE_OPTIONS = [10, 15, 20, 50, 100];
 
   /**
    * createController: 创建带时序保护（E06）和状态隔离（E05）的列表数据控制器。
@@ -276,14 +266,10 @@
   }
 
   /**
-   * Stage 3 公共优先级 / 对象类型 helpers。
-   * 入口 (handlers/services) 输出 P1–P4 字符串值 ("1","2","3","4") 或数字; 也可能
-   * 返回 null/undefined/"" / 越界值。规范:
-   *   - normalizePriority(raw) -> 1..4 数字 / null (无默认 fallback)
-   *   - priorityBadge(raw)    -> <span class="wb-priority" data-priority="N">P{N}</span>
-   *                              raw 无效时返回 <span class="wb-priority" data-priority="">—</span>
-   *   - objectTypeBadge(kind) -> <span class="wb-type wb-type-{kind}">中文 label</span>
-   *                              kind 未知时返回 wb-type-unknown。
+   * 公共优先级 / 对象类型 helpers。
+   *   - normalizePriority(raw) -> 1..4 / null（无默认）
+   *   - priorityBadge(raw)    -> wb-priority 标记；无效时 em-dash
+   *   - objectTypeBadge(kind) -> wb-type 标记；未知时 wb-type-unknown
    */
   function normalizePriority(raw) {
     if (raw === null || raw === undefined) { return null; }
@@ -388,9 +374,9 @@
     var k = normalizeKind(kind);
     if (!k) { return '<span class="wb-type wb-type-unknown">—</span>'; }
     if (OBJECT_TYPE_LABELS[k]) {
-      return '<span class="wb-type wb-type-' + k + '">' + escapeHtml(OBJECT_TYPE_LABELS[k]) + "</span>";
+      return '<span class="wb-type wb-type-' + k + '">' + window.escapeHtml(OBJECT_TYPE_LABELS[k]) + "</span>";
     }
-    return '<span class="wb-type wb-type-unknown">' + escapeHtml(k) + "</span>";
+    return '<span class="wb-type wb-type-unknown">' + window.escapeHtml(k) + "</span>";
   }
 
   function formatChipId(safeId) {
@@ -420,10 +406,10 @@
     var label = OBJECT_TYPE_SHORT_LABELS[k] || OBJECT_TYPE_LABELS[k] || k || "—";
     var cls = k && OBJECT_TYPE_LABELS[k] ? ("wb-type-" + k) : "wb-type-unknown";
     if (!safeId) {
-      return '<span class="wb-type ' + cls + '"><span class="wb-type-tag">' + escapeHtml(label) + "</span></span>";
+      return '<span class="wb-type ' + cls + '"><span class="wb-type-tag">' + window.escapeHtml(label) + "</span></span>";
     }
     return '<span class="wb-type ' + cls + '">' +
-      '<span class="wb-type-tag">' + escapeHtml(label) + "</span>" +
+      '<span class="wb-type-tag">' + window.escapeHtml(label) + "</span>" +
       '<span class="wb-type-id">' + formatChipId(safeId) + "</span>" +
       "</span>";
   }
@@ -472,11 +458,11 @@
     } else if (lower.indexOf("开发") >= 0 || lower.indexOf("doing") >= 0 || lower.indexOf("测试") >= 0 || lower.indexOf("处理") >= 0 || lower.indexOf("进行") >= 0 || lower.indexOf("评审") >= 0 || lower.indexOf("active") >= 0) {
       semantic = "processing";
     }
-    return '<span class="wb-status-tag wb-status-' + semantic + '"><i class="wb-status-dot"></i>' + escapeHtml(raw) + '</span>';
+    return '<span class="wb-status-tag wb-status-' + semantic + '"><i class="wb-status-dot"></i>' + window.escapeHtml(raw) + '</span>';
   }
 
   window.PersonalList = {
-    escapeHtml: escapeHtml,
+    escapeHtml: function (value) { return window.escapeHtml(value); },
     createController: createController,
     renderPagination: renderPagination,
     loadPageSize: loadPageSize,

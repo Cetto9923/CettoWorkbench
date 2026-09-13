@@ -65,6 +65,7 @@ type BuildOption struct {
 type UserOption struct {
 	Account  string `json:"account"`
 	Realname string `json:"realname"`
+	Pinyin   string `json:"pinyin,omitempty"`
 }
 
 // ContextResp 提测弹窗「当前需求上下文」JSON。

@@ -18,7 +18,6 @@
   <link rel="stylesheet" href="{{ asset "/static/vendor/fonts/jetbrains-mono/fonts.css" }}">
   <link rel="stylesheet" href="{{ asset "/static/vendor/bootstrap-icons/bootstrap-icons.css" }}">
   <link rel="stylesheet" href="{{ asset "/static/vendor/fontawesome/css/all.min.css" }}">
-  <link rel="stylesheet" href="{{ asset "/static/vendor/quill/quill.snow.css" }}">
   <link rel="stylesheet" href="/static/css/layout/base.css">
   <link rel="stylesheet" href="/static/css/layout/variables.css">
   <link rel="stylesheet" href="/static/css/layout/app.css">
@@ -73,6 +72,7 @@
       </div>
     </div>
   </div>
+  <script src="{{ asset "/static/js/picker/vendor/pinyin-lite.js" }}"></script>
   <script src="{{ asset "/static/js/components/autocomplete-options.js" }}"></script>
   <script src="{{ asset "/static/js/ui.js" }}"></script>
   <script src="/static/js/app.js"></script>
@@ -81,7 +81,6 @@
   <script src="{{ asset "/static/js/layout/globalsearch.js" }}"></script>
   <script src="{{ asset "/static/js/po/po-profile.js" }}"></script>
   {{ if not .HideChrome }}<script src="{{ asset "/static/js/layout/bottomtabbar.js" }}"></script>{{ end }}
-  <script src="{{ asset "/static/vendor/quill/quill.min.js" }}"></script>
   <script src="{{ asset "/static/vendor/jquery/jquery.min.js" }}"></script>
   {{ if and (not .HideChrome) (eq .LayoutNav "top") }}<script src="/static/js/layout/topnav.js"></script>{{ end }}
   {{ block "page_js" . }}{{ end }}

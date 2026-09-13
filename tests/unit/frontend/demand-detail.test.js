@@ -1,5 +1,18 @@
 const assert = require("assert");
+const fs = require("node:fs");
+const path = require("node:path");
+const vm = require("node:vm");
+
 global.window = global;
+global.document = {
+  querySelector: () => null,
+  addEventListener: () => {},
+  removeEventListener: () => {}
+};
+// Load base shared scripts matching base.html load order
+vm.runInThisContext(fs.readFileSync(path.join(__dirname, "../../../web/static/js/components/autocomplete-options.js"), "utf8"));
+vm.runInThisContext(fs.readFileSync(path.join(__dirname, "../../../web/static/js/ui.js"), "utf8"));
+vm.runInThisContext(fs.readFileSync(path.join(__dirname, "../../../web/static/js/po/personal-list.js"), "utf8"));
 
 const R = require("../../../web/static/js/po/demand-detail-render.js");
 

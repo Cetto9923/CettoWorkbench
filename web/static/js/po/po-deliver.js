@@ -6,17 +6,14 @@
   var LAUNCH_WINDOW_OTHER = "__launch_other__";
   var currentCtx = null, isSubmitting = false;
 
-  var esc = (window.PersonalList && window.PersonalList.escapeHtml) || function (s) { return String(s == null ? "" : s); };
+  var esc = window.escapeHtml;
 
   function demandIdOf(value) {
     var m = String(value == null ? "" : value).trim().match(/(?:US|REQ|DEMAND)?[-#]?(\d+)/i);
     return m ? m[1] : "";
   }
 
-  function showToast(msg, type) {
-    if (typeof window.showToast === "function") window.showToast(msg, type);
-    else alert(msg);
-  }
+  function showToast(msg, type) { window.showToast(msg, type); }
 
   function pad2(n) { return String(n).padStart(2, "0"); }
   function localCalendarIsoFromDate(d) {

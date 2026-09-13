@@ -181,11 +181,45 @@ func (r *Repo) SearchUsers(ctx context.Context, q string, limit int) ([]Candidat
 	like := "%" + q + "%"
 	var rows []CandidateItem
 	err := r.read().WithContext(ctx).Raw(`
-SELECT account, COALESCE(NULLIF(realname, ''), account) AS name
+SELECT account, COALESCE(NULLIF(realname, ''), account) AS name, pinyin
 FROM zt_user
 WHERE deleted = '0' AND (account LIKE ? OR realname LIKE ? OR pinyin LIKE ?)
 ORDER BY account ASC
 LIMIT ?`, like, like, like, limit).Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	if rows == nil {
+		rows = []CandidateItem{}
+	}
+	return rows, nil
+}
+
+// SearchPeerTeamUsers 返回当前小组及同一父级下兄弟小组的成员。
+// 空 q 用于团队维护弹窗的默认候选列表，非空 q 仍支持姓名、账号和禅道拼音搜索。
+func (r *Repo) SearchPeerTeamUsers(ctx context.Context, teamgroupID uint, q string, limit int) ([]CandidateItem, error) {
+	if teamgroupID == 0 {
+		return []CandidateItem{}, nil
+	}
+	if limit <= 0 || limit > 100 {
+		limit = 50
+	}
+	q = strings.TrimSpace(q)
+	like := "%" + q + "%"
+	var rows []CandidateItem
+	err := r.read().WithContext(ctx).Raw(`
+SELECT DISTINCT t.account, COALESCE(NULLIF(u.realname, ''), t.account) AS name, u.pinyin
+FROM zt_teamgroup current_tg
+INNER JOIN zt_teamgroup peer_tg
+  ON peer_tg.deleted = '0'
+ AND ((current_tg.parent <> 0 AND peer_tg.parent = current_tg.parent)
+      OR (current_tg.parent = 0 AND peer_tg.id = current_tg.id))
+INNER JOIN zt_team t ON t.root = peer_tg.id AND t.type = 'teamgroup' AND t.account <> ''
+INNER JOIN zt_user u ON u.account = t.account AND u.deleted = '0'
+WHERE current_tg.id = ? AND current_tg.deleted = '0'
+  AND (? = '' OR t.account LIKE ? OR u.realname LIKE ? OR u.pinyin LIKE ?)
+ORDER BY t.account ASC
+LIMIT ?`, teamgroupID, q, like, like, like, limit).Scan(&rows).Error
 	if err != nil {
 		return nil, err
 	}

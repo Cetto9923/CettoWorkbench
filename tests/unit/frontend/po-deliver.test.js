@@ -78,7 +78,8 @@ const jsPath = path.join(root, "web/static/js/po/po-deliver.js");
 const jsContent = fs.readFileSync(jsPath, "utf8");
 
 // Mock window and document to evaluate helpers
-const mockWindow = {};
+// 真源桩：production 由 ui.js 提供 window.escapeHtml（base.html 全站加载）。
+const mockWindow = { escapeHtml: v => String(v == null ? "" : v) };
 const mockDoc = {};
 const evalContext = new Function("window", "document", "jQuery", "$", jsContent);
 try {

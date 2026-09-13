@@ -170,6 +170,7 @@ func applyDemandStage(q *gorm.DB, account string, filter mysqlStageFilter) *gorm
 func (r *Repo) scheduleStoryScope(ctx context.Context, account string) *gorm.DB {
 	return r.db.WithContext(ctx).Table("zt_story").
 		Where("deleted = ?", "0").
+		Where("(fromDemand IS NULL OR fromDemand = 0)").
 		Where("IFNULL(sourceType, '') != ?", "demandpool").
 		Where("type = ?", "story").
 		Where("assignedTo = ?", account).
@@ -185,6 +186,7 @@ func (r *Repo) deliverStoryScope(ctx context.Context, account string) *gorm.DB {
 	today := time.Now().Format("2006-01-02")
 	return r.db.WithContext(ctx).Table("zt_story").
 		Where("deleted = ?", "0").
+		Where("(fromDemand IS NULL OR fromDemand = 0)").
 		Where("IFNULL(sourceType, '') != ?", "demandpool").
 		Where("type = ?", "story").
 		Where("assignedTo = ?", account).
@@ -276,6 +278,33 @@ func (r *Repo) FindStoriesByIDs(ctx context.Context, ids []int) ([]StoryRow, err
 		return nil, err
 	}
 	return rows, nil
+}
+
+// FindPrimaryStoryIDsByDemandIDs 批量找到业务需求对应的可办理研发需求。
+// 参与列表仍按业务需求展示，但排期动作必须落到研发需求，不得生成业务需求排期入口。
+func (r *Repo) FindPrimaryStoryIDsByDemandIDs(ctx context.Context, demandIDs []int) (map[int]int, error) {
+	out := make(map[int]int)
+	if r == nil || r.db == nil || len(demandIDs) == 0 {
+		return out, nil
+	}
+	var rows []struct {
+		DemandID int `gorm:"column:demand_id"`
+		StoryID  int `gorm:"column:story_id"`
+	}
+	err := r.db.WithContext(ctx).Table("zt_story").
+		Select("fromDemand AS demand_id, MIN(id) AS story_id").
+		Where("fromDemand IN ? AND deleted = ? AND status <> ?", demandIDs, "0", "closed").
+		Group("fromDemand").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	for _, row := range rows {
+		if row.DemandID > 0 && row.StoryID > 0 {
+			out[row.DemandID] = row.StoryID
+		}
+	}
+	return out, nil
 }
 
 // dateUnsetExpr 判断 DATE 列未填（NULL 或零日期）。

@@ -2,7 +2,7 @@
    布局目标：标题 → 负责人 → 效能快照 → 需求树+问题栏 连续紧凑排列，1920×1080 一屏可见多条需求。
    原则：无固定大高度、无 min-height 撑开、无 flex 占位留白；间距 6~8px。 */
 
-/* 公共优先级 / 对象类型 token-driven 样式 + 旧 class 别名 (Stage 2) */
+/* 公共优先级 / 对象类型：复用 wb-priority.css */
 @import url("./wb-priority.css");
 
 :root{
@@ -217,7 +217,7 @@
 .po-board .task-card:hover{border-color:var(--blue-bd);box-shadow:var(--shadow)}
 .po-board .task-card.blocked{border-left-color:var(--orange)}
 .po-board .task-card.overdue{border-left-color:var(--red)}
-.po-board .task-card.done{border-left-color:var(--green)}
+.po-board .task-card.done{border-left-color:var(--green)}.po-board .task-card.hidden{display:none}
 .po-board .task-head{display:flex;align-items:center;gap:6px;min-width:0}
 .po-board .task-title{font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .po-board .task-title-link{color:var(--t1);text-decoration:none;min-width:0}
@@ -233,8 +233,6 @@
 .po-board .task-filter-tip{flex-shrink:0;padding:6px 10px;border:1px solid var(--blue-bd);background:var(--color-info-bg);border-radius:4px;margin-bottom:6px;font-size:10px;color:var(--t2)}
 .po-board .task-filter-tip strong{color:var(--navy)}
 .po-board .hidden{display:none!important}
-.po-board .toast{position:fixed;left:50%;top:52%;transform:translate(-50%,-50%);background:rgba(31,41,55,.9);color:var(--color-text-on-accent);padding:11px 18px;border-radius:7px;font-size:12px;opacity:0;pointer-events:none;transition:.18s;z-index:99}
-.po-board .toast.show{opacity:1}
 
 /* 任务抽屉（方案1: 右侧滑出，不离开需求看板） */
 /* 注意：backdrop/drawer 在 .po-board 外部，需单独声明 hidden，不依赖 .po-board .hidden */

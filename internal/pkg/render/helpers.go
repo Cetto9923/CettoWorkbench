@@ -2,8 +2,7 @@
 // 文件: internal/pkg/render/helpers.go
 // 模块: render
 // 类型: helper
-// 职责: 模板 funcmap 用的工具函数（asset URL 生成、dict/add/sub/alertClass/toInt）。
-//       独立成文件以保持 render.go 在职责分离下不超过 500 行上限。
+// 职责: 模板 funcmap 工具（asset URL、dict/add/sub/alertClass/toInt）。
 // =============================================================================
 
 package render

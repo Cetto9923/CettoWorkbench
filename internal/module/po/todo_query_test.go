@@ -11,6 +11,9 @@ package po
 import (
 	"strings"
 	"testing"
+
+	"workbench/internal/config"
+	"workbench/internal/pkg/zentao"
 )
 
 func TestBuildTodoUnionSQLObjectFiltering(t *testing.T) {
@@ -166,5 +169,54 @@ func TestBuildTodoOuterWhereDimensions(t *testing.T) {
 	whereFocus, _ := buildTodoOuterWhere(TodoListReq{Focus: "today"}, nil, true, "2026-09-05")
 	if !strings.Contains(whereFocus, "t.deadline_str = ?") {
 		t.Errorf("expected focus today condition, got: %s", whereFocus)
+	}
+}
+
+func TestBuildTodoUnionSQL_ApprovalType(t *testing.T) {
+	// 审批场景过滤仅保留 approval，并且携带对应 objectType 条件
+	sqlCharter, _ := buildTodoUnionSQL("user_a", TodoListReq{ApprovalType: "charter"})
+	if !strings.Contains(sqlCharter, "'approval' AS kind") {
+		t.Errorf("expected approval in union for approvalType charter, got: %s", sqlCharter)
+	}
+	if strings.Contains(sqlCharter, "'demand' AS kind") || strings.Contains(sqlCharter, "'task' AS kind") {
+		t.Errorf("expected approvalType to exclude demand and task, got: %s", sqlCharter)
+	}
+	if !strings.Contains(sqlCharter, "ao.objectType = 'charter'") {
+		t.Errorf("expected charter condition in approval query, got: %s", sqlCharter)
+	}
+}
+
+func TestFormatTodoUnifiedItem_ApprovalURL(t *testing.T) {
+	zentao.SetConfig(config.ZentaoConfig{URL: "http://zentao.test", RequestType: "PATH_INFO"})
+	rowCharter := todoUnifiedRow{
+		Kind:       "approval",
+		ID:         2781,
+		ObjectType: "charter",
+		ObjectID:   152,
+		ProjectID:  99,
+	}
+	itemCharter := formatTodoUnifiedItem(rowCharter, map[string]string{})
+	if !strings.Contains(itemCharter.URL, "charter-view-99.html") && !strings.Contains(itemCharter.URL, "projectID=99") {
+		t.Errorf("expected charter URL with projectID=99, got: %s", itemCharter.URL)
+	}
+
+	rowReview := todoUnifiedRow{
+		Kind:       "approval",
+		ID:         2782,
+		ObjectType: "review",
+		ObjectID:   304,
+	}
+	itemReview := formatTodoUnifiedItem(rowReview, map[string]string{})
+	if !strings.Contains(itemReview.URL, "review-view-304.html") && !strings.Contains(itemReview.URL, "reviewID=304") {
+		t.Errorf("expected review URL with reviewID=304, got: %s", itemReview.URL)
+	}
+
+	rowFallback := todoUnifiedRow{
+		Kind: "approval",
+		ID:   2783,
+	}
+	itemFallback := formatTodoUnifiedItem(rowFallback, map[string]string{})
+	if !strings.Contains(itemFallback.URL, "approval-view-2783.html") && !strings.Contains(itemFallback.URL, "approvalID=2783") {
+		t.Errorf("expected fallback approval URL with approval-view-2783.html or approvalID=2783, got: %s", itemFallback.URL)
 	}
 }

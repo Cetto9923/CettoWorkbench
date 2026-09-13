@@ -31,13 +31,13 @@ import (
 type Service struct {
 	repo    *Repo
 	userSvc *user.Service
-	ztAPI   *zentao.Client
+	ztSite  *zentao.Client
 	logger  *zap.Logger
 }
 
-// NewService 创建 Service。ztAPI 可为空，写入禅道时回退 DefaultClient()。
-func NewService(repo *Repo, userSvc *user.Service, ztAPI *zentao.Client, logger *zap.Logger) *Service {
-	return &Service{repo: repo, userSvc: userSvc, ztAPI: ztAPI, logger: logger}
+// NewService 创建 Service。ztSite 为禅道站点客户端，可为空，写入时回退 SiteClient()。
+func NewService(repo *Repo, userSvc *user.Service, ztSite *zentao.Client, logger *zap.Logger) *Service {
+	return &Service{repo: repo, userSvc: userSvc, ztSite: ztSite, logger: logger}
 }
 
 // LinkStory 对齐禅道 projectbuild-linkStory（默认列表或 bySearch）。
@@ -245,12 +245,13 @@ func (s *Service) LinkStories(ctx context.Context, actor *model.User, buildID ui
 		return err
 	}
 
-	client := s.ztAPI
+	// 版本关联/解除需求是禅道站点控制层动作，未注册 REST entry，必须走站点客户端。
+	client := s.ztSite
 	if client == nil {
-		client = zentao.DefaultClient()
+		client = zentao.SiteClient()
 	}
 	if client == nil {
-		return errorx.New(errorx.ErrCodeInternal, "禅道 API 未配置")
+		return errorx.New(errorx.ErrCodeInternal, "禅道站点未配置")
 	}
 
 	if err := linkBuildStories(ctx, client, linkBuildStoriesReq{
@@ -295,12 +296,13 @@ func (s *Service) UnlinkStories(ctx context.Context, actor *model.User, buildID 
 		return err
 	}
 
-	client := s.ztAPI
+	// 版本关联/解除需求是禅道站点控制层动作，未注册 REST entry，必须走站点客户端。
+	client := s.ztSite
 	if client == nil {
-		client = zentao.DefaultClient()
+		client = zentao.SiteClient()
 	}
 	if client == nil {
-		return errorx.New(errorx.ErrCodeInternal, "禅道 API 未配置")
+		return errorx.New(errorx.ErrCodeInternal, "禅道站点未配置")
 	}
 
 	if err := unlinkBuildStories(ctx, client, linkBuildStoriesReq{

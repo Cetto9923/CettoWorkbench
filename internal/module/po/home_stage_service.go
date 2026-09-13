@@ -45,5 +45,5 @@ func (s *Service) listAllStageDemands(ctx context.Context, actor *model.User, re
 	if err != nil {
 		return nil, err
 	}
-	return s.populateWorkItems(ctx, actor, refs, total, req.Page, req.PageSize, displayMap)
+	return s.populateWorkItems(ctx, actor, refs, total, req.Page, req.PageSize, displayMap, req)
 }

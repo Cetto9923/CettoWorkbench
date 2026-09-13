@@ -41,22 +41,49 @@ or `master`.
 
 ## Mandatory pre-flight
 
-Read `docs/engineering/agent-onboarding.md` at session start and after a handoff
-or context reset. Record the task, branch/HEAD, relevant WIP, files actually
-read, and acceptance commands. Agent memories, historical plans, comments, and
-reference repositories are evidence to verify, not new authorization or proof
-that a prior requirement was satisfied. See `agent-compatibility.md` in the same
-directory for tool entry points and cold-start checks.
-`docs/engineering/spec-index.md` is the directory for current rules, scoped
-contracts, catalogs and historical evidence. Directory proximity does not make
-a historical report a current rule. Log access and review evidence follow
-`docs/engineering/quality.md`.
+At session start and after a handoff or context reset, run and report:
+
+```sh
+git rev-parse --show-toplevel
+git branch --show-current
+git status --short
+```
+
+STOP immediately if the current branch is `main` or `master`. Record the task,
+branch/HEAD, relevant WIP, files actually read, and acceptance commands. Agent
+memories, historical plans, comments, and reference repositories are evidence to
+verify, not new authorization or proof that a prior requirement was satisfied.
+See `agent-compatibility.md` for tool entry points and cold-start checks.
+Log access and review evidence follow `docs/engineering/quality.md`.
 
 Before editing, confirm: safe current branch; task goal and allowed diff; relevant
 module/design docs; data source and schema ownership; whether any reference or
 shared component is actually applicable; DB/permission/performance impact; and
 the commands that prove acceptance. Stop and surface unresolved architecture or
 data ambiguity instead of inventing a contract.
+
+## Scope Gate
+
+Before implementing any non-trivial change, write and keep a Scope Contract.
+Trivial changes — a typo fix, a one-line correction, or a formatting-only change
+with no behavior impact — are exempt and may skip the contract.
+
+The Scope Contract states, in fixed order:
+
+```text
+Scope Contract
+目标 / Goal:
+必须改变 / Must change:
+允许影响 / Allowed to affect:
+明确不处理 / OUT_OF_SCOPE:
+预计修改 / Expected to modify (file:symbol):
+预计不修改 / Expected NOT to modify:
+验收条件 / Acceptance:
+发现的额外问题 / Extra findings:
+```
+
+Anything discovered beyond the stated scope is marked OUT_OF_SCOPE and reported,
+never silently fixed. Re-run the Scope Gate whenever the scope meaningfully changes.
 
 ## MUST rules
 
@@ -176,3 +203,29 @@ was added; query changes do not introduce N+1, in-memory pagination, or repeated
 same-request reads; no secret was introduced; required automated and acceptance
 gates ran. Report every failed/skipped gate and do not claim completion when one
 is missing.
+
+## Machine gates vs review-only
+
+`make check` enforces only what is machine-decidable. The following MUST be
+verified during review and are NOT proven by any scanner: object-level
+authorization semantics; transaction/lock order and deadlock risk; N+1 and
+page-query budgets; whether a comment is true and non-redundant; whether a change
+is the smallest maintainable one; whether new code reuses an existing shared
+capability; and real authenticated browser acceptance. Do not claim any of these
+as "verified" from a green `make check`.
+
+## Handoff record
+
+Use a short record, never a copied constitution or a mandatory giant report:
+
+```text
+Scope / allowed files / forbidden actions:
+Repository / branch / HEAD / WIP snapshot:
+Rules actually read / confirmed business source:
+Changed behavior or audit finding / file:symbol:
+DB ownership / environment authorization / concurrent writers (if affected):
+Queries / lock order / bounds / idempotency evidence (if affected):
+Commands / exit codes / executed cases / skipped gates:
+External changes / unresolved risks / remaining decisions:
+Docs, application, live acceptance and CI status separately:
+```

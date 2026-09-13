@@ -54,7 +54,7 @@ type DemandDetailResp struct {
 	Delivery        *DetailDelivery              `json:"delivery,omitempty"`
 	History         *DetailHistory               `json:"history,omitempty"`
 	Config          DetailConfig                 `json:"config"`
-	PrimaryAction   *primaryaction.PrimaryAction `json:"primaryAction,omitempty"` // Stage 5: 服务端主操作
+	PrimaryAction   *primaryaction.PrimaryAction `json:"primaryAction,omitempty"` // 服务端主操作
 }
 
 // DetailConfig 集中配置（前端禁止 hardcode）。

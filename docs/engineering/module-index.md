@@ -23,7 +23,10 @@ This index provides a structural map of the modules under `internal/module/`.
 | `user` | User management (legacy non-authoritative) | `user.Service` | `user.Repo`, `gorm.DB` | `zt_user`, `zt_gf_user_roles` | SOURCE VERIFIED / SCHEMA UNVERIFIED (Legacy) | `internal/module/user/` |
 | `schedule` | Window scheduling, demand allocation | `schedule.Service` | `schedule.Repo`, `gorm.DB`, `zentao` | `zt_demand`, `zt_task` | SOURCE VERIFIED / SCHEMA UNVERIFIED | `internal/module/schedule/` |
 | `po` | PO value stream, board metrics, todos, notices | `po.Service` | `po.Repo`, `schedule.Service`, `user.Service` | `zt_demand`, `zt_task` | SOURCE VERIFIED / SCHEMA UNVERIFIED | `internal/module/po/` |
+| `agileteam` | Agile team topology, membership adjustments, confirm/reject | `agileteam.Service` | `agileteam.Repo`, `gorm.DB` | `zt_teamgroup`, `zt_team`, `zt_wb_agileteam_adjustment`, `zt_wb_agileteam_adjustment_item`, `zt_wb_agileteam_history`, `zt_user` | SOURCE VERIFIED / SCHEMA UNVERIFIED | `internal/module/agileteam/` |
+| `metrics` | Metrics definitions, read-only ZenTao snapshots, radar helpers | `metrics.Service` | `metrics.Repo`, `gorm.DB` | `zt_story`, `zt_bug`, `zt_task` | SOURCE VERIFIED / SCHEMA UNVERIFIED | `internal/module/metrics/` |
+| `profile` | Self-service profile, password, preferred roles, main team | `profile.Service` | `profile.Repo`, `gorm.DB` | `zt_user`, `zt_dept`, `zt_teamgroup`, `zt_team`, `zt_wb_profile_prefs`, `zt_gf_user_roles`, `zt_roles` | SOURCE VERIFIED / SCHEMA UNVERIFIED | `internal/module/profile/` |
+| `query` | Read-only business/RD demand list views | `query.Service` | `query.Repo`, `gorm.DB` | `zt_demand`, `zt_story`, `zt_user`, `zt_product` | SOURCE VERIFIED / SCHEMA UNVERIFIED | `internal/module/query/` |
 | `debug` | SQL performance telemetry (superadmin only) | `debug.Service` | `debug.Repo`, filesystem logs | None (file logs only) | SOURCE VERIFIED | `internal/module/debug/` |
 
-- **Future Capabilities**: Future assistant boundaries are documented in [ai-boundary.md](ai-boundary.md). No AI runtime or SDK is currently implemented.
 - **Shared Frontend**: Source-inspected shared client-side capabilities are documented in [shared-frontend.md](shared-frontend.md).

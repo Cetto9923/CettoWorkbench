@@ -15,15 +15,7 @@
 })(typeof self !== "undefined" ? self : this, function (RichText) {
   "use strict";
 
-  var esc = (RichText && RichText.esc) || function (str) {
-    if (str === null || str === undefined) return "";
-    return String(str)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  };
+  var esc = window.escapeHtml;
   var sanitizeRichText = (RichText && RichText.sanitizeRichText) || function (raw) { return esc(raw); };
 
   function categoryLabel(value) {
@@ -257,7 +249,7 @@
     var ta = document.getElementById("ddRejectComment");
     var comment = (ta && ta.value || "").trim();
     if (!comment) {
-      if (typeof window.showToast === "function") window.showToast("驳回时请输入评审意见", "warning");
+      window.showToast("驳回时请输入评审意见", "warning");
       if (ta) ta.focus();
       return;
     }
@@ -283,9 +275,7 @@
         });
       })
       .then(function (data) {
-        if (typeof window.showToast === "function") {
-          window.showToast((data && data.message) || (result === "pass" ? "评审通过成功" : "驳回成功"), "success");
-        }
+        window.showToast((data && data.message) || (result === "pass" ? "评审通过成功" : "驳回成功"), "success");
         if (window.DemandDetail && typeof window.DemandDetail.close === "function") {
           window.DemandDetail.close();
         }
@@ -298,9 +288,7 @@
         }
       })
       .catch(function (err) {
-        if (typeof window.showToast === "function") {
-          window.showToast(err.message || "评审失败", "error");
-        }
+        window.showToast(err.message || "评审失败", "error");
       })
       .then(function () {
         if (typeof onDone === "function") onDone();
@@ -366,9 +354,7 @@
       })
       .then(function (data) {
         closeWithdrawModal();
-        if (typeof window.showToast === "function") {
-          window.showToast((data && data.message) || "撤销评审成功，需求已退回草稿状态", "success");
-        }
+        window.showToast((data && data.message) || "撤销评审成功，需求已退回草稿状态", "success");
         if (window.DemandDetail && typeof window.DemandDetail.open === "function") {
           window.DemandDetail.open(cleanId);
         }
@@ -381,9 +367,7 @@
         }
       })
       .catch(function (err) {
-        if (typeof window.showToast === "function") {
-          window.showToast(err.message || "撤销评审失败", "error");
-        }
+        window.showToast(err.message || "撤销评审失败", "error");
       })
       .then(function () {
         if (btn) {
@@ -439,9 +423,7 @@
         });
       })
       .then(function (data) {
-        if (typeof window.showToast === "function") {
-          window.showToast((data && data.message) || "提交评审成功", "success");
-        }
+        window.showToast((data && data.message) || "提交评审成功", "success");
         if (window.DemandDetail && typeof window.DemandDetail.open === "function") {
           window.DemandDetail.open(cleanId);
         }
@@ -454,9 +436,7 @@
         }
       })
       .catch(function (err) {
-        if (typeof window.showToast === "function") {
-          window.showToast(err.message || "提交评审失败", "error");
-        }
+        window.showToast(err.message || "提交评审失败", "error");
       })
       .then(function () {
         if (btn) {

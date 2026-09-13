@@ -21,6 +21,8 @@ jobs:
           cache: true
       - name: Run required regression gates
         run: make check
+      - name: Run gate self-tests
+        run: make check-gates
 
   integration-tests:
     runs-on: ubuntu-latest

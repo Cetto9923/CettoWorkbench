@@ -169,15 +169,22 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
               <i class="fas fa-chevron-down" aria-hidden="true"></i>
             </button>
             <div class="schedule-ms-panel" hidden>
+              <div class="schedule-ms-search">
+                <i class="fas fa-search schedule-ms-search-icon" aria-hidden="true"></i>
+                <input type="text" class="schedule-ms-search-input" placeholder="搜索系统..." autocomplete="off" aria-label="搜索系统">
+                <button type="button" class="schedule-ms-search-clear" hidden aria-label="清空搜索">×</button>
+              </div>
               <div class="schedule-ms-options">
                 {{ range .FilterProducts }}
-                <label class="schedule-ms-option">
+                <label class="schedule-ms-option" data-label="{{ .Name }}">
                   <input type="checkbox" class="schedule-ms-checkbox" value="{{ .ID }}" data-label="{{ .Name }}"{{ if index $.SelectedProductMap .ID }} checked{{ end }}>
-                  <span>{{ .Name }}</span>
+                  <span class="schedule-ms-option-name">{{ .Name }}</span>
+                  {{ if .IsMyProduct }}<span class="schedule-ms-tag">我参与</span>{{ end }}
                 </label>
                 {{ else }}
                 <div class="schedule-ms-empty">暂无系统</div>
                 {{ end }}
+                <div class="schedule-ms-no-match" hidden>无匹配系统</div>
               </div>
             </div>
           </div>
@@ -309,11 +316,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             <td class="schedule-task-col"><span class="t3">—</span></td>
             <td class="schedule-action-col">
               <div class="schedule-action-buttons">
-                {{ if .DetailURL }}
-                <a href="{{ .DetailURL }}" class="action-btn {{ .ActionClass }}" data-demand-id="{{ .DemandID }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</a>
-                {{ else }}
-                <button type="button" class="action-btn {{ .ActionClass }}" data-demand-id="{{ .DemandID }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</button>
-                {{ end }}
+                <button type="button" class="action-btn {{ .ActionClass }}" data-demand-id="{{ .DemandID }}" data-detail-url="{{ .DetailURL }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</button>
               </div>
             </td>
           </tr>
@@ -343,11 +346,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             <td class="schedule-task-col"><span class="t3">—</span></td>
             <td class="schedule-action-col">
               <div class="schedule-action-buttons">
-                {{ if .DetailURL }}
-                <a href="{{ .DetailURL }}" class="action-btn {{ .ActionClass }}" data-demand-id="{{ .DemandID }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</a>
-                {{ else }}
-                <button type="button" class="action-btn {{ .ActionClass }}" data-demand-id="{{ .DemandID }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</button>
-                {{ end }}
+                <button type="button" class="action-btn {{ .ActionClass }}" data-demand-id="{{ .DemandID }}" data-detail-url="{{ .DetailURL }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</button>
               </div>
             </td>
           </tr>
@@ -489,11 +488,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             </td>
             <td class="schedule-action-col">
               <div class="schedule-action-buttons">
-                {{ if .DetailURL }}
-                <a href="{{ .DetailURL }}" class="action-btn action-btn--primary" data-story-id="{{ .StoryID }}">排期</a>
-                {{ else }}
-                <button type="button" class="action-btn action-btn--primary" data-story-id="{{ .StoryID }}">排期</button>
-                {{ end }}
+                <button type="button" class="action-btn action-btn--primary" data-story-id="{{ .StoryID }}" data-detail-url="{{ .DetailURL }}">排期</button>
                 <button type="button" class="action-btn action-btn--success js-open-task-modal" data-story-id="{{ .StoryID }}">维护任务</button>
               </div>
             </td>
@@ -528,11 +523,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             </td>
             <td class="schedule-action-col">
               <div class="schedule-action-buttons">
-                {{ if .DetailURL }}
-                <a href="{{ .DetailURL }}" class="action-btn action-btn--primary" data-story-id="{{ .StoryID }}">排期</a>
-                {{ else }}
-                <button type="button" class="action-btn action-btn--primary" data-story-id="{{ .StoryID }}">排期</button>
-                {{ end }}
+                <button type="button" class="action-btn action-btn--primary" data-story-id="{{ .StoryID }}" data-detail-url="{{ .DetailURL }}">排期</button>
                 <button type="button" class="action-btn action-btn--success js-open-task-modal" data-story-id="{{ .StoryID }}">维护任务</button>
               </div>
             </td>

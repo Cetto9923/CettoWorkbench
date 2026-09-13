@@ -1,8 +1,8 @@
 // =============================================================================
 // 文件: web/static/js/po/demand-detail-render.js
 // 模块: PO 工作台
-// 职责: 业务需求统一详情 Tab 纯渲染入口（概览/需求/交付/历史）；研发执行
-//       Tab 见 demand-detail-render-execution.js。全局 API 不变。
+// 职责: 业务需求统一详情 Tab 纯渲染（概览/需求/交付/历史）；
+//       研发执行 Tab 见 demand-detail-render-execution.js。
 // =============================================================================
 
 (function (root, factory) {
@@ -20,15 +20,7 @@
 })(typeof self !== "undefined" ? self : this, function (RichText, Parent, Execution) {
   "use strict";
 
-  var esc = (RichText && RichText.esc) || function (str) {
-    if (str === null || str === undefined) return "";
-    return String(str)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  };
+  var esc = window.escapeHtml;
   var sanitizeRichText = (RichText && RichText.sanitizeRichText) || function (raw) { return esc(raw); };
   var excerpt = (RichText && RichText.excerpt) || function (text, max) {
     if (!text || text === "—") return "";
@@ -39,12 +31,8 @@
   };
   var renderParentAggregate = (Parent && Parent.renderParentAggregate) || function () { return ""; };
   var renderTabExecution = (Execution && Execution.renderTabExecution) || function () { return ""; };
-  // 公共优先级渲染 (Stage 3): PersonalList.priorityBadge 优先, 缺失时降级到本地实现。
-  var priorityBadge = (typeof window !== "undefined" && window.PersonalList && window.PersonalList.priorityBadge) || function (raw) {
-    var n = parseInt(String(raw == null ? "" : raw).replace(/^p/i, ""), 10);
-    if (isNaN(n) || n < 1 || n > 4) { return '<span class="wb-priority" data-priority="">—</span>'; }
-    return '<span class="wb-priority" data-priority="' + n + '">P' + n + "</span>";
-  };
+  // 公共优先级渲染：PersonalList.priorityBadge
+  var priorityBadge = window.PersonalList.priorityBadge;
 
   function categoryLabel(value) {
     var key = String(value || "").trim().toLowerCase();

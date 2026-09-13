@@ -22,72 +22,13 @@
         <span>质效驾驶舱</span>
       </div>
       <div class="radar-scope-chips">
-        <span class="scope-chip" id="radarScopeBadge"><i class="fas fa-users-viewfinder"></i> 敏捷小组视角</span>
-        <span class="scope-chip target" id="radarTargetBadge"><i class="fas fa-layer-group"></i> 组织变革团队</span>
-        <span class="scope-chip time" id="radarTimeBadge"><i class="fas fa-calendar-alt"></i> 2026年09月 运行快照</span>
+        <span class="scope-chip" id="radarScopeBadge"><i class="fas fa-users-viewfinder"></i> 全量指标</span>
+        <span class="scope-chip target" id="radarTargetBadge"><i class="fas fa-layer-group"></i> 五维分类</span>
+        <span class="scope-chip time" id="radarTimeBadge"><i class="fas fa-calendar-alt"></i> 当前数据快照</span>
       </div>
     </div>
 
     <div class="radar-screen-controls">
-      <!-- 视角切换：敏捷小组视角 VS 团队管理角度 -->
-      <div class="radar-view-mode-tabs" role="tablist" aria-label="观察视角">
-        <button type="button" class="radar-mode-btn active" id="btnModeGroup" data-mode="group">敏捷小组视角</button>
-        <button type="button" class="radar-mode-btn" id="btnModeTeam" data-mode="team">团队管理角度</button>
-      </div>
-
-      <!-- 1) 敏捷小组下拉（看板敏捷团队口径 zt_teamgroup） -->
-      <div class="radar-select-group" id="radarTeamgroupWrap">
-        <span class="ctrl-label">敏捷小组:</span>
-        <div class="custom-select-box">
-          <select id="radarTeamgroupSelect" aria-label="看板敏捷小组">
-            <option value="0">全部敏捷小组（汇总）</option>
-          </select>
-          <i class="fas fa-chevron-down select-arrow"></i>
-        </div>
-      </div>
-
-      <!-- 2) 团队管理维度下拉（组织架构层级团队，如项目赋能团队等） -->
-      <div class="radar-select-group" id="radarOrgTeamWrap" style="display: none;">
-        <span class="ctrl-label">管理团队:</span>
-        <div class="custom-select-box">
-          <select id="radarOrgTeamSelect" aria-label="组织架构团队">
-            <option value="all" selected>全团队管理汇总 (全行)</option>
-            <option value="项目赋能团队">项目赋能团队 (科技支撑团队)</option>
-            <option value="需求&效能团队">需求&效能团队 (卓越中心)</option>
-            <option value="组织变革团队">组织变革团队</option>
-            <option value="架构&质量团队">架构&质量团队</option>
-            <option value="安全&合规团队">安全&合规团队</option>
-            <option value="核心专项团队">核心专项团队 (产品一部)</option>
-            <option value="信贷专项团队">信贷专项团队 (产品二部)</option>
-            <option value="小微专项团队">小微专项团队</option>
-            <option value="零售专项团队">零售专项团队 (产品三部)</option>
-            <option value="业务中台团队">业务中台团队</option>
-            <option value="线下渠道团队">线下渠道团队</option>
-            <option value="计财专项团队">计财专项团队</option>
-            <option value="AI实验室">AI实验室</option>
-            <option value="技术测试团队">技术测试团队</option>
-          </select>
-          <i class="fas fa-chevron-down select-arrow"></i>
-        </div>
-      </div>
-
-      <!-- 统计月份下拉 -->
-      <div class="radar-select-group">
-        <span class="ctrl-label">统计月份:</span>
-        <div class="custom-select-box">
-          <select id="radarMonthSelect" aria-label="统计月份">
-            <option value="2026-09" selected>2026年09月（本月）</option>
-            <option value="2026-08">2026年08月</option>
-            <option value="2026-07">2026年07月</option>
-            <option value="2026-06">2026年06月</option>
-            <option value="2026-05">2026年05月</option>
-            <option value="2026-04">2026年04月</option>
-            <option value="">全部累计（实时）</option>
-          </select>
-          <i class="fas fa-chevron-down select-arrow"></i>
-        </div>
-      </div>
-
       <a href="/metrics/manage" class="pmo-config-btn" title="进入PMO指标元数据与阈值配置管理">
         <i class="fas fa-sliders-h"></i>
         <span>配置管理</span>

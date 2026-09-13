@@ -17,15 +17,28 @@ import (
 )
 
 const noticeCategorySQLExpr = `CASE
-	WHEN COALESCE(a.action, '') IN ('reviewed', 'reviewpassed', 'reviewrejected', 'submitreview', 'submit', 'submitted', 'returned', 'withdraw') THEN 'approval'
+	WHEN COALESCE(a.action, '') IN ('reviewed', 'reviewpassed', 'reviewrejected', 'submitreview', 'submit', 'submitted', 'returned', 'withdraw', 'approvalreview') THEN 'approval'
 	WHEN COALESCE(a.action, '') IN ('reminded', 'overdue', 'due', 'delay', 'delayed', 'soon') THEN 'reminder'
 	WHEN COALESCE(a.action, '') IN ('assigned', 'assignedTo', 'transfer', 'cc', 'commented', 'remark', 'mentioned') THEN 'collaboration'
-	WHEN COALESCE(a.action, '') IN ('rejected', 'bugconfirmed', 'paused', 'suspended', 'hangup', 'archive', 'blocked', 'gatefailed') THEN 'risk'
+	WHEN COALESCE(a.action, '') IN ('rejected', 'bugconfirmed', 'paused', 'suspended', 'hangup', 'archive', 'archived', 'blocked', 'gatefailed') THEN 'risk'
+	WHEN COALESCE(a.objectType, n.objectType) IN ('approval', 'charter', 'guideline', 'buildguideline', 'review', 'planchange') THEN 'approval'
 	WHEN COALESCE(a.objectType, n.objectType) IN ('doc', 'release', 'system', 'sync', 'account') THEN 'system'
+	WHEN n.subject LIKE 'CHARTER %' OR n.subject LIKE 'GUIDELINE %' OR n.subject LIKE 'REVIEW %' OR n.subject LIKE 'APPROVAL %' OR n.subject LIKE '%审批%' OR n.subject LIKE '%评审%' OR n.data LIKE '%当前需要您进行审批%' OR n.data LIKE '%/charter-view-%' OR n.data LIKE '%/guideline-view-%' OR n.data LIKE '%/review-view-%' THEN 'approval'
+	WHEN n.subject LIKE '提醒：您有 %' OR n.subject LIKE '%催办%' OR n.subject LIKE '%到期%' OR n.subject LIKE '%逾期%' OR n.subject LIKE '%延期%' OR n.data LIKE '%催办%' OR n.data LIKE '%到期%' OR n.data LIKE '%逾期%' OR n.data LIKE '%延期%' THEN 'reminder'
+	WHEN n.subject LIKE '%指派%' OR n.subject LIKE '%转交%' OR n.subject LIKE '%抄送%' OR n.data LIKE '%指派给%' OR n.data LIKE '%转交%' OR n.data LIKE '%抄送%' OR n.data LIKE '%评论%' OR n.data LIKE '%备注%' THEN 'collaboration'
+	WHEN n.subject LIKE '%挂起%' OR n.subject LIKE '%阻塞%' OR n.subject LIKE '%异常%' OR n.subject LIKE '%驳回%' OR n.subject LIKE '%拒绝%' OR n.subject LIKE '%终止%' OR n.data LIKE '%挂起%' OR n.data LIKE '%阻塞%' OR n.data LIKE '%异常%' OR n.data LIKE '%驳回%' OR n.data LIKE '%拒绝%' OR n.data LIKE '%终止%' THEN 'risk'
+	WHEN n.subject LIKE '%系统通知%' OR n.subject LIKE '%系统公告%' OR n.data LIKE '%系统通知%' OR n.data LIKE '%系统公告%' THEN 'system'
 	ELSE 'business'
 END`
 
-const noticeNeedsActionSQLExpr = `COALESCE(a.action, '') IN ('reviewed', 'clarify', 'assigned', 'assignedTo', 'submitted', 'submit', 'returned', 'reminded')`
+const noticeNeedsActionSQLExpr = `(
+	COALESCE(a.action, '') IN ('reviewed', 'clarify', 'assigned', 'assignedTo', 'submitted', 'submit', 'returned', 'reminded')
+	OR (COALESCE(a.action, '') = '' AND (
+		n.subject LIKE 'CHARTER %' OR n.subject LIKE 'GUIDELINE %' OR n.subject LIKE 'REVIEW %' OR n.subject LIKE 'APPROVAL %'
+		OR n.subject LIKE '提醒：您有 %' OR n.subject LIKE '%催办%'
+		OR n.data LIKE '%当前需要您进行审批%' OR n.data LIKE '%指派给%'
+	))
+)`
 
 type noticeQuickCountsRow struct {
 	Total    int64 `gorm:"column:total"`
@@ -88,16 +101,81 @@ func applyNoticeFilters(query *gorm.DB, now time.Time, req NoticeListReq, includ
 			escaped, escaped, escaped)
 	}
 
-	if req.ObjectType == "approval" {
+	switch req.ObjectType {
+	case "", "all":
+		// no filter
+	case "approval":
 		query = query.Where(noticeCategorySQLExpr + " = 'approval'")
-	} else if req.ObjectType == "feedback" {
+	case "demand":
+		query = query.Where(`(
+			COALESCE(a.objectType, n.objectType) IN ('demand', 'sub_demand', 'business')
+			OR ((COALESCE(a.objectType, n.objectType, '') IN ('mail', '', 'message')) AND (
+				n.subject REGEXP '^(DEMAND|demand|业务需求|需求)[[:space:]]*#[[:space:]]*[0-9]+'
+				OR (n.subject NOT REGEXP '#[[:space:]]*[0-9]+' AND (n.subject LIKE '%需求%' OR n.data LIKE '%/demand-view-%'))
+			))
+		)`)
+	case "story":
+		query = query.Where(`(
+			COALESCE(a.objectType, n.objectType) = 'story'
+			OR ((COALESCE(a.objectType, n.objectType, '') IN ('mail', '', 'message')) AND (
+				n.subject REGEXP '^(STORY|story|研发需求|研需)[[:space:]]*#[[:space:]]*[0-9]+'
+				OR (n.subject NOT REGEXP '#[[:space:]]*[0-9]+' AND n.data LIKE '%/story-view-%')
+			))
+		)`)
+	case "task":
+		query = query.Where(`(
+			COALESCE(a.objectType, n.objectType) = ?
+			OR ((COALESCE(a.objectType, n.objectType, '') IN ('mail', '', 'message')) AND (
+				n.subject REGEXP '^(TASK|task|任务)[[:space:]]*#[[:space:]]*[0-9]+'
+				OR (n.subject NOT REGEXP '#[[:space:]]*[0-9]+' AND (n.subject LIKE '提醒：您有 任务%' OR n.data LIKE '%/task-view-%'))
+			))
+		)`, "task")
+	case "bug":
+		query = query.Where(`(
+			COALESCE(a.objectType, n.objectType) = 'bug'
+			OR ((COALESCE(a.objectType, n.objectType, '') IN ('mail', '', 'message')) AND (
+				n.subject REGEXP '^(BUG|bug|缺陷)[[:space:]]*#[[:space:]]*[0-9]+'
+				OR (n.subject NOT REGEXP '#[[:space:]]*[0-9]+' AND (n.subject LIKE '提醒：您有 Bug%' OR n.data LIKE '%/bug-view-%'))
+			))
+		)`)
+	case "feedback":
 		query = query.Where("(COALESCE(a.objectType, n.objectType) = ? OR (COALESCE(a.objectType, n.objectType, '') IN ('mail', '') AND n.subject REGEXP ?))", "feedback", `^(反馈|FEEDBACK|Feedback)[[:space:]]*#[[:space:]]*[0-9]+`)
-	} else if req.ObjectType != "" && req.ObjectType != "all" {
-		if req.ObjectType == "demand" {
-			query = query.Where("COALESCE(a.objectType, n.objectType) IN ?", []string{"demand", "sub_demand", "business"})
-		} else {
-			query = query.Where("COALESCE(a.objectType, n.objectType) = ?", req.ObjectType)
-		}
+	case "project":
+		query = query.Where(`(
+			COALESCE(a.objectType, n.objectType) = 'project'
+			OR ((COALESCE(a.objectType, n.objectType, '') IN ('mail', '', 'message')) AND (
+				n.subject REGEXP '^(PROJECT|project|项目)[[:space:]]*#[[:space:]]*[0-9]+'
+				OR (n.subject NOT REGEXP '#[[:space:]]*[0-9]+' AND n.data LIKE '%/project-view-%')
+			))
+		)`)
+	case "testtask":
+		query = query.Where(`(
+			COALESCE(a.objectType, n.objectType) IN ('testtask', 'testcase', 'case')
+			OR ((COALESCE(a.objectType, n.objectType, '') IN ('mail', '', 'message')) AND (
+				n.subject REGEXP '^(TESTTASK|testtask|TESTCASE|testcase|测试单|测试)[[:space:]]*#[[:space:]]*[0-9]+'
+				OR (n.subject NOT REGEXP '#[[:space:]]*[0-9]+' AND (n.subject LIKE '%测试单%' OR n.data LIKE '%/testtask-view-%' OR n.data LIKE '%/testcase-view-%'))
+			))
+		)`)
+	case "issue":
+		query = query.Where(`(
+			COALESCE(a.objectType, n.objectType) = 'issue'
+			OR ((COALESCE(a.objectType, n.objectType, '') IN ('mail', '', 'message')) AND (
+				n.subject REGEXP '^(ISSUE|issue|问题)[[:space:]]*#[[:space:]]*[0-9]+'
+				OR (n.subject NOT REGEXP '#[[:space:]]*[0-9]+' AND n.data LIKE '%/issue-view-%')
+			))
+		)`)
+	case "risk":
+		query = query.Where(`(
+			COALESCE(a.objectType, n.objectType) = 'risk'
+			OR ((COALESCE(a.objectType, n.objectType, '') IN ('mail', '', 'message')) AND (
+				n.subject REGEXP '^(RISK|risk|风险)[[:space:]]*#[[:space:]]*[0-9]+'
+				OR (n.subject NOT REGEXP '#[[:space:]]*[0-9]+' AND n.data LIKE '%/risk-view-%')
+			))
+		)`)
+	case "mail":
+		query = query.Where("n.objectType = 'mail'")
+	default:
+		query = query.Where("COALESCE(a.objectType, n.objectType) = ?", req.ObjectType)
 	}
 
 	switch req.TimeRange {

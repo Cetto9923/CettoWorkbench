@@ -16,6 +16,8 @@ const vm = require("node:vm");
 
 // We load personal-list.js into a sandbox so we can call its window.PersonalList API.
 const sandbox = { window: {} };
+// 真源桩：production 由 ui.js 提供 window.escapeHtml（base.html 全站加载，早于页面 page_js）。
+sandbox.window.escapeHtml = (v) => String(v == null ? "" : v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 vm.createContext(sandbox);
 vm.runInNewContext(
   fs.readFileSync(path.join(__dirname, "../../../web/static/js/po/personal-list.js"), "utf8"),
@@ -132,7 +134,8 @@ console.log("PASS: home.js consumer uses priorityBadge/objectTypeBadge (no inlin
 
 const followSrc = fs.readFileSync(path.join(__dirname, "../../../web/static/js/po/follow.js"), "utf8");
 assert.ok(!/class="follow-pri/.test(followSrc), "follow.js must no longer emit follow-pri directly");
-assert.ok(/priorityBadge\(/.test(followSrc), "follow.js must call priorityBadge()");
+const followDemandSrc = fs.readFileSync(path.join(__dirname, "../../../web/static/js/po/follow-demand.js"), "utf8");
+assert.ok(/priorityBadge\(/.test(followDemandSrc), "follow-demand.js must call priorityBadge()");
 console.log("PASS: follow.js consumer uses priorityBadge (no inline color)");
 
 const todosSrc = fs.readFileSync(path.join(__dirname, "../../../web/static/js/po/todos.js"), "utf8");
@@ -143,7 +146,8 @@ assert.ok(!/wb-type-unknown/.test(todosSrc) || /objectTypeBadgeFromKind/.test(to
 console.log("PASS: todos.js consumer uses priorityBadge + objectTypeBadgeFromKind");
 
 const wbSrc = fs.readFileSync(path.join(__dirname, "../../../web/static/js/po/workboard.js"), "utf8");
-assert.ok(/priorityBadge\(/.test(wbSrc), "workboard.js must call priorityBadge() (via priTag)");
+const wbCoreSrc = fs.readFileSync(path.join(__dirname, "../../../web/static/js/po/workboard-core.js"), "utf8");
+assert.ok(/priorityBadge\(/.test(wbCoreSrc), "workboard-core.js must call priorityBadge() (via priTag)");
 assert.ok(/objectTypeBadge\(/.test(wbSrc), "workboard.js must call objectTypeBadge()");
 assert.ok(!/class="type-tag/.test(wbSrc), "workboard.js must no longer emit type-tag");
 assert.ok(!/type-biz|type-child|type-rd/.test(wbSrc), "workboard.js must no longer emit board type-* dual-track classes");
@@ -155,9 +159,9 @@ assert.ok(!/class="dd-tag"[^>]*>\s*\$|dd-tag.*?priority/.test(ddSrc), "demand-de
 console.log("PASS: demand-detail-render.js header uses priorityBadge()");
 
 const noticeSrc = fs.readFileSync(path.join(__dirname, "../../../web/static/js/po/notice.js"), "utf8");
-// Notice page does not currently render a type *badge* (object info is shown as a
-// compact label/link per formatObjectCell). Out of Stage 3 scope; documented.
-assert.ok(/var objectTypeBadge =/.test(noticeSrc), "notice.js must import objectTypeBadge helper for parity");
+// Notice page does not render a type badge (object info via formatObjectCell / idChipHtml).
+assert.ok(!/function\s+objectTypeBadge\s*\(/.test(noticeSrc), "notice.js must not redefine objectTypeBadge");
+assert.ok(/idChipHtml|PersonalList/.test(noticeSrc), "notice.js still consumes PersonalList helpers");
 console.log("PASS: notice.js exposes objectTypeBadge (no badge render site in scope)");
 
 console.log("\nALL: priority helpers contract honored across 8 consumer files");

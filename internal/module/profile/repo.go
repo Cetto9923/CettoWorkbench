@@ -27,11 +27,6 @@ func NewRepo(db *gorm.DB) *Repo {
 	return &Repo{db: db}
 }
 
-// DB 返回底层连接。
-func (r *Repo) DB() *gorm.DB {
-	return r.db
-}
-
 type profileRow struct {
 	ID       int64  `gorm:"column:id"`
 	Account  string `gorm:"column:account"`
@@ -175,11 +170,11 @@ func (r *Repo) FindUserOrgRoles(ctx context.Context, account string) ([]RoleOpti
 		return []RoleOption{}, nil
 	}
 	var rows []struct {
-		Key   string `gorm:"column:key"`
-		Label string `gorm:"column:label"`
+		RoleKey string `gorm:"column:role_key"`
+		Label   string `gorm:"column:label"`
 	}
 	err := r.db.WithContext(ctx).Raw(`
-SELECT r.code AS key, r.name AS label
+SELECT r.code AS role_key, r.name AS label
 FROM zt_user u
 JOIN zt_gf_user_roles ur ON ur.userId = u.id
 JOIN zt_roles r ON r.id = ur.roleId
@@ -190,7 +185,7 @@ ORDER BY r.sortOrder ASC, r.id ASC`, account).Scan(&rows).Error
 	}
 	opts := make([]RoleOption, len(rows))
 	for i, row := range rows {
-		opts[i] = RoleOption{Key: row.Key, Label: row.Label}
+		opts[i] = RoleOption{Key: row.RoleKey, Label: row.Label}
 	}
 	return opts, nil
 }

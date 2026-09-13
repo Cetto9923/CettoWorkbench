@@ -1,4 +1,4 @@
-/* PO 工作看板 - 共享状态与工具（V1.3）。零行为搬家。 */
+/* PO 工作看板 - 共享状态与工具（V1.3）。 */
 (function (WB) {
   "use strict";
 
@@ -6,7 +6,6 @@
   // 小组选择：单选某小组，不再提供"全部"。teamgroup=0 仅作为"未选"占位，加载后会落到第一个实际小组。
   var state = { owner: "", teamgroup: loadTeamgroup(), storyFilter: 0, pendingFocus: 0 };
   var teams = [];
-  var toastTimer = null;
   var MAX_OWNERS = 6; // 直接展示人数（不含"更多"折叠）
 
   var TG_KEY = "po.board.teamgroup";
@@ -14,23 +13,9 @@
   function saveTeamgroup(id) { localStorage.setItem(TG_KEY, String(id)); }
 
   function $(id) { return document.getElementById(id); }
-  var esc = (window.PersonalList && window.PersonalList.escapeHtml) || function (v) { return String(v == null ? "" : v); };
-  var priorityBadge = (window.PersonalList && window.PersonalList.priorityBadge) || function (r) {
-    var n = parseInt(String(r || "").replace(/^p/i, ""), 10);
-    return (isNaN(n) || n < 1 || n > 4) ? '<span class="wb-priority" data-priority="">—</span>' : '<span class="wb-priority" data-priority="' + n + '">P' + n + "</span>";
-  };
-  function showToast(msg, type) {
-    if (typeof window.showToast === "function" && window.showToast !== showToast) {
-      window.showToast(msg, type || "info");
-      return;
-    }
-    var t = $("toast");
-    if (!t) { return; }
-    t.textContent = msg; t.classList.add("show");
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { t.classList.remove("show"); }, 1800);
-  }
-  if (!window.showToast) window.showToast = showToast;
+  var esc = window.escapeHtml;
+  var priorityBadge = window.PersonalList.priorityBadge;
+  function showToast(msg, type) { window.showToast(msg, type || "info"); }
   function onErr(hostId) {
     var host = $(hostId);
     if (host) host.innerHTML = '<div class="demand-empty">加载失败 · <button type="button" class="action soft" data-retry="1">重试</button></div>';
@@ -40,12 +25,7 @@
     return d.getFullYear() + "-" + m + "-" + day;
   }
   var NODE_TYPE_KIND = { business: "business", childBusiness: "sub_demand", rd: "story", independentRd: "independent_story", task: "task", unknown: "" };
-  var objectTypeBadge = (window.PersonalList && window.PersonalList.objectTypeBadge) || function (kind) {
-    var labels = { business: "业务需求", sub_demand: "子需求", story: "研发需求", independent_story: "独立研需", task: "任务" };
-    var k = String(kind || "").trim().toLowerCase();
-    if (!k || !labels[k]) { return '<span class="wb-type wb-type-unknown">' + (k ? esc(k) : "—") + "</span>"; }
-    return '<span class="wb-type wb-type-' + k + '">' + labels[k] + "</span>";
-  };
+  var objectTypeBadge = window.PersonalList.objectTypeBadge;
   function nodeTypeOf(node, parentKind) {
     if (node.kind === "story") { return node.independent ? "independentRd" : "rd"; }
     if (node.kind === "sub_demand") { return "childBusiness"; }
@@ -75,7 +55,14 @@
     if ($("taskRoleBanner")) $("taskRoleBanner").classList.toggle("hidden", demand);
     $("taskFilterTip").classList.toggle("hidden", demand || !state.storyFilter);
     $("ownerTitle").textContent = demand ? "PO / 需求负责人" : "任务负责人";
-    if (demand) { if (WB.loadDemand) WB.loadDemand(); } else { ensureTeamgroup(); if (WB.loadTasks) WB.loadTasks(); }
+    // 需求/任务数据与指标互不依赖，首屏并行发起，避免等主看板返回后再加载指标。
+    if (demand) {
+      if (WB.loadMetrics) WB.loadMetrics();
+      if (WB.loadDemand) WB.loadDemand();
+    } else {
+      ensureTeamgroup();
+      if (WB.loadTasks) WB.loadTasks();
+    }
   }
   $("demandTab").addEventListener("click", function () { switchMode("demand"); });
   $("taskTab").addEventListener("click", function () { switchMode("task"); });
@@ -156,6 +143,7 @@
     setMode: function (m) { mode = m; },
     state: state,
     getTeams: function () { return teams; },
+    getSelectedTeamgroupId: function () { return Number(state.teamgroup || 0); },
     setTeams: function (t) { teams = t; },
     MAX_OWNERS: MAX_OWNERS,
     $: $,

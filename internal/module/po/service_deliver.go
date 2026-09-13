@@ -9,16 +9,10 @@ package po
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
 	"workbench/internal/model"
-)
-
-var (
-	errDeliverNotAcceptanced = errors.New("业务验收未通过，暂不能发起交付")
-	errDeliverAlreadyWait    = errors.New("已发起交付，需求已进入待发布，无需重复提交")
 )
 
 // GetDemandDeliverMeta 获取发起交付表单初始化数据及前置检查结果。

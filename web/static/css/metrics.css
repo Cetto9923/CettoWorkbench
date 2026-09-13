@@ -207,7 +207,6 @@
 }
 
 /* 操作按钮（详情） */
-.po-metrics-manage .metric-action-detail,
 .po-metrics-manage .action-btn {
   display: inline-flex;
   align-items: center;
@@ -222,15 +221,13 @@
   cursor: pointer;
   transition: all 0.15s ease;
 }
-.po-metrics-manage .metric-action-detail:hover,
 .po-metrics-manage .action-btn:hover {
   border-color: var(--color-primary, #6366f1);
   color: var(--color-primary, #4f46e5);
 }
 
 /* 雷达页沿用同一套紧凑矩形操作按钮，避免被通用圆形动作样式覆盖。 */
-.po-metrics-radar .action-btn,
-.po-metrics-radar .metric-radar-jump {
+.po-metrics-radar .action-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -255,115 +252,6 @@
 }
 .po-metrics-manage .metric-table .metric-col-opt {
   min-width: 60px;
-}
-
-/* 详情 drawer（在 workspace 内联，不引第二套 drawer 框架） */
-.po-metrics-manage .metric-detail {
-  margin-bottom: 12px;
-  padding: 16px;
-  border: 1px solid var(--color-border, #e2e8f0);
-  border-radius: 8px;
-  background: var(--color-surface, #ffffff);
-  box-shadow: 0 1px 2px var(--color-shadow-02, rgba(0, 0, 0, 0.04));
-}
-.po-metrics-manage .metric-detail[hidden] {
-  display: none;
-}
-.po-metrics-manage .metric-detail-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  flex-wrap: wrap;
-  border-bottom: 1px solid var(--color-border, #e2e8f0);
-  padding-bottom: 12px;
-  margin-bottom: 12px;
-}
-.po-metrics-manage .metric-detail-code {
-  display: inline-block;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 12px;
-  color: var(--color-text-disabled, #94a3b8);
-  margin-bottom: 4px;
-}
-.po-metrics-manage .metric-detail-title {
-  margin: 0 0 8px 0;
-  font-size: 16px;
-  color: var(--po-t1, #0f172a);
-  font-weight: 700;
-  line-height: 1.4;
-}
-.po-metrics-manage .metric-detail-meta {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 8px 16px;
-}
-.po-metrics-manage .metric-detail-meta-item {
-  display: flex;
-  flex-direction: column;
-  font-size: 12px;
-  color: var(--po-t1, #334155);
-}
-.po-metrics-manage .metric-detail-meta-item em {
-  font-style: normal;
-  font-size: 11px;
-  color: var(--color-text-disabled, #94a3b8);
-  margin-bottom: 2px;
-}
-.po-metrics-manage .metric-detail-actions {
-  display: flex;
-  gap: 6px;
-}
-.po-metrics-manage .metric-detail-close {
-  height: 28px;
-  padding: 0 12px;
-  border-radius: 4px;
-  border: 1px solid var(--color-border, #e2e8f0);
-  background: var(--color-surface, #ffffff);
-  color: var(--color-text-secondary, #475569);
-  font-size: 12px;
-  cursor: pointer;
-}
-.po-metrics-manage .metric-detail-close:hover {
-  border-color: var(--color-text-disabled, #94a3b8);
-}
-.po-metrics-manage .metric-detail-body {
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--po-t1, #334155);
-  display: grid;
-  gap: 12px;
-}
-.po-metrics-manage .metric-detail-section {
-  padding: 10px 12px;
-  border: 1px solid var(--color-border, #e2e8f0);
-  border-radius: 6px;
-  background: var(--color-surface-soft, #f8fafd);
-}
-.po-metrics-manage .metric-detail-section h4 {
-  margin: 0 0 6px 0;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--color-text-secondary, #475569);
-  letter-spacing: 0.02em;
-}
-.po-metrics-manage .metric-detail-section p {
-  margin: 4px 0;
-  font-size: 12px;
-  line-height: 1.6;
-}
-.po-metrics-manage .metric-detail-section code {
-  display: inline-block;
-  padding: 1px 6px;
-  border-radius: 3px;
-  background: var(--color-surface-soft-3, #f1f5f9);
-  color: var(--po-t1, #1e293b);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 11px;
-}
-.po-metrics-manage .metric-detail-note {
-  color: var(--color-text-disabled, #94a3b8);
-  font-size: 11px;
 }
 
 /* 雷达页共用：顶部 KPI 带 + 5 分类配色 token 与 manage 完全一致 */
@@ -440,224 +328,6 @@
   color: var(--color-text-disabled, #94a3b8);
 }
 
-/* =============================================================================
-   /metrics/radar 增量样式（仅在 .po-metrics-radar 作用域下生效，不动 manage）。
-   - 5 分类 KPI 卡（顶部紧凑卡带）
-   - 异常指标分组表格
-   - sparkline SVG 4 色调色板（token-driven）
-   ============================================================================= */
-
-/* 顶部 KPI 卡带容器 */
-.po-metrics-radar .metric-radar-summary {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 10px;
-  padding: 12px 14px;
-  background: var(--color-surface-soft, #f8fafd);
-  border-bottom: 1px solid var(--color-border, #e2e8f0);
-}
-.po-metrics-radar .metric-radar-summary > .state-placeholder {
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: 18px 0;
-}
-@media (max-width: 1200px) {
-  .po-metrics-radar .metric-radar-summary {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-@media (max-width: 720px) {
-  .po-metrics-radar .metric-radar-summary {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-/* 单张 KPI 卡 */
-.po-metrics-radar .metric-radar-card {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-height: 132px;
-  padding: 10px 12px;
-  background: var(--color-surface, #ffffff);
-  border: 1px solid var(--color-border, #e2e8f0);
-  border-radius: 6px;
-  box-shadow: 0 1px 2px var(--color-shadow-02, rgba(0, 0, 0, 0.02));
-  position: relative;
-}
-.po-metrics-radar .metric-radar-card.tone-success { border-color: var(--color-success-border, #a7f3d0); }
-.po-metrics-radar .metric-radar-card.tone-warning { border-color: var(--color-warning-border, #fed7aa); }
-.po-metrics-radar .metric-radar-card.tone-danger  { border-color: var(--color-danger-border, #fecaca); }
-.po-metrics-radar .metric-radar-card.tone-muted   { border-color: var(--color-border-strong, #cbd5e1); }
-
-.po-metrics-radar .metric-radar-card-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-}
-.po-metrics-radar .metric-radar-score {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 4px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-}
-.po-metrics-radar .metric-radar-score em {
-  font-style: normal;
-  font-size: 11px;
-  color: var(--color-text-disabled, #94a3b8);
-}
-.po-metrics-radar .metric-radar-score strong {
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 1;
-  color: var(--po-t1, #0f172a);
-}
-.po-metrics-radar .metric-radar-score[data-severity="normal"] strong { color: var(--color-success, #065f46); }
-.po-metrics-radar .metric-radar-score[data-severity="warn"]   strong { color: var(--color-warning, #92400e); }
-.po-metrics-radar .metric-radar-score[data-severity="danger"] strong { color: var(--color-danger, #991b1b); }
-.po-metrics-radar .metric-radar-score[data-severity="unknown"] strong { color: var(--color-text-disabled, #94a3b8); }
-
-.po-metrics-radar .metric-radar-counts {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.po-metrics-radar .metric-radar-count {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 4px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-}
-.po-metrics-radar .metric-radar-count em {
-  font-style: normal;
-  font-size: 11px;
-  color: var(--color-text-disabled, #94a3b8);
-}
-.po-metrics-radar .metric-radar-count strong {
-  font-size: 13px;
-  font-weight: 700;
-}
-.po-metrics-radar .metric-radar-count.tone-success strong { color: var(--color-success, #065f46); }
-.po-metrics-radar .metric-radar-count.tone-warning strong { color: var(--color-warning, #92400e); }
-.po-metrics-radar .metric-radar-count.tone-danger  strong { color: var(--color-danger, #991b1b); }
-
-.po-metrics-radar .metric-radar-card-foot {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  color: var(--color-text-secondary, #475569);
-}
-.po-metrics-radar .metric-radar-total strong {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  color: var(--po-t1, #1e293b);
-}
-
-.po-metrics-radar .metric-radar-toprisk-row {
-  font-size: 11px;
-  color: var(--color-text-secondary, #64748b);
-  border-top: 1px dashed var(--color-border, #e2e8f0);
-  padding-top: 6px;
-}
-.po-metrics-radar .metric-radar-toprisk {
-  color: var(--color-primary, #2563eb);
-  text-decoration: none;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-}
-.po-metrics-radar .metric-radar-toprisk:hover {
-  text-decoration: underline;
-  color: var(--color-primary, #1d4ed8);
-}
-.po-metrics-radar .metric-radar-toprisk.muted {
-  color: var(--color-text-disabled, #94a3b8);
-  cursor: default;
-}
-
-/* 分组表格 */
-.po-metrics-radar .metric-radar-groups {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 12px 14px 16px;
-}
-.po-metrics-radar .metric-radar-groups > .state-placeholder {
-  text-align: center;
-  padding: 18px 0;
-}
-.po-metrics-radar .metric-radar-group {
-  border: 1px solid var(--color-border, #e2e8f0);
-  border-radius: 6px;
-  background: var(--color-surface, #ffffff);
-  box-shadow: 0 1px 2px var(--color-shadow-02, rgba(0, 0, 0, 0.02));
-  overflow: hidden;
-}
-.po-metrics-radar .metric-radar-group-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--color-border, #e2e8f0);
-  background: var(--color-surface-soft, #f8fafd);
-}
-.po-metrics-radar .metric-radar-group-count {
-  font-size: 12px;
-  color: var(--color-text-secondary, #475569);
-}
-.po-metrics-radar .metric-radar-group-count strong {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  color: var(--color-danger, #991b1b);
-  margin: 0 2px;
-}
-.po-metrics-radar .metric-radar-table {
-  width: 100%;
-}
-.po-metrics-radar .metric-radar-table th,
-.po-metrics-radar .metric-radar-table td {
-  white-space: nowrap;
-}
-.po-metrics-radar .metric-radar-table .metric-col-name { min-width: 200px; }
-.po-metrics-radar .metric-radar-table .metric-col-opt  { min-width: 60px; }
-.po-metrics-radar .metric-radar-value {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-weight: 600;
-  color: var(--po-t1, #1e293b);
-}
-.po-metrics-radar .metric-radar-spark {
-  width: 100px;
-  vertical-align: middle;
-}
-.po-metrics-radar .metric-radar-trend {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 12px;
-}
-.po-metrics-radar .metric-radar-trend.tone-success { color: var(--color-success, #065f46); }
-.po-metrics-radar .metric-radar-trend.tone-warning { color: var(--color-warning, #92400e); }
-.po-metrics-radar .metric-radar-trend.tone-danger  { color: var(--color-danger, #991b1b); }
-.po-metrics-radar .metric-radar-trend.tone-muted   { color: var(--color-text-disabled, #94a3b8); }
-
-/* sparkline 4 色调色板 */
-.po-metrics-radar .metric-sparkline {
-  width: 90px;
-  height: 26px;
-  display: block;
-}
-.po-metrics-radar .metric-sparkline polyline,
-.po-metrics-radar .metric-sparkline line {
-  stroke-width: 1.5;
-  stroke-linejoin: round;
-  stroke-linecap: round;
-}
-.po-metrics-radar .metric-sparkline.tone-success polyline,
-.po-metrics-radar .metric-sparkline.tone-success line { stroke: var(--color-success, #10b981); }
-.po-metrics-radar .metric-sparkline.tone-warning polyline,
-.po-metrics-radar .metric-sparkline.tone-warning line { stroke: var(--color-warning, #f59e0b); }
-.po-metrics-radar .metric-sparkline.tone-danger polyline,
-.po-metrics-radar .metric-sparkline.tone-danger line  { stroke: var(--color-danger, #ef4444); }
-.po-metrics-radar .metric-sparkline.tone-muted polyline,
-.po-metrics-radar .metric-sparkline.tone-muted line   { stroke: var(--color-text-disabled, #94a3b8); }
-
 /* 错误态占位 */
 .po-metrics-radar .state-placeholder.error {
   margin: 14px 14px 18px;
@@ -689,10 +359,23 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  padding: 12px 16px;
+  padding: 10px 16px;
   background: var(--color-surface, #ffffff);
   border-bottom: 1px solid var(--color-border, #e2e8f0);
+}
+.po-metrics-manage .toolbar-filters-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.po-metrics-manage .workspace-toolbar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
 }
 .po-metrics-manage .filter-group {
   display: inline-flex;
@@ -778,7 +461,7 @@
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
-  margin-bottom: 10px;
+  margin: 0 0 12px;
 }
 .po-metrics-manage .metric-summary-card {
   background: var(--color-surface);
@@ -792,6 +475,7 @@
   min-height: 72px;
   box-sizing: border-box;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
 }
 .po-metrics-manage .metric-summary-card:hover {
   border-color: var(--color-border-strong);
@@ -829,7 +513,32 @@
   color: var(--color-danger, #dc2626);
 }
 
-/* 深色模式下的指标管理概览卡片 (与 follow.css / shell.css 规范完全同频) */
+/* 基础单元类（双模式通用） */
+.po-metrics-manage .metric-target-val {
+  font-weight: 700;
+  font-family: ui-monospace, monospace;
+  color: var(--color-text-primary, #0f172a);
+}
+.po-metrics-manage .metric-col-source {
+  font-size: 12px;
+  color: var(--color-text-secondary, #475569);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.po-metrics-manage .dir-tag {
+  font-size: 11px;
+  font-weight: 600;
+}
+.po-metrics-manage .dir-tag.dir-up {
+  color: #059669;
+}
+.po-metrics-manage .dir-tag.dir-down {
+  color: #2563eb;
+}
+
+/* 深色模式下的指标管理概览卡片 (与 follow.css / shell.css 规范完全同频 · 高对比度优化) */
 html[data-theme="dark"] .po-metrics-manage .metric-summary-card {
   background: var(--color-surface, #1e293b);
   border-color: var(--color-border, #334155);
@@ -840,22 +549,137 @@ html[data-theme="dark"] .po-metrics-manage .metric-summary-card:hover {
   border-color: var(--color-border-strong, #475569);
 }
 html[data-theme="dark"] .po-metrics-manage .m-sum-label {
-  color: var(--color-text-secondary, #94a3b8);
+  color: #cbd5e1;
 }
 html[data-theme="dark"] .po-metrics-manage .m-sum-num {
-  color: var(--color-text-primary, #f8fafc);
+  color: #f8fafc;
 }
 html[data-theme="dark"] .po-metrics-manage .m-sum-desc {
-  color: var(--color-text-disabled, #64748b);
+  color: #94a3b8;
 }
 html[data-theme="dark"] .po-metrics-manage .metric-summary-card.c-enabled .m-sum-num {
-  color: var(--color-success, #34d399);
+  color: #34d399;
 }
 html[data-theme="dark"] .po-metrics-manage .metric-summary-card.c-warn .m-sum-num {
-  color: var(--color-warning, #fbbf24);
+  color: #fbbf24;
 }
 html[data-theme="dark"] .po-metrics-manage .metric-summary-card.c-danger .m-sum-num {
-  color: var(--color-danger, #f87171);
+  color: #f87171;
+}
+
+/* 深色模式下的表格与内容高对比度深度优化 · 彻底解决暗色下看不清字的问题 */
+html[data-theme="dark"] .po-metrics-manage .workspace-table th {
+  background: #0f172a !important;
+  color: #cbd5e1 !important;
+  border-bottom: 1px solid #334155 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .workspace-table td {
+  color: #cbd5e1 !important;
+  border-bottom: 1px solid #334155 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .workspace-table tr:hover td {
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+html[data-theme="dark"] .po-metrics-manage .metric-table .metric-name {
+  color: #60a5fa !important;
+}
+html[data-theme="dark"] .po-metrics-manage .metric-table .metric-code {
+  color: #94a3b8 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .metric-col-source {
+  color: #cbd5e1 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .metric-target-val {
+  color: #f8fafc !important;
+}
+html[data-theme="dark"] .po-metrics-manage .metric-target-row em {
+  color: #94a3b8 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .metric-target-row[data-tone="warn"] span {
+  color: #fbbf24 !important;
+  font-weight: 600;
+}
+html[data-theme="dark"] .po-metrics-manage .metric-target-row[data-tone="danger"] span {
+  color: #f87171 !important;
+  font-weight: 600;
+}
+html[data-theme="dark"] .po-metrics-manage .dir-tag.dir-up {
+  color: #34d399 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .dir-tag.dir-down {
+  color: #60a5fa !important;
+}
+html[data-theme="dark"] .po-metrics-manage .state-tag {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .action-btn {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .action-btn:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+html[data-theme="dark"] .po-metrics-manage .action-btn.primary {
+  background: #2563eb !important;
+  border-color: #2563eb !important;
+  color: #ffffff !important;
+}
+html[data-theme="dark"] .po-metrics-manage .action-btn.text-danger {
+  background: rgba(239, 68, 68, 0.12) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+  color: #f87171 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .action-btn.text-success {
+  background: rgba(16, 185, 129, 0.12) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+  color: #34d399 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .workspace-result-bar {
+  background: #1e293b !important;
+  color: #cbd5e1 !important;
+  border-bottom: 1px solid #334155 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .workspace-result-bar strong {
+  color: #f8fafc !important;
+}
+html[data-theme="dark"] .po-metrics-manage .workspace-result-hint {
+  color: #94a3b8 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .workspace-toolbar {
+  background: #1e293b !important;
+  border-bottom: 1px solid #334155 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .toolbar-filters-group .filter-label {
+  color: #cbd5e1 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .toolbar-filters-group select {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+html[data-theme="dark"] .po-metrics-manage .workspace-search {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .workspace-search input {
+  color: #f8fafc !important;
+}
+html[data-theme="dark"] .po-metrics-manage .workspace-search input::placeholder {
+  color: #64748b !important;
+}
+html[data-theme="dark"] .po-metrics-manage .workspace-btn {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .workspace-btn:hover {
+  background: #334155 !important;
+  color: #f8fafc !important;
 }
 
 /* 工具栏与过滤器 (规范消费 personal-workspace.css) */
@@ -1125,20 +949,22 @@ html[data-theme="dark"] .po-metrics-manage .metric-summary-card.c-danger .m-sum-
   grid-template-columns: 1.25fr 1fr 1fr 1fr 1.25fr;
   gap: 8px;
   flex-shrink: 0;
-  height: 60px;
+  height: 74px;
+  min-height: 74px;
   box-sizing: border-box;
 }
 .radar-kpi-block {
   background: var(--color-surface, #ffffff);
   border: 1px solid var(--color-border, #e2e8f0);
   border-radius: 8px;
-  padding: 6px 12px;
+  padding: 8px 12px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.03));
   position: relative;
   overflow: hidden;
+  box-sizing: border-box;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .radar-kpi-block:hover {
@@ -1149,6 +975,7 @@ html[data-theme="dark"] .po-metrics-manage .metric-summary-card.c-danger .m-sum-
   display: flex;
   justify-content: space-between;
   align-items: center;
+  line-height: 1.2;
 }
 .radar-kpi-block .kpi-label {
   font-size: 11px;
@@ -1166,9 +993,9 @@ html[data-theme="dark"] .po-metrics-manage .metric-summary-card.c-danger .m-sum-
 }
 .radar-kpi-block strong {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 800;
-  line-height: 1;
+  line-height: 1.1;
   color: var(--color-text-primary, #0f172a);
 }
 .radar-kpi-block .kpi-unit-tag {
@@ -1181,6 +1008,7 @@ html[data-theme="dark"] .po-metrics-manage .metric-summary-card.c-danger .m-sum-
   align-items: center;
   gap: 6px;
   font-size: 10px;
+  line-height: 1.2;
 }
 .radar-kpi-block .kpi-sub-text {
   font-size: 10px;
@@ -1492,14 +1320,14 @@ html[data-theme="dark"] .po-metrics-manage .metric-summary-card.c-danger .m-sum-
 .radar-m-compact-tile {
   border: 1px solid var(--color-border, #e2e8f0);
   border-radius: 6px;
-  padding: 8px 10px;
+  padding: 6px 10px;
   background: var(--color-surface, #ffffff);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   cursor: pointer;
   transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-  min-height: 76px;
+  min-height: 74px;
   box-sizing: border-box;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
@@ -1566,7 +1394,7 @@ html[data-theme="dark"] .po-metrics-manage .metric-summary-card.c-danger .m-sum-
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin: 4px 0 2px;
+  margin: 2px 0 1px;
 }
 .m-val-text {
   font-family: ui-monospace, SFMono-Regular, monospace;

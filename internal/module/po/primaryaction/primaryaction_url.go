@@ -3,7 +3,7 @@
 // 模块: PO 工作台
 // 类型: contract
 // 职责: primaryAction 各阶段的 URL 拼接。
-//       可办理操作必须指向禅道原生页面/API；测试单使用 TesttaskViewURL。
+//       返回工作台办理端点或禅道页面；测试单使用 TesttaskViewURL。
 // 依赖: internal/pkg/zentao
 // =============================================================================
 
@@ -15,15 +15,7 @@ import (
 	"workbench/internal/pkg/zentao"
 )
 
-// input 是 Derive 用的事实快照的最小子集；URL helper 只需 ObjectID + Kind。
-type inputShape interface {
-	getObjectID() uint
-	getKind() ObjectKind
-}
-
-// URL helpers 接收一个轻量 input struct（避免循环依赖）。
-//
-// 用 struct 直接传参而不是引用 Input，避免 URL 派生逻辑被未来的能力字段污染。
+// URL helpers 接收对象 ID 和种类；排期入口按对象种类选择路由。
 
 // AcceptURL 评审站内提交端点（前端按 drawer 形态提交）。
 func AcceptURL(objectID uint, kind ObjectKind) string {
@@ -77,7 +69,7 @@ func DeliverURL(objectID uint, kind ObjectKind) string {
 }
 
 // EvaluateURL 评价端点。
-// §4-2 阻塞：当前无 endpoint。
+// 指向禅道需求评价页面。
 func EvaluateURL(objectID uint, kind ObjectKind) string {
 	return zentao.URL("demand", "appraise", fmt.Sprintf("demandID=%d", objectID))
 }

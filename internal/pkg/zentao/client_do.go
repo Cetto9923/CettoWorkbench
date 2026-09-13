@@ -1,11 +1,4 @@
-// =============================================================================
-// 文件: internal/pkg/zentao/client_do.go
-// 模块: 基础设施
-// 类型: infra
-// 职责: 统一禅道 REST 出站：用户态 DoAs、服务账号 Do、401 重试与 APILog。
-// 依赖: internal/pkg/zentao（client / apilog）
-// =============================================================================
-
+// Package zentao 统一禅道 REST 出站：用户态 DoAs、服务账号 Do、401 重试与 APILog。
 package zentao
 
 import (

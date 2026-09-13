@@ -242,7 +242,7 @@ func selectBoardTeamgroup(requested uint, teams []BoardTeamgroupOption) uint {
 	return 0
 }
 
-// attachPrimaryActions 为需求树每个节点附加服务端 primaryAction（Stage 5）。
+// attachPrimaryActions 为需求树每个节点附加服务端 primaryAction。
 //
 // 先遍历一次树收集需求 / 故事 ID（去重），再走 DeriveDemandPrimaryActions /
 // DeriveStoryPrimaryActions 的 IN (?) 批量派生，最后回填到每个节点。

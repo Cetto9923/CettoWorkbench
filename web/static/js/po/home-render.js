@@ -1,20 +1,16 @@
 /* =============================================================================
    文件: web/static/js/po/home-render.js
    模块: PO 个人工作台 - 首页列表/价值流渲染
-   职责: 状态标签、行渲染、价值流计数卡与标题文案（零行为搬家）
+   职责: 状态标签、行渲染、价值流计数卡与标题文案
    依赖: personal-list.js, primary-action.js
    ============================================================================= */
 
 (function (root) {
   "use strict";
 
-  var esc = (root.PersonalList && root.PersonalList.escapeHtml) || function (v) { return String(v == null ? "" : v); };
+  var esc = root.escapeHtml;
   var PL = root.PersonalList || {};
-  var priorityBadge = PL.priorityBadge || function (raw) {
-    var n = parseInt(String(raw || "").replace(/^p/i, ""), 10);
-    if (isNaN(n) || n < 1 || n > 4) { return '<span class="wb-priority" data-priority="">—</span>'; }
-    return '<span class="wb-priority" data-priority="' + n + '">P' + n + "</span>";
-  };
+  var priorityBadge = PL.priorityBadge;
   var primaryActionHtml = (root.PrimaryAction && root.PrimaryAction.primaryActionHtml) || function () {
     return '<span class="home-unavailable">—</span>';
   };

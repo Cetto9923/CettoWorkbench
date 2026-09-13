@@ -154,7 +154,7 @@ func (h *Handler) Index(c *gin.Context) {
 		windows = []WindowCard{}
 	}
 
-	filterProducts, err := h.svc.ListFilterProducts(c.Request.Context())
+	filterProducts, err := h.svc.ListFilterProducts(c.Request.Context(), actor)
 	if err != nil {
 		if h.logger != nil {
 			h.logger.Error("load filter products failed", zap.Error(err))

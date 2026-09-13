@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"workbench/internal/pkg/personlabel"
 )
 
 type doneActionDBRow struct {
@@ -69,7 +70,7 @@ func (r *Repo) fetchActionHistories(ctx context.Context, actionIDs []int64) map[
 }
 
 // fetchObjectContexts 批量加载对象的名称、状态、所属项目及执行。
-// 审批对象上下文的查询失败会向上返回 error；其余对象类型的静默降级是既有行为，未在本次范围内改动。
+// 审批对象上下文查询失败向上返回；其余对象类型保持静默降级。
 func (r *Repo) fetchObjectContexts(ctx context.Context, rows []doneActionDBRow) (map[string]doneObjectContext, error) {
 	out := make(map[string]doneObjectContext, len(rows))
 	if r == nil || r.db == nil || len(rows) == 0 {
@@ -104,8 +105,7 @@ func (r *Repo) fetchObjectContexts(ctx context.Context, rows []doneActionDBRow) 
 		}
 	}
 
-	// 审批对象（charter/planchange/buildguideline/review/case）的上下文独立在
-	// repodone_enrich_approval.go 中加载，避免主文件超出 500 行硬上限。
+	// 审批对象上下文见 loadApprovalObjectContexts。
 	if err := r.loadApprovalObjectContexts(ctx, out,
 		charterIDs, planchangeIDs, buildguidelineIDs, reviewIDs, caseIDs); err != nil {
 		return nil, err
@@ -383,7 +383,7 @@ func (r *Repo) FindDoneActionDetail(ctx context.Context, actionID int64) (*DoneD
 	item := DoneAction{
 		ID:             row.ID,
 		SourceActionId: row.ID, SourceSystem: "zentao", ActionName: actionLabel, ActionKey: row.Action,
-		ActorName: FormatAccountName(row.Actor, row.ActorName), ObjectCode: doneObjectCode(row.ObjectType, row.ObjectID), ObjectTitle: objCtx.Title,
+		ActorName: personlabel.Format(row.Actor, row.ActorName), ObjectCode: doneObjectCode(row.ObjectType, row.ObjectID), ObjectTitle: objCtx.Title,
 		BeforeStatus: before, AfterStatus: after, CurrentStatus: objCtx.Status, NextOwnerName: objCtx.CurrentOwner,
 		Actor:           row.Actor,
 		Action:          actionLabel,
@@ -421,7 +421,7 @@ func (r *Repo) FindDoneActionDetail(ctx context.Context, actionID int64) (*DoneD
 		lbl := doneHistoryActionLabel(row.ObjectType, n.Action)
 		timeline = append(timeline, DoneDetailTimeline{
 			ActionName: lbl,
-			ActorName:  FormatAccountName(n.Actor, n.ActorName),
+			ActorName:  personlabel.Format(n.Actor, n.ActorName),
 			OccurredAt: n.Date.Format("2006-01-02 15:04:05"),
 			IsCurrent:  n.ID == row.ID,
 		})

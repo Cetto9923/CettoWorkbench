@@ -1,9 +1,0 @@
-# Cursor adapter
-
-`AGENTS.md` is the repository-wide canonical engineering source. Read it before
-editing, then load the relevant document in `docs/engineering/` and the scoped
-rules in `.cursor/rules/` for the files being changed.
-
-This file intentionally contains no duplicate architecture, security, database,
-or completion rules. If an adapter disagrees with `AGENTS.md`, `AGENTS.md` wins.
-Run `git diff --check` and `make check` before claiming completion.

@@ -36,9 +36,9 @@ func TestExtractDemandID(t *testing.T) {
 	}
 }
 
-func TestBindScheduleSpotlightUsesServerPrimaryAction(t *testing.T) {
+func TestBindPrimaryActionSpotlight(t *testing.T) {
 	spotlight := &DetailSpotlight{ActionLabel: "排期"}
-	bindScheduleSpotlight(spotlight, primaryaction.PrimaryAction{
+	bindPrimaryActionSpotlight(spotlight, primaryaction.PrimaryAction{
 		Key:     string(primaryaction.KeySchedule),
 		Label:   "排期",
 		URL:     "/schedule/demands/42/scheduling",
@@ -49,7 +49,7 @@ func TestBindScheduleSpotlightUsesServerPrimaryAction(t *testing.T) {
 	}
 
 	spotlight.ActionURL = ""
-	bindScheduleSpotlight(spotlight, primaryaction.PrimaryAction{
+	bindPrimaryActionSpotlight(spotlight, primaryaction.PrimaryAction{
 		Key:     string(primaryaction.KeySchedule),
 		URL:     "/schedule/demands/42/scheduling",
 		Enabled: false,

@@ -28,3 +28,6 @@ backups/*.sql.gz
 
 # Local PRD sources (large HTML/screenshots) — never commit
 /docs/PRD/
+
+# Static prototype demo tree — not tracked by this repository.
+/docs/Demo/

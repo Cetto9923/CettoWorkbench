@@ -41,3 +41,17 @@ func TestTodoListReqValidate_AcceptsPublishStage(t *testing.T) {
 		t.Fatalf("expected invalid stage error, got: %#v", errs)
 	}
 }
+
+func TestTodoListReqValidate_ApprovalType(t *testing.T) {
+	for _, valid := range []string{"", "all", "charter", "buildguideline", "planchange", "review", "reviewchange", "reviewbymanager"} {
+		req := TodoListReq{ApprovalType: valid}
+		if errs := req.Validate(); len(errs) != 0 {
+			t.Fatalf("expected valid approvalType for %q, got: %#v", valid, errs)
+		}
+	}
+
+	reqInvalid := TodoListReq{ApprovalType: "invalid_type"}
+	if errs := reqInvalid.Validate(); len(errs) != 1 || errs[0].Field != "approvalType" {
+		t.Fatalf("expected invalid approvalType error, got: %#v", errs)
+	}
+}

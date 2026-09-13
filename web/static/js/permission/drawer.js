@@ -155,8 +155,7 @@
       scopeIncludeChildren = !!(icEl && icEl.checked);
       if (scopeDeptId <= 0 && scopeTeamId <= 0) {
         const msg = "任命团队管理须填写部门 ID 或敏捷小组 ID（不可无限范围）";
-        if (typeof showToast === "function") showToast(msg, "error");
-        else alert(msg);
+        window.showToast(msg, "error");
         return;
       }
     }
@@ -179,7 +178,7 @@
       })
       .then(function (res) {
         if (res.json.success) {
-          if (typeof showToast === "function") showToast(res.json.message || "授权成功", "success");
+          window.showToast(res.json.message || "授权成功", "success");
           permissionOpenDetail(account);
           if (typeof window.permissionReload === "function") window.permissionReload();
         } else {
@@ -187,8 +186,7 @@
             (res.json.errors && res.json.errors[0] && res.json.errors[0].message) ||
             res.json.message ||
             "授权失败";
-          if (typeof showToast === "function") showToast(msg, "error");
-          else alert(msg);
+          window.showToast(msg, "error");
         }
       });
   };
@@ -204,12 +202,12 @@
       })
       .then(function (json) {
         if (json.success) {
-          if (typeof showToast === "function") showToast(json.message || "已撤销", "success");
+          window.showToast(json.message || "已撤销", "success");
           const acc = document.getElementById("drawerAccount");
           if (acc && acc.textContent) permissionOpenDetail(acc.textContent);
           if (typeof window.permissionReload === "function") window.permissionReload();
-        } else if (typeof showToast === "function") {
-          showToast(json.message || "撤销失败", "error");
+        } else {
+          window.showToast(json.message || "撤销失败", "error");
         }
       });
   };
@@ -310,15 +308,14 @@
       })
       .then(function (res) {
         if (res.json.success) {
-          if (typeof showToast === "function") showToast(res.json.message || "已保存", "success");
+          window.showToast(res.json.message || "已保存", "success");
           loadRolePages(role);
         } else {
           const msg =
             (res.json.errors && res.json.errors[0] && res.json.errors[0].message) ||
             res.json.message ||
             "保存失败";
-          if (typeof showToast === "function") showToast(msg, "error");
-          else alert(msg);
+          window.showToast(msg, "error");
         }
       });
   };

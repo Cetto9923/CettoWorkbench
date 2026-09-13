@@ -43,9 +43,10 @@ type ClarifyUserStoryItem struct {
 
 // ClarifyOption 下拉选项。
 type ClarifyOption struct {
-	Value string `json:"value"`
-	Label string `json:"label"`
-	Dept  string `json:"dept,omitempty"`
+	Value  string `json:"value"`
+	Label  string `json:"label"`
+	Dept   string `json:"dept,omitempty"`
+	Pinyin string `json:"pinyin,omitempty"`
 }
 
 // ClarifyProductOption 候选产品选项。

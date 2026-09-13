@@ -74,9 +74,11 @@ function loadTodos(search) {
     String
   };
   sandbox.window = sandbox;
+  sandbox.escapeHtml = (v) => String(v == null ? "" : v);
   sandbox.location = { pathname: "/todos", search: search || "" };
   sandbox.history = { replaceState(_state, _title, url) { sandbox.lastUrl = url; } };
   sandbox.PersonalList = {
+    PAGE_SIZE_OPTIONS: [10, 15, 20, 50, 100],
     escapeHtml: (v) => String(v == null ? "" : v),
     loadPageSize: (_key, fallback) => fallback,
     savePageSize() {},
@@ -95,7 +97,7 @@ function loadTodos(search) {
   assert.ok(ready, "todos.js must register a DOMContentLoaded handler");
   ready();
 
-  return { chips: document.getElementById("todosObjectChips"), requests, sandbox };
+  return { chips: document.getElementById("todosObjectChips"), requests, sandbox, document };
 }
 
 /* 1. 模板：分类栏改为与已办同款空容器，并移除冗余的"具体对象"下拉 */
@@ -186,3 +188,68 @@ fullFlow.requests[0].onDone({
 const fullKeys = [...fullFlow.chips.innerHTML.matchAll(/data-object-type="([^"]*)"/g)].map((m) => m[1]);
 assert.deepEqual(fullKeys, ["", "approval", "demand", "story", "task", "bug", "risk", "issue", "todo", "testtask"], "全量对象有数据时按预定顺序完整展示分类芯片");
 console.log("PASS: todos full object types render chips when data exists");
+
+/* 8. 模板：支持审批场景下拉，包含项目章程、建设指引、计划变更、需求评审、需求变更、主管审批 */
+assert.match(template, /<select id="todosApprovalType"/, "待办工具栏必须包含审批场景下拉");
+["charter", "buildguideline", "planchange", "review", "reviewchange", "reviewbymanager"].forEach((val) => {
+  assert.match(template, new RegExp(`value="${val}"`), `审批场景必须包含 ${val}`);
+});
+console.log("PASS: todos template includes todosApprovalType with canonical scenarios");
+
+/* 9. 动态筛选项显隐：默认全部待办下，所有对象特化下拉均隐藏 */
+const defaultView = loadTodos("");
+const defaultDoc = defaultView.document;
+assert.equal(defaultDoc.getElementById("todosAction").hidden, true, "全部待办下办理场景必须隐藏");
+assert.equal(defaultDoc.getElementById("todosStage").hidden, true, "全部待办下价值阶段必须隐藏");
+assert.equal(defaultDoc.getElementById("todosResponsibility").hidden, true, "全部待办下办理责任必须隐藏");
+assert.equal(defaultDoc.getElementById("todosApprovalType").hidden, true, "全部待办下审批场景必须隐藏");
+console.log("PASS: default todos view hides all specialized dropdowns");
+
+/* 10. 切换到各对象TAB时：
+       - demand: 显示办理场景、价值阶段、办理责任，隐藏审批场景
+       - story: 仅显示办理责任，隐藏办理场景、价值阶段、审批场景
+       - approval: 仅显示审批场景，隐藏办理场景、价值阶段、办理责任
+       - bug / risk / issue 等: 全部隐藏保持简洁 */
+const dynamicFlow = loadTodos("");
+dynamicFlow.requests[0].onDone({
+  items: [],
+  total: 10,
+  summary: {},
+  facets: [
+    { key: "approval", label: "审批", count: 2 },
+    { key: "demand", label: "业务需求", count: 3 },
+    { key: "story", label: "研发需求", count: 2 },
+    { key: "bug", label: "Bug", count: 3 }
+  ]
+});
+const dChips = dynamicFlow.chips.querySelectorAll(".wb-done-tab");
+const dynDoc = dynamicFlow.document;
+
+// 点击 approval (index 1)
+dChips[1].click();
+assert.equal(dynDoc.getElementById("todosApprovalType").hidden, false, "审批TAB必须显示审批场景");
+assert.equal(dynDoc.getElementById("todosAction").hidden, true, "审批TAB必须隐藏办理场景");
+assert.equal(dynDoc.getElementById("todosStage").hidden, true, "审批TAB必须隐藏价值阶段");
+assert.equal(dynDoc.getElementById("todosResponsibility").hidden, true, "审批TAB必须隐藏办理责任");
+
+// 点击 demand (index 2)
+dChips[2].click();
+assert.equal(dynDoc.getElementById("todosAction").hidden, false, "业务需求TAB必须显示办理场景");
+assert.equal(dynDoc.getElementById("todosStage").hidden, false, "业务需求TAB必须显示价值阶段");
+assert.equal(dynDoc.getElementById("todosResponsibility").hidden, false, "业务需求TAB必须显示办理责任");
+assert.equal(dynDoc.getElementById("todosApprovalType").hidden, true, "业务需求TAB必须隐藏审批场景");
+
+// 点击 story (index 3)
+dChips[3].click();
+assert.equal(dynDoc.getElementById("todosResponsibility").hidden, false, "研发需求TAB必须显示办理责任");
+assert.equal(dynDoc.getElementById("todosAction").hidden, true, "研发需求TAB必须隐藏办理场景保持简洁");
+assert.equal(dynDoc.getElementById("todosStage").hidden, true, "研发需求TAB必须隐藏价值阶段保持简洁");
+assert.equal(dynDoc.getElementById("todosApprovalType").hidden, true, "研发需求TAB必须隐藏审批场景");
+
+// 点击 bug (index 4)
+dChips[4].click();
+assert.equal(dynDoc.getElementById("todosAction").hidden, true, "Bug TAB必须隐藏办理场景");
+assert.equal(dynDoc.getElementById("todosStage").hidden, true, "Bug TAB必须隐藏价值阶段");
+assert.equal(dynDoc.getElementById("todosResponsibility").hidden, true, "Bug TAB必须隐藏办理责任");
+assert.equal(dynDoc.getElementById("todosApprovalType").hidden, true, "Bug TAB必须隐藏审批场景");
+console.log("PASS: todos toolbar dropdowns dynamically toggle visibility per object type");

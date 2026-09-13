@@ -9,22 +9,9 @@
   "use strict";
 
   var PL = window.PersonalList || {};
-  var esc = PL.escapeHtml || function (v) {
-    return String(v == null ? "" : v)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  };
-  var priorityBadge = PL.priorityBadge || function (raw) {
-    var n = parseInt(String(raw || "").replace(/^p/i, ""), 10);
-    if (isNaN(n) || n < 1 || n > 4) { return '<span class="wb-priority" data-priority="">—</span>'; }
-    return '<span class="wb-priority" data-priority="' + n + '">P' + n + "</span>";
-  };
-  var objectTypeBadgeFromKind = PL.objectTypeBadgeFromKind || function (kind) {
-    return '<span class="wb-type wb-type-' + esc(String(kind || "unknown")) + '">' + esc(String(kind || "—")) + "</span>";
-  };
+  var esc = window.escapeHtml;
+  var priorityBadge = PL.priorityBadge;
+  var objectTypeBadgeFromKind = PL.objectTypeBadgeFromKind;
   var $ = function (id) { return document.getElementById(id); };
 
   var STATUS_OPTIONS = {
@@ -53,7 +40,7 @@
     relation: "allRelated",
     status: "",
     keyword: "",
-    loop: "all",
+    loop: "open",
     overdue: false,
     project: 0,
     page: 1,
@@ -263,7 +250,7 @@
   }
 
   function initFromStorage() {
-    var ps = PL.loadPageSize && PL.loadPageSize("po.issueRisk.pageSize", 20, [10, 20, 50]);
+    var ps = PL.loadPageSize("po.issueRisk.pageSize", 20, PL.PAGE_SIZE_OPTIONS);
     if (ps) { state.pageSize = ps; }
   }
 
@@ -349,7 +336,7 @@
         state.relation = "allRelated";
         state.status = "";
         state.keyword = "";
-        state.loop = "all";
+        state.loop = "open";
         state.overdue = false;
         state.project = 0;
         state.page = 1;

@@ -258,5 +258,8 @@ func (s *Service) SearchCandidates(ctx context.Context, actor *model.User, req C
 	if _, err := requireActorAccount(actor); err != nil {
 		return nil, err
 	}
+	if req.TeamgroupID > 0 {
+		return s.repo.SearchPeerTeamUsers(ctx, req.TeamgroupID, req.Q, 50)
+	}
 	return s.repo.SearchUsers(ctx, req.Q, 20)
 }

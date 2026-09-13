@@ -1,5 +1,24 @@
 # Existing engineering debt
 
+> **HISTORICAL SNAPSHOT — not an authoritative live count.**
+> The line counts, probe results, and "current" figures below were captured at
+> the dates shown and are now historical. The live machine-readable source of
+> truth is `scripts/quality-baseline/file-length.tsv` (exact non-growth
+> baseline) together with the current `make check` / `make check-gates` output.
+> Revalidate against those before treating any number here as current.
+
+## Governance in progress — 2026-09-13
+
+Current execution: [code health record](../plan/code-health-20260913/README.md).
+Status is PARTIAL: deterministic PO/comment cleanup and two picker test migrations
+are implemented. The user-authorized missing picker dependency repair reuses the
+existing UI escape helper; frontend regression and 36 quality-gate self-tests pass.
+Two remaining test migrations and production file splits are not complete.
+`make check` currently stops when the length scanner encounters an unstaged deleted
+tracked file; production over-limit files also remain. Demo/audit originals remain
+`BLOCKED BY EXISTING BASELINE`. No baseline was expanded and browser acceptance
+has not been certified.
+
 ## Baseline snapshot — 2026-09-10
 
 `scripts/check-file-length.sh` was probed on commit `cc564036` (branch
@@ -35,9 +54,17 @@ Issue categories as captured by the probe:
    The wave deliberately does not ratchet the baseline; shrink without
    lowering the number keeps the gate failing until the owning change is
    ready.
-4. **`docs/Demo/` artifacts (≈22)** — the script scans the Demo tree
-   unfiltered; every Demo HTML/JS/CSS over 500 lines reports here. Demo
-   is explicitly out of scope for this wave (see Plan §6 "明确不做").
+4. **`docs/Demo/` artifacts (≈22)** — **resolved, historical entry.** Two
+   independent changes removed this debt class: (a) the current
+   `check-file-length.sh` restricts its scope to a `case` whitelist of
+   `cmd/ internal/ web/templates/ web/static/js/ web/static/css/ tests/`,
+   which excludes `docs/` entirely, so no Demo path is scanned; and (b) the
+   Demo tree itself was migrated out of this repository on 2026-09-13 to
+   `/Users/yuyan9923/GitHub/CRCBWorkbench/docs/Demo` (175 files,
+   SHA-256-verified 1:1), matching `main`, which does not track `docs/Demo`.
+   No Demo path remains in the gate scope, in `file-length.tsv`, or in
+   `patterns.tsv`. See `docs/plan/code-health-20260913/README.md` for the
+   migration record.
 
 This snapshot is the only artifact produced by commit `chore(debt):
 register 2026-09-10 file-length baseline failure`. The next wave must

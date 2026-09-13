@@ -119,7 +119,7 @@ func TestFindCandidateUsers_PrimaryDeptFirstAndAccountDesc(t *testing.T) {
 			AddRow(5).AddRow(18).AddRow(19))
 
 	// 5. 候选人排序查询：本一级部门置顶，工号倒序，并带回所在部门。
-	mock.ExpectQuery("SELECT u\\.account, u\\.realname, COALESCE\\(d\\.name, ''\\) AS dept FROM zt_user AS u LEFT JOIN zt_dept AS d ON d\\.id = u\\.dept WHERE u\\.deleted = '0' ORDER BY CASE WHEN u\\.dept IN \\(\\?,\\?,\\?\\) THEN 0 ELSE 1 END, u\\.account DESC").
+	mock.ExpectQuery("SELECT u\\.account, u\\.realname, COALESCE\\(d\\.name, ''\\) AS dept, u\\.pinyin FROM zt_user AS u LEFT JOIN zt_dept AS d ON d\\.id = u\\.dept WHERE u\\.deleted = '0' ORDER BY CASE WHEN u\\.dept IN \\(\\?,\\?,\\?\\) THEN 0 ELSE 1 END, u\\.account DESC").
 		WithArgs(5, 18, 19).
 		WillReturnRows(sqlmock.NewRows([]string{"account", "realname", "dept"}).
 			AddRow("003000", "张三", "金融科技总部").
@@ -166,7 +166,7 @@ func TestFindCandidateUsers_FallbackToAccountDescWhenNoDept(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"dept"}).AddRow(0))
 
 	// 回退到纯工号倒序，仍带回部门字段。
-	mock.ExpectQuery("SELECT u\\.account, u\\.realname, COALESCE\\(d\\.name, ''\\) AS dept FROM zt_user AS u LEFT JOIN zt_dept AS d ON d\\.id = u\\.dept WHERE u\\.deleted = '0' ORDER BY u\\.account DESC").
+	mock.ExpectQuery("SELECT u\\.account, u\\.realname, COALESCE\\(d\\.name, ''\\) AS dept, u\\.pinyin FROM zt_user AS u LEFT JOIN zt_dept AS d ON d\\.id = u\\.dept WHERE u\\.deleted = '0' ORDER BY u\\.account DESC").
 		WillReturnRows(sqlmock.NewRows([]string{"account", "realname", "dept"}).
 			AddRow("009999", "赵六", "业务部门").
 			AddRow("001000", "张三", ""))

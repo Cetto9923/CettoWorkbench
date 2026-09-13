@@ -152,9 +152,7 @@
       })
       .then(function (result) {
         if (!result.data || !result.data.success) {
-          if (typeof window.showToast === "function") {
-            window.showToast((result.data && result.data.error) || "加载版本窗口列表失败", "error");
-          }
+          window.showToast((result.data && result.data.error) || "加载版本窗口列表失败", "error");
           return;
         }
         renderManageVersionWindowsTable(result.data.windows || []);
@@ -164,9 +162,7 @@
         if (isSessionExpiredError(err)) {
           return;
         }
-        if (typeof window.showToast === "function") {
-          window.showToast("加载版本窗口列表失败，请稍后重试", "error");
-        }
+        window.showToast("加载版本窗口列表失败，请稍后重试", "error");
       });
   }
 

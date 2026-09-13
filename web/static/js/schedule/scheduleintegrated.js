@@ -27,13 +27,6 @@
     return isNaN(num) || num < 0 || num > 4 ? 3 : num;
   }
 
-  function toast(message, type) {
-    if (typeof window.showToast === "function") {
-      window.showToast(message, type || "success");
-      return;
-    }
-    window.alert(message);
-  }
 
   function flushInlineEdits() {
     if (rdApi && rdApi.exitStoryEditMode) {
@@ -308,7 +301,7 @@
     // 先判来源：独立研发需求（story）走 story 路径，业需（demand）走 demand 路径
     var isStorySource = shared && shared.currentStoryId > 0;
     if (!isStorySource && (!shared || !shared.currentDemandId)) {
-      toast("业需 ID 无效，请关闭弹窗后重试", "error");
+      window.showToast("业需 ID 无效，请关闭弹窗后重试", "error");
       return;
     }
 
@@ -317,7 +310,7 @@
     var data = collectSchedulingData();
     var validationError = validateSchedulingData(data);
     if (validationError) {
-      toast(validationError, "error");
+      window.showToast(validationError, "error");
       return;
     }
 
@@ -326,7 +319,7 @@
     var fetchFn = window.scheduleFetch;
     if (typeof fetchFn !== "function") {
       setSaveButtonLoading(false);
-      toast("保存功能未加载，请刷新页面后重试", "error");
+      window.showToast("保存功能未加载，请刷新页面后重试", "error");
       return;
     }
 
@@ -349,15 +342,15 @@
           return;
         }
         if (result && result.success) {
-          toast("保存成功", "success");
+          window.showToast("保存成功", "success");
           closeScheduleIntegratedModal();
           window.location.reload();
           return;
         }
-        toast((result && result.message) || "保存失败", "error");
+        window.showToast((result && result.message) || "保存失败", "error");
       })
       .catch(function (err) {
-        toast("保存失败: " + (err && err.message ? err.message : "请稍后重试"), "error");
+        window.showToast("保存失败: " + (err && err.message ? err.message : "请稍后重试"), "error");
       })
       .finally(function () {
         setSaveButtonLoading(false);
@@ -684,7 +677,7 @@
     })
       .done(function (resp) {
         if (!resp || !resp.success) {
-          window.alert((resp && resp.error) || "加载业需详情失败");
+          window.showToast((resp && resp.error) || "加载业需详情失败", "error");
           return;
         }
         fillSchedulingDetail(resp);
@@ -697,7 +690,7 @@
         }
       })
       .fail(function () {
-        window.alert("加载业需详情失败，请稍后重试");
+        window.showToast("加载业需详情失败，请稍后重试", "error");
       });
   }
 
@@ -709,7 +702,7 @@
     })
       .done(function (resp) {
         if (!resp || !resp.success) {
-          window.alert((resp && resp.error) || "加载研发需求详情失败");
+          window.showToast((resp && resp.error) || "加载研发需求详情失败", "error");
           return;
         }
         fillSchedulingDetail(resp);
@@ -722,7 +715,7 @@
         }
       })
       .fail(function () {
-        window.alert("加载研发需求详情失败，请稍后重试");
+        window.showToast("加载研发需求详情失败，请稍后重试", "error");
       });
   }
 
@@ -778,7 +771,7 @@
       demandID = extractDemandID(source);
       storyID = extractStoryID(source);
       ctx = extractRowContext(source);
-      ctx.detailUrl = $.trim(source.attr("href") || "");
+      ctx.detailUrl = $.trim(source.attr("data-detail-url") || source.attr("href") || "");
     } else if (source && typeof source === "object" && source.id) {
       ctx = {
         id: source.id,

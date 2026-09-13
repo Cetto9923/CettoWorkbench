@@ -25,12 +25,6 @@ func TestFormatTodoDeadline(t *testing.T) {
 	}
 }
 
-func TestFormatAccountNameDoesNotDuplicateExistingAccount(t *testing.T) {
-	if got := FormatAccountName("003030", "程统(003030)"); got != "程统(003030)" {
-		t.Fatalf("formatted account name = %q, want no duplicate suffix", got)
-	}
-}
-
 func TestIssueRiskPriLabel(t *testing.T) {
 	// zt_issue/zt_risk.pri 为 char(30)，混存数字串与 low/middle/high/urgent，须统一映射到 P1..P4。
 	cases := map[string]string{

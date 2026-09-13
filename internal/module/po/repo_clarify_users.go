@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"gorm.io/gorm/clause"
+	"workbench/internal/pkg/personlabel"
 )
 
 // findFirstLevelDeptIDs 查找操作人所在的一级部门（例如总行-金融科技总部这个级别）及其所有下属部门 ID。
@@ -124,8 +125,9 @@ func (r *Repo) FindCandidateUsers(ctx context.Context, actorAccount string) ([]C
 		Account  string `gorm:"column:account"`
 		Realname string `gorm:"column:realname"`
 		Dept     string `gorm:"column:dept"`
+		Pinyin   string `gorm:"column:pinyin"`
 	}
-	if err := query.Select("u.account, u.realname, COALESCE(d.name, '') AS dept").Find(&rows).Error; err != nil {
+	if err := query.Select("u.account, u.realname, COALESCE(d.name, '') AS dept, u.pinyin").Find(&rows).Error; err != nil {
 		return nil, err
 	}
 	out := make([]ClarifyOption, 0, len(rows))
@@ -135,9 +137,10 @@ func (r *Repo) FindCandidateUsers(ctx context.Context, actorAccount string) ([]C
 			continue
 		}
 		out = append(out, ClarifyOption{
-			Value: account,
-			Label: FormatAccountName(account, row.Realname),
-			Dept:  strings.TrimSpace(row.Dept),
+			Value:  account,
+			Label:  personlabel.Format(account, row.Realname),
+			Dept:   strings.TrimSpace(row.Dept),
+			Pinyin: strings.TrimSpace(row.Pinyin),
 		})
 	}
 	return out, nil

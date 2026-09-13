@@ -1,25 +1,14 @@
 /* =============================================================================
    文件: web/static/js/metrics-radar.js
-   模块: 指标雷达 (metrics) - 质效监控大屏驾驶舱
-   职责: 聚合展示质效计算结果：
-         1. 敏捷小组视角（看板敏捷团队）VS 团队管理角度（组织架构层级团队）自由切换
-         2. 组织架构团队下拉筛选（如项目赋能团队、需求&效能团队等）
-         3. 按月度时间维度切片统计
-         4. 现代科技质感高密度排布（完美兼容浅色与深色主题，0 滚动条，一眼到底）
-         5. 自适应五维质效雷达盘 + 底部透视下钻控制台
+   模块: 指标雷达 (metrics) - 质效监控大屏
+   职责: 从后端 /metrics/api 读取指标元数据，按 5 分类聚合雷达盘 / 健康 / 矩阵；
+         未接入外部源的指标显示「暂无数据」且不参与评分、均值、排名。
    ============================================================================= */
 (function () {
   "use strict";
 
   var PL = window.PersonalList || {};
-  var esc = PL.escapeHtml || function (v) {
-    return String(v == null ? "" : v)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  };
+  var esc = window.escapeHtml;
   var $ = function (id) { return document.getElementById(id); };
 
   var CATEGORY_NAMES = ["需求治理", "交付效率", "研发质量", "规范执行", "效能管理"];
@@ -34,306 +23,73 @@
 
   var STATUS_LABEL = { normal: "正常达标", warn: "预警关注", danger: "高危风险", unknown: "暂无数据" };
 
-  // 看板敏捷小组字典 (zt_teamgroup)
-  var boardTeamMap = {
-    "0": "全部敏捷小组（汇总）"
-  };
-
-  var state = {
-    viewMode: "group",       // "group" (敏捷小组视角) 或 "team" (团队管理角度)
-    teamgroupId: "0",        // 看板敏捷团队 ID
-    orgTeamName: "all",      // 组织架构层级团队名称
-    month: "2026-09",        // 统计月份
-    matrixCategory: "",      // 矩阵分类筛选
-    selectedCode: "delivery.cycle" // 选中的指标
-  };
-
-  var allCalculatedMetrics = [];
+  var allMetrics = [];
   var categoryScores = {};
+  var state = { matrixCategory: "", selectedCode: "" };
 
-  function formatMonthText(m) {
-    if (!m) return "全部累计（实时）";
-    var p = m.split("-");
-    return p.length === 2 ? p[0] + "年" + p[1] + "月" : m;
+  function parseNum(value) {
+    if (!value || value === "—") return NaN;
+    var n = parseFloat(String(value).replace(/[^0-9.\-]/g, ""));
+    return isNaN(n) ? NaN : n;
   }
 
-  function evalStatus(valNum, targetVal, warnVal, dangerVal, goodDirection) {
-    if (valNum == null || isNaN(valNum)) return "unknown";
-    if (goodDirection === "up") {
-      if (valNum >= targetVal) return "normal";
-      if (valNum >= warnVal) return "warn";
-      return "danger";
-    } else {
-      if (valNum <= targetVal) return "normal";
-      if (valNum <= warnVal) return "warn";
-      return "danger";
-    }
-  }
-
-  // 1. 同步看板敏捷团队
-  function loadBoardTeamgroups(cb) {
-    fetch("/board/demand/items", { method: "GET" })
+  // 从后端 metadata API 拉取指标目录（唯一 SSOT）。
+  function loadMetrics(cb) {
+    fetch("/metrics/api?page=1&pageSize=100")
       .then(function (r) { return r.json(); })
       .then(function (payload) {
-        if (payload && payload.success && Array.isArray(payload.teamgroups) && payload.teamgroups.length) {
-          var sel = $("radarTeamgroupSelect");
-          if (sel) {
-            sel.innerHTML = '<option value="0">全部敏捷小组（汇总）</option>';
-            payload.teamgroups.forEach(function (tg) {
-              boardTeamMap[String(tg.id)] = tg.name;
-              var opt = document.createElement("option");
-              opt.value = String(tg.id);
-              opt.textContent = tg.name;
-              sel.appendChild(opt);
-            });
-            if (payload.teamgroups.length > 0 && state.teamgroupId === "0") {
-              state.teamgroupId = String(payload.teamgroups[0].id);
-              sel.value = state.teamgroupId;
-            }
-          }
-        }
+        allMetrics = (payload && Array.isArray(payload.items)) ? payload.items : [];
         if (typeof cb === "function") cb();
       })
       .catch(function () {
+        allMetrics = [];
         if (typeof cb === "function") cb();
       });
   }
 
-  // 2. 真实计算与多维聚合
-  function fetchAndCompute(cb) {
-    var teamId = state.viewMode === "group" ? (parseInt(state.teamgroupId, 10) || 0) : 0;
-    var apiBaseUrl = "/metrics/api?page=1&pageSize=100";
-    var groupMetricsUrl = teamId > 0 ? "/board/group/metrics?teamgroupId=" + teamId : null;
-
-    var p1 = fetch(apiBaseUrl).then(function (r) { return r.json(); }).catch(function () { return { items: [] }; });
-    var p2 = groupMetricsUrl ? fetch(groupMetricsUrl).then(function (r) { return r.json(); }).catch(function () { return { metrics: [] }; }) : Promise.resolve({ metrics: [] });
-
-    Promise.all([p1, p2]).then(function (results) {
-      var baseResp = results[0] || {};
-      var groupResp = results[1] || {};
-      var groupMetrics = Array.isArray(groupResp.metrics) ? groupResp.metrics : [];
-
-      var gmMap = {};
-      groupMetrics.forEach(function (gm) {
-        if (gm && gm.Key) gmMap[gm.Key] = gm;
-      });
-
-      var monthSeed = 1.0;
-      if (state.month) {
-        var mNum = parseInt(state.month.split("-")[1], 10) || 9;
-        monthSeed = 0.88 + (mNum % 5) * 0.04;
-      }
-
-      // 组织架构团队微调因子
-      var orgSeed = 1.0;
-      if (state.viewMode === "team" && state.orgTeamName !== "all") {
-        var hash = 0;
-        for (var i = 0; i < state.orgTeamName.length; i++) hash += state.orgTeamName.charCodeAt(i);
-        orgSeed = 0.85 + (hash % 6) * 0.05;
-      }
-
-      var isTeamMode = state.viewMode === "team";
-      var items = [];
-
-      // 1. 交付周期
-      var dVal = gmMap.delivery && gmMap.delivery.Value !== "-" ? parseFloat(gmMap.delivery.Value) : (isTeamMode ? 32.5 * orgSeed : 28.5 * monthSeed);
-      items.push({
-        code: "delivery.cycle", name: "交付周期", category: "交付效率", unit: "天",
-        value: dVal ? dVal.toFixed(1) + " 天" : "—", valueNum: dVal,
-        target: "≤30天", warningThreshold: "40天", dangerThreshold: "50天", goodDirection: "down",
-        status: evalStatus(dVal, 30, 40, 50, "down"),
-        formula: "AVG((实际发布时间 - 业务评审通过时间) - 挂起天数)",
-        sample: "统计当前月度已完成上线业务需求样本，已扣除外部挂起天数"
-      });
-
-      // 2. 实施周期
-      var impVal = gmMap.implement && gmMap.implement.Value !== "-" ? parseFloat(gmMap.implement.Value) : (isTeamMode ? 21.0 * orgSeed : 18.2 * monthSeed);
-      items.push({
-        code: "implement.cycle", name: "实施周期", category: "交付效率", unit: "天",
-        value: impVal ? impVal.toFixed(1) + " 天" : "—", valueNum: impVal,
-        target: "≤20天", warningThreshold: "28天", dangerThreshold: "35天", goodDirection: "down",
-        status: evalStatus(impVal, 20, 28, 35, "down"),
-        formula: "AVG((实际发布时间 - 首次需求澄清时间) - 挂起天数)",
-        sample: "从需求澄清排期至发布上线阶段的实际耗时"
-      });
-
-      // 3. 需求完成率
-      var doneRate = isTeamMode ? Math.min(96, 89.0 + orgSeed * 2) : Math.min(98, 92.0 + (monthSeed - 1.0) * 8);
-      items.push({
-        code: "story.doneRate", name: "研发需求完成率", category: "交付效率", unit: "%",
-        value: doneRate.toFixed(0) + "%", valueNum: doneRate,
-        target: "≥90%", warningThreshold: "70%", dangerThreshold: "60%", goodDirection: "up",
-        status: evalStatus(doneRate, 90, 70, 60, "up"),
-        formula: "(已关闭 + 已发布需求数) ÷ 需求总数 * 100%",
-        sample: "当期承接需求完成交付闭环比例"
-      });
-
-      // 4. 超两个迭代周期占比
-      var overIter = gmMap.overIteration && gmMap.overIteration.Value !== "-" ? parseFloat(gmMap.overIteration.Value) : (isTeamMode ? 11.5 * orgSeed : 8.3 * monthSeed);
-      items.push({
-        code: "story.overIteration", name: "超期迭代占比", category: "需求治理", unit: "%",
-        value: overIter ? overIter.toFixed(1) + "%" : "—", valueNum: overIter,
-        target: "≤10%", warningThreshold: "15%", dangerThreshold: "20%", goodDirection: "down",
-        status: evalStatus(overIter, 10, 15, 20, "down"),
-        formula: "实施周期>42天的业务需求数 ÷ 进行中需求数 * 100%",
-        sample: "月末时点滞留在研超过2个迭代（42天）的长周期需求"
-      });
-
-      // 5. 超2周未排期单数
-      var unVal = gmMap.unscheduled && gmMap.unscheduled.Value !== "-" ? parseInt(gmMap.unscheduled.Value, 10) : (isTeamMode ? Math.round(12 * orgSeed) : Math.max(1, Math.round(2 * monthSeed)));
-      items.push({
-        code: "story.unscheduled", name: "超2周未排期", category: "需求治理", unit: "个",
-        value: unVal + " 个", valueNum: unVal,
-        target: "≤3个", warningThreshold: "5个", dangerThreshold: "8个", goodDirection: "down",
-        status: evalStatus(unVal, 3, 5, 8, "down"),
-        formula: "COUNT(评审通过超过14天仍未组织需求澄清的工单)",
-        sample: "前置缓冲池积压滞留工单数"
-      });
-
-      // 6. 上线延期数
-      var delayVal = gmMap.onlineDelay && gmMap.onlineDelay.Value !== "-" ? parseInt(gmMap.onlineDelay.Value, 10) : (isTeamMode ? Math.round(3 * orgSeed) : Math.round(1 * monthSeed));
-      items.push({
-        code: "story.delayedLaunch", name: "上线延期数", category: "需求治理", unit: "个",
-        value: delayVal + " 个", valueNum: delayVal,
-        target: "0个", warningThreshold: "1个", dangerThreshold: "2个", goodDirection: "down",
-        status: delayVal === 0 ? "normal" : (delayVal <= 2 ? "warn" : "danger"),
-        formula: "COUNT(实际发布时间 > 计划上线时间)",
-        sample: "当月实际发版滞后于承诺排期的单据"
-      });
-
-      // 7. 进行中需求
-      var actVal = isTeamMode ? Math.round(280 * orgSeed) : Math.round(28 * monthSeed);
-      items.push({
-        code: "story.active", name: "进行中需求", category: "需求治理", unit: "个",
-        value: actVal + " 个", valueNum: actVal,
-        target: isTeamMode ? "≤300个" : "≤30个", warningThreshold: isTeamMode ? "300个" : "30个", dangerThreshold: isTeamMode ? "500个" : "45个", goodDirection: "down",
-        status: evalStatus(actVal, isTeamMode ? 300 : 30, isTeamMode ? 350 : 38, isTeamMode ? 450 : 45, "down"),
-        formula: "COUNT(zt_demand WHERE status NOT IN ('closed','released'))",
-        sample: "月末时点在研负载与吞吐压力"
-      });
-
-      // 8. 质量门禁通过率
-      var gateVal = gmMap.gate && gmMap.gate.Value !== "-" ? parseFloat(gmMap.gate.Value) : (isTeamMode ? 92.5 : 94.0);
-      items.push({
-        code: "gate.passRate", name: "质量门禁通过率", category: "研发质量", unit: "%",
-        value: gateVal ? gateVal.toFixed(0) + "%" : "—", valueNum: gateVal,
-        target: "≥90%", warningThreshold: "85%", dangerThreshold: "80%", goodDirection: "up",
-        status: evalStatus(gateVal, 90, 85, 80, "up"),
-        formula: "门禁一次性检查通过数 ÷ 需门禁研发需求总数 * 100%",
-        sample: "代码审查自动化测试流水线拦截与通过率"
-      });
-
-      // 9. 缺陷关闭率
-      var bcVal = gmMap.bugClose && gmMap.bugClose.Value !== "-" ? parseFloat(gmMap.bugClose.Value) : (isTeamMode ? 90.5 : 94.2);
-      items.push({
-        code: "bug.closeRate", name: "缺陷关闭率", category: "研发质量", unit: "%",
-        value: bcVal ? bcVal.toFixed(0) + "%" : "—", valueNum: bcVal,
-        target: "≥90%", warningThreshold: "85%", dangerThreshold: "80%", goodDirection: "up",
-        status: evalStatus(bcVal, 90, 85, 80, "up"),
-        formula: "关闭的缺陷数 ÷ 缺陷总数 * 100%",
-        sample: "缺陷修复与验证闭环效率"
-      });
-
-      // 10. 缺陷响应效率
-      var brVal = gmMap.bugResponse && gmMap.bugResponse.Value !== "-" ? parseFloat(gmMap.bugResponse.Value) : (isTeamMode ? 86.5 : 89.5);
-      items.push({
-        code: "bug.responseRate", name: "缺陷响应效率", category: "研发质量", unit: "%",
-        value: brVal ? brVal.toFixed(0) + "%" : "—", valueNum: brVal,
-        target: "≥85%", warningThreshold: "80%", dangerThreshold: "75%", goodDirection: "up",
-        status: evalStatus(brVal, 85, 80, 75, "up"),
-        formula: "致命1天、严重3天内解决率综合加权",
-        sample: "按 Bug 严重程度阶梯时限考核解决速率"
-      });
-
-      // 11. 未关闭缺陷
-      var bugOpen = isTeamMode ? Math.round(65 * orgSeed) : Math.round(4 * monthSeed);
-      items.push({
-        code: "bug.open", name: "未关闭缺陷", category: "研发质量", unit: "个",
-        value: bugOpen + " 个", valueNum: bugOpen,
-        target: isTeamMode ? "≤50个" : "≤5个", warningThreshold: isTeamMode ? "50个" : "5个", dangerThreshold: isTeamMode ? "100个" : "10个", goodDirection: "down",
-        status: evalStatus(bugOpen, isTeamMode ? 50 : 5, isTeamMode ? 70 : 7, isTeamMode ? 90 : 10, "down"),
-        formula: "COUNT(zt_bug WHERE status NOT IN ('closed','cancelled'))",
-        sample: "当前存量活跃未闭环缺陷数"
-      });
-
-      // 12. SP 偏差率
-      var spDev = isTeamMode ? 14.2 * orgSeed : 11.4 * monthSeed;
-      items.push({
-        code: "sp.deviationRate", name: "SP偏差率", category: "效能管理", unit: "%",
-        value: spDev.toFixed(1) + "%", valueNum: spDev,
-        target: "≤15%", warningThreshold: "25%", dangerThreshold: "35%", goodDirection: "down",
-        status: evalStatus(spDev, 15, 25, 35, "down"),
-        formula: "|实际工时 - (故事点 × 7h)| ÷ (故事点 × 7h)",
-        sample: "估算规模与实际人力投入吻合度（1 SP = 7 人时）"
-      });
-
-      // 13. 规范执行完整性
-      items.push({
-        code: "norm.completeness", name: "规范执行完整性", category: "规范执行", unit: "%",
-        value: "96%", valueNum: 96,
-        target: "≥95%", warningThreshold: "80%", dangerThreshold: "70%", goodDirection: "up",
-        status: "normal",
-        formula: "正文字段与附件齐备单数 ÷ 需求总数",
-        sample: "需求卡片规范与门禁合规检查"
-      });
-
-      allCalculatedMetrics = items;
-      computeCategoryScores(items);
-
-      if (typeof cb === "function") cb();
-    }).catch(function (err) {
-      console.error("fetchAndCompute error:", err);
-      if (typeof cb === "function") cb();
-    });
-  }
-
-  // 3. 计算 5 分类得分与总分
+  // 按 5 分类聚合：normal/warn/danger 参与评分，unknown（unavailable）不参与。
   function computeCategoryScores(items) {
     var catMap = {};
     CATEGORY_NAMES.forEach(function (c) {
-      catMap[c] = { normal: 0, warn: 0, danger: 0, total: 0 };
+      catMap[c] = { normal: 0, warn: 0, danger: 0, unknown: 0, total: 0 };
     });
-
     items.forEach(function (m) {
-      if (catMap[m.category]) {
-        catMap[m.category].total++;
-        if (m.status === "normal") catMap[m.category].normal++;
-        else if (m.status === "warn") catMap[m.category].warn++;
-        else if (m.status === "danger") catMap[m.category].danger++;
-      }
+      var bucket = catMap[m.category];
+      if (!bucket) return;
+      bucket.total++;
+      var st = m.status || "unknown";
+      if (st === "normal") bucket.normal++;
+      else if (st === "warn") bucket.warn++;
+      else if (st === "danger") bucket.danger++;
+      else bucket.unknown++;
     });
 
     categoryScores = {};
-    var totalNormal = 0, totalWarn = 0, totalDanger = 0, totalAll = items.length;
-
+    var totalNormal = 0, totalWarn = 0, totalDanger = 0, scorableTotal = 0;
     CATEGORY_NAMES.forEach(function (c) {
       var d = catMap[c];
-      var score = 100;
-      if (d.total > 0) {
-        score = Math.round(((d.normal * 1.0 + d.warn * 0.6) / d.total) * 100);
-      }
+      var scorable = d.normal + d.warn + d.danger;
+      var score = scorable > 0 ? Math.round(((d.normal * 1.0 + d.warn * 0.5) / scorable) * 100) : 0;
       categoryScores[c] = {
         score: score,
-        severity: score >= 80 ? "normal" : (score >= 60 ? "warn" : "danger"),
-        normal: d.normal,
-        warn: d.warn,
-        danger: d.danger,
-        total: d.total
+        severity: scorable === 0 ? "unknown" : (score >= 80 ? "normal" : (score >= 60 ? "warn" : "danger")),
+        normal: d.normal, warn: d.warn, danger: d.danger, unknown: d.unknown, total: d.total
       };
       totalNormal += d.normal;
       totalWarn += d.warn;
       totalDanger += d.danger;
+      scorableTotal += scorable;
     });
 
-    var overallScore = Math.round((totalNormal * 1.0 + totalWarn * 0.5) / Math.max(1, totalAll) * 100);
+    var overallScore = scorableTotal > 0 ? Math.round((totalNormal * 1.0 + totalWarn * 0.5) / scorableTotal * 100) : 0;
 
     if ($("kpiScore")) $("kpiScore").textContent = overallScore;
     if ($("kpiScoreRank")) {
-      $("kpiScoreRank").textContent = overallScore >= 85 ? "质效优秀 ↑" : (overallScore >= 75 ? "质效良好" : "质效警示 ↓");
+      $("kpiScoreRank").textContent = scorableTotal === 0 ? "暂无数据" : (overallScore >= 85 ? "质效优秀 ↑" : (overallScore >= 75 ? "质效良好" : "质效警示 ↓"));
     }
     if ($("kpiNormalCount")) $("kpiNormalCount").textContent = totalNormal;
     if ($("kpiNormalRate")) {
-      var rate = Math.round(totalNormal / Math.max(1, totalAll) * 100);
+      var rate = scorableTotal > 0 ? Math.round(totalNormal / scorableTotal * 100) : 0;
       $("kpiNormalRate").textContent = "达标率 " + rate + "%";
       if ($("kpiNormalBar")) $("kpiNormalBar").style.width = rate + "%";
     }
@@ -344,28 +100,8 @@
         ? '<i class="fas fa-triangle-exclamation"></i> ' + totalDanger + ' 项高危需治理'
         : '<i class="fas fa-check"></i> 运行平稳 · 暂无阻断';
     }
-
-    var targetName = "";
-    if (state.viewMode === "team") {
-      targetName = state.orgTeamName === "all" ? "全团队管理汇总 (全行)" : state.orgTeamName;
-    } else {
-      targetName = boardTeamMap[state.teamgroupId] || "看板敏捷小组";
-    }
-
-    if ($("kpiCurrentTarget")) $("kpiCurrentTarget").textContent = targetName;
-    if ($("kpiSnapshotTime")) $("kpiSnapshotTime").innerHTML = '<i class="fas fa-database"></i> ' + esc(formatMonthText(state.month)) + ' 实时快照';
-
-    if ($("radarScopeBadge")) {
-      $("radarScopeBadge").innerHTML = state.viewMode === "team"
-        ? '<i class="fas fa-sitemap"></i> 团队管理维度'
-        : '<i class="fas fa-users-viewfinder"></i> 敏捷小组视角';
-    }
-    if ($("radarTargetBadge")) {
-      $("radarTargetBadge").innerHTML = '<i class="fas fa-layer-group"></i> ' + esc(targetName);
-    }
-    if ($("radarTimeBadge")) {
-      $("radarTimeBadge").innerHTML = '<i class="fas fa-calendar-alt"></i> ' + esc(formatMonthText(state.month)) + ' 运行快照';
-    }
+    if ($("kpiCurrentTarget")) $("kpiCurrentTarget").textContent = "全量指标 (实时快照)";
+    if ($("kpiSnapshotTime")) $("kpiSnapshotTime").innerHTML = '<i class="fas fa-database"></i> ' + esc((allMetrics[0] && allMetrics[0].lastCalcTime) || "实时快照");
   }
 
   // 4. 自适应 SVG 五维雷达盘 (双模式主题响应)
@@ -419,7 +155,7 @@
     }).join("");
 
     var scoreCoords = CATEGORY_NAMES.map(function (cat, i) {
-      var s = categoryScores[cat] ? categoryScores[cat].score : 50;
+      var s = categoryScores[cat] ? categoryScores[cat].score : 0;
       return getCoord(s, angles[i]);
     });
     var scorePts = scoreCoords.map(function (p) { return p.x.toFixed(1) + "," + p.y.toFixed(1); }).join(" ");
@@ -462,32 +198,34 @@
       '</svg>';
   }
 
-  // 5. 5分类健康条 (现代质感分割卡片)
+  // 5. 5分类健康条
   function renderCategoryCards() {
     var host = $("radarCategoryCards");
     if (!host) return;
 
     var html = CATEGORY_NAMES.map(function (cat) {
-      var data = categoryScores[cat] || { score: 0, severity: "unknown", normal: 0, warn: 0, danger: 0, total: 0 };
+      var data = categoryScores[cat] || { score: 0, severity: "unknown", normal: 0, warn: 0, danger: 0, unknown: 0, total: 0 };
       var cls = CATEGORY_COLOR_CLASS[cat] || "cat-default";
-      var scoreCls = data.score >= 80 ? "score-ok" : (data.score >= 60 ? "score-warn" : "score-danger");
+      var scorable = data.normal + data.warn + data.danger;
+      var scoreCls = scorable === 0 ? "score-danger" : (data.score >= 80 ? "score-ok" : (data.score >= 60 ? "score-warn" : "score-danger"));
       var isActive = state.matrixCategory === cat ? "active" : "";
 
-      var tot = data.total || 1;
-      var pOk = Math.round((data.normal / tot) * 100);
-      var pWarn = Math.round((data.warn / tot) * 100);
-      var pDanger = Math.round((data.danger / tot) * 100);
+      var pOk = scorable > 0 ? Math.round((data.normal / scorable) * 100) : 0;
+      var pWarn = scorable > 0 ? Math.round((data.warn / scorable) * 100) : 0;
+      var pDanger = scorable > 0 ? Math.round((data.danger / scorable) * 100) : 0;
+      var scoreText = scorable > 0 ? data.score + "分" : "暂无数据";
 
       return '<div class="radar-cat-card ' + isActive + '" data-cat="' + esc(cat) + '" title="点击筛选右侧' + esc(cat) + '指标">' +
         '<div class="radar-cat-row-top">' +
           '<div class="radar-cat-left">' +
             '<span class="metric-category ' + cls + '" style="height:18px; padding:0 6px; font-size:10px; font-weight:600;">' + esc(cat) + '</span>' +
-            '<span class="radar-cat-score ' + scoreCls + '">' + data.score + '分</span>' +
+            '<span class="radar-cat-score ' + scoreCls + '">' + esc(scoreText) + '</span>' +
           '</div>' +
           '<div class="radar-cat-counts-tag">' +
             '<span class="c-ok">' + data.normal + '达标</span>' +
             (data.warn > 0 ? ' · <span class="c-warn">' + data.warn + '关注</span>' : '') +
             (data.danger > 0 ? ' · <span class="c-danger">' + data.danger + '风险</span>' : '') +
+            (data.unknown > 0 ? ' · <span class="c-unknown">' + data.unknown + '未接入</span>' : '') +
           '</div>' +
         '</div>' +
         '<div class="radar-cat-track">' +
@@ -501,14 +239,14 @@
     host.innerHTML = html;
   }
 
-  // 6. 核心指标微磁贴网格 (4列优雅排布，自适应充满，卡片做丰满)
+  // 6. 核心指标矩阵
   function renderMatrixGrid() {
     var host = $("radarMatrixGrid");
     if (!host) return;
 
-    var filtered = allCalculatedMetrics;
+    var filtered = allMetrics;
     if (state.matrixCategory) {
-      filtered = allCalculatedMetrics.filter(function (m) { return m.category === state.matrixCategory; });
+      filtered = allMetrics.filter(function (m) { return m.category === state.matrixCategory; });
     }
 
     if (filtered.length === 0) {
@@ -519,19 +257,25 @@
     var html = filtered.map(function (m) {
       var isSel = m.code === state.selectedCode;
       var statusCls = m.status || "unknown";
-      var statusText = statusCls === "normal" ? "达标" : (statusCls === "warn" ? "关注" : (statusCls === "danger" ? "风险" : "—"));
+      var statusText = STATUS_LABEL[statusCls] || "—";
       var statusIcon = statusCls === "normal" ? "fa-circle-check" : (statusCls === "warn" ? "fa-triangle-exclamation" : (statusCls === "danger" ? "fa-circle-xmark" : "fa-circle-question"));
       var catCls = CATEGORY_COLOR_CLASS[m.category] || "cat-delivery";
 
+      var vn = parseNum(m.value);
+      var isUnavailable = statusCls === "unknown" || isNaN(vn);
       var gaugePct = 0;
-      if (m.unit === "%") {
-        gaugePct = Math.min(100, Math.max(0, m.valueNum || 0));
-      } else if (m.unit === "天") {
-        var targetNum = parseFloat(m.target.replace(/[^0-9.]/g, "")) || 30;
-        gaugePct = Math.min(100, Math.max(10, Math.round(((m.valueNum || 0) / (targetNum * 1.3)) * 100)));
-      } else {
-        gaugePct = m.status === "normal" ? 100 : (m.status === "warn" ? 60 : 30);
+      if (!isUnavailable) {
+        if (m.unit === "%") {
+          gaugePct = Math.min(100, Math.max(0, vn));
+        } else if (m.unit === "天") {
+          var targetNum = parseNum(m.target) || 30;
+          gaugePct = Math.min(100, Math.max(10, Math.round((vn / (targetNum * 1.3)) * 100)));
+        } else {
+          gaugePct = statusCls === "normal" ? 100 : (statusCls === "warn" ? 60 : 30);
+        }
       }
+
+      var valueHtml = isUnavailable ? '<span class="m-val-text unavailable">暂无数据</span>' : '<strong class="m-val-text">' + esc(m.value) + '</strong>';
 
       return '<div class="radar-m-compact-tile ' + (isSel ? 'selected' : '') + '" data-code="' + esc(m.code) + '">' +
         '<div class="tile-row-top">' +
@@ -540,17 +284,17 @@
             '<span class="m-name-text" title="' + esc(m.name) + '">' + esc(m.name) + '</span>' +
           '</div>' +
           '<span class="m-badge-pill ' + statusCls + '">' +
-            '<i class="fas ' + statusIcon + '"></i> ' + statusText +
+            '<i class="fas ' + statusIcon + '"></i> ' + esc(statusText) +
           '</span>' +
         '</div>' +
         '<div class="tile-row-middle">' +
-          '<strong class="m-val-text">' + esc(m.value) + '</strong>' +
+          valueHtml +
           '<div class="m-mini-gauge">' +
             '<div class="m-gauge-bar ' + statusCls + '" style="width:' + gaugePct + '%"></div>' +
           '</div>' +
         '</div>' +
         '<div class="tile-row-bottom">' +
-          '<span class="m-target-text"><i class="fas fa-bullseye" style="font-size:9px; margin-right:3px; opacity:0.7;"></i>目标 ' + esc(m.target) + '</span>' +
+          '<span class="m-target-text"><i class="fas fa-bullseye" style="font-size:9px; margin-right:3px; opacity:0.7;"></i>目标 ' + esc(m.target || "—") + '</span>' +
           '<span class="m-code-text">' + esc(m.code) + '</span>' +
         '</div>' +
       '</div>';
@@ -558,13 +302,28 @@
 
     host.innerHTML = html;
     updateDetailDock();
+    updateFilterTags();
+  }
+
+  function updateFilterTags() {
+    var container = $("matrixCategoryFilters");
+    if (!container) return;
+    var counts = { "": allMetrics.length };
+    allMetrics.forEach(function (m) { counts[m.category] = (counts[m.category] || 0) + 1; });
+    var tags = [["", "全部"]].concat(CATEGORY_NAMES.map(function (c) { return [c, c]; }));
+    container.innerHTML = tags.map(function (pair) {
+      var cat = pair[0], label = pair[1];
+      var n = counts[cat] || 0;
+      var active = state.matrixCategory === cat ? "active" : "";
+      return '<button type="button" class="matrix-tag-btn ' + active + '" data-cat="' + esc(cat) + '">' + esc(label) + ' (' + n + ')</button>';
+    }).join("");
   }
 
   // 7. 底部透视控制台 Dock
   function updateDetailDock() {
-    var target = allCalculatedMetrics.find(function (m) { return m.code === state.selectedCode; });
-    if (!target && allCalculatedMetrics.length > 0) {
-      target = allCalculatedMetrics[0];
+    var target = allMetrics.find(function (m) { return m.code === state.selectedCode; });
+    if (!target && allMetrics.length > 0) {
+      target = allMetrics[0];
       state.selectedCode = target.code;
     }
     if (!target) return;
@@ -583,72 +342,31 @@
       var icon = target.status === "normal" ? "fa-circle-check" : (target.status === "warn" ? "fa-triangle-exclamation" : "fa-shield-virus");
       statusEl.innerHTML = '<i class="fas ' + icon + '"></i> ' + (STATUS_LABEL[target.status] || "—");
     }
-    if ($("dockCurrentVal")) $("dockCurrentVal").textContent = target.value;
+    if ($("dockCurrentVal")) $("dockCurrentVal").textContent = (target.value && target.value !== "—") ? target.value : "暂无数据";
     if ($("dockTargetVal")) {
       $("dockTargetVal").textContent = "目标 " + (target.target || "—") +
         " · 关注 " + (target.warningThreshold || "—") +
         " · 风险 " + (target.dangerThreshold || "—");
     }
     if ($("dockFormula")) $("dockFormula").textContent = target.formula || "标准计算规则";
-    if ($("dockSample")) $("dockSample").textContent = target.sample || "基于当前时间窗口下看板单据实测值";
+    if ($("dockSample")) $("dockSample").textContent = target.description || "基于后端指标目录的实时测算";
   }
 
-  function refresh() {
-    fetchAndCompute(function () {
-      renderRadarSvg();
-      renderCategoryCards();
-      renderMatrixGrid();
-    });
+  function render() {
+    computeCategoryScores(allMetrics);
+    renderRadarSvg();
+    renderCategoryCards();
+    renderMatrixGrid();
   }
 
   function initControls() {
-    // 视角切换
-    $("btnModeGroup").addEventListener("click", function () {
-      state.viewMode = "group";
-      $("btnModeGroup").classList.add("active");
-      $("btnModeTeam").classList.remove("active");
-      $("radarTeamgroupWrap").style.display = "inline-flex";
-      $("radarOrgTeamWrap").style.display = "none";
-      refresh();
-    });
-
-    $("btnModeTeam").addEventListener("click", function () {
-      state.viewMode = "team";
-      $("btnModeTeam").classList.add("active");
-      $("btnModeGroup").classList.remove("active");
-      $("radarTeamgroupWrap").style.display = "none";
-      $("radarOrgTeamWrap").style.display = "inline-flex";
-      refresh();
-    });
-
-    // 敏捷小组下拉
-    $("radarTeamgroupSelect").addEventListener("change", function () {
-      state.teamgroupId = this.value;
-      refresh();
-    });
-
-    // 组织架构管理团队下拉
-    $("radarOrgTeamSelect").addEventListener("change", function () {
-      state.orgTeamName = this.value;
-      refresh();
-    });
-
-    // 统计月份下拉
-    $("radarMonthSelect").addEventListener("change", function () {
-      state.month = this.value;
-      refresh();
-    });
-
     // 矩阵分类筛选按钮
     var tagContainer = $("matrixCategoryFilters");
     if (tagContainer) {
       tagContainer.addEventListener("click", function (e) {
         var btn = e.target.closest(".matrix-tag-btn");
         if (!btn) return;
-        tagContainer.querySelectorAll(".matrix-tag-btn").forEach(function (b) { b.classList.remove("active"); });
-        btn.classList.add("active");
         state.matrixCategory = btn.getAttribute("data-cat") || "";
-        renderCategoryCards();
         renderMatrixGrid();
       });
     }
@@ -661,13 +379,6 @@
         if (!card) return;
         var cat = card.getAttribute("data-cat");
         state.matrixCategory = (state.matrixCategory === cat) ? "" : cat;
-        if (tagContainer) {
-          tagContainer.querySelectorAll(".matrix-tag-btn").forEach(function (b) {
-            var bCat = b.getAttribute("data-cat") || "";
-            if (bCat === state.matrixCategory) b.classList.add("active");
-            else b.classList.remove("active");
-          });
-        }
         renderCategoryCards();
         renderMatrixGrid();
       });
@@ -684,7 +395,7 @@
       updateDetailDock();
     });
 
-    // 监听全局主题 (Dark / Light) 动态切换，无缝刷新雷达 SVG
+    // 监听全局主题 (Dark / Light) 动态切换，刷新雷达 SVG
     try {
       var themeObserver = new MutationObserver(function (mutations) {
         mutations.forEach(function (mutation) {
@@ -701,8 +412,6 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     initControls();
-    loadBoardTeamgroups(function () {
-      refresh();
-    });
+    loadMetrics(render);
   });
 })();

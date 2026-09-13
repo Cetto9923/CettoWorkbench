@@ -1,8 +1,7 @@
 // =============================================================================
 // 文件: web/static/js/po/demand-detail-render-execution.js
 // 模块: PO 工作台
-// 职责: 详情「研发执行」Tab 与代码质量树纯渲染；从 demand-detail-render
-//       机械拆出以保持 500 行硬性上限（零行为变化）。
+// 职责: 详情「研发执行」Tab 与代码质量树纯渲染。
 // =============================================================================
 
 (function (root, factory) {
@@ -16,15 +15,7 @@
 })(typeof self !== "undefined" ? self : this, function (RichText) {
   "use strict";
 
-  var esc = (RichText && RichText.esc) || function (str) {
-    if (str === null || str === undefined) return "";
-    return String(str)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  };
+  var esc = window.escapeHtml;
 
   function renderQualityTree(tree) {
     if (!tree || tree.length === 0) {

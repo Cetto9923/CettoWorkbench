@@ -14,6 +14,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -60,14 +61,35 @@ func (s *Service) GetCreateWindowFormData(ctx context.Context, actor *model.User
 	}, nil
 }
 
-// ListFilterProducts 查询筛选区全部产品/系统列表。
-func (s *Service) ListFilterProducts(ctx context.Context) ([]ZtProduct, error) {
+// ListFilterProducts 查询筛选区全部产品/系统列表，当前用户参与的系统排序在前。
+func (s *Service) ListFilterProducts(ctx context.Context, actor *model.User) ([]ZtProduct, error) {
 	products, err := s.repo.ListAllProducts(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if products == nil {
+	if len(products) == 0 {
 		return []ZtProduct{}, nil
+	}
+	account := actorAccount(actor)
+	if account != "" {
+		userProducts, err := s.repo.GetUserProducts(ctx, account)
+		if err == nil && len(userProducts) > 0 {
+			userMap := make(map[uint]bool, len(userProducts))
+			for _, up := range userProducts {
+				userMap[up.ID] = true
+			}
+			for i := range products {
+				if userMap[products[i].ID] {
+					products[i].IsMyProduct = true
+				}
+			}
+			sort.SliceStable(products, func(i, j int) bool {
+				if products[i].IsMyProduct != products[j].IsMyProduct {
+					return products[i].IsMyProduct
+				}
+				return false
+			})
+		}
 	}
 	return products, nil
 }
@@ -367,6 +389,8 @@ func (s *Service) Update(ctx context.Context, actor *model.User, req UpdateReq) 
 }
 
 // Delete 软删除版本窗口。
+// 业务不变量：窗口若已被任何需求（zt_demandwindow）或产品/计划（zt_versionwindowproduct）
+// 关联，则拒绝删除，避免产生孤儿关联记录。
 func (s *Service) Delete(ctx context.Context, actor *model.User, req DeleteReq) error {
 	window, err := s.repo.FindByID(ctx, req.ID)
 	if err != nil {
@@ -379,7 +403,13 @@ func (s *Service) Delete(ctx context.Context, actor *model.User, req DeleteReq) 
 	if window.CreatedBy != account {
 		return errors.New("只有创建人可以删除")
 	}
-	// TODO: 如果窗口已关联需求，不允许删除
+	assoc, err := s.repo.CountWindowAssociations(ctx, req.ID)
+	if err != nil {
+		return err
+	}
+	if assoc > 0 {
+		return fmt.Errorf("版本窗口已关联 %d 条需求/产品记录，无法删除", assoc)
+	}
 	return s.repo.Delete(ctx, req.ID)
 }
 
