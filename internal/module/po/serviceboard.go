@@ -28,6 +28,11 @@ func (s *Service) BoardDemand(ctx context.Context, actor *model.User, req BoardD
 	if actor == nil || strings.TrimSpace(actor.Account) == "" {
 		return &BoardDemandResp{Tree: nil, Teamgroups: nil}, nil
 	}
+	teams, err := s.repo.FindBoardTeamgroups(ctx, actor.Account)
+	if err != nil {
+		return nil, err
+	}
+	req.TeamgroupID = selectBoardTeamgroup(req.TeamgroupID, teams)
 	if req.POAccount == "" {
 		req.POAccount = actor.Account
 	}
@@ -42,11 +47,12 @@ func (s *Service) BoardDemand(ctx context.Context, actor *model.User, req BoardD
 	if err := s.attachPrimaryActions(ctx, actor, tree); err != nil {
 		return nil, err
 	}
-	teams, err := s.repo.FindBoardTeamgroups(ctx, actor.Account)
-	if err != nil {
-		return nil, err
-	}
-	return &BoardDemandResp{Tree: tree, Summary: summary, Teamgroups: teams}, nil
+	return &BoardDemandResp{
+		Tree:                tree,
+		Summary:             summary,
+		Teamgroups:          teams,
+		SelectedTeamgroupID: req.TeamgroupID,
+	}, nil
 }
 
 // BoardIssues 右侧问题栏：当前账号可见真实问题。

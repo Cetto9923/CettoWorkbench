@@ -24,7 +24,7 @@ type NoticeListReq struct {
 
 func (r *NoticeListReq) Validate() []FieldError {
 	r.QuickView = noticeValue(r.QuickView, "unread")
-	if !isNoticeValue(r.QuickView, "all", "unread", "action", "abnormal", "today") {
+	if !isNoticeValue(r.QuickView, "all", "unread", "action", "inform", "abnormal", "today") {
 		return []FieldError{{Field: "quickView", Message: "无效的快捷视图"}}
 	}
 	r.Category = noticeValue(r.Category, "all")
@@ -98,6 +98,7 @@ type NoticeBucketResp struct {
 	Total      int64            `json:"total"`
 	Filtered   int64            `json:"filteredTotal"`
 	Unread     int64            `json:"unread"`
+	Inform     int64            `json:"inform"`
 	Action     int64            `json:"action"`
 	Abnormal   int64            `json:"abnormal"`
 	Today      int64            `json:"today"`

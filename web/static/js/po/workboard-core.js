@@ -55,9 +55,8 @@
     if ($("taskRoleBanner")) $("taskRoleBanner").classList.toggle("hidden", demand);
     $("taskFilterTip").classList.toggle("hidden", demand || !state.storyFilter);
     $("ownerTitle").textContent = demand ? "PO / 需求负责人" : "任务负责人";
-    // 需求/任务数据与指标互不依赖，首屏并行发起，避免等主看板返回后再加载指标。
+    // 需求首屏先确定默认小组，再用同一小组加载需求与效能快照。
     if (demand) {
-      if (WB.loadMetrics) WB.loadMetrics();
       if (WB.loadDemand) WB.loadDemand();
     } else {
       ensureTeamgroup();
@@ -78,6 +77,7 @@
     if (state.teamgroup === 0) {
       var idx = teams.findIndex(function (t) { return t.id === loadTeamgroup(); });
       state.teamgroup = idx < 0 ? teams[0].id : teams[idx].id;
+      saveTeamgroup(state.teamgroup);
     }
     var addBtn = function (id, name, active) {
       var b = document.createElement("button");

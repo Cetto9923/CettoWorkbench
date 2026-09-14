@@ -31,6 +31,7 @@ func (s *Service) NoticeList(ctx context.Context, actor *model.User, req NoticeL
 		Filtered:   repoResp.Filtered,
 		Unread:     repoResp.Unread,
 		Action:     repoResp.Action,
+		Inform:     repoResp.Inform,
 		Abnormal:   repoResp.Abnormal,
 		Today:      repoResp.Today,
 		Categories: repoResp.Categories,

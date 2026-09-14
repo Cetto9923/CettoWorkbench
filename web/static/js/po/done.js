@@ -35,8 +35,8 @@
     pageSize: 20
   };
 
-  var metaData = { actions: [], results: [], projects: [] };
-  var requestSeq = 0;
+  var metaData = { actions: [], results: [], projects: [] }; var requestSeq = 0;
+  var metaSeq = 0;
 
   function $(id) { return document.getElementById(id); }
   function fmtDateTime(value) {
@@ -80,14 +80,17 @@
     if (!id) return "--";
     return String((item && item.objectType) || "").toLowerCase() === "demand" ? "US" + id : id;
   }
-
-  function loadMeta() {
-    function setEnabled(on) {
-      ["doneAction", "doneResult", "doneProject"].forEach(function (id) { var el = $(id); if (el) el.disabled = !on; });
-    }
-    fetch("/done/meta", { credentials: "same-origin" })
+  function loadMeta(objectType) {
+    var seq = ++metaSeq;
+    objectType = String(objectType || "").trim();
+    function setEnabled(on) { ["doneAction", "doneResult", "doneProject"].forEach(function (id) { var el = $(id); if (el) el.disabled = !on; }); }
+    setEnabled(false);
+    renderSelectOptions("doneAction", [], "全部操作"); renderSelectOptions("doneResult", [], "全部结果"); renderSelectOptions("doneProject", [], "全部项目");
+    var url = "/done/meta" + (objectType ? "?objectType=" + encodeURIComponent(objectType) : "");
+    return fetch(url, { credentials: "same-origin" })
       .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
       .then(function (res) {
+        if (seq !== metaSeq) return false;
         if (!res || !res.data) throw new Error("empty meta");
         var d = res.data;
         metaData.actions = d.actionTypes || []; metaData.results = d.results || []; metaData.projects = d.projects || [];
@@ -95,13 +98,15 @@
         renderSelectOptions("doneResult", metaData.results, "全部结果");
         renderSelectOptions("doneProject", metaData.projects, "全部项目");
         setEnabled(true);
+        return true;
       })
       .catch(function () {
+        if (seq !== metaSeq) return false;
         setEnabled(false);
         window.showToast("筛选条件加载失败，请稍后重试", "error");
+        return false;
       });
   }
-
   function renderSelectOptions(selectId, list, defaultLabel) {
     var el = $(selectId);
     if (!el) return;
@@ -111,7 +116,6 @@
     });
     el.innerHTML = html;
   }
-
   function renderSummaryKPIs(sum) {
     sum = sum || {};
     var today = Number(sum.today || 0);
@@ -136,7 +140,6 @@
       card.setAttribute("aria-pressed", isActive ? "true" : "false");
     });
   }
-
   function renderObjectChips(facets, total) {
     var host = $("doneObjectChips");
     if (!host) return;
@@ -160,18 +163,17 @@
     }).join("");
 
     host.innerHTML = html;
-
     host.querySelectorAll(".wb-done-tab").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var key = btn.getAttribute("data-object-type") || "";
         state.tab = key === "approval" ? "approval" : "all";
         state.objectType = key === "approval" ? "" : key;
+        state.action = ""; state.result = ""; state.project = "";
         state.page = 1;
-        loadList();
+        loadMeta(key).then(function () { loadList(); });
       });
     });
   }
-
   /* ────────── 3. 列表加载与 9 列表格渲染 ────────── */
   function loadList() {
     var seq = ++requestSeq;
@@ -468,7 +470,7 @@
         document.querySelectorAll(".wb-done-seg").forEach(function (b) {
           b.classList.toggle("active", b.getAttribute("data-mode") === "core");
         });
-        loadList();
+        loadMeta("").then(function () { loadList(); });
       });
     }
 

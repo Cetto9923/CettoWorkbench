@@ -220,10 +220,11 @@ func (h *BoardHandler) BoardDemandItems(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"success":    true,
-		"tree":       resp.Tree,
-		"summary":    resp.Summary,
-		"teamgroups": resp.Teamgroups,
+		"success":             true,
+		"tree":                resp.Tree,
+		"summary":             resp.Summary,
+		"teamgroups":          resp.Teamgroups,
+		"selectedTeamgroupId": resp.SelectedTeamgroupID,
 	})
 }
 

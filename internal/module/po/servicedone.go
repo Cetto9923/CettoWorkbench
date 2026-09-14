@@ -70,11 +70,12 @@ func (s *Service) DoneList(ctx context.Context, actor *model.User, req DoneListR
 }
 
 // DoneMeta 获取已办筛选项元数据。
-func (s *Service) DoneMeta(ctx context.Context, actor *model.User) (*DoneMetaResp, error) {
+func (s *Service) DoneMeta(ctx context.Context, actor *model.User, objectType string) (*DoneMetaResp, error) {
 	account := ""
 	if actor != nil {
 		account = actor.Account
 	}
+	objectType = strings.TrimSpace(strings.ToLower(objectType))
 
 	timeRanges := []DoneMetaOption{
 		{Key: "all", Label: "全部时间"},
@@ -101,18 +102,6 @@ func (s *Service) DoneMeta(ctx context.Context, actor *model.User) (*DoneMetaRes
 		{Key: "todo", Label: "待办"},
 	}
 
-	results := []DoneMetaOption{
-		{Key: "done", Label: "完成"},
-		{Key: "approved", Label: "通过"},
-		{Key: "rejected", Label: "驳回"},
-		{Key: "closed", Label: "关闭"},
-		{Key: "activated", Label: "激活"},
-		{Key: "submitted", Label: "已提交"},
-		{Key: "verified", Label: "已验收"},
-		{Key: "resolved", Label: "已解决"},
-		{Key: "returned", Label: "已退回"},
-	}
-
 	actionTypes := []DoneMetaAction{
 		{Key: "demand:reviewed", Label: "需求评审", ObjectType: "demand"},
 		{Key: "demand:reviewchange", Label: "变更评审", ObjectType: "demand"},
@@ -126,10 +115,36 @@ func (s *Service) DoneMeta(ctx context.Context, actor *model.User) (*DoneMetaRes
 		{Key: "task:closed", Label: "关闭任务", ObjectType: "task"},
 		{Key: "bug:resolved", Label: "解决 Bug", ObjectType: "bug"},
 		{Key: "bug:closed", Label: "关闭 Bug", ObjectType: "bug"},
+		{Key: "risk:resolved", Label: "解决风险", ObjectType: "risk"},
+		{Key: "risk:closed", Label: "关闭风险", ObjectType: "risk"},
+		{Key: "issue:resolved", Label: "解决问题", ObjectType: "issue"},
+		{Key: "issue:closed", Label: "关闭问题", ObjectType: "issue"},
+		{Key: "feedback:resolved", Label: "解决反馈", ObjectType: "feedback"},
+		{Key: "feedback:closed", Label: "关闭反馈", ObjectType: "feedback"},
+		{Key: "release:delivered", Label: "发布上线", ObjectType: "release"},
+		{Key: "release:closed", Label: "关闭发布", ObjectType: "release"},
+		{Key: "build:finished", Label: "完成构建", ObjectType: "build"},
+		{Key: "build:closed", Label: "关闭构建", ObjectType: "build"},
 		{Key: "todo:finished", Label: "完成待办", ObjectType: "todo"},
+		{Key: "todo:closed", Label: "关闭待办", ObjectType: "todo"},
+		{Key: "charter:approvalreview", Label: "项目章程审批", ObjectType: "approval"},
+		{Key: "planchange:approvalreview", Label: "计划变更审批", ObjectType: "approval"},
+		{Key: "buildguideline:approvalreview", Label: "项目建设指引审批", ObjectType: "approval"},
+		{Key: "review:reviewed", Label: "项目评审", ObjectType: "approval"},
+		{Key: "case:reviewed", Label: "用例评审", ObjectType: "approval"},
 	}
 
-	projects := s.repo.FindDoneProjects(ctx, account)
+	if objectType != "" && objectType != "all" {
+		filtered := actionTypes[:0]
+		for _, action := range actionTypes {
+			if action.ObjectType == objectType {
+				filtered = append(filtered, action)
+			}
+		}
+		actionTypes = filtered
+	}
+	results := doneMetaResults(objectType)
+	projects := s.repo.FindDoneProjects(ctx, account, objectType)
 
 	return &DoneMetaResp{
 		Products:        []DoneMetaOption{},
@@ -141,6 +156,48 @@ func (s *Service) DoneMeta(ctx context.Context, actor *model.User) (*DoneMetaRes
 		Projects:        projects,
 		Executions:      []DoneMetaOption{},
 	}, nil
+}
+
+func doneMetaResults(objectType string) []DoneMetaOption {
+	all := []DoneMetaOption{
+		{Key: "done", Label: "完成"},
+		{Key: "approved", Label: "通过"},
+		{Key: "rejected", Label: "驳回"},
+		{Key: "closed", Label: "关闭"},
+		{Key: "activated", Label: "激活"},
+		{Key: "submitted", Label: "已提交"},
+		{Key: "verified", Label: "已验收"},
+		{Key: "resolved", Label: "已解决"},
+		{Key: "returned", Label: "已退回"},
+	}
+	byType := map[string][]string{
+		"approval": {"approved", "done"},
+		"demand":   {"done", "approved", "submitted", "returned", "verified", "closed", "activated"},
+		"story":    {"done", "submitted", "verified", "closed", "activated"},
+		"task":     {"done", "closed", "activated"},
+		"bug":      {"done", "resolved", "closed", "activated"},
+		"risk":     {"resolved", "closed"},
+		"issue":    {"resolved", "closed"},
+		"feedback": {"done", "resolved", "closed"},
+		"release":  {"done", "closed"},
+		"build":    {"done", "closed"},
+		"todo":     {"done", "closed", "activated"},
+	}
+	keys, ok := byType[objectType]
+	if !ok {
+		return all
+	}
+	allowed := make(map[string]bool, len(keys))
+	for _, key := range keys {
+		allowed[key] = true
+	}
+	filtered := make([]DoneMetaOption, 0, len(keys))
+	for _, option := range all {
+		if allowed[option.Key] {
+			filtered = append(filtered, option)
+		}
+	}
+	return filtered
 }
 
 // DoneDetail 获取单个已办动作详情。

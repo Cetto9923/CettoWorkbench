@@ -287,7 +287,7 @@ func (h *Handler) DoneItems(c *gin.Context) {
 // DoneMeta 返回"我的已办"筛选项元数据 JSON。
 func (h *Handler) DoneMeta(c *gin.Context) {
 	actor := middleware.CurrentUser(c)
-	resp, err := h.svc.DoneMeta(c.Request.Context(), actor)
+	resp, err := h.svc.DoneMeta(c.Request.Context(), actor, c.Query("objectType"))
 	if err != nil {
 		h.logger.Error("po done meta", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "获取已办筛选项失败"})

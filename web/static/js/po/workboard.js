@@ -63,8 +63,17 @@
       .then(function (r) { if (!r.ok) { throw new Error("http"); } return r.json(); })
       .then(function (payload) {
         if (!payload || payload.success !== true) { throw new Error("payload"); }
-        if (payload.teamgroups && payload.teamgroups.length) { WB.setTeams(payload.teamgroups); WB.renderTeamChips(); }
+        if (payload.teamgroups && payload.teamgroups.length) {
+          WB.setTeams(payload.teamgroups);
+          if (payload.selectedTeamgroupId) {
+            state.teamgroup = Number(payload.selectedTeamgroupId);
+            WB.saveTeamgroup(state.teamgroup);
+          }
+          WB.renderTeamChips();
+        }
         renderDemandMatrix(payload.tree || []); renderDemandOwners(payload.tree || []);
+        // 需求接口负责确定默认小组，拿到同一个 ID 后再加载快照，避免首屏请求 teamgroupId=0。
+        loadMetrics();
         if (state.pendingFocus) { focusStoryRow(state.pendingFocus); state.pendingFocus = 0; }
       })
       .catch(function () { onErr("demandGroups"); });
@@ -281,12 +290,11 @@
   if ($("taskDoneConfirm")) { $("taskDoneConfirm").addEventListener("click", confirmDoneModal); }
 
   function updateTaskStats() {
-    var blocked = 0, overdue = 0, visible = 0;
+    var overdue = 0;
     document.querySelectorAll("#taskBoard .task-card").forEach(function (r) {
       if (r.classList.contains("hidden")) { return; }
-      visible++; if (r.classList.contains("blocked")) { blocked++; } if (r.classList.contains("overdue")) { overdue++; }
+      if (r.classList.contains("overdue")) { overdue++; }
     });
-    $("taskStats").querySelector('[data-flag="blocked"] strong').textContent = blocked;
     $("taskStats").querySelector('[data-flag="overdue"] strong').textContent = overdue;
     document.querySelectorAll("#taskBoard .task-col-body").forEach(function (c) {
       var empty = c.querySelector(".task-filter-empty");

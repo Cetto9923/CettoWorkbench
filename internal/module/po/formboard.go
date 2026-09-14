@@ -112,9 +112,10 @@ type BoardDemandItem struct {
 
 // BoardDemandResp 是需求看板响应。
 type BoardDemandResp struct {
-	Tree       []*BoardDemandItem     `json:"tree"`
-	Summary    BoardDemandSummary     `json:"summary"`
-	Teamgroups []BoardTeamgroupOption `json:"teamgroups"`
+	Tree                []*BoardDemandItem     `json:"tree"`
+	Summary             BoardDemandSummary     `json:"summary"`
+	Teamgroups          []BoardTeamgroupOption `json:"teamgroups"`
+	SelectedTeamgroupID uint                   `json:"selectedTeamgroupId"`
 }
 
 // BoardDemandSummary 是需求看板顶部摘要。

@@ -40,6 +40,7 @@ make check
 - **Cline**: [.clinerules/00-workbench.md](.clinerules/00-workbench.md)。
 - **工具覆盖与实际加载验证**: [agent-compatibility.md](docs/engineering/agent-compatibility.md)。
 - **模块目录**: 见 [docs/engineering/module-index.md](docs/engineering/module-index.md)。
+- **代码目录地图**: 见 [docs/CODE_DIRECTORY.md](docs/CODE_DIRECTORY.md)。
 - **前端共享能力**: 见 [docs/engineering/shared-frontend.md](docs/engineering/shared-frontend.md)。
 
 远端 Agent 使用前核对目标仓库、分支和规范版本；不要默认 GitHub 默认分支就是

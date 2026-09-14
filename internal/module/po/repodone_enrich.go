@@ -317,7 +317,7 @@ func (r *Repo) CountDoneFacetCounts(ctx context.Context, account string) []DoneF
 }
 
 // FindDoneProjects 查询当前用户在已办事项中涉及的可选项目列表。
-func (r *Repo) FindDoneProjects(ctx context.Context, account string) []DoneMetaOption {
+func (r *Repo) FindDoneProjects(ctx context.Context, account, objectType string) []DoneMetaOption {
 	out := []DoneMetaOption{}
 	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
 		return out
@@ -326,13 +326,44 @@ func (r *Repo) FindDoneProjects(ctx context.Context, account string) []DoneMetaO
 		ID   int64  `gorm:"column:id"`
 		Name string `gorm:"column:name"`
 	}
+	type relation struct {
+		objectType string
+		table      string
+		projectCol string
+		approval   bool
+	}
+	relations := []relation{
+		{objectType: "task", table: "zt_task", projectCol: "project"},
+		{objectType: "bug", table: "zt_bug", projectCol: "project"},
+		{objectType: "charter", table: "zt_charter", projectCol: "project", approval: true},
+		{objectType: "planchange", table: "zt_planchange", projectCol: "project", approval: true},
+		{objectType: "buildguideline", table: "zt_projectbuildguide", projectCol: "projectID", approval: true},
+		{objectType: "review", table: "zt_review", projectCol: "project", approval: true},
+		{objectType: "case", table: "zt_case", projectCol: "project", approval: true},
+	}
+	parts := make([]string, 0, len(relations))
+	args := make([]interface{}, 0, len(relations)*3)
+	for _, rel := range relations {
+		if objectType == "approval" && !rel.approval {
+			continue
+		}
+		if objectType != "" && objectType != "all" && objectType != "approval" && objectType != rel.objectType {
+			continue
+		}
+		part := fmt.Sprintf("SELECT o.%s AS project_id FROM zt_action AS a JOIN %s AS o ON o.id = a.objectID WHERE a.actor = ? AND a.objectType = ?", rel.projectCol, rel.table)
+		args = append(args, account, rel.objectType)
+		if codes := formalDoneActionCodes(rel.objectType); len(codes) > 0 {
+			part += " AND a.action IN ?"
+			args = append(args, codes)
+		}
+		parts = append(parts, part)
+	}
+	if len(parts) == 0 {
+		return out
+	}
 	var rows []pRow
-	_ = r.db.WithContext(ctx).Table("zt_project AS p").
-		Select("DISTINCT p.id, p.name").
-		Where("p.type = 'project' AND p.deleted = '0'").
-		Order("p.id DESC").
-		Limit(50).
-		Scan(&rows).Error
+	query := "SELECT DISTINCT p.id, p.name FROM (" + strings.Join(parts, " UNION ALL ") + ") AS done_projects JOIN zt_project AS p ON p.id = done_projects.project_id WHERE p.type = 'project' AND p.deleted = '0' ORDER BY p.id DESC LIMIT 50"
+	_ = r.db.WithContext(ctx).Raw(query, args...).Scan(&rows).Error
 	for _, p := range rows {
 		out = append(out, DoneMetaOption{
 			Key:   fmt.Sprintf("%d", p.ID),

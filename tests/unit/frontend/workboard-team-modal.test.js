@@ -15,9 +15,13 @@ function assert(condition, message) {
 
 const modal = read('web/static/js/po/workboard-modal.js');
 const core = read('web/static/js/po/workboard-core.js');
+const board = read('web/static/js/po/workboard.js');
 const css = read('web/static/css/po/workboard-addon.css');
 
 assert(/getSelectedTeamgroupId/.test(core), 'workboard exposes the selected teamgroup id');
+assert(/selectedTeamgroupId/.test(board), 'demand board restores the server-selected default teamgroup');
+assert(/renderDemandOwners\(payload\.tree \|\| \[\]\);[\s\S]*loadMetrics\(\);/.test(board),
+  'demand board loads the team snapshot after resolving the default teamgroup');
 assert(/\/workbench\/api\/agile-teams\/" \+ encodeURIComponent\(teamId\)/.test(modal),
   'team modal loads the selected team detail');
 assert(/data\.formal \|\| \[\]/.test(modal), 'team modal renders formal members from the detail response');

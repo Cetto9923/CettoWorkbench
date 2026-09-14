@@ -17,7 +17,7 @@
     pageSize: 20
   };
 
-  var VALID_QUICKVIEWS = ["all", "unread", "action", "abnormal", "today"];
+  var VALID_QUICKVIEWS = ["all", "unread", "action", "inform", "abnormal", "today"];
   var VALID_CATEGORIES = ["all", "business", "approval", "reminder", "collaboration", "risk", "system"];
   var VALID_OBJECT_TYPES = ["all", "demand", "story", "feedback", "project", "task", "bug", "testtask", "issue", "risk", "approval", "mail"];
   var VALID_TIME_RANGES = ["all", "today", "3d", "7d", "30d"];
@@ -237,7 +237,7 @@
   }
 
   function updateCounts(payload) {
-    var quick = { qvCountAll: "total", qvCountUnread: "unread", qvCountAction: "action", qvCountAbnormal: "abnormal", qvCountToday: "today" };
+    var quick = { qvCountAll: "total", qvCountUnread: "unread", qvCountAction: "action", qvCountInform: "inform", qvCountAbnormal: "abnormal", qvCountToday: "today" };
     var categories = {
       categoryBusiness: "business", categoryApproval: "approval", categoryReminder: "reminder",
       categoryCollaboration: "collaboration", categoryRisk: "risk", categorySystem: "system"
@@ -253,7 +253,7 @@
   }
 
   function resetCounts() {
-    ["qvCountAll", "qvCountUnread", "qvCountAction", "qvCountAbnormal", "qvCountToday",
+    ["qvCountAll", "qvCountUnread", "qvCountAction", "qvCountInform", "qvCountAbnormal", "qvCountToday",
      "categoryAll", "categoryBusiness", "categoryApproval", "categoryReminder",
      "categoryCollaboration", "categoryRisk", "categorySystem"].forEach(function (id) {
       var el = $(id); if (el) { el.textContent = "—"; }
@@ -374,8 +374,7 @@
     [
       { id: "noticeObjectType", key: "objectType" },
       { id: "noticeTimeRange", key: "timeRange" },
-      { id: "noticeReadState", key: "readState" },
-      { id: "noticeNeedAction", key: "needAction" }
+      { id: "noticeReadState", key: "readState" }
     ].forEach(function (it) {
       var sel = $(it.id);
       if (sel) sel.addEventListener("change", function () {
@@ -401,7 +400,7 @@
         });
 
         if (kwInput) kwInput.value = "";
-        ["noticeObjectType", "noticeTimeRange", "noticeReadState", "noticeNeedAction"].forEach(function (id) {
+        ["noticeObjectType", "noticeTimeRange", "noticeReadState"].forEach(function (id) {
           if ($(id)) $(id).value = "all";
         });
         hasCorrectedPage = false; syncUrl(); loadData();

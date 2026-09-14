@@ -64,6 +64,7 @@ type noticeRepoResp struct {
 	Filtered   int64
 	Unread     int64
 	Action     int64
+	Inform     int64
 	Abnormal   int64
 	Today      int64
 	Categories map[string]int64
@@ -99,6 +100,7 @@ func (r *Repo) FindNotices(ctx context.Context, account string, req NoticeListRe
 		resp.Total = comb.Total
 		resp.Unread = comb.Unread
 		resp.Action = comb.Action
+		resp.Inform = comb.Inform
 		resp.Abnormal = comb.Abnormal
 		resp.Today = comb.Today
 
@@ -117,6 +119,7 @@ func (r *Repo) FindNotices(ctx context.Context, account string, req NoticeListRe
 		resp.Total = quick.Total
 		resp.Unread = quick.Unread
 		resp.Action = quick.Action
+		resp.Inform = quick.Inform
 		resp.Abnormal = quick.Abnormal
 		resp.Today = quick.Today
 

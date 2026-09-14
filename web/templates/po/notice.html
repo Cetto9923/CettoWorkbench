@@ -17,6 +17,7 @@
       <button type="button" class="header-quick-chip" data-qv="all" aria-pressed="false">全部通知 <em id="qvCountAll">—</em></button>
       <button type="button" class="header-quick-chip active" data-qv="unread" aria-pressed="true">未读 <em id="qvCountUnread">—</em></button>
       <button type="button" class="header-quick-chip" data-qv="action" aria-pressed="false">需处理 <em id="qvCountAction">—</em></button>
+      <button type="button" class="header-quick-chip" data-qv="inform" aria-pressed="false">知会 <em id="qvCountInform">—</em></button>
       <button type="button" class="header-quick-chip warning" data-qv="abnormal" aria-pressed="false">异常提醒 <em id="qvCountAbnormal">—</em></button>
       <button type="button" class="header-quick-chip" data-qv="today" aria-pressed="false">今日新增 <em id="qvCountToday">—</em></button>
     </div>
@@ -38,7 +39,6 @@
       <select id="noticeObjectType" aria-label="关联对象"><option value="all">关联对象：全部</option><option value="demand">业务需求</option><option value="story">研发需求</option><option value="feedback">反馈</option><option value="project">项目</option><option value="task">任务</option><option value="bug">Bug</option><option value="testtask">测试单</option><option value="issue">问题</option><option value="risk">风险</option><option value="approval">审批</option><option value="mail">邮件通知</option></select>
       <select id="noticeTimeRange" aria-label="通知时间"><option value="all">通知时间：全部</option><option value="today">今天</option><option value="3d">近 3 天</option><option value="7d">近 7 天</option><option value="30d">近 30 天</option></select>
       <select id="noticeReadState" aria-label="已读状态"><option value="all">已读状态：全部</option><option value="unread">未读</option><option value="read">已读</option></select>
-      <select id="noticeNeedAction" aria-label="处理状态"><option value="all">处理状态：全部</option><option value="required">需处理</option><option value="none">仅知会</option></select>
       <button type="button" class="workspace-btn" id="noticeResetBtn">重置筛选</button>
       <button type="button" class="workspace-btn soft-primary" id="noticeMarkAllBtn" title="将当前筛选的全部未读通知标为已读（包含后续页）">全部标为已读</button>
     </div>

@@ -59,6 +59,16 @@ func TestIsNoticeReqCategoryUnfiltered(t *testing.T) {
 	}
 }
 
+func TestNoticeInformQuickViewValidation(t *testing.T) {
+	req := NoticeListReq{QuickView: "inform"}
+	if errs := req.Validate(); len(errs) != 0 {
+		t.Fatalf("inform quick view should be accepted: %v", errs)
+	}
+	if isNoticeReqCategoryUnfiltered(req) {
+		t.Fatal("inform quick view must remain a filtered request")
+	}
+}
+
 func TestNoticeCategoryConsistency(t *testing.T) {
 	// 验证 SQL CASE 表达式中的分类枚举与 Go classifyNotice 严格一一对应
 	actions := []string{

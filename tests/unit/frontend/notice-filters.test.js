@@ -154,6 +154,21 @@ function testExplicitQuickViewRespected() {
   console.log('PASS: explicit quickView=action is respected');
 }
 
+function testInformQuickViewAndRemovedToolbarFilter() {
+  const template = fs.readFileSync(path.join(__dirname, '../../../web/templates/po/notice.html'), 'utf8');
+  assert.ok(template.includes('data-qv="inform"'), 'notice page must expose the top-level inform quick filter');
+  assert.equal(template.includes('id="noticeNeedAction"'), false,
+    'notice page must not render the redundant processing-status select');
+
+  const { listCalls, ready } = loadNoticeScript({
+    location: { pathname: '/notice', search: '?quickView=inform' }
+  });
+  ready();
+  assert.ok(listCalls.some((c) => String(c.url).includes('quickView=inform')),
+    'quickView=inform must be sent to the notice list API');
+  console.log('PASS: notification inform quick view and removed toolbar filter');
+}
+
 // Regression: the row must render the backend's subject verbatim (when the
 // subject does NOT match a canonical 「TYPE #ID」prefix) and keep the structured
 // object badge. Frontend regex-based prefix stripping is forbidden beyond the
@@ -448,6 +463,7 @@ async function main() {
   await testMarkAllScopedFilters();
   testDefaultQuickViewUnread();
   testExplicitQuickViewRespected();
+  testInformQuickViewAndRemovedToolbarFilter();
   testNoticeSubjectNotCharStripped();
   testNoticeFeedbackBadgeAndTitle();
   testNoticeDemandBadgeAndTitle();

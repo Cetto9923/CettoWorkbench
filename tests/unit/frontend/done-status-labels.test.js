@@ -107,7 +107,7 @@ function itemsFetch(url) {
   assert.equal(fail.toasts.length, 1);
   assert.equal(fail.toasts[0].msg, "筛选条件加载失败，请稍后重试");
   assert.equal(fail.selects.doneAction.disabled, true);
-  assert.equal(fail.selects.doneAction.innerHTML, "");
+  assert.match(fail.selects.doneAction.innerHTML, /全部操作/);
 
   console.log("PASS: done status labels + loadMeta failure toast");
 })().catch((err) => {

@@ -44,6 +44,7 @@ type noticeQuickCountsRow struct {
 	Total    int64 `gorm:"column:total"`
 	Unread   int64 `gorm:"column:unread"`
 	Action   int64 `gorm:"column:action_count"`
+	Inform   int64 `gorm:"column:inform_count"`
 	Abnormal int64 `gorm:"column:abnormal"`
 	Today    int64 `gorm:"column:today_count"`
 }
@@ -62,6 +63,7 @@ type noticeCombinedCountsRow struct {
 	Total         int64 `gorm:"column:total"`
 	Unread        int64 `gorm:"column:unread"`
 	Action        int64 `gorm:"column:action_count"`
+	Inform        int64 `gorm:"column:inform_count"`
 	Abnormal      int64 `gorm:"column:abnormal"`
 	Today         int64 `gorm:"column:today_count"`
 	ApprovalCount int64 `gorm:"column:approval_count"`
@@ -205,6 +207,8 @@ func applyNoticeFilters(query *gorm.DB, now time.Time, req NoticeListReq, includ
 		query = query.Where("nr.id IS NULL")
 	case "action":
 		query = query.Where(noticeNeedsActionSQLExpr)
+	case "inform":
+		query = query.Where("NOT (" + noticeNeedsActionSQLExpr + ")")
 	case "abnormal":
 		query = query.Where(noticeCategorySQLExpr + " = 'risk'")
 	case "today":
@@ -235,6 +239,7 @@ func (r *Repo) queryCombinedNoticeCounts(ctx context.Context, account string, no
 		COUNT(n.id) AS total,
 		COALESCE(SUM(CASE WHEN nr.id IS NULL THEN 1 ELSE 0 END), 0) AS unread,
 		COALESCE(SUM(CASE WHEN `+noticeNeedsActionSQLExpr+` THEN 1 ELSE 0 END), 0) AS action_count,
+		COALESCE(SUM(CASE WHEN NOT (`+noticeNeedsActionSQLExpr+`) THEN 1 ELSE 0 END), 0) AS inform_count,
 		COALESCE(SUM(CASE WHEN `+noticeCategorySQLExpr+` = 'risk' THEN 1 ELSE 0 END), 0) AS abnormal,
 		COALESCE(SUM(CASE WHEN n.createdDate >= ? AND n.createdDate < ? THEN 1 ELSE 0 END), 0) AS today_count,
 		COALESCE(SUM(CASE WHEN `+noticeCategorySQLExpr+` = 'approval' THEN 1 ELSE 0 END), 0) AS approval_count,
@@ -259,6 +264,7 @@ func (r *Repo) queryQuickNoticeCounts(ctx context.Context, account string, now t
 		COUNT(n.id) AS total,
 		COALESCE(SUM(CASE WHEN nr.id IS NULL THEN 1 ELSE 0 END), 0) AS unread,
 		COALESCE(SUM(CASE WHEN `+noticeNeedsActionSQLExpr+` THEN 1 ELSE 0 END), 0) AS action_count,
+		COALESCE(SUM(CASE WHEN NOT (`+noticeNeedsActionSQLExpr+`) THEN 1 ELSE 0 END), 0) AS inform_count,
 		COALESCE(SUM(CASE WHEN `+noticeCategorySQLExpr+` = 'risk' THEN 1 ELSE 0 END), 0) AS abnormal,
 		COALESCE(SUM(CASE WHEN n.createdDate >= ? AND n.createdDate < ? THEN 1 ELSE 0 END), 0) AS today_count
 	`, startOfToday, endOfToday)
