@@ -251,6 +251,22 @@
     return String(item.valueStream || item.stage || "").trim() === "提测";
   }
 
+  // 澄清阶段：业需价值流为「澄清」时展示跳转禅道澄清页
+  function canShowClarify(item) {
+    if (!item || String(item.kind || "") === "story") {
+      return false;
+    }
+    return String(item.valueStream || item.stage || "").trim() === "澄清";
+  }
+
+  // 评价反馈阶段：业需价值流为「评价反馈」时展示跳转禅道评价页
+  function canShowAppraise(item) {
+    if (!item || String(item.kind || "") === "story") {
+      return false;
+    }
+    return String(item.valueStream || item.stage || "").trim() === "评价反馈";
+  }
+
   // 受理阶段操作按钮（仅展示，提交/撤销/编辑暂不接业务）
   function acceptActionButtons(item) {
     var parts = [];
@@ -368,6 +384,22 @@
       : "<span class=\"row-id-link\">" + escapeHtml(displayId) + "</span>";
     var idChip = idChipHtml(objectTypeKind(item), idInner);
     var actionParts = acceptActionButtons(item);
+    if (canShowClarify(item)) {
+      var clarifyUrl = String(item.clarifyUrl || "").trim();
+      if (clarifyUrl) {
+        actionParts.push(
+          "<a " + zentaoLinkAttrs(clarifyUrl, "table-action-btn primary") + ">澄清</a>"
+        );
+      }
+    }
+    if (canShowAppraise(item)) {
+      var appraiseUrl = String(item.appraiseUrl || "").trim();
+      if (appraiseUrl) {
+        actionParts.push(
+          "<a " + zentaoLinkAttrs(appraiseUrl, "table-action-btn primary") + ">评价</a>"
+        );
+      }
+    }
     if (!actionParts.length && canShowSubmitTest(item)) {
       actionParts.push(
         "<button type=\"button\" class=\"table-action-btn primary js-submit-test\" data-demand-id=\"" +
