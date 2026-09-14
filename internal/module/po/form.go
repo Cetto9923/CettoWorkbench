@@ -120,6 +120,7 @@ type WorkItemDetail struct {
 	ZentaoUrl       string `json:"zentaoUrl"`
 	ClarifyUrl      string `json:"clarifyUrl"`  // 禅道业需澄清页（demand-clarify）
 	AppraiseUrl     string `json:"appraiseUrl"` // 禅道业需评价页（demand-appraise）
+	TesttaskUrl     string `json:"testtaskUrl"` // 禅道测试单用例页（testtask-cases），联调测试阶段
 	ValueStream     string `json:"valueStream"`
 	ZentaoStatus    string `json:"zentaoStatus"`    // 禅道 status 原文，前端按业需/研需分别映射中文
 	CanReview       bool   `json:"canReview"`       // 待评审且当前账号是未出结果的业务评审人

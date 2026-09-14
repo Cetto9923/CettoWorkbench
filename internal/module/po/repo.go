@@ -3,7 +3,7 @@
 // 模块: PO 工作台
 // 类型: action
 // 职责: 价值流阶段业需/研发需求的只读库统计与列表查询（业需范围：澄清 PM 或 QD/RD/BRA，排除 closed；「全部」计数仅 Pluck id）。
-// 依赖: 无
+// 依赖: internal/model/zentao
 // =============================================================================
 
 package po
@@ -16,6 +16,8 @@ import (
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+
+	zentaomodel "workbench/internal/model/zentao"
 )
 
 // mysqlStageFilter 走 MySQL 的价值流阶段过滤条件。
@@ -87,7 +89,8 @@ type DemandRow struct {
 	QD         string `gorm:"column:QD"`
 	RD         string `gorm:"column:RD"`
 	BRA        string `gorm:"column:BRA"`
-	PM         string `gorm:"column:pm"` // zt_demandclarify.PM，多账号逗号分隔
+	MainSystem string `gorm:"column:mainSystem"` // 主系统产品 ID（字符串）
+	PM         string `gorm:"column:pm"`         // zt_demandclarify.PM，多账号逗号分隔
 }
 
 // StoryRow 研发需求列表投影。
@@ -224,7 +227,7 @@ func (r *Repo) FindRoleDemands(ctx context.Context, account string, filter mysql
 	q := applyDemandListOrder(
 		r.roleDemandScope(ctx, account, filter).
 			Select(`zt_demand.id, zt_demand.name, zt_demand.pri, zt_demand.status, zt_demand.createdBy,
-			zt_demand.assignedTo, zt_demand.QD, zt_demand.RD, zt_demand.BRA,
+			zt_demand.assignedTo, zt_demand.QD, zt_demand.RD, zt_demand.BRA, zt_demand.mainSystem,
 			clarify_pm.PM AS pm`).
 			Joins(`LEFT JOIN (
 			SELECT demand, GROUP_CONCAT(PM) AS PM
@@ -348,6 +351,42 @@ func (r *Repo) FindDeliverStories(ctx context.Context, account string) ([]StoryR
 		return nil, err
 	}
 	return rows, nil
+}
+
+// FindMaxTesttaskIDByProducts 按产品取最大测试单 id（ORDER BY id DESC LIMIT 1）。
+func (r *Repo) FindMaxTesttaskIDByProducts(ctx context.Context, productIDs []uint) (map[uint]uint, error) {
+	out := make(map[uint]uint)
+	if r == nil || r.db == nil || len(productIDs) == 0 {
+		return out, nil
+	}
+	uniq := make([]uint, 0, len(productIDs))
+	seen := make(map[uint]struct{}, len(productIDs))
+	for _, id := range productIDs {
+		if id == 0 {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		uniq = append(uniq, id)
+	}
+	for _, productID := range uniq {
+		var taskID uint
+		err := r.db.WithContext(ctx).Model(&zentaomodel.ZtTesttask{}).
+			Select("id").
+			Where("product = ? AND deleted = ?", productID, "0").
+			Order("id DESC").
+			Limit(1).
+			Scan(&taskID).Error
+		if err != nil {
+			return nil, err
+		}
+		if taskID > 0 {
+			out[productID] = taskID
+		}
+	}
+	return out, nil
 }
 
 // dateUnsetExpr 判断 DATE 列未填（NULL 或零日期）。

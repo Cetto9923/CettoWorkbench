@@ -267,6 +267,14 @@
     return String(item.valueStream || item.stage || "").trim() === "评价反馈";
   }
 
+  // 联调测试阶段：业需价值流为「联调测试」且有测试单链接时展示
+  function canShowTesttask(item) {
+    if (!item || String(item.kind || "") === "story") {
+      return false;
+    }
+    return String(item.valueStream || item.stage || "").trim() === "联调测试";
+  }
+
   // 受理阶段操作按钮（仅展示，提交/撤销/编辑暂不接业务）
   function acceptActionButtons(item) {
     var parts = [];
@@ -397,6 +405,14 @@
       if (appraiseUrl) {
         actionParts.push(
           "<a " + zentaoLinkAttrs(appraiseUrl, "table-action-btn primary") + ">评价</a>"
+        );
+      }
+    }
+    if (canShowTesttask(item)) {
+      var testtaskUrl = String(item.testtaskUrl || "").trim();
+      if (testtaskUrl) {
+        actionParts.push(
+          "<a " + zentaoLinkAttrs(testtaskUrl, "table-action-btn primary") + ">测试单</a>"
         );
       }
     }

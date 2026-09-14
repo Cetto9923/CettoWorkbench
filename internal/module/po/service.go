@@ -14,6 +14,7 @@ package po
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"go.uber.org/zap"
@@ -303,14 +304,22 @@ func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stage
 func (s *Service) buildDemandWorkItems(ctx context.Context, account, stageStatus string, rows []DemandRow, displayMap map[string]string) ([]WorkItemDetail, error) {
 	label := valueStreamLabelForStatus(stageStatus)
 	waitIDs := make([]int, 0, len(rows))
+	productIDs := make([]uint, 0, len(rows))
 	for _, row := range rows {
 		if strings.TrimSpace(row.Status) == "wait" {
 			waitIDs = append(waitIDs, row.ID)
+		}
+		if pid := parseMainSystemID(row.MainSystem); pid > 0 {
+			productIDs = append(productIDs, pid)
 		}
 	}
 	pendingReview, pendingErr := s.repo.FindPendingReviewDemandIDs(ctx, account, waitIDs)
 	if pendingErr != nil {
 		return nil, pendingErr
+	}
+	testtaskByProduct, ttErr := s.repo.FindMaxTesttaskIDByProducts(ctx, productIDs)
+	if ttErr != nil {
+		return nil, ttErr
 	}
 	items := make([]WorkItemDetail, 0, len(rows))
 	for _, row := range rows {
@@ -323,6 +332,12 @@ func (s *Service) buildDemandWorkItems(ctx context.Context, account, stageStatus
 		status := strings.TrimSpace(row.Status)
 		isCreator := account != "" && strings.TrimSpace(row.CreatedBy) == account
 		canOwnerDraft := isCreator && (status == "draft" || status == "refuse")
+		testtaskURL := ""
+		if pid := parseMainSystemID(row.MainSystem); pid > 0 {
+			if taskID := testtaskByProduct[pid]; taskID > 0 {
+				testtaskURL = zentao.URL("testtask", "cases", fmt.Sprintf("taskID=%d", taskID))
+			}
+		}
 		items = append(items, WorkItemDetail{
 			Kind:            "demand",
 			ID:              fmt.Sprintf("US%d", row.ID),
@@ -333,6 +348,7 @@ func (s *Service) buildDemandWorkItems(ctx context.Context, account, stageStatus
 			ZentaoUrl:       zentao.URL("demand", "view", fmt.Sprintf("demandID=%d", row.ID)),
 			ClarifyUrl:      zentao.URL("demand", "clarify", fmt.Sprintf("demandID=%d", row.ID)),
 			AppraiseUrl:     zentao.URL("demand", "appraise", fmt.Sprintf("demandID=%d", row.ID)),
+			TesttaskUrl:     testtaskURL,
 			ValueStream:     label,
 			ZentaoStatus:    row.Status,
 			CanReview:       canReview,
@@ -342,6 +358,19 @@ func (s *Service) buildDemandWorkItems(ctx context.Context, account, stageStatus
 		})
 	}
 	return items, nil
+}
+
+// parseMainSystemID 将业需 mainSystem 字符串解析为产品 ID。
+func parseMainSystemID(raw string) uint {
+	s := strings.TrimSpace(raw)
+	if s == "" {
+		return 0
+	}
+	n, err := strconv.ParseUint(s, 10, 64)
+	if err != nil {
+		return 0
+	}
+	return uint(n)
 }
 
 func resolveNextOwnerDisplay(row DemandRow, displayMap map[string]string) string {
