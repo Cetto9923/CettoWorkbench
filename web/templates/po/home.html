@@ -52,12 +52,18 @@
         <div class="home-vs-compact-row">
           {{ range $i, $stage := .ValueStreamStages }}
           <button type="button"
-            class="home-vs-mini-card{{ if eq $i 0 }} active{{ else if eq $stage.Count 0 }} empty{{ end }}"
+            class="home-vs-mini-card stage-{{ $stage.Status }}{{ if eq $i 0 }} active{{ else if eq $stage.Count 0 }} empty{{ end }}"
             data-vs-status="{{ $stage.Status }}"
             title="{{ $stage.Label }} · {{ $stage.Count }} 条">
-            <span class="vs-mini-name">{{ $stage.Label }}</span>
-            <span class="vs-mini-count">{{ $stage.Count }}</span>
-            <span class="vs-mini-meta">业需 {{ $stage.DemandCount }} · 研需 {{ $stage.StoryCount }}</span>
+            <div class="vs-card-top">
+              <span class="vs-mini-name">{{ $stage.Label }}</span>
+              {{ if eq $stage.Status "all" }}<i class="fas fa-check vs-status-icon"></i>
+              {{ else if eq $stage.Status "schedule" }}<span class="vs-status-dot dot-amber"></span>
+              {{ else if eq $stage.Status "waitacceptance" }}<span class="vs-status-dot dot-blue"></span>
+              {{ end }}
+            </div>
+            <div class="vs-mini-count">{{ $stage.Count }}</div>
+            <div class="vs-mini-meta">{{ if eq $stage.Status "all" }}全量汇总{{ else }}业{{ $stage.DemandCount }} · 研{{ $stage.StoryCount }}{{ end }}</div>
           </button>
           {{ end }}
         </div>

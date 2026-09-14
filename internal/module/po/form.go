@@ -113,19 +113,22 @@ type ReviewDemandResp struct {
 
 // WorkItemDetail 单条需求或故事详情。
 type WorkItemDetail struct {
-	Kind         string `json:"kind"`
-	ID           string `json:"id"` // 展示编号：业需 US{id}，研需 U{id}
-	Pri          string `json:"pri"`
-	Title        string `json:"title"`
-	Stage        string `json:"stage"`
-	Blocker      string `json:"blocker"`
-	Next         string `json:"next"`
-	Owner        string `json:"owner"`     // 与 NextOwner 同值，兼容旧字段
-	NextOwner    string `json:"nextOwner"` // 下一责任人展示名（DeriveCurrentHandler）
-	ZentaoUrl    string `json:"zentaoUrl"`
-	ValueStream  string `json:"valueStream"`
-	ZentaoStatus string `json:"zentaoStatus"` // 禅道 status 原文，前端按业需/研需分别映射中文
-	CanReview    bool   `json:"canReview"`    // 当前登录人是待评业务评审人（与指派给无关）
+	Kind            string `json:"kind"`
+	ID              string `json:"id"` // 展示编号：业需 US{id}，研需 U{id}
+	Pri             string `json:"pri"`
+	Title           string `json:"title"`
+	Stage           string `json:"stage"`
+	Blocker         string `json:"blocker"`
+	Next            string `json:"next"`
+	Owner           string `json:"owner"`     // 与 NextOwner 同值，兼容旧字段
+	NextOwner       string `json:"nextOwner"` // 下一责任人展示名（DeriveCurrentHandler）
+	ZentaoUrl       string `json:"zentaoUrl"`
+	ValueStream     string `json:"valueStream"`
+	ZentaoStatus    string `json:"zentaoStatus"`    // 禅道 status 原文，前端按业需/研需分别映射中文
+	CanReview       bool   `json:"canReview"`       // 待评审且当前账号是未出结果的业务评审人
+	CanCancelReview bool   `json:"canCancelReview"` // 待评审且当前账号是提交人（创建人）
+	CanSubmitReview bool   `json:"canSubmitReview"` // 草稿/已驳回且当前账号是创建人
+	CanEdit         bool   `json:"canEdit"`         // 草稿/已驳回且当前账号是创建人
 }
 
 // DemandsResp 价值流状态下的需求详情列表。

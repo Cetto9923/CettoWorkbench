@@ -319,17 +319,23 @@ func (s *Service) buildDemandWorkItems(ctx context.Context, account, stageStatus
 		}
 		ownerDisp := resolveNextOwnerDisplay(row, displayMap)
 		_, canReview := pendingReview[row.ID]
+		status := strings.TrimSpace(row.Status)
+		isCreator := account != "" && strings.TrimSpace(row.CreatedBy) == account
+		canOwnerDraft := isCreator && (status == "draft" || status == "refuse")
 		items = append(items, WorkItemDetail{
-			Kind:         "demand",
-			ID:           fmt.Sprintf("US%d", row.ID),
-			Pri:          pri,
-			Title:        row.Name,
-			Owner:        ownerDisp,
-			NextOwner:    ownerDisp,
-			ZentaoUrl:    zentao.URL("demand", "view", fmt.Sprintf("demandID=%d", row.ID)),
-			ValueStream:  label,
-			ZentaoStatus: row.Status,
-			CanReview:    canReview,
+			Kind:            "demand",
+			ID:              fmt.Sprintf("US%d", row.ID),
+			Pri:             pri,
+			Title:           row.Name,
+			Owner:           ownerDisp,
+			NextOwner:       ownerDisp,
+			ZentaoUrl:       zentao.URL("demand", "view", fmt.Sprintf("demandID=%d", row.ID)),
+			ValueStream:     label,
+			ZentaoStatus:    row.Status,
+			CanReview:       canReview,
+			CanCancelReview: isCreator && status == "wait",
+			CanSubmitReview: canOwnerDraft,
+			CanEdit:         canOwnerDraft,
 		})
 	}
 	return items, nil
