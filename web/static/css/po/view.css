@@ -169,36 +169,32 @@
   color: var(--color-info, #2563eb);
 }
 
-/* 核心属性条（4 列平铺） */
+/* 核心属性条（与 dd-spot-cards-3 同款分卡片） */
 .dd-core-strip {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  border: 1px solid var(--color-border, #e2e8f0);
-  border-radius: 8px;
-  background: var(--color-surface-muted, #f8fafc);
-  overflow: hidden;
-  margin-bottom: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 10px 0;
 }
 
 .dd-core-item {
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 8px;
+  background: var(--color-surface-muted, #f8fafc);
   padding: 8px 12px;
-  border-right: 1px solid var(--color-border, #e2e8f0);
-}
-
-.dd-core-item:last-child {
-  border-right: none;
+  min-width: 0;
 }
 
 .dd-core-item .k {
   font-size: 11px;
-  color: var(--dd-muted);
-  margin-bottom: 3px;
+  color: var(--color-text-secondary, #64748b);
+  margin-bottom: 2px;
 }
 
 .dd-core-item .v {
-  font-size: 12px;
-  color: var(--color-text-body, #334155);
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 750;
+  color: var(--color-text-strong, #1e293b);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

@@ -1,9 +1,9 @@
 {{/* ==========================================================================
 文件: web/templates/po/view.html
 模块: PO工作台
-职责: 业需评审详情右侧抽屉静态页（home 通过同模块兄弟模板引入；假数据占位，不接详情 API）
+职责: 业需评审详情右侧抽屉（home 引入；数据由 view.js 调 GET /demands/:id 回填）
 全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
-页面字段: 无（由 JS 从列表行注入 ID/标题等）
+页面字段: 无（抽屉 DOM 占位，JS 注入详情）
 ========================================================================== */}}
 {{ define "po/view" }}
 <div class="dd-drawer-mask" id="poDemandViewDrawer" aria-hidden="true">
@@ -11,7 +11,7 @@
     <header class="dd-head" id="poDemandViewHead">
       <div class="dd-idrow">
         <span class="dd-id" id="poDemandViewId">US—</span>
-        <span class="dd-tag" id="poDemandViewPri">P2</span>
+        <span class="wb-priority" id="poDemandViewPri" data-priority="2">P2</span>
         <div class="dd-head-actions">
           <button type="button" class="dd-iconbtn" id="poDemandViewCloseBtn" aria-label="关闭"><i class="fas fa-xmark"></i></button>
         </div>
@@ -20,7 +20,6 @@
       <div class="dd-meta">
         <span>提出人：<b id="poDemandViewProposerMeta">—</b></span>
         <span>需求负责人：<b id="poDemandViewPoMeta">—</b></span>
-        <span>最近更新：<b id="poDemandViewUpdatedMeta">—</b></span>
       </div>
       <div class="dd-spot-cards-3">
         <div class="dd-spot-card">
@@ -32,7 +31,7 @@
           <div class="val" id="poDemandViewSpotReviewer">—</div>
         </div>
         <div class="dd-spot-card">
-          <div class="lab">目标上线</div>
+          <div class="lab">期望上线</div>
           <div class="val" id="poDemandViewSpotLaunch">—</div>
         </div>
       </div>
@@ -44,10 +43,6 @@
         <div class="dd-core-item">
           <div class="k">需求来源</div>
           <div class="v" id="poDemandViewStripSource">—</div>
-        </div>
-        <div class="dd-core-item">
-          <div class="k">所属产品</div>
-          <div class="v" id="poDemandViewStripProduct">—</div>
         </div>
         <div class="dd-core-item">
           <div class="k">所属需求池</div>
@@ -68,34 +63,23 @@
               <div class="dd-card-body">
                 <div class="dd-cardhead"><h3>业务需求描述</h3></div>
                 <div class="dd-review-richtext" id="poDemandViewSpec">
-                  <p>此处为需求描述静态占位。接入详情接口后，将展示禅道业务需求正文。</p>
-                  <ul>
-                    <li>背景与目标说明</li>
-                    <li>关键业务规则与边界</li>
-                    <li>关联系统与依赖</li>
-                  </ul>
+                  <span class="text-muted">加载中…</span>
                 </div>
               </div>
             </div>
             <div class="dd-card">
               <div class="dd-card-body">
-                <div class="dd-cardhead"><h3>验收标准 (Verify Plan)</h3></div>
+                <div class="dd-cardhead"><h3>验收标准</h3></div>
                 <div class="dd-review-richtext" id="poDemandViewVerify">
-                  <p>此处为验收标准静态占位。接入详情接口后，将展示 Verify Plan。</p>
-                  <ol>
-                    <li>主流程可完成且结果正确</li>
-                    <li>异常路径有明确提示</li>
-                    <li>权限与数据范围符合预期</li>
-                  </ol>
+                  <span class="text-muted">加载中…</span>
                 </div>
               </div>
             </div>
             <div class="dd-card">
               <div class="dd-card-body">
-                <div class="dd-cardhead"><h3>需求附件</h3></div>
-                <ul class="dd-file-list">
-                  <li><a href="#" onclick="return false;">需求说明书.pdf</a> (128 KB)</li>
-                  <li><a href="#" onclick="return false;">原型截图.png</a> (456 KB)</li>
+                <div class="dd-cardhead"><h3>附件</h3></div>
+                <ul class="dd-file-list" id="poDemandViewFiles">
+                  <li class="text-muted">加载中…</li>
                 </ul>
               </div>
             </div>
@@ -110,7 +94,6 @@
                   <div class="k">需求类别</div><div class="v" id="poDemandViewCategory">业务需求</div>
                   <div class="k">需求来源</div><div class="v" id="poDemandViewSource">客户</div>
                   <div class="k">优先级</div><div class="v" id="poDemandViewPriSide">P2</div>
-                  <div class="k">所属产品</div><div class="v" id="poDemandViewProduct">—</div>
                   <div class="k">所属需求池</div><div class="v" id="poDemandViewPool">—</div>
                   <div class="k">期望上线</div><div class="v" id="poDemandViewLaunch">—</div>
                 </div>
@@ -118,10 +101,10 @@
                 <div class="dd-kv-list compact">
                   <div class="k">提出人</div><div class="v" id="poDemandViewProposer">—</div>
                   <div class="k">提出部门</div><div class="v" id="poDemandViewDept">—</div>
-                  <div class="k">负责人 / PO</div><div class="v" id="poDemandViewBra">—</div>
+                  <div class="k">需求负责人</div><div class="v" id="poDemandViewBra">—</div>
                   <div class="k">业务评审人</div><div class="v" id="poDemandViewReviewer">—</div>
                   <div class="k">创建人</div><div class="v" id="poDemandViewCreator">—</div>
-                  <div class="k">当前责任人</div><div class="v" id="poDemandViewCurrentOwner">—</div>
+                  <div class="k">指派给</div><div class="v" id="poDemandViewCurrentOwner">—</div>
                 </div>
               </div>
             </div>

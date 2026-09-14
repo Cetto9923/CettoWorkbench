@@ -9,6 +9,7 @@
 package po
 
 import (
+	"strconv"
 	"strings"
 
 	"workbench/internal/module/schedule"
@@ -123,6 +124,8 @@ type WorkItemDetail struct {
 	Owner           string `json:"owner"`     // 与 NextOwner 同值，兼容旧字段
 	NextOwner       string `json:"nextOwner"` // 下一责任人展示名（DeriveCurrentHandler）
 	ZentaoUrl       string `json:"zentaoUrl"`
+	ClarifyUrl      string `json:"clarifyUrl"`  // 禅道业需澄清页（demand-clarify）
+	AppraiseUrl     string `json:"appraiseUrl"` // 禅道业需评价页（demand-appraise）
 	ValueStream     string `json:"valueStream"`
 	ZentaoStatus    string `json:"zentaoStatus"`    // 禅道 status 原文，前端按业需/研需分别映射中文
 	CanReview       bool   `json:"canReview"`       // 待评审且当前账号是未出结果的业务评审人
@@ -137,4 +140,63 @@ type DemandsResp struct {
 	Total    int64            `json:"total"`
 	Page     int              `json:"page"`
 	PageSize int              `json:"pageSize"`
+}
+
+// DemandDetailReq 业需详情查询（path :id，支持 US123 / 123）。
+type DemandDetailReq struct {
+	ID string
+}
+
+// ExtractDemandID 从 US{id} 或纯数字解析主键。
+func (r *DemandDetailReq) ExtractDemandID() int64 {
+	raw := strings.TrimSpace(r.ID)
+	raw = strings.TrimPrefix(raw, "US")
+	raw = strings.TrimPrefix(raw, "us")
+	id, err := strconv.ParseInt(raw, 10, 64)
+	if err != nil || id <= 0 {
+		return 0
+	}
+	return id
+}
+
+// Validate 校验需求 ID。
+func (r *DemandDetailReq) Validate() []FieldError {
+	if r.ExtractDemandID() <= 0 {
+		return []FieldError{{Field: "id", Message: "需求 ID 无效"}}
+	}
+	return nil
+}
+
+// DemandAttachment 需求附件。
+type DemandAttachment struct {
+	ID       uint   `json:"id"`
+	Title    string `json:"title"`
+	Size     string `json:"size"`
+	Download string `json:"download"`
+}
+
+// DemandDetailResp 业需评审抽屉详情（字段对齐禅道 demand-view）。
+type DemandDetailResp struct {
+	ID                string             `json:"id"`
+	DemandID          int64              `json:"demandId"`
+	Title             string             `json:"title"`
+	Pri               string             `json:"pri"`
+	Category          string             `json:"category"`
+	Source            string             `json:"source"`
+	PoolName          string             `json:"poolName"`
+	Deadline          string             `json:"deadline"` // 期望上线，zt_demand.deadline
+	ProposerName      string             `json:"proposerName"`
+	ProposerDept      string             `json:"proposerDept"`
+	OwnerName         string             `json:"ownerName"`
+	Reviewer          string             `json:"reviewer"`
+	CreatedName       string             `json:"createdName"`
+	CurrentOwner      string             `json:"currentOwner"` // UI 展示为「指派给」，取 assignedTo
+	ZentaoStatus      string             `json:"zentaoStatus"`
+	ZentaoStatusLabel string             `json:"zentaoStatusLabel"`
+	ValueStageLabel   string             `json:"valueStageLabel"`
+	SpecHtml          string             `json:"specHtml"`
+	VerifyHtml        string             `json:"verifyHtml"`
+	ZentaoURL         string             `json:"zentaoUrl"`
+	ZentaoEditURL     string             `json:"zentaoEditUrl"`
+	Attachments       []DemandAttachment `json:"attachments"`
 }

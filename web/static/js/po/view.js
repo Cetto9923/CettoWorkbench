@@ -1,7 +1,7 @@
 /*
  * 文件: web/static/js/po/view.js
  * 模块: PO工作台
- * 职责: 业需评审详情右侧抽屉开关与列表行字段回填（静态演示，不接详情/提交 API）。
+ * 职责: 业需评审详情右侧抽屉；打开时拉取 GET /demands/:id 回填（对齐禅道 demand-view）。
  */
 (function ($) {
   "use strict";
@@ -9,6 +9,7 @@
   var DRAWER_ID = "poDemandViewDrawer";
   var REJECT_MODAL_ID = "poDemandViewRejectModal";
   var currentItem = null;
+  var detailAbort = null;
 
   function showToast(message, level) {
     if (typeof window.showToast === "function") {
@@ -28,100 +29,231 @@
     }
   }
 
-  function categoryLabel(value) {
-    var key = String(value || "").trim().toLowerCase();
-    var labels = {
-      experience: "体验优化",
-      feature: "功能需求",
-      request: "业务需求",
-      business: "业务需求",
-      research: "调研需求",
-      bug: "BUG",
-      tecopt: "技术优化",
-      performance: "性能",
-      safe: "安全",
-      datacg: "数据变更",
-      datachange: "数据变更",
-      dataexport: "数据导出",
-      other: "其他"
-    };
-    return labels[key] || value || "—";
-  }
-
-  function zentaoStatusLabel(value) {
-    var raw = String(value || "").trim();
-    var key = raw.toLowerCase();
-    var labels = {
-      developing: "开发中",
-      testing: "测试中",
-      wait: "待评审",
-      draft: "草稿",
-      active: "已评审",
-      closed: "已关闭",
-      canceled: "已取消",
-      cancelled: "已取消",
-      suspended: "已挂起",
-      blocked: "已阻塞",
-      done: "已完成",
-      resolved: "已解决",
-      verified: "已验证",
-      reviewing: "评审中",
-      changed: "已变更",
-      postponed: "已延期",
-      refuse: "已驳回"
-    };
-    return labels[key] || raw || "—";
-  }
-
-  function spotStageLabel(item) {
-    var zt = String((item && item.zentaoStatus) || "").trim().toLowerCase();
-    if (zt === "wait") {
-      return "待受理";
+  function setPriority(id, pri) {
+    var el = document.getElementById(id);
+    if (!el) {
+      return;
     }
-    return dash(item && (item.valueStream || item.stage || item.valueStageLabel || item.valueStage));
+    var raw = String(pri == null ? "" : pri).trim();
+    var m = raw.match(/(\d+)/);
+    var num = m ? m[1] : "2";
+    el.textContent = "P" + num;
+    el.setAttribute("data-priority", num);
   }
 
-  function fillFromItem(item) {
-    currentItem = item || null;
-    var id = dash(item && item.id);
-    var title = dash(item && item.title);
-    var owner = dash(item && (item.ownerName || item.nextOwner || item.owner));
-    var proposer = dash(item && (item.proposerName || item.proposer));
-    var updated = dash(item && (item.editedDate || item.updatedDate || item.updatedAt));
-    var reviewer = dash(item && (item.reviewer || item.nextOwner || item.owner));
-    var pri = dash(item && item.pri);
-    var category = categoryLabel(item && item.category);
-    var source = dash(item && item.source);
-    var product = dash(item && item.product);
-    var pool = dash(item && (item.poolName || item.pool));
-    var launch = dash(item && (item.estimateLaunch || item.launchDate || item.expectedLaunch));
+  function escapeHtml(text) {
+    return String(text == null ? "" : text)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function sanitizeRichHtml(html) {
+    var tmp = document.createElement("div");
+    tmp.innerHTML = String(html || "");
+    tmp.querySelectorAll("script,style,iframe,object,embed,form,link,meta").forEach(function (el) {
+      el.remove();
+    });
+    tmp.querySelectorAll("*").forEach(function (el) {
+      Array.from(el.attributes).forEach(function (attr) {
+        var name = attr.name || "";
+        var value = String(attr.value || "");
+        if (/^on/i.test(name) || (name === "href" && /^javascript:/i.test(value))) {
+          el.removeAttribute(name);
+        }
+      });
+    });
+    return tmp.innerHTML;
+  }
+
+  function formatRichTextContent(raw) {
+    raw = String(raw == null ? "" : raw).trim();
+    if (!raw) {
+      return "";
+    }
+    if (/<[a-z][\s\S]*>/i.test(raw)) {
+      return sanitizeRichHtml(raw);
+    }
+    return escapeHtml(raw).replace(/\n/g, "<br>");
+  }
+
+  function setRichHtml(id, html, emptyText) {
+    var el = document.getElementById(id);
+    if (!el) {
+      return;
+    }
+    var safe = formatRichTextContent(html);
+    el.innerHTML = safe || '<span class="text-muted">' + escapeHtml(emptyText || "暂无") + "</span>";
+  }
+
+  function renderAttachments(list) {
+    var ul = document.getElementById("poDemandViewFiles");
+    if (!ul) {
+      return;
+    }
+    var rows = Array.isArray(list) ? list : [];
+    if (!rows.length) {
+      ul.innerHTML = '<li class="text-muted">暂无附件</li>';
+      return;
+    }
+    ul.innerHTML = rows
+      .map(function (f) {
+        var title = escapeHtml(f && f.title);
+        var size = escapeHtml(f && f.size);
+        var href = escapeHtml((f && f.download) || "#");
+        return (
+          "<li><a href=\"" +
+          href +
+          "\" target=\"_blank\" rel=\"noopener noreferrer\">" +
+          title +
+          "</a> (" +
+          size +
+          ")</li>"
+        );
+      })
+      .join("");
+  }
+
+  function demandNumericId(item) {
+    var raw = String((item && (item.demandId || item.id)) || "").trim();
+    raw = raw.replace(/^US/i, "");
+    return raw;
+  }
+
+  function fillHeaderAndAside(data) {
+    var id = dash(data && data.id);
+    var title = dash(data && data.title);
+    var owner = dash(data && data.ownerName);
+    var proposer = dash(data && data.proposerName);
+    var reviewer = dash(data && data.reviewer);
+    var pri = dash(data && data.pri);
+    var category = dash(data && data.category);
+    var source = dash(data && data.source);
+    var pool = dash(data && data.poolName);
+    var launch = dash(data && data.deadline);
+    var stage = dash(data && data.valueStageLabel);
+    var ztLabel = dash(data && data.zentaoStatusLabel);
 
     setText("poDemandViewId", id);
     setText("poDemandViewTitle", title);
-    setText("poDemandViewPri", pri === "—" ? "P2" : pri);
+    setPriority("poDemandViewPri", pri);
     setText("poDemandViewPriSide", pri === "—" ? "P2" : pri);
     setText("poDemandViewProposerMeta", proposer);
     setText("poDemandViewPoMeta", owner);
-    setText("poDemandViewUpdatedMeta", updated);
-    setText("poDemandViewCurrentOwner", dash(item && (item.nextOwner || item.owner || item.ownerName)));
+    setText("poDemandViewCurrentOwner", dash(data && data.currentOwner));
     setText("poDemandViewBra", owner);
     setText("poDemandViewProposer", proposer);
+    setText("poDemandViewDept", dash(data && data.proposerDept));
     setText("poDemandViewReviewer", reviewer);
+    setText("poDemandViewCreator", dash(data && data.createdName));
 
-    setText("poDemandViewSpotStage", spotStageLabel(item));
+    setText("poDemandViewSpotStage", stage);
     setText("poDemandViewSpotReviewer", reviewer === "—" ? "待确认" : reviewer);
     setText("poDemandViewSpotLaunch", launch);
     setText("poDemandViewStripCategory", category);
     setText("poDemandViewStripSource", source);
-    setText("poDemandViewStripProduct", product);
     setText("poDemandViewStripPool", pool);
-    setText("poDemandViewNativeState", zentaoStatusLabel(item && item.zentaoStatus));
+    setText("poDemandViewNativeState", ztLabel);
 
     setText("poDemandViewCategory", category);
     setText("poDemandViewSource", source);
-    setText("poDemandViewProduct", product);
     setText("poDemandViewPool", pool);
     setText("poDemandViewLaunch", launch);
+  }
+
+  function fillBodyContent(data) {
+    setRichHtml("poDemandViewSpec", data && data.specHtml, "暂无详细描述");
+    setRichHtml("poDemandViewVerify", data && data.verifyHtml, "暂无验收标准说明");
+    renderAttachments(data && data.attachments);
+  }
+
+  function fillFromListItem(item) {
+    currentItem = item || null;
+    fillHeaderAndAside({
+      id: item && item.id,
+      title: item && item.title,
+      pri: item && item.pri,
+      ownerName: item && (item.ownerName || item.nextOwner || item.owner),
+      proposerName: item && (item.proposerName || item.proposer),
+      reviewer: item && item.reviewer,
+      category: item && item.category,
+      source: item && item.source,
+      poolName: item && (item.poolName || item.pool),
+      deadline: item && (item.deadline || item.estimateLaunch || item.launchDate || item.expectedLaunch),
+      valueStageLabel: item && (item.valueStream || item.stage),
+      zentaoStatusLabel: item && item.zentaoStatus,
+      currentOwner: item && (item.nextOwner || item.owner || item.ownerName),
+      proposerDept: item && item.proposerDept,
+      createdName: item && item.createdName
+    });
+    setRichHtml("poDemandViewSpec", "", "加载中…");
+    setRichHtml("poDemandViewVerify", "", "加载中…");
+    renderAttachments([]);
+    var filesEl = document.getElementById("poDemandViewFiles");
+    if (filesEl) {
+      filesEl.innerHTML = '<li class="text-muted">加载中…</li>';
+    }
+  }
+
+  function applyDetail(data) {
+    if (!data) {
+      return;
+    }
+    fillHeaderAndAside(data);
+    fillBodyContent(data);
+    var editBtn = document.getElementById("poDemandViewEditBtn");
+    if (editBtn) {
+      var editUrl = String((data && data.zentaoEditUrl) || "").trim();
+      if (editUrl) {
+        editBtn.disabled = false;
+        editBtn.removeAttribute("title");
+        editBtn.onclick = function () {
+          window.open(editUrl, "_blank", "noopener,noreferrer");
+        };
+      }
+    }
+  }
+
+  function fetchDetail(item) {
+    var id = demandNumericId(item);
+    if (!id) {
+      return;
+    }
+    if (detailAbort && typeof detailAbort.abort === "function") {
+      detailAbort.abort();
+    }
+    detailAbort = typeof AbortController !== "undefined" ? new AbortController() : null;
+    var opts = { credentials: "same-origin", headers: { Accept: "application/json" } };
+    if (detailAbort) {
+      opts.signal = detailAbort.signal;
+    }
+    fetch("/demands/" + encodeURIComponent(id), opts)
+      .then(function (res) {
+        return res.json().then(function (json) {
+          return { ok: res.ok, status: res.status, json: json };
+        });
+      })
+      .then(function (ret) {
+        if (!ret.ok || !ret.json || !ret.json.success || !ret.json.data) {
+          var msg = (ret.json && ret.json.message) || "获取需求详情失败";
+          showToast(msg, "error");
+          setRichHtml("poDemandViewSpec", "", "加载失败");
+          setRichHtml("poDemandViewVerify", "", "加载失败");
+          renderAttachments([]);
+          return;
+        }
+        applyDetail(ret.json.data);
+      })
+      .catch(function (err) {
+        if (err && err.name === "AbortError") {
+          return;
+        }
+        showToast("获取需求详情失败", "error");
+        setRichHtml("poDemandViewSpec", "", "加载失败");
+        setRichHtml("poDemandViewVerify", "", "加载失败");
+      });
   }
 
   function openRejectModal() {
@@ -149,6 +281,10 @@
 
   function closeDrawer() {
     closeRejectModal();
+    if (detailAbort && typeof detailAbort.abort === "function") {
+      detailAbort.abort();
+      detailAbort = null;
+    }
     var drawer = document.getElementById(DRAWER_ID);
     if (drawer) {
       drawer.classList.remove("active");
@@ -159,7 +295,7 @@
   }
 
   function openDrawer(item) {
-    fillFromItem(item);
+    fillFromListItem(item);
     var drawer = document.getElementById(DRAWER_ID);
     if (!drawer) {
       return;
@@ -171,6 +307,7 @@
     if (body) {
       body.scrollTop = 0;
     }
+    fetchDetail(item);
   }
 
   function bindEvents() {
