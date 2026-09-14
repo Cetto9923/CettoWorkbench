@@ -141,7 +141,7 @@ func Run() error {
 	scheduleSvc := schedule.NewService(scheduleRepo, zapLog)
 	scheduleHandler := schedule.NewHandler(rend, zapLog, scheduleSvc, strings.TrimRight(cfg.Zentao.URL, "/"))
 	poRepo := po.NewRepo(dbReadonly, db)
-	poSvc := po.NewService(poRepo, scheduleSvc, userSvc, zapLog)
+	poSvc := po.NewService(poRepo, scheduleSvc, userSvc, zentaopkg.API(), zapLog)
 	poHandler := po.NewHandler(poSvc, zapLog)
 	testtaskReadDB := dbReadonly
 	if testtaskReadDB == nil {

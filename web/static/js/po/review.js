@@ -1,20 +1,118 @@
 /*
  * 文件: web/static/js/po/review.js
  * 模块: PO工作台
- * 职责: 业需审批右侧抽屉；打开时拉取 GET /demands/:id 回填。
+ * 职责: 业需审批右侧抽屉；打开时拉取 GET /demands/:id 回填；通过/驳回提交 POST /demands/:id/review。
  */
 (function ($) {
   "use strict";
 
   var DRAWER_ID = "poDemandReviewDrawer";
   var REJECT_MODAL_ID = "poDemandReviewRejectModal";
+  var PASS_MODAL_ID = "poDemandReviewPassModal";
   var currentItem = null;
   var detailAbort = null;
+  var submitting = false;
 
   function showToast(message, level) {
     if (typeof window.showToast === "function") {
       window.showToast(message, level || "info");
     }
+  }
+
+  function csrfHeaders() {
+    var headers = {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "X-Requested-With": "XMLHttpRequest"
+    };
+    var meta = document.querySelector('meta[name="csrf-token"]');
+    var token = meta ? String(meta.getAttribute("content") || "").trim() : "";
+    if (token) {
+      headers["X-CSRF-Token"] = token;
+    }
+    return headers;
+  }
+
+  function reviewFailMessage(res, data, text) {
+    if (data) {
+      var fromApi = String(data.message || data.error || "").trim();
+      if (fromApi) {
+        return fromApi;
+      }
+    }
+    if (res && res.status === 401) {
+      return "未登录或会话已过期，请刷新后重试";
+    }
+    if (res && res.status === 403) {
+      return "没有评审权限";
+    }
+    if (text && /CSRF/i.test(text)) {
+      return "安全校验失败，请刷新页面后重试";
+    }
+    if (res && res.status) {
+      return "评审失败（HTTP " + res.status + "）";
+    }
+    return "评审失败";
+  }
+
+  function setActionButtonsDisabled(disabled) {
+    $(
+      "#poDemandReviewPassBtn, #poDemandReviewRejectBtn, #poDemandReviewRejectConfirmBtn, #poDemandReviewPassConfirmBtn"
+    ).prop("disabled", !!disabled);
+  }
+
+  function submitReview(result, comment) {
+    var id = demandNumericId(currentItem);
+    if (!id) {
+      showToast("需求 ID 无效", "error");
+      return;
+    }
+    if (submitting) {
+      return;
+    }
+    submitting = true;
+    setActionButtonsDisabled(true);
+    var fetchFn = window.appFetch || fetch;
+    fetchFn("/demands/" + encodeURIComponent(id) + "/review", {
+      method: "POST",
+      headers: csrfHeaders(),
+      body: JSON.stringify({
+        result: result,
+        comment: comment || ""
+      })
+    })
+      .then(function (res) {
+        return res.text().then(function (text) {
+          var data = {};
+          try {
+            data = text ? JSON.parse(text) : {};
+          } catch (ignore) {
+            data = {};
+          }
+          return { ok: res.ok, data: data, res: res, text: text };
+        });
+      })
+      .then(function (wrap) {
+        var data = wrap.data;
+        if (wrap.ok && data.success) {
+          showToast(data.message || "评审成功", "success");
+          closeRejectModal();
+          closePassModal();
+          closeDrawer();
+          if (typeof window.refreshPoHomeDemands === "function") {
+            window.refreshPoHomeDemands();
+          }
+          return;
+        }
+        showToast(reviewFailMessage(wrap.res, data, wrap.text), "error");
+      })
+      .catch(function () {
+        showToast("评审失败，请稍后重试", "error");
+      })
+      .then(function () {
+        submitting = false;
+        setActionButtonsDisabled(false);
+      });
   }
 
   function dash(value) {
@@ -257,6 +355,7 @@
   }
 
   function openRejectModal() {
+    closePassModal();
     var modal = document.getElementById(REJECT_MODAL_ID);
     if (!modal) {
       return;
@@ -279,8 +378,32 @@
     modal.setAttribute("aria-hidden", "true");
   }
 
+  function openPassModal() {
+    closeRejectModal();
+    var modal = document.getElementById(PASS_MODAL_ID);
+    if (!modal) {
+      return;
+    }
+    modal.style.display = "flex";
+    modal.setAttribute("aria-hidden", "false");
+    var confirmBtn = document.getElementById("poDemandReviewPassConfirmBtn");
+    if (confirmBtn) {
+      confirmBtn.focus();
+    }
+  }
+
+  function closePassModal() {
+    var modal = document.getElementById(PASS_MODAL_ID);
+    if (!modal) {
+      return;
+    }
+    modal.style.display = "none";
+    modal.setAttribute("aria-hidden", "true");
+  }
+
   function closeDrawer() {
     closeRejectModal();
+    closePassModal();
     if (detailAbort && typeof detailAbort.abort === "function") {
       detailAbort.abort();
       detailAbort = null;
@@ -338,15 +461,25 @@
         $("#poDemandReviewRejectComment").focus();
         return;
       }
-      showToast("静态演示：驳回未提交", "info");
-      closeRejectModal();
+      submitReview("refuse", comment);
     });
     $("#poDemandReviewPassBtn").on("click", function () {
-      showToast("静态演示：评审通过未提交", "info");
+      openPassModal();
+    });
+    $("#poDemandReviewPassCloseBtn, #poDemandReviewPassCancelBtn").on("click", function () {
+      closePassModal();
+    });
+    $("#poDemandReviewPassConfirmBtn").on("click", function () {
+      submitReview("pass", "");
     });
 
     $(document).on("keydown.poDemandReview", function (e) {
       if (e.key !== "Escape" && e.keyCode !== 27) {
+        return;
+      }
+      var passModal = document.getElementById(PASS_MODAL_ID);
+      if (passModal && passModal.style.display === "flex") {
+        closePassModal();
         return;
       }
       var rejectModal = document.getElementById(REJECT_MODAL_ID);

@@ -45,12 +45,13 @@ type Service struct {
 	repo     *Repo
 	schedule *schedule.Service
 	userSvc  *user.Service
+	ztAPI    *zentao.Client
 	logger   *zap.Logger
 }
 
-// NewService 创建 Service。
-func NewService(repo *Repo, scheduleSvc *schedule.Service, userSvc *user.Service, logger *zap.Logger) *Service {
-	return &Service{repo: repo, schedule: scheduleSvc, userSvc: userSvc, logger: logger}
+// NewService 创建 Service。ztAPI 可为空，评审写禅道时回退 zentao.API()。
+func NewService(repo *Repo, scheduleSvc *schedule.Service, userSvc *user.Service, ztAPI *zentao.Client, logger *zap.Logger) *Service {
+	return &Service{repo: repo, schedule: scheduleSvc, userSvc: userSvc, ztAPI: ztAPI, logger: logger}
 }
 
 // Home 加载首页价值流阶段统计。

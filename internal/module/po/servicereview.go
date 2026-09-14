@@ -2,28 +2,27 @@
 // 文件: internal/module/po/servicereview.go
 // 模块: PO 工作台
 // 类型: action
-// 职责: 业需评审业务规则（对照禅道 demand->review，不含 OA 同步与转工单）。
+// 职责: 业需评审：本地校验资格后，以当前用户身份转发禅道 POST /demand/:id/review。
 // 依赖: internal/model
 //       internal/pkg/errorx
+//       internal/pkg/zentao
 // =============================================================================
 
 package po
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"strings"
+
+	"go.uber.org/zap"
 
 	"workbench/internal/model"
 	"workbench/internal/pkg/errorx"
+	"workbench/internal/pkg/zentao"
 )
 
-// ReviewDemand 提交业需评审。
-//
-// 读代码时可按 PHP/Java 这样理解：
-//  1. actor 就是当前登录用户（Service 里不碰 gin.Context）
-//  2. 先校验「待评审 + 当前账号是未出结果的业务评审人」（与 assignedTo 无关）
-//  3. 再按禅道规则改三张表：评审人结果、需求字段、操作历史
+// ReviewDemand 提交业需评审（代理禅道 API，不再本地写 zt_demandreview）。
 func (s *Service) ReviewDemand(ctx context.Context, actor *model.User, req ReviewDemandReq) (ReviewDemandResp, error) {
 	empty := ReviewDemandResp{}
 	if actor == nil || strings.TrimSpace(actor.Account) == "" {
@@ -53,88 +52,29 @@ func (s *Service) ReviewDemand(ctx context.Context, actor *model.User, req Revie
 		return empty, errorx.New(errorx.ErrCodeConflict, "您已评审过该需求")
 	}
 
-	reviewedBy := appendUniqueAccount(demand.ReviewedBy, account)
-	mailto := normalizeMailto(req.Mailto)
-
-	// 拒绝：立刻变成 refuse，并指派回创建人。
-	// 通过：事务里锁需求行，再统计尚未 pass 的评审人（含 NULL）；为 0 才改成 active。
-	newStatus := ""
-	statusAction := ""
-	assignBack := ""
-	if req.Result == "refuse" {
-		newStatus = "refuse"
-		statusAction = "reviewrejected"
-		assignBack = strings.TrimSpace(demand.CreatedBy)
+	client := s.ztAPI
+	if client == nil {
+		client = zentao.API()
+	}
+	if client == nil {
+		return empty, errorx.New(errorx.ErrCodeInternal, "禅道 API 未配置")
 	}
 
-	if err := s.repo.SaveDemandReview(ctx, saveDemandReviewIn{
-		DemandID:     req.ID,
-		Account:      account,
-		Result:       req.Result,
-		IsNeedFocus:  req.IsNeedFocus,
-		Mailto:       mailto,
-		ReviewedBy:   reviewedBy,
-		Comment:      req.Comment,
-		Product:      demand.Product,
-		NewStatus:    newStatus,
-		StatusAction: statusAction,
-		AssignBackTo: assignBack,
-	}); err != nil {
-		if errors.Is(err, errDemandNotReviewable) || errors.Is(err, errAlreadyReviewed) {
-			return empty, errorx.New(errorx.ErrCodeConflict, err.Error())
+	if callErr := reviewDemandViaZentao(ctx, client, reviewDemandViaZentaoReq{
+		DemandID: req.ID,
+		Result:   req.Result,
+		Comment:  req.Comment,
+	}); callErr != nil {
+		if s.logger != nil {
+			s.logger.Error("zentao demand review",
+				zap.Error(callErr),
+				zap.Int64("id", req.ID),
+				zap.String("account", account),
+				zap.String("result", req.Result),
+			)
 		}
-		if isLockWait(err) {
-			return empty, errorx.New(errorx.ErrCodeConflict, "该需求正在被他人编辑，请稍后重试")
-		}
-		return empty, err
+		return empty, errorx.Wrap(errorx.ErrCodeInvalidParam, fmt.Sprintf("评审失败：%s", callErr.Error()), callErr)
 	}
 
 	return ReviewDemandResp{ID: req.ID}, nil
-}
-
-// appendUniqueAccount 把当前账号追加进 reviewedBy（逗号分隔，去重）。
-func appendUniqueAccount(old, account string) string {
-	seen := map[string]bool{}
-	var out []string
-	for _, part := range strings.Split(old, ",") {
-		p := strings.TrimSpace(part)
-		if p == "" || seen[p] {
-			continue
-		}
-		seen[p] = true
-		out = append(out, p)
-	}
-	account = strings.TrimSpace(account)
-	if account != "" && !seen[account] {
-		out = append(out, account)
-	}
-	return strings.Join(out, ",")
-}
-
-// normalizeMailto 把「张三, 004861」收成禅道常用的逗号串；空则不改库。
-func normalizeMailto(raw string) *string {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return nil
-	}
-	var parts []string
-	for _, p := range strings.Split(raw, ",") {
-		p = strings.TrimSpace(p)
-		if p != "" {
-			parts = append(parts, p)
-		}
-	}
-	if len(parts) == 0 {
-		return nil
-	}
-	joined := strings.Join(parts, ",")
-	return &joined
-}
-
-func isLockWait(err error) bool {
-	if err == nil {
-		return false
-	}
-	msg := strings.ToLower(err.Error())
-	return strings.Contains(msg, "lock wait timeout") || strings.Contains(msg, "deadlock")
 }

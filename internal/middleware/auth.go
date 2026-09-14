@@ -5,7 +5,9 @@
 // 职责: 校验登录态并注入当前用户上下文。
 // 依赖: internal/model
 //       internal/pkg/menu
+//       internal/pkg/perm
 //       internal/pkg/session
+//       internal/pkg/zentao
 // =============================================================================
 
 package middleware
@@ -24,6 +26,7 @@ import (
 	"workbench/internal/pkg/menu"
 	"workbench/internal/pkg/perm"
 	"workbench/internal/pkg/session"
+	zentaopkg "workbench/internal/pkg/zentao"
 )
 
 // RequireLogin 要求请求已登录，否则重定向到登录页。
@@ -81,6 +84,8 @@ func RequireLogin(mgr *scs.SessionManager, db *gorm.DB) gin.HandlerFunc {
 		c.Set("currentUser", &user)
 		c.Set("userPerms", userPerms)
 		c.Set("currentMenus", currentMenus)
+		// 禅道出站 API 统一从 ctx 取当前账号做 type=po 免密鉴权。
+		c.Request = c.Request.WithContext(zentaopkg.WithAccount(c.Request.Context(), user.Account))
 		c.Next()
 	}
 }

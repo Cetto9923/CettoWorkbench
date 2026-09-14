@@ -69,29 +69,26 @@ func (r *DemandsReq) Validate() []FieldError {
 	return nil
 }
 
-// ReviewDemandReq 业需评审提交（JSON Body，对应禅道 demand-review 表单）。
+// ReviewDemandReq 业需评审提交（JSON Body，转发禅道 POST /demand/:id/review）。
 //
-// 字段对照禅道 POST：
+// 字段对照禅道 OpenAPI：
 //
-//	result      → 评审结果 pass=确认通过 / refuse=拒绝
-//	isNeedFocus → 是否重点关注 0=否 / 1=是
-//	mailto      → 通知人，逗号分隔账号
-//	comment     → 备注（纯文本）
+//	result  → 评审结果 pass=确认通过 / refuse=拒绝（必填）
+//	comment → 备注（纯文本，可选；驳回时前端会填）
+//	mailto  → 通知人（可选，当前抽屉不传）
 //
 // ID 不从 JSON 读，由 Handler 从 URL :id 填进来（和 DeleteReq 同一套路）。
 type ReviewDemandReq struct {
-	ID          int64  `json:"-"`
-	Result      string `json:"result"`
-	IsNeedFocus string `json:"isNeedFocus"`
-	Mailto      string `json:"mailto"`
-	Comment     string `json:"comment"`
+	ID      int64  `json:"-"`
+	Result  string `json:"result"`
+	Mailto  string `json:"mailto"`
+	Comment string `json:"comment"`
 }
 
 // Validate 校验评审表单。返回空切片表示通过。
 func (r *ReviewDemandReq) Validate() []FieldError {
 	var errs []FieldError
 	r.Result = strings.TrimSpace(r.Result)
-	r.IsNeedFocus = strings.TrimSpace(r.IsNeedFocus)
 	r.Mailto = strings.TrimSpace(r.Mailto)
 	r.Comment = strings.TrimSpace(r.Comment)
 
@@ -100,9 +97,6 @@ func (r *ReviewDemandReq) Validate() []FieldError {
 	}
 	if r.Result != "pass" && r.Result != "refuse" {
 		errs = append(errs, FieldError{Field: "result", Message: "请选择评审结果"})
-	}
-	if r.IsNeedFocus != "0" && r.IsNeedFocus != "1" {
-		errs = append(errs, FieldError{Field: "isNeedFocus", Message: "请选择是否需要重点关注"})
 	}
 	return errs
 }
