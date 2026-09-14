@@ -67,9 +67,16 @@ func (s *Service) GetContext(ctx context.Context, actor *model.User, demandID ui
 	}
 	systems := BuildSystemItems(products, row.MainSystemID, row.MainSystemName)
 
-	users, err := s.repo.ListInsideUsers(ctx)
-	if err != nil {
-		return nil, err
+	users := []UserOption{}
+	if s.userSvc != nil {
+		pickerUsers, listErr := s.userSvc.ListInsideUsers(ctx, actor)
+		if listErr != nil {
+			return nil, listErr
+		}
+		users = make([]UserOption, 0, len(pickerUsers))
+		for _, item := range pickerUsers {
+			users = append(users, UserOption{Account: item.Account, Realname: item.Realname})
+		}
 	}
 
 	account, name := "", ""

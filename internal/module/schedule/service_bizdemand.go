@@ -409,8 +409,6 @@ func (s *Service) GetDemandScheduling(ctx context.Context, actor *model.User, de
 	if demandID == 0 {
 		return nil, errors.New("业需 ID 无效")
 	}
-	_ = actorAccount(actor)
-
 	detail, err := s.repo.GetDemandSchedulingDetail(ctx, demandID)
 	if err != nil {
 		return nil, err
@@ -419,7 +417,7 @@ func (s *Service) GetDemandScheduling(ctx context.Context, actor *model.User, de
 	if err != nil {
 		return nil, err
 	}
-	users, err := s.repo.ListInsideUsersForScheduling(ctx)
+	users, err := s.listInsideUsers(ctx, actor)
 	if err != nil {
 		return nil, err
 	}

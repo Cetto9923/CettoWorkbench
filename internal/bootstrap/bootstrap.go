@@ -138,7 +138,7 @@ func Run() error {
 	roleHandler := role.NewHandler(rend, zapLog, roleSvc)
 
 	scheduleRepo := schedule.NewRepo(db)
-	scheduleSvc := schedule.NewService(scheduleRepo, zapLog)
+	scheduleSvc := schedule.NewService(scheduleRepo, userSvc, zapLog)
 	scheduleHandler := schedule.NewHandler(rend, zapLog, scheduleSvc, strings.TrimRight(cfg.Zentao.URL, "/"))
 	poRepo := po.NewRepo(dbReadonly, db)
 	poSvc := po.NewService(poRepo, scheduleSvc, userSvc, zentaopkg.API(), zapLog)

@@ -204,11 +204,6 @@ type schedulingWindowRow struct {
 	ReleaseDate string `gorm:"column:releaseDate"`
 }
 
-type schedulingUserRow struct {
-	Account  string `gorm:"column:account"`
-	Realname string `gorm:"column:realname"`
-}
-
 // ListUpcomingSchedulingWindows 查询未过期的版本窗口列表。
 func (r *Repo) ListUpcomingSchedulingWindows(ctx context.Context) ([]SchedulingWindowOption, error) {
 	const query = `
@@ -231,37 +226,6 @@ ORDER BY releaseDate ASC`
 			ID:          row.ID,
 			Name:        strings.TrimSpace(row.Name),
 			ReleaseDate: formatZenTaoDate(row.ReleaseDate),
-		})
-	}
-	return out, nil
-}
-
-// ListInsideUsersForScheduling 查询内部用户列表（负责人下拉）。
-func (r *Repo) ListInsideUsersForScheduling(ctx context.Context) ([]SchedulingUserOption, error) {
-	const query = `
-SELECT account, realname
-FROM zt_user
-WHERE deleted = '0'
-  AND type = 'inside'
-ORDER BY account ASC`
-
-	var rows []schedulingUserRow
-	if err := r.db.WithContext(ctx).Raw(query).Scan(&rows).Error; err != nil {
-		return nil, err
-	}
-	out := make([]SchedulingUserOption, 0, len(rows))
-	for _, row := range rows {
-		account := strings.TrimSpace(row.Account)
-		if account == "" {
-			continue
-		}
-		realname := strings.TrimSpace(row.Realname)
-		if realname == "" {
-			realname = account
-		}
-		out = append(out, SchedulingUserOption{
-			Account:  account,
-			Realname: realname,
 		})
 	}
 	return out, nil
