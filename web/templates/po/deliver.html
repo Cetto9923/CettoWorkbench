@@ -1,0 +1,105 @@
+{{/* ==========================================================================
+文件: web/templates/po/deliver.html
+模块: PO工作台
+职责: 发起交付弹窗（home 引入；静态页对齐原型 po_deliver_modal）
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: 无（弹窗 DOM 占位，静态展示）
+========================================================================== */}}
+{{ define "po/deliver" }}
+<div id="poDeliverModalOverlay" class="batch-modal-overlay po-deliver-modal-overlay" aria-hidden="true">
+  <div id="poDeliverModal" class="batch-modal po-deliver-modal" role="dialog" aria-modal="true" aria-labelledby="poDeliverModalTitle">
+    <div class="batch-modal-hdr">
+      <h3 id="poDeliverModalTitle">发起交付</h3>
+      <button type="button" class="po-deliver-close-btn" id="poDeliverCloseBtn" aria-label="关闭">&times;</button>
+    </div>
+
+    <div id="poDeliverLoadingState" class="demand-clarify-loading" hidden>
+      <div class="clarify-spinner"></div>
+      <p>正在加载交付信息与前置检查…</p>
+    </div>
+    <div id="poDeliverErrorState" class="demand-clarify-error-state" hidden>
+      <p id="poDeliverErrorMsg">加载失败，请稍后重试</p>
+      <button type="button" class="table-action-btn primary" id="poDeliverRetryBtn">重新加载</button>
+    </div>
+
+    {{/* header / scroll-body / footer 三级同级，避免 form 打断 flex 高度链导致小屏无法滚动 */}}
+    <div class="batch-modal-body" id="poDeliverModalBody">
+      <form id="poDeliverForm" novalidate>
+        <div class="vf-section" id="poDeliverPrecheckSection">
+          <div class="vf-section-title">交付前置检查</div>
+          <div class="ad-checklist po-deliver-checklist" id="poDeliverChecklist">
+            <div class="ad-check-row"><span>业务验收</span><span class="ad-tag ok">通过</span></div>
+            <div class="ad-check-row"><span>主管部门审批</span><span class="ad-tag ok">通过</span></div>
+            <div class="ad-check-row"><span>测试阻塞</span><span class="ad-tag ok">无阻塞</span></div>
+          </div>
+          <div class="hint" id="poDeliverPrecheckHint">请确认以上前置条件无误后再填写交付信息并提交。</div>
+          <div class="error" id="poDeliverPrecheckError" hidden></div>
+        </div>
+
+        <div class="vf-section">
+          <div class="vf-section-title">交付信息</div>
+          <div class="ad-form-grid po-deliver-grid">
+            <div class="ad-field full">
+              <label>上线窗口 <span class="ad-req">*</span></label>
+              <div class="ui-autocomplete">
+                <input type="text" id="poLaunchWindowInput" class="ad-input" placeholder="搜索上线窗口" autocomplete="off">
+                <input type="hidden" id="poLaunchWindowSelect">
+              </div>
+              <div class="po-launch-window-notice hint" id="poLaunchWindowNotice" hidden></div>
+              <div class="po-launch-date-field" id="poLaunchDateFieldWrap" hidden>
+                <label>上线时间 <span class="ad-req">*</span></label>
+                <input type="date" class="ad-input" id="poLaunchDate">
+              </div>
+            </div>
+
+            <div class="ad-field">
+              <label>快速评审</label>
+              <div class="checks">
+                <label><input type="radio" name="poDeliverCarReview" value="1"> 是</label>
+                <label><input type="radio" name="poDeliverCarReview" value="0" checked> 否</label>
+              </div>
+            </div>
+
+            <div class="ad-field">
+              <label>灰度验证计划 <span class="ad-req">*</span></label>
+              <div class="ui-autocomplete">
+                <input type="text" id="poDeliverGrayPlanInput" class="ad-input" placeholder="搜索" autocomplete="off">
+                <input type="hidden" id="poDeliverGrayPlan" value="0">
+              </div>
+            </div>
+
+            <div class="ad-field">
+              <label>生产验证时间 <span class="ad-req">*</span></label>
+              <div class="ui-autocomplete">
+                <input type="text" id="poDeliverVerifyDateInput" class="ad-input" placeholder="搜索" autocomplete="off">
+                <input type="hidden" id="poDeliverVerifyDate" value="1">
+              </div>
+            </div>
+
+            <div class="ad-field full">
+              <label>生产验证计划 <span class="ad-req">*</span></label>
+              <textarea class="ad-input" id="poDeliverVerifyPlan" rows="4" required placeholder="请填写上线后生产验证范围、步骤与通过标准"></textarea>
+            </div>
+
+            <div class="ad-field full">
+              <label>生产验证责任人 <span class="ad-req">*</span></label>
+              <div id="poDeliverVerifierHost" class="po-deliver-verifier-host">
+                <div class="ui-autocomplete">
+                  <input type="text" id="poDeliverVerifierInput" class="ad-input" placeholder="输入姓名或工号搜索" autocomplete="off">
+                  <input type="hidden" id="poDeliverVerifierValue">
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="hint">带 <span class="ad-req">*</span> 为必填。提交后需求进入「待发布」，并同步关联研发需求交付/验证信息。</div>
+        </div>
+      </form>
+    </div>
+
+    <div class="batch-modal-footer wb-detail-footer" id="poDeliverModalFooter">
+      <button type="button" class="action-btn" id="poDeliverCancelBtn">取消</button>
+      <button type="submit" form="poDeliverForm" class="action-btn primary write-action" id="poDeliverConfirmBtn">保存</button>
+    </div>
+  </div>
+</div>
+{{ end }}

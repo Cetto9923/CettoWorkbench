@@ -275,6 +275,14 @@
     return String(item.valueStream || item.stage || "").trim() === "联调测试";
   }
 
+  // 发起交付阶段：业需价值流为「发起交付」时展示静态按钮（暂不接业务）
+  function canShowDeliver(item) {
+    if (!item || String(item.kind || "") === "story") {
+      return false;
+    }
+    return String(item.valueStream || item.stage || "").trim() === "发起交付";
+  }
+
   // 受理阶段操作按钮（仅展示，提交/撤销/编辑暂不接业务）
   function acceptActionButtons(item) {
     var parts = [];
@@ -421,6 +429,13 @@
         "<button type=\"button\" class=\"table-action-btn primary js-submit-test\" data-demand-id=\"" +
           escapeHtml(item.id || "") +
           "\">提测</button>"
+      );
+    }
+    if (canShowDeliver(item)) {
+      actionParts.push(
+        "<button type=\"button\" class=\"table-action-btn primary js-initiate-deliver\" data-demand-id=\"" +
+          escapeHtml(item.id || "") +
+          "\">发起交付</button>"
       );
     }
     var actionHtml = actionParts.length
@@ -622,6 +637,17 @@
     });
   }
 
+  function bindDeliverButtons($list) {
+    $list.find(".js-initiate-deliver").on("click", function () {
+      var demandId = String($(this).attr("data-demand-id") || "").trim();
+      var item = findListItemByDemandId(demandId);
+      if (typeof window.openPoDeliverModal !== "function") {
+        return;
+      }
+      window.openPoDeliverModal(item || demandId);
+    });
+  }
+
   function bindPagination(totalPages) {
     var $pager = $("#homePager");
     $pager.find("a.page-link[data-page]").on("click", function (e) {
@@ -671,6 +697,7 @@
     bindZentaoLinks($("#top5List"));
     bindReviewButtons($("#top5List"));
     bindSubmitTestButtons($("#top5List"));
+    bindDeliverButtons($("#top5List"));
     renderPagination(total);
   }
 

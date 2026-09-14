@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="{{ asset "/static/css/po/review.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/po/testtask.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/po/linkstory.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/deliver.css" }}">
 {{ end }}
 
 {{ define "content" }}
@@ -175,11 +176,13 @@
 {{ template "po/review" . }}
 {{ template "po/testtask" . }}
 {{ template "po/linkstory" . }}
+{{ template "po/deliver" . }}
 {{ end }}
 
 {{ define "page_js" }}
 <script src="{{ asset "/static/js/po/review.js" }}"></script>
 <script src="{{ asset "/static/js/po/testtask.js" }}"></script>
 <script src="{{ asset "/static/js/po/linkstory.js" }}"></script>
+<script src="{{ asset "/static/js/po/deliver.js" }}"></script>
 <script src="{{ asset "/static/js/po/home.js" }}"></script>
 {{ end }}
