@@ -114,7 +114,6 @@ func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stage
 		account = actor.Account
 	}
 	includeDemand := req.ObjectType != "story"
-	includeStory := req.ObjectType != "demand"
 	label := valueStreamLabelForStatus(stageStatus)
 	offset := (req.Page - 1) * req.PageSize
 
@@ -173,47 +172,15 @@ func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stage
 		return &DemandsResp{Items: items, Total: int(total), Page: req.Page, PageSize: req.PageSize}, nil
 	}
 
-	// 包含独立研发需求阶段（排期/交付）：按 ID 投影分页后按需加载详情
-	refs := make([]itemRef, 0)
-	if includeDemand {
-		demandIDs, err := s.repo.FindRoleDemandIDsWithFilters(ctx, account, filter, req)
-		if err != nil {
-			return nil, err
-		}
-		for _, id := range demandIDs {
-			refs = append(refs, itemRef{kind: "demand", id: id, stageStatus: stageStatus})
-		}
+	// 包含独立研发需求阶段（排期/交付）：SQL 合并业需/研需 ID 后分页，再按需加载详情
+	refs, total, err := s.repo.FindStageMixedRefsPaged(ctx, account, stageStatus, filter, req)
+	if err != nil {
+		return nil, err
 	}
-	if includeStory && filter.scheduleIncomplete {
-		storyIDs, sErr := s.repo.FindScheduleStoryIDsWithFilters(ctx, account, req)
-		if sErr != nil {
-			return nil, sErr
-		}
-		for _, id := range storyIDs {
-			refs = append(refs, itemRef{kind: "story", id: id, stageStatus: stageStatus})
-		}
-	}
-	if includeStory && filter.deliverStories {
-		storyIDs, sErr := s.repo.FindDeliverStoryIDsWithFilters(ctx, account, req)
-		if sErr != nil {
-			return nil, sErr
-		}
-		for _, id := range storyIDs {
-			refs = append(refs, itemRef{kind: "story", id: id, stageStatus: stageStatus})
-		}
-	}
-
-	total := len(refs)
-	if offset >= total || total == 0 {
+	if total == 0 || len(refs) == 0 {
 		return &DemandsResp{Items: []WorkItemDetail{}, Total: total, Page: req.Page, PageSize: req.PageSize}, nil
 	}
-	end := offset + req.PageSize
-	if end > total {
-		end = total
-	}
-	pageRefs := refs[offset:end]
-
-	return s.populateWorkItems(ctx, actor, pageRefs, total, req.Page, req.PageSize, displayMap, req)
+	return s.populateWorkItems(ctx, actor, refs, total, req.Page, req.PageSize, displayMap, req)
 }
 
 func (s *Service) populateWorkItems(ctx context.Context, actor *model.User, pageRefs []itemRef, total, page, pageSize int, displayMap map[string]string, req DemandsReq) (*DemandsResp, error) {

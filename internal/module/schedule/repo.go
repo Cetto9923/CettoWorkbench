@@ -253,6 +253,25 @@ func (r *Repo) FindByID(ctx context.Context, id uint64) (*model.VersionWindow, e
 	return &window, nil
 }
 
+// ExistsWindowName 检查未删除窗口中是否已有同名（excludeID>0 时排除自身，供更新用）。
+// 仅统计 deletedAt IS NULL；软删窗口的名称允许复用。
+func (r *Repo) ExistsWindowName(ctx context.Context, name string, excludeID uint64) (bool, error) {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return false, nil
+	}
+	q := r.db.WithContext(ctx).Model(&model.VersionWindow{}).
+		Where("deletedAt IS NULL AND name = ?", name)
+	if excludeID > 0 {
+		q = q.Where("id <> ?", excludeID)
+	}
+	var count int64
+	if err := q.Count(&count).Error; err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
 // GetWindowConsumedHours 查询窗口关联任务的已消耗工时总和。
 // 链路: zt_versionwindowproduct.plan → zt_planstory.story → zt_task.consumed
 func (r *Repo) GetWindowConsumedHours(ctx context.Context, windowID uint64) (float64, error) {

@@ -241,6 +241,19 @@ func (r *Repo) ExistsByAccount(ctx context.Context, account string, excludeID in
 	return count > 0, nil
 }
 
+// FindExistingAccounts 一次查出已存在的账号集合（用于批量创建冲突检测）。
+func (r *Repo) FindExistingAccounts(ctx context.Context, accounts []string) ([]string, error) {
+	if len(accounts) == 0 {
+		return nil, nil
+	}
+	var found []string
+	err := r.db.WithContext(ctx).
+		Model(&model.User{}).
+		Where("account IN ? AND deleted = ?", accounts, "0").
+		Pluck("account", &found).Error
+	return found, err
+}
+
 // ListRoles 返回可分配的启用角色。
 func (r *Repo) ListRoles(ctx context.Context) ([]model.Role, error) {
 	var roles []model.Role

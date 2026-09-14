@@ -120,6 +120,7 @@ func (s *Service) BatchCreate(ctx context.Context, actor *model.User, req BatchC
 	users := make([]*model.User, 0, len(req.Users))
 	roleIDsList := make([][]int64, 0, len(req.Users))
 	seen := make(map[string]struct{}, len(req.Users))
+	accounts := make([]string, 0, len(req.Users))
 
 	for _, item := range req.Users {
 		accountKey := strings.ToLower(strings.TrimSpace(item.Account))
@@ -127,14 +128,7 @@ func (s *Service) BatchCreate(ctx context.Context, actor *model.User, req BatchC
 			return BatchCreateResp{}, errors.New("批量数据中存在重复用户名: " + item.Account)
 		}
 		seen[accountKey] = struct{}{}
-
-		exists, err := s.repo.ExistsByAccount(ctx, item.Account, 0)
-		if err != nil {
-			return BatchCreateResp{}, err
-		}
-		if exists {
-			return BatchCreateResp{}, errors.New("用户名已存在: " + item.Account)
-		}
+		accounts = append(accounts, item.Account)
 
 		user := &model.User{
 			Account:      item.Account,
@@ -147,6 +141,14 @@ func (s *Service) BatchCreate(ctx context.Context, actor *model.User, req BatchC
 		user.SetActive(item.IsActive)
 		users = append(users, user)
 		roleIDsList = append(roleIDsList, item.RoleIDs)
+	}
+
+	existing, err := s.repo.FindExistingAccounts(ctx, accounts)
+	if err != nil {
+		return BatchCreateResp{}, err
+	}
+	if len(existing) > 0 {
+		return BatchCreateResp{}, errors.New("用户名已存在: " + existing[0])
 	}
 
 	if err := s.repo.BatchCreate(ctx, users, roleIDsList); err != nil {

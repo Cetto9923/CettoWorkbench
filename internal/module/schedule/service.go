@@ -315,6 +315,14 @@ func (s *Service) Create(ctx context.Context, actor *model.User, req CreateReq) 
 	window.CreatedBy = account
 	window.UpdatedBy = account
 
+	exists, err := s.repo.ExistsWindowName(ctx, window.Name, 0)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		return nil, errors.New("版本窗口名称已存在，请更换名称")
+	}
+
 	productIDs := collectWindowProductIDs(req.Products)
 	notice, err := s.validateProductsAccess(ctx, productIDs, account)
 	if err != nil {
@@ -360,6 +368,14 @@ func (s *Service) Update(ctx context.Context, actor *model.User, req UpdateReq) 
 		return err
 	}
 	window.UpdatedBy = account
+
+	exists, err := s.repo.ExistsWindowName(ctx, window.Name, req.ID)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return errors.New("版本窗口名称已存在，请更换名称")
+	}
 
 	productIDs := collectWindowProductIDs(req.Products)
 	notice, err := s.validateProductsAccess(ctx, productIDs, account)

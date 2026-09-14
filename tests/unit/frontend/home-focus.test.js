@@ -59,6 +59,9 @@ for (const focus of ['today', 'blocked', 'overdue', 'suspended', 'all']) {
 }
 const html = fs.readFileSync(path.join(__dirname, '../../../web/templates/po/home.html'), 'utf8');
 assert.ok(!html.includes('/todos?focus='), 'homepage focus must not link to todos');
+const homeSource = fs.readFileSync(path.join(__dirname, '../../../web/static/js/po/home.js'), 'utf8');
+assert.match(homeSource, /renderValueStreamSummary\(res\.stageSummary, state\.focus\)/,
+  'homepage list response must render stage summary with the current focus');
 for (const focus of ['today','blocked','overdue','suspended']) {
   assert.match(html, new RegExp('<button[^>]+data-home-focus="'+focus+'"'));
 }

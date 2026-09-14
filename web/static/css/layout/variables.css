@@ -1,5 +1,8 @@
 :root,
 html[data-theme="light"] {
+  /* Native controls (date/select/scrollbars) follow light chrome UI */
+  color-scheme: light;
+
   /* 品牌主色 */
   --color-primary: #6366f1;
   --color-primary-hover: #4f46e5;
@@ -292,6 +295,9 @@ html[data-theme="light"] {
 }
 
 html[data-theme="dark"] {
+  /* Native controls (date picker popup, selects, scrollbars) follow dark chrome UI */
+  color-scheme: dark;
+
   /* 品牌主色：由偏紫 Indigo 修正为纯正科技蓝，实现简洁大方 */
   --color-primary: #3b82f6;
   --color-primary-hover: #2563eb;

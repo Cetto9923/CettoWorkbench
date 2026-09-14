@@ -422,7 +422,7 @@
   };
 
   const requestStatusUpdate = async (id, status, csrfToken) => {
-    const response = await fetch(`/admin/depts/${id}/status`, {
+    const response = await window.appFetch(`/admin/depts/${id}/status`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
@@ -542,7 +542,7 @@
           status,
           enableAncestors,
         });
-        const response = await fetch("/admin/depts", {
+        const response = await window.appFetch("/admin/depts", {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",

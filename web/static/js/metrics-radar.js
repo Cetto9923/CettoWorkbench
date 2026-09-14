@@ -35,7 +35,7 @@
 
   // 从后端 metadata API 拉取指标目录（唯一 SSOT）。
   function loadMetrics(cb) {
-    fetch("/metrics/api?page=1&pageSize=100")
+    window.appFetch("/metrics/api?page=1&pageSize=100")
       .then(function (r) { return r.json(); })
       .then(function (payload) {
         allMetrics = (payload && Array.isArray(payload.items)) ? payload.items : [];

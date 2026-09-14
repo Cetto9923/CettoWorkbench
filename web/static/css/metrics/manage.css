@@ -1,0 +1,418 @@
+/* =============================================================================
+   文件: web/static/css/metrics/manage.css
+   模块: 指标管理 (metrics)
+   职责: 指标管理页工具栏与工作区
+   拆分自原 metrics.css（Wave 4 file-length）；语义不变。
+   ============================================================================= */
+
+/* =============================================================================
+   敏捷小组与月度时间维度扩展样式
+   ============================================================================= */
+.po-metrics-manage .workspace-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--color-surface, #ffffff);
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
+}
+.po-metrics-manage .toolbar-filters-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.po-metrics-manage .workspace-toolbar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.po-metrics-manage .filter-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+.po-metrics-manage .filter-label {
+  font-size: 12px;
+  color: var(--color-text-secondary, #64748b);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.po-metrics-manage .workspace-toolbar select {
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 5px;
+  border: 1px solid var(--color-border, #cbd5e1);
+  background: var(--color-surface, #fff);
+  color: var(--po-t1, #1e293b);
+  font-size: 12px;
+  outline: none;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+.po-metrics-manage .workspace-toolbar select:hover {
+  border-color: var(--color-primary, #6366f1);
+}
+.po-metrics-manage .workspace-toolbar select:focus {
+  border-color: var(--color-primary, #6366f1);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+/* =============================================================================
+   一、 指标管理 (metrics/manage) 样式体系 (全面融合 PO 骨架规范 · 双模式统一)
+   ============================================================================= */
+.po-metrics-manage .workspace-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  box-sizing: border-box;
+}
+.po-metrics-manage .workspace-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.po-metrics-manage .workspace-header-left h2 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+.po-metrics-manage .workspace-header-left p {
+  margin: 0;
+  padding-left: 12px;
+  border-left: 1px solid var(--color-border);
+  font-size: 12px;
+  line-height: 14px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.po-metrics-manage .workspace-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 5 联概览卡片 (与 follow.css / home.css 规范一致，统一卡片表面，无刺眼高饱和外框) */
+.po-metrics-manage .metric-summary-cards {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 12px;
+}
+.po-metrics-manage .metric-summary-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.04));
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 72px;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+}
+.po-metrics-manage .metric-summary-card:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+}
+.po-metrics-manage .m-sum-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+.po-metrics-manage .m-sum-num {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--color-text-primary);
+  margin: 4px 0 2px;
+}
+.po-metrics-manage .m-sum-desc {
+  font-size: 11px;
+  color: var(--color-text-disabled);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 数字专属语义色：仅数字着色，边框与底色保持统一的沉稳表面！ */
+.po-metrics-manage .metric-summary-card.c-enabled .m-sum-num {
+  color: var(--color-success, #059669);
+}
+.po-metrics-manage .metric-summary-card.c-warn .m-sum-num {
+  color: var(--color-warning, #d97706);
+}
+.po-metrics-manage .metric-summary-card.c-danger .m-sum-num {
+  color: var(--color-danger, #dc2626);
+}
+
+/* 基础单元类（双模式通用） */
+.po-metrics-manage .metric-target-val {
+  font-weight: 700;
+  font-family: ui-monospace, monospace;
+  color: var(--color-text-primary, #0f172a);
+}
+.po-metrics-manage .metric-col-source {
+  font-size: 12px;
+  color: var(--color-text-secondary, #475569);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.po-metrics-manage .dir-tag {
+  font-size: 11px;
+  font-weight: 600;
+}
+.po-metrics-manage .dir-tag.dir-up {
+  color: #059669;
+}
+.po-metrics-manage .dir-tag.dir-down {
+  color: #2563eb;
+}
+
+/* 深色模式下的指标管理概览卡片 (与 follow.css / shell.css 规范完全同频 · 高对比度优化) */
+html[data-theme="dark"] .po-metrics-manage .metric-summary-card {
+  background: var(--color-surface, #1e293b);
+  border-color: var(--color-border, #334155);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+html[data-theme="dark"] .po-metrics-manage .metric-summary-card:hover {
+  background: var(--color-surface-hover, #334155);
+  border-color: var(--color-border-strong, #475569);
+}
+html[data-theme="dark"] .po-metrics-manage .m-sum-label {
+  color: #cbd5e1;
+}
+html[data-theme="dark"] .po-metrics-manage .m-sum-num {
+  color: #f8fafc;
+}
+html[data-theme="dark"] .po-metrics-manage .m-sum-desc {
+  color: #94a3b8;
+}
+html[data-theme="dark"] .po-metrics-manage .metric-summary-card.c-enabled .m-sum-num {
+  color: #34d399;
+}
+html[data-theme="dark"] .po-metrics-manage .metric-summary-card.c-warn .m-sum-num {
+  color: #fbbf24;
+}
+html[data-theme="dark"] .po-metrics-manage .metric-summary-card.c-danger .m-sum-num {
+  color: #f87171;
+}
+
+/* 深色模式下的表格与内容高对比度深度优化 · 彻底解决暗色下看不清字的问题 */
+html[data-theme="dark"] .po-metrics-manage .workspace-table th {
+  background: #0f172a !important;
+  color: #cbd5e1 !important;
+  border-bottom: 1px solid #334155 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .workspace-table td {
+  color: #cbd5e1 !important;
+  border-bottom: 1px solid #334155 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .workspace-table tr:hover td {
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+html[data-theme="dark"] .po-metrics-manage .metric-table .metric-name {
+  color: #60a5fa !important;
+}
+html[data-theme="dark"] .po-metrics-manage .metric-table .metric-code {
+  color: #94a3b8 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .metric-col-source {
+  color: #cbd5e1 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .metric-target-val {
+  color: #f8fafc !important;
+}
+html[data-theme="dark"] .po-metrics-manage .metric-target-row em {
+  color: #94a3b8 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .metric-target-row[data-tone="warn"] span {
+  color: #fbbf24 !important;
+  font-weight: 600;
+}
+html[data-theme="dark"] .po-metrics-manage .metric-target-row[data-tone="danger"] span {
+  color: #f87171 !important;
+  font-weight: 600;
+}
+html[data-theme="dark"] .po-metrics-manage .dir-tag.dir-up {
+  color: #34d399 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .dir-tag.dir-down {
+  color: #60a5fa !important;
+}
+html[data-theme="dark"] .po-metrics-manage .state-tag {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .action-btn {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .action-btn:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+html[data-theme="dark"] .po-metrics-manage .action-btn.primary {
+  background: #2563eb !important;
+  border-color: #2563eb !important;
+  color: #ffffff !important;
+}
+html[data-theme="dark"] .po-metrics-manage .action-btn.text-danger {
+  background: rgba(239, 68, 68, 0.12) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+  color: #f87171 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .action-btn.text-success {
+  background: rgba(16, 185, 129, 0.12) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+  color: #34d399 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .workspace-result-bar {
+  background: #1e293b !important;
+  color: #cbd5e1 !important;
+  border-bottom: 1px solid #334155 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .workspace-result-bar strong {
+  color: #f8fafc !important;
+}
+html[data-theme="dark"] .po-metrics-manage .workspace-result-hint {
+  color: #94a3b8 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .workspace-toolbar {
+  background: #1e293b !important;
+  border-bottom: 1px solid #334155 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .toolbar-filters-group .filter-label {
+  color: #cbd5e1 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .toolbar-filters-group select {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+html[data-theme="dark"] .po-metrics-manage .workspace-search {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .workspace-search input {
+  color: #f8fafc !important;
+}
+html[data-theme="dark"] .po-metrics-manage .workspace-search input::placeholder {
+  color: #64748b !important;
+}
+html[data-theme="dark"] .po-metrics-manage .workspace-btn {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+html[data-theme="dark"] .po-metrics-manage .workspace-btn:hover {
+  background: #334155 !important;
+  color: #f8fafc !important;
+}
+
+/* 工具栏与过滤器 (规范消费 personal-workspace.css) */
+.po-metrics-manage .workspace-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
+  flex-wrap: wrap;
+}
+.toolbar-filters-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.toolbar-filters-group .filter-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+}
+.toolbar-filters-group .filter-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+.toolbar-filters-group .custom-select-box {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.toolbar-filters-group .custom-select-box select {
+  height: 28px;
+  padding: 0 22px 0 8px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 4px;
+  background: var(--color-surface);
+  color: var(--color-text-body);
+  font-size: 11px;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+}
+.toolbar-filters-group .custom-select-box .select-arrow {
+  position: absolute;
+  right: 8px;
+  pointer-events: none;
+  font-size: 9px;
+  color: var(--color-text-secondary);
+}
+.po-metrics-manage .workspace-search {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 220px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 4px;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  box-sizing: border-box;
+}
+.po-metrics-manage .workspace-search .search-icon {
+  font-size: 11px;
+  color: var(--color-text-disabled);
+  margin-right: 4px;
+}
+.po-metrics-manage .workspace-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  font-size: 11px;
+  color: var(--color-text-body);
+  background: transparent;
+}

@@ -147,3 +147,41 @@ func (r *Repo) UpdateStatusBatch(ctx context.Context, ids []uint64, status uint8
 			"status": status,
 		}).Error
 }
+
+// CreateEnablingAncestors 在事务内启用祖先部门（status=0）并创建新部门。
+func (r *Repo) CreateEnablingAncestors(ctx context.Context, parentID uint64, m *model.Dept) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		ancestorIDs, err := collectAncestorIDs(ctx, tx, parentID)
+		if err != nil {
+			return err
+		}
+		if len(ancestorIDs) > 0 {
+			if err = tx.WithContext(ctx).
+				Model(&model.Dept{}).
+				Where("id IN ? AND deletedAt IS NULL", ancestorIDs).
+				Updates(map[string]any{
+					"status": 0,
+				}).Error; err != nil {
+				return err
+			}
+		}
+		return tx.WithContext(ctx).Create(m).Error
+	})
+}
+
+func collectAncestorIDs(ctx context.Context, tx *gorm.DB, parentID uint64) ([]uint64, error) {
+	ids := make([]uint64, 0)
+	currentID := parentID
+	for currentID > 0 {
+		var current model.Dept
+		if err := tx.WithContext(ctx).
+			Model(&model.Dept{}).
+			Where("id = ? AND deletedAt IS NULL", currentID).
+			First(&current).Error; err != nil {
+			return nil, err
+		}
+		ids = append(ids, current.ID)
+		currentID = current.ParentID
+	}
+	return ids, nil
+}

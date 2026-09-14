@@ -37,6 +37,14 @@
     return !!(err && err.message === "session expired");
   }
 
+  function scheduleWindowAPIErrorMessage(data, fallback) {
+    var msg = "";
+    if (data) {
+      msg = String(data.error || data.message || "").trim();
+    }
+    return msg || fallback || "操作失败";
+  }
+
   function scheduleRequestFetch(url, options) {
     var fetchFn = window.scheduleFetch || window.appFetch || fetch;
     return fetchFn(url, options);
@@ -65,7 +73,7 @@
       })
       .then(function (result) {
         if (!result.data || !result.data.success) {
-          window.showToast((result.data && result.data.error) || "加载窗口详情失败", "error");
+          window.showToast(scheduleWindowAPIErrorMessage(result.data, "加载窗口详情失败"), "error");
           return;
         }
         scheduleVersionWindowModalMode = "edit";
@@ -300,6 +308,33 @@
     if (!String(payload.name || "").trim()) {
       return "请填写窗口名称";
     }
+    var name = String(payload.name || "").trim();
+    var excludeId = scheduleVersionWindowModalMode === "edit" ? String(scheduleEditingWindowId || "") : "";
+    var duplicate = false;
+    $("#scheduleIntegratedWindowSelect option").each(function () {
+      var id = String(this.value || "");
+      if (!id || (excludeId && id === excludeId)) {
+        return;
+      }
+      if ($.trim($(this).text()) === name) {
+        duplicate = true;
+        return false;
+      }
+    });
+    if (!duplicate) {
+      document.querySelectorAll("[data-window-name]").forEach(function (el) {
+        var id = String(el.getAttribute("data-window-id") || el.dataset.windowId || "");
+        if (excludeId && id === excludeId) {
+          return;
+        }
+        if (String(el.getAttribute("data-window-name") || "").trim() === name) {
+          duplicate = true;
+        }
+      });
+    }
+    if (duplicate) {
+      return "版本窗口名称已存在，请更换名称";
+    }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(String(payload.startDate || "").slice(0, 10))) {
       return "请填写窗口开始日期";
     }
@@ -349,6 +384,10 @@
     if (!isModalActive()) {
       return null;
     }
+    var $saveBtn = $("#scheduleVersionWindowModalSaveBtn");
+    if ($saveBtn.prop("disabled")) {
+      return null;
+    }
     var payload = collectScheduleCreateSavePayload();
     var validationError = validateScheduleCreateSavePayload(payload);
     if (validationError) {
@@ -360,6 +399,7 @@
     var url = isEdit ? scheduleWindowURL(scheduleEditingWindowId) : SCHEDULE_CREATE_WINDOW_URL;
     var successMessage = isEdit ? "版本窗口更新成功" : "版本窗口保存成功";
 
+    $saveBtn.prop("disabled", true);
     submitScheduleWindowRequest(method, url, payload)
       .then(function (result) {
         if (result.data && result.data.success) {
@@ -376,15 +416,21 @@
           return;
         }
         window.showToast(
-            (result.data && result.data.error) || (result.ok ? "保存失败" : "保存失败，请稍后重试"),
-            "error"
-          );
+          scheduleWindowAPIErrorMessage(
+            result.data,
+            result.ok ? "保存失败" : "保存失败，请稍后重试"
+          ),
+          "error"
+        );
       })
       .catch(function (err) {
         if (isSessionExpiredError(err)) {
           return;
         }
         window.showToast("保存失败，请稍后重试", "error");
+      })
+      .finally(function () {
+        $saveBtn.prop("disabled", false);
       });
     return payload;
   }
@@ -423,8 +469,11 @@
           }
           return;
         }
-        window.showToast(
-            (result.data && result.data.error) || (result.ok ? "删除失败" : "删除失败，请稍后重试"),
+          window.showToast(
+            scheduleWindowAPIErrorMessage(
+              result.data,
+              result.ok ? "删除失败" : "删除失败，请稍后重试"
+            ),
             "error"
           );
       })

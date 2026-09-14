@@ -1,0 +1,361 @@
+/* =============================================================================
+   文件: web/static/css/metrics/radar-matrix.css
+   模块: 指标管理 (metrics)
+   职责: 雷达右侧矩阵与底部 Dock（浅色）
+   拆分自原 metrics.css（Wave 4 file-length）；语义不变。
+   ============================================================================= */
+
+/* 右侧核心指标运行矩阵 (浅色) */
+.radar-panel-right {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden !important;
+}
+.radar-metrics-matrix-card {
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 8px;
+  padding: 8px 14px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden !important;
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.04));
+}
+.radar-metrics-matrix-card .card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+.card-title-group {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.card-title-group i {
+  color: var(--color-info, #2563eb);
+  font-size: 13px;
+}
+.card-title-group .card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-primary, #0f172a);
+}
+.card-title-group .card-sub-hint {
+  font-size: 10px;
+  color: var(--color-text-secondary, #64748b);
+  margin-left: 6px;
+}
+.matrix-filter-tags {
+  display: flex;
+  gap: 5px;
+}
+.matrix-tag-btn {
+  border: 1px solid var(--color-border, #e2e8f0);
+  background: var(--color-surface-muted, #f8fafc);
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: var(--color-text-secondary, #64748b);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.matrix-tag-btn:hover {
+  border-color: var(--color-border-strong, #cbd5e1);
+  color: var(--color-text-primary, #0f172a);
+}
+.matrix-tag-btn.active {
+  background: var(--color-info, #2563eb);
+  border-color: var(--color-info, #2563eb);
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+}
+
+/* 核心指标微磁贴网格 (浅色) */
+.radar-matrix-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  min-height: 0;
+  overflow-y: auto;
+  align-content: start;
+  padding-right: 2px;
+}
+.radar-m-compact-tile {
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 6px;
+  padding: 6px 10px;
+  background: var(--color-surface, #ffffff);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  min-height: 74px;
+  box-sizing: border-box;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+.radar-m-compact-tile:hover {
+  border-color: var(--color-info-border, #bfdbfe);
+  background: var(--color-surface-hover, #f8fafc);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+.radar-m-compact-tile.selected {
+  border-color: var(--color-info, #2563eb) !important;
+  background: var(--color-info-bg, #eff6ff) !important;
+  box-shadow: 0 0 0 1px var(--color-info, #2563eb);
+}
+.tile-row-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+.tile-title-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+.cat-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.cat-dot.cat-delivery { background: #2563eb; }
+.cat-dot.cat-demand   { background: #7c3aed; }
+.cat-dot.cat-quality  { background: #dc2626; }
+.cat-dot.cat-compliance { background: #d97706; }
+.cat-dot.cat-performance { background: #059669; }
+
+.m-name-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary, #0f172a);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.m-badge-pill {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: 600;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.m-badge-pill.normal { background: var(--color-success-bg, #d1fae5); color: var(--color-success, #059669); border: 1px solid var(--color-success-border, #a7f3d0); }
+.m-badge-pill.warn   { background: var(--color-warning-bg, #fef3c7); color: var(--color-warning, #d97706); border: 1px solid var(--color-warning-border, #fed7aa); }
+.m-badge-pill.danger { background: var(--color-danger-bg, #fee2e2); color: var(--color-danger, #dc2626); border: 1px solid var(--color-danger-border, #fecaca); }
+.m-badge-pill.unknown { background: var(--color-surface-muted, #f1f5f9); color: var(--color-text-secondary, #64748b); border: 1px solid var(--color-border, #e2e8f0); }
+
+.tile-row-middle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 2px 0 1px;
+}
+.m-val-text {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-text-primary, #0f172a);
+  line-height: 1;
+}
+.m-mini-gauge {
+  flex: 1;
+  max-width: 65px;
+  height: 3px;
+  background: var(--color-border, #e2e8f0);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.m-gauge-bar {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+.m-gauge-bar.normal { background: var(--color-success-fill, #10b981); }
+.m-gauge-bar.warn   { background: var(--color-warning-fill, #f59e0b); }
+.m-gauge-bar.danger { background: var(--color-danger-fill, #dc2626); }
+
+.tile-row-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+}
+.m-target-text {
+  color: var(--color-text-secondary, #64748b);
+  font-family: ui-monospace, monospace;
+}
+.m-code-text {
+  color: var(--color-text-disabled, #94a3b8);
+  font-family: ui-monospace, monospace;
+  font-size: 9px;
+}
+
+/* 底部透视 Dock (浅色) */
+.radar-detail-dock {
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 8px;
+  padding: 6px 14px;
+  flex: 0 0 62px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.04));
+}
+.dock-row-primary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  line-height: 1.2;
+}
+.dock-primary-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dock-badge {
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+}
+.dock-badge.cat-delivery { background: var(--color-info-bg, #eff6ff); color: var(--color-info, #1d4ed8); border: 1px solid var(--color-info-border, #bfdbfe); }
+.dock-badge.cat-demand   { background: rgba(124, 58, 237, 0.1); color: #6d28d9; border: 1px solid rgba(124, 58, 237, 0.25); }
+.dock-badge.cat-quality  { background: var(--color-danger-bg, #fee2e2); color: var(--color-danger, #b91c1c); border: 1px solid var(--color-danger-border, #fecaca); }
+.dock-badge.cat-compliance { background: var(--color-warning-bg, #fef3c7); color: var(--color-warning, #b45309); border: 1px solid var(--color-warning-border, #fed7aa); }
+.dock-badge.cat-performance { background: var(--color-success-bg, #d1fae5); color: var(--color-success, #047857); border: 1px solid var(--color-success-border, #a7f3d0); }
+
+.dock-title {
+  color: var(--color-text-primary, #0f172a);
+  font-weight: 700;
+  font-size: 13px;
+}
+.dock-code {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: var(--color-text-secondary, #64748b);
+  background: var(--color-surface-muted, #f1f5f9);
+  border: 1px solid var(--color-border, #e2e8f0);
+  padding: 0 4px;
+  border-radius: 3px;
+}
+.dock-status-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+.dock-status-badge.normal { background: var(--color-success-bg, #d1fae5); color: var(--color-success, #059669); border: 1px solid var(--color-success-border, #a7f3d0); }
+.dock-status-badge.warn   { background: var(--color-warning-bg, #fef3c7); color: var(--color-warning, #d97706); border: 1px solid var(--color-warning-border, #fed7aa); }
+.dock-status-badge.danger { background: var(--color-danger-bg, #fee2e2); color: var(--color-danger, #dc2626); border: 1px solid var(--color-danger-border, #fecaca); }
+
+.dock-primary-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+.dock-val-item strong {
+  font-family: ui-monospace, monospace;
+  color: var(--color-info, #2563eb);
+  font-size: 13px;
+  font-weight: 700;
+}
+.dock-target-item {
+  color: var(--color-text-secondary, #64748b);
+  font-size: 11px;
+}
+.dock-divider {
+  color: var(--color-border-strong, #cbd5e1);
+}
+
+.dock-row-secondary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--color-text-secondary, #64748b);
+  overflow: hidden;
+  white-space: nowrap;
+}
+.dock-info-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  overflow: hidden;
+}
+.dock-info-item.formula-item {
+  flex-shrink: 0;
+}
+.dock-info-item.sample-item {
+  flex: 1;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+.dock-label {
+  color: var(--color-text-secondary, #64748b);
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.dock-row-secondary code {
+  font-family: ui-monospace, monospace;
+  background: var(--color-surface-muted, #f8fafc);
+  padding: 1px 6px;
+  border-radius: 3px;
+  color: var(--color-text-primary, #0f172a);
+  font-size: 10px;
+  border: 1px solid var(--color-border, #e2e8f0);
+}
+.dock-sample-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-secondary, #475569);
+  font-size: 11px;
+}
+.dock-bullet {
+  color: var(--color-border-strong, #cbd5e1);
+}
+.dock-config-link {
+  margin-left: auto;
+  color: var(--color-info, #1d4ed8);
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--color-info-bg, #eff6ff);
+  border: 1px solid var(--color-info-border, #bfdbfe);
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+.dock-config-link:hover {
+  background: var(--color-info, #2563eb);
+  color: #ffffff;
+}

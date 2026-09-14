@@ -203,11 +203,12 @@ func (r *Repo) homeFocusStoryQuery(ctx context.Context, account string, req Dema
 	return result
 }
 
+// homeStoryStage maps zt_story.status onto homepage value-stream stages.
+// Independent stories have no clarify step; early statuses belong in schedule
+// (aligned with deriveStoryStageKey: active/wait/planned → StageSchedule).
 func homeStoryStage(status string) string {
 	switch strings.ToLower(strings.TrimSpace(status)) {
-	case "draft", "wait", "active":
-		return "clarify"
-	case "clarified", "planned", "projected", "designed", "designing":
+	case "draft", "wait", "active", "clarified", "planned", "projected", "designed", "designing":
 		return "schedule"
 	case "developing", "developed":
 		return "developing"

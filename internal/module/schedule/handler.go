@@ -267,17 +267,24 @@ func (h *Handler) CreateWindow(c *gin.Context) {
 		if h.logger != nil {
 			h.logger.Error("save version window failed", zap.Error(err), zap.String("name", strings.TrimSpace(req.Name)))
 		}
-		c.JSON(http.StatusOK, gin.H{"success": false, "error": "保存版本窗口失败"})
+		msg := err.Error()
+		if msg == "" {
+			msg = "保存版本窗口失败"
+		}
+		c.JSON(http.StatusOK, gin.H{"success": false, "error": msg})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"success":     true,
-		"message":     "版本窗口保存成功",
-		"windowId":    createdWindow.ID,
-		"name":        createdWindow.Name,
-		"releaseDate": createdWindow.ReleaseDate.Format("2006-01-02"),
-		"redirectUrl": scheduleRedirectURL,
+		"success":      true,
+		"message":      "版本窗口保存成功",
+		"windowId":     createdWindow.ID,
+		"name":         createdWindow.Name,
+		"releaseDate":  createdWindow.ReleaseDate.Format("2006-01-02"),
+		"planTestDone": strings.TrimSpace(req.PlanTestDone),
+		"testDone":     strings.TrimSpace(req.TestDone),
+		"acceptDone":   strings.TrimSpace(req.AcceptDone),
+		"redirectUrl":  scheduleRedirectURL,
 	})
 }
 
@@ -346,7 +353,11 @@ func (h *Handler) UpdateWindow(c *gin.Context) {
 		if h.logger != nil {
 			h.logger.Error("update version window failed", zap.Error(err), zap.Uint64("window_id", id))
 		}
-		c.JSON(http.StatusOK, gin.H{"success": false, "error": "更新版本窗口失败"})
+		msg := err.Error()
+		if msg == "" {
+			msg = "更新版本窗口失败"
+		}
+		c.JSON(http.StatusOK, gin.H{"success": false, "error": msg})
 		return
 	}
 

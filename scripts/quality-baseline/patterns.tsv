@@ -1,4 +1,3 @@
-# severity<TAB>rule<TAB>path<TAB>stable finding fingerprint
 advisory	DIRECT_GIN_SCALAR	internal/middleware/ratelimit.go	63764de28e13632c455feba1f037fee437eca5a1
 advisory	DIRECT_GIN_SCALAR	internal/middleware/ratelimit.go	f949337b3ee5ea15ab4221b3f5fd166806d635b7
 advisory	DIRECT_GIN_SCALAR	internal/module/agileteam/handler_adjustment.go	b7f274b8fcfc21ab57cf0cc0c6a3c95c68036e35
@@ -19,11 +18,6 @@ advisory	DIRECT_GIN_SCALAR	internal/module/schedule/handler_story_scheduling.go	
 advisory	DIRECT_PAGE_FETCH	web/static/js/agileteam/agileteam.js	befdbf99b352bc2558c1a23fe1d4c44da2368c86
 advisory	DIRECT_PAGE_FETCH	web/static/js/auth/login.js	777fb63edf946987449fb5e758826d550924bb78
 advisory	DIRECT_PAGE_FETCH	web/static/js/debug/sqlperf.js	9caa6ac519ba94536792a7ccbdf6cbedaa35b102
-advisory	DIRECT_PAGE_FETCH	web/static/js/dept/list.js	5cd9fccd47efd0d6095778175c2c8226aecc70f5
-advisory	DIRECT_PAGE_FETCH	web/static/js/dept/list.js	7a87da3f3e5dc559b33df15d580363069850d213
-advisory	DIRECT_PAGE_FETCH	web/static/js/metrics-radar.js	baf8a2b7bbd8a50fe7a0ef7bcf07c00e958da285
-advisory	DIRECT_PAGE_FETCH	web/static/js/metrics-radar.js	cc671c47b914bc58caf46c8ebe03f5c1a603669c
-advisory	DIRECT_PAGE_FETCH	web/static/js/metrics-radar.js	cc8e4c5fd4616e4e03b5770d48d5d51f5acc5a12
 advisory	DIRECT_PAGE_FETCH	web/static/js/permission/drawer.js	343cc703b5479b239356deea313c133b554b90f0
 advisory	DIRECT_PAGE_FETCH	web/static/js/permission/drawer.js	604dadd71abd7ec777c4c4a42c8af26584871935
 advisory	DIRECT_PAGE_FETCH	web/static/js/permission/drawer.js	6a2c815de964a016a1180012b17a1e2ca47f710f
@@ -73,12 +67,6 @@ advisory	ROUTE_PERMISSION_REVIEW	internal/module/debug/handler.go	bbb1af59c5ada4
 advisory	ROUTE_PERMISSION_REVIEW	internal/module/debug/handler.go	bbfb02ab3c40caf239e10c8fe43ec6c7973a0ab7
 advisory	ROUTE_PERMISSION_REVIEW	internal/module/dept/handler.go	c2475470a8a8fa70f9719dfb8487e04572f5b74c
 advisory	ROUTE_PERMISSION_REVIEW	internal/module/menu/handler.go	a7fd6ad8415d4367f7c4b16ad7d01bdda5751e64
-advisory	ROUTE_PERMISSION_REVIEW	internal/module/metrics/handler.go	11e5743ce5a821bcfc773744177a18e8f0fd9762
-advisory	ROUTE_PERMISSION_REVIEW	internal/module/metrics/handler.go	6d2328ae4634c2c6f369e87a3fdc58c9b55b8876
-advisory	ROUTE_PERMISSION_REVIEW	internal/module/metrics/handler.go	70d39abd4483ca7bf798df6783cf8e83f6ba384a
-advisory	ROUTE_PERMISSION_REVIEW	internal/module/metrics/handler.go	ef3ca15c0c5b1d82044bb0c44d672dd70df589a4
-advisory	ROUTE_PERMISSION_REVIEW	internal/module/po/handler.go	4d1bcd8c190a65994280ff5b6c7e87f9dc126fe1
-advisory	ROUTE_PERMISSION_REVIEW	internal/module/po/handler.go	bf43dd32f759dd27ddd8faefa173cf93ff9d8602
 advisory	ROUTE_PERMISSION_REVIEW	internal/module/profile/handler.go	e7d1fb7d108b4f765afa265d20a85d490dab967e
 advisory	ROUTE_PERMISSION_REVIEW	internal/module/profile/handler.go	f2874e76e08fe951666370d1605cc4092767fcf0
 advisory	ROUTE_PERMISSION_REVIEW	internal/module/role/handler.go	333d1583f27cea7984943a1586f414088c949107
@@ -100,3 +88,4 @@ advisory	WEAK_PASSWORD_HASH	internal/module/user/service.go	001403c972cf63388be0
 advisory	WEAK_PASSWORD_HASH	internal/module/user/service.go	697e7074eb074640ec0d1295cd2fe4f77a5cdf37
 advisory	WEAK_PASSWORD_HASH	internal/module/user/service.go	70cf2a220a2b32b45105c091957b11d5d455552b
 advisory	WEAK_PASSWORD_HASH	internal/pkg/encode/encode.go	167b6cfabf183890714a9331de857d62a0be3584
+advisory	WEAK_PASSWORD_HASH	internal/pkg/encode/encode.go	d8ec62845445bfe2522a54a9f0f4d0ac723e8992

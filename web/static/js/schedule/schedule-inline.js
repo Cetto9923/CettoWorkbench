@@ -42,6 +42,22 @@
     if (!data.products.length) $("<div>").addClass("schedule-create-empty").text("暂无关联系统").appendTo($products);
   }
 
+  function appendWindowOption($select, item) {
+    var id = String(item.id || "");
+    if (!id) {
+      return null;
+    }
+    var $opt = $("<option>")
+      .val(id)
+      .text(item.name || id)
+      .attr("data-release-date", item.releaseDate || "")
+      .attr("data-plan-test-done", item.planTestDone || "")
+      .attr("data-test-done", item.testDone || "")
+      .attr("data-accept-done", item.acceptDone || "");
+    $opt.appendTo($select);
+    return $opt;
+  }
+
   function refreshWindows(url, previousIDs, payload, resData) {
     return readJSON(url).then(function (data) {
       var $select = $("#scheduleIntegratedWindowSelect");
@@ -50,7 +66,7 @@
       (data.windows || []).forEach(function (item) {
         var strId = String(item.id);
         if (!previousIDs.has(strId)) {
-          $("<option>").val(item.id).text(item.name).attr("data-release-date", item.releaseDate).appendTo($select);
+          appendWindowOption($select, item);
           if (createdId && strId === createdId) {
             candidates.push(item.id);
           } else if (item.name === payload.name && item.releaseDate === payload.releaseDate) {
@@ -62,11 +78,14 @@
         $select.val(candidates[0]).trigger("change");
       } else if (createdId) {
         if (!$select.find("option[value='" + createdId + "']").length) {
-          $("<option>")
-            .val(createdId)
-            .text(payload.name)
-            .attr("data-release-date", payload.releaseDate)
-            .appendTo($select);
+          appendWindowOption($select, {
+            id: createdId,
+            name: payload.name,
+            releaseDate: payload.releaseDate,
+            planTestDone: (resData && resData.planTestDone) || payload.planTestDone || "",
+            testDone: (resData && resData.testDone) || payload.testDone || "",
+            acceptDone: (resData && resData.acceptDone) || payload.acceptDone || ""
+          });
         }
         $select.val(createdId).trigger("change");
       }
@@ -75,11 +94,14 @@
         var $select = $("#scheduleIntegratedWindowSelect");
         var createdId = String(resData.windowId);
         if (!$select.find("option[value='" + createdId + "']").length) {
-          $("<option>")
-            .val(createdId)
-            .text(payload.name)
-            .attr("data-release-date", payload.releaseDate)
-            .appendTo($select);
+          appendWindowOption($select, {
+            id: createdId,
+            name: payload.name,
+            releaseDate: payload.releaseDate,
+            planTestDone: resData.planTestDone || payload.planTestDone || "",
+            testDone: resData.testDone || payload.testDone || "",
+            acceptDone: resData.acceptDone || payload.acceptDone || ""
+          });
         }
         $select.val(createdId).trigger("change");
       } else {

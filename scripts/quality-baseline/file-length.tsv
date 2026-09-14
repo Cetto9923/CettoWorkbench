@@ -4,7 +4,6 @@ internal/module/schedule/handler_demand.go	662
 internal/module/user/handler.go	544
 web/static/css/components/components.css	616
 web/static/css/layout/layout.css	643
-web/static/css/metrics.css	2154
 web/static/css/permission/list.css	514
 web/static/css/po/board.css	517
 web/static/css/po/follow.css	710

@@ -62,7 +62,8 @@
 
     var bannerBadge = "待业务评审";
     var bannerText = "";
-    var badgeStyle = "";
+    var bannerMod = "dd-review-banner--wait";
+    var badgeMod = "";
 
     if (status === "wait") {
       if (canReview) {
@@ -72,22 +73,24 @@
           : "该需求处于待业务评审阶段，您是业务评审人。请核对需求背景与验收标准后，在底部进行评审通过或驳回。";
       } else if (isCreator) {
         bannerBadge = "待业务评审";
-        badgeStyle = "background:#e6f7ff;color:#096dd9;border:1px solid #91d5ff;";
+        badgeMod = "dd-review-badge--creator";
         bannerText = "该需求已提交业务评审，正在等待业务评审人出具评审结果。您是该需求的创建人，可在底部编辑需求或撤回评审。";
       } else {
         bannerBadge = "待业务评审";
-        badgeStyle = "background:#f5f5f5;color:#595959;border:1px solid #d9d9d9;";
+        badgeMod = "dd-review-badge--muted";
         bannerText = "该需求处于待业务评审阶段，正在等待业务评审人处理。当前仅支持查看。";
       }
     } else if (status === "refuse") {
       bannerBadge = "已驳回";
-      badgeStyle = "background:#fff2f0;color:#cf1322;border:1px solid #ffa39e;";
+      bannerMod = "dd-review-banner--refuse";
+      badgeMod = "dd-review-badge--refuse";
       bannerText = isCreator
         ? "该需求已被评审驳回。您是该需求的创建人，可在底部点击编辑前往修改需求内容，或重新提交业务评审。"
         : "该需求已被评审驳回。当前仅支持查看。";
     } else {
       bannerBadge = "草稿 / 暂存";
-      badgeStyle = "background:#fffbe6;color:#d46b08;border:1px solid #ffe58f;";
+      bannerMod = "dd-review-banner--draft";
+      badgeMod = "dd-review-badge--draft";
       bannerText = isCreator
         ? "该需求处于草稿/暂存状态。您是该需求的创建人，核对信息无误后可在底部提交业务评审，或前往编辑。"
         : "该需求处于草稿/暂存状态。当前仅支持查看。";
@@ -137,7 +140,7 @@
       '      <button type="button" class="ui-close-btn" onclick="DemandDetailReview.closeRejectModal()">×</button>',
       '    </div>',
       '    <div class="dd-reject-modal-body">',
-      '      <label class="dd-reject-label"><span style="color:#ef4444;">*</span> 请输入驳回原因 / 意见（必填）：</label>',
+      '      <label class="dd-reject-label"><span class="dd-required">*</span> 请输入驳回原因 / 意见（必填）：</label>',
       '      <textarea id="ddRejectComment" class="dd-reject-textarea" rows="4" placeholder="请详细说明驳回原因，将作为评审记录同步至禅道并通知创建人..."></textarea>',
       '    </div>',
       '    <div class="dd-reject-modal-footer">',
@@ -156,7 +159,7 @@
       '      <button type="button" class="ui-close-btn" onclick="DemandDetailReview.closeWithdrawModal()">×</button>',
       '    </div>',
       '    <div class="dd-reject-modal-body">',
-      '      <p style="margin:0 0 12px;font-size:13px;color:#475569;line-height:1.5;">确定要撤销该业务需求的评审申请吗？撤销后需求将退回<strong>草稿</strong>状态，评审流程中止。</p>',
+      '      <p class="dd-reject-modal-lead">确定要撤销该业务需求的评审申请吗？撤销后需求将退回<strong>草稿</strong>状态，评审流程中止。</p>',
       '      <label class="dd-reject-label">撤销原因 / 说明（选填）：</label>',
       '      <textarea id="ddWithdrawComment" class="dd-reject-textarea" rows="3" placeholder="选填，默认为“创建人撤销评审”，将作为评审记录同步至禅道..."></textarea>',
       '    </div>',
@@ -170,9 +173,9 @@
 
     return [
       '<div class="dd-review-container">',
-      '  <div class="dd-review-banner">',
+      '  <div class="dd-review-banner ' + esc(bannerMod) + '">',
       '    <div class="dd-review-banner-text">',
-      '      <span class="dd-review-badge"' + (badgeStyle ? ' style="' + esc(badgeStyle) + '"' : '') + '>' + esc(bannerBadge) + '</span>',
+      '      <span class="dd-review-badge' + (badgeMod ? ' ' + esc(badgeMod) : '') + '">' + esc(bannerBadge) + '</span>',
       '      <span>' + esc(bannerText) + '</span>',
       '    </div>',
       '  </div>',

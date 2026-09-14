@@ -37,10 +37,9 @@ func NewHandler(renderer *render.Renderer, service *Service, logger *zap.Logger)
 // RegisterRoutes 注册路由到 rg（已带 RequireLogin + RecordOperationLog）。
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g := rg.Group("/metrics")
-	permMW := middleware.RequirePerm(perm.PoHomeList)
-	g.GET("/manage", permMW, h.Manage)
-	g.GET("/radar", permMW, h.Radar)
-	g.GET("/api", permMW, h.API)
+	g.GET("/manage", middleware.RequirePerm(perm.PoHomeList), h.Manage)
+	g.GET("/radar", middleware.RequirePerm(perm.PoHomeList), h.Radar)
+	g.GET("/api", middleware.RequirePerm(perm.PoHomeList), h.API)
 }
 
 // Manage 渲染指标管理页面（占位骨架在 metrics/manage.html）。

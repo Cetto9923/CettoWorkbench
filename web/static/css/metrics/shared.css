@@ -1,0 +1,351 @@
+/* =============================================================================
+   文件: web/static/css/metrics/shared.css
+   模块: 指标管理 (metrics)
+   职责: manage/radar 共用语义 token 与表格/摘要卡
+   拆分自原 metrics.css（Wave 4 file-length）；语义不变。
+   ============================================================================= */
+
+.po-metrics-manage,
+.po-metrics-radar {
+  /* 让 KPI 卡顶部间距更紧凑：与个人工作台骨架对齐 */
+}
+
+/* 4 项摘要卡（顶部 KPI 带） */
+.po-metrics-manage .metric-summary-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--color-surface-soft, #f8fafd);
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
+}
+.po-metrics-manage .metric-summary-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 56px;
+  padding: 8px 12px;
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 6px;
+  box-shadow: 0 1px 2px var(--color-shadow-02, rgba(0, 0, 0, 0.02));
+}
+.po-metrics-manage .metric-summary-card em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--color-text-disabled, #94a3b8);
+  margin-bottom: 4px;
+}
+.po-metrics-manage .metric-summary-card strong {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--po-t1, #1e293b);
+  line-height: 1.1;
+}
+.po-metrics-manage .metric-summary-card.warn {
+  border-color: var(--color-warning-border, #fed7aa);
+  background: var(--color-warning-bg, #fef3c7);
+}
+.po-metrics-manage .metric-summary-card.warn strong {
+  color: var(--color-warning, #92400e);
+}
+@media (max-width: 860px) {
+  .po-metrics-manage .metric-summary-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* 分类徽章（5 分类映射到 5 色 token） */
+.po-metrics-manage .metric-category {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid var(--color-border, #e2e8f0);
+  background: var(--color-surface-soft, #f8fafd);
+  color: var(--color-text-secondary, #64748b);
+  white-space: nowrap;
+}
+.po-metrics-manage .metric-category.cat-demand {
+  border-color: var(--color-info-border, #bfdbfe);
+  background: var(--color-info-bg, #eff6ff);
+  color: var(--color-info, #2563eb);
+}
+.po-metrics-manage .metric-category.cat-delivery {
+  border-color: var(--color-primary-border, #c7d2fe);
+  background: var(--color-primary-light, #eef2ff);
+  color: var(--color-primary, #6366f1);
+}
+.po-metrics-manage .metric-category.cat-quality {
+  border-color: var(--color-danger-border, #fecaca);
+  background: var(--color-danger-bg, #fee2e2);
+  color: var(--color-danger, #991b1b);
+}
+.po-metrics-manage .metric-category.cat-compliance {
+  border-color: var(--color-warning-border, #fed7aa);
+  background: var(--color-warning-bg, #fef3c7);
+  color: var(--color-warning, #92400e);
+}
+.po-metrics-manage .metric-category.cat-performance {
+  border-color: var(--color-success-border, #a7f3d0);
+  background: var(--color-success-bg, #d1fae5);
+  color: var(--color-success, #065f46);
+}
+
+/* 指标名 / 编码 列 */
+.po-metrics-manage .metric-col-name {
+  min-width: 220px;
+  white-space: normal;
+}
+.po-metrics-manage .metric-table .metric-name {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--po-t1, #1e293b);
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  line-height: 1.4;
+}
+.po-metrics-manage .metric-table .metric-name:hover {
+  color: var(--po-blue, #2563eb);
+  text-decoration: underline;
+}
+.po-metrics-manage .metric-table .metric-code {
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  color: var(--color-text-disabled, #94a3b8);
+  margin-top: 2px;
+}
+
+/* 目标 / 阈值 三段堆叠 */
+.po-metrics-manage .metric-target-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+.po-metrics-manage .metric-target-row {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+.po-metrics-manage .metric-target-row em {
+  font-style: normal;
+  font-size: 10px;
+  color: var(--color-text-disabled, #94a3b8);
+  min-width: 28px;
+}
+.po-metrics-manage .metric-target-row[data-tone="t2"] span {
+  color: var(--po-t2, #64748b);
+  font-weight: 600;
+}
+.po-metrics-manage .metric-target-row[data-tone="warn"] span {
+  color: var(--color-warning, #92400e);
+}
+.po-metrics-manage .metric-target-row[data-tone="danger"] span {
+  color: var(--color-danger, #991b1b);
+  font-weight: 600;
+}
+
+/* 状态徽章（normal / warn / danger / unknown） */
+.po-metrics-manage .metric-status {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid var(--color-border, #e2e8f0);
+  background: var(--color-surface-soft, #f8fafd);
+  color: var(--color-text-secondary, #64748b);
+  white-space: nowrap;
+}
+.po-metrics-manage .metric-status.normal {
+  border-color: var(--color-success-border, #a7f3d0);
+  background: var(--color-success-bg, #d1fae5);
+  color: var(--color-success, #065f46);
+}
+.po-metrics-manage .metric-status.warn {
+  border-color: var(--color-warning-border, #fed7aa);
+  background: var(--color-warning-bg, #fef3c7);
+  color: var(--color-warning, #92400e);
+}
+.po-metrics-manage .metric-status.danger {
+  border-color: var(--color-danger-border, #fecaca);
+  background: var(--color-danger-bg, #fee2e2);
+  color: var(--color-danger, #991b1b);
+}
+.po-metrics-manage .metric-status.unknown {
+  border-color: var(--color-border-strong, #cbd5e1);
+  background: var(--color-surface-soft-3, #f1f5f9);
+  color: var(--color-text-disabled, #94a3b8);
+}
+
+/* 只读配置 tag */
+.po-metrics-manage .state-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  border: 1px solid var(--color-border, #e2e8f0);
+  background: var(--color-surface-soft, #f8fafd);
+  color: var(--color-text-secondary, #64748b);
+}
+
+/* 操作按钮（详情） */
+.po-metrics-manage .action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 4px;
+  border: 1px solid var(--color-border, #e2e8f0);
+  background: var(--color-surface, #ffffff);
+  color: var(--color-text-secondary, #475569);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.po-metrics-manage .action-btn:hover {
+  border-color: var(--color-primary, #6366f1);
+  color: var(--color-primary, #4f46e5);
+}
+
+/* 雷达页沿用同一套紧凑矩形操作按钮，避免被通用圆形动作样式覆盖。 */
+.po-metrics-radar .action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  min-width: 42px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 4px !important;
+  background: var(--color-surface, #fff);
+  color: var(--color-text-secondary, #475569);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+/* 行高与列宽微调（与个人工作台对齐） */
+.po-metrics-manage .metric-table th,
+.po-metrics-manage .metric-table td {
+  white-space: nowrap;
+}
+.po-metrics-manage .metric-table .metric-col-target {
+  min-width: 140px;
+}
+.po-metrics-manage .metric-table .metric-col-opt {
+  min-width: 60px;
+}
+
+/* 雷达页共用：顶部 KPI 带 + 5 分类配色 token 与 manage 完全一致 */
+.po-metrics-radar .metric-category {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid var(--color-border, #e2e8f0);
+  background: var(--color-surface-soft, #f8fafd);
+  color: var(--color-text-secondary, #64748b);
+}
+.po-metrics-radar .metric-category.cat-demand {
+  border-color: var(--color-info-border, #bfdbfe);
+  background: var(--color-info-bg, #eff6ff);
+  color: var(--color-info, #2563eb);
+}
+.po-metrics-radar .metric-category.cat-delivery {
+  border-color: var(--color-primary-border, #c7d2fe);
+  background: var(--color-primary-light, #eef2ff);
+  color: var(--color-primary, #6366f1);
+}
+.po-metrics-radar .metric-category.cat-quality {
+  border-color: var(--color-danger-border, #fecaca);
+  background: var(--color-danger-bg, #fee2e2);
+  color: var(--color-danger, #991b1b);
+}
+.po-metrics-radar .metric-category.cat-compliance {
+  border-color: var(--color-warning-border, #fed7aa);
+  background: var(--color-warning-bg, #fef3c7);
+  color: var(--color-warning, #92400e);
+}
+.po-metrics-radar .metric-category.cat-performance {
+  border-color: var(--color-success-border, #a7f3d0);
+  background: var(--color-success-bg, #d1fae5);
+  color: var(--color-success, #065f46);
+}
+.po-metrics-radar .metric-status.normal,
+.po-metrics-radar .metric-status.warn,
+.po-metrics-radar .metric-status.danger,
+.po-metrics-radar .metric-status.unknown {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid var(--color-border, #e2e8f0);
+  background: var(--color-surface-soft, #f8fafd);
+  color: var(--color-text-secondary, #64748b);
+}
+.po-metrics-radar .metric-status.normal {
+  border-color: var(--color-success-border, #a7f3d0);
+  background: var(--color-success-bg, #d1fae5);
+  color: var(--color-success, #065f46);
+}
+.po-metrics-radar .metric-status.warn {
+  border-color: var(--color-warning-border, #fed7aa);
+  background: var(--color-warning-bg, #fef3c7);
+  color: var(--color-warning, #92400e);
+}
+.po-metrics-radar .metric-status.danger {
+  border-color: var(--color-danger-border, #fecaca);
+  background: var(--color-danger-bg, #fee2e2);
+  color: var(--color-danger, #991b1b);
+}
+.po-metrics-radar .metric-status.unknown {
+  border-color: var(--color-border-strong, #cbd5e1);
+  background: var(--color-surface-soft-3, #f1f5f9);
+  color: var(--color-text-disabled, #94a3b8);
+}
+
+/* 错误态占位 */
+.po-metrics-radar .state-placeholder.error {
+  margin: 14px 14px 18px;
+  padding: 12px;
+  border: 1px solid var(--color-danger-border, #fecaca);
+  background: var(--color-danger-bg, #fee2e2);
+  color: var(--color-danger, #991b1b);
+  border-radius: 6px;
+}
+.po-metrics-radar .state-placeholder.error .retry-btn {
+  margin-left: 12px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 4px;
+  border: 1px solid var(--color-danger, #dc2626);
+  background: var(--color-surface, #ffffff);
+  color: var(--color-danger, #991b1b);
+  font-size: 11px;
+  cursor: pointer;
+}
+.po-metrics-radar .state-placeholder.error .retry-btn:hover {
+  background: var(--color-danger-bg, #fee2e2);
+}

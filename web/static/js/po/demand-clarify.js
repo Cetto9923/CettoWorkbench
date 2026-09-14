@@ -366,10 +366,19 @@
       if (err) { showToast(err, "error"); return; }
 
       var payload = buildPayload(), $btn = $("#poClarifySubmitBtn"), $cancelBtn = $("#poClarifyCancelBtn");
-      isSubmitting = true; $btn.prop("disabled", true).text("保存中…"); $cancelBtn.prop("disabled", true);
+      isSubmitting = true; $btn.prop("disabled", true).text("正在保存到禅道…"); $cancelBtn.prop("disabled", true);
+
+      var controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+      var timeoutId = null;
+      if (controller) {
+        timeoutId = window.setTimeout(function () { controller.abort(); }, 25000);
+      }
 
       (window.appFetch || window.fetch)("/demands/" + encodeURIComponent(currentDemandId) + "/clarify", {
-        method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify(payload)
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify(payload),
+        signal: controller ? controller.signal : undefined
       })
         .then(function (res) {
           return res.json().then(function (d) {
@@ -379,11 +388,18 @@
         })
         .then(function (data) { handleClarifySuccess(data && data.message); })
         .catch(function (err) {
+          if (err && err.name === "AbortError") {
+            showToast("澄清保存超时，请稍后重试；若禅道已保存成功请刷新首页确认", "error");
+            return;
+          }
           if (err.status === 422 || (err.message && err.message.indexOf("当前需求不是待澄清状态") >= 0)) {
             handleClarifySuccess("该需求已完成澄清或状态已更新");
           } else { showToast(err.message || "保存异常", "error"); }
         })
-        .then(function () { isSubmitting = false; $btn.prop("disabled", false).text("保存澄清"); $cancelBtn.prop("disabled", false); });
+        .then(function () {
+          if (timeoutId) { window.clearTimeout(timeoutId); }
+          isSubmitting = false; $btn.prop("disabled", false).text("保存澄清"); $cancelBtn.prop("disabled", false);
+        });
     });
   }
 

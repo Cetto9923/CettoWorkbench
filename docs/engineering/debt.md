@@ -1,122 +1,56 @@
-# Existing engineering debt
+# Engineering debt ledger
 
-> **HISTORICAL SNAPSHOT — not an authoritative live count.**
-> The line counts, probe results, and "current" figures below were captured at
-> the dates shown and are now historical. The live machine-readable source of
-> truth is `scripts/quality-baseline/file-length.tsv` (exact non-growth
-> baseline) together with the current `make check` / `make check-gates` output.
-> Revalidate against those before treating any number here as current.
+> **Live ledger** (refreshed 2026-09-14, tech-debt governance Wave 0).
+> Machine truth: `scripts/quality-baseline/*` + current `make check`.
+> This file is the human entry; numbers here must match those baselines after revalidation.
 
-## Governance in progress — 2026-09-13
+Governance plan: Cursor plan「技术债治理方案」; execution notes under
+`docs/plan/tech-debt-governance-20260914/` when present.
 
-Current execution: [code health record](../plan/code-health-20260913/README.md).
-Status is PARTIAL: deterministic PO/comment cleanup and two picker test migrations
-are implemented. The user-authorized missing picker dependency repair reuses the
-existing UI escape helper; frontend regression and 36 quality-gate self-tests pass.
-Two remaining test migrations and production file splits are not complete.
-`make check` currently stops when the length scanner encounters an unstaged deleted
-tracked file; production over-limit files also remain. Demo/audit originals remain
-`BLOCKED BY EXISTING BASELINE`. No baseline was expanded and browser acceptance
-has not been certified.
+## Current open items
 
-## Baseline snapshot — 2026-09-10
+| Sev | Item | Live evidence | Status |
+|-----|------|---------------|--------|
+| P0 | ZenTao-compatible MD5 password write/verify | `patterns.tsv` `WEAK_PASSWORD_HASH` ×7 (`encode`, `user`, `profile`, `login`); see [password-hash decision](../plan/tech-debt-governance-20260914/password-hash-decision.md) | **DECIDED / migration pending** — no silent algorithm change |
+| P1 | Service → DB boundary | `architecture.tsv` empty (0 files) after Wave 2 | **CLOSED** |
+| P1 | Query / pagination debt | Revalidated 2026-09-14: todo/notice/window/KPI/follow OK; schedule/deliver list + user batch create fixed — [wave3](../plan/tech-debt-governance-20260914/wave3-query-revalidate.md) | **CLOSED** (residual advisories on unrelated paths remain P2) |
+| P1 | Files >500 lines | `file-length.tsv` — 26 entries after Wave 4 removed `metrics.css` (2154→split under 500). Remaining hot: `schedule/form.go` 935, `scheduleintegrated.css` 929, `po-profile.js` 856… | **OPEN** (metrics cluster closed; continue by file) |
+| P2 | Advisory inventory | `patterns.tsv` ~91 after Wave 5 shrink (was ~102); login `DIRECT_PAGE_FETCH` retained intentionally | **PARTIAL** |
+| P2 | auth toast guard | `web/templates/layout/auth.html` does not load `ui.js`; `app.js` / `auth/login.js` keep `typeof showToast` | **RETAINED** (intentional; optional load of `ui.js` needs separate auth) |
 
-`scripts/check-file-length.sh` was probed on commit `cc564036` (branch
-`release/po-integrate-main-202609`) before any edits in this debt-cleanup
-wave. It **exited with code 1** and printed 38 issues. This commit only
-records the snapshot; the gate remains `BLOCKED BY EXISTING BASELINE` until a
-follow-up wave either shrinks files below 500 lines or the
-`file-length.tsv` baseline mechanism is amended (currently rejected as
-"baseline expansion rejected: new over-500-line files cannot be added to
-baseline").
+## SUPERSEDED (do not reopen from old narrative)
 
-Issue categories as captured by the probe:
+| Former claim | Why superseded |
+|--------------|----------------|
+| Schedule routes lack capability middleware | `schedule/handler.go` uses `RequirePerm(perm.Schedule*)` |
+| `configs/config.yaml` tracked real passwords | Placeholders `changeme` only; `secrets.tsv` empty |
+| Malformed `basemodel` GORM tag / go-vet fail | `go-vet` / `gofmt` baselines empty or clean under current tree |
+| `go.mod` absolute `replace workbench => /home/...` | No `replace` directive in current `go.mod` |
+| `docs/Demo/` file-length / patterns debt | Demo tree removed from this repo; length scanner excludes `docs/` |
+| Production JS `alert(` / esc-probe / badge–PAGE_SIZE thin wrappers / picker `catch→[]` | Slim 2026-09: production probes cleared; auth toast guard retained as above |
+| “No schedule capability / no integration tests at all” (old audit prose) | Capability middleware + isolated test files exist; coverage quality is separate |
 
-1. **New over-limit files (7)** — never registered in the historical
-   baseline. None are touched by this wave.
-   - `internal/module/po/servicefollow.go` (507)
-   - `internal/pkg/zentao/client.go` (553)
-   - `web/static/css/metrics.css` (683)
-   - `web/static/css/po/demand-detail.css` (667)
-   - `web/static/css/po/follow.css` (691)
-   - `web/static/css/po/personal-workspace.css` (598)
-   - `web/static/js/po/notice.js` (568)
-2. **Baseline files that grew during WIP (4)** — present in
-   `file-length.tsv` but currently larger than the recorded count. These
-   are existing-WIP files (per the pre-flight `git status`): the wave does
-   not modify them.
-   - `web/static/css/components/components.css` (595 → 616)
-   - `web/static/css/layout/layout.css` (531 → 643)
-   - `web/static/css/schedule/schedule.css` (580 → 596)
-   - `web/static/js/ui.js` (775 → 819)
-3. **Baseline files that shrank (2)** — `scheduleintegrated.css`
-   (879 → 878) and `web/templates/schedule/index.html` (742 → 741).
-   The wave deliberately does not ratchet the baseline; shrink without
-   lowering the number keeps the gate failing until the owning change is
-   ready.
-4. **`docs/Demo/` artifacts (≈22)** — **resolved, historical entry.** Two
-   independent changes removed this debt class: (a) the current
-   `check-file-length.sh` restricts its scope to a `case` whitelist of
-   `cmd/ internal/ web/templates/ web/static/js/ web/static/css/ tests/`,
-   which excludes `docs/` entirely, so no Demo path is scanned; and (b) the
-   Demo tree itself was migrated out of this repository on 2026-09-13 to
-   `/Users/yuyan9923/GitHub/CRCBWorkbench/docs/Demo` (175 files,
-   SHA-256-verified 1:1), matching `main`, which does not track `docs/Demo`.
-   No Demo path remains in the gate scope, in `file-length.tsv`, or in
-   `patterns.tsv`. See `docs/plan/code-health-20260913/README.md` for the
-   migration record.
+## Frozen / out of casual slim batches
 
-This snapshot is the only artifact produced by commit `chore(debt):
-register 2026-09-10 file-length baseline failure`. The next wave must
-either fix files, amend the baseline mechanism, or carve out a tracked
-ignore — none of which is authorized by the current task.
+- FollowScope constants (business-facing; comment-only cleanup already done)
+- Full-repo file-header reformatting
+- Metrics **business** semantics / radar formula rewrites without product auth
+- Weakening AGENTS / Gate / expanding `file-length.tsv` to absorb growth
+- Promoting `internal/module/user/` to Golden Reference
 
-## Current reading note — 2026-09-07
+## Baseline pointers
 
-The Phase 1 table below is a **historical inventory**, not a current audit or an
-execution order. Do not reopen completed cards from this table alone. Revalidate
-each entry against the active task and exact working tree.
+| Gate artifact | Role |
+|---------------|------|
+| `scripts/quality-baseline/file-length.tsv` | Exact non-growth line counts for >500 files |
+| `scripts/quality-baseline/architecture.tsv` | Exact Handler/Repo/Service boundary debt fingerprints |
+| `scripts/quality-baseline/patterns.tsv` | Pattern hits (blocking + advisory) |
+| `scripts/quality-baseline/secrets.tsv` | Secret fingerprints (must stay empty of real secrets) |
+| `scripts/quality-baseline/gofmt.tsv` / `go-vet.txt` | Format / vet debt |
 
-Current findings and evidence: [Agent governance audit](../plan/agent-governance-audit-20260907/REPORT.md).
-Priority follow-up: reconcile mixed WIP/build failures; repair actual capability
-checking; restore reachable regression coverage; remove home unbounded ID
-pagination; define/test shared ZenTao write concurrency and runtime budgets.
-No business repair was performed by that audit.
+## Historical appendix
 
-Known superseded inventory statements, verified from current source/gates:
-- Secret scanner has zero fingerprints; this does not prove credential rotation.
-- Explicit schedule capability middleware and corresponding tests now exist.
-- Isolated integration and frontend/E2E files exist; their coverage and execution
-  must be evaluated, not described as absent.
-- Todo/notice SQL query modules exist. Old in-memory helpers alone do not prove
-  that current request paths call them; trace callers before filing a regression.
-- Current gofmt baseline is zero. Vet/application compilation is blocked by
-  current WIP; do not repeat an old malformed-tag diagnosis without revalidation.
-
-## Historical Phase 1 inventory
-
-Phase 1 does not modify the business implementation below. Severity reflects
-risk, not authorization to repair. Machine-readable non-growth baselines live in
-`scripts/quality-baseline/`.
-
-| Location | Existing problem | Severity | Phase 2 recommendation |
-|---|---|---:|---|
-| `configs/config.yaml` | Three tracked password fields contain non-placeholder values; values are not reproduced here. | P0 | Rotate credentials, commit placeholders, verify env/secret injection, then remove fingerprints. |
-| `internal/module/user/service.go`, `internal/pkg/encode/encode.go` | User create/reset uses MD5 for password writes. | P0 | Confirm ZenTao auth contract, isolate compatibility, design migration, prohibit new MD5 writes. |
-| `internal/model/basemodel.go:17` | Malformed GORM struct tag makes `go vet ./...` fail. | P1 | Correct it in a focused change and remove exact vet baseline. |
-| `internal/module/user/handler.go` | POST/form/Flash/redirect conflicts with old JSON contract; file exceeds 500 lines. | P1 | Decide/migrate contracts with browser tests, then split by capability. |
-| `internal/module/schedule/handler.go` | Schedule routes have group authentication but no explicit capability permission. | P1 | Add capability permissions, Service object checks, and authorization tests. |
-| `internal/module/dept/service.go` | Service reaches through `repo.db` and owns a GORM transaction/callback, crossing the Service -> Repo boundary. | P1 | Move transaction-capable persistence behind Repo methods while leaving business orchestration in Service. |
-| `internal/module/po/servicetodo.go`, `internal/module/po/repotodo.go` | Todo loads broad sets, filters/sorts/pages in Go, and reloads account dictionary up to three times. | P1 | Create bounded cross-object query plan; SQL-filter/count/page; load dictionary once. |
-| `internal/module/po/reponotice.go` | Notifications load all rows, then filter/count/page in memory. | P1 | Move filter/count/page and bounded aggregates to SQL. |
-| `internal/module/po/service.go`, `internal/module/po/servicefollow.go`, `internal/module/po/repokpi.go` | Homepage stage loops and per-KPI queries create page query fan-out. | P1 | Measure query plan, consolidate compatible aggregates/ID sets, add contract tests. |
-| `internal/module/schedule/service_window.go` | Window lists query capacity, consumed hours, count/stats per window. | P1 | Batch aggregates/capacity inputs and assemble without per-window SQL. |
-| `internal/module/user/service.go` | Batch create checks account existence once per row. | P1 | Fetch conflicts once and rely on verified transaction/uniqueness. |
-| `internal/module/user/` | Former Golden Reference violates security, protocol, size, schema-boundary rules. | P1 | Keep non-authoritative; promote only a future all-green candidate. |
-| `scripts/quality-baseline/file-length.tsv` entries | Multiple first-party Go/JS/CSS/HTML files exceed 500 lines; two exceed 1,100. | P1 | Split one capability at a time with before/after tests. |
-| `web/static/js/po/*.js`, schedule scripts | Escape, pagination, direct fetch/error, and new-window behavior repeat locally. | P2 | Inventory contracts; consolidate only stable identical behavior; add browser coverage. |
-| Repository tests | Unit tests are sparse; no explicit integration/E2E suites; SQL/permission contracts largely unprotected. | P2 | Add isolated integration fixtures and focused E2E; prioritize rules/permissions/query contracts. |
-| `scripts/quality-baseline/gofmt.tsv` entries | Six tracked Go files have formatting debt. | P2 | Format when deliberately touched and remove exact fingerprint. |
-| `go.mod:71` | `replace workbench => /home/wds/repo/workbench` couples module resolution to one developer's absolute filesystem path. | P2 | In Phase 2, confirm why the replacement exists and whether it can be removed or replaced portably. |
-
-The complete >500-line list is stored once in the exact non-growth baseline.
+Older dated snapshots (2026-09-07 Phase 1 inventory, 2026-09-10 file-length probe prose,
+2026-09-13 code-health PARTIAL notes) are **not** current counts. Prefer this open-items
+table and the TSV baselines. Prior narrative remains in git history and
+`docs/plan/code-health-20260913/` if needed for archaeology.

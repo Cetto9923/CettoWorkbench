@@ -1,7 +1,11 @@
 /*
  * 登录页交互：ajax 提交、密码显隐、SSO 占位。
- * ajax 用 fetch 拿 JSON，等浏览器收下 session cookie 后再跳转，
+ * ajax 用原生 fetch 拿 JSON，等浏览器收下 session cookie 后再跳转，
  * 避免 POST 303 跟跳时 Chrome 还没带上新 cookie，又被送回登录页。
+ *
+ * DIRECT_PAGE_FETCH retained on purpose: auth.html does not load app.js/ui.js,
+ * so window.appFetch is unavailable. Do not switch to appFetch without loading
+ * those assets and re-testing the cookie race.
  */
 (function () {
   "use strict";

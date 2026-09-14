@@ -500,6 +500,9 @@
         .val(id)
         .text(name || id)
         .attr("data-release-date", releaseDate)
+        .attr("data-plan-test-done", $.trim(window.planTestDone || ""))
+        .attr("data-test-done", $.trim(window.testDone || ""))
+        .attr("data-accept-done", $.trim(window.acceptDone || ""))
         .appendTo($select);
     });
 
@@ -518,16 +521,34 @@
     }
   }
 
-  function syncPlanDateFromWindow() {
+  function syncPlanDateFromWindow(opts) {
+    opts = opts || {};
+    var fillEmptyOnly = !!opts.fillEmptyOnly;
     var $select = $("#scheduleIntegratedWindowSelect");
     var $selected = $select.find("option:selected");
     var releaseDate = "";
+    var planTestDone = "";
+    var testDone = "";
+    var acceptDone = "";
 
     if ($select.val()) {
       releaseDate = $.trim($selected.attr("data-release-date") || "");
+      planTestDone = $.trim($selected.attr("data-plan-test-done") || "");
+      testDone = $.trim($selected.attr("data-test-done") || "");
+      acceptDone = $.trim($selected.attr("data-accept-done") || "");
     }
 
     setDateInputValue($("#scheduleIntegratedSchedulePlanDate"), releaseDate);
+
+    function applyMilestone($input, value) {
+      if (fillEmptyOnly && $.trim($input.val() || "")) {
+        return;
+      }
+      setDateInputValue($input, value);
+    }
+    applyMilestone($("#scheduleIntegratedDevelopFinish"), planTestDone);
+    applyMilestone($("#scheduleIntegratedTestFinish"), testDone);
+    applyMilestone($("#scheduleIntegratedAcceptancedDate"), acceptDone);
     updateReleaseMeta();
   }
 
@@ -651,11 +672,12 @@
 
     fillWindowSelect(data.windows, data.windowId, data.windowName, data.schedulePlanDate);
     applyWindowEditability(data.canEditWindow, data.windowPhase);
-    syncPlanDateFromWindow();
-    initSchedulingOwnerPickers(users, data);
     setDateInputValue($("#scheduleIntegratedDevelopFinish"), data.developFinish);
     setDateInputValue($("#scheduleIntegratedTestFinish"), data.testFinish);
     setDateInputValue($("#scheduleIntegratedAcceptancedDate"), data.acceptancedDate);
+    // 先写需求已有日期，再按窗口补空：切换窗口时 change 会整表代入里程碑
+    syncPlanDateFromWindow({ fillEmptyOnly: true });
+    initSchedulingOwnerPickers(users, data);
 
     var systemsHint = shared
       ? shared.formatInvolvedSystemsHint(involvedProducts, mainSystem)

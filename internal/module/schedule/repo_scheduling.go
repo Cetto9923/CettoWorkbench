@@ -199,9 +199,12 @@ func formatZenTaoDate(raw string) string {
 }
 
 type schedulingWindowRow struct {
-	ID          uint   `gorm:"column:id"`
-	Name        string `gorm:"column:name"`
-	ReleaseDate string `gorm:"column:releaseDate"`
+	ID           uint   `gorm:"column:id"`
+	Name         string `gorm:"column:name"`
+	ReleaseDate  string `gorm:"column:releaseDate"`
+	PlanTestDone string `gorm:"column:planTestDone"`
+	TestDone     string `gorm:"column:testDone"`
+	AcceptDone   string `gorm:"column:acceptDone"`
 }
 
 type schedulingUserRow struct {
@@ -210,17 +213,22 @@ type schedulingUserRow struct {
 	Pinyin   string `gorm:"column:pinyin"`
 }
 
-// ListUpcomingSchedulingWindows 查询未过期的版本窗口列表。
+// ListUpcomingSchedulingWindows 查询未过期的版本窗口列表（含基础里程碑日期）。
 func (r *Repo) ListUpcomingSchedulingWindows(ctx context.Context) ([]SchedulingWindowOption, error) {
 	const query = `
 SELECT
-  id,
-  name,
-  DATE_FORMAT(releaseDate, '%Y-%m-%d') AS releaseDate
-FROM zt_versionwindow
-WHERE deletedAt IS NULL
-  AND releaseDate >= CURDATE()
-ORDER BY releaseDate ASC`
+  vw.id,
+  vw.name,
+  DATE_FORMAT(vw.releaseDate, '%Y-%m-%d') AS releaseDate,
+  DATE_FORMAT(m.planTestDone, '%Y-%m-%d') AS planTestDone,
+  DATE_FORMAT(m.testDone, '%Y-%m-%d') AS testDone,
+  DATE_FORMAT(m.acceptDone, '%Y-%m-%d') AS acceptDone
+FROM zt_versionwindow vw
+LEFT JOIN zt_wb_versionwindow_milestone m
+  ON m.versionWindow = vw.id AND m.deletedAt IS NULL
+WHERE vw.deletedAt IS NULL
+  AND vw.releaseDate >= CURDATE()
+ORDER BY vw.releaseDate ASC`
 
 	var rows []schedulingWindowRow
 	if err := r.db.WithContext(ctx).Raw(query).Scan(&rows).Error; err != nil {
@@ -229,9 +237,12 @@ ORDER BY releaseDate ASC`
 	out := make([]SchedulingWindowOption, 0, len(rows))
 	for _, row := range rows {
 		out = append(out, SchedulingWindowOption{
-			ID:          row.ID,
-			Name:        strings.TrimSpace(row.Name),
-			ReleaseDate: formatZenTaoDate(row.ReleaseDate),
+			ID:           row.ID,
+			Name:         strings.TrimSpace(row.Name),
+			ReleaseDate:  formatZenTaoDate(row.ReleaseDate),
+			PlanTestDone: formatZenTaoDate(row.PlanTestDone),
+			TestDone:     formatZenTaoDate(row.TestDone),
+			AcceptDone:   formatZenTaoDate(row.AcceptDone),
 		})
 	}
 	return out, nil

@@ -16,8 +16,6 @@ import (
 	"time"
 
 	"workbench/internal/model"
-
-	"gorm.io/gorm"
 )
 
 // DeptNode 表示部门树节点。
@@ -76,40 +74,19 @@ func (s *Service) Create(ctx context.Context, actor *model.User, req CreateReq) 
 			if !req.EnableAncestors {
 				status = 1
 			} else {
-				var createdID uint64
-				if err := s.repo.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-					ancestorIDs, txErr := s.collectAncestorIDs(ctx, tx, req.ParentID)
-					if txErr != nil {
-						return txErr
-					}
-					if len(ancestorIDs) > 0 {
-						if txErr = tx.WithContext(ctx).
-							Model(&model.Dept{}).
-							Where("id IN ? AND deletedAt IS NULL", ancestorIDs).
-							Updates(map[string]any{
-								"status": 0,
-							}).Error; txErr != nil {
-							return txErr
-						}
-					}
-					m := &model.Dept{
-						ParentID: req.ParentID,
-						Name:     name,
-						Leader:   leader,
-						Phone:    phone,
-						Email:    email,
-						Status:   0,
-						Sort:     req.Sort,
-					}
-					if txErr = tx.WithContext(ctx).Create(m).Error; txErr != nil {
-						return txErr
-					}
-					createdID = m.ID
-					return nil
-				}); err != nil {
+				m := &model.Dept{
+					ParentID: req.ParentID,
+					Name:     name,
+					Leader:   leader,
+					Phone:    phone,
+					Email:    email,
+					Status:   0,
+					Sort:     req.Sort,
+				}
+				if err := s.repo.CreateEnablingAncestors(ctx, req.ParentID, m); err != nil {
 					return CreateResp{}, err
 				}
-				return CreateResp{ID: createdID}, nil
+				return CreateResp{ID: m.ID}, nil
 			}
 		}
 	}
@@ -126,23 +103,6 @@ func (s *Service) Create(ctx context.Context, actor *model.User, req CreateReq) 
 		return CreateResp{}, err
 	}
 	return CreateResp{ID: m.ID}, nil
-}
-
-func (s *Service) collectAncestorIDs(ctx context.Context, tx *gorm.DB, parentID uint64) ([]uint64, error) {
-	ids := make([]uint64, 0)
-	currentID := parentID
-	for currentID > 0 {
-		var current model.Dept
-		if err := tx.WithContext(ctx).
-			Model(&model.Dept{}).
-			Where("id = ? AND deletedAt IS NULL", currentID).
-			First(&current).Error; err != nil {
-			return nil, err
-		}
-		ids = append(ids, current.ID)
-		currentID = current.ParentID
-	}
-	return ids, nil
 }
 
 // Update 更新部门。

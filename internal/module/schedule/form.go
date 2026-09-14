@@ -507,9 +507,12 @@ type DemandSchedulingDetail struct {
 
 // SchedulingWindowOption 排期弹窗版本窗口下拉项。
 type SchedulingWindowOption struct {
-	ID          uint   `json:"id"`
-	Name        string `json:"name"`
-	ReleaseDate string `json:"releaseDate"`
+	ID           uint   `json:"id"`
+	Name         string `json:"name"`
+	ReleaseDate  string `json:"releaseDate"`
+	PlanTestDone string `json:"planTestDone,omitempty"`
+	TestDone     string `json:"testDone,omitempty"`
+	AcceptDone   string `json:"acceptDone,omitempty"`
 }
 
 // SchedulingUserOption 排期弹窗负责人下拉项。

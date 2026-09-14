@@ -112,9 +112,11 @@ func TestListMySQLDemands_ScheduleDemandOnly(t *testing.T) {
 
 	scheduleFilter := mysqlStageFilters["schedule"]
 
-	// 只预期 FindRoleDemandIDs，不预期 FindScheduleStoryIDs / FindDeliverStoryIDs
-	mock.ExpectQuery("SELECT .* FROM `zt_demand`").
-		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(9001))
+	// FindStageMixedRefsPaged: COUNT then paged SELECT (demand-only union)
+	mock.ExpectQuery("(?s)^SELECT COUNT\\(\\*\\) FROM \\(.*zt_demand.*\\) AS stage_mixed$").
+		WillReturnRows(sqlmock.NewRows([]string{"COUNT(*)"}).AddRow(1))
+	mock.ExpectQuery("(?s)^SELECT id, kind FROM \\(.*zt_demand.*\\) AS stage_mixed ORDER BY kind_rank ASC, id DESC LIMIT \\? OFFSET \\?$").
+		WillReturnRows(sqlmock.NewRows([]string{"id", "kind"}).AddRow(9001, "demand"))
 
 	// populateWorkItems → FindRoleDemandsByIDs
 	mock.ExpectQuery("SELECT .* FROM `zt_demand`").
@@ -160,10 +162,10 @@ func TestListMySQLDemands_ScheduleStoryOnly(t *testing.T) {
 
 	scheduleFilter := mysqlStageFilters["schedule"]
 
-	// 只预期 FindScheduleStoryIDs，不预期 FindRoleDemandIDs
-	mock.ExpectQuery("SELECT .* FROM `zt_story`").
-		WithArgs("0", "demandpool", "story", "alice").
-		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(501))
+	mock.ExpectQuery("(?s)^SELECT COUNT\\(\\*\\) FROM \\(.*zt_story.*\\) AS stage_mixed$").
+		WillReturnRows(sqlmock.NewRows([]string{"COUNT(*)"}).AddRow(1))
+	mock.ExpectQuery("(?s)^SELECT id, kind FROM \\(.*zt_story.*\\) AS stage_mixed ORDER BY kind_rank ASC, id DESC LIMIT \\? OFFSET \\?$").
+		WillReturnRows(sqlmock.NewRows([]string{"id", "kind"}).AddRow(501, "story"))
 
 	// populateWorkItems → FindStoriesByIDs
 	mock.ExpectQuery("SELECT .* FROM `zt_story` WHERE id IN .*").

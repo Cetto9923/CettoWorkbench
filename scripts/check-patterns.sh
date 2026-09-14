@@ -110,7 +110,7 @@ if ((${#handler_files[@]} > 0)); then
   routes=$("${grepper[@]}" -- '\.(GET|POST|PUT|DELETE)[[:space:]]*\(' "${handler_files[@]}" 2>/dev/null || true)
   while IFS=: read -r path line rest; do
     [[ -z "$path" ]] && continue
-    [[ "$rest" == *RequirePerm* ]] && continue
+    [[ "$rest" == *RequirePerm* || "$rest" == *RequireAnyPerm* ]] && continue
     evidence=$(printf '%s' "$rest" | sed -E 's/[[:space:]]+/ /g; s/^ //; s/ $//')
     printf '%s\t%s\t%s\t%s\t%s\n' \
       advisory ROUTE_PERMISSION_REVIEW "$path" "$line" "$evidence" >>"$raw"

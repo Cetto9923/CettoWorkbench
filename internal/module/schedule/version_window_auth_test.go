@@ -17,7 +17,26 @@ const (
 	testFindProductsByIDRegex = `(?s)SELECT id, name\s+FROM zt_product\s+WHERE id IN \((?:\?|,\s*|\?)+\)\s+AND deleted = '0'`
 	testFindWindowByIDRegex   = `(?s)SELECT \* FROM ` + "`zt_versionwindow`" + ` WHERE id = \? AND ` + "`zt_versionwindow`" + `\.` + "`deletedAt`" + ` IS NULL`
 	testGetMatchingPlansRegex = `(?s)SELECT id, product, title, begin, end, status\s+FROM zt_productplan\s+WHERE product = \? AND end = \? AND deleted = '0'`
+	testExistsWindowNameRegex = `(?s)SELECT count\(\*\) FROM ` + "`zt_versionwindow`" + ` WHERE \(deletedAt IS NULL AND name = \?\)`
 )
+
+func expectNoDuplicateWindowName(mock sqlmock.Sqlmock, name string, excludeID uint64) {
+	_ = name
+	_ = excludeID
+	mock.ExpectQuery(testExistsWindowNameRegex).
+		WillReturnRows(sqlmock.NewRows([]string{"count(*)"}).AddRow(0))
+}
+
+// expectDuplicateWindowName 模拟未删除窗口中已存在同名（Create excludeID=0；Update 传自身 ID）。
+func expectDuplicateWindowName(mock sqlmock.Sqlmock, name string, excludeID uint64) {
+	q := mock.ExpectQuery(testExistsWindowNameRegex)
+	if excludeID > 0 {
+		q.WithArgs(name, excludeID)
+	} else {
+		q.WithArgs(name)
+	}
+	q.WillReturnRows(sqlmock.NewRows([]string{"count(*)"}).AddRow(1))
+}
 
 // 1. CreateUnauthorizedProductRejected:
 // actor attempts to create a window referencing an unauthorized product.
@@ -29,6 +48,8 @@ func TestVersionWindow_CreateUnauthorizedProductRejected(t *testing.T) {
 
 	ctx := context.Background()
 	actor := &model.User{Account: "alice"}
+
+	expectNoDuplicateWindowName(mock, "Test Window", 0)
 
 	// Actor has access to product 100 only; product 200 is unauthorized.
 	mock.ExpectQuery(testGetUserProductsRegex).
@@ -86,6 +107,8 @@ func TestVersionWindow_CreateAuthorizedProductsStillWorks(t *testing.T) {
 
 	ctx := context.Background()
 	actor := &model.User{Account: "alice"}
+
+	expectNoDuplicateWindowName(mock, "Test Window", 0)
 
 	// Actor has access to product 100.
 	mock.ExpectQuery(testGetUserProductsRegex).
@@ -148,6 +171,8 @@ func TestVersionWindow_UpdateUnauthorizedProductRejected(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "releaseDate", "teamgroup", "groupSize", "createdBy", "status"}).
 			AddRow(1, "Original Window", time.Now().AddDate(0, 1, 0), 1, 1, "alice", "planning"))
 
+	expectNoDuplicateWindowName(mock, "Modified Window", 1)
+
 	// Actor does not have access to product 200.
 	mock.ExpectQuery(testGetUserProductsRegex).
 		WithArgs("alice", "alice", "alice", "alice", "alice").
@@ -206,6 +231,8 @@ func TestVersionWindow_UpdateUnauthorizedLeavesExistingWindowUntouched(t *testin
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "releaseDate", "teamgroup", "groupSize", "createdBy", "status"}).
 			AddRow(1, "Original Window", origReleaseDate, 1, 1, "alice", "planning"))
 
+	expectNoDuplicateWindowName(mock, "Attempted Malicious Rename", 1)
+
 	// Actor has access to product 100 only, not 999.
 	mock.ExpectQuery(testGetUserProductsRegex).
 		WithArgs("alice", "alice", "alice", "alice", "alice").
@@ -259,6 +286,8 @@ func TestVersionWindow_UpdateAuthorizedProductsStillWorks(t *testing.T) {
 		WithArgs(1, 1).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "releaseDate", "teamgroup", "groupSize", "createdBy", "status"}).
 			AddRow(1, "Original Window", time.Now().AddDate(0, 1, 0), 1, 1, "alice", "planning"))
+
+	expectNoDuplicateWindowName(mock, "Updated Window Name", 1)
 
 	// Actor has access to product 100.
 	mock.ExpectQuery(testGetUserProductsRegex).
@@ -321,6 +350,7 @@ func TestVersionWindow_MultipleProductsOneUnauthorizedRejectsWholeRequest(t *tes
 		svc := NewService(repo, nil)
 
 		// Actor has access to 100 and 300, but lacks 200.
+		expectNoDuplicateWindowName(mock, "Multi-product Window", 0)
 		mock.ExpectQuery(testGetUserProductsRegex).
 			WithArgs("alice", "alice", "alice", "alice", "alice").
 			WillReturnRows(sqlmock.NewRows([]string{"id", "name", "code", "status", "PO", "QD", "RD", "createdBy", "whitelist"}).
@@ -373,6 +403,8 @@ func TestVersionWindow_MultipleProductsOneUnauthorizedRejectsWholeRequest(t *tes
 			WillReturnRows(sqlmock.NewRows([]string{"id", "name", "releaseDate", "teamgroup", "groupSize", "createdBy", "status"}).
 				AddRow(1, "Original Window", time.Now().AddDate(0, 1, 0), 1, 1, "alice", "planning"))
 
+		expectNoDuplicateWindowName(mock, "Multi-product Window", 1)
+
 		mock.ExpectQuery(testGetUserProductsRegex).
 			WithArgs("alice", "alice", "alice", "alice", "alice").
 			WillReturnRows(sqlmock.NewRows([]string{"id", "name", "code", "status", "PO", "QD", "RD", "createdBy", "whitelist"}).
@@ -415,4 +447,81 @@ func TestVersionWindow_MultipleProductsOneUnauthorizedRejectsWholeRequest(t *tes
 			t.Fatalf("unmet mock expectations: %v", err)
 		}
 	})
+}
+
+// CreateDuplicateNameRejected: 未删除窗口已占用同名时 Create 必须业务拒绝且零写入。
+func TestVersionWindow_CreateDuplicateNameRejected(t *testing.T) {
+	db, mock := setupMockDB(t)
+	repo := NewRepo(db)
+	svc := NewService(repo, nil)
+
+	expectDuplicateWindowName(mock, "Dup Window", 0)
+
+	_, err := svc.Create(context.Background(), &model.User{Account: "alice"}, CreateReq{
+		Name:        "Dup Window",
+		ReleaseDate: "2026-10-01",
+		TeamgroupID: 1,
+		GroupSize:   1,
+	})
+	if err == nil {
+		t.Fatal("expected duplicate name error, got nil")
+	}
+	if !strings.Contains(err.Error(), "版本窗口名称已存在") {
+		t.Fatalf("expected duplicate name message, got: %v", err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet mock expectations: %v", err)
+	}
+}
+
+// UpdateDuplicateNameRejected: 改名撞上其他未删除窗口时 Update 必须业务拒绝且零写入。
+func TestVersionWindow_UpdateDuplicateNameRejected(t *testing.T) {
+	db, mock := setupMockDB(t)
+	repo := NewRepo(db)
+	svc := NewService(repo, nil)
+
+	mock.ExpectQuery(testFindWindowByIDRegex).
+		WithArgs(1, 1).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "releaseDate", "teamgroup", "groupSize", "createdBy", "status"}).
+			AddRow(1, "Original Window", time.Now().AddDate(0, 1, 0), 1, 1, "alice", "planning"))
+
+	expectDuplicateWindowName(mock, "Taken Name", 1)
+
+	err := svc.Update(context.Background(), &model.User{Account: "alice"}, UpdateReq{
+		ID:          1,
+		Name:        "Taken Name",
+		ReleaseDate: "2026-10-01",
+		TeamgroupID: 1,
+		GroupSize:   1,
+	})
+	if err == nil {
+		t.Fatal("expected duplicate name error, got nil")
+	}
+	if !strings.Contains(err.Error(), "版本窗口名称已存在") {
+		t.Fatalf("expected duplicate name message, got: %v", err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet mock expectations: %v", err)
+	}
+}
+
+// ExistsWindowName 仅统计 deletedAt IS NULL；软删窗口同名视为不存在，允许复用。
+func TestExistsWindowName_SoftDeletedNameReusable(t *testing.T) {
+	db, mock := setupMockDB(t)
+	repo := NewRepo(db)
+
+	mock.ExpectQuery(testExistsWindowNameRegex).
+		WithArgs("Reusable After Soft Delete").
+		WillReturnRows(sqlmock.NewRows([]string{"count(*)"}).AddRow(0))
+
+	exists, err := repo.ExistsWindowName(context.Background(), "Reusable After Soft Delete", 0)
+	if err != nil {
+		t.Fatalf("ExistsWindowName: %v", err)
+	}
+	if exists {
+		t.Fatal("expected soft-deleted-only name to be reusable (exists=false)")
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet mock expectations: %v", err)
+	}
 }

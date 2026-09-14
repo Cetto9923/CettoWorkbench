@@ -214,6 +214,71 @@ func (r *Repo) FindDeliverStoryIDsWithFilters(ctx context.Context, account strin
 	return ids, err
 }
 
+// FindStageMixedRefsPaged SQL-paginates the schedule/deliver mix of demand + story
+// IDs (demands first, then stories; each by id DESC) without materializing the
+// full ID list in process memory.
+func (r *Repo) FindStageMixedRefsPaged(ctx context.Context, account, stageStatus string, filter mysqlStageFilter, req DemandsReq) ([]itemRef, int, error) {
+	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
+		return nil, 0, nil
+	}
+	includeDemand := req.ObjectType != "story"
+	includeStory := req.ObjectType != "demand"
+	parts := make([]string, 0, 2)
+	args := make([]interface{}, 0)
+
+	if includeDemand && filterReady(account, filter) {
+		stmt := r.roleDemandScopeWithFilters(ctx, account, filter, req).
+			Select("zt_demand.id AS id, 'demand' AS kind, 0 AS kind_rank").
+			Session(&gorm.Session{DryRun: true}).Find(&[]struct{ ID int }{}).Statement
+		parts = append(parts, stmt.SQL.String())
+		args = append(args, stmt.Vars...)
+	}
+	if includeStory && filter.scheduleIncomplete {
+		stmt := applyStoryToolbarFilters(r.scheduleStoryScope(ctx, account), account, req).
+			Select("id AS id, 'story' AS kind, 1 AS kind_rank").
+			Session(&gorm.Session{DryRun: true}).Find(&[]struct{ ID int }{}).Statement
+		parts = append(parts, stmt.SQL.String())
+		args = append(args, stmt.Vars...)
+	}
+	if includeStory && filter.deliverStories {
+		stmt := applyStoryToolbarFilters(r.deliverStoryScope(ctx, account), account, req).
+			Select("id AS id, 'story' AS kind, 1 AS kind_rank").
+			Session(&gorm.Session{DryRun: true}).Find(&[]struct{ ID int }{}).Statement
+		parts = append(parts, stmt.SQL.String())
+		args = append(args, stmt.Vars...)
+	}
+	if len(parts) == 0 {
+		return nil, 0, nil
+	}
+
+	unionSQL := strings.Join(parts, " UNION ALL ")
+	var total int64
+	if err := r.db.WithContext(ctx).
+		Raw("SELECT COUNT(*) FROM ("+unionSQL+") AS stage_mixed", args...).
+		Scan(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	offset := (req.Page - 1) * req.PageSize
+	if total == 0 || int64(offset) >= total {
+		return nil, int(total), nil
+	}
+	var rows []struct {
+		ID   int    `gorm:"column:id"`
+		Kind string `gorm:"column:kind"`
+	}
+	pageArgs := append(append([]interface{}{}, args...), req.PageSize, offset)
+	if err := r.db.WithContext(ctx).
+		Raw("SELECT id, kind FROM ("+unionSQL+") AS stage_mixed ORDER BY kind_rank ASC, id DESC LIMIT ? OFFSET ?", pageArgs...).
+		Scan(&rows).Error; err != nil {
+		return nil, 0, err
+	}
+	refs := make([]itemRef, 0, len(rows))
+	for _, row := range rows {
+		refs = append(refs, itemRef{kind: row.Kind, id: row.ID, stageStatus: stageStatus})
+	}
+	return refs, int(total), nil
+}
+
 // demandStageCase reuses the single-stage predicates in first-match order.
 func (r *Repo) demandStageCase(ctx context.Context, account string) (string, []interface{}) {
 	var sql strings.Builder

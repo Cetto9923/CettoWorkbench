@@ -92,6 +92,10 @@
       if (!form || form.tagName !== "FORM") {
         return;
       }
+      // AJAX / fetch 提交由页面脚本自管 loading；勿抢按钮文案（否则会卡在「处理中...」）
+      if (form.getAttribute("data-ajax") === "1" || form.getAttribute("data-no-submit-loading") === "1") {
+        return;
+      }
       if (event.defaultPrevented) {
         return;
       }

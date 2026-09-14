@@ -200,9 +200,8 @@
 
         $("#top5List").attr("aria-busy", "false");
         renderList(total);
-        if (res.stageSummary && res.stageSummary.length) {
-          renderValueStreamSummary(res.stageSummary);
-        }
+        // “全部”列表没有 stageSummary：显式恢复模板中的全量基线，避免保留上一次焦点查询的旧数字。
+        renderValueStreamSummary(res.stageSummary, state.focus);
         fillUpdateTime();
       })
       .catch(function (err) {
