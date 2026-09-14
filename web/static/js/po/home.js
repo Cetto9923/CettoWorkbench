@@ -556,10 +556,10 @@
     $list.find(".js-demand-review").on("click", function () {
       var demandId = String($(this).attr("data-demand-id") || "").trim();
       var item = findListItemByDemandId(demandId);
-      if (!item || typeof window.openPoDemandReviewModal !== "function") {
+      if (!item || typeof window.openPoDemandViewDrawer !== "function") {
         return;
       }
-      window.openPoDemandReviewModal(item);
+      window.openPoDemandViewDrawer(item);
     });
   }
 

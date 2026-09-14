@@ -8,6 +8,7 @@
 ========================================================================== */}}
 {{ define "page_css" }}
 <link rel="stylesheet" href="{{ asset "/static/css/po/home.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/view.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/po/testtask.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/po/linkstory.css" }}">
 {{ end }}
@@ -158,7 +159,7 @@
             </div>
           </div>
           {{ else }}
-          <div class="home-version-empty">当前无进行中等待发布的真实版本窗口</div>
+          <div class="home-version-empty">暂无活跃版本窗口</div>
           {{ end }}
         </div>
         <div class="version-dock-bottom">
@@ -206,12 +207,14 @@
   </form>
 </div>
 
+{{ template "po/view" . }}
 {{ template "po/testtask" . }}
 {{ template "po/linkstory" . }}
 {{ end }}
 
 {{ define "page_js" }}
 <script src="{{ asset "/static/js/po/homereview.js" }}"></script>
+<script src="{{ asset "/static/js/po/view.js" }}"></script>
 <script src="{{ asset "/static/js/po/testtask.js" }}"></script>
 <script src="{{ asset "/static/js/po/linkstory.js" }}"></script>
 <script src="{{ asset "/static/js/po/home.js" }}"></script>
