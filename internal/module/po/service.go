@@ -129,7 +129,28 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 		}
 	}
 
-	return &HomeResp{Stages: stages, VersionWindows: versionWindows}, nil
+	launchWindows := []LaunchWindowOption{}
+	vwRows, vwErr := s.repo.ListVersionWindows(ctx)
+	if vwErr != nil {
+		if s.logger != nil {
+			s.logger.Warn("po home launch windows", zap.Error(vwErr))
+		}
+	} else {
+		launchWindows = make([]LaunchWindowOption, 0, len(vwRows))
+		for _, w := range vwRows {
+			launchWindows = append(launchWindows, LaunchWindowOption{
+				ID:          w.ID,
+				Name:        strings.TrimSpace(w.Name),
+				ReleaseDate: w.ReleaseDate.Format("2006-01-02"),
+			})
+		}
+	}
+
+	return &HomeResp{
+		Stages:         stages,
+		VersionWindows: versionWindows,
+		LaunchWindows:  launchWindows,
+	}, nil
 }
 
 // Demands 按价值流状态返回当前用户关联的需求/故事详情（后端分页）。

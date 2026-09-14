@@ -1,12 +1,12 @@
 {{/* ==========================================================================
 文件: web/templates/po/deliver.html
 模块: PO工作台
-职责: 发起交付弹窗（home 引入；静态页对齐原型 po_deliver_modal）
+职责: 发起交付弹窗（home 引入）
 全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
-页面字段: 无（弹窗 DOM 占位，静态展示）
+页面字段: .LaunchWindowsJSON (string) 全部未删除 zt_versionwindow JSON
 ========================================================================== */}}
 {{ define "po/deliver" }}
-<div id="poDeliverModalOverlay" class="batch-modal-overlay po-deliver-modal-overlay" aria-hidden="true">
+<div id="poDeliverModalOverlay" class="batch-modal-overlay po-deliver-modal-overlay" aria-hidden="true" data-launch-windows="{{ .LaunchWindowsJSON }}">
   <div id="poDeliverModal" class="batch-modal po-deliver-modal" role="dialog" aria-modal="true" aria-labelledby="poDeliverModalTitle">
     <div class="batch-modal-hdr">
       <h3 id="poDeliverModalTitle">发起交付</h3>
@@ -44,11 +44,6 @@
               <div class="ui-autocomplete">
                 <input type="text" id="poLaunchWindowInput" class="ad-input" placeholder="搜索上线窗口" autocomplete="off">
                 <input type="hidden" id="poLaunchWindowSelect">
-              </div>
-              <div class="po-launch-window-notice hint" id="poLaunchWindowNotice" hidden></div>
-              <div class="po-launch-date-field" id="poLaunchDateFieldWrap" hidden>
-                <label>上线时间 <span class="ad-req">*</span></label>
-                <input type="date" class="ad-input" id="poLaunchDate">
               </div>
             </div>
 
@@ -91,7 +86,6 @@
               </div>
             </div>
           </div>
-          <div class="hint">带 <span class="ad-req">*</span> 为必填。提交后需求进入「待发布」，并同步关联研发需求交付/验证信息。</div>
         </div>
       </form>
     </div>

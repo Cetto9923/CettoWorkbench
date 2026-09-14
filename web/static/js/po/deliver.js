@@ -1,15 +1,13 @@
 /*
  * 文件: web/static/js/po/deliver.js
  * 模块: PO工作台
- * 职责: 发起交付弹窗开关与静态检索下拉（不接提交接口）
+ * 职责: 发起交付弹窗开关与检索下拉（上线窗口取 zt_versionwindow 未删除数据）
  */
 (function ($) {
   "use strict";
 
-  var LAUNCH_WINDOW_OTHER = "__launch_other__";
   var bound = false;
 
-  var WINDOW_OPTIONS = [{ value: LAUNCH_WINDOW_OTHER, label: "＋ 选择其他上线时间" }];
   var GRAY_OPTIONS = [
     { value: "1", label: "是" },
     { value: "0", label: "否" }
@@ -27,11 +25,38 @@
     return m ? m[1] : "";
   }
 
+  function parseLaunchWindows() {
+    var raw = $("#poDeliverModalOverlay").attr("data-launch-windows") || "[]";
+    try {
+      var list = JSON.parse(raw);
+      return Array.isArray(list) ? list : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function buildLaunchWindowOptions() {
+    return parseLaunchWindows()
+      .map(function (w) {
+        var id = Number(w && w.id ? w.id : 0);
+        if (!id) {
+          return null;
+        }
+        var name = String((w && w.name) || "").trim() || "窗口" + id;
+        var rd = String((w && w.releaseDate) || "").trim();
+        return {
+          value: String(id),
+          label: rd ? name + " · " + rd : name
+        };
+      })
+      .filter(Boolean);
+  }
+
   function initSearchSelects() {
     if (typeof window.initAutocomplete !== "function") {
       return;
     }
-    window.initAutocomplete("poLaunchWindowInput", "poLaunchWindowSelect", WINDOW_OPTIONS, {
+    window.initAutocomplete("poLaunchWindowInput", "poLaunchWindowSelect", buildLaunchWindowOptions(), {
       placeholder: "搜索上线窗口"
     });
     window.initAutocomplete("poDeliverGrayPlanInput", "poDeliverGrayPlan", GRAY_OPTIONS, {
@@ -61,21 +86,6 @@
     window.destroyAutocomplete("poDeliverVerifierInput");
   }
 
-  function syncLaunchDateField() {
-    var raw = String($("#poLaunchWindowSelect").val() || "");
-    var $wrap = $("#poLaunchDateFieldWrap");
-    var $notice = $("#poLaunchWindowNotice");
-    if (raw === LAUNCH_WINDOW_OTHER) {
-      $wrap.removeAttr("hidden");
-      $notice
-        .text("当前日期暂无上线窗口，保存后将自动创建窗口并关联本次交付")
-        .removeAttr("hidden");
-    } else {
-      $wrap.attr("hidden", true);
-      $notice.attr("hidden", true).text("");
-    }
-  }
-
   function openPoDeliverModal(idOrItem) {
     var raw = idOrItem && typeof idOrItem === "object" ? idOrItem.id : idOrItem;
     var numeric = demandIdOf(raw);
@@ -88,7 +98,6 @@
     $("#poDeliverLoadingState, #poDeliverErrorState").attr("hidden", true);
     $("#poDeliverForm").removeAttr("hidden");
     initSearchSelects();
-    syncLaunchDateField();
     return false;
   }
 
@@ -113,16 +122,6 @@
     });
     $("#poDeliverForm").on("submit", function (e) {
       e.preventDefault();
-    });
-    $(document).on(
-      "click",
-      '.ui-autocomplete-dropdown[data-autocomplete-for="poLaunchWindowInput"] .ui-autocomplete-option',
-      function () {
-        setTimeout(syncLaunchDateField, 0);
-      }
-    );
-    $("#poLaunchWindowInput").on("blur input", function () {
-      setTimeout(syncLaunchDateField, 50);
     });
   }
 

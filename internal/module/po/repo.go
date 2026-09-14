@@ -3,7 +3,8 @@
 // 模块: PO 工作台
 // 类型: action
 // 职责: 价值流阶段业需/研发需求的只读库统计与列表查询（业需范围：澄清 PM 或 QD/RD/BRA，排除 closed；「全部」计数仅 Pluck id）。
-// 依赖: internal/model/zentao
+// 依赖: internal/model
+//       internal/model/zentao
 // =============================================================================
 
 package po
@@ -17,6 +18,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
+	"workbench/internal/model"
 	zentaomodel "workbench/internal/model/zentao"
 )
 
@@ -387,6 +389,17 @@ func (r *Repo) FindMaxTesttaskIDByProducts(ctx context.Context, productIDs []uin
 		}
 	}
 	return out, nil
+}
+
+// ListVersionWindows 查询全部未删除的上线窗口（zt_versionwindow，GORM 自动过滤 deletedAt）。
+func (r *Repo) ListVersionWindows(ctx context.Context) ([]model.VersionWindow, error) {
+	var rows []model.VersionWindow
+	if err := r.db.WithContext(ctx).
+		Order("releaseDate ASC").
+		Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
 }
 
 // dateUnsetExpr 判断 DATE 列未填（NULL 或零日期）。

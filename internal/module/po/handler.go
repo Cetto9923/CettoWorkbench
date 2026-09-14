@@ -10,6 +10,7 @@
 package po
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -58,21 +59,31 @@ func (h *Handler) Home(c *gin.Context) {
 		if h.logger != nil {
 			h.logger.Warn("po home value stream", zap.Error(err))
 		}
-		resp = &HomeResp{Stages: emptyValueStreamStages()}
+		resp = &HomeResp{Stages: emptyValueStreamStages(), LaunchWindows: []LaunchWindowOption{}}
+	}
+	if resp.LaunchWindows == nil {
+		resp.LaunchWindows = []LaunchWindowOption{}
 	}
 
 	if h.logger != nil {
 		h.logger.Info("po home version windows render",
 			zap.String("account", account),
 			zap.Int("render_count", len(resp.VersionWindows)),
+			zap.Int("launch_window_count", len(resp.LaunchWindows)),
 		)
 	}
 
+	launchWindowsJSON := "[]"
+	if b, err := json.Marshal(resp.LaunchWindows); err == nil {
+		launchWindowsJSON = string(b)
+	}
+
 	render.Page(c, http.StatusOK, constants.TEMPLATE_PO_HOME, gin.H{
-		"Title":             "工作台首页",
-		"PageTitle":         "工作台首页",
-		"ValueStreamStages": resp.Stages,
-		"VersionWindows":    resp.VersionWindows,
+		"Title":              "工作台首页",
+		"PageTitle":          "工作台首页",
+		"ValueStreamStages":  resp.Stages,
+		"VersionWindows":     resp.VersionWindows,
+		"LaunchWindowsJSON":  launchWindowsJSON,
 	})
 }
 

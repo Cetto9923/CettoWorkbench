@@ -30,10 +30,18 @@ type ValueStreamStage struct {
 	StoryCount  int64
 }
 
+// LaunchWindowOption 发起交付「上线窗口」检索下拉选项。
+type LaunchWindowOption struct {
+	ID          uint64 `json:"id"`
+	Name        string `json:"name"`
+	ReleaseDate string `json:"releaseDate"`
+}
+
 // HomeResp PO 工作台首页数据。
 type HomeResp struct {
 	Stages         []ValueStreamStage
 	VersionWindows []schedule.HomeVersionWindowCard
+	LaunchWindows  []LaunchWindowOption
 }
 
 // DemandsReq 按价值流状态查询需求/故事详情。

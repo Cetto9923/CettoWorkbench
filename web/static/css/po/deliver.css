@@ -285,15 +285,6 @@
   align-items: center;
   gap: 4px;
 }
-#poDeliverModal .po-launch-window-notice {
-  font-size: 11px;
-  color: #2563eb;
-  margin-top: 4px;
-  line-height: 1.4;
-}
-#poDeliverModal .po-launch-date-field {
-  margin-top: 8px;
-}
 #poDeliverModal .ui-autocomplete,
 #poDeliverModal .po-deliver-verifier-host {
   width: 100%;
