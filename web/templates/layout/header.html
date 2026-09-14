@@ -47,24 +47,36 @@ web/templates/layout/header.html 模块: 布局 职责:
     </div>
     <div class="dropdown">
       <button
-        class="btn btn-neutral btn-sm"
+        class="po-user-info"
         type="button"
         onclick="return toggleDropdown(this);"
+        aria-haspopup="menu"
       >
-        <i class="bi bi-person nav-icon"></i>
-        <span class="nav-item-text"
-          >{{ if .CurrentUser }}{{ .CurrentUser.DisplayName }}{{ else }}用户{{
-          end }}</span
-        >
+        <span class="po-user-avatar">{{ if and .CurrentUser .CurrentUser.DisplayName }}{{ if ge (len .CurrentUser.DisplayName) 3 }}{{ slice .CurrentUser.DisplayName 0 3 }}{{ else }}{{ .CurrentUser.DisplayName }}{{ end }}{{ else }}用{{ end }}</span>
+        <span>{{ if .CurrentUser }}{{ .CurrentUser.DisplayName }}{{ else }}用户{{ end }}</span>
       </button>
       <div class="dropdown-menu">
+        <div class="theme-picker-group" role="group" aria-label="外观设置">
+          <div class="dropdown-header">外观</div>
+          <button
+            type="button"
+            class="dropdown-item"
+            role="menuitemradio"
+            aria-checked="true"
+            data-theme-value="light"
+          >
+            <i class="bi bi-sun"></i><span>浅色</span>
+            <i class="bi bi-check check-mark"></i>
+          </button>
+        </div>
+        <div class="dropdown-divider"></div>
         <form action="/logout" method="POST">
           <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}" />
           <button
             type="submit"
             class="dropdown-item dropdown-item-danger topbar-dropdown-item"
           >
-            <i class="bi bi-box-arrow-right"></i>
+            <i class="fas fa-right-from-bracket"></i>
             <span>登出</span>
           </button>
         </form>

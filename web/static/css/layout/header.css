@@ -1,0 +1,169 @@
+/* ==========================================================================
+   文件: web/static/css/layout/header.css
+   模块: 布局
+   职责: 顶栏用户区、主题选择与用户下拉菜单样式。
+========================================================================== */
+
+.po-user-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: 13px/1 var(--font-sans);
+  cursor: pointer;
+}
+
+.po-user-info:hover {
+  background: var(--color-surface-muted);
+  color: var(--color-text-primary);
+}
+
+.po-user-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-info, #2563eb);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.dropdown-header {
+  padding: var(--space-2) var(--space-3) var(--space-1);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-disabled);
+  user-select: none;
+}
+
+.dropdown-divider {
+  height: 1px;
+  margin: var(--space-1) 0;
+  overflow: hidden;
+  background-color: var(--color-border);
+}
+
+.theme-picker-group .dropdown-item {
+  display: flex;
+  align-items: center;
+}
+
+.theme-picker-group .dropdown-item i:first-child {
+  margin-right: var(--space-2);
+}
+
+.theme-picker-group .dropdown-item .check-mark {
+  margin-left: auto;
+  opacity: 0;
+  color: var(--color-primary);
+}
+
+.theme-picker-group .dropdown-item[aria-checked="true"] {
+  background-color: var(--color-surface-hover);
+  color: var(--color-primary);
+}
+
+.theme-picker-group .dropdown-item[aria-checked="true"] .check-mark {
+  opacity: 1;
+}
+
+/* 顶部用户菜单：几何与间距对齐原型 .po-header-right .dropdown-menu */
+.topbar-actions .dropdown-menu {
+  min-width: 126px;
+  padding: 6px;
+  border-color: var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-body);
+  box-shadow: var(--shadow-popover);
+}
+
+.topbar-actions .dropdown-menu form {
+  margin: 0;
+}
+
+.topbar-actions .dropdown-header {
+  padding: 6px 8px 4px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.topbar-actions .dropdown-divider {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--color-border);
+}
+
+.topbar-actions .dropdown-item,
+.topbar-actions .topbar-dropdown-item {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-body);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+/* 主题项：与原型 .dropdown-item 一致 */
+.topbar-actions .dropdown-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+/* 操作项（登出等）：与原型 .topbar-dropdown-item 一致，需压过 .dropdown-item */
+.topbar-actions .topbar-dropdown-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.topbar-actions .topbar-dropdown-item i {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.topbar-actions .dropdown-item:hover,
+.topbar-actions .topbar-dropdown-item:hover {
+  border-color: var(--color-border);
+  background: var(--color-surface-muted);
+  color: var(--color-text-primary);
+}
+
+.topbar-actions .theme-picker-group .dropdown-item[aria-checked="true"] {
+  border-color: var(--color-primary-border);
+  background: var(--color-primary-light);
+  color: var(--color-primary-hover);
+}
+
+.topbar-actions .theme-picker-group .dropdown-item[aria-checked="true"] .check-mark {
+  opacity: 1;
+}
+
+.topbar-actions .topbar-dropdown-item.dropdown-item-danger {
+  color: var(--color-danger);
+}
+
+.topbar-actions .topbar-dropdown-item.dropdown-item-danger:hover {
+  border-color: var(--color-danger-border);
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}

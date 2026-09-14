@@ -481,47 +481,6 @@
   color: var(--color-danger);
 }
 
-/* 顶部用户菜单（头像下拉）使用独立视觉风格，避免影响其他 dropdown */
-.topbar-actions .dropdown-menu {
-  min-width: 100%;
-  width: 100%;
-  padding: var(--space-1);
-  box-shadow: var(--shadow-popover);
-}
-
-.topbar-actions .dropdown-menu form {
-  margin: 0;
-}
-
-.topbar-dropdown-item {
-  width: 100%;
-  border: 0;
-  background: transparent;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  border-radius: 12px;
-  padding: var(--space-1) var(--space-3);
-  font-size: var(--font-size-xs);
-  font-weight: 500;
-  line-height: 1.2;
-  cursor: pointer;
-}
-
-.topbar-dropdown-item i {
-  font-size: var(--font-size-xs);
-  line-height: 1;
-}
-
-.topbar-actions .topbar-dropdown-item.dropdown-item-danger {
-  color: var(--color-danger-bright);
-}
-
-.topbar-actions .topbar-dropdown-item.dropdown-item-danger:hover {
-  background: var(--color-surface);
-  color: var(--color-danger-accent);
-}
-
 .split-layout {
   display: flex;
   gap: var(--space-3);
