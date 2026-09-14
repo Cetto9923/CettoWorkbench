@@ -1,13 +1,13 @@
 /*
- * 文件: web/static/js/po/view.js
+ * 文件: web/static/js/po/review.js
  * 模块: PO工作台
- * 职责: 业需评审详情右侧抽屉；打开时拉取 GET /demands/:id 回填（对齐禅道 demand-view）。
+ * 职责: 业需审批右侧抽屉；打开时拉取 GET /demands/:id 回填。
  */
 (function ($) {
   "use strict";
 
-  var DRAWER_ID = "poDemandViewDrawer";
-  var REJECT_MODAL_ID = "poDemandViewRejectModal";
+  var DRAWER_ID = "poDemandReviewDrawer";
+  var REJECT_MODAL_ID = "poDemandReviewRejectModal";
   var currentItem = null;
   var detailAbort = null;
 
@@ -89,7 +89,7 @@
   }
 
   function renderAttachments(list) {
-    var ul = document.getElementById("poDemandViewFiles");
+    var ul = document.getElementById("poDemandReviewFiles");
     if (!ul) {
       return;
     }
@@ -136,36 +136,36 @@
     var stage = dash(data && data.valueStageLabel);
     var ztLabel = dash(data && data.zentaoStatusLabel);
 
-    setText("poDemandViewId", id);
-    setText("poDemandViewTitle", title);
-    setPriority("poDemandViewPri", pri);
-    setText("poDemandViewPriSide", pri === "—" ? "P2" : pri);
-    setText("poDemandViewProposerMeta", proposer);
-    setText("poDemandViewPoMeta", owner);
-    setText("poDemandViewCurrentOwner", dash(data && data.currentOwner));
-    setText("poDemandViewBra", owner);
-    setText("poDemandViewProposer", proposer);
-    setText("poDemandViewDept", dash(data && data.proposerDept));
-    setText("poDemandViewReviewer", reviewer);
-    setText("poDemandViewCreator", dash(data && data.createdName));
+    setText("poDemandReviewUsId", id);
+    setText("poDemandReviewDrawerTitle", title);
+    setPriority("poDemandReviewPri", pri);
+    setText("poDemandReviewPriSide", pri === "—" ? "P2" : pri);
+    setText("poDemandReviewProposerMeta", proposer);
+    setText("poDemandReviewPoMeta", owner);
+    setText("poDemandReviewCurrentOwner", dash(data && data.currentOwner));
+    setText("poDemandReviewBra", owner);
+    setText("poDemandReviewProposer", proposer);
+    setText("poDemandReviewDept", dash(data && data.proposerDept));
+    setText("poDemandReviewReviewer", reviewer);
+    setText("poDemandReviewCreator", dash(data && data.createdName));
 
-    setText("poDemandViewSpotStage", stage);
-    setText("poDemandViewSpotReviewer", reviewer === "—" ? "待确认" : reviewer);
-    setText("poDemandViewSpotLaunch", launch);
-    setText("poDemandViewStripCategory", category);
-    setText("poDemandViewStripSource", source);
-    setText("poDemandViewStripPool", pool);
-    setText("poDemandViewNativeState", ztLabel);
+    setText("poDemandReviewSpotStage", stage);
+    setText("poDemandReviewSpotReviewer", reviewer === "—" ? "待确认" : reviewer);
+    setText("poDemandReviewSpotLaunch", launch);
+    setText("poDemandReviewStripCategory", category);
+    setText("poDemandReviewStripSource", source);
+    setText("poDemandReviewStripPool", pool);
+    setText("poDemandReviewNativeState", ztLabel);
 
-    setText("poDemandViewCategory", category);
-    setText("poDemandViewSource", source);
-    setText("poDemandViewPool", pool);
-    setText("poDemandViewLaunch", launch);
+    setText("poDemandReviewCategory", category);
+    setText("poDemandReviewSource", source);
+    setText("poDemandReviewPool", pool);
+    setText("poDemandReviewLaunch", launch);
   }
 
   function fillBodyContent(data) {
-    setRichHtml("poDemandViewSpec", data && data.specHtml, "暂无详细描述");
-    setRichHtml("poDemandViewVerify", data && data.verifyHtml, "暂无验收标准说明");
+    setRichHtml("poDemandReviewSpec", data && data.specHtml, "暂无详细描述");
+    setRichHtml("poDemandReviewVerify", data && data.verifyHtml, "暂无验收标准说明");
     renderAttachments(data && data.attachments);
   }
 
@@ -188,10 +188,10 @@
       proposerDept: item && item.proposerDept,
       createdName: item && item.createdName
     });
-    setRichHtml("poDemandViewSpec", "", "加载中…");
-    setRichHtml("poDemandViewVerify", "", "加载中…");
+    setRichHtml("poDemandReviewSpec", "", "加载中…");
+    setRichHtml("poDemandReviewVerify", "", "加载中…");
     renderAttachments([]);
-    var filesEl = document.getElementById("poDemandViewFiles");
+    var filesEl = document.getElementById("poDemandReviewFiles");
     if (filesEl) {
       filesEl.innerHTML = '<li class="text-muted">加载中…</li>';
     }
@@ -203,7 +203,7 @@
     }
     fillHeaderAndAside(data);
     fillBodyContent(data);
-    var editBtn = document.getElementById("poDemandViewEditBtn");
+    var editBtn = document.getElementById("poDemandReviewEditBtn");
     if (editBtn) {
       var editUrl = String((data && data.zentaoEditUrl) || "").trim();
       if (editUrl) {
@@ -239,8 +239,8 @@
         if (!ret.ok || !ret.json || !ret.json.success || !ret.json.data) {
           var msg = (ret.json && ret.json.message) || "获取需求详情失败";
           showToast(msg, "error");
-          setRichHtml("poDemandViewSpec", "", "加载失败");
-          setRichHtml("poDemandViewVerify", "", "加载失败");
+          setRichHtml("poDemandReviewSpec", "", "加载失败");
+          setRichHtml("poDemandReviewVerify", "", "加载失败");
           renderAttachments([]);
           return;
         }
@@ -251,8 +251,8 @@
           return;
         }
         showToast("获取需求详情失败", "error");
-        setRichHtml("poDemandViewSpec", "", "加载失败");
-        setRichHtml("poDemandViewVerify", "", "加载失败");
+        setRichHtml("poDemandReviewSpec", "", "加载失败");
+        setRichHtml("poDemandReviewVerify", "", "加载失败");
       });
   }
 
@@ -263,7 +263,7 @@
     }
     modal.style.display = "flex";
     modal.setAttribute("aria-hidden", "false");
-    var ta = document.getElementById("poDemandViewRejectComment");
+    var ta = document.getElementById("poDemandReviewRejectComment");
     if (ta) {
       ta.value = "";
       ta.focus();
@@ -303,7 +303,7 @@
     drawer.classList.add("active");
     drawer.setAttribute("aria-hidden", "false");
     document.body.style.overflow = "hidden";
-    var body = document.getElementById("poDemandViewBody");
+    var body = document.getElementById("poDemandReviewBody");
     if (body) {
       body.scrollTop = 0;
     }
@@ -316,7 +316,7 @@
       return;
     }
 
-    $("#poDemandViewCloseBtn").on("click", function () {
+    $("#poDemandReviewDrawerCloseBtn").on("click", function () {
       closeDrawer();
     });
     $(drawer).on("click", function (e) {
@@ -325,27 +325,27 @@
       }
     });
 
-    $("#poDemandViewRejectBtn").on("click", function () {
+    $("#poDemandReviewRejectBtn").on("click", function () {
       openRejectModal();
     });
-    $("#poDemandViewRejectCloseBtn, #poDemandViewRejectCancelBtn").on("click", function () {
+    $("#poDemandReviewRejectCloseBtn, #poDemandReviewRejectCancelBtn").on("click", function () {
       closeRejectModal();
     });
-    $("#poDemandViewRejectConfirmBtn").on("click", function () {
-      var comment = String($("#poDemandViewRejectComment").val() || "").trim();
+    $("#poDemandReviewRejectConfirmBtn").on("click", function () {
+      var comment = String($("#poDemandReviewRejectComment").val() || "").trim();
       if (!comment) {
         showToast("驳回时请输入评审意见", "warning");
-        $("#poDemandViewRejectComment").focus();
+        $("#poDemandReviewRejectComment").focus();
         return;
       }
       showToast("静态演示：驳回未提交", "info");
       closeRejectModal();
     });
-    $("#poDemandViewPassBtn").on("click", function () {
+    $("#poDemandReviewPassBtn").on("click", function () {
       showToast("静态演示：评审通过未提交", "info");
     });
 
-    $(document).on("keydown.poDemandView", function (e) {
+    $(document).on("keydown.poDemandReview", function (e) {
       if (e.key !== "Escape" && e.keyCode !== 27) {
         return;
       }
@@ -360,8 +360,8 @@
     });
   }
 
-  window.openPoDemandViewDrawer = openDrawer;
-  window.closePoDemandViewDrawer = closeDrawer;
+  window.openPoDemandReviewDrawer = openDrawer;
+  window.closePoDemandReviewDrawer = closeDrawer;
 
   $(bindEvents);
 })(jQuery);
