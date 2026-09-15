@@ -59,10 +59,13 @@ func (h *Handler) Home(c *gin.Context) {
 		if h.logger != nil {
 			h.logger.Warn("po home value stream", zap.Error(err))
 		}
-		resp = &HomeResp{Stages: emptyValueStreamStages(), LaunchWindows: []LaunchWindowOption{}}
+		resp = &HomeResp{Stages: emptyValueStreamStages(), LaunchWindows: []LaunchWindowOption{}, Users: []UserOption{}}
 	}
 	if resp.LaunchWindows == nil {
 		resp.LaunchWindows = []LaunchWindowOption{}
+	}
+	if resp.Users == nil {
+		resp.Users = []UserOption{}
 	}
 
 	if h.logger != nil {
@@ -77,13 +80,18 @@ func (h *Handler) Home(c *gin.Context) {
 	if b, err := json.Marshal(resp.LaunchWindows); err == nil {
 		launchWindowsJSON = string(b)
 	}
+	usersJSON := "[]"
+	if b, err := json.Marshal(resp.Users); err == nil {
+		usersJSON = string(b)
+	}
 
 	render.Page(c, http.StatusOK, constants.TEMPLATE_PO_HOME, gin.H{
-		"Title":              "工作台首页",
-		"PageTitle":          "工作台首页",
-		"ValueStreamStages":  resp.Stages,
-		"VersionWindows":     resp.VersionWindows,
-		"LaunchWindowsJSON":  launchWindowsJSON,
+		"Title":             "工作台首页",
+		"PageTitle":         "工作台首页",
+		"ValueStreamStages": resp.Stages,
+		"VersionWindows":    resp.VersionWindows,
+		"LaunchWindowsJSON": launchWindowsJSON,
+		"UsersJSON":         usersJSON,
 	})
 }
 

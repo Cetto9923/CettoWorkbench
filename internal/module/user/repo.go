@@ -141,7 +141,6 @@ func (r *Repo) FindInsideUsers(ctx context.Context, actorDept uint64) ([]InsideU
 SELECT account, realname
 FROM zt_user
 WHERE deleted = '0'
-  AND type = 'inside'
 ORDER BY
   CASE
     WHEN ? > 0 AND dept = ? THEN 0

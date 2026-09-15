@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"workbench/internal/model"
@@ -110,4 +111,23 @@ func formatFileSize(size int) string {
 		return fmt.Sprintf("%d B", size)
 	}
 	return fmt.Sprintf("%.1f KB", float64(size)/1024.0)
+}
+
+// listVerifierUsers 复用 user.ListInsideUsers，组装内部用户下拉（失败时返回空列表，不阻断首页）。
+func (s *Service) listVerifierUsers(ctx context.Context, actor *model.User) []UserOption {
+	if s.userSvc == nil {
+		return []UserOption{}
+	}
+	users, err := s.userSvc.ListInsideUsers(ctx, actor)
+	if err != nil {
+		if s.logger != nil {
+			s.logger.Warn("po home verifier users", zap.Error(err))
+		}
+		return []UserOption{}
+	}
+	out := make([]UserOption, 0, len(users))
+	for _, item := range users {
+		out = append(out, UserOption{Account: item.Account, Realname: item.Realname})
+	}
+	return out
 }

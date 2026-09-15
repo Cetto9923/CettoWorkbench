@@ -25,14 +25,22 @@
     return m ? m[1] : "";
   }
 
-  function parseLaunchWindows() {
-    var raw = $("#poDeliverModalOverlay").attr("data-launch-windows") || "[]";
+  function parseJSONAttr(attrName) {
+    var raw = $("#poDeliverModalOverlay").attr(attrName) || "[]";
     try {
       var list = JSON.parse(raw);
       return Array.isArray(list) ? list : [];
     } catch (e) {
       return [];
     }
+  }
+
+  function parseLaunchWindows() {
+    return parseJSONAttr("data-launch-windows");
+  }
+
+  function parseUsers() {
+    return parseJSONAttr("data-users");
   }
 
   function buildLaunchWindowOptions() {
@@ -48,6 +56,19 @@
           value: String(id),
           label: rd ? name + " · " + rd : name
         };
+      })
+      .filter(Boolean);
+  }
+
+  function buildVerifierOptions() {
+    return parseUsers()
+      .map(function (u) {
+        var account = String((u && u.account) || "").trim();
+        if (!account) {
+          return null;
+        }
+        var label = String((u && u.realname) || "").trim() || account;
+        return { value: account, label: label };
       })
       .filter(Boolean);
   }
@@ -71,7 +92,7 @@
       labelOnly: true,
       placeholder: "搜索"
     });
-    window.initAutocomplete("poDeliverVerifierInput", "poDeliverVerifierValue", [], {
+    window.initAutocomplete("poDeliverVerifierInput", "poDeliverVerifierValue", buildVerifierOptions(), {
       placeholder: "输入姓名或工号搜索"
     });
   }

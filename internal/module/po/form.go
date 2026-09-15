@@ -37,11 +37,18 @@ type LaunchWindowOption struct {
 	ReleaseDate string `json:"releaseDate"`
 }
 
+// UserOption 发起交付「生产验证责任人」检索下拉项（内部用户，同源 user.ListInsideUsers）。
+type UserOption struct {
+	Account  string `json:"account"`
+	Realname string `json:"realname"`
+}
+
 // HomeResp PO 工作台首页数据。
 type HomeResp struct {
 	Stages         []ValueStreamStage
 	VersionWindows []schedule.HomeVersionWindowCard
 	LaunchWindows  []LaunchWindowOption
+	Users          []UserOption
 }
 
 // DemandsReq 按价值流状态查询需求/故事详情。

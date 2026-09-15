@@ -4,9 +4,10 @@
 职责: 发起交付弹窗（home 引入）
 全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
 页面字段: .LaunchWindowsJSON (string) 全部未删除 zt_versionwindow JSON
+          .UsersJSON (string) 内部用户 JSON（account / realname，同源 ListInsideUsers）
 ========================================================================== */}}
 {{ define "po/deliver" }}
-<div id="poDeliverModalOverlay" class="batch-modal-overlay po-deliver-modal-overlay" aria-hidden="true" data-launch-windows="{{ .LaunchWindowsJSON }}">
+<div id="poDeliverModalOverlay" class="batch-modal-overlay po-deliver-modal-overlay" aria-hidden="true" data-launch-windows="{{ .LaunchWindowsJSON }}" data-users="{{ .UsersJSON }}">
   <div id="poDeliverModal" class="batch-modal po-deliver-modal" role="dialog" aria-modal="true" aria-labelledby="poDeliverModalTitle">
     <div class="batch-modal-hdr">
       <h3 id="poDeliverModalTitle">发起交付</h3>

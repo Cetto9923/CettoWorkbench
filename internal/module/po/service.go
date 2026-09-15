@@ -150,6 +150,7 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 		Stages:         stages,
 		VersionWindows: versionWindows,
 		LaunchWindows:  launchWindows,
+		Users:          s.listVerifierUsers(ctx, actor),
 	}, nil
 }
 
