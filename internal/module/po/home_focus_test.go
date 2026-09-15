@@ -334,3 +334,33 @@ func TestHomeFocusStageSummary_DurationCalculation(t *testing.T) {
 		t.Fatalf("mock expectations unmet: %v", err)
 	}
 }
+
+func TestHomeFocusMyActionEmptyReviewIDs_NoEmptyInClause(t *testing.T) {
+	// 验证：当待评审切片为空 []int{} 时，生成的 SQL 必须使用恒假 (1 = 0)，不得生成非法空 IN ()
+	where, args := currentHandlerDemandWhereWithReviews("alice", []int{})
+	if strings.Contains(where, "IN ()") || strings.Contains(where, "IN (?)") {
+		t.Fatalf("empty review IDs must not generate IN clause: %s", where)
+	}
+	if !strings.Contains(where, "status = 'wait' AND 1 = 0") {
+		t.Fatalf("empty review IDs must set wait stage to 1 = 0: %s", where)
+	}
+	if len(args) != 14 {
+		t.Fatalf("expected 14 args for empty review IDs, got %d", len(args))
+	}
+
+	// 验证 dry-run 查询不生成空 IN
+	db, _ := openSQLMock(t)
+	repo := NewRepo(db, nil)
+	query := repo.homeFocusQueryWithReviews(context.Background(), "alice", DemandsReq{
+		Status: "all", Focus: "my_action", Page: 1, PageSize: 15,
+	}, []int{})
+	var rows []struct{ ID int }
+	stmt := query.Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
+	sql := stmt.SQL.String()
+	if strings.Contains(sql, "IN ()") {
+		t.Fatalf("dry-run SQL contains illegal empty IN clause: %s", sql)
+	}
+	if !strings.Contains(sql, "status = 'wait' AND 1 = 0") {
+		t.Fatalf("dry-run SQL missing wait false guard: %s", sql)
+	}
+}

@@ -31,10 +31,34 @@ func currentHandlerDemandWhere(account string) (string, []interface{}) {
 }
 
 // currentHandlerDemandWhereWithReviews 优化版本：利用已预查的评审 demand ID 列表替换相关子查询，
-// 避免对大表 zt_demandreview 执行逐行全表扫描。当 reviewDemandIDs 为 nil 时退化为原子查询实现。
+// 避免对大表 zt_demandreview 执行逐行全表扫描。当 reviewDemandIDs 为 nil 时退化为原子查询实现；
+// 当 reviewDemandIDs 为空切片（无待评审）时，wait 阶段置为恒假条件 (1 = 0)，防止生成非法空 IN ()。
 func currentHandlerDemandWhereWithReviews(account string, reviewDemandIDs []int) (string, []interface{}) {
 	if reviewDemandIDs == nil {
 		return currentHandlerDemandWhere(account)
+	}
+	if len(reviewDemandIDs) == 0 {
+		return `(
+		(status IN ('draft', 'refuse') AND createdBy = ?)
+		OR (status = 'wait' AND 1 = 0)
+		OR (status = 'active' AND (
+			assignedTo = ? OR BRA = ? OR EXISTS (
+				SELECT 1 FROM zt_demandclarify dc
+				WHERE dc.demand = zt_demand.id AND FIND_IN_SET(?, REPLACE(dc.PM, ' ', '')) > 0
+			)
+		))
+		OR (status = 'clarified' AND (
+			assignedTo = ? OR BRA = ? OR EXISTS (
+				SELECT 1 FROM zt_demandclarify dc
+				WHERE dc.demand = zt_demand.id AND FIND_IN_SET(?, REPLACE(dc.PM, ' ', '')) > 0
+			)
+		))
+		OR (status = 'developing' AND BRA = ?)
+		OR (status = 'testing' AND (QD = ? OR (accepter = ? AND ` + dateSetBeforeTodaySQL("testFinish") + `)))
+		OR (status = 'waitacceptance' AND accepter = ?)
+		OR (status IN ('acceptanced', 'waitdeliver') AND BRA = ?)
+		OR (status = 'released' AND (originator = ? OR BRA = ?))
+	)`, []interface{}{account, account, account, account, account, account, account, account, account, account, account, account, account, account}
 	}
 	return `(
 		(status IN ('draft', 'refuse') AND createdBy = ?)

@@ -24,7 +24,11 @@ func (r *Repo) acceptRefsPaged(ctx context.Context, account string, req DemandsR
 	base := r.roleDemandScope(ctx, account, mysqlStageFilters["accept"])
 	var reviewIDs []int
 	if req.Relation == "handling" || req.Relation == "following" {
-		reviewIDs, _ = r.FindAccountPendingReviewDemandIDs(ctx, account)
+		var err error
+		reviewIDs, err = r.FindAccountPendingReviewDemandIDs(ctx, account)
+		if err != nil {
+			reviewIDs = nil
+		}
 	}
 	base = r.applyHomeFocusToolbarFiltersWithReviews(base, account, req, reviewIDs)
 	var total int64
@@ -142,7 +146,11 @@ func (r *Repo) allStageRefQuery(ctx context.Context, account string, req Demands
 		demandBase := r.roleDemandBase(ctx, account)
 		var reviewIDs []int
 		if req.Relation == "handling" || req.Relation == "following" {
-			reviewIDs, _ = r.FindAccountPendingReviewDemandIDs(ctx, account)
+			var err error
+			reviewIDs, err = r.FindAccountPendingReviewDemandIDs(ctx, account)
+			if err != nil {
+				reviewIDs = nil
+			}
 		}
 		demandBase = r.applyHomeFocusToolbarFiltersWithReviews(demandBase, account, req, reviewIDs)
 		stmt := demandBase.Select("id, 'demand' AS kind, "+stageSQL+" AS stage_index, 0 AS kind_rank, "+demandDurationDaysSQLExpr("zt_demand.createdDate")+" AS duration_days", stageArgs...).Session(&gorm.Session{DryRun: true}).Find(&[]struct{ ID int }{}).Statement
@@ -199,7 +207,11 @@ func (r *Repo) roleDemandScopeWithFilters(ctx context.Context, account string, f
 	base := r.roleDemandScope(ctx, account, filter)
 	var reviewIDs []int
 	if req.Relation == "handling" || req.Relation == "following" {
-		reviewIDs, _ = r.FindAccountPendingReviewDemandIDs(ctx, account)
+		var err error
+		reviewIDs, err = r.FindAccountPendingReviewDemandIDs(ctx, account)
+		if err != nil {
+			reviewIDs = nil
+		}
 	}
 	return r.applyHomeFocusToolbarFiltersWithReviews(base, account, req, reviewIDs)
 }

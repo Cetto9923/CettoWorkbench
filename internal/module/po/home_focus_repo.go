@@ -20,14 +20,24 @@ func (r *Repo) FindAccountPendingReviewDemandIDs(ctx context.Context, account st
 	err := r.db.WithContext(ctx).Table("zt_demandreview").
 		Where("reviewer = ? AND (result IS NULL OR result = '')", account).
 		Pluck("demand", &ids).Error
-	return ids, err
+	if err != nil {
+		return nil, err
+	}
+	if ids == nil {
+		ids = []int{}
+	}
+	return ids, nil
 }
 
 // homeFocusQuery intersects the existing stage scopes with the homepage focus.
 func (r *Repo) homeFocusQuery(ctx context.Context, account string, req DemandsReq) *gorm.DB {
 	var reviewIDs []int
 	if req.Focus == "my_action" {
-		reviewIDs, _ = r.FindAccountPendingReviewDemandIDs(ctx, account)
+		var err error
+		reviewIDs, err = r.FindAccountPendingReviewDemandIDs(ctx, account)
+		if err != nil {
+			reviewIDs = nil
+		}
 	}
 	return r.homeFocusQueryWithReviews(ctx, account, req, reviewIDs)
 }
@@ -183,7 +193,10 @@ func (r *Repo) CountHomeFocus(ctx context.Context, account string, req DemandsRe
 		return 0, nil
 	}
 	var total int64
-	reviewIDs, _ := r.FindAccountPendingReviewDemandIDs(ctx, account)
+	reviewIDs, err := r.FindAccountPendingReviewDemandIDs(ctx, account)
+	if err != nil {
+		reviewIDs = nil
+	}
 	if req.ObjectType != "story" {
 		base := r.homeFocusQueryWithReviews(ctx, account, req, reviewIDs)
 		base = r.applyHomeFocusToolbarFiltersWithReviews(base, account, req, reviewIDs)
@@ -303,7 +316,10 @@ func (r *Repo) HomeFocusStageSummary(ctx context.Context, account string, req De
 		DurationCount int64 `gorm:"column:duration_count"`
 	}
 	if req.ObjectType != "story" {
-		reviewIDs, _ := r.FindAccountPendingReviewDemandIDs(ctx, account)
+		reviewIDs, err := r.FindAccountPendingReviewDemandIDs(ctx, account)
+		if err != nil {
+			reviewIDs = nil
+		}
 		base := r.applyHomeFocusToolbarFiltersWithReviews(r.homeFocusQueryWithReviews(ctx, account, req, reviewIDs), account, req, reviewIDs)
 		if err := r.db.WithContext(ctx).Table("(?) AS focused", base).
 			Select("stage_index, COUNT(*) AS count, IFNULL(SUM(duration_days), 0) AS total_duration, COUNT(duration_days) AS duration_count").

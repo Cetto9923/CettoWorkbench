@@ -35,6 +35,9 @@ type releaseDevRow struct {
 
 // FindOpenIssueCountsByProject 未关闭问题数。
 func (r *Repo) FindOpenIssueCountsByProject(ctx context.Context, projectIDs []uint) (map[uint]int, error) {
+	if len(projectIDs) == 0 {
+		return map[uint]int{}, nil
+	}
 	return r.scanProjectCounts(ctx, `
 SELECT project AS project_id, COUNT(*) AS cnt
 FROM zt_issue
@@ -44,6 +47,9 @@ GROUP BY project`, projectIDs)
 
 // FindOpenRiskCountsByProject 未关闭风险数。
 func (r *Repo) FindOpenRiskCountsByProject(ctx context.Context, projectIDs []uint) (map[uint]int, error) {
+	if len(projectIDs) == 0 {
+		return map[uint]int{}, nil
+	}
 	return r.scanProjectCounts(ctx, `
 SELECT project AS project_id, COUNT(*) AS cnt
 FROM zt_risk
@@ -53,6 +59,9 @@ GROUP BY project`, projectIDs)
 
 // FindStaffCountsByProject 本周工时记录去重人数。
 func (r *Repo) FindStaffCountsByProject(ctx context.Context, projectIDs []uint, monday, sunday string) (map[uint]int, error) {
+	if len(projectIDs) == 0 {
+		return map[uint]int{}, nil
+	}
 	return r.scanProjectCounts(ctx, `
 SELECT e.project AS project_id, COUNT(DISTINCT ef.account) AS cnt
 FROM zt_effort AS ef
