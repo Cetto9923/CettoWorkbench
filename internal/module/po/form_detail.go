@@ -407,7 +407,6 @@ type StageDurationItem struct {
 // DemandLifecycle 需求生命周期经办人。
 type DemandLifecycle struct {
 	CreatedBy      string `json:"createdBy"`
-	CreatedName    string `json:"createdName"`
 	CreatedDate    string `json:"createdDate"`
 	AssignedTo     string `json:"assignedTo"`
 	AssignedDate   string `json:"assignedDate"`

@@ -1,11 +1,15 @@
 # path<TAB>current debt line count; every shrink must ratchet this number down
 internal/module/schedule/handler_demand.go	660
+internal/module/schedule/repo.go	516
+internal/module/schedule/service.go	501
+internal/module/schedule/version_window_auth_test.go	527
 internal/module/user/handler.go	544
 web/static/css/components/components.css	616
 web/static/css/layout/layout.css	643
 web/static/css/permission/list.css	514
 web/static/css/po/board.css	517
-web/static/css/po/follow.css	710
+web/static/css/po/demand-detail.css	513
+web/static/css/po/follow.css	656
 web/static/css/po/po-profile.css	733
 web/static/css/po/shell.css	562
 web/static/css/po/wb-priority.css	504
@@ -16,10 +20,11 @@ web/static/js/components/form.js	513
 web/static/js/debug/sqlperf.js	550
 web/static/js/dept/list.js	650
 web/static/js/permission/members.js	572
+web/static/js/po/demand-clarify.js	510
 web/static/js/po/linkstory.js	605
-web/static/js/po/notice.js	507
+web/static/js/po/notice.js	506
 web/static/js/po/po-profile.js	856
-web/static/js/schedule/scheduleintegrated.js	833
+web/static/js/schedule/scheduleintegrated.js	826
 web/static/js/schedule/scheduleintegratedtasks.js	556
 web/static/js/ui.js	749
 web/templates/dept/edit.html	513

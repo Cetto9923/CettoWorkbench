@@ -214,7 +214,7 @@
     }
 
     var todayStr = new Date().toISOString().slice(0, 10);
-    var isOverdue = !!(item.isOverdue || (item.deadline && /^\d{4}-\d{2}-\d{2}/.test(item.deadline) && item.deadline < todayStr));
+    var isOverdue = !!(item.deadline && /^\d{4}-\d{2}-\d{2}/.test(item.deadline) && item.deadline < todayStr);
     var deadHtml = isOverdue ? '<span class="todos-deadline-overdue" title="已超期">' + esc(item.deadline) + '</span>' : esc(item.deadline || "—");
 
     return "<tr>" +
