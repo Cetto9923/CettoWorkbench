@@ -301,16 +301,25 @@
   }
 
   // 排期弹窗入口：价值流「排期」的业需/独立研需；以及「发起交付」阶段的独立研需
+  // 排期阶段研需仅当 zt_story.stage ∈ wait/planned/projected 时展示排期按钮
   function canShowSchedule(item) {
     if (!item) {
       return false;
     }
-    var stage = String(item.valueStream || item.stage || "").trim();
-    if (stage === "排期") {
+    var valueStream = String(item.valueStream || "").trim();
+    if (valueStream === "排期") {
+      if (isStoryItem(item)) {
+        var storyStage = String(item.stage || "").trim().toLowerCase();
+        return (
+          storyStage === "wait" ||
+          storyStage === "planned" ||
+          storyStage === "projected"
+        );
+      }
       return true;
     }
     // 发起交付阶段业需走「发起交付」；独立研需复用 /schedule/stories/:id/scheduling
-    return isStoryItem(item) && stage === "发起交付";
+    return isStoryItem(item) && valueStream === "发起交付";
   }
 
   // 受理阶段操作按钮（仅展示，提交/撤销/编辑暂不接业务）

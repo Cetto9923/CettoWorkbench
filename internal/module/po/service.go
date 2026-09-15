@@ -452,6 +452,7 @@ func storyWorkItems(rows []StoryRow, label string, actor *model.User, displayMap
 			ID:           fmt.Sprintf("U%d", row.ID),
 			Pri:          fmt.Sprintf("P%d", row.Pri),
 			Title:        row.Title,
+			Stage:        strings.TrimSpace(row.Stage), // 禅道研需 stage，供排期按钮判定
 			Owner:        owner,
 			NextOwner:    owner,
 			ZentaoUrl:    zentao.URL("story", "view", fmt.Sprintf("storyID=%d", row.ID)),

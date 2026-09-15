@@ -190,7 +190,7 @@ type WorkItemDetail struct {
 	ID              string `json:"id"` // 展示编号：业需 US{id}，研需 U{id}
 	Pri             string `json:"pri"`
 	Title           string `json:"title"`
-	Stage           string `json:"stage"`
+	Stage           string `json:"stage"` // 研需：zt_story.stage；业需一般为空（价值流用 valueStream）
 	Blocker         string `json:"blocker"`
 	Next            string `json:"next"`
 	Owner           string `json:"owner"`     // 与 NextOwner 同值，兼容旧字段

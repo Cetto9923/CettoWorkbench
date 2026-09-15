@@ -101,6 +101,7 @@ type StoryRow struct {
 	Title  string `gorm:"column:title"`
 	Pri    int    `gorm:"column:pri"`
 	Status string `gorm:"column:status"`
+	Stage  string `gorm:"column:stage"` // zt_story.stage（wait/planned/projected 等）
 }
 
 func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysqlStageFilter) *gorm.DB {
@@ -305,7 +306,7 @@ func (r *Repo) FindScheduleStories(ctx context.Context, account string) ([]Story
 	}
 	var rows []StoryRow
 	err := r.scheduleStoryScope(ctx, account).
-		Select("id", "title", "pri", "status").
+		Select("id", "title", "pri", "status", "stage").
 		Order("id DESC").
 		Find(&rows).Error
 	if err != nil {
@@ -346,7 +347,7 @@ func (r *Repo) FindDeliverStories(ctx context.Context, account string) ([]StoryR
 	}
 	var rows []StoryRow
 	err := r.deliverStoryScope(ctx, account).
-		Select("id", "title", "pri", "status").
+		Select("id", "title", "pri", "status", "stage").
 		Order("id DESC").
 		Find(&rows).Error
 	if err != nil {
