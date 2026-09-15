@@ -2,7 +2,7 @@
 // 文件: internal/pkg/sqllog/reader.go
 // 模块: 基础设施
 // 类型: infra
-// 职责: 从 sql.log 读取请求级 SQL 汇总行，供性能分析页使用。
+// 职责: 从 sql.log / sql-YYYY-MM-DD.log 读取汇总行与单条 SQL 查询行。
 // 依赖: 无
 // =============================================================================
 
@@ -26,6 +26,19 @@ type RequestSummary struct {
 	Elapsed   string  `json:"elapsed"`
 	ElapsedMS float64 `json:"elapsed_ms"`
 	SQLCount  int     `json:"sql_count"`
+}
+
+// QueryEntry 单条 SQL 查询记录（与按日 sql-YYYY-MM-DD.log 中查询行对应）。
+type QueryEntry struct {
+	Time      string  `json:"time"`
+	RequestID string  `json:"request_id"`
+	Seq       int     `json:"seq"`
+	SQL       string  `json:"sql"`
+	Elapsed   string  `json:"elapsed"`
+	ElapsedMS float64 `json:"elapsed_ms"`
+	Rows      int64   `json:"rows"`
+	File      string  `json:"file"`
+	Error     string  `json:"error,omitempty"`
 }
 
 // ReadRequestSummaries 读取日志文件中全部请求汇总行；文件不存在时返回空切片。
@@ -73,6 +86,54 @@ func ReadRequestSummaries(path string) ([]RequestSummary, error) {
 		return nil, err
 	}
 	return summaries, nil
+}
+
+// ReadQueryEntries 读取日志中的单条 SQL 查询行；跳过请求汇总行；文件不存在时返回空切片。
+func ReadQueryEntries(path string) ([]QueryEntry, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return []QueryEntry{}, nil
+		}
+		return nil, err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	buf := make([]byte, 0, 64*1024)
+	scanner.Buffer(buf, 1024*1024)
+
+	entries := make([]QueryEntry, 0)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+
+		var entry queryEntry
+		if err := json.Unmarshal([]byte(line), &entry); err != nil {
+			continue
+		}
+		if strings.TrimSpace(entry.SQL) == "" {
+			continue
+		}
+
+		entries = append(entries, QueryEntry{
+			Time:      entry.Time,
+			RequestID: entry.RequestID,
+			Seq:       entry.Seq,
+			SQL:       entry.SQL,
+			Elapsed:   entry.Elapsed,
+			ElapsedMS: parseElapsedMS(entry.Elapsed),
+			Rows:      entry.Rows,
+			File:      entry.File,
+			Error:     entry.Error,
+		})
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	return entries, nil
 }
 
 func parseElapsedMS(text string) float64 {
