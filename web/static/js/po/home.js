@@ -331,7 +331,7 @@
     );
   }
 
-  // 受理阶段操作按钮（仅展示，提交/撤销/编辑暂不接业务）
+  // 受理阶段操作按钮（评审/撤销走抽屉；编辑跳转禅道 demand-edit）
   function acceptActionButtons(item) {
     var parts = [];
     var demandId = escapeHtml(item.id || "");
@@ -344,9 +344,9 @@
     }
     if (canShowCancelReview(item)) {
       parts.push(
-        "<button type=\"button\" class=\"table-action-btn secondary js-cancel-review\" data-demand-id=\"" +
+        "<button type=\"button\" class=\"table-action-btn primary js-cancel-review\" data-demand-id=\"" +
           demandId +
-          "\">撤销评审</button>"
+          "\">撤回</button>"
       );
     }
     if (canShowSubmitReview(item)) {
@@ -357,11 +357,12 @@
       );
     }
     if (canShowEdit(item)) {
-      parts.push(
-        "<button type=\"button\" class=\"table-action-btn secondary js-edit-demand\" data-demand-id=\"" +
-          demandId +
-          "\">编辑</button>"
-      );
+      var editUrl = String(item.zentaoEditUrl || "").trim();
+      if (editUrl) {
+        parts.push(
+          "<a " + zentaoLinkAttrs(editUrl, "table-action-btn secondary") + ">编辑</a>"
+        );
+      }
     }
     return parts;
   }

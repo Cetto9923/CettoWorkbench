@@ -368,6 +368,7 @@ func (s *Service) buildDemandWorkItems(ctx context.Context, account, stageStatus
 			Owner:           ownerDisp,
 			NextOwner:       ownerDisp,
 			ZentaoUrl:       zentao.URL("demand", "view", fmt.Sprintf("demandID=%d", row.ID)),
+			ZentaoEditUrl:   zentao.URL("demand", "edit", fmt.Sprintf("demandID=%d", row.ID)),
 			ClarifyUrl:      zentao.URL("demand", "clarify", fmt.Sprintf("demandID=%d", row.ID)),
 			AppraiseUrl:     zentao.URL("demand", "appraise", fmt.Sprintf("demandID=%d", row.ID)),
 			TesttaskUrl:     testtaskURL,
