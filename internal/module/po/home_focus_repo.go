@@ -2,6 +2,8 @@ package po
 
 import (
 	"context"
+	"fmt"
+	"math"
 	"strings"
 	"time"
 
@@ -42,6 +44,13 @@ func (r *Repo) homeFocusQueryWithReviews(ctx context.Context, account string, re
 		if req.Status == "all" {
 			q = r.roleDemandBase(ctx, account)
 		}
+		if isParticipateScheduleRequest(req) {
+			if req.Status == "schedule" {
+				q = q.Where("1 = 0")
+			} else if req.Status == "all" {
+				q = q.Where("NOT (status = ? AND "+scheduleIncompleteDemandSQL()+")", "clarified")
+			}
+		}
 		switch req.Focus {
 		case "my_action":
 			// 只把当前价值流步骤的正式办理人视为“待我处理”；创建人、评审人和关注人不是当前负责人。
@@ -64,11 +73,11 @@ func (r *Repo) homeFocusQueryWithReviews(ctx context.Context, account string, re
 			q = q.Where("hang = ?", "1")
 		}
 		var rows []struct{ ID int }
-		stmt := q.Select("id, status, assignedTo, createdBy, ? AS stage_index", index).Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
+		stmt := q.Select("id, status, assignedTo, createdBy, ? AS stage_index, "+demandDurationDaysSQLExpr("zt_demand.createdDate")+" AS duration_days", index).Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
 		if req.Status == "all" {
 			stageSQL, stageArgs := r.demandStageCase(ctx, account)
-			stmt = q.Select("id, status, assignedTo, createdBy, "+stageSQL+" AS stage_index", stageArgs...).Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
-			parts = append(parts, "SELECT id, status, assignedTo, createdBy, stage_index FROM ("+stmt.SQL.String()+") AS demand_stages WHERE stage_index IS NOT NULL")
+			stmt = q.Select("id, status, assignedTo, createdBy, "+stageSQL+" AS stage_index, "+demandDurationDaysSQLExpr("zt_demand.createdDate")+" AS duration_days", stageArgs...).Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
+			parts = append(parts, "SELECT id, status, assignedTo, createdBy, stage_index, duration_days FROM ("+stmt.SQL.String()+") AS demand_stages WHERE stage_index IS NOT NULL")
 			args = append(args, stmt.Vars...)
 			break
 		}
@@ -77,11 +86,11 @@ func (r *Repo) homeFocusQueryWithReviews(ctx context.Context, account string, re
 	}
 	if len(parts) == 0 {
 		// 无匹配阶段时返回空候选集，避免非法 SQL。
-		return r.db.WithContext(ctx).Table("(SELECT NULL AS id, NULL AS status, NULL AS assignedTo, NULL AS createdBy, 0 AS stage_index WHERE 1 = 0) AS candidates").
-			Select("id, status, assignedTo, createdBy, stage_index")
+		return r.db.WithContext(ctx).Table("(SELECT NULL AS id, NULL AS status, NULL AS assignedTo, NULL AS createdBy, 0 AS stage_index, NULL AS duration_days WHERE 1 = 0) AS candidates").
+			Select("id, status, assignedTo, createdBy, stage_index, duration_days")
 	}
 	return r.db.WithContext(ctx).Table("("+strings.Join(parts, " UNION ALL ")+") AS candidates", args...).
-		Select("id, MAX(status) AS status, MAX(assignedTo) AS assignedTo, MAX(createdBy) AS createdBy, MIN(stage_index) AS stage_index").Group("id")
+		Select("id, MAX(status) AS status, MAX(assignedTo) AS assignedTo, MAX(createdBy) AS createdBy, MIN(stage_index) AS stage_index, MAX(duration_days) AS duration_days").Group("id")
 }
 
 // applyHomeFocusToolbarFilters 把 DemandsReq 的 keyword/objectType/priority/relation
@@ -174,7 +183,11 @@ func (r *Repo) CountHomeFocus(ctx context.Context, account string, req DemandsRe
 // findHomeFocusStoryRefs 复用首页正式焦点的日期/挂起规则，为独立研发需求提供焦点列表。
 // 研发需求目前只在排期、交付及待我处理等有明确工作台责任的场景进入首页。
 func (r *Repo) homeFocusStoryQuery(ctx context.Context, account string, req DemandsReq) *gorm.DB {
+	participate := isParticipateScheduleRequest(req)
 	q := r.db.WithContext(ctx).Table("zt_story").Where("deleted = ? AND status <> ? AND IFNULL(sourceType, '') <> ?", "0", "closed", "demandpool")
+	if participate {
+		q = r.participateScheduleStoryScope(ctx, account)
+	}
 	if req.ObjectType == "story" || req.Status == "all" || req.Status == "schedule" {
 		q = q.Where("((status IN ? AND (developFinish IS NULL OR developFinish = '0000-00-00' OR testFinish IS NULL OR testFinish = '0000-00-00')) OR (status IN ? AND deliverDate IS NOT NULL AND deliverDate != '0000-00-00'))", []string{"draft", "wait", "active", "clarified", "planned", "developing"}, []string{"acceptanced", "waitdeliver", "released"})
 	}
@@ -191,9 +204,15 @@ func (r *Repo) homeFocusStoryQuery(ctx context.Context, account string, req Dema
 		q = q.Where("1 = 0")
 	case "my_action":
 		// assignedTo 是研发需求的正式办理责任字段；不把 openedBy/watch 视为待办。
-		q = q.Where("assignedTo = ?", account)
+		if !participate {
+			q = q.Where("assignedTo = ?", account)
+		}
 	}
-	q = applyStoryToolbarFilters(q, account, req)
+	if participate {
+		q = applyParticipateStoryToolbarFilters(q, account, req)
+	} else {
+		q = applyStoryToolbarFilters(q, account, req)
+	}
 	stageSQL := homeFocusStoryStageSQL()
 	base := q.Select("id, " + stageSQL + " AS stage_index")
 	result := r.db.WithContext(ctx).Table("(?) AS focused_stories", base)
@@ -246,32 +265,57 @@ func (r *Repo) countHomeFocusStories(ctx context.Context, account string, req De
 func (r *Repo) HomeFocusStageSummary(ctx context.Context, account string, req DemandsReq) ([]ValueStreamStage, error) {
 	stages := make([]ValueStreamStage, len(valueStreamStages))
 	for i, stage := range valueStreamStages {
-		stages[i] = ValueStreamStage{Label: stage.label, Status: stage.status, Valid: true}
+		stages[i] = ValueStreamStage{
+			Label:           stage.label,
+			Status:          stage.status,
+			Valid:           true,
+			AvgDurationText: "—",
+		}
 	}
 	if strings.TrimSpace(account) == "" {
 		return stages, nil
 	}
 	req.Status = "all"
 	var rows []struct {
-		StageIndex int   `gorm:"column:stage_index"`
-		Count      int64 `gorm:"column:count"`
+		StageIndex    int   `gorm:"column:stage_index"`
+		Count         int64 `gorm:"column:count"`
+		TotalDuration int64 `gorm:"column:total_duration"`
+		DurationCount int64 `gorm:"column:duration_count"`
 	}
 	if req.ObjectType != "story" {
 		reviewIDs, _ := r.FindAccountPendingReviewDemandIDs(ctx, account)
 		base := r.applyHomeFocusToolbarFiltersWithReviews(r.homeFocusQueryWithReviews(ctx, account, req, reviewIDs), account, req, reviewIDs)
 		if err := r.db.WithContext(ctx).Table("(?) AS focused", base).
-			Select("stage_index, COUNT(*) AS count").Group("stage_index").Scan(&rows).Error; err != nil {
+			Select("stage_index, COUNT(*) AS count, IFNULL(SUM(duration_days), 0) AS total_duration, COUNT(duration_days) AS duration_count").
+			Group("stage_index").Scan(&rows).Error; err != nil {
 			return nil, err
 		}
 	}
 	var all int64
+	var allDemand int64
+	var allDemandDuration int64
+	var allDemandDurationCount int64
 	for _, row := range rows {
 		if row.StageIndex <= 0 || row.StageIndex >= len(stages) {
 			continue
 		}
 		stages[row.StageIndex].Count = row.Count
 		stages[row.StageIndex].DemandCount = row.Count
+		if row.DurationCount > 0 {
+			avg := int(math.Round(float64(row.TotalDuration) / float64(row.DurationCount)))
+			if avg < 1 {
+				avg = 1
+			}
+			stages[row.StageIndex].AvgDurationDays = avg
+			stages[row.StageIndex].AvgDurationText = fmt.Sprintf("均%d天", avg)
+		} else {
+			stages[row.StageIndex].AvgDurationDays = 0
+			stages[row.StageIndex].AvgDurationText = "—"
+		}
 		all += row.Count
+		allDemand += row.Count
+		allDemandDuration += row.TotalDuration
+		allDemandDurationCount += row.DurationCount
 	}
 	if req.ObjectType != "demand" {
 		var storyRows []struct {
@@ -292,6 +336,18 @@ func (r *Repo) HomeFocusStageSummary(ctx context.Context, account string, req De
 		}
 	}
 	stages[0].Count = all
-	stages[0].DemandCount = all
+	stages[0].DemandCount = allDemand
+	stages[0].StoryCount = all - allDemand
+	if allDemandDurationCount > 0 {
+		avg := int(math.Round(float64(allDemandDuration) / float64(allDemandDurationCount)))
+		if avg < 1 {
+			avg = 1
+		}
+		stages[0].AvgDurationDays = avg
+		stages[0].AvgDurationText = fmt.Sprintf("均%d天", avg)
+	} else {
+		stages[0].AvgDurationDays = 0
+		stages[0].AvgDurationText = "—"
+	}
 	return stages, nil
 }

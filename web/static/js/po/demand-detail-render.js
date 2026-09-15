@@ -46,12 +46,23 @@
     return labels[key] || raw || "—";
   }
 
+  function decodeBasicEntities(str) {
+    return String(str || "")
+      .replace(/&quot;/g, '"')
+      .replace(/&#34;/g, '"')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&#39;/g, "'");
+  }
+
   function renderHeader(summary, mode) {
     var tagText = mode === "parentAggregate" ? "父业务需求 · 聚合对象" : (mode === "childUnit" ? "子业务需求 · 交付单元" : "独立交付单元");
     var reviewer = summary.reviewer || "待确认";
     var launch = summary.estimateLaunch || "—";
     var stageLabel = String(summary.zentaoStatus || "").toLowerCase() === "wait" ? "待受理" : (summary.valueStageLabel || summary.valueStage || "—");
     var zentaoUrl = summary.zentaoUrl || "";
+    var cleanTitle = decodeBasicEntities(summary.title);
 
     return '<div class="dd-idrow">' +
       (zentaoUrl ? '<a class="dd-id table-id-link" href="' + esc(zentaoUrl) + '" target="_blank" rel="noopener noreferrer">' + esc(summary.code) + '</a>' : '<span class="dd-id">' + esc(summary.code) + '</span>') +
@@ -60,24 +71,25 @@
       '<div class="dd-head-actions">' +
       '  <button class="ui-close-btn" onclick="DemandDetail.close()" title="关闭" aria-label="关闭">×</button>' +
       '</div></div>' +
-      '<div class="dd-title">' + esc(summary.title) + '</div>' +
+      '<div class="dd-title">' + esc(cleanTitle) + '</div>' +
       '<div class="dd-meta">' +
       '  <span>提出人：' + esc(summary.proposerName) + '</span>' +
       '  <span>PO：' + esc(summary.ownerName) + '</span>' +
       '  <span>最近更新：' + esc(summary.editedDate) + '</span>' +
       '</div>' +
-      '<div class="dd-spot-cards-3">' +
-      '  <div class="dd-spot-card"><div class="lab">当前阶段</div><div class="val blue">' + esc(stageLabel) + '</div></div>' +
-      '  <div class="dd-spot-card"><div class="lab">业务评审人</div><div class="val">' + esc(reviewer) + '</div></div>' +
-      '  <div class="dd-spot-card"><div class="lab">目标上线</div><div class="val">' + esc(launch) + '</div></div>' +
-      '</div>' +
-      '<div class="dd-core-strip">' +
-      '  <div class="dd-core-item"><div class="k">需求类别</div><div class="v">' + esc(categoryLabel(summary.category)) + '</div></div>' +
-      '  <div class="dd-core-item"><div class="k">需求来源</div><div class="v">' + esc(summary.source) + '</div></div>' +
-      '  <div class="dd-core-item"><div class="k">所属产品</div><div class="v">' + esc(summary.product) + '</div></div>' +
-      '  <div class="dd-core-item"><div class="k">所属需求池</div><div class="v">' + esc(summary.poolName) + '</div></div>' +
-      '</div>' +
-      '<div class="dd-native-line"><b>禅道状态</b><span class="dd-native-state">' + esc(zentaoStatusLabel(summary.zentaoStatus)) + '</span><span style="color:#cbd5e1">•</span><span>原始状态仅用于追溯，工作台按价值流阶段统一展示与办理</span></div>';
+      '<div class="dd-summary-panel">' +
+      '  <div class="dd-summary-grid">' +
+      '    <div class="dd-summary-cell"><div class="lab">当前阶段</div><div class="val blue">' + esc(stageLabel) + '</div></div>' +
+      '    <div class="dd-summary-cell"><div class="lab">业务评审人</div><div class="val">' + esc(reviewer) + '</div></div>' +
+      '    <div class="dd-summary-cell"><div class="lab">需求创建时间</div><div class="val">' + esc(summary.createdDate || "—") + '</div></div>' +
+      '    <div class="dd-summary-cell"><div class="lab">期望上线日期</div><div class="val">' + esc(launch) + '</div></div>' +
+      '    <div class="dd-summary-cell"><div class="lab">需求类别</div><div class="val">' + esc(categoryLabel(summary.category)) + '</div></div>' +
+      '    <div class="dd-summary-cell"><div class="lab">需求来源</div><div class="val">' + esc(summary.source) + '</div></div>' +
+      '    <div class="dd-summary-cell"><div class="lab">所属需求池</div><div class="val">' + esc(summary.poolName) + '</div></div>' +
+      '    <div class="dd-summary-cell"><div class="lab">所属模块</div><div class="val">' + esc(summary.moduleName || "—") + '</div></div>' +
+      '  </div>' +
+      '  <div class="dd-native-line"><b>禅道状态</b><span class="dd-native-state">' + esc(zentaoStatusLabel(summary.zentaoStatus)) + '</span><span class="dd-native-dot">•</span><span>原始状态仅用于追溯，工作台按价值流阶段统一展示与办理</span></div>' +
+      '</div>';
   }
 
   function renderRelationNav(ctx, currentId) {
@@ -220,7 +232,7 @@
       '        <div class="dd-ms"><div class="k">开发完成</div><div class="v">' + esc(summary.developFinish || "—") + '</div><div class="sub">计划完成</div></div>',
       '        <div class="dd-ms"><div class="k">测试完成</div><div class="v">' + esc(summary.testFinish || "—") + '</div><div class="sub">计划完成</div></div>',
       '        <div class="dd-ms"><div class="k">验收完成</div><div class="v">' + esc(summary.verifyFinish || "—") + '</div><div class="sub">计划完成</div></div>',
-      '        <div class="dd-ms"><div class="k">目标上线</div><div class="v">' + esc(summary.estimateLaunch || "—") + '</div><div class="sub">当前目标日期</div></div>',
+      '        <div class="dd-ms"><div class="k">期望上线日期</div><div class="v">' + esc(summary.estimateLaunch || "—") + '</div><div class="sub">禅道当前字段</div></div>',
       '      </div>',
       '    </div></div>',
       '  </div>',
@@ -233,9 +245,9 @@
       '        <div class="k">需求类别</div><div class="v">' + esc(categoryLabel(summary.category)) + '</div>',
       '        <div class="k">需求来源</div><div class="v">' + esc(summary.source) + '</div>',
       '        <div class="k">优先级</div><div class="v">' + esc(summary.priority) + '</div>',
-      '        <div class="k">主系统</div><div class="v">' + esc(summary.mainSystemName) + '</div>',
-      '        <div class="k">所属产品</div><div class="v">' + esc(summary.product) + '</div>',
       '        <div class="k">所属需求池</div><div class="v">' + esc(summary.poolName) + '</div>',
+      '        <div class="k">所属模块</div><div class="v">' + esc(summary.moduleName || "—") + '</div>',
+      '        <div class="k">主系统</div><div class="v">' + esc(summary.mainSystemName) + '</div>',
       '        <div class="k">BSA等级</div><div class="v">' + esc(summary.bsa) + '</div>',
       '        <div class="k">来源备注</div><div class="v">' + esc(summary.sourceNote) + '</div>',
       '      </div>',
@@ -299,7 +311,7 @@
       '</div>' +
       '<div class="dd-cardhead"><h3>发布与投产信息</h3></div>' +
       '<div class="dd-kv-list" style="grid-template-columns:120px 1fr;">' +
-      '  <div class="k">目标上线时间</div><div class="v">' + esc(delivery.estimateLaunch) + '</div>' +
+      '  <div class="k">期望上线日期</div><div class="v">' + esc(delivery.estimateLaunch) + '</div>' +
       '  <div class="k">发布规划窗口</div><div class="v">' + esc(delivery.publishWindow) + '</div>' +
       '  <div class="k">生产验证结论</div><div class="v">' + esc(delivery.verifyConclusion) + '</div>' +
       '</div></div></div>';

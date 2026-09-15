@@ -8,7 +8,9 @@ import (
 	"workbench/internal/module/po/primaryaction"
 )
 
-// prepareParticipateStoryActions 批量准备参与业务需求的研发需求排期动作。
+// prepareParticipateStoryActions 兼容显式 objectType=demand 时的研发需求排期动作。
+// 默认“我参与”排期已经直接返回研发需求行；只有用户明确要求业务需求对象时，
+// 才保留在业务需求行上替换排期 URL 的兼容行为。
 func (s *Service) prepareParticipateStoryActions(ctx context.Context, actor *model.User, refs []itemRef, req DemandsReq, storyActions map[uint]primaryaction.PrimaryAction) (map[int]int, error) {
 	result := make(map[int]int)
 	if !strings.EqualFold(strings.TrimSpace(req.Relation), "participate") {

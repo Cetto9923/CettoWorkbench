@@ -37,7 +37,7 @@ function loadNoticeScript(windowOverrides, documentOverrides) {
     return reminderAliases[token] || reminderAliases[token.toLowerCase()] || "";
   }
   const defaultPersonalList = {
-    PAGE_SIZE_OPTIONS: [10, 15, 20, 50, 100],
+    PAGE_SIZE_OPTIONS: [10, 12, 15, 20, 50, 100],
     escapeHtml: (v) => String(v == null ? '' : v),
     objectTypeBadge: (k) => String(k || ''),
     loadPageSize: (_key, fallback) => fallback,

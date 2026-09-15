@@ -9,7 +9,7 @@
   "use strict";
 
   // 每页条数选项：与 components/pager.html 的 <select name="pageSize"> 保持同一套取值。
-  var PAGE_SIZE_OPTIONS = [10, 15, 20, 50, 100];
+  var PAGE_SIZE_OPTIONS = [10, 12, 15, 20, 50, 100];
 
   /**
    * createController: 创建带时序保护（E06）和状态隔离（E05）的列表数据控制器。

@@ -68,44 +68,36 @@
 .dd-title { font-weight: 700; font-size: 18px; color: var(--color-text-strong, #1e293b); margin: 10px 0 8px; line-height: 1.4; }
 .dd-meta { display: flex; gap: 20px; color: var(--color-text-secondary, #64748b); font-size: 12px; flex-wrap: wrap; margin-bottom: 12px; }
 
-/* 顶部 3 个聚光大卡片 */
-.dd-spot-cards-3 {
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px; margin-bottom: 10px;
+/* 顶部统一属性卡片（4列x2行无缝对齐 + 禅道追溯底栏） */
+.dd-summary-panel {
+  border: 1px solid var(--color-border, #e2e8f0); border-radius: 8px;
+  background: var(--color-surface-muted, #f8fafc); overflow: hidden; margin-bottom: 12px;
 }
-.dd-spot-card {
-  border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface-muted);
-  padding: 8px 12px; min-width: 0;
-}
-.dd-spot-card .lab { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 2px; }
-.dd-spot-card .val {
-  font-size: 14px; font-weight: 750; color: var(--color-text-strong, #1e293b);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.dd-spot-card .val.blue { color: var(--color-info); }
-
-/* 核心属性条（4 列平铺） */
-.dd-core-strip {
+.dd-summary-grid {
   display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
-  border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface-muted);
-  overflow: hidden; margin-bottom: 10px;
 }
-.dd-core-item { padding: 8px 12px; border-right: 1px solid var(--color-border); }
-.dd-core-item:last-child { border-right: none; }
-.dd-core-item .k { font-size: 11px; color: var(--dd-muted); margin-bottom: 3px; }
-.dd-core-item .v {
-  font-size: 12px; color: var(--color-text-body, #334155); font-weight: 600;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+.dd-summary-cell {
+  padding: 8px 12px; min-width: 0;
+  border-right: 1px solid var(--color-border, #e2e8f0);
 }
+.dd-summary-cell:nth-child(4n) { border-right: none; }
+.dd-summary-cell:nth-child(n+5) { border-top: 1px solid var(--color-border, #e2e8f0); }
+.dd-summary-cell .lab, .dd-summary-cell .k { font-size: 11px; color: var(--color-text-secondary, #64748b); margin-bottom: 2px; }
+.dd-summary-cell .val, .dd-summary-cell .v {
+  font-size: 13px; font-weight: 600; color: var(--color-text-strong, #1e293b);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.35;
+}
+.dd-summary-cell .val.blue, .dd-summary-cell .v.blue { color: var(--color-info, #2563eb); font-weight: 700; }
 
-/* 禅道真实状态追溯行 */
+/* 禅道真实状态追溯栏（内嵌卡片底栏，紧凑精致） */
 .dd-native-line {
-  padding: 6px 10px; border-radius: 6px; background: var(--color-surface-muted, #f8fafc);
-  border: 1px solid var(--color-border); color: var(--dd-muted); font-size: 11px;
-  display: flex; align-items: center; gap: 8px;
+  padding: 5px 12px; background: var(--color-surface, #fff);
+  border-top: 1px solid var(--color-border, #e2e8f0); color: var(--color-text-secondary, #64748b);
+  font-size: 11px; display: flex; align-items: center; gap: 8px;
 }
-.dd-native-line b { color: var(--color-text-body, #475569); }
+.dd-native-line b { color: var(--color-text-body, #475569); font-weight: 600; }
 .dd-native-state { color: var(--color-text-strong, #1e293b); font-weight: 600; }
+.dd-native-dot { color: #cbd5e1; }
 
 /* 父子关系导航条 */
 .dd-relation-nav { padding: 8px 24px; background: var(--color-surface-muted); border-bottom: 1px solid var(--color-border); flex-shrink: 0; }

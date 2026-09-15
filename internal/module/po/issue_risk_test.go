@@ -106,6 +106,7 @@ func TestIssueRiskSeverityAndPriorityLabels(t *testing.T) {
 		{"1", "致命", issueRiskSeverity},
 		{"2", "严重", issueRiskSeverity},
 		{"3", "一般", issueRiskSeverity},
+		{"4", "轻微", issueRiskSeverity},
 		{"", "一般", issueRiskSeverity},
 		{"未知", "一般", issueRiskSeverity},
 	}

@@ -29,6 +29,8 @@ const bothActionsHtml = Review.renderReviewView({
     source: "—",
     priority: "P3",
     product: "—",
+    priority: "P3",
+    moduleName: "客户管理模块",
     poolName: "科技工具链建设需求池",
     proposerName: "程统(003030)",
     proposerDept: "组织变革团队",
@@ -54,6 +56,8 @@ assert.ok(typeof Review.openWithdrawModal === "function", "openWithdrawModal mus
 assert.ok(typeof Review.closeWithdrawModal === "function", "closeWithdrawModal must be exported");
 assert.ok(typeof Review.confirmWithdraw === "function", "confirmWithdraw must be exported");
 assert.ok(bothActionsHtml.includes("也是创建人"), "banner must explain the combined reviewer and creator state");
+assert.ok(bothActionsHtml.includes("所属模块"), "review view must show demand module");
+assert.ok(bothActionsHtml.includes("客户管理模块"), "review view must show the ZenTao module name");
 console.log("PASS: reviewer+creator sees both review decision buttons and withdraw action");
 
 const reviewerOnlyHtml = Review.renderReviewView({

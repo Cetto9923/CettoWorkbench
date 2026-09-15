@@ -280,7 +280,6 @@
 
       var tbody = $("noticeTbody");
       if (tbody) { tbody.innerHTML = items.map(rowHtml).join(""); }
-      if ($("noticeSummary")) { $("noticeSummary").textContent = "共 " + total + " 条通知"; }
       if (payload) { updateCounts(payload); }
 
       if (window.PersonalList) {
@@ -465,7 +464,6 @@
   document.addEventListener("DOMContentLoaded", function () {
     if (window.PersonalList) {
       controller = window.PersonalList.createController({
-        summaryEl: $("noticeSummary"),
         emptyEl: $("noticeEmpty"),
         errorEl: $("noticeError"),
         tbodyEl: $("noticeTbody"),

@@ -7,7 +7,12 @@
 
 package po
 
-import "testing"
+import (
+	"testing"
+	"time"
+
+	"github.com/DATA-DOG/go-sqlmock"
+)
 
 func TestBuildSummaryCreatedNameUsesRealnameWithAccount(t *testing.T) {
 	svc := &DetailService{}
@@ -38,5 +43,69 @@ func TestBuildSummaryCreatedNameUsesRealnameWithAccount(t *testing.T) {
 	empty := svc.buildSummary(&DemandDetailRow{ID: 3})
 	if empty.CreatedName != "" {
 		t.Fatalf("CreatedName for empty account = %q, want empty", empty.CreatedName)
+	}
+}
+
+func TestFormatModuleNameUsesChineseEmptyState(t *testing.T) {
+	for _, value := range []string{"", "0", "—"} {
+		if got := formatModuleName(value); got != "未设置" {
+			t.Fatalf("formatModuleName(%q) = %q, want 未设置", value, got)
+		}
+	}
+	if got := formatModuleName("客户管理模块"); got != "客户管理模块" {
+		t.Fatalf("formatModuleName() = %q, want original module name", got)
+	}
+}
+
+func TestBuildSummaryUsesActionCreatedDateWhenAvailable(t *testing.T) {
+	svc := &DetailService{}
+	createdDate := time.Date(2025, 7, 11, 0, 0, 0, 0, time.Local)
+	actionDate := time.Date(2025, 7, 11, 14, 35, 22, 0, time.Local)
+
+	row := &DemandDetailRow{
+		ID:                63316,
+		CreatedDate:       &createdDate,
+		ActionCreatedDate: &actionDate,
+	}
+
+	summary := svc.buildSummary(row)
+	if summary.CreatedDate != "2025-07-11 14:35" {
+		t.Fatalf("CreatedDate = %q, want %q", summary.CreatedDate, "2025-07-11 14:35")
+	}
+	if summary.EditedDate != "2025-07-11 14:35" {
+		t.Fatalf("EditedDate = %q, want %q", summary.EditedDate, "2025-07-11 14:35")
+	}
+}
+
+func TestBuildSummaryFallsBackToCreatedDateWhenActionDateNil(t *testing.T) {
+	svc := &DetailService{}
+	createdDate := time.Date(2025, 7, 11, 10, 20, 0, 0, time.Local)
+
+	row := &DemandDetailRow{
+		ID:          63316,
+		CreatedDate: &createdDate,
+	}
+
+	summary := svc.buildSummary(row)
+	if summary.CreatedDate != "2025-07-11 10:20" {
+		t.Fatalf("CreatedDate = %q, want %q", summary.CreatedDate, "2025-07-11 10:20")
+	}
+}
+
+func TestFindDemandCreationActionDate_QueriesZtAction(t *testing.T) {
+	gormDB, mock := setupMockDB(t)
+	repo := NewDemandDetailRepo(gormDB)
+
+	actionTime := time.Date(2025, 7, 11, 16, 42, 10, 0, time.Local)
+	mock.ExpectQuery(`SELECT a\.date FROM zt_action a WHERE a\.objectType = 'demand' AND a\.objectID = \?`).
+		WithArgs(uint(63316)).
+		WillReturnRows(sqlmock.NewRows([]string{"date"}).AddRow(actionTime))
+
+	actDate, err := repo.FindDemandCreationActionDate(t.Context(), 63316)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if actDate == nil || *actDate != actionTime {
+		t.Fatalf("actDate = %v, want %v", actDate, actionTime)
 	}
 }

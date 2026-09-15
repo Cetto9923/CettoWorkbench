@@ -65,6 +65,19 @@
   border-radius: 9999px;
   font-weight: 600;
 }
+/* 首页默认焦点：用高对比琥珀色突出“待我处理”，避免与普通蓝色筛选混淆。 */
+.po-personal-workspace .header-quick-chip.my-action.active,
+.po-personal-workspace .header-quick-chip.my-action[aria-pressed="true"] {
+  border-color: var(--color-warning-fill);
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+  box-shadow: 0 0 0 2px var(--color-warning-border);
+}
+.po-personal-workspace .header-quick-chip.my-action.active em,
+.po-personal-workspace .header-quick-chip.my-action[aria-pressed="true"] em {
+  background: var(--color-warning-fill);
+  color: var(--color-text-on-accent);
+}
 .po-personal-workspace .header-quick-chip:disabled,
 .po-personal-workspace .header-quick-chip.disabled {
   opacity: 0.55;
@@ -111,6 +124,55 @@
 .po-personal-workspace .header-quick-chip.warning[aria-pressed="true"] em {
   background: transparent;
   color: var(--color-warning);
+}
+.po-personal-workspace .header-quick-chip.info {
+  border-color: var(--color-info-border);
+  background: var(--color-info-bg);
+  color: var(--color-info);
+}
+.po-personal-workspace .header-quick-chip.info em {
+  color: var(--color-info);
+  font-weight: 700;
+}
+.po-personal-workspace .header-quick-chip.success {
+  border-color: var(--color-success-border);
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+.po-personal-workspace .header-quick-chip.success em {
+  color: var(--color-success);
+  font-weight: 700;
+}
+.po-personal-workspace .header-quick-chip.success.active,
+.po-personal-workspace .header-quick-chip.success[aria-pressed="true"] {
+  border-color: var(--color-success-border);
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+.po-personal-workspace .header-quick-chip.success.active em,
+.po-personal-workspace .header-quick-chip.success[aria-pressed="true"] em {
+  background: var(--color-success-fill);
+  color: var(--color-text-on-accent);
+}
+.po-personal-workspace .header-quick-chip.primary {
+  border-color: var(--color-primary-border);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+.po-personal-workspace .header-quick-chip.primary em {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+.po-personal-workspace .header-quick-chip.primary.active,
+.po-personal-workspace .header-quick-chip.primary[aria-pressed="true"] {
+  border-color: var(--color-primary-border);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+.po-personal-workspace .header-quick-chip.primary.active em,
+.po-personal-workspace .header-quick-chip.primary[aria-pressed="true"] em {
+  background: var(--color-primary);
+  color: var(--color-text-on-accent);
 }
 
 /* 主面板容器 (Proposal A: 白底、精致细边、8px圆角与微阴影) */

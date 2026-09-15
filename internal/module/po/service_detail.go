@@ -81,6 +81,12 @@ func (s *DetailService) GetDemandDetail(ctx context.Context, actor *model.User, 
 		}
 	}
 
+	if s.repo != nil {
+		if actDate, _ := s.repo.FindDemandCreationActionDate(ctx, row.ID); actDate != nil {
+			row.ActionCreatedDate = actDate
+		}
+	}
+
 	summary := s.buildSummary(row)
 
 	resp := &DemandDetailResp{
@@ -214,13 +220,21 @@ func canWithdrawReviewForDetail(actor *model.User, row *DemandDetailRow) bool {
 func (s *DetailService) buildSummary(row *DemandDetailRow) DemandSummary {
 	code := fmt.Sprintf("US%d", row.ID)
 	stageKey, stageLabel := mapValueStage(row.Stage, row.Status)
+	createdTime := row.CreatedDate
+	if row.ActionCreatedDate != nil {
+		createdTime = row.ActionCreatedDate
+	}
 	createdStr := ""
-	if row.CreatedDate != nil {
-		createdStr = row.CreatedDate.Format("2006-01-02 15:04")
+	if createdTime != nil {
+		createdStr = createdTime.Format("2006-01-02 15:04")
 	}
 	editedStr := createdStr
 	if row.EditedDate != nil {
-		editedStr = row.EditedDate.Format("2006-01-02 15:04")
+		if row.EditedDate.Hour() == 0 && row.EditedDate.Minute() == 0 && row.ActionCreatedDate != nil && row.EditedDate.Format("2006-01-02") == row.ActionCreatedDate.Format("2006-01-02") {
+			editedStr = createdStr
+		} else {
+			editedStr = row.EditedDate.Format("2006-01-02 15:04")
+		}
 	}
 	launchStr := "—"
 	if row.EstimateLaunch != nil {
@@ -269,6 +283,7 @@ func (s *DetailService) buildSummary(row *DemandDetailRow) DemandSummary {
 		Product:          prodName,
 		MainSystem:       defaultDash(row.MainSystem),
 		MainSystemName:   defaultDash(firstNonEmpty(row.MainSystemName, row.MainSystem)),
+		ModuleName:       formatModuleName(row.ModuleName),
 		PoolName:         defaultDash(row.PoolName),
 		Priority:         formatPriority(row.Pri),
 		Status:           defaultDash(row.Status),

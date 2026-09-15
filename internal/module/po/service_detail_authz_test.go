@@ -32,7 +32,7 @@ import (
 
 func newDemandDetailMockRow(id uint, parent int64) *sqlmock.Rows {
 	return sqlmock.NewRows([]string{
-		"id", "parent", "pool", "pri", "category", "source", "sourceNote",
+		"id", "parent", "pool", "module", "pri", "category", "source", "sourceNote",
 		"name", "desc", "verifyPlan", "feedbackBy", "feedbackedBy",
 		"assignedTo", "QD", "RD", "BRA", "mainSystem", "reviewer",
 		"reviewedDate", "status", "stage", "originator", "createdBy",
@@ -42,16 +42,16 @@ func newDemandDetailMockRow(id uint, parent int64) *sqlmock.Rows {
 		"developFinish", "testFinish", "verifyFinish",
 		"assigned_to_name", "bra_name", "qd_name", "originator_name",
 		"accepter_name", "reviewer_name", "originator_dept", "pool_name",
-		"product_name", "main_system_name",
+		"product_name", "module_name", "main_system_name",
 	}).AddRow(
-		id, parent, 0, "2", "", "", "",
+		id, parent, 0, 0, "2", "", "", "",
 		"detail-name", "desc", "plan", "", "user_po",
 		"user_assigned", "user_qd", "", "user_bra", "0", "user_reviewer", nil,
 		"wait", "developing", "user_orig", "user_creator", nil, "user_close", nil,
 		"", "user_edit", nil, "", "", nil, nil, nil, "0", "user_acc", 0, nil, nil, nil,
 		"assigned-name", "bra-name", "qd-name", "orig-name",
 		"acc-name", "rev-name", "—", "pool-name",
-		"product-name", "system-name",
+		"product-name", "module-name", "system-name",
 	)
 }
 

@@ -220,3 +220,56 @@ func TestFormatTodoUnifiedItem_ApprovalURL(t *testing.T) {
 		t.Errorf("expected fallback approval URL with approval-view-2783.html or approvalID=2783, got: %s", itemFallback.URL)
 	}
 }
+
+func TestFormatTodoUnifiedItem_ApprovalScene(t *testing.T) {
+	want := map[string]string{
+		"charter":         "项目章程",
+		"buildguideline":  "建设指引",
+		"planchange":      "计划变更",
+		"review":          "需求评审",
+		"reviewchange":    "需求变更",
+		"reviewbymanager": "主管审批",
+	}
+	for objectType, label := range want {
+		item := formatTodoUnifiedItem(todoUnifiedRow{Kind: "approval", ObjectType: objectType}, nil)
+		if item.ApprovalScene != label {
+			t.Errorf("approval scene %q = %q, want %q", objectType, item.ApprovalScene, label)
+		}
+	}
+	if item := formatTodoUnifiedItem(todoUnifiedRow{Kind: "approval", ObjectType: "unknown"}, nil); item.ApprovalScene != "—" {
+		t.Errorf("unknown approval scene = %q, want em dash", item.ApprovalScene)
+	}
+}
+
+func TestTodoIssueRiskSeverity(t *testing.T) {
+	cases := []struct {
+		kind string
+		raw  string
+		want string
+	}{
+		{kind: "risk", raw: "1", want: "低"},
+		{kind: "risk", raw: "5", want: "高"},
+		{kind: "risk", raw: "high", want: "较高"},
+		{kind: "issue", raw: "1", want: "致命"},
+		{kind: "issue", raw: "3", want: "一般"},
+		{kind: "issue", raw: "4", want: "轻微"},
+		{kind: "demand", raw: "1", want: ""},
+	}
+	for _, tc := range cases {
+		item := formatTodoUnifiedItem(todoUnifiedRow{Kind: tc.kind, Severity: tc.raw}, nil)
+		if item.Severity != tc.want {
+			t.Errorf("%s severity %q = %q, want %q", tc.kind, tc.raw, item.Severity, tc.want)
+		}
+	}
+}
+
+func TestTodoIssueRiskSQLUsesDomainSeverityFields(t *testing.T) {
+	riskSQL, _ := buildTodoRiskSQL("user_a")
+	if !strings.Contains(riskSQL, "rk.impact AS severity") {
+		t.Fatalf("risk SQL must use zt_risk.impact, got: %s", riskSQL)
+	}
+	issueSQL, _ := buildTodoIssueSQL("user_a")
+	if !strings.Contains(issueSQL, "iss.severity AS severity") {
+		t.Fatalf("issue SQL must use zt_issue.severity, got: %s", issueSQL)
+	}
+}

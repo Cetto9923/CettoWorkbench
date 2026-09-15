@@ -47,9 +47,11 @@ var mysqlStageFilters = map[string]mysqlStageFilter{
 	"acceptanced": {
 		statuses:       []string{"acceptanced"},
 		deliverDateDue: true,
+		braRequired:    true,
 		deliverStories: true,
 	},
-	"publish": {publishStage: true},
+	// 发布只展示待交付需求；已发布但未评价的需求不再回流到首页。
+	"publish": {statuses: []string{"waitdeliver"}},
 	"released": {
 		statuses: []string{"released"},
 		overall:  &releasedOverallEmpty,
@@ -87,7 +89,7 @@ func (r *Repo) roleDemandBase(ctx context.Context, account string) *gorm.DB {
 		Where("status NOT IN ?", []string{"closed"}).
 		Where("NOT EXISTS (SELECT 1 FROM zt_demand child WHERE child.deleted = ? AND child.parent = zt_demand.id)", "0").
 		Where(`(
-			id IN (SELECT demand FROM zt_demandclarify WHERE PM = ?)
+			id IN (SELECT demand FROM zt_demandclarify WHERE FIND_IN_SET(?, REPLACE(PM, ' ', '')) > 0)
 			OR QD = ?
 			OR RD = ?
 			OR BRA = ?
@@ -153,17 +155,22 @@ func applyDemandStage(q *gorm.DB, account string, filter mysqlStageFilter) *gorm
 		q = q.Where("NOT EXISTS (SELECT 1 FROM zt_demandclarify dc WHERE dc.demand = zt_demand.id)")
 	}
 	if filter.scheduleIncomplete {
-		// 日期未填：NULL / 零日期；或 QD、mainDevelopers 为空
-		q = q.Where("(" + strings.Join([]string{
-			dateUnsetExpr("developFinish"),
-			dateUnsetExpr("testFinish"),
-			dateUnsetExpr("verifyFinish"),
-			dateUnsetExpr("estimateLaunch"),
-			"QD = ''",
-			"mainDevelopers = ''",
-		}, " OR ") + ")")
+		q = q.Where(scheduleIncompleteDemandSQL())
 	}
 	return q
+}
+
+// scheduleIncompleteDemandSQL 业务需求仍处于排期准备状态的条件。
+// 该条件与排期阶段的正式列表口径保持一致，避免参与人员分支出现另一套阶段判断。
+func scheduleIncompleteDemandSQL() string {
+	return "(" + strings.Join([]string{
+		dateUnsetExpr("developFinish"),
+		dateUnsetExpr("testFinish"),
+		dateUnsetExpr("verifyFinish"),
+		dateUnsetExpr("estimateLaunch"),
+		"QD = ''",
+		"mainDevelopers = ''",
+	}, " OR ") + ")"
 }
 
 // scheduleStoryScope 排期阶段独立研发需求：非需求池、指派给当前用户、关键日期未填。

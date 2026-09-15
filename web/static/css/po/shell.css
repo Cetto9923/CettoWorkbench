@@ -1,6 +1,6 @@
 /* PO 工作台共享外壳：几何取自 po-v2 运行页实测。 */
 body.po-workbench-shell {
-  --sidebar-width: 200px;
+  --sidebar-width: 224px;
   --topbar-height: 56px;
   --topbar-stack-height: 56px;
   background: var(--color-page-bg);
@@ -226,25 +226,56 @@ body.po-workbench-shell .layout {
 }
 
 body.po-workbench-shell .sidebar {
-  top: 0;
-  bottom: 0;
-  width: 200px;
-  border-right-color: var(--color-border);
-  z-index: 120;
+  top: 0; bottom: 0; width: var(--sidebar-width); border-right-color: var(--color-border); z-index: 120;
 }
 
-.po-sidebar-brand {
-  display: flex;
-  flex: 0 0 56px;
-  align-items: center;
-  gap: 8px;
-  height: 56px;
-  padding: 0 16px;
-  border-bottom: 1px solid var(--color-border);
-  color: var(--color-text-primary);
-  font-size: 14px;
-  font-weight: 700;
+body.po-workbench-shell .sidebar.po-dual-sidebar {
+  display: flex; flex-direction: row; padding: 0; overflow: hidden; background: var(--color-surface);
 }
+
+body.po-workbench-shell .po-rail {
+  display: flex; flex: 0 0 56px; flex-direction: column; align-items: center; width: 56px;
+  padding: 10px 0; gap: 8px; border-right: 1px solid var(--color-border); background: var(--color-surface-muted);
+}
+
+body.po-workbench-shell .po-rail-header,
+body.po-workbench-shell .po-rail-footer,
+body.po-workbench-shell .po-rail-nav { display: flex; align-items: center; width: 100%; }
+
+body.po-workbench-shell .po-rail-header,
+body.po-workbench-shell .po-rail-footer { justify-content: center; }
+
+body.po-workbench-shell .po-rail-nav { flex: 1; flex-direction: column; gap: 8px; }
+
+body.po-workbench-shell .po-rail .po-brand-logo {
+  width: 32px; height: 32px; border-radius: 8px; font-size: 14px; text-decoration: none; box-shadow: var(--shadow-sm);
+}
+
+body.po-workbench-shell .po-rail-btn {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 44px; min-height: 40px; padding: 4px 0; gap: 2px; border: 0; border-radius: 9px;
+  background: transparent; color: var(--color-text-secondary); font: inherit; line-height: 1; cursor: pointer; appearance: none;
+}
+
+body.po-workbench-shell .po-rail-btn i { font-size: 15px; }
+body.po-workbench-shell .po-rail-btn span:not(.po-rail-dot) { font-size: 11px; font-weight: 600; }
+body.po-workbench-shell .po-rail-btn:hover { background: var(--color-surface); color: var(--color-text-primary); }
+body.po-workbench-shell .po-rail-btn.active { background: var(--color-surface); color: var(--color-info); box-shadow: var(--shadow-sm); }
+body.po-workbench-shell .po-rail-dot {
+  position: absolute; top: 6px; right: 7px; width: 7px; height: 7px; border: 1px solid var(--color-surface-muted);
+  border-radius: 50%; background: var(--color-danger-fill);
+}
+
+body.po-workbench-shell .po-subnav { flex: 1; min-width: 0; padding: 12px 10px; overflow-y: auto; }
+body.po-workbench-shell .po-subnav-panel { display: none; }
+body.po-workbench-shell .po-subnav-panel.is-active { display: block; }
+body.po-workbench-shell .po-subnav-header { display: flex; align-items: center; height: 28px; margin-bottom: 8px; }
+body.po-workbench-shell .po-subnav-title { color: var(--color-text-primary); font-size: 14px; font-weight: 700; }
+body.po-workbench-shell .po-subnav-body { display: flex; flex-direction: column; gap: 6px; }
+body.po-workbench-shell .po-subnav .nav-icon { display: none; }
+body.po-workbench-shell .po-subnav .nav-item { gap: 6px; padding: 6px 10px; }
+body.po-workbench-shell .po-subnav .nav-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body.po-workbench-shell .po-subnav .nav-badge { margin-left: auto; flex-shrink: 0; }
 
 .po-brand-logo {
   display: inline-flex;
@@ -260,77 +291,39 @@ body.po-workbench-shell .sidebar {
 }
 
 .po-sidebar-collapse {
-  width: 24px;
-  height: 24px;
-  margin-left: auto;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--color-text-disabled);
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity .15s ease;
+  width: 24px; height: 24px; margin-left: auto; border: 0; border-radius: 6px; background: transparent;
+  color: var(--color-text-disabled); cursor: pointer; opacity: 0; transition: opacity .15s ease;
 }
 
 body.po-workbench-shell .sidebar:hover .po-sidebar-collapse,
 .po-sidebar-collapse:focus-visible { opacity: 1; }
 
-body.po-workbench-shell .sidebar-body {
-  padding: 0;
-}
-
-body.po-workbench-shell .po-sidebar-nav {
-  gap: 2px;
-  padding: 8px;
-}
-
-body.po-workbench-shell .sidebar .nav-section-label {
-  height: 26px;
-  margin: 0;
-  padding: 6px 12px 2px;
-  color: var(--color-text-disabled);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
 body.po-workbench-shell .sidebar .nav-item {
-  min-height: 32px;
-  padding: 6px 12px;
-  border-radius: 6px;
-  color: var(--color-text-secondary);
-  font-size: 13px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  display: flex; align-items: center; gap: 8px; width: 100%; min-height: 32px; padding: 6px 12px;
+  border: 0; border-radius: 6px; background: transparent; color: var(--color-text-secondary);
+  font-size: 13px; font-weight: 500; font-family: inherit;
   transition: all 0.15s ease;
 }
 
+body.po-workbench-shell .sidebar button.nav-item {
+  appearance: none; cursor: default; text-align: left;
+}
+
 body.po-workbench-shell .sidebar .nav-item:hover {
-  background: var(--color-surface-muted);
-  color: var(--color-text-primary);
+  background: var(--color-surface-muted); color: var(--color-text-primary);
 }
 
 body.po-workbench-shell .sidebar .nav-item.active {
-  background: var(--color-info-bg);
-  color: var(--color-info);
-  font-weight: 600;
+  background: var(--color-info-bg); color: var(--color-info); font-weight: 600;
 }
 
-body.po-workbench-shell .sidebar .nav-divider {
-  margin: 6px 0;
-  background: var(--color-border);
+body.po-workbench-shell .sidebar .nav-icon {
+  flex: 0 0 18px; text-align: center;
 }
 
 body.po-workbench-shell .sidebar .nav-badge {
-  color: var(--color-info);
-  background: var(--color-info-bg);
-  font-size: 11px;
-  font-weight: 600;
-  padding: 1px 6px;
-  border-radius: 9999px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--color-info); background: var(--color-info-bg); font-size: 11px; font-weight: 600;
+  padding: 1px 6px; border-radius: 9999px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 /* 侧栏角标：未读通知强调红色，保持告警视觉 */
@@ -352,10 +345,6 @@ body.po-workbench-shell .sidebar .nav-badge--muted {
 /* 角标为 0 时不显示；hidden class 作为兜底 */
 body.po-workbench-shell .sidebar .nav-badge[hidden],
 body.po-workbench-shell .sidebar .nav-badge:empty { display: none; }
-
-body.po-workbench-shell .sidebar .badge {
-  background: var(--color-danger-fill);
-}
 
 body.po-workbench-shell .main {
   height: calc(100vh - var(--po-shell-topbar-height));
@@ -484,11 +473,13 @@ body.po-workbench-shell .workspace-header-left p {
 }
 
 body.po-workbench-shell.has-bottom-tabs { --po-shell-pad-bottom: 56px; }
+body.sidebar-collapsed.po-workbench-shell { --sidebar-width-collapsed: 56px; }
 
 body.sidebar-collapsed.po-workbench-shell .sidebar { width: var(--sidebar-width-collapsed); }
+body.sidebar-collapsed.po-workbench-shell .sidebar.po-dual-sidebar { width: 56px; }
+body.sidebar-collapsed.po-workbench-shell .sidebar.po-dual-sidebar .po-subnav { display: none; }
 body.sidebar-collapsed.po-workbench-shell .topbar { left: var(--sidebar-width-collapsed); }
 body.sidebar-collapsed.po-workbench-shell .bottom-tabbar { left: var(--sidebar-width-collapsed); }
-body.sidebar-collapsed.po-workbench-shell .po-sidebar-brand { justify-content: center; padding: 0 4px; }
 body.sidebar-collapsed.po-workbench-shell .po-brand-logo { margin: 0; }
 body.sidebar-collapsed.po-workbench-shell .po-sidebar-collapse { display: inline-flex; align-items: center; justify-content: center; opacity: 1; margin: 0; }
 body.sidebar-collapsed.po-workbench-shell .po-sidebar-collapse i { transform: rotate(180deg); }

@@ -19,9 +19,9 @@
   <header class="workspace-header">
     <div class="header-quick-filters" id="followQuickChips" role="group" aria-label="关注快捷焦点">
       <button type="button" class="header-quick-chip active" data-scope="open" aria-pressed="true">全部未关闭 <em id="kpiOpen">0</em></button>
-      <button type="button" class="header-quick-chip" data-lifecycle="clarifying" aria-pressed="false">梳理中 <em id="kpiClarifying">0</em></button>
-      <button type="button" class="header-quick-chip" data-lifecycle="implementing" aria-pressed="false">实施中 <em id="kpiImplementing">0</em></button>
-      <button type="button" class="header-quick-chip" data-lifecycle="released" aria-pressed="false">已发布 <em id="kpiReleased">0</em></button>
+      <button type="button" class="header-quick-chip warning" data-lifecycle="clarifying" aria-pressed="false">梳理中 <em id="kpiClarifying">0</em></button>
+      <button type="button" class="header-quick-chip primary" data-lifecycle="implementing" aria-pressed="false">实施中 <em id="kpiImplementing">0</em></button>
+      <button type="button" class="header-quick-chip success" data-lifecycle="released" aria-pressed="false">已发布 <em id="kpiReleased">0</em></button>
       <button type="button" class="header-quick-chip danger" data-scope="closed" aria-pressed="false">已关闭 <em id="kpiClosed">0</em></button>
     </div>
   </header>
@@ -149,7 +149,7 @@
           </colgroup>
           <thead>
             <tr>
-              <th>对象#ID</th>
+              <th>ID</th>
               <th>标题</th>
               <th>研发阶段</th>
               <th>进度摘要</th>

@@ -31,63 +31,66 @@ type DemandDetailRow struct {
 	ID uint `gorm:"column:id"`
 	// ZenTao uses -1 for a top-level demand. Keep the source value signed so a
 	// valid top-level record cannot make detail loading fail during row scanning.
-	Parent           int64      `gorm:"column:parent"`
-	Pool             uint       `gorm:"column:pool"`
-	PoolName         string     `gorm:"column:pool_name"`
-	Pri              string     `gorm:"column:pri"`
-	Category         string     `gorm:"column:category"`
-	Source           string     `gorm:"column:source"`
-	SourceNote       string     `gorm:"column:sourceNote"`
-	Name             string     `gorm:"column:name"`
-	Desc             string     `gorm:"column:desc"`
-	VerifyPlan       string     `gorm:"column:verifyPlan"`
-	FeedbackBy       string     `gorm:"column:feedbackBy"`
-	FeedbackedBy     string     `gorm:"column:feedbackedBy"`
-	AssignedTo       string     `gorm:"column:assignedTo"`
-	AssignedToName   string     `gorm:"column:assigned_to_name"`
-	QD               string     `gorm:"column:QD"`
-	QDName           string     `gorm:"column:qd_name"`
-	RD               string     `gorm:"column:RD"`
-	BRA              string     `gorm:"column:BRA"`
-	BRAName          string     `gorm:"column:bra_name"`
-	MainSystem       string     `gorm:"column:mainSystem"`
-	Reviewer         string     `gorm:"column:reviewer"`
-	ReviewedDate     *time.Time `gorm:"column:reviewedDate"`
-	Status           string     `gorm:"column:status"`
-	Stage            string     `gorm:"column:stage"`
-	Originator       string     `gorm:"column:originator"`
-	OriginatorName   string     `gorm:"column:originator_name"`
-	OriginatorDept   string     `gorm:"column:originator_dept"`
-	CreatedBy        string     `gorm:"column:createdBy"`
-	CreatedByName    string     `gorm:"column:created_by_name"`
-	CreatedDate      *time.Time `gorm:"column:createdDate"`
-	ClosedBy         string     `gorm:"column:closedBy"`
-	ClosedDate       *time.Time `gorm:"column:closedDate"`
-	ClosedReason     string     `gorm:"column:closedReason"`
-	EditedBy         string     `gorm:"column:editedBy"`
-	EditedDate       *time.Time `gorm:"column:editedDate"`
-	Duration         string     `gorm:"column:duration"`
-	BSA              string     `gorm:"column:BSA"`
-	EstimateLaunch   *time.Time `gorm:"column:estimateLaunch"`
-	PublishWindow    *time.Time `gorm:"column:publishWindow"`
-	DeliverDate      *time.Time `gorm:"column:deliverDate"`
-	Product          string     `gorm:"column:product"`
-	ProductName      string     `gorm:"column:product_name"`
-	Accepter         string     `gorm:"column:accepter"`
-	AccepterName     string     `gorm:"column:accepter_name"`
-	ReviewerName     string     `gorm:"column:reviewer_name"`
-	MainSystemName   string     `gorm:"column:main_system_name"`
-	EstimateDelivery int        `gorm:"column:estimateDelivery"`
-	DevelopFinish    *time.Time `gorm:"column:developFinish"`
-	TestFinish       *time.Time `gorm:"column:testFinish"`
-	VerifyFinish     *time.Time `gorm:"column:verifyFinish"`
+	Parent            int64      `gorm:"column:parent"`
+	Pool              uint       `gorm:"column:pool"`
+	Module            uint       `gorm:"column:module"`
+	PoolName          string     `gorm:"column:pool_name"`
+	Pri               string     `gorm:"column:pri"`
+	Category          string     `gorm:"column:category"`
+	Source            string     `gorm:"column:source"`
+	SourceNote        string     `gorm:"column:sourceNote"`
+	Name              string     `gorm:"column:name"`
+	Desc              string     `gorm:"column:desc"`
+	VerifyPlan        string     `gorm:"column:verifyPlan"`
+	FeedbackBy        string     `gorm:"column:feedbackBy"`
+	FeedbackedBy      string     `gorm:"column:feedbackedBy"`
+	AssignedTo        string     `gorm:"column:assignedTo"`
+	AssignedToName    string     `gorm:"column:assigned_to_name"`
+	QD                string     `gorm:"column:QD"`
+	QDName            string     `gorm:"column:qd_name"`
+	RD                string     `gorm:"column:RD"`
+	BRA               string     `gorm:"column:BRA"`
+	BRAName           string     `gorm:"column:bra_name"`
+	MainSystem        string     `gorm:"column:mainSystem"`
+	Reviewer          string     `gorm:"column:reviewer"`
+	ReviewedDate      *time.Time `gorm:"column:reviewedDate"`
+	Status            string     `gorm:"column:status"`
+	Stage             string     `gorm:"column:stage"`
+	Originator        string     `gorm:"column:originator"`
+	OriginatorName    string     `gorm:"column:originator_name"`
+	OriginatorDept    string     `gorm:"column:originator_dept"`
+	CreatedBy         string     `gorm:"column:createdBy"`
+	CreatedByName     string     `gorm:"column:created_by_name"`
+	CreatedDate       *time.Time `gorm:"column:createdDate"`
+	ClosedBy          string     `gorm:"column:closedBy"`
+	ClosedDate        *time.Time `gorm:"column:closedDate"`
+	ClosedReason      string     `gorm:"column:closedReason"`
+	EditedBy          string     `gorm:"column:editedBy"`
+	EditedDate        *time.Time `gorm:"column:editedDate"`
+	Duration          string     `gorm:"column:duration"`
+	BSA               string     `gorm:"column:BSA"`
+	EstimateLaunch    *time.Time `gorm:"column:estimateLaunch"`
+	PublishWindow     *time.Time `gorm:"column:publishWindow"`
+	DeliverDate       *time.Time `gorm:"column:deliverDate"`
+	Product           string     `gorm:"column:product"`
+	ProductName       string     `gorm:"column:product_name"`
+	ModuleName        string     `gorm:"column:module_name"`
+	Accepter          string     `gorm:"column:accepter"`
+	AccepterName      string     `gorm:"column:accepter_name"`
+	ReviewerName      string     `gorm:"column:reviewer_name"`
+	MainSystemName    string     `gorm:"column:main_system_name"`
+	EstimateDelivery  int        `gorm:"column:estimateDelivery"`
+	DevelopFinish     *time.Time `gorm:"column:developFinish"`
+	TestFinish        *time.Time `gorm:"column:testFinish"`
+	VerifyFinish      *time.Time `gorm:"column:verifyFinish"`
+	ActionCreatedDate *time.Time `gorm:"-"`
 }
 
 // FindDemandDetailByID 查询单个需求及左连扩展字段。
 func (r *DemandDetailRepo) FindDemandDetailByID(ctx context.Context, id uint) (*DemandDetailRow, error) {
 	var row DemandDetailRow
 	err := r.db.WithContext(ctx).Raw(`
-SELECT d.id, d.parent, d.pool, d.pri, d.category, d.source, d.sourceNote,
+SELECT d.id, d.parent, d.pool, d.module, d.pri, d.category, d.source, d.sourceNote,
        d.name, d.desc, d.verifyPlan, d.feedbackBy, d.feedbackedBy,
        d.assignedTo, d.QD, d.RD, d.BRA, d.mainSystem, d.reviewer, d.reviewedDate,
        d.status, d.stage, d.originator, d.createdBy, d.createdDate,
@@ -106,6 +109,7 @@ SELECT d.id, d.parent, d.pool, d.pri, d.category, d.source, d.sourceNote,
        COALESCE(dept.name, '—') AS originator_dept,
        COALESCE(dp.name, '—') AS pool_name,
        COALESCE(prod.name, d.product) AS product_name,
+       COALESCE(dm.name, NULLIF(CAST(d.module AS CHAR), '0')) AS module_name,
        COALESCE(sys.name, d.mainSystem) AS main_system_name
 FROM zt_demand d
 LEFT JOIN zt_user u_assign ON d.assignedTo = u_assign.account AND u_assign.deleted = '0'
@@ -117,6 +121,7 @@ LEFT JOIN zt_user u_creat ON d.createdBy = u_creat.account AND u_creat.deleted =
 LEFT JOIN zt_dept dept ON u_orig.dept = dept.id
 LEFT JOIN zt_demandpool dp ON d.pool = dp.id AND dp.deleted = '0'
 LEFT JOIN zt_product prod ON d.product = prod.id AND prod.deleted = '0'
+LEFT JOIN zt_module dm ON d.module = dm.id AND dm.deleted = '0'
 LEFT JOIN zt_product sys ON sys.id = CAST(NULLIF(d.mainSystem, '') AS UNSIGNED) AND sys.deleted = '0'
 WHERE d.id = ? AND d.deleted = '0'
 LIMIT 1`, id).Scan(&row).Error
@@ -322,6 +327,24 @@ WHERE a.objectType = 'demand' AND a.objectID = ?
 ORDER BY a.date DESC
 LIMIT 60`, demandID).Scan(&rows).Error
 	return rows, err
+}
+
+// FindDemandCreationActionDate 从操作记录 (zt_action) 中查找需求创建的详细时间。
+func (r *DemandDetailRepo) FindDemandCreationActionDate(ctx context.Context, demandID uint) (*time.Time, error) {
+	if r == nil || r.db == nil || demandID == 0 {
+		return nil, nil
+	}
+	var createdDate *time.Time
+	err := r.db.WithContext(ctx).Raw(`
+SELECT a.date
+FROM zt_action a
+WHERE a.objectType = 'demand' AND a.objectID = ?
+ORDER BY (CASE WHEN LOWER(a.action) IN ('created', 'opened') THEN 0 ELSE 1 END) ASC, a.id ASC
+LIMIT 1`, demandID).Scan(&createdDate).Error
+	if err != nil {
+		return nil, err
+	}
+	return createdDate, nil
 }
 
 // DemandClarifyRow 澄清扩展说明。

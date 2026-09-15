@@ -137,53 +137,138 @@
   模块: 布局
   职责: 渲染左侧菜单。支持PO角色与PMO管理员视图动态切换。
 ========================================================================== */}}
-<nav class="sidebar" id="sidebar">
-  {{ if or (eq .CurrentPath "/home") (eq .CurrentPath "/schedule") (eq .CurrentPath "/todos") (eq .CurrentPath "/done") (eq .CurrentPath "/notice") (eq .CurrentPath "/follow") (eq .CurrentPath "/board/demand") (eq .CurrentPath "/board/task") (eq .CurrentPath "/query") (eq .CurrentPath "/metrics/manage") (eq .CurrentPath "/metrics/radar") (eq .CurrentPath "/issues/risk") (eq .CurrentPath "/issue-risk") (eq .CurrentPath "/agileteam") (eq .CurrentPath "/pmo") }}
-  <div class="po-sidebar-brand">
-    <span class="po-brand-logo">研</span>
-    <strong class="nav-text">研发工作台</strong>
-    <button type="button" class="po-sidebar-collapse js-sidebar-collapse" id="sidebarToggle" title="收起菜单" aria-label="收起菜单"><i class="fas fa-chevron-left"></i></button>
-  </div>
-  <div class="sidebar-body">
-    <div class="sidebar-nav po-sidebar-nav">
-      <div class="nav-section-label">个人工作</div>
-      <a href="/home" class="nav-item{{ if eq .CurrentPath "/home" }} active{{ end }}"><i class="nav-icon fas fa-home"></i><span class="nav-text">首页</span></a>
-      <a href="/todos" class="nav-item{{ if eq .CurrentPath "/todos" }} active{{ end }}"><i class="nav-icon fas fa-list-check"></i><span class="nav-text">我的待办</span>{{ if gt .SidebarBadges.Todos 0 }}<span class="nav-badge" data-sidebar-badge="todos" title="待办条数">{{ .SidebarBadges.Todos }}</span>{{ end }}</a>
-      <a href="/done" class="nav-item{{ if eq .CurrentPath "/done" }} active{{ end }}"><i class="nav-icon fas fa-clock-rotate-left"></i><span class="nav-text">我的已办</span></a>
-      <a href="/notice" class="nav-item{{ if eq .CurrentPath "/notice" }} active{{ end }}"><i class="nav-icon fas fa-bell"></i><span class="nav-text">通知中心</span>{{ if gt .SidebarBadges.Notice 0 }}<span class="nav-badge nav-badge--danger" data-sidebar-badge="notice" title="未读通知条数">{{ .SidebarBadges.Notice }}</span>{{ end }}</a>
-      <a href="/follow" class="nav-item{{ if eq .CurrentPath "/follow" }} active{{ end }}"><i class="nav-icon fas fa-star"></i><span class="nav-text">我的关注</span></a>
+<nav class="sidebar{{ if or (eq .CurrentPath "/home") (eq .CurrentPath "/schedule") (eq .CurrentPath "/todos") (eq .CurrentPath "/done") (eq .CurrentPath "/notice") (eq .CurrentPath "/follow") (eq .CurrentPath "/board/demand") (eq .CurrentPath "/board/task") (eq .CurrentPath "/query") (eq .CurrentPath "/metrics/manage") (eq .CurrentPath "/metrics/radar") (eq .CurrentPath "/issues/risk") (eq .CurrentPath "/issue-risk") (eq .CurrentPath "/agileteam") (eq .CurrentPath "/pmo") (hasPrefix .CurrentPath "/demands/") }} po-dual-sidebar{{ end }}" id="sidebar">
+  {{ if or (eq .CurrentPath "/home") (eq .CurrentPath "/schedule") (eq .CurrentPath "/todos") (eq .CurrentPath "/done") (eq .CurrentPath "/notice") (eq .CurrentPath "/follow") (eq .CurrentPath "/board/demand") (eq .CurrentPath "/board/task") (eq .CurrentPath "/query") (eq .CurrentPath "/metrics/manage") (eq .CurrentPath "/metrics/radar") (eq .CurrentPath "/issues/risk") (eq .CurrentPath "/issue-risk") (eq .CurrentPath "/agileteam") (eq .CurrentPath "/pmo") (hasPrefix .CurrentPath "/demands/") }}
+  {{ $isPersonal := or (eq .CurrentPath "/home") (eq .CurrentPath "/todos") (eq .CurrentPath "/done") (eq .CurrentPath "/notice") (eq .CurrentPath "/follow") }}
+  {{ $isDelivery := or (eq .CurrentPath "/board/demand") (eq .CurrentPath "/board/task") (eq .CurrentPath "/query") (eq .CurrentPath "/schedule") (hasPrefix .CurrentPath "/demands/") }}
+  {{ $isCollab := or (eq .CurrentPath "/agileteam") (eq .CurrentPath "/pmo") }}
+  {{ $isGov := or (eq .CurrentPath "/issues/risk") (eq .CurrentPath "/issue-risk") (eq .CurrentPath "/metrics/radar") (eq .CurrentPath "/metrics/manage") }}
+  {{ $isAdmin := or (eq .CurrentPath "/admin/roles") (eq .CurrentPath "/admin/users") }}
+  {{ $activeGroup := "personal" }}
+  {{ if $isDelivery }}{{ $activeGroup = "delivery" }}
+  {{ else if $isCollab }}{{ $activeGroup = "collab" }}
+  {{ else if $isGov }}{{ $activeGroup = "gov" }}
+  {{ else if $isAdmin }}{{ $activeGroup = "admin" }}
+  {{ end }}
+  {{ $personalBadge := add .SidebarBadges.Todos .SidebarBadges.Notice }}
 
-      <div class="nav-divider" role="separator"></div>
-      <div class="nav-section-label">需求交付</div>
-      <a href="/board/demand" class="nav-item{{ if or (eq .CurrentPath "/board/demand") (eq .CurrentPath "/board/task") }} active{{ end }}"><i class="nav-icon fas fa-table-cells-large"></i><span class="nav-text">工作看板</span></a>
-      <a href="/query" class="nav-item{{ if eq .CurrentPath "/query" }} active{{ end }}"><i class="nav-icon fas fa-magnifying-glass"></i><span class="nav-text">需求查询</span></a>
-      <a href="/schedule" class="nav-item{{ if eq .CurrentPath "/schedule" }} active{{ end }}"><i class="nav-icon fas fa-calendar-check"></i><span class="nav-text">需求排期</span><span class="nav-badge">PO</span></a>
-      <button type="button" class="nav-item po-shell-placeholder" data-placeholder-type="migration"><i class="nav-icon fas fa-boxes-packing"></i><span class="nav-text">版本交付</span><span class="nav-badge nav-badge--muted">建设中</span></button>
-
-      <div class="nav-divider" role="separator"></div>
-      <div class="nav-section-label">团队协作</div>
-      <a href="/agileteam" class="nav-item{{ if or (eq .CurrentPath "/agileteam") (eq .CurrentPath "/pmo") }} active{{ end }}"><i class="nav-icon fas fa-users"></i><span class="nav-text">敏捷小组</span></a>
-      <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-arrows-spin"></i><span class="nav-text">迭代管理</span><span class="nav-badge nav-badge--muted">规划中</span></button>
-      <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-heart-pulse"></i><span class="nav-text">团队健康</span><span class="nav-badge nav-badge--muted">规划中</span></button>
-
-      <div class="nav-divider" role="separator"></div>
-      <div class="nav-section-label">项目管理</div>
-      <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-diagram-project"></i><span class="nav-text">项目总览</span><span class="nav-badge nav-badge--muted">规划中</span></button>
-      <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-flag-checkered"></i><span class="nav-text">计划里程碑</span><span class="nav-badge nav-badge--muted">规划中</span></button>
-
-      <div class="nav-divider" role="separator"></div>
-      <div class="nav-section-label">治理分析</div>
-      <a href="/issues/risk" class="nav-item{{ if or (eq .CurrentPath "/issues/risk") (eq .CurrentPath "/issue-risk") }} active{{ end }}"><i class="nav-icon fas fa-shield-alt"></i><span class="nav-text">问题风险</span></a>
-      <a href="/metrics/radar" class="nav-item{{ if eq .CurrentPath "/metrics/radar" }} active{{ end }}"><i class="nav-icon fas fa-chart-line"></i><span class="nav-text">指标雷达</span></a>
-      <a href="/metrics/manage" class="nav-item{{ if eq .CurrentPath "/metrics/manage" }} active{{ end }}"><i class="nav-icon fas fa-sliders"></i><span class="nav-text">指标管理</span></a>
-      <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-triangle-exclamation"></i><span class="nav-text">质效预警</span><span class="nav-badge nav-badge--muted">规划中</span></button>
-
+  <!-- 左侧 56px 极窄主图标轨 (Master Rail) -->
+  <aside class="po-rail" aria-label="工作台大类导航">
+    <div class="po-rail-header">
+      <a href="/home" class="po-brand-logo" title="研发工作台首页">研</a>
+    </div>
+    <div class="po-rail-nav">
+      <button type="button" class="po-rail-btn{{ if eq $activeGroup "personal" }} active{{ end }}" data-rail-group="personal" title="个人工作">
+        <i class="fas fa-user"></i>
+        <span>个人</span>
+        {{ if gt $personalBadge 0 }}<span class="po-rail-dot" title="有待办事项"></span>{{ end }}
+      </button>
+      <button type="button" class="po-rail-btn{{ if eq $activeGroup "delivery" }} active{{ end }}" data-rail-group="delivery" title="需求交付">
+        <i class="fas fa-cube"></i>
+        <span>交付</span>
+      </button>
+      <button type="button" class="po-rail-btn{{ if eq $activeGroup "collab" }} active{{ end }}" data-rail-group="collab" title="团队协作">
+        <i class="fas fa-users"></i>
+        <span>协作</span>
+      </button>
+      <button type="button" class="po-rail-btn{{ if eq $activeGroup "project" }} active{{ end }}" data-rail-group="project" title="项目管理">
+        <i class="fas fa-diagram-project"></i>
+        <span>项目</span>
+      </button>
+      <button type="button" class="po-rail-btn{{ if eq $activeGroup "gov" }} active{{ end }}" data-rail-group="gov" title="治理分析">
+        <i class="fas fa-chart-pie"></i>
+        <span>治理</span>
+      </button>
       {{ if and .CurrentUser .CurrentUser.IsSuperAdmin }}
-      <div class="nav-divider" role="separator"></div>
-      <div class="nav-section-label">组织管理</div>
-      <a href="/admin/roles" class="nav-item{{ if or (eq .CurrentPath "/admin/roles") (eq .CurrentPath "/admin/users") }} active{{ end }}"><i class="nav-icon fas fa-user-shield"></i><span class="nav-text">后台管理</span></a>
+      <button type="button" class="po-rail-btn{{ if eq $activeGroup "admin" }} active{{ end }}" data-rail-group="admin" title="组织管理">
+        <i class="fas fa-user-shield"></i>
+        <span>管理</span>
+      </button>
       {{ end }}
     </div>
+    <div class="po-rail-footer">
+      <button type="button" class="po-sidebar-collapse js-sidebar-collapse" id="sidebarToggle" title="收起/展开子菜单" aria-label="收起/展开子菜单">
+        <i class="fas fa-angles-left"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- 右侧 156px 子功能面板 (Detail Sub-Panel) -->
+  <div class="po-subnav" aria-label="子功能导航">
+    {{/* 1. 个人工作 */}}
+    <div class="po-subnav-panel{{ if eq $activeGroup "personal" }} is-active{{ end }}" data-subnav-panel="personal">
+      <div class="po-subnav-header">
+        <span class="po-subnav-title">个人工作</span>
+      </div>
+      <div class="po-subnav-body">
+        <a href="/home" class="nav-item{{ if eq .CurrentPath "/home" }} active{{ end }}"><i class="nav-icon fas fa-home"></i><span class="nav-text">首页</span></a>
+        <a href="/todos" class="nav-item{{ if eq .CurrentPath "/todos" }} active{{ end }}"><i class="nav-icon fas fa-list-check"></i><span class="nav-text">我的待办</span>{{ if gt .SidebarBadges.Todos 0 }}<span class="nav-badge" data-sidebar-badge="todos" title="待办条数">{{ .SidebarBadges.Todos }}</span>{{ end }}</a>
+        <a href="/done" class="nav-item{{ if eq .CurrentPath "/done" }} active{{ end }}"><i class="nav-icon fas fa-clock-rotate-left"></i><span class="nav-text">我的已办</span></a>
+        <a href="/notice" class="nav-item{{ if eq .CurrentPath "/notice" }} active{{ end }}"><i class="nav-icon fas fa-bell"></i><span class="nav-text">通知中心</span>{{ if gt .SidebarBadges.Notice 0 }}<span class="nav-badge nav-badge--danger" data-sidebar-badge="notice" title="未读通知条数">{{ .SidebarBadges.Notice }}</span>{{ end }}</a>
+        <a href="/follow" class="nav-item{{ if eq .CurrentPath "/follow" }} active{{ end }}"><i class="nav-icon fas fa-star"></i><span class="nav-text">我的关注</span></a>
+      </div>
+    </div>
+
+    {{/* 2. 需求交付 */}}
+    <div class="po-subnav-panel{{ if eq $activeGroup "delivery" }} is-active{{ end }}" data-subnav-panel="delivery">
+      <div class="po-subnav-header">
+        <span class="po-subnav-title">需求交付</span>
+      </div>
+      <div class="po-subnav-body">
+        <a href="/board/demand" class="nav-item{{ if or (eq .CurrentPath "/board/demand") (eq .CurrentPath "/board/task") }} active{{ end }}"><i class="nav-icon fas fa-table-cells-large"></i><span class="nav-text">工作看板</span></a>
+        <a href="/query" class="nav-item{{ if eq .CurrentPath "/query" }} active{{ end }}"><i class="nav-icon fas fa-magnifying-glass"></i><span class="nav-text">需求查询</span></a>
+        <a href="/schedule" class="nav-item{{ if eq .CurrentPath "/schedule" }} active{{ end }}"><i class="nav-icon fas fa-calendar-check"></i><span class="nav-text">需求排期</span><span class="nav-badge">PO</span></a>
+        <button type="button" class="nav-item po-shell-placeholder" data-placeholder-type="migration"><i class="nav-icon fas fa-boxes-packing"></i><span class="nav-text">版本交付</span><span class="nav-badge nav-badge--muted">建设中</span></button>
+      </div>
+    </div>
+
+    {{/* 3. 团队协作 */}}
+    <div class="po-subnav-panel{{ if eq $activeGroup "collab" }} is-active{{ end }}" data-subnav-panel="collab">
+      <div class="po-subnav-header">
+        <span class="po-subnav-title">团队协作</span>
+      </div>
+      <div class="po-subnav-body">
+        <a href="/agileteam" class="nav-item{{ if or (eq .CurrentPath "/agileteam") (eq .CurrentPath "/pmo") }} active{{ end }}"><i class="nav-icon fas fa-users"></i><span class="nav-text">敏捷小组</span></a>
+        <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-arrows-spin"></i><span class="nav-text">迭代管理</span><span class="nav-badge nav-badge--muted">规划中</span></button>
+        <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-heart-pulse"></i><span class="nav-text">团队健康</span><span class="nav-badge nav-badge--muted">规划中</span></button>
+      </div>
+    </div>
+
+    {{/* 4. 项目管理 */}}
+    <div class="po-subnav-panel{{ if eq $activeGroup "project" }} is-active{{ end }}" data-subnav-panel="project">
+      <div class="po-subnav-header">
+        <span class="po-subnav-title">项目管理</span>
+      </div>
+      <div class="po-subnav-body">
+        <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-folder-tree"></i><span class="nav-text">项目总览</span><span class="nav-badge nav-badge--muted">规划中</span></button>
+        <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-flag-checkered"></i><span class="nav-text">计划里程碑</span><span class="nav-badge nav-badge--muted">规划中</span></button>
+      </div>
+    </div>
+
+    {{/* 5. 治理分析 */}}
+    <div class="po-subnav-panel{{ if eq $activeGroup "gov" }} is-active{{ end }}" data-subnav-panel="gov">
+      <div class="po-subnav-header">
+        <span class="po-subnav-title">治理分析</span>
+      </div>
+      <div class="po-subnav-body">
+        <a href="/issues/risk" class="nav-item{{ if or (eq .CurrentPath "/issues/risk") (eq .CurrentPath "/issue-risk") }} active{{ end }}"><i class="nav-icon fas fa-shield-alt"></i><span class="nav-text">问题风险</span></a>
+        <a href="/metrics/radar" class="nav-item{{ if eq .CurrentPath "/metrics/radar" }} active{{ end }}"><i class="nav-icon fas fa-chart-line"></i><span class="nav-text">指标雷达</span></a>
+        <a href="/metrics/manage" class="nav-item{{ if eq .CurrentPath "/metrics/manage" }} active{{ end }}"><i class="nav-icon fas fa-sliders"></i><span class="nav-text">指标管理</span></a>
+        <button type="button" class="nav-item po-shell-placeholder"><i class="nav-icon fas fa-triangle-exclamation"></i><span class="nav-text">质效预警</span><span class="nav-badge nav-badge--muted">规划中</span></button>
+      </div>
+    </div>
+
+    {{ if and .CurrentUser .CurrentUser.IsSuperAdmin }}
+    {{/* 6. 组织管理 */}}
+    <div class="po-subnav-panel{{ if eq $activeGroup "admin" }} is-active{{ end }}" data-subnav-panel="admin">
+      <div class="po-subnav-header">
+        <span class="po-subnav-title">组织管理</span>
+      </div>
+      <div class="po-subnav-body">
+        <a href="/admin/roles" class="nav-item{{ if or (eq .CurrentPath "/admin/roles") (eq .CurrentPath "/admin/users") }} active{{ end }}"><i class="nav-icon fas fa-user-shield"></i><span class="nav-text">后台管理</span></a>
+      </div>
+    </div>
+    {{ end }}
   </div>
   {{ else }}
   <div class="po-sidebar-brand">

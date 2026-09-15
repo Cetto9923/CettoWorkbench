@@ -35,10 +35,12 @@ const mockSummary = {
   originator: "009871",
   proposerDept: "零售信贷部",
   ownerName: "程统",
+  createdDate: "2025-07-11 00:00",
   editedDate: "2026-08-28 14:32",
   category: "功能",
   source: "业务部门",
   product: "影像平台",
+  moduleName: "客户管理模块",
   poolName: "信贷需求池",
   bsa: "A 级",
   zentaoStatus: "已评审 / 待澄清"
@@ -48,11 +50,24 @@ const headerHtml = R.renderHeader(mockSummary, "childUnit");
 assert.ok(headerHtml.includes("US63442"), "Header must include demand code");
 assert.ok(headerHtml.includes("子业务需求 · 交付单元"), "Header must show child unit tag");
 assert.ok(headerHtml.includes("已评审 / 待澄清"), "Header must show native zentao status");
+assert.ok(headerHtml.includes("期望上线日期"), "Header must use the ZenTao expected launch date label");
+assert.ok(headerHtml.includes("需求创建时间"), "Header must show demand creation time");
+assert.ok(headerHtml.indexOf("需求创建时间") < headerHtml.indexOf("期望上线日期"), "Creation time must precede expected launch date");
+assert.ok(headerHtml.includes("所属模块"), "Header must show demand module");
+assert.ok(headerHtml.includes("客户管理模块"), "Header must show the ZenTao module name");
 console.log("PASS: renderHeader correctly renders header attributes");
 
 const dataExportHeaderHtml = R.renderHeader(Object.assign({}, mockSummary, { category: "dataexport" }), "childUnit");
 assert.ok(dataExportHeaderHtml.includes("数据导出"), "Header must localize the dataexport category");
-console.log("PASS: renderHeader localizes ZenTao demand categories");
+assert.ok(headerHtml.includes("dd-summary-panel"), "Header must use unified summary panel");
+assert.ok(headerHtml.includes("dd-summary-grid"), "Header must use unified summary grid");
+
+const entityTitleHeader = R.renderHeader(Object.assign({}, mockSummary, {
+  title: '提交研发需求页面新增&quot;不涉及代码改造&quot;按钮'
+}), "childUnit");
+assert.ok(!entityTitleHeader.includes('&amp;quot;'), "Header title must not double-escape HTML entities into literal &amp;quot;");
+assert.ok(entityTitleHeader.includes('&quot;不涉及代码改造&quot;'), "Header title must safely escape quotes for innerHTML");
+console.log("PASS: renderHeader localizes ZenTao demand categories and safely decodes title entities");
 
 // 3. renderRelationNav test
 const mockRelCtx = {

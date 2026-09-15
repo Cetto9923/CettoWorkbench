@@ -300,8 +300,12 @@ func (s *DetailService) buildHistory(ctx context.Context, row *DemandDetailRow) 
 	}
 
 	createdStr := "—"
-	if row.CreatedDate != nil {
-		createdStr = row.CreatedDate.Format("2006-01-02")
+	createdTime := row.CreatedDate
+	if row.ActionCreatedDate != nil {
+		createdTime = row.ActionCreatedDate
+	}
+	if createdTime != nil {
+		createdStr = createdTime.Format("2006-01-02 15:04")
 	}
 	reviewedStr := "—"
 	if row.ReviewedDate != nil {
@@ -353,6 +357,14 @@ func defaultDash(v string) string {
 	val := strings.TrimSpace(v)
 	if val == "" {
 		return "—"
+	}
+	return val
+}
+
+func formatModuleName(v string) string {
+	val := strings.TrimSpace(v)
+	if val == "" || val == "0" || val == "—" {
+		return "未设置"
 	}
 	return val
 }

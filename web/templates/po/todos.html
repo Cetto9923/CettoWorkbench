@@ -18,10 +18,10 @@
   <header class="workspace-header">
     <div class="header-quick-filters" id="todosQuickChips" role="group" aria-label="快捷焦点">
       <button type="button" class="header-quick-chip active" data-focus="pending" aria-pressed="true">待处理 <em id="countPending">—</em></button>
-      <button type="button" class="header-quick-chip" data-focus="today" aria-pressed="false">今日到期 <em id="countToday">—</em></button>
+      <button type="button" class="header-quick-chip warning" data-focus="today" aria-pressed="false">今日到期 <em id="countToday">—</em></button>
       <button type="button" class="header-quick-chip danger" data-focus="overdue" aria-pressed="false">超期 <em id="countOverdue">—</em></button>
       <button type="button" class="header-quick-chip warning" data-focus="blocked" aria-pressed="false">阻塞 <em id="countBlocked">—</em></button>
-      <button type="button" class="header-quick-chip" data-focus="p1" aria-pressed="false">P1 <em id="countP1">—</em></button>
+      <button type="button" class="header-quick-chip info" data-focus="p1" aria-pressed="false">P1 <em id="countP1">—</em></button>
     </div>
   </header>
 
@@ -44,18 +44,14 @@
       <button type="button" id="todosResetBtn" class="workspace-btn">重置筛选</button>
     </div>
 
-    <div class="workspace-result-bar" aria-live="polite">
-      <span id="todosSummary">加载中…</span>
-      <span class="workspace-result-hint">待办代表当前责任事项</span>
-    </div>
-
     <div class="table-scroll-container">
       <table class="workspace-table todos-table" id="todosTable">
         <thead>
           <tr>
-            <th class="todos-col-obj" style="width:130px">对象#ID</th>
+            <th class="todos-col-obj" style="width:130px">ID</th>
             <th class="todos-col-item">标题</th>
-            <th class="todos-col-pri">优先级</th>
+            <th class="todos-col-approval" id="todosApprovalHeader" hidden>审批场景</th>
+            <th class="todos-col-pri" id="todosMetricHeader">优先级</th>
             <th class="todos-col-rel">关系 / 责任</th>
             <th class="todos-col-stage">阶段 / 形成原因</th>
             <th class="todos-col-dead">截止时间</th>
@@ -64,7 +60,7 @@
           </tr>
         </thead>
         <tbody id="todosTbody">
-          <tr><td colspan="8" class="state-placeholder">正在拉取待办事项…</td></tr>
+          <tr><td colspan="9" class="state-placeholder">正在拉取待办事项…</td></tr>
         </tbody>
       </table>
     </div>

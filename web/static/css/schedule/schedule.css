@@ -155,21 +155,20 @@ body.po-workbench-shell .main:has(#page-schedule) {
   padding: 6px 12px;
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .schedule-quick-scope {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0;
-  background: transparent;
-  border-bottom: none;
-  flex-wrap: wrap;
+  display: flex; align-items: center; gap: 6px; padding: 0; background: transparent; border-bottom: none;
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
   margin-left: auto;
+  min-width: 0; overflow-x: auto; overflow-y: hidden;
+  scrollbar-width: thin;
 }
 
 .schedule-quick-scope-label {
+  flex: 0 0 auto;
   font-size: 12px;
   font-weight: 700;
   color: var(--color-text-primary);
@@ -184,9 +183,7 @@ body.po-workbench-shell .main:has(#page-schedule) {
 }
 
 .schedule-scope-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px;
   height: 28px;
   border-radius: 4px;
   padding: 0 10px;
@@ -225,11 +222,9 @@ body.po-workbench-shell .main:has(#page-schedule) {
 }
 
 .schedule-suspended-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px;
   height: 26px;
-  margin-left: auto;
+  margin-left: 0;
   border-radius: 6px;
   padding: 0 8px;
   font-size: 12px;

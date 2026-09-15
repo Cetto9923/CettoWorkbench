@@ -31,6 +31,7 @@ type todoUnifiedRow struct {
 	DisplayID      string `gorm:"column:display_id"`
 	Title          string `gorm:"column:title"`
 	Status         string `gorm:"column:status"`
+	Severity       string `gorm:"column:severity"`
 	PriStr         string `gorm:"column:pri_str"`
 	PriorityRank   int    `gorm:"column:priority_rank"`
 	DeadlineStr    string `gorm:"column:deadline_str"`
@@ -127,8 +128,9 @@ func (r *Repo) QueryTodoUnified(ctx context.Context, account string, req TodoLis
 		return result, nil
 	}
 
-	pagedSQL := fmt.Sprintf(`SELECT t.kind, t.id, t.display_id, t.title, t.status, t.pri_str, t.priority_rank,
-		t.deadline_str, t.owner_account, t.relation, t.responsibility, t.blocked, t.type_order
+	pagedSQL := fmt.Sprintf(`SELECT t.kind, t.id, t.display_id, t.title, t.status, t.severity, t.pri_str, t.priority_rank,
+		t.deadline_str, t.owner_account, t.relation, t.responsibility, t.blocked, t.type_order,
+		t.object_type
 	FROM (%s) AS t %s
 	ORDER BY t.priority_rank ASC, t.deadline_str ASC, t.id DESC, t.type_order ASC
 	LIMIT ? OFFSET ?`, unionSQL, postTabWhere)
@@ -172,6 +174,7 @@ func buildTodoUnionSQL(account string, req TodoListReq) (string, []interface{}) 
 	var args []interface{}
 	if includeDemand {
 		demandSQL := `SELECT 'demand' AS kind, d.id, CONCAT('US', d.id) AS display_id, d.name AS title, d.status,
+			'' AS severity,
 			CASE WHEN d.pri = '1' THEN '1' WHEN d.pri = '2' THEN '2' WHEN d.pri = '3' THEN '3' WHEN d.pri = '4' THEN '4' ELSE '0' END AS pri_str,
 			CASE WHEN d.pri = '1' THEN 1 WHEN d.pri = '2' THEN 2 WHEN d.pri = '3' THEN 3 ELSE 4 END AS priority_rank,
 			CASE WHEN d.deadline IS NULL OR d.deadline = '0000-00-00' OR d.deadline = '0001-01-01' THEN '9999-12-31' ELSE DATE_FORMAT(d.deadline, '%Y-%m-%d') END AS deadline_str,
@@ -190,6 +193,7 @@ func buildTodoUnionSQL(account string, req TodoListReq) (string, []interface{}) 
 	}
 	if includeTask {
 		taskSQL := `SELECT 'task' AS kind, t.id, CAST(t.id AS CHAR) AS display_id, t.name AS title, t.status,
+			'' AS severity,
 			CASE WHEN t.pri = 1 THEN '1' WHEN t.pri = 2 THEN '2' WHEN t.pri = 3 THEN '3' WHEN t.pri = 4 THEN '4' ELSE '0' END AS pri_str,
 			CASE WHEN t.pri = 1 THEN 1 WHEN t.pri = 2 THEN 2 WHEN t.pri = 3 THEN 3 ELSE 4 END AS priority_rank,
 			CASE WHEN t.deadline IS NULL OR t.deadline = '0000-00-00' OR t.deadline = '0001-01-01' THEN '9999-12-31' ELSE DATE_FORMAT(t.deadline, '%Y-%m-%d') END AS deadline_str,
@@ -201,6 +205,7 @@ func buildTodoUnionSQL(account string, req TodoListReq) (string, []interface{}) 
 	}
 	if includeBug {
 		bugSQL := `SELECT 'bug' AS kind, b.id, CAST(b.id AS CHAR) AS display_id, b.title AS title, b.status,
+			'' AS severity,
 			CASE WHEN b.pri = 1 THEN '1' WHEN b.pri = 2 THEN '2' WHEN b.pri = 3 THEN '3' WHEN b.pri = 4 THEN '4' ELSE '0' END AS pri_str,
 			CASE WHEN b.pri = 1 THEN 1 WHEN b.pri = 2 THEN 2 WHEN b.pri = 3 THEN 3 ELSE 4 END AS priority_rank,
 			'9999-12-31' AS deadline_str, b.assignedTo AS owner_account, '我负责' AS relation, '待我处理' AS responsibility, 0 AS blocked, 3 AS type_order,
@@ -416,7 +421,7 @@ func formatTodoUnifiedItem(row todoUnifiedRow, displayMap map[string]string) Tod
 	}
 	item := TodoItem{
 		Kind: row.Kind, ID: row.ID, DisplayID: row.DisplayID, Title: row.Title, Stage: row.Status,
-		Priority: priority, Relation: row.Relation, Responsibility: row.Responsibility,
+		Priority: priority, Severity: issueRiskSeverityForTodo(row.Kind, row.Severity), Relation: row.Relation, Responsibility: row.Responsibility,
 		Reason: row.Status, Deadline: deadline, Owner: owner,
 	}
 	switch row.Kind {
@@ -436,6 +441,7 @@ func formatTodoUnifiedItem(row todoUnifiedRow, displayMap map[string]string) Tod
 		item.Deadline = ""
 	case "approval":
 		item.Type = "审批"
+		item.ApprovalScene = todoApprovalSceneLabel(row.ObjectType)
 		item.URL = objectViewURLWithProject(row.ObjectType, uint(row.ObjectID), uint(row.ProjectID))
 		if item.URL == "" && row.ObjectType != "charter" && row.ObjectType != "buildguideline" {
 			item.URL = zentao.URL("approval", "view", fmt.Sprintf("approvalID=%d", row.ID))

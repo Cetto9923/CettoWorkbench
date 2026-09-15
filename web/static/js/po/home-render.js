@@ -164,7 +164,7 @@
       '</tr>';
   }
 
-  // 右上角焦点是一级范围，价值流卡片必须显示该范围内各阶段的数量。
+  // 右上角焦点是一级范围，价值流卡片必须显示该范围内各阶段的数量、条数分布与耗时。
   // 当焦点为全部 (all) 或未提供 stageSummary 时，恢复全景流的服务端基线统计。
   function renderValueStreamSummary(rows, focus) {
     if (!document || !document.querySelectorAll) { return; }
@@ -173,10 +173,15 @@
       document.querySelectorAll(".home-vs-mini-card").forEach(function (card) {
         var baseCount = card.getAttribute("data-base-count");
         var baseMeta = card.getAttribute("data-base-meta");
+        var baseDuration = card.getAttribute("data-base-duration");
         var count = card.querySelector(".vs-mini-count");
-        var meta = card.querySelector(".vs-mini-meta");
+        var breakdown = card.querySelector(".vs-mini-breakdown") || card.querySelector(".vs-mini-meta");
+        var dur = card.querySelector(".vs-mini-dur") || card.querySelector(".vs-mini-duration-row .val");
         if (baseCount && count) { count.textContent = baseCount; }
-        if (baseMeta && meta) { meta.textContent = baseMeta; }
+        if (baseMeta && breakdown) { breakdown.textContent = baseMeta; }
+        if (baseDuration && dur) {
+          dur.innerHTML = (!baseDuration || baseDuration === "—") ? "—" : '<span class="tag">均</span>' + baseDuration;
+        }
         var totalNum = parseInt(baseCount, 10);
         card.classList.toggle("empty", !isNaN(totalNum) && totalNum === 0);
         card.setAttribute("title", (card.querySelector(".vs-mini-name") || {}).textContent + " · 共 " + (baseCount || "0") + " 条");
@@ -184,15 +189,25 @@
       return;
     }
     var byStatus = {};
-    rows.forEach(function (row) { byStatus[row.status] = Number(row.count || 0); });
+    rows.forEach(function (row) { byStatus[row.status] = row; });
     document.querySelectorAll(".home-vs-mini-card").forEach(function (card) {
       var status = card.getAttribute("data-vs-status") || "";
-      var total = byStatus[status];
-      if (typeof total !== "number") { return; }
+      var row = byStatus[status];
+      if (!row) { return; }
+      var total = Number(row.count || 0);
       var count = card.querySelector(".vs-mini-count");
-      var meta = card.querySelector(".vs-mini-meta");
+      var breakdown = card.querySelector(".vs-mini-breakdown") || card.querySelector(".vs-mini-meta");
+      var dur = card.querySelector(".vs-mini-dur") || card.querySelector(".vs-mini-duration-row .val");
       if (count) { count.textContent = String(total); }
-      if (meta) { meta.textContent = status === "all" ? "焦点汇总" : "焦点范围"; }
+      if (breakdown) {
+        var dCount = typeof row.demandCount === "number" ? row.demandCount : total;
+        var sCount = typeof row.storyCount === "number" ? row.storyCount : 0;
+        breakdown.textContent = "业" + dCount + " · 研" + sCount;
+      }
+      if (dur) {
+        var durDays = Number(row.avgDurationDays || 0);
+        dur.innerHTML = durDays > 0 ? ('<span class="tag">均</span>' + durDays + "天") : "—";
+      }
       card.classList.toggle("empty", total === 0);
       card.setAttribute("title", (card.querySelector(".vs-mini-name") || {}).textContent + " · 共 " + total + " 条");
     });

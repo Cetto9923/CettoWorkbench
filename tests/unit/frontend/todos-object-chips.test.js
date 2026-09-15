@@ -15,6 +15,7 @@ const scriptSource = fs.readFileSync(path.join(root, "web/static/js/po/todos.js"
 const template = fs.readFileSync(path.join(root, "web/templates/po/todos.html"), "utf8");
 const doneScript = fs.readFileSync(path.join(root, "web/static/js/po/done.js"), "utf8");
 const sharedCss = fs.readFileSync(path.join(root, "web/static/css/po/personal-workspace.css"), "utf8");
+const todosCss = fs.readFileSync(path.join(root, "web/static/css/po/todos.css"), "utf8");
 
 // makeNode 提供最小 DOM 桩。芯片按钮按当前 innerHTML 生成一次并缓存，
 // 这样 renderObjectChips 绑定的 click 处理器和测试后续取到的是同一批对象。
@@ -78,7 +79,7 @@ function loadTodos(search) {
   sandbox.location = { pathname: "/todos", search: search || "" };
   sandbox.history = { replaceState(_state, _title, url) { sandbox.lastUrl = url; } };
   sandbox.PersonalList = {
-    PAGE_SIZE_OPTIONS: [10, 15, 20, 50, 100],
+    PAGE_SIZE_OPTIONS: [10, 12, 15, 20, 50, 100],
     escapeHtml: (v) => String(v == null ? "" : v),
     loadPageSize: (_key, fallback) => fallback,
     savePageSize() {},
@@ -109,9 +110,19 @@ assert.match(
 assert.doesNotMatch(template, /category-tab/, "不应保留旧的硬编码分类 Tab");
 assert.doesNotMatch(template, /todosObjectType/, '分类芯片已是对象类型，"具体对象"下拉必须移除');
 
+// 2a. 审批对象额外展示服务端返回的具体审批场景。
+assert.match(template, /<th class="todos-col-approval" id="todosApprovalHeader" hidden>审批场景<\/th>/);
+assert.match(template, /id="todosMetricHeader"/);
+assert.match(scriptSource, /item\.approvalScene/);
+assert.match(scriptSource, /todosApprovalHeader/);
+assert.match(scriptSource, /item\.severity/);
+assert.match(scriptSource, /风险等级/);
+assert.match(scriptSource, /严重程度/);
+assert.match(scriptSource, /unconfirmed:\s*"未确认"/);
+assert.match(todosCss, /\.todos-col-approval\s*\{/);
+
 /* 2. CSS：芯片几何在共享层定义一次，页面 CSS 不复制色板 */
 assert.match(sharedCss, /\.wb-done-tab\s*\{/, "芯片样式必须提取到 personal-workspace.css 共享层");
-const todosCss = fs.readFileSync(path.join(root, "web/static/css/po/todos.css"), "utf8");
 assert.doesNotMatch(todosCss, /\.wb-done-tab/, "todos.css 不应复制一份芯片样式");
 
 /* 3. 芯片集合与已办一致的渲染契约，且只覆盖待办实际接入的对象类型 */

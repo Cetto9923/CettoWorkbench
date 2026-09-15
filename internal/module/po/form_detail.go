@@ -92,6 +92,7 @@ type DemandSummary struct {
 	CurrentOwner       string `json:"currentOwner"`
 	MainSystem         string `json:"mainSystem"`
 	MainSystemName     string `json:"mainSystemName"`
+	ModuleName         string `json:"moduleName"`
 	Desc               string `json:"desc"`
 	VerifyPlan         string `json:"verifyPlan"`
 	EstimateDelivery   int    `json:"estimateDelivery"`

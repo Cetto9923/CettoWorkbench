@@ -15,85 +15,90 @@
 .po-home .home-vs-title-group { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--color-text-strong, #1e293b); }
 .po-home .home-vs-desc { font-size: 11px; font-weight: 400; color: var(--color-text-secondary); }
 .po-home .home-vs-meta { font-size: 11px; color: var(--color-text-secondary); }
-.po-home .home-vs-compact-row { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 6px; }
+.po-home .home-vs-compact-scroll { overflow-x: auto; padding-bottom: 2px; scrollbar-gutter: stable; }
+.po-home .home-vs-pipeline-wrap { display: flex; align-items: center; gap: 6px; width: max-content; min-width: 100%; }
 .po-home .home-vs-mini-card {
-  display: flex; flex-direction: column; justify-content: space-between; height: 68px;
-  padding: 7px 8px; border-radius: 6px; border: 1px solid var(--color-border, #e2e8f0); background: var(--color-surface-muted);
-  cursor: pointer; transition: all 0.15s ease; text-align: left;
+  display: flex; flex-direction: column; justify-content: space-between; height: 64px;
+  background: var(--color-surface-muted, #f8fafc); cursor: pointer; text-align: left; outline: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.po-home .home-vs-mini-card:hover { border-color: var(--color-info-border, #93c5fd); background: var(--color-info-bg, #eff6ff); }
+.po-home .home-vs-mini-card:focus { outline: none; }
+.po-home .home-vs-mini-card:focus-visible { outline: 2px solid var(--color-stage-active-border, #2563eb); outline-offset: 1px; }
 .po-home .home-vs-mini-card .vs-card-top { display: flex; align-items: center; justify-content: space-between; }
-.po-home .home-vs-mini-card .vs-mini-name { font-size: 11px; font-weight: 600; color: var(--color-text-body, #475569); }
-.po-home .home-vs-mini-card .vs-mini-count { font-size: 14px; line-height: 18px; font-weight: 700; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--color-text-strong, #1e293b); }
-.po-home .home-vs-mini-card .vs-mini-meta { font-size: 10px; color: var(--color-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.po-home .home-vs-mini-card .vs-mini-name { font-size: 11px; font-weight: 600; color: var(--color-text-body, #475569); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.po-home .home-vs-mini-card .vs-mini-count { min-width: 44px; font-size: 14px; line-height: 16px; font-weight: 700; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; color: var(--color-text-strong, #1e293b); }
+.po-home .home-vs-mini-card .vs-mini-meta-row { display: flex; align-items: center; justify-content: space-between; font-size: 10px; line-height: 12px; white-space: nowrap; gap: 4px; }
+.po-home .home-vs-mini-card .vs-mini-breakdown { min-width: 54px; font-size: 10px; color: var(--color-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.po-home .home-vs-mini-card .vs-mini-dur { flex: 0 0 38px; text-align: right; font-size: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; color: var(--color-text-secondary, #64748b); white-space: nowrap; }
+.po-home .home-vs-mini-card .vs-mini-dur .tag { color: var(--color-text-muted, #94a3b8); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin-right: 1px; }
 
-/* 各阶段特异色彩强化：未激活态轻量半透明，不喧宾夺主 */
-.po-home .home-vs-mini-card.stage-schedule:not(.active) {
-  border-color: var(--color-stage-schedule-border);
-  background: var(--color-stage-schedule-bg);
+/* 独立总控驾驶舱（全部） */
+.po-home .home-vs-overview-card {
+  flex: 0 0 112px; width: 112px; padding: 5px 8px; border-radius: 6px; border: 1px solid var(--color-border, #e2e8f0);
 }
-.po-home .home-vs-mini-card.stage-schedule:not(.active) .vs-mini-name,
-.po-home .home-vs-mini-card.stage-schedule:not(.active) .vs-mini-count {
-  color: var(--color-stage-schedule-fg);
-}
-
-/* 验收框（未选中态）：采用清爽天青蓝，消除与焦点框撞色问题，禁止使用深实底 */
-.po-home .home-vs-mini-card.stage-waitacceptance:not(.active) {
-  border-color: var(--color-stage-waitacceptance-border);
-  background: var(--color-stage-waitacceptance-bg);
-}
-.po-home .home-vs-mini-card.stage-waitacceptance:not(.active) .vs-mini-name,
-.po-home .home-vs-mini-card.stage-waitacceptance:not(.active) .vs-mini-count {
-  color: var(--color-stage-waitacceptance-fg);
+.po-home .home-vs-overview-card:hover { border-color: var(--color-info-border, #93c5fd); background: var(--color-info-bg, #eff6ff); }
+.po-home .home-vs-overview-card.active {
+  z-index: 5; border: 1px solid var(--color-stage-active-border, #2563eb) !important; background: var(--color-stage-active-bg, #eff6ff) !important;
+  box-shadow: inset 0 0 0 1px var(--color-stage-active-border, #2563eb), 0 0 0 2px var(--color-stage-active-ring, rgba(37,99,235,0.2)) !important;
 }
 
-.po-home .home-vs-mini-card.stage-publish:not(.active) {
-  border-color: var(--color-stage-publish-border);
-  background: var(--color-stage-publish-bg);
-}
-.po-home .home-vs-mini-card.stage-publish:not(.active) .vs-mini-name,
-.po-home .home-vs-mini-card.stage-publish:not(.active) .vs-mini-count {
-  color: var(--color-stage-publish-fg);
+/* 导向流水线流向符 */
+.po-home .home-vs-flow-divider {
+  flex: 0 0 12px; display: flex; align-items: center; justify-content: center;
+  color: var(--color-stage-active-fg, #2563eb); font-size: 11px;
 }
 
-/* 选中阶段高亮样式：强化为统治级品牌焦点（高对比度双环光晕 + 高清字色） */
-.po-home .home-vs-mini-card.active {
-  position: relative;
-  z-index: 2;
-  border: 2px solid var(--color-stage-active-border) !important;
-  background: var(--color-stage-active-bg) !important;
-  box-shadow: 0 0 0 1.5px var(--color-stage-active-border), 0 3px 10px var(--color-stage-active-ring) !important;
+/* 9阶段现代流程微卡轨道 + 嵌入式向前尖角纽带 */
+.po-home .home-vs-chevron-track { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; min-width: 0; }
+.po-home .home-vs-chevron-step {
+  position: relative; flex: 0 0 112px; width: 112px; min-width: 112px; padding: 5px 8px;
+  border-radius: 6px; border: 1px solid var(--color-border, #e2e8f0);
+  background: var(--color-surface, #ffffff); box-shadow: 0 1px 2px var(--color-shadow-05, rgba(0,0,0,0.02));
 }
-.po-home .home-vs-mini-card.active .vs-mini-name {
-  color: var(--color-stage-active-fg) !important;
-  font-weight: 700;
+.po-home .home-vs-chevron-step:hover { border-color: var(--color-info-border, #93c5fd); background: #f8fafc; }
+
+/* 卡片间嵌入式向前流向微尖角纽带 */
+.po-home .home-vs-chevron-step:not(:last-child)::after {
+  content: ''; position: absolute; right: -6.5px; top: 50%; transform: translateY(-50%);
+  width: 0; height: 0; border-top: 5px solid transparent; border-bottom: 5px solid transparent;
+  border-left: 5px solid var(--color-border-strong, #94a3b8); z-index: 10; pointer-events: none;
 }
-.po-home .home-vs-mini-card.active .vs-mini-count {
-  color: var(--color-stage-active-fg-emphasis) !important;
-  font-weight: 800;
-}
-.po-home .home-vs-mini-card.active .vs-mini-meta {
-  color: var(--color-stage-active-fg-meta) !important;
-  font-weight: 500;
-}
-.po-home .home-vs-mini-card.active .vs-status-icon {
-  font-size: 9px;
-  color: var(--color-stage-active-fg-meta) !important;
-}
-.po-home .home-vs-mini-card.active .vs-status-dot {
-  background: var(--color-stage-active-dot) !important;
+.po-home .home-vs-chevron-step.active:not(:last-child)::after { border-left-color: var(--color-stage-active-border, #2563eb); }
+
+/* 激活态：360度完整蓝框与光晕（保持1px边框+内阴影，绝对零位移） */
+.po-home .home-vs-chevron-step.active {
+  z-index: 5; border: 1px solid var(--color-stage-active-border, #2563eb) !important; background: var(--color-stage-active-bg, #eff6ff) !important;
+  box-shadow: inset 0 0 0 1px var(--color-stage-active-border, #2563eb), 0 0 0 2px var(--color-stage-active-ring, rgba(37,99,235,0.2)) !important;
 }
 
-/* 空阶段弱化 */
-.po-home .home-vs-mini-card.empty:not(.active) {
-  opacity: 0.65;
-}
-.po-home .home-vs-mini-card.empty:not(.active):hover {
-  opacity: 1;
-}
+/* 阶段色彩强化：温润浅调 */
+.po-home .home-vs-mini-card.stage-schedule:not(.active) { border-color: var(--color-stage-schedule-border, #fde68a); background: var(--color-stage-schedule-bg, #fffdf5); }
+.po-home .home-vs-mini-card.stage-schedule:not(.active) .vs-mini-count { color: var(--color-stage-schedule-fg, #b45309); }
+.po-home .home-vs-mini-card.stage-waitacceptance:not(.active) { border-color: var(--color-stage-waitacceptance-border, #e0f2fe); background: var(--color-stage-waitacceptance-bg, #f8fbfe); }
+.po-home .home-vs-mini-card.stage-waitacceptance:not(.active) .vs-mini-count { color: var(--color-stage-waitacceptance-fg, #0284c7); }
+.po-home .home-vs-mini-card.stage-publish:not(.active) { border-color: var(--color-stage-publish-border, #dcfce7); background: var(--color-stage-publish-bg, #f8fdf9); }
+.po-home .home-vs-mini-card.stage-publish:not(.active) .vs-mini-count { color: var(--color-stage-publish-fg, #16a34a); }
+
+/* 激活态文本色彩与徽标（字重保持一致，杜绝字符膨胀微位移） */
+.po-home .home-vs-mini-card.active .vs-mini-name { color: var(--color-stage-active-fg, #1d4ed8) !important; font-weight: 600; }
+.po-home .home-vs-mini-card.active .vs-mini-count { color: var(--color-stage-active-fg-emphasis, #1e40af) !important; font-weight: 700; }
+.po-home .home-vs-mini-card.active .vs-mini-meta,
+.po-home .home-vs-mini-card.active .vs-mini-breakdown { color: var(--color-stage-active-fg-meta, #2563eb) !important; font-weight: 500; }
+.po-home .home-vs-mini-card.active .vs-mini-dur { color: var(--color-stage-active-fg, #1d4ed8) !important; font-weight: 600; }
+.po-home .home-vs-mini-card.active .vs-status-icon { font-size: 9px; color: var(--color-stage-active-fg-meta, #2563eb) !important; }
+.po-home .home-vs-mini-card.active .vs-status-dot { background: var(--color-stage-active-dot, #2563eb) !important; }
+
+/* 空阶段（无数据）：白底微灰字，绝不发脏发黑 */
+.po-home .home-vs-mini-card.empty:not(.active) { background: var(--color-surface-muted, #fafbfc); border-color: var(--color-border-subtle, #f1f5f9); }
+.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-name { color: var(--color-text-secondary, #64748b); }
+.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-count { color: var(--color-text-muted, #94a3b8); }
+.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-meta,
+.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-breakdown { color: var(--color-border-strong, #cbd5e1); }
+.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-dur,
+.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-dur .tag { color: var(--color-border-strong, #cbd5e1); }
 .po-home .vs-status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
-.po-home .dot-amber { background: var(--color-warning-light); }
-.po-home .dot-blue { background: var(--color-info-fill, #3b82f6); }
+.po-home .dot-amber { background: var(--color-warning-fill, #f59e0b); }
+.po-home .dot-blue { background: var(--color-info-fill, #0ea5e9); }
 
 /* 3. 主体工作区网格 */
 .po-home .home-content-grid {
@@ -124,8 +129,12 @@
 }
 .po-home .home-refresh:hover { background: var(--color-surface-muted, #f8fafc); }
 
-/* 行动列表主表格 */
-.po-home .table-scroll-container { overflow-x: auto; min-height: 280px; }
+/* 行动列表主表格（锁定稳态最小高度，彻底防止加载瞬间 350px 高度塌陷与滚动条跳跃） */
+.po-home .table-scroll-container { overflow-x: auto; min-height: 560px; }
+.po-home .table-scroll-container .state-placeholder { padding: 180px 20px; }
+.po-home .top5-section > .state-placeholder:not([hidden]) {
+  min-height: 599px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px;
+}
 .po-home .home-action-table { width: 100%; border-collapse: collapse; }
 .po-home .home-action-table th {
   background: var(--color-surface-muted, #f8fafc); padding: 9px 12px; font-size: 11px; font-weight: 600;
@@ -209,7 +218,11 @@
   padding: 10px; border-radius: 6px; border: 1px solid var(--color-stage-active-border); background: var(--color-version-card-bg);
 }
 .po-home .home-version-card-hdr { display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 700; }
-.po-home .home-version-name { color: var(--color-text-primary, #0f172a); display: inline-flex; align-items: center; gap: 4px; }
+.po-home .home-version-name {
+  color: var(--color-text-primary, #0f172a); display: inline-flex; align-items: center; gap: 4px; min-width: 0; text-decoration: none;
+}
+.po-home .home-version-name:hover { color: var(--color-version-link); text-decoration: underline; }
+.po-home .home-version-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .po-home .home-version-badge {
   font-size: 10px; padding: 1px 6px; border-radius: 3px; background: var(--color-version-badge-bg); color: var(--color-version-link); border: 1px solid var(--color-version-badge-border); font-weight: 500;
 }
@@ -221,12 +234,6 @@
 .po-home .summary-stat strong {
   display: block; font-size: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--color-text-primary, #0f172a);
 }
-.po-home .version-card-footer { margin-top: 8px; text-align: right; }
-.po-home .version-enter-link {
-  font-size: 11px; color: var(--color-info-fill, #2563eb); font-weight: 500; text-decoration: none;
-  display: inline-flex; align-items: center; gap: 2px;
-}
-.po-home .version-enter-link:hover { text-decoration: underline; }
 .po-home .version-dock-bottom { padding: 8px 12px 10px; border-top: 1px dashed var(--color-border, #e2e8f0); text-align: center; }
 .po-home .version-manage-link {
   font-size: 11px; color: var(--color-text-secondary, #64748b); text-decoration: none; display: inline-flex; align-items: center; gap: 4px;
@@ -273,6 +280,7 @@
   .po-home .home-side-column { display: grid; grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 800px) {
-  .po-home .home-vs-compact-row { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .po-home .home-vs-compact-scroll { overflow-x: auto; }
+  .po-home .home-vs-pipeline-wrap { min-width: 760px; }
   .po-home .home-side-column { grid-template-columns: 1fr; }
 }

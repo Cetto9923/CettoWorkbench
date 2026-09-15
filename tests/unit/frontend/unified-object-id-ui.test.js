@@ -1,7 +1,7 @@
 /* =============================================================================
    文件: tests/unit/frontend/unified-object-id-ui.test.js
    模块: PO 工作台 - 统一对象与 ID 的 UI 规范回归测试
-   职责: 验证 PersonalList.idChipHtml 归一化解析、各页面对象#ID表头规范及合并列渲染。
+   职责: 验证 PersonalList.idChipHtml 归一化解析、各页面 ID 表头规范及合并列渲染。
    ============================================================================= */
 
 const assert = require("node:assert/strict");
@@ -53,30 +53,34 @@ console.log("PASS: PersonalList.idChipHtml renders Option B linear two-tone badg
 
 // 2. 检查 HTML 模板表头契约
 const homeHtml = fs.readFileSync(path.join(root, "web/templates/po/home.html"), "utf8");
-assert.ok(homeHtml.includes("对象#ID"), "home.html header must contain 对象#ID");
+assert.ok(homeHtml.includes('class="c-id"') && homeHtml.includes(">ID<"), "home.html header must contain ID");
 assert.ok(!homeHtml.includes(">需求编号<"), "home.html header must not contain 需求编号");
-console.log("PASS: home.html header is unified to 对象#ID");
+console.log("PASS: home.html header is unified to ID");
 
 const doneHtml = fs.readFileSync(path.join(root, "web/templates/po/done.html"), "utf8");
-assert.ok(doneHtml.includes(">对象#ID<"), "done.html header must contain 对象#ID");
+assert.ok(doneHtml.includes(">ID<"), "done.html header must contain ID");
 assert.ok(!doneHtml.includes(">对象<"), "done.html header must not contain solitary 对象");
-console.log("PASS: done.html header is unified to 对象#ID");
+assert.ok(doneHtml.indexOf(">ID<") < doneHtml.indexOf(">标题<"), "done.html ID column must be leftmost");
+assert.ok(doneHtml.indexOf(">当前状态<") < doneHtml.indexOf(">处理时间<"), "done.html handled time must move after current status");
+assert.ok(doneHtml.indexOf(">处理时间<") < doneHtml.indexOf(">操作<"), "done.html handled time must be before operation");
+console.log("PASS: done.html header is unified to ID with handled time before operation");
 
 const todosHtml = fs.readFileSync(path.join(root, "web/templates/po/todos.html"), "utf8");
 assert.ok(todosHtml.includes("todos-col-obj"), "todos.html must have todos-col-obj column");
-assert.ok(todosHtml.includes(">对象#ID<"), "todos.html header must contain 对象#ID");
-console.log("PASS: todos.html has independent 对象#ID column");
+assert.ok(todosHtml.includes(">ID<"), "todos.html header must contain ID");
+console.log("PASS: todos.html has independent ID column");
 
 const followHtml = fs.readFileSync(path.join(root, "web/templates/po/follow.html"), "utf8");
-assert.ok(followHtml.includes(">对象#ID<"), "follow.html header must contain 对象#ID");
+assert.ok(followHtml.includes(">ID<"), "follow.html header must contain ID");
 assert.ok(!followHtml.includes(">对象类型<"), "follow.html must not have separate 对象类型 column");
-console.log("PASS: follow.html merges ID and object type into 对象#ID");
+console.log("PASS: follow.html merges ID and object type into ID column");
 
 const scheduleHtml = fs.readFileSync(path.join(root, "web/templates/schedule/index.html"), "utf8");
-assert.ok(scheduleHtml.includes("对象#ID"), "schedule/index.html header must contain 对象#ID");
+assert.ok(!scheduleHtml.includes("对象#ID"), "schedule/index.html header must not contain 对象#ID");
+assert.ok(scheduleHtml.includes('class="schedule-col-id"') && scheduleHtml.includes(">ID<"), "schedule/index.html header must contain ID");
 assert.ok(scheduleHtml.includes("需求标题"), "schedule/index.html header must contain 需求标题");
 assert.ok(scheduleHtml.includes("table-scroll-container"), "schedule/index.html must use table-scroll-container");
-console.log("PASS: schedule/index.html unifies to 对象#ID and 需求标题 with table-scroll-container");
+console.log("PASS: schedule/index.html unifies to ID and 需求标题 with table-scroll-container");
 
 // 3. 检查 JS 实现中消费 idChipHtml
 const todosJs = fs.readFileSync(path.join(root, "web/static/js/po/todos.js"), "utf8");
@@ -88,4 +92,4 @@ const followJs = fs.readFileSync(path.join(root, "web/static/js/po/follow.js"), 
 assert.ok(followJs.includes("idChipHtml"), "follow.js must use idChipHtml");
 
 console.log("PASS: todos.js and follow.js use idChipHtml for single-source-of-truth rendering");
-console.log("\nALL: unified Object#ID contract verified successfully!");
+console.log("\nALL: unified ID contract verified successfully!");

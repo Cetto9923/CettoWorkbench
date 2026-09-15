@@ -34,11 +34,11 @@
       </div>
     </div>
     <div class="header-quick-filters" id="homeQuickChips" role="group" aria-label="快捷焦点">
-      <button type="button" class="header-quick-chip active" data-home-focus="all" aria-pressed="true">
+      <button type="button" class="header-quick-chip" data-home-focus="all" aria-pressed="false">
         <span>全部</span> <em>{{ if .PageError }}—{{ else }}{{ .AllCount }}{{ end }}</em>
       </button>
-      <button type="button" data-home-focus="my_action" class="header-quick-chip" title="查看当前由我正式办理的事项" aria-pressed="false"><span>待我处理</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.MyPending }}{{ end }}</em></button>
-      <button type="button" data-home-focus="today" class="header-quick-chip" title="在首页查看今天到期及已超期的需求" aria-pressed="false">
+      <button type="button" data-home-focus="my_action" class="header-quick-chip my-action" title="查看当前由我正式办理的事项" aria-pressed="true"><span>待我处理</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.MyPending }}{{ end }}</em></button>
+      <button type="button" data-home-focus="today" class="header-quick-chip warning" title="在首页查看今天到期及已超期的需求" aria-pressed="false">
         <span>今日必推</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.Today }}{{ end }}</em>
       </button>
       <button type="button" data-home-focus="blocked" class="header-quick-chip warning" title="在首页查看当前阻塞需求" aria-pressed="false">
@@ -77,26 +77,59 @@
     </div>
     <div class="home-vs-compact-scroll" id="homeVsCompactScroll">
       <div class="home-vs-compact" id="homeVsCompact">
-        <div class="home-vs-compact-row">
+        <div class="home-vs-pipeline-wrap">
           {{ range $i, $stage := .ValueStreamStages }}
+          {{ if eq $stage.Status "all" }}
           <button type="button"
-            class="home-vs-mini-card stage-{{ $stage.Status }}{{ if eq $i 0 }} active{{ else if eq $stage.Count 0 }} empty{{ end }}"
-            data-vs-status="{{ $stage.Status }}"
+            class="home-vs-mini-card home-vs-overview-card stage-all{{ if eq $i 0 }} active{{ else if eq $stage.Count 0 }} empty{{ end }}"
+            data-vs-status="all"
             data-base-count="{{ if $.PageError }}—{{ else }}{{ $stage.Count }}{{ end }}"
-            data-base-meta="{{ if $.PageError }}暂不可用{{ else if eq $stage.Status "all" }}全量汇总{{ else }}业{{ $stage.DemandCount }} · 研{{ $stage.StoryCount }}{{ end }}"
+            data-base-meta="{{ if $.PageError }}暂不可用{{ else }}业{{ $stage.DemandCount }} · 研{{ $stage.StoryCount }}{{ end }}"
+            data-base-duration="{{ if $.PageError }}—{{ else if gt $stage.AvgDurationDays 0 }}{{ $stage.AvgDurationDays }}天{{ else }}—{{ end }}"
             aria-pressed="{{ if eq $i 0 }}true{{ else }}false{{ end }}"
             title="{{ $stage.Label }} · 共 {{ $stage.Count }} 条">
             <div class="vs-card-top">
               <span class="vs-mini-name">{{ $stage.Label }}</span>
-              {{ if eq $stage.Status "all" }}<i class="fas fa-check vs-status-icon"></i>
-              {{ else if eq $stage.Status "schedule" }}<span class="vs-status-dot dot-amber"></span>
-              {{ else if eq $stage.Status "waitacceptance" }}<span class="vs-status-dot dot-blue"></span>
-              {{ end }}
+              <i class="fas fa-check vs-status-icon"></i>
             </div>
             <div class="vs-mini-count">{{ if $.PageError }}—{{ else }}{{ $stage.Count }}{{ end }}</div>
-            <div class="vs-mini-meta">{{ if $.PageError }}暂不可用{{ else if eq $stage.Status "all" }}全量汇总{{ else }}业{{ $stage.DemandCount }} · 研{{ $stage.StoryCount }}{{ end }}</div>
+            <div class="vs-mini-meta-row">
+              <span class="vs-mini-breakdown">{{ if $.PageError }}暂不可用{{ else }}业{{ $stage.DemandCount }} · 研{{ $stage.StoryCount }}{{ end }}</span>
+              <span class="vs-mini-dur">{{ if $.PageError }}—{{ else if gt $stage.AvgDurationDays 0 }}<span class="tag">均</span>{{ $stage.AvgDurationDays }}天{{ else }}—{{ end }}</span>
+            </div>
           </button>
+          <div class="home-vs-flow-divider" aria-hidden="true">
+            <i class="fas fa-angles-right"></i>
+          </div>
           {{ end }}
+          {{ end }}
+
+          <div class="home-vs-chevron-track">
+            {{ range $i, $stage := .ValueStreamStages }}
+            {{ if ne $stage.Status "all" }}
+            <button type="button"
+              class="home-vs-mini-card home-vs-chevron-step stage-{{ $stage.Status }}{{ if eq $stage.Count 0 }} empty{{ end }}"
+              data-vs-status="{{ $stage.Status }}"
+              data-base-count="{{ if $.PageError }}—{{ else }}{{ $stage.Count }}{{ end }}"
+              data-base-meta="{{ if $.PageError }}暂不可用{{ else }}业{{ $stage.DemandCount }} · 研{{ $stage.StoryCount }}{{ end }}"
+              data-base-duration="{{ if $.PageError }}—{{ else if gt $stage.AvgDurationDays 0 }}{{ $stage.AvgDurationDays }}天{{ else }}—{{ end }}"
+              aria-pressed="false"
+              title="{{ $stage.Label }} · 共 {{ $stage.Count }} 条">
+              <div class="vs-card-top">
+                <span class="vs-mini-name">{{ $stage.Label }}</span>
+                {{ if eq $stage.Status "schedule" }}<span class="vs-status-dot dot-amber"></span>
+                {{ else if eq $stage.Status "waitacceptance" }}<span class="vs-status-dot dot-blue"></span>
+                {{ end }}
+              </div>
+              <div class="vs-mini-count">{{ if $.PageError }}—{{ else }}{{ $stage.Count }}{{ end }}</div>
+              <div class="vs-mini-meta-row">
+                <span class="vs-mini-breakdown">{{ if $.PageError }}暂不可用{{ else }}业{{ $stage.DemandCount }} · 研{{ $stage.StoryCount }}{{ end }}</span>
+                <span class="vs-mini-dur">{{ if $.PageError }}—{{ else if gt $stage.AvgDurationDays 0 }}<span class="tag">均</span>{{ $stage.AvgDurationDays }}天{{ else }}—{{ end }}</span>
+              </div>
+            </button>
+            {{ end }}
+            {{ end }}
+          </div>
         </div>
       </div>
     </div>
@@ -138,7 +171,7 @@
         <table class="workspace-table home-action-table">
           <thead>
             <tr>
-              <th class="c-id" style="width:130px">对象#ID</th>
+              <th class="c-id" style="width:130px">ID</th>
               <th class="c-title">事项标题</th>
               <th class="c-stage">当前阶段</th>
               <th class="c-zt-status">状态</th>
@@ -240,10 +273,10 @@
             {{ range .VersionWindows }}
             <div class="home-version-card">
               <div class="home-version-card-hdr">
-                <div class="home-version-name" title="{{ .Name }}">
+                <a href="/schedule" class="home-version-name" title="进入排期维护：{{ .Name }}">
                   <i class="fas fa-calendar-day text-blue"></i>
                   <span>{{ .Name }}</span>
-                </div>
+                </a>
                 <span class="home-version-badge">{{ .Range }}</span>
               </div>
               <div class="summary-sub">{{ .AgileGroup }}</div>
@@ -252,9 +285,6 @@
                 <div class="summary-stat"><span>研发中</span> <strong>{{ .DevCount }}</strong></div>
                 <div class="summary-stat"><span>测试中</span> <strong>{{ .TestCount }}</strong></div>
                 <div class="summary-stat"><span>待交付</span> <strong>{{ .DeliverCount }}</strong></div>
-              </div>
-              <div class="version-card-footer">
-                <a href="/schedule" class="version-enter-link">进入排期维护 <i class="fas fa-angle-right"></i></a>
               </div>
             </div>
             {{ end }}

@@ -8,7 +8,7 @@
     <div class="header-quick-filters" id="irQuickChips" role="group" aria-label="未关闭与逾期">
       <button type="button" class="header-quick-chip" data-loop="all" aria-pressed="false">全部 <em id="irCountAll">—</em></button>
       <button type="button" class="header-quick-chip active" data-loop="open" aria-pressed="true">未关闭 <em id="irCountOpen">—</em></button>
-      <button type="button" class="header-quick-chip" data-loop="closed" aria-pressed="false">已闭环 <em id="irCountClosed">—</em></button>
+      <button type="button" class="header-quick-chip success" data-loop="closed" aria-pressed="false">已闭环 <em id="irCountClosed">—</em></button>
       <button type="button" class="header-quick-chip danger" data-overdue="true" aria-pressed="false">逾期 <em id="irCountOverdue">—</em></button>
     </div>
   </header>
@@ -27,10 +27,6 @@
       <select id="irProject" aria-label="所属项目"><option value="">项目：全部</option></select>
       <label class="workspace-search"><span>⌕</span><input id="irKeyword" type="search" placeholder="搜索编号、标题或项目" aria-label="搜索问题风险"></label>
       <button class="workspace-btn" id="irReset">重置筛选</button>
-    </div>
-    <div class="workspace-result-bar">
-      <span id="irSummary">加载中…</span>
-      <span class="workspace-result-hint">数据来自禅道问题/风险表</span>
     </div>
     <div class="workspace-detail ir-detail" id="irDetailView" hidden>
       <header class="ir-detail-head">
@@ -61,7 +57,7 @@
       <table class="workspace-table ir-table">
         <thead>
           <tr>
-            <th class="ir-col-id" style="width:130px">对象#ID</th>
+            <th class="ir-col-id" style="width:130px">ID</th>
             <th class="ir-title">问题 / 风险名称</th>
             <th class="ir-col-project" style="width:200px">所属项目</th>
             <th class="ir-col-level" style="width:110px">等级/优先级</th>

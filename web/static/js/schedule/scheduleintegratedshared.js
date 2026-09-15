@@ -64,6 +64,8 @@
     mainSystemId: 0,
     productProjectsMap: {},
     productExecutionsMap: {},
+    draftStoryDefaults: {},
+    windowProductPlans: [],
     taskRowSeq: 0,
     manualNodeSeq: 0,
     currentDemandId: 0,
@@ -109,6 +111,7 @@
             value: $.trim(user.account || ""),
             label: $.trim(user.realname || "") || $.trim(user.account || ""),
             pinyin: $.trim(user.pinyin || ""),
+            dept: $.trim(user.dept || ""),
           };
         })
         .filter(function (item) {

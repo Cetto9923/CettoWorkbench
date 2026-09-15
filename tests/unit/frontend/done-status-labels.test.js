@@ -41,7 +41,7 @@ function run(fetchImpl, withMetaSelects) {
     },
     window: {
       escapeHtml: (v) => String(v == null ? "" : v),
-      PersonalList: { loadPageSize: () => 20, escapeHtml: (v) => String(v == null ? "" : v), PAGE_SIZE_OPTIONS: [10, 15, 20, 50, 100] },
+      PersonalList: { loadPageSize: () => 20, escapeHtml: (v) => String(v == null ? "" : v), PAGE_SIZE_OPTIONS: [10, 12, 15, 20, 50, 100] },
       showToast: (msg, type) => { toasts.push({ msg, type }); }
     },
     URLSearchParams,

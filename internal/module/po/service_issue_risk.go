@@ -153,6 +153,10 @@ func issueRiskSeverity(raw string) string {
 		return "致命"
 	case "2":
 		return "严重"
+	case "3":
+		return "一般"
+	case "4":
+		return "轻微"
 	default:
 		return "一般"
 	}

@@ -12,7 +12,7 @@
 
   var state = {
     status: "all",
-    focus: "all",
+    focus: "my_action",
     page: 1,
     pageSize: 20,
     keyword: "",
@@ -135,12 +135,14 @@
 
     if (!filtered.length) {
       $("#top5Tbody").empty();
+      $("#top5List").attr("hidden", true);
       $("#top5Empty").removeAttr("hidden");
       $("#homePagination").attr("hidden", true);
       return;
     }
 
     $("#top5Empty").attr("hidden", true);
+    $("#top5List").removeAttr("hidden");
     $("#top5Tbody").html(filtered.map(renderRow).join(""));
 
     if (window.PersonalList) {
@@ -175,6 +177,7 @@
     var reqSeq = currentSeq;
     if (status) { state.status = status; }
 
+    $("#top5List").removeAttr("hidden");
     $("#top5Empty").attr("hidden", true);
     $("#top5Error").attr("hidden", true);
     $("#top5Tbody").html('<tr><td colspan="6" class="state-placeholder">正在加载行动列表…</td></tr>');
@@ -211,6 +214,7 @@
         $("#lastUpdateTime").text("—");
         updateTitle(null);
         $("#top5Tbody").empty();
+        $("#top5List").attr("hidden", true);
         $("#top5Empty").attr("hidden", true);
         $("#top5Error").removeAttr("hidden");
         $("#homePagination").attr("hidden", true);

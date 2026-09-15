@@ -52,7 +52,7 @@ async function loadHomeAndResolve({ search, loadPageSize, items, total }) {
       return new Promise((resolve) => { resolveFetch = resolve; });
     },
     PersonalList: {
-      PAGE_SIZE_OPTIONS: [10, 15, 20, 50, 100],
+      PAGE_SIZE_OPTIONS: [10, 12, 15, 20, 50, 100],
       escapeHtml: (v) => String(v == null ? '' : v),
       priorityBadge: () => '',
       loadPageSize,

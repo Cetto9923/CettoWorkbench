@@ -9,9 +9,15 @@ import (
 )
 
 type stageCount struct {
-	StageIndex int
-	Kind       string
-	Count      int64
+	StageIndex    int
+	Kind          string
+	Count         int64
+	TotalDuration int64
+	DurationCount int64
+}
+
+func demandDurationDaysSQLExpr(column string) string {
+	return "CASE WHEN " + column + " IS NOT NULL AND " + column + " > '1970-01-01' THEN GREATEST(1, DATEDIFF(CURDATE(), " + column + ")) ELSE 1 END"
 }
 
 func (r *Repo) acceptRefsPaged(ctx context.Context, account string, req DemandsReq) ([]itemRef, int, error) {
@@ -42,7 +48,8 @@ func (r *Repo) countStageRefs(ctx context.Context, account string) ([]stageCount
 	var rows []stageCount
 	base := r.allStageRefQuery(ctx, account, DemandsReq{})
 	err := r.db.WithContext(ctx).Table("(?) AS all_stages", base).
-		Select("stage_index, kind, COUNT(*) AS count").Group("stage_index, kind").Scan(&rows).Error
+		Select("stage_index, kind, COUNT(*) AS count, IFNULL(SUM(duration_days), 0) AS total_duration, COUNT(duration_days) AS duration_count").
+		Group("stage_index, kind").Scan(&rows).Error
 	return rows, err
 }
 
@@ -68,8 +75,8 @@ func applyStoryToolbarFilters(q *gorm.DB, account string, req DemandsReq) *gorm.
 			q = q.Where("assignedTo = ?", account)
 		}
 	case "participate":
-		// 研发需求没有业务需求维度的“配合”关系；无业务需求且指派给
-		// 当前用户的研发需求仍由 lead/handling 归入“我负责”。
+		// 独立研发需求没有业务需求维度的“配合”关系；需求池关联研发需求
+		// 在排期阶段由 participateScheduleStoryScope 单独按业务需求 PM 关系处理。
 		q = q.Where("1 = 0")
 	case "following":
 		if account == "" {
@@ -79,6 +86,49 @@ func applyStoryToolbarFilters(q *gorm.DB, account string, req DemandsReq) *gorm.
 		}
 	}
 	return q
+}
+
+// participateScheduleStoryScope 是“我参与”在排期阶段的研发需求候选集。
+// 独立研发需求按 assignedTo 归入；需求池研发需求按关联业务需求的澄清 PM
+// 归入，并要求业务需求负责人是其他人，避免同时落入“我牵头”和“我参与”。
+func (r *Repo) participateScheduleStoryScope(ctx context.Context, account string) *gorm.DB {
+	return r.db.WithContext(ctx).Table("zt_story AS s").
+		Where("s.deleted = ?", "0").
+		Where("s.type = ?", "story").
+		Where("s.status IN ?", []string{"draft", "wait", "active", "clarified", "planned", "projected", "designed", "designing"}).
+		Where(`(
+			(s.sourceType <> 'demandpool' AND s.assignedTo = ?)
+			OR
+			(s.sourceType = 'demandpool' AND s.fromDemand IS NOT NULL AND s.fromDemand <> 0 AND EXISTS (
+			SELECT 1 FROM zt_demand d
+			WHERE d.id = s.fromDemand
+			  AND d.deleted = '0'
+			  AND d.status <> 'closed'
+			  AND d.pool IS NOT NULL AND d.pool <> 0
+			  AND (d.BRA <> ? OR d.BRA IS NULL OR d.BRA = '')
+			  AND EXISTS (
+				SELECT 1 FROM zt_demandclarify dc
+				WHERE dc.demand = d.id
+				  AND FIND_IN_SET(?, REPLACE(dc.PM, ' ', '')) > 0
+			  )
+			))`, account, account, account).
+		Where("(" + strings.Join([]string{
+			dateUnsetExpr("s.developFinish"),
+			dateUnsetExpr("s.testFinish"),
+			dateUnsetExpr("s.verifyFinish"),
+		}, " OR ") + ")")
+}
+
+func applyParticipateStoryToolbarFilters(q *gorm.DB, account string, req DemandsReq) *gorm.DB {
+	// 候选集已完成关系筛选，这里只复用关键词/优先级条件。
+	storyReq := req
+	storyReq.Relation = "all"
+	return applyStoryToolbarFilters(q, account, storyReq)
+}
+
+func isParticipateScheduleRequest(req DemandsReq) bool {
+	return strings.EqualFold(strings.TrimSpace(req.Relation), "participate") &&
+		req.ObjectType != "demand"
 }
 
 // allStageRefQuery keeps demand and story identities separate during deduplication.
@@ -95,8 +145,12 @@ func (r *Repo) allStageRefQuery(ctx context.Context, account string, req Demands
 			reviewIDs, _ = r.FindAccountPendingReviewDemandIDs(ctx, account)
 		}
 		demandBase = r.applyHomeFocusToolbarFiltersWithReviews(demandBase, account, req, reviewIDs)
-		stmt := demandBase.Select("id, 'demand' AS kind, "+stageSQL+" AS stage_index, 0 AS kind_rank", stageArgs...).Session(&gorm.Session{DryRun: true}).Find(&[]struct{ ID int }{}).Statement
-		parts = append(parts, "SELECT id, kind, stage_index, kind_rank FROM ("+stmt.SQL.String()+") AS demand_stages WHERE stage_index IS NOT NULL")
+		stmt := demandBase.Select("id, 'demand' AS kind, "+stageSQL+" AS stage_index, 0 AS kind_rank, "+demandDurationDaysSQLExpr("zt_demand.createdDate")+" AS duration_days", stageArgs...).Session(&gorm.Session{DryRun: true}).Find(&[]struct{ ID int }{}).Statement
+		demandWhere := "WHERE stage_index IS NOT NULL"
+		if isParticipateScheduleRequest(req) {
+			demandWhere += fmt.Sprintf(" AND stage_index <> %d", homeFocusStageIndex("schedule"))
+		}
+		parts = append(parts, "SELECT id, kind, stage_index, kind_rank, duration_days FROM ("+stmt.SQL.String()+") AS demand_stages "+demandWhere)
 		args = append(args, stmt.Vars...)
 	}
 	for index, stage := range valueStreamStages {
@@ -108,26 +162,35 @@ func (r *Repo) allStageRefQuery(ctx context.Context, account string, req Demands
 			continue
 		}
 		if includeStory && filter.scheduleIncomplete {
-			stmt := applyStoryToolbarFilters(r.scheduleStoryScope(ctx, account), account, req).
-				Select("id, 'story' AS kind, ? AS stage_index, 1 AS kind_rank", index).
-				Session(&gorm.Session{DryRun: true}).Find(&[]struct{ ID int }{}).Statement
+			storyScope := r.scheduleStoryScope(ctx, account)
+			var stmt *gorm.Statement
+			if strings.EqualFold(strings.TrimSpace(req.Relation), "participate") {
+				storyScope = r.participateScheduleStoryScope(ctx, account)
+				stmt = applyParticipateStoryToolbarFilters(storyScope, account, req).
+					Select("id, 'story' AS kind, ? AS stage_index, 1 AS kind_rank, NULL AS duration_days", index).
+					Session(&gorm.Session{DryRun: true}).Find(&[]struct{ ID int }{}).Statement
+			} else {
+				stmt = applyStoryToolbarFilters(storyScope, account, req).
+					Select("id, 'story' AS kind, ? AS stage_index, 1 AS kind_rank, NULL AS duration_days", index).
+					Session(&gorm.Session{DryRun: true}).Find(&[]struct{ ID int }{}).Statement
+			}
 			parts = append(parts, stmt.SQL.String())
 			args = append(args, stmt.Vars...)
 		}
 		if includeStory && filter.deliverStories {
 			stmt := applyStoryToolbarFilters(r.deliverStoryScope(ctx, account), account, req).
-				Select("id, 'story' AS kind, ? AS stage_index, 1 AS kind_rank", index).
+				Select("id, 'story' AS kind, ? AS stage_index, 1 AS kind_rank, NULL AS duration_days", index).
 				Session(&gorm.Session{DryRun: true}).Find(&[]struct{ ID int }{}).Statement
 			parts = append(parts, stmt.SQL.String())
 			args = append(args, stmt.Vars...)
 		}
 	}
 	if len(parts) == 0 {
-		return r.db.WithContext(ctx).Table("(SELECT NULL AS kind, NULL AS id, 0 AS stage_index, 0 AS kind_rank WHERE 1 = 0) AS stage_candidates").
-			Select("kind, id, stage_index, kind_rank")
+		return r.db.WithContext(ctx).Table("(SELECT NULL AS kind, NULL AS id, 0 AS stage_index, 0 AS kind_rank, NULL AS duration_days WHERE 1 = 0) AS stage_candidates").
+			Select("kind, id, stage_index, kind_rank, duration_days")
 	}
 	return r.db.WithContext(ctx).Table("("+strings.Join(parts, " UNION ALL ")+") AS stage_candidates", args...).
-		Select("kind, id, MIN(stage_index) AS stage_index, MIN(kind_rank) AS kind_rank").
+		Select("kind, id, MIN(stage_index) AS stage_index, MIN(kind_rank) AS kind_rank, MAX(duration_days) AS duration_days").
 		Group("kind, id")
 }
 
@@ -226,7 +289,7 @@ func (r *Repo) FindStageMixedRefsPaged(ctx context.Context, account, stageStatus
 	parts := make([]string, 0, 2)
 	args := make([]interface{}, 0)
 
-	if includeDemand && filterReady(account, filter) {
+	if includeDemand && filterReady(account, filter) && !isParticipateScheduleRequest(req) {
 		stmt := r.roleDemandScopeWithFilters(ctx, account, filter, req).
 			Select("zt_demand.id AS id, 'demand' AS kind, 0 AS kind_rank").
 			Session(&gorm.Session{DryRun: true}).Find(&[]struct{ ID int }{}).Statement
@@ -234,11 +297,21 @@ func (r *Repo) FindStageMixedRefsPaged(ctx context.Context, account, stageStatus
 		args = append(args, stmt.Vars...)
 	}
 	if includeStory && filter.scheduleIncomplete {
-		stmt := applyStoryToolbarFilters(r.scheduleStoryScope(ctx, account), account, req).
-			Select("id AS id, 'story' AS kind, 1 AS kind_rank").
-			Session(&gorm.Session{DryRun: true}).Find(&[]struct{ ID int }{}).Statement
-		parts = append(parts, stmt.SQL.String())
-		args = append(args, stmt.Vars...)
+		storyScope := r.scheduleStoryScope(ctx, account)
+		if strings.EqualFold(strings.TrimSpace(req.Relation), "participate") {
+			storyScope = r.participateScheduleStoryScope(ctx, account)
+			stmt := applyParticipateStoryToolbarFilters(storyScope, account, req).
+				Select("id AS id, 'story' AS kind, 1 AS kind_rank").
+				Session(&gorm.Session{DryRun: true}).Find(&[]struct{ ID int }{}).Statement
+			parts = append(parts, stmt.SQL.String())
+			args = append(args, stmt.Vars...)
+		} else {
+			stmt := applyStoryToolbarFilters(storyScope, account, req).
+				Select("id AS id, 'story' AS kind, 1 AS kind_rank").
+				Session(&gorm.Session{DryRun: true}).Find(&[]struct{ ID int }{}).Statement
+			parts = append(parts, stmt.SQL.String())
+			args = append(args, stmt.Vars...)
+		}
 	}
 	if includeStory && filter.deliverStories {
 		stmt := applyStoryToolbarFilters(r.deliverStoryScope(ctx, account), account, req).

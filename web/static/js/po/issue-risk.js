@@ -174,11 +174,6 @@
       var tbody = $("irTbody");
       if (tbody) { tbody.innerHTML = lastItems.map(function (x, i) { return rowHtml(x, i); }).join(""); }
 
-      var summary = $("irSummary");
-      if (summary) {
-        summary.textContent = "共 " + total + " 条" + (state.kind === "risk" ? "风险" : "问题");
-      }
-
       syncChips();
       hideDetail();
 
@@ -383,7 +378,6 @@
   document.addEventListener("DOMContentLoaded", function () {
     if (PL.createController) {
       controller = PL.createController({
-        summaryEl: $("irSummary"),
         emptyEl: $("irEmpty"),
         errorEl: $("irError"),
         tbodyEl: $("irTbody")

@@ -59,9 +59,6 @@
     shared.manualNodeSeq += 1;
     var nodeId = shared.manualNodeSeq;
     var defaultProductId = shared.mainSystemId || "";
-    var defaultTitle = $.trim(shared.draftStoryTitle || "");
-    var defaultAssignee = $.trim(shared.draftStoryAssignee || "");
-    var defaultAssigneeName = $.trim(shared.draftStoryAssigneeName || "");
 
     var node = shared.cloneTemplateElement("tplRdNodeDraft", ".rd-node");
     if (!node) {
@@ -71,14 +68,11 @@
     $node.attr("data-node-id", nodeId);
     $node.attr("data-new", "true");
     $node.attr("data-product-id", defaultProductId || "");
-    $node.attr("data-story-title", defaultTitle);
-    $node.attr("data-assigned-to", defaultAssignee);
-    $node.attr("data-assigned-to-name", defaultAssigneeName);
 
     var $header = $node.find(".rd-node-header").first();
     $header.find(".rd-node-role-badge").replaceWith(shared.buildRoleBadge(defaultProductId, shared.mainSystemId));
     shared.fillProductSelect($header.find(".rd-node-product"), shared.involvedProducts, defaultProductId);
-    $header.find(".rd-node-title").val(defaultTitle);
+    applyDraftDefaults($node, defaultProductId);
 
     var inputId = "rdNodeOwnerInput" + nodeId;
     var hiddenId = "rdNodeOwnerValue" + nodeId;
@@ -124,6 +118,66 @@
     return name || id;
   }
 
+  function storyDefaultFor(productId) {
+    return shared.draftStoryDefaults[String(productId || "")] || {};
+  }
+
+  function planFor(productId) {
+    var windowId = String($("#scheduleIntegratedWindowSelect").val() || "");
+    var found = null;
+    (shared.windowProductPlans || []).some(function (plan) {
+      if (String(plan.windowId || "") === windowId && String(plan.productId || "") === String(productId || "")) {
+        found = plan;
+        return true;
+      }
+      return false;
+    });
+    return found;
+  }
+
+  function planLabel(plan) {
+    if (!plan || (!plan.planId && !plan.planName)) {
+      return "计划: 未绑定";
+    }
+    return "计划: " + ($.trim(plan.planName || "") || ("#" + plan.planId));
+  }
+
+  function applyDraftDefaults($node, productId) {
+    var defaults = storyDefaultFor(productId);
+    var hasProductDefaults = !!defaults.productId;
+    var plan = planFor(productId) || defaults;
+    var title = $.trim(hasProductDefaults ? defaults.title : shared.draftStoryTitle || "");
+    var spec = hasProductDefaults ? String(defaults.spec || "") : "";
+    var assignedTo = $.trim(hasProductDefaults ? defaults.assignedTo : shared.draftStoryAssignee || "");
+    var assignedToName = $.trim(hasProductDefaults ? defaults.assignedToName : shared.draftStoryAssigneeName || "");
+    $node.attr("data-story-title", title);
+    $node.attr("data-spec", spec);
+    $node.attr("data-assigned-to", assignedTo);
+    $node.attr("data-assigned-to-name", assignedToName);
+    $node.find(".rd-node-title").val(title);
+    $node.find(".rd-node-spec").val(spec);
+    $node.find(".rd-node-plan").text(planLabel(plan));
+  }
+
+  function refreshDraftPlanLabels() {
+    $("#rdTreeNodes .rd-node--draft").each(function () {
+      var $node = $(this);
+      var plan = planFor($node.attr("data-product-id"));
+      $node.find(".rd-node-plan").text(planLabel(plan));
+    });
+  }
+
+  function defaultsFromResponse(data) {
+    data = data || {};
+    return {
+      title: data.name,
+      assignee: data.bra,
+      assigneeName: data.braName,
+      storyDefaults: data.storyDefaults,
+      windowProductPlans: data.windowProductPlans,
+    };
+  }
+
   function buildProductSelect(selectedId) {
     var $select = $('<select class="rd-node-product form-select rd-node-product-select"></select>');
     shared.fillProductSelect($select, shared.involvedProducts, selectedId);
@@ -135,6 +189,10 @@
     $node.attr("data-product-id", productId || "");
     $node.attr("data-product-name", name === "—" ? "" : name);
     $node.find(".rd-node-role-badge").first().replaceWith(shared.buildRoleBadge(productId, shared.mainSystemId));
+    if ($node.hasClass("rd-node--draft")) {
+      applyDraftDefaults($node, productId);
+      initDraftNodePickers($node);
+    }
     if (!productId) {
       $node.attr("data-projects", JSON.stringify([]));
       return;
@@ -259,6 +317,13 @@
     shared.draftStoryTitle = $.trim((draftDefaults && draftDefaults.title) || "");
     shared.draftStoryAssignee = $.trim((draftDefaults && draftDefaults.assignee) || "");
     shared.draftStoryAssigneeName = $.trim((draftDefaults && draftDefaults.assigneeName) || "");
+    shared.draftStoryDefaults = {};
+    (draftDefaults && draftDefaults.storyDefaults || []).forEach(function (item) {
+      if (item && item.productId) {
+        shared.draftStoryDefaults[String(item.productId)] = item;
+      }
+    });
+    shared.windowProductPlans = (draftDefaults && draftDefaults.windowProductPlans) || [];
     shared.productProjectsMap = shared.buildProductProjectsMap(productProjects);
 
     var $container = $("#rdTreeNodes");
@@ -283,6 +348,8 @@
     shared.draftStoryTitle = "";
     shared.draftStoryAssignee = "";
     shared.draftStoryAssigneeName = "";
+    shared.draftStoryDefaults = {};
+    shared.windowProductPlans = [];
     shared.productProjectsMap = {};
     shared.manualNodeSeq = 0;
     shared.taskRowSeq = 0;
@@ -354,6 +421,8 @@
     render: renderRdTree,
     reset: resetRdTree,
     exitStoryEditMode: exitStoryEditMode,
+    defaultsFromResponse: defaultsFromResponse,
+    refreshPlansForWindow: refreshDraftPlanLabels,
   };
 
   $(document).on("click", "#scheduleIntegratedModalBody .rd-toggle", function (e) {
@@ -388,4 +457,10 @@
   $(document).on("change", "#scheduleIntegratedModalBody .rd-node-product", function () {
     applyProductChange($(this).closest(".rd-node"), $(this).val());
   });
+
+  $(document).on("input", "#scheduleIntegratedModalBody .rd-node-spec", function () {
+    $(this).closest(".rd-node").attr("data-spec", $(this).val() || "");
+  });
+
+  $(document).on("change", "#scheduleIntegratedWindowSelect", refreshDraftPlanLabels);
 })(jQuery);

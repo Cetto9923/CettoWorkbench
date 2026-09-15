@@ -11,6 +11,7 @@
 
   var sidebar = document.getElementById("sidebar");
   if (!sidebar) return;
+  var isDualSidebar = sidebar.classList.contains("po-dual-sidebar");
 
   /* ── 工具函数 ── */
 
@@ -61,6 +62,13 @@
   /* ── 手风琴点击 ── */
 
   sidebar.addEventListener("click", function (e) {
+    var railBtn = e.target.closest(".po-rail-btn");
+    if (railBtn && sidebar.contains(railBtn)) {
+      var group = railBtn.getAttribute("data-rail-group");
+      if (group) activateRailGroup(group);
+      return;
+    }
+
     var toggle = e.target.closest(".js-nav-toggle");
     if (!toggle || !sidebar.contains(toggle)) return;
     e.preventDefault();
@@ -88,6 +96,18 @@
   var collapseBtn = document.getElementById("sidebarToggle");
   var STORAGE_KEY = "gofw.sidebar.collapsed";
 
+  function activateRailGroup(group) {
+    if (!isDualSidebar) return;
+    sidebar.querySelectorAll(".po-rail-btn").forEach(function (btn) {
+      var active = btn.getAttribute("data-rail-group") === group;
+      btn.classList.toggle("active", active);
+      btn.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+    sidebar.querySelectorAll(".po-subnav-panel").forEach(function (panel) {
+      panel.classList.toggle("is-active", panel.getAttribute("data-subnav-panel") === group);
+    });
+  }
+
   function applyCollapsed(collapsed) {
     document.body.classList.toggle("sidebar-collapsed", collapsed);
     if (!collapseBtn) return;
@@ -105,6 +125,11 @@
     initialCollapsed = false;
   }
   applyCollapsed(initialCollapsed);
+
+  if (isDualSidebar) {
+    var activeRail = sidebar.querySelector(".po-rail-btn.active");
+    if (activeRail) activateRailGroup(activeRail.getAttribute("data-rail-group"));
+  }
 
   if (collapseBtn) {
     collapseBtn.addEventListener("click", function () {

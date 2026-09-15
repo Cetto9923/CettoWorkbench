@@ -22,7 +22,7 @@ func InitMinimalSchema(ctx context.Context, db *gorm.DB) error {
 	_ = db.Exec("SET SESSION sql_mode = 'NO_AUTO_VALUE_ON_ZERO'").Error
 
 	tables := []string{
-		"zt_workbench_notify_reads", "zt_notify", "zt_action", "zt_user", "zt_demandclarify",
+		"zt_workbench_notify_reads", "zt_notify", "zt_action", "zt_user", "zt_module", "zt_demandclarify",
 		"zt_demand", "zt_task", "zt_story", "zt_bug", "zt_versionwindowproduct", "zt_demandwindow",
 		"zt_versionwindow", "zt_planstory", "zt_dept", "zt_approvalnode", "zt_approvalobject",
 		"zt_charter", "zt_project", "zt_planchange", "zt_projectbuildguide", "zt_review",
@@ -88,10 +88,24 @@ func InitMinimalSchema(ctx context.Context, db *gorm.DB) error {
 			UNIQUE KEY account (account)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
+		`CREATE TABLE IF NOT EXISTS zt_module (
+			id int unsigned NOT NULL AUTO_INCREMENT,
+			root int unsigned NOT NULL DEFAULT '0',
+			branch int unsigned NOT NULL DEFAULT '0',
+			name varchar(255) NOT NULL DEFAULT '',
+			parent int unsigned NOT NULL DEFAULT '0',
+			path varchar(255) NOT NULL DEFAULT '',
+			grade tinyint unsigned NOT NULL DEFAULT '0',
+			type varchar(30) NOT NULL DEFAULT '',
+			deleted enum('0','1') NOT NULL DEFAULT '0',
+			PRIMARY KEY (id)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
 		`CREATE TABLE IF NOT EXISTS zt_demand (
 			id int NOT NULL AUTO_INCREMENT,
 			parent mediumint NOT NULL DEFAULT '0',
 			pool int NOT NULL DEFAULT '0',
+			module int NOT NULL DEFAULT '0',
 			pri char(30) NOT NULL DEFAULT '',
 			name varchar(255) NOT NULL DEFAULT '',
 			` + "`desc`" + ` longtext,
@@ -282,6 +296,7 @@ func InitMinimalSchema(ctx context.Context, db *gorm.DB) error {
 			title varchar(255) NOT NULL DEFAULT '',
 			status varchar(30) NOT NULL DEFAULT '',
 			pri tinyint unsigned NOT NULL DEFAULT '0',
+			severity tinyint unsigned NOT NULL DEFAULT '0',
 			deadline date DEFAULT NULL,
 			assignedTo varchar(30) NOT NULL DEFAULT '',
 			createdBy varchar(30) NOT NULL DEFAULT '',
@@ -295,6 +310,7 @@ func InitMinimalSchema(ctx context.Context, db *gorm.DB) error {
 			name varchar(255) NOT NULL DEFAULT '',
 			status varchar(30) NOT NULL DEFAULT '',
 			pri tinyint unsigned NOT NULL DEFAULT '0',
+			impact tinyint unsigned NOT NULL DEFAULT '0',
 			plannedClosedDate date DEFAULT NULL,
 			assignedTo varchar(30) NOT NULL DEFAULT '',
 			createdBy varchar(30) NOT NULL DEFAULT '',

@@ -22,13 +22,13 @@ function cssRead(rel) { return read(path.join("web/static/css", rel)); }
   const PersonalList = require("../../../web/static/js/po/personal-list.js");
   assert.deepEqual(
     PersonalList.PAGE_SIZE_OPTIONS,
-    [10, 15, 20, 50, 100],
-    "PersonalList.PAGE_SIZE_OPTIONS must be the unified contract [10,15,20,50,100]"
+    [10, 12, 15, 20, 50, 100],
+    "PersonalList.PAGE_SIZE_OPTIONS must be the unified contract [10,12,15,20,50,100]"
   );
   const pagerTpl = read("web/templates/components/pager.html");
   const serverSizes = [...pagerTpl.matchAll(/<option value="(\d+)"[^>]*>\d+ 条\/页/g)].map((m) => Number(m[1]));
-  assert.deepEqual(serverSizes, [10, 15, 20, 50, 100], "components/pager.html must offer [10,15,20,50,100]");
-  console.log("PASS: pagination page-size options are the shared 10/15/20/50/100 contract");
+  assert.deepEqual(serverSizes, [10, 12, 15, 20, 50, 100], "components/pager.html must offer [10,12,15,20,50,100]");
+  console.log("PASS: pagination page-size options are the shared 10/12/15/20/50/100 contract");
 })();
 
 // 2. 页面标题头卡片规格仅由 shell.css 一处定义。
@@ -65,7 +65,33 @@ function cssRead(rel) { return read(path.join("web/static/css", rel)); }
   console.log("PASS: page-header card and rhythm are shared from shell.css");
 })();
 
-// 3. 描述性文字使用 --color-text-secondary，且 notice / follow 行内按钮统一为 28px/12px。
+// 3. 快捷统计条共享同一套几何，并用语义色区分信息、成功、预警与危险状态。
+(function testQuickChipSemantics() {
+  const css = cssRead("po/personal-workspace.css");
+  for (const semantic of ["info", "success", "primary", "warning", "danger"]) {
+    assert.match(css, new RegExp("\\.header-quick-chip\\." + semantic), "shared quick chips must define " + semantic + " state");
+  }
+  assert.match(css, /\.header-quick-chip\.success[\s\S]*?var\(--color-success-bg\)/, "success chips must use success semantic tokens");
+  assert.match(css, /\.header-quick-chip\.primary[\s\S]*?var\(--color-primary-light\)/, "primary chips must use primary semantic tokens");
+
+  const templates = {
+    done: read("web/templates/po/done.html"),
+    todos: read("web/templates/po/todos.html"),
+    notice: read("web/templates/po/notice.html"),
+    follow: read("web/templates/po/follow.html"),
+    home: read("web/templates/po/home.html"),
+    risk: read("web/templates/po/issue-risk.html"),
+  };
+  assert.match(templates.done, /class="header-quick-chip wb-done-kpi info"[^>]*data-range="today"/);
+  assert.match(templates.done, /class="header-quick-chip wb-done-kpi success"[^>]*data-range="week"/);
+  assert.match(templates.notice, /class="header-quick-chip danger"[^>]*data-qv="abnormal"/);
+  assert.match(templates.follow, /class="header-quick-chip success"[^>]*data-lifecycle="released"/);
+  assert.match(templates.home, /data-home-focus="today"[^>]*class="header-quick-chip warning"/);
+  assert.match(templates.risk, /class="header-quick-chip success"[^>]*data-loop="closed"/);
+  console.log("PASS: PO quick statistics share semantic color states across pages");
+})();
+
+// 4. 描述性文字使用 --color-text-secondary，且 notice / follow 行内按钮统一为 28px/12px。
 (function testDescriptiveTextTokens() {
   const cases = [
     ["po/notice.css", /\.notice-read-state\s*\{[^}]*color: var\(--color-text-secondary\)/],

@@ -15,6 +15,11 @@
   width: auto;
   min-width: 200px;
 }
+.po-todos .todos-table .todos-col-approval {
+  width: 108px;
+  min-width: 108px;
+  white-space: nowrap;
+}
 
 .po-todos .todos-item-title {
   display: block;
@@ -34,6 +39,19 @@
   width: 72px;
   overflow: visible;
   text-overflow: clip;
+}
+.po-todos .todos-severity-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border: 1px solid var(--po-border, #d9e2f0);
+  border-radius: 999px;
+  color: var(--po-t1, #334155);
+  background: var(--po-surface-soft, #f5f8fc);
+  font-size: 12px;
+  line-height: 20px;
+  white-space: nowrap;
 }
 .po-todos .todos-table .todos-col-rel {
   width: 80px;

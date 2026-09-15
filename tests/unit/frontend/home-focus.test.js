@@ -33,7 +33,7 @@ const window = {
   appFetch(url) { requests.push(url); return new Promise(() => {}); },
   // pageSize 记忆（Stage 4）在沙箱中预装，避免 home.js 读取 loadPageSize 触发 TypeError。
   PersonalList: {
-      PAGE_SIZE_OPTIONS: [10, 15, 20, 50, 100],
+      PAGE_SIZE_OPTIONS: [10, 12, 15, 20, 50, 100],
     escapeHtml: (v) => String(v == null ? '' : v),
     loadPageSize: (_key, fallback) => fallback,
     savePageSize() {},

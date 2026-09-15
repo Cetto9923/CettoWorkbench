@@ -16,10 +16,10 @@
     <div class="header-quick-filters" id="noticeQuickChips" role="group" aria-label="快捷焦点">
       <button type="button" class="header-quick-chip" data-qv="all" aria-pressed="false">全部通知 <em id="qvCountAll">—</em></button>
       <button type="button" class="header-quick-chip active" data-qv="unread" aria-pressed="true">未读 <em id="qvCountUnread">—</em></button>
-      <button type="button" class="header-quick-chip" data-qv="action" aria-pressed="false">需处理 <em id="qvCountAction">—</em></button>
-      <button type="button" class="header-quick-chip" data-qv="inform" aria-pressed="false">知会 <em id="qvCountInform">—</em></button>
-      <button type="button" class="header-quick-chip warning" data-qv="abnormal" aria-pressed="false">异常提醒 <em id="qvCountAbnormal">—</em></button>
-      <button type="button" class="header-quick-chip" data-qv="today" aria-pressed="false">今日新增 <em id="qvCountToday">—</em></button>
+      <button type="button" class="header-quick-chip warning" data-qv="action" aria-pressed="false">需处理 <em id="qvCountAction">—</em></button>
+      <button type="button" class="header-quick-chip info" data-qv="inform" aria-pressed="false">知会 <em id="qvCountInform">—</em></button>
+      <button type="button" class="header-quick-chip danger" data-qv="abnormal" aria-pressed="false">异常提醒 <em id="qvCountAbnormal">—</em></button>
+      <button type="button" class="header-quick-chip success" data-qv="today" aria-pressed="false">今日新增 <em id="qvCountToday">—</em></button>
     </div>
   </header>
 
@@ -41,11 +41,6 @@
       <select id="noticeReadState" aria-label="已读状态"><option value="all">已读状态：全部</option><option value="unread">未读</option><option value="read">已读</option></select>
       <button type="button" class="workspace-btn" id="noticeResetBtn">重置筛选</button>
       <button type="button" class="workspace-btn soft-primary" id="noticeMarkAllBtn" title="将当前筛选的全部未读通知标为已读（包含后续页）">全部标为已读</button>
-    </div>
-
-    <div class="workspace-result-bar" aria-live="polite">
-      <span id="noticeSummary">加载中…</span>
-      <span class="workspace-result-hint">批量已读作用于当前筛选的所有页 · 已读不影响业务待办状态</span>
     </div>
 
     <div class="table-scroll-container">

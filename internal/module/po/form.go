@@ -23,12 +23,14 @@ type FieldError struct {
 
 // ValueStreamStage 价值流阶段卡片数据（对应 homeVsCompact 单个阶段）。
 type ValueStreamStage struct {
-	Label       string `json:"label"`
-	Status      string `json:"status"`
-	Valid       bool   `json:"valid"` // 真实统计有效标记，失败兜底时为 false (ERROR ≠ ZERO)
-	Count       int64  `json:"count"`
-	DemandCount int64  `json:"demandCount"`
-	StoryCount  int64  `json:"storyCount"`
+	Label           string `json:"label"`
+	Status          string `json:"status"`
+	Valid           bool   `json:"valid"` // 真实统计有效标记，失败兜底时为 false (ERROR ≠ ZERO)
+	Count           int64  `json:"count"`
+	DemandCount     int64  `json:"demandCount"`
+	StoryCount      int64  `json:"storyCount"`
+	AvgDurationDays int    `json:"avgDurationDays"`
+	AvgDurationText string `json:"avgDurationText"`
 }
 
 // HomeResp PO 工作台首页数据。
@@ -341,21 +343,23 @@ func (r *TodoListReq) Validate() []FieldError {
 // TodoItem 我的待办单条（横跨业务需求/研发需求/任务/Bug/测试单等多种对象）。
 // kind 决定展示与跳转链接生成。
 type TodoItem struct {
-	Kind           string `json:"kind"`           // demand / story / task / bug / test
-	ID             int64  `json:"id"`             // 业务需求 ID（业需/任务/...各自主键）
-	DisplayID      string `json:"displayId"`      // 展示编号：业需 US{id}，其余对象使用禅道原始数字 ID
-	Title          string `json:"title"`          // 标题
-	Type           string `json:"type"`           // 对象类型中文标签（业务需求/任务/Bug/测试单...）
-	Stage          string `json:"stage"`          // 当前阶段（valueStream 标签或 zentao status 中文）
-	Priority       string `json:"priority"`       // 优先级 P0..P4
-	Relation       string `json:"relation"`       // 我负责/我配合/我关注
-	Responsibility string `json:"responsibility"` // 待我处理/待我跟进
-	Reason         string `json:"reason"`         // 形成原因（来源禅道 status 或业务场景）
-	Deadline       string `json:"deadline"`       // 截止日期 YYYY-MM-DD（无日期空串）
-	Owner          string `json:"owner"`          // 责任人展示名
-	URL            string `json:"url"`            // 禅道详情 URL 或工作台任务详情 URL
-	Action         string `json:"action"`         // 当前可执行或跟进动作
-	Blocked        bool   `json:"blocked"`        // 是否存在明确阻塞事实
+	Kind           string `json:"kind"`                    // demand / story / task / bug / test
+	ID             int64  `json:"id"`                      // 业务需求 ID（业需/任务/...各自主键）
+	DisplayID      string `json:"displayId"`               // 展示编号：业需 US{id}，其余对象使用禅道原始数字 ID
+	Title          string `json:"title"`                   // 标题
+	Type           string `json:"type"`                    // 对象类型中文标签（业务需求/任务/Bug/测试单...）
+	Stage          string `json:"stage"`                   // 当前阶段（valueStream 标签或 zentao status 中文）
+	Priority       string `json:"priority"`                // 优先级 P0..P4
+	Severity       string `json:"severity,omitempty"`      // 风险等级/问题严重程度
+	Relation       string `json:"relation"`                // 我负责/我配合/我关注
+	Responsibility string `json:"responsibility"`          // 待我处理/待我跟进
+	Reason         string `json:"reason"`                  // 形成原因（来源禅道 status 或业务场景）
+	Deadline       string `json:"deadline"`                // 截止日期 YYYY-MM-DD（无日期空串）
+	Owner          string `json:"owner"`                   // 责任人展示名
+	URL            string `json:"url"`                     // 禅道详情 URL 或工作台任务详情 URL
+	Action         string `json:"action"`                  // 当前可执行或跟进动作
+	Blocked        bool   `json:"blocked"`                 // 是否存在明确阻塞事实
+	ApprovalScene  string `json:"approvalScene,omitempty"` // 审批对象的具体审批场景
 }
 
 // TodoSummary 我的待办一级快捷指标，与返回列表同源计算。

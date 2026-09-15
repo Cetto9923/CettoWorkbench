@@ -106,7 +106,7 @@ func TestAllStageRefQuery_ToolbarFilters_KeywordAndRelation(t *testing.T) {
 		t.Fatalf("expected assignedTo = ? in story SQL: %s", sqlLead)
 	}
 
-	// Relation participate filter (我参与: 需求池业务需求 + 非当前负责人 + 需求分析人)
+	// Relation participate filter：澄清仍能看到业务需求，排期阶段切换为关联研发需求。
 	queryPart := repo.allStageRefQuery(context.Background(), "alice", DemandsReq{Relation: "participate"})
 	stmtPart := db.Table("(?) AS all_stages", queryPart).Select("kind, id").
 		Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
@@ -114,11 +114,12 @@ func TestAllStageRefQuery_ToolbarFilters_KeywordAndRelation(t *testing.T) {
 	if !strings.Contains(sqlPart, "d.BRA <> ?") ||
 		!strings.Contains(sqlPart, "d.pool IS NOT NULL AND d.pool <> 0") ||
 		!strings.Contains(sqlPart, "zt_demandpool") ||
-		!strings.Contains(sqlPart, "FIND_IN_SET") {
-		t.Fatalf("expected demand-pool analyst participation in demand SQL: %s", sqlPart)
+		!strings.Contains(sqlPart, "FIND_IN_SET") ||
+		!strings.Contains(sqlPart, "fromDemand") {
+		t.Fatalf("expected demand-pool analyst participation and associated story SQL: %s", sqlPart)
 	}
-	if strings.Contains(sqlPart, "assignedTo = ? OR EXISTS") {
-		t.Fatalf("participate must not classify story rows as participation: %s", sqlPart)
+	if !strings.Contains(sqlPart, "stage_index <>") {
+		t.Fatalf("participate must exclude the business-demand schedule row: %s", sqlPart)
 	}
 }
 
@@ -220,6 +221,51 @@ func TestServiceDemands_AllStage_PriorityP1(t *testing.T) {
 	if resp.Items[0].Pri != "P1" {
 		t.Fatalf("expected item pri P1, got %s", resp.Items[0].Pri)
 	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("mock expectations unmet: %v", err)
+	}
+}
+
+func TestCountAllStageBreakdown_DurationCalculation(t *testing.T) {
+	db, mock := openSQLMock(t)
+	repo := NewRepo(db, nil)
+	svc := NewService(repo, nil, nil, nil)
+
+	mock.ExpectQuery("(?s)SELECT stage_index, kind, COUNT\\(\\*\\) AS count, IFNULL\\(SUM\\(duration_days\\), 0\\) AS total_duration, COUNT\\(duration_days\\) AS duration_count FROM .* GROUP BY stage_index, kind").
+		WillReturnRows(sqlmock.NewRows([]string{"stage_index", "kind", "count", "total_duration", "duration_count"}).
+			AddRow(1, "demand", 10, 80, 10). // 受理：均 80/10 = 8天
+			AddRow(3, "demand", 2, 25, 2).   // 排期：均 25/2 = 12.5 -> 13天
+			AddRow(3, "story", 5, 0, 0))     // 研发需求不计入
+
+	breakdown, err := svc.countAllStageBreakdown(context.Background(), "alice")
+	if err != nil {
+		t.Fatalf("countAllStageBreakdown error: %v", err)
+	}
+
+	if len(breakdown) != len(valueStreamStages) {
+		t.Fatalf("expected %d stages, got %d", len(valueStreamStages), len(breakdown))
+	}
+
+	// 验证受理阶段
+	if breakdown[1].AvgDurationDays != 8 || breakdown[1].AvgDurationText != "均8天" {
+		t.Errorf("accept stage duration mismatch, got days=%d, text=%q, want 8, '均8天'", breakdown[1].AvgDurationDays, breakdown[1].AvgDurationText)
+	}
+
+	// 验证排期阶段（含四舍五入）
+	if breakdown[3].AvgDurationDays != 13 || breakdown[3].AvgDurationText != "均13天" {
+		t.Errorf("schedule stage duration mismatch, got days=%d, text=%q, want 13, '均13天'", breakdown[3].AvgDurationDays, breakdown[3].AvgDurationText)
+	}
+
+	// 验证无需求阶段默认为 "—"
+	if breakdown[4].AvgDurationDays != 0 || breakdown[4].AvgDurationText != "—" {
+		t.Errorf("empty stage duration mismatch, got days=%d, text=%q, want 0, '—'", breakdown[4].AvgDurationDays, breakdown[4].AvgDurationText)
+	}
+
+	// 验证全部卡片全流均值：(80+25)/(10+2) = 105/12 = 8.75 -> 9天
+	if breakdown[0].AvgDurationDays != 9 || breakdown[0].AvgDurationText != "均9天" {
+		t.Errorf("all stage duration mismatch, got days=%d, text=%q, want 9, '均9天'", breakdown[0].AvgDurationDays, breakdown[0].AvgDurationText)
+	}
+
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("mock expectations unmet: %v", err)
 	}

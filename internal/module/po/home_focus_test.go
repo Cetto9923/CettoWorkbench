@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"gorm.io/gorm"
 )
 
@@ -96,14 +97,44 @@ func TestHomeFocusToolbarRelationLeadAndParticipate(t *testing.T) {
 	}
 }
 
-func TestHomeFocusStoryParticipateExcludesStories(t *testing.T) {
+func TestHomeFocusStoryParticipateUsesAssociatedStories(t *testing.T) {
 	db, _ := openSQLMock(t)
-	query := applyStoryToolbarFilters(db.Table("zt_story"), "alice", DemandsReq{Relation: "participate"})
+	repo := NewRepo(db, nil)
+	query := repo.homeFocusStoryQuery(context.Background(), "alice", DemandsReq{
+		Focus: "my_action", Status: "schedule", Relation: "participate",
+	})
 	var rows []struct{ ID int }
 	stmt := query.Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
 	sql := stmt.SQL.String()
-	if !strings.Contains(sql, "1 = 0") {
-		t.Fatalf("participate must not expose story rows: %s", sql)
+	for _, want := range []string{"fromDemand", "d.pool IS NOT NULL AND d.pool <> 0", "FIND_IN_SET"} {
+		if !strings.Contains(sql, want) {
+			t.Fatalf("participate schedule stories must include %q: %s", want, sql)
+		}
+	}
+	if !strings.Contains(sql, "s.sourceType <> 'demandpool' AND s.assignedTo = ?") {
+		t.Fatalf("participate schedule stories must include assigned independent stories: %s", sql)
+	}
+}
+
+func TestHomeFocusParticipateScheduleExcludesBusinessDemand(t *testing.T) {
+	db, _ := openSQLMock(t)
+	repo := NewRepo(db, nil)
+
+	schedule := repo.homeFocusQueryWithReviews(context.Background(), "alice", DemandsReq{
+		Focus: "my_action", Status: "schedule", Relation: "participate",
+	}, nil)
+	var rows []struct{ ID int }
+	scheduleStmt := db.Table("(?) AS focused", schedule).Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
+	if !strings.Contains(scheduleStmt.SQL.String(), "1 = 0") {
+		t.Fatalf("participate schedule must not return the business-demand row: %s", scheduleStmt.SQL.String())
+	}
+
+	all := repo.homeFocusQueryWithReviews(context.Background(), "alice", DemandsReq{
+		Focus: "my_action", Status: "all", Relation: "participate",
+	}, nil)
+	allStmt := db.Table("(?) AS focused", all).Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
+	if !strings.Contains(allStmt.SQL.String(), "NOT (status = ?") || !strings.Contains(allStmt.SQL.String(), "estimateLaunch") {
+		t.Fatalf("participate all must retain clarify demand and exclude schedule demand: %s", allStmt.SQL.String())
 	}
 }
 
@@ -215,5 +246,42 @@ func TestHomeFocusToolbarUsesCurrentHandler(t *testing.T) {
 	stmt := db.Table("(?) AS focused", query).Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
 	if !strings.Contains(stmt.SQL.String(), "currentHandlerDemandKeywordWhere") && !strings.Contains(stmt.SQL.String(), "LOWER(IFNULL(RD, '')) LIKE") {
 		t.Fatalf("keyword must include current stage handler: %s", stmt.SQL.String())
+	}
+}
+
+func TestHomeFocusStageSummary_DurationCalculation(t *testing.T) {
+	db, mock := openSQLMock(t)
+	repo := NewRepo(db, nil)
+
+	mock.ExpectQuery("SELECT `demand` FROM `zt_demandreview` WHERE reviewer = ?").
+		WithArgs("alice").
+		WillReturnRows(sqlmock.NewRows([]string{"demand"}))
+
+	mock.ExpectQuery("(?s)SELECT stage_index, COUNT\\(\\*\\) AS count, IFNULL\\(SUM\\(duration_days\\), 0\\) AS total_duration, COUNT\\(duration_days\\) AS duration_count FROM .* GROUP BY `stage_index`").
+		WillReturnRows(sqlmock.NewRows([]string{"stage_index", "count", "total_duration", "duration_count"}).
+			AddRow(2, 5, 50, 5). // 澄清：50/5 = 10天
+			AddRow(3, 4, 48, 4)) // 排期：48/4 = 12天
+
+	stages, err := repo.HomeFocusStageSummary(context.Background(), "alice", DemandsReq{
+		Focus:      "my_action",
+		ObjectType: "demand",
+	})
+	if err != nil {
+		t.Fatalf("HomeFocusStageSummary error: %v", err)
+	}
+
+	if stages[2].AvgDurationDays != 10 || stages[2].AvgDurationText != "均10天" {
+		t.Errorf("clarify stage duration mismatch: days=%d, text=%q, want 10, '均10天'", stages[2].AvgDurationDays, stages[2].AvgDurationText)
+	}
+	if stages[3].AvgDurationDays != 12 || stages[3].AvgDurationText != "均12天" {
+		t.Errorf("schedule stage duration mismatch: days=%d, text=%q, want 12, '均12天'", stages[3].AvgDurationDays, stages[3].AvgDurationText)
+	}
+	// 汇总卡片
+	if stages[0].AvgDurationDays != 11 || stages[0].AvgDurationText != "均11天" {
+		t.Errorf("all stage duration mismatch: days=%d, text=%q, want 11, '均11天'", stages[0].AvgDurationDays, stages[0].AvgDurationText)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("mock expectations unmet: %v", err)
 	}
 }

@@ -56,6 +56,8 @@
     if ($("todosStage")) { $("todosStage").hidden = !isDemand; }
     if ($("todosResponsibility")) { $("todosResponsibility").hidden = !(isDemand || isStory); }
     if ($("todosApprovalType")) { $("todosApprovalType").hidden = !isApproval; }
+    if ($("todosApprovalHeader")) { $("todosApprovalHeader").hidden = !isApproval; }
+    if ($("todosMetricHeader")) { $("todosMetricHeader").textContent = ot === "risk" ? "风险等级" : (ot === "issue" ? "严重程度" : "优先级"); }
   }
 
   var searchTimer = null;
@@ -177,7 +179,9 @@
       draft: "草稿", wait: "待受理", refuse: "已挂起", active: "待澄清",
       clarified: "待排期", developing: "研发中", testing: "测试中",
       waitacceptance: "待验收", acceptanced: "待交付", waitdeliver: "待发布",
-      opened: "处理中", doing: "进行中"
+      opened: "处理中", doing: "进行中", unconfirmed: "未确认", confirmed: "已确认",
+      resolved: "已解决", closed: "已关闭", cancel: "已取消", canceled: "已取消",
+      tracked: "跟踪中", hangup: "已挂起"
     };
     return labels[value] || value || "—";
   }
@@ -188,19 +192,27 @@
     var idContent = item.url ? '<a class="table-id-link" href="' + esc(item.url) + '" target="_blank" rel="noopener noreferrer">' + id + "</a>" : id;
     var titleContent = item.url ? '<a class="table-title-link" href="' + esc(item.url) + '" target="_blank" rel="noopener noreferrer">' + title + "</a>" : title;
     var isStory = String(item.kind || "").toLowerCase() === "story";
+    var isIssueRisk = state.objectType === "risk" || state.objectType === "issue";
+    var metricHtml = isIssueRisk
+      ? '<span class="todos-severity-tag">' + esc(item.severity || "—") + "</span>"
+      : priorityBadge(item.priority);
 
     // 对象 + ID 单 chip：与通知中心 / 首页 / 已办同款（wb-type / wb-type-{kind}），
     // 走 PersonalList.idChipHtml（OBJECT_TYPE_SHORT_LABELS 缩写 + "#" 分隔符）。
     var idChip = PL.idChipHtml
       ? PL.idChipHtml(chipKindFromApi(item.kind), idContent)
       : objectTypeBadgeFromKind(item.kind);
+    var approvalSceneCell = state.objectType === "approval"
+      ? '<td class="todos-col-approval">' + esc(item.approvalScene || "—") + "</td>"
+      : "";
 
     return "<tr>" +
       '<td class="todos-col-obj">' + idChip + "</td>" +
       '<td class="todos-col-item" title="' + title + '">' +
         '<div class="todos-item-title">' + titleContent + "</div>" +
       "</td>" +
-      '<td class="todos-col-pri">' + priorityBadge(item.priority) + "</td>" +
+      approvalSceneCell +
+      '<td class="todos-col-pri">' + metricHtml + "</td>" +
       '<td class="todos-col-rel"><span class="relation-tag">' + esc(item.relation || "—") + "</span></td>" +
       '<td class="todos-col-stage" title="' + esc(stageLabel(item.reason)) + '">' + ((PL && PL.statusTagHtml) ? PL.statusTagHtml(stageLabel(item.reason)) : esc(stageLabel(item.reason))) + "</td>" +
       '<td class="todos-col-dead">' + esc(item.deadline || "—") + "</td>" +
@@ -297,7 +309,6 @@
 
       var tbody = $("todosTbody");
       if (tbody) { tbody.innerHTML = items.map(rowHtml).join(""); }
-      if ($("todosSummary")) { $("todosSummary").textContent = "共 " + total + " 条待办事项"; }
       if (payload && payload.summary) {
         renderCounts(payload.summary);
       }
@@ -430,11 +441,10 @@
   document.addEventListener("DOMContentLoaded", function () {
     if (window.PersonalList) {
       controller = window.PersonalList.createController({
-        summaryEl: $("todosSummary"),
         emptyEl: $("todosEmpty"),
         errorEl: $("todosError"),
         tbodyEl: $("todosTbody"),
-        errorColspan: 8,
+        errorColspan: 9,
         onError: function () { resetCounts(); }
       });
     }

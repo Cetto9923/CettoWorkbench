@@ -32,7 +32,7 @@ func buildTodoApprovalSQL(account string, approvalType string) (string, []interf
 			WHEN ao.objectType = 'review' THEN COALESCE(NULLIF(rv.title, ''), NULLIF(p4.name, ''), '项目评审')
 			ELSE '审批'
 		END AS title,
-		'doing' AS status,
+		'doing' AS status, '' AS severity,
 		'2' AS pri_str, 2 AS priority_rank,
 		CASE WHEN ao.objectType = 'review' AND rv.deadline IS NOT NULL AND rv.deadline <> '0000-00-00' THEN DATE_FORMAT(rv.deadline, '%Y-%m-%d') ELSE '9999-12-31' END AS deadline_str,
 		n.account AS owner_account, '我负责' AS relation, '待我处理' AS responsibility, 0 AS blocked, 4 AS type_order,
@@ -59,6 +59,7 @@ func buildTodoApprovalSQL(account string, approvalType string) (string, []interf
 
 func buildTodoStorySQL(account string) (string, []interface{}) {
 	sql := `SELECT 'story' AS kind, s.id, CAST(s.id AS CHAR) AS display_id, s.title AS title, s.status,
+		'' AS severity,
 		CASE WHEN s.pri = 1 THEN '1' WHEN s.pri = 2 THEN '2' WHEN s.pri = 3 THEN '3' WHEN s.pri = 4 THEN '4' ELSE '0' END AS pri_str,
 		CASE WHEN s.pri = 1 THEN 1 WHEN s.pri = 2 THEN 2 WHEN s.pri = 3 THEN 3 ELSE 4 END AS priority_rank,
 		CASE WHEN s.deliverDate IS NULL OR s.deliverDate = '0000-00-00' THEN '9999-12-31' ELSE DATE_FORMAT(s.deliverDate, '%Y-%m-%d') END AS deadline_str,
@@ -72,6 +73,7 @@ func buildTodoStorySQL(account string) (string, []interface{}) {
 
 func buildTodoRiskSQL(account string) (string, []interface{}) {
 	sql := `SELECT 'risk' AS kind, rk.id, CAST(rk.id AS CHAR) AS display_id, rk.name AS title, rk.status,
+		rk.impact AS severity,
 		CASE WHEN rk.pri = '1' THEN '1' WHEN rk.pri = '2' THEN '2' WHEN rk.pri = '3' THEN '3' WHEN rk.pri = '4' THEN '4' ELSE '0' END AS pri_str,
 		CASE WHEN rk.pri = '1' THEN 1 WHEN rk.pri = 2 THEN 2 WHEN rk.pri = 3 THEN 3 ELSE 4 END AS priority_rank,
 		'9999-12-31' AS deadline_str,
@@ -84,6 +86,7 @@ func buildTodoRiskSQL(account string) (string, []interface{}) {
 
 func buildTodoIssueSQL(account string) (string, []interface{}) {
 	sql := `SELECT 'issue' AS kind, iss.id, CAST(iss.id AS CHAR) AS display_id, iss.title AS title, iss.status,
+		iss.severity AS severity,
 		CASE WHEN iss.pri = '1' THEN '1' WHEN iss.pri = '2' THEN '2' WHEN iss.pri = '3' THEN '3' WHEN iss.pri = '4' THEN '4' ELSE '0' END AS pri_str,
 		CASE WHEN iss.pri = '1' THEN 1 WHEN iss.pri = 2 THEN 2 WHEN iss.pri = 3 THEN 3 ELSE 4 END AS priority_rank,
 		CASE WHEN iss.deadline IS NULL OR iss.deadline = '0000-00-00' THEN '9999-12-31' ELSE DATE_FORMAT(iss.deadline, '%Y-%m-%d') END AS deadline_str,
@@ -96,6 +99,7 @@ func buildTodoIssueSQL(account string) (string, []interface{}) {
 
 func buildTodoPersonalSQL(account string) (string, []interface{}) {
 	sql := `SELECT 'todo' AS kind, td.id, CAST(td.id AS CHAR) AS display_id, td.name AS title, td.status,
+		'' AS severity,
 		CASE WHEN td.pri = 1 THEN '1' WHEN td.pri = 2 THEN '2' WHEN td.pri = 3 THEN '3' WHEN td.pri = 4 THEN '4' ELSE '0' END AS pri_str,
 		CASE WHEN td.pri = 1 THEN 1 WHEN td.pri = 2 THEN 2 WHEN td.pri = 3 THEN 3 ELSE 4 END AS priority_rank,
 		CASE WHEN td.date IS NULL OR td.date = '0000-00-00' THEN '9999-12-31' ELSE DATE_FORMAT(td.date, '%Y-%m-%d') END AS deadline_str,
@@ -109,6 +113,7 @@ func buildTodoPersonalSQL(account string) (string, []interface{}) {
 
 func buildTodoTesttaskSQL(account string) (string, []interface{}) {
 	sql := `SELECT 'testtask' AS kind, tt.id, CAST(tt.id AS CHAR) AS display_id, tt.name AS title, tt.status,
+		'' AS severity,
 		CASE WHEN tt.pri = 1 THEN '1' WHEN tt.pri = 2 THEN '2' WHEN tt.pri = 3 THEN '3' WHEN tt.pri = 4 THEN '4' ELSE '0' END AS pri_str,
 		CASE WHEN tt.pri = 1 THEN 1 WHEN tt.pri = 2 THEN 2 WHEN tt.pri = 3 THEN 3 ELSE 4 END AS priority_rank,
 		CASE WHEN tt.end IS NULL OR tt.end = '0000-00-00' THEN '9999-12-31' ELSE DATE_FORMAT(tt.end, '%Y-%m-%d') END AS deadline_str,
