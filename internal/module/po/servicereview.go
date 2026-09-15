@@ -2,7 +2,7 @@
 // 文件: internal/module/po/servicereview.go
 // 模块: PO 工作台
 // 类型: action
-// 职责: 业需评审：本地校验资格后，以当前用户身份转发禅道 POST /demand/:id/review。
+// 职责: 业需评审与撤回：本地校验资格后，以当前用户身份转发禅道 API。
 // 依赖: internal/model
 //       internal/pkg/errorx
 //       internal/pkg/zentao
@@ -77,4 +77,51 @@ func (s *Service) ReviewDemand(ctx context.Context, actor *model.User, req Revie
 	}
 
 	return ReviewDemandResp{ID: req.ID}, nil
+}
+
+// WithdrawDemandReview 撤回业需评审申请（仅创建人或超级管理员；代理禅道 withdrawReview）。
+func (s *Service) WithdrawDemandReview(ctx context.Context, actor *model.User, req WithdrawDemandReviewReq) (WithdrawDemandReviewResp, error) {
+	empty := WithdrawDemandReviewResp{}
+	if actor == nil || strings.TrimSpace(actor.Account) == "" {
+		return empty, errorx.New(errorx.ErrCodeForbidden, "请先登录")
+	}
+	account := strings.TrimSpace(actor.Account)
+
+	demand, err := s.repo.FindDemandForReview(ctx, req.ID)
+	if err != nil {
+		return empty, err
+	}
+	if demand == nil || demand.Deleted != "0" {
+		return empty, errorx.New(errorx.ErrCodeNotFound, "需求不存在")
+	}
+	if strings.TrimSpace(demand.Status) != "wait" {
+		return empty, errorx.New(errorx.ErrCodeConflict, "该需求不是待评审状态")
+	}
+	if !actor.IsSuperAdmin && strings.TrimSpace(demand.CreatedBy) != account {
+		return empty, errorx.New(errorx.ErrCodeForbidden, "只有创建人可以撤回评审")
+	}
+
+	client := s.ztAPI
+	if client == nil {
+		client = zentao.API()
+	}
+	if client == nil {
+		return empty, errorx.New(errorx.ErrCodeInternal, "禅道 API 未配置")
+	}
+
+	if callErr := withdrawDemandReviewViaZentao(ctx, client, withdrawDemandReviewViaZentaoReq{
+		DemandID: req.ID,
+		Comment:  req.Comment,
+	}); callErr != nil {
+		if s.logger != nil {
+			s.logger.Error("zentao demand withdrawReview",
+				zap.Error(callErr),
+				zap.Int64("id", req.ID),
+				zap.String("account", account),
+			)
+		}
+		return empty, errorx.Wrap(errorx.ErrCodeInvalidParam, fmt.Sprintf("撤回评审失败：%s", callErr.Error()), callErr)
+	}
+
+	return WithdrawDemandReviewResp{ID: req.ID}, nil
 }

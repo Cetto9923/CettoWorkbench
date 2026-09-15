@@ -121,6 +121,30 @@ type ReviewDemandResp struct {
 	ID int64 `json:"id"`
 }
 
+// WithdrawDemandReviewReq 撤回业需评审（JSON Body，转发禅道 POST /demand/:id/withdrawReview）。
+//
+//	comment → 备注/评论（可选；未传置为空字符串）
+//
+// ID 不从 JSON 读，由 Handler 从 URL :id 填入。
+type WithdrawDemandReviewReq struct {
+	ID      int64  `json:"-"`
+	Comment string `json:"comment"`
+}
+
+// Validate 校验撤回评审入参。
+func (r *WithdrawDemandReviewReq) Validate() []FieldError {
+	if r.ID <= 0 {
+		return []FieldError{{Field: "id", Message: "需求 ID 无效"}}
+	}
+	r.Comment = strings.TrimSpace(r.Comment)
+	return nil
+}
+
+// WithdrawDemandReviewResp 撤回评审成功响应。
+type WithdrawDemandReviewResp struct {
+	ID int64 `json:"id"`
+}
+
 // DeliverDemandReq 发起交付提交（JSON Body，转发禅道 POST /demand/:id/deliver）。
 //
 // 字段对照禅道 OpenAPI（表单字段经 API entry 写入 $_POST）：

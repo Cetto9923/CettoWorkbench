@@ -300,8 +300,18 @@
     return String(item.valueStream || item.stage || "").trim() === "发起交付";
   }
 
+  // 研需可排期：zt_story.stage ∈ wait/planned/projected
+  function isSchedulableStoryStage(item) {
+    var storyStage = String(item.stage || "").trim().toLowerCase();
+    return (
+      storyStage === "wait" ||
+      storyStage === "planned" ||
+      storyStage === "projected"
+    );
+  }
+
   // 排期弹窗入口：价值流「排期」的业需/独立研需；以及「发起交付」阶段的独立研需
-  // 排期阶段研需仅当 zt_story.stage ∈ wait/planned/projected 时展示排期按钮
+  // 研需仅当 stage ∈ wait/planned/projected 时展示排期按钮
   function canShowSchedule(item) {
     if (!item) {
       return false;
@@ -309,17 +319,16 @@
     var valueStream = String(item.valueStream || "").trim();
     if (valueStream === "排期") {
       if (isStoryItem(item)) {
-        var storyStage = String(item.stage || "").trim().toLowerCase();
-        return (
-          storyStage === "wait" ||
-          storyStage === "planned" ||
-          storyStage === "projected"
-        );
+        return isSchedulableStoryStage(item);
       }
       return true;
     }
     // 发起交付阶段业需走「发起交付」；独立研需复用 /schedule/stories/:id/scheduling
-    return isStoryItem(item) && valueStream === "发起交付";
+    return (
+      isStoryItem(item) &&
+      valueStream === "发起交付" &&
+      isSchedulableStoryStage(item)
+    );
   }
 
   // 受理阶段操作按钮（仅展示，提交/撤销/编辑暂不接业务）
@@ -676,6 +685,17 @@
     });
   }
 
+  function bindCancelReviewButtons($list) {
+    $list.find(".js-cancel-review").on("click", function () {
+      var demandId = String($(this).attr("data-demand-id") || "").trim();
+      var item = findListItemByDemandId(demandId);
+      if (!item || typeof window.openPoDemandCanalDrawer !== "function") {
+        return;
+      }
+      window.openPoDemandCanalDrawer(item);
+    });
+  }
+
   function bindSubmitTestButtons($list) {
     $list.find(".js-submit-test").on("click", function () {
       var demandId = String($(this).attr("data-demand-id") || "").trim();
@@ -774,6 +794,7 @@
     $("#top5List").html(html);
     bindZentaoLinks($("#top5List"));
     bindReviewButtons($("#top5List"));
+    bindCancelReviewButtons($("#top5List"));
     bindSubmitTestButtons($("#top5List"));
     bindDeliverButtons($("#top5List"));
     bindScheduleButtons($("#top5List"));

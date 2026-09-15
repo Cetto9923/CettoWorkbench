@@ -2,7 +2,7 @@
 // 文件: internal/module/po/gateway.go
 // 模块: PO 工作台
 // 类型: action
-// 职责: 出站适配层：封装业需评审 / 发起交付的禅道 REST 调用。
+// 职责: 出站适配层：封装业需评审 / 撤回评审 / 发起交付的禅道 REST 调用。
 // 依赖: internal/pkg/zentao
 // =============================================================================
 
@@ -43,6 +43,28 @@ func reviewDemandViaZentao(ctx context.Context, client *zentao.Client, req revie
 		payload["comment"] = comment
 	}
 	path := fmt.Sprintf("/demand/%d/review", req.DemandID)
+	return client.Do(ctx, http.MethodPost, path, payload, nil)
+}
+
+// withdrawDemandReviewViaZentaoReq 禅道 POST /demand/:id/withdrawReview 入参。
+type withdrawDemandReviewViaZentaoReq struct {
+	DemandID int64
+	Comment  string
+}
+
+// withdrawDemandReviewViaZentao 以当前登录账号（ctx）调用禅道撤回评审接口。
+// comment 始终下发；未传时置为空字符串。
+func withdrawDemandReviewViaZentao(ctx context.Context, client *zentao.Client, req withdrawDemandReviewViaZentaoReq) error {
+	if client == nil {
+		return fmt.Errorf("禅道 API 未配置")
+	}
+	if req.DemandID <= 0 {
+		return fmt.Errorf("需求 ID 无效")
+	}
+	payload := map[string]any{
+		"comment": strings.TrimSpace(req.Comment),
+	}
+	path := fmt.Sprintf("/demand/%d/withdrawReview", req.DemandID)
 	return client.Do(ctx, http.MethodPost, path, payload, nil)
 }
 

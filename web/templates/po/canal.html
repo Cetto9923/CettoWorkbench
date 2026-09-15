@@ -1,0 +1,143 @@
+{{/* ==========================================================================
+文件: web/templates/po/canal.html
+模块: PO工作台
+职责: 撤销评审右侧抽屉（home 引入；布局与 review.html 一致；数据由 canal.js 调 GET /demands/:id 回填）
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: 无（抽屉 DOM 占位，JS 注入需求数据）
+========================================================================== */}}
+{{ define "po/canal" }}
+<div class="dd-drawer-mask" id="poDemandCanalDrawer" aria-hidden="true">
+  <div class="dd-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="poDemandCanalDrawerTitle" onclick="event.stopPropagation()">
+    <header class="dd-head" id="poDemandCanalHead">
+      <div class="dd-idrow">
+        <span class="dd-id" id="poDemandCanalUsId">US—</span>
+        <span class="wb-priority" id="poDemandCanalPri" data-priority="2">P2</span>
+        <div class="dd-head-actions">
+          <button type="button" class="dd-iconbtn" id="poDemandCanalDrawerCloseBtn" aria-label="关闭"><i class="fas fa-xmark"></i></button>
+        </div>
+      </div>
+      <div class="dd-title" id="poDemandCanalDrawerTitle">需求标题</div>
+      <div class="dd-meta">
+        <span>提出人：<b id="poDemandCanalProposerMeta">—</b></span>
+        <span>需求负责人：<b id="poDemandCanalPoMeta">—</b></span>
+      </div>
+      <div class="dd-spot-cards-3">
+        <div class="dd-spot-card">
+          <div class="lab">当前阶段</div>
+          <div class="val blue" id="poDemandCanalSpotStage">—</div>
+        </div>
+        <div class="dd-spot-card">
+          <div class="lab">业务评审人</div>
+          <div class="val" id="poDemandCanalSpotReviewer">—</div>
+        </div>
+        <div class="dd-spot-card">
+          <div class="lab">期望上线</div>
+          <div class="val" id="poDemandCanalSpotLaunch">—</div>
+        </div>
+      </div>
+      <div class="dd-core-strip">
+        <div class="dd-core-item">
+          <div class="k">需求类别</div>
+          <div class="v" id="poDemandCanalStripCategory">—</div>
+        </div>
+        <div class="dd-core-item">
+          <div class="k">需求来源</div>
+          <div class="v" id="poDemandCanalStripSource">—</div>
+        </div>
+        <div class="dd-core-item">
+          <div class="k">所属需求池</div>
+          <div class="v" id="poDemandCanalStripPool">—</div>
+        </div>
+      </div>
+      <div class="dd-native-line">
+        <b>禅道状态</b>
+        <span class="dd-native-state" id="poDemandCanalNativeState">—</span>
+      </div>
+    </header>
+
+    <main class="dd-body" id="poDemandCanalBody">
+      <div class="dd-review-container">
+        <div class="dd-grid dd-review-grid">
+          <div class="dd-main">
+            <div class="dd-card">
+              <div class="dd-card-body">
+                <div class="dd-cardhead"><h3>业务需求描述</h3></div>
+                <div class="dd-review-richtext" id="poDemandCanalSpec">
+                  <span class="text-muted">加载中…</span>
+                </div>
+              </div>
+            </div>
+            <div class="dd-card">
+              <div class="dd-card-body">
+                <div class="dd-cardhead"><h3>验收标准</h3></div>
+                <div class="dd-review-richtext" id="poDemandCanalVerify">
+                  <span class="text-muted">加载中…</span>
+                </div>
+              </div>
+            </div>
+            <div class="dd-card">
+              <div class="dd-card-body">
+                <div class="dd-cardhead"><h3>附件</h3></div>
+                <ul class="dd-file-list" id="poDemandCanalFiles">
+                  <li class="text-muted">加载中…</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <aside class="dd-sidebar">
+            <div class="dd-card">
+              <div class="dd-card-body">
+                <div class="dd-cardhead"><h3>基本信息</h3></div>
+                <div class="dd-aside-title">业务属性</div>
+                <div class="dd-kv-list compact">
+                  <div class="k">需求类别</div><div class="v" id="poDemandCanalCategory">业务需求</div>
+                  <div class="k">需求来源</div><div class="v" id="poDemandCanalSource">客户</div>
+                  <div class="k">优先级</div><div class="v" id="poDemandCanalPriSide">P2</div>
+                  <div class="k">所属需求池</div><div class="v" id="poDemandCanalPool">—</div>
+                  <div class="k">期望上线</div><div class="v" id="poDemandCanalLaunch">—</div>
+                </div>
+                <div class="dd-aside-title" style="margin-top:14px">相关责任人</div>
+                <div class="dd-kv-list compact">
+                  <div class="k">提出人</div><div class="v" id="poDemandCanalProposer">—</div>
+                  <div class="k">提出部门</div><div class="v" id="poDemandCanalDept">—</div>
+                  <div class="k">需求负责人</div><div class="v" id="poDemandCanalBra">—</div>
+                  <div class="k">业务评审人</div><div class="v" id="poDemandCanalReviewer">—</div>
+                  <div class="k">创建人</div><div class="v" id="poDemandCanalCreator">—</div>
+                  <div class="k">指派给</div><div class="v" id="poDemandCanalCurrentOwner">—</div>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        <div class="dd-review-footer dd-review-action-bar">
+          <div class="dd-review-footer-left">
+            <button type="button" class="dd-btn dd-btn-edit" id="poDemandCanalEditBtn" disabled title="静态演示">编辑需求 ↗</button>
+            <button type="button" class="dd-btn danger-outline" id="poDemandCanalWithdrawBtn">撤销评审</button>
+          </div>
+          <div class="dd-review-footer-right"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div id="poDemandCanalWithdrawModal" class="dd-reject-modal-overlay" style="display:none;" aria-hidden="true">
+  <div class="dd-reject-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="poDemandCanalWithdrawTitle">
+    <div class="dd-reject-modal-header">
+      <h3 id="poDemandCanalWithdrawTitle">撤销需求评审</h3>
+      <button type="button" class="dd-iconbtn" id="poDemandCanalWithdrawCloseBtn" aria-label="关闭"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="dd-reject-modal-body">
+      <p class="dd-reject-label" style="margin:0 0 12px;">确定要撤销该业务需求的评审申请吗？撤销后需求将退回<strong>草稿</strong>状态，评审流程中止。</p>
+      <label class="dd-reject-label" for="poDemandCanalWithdrawComment">撤销原因 / 说明：</label>
+      <textarea id="poDemandCanalWithdrawComment" class="dd-reject-textarea" rows="3" placeholder="选填，默认为“创建人撤销评审”，将作为评审记录同步至禅道"></textarea>
+    </div>
+    <div class="dd-reject-modal-footer">
+      <button type="button" class="dd-btn" id="poDemandCanalWithdrawCancelBtn">取消</button>
+      <button type="button" class="dd-btn danger" id="poDemandCanalWithdrawConfirmBtn">确认撤销</button>
+    </div>
+  </div>
+</div>
+{{ end }}
