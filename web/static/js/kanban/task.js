@@ -82,15 +82,22 @@
           escapeHtml(task.storyTitle || String(task.storyId)) +
           "</span>"
         : "";
-    var codeText = escapeHtml((task && (task.displayId || task.id)) || "");
-    var titleText = escapeHtml((task && task.title) || "");
-    var codeHtml = task && task.url
-      ? '<a class="code task-code-link" href="' +
+    var rawId = String((task && (task.displayId || task.id)) || "").trim();
+    var idText = rawId ? (rawId.charAt(0) === "#" ? rawId : "#" + rawId) : "";
+    var idInner = idText ? escapeHtml(idText) : "";
+    if (idInner && task && task.url) {
+      idInner =
+        '<a class="task-code-link" href="' +
         escapeHtml(task.url) +
         '" target="_blank" rel="noopener noreferrer" draggable="false" title="在禅道打开任务详情">' +
-        codeText +
-        "</a>"
-      : '<span class="code">' + codeText + "</span>";
+        idInner +
+        "</a>";
+    }
+    var typeChip =
+      '<span class="wb-type wb-type-task"><span class="wb-type-tag">任务</span>' +
+      (idInner ? '<span class="wb-type-id">' + idInner + "</span>" : "") +
+      "</span>";
+    var titleText = escapeHtml((task && task.title) || "");
     var titleHtml = task && task.url
       ? '<a class="task-title task-title-link" href="' +
         escapeHtml(task.url) +
@@ -121,8 +128,7 @@
       escapeHtml((task && task.ownerAccount) || "") +
       '">' +
       '<div class="task-head">' +
-      '<span class="kb-type kb-type-task">任务</span>' +
-      codeHtml +
+      typeChip +
       titleHtml +
       "</div>" +
       '<div class="task-meta">' +

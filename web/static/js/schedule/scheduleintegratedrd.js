@@ -17,7 +17,7 @@
 
   function fillStoryDisplayHeader($header, story) {
     var assignee = $.trim(story.assignedToName || "") || $.trim(story.assignedTo || "") || "待分配";
-    $header.find(".rd-node-id").text("RD-" + (story.id || "—"));
+    $header.find(".rd-node-id").text(story.id || "—");
     $header.find(".rd-node-role-badge").replaceWith(shared.buildRoleBadge(story.productId, shared.mainSystemId));
     $header.find(".rd-node-product-name").text(story.productName || "—");
     $header.find(".rd-node-title-display").text(story.title || "—");

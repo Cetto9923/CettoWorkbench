@@ -39,11 +39,28 @@
     return text || "—";
   }
 
+  function extractNumericId(raw) {
+    var s = String(raw == null ? "" : raw).trim().replace(/^#/, "");
+    if (!s) return "";
+    var m = s.match(/^(?:US|REQ|SUB)-?(\d+)$/i);
+    if (m) return m[1];
+    m = s.match(/^(?:RD|U)-?(\d+)$/i);
+    if (m) return m[1];
+    m = s.match(/^(\d+)$/);
+    return m ? m[1] : "";
+  }
+
   function isStoryItem(item) {
+    var kind = String((item && item.kind) || "").toLowerCase();
+    if (kind === "story" || kind === "independent_story") {
+      return true;
+    }
+    if (kind === "demand" || kind === "business" || kind === "sub_demand") {
+      return false;
+    }
     return (
-      String((item && item.kind) || "") === "story" ||
       Number(item && item.storyId) > 0 ||
-      /^U\d+$/i.test(String((item && item.id) || ""))
+      /^U\d+$/i.test(String((item && item.id) || "").replace(/^#/, ""))
     );
   }
 
@@ -394,7 +411,8 @@
     var id = item.id || "";
     var url = (item.zentaoUrl || "").trim();
     var isStory = isStoryItem(item);
-    var displayId = isStory ? String(id).replace(/^U/i, "") : id;
+    var numId = extractNumericId(id) || String(id).replace(/^#/, "");
+    var displayId = isStory ? numId : numId ? "US" + numId : "";
     var idInner = url
       ? "<a " + zentaoLinkAttrs(url, "row-id-link") + ">" + escapeHtml(displayId) + "</a>"
       : "<span class=\"row-id-link\">" + escapeHtml(displayId) + "</span>";

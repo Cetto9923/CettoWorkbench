@@ -65,7 +65,7 @@
     var name = String(owner || "").trim();
     if (!name) return "";
     return (
-      '<span class="meta-sep">·</span><span class="owner-badge">' +
+      '<span class="owner-badge">' +
       '<span class="owner-dot">' +
       escapeHtml(firstRune(name)) +
       "</span>" +
@@ -99,14 +99,55 @@
     return html;
   }
 
-  function typeBadgeHtml(item) {
-    var isStory =
-      String((item && item.kind) || "") === "story" ||
-      /^U\d+$/i.test(String((item && item.id) || ""));
-    if (isStory) {
-      return '<span class="kb-type kb-type-indy">研发需求</span>';
+  function extractNumericId(raw) {
+    var s = String(raw == null ? "" : raw).trim().replace(/^#/, "");
+    if (!s) return "";
+    var m = s.match(/^(?:US|REQ|SUB)-?(\d+)$/i);
+    if (m) return m[1];
+    m = s.match(/^(?:RD|U)-?(\d+)$/i);
+    if (m) return m[1];
+    m = s.match(/^(\d+)$/);
+    return m ? m[1] : "";
+  }
+
+  function isBusinessDemandItem(item) {
+    var kind = String((item && item.kind) || "").toLowerCase();
+    if (kind === "demand" || kind === "business" || kind === "sub_demand") {
+      return true;
     }
-    return '<span class="kb-type kb-type-biz">业务需求</span>';
+    if (kind === "story" || kind === "independent_story" || kind === "task") {
+      return false;
+    }
+    var raw = String((item && item.id) || "").trim().replace(/^#/, "");
+    if (/^U\d+$/i.test(raw) || /^(?:RD)-?\d+$/i.test(raw)) {
+      return false;
+    }
+    return /^US/i.test(raw) || /^(?:REQ|SUB)-?/i.test(raw);
+  }
+
+  function formatChipId(item) {
+    var num = extractNumericId(item && item.id);
+    if (!num) return "";
+    return isBusinessDemandItem(item) ? "#US" + num : "#" + num;
+  }
+
+  function idChipHtml(item) {
+    var isStory = !isBusinessDemandItem(item);
+    var label = isStory ? "研需" : "业需";
+    var cls = isStory ? "wb-type-story" : "wb-type-business";
+    var idText = formatChipId(item);
+    var idInner = idText
+      ? '<span class="wb-type-id">' + escapeHtml(idText) + "</span>"
+      : "";
+    return (
+      '<span class="wb-type ' +
+      cls +
+      '"><span class="wb-type-tag">' +
+      label +
+      "</span>" +
+      idInner +
+      "</span>"
+    );
   }
 
   function renderDemandRow(item) {
@@ -125,6 +166,11 @@
         "</a>"
       : '<span class="node-title" title="' + title + '">' + title + "</span>";
 
+    var ownerHtml = ownerBadgeHtml(item.owner);
+    var metaHtml = ownerHtml
+      ? '<div class="node-meta">' + ownerHtml + "</div>"
+      : "";
+
     return (
       '<div class="demand-row is-standalone" data-demand-id="' +
       id +
@@ -133,7 +179,7 @@
       '">' +
       '<div class="tree-cell ind0"><div class="node-main">' +
       '<div class="node-title-line">' +
-      typeBadgeHtml(item) +
+      idChipHtml(item) +
       (pri
         ? '<span class="wb-priority is-compact"' +
           priAttr +
@@ -143,11 +189,8 @@
         : "") +
       titleEl +
       "</div>" +
-      '<div class="node-meta"><span class="code"># ' +
-      id +
-      "</span>" +
-      ownerBadgeHtml(item.owner) +
-      "</div></div></div>" +
+      metaHtml +
+      "</div></div>" +
       stageCellsHtml(item) +
       "</div>"
     );

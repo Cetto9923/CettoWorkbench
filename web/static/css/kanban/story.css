@@ -464,27 +464,62 @@
   min-width: 0;
 }
 
-.po-board .kb-type {
+.po-board .wb-type {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1px solid var(--color-info, #2563eb);
+  background: #fff;
+  padding: 0;
+  color: #1e293b;
+  flex-shrink: 0;
+}
+
+.po-board .wb-type .wb-type-tag {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 18px;
   padding: 0 6px;
-  border-radius: 3px;
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 1;
-  white-space: nowrap;
-  flex-shrink: 0;
+  height: 100%;
   color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
-.po-board .kb-type-indy {
+.po-board .wb-type .wb-type-id {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 6px;
+  color: #1e293b;
+  background: #fff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.po-board .wb-type-business {
+  border-color: var(--color-info, #2563eb);
+}
+
+.po-board .wb-type-business .wb-type-tag {
+  background: var(--color-info, #2563eb);
+}
+
+.po-board .wb-type-story {
+  border-color: #0d9488;
+}
+
+.po-board .wb-type-story .wb-type-tag {
   background: #0d9488;
-}
-
-.po-board .kb-type-biz {
-  background: #2563eb;
 }
 
 .po-board .node-title-line .wb-priority,

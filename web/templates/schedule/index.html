@@ -276,8 +276,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
                   <button type="button" class="schedule-row-expand" data-target="{{ .ID }}" title="展开/收起子行"><i class="fas fa-chevron-down"></i></button>
                   {{ end }}
                 </span>
-                <span class="schedule-type-badge schedule-type-badge--biz">业务需求</span>
-                <span class="schedule-id-badge">{{ .ID }}</span>
+                <span class="wb-type wb-type-business"><span class="wb-type-tag">业需</span><span class="wb-type-id schedule-id-badge">#{{ .ID }}</span></span>
                 {{ if .DetailURL }}
                 <a href="{{ .DetailURL }}" target="_blank" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
                 {{ else }}
@@ -309,8 +308,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             <td>
               <div class="schedule-title-cell schedule-title-cell--l2">
                 <span class="tree-guide"></span>
-                <span class="schedule-type-badge schedule-type-badge--sub">子业务需求</span>
-                <span class="schedule-id-badge">{{ .ID }}</span>
+                <span class="wb-type wb-type-sub"><span class="wb-type-tag">子需</span><span class="wb-type-id schedule-id-badge">#{{ .ID }}</span></span>
                 {{ if .DetailURL }}
                 <a href="{{ .DetailURL }}" target="_blank" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
                 {{ else }}
@@ -342,8 +340,8 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             <td>
               <div class="schedule-title-cell schedule-title-cell--l3">
                 <span class="tree-guide"></span>
-                {{ if .IsMain }}<span class="schedule-type-badge schedule-type-badge--rd">研发需求<span class="rd-subtype">主</span></span>{{ else }}<span class="schedule-type-badge schedule-type-badge--rd">研发需求<span class="rd-subtype">配</span></span>{{ end }}
-                <span class="schedule-id-badge">{{ .ID }}</span>
+                <span class="wb-type wb-type-story"><span class="wb-type-tag">研需</span><span class="wb-type-id schedule-id-badge">#{{ .ID }}</span></span>
+                {{ if .IsMain }}<span class="schedule-rd-role schedule-rd-role--main">主</span>{{ else }}<span class="schedule-rd-role schedule-rd-role--coop">配</span>{{ end }}
                 {{ if .DetailURL }}
                 <a href="{{ .DetailURL }}" target="_blank" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
                 {{ else }}
@@ -377,8 +375,8 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             <td>
               <div class="schedule-title-cell schedule-title-cell--l3">
                 <span class="tree-guide"></span>
-                {{ if .IsMain }}<span class="schedule-type-badge schedule-type-badge--rd">研发需求<span class="rd-subtype">主</span></span>{{ else }}<span class="schedule-type-badge schedule-type-badge--rd">研发需求<span class="rd-subtype">配</span></span>{{ end }}
-                <span class="schedule-id-badge">{{ .ID }}</span>
+                <span class="wb-type wb-type-story"><span class="wb-type-tag">研需</span><span class="wb-type-id schedule-id-badge">#{{ .ID }}</span></span>
+                {{ if .IsMain }}<span class="schedule-rd-role schedule-rd-role--main">主</span>{{ else }}<span class="schedule-rd-role schedule-rd-role--coop">配</span>{{ end }}
                 {{ if .DetailURL }}
                 <a href="{{ .DetailURL }}" target="_blank" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
                 {{ else }}
@@ -445,8 +443,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
                 {{ if .HasChildren }}
                 <button type="button" class="schedule-row-expand" data-target="{{ .ID }}" title="展开/收起子行"><i class="fas fa-chevron-down"></i></button>
                 {{ end }}
-                <!-- <span class="schedule-type-badge schedule-type-badge--rd">独立研发</span> -->
-                <span class="schedule-id-badge">{{ .ID }}</span>
+                <span class="wb-type wb-type-story"><span class="wb-type-tag">研需</span><span class="wb-type-id schedule-id-badge">#{{ .ID }}</span></span>
                 {{ if .DetailURL }}
                 <a href="{{ .DetailURL }}" target="_blank" rel="noopener noreferrer" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
                 {{ else }}
@@ -483,8 +480,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             <td>
               <div class="schedule-title-cell schedule-title-cell--l2">
                 <span class="tree-guide"></span>
-                <span class="schedule-type-badge schedule-type-badge--rd">子研发</span>
-                <span class="schedule-id-badge">{{ .ID }}</span>
+                <span class="wb-type wb-type-story"><span class="wb-type-tag">子研</span><span class="wb-type-id schedule-id-badge">#{{ .ID }}</span></span>
                 {{ if .DetailURL }}
                 <a href="{{ .DetailURL }}" target="_blank" rel="noopener noreferrer" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
                 {{ else }}
@@ -628,7 +624,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
 <div class="batch-modal-overlay" id="taskModalOverlay"></div>
 <div class="batch-modal" id="taskModal">
   <div class="batch-modal-hdr">
-    <h3 id="taskModalTitle">拆任务 · RD-xxxxx</h3>
+    <h3 id="taskModalTitle">拆任务</h3>
     <button type="button" class="drawer-close" onclick="closeTaskModal()"><i class="fas fa-xmark"></i></button>
   </div>
   <div class="batch-modal-body" id="taskModalBody">

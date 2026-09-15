@@ -229,42 +229,93 @@
   background: var(--blue-bg);
 }
 
-.schedule-type-badge {
+.schedule-table .wb-type {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  padding: 2px 8px;
-  border-radius: 3px;
+  height: 20px;
+  border-radius: 5px;
   font-size: 11px;
   font-weight: 600;
+  line-height: 1;
   white-space: nowrap;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1px solid var(--color-info, #2563eb);
+  background: #fff;
+  padding: 0;
+  color: #1e293b;
   flex-shrink: 0;
-  line-height: 1.4;
 }
 
-.schedule-type-badge--biz {
-  background: #eff6ff;
-  color: #2563eb;
-  border: 1px solid #dbeafe;
+.schedule-table .wb-type .wb-type-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  height: 100%;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
-.schedule-type-badge--sub {
-  background: #f5f3ff;
-  color: #7c3aed;
-  border: 1px solid #ede9fe;
+.schedule-table .wb-type .wb-type-id {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 6px;
+  color: #1e293b;
+  background: #fff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 600;
 }
 
-.schedule-type-badge--rd {
-  background: #fef2f2;
-  color: #dc2626;
-  border: 1px solid #fee2e2;
+.schedule-table .wb-type-business {
+  border-color: var(--color-info, #2563eb);
 }
 
-.rd-subtype {
+.schedule-table .wb-type-business .wb-type-tag {
+  background: var(--color-info, #2563eb);
+}
+
+.schedule-table .wb-type-sub {
+  border-color: #7c3aed;
+}
+
+.schedule-table .wb-type-sub .wb-type-tag {
+  background: #7c3aed;
+}
+
+.schedule-table .wb-type-story {
+  border-color: #0d9488;
+}
+
+.schedule-table .wb-type-story .wb-type-tag {
+  background: #0d9488;
+}
+
+.schedule-rd-role {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 16px;
+  min-width: 16px;
+  padding: 0 5px;
+  border-radius: 3px;
   font-size: 10px;
-  font-weight: 400;
-  opacity: 0.7;
-  margin-left: 2px;
+  font-weight: 600;
+  line-height: 1;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.schedule-rd-role--main {
+  background: #2563eb;
+}
+
+.schedule-rd-role--coop {
+  background: #ea580c;
 }
 
 .schedule-title-link {
@@ -294,15 +345,6 @@
 
 .schedule-title-link:hover {
   text-decoration: underline;
-}
-
-.schedule-id-badge {
-  font-family: "JetBrains Mono", monospace;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--t2);
-  white-space: nowrap;
-  flex-shrink: 0;
 }
 
 .window-status-tag {

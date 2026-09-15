@@ -159,9 +159,27 @@
   text-decoration: underline;
 }
 
-.po-board .kb-type-task {
-  background: #ecfdf5;
-  color: #047857;
+.po-board .wb-type-task {
+  border-color: #047857;
+}
+
+.po-board .wb-type-task .wb-type-tag {
+  background: #047857;
+}
+
+.po-board .wb-type .wb-type-id a,
+.po-board .wb-type .task-code-link {
+  color: #1e293b;
+  text-decoration: none;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.po-board .wb-type .wb-type-id a:hover,
+.po-board .wb-type .task-code-link:hover {
+  color: var(--navy, #2563eb);
+  text-decoration: underline;
 }
 
 .po-board .task-title {
