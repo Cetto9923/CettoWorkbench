@@ -169,6 +169,29 @@ function testInformQuickViewAndRemovedToolbarFilter() {
   console.log('PASS: notification inform quick view and removed toolbar filter');
 }
 
+function testNoticeDateMovesToSecondLineWithoutDateColumn() {
+  const template = fs.readFileSync(path.join(__dirname, '../../../web/templates/po/notice.html'), 'utf8');
+  assert.equal(template.includes('<th class="notice-date">时间</th>'), false,
+    'notice table must not reserve a standalone date column');
+  const item = {
+    id: 'n-date-layout-1', objectType: 'story', objectId: 70526,
+    subject: '通知标题', summary: '通知摘要', data: '通知摘要',
+    actor: 'reviewer', read: false, date: '2026-09-15 10:20:30'
+  };
+  const { nodes, ready } = loadSingleItem(item);
+  ready();
+  const html = String(nodes.get('noticeTbody').innerHTML || '');
+  assert.ok(html.includes('class="notice-subject-sub"'),
+    'notice date must render in the second content line');
+  assert.ok(html.includes('class="notice-subject-date"'),
+    'notice date must use the compact second-line date style');
+  assert.ok(html.includes('>2026-09-15 10:20:30</time>'),
+    'notice date must remain visible');
+  assert.equal((html.match(/<td class="notice-/g) || []).length, 4,
+    'notice row must keep four columns after moving the date');
+  console.log('PASS: notification date is in the compact second line');
+}
+
 // Regression: the row must render the backend's subject verbatim (when the
 // subject does NOT match a canonical 「TYPE #ID」prefix) and keep the structured
 // object badge. Frontend regex-based prefix stripping is forbidden beyond the
@@ -464,6 +487,7 @@ async function main() {
   testDefaultQuickViewUnread();
   testExplicitQuickViewRespected();
   testInformQuickViewAndRemovedToolbarFilter();
+  testNoticeDateMovesToSecondLineWithoutDateColumn();
   testNoticeSubjectNotCharStripped();
   testNoticeFeedbackBadgeAndTitle();
   testNoticeDemandBadgeAndTitle();

@@ -75,6 +75,7 @@ function itemsFetch(url) {
   assert.match(labels.tbody.innerHTML, /开发中/);
   assert.match(labels.tbody.innerHTML, /待评审/);
   assert.match(labels.tbody.innerHTML, /已评审/);
+  assert.match(labels.tbody.innerHTML, /12:00:00/);
   assert.doesNotMatch(labels.tbody.innerHTML, /已激活/);
   assert.doesNotMatch(labels.tbody.innerHTML, />doing</);
   assert.doesNotMatch(labels.tbody.innerHTML, />developing</);

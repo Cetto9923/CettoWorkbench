@@ -192,16 +192,18 @@
       ? stripSubjectPrefix(rawSubject, canon, oid)
       : rawSubject);
 
-    var subText = "";
-    var rawSummary = String(item.data || item.summary || "").trim();
+    var subText = "", rawSummary = String(item.data || item.summary || "").trim(), summaryHtml = "";
     if (rawSummary && rawSummary !== rawSubject) {
       var icon = "";
       if (rawSummary.indexOf("审批") >= 0) icon = "💬 ";
       else if (rawSummary.indexOf("指派") >= 0) icon = "📌 ";
       else if (rawSummary.indexOf("描述") >= 0) icon = "📝 ";
-      subText = '<div class="notice-subject-sub" title="' + esc(decodeEntities(rawSummary)) + '">' +
-        '<span class="notice-sub-icon">' + icon + "</span>" + esc(decodeEntities(rawSummary)) + "</div>";
+      summaryHtml = '<span class="notice-subject-summary" title="' + esc(decodeEntities(rawSummary)) + '">' +
+        '<span class="notice-sub-icon">' + icon + "</span>" + esc(decodeEntities(rawSummary)) + "</span>";
     }
+    subText = '<div class="notice-subject-sub">' + summaryHtml +
+      '<time class="notice-subject-date" datetime="' + esc(item.date || "") + '">' +
+      esc(item.date || "—") + "</time></div>";
 
     var titleTag = item.url ? "a" : "button";
     var titleAttrs = item.url
@@ -231,7 +233,6 @@
     return "<tr" + (item.read ? "" : ' class="is-unread"') + ">" +
       '<td class="notice-subject">' + formatNoticeSubject(item) + "</td>" +
       '<td class="notice-actor">' + esc(item.actor || "—") + "</td>" +
-      '<td class="notice-date">' + esc(item.date || "—") + "</td>" +
       '<td class="notice-state">' + statusHtml + "</td>" +
       '<td class="notice-opt"><div class="notice-opt-group">' + actions.join("") + "</div></td>" +
       "</tr>";
@@ -468,7 +469,7 @@
         emptyEl: $("noticeEmpty"),
         errorEl: $("noticeError"),
         tbodyEl: $("noticeTbody"),
-        errorColspan: 5,
+        errorColspan: 4,
         onError: function () { resetCounts(); }
       });
     }

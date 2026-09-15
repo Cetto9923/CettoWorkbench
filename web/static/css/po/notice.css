@@ -7,7 +7,6 @@
 
 .po-notice .notice-table .notice-subject { width: auto; min-width: 300px; }
 .po-notice .notice-table .notice-actor { min-width: 120px; width: 130px; }
-.po-notice .notice-table .notice-date { width: 145px; }
 .po-notice .notice-table .notice-state { width: 80px; }
 .po-notice .notice-table .notice-opt { width: 220px; text-align: right; }
 
@@ -94,13 +93,25 @@
 /* 通知对象 chip 颜色见 wb-priority.css 的 .wb-type / .wb-type-{kind}。 */
 
 .po-notice .notice-subject-sub {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   overflow: hidden;
   margin-top: 3px;
   color: var(--color-text-body);
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.4;
+  min-width: 0;
+  white-space: nowrap;
+}
+.po-notice .notice-subject-summary {
+  min-width: 0;
+  overflow: hidden;
   text-overflow: ellipsis;
+}
+.po-notice .notice-subject-date {
+  flex: 0 0 auto;
+  color: var(--color-text-muted);
   white-space: nowrap;
 }
 .po-notice .notice-sub-icon {

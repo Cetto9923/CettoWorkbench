@@ -41,7 +41,7 @@
   function $(id) { return document.getElementById(id); }
   function fmtDateTime(value) {
     if (!value) return '<span class="done-time-date">--</span>';
-    var m = String(value).match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})/);
+    var m = String(value).match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2})/);
     if (!m) return '<span class="done-time-date">' + esc(value) + "</span>";
     return '<span class="done-time-date">' + m[1] + '</span><span class="done-time-clock">' + m[2] + "</span>";
   }
