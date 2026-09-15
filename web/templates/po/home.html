@@ -13,6 +13,9 @@
 <link rel="stylesheet" href="{{ asset "/static/css/po/testtask.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/po/linkstory.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/po/deliver.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/schedule/schedule.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulemodal.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/schedule/scheduleintegrated.css" }}">
 {{ end }}
 
 {{ define "content" }}
@@ -178,6 +181,7 @@
 {{ template "po/testtask" . }}
 {{ template "po/linkstory" . }}
 {{ template "po/deliver" . }}
+{{ template "schedule/integrated" . }}
 {{ end }}
 
 {{ define "page_js" }}
@@ -185,5 +189,10 @@
 <script src="{{ asset "/static/js/po/testtask.js" }}"></script>
 <script src="{{ asset "/static/js/po/linkstory.js" }}"></script>
 <script src="{{ asset "/static/js/po/deliver.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/schedulefetch.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/scheduleintegratedshared.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/scheduleintegratedtasks.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/scheduleintegratedrd.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/scheduleintegrated.js" }}"></script>
 <script src="{{ asset "/static/js/po/home.js" }}"></script>
 {{ end }}

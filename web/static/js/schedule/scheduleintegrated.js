@@ -784,7 +784,8 @@
         system: source.system || "—",
         detailUrl: source.detailUrl || "",
       };
-      demandID = source.demandId || source.demandID || 0;
+      demandID = parsePositiveInt(source.demandId || source.demandID);
+      storyID = parsePositiveInt(source.storyId || source.storyID);
     } else {
       ctx = {
         id: "—",

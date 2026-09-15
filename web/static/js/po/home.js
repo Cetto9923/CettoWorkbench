@@ -300,6 +300,14 @@
     return String(item.valueStream || item.stage || "").trim() === "发起交付";
   }
 
+  // 排期阶段：业需 / 独立研需价值流为「排期」时展示排期弹窗入口
+  function canShowSchedule(item) {
+    if (!item) {
+      return false;
+    }
+    return String(item.valueStream || item.stage || "").trim() === "排期";
+  }
+
   // 受理阶段操作按钮（仅展示，提交/撤销/编辑暂不接业务）
   function acceptActionButtons(item) {
     var parts = [];
@@ -454,6 +462,16 @@
         "<button type=\"button\" class=\"table-action-btn primary js-initiate-deliver\" data-demand-id=\"" +
           escapeHtml(item.id || "") +
           "\">发起交付</button>"
+      );
+    }
+    if (canShowSchedule(item)) {
+      var scheduleIdAttr = isStory
+        ? " data-story-id=\"" + escapeHtml(numId) + "\""
+        : " data-demand-id=\"" + escapeHtml(numId) + "\"";
+      actionParts.push(
+        "<button type=\"button\" class=\"table-action-btn primary js-open-schedule\"" +
+          scheduleIdAttr +
+          ">排期</button>"
       );
     }
     var actionHtml = actionParts.length
@@ -666,6 +684,34 @@
     });
   }
 
+  function bindScheduleButtons($list) {
+    $list.find(".js-open-schedule").on("click", function () {
+      if (typeof window.openScheduleIntegratedModal !== "function") {
+        return;
+      }
+      var $btn = $(this);
+      var demandId = parseInt(String($btn.attr("data-demand-id") || ""), 10) || 0;
+      var storyId = parseInt(String($btn.attr("data-story-id") || ""), 10) || 0;
+      var lookupId = demandId
+        ? "US" + demandId
+        : storyId
+          ? "U" + storyId
+          : "";
+      var item = lookupId ? findListItemByDemandId(lookupId) : null;
+      var displayId = item ? String(item.id || "") : lookupId || "—";
+      window.openScheduleIntegratedModal({
+        id: displayId,
+        title: item ? item.title || "—" : "—",
+        owner: item ? item.nextOwner || item.owner || "待分配" : "待分配",
+        system: "—",
+        detailUrl: item ? item.zentaoUrl || "" : "",
+        demandId: demandId,
+        storyId: storyId,
+        isIndependent: storyId > 0
+      });
+    });
+  }
+
   function bindPagination(totalPages) {
     var $pager = $("#homePager");
     $pager.find("a.page-link[data-page]").on("click", function (e) {
@@ -716,6 +762,7 @@
     bindReviewButtons($("#top5List"));
     bindSubmitTestButtons($("#top5List"));
     bindDeliverButtons($("#top5List"));
+    bindScheduleButtons($("#top5List"));
     renderPagination(total);
   }
 
