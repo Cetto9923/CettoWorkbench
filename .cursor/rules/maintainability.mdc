@@ -1,0 +1,10 @@
+---
+description: Human-maintainable code; anti-bloat for AI edits
+globs: "*"
+alwaysApply: true
+---
+
+Follow `AGENTS.md` MUST 17 and `docs/engineering/maintainability.md`.
+Fail Fast, YAGNI, delete dead in-scope paths, no speculative compat layers.
+Dehydration tasks: zero behavior change unless explicitly authorized; prefer net line decrease.
+This rule defines no independent norms beyond those documents.

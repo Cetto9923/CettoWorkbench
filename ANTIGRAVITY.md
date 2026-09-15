@@ -1,5 +1,5 @@
-# Gemini / Antigravity adapter
+# Antigravity adapter
 
 Read `@AGENTS.md` in full before editing. It is the only normative rule source;
 this adapter defines none. Follow its pre-flight, task scope, and handoff gates.
-Antigravity uses this same entry (see also root `ANTIGRAVITY.md`).
+Same contract as `GEMINI.md`.

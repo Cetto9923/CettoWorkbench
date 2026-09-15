@@ -1,8 +1,8 @@
 # workbench engineering constitution
 
 `AGENTS.md` is the repository-wide canonical **engineering** source for Codex,
-Claude Code, Cursor, and other coding agents. Tool adapters may summarize how
-to load it, but MUST NOT redefine or weaken it.
+Claude Code, Cursor, Antigravity/Gemini, and other coding agents. Tool adapters
+may summarize how to load it, but MUST NOT redefine or weaken it.
 
 Engineering and business truth are separate chains:
 
@@ -140,7 +140,7 @@ never silently fixed. Re-run the Scope Gate whenever the scope meaningfully chan
 11. **Simplicity.** Prefer the smallest maintainable change and existing mature
     components. A new framework, manager, engine, provider, adapter, or common
     layer needs present-day duplication/boundary evidence. Fix root causes; do not
-    stack fallbacks and special cases. No drive-by refactor.
+    stack fallbacks and special cases. No drive-by refactor. See also MUST 17.
 12. **Delivery truth.** `done`, `verified`, `ready`, `complete`, or `可交付` may be
     used only when every required gate and task-specific acceptance gate passes.
     Otherwise report `partial`, `failed`, or `blocked`. A known baseline failure
@@ -170,6 +170,17 @@ never silently fixed. Re-run the Scope Gate whenever the scope meaningfully chan
     debt is allowed. Adapter existence does not prove adherence; static tests
     do not prove concurrency or performance safety. Code comments/file splits
     follow the content and structure contract in `architecture.md`.
+17. **Human-maintainable / anti-bloat.** Production operators cannot use AI to
+    debug. New or changed code MUST stay readable by a human who was not in the
+    generating session. Expand `docs/engineering/maintainability.md`. In short:
+    Fail Fast (no silent swallow / fake success / speculative fallback chains);
+    YAGNI (no speculative feature, compat shim, config knob, or abstraction for a
+    single call site); delete dead paths you own in-scope rather than comment them
+    out; prefer deleting or narrowing over wrapping; do not grow nested defensive
+    branches for impossible states; a net line increase needs a present-day
+    product or engineering reason. Dehydration tasks MUST keep behavior unchanged
+    unless the task explicitly authorizes a behavior change, and SHOULD shrink
+    net lines in the allowed files.
 
 ## Golden Reference policy
 
@@ -184,7 +195,8 @@ required gates pass and the decision is recorded in `docs/engineering/`.
 ## Required references and gates
 
 Read the focused documents under `docs/engineering/` before affected work:
-`architecture.md`, `database.md`, `frontend.md`, `testing.md`, and `quality.md`.
+`architecture.md`, `database.md`, `frontend.md`, `testing.md`, `quality.md`, and
+`maintainability.md` (for size, fail-fast, YAGNI, and dehydration).
 Cursor file rules load these boundaries by file type. Before handoff, run:
 
 ```sh
@@ -211,7 +223,8 @@ verified during review and are NOT proven by any scanner: object-level
 authorization semantics; transaction/lock order and deadlock risk; N+1 and
 page-query budgets; whether a comment is true and non-redundant; whether a change
 is the smallest maintainable one; whether new code reuses an existing shared
-capability; and real authenticated browser acceptance. Do not claim any of these
+capability; whether a human unfamiliar with the session can debug the change;
+and real authenticated browser acceptance. Do not claim any of these
 as "verified" from a green `make check`.
 
 ## Handoff record
