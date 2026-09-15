@@ -300,12 +300,17 @@
     return String(item.valueStream || item.stage || "").trim() === "发起交付";
   }
 
-  // 排期阶段：业需 / 独立研需价值流为「排期」时展示排期弹窗入口
+  // 排期弹窗入口：价值流「排期」的业需/独立研需；以及「发起交付」阶段的独立研需
   function canShowSchedule(item) {
     if (!item) {
       return false;
     }
-    return String(item.valueStream || item.stage || "").trim() === "排期";
+    var stage = String(item.valueStream || item.stage || "").trim();
+    if (stage === "排期") {
+      return true;
+    }
+    // 发起交付阶段业需走「发起交付」；独立研需复用 /schedule/stories/:id/scheduling
+    return isStoryItem(item) && stage === "发起交付";
   }
 
   // 受理阶段操作按钮（仅展示，提交/撤销/编辑暂不接业务）

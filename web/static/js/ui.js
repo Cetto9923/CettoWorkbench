@@ -383,7 +383,7 @@
     if (!matches.length) {
       var empty = document.createElement("div");
       empty.className = "ui-autocomplete-empty";
-      empty.textContent = result.hasQuery ? "无匹配结果" : "暂无可选用户";
+      empty.textContent = result.hasQuery ? "无匹配结果" : "暂无可用数据";
       dropdown.appendChild(empty);
       dropdown.classList.add("is-open");
       state.open = true;

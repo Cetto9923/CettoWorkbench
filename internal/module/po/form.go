@@ -121,6 +121,69 @@ type ReviewDemandResp struct {
 	ID int64 `json:"id"`
 }
 
+// DeliverDemandReq 发起交付提交（JSON Body，转发禅道 POST /demand/:id/deliver）。
+//
+// 字段对照禅道 OpenAPI（表单字段经 API entry 写入 $_POST）：
+//
+//	deliverDate       → 交付时间（Y-m-d，取上线窗口结束日 releaseDate）
+//	isGrayVerifyPlan  → 灰度验证计划 1/0
+//	verifyDate        → 生产验证时间（不可为空或 "0"）
+//	verifyPlan        → 生产验证计划
+//	veriFier          → 生产验证责任人（禅道字段大小写如此）
+//	isCarReview       → 快速评审；未传或空串时置为 "0"
+//
+// ID 不从 JSON 读，由 Handler 从 URL :id 填入。
+type DeliverDemandReq struct {
+	ID               int64  `json:"-"`
+	DeliverDate      string `json:"deliverDate"`
+	IsGrayVerifyPlan string `json:"isGrayVerifyPlan"`
+	VerifyDate       string `json:"verifyDate"`
+	VerifyPlan       string `json:"verifyPlan"`
+	VeriFier         string `json:"veriFier"`
+	IsCarReview      string `json:"isCarReview"`
+}
+
+// Validate 校验发起交付表单。返回空切片表示通过。
+func (r *DeliverDemandReq) Validate() []FieldError {
+	var errs []FieldError
+	r.DeliverDate = strings.TrimSpace(r.DeliverDate)
+	r.IsGrayVerifyPlan = strings.TrimSpace(r.IsGrayVerifyPlan)
+	r.VerifyDate = strings.TrimSpace(r.VerifyDate)
+	r.VerifyPlan = strings.TrimSpace(r.VerifyPlan)
+	r.VeriFier = strings.TrimSpace(r.VeriFier)
+	r.IsCarReview = strings.TrimSpace(r.IsCarReview)
+	if r.IsCarReview == "" {
+		r.IsCarReview = "0"
+	}
+
+	if r.ID <= 0 {
+		errs = append(errs, FieldError{Field: "id", Message: "需求 ID 无效"})
+	}
+	if r.DeliverDate == "" {
+		errs = append(errs, FieldError{Field: "deliverDate", Message: "请选择上线窗口"})
+	} else if len(r.DeliverDate) != 10 || r.DeliverDate[4] != '-' || r.DeliverDate[7] != '-' {
+		errs = append(errs, FieldError{Field: "deliverDate", Message: "交付时间格式无效"})
+	}
+	if r.IsGrayVerifyPlan == "" {
+		errs = append(errs, FieldError{Field: "isGrayVerifyPlan", Message: "请选择灰度验证计划"})
+	}
+	if r.VerifyDate == "" || r.VerifyDate == "0" {
+		errs = append(errs, FieldError{Field: "verifyDate", Message: "请选择生产验证时间"})
+	}
+	if r.VerifyPlan == "" {
+		errs = append(errs, FieldError{Field: "verifyPlan", Message: "请填写生产验证计划"})
+	}
+	if r.VeriFier == "" {
+		errs = append(errs, FieldError{Field: "veriFier", Message: "请选择生产验证责任人"})
+	}
+	return errs
+}
+
+// DeliverDemandResp 发起交付成功响应。
+type DeliverDemandResp struct {
+	ID int64 `json:"id"`
+}
+
 // WorkItemDetail 单条需求或故事详情。
 type WorkItemDetail struct {
 	Kind            string `json:"kind"`

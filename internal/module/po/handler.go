@@ -44,6 +44,8 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.GET("/demands/:id", middleware.RequirePerm(perm.PoDemandReview), h.DemandDetail)
 	// 评审资格在 Service 里按 zt_demandreview 业务评审人校验（与指派给无关）。
 	g.POST("/demands/:id/review", middleware.RequirePerm(perm.PoDemandReview), h.ReviewDemand)
+	// 交付业务校验由禅道 /demand/:id/deliver 完成，工作台仅代理转发。
+	g.POST("/demands/:id/deliver", middleware.RequirePerm(perm.PoDemandDeliver), h.DeliverDemand)
 }
 
 // Home 渲染 PO 工作台首页。
