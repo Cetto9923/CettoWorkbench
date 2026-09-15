@@ -161,13 +161,13 @@ func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysql
 	return q
 }
 
-// scheduleStoryScope 排期阶段独立研发需求：非需求池、指派给当前用户、关键日期未填。
+// scheduleStoryScope 排期阶段独立研发需求：非需求池、指派人或 ReqM 为当前用户、关键日期未填。
 func (r *Repo) scheduleStoryScope(ctx context.Context, account string) *gorm.DB {
 	return r.db.WithContext(ctx).Table("zt_story").
 		Where("deleted = ?", "0").
 		Where("IFNULL(sourceType, '') != ?", "demandpool").
 		Where("type = ?", "story").
-		Where("assignedTo = ?", account).
+		Where("(assignedTo = ? OR ReqM = ?)", account, account).
 		Where("(" + strings.Join([]string{
 			dateUnsetExpr("developFinish"),
 			dateUnsetExpr("testFinish"),
@@ -175,14 +175,14 @@ func (r *Repo) scheduleStoryScope(ctx context.Context, account string) *gorm.DB 
 		}, " OR ") + ")")
 }
 
-// deliverStoryScope 交付阶段独立研发需求：非需求池、指派给当前用户、今天 >= deliverDate。
+// deliverStoryScope 交付阶段独立研发需求：非需求池、指派人或 ReqM 为当前用户、今天 >= deliverDate。
 func (r *Repo) deliverStoryScope(ctx context.Context, account string) *gorm.DB {
 	today := time.Now().Format("2006-01-02")
 	return r.db.WithContext(ctx).Table("zt_story").
 		Where("deleted = ?", "0").
 		Where("IFNULL(sourceType, '') != ?", "demandpool").
 		Where("type = ?", "story").
-		Where("assignedTo = ?", account).
+		Where("(assignedTo = ? OR ReqM = ?)", account, account).
 		Where(dateSetExpr("deliverDate")+" AND deliverDate <= ?", today)
 }
 
