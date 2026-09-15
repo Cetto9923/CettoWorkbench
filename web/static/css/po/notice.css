@@ -5,9 +5,9 @@
    依赖: personal-workspace.css
    ============================================================================= */
 
-.po-notice .notice-table .notice-subject { width: auto; min-width: 320px; }
-.po-notice .notice-table .notice-actor { width: 100px; }
-.po-notice .notice-table .notice-date { width: 150px; }
+.po-notice .notice-table .notice-subject { width: auto; min-width: 300px; }
+.po-notice .notice-table .notice-actor { min-width: 120px; width: 130px; }
+.po-notice .notice-table .notice-date { width: 145px; }
 .po-notice .notice-table .notice-state { width: 80px; }
 .po-notice .notice-table .notice-opt { width: 220px; text-align: right; }
 
@@ -20,12 +20,21 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
   overflow: hidden;
   color: var(--color-text-strong);
   font-size: 13px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   line-height: 1.4;
+}
+.po-notice .notice-subject-text .wb-id-chip,
+.po-notice .notice-subject-text .wb-type {
+  flex-shrink: 0;
+}
+.po-notice .notice-subject-text > span {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
 }
 .po-notice .notice-title-main {
   border: 0;
@@ -34,7 +43,9 @@
   background: transparent;
   font: inherit;
   text-align: left;
-  display: inline;
+  display: inline-block;
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -138,7 +149,7 @@
 .po-notice .notice-read-btn:hover:not(:disabled) {
   border-color: var(--color-info);
   color: var(--color-info);
-  background: var(--color-surface-hover);
+  background: var(--color-info-bg);
 }
 .po-notice .notice-missing-rel {
   color: var(--color-text-secondary);
@@ -150,7 +161,7 @@
 .po-notice .notice-view-btn {
   color: var(--color-info);
   cursor: pointer;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-info-border);
   background: var(--color-surface);
   font-size: 12px;
   font-weight: 500;
@@ -163,7 +174,7 @@
   box-sizing: border-box;
 }
 .po-notice .notice-view-btn:hover {
-  background: var(--color-surface-hover);
+  background: var(--color-info-bg);
   border-color: var(--color-info);
   color: var(--color-info);
   text-decoration: none;

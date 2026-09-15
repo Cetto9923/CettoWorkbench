@@ -19,35 +19,40 @@
 }
 .wb-done-seg-set {
   display: inline-flex;
-  border: 1px solid var(--po-border, var(--color-border, #e5e7eb));
-  border-radius: 5px;
-  overflow: hidden;
-  background: var(--color-surface-muted, #f8fafc);
+  height: 28px;
+  padding: 2px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-surface-muted);
+  box-sizing: border-box;
 }
 .wb-done-seg {
   border: 0;
   background: transparent;
-  color: var(--po-t2, #4b5563);
-  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-size: 11px;
   height: 22px;
-  padding: 0 10px;
+  padding: 0 8px;
+  border-radius: 3px;
   cursor: pointer;
+  white-space: nowrap;
   transition: all .15s ease;
 }
 .wb-done-seg.active {
-  background: var(--color-surface, #fff);
-  color: var(--po-blue, var(--color-info-fill, #2563eb));
+  background: var(--color-surface);
+  color: var(--color-info);
   font-weight: 600;
-  box-shadow: 0 1px 2px rgba(0,0,0,.06);
+  box-shadow: var(--shadow-sm);
 }
 .wb-done-select {
   height: 28px;
   padding: 0 8px;
-  border: 1px solid var(--po-border, var(--color-border, #e5e7eb));
+  border: 1px solid var(--color-border-strong);
   border-radius: 4px;
-  font-size: 12px;
-  color: var(--po-t1, var(--color-text-deep, #1f2937));
-  background: var(--color-surface, #fff);
+  font-size: 11px;
+  color: var(--color-text-body);
+  background: var(--color-surface);
+  box-sizing: border-box;
 }
 
 /* ---------- 4. 九列表格 ---------- */
@@ -73,7 +78,7 @@
   vertical-align: middle;
 }
 .wb-done-table tr:hover td {
-  background: #fafbfc;
+  background: var(--color-surface-hover, #fafbfc);
 }
 
 .done-time {
@@ -204,17 +209,26 @@
 .done-ctx-exec.done-ctx-na { color: var(--color-text-secondary); }
 
 .wb-done-detail-btn {
-  border: 1px solid var(--po-border, var(--color-border, #e5e7eb));
-  background: var(--color-surface, #fff);
-  color: var(--po-t2, #4b5563);
-  padding: 3px 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--color-info-border);
   border-radius: 4px;
-  font-size: 11px;
+  background: var(--color-surface);
+  color: var(--color-info);
+  font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
+  white-space: nowrap;
+  box-sizing: border-box;
+  transition: all .15s ease;
 }
 .wb-done-detail-btn:hover {
-  border-color: var(--po-blue, var(--color-info-fill, #2563eb));
-  color: var(--po-blue, var(--color-info-fill, #2563eb));
+  background: var(--color-info-bg);
+  border-color: var(--color-info);
+  color: var(--color-info);
 }
 
 /* ---------- 5. 抽屉样式 ---------- */
@@ -292,8 +306,8 @@
   position: relative;
 }
 .done-tl.current {
-  border-left-color: var(--po-blue, var(--color-info-fill, #2563eb));
-  background: var(--color-primary-light);
+  border-left-color: var(--color-info-fill);
+  background: var(--color-info-bg);
   border-radius: 0 4px 4px 0;
 }
 .done-tl-title {

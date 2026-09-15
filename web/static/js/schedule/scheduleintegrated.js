@@ -8,20 +8,6 @@
   var SAVE_BTN_DEFAULT_TEXT = "确认并同步";
   var SAVE_BTN_LOADING_TEXT = "保存中...";
 
-  function parsePositiveInt(value) {
-    var num = parseInt(String(value == null ? "" : value), 10);
-    return isNaN(num) || num <= 0 ? 0 : num;
-  }
-
-  function parseEstimateValue(value) {
-    var raw = $.trim(value == null ? "" : String(value));
-    if (!raw) {
-      return 0;
-    }
-    var num = Number(raw);
-    return isNaN(num) ? 0 : num;
-  }
-
   function parseTaskPri(value) {
     var num = parseInt(String(value == null ? "" : value), 10);
     return isNaN(num) || num < 0 || num > 4 ? 3 : num;
@@ -39,44 +25,17 @@
     }
   }
 
-  function readStoryTitle($node) {
-    var $header = $node.find(".rd-node-header").first();
-    var fromInput = $.trim($header.find(".rd-node-title-input, .rd-node-title").first().val() || "");
-    if (fromInput) {
-      return fromInput;
-    }
-    return $.trim($node.attr("data-story-title") || $header.find(".rd-node-title-display").first().text() || "");
-  }
-
-  function readStoryProductId($node) {
-    var $header = $node.find(".rd-node-header").first();
-    var fromSelect = $.trim($header.find(".rd-node-product").first().val() || "");
-    if (fromSelect) {
-      return parsePositiveInt(fromSelect);
-    }
-    return parsePositiveInt($node.attr("data-product-id"));
-  }
-
-  function readStoryAssignedTo($node) {
-    var $header = $node.find(".rd-node-header").first();
-    var fromHidden = $.trim($header.find(".rd-node-assignee-value").first().val() || "");
-    if (fromHidden) {
-      return fromHidden;
-    }
-    return $.trim($node.attr("data-assigned-to") || "");
-  }
-
   function isDraftStoryEmpty($node) {
-    var storyId = parsePositiveInt($node.attr("data-story-id"));
+    var storyId = shared.parsePositiveInt($node.attr("data-story-id"));
     if (storyId > 0) {
       return false;
     }
-    return !readStoryTitle($node) && !readStoryProductId($node);
+    return !shared.readStoryTitle($node) && !shared.readStoryProductId($node);
   }
 
   function collectTaskFromRow($row) {
     var $row = $($row);
-    var taskId = parsePositiveInt($row.attr("data-task-id"));
+    var taskId = shared.parsePositiveInt($row.attr("data-task-id"));
     var isNewRow = $row.hasClass("rd-task-row--new") || taskId === 0;
     var isEditing = $row.hasClass("rd-task-row--editing") || $row.hasClass("rd-task-row--new");
 
@@ -90,21 +49,21 @@
     var deadline = "";
 
     if (isEditing) {
-      executionId = parsePositiveInt($row.find(".rd-task-execution-select").first().val() || $row.attr("data-execution-id"));
+      executionId = shared.parsePositiveInt($row.find(".rd-task-execution-select").first().val() || $row.attr("data-execution-id"));
       type = $.trim($row.find(".rd-task-type").first().val() || $row.attr("data-task-type") || "");
       pri = parseTaskPri($row.find(".rd-task-pri").first().val() || $row.attr("data-pri") || "3");
       name = $.trim($row.find(".rd-task-name").first().val() || $row.attr("data-task-name") || "");
       assignedTo = $.trim($row.find(".rd-node-assignee-value").first().val() || $row.attr("data-assigned-to") || "");
-      estimate = parseEstimateValue($row.find(".rd-task-hours").first().val() || $row.attr("data-estimate"));
+      estimate = shared.parseEstimateValue($row.find(".rd-task-hours").first().val() || $row.attr("data-estimate"));
       estStarted = $.trim($row.find(".rd-task-start").first().val() || $row.attr("data-est-started") || "");
       deadline = $.trim($row.find(".rd-task-end").first().val() || $row.attr("data-deadline") || "");
     } else {
-      executionId = parsePositiveInt($row.attr("data-execution-id"));
+      executionId = shared.parsePositiveInt($row.attr("data-execution-id"));
       type = $.trim($row.attr("data-task-type") || "");
       pri = parseTaskPri($row.attr("data-pri") || "3");
       name = $.trim($row.attr("data-task-name") || "");
       assignedTo = $.trim($row.attr("data-assigned-to") || "");
-      estimate = parseEstimateValue($row.attr("data-estimate"));
+      estimate = shared.parseEstimateValue($row.attr("data-estimate"));
       estStarted = $.trim($row.attr("data-est-started") || "");
       deadline = $.trim($row.attr("data-deadline") || "");
     }
@@ -173,7 +132,7 @@
   }
 
   function collectStoryFromNode($node) {
-    var storyId = parsePositiveInt($node.attr("data-story-id"));
+    var storyId = shared.parsePositiveInt($node.attr("data-story-id"));
     var isNew = $node.attr("data-new") === "true" || storyId === 0;
 
     if (isNew && isDraftStoryEmpty($node)) {
@@ -181,11 +140,15 @@
     }
 
     var story = {
-      productId: readStoryProductId($node),
-      title: readStoryTitle($node),
-      assignedTo: readStoryAssignedTo($node),
-      estimate: parseEstimateValue($node.attr("data-estimate")),
-      spec: $.trim($node.attr("data-spec") || ""),
+      productId: shared.readStoryProductId($node),
+      moduleId: shared.parsePositiveInt(shared.readStoryField($node, ".rd-node-module", "data-module-id")),
+      planId: shared.parsePositiveInt(shared.readStoryField($node, ".rd-node-plan-select", "data-plan-id")),
+      title: shared.readStoryTitle($node),
+      type: shared.readStoryField($node, ".rd-node-type", "data-story-type") || "story",
+      pri: shared.readStoryPri($node),
+      assignedTo: shared.readStoryAssignedTo($node),
+      estimate: shared.parseEstimateValue(shared.readStoryField($node, ".rd-node-estimate", "data-estimate")),
+      spec: shared.readStoryField($node, ".rd-node-spec", "data-spec"),
       tasks: [],
     };
 
@@ -202,7 +165,7 @@
 
   function collectSchedulingData() {
     var data = {
-      windowId: parsePositiveInt($("#scheduleIntegratedWindowSelect").val()),
+      windowId: shared.parsePositiveInt($("#scheduleIntegratedWindowSelect").val()),
       rd: $.trim($("#scheduleIntRDValue").val() || ""),
       qd: $.trim($("#scheduleIntQDValue").val() || ""),
       accepter: $.trim($("#scheduleIntAccepterValue").val() || ""),
@@ -257,6 +220,18 @@
       }
       if (story.action === "delete") {
         continue;
+      }
+      if (!$.trim(story.title || "")) {
+        return "研发需求必须填写标题";
+      }
+      if (!story.productId) {
+        return "研发需求必须选择系统";
+      }
+      if (!$.trim(story.spec || "")) {
+        return "研发需求必须填写描述";
+      }
+      if (!$.trim(story.assignedTo || "")) {
+        return "研发需求必须选择指派人";
       }
       for (var j = 0; j < (story.tasks || []).length; j++) {
         var task = story.tasks[j];
@@ -706,14 +681,12 @@
         if (resp.id) {
           $("#scheduleIntegratedModalTitle").text("排期一体化办理 · US" + resp.id);
           if (shared) {
-            shared.currentDemandId = parsePositiveInt(resp.id);
+            shared.currentDemandId = shared.parsePositiveInt(resp.id);
             shared.currentStoryId = 0;
           }
         }
       })
-      .fail(function () {
-        window.showToast("加载业需详情失败，请稍后重试", "error");
-      });
+      .fail(function (xhr) { window.showToast("加载业需详情失败：" + String((xhr && xhr.responseJSON && (xhr.responseJSON.error || xhr.responseJSON.message)) || (xhr && xhr.responseText) || "请稍后重试").replace(/<[^>]*>/g, "").slice(0, 120), "error"); });
   }
 
   function loadStorySchedulingDetail(storyID) {
@@ -731,14 +704,12 @@
         if (resp.id) {
           $("#scheduleIntegratedModalTitle").text("排期一体化办理 · " + resp.id);
           if (shared) {
-            shared.currentStoryId = parsePositiveInt(resp.id);
+            shared.currentStoryId = shared.parsePositiveInt(resp.id);
             shared.currentDemandId = 0;
           }
         }
       })
-      .fail(function () {
-        window.showToast("加载研发需求详情失败，请稍后重试", "error");
-      });
+      .fail(function (xhr) { window.showToast("加载研发需求详情失败：" + String((xhr && xhr.responseJSON && (xhr.responseJSON.error || xhr.responseJSON.message)) || (xhr && xhr.responseText) || "请稍后重试").replace(/<[^>]*>/g, "").slice(0, 120), "error"); });
   }
 
   function resetIntegratedForm() {

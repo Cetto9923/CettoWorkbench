@@ -114,17 +114,23 @@ func (s *Service) GetStoryScheduling(ctx context.Context, actor *model.User, sto
 	if err != nil {
 		return nil, err
 	}
-	users, err := s.repo.ListInsideUsersForScheduling(ctx)
+	users, err := s.repo.ListInsideUsersForScheduling(ctx, actorAccount(actor))
 	if err != nil {
 		return nil, err
 	}
 
 	involvedProducts := []ZtProductOption{}
+	productIDs := []uint{}
 	if detail.MainSystemID > 0 {
 		involvedProducts = append(involvedProducts, ZtProductOption{
 			ID:   detail.MainSystemID,
 			Name: detail.MainSystemName,
 		})
+		productIDs = append(productIDs, detail.MainSystemID)
+	}
+	productPlans, err := s.repo.ListSchedulingProductPlans(ctx, productIDs)
+	if err != nil {
+		return nil, err
 	}
 
 	return &DemandSchedulingResp{
@@ -133,6 +139,7 @@ func (s *Service) GetStoryScheduling(ctx context.Context, actor *model.User, sto
 		ProductProjects:        map[string][]DemandSchedulingProjectOption{},
 		ProjectExecutions:      map[string][]ZtExecutionOption{},
 		Stories:                []DemandSchedulingStoryItem{},
+		ProductPlans:           productPlans,
 		Windows:                windows,
 		Users:                  users,
 	}, nil

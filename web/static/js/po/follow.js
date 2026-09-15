@@ -38,6 +38,8 @@
     });
     var weeklySec = document.getElementById("weeklySection");
     var demandSec = document.getElementById("demandSection");
+    var quickChips = document.getElementById("followQuickChips");
+    if (quickChips) quickChips.hidden = (tab !== "demand");
     if (weeklySec) weeklySec.hidden = (tab !== "weekly");
     if (demandSec) demandSec.hidden = (tab === "weekly");
     if (tab === "weekly") loadWeeklyData();
@@ -165,7 +167,11 @@
     var html = pageItems.map(function (item) {
       var pid = item.projectId;
       var desc = item.overallSituationDesc ? '<div class="pw-desc">' + esc(item.overallSituationDesc) + "</div>" : '<div class="pw-desc muted">—</div>';
-      var pmAccount = item.pmAccount ? " (" + esc(item.pmAccount) + ")" : "";
+      var pmName = String(item.pmName || item.pmAccount || "—").trim();
+      var pmDisplay = esc(pmName);
+      if (item.pmAccount && pmName.indexOf(item.pmAccount) === -1) {
+        pmDisplay += " (" + esc(item.pmAccount) + ")";
+      }
 
       var sourceBadge = "";
       if (item.isParticipated || item.source === "participated" || item.source === "both") {
@@ -183,7 +189,7 @@
       }
 
       return "<tr>" +
-        '<td><div class="pw-code">' + esc(item.projectCode || "P" + pid) + '</div><div class="pw-name" data-open-detail="' + pid + '">' + esc(item.projectName || "—") + sourceBadge + '</div><div class="pw-meta">项目经理：' + esc(item.pmName || item.pmAccount || "—") + pmAccount + '</div></td>' +
+        '<td><div class="pw-code">' + esc(item.projectCode || "P" + pid) + '</div><div class="pw-name" data-open-detail="' + pid + '">' + esc(item.projectName || "—") + sourceBadge + '</div><div class="pw-meta">项目经理：' + pmDisplay + '</div></td>' +
         '<td><div class="pw-period">第 ' + (item.weekSN || "—") + ' 周</div><div class="pw-subtle">' + esc(item.weekStart) + ' ~ ' + esc(item.weekEnd) + '</div>' + submitStatusHtml(item.submitStatus) + '</td>' +
         '<td><div class="pw-situation">' + situationTag(item) + '</div>' + desc + '</td>' +
         '<td><div class="pw-progress"><div class="pw-pbox"><b>' + (item.finishedCount || 0) + '</b><span>完成</span></div><div class="pw-pbox"><b>' + (item.unfinishedCount || 0) + '</b><span>未完成</span></div><div class="pw-pbox"><b>' + (item.nextWeekCount || 0) + '</b><span>下周</span></div></div></td>' +
@@ -351,8 +357,6 @@
         document.querySelectorAll("#weeklySection .pw-scope-btn").forEach(function (b) {
           var active = (b.getAttribute("data-scope") || "mine") === weeklyScope;
           b.classList.toggle("active", active);
-          b.style.background = active ? "var(--color-primary, #2563eb)" : "transparent";
-          b.style.color = active ? "#fff" : "var(--color-text-body, #475569)";
         });
         weeklyPager.page = 1;
         loadWeeklyData();
@@ -387,8 +391,6 @@
         document.querySelectorAll("#weeklySection .pw-scope-btn").forEach(function (b) {
           var active = (b.getAttribute("data-scope") || "mine") === "mine";
           b.classList.toggle("active", active);
-          b.style.background = active ? "var(--color-primary, #2563eb)" : "transparent";
-          b.style.color = active ? "#fff" : "var(--color-text-body, #475569)";
         });
         setWeeklyFilter("all");
       });
@@ -403,9 +405,9 @@
 
     if (window.FollowDemand) {
       window.FollowDemand.bind();
-      window.FollowDemand.load();
     }
-    loadWeeklyData();
+    var sp = new URLSearchParams(window.location.search);
+    switchTab(sp.get("tab") || "demand");
   }
 
   if (document.readyState === "loading") {

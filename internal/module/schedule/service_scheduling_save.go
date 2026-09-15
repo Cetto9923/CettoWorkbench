@@ -181,9 +181,12 @@ func (s *Service) applySchedulingStory(
 	switch strings.TrimSpace(storyReq.Action) {
 	case "new":
 		productID = storyReq.ProductID
-		planID, err = s.resolvePlanForProduct(ctx, txRepo, account, windowID, productID)
-		if err != nil {
-			return 0, 0, 0, err
+		planID = storyReq.PlanID
+		if planID == 0 {
+			planID, err = s.resolvePlanForProduct(ctx, txRepo, account, windowID, productID)
+			if err != nil {
+				return 0, 0, 0, err
+			}
 		}
 		isMain := "0"
 		if productID > 0 && productID == mainSystemID {
@@ -191,7 +194,11 @@ func (s *Service) applySchedulingStory(
 		}
 		storyID, err = txRepo.CreateStory(ctx, &ZtStoryInsert{
 			Product:                 productID,
+			Module:                  storyReq.ModuleID,
+			Plan:                    planID,
 			Title:                   storyReq.Title,
+			Type:                    storyReq.Type,
+			Pri:                     storyReq.Pri,
 			AssignedTo:              storyReq.AssignedTo,
 			Estimate:                storyReq.Estimate,
 			FromDemand:              demandID,
@@ -213,39 +220,71 @@ func (s *Service) applySchedulingStory(
 			return 0, 0, 0, fmt.Errorf("create story action: %w", err)
 		}
 		// 关联到计划：排在 Opened 之后，保证 story 详情页 action 顺序 Opened → linked2plan → linked2project → linked2execution。
-		if err := txRepo.LinkStoryToPlan(ctx, storyID, productID, planID, account); err != nil {
-			return 0, 0, 0, fmt.Errorf("link story to plan: %w", err)
+		if planID > 0 {
+			if err := txRepo.LinkStoryToPlan(ctx, storyID, productID, planID, account); err != nil {
+				return 0, 0, 0, fmt.Errorf("link story to plan: %w", err)
+			}
 		}
 		return storyID, productID, planID, nil
 
 	case "edit":
 		storyID = storyReq.ID
 		productID = storyReq.ProductID
-		if err := txRepo.UpdateStory(ctx, storyID, map[string]interface{}{
+		planID = storyReq.PlanID
+		storyUpdates := map[string]interface{}{
 			"title":          strings.TrimSpace(storyReq.Title),
 			"assignedTo":     strings.TrimSpace(storyReq.AssignedTo),
 			"product":        storyReq.ProductID,
 			"lastEditedBy":   account,
 			"lastEditedDate": time.Now(),
-		}); err != nil {
+		}
+		hasExpandedStoryFields := strings.TrimSpace(storyReq.Spec) != "" ||
+			strings.TrimSpace(storyReq.Type) != "" ||
+			storyReq.Pri != 0 ||
+			storyReq.Estimate != 0 ||
+			storyReq.ModuleID != 0 ||
+			storyReq.PlanID != 0
+		if hasExpandedStoryFields {
+			storyUpdates["module"] = storyReq.ModuleID
+			storyUpdates["type"] = normalizeStoryType(storyReq.Type)
+			storyUpdates["pri"] = normalizeStoryPriority(storyReq.Pri)
+			storyUpdates["estimate"] = storyReq.Estimate
+		}
+		if planID > 0 {
+			storyUpdates["plan"] = formatOptionalUint(planID)
+		}
+		if err := txRepo.UpdateStory(ctx, storyID, storyUpdates); err != nil {
 			return 0, 0, 0, fmt.Errorf("update story %d: %w", storyID, err)
+		}
+		if strings.TrimSpace(storyReq.Spec) != "" {
+			if err := txRepo.UpdateLatestStorySpec(ctx, &ZtStorySpec{
+				Story: storyID,
+				Title: storyReq.Title,
+				Spec:  storyReq.Spec,
+			}); err != nil {
+				return 0, 0, 0, fmt.Errorf("update story spec %d: %w", storyID, err)
+			}
 		}
 		if err := txRepo.CreateAction(ctx, "story", storyID, "Edited", account, storyReq.ProductID, 0, 0, ""); err != nil {
 			return 0, 0, 0, fmt.Errorf("create story action: %w", err)
 		}
 		// 同步计划关联:解析目标计划 → 从该 story 的其他计划移除 → 幂等关联到目标计划。
 		// 对 productID 未变化的情况也幂等(Ensure INSERT IGNORE + Remove 保留当前 plan)。
-		newPlanID, err := s.resolvePlanForProduct(ctx, txRepo, account, windowID, storyReq.ProductID)
-		if err != nil {
-			return 0, 0, 0, fmt.Errorf("resolve plan for edited story %d: %w", storyID, err)
+		if planID == 0 {
+			planID, err = s.resolvePlanForProduct(ctx, txRepo, account, windowID, storyReq.ProductID)
+			if err != nil {
+				return 0, 0, 0, fmt.Errorf("resolve plan for edited story %d: %w", storyID, err)
+			}
 		}
-		if err := txRepo.RemoveStoryFromOtherPlans(ctx, storyID, newPlanID, productID, account); err != nil {
+		if err := txRepo.RemoveStoryFromOtherPlans(ctx, storyID, planID, productID, account); err != nil {
 			return 0, 0, 0, fmt.Errorf("remove story %d from other plans: %w", storyID, err)
 		}
-		if err := txRepo.LinkStoryToPlan(ctx, storyID, productID, newPlanID, account); err != nil {
-			return 0, 0, 0, fmt.Errorf("link story to plan: %w", err)
+		if planID > 0 {
+			if err := txRepo.LinkStoryToPlan(ctx, storyID, productID, planID, account); err != nil {
+				return 0, 0, 0, fmt.Errorf("link story to plan: %w", err)
+			}
 		}
-		return storyID, productID, 0, nil
+		return storyID, productID, planID, nil
 
 	case "delete":
 		storyID = storyReq.ID
@@ -371,95 +410,6 @@ func (s *Service) applySingleSchedulingTask(
 		}
 	}
 	return nil
-}
-
-func (s *Service) resolvePlanForProduct(
-	ctx context.Context,
-	txRepo *Repo,
-	account string,
-	windowID uint,
-	productID uint,
-) (uint, error) {
-	vwp, err := txRepo.FindWindowProductPlan(ctx, windowID, productID)
-	if err != nil {
-		return 0, err
-	}
-	if vwp != nil && vwp.PlanID != nil && *vwp.PlanID > 0 {
-		return *vwp.PlanID, nil
-	}
-
-	// vwp != nil:系统已在窗口中但无计划,自动创建计划并回填窗口产品。
-	if vwp != nil {
-		window, err := txRepo.FindByID(ctx, uint64(windowID))
-		if err != nil {
-			return 0, err
-		}
-		if window == nil {
-			return 0, errors.New("版本窗口不存在")
-		}
-
-		endDate := window.ReleaseDate.Format("2006-01-02")
-		beginDate := endDate
-		if window.StartDate != nil {
-			beginDate = window.StartDate.Format("2006-01-02")
-		}
-		title := strings.TrimSpace(window.Name)
-		if title == "" {
-			title = endDate
-		}
-
-		planID, err := txRepo.CreateProductPlan(ctx, productID, title, beginDate, endDate, account)
-		if err != nil {
-			return 0, fmt.Errorf("create product plan: %w", err)
-		}
-		if err := txRepo.UpdateWindowProductPlanID(ctx, vwp.ID, planID, account); err != nil {
-			return 0, err
-		}
-		return planID, nil
-	}
-
-	// vwp == nil:系统不在窗口,自动勾选到窗口并复用已有计划或新建计划。
-	window, err := txRepo.FindByID(ctx, uint64(windowID))
-	if err != nil {
-		return 0, err
-	}
-	if window == nil {
-		return 0, errors.New("版本窗口不存在")
-	}
-	endDate := window.ReleaseDate.Format("2006-01-02")
-	beginDate := endDate
-	if window.StartDate != nil {
-		beginDate = window.StartDate.Format("2006-01-02")
-	}
-	title := strings.TrimSpace(window.Name)
-	if title == "" {
-		title = endDate
-	}
-	plans, err := txRepo.GetMatchingPlans(ctx, productID, endDate)
-	if err != nil {
-		return 0, fmt.Errorf("get matching plans for product %d: %w", productID, err)
-	}
-	var planID uint
-	if len(plans) > 0 {
-		planID = plans[0].ID
-	} else {
-		planID, err = txRepo.CreateProductPlan(ctx, productID, title, beginDate, endDate, account)
-		if err != nil {
-			return 0, fmt.Errorf("create product plan: %w", err)
-		}
-	}
-	wp := &model.VersionWindowProduct{
-		WindowID:   uint64(windowID),
-		ProductID:  productID,
-		PlanID:     &planID,
-		PlanSynced: 1,
-		CreatedBy:  account,
-		UpdatedBy:  account,
-	}
-	if err := txRepo.CreateWindowProduct(ctx, wp); err != nil {
-		return 0, fmt.Errorf("create window product for product %d: %w", productID, err)
-	}
-	return planID, nil
 }
 
 func buildDemandSchedulingUpdates(req *SaveSchedulingReq, account string) map[string]interface{} {

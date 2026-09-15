@@ -40,9 +40,11 @@ func (r *Repo) homeFocusQueryWithReviews(ctx context.Context, account string, re
 		if stage.status == "all" || (req.Status != "all" && stage.status != req.Status) {
 			continue
 		}
-		q := r.roleDemandScope(ctx, account, mysqlStageFilters[stage.status])
-		if req.Status == "all" {
-			q = r.roleDemandBase(ctx, account)
+		q := r.homeFocusDemandBase(ctx, account)
+		if req.Status != "all" {
+			if filter, ok := mysqlStageFilters[stage.status]; ok {
+				q = applyDemandStage(q, account, filter)
+			}
 		}
 		if isParticipateScheduleRequest(req) {
 			if req.Status == "schedule" {
@@ -57,18 +59,18 @@ func (r *Repo) homeFocusQueryWithReviews(ctx context.Context, account string, re
 			where, whereArgs := currentHandlerDemandWhereWithReviews(account, reviewIDs)
 			q = q.Where(where, whereArgs...)
 		case "today":
-			q = q.Where("deadline IS NOT NULL AND deadline != '0000-00-00' AND deadline <= ?", today)
+			q = q.Where(dateSetExpr("deadline")+" AND deadline <= ?", today)
 		case "overdue":
-			q = q.Where("deadline IS NOT NULL AND deadline != '0000-00-00' AND deadline < ?", today)
+			q = q.Where(dateSetExpr("deadline")+" AND deadline < ?", today)
 		case "blocked":
 			q = q.Where(`status = ? OR (
-				 developFinish IS NOT NULL AND developFinish != '0000-00-00' AND developFinish <= ?
+				 `+dateSetBeforeTodaySQL("developFinish")+`
 				AND (managerReviewers IS NOT NULL AND managerReviewers <> '' OR EXISTS (
 					SELECT 1 FROM zt_demandmanagerreview mr
 					WHERE mr.demand = zt_demand.id
 				))
 				AND COALESCE(isManagerReview, '') NOT IN ('pass', 'passed')
-			)`, "refuse", today)
+			)`, "refuse")
 		case "suspended":
 			q = q.Where("hang = ?", "1")
 		}
@@ -93,6 +95,25 @@ func (r *Repo) homeFocusQueryWithReviews(ctx context.Context, account string, re
 		Select("id, MAX(status) AS status, MAX(assignedTo) AS assignedTo, MAX(createdBy) AS createdBy, MIN(stage_index) AS stage_index, MAX(duration_days) AS duration_days").Group("id")
 }
 
+// homeFocusDemandBase is the homepage candidate set.  It includes the
+// creator/originator in addition to the operational owners because those are
+// legitimate handlers in the accept and feedback stages.  Stage-specific
+// visibility and "my action" predicates are applied by the caller; this base
+// only prevents unrelated demands from entering the homepage query.
+func (r *Repo) homeFocusDemandBase(ctx context.Context, account string) *gorm.DB {
+	return r.db.WithContext(ctx).Table("zt_demand").
+		Where("deleted = ?", "0").
+		Where("status NOT IN ?", []string{"closed"}).
+		Where("NOT EXISTS (SELECT 1 FROM zt_demand child WHERE child.deleted = ? AND child.parent = zt_demand.id)", "0").
+		Where(`(
+			createdBy = ? OR originator = ? OR assignedTo = ? OR QD = ? OR RD = ? OR BRA = ?
+			OR id IN (SELECT demand FROM zt_demandclarify WHERE FIND_IN_SET(?, REPLACE(PM, ' ', '')) > 0)
+			OR id IN (SELECT demand FROM zt_demandreview WHERE reviewer = ?)
+			OR id IN (SELECT demand FROM zt_demandmanagerreview WHERE reviewer = ?)
+			OR accepter = ?
+		)`, account, account, account, account, account, account, account, account, account, account)
+}
+
 // applyHomeFocusToolbarFilters 把 DemandsReq 的 keyword/objectType/priority/relation
 // 透传到业务需求 SQL（研发需求由 findHomeFocusStoryRefs 单独使用同等过滤）。
 func applyHomeFocusToolbarFilters(base *gorm.DB, account string, req DemandsReq) *gorm.DB {
@@ -110,7 +131,7 @@ func applyHomeFocusToolbarFiltersWithClause(base *gorm.DB, account string, req D
 		pattern := "%" + kw + "%"
 		base = base.Where(
 			"id IN (SELECT id FROM zt_demand WHERE LOWER(CAST(id AS CHAR)) LIKE ? OR LOWER(name) LIKE ? OR ("+currentHandlerDemandKeywordWhere()+"))",
-			pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern,
+			pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern,
 		)
 	}
 	switch strings.ToLower(strings.TrimSpace(req.Priority)) {
@@ -189,14 +210,14 @@ func (r *Repo) homeFocusStoryQuery(ctx context.Context, account string, req Dema
 		q = r.participateScheduleStoryScope(ctx, account)
 	}
 	if req.ObjectType == "story" || req.Status == "all" || req.Status == "schedule" {
-		q = q.Where("((status IN ? AND (developFinish IS NULL OR developFinish = '0000-00-00' OR testFinish IS NULL OR testFinish = '0000-00-00')) OR (status IN ? AND deliverDate IS NOT NULL AND deliverDate != '0000-00-00'))", []string{"draft", "wait", "active", "clarified", "planned", "developing"}, []string{"acceptanced", "waitdeliver", "released"})
+		q = q.Where("((status IN ? AND ("+dateUnsetExpr("developFinish")+" OR "+dateUnsetExpr("testFinish")+")) OR (status IN ? AND "+dateSetExpr("deliverDate")+"))", []string{"draft", "wait", "active", "clarified", "planned", "developing"}, []string{"acceptanced", "waitdeliver", "released"})
 	}
 	today := time.Now().Format("2006-01-02")
 	switch req.Focus {
 	case "today":
-		q = q.Where("COALESCE(NULLIF(developFinish, '0000-00-00'), NULLIF(testFinish, '0000-00-00'), NULLIF(deliverDate, '0000-00-00')) <= ?", today)
+		q = q.Where("COALESCE(NULLIF(CASE WHEN "+dateUnsetExpr("developFinish")+" THEN NULL ELSE CAST(developFinish AS CHAR) END, ''), NULLIF(CASE WHEN "+dateUnsetExpr("testFinish")+" THEN NULL ELSE CAST(testFinish AS CHAR) END, ''), NULLIF(CASE WHEN "+dateUnsetExpr("deliverDate")+" THEN NULL ELSE CAST(deliverDate AS CHAR) END, '')) <= ?", today)
 	case "overdue":
-		q = q.Where("COALESCE(NULLIF(developFinish, '0000-00-00'), NULLIF(testFinish, '0000-00-00'), NULLIF(deliverDate, '0000-00-00')) < ?", today)
+		q = q.Where("COALESCE(NULLIF(CASE WHEN "+dateUnsetExpr("developFinish")+" THEN NULL ELSE CAST(developFinish AS CHAR) END, ''), NULLIF(CASE WHEN "+dateUnsetExpr("testFinish")+" THEN NULL ELSE CAST(testFinish AS CHAR) END, ''), NULLIF(CASE WHEN "+dateUnsetExpr("deliverDate")+" THEN NULL ELSE CAST(deliverDate AS CHAR) END, '')) < ?", today)
 	case "blocked":
 		q = q.Where("status = ?", "refuse")
 	case "suspended":
@@ -214,10 +235,9 @@ func (r *Repo) homeFocusStoryQuery(ctx context.Context, account string, req Dema
 		q = applyStoryToolbarFilters(q, account, req)
 	}
 	stageSQL := homeFocusStoryStageSQL()
-	base := q.Select("id, " + stageSQL + " AS stage_index")
-	result := r.db.WithContext(ctx).Table("(?) AS focused_stories", base)
+	result := q.Select("id, " + stageSQL + " AS stage_index")
 	if req.Status != "all" && req.Status != "" {
-		result = result.Where("stage_index = ?", homeFocusStageIndex(req.Status))
+		result = result.Where("("+stageSQL+") = ?", homeFocusStageIndex(req.Status))
 	}
 	return result
 }
@@ -322,7 +342,8 @@ func (r *Repo) HomeFocusStageSummary(ctx context.Context, account string, req De
 			StageIndex int
 			Count      int64
 		}
-		if err := r.homeFocusStoryQuery(ctx, account, req).Select("stage_index, COUNT(*) AS count").Group("stage_index").Scan(&storyRows).Error; err != nil {
+		stageSQL := homeFocusStoryStageSQL()
+		if err := r.homeFocusStoryQuery(ctx, account, req).Select(stageSQL + " AS stage_index, COUNT(*) AS count").Group(stageSQL).Scan(&storyRows).Error; err != nil {
 			return nil, err
 		}
 		for _, row := range storyRows {

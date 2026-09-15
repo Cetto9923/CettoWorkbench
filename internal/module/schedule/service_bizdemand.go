@@ -409,7 +409,7 @@ func (s *Service) GetDemandScheduling(ctx context.Context, actor *model.User, de
 	if demandID == 0 {
 		return nil, errors.New("业需 ID 无效")
 	}
-	_ = actorAccount(actor)
+	account := actorAccount(actor)
 
 	detail, err := s.repo.GetDemandSchedulingDetail(ctx, demandID)
 	if err != nil {
@@ -419,7 +419,7 @@ func (s *Service) GetDemandScheduling(ctx context.Context, actor *model.User, de
 	if err != nil {
 		return nil, err
 	}
-	users, err := s.repo.ListInsideUsersForScheduling(ctx)
+	users, err := s.repo.ListInsideUsersForScheduling(ctx, account)
 	if err != nil {
 		return nil, err
 	}
@@ -441,12 +441,44 @@ func (s *Service) GetDemandScheduling(ctx context.Context, actor *model.User, de
 	if err != nil {
 		return nil, err
 	}
+	for _, story := range stories {
+		if story.ProductID > 0 {
+			productIDs = append(productIDs, story.ProductID)
+		}
+	}
+	productIDs = uniqueUints(productIDs)
 	detail.WindowPhase = calcSchedulingWindowPhase(detail.WindowID, len(stories))
 	detail.CanEditWindow = canEditSchedulingWindow(detail.WindowID, len(stories))
 	userStories, err := s.buildDemandUserStories(ctx, demandID)
 	if err != nil {
 		return nil, err
 	}
+	clarifyDefaults, err := s.repo.GetDemandClarifyStoryDefaults(ctx, demandID)
+	if err != nil {
+		return nil, err
+	}
+	windowIDs := make([]uint, 0, len(windows)+1)
+	for _, window := range windows {
+		if window.ID > 0 {
+			windowIDs = append(windowIDs, window.ID)
+		}
+	}
+	if detail.WindowID > 0 {
+		windowIDs = append(windowIDs, detail.WindowID)
+	}
+	windowPlans, err := s.repo.ListSchedulingWindowProductPlans(ctx, windowIDs, productIDs)
+	if err != nil {
+		return nil, err
+	}
+	productPlans, err := s.repo.ListSchedulingProductPlans(ctx, productIDs)
+	if err != nil {
+		return nil, err
+	}
+	analystNames := make(map[string]string, len(users))
+	for _, user := range users {
+		analystNames[strings.TrimSpace(user.Account)] = strings.TrimSpace(user.Realname)
+	}
+	storyDefaults := buildDemandSchedulingStoryDefaults(detail, clarifyDefaults, userStories, windowPlans, analystNames)
 	projectExecutions, err := s.buildProjectExecutionsMap(ctx, productProjects)
 	if err != nil {
 		return nil, err
@@ -458,6 +490,9 @@ func (s *Service) GetDemandScheduling(ctx context.Context, actor *model.User, de
 		ProjectExecutions:      projectExecutions,
 		Stories:                stories,
 		UserStories:            userStories,
+		StoryDefaults:          storyDefaults,
+		WindowProductPlans:     windowPlans,
+		ProductPlans:           productPlans,
 		Windows:                windows,
 		Users:                  users,
 	}, nil

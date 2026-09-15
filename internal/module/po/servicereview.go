@@ -129,6 +129,10 @@ func (s *Service) SubmitDemandReview(ctx context.Context, actor *model.User, req
 	if len(reviewers) == 0 {
 		reviewers = splitReviewerAccounts(demand.Reviewer)
 	}
+	reviewers = normalizeReviewerAccounts(reviewers)
+	if len(reviewers) == 0 {
+		return errorx.New(errorx.ErrCodeInvalidParam, "请至少选择一位业务评审人")
+	}
 
 	ztClient := zentao.DefaultClient()
 	ztErr := ztClient.SubmitDemandReview(ctx, zentao.SubmitDemandReviewParams{
@@ -145,12 +149,22 @@ func (s *Service) SubmitDemandReview(ctx context.Context, actor *model.User, req
 
 // splitReviewerAccounts 把 zt_demand.reviewer 的逗号分隔账号拆成去空串切片。
 func splitReviewerAccounts(raw string) []string {
-	var out []string
-	for _, part := range strings.Split(raw, ",") {
-		p := strings.TrimSpace(part)
-		if p != "" {
-			out = append(out, p)
+	return normalizeReviewerAccounts(strings.Split(raw, ","))
+}
+
+func normalizeReviewerAccounts(accounts []string) []string {
+	out := make([]string, 0, len(accounts))
+	seen := make(map[string]struct{}, len(accounts))
+	for _, account := range accounts {
+		account = strings.TrimSpace(account)
+		if account == "" {
+			continue
 		}
+		if _, ok := seen[account]; ok {
+			continue
+		}
+		seen[account] = struct{}{}
+		out = append(out, account)
 	}
 	return out
 }

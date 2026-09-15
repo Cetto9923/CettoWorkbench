@@ -22,7 +22,7 @@ func toBizRequirementsView(items []BizDemandItem, zentaoBase string) []BizRequir
 	out := make([]BizRequirement, 0, len(items))
 	for _, item := range items {
 		priority, priClass := formatPriority(item.Pri)
-		agileGroup := item.TeamgroupName
+		agileGroup := formatTeamgroupLeaf(item.TeamgroupName)
 		if agileGroup == "" {
 			agileGroup = "—"
 		}
@@ -66,7 +66,7 @@ func toSubBizRequirementsView(items []SubDemandItem, zentaoBase string) []SubBiz
 	out := make([]SubBizRequirement, 0, len(items))
 	for _, item := range items {
 		priority, priClass := formatPriority(item.Pri)
-		agileGroup := item.TeamgroupName
+		agileGroup := formatTeamgroupLeaf(item.TeamgroupName)
 		if agileGroup == "" {
 			agileGroup = "—"
 		}
@@ -111,7 +111,7 @@ func toDevRequirementsView(stories []StoryItem, zentaoBase string) []DevRequirem
 		if windowName == "" {
 			windowName = "—"
 		}
-		agileGroup := story.TeamgroupName
+		agileGroup := formatTeamgroupLeaf(story.TeamgroupName)
 		if agileGroup == "" {
 			agileGroup = "—"
 		}
@@ -180,6 +180,15 @@ func formatOwner(name string) string {
 	return name
 }
 
+func formatTeamgroupLeaf(name string) string {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return ""
+	}
+	parts := strings.Split(name, "/")
+	return strings.TrimSpace(parts[len(parts)-1])
+}
+
 func formatBizID(id uint) string {
 	return "US" + strconv.FormatUint(uint64(id), 10)
 }
@@ -205,7 +214,7 @@ func toIndependentRequirementsView(items []IndependentStoryItem, zentaoBase stri
 		if windowName == "" {
 			windowName = "—"
 		}
-		teamgroupName := item.TeamgroupName
+		teamgroupName := formatTeamgroupLeaf(item.TeamgroupName)
 		if teamgroupName == "" {
 			teamgroupName = "—"
 		}
@@ -243,7 +252,7 @@ func toIndependentChildrenView(items []IndependentStoryItem, zentaoBase string) 
 		if windowName == "" {
 			windowName = "—"
 		}
-		teamgroupName := item.TeamgroupName
+		teamgroupName := formatTeamgroupLeaf(item.TeamgroupName)
 		if teamgroupName == "" {
 			teamgroupName = "—"
 		}

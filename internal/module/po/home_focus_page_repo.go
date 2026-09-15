@@ -33,7 +33,8 @@ func (r *Repo) focusPageQuery(ctx context.Context, account string, req DemandsRe
 		args = append(args, stmt.Vars...)
 	}
 	if req.ObjectType != "demand" {
-		stmt := r.homeFocusStoryQuery(ctx, account, req).Select("id, 'story' AS kind, stage_index, 2 AS action_rank").
+		stageSQL := homeFocusStoryStageSQL()
+		stmt := r.homeFocusStoryQuery(ctx, account, req).Select("id, 'story' AS kind, " + stageSQL + " AS stage_index, 2 AS action_rank").
 			Session(&gorm.Session{DryRun: true}).Find(&[]struct{ ID int }{}).Statement
 		parts = append(parts, stmt.SQL.String())
 		args = append(args, stmt.Vars...)

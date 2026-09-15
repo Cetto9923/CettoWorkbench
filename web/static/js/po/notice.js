@@ -187,9 +187,10 @@
       badgeHtml = relatedBugLinks(item, 3);
       if (item.relatedObjects.length > 3) badgeHtml += '<span>等 ' + item.relatedObjects.length + ' 个 Bug</span>';
     }
-    var displayTitle = (canon && OBJECT_TYPE_LABELS[canon] && !isReminderTemplate)
+    var decodeEntities = (window.PersonalList && window.PersonalList.decodeHtmlEntities) || function (s) { return s; };
+    var displayTitle = decodeEntities((canon && OBJECT_TYPE_LABELS[canon] && !isReminderTemplate)
       ? stripSubjectPrefix(rawSubject, canon, oid)
-      : rawSubject;
+      : rawSubject);
 
     var subText = "";
     var rawSummary = String(item.data || item.summary || "").trim();
@@ -198,8 +199,8 @@
       if (rawSummary.indexOf("审批") >= 0) icon = "💬 ";
       else if (rawSummary.indexOf("指派") >= 0) icon = "📌 ";
       else if (rawSummary.indexOf("描述") >= 0) icon = "📝 ";
-      subText = '<div class="notice-subject-sub" title="' + esc(rawSummary) + '">' +
-        '<span class="notice-sub-icon">' + icon + "</span>" + esc(rawSummary) + "</div>";
+      subText = '<div class="notice-subject-sub" title="' + esc(decodeEntities(rawSummary)) + '">' +
+        '<span class="notice-sub-icon">' + icon + "</span>" + esc(decodeEntities(rawSummary)) + "</div>";
     }
 
     var titleTag = item.url ? "a" : "button";
@@ -208,7 +209,7 @@
       : ' type="button" data-notice-open="' + esc(item.id) + '"';
     var titleHtml = '<' + titleTag + ' class="table-title-link notice-title-main"' + titleAttrs + '>' + esc(displayTitle) + "</" + titleTag + ">";
 
-    return '<div class="notice-subject-text" title="' + esc(rawSubject) + '">' +
+    return '<div class="notice-subject-text" title="' + esc(decodeEntities(rawSubject)) + '">' +
       badgeHtml + titleHtml + "</div>" + subText;
   }
 

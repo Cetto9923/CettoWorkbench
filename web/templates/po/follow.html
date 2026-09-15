@@ -56,10 +56,10 @@
 
       <!-- 工具栏 -->
       <div class="pw-toolbar">
-        <div class="pw-scope-switch" id="pwScopeSwitch" style="display:inline-flex;align-items:center;border:1px solid var(--color-border,#cbd5e1);border-radius:5px;overflow:hidden;margin-right:4px;">
-          <button type="button" class="pw-scope-btn active" data-scope="mine" style="height:28px;padding:0 8px;border:none;background:var(--color-primary,#2563eb);color:#fff;cursor:pointer;font-size:12px;">我的</button>
-          <button type="button" class="pw-scope-btn" data-scope="participated" style="height:28px;padding:0 8px;border:none;background:transparent;color:var(--color-text-body,#475569);cursor:pointer;font-size:12px;">仅参与</button>
-          <button type="button" class="pw-scope-btn" data-scope="watched" style="height:28px;padding:0 8px;border:none;background:transparent;color:var(--color-text-body,#475569);cursor:pointer;font-size:12px;">仅关注</button>
+        <div class="pw-scope-switch" id="pwScopeSwitch">
+          <button type="button" class="pw-scope-btn active" data-scope="mine">我的</button>
+          <button type="button" class="pw-scope-btn" data-scope="participated">仅参与</button>
+          <button type="button" class="pw-scope-btn" data-scope="watched">仅关注</button>
         </div>
         <button type="button" class="pw-filter-btn active" data-filter="all">全部 <span class="n" id="pwBtnAll">0</span></button>
         <button type="button" class="pw-filter-btn" data-filter="waiting">待提交 <span class="n" id="pwBtnWaiting">0</span></button>
@@ -123,13 +123,8 @@
       </div>
 
       <div class="pw-toolbar" id="fdToolbar">
-        <button type="button" class="pw-filter-btn active" data-scope="open">全部未关闭 <span class="n" id="fdBtnOpen">0</span></button>
-        <button type="button" class="pw-filter-btn" data-lifecycle="clarifying">梳理中 <span class="n" id="fdBtnClarifying">0</span></button>
-        <button type="button" class="pw-filter-btn" data-lifecycle="implementing">实施中 <span class="n" id="fdBtnImplementing">0</span></button>
-        <button type="button" class="pw-filter-btn" data-lifecycle="released">已发布 <span class="n" id="fdBtnReleased">0</span></button>
-        <button type="button" class="pw-filter-btn" data-scope="closed">已关闭 <span class="n" id="fdBtnClosed">0</span></button>
-        <div class="pw-spacer"></div>
         <span class="pw-toolbar-hint" id="followSummary">关注业务需求 · 加载中…</span>
+        <div class="pw-spacer"></div>
         <input type="search" class="pw-search" id="followKeyword" placeholder="搜索标题或编号" aria-label="关键词" />
         <button type="button" class="pw-reset-btn" id="fdResetBtn">重置筛选</button>
         <button type="button" class="pw-reset-btn fd-export-btn" id="fdExportBtn" title="导出当前筛选结果">导出</button>
@@ -191,6 +186,7 @@
 <script src="{{ asset "/static/js/po/demand-detail-render-execution.js" }}"></script>
 <script src="{{ asset "/static/js/po/demand-detail-render.js" }}"></script>
 <script src="{{ asset "/static/js/po/demand-detail-review.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail-submit-review.js" }}"></script>
 <script src="{{ asset "/static/js/po/demand-detail.js" }}"></script>
 <script src="{{ asset "/static/js/po/demand-clarify.js" }}"></script>
 <script src="{{ asset "/static/js/po/follow-drawer.js" }}"></script>

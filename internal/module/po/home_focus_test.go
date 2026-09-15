@@ -176,8 +176,8 @@ func TestHomeFocusStoryQuery_ClarifyExcludesActiveStory_ScheduleIncludes(t *test
 	var rows []struct{ ID int }
 	clarifyStmt := clarifyQ.Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
 	clarifySQL := clarifyStmt.SQL.String()
-	if !strings.Contains(clarifySQL, "stage_index = ?") {
-		t.Fatalf("clarify focus story query must filter by stage_index: %s", clarifySQL)
+	if !strings.Contains(clarifySQL, "CASE LOWER(TRIM(status))") || !strings.Contains(clarifySQL, ") = ?") {
+		t.Fatalf("clarify focus story query must filter by the computed stage index: %s", clarifySQL)
 	}
 	foundClarifyIdx := false
 	for _, v := range clarifyStmt.Vars {
@@ -201,8 +201,8 @@ func TestHomeFocusStoryQuery_ClarifyExcludesActiveStory_ScheduleIncludes(t *test
 	})
 	scheduleStmt := scheduleQ.Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
 	scheduleSQL := scheduleStmt.SQL.String()
-	if !strings.Contains(scheduleSQL, "stage_index = ?") {
-		t.Fatalf("schedule focus story query must filter by stage_index: %s", scheduleSQL)
+	if !strings.Contains(scheduleSQL, "CASE LOWER(TRIM(status))") || !strings.Contains(scheduleSQL, ") = ?") {
+		t.Fatalf("schedule focus story query must filter by the computed stage index: %s", scheduleSQL)
 	}
 	foundScheduleIdx := false
 	for _, v := range scheduleStmt.Vars {
@@ -244,8 +244,57 @@ func TestHomeFocusToolbarUsesCurrentHandler(t *testing.T) {
 	query := applyHomeFocusToolbarFilters(base, "alice", DemandsReq{Keyword: "alice"})
 	var rows []struct{ ID int }
 	stmt := db.Table("(?) AS focused", query).Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
-	if !strings.Contains(stmt.SQL.String(), "currentHandlerDemandKeywordWhere") && !strings.Contains(stmt.SQL.String(), "LOWER(IFNULL(RD, '')) LIKE") {
+	if !strings.Contains(stmt.SQL.String(), "LOWER(IFNULL(BRA, '')) LIKE") || !strings.Contains(stmt.SQL.String(), "LOWER(IFNULL(QD, '')) LIKE") {
 		t.Fatalf("keyword must include current stage handler: %s", stmt.SQL.String())
+	}
+}
+
+func TestHomeFocusMyActionUsesStageRoleMatrix(t *testing.T) {
+	db, _ := openSQLMock(t)
+	repo := NewRepo(db, nil)
+	query := repo.homeFocusQueryWithReviews(context.Background(), "alice", DemandsReq{
+		Status: "all", Focus: "my_action", Page: 1, PageSize: 15,
+	}, []int{101, 102})
+	var rows []struct{ ID int }
+	stmt := query.Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
+	sql := stmt.SQL.String()
+	for _, want := range []string{
+		"status IN ('draft', 'refuse') AND createdBy = ?",
+		"status = 'wait' AND id IN (",
+		"status = 'active' AND (",
+		"status = 'clarified' AND (",
+		"status = 'developing' AND BRA = ?",
+		"status = 'testing' AND (QD = ? OR (accepter = ?",
+		"status = 'waitacceptance' AND accepter = ?",
+		"status IN ('acceptanced', 'waitdeliver') AND BRA = ?",
+		"status = 'released' AND (originator = ? OR BRA = ?)",
+	} {
+		if !strings.Contains(sql, want) {
+			t.Fatalf("my_action role matrix missing %q: %s", want, sql)
+		}
+	}
+	if strings.Contains(sql, "status IN ('developing', 'testing', 'waitacceptance') AND RD = ?") {
+		t.Fatal("my_action must not use RD as a cross-stage fallback")
+	}
+}
+
+func TestHomeFocusPageStoryBranchIsFlatAndZeroDateSafe(t *testing.T) {
+	db, _ := openSQLMock(t)
+	repo := NewRepo(db, nil)
+	query := repo.focusPageQuery(context.Background(), "alice", DemandsReq{
+		Status: "developing", Focus: "my_action", Page: 1, PageSize: 10,
+	}, nil)
+	var rows []struct{ ID int }
+	stmt := query.Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
+	sql := stmt.SQL.String()
+	if strings.Contains(sql, "focused_stories") {
+		t.Fatalf("story branch must not nest a derived-table alias inside the UNION: %s", sql)
+	}
+	if strings.Contains(sql, "= '0000-00-00'") || strings.Contains(sql, "!= '0000-00-00'") {
+		t.Fatalf("homepage focus query must not compare date columns with zero-date literals: %s", sql)
+	}
+	if !strings.Contains(sql, "CASE LOWER(TRIM(status))") || !strings.Contains(sql, ") = ?") {
+		t.Fatalf("story branch must filter the computed stage in SQL: %s", sql)
 	}
 }
 

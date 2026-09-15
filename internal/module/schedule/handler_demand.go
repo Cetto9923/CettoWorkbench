@@ -267,8 +267,6 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 		}
 		bizResp = &ListBizDemandsResp{Total: 0, Items: []BizDemandItem{}}
 	}
-	bizRequirements := toBizRequirementsView(bizResp.Items, h.zentaoURL)
-
 	var indepReq ListIndependentReq
 	if err := c.ShouldBindQuery(&indepReq); err != nil {
 		render.Error(c, http.StatusBadRequest, "参数解析失败", err)
@@ -289,18 +287,18 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 	indepReq.TestOwner = listReq.TestOwner
 	indepReq.Normalize()
 
-	indepResp, err := h.svc.ListIndependentStories(c.Request.Context(), actor, indepReq)
-	if err != nil {
-		if h.logger != nil {
-			h.logger.Error("load independent stories failed", zap.Error(err))
+	indepResp := &ListIndependentResp{Total: 0, Items: []IndependentStoryItem{}}
+	if activeFilter != FilterManagerReviewing {
+		indepResp, err = h.svc.ListIndependentStories(c.Request.Context(), actor, indepReq)
+		if err != nil {
+			if h.logger != nil {
+				h.logger.Error("load independent stories failed", zap.Error(err))
+			}
+			indepResp = &ListIndependentResp{Total: 0, Items: []IndependentStoryItem{}}
+		} else if indepResp == nil {
+			indepResp = &ListIndependentResp{Total: 0, Items: []IndependentStoryItem{}}
 		}
-		indepResp = &ListIndependentResp{Total: 0, Items: []IndependentStoryItem{}}
 	}
-	if indepResp == nil {
-		indepResp = &ListIndependentResp{Total: 0, Items: []IndependentStoryItem{}}
-	}
-	independentRequirements := toIndependentRequirementsView(indepResp.Items, h.zentaoURL)
-
 	bizFilterCounts, err := h.svc.GetBizDemandFilterCounts(c.Request.Context(), actor, activeFilter)
 	if err != nil {
 		if h.logger != nil {
@@ -339,10 +337,10 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 	})
 
 	return scheduleIndexDemandData{
-		BizRequirements:         bizRequirements,
+		BizRequirements:         toBizRequirementsView(bizResp.Items, h.zentaoURL),
 		BizTotal:                bizResp.Total,
 		BizPager:                bizPager,
-		IndependentRequirements: independentRequirements,
+		IndependentRequirements: toIndependentRequirementsView(indepResp.Items, h.zentaoURL),
 		IndependentTotal:        indepResp.Total,
 		IndepPager:              indepPager,
 		ActiveTab:               tab,
@@ -395,16 +393,7 @@ func (h *Handler) GetDemandScheduling(c *gin.Context) {
 		return
 	}
 
-	out := gin.H{
-		"success":           true,
-		"involvedProducts":  []ZtProductOption{},
-		"productProjects":   gin.H{},
-		"projectExecutions": gin.H{},
-		"stories":           []DemandSchedulingStoryItem{},
-		"userStories":       []UserStoryItem{},
-		"windows":           []SchedulingWindowOption{},
-		"users":             []SchedulingUserOption{},
-	}
+	out := newDemandSchedulingPayload()
 	if resp != nil {
 		if resp.InvolvedProducts != nil {
 			out["involvedProducts"] = resp.InvolvedProducts
@@ -420,6 +409,15 @@ func (h *Handler) GetDemandScheduling(c *gin.Context) {
 		}
 		if resp.UserStories != nil {
 			out["userStories"] = resp.UserStories
+		}
+		if resp.StoryDefaults != nil {
+			out["storyDefaults"] = resp.StoryDefaults
+		}
+		if resp.WindowProductPlans != nil {
+			out["windowProductPlans"] = resp.WindowProductPlans
+		}
+		if resp.ProductPlans != nil {
+			out["productPlans"] = resp.ProductPlans
 		}
 		if resp.Windows != nil {
 			out["windows"] = resp.Windows

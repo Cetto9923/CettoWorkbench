@@ -74,7 +74,7 @@ func (s *Service) GetStoryTasks(ctx context.Context, actor *model.User, storyID 
 		})
 	}
 
-	users, err := s.repo.ListInsideUsersForScheduling(ctx)
+	users, err := s.repo.ListInsideUsersForScheduling(ctx, actorAccount(actor))
 	if err != nil {
 		return nil, err
 	}

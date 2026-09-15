@@ -83,8 +83,16 @@ func (s *Service) buildDemandSchedulingStories(
 			Title:          strings.TrimSpace(row.Title),
 			ProductID:      row.Product,
 			ProductName:    productNameByID[row.Product],
+			ModuleID:       row.Module,
+			ModuleName:     storyModuleLabel(row.Module),
+			PlanID:         parseUintString(row.Plan),
+			PlanName:       strings.TrimSpace(row.PlanName),
+			Type:           normalizeStoryType(row.Type),
+			TypeLabel:      storyTypeLabel(row.Type),
+			Pri:            normalizeStoryPriority(row.Pri),
 			IsMain:         row.IsMainSystemAssociation > 0,
 			Estimate:       row.Estimate,
+			Spec:           strings.TrimSpace(row.Spec),
 			AssignedTo:     assignedTo,
 			AssignedToName: resolveRealname(assignedTo, realnameByAccount),
 			Tasks:          tasks,
@@ -92,6 +100,39 @@ func (s *Service) buildDemandSchedulingStories(
 		})
 	}
 	return items, nil
+}
+
+func storyModuleLabel(moduleID uint) string {
+	if moduleID == 0 {
+		return "/"
+	}
+	return strconv.FormatUint(uint64(moduleID), 10)
+}
+
+func normalizeStoryType(typ string) string {
+	typ = strings.TrimSpace(typ)
+	if typ == "" {
+		return "story"
+	}
+	return typ
+}
+
+func storyTypeLabel(typ string) string {
+	switch normalizeStoryType(typ) {
+	case "story":
+		return "功能"
+	case "requirement":
+		return "用户需求"
+	default:
+		return strings.TrimSpace(typ)
+	}
+}
+
+func normalizeStoryPriority(pri int) int {
+	if pri < 1 || pri > 4 {
+		return 3
+	}
+	return pri
 }
 
 // buildDemandUserStories 装配业需级用户故事条目（来自 zt_demanduserstory）。

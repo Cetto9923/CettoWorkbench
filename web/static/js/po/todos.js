@@ -188,7 +188,9 @@
 
   function rowHtml(item) {
     var id = esc(item.displayId || item.id);
-    var title = esc(item.title || "—");
+    var decodeEntities = (PL && PL.decodeHtmlEntities) || function (s) { return s; };
+    var cleanRawTitle = decodeEntities(item.title || "—");
+    var title = esc(cleanRawTitle);
     var idContent = item.url ? '<a class="table-id-link" href="' + esc(item.url) + '" target="_blank" rel="noopener noreferrer">' + id + "</a>" : id;
     var titleContent = item.url ? '<a class="table-title-link" href="' + esc(item.url) + '" target="_blank" rel="noopener noreferrer">' + title + "</a>" : title;
     var isStory = String(item.kind || "").toLowerCase() === "story";
@@ -206,6 +208,15 @@
       ? '<td class="todos-col-approval">' + esc(item.approvalScene || "—") + "</td>"
       : "";
 
+    var optHtml = primaryActionHtml(item, isStory, ["clarify"]);
+    if (optHtml.indexOf("—") !== -1 && item.url) {
+      optHtml = '<a class="table-action-btn secondary" href="' + esc(item.url) + '" target="_blank" rel="noopener noreferrer">查看 ↗</a>';
+    }
+
+    var todayStr = new Date().toISOString().slice(0, 10);
+    var isOverdue = !!(item.isOverdue || (item.deadline && /^\d{4}-\d{2}-\d{2}/.test(item.deadline) && item.deadline < todayStr));
+    var deadHtml = isOverdue ? '<span class="todos-deadline-overdue" title="已超期">' + esc(item.deadline) + '</span>' : esc(item.deadline || "—");
+
     return "<tr>" +
       '<td class="todos-col-obj">' + idChip + "</td>" +
       '<td class="todos-col-item" title="' + title + '">' +
@@ -215,9 +226,9 @@
       '<td class="todos-col-pri">' + metricHtml + "</td>" +
       '<td class="todos-col-rel"><span class="relation-tag">' + esc(item.relation || "—") + "</span></td>" +
       '<td class="todos-col-stage" title="' + esc(stageLabel(item.reason)) + '">' + ((PL && PL.statusTagHtml) ? PL.statusTagHtml(stageLabel(item.reason)) : esc(stageLabel(item.reason))) + "</td>" +
-      '<td class="todos-col-dead">' + esc(item.deadline || "—") + "</td>" +
+      '<td class="todos-col-dead">' + deadHtml + "</td>" +
       '<td class="todos-col-owner" title="' + esc(item.owner || "—") + '">' + esc(item.owner || "—") + "</td>" +
-      '<td class="todos-col-opt">' + primaryActionHtml(item, isStory, ["clarify"]) + "</td>" +
+      '<td class="todos-col-opt">' + optHtml + "</td>" +
       "</tr>";
   }
 

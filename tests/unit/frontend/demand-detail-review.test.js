@@ -14,6 +14,8 @@ vm.runInThisContext(fs.readFileSync(path.join(__dirname, "../../../web/static/js
 vm.runInThisContext(fs.readFileSync(path.join(__dirname, "../../../web/static/js/ui.js"), "utf8"));
 
 const Review = require("../../../web/static/js/po/demand-detail-review.js");
+global.DemandDetailReview = Review;
+vm.runInThisContext(fs.readFileSync(path.join(__dirname, "../../../web/static/js/po/demand-detail-submit-review.js"), "utf8"));
 
 console.log("=== Running DemandDetailReview unit tests ===");
 
@@ -96,3 +98,16 @@ const lockedEditHtml = Review.renderReviewView({
 assert.ok(lockedEditHtml.includes("编辑已锁定 ↗"), "edit button is disabled when someone reviewed");
 assert.ok(lockedEditHtml.includes("已有评审人出具评审意见"), "shows lockout tooltip reason");
 console.log("PASS: demand editing is locked once someone has reviewed");
+
+const submitReviewHtml = Review.renderReviewView({
+  summary: { id: "US63429", demandId: 63429, status: "draft", isCreator: true },
+  primaryAction: { key: "submit_review", enabled: true },
+  requirement: {}
+});
+assert.ok(submitReviewHtml.includes('id="ddSubmitReviewModal"'), "draft demand must render submit-review modal");
+assert.ok(submitReviewHtml.includes('id="ddReviewReviewerInput"'), "submit-review modal must render reviewer picker");
+assert.ok(submitReviewHtml.includes('id="ddReviewSelected"'), "submit-review modal must render multi-reviewer chips");
+assert.ok(submitReviewHtml.includes('confirmSubmitReview'), "submit-review modal must bind its confirm action");
+assert.ok(typeof Review.openSubmitReviewModal === "function", "openSubmitReviewModal must be exported");
+assert.ok(typeof Review.confirmSubmitReview === "function", "confirmSubmitReview must be exported");
+console.log("PASS: draft demand exposes the multi-reviewer submit modal");

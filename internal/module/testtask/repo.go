@@ -112,6 +112,41 @@ func (r *Repo) FindBuildsByIDs(ctx context.Context, ids []uint) (map[uint]buildM
 	return out, nil
 }
 
+// FindBuildsByProductID 列出产品下未删除版本（供提测「已有版本」下拉；与执行列表同为直读库）。
+func (r *Repo) FindBuildsByProductID(ctx context.Context, productID uint) ([]buildMeta, error) {
+	if r == nil || r.db == nil || productID == 0 {
+		return []buildMeta{}, nil
+	}
+	type row struct {
+		ID        uint   `gorm:"column:id"`
+		ProductID uint   `gorm:"column:product"`
+		ProjectID uint   `gorm:"column:project"`
+		Execution uint   `gorm:"column:execution"`
+		Name      string `gorm:"column:name"`
+	}
+	var rows []row
+	err := r.db.WithContext(ctx).Table("zt_build").
+		Select("id, product, project, execution, name").
+		Where("product = ? AND deleted = ?", productID, "0").
+		Order("id DESC").
+		Limit(500).
+		Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	out := make([]buildMeta, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, buildMeta{
+			ID:        row.ID,
+			ProductID: row.ProductID,
+			ProjectID: row.ProjectID,
+			Execution: row.Execution,
+			Name:      strings.TrimSpace(row.Name),
+		})
+	}
+	return out, nil
+}
+
 // VerifyExecutionBelongsToProject 校验执行是否属于所选项目（且项目类型为 project）。
 // 项目=0 视作跳过（禅道历史 build 偶有无 project 字段）；执行=0 或执行.project != projectID 返回 false。
 func (r *Repo) VerifyExecutionBelongsToProject(ctx context.Context, projectID, executionID uint) (bool, error) {

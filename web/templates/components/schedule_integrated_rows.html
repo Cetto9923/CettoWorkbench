@@ -104,19 +104,22 @@
     <div class="rd-node-header rd-node-header--edit">
       <button type="button" class="rd-toggle" title="展开/收起任务" aria-label="展开/收起任务">▼</button>
       <span class="rd-node-role-badge"></span>
-      <select class="rd-node-product form-select rd-node-product-select"><option value="">请选择系统</option></select>
-      <input type="text" class="rd-node-title form-input rd-node-title-input" placeholder="研发需求名称">
-      <span class="rd-node-plan" title="版本窗口绑定的产品计划"></span>
-      <span class="rd-node-header-right">
-        <span class="rd-node-assignee-wrap">
-          <input type="text" class="rd-node-assignee-input form-input rd-node-assignee-field" placeholder="指派人" autocomplete="off">
-          <input type="hidden" class="rd-node-assignee-value">
-        </span>
-        <span class="rd-node-actions"></span>
-      </span>
+      <strong class="rd-node-title-display">研发需求</strong>
+      <span class="rd-node-header-right"><span class="rd-node-actions"></span></span>
     </div>
-    <div class="rd-node-spec-wrap">
-      <textarea class="rd-node-spec form-input" rows="2" placeholder="需求描述"></textarea>
+    <div class="rd-story-grid">
+      <label><span>所属产品 <b class="req">*</b></span><select class="rd-node-product form-select rd-node-product-select"><option value="">请选择系统</option></select></label>
+      <label><span>所属模块</span><select class="rd-node-module form-select"><option value="0">/</option></select></label>
+      <label><span>所属计划</span><select class="rd-node-plan-select form-select"><option value="">未绑定</option></select></label>
+      <label class="rd-story-grid-title"><span>研发需求名称 <b class="req">*</b></span><input type="text" class="rd-node-title form-input rd-node-title-input" placeholder="研发需求名称"></label>
+      <label class="rd-story-grid-spec"><span>描述 <b class="req">*</b></span><textarea class="rd-node-spec form-input" rows="3" placeholder="需求描述"></textarea></label>
+      <label><span>指派给 <b class="req">*</b></span><span class="rd-node-assignee-wrap">
+        <input type="text" class="rd-node-assignee-input form-input rd-node-assignee-field" placeholder="指派人" autocomplete="off">
+        <input type="hidden" class="rd-node-assignee-value">
+      </span></label>
+      <label><span>类别</span><select class="rd-node-type form-select"><option value="story">功能</option></select></label>
+      <label><span>优先级</span><select class="rd-node-pri form-select"><option value="1">P1</option><option value="2">P2</option><option value="3">P3</option><option value="4">P4</option></select></label>
+      <label><span>预计工时</span><input type="number" class="rd-node-estimate form-input" min="0" step="0.5" placeholder="h"></label>
     </div>
   </div>
 </template>

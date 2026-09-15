@@ -24,7 +24,11 @@ import (
 // ZtStoryInsert 禅道 zt_story 写入字段。
 type ZtStoryInsert struct {
 	Product                 uint
+	Module                  uint
+	Plan                    uint
 	Title                   string
+	Type                    string
+	Pri                     int
 	AssignedTo              string
 	Estimate                float64
 	FromDemand              uint
@@ -280,13 +284,13 @@ func (r *Repo) CreateStory(ctx context.Context, story *ZtStoryInsert) (uint, err
 	row := ztStoryCreateRow{
 		Product:                 story.Product,
 		Branch:                  "0",
-		Module:                  0,
-		Plan:                    "",
+		Module:                  story.Module,
+		Plan:                    formatOptionalUint(story.Plan),
 		Source:                  "",
 		SourceNote:              "",
 		Title:                   strings.TrimSpace(story.Title),
-		Type:                    "story",
-		Pri:                     3,
+		Type:                    normalizeStoryType(story.Type),
+		Pri:                     normalizeStoryPriority(story.Pri),
 		Grade:                   1,
 		Estimate:                story.Estimate,
 		Status:                  "active",

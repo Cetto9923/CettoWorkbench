@@ -39,6 +39,8 @@
     ui: "界面",
   };
 
+  var storyTypeOptions = [{ value: "story", label: "功能" }];
+
   function cloneTemplate(id) {
     var tpl = document.getElementById(id);
     if (!tpl || !tpl.content) {
@@ -58,6 +60,46 @@
     return frag.firstElementChild;
   }
 
+  function parsePositiveInt(value) {
+    var num = parseInt(String(value == null ? "" : value), 10);
+    return isNaN(num) || num <= 0 ? 0 : num;
+  }
+
+  function parseEstimateValue(value) {
+    var raw = $.trim(value == null ? "" : String(value));
+    if (!raw) {
+      return 0;
+    }
+    var num = Number(raw);
+    return isNaN(num) ? 0 : num;
+  }
+
+  function readStoryField($node, selector, attrName) {
+    var fromInput = $.trim($node.find(selector).first().val() || "");
+    return fromInput || $.trim($node.attr(attrName) || "");
+  }
+
+  function readStoryTitle($node) {
+    var fromInput = $.trim($node.find(".rd-node-title-input, .rd-node-title").first().val() || "");
+    var $header = $node.find(".rd-node-header").first();
+    return fromInput || $.trim($node.attr("data-story-title") || $header.find(".rd-node-title-display").first().text() || "");
+  }
+
+  function readStoryProductId($node) {
+    var fromSelect = $.trim($node.find(".rd-node-product").first().val() || "");
+    return fromSelect ? parsePositiveInt(fromSelect) : parsePositiveInt($node.attr("data-product-id"));
+  }
+
+  function readStoryAssignedTo($node) {
+    var fromHidden = $.trim($node.find(".rd-node-assignee-value").first().val() || "");
+    return fromHidden || $.trim($node.attr("data-assigned-to") || "");
+  }
+
+  function readStoryPri($node) {
+    var value = parseInt(readStoryField($node, ".rd-node-pri", "data-pri") || "3", 10);
+    return isNaN(value) || value < 1 || value > 4 ? 3 : value;
+  }
+
   window.ScheduleIntegratedShared = {
     schedulingUsers: [],
     involvedProducts: [],
@@ -66,6 +108,8 @@
     productExecutionsMap: {},
     draftStoryDefaults: {},
     windowProductPlans: [],
+    productPlans: {},
+    storyTypeOptions: storyTypeOptions,
     taskRowSeq: 0,
     manualNodeSeq: 0,
     currentDemandId: 0,
@@ -74,6 +118,13 @@
     currentCanEditWindow: true,
     currentWindowPhase: "",
     isSchedulingDetailLoaded: false,
+    parsePositiveInt: parsePositiveInt,
+    parseEstimateValue: parseEstimateValue,
+    readStoryAssignedTo: readStoryAssignedTo,
+    readStoryField: readStoryField,
+    readStoryPri: readStoryPri,
+    readStoryProductId: readStoryProductId,
+    readStoryTitle: readStoryTitle,
     deletedStoryIds: [],
     deletedTaskIds: [],
     zentaoURL: "",
@@ -192,6 +243,30 @@
       if (selected) {
         $select.val(selected);
       }
+    },
+
+    fillStoryPlanSelect: function ($select, productId, selectedId) {
+      var selected = String(selectedId || "");
+      var plans = this.productPlans[String(productId || "")] || [];
+      $select.empty();
+      $("<option></option>").val("").text("未绑定").appendTo($select);
+      plans.forEach(function (plan) {
+        var id = String(plan.id || "");
+        if (!id) {
+          return;
+        }
+        $("<option></option>").val(id).text(plan.title || ("#" + id)).appendTo($select);
+      });
+      $select.val(selected);
+    },
+
+    fillStoryTypeSelect: function ($select, selectedType) {
+      var selected = $.trim(selectedType || "story") || "story";
+      $select.empty();
+      storyTypeOptions.forEach(function (item) {
+        $("<option></option>").val(item.value).text(item.label).appendTo($select);
+      });
+      $select.val(selected);
     },
 
     buildProductProjectsMap: function (productProjects) {

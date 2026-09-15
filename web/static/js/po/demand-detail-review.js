@@ -18,6 +18,23 @@
   var esc = window.escapeHtml;
   var sanitizeRichText = (RichText && RichText.sanitizeRichText) || function (raw) { return esc(raw); };
 
+  function parseActionResponse(res, fallbackMsg) {
+    return res.text().then(function (text) {
+      var data = null;
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          data = { message: text.replace(/<[^>]*>/g, "").trim() };
+        }
+      }
+      if (!res.ok || (data && data.success === false)) {
+        throw new Error((data && data.message) || fallbackMsg);
+      }
+      return data || {};
+    });
+  }
+
   function categoryLabel(value) {
     var key = String(value || "").trim().toLowerCase();
     var labels = { experience: "体验优化", feature: "功能需求", request: "业务需求", business: "业务需求", research: "调研需求", bug: "BUG", tecopt: "技术优化", performance: "性能", safe: "安全", datacg: "数据变更", datachange: "数据变更", dataexport: "数据导出", other: "其他" };
@@ -171,6 +188,10 @@
       '</div>'
     ].join("");
 
+    var submitReviewModalHtml = window.DemandDetailReviewSubmitReview
+      ? window.DemandDetailReviewSubmitReview.modalHtml(cleanId)
+      : "";
+
     return [
       '<div class="dd-review-container">',
       '  <div class="dd-review-banner ' + esc(bannerMod) + '">',
@@ -218,6 +239,7 @@
       footerHtml,
       rejectModalHtml,
       withdrawModalHtml,
+      submitReviewModalHtml,
       '</div>'
     ].join("");
   }
@@ -271,12 +293,7 @@
       headers: { "Content-Type": "application/json", "Accept": "application/json" },
       body: JSON.stringify({ result: result, isNeedFocus: "0", comment: comment })
     })
-      .then(function (res) {
-        return res.json().then(function (data) {
-          if (!res.ok) throw new Error((data && data.message) || "评审提交失败");
-          return data;
-        });
-      })
+      .then(function (res) { return parseActionResponse(res, "评审提交失败"); })
       .then(function (data) {
         window.showToast((data && data.message) || (result === "pass" ? "评审通过成功" : "驳回成功"), "success");
         if (window.DemandDetail && typeof window.DemandDetail.close === "function") {
@@ -349,12 +366,7 @@
         comment: comment || "工作台创建人撤销评审"
       })
     })
-      .then(function (res) {
-        return res.json().then(function (data) {
-          if (!res.ok) throw new Error((data && data.message) || "撤销评审失败");
-          return data;
-        });
-      })
+      .then(function (res) { return parseActionResponse(res, "撤销评审失败"); })
       .then(function (data) {
         closeWithdrawModal();
         window.showToast((data && data.message) || "撤销评审成功，需求已退回草稿状态", "success");
@@ -400,53 +412,9 @@
   function handleSubmitReview(demandId) {
     var cleanId = String(demandId || (window.DemandDetail && window.DemandDetail.getCurrentDemandId ? window.DemandDetail.getCurrentDemandId() : "")).replace(/^US/i, "");
     if (!cleanId) return;
-    if (!window.confirm("确定要将该需求提交业务评审吗？")) {
-      return;
+    if (window.DemandDetailReviewSubmitReview) {
+      window.DemandDetailReviewSubmitReview.open(cleanId);
     }
-    var btn = document.getElementById("ddSubmitReviewBtn");
-    if (btn) {
-      btn.disabled = true;
-      btn.textContent = "提交中…";
-    }
-    var fetchFn = (typeof window !== "undefined" && window.appFetch) ? window.appFetch : fetch;
-    fetchFn("/demands/" + encodeURIComponent(cleanId) + "/submit-review", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json"
-      },
-      body: JSON.stringify({
-        comment: "工作台创建人提交评审"
-      })
-    })
-      .then(function (res) {
-        return res.json().then(function (data) {
-          if (!res.ok) throw new Error((data && data.message) || "提交评审失败");
-          return data;
-        });
-      })
-      .then(function (data) {
-        window.showToast((data && data.message) || "提交评审成功", "success");
-        if (window.DemandDetail && typeof window.DemandDetail.open === "function") {
-          window.DemandDetail.open(cleanId);
-        }
-        if (typeof window.refreshPoHomeDemands === "function") {
-          window.refreshPoHomeDemands();
-        } else if (window.QueryList && typeof window.QueryList.search === "function") {
-          window.QueryList.search();
-        } else if (window.PersonalList && typeof window.PersonalList.refresh === "function") {
-          window.PersonalList.refresh();
-        }
-      })
-      .catch(function (err) {
-        window.showToast(err.message || "提交评审失败", "error");
-      })
-      .then(function () {
-        if (btn) {
-          btn.disabled = false;
-          btn.textContent = "提交评审";
-        }
-      });
   }
 
   return {

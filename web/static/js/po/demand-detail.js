@@ -191,6 +191,9 @@
   function close() {
     requestSeq++;
     currentData = null;
+    if (window.DemandDetailReview && typeof window.DemandDetailReview.closeSubmitReviewModal === "function") {
+      window.DemandDetailReview.closeSubmitReviewModal();
+    }
     var drawer = $("demandDetailDrawer");
     if (drawer) {
       drawer.classList.remove("active");

@@ -146,9 +146,11 @@
       var cleanId = String(id).replace(/^US/i, "");
       workbenchHref = cleanId ? "/demands/" + encodeURIComponent(cleanId) : "";
     }
+    var decodeEntities = (PL && PL.decodeHtmlEntities) || function (s) { return s; };
+    var cleanTitle = decodeEntities(item.title || "—");
     var titleLink = workbenchHref
-      ? '<a class="table-title-link" href="' + esc(workbenchHref) + '">' + esc(item.title || "—") + '</a>'
-      : (url ? '<a class="table-title-story" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(item.title || "—") + '</a>' : esc(item.title || "—"));
+      ? '<a class="table-title-link" href="' + esc(workbenchHref) + '">' + esc(cleanTitle) + '</a>'
+      : (url ? '<a class="table-title-story" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(cleanTitle) + '</a>' : esc(cleanTitle));
     var titleHtml = '<div class="home-title-line">' + inlineFlags + titleLink + '</div>';
 
     var statusText = getHomeZentaoStatusLabel(item);
@@ -156,7 +158,7 @@
 
     return '<tr>' +
       '<td class="c-id">' + idChip + '</td>' +
-      '<td class="c-title" title="' + esc(item.title || "") + '">' + titleHtml + '</td>' +
+      '<td class="c-title" title="' + esc(cleanTitle) + '">' + titleHtml + '</td>' +
       '<td class="c-stage"><span class="stage-tag">' + esc(item.valueStream || item.stage || "—") + '</span></td>' +
       '<td class="c-zt-status">' + statusHtml + '</td>' +
       '<td class="c-owner">' + esc(dash(item.nextOwner || item.owner)) + '</td>' +
@@ -177,12 +179,23 @@
         var count = card.querySelector(".vs-mini-count");
         var breakdown = card.querySelector(".vs-mini-breakdown") || card.querySelector(".vs-mini-meta");
         var dur = card.querySelector(".vs-mini-dur") || card.querySelector(".vs-mini-duration-row .val");
-        if (baseCount && count) { count.textContent = baseCount; }
-        if (baseMeta && breakdown) { breakdown.textContent = baseMeta; }
-        if (baseDuration && dur) {
-          dur.innerHTML = (!baseDuration || baseDuration === "—") ? "—" : '<span class="tag">均</span>' + baseDuration;
-        }
         var totalNum = parseInt(baseCount, 10);
+        var isAll = card.getAttribute("data-vs-status") === "all";
+        if (baseCount && count) { count.textContent = baseCount; }
+        if (breakdown) {
+          if (!isAll && !isNaN(totalNum) && totalNum === 0) {
+            breakdown.textContent = "-";
+          } else if (baseMeta) {
+            breakdown.textContent = baseMeta;
+          }
+        }
+        if (dur) {
+          if (!isAll && !isNaN(totalNum) && totalNum === 0) {
+            dur.textContent = "-";
+          } else if (baseDuration) {
+            dur.innerHTML = (!baseDuration || baseDuration === "—") ? "—" : (baseDuration.indexOf("均") >= 0 ? baseDuration : ('<span class="tag">均</span> ' + baseDuration));
+          }
+        }
         card.classList.toggle("empty", !isNaN(totalNum) && totalNum === 0);
         card.setAttribute("title", (card.querySelector(".vs-mini-name") || {}).textContent + " · 共 " + (baseCount || "0") + " 条");
       });
@@ -198,15 +211,16 @@
       var count = card.querySelector(".vs-mini-count");
       var breakdown = card.querySelector(".vs-mini-breakdown") || card.querySelector(".vs-mini-meta");
       var dur = card.querySelector(".vs-mini-dur") || card.querySelector(".vs-mini-duration-row .val");
+      var isAll = status === "all";
       if (count) { count.textContent = String(total); }
       if (breakdown) {
         var dCount = typeof row.demandCount === "number" ? row.demandCount : total;
         var sCount = typeof row.storyCount === "number" ? row.storyCount : 0;
-        breakdown.textContent = "业" + dCount + " · 研" + sCount;
+        breakdown.textContent = (!isAll && total === 0) ? "-" : ("业" + dCount + "·研" + sCount);
       }
       if (dur) {
         var durDays = Number(row.avgDurationDays || 0);
-        dur.innerHTML = durDays > 0 ? ('<span class="tag">均</span>' + durDays + "天") : "—";
+        dur.innerHTML = (!isAll && total === 0) ? "-" : (durDays > 0 ? ('<span class="tag">均</span> ' + durDays + "天") : "—");
       }
       card.classList.toggle("empty", total === 0);
       card.setAttribute("title", (card.querySelector(".vs-mini-name") || {}).textContent + " · 共 " + total + " 条");

@@ -211,6 +211,7 @@ type schedulingUserRow struct {
 	Account  string `gorm:"column:account"`
 	Realname string `gorm:"column:realname"`
 	Pinyin   string `gorm:"column:pinyin"`
+	Dept     string `gorm:"column:dept"`
 }
 
 // ListUpcomingSchedulingWindows 查询未过期的版本窗口列表（含基础里程碑日期）。
@@ -248,17 +249,54 @@ ORDER BY vw.releaseDate ASC`
 	return out, nil
 }
 
+// firstLevelDeptPath 返回当前用户所属一级部门及其下属部门的路径前缀。
+// 例如禅道 path ",1,5,18," 对应一级部门前缀 ",1,5,"。
+func (r *Repo) firstLevelDeptPath(ctx context.Context, account string) string {
+	account = strings.TrimSpace(account)
+	if account == "" {
+		return ""
+	}
+
+	var path string
+	if err := r.db.WithContext(ctx).Raw(`
+SELECT d.path
+FROM zt_user AS u
+LEFT JOIN zt_dept AS d ON d.id = u.dept
+WHERE u.account = ? AND u.deleted = '0'
+LIMIT 1`, account).Scan(&path).Error; err != nil {
+		return ""
+	}
+
+	parts := strings.Split(strings.Trim(path, ","), ",")
+	if len(parts) == 0 || strings.TrimSpace(parts[0]) == "" {
+		return ""
+	}
+	if len(parts) > 2 {
+		parts = parts[:2]
+	}
+	return "," + strings.Join(parts, ",") + ","
+}
+
 // ListInsideUsersForScheduling 查询内部用户列表（负责人下拉）。
-func (r *Repo) ListInsideUsersForScheduling(ctx context.Context) ([]SchedulingUserOption, error) {
-	const query = `
-SELECT account, realname, pinyin
-FROM zt_user
-WHERE deleted = '0'
-  AND type = 'inside'
-ORDER BY account ASC`
+// 当前用户所在一级部门及其下属部门优先，所有分组内均按工号倒序。
+func (r *Repo) ListInsideUsersForScheduling(ctx context.Context, actorAccount string) ([]SchedulingUserOption, error) {
+	deptPath := r.firstLevelDeptPath(ctx, actorAccount)
+	orderSQL := "u.account DESC"
+	orderArgs := []interface{}{}
+	if deptPath != "" {
+		orderSQL = "CASE WHEN d.path LIKE ? THEN 0 ELSE 1 END, u.account DESC"
+		orderArgs = append(orderArgs, deptPath+"%")
+	}
+	query := `
+SELECT u.account, u.realname, u.pinyin, COALESCE(d.name, '') AS dept
+FROM zt_user AS u
+LEFT JOIN zt_dept AS d ON d.id = u.dept
+WHERE u.deleted = '0'
+  AND u.type = 'inside'
+ORDER BY ` + orderSQL
 
 	var rows []schedulingUserRow
-	if err := r.db.WithContext(ctx).Raw(query).Scan(&rows).Error; err != nil {
+	if err := r.db.WithContext(ctx).Raw(query, orderArgs...).Scan(&rows).Error; err != nil {
 		return nil, err
 	}
 	out := make([]SchedulingUserOption, 0, len(rows))
@@ -275,6 +313,7 @@ ORDER BY account ASC`
 			Account:  account,
 			Realname: realname,
 			Pinyin:   strings.TrimSpace(row.Pinyin),
+			Dept:     strings.TrimSpace(row.Dept),
 		})
 	}
 	return out, nil
@@ -318,16 +357,26 @@ func (r *Repo) GetDemandStories(ctx context.Context, demandID uint) ([]ZtStory, 
 
 	const query = `
 SELECT
-  id,
-  title,
-  product,
-  estimate,
-  assignedTo,
-  CAST(IFNULL(NULLIF(isMainSystemAssociation, ''), '0') AS SIGNED) AS isMainSystemAssociation
-FROM zt_story
-WHERE fromDemand = ?
-  AND deleted = '0'
-ORDER BY isMainSystemAssociation DESC, id ASC`
+  s.id,
+  s.title,
+  s.pri,
+  s.product,
+  s.module,
+  s.plan,
+  COALESCE(pp.title, '') AS planName,
+  s.type,
+  s.estimate,
+  s.assignedTo,
+  COALESCE(ss.spec, '') AS spec,
+  CAST(IFNULL(NULLIF(s.isMainSystemAssociation, ''), '0') AS SIGNED) AS isMainSystemAssociation
+FROM zt_story s
+LEFT JOIN zt_productplan pp ON pp.id = CAST(NULLIF(s.plan, '') AS UNSIGNED) AND pp.deleted = '0'
+LEFT JOIN zt_storyspec ss
+  ON ss.story = s.id
+ AND ss.version = (SELECT MAX(ss2.version) FROM zt_storyspec ss2 WHERE ss2.story = s.id)
+WHERE s.fromDemand = ?
+  AND s.deleted = '0'
+ORDER BY isMainSystemAssociation DESC, s.id ASC`
 
 	var rows []ZtStory
 	if err := r.db.WithContext(ctx).Raw(query, demandID).Scan(&rows).Error; err != nil {

@@ -36,27 +36,6 @@ type projectBuild struct {
 	Name string `json:"name"`
 }
 
-type productBuild struct {
-	ID   uint   `json:"id"`
-	Name string `json:"name"`
-}
-
-func listProductBuilds(ctx context.Context, client *zentao.Client, productID uint) ([]productBuild, error) {
-	if client == nil || productID == 0 {
-		return nil, fmt.Errorf("产品 ID 无效")
-	}
-	var out struct {
-		Builds []productBuild `json:"builds"`
-	}
-	if err := client.Do(ctx, http.MethodGet, fmt.Sprintf("/products/%d/builds", productID), nil, &out); err != nil {
-		return nil, err
-	}
-	if out.Builds == nil {
-		return []productBuild{}, nil
-	}
-	return out.Builds, nil
-}
-
 // createProjectBuild 调用禅道创建版本接口（用户态 DoAs）。
 func createProjectBuild(ctx context.Context, client *zentao.Client, req createProjectBuildReq) (*projectBuild, error) {
 	if client == nil {
@@ -142,6 +121,11 @@ func createTesttask(ctx context.Context, client *zentao.Client, req createTestta
 	if req.BuildID == 0 {
 		return nil, fmt.Errorf("buildId 无效")
 	}
+	taskType := strings.TrimSpace(req.Type)
+	if taskType == "" {
+		taskType = "integrate"
+	}
+	// 禅道 form->create 里 type 为 array+join；传字符串会导致创建链路异常并返回空 HTML。
 	payload := map[string]any{
 		"project":   req.ProjectID,
 		"product":   req.ProductID,
@@ -151,11 +135,12 @@ func createTesttask(ctx context.Context, client *zentao.Client, req createTestta
 		"begin":     strings.TrimSpace(req.Begin),
 		"end":       strings.TrimSpace(req.End),
 		"owner":     strings.TrimSpace(req.Owner),
-		"type":      strings.TrimSpace(req.Type),
+		"type":      []string{taskType},
 		"pri":       req.Pri,
 		"status":    "wait",
 		"joint":     "0",
 		"desc":      req.Desc,
+		"members":   []string{},
 	}
 	var out createdTesttask
 	path := fmt.Sprintf("/projects/%d/testtasks", req.ProjectID)
@@ -163,7 +148,7 @@ func createTesttask(ctx context.Context, client *zentao.Client, req createTestta
 		return nil, err
 	}
 	if out.ID == 0 {
-		return nil, fmt.Errorf("禅道未返回测试单 ID")
+		return nil, fmt.Errorf("禅道未返回测试单 ID（接口可能返回空响应；请确认版本仍在禅道可选列表）")
 	}
 	return &out, nil
 }

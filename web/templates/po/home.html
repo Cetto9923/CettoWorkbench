@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="{{ asset "/static/css/po/po-urge.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulemodal.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/scheduleintegrated.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/schedule/scheduleintegrated-story.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedule-inline.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/po/testtask.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/po/linkstory.css" }}">
@@ -66,8 +67,8 @@
     <div class="home-vs-hdr">
       <div class="home-vs-title-group">
         <i class="fas fa-route text-blue"></i>
-        <span class="home-vs-title">需求价值全景流</span>
-        <span class="home-vs-desc">点击阶段卡片联动筛选下方行动列表</span>
+        <span class="home-vs-title">需求价值全景流转流水线</span>
+        <span class="home-vs-desc">从产研各代表生命周期看板链路，点击阶段可下钻筛选需求</span>
       </div>
       <div class="home-vs-meta">
         {{ range $i, $stage := .ValueStreamStages }}{{ if eq $stage.Status "all" }}
@@ -84,22 +85,22 @@
             class="home-vs-mini-card home-vs-overview-card stage-all{{ if eq $i 0 }} active{{ else if eq $stage.Count 0 }} empty{{ end }}"
             data-vs-status="all"
             data-base-count="{{ if $.PageError }}—{{ else }}{{ $stage.Count }}{{ end }}"
-            data-base-meta="{{ if $.PageError }}暂不可用{{ else }}业{{ $stage.DemandCount }} · 研{{ $stage.StoryCount }}{{ end }}"
-            data-base-duration="{{ if $.PageError }}—{{ else if gt $stage.AvgDurationDays 0 }}{{ $stage.AvgDurationDays }}天{{ else }}—{{ end }}"
+            data-base-meta="{{ if $.PageError }}暂不可用{{ else }}全部对象{{ end }}"
+            data-base-duration="{{ if $.PageError }}—{{ else if gt $stage.AvgDurationDays 0 }}均 {{ $stage.AvgDurationDays }}天{{ else }}—{{ end }}"
             aria-pressed="{{ if eq $i 0 }}true{{ else }}false{{ end }}"
-            title="{{ $stage.Label }} · 共 {{ $stage.Count }} 条">
+            title="全部对象 · 共 {{ $stage.Count }} 条">
             <div class="vs-card-top">
-              <span class="vs-mini-name">{{ $stage.Label }}</span>
+              <span class="vs-mini-name">全部对象</span>
               <i class="fas fa-check vs-status-icon"></i>
             </div>
             <div class="vs-mini-count">{{ if $.PageError }}—{{ else }}{{ $stage.Count }}{{ end }}</div>
             <div class="vs-mini-meta-row">
-              <span class="vs-mini-breakdown">{{ if $.PageError }}暂不可用{{ else }}业{{ $stage.DemandCount }} · 研{{ $stage.StoryCount }}{{ end }}</span>
-              <span class="vs-mini-dur">{{ if $.PageError }}—{{ else if gt $stage.AvgDurationDays 0 }}<span class="tag">均</span>{{ $stage.AvgDurationDays }}天{{ else }}—{{ end }}</span>
+              <span class="vs-mini-dur">{{ if $.PageError }}—{{ else if gt $stage.AvgDurationDays 0 }}<span class="tag">均</span> {{ $stage.AvgDurationDays }}天{{ else }}—{{ end }}</span>
             </div>
           </button>
           <div class="home-vs-flow-divider" aria-hidden="true">
-            <i class="fas fa-angles-right"></i>
+            <span>流转</span>
+            <i class="fas fa-arrow-right"></i>
           </div>
           {{ end }}
           {{ end }}
@@ -111,20 +112,17 @@
               class="home-vs-mini-card home-vs-chevron-step stage-{{ $stage.Status }}{{ if eq $stage.Count 0 }} empty{{ end }}"
               data-vs-status="{{ $stage.Status }}"
               data-base-count="{{ if $.PageError }}—{{ else }}{{ $stage.Count }}{{ end }}"
-              data-base-meta="{{ if $.PageError }}暂不可用{{ else }}业{{ $stage.DemandCount }} · 研{{ $stage.StoryCount }}{{ end }}"
-              data-base-duration="{{ if $.PageError }}—{{ else if gt $stage.AvgDurationDays 0 }}{{ $stage.AvgDurationDays }}天{{ else }}—{{ end }}"
+              data-base-meta="{{ if $.PageError }}暂不可用{{ else if eq $stage.Count 0 }}-{{ else }}业{{ $stage.DemandCount }}·研{{ $stage.StoryCount }}{{ end }}"
+              data-base-duration="{{ if $.PageError }}—{{ else if eq $stage.Count 0 }}-{{ else if gt $stage.AvgDurationDays 0 }}均 {{ $stage.AvgDurationDays }}天{{ else }}—{{ end }}"
               aria-pressed="false"
               title="{{ $stage.Label }} · 共 {{ $stage.Count }} 条">
               <div class="vs-card-top">
-                <span class="vs-mini-name">{{ $stage.Label }}</span>
-                {{ if eq $stage.Status "schedule" }}<span class="vs-status-dot dot-amber"></span>
-                {{ else if eq $stage.Status "waitacceptance" }}<span class="vs-status-dot dot-blue"></span>
-                {{ end }}
+                <span class="vs-mini-name">{{ if eq $stage.Status "schedule" }}<span class="vs-status-dot dot-amber"></span> {{ end }}{{ $i }}. {{ $stage.Label }}</span>
+                <span class="vs-mini-breakdown">{{ if $.PageError }}—{{ else if eq $stage.Count 0 }}-{{ else }}业{{ $stage.DemandCount }}·研{{ $stage.StoryCount }}{{ end }}</span>
               </div>
               <div class="vs-mini-count">{{ if $.PageError }}—{{ else }}{{ $stage.Count }}{{ end }}</div>
               <div class="vs-mini-meta-row">
-                <span class="vs-mini-breakdown">{{ if $.PageError }}暂不可用{{ else }}业{{ $stage.DemandCount }} · 研{{ $stage.StoryCount }}{{ end }}</span>
-                <span class="vs-mini-dur">{{ if $.PageError }}—{{ else if gt $stage.AvgDurationDays 0 }}<span class="tag">均</span>{{ $stage.AvgDurationDays }}天{{ else }}—{{ end }}</span>
+                <span class="vs-mini-dur">{{ if $.PageError }}—{{ else if eq $stage.Count 0 }}-{{ else if gt $stage.AvgDurationDays 0 }}<span class="tag">均</span> {{ $stage.AvgDurationDays }}天{{ else }}—{{ end }}</span>
               </div>
             </button>
             {{ end }}
@@ -144,7 +142,7 @@
         <div class="toolbar-left-group">
           <label class="workspace-search">
             <span aria-hidden="true">⌕</span>
-            <input type="search" id="homeKeyword" placeholder="搜索 ID、标题或当前步骤负责人" aria-label="关键词">
+            <input type="search" id="homeKeyword" placeholder="按编号/标题精准过滤..." aria-label="关键词">
           </label>
           <div class="relation-segment" id="homeRelationSegment" aria-label="我的关系">
             <button type="button" class="active" data-relation="all">全部</button>
@@ -176,7 +174,7 @@
               <th class="c-stage">当前阶段</th>
               <th class="c-zt-status">状态</th>
               <th class="c-owner">当前负责人</th>
-              <th class="c-actions" style="width:124px">操作</th>
+              <th class="c-actions" style="width:124px">快捷操作</th>
             </tr>
           </thead>
           <tbody id="top5Tbody">
@@ -337,6 +335,7 @@
 <script src="{{ asset "/static/js/po/demand-detail-render-execution.js" }}"></script>
 <script src="{{ asset "/static/js/po/demand-detail-render.js" }}"></script>
 <script src="{{ asset "/static/js/po/demand-detail-review.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail-submit-review.js" }}"></script>
 <script src="{{ asset "/static/js/po/demand-detail.js" }}"></script>
 <script src="{{ asset "/static/js/po/demand-clarify.js" }}"></script>
 <script src="{{ asset "/static/js/po/po-deliver.js" }}"></script>

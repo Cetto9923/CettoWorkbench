@@ -66,6 +66,10 @@ func TestHandler_GetContext(t *testing.T) {
 	h := NewHandler(svc, nil)
 
 	r := gin.New()
+	r.Use(func(c *gin.Context) {
+		c.Set("currentUser", &model.User{Account: "admin", IsSuperAdmin: true})
+		c.Next()
+	})
 	h.RegisterRoutes(r.Group(""))
 
 	mock.ExpectQuery("(?s)SELECT d\\.id, d\\.name.*FROM zt_demand AS d.*WHERE d\\.id = \\? AND d\\.deleted = '0' LIMIT \\?").

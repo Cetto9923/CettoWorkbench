@@ -61,14 +61,17 @@ func (h *Handler) GetStoryScheduling(c *gin.Context) {
 
 func buildSchedulingDetailJSON(resp *DemandSchedulingResp) gin.H {
 	out := gin.H{
-		"success":           true,
-		"involvedProducts":  []ZtProductOption{},
-		"productProjects":   gin.H{},
-		"projectExecutions": gin.H{},
-		"stories":           []DemandSchedulingStoryItem{},
-		"userStories":       []UserStoryItem{},
-		"windows":           []SchedulingWindowOption{},
-		"users":             []SchedulingUserOption{},
+		"success":            true,
+		"involvedProducts":   []ZtProductOption{},
+		"productProjects":    gin.H{},
+		"projectExecutions":  gin.H{},
+		"stories":            []DemandSchedulingStoryItem{},
+		"userStories":        []UserStoryItem{},
+		"storyDefaults":      []DemandSchedulingStoryDefault{},
+		"windowProductPlans": []SchedulingWindowProductPlan{},
+		"productPlans":       gin.H{},
+		"windows":            []SchedulingWindowOption{},
+		"users":              []SchedulingUserOption{},
 	}
 	if resp == nil {
 		return out
@@ -84,6 +87,18 @@ func buildSchedulingDetailJSON(resp *DemandSchedulingResp) gin.H {
 	}
 	if resp.Stories != nil {
 		out["stories"] = resp.Stories
+	}
+	if resp.UserStories != nil {
+		out["userStories"] = resp.UserStories
+	}
+	if resp.StoryDefaults != nil {
+		out["storyDefaults"] = resp.StoryDefaults
+	}
+	if resp.WindowProductPlans != nil {
+		out["windowProductPlans"] = resp.WindowProductPlans
+	}
+	if resp.ProductPlans != nil {
+		out["productPlans"] = resp.ProductPlans
 	}
 	if resp.Windows != nil {
 		out["windows"] = resp.Windows

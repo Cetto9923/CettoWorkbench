@@ -52,6 +52,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.POST("/demands/:id/review", middleware.RequirePerm(perm.PoHomeList), h.ReviewDemand)
 	g.POST("/demands/:id/withdraw-review", middleware.RequirePerm(perm.PoHomeList), h.WithdrawDemandReview)
 	g.POST("/demands/:id/submit-review", middleware.RequirePerm(perm.PoHomeList), h.SubmitDemandReview)
+	g.GET("/demands/:id/review-candidates", middleware.RequirePerm(perm.PoHomeList), h.DemandReviewCandidates)
 	g.GET("/demands/:id/clarify", middleware.RequirePerm(perm.PoHomeList), h.GetDemandClarify)
 	g.POST("/demands/:id/clarify", middleware.RequirePerm(perm.PoHomeList), h.ClarifyDemand)
 	g.POST("/demands/:id/clarify/ai-generate", middleware.RequirePerm(perm.PoHomeList), h.GenerateAIUserStory)
@@ -376,6 +377,7 @@ func (h *Handler) NoticeItems(c *gin.Context) {
 		"filteredTotal": resp.Filtered,
 		"unread":        resp.Unread,
 		"action":        resp.Action,
+		"inform":        resp.Inform,
 		"abnormal":      resp.Abnormal,
 		"today":         resp.Today,
 		"categories":    resp.Categories,

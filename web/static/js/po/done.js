@@ -74,6 +74,11 @@
     if ((obj === "buildguideline" || obj === "planchange" || obj === "review") && approvalLabels[key]) return approvalLabels[key];
     return labels[key] || raw || "--";
   }
+  function actionLabel(action) {
+    var raw = String(action || "").trim(), key = raw.toLowerCase();
+    var map = { linkstory: "关联需求", unlinkstory: "移除需求关联", opened: "创建", created: "创建", edited: "编辑", closed: "关闭", deleted: "删除", assigned: "指派", started: "开始", finished: "完成", commented: "添加备注", reviewed: "评审", resolved: "解决", activated: "激活", confirmed: "确认" };
+    return map[key] || raw || "--";
+  }
 
   function objectCode(item) {
     var id = String((item && item.objectId) || "").trim();
@@ -118,16 +123,8 @@
   }
   function renderSummaryKPIs(sum) {
     sum = sum || {};
-    var today = Number(sum.today || 0);
-    var week = Number(sum.week || 0);
-    var month = Number(sum.month || 0);
-    var objects = Number(sum.objects || 0);
-
-    var elToday = $("kpiToday");
-    var elWeek = $("kpiWeek");
-    var elMonth = $("kpiMonth");
-    var elObjects = $("kpiObjects");
-
+    var today = Number(sum.today || 0), week = Number(sum.week || 0), month = Number(sum.month || 0), objects = Number(sum.objects || 0);
+    var elToday = $("kpiToday"), elWeek = $("kpiWeek"), elMonth = $("kpiMonth"), elObjects = $("kpiObjects");
     if (elToday) elToday.textContent = today;
     if (elWeek) elWeek.textContent = week;
     if (elMonth) elMonth.textContent = month;
@@ -272,7 +269,7 @@
             '<tr>' +
             '<td class="done-obj">' + objCell + '</td>' +
             '<td class="done-title">' + titleCell + '</td>' +
-            '<td class="done-action"><span class="done-action-name">' + esc(it.actionName || it.action) + '</span></td>' +
+            '<td class="done-action"><span class="done-action-name">' + esc(actionLabel(it.actionName || it.action)) + '</span></td>' +
             '<td class="done-result"><span class="done-tag ' + tagClass(it.resultCode || it.result) + '">' + esc(it.resultText || it.result || "--") + '</span></td>' +
             '<td class="done-change">' + changeHtml + '</td>' +
             '<td class="done-ctx">' + ctxHtml + '</td>' +
@@ -372,13 +369,12 @@
           '<section class="done-section"><div class="done-section-title">本次办理摘要</div><div class="done-summary-box"><div class="done-kv">' +
           '<span class="done-kv-k">业务对象</span><span class="done-kv-v done-kv-wide">' + esc(it.objectCode) + ' · ' + esc(it.objectTitle || it.objectName || "--") + '</span>' +
           '<span class="done-kv-k">来源</span><span class="done-kv-v">禅道</span>' +
-          '<span class="done-kv-k">我做了什么</span><span class="done-kv-v done-kv-action">' + esc(it.actionName) + '</span>' +
+          '<span class="done-kv-k">我做了什么</span><span class="done-kv-v done-kv-action">' + esc(actionLabel(it.actionName)) + '</span>' +
           '<span class="done-kv-k">处理结果</span><span class="done-kv-v">' + esc(it.resultText) + '</span>' +
           '<span class="done-kv-k">办理人</span><span class="done-kv-v">' + esc(it.actorName) + '</span>' +
           '<span class="done-kv-k">处理时间</span><span class="done-kv-v">' + esc(it.date || it.handledAt) + '</span>' +
           '<span class="done-kv-k">状态变化</span><span class="done-kv-v">' + esc(changeText) + '</span>' +
-          '<span class="done-kv-k">下一责任人</span><span class="done-kv-v">' + esc(it.nextOwnerName || "--") + '</span>' +
-          '</div></div></section>' +
+          '<span class="done-kv-k">下一责任人</span><span class="done-kv-v">' + esc(it.nextOwnerName || "--") + '</span></div></div></section>' +
           '<section class="done-section"><div class="done-section-title">对象上下文</div><div class="done-summary-box"><div class="done-kv">' +
           '<span class="done-kv-k">所属产品</span><span class="done-kv-v">' + esc(ctx.productName || "--") + '</span>' +
           '<span class="done-kv-k">所属需求池</span><span class="done-kv-v">' + esc(ctx.poolName || "--") + '</span>' +

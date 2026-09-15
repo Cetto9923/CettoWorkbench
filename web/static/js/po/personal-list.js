@@ -461,8 +461,14 @@
     return '<span class="wb-status-tag wb-status-' + semantic + '"><i class="wb-status-dot"></i>' + window.escapeHtml(raw) + '</span>';
   }
 
+  function decodeHtmlEntities(str) {
+    if (!str || typeof str !== "string") { return ""; }
+    return str.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+  }
+
   window.PersonalList = {
     escapeHtml: function (value) { return window.escapeHtml(value); },
+    decodeHtmlEntities: decodeHtmlEntities,
     createController: createController,
     renderPagination: renderPagination,
     loadPageSize: loadPageSize,

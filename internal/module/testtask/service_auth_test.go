@@ -59,3 +59,19 @@ func assertForbidden(t *testing.T, err error) {
 		t.Fatalf("expected %q, got %v", errorx.ErrCodeForbidden, err)
 	}
 }
+
+func TestListProductBuildsReadsRepo(t *testing.T) {
+	db, mock := setupMockTesttaskDB(t)
+	svc := NewService(NewRepo(db), nil, nil, nil)
+	mock.ExpectQuery("SELECT id, product, project, execution, name FROM `zt_build` WHERE product = \\? AND deleted = \\? ORDER BY id DESC LIMIT \\?").
+		WithArgs(1, "0", 500).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "product", "project", "execution", "name"}).
+			AddRow(47099, 1, 15077, 21051, "build-a"))
+	items, err := svc.ListProductBuilds(context.Background(), &model.User{Account: "003030"}, 1)
+	if err != nil {
+		t.Fatalf("unexpected err: %v", err)
+	}
+	if len(items) != 1 || items[0].Value != "47099" || items[0].Label != "build-a" {
+		t.Fatalf("unexpected items: %+v", items)
+	}
+}

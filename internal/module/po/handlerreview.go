@@ -143,6 +143,26 @@ func (h *Handler) SubmitDemandReview(c *gin.Context) {
 	})
 }
 
+// DemandReviewCandidates 返回提交评审弹框的评审人候选。
+// GET /demands/:id/review-candidates
+func (h *Handler) DemandReviewCandidates(c *gin.Context) {
+	id, err := parseReviewDemandID(c.Param("id"))
+	if err != nil || id <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "需求 ID 无效"})
+		return
+	}
+	resp, svcErr := h.svc.GetDemandReviewCandidates(c.Request.Context(), middleware.CurrentUser(c), id)
+	if svcErr != nil {
+		if h.logger != nil {
+			h.logger.Error("po get demand review candidates", zap.Error(svcErr), zap.Int64("id", id))
+		}
+		status, msg := reviewHTTPError(svcErr)
+		c.JSON(status, gin.H{"message": msg})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": resp})
+}
+
 // parseReviewDemandID 接受数字主键，或列表展示用的 US{id}。
 func parseReviewDemandID(raw string) (int64, error) {
 	raw = strings.TrimSpace(raw)

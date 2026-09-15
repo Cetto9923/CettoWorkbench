@@ -45,10 +45,10 @@
   align-items: center;
   min-height: 22px;
   padding: 0 8px;
-  border: 1px solid var(--po-border, #d9e2f0);
+  border: 1px solid var(--color-border);
   border-radius: 999px;
-  color: var(--po-t1, #334155);
-  background: var(--po-surface-soft, #f5f8fc);
+  color: var(--color-text-body);
+  background: var(--color-surface-muted);
   font-size: 12px;
   line-height: 20px;
   white-space: nowrap;
@@ -63,10 +63,11 @@
   width: 104px;
 }
 .po-todos .todos-table .todos-col-owner {
-  width: 90px;
+  min-width: 120px;
+  width: 130px;
 }
 .po-todos .todos-table .todos-col-opt {
-  width: 84px;
+  width: 88px;
   text-align: right;
 }
 
@@ -121,15 +122,24 @@
   justify-content: center;
   height: 26px;
   padding: 0 9px;
-  border: 1px solid var(--po-blue-bd, var(--color-info-border, #bfdbfe));
+  border: 1px solid var(--color-info-border, #bfdbfe);
   border-radius: 4px;
-  background: var(--po-blue-bg, var(--color-info-bg, #eff6ff));
-  color: var(--po-blue, var(--color-info-fill, #2563eb));
+  background: var(--color-info-bg, #eff6ff);
+  color: var(--color-info, #2563eb);
   font-size: 11px;
+  font-weight: 500;
   text-decoration: none;
   cursor: pointer;
   white-space: nowrap;
+  transition: all 0.15s ease;
 }
 .po-todos .todo-action:hover {
-  background: var(--color-info-bg, #dbeafe);
+  background: var(--color-info-fill, #2563eb);
+  border-color: var(--color-info-fill, #2563eb);
+  color: var(--color-text-on-accent, #ffffff);
+}
+
+.po-todos .todos-deadline-overdue {
+  color: var(--color-danger, #ef4444);
+  font-weight: 600;
 }

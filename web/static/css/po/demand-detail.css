@@ -422,6 +422,51 @@
   border-radius: 12px; width: 460px; max-width: 92vw;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15); overflow: hidden;
 }
+.dd-submit-review-dialog { width: 560px; }
+.dd-submit-review-hint {
+  margin: 4px 0 0; color: var(--color-text-muted); font-size: 12px; font-weight: 400;
+}
+.dd-review-picker {
+  border: 1px solid var(--color-border-strong); border-radius: 7px;
+  background: var(--color-surface); transition: border-color 0.15s, box-shadow 0.15s;
+}
+.dd-review-picker:focus-within {
+  border-color: var(--color-info); box-shadow: 0 0 0 2px var(--color-primary-ring-soft);
+}
+.dd-review-selected {
+  display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px 2px; min-height: 22px;
+}
+.dd-review-chip {
+  display: inline-flex; align-items: center; gap: 4px; max-width: 100%;
+  padding: 3px 7px; border: 1px solid var(--color-info-border); border-radius: 5px;
+  background: var(--color-info-bg); color: var(--color-info); font-size: 12px; line-height: 1.3;
+}
+.dd-review-chip-remove {
+  border: 0; padding: 0; background: transparent; color: currentColor; cursor: pointer;
+  font-size: 14px; line-height: 1; opacity: .7;
+}
+.dd-review-chip-remove:hover { opacity: 1; }
+.dd-review-picker-input { padding: 0 8px 7px; }
+.dd-review-picker-input .ui-autocomplete { width: 100%; }
+.dd-review-picker-input .ui-autocomplete-input-wrap {
+  display: flex; align-items: center; min-height: 32px; border: 0 !important;
+  box-shadow: none !important; background: transparent; padding: 0;
+}
+.dd-review-picker-input .ui-autocomplete-input,
+.dd-review-picker-input input.ui-autocomplete-input {
+  flex: 1; min-width: 0; min-height: 32px; padding: 5px 2px !important;
+  border: 0 !important; outline: 0 !important; box-shadow: none !important;
+  background: transparent; color: var(--color-text-primary); font-size: 13px;
+}
+.dd-review-picker-input .ui-autocomplete-input::placeholder { color: var(--color-text-muted); }
+.dd-review-picker-input .ui-autocomplete-clear { right: 2px; }
+.dd-review-picker-state { margin-top: 7px; color: var(--color-text-muted); font-size: 12px; line-height: 1.5; }
+.dd-review-picker-error {
+  display: flex; align-items: center; gap: 6px; color: var(--color-danger);
+  padding: 7px 10px; border-radius: 6px; background: var(--color-danger-bg, #fff1f2);
+}
+.dd-review-picker-error a { color: inherit; font-weight: 600; text-decoration: underline; }
+.dd-submit-comment-label { margin-top: 17px; }
 .dd-reject-modal-header {
   padding: 14px 20px; border-bottom: 1px solid var(--color-border);
   display: flex; align-items: center; justify-content: space-between;

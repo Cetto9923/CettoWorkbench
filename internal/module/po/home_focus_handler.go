@@ -1,22 +1,33 @@
 package po
 
-// currentHandlerDemandWhere mirrors DeriveCurrentHandler for rows that have a real current person.
-// “待确认”和“待分配”不是账号，因而不会命中“我处理”。
+// currentHandlerDemandWhere returns the stage-specific homepage "my action"
+// predicate. The same account can be related to a demand in several ways, but
+// only the role that is actionable in the current value-stream stage matches.
 func currentHandlerDemandWhere(account string) (string, []interface{}) {
 	return `(
-		(status = 'wait' AND (assignedTo = ? OR (status = 'wait' AND EXISTS (
+		(status IN ('draft', 'refuse') AND createdBy = ?)
+		OR (status = 'wait' AND EXISTS (
 			SELECT 1 FROM zt_demandreview dr
 			WHERE dr.demand = zt_demand.id AND dr.reviewer = ? AND (dr.result IS NULL OR dr.result = '')
-		))))
-		OR (status IN ('draft', 'refuse') AND (assignedTo = ? OR createdBy = ?))
-		OR (status = 'active' AND (
-			EXISTS (SELECT 1 FROM zt_demandclarify dc WHERE dc.demand = zt_demand.id AND FIND_IN_SET(?, REPLACE(dc.PM, ' ', '')) > 0)
-			OR (NOT EXISTS (SELECT 1 FROM zt_demandclarify dc WHERE dc.demand = zt_demand.id AND dc.PM IS NOT NULL AND dc.PM <> '') AND assignedTo = ?)
-			OR (NOT EXISTS (SELECT 1 FROM zt_demandclarify dc WHERE dc.demand = zt_demand.id AND dc.PM IS NOT NULL AND dc.PM <> '') AND (assignedTo IS NULL OR assignedTo = '') AND QD = ?)
 		))
-		OR (status = 'clarified' AND (assignedTo = ? OR ((assignedTo IS NULL OR assignedTo = '') AND QD = ?)))
-		OR (status IN ('developing', 'testing', 'waitacceptance') AND RD = ?)
-	)`, []interface{}{account, account, account, account, account, account, account, account, account, account}
+		OR (status = 'active' AND (
+			assignedTo = ? OR BRA = ? OR EXISTS (
+				SELECT 1 FROM zt_demandclarify dc
+				WHERE dc.demand = zt_demand.id AND FIND_IN_SET(?, REPLACE(dc.PM, ' ', '')) > 0
+			)
+		))
+		OR (status = 'clarified' AND (
+			assignedTo = ? OR BRA = ? OR EXISTS (
+				SELECT 1 FROM zt_demandclarify dc
+				WHERE dc.demand = zt_demand.id AND FIND_IN_SET(?, REPLACE(dc.PM, ' ', '')) > 0
+			)
+		))
+		OR (status = 'developing' AND BRA = ?)
+		OR (status = 'testing' AND (QD = ? OR (accepter = ? AND ` + dateSetBeforeTodaySQL("testFinish") + `)))
+		OR (status = 'waitacceptance' AND accepter = ?)
+		OR (status IN ('acceptanced', 'waitdeliver') AND BRA = ?)
+		OR (status = 'released' AND (originator = ? OR BRA = ?))
+	)`, []interface{}{account, account, account, account, account, account, account, account, account, account, account, account, account, account, account}
 }
 
 // currentHandlerDemandWhereWithReviews 优化版本：利用已预查的评审 demand ID 列表替换相关子查询，
@@ -25,46 +36,58 @@ func currentHandlerDemandWhereWithReviews(account string, reviewDemandIDs []int)
 	if reviewDemandIDs == nil {
 		return currentHandlerDemandWhere(account)
 	}
-	if len(reviewDemandIDs) == 0 {
-		return `(
-			(status = 'wait' AND assignedTo = ?)
-			OR (status IN ('draft', 'refuse') AND (assignedTo = ? OR createdBy = ?))
-			OR (status = 'active' AND (
-				EXISTS (SELECT 1 FROM zt_demandclarify dc WHERE dc.demand = zt_demand.id AND FIND_IN_SET(?, REPLACE(dc.PM, ' ', '')) > 0)
-				OR (NOT EXISTS (SELECT 1 FROM zt_demandclarify dc WHERE dc.demand = zt_demand.id AND dc.PM IS NOT NULL AND dc.PM <> '') AND assignedTo = ?)
-				OR (NOT EXISTS (SELECT 1 FROM zt_demandclarify dc WHERE dc.demand = zt_demand.id AND dc.PM IS NOT NULL AND dc.PM <> '') AND (assignedTo IS NULL OR assignedTo = '') AND QD = ?)
-			))
-			OR (status = 'clarified' AND (assignedTo = ? OR ((assignedTo IS NULL OR assignedTo = '') AND QD = ?)))
-			OR (status IN ('developing', 'testing', 'waitacceptance') AND RD = ?)
-		)`, []interface{}{account, account, account, account, account, account, account, account, account}
-	}
 	return `(
-		(status = 'wait' AND (assignedTo = ? OR id IN (?)))
-		OR (status IN ('draft', 'refuse') AND (assignedTo = ? OR createdBy = ?))
+		(status IN ('draft', 'refuse') AND createdBy = ?)
+		OR (status = 'wait' AND id IN (?))
 		OR (status = 'active' AND (
-			EXISTS (SELECT 1 FROM zt_demandclarify dc WHERE dc.demand = zt_demand.id AND FIND_IN_SET(?, REPLACE(dc.PM, ' ', '')) > 0)
-			OR (NOT EXISTS (SELECT 1 FROM zt_demandclarify dc WHERE dc.demand = zt_demand.id AND dc.PM IS NOT NULL AND dc.PM <> '') AND assignedTo = ?)
-			OR (NOT EXISTS (SELECT 1 FROM zt_demandclarify dc WHERE dc.demand = zt_demand.id AND dc.PM IS NOT NULL AND dc.PM <> '') AND (assignedTo IS NULL OR assignedTo = '') AND QD = ?)
+			assignedTo = ? OR BRA = ? OR EXISTS (
+				SELECT 1 FROM zt_demandclarify dc
+				WHERE dc.demand = zt_demand.id AND FIND_IN_SET(?, REPLACE(dc.PM, ' ', '')) > 0
+			)
 		))
-		OR (status = 'clarified' AND (assignedTo = ? OR ((assignedTo IS NULL OR assignedTo = '') AND QD = ?)))
-		OR (status IN ('developing', 'testing', 'waitacceptance') AND RD = ?)
-	)`, []interface{}{account, reviewDemandIDs, account, account, account, account, account, account, account, account}
+		OR (status = 'clarified' AND (
+			assignedTo = ? OR BRA = ? OR EXISTS (
+				SELECT 1 FROM zt_demandclarify dc
+				WHERE dc.demand = zt_demand.id AND FIND_IN_SET(?, REPLACE(dc.PM, ' ', '')) > 0
+			)
+		))
+		OR (status = 'developing' AND BRA = ?)
+		OR (status = 'testing' AND (QD = ? OR (accepter = ? AND ` + dateSetBeforeTodaySQL("testFinish") + `)))
+		OR (status = 'waitacceptance' AND accepter = ?)
+		OR (status IN ('acceptanced', 'waitdeliver') AND BRA = ?)
+		OR (status = 'released' AND (originator = ? OR BRA = ?))
+	)`, []interface{}{account, reviewDemandIDs, account, account, account, account, account, account, account, account, account, account, account, account, account}
 }
 
-// currentHandlerDemandKeywordWhere is the keyword counterpart of currentHandlerDemandWhere.
-// It deliberately excludes historical/auxiliary owners such as QD on a developing demand.
+// currentHandlerDemandKeywordWhere is the keyword counterpart of the same
+// stage-specific predicate. It keeps the homepage "当前负责人" search in sync
+// with the actual "待我处理" role mapping.
 func currentHandlerDemandKeywordWhere() string {
 	return `
-		(status = 'wait' AND (LOWER(IFNULL(assignedTo, '')) LIKE ? OR (status = 'wait' AND EXISTS (
+		(status IN ('draft', 'refuse') AND LOWER(IFNULL(createdBy, '')) LIKE ?)
+		OR (status = 'wait' AND EXISTS (
 			SELECT 1 FROM zt_demandreview dr
 			WHERE dr.demand = zt_demand.id AND LOWER(IFNULL(dr.reviewer, '')) LIKE ? AND (dr.result IS NULL OR dr.result = '')
-		))))
-		OR (status IN ('draft', 'refuse') AND (LOWER(IFNULL(assignedTo, '')) LIKE ? OR LOWER(IFNULL(createdBy, '')) LIKE ?))
-		OR (status = 'active' AND (
-			EXISTS (SELECT 1 FROM zt_demandclarify dc WHERE dc.demand = zt_demand.id AND LOWER(IFNULL(dc.PM, '')) LIKE ?)
-			OR (NOT EXISTS (SELECT 1 FROM zt_demandclarify dc WHERE dc.demand = zt_demand.id AND dc.PM IS NOT NULL AND dc.PM <> '') AND LOWER(IFNULL(assignedTo, '')) LIKE ?)
-			OR (NOT EXISTS (SELECT 1 FROM zt_demandclarify dc WHERE dc.demand = zt_demand.id AND dc.PM IS NOT NULL AND dc.PM <> '') AND (assignedTo IS NULL OR assignedTo = '') AND LOWER(IFNULL(QD, '')) LIKE ?)
 		))
-		OR (status = 'clarified' AND (LOWER(IFNULL(assignedTo, '')) LIKE ? OR ((assignedTo IS NULL OR assignedTo = '') AND LOWER(IFNULL(QD, '')) LIKE ?)))
-		OR (status IN ('developing', 'testing', 'waitacceptance') AND LOWER(IFNULL(RD, '')) LIKE ?)`
+		OR (status = 'active' AND (
+			LOWER(IFNULL(assignedTo, '')) LIKE ? OR LOWER(IFNULL(BRA, '')) LIKE ? OR EXISTS (
+				SELECT 1 FROM zt_demandclarify dc WHERE dc.demand = zt_demand.id AND LOWER(IFNULL(dc.PM, '')) LIKE ?
+			)
+		))
+		OR (status = 'clarified' AND (
+			LOWER(IFNULL(assignedTo, '')) LIKE ? OR LOWER(IFNULL(BRA, '')) LIKE ? OR EXISTS (
+				SELECT 1 FROM zt_demandclarify dc WHERE dc.demand = zt_demand.id AND LOWER(IFNULL(dc.PM, '')) LIKE ?
+			)
+		))
+		OR (status = 'developing' AND LOWER(IFNULL(BRA, '')) LIKE ?)
+		OR (status = 'testing' AND (LOWER(IFNULL(QD, '')) LIKE ? OR LOWER(IFNULL(accepter, '')) LIKE ?))
+		OR (status = 'waitacceptance' AND LOWER(IFNULL(accepter, '')) LIKE ?)
+		OR (status IN ('acceptanced', 'waitdeliver') AND LOWER(IFNULL(BRA, '')) LIKE ?)
+		OR (status = 'released' AND (LOWER(IFNULL(originator, '')) LIKE ? OR LOWER(IFNULL(BRA, '')) LIKE ?))`
+}
+
+// dateSetBeforeTodaySQL avoids a zero-date literal, which can fail under
+// MySQL's NO_ZERO_DATE mode while still accepting ZenTao's historical values.
+func dateSetBeforeTodaySQL(column string) string {
+	return column + " IS NOT NULL AND CAST(" + column + " AS CHAR) NOT LIKE '0000-00-00%' AND " + column + " <= CURDATE()"
 }

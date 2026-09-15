@@ -16,7 +16,7 @@
 .po-home .home-vs-desc { font-size: 11px; font-weight: 400; color: var(--color-text-secondary); }
 .po-home .home-vs-meta { font-size: 11px; color: var(--color-text-secondary); }
 .po-home .home-vs-compact-scroll { overflow-x: auto; padding-bottom: 2px; scrollbar-gutter: stable; }
-.po-home .home-vs-pipeline-wrap { display: flex; align-items: center; gap: 6px; width: max-content; min-width: 100%; }
+.po-home .home-vs-pipeline-wrap { display: flex; align-items: stretch; gap: 8px; width: 100%; min-width: 100%; }
 .po-home .home-vs-mini-card {
   display: flex; flex-direction: column; justify-content: space-between; height: 64px;
   background: var(--color-surface-muted, #f8fafc); cursor: pointer; text-align: left; outline: none;
@@ -24,17 +24,17 @@
 }
 .po-home .home-vs-mini-card:focus { outline: none; }
 .po-home .home-vs-mini-card:focus-visible { outline: 2px solid var(--color-stage-active-border, #2563eb); outline-offset: 1px; }
-.po-home .home-vs-mini-card .vs-card-top { display: flex; align-items: center; justify-content: space-between; }
-.po-home .home-vs-mini-card .vs-mini-name { font-size: 11px; font-weight: 600; color: var(--color-text-body, #475569); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.po-home .home-vs-mini-card .vs-mini-count { min-width: 44px; font-size: 14px; line-height: 16px; font-weight: 700; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; color: var(--color-text-strong, #1e293b); }
+.po-home .home-vs-mini-card .vs-card-top { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+.po-home .home-vs-mini-card .vs-mini-name { font-size: 11px; font-weight: 600; color: var(--color-text-body, #475569); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-flex; align-items: center; gap: 3px; }
+.po-home .home-vs-mini-card .vs-mini-count { font-size: 14px; line-height: 16px; font-weight: 700; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; color: var(--color-text-strong, #1e293b); }
 .po-home .home-vs-mini-card .vs-mini-meta-row { display: flex; align-items: center; justify-content: space-between; font-size: 10px; line-height: 12px; white-space: nowrap; gap: 4px; }
-.po-home .home-vs-mini-card .vs-mini-breakdown { min-width: 54px; font-size: 10px; color: var(--color-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.po-home .home-vs-mini-card .vs-mini-dur { flex: 0 0 38px; text-align: right; font-size: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; color: var(--color-text-secondary, #64748b); white-space: nowrap; }
+.po-home .home-vs-mini-card .vs-mini-breakdown { font-size: 10px; color: var(--color-text-secondary); white-space: nowrap; }
+.po-home .home-vs-mini-card .vs-mini-dur { font-size: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; color: var(--color-text-secondary, #64748b); white-space: nowrap; }
 .po-home .home-vs-mini-card .vs-mini-dur .tag { color: var(--color-text-muted, #94a3b8); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin-right: 1px; }
 
 /* 独立总控驾驶舱（全部） */
 .po-home .home-vs-overview-card {
-  flex: 0 0 112px; width: 112px; padding: 5px 8px; border-radius: 6px; border: 1px solid var(--color-border, #e2e8f0);
+  flex: 0 0 96px; width: 96px; min-width: 96px; padding: 5px 8px; border-radius: 6px; border: 1px solid var(--color-border, #e2e8f0);
 }
 .po-home .home-vs-overview-card:hover { border-color: var(--color-info-border, #93c5fd); background: var(--color-info-bg, #eff6ff); }
 .po-home .home-vs-overview-card.active {
@@ -44,24 +44,25 @@
 
 /* 导向流水线流向符 */
 .po-home .home-vs-flow-divider {
-  flex: 0 0 12px; display: flex; align-items: center; justify-content: center;
-  color: var(--color-stage-active-fg, #2563eb); font-size: 11px;
+  flex: 0 0 34px; display: flex; align-items: center; justify-content: center; gap: 2px;
+  color: var(--color-primary, #2563eb); font-size: 11px; font-weight: 600;
 }
+.po-home .home-vs-flow-divider i { font-size: 10px; }
 
 /* 9阶段现代流程微卡轨道 + 嵌入式向前尖角纽带 */
-.po-home .home-vs-chevron-track { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; min-width: 0; }
+.po-home .home-vs-chevron-track { flex: 1 1 0; display: flex; align-items: stretch; gap: 8px; min-width: 0; width: 100%; }
 .po-home .home-vs-chevron-step {
-  position: relative; flex: 0 0 112px; width: 112px; min-width: 112px; padding: 5px 8px;
-  border-radius: 6px; border: 1px solid var(--color-border, #e2e8f0);
-  background: var(--color-surface, #ffffff); box-shadow: 0 1px 2px var(--color-shadow-05, rgba(0,0,0,0.02));
+  position: relative; flex: 1 1 0; min-width: 0; width: auto; padding: 5px 7px;
+  border-radius: 6px; border: 1px solid var(--color-border-strong, #cbd5e1);
+  background: var(--color-surface, #ffffff); box-shadow: 0 1px 2px rgba(15,23,42,0.04);
 }
-.po-home .home-vs-chevron-step:hover { border-color: var(--color-info-border, #93c5fd); background: #f8fafc; }
+.po-home .home-vs-chevron-step:hover { border-color: var(--color-info-border, #93c5fd); background: var(--color-surface-hover, #f8fafc); }
 
 /* 卡片间嵌入式向前流向微尖角纽带 */
 .po-home .home-vs-chevron-step:not(:last-child)::after {
-  content: ''; position: absolute; right: -6.5px; top: 50%; transform: translateY(-50%);
+  content: ''; position: absolute; right: -8px; top: 50%; transform: translateY(-50%);
   width: 0; height: 0; border-top: 5px solid transparent; border-bottom: 5px solid transparent;
-  border-left: 5px solid var(--color-border-strong, #94a3b8); z-index: 10; pointer-events: none;
+  border-left: 6px solid var(--color-border-strong, #94a3b8); z-index: 10; pointer-events: none;
 }
 .po-home .home-vs-chevron-step.active:not(:last-child)::after { border-left-color: var(--color-stage-active-border, #2563eb); }
 
@@ -88,14 +89,14 @@
 .po-home .home-vs-mini-card.active .vs-status-icon { font-size: 9px; color: var(--color-stage-active-fg-meta, #2563eb) !important; }
 .po-home .home-vs-mini-card.active .vs-status-dot { background: var(--color-stage-active-dot, #2563eb) !important; }
 
-/* 空阶段（无数据）：白底微灰字，绝不发脏发黑 */
-.po-home .home-vs-mini-card.empty:not(.active) { background: var(--color-surface-muted, #fafbfc); border-color: var(--color-border-subtle, #f1f5f9); }
-.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-name { color: var(--color-text-secondary, #64748b); }
-.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-count { color: var(--color-text-muted, #94a3b8); }
+/* 空阶段（无数据）：使用统一无数据弱灰色，杜绝发白发亮或过深发脏 */
+.po-home .home-vs-mini-card.empty:not(.active) { background: var(--color-surface-muted, #fafbfc); border-color: var(--color-border, #e2e8f0); }
+.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-name { color: var(--color-text-disabled, #64748b); }
+.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-count { color: var(--color-text-disabled, #94a3b8); }
 .po-home .home-vs-mini-card.empty:not(.active) .vs-mini-meta,
-.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-breakdown { color: var(--color-border-strong, #cbd5e1); }
+.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-breakdown { color: var(--color-text-disabled, #cbd5e1); }
 .po-home .home-vs-mini-card.empty:not(.active) .vs-mini-dur,
-.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-dur .tag { color: var(--color-border-strong, #cbd5e1); }
+.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-dur .tag { color: var(--color-text-disabled, #cbd5e1); }
 .po-home .vs-status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
 .po-home .dot-amber { background: var(--color-warning-fill, #f59e0b); }
 .po-home .dot-blue { background: var(--color-info-fill, #0ea5e9); }
@@ -157,8 +158,12 @@
   white-space: nowrap;
 }
 
-.po-home .stage-tag, .po-home .status-tag {
+.po-home .stage-tag {
   display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--color-text-body, #475569);
+  background: var(--color-surface-muted, #f1f5f9); padding: 1px 6px; border-radius: 4px; border: 1px solid var(--color-border, #e2e8f0);
+}
+.po-home .status-tag, .po-home .wb-status-tag {
+  display: inline-flex; align-items: center; gap: 4px; font-size: 11px;
 }
 .po-home .status-dot {
   width: 6px; height: 6px; border-radius: 50%; display: inline-block; background: var(--color-text-secondary);

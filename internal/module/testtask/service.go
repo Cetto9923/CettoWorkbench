@@ -104,7 +104,7 @@ func (s *Service) ListProductExecutions(ctx context.Context, actor *model.User, 
 	return BuildExecutionOptions(rows, noClosed), nil
 }
 
-// ListProductBuilds 返回产品已有版本。
+// ListProductBuilds 返回产品已有版本（直读 zt_build，与执行列表同路径；不依赖易失败的系统账号禅道 GET）。
 func (s *Service) ListProductBuilds(ctx context.Context, actor *model.User, productID uint) ([]BuildOption, error) {
 	if actor == nil || strings.TrimSpace(actor.Account) == "" {
 		return nil, errorx.New(errorx.ErrCodeForbidden, "请先登录")
@@ -112,14 +112,10 @@ func (s *Service) ListProductBuilds(ctx context.Context, actor *model.User, prod
 	if productID == 0 {
 		return nil, errorx.New(errorx.ErrCodeInvalidParam, "产品 ID 无效")
 	}
-	client := s.ztAPI
-	if client == nil {
-		client = zentao.DefaultClient()
+	if s.repo == nil {
+		return nil, errorx.New(errorx.ErrCodeInternal, "提测上下文不可用")
 	}
-	if client == nil {
-		return nil, errorx.New(errorx.ErrCodeInternal, "禅道 API 未配置")
-	}
-	items, err := listProductBuilds(ctx, client, productID)
+	items, err := s.repo.FindBuildsByProductID(ctx, productID)
 	if err != nil {
 		return nil, err
 	}

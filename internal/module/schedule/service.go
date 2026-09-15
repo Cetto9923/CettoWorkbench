@@ -114,8 +114,8 @@ func (s *Service) ListFilterWindows(ctx context.Context) ([]WindowFilterOption, 
 }
 
 // ListScheduleUsers 查询筛选区负责人下拉用户。
-func (s *Service) ListScheduleUsers(ctx context.Context) ([]SchedulingUserOption, error) {
-	users, err := s.repo.ListInsideUsersForScheduling(ctx)
+func (s *Service) ListScheduleUsers(ctx context.Context, actor *model.User) ([]SchedulingUserOption, error) {
+	users, err := s.repo.ListInsideUsersForScheduling(ctx, actorAccount(actor))
 	if err != nil {
 		return nil, err
 	}

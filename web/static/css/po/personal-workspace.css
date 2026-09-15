@@ -48,36 +48,52 @@
   font-style: normal;
   font-size: 11px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  color: var(--color-text-secondary);
+  font-weight: 600;
+  color: var(--color-text-body);
 }
+
+/* 基础激活态：主品牌蓝柔和微底 */
 .po-personal-workspace .header-quick-chip.active,
 .po-personal-workspace .header-quick-chip[aria-pressed="true"] {
-  border-color: var(--color-info-fill);
+  border-color: var(--color-info-border);
   background: var(--color-info-bg);
   color: var(--color-info);
   font-weight: 600;
 }
 .po-personal-workspace .header-quick-chip.active em,
 .po-personal-workspace .header-quick-chip[aria-pressed="true"] em {
-  background: var(--color-info-fill);
-  color: var(--color-text-on-accent);
-  padding: 1px 6px;
-  border-radius: 9999px;
-  font-weight: 600;
+  color: var(--color-info);
+  font-weight: 700;
 }
-/* 首页默认焦点：用高对比琥珀色突出“待我处理”，避免与普通蓝色筛选混淆。 */
+
+/* 首页全部总控芯片 */
+.po-personal-workspace .header-quick-chip[data-home-focus="all"].active,
+.po-personal-workspace .header-quick-chip[data-home-focus="all"][aria-pressed="true"] {
+  background: var(--color-surface-hover);
+  border-color: var(--color-border-strong);
+  color: var(--color-text-strong);
+}
+.po-personal-workspace .header-quick-chip[data-home-focus="all"].active em,
+.po-personal-workspace .header-quick-chip[data-home-focus="all"][aria-pressed="true"] em {
+  color: var(--color-text-strong);
+  font-weight: 700;
+}
+
+/* “待我处理”重点焦点：温润淡琥珀底色 + 金色边框 + 温暖深棕文字（杜绝厚重实底色块与内嵌气泡） */
 .po-personal-workspace .header-quick-chip.my-action.active,
 .po-personal-workspace .header-quick-chip.my-action[aria-pressed="true"] {
-  border-color: var(--color-warning-fill);
-  background: var(--color-warning-bg);
-  color: var(--color-warning);
-  box-shadow: 0 0 0 2px var(--color-warning-border);
+  border-color: var(--color-warning-light, #fcd34d);
+  background: var(--color-warning-bg, #fffbeb);
+  color: var(--color-warning, #92400e);
+  font-weight: 600;
+  box-shadow: none;
 }
 .po-personal-workspace .header-quick-chip.my-action.active em,
 .po-personal-workspace .header-quick-chip.my-action[aria-pressed="true"] em {
-  background: var(--color-warning-fill);
-  color: var(--color-text-on-accent);
+  color: var(--color-warning, #92400e);
+  font-weight: 700;
 }
+
 .po-personal-workspace .header-quick-chip:disabled,
 .po-personal-workspace .header-quick-chip.disabled {
   opacity: 0.55;
@@ -85,6 +101,8 @@
   background: var(--color-surface-muted);
   border-color: var(--color-border);
 }
+
+/* 危险态（超期风险） */
 .po-personal-workspace .header-quick-chip.danger {
   border-color: var(--color-danger-border);
   background: var(--color-danger-bg);
@@ -98,33 +116,37 @@
 .po-personal-workspace .header-quick-chip.danger.active,
 .po-personal-workspace .header-quick-chip.danger[aria-pressed="true"] {
   background: var(--color-danger-bg);
-  border-color: var(--color-danger-border);
+  border-color: var(--color-danger-strong, #ef4444);
   color: var(--color-danger);
 }
 .po-personal-workspace .header-quick-chip.danger.active em,
 .po-personal-workspace .header-quick-chip.danger[aria-pressed="true"] em {
-  background: var(--color-danger-fill);
-  color: var(--color-text-on-accent);
+  color: var(--color-danger);
+  font-weight: 700;
 }
+
+/* 预警态（今日必推/阻塞） */
 .po-personal-workspace .header-quick-chip.warning {
-  border-color: var(--color-warning-border);
-  background: var(--color-warning-bg);
-  color: var(--color-warning);
+  border-color: var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
 }
 .po-personal-workspace .header-quick-chip.warning em {
-  color: var(--color-warning);
+  color: var(--color-text-body);
 }
 .po-personal-workspace .header-quick-chip.warning.active,
 .po-personal-workspace .header-quick-chip.warning[aria-pressed="true"] {
   background: var(--color-warning-bg);
-  border-color: var(--color-warning-fill);
+  border-color: var(--color-warning-light, #fcd34d);
   color: var(--color-warning);
 }
 .po-personal-workspace .header-quick-chip.warning.active em,
 .po-personal-workspace .header-quick-chip.warning[aria-pressed="true"] em {
-  background: transparent;
   color: var(--color-warning);
+  font-weight: 700;
 }
+
+/* 信息态 */
 .po-personal-workspace .header-quick-chip.info {
   border-color: var(--color-info-border);
   background: var(--color-info-bg);
@@ -134,6 +156,8 @@
   color: var(--color-info);
   font-weight: 700;
 }
+
+/* 成功态 */
 .po-personal-workspace .header-quick-chip.success {
   border-color: var(--color-success-border);
   background: var(--color-success-bg);
@@ -143,17 +167,8 @@
   color: var(--color-success);
   font-weight: 700;
 }
-.po-personal-workspace .header-quick-chip.success.active,
-.po-personal-workspace .header-quick-chip.success[aria-pressed="true"] {
-  border-color: var(--color-success-border);
-  background: var(--color-success-bg);
-  color: var(--color-success);
-}
-.po-personal-workspace .header-quick-chip.success.active em,
-.po-personal-workspace .header-quick-chip.success[aria-pressed="true"] em {
-  background: var(--color-success-fill);
-  color: var(--color-text-on-accent);
-}
+
+/* 主要态 */
 .po-personal-workspace .header-quick-chip.primary {
   border-color: var(--color-primary-border);
   background: var(--color-primary-light);
@@ -162,17 +177,6 @@
 .po-personal-workspace .header-quick-chip.primary em {
   color: var(--color-primary);
   font-weight: 700;
-}
-.po-personal-workspace .header-quick-chip.primary.active,
-.po-personal-workspace .header-quick-chip.primary[aria-pressed="true"] {
-  border-color: var(--color-primary-border);
-  background: var(--color-primary-light);
-  color: var(--color-primary);
-}
-.po-personal-workspace .header-quick-chip.primary.active em,
-.po-personal-workspace .header-quick-chip.primary[aria-pressed="true"] em {
-  background: var(--color-primary);
-  color: var(--color-text-on-accent);
 }
 
 /* 主面板容器 (Proposal A: 白底、精致细边、8px圆角与微阴影) */

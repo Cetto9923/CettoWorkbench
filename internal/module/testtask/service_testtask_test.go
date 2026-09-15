@@ -409,7 +409,7 @@ func TestHandler_CreateTesttasksReturns207OnPartial(t *testing.T) {
 	r := gin.New()
 	// 注入当前用户：业务校验放在 Service / Handler，但 middleware.CurrentUser 需从 ctx 取
 	r.Use(func(c *gin.Context) {
-		c.Set("currentUser", &model.User{Account: "tester"})
+		c.Set("currentUser", &model.User{Account: "tester", IsSuperAdmin: true})
 		c.Next()
 	})
 	h.RegisterRoutes(r.Group(""))
@@ -451,7 +451,7 @@ func TestHandler_CreateTesttasksReturnsValidationErrors(t *testing.T) {
 	r := gin.New()
 	// 注入当前用户：业务校验放在 Service / Handler，但 middleware.CurrentUser 需从 ctx 取
 	r.Use(func(c *gin.Context) {
-		c.Set("currentUser", &model.User{Account: "tester"})
+		c.Set("currentUser", &model.User{Account: "tester", IsSuperAdmin: true})
 		c.Next()
 	})
 	h.RegisterRoutes(r.Group(""))

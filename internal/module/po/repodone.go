@@ -173,10 +173,7 @@ func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) 
 	items := make([]DoneAction, 0, len(rows))
 	for _, row := range rows {
 		meta := formalDoneActions[row.ObjectType+":"+row.Action]
-		actionLabel := meta.Label
-		if actionLabel == "" {
-			actionLabel = row.Action // 无 formal 定义（如 todo/release/feedback）时展示原始动作 code
-		}
+		actionLabel := doneHistoryActionLabel(row.ObjectType, row.Action)
 		chg := hists[row.ID]
 		ctx := objCtxs[fmt.Sprintf("%s:%d", row.ObjectType, row.ObjectID)]
 		title := ctx.Title

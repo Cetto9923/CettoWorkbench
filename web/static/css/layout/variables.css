@@ -316,7 +316,7 @@ html[data-theme="dark"] {
 
   --color-danger: #f87171; /* lighter for text readability */
   --color-danger-fill: #dc2626;
-  --color-danger-bg: #450a0a; /* very dark red bg */
+  --color-danger-bg: rgba(239, 68, 68, 0.15); /* translucent red bg */
   --color-danger-strong: #ef4444;
   --color-danger-accent: #f87171; /* used for --po-red alias */
   --color-danger-bright: #fca5a5;
@@ -324,13 +324,13 @@ html[data-theme="dark"] {
   --color-danger-deeper: #7f1d1d;
   --color-danger-action: #f87171; /* lighter for text readability on dark surfaces */
   --color-danger-action-hover: #fca5a5; /* even lighter for hover state */
-  --color-danger-border: #991b1b; /* used for --po-red-bd alias */
+  --color-danger-border: rgba(239, 68, 68, 0.4); /* translucent border */
 
   --color-warning: #fbbf24; /* lighter for text readability */
   --color-warning-fill: #b45309; /* darker for text on accent */
-  --color-warning-bg: #451a03; /* dark orange/amber bg */
+  --color-warning-bg: rgba(245, 158, 11, 0.15); /* translucent amber bg */
   --color-warning-light: #fcd34d;
-  --color-warning-border: #92400e; /* explicitly mapped */
+  --color-warning-border: rgba(245, 158, 11, 0.4); /* translucent amber border */
 
   --color-info-fill: #2563eb; /* darker blue for fill */
   --color-info-fill-hover: #1d4ed8;
