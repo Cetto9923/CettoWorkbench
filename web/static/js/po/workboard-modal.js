@@ -139,7 +139,7 @@
       if (revision !== teamDataRevision) return;
       var data = json.data || {};
       currentAgileMembers = (data.formal || []).map(function (m) {
-        return { name: m.name || m.account, account: m.account, role: m.role || "研发", status: m.status || "formal" };
+        return { name: m.name || m.account, account: m.account, role: m.role || "研发", status: m.status || "formal", hours: Number(m.hours) || 0 };
       });
       teamDraft = currentAgileMembers.map(function (m) { return Object.assign({}, m); });
       var titleEl = document.getElementById("kanbanTeamModalTitle");
@@ -328,14 +328,67 @@
   }
 
   function submitKanbanTeamModal() {
-    currentAgileMembers = teamDraft.map(function (m) {
-      var copy = Object.assign({}, m);
-      copy.isNew = false;
-      return copy;
+    var teamId = Number(currentTeamgroupID || (window.PoWB && typeof window.PoWB.getSelectedTeamgroupId === "function" ? window.PoWB.getSelectedTeamgroupId() : 0));
+    if (!teamId) {
+      window.showToast("当前未选择敏捷小组，无法提交调整", "warning");
+      return;
+    }
+    var origMap = {};
+    currentAgileMembers.forEach(function (m) { origMap[m.account] = m; });
+    var draftMap = {};
+    var items = [];
+    teamDraft.forEach(function (m) {
+      draftMap[m.account] = m;
+      if (!origMap[m.account]) {
+        items.push({
+          account: m.account,
+          actionType: "add",
+          role: m.role || "研发",
+          availableHours: Number(m.hours) || 0
+        });
+      } else if (m.role !== origMap[m.account].role) {
+        items.push({
+          account: m.account,
+          actionType: "roleChange",
+          role: m.role || "研发",
+          availableHours: Number(m.hours) || 0
+        });
+      }
+    });
+    currentAgileMembers.forEach(function (m) {
+      if (!draftMap[m.account]) {
+        items.push({
+          account: m.account,
+          actionType: "remove",
+          role: m.role || "研发",
+          availableHours: Number(m.hours) || 0
+        });
+      }
     });
 
-    closeKanbanTeamModal();
-    window.showToast("团队调整申请已提交成功，待组织级敏捷教练审批生效", "success");
+    if (!items.length) {
+      window.showToast("尚未产生变更", "info");
+      return;
+    }
+
+    var reasonInput = document.getElementById("kbTeamAdjustReason");
+    var reason = reasonInput ? reasonInput.value.trim() : "";
+
+    if (typeof window.appJson !== "function") {
+      window.showToast("页面请求组件未就绪，请刷新重试", "error");
+      return;
+    }
+
+    window.appJson("/workbench/api/agile-teams/" + encodeURIComponent(teamId) + "/adjustments", {
+      method: "POST",
+      body: { reason: reason, items: items }
+    }).then(function () {
+      closeKanbanTeamModal();
+      window.showToast("已提交，待组织级敏捷教练确认", "success");
+      loadTeamDetail(teamId);
+    }).catch(function (err) {
+      window.showToast((err && err.message) || "提交调整失败", "error");
+    });
   }
 
   window.openKanbanCreateModal = function (mode) {

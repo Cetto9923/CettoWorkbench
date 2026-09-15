@@ -35,12 +35,12 @@
     <div id="demandActions" class="actions">
       <button type="button" id="demandToggleAll" class="action" hidden>展开研需</button>
       <button type="button" class="action soft" onclick="location.href='/schedule'">需求排期</button>
-      <button type="button" class="action primary" onclick="openKanbanCreateModal('issue')">+ 提问题</button>
+      <button type="button" class="action primary" onclick="openKanbanCreateModal('issue')" hidden aria-hidden="true">+ 提问题</button>
     </div>
     <div id="taskActions" class="actions hidden">
       <button type="button" class="action" onclick="openKanbanTeamModal()">调整成员</button>
-      <button type="button" class="action primary" onclick="openKanbanCreateModal('task')">+ 建任务</button>
-      <button type="button" class="action primary" onclick="openKanbanCreateModal('issue')">+ 提问题</button>
+      <button type="button" class="action primary" onclick="openKanbanCreateModal('task')" hidden aria-hidden="true">+ 建任务</button>
+      <button type="button" class="action primary" onclick="openKanbanCreateModal('issue')" hidden aria-hidden="true">+ 提问题</button>
     </div>
   </div>
 
@@ -290,6 +290,7 @@
   </div>
   <div class="kb-modal-body" id="kbTeamModalBody"></div>
   <div class="kb-modal-footer">
+    <input type="text" class="kb-input" id="kbTeamAdjustReason" placeholder="调整原因（可选）" style="flex:1;margin-right:12px;max-width:260px;" />
     <button type="button" class="action" onclick="WorkboardModal.closeTeamModal()">取消</button>
     <button type="button" class="action primary" onclick="WorkboardModal.submitTeamModal()">提交调整</button>
   </div>
