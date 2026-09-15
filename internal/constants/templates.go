@@ -26,6 +26,7 @@ const (
 	TEMPLATE_USER_EDIT        = "user/edit"
 
 	TEMPLATE_DEBUG_SQLPERF = "web/templates/debug/sqlperf.html"
+	TEMPLATE_DEBUG_SQLLOG  = "web/templates/debug/sqllog.html"
 
 	TEMPLATE_PO_HOME      = "po/home"
 	TEMPLATE_PO_LINKSTORY = "po/linkstory"

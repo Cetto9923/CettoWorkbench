@@ -1,8 +1,8 @@
 // =============================================================================
-// 文件: internal/module/sqlperf/repo.go
+// 文件: internal/module/debug/repo.go
 // 模块: SQL 性能分析
 // 类型: readonly
-// 职责: 从 sql.log 读取请求级 SQL 汇总数据。
+// 职责: 从 sql.log / sql-YYYY-MM-DD.log 读取请求汇总与单条 SQL 明细。
 // 依赖: internal/pkg/sqllog
 // =============================================================================
 
@@ -17,8 +17,16 @@ import (
 	"workbench/internal/pkg/sqllog"
 )
 
+const (
+	dailySQLLogPrefix = "sql-"
+	dailySQLLogSuffix = ".log"
+	defaultQueryLimit = 200
+	maxQueryLimit     = 2000
+)
+
 // Repo SQL 性能分析数据访问层。
 type Repo struct {
+	logDir  string
 	logPath string
 }
 
@@ -26,12 +34,17 @@ var ignoredRequests = []string{
 	"/favicon.ico",
 	"/debug/sqlperf",
 	"/debug/sqlperf/requests",
+	"/debug/sqllog",
+	"/debug/sqllog/queries",
 }
 
 // NewRepo 创建 Repo。
 func NewRepo(logDir string) *Repo {
 	dir := strings.TrimSpace(logDir)
-	return &Repo{logPath: filepath.Join(dir, "sql.log")}
+	return &Repo{
+		logDir:  dir,
+		logPath: filepath.Join(dir, "sql.log"),
+	}
 }
 
 // FindAll 读取全部请求汇总行。
@@ -57,6 +70,41 @@ func (r *Repo) FindAll(ctx context.Context, req RepoFindAllReq) ([]RequestItem, 
 	return items, int64(len(items)), nil
 }
 
+// FindQueries 读取指定日期的 SQL 明细，按耗时降序，并截断到 limit。
+func (r *Repo) FindQueries(ctx context.Context, req RepoFindQueriesReq) ([]QueryItem, int64, error) {
+	_ = ctx
+
+	date := strings.TrimSpace(req.Date)
+	path := filepath.Join(r.logDir, dailySQLLogPrefix+date+dailySQLLogSuffix)
+	entries, err := sqllog.ReadQueryEntries(path)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	items := make([]QueryItem, 0, len(entries))
+	for _, entry := range entries {
+		items = append(items, toQueryItem(entry))
+	}
+
+	slices.SortFunc(items, func(a, b QueryItem) int {
+		switch {
+		case a.ElapsedMS > b.ElapsedMS:
+			return -1
+		case a.ElapsedMS < b.ElapsedMS:
+			return 1
+		default:
+			return strings.Compare(b.Time, a.Time)
+		}
+	})
+
+	total := int64(len(items))
+	limit := normalizeQueryLimit(req.Limit)
+	if len(items) > limit {
+		items = items[:limit]
+	}
+	return items, total, nil
+}
+
 func toRequestItem(summary sqllog.RequestSummary) RequestItem {
 	return RequestItem{
 		Time:      summary.Time,
@@ -68,6 +116,30 @@ func toRequestItem(summary sqllog.RequestSummary) RequestItem {
 		ElapsedMS: summary.ElapsedMS,
 		SQLCount:  summary.SQLCount,
 	}
+}
+
+func toQueryItem(entry sqllog.QueryEntry) QueryItem {
+	return QueryItem{
+		Time:      entry.Time,
+		RequestID: entry.RequestID,
+		Seq:       entry.Seq,
+		SQL:       entry.SQL,
+		Elapsed:   entry.Elapsed,
+		ElapsedMS: entry.ElapsedMS,
+		Rows:      entry.Rows,
+		File:      entry.File,
+		Error:     entry.Error,
+	}
+}
+
+func normalizeQueryLimit(limit int) int {
+	if limit <= 0 {
+		return defaultQueryLimit
+	}
+	if limit > maxQueryLimit {
+		return maxQueryLimit
+	}
+	return limit
 }
 
 func isIgnoredRequest(method, route string) bool {

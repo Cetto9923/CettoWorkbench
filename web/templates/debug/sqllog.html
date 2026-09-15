@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>慢 SQL 明细 - goframework</title>
+  <link rel="stylesheet" href="/static/css/layout/variables.css">
+  <link rel="stylesheet" href="/static/css/layout/base.css">
+  <link rel="stylesheet" href="/static/css/components/components.css">
+  <link rel="stylesheet" href="/static/css/debug/sqllog.css">
+</head>
+<body>
+  <main class="main sqllog-page">
+    <div class="page-header">
+      <div class="page-header-left">
+        <h1 class="page-title">慢 SQL 明细</h1>
+      </div>
+    </div>
+
+    <div class="sqllog-toolbar">
+      <label class="sqllog-filter-label" for="sqllog-date">日期</label>
+      <input type="date" id="sqllog-date" class="input sqllog-filter-control">
+      <label class="sqllog-filter-label" for="sqllog-limit">显示条数</label>
+      <select id="sqllog-limit" class="select sqllog-filter-control sqllog-limit">
+        <option value="100">100</option>
+        <option value="200" selected>200</option>
+        <option value="500">500</option>
+        <option value="1000">1000</option>
+      </select>
+      <span id="sqllog-summary" class="sqllog-summary" aria-live="polite"></span>
+    </div>
+
+    <div class="table-container sqllog-table-card">
+      <div class="table-wrapper">
+        <table class="data-table" id="sqllog-table">
+          <thead>
+            <tr>
+              <th class="sqllog-col-elapsed">耗时</th>
+              <th class="sqllog-col-time">时间</th>
+              <th class="sqllog-col-file">位置</th>
+              <th>SQL</th>
+            </tr>
+          </thead>
+          <tbody id="sqllog-tbody">
+            <tr>
+              <td colspan="4" class="sqllog-empty">加载中…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script src="/static/js/debug/sqllog.js"></script>
+</body>
+</html>

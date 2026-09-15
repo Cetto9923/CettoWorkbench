@@ -35,3 +35,20 @@ func (s *Service) Requests(ctx context.Context, req RequestsReq) (RequestsResp, 
 
 	return RequestsResp{Requests: items}, nil
 }
+
+// Queries 查询指定日期的 SQL 明细（按耗时降序）；不接收 actor。
+func (s *Service) Queries(ctx context.Context, req QueriesReq) (QueriesResp, error) {
+	date := strings.TrimSpace(req.Date)
+	items, total, err := s.repo.FindQueries(ctx, RepoFindQueriesReq{
+		Date:  date,
+		Limit: req.Limit,
+	})
+	if err != nil {
+		return QueriesResp{}, err
+	}
+	return QueriesResp{
+		Date:    date,
+		Total:   total,
+		Queries: items,
+	}, nil
+}

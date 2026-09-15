@@ -36,3 +36,35 @@ type RepoFindAllReq struct {
 	StartDate string
 	EndDate   string
 }
+
+// QueryItem 单条 SQL 查询记录。
+type QueryItem struct {
+	Time      string  `json:"time"`
+	RequestID string  `json:"request_id"`
+	Seq       int     `json:"seq"`
+	SQL       string  `json:"sql"`
+	Elapsed   string  `json:"elapsed"`
+	ElapsedMS float64 `json:"elapsed_ms"`
+	Rows      int64   `json:"rows"`
+	File      string  `json:"file"`
+	Error     string  `json:"error,omitempty"`
+}
+
+// QueriesReq 按日 SQL 明细查询参数。
+type QueriesReq struct {
+	Date  string `form:"date"`
+	Limit int    `form:"limit"`
+}
+
+// QueriesResp 按日 SQL 明细查询响应。
+type QueriesResp struct {
+	Date    string
+	Total   int64
+	Queries []QueryItem
+}
+
+// RepoFindQueriesReq 仓储层按日 SQL 明细查询参数。
+type RepoFindQueriesReq struct {
+	Date  string
+	Limit int
+}

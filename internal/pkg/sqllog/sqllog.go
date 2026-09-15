@@ -2,7 +2,7 @@
 // 文件: internal/pkg/sqllog/sqllog.go
 // 模块: 基础设施
 // 类型: infra
-// 职责: 以 JSON 行格式记录 SQL 查询日志（sql.log），dev 环境同时彩色输出到控制台。
+// 职责: 以 JSON 行格式记录 SQL 查询日志（sql.log + 按日 sql-YYYY-MM-DD.log），dev 环境同时彩色输出到控制台。
 // 依赖: internal/config
 // =============================================================================
 
@@ -24,7 +24,11 @@ import (
 	"workbench/internal/config"
 )
 
-const slowThreshold = 200 * time.Millisecond
+const (
+	slowThreshold    = 200 * time.Millisecond
+	dailyLogPrefix   = "sql-"
+	dailyLogSuffix   = ".log"
+)
 
 var defaultWriter = &Writer{}
 
@@ -47,7 +51,7 @@ func NewRequestID() string {
 	return hex.EncodeToString(b)
 }
 
-// LogQuery 记录单条 SQL 查询。
+// LogQuery 记录单条 SQL 查询（写入 sql.log 与按日 sql-YYYY-MM-DD.log）。
 func LogQuery(ctx context.Context, sql string, elapsed time.Duration, rows int64, err error) {
 	state := RequestStateFromContext(ctx)
 	slow := elapsed > slowThreshold
@@ -75,10 +79,11 @@ func LogQuery(ctx context.Context, sql string, elapsed time.Duration, rows int64
 	}
 
 	defaultWriter.write(entry)
+	defaultWriter.writeDaily(entry)
 	defaultWriter.printConsoleSQL(sql, elapsed, rows, file, err)
 }
 
-// LogRequestSummary 记录请求级 SQL 汇总。
+// LogRequestSummary 记录请求级 SQL 汇总（仅写入 sql.log，供性能分析页读取）。
 func LogRequestSummary(state *RequestState, route string, elapsed time.Duration) {
 	if state == nil {
 		return
@@ -110,12 +115,19 @@ type Writer struct {
 	mu             sync.Mutex
 	enabled        bool
 	consoleEnabled bool
-	file           *os.File
+	file           *os.File // sql.log（性能分析）
+	dir            string
+	day            string
+	dailyFile      *os.File // sql-YYYY-MM-DD.log（按日查询明细）
+	now            func() time.Time
 }
 
 func (w *Writer) open(cfg *config.Config) error {
 	w.mu.Lock()
 	w.consoleEnabled = cfg != nil && !strings.EqualFold(strings.TrimSpace(cfg.App.Env), "prod")
+	if w.now == nil {
+		w.now = time.Now
+	}
 	w.mu.Unlock()
 
 	dir := ""
@@ -125,6 +137,16 @@ func (w *Writer) open(cfg *config.Config) error {
 	if dir == "" {
 		w.mu.Lock()
 		w.enabled = false
+		w.dir = ""
+		w.day = ""
+		if w.file != nil {
+			_ = w.file.Close()
+			w.file = nil
+		}
+		if w.dailyFile != nil {
+			_ = w.dailyFile.Close()
+			w.dailyFile = nil
+		}
 		w.mu.Unlock()
 		return nil
 	}
@@ -144,7 +166,13 @@ func (w *Writer) open(cfg *config.Config) error {
 	if w.file != nil {
 		_ = w.file.Close()
 	}
+	if w.dailyFile != nil {
+		_ = w.dailyFile.Close()
+		w.dailyFile = nil
+	}
 	w.file = file
+	w.dir = dir
+	w.day = ""
 	w.enabled = true
 	return nil
 }
@@ -152,10 +180,18 @@ func (w *Writer) open(cfg *config.Config) error {
 func (w *Writer) sync() error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	if w.file == nil {
-		return nil
+	var firstErr error
+	if w.file != nil {
+		if err := w.file.Sync(); err != nil && firstErr == nil {
+			firstErr = err
+		}
 	}
-	return w.file.Sync()
+	if w.dailyFile != nil {
+		if err := w.dailyFile.Sync(); err != nil && firstErr == nil {
+			firstErr = err
+		}
+	}
+	return firstErr
 }
 
 func (w *Writer) write(v any) {
@@ -171,6 +207,47 @@ func (w *Writer) write(v any) {
 	}
 	_, _ = w.file.Write(data)
 	_, _ = w.file.Write([]byte("\n"))
+}
+
+// writeDaily 将单条 SQL 查询写入按日文件 sql-YYYY-MM-DD.log（与 sql.log 分离）。
+func (w *Writer) writeDaily(v any) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if !w.enabled || w.dir == "" {
+		return
+	}
+	if err := w.ensureDailyFileLocked(); err != nil {
+		return
+	}
+	data, err := json.Marshal(v)
+	if err != nil {
+		return
+	}
+	_, _ = w.dailyFile.Write(data)
+	_, _ = w.dailyFile.Write([]byte("\n"))
+}
+
+func (w *Writer) ensureDailyFileLocked() error {
+	nowFn := w.now
+	if nowFn == nil {
+		nowFn = time.Now
+	}
+	day := nowFn().Format("2006-01-02")
+	if w.dailyFile != nil && w.day == day {
+		return nil
+	}
+	if w.dailyFile != nil {
+		_ = w.dailyFile.Close()
+		w.dailyFile = nil
+	}
+	path := filepath.Join(w.dir, dailyLogPrefix+day+dailyLogSuffix)
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	if err != nil {
+		return err
+	}
+	w.dailyFile = f
+	w.day = day
+	return nil
 }
 
 type requestSummaryEntry struct {

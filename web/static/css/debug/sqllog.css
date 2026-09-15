@@ -1,0 +1,164 @@
+.sqllog-page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--space-6);
+}
+
+.sqllog-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background: var(--color-page-bg);
+}
+
+.sqllog-filter-label {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.sqllog-filter-control {
+  flex: 0 1 160px;
+  min-width: 0;
+}
+
+.sqllog-limit {
+  flex: 0 1 100px;
+}
+
+.sqllog-summary {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.sqllog-table-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.sqllog-col-elapsed {
+  width: 96px;
+}
+
+.sqllog-col-time {
+  width: 180px;
+}
+
+.sqllog-col-file {
+  width: 220px;
+}
+
+.sqllog-elapsed {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.sqllog-elapsed.is-slow {
+  color: #c2410c;
+}
+
+.sqllog-sql-wrap {
+  max-width: 720px;
+}
+
+.sqllog-sql {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 3.6em;
+  overflow: hidden;
+}
+
+.sqllog-sql-wrap.is-expanded .sqllog-sql {
+  max-height: none;
+}
+
+.sqllog-sql-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-1);
+}
+
+.sqllog-sql-toggle {
+  display: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-primary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.sqllog-sql-toggle:hover,
+.sqllog-sql-copy:hover {
+  text-decoration: underline;
+}
+
+.sqllog-sql-wrap.is-clamped .sqllog-sql-toggle {
+  display: inline-block;
+}
+
+.sqllog-sql-copy {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-primary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.sqllog-sql-copy.is-copied {
+  color: var(--color-text-secondary);
+}
+
+.sqllog-file {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  word-break: break-all;
+}
+
+.sqllog-empty {
+  text-align: center;
+  color: var(--color-text-secondary);
+  padding: var(--space-8) var(--space-4);
+}
+
+.sqllog-error-tag {
+  display: inline-block;
+  margin-top: var(--space-1);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 11px;
+}
+
+@media (max-width: 768px) {
+  .sqllog-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sqllog-summary {
+    margin-left: 0;
+  }
+
+  .sqllog-filter-control,
+  .sqllog-limit {
+    flex: 1 1 auto;
+  }
+}
