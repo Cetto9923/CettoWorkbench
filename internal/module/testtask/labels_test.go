@@ -8,7 +8,11 @@
 
 package testtask
 
-import "testing"
+import (
+	"testing"
+
+	"workbench/internal/pkg/personlabel"
+)
 
 func TestBuildContextRespIncludesQDAndUsers(t *testing.T) {
 	row := DemandContextRow{
@@ -157,5 +161,27 @@ func TestValidateCreateBuildsReq(t *testing.T) {
 	empty := CreateBuildsReq{}
 	if errs := empty.Validate(); len(errs) == 0 {
 		t.Fatal("empty req should produce error")
+	}
+}
+
+func TestUserOptionLabelDeduplication(t *testing.T) {
+	cases := []struct {
+		account  string
+		realname string
+		want     string
+	}{
+		{"000014", "丁喜莱", "丁喜莱(000014)"},
+		{"000014", "丁喜莱(000014)", "丁喜莱(000014)"},
+		{"000014", "", "000014"},
+	}
+	for _, tc := range cases {
+		opt := UserOption{
+			Account:  tc.account,
+			Realname: tc.realname,
+			Label:    personlabel.Format(tc.account, tc.realname),
+		}
+		if opt.Label != tc.want {
+			t.Errorf("Format(%q, %q) = %q, want %q", tc.account, tc.realname, opt.Label, tc.want)
+		}
 	}
 }

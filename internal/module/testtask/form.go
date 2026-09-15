@@ -65,6 +65,7 @@ type BuildOption struct {
 type UserOption struct {
 	Account  string `json:"account"`
 	Realname string `json:"realname"`
+	Label    string `json:"label,omitempty"`
 	Pinyin   string `json:"pinyin,omitempty"`
 }
 

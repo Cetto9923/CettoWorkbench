@@ -18,6 +18,7 @@ import (
 	"gorm.io/gorm"
 
 	zentaomodel "workbench/internal/model/zentao"
+	"workbench/internal/pkg/personlabel"
 )
 
 // executionRow 产品下执行查询行（含所属项目信息，供 stagefilter / 展示用）。
@@ -249,7 +250,12 @@ ORDER BY account ASC`
 		if realname == "" {
 			realname = account
 		}
-		out = append(out, UserOption{Account: account, Realname: realname, Pinyin: strings.TrimSpace(row.Pinyin)})
+		out = append(out, UserOption{
+			Account:  account,
+			Realname: realname,
+			Label:    personlabel.Format(account, row.Realname),
+			Pinyin:   strings.TrimSpace(row.Pinyin),
+		})
 	}
 	return out, nil
 }

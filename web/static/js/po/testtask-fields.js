@@ -1,11 +1,24 @@
 (function ($) {
   "use strict";
+  function formatUserLabel(u) {
+    if (u && u.label) return u.label;
+    var acc = String((u && u.account) || "").trim();
+    if (!acc) return "";
+    var name = String((u && u.realname) || acc).trim();
+    if (!name) return acc;
+    var suffix = "(" + acc + ")";
+    if (name === acc || name.indexOf(suffix) !== -1) {
+      return name;
+    }
+    return name + suffix;
+  }
+
   function init(data) {
     var $r = window.PoTesttaskCore.$root();
     var now = new Date();
     var today = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
     var users = (data.users || []).map(function (u) {
-      return { value: u.account, label: (u.realname || u.account) + "(" + u.account + ")", pinyin: u.pinyin || "" };
+      return { value: u.account, label: formatUserLabel(u), pinyin: u.pinyin || "" };
     });
     $r.find('[data-tt-task-name="joint"]').val(today.replace(/-/g, "") + "-US" + data.demandId + "-联调总测试单");
     $r.find('[data-tt-task-begin="joint"]').val(today);
