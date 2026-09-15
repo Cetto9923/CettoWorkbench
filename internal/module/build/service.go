@@ -83,9 +83,6 @@ func (s *Service) LinkStory(ctx context.Context, actor *model.User, buildID uint
 			BuildID:     buildID,
 			BaseUrl:     baseURL,
 			Stories:     []LinkStoryItem{},
-			Total:       0,
-			Page:        pager.CurrentPage,
-			PageSize:    pager.PageSize,
 			SearchForm:  searchForm,
 			QuerySuffix: querySuffix,
 		}, pager, nil
@@ -170,9 +167,6 @@ func (s *Service) LinkStory(ctx context.Context, actor *model.User, buildID uint
 		BuildID:     buildID,
 		BaseUrl:     baseURL,
 		Stories:     items,
-		Total:       total,
-		Page:        pager.CurrentPage,
-		PageSize:    pager.PageSize,
 		SearchForm:  searchForm,
 		QuerySuffix: querySuffix,
 	}, pager, nil

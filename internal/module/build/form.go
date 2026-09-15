@@ -128,9 +128,6 @@ type LinkStoryListResp struct {
 	BuildID     uint
 	BaseUrl     string
 	Stories     []LinkStoryItem
-	Total       int64
-	Page        int
-	PageSize    int
 	SearchForm  LinkStorySearchForm
 	QuerySuffix string // 分页链接附加查询串（含前置 &）
 }

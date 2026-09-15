@@ -164,13 +164,3 @@ func FieldControl(field string, defs []SearchFieldDef) string {
 	}
 	return "input"
 }
-
-// FieldOptionsKey 查字段选项集 key。
-func FieldOptionsKey(field string, defs []SearchFieldDef) string {
-	for _, d := range defs {
-		if d.Key == field {
-			return d.OptionsKey
-		}
-	}
-	return ""
-}

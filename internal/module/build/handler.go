@@ -97,7 +97,6 @@ func (h *Handler) LinkStory(c *gin.Context) {
 		"BaseUrl":        resp.BaseUrl,
 		"Stories":        resp.Stories,
 		"Pager":          pager,
-		"PageSize":       resp.PageSize,
 		"SearchForm":     resp.SearchForm,
 		"SearchMetaJSON": SearchMetaJSON(resp.SearchForm),
 		"QuerySuffix":    resp.QuerySuffix,
