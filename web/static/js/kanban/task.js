@@ -162,10 +162,20 @@
     setStat("overdue", (summary && summary.overdue) || 0);
   }
 
+  function activeTeamgroupID() {
+    if (!chipsWrap) return "";
+    var active = chipsWrap.querySelector(".chip.active[data-teamgroup-id]");
+    return active ? String(active.getAttribute("data-teamgroup-id") || "").trim() : "";
+  }
+
   function tasksUrl(account) {
+    var params = new URLSearchParams();
     var acc = String(account || "").trim();
-    if (!acc) return TASKS_URL;
-    return TASKS_URL + "?account=" + encodeURIComponent(acc);
+    if (acc) params.set("account", acc);
+    var tg = activeTeamgroupID();
+    if (tg) params.set("teamgroupId", tg);
+    var q = params.toString();
+    return q ? TASKS_URL + "?" + q : TASKS_URL;
   }
 
   function loadTasks(account) {
@@ -225,8 +235,17 @@
     return btn;
   }
 
+  function memberPersons(group) {
+    return Array.prototype.filter.call(
+      group.querySelectorAll(".person[data-account]"),
+      function (el) {
+        return el.getAttribute("data-account") !== "all";
+      }
+    );
+  }
+
   function expandPeople(group) {
-    group.querySelectorAll(".person[data-account]").forEach(function (el, idx) {
+    memberPersons(group).forEach(function (el, idx) {
       if (idx < VISIBLE_COUNT) return;
       el.classList.remove("is-overflow");
       el.removeAttribute("hidden");
@@ -245,7 +264,7 @@
     if (active) {
       activeAccount = active.getAttribute("data-account") || "";
     }
-    group.querySelectorAll(".person[data-account]").forEach(function (el, idx) {
+    memberPersons(group).forEach(function (el, idx) {
       if (idx < VISIBLE_COUNT) {
         el.classList.remove("is-overflow");
         el.removeAttribute("hidden");
@@ -282,7 +301,7 @@
     }
   }
 
-  // 必选一人：优先当前登录用户，否则组内第一人；不可取消选中。
+  // 必选一人：优先当前登录用户，否则「全部」；不可取消选中。
   function selectDefaultPerson(group, allowExpand) {
     group.querySelectorAll(".person.active").forEach(function (el) {
       el.classList.remove("active");
@@ -293,6 +312,9 @@
       person = group.querySelector(
         '.person[data-account="' + cssEscape(currentAccount) + '"]'
       );
+    }
+    if (!person) {
+      person = group.querySelector('.person[data-account="all"]');
     }
     if (!person) {
       person = group.querySelector(".person[data-account]");

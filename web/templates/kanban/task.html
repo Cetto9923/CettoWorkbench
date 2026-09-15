@@ -47,6 +47,7 @@
       {{ if .Teamgroups }}
         {{ range $i, $g := .Teamgroups }}
       <div class="people-group{{ if ne $i 0 }} is-hidden{{ end }}" data-teamgroup-id="{{ $g.ID }}"{{ if ne $i 0 }} hidden{{ end }}>
+        <button type="button" class="person" data-account="all" title="全部">全部</button>
           {{ if $g.Members }}
             {{ range $j, $m := $g.Members }}
         <button type="button" class="person role-{{ $m.Role }}{{ if ge $j 5 }} is-overflow{{ end }}" data-account="{{ $m.Account }}" title="{{ $m.Display }}"{{ if ge $j 5 }} hidden{{ end }}>

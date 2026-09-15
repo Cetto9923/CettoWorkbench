@@ -78,13 +78,17 @@ type ListBizDemandsResp struct {
 }
 
 // ListDemandsReq 需求树查询（按选中负责人账号过滤价值流）。
+// Account=all 时按 TeamgroupID 对应小组全员聚合。
 type ListDemandsReq struct {
-	Account string `form:"account"`
+	Account     string `form:"account"`
+	TeamgroupID uint   `form:"teamgroupId"`
 }
 
 // ListTasksReq 任务看板查询（按选中负责人账号过滤）。
+// Account=all 时按 TeamgroupID 对应小组全员聚合。
 type ListTasksReq struct {
-	Account string `form:"account"`
+	Account     string `form:"account"`
+	TeamgroupID uint   `form:"teamgroupId"`
 }
 
 // TaskItem 任务看板单卡。

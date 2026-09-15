@@ -24,6 +24,7 @@ import (
 const taskTimeLayout = "2006-01-02 15:04:05"
 
 // ListTasks 按选中负责人拉取任务三列（wait/doing=指派；done=完成者）。
+// account=all 时按当前敏捷小组全员聚合。
 func (s *Service) ListTasks(ctx context.Context, actor *model.User, req ListTasksReq) (ListTasksResp, error) {
 	empty := ListTasksResp{Columns: newEmptyTaskColumns(), Summary: TaskSummary{}}
 	actorAccount := ""
@@ -35,12 +36,15 @@ func (s *Service) ListTasks(ctx context.Context, actor *model.User, req ListTask
 	if err != nil {
 		return ListTasksResp{}, err
 	}
-	target, err := resolveDemandAccount(actorAccount, req.Account, collectMemberAccounts(groups))
+	targets, err := resolveKanbanAccounts(actorAccount, req.Account, req.TeamgroupID, groups)
 	if err != nil {
 		return ListTasksResp{}, err
 	}
+	if len(targets) == 0 {
+		return empty, nil
+	}
 
-	rows, err := s.repo.FindKanbanTasks(ctx, target)
+	rows, err := s.repo.FindKanbanTasks(ctx, targets)
 	if err != nil {
 		return ListTasksResp{}, err
 	}

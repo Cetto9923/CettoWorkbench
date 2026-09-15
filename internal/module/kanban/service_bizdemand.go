@@ -16,13 +16,12 @@ import (
 
 	"workbench/internal/model"
 	"workbench/internal/module/po"
-	"workbench/internal/pkg/errorx"
 )
 
 const bizDemandPageSize = 100
 
 // ListValueStreamBizDemands 按选中负责人拉取价值流「全部」业需与研需。
-// account 为空时回落到 actor；非小组成员返回 forbidden。
+// account 为空时回落到 actor；account=all 时按当前敏捷小组全员聚合去重。
 func (s *Service) ListValueStreamBizDemands(ctx context.Context, actor *model.User, req ListDemandsReq) (ListBizDemandsResp, error) {
 	if s.poSvc == nil {
 		return ListBizDemandsResp{Items: []BizDemandItem{}}, nil
@@ -36,12 +35,35 @@ func (s *Service) ListValueStreamBizDemands(ctx context.Context, actor *model.Us
 	if err != nil {
 		return ListBizDemandsResp{}, err
 	}
-	target, err := resolveDemandAccount(actorAccount, req.Account, collectMemberAccounts(groups))
+	targets, err := resolveKanbanAccounts(actorAccount, req.Account, req.TeamgroupID, groups)
 	if err != nil {
 		return ListBizDemandsResp{}, err
 	}
+	if len(targets) == 0 {
+		return ListBizDemandsResp{Items: []BizDemandItem{}}, nil
+	}
 
-	viewAs := viewAsUser(actor, target)
+	seen := make(map[string]struct{})
+	var all []po.WorkItemDetail
+	for _, target := range targets {
+		items, demErr := s.fetchDemandsForAccount(ctx, viewAsUser(actor, target))
+		if demErr != nil {
+			return ListBizDemandsResp{}, demErr
+		}
+		for _, it := range items {
+			key := it.Kind + ":" + it.ID
+			if _, ok := seen[key]; ok {
+				continue
+			}
+			seen[key] = struct{}{}
+			all = append(all, it)
+		}
+	}
+
+	return ListBizDemandsResp{Items: toBizDemandItems(all)}, nil
+}
+
+func (s *Service) fetchDemandsForAccount(ctx context.Context, viewAs *model.User) ([]po.WorkItemDetail, error) {
 	var all []po.WorkItemDetail
 	page := 1
 	for {
@@ -49,7 +71,7 @@ func (s *Service) ListValueStreamBizDemands(ctx context.Context, actor *model.Us
 		dreq.Normalize()
 		resp, demErr := s.poSvc.Demands(ctx, viewAs, dreq)
 		if demErr != nil {
-			return ListBizDemandsResp{}, demErr
+			return nil, demErr
 		}
 		if resp == nil || len(resp.Items) == 0 {
 			break
@@ -60,8 +82,7 @@ func (s *Service) ListValueStreamBizDemands(ctx context.Context, actor *model.Us
 		}
 		page++
 	}
-
-	return ListBizDemandsResp{Items: toBizDemandItems(all)}, nil
+	return all, nil
 }
 
 func viewAsUser(actor *model.User, account string) *model.User {
@@ -74,38 +95,6 @@ func viewAsUser(actor *model.User, account string) *model.User {
 		u.DisplayName = ""
 	}
 	return &u
-}
-
-func collectMemberAccounts(groups []TeamgroupItem) map[string]struct{} {
-	out := make(map[string]struct{})
-	for _, g := range groups {
-		for _, m := range g.Members {
-			acc := strings.TrimSpace(m.Account)
-			if acc == "" {
-				continue
-			}
-			out[acc] = struct{}{}
-		}
-	}
-	return out
-}
-
-func resolveDemandAccount(actorAccount, reqAccount string, allowed map[string]struct{}) (string, error) {
-	actorAccount = strings.TrimSpace(actorAccount)
-	acc := strings.TrimSpace(reqAccount)
-	if acc == "" {
-		acc = actorAccount
-	}
-	if acc == "" {
-		return "", errorx.New(errorx.ErrCodeInvalidParam, "账号不能为空")
-	}
-	if acc == actorAccount {
-		return acc, nil
-	}
-	if _, ok := allowed[acc]; !ok {
-		return "", errorx.New(errorx.ErrCodeForbidden, "无权查看该成员")
-	}
-	return acc, nil
 }
 
 func toBizDemandItems(items []po.WorkItemDetail) []BizDemandItem {

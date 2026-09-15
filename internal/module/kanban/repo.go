@@ -91,11 +91,26 @@ func (r *Repo) ListTeamMembersByRoots(ctx context.Context, roots []uint) ([]team
 	return rows, nil
 }
 
-// FindKanbanTasks 查询选中账号的看板任务。
-// wait/doing：assignedTo=account；done：finishedBy=account；不含 pause。
-func (r *Repo) FindKanbanTasks(ctx context.Context, account string) ([]taskRow, error) {
-	account = strings.TrimSpace(account)
-	if account == "" || r == nil || r.db == nil {
+// FindKanbanTasks 查询选中账号（可多个）的看板任务。
+// wait/doing：assignedTo IN accounts；done：finishedBy IN accounts；不含 pause。
+func (r *Repo) FindKanbanTasks(ctx context.Context, accounts []string) ([]taskRow, error) {
+	if r == nil || r.db == nil {
+		return []taskRow{}, nil
+	}
+	cleaned := make([]string, 0, len(accounts))
+	seen := make(map[string]struct{}, len(accounts))
+	for _, a := range accounts {
+		a = strings.TrimSpace(a)
+		if a == "" {
+			continue
+		}
+		if _, ok := seen[a]; ok {
+			continue
+		}
+		seen[a] = struct{}{}
+		cleaned = append(cleaned, a)
+	}
+	if len(cleaned) == 0 {
 		return []taskRow{}, nil
 	}
 
@@ -119,9 +134,9 @@ func (r *Repo) FindKanbanTasks(ctx context.Context, account string) ([]taskRow, 
 		Joins("LEFT JOIN zt_story AS s ON s.id = t.story AND s.deleted = ?", "0").
 		Where("t.deleted = ?", "0").
 		Where(`(
-			(t.assignedTo = ? AND t.status IN (?, ?))
-			OR (t.finishedBy = ? AND t.status = ?)
-		)`, account, "wait", "doing", account, "done").
+			(t.assignedTo IN ? AND t.status IN (?, ?))
+			OR (t.finishedBy IN ? AND t.status = ?)
+		)`, cleaned, "wait", "doing", cleaned, "done").
 		Order("t.id DESC").
 		Limit(kanbanTaskLimit).
 		Scan(&rows).Error
