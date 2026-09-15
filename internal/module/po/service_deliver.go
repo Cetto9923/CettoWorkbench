@@ -55,7 +55,10 @@ func (s *Service) GetDemandDeliverMeta(ctx context.Context, actor *model.User, d
 	}
 
 	// 前置检查
-	severeBugs, openBugs, _ := s.repo.CheckDeliverBlockers(ctx, demandID)
+	severeBugs, openBugs, err := s.repo.CheckDeliverBlockers(ctx, demandID)
+	if err != nil {
+		return nil, fmt.Errorf("检查交付阻塞缺陷失败: %w", err)
+	}
 	acceptOk := row.Status == "acceptanced" || row.Status == "waitdeliver" || row.VerifyFinish != ""
 	mgrOk := true // 主管部门审批（当前禅道库中无阻断 approval）
 	testOk := severeBugs == 0
@@ -65,12 +68,14 @@ func (s *Service) GetDemandDeliverMeta(ctx context.Context, actor *model.User, d
 		{Label: "主管部门审批", Value: boolStr(mgrOk, "通过", "未完成"), OK: mgrOk},
 		{Label: "测试阻塞", Value: testBlockerValue(severeBugs, openBugs), OK: testOk},
 	}
-	canSubmit := acceptOk && mgrOk
+	canSubmit := acceptOk && mgrOk && testOk
 	blockReason := ""
 	if !acceptOk {
 		blockReason = "业务验收未通过，暂不能发起交付"
 	} else if !mgrOk {
 		blockReason = "主管部门审批未完成，暂不能发起交付"
+	} else if !testOk {
+		blockReason = fmt.Sprintf("存在 %d 个严重缺陷未关闭，测试阻塞暂不能发起交付", severeBugs)
 	}
 
 	// 查询已关联上线窗口与候选窗口
@@ -158,6 +163,15 @@ func (s *Service) DeliverDemand(ctx context.Context, actor *model.User, req Dema
 	// 状态门拦截
 	if row.Status != "acceptanced" && row.Status != "waitdeliver" {
 		return errHomeActionConflict
+	}
+
+	// 阻塞检查：严重缺陷未清时阻断发起交付
+	severeBugs, _, err := s.repo.CheckDeliverBlockers(ctx, req.ID)
+	if err != nil {
+		return fmt.Errorf("检查交付阻塞缺陷失败: %w", err)
+	}
+	if severeBugs > 0 {
+		return fmt.Errorf("存在 %d 个严重缺陷未关闭，禁止发起交付", severeBugs)
 	}
 
 	comment := strings.TrimSpace(req.Comment)

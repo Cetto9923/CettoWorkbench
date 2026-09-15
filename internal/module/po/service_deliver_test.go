@@ -10,6 +10,7 @@ package po
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -144,6 +145,10 @@ func TestDeliverDemand_BraOwnerAllowed(t *testing.T) {
 			1005, "MCP定位服务", "acceptanced", "0", "002397", "", "009058", "", "", "004686", "009058", "003030", "003030", "003030", "2026-09-20", "0", "0", "1", "验证计划", "2026-09-10", "1", "1",
 		))
 
+	mock.ExpectQuery(`(?s)SELECT.*severe_count.*open_count.*FROM zt_bug`).
+		WithArgs(uint(1005)).
+		WillReturnRows(sqlmock.NewRows([]string{"severe_count", "open_count"}).AddRow(0, 0))
+
 	mock.ExpectBegin()
 	mock.ExpectQuery(`(?s)SELECT id, status, deleted, product FROM .zt_demand. WHERE id = \? LIMIT \? FOR UPDATE`).
 		WithArgs(uint(1005), 1).
@@ -169,5 +174,64 @@ func TestDeliverDemand_BraOwnerAllowed(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatalf("expected BRA owner allowed to deliver, got error: %v", err)
+	}
+}
+
+func TestGetDemandDeliverMeta_SevereBugsBlocksCanSubmit(t *testing.T) {
+	s, mock := newServiceForDeliverTest(t)
+	mock.ExpectQuery(`(?s)SELECT.*FROM zt_demand.*WHERE id = \?`).
+		WithArgs(uint(1006)).
+		WillReturnRows(sqlmock.NewRows([]string{
+			"id", "name", "status", "deleted", "assignedTo", "distributedBy", "createdBy", "submitedBy", "submitBy", "QD", "RD", "BRA", "accepter", "veriFier", "deliverDate", "isCarReview", "isGrayVerifyPlan", "verifyDate", "verifyPlan", "verifyFinish", "product", "mainSystem",
+		}).AddRow(
+			1006, "存在严重Bug业需", "acceptanced", "0", "alice", "", "bob", "", "", "qd", "rd", "alice", "alice", "alice", "2026-09-20", "0", "1", "2", "验证计划", "2026-09-10", "1", "1",
+		))
+
+	// 存在 1 个严重缺陷
+	mock.ExpectQuery(`(?s)SELECT.*severe_count.*open_count.*FROM zt_bug`).
+		WithArgs(uint(1006)).
+		WillReturnRows(sqlmock.NewRows([]string{"severe_count", "open_count"}).AddRow(1, 3))
+
+	mock.ExpectQuery(`(?s)SELECT.*dw\.versionWindow.*FROM zt_demandwindow dw`).
+		WithArgs(uint(1006)).
+		WillReturnRows(sqlmock.NewRows([]string{"window_id", "window_name", "release_date"}).AddRow(0, "", ""))
+	mock.ExpectQuery(`(?s)SELECT id, name.*FROM zt_versionwindow`).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "releaseDate"}))
+	mock.ExpectQuery(`(?s)SELECT account AS value.*FROM zt_user`).
+		WillReturnRows(sqlmock.NewRows([]string{"value", "label"}))
+
+	meta, err := s.GetDemandDeliverMeta(context.Background(), &model.User{Account: "alice"}, 1006)
+	if err != nil {
+		t.Fatalf("unexpected err: %v", err)
+	}
+	if meta.Precheck.CanSubmit {
+		t.Fatalf("expected CanSubmit = false when severeBugs > 0")
+	}
+	if !strings.Contains(meta.Precheck.BlockReason, "严重缺陷未关闭") {
+		t.Fatalf("expected BlockReason to mention 严重缺陷未关闭, got %q", meta.Precheck.BlockReason)
+	}
+}
+
+func TestGetDemandDeliverMeta_CheckBlockersErrorFailFast(t *testing.T) {
+	s, mock := newServiceForDeliverTest(t)
+	mock.ExpectQuery(`(?s)SELECT.*FROM zt_demand.*WHERE id = \?`).
+		WithArgs(uint(1007)).
+		WillReturnRows(sqlmock.NewRows([]string{
+			"id", "name", "status", "deleted", "assignedTo", "distributedBy", "createdBy", "submitedBy", "submitBy", "QD", "RD", "BRA", "accepter", "veriFier", "deliverDate", "isCarReview", "isGrayVerifyPlan", "verifyDate", "verifyPlan", "verifyFinish", "product", "mainSystem",
+		}).AddRow(
+			1007, "DB故障业需", "acceptanced", "0", "alice", "", "bob", "", "", "qd", "rd", "alice", "alice", "alice", "2026-09-20", "0", "1", "2", "验证计划", "2026-09-10", "1", "1",
+		))
+
+	// CheckDeliverBlockers 报错
+	mock.ExpectQuery(`(?s)SELECT.*severe_count.*open_count.*FROM zt_bug`).
+		WithArgs(uint(1007)).
+		WillReturnError(errors.New("db connection lost"))
+
+	_, err := s.GetDemandDeliverMeta(context.Background(), &model.User{Account: "alice"}, 1007)
+	if err == nil {
+		t.Fatal("expected error when CheckDeliverBlockers fails, got nil")
+	}
+	if !strings.Contains(err.Error(), "检查交付阻塞缺陷失败") {
+		t.Fatalf("expected fail-fast error, got %v", err)
 	}
 }
