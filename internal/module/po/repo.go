@@ -3,22 +3,29 @@
 // 模块: PO 工作台
 // 类型: action
 // 职责: 价值流阶段业需/研发需求的只读库统计与列表查询（业需范围：澄清 PM 或 QD/RD/BRA，排除 closed；「全部」计数仅 Pluck id）。
-// 依赖: 无
+// 依赖: internal/model
+//       internal/model/zentao
 // =============================================================================
 
 package po
 
 import (
 	"context"
+	"strconv"
 	"strings"
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+
+	"workbench/internal/model"
+	zentaomodel "workbench/internal/model/zentao"
 )
 
 // mysqlStageFilter 走 MySQL 的价值流阶段过滤条件。
 type mysqlStageFilter struct {
 	statuses           []string
+	statusOrder        []string // 非空时按该顺序排 status，其次 id DESC（受理：待评审→已驳回→草稿）
 	overall            *string
 	parent             *string
 	developFinishDue   bool // true：今天 >= developFinish（且 developFinish 非空）
@@ -37,7 +44,10 @@ var (
 
 // mysqlStageFilters 价值流阶段 → MySQL 查询条件。
 var mysqlStageFilters = map[string]mysqlStageFilter{
-	"accept":         {statuses: []string{"draft", "wait", "refuse"}},
+	"accept": {
+		statuses:    []string{"draft", "wait", "refuse"},
+		statusOrder: []string{"wait", "refuse", "draft"}, // 待评审 → 已驳回 → 草稿
+	},
 	"clarify":        {statuses: []string{"active"}, noClarify: true},
 	"schedule":       {statuses: []string{"clarified"}, scheduleIncomplete: true},
 	"developing":     {statuses: []string{"developing"}, developFinishDue: true},
@@ -76,11 +86,13 @@ type DemandRow struct {
 	Name       string `gorm:"column:name"`
 	Pri        string `gorm:"column:pri"`
 	Status     string `gorm:"column:status"`
+	CreatedBy  string `gorm:"column:createdBy"`
 	AssignedTo string `gorm:"column:assignedTo"`
 	QD         string `gorm:"column:QD"`
 	RD         string `gorm:"column:RD"`
 	BRA        string `gorm:"column:BRA"`
-	PM         string `gorm:"column:pm"` // zt_demandclarify.PM，多账号逗号分隔
+	MainSystem string `gorm:"column:mainSystem"` // 主系统产品 ID（字符串）
+	PM         string `gorm:"column:pm"`         // zt_demandclarify.PM，多账号逗号分隔
 }
 
 // StoryRow 研发需求列表投影。
@@ -89,6 +101,7 @@ type StoryRow struct {
 	Title  string `gorm:"column:title"`
 	Pri    int    `gorm:"column:pri"`
 	Status string `gorm:"column:status"`
+	Stage  string `gorm:"column:stage"` // zt_story.stage（wait/planned/projected 等）
 }
 
 func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysqlStageFilter) *gorm.DB {
@@ -149,13 +162,13 @@ func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysql
 	return q
 }
 
-// scheduleStoryScope 排期阶段独立研发需求：非需求池、指派给当前用户、关键日期未填。
+// scheduleStoryScope 排期阶段独立研发需求：非需求池、指派人或 ReqM 为当前用户、关键日期未填。
 func (r *Repo) scheduleStoryScope(ctx context.Context, account string) *gorm.DB {
 	return r.db.WithContext(ctx).Table("zt_story").
 		Where("deleted = ?", "0").
 		Where("IFNULL(sourceType, '') != ?", "demandpool").
 		Where("type = ?", "story").
-		Where("assignedTo = ?", account).
+		Where("(assignedTo = ? OR ReqM = ?)", account, account).
 		Where("(" + strings.Join([]string{
 			dateUnsetExpr("developFinish"),
 			dateUnsetExpr("testFinish"),
@@ -163,14 +176,14 @@ func (r *Repo) scheduleStoryScope(ctx context.Context, account string) *gorm.DB 
 		}, " OR ") + ")")
 }
 
-// deliverStoryScope 交付阶段独立研发需求：非需求池、指派给当前用户、今天 >= deliverDate。
+// deliverStoryScope 交付阶段独立研发需求：非需求池、指派人或 ReqM 为当前用户、今天 >= deliverDate。
 func (r *Repo) deliverStoryScope(ctx context.Context, account string) *gorm.DB {
 	today := time.Now().Format("2006-01-02")
 	return r.db.WithContext(ctx).Table("zt_story").
 		Where("deleted = ?", "0").
 		Where("IFNULL(sourceType, '') != ?", "demandpool").
 		Where("type = ?", "story").
-		Where("assignedTo = ?", account).
+		Where("(assignedTo = ? OR ReqM = ?)", account, account).
 		Where(dateSetExpr("deliverDate")+" AND deliverDate <= ?", today)
 }
 
@@ -200,8 +213,7 @@ func (r *Repo) FindRoleDemandIDs(ctx context.Context, account string, filter mys
 		return nil, nil
 	}
 	var ids []int
-	err := r.roleDemandScope(ctx, account, filter).
-		Order("zt_demand.id DESC").
+	err := applyDemandListOrder(r.roleDemandScope(ctx, account, filter), filter).
 		Pluck("zt_demand.id", &ids).Error
 	if err != nil {
 		return nil, err
@@ -215,17 +227,19 @@ func (r *Repo) FindRoleDemands(ctx context.Context, account string, filter mysql
 	if r == nil || r.db == nil || !filterReady(account, filter) {
 		return nil, nil
 	}
-	q := r.roleDemandScope(ctx, account, filter).
-		Select(`zt_demand.id, zt_demand.name, zt_demand.pri, zt_demand.status,
-			zt_demand.assignedTo, zt_demand.QD, zt_demand.RD, zt_demand.BRA,
+	q := applyDemandListOrder(
+		r.roleDemandScope(ctx, account, filter).
+			Select(`zt_demand.id, zt_demand.name, zt_demand.pri, zt_demand.status, zt_demand.createdBy,
+			zt_demand.assignedTo, zt_demand.QD, zt_demand.RD, zt_demand.BRA, zt_demand.mainSystem,
 			clarify_pm.PM AS pm`).
-		Joins(`LEFT JOIN (
+			Joins(`LEFT JOIN (
 			SELECT demand, GROUP_CONCAT(PM) AS PM
 			FROM zt_demandclarify
 			WHERE PM IS NOT NULL AND PM <> ''
 			GROUP BY demand
-		) AS clarify_pm ON clarify_pm.demand = zt_demand.id`).
-		Order("zt_demand.id DESC")
+		) AS clarify_pm ON clarify_pm.demand = zt_demand.id`),
+		filter,
+	)
 	if limit > 0 {
 		if offset < 0 {
 			offset = 0
@@ -238,6 +252,26 @@ func (r *Repo) FindRoleDemands(ctx context.Context, account string, filter mysql
 		return nil, err
 	}
 	return rows, nil
+}
+
+// applyDemandListOrder 列表排序：有 statusOrder 时按自定义状态序，否则 id DESC。
+// CASE + ? 占位，兼容 OceanBase；同状态内仍 id DESC。
+func applyDemandListOrder(q *gorm.DB, filter mysqlStageFilter) *gorm.DB {
+	if len(filter.statusOrder) == 0 {
+		return q.Order("zt_demand.id DESC")
+	}
+	var b strings.Builder
+	b.WriteString("CASE zt_demand.status")
+	args := make([]any, 0, len(filter.statusOrder))
+	for i, st := range filter.statusOrder {
+		b.WriteString(" WHEN ? THEN ")
+		b.WriteString(strconv.Itoa(i + 1))
+		args = append(args, st)
+	}
+	b.WriteString(" ELSE 999 END ASC, zt_demand.id DESC")
+	return q.Order(clause.OrderBy{
+		Expression: clause.Expr{SQL: b.String(), Vars: args},
+	})
 }
 
 // CountScheduleStories 统计排期阶段独立研发需求数量。
@@ -272,7 +306,7 @@ func (r *Repo) FindScheduleStories(ctx context.Context, account string) ([]Story
 	}
 	var rows []StoryRow
 	err := r.scheduleStoryScope(ctx, account).
-		Select("id", "title", "pri", "status").
+		Select("id", "title", "pri", "status", "stage").
 		Order("id DESC").
 		Find(&rows).Error
 	if err != nil {
@@ -313,10 +347,58 @@ func (r *Repo) FindDeliverStories(ctx context.Context, account string) ([]StoryR
 	}
 	var rows []StoryRow
 	err := r.deliverStoryScope(ctx, account).
-		Select("id", "title", "pri", "status").
+		Select("id", "title", "pri", "status", "stage").
 		Order("id DESC").
 		Find(&rows).Error
 	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+// FindMaxTesttaskIDByProducts 按产品取最大测试单 id（ORDER BY id DESC LIMIT 1）。
+func (r *Repo) FindMaxTesttaskIDByProducts(ctx context.Context, productIDs []uint) (map[uint]uint, error) {
+	out := make(map[uint]uint)
+	if r == nil || r.db == nil || len(productIDs) == 0 {
+		return out, nil
+	}
+	uniq := make([]uint, 0, len(productIDs))
+	seen := make(map[uint]struct{}, len(productIDs))
+	for _, id := range productIDs {
+		if id == 0 {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		uniq = append(uniq, id)
+	}
+	for _, productID := range uniq {
+		var taskID uint
+		err := r.db.WithContext(ctx).Model(&zentaomodel.ZtTesttask{}).
+			Select("id").
+			Where("product = ? AND deleted = ?", productID, "0").
+			Order("id DESC").
+			Limit(1).
+			Scan(&taskID).Error
+		if err != nil {
+			return nil, err
+		}
+		if taskID > 0 {
+			out[productID] = taskID
+		}
+	}
+	return out, nil
+}
+
+// ListVersionWindows 查询上线时间（releaseDate）>= 今天的未删除窗口（zt_versionwindow）。
+func (r *Repo) ListVersionWindows(ctx context.Context) ([]model.VersionWindow, error) {
+	var rows []model.VersionWindow
+	if err := r.db.WithContext(ctx).
+		Where("releaseDate >= CURDATE()").
+		Order("releaseDate ASC").
+		Find(&rows).Error; err != nil {
 		return nil, err
 	}
 	return rows, nil

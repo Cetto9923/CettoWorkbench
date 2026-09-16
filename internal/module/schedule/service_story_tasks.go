@@ -21,7 +21,6 @@ import (
 
 // GetStoryTasks 加载维护任务弹窗数据。
 func (s *Service) GetStoryTasks(ctx context.Context, actor *model.User, storyID uint) (*StoryTasksResp, error) {
-	_ = actorAccount(actor)
 	if storyID == 0 {
 		return nil, errors.New("研发需求 ID 无效")
 	}
@@ -74,7 +73,7 @@ func (s *Service) GetStoryTasks(ctx context.Context, actor *model.User, storyID 
 		})
 	}
 
-	users, err := s.repo.ListInsideUsersForScheduling(ctx)
+	users, err := s.listInsideUsers(ctx, actor)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +81,7 @@ func (s *Service) GetStoryTasks(ctx context.Context, actor *model.User, storyID 
 	demandID := detail.FromDemand
 	demandName := detail.DemandName
 	if demandName == "" && demandID > 0 {
-		demandName = fmt.Sprintf("REQ-%d", demandID)
+		demandName = fmt.Sprintf("US%d", demandID)
 	}
 
 	return &StoryTasksResp{

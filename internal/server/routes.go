@@ -18,6 +18,7 @@ import (
 	"workbench/internal/module/debug"
 	"workbench/internal/module/dept"
 	"workbench/internal/module/follow"
+	"workbench/internal/module/kanban"
 
 	"workbench/internal/module/build"
 	loginmodule "workbench/internal/module/login"
@@ -48,6 +49,7 @@ type RouteDeps struct {
 	RoleHandler         *role.Handler
 	PoHandler           *pomodule.Handler
 	FollowHandler       *follow.Handler
+	KanbanHandler       *kanban.Handler
 	ScheduleHandler     *schedule.Handler
 	TesttaskHandler     *testtask.Handler
 	BuildHandler        *build.Handler
@@ -95,6 +97,9 @@ func registerRoutes(r *gin.Engine, deps RouteDeps) {
 		}
 		if deps.FollowHandler != nil {
 			deps.FollowHandler.RegisterRoutes(po)
+		}
+		if deps.KanbanHandler != nil {
+			deps.KanbanHandler.RegisterRoutes(po)
 		}
 		if deps.ScheduleHandler != nil {
 			deps.ScheduleHandler.RegisterRoutes(po)

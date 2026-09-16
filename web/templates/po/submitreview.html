@@ -1,0 +1,174 @@
+{{/* ==========================================================================
+文件: web/templates/po/submitreview.html
+模块: PO工作台
+职责: 业需提交评审右侧抽屉（home 引入；数据由 submitreview.js 调 GET /demands/:id 回填）
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: .UsersJSON (string) 内部用户 JSON（account / realname，同源 ListInsideUsers）
+========================================================================== */}}
+{{ define "po/submitreview" }}
+<div class="dd-drawer-mask" id="poDemandSubmitReviewDrawer" aria-hidden="true" data-users="{{ .UsersJSON }}">
+  <div class="dd-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="poDemandSubmitReviewDrawerTitle" onclick="event.stopPropagation()">
+    <header class="dd-head" id="poDemandSubmitReviewHead">
+      <div class="dd-idrow">
+        <span class="dd-id" id="poDemandSubmitReviewUsId">US—</span>
+        <span class="wb-priority" id="poDemandSubmitReviewPri" data-priority="2">P2</span>
+        <div class="dd-head-actions">
+          <button type="button" class="dd-iconbtn" id="poDemandSubmitReviewDrawerCloseBtn" aria-label="关闭"><i class="fas fa-xmark"></i></button>
+        </div>
+      </div>
+      <div class="dd-title" id="poDemandSubmitReviewDrawerTitle">需求标题</div>
+      <div class="dd-meta">
+        <span>提出人：<b id="poDemandSubmitReviewProposerMeta">—</b></span>
+        <span>需求负责人：<b id="poDemandSubmitReviewPoMeta">—</b></span>
+      </div>
+      <div class="dd-spot-cards-3">
+        <div class="dd-spot-card">
+          <div class="lab">当前阶段</div>
+          <div class="val blue" id="poDemandSubmitReviewSpotStage">—</div>
+        </div>
+        <div class="dd-spot-card">
+          <div class="lab">业务评审人</div>
+          <div class="val" id="poDemandSubmitReviewSpotReviewer">—</div>
+        </div>
+        <div class="dd-spot-card">
+          <div class="lab">期望上线</div>
+          <div class="val" id="poDemandSubmitReviewSpotLaunch">—</div>
+        </div>
+      </div>
+      <div class="dd-core-strip">
+        <div class="dd-core-item">
+          <div class="k">需求类别</div>
+          <div class="v" id="poDemandSubmitReviewStripCategory">—</div>
+        </div>
+        <div class="dd-core-item">
+          <div class="k">需求来源</div>
+          <div class="v" id="poDemandSubmitReviewStripSource">—</div>
+        </div>
+        <div class="dd-core-item">
+          <div class="k">所属需求池</div>
+          <div class="v" id="poDemandSubmitReviewStripPool">—</div>
+        </div>
+      </div>
+      <div class="dd-native-line">
+        <b>禅道状态</b>
+        <span class="dd-native-state" id="poDemandSubmitReviewNativeState">—</span>
+      </div>
+    </header>
+
+    <main class="dd-body" id="poDemandSubmitReviewBody">
+      <div class="dd-review-container">
+        <div class="dd-grid dd-review-grid">
+          <div class="dd-main">
+            <div class="dd-card">
+              <div class="dd-card-body">
+                <div class="dd-cardhead"><h3>业务需求描述</h3></div>
+                <div class="dd-review-richtext" id="poDemandSubmitReviewSpec">
+                  <span class="text-muted">加载中…</span>
+                </div>
+              </div>
+            </div>
+            <div class="dd-card">
+              <div class="dd-card-body">
+                <div class="dd-cardhead"><h3>验收标准</h3></div>
+                <div class="dd-review-richtext" id="poDemandSubmitReviewVerify">
+                  <span class="text-muted">加载中…</span>
+                </div>
+              </div>
+            </div>
+            <div class="dd-card">
+              <div class="dd-card-body">
+                <div class="dd-cardhead"><h3>附件</h3></div>
+                <ul class="dd-file-list" id="poDemandSubmitReviewFiles">
+                  <li class="text-muted">加载中…</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <aside class="dd-sidebar">
+            <div class="dd-card">
+              <div class="dd-card-body">
+                <div class="dd-cardhead"><h3>基本信息</h3></div>
+                <div class="dd-aside-title">业务属性</div>
+                <div class="dd-kv-list compact">
+                  <div class="k">需求类别</div><div class="v" id="poDemandSubmitReviewCategory">业务需求</div>
+                  <div class="k">需求来源</div><div class="v" id="poDemandSubmitReviewSource">客户</div>
+                  <div class="k">优先级</div><div class="v" id="poDemandSubmitReviewPriSide">P2</div>
+                  <div class="k">所属需求池</div><div class="v" id="poDemandSubmitReviewPool">—</div>
+                  <div class="k">期望上线</div><div class="v" id="poDemandSubmitReviewLaunch">—</div>
+                </div>
+                <div class="dd-aside-title" style="margin-top:14px">相关责任人</div>
+                <div class="dd-kv-list compact">
+                  <div class="k">提出人</div><div class="v" id="poDemandSubmitReviewProposer">—</div>
+                  <div class="k">提出部门</div><div class="v" id="poDemandSubmitReviewDept">—</div>
+                  <div class="k">需求负责人</div><div class="v" id="poDemandSubmitReviewBra">—</div>
+                  <div class="k">业务评审人</div><div class="v" id="poDemandSubmitReviewReviewer">—</div>
+                  <div class="k">创建人</div><div class="v" id="poDemandSubmitReviewCreator">—</div>
+                  <div class="k">指派给</div><div class="v" id="poDemandSubmitReviewCurrentOwner">—</div>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        <div class="dd-review-footer dd-review-action-bar">
+          <div class="dd-review-footer-left">
+            <button type="button" class="dd-btn dd-btn-edit" id="poDemandSubmitReviewEditBtn" disabled title="暂无编辑链接">编辑需求 ↗</button>
+          </div>
+          <div class="dd-review-footer-right">
+            <button type="button" class="dd-btn primary" id="poDemandSubmitReviewOpenModalBtn">提交评审</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div id="poDemandSubmitReviewModal" class="dd-reject-modal-overlay" style="display:none;" aria-hidden="true">
+  <div class="dd-reject-modal-dialog dd-submit-review-dialog" role="dialog" aria-modal="true" aria-labelledby="poDemandSubmitReviewModalTitle">
+    <div class="dd-reject-modal-header">
+      <div>
+        <h3 id="poDemandSubmitReviewModalTitle">提交需求评审</h3>
+        <p class="dd-submit-review-hint">请选择业务评审人，支持多人会签；选择结果将同步至禅道。</p>
+      </div>
+      <button type="button" class="dd-iconbtn" id="poDemandSubmitReviewModalCloseBtn" aria-label="关闭"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="dd-reject-modal-body">
+      <label class="dd-reject-label" for="poDemandSubmitReviewReviewerInput"><span class="dd-required">*</span> 业务评审人</label>
+      <div class="dropdown form-multiselect" id="poDemandSubmitReviewPicker" data-role-dropdown data-multiselect-keep-placeholder="true">
+        <div class="form-input-clear-wrap">
+          <div class="form-multiselect-display" data-role-display>
+            <div class="form-multiselect-tags" data-role-tags id="poDemandSubmitReviewSelected"></div>
+            <input
+              id="poDemandSubmitReviewReviewerInput"
+              type="text"
+              class="input form-multiselect-input"
+              data-multiselect-filter
+              placeholder="输入姓名、工号搜索"
+              data-placeholder-empty="输入姓名、工号搜索"
+              autocomplete="off"
+              aria-autocomplete="list"
+              aria-label="检索业务评审人"
+            >
+          </div>
+          <button type="button" class="form-dropdown-chevron" aria-label="展开业务评审人" onclick="return toggleDropdown(this);">
+            <i class="bi bi-chevron-down" aria-hidden="true"></i>
+          </button>
+          <button type="button" class="form-dropdown-clear" data-form-multiselect-clear aria-label="清除业务评审人" hidden>×</button>
+        </div>
+        <div class="dropdown-menu form-multiselect-menu">
+          <div class="form-multiselect-scroll">
+            <div class="form-multiselect-list" id="poDemandSubmitReviewOptionList"></div>
+          </div>
+        </div>
+      </div>
+      <label class="dd-reject-label dd-submit-comment-label" for="poDemandSubmitReviewComment">评审说明</label>
+      <textarea id="poDemandSubmitReviewComment" class="dd-reject-textarea" rows="3" ></textarea>
+    </div>
+    <div class="dd-reject-modal-footer">
+      <button type="button" class="dd-btn" id="poDemandSubmitReviewModalCancelBtn">取消</button>
+      <button type="button" class="dd-btn primary" id="poDemandSubmitReviewConfirmBtn">确认提交</button>
+    </div>
+  </div>
+</div>
+{{ end }}

@@ -6,6 +6,10 @@
 - ORM: GORM + MySQL
 - 数据库: MySQL 8.0+
 - 前端: HTML + CSS + JS
+- 页面样式与原型一致，原型地址为：/home/wrk/code/workbench_pro
+
+禅道地址为 https://changshu.wrk.oop.cc/ ，账号为 admin，密码为 Asd123456。
+禅道代码为：/home/wrk/repo/max/changshu561。不可修改禅道代码
 ---
 
 ## 核心底线（违反即为 bug）
@@ -33,7 +37,14 @@
 11. **表单验证统一手写 `Validate() []FieldError` 方法，禁止引入 `go-playground/validator`**
 13. **除弹窗外的所有页面均在当前页打开**，禁止打开新窗口`
 14. 在 `db/install.sql` 新增建表 SQL，字段名小驼峰，含 `deletedAt` 、`createdBy` 、`createdDate` 、`updatedBy` 、`updatedDate` 字段，表名前缀为zt_
+15.所有表需要在 model 中实体化
+16.所有下拉都为检索下拉
+17.所有日期的格式为 y-m-d
 ---
+
+## 其他注意事项
+1.所有 sql 写法需要兼容oceanbase
+2.用户的显示，可以使用 module/user 的AccountDisplayMap方法
 
 ## 命名规则
 - **文件名/目录名**：全小写拼接

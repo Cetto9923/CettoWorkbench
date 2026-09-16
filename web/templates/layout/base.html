@@ -14,6 +14,7 @@
   <meta name="zentao-url" content="{{ .ZentaoURL }}">
   <meta name="zentao-request-type" content="{{ .ZentaoRequestType }}">
   <title>{{ .Title }} - workbench</title>
+  <script src="/static/js/layout/header.js"></script>
   <link rel="stylesheet" href="{{ asset "/static/vendor/fonts/jetbrains-mono/fonts.css" }}">
   <link rel="stylesheet" href="{{ asset "/static/vendor/bootstrap-icons/bootstrap-icons.css" }}">
   <link rel="stylesheet" href="{{ asset "/static/vendor/fontawesome/css/all.min.css" }}">
@@ -24,6 +25,7 @@
   <link rel="stylesheet" href="/static/css/layout/layout.css">
   {{ if and (not .HideChrome) (eq .LayoutNav "top") }}<link rel="stylesheet" href="/static/css/layout/topnav.css">{{ end }}
   <link rel="stylesheet" href="/static/css/components/components.css">
+  <link rel="stylesheet" href="/static/css/layout/header.css">
   {{ block "page_css" . }}{{ end }}
 </head>
 <body{{ if .HideChrome }} class="layout-chrome-hidden"{{ else }} class="has-bottom-tabs{{ if eq .LayoutNav "top" }} layout-nav-top{{ end }}"{{ end }}>

@@ -34,6 +34,7 @@ import (
 
 	"workbench/internal/module/build"
 	"workbench/internal/module/follow"
+	"workbench/internal/module/kanban"
 	"workbench/internal/module/login"
 	"workbench/internal/module/loginlog"
 	"workbench/internal/module/menu"
@@ -137,10 +138,10 @@ func Run() error {
 	roleHandler := role.NewHandler(rend, zapLog, roleSvc)
 
 	scheduleRepo := schedule.NewRepo(db)
-	scheduleSvc := schedule.NewService(scheduleRepo, zapLog)
+	scheduleSvc := schedule.NewService(scheduleRepo, userSvc, zapLog)
 	scheduleHandler := schedule.NewHandler(rend, zapLog, scheduleSvc, strings.TrimRight(cfg.Zentao.URL, "/"))
 	poRepo := po.NewRepo(dbReadonly, db)
-	poSvc := po.NewService(poRepo, scheduleSvc, userSvc, zapLog)
+	poSvc := po.NewService(poRepo, scheduleSvc, userSvc, zentaopkg.API(), zapLog)
 	poHandler := po.NewHandler(poSvc, zapLog)
 	testtaskReadDB := dbReadonly
 	if testtaskReadDB == nil {
@@ -157,6 +158,13 @@ func Run() error {
 	buildSvc := build.NewService(buildRepo, userSvc, zentaopkg.API(), zapLog)
 	buildHandler := build.NewHandler(buildSvc, zapLog)
 	followHandler := follow.NewHandler(zapLog)
+	kanbanReadDB := dbReadonly
+	if kanbanReadDB == nil {
+		kanbanReadDB = db
+	}
+	kanbanRepo := kanban.NewRepo(kanbanReadDB)
+	kanbanSvc := kanban.NewService(kanbanRepo, userSvc, poSvc, zentaopkg.API())
+	kanbanHandler := kanban.NewHandler(kanbanSvc, zapLog)
 	sqlPerfRepo := debug.NewRepo(cfg.Log.Dir)
 	sqlPerfSvc := debug.NewService(sqlPerfRepo)
 	sqlPerfHandler := debug.NewHandler(sqlPerfSvc)
@@ -176,6 +184,7 @@ func Run() error {
 		RoleHandler:         roleHandler,
 		PoHandler:           poHandler,
 		FollowHandler:       followHandler,
+		KanbanHandler:       kanbanHandler,
 		ScheduleHandler:     scheduleHandler,
 		TesttaskHandler:     testtaskHandler,
 		BuildHandler:        buildHandler,

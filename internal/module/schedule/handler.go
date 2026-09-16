@@ -169,7 +169,7 @@ func (h *Handler) Index(c *gin.Context) {
 		filterWindows = []WindowFilterOption{}
 	}
 
-	filterUsers, err := h.svc.ListScheduleUsers(c.Request.Context())
+	filterUsers, err := h.svc.ListScheduleUsers(c.Request.Context(), actor)
 	if err != nil {
 		if h.logger != nil {
 			h.logger.Error("load filter users failed", zap.Error(err))

@@ -2,7 +2,7 @@
 // 文件: internal/pkg/zentao/client.go
 // 模块: 基础设施
 // 类型: infra
-// 职责: 禅道 REST API 通用客户端：取 Token、带鉴权发请求，并落盘 api 请求日志。
+// 职责: 禅道 REST API 通用客户端：按当前账号 type=po 免密取 Token、带鉴权发请求，并落盘 api 请求日志。
 // 依赖: internal/config
 // =============================================================================
 
@@ -25,29 +25,31 @@ import (
 // tokenTTL 默认 Token 缓存时长（对齐工作台 session 常见 2h）。
 const tokenTTL = 2 * time.Hour
 
-// Client 禅道 OpenAPI 客户端（api.php/v1）。
-type Client struct {
-	apiBase  string
-	account  string
-	password string
-	http     *http.Client
+type tokenCacheEntry struct {
+	token string
+	at    time.Time
+}
 
-	mu      sync.Mutex
-	token   string
-	tokenAt time.Time // 最近一次成功取 Token 的时间
-	now     func() time.Time
+// Client 禅道 OpenAPI 客户端（api.php/v1）。
+// 鉴权统一：从 ctx 取当前账号，POST /tokens {account, type:"po"} 免密登录。
+type Client struct {
+	apiBase string
+	http    *http.Client
+
+	mu     sync.Mutex
+	tokens map[string]tokenCacheEntry // 按账号缓存 Token
+	now    func() time.Time
 }
 
 // NewClient 根据配置创建客户端。api 为空时后续调用会报错。
 func NewClient(cfg config.ZentaoConfig) *Client {
 	return &Client{
-		apiBase:  strings.TrimRight(strings.TrimSpace(cfg.API), "/"),
-		account:  strings.TrimSpace(cfg.Account),
-		password: cfg.Password,
+		apiBase: strings.TrimRight(strings.TrimSpace(cfg.API), "/"),
 		http: &http.Client{
 			Timeout: 30 * time.Second,
 		},
-		now: time.Now,
+		tokens: map[string]tokenCacheEntry{},
+		now:    time.Now,
 	}
 }
 
@@ -58,43 +60,47 @@ func (c *Client) currentTime() time.Time {
 	return time.Now()
 }
 
-func (c *Client) cachedTokenLocked() (string, bool) {
-	if c.token == "" || c.tokenAt.IsZero() {
+func (c *Client) cachedTokenLocked(account string) (string, bool) {
+	if c.tokens == nil {
 		return "", false
 	}
-	if c.currentTime().Sub(c.tokenAt) >= tokenTTL {
-		c.token = ""
-		c.tokenAt = time.Time{}
+	e, ok := c.tokens[account]
+	if !ok || e.token == "" || e.at.IsZero() {
 		return "", false
 	}
-	return c.token, true
+	if c.currentTime().Sub(e.at) >= tokenTTL {
+		delete(c.tokens, account)
+		return "", false
+	}
+	return e.token, true
 }
 
-// GetToken 获取并缓存鉴权 Token（禅道 session_id）；默认缓存 2 小时，过期后重新拉取。
-func (c *Client) GetToken(ctx context.Context) (string, error) {
+// getToken 按账号取禅道 Token（type=po）；命中未过期缓存则直接返回。
+func (c *Client) getToken(ctx context.Context, account string) (string, error) {
 	if c == nil {
 		return "", fmt.Errorf("zentao client is nil")
 	}
 	c.mu.Lock()
-	if tok, ok := c.cachedTokenLocked(); ok {
+	if tok, ok := c.cachedTokenLocked(account); ok {
 		c.mu.Unlock()
 		return tok, nil
 	}
 	c.mu.Unlock()
-	return c.refreshToken(ctx)
+	return c.refreshTokenPO(ctx, account)
 }
 
-func (c *Client) refreshToken(ctx context.Context) (string, error) {
+// refreshTokenPO POST /tokens，body 为 {account, type:"po"}。
+func (c *Client) refreshTokenPO(ctx context.Context, account string) (string, error) {
 	if c.apiBase == "" {
 		return "", fmt.Errorf("zentao api 未配置")
 	}
-	if c.account == "" {
-		return "", fmt.Errorf("zentao account 未配置")
+	account = strings.TrimSpace(account)
+	if account == "" {
+		return "", fmt.Errorf("未登录或禅道账号为空")
 	}
-
 	body := map[string]string{
-		"account":  c.account,
-		"password": c.password,
+		"account": account,
+		"type":    "po",
 	}
 	var resp struct {
 		Token   string `json:"token"`
@@ -117,22 +123,30 @@ func (c *Client) refreshToken(ctx context.Context) (string, error) {
 	}
 
 	c.mu.Lock()
-	c.token = tok
-	c.tokenAt = c.currentTime()
+	if c.tokens == nil {
+		c.tokens = map[string]tokenCacheEntry{}
+	}
+	c.tokens[account] = tokenCacheEntry{token: tok, at: c.currentTime()}
 	c.mu.Unlock()
 	return tok, nil
 }
 
-func (c *Client) clearToken() {
+func (c *Client) clearToken(account string) {
 	c.mu.Lock()
-	c.token = ""
-	c.tokenAt = time.Time{}
+	if c.tokens != nil {
+		delete(c.tokens, account)
+	}
 	c.mu.Unlock()
 }
 
-// Do 带 Token 调用禅道 API；path 以 / 开头（相对 apiBase）。401 时清缓存重取 Token 并重试一次。
+// Do 带当前登录账号的 Token 调用禅道 API；path 以 / 开头（相对 apiBase）。
+// 账号来自 ctx（RequireLogin 注入的 WithAccount）；401 时清该账号缓存并重试一次。
 func (c *Client) Do(ctx context.Context, method, path string, body any, out any) error {
-	tok, err := c.GetToken(ctx)
+	account := AccountFrom(ctx)
+	if account == "" {
+		return fmt.Errorf("未登录或禅道账号为空")
+	}
+	tok, err := c.getToken(ctx, account)
 	if err != nil {
 		return err
 	}
@@ -143,8 +157,8 @@ func (c *Client) Do(ctx context.Context, method, path string, body any, out any)
 	if !isUnauthorized(err) {
 		return err
 	}
-	c.clearToken()
-	tok, err = c.refreshToken(ctx)
+	c.clearToken(account)
+	tok, err = c.refreshTokenPO(ctx, account)
 	if err != nil {
 		return err
 	}

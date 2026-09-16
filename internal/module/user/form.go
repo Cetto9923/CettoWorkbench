@@ -29,6 +29,12 @@ type FieldError struct {
 	Message string
 }
 
+// InsideUserOption 人员选择控件下拉项（内部用户）。
+type InsideUserOption struct {
+	Account  string `json:"account"`
+	Realname string `json:"realname"`
+}
+
 // ListReq 用户列表查询请求。
 type ListReq struct {
 	Account     string `form:"account"`     // 按账号模糊搜索

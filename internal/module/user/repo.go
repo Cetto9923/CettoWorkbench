@@ -122,6 +122,71 @@ func (r *Repo) FindAccountDisplayMap(ctx context.Context) (map[string]string, er
 	return out, nil
 }
 
+type insideUserRow struct {
+	Account  string `gorm:"column:account"`
+	Realname string `gorm:"column:realname"`
+}
+
+// FindInsideUsers 查询内部用户列表（人员选择控件）。
+// 过滤范围：deleted=0 且 type=inside。排序：
+// 1) 当前部门成员 account DESC
+// 2) 所属二级部门（grade=2，更深层级向上找父二级）及其全部子孙，不含当前部门，account DESC
+// 3) 其余用户 account DESC
+func (r *Repo) FindInsideUsers(ctx context.Context, actorDept uint64) ([]InsideUserOption, error) {
+	grade2Path, err := r.findGrade2AncestorPath(ctx, actorDept)
+	if err != nil {
+		return nil, err
+	}
+	const query = `
+SELECT account, realname
+FROM zt_user
+WHERE deleted = '0'
+ORDER BY
+  CASE
+    WHEN ? > 0 AND dept = ? THEN 0
+    WHEN ? <> '' AND EXISTS (
+      SELECT 1 FROM zt_dept d
+      WHERE d.id = zt_user.dept AND d.path LIKE CONCAT(?, '%')
+    ) THEN 1
+    ELSE 2
+  END ASC,
+  account DESC`
+	var rows []insideUserRow
+	if err := r.db.WithContext(ctx).Raw(query, actorDept, actorDept, grade2Path, grade2Path).Scan(&rows).Error; err != nil {
+		return nil, fmt.Errorf("find inside users: %w", err)
+	}
+	out := make([]InsideUserOption, 0, len(rows))
+	for _, row := range rows {
+		account := strings.TrimSpace(row.Account)
+		if account == "" {
+			continue
+		}
+		realname := strings.TrimSpace(row.Realname)
+		if realname == "" {
+			realname = account
+		}
+		out = append(out, InsideUserOption{Account: account, Realname: realname})
+	}
+	return out, nil
+}
+
+func (r *Repo) findGrade2AncestorPath(ctx context.Context, actorDept uint64) (string, error) {
+	if actorDept == 0 {
+		return "", nil
+	}
+	const pathQuery = `
+SELECT g2.path
+FROM zt_dept me
+INNER JOIN zt_dept g2 ON g2.grade = 2 AND me.path LIKE CONCAT(g2.path, '%')
+WHERE me.id = ?
+LIMIT 1`
+	var path string
+	if err := r.db.WithContext(ctx).Raw(pathQuery, actorDept).Scan(&path).Error; err != nil {
+		return "", fmt.Errorf("find grade2 ancestor path: %w", err)
+	}
+	return strings.TrimSpace(path), nil
+}
+
 // formatAccountDisplay 账号 + realname →「姓名(工号)」；无 realname 时回退裸账号。
 func formatAccountDisplay(account, realname string) string {
 	v := strings.TrimSpace(account)

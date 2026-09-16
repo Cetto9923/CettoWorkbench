@@ -218,3 +218,22 @@ func (s *Service) AccountDisplayMap(ctx context.Context, actor *model.User) (map
 	_ = actor
 	return s.repo.FindAccountDisplayMap(ctx)
 }
+
+// ListInsideUsers 返回人员选择控件用的内部用户列表（按当前登录用户部门亲和度排序）。
+func (s *Service) ListInsideUsers(ctx context.Context, actor *model.User) ([]InsideUserOption, error) {
+	users, err := s.repo.FindInsideUsers(ctx, actorDeptID(actor))
+	if err != nil {
+		return nil, err
+	}
+	if users == nil {
+		return []InsideUserOption{}, nil
+	}
+	return users, nil
+}
+
+func actorDeptID(actor *model.User) uint64 {
+	if actor == nil {
+		return 0
+	}
+	return actor.DeptID
+}

@@ -1,0 +1,331 @@
+{{/* ==========================================================================
+文件: web/templates/components/scheduleintegrated.html
+模块: 通用模板
+职责: 一体化排期弹窗及 RD/任务行模板（schedule 页与 PO 首页共用）
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: 无（静态 DOM / template 片段）
+========================================================================== */}}
+{{ define "schedule/integrated" }}
+<div class="batch-modal-overlay" id="scheduleIntegratedModalOverlay"></div>
+<div class="batch-modal schedule-integrated-modal" id="scheduleIntegratedModal">
+  <div class="batch-modal-hdr">
+    <h3 id="scheduleIntegratedModalTitle">排期一体化办理</h3>
+    <button type="button" class="drawer-close" id="scheduleIntegratedModalCloseBtn"><i class="fas fa-xmark"></i></button>
+  </div>
+  <div class="batch-modal-body" id="scheduleIntegratedModalBody">
+    <div class="schedule-modal-info">
+      <div class="schedule-modal-title" id="scheduleIntegratedReqTitle">—</div>
+      <div class="schedule-modal-summary">
+        <span>主系统 <strong id="scheduleIntegratedReqSystem">—</strong></span>
+        <span>指派人 <strong id="scheduleIntegratedReqOwner">—</strong></span>
+      </div>
+    </div>
+
+    <div class="schedule-integrated-section">
+      <div class="schedule-integrated-section-hdr"><strong>需求排期</strong></div>
+      <div class="schedule-integrated-section-body">
+        <div class="schedule-integrated-form-sheet">
+          <div class="schedule-integrated-grid">
+            <div class="schedule-integrated-cell">
+              <label class="schedule-integrated-label">版本窗口 <span class="req">*</span></label>
+              <div class="schedule-window-combo">
+                <select id="scheduleIntegratedWindowSelect" class="form-select schedule-field-control schedule-window-combo-select">
+                  <option value="">请选择版本窗口</option>
+                </select>
+              </div>
+            </div>
+            <div class="schedule-integrated-cell">
+              <label class="schedule-integrated-label">预计上线</label>
+              <div class="schedule-target-combo">
+                <input type="date" id="scheduleIntegratedSchedulePlanDate" class="form-input schedule-field-control schedule-target-combo-date" readonly>
+              </div>
+            </div>
+            <div class="schedule-integrated-cell">
+              <label class="schedule-integrated-label" for="scheduleIntRDInput">开发负责人</label>
+              <input
+                type="text"
+                id="scheduleIntRDInput"
+                class="form-input schedule-field-control"
+                placeholder="输入姓名或工号搜索"
+                autocomplete="off"
+              >
+              <input type="hidden" id="scheduleIntRDValue" name="rd">
+            </div>
+            <div class="schedule-integrated-cell">
+              <label class="schedule-integrated-label" for="scheduleIntQDInput">测试负责人</label>
+              <input
+                type="text"
+                id="scheduleIntQDInput"
+                class="form-input schedule-field-control"
+                placeholder="输入姓名或工号搜索"
+                autocomplete="off"
+              >
+              <input type="hidden" id="scheduleIntQDValue" name="qd">
+            </div>
+            <div class="schedule-integrated-cell">
+              <label class="schedule-integrated-label" for="scheduleIntAccepterInput">验收负责人</label>
+              <input
+                type="text"
+                id="scheduleIntAccepterInput"
+                class="form-input schedule-field-control"
+                placeholder="输入姓名或工号搜索"
+                autocomplete="off"
+              >
+              <input type="hidden" id="scheduleIntAccepterValue" name="accepter">
+            </div>
+            <div class="schedule-integrated-cell">
+              <label class="schedule-integrated-label">提测/开发</label>
+              <input type="date" id="scheduleIntegratedDevelopFinish" class="form-input schedule-field-control">
+            </div>
+            <div class="schedule-integrated-cell">
+              <label class="schedule-integrated-label">测试完成</label>
+              <input type="date" id="scheduleIntegratedTestFinish" class="form-input schedule-field-control">
+            </div>
+            <div class="schedule-integrated-cell">
+              <label class="schedule-integrated-label">验收完成</label>
+              <input type="date" id="scheduleIntegratedAcceptancedDate" class="form-input schedule-field-control">
+            </div>
+            <div class="schedule-integrated-cell schedule-integrated-cell--pad" aria-hidden="true"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="schedule-integrated-section" id="scheduleIntegratedRdSection">
+      <div class="schedule-integrated-section-hdr schedule-integrated-section-hdr--actions">
+        <div><strong>研发需求与任务</strong></div>
+      </div>
+      <div class="schedule-integrated-section-body">
+        <div class="transfer-dev-section">
+          <div class="transfer-dev-section-head"><strong>用户故事条目</strong></div>
+          <table class="transfer-dev-story-table">
+            <thead>
+              <tr>
+                <th style="width:56px">序号</th>
+                <th style="width:120px">角色</th>
+                <th>目标和值</th>
+                <th style="width:120px">涉及系统</th>
+                <th style="width:132px">负责团队</th>
+                <th style="width:72px">故事点</th>
+              </tr>
+            </thead>
+            <tbody id="storyItemsBody"></tbody>
+          </table>
+        </div>
+        <div id="rdTaskTree" class="rd-task-tree">
+          <div class="transfer-dev-section-head"><strong>研发需求</strong></div>
+          <div id="rdTreeEmpty" class="integrated-rd-tree-empty compact" style="display:none;">
+            <p>暂无研发需求</p>
+          </div>
+          <div id="rdTreeNodes"></div>
+          <button type="button" class="rd-add-node">+ 添加研发需求</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="batch-modal-footer schedule-integrated-footer">
+    <button type="button" class="action-btn" id="scheduleIntegratedModalDismissBtn">取消</button>
+    <button type="button" class="action-btn primary" id="scheduleIntegratedSaveBtn">确认并同步</button>
+  </div>
+</div>
+
+<div class="batch-modal-overlay" id="scheduleProductNoticeOverlay"></div>
+<div class="batch-modal schedule-product-notice-modal" id="scheduleProductNoticeModal">
+  <div class="batch-modal-hdr">
+    <h3>系统维护提示</h3>
+    <button type="button" class="drawer-close" id="scheduleProductNoticeCloseBtn"><i class="fas fa-xmark"></i></button>
+  </div>
+  <div class="batch-modal-body">
+    <p id="scheduleProductNoticeMessage" class="schedule-product-notice-message"></p>
+    <div class="batch-modal-footer">
+      <button type="button" class="action-btn action-btn--primary" id="scheduleProductNoticeOkBtn">确定（去禅道）</button>
+      <button type="button" class="action-btn" id="scheduleProductNoticeCancelBtn">取消</button>
+    </div>
+  </div>
+</div>
+
+<template id="tplTaskModalRowNew">
+  <tr class="task-modal-row task-modal-row--new rd-task-row rd-task-row--new">
+    <td class="rd-task-cell rd-task-cell-project"><select class="rd-task-project-select form-select rd-task-select"><option value="">请选择项目</option></select></td>
+    <td class="rd-task-cell rd-task-cell-execution"><select class="rd-task-execution-select form-select rd-task-select" disabled><option value="">请选择执行</option></select></td>
+    <td class="rd-task-cell rd-task-cell-type"><select class="rd-task-type form-select rd-task-select"></select></td>
+    <td class="rd-task-cell rd-task-cell-pri"><select class="rd-task-pri form-select rd-task-select"><option value="1">P1</option><option value="2">P2</option><option value="3" selected>P3</option><option value="4">P4</option></select></td>
+    <td class="rd-task-cell rd-task-cell-name rd-task-cell--name"><input type="text" class="rd-task-name form-input rd-task-input" placeholder="任务名称"></td>
+    <td class="rd-task-cell rd-task-cell-owner rd-task-cell--owner rd-task-owner-cell"></td>
+    <td class="rd-task-cell rd-task-cell-hours"><input type="number" class="rd-task-hours form-input rd-task-input" min="0" step="0.5" placeholder="h"></td>
+    <td class="rd-task-cell rd-task-cell-start"><input type="date" class="rd-task-start form-input rd-task-input"></td>
+    <td class="rd-task-cell rd-task-cell-end"><input type="date" class="rd-task-end form-input rd-task-input"></td>
+  </tr>
+</template>
+
+<template id="tplTaskModalRowExisting">
+  <tr class="task-modal-row task-modal-row--existing rd-task-row rd-task-row--editing" data-task-id="">
+    <td class="rd-task-cell rd-task-cell-project"><select class="rd-task-project-select form-select rd-task-select"><option value="">请选择项目</option></select></td>
+    <td class="rd-task-cell rd-task-cell-execution"><select class="rd-task-execution-select form-select rd-task-select" disabled><option value="">请选择执行</option></select></td>
+    <td class="rd-task-cell rd-task-cell-type task-modal-type-cell"></td>
+    <td class="rd-task-cell rd-task-cell-pri"><select class="rd-task-pri form-select rd-task-select"><option value="1">P1</option><option value="2">P2</option><option value="3">P3</option><option value="4">P4</option></select></td>
+    <td class="rd-task-cell rd-task-cell-name rd-task-cell--name"><input type="text" class="rd-task-name form-input rd-task-input"></td>
+    <td class="rd-task-cell rd-task-cell-owner rd-task-cell--owner rd-task-owner-cell"></td>
+    <td class="rd-task-cell rd-task-cell-hours"><input type="number" class="rd-task-hours form-input rd-task-input" min="0" step="0.5"></td>
+    <td class="rd-task-cell rd-task-cell-start"><input type="date" class="rd-task-start form-input rd-task-input"></td>
+    <td class="rd-task-cell rd-task-cell-end"><input type="date" class="rd-task-end form-input rd-task-input"></td>
+  </tr>
+</template>
+
+<template id="tplRdTaskTableHead">
+  <thead>
+    <tr class="rd-task-table-head-row">
+      <th class="rd-task-th rd-task-th--project" style="width:120px">项目</th>
+      <th class="rd-task-th rd-task-th--execution" style="width:120px">执行</th>
+      <th class="rd-task-th rd-task-th--type" style="width:80px">类型</th>
+      <th class="rd-task-th rd-task-th--pri" style="width:72px">优先级</th>
+      <th class="rd-task-th rd-task-th--name">任务名称 <span class="req">*</span></th>
+      <th class="rd-task-th rd-task-th--owner" style="width:140px">负责人</th>
+      <th class="rd-task-th rd-task-th--hours" style="width:60px">预估(h) <span class="req">*</span></th>
+      <th class="rd-task-th rd-task-th--start" style="width:100px">开始</th>
+      <th class="rd-task-th rd-task-th--end" style="width:100px">截止 <span class="req">*</span></th>
+      <th class="rd-task-th rd-task-th--actions" style="width:48px">操作</th>
+    </tr>
+  </thead>
+</template>
+
+<template id="tplRdTaskRowNew">
+  <tr class="rd-task-row rd-task-row--new" data-story-id="">
+    <td class="rd-task-cell rd-task-cell-project"><select class="rd-task-project-select form-select rd-task-select"><option value="">请选择项目</option></select></td>
+    <td class="rd-task-cell rd-task-cell-execution"><select class="rd-task-execution-select form-select rd-task-select" disabled><option value="">请选择执行</option></select></td>
+    <td class="rd-task-cell rd-task-cell-type"><select class="rd-task-type form-select rd-task-select"><option value="devel">开发</option><option value="test">测试</option><option value="OLtest">上线测试</option><option value="review">评审</option><option value="affair">事务</option><option value="request">需求</option><option value="misc">其他</option><option value="codereview">代码评审</option><option value="design">设计</option><option value="study">研究</option><option value="OLDebug">上线调试</option><option value="Online">上线</option><option value="Train">培训</option><option value="meeting">会议</option><option value="discuss">讨论</option><option value="ui">界面</option></select></td>
+    <td class="rd-task-cell rd-task-cell-pri"><select class="rd-task-pri form-select rd-task-select"><option value="1">P1</option><option value="2">P2</option><option value="3" selected>P3</option><option value="4">P4</option></select></td>
+    <td class="rd-task-cell rd-task-cell-name rd-task-cell--name"><input type="text" class="rd-task-name form-input rd-task-input" placeholder="任务名称"></td>
+    <td class="rd-task-cell rd-task-cell-owner rd-task-cell--owner rd-task-owner-cell"></td>
+    <td class="rd-task-cell rd-task-cell-hours"><input type="number" class="rd-task-hours form-input rd-task-input" min="0" step="0.5" placeholder="h"></td>
+    <td class="rd-task-cell rd-task-cell-start"><input type="date" class="rd-task-start form-input rd-task-input"></td>
+    <td class="rd-task-cell rd-task-cell-end"><input type="date" class="rd-task-end form-input rd-task-input"></td>
+    <td class="rd-task-cell rd-task-cell-actions"><span class="task-actions"></span></td>
+  </tr>
+</template>
+
+<template id="tplRdTaskRowReadonly">
+  <tr class="rd-task-row rd-task-row--existing">
+    <td class="rd-task-cell rd-task-cell-project"></td>
+    <td class="rd-task-cell rd-task-cell-execution"></td>
+    <td class="rd-task-cell rd-task-cell-type"></td>
+    <td class="rd-task-cell rd-task-cell-pri"></td>
+    <td class="rd-task-cell rd-task-cell-name rd-task-cell--name"></td>
+    <td class="rd-task-cell rd-task-cell-owner rd-task-cell--owner"></td>
+    <td class="rd-task-cell rd-task-cell-hours"></td>
+    <td class="rd-task-cell rd-task-cell-start"></td>
+    <td class="rd-task-cell rd-task-cell-end"></td>
+    <td class="rd-task-cell rd-task-cell-actions"><span class="task-actions"></span></td>
+  </tr>
+</template>
+
+<template id="tplRdTaskRowEdit">
+  <tr class="rd-task-row rd-task-row--editing">
+    <td class="rd-task-cell rd-task-cell-project"><select class="rd-task-project-select form-select rd-task-select"><option value="">请选择项目</option></select></td>
+    <td class="rd-task-cell rd-task-cell-execution"><select class="rd-task-execution-select form-select rd-task-select" disabled><option value="">请选择执行</option></select></td>
+    <td class="rd-task-cell rd-task-cell-type"><select class="rd-task-type form-select rd-task-select"></select></td>
+    <td class="rd-task-cell rd-task-cell-pri"><select class="rd-task-pri form-select rd-task-select"><option value="1">P1</option><option value="2">P2</option><option value="3">P3</option><option value="4">P4</option></select></td>
+    <td class="rd-task-cell rd-task-cell-name rd-task-cell--name"><input type="text" class="rd-task-name form-input rd-task-input" placeholder="任务名称"></td>
+    <td class="rd-task-cell rd-task-cell-owner rd-task-cell--owner rd-task-owner-cell"></td>
+    <td class="rd-task-cell rd-task-cell-hours"><input type="number" class="rd-task-hours form-input rd-task-input" min="0" step="0.5" placeholder="h"></td>
+    <td class="rd-task-cell rd-task-cell-start"><input type="date" class="rd-task-start form-input rd-task-input"></td>
+    <td class="rd-task-cell rd-task-cell-end"><input type="date" class="rd-task-end form-input rd-task-input"></td>
+    <td class="rd-task-cell rd-task-cell-actions"><span class="task-actions"></span></td>
+  </tr>
+</template>
+
+<template id="tplRdTaskActions">
+  <span class="task-actions">
+    <button type="button" class="task-edit-btn" title="编辑"><i class="fas fa-pen"></i></button>
+    <button type="button" class="task-delete-btn" title="删除此任务"><i class="fas fa-trash-can"></i></button>
+  </span>
+</template>
+
+<template id="tplRdTaskActionsDeleteOnly">
+  <span class="task-actions">
+    <button type="button" class="task-delete-btn" title="删除此任务"><i class="fas fa-trash-can"></i></button>
+  </span>
+</template>
+
+<template id="tplRdTaskSection">
+  <div class="rd-node-tasks">
+    <table class="rd-task-table">
+      <tbody class="rd-task-body"></tbody>
+    </table>
+    <button type="button" class="rd-add-task">+ 添加任务</button>
+  </div>
+</template>
+
+<template id="tplRdNode">
+  <div class="rd-node rd-node--story">
+    <div class="rd-node-header">
+      <button type="button" class="rd-toggle" title="展开/收起任务" aria-label="展开/收起任务">▼</button>
+      <span class="rd-node-id"></span>
+      <span class="rd-node-role-badge"></span>
+      <span class="rd-node-product-name"></span>
+      <strong class="rd-node-title-display"></strong>
+      <span class="rd-node-header-right">
+        <span class="rd-node-assignee-display"></span>
+        <span class="rd-node-actions"></span>
+      </span>
+    </div>
+  </div>
+</template>
+
+<template id="tplRdNodeDraft">
+  <div class="rd-node rd-node--draft">
+    <div class="rd-node-header rd-node-header--edit">
+      <button type="button" class="rd-toggle" title="展开/收起任务" aria-label="展开/收起任务">▼</button>
+      <span class="rd-node-role-badge"></span>
+      <select class="rd-node-product form-select rd-node-product-select"><option value="">请选择系统</option></select>
+      <input type="text" class="rd-node-title form-input rd-node-title-input" placeholder="研发需求名称">
+      <span class="rd-node-header-right">
+        <span class="rd-node-assignee-wrap">
+          <input type="text" class="rd-node-assignee-input form-input rd-node-assignee-field" placeholder="指派人" autocomplete="off">
+          <input type="hidden" class="rd-node-assignee-value">
+        </span>
+        <span class="rd-node-actions"></span>
+      </span>
+    </div>
+  </div>
+</template>
+
+<template id="tplRdNodeActionsEdit">
+  <span class="rd-node-actions">
+    <button type="button" class="rd-edit-btn" title="编辑"><i class="fas fa-pen"></i></button>
+    <button type="button" class="rd-delete-btn" title="删除此研发需求"><i class="fas fa-trash-can"></i></button>
+  </span>
+</template>
+
+<template id="tplRdNodeActionsDelete">
+  <span class="rd-node-actions">
+    <button type="button" class="rd-delete-btn" title="删除此研发需求"><i class="fas fa-trash-can"></i></button>
+  </span>
+</template>
+
+<template id="tplRdNodeConfirmBtn">
+  <button type="button" class="rd-confirm-btn" title="确认"><i class="fas fa-check"></i></button>
+</template>
+
+<template id="tplRdStoryAssigneeEdit">
+  <span class="rd-node-assignee-wrap">
+    <input type="text" class="rd-node-assignee-input form-input rd-node-assignee-field" placeholder="指派人" autocomplete="off">
+    <input type="hidden" class="rd-node-assignee-value">
+  </span>
+</template>
+
+<template id="tplStoryItemEmpty">
+  <tr><td colspan="6" class="transfer-dev-story-empty">暂无用户故事条目</td></tr>
+</template>
+
+<template id="tplStoryItemRow">
+  <tr>
+    <td class="story-item-index"></td>
+    <td class="story-item-role"></td>
+    <td class="story-item-title"></td>
+    <td class="story-item-product"></td>
+    <td>—</td>
+    <td class="story-item-estimate"></td>
+  </tr>
+</template>
+{{ end }}

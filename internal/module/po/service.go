@@ -14,6 +14,7 @@ package po
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"go.uber.org/zap"
@@ -45,12 +46,13 @@ type Service struct {
 	repo     *Repo
 	schedule *schedule.Service
 	userSvc  *user.Service
+	ztAPI    *zentao.Client
 	logger   *zap.Logger
 }
 
-// NewService 创建 Service。
-func NewService(repo *Repo, scheduleSvc *schedule.Service, userSvc *user.Service, logger *zap.Logger) *Service {
-	return &Service{repo: repo, schedule: scheduleSvc, userSvc: userSvc, logger: logger}
+// NewService 创建 Service。ztAPI 可为空，评审写禅道时回退 zentao.API()。
+func NewService(repo *Repo, scheduleSvc *schedule.Service, userSvc *user.Service, ztAPI *zentao.Client, logger *zap.Logger) *Service {
+	return &Service{repo: repo, schedule: scheduleSvc, userSvc: userSvc, ztAPI: ztAPI, logger: logger}
 }
 
 // Home 加载首页价值流阶段统计。
@@ -127,7 +129,29 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 		}
 	}
 
-	return &HomeResp{Stages: stages, VersionWindows: versionWindows}, nil
+	launchWindows := []LaunchWindowOption{}
+	vwRows, vwErr := s.repo.ListVersionWindows(ctx)
+	if vwErr != nil {
+		if s.logger != nil {
+			s.logger.Warn("po home launch windows", zap.Error(vwErr))
+		}
+	} else {
+		launchWindows = make([]LaunchWindowOption, 0, len(vwRows))
+		for _, w := range vwRows {
+			launchWindows = append(launchWindows, LaunchWindowOption{
+				ID:          w.ID,
+				Name:        strings.TrimSpace(w.Name),
+				ReleaseDate: w.ReleaseDate.Format("2006-01-02"),
+			})
+		}
+	}
+
+	return &HomeResp{
+		Stages:         stages,
+		VersionWindows: versionWindows,
+		LaunchWindows:  launchWindows,
+		Users:          s.listVerifierUsers(ctx, actor),
+	}, nil
 }
 
 // Demands 按价值流状态返回当前用户关联的需求/故事详情（后端分页）。
@@ -302,14 +326,22 @@ func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stage
 func (s *Service) buildDemandWorkItems(ctx context.Context, account, stageStatus string, rows []DemandRow, displayMap map[string]string) ([]WorkItemDetail, error) {
 	label := valueStreamLabelForStatus(stageStatus)
 	waitIDs := make([]int, 0, len(rows))
+	productIDs := make([]uint, 0, len(rows))
 	for _, row := range rows {
 		if strings.TrimSpace(row.Status) == "wait" {
 			waitIDs = append(waitIDs, row.ID)
+		}
+		if pid := parseMainSystemID(row.MainSystem); pid > 0 {
+			productIDs = append(productIDs, pid)
 		}
 	}
 	pendingReview, pendingErr := s.repo.FindPendingReviewDemandIDs(ctx, account, waitIDs)
 	if pendingErr != nil {
 		return nil, pendingErr
+	}
+	testtaskByProduct, ttErr := s.repo.FindMaxTesttaskIDByProducts(ctx, productIDs)
+	if ttErr != nil {
+		return nil, ttErr
 	}
 	items := make([]WorkItemDetail, 0, len(rows))
 	for _, row := range rows {
@@ -319,20 +351,49 @@ func (s *Service) buildDemandWorkItems(ctx context.Context, account, stageStatus
 		}
 		ownerDisp := resolveNextOwnerDisplay(row, displayMap)
 		_, canReview := pendingReview[row.ID]
+		status := strings.TrimSpace(row.Status)
+		isCreator := account != "" && strings.TrimSpace(row.CreatedBy) == account
+		canOwnerDraft := isCreator && (status == "draft" || status == "refuse")
+		testtaskURL := ""
+		if pid := parseMainSystemID(row.MainSystem); pid > 0 {
+			if taskID := testtaskByProduct[pid]; taskID > 0 {
+				testtaskURL = zentao.URL("testtask", "cases", fmt.Sprintf("taskID=%d", taskID))
+			}
+		}
 		items = append(items, WorkItemDetail{
-			Kind:         "demand",
-			ID:           fmt.Sprintf("US%d", row.ID),
-			Pri:          pri,
-			Title:        row.Name,
-			Owner:        ownerDisp,
-			NextOwner:    ownerDisp,
-			ZentaoUrl:    zentao.URL("demand", "view", fmt.Sprintf("demandID=%d", row.ID)),
-			ValueStream:  label,
-			ZentaoStatus: row.Status,
-			CanReview:    canReview,
+			Kind:            "demand",
+			ID:              fmt.Sprintf("US%d", row.ID),
+			Pri:             pri,
+			Title:           row.Name,
+			Owner:           ownerDisp,
+			NextOwner:       ownerDisp,
+			ZentaoUrl:       zentao.URL("demand", "view", fmt.Sprintf("demandID=%d", row.ID)),
+			ZentaoEditUrl:   zentao.URL("demand", "edit", fmt.Sprintf("demandID=%d", row.ID)),
+			ClarifyUrl:      zentao.URL("demand", "clarify", fmt.Sprintf("demandID=%d", row.ID)),
+			AppraiseUrl:     zentao.URL("demand", "appraise", fmt.Sprintf("demandID=%d", row.ID)),
+			TesttaskUrl:     testtaskURL,
+			ValueStream:     label,
+			ZentaoStatus:    row.Status,
+			CanReview:       canReview,
+			CanCancelReview: isCreator && status == "wait",
+			CanSubmitReview: canOwnerDraft,
+			CanEdit:         canOwnerDraft,
 		})
 	}
 	return items, nil
+}
+
+// parseMainSystemID 将业需 mainSystem 字符串解析为产品 ID。
+func parseMainSystemID(raw string) uint {
+	s := strings.TrimSpace(raw)
+	if s == "" {
+		return 0
+	}
+	n, err := strconv.ParseUint(s, 10, 64)
+	if err != nil {
+		return 0
+	}
+	return uint(n)
 }
 
 func resolveNextOwnerDisplay(row DemandRow, displayMap map[string]string) string {
@@ -392,6 +453,7 @@ func storyWorkItems(rows []StoryRow, label string, actor *model.User, displayMap
 			ID:           fmt.Sprintf("U%d", row.ID),
 			Pri:          fmt.Sprintf("P%d", row.Pri),
 			Title:        row.Title,
+			Stage:        strings.TrimSpace(row.Stage), // 禅道研需 stage，供排期按钮判定
 			Owner:        owner,
 			NextOwner:    owner,
 			ZentaoUrl:    zentao.URL("story", "view", fmt.Sprintf("storyID=%d", row.ID)),

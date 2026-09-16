@@ -6,6 +6,7 @@
 // 依赖: internal/model
 //       internal/module/schedule/repo.go
 //       internal/module/schedule/service_window.go
+//       internal/module/user
 // =============================================================================
 
 package schedule
@@ -20,17 +21,19 @@ import (
 	"go.uber.org/zap"
 
 	"workbench/internal/model"
+	"workbench/internal/module/user"
 )
 
 // Service 处理排期业务逻辑。
 type Service struct {
-	repo   *Repo
-	logger *zap.Logger
+	repo    *Repo
+	userSvc *user.Service
+	logger  *zap.Logger
 }
 
 // NewService 创建 Service。
-func NewService(repo *Repo, logger *zap.Logger) *Service {
-	return &Service{repo: repo, logger: logger}
+func NewService(repo *Repo, userSvc *user.Service, logger *zap.Logger) *Service {
+	return &Service{repo: repo, userSvc: userSvc, logger: logger}
 }
 
 // GetUserTeamgroups 查询用户所属敏捷小组并拼接展示名称。
@@ -158,15 +161,26 @@ func (s *Service) ListFilterWindows(ctx context.Context) ([]WindowFilterOption, 
 }
 
 // ListScheduleUsers 查询筛选区负责人下拉用户。
-func (s *Service) ListScheduleUsers(ctx context.Context) ([]SchedulingUserOption, error) {
-	users, err := s.repo.ListInsideUsersForScheduling(ctx)
+func (s *Service) ListScheduleUsers(ctx context.Context, actor *model.User) ([]SchedulingUserOption, error) {
+	return s.listInsideUsers(ctx, actor)
+}
+
+func (s *Service) listInsideUsers(ctx context.Context, actor *model.User) ([]SchedulingUserOption, error) {
+	if s.userSvc == nil {
+		return []SchedulingUserOption{}, nil
+	}
+	users, err := s.userSvc.ListInsideUsers(ctx, actor)
 	if err != nil {
 		return nil, err
 	}
-	if users == nil {
-		return []SchedulingUserOption{}, nil
+	out := make([]SchedulingUserOption, 0, len(users))
+	for _, item := range users {
+		out = append(out, SchedulingUserOption{
+			Account:  item.Account,
+			Realname: item.Realname,
+		})
 	}
-	return users, nil
+	return out, nil
 }
 
 func computeWindowPermissions(createdBy, account string, demandCount int) (canEdit, canDelete, hasLinkedDemands bool) {

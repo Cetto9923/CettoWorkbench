@@ -103,8 +103,6 @@ func (s *Service) GetStoryScheduling(ctx context.Context, actor *model.User, sto
 	if storyID == 0 {
 		return nil, errors.New("研发需求 ID 无效")
 	}
-	_ = actorAccount(actor)
-
 	detail, err := s.repo.GetStorySchedulingDetail(ctx, storyID)
 	if err != nil {
 		return nil, err
@@ -114,7 +112,7 @@ func (s *Service) GetStoryScheduling(ctx context.Context, actor *model.User, sto
 	if err != nil {
 		return nil, err
 	}
-	users, err := s.repo.ListInsideUsersForScheduling(ctx)
+	users, err := s.listInsideUsers(ctx, actor)
 	if err != nil {
 		return nil, err
 	}

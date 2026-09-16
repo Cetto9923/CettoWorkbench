@@ -154,4 +154,4 @@ UPDATE `zt_menus` SET `parentId` = 4, `sort` = 1 WHERE `path` = '/schedule' AND 
 
 INSERT INTO `zt_menus` (`parentId`, `title`, `icon`, `path`, `perm`, `type`, `sort`) VALUES
 -- (1,	'我的关注',	'fa-star',	'/follow',	'follow:list',	'C',	5),
-(4,	'工作看板',	'fa-table-cells-large',	'/kanban',	'kanban:list',	'C',	1);
+(4,	'工作看板',	'fa-table-cells-large',	'/kanban/story',	'kanban:story',	'C',	1);

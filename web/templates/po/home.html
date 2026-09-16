@@ -4,12 +4,19 @@
 职责: PO 工作台首页（左行动列表 + 右聚焦专区/版本窗口，对齐原型布局）
 全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
 页面字段: .Title (string), .PageTitle (string), .ValueStreamStages ([]ValueStreamStage),
-          .VersionWindows ([]schedule.HomeVersionWindowCard)
+          .VersionWindows ([]schedule.HomeVersionWindowCard),
+          .LaunchWindowsJSON (string), .UsersJSON (string)
 ========================================================================== */}}
 {{ define "page_css" }}
 <link rel="stylesheet" href="{{ asset "/static/css/po/home.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/common.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/submitreview.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/po/testtask.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/po/linkstory.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/deliver.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/schedule/schedule.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulemodal.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/schedule/scheduleintegrated.css" }}">
 {{ end }}
 
 {{ define "content" }}
@@ -52,12 +59,18 @@
         <div class="home-vs-compact-row">
           {{ range $i, $stage := .ValueStreamStages }}
           <button type="button"
-            class="home-vs-mini-card{{ if eq $i 0 }} active{{ else if eq $stage.Count 0 }} empty{{ end }}"
+            class="home-vs-mini-card stage-{{ $stage.Status }}{{ if eq $i 0 }} active{{ else if eq $stage.Count 0 }} empty{{ end }}"
             data-vs-status="{{ $stage.Status }}"
             title="{{ $stage.Label }} · {{ $stage.Count }} 条">
-            <span class="vs-mini-name">{{ $stage.Label }}</span>
-            <span class="vs-mini-count">{{ $stage.Count }}</span>
-            <span class="vs-mini-meta">业需 {{ $stage.DemandCount }} · 研需 {{ $stage.StoryCount }}</span>
+            <div class="vs-card-top">
+              <span class="vs-mini-name">{{ $stage.Label }}</span>
+              {{ if eq $stage.Status "all" }}<i class="fas fa-check vs-status-icon"></i>
+              {{ else if eq $stage.Status "schedule" }}<span class="vs-status-dot dot-amber"></span>
+              {{ else if eq $stage.Status "waitacceptance" }}<span class="vs-status-dot dot-blue"></span>
+              {{ end }}
+            </div>
+            <div class="vs-mini-count">{{ $stage.Count }}</div>
+            <div class="vs-mini-meta">{{ if eq $stage.Status "all" }}全量汇总{{ else }}业{{ $stage.DemandCount }} · 研{{ $stage.StoryCount }}{{ end }}</div>
           </button>
           {{ end }}
         </div>
@@ -152,7 +165,7 @@
             </div>
           </div>
           {{ else }}
-          <div class="home-version-empty">当前无进行中等待发布的真实版本窗口</div>
+          <div class="home-version-empty">暂无活跃版本窗口</div>
           {{ end }}
         </div>
         <div class="version-dock-bottom">
@@ -165,48 +178,27 @@
   </div>
 </div>
 
-<div class="po-review-overlay" id="poDemandReviewOverlay"></div>
-<div class="po-review-modal" id="poDemandReviewModal" role="dialog" aria-labelledby="poDemandReviewTitle">
-  <div class="po-review-hdr">
-    <h3 id="poDemandReviewTitle">
-      <span>评审需求</span>
-      <span class="po-review-req-name" id="poDemandReviewName"></span>
-      <span class="po-review-req-id" id="poDemandReviewId"></span>
-    </h3>
-    <button type="button" class="po-review-close" id="poDemandReviewCloseBtn" aria-label="关闭"><i class="fas fa-xmark"></i></button>
-  </div>
-  <form class="po-review-form" id="poDemandReviewForm">
-    <div class="po-review-field">
-      <label for="poDemandReviewResult"><span class="req">*</span>评审结果</label>
-      <select id="poDemandReviewResult" name="result" class="select" required>
-        <option value="pass">确认通过</option>
-        <option value="refuse">拒绝</option>
-      </select>
-    </div>
-    <div class="po-review-field">
-      <label for="poDemandReviewFocus"><span class="req">*</span>是否需要重点关注</label>
-      <select id="poDemandReviewFocus" name="isNeedFocus" class="select" required>
-        <option value="0">否</option>
-        <option value="1">是</option>
-      </select>
-    </div>
-    <div class="po-review-field po-review-field--editor">
-      <label for="poDemandReviewComment">备注</label>
-      <textarea id="poDemandReviewComment" name="comment" class="textarea po-review-comment" rows="8" placeholder="可以填写评审意见"></textarea>
-    </div>
-    <div class="po-review-actions">
-      <button type="submit" class="po-review-submit" id="poDemandReviewSubmitBtn">评审需求</button>
-    </div>
-  </form>
-</div>
-
+{{ template "po/review" . }}
+{{ template "po/submitreview" . }}
+{{ template "po/canal" . }}
 {{ template "po/testtask" . }}
 {{ template "po/linkstory" . }}
+{{ template "po/deliver" . }}
+{{ template "schedule/integrated" . }}
 {{ end }}
 
 {{ define "page_js" }}
-<script src="{{ asset "/static/js/po/homereview.js" }}"></script>
+<script src="{{ asset "/static/js/po/common.js" }}"></script>
+<script src="{{ asset "/static/js/po/review.js" }}"></script>
+<script src="{{ asset "/static/js/po/submitreview.js" }}"></script>
+<script src="{{ asset "/static/js/po/canal.js" }}"></script>
 <script src="{{ asset "/static/js/po/testtask.js" }}"></script>
 <script src="{{ asset "/static/js/po/linkstory.js" }}"></script>
+<script src="{{ asset "/static/js/po/deliver.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/schedulefetch.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/scheduleintegratedshared.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/scheduleintegratedtasks.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/scheduleintegratedrd.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/scheduleintegrated.js" }}"></script>
 <script src="{{ asset "/static/js/po/home.js" }}"></script>
 {{ end }}

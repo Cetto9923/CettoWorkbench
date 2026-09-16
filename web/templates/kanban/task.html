@@ -1,0 +1,110 @@
+{{/* ==========================================================================
+文件: web/templates/kanban/task.html
+模块: 工作看板
+职责: 任务看板静态壳；三列任务由 task.js ajax 填充，小组/成员切换驱动刷新；
+      wait/doing 拖拽经 taskdrag.js 调用 PUT /kanban/tasks/:id 写禅道。
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .PageTitle (string), .BaseUrl (string), .IssueCreateURL (string), .TaskCreateURL (string), .Teamgroups ([]module/kanban.TeamgroupItem)
+========================================================================== */}}
+{{ define "page_css" }}
+<link rel="stylesheet" href="{{ asset "/static/css/kanban/task.css" }}">
+{{ end }}
+
+{{ define "content" }}
+<div class="po-board">
+  <div class="page-hdr">
+    <h2>工作看板</h2>
+    <div class="board-switch" role="tablist" aria-label="看板类型">
+      <a href="/kanban/story" role="tab" aria-selected="false">需求看板</a>
+      <a href="/kanban/task" class="active" role="tab" aria-selected="true">任务看板</a>
+    </div>
+    <div class="stats" aria-label="任务统计">
+      <button type="button" class="stat orange" disabled>阻塞 <strong data-stat="blocked">0</strong></button>
+      <button type="button" class="stat red" disabled>超期 <strong data-stat="overdue">0</strong></button>
+    </div>
+    <div class="filter-stack">
+      <span class="filter-label">敏捷小组</span>
+      <div class="chips" data-teamgroup-chips>
+        {{ if .Teamgroups }}
+          {{ range $i, $g := .Teamgroups }}
+        <button type="button" class="chip{{ if eq $i 0 }} active{{ end }}" data-teamgroup-id="{{ $g.ID }}">{{ $g.Name }}</button>
+          {{ end }}
+        {{ else }}
+        <span class="chips-empty">暂无所属敏捷小组</span>
+        {{ end }}
+      </div>
+    </div>
+    <div class="actions">
+      <button type="button" class="action" disabled>调整成员</button>
+      <a class="action primary" href="{{ .TaskCreateURL }}" target="_blank" rel="noopener noreferrer">+ 建任务</a>
+      <a class="action primary" href="{{ .IssueCreateURL }}" target="_blank" rel="noopener noreferrer">+ 提问题</a>
+    </div>
+  </div>
+
+  <div class="owner-row">
+    <span class="owner-title">任务负责人</span>
+    <div class="people" data-people{{ if .CurrentUser }} data-current-account="{{ .CurrentUser.Account }}"{{ end }}>
+      {{ if .Teamgroups }}
+        {{ range $i, $g := .Teamgroups }}
+      <div class="people-group{{ if ne $i 0 }} is-hidden{{ end }}" data-teamgroup-id="{{ $g.ID }}"{{ if ne $i 0 }} hidden{{ end }}>
+        <button type="button" class="person" data-account="all" title="全部">全部</button>
+          {{ if $g.Members }}
+            {{ range $j, $m := $g.Members }}
+        <button type="button" class="person role-{{ $m.Role }}{{ if ge $j 5 }} is-overflow{{ end }}" data-account="{{ $m.Account }}" title="{{ $m.Display }}"{{ if ge $j 5 }} hidden{{ end }}>
+          <span class="mini-avatar">{{ $m.Initial }}</span>{{ $m.Display }}
+        </button>
+            {{ end }}
+            {{ if gt (len $g.Members) 5 }}
+        <button type="button" class="person more" data-people-more>更多 {{ sub (len $g.Members) 5 }} ›</button>
+            {{ end }}
+          {{ else }}
+        <span class="people-placeholder">暂无成员</span>
+          {{ end }}
+      </div>
+        {{ end }}
+      {{ else }}
+      <span class="people-placeholder">暂无所属敏捷小组</span>
+      {{ end }}
+    </div>
+  </div>
+
+  <div class="standup">
+    <div class="board-main">
+      <div class="task-board">
+        <div class="task-col" data-col="wait">
+          <div class="task-col-hdr">未开始 <span class="k-count">0</span></div>
+          <div class="task-col-body"></div>
+        </div>
+        <div class="task-col" data-col="doing">
+          <div class="task-col-hdr">进行中 <span class="k-count">0</span></div>
+          <div class="task-col-body"></div>
+        </div>
+        <div class="task-col" data-col="done">
+          <div class="task-col-hdr">已完成 <span class="k-count">0</span></div>
+          <div class="task-col-body"></div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="issue-panel">
+      <div class="issue-hdr">
+        <strong>问题</strong>
+        <span class="issue-count">0</span>
+        <button type="button" class="issue-all" disabled>查看全部</button>
+      </div>
+      <div class="issue-tabs">
+        <button type="button" class="issue-tab active" disabled>全部</button>
+        <button type="button" class="issue-tab" disabled>待处理</button>
+        <button type="button" class="issue-tab" disabled>处理中</button>
+      </div>
+      <div class="issue-list">
+        <div class="demand-empty demand-empty--visible">暂无问题</div>
+      </div>
+    </aside>
+  </div>
+</div>
+{{ end }}
+{{ define "page_js" }}
+<script src="{{ asset "/static/js/kanban/task.js" }}"></script>
+<script src="{{ asset "/static/js/kanban/taskdrag.js" }}"></script>
+{{ end }}

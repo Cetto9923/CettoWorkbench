@@ -38,7 +38,7 @@ func toBizRequirementsView(items []BizDemandItem, zentaoBase string) []BizRequir
 		}
 		out = append(out, BizRequirement{
 			DemandID:           item.ID,
-			ID:                 formatBizID(item.ID),
+			ID:                 formatDemandDisplayID(item.ID),
 			Title:              item.Name,
 			Priority:           priority,
 			PriClass:           priClass,
@@ -76,7 +76,7 @@ func toSubBizRequirementsView(items []SubDemandItem, zentaoBase string) []SubBiz
 		}
 		out = append(out, SubBizRequirement{
 			DemandID:         item.ID,
-			ID:               formatSubID(item.ID),
+			ID:               formatDemandDisplayID(item.ID),
 			Title:            item.Name,
 			Priority:         priority,
 			PriClass:         priClass,
@@ -117,7 +117,7 @@ func toDevRequirementsView(stories []StoryItem, zentaoBase string) []DevRequirem
 		}
 		out = append(out, DevRequirement{
 			StoryID:     story.ID,
-			ID:          formatStoryID(story.ID),
+			ID:          formatOtherDisplayID(story.ID),
 			Title:       story.Title,
 			Priority:    priority,
 			PriClass:    priClass,
@@ -180,16 +180,15 @@ func formatOwner(name string) string {
 	return name
 }
 
-func formatBizID(id uint) string {
-	return "REQ-" + strconv.FormatUint(uint64(id), 10)
+// formatDemandDisplayID 业务需求展示编号：#US{id}。
+// 顶层业需、以及从业需拆出的子需求都走这条；研需/子研不要用。
+func formatDemandDisplayID(id uint) string {
+	return "US" + strconv.FormatUint(uint64(id), 10)
 }
 
-func formatSubID(id uint) string {
-	return "SUB-" + strconv.FormatUint(uint64(id), 10)
-}
-
-func formatStoryID(id uint) string {
-	return "RD-" + strconv.FormatUint(uint64(id), 10)
+// formatOtherDisplayID 非业务需求展示编号：#{id}（研需、子研等）。
+func formatOtherDisplayID(id uint) string {
+	return strconv.FormatUint(uint64(id), 10)
 }
 
 // toIndependentRequirementsView 将独立研发需求列表转为页面树形行。
@@ -212,7 +211,7 @@ func toIndependentRequirementsView(items []IndependentStoryItem, zentaoBase stri
 		children := toIndependentChildrenView(item.Children, zentaoBase)
 		out = append(out, IndependentRequirement{
 			StoryID:       item.ID,
-			ID:            formatStoryID(item.ID),
+			ID:            formatOtherDisplayID(item.ID),
 			Title:         item.Title,
 			Priority:      priority,
 			PriClass:      priClass,
@@ -250,7 +249,7 @@ func toIndependentChildrenView(items []IndependentStoryItem, zentaoBase string) 
 		detailURL := template.URL(zentao.StoryViewURLWithBase(zentaoBase, item.ID))
 		out = append(out, IndependentChildRequirement{
 			StoryID:       item.ID,
-			ID:            formatStoryID(item.ID),
+			ID:            formatOtherDisplayID(item.ID),
 			Title:         item.Title,
 			Priority:      priority,
 			PriClass:      priClass,
