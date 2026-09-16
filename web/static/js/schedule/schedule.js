@@ -119,10 +119,89 @@
       var $chip = $(this);
       var count = $chip.attr("data-" + attrName);
       if (count === undefined || count === null || count === "") {
-        count = 0;
+        $chip.find(".js-filter-count").text("—");
+        return;
       }
       $chip.find(".js-filter-count").text(count);
     });
+  }
+
+  function applyFilterCountsPayload(biz, indep) {
+    var fieldByFilter = {
+      all_open: "allOpen",
+      unscheduled: "unscheduled",
+      pending_review: "pendingReview",
+      unassigned: "unassigned",
+      manager_reviewing: "managerReviewing",
+      closed: "closed",
+    };
+    $root.find(".schedule-scope-chip").each(function () {
+      var $chip = $(this);
+      var filter = $chip.attr("data-filter");
+      var field = fieldByFilter[filter];
+      if (!field) {
+        return;
+      }
+      var bizVal = biz && biz[field] != null ? biz[field] : 0;
+      var indepVal = indep && indep[field] != null ? indep[field] : 0;
+      $chip.attr("data-biz-count", bizVal);
+      $chip.attr("data-indep-count", indepVal);
+    });
+    var suspended = biz && biz.suspended != null ? biz.suspended : 0;
+    $root.find(".js-suspended-count").text("(" + suspended + ")");
+    updateFilterChipCounts();
+  }
+
+  function buildFilterCountsURL() {
+    var $scope = $("#scheduleQuickScope");
+    var url = $scope.attr("data-filter-counts-url") || "/schedule/filter-counts";
+    var params = new URLSearchParams();
+    var filter = $scope.attr("data-active-filter") || currentFilter();
+    params.set("filter", filter);
+
+    var canReuse = $scope.attr("data-can-reuse") === "1";
+    var suspended = $scope.attr("data-suspended") === "1";
+    if (canReuse) {
+      var bizTotal = parseInt($scope.attr("data-biz-total") || "0", 10) || 0;
+      var indepTotal = parseInt($scope.attr("data-indep-total") || "0", 10) || 0;
+      if (suspended) {
+        params.set("reuseBizFilter", "suspended");
+        params.set("reuseBizTotal", String(bizTotal));
+      } else {
+        params.set("reuseBizFilter", filter);
+        params.set("reuseBizTotal", String(bizTotal));
+        params.set("reuseIndepFilter", filter);
+        params.set("reuseIndepTotal", String(indepTotal));
+      }
+    }
+    return url + "?" + params.toString();
+  }
+
+  function loadFilterCounts() {
+    var $scope = $("#scheduleQuickScope");
+    if (!$scope.length) {
+      return;
+    }
+    fetch(buildFilterCountsURL(), {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      credentials: "same-origin",
+    })
+      .then(function (res) {
+        if (!res.ok) {
+          throw new Error("filter counts http " + res.status);
+        }
+        return res.json();
+      })
+      .then(function (json) {
+        if (!json || !json.success) {
+          return;
+        }
+        applyFilterCountsPayload(json.biz || {}, json.indep || {});
+      })
+      .catch(function () {
+        // 角标失败不阻塞列表，保持占位符
+      });
   }
 
   function setDataTab($tab, updateURL) {
@@ -374,4 +453,5 @@
   } else {
     syncFilterTabUI();
   }
+  loadFilterCounts();
 })(jQuery);

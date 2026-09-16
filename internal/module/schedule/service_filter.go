@@ -16,7 +16,7 @@ import (
 )
 
 // GetBizDemandFilterCounts 查询业务需求各快捷筛选项数量。
-func (s *Service) GetBizDemandFilterCounts(ctx context.Context, actor *model.User, activeFilter string) (FilterCounts, error) {
+func (s *Service) GetBizDemandFilterCounts(ctx context.Context, actor *model.User, activeFilter, reuseFilter string, reuseTotal int64) (FilterCounts, error) {
 	account := actorAccount(actor)
 	if account == "" {
 		return FilterCounts{}, nil
@@ -26,11 +26,11 @@ func (s *Service) GetBizDemandFilterCounts(ctx context.Context, actor *model.Use
 	if err != nil {
 		return FilterCounts{}, err
 	}
-	return s.repo.GetBizDemandFilterCounts(ctx, poolIDs, account, activeFilter)
+	return s.repo.GetBizDemandFilterCounts(ctx, poolIDs, account, activeFilter, reuseFilter, reuseTotal)
 }
 
 // GetIndependentFilterCounts 查询独立研发需求各快捷筛选项数量。
-func (s *Service) GetIndependentFilterCounts(ctx context.Context, actor *model.User) (FilterCounts, error) {
+func (s *Service) GetIndependentFilterCounts(ctx context.Context, actor *model.User, reuseFilter string, reuseTotal int64) (FilterCounts, error) {
 	account := actorAccount(actor)
 	if account == "" {
 		return FilterCounts{}, nil
@@ -40,5 +40,23 @@ func (s *Service) GetIndependentFilterCounts(ctx context.Context, actor *model.U
 	if err != nil {
 		return FilterCounts{}, err
 	}
-	return s.repo.GetIndependentFilterCounts(ctx, productIDs, account)
+	return s.repo.GetIndependentFilterCounts(ctx, productIDs, account, reuseFilter, reuseTotal)
+}
+
+// GetScheduleFilterCounts 查询业需与独立研需快捷筛选项数量（角标 ajax）。
+func (s *Service) GetScheduleFilterCounts(ctx context.Context, actor *model.User, req FilterCountsReq) (FilterCountsResp, error) {
+	activeFilter := NormalizeDemandFilter(req.Filter)
+	biz, err := s.GetBizDemandFilterCounts(ctx, actor, activeFilter, req.ReuseBizFilter, req.ReuseBizTotal)
+	if err != nil {
+		return FilterCountsResp{}, err
+	}
+	indep, err := s.GetIndependentFilterCounts(ctx, actor, req.ReuseIndepFilter, req.ReuseIndepTotal)
+	if err != nil {
+		return FilterCountsResp{}, err
+	}
+	return FilterCountsResp{
+		Success: true,
+		Biz:     biz,
+		Indep:   indep,
+	}, nil
 }

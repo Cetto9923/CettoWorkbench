@@ -27,7 +27,7 @@ databaseReadonly:
   charset: "utf8mb4"
   parseTime: true
   loc: "Local"
-  sessionVariables: ""
+  sessionVariables: "ob_read_consistency=Weak"
 
 zentao:
   # 禅道地址

@@ -137,6 +137,7 @@ type scheduleIndexDemandData struct {
 	SuspendedCount          int64
 	BizFilterCounts         FilterCounts
 	IndepFilterCounts       FilterCounts
+	CanReuseListTotal       bool
 	SelectedGroups          string
 	SelectedProducts        string
 	SelectedStages          string
@@ -238,6 +239,21 @@ func selectedStageMap(raw string) map[string]bool {
 	return out
 }
 
+// scheduleCanReuseListTotal 无高级筛选时，列表 total 可安全复用为角标。
+// 非挂起：复用当前 filter 对应角标；挂起：仅复用 Suspended。
+func scheduleCanReuseListTotal(req ListBizDemandsReq, _ bool) bool {
+	return strings.TrimSpace(req.Groups) == "" &&
+		strings.TrimSpace(req.Products) == "" &&
+		strings.TrimSpace(req.Stages) == "" &&
+		strings.TrimSpace(req.Windows) == "" &&
+		strings.TrimSpace(req.Keyword) == "" &&
+		strings.TrimSpace(req.Pri) == "" &&
+		strings.TrimSpace(req.WindowType) == "" &&
+		strings.TrimSpace(req.DevOwner) == "" &&
+		strings.TrimSpace(req.TestOwner) == "" &&
+		strings.TrimSpace(req.AcceptOwner) == ""
+}
+
 func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User, bizPage, indepPage int) (scheduleIndexDemandData, bool) {
 	tab := strings.TrimSpace(c.Query("tab"))
 	if tab != "indep" {
@@ -300,24 +316,11 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 	}
 	independentRequirements := toIndependentRequirementsView(indepResp.Items, h.zentaoURL)
 
-	bizFilterCounts, err := h.svc.GetBizDemandFilterCounts(c.Request.Context(), actor, activeFilter)
-	if err != nil {
-		if h.logger != nil {
-			h.logger.Error("load biz filter counts failed", zap.Error(err))
-		}
-		bizFilterCounts = FilterCounts{}
-	}
-	indepFilterCounts, err := h.svc.GetIndependentFilterCounts(c.Request.Context(), actor)
-	if err != nil {
-		if h.logger != nil {
-			h.logger.Error("load independent filter counts failed", zap.Error(err))
-		}
-		indepFilterCounts = FilterCounts{}
-	}
 	selectedStages := bizStages
 	if tab == "indep" {
 		selectedStages = indepStages
 	}
+	canReuseListTotal := scheduleCanReuseListTotal(listReq, suspendedActive)
 
 	bizPager := pagination.New(bizResp.Total, bizPage, scheduleListPageSize)
 	bizPager.PageParam = "bizPage"
@@ -347,9 +350,10 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 		ActiveTab:               tab,
 		ActiveFilter:            activeFilter,
 		SuspendedActive:         suspendedActive,
-		SuspendedCount:          bizFilterCounts.Suspended,
-		BizFilterCounts:         bizFilterCounts,
-		IndepFilterCounts:       indepFilterCounts,
+		SuspendedCount:          0,
+		BizFilterCounts:         FilterCounts{},
+		IndepFilterCounts:       FilterCounts{},
+		CanReuseListTotal:       canReuseListTotal,
 		SelectedGroups:          listReq.Groups,
 		SelectedProducts:        listReq.Products,
 		SelectedStages:          selectedStages,

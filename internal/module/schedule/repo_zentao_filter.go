@@ -43,102 +43,40 @@ type indepStorySimpleCountRow struct {
 	Closed        int64 `gorm:"column:closed"`
 }
 
-const bizDemandHasChildSQL = `
-EXISTS (
-  SELECT 1 FROM zt_demand c
-  WHERE c.parent = d.id AND c.deleted = '0'
-)`
-
-const bizDemandUnscheduledSelfSQL = `
-EXISTS (
-  SELECT 1 FROM zt_demandclarify dc
-  WHERE dc.demand = d.id
-    AND TRIM(IFNULL(dc.product, '')) != ''
-)
-AND (
-  d.assignedTo = ?
-  OR d.BRA = ?
-  OR EXISTS (
+// 从当前用户相关业需做半连接，避免对池内全部父业需逐行跑 EXISTS。
+const bizDemandUnscheduledTopIDsSQL = `
+SELECT u.top_id
+FROM (
+  SELECT DISTINCT CASE
+    WHEN x.parent IN (0, -1) THEN x.id
+    ELSE x.parent
+  END AS top_id
+  FROM (
+    SELECT id FROM zt_demand WHERE deleted = '0' AND assignedTo = ?
+    UNION
+    SELECT id FROM zt_demand WHERE deleted = '0' AND BRA = ?
+    UNION
+    SELECT demand FROM zt_demandclarify WHERE PM = ? AND TRIM(IFNULL(product, '')) != ''
+  ) rel
+  INNER JOIN zt_demand x ON x.id = rel.id AND x.deleted = '0'
+  WHERE EXISTS (
     SELECT 1 FROM zt_demandclarify dc
-    WHERE dc.demand = d.id
-      AND dc.PM = ?
+    WHERE dc.demand = x.id
       AND TRIM(IFNULL(dc.product, '')) != ''
   )
-)
-AND (
-  NOT EXISTS (
-    SELECT 1 FROM zt_story s
-    JOIN zt_planstory ps ON ps.story = s.id
-    JOIN zt_versionwindowproduct vwp ON vwp.plan = ps.plan AND vwp.deletedAt IS NULL
-    WHERE s.fromDemand = d.id
-      AND s.deleted = '0'
-      AND s.sourceType = 'demandpool'
-      AND s.type = 'story'
-  )
-  OR NOT EXISTS (
-    SELECT 1 FROM zt_story s
-    WHERE s.fromDemand = d.id
-      AND s.deleted = '0'
-      AND s.sourceType = 'demandpool'
-      AND s.type = 'story'
-  )
-  OR EXISTS (
-    SELECT 1 FROM zt_story s
-    WHERE s.fromDemand = d.id
-      AND s.deleted = '0'
-      AND s.sourceType = 'demandpool'
-      AND s.type = 'story'
-      AND (
-        NOT EXISTS (SELECT 1 FROM zt_task t WHERE t.story = s.id AND t.deleted = '0' AND t.status != 'closed')
-        OR EXISTS (
-          SELECT 1 FROM zt_task t
-          WHERE t.story = s.id AND t.deleted = '0' AND t.status != 'closed'
-            AND (t.assignedTo = '' OR t.assignedTo IS NULL)
-        )
-      )
-  )
-)`
-
-const bizDemandUnscheduledChildSQL = `
-EXISTS (
-  SELECT 1 FROM zt_demand c
-  WHERE c.parent = d.id
-    AND c.deleted = '0'
-    AND EXISTS (
-      SELECT 1 FROM zt_demandclarify dc
-      WHERE dc.demand = c.id
-        AND TRIM(IFNULL(dc.product, '')) != ''
-    )
-    AND (
-      c.assignedTo = ?
-      OR c.BRA = ?
-      OR EXISTS (
-        SELECT 1 FROM zt_demandclarify dc
-        WHERE dc.demand = c.id
-          AND dc.PM = ?
-          AND TRIM(IFNULL(dc.product, '')) != ''
-      )
-    )
     AND (
       NOT EXISTS (
         SELECT 1 FROM zt_story s
-        JOIN zt_planstory ps ON ps.story = s.id
-        JOIN zt_versionwindowproduct vwp ON vwp.plan = ps.plan AND vwp.deletedAt IS NULL
-        WHERE s.fromDemand = c.id
-          AND s.deleted = '0'
-          AND s.sourceType = 'demandpool'
-          AND s.type = 'story'
-      )
-      OR NOT EXISTS (
-        SELECT 1 FROM zt_story s
-        WHERE s.fromDemand = c.id
+        INNER JOIN zt_planstory ps ON ps.story = s.id
+        INNER JOIN zt_versionwindowproduct vwp ON vwp.plan = ps.plan AND vwp.deletedAt IS NULL
+        WHERE s.fromDemand = x.id
           AND s.deleted = '0'
           AND s.sourceType = 'demandpool'
           AND s.type = 'story'
       )
       OR EXISTS (
         SELECT 1 FROM zt_story s
-        WHERE s.fromDemand = c.id
+        WHERE s.fromDemand = x.id
           AND s.deleted = '0'
           AND s.sourceType = 'demandpool'
           AND s.type = 'story'
@@ -152,28 +90,35 @@ EXISTS (
           )
       )
     )
-)`
+    AND (
+      (
+        x.parent IN (0, -1)
+        AND NOT EXISTS (
+          SELECT 1 FROM zt_demand c
+          WHERE c.parent = x.id AND c.deleted = '0'
+        )
+      )
+      OR x.parent > 0
+    )
+) u`
 
 const bizDemandUnscheduledSQL = `
-AND (
-  (
-    NOT ` + bizDemandHasChildSQL + `
-    AND ` + bizDemandUnscheduledSelfSQL + `
-  )
-  OR ` + bizDemandUnscheduledChildSQL + `
+AND d.id IN (
+` + bizDemandUnscheduledTopIDsSQL + `
 )`
 
+const bizDemandUnassignedDemandIDsSQL = `
+SELECT s.fromDemand
+FROM zt_story s
+LEFT JOIN zt_task t ON t.story = s.id AND t.deleted = '0' AND t.status != 'closed'
+WHERE s.deleted = '0' AND s.fromDemand > 0
+GROUP BY s.id, s.fromDemand
+HAVING COUNT(t.id) = 0
+    OR SUM(CASE WHEN t.assignedTo IS NULL OR t.assignedTo = '' THEN 1 ELSE 0 END) > 0`
+
 const bizDemandUnassignedSQL = `
-AND EXISTS (
-  SELECT 1 FROM zt_story s WHERE s.fromDemand = d.id AND s.deleted = '0'
-  AND (
-    NOT EXISTS (SELECT 1 FROM zt_task t WHERE t.story = s.id AND t.deleted = '0' AND t.status != 'closed')
-    OR EXISTS (
-      SELECT 1 FROM zt_task t
-      WHERE t.story = s.id AND t.deleted = '0' AND t.status != 'closed'
-        AND (t.assignedTo = '' OR t.assignedTo IS NULL)
-    )
-  )
+AND d.id IN (
+` + bizDemandUnassignedDemandIDsSQL + `
 )`
 
 const indepStoryUnscheduledSQL = `
@@ -216,7 +161,7 @@ func buildBizDemandFilterClause(filter, account string) filterClause {
 	case FilterUnscheduled:
 		return filterClause{
 			sql:  bizDemandExcludeReleasedSQL + "\n" + bizDemandUnscheduledExcludeHangSQL + bizDemandUnscheduledSQL,
-			args: []interface{}{account, account, account, account, account, account},
+			args: []interface{}{account, account, account},
 		}
 	case FilterPendingReview:
 		return filterClause{sql: "AND d.status = 'wait'"}
@@ -266,7 +211,8 @@ func buildIndepStoryFilterClause(filter, account string) filterClause {
 }
 
 // GetBizDemandFilterCounts 统计业务需求各快捷筛选项数量。
-func (r *Repo) GetBizDemandFilterCounts(ctx context.Context, poolIDs []uint, account, activeFilter string) (FilterCounts, error) {
+// reuseFilter/reuseTotal：列表 total 可复用时跳过对应重 COUNT。
+func (r *Repo) GetBizDemandFilterCounts(ctx context.Context, poolIDs []uint, account, activeFilter, reuseFilter string, reuseTotal int64) (FilterCounts, error) {
 	if len(poolIDs) == 0 {
 		return FilterCounts{}, nil
 	}
@@ -285,20 +231,22 @@ WHERE deleted = '0' AND parent IN (0, -1) AND pool IN ?`
 		return FilterCounts{}, err
 	}
 
-	unscheduled, err := r.countBizDemandsWithFilter(ctx, poolIDs, account, FilterUnscheduled, false)
-	if err != nil {
-		return FilterCounts{}, err
-	}
-	unassigned, err := r.countBizDemandsWithFilter(ctx, poolIDs, account, FilterUnassigned, false)
-	if err != nil {
-		return FilterCounts{}, err
-	}
-	suspended, err := r.countBizDemandsWithFilter(ctx, poolIDs, account, activeFilter, true)
+	needUnscheduled := !filterCountReuseMatches(reuseFilter, FilterUnscheduled)
+	needUnassigned := !filterCountReuseMatches(reuseFilter, FilterUnassigned)
+	unscheduled, unassigned, err := r.countBizDemandHeavyFilters(ctx, poolIDs, account, needUnscheduled, needUnassigned)
 	if err != nil {
 		return FilterCounts{}, err
 	}
 
-	return FilterCounts{
+	var suspended int64
+	if !filterCountReuseMatches(reuseFilter, FilterCountReuseSuspended) {
+		suspended, err = r.countBizDemandsWithFilter(ctx, poolIDs, account, activeFilter, true)
+		if err != nil {
+			return FilterCounts{}, err
+		}
+	}
+
+	counts := FilterCounts{
 		AllOpen:          row.AllOpen,
 		Unscheduled:      unscheduled,
 		PendingReview:    row.PendingReview,
@@ -306,7 +254,55 @@ WHERE deleted = '0' AND parent IN (0, -1) AND pool IN ?`
 		ManagerReviewing: row.ManagerReviewing,
 		Closed:           row.Closed,
 		Suspended:        suspended,
-	}, nil
+	}
+	applyFilterCountReuse(&counts, reuseFilter, reuseTotal)
+	return counts, nil
+}
+
+type bizDemandHeavyCountRow struct {
+	Unscheduled int64 `gorm:"column:unscheduled"`
+	Unassigned  int64 `gorm:"column:unassigned"`
+}
+
+func (r *Repo) countBizDemandHeavyFilters(ctx context.Context, poolIDs []uint, account string, needUnscheduled, needUnassigned bool) (int64, int64, error) {
+	if !needUnscheduled && !needUnassigned {
+		return 0, 0, nil
+	}
+	account = strings.TrimSpace(account)
+
+	if needUnscheduled && !needUnassigned {
+		total, err := r.countBizDemandsWithFilter(ctx, poolIDs, account, FilterUnscheduled, false)
+		return total, 0, err
+	}
+	if needUnassigned && !needUnscheduled {
+		total, err := r.countBizDemandsWithFilter(ctx, poolIDs, account, FilterUnassigned, false)
+		return 0, total, err
+	}
+
+	const query = `
+SELECT
+  SUM(CASE
+    WHEN d.hang = '0'
+      AND d.status != 'released'
+      AND d.id IN (` + bizDemandUnscheduledTopIDsSQL + `)
+    THEN 1 ELSE 0
+  END) AS unscheduled,
+  SUM(CASE
+    WHEN d.status != 'released'
+      AND d.id IN (` + bizDemandUnassignedDemandIDsSQL + `)
+    THEN 1 ELSE 0
+  END) AS unassigned
+FROM zt_demand d
+WHERE d.deleted = '0'
+  AND d.parent IN (0, -1)
+  AND d.pool IN ?`
+
+	args := []interface{}{account, account, account, poolIDs}
+	var row bizDemandHeavyCountRow
+	if err := r.db.WithContext(ctx).Raw(query, args...).Scan(&row).Error; err != nil {
+		return 0, 0, err
+	}
+	return row.Unscheduled, row.Unassigned, nil
 }
 
 func (r *Repo) countBizDemandsWithFilter(ctx context.Context, poolIDs []uint, account, filter string, suspended bool) (int64, error) {
@@ -356,8 +352,13 @@ WHERE demand IN ?
 	return out, nil
 }
 
+type indepStoryHeavyCountRow struct {
+	Unscheduled int64 `gorm:"column:unscheduled"`
+	Unassigned  int64 `gorm:"column:unassigned"`
+}
+
 // GetIndependentFilterCounts 统计独立研发需求各快捷筛选项数量。
-func (r *Repo) GetIndependentFilterCounts(ctx context.Context, productIDs []uint, account string) (FilterCounts, error) {
+func (r *Repo) GetIndependentFilterCounts(ctx context.Context, productIDs []uint, account, reuseFilter string, reuseTotal int64) (FilterCounts, error) {
 	if len(productIDs) == 0 {
 		return FilterCounts{}, nil
 	}
@@ -379,23 +380,92 @@ WHERE IFNULL(s.sourceType, '') != 'demandpool'
 		return FilterCounts{}, err
 	}
 
-	unscheduled, err := r.countIndepStoriesWithFilter(ctx, productIDs, account, FilterUnscheduled)
-	if err != nil {
-		return FilterCounts{}, err
-	}
-	unassigned, err := r.countIndepStoriesWithFilter(ctx, productIDs, account, FilterUnassigned)
+	needUnscheduled := !filterCountReuseMatches(reuseFilter, FilterUnscheduled)
+	needUnassigned := !filterCountReuseMatches(reuseFilter, FilterUnassigned)
+	unscheduled, unassigned, err := r.countIndepStoryHeavyFilters(ctx, productIDs, account, needUnscheduled, needUnassigned)
 	if err != nil {
 		return FilterCounts{}, err
 	}
 
-	return FilterCounts{
+	counts := FilterCounts{
 		AllOpen:          row.AllOpen,
 		Unscheduled:      unscheduled,
 		PendingReview:    row.PendingReview,
 		Unassigned:       unassigned,
 		ManagerReviewing: 0,
 		Closed:           row.Closed,
-	}, nil
+	}
+	applyFilterCountReuse(&counts, reuseFilter, reuseTotal)
+	return counts, nil
+}
+
+func (r *Repo) countIndepStoryHeavyFilters(ctx context.Context, productIDs []uint, account string, needUnscheduled, needUnassigned bool) (int64, int64, error) {
+	if !needUnscheduled && !needUnassigned {
+		return 0, 0, nil
+	}
+	account = strings.TrimSpace(account)
+
+	if needUnscheduled && !needUnassigned {
+		total, err := r.countIndepStoriesWithFilter(ctx, productIDs, account, FilterUnscheduled)
+		return total, 0, err
+	}
+	if needUnassigned && !needUnscheduled {
+		total, err := r.countIndepStoriesWithFilter(ctx, productIDs, account, FilterUnassigned)
+		return 0, total, err
+	}
+
+	const query = `
+SELECT
+  SUM(CASE
+    WHEN s.status != 'released'
+      AND (
+        s.assignedTo = ?
+        OR EXISTS (
+          SELECT 1 FROM zt_product p
+          WHERE p.id = s.product AND p.deleted = '0'
+            AND (p.PO = ? OR p.QD = ? OR p.RD = ?)
+        )
+      )
+      AND (
+        NOT EXISTS (
+          SELECT 1 FROM zt_planstory ps
+          JOIN zt_versionwindowproduct vwp ON vwp.plan = ps.plan AND vwp.deletedAt IS NULL
+          WHERE ps.story = s.id
+        )
+        OR NOT EXISTS (SELECT 1 FROM zt_task t WHERE t.story = s.id AND t.deleted = '0' AND t.status != 'closed')
+        OR EXISTS (
+          SELECT 1 FROM zt_task t
+          WHERE t.story = s.id AND t.deleted = '0' AND t.status != 'closed'
+            AND (t.assignedTo = '' OR t.assignedTo IS NULL)
+        )
+      )
+    THEN 1 ELSE 0
+  END) AS unscheduled,
+  SUM(CASE
+    WHEN s.status != 'released'
+      AND (
+        NOT EXISTS (SELECT 1 FROM zt_task t WHERE t.story = s.id AND t.deleted = '0' AND t.status != 'closed')
+        OR EXISTS (
+          SELECT 1 FROM zt_task t
+          WHERE t.story = s.id AND t.deleted = '0' AND t.status != 'closed'
+            AND (t.assignedTo = '' OR t.assignedTo IS NULL)
+        )
+      )
+    THEN 1 ELSE 0
+  END) AS unassigned
+FROM zt_story s
+WHERE IFNULL(s.sourceType, '') != 'demandpool'
+  AND s.parent = 0
+  AND s.type = 'story'
+  AND s.deleted = '0'
+  AND s.product IN ?`
+
+	args := []interface{}{account, account, account, account, productIDs}
+	var row indepStoryHeavyCountRow
+	if err := r.db.WithContext(ctx).Raw(query, args...).Scan(&row).Error; err != nil {
+		return 0, 0, err
+	}
+	return row.Unscheduled, row.Unassigned, nil
 }
 
 func (r *Repo) countIndepStoriesWithFilter(ctx context.Context, productIDs []uint, account, filter string) (int64, error) {

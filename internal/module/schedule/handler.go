@@ -103,6 +103,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.Use(middleware.ActiveNav("/schedule"))
 	{
 		g.GET("", h.Index)
+		g.GET("/filter-counts", h.GetFilterCounts)
 		g.GET("/matching-plans", h.GetMatchingPlans)
 		g.GET("/demands/:id/scheduling", h.GetDemandScheduling)
 		g.POST("/demands/:id/save-scheduling", h.SaveScheduling)
@@ -212,7 +213,35 @@ func (h *Handler) Index(c *gin.Context) {
 		"SuspendedCount":          demandData.SuspendedCount,
 		"BizFilterCounts":         demandData.BizFilterCounts,
 		"IndepFilterCounts":       demandData.IndepFilterCounts,
+		"CanReuseListTotal":       demandData.CanReuseListTotal,
+		"FilterCountsURL":         "/schedule/filter-counts",
 	})
+}
+
+// GetFilterCounts 返回快捷筛选项角标数量（JSON，懒加载）。
+func (h *Handler) GetFilterCounts(c *gin.Context) {
+	var req FilterCountsReq
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "参数解析失败",
+		})
+		return
+	}
+
+	actor := middleware.CurrentUser(c)
+	resp, err := h.svc.GetScheduleFilterCounts(c.Request.Context(), actor, req)
+	if err != nil {
+		if h.logger != nil {
+			h.logger.Error("load schedule filter counts failed", zap.Error(err))
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"error":   "加载筛选项数量失败",
+		})
+		return
+	}
+	c.JSON(http.StatusOK, resp)
 }
 
 // ListWindows 返回版本窗口维护列表（JSON）。

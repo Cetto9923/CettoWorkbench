@@ -432,17 +432,36 @@ const (
 	FilterUnassigned       = "unassigned"
 	FilterManagerReviewing = "manager_reviewing"
 	FilterClosed           = "closed"
+
+	// FilterCountReuseSuspended 角标复用：挂起数量（非列表快捷筛选值）。
+	FilterCountReuseSuspended = "suspended"
 )
 
 // FilterCounts 各快捷筛选项数量。
 type FilterCounts struct {
-	AllOpen          int64
-	Unscheduled      int64
-	PendingReview    int64
-	Unassigned       int64
-	ManagerReviewing int64
-	Closed           int64
-	Suspended        int64 // 当前主筛选下 hang='1' 的数量
+	AllOpen          int64 `json:"allOpen"`
+	Unscheduled      int64 `json:"unscheduled"`
+	PendingReview    int64 `json:"pendingReview"`
+	Unassigned       int64 `json:"unassigned"`
+	ManagerReviewing int64 `json:"managerReviewing"`
+	Closed           int64 `json:"closed"`
+	Suspended        int64 `json:"suspended"` // 当前主筛选下 hang='1' 的数量
+}
+
+// FilterCountsReq 角标统计 ajax 入参。
+type FilterCountsReq struct {
+	Filter           string `form:"filter"`
+	ReuseBizFilter   string `form:"reuseBizFilter"`
+	ReuseBizTotal    int64  `form:"reuseBizTotal"`
+	ReuseIndepFilter string `form:"reuseIndepFilter"`
+	ReuseIndepTotal  int64  `form:"reuseIndepTotal"`
+}
+
+// FilterCountsResp 角标统计 ajax 出参。
+type FilterCountsResp struct {
+	Success bool         `json:"success"`
+	Biz     FilterCounts `json:"biz"`
+	Indep   FilterCounts `json:"indep"`
 }
 
 // NormalizeDemandFilter 规范化快捷筛选参数，默认全部未关闭。
@@ -455,6 +474,32 @@ func NormalizeDemandFilter(filter string) string {
 		return FilterAllOpen
 	default:
 		return FilterAllOpen
+	}
+}
+
+func filterCountReuseMatches(reuseFilter, field string) bool {
+	return strings.TrimSpace(reuseFilter) == field
+}
+
+func applyFilterCountReuse(counts *FilterCounts, reuseFilter string, reuseTotal int64) {
+	if counts == nil {
+		return
+	}
+	switch strings.TrimSpace(reuseFilter) {
+	case FilterAllOpen:
+		counts.AllOpen = reuseTotal
+	case FilterUnscheduled:
+		counts.Unscheduled = reuseTotal
+	case FilterPendingReview:
+		counts.PendingReview = reuseTotal
+	case FilterUnassigned:
+		counts.Unassigned = reuseTotal
+	case FilterManagerReviewing:
+		counts.ManagerReviewing = reuseTotal
+	case FilterClosed:
+		counts.Closed = reuseTotal
+	case FilterCountReuseSuspended:
+		counts.Suspended = reuseTotal
 	}
 }
 
