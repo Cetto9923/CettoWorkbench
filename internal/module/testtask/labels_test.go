@@ -9,9 +9,10 @@
 package testtask
 
 import (
+	"context"
 	"testing"
 
-	"workbench/internal/pkg/personlabel"
+	"github.com/DATA-DOG/go-sqlmock"
 )
 
 func TestBuildContextRespIncludesQDAndUsers(t *testing.T) {
@@ -175,13 +176,18 @@ func TestUserOptionLabelDeduplication(t *testing.T) {
 		{"000014", "", "000014"},
 	}
 	for _, tc := range cases {
-		opt := UserOption{
-			Account:  tc.account,
-			Realname: tc.realname,
-			Label:    personlabel.Format(tc.account, tc.realname),
+		db, mock := setupMockTesttaskDB(t)
+		mock.ExpectQuery(`(?s)SELECT account, realname, pinyin\s+FROM zt_user\s+WHERE deleted = '0'\s+AND type = 'inside'`).
+			WillReturnRows(sqlmock.NewRows([]string{"account", "realname", "pinyin"}).AddRow(tc.account, tc.realname, "dxl"))
+		options, err := NewRepo(db).ListInsideUsers(context.Background())
+		if err != nil {
+			t.Fatal(err)
 		}
-		if opt.Label != tc.want {
-			t.Errorf("Format(%q, %q) = %q, want %q", tc.account, tc.realname, opt.Label, tc.want)
+		if len(options) != 1 || options[0].Account != tc.account || options[0].Label != tc.want || options[0].Pinyin != "dxl" {
+			t.Fatalf("ListInsideUsers(%q, %q) = %+v, want label %q", tc.account, tc.realname, options, tc.want)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatal(err)
 		}
 	}
 }
