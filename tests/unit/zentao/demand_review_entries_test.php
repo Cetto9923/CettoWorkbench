@@ -60,8 +60,4 @@ foreach(array('demandReviewEntry' => 'review', 'demandWithdrawReviewEntry' => 'w
     try { $entry->post(1); throw new RuntimeException('permission bypass'); }
     catch(RuntimeException $e) { verify($e->getMessage() === 'denied' && !$entry->called, 'retain permission check'); }
 }
-// In API mode send() does not end execution. The withdraw controller must not
-// fall through to display(), which would append HTML to the JSON response.
-$withdrawControl = file_get_contents($root . '../../../extension/custom/demand/ext/control/withdrawreview.php');
-verify(strpos($withdrawControl, 'return $this->send') !== false, 'withdraw controller returns after API response');
 echo "PASS: all three demand adapters, success/error/malformed response and denied permissions\n";

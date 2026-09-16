@@ -17,6 +17,9 @@ func TestValidateDemandReviewResponse(t *testing.T) {
 		{"empty", `{}`, 200, true},
 		{"null", `null`, 200, true},
 		{"html", `<html>error</html>`, 200, true},
+		{"json then html result success", `{"result":"success","message":"ok"}<html>x</html>`, 200, false},
+		{"json then html success true", "{\"success\":true,\"message\":\"saved\"}\n<div>trailer</div>", 200, false},
+		{"json then html result fail", `{"result":"fail","message":"no"}<html>`, 200, true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			err := validateDemandReviewResponse([]byte(tc.body), tc.status)
