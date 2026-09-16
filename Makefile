@@ -20,6 +20,7 @@ check-frontend-test:
 	@node tests/unit/frontend/wb-picker-search.regression.test.js
 	@node tests/unit/frontend/wb-picker-phase-a.regression.test.js
 	@node tests/unit/frontend/agileteam-adjustment.regression.test.js
+	@node tests/unit/frontend/workboard-team-modal.test.js
 	@node tests/unit/frontend/user-picker.test.js
 	@node tests/unit/frontend/auth-errors.test.js
 	@node tests/unit/frontend/csrf-tokens.test.js

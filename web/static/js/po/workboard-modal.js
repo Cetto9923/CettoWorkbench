@@ -259,11 +259,7 @@
       '    </tr>' +
       '  </thead>' +
       '  <tbody>' + rowsHtml + '</tbody>' +
-      '</table>' +
-      '<div class="kb-form-group" style="margin-top:14px">' +
-      '  <label style="font-size:12px;font-weight:600;color:var(--t1);margin-bottom:4px;display:block">调整说明</label>' +
-      '  <textarea class="kb-textarea" id="kbTeamReason" rows="2" placeholder="说明本次成员调整原因（可选）"></textarea>' +
-      '</div>';
+      '</table>';
 
     var copyBtn = document.getElementById("kbTeamCopyBtn");
     if (copyBtn) {
