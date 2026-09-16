@@ -10,6 +10,7 @@ package agileteam
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -99,6 +100,43 @@ func TestConfirmAdjustmentConcurrentTransitionRollsBack(t *testing.T) {
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("sql expectations: %v", err)
+	}
+}
+
+func TestConfirmAdjustmentRejectsInvalidHours(t *testing.T) {
+	for _, hours := range []float64{-1, 25} {
+		t.Run(fmt.Sprint(hours), func(t *testing.T) {
+			svc, mock := newTestService(t)
+			now := time.Now()
+			mock.ExpectQuery("(?s)SELECT \\* FROM `zt_wb_agileteam_adjustment`.*id = \\?.*LIMIT").
+				WithArgs(int64(20), 1).
+				WillReturnRows(sqlmock.NewRows([]string{
+					"id", "teamgroupId", "adjustNo", "status", "reason",
+					"submittedBy", "confirmedBy", "confirmedDate", "rejectedBy", "rejectedDate", "rejectReason",
+					"createdBy", "createdDate", "updatedBy", "updatedDate", "deletedAt",
+				}).AddRow(int64(20), uint(3), "ADJ-020", StatusPending, "扩编",
+					"po1", "", nil, "", nil, "",
+					"po1", now, "po1", now, nil))
+			mock.ExpectQuery("(?s)SELECT \\* FROM `zt_wb_agileteam_adjustment_item`.*adjustmentId").
+				WithArgs(int64(20)).
+				WillReturnRows(sqlmock.NewRows([]string{
+					"id", "adjustmentId", "account", "actionType", "role", "prevRole",
+					"availableHours", "prevHours", "createdBy", "createdDate", "updatedBy", "updatedDate", "deletedAt",
+				}).AddRow(int64(1), int64(20), "newbie", ActionAdd, "研发", "", hours, 0.0, "po1", now, "po1", now, nil))
+
+			actor := &model.User{Account: "admin", IsSuperAdmin: true}
+			err := svc.ConfirmAdjustment(context.Background(), actor, ConfirmReq{AdjustmentID: 20}, true)
+			biz, ok := errorx.IsBizError(err)
+			if !ok || biz.Code != "invalid" {
+				t.Fatalf("want invalid for hours=%v, got %#v", hours, err)
+			}
+			if !strings.Contains(err.Error(), "必须在 0 到 24 之间") {
+				t.Fatalf("want unified hours message, got %q", err.Error())
+			}
+			if err := mock.ExpectationsWereMet(); err != nil {
+				t.Fatalf("sql expectations: %v", err)
+			}
+		})
 	}
 }
 

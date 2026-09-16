@@ -87,6 +87,8 @@ func (h *Handler) DeliverDemand(c *gin.Context) {
 			status = http.StatusForbidden
 		case errors.Is(actionErr, errHomeActionConflict):
 			status = http.StatusConflict
+		case errors.Is(actionErr, errDeliverBlocked):
+			status = http.StatusConflict
 		}
 		c.JSON(status, gin.H{"success": false, "message": actionErr.Error()})
 		return

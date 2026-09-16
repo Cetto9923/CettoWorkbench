@@ -46,6 +46,29 @@ func TestDeliverHandlerChecksBlockersForBothBodies(t *testing.T) {
 	}
 }
 
+func TestMinimalDeliverBlockedReturns409(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	svc, mock := newServiceForDeliverTest(t)
+	mock.ExpectQuery("(?s)SELECT.*FROM `zt_demand`.*WHERE id = ").WithArgs(uint(1002), 1).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "status", "deleted", "assignedTo"}).AddRow(1002, "acceptanced", "0", "alice"))
+	mock.ExpectQuery("(?s)SELECT.*severe_count.*open_count.*FROM zt_bug").WithArgs(uint(1002)).
+		WillReturnRows(sqlmock.NewRows([]string{"severe_count", "open_count"}).AddRow(3, 1))
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Params = gin.Params{{Key: "id", Value: "1002"}}
+	c.Set("currentUser", &model.User{Account: "alice"})
+	// 极简 body：仅 comment，走 DeliverHomeDemand -> homeAction("deliver")，同样受严重缺陷拦截
+	c.Request = httptest.NewRequest("POST", "/demands/1002/deliver", strings.NewReader(`{"comment":"交付"}`))
+	c.Request.Header.Set("Content-Type", "application/json")
+	(&Handler{svc: svc}).DeliverDemand(c)
+	if w.Code != 409 || !strings.Contains(w.Body.String(), "严重缺陷未关闭") {
+		t.Fatalf("minimal deliver with severe bugs should be 409, got status=%d body=%s", w.Code, w.Body.String())
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestMinimalDeliverHandlerAllowsClearDemand(t *testing.T) {
 	svc, mock := newServiceForDeliverTest(t)
 	mock.ExpectQuery("(?s)SELECT.*FROM `zt_demand`.*WHERE id = ").WithArgs(uint(1001), 1).

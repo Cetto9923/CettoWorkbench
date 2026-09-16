@@ -220,7 +220,7 @@ func (s *Service) checkDemandDeliverBlockers(ctx context.Context, id uint) error
 		return fmt.Errorf("检查交付阻塞缺陷失败: %w", err)
 	}
 	if severeBugs > 0 {
-		return fmt.Errorf("%w：存在 %d 个严重缺陷未关闭，禁止发起交付", errHomeActionConflict, severeBugs)
+		return fmt.Errorf("%w：当前有 %d 个未关闭", errDeliverBlocked, severeBugs)
 	}
 	return nil
 }

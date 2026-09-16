@@ -14,6 +14,7 @@ var (
 	errHomeActionNotFound  = errors.New("需求不存在")
 	errHomeActionForbidden = errors.New("无权办理该需求")
 	errHomeActionConflict  = errors.New("需求状态已变化，请刷新后重试")
+	errDeliverBlocked      = errors.New("存在严重缺陷未关闭，禁止发起交付")
 	errUrgeNoRecipient     = errors.New("未找到验收责任人")
 	errUrgeChannel         = errors.New("不支持的催办渠道")
 	errUrgeDuplicate       = errors.New("催办重复")

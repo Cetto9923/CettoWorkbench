@@ -75,15 +75,17 @@ func (s *Service) SubmitAdjustment(ctx context.Context, actor *model.User, req S
 	items := make([]AdjustmentItem, 0, len(req.Items))
 	for _, it := range req.Items {
 		prevRole, prevHours := "", 0.0
+		memberExists := false
 		if m, err := s.repo.FindMember(ctx, req.TeamgroupID, it.Account); err == nil && m != nil {
 			prevRole, prevHours = m.Role, m.Hours
+			memberExists = true
 		} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, err
 		}
-		if it.ActionType == ActionAdd && prevRole != "" {
+		if it.ActionType == ActionAdd && memberExists {
 			return nil, errorx.New("invalid", it.Account+" 已是正式成员，请改用角色调整或移除")
 		}
-		if (it.ActionType == ActionRemove || it.ActionType == ActionRoleChange) && prevRole == "" && prevHours == 0 {
+		if (it.ActionType == ActionRemove || it.ActionType == ActionRoleChange) && !memberExists {
 			if _, e2 := s.repo.FindMember(ctx, req.TeamgroupID, it.Account); errors.Is(e2, gorm.ErrRecordNotFound) {
 				return nil, errorx.New("invalid", it.Account+" 不是正式成员，无法"+it.ActionType)
 			} else if e2 != nil {
@@ -177,7 +179,7 @@ func (s *Service) ConfirmAdjustment(ctx context.Context, actor *model.User, req 
 		if item.ActionType == ActionAdd || item.ActionType == ActionRoleChange {
 			accounts = append(accounts, item.Account)
 			if item.AvailableHours < 0 || item.AvailableHours > 24 {
-				return errorx.New("invalid", item.Account+" 的可用工时不合法，无法确认")
+				return errorx.New("invalid", item.Account+" 的可用工时必须在 0 到 24 之间")
 			}
 		}
 	}
