@@ -686,6 +686,17 @@
     });
   }
 
+  function bindSubmitReviewButtons($list) {
+    $list.find(".js-submit-review").on("click", function () {
+      var demandId = String($(this).attr("data-demand-id") || "").trim();
+      var item = findListItemByDemandId(demandId);
+      if (!item || typeof window.openPoDemandSubmitReviewDrawer !== "function") {
+        return;
+      }
+      window.openPoDemandSubmitReviewDrawer(item);
+    });
+  }
+
   function bindCancelReviewButtons($list) {
     $list.find(".js-cancel-review").on("click", function () {
       var demandId = String($(this).attr("data-demand-id") || "").trim();
@@ -795,6 +806,7 @@
     $("#top5List").html(html);
     bindZentaoLinks($("#top5List"));
     bindReviewButtons($("#top5List"));
+    bindSubmitReviewButtons($("#top5List"));
     bindCancelReviewButtons($("#top5List"));
     bindSubmitTestButtons($("#top5List"));
     bindDeliverButtons($("#top5List"));

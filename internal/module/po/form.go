@@ -286,7 +286,8 @@ type DemandDetailResp struct {
 	ProposerName      string             `json:"proposerName"`
 	ProposerDept      string             `json:"proposerDept"`
 	OwnerName         string             `json:"ownerName"`
-	Reviewer          string             `json:"reviewer"`
+	Reviewer          string             `json:"reviewer"`          // 展示名（多评审人用 ", " 拼接）
+	ReviewerAccounts  []string           `json:"reviewerAccounts"`  // 原始账号列表，供提交评审多选回显
 	CreatedName       string             `json:"createdName"`
 	CurrentOwner      string             `json:"currentOwner"` // UI 展示为「指派给」，取 assignedTo
 	ZentaoStatus      string             `json:"zentaoStatus"`

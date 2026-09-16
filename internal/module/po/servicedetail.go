@@ -83,6 +83,7 @@ func buildDemandDetailResp(row *DemandDetailRow, displayMap map[string]string, f
 		ProposerDept:      dashOr(row.ProposeDept),
 		OwnerName:         dashOr(lookupAccountDisplay(displayMap, row.BRA)),
 		Reviewer:          dashOr(lookupAccountsDisplay(displayMap, row.Reviewer)),
+		ReviewerAccounts:  splitReviewerAccounts(row.Reviewer),
 		CreatedName:       dashOr(lookupAccountDisplay(displayMap, row.CreatedBy)),
 		CurrentOwner:      dashOr(lookupAccountDisplay(displayMap, row.AssignedTo)), // UI：指派给
 		ZentaoStatus:      strings.TrimSpace(row.Status),
@@ -128,6 +129,29 @@ func (s *Service) listVerifierUsers(ctx context.Context, actor *model.User) []Us
 	out := make([]UserOption, 0, len(users))
 	for _, item := range users {
 		out = append(out, UserOption{Account: item.Account, Realname: item.Realname})
+	}
+	return out
+}
+
+// splitReviewerAccounts 把 zt_demand.reviewer 的逗号分隔账号拆成去重切片。
+func splitReviewerAccounts(raw string) []string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return []string{}
+	}
+	parts := strings.Split(raw, ",")
+	out := make([]string, 0, len(parts))
+	seen := make(map[string]struct{}, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		if _, ok := seen[p]; ok {
+			continue
+		}
+		seen[p] = struct{}{}
+		out = append(out, p)
 	}
 	return out
 }

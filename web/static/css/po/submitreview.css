@@ -1,0 +1,33 @@
+/*
+ * 文件: web/static/css/po/submitreview.css
+ * 模块: PO工作台
+ * 职责: 提交评审弹窗布局（多选下拉复用 form-multiselect）
+ */
+
+.dd-submit-review-dialog {
+  width: 560px;
+  overflow: visible;
+}
+
+.dd-submit-review-dialog .dd-reject-modal-body {
+  overflow: visible;
+}
+
+.dd-submit-review-hint {
+  margin: 4px 0 0;
+  color: var(--color-text-muted, #94a3b8);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.dd-required {
+  color: #ef4444;
+}
+
+.dd-submit-comment-label {
+  margin-top: 17px;
+}
+
+.dd-submit-review-dialog .form-multiselect.open > .dropdown-menu.form-multiselect-menu {
+  z-index: 1100;
+}
