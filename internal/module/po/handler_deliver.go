@@ -8,6 +8,7 @@
 package po
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -63,35 +64,38 @@ func (h *Handler) DeliverDemand(c *gin.Context) {
 	}
 	req.ID = id
 
-	// 若提供了完整表单字段（deliverDate 等），进行完整参数校验
-	if req.DeliverDate != "" || req.VerifyPlan != "" || req.Verifier != "" {
+	var actionErr error
+	fullForm := req.DeliverDate != "" || req.VerifyPlan != "" || req.Verifier != ""
+	if fullForm {
 		if errs := req.Validate(); len(errs) > 0 {
 			c.JSON(http.StatusUnprocessableEntity, gin.H{"success": false, "message": "参数校验失败", "errors": errs})
 			return
 		}
-		if err := h.svc.DeliverDemand(c.Request.Context(), middleware.CurrentUser(c), req); err != nil {
-			if h.logger != nil {
-				h.logger.Error("po deliver demand failed", zap.Error(err), zap.Uint("id", id))
-			}
-			status := http.StatusInternalServerError
-			if err == errHomeActionNotFound {
-				status = http.StatusNotFound
-			} else if err == errHomeActionForbidden {
-				status = http.StatusForbidden
-			} else if err == errHomeActionConflict {
-				status = http.StatusConflict
-			}
-			c.JSON(status, gin.H{"success": false, "message": err.Error()})
-			return
+		actionErr = h.svc.DeliverDemand(c.Request.Context(), middleware.CurrentUser(c), req)
+	} else {
+		actionErr = h.svc.DeliverHomeDemand(c.Request.Context(), middleware.CurrentUser(c), id, req.Comment)
+	}
+	if actionErr != nil {
+		if h.logger != nil {
+			h.logger.Error("po deliver demand failed", zap.Error(actionErr), zap.Uint("id", id))
 		}
-		c.JSON(http.StatusOK, gin.H{"success": true, "message": "发起交付成功"})
+		status := http.StatusInternalServerError
+		switch {
+		case errors.Is(actionErr, errHomeActionNotFound):
+			status = http.StatusNotFound
+		case errors.Is(actionErr, errHomeActionForbidden):
+			status = http.StatusForbidden
+		case errors.Is(actionErr, errHomeActionConflict):
+			status = http.StatusConflict
+		}
+		c.JSON(status, gin.H{"success": false, "message": actionErr.Error()})
 		return
 	}
-
-	// 兼容原有极简动作提交（如自动化测试或简易脚本）
-	h.homeAction(c, func(aid uint, comment string) error {
-		return h.svc.DeliverHomeDemand(c.Request.Context(), middleware.CurrentUser(c), aid, comment)
-	}, "发起交付成功")
+	response := gin.H{"success": true, "message": "发起交付成功"}
+	if !fullForm {
+		response["redirectUrl"] = "/home"
+	}
+	c.JSON(http.StatusOK, response)
 }
 
 func parseDeliverDemandID(raw string) (uint, error) {

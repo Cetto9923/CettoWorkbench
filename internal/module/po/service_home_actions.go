@@ -47,6 +47,9 @@ func (s *Service) homeAction(ctx context.Context, actor *model.User, id uint, ac
 		if row.Status != "acceptanced" {
 			return errHomeActionConflict
 		}
+		if err := s.checkDemandDeliverBlockers(ctx, id); err != nil {
+			return err
+		}
 		return s.repo.updateHomeDemandStatus(ctx, id, "acceptanced", "waitdeliver", account, "deliver", homeActionComment(comment, "工作台发起交付"), false)
 	case "urge":
 		return s.repo.insertHomeDemandAction(ctx, id, account, "reminded", homeActionComment(comment, "工作台催办验收"))

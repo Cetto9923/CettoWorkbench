@@ -166,12 +166,8 @@ func (s *Service) DeliverDemand(ctx context.Context, actor *model.User, req Dema
 	}
 
 	// 阻塞检查：严重缺陷未清时阻断发起交付
-	severeBugs, _, err := s.repo.CheckDeliverBlockers(ctx, req.ID)
-	if err != nil {
-		return fmt.Errorf("检查交付阻塞缺陷失败: %w", err)
-	}
-	if severeBugs > 0 {
-		return fmt.Errorf("存在 %d 个严重缺陷未关闭，禁止发起交付", severeBugs)
+	if err := s.checkDemandDeliverBlockers(ctx, req.ID); err != nil {
+		return err
 	}
 
 	comment := strings.TrimSpace(req.Comment)
@@ -216,4 +212,15 @@ func defaultString(v, fallback string) string {
 		return fallback
 	}
 	return strings.TrimSpace(v)
+}
+
+func (s *Service) checkDemandDeliverBlockers(ctx context.Context, id uint) error {
+	severeBugs, _, err := s.repo.CheckDeliverBlockers(ctx, id)
+	if err != nil {
+		return fmt.Errorf("检查交付阻塞缺陷失败: %w", err)
+	}
+	if severeBugs > 0 {
+		return fmt.Errorf("%w：存在 %d 个严重缺陷未关闭，禁止发起交付", errHomeActionConflict, severeBugs)
+	}
+	return nil
 }
