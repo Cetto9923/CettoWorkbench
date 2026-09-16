@@ -27,7 +27,7 @@ func (r *Repo) acceptRefsPaged(ctx context.Context, account string, req DemandsR
 		var err error
 		reviewIDs, err = r.FindAccountPendingReviewDemandIDs(ctx, account)
 		if err != nil {
-			reviewIDs = nil
+			return nil, 0, err
 		}
 	}
 	base = r.applyHomeFocusToolbarFiltersWithReviews(base, account, req, reviewIDs)
@@ -50,8 +50,11 @@ func (r *Repo) acceptRefsPaged(ctx context.Context, account string, req DemandsR
 
 func (r *Repo) countStageRefs(ctx context.Context, account string) ([]stageCount, error) {
 	var rows []stageCount
-	base := r.allStageRefQuery(ctx, account, DemandsReq{})
-	err := r.db.WithContext(ctx).Table("(?) AS all_stages", base).
+	base, err := r.allStageRefQuery(ctx, account, DemandsReq{})
+	if err != nil {
+		return nil, err
+	}
+	err = r.db.WithContext(ctx).Table("(?) AS all_stages", base).
 		Select("stage_index, kind, COUNT(*) AS count, IFNULL(SUM(duration_days), 0) AS total_duration, COUNT(duration_days) AS duration_count").
 		Group("stage_index, kind").Scan(&rows).Error
 	return rows, err
@@ -136,7 +139,7 @@ func isParticipateScheduleRequest(req DemandsReq) bool {
 }
 
 // allStageRefQuery keeps demand and story identities separate during deduplication.
-func (r *Repo) allStageRefQuery(ctx context.Context, account string, req DemandsReq) *gorm.DB {
+func (r *Repo) allStageRefQuery(ctx context.Context, account string, req DemandsReq) (*gorm.DB, error) {
 	includeDemand := req.ObjectType != "story"
 	includeStory := req.ObjectType != "demand"
 	parts := make([]string, 0, len(valueStreamStages)+2)
@@ -149,7 +152,7 @@ func (r *Repo) allStageRefQuery(ctx context.Context, account string, req Demands
 			var err error
 			reviewIDs, err = r.FindAccountPendingReviewDemandIDs(ctx, account)
 			if err != nil {
-				reviewIDs = nil
+				return nil, err
 			}
 		}
 		demandBase = r.applyHomeFocusToolbarFiltersWithReviews(demandBase, account, req, reviewIDs)
@@ -195,25 +198,25 @@ func (r *Repo) allStageRefQuery(ctx context.Context, account string, req Demands
 	}
 	if len(parts) == 0 {
 		return r.db.WithContext(ctx).Table("(SELECT NULL AS kind, NULL AS id, 0 AS stage_index, 0 AS kind_rank, NULL AS duration_days WHERE 1 = 0) AS stage_candidates").
-			Select("kind, id, stage_index, kind_rank, duration_days")
+			Select("kind, id, stage_index, kind_rank, duration_days"), nil
 	}
 	return r.db.WithContext(ctx).Table("("+strings.Join(parts, " UNION ALL ")+") AS stage_candidates", args...).
 		Select("kind, id, MIN(stage_index) AS stage_index, MIN(kind_rank) AS kind_rank, MAX(duration_days) AS duration_days").
-		Group("kind, id")
+		Group("kind, id"), nil
 }
 
 // roleDemandScopeWithFilters 为业需查询施加阶段过滤与工具栏过滤（priority/keyword/relation）
-func (r *Repo) roleDemandScopeWithFilters(ctx context.Context, account string, filter mysqlStageFilter, req DemandsReq) *gorm.DB {
+func (r *Repo) roleDemandScopeWithFilters(ctx context.Context, account string, filter mysqlStageFilter, req DemandsReq) (*gorm.DB, error) {
 	base := r.roleDemandScope(ctx, account, filter)
 	var reviewIDs []int
 	if req.Relation == "handling" || req.Relation == "following" {
 		var err error
 		reviewIDs, err = r.FindAccountPendingReviewDemandIDs(ctx, account)
 		if err != nil {
-			reviewIDs = nil
+			return nil, err
 		}
 	}
-	return r.applyHomeFocusToolbarFiltersWithReviews(base, account, req, reviewIDs)
+	return r.applyHomeFocusToolbarFiltersWithReviews(base, account, req, reviewIDs), nil
 }
 
 // CountRoleDemandsWithFilters 按阶段过滤条件与工具栏筛选统计业需数量。
@@ -222,7 +225,11 @@ func (r *Repo) CountRoleDemandsWithFilters(ctx context.Context, account string, 
 		return 0, nil
 	}
 	var total int64
-	err := r.roleDemandScopeWithFilters(ctx, account, filter, req).Count(&total).Error
+	base, err := r.roleDemandScopeWithFilters(ctx, account, filter, req)
+	if err != nil {
+		return 0, err
+	}
+	err = base.Count(&total).Error
 	return total, err
 }
 
@@ -232,8 +239,11 @@ func (r *Repo) FindRoleDemandsPagedWithFilters(ctx context.Context, account stri
 		return nil, nil
 	}
 	var rows []DemandRow
-	q := r.roleDemandScopeWithFilters(ctx, account, filter, req).
-		Select(`zt_demand.id, zt_demand.name, zt_demand.pri, zt_demand.status, zt_demand.hang,
+	base, err := r.roleDemandScopeWithFilters(ctx, account, filter, req)
+	if err != nil {
+		return nil, err
+	}
+	q := base.Select(`zt_demand.id, zt_demand.name, zt_demand.pri, zt_demand.status, zt_demand.hang,
 			zt_demand.assignedTo, zt_demand.QD, zt_demand.RD, zt_demand.BRA,
 			clarify_pm.PM AS pm`).
 		Joins(`LEFT JOIN (
@@ -249,7 +259,7 @@ func (r *Repo) FindRoleDemandsPagedWithFilters(ctx context.Context, account stri
 	if limit > 0 {
 		q = q.Limit(limit)
 	}
-	err := q.Find(&rows).Error
+	err = q.Find(&rows).Error
 	return rows, err
 }
 
@@ -259,8 +269,11 @@ func (r *Repo) FindRoleDemandIDsWithFilters(ctx context.Context, account string,
 		return nil, nil
 	}
 	var ids []int
-	err := r.roleDemandScopeWithFilters(ctx, account, filter, req).
-		Order("zt_demand.id DESC").
+	base, err := r.roleDemandScopeWithFilters(ctx, account, filter, req)
+	if err != nil {
+		return nil, err
+	}
+	err = base.Order("zt_demand.id DESC").
 		Pluck("zt_demand.id", &ids).Error
 	return ids, err
 }
@@ -302,8 +315,11 @@ func (r *Repo) FindStageMixedRefsPaged(ctx context.Context, account, stageStatus
 	args := make([]interface{}, 0)
 
 	if includeDemand && filterReady(account, filter) && !isParticipateScheduleRequest(req) {
-		stmt := r.roleDemandScopeWithFilters(ctx, account, filter, req).
-			Select("zt_demand.id AS id, 'demand' AS kind, 0 AS kind_rank").
+		base, err := r.roleDemandScopeWithFilters(ctx, account, filter, req)
+		if err != nil {
+			return nil, 0, err
+		}
+		stmt := base.Select("zt_demand.id AS id, 'demand' AS kind, 0 AS kind_rank").
 			Session(&gorm.Session{DryRun: true}).Find(&[]struct{ ID int }{}).Statement
 		parts = append(parts, stmt.SQL.String())
 		args = append(args, stmt.Vars...)

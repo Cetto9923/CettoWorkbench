@@ -217,7 +217,10 @@ func (r *Repo) FindAllStageRefsPaged(ctx context.Context, account string, req De
 	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
 		return nil, 0, nil
 	}
-	base := r.allStageRefQuery(ctx, account, req)
+	base, err := r.allStageRefQuery(ctx, account, req)
+	if err != nil {
+		return nil, 0, err
+	}
 	var total int64
 	if err := r.db.WithContext(ctx).Table("(?) AS all_stages", base).Count(&total).Error; err != nil {
 		return nil, 0, err

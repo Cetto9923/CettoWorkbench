@@ -30,16 +30,16 @@ func (r *Repo) FindAccountPendingReviewDemandIDs(ctx context.Context, account st
 }
 
 // homeFocusQuery intersects the existing stage scopes with the homepage focus.
-func (r *Repo) homeFocusQuery(ctx context.Context, account string, req DemandsReq) *gorm.DB {
+func (r *Repo) homeFocusQuery(ctx context.Context, account string, req DemandsReq) (*gorm.DB, error) {
 	var reviewIDs []int
 	if req.Focus == "my_action" {
 		var err error
 		reviewIDs, err = r.FindAccountPendingReviewDemandIDs(ctx, account)
 		if err != nil {
-			reviewIDs = nil
+			return nil, err
 		}
 	}
-	return r.homeFocusQueryWithReviews(ctx, account, req, reviewIDs)
+	return r.homeFocusQueryWithReviews(ctx, account, req, reviewIDs), nil
 }
 
 func (r *Repo) homeFocusQueryWithReviews(ctx context.Context, account string, req DemandsReq, reviewIDs []int) *gorm.DB {
@@ -195,7 +195,7 @@ func (r *Repo) CountHomeFocus(ctx context.Context, account string, req DemandsRe
 	var total int64
 	reviewIDs, err := r.FindAccountPendingReviewDemandIDs(ctx, account)
 	if err != nil {
-		reviewIDs = nil
+		return 0, err
 	}
 	if req.ObjectType != "story" {
 		base := r.homeFocusQueryWithReviews(ctx, account, req, reviewIDs)
@@ -318,7 +318,7 @@ func (r *Repo) HomeFocusStageSummary(ctx context.Context, account string, req De
 	if req.ObjectType != "story" {
 		reviewIDs, err := r.FindAccountPendingReviewDemandIDs(ctx, account)
 		if err != nil {
-			reviewIDs = nil
+			return nil, err
 		}
 		base := r.applyHomeFocusToolbarFiltersWithReviews(r.homeFocusQueryWithReviews(ctx, account, req, reviewIDs), account, req, reviewIDs)
 		if err := r.db.WithContext(ctx).Table("(?) AS focused", base).

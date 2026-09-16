@@ -27,7 +27,10 @@ func TestAllStageRefQuery_ToolbarFilters_Priority(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.pri, func(t *testing.T) {
-			query := repo.allStageRefQuery(context.Background(), "alice", DemandsReq{Priority: tc.pri})
+			query, queryErr := repo.allStageRefQuery(context.Background(), "alice", DemandsReq{Priority: tc.pri})
+			if queryErr != nil {
+				t.Fatal(queryErr)
+			}
 			var rows []struct {
 				Kind string
 				ID   int
@@ -66,7 +69,10 @@ func TestAllStageRefQuery_ToolbarFilters_KeywordAndRelation(t *testing.T) {
 	repo := NewRepo(db, nil)
 
 	// Keyword filter
-	query := repo.allStageRefQuery(context.Background(), "alice", DemandsReq{Keyword: "搜索测试"})
+	query, queryErr := repo.allStageRefQuery(context.Background(), "alice", DemandsReq{Keyword: "搜索测试"})
+	if queryErr != nil {
+		t.Fatal(queryErr)
+	}
 	var rows []struct {
 		Kind string
 		ID   int
@@ -83,7 +89,10 @@ func TestAllStageRefQuery_ToolbarFilters_KeywordAndRelation(t *testing.T) {
 		WithArgs("alice").
 		WillReturnRows(sqlmock.NewRows([]string{"demand"}))
 
-	queryRel := repo.allStageRefQuery(context.Background(), "alice", DemandsReq{Relation: "handling"})
+	queryRel, queryErr := repo.allStageRefQuery(context.Background(), "alice", DemandsReq{Relation: "handling"})
+	if queryErr != nil {
+		t.Fatal(queryErr)
+	}
 	stmtRel := db.Table("(?) AS all_stages", queryRel).Select("kind, id").
 		Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
 	sqlRel := stmtRel.SQL.String()
@@ -95,7 +104,10 @@ func TestAllStageRefQuery_ToolbarFilters_KeywordAndRelation(t *testing.T) {
 	}
 
 	// Relation lead filter (我牵头: BRA = account, assignedTo = account)
-	queryLead := repo.allStageRefQuery(context.Background(), "alice", DemandsReq{Relation: "lead"})
+	queryLead, queryErr := repo.allStageRefQuery(context.Background(), "alice", DemandsReq{Relation: "lead"})
+	if queryErr != nil {
+		t.Fatal(queryErr)
+	}
 	stmtLead := db.Table("(?) AS all_stages", queryLead).Select("kind, id").
 		Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
 	sqlLead := stmtLead.SQL.String()
@@ -107,7 +119,10 @@ func TestAllStageRefQuery_ToolbarFilters_KeywordAndRelation(t *testing.T) {
 	}
 
 	// Relation participate filter：澄清仍能看到业务需求，排期阶段切换为关联研发需求。
-	queryPart := repo.allStageRefQuery(context.Background(), "alice", DemandsReq{Relation: "participate"})
+	queryPart, queryErr := repo.allStageRefQuery(context.Background(), "alice", DemandsReq{Relation: "participate"})
+	if queryErr != nil {
+		t.Fatal(queryErr)
+	}
 	stmtPart := db.Table("(?) AS all_stages", queryPart).Select("kind, id").
 		Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
 	sqlPart := stmtPart.SQL.String()
@@ -130,7 +145,10 @@ func TestSingleStage_CountAndPagedWithFilters_Priority(t *testing.T) {
 	filter := mysqlStageFilters["clarify"]
 
 	// CountRoleDemandsWithFilters
-	qCount := repo.roleDemandScopeWithFilters(context.Background(), "alice", filter, DemandsReq{Priority: "p1"})
+	qCount, queryErr := repo.roleDemandScopeWithFilters(context.Background(), "alice", filter, DemandsReq{Priority: "p1"})
+	if queryErr != nil {
+		t.Fatal(queryErr)
+	}
 	var total int64
 	stmtCount := qCount.Session(&gorm.Session{DryRun: true}).Count(&total).Statement
 	if !strings.Contains(stmtCount.SQL.String(), "pri = '1'") {
@@ -138,7 +156,10 @@ func TestSingleStage_CountAndPagedWithFilters_Priority(t *testing.T) {
 	}
 
 	// FindRoleDemandsPagedWithFilters
-	qPaged := repo.roleDemandScopeWithFilters(context.Background(), "alice", filter, DemandsReq{Priority: "p1"})
+	qPaged, queryErr := repo.roleDemandScopeWithFilters(context.Background(), "alice", filter, DemandsReq{Priority: "p1"})
+	if queryErr != nil {
+		t.Fatal(queryErr)
+	}
 	var dRows []DemandRow
 	stmtPaged := qPaged.Session(&gorm.Session{DryRun: true}).Find(&dRows).Statement
 	if !strings.Contains(stmtPaged.SQL.String(), "pri = '1'") {

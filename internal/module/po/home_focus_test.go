@@ -15,7 +15,10 @@ func TestHomeFocusSQLIntersectsStageBeforePagination(t *testing.T) {
 	repo := NewRepo(db, nil)
 	for _, focus := range []string{"today", "overdue", "blocked", "suspended"} {
 		req := DemandsReq{Status: "testing", Focus: focus, Page: 2, PageSize: 15}
-		query := repo.homeFocusQuery(context.Background(), "alice", req)
+		query, queryErr := repo.homeFocusQuery(context.Background(), "alice", req)
+		if queryErr != nil {
+			t.Fatal(queryErr)
+		}
 		var rows []struct{ ID int }
 		stmt := db.Table("(?) AS focused", query).Select("id, stage_index").Order("stage_index ASC, id DESC").Offset(15).Limit(15).Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
 		sql := stmt.SQL.String()
@@ -76,7 +79,10 @@ func TestHomeFocusRequestValidation(t *testing.T) {
 func TestHomeFocusToolbarRelationLeadAndParticipate(t *testing.T) {
 	db, _ := openSQLMock(t)
 	repo := NewRepo(db, nil)
-	base := repo.homeFocusQuery(context.Background(), "alice", DemandsReq{Status: "developing", Page: 1, PageSize: 15})
+	base, queryErr := repo.homeFocusQuery(context.Background(), "alice", DemandsReq{Status: "developing", Page: 1, PageSize: 15})
+	if queryErr != nil {
+		t.Fatal(queryErr)
+	}
 
 	// lead: 我作为需求负责人 (BRA = account)
 	queryLead := applyHomeFocusToolbarFilters(base, "alice", DemandsReq{Relation: "lead"})
@@ -225,7 +231,10 @@ func TestHomeFocusStoryQuery_ClarifyExcludesActiveStory_ScheduleIncludes(t *test
 func TestHomeFocusToolbarUsesCurrentHandler(t *testing.T) {
 	db, _ := openSQLMock(t)
 	repo := NewRepo(db, nil)
-	base := repo.homeFocusQuery(context.Background(), "alice", DemandsReq{Status: "developing", Page: 1, PageSize: 15})
+	base, queryErr := repo.homeFocusQuery(context.Background(), "alice", DemandsReq{Status: "developing", Page: 1, PageSize: 15})
+	if queryErr != nil {
+		t.Fatal(queryErr)
+	}
 	for relation, want := range map[string]string{
 		"handling":  "id IN (SELECT id FROM zt_demand WHERE",
 		"following": "id NOT IN (SELECT id FROM zt_demand WHERE",
