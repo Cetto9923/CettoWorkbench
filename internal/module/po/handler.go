@@ -42,6 +42,8 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.GET("/home", h.Home)
 	g.GET("/demands", h.Demands)
 	g.GET("/demands/:id", middleware.RequirePerm(perm.PoDemandReview), h.DemandDetail)
+	// 发起评审资格在 Service 里按创建人 + draft/refuse 校验。
+	g.POST("/demands/:id/submit-review", middleware.RequirePerm(perm.PoDemandReview), h.SubmitDemandReview)
 	// 评审资格在 Service 里按 zt_demandreview 业务评审人校验（与指派给无关）。
 	g.POST("/demands/:id/review", middleware.RequirePerm(perm.PoDemandReview), h.ReviewDemand)
 	// 撤回资格在 Service 里按创建人（或超管）+ 待评审状态校验。

@@ -1,7 +1,7 @@
 /*
  * 文件: web/static/js/po/submitreview.js
  * 模块: PO工作台
- * 职责: 业需提交评审右侧抽屉；确认提交暂未接后端。
+ * 职责: 业需提交评审右侧抽屉；确认后 POST /demands/:id/submit-review 代理禅道。
  */
 (function ($) {
   "use strict";
@@ -19,6 +19,7 @@
   var currentItem = null;
   var currentDetail = null;
   var detailCtrl = { abort: null };
+  var submitting = false;
 
   function parseUsers() {
     var raw = $("#" + DRAWER_ID).attr("data-users") || "[]";
@@ -139,6 +140,10 @@
       return;
     }
     remountReviewerMultiselect();
+    var ta = document.getElementById("poDemandSubmitReviewComment");
+    if (ta) {
+      ta.value = "";
+    }
     drawer.showModal(MODAL_ID);
     // 不自动 focus，避免弹窗打开时下拉默认展开
   }
@@ -151,14 +156,92 @@
     drawer.hideModal(MODAL_ID);
   }
 
+  function submitFailMessage(res, data, text) {
+    if (data && data.message) {
+      return data.message;
+    }
+    if (data && Array.isArray(data.errors) && data.errors.length) {
+      var first = data.errors[0];
+      if (first && first.message) {
+        return first.message;
+      }
+    }
+    if (text && String(text).trim()) {
+      return String(text).trim().slice(0, 200);
+    }
+    if (res && res.status) {
+      return "提交评审失败（HTTP " + res.status + "）";
+    }
+    return "提交评审失败";
+  }
+
+  function setSubmitButtonsDisabled(disabled) {
+    $("#poDemandSubmitReviewConfirmBtn, #poDemandSubmitReviewOpenModalBtn").prop("disabled", !!disabled);
+  }
+
   function confirmSubmit() {
-    if (!getSelectedReviewers().length) {
+    var reviewers = getSelectedReviewers();
+    if (!reviewers.length) {
       Common.showToast("请至少选择一位业务评审人", "warning");
       return;
     }
-    // 后端提交评审接口暂未接入，仅完成前端选人与校验
-    Common.showToast("提交评审接口暂未接入", "info");
-    closeSubmitModal();
+    var id = Common.demandNumericId(currentItem);
+    if (!id) {
+      Common.showToast("需求 ID 无效", "error");
+      return;
+    }
+    if (submitting) {
+      return;
+    }
+
+    var comment = "";
+    var ta = document.getElementById("poDemandSubmitReviewComment");
+    if (ta) {
+      comment = String(ta.value || "").trim();
+    }
+
+    submitting = true;
+    setSubmitButtonsDisabled(true);
+    var fetchFn = window.appFetch || fetch;
+    fetchFn("/demands/" + encodeURIComponent(id) + "/submit-review", {
+      method: "POST",
+      headers: Common.csrfHeaders(),
+      body: JSON.stringify({
+        reviewer: reviewers,
+        comment: comment
+      })
+    })
+      .then(function (res) {
+        return res.text().then(function (text) {
+          var data = {};
+          try {
+            data = text ? JSON.parse(text) : {};
+          } catch (ignore) {
+            data = {};
+          }
+          return { ok: res.ok, data: data, res: res, text: text };
+        });
+      })
+      .then(function (wrap) {
+        var data = wrap.data;
+        if (wrap.ok && data.success) {
+          Common.showToast(data.message || "提交评审成功", "success");
+          closeSubmitModal();
+          closeDrawer();
+          if (typeof window.refreshPoHomeDemands === "function") {
+            window.refreshPoHomeDemands();
+          }
+          return;
+        }
+        Common.showToast(submitFailMessage(wrap.res, data, wrap.text), "error");
+      })
+      .catch(function () {
+        Common.showToast("提交评审失败，请稍后重试", "error");
+      })
+      .then(function () {
+        submitting = false;
+        setSubmitButtonsDisabled(false);
+      });
   }
 
   function closeDrawer() {

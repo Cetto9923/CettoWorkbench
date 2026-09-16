@@ -2,7 +2,7 @@
 // 文件: internal/module/po/gateway.go
 // 模块: PO 工作台
 // 类型: action
-// 职责: 出站适配层：封装业需评审 / 撤回评审 / 发起交付的禅道 REST 调用。
+// 职责: 出站适配层：封装业需发起评审 / 评审 / 撤回评审 / 发起交付的禅道 REST 调用。
 // 依赖: internal/pkg/zentao
 // =============================================================================
 
@@ -16,6 +16,34 @@ import (
 
 	"workbench/internal/pkg/zentao"
 )
+
+// submitDemandReviewViaZentaoReq 禅道 POST /demand/:id/submit 入参。
+type submitDemandReviewViaZentaoReq struct {
+	DemandID int64
+	Reviewer []string
+	Comment  string
+}
+
+// submitDemandReviewViaZentao 以当前登录账号（ctx）调用禅道发起评审接口。
+func submitDemandReviewViaZentao(ctx context.Context, client *zentao.Client, req submitDemandReviewViaZentaoReq) error {
+	if client == nil {
+		return fmt.Errorf("禅道 API 未配置")
+	}
+	if req.DemandID <= 0 {
+		return fmt.Errorf("需求 ID 无效")
+	}
+	if len(req.Reviewer) == 0 {
+		return fmt.Errorf("业务评审人不能为空")
+	}
+	payload := map[string]any{
+		"reviewer": req.Reviewer,
+	}
+	if comment := strings.TrimSpace(req.Comment); comment != "" {
+		payload["comment"] = comment
+	}
+	path := fmt.Sprintf("/demand/%d/submit", req.DemandID)
+	return client.Do(ctx, http.MethodPost, path, payload, nil)
+}
 
 // reviewDemandViaZentaoReq 禅道 POST /demand/:id/review 入参。
 type reviewDemandViaZentaoReq struct {

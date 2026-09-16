@@ -145,6 +145,52 @@ type WithdrawDemandReviewResp struct {
 	ID int64 `json:"id"`
 }
 
+// SubmitDemandReviewReq 发起业需评审（JSON Body，转发禅道 POST /demand/:id/submit）。
+//
+//	reviewer → 业务评审人账号数组（必填，至少一人）
+//	comment  → 评审说明（可选）
+//
+// ID 不从 JSON 读，由 Handler 从 URL :id 填入。
+type SubmitDemandReviewReq struct {
+	ID       int64    `json:"-"`
+	Reviewer []string `json:"reviewer"`
+	Comment  string   `json:"comment"`
+}
+
+// Validate 校验发起评审入参。
+func (r *SubmitDemandReviewReq) Validate() []FieldError {
+	var errs []FieldError
+	r.Comment = strings.TrimSpace(r.Comment)
+
+	if r.ID <= 0 {
+		errs = append(errs, FieldError{Field: "id", Message: "需求 ID 无效"})
+	}
+
+	cleaned := make([]string, 0, len(r.Reviewer))
+	seen := make(map[string]struct{}, len(r.Reviewer))
+	for _, raw := range r.Reviewer {
+		account := strings.TrimSpace(raw)
+		if account == "" {
+			continue
+		}
+		if _, ok := seen[account]; ok {
+			continue
+		}
+		seen[account] = struct{}{}
+		cleaned = append(cleaned, account)
+	}
+	r.Reviewer = cleaned
+	if len(r.Reviewer) == 0 {
+		errs = append(errs, FieldError{Field: "reviewer", Message: "请至少选择一位业务评审人"})
+	}
+	return errs
+}
+
+// SubmitDemandReviewResp 发起评审成功响应。
+type SubmitDemandReviewResp struct {
+	ID int64 `json:"id"`
+}
+
 // DeliverDemandReq 发起交付提交（JSON Body，转发禅道 POST /demand/:id/deliver）。
 //
 // 字段对照禅道 OpenAPI（表单字段经 API entry 写入 $_POST）：
