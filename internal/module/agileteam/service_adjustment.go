@@ -176,7 +176,7 @@ func (s *Service) ConfirmAdjustment(ctx context.Context, actor *model.User, req 
 	for _, item := range items {
 		if item.ActionType == ActionAdd || item.ActionType == ActionRoleChange {
 			accounts = append(accounts, item.Account)
-			if item.AvailableHours <= 0 || item.AvailableHours > 24 {
+			if item.AvailableHours < 0 || item.AvailableHours > 24 {
 				return errorx.New("invalid", item.Account+" 的可用工时不合法，无法确认")
 			}
 		}

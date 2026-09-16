@@ -51,8 +51,8 @@ func validateAdjustmentWriteBoundary(req SubmitAdjustmentReq) error {
 		if utf8.RuneCountInString(role) > 64 || hasControlRune(role) {
 			return errorx.New("invalid", "成员角色过长或包含非法字符")
 		}
-		if action != ActionRemove && (item.AvailableHours <= 0 || item.AvailableHours > 24) {
-			return errorx.New("invalid", account+" 的可用工时必须大于 0 且不超过 24")
+		if action != ActionRemove && (item.AvailableHours < 0 || item.AvailableHours > 24) {
+			return errorx.New("invalid", account+" 的可用工时必须在 0 到 24 之间")
 		}
 	}
 	return nil
