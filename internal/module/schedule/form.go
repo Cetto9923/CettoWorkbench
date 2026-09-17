@@ -492,7 +492,7 @@ type ListBizDemandsReq struct {
 	Keyword     string `form:"keyword"`
 	WindowID    uint   `form:"windowId"`
 	Scope       string `form:"scope"`
-	Filter      string `form:"filter"`    // all_open, unscheduled, pending_review, manager_reviewing, closed
+	Filter      string `form:"filter"`    // all_open, unscheduled, pending_review(待受理=与我相关+draft/wait/refuse), manager_reviewing, closed
 	Suspended   bool   `form:"suspended"` // true 时叠加 AND hang = '1'
 	Groups      string `form:"groups"`    // 逗号分隔的小组 ID
 	Products    string `form:"products"`  // 逗号分隔的产品 ID

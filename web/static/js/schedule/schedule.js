@@ -12,8 +12,9 @@
   };
 
   var defaultFilter = "all_open";
-  var bizOnlyFilters = ["manager_reviewing"];
+  var bizOnlyFilters = ["pending_review", "manager_reviewing"];
   var indepTabDisabledTitles = {
+    pending_review: "待受理仅适用于业务需求",
     manager_reviewing: "无主管审批状态",
   };
 

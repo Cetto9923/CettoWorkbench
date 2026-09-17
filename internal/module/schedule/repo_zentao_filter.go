@@ -20,7 +20,6 @@ type filterClause struct {
 
 type bizDemandSimpleCountRow struct {
 	AllOpen          int64 `gorm:"column:all_open"`
-	PendingReview    int64 `gorm:"column:pending_review"`
 	ManagerReviewing int64 `gorm:"column:manager_reviewing"`
 	Closed           int64 `gorm:"column:closed"`
 }
@@ -140,7 +139,20 @@ func buildBizDemandFilterClause(filter, account string) filterClause {
 			args: []interface{}{account, account, account},
 		}
 	case FilterPendingReview:
-		return filterClause{sql: "AND d.status = 'wait'"}
+		// 与首页价值流「受理」一致：与我相关 + draft/wait/refuse
+		if account == "" {
+			return filterClause{sql: "AND 1 = 0"}
+		}
+		return filterClause{
+			sql: `AND d.status IN ('draft', 'wait', 'refuse')
+AND (
+  d.id IN (SELECT demand FROM zt_demandclarify WHERE PM = ?)
+  OR d.QD = ?
+  OR d.RD = ?
+  OR d.BRA = ?
+)`,
+			args: []interface{}{account, account, account, account},
+		}
 	case FilterManagerReviewing:
 		return filterClause{sql: "AND d.isManagerReview = 'reviewing'"}
 	case FilterClosed:
@@ -168,7 +180,8 @@ func buildIndepStoryFilterClause(filter, account string) filterClause {
 			args: []interface{}{account, account, account, account},
 		}
 	case FilterPendingReview:
-		return filterClause{sql: "AND s.status = 'reviewing'"}
+		// 待受理仅业需（价值流受理不含独立研需）
+		return filterClause{sql: "AND 1 = 0"}
 	case FilterManagerReviewing:
 		return filterClause{sql: "AND 1 = 0"}
 	case FilterClosed:
@@ -188,7 +201,6 @@ func (r *Repo) GetBizDemandFilterCounts(ctx context.Context, poolIDs []uint, acc
 	const simpleQuery = `
 SELECT
   SUM(CASE WHEN status != 'closed' AND status != 'released' THEN 1 ELSE 0 END) AS all_open,
-  SUM(CASE WHEN status = 'wait' THEN 1 ELSE 0 END) AS pending_review,
   SUM(CASE WHEN isManagerReview = 'reviewing' THEN 1 ELSE 0 END) AS manager_reviewing,
   SUM(CASE WHEN status = 'closed' THEN 1 ELSE 0 END) AS closed
 FROM zt_demand
@@ -200,7 +212,8 @@ WHERE deleted = '0' AND parent IN (0, -1) AND pool IN ?`
 	}
 
 	needUnscheduled := !filterCountReuseMatches(reuseFilter, FilterUnscheduled)
-	unscheduled, err := r.countBizDemandHeavyFilters(ctx, poolIDs, account, needUnscheduled)
+	needPendingReview := !filterCountReuseMatches(reuseFilter, FilterPendingReview)
+	unscheduled, pendingReview, err := r.countBizDemandHeavyFilters(ctx, poolIDs, account, needUnscheduled, needPendingReview)
 	if err != nil {
 		return FilterCounts{}, err
 	}
@@ -216,7 +229,7 @@ WHERE deleted = '0' AND parent IN (0, -1) AND pool IN ?`
 	counts := FilterCounts{
 		AllOpen:          row.AllOpen,
 		Unscheduled:      unscheduled,
-		PendingReview:    row.PendingReview,
+		PendingReview:    pendingReview,
 		ManagerReviewing: row.ManagerReviewing,
 		Closed:           row.Closed,
 		Suspended:        suspended,
@@ -225,11 +238,20 @@ WHERE deleted = '0' AND parent IN (0, -1) AND pool IN ?`
 	return counts, nil
 }
 
-func (r *Repo) countBizDemandHeavyFilters(ctx context.Context, poolIDs []uint, account string, needUnscheduled bool) (int64, error) {
-	if !needUnscheduled {
-		return 0, nil
+func (r *Repo) countBizDemandHeavyFilters(ctx context.Context, poolIDs []uint, account string, needUnscheduled, needPendingReview bool) (unscheduled, pendingReview int64, err error) {
+	if needUnscheduled {
+		unscheduled, err = r.countBizDemandsWithFilter(ctx, poolIDs, account, FilterUnscheduled, false)
+		if err != nil {
+			return 0, 0, err
+		}
 	}
-	return r.countBizDemandsWithFilter(ctx, poolIDs, account, FilterUnscheduled, false)
+	if needPendingReview {
+		pendingReview, err = r.countBizDemandsWithFilter(ctx, poolIDs, account, FilterPendingReview, false)
+		if err != nil {
+			return 0, 0, err
+		}
+	}
+	return unscheduled, pendingReview, nil
 }
 
 func (r *Repo) countBizDemandsWithFilter(ctx context.Context, poolIDs []uint, account, filter string, suspended bool) (int64, error) {
@@ -288,7 +310,7 @@ func (r *Repo) GetIndependentFilterCounts(ctx context.Context, productIDs []uint
 	const simpleQuery = `
 SELECT
   SUM(CASE WHEN s.status != 'closed' AND s.status != 'released' THEN 1 ELSE 0 END) AS all_open,
-  SUM(CASE WHEN s.status = 'reviewing' THEN 1 ELSE 0 END) AS pending_review,
+  0 AS pending_review,
   SUM(CASE WHEN s.status = 'closed' THEN 1 ELSE 0 END) AS closed
 FROM zt_story s
 WHERE IFNULL(s.sourceType, '') != 'demandpool'
