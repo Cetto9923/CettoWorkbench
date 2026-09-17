@@ -13,6 +13,7 @@ type ZtProduct struct {
 	ID      uint   `gorm:"column:id;primaryKey" json:"id"`
 	Name    string `gorm:"column:name" json:"name"`
 	Type    string `gorm:"column:type" json:"type"`
+	ReqM    string `gorm:"column:ReqM;type:varchar(30);default:''" json:"reqM"` // 需求负责人
 	Deleted string `gorm:"column:deleted" json:"deleted"`
 }
 
