@@ -2,7 +2,7 @@
 // 文件: internal/module/po/repo.go
 // 模块: PO 工作台
 // 类型: action
-// 职责: 价值流阶段业需/研发需求的只读库统计与列表查询（业需范围：澄清 PM 或 QD/RD/BRA，排除 closed；「全部」计数仅 Pluck id）。
+// 职责: 价值流阶段业需/研发需求的只读库统计与列表查询（业需范围：澄清 PM 或 QD/RD/BRA，排除 closed 与父需求；「全部」计数仅 Pluck id）。
 // 依赖: internal/model
 //       internal/model/zentao
 // =============================================================================
@@ -27,7 +27,6 @@ type mysqlStageFilter struct {
 	statuses           []string
 	statusOrder        []string // 非空时按该顺序排 status，其次 id DESC（受理：待评审→已驳回→草稿）
 	overall            *string
-	parent             *string
 	developFinishDue   bool // true：今天 >= developFinish（且 developFinish 非空）
 	deliverDateDue     bool // true：今天 >= deliverDate（且 deliverDate 非空）
 	braRequired        bool // true：BRA 必须等于当前账号
@@ -37,10 +36,7 @@ type mysqlStageFilter struct {
 	deliverStories     bool // true：合并交付阶段独立研发需求
 }
 
-var (
-	releasedOverallEmpty = "0"
-	releasedParent       = "-1"
-)
+var releasedOverallEmpty = "0"
 
 // mysqlStageFilters 价值流阶段 → MySQL 查询条件。
 var mysqlStageFilters = map[string]mysqlStageFilter{
@@ -63,7 +59,6 @@ var mysqlStageFilters = map[string]mysqlStageFilter{
 	"released": {
 		statuses: []string{"released"},
 		overall:  &releasedOverallEmpty,
-		parent:   &releasedParent,
 	},
 }
 
@@ -105,10 +100,11 @@ type StoryRow struct {
 }
 
 func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysqlStageFilter) *gorm.DB {
-	// 业需可见范围：澄清表 PM = 当前账号，或 QD/RD/BRA = 当前账号；排除已关闭
+	// 业需可见范围：澄清表 PM = 当前账号，或 QD/RD/BRA = 当前账号；排除已关闭、父需求（parent=-1）
 	q := r.db.WithContext(ctx).Table("zt_demand").
 		Where("deleted = ?", "0").
 		Where("status NOT IN ?", []string{"closed"}).
+		Where("parent != ?", -1).
 		Where(`(
 			id IN (SELECT demand FROM zt_demandclarify WHERE PM = ?)
 			OR QD = ?
@@ -129,9 +125,6 @@ func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysql
 	q = q.Where("status IN ?", filter.statuses)
 	if filter.overall != nil {
 		q = q.Where("overall = ?", *filter.overall)
-	}
-	if filter.parent != nil {
-		q = q.Where("parent != ?", *filter.parent)
 	}
 	if filter.developFinishDue {
 		today := time.Now().Format("2006-01-02")
@@ -168,12 +161,13 @@ const storyAssignedOrProductReqM = `(zt_story.assignedTo = ? OR EXISTS (
 	WHERE p.id = zt_story.product AND p.deleted = '0' AND p.ReqM = ?
 ))`
 
-// scheduleStoryScope 排期阶段独立研发需求：非需求池、指派人或所属产品 ReqM 为当前用户、关键日期未填。
+// scheduleStoryScope 排期阶段独立研发需求：非需求池、非父需求、指派人或所属产品 ReqM 为当前用户、关键日期未填。
 func (r *Repo) scheduleStoryScope(ctx context.Context, account string) *gorm.DB {
 	return r.db.WithContext(ctx).Table("zt_story").
 		Where("deleted = ?", "0").
 		Where("IFNULL(sourceType, '') != ?", "demandpool").
 		Where("type = ?", "story").
+		Where("isParent = ?", "0").
 		Where(storyAssignedOrProductReqM, account, account).
 		Where("(" + strings.Join([]string{
 			dateUnsetExpr("developFinish"),
@@ -182,13 +176,14 @@ func (r *Repo) scheduleStoryScope(ctx context.Context, account string) *gorm.DB 
 		}, " OR ") + ")")
 }
 
-// deliverStoryScope 交付阶段独立研发需求：非需求池、指派人或所属产品 ReqM 为当前用户、今天 >= deliverDate。
+// deliverStoryScope 交付阶段独立研发需求：非需求池、非父需求、指派人或所属产品 ReqM 为当前用户、今天 >= deliverDate。
 func (r *Repo) deliverStoryScope(ctx context.Context, account string) *gorm.DB {
 	today := time.Now().Format("2006-01-02")
 	return r.db.WithContext(ctx).Table("zt_story").
 		Where("deleted = ?", "0").
 		Where("IFNULL(sourceType, '') != ?", "demandpool").
 		Where("type = ?", "story").
+		Where("isParent = ?", "0").
 		Where(storyAssignedOrProductReqM, account, account).
 		Where(dateSetExpr("deliverDate")+" AND deliverDate <= ?", today)
 }
