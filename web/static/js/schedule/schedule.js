@@ -11,7 +11,7 @@
     independentRD: "独立研发需求列表",
   };
 
-  var defaultFilter = "all_open";
+  var defaultFilter = "unscheduled";
   var bizOnlyFilters = ["pending_review", "manager_reviewing"];
   var indepTabDisabledTitles = {
     pending_review: "待受理仅适用于业务需求",

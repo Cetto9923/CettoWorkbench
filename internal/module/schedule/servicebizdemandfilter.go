@@ -42,6 +42,9 @@ func (c *bizDemandAssembleContext) filterUnscheduledBizDemandTree(topDemands []Z
 }
 
 func (c bizDemandAssembleContext) demandMatchesUnscheduled(demand ZtDemand) bool {
+	if !demandStatusUnscheduledEligible(demand.Status) {
+		return false
+	}
 	if c.productCountByDemand[demand.ID] <= 0 {
 		return false
 	}
@@ -49,6 +52,15 @@ func (c bizDemandAssembleContext) demandMatchesUnscheduled(demand ZtDemand) bool
 		return false
 	}
 	return c.demandHasUnscheduledState(demand.ID)
+}
+
+func demandStatusUnscheduledEligible(status string) bool {
+	switch strings.TrimSpace(status) {
+	case "clarified", "developing":
+		return true
+	default:
+		return false
+	}
 }
 
 func (c bizDemandAssembleContext) demandRelatedToAccount(demand ZtDemand) bool {

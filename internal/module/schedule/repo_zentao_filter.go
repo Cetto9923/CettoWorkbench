@@ -19,16 +19,13 @@ type filterClause struct {
 }
 
 type bizDemandSimpleCountRow struct {
-	AllOpen          int64 `gorm:"column:all_open"`
-	ManagerReviewing int64 `gorm:"column:manager_reviewing"`
-	Closed           int64 `gorm:"column:closed"`
+	AllOpen int64 `gorm:"column:all_open"`
+	Closed  int64 `gorm:"column:closed"`
 }
 
 const bizDemandHangSuspendedSQL = ` AND d.hang = '1'`
 
 const bizDemandAllOpenSQL = `AND d.status != 'closed' AND d.status != 'released'`
-
-const bizDemandExcludeReleasedSQL = `AND d.status != 'released'`
 
 const bizDemandUnscheduledExcludeHangSQL = `AND d.hang = '0'`
 
@@ -58,7 +55,8 @@ FROM (
     SELECT demand FROM zt_demandclarify WHERE PM = ? AND TRIM(IFNULL(product, '')) != ''
   ) rel
   INNER JOIN zt_demand x ON x.id = rel.id AND x.deleted = '0'
-  WHERE EXISTS (
+  WHERE x.status IN ('clarified', 'developing')
+    AND EXISTS (
     SELECT 1 FROM zt_demandclarify dc
     WHERE dc.demand = x.id
       AND TRIM(IFNULL(dc.product, '')) != ''
@@ -134,8 +132,12 @@ func buildBizDemandFilterClause(filter, account string) filterClause {
 	account = strings.TrimSpace(account)
 	switch filter {
 	case FilterUnscheduled:
+		// 与我相关 + 已澄清/开发中 + 已澄清系统 + 待排期态；排除挂起
+		if account == "" {
+			return filterClause{sql: "AND 1 = 0"}
+		}
 		return filterClause{
-			sql:  bizDemandExcludeReleasedSQL + "\n" + bizDemandUnscheduledExcludeHangSQL + bizDemandUnscheduledSQL,
+			sql:  bizDemandUnscheduledExcludeHangSQL + bizDemandUnscheduledSQL,
 			args: []interface{}{account, account, account},
 		}
 	case FilterPendingReview:
@@ -154,7 +156,22 @@ AND (
 			args: []interface{}{account, account, account, account},
 		}
 	case FilterManagerReviewing:
-		return filterClause{sql: "AND d.isManagerReview = 'reviewing'"}
+		// 主管审批中 + 与我相关：指派人 / BRA / 澄清 PM（product 非空，与待排期一致）
+		if account == "" {
+			return filterClause{sql: "AND 1 = 0"}
+		}
+		return filterClause{
+			sql: `AND d.isManagerReview = 'reviewing'
+AND (
+  d.assignedTo = ?
+  OR d.BRA = ?
+  OR d.id IN (
+    SELECT demand FROM zt_demandclarify
+    WHERE PM = ? AND TRIM(IFNULL(product, '')) != ''
+  )
+)`,
+			args: []interface{}{account, account, account},
+		}
 	case FilterClosed:
 		return filterClause{sql: "AND d.status = 'closed'"}
 	default:
@@ -201,7 +218,6 @@ func (r *Repo) GetBizDemandFilterCounts(ctx context.Context, poolIDs []uint, acc
 	const simpleQuery = `
 SELECT
   SUM(CASE WHEN status != 'closed' AND status != 'released' THEN 1 ELSE 0 END) AS all_open,
-  SUM(CASE WHEN isManagerReview = 'reviewing' THEN 1 ELSE 0 END) AS manager_reviewing,
   SUM(CASE WHEN status = 'closed' THEN 1 ELSE 0 END) AS closed
 FROM zt_demand
 WHERE deleted = '0' AND parent IN (0, -1) AND pool IN ?`
@@ -213,7 +229,8 @@ WHERE deleted = '0' AND parent IN (0, -1) AND pool IN ?`
 
 	needUnscheduled := !filterCountReuseMatches(reuseFilter, FilterUnscheduled)
 	needPendingReview := !filterCountReuseMatches(reuseFilter, FilterPendingReview)
-	unscheduled, pendingReview, err := r.countBizDemandHeavyFilters(ctx, poolIDs, account, needUnscheduled, needPendingReview)
+	needManagerReviewing := !filterCountReuseMatches(reuseFilter, FilterManagerReviewing)
+	unscheduled, pendingReview, managerReviewing, err := r.countBizDemandHeavyFilters(ctx, poolIDs, account, needUnscheduled, needPendingReview, needManagerReviewing)
 	if err != nil {
 		return FilterCounts{}, err
 	}
@@ -230,7 +247,7 @@ WHERE deleted = '0' AND parent IN (0, -1) AND pool IN ?`
 		AllOpen:          row.AllOpen,
 		Unscheduled:      unscheduled,
 		PendingReview:    pendingReview,
-		ManagerReviewing: row.ManagerReviewing,
+		ManagerReviewing: managerReviewing,
 		Closed:           row.Closed,
 		Suspended:        suspended,
 	}
@@ -238,20 +255,26 @@ WHERE deleted = '0' AND parent IN (0, -1) AND pool IN ?`
 	return counts, nil
 }
 
-func (r *Repo) countBizDemandHeavyFilters(ctx context.Context, poolIDs []uint, account string, needUnscheduled, needPendingReview bool) (unscheduled, pendingReview int64, err error) {
+func (r *Repo) countBizDemandHeavyFilters(ctx context.Context, poolIDs []uint, account string, needUnscheduled, needPendingReview, needManagerReviewing bool) (unscheduled, pendingReview, managerReviewing int64, err error) {
 	if needUnscheduled {
 		unscheduled, err = r.countBizDemandsWithFilter(ctx, poolIDs, account, FilterUnscheduled, false)
 		if err != nil {
-			return 0, 0, err
+			return 0, 0, 0, err
 		}
 	}
 	if needPendingReview {
 		pendingReview, err = r.countBizDemandsWithFilter(ctx, poolIDs, account, FilterPendingReview, false)
 		if err != nil {
-			return 0, 0, err
+			return 0, 0, 0, err
 		}
 	}
-	return unscheduled, pendingReview, nil
+	if needManagerReviewing {
+		managerReviewing, err = r.countBizDemandsWithFilter(ctx, poolIDs, account, FilterManagerReviewing, false)
+		if err != nil {
+			return 0, 0, 0, err
+		}
+	}
+	return unscheduled, pendingReview, managerReviewing, nil
 }
 
 func (r *Repo) countBizDemandsWithFilter(ctx context.Context, poolIDs []uint, account, filter string, suspended bool) (int64, error) {

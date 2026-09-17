@@ -15,11 +15,11 @@ func TestFilterUnscheduledBizDemandTree(t *testing.T) {
 	}{
 		{
 			name:       "hide parent when no children match",
-			topDemands: []ZtDemand{{ID: 1, AssignedTo: "po"}},
+			topDemands: []ZtDemand{{ID: 1, AssignedTo: "po", Status: "clarified"}},
 			children: map[int][]ZtDemand{
 				1: {
-					{ID: 11, AssignedTo: "po"},
-					{ID: 12, AssignedTo: "po"},
+					{ID: 11, AssignedTo: "po", Status: "clarified"},
+					{ID: 12, AssignedTo: "po", Status: "clarified"},
 				},
 			},
 			productCount: map[uint]int{},
@@ -31,8 +31,8 @@ func TestFilterUnscheduledBizDemandTree(t *testing.T) {
 			topDemands: []ZtDemand{{ID: 2}},
 			children: map[int][]ZtDemand{
 				2: {
-					{ID: 21, AssignedTo: "po"},
-					{ID: 22, AssignedTo: "po"},
+					{ID: 21, AssignedTo: "po", Status: "clarified"},
+					{ID: 22, AssignedTo: "po", Status: "clarified"},
 				},
 			},
 			productCount: map[uint]int{21: 1},
@@ -41,7 +41,7 @@ func TestFilterUnscheduledBizDemandTree(t *testing.T) {
 		},
 		{
 			name:         "show leaf parent when it matches",
-			topDemands:   []ZtDemand{{ID: 3, AssignedTo: "po"}},
+			topDemands:   []ZtDemand{{ID: 3, AssignedTo: "po", Status: "developing"}},
 			children:     map[int][]ZtDemand{},
 			productCount: map[uint]int{3: 1},
 			wantTopIDs:   []uint{3},
@@ -49,11 +49,19 @@ func TestFilterUnscheduledBizDemandTree(t *testing.T) {
 		},
 		{
 			name:       "parent self match does not show when all children fail",
-			topDemands: []ZtDemand{{ID: 4, AssignedTo: "po"}},
+			topDemands: []ZtDemand{{ID: 4, AssignedTo: "po", Status: "clarified"}},
 			children: map[int][]ZtDemand{
-				4: {{ID: 41, AssignedTo: "po"}},
+				4: {{ID: 41, AssignedTo: "po", Status: "clarified"}},
 			},
 			productCount: map[uint]int{4: 1},
+			wantTopIDs:   []uint{},
+			wantChildIDs: nil,
+		},
+		{
+			name:         "hide leaf when status not clarified or developing",
+			topDemands:   []ZtDemand{{ID: 5, AssignedTo: "po", Status: "draft"}},
+			children:     map[int][]ZtDemand{},
+			productCount: map[uint]int{5: 1},
 			wantTopIDs:   []uint{},
 			wantChildIDs: nil,
 		},

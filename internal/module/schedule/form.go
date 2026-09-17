@@ -435,15 +435,15 @@ type FilterCountsResp struct {
 	Story   FilterCounts `json:"story"`
 }
 
-// NormalizeDemandFilter 规范化快捷筛选参数，默认全部未关闭。
+// NormalizeDemandFilter 规范化快捷筛选参数，默认待排期。
 func NormalizeDemandFilter(filter string) string {
 	switch strings.TrimSpace(filter) {
-	case FilterUnscheduled, FilterPendingReview, FilterManagerReviewing, FilterClosed:
+	case FilterAllOpen, FilterUnscheduled, FilterPendingReview, FilterManagerReviewing, FilterClosed:
 		return strings.TrimSpace(filter)
 	case "suspended":
 		return FilterAllOpen
 	default:
-		return FilterAllOpen
+		return FilterUnscheduled
 	}
 }
 
@@ -492,7 +492,7 @@ type ListBizDemandsReq struct {
 	Keyword     string `form:"keyword"`
 	WindowID    uint   `form:"windowId"`
 	Scope       string `form:"scope"`
-	Filter      string `form:"filter"`    // all_open, unscheduled, pending_review(待受理=与我相关+draft/wait/refuse), manager_reviewing, closed
+	Filter      string `form:"filter"`    // all_open, unscheduled(待排期=与我相关+clarified/developing+已澄清系统+待排期态), pending_review(待受理=与我相关+draft/wait/refuse), manager_reviewing(主管审批中=与我相关+isManagerReview=reviewing), closed
 	Suspended   bool   `form:"suspended"` // true 时叠加 AND hang = '1'
 	Groups      string `form:"groups"`    // 逗号分隔的小组 ID
 	Products    string `form:"products"`  // 逗号分隔的产品 ID
