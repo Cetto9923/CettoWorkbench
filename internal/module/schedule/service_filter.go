@@ -43,20 +43,25 @@ func (s *Service) GetIndependentFilterCounts(ctx context.Context, actor *model.U
 	return s.repo.GetIndependentFilterCounts(ctx, productIDs, account, reuseFilter, reuseTotal)
 }
 
-// GetScheduleFilterCounts 查询业需与独立研需快捷筛选项数量（角标 ajax）。
+// GetScheduleFilterCounts 按当前 tab 查询业务需求或研发需求快捷筛选项数量（角标 ajax）。
 func (s *Service) GetScheduleFilterCounts(ctx context.Context, actor *model.User, req FilterCountsReq) (FilterCountsResp, error) {
 	activeFilter := NormalizeDemandFilter(req.Filter)
-	biz, err := s.GetBizDemandFilterCounts(ctx, actor, activeFilter, req.ReuseBizFilter, req.ReuseBizTotal)
-	if err != nil {
-		return FilterCountsResp{}, err
+	tab := NormalizeFilterCountsTab(req.Tab)
+
+	resp := FilterCountsResp{Success: true}
+	switch tab {
+	case FilterCountsTabStory:
+		story, err := s.GetIndependentFilterCounts(ctx, actor, req.ReuseStoryFilter, req.ReuseStoryTotal)
+		if err != nil {
+			return FilterCountsResp{}, err
+		}
+		resp.Story = story
+	default:
+		demand, err := s.GetBizDemandFilterCounts(ctx, actor, activeFilter, req.ReuseDemandFilter, req.ReuseDemandTotal)
+		if err != nil {
+			return FilterCountsResp{}, err
+		}
+		resp.Demand = demand
 	}
-	indep, err := s.GetIndependentFilterCounts(ctx, actor, req.ReuseIndepFilter, req.ReuseIndepTotal)
-	if err != nil {
-		return FilterCountsResp{}, err
-	}
-	return FilterCountsResp{
-		Success: true,
-		Biz:     biz,
-		Indep:   indep,
-	}, nil
+	return resp, nil
 }

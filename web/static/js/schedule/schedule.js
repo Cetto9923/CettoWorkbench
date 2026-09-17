@@ -126,7 +126,11 @@
     });
   }
 
-  function applyFilterCountsPayload(biz, indep) {
+  function currentFilterCountsTab() {
+    return currentDataTabType() === "independentRD" ? "story" : "demand";
+  }
+
+  function applyFilterCountsPayload(tab, demand, story) {
     var fieldByFilter = {
       all_open: "allOpen",
       unscheduled: "unscheduled",
@@ -135,6 +139,8 @@
       manager_reviewing: "managerReviewing",
       closed: "closed",
     };
+    var counts = tab === "story" ? story : demand;
+    var attrName = tab === "story" ? "data-indep-count" : "data-biz-count";
     $root.find(".schedule-scope-chip").each(function () {
       var $chip = $(this);
       var filter = $chip.attr("data-filter");
@@ -142,13 +148,13 @@
       if (!field) {
         return;
       }
-      var bizVal = biz && biz[field] != null ? biz[field] : 0;
-      var indepVal = indep && indep[field] != null ? indep[field] : 0;
-      $chip.attr("data-biz-count", bizVal);
-      $chip.attr("data-indep-count", indepVal);
+      var val = counts && counts[field] != null ? counts[field] : 0;
+      $chip.attr(attrName, val);
     });
-    var suspended = biz && biz.suspended != null ? biz.suspended : 0;
-    $root.find(".js-suspended-count").text("(" + suspended + ")");
+    if (tab === "demand") {
+      var suspended = demand && demand.suspended != null ? demand.suspended : 0;
+      $root.find(".js-suspended-count").text("(" + suspended + ")");
+    }
     updateFilterChipCounts();
   }
 
@@ -157,21 +163,26 @@
     var url = $scope.attr("data-filter-counts-url") || "/schedule/filter-counts";
     var params = new URLSearchParams();
     var filter = $scope.attr("data-active-filter") || currentFilter();
+    var tab = currentFilterCountsTab();
     params.set("filter", filter);
+    params.set("tab", tab);
 
     var canReuse = $scope.attr("data-can-reuse") === "1";
     var suspended = $scope.attr("data-suspended") === "1";
     if (canReuse) {
-      var bizTotal = parseInt($scope.attr("data-biz-total") || "0", 10) || 0;
-      var indepTotal = parseInt($scope.attr("data-indep-total") || "0", 10) || 0;
-      if (suspended) {
-        params.set("reuseBizFilter", "suspended");
-        params.set("reuseBizTotal", String(bizTotal));
+      if (tab === "story") {
+        var storyTotal = parseInt($scope.attr("data-indep-total") || "0", 10) || 0;
+        params.set("reuseStoryFilter", filter);
+        params.set("reuseStoryTotal", String(storyTotal));
       } else {
-        params.set("reuseBizFilter", filter);
-        params.set("reuseBizTotal", String(bizTotal));
-        params.set("reuseIndepFilter", filter);
-        params.set("reuseIndepTotal", String(indepTotal));
+        var demandTotal = parseInt($scope.attr("data-biz-total") || "0", 10) || 0;
+        if (suspended) {
+          params.set("reuseDemandFilter", "suspended");
+          params.set("reuseDemandTotal", String(demandTotal));
+        } else {
+          params.set("reuseDemandFilter", filter);
+          params.set("reuseDemandTotal", String(demandTotal));
+        }
       }
     }
     return url + "?" + params.toString();
@@ -182,6 +193,7 @@
     if (!$scope.length) {
       return;
     }
+    var tab = currentFilterCountsTab();
     fetch(buildFilterCountsURL(), {
       method: "GET",
       headers: { Accept: "application/json" },
@@ -197,7 +209,7 @@
         if (!json || !json.success) {
           return;
         }
-        applyFilterCountsPayload(json.biz || {}, json.indep || {});
+        applyFilterCountsPayload(tab, json.demand || {}, json.story || {});
       })
       .catch(function () {
         // 角标失败不阻塞列表，保持占位符

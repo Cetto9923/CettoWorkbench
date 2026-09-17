@@ -435,6 +435,10 @@ const (
 
 	// FilterCountReuseSuspended 角标复用：挂起数量（非列表快捷筛选值）。
 	FilterCountReuseSuspended = "suspended"
+
+	// 角标统计 tab：业务需求 / 研发需求。
+	FilterCountsTabDemand = "demand"
+	FilterCountsTabStory  = "story"
 )
 
 // FilterCounts 各快捷筛选项数量。
@@ -450,18 +454,19 @@ type FilterCounts struct {
 
 // FilterCountsReq 角标统计 ajax 入参。
 type FilterCountsReq struct {
-	Filter           string `form:"filter"`
-	ReuseBizFilter   string `form:"reuseBizFilter"`
-	ReuseBizTotal    int64  `form:"reuseBizTotal"`
-	ReuseIndepFilter string `form:"reuseIndepFilter"`
-	ReuseIndepTotal  int64  `form:"reuseIndepTotal"`
+	Filter            string `form:"filter"`
+	Tab               string `form:"tab"` // demand | story
+	ReuseDemandFilter string `form:"reuseDemandFilter"`
+	ReuseDemandTotal  int64  `form:"reuseDemandTotal"`
+	ReuseStoryFilter  string `form:"reuseStoryFilter"`
+	ReuseStoryTotal   int64  `form:"reuseStoryTotal"`
 }
 
-// FilterCountsResp 角标统计 ajax 出参。
+// FilterCountsResp 角标统计 ajax 出参（仅填充当前 tab 对应侧）。
 type FilterCountsResp struct {
 	Success bool         `json:"success"`
-	Biz     FilterCounts `json:"biz"`
-	Indep   FilterCounts `json:"indep"`
+	Demand  FilterCounts `json:"demand"`
+	Story   FilterCounts `json:"story"`
 }
 
 // NormalizeDemandFilter 规范化快捷筛选参数，默认全部未关闭。
@@ -474,6 +479,16 @@ func NormalizeDemandFilter(filter string) string {
 		return FilterAllOpen
 	default:
 		return FilterAllOpen
+	}
+}
+
+// NormalizeFilterCountsTab 规范化角标统计 tab，默认业务需求。
+func NormalizeFilterCountsTab(tab string) string {
+	switch strings.ToLower(strings.TrimSpace(tab)) {
+	case FilterCountsTabStory:
+		return FilterCountsTabStory
+	default:
+		return FilterCountsTabDemand
 	}
 }
 
