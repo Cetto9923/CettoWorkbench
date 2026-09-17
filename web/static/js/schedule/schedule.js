@@ -120,7 +120,6 @@
       var $chip = $(this);
       var count = $chip.attr("data-" + attrName);
       if (count === undefined || count === null || count === "") {
-        $chip.find(".js-filter-count").text("—");
         return;
       }
       $chip.find(".js-filter-count").text(count);
@@ -155,6 +154,9 @@
       var suspended = demand && demand.suspended != null ? demand.suspended : 0;
       $root.find(".js-suspended-count").text("(" + suspended + ")");
     }
+    try {
+      sessionStorage.setItem("wb_schedule_counts_" + tab, JSON.stringify(counts));
+    } catch (e) {}
     updateFilterChipCounts();
   }
 
@@ -454,6 +456,14 @@
   });
 
   $("#scheduleClearFilters").on("click", clearFilters);
+
+  var initialTab = currentFilterCountsTab();
+  try {
+    var cached = JSON.parse(sessionStorage.getItem("wb_schedule_counts_" + initialTab));
+    if (cached) {
+      applyFilterCountsPayload(initialTab, cached, cached);
+    }
+  } catch (e) {}
 
   var params = readURLParams();
   if (params.get("tab") === "indep") {
