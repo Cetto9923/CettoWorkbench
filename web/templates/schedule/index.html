@@ -13,7 +13,7 @@
           .FilterWindows ([]schedule.WindowFilterOption),
           .StageFilterOptions ([]schedule.StageFilterOption),
           .SelectedWindowMap (map[uint]bool), .BizPager (*pagination.Pager),
-          .IndepPager (*pagination.Pager)
+          .IndepPager (*pagination.Pager), .InsideUsersURL (string)
 TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
 ========================================================================== */}}
 {{ define "page_css" }}
@@ -221,24 +221,18 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
         <option value="3"{{ if eq .SelectedPri "3" }} selected{{ end }}>P3</option>
         <option value="4"{{ if eq .SelectedPri "4" }} selected{{ end }}>P4</option>
       </select>
-      <select class="form-select" id="scheduleFilterDev">
-        <option value="">开发负责人</option>
-        {{ range .FilterUsers }}
-        <option value="{{ .Account }}"{{ if eq $.SelectedDevOwner .Account }} selected{{ end }}>{{ .Realname }}</option>
-        {{ end }}
-      </select>
-      <select class="form-select" id="scheduleFilterTest">
-        <option value="">测试负责人</option>
-        {{ range .FilterUsers }}
-        <option value="{{ .Account }}"{{ if eq $.SelectedTestOwner .Account }} selected{{ end }}>{{ .Realname }}</option>
-        {{ end }}
-      </select>
-      <select class="form-select" id="scheduleFilterAccept">
-        <option value="">验收负责人</option>
-        {{ range .FilterUsers }}
-        <option value="{{ .Account }}"{{ if eq $.SelectedAcceptOwner .Account }} selected{{ end }}>{{ .Realname }}</option>
-        {{ end }}
-      </select>
+      <div class="ui-autocomplete schedule-owner-picker" data-inside-users-url="{{ .InsideUsersURL }}">
+        <input type="text" id="scheduleFilterDevInput" class="form-input" placeholder="开发负责人" autocomplete="off">
+        <input type="hidden" id="scheduleFilterDevValue" class="schedule-owner-filter-value" value="{{ .SelectedDevOwner }}" data-selected-value="{{ .SelectedDevOwner }}">
+      </div>
+      <div class="ui-autocomplete schedule-owner-picker">
+        <input type="text" id="scheduleFilterTestInput" class="form-input" placeholder="测试负责人" autocomplete="off">
+        <input type="hidden" id="scheduleFilterTestValue" class="schedule-owner-filter-value" value="{{ .SelectedTestOwner }}" data-selected-value="{{ .SelectedTestOwner }}">
+      </div>
+      <div class="ui-autocomplete schedule-owner-picker">
+        <input type="text" id="scheduleFilterAcceptInput" class="form-input" placeholder="验收负责人" autocomplete="off">
+        <input type="hidden" id="scheduleFilterAcceptValue" class="schedule-owner-filter-value" value="{{ .SelectedAcceptOwner }}" data-selected-value="{{ .SelectedAcceptOwner }}">
+      </div>
     </div>
 
     <div class="schedule-data-tabs">

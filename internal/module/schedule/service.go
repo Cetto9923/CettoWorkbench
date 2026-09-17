@@ -160,11 +160,6 @@ func (s *Service) ListFilterWindows(ctx context.Context) ([]WindowFilterOption, 
 	return out, nil
 }
 
-// ListScheduleUsers 查询筛选区负责人下拉用户。
-func (s *Service) ListScheduleUsers(ctx context.Context, actor *model.User) ([]SchedulingUserOption, error) {
-	return s.listInsideUsers(ctx, actor)
-}
-
 func (s *Service) listInsideUsers(ctx context.Context, actor *model.User) ([]SchedulingUserOption, error) {
 	if s.userSvc == nil {
 		return []SchedulingUserOption{}, nil

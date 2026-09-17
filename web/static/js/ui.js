@@ -459,6 +459,11 @@
     state.items = ensureAutocompleteItem(state.items, value, label);
     updateAutocompleteClearButton(state);
     closeAutocomplete(state);
+    try {
+      state.hidden.dispatchEvent(new Event("change", { bubbles: true }));
+    } catch (e) {
+      /* ignore */
+    }
   }
 
   function clearAutocompleteValue(state) {
@@ -466,6 +471,11 @@
     state.hidden.value = "";
     updateAutocompleteClearButton(state);
     closeAutocomplete(state);
+    try {
+      state.hidden.dispatchEvent(new Event("change", { bubbles: true }));
+    } catch (e) {
+      /* ignore */
+    }
   }
 
   function ensureAutocompleteStructure(input, hidden) {

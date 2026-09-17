@@ -39,71 +39,6 @@ type indepStorySimpleCountRow struct {
 	Closed        int64 `gorm:"column:closed"`
 }
 
-// 从当前用户相关业需做半连接，避免对池内全部父业需逐行跑 EXISTS。
-const bizDemandUnscheduledTopIDsSQL = `
-SELECT u.top_id
-FROM (
-  SELECT DISTINCT CASE
-    WHEN x.parent IN (0, -1) THEN x.id
-    ELSE x.parent
-  END AS top_id
-  FROM (
-    SELECT id FROM zt_demand WHERE deleted = '0' AND assignedTo = ?
-    UNION
-    SELECT id FROM zt_demand WHERE deleted = '0' AND BRA = ?
-    UNION
-    SELECT demand FROM zt_demandclarify WHERE PM = ? AND TRIM(IFNULL(product, '')) != ''
-  ) rel
-  INNER JOIN zt_demand x ON x.id = rel.id AND x.deleted = '0'
-  WHERE x.status IN ('clarified', 'developing')
-    AND EXISTS (
-    SELECT 1 FROM zt_demandclarify dc
-    WHERE dc.demand = x.id
-      AND TRIM(IFNULL(dc.product, '')) != ''
-  )
-    AND (
-      NOT EXISTS (
-        SELECT 1 FROM zt_story s
-        INNER JOIN zt_planstory ps ON ps.story = s.id
-        INNER JOIN zt_versionwindowproduct vwp ON vwp.plan = ps.plan AND vwp.deletedAt IS NULL
-        WHERE s.fromDemand = x.id
-          AND s.deleted = '0'
-          AND s.sourceType = 'demandpool'
-          AND s.type = 'story'
-      )
-      OR EXISTS (
-        SELECT 1 FROM zt_story s
-        WHERE s.fromDemand = x.id
-          AND s.deleted = '0'
-          AND s.sourceType = 'demandpool'
-          AND s.type = 'story'
-          AND (
-            NOT EXISTS (SELECT 1 FROM zt_task t WHERE t.story = s.id AND t.deleted = '0' AND t.status != 'closed')
-            OR EXISTS (
-              SELECT 1 FROM zt_task t
-              WHERE t.story = s.id AND t.deleted = '0' AND t.status != 'closed'
-                AND (t.assignedTo = '' OR t.assignedTo IS NULL)
-            )
-          )
-      )
-    )
-    AND (
-      (
-        x.parent IN (0, -1)
-        AND NOT EXISTS (
-          SELECT 1 FROM zt_demand c
-          WHERE c.parent = x.id AND c.deleted = '0'
-        )
-      )
-      OR x.parent > 0
-    )
-) u`
-
-const bizDemandUnscheduledSQL = `
-AND d.id IN (
-` + bizDemandUnscheduledTopIDsSQL + `
-)`
-
 const indepStoryUnscheduledSQL = `
 AND (
   s.assignedTo = ?
@@ -132,14 +67,11 @@ func buildBizDemandFilterClause(filter, account string) filterClause {
 	account = strings.TrimSpace(account)
 	switch filter {
 	case FilterUnscheduled:
-		// 与我相关 + 已澄清/开发中 + 已澄清系统 + 待排期态；排除挂起
+		// 待排期走 FindUnscheduledBizDemandTopIDs 多阶段路径，避免巨型相关子查询。
 		if account == "" {
 			return filterClause{sql: "AND 1 = 0"}
 		}
-		return filterClause{
-			sql:  bizDemandUnscheduledExcludeHangSQL + bizDemandUnscheduledSQL,
-			args: []interface{}{account, account, account},
-		}
+		return filterClause{sql: bizDemandUnscheduledExcludeHangSQL}
 	case FilterPendingReview:
 		// 与首页价值流「受理」一致：与我相关 + draft/wait/refuse
 		if account == "" {
@@ -278,6 +210,10 @@ func (r *Repo) countBizDemandHeavyFilters(ctx context.Context, poolIDs []uint, a
 }
 
 func (r *Repo) countBizDemandsWithFilter(ctx context.Context, poolIDs []uint, account, filter string, suspended bool) (int64, error) {
+	if NormalizeDemandFilter(filter) == FilterUnscheduled {
+		return r.countUnscheduledBizDemands(ctx, poolIDs, account, suspended)
+	}
+
 	clause := applyBizDemandSuspended(buildBizDemandFilterClause(filter, account), suspended)
 	const countQuery = `
 SELECT COUNT(*) AS total

@@ -170,6 +170,10 @@ func (r *Repo) ListBizDemands(ctx context.Context, req ListBizDemandsReq, poolID
 		return []ZtDemand{}, 0, nil
 	}
 
+	if NormalizeDemandFilter(req.Filter) == FilterUnscheduled {
+		return r.listUnscheduledBizDemands(ctx, req, poolIDs, account)
+	}
+
 	clause := mergeFilterClauses(
 		applyBizDemandSuspended(buildBizDemandFilterClause(req.Filter, account), req.Suspended),
 		buildBizDemandAdvancedClause(advancedFilterParamsFromBizReq(req)),

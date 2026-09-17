@@ -90,3 +90,21 @@
 #scheduleMultiselectRow > .action-btn {
   height: 30px;
 }
+
+#page-schedule #scheduleMoreFilters .schedule-owner-picker {
+  width: 100%;
+  min-width: 0;
+}
+
+#page-schedule #scheduleMoreFilters .schedule-owner-picker .ui-autocomplete-input-wrap {
+  width: 100%;
+}
+
+#page-schedule #scheduleMoreFilters .schedule-owner-picker .ui-autocomplete-input {
+  width: 100% !important;
+  min-width: 0;
+  height: 30px;
+  padding: 5px 28px 5px 8px;
+  font-size: 12px;
+  box-sizing: border-box;
+}

@@ -169,14 +169,6 @@ func (h *Handler) Index(c *gin.Context) {
 		filterWindows = []WindowFilterOption{}
 	}
 
-	filterUsers, err := h.svc.ListScheduleUsers(c.Request.Context(), actor)
-	if err != nil {
-		if h.logger != nil {
-			h.logger.Error("load filter users failed", zap.Error(err))
-		}
-		filterUsers = []SchedulingUserOption{}
-	}
-
 	render.Page(c, http.StatusOK, constants.TEMPLATE_SCHEDULE_INDEX, gin.H{
 		"Title":                   "排期工作台",
 		"PageTitle":               "排期工作台",
@@ -189,7 +181,6 @@ func (h *Handler) Index(c *gin.Context) {
 		"Products":                formData.Products,
 		"FilterProducts":          filterProducts,
 		"FilterWindows":           filterWindows,
-		"FilterUsers":             filterUsers,
 		"StageFilterOptions":      ScheduleStageFilterOptionsForTab(demandData.ActiveTab),
 		"SelectedGroups":          demandData.SelectedGroups,
 		"SelectedProducts":        demandData.SelectedProducts,
@@ -213,6 +204,7 @@ func (h *Handler) Index(c *gin.Context) {
 		"IndepFilterCounts":       demandData.IndepFilterCounts,
 		"CanReuseListTotal":       demandData.CanReuseListTotal,
 		"FilterCountsURL":         "/schedule/filter-counts",
+		"InsideUsersURL":          "/users",
 	})
 }
 

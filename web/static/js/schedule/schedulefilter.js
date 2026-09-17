@@ -11,6 +11,17 @@
     return;
   }
 
+  var ownerPickerItems = null;
+  var ownerPickerLoading = null;
+  var ownerPickersReady = false;
+  var suppressOwnerChange = false;
+
+  var OWNER_PICKERS = [
+    { inputId: "scheduleFilterDevInput", hiddenId: "scheduleFilterDevValue", placeholder: "开发负责人" },
+    { inputId: "scheduleFilterTestInput", hiddenId: "scheduleFilterTestValue", placeholder: "测试负责人" },
+    { inputId: "scheduleFilterAcceptInput", hiddenId: "scheduleFilterAcceptValue", placeholder: "验收负责人" },
+  ];
+
   function readURLParams() {
     return new URLSearchParams(window.location.search);
   }
@@ -79,9 +90,9 @@
       windows: "",
       keyword: $.trim($("#scheduleSearch").val() || ""),
       pri: $.trim($("#scheduleFilterPri").val() || ""),
-      dev: $.trim($("#scheduleFilterDev").val() || ""),
-      test: $.trim($("#scheduleFilterTest").val() || ""),
-      accept: $.trim($("#scheduleFilterAccept").val() || ""),
+      dev: $.trim($("#scheduleFilterDevValue").val() || ""),
+      test: $.trim($("#scheduleFilterTestValue").val() || ""),
+      accept: $.trim($("#scheduleFilterAcceptValue").val() || ""),
     };
     $row.find(".schedule-ms").each(function () {
       var $ms = $(this);
@@ -119,6 +130,88 @@
     return !!(values.pri || values.dev || values.test || values.accept);
   }
 
+  function toAutocompleteItems(users) {
+    return (users || [])
+      .map(function (user) {
+        return {
+          value: $.trim(user.account || ""),
+          label: $.trim(user.realname || "") || $.trim(user.account || ""),
+        };
+      })
+      .filter(function (item) {
+        return !!item.value;
+      });
+  }
+
+  function findOwnerLabel(items, account) {
+    account = $.trim(account || "");
+    if (!account) {
+      return "";
+    }
+    for (var i = 0; i < (items || []).length; i++) {
+      if (items[i].value === account) {
+        return items[i].label || account;
+      }
+    }
+    return account;
+  }
+
+  function insideUsersURL() {
+    return $(".schedule-owner-picker").first().attr("data-inside-users-url") || "/users";
+  }
+
+  function initOwnerPickers(items) {
+    if (typeof window.initAutocomplete !== "function") {
+      return;
+    }
+    suppressOwnerChange = true;
+    OWNER_PICKERS.forEach(function (picker) {
+      var selected = $.trim($("#" + picker.hiddenId).attr("data-selected-value") || $("#" + picker.hiddenId).val() || "");
+      window.initAutocomplete(picker.inputId, picker.hiddenId, items, {
+        placeholder: picker.placeholder,
+        value: selected,
+        label: findOwnerLabel(items, selected),
+      });
+    });
+    ownerPickersReady = true;
+    suppressOwnerChange = false;
+  }
+
+  function loadOwnerPickers() {
+    if (ownerPickerItems) {
+      initOwnerPickers(ownerPickerItems);
+      return $.Deferred().resolve(ownerPickerItems).promise();
+    }
+    if (ownerPickerLoading) {
+      return ownerPickerLoading;
+    }
+    var req = window.appFetch
+      ? window.appFetch(insideUsersURL(), { headers: { Accept: "application/json" } })
+      : fetch(insideUsersURL(), { headers: { Accept: "application/json" } });
+    ownerPickerLoading = Promise.resolve(req)
+      .then(function (res) {
+        return res.json();
+      })
+      .then(function (json) {
+        var items = toAutocompleteItems((json && json.items) || []);
+        ownerPickerItems = items;
+        initOwnerPickers(items);
+        return items;
+      })
+      .catch(function () {
+        ownerPickerItems = [];
+        initOwnerPickers([]);
+        if (typeof window.showToast === "function") {
+          window.showToast("加载负责人列表失败", "error");
+        }
+        return [];
+      })
+      .finally(function () {
+        ownerPickerLoading = null;
+      });
+    return ownerPickerLoading;
+  }
+
   function setMoreFiltersOpen(open) {
     var $more = $("#scheduleMoreFilters");
     var $toggle = $("#scheduleMoreFilterToggle");
@@ -127,6 +220,9 @@
     }
     $more.toggleClass("open", open).prop("hidden", !open);
     $toggle.toggleClass("active", open).attr("aria-expanded", open ? "true" : "false");
+    if (open) {
+      loadOwnerPickers();
+    }
   }
 
   function toggleMoreFilters() {
@@ -180,6 +276,13 @@
   });
 
   $("#scheduleMoreFilters").on("change", ".form-select", function () {
+    applyAdvancedFilters();
+  });
+
+  $("#scheduleMoreFilters").on("change", ".schedule-owner-filter-value", function () {
+    if (suppressOwnerChange || !ownerPickersReady) {
+      return;
+    }
     applyAdvancedFilters();
   });
 

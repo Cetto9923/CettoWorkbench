@@ -92,6 +92,9 @@ func registerRoutes(r *gin.Engine, deps RouteDeps) {
 	po.Use(middleware.RequireLogin(deps.SessionMgr, deps.DB))
 	po.Use(middleware.RecordOperationLog(deps.DB, deps.SessionMgr))
 	{
+		if deps.UserHandler != nil {
+			deps.UserHandler.RegisterInsideRoutes(po)
+		}
 		if deps.PoHandler != nil {
 			deps.PoHandler.RegisterRoutes(po)
 		}

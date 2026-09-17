@@ -67,6 +67,30 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	users.DELETE("/:id", middleware.RequirePerm(perm.UserDelete), h.Delete)
 }
 
+// RegisterInsideRoutes 注册内部用户检索下拉接口（GET /users，无 RequirePerm）。
+func (h *Handler) RegisterInsideRoutes(rg *gin.RouterGroup) {
+	rg.GET("/users", h.ListInsideUsers)
+}
+
+// ListInsideUsers 返回人员选择控件用的内部用户列表（JSON）。
+func (h *Handler) ListInsideUsers(c *gin.Context) {
+	actor := middleware.CurrentUser(c)
+	users, err := h.svc.ListInsideUsers(c.Request.Context(), actor)
+	if err != nil {
+		h.logger.Error("list inside users failed", zap.Error(err))
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"error":   "加载用户列表失败",
+			"items":   []InsideUserOption{},
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"items":   users,
+	})
+}
+
 // Export 导出用户列表并触发浏览器下载。
 func (h *Handler) Export(c *gin.Context) {
 	var req ExportReq
