@@ -46,7 +46,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
         {{ if .Windows }}
         <div class="schedule-version-grid">
           {{ range $i, $w := .Windows }}
-          {{ if lt $i 3 }}
+          {{ if lt $i 4 }}
           <div class="schedule-version-card {{ $w.ToneClass }}" data-window-id="{{ $w.ID }}">
             <div class="schedule-version-body-click">
               <div class="schedule-version-top">

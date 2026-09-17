@@ -30,7 +30,7 @@
 
 .schedule-version-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(220px, 1fr)) 120px;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) 80px;
   gap: 8px;
   align-items: stretch;
 }
@@ -285,42 +285,49 @@
 }
 
 .schedule-version-extra {
-  grid-column: 4;
+  grid-column: -1;
   grid-row: 1;
-  border: 1px dashed #cbd5e1;
-  border-radius: 8px;
-  background: #fff;
-  color: #475569;
+  width: 80px;
+  border: 1px dashed var(--color-border-strong, #cbd5e1);
+  border-radius: 6px;
+  background: var(--color-surface-muted, #f8fafc);
+  color: var(--color-text-secondary, #64748b);
   display: flex;
   flex-direction: column;
-  gap: 6px;
   justify-content: center;
-  padding: 8px;
+  padding: 4px;
   min-width: 0;
   box-sizing: border-box;
+  transition: all 0.15s;
+}
+
+.schedule-version-extra:hover {
+  border-color: var(--color-info-fill, var(--blue, #2563eb));
+  background: var(--color-surface, #fff);
+}
+
+.schedule-version-extra:hover .schedule-version-add {
+  color: var(--color-info-fill, var(--blue, #2563eb));
 }
 
 .schedule-version-add {
-  border: 1px solid var(--blue-bd);
-  border-radius: 6px;
-  background: var(--blue-bg);
-  color: var(--blue);
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary, #64748b);
   font-family: inherit;
-  font-weight: 800;
-  font-size: 12px;
+  font-weight: 600;
+  font-size: 11px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 2px;
   cursor: pointer;
-  height: 28px;
+  height: 100%;
   width: 100%;
   padding: 0;
   box-sizing: border-box;
-}
-
-.schedule-version-add i {
-  font-size: 12px;
+  transition: all 0.15s;
 }
 .schedule-create-plan-grid {
   display: grid;
@@ -408,7 +415,7 @@
 
 @media (max-width: 1180px) {
   .schedule-version-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) 110px;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) 80px;
   }
 
   .schedule-version-extra {

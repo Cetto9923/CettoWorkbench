@@ -179,7 +179,7 @@
   background: var(--white);
   cursor: pointer;
   color: var(--t2);
-  transition: all 0.15s;
+  transition: color 0.15s, border-color 0.15s, background 0.15s, box-shadow 0.15s;
   font-family: inherit;
   white-space: nowrap;
 }
@@ -203,8 +203,13 @@
 }
 
 .schedule-scope-chip strong {
-  font-family: "JetBrains Mono", monospace;
+  display: inline-block;
+  min-width: 3.5ch;
   margin-left: 4px;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  box-sizing: content-box;
 }
 
 .schedule-scope-chip--secondary {
@@ -226,7 +231,7 @@
   background: var(--bg);
   cursor: pointer;
   color: var(--t2);
-  transition: all 0.15s;
+  transition: color 0.15s, border-color 0.15s, background 0.15s, box-shadow 0.15s;
   font-family: inherit;
   white-space: nowrap;
 }
@@ -274,8 +279,13 @@
 }
 
 .schedule-suspended-toggle strong {
-  font-family: "JetBrains Mono", monospace;
+  display: inline-block;
+  min-width: 4.5ch;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+  box-sizing: content-box;
 }
 
 .schedule-clear-btn {
