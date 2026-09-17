@@ -300,7 +300,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             <td class="schedule-action-col">
               <div class="schedule-action-buttons">
                 {{ if .DetailURL }}
-                <a href="{{ .DetailURL }}" class="action-btn {{ .ActionClass }}" data-demand-id="{{ .DemandID }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</a>
+                <a href="{{ .DetailURL }}" target="_blank" rel="noopener noreferrer" class="action-btn {{ .ActionClass }}" data-demand-id="{{ .DemandID }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</a>
                 {{ else }}
                 <button type="button" class="action-btn {{ .ActionClass }}" data-demand-id="{{ .DemandID }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</button>
                 {{ end }}
@@ -332,7 +332,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             <td class="schedule-action-col">
               <div class="schedule-action-buttons">
                 {{ if .DetailURL }}
-                <a href="{{ .DetailURL }}" class="action-btn {{ .ActionClass }}" data-demand-id="{{ .DemandID }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</a>
+                <a href="{{ .DetailURL }}" target="_blank" rel="noopener noreferrer" class="action-btn {{ .ActionClass }}" data-demand-id="{{ .DemandID }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</a>
                 {{ else }}
                 <button type="button" class="action-btn {{ .ActionClass }}" data-demand-id="{{ .DemandID }}" style="padding:4px 10px;font-size:11px">{{ .ActionLabel }}</button>
                 {{ end }}
