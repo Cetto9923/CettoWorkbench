@@ -135,7 +135,6 @@
       all_open: "allOpen",
       unscheduled: "unscheduled",
       pending_review: "pendingReview",
-      unassigned: "unassigned",
       manager_reviewing: "managerReviewing",
       closed: "closed",
     };
@@ -263,7 +262,6 @@
       windows: null,
       keyword: null,
       pri: null,
-      windowType: null,
       dev: null,
       test: null,
       accept: null,

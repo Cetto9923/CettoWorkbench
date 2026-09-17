@@ -79,7 +79,6 @@
       windows: "",
       keyword: $.trim($("#scheduleSearch").val() || ""),
       pri: $.trim($("#scheduleFilterPri").val() || ""),
-      windowType: $.trim($("#scheduleFilterWindowType").val() || ""),
       dev: $.trim($("#scheduleFilterDev").val() || ""),
       test: $.trim($("#scheduleFilterTest").val() || ""),
       accept: $.trim($("#scheduleFilterAccept").val() || ""),
@@ -107,7 +106,6 @@
       windows: values.windows || null,
       keyword: values.keyword || null,
       pri: values.pri || null,
-      windowType: values.windowType || null,
       dev: values.dev || null,
       test: values.test || null,
       accept: values.accept || null,
@@ -118,7 +116,7 @@
 
   function hasMoreFiltersActive() {
     var values = collectAdvancedFilterValues();
-    return !!(values.pri || values.windowType || values.dev || values.test || values.accept);
+    return !!(values.pri || values.dev || values.test || values.accept);
   }
 
   function setMoreFiltersOpen(open) {

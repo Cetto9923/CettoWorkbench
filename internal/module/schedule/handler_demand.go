@@ -144,7 +144,6 @@ type scheduleIndexDemandData struct {
 	SelectedWindows         string
 	SelectedKeyword         string
 	SelectedPri             string
-	SelectedWindowType      string
 	SelectedDevOwner        string
 	SelectedTestOwner       string
 	SelectedAcceptOwner     string
@@ -166,7 +165,6 @@ type scheduleFilterPreserveReq struct {
 	windows     string
 	keyword     string
 	pri         string
-	windowType  string
 	devOwner    string
 	testOwner   string
 	acceptOwner string
@@ -196,9 +194,6 @@ func scheduleFilterPreserveParams(req scheduleFilterPreserveReq) map[string]stri
 	}
 	if strings.TrimSpace(req.pri) != "" {
 		params["pri"] = strings.TrimSpace(req.pri)
-	}
-	if strings.TrimSpace(req.windowType) != "" {
-		params["windowType"] = strings.TrimSpace(req.windowType)
 	}
 	if strings.TrimSpace(req.devOwner) != "" {
 		params["dev"] = strings.TrimSpace(req.devOwner)
@@ -248,7 +243,6 @@ func scheduleCanReuseListTotal(req ListBizDemandsReq, _ bool) bool {
 		strings.TrimSpace(req.Windows) == "" &&
 		strings.TrimSpace(req.Keyword) == "" &&
 		strings.TrimSpace(req.Pri) == "" &&
-		strings.TrimSpace(req.WindowType) == "" &&
 		strings.TrimSpace(req.DevOwner) == "" &&
 		strings.TrimSpace(req.TestOwner) == "" &&
 		strings.TrimSpace(req.AcceptOwner) == ""
@@ -299,7 +293,6 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 	indepReq.Windows = listReq.Windows
 	indepReq.Keyword = listReq.Keyword
 	indepReq.Pri = listReq.Pri
-	indepReq.WindowType = listReq.WindowType
 	indepReq.DevOwner = listReq.DevOwner
 	indepReq.TestOwner = listReq.TestOwner
 	indepReq.Normalize()
@@ -327,7 +320,7 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 	bizPager.PreserveParams = scheduleFilterPreserveParams(scheduleFilterPreserveReq{
 		filter: activeFilter, suspended: suspendedActive, bizPage: bizPage, indepPage: indepPage, tab: tab,
 		groups: listReq.Groups, products: listReq.Products, stages: bizStages, windows: listReq.Windows,
-		keyword: listReq.Keyword, pri: listReq.Pri, windowType: listReq.WindowType,
+		keyword: listReq.Keyword, pri: listReq.Pri,
 		devOwner: listReq.DevOwner, testOwner: listReq.TestOwner, acceptOwner: listReq.AcceptOwner,
 	})
 
@@ -336,7 +329,7 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 	indepPager.PreserveParams = scheduleFilterPreserveParams(scheduleFilterPreserveReq{
 		filter: activeFilter, suspended: suspendedActive, bizPage: bizPage, indepPage: indepPage, tab: "indep",
 		groups: listReq.Groups, products: listReq.Products, stages: indepStages, windows: listReq.Windows,
-		keyword: listReq.Keyword, pri: listReq.Pri, windowType: listReq.WindowType,
+		keyword: listReq.Keyword, pri: listReq.Pri,
 		devOwner: listReq.DevOwner, testOwner: listReq.TestOwner, acceptOwner: listReq.AcceptOwner,
 	})
 
@@ -360,7 +353,6 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 		SelectedWindows:         listReq.Windows,
 		SelectedKeyword:         listReq.Keyword,
 		SelectedPri:             listReq.Pri,
-		SelectedWindowType:      listReq.WindowType,
 		SelectedDevOwner:        listReq.DevOwner,
 		SelectedTestOwner:       listReq.TestOwner,
 		SelectedAcceptOwner:     listReq.AcceptOwner,

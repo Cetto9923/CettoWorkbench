@@ -66,29 +66,6 @@ const bizDemandWindowIDsSQL = `
   )
 )`
 
-const bizDemandWindowTypeSQL = `
-(
-  d.id IN (
-    SELECT DISTINCT dw.demand
-    FROM zt_demandwindow dw
-    INNER JOIN zt_versionwindow vw ON vw.id = dw.versionWindow AND vw.deletedAt IS NULL
-    WHERE dw.deletedAt IS NULL
-      AND dw.story = 0
-      AND vw.status = ?
-  )
-  OR d.id IN (
-    SELECT DISTINCT c.parent
-    FROM zt_demandwindow dw
-    INNER JOIN zt_demand c ON c.id = dw.demand
-    INNER JOIN zt_versionwindow vw ON vw.id = dw.versionWindow AND vw.deletedAt IS NULL
-    WHERE dw.deletedAt IS NULL
-      AND dw.story = 0
-      AND c.deleted = '0'
-      AND c.parent > 0
-      AND vw.status = ?
-  )
-)`
-
 const indepStoryWindowIDsSQL = `
 (
   EXISTS (
@@ -106,23 +83,6 @@ const indepStoryWindowIDsSQL = `
   )
 )`
 
-const indepStoryWindowTypeSQL = `
-(
-  EXISTS (
-    SELECT 1 FROM zt_planstory ps
-    INNER JOIN zt_versionwindowproduct vwp ON vwp.plan = ps.plan AND vwp.deletedAt IS NULL
-    INNER JOIN zt_versionwindow vw ON vw.id = vwp.versionWindow AND vw.deletedAt IS NULL
-    WHERE ps.story = s.id AND vw.status = ?
-  )
-  OR EXISTS (
-    SELECT 1 FROM zt_story ch
-    INNER JOIN zt_planstory ps ON ps.story = ch.id
-    INNER JOIN zt_versionwindowproduct vwp ON vwp.plan = ps.plan AND vwp.deletedAt IS NULL
-    INNER JOIN zt_versionwindow vw ON vw.id = vwp.versionWindow AND vw.deletedAt IS NULL
-    WHERE ch.parent = s.id AND ch.deleted = '0' AND ch.type = 'story' AND vw.status = ?
-  )
-)`
-
 type advancedFilterParams struct {
 	groupIDs    []uint
 	productIDs  []uint
@@ -130,7 +90,6 @@ type advancedFilterParams struct {
 	stages      []string
 	keyword     string
 	pri         string
-	windowType  string
 	devOwner    string
 	testOwner   string
 	acceptOwner string
@@ -144,7 +103,6 @@ func advancedFilterParamsFromBizReq(req ListBizDemandsReq) advancedFilterParams 
 		stages:      ParseCommaSeparatedStages(req.Stages),
 		keyword:     strings.TrimSpace(req.Keyword),
 		pri:         NormalizePriorityFilter(req.Pri),
-		windowType:  NormalizeWindowTypeFilter(req.WindowType),
 		devOwner:    strings.TrimSpace(req.DevOwner),
 		testOwner:   strings.TrimSpace(req.TestOwner),
 		acceptOwner: strings.TrimSpace(req.AcceptOwner),
@@ -159,7 +117,6 @@ func advancedFilterParamsFromIndepReq(req ListIndependentReq) advancedFilterPara
 		stages:     ParseCommaSeparatedStages(req.Stages),
 		keyword:    strings.TrimSpace(req.Keyword),
 		pri:        NormalizePriorityFilter(req.Pri),
-		windowType: NormalizeWindowTypeFilter(req.WindowType),
 		devOwner:   strings.TrimSpace(req.DevOwner),
 		testOwner:  strings.TrimSpace(req.TestOwner),
 	}
@@ -209,10 +166,6 @@ func buildBizDemandAdvancedClause(params advancedFilterParams) filterClause {
 	if params.pri != "" {
 		parts = append(parts, "AND d.pri = ?")
 		args = append(args, params.pri)
-	}
-	if params.windowType != "" {
-		parts = append(parts, "AND "+bizDemandWindowTypeSQL)
-		args = append(args, params.windowType, params.windowType)
 	}
 	if params.devOwner != "" {
 		parts = append(parts, "AND d.RD = ?")
@@ -271,10 +224,6 @@ func buildIndepStoryAdvancedClause(params advancedFilterParams) filterClause {
 	if params.pri != "" {
 		parts = append(parts, "AND s.pri = ?")
 		args = append(args, params.pri)
-	}
-	if params.windowType != "" {
-		parts = append(parts, "AND "+indepStoryWindowTypeSQL)
-		args = append(args, params.windowType, params.windowType)
 	}
 	if params.devOwner != "" {
 		parts = append(parts, "AND s.assignedTo = ?")

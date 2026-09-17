@@ -107,20 +107,6 @@ AND d.id IN (
 ` + bizDemandUnscheduledTopIDsSQL + `
 )`
 
-const bizDemandUnassignedDemandIDsSQL = `
-SELECT s.fromDemand
-FROM zt_story s
-LEFT JOIN zt_task t ON t.story = s.id AND t.deleted = '0' AND t.status != 'closed'
-WHERE s.deleted = '0' AND s.fromDemand > 0
-GROUP BY s.id, s.fromDemand
-HAVING COUNT(t.id) = 0
-    OR SUM(CASE WHEN t.assignedTo IS NULL OR t.assignedTo = '' THEN 1 ELSE 0 END) > 0`
-
-const bizDemandUnassignedSQL = `
-AND d.id IN (
-` + bizDemandUnassignedDemandIDsSQL + `
-)`
-
 const indepStoryUnscheduledSQL = `
 AND (
   s.assignedTo = ?
@@ -144,16 +130,6 @@ AND (
   )
 )`
 
-const indepStoryUnassignedSQL = `
-AND (
-  NOT EXISTS (SELECT 1 FROM zt_task t WHERE t.story = s.id AND t.deleted = '0' AND t.status != 'closed')
-  OR EXISTS (
-    SELECT 1 FROM zt_task t
-    WHERE t.story = s.id AND t.deleted = '0' AND t.status != 'closed'
-      AND (t.assignedTo = '' OR t.assignedTo IS NULL)
-  )
-)`
-
 func buildBizDemandFilterClause(filter, account string) filterClause {
 	filter = NormalizeDemandFilter(filter)
 	account = strings.TrimSpace(account)
@@ -165,10 +141,6 @@ func buildBizDemandFilterClause(filter, account string) filterClause {
 		}
 	case FilterPendingReview:
 		return filterClause{sql: "AND d.status = 'wait'"}
-	case FilterUnassigned:
-		return filterClause{
-			sql: bizDemandExcludeReleasedSQL + "\n" + bizDemandUnassignedSQL,
-		}
 	case FilterManagerReviewing:
 		return filterClause{sql: "AND d.isManagerReview = 'reviewing'"}
 	case FilterClosed:
@@ -197,10 +169,6 @@ func buildIndepStoryFilterClause(filter, account string) filterClause {
 		}
 	case FilterPendingReview:
 		return filterClause{sql: "AND s.status = 'reviewing'"}
-	case FilterUnassigned:
-		return filterClause{
-			sql: indepStoryExcludeReleasedSQL + "\n" + indepStoryUnassignedSQL,
-		}
 	case FilterManagerReviewing:
 		return filterClause{sql: "AND 1 = 0"}
 	case FilterClosed:
@@ -232,8 +200,7 @@ WHERE deleted = '0' AND parent IN (0, -1) AND pool IN ?`
 	}
 
 	needUnscheduled := !filterCountReuseMatches(reuseFilter, FilterUnscheduled)
-	needUnassigned := !filterCountReuseMatches(reuseFilter, FilterUnassigned)
-	unscheduled, unassigned, err := r.countBizDemandHeavyFilters(ctx, poolIDs, account, needUnscheduled, needUnassigned)
+	unscheduled, err := r.countBizDemandHeavyFilters(ctx, poolIDs, account, needUnscheduled)
 	if err != nil {
 		return FilterCounts{}, err
 	}
@@ -250,7 +217,6 @@ WHERE deleted = '0' AND parent IN (0, -1) AND pool IN ?`
 		AllOpen:          row.AllOpen,
 		Unscheduled:      unscheduled,
 		PendingReview:    row.PendingReview,
-		Unassigned:       unassigned,
 		ManagerReviewing: row.ManagerReviewing,
 		Closed:           row.Closed,
 		Suspended:        suspended,
@@ -259,50 +225,11 @@ WHERE deleted = '0' AND parent IN (0, -1) AND pool IN ?`
 	return counts, nil
 }
 
-type bizDemandHeavyCountRow struct {
-	Unscheduled int64 `gorm:"column:unscheduled"`
-	Unassigned  int64 `gorm:"column:unassigned"`
-}
-
-func (r *Repo) countBizDemandHeavyFilters(ctx context.Context, poolIDs []uint, account string, needUnscheduled, needUnassigned bool) (int64, int64, error) {
-	if !needUnscheduled && !needUnassigned {
-		return 0, 0, nil
+func (r *Repo) countBizDemandHeavyFilters(ctx context.Context, poolIDs []uint, account string, needUnscheduled bool) (int64, error) {
+	if !needUnscheduled {
+		return 0, nil
 	}
-	account = strings.TrimSpace(account)
-
-	if needUnscheduled && !needUnassigned {
-		total, err := r.countBizDemandsWithFilter(ctx, poolIDs, account, FilterUnscheduled, false)
-		return total, 0, err
-	}
-	if needUnassigned && !needUnscheduled {
-		total, err := r.countBizDemandsWithFilter(ctx, poolIDs, account, FilterUnassigned, false)
-		return 0, total, err
-	}
-
-	const query = `
-SELECT
-  SUM(CASE
-    WHEN d.hang = '0'
-      AND d.status != 'released'
-      AND d.id IN (` + bizDemandUnscheduledTopIDsSQL + `)
-    THEN 1 ELSE 0
-  END) AS unscheduled,
-  SUM(CASE
-    WHEN d.status != 'released'
-      AND d.id IN (` + bizDemandUnassignedDemandIDsSQL + `)
-    THEN 1 ELSE 0
-  END) AS unassigned
-FROM zt_demand d
-WHERE d.deleted = '0'
-  AND d.parent IN (0, -1)
-  AND d.pool IN ?`
-
-	args := []interface{}{account, account, account, poolIDs}
-	var row bizDemandHeavyCountRow
-	if err := r.db.WithContext(ctx).Raw(query, args...).Scan(&row).Error; err != nil {
-		return 0, 0, err
-	}
-	return row.Unscheduled, row.Unassigned, nil
+	return r.countBizDemandsWithFilter(ctx, poolIDs, account, FilterUnscheduled, false)
 }
 
 func (r *Repo) countBizDemandsWithFilter(ctx context.Context, poolIDs []uint, account, filter string, suspended bool) (int64, error) {
@@ -352,11 +279,6 @@ WHERE demand IN ?
 	return out, nil
 }
 
-type indepStoryHeavyCountRow struct {
-	Unscheduled int64 `gorm:"column:unscheduled"`
-	Unassigned  int64 `gorm:"column:unassigned"`
-}
-
 // GetIndependentFilterCounts 统计独立研发需求各快捷筛选项数量。
 func (r *Repo) GetIndependentFilterCounts(ctx context.Context, productIDs []uint, account, reuseFilter string, reuseTotal int64) (FilterCounts, error) {
 	if len(productIDs) == 0 {
@@ -381,8 +303,7 @@ WHERE IFNULL(s.sourceType, '') != 'demandpool'
 	}
 
 	needUnscheduled := !filterCountReuseMatches(reuseFilter, FilterUnscheduled)
-	needUnassigned := !filterCountReuseMatches(reuseFilter, FilterUnassigned)
-	unscheduled, unassigned, err := r.countIndepStoryHeavyFilters(ctx, productIDs, account, needUnscheduled, needUnassigned)
+	unscheduled, err := r.countIndepStoryHeavyFilters(ctx, productIDs, account, needUnscheduled)
 	if err != nil {
 		return FilterCounts{}, err
 	}
@@ -391,7 +312,6 @@ WHERE IFNULL(s.sourceType, '') != 'demandpool'
 		AllOpen:          row.AllOpen,
 		Unscheduled:      unscheduled,
 		PendingReview:    row.PendingReview,
-		Unassigned:       unassigned,
 		ManagerReviewing: 0,
 		Closed:           row.Closed,
 	}
@@ -399,73 +319,11 @@ WHERE IFNULL(s.sourceType, '') != 'demandpool'
 	return counts, nil
 }
 
-func (r *Repo) countIndepStoryHeavyFilters(ctx context.Context, productIDs []uint, account string, needUnscheduled, needUnassigned bool) (int64, int64, error) {
-	if !needUnscheduled && !needUnassigned {
-		return 0, 0, nil
+func (r *Repo) countIndepStoryHeavyFilters(ctx context.Context, productIDs []uint, account string, needUnscheduled bool) (int64, error) {
+	if !needUnscheduled {
+		return 0, nil
 	}
-	account = strings.TrimSpace(account)
-
-	if needUnscheduled && !needUnassigned {
-		total, err := r.countIndepStoriesWithFilter(ctx, productIDs, account, FilterUnscheduled)
-		return total, 0, err
-	}
-	if needUnassigned && !needUnscheduled {
-		total, err := r.countIndepStoriesWithFilter(ctx, productIDs, account, FilterUnassigned)
-		return 0, total, err
-	}
-
-	const query = `
-SELECT
-  SUM(CASE
-    WHEN s.status != 'released'
-      AND (
-        s.assignedTo = ?
-        OR EXISTS (
-          SELECT 1 FROM zt_product p
-          WHERE p.id = s.product AND p.deleted = '0'
-            AND (p.PO = ? OR p.QD = ? OR p.RD = ?)
-        )
-      )
-      AND (
-        NOT EXISTS (
-          SELECT 1 FROM zt_planstory ps
-          JOIN zt_versionwindowproduct vwp ON vwp.plan = ps.plan AND vwp.deletedAt IS NULL
-          WHERE ps.story = s.id
-        )
-        OR NOT EXISTS (SELECT 1 FROM zt_task t WHERE t.story = s.id AND t.deleted = '0' AND t.status != 'closed')
-        OR EXISTS (
-          SELECT 1 FROM zt_task t
-          WHERE t.story = s.id AND t.deleted = '0' AND t.status != 'closed'
-            AND (t.assignedTo = '' OR t.assignedTo IS NULL)
-        )
-      )
-    THEN 1 ELSE 0
-  END) AS unscheduled,
-  SUM(CASE
-    WHEN s.status != 'released'
-      AND (
-        NOT EXISTS (SELECT 1 FROM zt_task t WHERE t.story = s.id AND t.deleted = '0' AND t.status != 'closed')
-        OR EXISTS (
-          SELECT 1 FROM zt_task t
-          WHERE t.story = s.id AND t.deleted = '0' AND t.status != 'closed'
-            AND (t.assignedTo = '' OR t.assignedTo IS NULL)
-        )
-      )
-    THEN 1 ELSE 0
-  END) AS unassigned
-FROM zt_story s
-WHERE IFNULL(s.sourceType, '') != 'demandpool'
-  AND s.parent = 0
-  AND s.type = 'story'
-  AND s.deleted = '0'
-  AND s.product IN ?`
-
-	args := []interface{}{account, account, account, account, productIDs}
-	var row indepStoryHeavyCountRow
-	if err := r.db.WithContext(ctx).Raw(query, args...).Scan(&row).Error; err != nil {
-		return 0, 0, err
-	}
-	return row.Unscheduled, row.Unassigned, nil
+	return r.countIndepStoriesWithFilter(ctx, productIDs, account, FilterUnscheduled)
 }
 
 func (r *Repo) countIndepStoriesWithFilter(ctx context.Context, productIDs []uint, account, filter string) (int64, error) {
