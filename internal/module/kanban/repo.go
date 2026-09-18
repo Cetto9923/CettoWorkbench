@@ -2,7 +2,7 @@
 // 文件: internal/module/kanban/repo.go
 // 模块: 工作看板
 // 类型: action
-// 职责: 看板数据访问（敏捷小组/成员、任务三列查询、任务状态读取）。
+// 职责: 看板数据访问（敏捷小组/成员、任务三列查询、任务状态读取、独立研需查询）。
 // 依赖: internal/model/zentao
 // =============================================================================
 
@@ -18,7 +18,10 @@ import (
 	ztmodel "workbench/internal/model/zentao"
 )
 
-const kanbanTaskLimit = 200
+const (
+	kanbanTaskLimit       = 200
+	independentStoryLimit = 200
+)
 
 // Repo 封装看板数据访问。
 type Repo struct {
@@ -195,4 +198,63 @@ func (r *Repo) FindTaskStatusByID(ctx context.Context, id int64) (*taskStatusRow
 		Status:     row.Status,
 		AssignedTo: row.AssignedTo,
 	}, nil
+}
+
+// IndependentStoryRow 独立研需（zt_story）供看板行展示。
+type IndependentStoryRow struct {
+	ID            int64      `gorm:"column:id"`
+	Title         string     `gorm:"column:title"`
+	Status        string     `gorm:"column:status"`
+	Stage         string     `gorm:"column:stage"`
+	Pri           int        `gorm:"column:pri"`
+	AssignedTo    string     `gorm:"column:assignedTo"`
+	DevelopFinish *time.Time `gorm:"column:developFinish"`
+	TestFinish    *time.Time `gorm:"column:testFinish"`
+	VerifyFinish  *time.Time `gorm:"column:verifyFinish"`
+	DeliverDate   *time.Time `gorm:"column:deliverDate"`
+}
+
+// FindIndependentStoriesByAccounts 严格按照 PRD《价值流阶段数据统计逻辑.xlsx》查询独立研发需求。
+// 过滤条件：非需求池(sourceType != 'demandpool')、非父需求(isParent = '0')、未删除且未关闭、
+// 指派人或所属产品需求负责人(ReqM)为当前团队成员。
+func (r *Repo) FindIndependentStoriesByAccounts(ctx context.Context, accounts []string) ([]IndependentStoryRow, error) {
+	if r == nil || r.db == nil || len(accounts) == 0 {
+		return []IndependentStoryRow{}, nil
+	}
+	cleaned := make([]string, 0, len(accounts))
+	for _, a := range accounts {
+		if s := strings.TrimSpace(a); s != "" {
+			cleaned = append(cleaned, s)
+		}
+	}
+	if len(cleaned) == 0 {
+		return []IndependentStoryRow{}, nil
+	}
+
+	var rows []IndependentStoryRow
+	err := r.db.WithContext(ctx).Table("zt_story").
+		Where("deleted = ?", "0").
+		Where("status != ?", "closed").
+		Where("type = ?", "story").
+		Where("isParent = ?", "0").
+		Where("(fromDemand IS NULL OR fromDemand = 0)").
+		Where("IFNULL(sourceType, '') != ?", "demandpool").
+		Where(`(
+			zt_story.assignedTo IN ?
+			OR EXISTS (
+				SELECT 1 FROM zt_product p
+				WHERE p.id = zt_story.product AND p.deleted = '0' AND p.ReqM IN ?
+			)
+		)`, cleaned, cleaned).
+		Select("id, title, status, stage, pri, assignedTo, developFinish, testFinish, verifyFinish, deliverDate").
+		Order("id DESC").
+		Limit(independentStoryLimit).
+		Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	if rows == nil {
+		return []IndependentStoryRow{}, nil
+	}
+	return rows, nil
 }

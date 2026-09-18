@@ -5,20 +5,27 @@
 // 职责: 复用首页价值流 Demands，按选中负责人组装需求树（业需 + 独立研需）。
 // 依赖: internal/model
 //       internal/module/po
-//       internal/pkg/errorx
+//       internal/pkg/zentao
 // =============================================================================
 
 package kanban
 
 import (
 	"context"
+	"fmt"
+	"strconv"
 	"strings"
+	"time"
 
 	"workbench/internal/model"
 	"workbench/internal/module/po"
+	"workbench/internal/pkg/zentao"
 )
 
-const bizDemandPageSize = 100
+const (
+	bizDemandPageSize   = 100
+	maxDemandFetchPages = 10 // 限制拉取上限（1000条），在保证卡片不被截断的同时防止大表级联扫描超时
+)
 
 // ListValueStreamBizDemands 按选中负责人拉取价值流「全部」业需与研需。
 // account 为空时回落到 actor；account=all 时按当前敏捷小组全员聚合去重。
@@ -51,7 +58,7 @@ func (s *Service) ListValueStreamBizDemands(ctx context.Context, actor *model.Us
 			return ListBizDemandsResp{}, demErr
 		}
 		for _, it := range items {
-			key := it.Kind + ":" + it.ID
+			key := demandItemKey(it.Kind, it.ID)
 			if _, ok := seen[key]; ok {
 				continue
 			}
@@ -60,13 +67,97 @@ func (s *Service) ListValueStreamBizDemands(ctx context.Context, actor *model.Us
 		}
 	}
 
-	return ListBizDemandsResp{Items: toBizDemandItems(all)}, nil
+	items := toBizDemandItems(all)
+	if s.repo != nil {
+		indStories, indErr := s.repo.FindIndependentStoriesByAccounts(ctx, targets)
+		if indErr != nil {
+			return ListBizDemandsResp{}, indErr
+		}
+		if len(indStories) > 0 {
+			displayMap, _ := s.loadAccountDisplayMap(ctx, actor)
+			for _, st := range indStories {
+				numIDStr := strconv.FormatInt(st.ID, 10)
+				key := demandItemKey("story", numIDStr)
+				if _, ok := seen[key]; ok {
+					continue
+				}
+				seen[key] = struct{}{}
+
+				owner := lookupDisplay(displayMap, st.AssignedTo)
+				pri := ""
+				if st.Pri > 0 {
+					pri = fmt.Sprintf("P%d", st.Pri)
+				}
+				items = append(items, BizDemandItem{
+					Kind:         "story",
+					ID:           fmt.Sprintf("U%d", st.ID),
+					Pri:          pri,
+					Title:        st.Title,
+					Owner:        owner,
+					ValueStream:  deriveStoryStage(st.Status, st.Stage, st.DevelopFinish, st.TestFinish, st.VerifyFinish, st.DeliverDate),
+					ZentaoUrl:    zentao.URL("story", "view", "storyID="+numIDStr),
+					ZentaoStatus: st.Status,
+				})
+			}
+		}
+	}
+	return ListBizDemandsResp{Items: items}, nil
+}
+
+// deriveStoryStage 严格按照 PRD《价值流阶段数据统计逻辑.xlsx》将研发需求派生到看板 4 列（研需无受理/澄清）：
+// 1. 交付/评价：deliverDate <= 今天，或处于 launched(已发布) 状态，或 stage 为 delivering/delivered/released
+// 2. 联调/验收：stage 为 testing/tested/verified，或开发、测试、验证三段完成时间均已填写
+// 3. 研发/提测：status 为 developing，或 stage 为 developing/developed
+// 4. 排期（默认）：未完整填写完成时间或处于 wait/planned/projected 等状态，统一归入排期
+func deriveStoryStage(status, stage string, developFinish, testFinish, verifyFinish, deliverDate *time.Time) string {
+	if isEffectiveDateBeforeOrEqualToday(deliverDate) {
+		return "交付/评价"
+	}
+	if status == "launched" || stage == "delivering" || stage == "delivered" || stage == "released" {
+		return "交付/评价"
+	}
+
+	if stage == "testing" || stage == "tested" || stage == "verified" {
+		return "联调/验收"
+	}
+	if isEffectiveDate(developFinish) && isEffectiveDate(testFinish) && isEffectiveDate(verifyFinish) {
+		return "联调/验收"
+	}
+
+	if status == "developing" || stage == "developing" || stage == "developed" {
+		return "研发/提测"
+	}
+
+	return "排期"
+}
+
+func isEffectiveDate(t *time.Time) bool {
+	return t != nil && !t.IsZero() && t.Format("2006-01-02") != "0000-00-00"
+}
+
+func isEffectiveDateBeforeOrEqualToday(t *time.Time) bool {
+	if !isEffectiveDate(t) {
+		return false
+	}
+	today := time.Now().Format("2006-01-02")
+	return t.Format("2006-01-02") <= today
+}
+
+func demandItemKey(kind, id string) string {
+	raw := strings.TrimSpace(id)
+	raw = strings.TrimPrefix(raw, "#")
+	raw = strings.TrimPrefix(strings.ToUpper(raw), "US")
+	raw = strings.TrimPrefix(strings.ToUpper(raw), "U")
+	raw = strings.TrimPrefix(strings.ToUpper(raw), "REQ")
+	raw = strings.TrimPrefix(strings.ToUpper(raw), "SUB")
+	raw = strings.TrimPrefix(raw, "-")
+	return strings.ToLower(strings.TrimSpace(kind)) + ":" + raw
 }
 
 func (s *Service) fetchDemandsForAccount(ctx context.Context, viewAs *model.User) ([]po.WorkItemDetail, error) {
 	var all []po.WorkItemDetail
 	page := 1
-	for {
+	for page <= maxDemandFetchPages {
 		dreq := po.DemandsReq{Status: "all", Page: page, PageSize: bizDemandPageSize}
 		dreq.Normalize()
 		resp, demErr := s.poSvc.Demands(ctx, viewAs, dreq)
