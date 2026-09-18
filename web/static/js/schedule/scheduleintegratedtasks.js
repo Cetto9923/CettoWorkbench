@@ -136,6 +136,15 @@
     $section.toggle(hasTasks);
   }
 
+  function syncAddTaskButtonVisibility($node) {
+    var $btn = $node.find(".rd-add-task").first();
+    if (!$btn.length) {
+      return;
+    }
+    var hasTasks = $node.find(".rd-task-body .rd-task-row").length > 0;
+    $btn.toggle(!hasTasks);
+  }
+
   function readSectionProject($scope) {
     var $select = getSectionProjectSelect($scope);
     var projectId = $.trim($select.val() || "");
@@ -600,8 +609,13 @@
       }
     });
     var $projectSection = $(section).find(".rd-task-project-section").first();
+    var hasTasks = $body.find(".rd-task-row").length > 0;
     if ($projectSection.length) {
-      $projectSection.toggle($body.find(".rd-task-row").length > 0);
+      $projectSection.toggle(hasTasks);
+    }
+    var $addBtn = $(section).find(".rd-add-task").first();
+    if ($addBtn.length) {
+      $addBtn.toggle(!hasTasks);
     }
     return section;
   }
@@ -814,6 +828,7 @@
       $node.find(".rd-task-body").first().append($row);
     }
     syncProjectSectionVisibility($node);
+    syncAddTaskButtonVisibility($node);
     initNewTaskRowFields($row, $node, readRowProjectExecution($afterRow), null);
   }
 
@@ -868,6 +883,7 @@
       initNewTaskRowFields($row, $node, null, spec);
     });
     syncProjectSectionVisibility($node);
+    syncAddTaskButtonVisibility($node);
   }
 
   function isAutocompleteTarget(target) {
@@ -886,6 +902,7 @@
     loadRowExecutions: loadRowExecutions,
     loadProductProjects: loadProductProjects,
     initNodeProjectSelect: initNodeProjectSelect,
+    syncAddTaskButtonVisibility: syncAddTaskButtonVisibility,
     syncExecutionSameButton: syncExecutionSameButton,
     setExecutionSameActive: setExecutionSameActive,
     isExecutionSameActive: isExecutionSameActive,
@@ -928,6 +945,7 @@
     clearTaskOwnerPickerMeta($row);
     $row.remove();
     syncProjectSectionVisibility($node);
+    syncAddTaskButtonVisibility($node);
   });
 
   $(document).on("click", "#scheduleIntegratedModalBody .task-edit-btn", function (e) {

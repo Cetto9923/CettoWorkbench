@@ -52,6 +52,7 @@
     if (section) {
       node.appendChild(section);
     }
+    tasksApi.syncAddTaskButtonVisibility($node);
     return node;
   }
 
@@ -262,6 +263,7 @@
       applyStoryDataAttrs($node, story);
       $container.append(node);
       tasksApi.initNodeProjectSelect($node);
+      tasksApi.syncAddTaskButtonVisibility($node);
     });
 
     updateTreeEmptyState();
