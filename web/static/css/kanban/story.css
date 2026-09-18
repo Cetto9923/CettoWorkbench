@@ -5,12 +5,15 @@
 ========================================================================== */
 
 .main:has(.po-board) {
+  box-sizing: border-box;
   padding: 10px 12px 12px;
-  padding-bottom: calc(12px + var(--bottom-tabbar-height, 0px));
+  padding-bottom: calc(12px + var(--bottom-tabbar-height, 40px));
   background: var(--po-bg, #f4f5f7);
   display: flex;
   flex-direction: column;
-  min-height: calc(100vh - var(--topbar-stack-height, 56px) - var(--bottom-tabbar-height, 0px));
+  height: calc(100vh - var(--topbar-stack-height, 56px));
+  max-height: calc(100vh - var(--topbar-stack-height, 56px));
+  overflow: hidden;
 }
 
 .po-board {
@@ -380,9 +383,17 @@
   background: var(--white);
   border: 1px solid var(--border);
   border-radius: 6px;
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
   display: flex;
   flex-direction: column;
+}
+
+.po-board #demandGroups.is-loading {
+  opacity: 0.6;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
 }
 
 .po-board .demand-grid {
