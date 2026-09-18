@@ -383,6 +383,48 @@
   text-decoration: underline;
 }
 
+.dd-table-wrap {
+  overflow-x: auto;
+}
+
+.dd-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  color: var(--color-text-body, #334155);
+}
+
+.dd-table th,
+.dd-table td {
+  border: 1px solid var(--color-border, #e2e8f0);
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+  word-break: break-word;
+}
+
+.dd-table th {
+  background: var(--color-surface-muted, #f8fafc);
+  color: var(--color-text-muted, #64748b);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.dd-table td.text-muted,
+.dd-table .text-muted {
+  color: var(--color-text-muted, #94a3b8);
+  text-align: center;
+}
+
+.dd-table-title a {
+  color: var(--color-info, #2563eb);
+  text-decoration: none;
+}
+
+.dd-table-title a:hover {
+  text-decoration: underline;
+}
+
 .dd-review-footer {
   position: sticky;
   bottom: 0;

@@ -12,6 +12,7 @@ package po
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -187,6 +188,9 @@ func demandDetailHTTPError(err error) (int, string) {
 			return http.StatusBadRequest, biz.Msg
 		}
 		return http.StatusBadRequest, biz.Msg
+	}
+	if err != nil && strings.TrimSpace(err.Error()) != "" {
+		return http.StatusInternalServerError, "获取需求详情失败：" + err.Error()
 	}
 	return http.StatusInternalServerError, "获取需求详情失败"
 }

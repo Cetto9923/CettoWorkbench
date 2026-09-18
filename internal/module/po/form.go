@@ -374,9 +374,9 @@ type DemandDetailResp struct {
 	ProposerName      string             `json:"proposerName"`
 	ProposerDept      string             `json:"proposerDept"`
 	OwnerName         string             `json:"ownerName"`
-	BraAccount        string             `json:"braAccount"`        // 需求负责人账号，验收弹窗默认指派给
-	Reviewer          string             `json:"reviewer"`          // 展示名（多评审人用 ", " 拼接）
-	ReviewerAccounts  []string           `json:"reviewerAccounts"`  // 原始账号列表，供提交评审多选回显
+	BraAccount        string             `json:"braAccount"`       // 需求负责人账号，验收弹窗默认指派给
+	Reviewer          string             `json:"reviewer"`         // 展示名（多评审人用 ", " 拼接）
+	ReviewerAccounts  []string           `json:"reviewerAccounts"` // 原始账号列表，供提交评审多选回显
 	CreatedName       string             `json:"createdName"`
 	CurrentOwner      string             `json:"currentOwner"` // UI 展示为「指派给」，取 assignedTo
 	ZentaoStatus      string             `json:"zentaoStatus"`
@@ -387,4 +387,52 @@ type DemandDetailResp struct {
 	ZentaoURL         string             `json:"zentaoUrl"`
 	ZentaoEditURL     string             `json:"zentaoEditUrl"`
 	Attachments       []DemandAttachment `json:"attachments"`
+	// 以下四块对齐禅道 demand-view（验收抽屉展示）
+	Stories       []DemandStoryItem        `json:"stories"`
+	UserStories   []DemandUserStoryItem    `json:"userStories"`
+	ReviewRecords []DemandReviewRecordItem `json:"reviewRecords"`
+	Tickets       []DemandTicketItem       `json:"tickets"`
+}
+
+// DemandStoryItem 转化的研发需求（zt_story fromDemand）。
+type DemandStoryItem struct {
+	ID          uint   `json:"id"`
+	Title       string `json:"title"`
+	Stage       string `json:"stage"`
+	StageLabel  string `json:"stageLabel"`
+	ProductName string `json:"productName"`
+	ReleaseDate string `json:"releaseDate"`
+	ZentaoURL   string `json:"zentaoUrl"`
+}
+
+// DemandUserStoryItem 用户故事条目（zt_demanduserstory）。
+type DemandUserStoryItem struct {
+	NO          int    `json:"no"`
+	Role        string `json:"role"`
+	GV          string `json:"gv"`
+	ProductName string `json:"productName"`
+	PointLabel  string `json:"pointLabel"`
+}
+
+// DemandReviewRecordItem 评审信息（zt_demandreviewrecord）。
+type DemandReviewRecordItem struct {
+	ReviewType        string `json:"reviewType"`
+	ReviewTypeLabel   string `json:"reviewTypeLabel"`
+	ReviewDate        string `json:"reviewDate"`
+	ReviewResult      string `json:"reviewResult"`
+	CreatedBy         string `json:"createdBy"`
+	CreatedByName     string `json:"createdByName"`
+	CreatedDate       string `json:"createdDate"`
+	ReviewStatus      string `json:"reviewStatus"`
+	ReviewStatusLabel string `json:"reviewStatusLabel"`
+}
+
+// DemandTicketItem 工单信息（zt_ticket.demand）。
+type DemandTicketItem struct {
+	ID          uint   `json:"id"`
+	Title       string `json:"title"`
+	Pri         string `json:"pri"`
+	Status      string `json:"status"`
+	StatusLabel string `json:"statusLabel"`
+	ZentaoURL   string `json:"zentaoUrl"`
 }

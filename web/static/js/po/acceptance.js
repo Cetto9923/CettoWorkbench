@@ -248,12 +248,21 @@
   function openDrawer(item) {
     currentItem = item || null;
     currentDetail = null;
+    window.PoAcceptanceRelations && window.PoAcceptanceRelations.reset("加载中…");
     if (!drawer.openDrawer(item)) {
       return;
     }
-    drawer.fetchDetail(item, detailCtrl, function (data) {
-      currentDetail = data || null;
-    });
+    drawer.fetchDetail(
+      item,
+      detailCtrl,
+      function (data) {
+        currentDetail = data || null;
+        window.PoAcceptanceRelations && window.PoAcceptanceRelations.render(data);
+      },
+      function () {
+        window.PoAcceptanceRelations && window.PoAcceptanceRelations.reset("加载失败");
+      }
+    );
   }
 
   function bindEvents() {

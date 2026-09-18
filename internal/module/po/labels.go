@@ -8,7 +8,10 @@
 
 package po
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 func demandCategoryLabel(raw string) string {
 	key := strings.ToLower(strings.TrimSpace(raw))
@@ -125,4 +128,91 @@ func dashOr(v string) string {
 		return "—"
 	}
 	return v
+}
+
+// storyStageLabel 对齐禅道 story->stageList。
+func storyStageLabel(raw string) string {
+	key := strings.ToLower(strings.TrimSpace(raw))
+	labels := map[string]string{
+		"wait":       "未开始",
+		"planned":    "已计划",
+		"projected":  "研发立项",
+		"designing":  "设计中",
+		"designed":   "设计完毕",
+		"developing": "研发中",
+		"developed":  "研发完毕",
+		"testing":    "测试中",
+		"tested":     "测试完毕",
+		"verified":   "已验收",
+		"rejected":   "验收失败",
+		"delivering": "交付中",
+		"delivered":  "已交付",
+		"released":   "已发布",
+		"closed":     "已关闭",
+	}
+	if v, ok := labels[key]; ok {
+		return v
+	}
+	return dashOr(raw)
+}
+
+// ticketStatusLabel 对齐禅道 ticket->statusList。
+func ticketStatusLabel(raw string) string {
+	key := strings.ToLower(strings.TrimSpace(raw))
+	labels := map[string]string{
+		"wait":   "等待",
+		"doing":  "处理中",
+		"done":   "已处理",
+		"closed": "已关闭",
+	}
+	if v, ok := labels[key]; ok {
+		return v
+	}
+	return dashOr(raw)
+}
+
+// demandReviewTypeLabel 对齐禅道 demandreviewrecord->reviewTypeList。
+func demandReviewTypeLabel(raw string) string {
+	key := strings.ToLower(strings.TrimSpace(raw))
+	labels := map[string]string{
+		"demand": "需求评审",
+		"design": "设计评审",
+		"test":   "测试案例评审",
+	}
+	if v, ok := labels[key]; ok {
+		return v
+	}
+	return dashOr(raw)
+}
+
+// demandReviewStatusLabel 对齐禅道 demandreviewrecord->reviewStatusList。
+func demandReviewStatusLabel(raw string) string {
+	key := strings.TrimSpace(raw)
+	labels := map[string]string{
+		"reviewPassed": "评审通过",
+		"noRequired":   "无需评审",
+	}
+	if v, ok := labels[key]; ok {
+		return v
+	}
+	return dashOr(raw)
+}
+
+// storyPointKeywordLabel 对齐禅道用户故事校准故事点关键词。
+func storyPointKeywordLabel(point int) string {
+	switch point {
+	case 2:
+		return "微型"
+	case 3:
+		return "小型"
+	case 5:
+		return "中型"
+	case 8:
+		return "大型"
+	default:
+		if point <= 0 {
+			return "—"
+		}
+		return fmt.Sprintf("%d", point)
+	}
 }

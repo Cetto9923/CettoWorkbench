@@ -54,6 +54,15 @@ func (s *Service) GetDemandDetail(ctx context.Context, actor *model.User, req De
 		return nil, fileErr
 	}
 	resp := buildDemandDetailResp(row, displayMap, files)
+
+	stories, userStories, reviews, tickets, relErr := s.loadDemandDetailRelations(ctx, id, displayMap)
+	if relErr != nil {
+		return nil, relErr
+	}
+	resp.Stories = stories
+	resp.UserStories = userStories
+	resp.ReviewRecords = reviews
+	resp.Tickets = tickets
 	return &resp, nil
 }
 
@@ -95,6 +104,10 @@ func buildDemandDetailResp(row *DemandDetailRow, displayMap map[string]string, f
 		ZentaoURL:         zentao.DemandViewURL(uint(row.ID)),
 		ZentaoEditURL:     zentao.URL("demand", "edit", fmt.Sprintf("demandID=%d", row.ID)),
 		Attachments:       atts,
+		Stories:           []DemandStoryItem{},
+		UserStories:       []DemandUserStoryItem{},
+		ReviewRecords:     []DemandReviewRecordItem{},
+		Tickets:           []DemandTicketItem{},
 	}
 }
 

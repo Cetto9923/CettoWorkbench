@@ -257,7 +257,7 @@
       renderAttachments([]);
     }
 
-    function fetchDetail(item, ctrl, onSuccess) {
+    function fetchDetail(item, ctrl, onSuccess, onFail) {
       var id = demandNumericId(item);
       if (!id) {
         return null;
@@ -283,6 +283,9 @@
           if (!ret.ok || !ret.json || !ret.json.success || !ret.json.data) {
             showToast((ret.json && ret.json.message) || "获取需求详情失败", "error");
             setFailedBody();
+            if (typeof onFail === "function") {
+              onFail();
+            }
             return;
           }
           applyDetail(ret.json.data);
@@ -296,6 +299,9 @@
           }
           showToast("获取需求详情失败", "error");
           setFailedBody();
+          if (typeof onFail === "function") {
+            onFail();
+          }
         });
       return abort;
     }
