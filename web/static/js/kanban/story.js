@@ -237,7 +237,12 @@
       return;
     }
     var seq = ++loadSeq;
-    showDemandEmpty("加载中…");
+    var hasRows = !!demandHost.querySelector(".demand-row");
+    if (hasRows) {
+      demandHost.classList.add("is-loading");
+    } else {
+      showDemandEmpty("加载中…");
+    }
     var fetchFn = typeof window.appFetch === "function" ? window.appFetch : fetch;
     fetchFn(demandsUrl(acc), { method: "GET", credentials: "same-origin" })
       .then(function (r) {
@@ -246,11 +251,13 @@
       })
       .then(function (payload) {
         if (seq !== loadSeq) return;
+        demandHost.classList.remove("is-loading");
         if (!payload || payload.success !== true) throw new Error("payload");
         renderDemands(payload.items || []);
       })
       .catch(function () {
         if (seq !== loadSeq) return;
+        demandHost.classList.remove("is-loading");
         showDemandEmpty("需求加载失败");
       });
   }
