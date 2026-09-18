@@ -250,8 +250,16 @@ func buildIndepStoryAdvancedClause(params advancedFilterParams) filterClause {
 }
 
 func mergeFilterClauses(base, extra filterClause) filterClause {
+	sql := base.sql
+	if extra.sql != "" {
+		// 避免 `?AND` 粘连导致占位符无法绑定（待排期 hang=? + keyword 曾因此 1064）。
+		if sql != "" && !strings.HasSuffix(sql, "\n") && !strings.HasPrefix(extra.sql, "\n") {
+			sql += "\n"
+		}
+		sql += extra.sql
+	}
 	return filterClause{
-		sql:  base.sql + extra.sql,
+		sql:  sql,
 		args: append(append([]interface{}{}, base.args...), extra.args...),
 	}
 }

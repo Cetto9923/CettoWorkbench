@@ -81,17 +81,8 @@ func (c bizDemandAssembleContext) demandHasUnscheduledState(demandID uint) bool 
 	if !anyDemandHasWindow([]uint{demandID}, c.windowByDemand) {
 		return true
 	}
-	stories := c.storiesByDemand[demandID]
-	if len(stories) == 0 {
-		return true
-	}
-	mainStories := filterMainSystemStories(stories)
-	taskTotal, unassignedTotal := sumMainSystemTasks(mainStories, c.taskStatByStory)
-	if taskTotal == 0 {
-		return true
-	}
-	if unassignedTotal > 0 {
-		return true
-	}
-	return false
+	return anyMainSystemStoryNeedsScheduling(
+		filterMainSystemStories(c.storiesByDemand[demandID]),
+		c.taskStatByStory,
+	)
 }

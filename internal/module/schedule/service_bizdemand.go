@@ -295,14 +295,8 @@ func calcBizDemandStage(
 	if !anyDemandHasWindow(demandIDs, windowByDemand) {
 		return StageScheduleIncomplete
 	}
-	if len(mainStories) == 0 {
+	if anyMainSystemStoryNeedsScheduling(mainStories, taskStatByStory) {
 		return StageScheduleIncomplete
-	}
-	for _, story := range mainStories {
-		stat := taskStatByStory[story.ID]
-		if stat.Total == 0 || stat.Unassigned > 0 {
-			return StageScheduleIncomplete
-		}
 	}
 	return StageScheduleDone
 }

@@ -127,6 +127,21 @@ func sumMainSystemTasks(stories []ZtStory, taskStatByStory map[uint]StoryTaskSta
 	return taskTotal, unassignedTotal
 }
 
+// anyMainSystemStoryNeedsScheduling 任一条主系统研需未建任务或存在未指派任务时返回 true。
+// 无主系统研需时也视为待排期。
+func anyMainSystemStoryNeedsScheduling(mainStories []ZtStory, taskStatByStory map[uint]StoryTaskStat) bool {
+	if len(mainStories) == 0 {
+		return true
+	}
+	for _, story := range mainStories {
+		stat := taskStatByStory[story.ID]
+		if stat.Total == 0 || stat.Unassigned > 0 {
+			return true
+		}
+	}
+	return false
+}
+
 func pickBizWindowName(stories []ZtStory, windowByStory map[uint]StoryWindowRef) string {
 	for _, story := range stories {
 		ref, ok := windowByStory[story.ID]

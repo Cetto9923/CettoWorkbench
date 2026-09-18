@@ -21,6 +21,8 @@ func extractScheduleSearchID(keyword string) string {
 	if trimmed == "" {
 		return ""
 	}
+	trimmed = strings.TrimPrefix(trimmed, "#")
+	trimmed = strings.TrimSpace(trimmed)
 	if schedulePlainIDPattern.MatchString(trimmed) {
 		return trimmed
 	}

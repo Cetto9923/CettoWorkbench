@@ -180,7 +180,7 @@ WHERE d.deleted = '0'
   AND d.hang = ?`
 
 	var total int64
-	if err := r.db.WithContext(ctx).Raw(countQuery+advanced.sql, countArgs...).Scan(&total).Error; err != nil {
+	if err := r.db.WithContext(ctx).Raw(countQuery+"\n"+advanced.sql, countArgs...).Scan(&total).Error; err != nil {
 		return nil, 0, err
 	}
 	if total == 0 {
@@ -216,7 +216,7 @@ WHERE d.deleted = '0'
   AND d.hang = ?`
 
 	var rows []ZtDemand
-	if err := r.db.WithContext(ctx).Raw(listQuery+advanced.sql+`
+	if err := r.db.WithContext(ctx).Raw(listQuery+"\n"+advanced.sql+`
 ORDER BY d.id DESC
 LIMIT ? OFFSET ?`, listArgs...).Scan(&rows).Error; err != nil {
 		return nil, 0, err

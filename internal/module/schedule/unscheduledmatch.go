@@ -49,16 +49,8 @@ func demandHasUnscheduledStoryState(
 	if !hasWindow {
 		return true
 	}
-	if len(stories) == 0 {
-		return true
-	}
-	for _, story := range stories {
-		stat := taskStatByStory[story.ID]
-		if stat.Total == 0 || stat.Unassigned > 0 {
-			return true
-		}
-	}
-	return false
+	// 与排期阶段一致：仅看主系统研需；任一条未建任务或未指派即待排期。
+	return anyMainSystemStoryNeedsScheduling(filterMainSystemStories(stories), taskStatByStory)
 }
 
 func collectUnscheduledBizDemandTopIDs(
