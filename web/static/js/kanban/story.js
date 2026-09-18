@@ -188,12 +188,25 @@
       : '<span class="node-title" title="' + title + '">' + title + "</span>";
 
     var ownerHtml = ownerBadgeHtml(item.owner);
-    var countHtml = "";
-    if (isBusinessDemandItem(item) && item.storyCount > 0) {
-      countHtml = '<span class="summary" style="font-size:10px;color:var(--t3);margin-left:6px;">' + escapeHtml(String(item.storyCount)) + " 研需</span>";
+    var isBiz = isBusinessDemandItem(item);
+    var countBadge = "";
+    if (isBiz) {
+      var sc = parseInt(item && item.storyCount, 10) || 0;
+      var label = sc > 0 ? (sc + " 研发需求") : "研发需求 0";
+      countBadge = '<span class="summary" style="font-size:10px;padding:1px 6px;border-radius:4px;background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;white-space:nowrap;margin-left:6px;flex-shrink:0;">' +
+        escapeHtml(label) +
+        "</span>";
+    } else {
+      var total = parseInt(item && item.taskTotal, 10) || 0;
+      var done = parseInt(item && item.taskDone, 10) || 0;
+      var taskLabel = total > 0 ? ("任务 " + done + "/" + total) : "任务 0";
+      countBadge = '<span class="summary" style="font-size:10px;padding:1px 6px;border-radius:4px;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;white-space:nowrap;margin-left:6px;flex-shrink:0;">' +
+        escapeHtml(taskLabel) +
+        "</span>";
     }
-    var metaHtml = (ownerHtml || countHtml)
-      ? '<div class="node-meta">' + ownerHtml + countHtml + "</div>"
+
+    var metaHtml = ownerHtml
+      ? '<div class="node-meta">' + ownerHtml + "</div>"
       : "";
 
     return (
@@ -213,6 +226,7 @@
           "</span>"
         : "") +
       titleEl +
+      countBadge +
       "</div>" +
       metaHtml +
       "</div></div>" +
