@@ -5,6 +5,7 @@
 @import "./modal.css";
 @import "./autocomplete.css";
 @import "./priority.css";
+@import "./severity.css";
 
 .form-required-mark {
   display: inline-block;

@@ -2,7 +2,7 @@
 // 文件: internal/module/kanban/handler.go
 // 模块: 工作看板
 // 类型: action
-// 职责: 需求/任务看板静态页、业需/任务 JSON，及任务状态拖拽更新。
+// 职责: 需求/任务看板静态页、业需/任务/问题 JSON，及任务状态拖拽更新。
 // 依赖: internal/middleware
 //       internal/pkg/errorx
 //       internal/pkg/perm
@@ -47,6 +47,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.GET("/story/demands", middleware.RequirePerm(perm.KanbanStory), h.Demands)
 	g.GET("/task", middleware.RequirePerm(perm.KanbanStory), h.Task)
 	g.GET("/task/items", middleware.RequirePerm(perm.KanbanStory), h.Tasks)
+	g.GET("/issues", middleware.RequirePerm(perm.KanbanStory), h.Issues)
 
 	g.PUT("/tasks/:id", middleware.RequirePerm(perm.KanbanStory), h.UpdateTaskStatus)
 }
@@ -162,6 +163,47 @@ func (h *Handler) Tasks(c *gin.Context) {
 		"success": true,
 		"columns": resp.Columns,
 		"summary": resp.Summary,
+	})
+}
+
+// Issues 按选中提出人与问题 tab 返回问题列表（JSON）。
+func (h *Handler) Issues(c *gin.Context) {
+	var req ListIssuesReq
+	_ = c.ShouldBindQuery(&req)
+	if errs := req.Validate(); len(errs) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"success": false, "errors": errs})
+		return
+	}
+
+	resp, err := h.svc.ListIssues(c.Request.Context(), middleware.CurrentUser(c), req)
+	if err != nil {
+		if biz, ok := errorx.IsBizError(err); ok {
+			status := http.StatusBadRequest
+			switch biz.Code {
+			case errorx.ErrCodeForbidden:
+				status = http.StatusForbidden
+			case errorx.ErrCodeInvalidParam:
+				status = http.StatusBadRequest
+			}
+			c.JSON(status, gin.H{"success": false, "message": biz.Msg})
+			return
+		}
+		if h.logger != nil {
+			h.logger.Error("list kanban issues failed", zap.Error(err))
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "获取问题失败",
+		})
+		return
+	}
+	if resp.Items == nil {
+		resp.Items = []IssueItem{}
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"items":   resp.Items,
+		"counts":  resp.Counts,
 	})
 }
 

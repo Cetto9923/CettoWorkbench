@@ -2,7 +2,7 @@
 // 文件: internal/module/kanban/form.go
 // 模块: 工作看板
 // 类型: action
-// 职责: 需求/任务看板页展示、查询与任务状态更新用结构体。
+// 职责: 需求/任务看板页展示、查询、问题栏与任务状态更新用结构体。
 // 依赖: 无
 // =============================================================================
 
@@ -125,4 +125,58 @@ type TaskSummary struct {
 type ListTasksResp struct {
 	Columns []TaskColumn `json:"columns"`
 	Summary TaskSummary  `json:"summary"`
+}
+
+// 问题栏 tab：未解决 / 已解决。
+const (
+	IssueTabUnresolved = "unresolved"
+	IssueTabResolved   = "resolved"
+)
+
+// ListIssuesReq 看板右侧问题栏查询。
+// Account=all 时按 TeamgroupID 对应小组全员聚合；Tab 决定状态筛选。
+type ListIssuesReq struct {
+	Account     string `form:"account"`
+	TeamgroupID uint   `form:"teamgroupId"`
+	Tab         string `form:"tab"` // unresolved | resolved
+}
+
+// Validate 规范化 tab，非法值回退未解决。
+func (r *ListIssuesReq) Validate() []FieldError {
+	tab := strings.TrimSpace(r.Tab)
+	if tab == "" {
+		tab = IssueTabUnresolved
+	}
+	if tab != IssueTabUnresolved && tab != IssueTabResolved {
+		return []FieldError{{Field: "tab", Message: "仅支持 unresolved 或 resolved"}}
+	}
+	r.Tab = tab
+	return nil
+}
+
+// IssueItem 问题栏单条。
+type IssueItem struct {
+	ID            int64  `json:"id"`
+	Title         string `json:"title"`
+	Severity      string `json:"severity"`      // 1|2|3|4，供 .wb-severity[data-severity]
+	SeverityLabel string `json:"severityLabel"` // 严重/较严重/较小/建议
+	Status        string `json:"status"`
+	StatusLabel   string `json:"statusLabel"`
+	CreatedBy     string `json:"createdBy"`
+	AssignedTo    string `json:"assignedTo"`
+	Owner         string `json:"owner"`
+	OwnerAccount  string `json:"ownerAccount"`
+	URL           string `json:"url"`
+}
+
+// IssueTabCounts 未解决 / 已解决计数（不受当前 tab 限制）。
+type IssueTabCounts struct {
+	Unresolved int64 `json:"unresolved"`
+	Resolved   int64 `json:"resolved"`
+}
+
+// ListIssuesResp 问题栏列表响应。
+type ListIssuesResp struct {
+	Items  []IssueItem    `json:"items"`
+	Counts IssueTabCounts `json:"counts"`
 }

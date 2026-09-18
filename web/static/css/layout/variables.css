@@ -114,6 +114,20 @@
   --po-pri-4-fg: var(--color-text-secondary);
   --po-pri-4-bd: var(--color-border);
 
+  /* 公共严重程度 1–4：严重 / 较严重 / 较小 / 建议（全站唯一色板） */
+  --po-sev-1-bg: var(--color-danger-bg);
+  --po-sev-1-fg: var(--color-danger);
+  --po-sev-1-bd: var(--color-danger-border);
+  --po-sev-2-bg: var(--po-orange-bg);
+  --po-sev-2-fg: var(--po-orange);
+  --po-sev-2-bd: var(--po-orange-bd);
+  --po-sev-3-bg: var(--po-blue-bg);
+  --po-sev-3-fg: var(--po-blue);
+  --po-sev-3-bd: var(--po-blue-bd);
+  --po-sev-4-bg: var(--color-surface-muted);
+  --po-sev-4-fg: var(--color-text-secondary);
+  --po-sev-4-bd: var(--color-border);
+
   /* 间距基准（只允许使用这些值）*/
   --space-0_5: 2px;
   --space-1: 4px;

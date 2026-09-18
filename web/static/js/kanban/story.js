@@ -269,6 +269,9 @@
     selectedAccount = next;
     if (reload || changed) {
       loadDemands(selectedAccount);
+      if (window.KanbanIssue && typeof window.KanbanIssue.setAccount === "function") {
+        window.KanbanIssue.setAccount(selectedAccount);
+      }
     }
   }
 
@@ -484,6 +487,10 @@
       if (person.classList.contains("active")) return;
       selectPerson(group, person);
     });
+  }
+
+  if (window.KanbanIssue && typeof window.KanbanIssue.init === "function") {
+    window.KanbanIssue.init({ getTeamgroupId: activeTeamgroupID });
   }
 
   ensureDefaultTeamgroup();

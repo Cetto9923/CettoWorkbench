@@ -217,6 +217,9 @@
     selectedAccount = next;
     if (reload || changed) {
       loadTasks(selectedAccount);
+      if (window.KanbanIssue && typeof window.KanbanIssue.setAccount === "function") {
+        window.KanbanIssue.setAccount(selectedAccount);
+      }
     }
   }
 
@@ -433,6 +436,10 @@
   root.addEventListener("kanban:tasks-reload", function () {
     loadTasks(selectedAccount);
   });
+
+  if (window.KanbanIssue && typeof window.KanbanIssue.init === "function") {
+    window.KanbanIssue.init({ getTeamgroupId: activeTeamgroupID });
+  }
 
   ensureDefaultTeamgroup();
 })();

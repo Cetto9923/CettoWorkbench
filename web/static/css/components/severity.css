@@ -1,0 +1,66 @@
+/* =============================================================================
+   文件: web/static/css/components/severity.css
+   模块: 公共 UI - 严重程度
+   职责: 全站唯一严重程度色板真源。.wb-severity[data-severity] 为规范写法；
+         取值 1=严重 / 2=较严重 / 3=较小 / 4=建议；禁止页面私有覆写色板。
+   用法: <span class="wb-severity" data-severity="2">较严重</span>
+         紧凑态加 .is-compact（列表/卡片等窄位）。
+   ============================================================================= */
+
+.wb-severity {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 20px;
+  padding: 0 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
+  flex-shrink: 0;
+}
+
+.wb-severity[data-severity="1"] {
+  background: var(--po-sev-1-bg);
+  color: var(--po-sev-1-fg);
+  border-color: var(--po-sev-1-bd);
+}
+
+.wb-severity[data-severity="2"] {
+  background: var(--po-sev-2-bg);
+  color: var(--po-sev-2-fg);
+  border-color: var(--po-sev-2-bd);
+}
+
+.wb-severity[data-severity="3"] {
+  background: var(--po-sev-3-bg);
+  color: var(--po-sev-3-fg);
+  border-color: var(--po-sev-3-bd);
+}
+
+.wb-severity[data-severity="4"] {
+  background: var(--po-sev-4-bg);
+  color: var(--po-sev-4-fg);
+  border-color: var(--po-sev-4-bd);
+}
+
+.wb-severity[data-severity=""],
+.wb-severity[data-severity="0"],
+.wb-severity:not([data-severity]) {
+  background: transparent;
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+}
+
+.wb-severity.is-compact {
+  min-height: 18px;
+  padding: 0 4px;
+  font-size: 10px;
+  border-radius: 3px;
+}

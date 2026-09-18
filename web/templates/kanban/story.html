@@ -91,12 +91,10 @@
       <div class="issue-hdr">
         <strong>问题</strong>
         <span class="issue-count">0</span>
-        <button type="button" class="issue-all" disabled>查看全部</button>
       </div>
       <div class="issue-tabs">
-        <button type="button" class="issue-tab active" disabled>全部</button>
-        <button type="button" class="issue-tab" disabled>待处理</button>
-        <button type="button" class="issue-tab" disabled>处理中</button>
+        <button type="button" class="issue-tab active" data-issue-tab="unresolved">未解决 <strong data-issue-count="unresolved">0</strong></button>
+        <button type="button" class="issue-tab" data-issue-tab="resolved">已解决 <strong data-issue-count="resolved">0</strong></button>
       </div>
       <div class="issue-list">
         <div class="demand-empty demand-empty--visible">暂无问题</div>
@@ -106,5 +104,6 @@
 </div>
 {{ end }}
 {{ define "page_js" }}
+<script src="{{ asset "/static/js/kanban/issue.js" }}"></script>
 <script src="{{ asset "/static/js/kanban/story.js" }}"></script>
 {{ end }}
