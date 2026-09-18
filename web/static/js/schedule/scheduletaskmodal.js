@@ -7,6 +7,7 @@
   var currentStoryId = 0;
   var deletedTaskIds = [];
   var cachedProjects = [];
+  var currentStoryInfo = {};
 
   function parsePositiveInt(value) {
     var num = parseInt(String(value == null ? "" : value), 10);
@@ -293,6 +294,28 @@
     bindTaskRowControls($row, assignedTo, assignedToName);
   }
 
+  function normalizeDateValue(value) {
+    var raw = $.trim(String(value == null ? "" : value));
+    if (!raw) {
+      return "";
+    }
+    return raw.slice(0, 10);
+  }
+
+  function resolveUserLabel(account) {
+    var acc = $.trim(account || "");
+    if (!acc) {
+      return "";
+    }
+    var users = (shared && shared.schedulingUsers) || [];
+    for (var i = 0; i < users.length; i++) {
+      if ($.trim(users[i].account || "") === acc) {
+        return $.trim(users[i].realname || "") || acc;
+      }
+    }
+    return acc;
+  }
+
   function syncTaskModalProjectVisibility() {
     var hasTasks = $("#taskModalTableBody .task-modal-row").length > 0;
     $("#taskModalProjectSection").toggle(hasTasks);
@@ -334,24 +357,94 @@
     syncTaskModalProjectVisibility();
   }
 
-  function addTaskModalRow() {
+  function addEmptyTaskModalRow(config) {
     var row = cloneRow("tplTaskModalRowNew");
     if (!row) {
-      return;
+      return null;
     }
     var $row = $(row);
+    var cfg = config || {};
+    var taskType = $.trim(cfg.type || "devel");
     if (tasksApi) {
-      tasksApi.fillTaskTypeSelect($row.find(".rd-task-type"), "devel");
+      tasksApi.fillTaskTypeSelect($row.find(".rd-task-type"), taskType);
+    } else {
+      $row.find(".rd-task-type").val(taskType);
+    }
+    if (cfg.name != null) {
+      $row.find(".rd-task-name").val(cfg.name);
+    }
+    $row.find(".rd-task-start").val(normalizeDateValue(cfg.estStarted));
+    $row.find(".rd-task-end").val(normalizeDateValue(cfg.deadline));
+    if (cfg.assignedTo) {
+      $row.attr("data-assigned-to", $.trim(cfg.assignedTo || ""));
+      $row.attr("data-assigned-to-name", $.trim(cfg.assignedToName || "") || resolveUserLabel(cfg.assignedTo));
     }
     $("#taskModalTableBody").append($row);
     mountTaskRowControls($row);
     initTaskModalRowExecution($row, 0);
     syncTaskModalProjectVisibility();
+    return $row;
+  }
+
+  function buildDefaultTaskSpecs() {
+    var title = $.trim(currentStoryInfo.title || "");
+    var developFinish = normalizeDateValue($("#scheduleIntegratedDevelopFinish").val());
+    var testFinish = normalizeDateValue($("#scheduleIntegratedTestFinish").val());
+    var acceptancedDate = normalizeDateValue($("#scheduleIntegratedAcceptancedDate").val());
+    var schedulePlanDate =
+      normalizeDateValue($("#scheduleIntegratedSchedulePlanDate").val()) ||
+      normalizeDateValue(currentStoryInfo.releaseDate);
+    var rd = $.trim($("#scheduleIntRDValue").val() || "");
+    var rdName = $.trim($("#scheduleIntRDInput").val() || "") || resolveUserLabel(rd);
+    var qd = $.trim($("#scheduleIntQDValue").val() || "");
+    var qdName = $.trim($("#scheduleIntQDInput").val() || "") || resolveUserLabel(qd);
+
+    return [
+      {
+        type: "devel",
+        name: "【开发】" + title,
+        assignedTo: rd,
+        assignedToName: rdName,
+        estStarted: "",
+        deadline: developFinish,
+      },
+      {
+        type: "test",
+        name: "【测试】" + title,
+        assignedTo: qd,
+        assignedToName: qdName,
+        estStarted: developFinish,
+        deadline: testFinish,
+      },
+      {
+        type: "Online",
+        name: "【上线】" + title,
+        assignedTo: "",
+        assignedToName: "",
+        estStarted: schedulePlanDate,
+        deadline: acceptancedDate,
+      },
+    ];
+  }
+
+  function addDefaultTaskModalRows() {
+    buildDefaultTaskSpecs().forEach(function (spec) {
+      addEmptyTaskModalRow(spec);
+    });
+  }
+
+  function addTaskModalRow() {
+    if ($("#taskModalTableBody .task-modal-row").length === 0) {
+      addDefaultTaskModalRows();
+      return;
+    }
+    addEmptyTaskModalRow();
   }
 
   function resetModalState() {
     deletedTaskIds = [];
     cachedProjects = [];
+    currentStoryInfo = {};
     $("#taskModalTableBody .task-modal-row").each(function () {
       clearTaskRowControls($(this));
     });
@@ -393,6 +486,12 @@
       cachedProjects = resp.projects || [];
 
       var story = resp.story || {};
+      currentStoryInfo = {
+        id: story.id || storyId,
+        title: story.title || "",
+        releaseDate: story.releaseDate || "",
+        productId: story.productId || 0,
+      };
       $("#taskModalTitle").text("拆任务 · " + (story.id || storyId));
       renderSpec(story);
       renderInfoBar(story);
