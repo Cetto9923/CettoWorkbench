@@ -196,3 +196,55 @@ func (r *Repo) FindTaskStatusByID(ctx context.Context, id int64) (*taskStatusRow
 		AssignedTo: row.AssignedTo,
 	}, nil
 }
+
+// FindStoryCountsByDemands 批量统计业务需求下关联的未删除研发需求数（走 fromDemand 索引）。
+func (r *Repo) FindStoryCountsByDemands(ctx context.Context, demandIDs []int64) (map[int64]int, error) {
+	if len(demandIDs) == 0 || r == nil || r.db == nil {
+		return map[int64]int{}, nil
+	}
+	type countRow struct {
+		FromDemand int64 `gorm:"column:fromDemand"`
+		Cnt        int   `gorm:"column:cnt"`
+	}
+	var rows []countRow
+	err := r.db.WithContext(ctx).Table("zt_story").
+		Select("fromDemand, COUNT(1) AS cnt").
+		Where("fromDemand IN ? AND deleted = ?", demandIDs, "0").
+		Group("fromDemand").
+		Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	res := make(map[int64]int, len(rows))
+	for _, row := range rows {
+		res[row.FromDemand] = row.Cnt
+	}
+	return res, nil
+}
+
+// FindTaskStatsByStories 批量统计研发需求下的任务总量与已完成任务数（走 story 索引）。
+func (r *Repo) FindTaskStatsByStories(ctx context.Context, storyIDs []int64) (map[int64][2]int, error) {
+	if len(storyIDs) == 0 || r == nil || r.db == nil {
+		return map[int64][2]int{}, nil
+	}
+	type taskStatRow struct {
+		Story int64 `gorm:"column:story"`
+		Total int   `gorm:"column:total"`
+		Done  int   `gorm:"column:done"`
+	}
+	var rows []taskStatRow
+	err := r.db.WithContext(ctx).Table("zt_task").
+		Select("story, COUNT(1) AS total, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) AS done", "done").
+		Where("story IN ? AND deleted = ?", storyIDs, "0").
+		Group("story").
+		Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	res := make(map[int64][2]int, len(rows))
+	for _, row := range rows {
+		res[row.Story] = [2]int{row.Done, row.Total}
+	}
+	return res, nil
+}
+

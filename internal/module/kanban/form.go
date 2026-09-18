@@ -70,6 +70,9 @@ type BizDemandItem struct {
 	ValueStream  string `json:"valueStream"`
 	ZentaoUrl    string `json:"zentaoUrl"`
 	ZentaoStatus string `json:"zentaoStatus"`
+	StoryCount   int    `json:"storyCount,omitempty"`
+	TaskDone     int    `json:"taskDone,omitempty"`
+	TaskTotal    int    `json:"taskTotal,omitempty"`
 }
 
 // ListBizDemandsResp 看板需求树列表响应（业需 + 独立研需）。

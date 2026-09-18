@@ -78,7 +78,28 @@
     var stream = (item && item.valueStream) || "";
     var col = stageColOf(stream);
     var name = escapeHtml(stream || "受理");
-    var mini = demandStageMini(stream);
+    var isBusiness = isBusinessDemandItem(item);
+    var mini = "";
+
+    if (isBusiness) {
+      if (item && item.storyCount > 0) {
+        mini = item.storyCount + " 研发需求推进中";
+      } else {
+        mini = demandStageMini(stream);
+      }
+    } else {
+      if (item && item.taskTotal > 0) {
+        mini = "任务 " + item.taskDone + "/" + item.taskTotal;
+        if (item.owner) {
+          mini += " · " + item.owner + "负责";
+        }
+      } else if (/研发|提测/.test(stream)) {
+        mini = "尚未创建研发任务";
+      } else {
+        mini = demandStageMini(stream);
+      }
+    }
+
     var miniHtml = mini
       ? '<div class="stage-mini">' + escapeHtml(mini) + "</div>"
       : "";
@@ -167,8 +188,12 @@
       : '<span class="node-title" title="' + title + '">' + title + "</span>";
 
     var ownerHtml = ownerBadgeHtml(item.owner);
-    var metaHtml = ownerHtml
-      ? '<div class="node-meta">' + ownerHtml + "</div>"
+    var countHtml = "";
+    if (isBusinessDemandItem(item) && item.storyCount > 0) {
+      countHtml = '<span class="summary" style="font-size:10px;color:var(--t3);margin-left:6px;">' + escapeHtml(String(item.storyCount)) + " 研需</span>";
+    }
+    var metaHtml = (ownerHtml || countHtml)
+      ? '<div class="node-meta">' + ownerHtml + countHtml + "</div>"
       : "";
 
     return (

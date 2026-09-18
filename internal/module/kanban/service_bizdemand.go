@@ -12,6 +12,7 @@ package kanban
 
 import (
 	"context"
+	"strconv"
 	"strings"
 
 	"workbench/internal/model"
@@ -60,29 +61,85 @@ func (s *Service) ListValueStreamBizDemands(ctx context.Context, actor *model.Us
 		}
 	}
 
-	return ListBizDemandsResp{Items: toBizDemandItems(all)}, nil
+	items := toBizDemandItems(all)
+	s.enrichDemandCounts(ctx, items)
+	return ListBizDemandsResp{Items: items}, nil
 }
 
 func (s *Service) fetchDemandsForAccount(ctx context.Context, viewAs *model.User) ([]po.WorkItemDetail, error) {
-	var all []po.WorkItemDetail
-	page := 1
-	for {
-		dreq := po.DemandsReq{Status: "all", Page: page, PageSize: bizDemandPageSize}
-		dreq.Normalize()
-		resp, demErr := s.poSvc.Demands(ctx, viewAs, dreq)
-		if demErr != nil {
-			return nil, demErr
-		}
-		if resp == nil || len(resp.Items) == 0 {
-			break
-		}
-		all = append(all, resp.Items...)
-		if int64(page*bizDemandPageSize) >= resp.Total || len(resp.Items) < bizDemandPageSize {
-			break
-		}
-		page++
+	dreq := po.DemandsReq{Status: "all", Page: 1, PageSize: bizDemandPageSize}
+	dreq.Normalize()
+	resp, demErr := s.poSvc.Demands(ctx, viewAs, dreq)
+	if demErr != nil {
+		return nil, demErr
 	}
-	return all, nil
+	if resp == nil || len(resp.Items) == 0 {
+		return nil, nil
+	}
+	return resp.Items, nil
+}
+
+func (s *Service) enrichDemandCounts(ctx context.Context, items []BizDemandItem) {
+	if s.repo == nil || len(items) == 0 {
+		return
+	}
+	var demandIDs []int64
+	var storyIDs []int64
+	demandIdxMap := make(map[int64][]int)
+	storyIdxMap := make(map[int64][]int)
+
+	for i, it := range items {
+		numID, err := strconv.ParseInt(extractNumericID(it.ID), 10, 64)
+		if err != nil || numID <= 0 {
+			continue
+		}
+		kind := strings.ToLower(it.Kind)
+		if kind == "demand" || kind == "business" || kind == "sub_demand" {
+			if _, exists := demandIdxMap[numID]; !exists {
+				demandIDs = append(demandIDs, numID)
+			}
+			demandIdxMap[numID] = append(demandIdxMap[numID], i)
+		} else if kind == "story" || kind == "independent_story" {
+			if _, exists := storyIdxMap[numID]; !exists {
+				storyIDs = append(storyIDs, numID)
+			}
+			storyIdxMap[numID] = append(storyIdxMap[numID], i)
+		}
+	}
+
+	if len(demandIDs) > 0 {
+		if storyCounts, err := s.repo.FindStoryCountsByDemands(ctx, demandIDs); err == nil {
+			for did, cnt := range storyCounts {
+				for _, idx := range demandIdxMap[did] {
+					items[idx].StoryCount = cnt
+				}
+			}
+		}
+	}
+
+	if len(storyIDs) > 0 {
+		if taskStats, err := s.repo.FindTaskStatsByStories(ctx, storyIDs); err == nil {
+			for sid, stats := range taskStats {
+				for _, idx := range storyIdxMap[sid] {
+					items[idx].TaskDone = stats[0]
+					items[idx].TaskTotal = stats[1]
+				}
+			}
+		}
+	}
+}
+
+func extractNumericID(raw string) string {
+	s := strings.TrimSpace(raw)
+	s = strings.TrimPrefix(s, "#")
+	for _, prefix := range []string{"US", "REQ", "SUB", "RD", "U", "us", "req", "sub", "rd", "u"} {
+		if strings.HasPrefix(s, prefix) {
+			s = strings.TrimPrefix(s, prefix)
+			s = strings.TrimPrefix(s, "-")
+			break
+		}
+	}
+	return s
 }
 
 func viewAsUser(actor *model.User, account string) *model.User {
@@ -113,3 +170,4 @@ func toBizDemandItems(items []po.WorkItemDetail) []BizDemandItem {
 	}
 	return out
 }
+
