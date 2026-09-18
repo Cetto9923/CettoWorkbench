@@ -170,4 +170,3 @@ func toBizDemandItems(items []po.WorkItemDetail) []BizDemandItem {
 	}
 	return out
 }
-

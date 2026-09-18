@@ -247,4 +247,3 @@ func (r *Repo) FindTaskStatsByStories(ctx context.Context, storyIDs []int64) (ma
 	}
 	return res, nil
 }
-
