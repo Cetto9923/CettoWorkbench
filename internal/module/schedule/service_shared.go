@@ -89,17 +89,18 @@ func anyDemandOrStoryHasWindow(
 	return anyDemandHasWindow(demandIDs, windowByDemand) || anyStoryHasWindow(stories, windowByStory)
 }
 
-func calcDemandWindowPhase(
-	demandIDs []uint,
-	stories []ZtStory,
-	windowByDemand map[uint]DemandWindowRef,
-	windowByStory map[uint]StoryWindowRef,
-) string {
-	if !anyDemandOrStoryHasWindow(demandIDs, stories, windowByDemand, windowByStory) {
-		return ""
-	}
-	return calcSchedulingWindowPhase(pickDemandWindowID(demandIDs, stories, windowByDemand, windowByStory), len(stories))
-}
+// 窗口阶段列已下线，列表暂不调用；排期详情仍用 calcSchedulingWindowPhase
+// func calcDemandWindowPhase(
+// 	demandIDs []uint,
+// 	stories []ZtStory,
+// 	windowByDemand map[uint]DemandWindowRef,
+// 	windowByStory map[uint]StoryWindowRef,
+// ) string {
+// 	if !anyDemandOrStoryHasWindow(demandIDs, stories, windowByDemand, windowByStory) {
+// 		return ""
+// 	}
+// 	return calcSchedulingWindowPhase(pickDemandWindowID(demandIDs, stories, windowByDemand, windowByStory), len(stories))
+// }
 
 func calcSchedulingWindowPhase(windowID uint, storyCount int) string {
 	if windowID == 0 {

@@ -89,31 +89,33 @@ type SubBizRequirement struct {
 	Priority         string
 	PriClass         string
 	AgileGroup       string
-	Stage            string
-	StageClass       string
-	WindowPhase      string
-	WindowPhaseClass string
-	WindowName       string
-	Owner            string
-	ActionLabel      string
-	ActionClass      string
-	DetailURL        template.URL
-	DevRequirements  []DevRequirement
+	Stage      string
+	StageClass string
+	// 窗口阶段列已下线
+	// WindowPhase      string
+	// WindowPhaseClass string
+	WindowName      string
+	Owner           string
+	ActionLabel     string
+	ActionClass     string
+	DetailURL       template.URL
+	DevRequirements []DevRequirement
 }
 
 // BizRequirement 业务需求行（树形一级）。
 type BizRequirement struct {
-	DemandID           uint
-	ID                 string
-	Title              string
-	Priority           string
-	PriClass           string
-	AgileGroup         string
-	Stage              string
-	StageClass         string
-	WindowPhase        string
-	WindowPhaseClass   string
-	WindowName         string
+	DemandID   uint
+	ID         string
+	Title      string
+	Priority   string
+	PriClass   string
+	AgileGroup string
+	Stage      string
+	StageClass string
+	// 窗口阶段列已下线
+	// WindowPhase        string
+	// WindowPhaseClass   string
+	WindowName string
 	Owner              string
 	ActionLabel        string
 	ActionClass        string

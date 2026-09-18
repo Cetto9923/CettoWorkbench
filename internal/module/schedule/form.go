@@ -555,27 +555,29 @@ type BizDemandItem struct {
 	ExtraSystemCount int             `json:"extraSystemCount"`
 	TeamgroupName    string          `json:"teamgroupName"`
 	OwnerName        string          `json:"ownerName"`
-	Stage            string          `json:"stage"`
-	WindowPhase      string          `json:"windowPhase"`
-	WindowName       string          `json:"windowName"`
-	Children         []SubDemandItem `json:"children"`
-	Stories          []StoryItem     `json:"stories"`
+	Stage string `json:"stage"`
+	// 窗口阶段列已下线
+	// WindowPhase string `json:"windowPhase"`
+	WindowName string          `json:"windowName"`
+	Children   []SubDemandItem `json:"children"`
+	Stories    []StoryItem     `json:"stories"`
 }
 
 // SubDemandItem 子业需（树形二级）。
 type SubDemandItem struct {
-	ID               uint        `json:"id"`
-	Name             string      `json:"name"`
-	Pri              int         `json:"pri"`
-	Status           string      `json:"status"`
-	MainSystemName   string      `json:"mainSystemName"`
-	ExtraSystemCount int         `json:"extraSystemCount"`
-	TeamgroupName    string      `json:"teamgroupName"`
-	OwnerName        string      `json:"ownerName"`
-	Stage            string      `json:"stage"`
-	WindowPhase      string      `json:"windowPhase"`
-	WindowName       string      `json:"windowName"`
-	Stories          []StoryItem `json:"stories"`
+	ID               uint   `json:"id"`
+	Name             string `json:"name"`
+	Pri              int    `json:"pri"`
+	Status           string `json:"status"`
+	MainSystemName   string `json:"mainSystemName"`
+	ExtraSystemCount int    `json:"extraSystemCount"`
+	TeamgroupName    string `json:"teamgroupName"`
+	OwnerName        string `json:"ownerName"`
+	Stage            string `json:"stage"`
+	// 窗口阶段列已下线
+	// WindowPhase string `json:"windowPhase"`
+	WindowName string      `json:"windowName"`
+	Stories    []StoryItem `json:"stories"`
 }
 
 // StoryItem 研发需求（树形三级）。
