@@ -344,10 +344,6 @@
         return resp.json();
       })
       .then(function (result) {
-        if (result && result.code === "PRODUCT_ACCESS_NOTICE") {
-          showProductNotice(result.products || []);
-          return;
-        }
         if (result && result.success) {
           toast("保存成功", "success");
           closeScheduleIntegratedModal();
@@ -363,41 +359,6 @@
         setSaveButtonLoading(false);
       });
   }
-
-  function showProductNotice(products) {
-    products = products || [];
-    if (!products.length) { return; }
-    // 找 id 最大的产品，用其后端生成的 viewUrl（完整 GET 风格链接，不再前端拼接）
-    var pick = products[0];
-    for (var i = 1; i < products.length; i++) {
-      if ((products[i].id || 0) > (pick.id || 0)) { pick = products[i]; }
-    }
-    var names = [];
-    for (var j = 0; j < products.length; j++) {
-      var n = $.trim(products[j].name || "");
-      if (n) { names.push(n); }
-    }
-    $("#scheduleProductNoticeMessage").text("您不是 " + names.join("、") + " 的负责人，请去禅道维护");
-    $("#scheduleProductNoticeOkBtn").off("click").on("click", function () {
-      var viewUrl = $.trim(pick.viewUrl || "");
-      if (viewUrl) { window.open(viewUrl, "_blank"); }
-      closeProductNotice();
-    });
-    $("#scheduleProductNoticeCancelBtn").off("click").on("click", closeProductNotice);
-    $("#scheduleProductNoticeCloseBtn").off("click").on("click", closeProductNotice);
-    if (typeof window.openShowModals === "function") {
-      window.openShowModals(["scheduleProductNoticeModal", "scheduleProductNoticeOverlay"]);
-    }
-  }
-
-  function closeProductNotice() {
-    if (typeof window.closeShowModals === "function") {
-      window.closeShowModals(["scheduleProductNoticeModal", "scheduleProductNoticeOverlay"]);
-    }
-  }
-
-  window.showProductNotice = showProductNotice;
-  window.closeProductNotice = closeProductNotice;
 
   function extractDemandID($btn) {
     var raw = $btn.data("demand-id");

@@ -24,7 +24,6 @@ import (
 	"workbench/internal/model"
 	"workbench/internal/pkg/pagination"
 	"workbench/internal/pkg/render"
-	"workbench/internal/pkg/zentao"
 )
 
 // IndependentChildRequirement 独立研发需求子行（树形二级）。
@@ -485,19 +484,6 @@ func (h *Handler) SaveScheduling(c *gin.Context) {
 
 	actor := middleware.CurrentUser(c)
 	if err := h.svc.SaveScheduling(c.Request.Context(), actor, demandID, &req); err != nil {
-		// 业务前置校验拦截：零写入，前端弹警告框引导去禅道维护。
-		var notice *ProductAccessNoticeError
-		if errors.As(err, &notice) {
-			for i := range notice.Products {
-				notice.Products[i].ViewURL = zentao.ProductViewURLWithBase(h.zentaoURL, notice.Products[i].ID)
-			}
-			c.JSON(http.StatusOK, gin.H{
-				"success":  false,
-				"code":     "PRODUCT_ACCESS_NOTICE",
-				"products": notice.Products,
-			})
-			return
-		}
 		var businessErr *SchedulingBusinessError
 		if errors.As(err, &businessErr) {
 			c.JSON(http.StatusUnprocessableEntity, gin.H{
@@ -552,19 +538,6 @@ func (h *Handler) SaveStoryScheduling(c *gin.Context) {
 
 	actor := middleware.CurrentUser(c)
 	if err := h.svc.SaveStoryScheduling(c.Request.Context(), actor, storyID, &req); err != nil {
-		// 业务前置校验拦截（PRODUCT_ACCESS_NOTICE）：零写入，前端弹警告引导去禅道。
-		var notice *ProductAccessNoticeError
-		if errors.As(err, &notice) {
-			for i := range notice.Products {
-				notice.Products[i].ViewURL = zentao.ProductViewURLWithBase(h.zentaoURL, notice.Products[i].ID)
-			}
-			c.JSON(http.StatusOK, gin.H{
-				"success":  false,
-				"code":     "PRODUCT_ACCESS_NOTICE",
-				"products": notice.Products,
-			})
-			return
-		}
 		if h.logger != nil {
 			h.logger.Error("save story scheduling failed",
 				zap.Error(err),

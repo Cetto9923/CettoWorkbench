@@ -51,15 +51,6 @@ func (s *Service) SaveScheduling(ctx context.Context, actor *model.User, demandI
 		return err
 	}
 
-	// 进事务前做整体校验:任一目标系统不在当前用户有权限的产品集合内则零写入、返回提示。
-	notice, err := s.precheckSchedulingProducts(ctx, req.WindowID, req.Stories, account)
-	if err != nil {
-		return err
-	}
-	if notice != nil {
-		return notice // *ProductAccessNoticeError,由 handler 用 errors.As 识别
-	}
-
 	return s.repo.Transaction(ctx, func(txRepo *Repo) error {
 		for _, storyReq := range req.Stories {
 			storyID, productID, _, err := s.applySchedulingStory(ctx, txRepo, account, demandID, mainSystemID, req.WindowID, storyReq)
@@ -137,18 +128,6 @@ func (s *Service) SaveStoryScheduling(ctx context.Context, actor *model.User, st
 	mainSystemID, err := s.repo.GetStoryProductID(ctx, storyID)
 	if err != nil {
 		return err
-	}
-
-	// precheck 覆盖主系统：独立研发需求弹窗 req.Stories 通常为空（service_independent.go 返回 Stories:[]），
-	// 直接传 precheck 会因无 productID 而放行。此处显式追加主系统条目，precheck 内部 uniqueUints 会自动去重。
-	precheckStories := append([]SaveSchedulingStory{}, req.Stories...)
-	precheckStories = append(precheckStories, SaveSchedulingStory{Action: "edit", ProductID: mainSystemID})
-	notice, err := s.precheckSchedulingProducts(ctx, req.WindowID, precheckStories, account)
-	if err != nil {
-		return err
-	}
-	if notice != nil {
-		return notice
 	}
 
 	return s.repo.Transaction(ctx, func(txRepo *Repo) error {
