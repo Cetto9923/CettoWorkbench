@@ -2,7 +2,7 @@
 // 文件: internal/module/po/gateway.go
 // 模块: PO 工作台
 // 类型: action
-// 职责: 出站适配层：封装业需发起评审 / 评审 / 撤回评审 / 发起交付的禅道 REST 调用。
+// 职责: 出站适配层：封装业需发起评审 / 评审 / 撤回评审 / 发起交付 / 验收的禅道 REST 调用。
 // 依赖: internal/pkg/zentao
 // =============================================================================
 
@@ -128,5 +128,38 @@ func deliverDemandViaZentao(ctx context.Context, client *zentao.Client, req deli
 		"isCarReview":      isCar,
 	}
 	path := fmt.Sprintf("/demand/%d/deliver", req.DemandID)
+	return client.Do(ctx, http.MethodPost, path, payload, nil)
+}
+
+// acceptDemandViaZentaoReq 禅道 POST /demand/:id/acceptance 入参。
+type acceptDemandViaZentaoReq struct {
+	DemandID   int64
+	Acceptance string // yes / no
+	AssignedTo string
+	Comment    string
+}
+
+// acceptDemandViaZentao 以当前登录账号（ctx）调用禅道验收接口。
+func acceptDemandViaZentao(ctx context.Context, client *zentao.Client, req acceptDemandViaZentaoReq) error {
+	if client == nil {
+		return fmt.Errorf("禅道 API 未配置")
+	}
+	if req.DemandID <= 0 {
+		return fmt.Errorf("需求 ID 无效")
+	}
+	acceptance := strings.TrimSpace(req.Acceptance)
+	if acceptance != "yes" && acceptance != "no" {
+		return fmt.Errorf("验收结果无效")
+	}
+	assignedTo := strings.TrimSpace(req.AssignedTo)
+	if assignedTo == "" {
+		return fmt.Errorf("指派给不能为空")
+	}
+	payload := map[string]any{
+		"acceptance": acceptance,
+		"assignedTo": assignedTo,
+		"comment":    strings.TrimSpace(req.Comment),
+	}
+	path := fmt.Sprintf("/demand/%d/acceptance", req.DemandID)
 	return client.Do(ctx, http.MethodPost, path, payload, nil)
 }

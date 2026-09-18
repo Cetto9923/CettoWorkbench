@@ -82,6 +82,7 @@ func buildDemandDetailResp(row *DemandDetailRow, displayMap map[string]string, f
 		ProposerName:      dashOr(lookupAccountDisplay(displayMap, row.Originator)),
 		ProposerDept:      dashOr(row.ProposeDept),
 		OwnerName:         dashOr(lookupAccountDisplay(displayMap, row.BRA)),
+		BraAccount:        strings.TrimSpace(row.BRA),
 		Reviewer:          dashOr(lookupAccountsDisplay(displayMap, row.Reviewer)),
 		ReviewerAccounts:  splitReviewerAccounts(row.Reviewer),
 		CreatedName:       dashOr(lookupAccountDisplay(displayMap, row.CreatedBy)),

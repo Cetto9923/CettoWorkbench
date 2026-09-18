@@ -254,6 +254,47 @@ type DeliverDemandResp struct {
 	ID int64 `json:"id"`
 }
 
+// AcceptanceReq 业需验收提交（JSON Body，转发禅道 POST /demand/:id/acceptance）。
+//
+//	acceptance  → yes 通过 / no 不通过（必填）
+//	assignedTo  → 指派账号（必填）
+//	comment     → 验收意见；acceptance=no 时必填
+//
+// ID 不从 JSON 读，由 Handler 从 URL :id 填入。
+type AcceptanceReq struct {
+	ID         int64  `json:"-"`
+	Acceptance string `json:"acceptance"`
+	AssignedTo string `json:"assignedTo"`
+	Comment    string `json:"comment"`
+}
+
+// Validate 校验验收表单。返回空切片表示通过。
+func (r *AcceptanceReq) Validate() []FieldError {
+	var errs []FieldError
+	r.Acceptance = strings.TrimSpace(r.Acceptance)
+	r.AssignedTo = strings.TrimSpace(r.AssignedTo)
+	r.Comment = strings.TrimSpace(r.Comment)
+
+	if r.ID <= 0 {
+		errs = append(errs, FieldError{Field: "id", Message: "需求 ID 无效"})
+	}
+	if r.Acceptance != "yes" && r.Acceptance != "no" {
+		errs = append(errs, FieldError{Field: "acceptance", Message: "请选择验收结果"})
+	}
+	if r.AssignedTo == "" {
+		errs = append(errs, FieldError{Field: "assignedTo", Message: "请选择指派给"})
+	}
+	if r.Acceptance == "no" && r.Comment == "" {
+		errs = append(errs, FieldError{Field: "comment", Message: "不通过时请填写验收意见"})
+	}
+	return errs
+}
+
+// AcceptanceResp 业需验收成功响应。
+type AcceptanceResp struct {
+	ID int64 `json:"id"`
+}
+
 // WorkItemDetail 单条需求或故事详情。
 type WorkItemDetail struct {
 	Kind            string `json:"kind"`
@@ -333,6 +374,7 @@ type DemandDetailResp struct {
 	ProposerName      string             `json:"proposerName"`
 	ProposerDept      string             `json:"proposerDept"`
 	OwnerName         string             `json:"ownerName"`
+	BraAccount        string             `json:"braAccount"`        // 需求负责人账号，验收弹窗默认指派给
 	Reviewer          string             `json:"reviewer"`          // 展示名（多评审人用 ", " 拼接）
 	ReviewerAccounts  []string           `json:"reviewerAccounts"`  // 原始账号列表，供提交评审多选回显
 	CreatedName       string             `json:"createdName"`

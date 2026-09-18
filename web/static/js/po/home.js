@@ -761,9 +761,12 @@
 
   function bindAcceptanceButtons($list) {
     $list.find(".js-initiate-acceptance").on("click", function () {
-      if (typeof window.showToast === "function") {
-        window.showToast("验收功能开发中", "info");
+      var demandId = String($(this).attr("data-demand-id") || "").trim();
+      var item = findListItemByDemandId(demandId);
+      if (!item || typeof window.openPoDemandAcceptanceDrawer !== "function") {
+        return;
       }
+      window.openPoDemandAcceptanceDrawer(item);
     });
   }
 

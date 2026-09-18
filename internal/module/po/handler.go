@@ -50,6 +50,8 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.POST("/demands/:id/withdraw-review", middleware.RequirePerm(perm.PoDemandReview), h.WithdrawDemandReview)
 	// 交付业务校验由禅道 /demand/:id/deliver 完成，工作台仅代理转发。
 	g.POST("/demands/:id/deliver", middleware.RequirePerm(perm.PoDemandDeliver), h.DeliverDemand)
+	// 验收业务校验由禅道 /demand/:id/acceptance 完成，工作台仅代理转发。
+	g.POST("/demands/:id/acceptance", middleware.RequirePerm(perm.PoDemandAcceptance), h.AcceptDemand)
 }
 
 // Home 渲染 PO 工作台首页。

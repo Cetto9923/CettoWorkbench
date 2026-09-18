@@ -1,0 +1,41 @@
+/*
+ * 文件: web/static/css/po/acceptance.css
+ * 模块: PO工作台
+ * 职责: 验收弹窗单选检索 input 样式对齐 po-testtask-ac-input
+ */
+
+#poDemandAcceptanceModal .ui-autocomplete {
+  width: 100%;
+  min-width: 0;
+}
+
+#poDemandAcceptanceModal .po-testtask-ac-input,
+#poDemandAcceptanceModal .ui-autocomplete-input {
+  width: 100%;
+  border: 1px solid var(--tt-border, #e5e6eb);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--tt-text, #1d2129);
+  background: #fff;
+  box-sizing: border-box;
+}
+
+#poDemandAcceptanceModal .ui-autocomplete-input-wrap .ui-autocomplete-input {
+  display: block;
+  width: 100%;
+  padding-right: 30px;
+}
+
+#poDemandAcceptanceModal .po-testtask-ac-input:focus,
+#poDemandAcceptanceModal .ui-autocomplete-input:focus {
+  outline: none;
+  border-color: var(--tt-primary, #165dff);
+  box-shadow: none;
+}
+
+#poDemandAcceptanceModal .ui-autocomplete-dropdown,
+#poDemandAcceptanceModal .ui-autocomplete-dropdown--floating {
+  z-index: 1100;
+}
