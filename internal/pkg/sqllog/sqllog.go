@@ -25,9 +25,9 @@ import (
 )
 
 const (
-	slowThreshold    = 200 * time.Millisecond
-	dailyLogPrefix   = "sql-"
-	dailyLogSuffix   = ".log"
+	slowThreshold  = 200 * time.Millisecond
+	dailyLogPrefix = "sql-"
+	dailyLogSuffix = ".log"
 )
 
 var defaultWriter = &Writer{}
@@ -197,7 +197,10 @@ func (w *Writer) sync() error {
 func (w *Writer) write(v any) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	if !w.enabled || w.file == nil {
+	if !w.enabled || w.dir == "" {
+		return
+	}
+	if err := w.ensureMainFileLocked(); err != nil {
 		return
 	}
 
@@ -227,20 +230,54 @@ func (w *Writer) writeDaily(v any) {
 	_, _ = w.dailyFile.Write([]byte("\n"))
 }
 
+// openFileAlive 判断已打开的文件句柄是否仍指向 path 上的同一 inode。
+// 外部删除/替换日志文件后，句柄仍可写但路径上已无文件，此时需重新 OpenFile。
+func openFileAlive(f *os.File, path string) bool {
+	if f == nil {
+		return false
+	}
+	fi, err := f.Stat()
+	if err != nil {
+		return false
+	}
+	pi, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return os.SameFile(fi, pi)
+}
+
+func (w *Writer) ensureMainFileLocked() error {
+	path := filepath.Join(w.dir, "sql.log")
+	if openFileAlive(w.file, path) {
+		return nil
+	}
+	if w.file != nil {
+		_ = w.file.Close()
+		w.file = nil
+	}
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	if err != nil {
+		return err
+	}
+	w.file = f
+	return nil
+}
+
 func (w *Writer) ensureDailyFileLocked() error {
 	nowFn := w.now
 	if nowFn == nil {
 		nowFn = time.Now
 	}
 	day := nowFn().Format("2006-01-02")
-	if w.dailyFile != nil && w.day == day {
+	path := filepath.Join(w.dir, dailyLogPrefix+day+dailyLogSuffix)
+	if openFileAlive(w.dailyFile, path) && w.day == day {
 		return nil
 	}
 	if w.dailyFile != nil {
 		_ = w.dailyFile.Close()
 		w.dailyFile = nil
 	}
-	path := filepath.Join(w.dir, dailyLogPrefix+day+dailyLogSuffix)
 	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
 		return err
