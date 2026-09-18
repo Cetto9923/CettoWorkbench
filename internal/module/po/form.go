@@ -272,6 +272,7 @@ type WorkItemDetail struct {
 	TesttaskUrl     string `json:"testtaskUrl"`   // 禅道测试单用例页（testtask-cases），联调测试阶段
 	ValueStream     string `json:"valueStream"`
 	ZentaoStatus    string `json:"zentaoStatus"`    // 禅道 status 原文，前端按业需/研需分别映射中文
+	AssignedTo      string `json:"assignedTo"`      // 指派账号原文，验收按钮等前端判定用
 	CanReview       bool   `json:"canReview"`       // 待评审且当前账号是未出结果的业务评审人
 	CanCancelReview bool   `json:"canCancelReview"` // 待评审且当前账号是提交人（创建人）
 	CanSubmitReview bool   `json:"canSubmitReview"` // 草稿/已驳回且当前账号是创建人

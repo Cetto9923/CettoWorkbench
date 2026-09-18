@@ -374,6 +374,7 @@ func (s *Service) buildDemandWorkItems(ctx context.Context, account, stageStatus
 			TesttaskUrl:     testtaskURL,
 			ValueStream:     label,
 			ZentaoStatus:    row.Status,
+			AssignedTo:      strings.TrimSpace(row.AssignedTo),
 			CanReview:       canReview,
 			CanCancelReview: isCreator && status == "wait",
 			CanSubmitReview: canOwnerDraft,

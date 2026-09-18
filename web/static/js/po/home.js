@@ -300,6 +300,28 @@
     return String(item.valueStream || item.stage || "").trim() === "发起交付";
   }
 
+  function currentAccount() {
+    return String($("#poHomeRoot").attr("data-current-account") || "").trim();
+  }
+
+  // 验收阶段：待验收且 assignedTo=当前用户时展示验收按钮（点击暂占位）
+  function canShowAcceptance(item) {
+    if (!item || String(item.kind || "") === "story") {
+      return false;
+    }
+    if (String(item.valueStream || item.stage || "").trim() !== "验收") {
+      return false;
+    }
+    if (String(item.zentaoStatus || "").trim().toLowerCase() !== "waitacceptance") {
+      return false;
+    }
+    var account = currentAccount();
+    if (!account) {
+      return false;
+    }
+    return String(item.assignedTo || "").trim() === account;
+  }
+
   // 研需可排期：zt_story.stage ∈ wait/planned/projected
   function isSchedulableStoryStage(item) {
     var storyStage = String(item.stage || "").trim().toLowerCase();
@@ -486,6 +508,13 @@
         "<button type=\"button\" class=\"table-action-btn primary js-initiate-deliver\" data-demand-id=\"" +
           escapeHtml(item.id || "") +
           "\">发起交付</button>"
+      );
+    }
+    if (canShowAcceptance(item)) {
+      actionParts.push(
+        "<button type=\"button\" class=\"table-action-btn primary js-initiate-acceptance\" data-demand-id=\"" +
+          escapeHtml(item.id || "") +
+          "\">验收</button>"
       );
     }
     if (canShowSchedule(item)) {
@@ -730,6 +759,14 @@
     });
   }
 
+  function bindAcceptanceButtons($list) {
+    $list.find(".js-initiate-acceptance").on("click", function () {
+      if (typeof window.showToast === "function") {
+        window.showToast("验收功能开发中", "info");
+      }
+    });
+  }
+
   function bindScheduleButtons($list) {
     $list.find(".js-open-schedule").on("click", function () {
       if (typeof window.openScheduleIntegratedModal !== "function") {
@@ -810,6 +847,7 @@
     bindCancelReviewButtons($("#top5List"));
     bindSubmitTestButtons($("#top5List"));
     bindDeliverButtons($("#top5List"));
+    bindAcceptanceButtons($("#top5List"));
     bindScheduleButtons($("#top5List"));
     renderPagination(total);
   }
