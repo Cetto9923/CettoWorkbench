@@ -153,7 +153,7 @@ func (c bizDemandAssembleContext) buildBizDemandItem(top ZtDemand) BizDemandItem
 		ExtraSystemCount: extraSystemCount(c.productCountByDemand[top.ID]),
 		TeamgroupName:    teamgroupName,
 		OwnerName:        resolveDemandOwner(top.BRA, c.realnameByAccount),
-		Stage: calcBizDemandStage(subtreeDemandIDs, subtreeStories, mainSystemStories, c.windowByDemand, c.taskStatByStory),
+		Stage: calcBizDemandStage(subtreeDemandIDs, mainSystemStories, c.windowByDemand, c.taskStatByStory),
 		// 窗口阶段列已下线，暂不计算
 		// WindowPhase: calcDemandWindowPhase(subtreeDemandIDs, subtreeStories, c.windowByDemand, c.windowByStory),
 		WindowName: pickDemandWindowName(subtreeDemandIDs, subtreeStories, c.windowByDemand, c.windowByStory),
@@ -181,7 +181,7 @@ func (c bizDemandAssembleContext) buildSubDemandItems(parent ZtDemand, children 
 			ExtraSystemCount: extraSystemCount(c.productCountByDemand[child.ID]),
 			TeamgroupName:    parentTeamgroupName,
 			OwnerName:        resolveDemandOwner(child.BRA, c.realnameByAccount),
-			Stage: calcBizDemandStage(demandIDs, subtreeStories, filterMainSystemStories(subtreeStories), c.windowByDemand, c.taskStatByStory),
+			Stage: calcBizDemandStage(demandIDs, filterMainSystemStories(subtreeStories), c.windowByDemand, c.taskStatByStory),
 			// 窗口阶段列已下线，暂不计算
 			// WindowPhase: calcDemandWindowPhase(demandIDs, subtreeStories, c.windowByDemand, c.windowByStory),
 			WindowName: pickDemandWindowName(demandIDs, subtreeStories, c.windowByDemand, c.windowByStory),
@@ -285,9 +285,9 @@ func filterMainSystemStories(stories []ZtStory) []ZtStory {
 	return out
 }
 
+// calcBizDemandStage 业需/子需排期阶段：须已关联窗口，且每个主系统研需都已建任务并指派。
 func calcBizDemandStage(
 	demandIDs []uint,
-	allStories []ZtStory,
 	mainStories []ZtStory,
 	windowByDemand map[uint]DemandWindowRef,
 	taskStatByStory map[uint]StoryTaskStat,
@@ -295,12 +295,14 @@ func calcBizDemandStage(
 	if !anyDemandHasWindow(demandIDs, windowByDemand) {
 		return StageScheduleIncomplete
 	}
-	if len(allStories) == 0 {
+	if len(mainStories) == 0 {
 		return StageScheduleIncomplete
 	}
-	taskTotal, unassignedTotal := sumMainSystemTasks(mainStories, taskStatByStory)
-	if taskTotal == 0 || unassignedTotal > 0 {
-		return StageScheduleIncomplete
+	for _, story := range mainStories {
+		stat := taskStatByStory[story.ID]
+		if stat.Total == 0 || stat.Unassigned > 0 {
+			return StageScheduleIncomplete
+		}
 	}
 	return StageScheduleDone
 }

@@ -67,6 +67,38 @@ EXISTS (
     AND ` + bizDemandMainSystemStoryFrom + `
 )`
 
+// 至少有一条主系统研需，且每条主系统研需都已建任务且无未指派任务。
+const bizDemandMainSystemStoryAllAssignedSQL = `
+EXISTS (
+  SELECT 1 FROM zt_story s
+  WHERE s.deleted = '0'
+    AND s.sourceType = 'demandpool'
+    AND s.type = 'story'
+    AND ` + bizDemandMainSystemStoryFrom + `
+)
+AND NOT EXISTS (
+  SELECT 1 FROM zt_story s
+  WHERE s.deleted = '0'
+    AND s.sourceType = 'demandpool'
+    AND s.type = 'story'
+    AND ` + bizDemandMainSystemStoryFrom + `
+    AND (
+      NOT EXISTS (
+        SELECT 1 FROM zt_task t
+        WHERE t.story = s.id
+          AND t.deleted = '0'
+          AND t.status != 'closed'
+      )
+      OR EXISTS (
+        SELECT 1 FROM zt_task t
+        WHERE t.story = s.id
+          AND t.deleted = '0'
+          AND t.status != 'closed'
+          AND (t.assignedTo IS NULL OR t.assignedTo = '')
+      )
+    )
+)`
+
 const bizDemandStageNoWindowSQL = `
 NOT ` + bizDemandSubtreeHasDemandWindowSQL
 
@@ -86,8 +118,7 @@ AND ` + bizDemandMainSystemStoryUnassignedSQL
 
 const bizDemandStageTaskAssignedSQL = `
 ` + bizDemandSubtreeHasDemandWindowSQL + `
-AND ` + bizDemandMainSystemStoryHasTaskSQL + `
-AND NOT ` + bizDemandMainSystemStoryUnassignedSQL
+AND ` + bizDemandMainSystemStoryAllAssignedSQL
 
 const indepStoryHasChildrenSQL = `
 EXISTS (
@@ -163,7 +194,7 @@ func buildBizDemandStageOrClause(stages []string) filterClause {
 	for _, stage := range stages {
 		switch stage {
 		case StageFilterIncomplete:
-			conditions = append(conditions, "(("+bizDemandStageNoWindowSQL+") OR ("+bizDemandStageNoStorySQL+") OR ("+bizDemandStageNoTaskSQL+") OR ("+bizDemandStageTaskUnassignedSQL+"))")
+			conditions = append(conditions, "(NOT ("+bizDemandStageTaskAssignedSQL+"))")
 		case StageFilterNoStory:
 			conditions = append(conditions, "("+bizDemandStageNoStorySQL+")")
 		case StageFilterNoWindow:
