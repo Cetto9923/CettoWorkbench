@@ -125,8 +125,8 @@
     }
   }
 
-  function fillRowProjectSelect($row, projects, selectedId) {
-    var $select = $row.find(".rd-task-project-select").first();
+  function fillModalProjectSelect(projects, selectedId) {
+    var $select = $("#taskModalProjectSelect");
     var selected = String(selectedId || "");
     $select.empty();
     $("<option></option>").val("").text("请选择项目").appendTo($select);
@@ -140,6 +140,10 @@
     if (selected) {
       $select.val(selected);
     }
+  }
+
+  function getModalProjectId() {
+    return parsePositiveInt($("#taskModalProjectSelect").val());
   }
 
   function fillRowExecutionSelect($row, executions, selectedId, disabled) {
@@ -165,19 +169,35 @@
 
   function loadRowExecutions($row, projectId, selectedExecutionId) {
     var pid = parsePositiveInt(projectId);
+    var selectedId = selectedExecutionId;
+    if (tasksApi) {
+      var hasPrev = tasksApi.syncExecutionSameButton($row);
+      if (hasPrev && !selectedId && tasksApi.isExecutionSameActive($row)) {
+        selectedId = parsePositiveInt(tasksApi.readPrevRowExecution($row).executionId);
+      }
+    }
     if (!pid) {
       fillRowExecutionSelect($row, [], 0, true);
+      if (tasksApi) {
+        tasksApi.applySameAsPrevExecution($row);
+      }
       return $.Deferred().resolve([]).promise();
     }
     fillRowExecutionSelect($row, [], 0, true);
     return scheduleGetJSON("/schedule/projects/" + pid + "/executions")
       .then(function (resp) {
         var executions = (resp && resp.executions) || [];
-        fillRowExecutionSelect($row, executions, selectedExecutionId, false);
+        fillRowExecutionSelect($row, executions, selectedId, false);
+        if (tasksApi) {
+          tasksApi.applySameAsPrevExecution($row);
+        }
         return executions;
       })
       .catch(function () {
         fillRowExecutionSelect($row, [], 0, false);
+        if (tasksApi) {
+          tasksApi.applySameAsPrevExecution($row);
+        }
         return [];
       });
   }
@@ -257,14 +277,13 @@
     $row.attr("data-pri", String(normalizeTaskPri(task.pri)));
     $row.attr("data-assigned-to", task.assignedTo || "");
     $row.attr("data-assigned-to-name", task.assignedToName || "");
+    $row.attr("data-execution-id", String(task.executionId || ""));
     $row.find(".task-modal-type-cell").text(task.typeLabel || (shared && shared.taskTypeLabel(task.type)) || task.type || "—");
     $row.find(".rd-task-pri").val(taskPriSelectValue(task.pri));
     $row.find(".rd-task-name").val(task.name || "");
     $row.find(".rd-task-hours").val(task.estimate != null ? task.estimate : "");
     $row.find(".rd-task-start").val(task.estStarted || "");
     $row.find(".rd-task-end").val(task.deadline || "");
-    fillRowProjectSelect($row, cachedProjects, task.projectId || 0);
-    loadRowExecutions($row, task.projectId || 0, task.executionId || 0);
     return $row;
   }
 
@@ -272,6 +291,30 @@
     var assignedTo = $.trim($row.attr("data-assigned-to") || "");
     var assignedToName = $.trim($row.attr("data-assigned-to-name") || "");
     bindTaskRowControls($row, assignedTo, assignedToName);
+  }
+
+  function syncTaskModalProjectVisibility() {
+    var hasTasks = $("#taskModalTableBody .task-modal-row").length > 0;
+    $("#taskModalProjectSection").toggle(hasTasks);
+  }
+
+  function initTaskModalRowExecution($row, preferredExecutionId) {
+    if (tasksApi) {
+      var hasPrev = tasksApi.syncExecutionSameButton($row);
+      if (hasPrev) {
+        var prev = tasksApi.readPrevRowExecution($row);
+        var preferred = String(preferredExecutionId || "");
+        if (preferred && prev.executionId && preferred === prev.executionId) {
+          tasksApi.setExecutionSameActive($row, true);
+        } else if (preferred) {
+          tasksApi.setExecutionSameActive($row, false);
+        } else {
+          tasksApi.setExecutionSameActive($row, true);
+          preferredExecutionId = prev.executionId || 0;
+        }
+      }
+    }
+    loadRowExecutions($row, getModalProjectId(), preferredExecutionId || 0);
   }
 
   function renderTaskRows(tasks) {
@@ -285,8 +328,10 @@
       if ($row) {
         $body.append($row);
         mountTaskRowControls($row);
+        initTaskModalRowExecution($row, task.executionId || 0);
       }
     });
+    syncTaskModalProjectVisibility();
   }
 
   function addTaskModalRow() {
@@ -298,19 +343,42 @@
     if (tasksApi) {
       tasksApi.fillTaskTypeSelect($row.find(".rd-task-type"), "devel");
     }
-    fillRowProjectSelect($row, cachedProjects, 0);
     $("#taskModalTableBody").append($row);
     mountTaskRowControls($row);
+    initTaskModalRowExecution($row, 0);
+    syncTaskModalProjectVisibility();
   }
 
   function resetModalState() {
     deletedTaskIds = [];
+    cachedProjects = [];
     $("#taskModalTableBody .task-modal-row").each(function () {
       clearTaskRowControls($(this));
     });
     $("#taskModalTableBody").empty();
+    $("#taskModalProjectSelect").empty().append($("<option></option>").val("").text("请选择项目"));
+    $("#taskModalProjectSection").hide();
     $("#taskModalSpec").empty();
     $("#taskModalInfoBar").empty();
+  }
+
+  function resolveDefaultProjectId(resp) {
+    var defaultId = parsePositiveInt(resp && resp.defaultProjectId);
+    if (defaultId) {
+      return defaultId;
+    }
+    var tasks = (resp && resp.tasks) || [];
+    for (var i = 0; i < tasks.length; i++) {
+      var pid = parsePositiveInt(tasks[i].projectId);
+      if (pid) {
+        return pid;
+      }
+    }
+    var projects = (resp && resp.projects) || [];
+    if (projects.length === 1) {
+      return parsePositiveInt(projects[0].id);
+    }
+    return 0;
   }
 
   function loadTaskModalData(storyId) {
@@ -329,6 +397,7 @@
       renderSpec(story);
       renderInfoBar(story);
 
+      fillModalProjectSelect(cachedProjects, resolveDefaultProjectId(resp));
       renderTaskRows(resp.tasks || []);
       return resp;
     });
@@ -340,6 +409,7 @@
 
   function collectTasksPayload() {
     var tasks = [];
+    var projectId = getModalProjectId();
     deletedTaskIds.forEach(function (id) {
       tasks.push({ action: "delete", id: id });
     });
@@ -354,7 +424,7 @@
       tasks.push({
         action: "edit",
         id: taskId,
-        projectId: parsePositiveInt($row.find(".rd-task-project-select").val()),
+        projectId: projectId,
         executionId: parsePositiveInt($row.find(".rd-task-execution-select").val()),
         type: $.trim($row.attr("data-task-type") || ""),
         pri: normalizeTaskPri($row.find(".rd-task-pri").val()),
@@ -371,7 +441,7 @@
       tasks.push({
         action: "new",
         create: true,  // 去掉"创建"列后，新任务默认创建
-        projectId: parsePositiveInt($row.find(".rd-task-project-select").val()),
+        projectId: projectId,
         executionId: parsePositiveInt($row.find(".rd-task-execution-select").val()),
         type: $.trim($row.find(".rd-task-type").val() || "devel"),
         pri: normalizeTaskPri($row.find(".rd-task-pri").val()),
@@ -451,10 +521,53 @@
     }
   };
 
-  $("#taskModalTableBody").on("change", ".rd-task-project-select", function () {
-    var $row = $(this).closest("tr");
+  $("#taskModalProjectSelect").on("change", function () {
     var pid = parsePositiveInt($(this).val());
-    loadRowExecutions($row, pid, 0);
+    $("#taskModalTableBody .task-modal-row").each(function () {
+      loadRowExecutions($(this), pid, 0);
+    });
+  });
+
+  $("#taskModalTableBody").on("click", ".rd-task-execution-same", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!tasksApi) {
+      return;
+    }
+    var $row = $(this).closest("tr");
+    if ($row.find(".rd-task-execution-combo").hasClass("is-first-row")) {
+      return;
+    }
+    var nextActive = $(this).attr("aria-pressed") !== "true";
+    tasksApi.setExecutionSameActive($row, nextActive);
+    if (nextActive) {
+      tasksApi.applySameAsPrevExecution($row);
+      $row.nextAll(".task-modal-row").each(function () {
+        if (tasksApi.isExecutionSameActive($(this))) {
+          tasksApi.applySameAsPrevExecution($(this));
+        }
+      });
+    }
+  });
+
+  $("#taskModalTableBody").on("change", ".rd-task-execution-select", function () {
+    if (!tasksApi) {
+      return;
+    }
+    var $row = $(this).closest("tr");
+    var hasPrev = tasksApi.syncExecutionSameButton($row);
+    var prev = tasksApi.readPrevRowExecution($row);
+    var current = $.trim($(this).val() || "");
+    if (hasPrev && current && current === prev.executionId) {
+      tasksApi.setExecutionSameActive($row, true);
+    } else if (hasPrev) {
+      tasksApi.setExecutionSameActive($row, false);
+    }
+    $row.nextAll(".task-modal-row").each(function () {
+      if (tasksApi.isExecutionSameActive($(this))) {
+        tasksApi.applySameAsPrevExecution($(this));
+      }
+    });
   });
 
   $("#taskModalAddBtn").on("click", addTaskModalRow);

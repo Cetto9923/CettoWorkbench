@@ -119,6 +119,98 @@
     }
   }
 
+  function getSectionProjectSelect($scope) {
+    var $section = $scope.closest(".rd-node-tasks");
+    if (!$section.length) {
+      $section = $scope.find(".rd-node-tasks").first();
+    }
+    return $section.find(".rd-task-project-section .rd-task-project-select").first();
+  }
+
+  function syncProjectSectionVisibility($node) {
+    var $section = $node.find(".rd-task-project-section").first();
+    if (!$section.length) {
+      return;
+    }
+    var hasTasks = $node.find(".rd-task-body .rd-task-row").length > 0;
+    $section.toggle(hasTasks);
+  }
+
+  function readSectionProject($scope) {
+    var $select = getSectionProjectSelect($scope);
+    var projectId = $.trim($select.val() || "");
+    return {
+      projectId: projectId,
+      projectName: projectId ? $.trim($select.find("option:selected").text() || "") : "",
+    };
+  }
+
+  function pickDefaultProjectId($node) {
+    var found = "";
+    $node.find(".rd-task-body .rd-task-row").each(function () {
+      if (found) {
+        return;
+      }
+      var pid = $.trim($(this).attr("data-project-id") || "");
+      if (pid) {
+        found = pid;
+      }
+    });
+    return found;
+  }
+
+  function syncRowsProjectAttrs($node, projectId, projectName) {
+    $node.find(".rd-task-body .rd-task-row").each(function () {
+      var $row = $(this);
+      $row.attr("data-project-id", projectId || "");
+      $row.attr("data-project-name", projectName || "");
+    });
+  }
+
+  function refreshSectionEditableExecutions($node, projectId, clearSelected) {
+    $node.find(".rd-task-body .rd-task-row").each(function () {
+      var $row = $(this);
+      if (!$row.find(".rd-task-execution-select").length) {
+        return;
+      }
+      var selectedExecutionId = "";
+      if (!clearSelected) {
+        selectedExecutionId =
+          $.trim($row.find(".rd-task-execution-select").val() || "") ||
+          $.trim($row.attr("data-execution-id") || "");
+      }
+      loadRowExecutions($row, projectId, selectedExecutionId);
+    });
+  }
+
+  function initNodeProjectSelect($node, preferredProjectId) {
+    var $select = getSectionProjectSelect($node);
+    if (!$select.length) {
+      return;
+    }
+    var hasPreferred = arguments.length >= 2;
+    ensureNodeProjects($node, function (projects) {
+      var selected = hasPreferred ? String(preferredProjectId || "") : pickDefaultProjectId($node);
+      if (selected) {
+        var exists = (projects || []).some(function (project) {
+          return String(project.id || "") === selected;
+        });
+        if (!exists) {
+          selected = "";
+        }
+      }
+      if (!selected && projects && projects.length === 1) {
+        selected = String(projects[0].id || "");
+      }
+      fillProjectSelect($select, projects, selected);
+      var project = readSectionProject($node);
+      syncRowsProjectAttrs($node, project.projectId, project.projectName);
+      if (hasPreferred) {
+        refreshSectionEditableExecutions($node, project.projectId, true);
+      }
+    });
+  }
+
   function fillExecutionSelect($select, executions, selectedId, disabled) {
     var selected = String(selectedId || "");
     $select.empty();
@@ -139,16 +231,108 @@
     }
   }
 
+  function isExecutionSameActive($row) {
+    var $btn = $row.find(".rd-task-execution-same").first();
+    var $combo = $row.find(".rd-task-execution-combo").first();
+    if (!$btn.length || $combo.hasClass("is-first-row")) {
+      return false;
+    }
+    return $btn.attr("aria-pressed") !== "false";
+  }
+
+  function setExecutionSameActive($row, active) {
+    var $btn = $row.find(".rd-task-execution-same").first();
+    if (!$btn.length) {
+      return;
+    }
+    $btn.attr("aria-pressed", active ? "true" : "false");
+  }
+
+  function syncExecutionSameButton($row) {
+    var $combo = $row.find(".rd-task-execution-combo").first();
+    var $btn = $row.find(".rd-task-execution-same").first();
+    if (!$combo.length || !$btn.length) {
+      return false;
+    }
+    var hasPrev = $row.prevAll(".rd-task-row").length > 0;
+    $combo.toggleClass("is-first-row", !hasPrev);
+    if (!hasPrev) {
+      $btn.attr("aria-pressed", "false");
+      return false;
+    }
+    return true;
+  }
+
+  function readPrevRowExecution($row) {
+    var $prev = $row.prevAll(".rd-task-row").first();
+    if (!$prev.length) {
+      return { executionId: "", executionName: "" };
+    }
+    if ($prev.hasClass("rd-task-row--new") || $prev.hasClass("rd-task-row--editing")) {
+      var executionId = $.trim($prev.find(".rd-task-execution-select").val() || "");
+      return {
+        executionId: executionId,
+        executionName: executionId
+          ? $.trim($prev.find(".rd-task-execution-select option:selected").text() || "")
+          : "",
+      };
+    }
+    return {
+      executionId: $.trim($prev.attr("data-execution-id") || ""),
+      executionName: $.trim($prev.attr("data-execution-name") || ""),
+    };
+  }
+
+  function applySameAsPrevExecution($row) {
+    if (!isExecutionSameActive($row)) {
+      return;
+    }
+    var prev = readPrevRowExecution($row);
+    var $select = $row.find(".rd-task-execution-select").first();
+    if (!$select.length) {
+      return;
+    }
+    if (!prev.executionId) {
+      $select.val("");
+      return;
+    }
+    if ($select.find('option[value="' + prev.executionId + '"]').length) {
+      $select.val(prev.executionId);
+      return;
+    }
+    if (prev.executionName) {
+      $("<option></option>").val(prev.executionId).text(prev.executionName).appendTo($select);
+      $select.val(prev.executionId);
+    }
+  }
+
+  function resolveRowExecutionSelectedId($row, preferredId) {
+    if (preferredId) {
+      return String(preferredId);
+    }
+    if (isExecutionSameActive($row)) {
+      return readPrevRowExecution($row).executionId || "";
+    }
+    return "";
+  }
+
   function loadRowExecutions($row, projectId, selectedExecutionId) {
     var $executionSelect = $row.find(".rd-task-execution-select").first();
+    syncExecutionSameButton($row);
+    var selectedId = resolveRowExecutionSelectedId($row, selectedExecutionId);
+    if (isExecutionSameActive($row) && !selectedExecutionId) {
+      selectedId = readPrevRowExecution($row).executionId || "";
+    }
     if (!projectId) {
       fillExecutionSelect($executionSelect, [], "", true);
+      applySameAsPrevExecution($row);
       return;
     }
 
     var cached = getCachedExecutions(projectId);
     if (cached) {
-      fillExecutionSelect($executionSelect, cached, selectedExecutionId, false);
+      fillExecutionSelect($executionSelect, cached, selectedId, false);
+      applySameAsPrevExecution($row);
       return;
     }
 
@@ -157,14 +341,17 @@
       .then(function (resp) {
         if (!resp || !resp.success) {
           fillExecutionSelect($executionSelect, [], "", false);
+          applySameAsPrevExecution($row);
           return;
         }
         var executions = resp.executions || [];
         cacheExecutions(projectId, executions);
-        fillExecutionSelect($executionSelect, executions, selectedExecutionId, false);
+        fillExecutionSelect($executionSelect, executions, selectedId, false);
+        applySameAsPrevExecution($row);
       })
       .catch(function () {
         fillExecutionSelect($executionSelect, [], "", false);
+        applySameAsPrevExecution($row);
       });
   }
 
@@ -255,14 +442,13 @@
   }
 
   function collectTaskFormData($row) {
-    var $projectSelect = $row.find(".rd-task-project-select").first();
+    var project = readSectionProject($row);
     var $executionSelect = $row.find(".rd-task-execution-select").first();
-    var projectId = $.trim($projectSelect.val() || "");
     var executionId = $.trim($executionSelect.val() || "");
     return {
       id: $row.attr("data-task-id") || "",
-      projectId: projectId,
-      projectName: projectId ? $.trim($projectSelect.find("option:selected").text() || "") : "",
+      projectId: project.projectId,
+      projectName: project.projectName,
       executionId: executionId,
       executionName: executionId ? $.trim($executionSelect.find("option:selected").text() || "") : "",
       type: $.trim($row.find(".rd-task-type").val() || ""),
@@ -285,7 +471,6 @@
   }
 
   function renderTaskReadCells($row, task) {
-    $row.find(".rd-task-cell-project").text(task.projectName || "—");
     $row.find(".rd-task-cell-execution").text(task.executionName || "—");
     renderTaskTypeCell($row.find(".rd-task-cell-type"), task.type);
     $row.find(".rd-task-cell-pri").text(formatTaskPriLabel(task.pri));
@@ -341,7 +526,6 @@
       return;
     }
     var cellClasses = [
-      "rd-task-cell-project",
       "rd-task-cell-execution",
       "rd-task-cell-type",
       "rd-task-cell-pri",
@@ -415,6 +599,10 @@
         $body.append(row);
       }
     });
+    var $projectSection = $(section).find(".rd-task-project-section").first();
+    if ($projectSection.length) {
+      $projectSection.toggle($body.find(".rd-task-row").length > 0);
+    }
     return section;
   }
 
@@ -446,9 +634,20 @@
     var ownerIds = nextTaskOwnerIds($row);
     syncTaskRowDateInputs($row);
 
-    ensureNodeProjects($node, function (projects) {
-      fillProjectSelect($row.find(".rd-task-project-select"), projects, task.projectId);
-      loadRowExecutions($row, task.projectId, task.executionId);
+    ensureNodeProjects($node, function () {
+      var project = readSectionProject($node);
+      var projectId = project.projectId || task.projectId || "";
+      if (projectId && !project.projectId) {
+        fillProjectSelect(getSectionProjectSelect($node), getNodeProjects($node), projectId);
+        project = readSectionProject($node);
+      }
+      syncRowsProjectAttrs($node, project.projectId || projectId, project.projectName || task.projectName);
+      var hasPrev = syncExecutionSameButton($row);
+      if (hasPrev) {
+        var prevExec = readPrevRowExecution($row);
+        setExecutionSameActive($row, !!(task.executionId && prevExec.executionId === String(task.executionId)));
+      }
+      loadRowExecutions($row, project.projectId || projectId, task.executionId);
     });
     mountTaskOwnerPicker($row, ownerIds.inputId, ownerIds.hiddenId, task.assignedTo, task.assignedToName);
     $row.find(".rd-task-name").first().trigger("focus");
@@ -470,21 +669,205 @@
     });
   }
 
-  function appendEmptyTaskRow($node) {
+  function readRowProjectExecution($sourceRow) {
+    if (!$sourceRow || !$sourceRow.length) {
+      var empty = { projectId: "", executionId: "" };
+      return empty;
+    }
+    var project = readSectionProject($sourceRow);
+    if ($sourceRow.hasClass("rd-task-row--new") || $sourceRow.hasClass("rd-task-row--editing")) {
+      var form = collectTaskFormData($sourceRow);
+      return {
+        projectId: project.projectId || form.projectId || "",
+        executionId: form.executionId || "",
+      };
+    }
+    var data = readTaskDataFromRow($sourceRow);
+    return {
+      projectId: project.projectId || data.projectId || "",
+      executionId: data.executionId || "",
+    };
+  }
+
+  function normalizeDateValue(value) {
+    var raw = $.trim(String(value == null ? "" : value));
+    if (!raw) {
+      return "";
+    }
+    return raw.slice(0, 10);
+  }
+
+  function resolveUserLabel(account) {
+    var acc = $.trim(account || "");
+    if (!acc) {
+      return "";
+    }
+    var label = "";
+    (shared.schedulingUsers || []).some(function (user) {
+      if ($.trim(user.account || "") === acc) {
+        label = $.trim(user.realname || "") || acc;
+        return true;
+      }
+      return false;
+    });
+    return label || acc;
+  }
+
+  function readNodeStoryTitle($node) {
+    var $header = $node.find(".rd-node-header").first();
+    var fromInput = $.trim($header.find(".rd-node-title-input, .rd-node-title").first().val() || "");
+    if (fromInput) {
+      return fromInput;
+    }
+    return $.trim($node.attr("data-story-title") || $header.find(".rd-node-title-display").first().text() || "");
+  }
+
+  function readNodeProductId($node) {
+    var $header = $node.find(".rd-node-header").first();
+    var fromSelect = $.trim($header.find(".rd-node-product").first().val() || "");
+    if (fromSelect) {
+      return fromSelect;
+    }
+    return String($node.attr("data-product-id") || "");
+  }
+
+  function findProductReleaseOwner(productId) {
+    var id = String(productId || "");
+    if (!id) {
+      return "";
+    }
+    var account = "";
+    (shared.involvedProducts || []).some(function (product) {
+      if (String(product.id || "") === id) {
+        account = $.trim(product.rd || "");
+        return true;
+      }
+      return false;
+    });
+    return account;
+  }
+
+  function initNewTaskRowFields($row, $node, defaults, config) {
+    var sectionProject = readSectionProject($node);
+    var projectId = sectionProject.projectId || (defaults && defaults.projectId) || "";
+    var executionId = (defaults && defaults.executionId) || "";
+    var hasPrev = syncExecutionSameButton($row);
+    if (hasPrev) {
+      setExecutionSameActive($row, true);
+      if (!executionId) {
+        executionId = readPrevRowExecution($row).executionId || "";
+      }
+    } else {
+      setExecutionSameActive($row, false);
+    }
+    if (projectId) {
+      if (!sectionProject.projectId) {
+        ensureNodeProjects($node, function (projects) {
+          fillProjectSelect(getSectionProjectSelect($node), projects, projectId);
+          var project = readSectionProject($node);
+          syncRowsProjectAttrs($node, project.projectId, project.projectName);
+          loadRowExecutions($row, project.projectId || projectId, executionId);
+        });
+      } else {
+        syncRowsProjectAttrs($node, sectionProject.projectId, sectionProject.projectName);
+        loadRowExecutions($row, projectId, executionId);
+      }
+    } else {
+      fillExecutionSelect($row.find(".rd-task-execution-select").first(), [], "", true);
+      ensureNodeProjects($node, function (projects) {
+        fillProjectSelect(getSectionProjectSelect($node), projects, "");
+      });
+      applySameAsPrevExecution($row);
+    }
+
+    var cfg = config || {};
+    if (cfg.type) {
+      fillTaskTypeSelect($row.find(".rd-task-type"), cfg.type);
+    }
+    if (cfg.name != null) {
+      $row.find(".rd-task-name").val(cfg.name);
+    }
+    $row.find(".rd-task-start").val(normalizeDateValue(cfg.estStarted));
+    $row.find(".rd-task-end").val(normalizeDateValue(cfg.deadline));
+
+    var ownerIds = nextTaskOwnerIds($row);
+    mountTaskOwnerPicker(
+      $row,
+      ownerIds.inputId,
+      ownerIds.hiddenId,
+      $.trim(cfg.assignedTo || ""),
+      $.trim(cfg.assignedToName || "")
+    );
+    syncTaskRowDateInputs($row);
+  }
+
+  function appendEmptyTaskRow($node, $afterRow) {
     var storyId = $node.data("story-id") || "";
     var row = buildEmptyTaskRow(storyId);
     if (!row) {
       return;
     }
     var $row = $(row);
-    $node.find(".rd-task-body").first().append($row);
-    fillExecutionSelect($row.find(".rd-task-execution-select").first(), [], "", true);
-    ensureNodeProjects($node, function (projects) {
-      fillProjectSelect($row.find(".rd-task-project-select"), projects, "");
+    if ($afterRow && $afterRow.length) {
+      $afterRow.after($row);
+    } else {
+      $node.find(".rd-task-body").first().append($row);
+    }
+    syncProjectSectionVisibility($node);
+    initNewTaskRowFields($row, $node, readRowProjectExecution($afterRow), null);
+  }
+
+  function appendDefaultTaskRows($node) {
+    var storyId = $node.data("story-id") || "";
+    var title = readNodeStoryTitle($node);
+    var developFinish = normalizeDateValue($("#scheduleIntegratedDevelopFinish").val());
+    var testFinish = normalizeDateValue($("#scheduleIntegratedTestFinish").val());
+    var acceptancedDate = normalizeDateValue($("#scheduleIntegratedAcceptancedDate").val());
+    var schedulePlanDate = normalizeDateValue($("#scheduleIntegratedSchedulePlanDate").val());
+    var rd = $.trim($("#scheduleIntRDValue").val() || "");
+    var rdName = $.trim($("#scheduleIntRDInput").val() || "") || resolveUserLabel(rd);
+    var qd = $.trim($("#scheduleIntQDValue").val() || "");
+    var qdName = $.trim($("#scheduleIntQDInput").val() || "") || resolveUserLabel(qd);
+    var releaseOwner = findProductReleaseOwner(readNodeProductId($node));
+    var releaseOwnerName = resolveUserLabel(releaseOwner);
+
+    var specs = [
+      {
+        type: "devel",
+        name: "【开发】" + title,
+        assignedTo: rd,
+        assignedToName: rdName,
+        estStarted: "",
+        deadline: developFinish,
+      },
+      {
+        type: "test",
+        name: "【测试】" + title,
+        assignedTo: qd,
+        assignedToName: qdName,
+        estStarted: developFinish,
+        deadline: testFinish,
+      },
+      {
+        type: "Online",
+        name: "【上线】" + title,
+        assignedTo: releaseOwner,
+        assignedToName: releaseOwnerName,
+        estStarted: schedulePlanDate,
+        deadline: acceptancedDate,
+      },
+    ];
+
+    specs.forEach(function (spec) {
+      var row = buildEmptyTaskRow(storyId);
+      if (!row) {
+        return;
+      }
+      var $row = $(row);
+      $node.find(".rd-task-body").first().append($row);
+      initNewTaskRowFields($row, $node, null, spec);
     });
-    var ownerIds = nextTaskOwnerIds($row);
-    mountTaskOwnerPicker($row, ownerIds.inputId, ownerIds.hiddenId, "", "");
-    syncTaskRowDateInputs($row);
+    syncProjectSectionVisibility($node);
   }
 
   function isAutocompleteTarget(target) {
@@ -499,8 +882,15 @@
     buildExistingTaskRow: buildExistingTaskRow,
     buildTaskSectionBody: buildTaskSectionBody,
     appendEmptyTaskRow: appendEmptyTaskRow,
+    appendDefaultTaskRows: appendDefaultTaskRows,
     loadRowExecutions: loadRowExecutions,
     loadProductProjects: loadProductProjects,
+    initNodeProjectSelect: initNodeProjectSelect,
+    syncExecutionSameButton: syncExecutionSameButton,
+    setExecutionSameActive: setExecutionSameActive,
+    isExecutionSameActive: isExecutionSameActive,
+    applySameAsPrevExecution: applySameAsPrevExecution,
+    readPrevRowExecution: readPrevRowExecution,
     exitEditMode: exitTaskEditMode,
     mountTaskOwnerPicker: mountTaskOwnerPicker,
     syncTaskRowDateInputs: syncTaskRowDateInputs,
@@ -512,7 +902,14 @@
 
   $(document).on("click", "#scheduleIntegratedModalBody .rd-add-task", function (e) {
     e.preventDefault();
-    appendEmptyTaskRow($(this).closest(".rd-node"));
+    appendDefaultTaskRows($(this).closest(".rd-node"));
+  });
+
+  $(document).on("click", "#scheduleIntegratedModalBody .task-add-btn", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    var $currentRow = $(this).closest("tr");
+    appendEmptyTaskRow($(this).closest(".rd-node"), $currentRow);
   });
 
   $(document).on("click", "#scheduleIntegratedModalBody .task-delete-btn", function (e) {
@@ -530,6 +927,7 @@
     }
     clearTaskOwnerPickerMeta($row);
     $row.remove();
+    syncProjectSectionVisibility($node);
   });
 
   $(document).on("click", "#scheduleIntegratedModalBody .task-edit-btn", function (e) {
@@ -549,8 +947,46 @@
     exitTaskEditMode($editing);
   });
 
-  $(document).on("change", "#scheduleIntegratedModalBody .rd-task-project-select", function () {
+  $(document).on("change", "#scheduleIntegratedModalBody .rd-task-project-section .rd-task-project-select", function () {
+    var $node = $(this).closest(".rd-node");
+    var project = readSectionProject($node);
+    syncRowsProjectAttrs($node, project.projectId, project.projectName);
+    refreshSectionEditableExecutions($node, project.projectId, true);
+  });
+
+  $(document).on("click", "#scheduleIntegratedModalBody .rd-task-execution-same", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
     var $row = $(this).closest("tr");
-    loadRowExecutions($row, $(this).val(), "");
+    if ($row.find(".rd-task-execution-combo").hasClass("is-first-row")) {
+      return;
+    }
+    var nextActive = $(this).attr("aria-pressed") !== "true";
+    setExecutionSameActive($row, nextActive);
+    if (nextActive) {
+      applySameAsPrevExecution($row);
+      $row.nextAll(".rd-task-row").each(function () {
+        if (isExecutionSameActive($(this))) {
+          applySameAsPrevExecution($(this));
+        }
+      });
+    }
+  });
+
+  $(document).on("change", "#scheduleIntegratedModalBody .rd-task-execution-select", function () {
+    var $row = $(this).closest("tr");
+    var hasPrev = syncExecutionSameButton($row);
+    var prev = readPrevRowExecution($row);
+    var current = $.trim($(this).val() || "");
+    if (hasPrev && current && current === prev.executionId) {
+      setExecutionSameActive($row, true);
+    } else if (hasPrev) {
+      setExecutionSameActive($row, false);
+    }
+    $row.nextAll(".rd-task-row").each(function () {
+      if (isExecutionSameActive($(this))) {
+        applySameAsPrevExecution($(this));
+      }
+    });
   });
 })(jQuery);

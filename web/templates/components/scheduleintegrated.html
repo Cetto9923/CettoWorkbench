@@ -131,8 +131,12 @@
 
 <template id="tplTaskModalRowNew">
   <tr class="task-modal-row task-modal-row--new rd-task-row rd-task-row--new">
-    <td class="rd-task-cell rd-task-cell-project"><select class="rd-task-project-select form-select rd-task-select"><option value="">请选择项目</option></select></td>
-    <td class="rd-task-cell rd-task-cell-execution"><select class="rd-task-execution-select form-select rd-task-select" disabled><option value="">请选择执行</option></select></td>
+    <td class="rd-task-cell rd-task-cell-execution">
+      <div class="rd-task-execution-combo">
+        <select class="rd-task-execution-select form-select rd-task-select" disabled><option value="">请选择执行</option></select>
+        <button type="button" class="rd-task-execution-same" aria-pressed="true" title="同上">同上</button>
+      </div>
+    </td>
     <td class="rd-task-cell rd-task-cell-type"><select class="rd-task-type form-select rd-task-select"></select></td>
     <td class="rd-task-cell rd-task-cell-pri"><select class="rd-task-pri form-select rd-task-select"><option value="1">P1</option><option value="2">P2</option><option value="3" selected>P3</option><option value="4">P4</option></select></td>
     <td class="rd-task-cell rd-task-cell-name rd-task-cell--name"><input type="text" class="rd-task-name form-input rd-task-input" placeholder="任务名称"></td>
@@ -145,8 +149,12 @@
 
 <template id="tplTaskModalRowExisting">
   <tr class="task-modal-row task-modal-row--existing rd-task-row rd-task-row--editing" data-task-id="">
-    <td class="rd-task-cell rd-task-cell-project"><select class="rd-task-project-select form-select rd-task-select"><option value="">请选择项目</option></select></td>
-    <td class="rd-task-cell rd-task-cell-execution"><select class="rd-task-execution-select form-select rd-task-select" disabled><option value="">请选择执行</option></select></td>
+    <td class="rd-task-cell rd-task-cell-execution">
+      <div class="rd-task-execution-combo">
+        <select class="rd-task-execution-select form-select rd-task-select" disabled><option value="">请选择执行</option></select>
+        <button type="button" class="rd-task-execution-same" aria-pressed="true" title="同上">同上</button>
+      </div>
+    </td>
     <td class="rd-task-cell rd-task-cell-type task-modal-type-cell"></td>
     <td class="rd-task-cell rd-task-cell-pri"><select class="rd-task-pri form-select rd-task-select"><option value="1">P1</option><option value="2">P2</option><option value="3">P3</option><option value="4">P4</option></select></td>
     <td class="rd-task-cell rd-task-cell-name rd-task-cell--name"><input type="text" class="rd-task-name form-input rd-task-input"></td>
@@ -160,11 +168,10 @@
 <template id="tplRdTaskTableHead">
   <thead>
     <tr class="rd-task-table-head-row">
-      <th class="rd-task-th rd-task-th--project" style="width:120px">项目</th>
-      <th class="rd-task-th rd-task-th--execution" style="width:120px">执行</th>
+      <th class="rd-task-th rd-task-th--execution" style="width:220px">执行</th>
       <th class="rd-task-th rd-task-th--type" style="width:80px">类型</th>
       <th class="rd-task-th rd-task-th--pri" style="width:72px">优先级</th>
-      <th class="rd-task-th rd-task-th--name">任务名称 <span class="req">*</span></th>
+      <th class="rd-task-th rd-task-th--name" style="width:140px">任务名称 <span class="req">*</span></th>
       <th class="rd-task-th rd-task-th--owner" style="width:140px">负责人</th>
       <th class="rd-task-th rd-task-th--hours" style="width:60px">预估(h) <span class="req">*</span></th>
       <th class="rd-task-th rd-task-th--start" style="width:100px">开始</th>
@@ -176,8 +183,12 @@
 
 <template id="tplRdTaskRowNew">
   <tr class="rd-task-row rd-task-row--new" data-story-id="">
-    <td class="rd-task-cell rd-task-cell-project"><select class="rd-task-project-select form-select rd-task-select"><option value="">请选择项目</option></select></td>
-    <td class="rd-task-cell rd-task-cell-execution"><select class="rd-task-execution-select form-select rd-task-select" disabled><option value="">请选择执行</option></select></td>
+    <td class="rd-task-cell rd-task-cell-execution">
+      <div class="rd-task-execution-combo">
+        <select class="rd-task-execution-select form-select rd-task-select" disabled><option value="">请选择执行</option></select>
+        <button type="button" class="rd-task-execution-same" aria-pressed="true" title="同上">同上</button>
+      </div>
+    </td>
     <td class="rd-task-cell rd-task-cell-type"><select class="rd-task-type form-select rd-task-select"><option value="devel">开发</option><option value="test">测试</option><option value="OLtest">上线测试</option><option value="review">评审</option><option value="affair">事务</option><option value="request">需求</option><option value="misc">其他</option><option value="codereview">代码评审</option><option value="design">设计</option><option value="study">研究</option><option value="OLDebug">上线调试</option><option value="Online">上线</option><option value="Train">培训</option><option value="meeting">会议</option><option value="discuss">讨论</option><option value="ui">界面</option></select></td>
     <td class="rd-task-cell rd-task-cell-pri"><select class="rd-task-pri form-select rd-task-select"><option value="1">P1</option><option value="2">P2</option><option value="3" selected>P3</option><option value="4">P4</option></select></td>
     <td class="rd-task-cell rd-task-cell-name rd-task-cell--name"><input type="text" class="rd-task-name form-input rd-task-input" placeholder="任务名称"></td>
@@ -191,7 +202,6 @@
 
 <template id="tplRdTaskRowReadonly">
   <tr class="rd-task-row rd-task-row--existing">
-    <td class="rd-task-cell rd-task-cell-project"></td>
     <td class="rd-task-cell rd-task-cell-execution"></td>
     <td class="rd-task-cell rd-task-cell-type"></td>
     <td class="rd-task-cell rd-task-cell-pri"></td>
@@ -206,8 +216,12 @@
 
 <template id="tplRdTaskRowEdit">
   <tr class="rd-task-row rd-task-row--editing">
-    <td class="rd-task-cell rd-task-cell-project"><select class="rd-task-project-select form-select rd-task-select"><option value="">请选择项目</option></select></td>
-    <td class="rd-task-cell rd-task-cell-execution"><select class="rd-task-execution-select form-select rd-task-select" disabled><option value="">请选择执行</option></select></td>
+    <td class="rd-task-cell rd-task-cell-execution">
+      <div class="rd-task-execution-combo">
+        <select class="rd-task-execution-select form-select rd-task-select" disabled><option value="">请选择执行</option></select>
+        <button type="button" class="rd-task-execution-same" aria-pressed="true" title="同上">同上</button>
+      </div>
+    </td>
     <td class="rd-task-cell rd-task-cell-type"><select class="rd-task-type form-select rd-task-select"></select></td>
     <td class="rd-task-cell rd-task-cell-pri"><select class="rd-task-pri form-select rd-task-select"><option value="1">P1</option><option value="2">P2</option><option value="3">P3</option><option value="4">P4</option></select></td>
     <td class="rd-task-cell rd-task-cell-name rd-task-cell--name"><input type="text" class="rd-task-name form-input rd-task-input" placeholder="任务名称"></td>
@@ -222,18 +236,24 @@
 <template id="tplRdTaskActions">
   <span class="task-actions">
     <button type="button" class="task-edit-btn" title="编辑"><i class="fas fa-pen"></i></button>
+    <button type="button" class="task-add-btn" title="添加任务"><i class="fas fa-plus"></i></button>
     <button type="button" class="task-delete-btn" title="删除此任务"><i class="fas fa-trash-can"></i></button>
   </span>
 </template>
 
 <template id="tplRdTaskActionsDeleteOnly">
   <span class="task-actions">
+    <button type="button" class="task-add-btn" title="添加任务"><i class="fas fa-plus"></i></button>
     <button type="button" class="task-delete-btn" title="删除此任务"><i class="fas fa-trash-can"></i></button>
   </span>
 </template>
 
 <template id="tplRdTaskSection">
   <div class="rd-node-tasks">
+    <div class="task-modal-project-section rd-task-project-section" style="display:none;">
+      <label>任务所属项目</label>
+      <select class="rd-task-project-select form-select rd-task-select"><option value="">请选择项目</option></select>
+    </div>
     <table class="rd-task-table">
       <tbody class="rd-task-body"></tbody>
     </table>

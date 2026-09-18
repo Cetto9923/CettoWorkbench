@@ -125,10 +125,12 @@
     $node.find(".rd-node-role-badge").first().replaceWith(shared.buildRoleBadge(productId, shared.mainSystemId));
     if (!productId) {
       $node.attr("data-projects", JSON.stringify([]));
+      tasksApi.initNodeProjectSelect($node, "");
       return;
     }
     tasksApi.loadProductProjects(productId, function (projects) {
       $node.attr("data-projects", JSON.stringify(projects));
+      tasksApi.initNodeProjectSelect($node, "");
     });
   }
 
@@ -259,6 +261,7 @@
       $node.attr("data-product-id", story.productId || "");
       applyStoryDataAttrs($node, story);
       $container.append(node);
+      tasksApi.initNodeProjectSelect($node);
     });
 
     updateTreeEmptyState();
@@ -301,7 +304,10 @@
     if (defaultProductId) {
       tasksApi.loadProductProjects(defaultProductId, function (projects) {
         $node.attr("data-projects", JSON.stringify(projects));
+        tasksApi.initNodeProjectSelect($node);
       });
+    } else {
+      tasksApi.initNodeProjectSelect($node);
     }
     updateTreeEmptyState();
   }

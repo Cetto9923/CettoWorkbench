@@ -747,6 +747,7 @@ type SchedulingUserOption struct {
 type ZtProductOption struct {
 	ID   uint   `gorm:"column:id" json:"id"`
 	Name string `gorm:"column:name" json:"name"`
+	RD   string `gorm:"column:RD" json:"rd"` // 发布负责人账号
 }
 
 // ZtTaskItem 禅道 zt_task 只读投影（排期弹窗）。

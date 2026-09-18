@@ -238,7 +238,7 @@ func (r *Repo) GetDemandInvolvedProducts(ctx context.Context, demandID uint) ([]
 	}
 
 	const query = `
-SELECT DISTINCT p.id, p.name
+SELECT DISTINCT p.id, p.name, p.RD
 FROM zt_demandclarify dc
 JOIN zt_product p ON p.id = dc.product AND p.deleted = '0'
 WHERE dc.demand = ?
@@ -256,6 +256,7 @@ ORDER BY p.id ASC`
 		out = append(out, ZtProductOption{
 			ID:   row.ID,
 			Name: strings.TrimSpace(row.Name),
+			RD:   strings.TrimSpace(row.RD),
 		})
 	}
 	return out, nil

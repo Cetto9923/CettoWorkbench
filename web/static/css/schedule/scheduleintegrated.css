@@ -564,9 +564,12 @@
   color: #64748b;
 }
 
-.rd-task-th--project,
 .rd-task-th--execution {
-  width: 120px;
+  width: 220px;
+}
+
+.rd-task-project-section {
+  margin-top: 8px;
 }
 
 .rd-task-th--type {
@@ -574,6 +577,8 @@
 }
 
 .rd-task-th--name {
+  width: 140px;
+  max-width: 140px;
   overflow: hidden;
 }
 
@@ -592,6 +597,68 @@
 
 .rd-task-th--actions {
   width: 48px;
+}
+
+.rd-task-execution-combo {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 3px;
+  background: #fff;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.rd-task-execution-combo:focus-within {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+}
+
+.rd-task-execution-combo .rd-task-execution-select,
+#scheduleIntegratedModal .rd-task-execution-combo .rd-task-execution-select,
+#taskModal .rd-task-execution-combo .rd-task-execution-select {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  padding: 3px 4px;
+  font-size: 11px;
+}
+
+.rd-task-execution-combo .rd-task-execution-select:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.rd-task-execution-same {
+  flex: 0 0 auto;
+  border: none;
+  border-left: 1px solid #e5e7eb;
+  background: #fff;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 0 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.rd-task-execution-same:hover {
+  background: #f8fafc;
+}
+
+.rd-task-execution-same[aria-pressed="false"] {
+  color: #94a3b8;
+}
+
+.rd-task-execution-combo.is-first-row .rd-task-execution-same {
+  display: none;
 }
 
 .rd-task-cell {
@@ -664,6 +731,7 @@
 #scheduleIntegratedModal .task-delete-btn,
 #scheduleIntegratedModal .rd-edit-btn,
 #scheduleIntegratedModal .task-edit-btn,
+#scheduleIntegratedModal .task-add-btn,
 #scheduleIntegratedModal .rd-confirm-btn {
   border: none;
   background: none;
@@ -688,7 +756,8 @@
 }
 
 #scheduleIntegratedModal .rd-edit-btn:hover,
-#scheduleIntegratedModal .task-edit-btn:hover {
+#scheduleIntegratedModal .task-edit-btn:hover,
+#scheduleIntegratedModal .task-add-btn:hover {
   color: #2563eb;
   background: #f0f0f0;
 }
@@ -702,6 +771,7 @@
 #scheduleIntegratedModal .task-delete-btn i,
 #scheduleIntegratedModal .rd-edit-btn i,
 #scheduleIntegratedModal .task-edit-btn i,
+#scheduleIntegratedModal .task-add-btn i,
 #scheduleIntegratedModal .rd-confirm-btn i {
   font-size: 13px;
 }
@@ -722,6 +792,7 @@
 }
 
 #scheduleIntegratedModal .task-edit-btn,
+#scheduleIntegratedModal .task-add-btn,
 #scheduleIntegratedModal .task-delete-btn {
   padding: 4px;
 }
@@ -768,7 +839,7 @@
 #scheduleIntegratedModal .rd-node-tasks th:last-child,
 #scheduleIntegratedModal .rd-node-tasks td.rd-task-cell-actions {
   width: 48px;
-  padding: 6px 4px;
+  padding: 6px 2px;
   text-align: right;
 }
 
@@ -791,9 +862,11 @@
 }
 
 #scheduleIntegratedModal .rd-node-header--edit .rd-node-title,
-#scheduleIntegratedModal .rd-node-header--story-edit .rd-node-title {
+#scheduleIntegratedModal .rd-node-header--edit .rd-node-title-input,
+#scheduleIntegratedModal .rd-node-header--story-edit .rd-node-title,
+#scheduleIntegratedModal .rd-node-header--story-edit .rd-node-title-input {
   flex: 1 1 auto;
-  min-width: 140px;
+  min-width: 120px;
   width: auto;
   max-width: none;
 }
@@ -806,11 +879,16 @@
   flex: 0 0 auto;
 }
 
+#scheduleIntegratedModal .rd-node-header--edit .rd-node-header-right,
+#scheduleIntegratedModal .rd-node-header--story-edit .rd-node-header-right {
+  margin-left: auto;
+}
+
 #scheduleIntegratedModal .rd-node-header--edit .rd-node-assignee-wrap,
 #scheduleIntegratedModal .rd-node-header--story-edit .rd-node-assignee-wrap {
-  flex: 0 0 110px;
-  width: 110px;
-  min-width: 110px;
+  flex: 0 0 160px;
+  width: 160px;
+  min-width: 160px;
 }
 
 #scheduleIntegratedModal .rd-node-header--edit .rd-node-assignee-wrap .ui-autocomplete-input-wrap,
@@ -818,7 +896,7 @@
 #scheduleIntegratedModal .rd-node-header--story-edit .rd-node-assignee-wrap .ui-autocomplete-input-wrap,
 #scheduleIntegratedModal .rd-node-header--story-edit .rd-node-assignee-wrap .rd-node-assignee-input {
   width: 100%;
-  max-width: 110px;
+  max-width: 160px;
 }
 
 #scheduleIntegratedModal .rd-task-owner-cell .rd-node-assignee-wrap,

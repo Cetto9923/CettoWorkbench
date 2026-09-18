@@ -623,6 +623,13 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
 
     <div id="taskModalInfoBar" style="font-size:12px; color:#666; margin:12px 0;"></div>
 
+    <div class="task-modal-project-section" id="taskModalProjectSection" style="display:none;">
+      <label for="taskModalProjectSelect">项目</label>
+      <select id="taskModalProjectSelect" class="form-select rd-task-project-select rd-task-select">
+        <option value="">请选择项目</option>
+      </select>
+    </div>
+
     <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
       <button type="button" class="action-btn action-btn--primary" id="taskModalAddBtn">拆任务</button>
     </div>
@@ -631,11 +638,10 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
     <table class="rd-task-table" id="taskModalTable">
       <thead>
         <tr>
-          <th style="width:120px">项目</th>
-          <th style="width:120px">执行 <span class="req">*</span></th>
+          <th style="width:220px">执行 <span class="req">*</span></th>
           <th style="width:80px">类型</th>
           <th style="width:72px">优先级</th>
-          <th>任务名称 <span class="req">*</span></th>
+          <th style="width:140px">任务名称 <span class="req">*</span></th>
           <th style="width:120px">指派给</th>
           <th style="width:70px">预估(h) <span class="req">*</span></th>
           <th style="width:110px">预计开始</th>

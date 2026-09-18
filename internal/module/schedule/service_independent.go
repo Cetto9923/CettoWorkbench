@@ -119,10 +119,18 @@ func (s *Service) GetStoryScheduling(ctx context.Context, actor *model.User, sto
 
 	involvedProducts := []ZtProductOption{}
 	if detail.MainSystemID > 0 {
-		involvedProducts = append(involvedProducts, ZtProductOption{
-			ID:   detail.MainSystemID,
-			Name: detail.MainSystemName,
-		})
+		opts, err := s.repo.FindProductOptionsByIDs(ctx, []uint{detail.MainSystemID})
+		if err != nil {
+			return nil, err
+		}
+		if len(opts) > 0 {
+			involvedProducts = opts
+		} else {
+			involvedProducts = append(involvedProducts, ZtProductOption{
+				ID:   detail.MainSystemID,
+				Name: detail.MainSystemName,
+			})
+		}
 	}
 
 	return &DemandSchedulingResp{

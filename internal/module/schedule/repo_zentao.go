@@ -329,6 +329,37 @@ WHERE id IN ?
 	return out, nil
 }
 
+// FindProductOptionsByIDs 批量查产品选项（含发布负责人 RD）。
+func (r *Repo) FindProductOptionsByIDs(ctx context.Context, productIDs []uint) ([]ZtProductOption, error) {
+	if len(productIDs) == 0 {
+		return []ZtProductOption{}, nil
+	}
+
+	const query = `
+SELECT id, name, RD
+FROM zt_product
+WHERE id IN ?
+  AND deleted = '0'
+ORDER BY id ASC`
+
+	var rows []ZtProductOption
+	if err := r.db.WithContext(ctx).Raw(query, productIDs).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	out := make([]ZtProductOption, 0, len(rows))
+	for _, row := range rows {
+		if row.ID == 0 {
+			continue
+		}
+		out = append(out, ZtProductOption{
+			ID:   row.ID,
+			Name: strings.TrimSpace(row.Name),
+			RD:   strings.TrimSpace(row.RD),
+		})
+	}
+	return out, nil
+}
+
 // FindStoryWindowMappings 查研发需求关联的版本窗口（每 story 取 vw.id 最小的一条）。
 func (r *Repo) FindStoryWindowMappings(ctx context.Context, storyIDs []uint) (map[uint]StoryWindowRef, error) {
 	if len(storyIDs) == 0 {
