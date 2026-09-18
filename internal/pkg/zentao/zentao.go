@@ -131,6 +131,14 @@ func ProductViewURL(productID uint) string {
 	return URL("product", "view", fmt.Sprintf("productID=%d", productID))
 }
 
+// TicketViewURL 工单详情页链接。
+func TicketViewURL(ticketID uint) string {
+	if ticketID == 0 {
+		return ""
+	}
+	return URL("ticket", "view", fmt.Sprintf("id=%d", ticketID))
+}
+
 // ProductViewURLWithBase 使用指定站点前缀拼接产品概况页链接。
 func ProductViewURLWithBase(base string, productID uint) string {
 	if productID == 0 {
