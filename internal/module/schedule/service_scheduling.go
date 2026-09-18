@@ -62,6 +62,10 @@ func (s *Service) buildDemandSchedulingStories(
 	if err != nil {
 		return nil, err
 	}
+	planTitleByStory, err := s.repo.FindStoryPlanTitles(ctx, pluckStoryIDs(rows))
+	if err != nil {
+		return nil, err
+	}
 	realnameByAccount, err := s.repo.FindUsersByAccounts(ctx, collectNonEmptyAccounts(accounts...))
 	if err != nil {
 		return nil, err
@@ -86,6 +90,7 @@ func (s *Service) buildDemandSchedulingStories(
 			Title:          strings.TrimSpace(row.Title),
 			ProductID:      row.Product,
 			ProductName:    productNameByID[row.Product],
+			PlanTitle:      planTitleByStory[row.ID],
 			IsMain:         row.IsMainSystemAssociation > 0,
 			Estimate:       row.Estimate,
 			AssignedTo:     assignedTo,

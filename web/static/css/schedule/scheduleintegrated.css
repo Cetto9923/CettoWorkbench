@@ -57,9 +57,16 @@
   cursor: pointer;
 }
 
-#scheduleIntegratedModal input[type="date"].form-input:not([readonly])::-webkit-calendar-picker-indicator,
-#scheduleIntegratedModal .rd-node-tasks input[type="date"]::-webkit-calendar-picker-indicator,
-#taskModal .rd-node-tasks input[type="date"]::-webkit-calendar-picker-indicator {
+#scheduleIntegratedModal
+  input[type="date"].form-input:not(
+    [readonly]
+  )::-webkit-calendar-picker-indicator,
+#scheduleIntegratedModal
+  .rd-node-tasks
+  input[type="date"]::-webkit-calendar-picker-indicator,
+#taskModal
+  .rd-node-tasks
+  input[type="date"]::-webkit-calendar-picker-indicator {
   position: absolute;
   top: 0;
   left: 0;
@@ -80,9 +87,11 @@
   color: #aaa;
 }
 
-#scheduleIntegratedModal input[type="date"].form-input:focus::-webkit-datetime-edit,
+#scheduleIntegratedModal
+  input[type="date"].form-input:focus::-webkit-datetime-edit,
 #scheduleIntegratedModal input[type="date"]:focus::-webkit-datetime-edit,
-#scheduleIntegratedModal input[type="date"].form-input.has-value::-webkit-datetime-edit,
+#scheduleIntegratedModal
+  input[type="date"].form-input.has-value::-webkit-datetime-edit,
 #scheduleIntegratedModal input[type="date"].has-value::-webkit-datetime-edit,
 #taskModal input[type="date"].form-input:focus::-webkit-datetime-edit,
 #taskModal input[type="date"]:focus::-webkit-datetime-edit,
@@ -243,7 +252,9 @@
   border-radius: 6px;
   background: var(--white);
   box-sizing: border-box;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .schedule-integrated-cell .schedule-field-control:focus,
@@ -258,11 +269,17 @@
   min-width: 0;
 }
 
-#scheduleIntegratedModal .schedule-integrated-cell .ui-autocomplete-input-wrap .ui-autocomplete-input {
+#scheduleIntegratedModal
+  .schedule-integrated-cell
+  .ui-autocomplete-input-wrap
+  .ui-autocomplete-input {
   display: block;
 }
 
-#scheduleIntegratedModal .schedule-integrated-cell .ui-autocomplete-input-wrap .ui-autocomplete-input:focus {
+#scheduleIntegratedModal
+  .schedule-integrated-cell
+  .ui-autocomplete-input-wrap
+  .ui-autocomplete-input:focus {
   outline: none;
   border-color: var(--blue);
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
@@ -284,7 +301,9 @@
   border-radius: 6px;
   background: var(--white);
   overflow: hidden;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .schedule-window-combo:focus-within,
@@ -293,8 +312,14 @@
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
 }
 
-#scheduleIntegratedModal .schedule-integrated-cell .schedule-window-combo .schedule-window-combo-select,
-#scheduleIntegratedModal .schedule-integrated-cell .schedule-target-combo .schedule-target-combo-date {
+#scheduleIntegratedModal
+  .schedule-integrated-cell
+  .schedule-window-combo
+  .schedule-window-combo-select,
+#scheduleIntegratedModal
+  .schedule-integrated-cell
+  .schedule-target-combo
+  .schedule-target-combo-date {
   border: none;
   border-radius: 0;
   box-shadow: none;
@@ -797,6 +822,31 @@
   padding: 4px;
 }
 
+#scheduleIntegratedModal .integrated-rd-kv {
+  font-size: 11px;
+  color: var(--t2);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+#scheduleIntegratedModal .integrated-rd-kv em {
+  font-style: normal;
+  color: var(--t3);
+  font-size: 10px;
+}
+
+#scheduleIntegratedModal .integrated-rd-kv strong {
+  font-weight: 600;
+  color: var(--t1);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: min(280px, 36vw);
+}
+
 #scheduleIntegratedModal .rd-node-title-display {
   min-width: 0;
   font-size: 13px;
@@ -821,7 +871,11 @@
 #scheduleIntegratedModal .rd-node-tasks .rd-task-table td input,
 #scheduleIntegratedModal .rd-node-tasks .rd-task-table td select,
 #scheduleIntegratedModal .rd-node-tasks .rd-task-table td .ui-autocomplete,
-#scheduleIntegratedModal .rd-node-tasks .rd-task-table td .ui-autocomplete-input-wrap,
+#scheduleIntegratedModal
+  .rd-node-tasks
+  .rd-task-table
+  td
+  .ui-autocomplete-input-wrap,
 #taskModal .rd-node-tasks .rd-task-table td .ui-autocomplete,
 #taskModal .rd-node-tasks .rd-task-table td .ui-autocomplete-input-wrap {
   width: 100%;
@@ -829,8 +883,12 @@
   box-sizing: border-box;
 }
 
-#scheduleIntegratedModal .rd-task-row:not(.rd-task-row--editing):not(.rd-task-row--new) td.rd-task-cell-name,
-#scheduleIntegratedModal .rd-task-row:not(.rd-task-row--editing):not(.rd-task-row--new) td.rd-task-cell-owner {
+#scheduleIntegratedModal
+  .rd-task-row:not(.rd-task-row--editing):not(.rd-task-row--new)
+  td.rd-task-cell-name,
+#scheduleIntegratedModal
+  .rd-task-row:not(.rd-task-row--editing):not(.rd-task-row--new)
+  td.rd-task-cell-owner {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -849,13 +907,19 @@
   position: relative;
 }
 
-#scheduleIntegratedModal .rd-node-tasks input[type="date"]::-webkit-datetime-edit,
+#scheduleIntegratedModal
+  .rd-node-tasks
+  input[type="date"]::-webkit-datetime-edit,
 #taskModal .rd-node-tasks input[type="date"]::-webkit-datetime-edit {
   color: #aaa;
 }
 
-#scheduleIntegratedModal .rd-node-tasks input[type="date"]:focus::-webkit-datetime-edit,
-#scheduleIntegratedModal .rd-node-tasks input[type="date"].has-value::-webkit-datetime-edit,
+#scheduleIntegratedModal
+  .rd-node-tasks
+  input[type="date"]:focus::-webkit-datetime-edit,
+#scheduleIntegratedModal
+  .rd-node-tasks
+  input[type="date"].has-value::-webkit-datetime-edit,
 #taskModal .rd-node-tasks input[type="date"]:focus::-webkit-datetime-edit,
 #taskModal .rd-node-tasks input[type="date"].has-value::-webkit-datetime-edit {
   color: #333;
@@ -891,10 +955,22 @@
   min-width: 160px;
 }
 
-#scheduleIntegratedModal .rd-node-header--edit .rd-node-assignee-wrap .ui-autocomplete-input-wrap,
-#scheduleIntegratedModal .rd-node-header--edit .rd-node-assignee-wrap .rd-node-assignee-input,
-#scheduleIntegratedModal .rd-node-header--story-edit .rd-node-assignee-wrap .ui-autocomplete-input-wrap,
-#scheduleIntegratedModal .rd-node-header--story-edit .rd-node-assignee-wrap .rd-node-assignee-input {
+#scheduleIntegratedModal
+  .rd-node-header--edit
+  .rd-node-assignee-wrap
+  .ui-autocomplete-input-wrap,
+#scheduleIntegratedModal
+  .rd-node-header--edit
+  .rd-node-assignee-wrap
+  .rd-node-assignee-input,
+#scheduleIntegratedModal
+  .rd-node-header--story-edit
+  .rd-node-assignee-wrap
+  .ui-autocomplete-input-wrap,
+#scheduleIntegratedModal
+  .rd-node-header--story-edit
+  .rd-node-assignee-wrap
+  .rd-node-assignee-input {
   width: 100%;
   max-width: 160px;
 }

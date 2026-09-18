@@ -20,6 +20,7 @@
     $header.find(".rd-node-id").text(story.id || "—");
     $header.find(".rd-node-role-badge").replaceWith(shared.buildRoleBadge(story.productId, shared.mainSystemId));
     $header.find(".rd-node-product-name").text(story.productName || "—");
+    $header.find(".rd-node-plan-value").text($.trim(story.planTitle || "") || "—");
     $header.find(".rd-node-title-display").text(story.title || "—");
     $header.find(".rd-node-assignee-display").text("指派: " + assignee);
     mountNodeActions($header, "tplRdNodeActionsEdit");

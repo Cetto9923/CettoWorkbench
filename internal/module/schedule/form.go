@@ -548,15 +548,15 @@ type ListBizDemandsResp struct {
 
 // BizDemandItem 顶层业需（树形一级）。
 type BizDemandItem struct {
-	ID               uint            `json:"id"`
-	Name             string          `json:"name"`
-	Pri              int             `json:"pri"`
-	Status           string          `json:"status"`
-	MainSystemName   string          `json:"mainSystemName"`
-	ExtraSystemCount int             `json:"extraSystemCount"`
-	TeamgroupName    string          `json:"teamgroupName"`
-	OwnerName        string          `json:"ownerName"`
-	Stage string `json:"stage"`
+	ID               uint   `json:"id"`
+	Name             string `json:"name"`
+	Pri              int    `json:"pri"`
+	Status           string `json:"status"`
+	MainSystemName   string `json:"mainSystemName"`
+	ExtraSystemCount int    `json:"extraSystemCount"`
+	TeamgroupName    string `json:"teamgroupName"`
+	OwnerName        string `json:"ownerName"`
+	Stage            string `json:"stage"`
 	// 窗口阶段列已下线
 	// WindowPhase string `json:"windowPhase"`
 	WindowName string          `json:"windowName"`
@@ -640,18 +640,18 @@ type ZtDemand struct {
 
 // ListIndependentReq 独立研发需求 Tab 列表查询入参。
 type ListIndependentReq struct {
-	Page       int    `form:"page"`
-	PageSize   int    `form:"pageSize"`
-	Filter     string `form:"filter"`
-	Suspended  bool   `form:"suspended"`  // story 无 hang 字段，查询时忽略
-	Groups     string `form:"groups"`     // 逗号分隔的小组 ID
-	Products   string `form:"products"`   // 逗号分隔的产品 ID
-	Stages     string `form:"stages"`     // 逗号分隔的阶段值
-	Windows    string `form:"windows"`    // 逗号分隔的版本窗口 ID
-	Keyword    string `form:"keyword"`    // 编号/标题/负责人/系统
-	Pri       string `form:"pri"`  // 单值优先级：0-4
-	DevOwner  string `form:"dev"`  // 独立研发需求当前按 assignedTo 过滤
-	TestOwner string `form:"test"` // 独立研发需求当前按测试任务 assignedTo 过滤
+	Page      int    `form:"page"`
+	PageSize  int    `form:"pageSize"`
+	Filter    string `form:"filter"`
+	Suspended bool   `form:"suspended"` // story 无 hang 字段，查询时忽略
+	Groups    string `form:"groups"`    // 逗号分隔的小组 ID
+	Products  string `form:"products"`  // 逗号分隔的产品 ID
+	Stages    string `form:"stages"`    // 逗号分隔的阶段值
+	Windows   string `form:"windows"`   // 逗号分隔的版本窗口 ID
+	Keyword   string `form:"keyword"`   // 编号/标题/负责人/系统
+	Pri       string `form:"pri"`       // 单值优先级：0-4
+	DevOwner  string `form:"dev"`       // 独立研发需求当前按 assignedTo 过滤
+	TestOwner string `form:"test"`      // 独立研发需求当前按测试任务 assignedTo 过滤
 }
 
 // Validate 校验分页参数。
@@ -818,6 +818,7 @@ type DemandSchedulingStoryItem struct {
 	Title          string                          `json:"title"`
 	ProductID      uint                            `json:"productId"`
 	ProductName    string                          `json:"productName"`
+	PlanTitle      string                          `json:"planTitle"`
 	IsMain         bool                            `json:"isMain"`
 	Estimate       float64                         `json:"estimate"`
 	AssignedTo     string                          `json:"assignedTo"`

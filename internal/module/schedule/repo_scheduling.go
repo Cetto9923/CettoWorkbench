@@ -288,6 +288,37 @@ ORDER BY isMainSystemAssociation DESC, id ASC`
 	return rows, nil
 }
 
+// FindStoryPlanTitles 查研发需求关联的产品计划标题（每 story 取 plan id 最小的一条）。
+func (r *Repo) FindStoryPlanTitles(ctx context.Context, storyIDs []uint) (map[uint]string, error) {
+	if len(storyIDs) == 0 {
+		return map[uint]string{}, nil
+	}
+
+	const query = `
+SELECT ps.story AS storyID, pp.title AS planTitle
+FROM zt_planstory ps
+INNER JOIN zt_productplan pp ON pp.id = ps.plan AND pp.deleted = '0'
+WHERE ps.story IN ?
+ORDER BY ps.story ASC, pp.id ASC`
+
+	type storyPlanTitleRow struct {
+		StoryID   uint   `gorm:"column:storyID"`
+		PlanTitle string `gorm:"column:planTitle"`
+	}
+	var rows []storyPlanTitleRow
+	if err := r.db.WithContext(ctx).Raw(query, storyIDs).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	out := make(map[uint]string, len(rows))
+	for _, row := range rows {
+		if _, exists := out[row.StoryID]; exists {
+			continue
+		}
+		out[row.StoryID] = strings.TrimSpace(row.PlanTitle)
+	}
+	return out, nil
+}
+
 // GetDemandUserStories 按业需 ID 查询用户故事条目（来自 zt_demanduserstory）。
 func (r *Repo) GetDemandUserStories(ctx context.Context, demandID uint) ([]ZtDemandUserStory, error) {
 	if demandID == 0 {
