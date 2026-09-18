@@ -53,7 +53,7 @@
     return readURLParams().get("filter") || defaultFilter;
   }
 
-  var bizStageValues = ["no_window", "no_story", "no_task", "task_unassigned", "task_assigned"];
+  var bizStageValues = ["incomplete", "task_assigned"];
   var indepStageValues = ["no_window", "no_task", "task_unassigned", "task_assigned"];
 
   function sanitizeStagesForTab(raw, type) {

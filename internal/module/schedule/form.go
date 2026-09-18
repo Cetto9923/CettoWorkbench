@@ -226,15 +226,17 @@ func validateWindowSaveFields(
 	return errs
 }
 
-// 业需排期阶段（Service 层计算）。
+// 业需排期阶段（Service 层计算，列表仅二分展示）。
 const (
-	StageNoWindow       = "未关联窗口"
-	StageNoStory        = "未转研发"
-	StageNoTask         = "未建任务"
-	StageTaskUnassigned = "已建任务未指派"
-	StageTaskAssigned   = "已建任务并指派"
+	StageScheduleIncomplete = "排期未完成"
+	StageScheduleDone       = "排期已完成"
 
-	// 独立研发需求 Tab 排期阶段（4 级，末级文案与业需不同）。
+	// 独立研发需求 Tab 排期阶段（4 级）。
+	StageNoWindow                = "未关联窗口"
+	StageNoStory                 = "未转研发"
+	StageNoTask                  = "未建任务"
+	StageTaskUnassigned          = "已建任务未指派"
+	StageTaskAssigned            = "已建任务并指派"
 	IndependentStageTaskAssigned = "已建任务已指派"
 
 	WindowPhaseInitial = "初排"
@@ -248,6 +250,7 @@ const (
 	StageFilterNoTask         = "no_task"
 	StageFilterTaskUnassigned = "task_unassigned"
 	StageFilterTaskAssigned   = "task_assigned"
+	StageFilterIncomplete     = "incomplete" // 业需：排期未完成（细分阶段合集）
 )
 
 // StageFilterOption 排期阶段下拉选项。
@@ -264,11 +267,8 @@ type WindowFilterOption struct {
 
 // ScheduleBizStageFilterOptions 业务需求列表筛选区排期阶段选项。
 var ScheduleBizStageFilterOptions = []StageFilterOption{
-	{Value: StageFilterNoWindow, Label: "未关联窗口"},
-	{Value: StageFilterNoStory, Label: "未转研发"},
-	{Value: StageFilterNoTask, Label: "未建任务"},
-	{Value: StageFilterTaskUnassigned, Label: "已建任务未指派"},
-	{Value: StageFilterTaskAssigned, Label: "已建任务并指派"},
+	{Value: StageFilterIncomplete, Label: StageScheduleIncomplete},
+	{Value: StageFilterTaskAssigned, Label: StageScheduleDone},
 }
 
 // ScheduleIndependentStageFilterOptions 独立研发需求列表筛选区排期阶段选项。
@@ -322,6 +322,7 @@ func ParseCommaSeparatedStages(raw string) []string {
 		StageFilterNoTask:         {},
 		StageFilterTaskUnassigned: {},
 		StageFilterTaskAssigned:   {},
+		StageFilterIncomplete:     {},
 	}
 	parts := strings.Split(raw, ",")
 	out := make([]string, 0, len(parts))

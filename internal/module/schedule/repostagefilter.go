@@ -162,6 +162,8 @@ func buildBizDemandStageOrClause(stages []string) filterClause {
 	conditions := make([]string, 0, len(stages))
 	for _, stage := range stages {
 		switch stage {
+		case StageFilterIncomplete:
+			conditions = append(conditions, "(("+bizDemandStageNoWindowSQL+") OR ("+bizDemandStageNoStorySQL+") OR ("+bizDemandStageNoTaskSQL+") OR ("+bizDemandStageTaskUnassignedSQL+"))")
 		case StageFilterNoStory:
 			conditions = append(conditions, "("+bizDemandStageNoStorySQL+")")
 		case StageFilterNoWindow:

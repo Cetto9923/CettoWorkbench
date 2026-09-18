@@ -293,21 +293,19 @@ func calcBizDemandStage(
 	taskStatByStory map[uint]StoryTaskStat,
 ) string {
 	if !anyDemandHasWindow(demandIDs, windowByDemand) {
-		return StageNoWindow
+		return StageScheduleIncomplete
 	}
 	if len(allStories) == 0 {
-		return StageNoStory
+		return StageScheduleIncomplete
 	}
 	taskTotal, unassignedTotal := sumMainSystemTasks(mainStories, taskStatByStory)
-	if taskTotal == 0 {
-		return StageNoTask
+	if taskTotal == 0 || unassignedTotal > 0 {
+		return StageScheduleIncomplete
 	}
-	if unassignedTotal > 0 {
-		return StageTaskUnassigned
-	}
-	return StageTaskAssigned
+	return StageScheduleDone
 }
 
+// calcStoryStage 业需树下研需行阶段（保持细分文案，与业需二分展示无关）。
 func calcStoryStage(storyID uint, windowByStory map[uint]StoryWindowRef, taskStat StoryTaskStat) string {
 	ref, ok := windowByStory[storyID]
 	if !ok || ref.WindowID == 0 {

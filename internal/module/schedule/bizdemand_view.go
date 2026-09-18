@@ -154,9 +154,9 @@ func formatPriority(pri int) (label, class string) {
 
 func deriveBizStageClass(stage string) string {
 	switch stage {
-	case StageNoWindow, StageNoStory, StageNoTask:
+	case StageScheduleIncomplete, StageNoWindow, StageNoStory, StageNoTask:
 		return "stage-tag--draft"
-	case StageTaskUnassigned, StageTaskAssigned, IndependentStageTaskAssigned:
+	case StageScheduleDone, StageTaskUnassigned, StageTaskAssigned, IndependentStageTaskAssigned:
 		return "stage-tag--final"
 	default:
 		return ""
