@@ -135,3 +135,69 @@ func TestDemandItemKey(t *testing.T) {
 		}
 	}
 }
+
+func TestRawWorkItemID(t *testing.T) {
+	tests := []struct {
+		id   string
+		want string
+	}{
+		{id: "US63407", want: "63407"},
+		{id: "U68485", want: "68485"},
+		{id: "#US123", want: "123"},
+		{id: "REQ-999", want: "999"},
+		{id: "SUB-555", want: "555"},
+		{id: "RD-666", want: "666"},
+		{id: "777", want: "777"},
+		{id: "  US888  ", want: "888"},
+		{id: "us123", want: "123"},
+		{id: "USUS123", want: "US123"},
+		{id: "abc", want: "abc"},
+		{id: "#", want: ""},
+		{id: "", want: ""},
+	}
+
+	for _, tt := range tests {
+		got := rawWorkItemID(tt.id)
+		if got != tt.want {
+			t.Errorf("rawWorkItemID(%s) = %s, want %s", tt.id, got, tt.want)
+		}
+	}
+}
+
+func TestComputeDemandSummary(t *testing.T) {
+	items := []BizDemandItem{
+		{ValueStream: "受理 / 澄清", ZentaoStatus: "wait"},
+		{ValueStream: "排期", ZentaoStatus: "wait"},
+		{ValueStream: "研发 / 提测", ZentaoStatus: "suspended"},
+		{ValueStream: "交付 / 评价", ZentaoStatus: "refuse"},
+	}
+	sum := computeDemandSummary(items)
+	if sum.Clarify != 1 {
+		t.Errorf("Clarify = %d, want 1", sum.Clarify)
+	}
+	if sum.Schedule != 1 {
+		t.Errorf("Schedule = %d, want 1", sum.Schedule)
+	}
+	if sum.Blocked != 2 {
+		t.Errorf("Blocked = %d, want 2", sum.Blocked)
+	}
+}
+
+func TestComputeMemberCounts(t *testing.T) {
+	items := []BizDemandItem{
+		{OwnerAccount: "user1"},
+		{OwnerAccount: "user1"},
+		{OwnerAccount: "user2"},
+		{OwnerAccount: ""},
+	}
+	counts := computeMemberCounts(items)
+	if counts["user1"] != 2 {
+		t.Errorf("user1 = %d, want 2", counts["user1"])
+	}
+	if counts["user2"] != 1 {
+		t.Errorf("user2 = %d, want 1", counts["user2"])
+	}
+	if _, ok := counts[""]; ok {
+		t.Errorf("empty account should not be in map")
+	}
+}

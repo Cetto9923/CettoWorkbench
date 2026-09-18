@@ -67,14 +67,28 @@ type BizDemandItem struct {
 	Pri          string `json:"pri"`
 	Title        string `json:"title"`
 	Owner        string `json:"owner"`
+	OwnerAccount string `json:"ownerAccount"`
 	ValueStream  string `json:"valueStream"`
 	ZentaoUrl    string `json:"zentaoUrl"`
 	ZentaoStatus string `json:"zentaoStatus"`
+	StoryCount   int    `json:"storyCount"`
+	TaskDone     int    `json:"taskDone"`
+	TaskTotal    int    `json:"taskTotal"`
+}
+
+// DemandSummary 需求看板页头统计。
+type DemandSummary struct {
+	Clarify  int `json:"clarify"`  // 待澄清
+	Schedule int `json:"schedule"` // 待排期
+	Blocked  int `json:"blocked"`  // 阻塞
+	Overdue  int `json:"overdue"`  // 超期
 }
 
 // ListBizDemandsResp 看板需求树列表响应（业需 + 独立研需）。
 type ListBizDemandsResp struct {
-	Items []BizDemandItem `json:"items"`
+	Items        []BizDemandItem `json:"items"`
+	Summary      DemandSummary   `json:"summary"`
+	MemberCounts map[string]int  `json:"memberCounts,omitempty"`
 }
 
 // ListDemandsReq 需求树查询（按选中负责人账号过滤价值流）。

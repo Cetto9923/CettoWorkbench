@@ -2,7 +2,7 @@
 // 文件: internal/module/kanban/repo.go
 // 模块: 工作看板
 // 类型: action
-// 职责: 看板数据访问（敏捷小组/成员、任务三列查询、任务状态读取、独立研需查询）。
+// 职责: 看板数据访问（敏捷小组/成员、任务三列查询、任务状态读取、独立研需及需求/任务聚合统计）。
 // 依赖: internal/model/zentao
 // =============================================================================
 
@@ -257,4 +257,91 @@ func (r *Repo) FindIndependentStoriesByAccounts(ctx context.Context, accounts []
 		return []IndependentStoryRow{}, nil
 	}
 	return rows, nil
+}
+
+// FindStoryCountsByDemands 批量统计业务需求下的研发需求数（含子业需子树）。
+func (r *Repo) FindStoryCountsByDemands(ctx context.Context, demandIDs []int64) (map[int64]int, error) {
+	if r == nil || r.db == nil || len(demandIDs) == 0 {
+		return map[int64]int{}, nil
+	}
+	type countRow struct {
+		FromDemand int64 `gorm:"column:fromDemand"`
+		Cnt        int   `gorm:"column:cnt"`
+	}
+	var rows []countRow
+	err := r.db.WithContext(ctx).Table("zt_story").
+		Select("fromDemand, COUNT(*) as cnt").
+		Where("fromDemand IN ? AND deleted = ? AND type = ? AND isParent = ? AND status NOT IN ?",
+			demandIDs, "0", "story", "0", []string{"closed", "released"}).
+		Group("fromDemand").
+		Order(""). // 消除 OceanBase / MySQL 5.7 隐式 filesort
+		Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	res := make(map[int64]int, len(rows))
+	for _, row := range rows {
+		res[row.FromDemand] = row.Cnt
+	}
+
+	// 补齐子业需子树研需归集（对齐 schedule/repostagefilter.go bizDemandSubtreeStoryFrom）
+	type parentRow struct {
+		ID     int64 `gorm:"column:id"`
+		Parent int64 `gorm:"column:parent"`
+	}
+	var subDemands []parentRow
+	if subErr := r.db.WithContext(ctx).Table("zt_demand").
+		Select("id, parent").
+		Where("parent IN ? AND deleted = ?", demandIDs, "0").
+		Find(&subDemands).Error; subErr == nil && len(subDemands) > 0 {
+		subIDs := make([]int64, 0, len(subDemands))
+		subToParent := make(map[int64]int64, len(subDemands))
+		for _, sd := range subDemands {
+			subIDs = append(subIDs, sd.ID)
+			subToParent[sd.ID] = sd.Parent
+		}
+		var subStoryRows []countRow
+		if sErr := r.db.WithContext(ctx).Table("zt_story").
+			Select("fromDemand, COUNT(*) as cnt").
+			Where("fromDemand IN ? AND deleted = ? AND type = ? AND isParent = ? AND status NOT IN ?",
+				subIDs, "0", "story", "0", []string{"closed", "released"}).
+			Group("fromDemand").
+			Order("").
+			Find(&subStoryRows).Error; sErr == nil {
+			for _, sr := range subStoryRows {
+				if parentID, ok := subToParent[sr.FromDemand]; ok {
+					res[parentID] += sr.Cnt
+				}
+			}
+		}
+	}
+
+	return res, nil
+}
+
+// FindTaskCountsByStories 批量统计研发需求下的任务数（已完成/总数）。
+func (r *Repo) FindTaskCountsByStories(ctx context.Context, storyIDs []int64) (map[int64][2]int, error) {
+	if r == nil || r.db == nil || len(storyIDs) == 0 {
+		return map[int64][2]int{}, nil
+	}
+	type countRow struct {
+		Story int64 `gorm:"column:story"`
+		Total int   `gorm:"column:total"`
+		Done  int   `gorm:"column:done"`
+	}
+	var rows []countRow
+	err := r.db.WithContext(ctx).Table("zt_task").
+		Select("story, COUNT(*) as total, SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) as done").
+		Where("story IN ? AND deleted = ? AND status NOT IN ?", storyIDs, "0", []string{"closed", "cancel"}).
+		Group("story").
+		Order(""). // 消除 OceanBase / MySQL 5.7 隐式 filesort
+		Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	res := make(map[int64][2]int, len(rows))
+	for _, row := range rows {
+		res[row.Story] = [2]int{row.Done, row.Total}
+	}
+	return res, nil
 }

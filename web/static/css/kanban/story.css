@@ -339,6 +339,26 @@
   box-shadow: none;
 }
 
+.po-board .person .count {
+  font-size: 10px;
+  font-weight: 600;
+  margin-left: 2px;
+  opacity: 0.85;
+}
+
+.po-board .person.active .count {
+  color: #fff;
+  opacity: 1;
+}
+
+.po-board .node-title-line .summary {
+  font-size: 11px;
+  font-weight: normal;
+  color: var(--t2, #8c8c8c);
+  margin-left: 4px;
+  white-space: nowrap;
+}
+
 .po-board .mini-avatar {
   width: 15px;
   height: 15px;

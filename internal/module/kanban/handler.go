@@ -124,8 +124,10 @@ func (h *Handler) Demands(c *gin.Context) {
 		resp.Items = []BizDemandItem{}
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"items":   resp.Items,
+		"success":      true,
+		"items":        resp.Items,
+		"summary":      resp.Summary,
+		"memberCounts": resp.MemberCounts,
 	})
 }
 

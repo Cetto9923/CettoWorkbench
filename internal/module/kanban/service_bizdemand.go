@@ -94,6 +94,7 @@ func (s *Service) ListValueStreamBizDemands(ctx context.Context, actor *model.Us
 					Pri:          pri,
 					Title:        st.Title,
 					Owner:        owner,
+					OwnerAccount: st.AssignedTo,
 					ValueStream:  deriveStoryStage(st.Status, st.Stage, st.DevelopFinish, st.TestFinish, st.VerifyFinish, st.DeliverDate),
 					ZentaoUrl:    zentao.URL("story", "view", "storyID="+numIDStr),
 					ZentaoStatus: st.Status,
@@ -101,7 +102,16 @@ func (s *Service) ListValueStreamBizDemands(ctx context.Context, actor *model.Us
 			}
 		}
 	}
-	return ListBizDemandsResp{Items: items}, nil
+	if err := s.enrichDemandCounts(ctx, items); err != nil {
+		return ListBizDemandsResp{}, err
+	}
+	summary := computeDemandSummary(items)
+	memberCounts := computeMemberCounts(items)
+	return ListBizDemandsResp{
+		Items:        items,
+		Summary:      summary,
+		MemberCounts: memberCounts,
+	}, nil
 }
 
 // deriveStoryStage 严格按照 PRD《价值流阶段数据统计逻辑.xlsx》将研发需求派生到看板 4 列（研需无受理/澄清）：
@@ -143,15 +153,22 @@ func isEffectiveDateBeforeOrEqualToday(t *time.Time) bool {
 	return t.Format("2006-01-02") <= today
 }
 
-func demandItemKey(kind, id string) string {
+func rawWorkItemID(id string) string {
 	raw := strings.TrimSpace(id)
 	raw = strings.TrimPrefix(raw, "#")
-	raw = strings.TrimPrefix(strings.ToUpper(raw), "US")
-	raw = strings.TrimPrefix(strings.ToUpper(raw), "U")
-	raw = strings.TrimPrefix(strings.ToUpper(raw), "REQ")
-	raw = strings.TrimPrefix(strings.ToUpper(raw), "SUB")
-	raw = strings.TrimPrefix(raw, "-")
-	return strings.ToLower(strings.TrimSpace(kind)) + ":" + raw
+	upper := strings.ToUpper(raw)
+	for _, p := range []string{"US", "U", "REQ", "SUB", "RD"} {
+		if strings.HasPrefix(upper, p) {
+			raw = raw[len(p):]
+			upper = upper[len(p):]
+			break
+		}
+	}
+	return strings.TrimLeft(strings.TrimSpace(raw), "-")
+}
+
+func demandItemKey(kind, id string) string {
+	return strings.ToLower(strings.TrimSpace(kind)) + ":" + rawWorkItemID(id)
 }
 
 func (s *Service) fetchDemandsForAccount(ctx context.Context, viewAs *model.User) ([]po.WorkItemDetail, error) {
@@ -197,10 +214,94 @@ func toBizDemandItems(items []po.WorkItemDetail) []BizDemandItem {
 			Pri:          it.Pri,
 			Title:        it.Title,
 			Owner:        it.Owner,
+			OwnerAccount: it.AssignedTo,
 			ValueStream:  it.ValueStream,
 			ZentaoUrl:    it.ZentaoUrl,
 			ZentaoStatus: it.ZentaoStatus,
 		})
 	}
 	return out
+}
+
+func computeDemandSummary(items []BizDemandItem) DemandSummary {
+	var sum DemandSummary
+	for _, it := range items {
+		vs := it.ValueStream
+		if strings.Contains(vs, "受理") || strings.Contains(vs, "澄清") {
+			sum.Clarify++
+		}
+		if strings.Contains(vs, "排期") {
+			sum.Schedule++
+		}
+		// 阻塞：status 为 suspended (挂起) 或 refuse (已驳回)
+		if it.ZentaoStatus == "suspended" || it.ZentaoStatus == "refuse" {
+			sum.Blocked++
+		}
+	}
+	return sum
+}
+
+func computeMemberCounts(items []BizDemandItem) map[string]int {
+	counts := make(map[string]int)
+	for _, it := range items {
+		acc := strings.TrimSpace(it.OwnerAccount)
+		if acc != "" {
+			counts[acc]++
+		}
+	}
+	return counts
+}
+
+func (s *Service) enrichDemandCounts(ctx context.Context, items []BizDemandItem) error {
+	if s.repo == nil || len(items) == 0 {
+		return nil
+	}
+	var demandIDs []int64
+	var storyIDs []int64
+	demandIdxMap := make(map[int64][]int)
+	storyIdxMap := make(map[int64][]int)
+
+	for i, it := range items {
+		numID, err := strconv.ParseInt(rawWorkItemID(it.ID), 10, 64)
+		if err != nil || numID <= 0 {
+			continue
+		}
+		kind := strings.ToLower(strings.TrimSpace(it.Kind))
+		if kind == "demand" || kind == "business" || kind == "sub_demand" {
+			if _, exists := demandIdxMap[numID]; !exists {
+				demandIDs = append(demandIDs, numID)
+			}
+			demandIdxMap[numID] = append(demandIdxMap[numID], i)
+		} else if kind == "story" || kind == "independent_story" {
+			if _, exists := storyIdxMap[numID]; !exists {
+				storyIDs = append(storyIDs, numID)
+			}
+			storyIdxMap[numID] = append(storyIdxMap[numID], i)
+		}
+	}
+
+	if len(demandIDs) > 0 {
+		storyCounts, err := s.repo.FindStoryCountsByDemands(ctx, demandIDs)
+		if err != nil {
+			return err
+		}
+		for did, cnt := range storyCounts {
+			for _, idx := range demandIdxMap[did] {
+				items[idx].StoryCount = cnt
+			}
+		}
+	}
+	if len(storyIDs) > 0 {
+		taskCounts, err := s.repo.FindTaskCountsByStories(ctx, storyIDs)
+		if err != nil {
+			return err
+		}
+		for sid, counts := range taskCounts {
+			for _, idx := range storyIdxMap[sid] {
+				items[idx].TaskDone = counts[0]
+				items[idx].TaskTotal = counts[1]
+			}
+		}
+	}
+	return nil
 }
