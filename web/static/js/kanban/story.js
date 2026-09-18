@@ -15,63 +15,45 @@
   var chipsWrap = root.querySelector("[data-teamgroup-chips]");
   var peopleWrap = root.querySelector("[data-people]");
   var demandHost = document.getElementById("demandGroups");
-  var currentAccount = peopleWrap
-    ? (peopleWrap.getAttribute("data-current-account") || "").trim()
-    : "";
+  var currentAccount = peopleWrap ? (peopleWrap.getAttribute("data-current-account") || "").trim() : "";
   var selectedAccount = "";
   var loadSeq = 0;
 
   function escapeHtml(text) {
     return String(text == null ? "" : text)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
-
   function firstRune(s) {
     var t = String(s || "").trim();
-    if (!t) return "?";
-    return Array.from(t)[0] || "?";
+    return t ? (Array.from(t)[0] || "?") : "?";
   }
-
   function priNum(pri) {
     var m = String(pri || "").match(/(\d+)/);
     return m ? m[1] : "";
   }
-
-  // 价值流标签 → 看板 5 列（1=受理澄清 … 5=交付评价）
   function stageColOf(label) {
-    var stage = String(label || "");
-    if (/受理|澄清/.test(stage)) return 1;
-    if (/排期/.test(stage)) return 2;
-    if (/提测|研发|开发/.test(stage)) return 3;
-    if (/联调|验收|测试/.test(stage)) return 4;
-    if (/交付|评价|发布/.test(stage)) return 5;
+    var s = String(label || "");
+    if (/受理|澄清/.test(s)) return 1;
+    if (/排期/.test(s)) return 2;
+    if (/提测|研发|开发/.test(s)) return 3;
+    if (/联调|验收|测试/.test(s)) return 4;
+    if (/交付|评价|发布/.test(s)) return 5;
     return 1;
   }
 
-  // 业需 stage-mini：对齐原型 workboard-demand.js 文案
   function demandStageMini(label) {
-    var stage = String(label || "");
-    if (/受理|澄清/.test(stage)) return "科技侧需求梳理尚未完成";
-    if (/排期/.test(stage)) return "未绑定版本窗口";
-    if (/联调|验收/.test(stage)) return "测试完成 · 等待业务验收";
+    var s = String(label || "");
+    if (/受理|澄清/.test(s)) return "科技侧需求梳理尚未完成";
+    if (/排期/.test(s)) return "未绑定版本窗口";
+    if (/联调|验收/.test(s)) return "测试完成 · 等待业务验收";
     return "";
   }
-
   function ownerBadgeHtml(owner) {
     var name = String(owner || "").trim();
     if (!name) return "";
-    return (
-      '<span class="owner-badge">' +
-      '<span class="owner-dot">' +
-      escapeHtml(firstRune(name)) +
-      "</span>" +
-      escapeHtml(name) +
-      "</span>"
-    );
+    return '<span class="owner-badge"><span class="owner-dot">' +
+      escapeHtml(firstRune(name)) + "</span>" + escapeHtml(name) + "</span>";
   }
 
   function stageCellsHtml(item) {
@@ -82,40 +64,27 @@
     var mini = "";
 
     if (isBusiness) {
-      if (item && item.storyCount > 0) {
-        mini = item.storyCount + " 研发需求推进中";
-      } else {
-        mini = demandStageMini(stream);
-      }
+      mini = (item && item.storyCount > 0) ? (item.storyCount + " 研发需求推进中") : demandStageMini(stream);
     } else {
       if (item && item.taskTotal > 0) {
-        mini = "任务 " + item.taskDone + "/" + item.taskTotal;
-        if (item.owner) {
-          mini += " · " + item.owner + "负责";
-        }
-      } else if (/研发|提测/.test(stream)) {
-        mini = "尚未创建研发任务";
+        mini = "任务 " + item.taskDone + "/" + item.taskTotal + (item.owner ? " · " + item.owner + "负责" : "");
       } else {
         mini = demandStageMini(stream);
       }
     }
 
-    var miniHtml = mini
-      ? '<div class="stage-mini">' + escapeHtml(mini) + "</div>"
-      : "";
+    var miniHtml = mini ? '<div class="stage-mini">' + escapeHtml(mini) + "</div>" : "";
+    var actionBtn = (!isBusiness && /受理|澄清/.test(stream)) ? "去梳理" : "查看";
     var html = "";
     for (var c = 1; c <= 5; c++) {
       if (c !== col) {
         html += '<div class="stage-cell"></div>';
         continue;
       }
-      html +=
-        '<div class="stage-cell"><div class="stage-card actionable">' +
-        '<div class="stage-top"><span class="stage-name">' +
-        name +
-        '</span><button type="button" class="stage-action" disabled>查看</button></div>' +
-        miniHtml +
-        "</div></div>";
+      html += '<div class="stage-cell"><div class="stage-card actionable">' +
+        '<div class="stage-top"><span class="stage-name">' + name + '</span>' +
+        '<button type="button" class="stage-action" disabled>' + actionBtn + '</button></div>' +
+        miniHtml + "</div></div>";
     }
     return html;
   }
@@ -123,29 +92,17 @@
   function extractNumericId(raw) {
     var s = String(raw == null ? "" : raw).trim().replace(/^#/, "");
     if (!s) return "";
-    var m = s.match(/^(?:US|REQ|SUB)-?(\d+)$/i);
-    if (m) return m[1];
-    m = s.match(/^(?:RD|U)-?(\d+)$/i);
-    if (m) return m[1];
-    m = s.match(/^(\d+)$/);
+    var m = s.match(/^(?:US|REQ|SUB)-?(\d+)$/i) || s.match(/^(?:RD|U)-?(\d+)$/i) || s.match(/^(\d+)$/);
     return m ? m[1] : "";
   }
-
   function isBusinessDemandItem(item) {
     var kind = String((item && item.kind) || "").toLowerCase();
-    if (kind === "demand" || kind === "business" || kind === "sub_demand") {
-      return true;
-    }
-    if (kind === "story" || kind === "independent_story" || kind === "task") {
-      return false;
-    }
+    if (kind === "demand" || kind === "business" || kind === "sub_demand") return true;
+    if (kind === "story" || kind === "independent_story" || kind === "task") return false;
     var raw = String((item && item.id) || "").trim().replace(/^#/, "");
-    if (/^U\d+$/i.test(raw) || /^(?:RD)-?\d+$/i.test(raw)) {
-      return false;
-    }
+    if (/^U\d+$/i.test(raw) || /^(?:RD)-?\d+$/i.test(raw)) return false;
     return /^US/i.test(raw) || /^(?:REQ|SUB)-?/i.test(raw);
   }
-
   function formatChipId(item) {
     var num = extractNumericId(item && item.id);
     if (!num) return "";
@@ -154,21 +111,11 @@
 
   function idChipHtml(item) {
     var isStory = !isBusinessDemandItem(item);
-    var label = isStory ? "研需" : "业需";
+    var label = isStory ? "独立研需" : "业需";
     var cls = isStory ? "wb-type-story" : "wb-type-business";
     var idText = formatChipId(item);
-    var idInner = idText
-      ? '<span class="wb-type-id">' + escapeHtml(idText) + "</span>"
-      : "";
-    return (
-      '<span class="wb-type ' +
-      cls +
-      '"><span class="wb-type-tag">' +
-      label +
-      "</span>" +
-      idInner +
-      "</span>"
-    );
+    var idInner = idText ? '<span class="wb-type-id">' + escapeHtml(idText) + "</span>" : "";
+    return '<span class="wb-type ' + cls + '"><span class="wb-type-tag">' + label + '</span>' + idInner + '</span>';
   }
 
   function renderDemandRow(item) {
@@ -178,13 +125,7 @@
     var pNum = priNum(item.pri);
     var priAttr = pNum ? ' data-priority="' + escapeHtml(pNum) + '"' : "";
     var titleEl = item.zentaoUrl
-      ? '<a class="node-title is-link" href="' +
-        escapeHtml(item.zentaoUrl) +
-        '" target="_blank" rel="noopener noreferrer" title="' +
-        title +
-        '">' +
-        title +
-        "</a>"
+      ? '<a class="node-title is-link" href="' + escapeHtml(item.zentaoUrl) + '" target="_blank" rel="noopener noreferrer" title="' + title + '">' + title + "</a>"
       : '<span class="node-title" title="' + title + '">' + title + "</span>";
 
     var ownerHtml = ownerBadgeHtml(item.owner);
@@ -194,53 +135,33 @@
       var sc = parseInt(item && item.storyCount, 10) || 0;
       var label = sc > 0 ? (sc + " 研发需求") : "研发需求 0";
       countBadge = '<span class="summary" style="font-size:10px;padding:1px 6px;border-radius:4px;background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;white-space:nowrap;margin-left:6px;flex-shrink:0;">' +
-        escapeHtml(label) +
-        "</span>";
+        escapeHtml(label) + "</span>";
     } else {
       var total = parseInt(item && item.taskTotal, 10) || 0;
       var done = parseInt(item && item.taskDone, 10) || 0;
       var taskLabel = total > 0 ? ("任务 " + done + "/" + total) : "任务 0";
       countBadge = '<span class="summary" style="font-size:10px;padding:1px 6px;border-radius:4px;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;white-space:nowrap;margin-left:6px;flex-shrink:0;">' +
-        escapeHtml(taskLabel) +
-        "</span>";
+        escapeHtml(taskLabel) + "</span>";
     }
 
-    var metaHtml = ownerHtml
-      ? '<div class="node-meta">' + ownerHtml + "</div>"
-      : "";
+    var metaHtml = "";
+    if (ownerHtml) {
+      metaHtml = isBiz
+        ? '<div class="node-meta">' + ownerHtml + "</div>"
+        : '<div class="node-meta">' + ownerHtml + '<span class="biz-date" style="color:var(--t3, #8a99ad);margin-left:6px;">· 尚未纳入执行</span></div>';
+    }
 
-    return (
-      '<div class="demand-row is-standalone" data-demand-id="' +
-      id +
-      '" data-kind="' +
-      escapeHtml(item.kind || "") +
-      '">' +
+    return '<div class="demand-row is-standalone" data-demand-id="' + id + '" data-kind="' + escapeHtml(item.kind || "") + '">' +
       '<div class="tree-cell ind0"><div class="node-main">' +
-      '<div class="node-title-line">' +
-      idChipHtml(item) +
-      (pri
-        ? '<span class="wb-priority is-compact"' +
-          priAttr +
-          ">" +
-          pri +
-          "</span>"
-        : "") +
-      titleEl +
-      countBadge +
-      "</div>" +
-      metaHtml +
-      "</div></div>" +
-      stageCellsHtml(item) +
-      "</div>"
-    );
+      '<div class="node-title-line">' + idChipHtml(item) +
+      (pri ? '<span class="wb-priority is-compact"' + priAttr + ">" + pri + "</span>" : "") +
+      titleEl + countBadge + '</div>' + metaHtml + '</div></div>' +
+      stageCellsHtml(item) + '</div>';
   }
 
   function showDemandEmpty(msg) {
     if (!demandHost) return;
-    demandHost.innerHTML =
-      '<div class="demand-empty demand-empty--visible">' +
-      escapeHtml(msg) +
-      "</div>";
+    demandHost.innerHTML = '<div class="demand-empty demand-empty--visible">' + escapeHtml(msg) + "</div>";
   }
 
   function renderDemands(items) {
@@ -268,6 +189,57 @@
     return q ? DEMANDS_URL + "?" + q : DEMANDS_URL;
   }
 
+  function updateStats(items) {
+    var clarify = 0, schedule = 0, blocked = 0, overdue = 0;
+    (items || []).forEach(function (it) {
+      var s = String((it && it.valueStream) || "");
+      if (/受理|澄清/.test(s)) clarify++;
+      if (/排期/.test(s)) schedule++;
+      var st = String((it && it.zentaoStatus) || "");
+      if (st === "refuse" || st === "hang") blocked++;
+    });
+    var btns = root.querySelectorAll(".stats .stat");
+    if (btns.length >= 4) {
+      btns[0].innerHTML = '待澄清 <strong>' + clarify + '</strong>';
+      btns[1].innerHTML = '待排期 <strong>' + schedule + '</strong>';
+      btns[2].innerHTML = '阻塞 <strong>' + blocked + '</strong>';
+      btns[3].innerHTML = '超期 <strong>' + overdue + '</strong>';
+    }
+  }
+
+  function extractAccountFromOwner(owner) {
+    var s = String(owner || "").trim();
+    var m = s.match(/\(([^)]+)\)/);
+    return m ? m[1] : s;
+  }
+
+  function updatePeopleCounts(items) {
+    if (!peopleWrap) return;
+    var countsMap = {};
+    (items || []).forEach(function (it) {
+      var acc = extractAccountFromOwner(it && it.owner);
+      if (acc) countsMap[acc] = (countsMap[acc] || 0) + 1;
+    });
+    var activeGroup = peopleWrap.querySelector(".people-group:not(.is-hidden)");
+    if (!activeGroup) return;
+    activeGroup.querySelectorAll(".person[data-account]").forEach(function (btn) {
+      var acc = (btn.getAttribute("data-account") || "").trim();
+      if (acc === "all" || !acc) return;
+      var c = countsMap[acc] || 0;
+      var countEl = btn.querySelector(".count");
+      if (c > 0) {
+        if (!countEl) {
+          countEl = document.createElement("span");
+          countEl.className = "count";
+          btn.appendChild(countEl);
+        }
+        countEl.textContent = " " + c;
+      } else if (countEl) {
+        countEl.remove();
+      }
+    });
+  }
+
   function loadDemands(account) {
     if (!demandHost) return;
     var acc = String(account || "").trim();
@@ -292,7 +264,12 @@
         if (seq !== loadSeq) return;
         demandHost.classList.remove("is-loading");
         if (!payload || payload.success !== true) throw new Error("payload");
-        renderDemands(payload.items || []);
+        var items = payload.items || [];
+        renderDemands(items);
+        updateStats(items);
+        if (acc === "all") {
+          updatePeopleCounts(items);
+        }
       })
       .catch(function () {
         if (seq !== loadSeq) return;
@@ -319,6 +296,15 @@
       if (match) {
         group.removeAttribute("hidden");
         selectDefaultPerson(group, true);
+        var fetchFn = typeof window.appFetch === "function" ? window.appFetch : fetch;
+        fetchFn(demandsUrl("all"), { method: "GET", credentials: "same-origin" })
+          .then(function (r) { if (r && r.ok) return r.json(); })
+          .then(function (p) {
+            if (p && p.success && p.items) {
+              updatePeopleCounts(p.items);
+            }
+          })
+          .catch(function () {});
       } else {
         group.setAttribute("hidden", "hidden");
         group.querySelectorAll(".person.active").forEach(function (el) {
@@ -336,26 +322,18 @@
 
     var person = null;
     if (currentAccount) {
-      person = group.querySelector(
-        '.person[data-account="' + cssEscape(currentAccount) + '"]'
-      );
+      person = group.querySelector('.person[data-account="' + cssEscape(currentAccount) + '"]');
     }
-    if (!person) {
-      person = group.querySelector('.person[data-account="all"]');
-    }
-    if (!person) {
-      person = group.querySelector(".person[data-account]");
-    }
+    if (!person) person = group.querySelector('.person[data-account="all"]');
+    if (!person) person = group.querySelector(".person[data-account]");
     if (!person) {
       selectedAccount = "";
       showDemandEmpty("暂无成员");
       return;
     }
 
-    if (person.classList.contains("is-overflow")) {
-      if (allowExpand) {
-        expandPeople(group);
-      }
+    if (person.classList.contains("is-overflow") && allowExpand) {
+      expandPeople(group);
     }
     person.classList.add("active");
     setSelectedAccount(person.getAttribute("data-account"), true);
@@ -417,9 +395,7 @@
     var hidden = 0;
     var activeAccount = "";
     var active = group.querySelector(".person.active[data-account]");
-    if (active) {
-      activeAccount = active.getAttribute("data-account") || "";
-    }
+    if (active) activeAccount = active.getAttribute("data-account") || "";
     memberPersons(group).forEach(function (el, idx) {
       if (idx < VISIBLE_COUNT) {
         el.classList.remove("is-overflow");
@@ -435,19 +411,13 @@
     if (more) more.remove();
     var collapse = group.querySelector("[data-people-collapse]");
     if (collapse) collapse.remove();
-    if (hidden > 0) {
-      group.appendChild(makeToggleBtn(false, hidden));
-    }
-    // 收起后若选中人被藏起，保持选中账号并展开回选中；否则重新点亮可见选中人
+    if (hidden > 0) group.appendChild(makeToggleBtn(false, hidden));
+
     if (activeAccount) {
-      var still = group.querySelector(
-        '.person[data-account="' + cssEscape(activeAccount) + '"]'
-      );
+      var still = group.querySelector('.person[data-account="' + cssEscape(activeAccount) + '"]');
       if (still && still.classList.contains("is-overflow")) {
         expandPeople(group);
-        still = group.querySelector(
-          '.person[data-account="' + cssEscape(activeAccount) + '"]'
-        );
+        still = group.querySelector('.person[data-account="' + cssEscape(activeAccount) + '"]');
       }
       if (still) {
         group.querySelectorAll(".person.active").forEach(function (el) {
@@ -519,7 +489,6 @@
       var group = person.closest(".people-group");
       if (!group || group.classList.contains("is-hidden")) return;
 
-      // 不可取消选中：已选中再点仍保持选中，不重复请求
       if (person.classList.contains("active")) return;
       selectPerson(group, person);
     });

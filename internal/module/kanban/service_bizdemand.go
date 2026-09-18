@@ -17,6 +17,7 @@ import (
 
 	"workbench/internal/model"
 	"workbench/internal/module/po"
+	"workbench/internal/pkg/zentao"
 )
 
 const bizDemandPageSize = 100
@@ -62,9 +63,72 @@ func (s *Service) ListValueStreamBizDemands(ctx context.Context, actor *model.Us
 	}
 
 	items := toBizDemandItems(all)
+	if s.repo != nil && len(targets) > 0 {
+		if indStories, indErr := s.repo.FindIndependentStoriesByAccounts(ctx, targets); indErr == nil && len(indStories) > 0 {
+			var displayMap map[string]string
+			if s.userSvc != nil {
+				displayMap, _ = s.userSvc.AccountDisplayMap(ctx, actor)
+			}
+			for _, st := range indStories {
+				key := "story:" + strconv.FormatInt(st.ID, 10)
+				if _, ok := seen[key]; ok {
+					continue
+				}
+				seen[key] = struct{}{}
+				owner := st.AssignedTo
+				if owner == "" {
+					owner = st.OpenedBy
+				}
+				if disp, exists := displayMap[owner]; exists && disp != "" {
+					owner = disp
+				}
+				pri := ""
+				if st.Pri != "" && st.Pri != "0" {
+					pri = "P" + st.Pri
+				}
+				items = append(items, BizDemandItem{
+					Kind:         "story",
+					ID:           strconv.FormatInt(st.ID, 10),
+					Pri:          pri,
+					Title:        st.Title,
+					Owner:        owner,
+					ValueStream:  deriveStoryStage(st.Status, st.Stage),
+					ZentaoUrl:    zentao.URL("story", "view", "storyID="+strconv.FormatInt(st.ID, 10)),
+					ZentaoStatus: st.Status,
+				})
+			}
+		}
+	}
 	s.enrichDemandCounts(ctx, items)
 	return ListBizDemandsResp{Items: items}, nil
 }
+
+func deriveStoryStage(status, stage string) string {
+	switch status {
+	case "draft", "wait", "active":
+		if stage == "" || stage == "wait" {
+			return "受理/澄清"
+		}
+	case "clarified", "planned", "projected", "designed", "designing":
+		return "排期"
+	case "developing", "developed":
+		return "研发/提测"
+	case "testing", "tested", "verified", "reviewing":
+		return "联调/验收"
+	case "delivering", "delivered", "releasing", "released":
+		return "交付/评价"
+	}
+	switch stage {
+	case "developing", "developed":
+		return "研发/提测"
+	case "testing", "tested", "verified":
+		return "联调/验收"
+	case "delivering", "delivered", "released":
+		return "交付/评价"
+	}
+	return "受理/澄清"
+}
+
 
 func (s *Service) fetchDemandsForAccount(ctx context.Context, viewAs *model.User) ([]po.WorkItemDetail, error) {
 	dreq := po.DemandsReq{Status: "all", Page: 1, PageSize: bizDemandPageSize}

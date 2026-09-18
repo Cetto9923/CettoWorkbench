@@ -247,3 +247,39 @@ func (r *Repo) FindTaskStatsByStories(ctx context.Context, storyIDs []int64) (ma
 	}
 	return res, nil
 }
+
+// IndependentStoryRow 独立研需（zt_story）供看板行展示。
+type IndependentStoryRow struct {
+	ID         int64  `gorm:"column:id"`
+	Title      string `gorm:"column:title"`
+	Status     string `gorm:"column:status"`
+	Stage      string `gorm:"column:stage"`
+	Pri        string `gorm:"column:pri"`
+	AssignedTo string `gorm:"column:assignedTo"`
+	OpenedBy   string `gorm:"column:openedBy"`
+	Product    int64  `gorm:"column:product"`
+	SourceType string `gorm:"column:sourceType"`
+}
+
+// FindIndependentStoriesByAccounts 查询指定负责人的独立研发需求（非需求池来源且无关联业务需求）。
+func (r *Repo) FindIndependentStoriesByAccounts(ctx context.Context, accounts []string) ([]IndependentStoryRow, error) {
+	if len(accounts) == 0 || r == nil || r.db == nil {
+		return nil, nil
+	}
+	var rows []IndependentStoryRow
+	excludedSource := []string{"", "demandpool", "demandlib", "feedback"}
+	err := r.db.WithContext(ctx).Table("zt_story").
+		Where("(fromDemand IS NULL OR fromDemand = 0)").
+		Where("deleted = ?", "0").
+		Where("status != ?", "closed").
+		Where("sourceType NOT IN ?", excludedSource).
+		Where("assignedTo IN ?", accounts).
+		Select("id, title, status, stage, pri, assignedTo, openedBy, product, sourceType").
+		Order("id DESC").
+		Limit(100).
+		Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
