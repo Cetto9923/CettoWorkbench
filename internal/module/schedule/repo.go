@@ -392,7 +392,7 @@ func (r *Repo) FindAll(ctx context.Context) ([]model.VersionWindow, int64, error
 
 	var rows []model.VersionWindow
 	if err := query.
-		Order("releaseDate ASC").
+		Order("releaseDate DESC").
 		Find(&rows).Error; err != nil {
 		return nil, 0, err
 	}
