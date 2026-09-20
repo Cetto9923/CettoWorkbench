@@ -231,7 +231,7 @@ type storySchedulingRow struct {
 	Product       uint   `gorm:"column:product"`
 	FromDemand    uint   `gorm:"column:fromDemand"`
 	AssignedTo    string `gorm:"column:assignedTo"`
-	DevelopFinish string `gorm:"column:developFinish"`
+	DevelopFinish string `gorm:"column:estimateDevCompletion"` // 弹窗提测/开发回填自 estimateDevCompletion
 	TestFinish    string `gorm:"column:testFinish"`
 	VerifyFinish  string `gorm:"column:verifyFinish"`
 }
@@ -249,9 +249,9 @@ SELECT
   s.product,
   s.fromDemand,
   s.assignedTo,
-  s.developFinish,
-  s.testFinish,
-  s.verifyFinish
+  DATE_FORMAT(s.estimateDevCompletion, '%Y-%m-%d') AS estimateDevCompletion,
+  DATE_FORMAT(s.testFinish, '%Y-%m-%d') AS testFinish,
+  DATE_FORMAT(s.verifyFinish, '%Y-%m-%d') AS verifyFinish
 FROM zt_story s
 WHERE s.id = ?
   AND s.deleted = '0'

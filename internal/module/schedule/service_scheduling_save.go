@@ -62,14 +62,17 @@ func (s *Service) SaveScheduling(ctx context.Context, actor *model.User, demandI
 		// 与弹窗 #scheduleIntegratedSchedulePlanDate 一致：窗口 releaseDate。
 		estimateLaunch := window.ReleaseDate.Format("2006-01-02")
 
+		savedStory := false
 		for _, storyReq := range req.Stories {
-			storyID, productID, _, err := s.applySchedulingStory(ctx, txRepo, account, demandID, mainSystemID, req.WindowID, estimateLaunch, storyReq)
+			action := strings.TrimSpace(storyReq.Action)
+			storyID, productID, _, err := s.applySchedulingStory(ctx, txRepo, account, demandID, mainSystemID, req.WindowID, estimateLaunch, req.DevelopFinish, req.TestFinish, storyReq)
 			if err != nil {
 				return err
 			}
-			if strings.TrimSpace(storyReq.Action) == "delete" {
+			if action == "delete" {
 				continue
 			}
+			savedStory = true
 			if err := s.applySchedulingTasks(ctx, txRepo, account, storyID, productID, storyReq.Tasks); err != nil {
 				return err
 			}
@@ -77,6 +80,13 @@ func (s *Service) SaveScheduling(ctx context.Context, actor *model.User, demandI
 
 		if err := txRepo.UpdateDemandScheduling(ctx, demandID, buildDemandSchedulingUpdates(req, account, estimateLaunch)); err != nil {
 			return fmt.Errorf("update demand scheduling: %w", err)
+		}
+
+		// 对齐禅道 tostory：保存研发需求后，clarified → developing。
+		if savedStory {
+			if _, err := txRepo.PromoteDemandToDevelopingIfClarified(ctx, demandID, account); err != nil {
+				return fmt.Errorf("promote demand status: %w", err)
+			}
 		}
 
 		return txRepo.SaveDemandLevelWindow(ctx, demandID, uint64(req.WindowID), account)
@@ -152,7 +162,7 @@ func (s *Service) SaveStoryScheduling(ctx context.Context, actor *model.User, st
 
 		// (a) 子节点循环：独立研发需求常态为空，兼容未来子节点；demandID 传 0。
 		for _, storyReq := range req.Stories {
-			storyID2, productID, _, err := s.applySchedulingStory(ctx, txRepo, account, 0, mainSystemID, req.WindowID, estimateLaunch, storyReq)
+			storyID2, productID, _, err := s.applySchedulingStory(ctx, txRepo, account, 0, mainSystemID, req.WindowID, estimateLaunch, req.DevelopFinish, req.TestFinish, storyReq)
 			if err != nil {
 				return err
 			}
@@ -179,14 +189,15 @@ func (s *Service) SaveStoryScheduling(ctx context.Context, actor *model.User, st
 			return err
 		}
 
-		// (c) 日期存 zt_story：验收完成 → verifyFinish；预计上线 → estimateLaunch（同弹窗 schedulePlanDate）。
+		// (c) 日期存 zt_story：提测/开发 → estimateDevCompletion；测试完成 → testFinish；
+		// 验收完成 → verifyFinish；预计上线 → estimateLaunch（同弹窗 schedulePlanDate）。
 		return txRepo.UpdateStory(ctx, storyID, map[string]interface{}{
-			"estimateLaunch": nullableSchedulingDate(estimateLaunch),
-			"developFinish":  nullableSchedulingDate(req.DevelopFinish),
-			"testFinish":     nullableSchedulingDate(req.TestFinish),
-			"verifyFinish":   nullableSchedulingDate(req.AcceptancedDate),
-			"lastEditedBy":   account,
-			"lastEditedDate": time.Now(),
+			"estimateLaunch":        nullableSchedulingDate(estimateLaunch),
+			"estimateDevCompletion": nullableSchedulingDate(req.DevelopFinish),
+			"testFinish":            nullableSchedulingDate(req.TestFinish),
+			"verifyFinish":          nullableSchedulingDate(req.AcceptancedDate),
+			"lastEditedBy":          account,
+			"lastEditedDate":        time.Now(),
 		})
 	})
 }
@@ -199,6 +210,8 @@ func (s *Service) applySchedulingStory(
 	mainSystemID uint,
 	windowID uint,
 	estimateLaunch string,
+	developFinish string,
+	testFinish string,
 	storyReq SaveSchedulingStory,
 ) (storyID uint, productID uint, planID uint, err error) {
 	switch strings.TrimSpace(storyReq.Action) {
@@ -218,6 +231,8 @@ func (s *Service) applySchedulingStory(
 			AssignedTo:              storyReq.AssignedTo,
 			Estimate:                storyReq.Estimate,
 			EstimateLaunch:          estimateLaunch,
+			EstimateDevCompletion:   developFinish,
+			TestFinish:              testFinish,
 			FromDemand:              demandID,
 			IsMainSystemAssociation: isMain,
 			OpenedBy:                account,
@@ -246,12 +261,14 @@ func (s *Service) applySchedulingStory(
 		storyID = storyReq.ID
 		productID = storyReq.ProductID
 		if err := txRepo.UpdateStory(ctx, storyID, map[string]interface{}{
-			"title":          strings.TrimSpace(storyReq.Title),
-			"assignedTo":     strings.TrimSpace(storyReq.AssignedTo),
-			"product":        storyReq.ProductID,
-			"estimateLaunch": nullableSchedulingDate(estimateLaunch),
-			"lastEditedBy":   account,
-			"lastEditedDate": time.Now(),
+			"title":                 strings.TrimSpace(storyReq.Title),
+			"assignedTo":            strings.TrimSpace(storyReq.AssignedTo),
+			"product":               storyReq.ProductID,
+			"estimateLaunch":        nullableSchedulingDate(estimateLaunch),
+			"estimateDevCompletion": nullableSchedulingDate(developFinish),
+			"testFinish":            nullableSchedulingDate(testFinish),
+			"lastEditedBy":          account,
+			"lastEditedDate":        time.Now(),
 		}); err != nil {
 			return 0, 0, 0, fmt.Errorf("update story %d: %w", storyID, err)
 		}
@@ -475,19 +492,4 @@ func (s *Service) resolvePlanForProduct(
 		return 0, fmt.Errorf("create window product for product %d: %w", productID, err)
 	}
 	return planID, nil
-}
-
-func buildDemandSchedulingUpdates(req *SaveSchedulingReq, account string, estimateLaunch string) map[string]interface{} {
-	// acceptancedDate（界面「验收完成」）→ zt_demand.verifyFinish，与独立研发需求 zt_story.verifyFinish 映射一致。
-	return map[string]interface{}{
-		"RD":             strings.TrimSpace(req.RD),
-		"QD":             strings.TrimSpace(req.QD),
-		"accepter":       strings.TrimSpace(req.Accepter),
-		"estimateLaunch": nullableSchedulingDate(estimateLaunch),
-		"developFinish":  nullableSchedulingDate(req.DevelopFinish),
-		"testFinish":     nullableSchedulingDate(req.TestFinish),
-		"verifyFinish":   nullableSchedulingDate(req.AcceptancedDate),
-		"lastEditedBy":   account,
-		"lastEditedDate": time.Now(),
-	}
 }

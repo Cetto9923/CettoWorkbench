@@ -28,6 +28,8 @@ type ZtStoryInsert struct {
 	AssignedTo              string
 	Estimate                float64
 	EstimateLaunch          string // 默认取排期弹窗预计上线（窗口 releaseDate）
+	EstimateDevCompletion   string // 弹窗提测/开发 → zt_story.estimateDevCompletion
+	TestFinish              string // 弹窗测试完成 → zt_story.testFinish
 	FromDemand              uint
 	IsMainSystemAssociation string
 	OpenedBy                string
@@ -88,6 +90,8 @@ type ztStoryCreateRow struct {
 	AssignedTo              string     `gorm:"column:assignedTo"`
 	IsMainSystemAssociation string     `gorm:"column:isMainSystemAssociation"`
 	EstimateLaunch          *time.Time `gorm:"column:estimateLaunch"`
+	EstimateDevCompletion   *time.Time `gorm:"column:estimateDevCompletion"`
+	TestFinish              *time.Time `gorm:"column:testFinish"`
 	VerifyPlan              string     `gorm:"column:verifyPlan"`
 	Deleted                 string     `gorm:"column:deleted"`
 }
@@ -301,6 +305,8 @@ func (r *Repo) CreateStory(ctx context.Context, story *ZtStoryInsert) (uint, err
 		AssignedTo:              strings.TrimSpace(story.AssignedTo),
 		IsMainSystemAssociation: story.IsMainSystemAssociation,
 		EstimateLaunch:          parseSchedulingDatePtr(story.EstimateLaunch),
+		EstimateDevCompletion:   parseSchedulingDatePtr(story.EstimateDevCompletion),
+		TestFinish:              parseSchedulingDatePtr(story.TestFinish),
 		VerifyPlan:              "",
 		Deleted:                 "0",
 	}
@@ -480,32 +486,4 @@ func (r *Repo) SaveDemandLevelWindow(ctx context.Context, demandID uint, windowI
 		CreatedBy: account,
 		UpdatedBy: account,
 	}).Error
-}
-
-func nullableDateValue(raw string) string {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return "0000-00-00"
-	}
-	return raw
-}
-
-func nullableSchedulingDate(raw string) interface{} {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return nil
-	}
-	return raw
-}
-
-func parseSchedulingDatePtr(raw string) *time.Time {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return nil
-	}
-	t, err := time.ParseInLocation("2006-01-02", raw, time.Local)
-	if err != nil {
-		return nil
-	}
-	return &t
 }

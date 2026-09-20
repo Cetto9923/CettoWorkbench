@@ -13,6 +13,7 @@ import (
 	"context"
 	"strconv"
 	"strings"
+	"time"
 
 	"workbench/internal/model"
 )
@@ -332,4 +333,19 @@ func (s *Service) GetProjectExecutions(ctx context.Context, actor *model.User, p
 		})
 	}
 	return out, nil
+}
+
+func buildDemandSchedulingUpdates(req *SaveSchedulingReq, account string, estimateLaunch string) map[string]interface{} {
+	// acceptancedDate（界面「验收完成」）→ zt_demand.verifyFinish，与独立研发需求 zt_story.verifyFinish 映射一致。
+	return map[string]interface{}{
+		"RD":             strings.TrimSpace(req.RD),
+		"QD":             strings.TrimSpace(req.QD),
+		"accepter":       strings.TrimSpace(req.Accepter),
+		"estimateLaunch": nullableSchedulingDate(estimateLaunch),
+		"developFinish":  nullableSchedulingDate(req.DevelopFinish),
+		"testFinish":     nullableSchedulingDate(req.TestFinish),
+		"verifyFinish":   nullableSchedulingDate(req.AcceptancedDate),
+		"lastEditedBy":   account,
+		"lastEditedDate": time.Now(),
+	}
 }
