@@ -10,7 +10,10 @@ package sqllog
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
+	"errors"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -58,29 +61,21 @@ func ReadRequestSummaries(path string) ([]RequestSummary, error) {
 
 	summaries := make([]RequestSummary, 0)
 	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" {
+		line := scanner.Bytes()
+		if len(bytes.TrimSpace(line)) == 0 {
 			continue
 		}
 
-		var entry requestSummaryEntry
-		if err := json.Unmarshal([]byte(line), &entry); err != nil {
+		var entry RequestSummary
+		if err := json.Unmarshal(line, &entry); err != nil {
 			continue
 		}
 		if strings.TrimSpace(entry.Route) == "" {
 			continue
 		}
 
-		summaries = append(summaries, RequestSummary{
-			Time:      entry.Time,
-			Level:     entry.Level,
-			RequestID: entry.RequestID,
-			Method:    entry.Method,
-			Route:     entry.Route,
-			Elapsed:   entry.Elapsed,
-			ElapsedMS: parseElapsedMS(entry.Elapsed),
-			SQLCount:  entry.SQLCount,
-		})
+		entry.ElapsedMS = parseElapsedMS(entry.Elapsed)
+		summaries = append(summaries, entry)
 	}
 	if err := scanner.Err(); err != nil {
 		return nil, err
@@ -88,52 +83,77 @@ func ReadRequestSummaries(path string) ([]RequestSummary, error) {
 	return summaries, nil
 }
 
-// ReadQueryEntries 读取日志中的单条 SQL 查询行；跳过请求汇总行；文件不存在时返回空切片。
-func ReadQueryEntries(path string) ([]QueryEntry, error) {
+// ScanQueryEntries 从 offset 字节处开始扫描单条 SQL 查询行，每解析出一行调用 fn，
+// 返回可安全续读的下一个偏移量。写入侧每条日志分两次 Write（先数据、后换行），
+// 读取时可能落在两次之间，因此只有以 '\n' 结尾的完整行才计入返回值。
+// 文件不存在时原样返回 offset 且不报错。
+func ScanQueryEntries(path string, offset int64, fn func(entry QueryEntry)) (int64, error) {
+	if offset < 0 {
+		offset = 0
+	}
+
 	file, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return []QueryEntry{}, nil
+			return offset, nil
 		}
-		return nil, err
+		return offset, err
 	}
+
 	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	buf := make([]byte, 0, 64*1024)
-	scanner.Buffer(buf, 1024*1024)
-
-	entries := make([]QueryEntry, 0)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" {
-			continue
+	if offset > 0 {
+		//说明有缓存基点
+		if _, err := file.Seek(offset, io.SeekStart); err != nil {
+			//返回新的偏移量
+			return offset, err
 		}
-
-		var entry queryEntry
-		if err := json.Unmarshal([]byte(line), &entry); err != nil {
-			continue
-		}
-		if strings.TrimSpace(entry.SQL) == "" {
-			continue
-		}
-
-		entries = append(entries, QueryEntry{
-			Time:      entry.Time,
-			RequestID: entry.RequestID,
-			Seq:       entry.Seq,
-			SQL:       entry.SQL,
-			Elapsed:   entry.Elapsed,
-			ElapsedMS: parseElapsedMS(entry.Elapsed),
-			Rows:      entry.Rows,
-			File:      entry.File,
-			Error:     entry.Error,
-		})
 	}
-	if err := scanner.Err(); err != nil {
-		return nil, err
+
+	// 缓冲上限对齐改造前的 scanner.Buffer(buf, 1024*1024)：64KB~1MB 的单行仍能整行解析，
+	// 超过 1MB 的行退化为跳过（改造前会让整个请求失败）。
+	reader := bufio.NewReaderSize(file, 1024*1024)
+	pos := offset
+	safe := offset
+
+	for {
+		line, err := reader.ReadSlice('\n')
+		pos += int64(len(line))
+		if err == nil {
+			safe = pos
+			if entry, ok := parseQueryLine(line); ok {
+				fn(entry)
+			}
+			continue
+		}
+		if errors.Is(err, bufio.ErrBufferFull) {
+			// 超长行的中间块：不推进 safe，继续读到该行结尾
+			continue
+		}
+		if err == io.EOF {
+			return safe, nil
+		}
+		return safe, err
 	}
-	return entries, nil
+}
+
+// parseQueryLine 解析一行日志；空白行、请求汇总行、损坏行都返回 ok=false。
+// ReadSlice 返回的切片在下一次读取后失效，本函数只在本次调用内使用它。
+func parseQueryLine(line []byte) (QueryEntry, bool) {
+	trimmed := bytes.TrimSpace(line)
+	if len(trimmed) == 0 {
+		return QueryEntry{}, false
+	}
+
+	var entry QueryEntry
+	if err := json.Unmarshal(trimmed, &entry); err != nil {
+		return QueryEntry{}, false
+	}
+	if strings.TrimSpace(entry.SQL) == "" {
+		return QueryEntry{}, false
+	}
+
+	entry.ElapsedMS = parseElapsedMS(entry.Elapsed)
+	return entry, true
 }
 
 func parseElapsedMS(text string) float64 {
