@@ -65,9 +65,21 @@
       var opts = dropdown.querySelectorAll(".form-multiselect-option");
       for (var i = 0; i < opts.length; i++) {
         var nameEl = opts[i].querySelector(".form-multiselect-name");
+        var cb = opts[i].querySelector(".form-multiselect-checkbox");
         var t = nameEl ? nameEl.textContent.trim().toLowerCase() : "";
-        opts[i].style.display = !kw || t.indexOf(kw) !== -1 ? "" : "none";
+        var v = cb ? String(cb.value || "").toLowerCase() : "";
+        // 同时匹配展示名与 value（工号/账号），与「姓名、工号搜索」占位一致
+        opts[i].style.display =
+          !kw || t.indexOf(kw) !== -1 || v.indexOf(kw) !== -1 ? "" : "none";
       }
+    }
+
+    // 点选项时阻止 input blur：否则 blur 会清空筛选导致列表重排，click 落空选不中
+    var menu = dropdown.querySelector(".form-multiselect-menu");
+    if (menu) {
+      menu.addEventListener("mousedown", function (event) {
+        event.preventDefault();
+      });
     }
 
     function syncMultiselectClearVis() {

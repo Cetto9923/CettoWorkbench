@@ -1,7 +1,7 @@
 /*
  * 文件: web/static/css/po/submitreview.css
  * 模块: PO工作台
- * 职责: 提交评审弹窗布局（多选下拉复用 form-multiselect）
+ * 职责: 提交评审弹窗布局（标签 + 检索同框，复用 ui-autocomplete，默认展示 100 条）
  */
 
 .dd-submit-review-dialog {
@@ -28,6 +28,97 @@
   margin-top: 17px;
 }
 
-.dd-submit-review-dialog .form-multiselect.open > .dropdown-menu.form-multiselect-menu {
-  z-index: 1100;
+.dd-review-picker {
+  border: 1px solid var(--color-border-strong, var(--color-border));
+  border-radius: 7px;
+  background: var(--color-surface);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.dd-review-picker:focus-within {
+  border-color: var(--color-info, #3b82f6);
+  box-shadow: 0 0 0 2px var(--color-primary-ring-soft, rgba(59, 130, 246, 0.2));
+}
+
+/* 标签与检索输入同一行（可换行） */
+.dd-review-picker-display {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  min-height: 38px;
+  cursor: text;
+}
+
+.dd-review-selected {
+  display: contents;
+}
+
+.dd-review-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  padding: 3px 7px;
+  border: 1px solid var(--color-info-border, #bfdbfe);
+  border-radius: 5px;
+  background: var(--color-info-bg, #eff6ff);
+  color: var(--color-info, #2563eb);
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.dd-review-chip-remove {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: currentColor;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0.7;
+}
+
+.dd-review-chip-remove:hover {
+  opacity: 1;
+}
+
+.dd-review-picker-display .ui-autocomplete {
+  flex: 1 1 140px;
+  min-width: 140px;
+  width: auto;
+}
+
+.dd-review-picker-display .ui-autocomplete-input-wrap {
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent;
+  padding: 0;
+}
+
+.dd-review-picker-display .ui-autocomplete-input,
+.dd-review-picker-display input.ui-autocomplete-input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  min-height: 28px;
+  padding: 4px 2px !important;
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: 13px;
+}
+
+.dd-review-picker-display .ui-autocomplete-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.dd-review-picker-display .ui-autocomplete-clear {
+  right: 0;
 }

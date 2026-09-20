@@ -2,6 +2,7 @@
  * 文件: web/static/js/po/submitreview.js
  * 模块: PO工作台
  * 职责: 业需提交评审右侧抽屉；确认后 POST /demands/:id/submit-review 代理禅道。
+ *       业务评审人：initAutocomplete 检索（默认最多展示 100 条）+ 标签多人会签。
  */
 (function ($) {
   "use strict";
@@ -14,12 +15,19 @@
   var drawer = Common.create("poDemandSubmitReview");
   var DRAWER_ID = "poDemandSubmitReviewDrawer";
   var MODAL_ID = "poDemandSubmitReviewModal";
-  var PICKER_ID = "poDemandSubmitReviewPicker";
-  var OPTION_LIST_ID = "poDemandSubmitReviewOptionList";
+  var INPUT_ID = "poDemandSubmitReviewReviewerInput";
+  var HIDDEN_ID = "poDemandSubmitReviewReviewerValue";
+  var SELECTED_ID = "poDemandSubmitReviewSelected";
+  var MAX_SHOW = 100;
+
   var currentItem = null;
   var currentDetail = null;
   var detailCtrl = { abort: null };
   var submitting = false;
+  var selectedAccounts = [];
+  var userOptions = [];
+  var clearingPicker = false;
+  var valueBound = false;
 
   function parseUsers() {
     var raw = $("#" + DRAWER_ID).attr("data-users") || "[]";
@@ -55,12 +63,12 @@
       .filter(Boolean);
   }
 
-  function ensureSelectedOptions(users, selectedAccounts) {
+  function ensureSelectedOptions(users, accounts) {
     var exists = {};
     users.forEach(function (u) {
       exists[u.value] = true;
     });
-    selectedAccounts.forEach(function (account) {
+    accounts.forEach(function (account) {
       if (!exists[account]) {
         users.unshift({ value: account, label: account });
         exists[account] = true;
@@ -69,68 +77,107 @@
     return users;
   }
 
-  function optionHtml(item, checked) {
-    return (
-      '<label class="checkbox-label form-multiselect-option">' +
-      '<input type="checkbox" class="checkbox form-multiselect-checkbox" value="' +
-      Common.escapeHtml(item.value) +
-      '"' +
-      (checked ? " checked" : "") +
-      ">" +
-      '<span class="checkbox-box"></span>' +
-      '<span class="form-multiselect-name">' +
-      Common.escapeHtml(item.label) +
-      "</span>" +
-      "</label>"
-    );
+  function accountLabel(account) {
+    var acc = String(account || "").trim();
+    for (var i = 0; i < userOptions.length; i++) {
+      if (userOptions[i].value === acc) {
+        return userOptions[i].label || acc;
+      }
+    }
+    return acc;
+  }
+
+  function renderChips() {
+    var host = document.getElementById(SELECTED_ID);
+    if (!host) {
+      return;
+    }
+    host.innerHTML = selectedAccounts
+      .map(function (account) {
+        var name = accountLabel(account);
+        return (
+          '<span class="dd-review-chip">' +
+          Common.escapeHtml(name) +
+          '<button type="button" class="dd-review-chip-remove" data-reviewer-account="' +
+          Common.escapeHtml(account) +
+          '" aria-label="移除 ' +
+          Common.escapeHtml(name) +
+          '">×</button></span>'
+        );
+      })
+      .join("");
+  }
+
+  function addReviewer(account) {
+    account = String(account || "").trim();
+    if (!account || selectedAccounts.indexOf(account) >= 0) {
+      return;
+    }
+    selectedAccounts.push(account);
+    renderChips();
+  }
+
+  function removeReviewer(account) {
+    account = String(account || "").trim();
+    selectedAccounts = selectedAccounts.filter(function (item) {
+      return item !== account;
+    });
+    renderChips();
   }
 
   function getSelectedReviewers() {
-    var picker = document.getElementById(PICKER_ID);
-    if (!picker) {
-      return [];
-    }
-    var out = [];
-    picker.querySelectorAll(".form-multiselect-checkbox:checked").forEach(function (cb) {
-      var value = String(cb.value || "").trim();
-      if (value) {
-        out.push(value);
-      }
-    });
-    return out;
+    return selectedAccounts.slice();
   }
 
-  function remountReviewerMultiselect() {
-    var picker = document.getElementById(PICKER_ID);
-    var list = document.getElementById(OPTION_LIST_ID);
-    if (!picker || !list) {
+  function destroyReviewerPicker() {
+    if (typeof window.destroyAutocomplete === "function") {
+      window.destroyAutocomplete(INPUT_ID);
+    }
+  }
+
+  function remountReviewerPicker() {
+    var preselected = demandReviewerAccounts();
+    userOptions = ensureSelectedOptions(buildUserOptions(), preselected);
+    selectedAccounts = [];
+    preselected.forEach(function (account) {
+      addReviewer(account);
+    });
+    renderChips();
+
+    destroyReviewerPicker();
+    if (typeof window.initAutocomplete !== "function") {
       return;
     }
-
-    var selectedAccounts = demandReviewerAccounts();
-    var selectedSet = {};
-    selectedAccounts.forEach(function (account) {
-      selectedSet[account] = true;
+    window.initAutocomplete(INPUT_ID, HIDDEN_ID, userOptions, {
+      placeholder: "输入姓名或工号搜索",
+      maxShow: MAX_SHOW,
+      value: "",
+      label: ""
     });
 
-    var users = ensureSelectedOptions(buildUserOptions(), selectedAccounts);
-    list.innerHTML = users
-      .map(function (item) {
-        return optionHtml(item, !!selectedSet[item.value]);
-      })
-      .join("");
-
-    // 再次打开时克隆节点，丢掉旧监听后再 init（与提测多选一致）
-    if (picker.dataset.formMultiselectInit === "1") {
-      var clone = picker.cloneNode(true);
-      clone.removeAttribute("data-form-multiselect-init");
-      clone.classList.remove("open");
-      picker.parentNode.replaceChild(clone, picker);
-      picker = clone;
-    }
-
-    if (typeof window.initFormComponents === "function") {
-      window.initFormComponents(picker);
+    if (!valueBound) {
+      valueBound = true;
+      var hidden = document.getElementById(HIDDEN_ID);
+      if (hidden) {
+        hidden.addEventListener("change", function () {
+          if (clearingPicker) {
+            return;
+          }
+          var account = String(hidden.value || "").trim();
+          if (!account) {
+            return;
+          }
+          addReviewer(account);
+          if (typeof window.clearAutocomplete === "function") {
+            clearingPicker = true;
+            try {
+              window.clearAutocomplete(INPUT_ID);
+            } finally {
+              clearingPicker = false;
+            }
+          }
+        });
+      }
     }
   }
 
@@ -139,20 +186,16 @@
     if (!modal) {
       return;
     }
-    remountReviewerMultiselect();
+    remountReviewerPicker();
     var ta = document.getElementById("poDemandSubmitReviewComment");
     if (ta) {
       ta.value = "";
     }
     drawer.showModal(MODAL_ID);
-    // 不自动 focus，避免弹窗打开时下拉默认展开
   }
 
   function closeSubmitModal() {
-    var picker = document.getElementById(PICKER_ID);
-    if (picker) {
-      picker.classList.remove("open");
-    }
+    destroyReviewerPicker();
     drawer.hideModal(MODAL_ID);
   }
 
@@ -283,17 +326,29 @@
     $("#poDemandSubmitReviewModalCloseBtn, #poDemandSubmitReviewModalCancelBtn").on("click", closeSubmitModal);
     $("#poDemandSubmitReviewConfirmBtn").on("click", confirmSubmit);
 
+    // 点框内空白聚焦检索；标签与输入同一行
+    $(document).on("click", "#poDemandSubmitReviewPicker .dd-review-picker-display", function (e) {
+      if ($(e.target).closest(".dd-review-chip-remove, .ui-autocomplete-clear").length) {
+        return;
+      }
+      var input = document.getElementById(INPUT_ID);
+      if (input) {
+        input.focus();
+      }
+    });
+
+    $(document).on("click", "#" + SELECTED_ID + " .dd-review-chip-remove", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      removeReviewer($(this).attr("data-reviewer-account"));
+    });
+
     $(document).on("keydown.poDemandSubmitReview", function (e) {
       if (e.key !== "Escape" && e.keyCode !== 27) {
         return;
       }
       var modal = document.getElementById(MODAL_ID);
       if (modal && modal.style.display === "flex") {
-        var picker = document.getElementById(PICKER_ID);
-        if (picker && picker.classList.contains("open")) {
-          picker.classList.remove("open");
-          return;
-        }
         closeSubmitModal();
         return;
       }

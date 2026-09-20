@@ -612,7 +612,7 @@
       dropdown: dropdown,
       items: [],
       filteredItems: [],
-      maxShow: 1000,
+      maxShow: 100,
       labelOnly: false,
       activeIndex: -1,
       open: false,
@@ -656,7 +656,7 @@
     }
 
     state.items = normalizeAutocompleteItems(items);
-    state.maxShow = options.maxShow > 0 ? options.maxShow : 1000;
+    state.maxShow = options.maxShow > 0 ? options.maxShow : 100;
     state.labelOnly = !!options.labelOnly;
     if (options.placeholder) {
       state.input.placeholder = options.placeholder;

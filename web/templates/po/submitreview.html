@@ -135,30 +135,20 @@
     </div>
     <div class="dd-reject-modal-body">
       <label class="dd-reject-label" for="poDemandSubmitReviewReviewerInput"><span class="dd-required">*</span> 业务评审人</label>
-      <div class="dropdown form-multiselect" id="poDemandSubmitReviewPicker" data-role-dropdown data-multiselect-keep-placeholder="true">
-        <div class="form-input-clear-wrap">
-          <div class="form-multiselect-display" data-role-display>
-            <div class="form-multiselect-tags" data-role-tags id="poDemandSubmitReviewSelected"></div>
+      <div class="dd-review-picker" id="poDemandSubmitReviewPicker">
+        <div class="dd-review-picker-display">
+          <div class="dd-review-selected" id="poDemandSubmitReviewSelected" aria-live="polite"></div>
+          <div class="ui-autocomplete">
             <input
               id="poDemandSubmitReviewReviewerInput"
               type="text"
-              class="input form-multiselect-input"
-              data-multiselect-filter
-              placeholder="输入姓名、工号搜索"
-              data-placeholder-empty="输入姓名、工号搜索"
+              class="input"
+              placeholder="输入姓名或工号搜索"
               autocomplete="off"
               aria-autocomplete="list"
               aria-label="检索业务评审人"
             >
-          </div>
-          <button type="button" class="form-dropdown-chevron" aria-label="展开业务评审人" onclick="return toggleDropdown(this);">
-            <i class="bi bi-chevron-down" aria-hidden="true"></i>
-          </button>
-          <button type="button" class="form-dropdown-clear" data-form-multiselect-clear aria-label="清除业务评审人" hidden>×</button>
-        </div>
-        <div class="dropdown-menu form-multiselect-menu">
-          <div class="form-multiselect-scroll">
-            <div class="form-multiselect-list" id="poDemandSubmitReviewOptionList"></div>
+            <input type="hidden" id="poDemandSubmitReviewReviewerValue">
           </div>
         </div>
       </div>
