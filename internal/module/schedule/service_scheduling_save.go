@@ -52,8 +52,18 @@ func (s *Service) SaveScheduling(ctx context.Context, actor *model.User, demandI
 	}
 
 	return s.repo.Transaction(ctx, func(txRepo *Repo) error {
+		window, err := txRepo.FindByID(ctx, uint64(req.WindowID))
+		if err != nil {
+			return err
+		}
+		if window == nil {
+			return errors.New("版本窗口不存在")
+		}
+		// 与弹窗 #scheduleIntegratedSchedulePlanDate 一致：窗口 releaseDate。
+		estimateLaunch := window.ReleaseDate.Format("2006-01-02")
+
 		for _, storyReq := range req.Stories {
-			storyID, productID, _, err := s.applySchedulingStory(ctx, txRepo, account, demandID, mainSystemID, req.WindowID, storyReq)
+			storyID, productID, _, err := s.applySchedulingStory(ctx, txRepo, account, demandID, mainSystemID, req.WindowID, estimateLaunch, storyReq)
 			if err != nil {
 				return err
 			}
@@ -65,7 +75,7 @@ func (s *Service) SaveScheduling(ctx context.Context, actor *model.User, demandI
 			}
 		}
 
-		if err := txRepo.UpdateDemandScheduling(ctx, demandID, buildDemandSchedulingUpdates(req, account)); err != nil {
+		if err := txRepo.UpdateDemandScheduling(ctx, demandID, buildDemandSchedulingUpdates(req, account, estimateLaunch)); err != nil {
 			return fmt.Errorf("update demand scheduling: %w", err)
 		}
 
@@ -131,9 +141,18 @@ func (s *Service) SaveStoryScheduling(ctx context.Context, actor *model.User, st
 	}
 
 	return s.repo.Transaction(ctx, func(txRepo *Repo) error {
+		window, err := txRepo.FindByID(ctx, uint64(req.WindowID))
+		if err != nil {
+			return err
+		}
+		if window == nil {
+			return errors.New("版本窗口不存在")
+		}
+		estimateLaunch := window.ReleaseDate.Format("2006-01-02")
+
 		// (a) 子节点循环：独立研发需求常态为空，兼容未来子节点；demandID 传 0。
 		for _, storyReq := range req.Stories {
-			storyID2, productID, _, err := s.applySchedulingStory(ctx, txRepo, account, 0, mainSystemID, req.WindowID, storyReq)
+			storyID2, productID, _, err := s.applySchedulingStory(ctx, txRepo, account, 0, mainSystemID, req.WindowID, estimateLaunch, storyReq)
 			if err != nil {
 				return err
 			}
@@ -160,8 +179,9 @@ func (s *Service) SaveStoryScheduling(ctx context.Context, actor *model.User, st
 			return err
 		}
 
-		// (c) 日期存 zt_story：req.AcceptancedDate → zt_story.verifyFinish（与 GetStorySchedulingDetail 映射一致）。
+		// (c) 日期存 zt_story：验收完成 → verifyFinish；预计上线 → estimateLaunch（同弹窗 schedulePlanDate）。
 		return txRepo.UpdateStory(ctx, storyID, map[string]interface{}{
+			"estimateLaunch": nullableSchedulingDate(estimateLaunch),
 			"developFinish":  nullableSchedulingDate(req.DevelopFinish),
 			"testFinish":     nullableSchedulingDate(req.TestFinish),
 			"verifyFinish":   nullableSchedulingDate(req.AcceptancedDate),
@@ -178,6 +198,7 @@ func (s *Service) applySchedulingStory(
 	demandID uint,
 	mainSystemID uint,
 	windowID uint,
+	estimateLaunch string,
 	storyReq SaveSchedulingStory,
 ) (storyID uint, productID uint, planID uint, err error) {
 	switch strings.TrimSpace(storyReq.Action) {
@@ -196,6 +217,7 @@ func (s *Service) applySchedulingStory(
 			Title:                   storyReq.Title,
 			AssignedTo:              storyReq.AssignedTo,
 			Estimate:                storyReq.Estimate,
+			EstimateLaunch:          estimateLaunch,
 			FromDemand:              demandID,
 			IsMainSystemAssociation: isMain,
 			OpenedBy:                account,
@@ -227,6 +249,7 @@ func (s *Service) applySchedulingStory(
 			"title":          strings.TrimSpace(storyReq.Title),
 			"assignedTo":     strings.TrimSpace(storyReq.AssignedTo),
 			"product":        storyReq.ProductID,
+			"estimateLaunch": nullableSchedulingDate(estimateLaunch),
 			"lastEditedBy":   account,
 			"lastEditedDate": time.Now(),
 		}); err != nil {
@@ -454,15 +477,17 @@ func (s *Service) resolvePlanForProduct(
 	return planID, nil
 }
 
-func buildDemandSchedulingUpdates(req *SaveSchedulingReq, account string) map[string]interface{} {
+func buildDemandSchedulingUpdates(req *SaveSchedulingReq, account string, estimateLaunch string) map[string]interface{} {
+	// acceptancedDate（界面「验收完成」）→ zt_demand.verifyFinish，与独立研发需求 zt_story.verifyFinish 映射一致。
 	return map[string]interface{}{
-		"RD":              strings.TrimSpace(req.RD),
-		"QD":              strings.TrimSpace(req.QD),
-		"accepter":        strings.TrimSpace(req.Accepter),
-		"developFinish":   nullableSchedulingDate(req.DevelopFinish),
-		"testFinish":      nullableSchedulingDate(req.TestFinish),
-		"acceptancedDate": nullableSchedulingDate(req.AcceptancedDate),
-		"lastEditedBy":    account,
-		"lastEditedDate":  time.Now(),
+		"RD":             strings.TrimSpace(req.RD),
+		"QD":             strings.TrimSpace(req.QD),
+		"accepter":       strings.TrimSpace(req.Accepter),
+		"estimateLaunch": nullableSchedulingDate(estimateLaunch),
+		"developFinish":  nullableSchedulingDate(req.DevelopFinish),
+		"testFinish":     nullableSchedulingDate(req.TestFinish),
+		"verifyFinish":   nullableSchedulingDate(req.AcceptancedDate),
+		"lastEditedBy":   account,
+		"lastEditedDate": time.Now(),
 	}
 }

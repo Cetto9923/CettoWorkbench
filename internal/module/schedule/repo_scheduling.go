@@ -28,7 +28,7 @@ type demandSchedulingRow struct {
 	SchedulePlanDate string `gorm:"column:schedulePlanDate"`
 	DevelopFinish    string `gorm:"column:developFinish"`
 	TestFinish       string `gorm:"column:testFinish"`
-	AcceptancedDate  string `gorm:"column:acceptancedDate"`
+	VerifyFinish     string `gorm:"column:verifyFinish"`
 }
 
 // GetDemandSchedulingDetail 查询排期一体化弹窗所需的业需详情。
@@ -52,11 +52,10 @@ SELECT
   DATE_FORMAT(schedulePlanDate, '%Y-%m-%d') AS schedulePlanDate,
   DATE_FORMAT(developFinish, '%Y-%m-%d') AS developFinish,
   DATE_FORMAT(testFinish, '%Y-%m-%d') AS testFinish,
-  DATE_FORMAT(acceptancedDate, '%Y-%m-%d %H:%i:%s') AS acceptancedDate
+  DATE_FORMAT(verifyFinish, '%Y-%m-%d') AS verifyFinish
 FROM zt_demand
 WHERE id = ?
-  AND deleted = '0'
-LIMIT 1`
+  AND deleted = '0'`
 
 	var row demandSchedulingRow
 	if err := r.db.WithContext(ctx).Raw(query, demandID).Scan(&row).Error; err != nil {
@@ -104,7 +103,7 @@ LIMIT 1`
 		SchedulePlanDate: formatZenTaoDate(row.SchedulePlanDate),
 		DevelopFinish:    formatZenTaoDate(row.DevelopFinish),
 		TestFinish:       formatZenTaoDate(row.TestFinish),
-		AcceptancedDate:  formatZenTaoDate(row.AcceptancedDate),
+		AcceptancedDate:  formatZenTaoDate(row.VerifyFinish), // 界面 acceptancedDate ← zt_demand.verifyFinish
 		WindowID:         windowID,
 		WindowName:       windowName,
 	}, nil

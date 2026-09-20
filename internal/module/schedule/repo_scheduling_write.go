@@ -27,6 +27,7 @@ type ZtStoryInsert struct {
 	Title                   string
 	AssignedTo              string
 	Estimate                float64
+	EstimateLaunch          string // 默认取排期弹窗预计上线（窗口 releaseDate）
 	FromDemand              uint
 	IsMainSystemAssociation string
 	OpenedBy                string
@@ -84,10 +85,11 @@ type ztStoryCreateRow struct {
 	Version                 int       `gorm:"column:version"`
 	OpenedBy                string    `gorm:"column:openedBy"`
 	OpenedDate              time.Time `gorm:"column:openedDate"`
-	AssignedTo              string    `gorm:"column:assignedTo"`
-	IsMainSystemAssociation string    `gorm:"column:isMainSystemAssociation"`
-	VerifyPlan              string    `gorm:"column:verifyPlan"`
-	Deleted                 string    `gorm:"column:deleted"`
+	AssignedTo              string     `gorm:"column:assignedTo"`
+	IsMainSystemAssociation string     `gorm:"column:isMainSystemAssociation"`
+	EstimateLaunch          *time.Time `gorm:"column:estimateLaunch"`
+	VerifyPlan              string     `gorm:"column:verifyPlan"`
+	Deleted                 string     `gorm:"column:deleted"`
 }
 
 func (ztStoryCreateRow) TableName() string { return "zt_story" }
@@ -298,6 +300,7 @@ func (r *Repo) CreateStory(ctx context.Context, story *ZtStoryInsert) (uint, err
 		OpenedDate:              now,
 		AssignedTo:              strings.TrimSpace(story.AssignedTo),
 		IsMainSystemAssociation: story.IsMainSystemAssociation,
+		EstimateLaunch:          parseSchedulingDatePtr(story.EstimateLaunch),
 		VerifyPlan:              "",
 		Deleted:                 "0",
 	}
@@ -493,4 +496,16 @@ func nullableSchedulingDate(raw string) interface{} {
 		return nil
 	}
 	return raw
+}
+
+func parseSchedulingDatePtr(raw string) *time.Time {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil
+	}
+	t, err := time.ParseInLocation("2006-01-02", raw, time.Local)
+	if err != nil {
+		return nil
+	}
+	return &t
 }
