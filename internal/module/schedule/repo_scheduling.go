@@ -196,18 +196,24 @@ func formatZenTaoDate(raw string) string {
 }
 
 type schedulingWindowRow struct {
-	ID          uint   `gorm:"column:id"`
-	Name        string `gorm:"column:name"`
-	ReleaseDate string `gorm:"column:releaseDate"`
+	ID           uint   `gorm:"column:id"`
+	Name         string `gorm:"column:name"`
+	ReleaseDate  string `gorm:"column:releaseDate"`
+	PlanTestDone string `gorm:"column:planTestDone"`
+	TestDone     string `gorm:"column:testDone"`
+	AcceptDone   string `gorm:"column:acceptDone"`
 }
 
-// ListUpcomingSchedulingWindows 查询未过期的版本窗口列表。
+// ListUpcomingSchedulingWindows 查询未过期的版本窗口列表
 func (r *Repo) ListUpcomingSchedulingWindows(ctx context.Context) ([]SchedulingWindowOption, error) {
 	const query = `
 SELECT
   id,
   name,
-  DATE_FORMAT(releaseDate, '%Y-%m-%d') AS releaseDate
+  DATE_FORMAT(releaseDate, '%Y-%m-%d') AS releaseDate,
+  DATE_FORMAT(planTestDone, '%Y-%m-%d') AS planTestDone,
+  DATE_FORMAT(testDone, '%Y-%m-%d') AS testDone,
+  DATE_FORMAT(acceptDone, '%Y-%m-%d') AS acceptDone
 FROM zt_versionwindow
 WHERE deletedAt IS NULL
   AND releaseDate >= CURDATE()
@@ -220,9 +226,12 @@ ORDER BY releaseDate ASC`
 	out := make([]SchedulingWindowOption, 0, len(rows))
 	for _, row := range rows {
 		out = append(out, SchedulingWindowOption{
-			ID:          row.ID,
-			Name:        strings.TrimSpace(row.Name),
-			ReleaseDate: formatZenTaoDate(row.ReleaseDate),
+			ID:           row.ID,
+			Name:         strings.TrimSpace(row.Name),
+			ReleaseDate:  formatZenTaoDate(row.ReleaseDate),
+			PlanTestDone: formatZenTaoDate(row.PlanTestDone),
+			TestDone:     formatZenTaoDate(row.TestDone),
+			AcceptDone:   formatZenTaoDate(row.AcceptDone),
 		})
 	}
 	return out, nil

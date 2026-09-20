@@ -63,17 +63,21 @@ type MatchingPlansResp struct {
 
 // CreateReq 新建版本窗口保存请求。
 type CreateReq struct {
-	ReleaseDate string               `json:"releaseDate"`
-	Name        string               `json:"name"`
-	StartDate   string               `json:"startDate"`
-	TeamgroupID uint                 `json:"teamgroupId"`
-	GroupSize   int                  `json:"groupSize"`
-	Products    []WindowProductInput `json:"products"`
+	ReleaseDate  string               `json:"releaseDate"`
+	Name         string               `json:"name"`
+	StartDate    string               `json:"startDate"`
+	WindowType   string               `json:"windowType"`
+	PlanTestDone string               `json:"planTestDone"`
+	TestDone     string               `json:"testDone"`
+	AcceptDone   string               `json:"acceptDone"`
+	TeamgroupID  uint                 `json:"teamgroupId"`
+	GroupSize    int                  `json:"groupSize"`
+	Products     []WindowProductInput `json:"products"`
 }
 
 // Validate 校验新建版本窗口请求。
 func (r *CreateReq) Validate() []FieldError {
-	return validateWindowSaveFields(
+	errs := validateWindowSaveFields(
 		r.ReleaseDate,
 		r.Name,
 		r.StartDate,
@@ -81,17 +85,23 @@ func (r *CreateReq) Validate() []FieldError {
 		r.GroupSize,
 		r.Products,
 	)
+	errs = append(errs, validateWindowMilestoneFields(r.WindowType, r.PlanTestDone, r.TestDone, r.AcceptDone)...)
+	return errs
 }
 
 // UpdateReq 更新版本窗口请求。
 type UpdateReq struct {
-	ID          uint64               `json:"-"`
-	ReleaseDate string               `json:"releaseDate"`
-	Name        string               `json:"name"`
-	StartDate   string               `json:"startDate"`
-	TeamgroupID uint                 `json:"teamgroupId"`
-	GroupSize   int                  `json:"groupSize"`
-	Products    []WindowProductInput `json:"products"`
+	ID           uint64               `json:"-"`
+	ReleaseDate  string               `json:"releaseDate"`
+	Name         string               `json:"name"`
+	StartDate    string               `json:"startDate"`
+	WindowType   string               `json:"windowType"`
+	PlanTestDone string               `json:"planTestDone"`
+	TestDone     string               `json:"testDone"`
+	AcceptDone   string               `json:"acceptDone"`
+	TeamgroupID  uint                 `json:"teamgroupId"`
+	GroupSize    int                  `json:"groupSize"`
+	Products     []WindowProductInput `json:"products"`
 }
 
 // Validate 校验更新版本窗口请求。
@@ -108,6 +118,7 @@ func (r *UpdateReq) Validate() []FieldError {
 		r.GroupSize,
 		r.Products,
 	)...)
+	errs = append(errs, validateWindowMilestoneFields(r.WindowType, r.PlanTestDone, r.TestDone, r.AcceptDone)...)
 	return errs
 }
 
@@ -172,13 +183,17 @@ type WindowProductDetail struct {
 
 // WindowDetailResp 版本窗口详情响应。
 type WindowDetailResp struct {
-	ID          uint64                `json:"id"`
-	ReleaseDate string                `json:"releaseDate"`
-	Name        string                `json:"name"`
-	StartDate   string                `json:"startDate"`
-	TeamgroupID uint                  `json:"teamgroupId"`
-	GroupSize   uint                  `json:"groupSize"`
-	Products    []WindowProductDetail `json:"products"`
+	ID           uint64                `json:"id"`
+	ReleaseDate  string                `json:"releaseDate"`
+	Name         string                `json:"name"`
+	StartDate    string                `json:"startDate"`
+	WindowType   string                `json:"windowType"`
+	PlanTestDone string                `json:"planTestDone"`
+	TestDone     string                `json:"testDone"`
+	AcceptDone   string                `json:"acceptDone"`
+	TeamgroupID  uint                  `json:"teamgroupId"`
+	GroupSize    uint                  `json:"groupSize"`
+	Products     []WindowProductDetail `json:"products"`
 }
 
 func validateWindowSaveFields(
@@ -221,6 +236,32 @@ func validateWindowSaveFields(
 				Field:   "products",
 				Message: "第 " + strconv.Itoa(i+1) + " 个系统勾选同步创建计划时，计划名称不能为空",
 			})
+		}
+	}
+	return errs
+}
+
+func validateWindowMilestoneFields(windowType, planTestDone, testDone, acceptDone string) []FieldError {
+	var errs []FieldError
+	if wt := strings.TrimSpace(windowType); wt != "" && wt != "regular" && wt != "fast" && wt != "urgent" {
+		errs = append(errs, FieldError{Field: "windowType", Message: "发布类型无效"})
+	}
+	fields := []struct {
+		field string
+		value string
+		label string
+	}{
+		{field: "planTestDone", value: planTestDone, label: "预计提测/开发完成日期"},
+		{field: "testDone", value: testDone, label: "预计测试完成日期"},
+		{field: "acceptDone", value: acceptDone, label: "预计验收完成日期"},
+	}
+	for _, f := range fields {
+		value := strings.TrimSpace(f.value)
+		if value == "" {
+			continue
+		}
+		if _, err := time.Parse("2006-01-02", value); err != nil {
+			errs = append(errs, FieldError{Field: f.field, Message: f.label + "格式无效"})
 		}
 	}
 	return errs
@@ -735,9 +776,12 @@ type DemandSchedulingDetail struct {
 
 // SchedulingWindowOption 排期弹窗版本窗口下拉项。
 type SchedulingWindowOption struct {
-	ID          uint   `json:"id"`
-	Name        string `json:"name"`
-	ReleaseDate string `json:"releaseDate"`
+	ID           uint   `json:"id"`
+	Name         string `json:"name"`
+	ReleaseDate  string `json:"releaseDate"`
+	PlanTestDone string `json:"planTestDone,omitempty"`
+	TestDone     string `json:"testDone,omitempty"`
+	AcceptDone   string `json:"acceptDone,omitempty"`
 }
 
 // SchedulingUserOption 排期弹窗负责人下拉项。

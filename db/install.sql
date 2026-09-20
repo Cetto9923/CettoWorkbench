@@ -155,3 +155,12 @@ UPDATE `zt_menus` SET `parentId` = 4, `sort` = 1 WHERE `path` = '/schedule' AND 
 INSERT INTO `zt_menus` (`parentId`, `title`, `icon`, `path`, `perm`, `type`, `sort`) VALUES
 -- (1,	'我的关注',	'fa-star',	'/follow',	'follow:list',	'C',	5),
 (4,	'工作看板',	'fa-table-cells-large',	'/kanban/story',	'kanban:story',	'C',	1);
+
+-- 2026/09/20
+ALTER TABLE `zt_versionwindow`
+    ADD COLUMN `windowType` VARCHAR(20) NOT NULL DEFAULT 'regular' COMMENT '发布类型：regular/fast/urgent' AFTER `startDate`,
+    ADD COLUMN `planTestDone` DATE DEFAULT NULL COMMENT '预计提测/开发完成日期' AFTER `windowType`,
+    ADD COLUMN `testDone` DATE DEFAULT NULL COMMENT '预计测试完成日期' AFTER `planTestDone`,
+    ADD COLUMN `acceptDone` DATE DEFAULT NULL COMMENT '预计验收完成日期' AFTER `testDone`;
+
+-- 2026/09/20

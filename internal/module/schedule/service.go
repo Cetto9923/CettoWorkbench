@@ -188,63 +188,6 @@ func dateOnly(value time.Time) time.Time {
 	value = value.In(time.Local)
 	return time.Date(value.Year(), value.Month(), value.Day(), 0, 0, 0, 0, value.Location())
 }
-func buildVersionWindowFromCreateReq(req CreateReq) (*model.VersionWindow, error) {
-	releaseDate, err := time.ParseInLocation("2006-01-02", strings.TrimSpace(req.ReleaseDate), time.Local)
-	if err != nil {
-		return nil, fmt.Errorf("invalid release date")
-	}
-
-	window := &model.VersionWindow{
-		Name:        strings.TrimSpace(req.Name),
-		ReleaseDate: releaseDate,
-		TeamgroupID: req.TeamgroupID,
-		Status:      "planning",
-	}
-	if req.GroupSize > 0 {
-		window.GroupSize = uint(req.GroupSize)
-	} else {
-		window.GroupSize = 1
-	}
-
-	startDate := strings.TrimSpace(req.StartDate)
-	if startDate != "" {
-		parsed, err := time.ParseInLocation("2006-01-02", startDate, time.Local)
-		if err != nil {
-			return nil, fmt.Errorf("invalid start date")
-		}
-		window.StartDate = &parsed
-	}
-	return window, nil
-}
-
-func applyUpdateReqToVersionWindow(window *model.VersionWindow, req UpdateReq) error {
-	if window == nil {
-		return fmt.Errorf("version window is nil")
-	}
-	releaseDate, err := time.ParseInLocation("2006-01-02", strings.TrimSpace(req.ReleaseDate), time.Local)
-	if err != nil {
-		return fmt.Errorf("invalid release date")
-	}
-	window.Name = strings.TrimSpace(req.Name)
-	window.ReleaseDate = releaseDate
-	window.TeamgroupID = req.TeamgroupID
-	if req.GroupSize > 0 {
-		window.GroupSize = uint(req.GroupSize)
-	} else {
-		window.GroupSize = 1
-	}
-	startDate := strings.TrimSpace(req.StartDate)
-	if startDate != "" {
-		parsed, err := time.ParseInLocation("2006-01-02", startDate, time.Local)
-		if err != nil {
-			return fmt.Errorf("invalid start date")
-		}
-		window.StartDate = &parsed
-	} else {
-		window.StartDate = nil
-	}
-	return nil
-}
 
 // GetByID 查询版本窗口详情。
 func (s *Service) GetByID(ctx context.Context, actor *model.User, id uint64) (*WindowDetailResp, error) {
@@ -268,13 +211,17 @@ func (s *Service) GetByID(ctx context.Context, actor *model.User, id uint64) (*W
 	}
 
 	detail := &WindowDetailResp{
-		ID:          window.ID,
-		ReleaseDate: window.ReleaseDate.Format("2006-01-02"),
-		Name:        window.Name,
-		StartDate:   startDate,
-		TeamgroupID: window.TeamgroupID,
-		GroupSize:   window.GroupSize,
-		Products:    make([]WindowProductDetail, 0, len(products)),
+		ID:           window.ID,
+		ReleaseDate:  window.ReleaseDate.Format("2006-01-02"),
+		Name:         window.Name,
+		StartDate:    startDate,
+		WindowType:   normalizeWindowReleaseType(window.WindowType),
+		PlanTestDone: formatOptionalWindowDate(window.PlanTestDone),
+		TestDone:     formatOptionalWindowDate(window.TestDone),
+		AcceptDone:   formatOptionalWindowDate(window.AcceptDone),
+		TeamgroupID:  window.TeamgroupID,
+		GroupSize:    window.GroupSize,
+		Products:     make([]WindowProductDetail, 0, len(products)),
 	}
 
 	for _, row := range products {

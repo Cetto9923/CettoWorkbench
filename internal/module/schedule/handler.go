@@ -341,6 +341,10 @@ func (h *Handler) GetWindow(c *gin.Context) {
 		resp["releaseDate"] = detail.ReleaseDate
 		resp["name"] = detail.Name
 		resp["startDate"] = detail.StartDate
+		resp["windowType"] = detail.WindowType
+		resp["planTestDone"] = detail.PlanTestDone
+		resp["testDone"] = detail.TestDone
+		resp["acceptDone"] = detail.AcceptDone
 		resp["teamgroupId"] = detail.TeamgroupID
 		resp["groupSize"] = detail.GroupSize
 		resp["products"] = detail.Products

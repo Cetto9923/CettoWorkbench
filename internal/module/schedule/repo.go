@@ -360,10 +360,21 @@ func (r *Repo) Update(ctx context.Context, window *model.VersionWindow) error {
 	if window == nil || window.ID == 0 {
 		return errors.New("version window is invalid")
 	}
+	// 零值日期（nil）也要写回 NULL，故用 map。
 	return r.db.WithContext(ctx).
 		Model(window).
-		Select("Name", "ReleaseDate", "StartDate", "TeamgroupID", "GroupSize", "UpdatedBy").
-		Updates(window).Error
+		Updates(map[string]any{
+			"name":         window.Name,         // model.VersionWindow.Name
+			"releaseDate":  window.ReleaseDate,  // model.VersionWindow.ReleaseDate
+			"startDate":    window.StartDate,    // model.VersionWindow.StartDate
+			"windowType":   window.WindowType,   // model.VersionWindow.WindowType
+			"planTestDone": window.PlanTestDone, // model.VersionWindow.PlanTestDone
+			"testDone":     window.TestDone,     // model.VersionWindow.TestDone
+			"acceptDone":   window.AcceptDone,   // model.VersionWindow.AcceptDone
+			"teamgroup":    window.TeamgroupID,  // model.VersionWindow.TeamgroupID
+			"groupSize":    window.GroupSize,    // model.VersionWindow.GroupSize
+			"updatedBy":    window.UpdatedBy,    // model.VersionWindow.UpdatedBy
+		}).Error
 }
 
 // DeleteWindowProducts 物理删除窗口关联的产品记录（更新时重建关联，须绕过软删以免唯一索引冲突）。
