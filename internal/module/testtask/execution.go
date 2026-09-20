@@ -2,7 +2,7 @@
 // 文件: internal/module/testtask/execution.go
 // 模块: 提测办理
 // 类型: action
-// 职责: 对齐禅道版本创建执行下拉：stagefilter / leaf / order_asc / noclosed。
+// 职责: 对齐禅道版本创建执行下拉：stagefilter / leaf / order_asc。
 // 依赖: 无
 // =============================================================================
 
@@ -27,8 +27,8 @@ var stagefilterAttrs = map[string]struct{}{
 }
 
 // BuildExecutionOptions 按禅道 create build 的 mode 过滤并装配下拉项。
-// mode 语义：stagefilter | leaf | order_asc | 可选 noclosed（CRExecution==0 时）。
-func BuildExecutionOptions(rows []executionRow, noClosed bool) []ExecutionOption {
+// mode 语义：stagefilter | leaf | order_asc（closed 已在 Repo SQL 排除）。
+func BuildExecutionOptions(rows []executionRow) []ExecutionOption {
 	if len(rows) == 0 {
 		return []ExecutionOption{}
 	}
@@ -44,9 +44,6 @@ func BuildExecutionOptions(rows []executionRow, noClosed bool) []ExecutionOption
 	for _, row := range rows {
 		if _, isParent := parentSet[row.ID]; isParent {
 			continue // leaf
-		}
-		if noClosed && (row.Status == "done" || row.Status == "closed") {
-			continue // noclosed
 		}
 		model := strings.ToLower(row.ProjectModel)
 		if _, isWF := waterfallModels[model]; isWF {

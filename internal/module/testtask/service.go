@@ -87,7 +87,7 @@ func (s *Service) GetContext(ctx context.Context, actor *model.User, demandID ui
 	return BuildContextResp(*row, displayMap, account, name, systems, users), nil
 }
 
-// ListProductExecutions 当前产品下执行列表（对齐禅道版本创建 stagefilter|leaf|order_asc[+noclosed]）。
+// ListProductExecutions 当前产品下执行列表（对齐禅道版本创建 stagefilter|leaf|order_asc；closed 在 Repo SQL 排除）。
 func (s *Service) ListProductExecutions(ctx context.Context, actor *model.User, productID uint) ([]ExecutionOption, error) {
 	_ = actor // 预留：后续可按可见执行权限过滤
 	if productID == 0 {
@@ -101,12 +101,7 @@ func (s *Service) ListProductExecutions(ctx context.Context, actor *model.User, 
 	if err != nil {
 		return nil, err
 	}
-	crExec, err := s.repo.FindCRExecution(ctx)
-	if err != nil {
-		return nil, err
-	}
-	noClosed := crExec == 0
-	return BuildExecutionOptions(rows, noClosed), nil
+	return BuildExecutionOptions(rows), nil
 }
 
 // ListProductBuilds 当前产品下已有版本列表（代理禅道 GET /products/:id/builds）。

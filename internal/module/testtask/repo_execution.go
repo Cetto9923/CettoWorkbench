@@ -2,7 +2,7 @@
 // 文件: internal/module/testtask/repo_execution.go
 // 模块: 提测办理
 // 类型: action
-// 职责: 产品关联项目与执行查询；读取 CRExecution 配置。
+// 职责: 产品关联项目与执行查询。
 // 依赖: internal/model/zentao
 // =============================================================================
 
@@ -10,12 +10,8 @@ package testtask
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"strconv"
 	"strings"
-
-	"gorm.io/gorm"
 
 	zentaomodel "workbench/internal/model/zentao"
 )
@@ -73,7 +69,7 @@ WHERE pp.product = ?
 	return out, nil
 }
 
-// FindExecutionsByProjectIDs 查询若干项目下全部执行/阶段（未删）。
+// FindExecutionsByProjectIDs 查询若干项目下未关闭的执行/阶段（未删，status != closed）。
 func (r *Repo) FindExecutionsByProjectIDs(ctx context.Context, projectIDs []uint) ([]executionRow, error) {
 	if r == nil || r.db == nil || len(projectIDs) == 0 {
 		return []executionRow{}, nil
@@ -93,6 +89,7 @@ SELECT
 FROM zt_project e
 JOIN zt_project proj ON proj.id = e.project AND proj.deleted = '0' AND proj.type = 'project'
 WHERE e.deleted = '0'
+  AND e.status != 'closed'
   AND e.type IN ('sprint', 'stage', 'kanban')
   AND e.project IN ?
 ORDER BY e.project ASC, e.id ASC`
@@ -114,34 +111,4 @@ ORDER BY e.project ASC, e.id ASC`
 		out = append(out, row)
 	}
 	return out, nil
-}
-
-// FindCRExecution 读取「已关闭执行的变更」开关；未配置视为 0（禁止，需 noclosed）。
-func (r *Repo) FindCRExecution(ctx context.Context) (int, error) {
-	if r == nil || r.db == nil {
-		return 0, nil
-	}
-	var cfg zentaomodel.ZtConfig
-	err := r.db.WithContext(ctx).
-		Model(&zentaomodel.ZtConfig{}).
-		Select("value").
-		Where("module = ? AND `key` = ?", "common", "CRExecution").
-		Order("id DESC").
-		Limit(1).
-		Take(&cfg).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, nil
-		}
-		return 0, err
-	}
-	raw := strings.TrimSpace(cfg.Value)
-	if raw == "" {
-		return 0, nil
-	}
-	n, err := strconv.Atoi(raw)
-	if err != nil {
-		return 0, nil
-	}
-	return n, nil
 }
