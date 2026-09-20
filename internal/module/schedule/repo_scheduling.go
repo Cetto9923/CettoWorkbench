@@ -23,7 +23,6 @@ type demandSchedulingRow struct {
 	BRA              string `gorm:"column:BRA"`
 	RD               string `gorm:"column:RD"`
 	QD               string `gorm:"column:QD"`
-	Accepter         string `gorm:"column:accepter"`
 	MainSystem       string `gorm:"column:mainSystem"`
 	SchedulePlanDate string `gorm:"column:schedulePlanDate"`
 	DevelopFinish    string `gorm:"column:developFinish"`
@@ -47,7 +46,6 @@ SELECT
   BRA,
   RD,
   QD,
-  accepter,
   mainSystem,
   DATE_FORMAT(schedulePlanDate, '%Y-%m-%d') AS schedulePlanDate,
   DATE_FORMAT(developFinish, '%Y-%m-%d') AS developFinish,
@@ -80,7 +78,7 @@ WHERE id = ?
 		return nil, err
 	}
 
-	accounts := collectNonEmptyAccounts(row.BRA, row.RD, row.QD, row.Accepter)
+	accounts := collectNonEmptyAccounts(row.BRA, row.RD, row.QD)
 	realnameByAccount, err := r.FindUsersByAccounts(ctx, accounts)
 	if err != nil {
 		return nil, err
@@ -96,8 +94,8 @@ WHERE id = ?
 		RDName:           resolveRealname(row.RD, realnameByAccount),
 		QD:               strings.TrimSpace(row.QD),
 		QDName:           resolveRealname(row.QD, realnameByAccount),
-		Accepter:         strings.TrimSpace(row.Accepter),
-		AccepterName:     resolveRealname(row.Accepter, realnameByAccount),
+		Accepter:         strings.TrimSpace(row.RD),
+		AccepterName:     resolveRealname(row.RD, realnameByAccount),
 		MainSystemID:     mainSystemID,
 		MainSystemName:   mainSystemName,
 		SchedulePlanDate: formatZenTaoDate(row.SchedulePlanDate),
