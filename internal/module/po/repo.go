@@ -406,12 +406,11 @@ func (r *Repo) ListVersionWindows(ctx context.Context) ([]model.VersionWindow, e
 }
 
 // dateUnsetExpr 判断 DATE 列未填（NULL 或零日期）。
-// 不能写 col = '0000-00-00'：MySQL 8 / OceanBase 在 NO_ZERO_DATE 下会把字面量转 DATE，触发 Error 1525。
 func dateUnsetExpr(col string) string {
-	return col + " IS NULL OR CAST(" + col + " AS CHAR) LIKE '0000-00-00%'"
+	return col + " IS NULL OR " + col + " = '0000-00-00'"
 }
 
 // dateSetExpr 判断 DATE 列已填有效日期（非 NULL、非零日期）。
 func dateSetExpr(col string) string {
-	return col + " IS NOT NULL AND CAST(" + col + " AS CHAR) NOT LIKE '0000-00-00%'"
+	return col + " IS NOT NULL AND " + col + " != '0000-00-00'"
 }

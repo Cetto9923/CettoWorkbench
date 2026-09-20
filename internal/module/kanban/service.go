@@ -2,7 +2,7 @@
 // 文件: internal/module/kanban/service.go
 // 模块: 工作看板
 // 类型: readonly
-// 职责: 看板业务编排（所属小组 + 成员排序展示）。
+// 职责: 看板业务编排（所属小组 + 成员排序展示 + 需求/任务数量）。
 // 依赖: internal/model
 //       internal/module/po
 //       internal/module/user
@@ -79,7 +79,39 @@ func (s *Service) ListMyTeamgroups(ctx context.Context, actor *model.User) ([]Te
 			Members: buildOrderedMembers(row.PO, row.Manager, membersByRoot[row.ID], displayMap),
 		})
 	}
+	if err := s.fillMemberWorkload(ctx, out); err != nil {
+		return nil, err
+	}
 	return out, nil
+}
+
+// fillMemberWorkload 为负责人行填充需求看板数量（首页价值流「全部」）与任务看板数量（指派）。
+func (s *Service) fillMemberWorkload(ctx context.Context, groups []TeamgroupItem) error {
+	accounts := make([]string, 0)
+	for acc := range collectMemberAccounts(groups) {
+		accounts = append(accounts, acc)
+	}
+	if len(accounts) == 0 {
+		return nil
+	}
+	tasks, err := s.repo.CountMemberTasks(ctx, accounts)
+	if err != nil {
+		return err
+	}
+	for i := range groups {
+		for j := range groups[i].Members {
+			acc := groups[i].Members[j].Account
+			if s.poSvc != nil {
+				n, demErr := s.poSvc.CountValueStreamAll(ctx, acc)
+				if demErr != nil {
+					return demErr
+				}
+				groups[i].Members[j].DemandCount = n
+			}
+			groups[i].Members[j].TaskCount = tasks[acc]
+		}
+	}
+	return nil
 }
 
 func (s *Service) loadAccountDisplayMap(ctx context.Context, actor *model.User) (map[string]string, error) {

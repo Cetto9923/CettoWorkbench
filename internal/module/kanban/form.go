@@ -47,10 +47,12 @@ func (r *UpdateTaskStatusReq) Validate() []FieldError {
 
 // MemberItem 敏捷小组成员（PO / 需求负责人行）。
 type MemberItem struct {
-	Account string
-	Display string
-	Initial string // 头像首字（rune 安全）
-	Role    string // po | coach | member
+	Account     string
+	Display     string
+	Initial     string // 头像首字（rune 安全）
+	Role        string // po | coach | member
+	DemandCount int64  // 需求看板：与首页价值流「全部」相同（业需+研需去重）
+	TaskCount   int64  // 任务看板：指派给该账号的未开始 / 进行中任务
 }
 
 // TeamgroupItem 当前用户所属敏捷小组（页头 chips + 成员）。

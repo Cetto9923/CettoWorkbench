@@ -339,6 +339,17 @@
   box-shadow: none;
 }
 
+.po-board .count {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  color: var(--t3);
+  font-weight: 600;
+}
+
+.po-board .person.active .count {
+  color: rgba(255, 255, 255, 0.88);
+}
+
 .po-board .mini-avatar {
   width: 15px;
   height: 15px;

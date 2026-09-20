@@ -236,6 +236,18 @@ func (s *Service) countAllStageUniq(ctx context.Context, account string) (demand
 	return int64(len(seenDemand)), int64(len(seenStory)), nil
 }
 
+// CountValueStreamAll 首页价值流「全部」条数（业需 + 研需 kind+id 去重并集）。
+func (s *Service) CountValueStreamAll(ctx context.Context, account string) (int64, error) {
+	if s == nil {
+		return 0, nil
+	}
+	demandSum, storySum, err := s.countAllStageUniq(ctx, account)
+	if err != nil {
+		return 0, err
+	}
+	return demandSum + storySum, nil
+}
+
 // listAllStageDemands 「全部」列表 = 其余各阶段列表按阶段顺序拼接，按 kind+id 去重（保留首次出现）。
 // 返回全量 Items，由 Demands 统一切页。
 func (s *Service) listAllStageDemands(ctx context.Context, actor *model.User, displayMap map[string]string) (*DemandsResp, error) {
