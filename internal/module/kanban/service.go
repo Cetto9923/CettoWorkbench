@@ -79,13 +79,15 @@ func (s *Service) ListMyTeamgroups(ctx context.Context, actor *model.User) ([]Te
 			Members: buildOrderedMembers(row.PO, row.Manager, membersByRoot[row.ID], displayMap),
 		})
 	}
-	if err := s.fillMemberWorkload(ctx, out); err != nil {
-		return nil, err
-	}
+	// 暂不拉取人员后数量（首页价值流「全部」/ 指派任务），恢复时取消注释。
+	// if err := s.fillMemberWorkload(ctx, out); err != nil {
+	// 	return nil, err
+	// }
 	return out, nil
 }
 
 // fillMemberWorkload 为负责人行填充需求看板数量（首页价值流「全部」）与任务看板数量（指派）。
+// 当前未调用，保留以便恢复人员角标。
 func (s *Service) fillMemberWorkload(ctx context.Context, groups []TeamgroupItem) error {
 	accounts := make([]string, 0)
 	for acc := range collectMemberAccounts(groups) {

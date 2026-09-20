@@ -50,9 +50,9 @@
         <!-- <button type="button" class="person" data-account="all" title="全部">全部</button> -->
           {{ if $g.Members }}
             {{ range $j, $m := $g.Members }}
-        <button type="button" class="person role-{{ $m.Role }}{{ if ge $j 5 }} is-overflow{{ end }}" data-account="{{ $m.Account }}" title="{{ $m.Display }}：任务 {{ $m.TaskCount }}"{{ if ge $j 5 }} hidden{{ end }}>
+        <button type="button" class="person role-{{ $m.Role }}{{ if ge $j 5 }} is-overflow{{ end }}" data-account="{{ $m.Account }}" title="{{ $m.Display }}"{{ if ge $j 5 }} hidden{{ end }}>
           <span class="mini-avatar">{{ $m.Initial }}</span>{{ $m.Display }}
-          <span class="count" title="指派任务">{{ $m.TaskCount }}</span>
+          {{/* <span class="count" title="指派任务">{{ $m.TaskCount }}</span> */}}
         </button>
             {{ end }}
             {{ if gt (len $g.Members) 5 }}
