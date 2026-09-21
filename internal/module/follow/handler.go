@@ -16,7 +16,6 @@ import (
 	"go.uber.org/zap"
 
 	"workbench/internal/constants"
-	"workbench/internal/middleware"
 	"workbench/internal/pkg/render"
 )
 
@@ -32,9 +31,8 @@ func NewHandler(logger *zap.Logger) *Handler {
 
 // RegisterRoutes 注册我的关注路由（挂载在已配置登录与操作日志的中间件组上）。
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
-	g := rg.Group("/follow")
-	g.Use(middleware.ActiveNav("/follow"))
-	g.GET("", h.List)
+	// PO 模块已提供 /follow 全链路；此处禁用避免双注册。
+	_ = rg
 }
 
 // List 渲染我的关注静态列表页。
