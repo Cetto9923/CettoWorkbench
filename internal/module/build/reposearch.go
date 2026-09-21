@@ -21,13 +21,13 @@ import (
 
 // RepoFindStoriesBySearchReq bySearch 分页查询入参。
 type RepoFindStoriesBySearchReq struct {
-	ProductID   uint
-	BranchCSV   string
-	ExcludeIDs  []uint
-	UserWhere   string
-	UserArgs    []any
-	Limit       int
-	Offset      int
+	ProductID  uint
+	BranchCSV  string
+	ExcludeIDs []uint
+	UserWhere  string
+	UserArgs   []any
+	Limit      int
+	Offset     int
 }
 
 // FindProductType 读取产品类型（normal 等）。
@@ -176,7 +176,7 @@ func (r *Repo) FindStoriesBySearch(ctx context.Context, req RepoFindStoriesBySea
 		return nil, 0, err
 	}
 	var rows []linkableStoryRow
-	err := base().Select("DISTINCT s.id, s.pri, s.title, s.openedBy, s.assignedTo, s.estimate, s.status, s.stage").
+	err := base().Select(linkableStorySelect).
 		Order("s.id DESC").
 		Limit(req.Limit).
 		Offset(req.Offset).
@@ -237,17 +237,21 @@ func ReplaceMeToken(value, account string) string {
 
 // QuerySuffixFromReq 生成分页附加查询串（以 & 开头，不含 page/pageSize）。
 func QuerySuffixFromReq(req LinkStoryListReq) string {
-	if !req.IsBySearch() {
+	q := url.Values{}
+	if req.IsBySearch() {
+		q.Set("browseType", "bySearch")
+		q.Set("field1", req.Field1)
+		q.Set("operator1", req.Operator1)
+		q.Set("value1", req.Value1)
+		q.Set("andOr", req.AndOr)
+		q.Set("field2", req.Field2)
+		q.Set("operator2", req.Operator2)
+		q.Set("value2", req.Value2)
+	} else if req.DemandID > 0 {
+		q.Set("demandId", strconv.FormatUint(uint64(req.DemandID), 10))
+	}
+	if len(q) == 0 {
 		return ""
 	}
-	q := url.Values{}
-	q.Set("browseType", "bySearch")
-	q.Set("field1", req.Field1)
-	q.Set("operator1", req.Operator1)
-	q.Set("value1", req.Value1)
-	q.Set("andOr", req.AndOr)
-	q.Set("field2", req.Field2)
-	q.Set("operator2", req.Operator2)
-	q.Set("value2", req.Value2)
 	return "&" + q.Encode()
 }

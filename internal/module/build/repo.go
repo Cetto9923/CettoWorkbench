@@ -31,6 +31,12 @@ func NewRepo(db *gorm.DB) *Repo {
 	return &Repo{db: db}
 }
 
+// storyTitleRow 已关联需求的 id/title（Repo 查询行）。
+type storyTitleRow struct {
+	ID    uint   `gorm:"column:id"`
+	Title string `gorm:"column:title"`
+}
+
 // FindBuildByID 按 ID 读取未删除版本。
 func (r *Repo) FindBuildByID(ctx context.Context, id uint) (*ztmodel.ZtBuild, error) {
 	if r == nil || r.db == nil || id == 0 {
@@ -113,6 +119,7 @@ type linkableStoryRow struct {
 	Estimate   float32 `gorm:"column:estimate"`
 	Status     string  `gorm:"column:status"`
 	Stage      string  `gorm:"column:stage"`
+	FromDemand uint    `gorm:"column:fromDemand"`
 }
 
 // RepoFindLinkableStoriesReq 可关联需求分页查询入参。
@@ -121,33 +128,54 @@ type RepoFindLinkableStoriesReq struct {
 	ProductID   uint
 	BranchCSV   string
 	ExcludeIDs  []uint
+	DemandID    uint
 	Limit       int
 	Offset      int
 }
 
-// FindLinkableStories 对齐禅道 getExecutionStories(..., byBranch, ...) 默认列表。
+const linkableStorySelect = "DISTINCT s.id, s.pri, s.title, s.openedBy, s.assignedTo, s.estimate, s.status, s.stage, s.fromDemand"
+
+// FindLinkableStories 对齐禅道 getExecutionStories 默认列表。
+// DemandID>0 时并入当前业务需求拆分出的研发需求（fromDemand），并套用产品、分支与排除条件。
 func (r *Repo) FindLinkableStories(ctx context.Context, req RepoFindLinkableStoriesReq) ([]linkableStoryRow, int64, error) {
-	if r == nil || r.db == nil || req.ExecutionID == 0 {
+	if r == nil || r.db == nil {
 		return nil, 0, nil
 	}
+	includeDemand := req.DemandID > 0 && req.ProductID > 0
+	if req.ExecutionID == 0 && !includeDemand {
+		return nil, 0, nil
+	}
+
 	base := func() *gorm.DB {
-		q := r.db.WithContext(ctx).Table("zt_projectstory AS ps").
-			Joins("INNER JOIN zt_story AS s ON ps.story = s.id").
-			Joins("INNER JOIN zt_product AS p ON s.product = p.id").
-			Where("ps.project = ?", req.ExecutionID).
-			Where("s.deleted = ? AND p.deleted = ?", "0", "0").
-			Where("s.type = ?", "story")
-		if req.ProductID > 0 {
-			q = q.Where("ps.product = ?", req.ProductID)
+		var q *gorm.DB
+		if !includeDemand {
+			q = r.db.WithContext(ctx).Table("zt_projectstory AS ps").
+				Joins("INNER JOIN zt_story AS s ON ps.story = s.id").
+				Joins("INNER JOIN zt_product AS p ON s.product = p.id").
+				Where("ps.project = ?", req.ExecutionID).
+				Where("s.deleted = ? AND p.deleted = ?", "0", "0").
+				Where("s.type = ?", "story")
+			if req.ProductID > 0 {
+				q = q.Where("ps.product = ?", req.ProductID)
+			}
+		} else {
+			q = r.db.WithContext(ctx).Table("zt_story AS s").
+				Joins("INNER JOIN zt_product AS p ON s.product = p.id").
+				Where("s.deleted = ? AND p.deleted = ?", "0", "0").
+				Where("s.type = ?", "story")
+			if req.ExecutionID > 0 {
+				q = q.Where(`(
+					EXISTS (
+						SELECT 1 FROM zt_projectstory ps
+						WHERE ps.story = s.id AND ps.project = ? AND ps.product = ?
+					)
+					OR (s.fromDemand = ? AND s.product = ? AND s.isParent = ?)
+				)`, req.ExecutionID, req.ProductID, req.DemandID, req.ProductID, "0")
+			} else {
+				q = q.Where("s.fromDemand = ? AND s.product = ? AND s.isParent = ?", req.DemandID, req.ProductID, "0")
+			}
 		}
-		branchIDs := branchFilterIDs(req.BranchCSV)
-		if len(branchIDs) > 0 {
-			q = q.Where("s.branch IN ?", branchIDs)
-		}
-		if len(req.ExcludeIDs) > 0 {
-			q = q.Where("s.id NOT IN ?", req.ExcludeIDs)
-		}
-		return q
+		return applyLinkableScope(q, req)
 	}
 
 	var total int64
@@ -156,7 +184,7 @@ func (r *Repo) FindLinkableStories(ctx context.Context, req RepoFindLinkableStor
 	}
 
 	var rows []linkableStoryRow
-	err := base().Select("DISTINCT s.id, s.pri, s.title, s.openedBy, s.assignedTo, s.estimate, s.status, s.stage").
+	err := base().Select(linkableStorySelect).
 		Order("s.id DESC").
 		Limit(req.Limit).
 		Offset(req.Offset).
@@ -165,6 +193,18 @@ func (r *Repo) FindLinkableStories(ctx context.Context, req RepoFindLinkableStor
 		return nil, 0, err
 	}
 	return rows, total, nil
+}
+
+// applyLinkableScope 分支与已排除 ID。分支为空不过滤；有分支时含主干 0。
+func applyLinkableScope(q *gorm.DB, req RepoFindLinkableStoriesReq) *gorm.DB {
+	branchIDs := branchFilterIDs(req.BranchCSV)
+	if len(branchIDs) > 0 {
+		q = q.Where("s.branch IN ?", branchIDs)
+	}
+	if len(req.ExcludeIDs) > 0 {
+		q = q.Where("s.id NOT IN ?", req.ExcludeIDs)
+	}
+	return q
 }
 
 // branchFilterIDs 对齐禅道 byBranch：包含主干 0 + 版本 branch；空串表示不过滤。

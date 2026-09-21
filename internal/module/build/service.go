@@ -77,7 +77,7 @@ func (s *Service) LinkStory(ctx context.Context, actor *model.User, buildID uint
 	baseURL := fmt.Sprintf("/builds/%d/linkstory", buildID)
 	querySuffix := QuerySuffixFromReq(req)
 
-	if !req.IsBySearch() && executionID == 0 {
+	if !req.IsBySearch() && executionID == 0 && (req.DemandID == 0 || build.Product == 0) {
 		pager := pagination.New(0, req.Page, req.PageSize)
 		return &LinkStoryListResp{
 			BuildID:     buildID,
@@ -128,6 +128,7 @@ func (s *Service) LinkStory(ctx context.Context, actor *model.User, buildID uint
 			ProductID:   build.Product,
 			BranchCSV:   build.Branch,
 			ExcludeIDs:  excludeIDs,
+			DemandID:    req.DemandID,
 			Limit:       pager.Limit(),
 			Offset:      pager.Offset(),
 		})
@@ -162,7 +163,7 @@ func (s *Service) LinkStory(ctx context.Context, actor *model.User, buildID uint
 			StatusLabel:    StoryStatusLabel(row.Status),
 			StageLabel:     StoryStageLabel(row.Stage),
 			Stage:          row.Stage,
-			DefaultChecked: ShouldDefaultCheckStage(row.Stage),
+			DefaultChecked: ShouldDefaultCheckStory(row.Stage, row.FromDemand, req.DemandID, req.IsBySearch()),
 		})
 	}
 
@@ -204,14 +205,12 @@ func (s *Service) ListLinkedStories(ctx context.Context, actor *model.User, buil
 	if err != nil {
 		return nil, err
 	}
-	byID := make(map[uint]storyTitleRow, len(rows))
+
+	items := make([]LinkedStoryItem, 0, len(rows))
 	for _, row := range rows {
-		byID[row.ID] = row
+		items = append(items, LinkedStoryItem{ID: row.ID, Title: row.Title, ZentaoUrl: zentao.StoryViewURL(row.ID)})
 	}
-	items := BuildLinkedStoryItems(linkedIDs, byID)
-	for i := range items {
-		items[i].ZentaoUrl = zentao.StoryViewURL(items[i].ID)
-	}
+
 	return items, nil
 }
 
@@ -334,8 +333,8 @@ func (s *Service) buildSearchForm(ctx context.Context, actor *model.User, produc
 // SearchMetaJSON 供前端动态控件使用。
 func SearchMetaJSON(form LinkStorySearchForm) string {
 	type meta struct {
-		Fields  []SearchFieldDef           `json:"fields"`
-		Options map[string][]SearchOption  `json:"options"`
+		Fields  []SearchFieldDef          `json:"fields"`
+		Options map[string][]SearchOption `json:"options"`
 	}
 	b, err := json.Marshal(meta{Fields: form.Fields, Options: form.Options})
 	if err != nil {

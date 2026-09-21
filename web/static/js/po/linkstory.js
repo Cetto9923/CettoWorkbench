@@ -12,6 +12,7 @@
   var targetCtx = {
     unitId: "",
     buildId: "",
+    demandId: "",
     $list: null
   };
 
@@ -383,6 +384,8 @@
       Object.keys(searchParams).forEach(function (k) {
         q.push(encodeURIComponent(k) + "=" + encodeURIComponent(searchParams[k]));
       });
+    } else if (targetCtx.demandId) {
+      q.push("demandId=" + encodeURIComponent(targetCtx.demandId));
     }
     return q.length ? url + "?" + q.join("&") : url;
   }
@@ -439,6 +442,10 @@
     opts = opts || {};
     targetCtx.unitId = String(opts.unitId || "");
     targetCtx.buildId = String(opts.buildId || "").trim();
+    targetCtx.demandId = String(opts.demandId || "").trim();
+    if (!/^\d+$/.test(targetCtx.demandId) || targetCtx.demandId === "0") {
+      targetCtx.demandId = "";
+    }
     targetCtx.$list = opts.$list && opts.$list.length ? opts.$list : null;
 
     if (!/^\d+$/.test(targetCtx.buildId) || targetCtx.buildId === "0") {
