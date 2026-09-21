@@ -241,12 +241,14 @@ func (s *Service) applySchedulingStory(
 
 	case "delete":
 		storyID = storyReq.ID
-		if err := txRepo.CloseStory(ctx, storyID, account); err != nil {
-			return 0, 0, 0, fmt.Errorf("close story %d: %w", storyID, err)
+		if err := txRepo.DeleteStory(ctx, storyID); err != nil {
+			return 0, 0, 0, fmt.Errorf("delete story %d: %w", storyID, err)
 		}
-		if err := txRepo.CreateAction(ctx, "story", storyID, "Closed", account, 0, 0, 0, ""); err != nil {
+
+		if err := txRepo.CreateAction(ctx, "story", storyID, "deleted", account, 0, 0, 0, storyActionCanUndeleted); err != nil {
 			return 0, 0, 0, fmt.Errorf("create story action: %w", err)
 		}
+
 		return storyID, 0, 0, nil
 
 	default:

@@ -68,25 +68,25 @@ type ZtTaskSpec struct {
 }
 
 type ztStoryCreateRow struct {
-	ID                      uint      `gorm:"column:id;primaryKey;autoIncrement"`
-	Product                 uint      `gorm:"column:product"`
-	Branch                  string    `gorm:"column:branch"`
-	Module                  uint      `gorm:"column:module"`
-	Plan                    string    `gorm:"column:plan"`
-	Source                  string    `gorm:"column:source"`
-	SourceNote              string    `gorm:"column:sourceNote"`
-	Title                   string    `gorm:"column:title"`
-	Type                    string    `gorm:"column:type"`
-	Pri                     int       `gorm:"column:pri"`
-	Grade                   int       `gorm:"column:grade"`
-	Estimate                float64   `gorm:"column:estimate"`
-	Status                  string    `gorm:"column:status"`
-	Stage                   string    `gorm:"column:stage"`
-	SourceType              string    `gorm:"column:sourceType"`
-	FromDemand              uint      `gorm:"column:fromDemand"`
-	Version                 int       `gorm:"column:version"`
-	OpenedBy                string    `gorm:"column:openedBy"`
-	OpenedDate              time.Time `gorm:"column:openedDate"`
+	ID                      uint       `gorm:"column:id;primaryKey;autoIncrement"`
+	Product                 uint       `gorm:"column:product"`
+	Branch                  string     `gorm:"column:branch"`
+	Module                  uint       `gorm:"column:module"`
+	Plan                    string     `gorm:"column:plan"`
+	Source                  string     `gorm:"column:source"`
+	SourceNote              string     `gorm:"column:sourceNote"`
+	Title                   string     `gorm:"column:title"`
+	Type                    string     `gorm:"column:type"`
+	Pri                     int        `gorm:"column:pri"`
+	Grade                   int        `gorm:"column:grade"`
+	Estimate                float64    `gorm:"column:estimate"`
+	Status                  string     `gorm:"column:status"`
+	Stage                   string     `gorm:"column:stage"`
+	SourceType              string     `gorm:"column:sourceType"`
+	FromDemand              uint       `gorm:"column:fromDemand"`
+	Version                 int        `gorm:"column:version"`
+	OpenedBy                string     `gorm:"column:openedBy"`
+	OpenedDate              time.Time  `gorm:"column:openedDate"`
 	AssignedTo              string     `gorm:"column:assignedTo"`
 	IsMainSystemAssociation string     `gorm:"column:isMainSystemAssociation"`
 	EstimateLaunch          *time.Time `gorm:"column:estimateLaunch"`
@@ -351,6 +351,20 @@ func (r *Repo) UpdateStory(ctx context.Context, storyID uint, updates map[string
 		Table("zt_story").
 		Where("id = ? AND deleted = '0'", storyID).
 		Updates(updates).Error
+}
+
+// zt_action.extra 的标记位 禅道「已删除」列表列的就是 action='deleted' AND extra=1
+const storyActionCanUndeleted = "1"
+
+// DeleteStory 软删除研发需求（对齐禅道 story/control.php delete：置 deleted='1'）。
+func (r *Repo) DeleteStory(ctx context.Context, storyID uint) error {
+	if storyID == 0 {
+		return errors.New("story id is invalid")
+	}
+	return r.db.WithContext(ctx).
+		Table("zt_story").
+		Where("id = ? AND deleted = '0'", storyID).
+		Update("deleted", "1").Error
 }
 
 // CloseStory 关闭研发需求。
