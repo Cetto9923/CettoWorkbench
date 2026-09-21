@@ -11,7 +11,9 @@ package zentao
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
+	"time"
 
 	"workbench/internal/config"
 )
@@ -145,4 +147,185 @@ func ProductViewURLWithBase(base string, productID uint) string {
 		return ""
 	}
 	return URLWithBase(base, "product", "view", fmt.Sprintf("productID=%d", productID))
+}
+
+// TaskViewURL 任务详情页链接。
+func TaskViewURL(taskID uint) string {
+	if taskID == 0 {
+		return ""
+	}
+	return URL("task", "view", fmt.Sprintf("taskID=%d", taskID))
+}
+
+// BugViewURL Bug 详情页链接。
+func BugViewURL(bugID uint) string {
+	if bugID == 0 {
+		return ""
+	}
+	return URL("bug", "view", fmt.Sprintf("bugID=%d", bugID))
+}
+
+// CharterViewURL 项目章程详情页链接。禅道 charter::view 按项目打开，必须使用 projectID。
+func CharterViewURL(objectID, projectID uint) string {
+	if projectID == 0 {
+		return ""
+	}
+	return URL("charter", "view", fmt.Sprintf("projectID=%d", projectID))
+}
+
+// CharterViewURLWithBase 使用指定站点前缀拼接项目章程详情页链接。
+func CharterViewURLWithBase(base string, objectID, projectID uint) string {
+	if projectID == 0 {
+		return ""
+	}
+	return URLWithBase(base, "charter", "view", fmt.Sprintf("projectID=%d", projectID))
+}
+
+// BuildguidelineViewURL 项目建设指引详情页链接。禅道 buildguideline::view 按项目打开，必须使用 projectID。
+func BuildguidelineViewURL(objectID, projectID uint) string {
+	if projectID == 0 {
+		return ""
+	}
+	return URL("buildguideline", "view", fmt.Sprintf("projectID=%d", projectID))
+}
+
+// BuildguidelineViewURLWithBase 使用指定站点前缀拼接项目建设指引详情页链接。
+func BuildguidelineViewURLWithBase(base string, objectID, projectID uint) string {
+	if projectID == 0 {
+		return ""
+	}
+	return URLWithBase(base, "buildguideline", "view", fmt.Sprintf("projectID=%d", projectID))
+}
+
+// PlanchangeViewURL 计划变更详情页链接。
+func PlanchangeViewURL(objectID uint) string {
+	if objectID == 0 {
+		return ""
+	}
+	return URL("planchange", "view", fmt.Sprintf("ID=%d", objectID))
+}
+
+// PlanchangeViewURLWithBase 使用指定站点前缀拼接计划变更详情页链接。
+func PlanchangeViewURLWithBase(base string, objectID uint) string {
+	if objectID == 0 {
+		return ""
+	}
+	return URLWithBase(base, "planchange", "view", fmt.Sprintf("ID=%d", objectID))
+}
+
+// ReviewViewURL 项目评审详情页链接。
+func ReviewViewURL(objectID uint) string {
+	if objectID == 0 {
+		return ""
+	}
+	return URL("review", "view", fmt.Sprintf("reviewID=%d", objectID))
+}
+
+// ReviewViewURLWithBase 使用指定站点前缀拼接项目评审详情页链接。
+func ReviewViewURLWithBase(base string, objectID uint) string {
+	if objectID == 0 {
+		return ""
+	}
+	return URLWithBase(base, "review", "view", fmt.Sprintf("reviewID=%d", objectID))
+}
+
+// CaseViewURL 用例详情页链接。
+func CaseViewURL(objectID uint) string {
+	if objectID == 0 {
+		return ""
+	}
+	return URL("case", "view", fmt.Sprintf("caseID=%d", objectID))
+}
+
+// CaseViewURLWithBase 使用指定站点前缀拼接用例详情页链接。
+func CaseViewURLWithBase(base string, objectID uint) string {
+	if objectID == 0 {
+		return ""
+	}
+	return URLWithBase(base, "case", "view", fmt.Sprintf("caseID=%d", objectID))
+}
+
+// TesttaskViewURL 测试单详情页链接。
+func TesttaskViewURL(testtaskID uint) string {
+	if testtaskID == 0 {
+		return ""
+	}
+	return URL("testtask", "view", fmt.Sprintf("taskID=%d", testtaskID))
+}
+
+// IssueViewURL 问题详情页链接。
+func IssueViewURL(issueID uint) string {
+	if issueID == 0 {
+		return ""
+	}
+	return URL("issue", "view", fmt.Sprintf("issueID=%d", issueID))
+}
+
+// IssueViewURLWithBase 使用指定站点前缀拼接问题详情页链接。
+func IssueViewURLWithBase(base string, issueID uint) string {
+	if issueID == 0 {
+		return ""
+	}
+	return URLWithBase(base, "issue", "view", fmt.Sprintf("issueID=%d", issueID))
+}
+
+// RiskViewURL 风险详情页链接。
+func RiskViewURL(riskID uint) string {
+	if riskID == 0 {
+		return ""
+	}
+	return URL("risk", "view", fmt.Sprintf("riskID=%d", riskID))
+}
+
+// RiskViewURLWithBase 使用指定站点前缀拼接风险详情页链接。
+func RiskViewURLWithBase(base string, riskID uint) string {
+	if riskID == 0 {
+		return ""
+	}
+	return URLWithBase(base, "risk", "view", fmt.Sprintf("riskID=%d", riskID))
+}
+
+// WeeklyIndexURL 项目周报主界面链接。
+func WeeklyIndexURL(projectID uint, weekStart string) string {
+	return WeeklyIndexURLWithBase(strings.TrimRight(zentaoCfg.URL, "/"), projectID, weekStart)
+}
+
+// WeeklyIndexURLWithBase 使用指定站点前缀拼接周报链接。
+func WeeklyIndexURLWithBase(base string, projectID uint, weekStart string) string {
+	base = strings.TrimRight(base, "/")
+	if base == "" {
+		base = strings.TrimRight(zentaoCfg.URL, "/")
+	}
+	if base == "" || projectID == 0 {
+		return ""
+	}
+	dateKey := compactDateYYYYMMDD(weekStart)
+	q := url.Values{}
+	q.Set("m", "weekly")
+	q.Set("f", "index")
+	q.Set("projectID", strconv.FormatUint(uint64(projectID), 10))
+	q.Set("date", dateKey)
+	q.Set("from", "projectweekly")
+	return base + indexPath + "?" + q.Encode()
+}
+
+func compactDateYYYYMMDD(raw string) string {
+	s := strings.TrimSpace(raw)
+	if s == "" {
+		return ""
+	}
+	if len(s) == 8 {
+		if _, err := time.ParseInLocation("20060102", s, time.Local); err == nil {
+			return s
+		}
+	}
+	for _, layout := range []string{"2006-01-02", time.RFC3339, "2006/01/02"} {
+		if t, err := time.ParseInLocation(layout, s, time.Local); err == nil {
+			return t.Format("20060102")
+		}
+	}
+	if t, err := time.ParseInLocation("2006-01-02 15:04:05", s, time.Local); err == nil {
+		return t.Format("20060102")
+	}
+	return ""
 }

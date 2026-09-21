@@ -53,6 +53,11 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.POST("/demands/:id/deliver", middleware.RequirePerm(perm.PoDemandDeliver), h.DeliverDemand)
 	// 验收业务校验由禅道 /demand/:id/acceptance 完成，工作台仅代理转发。
 	g.POST("/demands/:id/acceptance", middleware.RequirePerm(perm.PoDemandAcceptance), h.AcceptDemand)
+
+	g.GET("/done", middleware.RequirePerm(perm.PoDoneList), h.Done)
+	g.GET("/done/items", middleware.RequirePerm(perm.PoDoneList), h.DoneItems)
+	g.GET("/done/meta", middleware.RequirePerm(perm.PoDoneList), h.DoneMeta)
+	g.GET("/done/detail/:actionId", middleware.RequirePerm(perm.PoDoneList), h.DoneDetail)
 }
 
 // Home 渲染 PO 工作台首页。

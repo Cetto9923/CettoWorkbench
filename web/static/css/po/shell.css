@@ -1,0 +1,509 @@
+/* PO 工作台共享外壳：几何取自 po-v2 运行页实测。 */
+body.po-workbench-shell {
+  --sidebar-width: 224px;
+  --topbar-height: 56px;
+  --topbar-stack-height: 56px;
+  background: var(--color-page-bg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  color: var(--color-text-primary);
+
+  /* PO UI architecture: legacy page aliases resolve to semantic theme tokens here. */
+  --bg: var(--color-page-bg);
+  --white: var(--color-surface);
+  --hover: var(--color-surface-hover);
+  --active: var(--color-surface-muted);
+  --border: var(--color-border);
+  --border-lt: var(--color-border-soft);
+  --t1: var(--color-text-deep);
+  --t2: var(--color-text-secondary);
+  --t3: var(--color-text-disabled);
+  --blue: var(--color-info);
+  --blue-bg: var(--color-info-bg);
+  --blue-bd: var(--color-info-border);
+  --red: var(--color-danger-fill);
+  --red-bg: var(--color-danger-bg);
+  --red-bd: var(--color-danger-border);
+  --orange: var(--color-warning);
+  --orange-bg: var(--color-warning-bg);
+  --orange-bd: var(--color-warning-border);
+  --green: var(--color-success-accent);
+  --green-bg: var(--color-success-bg);
+  --green-bd: var(--color-success-border);
+  --gray: var(--color-text-secondary);
+  --gray-bg: var(--color-surface-muted);
+  --purple: var(--color-primary-active-deep);
+  --purple-bg: var(--color-primary-light);
+  --purple-bd: var(--color-primary-border);
+  --r: 6px;
+
+  --po-scrollbar-size: 8px;
+  --po-scrollbar-track: transparent;
+  --po-scrollbar-thumb: var(--color-border-strong);
+  --po-scrollbar-thumb-hover: var(--color-text-disabled);
+  --po-scrollbar-corner: var(--color-surface);
+
+  /* 页面节奏：所有 PO 列表页共用同一套内外边距契约（滚动容器按这些值计算高度） */
+  --po-shell-topbar-height: 56px;
+  --po-shell-pad-top: 12px;
+  --po-shell-pad-x: 20px;
+  --po-shell-pad-bottom: 46px;
+}
+
+body.po-workbench-shell .topbar {
+  left: var(--sidebar-width);
+  min-height: var(--po-shell-topbar-height);
+  height: var(--po-shell-topbar-height);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+}
+
+body.po-workbench-shell .topbar-row {
+  height: 56px;
+  min-height: 56px;
+  padding: 0 20px;
+  gap: 12px;
+  align-items: center;
+}
+
+/* 全局统一 Page Header 标识区（单行紧凑布局：标题 │ 描述） */
+.topbar-identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 600px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.topbar-page-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.topbar-divider {
+  font-size: 14px;
+  color: var(--color-border-strong);
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.topbar-page-desc {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 992px) {
+  .topbar-page-desc,
+  .topbar-divider {
+    display: none;
+  }
+}
+
+/* 首页角色身份标签（轻量信息展示，非交互Tab） */
+.po-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 13px;
+  background: var(--color-info-bg);
+  border: 1px solid var(--color-info-border);
+  color: var(--color-info);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+.po-role-badge i {
+  font-size: 11px;
+}
+
+.po-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.po-global-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 260px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface-muted);
+  color: var(--color-text-disabled);
+}
+
+.po-global-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--color-text-body);
+  font: 12px/1 var(--font-sans);
+}
+
+.po-header-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px; height: 32px;
+  border: 0; border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  text-decoration: none;
+}
+.po-header-icon:hover { color: var(--color-text-body); background: var(--color-surface-hover, rgba(0, 0, 0, 0.04)); }
+.po-header-icon.active { color: var(--color-info); background: var(--color-info-bg, rgba(24, 144, 255, 0.08)); }
+
+.po-user-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: 13px/1 var(--font-sans);
+  cursor: pointer;
+}
+
+.po-user-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-info-fill);
+  color: var(--color-text-on-accent);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+body.po-workbench-shell .layout {
+  margin-top: var(--po-shell-topbar-height);
+  min-height: calc(100vh - var(--po-shell-topbar-height));
+}
+
+body.po-workbench-shell .sidebar {
+  top: 0; bottom: 0; width: var(--sidebar-width); border-right-color: var(--color-border); z-index: 120;
+}
+
+body.po-workbench-shell .sidebar.po-dual-sidebar {
+  display: flex; flex-direction: row; padding: 0; overflow: hidden; background: var(--color-surface);
+}
+
+body.po-workbench-shell .po-rail {
+  display: flex; flex: 0 0 56px; flex-direction: column; align-items: center; width: 56px;
+  padding: 10px 0; gap: 8px; border-right: 1px solid var(--color-border); background: var(--color-surface-muted);
+}
+
+body.po-workbench-shell .po-rail-header,
+body.po-workbench-shell .po-rail-footer,
+body.po-workbench-shell .po-rail-nav { display: flex; align-items: center; width: 100%; }
+
+body.po-workbench-shell .po-rail-header,
+body.po-workbench-shell .po-rail-footer { justify-content: center; }
+
+body.po-workbench-shell .po-rail-nav { flex: 1; flex-direction: column; gap: 8px; }
+
+body.po-workbench-shell .po-rail .po-brand-logo {
+  width: 32px; height: 32px; border-radius: 8px; font-size: 14px; text-decoration: none; box-shadow: var(--shadow-sm);
+}
+
+body.po-workbench-shell .po-rail-btn {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 44px; min-height: 40px; padding: 4px 0; gap: 2px; border: 0; border-radius: 9px;
+  background: transparent; color: var(--color-text-secondary); font: inherit; line-height: 1; cursor: pointer; appearance: none;
+}
+
+body.po-workbench-shell .po-rail-btn i { font-size: 15px; }
+body.po-workbench-shell .po-rail-btn span:not(.po-rail-dot) { font-size: 11px; font-weight: 600; }
+body.po-workbench-shell .po-rail-btn:hover { background: var(--color-surface); color: var(--color-text-primary); }
+body.po-workbench-shell .po-rail-btn.active { background: var(--color-surface); color: var(--color-info); box-shadow: var(--shadow-sm); }
+body.po-workbench-shell .po-rail-dot {
+  position: absolute; top: 6px; right: 7px; width: 7px; height: 7px; border: 1px solid var(--color-surface-muted);
+  border-radius: 50%; background: var(--color-danger-fill);
+}
+
+body.po-workbench-shell .po-subnav { flex: 1; min-width: 0; padding: 12px 10px; overflow-y: auto; }
+body.po-workbench-shell .po-subnav-panel { display: none; }
+body.po-workbench-shell .po-subnav-panel.is-active { display: block; }
+body.po-workbench-shell .po-subnav-header { display: flex; align-items: center; height: 28px; margin-bottom: 8px; }
+body.po-workbench-shell .po-subnav-title { color: var(--color-text-primary); font-size: 14px; font-weight: 700; }
+body.po-workbench-shell .po-subnav-body { display: flex; flex-direction: column; gap: 6px; }
+body.po-workbench-shell .po-subnav .nav-icon { display: none; }
+body.po-workbench-shell .po-subnav .nav-item { gap: 6px; padding: 6px 10px; }
+body.po-workbench-shell .po-subnav .nav-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body.po-workbench-shell .po-subnav .nav-badge { margin-left: auto; flex-shrink: 0; }
+
+.po-brand-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: var(--color-info-fill);
+  color: var(--color-text-on-accent);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.po-sidebar-collapse {
+  width: 24px; height: 24px; margin-left: auto; border: 0; border-radius: 6px; background: transparent;
+  color: var(--color-text-disabled); cursor: pointer; opacity: 0; transition: opacity .15s ease;
+}
+
+body.po-workbench-shell .sidebar:hover .po-sidebar-collapse,
+.po-sidebar-collapse:focus-visible { opacity: 1; }
+
+body.po-workbench-shell .sidebar .nav-item {
+  display: flex; align-items: center; gap: 8px; width: 100%; min-height: 32px; padding: 6px 12px;
+  border: 0; border-radius: 6px; background: transparent; color: var(--color-text-secondary);
+  font-size: 13px; font-weight: 500; font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+body.po-workbench-shell .sidebar button.nav-item {
+  appearance: none; cursor: default; text-align: left;
+}
+
+body.po-workbench-shell .sidebar .nav-item:hover {
+  background: var(--color-surface-muted); color: var(--color-text-primary);
+}
+
+body.po-workbench-shell .sidebar .nav-item.active {
+  background: var(--color-info-bg); color: var(--color-info); font-weight: 600;
+}
+
+body.po-workbench-shell .sidebar .nav-icon {
+  flex: 0 0 18px; text-align: center;
+}
+
+body.po-workbench-shell .sidebar .nav-badge {
+  color: var(--color-info); background: var(--color-info-bg); font-size: 11px; font-weight: 600;
+  padding: 1px 6px; border-radius: 9999px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* 侧栏角标：未读通知强调红色，保持告警视觉 */
+body.po-workbench-shell .sidebar .nav-badge--danger {
+  color: var(--color-text-on-accent);
+  background: var(--color-danger-fill);
+}
+
+/* 侧栏角标：规划中/迁移中微徽标（低调灰度） */
+body.po-workbench-shell .sidebar .nav-badge--muted {
+  color: var(--color-text-secondary);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  font-weight: 400;
+  font-size: 10px;
+  padding: 0 4px;
+}
+
+/* 角标为 0 时不显示；hidden class 作为兜底 */
+body.po-workbench-shell .sidebar .nav-badge[hidden],
+body.po-workbench-shell .sidebar .nav-badge:empty { display: none; }
+
+body.po-workbench-shell .main {
+  height: calc(100vh - var(--po-shell-topbar-height));
+  min-height: calc(100vh - var(--po-shell-topbar-height));
+  padding: var(--po-shell-pad-top) var(--po-shell-pad-x) var(--po-shell-pad-bottom);
+  overflow-y: auto;
+  background: var(--color-page-bg);
+}
+
+body.po-workbench-shell .workspace-header {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  box-sizing: border-box;
+}
+body.po-workbench-shell .workspace-header:has(.workspace-header-left) {
+  justify-content: space-between;
+}
+body.po-workbench-shell .workspace-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+body.po-workbench-shell .workspace-header-left h2 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+body.po-workbench-shell .workspace-header-left p {
+  margin: 0;
+  padding-left: 12px;
+  border-left: 1px solid var(--color-border);
+  font-size: 12px;
+  line-height: 14px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 双轨主栏状态解耦：当前路由实心指示条 + 展开抽屉浅底 */
+body.po-workbench-shell .po-rail-btn.is-active-route {
+  color: var(--color-info);
+}
+body.po-workbench-shell .po-rail-btn .po-rail-route-indicator {
+  display: none;
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  border-radius: 0 2px 2px 0;
+  background: var(--color-info-fill);
+}
+body.po-workbench-shell .po-rail-btn.is-active-route .po-rail-route-indicator {
+  display: block;
+}
+body.po-workbench-shell .po-rail-btn.is-drawer-open {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* 顶栏通知与中性徽标 */
+.po-header-badge {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  padding: 1px 4px;
+  border-radius: 9999px;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.nav-badge--neutral {
+  color: var(--color-text-secondary);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+}
+body.po-workbench-shell.has-bottom-tabs { --po-shell-pad-bottom: 56px; }
+body.sidebar-collapsed.po-workbench-shell { --sidebar-width-collapsed: 56px; }
+
+body.sidebar-collapsed.po-workbench-shell .sidebar { width: var(--sidebar-width-collapsed); }
+body.sidebar-collapsed.po-workbench-shell .sidebar.po-dual-sidebar { width: 56px; }
+body.sidebar-collapsed.po-workbench-shell .sidebar.po-dual-sidebar .po-subnav { display: none; }
+body.sidebar-collapsed.po-workbench-shell .topbar { left: var(--sidebar-width-collapsed); }
+body.sidebar-collapsed.po-workbench-shell .bottom-tabbar { left: var(--sidebar-width-collapsed); }
+body.sidebar-collapsed.po-workbench-shell .po-brand-logo { margin: 0; }
+body.sidebar-collapsed.po-workbench-shell .po-sidebar-collapse { display: inline-flex; align-items: center; justify-content: center; opacity: 1; margin: 0; }
+body.sidebar-collapsed.po-workbench-shell .po-sidebar-collapse i { transform: rotate(180deg); }
+
+@media (max-width: 900px) {
+  .po-global-search { width: 200px; }
+  .po-role-switcher { width: auto; }
+  .po-role-tab { min-width: 48px; padding: 0 8px; }
+}
+
+/* Global search dropdown inside PO header (globalsearch.js) */
+.po-header-right .search-box {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.po-header-right .search-box > i.fa-search {
+  pointer-events: none;
+}
+.po-header-right .search-box input {
+  border: 0;
+  background: transparent;
+  outline: none;
+  min-width: 0;
+  flex: 1;
+}
+.po-header-right .search-box-clear {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.7;
+  padding: 0 4px;
+}
+.po-header-right .search-box-clear[hidden] {
+  display: none !important;
+}
+.po-header-right .search-results {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  max-height: 320px;
+  overflow: auto;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-popover);
+}
+.po-header-right .search-results.show {
+  display: block;
+}
+.po-header-right .search-results .gs-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.po-header-right .search-results .gs-item:hover,
+.po-header-right .search-results .gs-item.is-active {
+  background: var(--color-info-bg);
+}
+.po-header-right .search-results .gs-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+}
+
+/* FontAwesome 图标兼容兜底（解决特定 FA6 别名在部分构建版本中未内嵌的问题） */
+.fa-shield-halved:before { content: "\f3ed" !important; }
+.fa-vial-circle-check:before { content: "\f126" !important; }

@@ -29,6 +29,16 @@ const (
 	TEMPLATE_DEBUG_SQLLOG  = "web/templates/debug/sqllog.html"
 
 	TEMPLATE_PO_HOME      = "po/home"
+
+	TEMPLATE_PO_TODOS         = "po/todos"
+	TEMPLATE_PO_DONE          = "po/done"
+	TEMPLATE_PO_NOTICE        = "po/notice"
+	TEMPLATE_PO_BOARD_DEMAND  = "po/workboard"
+	TEMPLATE_PO_BOARD_TASK    = "po/workboard"
+	TEMPLATE_PO_DEMAND_DETAIL = "po/demand_detail"
+	TEMPLATE_QUERY_INDEX      = "query/index"
+	TEMPLATE_PROFILE_INDEX    = "profile/index"
+
 	TEMPLATE_PO_LINKSTORY = "po/linkstory"
 
 	TEMPLATE_FOLLOW_LIST = "follow/list"
