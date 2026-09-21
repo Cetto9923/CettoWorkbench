@@ -89,8 +89,6 @@ func buildSchedulingDetailJSON(resp *DemandSchedulingResp) gin.H {
 		out["pri"] = detail.Pri
 		out["bra"] = detail.BRA
 		out["braName"] = detail.BRAName
-		out["rd"] = detail.RD
-		out["rdName"] = detail.RDName
 		out["qd"] = detail.QD
 		out["qdName"] = detail.QDName
 		out["accepter"] = detail.Accepter

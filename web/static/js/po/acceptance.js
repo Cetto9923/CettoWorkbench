@@ -75,7 +75,7 @@
     }
   }
 
-  // 与 scheduleIntRDInput 相同：initAutocomplete 单选检索
+  // 与排期弹窗负责人检索相同：initAutocomplete 单选检索
   function initModalSelects() {
     if (typeof window.initAutocomplete !== "function") {
       return;

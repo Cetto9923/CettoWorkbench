@@ -224,7 +224,6 @@
   function collectSchedulingData() {
     var data = {
       windowId: parsePositiveInt($("#scheduleIntegratedWindowSelect").val()),
-      rd: $.trim($("#scheduleIntRDValue").val() || ""),
       qd: $.trim($("#scheduleIntQDValue").val() || ""),
       accepter: $.trim($("#scheduleIntAccepterValue").val() || ""),
       developFinish: $.trim($("#scheduleIntegratedDevelopFinish").val() || ""),
@@ -441,11 +440,6 @@
     var items = shared.toAutocompleteItems(users);
     var placeholder = "输入姓名或工号搜索";
 
-    window.initAutocomplete("scheduleIntRDInput", "scheduleIntRDValue", items, {
-      placeholder: placeholder,
-      value: data.rd,
-      label: data.rdName,
-    });
     window.initAutocomplete("scheduleIntQDInput", "scheduleIntQDValue", items, {
       placeholder: placeholder,
       value: data.qd,
@@ -463,7 +457,6 @@
       return;
     }
 
-    window.clearAutocomplete("scheduleIntRDInput");
     window.clearAutocomplete("scheduleIntQDInput");
     window.clearAutocomplete("scheduleIntAccepterInput");
   }

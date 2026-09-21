@@ -82,14 +82,14 @@ type DevRequirement struct {
 
 // SubBizRequirement 子业务需求行（树形二级）。
 type SubBizRequirement struct {
-	DemandID         uint
-	ID               string
-	Title            string
-	Priority         string
-	PriClass         string
-	AgileGroup       string
-	Stage      string
-	StageClass string
+	DemandID        uint
+	ID              string
+	Title           string
+	Priority        string
+	PriClass        string
+	AgileGroup      string
+	Stage           string
+	StageClass      string
 	WindowName      string
 	Owner           string
 	ActionLabel     string
@@ -100,15 +100,15 @@ type SubBizRequirement struct {
 
 // BizRequirement 业务需求行（树形一级）。
 type BizRequirement struct {
-	DemandID   uint
-	ID         string
-	Title      string
-	Priority   string
-	PriClass   string
-	AgileGroup string
-	Stage      string
-	StageClass string
-	WindowName string
+	DemandID           uint
+	ID                 string
+	Title              string
+	Priority           string
+	PriClass           string
+	AgileGroup         string
+	Stage              string
+	StageClass         string
+	WindowName         string
 	Owner              string
 	ActionLabel        string
 	ActionClass        string
@@ -138,7 +138,6 @@ type scheduleIndexDemandData struct {
 	SelectedWindows         string
 	SelectedKeyword         string
 	SelectedPri             string
-	SelectedDevOwner        string
 	SelectedTestOwner       string
 	SelectedAcceptOwner     string
 	SelectedGroupMap        map[uint]bool
@@ -159,7 +158,6 @@ type scheduleFilterPreserveReq struct {
 	windows     string
 	keyword     string
 	pri         string
-	devOwner    string
 	testOwner   string
 	acceptOwner string
 }
@@ -188,9 +186,6 @@ func scheduleFilterPreserveParams(req scheduleFilterPreserveReq) map[string]stri
 	}
 	if strings.TrimSpace(req.pri) != "" {
 		params["pri"] = strings.TrimSpace(req.pri)
-	}
-	if strings.TrimSpace(req.devOwner) != "" {
-		params["dev"] = strings.TrimSpace(req.devOwner)
 	}
 	if strings.TrimSpace(req.testOwner) != "" {
 		params["test"] = strings.TrimSpace(req.testOwner)
@@ -237,7 +232,6 @@ func scheduleCanReuseListTotal(req ListBizDemandsReq, _ bool) bool {
 		strings.TrimSpace(req.Windows) == "" &&
 		strings.TrimSpace(req.Keyword) == "" &&
 		strings.TrimSpace(req.Pri) == "" &&
-		strings.TrimSpace(req.DevOwner) == "" &&
 		strings.TrimSpace(req.TestOwner) == "" &&
 		strings.TrimSpace(req.AcceptOwner) == ""
 }
@@ -287,7 +281,6 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 	indepReq.Windows = listReq.Windows
 	indepReq.Keyword = listReq.Keyword
 	indepReq.Pri = listReq.Pri
-	indepReq.DevOwner = listReq.DevOwner
 	indepReq.TestOwner = listReq.TestOwner
 	indepReq.Normalize()
 
@@ -315,7 +308,7 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 		filter: activeFilter, suspended: suspendedActive, bizPage: bizPage, indepPage: indepPage, tab: tab,
 		groups: listReq.Groups, products: listReq.Products, stages: bizStages, windows: listReq.Windows,
 		keyword: listReq.Keyword, pri: listReq.Pri,
-		devOwner: listReq.DevOwner, testOwner: listReq.TestOwner, acceptOwner: listReq.AcceptOwner,
+		testOwner: listReq.TestOwner, acceptOwner: listReq.AcceptOwner,
 	})
 
 	indepPager := pagination.New(indepResp.Total, indepPage, scheduleListPageSize)
@@ -324,7 +317,7 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 		filter: activeFilter, suspended: suspendedActive, bizPage: bizPage, indepPage: indepPage, tab: "indep",
 		groups: listReq.Groups, products: listReq.Products, stages: indepStages, windows: listReq.Windows,
 		keyword: listReq.Keyword, pri: listReq.Pri,
-		devOwner: listReq.DevOwner, testOwner: listReq.TestOwner, acceptOwner: listReq.AcceptOwner,
+		testOwner: listReq.TestOwner, acceptOwner: listReq.AcceptOwner,
 	})
 
 	return scheduleIndexDemandData{
@@ -347,7 +340,6 @@ func (h *Handler) loadScheduleIndexDemandData(c *gin.Context, actor *model.User,
 		SelectedWindows:         listReq.Windows,
 		SelectedKeyword:         listReq.Keyword,
 		SelectedPri:             listReq.Pri,
-		SelectedDevOwner:        listReq.DevOwner,
 		SelectedTestOwner:       listReq.TestOwner,
 		SelectedAcceptOwner:     listReq.AcceptOwner,
 		SelectedGroupMap:        selectedUintMap(listReq.Groups),
@@ -427,8 +419,6 @@ func (h *Handler) GetDemandScheduling(c *gin.Context) {
 			out["pri"] = detail.Pri
 			out["bra"] = detail.BRA
 			out["braName"] = detail.BRAName
-			out["rd"] = detail.RD
-			out["rdName"] = detail.RDName
 			out["qd"] = detail.QD
 			out["qdName"] = detail.QDName
 			out["accepter"] = detail.Accepter

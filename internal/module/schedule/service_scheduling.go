@@ -337,10 +337,10 @@ func (s *Service) GetProjectExecutions(ctx context.Context, actor *model.User, p
 
 func buildDemandSchedulingUpdates(req *SaveSchedulingReq, account string, estimateLaunch string) map[string]interface{} {
 	// acceptancedDate（界面「验收完成」）→ zt_demand.verifyFinish，与独立研发需求 zt_story.verifyFinish 映射一致。
+	// 验收负责人（scheduleIntAccepterInput）写入 zt_demand.RD，不再写 accepter。
 	return map[string]interface{}{
-		"RD":             strings.TrimSpace(req.RD),
+		"RD":             strings.TrimSpace(req.Accepter),
 		"QD":             strings.TrimSpace(req.QD),
-		"accepter":       strings.TrimSpace(req.Accepter),
 		"estimateLaunch": nullableSchedulingDate(estimateLaunch),
 		"developFinish":  nullableSchedulingDate(req.DevelopFinish),
 		"testFinish":     nullableSchedulingDate(req.TestFinish),

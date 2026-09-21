@@ -90,8 +90,6 @@ WHERE id = ?
 		Pri:              parseDemandPri(row.Pri),
 		BRA:              strings.TrimSpace(row.BRA),
 		BRAName:          resolveRealname(row.BRA, realnameByAccount),
-		RD:               strings.TrimSpace(row.RD),
-		RDName:           resolveRealname(row.RD, realnameByAccount),
 		QD:               strings.TrimSpace(row.QD),
 		QDName:           resolveRealname(row.QD, realnameByAccount),
 		Accepter:         strings.TrimSpace(row.RD),

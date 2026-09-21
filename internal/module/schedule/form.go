@@ -538,7 +538,6 @@ type ListBizDemandsReq struct {
 	Stages      string `form:"stages"`    // 逗号分隔的阶段值
 	Windows     string `form:"windows"`   // 逗号分隔的版本窗口 ID
 	Pri         string `form:"pri"`       // 单值优先级：0-4
-	DevOwner    string `form:"dev"`       // 开发负责人账号
 	TestOwner   string `form:"test"`      // 测试负责人账号
 	AcceptOwner string `form:"accept"`    // 验收负责人账号
 }
@@ -573,7 +572,6 @@ func (r *ListBizDemandsReq) Normalize() {
 	r.Stages = strings.TrimSpace(r.Stages)
 	r.Windows = strings.TrimSpace(r.Windows)
 	r.Pri = NormalizePriorityFilter(r.Pri)
-	r.DevOwner = strings.TrimSpace(r.DevOwner)
 	r.TestOwner = strings.TrimSpace(r.TestOwner)
 	r.AcceptOwner = strings.TrimSpace(r.AcceptOwner)
 }
@@ -586,33 +584,33 @@ type ListBizDemandsResp struct {
 
 // BizDemandItem 顶层业需（树形一级）。
 type BizDemandItem struct {
-	ID               uint   `json:"id"`
-	Name             string `json:"name"`
-	Pri              int    `json:"pri"`
-	Status           string `json:"status"`
-	MainSystemName   string `json:"mainSystemName"`
-	ExtraSystemCount int    `json:"extraSystemCount"`
-	TeamgroupName    string `json:"teamgroupName"`
-	OwnerName        string `json:"ownerName"`
-	Stage      string          `json:"stage"`
-	WindowName string          `json:"windowName"`
-	Children   []SubDemandItem `json:"children"`
-	Stories    []StoryItem     `json:"stories"`
+	ID               uint            `json:"id"`
+	Name             string          `json:"name"`
+	Pri              int             `json:"pri"`
+	Status           string          `json:"status"`
+	MainSystemName   string          `json:"mainSystemName"`
+	ExtraSystemCount int             `json:"extraSystemCount"`
+	TeamgroupName    string          `json:"teamgroupName"`
+	OwnerName        string          `json:"ownerName"`
+	Stage            string          `json:"stage"`
+	WindowName       string          `json:"windowName"`
+	Children         []SubDemandItem `json:"children"`
+	Stories          []StoryItem     `json:"stories"`
 }
 
 // SubDemandItem 子业需（树形二级）。
 type SubDemandItem struct {
-	ID               uint   `json:"id"`
-	Name             string `json:"name"`
-	Pri              int    `json:"pri"`
-	Status           string `json:"status"`
-	MainSystemName   string `json:"mainSystemName"`
-	ExtraSystemCount int    `json:"extraSystemCount"`
-	TeamgroupName    string `json:"teamgroupName"`
-	OwnerName        string `json:"ownerName"`
-	Stage      string      `json:"stage"`
-	WindowName string      `json:"windowName"`
-	Stories    []StoryItem `json:"stories"`
+	ID               uint        `json:"id"`
+	Name             string      `json:"name"`
+	Pri              int         `json:"pri"`
+	Status           string      `json:"status"`
+	MainSystemName   string      `json:"mainSystemName"`
+	ExtraSystemCount int         `json:"extraSystemCount"`
+	TeamgroupName    string      `json:"teamgroupName"`
+	OwnerName        string      `json:"ownerName"`
+	Stage            string      `json:"stage"`
+	WindowName       string      `json:"windowName"`
+	Stories          []StoryItem `json:"stories"`
 }
 
 // StoryItem 研发需求（树形三级）。
@@ -684,7 +682,6 @@ type ListIndependentReq struct {
 	Windows   string `form:"windows"`   // 逗号分隔的版本窗口 ID
 	Keyword   string `form:"keyword"`   // 编号/标题/负责人/系统
 	Pri       string `form:"pri"`       // 单值优先级：0-4
-	DevOwner  string `form:"dev"`       // 独立研发需求当前按 assignedTo 过滤
 	TestOwner string `form:"test"`      // 独立研发需求当前按测试任务 assignedTo 过滤
 }
 
@@ -718,7 +715,6 @@ func (r *ListIndependentReq) Normalize() {
 	r.Windows = strings.TrimSpace(r.Windows)
 	r.Keyword = strings.TrimSpace(r.Keyword)
 	r.Pri = NormalizePriorityFilter(r.Pri)
-	r.DevOwner = strings.TrimSpace(r.DevOwner)
 	r.TestOwner = strings.TrimSpace(r.TestOwner)
 }
 
@@ -749,8 +745,6 @@ type DemandSchedulingDetail struct {
 	Pri              int    `json:"pri"`
 	BRA              string `json:"bra"`
 	BRAName          string `json:"braName"`
-	RD               string `json:"rd"`
-	RDName           string `json:"rdName"`
 	QD               string `json:"qd"`
 	QDName           string `json:"qdName"`
 	Accepter         string `json:"accepter"`
@@ -761,8 +755,8 @@ type DemandSchedulingDetail struct {
 	DevelopFinish    string `json:"developFinish"`
 	TestFinish       string `json:"testFinish"`
 	AcceptancedDate  string `json:"acceptancedDate"`
-	WindowID   uint   `json:"windowId"`
-	WindowName string `json:"windowName"`
+	WindowID         uint   `json:"windowId"`
+	WindowName       string `json:"windowName"`
 }
 
 // SchedulingWindowOption 排期弹窗版本窗口下拉项。
@@ -918,7 +912,6 @@ type ZtDemandUserStory struct {
 // SaveSchedulingReq 排期一体化「确认并同步」保存请求。
 type SaveSchedulingReq struct {
 	WindowID        uint                  `json:"windowId"`
-	RD              string                `json:"rd"`
 	QD              string                `json:"qd"`
 	Accepter        string                `json:"accepter"`
 	DevelopFinish   string                `json:"developFinish"`

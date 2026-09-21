@@ -17,7 +17,6 @@
   var suppressOwnerChange = false;
 
   var OWNER_PICKERS = [
-    { inputId: "scheduleFilterDevInput", hiddenId: "scheduleFilterDevValue", placeholder: "开发负责人" },
     { inputId: "scheduleFilterTestInput", hiddenId: "scheduleFilterTestValue", placeholder: "测试负责人" },
     { inputId: "scheduleFilterAcceptInput", hiddenId: "scheduleFilterAcceptValue", placeholder: "验收负责人" },
   ];
@@ -90,7 +89,6 @@
       windows: "",
       keyword: $.trim($("#scheduleSearch").val() || ""),
       pri: $.trim($("#scheduleFilterPri").val() || ""),
-      dev: $.trim($("#scheduleFilterDevValue").val() || ""),
       test: $.trim($("#scheduleFilterTestValue").val() || ""),
       accept: $.trim($("#scheduleFilterAcceptValue").val() || ""),
     };
@@ -117,7 +115,6 @@
       windows: values.windows || null,
       keyword: values.keyword || null,
       pri: values.pri || null,
-      dev: values.dev || null,
       test: values.test || null,
       accept: values.accept || null,
       bizPage: null,
@@ -127,7 +124,7 @@
 
   function hasMoreFiltersActive() {
     var values = collectAdvancedFilterValues();
-    return !!(values.pri || values.dev || values.test || values.accept);
+    return !!(values.pri || values.test || values.accept);
   }
 
   function toAutocompleteItems(users) {

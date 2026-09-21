@@ -839,8 +839,6 @@
     var testFinish = normalizeDateValue($("#scheduleIntegratedTestFinish").val());
     var acceptancedDate = normalizeDateValue($("#scheduleIntegratedAcceptancedDate").val());
     var schedulePlanDate = normalizeDateValue($("#scheduleIntegratedSchedulePlanDate").val());
-    var rd = $.trim($("#scheduleIntRDValue").val() || "");
-    var rdName = $.trim($("#scheduleIntRDInput").val() || "") || resolveUserLabel(rd);
     var qd = $.trim($("#scheduleIntQDValue").val() || "");
     var qdName = $.trim($("#scheduleIntQDInput").val() || "") || resolveUserLabel(qd);
     var releaseOwner = findProductReleaseOwner(readNodeProductId($node));
@@ -850,8 +848,8 @@
       {
         type: "devel",
         name: "【开发】" + title,
-        assignedTo: rd,
-        assignedToName: rdName,
+        assignedTo: "",
+        assignedToName: "",
         estStarted: "",
         deadline: developFinish,
       },

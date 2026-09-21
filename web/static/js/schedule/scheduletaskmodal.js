@@ -411,8 +411,6 @@
     var schedulePlanDate =
       normalizeDateValue($("#scheduleIntegratedSchedulePlanDate").val()) ||
       normalizeDateValue(currentStoryInfo.releaseDate);
-    var rd = $.trim($("#scheduleIntRDValue").val() || "");
-    var rdName = $.trim($("#scheduleIntRDInput").val() || "") || resolveUserLabel(rd);
     var qd = $.trim($("#scheduleIntQDValue").val() || "");
     var qdName = $.trim($("#scheduleIntQDInput").val() || "") || resolveUserLabel(qd);
 
@@ -420,8 +418,8 @@
       {
         type: "devel",
         name: "【开发】" + title,
-        assignedTo: rd,
-        assignedToName: rdName,
+        assignedTo: "",
+        assignedToName: "",
         estStarted: "",
         deadline: developFinish,
       },

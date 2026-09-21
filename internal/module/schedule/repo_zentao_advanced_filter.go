@@ -90,7 +90,6 @@ type advancedFilterParams struct {
 	stages      []string
 	keyword     string
 	pri         string
-	devOwner    string
 	testOwner   string
 	acceptOwner string
 }
@@ -103,7 +102,6 @@ func advancedFilterParamsFromBizReq(req ListBizDemandsReq) advancedFilterParams 
 		stages:      ParseCommaSeparatedStages(req.Stages),
 		keyword:     strings.TrimSpace(req.Keyword),
 		pri:         NormalizePriorityFilter(req.Pri),
-		devOwner:    strings.TrimSpace(req.DevOwner),
 		testOwner:   strings.TrimSpace(req.TestOwner),
 		acceptOwner: strings.TrimSpace(req.AcceptOwner),
 	}
@@ -117,7 +115,6 @@ func advancedFilterParamsFromIndepReq(req ListIndependentReq) advancedFilterPara
 		stages:     ParseCommaSeparatedStages(req.Stages),
 		keyword:    strings.TrimSpace(req.Keyword),
 		pri:        NormalizePriorityFilter(req.Pri),
-		devOwner:   strings.TrimSpace(req.DevOwner),
 		testOwner:  strings.TrimSpace(req.TestOwner),
 	}
 }
@@ -166,10 +163,6 @@ func buildBizDemandAdvancedClause(params advancedFilterParams) filterClause {
 	if params.pri != "" {
 		parts = append(parts, "AND d.pri = ?")
 		args = append(args, params.pri)
-	}
-	if params.devOwner != "" {
-		parts = append(parts, "AND d.RD = ?")
-		args = append(args, params.devOwner)
 	}
 	if params.testOwner != "" {
 		parts = append(parts, "AND d.QD = ?")
@@ -224,10 +217,6 @@ func buildIndepStoryAdvancedClause(params advancedFilterParams) filterClause {
 	if params.pri != "" {
 		parts = append(parts, "AND s.pri = ?")
 		args = append(args, params.pri)
-	}
-	if params.devOwner != "" {
-		parts = append(parts, "AND s.assignedTo = ?")
-		args = append(args, params.devOwner)
 	}
 	if params.testOwner != "" {
 		parts = append(parts, `AND EXISTS (

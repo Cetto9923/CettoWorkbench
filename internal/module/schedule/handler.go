@@ -189,7 +189,6 @@ func (h *Handler) Index(c *gin.Context) {
 		"SelectedWindows":         demandData.SelectedWindows,
 		"SelectedKeyword":         demandData.SelectedKeyword,
 		"SelectedPri":             demandData.SelectedPri,
-		"SelectedDevOwner":        demandData.SelectedDevOwner,
 		"SelectedTestOwner":       demandData.SelectedTestOwner,
 		"SelectedAcceptOwner":     demandData.SelectedAcceptOwner,
 		"SelectedGroupMap":        demandData.SelectedGroupMap,
