@@ -20,12 +20,16 @@ var errDemandNotFound = errors.New("demand not found")
 
 // Repo 提测数据访问。
 type Repo struct {
-	db *gorm.DB
+	db     *gorm.DB
+	mainDB *gorm.DB
 }
 
 // NewRepo 创建 Repo（只读备库优先，可与主库相同）。
-func NewRepo(db *gorm.DB) *Repo {
-	return &Repo{db: db}
+func NewRepo(db *gorm.DB, mainDB *gorm.DB) *Repo {
+	if mainDB == nil {
+		mainDB = db
+	}
+	return &Repo{db: db, mainDB: mainDB}
 }
 
 // FindDemandContext 按业需 ID 读取上下文行（账号字段；展示名由 Service 用用户 map 解析）。
@@ -142,4 +146,19 @@ func (r *Repo) FindBuildsByIDs(ctx context.Context, ids []uint) (map[uint]buildM
 		}
 	}
 	return out, nil
+}
+
+// CountProductBuilds 统计产品下版本总数（含已删除），用于生成版本名称的序号。
+func (r *Repo) CountProductBuilds(ctx context.Context, productID uint) (int64, error) {
+	if r == nil || r.mainDB == nil || productID == 0 {
+		return 0, nil
+	}
+	var total int64
+	err := r.mainDB.WithContext(ctx).Table("zt_build").Where("product = ?", productID).
+		Count(&total).Error
+
+	if err != nil {
+		return 0, err
+	}
+	return total, err
 }

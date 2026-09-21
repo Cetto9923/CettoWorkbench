@@ -66,7 +66,9 @@ func (s *Service) GetContext(ctx context.Context, actor *model.User, demandID ui
 		return nil, err
 	}
 	systems := BuildSystemItems(products, row.MainSystemID, row.MainSystemName)
-
+	if err := s.attachNextBuildSeqs(ctx, systems); err != nil {
+		return nil, err
+	}
 	users := []UserOption{}
 	if s.userSvc != nil {
 		pickerUsers, listErr := s.userSvc.ListInsideUsers(ctx, actor)
@@ -143,11 +145,14 @@ func (s *Service) CreateBuilds(ctx context.Context, actor *model.User, demandID 
 
 	out := &CreateBuildsResp{Builds: make([]CreateBuildResult, 0, len(req.Builds))}
 	for _, item := range req.Builds {
+
+		name := strings.TrimSpace(item.Name)
+
 		build, err := createProjectBuild(ctx, client, createProjectBuildReq{
 			ProjectID:   item.ProjectID,
 			ExecutionID: item.ExecutionID,
 			ProductID:   item.ProductID,
-			Name:        strings.TrimSpace(item.Name),
+			Name:        name,
 			Builder:     strings.TrimSpace(actor.Account),
 			Date:        strings.TrimSpace(item.Date),
 			Desc:        item.Desc,
@@ -158,7 +163,7 @@ func (s *Service) CreateBuilds(ctx context.Context, actor *model.User, demandID 
 					zap.Error(err),
 					zap.Uint("productId", item.ProductID),
 					zap.Uint("projectId", item.ProjectID),
-					zap.String("name", item.Name),
+					zap.String("name", name),
 				)
 			}
 			return nil, errorx.Wrap(errorx.ErrCodeInvalidParam, fmt.Sprintf("保存版本失败：%s", err.Error()), err)
@@ -170,4 +175,22 @@ func (s *Service) CreateBuilds(ctx context.Context, actor *model.User, demandID 
 		})
 	}
 	return out, nil
+}
+
+// attachNextBuildSeqs 就地回填每个系统的下一个版本编号（现有版本总数含已删除 + 1）。
+func (s *Service) attachNextBuildSeqs(ctx context.Context, systems []SystemItem) error {
+	for i := range systems {
+		if systems[i].ID == 0 {
+			continue
+		}
+		total, err := s.repo.CountProductBuilds(ctx, systems[i].ID)
+		if err != nil {
+			if s.logger != nil {
+				s.logger.Error("count product builds", zap.Error(err), zap.Uint("productId", systems[i].ID))
+			}
+			return errorx.Wrap(errorx.ErrCodeInternal, "获取版本编号失败", err)
+		}
+		systems[i].NextBuildSeq = int(total) + 1
+	}
+	return nil
 }
