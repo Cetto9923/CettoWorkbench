@@ -378,7 +378,6 @@ SELECT
 FROM zt_task
 WHERE story = ?
   AND deleted = '0'
-  AND status != 'closed'
 ORDER BY id ASC`
 
 	var rows []ZtTaskItem

@@ -28,7 +28,7 @@ type ZtStoryInsert struct {
 	AssignedTo              string
 	Estimate                float64
 	EstimateLaunch          string // 默认取排期弹窗预计上线（窗口 releaseDate）
-	EstimateDevCompletion   string // 弹窗提测/开发 → zt_story.estimateDevCompletion
+	DevelopFinish           string // 弹窗提测/开发 → zt_story.developFinish
 	TestFinish              string // 弹窗测试完成 → zt_story.testFinish
 	FromDemand              uint
 	IsMainSystemAssociation string
@@ -90,7 +90,7 @@ type ztStoryCreateRow struct {
 	AssignedTo              string     `gorm:"column:assignedTo"`
 	IsMainSystemAssociation string     `gorm:"column:isMainSystemAssociation"`
 	EstimateLaunch          *time.Time `gorm:"column:estimateLaunch"`
-	EstimateDevCompletion   *time.Time `gorm:"column:estimateDevCompletion"`
+	DevelopFinish           *time.Time `gorm:"column:developFinish"`
 	TestFinish              *time.Time `gorm:"column:testFinish"`
 	VerifyPlan              string     `gorm:"column:verifyPlan"`
 	Deleted                 string     `gorm:"column:deleted"`
@@ -305,7 +305,7 @@ func (r *Repo) CreateStory(ctx context.Context, story *ZtStoryInsert) (uint, err
 		AssignedTo:              strings.TrimSpace(story.AssignedTo),
 		IsMainSystemAssociation: story.IsMainSystemAssociation,
 		EstimateLaunch:          parseSchedulingDatePtr(story.EstimateLaunch),
-		EstimateDevCompletion:   parseSchedulingDatePtr(story.EstimateDevCompletion),
+		DevelopFinish:           parseSchedulingDatePtr(story.DevelopFinish),
 		TestFinish:              parseSchedulingDatePtr(story.TestFinish),
 		VerifyPlan:              "",
 		Deleted:                 "0",

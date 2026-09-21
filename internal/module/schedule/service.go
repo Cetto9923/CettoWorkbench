@@ -7,6 +7,7 @@
 //       internal/module/schedule/repo.go
 //       internal/module/schedule/service_window.go
 //       internal/module/user
+//       internal/pkg/zentao
 // =============================================================================
 
 package schedule
@@ -22,18 +23,20 @@ import (
 
 	"workbench/internal/model"
 	"workbench/internal/module/user"
+	"workbench/internal/pkg/zentao"
 )
 
 // Service 处理排期业务逻辑。
 type Service struct {
 	repo    *Repo
 	userSvc *user.Service
+	ztAPI   *zentao.Client
 	logger  *zap.Logger
 }
 
 // NewService 创建 Service。
-func NewService(repo *Repo, userSvc *user.Service, logger *zap.Logger) *Service {
-	return &Service{repo: repo, userSvc: userSvc, logger: logger}
+func NewService(repo *Repo, userSvc *user.Service, ztAPI *zentao.Client, logger *zap.Logger) *Service {
+	return &Service{repo: repo, userSvc: userSvc, ztAPI: ztAPI, logger: logger}
 }
 
 // GetUserTeamgroups 查询用户所属敏捷小组并拼接展示名称。

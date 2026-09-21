@@ -181,8 +181,16 @@ func (e *apiError) Error() string {
 }
 
 func isUnauthorized(err error) bool {
+	return StatusCode(err) == http.StatusUnauthorized
+}
+
+// StatusCode 返回禅道 HTTP 错误状态码；非 API 错误时为 0。
+func StatusCode(err error) int {
 	ae, ok := err.(*apiError)
-	return ok && ae.status == http.StatusUnauthorized
+	if !ok || ae == nil {
+		return 0
+	}
+	return ae.status
 }
 
 func (c *Client) doRaw(ctx context.Context, method, path, token string, body any, out any) error {

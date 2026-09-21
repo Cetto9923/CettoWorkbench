@@ -279,23 +279,9 @@
     $("#rdTreeEmpty").show();
   }
 
-  function addDraftRdNode() {
-    if (!shared.isSchedulingDetailLoaded) {
-      if (typeof window.showToast === "function") {
-        window.showToast("业需详情加载中，请稍后再试", "error");
-      } else {
-        window.alert("业需详情加载中，请稍后再试");
-      }
-      return;
-    }
-    if (!shared.involvedProducts.length) {
-      var detailUrl = $.trim(shared.currentDemandDetailURL || "");
-      var confirmed = window.confirm("暂无涉及系统，无法添加研发需求，去澄清添加系统。");
-      if (confirmed && detailUrl) {
-        window.open(detailUrl, "_blank");
-      }
-      return;
-    }
+  var reviewNoticeChecking = false;
+
+  function appendDraftRdNode() {
     var node = buildDraftRdNode();
     if (!node) {
       return;
@@ -313,6 +299,62 @@
       tasksApi.initNodeProjectSelect($node);
     }
     updateTreeEmptyState();
+  }
+
+  function ensureReviewToStoryNotice(done) {
+    var demandId = shared && shared.currentDemandId ? shared.currentDemandId : 0;
+    if (!demandId) {
+      done();
+      return;
+    }
+    if (reviewNoticeChecking) {
+      return;
+    }
+    reviewNoticeChecking = true;
+    $.ajax({
+      url: "/schedule/demands/" + demandId + "/review-to-story-notice",
+      method: "GET",
+      dataType: "json",
+    })
+      .done(function (resp) {
+        if (resp && resp.blocked && resp.message) {
+          window.alert(resp.message);
+          return;
+        }
+        if (!resp || resp.success === false) {
+          window.alert((resp && (resp.error || resp.message)) || "主管部门审批校验失败");
+          return;
+        }
+        done();
+      })
+      .fail(function () {
+        window.alert("主管部门审批校验失败");
+      })
+      .always(function () {
+        reviewNoticeChecking = false;
+      });
+  }
+
+  function addDraftRdNode() {
+    if (!shared.isSchedulingDetailLoaded) {
+      if (typeof window.showToast === "function") {
+        window.showToast("业需详情加载中，请稍后再试", "error");
+      } else {
+        window.alert("业需详情加载中，请稍后再试");
+      }
+      return;
+    }
+    ensureReviewToStoryNotice(function () {
+      if (!shared.involvedProducts.length) {
+        var detailUrl = $.trim(shared.currentDemandDetailURL || "");
+        var confirmed = window.confirm("暂无涉及系统，无法添加研发需求，去澄清添加系统。");
+        if (confirmed && detailUrl) {
+          window.open(detailUrl, "_blank");
+        }
+        return;
+      }
+      appendDraftRdNode();
+    });
   }
 
   function removeRdNode($node) {
