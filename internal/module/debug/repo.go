@@ -28,6 +28,7 @@ const (
 type Repo struct {
 	logDir  string
 	logPath string
+	queries *queriesCache
 }
 
 var ignoredRequests = []string{
@@ -44,6 +45,7 @@ func NewRepo(logDir string) *Repo {
 	return &Repo{
 		logDir:  dir,
 		logPath: filepath.Join(dir, "sql.log"),
+		queries: newQueriesCache(),
 	}
 }
 
@@ -71,38 +73,13 @@ func (r *Repo) FindAll(ctx context.Context, req RepoFindAllReq) ([]RequestItem, 
 }
 
 // FindQueries 读取指定日期的 SQL 明细，按耗时降序，并截断到 limit。
+// 日志按天追加，重复查询只解析新增字节，见 queriesCache。
 func (r *Repo) FindQueries(ctx context.Context, req RepoFindQueriesReq) ([]QueryItem, int64, error) {
 	_ = ctx
 
 	date := strings.TrimSpace(req.Date)
 	path := filepath.Join(r.logDir, dailySQLLogPrefix+date+dailySQLLogSuffix)
-	entries, err := sqllog.ReadQueryEntries(path)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	items := make([]QueryItem, 0, len(entries))
-	for _, entry := range entries {
-		items = append(items, toQueryItem(entry))
-	}
-
-	slices.SortFunc(items, func(a, b QueryItem) int {
-		switch {
-		case a.ElapsedMS > b.ElapsedMS:
-			return -1
-		case a.ElapsedMS < b.ElapsedMS:
-			return 1
-		default:
-			return strings.Compare(b.Time, a.Time)
-		}
-	})
-
-	total := int64(len(items))
-	limit := normalizeQueryLimit(req.Limit)
-	if len(items) > limit {
-		items = items[:limit]
-	}
-	return items, total, nil
+	return r.queries.entry(date).items(path, normalizeQueryLimit(req.Limit))
 }
 
 func toRequestItem(summary sqllog.RequestSummary) RequestItem {

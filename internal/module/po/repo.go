@@ -395,6 +395,9 @@ func (r *Repo) FindMaxTesttaskIDByProducts(ctx context.Context, productIDs []uin
 
 // ListVersionWindows 查询上线时间（releaseDate）>= 今天的未删除窗口（zt_versionwindow）。
 func (r *Repo) ListVersionWindows(ctx context.Context) ([]model.VersionWindow, error) {
+	if r == nil || r.db == nil {
+		return nil, nil
+	}
 	var rows []model.VersionWindow
 	if err := r.db.WithContext(ctx).
 		Where("releaseDate >= CURDATE()").
