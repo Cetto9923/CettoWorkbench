@@ -24,3 +24,7 @@ func setupMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock) {
 	}
 	return gormDB, mock
 }
+
+func openSQLMock(t *testing.T) (*gorm.DB, sqlmock.Sqlmock) {
+	return setupMockDB(t)
+}
