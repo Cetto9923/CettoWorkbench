@@ -86,6 +86,11 @@ func API() *Client {
 	return DefaultClient()
 }
 
+// SiteClient 返回用于站点 PATH_INFO 动作的客户端（关注切换等 ajax 不在 REST）。
+// Main 底座 Client 共用同一实例；Follow* 方法内部用 zentaoCfg.URL 拼站点 URL。
+func SiteClient() *Client {
+	return DefaultClient()
+}
 
 func (c *Client) currentTime() time.Time {
 	if c != nil && c.now != nil {

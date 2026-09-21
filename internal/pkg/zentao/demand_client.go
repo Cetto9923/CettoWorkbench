@@ -11,6 +11,7 @@ package zentao
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 )
@@ -171,4 +172,67 @@ func (c *Client) GenerateAIUserStory(ctx context.Context, p GenerateAIUserStoryP
 		return nil, err
 	}
 	return &out, nil
+}
+
+// FollowDemandObject 调用禅道 demand::ajaxFollowObject（common::followObject）。
+func (c *Client) FollowDemandObject(ctx context.Context, account string, demandID int64) error {
+	return c.toggleDemandFollow(ctx, account, demandID, true)
+}
+
+// UnfollowDemandObject 调用禅道 demand::ajaxUnfollowObject（common::unfollowObject）。
+func (c *Client) UnfollowDemandObject(ctx context.Context, account string, demandID int64) error {
+	return c.toggleDemandFollow(ctx, account, demandID, false)
+}
+
+func (c *Client) toggleDemandFollow(ctx context.Context, account string, demandID int64, follow bool) error {
+	if c == nil {
+		return fmt.Errorf("zentao client is nil")
+	}
+	account = strings.TrimSpace(account)
+	if account == "" || demandID <= 0 {
+		return fmt.Errorf("invalid follow request")
+	}
+	token, err := c.getToken(ctx, account)
+	if err != nil {
+		return err
+	}
+	method := "ajaxUnfollowObject"
+	if follow {
+		method = "ajaxFollowObject"
+	}
+	base := strings.TrimRight(strings.TrimSpace(zentaoCfg.URL), "/")
+	if base == "" {
+		base = strings.TrimRight(strings.TrimSpace(c.apiBase), "/")
+		base = strings.TrimSuffix(base, "/api.php/v1")
+		base = strings.TrimSuffix(base, "/v1")
+		base = strings.TrimSuffix(base, "/api.php")
+		base = strings.TrimRight(base, "/")
+	}
+	reqURL := fmt.Sprintf("%s/demand-%s-demand-%d.html", base, method, demandID)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Token", token)
+	req.Header.Set("X-Requested-With", "XMLHttpRequest")
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return fmt.Errorf("无法连接禅道服务器: %v", err)
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("禅道 API 错误: HTTP %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
+	}
+	out := strings.TrimSpace(string(body))
+	if out != "0" && out != "1" {
+		if strings.Contains(out, "<html") || strings.Contains(out, "<!DOCTYPE") {
+			return fmt.Errorf("禅道鉴权失败: session rejected follow ajax")
+		}
+		return fmt.Errorf("禅道关注接口异常响应: %s", out)
+	}
+	return nil
 }
