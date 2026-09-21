@@ -30,9 +30,10 @@ type DemandContextRow struct {
 
 // SystemItem 需求涉及产品/系统（选择系统列表项）。
 type SystemItem struct {
-	ID     uint   `json:"id"`
-	Name   string `json:"name"`
-	IsMain bool   `json:"isMain"`
+	ID           uint   `json:"id"`
+	Name         string `json:"name"`
+	IsMain       bool   `json:"isMain"`
+	NextBuildSeq int    `json:"nextBuildSeq"` //下一个版本要用的编号
 }
 
 // ExecutionOption 所属执行下拉项（创建新版本）。

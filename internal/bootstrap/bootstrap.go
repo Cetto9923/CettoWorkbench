@@ -147,7 +147,7 @@ func Run() error {
 	if testtaskReadDB == nil {
 		testtaskReadDB = db
 	}
-	testtaskRepo := testtask.NewRepo(testtaskReadDB)
+	testtaskRepo := testtask.NewRepo(testtaskReadDB, db)
 	testtaskSvc := testtask.NewService(testtaskRepo, userSvc, zentaopkg.API(), zapLog)
 	testtaskHandler := testtask.NewHandler(testtaskSvc, zapLog)
 	buildReadDB := dbReadonly

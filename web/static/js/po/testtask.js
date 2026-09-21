@@ -94,10 +94,12 @@
     return todayYMD().replace(/-/g, "");
   }
 
-  function defaultVersionName(productName) {
+  function defaultVersionName(productName, seq) {
     var name = String(productName || "").trim();
     var ymd = compactToday();
-    return name ? name + " - " + ymd : ymd;
+    var base = name ? name + " - " + ymd : ymd;
+    var num = parseInt(seq, 10);
+    return num > 0 ? base + "-" + num : base;
   }
 
   function defaultTesttaskName(joint) {
@@ -911,7 +913,7 @@
       .attr("id", "poTtExistVerValue_" + id)
       .attr("data-tt-exist-ver", id);
 
-    $root.find('[data-tt-fill="ver-name"]').val(defaultVersionName(name));
+    $root.find('[data-tt-fill="ver-name"]').val(defaultVersionName(name, sys.nextBuildSeq));
     setDateValue($root.find('[data-tt-fill="launch"]'), todayYMD());
     fillExistVerOptions($root.find("[data-tt-exist-opt-list]"), id, []);
     return frag;
