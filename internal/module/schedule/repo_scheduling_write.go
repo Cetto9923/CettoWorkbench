@@ -367,16 +367,6 @@ func (r *Repo) DeleteStory(ctx context.Context, storyID uint) error {
 		Update("deleted", "1").Error
 }
 
-// CloseStory 关闭研发需求。
-func (r *Repo) CloseStory(ctx context.Context, storyID uint, actor string) error {
-	return r.UpdateStory(ctx, storyID, map[string]interface{}{
-		"status":       "closed",
-		"closedBy":     actor,
-		"closedDate":   time.Now(),
-		"closedReason": "done",
-	})
-}
-
 // CreateTask 创建任务。
 func (r *Repo) CreateTask(ctx context.Context, task *ZtTaskInsert) (uint, error) {
 	if task == nil {
