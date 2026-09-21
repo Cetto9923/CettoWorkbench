@@ -9,6 +9,7 @@ database:
   host: "127.0.0.1"
   port: "3306"
   user: "root"
+  # 数据库密码加密时格式为 crcb:<密文>|<私钥>
   password: "zentao"
   dbname: "zentao_changshu"
   charset: "utf8mb4"
@@ -22,6 +23,7 @@ databaseReadonly:
   host: "127.0.0.1"
   port: "3306"
   user: "root"
+  # 数据库密码加密时格式为 crcb:<密文>|<私钥>
   password: "zentao"
   dbname: "zentao_changshu"
   charset: "utf8mb4"

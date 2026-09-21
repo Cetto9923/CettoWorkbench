@@ -82,7 +82,7 @@ func buildDSN(dbCfg config.Database) string {
 	dsn := fmt.Sprintf(
 		"%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=%s&loc=%s",
 		dbCfg.User,
-		dbCfg.Password,
+		decryptPassword(dbCfg.Password), // 对齐禅道：OceanBase 密码可为 crcb: 密文
 		dbCfg.Host,
 		dbCfg.Port,
 		dbCfg.DBName,
