@@ -2,76 +2,28 @@
 // 文件: internal/module/po/servicereview.go
 // 模块: PO 工作台
 // 类型: action
-// 职责: 业需发起评审 / 评审 / 撤回：本地校验资格后，以当前用户身份转发禅道 API。
+// 职责: 业需评审业务规则（对照禅道 demand->review，不含 OA 同步与转工单）。
 // 依赖: internal/model
 //       internal/pkg/errorx
-//       internal/pkg/zentao
 // =============================================================================
 
 package po
 
 import (
 	"context"
-	"fmt"
 	"strings"
-
-	"go.uber.org/zap"
 
 	"workbench/internal/model"
 	"workbench/internal/pkg/errorx"
 	"workbench/internal/pkg/zentao"
 )
 
-// SubmitDemandReview 发起业需评审（仅创建人 + draft/refuse；代理禅道 submit）。
-func (s *Service) SubmitDemandReview(ctx context.Context, actor *model.User, req SubmitDemandReviewReq) (SubmitDemandReviewResp, error) {
-	empty := SubmitDemandReviewResp{}
-	if actor == nil || strings.TrimSpace(actor.Account) == "" {
-		return empty, errorx.New(errorx.ErrCodeForbidden, "请先登录")
-	}
-	account := strings.TrimSpace(actor.Account)
-
-	demand, err := s.repo.FindDemandForReview(ctx, req.ID)
-	if err != nil {
-		return empty, err
-	}
-	if demand == nil || demand.Deleted != "0" {
-		return empty, errorx.New(errorx.ErrCodeNotFound, "需求不存在")
-	}
-	status := strings.TrimSpace(demand.Status)
-	if status != "draft" && status != "refuse" {
-		return empty, errorx.New(errorx.ErrCodeConflict, "仅草稿或已驳回的需求可发起评审")
-	}
-	if strings.TrimSpace(demand.CreatedBy) != account {
-		return empty, errorx.New(errorx.ErrCodeForbidden, "只有创建人可以发起评审")
-	}
-
-	client := s.ztAPI
-	if client == nil {
-		client = zentao.API()
-	}
-	if client == nil {
-		return empty, errorx.New(errorx.ErrCodeInternal, "禅道 API 未配置")
-	}
-
-	if callErr := submitDemandReviewViaZentao(ctx, client, submitDemandReviewViaZentaoReq{
-		DemandID: req.ID,
-		Reviewer: req.Reviewer,
-		Comment:  req.Comment,
-	}); callErr != nil {
-		if s.logger != nil {
-			s.logger.Error("zentao demand submit",
-				zap.Error(callErr),
-				zap.Int64("id", req.ID),
-				zap.String("account", account),
-			)
-		}
-		return empty, errorx.Wrap(errorx.ErrCodeInvalidParam, fmt.Sprintf("提交评审失败：%s", callErr.Error()), callErr)
-	}
-
-	return SubmitDemandReviewResp{ID: req.ID}, nil
-}
-
-// ReviewDemand 提交业需评审（代理禅道 API，不再本地写 zt_demandreview）。
+// ReviewDemand 提交业需评审。
+//
+// 业务逻辑与系统联动说明：
+//  1. actor 为当前登录用户，执行对象级授权前置校验（待评审 + 业务评审人未出结果）；
+//  2. 实际业务流转（状态扭转、转工单流转、OA 待办消息推送等）统一走禅道原生 API，
+//     确保逻辑与禅道原版行为完全一致。
 func (s *Service) ReviewDemand(ctx context.Context, actor *model.User, req ReviewDemandReq) (ReviewDemandResp, error) {
 	empty := ReviewDemandResp{}
 	if actor == nil || strings.TrimSpace(actor.Account) == "" {
@@ -101,76 +53,118 @@ func (s *Service) ReviewDemand(ctx context.Context, actor *model.User, req Revie
 		return empty, errorx.New(errorx.ErrCodeConflict, "您已评审过该需求")
 	}
 
-	client := s.ztAPI
-	if client == nil {
-		client = zentao.API()
-	}
-	if client == nil {
-		return empty, errorx.New(errorx.ErrCodeInternal, "禅道 API 未配置")
-	}
-
-	if callErr := reviewDemandViaZentao(ctx, client, reviewDemandViaZentaoReq{
-		DemandID: req.ID,
-		Result:   req.Result,
-		Comment:  req.Comment,
-	}); callErr != nil {
-		if s.logger != nil {
-			s.logger.Error("zentao demand review",
-				zap.Error(callErr),
-				zap.Int64("id", req.ID),
-				zap.String("account", account),
-				zap.String("result", req.Result),
-			)
-		}
-		return empty, errorx.Wrap(errorx.ErrCodeInvalidParam, fmt.Sprintf("评审失败：%s", callErr.Error()), callErr)
+	// 统一调用禅道原生接口，让禅道处理转工单、状态流转及 OA 消息同步
+	ztClient := zentao.DefaultClient()
+	ztErr := ztClient.ReviewDemand(ctx, zentao.DemandReviewParams{
+		DemandID:    uint(req.ID),
+		Account:     account,
+		Result:      req.Result,
+		IsNeedFocus: req.IsNeedFocus,
+		Comment:     req.Comment,
+		Mailto:      req.Mailto,
+	})
+	if ztErr != nil {
+		return empty, errorx.New(errorx.ErrCodeInternal, "禅道评审执行失败: "+ztErr.Error())
 	}
 
 	return ReviewDemandResp{ID: req.ID}, nil
 }
 
-// WithdrawDemandReview 撤回业需评审申请（仅创建人或超级管理员；代理禅道 withdrawReview）。
-func (s *Service) WithdrawDemandReview(ctx context.Context, actor *model.User, req WithdrawDemandReviewReq) (WithdrawDemandReviewResp, error) {
-	empty := WithdrawDemandReviewResp{}
+// WithdrawDemandReview 撤回业需评审申请（仅创建人或超级管理员可操作）。
+func (s *Service) WithdrawDemandReview(ctx context.Context, actor *model.User, req WithdrawDemandReviewReq) error {
 	if actor == nil || strings.TrimSpace(actor.Account) == "" {
-		return empty, errorx.New(errorx.ErrCodeForbidden, "请先登录")
+		return errorx.New(errorx.ErrCodeForbidden, "请先登录")
 	}
 	account := strings.TrimSpace(actor.Account)
 
 	demand, err := s.repo.FindDemandForReview(ctx, req.ID)
 	if err != nil {
-		return empty, err
+		return err
 	}
 	if demand == nil || demand.Deleted != "0" {
-		return empty, errorx.New(errorx.ErrCodeNotFound, "需求不存在")
+		return errorx.New(errorx.ErrCodeNotFound, "需求不存在")
 	}
 	if strings.TrimSpace(demand.Status) != "wait" {
-		return empty, errorx.New(errorx.ErrCodeConflict, "该需求不是待评审状态")
+		return errorx.New(errorx.ErrCodeConflict, "该需求不是待评审状态")
 	}
 	if !actor.IsSuperAdmin && strings.TrimSpace(demand.CreatedBy) != account {
-		return empty, errorx.New(errorx.ErrCodeForbidden, "只有创建人可以撤回评审")
+		return errorx.New(errorx.ErrCodeForbidden, "只有创建人可以撤回评审")
 	}
 
-	client := s.ztAPI
-	if client == nil {
-		client = zentao.API()
-	}
-	if client == nil {
-		return empty, errorx.New(errorx.ErrCodeInternal, "禅道 API 未配置")
-	}
-
-	if callErr := withdrawDemandReviewViaZentao(ctx, client, withdrawDemandReviewViaZentaoReq{
-		DemandID: req.ID,
+	ztClient := zentao.DefaultClient()
+	ztErr := ztClient.WithdrawDemandReview(ctx, zentao.WithdrawDemandReviewParams{
+		DemandID: uint(req.ID),
+		Account:  account,
 		Comment:  req.Comment,
-	}); callErr != nil {
-		if s.logger != nil {
-			s.logger.Error("zentao demand withdrawReview",
-				zap.Error(callErr),
-				zap.Int64("id", req.ID),
-				zap.String("account", account),
-			)
-		}
-		return empty, errorx.Wrap(errorx.ErrCodeInvalidParam, fmt.Sprintf("撤回评审失败：%s", callErr.Error()), callErr)
+	})
+	if ztErr != nil {
+		return errorx.New(errorx.ErrCodeInternal, "禅道撤回评审执行失败: "+ztErr.Error())
+	}
+	return nil
+}
+
+// SubmitDemandReview 提交业需评审（草稿/已驳回状态下，创建人或指派人可操作）。
+func (s *Service) SubmitDemandReview(ctx context.Context, actor *model.User, req SubmitDemandReviewReq) error {
+	if actor == nil || strings.TrimSpace(actor.Account) == "" {
+		return errorx.New(errorx.ErrCodeForbidden, "请先登录")
+	}
+	account := strings.TrimSpace(actor.Account)
+
+	demand, err := s.repo.FindDemandForReview(ctx, req.ID)
+	if err != nil {
+		return err
+	}
+	if demand == nil || demand.Deleted != "0" {
+		return errorx.New(errorx.ErrCodeNotFound, "需求不存在")
+	}
+	st := strings.TrimSpace(demand.Status)
+	if st != "draft" && st != "refuse" {
+		return errorx.New(errorx.ErrCodeConflict, "当前状态不允许提交评审")
+	}
+	if !actor.IsSuperAdmin && strings.TrimSpace(demand.CreatedBy) != account && strings.TrimSpace(demand.AssignedTo) != account {
+		return errorx.New(errorx.ErrCodeForbidden, "只有创建人或指派人可以提交评审")
 	}
 
-	return WithdrawDemandReviewResp{ID: req.ID}, nil
+	reviewers := req.Reviewer
+	if len(reviewers) == 0 {
+		reviewers = splitReviewerAccounts(demand.Reviewer)
+	}
+	reviewers = normalizeReviewerAccounts(reviewers)
+	if len(reviewers) == 0 {
+		return errorx.New(errorx.ErrCodeInvalidParam, "请至少选择一位业务评审人")
+	}
+
+	ztClient := zentao.DefaultClient()
+	ztErr := ztClient.SubmitDemandReview(ctx, zentao.SubmitDemandReviewParams{
+		DemandID: uint(req.ID),
+		Account:  account,
+		Reviewer: reviewers,
+		Comment:  req.Comment,
+	})
+	if ztErr != nil {
+		return errorx.New(errorx.ErrCodeInternal, "禅道提交评审执行失败: "+ztErr.Error())
+	}
+	return nil
+}
+
+// splitReviewerAccounts 把 zt_demand.reviewer 的逗号分隔账号拆成去空串切片。
+func splitReviewerAccounts(raw string) []string {
+	return normalizeReviewerAccounts(strings.Split(raw, ","))
+}
+
+func normalizeReviewerAccounts(accounts []string) []string {
+	out := make([]string, 0, len(accounts))
+	seen := make(map[string]struct{}, len(accounts))
+	for _, account := range accounts {
+		account = strings.TrimSpace(account)
+		if account == "" {
+			continue
+		}
+		if _, ok := seen[account]; ok {
+			continue
+		}
+		seen[account] = struct{}{}
+		out = append(out, account)
+	}
+	return out
 }

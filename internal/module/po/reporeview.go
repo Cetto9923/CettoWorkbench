@@ -32,11 +32,30 @@ type demandReviewRow struct {
 	Status      string `gorm:"column:status"`
 	Deleted     string `gorm:"column:deleted"`
 	CreatedBy   string `gorm:"column:createdBy"`
+	AssignedTo  string `gorm:"column:assignedTo"`
 	ReviewedBy  string `gorm:"column:reviewedBy"`
+	Reviewer    string `gorm:"column:reviewer"`
 	Mailto      string `gorm:"column:mailto"`
 	IsNeedFocus string `gorm:"column:isNeedFocus"`
 	Product     string `gorm:"column:product"`
 }
+
+// demandActionRow 对应 zt_action，给禅道详情页「历史记录」用。
+type demandActionRow struct {
+	ID         uint      `gorm:"column:id;primaryKey;autoIncrement"`
+	ObjectType string    `gorm:"column:objectType"`
+	ObjectID   uint      `gorm:"column:objectID"`
+	Product    string    `gorm:"column:product"`
+	Project    uint      `gorm:"column:project"`
+	Execution  uint      `gorm:"column:execution"`
+	Actor      string    `gorm:"column:actor"`
+	Action     string    `gorm:"column:action"`
+	Date       time.Time `gorm:"column:date"`
+	Comment    string    `gorm:"column:comment"`
+	Extra      string    `gorm:"column:extra"`
+}
+
+func (demandActionRow) TableName() string { return "zt_action" }
 
 func (demandReviewRow) TableName() string { return "zt_demand" }
 
@@ -66,7 +85,7 @@ func (r *Repo) FindDemandForReview(ctx context.Context, id int64) (*demandReview
 	}
 	var row demandReviewRow
 	err = db.WithContext(ctx).
-		Select("id, status, deleted, createdBy, reviewedBy, mailto, isNeedFocus, product").
+		Select("id, status, deleted, createdBy, assignedTo, reviewedBy, reviewer, mailto, isNeedFocus, product").
 		Where("id = ?", id).
 		Take(&row).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
