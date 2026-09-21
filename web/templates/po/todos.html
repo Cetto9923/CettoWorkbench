@@ -1,0 +1,94 @@
+{{/* ==========================================================================
+文件: web/templates/po/todos.html
+模块: PO 工作台
+职责: 我的待办列表页（个人责任事项 + 统一工作台骨架）
+全局字段: .CurrentUser, .CSRFToken, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .PageTitle (string), .BaseUrl (string)
+========================================================================== */}}
+{{ define "page_css" }}
+<link rel="stylesheet" href="{{ asset "/static/css/po/personal-workspace.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/todos.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/demand-detail.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/demand-clarify.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/po-deliver.css" }}">
+{{ end }}
+
+{{ define "content" }}
+<div class="po-personal-workspace po-todos">
+  <header class="workspace-header">
+    <div class="header-quick-filters" id="todosQuickChips" role="group" aria-label="快捷焦点">
+      <button type="button" class="header-quick-chip active" data-focus="pending" aria-pressed="true">待处理 <em id="countPending">—</em></button>
+      <button type="button" class="header-quick-chip warning" data-focus="today" aria-pressed="false">今日到期 <em id="countToday">—</em></button>
+      <button type="button" class="header-quick-chip danger" data-focus="overdue" aria-pressed="false">超期 <em id="countOverdue">—</em></button>
+      <button type="button" class="header-quick-chip warning" data-focus="blocked" aria-pressed="false">阻塞 <em id="countBlocked">—</em></button>
+      <button type="button" class="header-quick-chip info" data-focus="p1" aria-pressed="false">P1 <em id="countP1">—</em></button>
+    </div>
+  </header>
+
+  <section class="workspace-panel">
+    <div class="wb-done-domains" id="todosObjectChips" role="group" aria-label="操作对象过滤">
+      <!-- 由 JS 按服务端 facets 动态渲染对象类型芯片与计数 -->
+    </div>
+
+    <div class="workspace-toolbar">
+      <label class="workspace-search"><span aria-hidden="true">⌕</span><input type="search" id="todosKeyword" placeholder="搜索 ID、标题或责任人" aria-label="关键词"></label>
+      <div class="relation-segment" aria-label="我的关系">
+        <button type="button" class="active" data-relation="all">全部</button>
+        <button type="button" data-relation="in_charge">我负责</button>
+        <button type="button" data-relation="cooperate">我配合</button>
+      </div>
+      <select id="todosAction" aria-label="办理场景" hidden><option value="all">办理场景：全部</option><option value="todo_review">待受理 / 澄清</option><option value="todo_schedule">待排期</option><option value="todo_verify">待验收</option><option value="todo_deliver">待交付</option><option value="todo_follow">待跟进</option></select>
+      <select id="todosStage" aria-label="价值阶段" hidden><option value="all">价值阶段：全部</option><option value="accept">受理</option><option value="clarify">澄清</option><option value="schedule">排期</option><option value="developing">提测</option><option value="testing">联调测试</option><option value="waitacceptance">验收</option><option value="acceptanced">发起交付</option><option value="publish">发布</option><option value="released">评价反馈</option></select>
+      <select id="todosResponsibility" aria-label="办理责任" hidden><option value="all">办理责任：全部</option><option value="my_action">待我处理</option><option value="my_follow_up">待我跟进</option></select>
+      <select id="todosApprovalType" aria-label="审批场景" hidden><option value="all">审批场景：全部</option><option value="charter">项目章程</option><option value="buildguideline">建设指引</option><option value="planchange">计划变更</option><option value="review">需求评审</option><option value="reviewchange">需求变更</option><option value="reviewbymanager">主管审批</option></select>
+      <button type="button" id="todosResetBtn" class="workspace-btn">重置筛选</button>
+    </div>
+
+    <div class="table-scroll-container">
+      <table class="workspace-table todos-table" id="todosTable">
+        <thead>
+          <tr>
+            <th class="todos-col-obj" style="width:130px">ID</th>
+            <th class="todos-col-item">标题</th>
+            <th class="todos-col-approval" id="todosApprovalHeader" hidden>审批场景</th>
+            <th class="todos-col-pri" id="todosMetricHeader">优先级</th>
+            <th class="todos-col-rel">关系 / 责任</th>
+            <th class="todos-col-stage">阶段 / 形成原因</th>
+            <th class="todos-col-dead">截止时间</th>
+            <th class="todos-col-owner">责任人</th>
+            <th class="todos-col-opt">操作</th>
+          </tr>
+        </thead>
+        <tbody id="todosTbody">
+          <tr><td colspan="9" class="state-placeholder">正在拉取待办事项…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="state-placeholder" id="todosEmpty" hidden>当前条件下没有待办事项</div>
+    <div class="state-placeholder error" id="todosError" hidden>
+      <span class="error-msg">拉取待办列表失败，请检查网络或重试</span>
+      <button type="button" class="retry-btn" id="todosRetryBtn">重试</button>
+    </div>
+    <div class="workspace-pagination" id="todosPagination" hidden></div>
+  </section>
+</div>
+{{ template "po/clarify_modal" . }}
+{{ template "po/deliver_modal" . }}
+{{ end }}
+
+{{ define "page_js" }}
+<script src="{{ asset "/static/js/po/personal-list.js" }}"></script>
+<script src="{{ asset "/static/js/po/primary-action.js" }}"></script>
+<script src="{{ asset "/static/js/po/html-sanitize.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail-richtext.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail-parent.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail-render-execution.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail-render.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail-review.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail-submit-review.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-clarify.js" }}"></script>
+<script src="{{ asset "/static/js/po/po-deliver.js" }}"></script>
+<script src="{{ asset "/static/js/po/todos.js" }}"></script>
+{{ end }}

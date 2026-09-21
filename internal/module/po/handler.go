@@ -70,6 +70,23 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.GET("/done/items", middleware.RequirePerm(perm.PoDoneList), h.DoneItems)
 	g.GET("/done/meta", middleware.RequirePerm(perm.PoDoneList), h.DoneMeta)
 	g.GET("/done/detail/:actionId", middleware.RequirePerm(perm.PoDoneList), h.DoneDetail)
+
+	g.GET("/todos", middleware.RequirePerm(perm.PoTodoList), h.Todos)
+	g.GET("/todos/items", middleware.RequirePerm(perm.PoTodoList), h.TodosItems)
+
+	g.GET("/notice", middleware.RequirePerm(perm.PoNoticeList), h.Notice)
+	g.GET("/notice/items", middleware.RequirePerm(perm.PoNoticeList), h.NoticeItems)
+	g.PUT("/notice/:id/read", middleware.RequirePerm(perm.PoNoticeUpdate), h.NoticeMarkRead)
+	g.PUT("/notice/read-all", middleware.RequirePerm(perm.PoNoticeUpdate), h.NoticeMarkAllRead)
+
+	g.GET("/follow", middleware.RequirePerm(perm.PoFollowList), h.Follow)
+	g.GET("/follow/items", middleware.RequirePerm(perm.PoFollowList), h.FollowItems)
+	g.GET("/follow/demands/export", middleware.RequirePerm(perm.PoFollowList), h.FollowDemandExport)
+	g.GET("/follow/project-weeklies", middleware.RequirePerm(perm.PoFollowList), h.ProjectWeeklies)
+	g.GET("/follow/project-weeklies/:id", middleware.RequirePerm(perm.PoFollowList), h.ProjectWeeklyDetail)
+	g.GET("/follow/project-weeklies/:id/history", middleware.RequirePerm(perm.PoFollowList), h.ProjectWeeklyHistory)
+	g.PUT("/follow/demand/:id", middleware.RequirePerm(perm.PoFollowUpdate), h.FollowSetDemand)
+	g.PUT("/follow/project-report/:id", middleware.RequirePerm(perm.PoFollowUpdate), h.FollowRemoveProjectReport)
 }
 
 // Home 渲染 PO 工作台首页。

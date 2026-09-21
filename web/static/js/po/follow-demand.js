@@ -1,0 +1,430 @@
+/**
+ * =============================================================================
+ * 文件: web/static/js/po/follow-demand.js
+ * 模块: PO 工作台 - 我的关注 · 业务需求
+ * 职责: 统计卡、关注维度筛选（默认全部未关闭）、单行列表（ID + 星标关注/取关 + 标题）、导出
+ * =============================================================================
+ */
+(function (root) {
+  "use strict";
+
+  var state = {
+    scope: "open",
+    lifecycle: "all",
+    keyword: "",
+    page: 1,
+    pageSize: 20,
+    total: 0,
+    stats: { open: 0, all: 0, clarifying: 0, implementing: 0, released: 0, closed: 0 }
+  };
+
+  var esc = root.escapeHtml;
+  var PL = root.PersonalList || {};
+  var PAGE_SIZE_OPTIONS = PL.PAGE_SIZE_OPTIONS;
+  if (typeof PL.loadPageSize === "function") {
+    state.pageSize = PL.loadPageSize("po.follow.pageSize", state.pageSize, PAGE_SIZE_OPTIONS);
+  }
+  var priorityBadge = PL.priorityBadge;
+
+  function dash(v) {
+    var t = String(v == null ? "" : v).trim();
+    return t || "—";
+  }
+
+  function stageLabel(value) {
+    var labels = {
+      wait: "已受理", draft: "草稿", active: "已澄清", clarified: "已澄清",
+      developing: "研发中", testing: "测试中", waitacceptance: "待验收",
+      acceptanced: "已验收", waitdeliver: "待交付", delivered: "已交付",
+      released: "已发布", closed: "已关闭", suspended: "已挂起", refuse: "已驳回",
+      accept: "已受理", clarify: "澄清中", schedule: "已排期", submittest: "提测",
+      publish: "发布", greyverify: "生产验证"
+    };
+    var key = String(value == null ? "" : value).toLowerCase();
+    return labels[key] || (String(value || "").trim() || "—");
+  }
+
+  function progressTag(item) {
+    var status = String(item.progressStatus || "").toLowerCase();
+    var label = dash(item.progressLabel);
+    if (status === "delayed") return '<span class="tag red">' + esc(label) + "</span>";
+    if (status === "done") return '<span class="tag green">' + esc(label) + "</span>";
+    if (status === "normal") return '<span class="tag green">' + esc(label) + "</span>";
+    return '<span class="pw-subtle">' + esc(label) + "</span>";
+  }
+
+  function keyTimesHtml(item) {
+    var parts = [];
+    if (String(item.developFinish || "").trim()) parts.push("开发 " + String(item.developFinish).trim());
+    if (String(item.testFinish || "").trim()) parts.push("测试 " + String(item.testFinish).trim());
+    if (String(item.deadline || "").trim()) parts.push("截止 " + String(item.deadline).trim());
+    return '<span class="fd-keytimes-inline" title="' + esc(parts.join(" · ")) + '">' + esc(parts.length ? parts.join(" · ") : "—") + "</span>";
+  }
+
+  function setNumText(id, val) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    if (el.firstChild && el.firstChild.nodeType === 3) {
+      el.firstChild.textContent = String(val);
+    } else {
+      var note = el.querySelector(".pw-sum-note");
+      el.textContent = String(val);
+      if (note) el.appendChild(note);
+    }
+  }
+
+  function updateStatsUI() {
+    var s = state.stats || {};
+    setNumText("fdStatClarifying", s.clarifying || 0);
+    setNumText("fdStatImplementing", s.implementing || 0);
+    setNumText("fdStatReleased", s.released || 0);
+    setNumText("fdStatClosed", s.closed || 0);
+    var setBtn = function (id, val) { var el = document.getElementById(id); if (el) el.textContent = String(val); };
+    var openCount = (typeof s.open === "number") ? s.open : Math.max(0, (s.all || 0) - (s.closed || 0));
+    setBtn("fdBtnOpen", openCount);
+    setBtn("fdBtnClarifying", s.clarifying || 0);
+    setBtn("fdBtnImplementing", s.implementing || 0);
+    setBtn("fdBtnReleased", s.released || 0);
+    setBtn("fdBtnClosed", s.closed || 0);
+
+    // 同步更新统一的标题栏右侧快捷焦点 (header-quick-filters)
+    setBtn("kpiOpen", openCount);
+    setBtn("kpiClarifying", s.clarifying || 0);
+    setBtn("kpiImplementing", s.implementing || 0);
+    setBtn("kpiReleased", s.released || 0);
+    setBtn("kpiClosed", s.closed || 0);
+  }
+
+  function syncFilterActive() {
+    document.querySelectorAll("#fdSummary .pw-sum-card").forEach(function (c) {
+      var lc = c.getAttribute("data-lifecycle");
+      var active = false;
+      if (state.scope === "closed") {
+        active = (lc === "closed");
+      } else if (state.lifecycle !== "all") {
+        active = (lc === state.lifecycle);
+      }
+      c.classList.toggle("active", active);
+    });
+    document.querySelectorAll("#fdToolbar .pw-filter-btn").forEach(function (b) {
+      var sc = b.getAttribute("data-scope");
+      var lc = b.getAttribute("data-lifecycle");
+      var active = false;
+      if (sc === "closed") {
+        active = (state.scope === "closed");
+      } else if (sc === "open") {
+        active = (state.scope === "open" && state.lifecycle === "all");
+      } else if (lc) {
+        active = (state.scope !== "closed" && state.lifecycle === lc);
+      }
+      b.classList.toggle("active", active);
+    });
+    document.querySelectorAll("#followQuickChips .header-quick-chip").forEach(function (chip) {
+      var sc = chip.getAttribute("data-scope");
+      var lc = chip.getAttribute("data-lifecycle");
+      var active = false;
+      if (sc === "closed") {
+        active = (state.scope === "closed");
+      } else if (sc === "open") {
+        active = (state.scope === "open" && state.lifecycle === "all");
+      } else if (lc) {
+        active = (state.scope !== "closed" && state.lifecycle === lc);
+      }
+      chip.classList.toggle("active", active);
+      chip.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+  }
+
+  function renderRows(items) {
+    var tbody = document.getElementById("followDemandTbody");
+    var empty = document.getElementById("followEmpty");
+    var pagEl = document.getElementById("followPagination");
+    var countText = document.getElementById("fdCountText");
+    if (!tbody) return;
+
+    if (!items.length) {
+      tbody.innerHTML = "";
+      if (empty) empty.hidden = false;
+      if (pagEl) pagEl.hidden = true;
+      if (countText) countText.textContent = "显示 0 / 共 0 条";
+      return;
+    }
+    if (empty) empty.hidden = true;
+
+    tbody.innerHTML = items.map(function (item) {
+      var did = item.id;
+      var displayId = "US" + did;
+      var ztUrl = String(item.url || "").trim();
+      var idLink = ztUrl
+        ? '<a class="table-id-link" href="' + esc(ztUrl) + '" target="_blank" rel="noopener noreferrer" title="在禅道中查看原始详情">' + esc(displayId) + "</a>"
+        : '<span class="table-id-link">' + esc(displayId) + "</span>";
+      var idChip = (PL.idChipHtml)
+        ? PL.idChipHtml("business", idLink)
+        : '<span class="wb-type wb-type-business"><span class="wb-type-tag">业务</span><span class="wb-type-id">#' + esc(displayId) + "</span></span>";
+
+      var priTag = priorityBadge(item.priority || item.pri);
+      var titleText = item.title || "—";
+      var tipParts = [];
+      if (item.owner) tipParts.push("负责人：" + String(item.owner));
+      if (item.reason) tipParts.push(String(item.reason));
+      if (item.isKey) tipParts.push("重点关注");
+      var tip = tipParts.length ? tipParts.join(" · ") : titleText;
+      var titleBtn = '<button type="button" class="table-title-link" data-open-demand="' + esc(did) + '" title="' + esc(tip) + '">' + esc(titleText) + "</button>";
+      var titleHtml = '<div class="home-title-line fd-title-line">' + priTag + titleBtn + "</div>";
+
+      var stage = (PL && PL.statusTagHtml) ? PL.statusTagHtml(stageLabel(item.stage || item.status)) : ('<span class="stage-tag">' + esc(stageLabel(item.stage || item.status)) + '</span>');
+      var schedule = '<span class="fd-schedule-inline" title="' + esc(dash(item.scheduleSummary)) + '">' + esc(dash(item.scheduleSummary)) + "</span>";
+      return '<tr data-demand-row="' + esc(did) + '">' +
+        '<td class="c-id">' + idChip + "</td>" +
+        '<td class="c-title">' + titleHtml + "</td>" +
+        "<td>" + stage + "</td>" +
+        "<td>" + progressTag(item) + "</td>" +
+        "<td>" + keyTimesHtml(item) + "</td>" +
+        "<td>" + schedule + "</td>" +
+        '<td><div class="pw-actions">' +
+        '<button type="button" class="pw-action-btn" data-open-demand="' + esc(did) + '" title="查看详情" aria-label="查看详情"><i class="fas fa-eye" aria-hidden="true"></i></button>' +
+        '<button type="button" class="pw-action-btn pw-watch-btn is-watched" data-watch-demand="' + esc(did) + '" data-watched="1" title="取消关注" aria-label="取消关注" aria-pressed="true"><i class="fas fa-star" aria-hidden="true"></i></button>' +
+        "</div></td></tr>";
+    }).join("");
+
+    var start = state.total === 0 ? 0 : (state.page - 1) * state.pageSize + 1;
+    var end = Math.min(state.total, state.page * state.pageSize);
+    if (countText) countText.textContent = "显示 " + start + "-" + end + " / 共 " + state.total + " 条";
+
+    if (pagEl && PL.renderPagination) {
+      pagEl.hidden = false;
+      PL.renderPagination({
+        container: pagEl,
+        page: state.page,
+        pageSize: state.pageSize,
+        total: state.total,
+        onPageChange: function (p) { state.page = p; load(); },
+        onPageSizeChange: function (ps) {
+          state.pageSize = ps; state.page = 1;
+          if (PL.savePageSize) PL.savePageSize("po.follow.pageSize", ps);
+          load();
+        }
+      });
+    }
+    bindRowEvents();
+  }
+
+  function setStarUI(btn, watched) {
+    if (!btn) return;
+    btn.classList.toggle("is-watched", !!watched);
+    btn.setAttribute("data-watched", watched ? "1" : "0");
+    btn.setAttribute("title", watched ? "取消关注" : "关注");
+    btn.setAttribute("aria-label", watched ? "取消关注" : "关注");
+    btn.setAttribute("aria-pressed", watched ? "true" : "false");
+    var icon = btn.querySelector("i");
+    if (icon) {
+      icon.className = watched ? "fas fa-star" : "far fa-star";
+    }
+  }
+
+  function bindRowEvents() {
+    document.querySelectorAll("#demandSection [data-open-demand]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-open-demand");
+        if (root.DemandDetail && typeof root.DemandDetail.open === "function") {
+          root.DemandDetail.open(id);
+        }
+      });
+    });
+    document.querySelectorAll("#demandSection [data-watch-demand]").forEach(function (btn) {
+      btn.addEventListener("click", async function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (btn.disabled) return;
+        var id = btn.getAttribute("data-watch-demand");
+        var watched = btn.getAttribute("data-watched") === "1";
+        var next = !watched;
+        btn.disabled = true;
+        var ok = false;
+        if (typeof root.FollowSetDemand === "function") {
+          ok = await root.FollowSetDemand(id, next);
+        } else if (!next && typeof root.FollowUnwatchDemand === "function") {
+          await root.FollowUnwatchDemand(id);
+          ok = true;
+        }
+        btn.disabled = false;
+        if (!ok) return;
+        setStarUI(btn, next);
+        if (!next) {
+          load();
+        }
+      });
+    });
+  }
+
+  async function load() {
+    var tbody = document.getElementById("followDemandTbody");
+    var empty = document.getElementById("followEmpty");
+    var error = document.getElementById("followError");
+    var summary = document.getElementById("followSummary");
+    if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="pw-empty-row">正在拉取关注业务需求…</td></tr>';
+    if (empty) empty.hidden = true;
+    if (error) error.hidden = true;
+    if (summary) summary.textContent = "关注业务需求 · 加载中…";
+    syncFilterActive();
+
+    var params = new URLSearchParams({
+      tab: "demand",
+      scope: state.scope || "open",
+      lifecycle: state.lifecycle || "all",
+      keyword: state.keyword || "",
+      page: String(state.page || 1),
+      pageSize: String(state.pageSize || 20)
+    });
+    try {
+      var res = await fetch("/follow/items?" + params.toString(), {
+        credentials: "include",
+        headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" }
+      });
+      var isFallback = false;
+      if (!res.ok && res.status === 422 && (state.scope === "open" || !state.scope)) {
+        // 后端尚未重启生效时的向下兼容降级
+        var fallbackParams = new URLSearchParams({
+          tab: "demand",
+          scope: "all",
+          lifecycle: state.lifecycle || "all",
+          keyword: state.keyword || "",
+          page: String(state.page || 1),
+          pageSize: String(state.pageSize || 20)
+        });
+        res = await fetch("/follow/items?" + fallbackParams.toString(), {
+          credentials: "include",
+          headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" }
+        });
+        isFallback = true;
+      }
+      if (!res.ok) throw new Error("fetch demand failed");
+      var json = await res.json();
+      if (!json || !json.success) throw new Error("fetch demand failed");
+      var items = Array.isArray(json.items) ? json.items : [];
+      if (isFallback && state.scope === "open" && state.lifecycle === "all") {
+        items = items.filter(function (it) {
+          return it.status !== "closed" && !it.isClosed;
+        });
+      }
+      state.total = typeof json.total === "number" ? (isFallback && state.scope === "open" ? items.length : json.total) : items.length;
+      if (json.stats) {
+        state.stats = json.stats;
+        if (typeof state.stats.open !== "number") {
+          state.stats.open = Math.max(0, (state.stats.all || 0) - (state.stats.closed || 0));
+        }
+      }
+      updateStatsUI();
+      if (summary) summary.textContent = "关注业务需求 · 共 " + state.total + " 条";
+      renderRows(items);
+      if (typeof root.FollowUpdateDemandBadge === "function") {
+        var badgeNum = (typeof state.stats.open === "number") ? state.stats.open : state.total;
+        root.FollowUpdateDemandBadge(badgeNum);
+      }
+    } catch (e) {
+      if (tbody) tbody.innerHTML = "";
+      if (summary) summary.textContent = "加载失败，请重试";
+      if (error) error.hidden = false;
+    }
+  }
+
+  function setScope(scope) {
+    state.scope = scope || "open";
+    if (state.scope === "closed") {
+      state.lifecycle = "all";
+    }
+    state.page = 1;
+    load();
+  }
+
+  function setLifecycle(lifecycle) {
+    var next = lifecycle || "all";
+    if (next === "closed") {
+      state.scope = "closed";
+      state.lifecycle = "all";
+    } else {
+      state.scope = "open";
+      if (state.lifecycle === next) next = "all";
+      state.lifecycle = next;
+    }
+    state.page = 1;
+    load();
+  }
+
+  function reset() {
+    state.scope = "open";
+    state.lifecycle = "all";
+    state.keyword = "";
+    state.page = 1;
+    var input = document.getElementById("followKeyword");
+    if (input) input.value = "";
+    load();
+  }
+
+  function exportCsv() {
+    var params = new URLSearchParams({
+      tab: "demand",
+      scope: state.scope || "open",
+      lifecycle: state.lifecycle || "all",
+      keyword: state.keyword || ""
+    });
+    window.location.href = "/follow/demands/export?" + params.toString();
+  }
+
+  function bind() {
+    document.querySelectorAll("#followQuickChips .header-quick-chip").forEach(function (chip) {
+      chip.addEventListener("click", function () {
+        var sc = chip.getAttribute("data-scope");
+        var lc = chip.getAttribute("data-lifecycle");
+        if (sc) {
+          setScope(sc);
+        } else if (lc) {
+          setLifecycle(lc);
+        }
+      });
+    });
+    document.querySelectorAll("#fdSummary .pw-sum-card").forEach(function (card) {
+      card.addEventListener("click", function () {
+        setLifecycle(card.getAttribute("data-lifecycle") || "all");
+      });
+    });
+    document.querySelectorAll("#fdToolbar .pw-filter-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var sc = btn.getAttribute("data-scope");
+        var lc = btn.getAttribute("data-lifecycle");
+        if (sc) {
+          setScope(sc);
+        } else if (lc) {
+          setLifecycle(lc);
+        }
+      });
+    });
+    var search = document.getElementById("followKeyword");
+    if (search) {
+      var timer = null;
+      search.addEventListener("input", function () {
+        clearTimeout(timer);
+        timer = setTimeout(function () {
+          state.keyword = search.value.trim();
+          state.page = 1;
+          load();
+        }, 300);
+      });
+    }
+    var resetBtn = document.getElementById("fdResetBtn");
+    if (resetBtn) resetBtn.addEventListener("click", reset);
+    var exportBtn = document.getElementById("fdExportBtn");
+    if (exportBtn) exportBtn.addEventListener("click", exportCsv);
+    var retry = document.getElementById("followRetryBtn");
+    if (retry) retry.addEventListener("click", load);
+  }
+
+  root.FollowDemand = {
+    bind: bind,
+    load: load,
+    getTotal: function () {
+      return (typeof state.stats.open === "number") ? state.stats.open : state.total || 0;
+    },
+    reset: reset
+  };
+})(window);
