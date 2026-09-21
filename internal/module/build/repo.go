@@ -21,7 +21,7 @@ import (
 
 var errBuildNotFound = errors.New("build not found")
 
-// Repo 版本数据访问。
+// Repo 版本数据访问。db 为主库：版本存在性判断不能容忍备库弱读延迟。
 type Repo struct {
 	db *gorm.DB
 }

@@ -150,11 +150,7 @@ func Run() error {
 	testtaskRepo := testtask.NewRepo(testtaskReadDB, db)
 	testtaskSvc := testtask.NewService(testtaskRepo, userSvc, zentaopkg.API(), zapLog)
 	testtaskHandler := testtask.NewHandler(testtaskSvc, zapLog)
-	buildReadDB := dbReadonly
-	if buildReadDB == nil {
-		buildReadDB = db
-	}
-	buildRepo := build.NewRepo(buildReadDB)
+	buildRepo := build.NewRepo(db)
 	buildSvc := build.NewService(buildRepo, userSvc, zentaopkg.API(), zapLog)
 	buildHandler := build.NewHandler(buildSvc, zapLog)
 	followHandler := follow.NewHandler(zapLog)
