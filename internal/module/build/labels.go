@@ -98,6 +98,18 @@ func ShouldDefaultCheckStage(stage string) bool {
 	}
 }
 
+// ShouldDefaultCheckStory 默认勾选：阶段命中，或未搜索时属于当前业务需求拆分出的研发需求。
+// 拆分关系由调用方按 zt_story.fromDemand 判定；产品、分支、父需求与已关联排除在查询层完成。
+func ShouldDefaultCheckStory(stage string, fromDemand, demandID uint, bySearch bool) bool {
+	if ShouldDefaultCheckStage(stage) {
+		return true
+	}
+	if bySearch || demandID == 0 {
+		return false
+	}
+	return fromDemand == demandID
+}
+
 // StoryStatusLabel 状态中文；未知则回退原值。
 func StoryStatusLabel(status string) string {
 	if label, ok := storyStatusLabels[status]; ok {

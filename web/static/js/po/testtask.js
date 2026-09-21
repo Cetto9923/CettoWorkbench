@@ -1338,7 +1338,12 @@
         }
       }
       if (typeof window.openPoLinkstoryModal === "function") {
-        window.openPoLinkstoryModal({ unitId: unitId, buildId: buildId, $list: $list });
+        window.openPoLinkstoryModal({
+          unitId: unitId,
+          buildId: buildId,
+          demandId: contextMeta.demandId,
+          $list: $list
+        });
         return;
       }
       showToast("关联研发需求弹窗未加载", "error");

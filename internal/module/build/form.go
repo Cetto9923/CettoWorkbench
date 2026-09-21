@@ -18,6 +18,7 @@ type LinkStoryListReq struct {
 	Page       int    `form:"page"`
 	PageSize   int    `form:"pageSize"`
 	BrowseType string `form:"browseType"`
+	DemandID   uint   `form:"demandId"`
 
 	Field1    string `form:"field1"`
 	Operator1 string `form:"operator1"`
