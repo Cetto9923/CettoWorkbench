@@ -114,12 +114,6 @@
     return name || id;
   }
 
-  function buildProductSelect(selectedId) {
-    var $select = $('<select class="rd-node-product form-select rd-node-product-select"></select>');
-    shared.fillProductSelect($select, shared.involvedProducts, selectedId);
-    return $select;
-  }
-
   function applyProductChange($node, productId) {
     var name = resolveProductName(productId);
     $node.attr("data-product-id", productId || "");
@@ -156,25 +150,14 @@
     closeOtherInlineEdits($node);
 
     var storyId = $node.attr("data-story-id") || "0";
-    var title = $node.attr("data-story-title") || "";
     var assignedTo = $node.attr("data-assigned-to") || "";
     var assignedToName = $node.attr("data-assigned-to-name") || "";
-    var productId = $node.attr("data-product-id") || "";
     var inputId = "rdStoryOwnerInput" + storyId;
     var hiddenId = "rdStoryOwnerValue" + storyId;
 
     $node.addClass("rd-node--editing");
     var $header = $node.find(".rd-node-header").first();
     $header.addClass("rd-node-header--story-edit");
-
-    $header.find(".rd-node-product-name").replaceWith(buildProductSelect(productId));
-    $header.find(".rd-node-role-badge").replaceWith(shared.buildRoleBadge(productId, shared.mainSystemId));
-
-    $header.find(".rd-node-title-display").replaceWith(
-      $('<input type="text" class="rd-node-title-input rd-node-title form-input">')
-        .attr("placeholder", "研发需求名称")
-        .val(title)
-    );
 
     shared.destroyStoryAssigneePicker(inputId);
 
@@ -194,7 +177,7 @@
     }
 
     shared.initStoryAssigneePicker(inputId, hiddenId, assignedTo, assignedToName);
-    $node.find(".rd-node-title-input, .rd-node-title").first().trigger("focus");
+    $header.find(".rd-node-assignee-input").trigger("focus");
   }
 
   function exitStoryEditMode($node) {
@@ -203,28 +186,11 @@
     }
 
     var $header = $node.find(".rd-node-header").first();
-    var title = $.trim($node.find(".rd-node-title-input").val() || $node.find(".rd-node-title").val() || "");
     var assignedTo = $.trim($node.find(".rd-node-assignee-value").val() || "");
     var assignedToName = $.trim($node.find(".rd-node-assignee-input").val() || "");
-    var productId = $.trim($header.find(".rd-node-product").val() || $node.attr("data-product-id") || "");
-    var productName = resolveProductName(productId);
 
-    if (title) {
-      $node.attr("data-story-title", title);
-    }
     $node.attr("data-assigned-to", assignedTo);
     $node.attr("data-assigned-to-name", assignedToName);
-    $node.attr("data-product-id", productId);
-    $node.attr("data-product-name", productName === "—" ? "" : productName);
-
-    $header.find(".rd-node-product").replaceWith(
-      $('<span class="rd-node-product-name"></span>').text(productName || "—")
-    );
-    $header.find(".rd-node-role-badge").replaceWith(shared.buildRoleBadge(productId, shared.mainSystemId));
-
-    $header.find(".rd-node-title-input, .rd-node-title").first().replaceWith(
-      $('<strong class="rd-node-title-display"></strong>').text(title || "—")
-    );
 
     var assigneeText = assigneeDisplayText(assignedToName, assignedTo);
     $header.find(".rd-node-assignee-wrap").replaceWith(
