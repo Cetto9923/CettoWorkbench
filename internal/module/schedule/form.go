@@ -944,6 +944,12 @@ func (r *SaveSchedulingReq) Validate() []FieldError {
 			if strings.TrimSpace(story.Title) == "" {
 				errs = append(errs, FieldError{Field: prefix + ".title", Message: "研发需求标题不能为空"})
 			}
+			if strings.TrimSpace(story.Spec) == "" {
+				errs = append(errs, FieldError{Field: prefix + ".spec", Message: "研发需求描述不能为空"})
+			}
+			if strings.TrimSpace(story.AssignedTo) == "" {
+				errs = append(errs, FieldError{Field: prefix + ".assignedTo", Message: "指派给不能为空"})
+			}
 		case "edit", "delete":
 			if story.ID == 0 {
 				errs = append(errs, FieldError{Field: prefix + ".id", Message: "研发需求 ID 无效"})
