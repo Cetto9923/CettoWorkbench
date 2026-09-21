@@ -545,6 +545,10 @@
   vertical-align: middle;
 }
 
+.po-home .row-title .wb-hang-tag {
+  margin-right: 6px;
+}
+
 /* 阶段胶囊：对齐原型 .stage-tag */
 .po-home .top5-list .stage-tag {
   display: inline-block;

@@ -88,6 +88,7 @@ type DemandRow struct {
 	BRA        string `gorm:"column:BRA"`
 	MainSystem string `gorm:"column:mainSystem"` // 主系统产品 ID（字符串）
 	PM         string `gorm:"column:pm"`         // zt_demandclarify.PM，多账号逗号分隔
+	Hang       string `gorm:"column:hang"`       // '1' 表示已挂起
 }
 
 // StoryRow 研发需求列表投影。
@@ -232,7 +233,7 @@ func (r *Repo) FindRoleDemands(ctx context.Context, account string, filter mysql
 		r.roleDemandScope(ctx, account, filter).
 			Select(`zt_demand.id, zt_demand.name, zt_demand.pri, zt_demand.status, zt_demand.createdBy,
 			zt_demand.assignedTo, zt_demand.QD, zt_demand.RD, zt_demand.BRA, zt_demand.mainSystem,
-			clarify_pm.PM AS pm`).
+			zt_demand.hang, clarify_pm.PM AS pm`).
 			Joins(`LEFT JOIN (
 			SELECT demand, GROUP_CONCAT(PM) AS PM
 			FROM zt_demandclarify

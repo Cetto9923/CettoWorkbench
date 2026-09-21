@@ -114,6 +114,7 @@ type BizRequirement struct {
 	ActionClass        string
 	DetailURL          template.URL
 	HasChildren        bool
+	Suspended          bool
 	SubBizRequirements []SubBizRequirement
 	DevRequirements    []DevRequirement
 }

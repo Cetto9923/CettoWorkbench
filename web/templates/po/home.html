@@ -31,6 +31,7 @@
   {{ if eq .Status "schedule" }}{{ $schedule = .Count }}{{ end }}
   {{ if eq .Status "waitacceptance" }}{{ $waitacceptance = .Count }}{{ end }}
 {{ end }}
+<template id="wbHangTagSource">{{ template "ui/hang" }}</template>
 <div class="po-home" id="poHomeRoot" data-current-account="{{ if .CurrentUser }}{{ .CurrentUser.Account }}{{ end }}">
   <div class="page-hdr">
     <h2 title="需求治理视角 · 受理→澄清→排期→提测→测试→验收→发起交付→发布→评价反馈">工作台首页</h2>

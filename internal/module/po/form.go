@@ -318,6 +318,7 @@ type WorkItemDetail struct {
 	CanCancelReview bool   `json:"canCancelReview"` // 待评审且当前账号是提交人（创建人）
 	CanSubmitReview bool   `json:"canSubmitReview"` // 草稿/已驳回且当前账号是创建人
 	CanEdit         bool   `json:"canEdit"`         // 草稿/已驳回且当前账号是创建人
+	Suspended       bool   `json:"suspended"`       // zt_demand.hang = '1'
 }
 
 // DemandsResp 价值流状态下的需求详情列表。

@@ -532,6 +532,10 @@
       : "";
     var priNumMatch = String(item.pri || "").match(/(\d+)/);
     var priNum = priNumMatch ? priNumMatch[1] : "";
+    var hangSource = document.getElementById("wbHangTagSource");
+    var hangHtml = item.suspended && hangSource
+      ? hangSource.innerHTML.trim() + " "
+      : "";
     var titleInner =
       (item.pri
         ? '<span class="wb-priority" data-priority="' +
@@ -540,6 +544,7 @@
           escapeHtml(item.pri) +
           "</span> "
         : "") +
+      hangHtml +
       escapeHtml(item.title || "");
     var titleHtml = url
       ? "<a " + zentaoLinkAttrs(url, "row-title-link") + ">" + titleInner + "</a>"

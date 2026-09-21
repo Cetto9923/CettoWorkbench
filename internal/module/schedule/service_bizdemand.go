@@ -153,8 +153,9 @@ func (c bizDemandAssembleContext) buildBizDemandItem(top ZtDemand) BizDemandItem
 		ExtraSystemCount: extraSystemCount(c.productCountByDemand[top.ID]),
 		TeamgroupName:    teamgroupName,
 		OwnerName:        resolveDemandOwner(top.BRA, c.realnameByAccount),
-		Stage:      calcBizDemandStage(subtreeDemandIDs, mainSystemStories, c.windowByDemand, c.taskStatByStory),
-		WindowName: pickDemandWindowName(subtreeDemandIDs, subtreeStories, c.windowByDemand, c.windowByStory),
+		Stage:            calcBizDemandStage(subtreeDemandIDs, mainSystemStories, c.windowByDemand, c.taskStatByStory),
+		WindowName:       pickDemandWindowName(subtreeDemandIDs, subtreeStories, c.windowByDemand, c.windowByStory),
+		Suspended:        strings.TrimSpace(top.Hang) == "1",
 		Children:         c.buildSubDemandItems(top, children),
 		Stories:          c.buildStoryItems(top.TeamGroup, teamgroupName, c.storiesByDemand[top.ID]),
 	}
@@ -179,8 +180,8 @@ func (c bizDemandAssembleContext) buildSubDemandItems(parent ZtDemand, children 
 			ExtraSystemCount: extraSystemCount(c.productCountByDemand[child.ID]),
 			TeamgroupName:    parentTeamgroupName,
 			OwnerName:        resolveDemandOwner(child.BRA, c.realnameByAccount),
-			Stage:      calcBizDemandStage(demandIDs, filterMainSystemStories(subtreeStories), c.windowByDemand, c.taskStatByStory),
-			WindowName: pickDemandWindowName(demandIDs, subtreeStories, c.windowByDemand, c.windowByStory),
+			Stage:            calcBizDemandStage(demandIDs, filterMainSystemStories(subtreeStories), c.windowByDemand, c.taskStatByStory),
+			WindowName:       pickDemandWindowName(demandIDs, subtreeStories, c.windowByDemand, c.windowByStory),
 			Stories:          c.buildStoryItems(parent.TeamGroup, parentTeamgroupName, childStories),
 		})
 	}

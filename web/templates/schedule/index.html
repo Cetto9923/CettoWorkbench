@@ -263,6 +263,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
                   {{ end }}
                 </span>
                 <span class="wb-type wb-type-business"><span class="wb-type-tag">业需</span><span class="wb-type-id schedule-id-badge">#{{ .ID }}</span></span>
+                {{ if .Suspended }}{{ template "ui/hang" }}{{ end }}
                 {{ if .DetailURL }}
                 <a href="{{ .DetailURL }}" target="_blank" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
                 {{ else }}

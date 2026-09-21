@@ -594,6 +594,7 @@ type BizDemandItem struct {
 	OwnerName        string          `json:"ownerName"`
 	Stage            string          `json:"stage"`
 	WindowName       string          `json:"windowName"`
+	Suspended        bool            `json:"suspended"`
 	Children         []SubDemandItem `json:"children"`
 	Stories          []StoryItem     `json:"stories"`
 }

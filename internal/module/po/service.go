@@ -391,6 +391,7 @@ func (s *Service) buildDemandWorkItems(ctx context.Context, account, stageStatus
 			CanCancelReview: isCreator && status == "wait",
 			CanSubmitReview: canOwnerDraft,
 			CanEdit:         canOwnerDraft,
+			Suspended:       strings.TrimSpace(row.Hang) == "1",
 		})
 	}
 	return items, nil
