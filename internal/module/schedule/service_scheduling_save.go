@@ -14,7 +14,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"workbench/internal/model"
 )
@@ -135,20 +134,8 @@ func (s *Service) SaveStoryScheduling(ctx context.Context, actor *model.User, st
 		if err := txRepo.LinkStoryToPlan(ctx, storyID, mainSystemID, planID, account); err != nil {
 			return err
 		}
-		if err := txRepo.CreateAction(ctx, "story", storyID, "Edited", account, mainSystemID, 0, 0, ""); err != nil {
-			return err
-		}
-
-		// (c) 日期存 zt_story：提测/开发 → developFinish；测试完成 → testFinish；
-		// 验收完成 → verifyFinish；预计上线 → estimateLaunch（同弹窗 schedulePlanDate）。
-		return txRepo.UpdateStory(ctx, storyID, map[string]interface{}{
-			"estimateLaunch": nullableSchedulingDate(estimateLaunch),
-			"developFinish":  nullableSchedulingDate(req.DevelopFinish),
-			"testFinish":     nullableSchedulingDate(req.TestFinish),
-			"verifyFinish":   nullableSchedulingDate(req.AcceptancedDate),
-			"lastEditedBy":   account,
-			"lastEditedDate": time.Now(),
-		})
+		// (c) 日期存 zt_story，并按禅道 Edited + zt_history 记录实际变更。
+		return s.saveEditedStoryDates(ctx, txRepo, account, storyID, mainSystemID, estimateLaunch, req.DevelopFinish, req.TestFinish, req.AcceptancedDate)
 	})
 }
 
@@ -210,20 +197,8 @@ func (s *Service) applySchedulingStory(
 	case "edit":
 		storyID = storyReq.ID
 		productID = storyReq.ProductID
-		if err := txRepo.UpdateStory(ctx, storyID, map[string]interface{}{
-			"title":          strings.TrimSpace(storyReq.Title),
-			"assignedTo":     strings.TrimSpace(storyReq.AssignedTo),
-			"product":        storyReq.ProductID,
-			"estimateLaunch": nullableSchedulingDate(estimateLaunch),
-			"developFinish":  nullableSchedulingDate(developFinish),
-			"testFinish":     nullableSchedulingDate(testFinish),
-			"lastEditedBy":   account,
-			"lastEditedDate": time.Now(),
-		}); err != nil {
-			return 0, 0, 0, fmt.Errorf("update story %d: %w", storyID, err)
-		}
-		if err := txRepo.CreateAction(ctx, "story", storyID, "Edited", account, storyReq.ProductID, 0, 0, ""); err != nil {
-			return 0, 0, 0, fmt.Errorf("create story action: %w", err)
+		if err := s.saveEditedStory(ctx, txRepo, account, storyID, productID, estimateLaunch, developFinish, testFinish, storyReq); err != nil {
+			return 0, 0, 0, err
 		}
 		// 同步计划关联:解析目标计划 → 从该 story 的其他计划移除 → 幂等关联到目标计划。
 		// 对 productID 未变化的情况也幂等(Ensure INSERT IGNORE + Remove 保留当前 plan)。
@@ -323,24 +298,8 @@ func (s *Service) applySingleSchedulingTask(
 		if err != nil {
 			return err
 		}
-		if err := txRepo.UpdateTask(ctx, taskReq.ID, map[string]interface{}{
-			"name":           strings.TrimSpace(taskReq.Name),
-			"type":           strings.TrimSpace(taskReq.Type),
-			"pri":            normalizeTaskPriority(taskReq.Pri),
-			"assignedTo":     strings.TrimSpace(taskReq.AssignedTo),
-			"estimate":       taskReq.Estimate,
-			"left":           taskReq.Estimate,
-			"estStarted":     nullableDateValue(taskReq.EstStarted),
-			"deadline":       nullableDateValue(taskReq.Deadline),
-			"execution":      taskReq.ExecutionID,
-			"project":        projectID,
-			"lastEditedBy":   account,
-			"lastEditedDate": time.Now(),
-		}); err != nil {
-			return fmt.Errorf("update task %d: %w", taskReq.ID, err)
-		}
-		if err := txRepo.CreateAction(ctx, "task", taskReq.ID, "Edited", account, productID, projectID, taskReq.ExecutionID, ""); err != nil {
-			return fmt.Errorf("create task action: %w", err)
+		if err := s.saveEditedTask(ctx, txRepo, account, productID, projectID, taskReq); err != nil {
+			return err
 		}
 		if err := txRepo.LinkStoryToProjectAndExecution(ctx, storyID, productID, projectID, taskReq.ExecutionID, account); err != nil {
 			return fmt.Errorf("link story to project/execution: %w", err)

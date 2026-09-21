@@ -3,7 +3,7 @@
 // 模块: PO 工作台
 // 类型: action
 // 职责: 业需评审写库（zt_demand / zt_demandreview / zt_action）。只走主库 writeDB。
-// 依赖: 无
+// 依赖: internal/pkg/ztaction
 // =============================================================================
 
 package po
@@ -17,6 +17,8 @@ import (
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+
+	"workbench/internal/pkg/ztaction"
 )
 
 var (
@@ -48,23 +50,6 @@ type demandReviewerRow struct {
 }
 
 func (demandReviewerRow) TableName() string { return "zt_demandreview" }
-
-// demandActionRow 对应 zt_action，给禅道详情页「历史记录」用。
-type demandActionRow struct {
-	ID         uint      `gorm:"column:id;primaryKey;autoIncrement"`
-	ObjectType string    `gorm:"column:objectType"`
-	ObjectID   uint      `gorm:"column:objectID"`
-	Product    string    `gorm:"column:product"`
-	Project    uint      `gorm:"column:project"`
-	Execution  uint      `gorm:"column:execution"`
-	Actor      string    `gorm:"column:actor"`
-	Action     string    `gorm:"column:action"`
-	Date       time.Time `gorm:"column:date"`
-	Comment    string    `gorm:"column:comment"`
-	Extra      string    `gorm:"column:extra"`
-}
-
-func (demandActionRow) TableName() string { return "zt_action" }
 
 func (r *Repo) writer() (*gorm.DB, error) {
 	if r == nil || r.writeDB == nil {
@@ -229,33 +214,29 @@ func (r *Repo) SaveDemandReview(ctx context.Context, in saveDemandReviewIn) erro
 			return fmt.Errorf("update demand: %w", err)
 		}
 
-		productField := ",0,"
-		if p := strings.TrimSpace(in.Product); p != "" && p != "0" {
-			productField = "," + p + ","
-		}
 		// extra 存 pass/refuse，禅道历史里用来显示「确认通过/拒绝」
-		if err := q().Create(&demandActionRow{
+		if _, err := ztaction.Create(ctx, q(), ztaction.Record{
 			ObjectType: "demand",
 			ObjectID:   uint(in.DemandID),
-			Product:    productField,
+			Product:    in.Product,
 			Actor:      in.Account,
 			Action:     "reviewed",
 			Date:       now,
 			Comment:    in.Comment,
 			Extra:      in.Result,
-		}).Error; err != nil {
+		}); err != nil {
 			return fmt.Errorf("insert action reviewed: %w", err)
 		}
 
 		if statusAction != "" {
-			if err := q().Create(&demandActionRow{
+			if _, err := ztaction.Create(ctx, q(), ztaction.Record{
 				ObjectType: "demand",
 				ObjectID:   uint(in.DemandID),
-				Product:    productField,
+				Product:    in.Product,
 				Actor:      in.Account,
 				Action:     statusAction,
 				Date:       now,
-			}).Error; err != nil {
+			}); err != nil {
 				return fmt.Errorf("insert action %s: %w", statusAction, err)
 			}
 		}

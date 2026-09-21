@@ -4,6 +4,8 @@
 // 类型: action
 // 职责: 排期一体化「确认并同步」写库操作。
 // 依赖: internal/model
+//       internal/model/zentao
+//       internal/pkg/ztaction
 //       internal/module/schedule/form.go
 // =============================================================================
 
@@ -12,13 +14,14 @@ package schedule
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
 	"gorm.io/gorm"
 
 	"workbench/internal/model"
+	ztmodel "workbench/internal/model/zentao"
+	"workbench/internal/pkg/ztaction"
 )
 
 // ZtStoryInsert 禅道 zt_story 写入字段。
@@ -66,103 +69,6 @@ type ZtTaskSpec struct {
 	EstStarted string
 	Deadline   string
 }
-
-type ztStoryCreateRow struct {
-	ID                      uint       `gorm:"column:id;primaryKey;autoIncrement"`
-	Product                 uint       `gorm:"column:product"`
-	Branch                  string     `gorm:"column:branch"`
-	Module                  uint       `gorm:"column:module"`
-	Plan                    string     `gorm:"column:plan"`
-	Source                  string     `gorm:"column:source"`
-	SourceNote              string     `gorm:"column:sourceNote"`
-	Title                   string     `gorm:"column:title"`
-	Type                    string     `gorm:"column:type"`
-	Pri                     int        `gorm:"column:pri"`
-	Grade                   int        `gorm:"column:grade"`
-	Estimate                float64    `gorm:"column:estimate"`
-	Status                  string     `gorm:"column:status"`
-	Stage                   string     `gorm:"column:stage"`
-	SourceType              string     `gorm:"column:sourceType"`
-	FromDemand              uint       `gorm:"column:fromDemand"`
-	Version                 int        `gorm:"column:version"`
-	OpenedBy                string     `gorm:"column:openedBy"`
-	OpenedDate              time.Time  `gorm:"column:openedDate"`
-	AssignedTo              string     `gorm:"column:assignedTo"`
-	IsMainSystemAssociation string     `gorm:"column:isMainSystemAssociation"`
-	EstimateLaunch          *time.Time `gorm:"column:estimateLaunch"`
-	DevelopFinish           *time.Time `gorm:"column:developFinish"`
-	TestFinish              *time.Time `gorm:"column:testFinish"`
-	VerifyPlan              string     `gorm:"column:verifyPlan"`
-	Deleted                 string     `gorm:"column:deleted"`
-}
-
-func (ztStoryCreateRow) TableName() string { return "zt_story" }
-
-type ztStorySpecRow struct {
-	Story   uint   `gorm:"column:story;primaryKey"`
-	Version int    `gorm:"column:version;primaryKey"`
-	Title   string `gorm:"column:title"`
-	Spec    string `gorm:"column:spec"`
-}
-
-func (ztStorySpecRow) TableName() string { return "zt_storyspec" }
-
-type ztPlanStoryRow struct {
-	Plan  uint `gorm:"column:plan;primaryKey"`
-	Story uint `gorm:"column:story;primaryKey"`
-	Order int  `gorm:"column:order"`
-}
-
-func (ztPlanStoryRow) TableName() string { return "zt_planstory" }
-
-type ztTaskCreateRow struct {
-	ID         uint      `gorm:"column:id;primaryKey;autoIncrement"`
-	Name       string    `gorm:"column:name"`
-	Type       string    `gorm:"column:type"`
-	Pri        int       `gorm:"column:pri"`
-	Story      uint      `gorm:"column:story"`
-	Project    uint      `gorm:"column:project"`
-	Execution  uint      `gorm:"column:execution"`
-	AssignedTo string    `gorm:"column:assignedTo"`
-	Estimate   float64   `gorm:"column:estimate"`
-	Consumed   float64   `gorm:"column:consumed"`
-	Left       float64   `gorm:"column:left"`
-	EstStarted string    `gorm:"column:estStarted"`
-	Deadline   string    `gorm:"column:deadline"`
-	Status     string    `gorm:"column:status"`
-	OpenedBy   string    `gorm:"column:openedBy"`
-	OpenedDate time.Time `gorm:"column:openedDate"`
-	Version    int       `gorm:"column:version"`
-	Deleted    string    `gorm:"column:deleted"`
-}
-
-func (ztTaskCreateRow) TableName() string { return "zt_task" }
-
-type ztTaskSpecRow struct {
-	Task       uint   `gorm:"column:task;primaryKey"`
-	Version    int    `gorm:"column:version;primaryKey"`
-	Name       string `gorm:"column:name"`
-	EstStarted string `gorm:"column:estStarted"`
-	Deadline   string `gorm:"column:deadline"`
-}
-
-func (ztTaskSpecRow) TableName() string { return "zt_taskspec" }
-
-type ztActionRow struct {
-	ID         uint      `gorm:"column:id;primaryKey;autoIncrement"`
-	ObjectType string    `gorm:"column:objectType"`
-	ObjectID   uint      `gorm:"column:objectID"`
-	Product    string    `gorm:"column:product"`
-	Project    uint      `gorm:"column:project"`
-	Execution  uint      `gorm:"column:execution"`
-	Actor      string    `gorm:"column:actor"`
-	Action     string    `gorm:"column:action"`
-	Date       time.Time `gorm:"column:date"`
-	Comment    string    `gorm:"column:comment"`
-	Extra      string    `gorm:"column:extra"`
-}
-
-func (ztActionRow) TableName() string { return "zt_action" }
 
 // FindWindowProductPlan 查窗口下某产品的关联计划。
 func (r *Repo) FindWindowProductPlan(ctx context.Context, windowID uint, productID uint) (*model.VersionWindowProduct, error) {
@@ -283,7 +189,7 @@ func (r *Repo) CreateStory(ctx context.Context, story *ZtStoryInsert) (uint, err
 		return 0, errors.New("story is nil")
 	}
 	now := time.Now()
-	row := ztStoryCreateRow{
+	row := ztmodel.ZtStoryCreate{
 		Product:                 story.Product,
 		Branch:                  "0",
 		Module:                  0,
@@ -321,7 +227,7 @@ func (r *Repo) CreateStorySpec(ctx context.Context, spec *ZtStorySpec) error {
 	if spec == nil {
 		return errors.New("story spec is nil")
 	}
-	row := ztStorySpecRow{
+	row := ztmodel.ZtStoryspec{
 		Story:   spec.Story,
 		Version: spec.Version,
 		Title:   strings.TrimSpace(spec.Title),
@@ -335,7 +241,7 @@ func (r *Repo) CreatePlanStory(ctx context.Context, planID uint, storyID uint) e
 	if planID == 0 || storyID == 0 {
 		return errors.New("plan or story id is invalid")
 	}
-	row := ztPlanStoryRow{Plan: planID, Story: storyID, Order: 0}
+	row := ztmodel.ZtPlanstory{Plan: planID, Story: storyID, Order: 0}
 	return r.db.WithContext(ctx).Create(&row).Error
 }
 
@@ -373,7 +279,7 @@ func (r *Repo) CreateTask(ctx context.Context, task *ZtTaskInsert) (uint, error)
 		return 0, errors.New("task is nil")
 	}
 	now := time.Now()
-	row := ztTaskCreateRow{
+	row := ztmodel.ZtTask{
 		Name:       strings.TrimSpace(task.Name),
 		Type:       strings.TrimSpace(task.Type),
 		Pri:        task.Pri,
@@ -403,7 +309,7 @@ func (r *Repo) CreateTaskSpec(ctx context.Context, spec *ZtTaskSpec) error {
 	if spec == nil {
 		return errors.New("task spec is nil")
 	}
-	row := ztTaskSpecRow{
+	row := ztmodel.ZtTaskspec{
 		Task:       spec.Task,
 		Version:    spec.Version,
 		Name:       strings.TrimSpace(spec.Name),
@@ -451,23 +357,17 @@ func (r *Repo) DeleteTask(ctx context.Context, taskID uint) error {
 
 // CreateAction 创建禅道操作日志。
 func (r *Repo) CreateAction(ctx context.Context, objectType string, objectID uint, action string, actor string, productID uint, projectID uint, executionID uint, extra string) error {
-	productField := ",0,"
-	if productID > 0 {
-		productField = fmt.Sprintf(",%d,", productID)
-	}
-	row := ztActionRow{
+	_, err := ztaction.Create(ctx, r.db, ztaction.Record{
 		ObjectType: objectType,
 		ObjectID:   objectID,
-		Product:    productField,
+		ProductID:  productID,
 		Project:    projectID,
 		Execution:  executionID,
 		Actor:      actor,
 		Action:     action,
-		Date:       time.Now(),
-		Comment:    "",
 		Extra:      extra,
-	}
-	return r.db.WithContext(ctx).Create(&row).Error
+	})
+	return err
 }
 
 // UpdateDemandScheduling 更新业需排期字段。
