@@ -2,8 +2,9 @@
 // 文件: internal/module/schedule/service_story_history.go
 // 模块: 排期工作台
 // 类型: action
-// 职责: 编辑研发需求或任务时对比旧值并写入禅道历史，指派变化同时更新 assignedDate。
-// 依赖: internal/pkg/ztaction
+// 职责: 编辑业务需求排期、研发需求或任务时对比旧值并写入禅道历史。
+// 依赖: internal/model
+//       internal/pkg/ztaction
 // =============================================================================
 
 package schedule
@@ -15,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"workbench/internal/model"
 	"workbench/internal/pkg/ztaction"
 )
 
@@ -157,6 +159,67 @@ func (s *Service) saveEditedTask(
 	}
 	if err := txRepo.LogEditedHistory(ctx, "task", taskReq.ID, account, productID, projectID, taskReq.ExecutionID, changes); err != nil {
 		return fmt.Errorf("create task action: %w", err)
+	}
+	return nil
+}
+
+func (s *Service) saveEditedDemandScheduling(
+	ctx context.Context,
+	txRepo *Repo,
+	account string,
+	demandID uint,
+	mainSystemID uint,
+	req *SaveSchedulingReq,
+	estimateLaunch string,
+	window *model.VersionWindow,
+) error {
+	snapshot, err := txRepo.FindDemandSchedulingSnapshot(ctx, demandID)
+	if err != nil {
+		return fmt.Errorf("load demand %d: %w", demandID, err)
+	}
+	oldWindowID, oldWindowName, err := txRepo.findDemandLevelWindow(ctx, demandID)
+	if err != nil {
+		return fmt.Errorf("load demand window %d: %w", demandID, err)
+	}
+	if err := txRepo.UpdateDemandScheduling(ctx, demandID, buildDemandSchedulingUpdates(req, account, estimateLaunch)); err != nil {
+		return fmt.Errorf("update demand scheduling: %w", err)
+	}
+
+	newWindowName := ""
+	var newWindowID uint
+	if window != nil {
+		newWindowID = uint(window.ID)
+		newWindowName = strings.TrimSpace(window.Name)
+	}
+	if newWindowName == "" {
+		newWindowName = strconv.FormatUint(uint64(newWindowID), 10)
+	}
+	if oldWindowID == 0 {
+		oldWindowName = ""
+	} else if strings.TrimSpace(oldWindowName) == "" {
+		oldWindowName = strconv.FormatUint(uint64(oldWindowID), 10)
+	} else {
+		oldWindowName = strings.TrimSpace(oldWindowName)
+	}
+	changes := []ztaction.Change{
+		{Field: "QD", Old: strings.TrimSpace(snapshot.QD), New: strings.TrimSpace(req.QD)},
+		{Field: "RD", Old: strings.TrimSpace(snapshot.RD), New: strings.TrimSpace(req.Accepter)},
+		{Field: "estimateLaunch", Old: normalizeHistoryDate(snapshot.EstimateLaunch), New: normalizeHistoryDate(estimateLaunch)},
+		{Field: "developFinish", Old: normalizeHistoryDate(snapshot.DevelopFinish), New: normalizeHistoryDate(req.DevelopFinish)},
+		{Field: "testFinish", Old: normalizeHistoryDate(snapshot.TestFinish), New: normalizeHistoryDate(req.TestFinish)},
+		{Field: "verifyFinish", Old: normalizeHistoryDate(snapshot.VerifyFinish), New: normalizeHistoryDate(req.AcceptancedDate)},
+	}
+	if oldWindowID != newWindowID {
+		changes = append(changes, ztaction.Change{Field: "versionWindow", Old: oldWindowName, New: newWindowName})
+	}
+	if err := txRepo.LogEditedRecord(ctx, ztaction.Record{
+		ObjectType: "demand",
+		ObjectID:   demandID,
+		Product:    snapshot.Product,
+		ProductID:  mainSystemID,
+		Actor:      account,
+	}, changes); err != nil {
+		return fmt.Errorf("create demand action: %w", err)
 	}
 	return nil
 }

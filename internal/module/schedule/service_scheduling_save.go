@@ -63,8 +63,8 @@ func (s *Service) SaveScheduling(ctx context.Context, actor *model.User, demandI
 			}
 		}
 
-		if err := txRepo.UpdateDemandScheduling(ctx, demandID, buildDemandSchedulingUpdates(req, account, estimateLaunch)); err != nil {
-			return fmt.Errorf("update demand scheduling: %w", err)
+		if err := s.saveEditedDemandScheduling(ctx, txRepo, account, demandID, mainSystemID, req, estimateLaunch, window); err != nil {
+			return err
 		}
 
 		// 对齐禅道 tostory：保存研发需求后，clarified → developing。
