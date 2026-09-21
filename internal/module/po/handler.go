@@ -88,6 +88,13 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.PUT("/follow/demand/:id", middleware.RequirePerm(perm.PoFollowUpdate), h.FollowSetDemand)
 	g.PUT("/follow/project-report/:id", middleware.RequirePerm(perm.PoFollowUpdate), h.FollowRemoveProjectReport)
 
+	// Keep the sidebar's public path aligned with the page capability name.
+	// The singular path remains as a compatibility alias for existing links.
+	for _, path := range []string{"/issues/risk", "/issue-risk"} {
+		g.GET(path, middleware.RequirePerm(perm.PoBoardDemandList), h.IssueRisk)
+		g.GET(path+"/items", middleware.RequirePerm(perm.PoBoardDemandList), h.IssueRiskItems)
+	}
+
 	NewBoardHandler(h.svc, h.logger).RegisterRoutes(g)
 }
 

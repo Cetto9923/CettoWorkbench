@@ -1,0 +1,20 @@
+/* 查询页复用个人工作区的操作按钮，事件仍由 action-btn 标记识别。 */
+.po-query .action-btn-disabled {
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
+}
+
+.po-query .query-col-id {
+  width: 140px;
+  white-space: nowrap;
+}
+
+.po-query .query-col-title {
+  min-width: 260px;
+  word-break: break-word;
+}
+
+.po-query .query-col-title .wb-priority {
+  margin-right: 6px;
+  vertical-align: middle;
+}

@@ -54,19 +54,3 @@ func todoApprovalSceneLabel(objectType string) string {
 		return "—"
 	}
 }
-
-// issueRiskSeverity maps ZenTao severity codes to Chinese labels for todo list display.
-func issueRiskSeverity(raw string) string {
-	switch strings.TrimSpace(raw) {
-	case "1":
-		return "致命"
-	case "2":
-		return "严重"
-	case "3", "":
-		return "一般"
-	case "4":
-		return "轻微"
-	default:
-		return "一般"
-	}
-}

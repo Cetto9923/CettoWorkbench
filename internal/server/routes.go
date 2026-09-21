@@ -19,6 +19,10 @@ import (
 	"workbench/internal/module/dept"
 	"workbench/internal/module/follow"
 	"workbench/internal/module/kanban"
+	"workbench/internal/module/query"
+	"workbench/internal/module/profile"
+	"workbench/internal/module/metrics"
+	"workbench/internal/module/agileteam"
 
 	"workbench/internal/module/build"
 	loginmodule "workbench/internal/module/login"
@@ -48,6 +52,10 @@ type RouteDeps struct {
 	DeptHandler         *dept.Handler
 	RoleHandler         *role.Handler
 	PoHandler           *pomodule.Handler
+	QueryHandler        *query.Handler
+	MetricsHandler      *metrics.Handler
+	ProfileHandler      *profile.Handler
+	AgileTeamHandler    *agileteam.Handler
 	FollowHandler       *follow.Handler
 	KanbanHandler       *kanban.Handler
 	ScheduleHandler     *schedule.Handler
@@ -97,6 +105,18 @@ func registerRoutes(r *gin.Engine, deps RouteDeps) {
 		}
 		if deps.PoHandler != nil {
 			deps.PoHandler.RegisterRoutes(po)
+		}
+		if deps.QueryHandler != nil {
+			deps.QueryHandler.RegisterRoutes(po)
+		}
+		if deps.MetricsHandler != nil {
+			deps.MetricsHandler.RegisterRoutes(po)
+		}
+		if deps.ProfileHandler != nil {
+			deps.ProfileHandler.RegisterRoutes(po)
+		}
+		if deps.AgileTeamHandler != nil {
+			deps.AgileTeamHandler.RegisterRoutes(po)
 		}
 		if deps.FollowHandler != nil {
 			deps.FollowHandler.RegisterRoutes(po)

@@ -42,6 +42,10 @@ import (
 	"workbench/internal/module/menu"
 	"workbench/internal/module/operationlog"
 	"workbench/internal/module/po"
+	"workbench/internal/module/query"
+	"workbench/internal/module/profile"
+	"workbench/internal/module/metrics"
+	"workbench/internal/module/agileteam"
 	"workbench/internal/module/role"
 	"workbench/internal/module/schedule"
 	"workbench/internal/module/testtask"
@@ -183,6 +187,16 @@ func Run() error {
 	sqlPerfSvc := debug.NewService(sqlPerfRepo)
 	sqlPerfHandler := debug.NewHandler(sqlPerfSvc)
 
+
+	queryRepo := query.NewRepo(dbReadonlyOrPrimary(dbReadonly, db))
+	querySvc := query.NewService(queryRepo)
+	queryHandler := query.NewHandler(rend, querySvc, zapLog)
+	metricsHandler := metrics.NewHandler(rend, metrics.NewService(metrics.NewRepo(dbReadonlyOrPrimary(dbReadonly, db))), zapLog)
+	profileHandler := profile.NewHandler(profile.NewService(profile.NewRepo(db)), zapLog)
+	agileTeamRepo := agileteam.NewRepo(db, dbReadonlyOrPrimary(dbReadonly, db))
+	agileTeamSvc := agileteam.NewService(agileTeamRepo, zapLog)
+	agileTeamHandler := agileteam.NewHandler(agileTeamSvc, zapLog)
+
 	routeDeps := server.RouteDeps{
 		SessionMgr:          sessionMgr,
 		DB:                  db,
@@ -197,6 +211,10 @@ func Run() error {
 		DeptHandler:         deptHandler,
 		RoleHandler:         roleHandler,
 		PoHandler:           poHandler,
+		QueryHandler:        queryHandler,
+		MetricsHandler:      metricsHandler,
+		ProfileHandler:      profileHandler,
+		AgileTeamHandler:    agileTeamHandler,
 		FollowHandler:       followHandler,
 		KanbanHandler:       kanbanHandler,
 		ScheduleHandler:     scheduleHandler,
@@ -207,4 +225,12 @@ func Run() error {
 
 	srv := server.New(cfg, zapLog, db, sessionMgr, limiter, nil, routeDeps)
 	return srv.Run()
+}
+
+// dbReadonlyOrPrimary 只读池可用则用之，否则降级主库。
+func dbReadonlyOrPrimary(ro, primary *gorm.DB) *gorm.DB {
+	if ro != nil {
+		return ro
+	}
+	return primary
 }

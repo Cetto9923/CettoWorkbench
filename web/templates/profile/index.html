@@ -1,0 +1,31 @@
+{{ define "page_css" }}
+<link rel="stylesheet" href="{{ asset "/static/css/po/personal-workspace.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/po-profile.css" }}">
+{{ end }}
+
+{{ define "content" }}
+<div class="po-personal-workspace po-profile">
+  <header class="workspace-header">
+    <div class="workspace-header-left">
+      <h2>个人资料</h2>
+      <p>查看与维护当前登录用户的资料、自选视图、默认小组与密码</p>
+    </div>
+  </header>
+  <section class="workspace-panel po-profile-panel">
+    <div id="poProfileLoading" class="state-placeholder">
+      <i class="fas fa-circle-notch fa-spin"></i> 正在加载个人资料…
+    </div>
+
+    <div id="poProfileError" class="state-placeholder error" hidden>
+      <div id="poProfileErrorMsg"></div>
+      <button id="poProfileRetryBtn" type="button" class="action-btn">重试</button>
+    </div>
+
+    <div id="profilePageBody" hidden></div>
+  </section>
+</div>
+{{ end }}
+
+{{ define "page_js" }}
+<script src="{{ asset "/static/js/po/po-profile.js" }}"></script>
+{{ end }}

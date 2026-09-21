@@ -1,0 +1,144 @@
+{{/* ==========================================================================
+文件: web/templates/metrics/manage.html
+模块: 指标管理 (metrics)
+职责: 指标元数据只读展示。指标定义唯一事实源在后端 /metrics/api
+     （internal/module/metrics/catalog.go），本页不再维护第二套字典或假持久化。
+全局字段: .CurrentUser, .CSRFToken, .Menus, .AppName, .CurrentPath
+页面字段: .Title (string), .PageTitle (string)
+========================================================================== */}}
+{{ define "page_css" }}
+<link rel="stylesheet" href="{{ asset "/static/css/po/personal-workspace.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/metrics/shared.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/metrics/manage.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/metrics/drawer.css" }}">
+{{ end }}
+
+{{ define "content" }}
+<div class="po-personal-workspace po-metrics-manage">
+  <!-- 1. 顶部 5 项指标概览卡 -->
+  <div class="metric-summary-cards" id="mSummaryCards" aria-label="指标概览">
+    <div class="metric-summary-card">
+      <span class="m-sum-label">指标总数</span>
+      <strong class="m-sum-num" id="mSummaryTotal">—</strong>
+      <span class="m-sum-desc">度量体系元数据池</span>
+    </div>
+    <div class="metric-summary-card c-enabled">
+      <span class="m-sum-label">已启用指标</span>
+      <strong class="m-sum-num" id="mSummaryEnabled">—</strong>
+      <span class="m-sum-desc">度量体系启用范围</span>
+    </div>
+    <div class="metric-summary-card c-warn">
+      <span class="m-sum-label">已设关注阈值</span>
+      <strong class="m-sum-num" id="mSummaryWarnThreshold">—</strong>
+      <span class="m-sum-desc">已定义达标目标</span>
+    </div>
+    <div class="metric-summary-card c-danger">
+      <span class="m-sum-label">已设风险红线</span>
+      <strong class="m-sum-num" id="mSummaryDangerThreshold">—</strong>
+      <span class="m-sum-desc">已定义危险红线</span>
+    </div>
+    <div class="metric-summary-card">
+      <span class="m-sum-label">覆盖业务分类</span>
+      <strong class="m-sum-num" id="mSummaryCategories">—</strong>
+      <span class="m-sum-desc">五维全方位度量</span>
+    </div>
+  </div>
+
+  <section class="workspace-panel">
+    <!-- 2. 工具栏（分类 + 角色 + 状态 + 搜索） -->
+    <div class="workspace-toolbar">
+      <div class="toolbar-filters-group">
+        <label class="filter-group" for="mCategory">
+          <span class="filter-label">分类:</span>
+          <div class="custom-select-box">
+            <select id="mCategory" aria-label="分类">
+              <option value="">全部分类</option>
+              <option value="需求治理">需求治理</option>
+              <option value="交付效率">交付效率</option>
+              <option value="研发质量">研发质量</option>
+              <option value="规范执行">规范执行</option>
+              <option value="效能管理">效能管理</option>
+            </select>
+            <i class="fas fa-chevron-down select-arrow"></i>
+          </div>
+        </label>
+
+        <label class="filter-group" for="mRole">
+          <span class="filter-label">责任角色:</span>
+          <div class="custom-select-box">
+            <select id="mRole" aria-label="责任角色">
+              <option value="">全部角色</option>
+              <option value="PO">PO</option>
+              <option value="SM">SM</option>
+              <option value="开发组长">开发组长</option>
+              <option value="测试负责人">测试负责人</option>
+              <option value="PMO">PMO</option>
+            </select>
+            <i class="fas fa-chevron-down select-arrow"></i>
+          </div>
+        </label>
+
+        <label class="filter-group" for="mState">
+          <span class="filter-label">启停状态:</span>
+          <div class="custom-select-box">
+            <select id="mState" aria-label="启停状态">
+              <option value="">全部状态</option>
+              <option value="enabled" selected>启用中</option>
+              <option value="disabled">已停用</option>
+            </select>
+            <i class="fas fa-chevron-down select-arrow"></i>
+          </div>
+        </label>
+
+        <div class="workspace-search">
+          <i class="fas fa-search search-icon"></i>
+          <input id="mKeyword" type="search" placeholder="搜索指标名 / 编码 / 数据来源 / 算法" aria-label="搜索指标">
+        </div>
+
+        <button type="button" class="workspace-btn" id="mReset">重置筛选</button>
+      </div>
+
+      <div class="workspace-toolbar-actions">
+        <a href="/metrics/radar" class="workspace-btn" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+          <i class="fas fa-chart-pie"></i> 进入指标雷达大屏
+        </a>
+      </div>
+    </div>
+
+    <!-- 结果统计与提示 -->
+    <div class="workspace-result-bar" aria-live="polite">
+      <span id="mSummary">正在加载指标元数据…</span>
+      <span class="workspace-result-hint">指标定义与阈值以后端 /metrics/api 为唯一事实源；外部数据源（FineReport / DevOps / 门禁）未接入时显示「暂无数据」</span>
+    </div>
+
+    <!-- 3. 指标元数据只读主表 -->
+    <div class="table-scroll-container" id="mListView">
+      <table class="workspace-table metric-table">
+        <thead>
+          <tr>
+            <th class="metric-col-name">指标名称 / 编码</th>
+            <th>业务分类</th>
+            <th>数据来源</th>
+            <th>考核目标</th>
+            <th class="metric-col-target">阈值配置 (关注/风险)</th>
+            <th>责任角色</th>
+            <th>极性方向</th>
+            <th>当前值</th>
+            <th>状态</th>
+          </tr>
+        </thead>
+        <tbody id="mTbody">
+          <tr><td colspan="9" class="state-placeholder">正在加载指标元数据…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="state-placeholder" id="mEmpty" hidden>当前条件下暂无指标</div>
+  </section>
+</div>
+{{ end }}
+
+{{ define "page_js" }}
+<script src="{{ asset "/static/js/po/personal-list.js" }}"></script>
+<script src="{{ asset "/static/js/metrics-manage.js" }}"></script>
+{{ end }}
