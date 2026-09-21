@@ -1,0 +1,40 @@
+#scheduleIntegratedModal .rd-story-grid {
+  display: grid;
+  grid-template-columns: 180px 120px 180px minmax(240px, 1fr) 160px 100px 90px 90px;
+  gap: 10px 12px;
+  padding: 12px 14px 14px;
+  border-top: 1px solid var(--color-border-soft);
+  background: var(--color-surface);
+}
+
+#scheduleIntegratedModal .rd-story-grid label {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+#scheduleIntegratedModal .rd-story-grid label > span:first-child {
+  font-weight: 600;
+}
+
+#scheduleIntegratedModal .rd-story-grid .form-input,
+#scheduleIntegratedModal .rd-story-grid .form-select,
+#scheduleIntegratedModal .rd-story-grid .ui-autocomplete-input-wrap,
+#scheduleIntegratedModal .rd-story-grid .rd-node-assignee-input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+#scheduleIntegratedModal .rd-story-grid-title,
+#scheduleIntegratedModal .rd-story-grid-spec {
+  grid-column: span 2;
+}
+
+#scheduleIntegratedModal .rd-story-grid-spec textarea {
+  min-height: 68px;
+  resize: vertical;
+}
