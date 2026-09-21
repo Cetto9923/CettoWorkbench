@@ -153,9 +153,7 @@ func (c bizDemandAssembleContext) buildBizDemandItem(top ZtDemand) BizDemandItem
 		ExtraSystemCount: extraSystemCount(c.productCountByDemand[top.ID]),
 		TeamgroupName:    teamgroupName,
 		OwnerName:        resolveDemandOwner(top.BRA, c.realnameByAccount),
-		Stage: calcBizDemandStage(subtreeDemandIDs, mainSystemStories, c.windowByDemand, c.taskStatByStory),
-		// 窗口阶段列已下线，暂不计算
-		// WindowPhase: calcDemandWindowPhase(subtreeDemandIDs, subtreeStories, c.windowByDemand, c.windowByStory),
+		Stage:      calcBizDemandStage(subtreeDemandIDs, mainSystemStories, c.windowByDemand, c.taskStatByStory),
 		WindowName: pickDemandWindowName(subtreeDemandIDs, subtreeStories, c.windowByDemand, c.windowByStory),
 		Children:         c.buildSubDemandItems(top, children),
 		Stories:          c.buildStoryItems(top.TeamGroup, teamgroupName, c.storiesByDemand[top.ID]),
@@ -181,9 +179,7 @@ func (c bizDemandAssembleContext) buildSubDemandItems(parent ZtDemand, children 
 			ExtraSystemCount: extraSystemCount(c.productCountByDemand[child.ID]),
 			TeamgroupName:    parentTeamgroupName,
 			OwnerName:        resolveDemandOwner(child.BRA, c.realnameByAccount),
-			Stage: calcBizDemandStage(demandIDs, filterMainSystemStories(subtreeStories), c.windowByDemand, c.taskStatByStory),
-			// 窗口阶段列已下线，暂不计算
-			// WindowPhase: calcDemandWindowPhase(demandIDs, subtreeStories, c.windowByDemand, c.windowByStory),
+			Stage:      calcBizDemandStage(demandIDs, filterMainSystemStories(subtreeStories), c.windowByDemand, c.taskStatByStory),
 			WindowName: pickDemandWindowName(demandIDs, subtreeStories, c.windowByDemand, c.windowByStory),
 			Stories:          c.buildStoryItems(parent.TeamGroup, parentTeamgroupName, childStories),
 		})
@@ -435,8 +431,6 @@ func (s *Service) GetDemandScheduling(ctx context.Context, actor *model.User, de
 	if err != nil {
 		return nil, err
 	}
-	detail.WindowPhase = calcSchedulingWindowPhase(detail.WindowID, len(stories))
-	detail.CanEditWindow = canEditSchedulingWindow(detail.WindowID, len(stories))
 	userStories, err := s.buildDemandUserStories(ctx, demandID)
 	if err != nil {
 		return nil, err

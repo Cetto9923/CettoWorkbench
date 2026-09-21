@@ -107,7 +107,6 @@ func (s *Service) GetStoryScheduling(ctx context.Context, actor *model.User, sto
 	if err != nil {
 		return nil, err
 	}
-	detail.CanEditWindow = true
 	windows, err := s.repo.ListUpcomingSchedulingWindows(ctx)
 	if err != nil {
 		return nil, err

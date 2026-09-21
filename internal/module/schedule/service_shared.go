@@ -89,33 +89,6 @@ func anyDemandOrStoryHasWindow(
 	return anyDemandHasWindow(demandIDs, windowByDemand) || anyStoryHasWindow(stories, windowByStory)
 }
 
-// 窗口阶段列已下线，列表暂不调用；排期详情仍用 calcSchedulingWindowPhase
-// func calcDemandWindowPhase(
-// 	demandIDs []uint,
-// 	stories []ZtStory,
-// 	windowByDemand map[uint]DemandWindowRef,
-// 	windowByStory map[uint]StoryWindowRef,
-// ) string {
-// 	if !anyDemandOrStoryHasWindow(demandIDs, stories, windowByDemand, windowByStory) {
-// 		return ""
-// 	}
-// 	return calcSchedulingWindowPhase(pickDemandWindowID(demandIDs, stories, windowByDemand, windowByStory), len(stories))
-// }
-
-func calcSchedulingWindowPhase(windowID uint, storyCount int) string {
-	if windowID == 0 {
-		return ""
-	}
-	if storyCount > 0 {
-		return WindowPhaseFinal
-	}
-	return WindowPhaseInitial
-}
-
-func canEditSchedulingWindow(windowID uint, storyCount int) bool {
-	return windowID == 0 || storyCount == 0
-}
-
 func sumMainSystemTasks(stories []ZtStory, taskStatByStory map[uint]StoryTaskStat) (int, int) {
 	taskTotal := 0
 	unassignedTotal := 0

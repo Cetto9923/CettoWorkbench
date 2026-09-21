@@ -11,7 +11,6 @@
 package schedule
 
 import (
-	"errors"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -91,9 +90,6 @@ type SubBizRequirement struct {
 	AgileGroup       string
 	Stage      string
 	StageClass string
-	// 窗口阶段列已下线
-	// WindowPhase      string
-	// WindowPhaseClass string
 	WindowName      string
 	Owner           string
 	ActionLabel     string
@@ -112,9 +108,6 @@ type BizRequirement struct {
 	AgileGroup string
 	Stage      string
 	StageClass string
-	// 窗口阶段列已下线
-	// WindowPhase        string
-	// WindowPhaseClass   string
 	WindowName string
 	Owner              string
 	ActionLabel        string
@@ -448,8 +441,6 @@ func (h *Handler) GetDemandScheduling(c *gin.Context) {
 			out["acceptancedDate"] = detail.AcceptancedDate
 			out["windowId"] = detail.WindowID
 			out["windowName"] = detail.WindowName
-			out["windowPhase"] = detail.WindowPhase
-			out["canEditWindow"] = detail.CanEditWindow
 		}
 	}
 	out["zentaoUrl"] = h.zentaoURL
@@ -486,14 +477,6 @@ func (h *Handler) SaveScheduling(c *gin.Context) {
 
 	actor := middleware.CurrentUser(c)
 	if err := h.svc.SaveScheduling(c.Request.Context(), actor, demandID, &req); err != nil {
-		var businessErr *SchedulingBusinessError
-		if errors.As(err, &businessErr) {
-			c.JSON(http.StatusUnprocessableEntity, gin.H{
-				"success": false,
-				"message": businessErr.Error(),
-			})
-			return
-		}
 		if h.logger != nil {
 			h.logger.Error("save demand scheduling failed",
 				zap.Error(err),

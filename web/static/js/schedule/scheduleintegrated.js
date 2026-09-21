@@ -499,21 +499,6 @@
     updateReleaseMeta();
   }
 
-  function applyWindowEditability(canEdit, phase) {
-    var editable = canEdit !== false;
-    var $select = $("#scheduleIntegratedWindowSelect");
-    $select.prop("disabled", !editable);
-    if (editable) {
-      $select.removeAttr("title");
-    } else {
-      $select.attr("title", "终排业务需求不能修改版本窗口");
-    }
-    if (shared) {
-      shared.currentCanEditWindow = editable;
-      shared.currentWindowPhase = $.trim(phase || "");
-    }
-  }
-
   function updateReleaseMeta() {
     var $select = $("#scheduleIntegratedWindowSelect");
     var windowLabel = "—";
@@ -615,7 +600,6 @@
     $("#scheduleIntegratedReqOwner").text(owner);
 
     fillWindowSelect(data.windows, data.windowId, data.windowName, data.schedulePlanDate);
-    applyWindowEditability(data.canEditWindow, data.windowPhase);
     syncPlanDateFromWindow();
     initSchedulingOwnerPickers(users, data);
     setDateInputValue($("#scheduleIntegratedDevelopFinish"), data.developFinish);
@@ -712,8 +696,6 @@
       shared.currentDemandId = 0;
       shared.currentStoryId = 0;
       shared.currentDemandDetailURL = "";
-      shared.currentCanEditWindow = true;
-      shared.currentWindowPhase = "";
       shared.isSchedulingDetailLoaded = false;
       shared.resetDeletedRecords();
     }
