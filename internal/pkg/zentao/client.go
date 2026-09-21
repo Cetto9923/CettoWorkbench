@@ -53,6 +53,40 @@ func NewClient(cfg config.ZentaoConfig) *Client {
 	}
 }
 
+var (
+	defaultClientMu sync.RWMutex
+	defaultClient   *Client
+)
+
+// SetDefaultClient 设置全局默认客户端。
+func SetDefaultClient(c *Client) {
+	defaultClientMu.Lock()
+	defer defaultClientMu.Unlock()
+	defaultClient = c
+}
+
+// DefaultClient 返回基于全局配置的默认客户端。
+func DefaultClient() *Client {
+	defaultClientMu.RLock()
+	c := defaultClient
+	defaultClientMu.RUnlock()
+	if c != nil {
+		return c
+	}
+	defaultClientMu.Lock()
+	defer defaultClientMu.Unlock()
+	if defaultClient == nil {
+		defaultClient = NewClient(zentaoCfg)
+	}
+	return defaultClient
+}
+
+// API 返回基于全局配置的默认客户端（兼容旧名称）。
+func API() *Client {
+	return DefaultClient()
+}
+
+
 func (c *Client) currentTime() time.Time {
 	if c != nil && c.now != nil {
 		return c.now()
