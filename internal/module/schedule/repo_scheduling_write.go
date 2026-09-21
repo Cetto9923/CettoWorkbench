@@ -448,6 +448,17 @@ func (r *Repo) CloseTask(ctx context.Context, taskID uint, actor string) error {
 	})
 }
 
+// DeleteTask 软删除任务（对齐禅道 task/control.php delete：置 deleted='1'）。
+func (r *Repo) DeleteTask(ctx context.Context, taskID uint) error {
+	if taskID == 0 {
+		return errors.New("task id is invalid")
+	}
+	return r.db.WithContext(ctx).
+		Table("zt_task").
+		Where("id = ? AND deleted = '0'", taskID).
+		Update("deleted", "1").Error
+}
+
 // CreateAction 创建禅道操作日志。
 func (r *Repo) CreateAction(ctx context.Context, objectType string, objectID uint, action string, actor string, productID uint, projectID uint, executionID uint, extra string) error {
 	productField := ",0,"

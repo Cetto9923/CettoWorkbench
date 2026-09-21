@@ -915,6 +915,11 @@
     nextTaskOwnerIds: nextTaskOwnerIds,
     destroyTaskOwnerPicker: destroyTaskOwnerPicker,
     fillTaskTypeSelect: fillTaskTypeSelect,
+    mountTaskActions: mountTaskActions,
+    copyEditCellsFromTemplate: copyEditCellsFromTemplate,
+    applyTaskDataAttrs: applyTaskDataAttrs,
+    readTaskDataFromRow: readTaskDataFromRow,
+    renderTaskReadCells: renderTaskReadCells,
   };
 
   $(document).on("click", "#scheduleIntegratedModalBody .rd-add-task", function (e) {

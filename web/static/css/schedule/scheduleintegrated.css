@@ -759,7 +759,10 @@
 #scheduleIntegratedModal .rd-edit-btn,
 #scheduleIntegratedModal .task-edit-btn,
 #scheduleIntegratedModal .task-add-btn,
-#scheduleIntegratedModal .rd-confirm-btn {
+#scheduleIntegratedModal .rd-confirm-btn,
+#taskModal .task-delete-btn,
+#taskModal .task-edit-btn,
+#taskModal .task-add-btn {
   border: none;
   background: none;
   padding: 8px;
@@ -777,14 +780,17 @@
 }
 
 #scheduleIntegratedModal .rd-delete-btn:hover,
-#scheduleIntegratedModal .task-delete-btn:hover {
+#scheduleIntegratedModal .task-delete-btn:hover,
+#taskModal .task-delete-btn:hover {
   color: #e53e3e;
   background: #f0f0f0;
 }
 
 #scheduleIntegratedModal .rd-edit-btn:hover,
 #scheduleIntegratedModal .task-edit-btn:hover,
-#scheduleIntegratedModal .task-add-btn:hover {
+#scheduleIntegratedModal .task-add-btn:hover,
+#taskModal .task-edit-btn:hover,
+#taskModal .task-add-btn:hover {
   color: #2563eb;
   background: #f0f0f0;
 }
@@ -799,7 +805,10 @@
 #scheduleIntegratedModal .rd-edit-btn i,
 #scheduleIntegratedModal .task-edit-btn i,
 #scheduleIntegratedModal .task-add-btn i,
-#scheduleIntegratedModal .rd-confirm-btn i {
+#scheduleIntegratedModal .rd-confirm-btn i,
+#taskModal .task-delete-btn i,
+#taskModal .task-edit-btn i,
+#taskModal .task-add-btn i {
   font-size: 13px;
 }
 
@@ -810,7 +819,8 @@
   flex-shrink: 0;
 }
 
-#scheduleIntegratedModal .task-actions {
+#scheduleIntegratedModal .task-actions,
+#taskModal .task-actions {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -820,7 +830,10 @@
 
 #scheduleIntegratedModal .task-edit-btn,
 #scheduleIntegratedModal .task-add-btn,
-#scheduleIntegratedModal .task-delete-btn {
+#scheduleIntegratedModal .task-delete-btn,
+#taskModal .task-edit-btn,
+#taskModal .task-add-btn,
+#taskModal .task-delete-btn {
   padding: 4px;
 }
 
@@ -897,7 +910,9 @@
 }
 
 #scheduleIntegratedModal .rd-node-tasks th:last-child,
-#scheduleIntegratedModal .rd-node-tasks td.rd-task-cell-actions {
+#scheduleIntegratedModal .rd-node-tasks td.rd-task-cell-actions,
+#taskModal .rd-node-tasks th:last-child,
+#taskModal .rd-node-tasks td.rd-task-cell-actions {
   width: 48px;
   padding: 6px 2px;
   text-align: right;

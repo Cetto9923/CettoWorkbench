@@ -347,10 +347,10 @@ func (s *Service) applySingleSchedulingTask(
 		}
 
 	case "delete":
-		if err := txRepo.CloseTask(ctx, taskReq.ID, account); err != nil {
-			return fmt.Errorf("close task %d: %w", taskReq.ID, err)
+		if err := txRepo.DeleteTask(ctx, taskReq.ID); err != nil {
+			return fmt.Errorf("delete task %d: %w", taskReq.ID, err)
 		}
-		if err := txRepo.CreateAction(ctx, "task", taskReq.ID, "Closed", account, productID, 0, 0, ""); err != nil {
+		if err := txRepo.CreateAction(ctx, "task", taskReq.ID, "deleted", account, productID, 0, 0, storyActionCanUndeleted); err != nil {
 			return fmt.Errorf("create task action: %w", err)
 		}
 	}

@@ -267,24 +267,36 @@
     $("#taskModalInfoBar").text(parts.join(" | ") || "—");
   }
 
+  function taskToRowData(task) {
+    return {
+      id: String(task.id || ""),
+      projectId: String(task.projectId || ""),
+      projectName: task.projectName || "",
+      executionId: String(task.executionId || ""),
+      executionName: task.executionName || "",
+      type: $.trim(task.type || ""),
+      pri: normalizeTaskPri(task.pri),
+      name: task.name || "",
+      assignedTo: task.assignedTo || "",
+      assignedToName: task.assignedToName || "",
+      estimate: task.estimate != null ? task.estimate : "",
+      estStarted: task.estStarted || "",
+      deadline: task.deadline || "",
+    };
+  }
+
+  // 存量任务默认只读，点铅笔才进入编辑态（与排期弹窗一致）。
   function renderExistingRow(task) {
-    var row = cloneRow("tplTaskModalRowExisting");
+    var row = cloneRow("tplRdTaskRowReadonly");
     if (!row) {
       return null;
     }
     var $row = $(row);
-    $row.attr("data-task-id", String(task.id || ""));
-    $row.attr("data-task-type", task.type || "");
-    $row.attr("data-pri", String(normalizeTaskPri(task.pri)));
-    $row.attr("data-assigned-to", task.assignedTo || "");
-    $row.attr("data-assigned-to-name", task.assignedToName || "");
-    $row.attr("data-execution-id", String(task.executionId || ""));
-    $row.find(".task-modal-type-cell").text(task.typeLabel || (shared && shared.taskTypeLabel(task.type)) || task.type || "—");
-    $row.find(".rd-task-pri").val(taskPriSelectValue(task.pri));
-    $row.find(".rd-task-name").val(task.name || "");
-    $row.find(".rd-task-hours").val(task.estimate != null ? task.estimate : "");
-    $row.find(".rd-task-start").val(task.estStarted || "");
-    $row.find(".rd-task-end").val(task.deadline || "");
+    var taskData = taskToRowData(task);
+    $row.attr("data-task-id", taskData.id);
+    tasksApi.applyTaskDataAttrs($row, taskData);
+    tasksApi.renderTaskReadCells($row, taskData);
+    tasksApi.mountTaskActions($row.find(".rd-task-cell-actions"), true);
     return $row;
   }
 
@@ -350,15 +362,13 @@
       var $row = renderExistingRow(task);
       if ($row) {
         $body.append($row);
-        mountTaskRowControls($row);
-        initTaskModalRowExecution($row, task.executionId || 0);
       }
     });
     syncTaskModalProjectVisibility();
   }
 
-  function addEmptyTaskModalRow(config) {
-    var row = cloneRow("tplTaskModalRowNew");
+  function addEmptyTaskModalRow(config, $afterRow) {
+    var row = cloneRow("tplRdTaskRowNew");
     if (!row) {
       return null;
     }
@@ -379,7 +389,14 @@
       $row.attr("data-assigned-to", $.trim(cfg.assignedTo || ""));
       $row.attr("data-assigned-to-name", $.trim(cfg.assignedToName || "") || resolveUserLabel(cfg.assignedTo));
     }
-    $("#taskModalTableBody").append($row);
+    if (tasksApi) {
+      tasksApi.mountTaskActions($row.find(".rd-task-cell-actions"), false);
+    }
+    if ($afterRow && $afterRow.length) {
+      $afterRow.after($row);
+    } else {
+      $("#taskModalTableBody").append($row);
+    }
     mountTaskRowControls($row);
     initTaskModalRowExecution($row, 0);
     syncTaskModalProjectVisibility();
@@ -502,8 +519,97 @@
     });
   }
 
-  function readRowAssignedTo($row) {
-    return $.trim($row.find(".rd-node-assignee-value").val() || "");
+  // 合并 data-* 与当前输入框：只读行只有 data-*，编辑行以输入框为准。
+  function collectRowFormData($row) {
+    var data = tasksApi.readTaskDataFromRow($row);
+    var $type = $row.find(".rd-task-type");
+    var $pri = $row.find(".rd-task-pri");
+    var $name = $row.find(".rd-task-name");
+    var $hours = $row.find(".rd-task-hours");
+    var $start = $row.find(".rd-task-start");
+    var $end = $row.find(".rd-task-end");
+    var $execution = $row.find(".rd-task-execution-select");
+
+    if ($type.length) {
+      data.type = $.trim($type.val() || "");
+    }
+    if ($pri.length) {
+      data.pri = normalizeTaskPri($pri.val());
+    }
+    if ($name.length) {
+      data.name = $.trim($name.val() || "");
+    }
+    if ($hours.length) {
+      data.estimate = $.trim($hours.val() || "");
+    }
+    if ($start.length) {
+      data.estStarted = $.trim($start.val() || "");
+    }
+    if ($end.length) {
+      data.deadline = $.trim($end.val() || "");
+    }
+    // 执行下拉是异步填充的，未加载完时保留 data-* 里的原执行，避免被空值覆盖。
+    if ($execution.length && $.trim($execution.val() || "")) {
+      data.executionId = $.trim($execution.val() || "");
+    }
+    var $ownerValue = $row.find(".rd-node-assignee-value").first();
+    if ($ownerValue.length) {
+      data.assignedTo = $.trim($ownerValue.val() || "");
+      data.assignedToName =
+        $.trim($row.find(".rd-node-assignee-input").first().val() || "") ||
+        resolveUserLabel(data.assignedTo);
+    }
+    data.id = $row.attr("data-task-id") || data.id || "";
+    data.projectId = String(getModalProjectId() || "");
+    return data;
+  }
+
+  function enterRowEdit($row) {
+    if (
+      !$row.length ||
+      $row.hasClass("rd-task-row--new") ||
+      $row.hasClass("rd-task-row--editing")
+    ) {
+      return;
+    }
+    exitRowEdit($("#taskModalTableBody .rd-task-row--editing").not($row));
+
+    var task = tasksApi.readTaskDataFromRow($row);
+    $row.addClass("rd-task-row--editing");
+    tasksApi.copyEditCellsFromTemplate($row);
+    tasksApi.fillTaskTypeSelect($row.find(".rd-task-type"), task.type);
+    $row.find(".rd-task-pri").val(taskPriSelectValue(task.pri));
+    $row.find(".rd-task-name").val(task.name);
+    $row.find(".rd-task-hours").val(task.estimate);
+    $row.find(".rd-task-start").val(normalizeDateValue(task.estStarted));
+    $row.find(".rd-task-end").val(normalizeDateValue(task.deadline));
+    tasksApi.mountTaskActions($row.find(".rd-task-cell-actions"), false);
+    tasksApi.syncTaskRowDateInputs($row);
+
+    var ownerIds = tasksApi.nextTaskOwnerIds($row);
+    tasksApi.mountTaskOwnerPicker(
+      $row,
+      ownerIds.inputId,
+      ownerIds.hiddenId,
+      task.assignedTo,
+      task.assignedToName
+    );
+    initTaskModalRowExecution($row, task.executionId || 0);
+  }
+
+  function exitRowEdit($rows) {
+    $rows.each(function () {
+      var $row = $(this);
+      if (!$row.hasClass("rd-task-row--editing")) {
+        return;
+      }
+      var task = collectRowFormData($row);
+      tasksApi.clearTaskOwnerPickerMeta($row);
+      tasksApi.applyTaskDataAttrs($row, task);
+      tasksApi.renderTaskReadCells($row, task);
+      tasksApi.mountTaskActions($row.find(".rd-task-cell-actions"), true);
+      $row.removeClass("rd-task-row--editing");
+    });
   }
 
   function collectTasksPayload() {
@@ -519,36 +625,37 @@
       if (!taskId) {
         return;
       }
-      // 去掉"创建"列后，现有任务默认保留编辑
+      var data = collectRowFormData($row);
       tasks.push({
         action: "edit",
         id: taskId,
         projectId: projectId,
-        executionId: parsePositiveInt($row.find(".rd-task-execution-select").val()),
-        type: $.trim($row.attr("data-task-type") || ""),
-        pri: normalizeTaskPri($row.find(".rd-task-pri").val()),
-        name: $.trim($row.find(".rd-task-name").val() || ""),
-        assignedTo: readRowAssignedTo($row),
-        estimate: Number($row.find(".rd-task-hours").val()) || 0,
-        estStarted: $.trim($row.find(".rd-task-start").val() || ""),
-        deadline: $.trim($row.find(".rd-task-end").val() || ""),
+        executionId: parsePositiveInt(data.executionId),
+        type: $.trim(data.type || ""),
+        pri: normalizeTaskPri(data.pri),
+        name: $.trim(data.name || ""),
+        assignedTo: $.trim(data.assignedTo || ""),
+        estimate: Number(data.estimate) || 0,
+        estStarted: $.trim(data.estStarted || ""),
+        deadline: $.trim(data.deadline || ""),
       });
     });
 
     $("#taskModalTableBody .task-modal-row--new").each(function () {
       var $row = $(this);
+      var data = collectRowFormData($row);
       tasks.push({
         action: "new",
-        create: true,  // 去掉"创建"列后，新任务默认创建
+        create: true,
         projectId: projectId,
-        executionId: parsePositiveInt($row.find(".rd-task-execution-select").val()),
-        type: $.trim($row.find(".rd-task-type").val() || "devel"),
-        pri: normalizeTaskPri($row.find(".rd-task-pri").val()),
-        name: $.trim($row.find(".rd-task-name").val() || ""),
-        assignedTo: readRowAssignedTo($row),
-        estimate: Number($row.find(".rd-task-hours").val()) || 0,
-        estStarted: $.trim($row.find(".rd-task-start").val() || ""),
-        deadline: $.trim($row.find(".rd-task-end").val() || ""),
+        executionId: parsePositiveInt(data.executionId),
+        type: $.trim(data.type || "devel"),
+        pri: normalizeTaskPri(data.pri),
+        name: $.trim(data.name || ""),
+        assignedTo: $.trim(data.assignedTo || ""),
+        estimate: Number(data.estimate) || 0,
+        estStarted: $.trim(data.estStarted || ""),
+        deadline: $.trim(data.deadline || ""),
       });
     });
 
@@ -559,6 +666,8 @@
     if (!currentStoryId) {
       return;
     }
+    // 编辑中的行先落回 data-*，collectTasksPayload 才能读到最新值。
+    exitRowEdit($("#taskModalTableBody .rd-task-row--editing"));
     var tasks = collectTasksPayload();
     var missingExecution = tasks.some(function (item) {
       return item.action === "new" && item.create && !item.executionId;
@@ -667,6 +776,46 @@
         tasksApi.applySameAsPrevExecution($(this));
       }
     });
+  });
+
+  $("#taskModalTableBody").on("click", ".task-edit-btn", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    enterRowEdit($(this).closest("tr"));
+  });
+
+  $("#taskModalTableBody").on("click", ".task-add-btn", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    addEmptyTaskModalRow({}, $(this).closest("tr"));
+  });
+
+  $("#taskModalTableBody").on("click", ".task-delete-btn", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    var $row = $(this).closest("tr");
+    var taskId = parsePositiveInt($row.attr("data-task-id"));
+    if (taskId) {
+      deletedTaskIds.push(taskId);
+    }
+    clearTaskRowControls($row);
+    $row.remove();
+    syncTaskModalProjectVisibility();
+  });
+
+  // 点到编辑行之外时自动存回只读
+  $(document).on("mousedown", function (e) {
+    var $editing = $("#taskModalTableBody .rd-task-row--editing");
+    if (!$editing.length) {
+      return;
+    }
+    if ($(e.target).closest("select, .ui-autocomplete, .ui-autocomplete-dropdown").length) {
+      return;
+    }
+    if ($(e.target).closest($editing).length) {
+      return;
+    }
+    exitRowEdit($editing);
   });
 
   $("#taskModalAddBtn").on("click", addTaskModalRow);
