@@ -45,9 +45,6 @@ func toBizRequirementsView(items []BizDemandItem, zentaoBase string) []BizRequir
 			AgileGroup:         agileGroup,
 			Stage:      item.Stage,
 			StageClass: deriveBizStageClass(item.Stage),
-			// 窗口阶段列已下线
-			// WindowPhase:      item.WindowPhase,
-			// WindowPhaseClass: deriveWindowPhaseClass(item.WindowPhase),
 			WindowName: windowName,
 			Owner:              formatOwner(item.OwnerName),
 			ActionLabel:        actionLabel,
@@ -84,9 +81,6 @@ func toSubBizRequirementsView(items []SubDemandItem, zentaoBase string) []SubBiz
 			AgileGroup:       agileGroup,
 			Stage:      item.Stage,
 			StageClass: deriveBizStageClass(item.Stage),
-			// 窗口阶段列已下线
-			// WindowPhase:      item.WindowPhase,
-			// WindowPhaseClass: deriveWindowPhaseClass(item.WindowPhase),
 			WindowName: windowName,
 			Owner:            formatOwner(item.OwnerName),
 			ActionLabel:      "排期",
@@ -162,18 +156,6 @@ func deriveBizStageClass(stage string) string {
 		return ""
 	}
 }
-
-// 窗口阶段列已下线，暂保留以备恢复
-// func deriveWindowPhaseClass(phase string) string {
-// 	switch phase {
-// 	case WindowPhaseInitial:
-// 		return "schedule-window-phase-tag--initial"
-// 	case WindowPhaseFinal:
-// 		return "schedule-window-phase-tag--final"
-// 	default:
-// 		return ""
-// 	}
-// }
 
 func formatOwner(name string) string {
 	name = strings.TrimSpace(name)

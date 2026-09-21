@@ -531,10 +531,12 @@
 }
 
 .rd-node-title-input,
+.rd-node-spec-input,
 .rd-node-assignee-field,
 .rd-task-input,
 .rd-task-select,
 #scheduleIntegratedModal .rd-node-title-input,
+#scheduleIntegratedModal .rd-node-spec-input,
 #scheduleIntegratedModal .rd-node-assignee-field,
 #scheduleIntegratedModal .rd-task-input,
 #scheduleIntegratedModal .rd-task-select,
@@ -927,12 +929,21 @@
 
 #scheduleIntegratedModal .rd-node-header--edit .rd-node-title,
 #scheduleIntegratedModal .rd-node-header--edit .rd-node-title-input,
+#scheduleIntegratedModal .rd-node-header--edit .rd-node-spec-input,
 #scheduleIntegratedModal .rd-node-header--story-edit .rd-node-title,
 #scheduleIntegratedModal .rd-node-header--story-edit .rd-node-title-input {
   flex: 1 1 auto;
   min-width: 120px;
   width: auto;
   max-width: none;
+}
+
+#scheduleIntegratedModal .rd-node-header--edit .rd-node-spec-label,
+#scheduleIntegratedModal .rd-node-header--edit .rd-node-assignee-label {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--t2);
+  white-space: nowrap;
 }
 
 #scheduleIntegratedModal .rd-node-header--edit .rd-node-product-select,

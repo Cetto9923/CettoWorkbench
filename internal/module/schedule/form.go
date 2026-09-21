@@ -279,9 +279,6 @@ const (
 	StageTaskUnassigned          = "已建任务未指派"
 	StageTaskAssigned            = "已建任务并指派"
 	IndependentStageTaskAssigned = "已建任务已指派"
-
-	WindowPhaseInitial = "初排"
-	WindowPhaseFinal   = "终排"
 )
 
 // 列表高级筛选排期阶段 URL 参数值。
@@ -597,9 +594,7 @@ type BizDemandItem struct {
 	ExtraSystemCount int    `json:"extraSystemCount"`
 	TeamgroupName    string `json:"teamgroupName"`
 	OwnerName        string `json:"ownerName"`
-	Stage            string `json:"stage"`
-	// 窗口阶段列已下线
-	// WindowPhase string `json:"windowPhase"`
+	Stage      string          `json:"stage"`
 	WindowName string          `json:"windowName"`
 	Children   []SubDemandItem `json:"children"`
 	Stories    []StoryItem     `json:"stories"`
@@ -615,9 +610,7 @@ type SubDemandItem struct {
 	ExtraSystemCount int    `json:"extraSystemCount"`
 	TeamgroupName    string `json:"teamgroupName"`
 	OwnerName        string `json:"ownerName"`
-	Stage            string `json:"stage"`
-	// 窗口阶段列已下线
-	// WindowPhase string `json:"windowPhase"`
+	Stage      string      `json:"stage"`
 	WindowName string      `json:"windowName"`
 	Stories    []StoryItem `json:"stories"`
 }
@@ -768,10 +761,8 @@ type DemandSchedulingDetail struct {
 	DevelopFinish    string `json:"developFinish"`
 	TestFinish       string `json:"testFinish"`
 	AcceptancedDate  string `json:"acceptancedDate"`
-	WindowID         uint   `json:"windowId"`
-	WindowName       string `json:"windowName"`
-	WindowPhase      string `json:"windowPhase"`
-	CanEditWindow    bool   `json:"canEditWindow"`
+	WindowID   uint   `json:"windowId"`
+	WindowName string `json:"windowName"`
 }
 
 // SchedulingWindowOption 排期弹窗版本窗口下拉项。
@@ -952,6 +943,12 @@ func (r *SaveSchedulingReq) Validate() []FieldError {
 			}
 			if strings.TrimSpace(story.Title) == "" {
 				errs = append(errs, FieldError{Field: prefix + ".title", Message: "研发需求标题不能为空"})
+			}
+			if strings.TrimSpace(story.Spec) == "" {
+				errs = append(errs, FieldError{Field: prefix + ".spec", Message: "研发需求描述不能为空"})
+			}
+			if strings.TrimSpace(story.AssignedTo) == "" {
+				errs = append(errs, FieldError{Field: prefix + ".assignedTo", Message: "指派给不能为空"})
 			}
 		case "edit", "delete":
 			if story.ID == 0 {

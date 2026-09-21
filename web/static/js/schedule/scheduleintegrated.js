@@ -64,6 +64,15 @@
     return parsePositiveInt($node.attr("data-product-id"));
   }
 
+  function readStorySpec($node) {
+    var $header = $node.find(".rd-node-header").first();
+    var fromInput = $.trim($header.find(".rd-node-spec-input").first().val() || "");
+    if (fromInput) {
+      return fromInput;
+    }
+    return $.trim($node.attr("data-spec") || "");
+  }
+
   function readStoryAssignedTo($node) {
     var $header = $node.find(".rd-node-header").first();
     var fromHidden = $.trim($header.find(".rd-node-assignee-value").first().val() || "");
@@ -78,7 +87,12 @@
     if (storyId > 0) {
       return false;
     }
-    return !readStoryTitle($node) && !readStoryProductId($node);
+    return (
+      !readStoryTitle($node) &&
+      !readStoryProductId($node) &&
+      !readStorySpec($node) &&
+      !readStoryAssignedTo($node)
+    );
   }
 
   function collectTaskFromRow($row) {
@@ -192,7 +206,7 @@
       title: readStoryTitle($node),
       assignedTo: readStoryAssignedTo($node),
       estimate: parseEstimateValue($node.attr("data-estimate")),
-      spec: $.trim($node.attr("data-spec") || ""),
+      spec: readStorySpec($node),
       tasks: [],
     };
 
@@ -257,6 +271,12 @@
       if (story.action === "new") {
         if (!$.trim(story.title || "")) {
           return "新建的研发需求必须填写标题";
+        }
+        if (!$.trim(story.spec || "")) {
+          return "新建的研发需求必须填写描述";
+        }
+        if (!$.trim(story.assignedTo || "")) {
+          return "新建的研发需求必须选择指派给";
         }
         if (!story.productId) {
           return "新建的研发需求必须选择系统";
@@ -499,21 +519,6 @@
     updateReleaseMeta();
   }
 
-  function applyWindowEditability(canEdit, phase) {
-    var editable = canEdit !== false;
-    var $select = $("#scheduleIntegratedWindowSelect");
-    $select.prop("disabled", !editable);
-    if (editable) {
-      $select.removeAttr("title");
-    } else {
-      $select.attr("title", "终排业务需求不能修改版本窗口");
-    }
-    if (shared) {
-      shared.currentCanEditWindow = editable;
-      shared.currentWindowPhase = $.trim(phase || "");
-    }
-  }
-
   function updateReleaseMeta() {
     var $select = $("#scheduleIntegratedWindowSelect");
     var windowLabel = "—";
@@ -615,7 +620,6 @@
     $("#scheduleIntegratedReqOwner").text(owner);
 
     fillWindowSelect(data.windows, data.windowId, data.windowName, data.schedulePlanDate);
-    applyWindowEditability(data.canEditWindow, data.windowPhase);
     syncPlanDateFromWindow();
     initSchedulingOwnerPickers(users, data);
     setDateInputValue($("#scheduleIntegratedDevelopFinish"), data.developFinish);
@@ -712,8 +716,6 @@
       shared.currentDemandId = 0;
       shared.currentStoryId = 0;
       shared.currentDemandDetailURL = "";
-      shared.currentCanEditWindow = true;
-      shared.currentWindowPhase = "";
       shared.isSchedulingDetailLoaded = false;
       shared.resetDeletedRecords();
     }

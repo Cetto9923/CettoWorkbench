@@ -69,8 +69,6 @@
     currentDemandId: 0,
     currentStoryId: 0,
     currentDemandDetailURL: "",
-    currentCanEditWindow: true,
-    currentWindowPhase: "",
     isSchedulingDetailLoaded: false,
     deletedStoryIds: [],
     deletedTaskIds: [],
