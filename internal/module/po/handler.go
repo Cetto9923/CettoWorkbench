@@ -87,6 +87,8 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.GET("/follow/project-weeklies/:id/history", middleware.RequirePerm(perm.PoFollowList), h.ProjectWeeklyHistory)
 	g.PUT("/follow/demand/:id", middleware.RequirePerm(perm.PoFollowUpdate), h.FollowSetDemand)
 	g.PUT("/follow/project-report/:id", middleware.RequirePerm(perm.PoFollowUpdate), h.FollowRemoveProjectReport)
+
+	NewBoardHandler(h.svc, h.logger).RegisterRoutes(g)
 }
 
 // Home 渲染 PO 工作台首页。
