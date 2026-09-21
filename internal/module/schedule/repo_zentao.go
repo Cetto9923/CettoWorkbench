@@ -409,7 +409,6 @@ SELECT
 FROM zt_task
 WHERE story IN ?
   AND deleted = '0'
-  AND status != 'closed'
 GROUP BY story`
 
 	var rows []storyTaskStatRow
