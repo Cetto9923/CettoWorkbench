@@ -163,4 +163,5 @@ ALTER TABLE `zt_versionwindow`
     ADD COLUMN `testDone` DATE DEFAULT NULL COMMENT '预计测试完成日期' AFTER `planTestDone`,
     ADD COLUMN `acceptDone` DATE DEFAULT NULL COMMENT '预计验收完成日期' AFTER `testDone`;
 
+UPDATE `zt_menus` SET `path` = '/kanban/task' WHERE `title` = '工作看板';
 -- 2026/09/20
