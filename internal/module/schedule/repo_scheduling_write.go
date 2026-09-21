@@ -28,7 +28,7 @@ type ZtStoryInsert struct {
 	AssignedTo              string
 	Estimate                float64
 	EstimateLaunch          string // 默认取排期弹窗预计上线（窗口 releaseDate）
-	EstimateDevCompletion   string // 弹窗提测/开发 → zt_story.estimateDevCompletion
+	DevelopFinish           string // 弹窗提测/开发 → zt_story.developFinish
 	TestFinish              string // 弹窗测试完成 → zt_story.testFinish
 	FromDemand              uint
 	IsMainSystemAssociation string
@@ -68,29 +68,29 @@ type ZtTaskSpec struct {
 }
 
 type ztStoryCreateRow struct {
-	ID                      uint      `gorm:"column:id;primaryKey;autoIncrement"`
-	Product                 uint      `gorm:"column:product"`
-	Branch                  string    `gorm:"column:branch"`
-	Module                  uint      `gorm:"column:module"`
-	Plan                    string    `gorm:"column:plan"`
-	Source                  string    `gorm:"column:source"`
-	SourceNote              string    `gorm:"column:sourceNote"`
-	Title                   string    `gorm:"column:title"`
-	Type                    string    `gorm:"column:type"`
-	Pri                     int       `gorm:"column:pri"`
-	Grade                   int       `gorm:"column:grade"`
-	Estimate                float64   `gorm:"column:estimate"`
-	Status                  string    `gorm:"column:status"`
-	Stage                   string    `gorm:"column:stage"`
-	SourceType              string    `gorm:"column:sourceType"`
-	FromDemand              uint      `gorm:"column:fromDemand"`
-	Version                 int       `gorm:"column:version"`
-	OpenedBy                string    `gorm:"column:openedBy"`
-	OpenedDate              time.Time `gorm:"column:openedDate"`
+	ID                      uint       `gorm:"column:id;primaryKey;autoIncrement"`
+	Product                 uint       `gorm:"column:product"`
+	Branch                  string     `gorm:"column:branch"`
+	Module                  uint       `gorm:"column:module"`
+	Plan                    string     `gorm:"column:plan"`
+	Source                  string     `gorm:"column:source"`
+	SourceNote              string     `gorm:"column:sourceNote"`
+	Title                   string     `gorm:"column:title"`
+	Type                    string     `gorm:"column:type"`
+	Pri                     int        `gorm:"column:pri"`
+	Grade                   int        `gorm:"column:grade"`
+	Estimate                float64    `gorm:"column:estimate"`
+	Status                  string     `gorm:"column:status"`
+	Stage                   string     `gorm:"column:stage"`
+	SourceType              string     `gorm:"column:sourceType"`
+	FromDemand              uint       `gorm:"column:fromDemand"`
+	Version                 int        `gorm:"column:version"`
+	OpenedBy                string     `gorm:"column:openedBy"`
+	OpenedDate              time.Time  `gorm:"column:openedDate"`
 	AssignedTo              string     `gorm:"column:assignedTo"`
 	IsMainSystemAssociation string     `gorm:"column:isMainSystemAssociation"`
 	EstimateLaunch          *time.Time `gorm:"column:estimateLaunch"`
-	EstimateDevCompletion   *time.Time `gorm:"column:estimateDevCompletion"`
+	DevelopFinish           *time.Time `gorm:"column:developFinish"`
 	TestFinish              *time.Time `gorm:"column:testFinish"`
 	VerifyPlan              string     `gorm:"column:verifyPlan"`
 	Deleted                 string     `gorm:"column:deleted"`
@@ -305,7 +305,7 @@ func (r *Repo) CreateStory(ctx context.Context, story *ZtStoryInsert) (uint, err
 		AssignedTo:              strings.TrimSpace(story.AssignedTo),
 		IsMainSystemAssociation: story.IsMainSystemAssociation,
 		EstimateLaunch:          parseSchedulingDatePtr(story.EstimateLaunch),
-		EstimateDevCompletion:   parseSchedulingDatePtr(story.EstimateDevCompletion),
+		DevelopFinish:           parseSchedulingDatePtr(story.DevelopFinish),
 		TestFinish:              parseSchedulingDatePtr(story.TestFinish),
 		VerifyPlan:              "",
 		Deleted:                 "0",

@@ -139,15 +139,15 @@ func (s *Service) SaveStoryScheduling(ctx context.Context, actor *model.User, st
 			return err
 		}
 
-		// (c) 日期存 zt_story：提测/开发 → estimateDevCompletion；测试完成 → testFinish；
+		// (c) 日期存 zt_story：提测/开发 → developFinish；测试完成 → testFinish；
 		// 验收完成 → verifyFinish；预计上线 → estimateLaunch（同弹窗 schedulePlanDate）。
 		return txRepo.UpdateStory(ctx, storyID, map[string]interface{}{
-			"estimateLaunch":        nullableSchedulingDate(estimateLaunch),
-			"estimateDevCompletion": nullableSchedulingDate(req.DevelopFinish),
-			"testFinish":            nullableSchedulingDate(req.TestFinish),
-			"verifyFinish":          nullableSchedulingDate(req.AcceptancedDate),
-			"lastEditedBy":          account,
-			"lastEditedDate":        time.Now(),
+			"estimateLaunch": nullableSchedulingDate(estimateLaunch),
+			"developFinish":  nullableSchedulingDate(req.DevelopFinish),
+			"testFinish":     nullableSchedulingDate(req.TestFinish),
+			"verifyFinish":   nullableSchedulingDate(req.AcceptancedDate),
+			"lastEditedBy":   account,
+			"lastEditedDate": time.Now(),
 		})
 	})
 }
@@ -181,7 +181,7 @@ func (s *Service) applySchedulingStory(
 			AssignedTo:              storyReq.AssignedTo,
 			Estimate:                storyReq.Estimate,
 			EstimateLaunch:          estimateLaunch,
-			EstimateDevCompletion:   developFinish,
+			DevelopFinish:           developFinish,
 			TestFinish:              testFinish,
 			FromDemand:              demandID,
 			IsMainSystemAssociation: isMain,
@@ -211,14 +211,14 @@ func (s *Service) applySchedulingStory(
 		storyID = storyReq.ID
 		productID = storyReq.ProductID
 		if err := txRepo.UpdateStory(ctx, storyID, map[string]interface{}{
-			"title":                 strings.TrimSpace(storyReq.Title),
-			"assignedTo":            strings.TrimSpace(storyReq.AssignedTo),
-			"product":               storyReq.ProductID,
-			"estimateLaunch":        nullableSchedulingDate(estimateLaunch),
-			"estimateDevCompletion": nullableSchedulingDate(developFinish),
-			"testFinish":            nullableSchedulingDate(testFinish),
-			"lastEditedBy":          account,
-			"lastEditedDate":        time.Now(),
+			"title":          strings.TrimSpace(storyReq.Title),
+			"assignedTo":     strings.TrimSpace(storyReq.AssignedTo),
+			"product":        storyReq.ProductID,
+			"estimateLaunch": nullableSchedulingDate(estimateLaunch),
+			"developFinish":  nullableSchedulingDate(developFinish),
+			"testFinish":     nullableSchedulingDate(testFinish),
+			"lastEditedBy":   account,
+			"lastEditedDate": time.Now(),
 		}); err != nil {
 			return 0, 0, 0, fmt.Errorf("update story %d: %w", storyID, err)
 		}

@@ -44,20 +44,20 @@ type recentProjectRow struct {
 
 // StoryTaskDetail 维护任务弹窗研发需求详情（Repo 层聚合）。
 type StoryTaskDetail struct {
-	StoryID           uint
-	Title             string
-	ProductID         uint
-	FromDemand        uint
-	AssignedTo        string
-	Status            string
-	Spec              string
-	Verify            string
-	DemandName        string
-	WindowName        string
-	ReleaseDate       string
-	DefaultProjectID  uint
+	StoryID            uint
+	Title              string
+	ProductID          uint
+	FromDemand         uint
+	AssignedTo         string
+	Status             string
+	Spec               string
+	Verify             string
+	DemandName         string
+	WindowName         string
+	ReleaseDate        string
+	DefaultProjectID   uint
 	DefaultExecutionID uint
-	Attachments       []StoryAttachmentItem
+	Attachments        []StoryAttachmentItem
 }
 
 // GetStoryTaskDetail 查询维护任务弹窗所需的研发需求详情。
@@ -231,7 +231,7 @@ type storySchedulingRow struct {
 	Product       uint   `gorm:"column:product"`
 	FromDemand    uint   `gorm:"column:fromDemand"`
 	AssignedTo    string `gorm:"column:assignedTo"`
-	DevelopFinish string `gorm:"column:estimateDevCompletion"` // 弹窗提测/开发回填自 estimateDevCompletion
+	DevelopFinish string `gorm:"column:developFinish"` // 弹窗提测/开发回填自 developFinish
 	TestFinish    string `gorm:"column:testFinish"`
 	VerifyFinish  string `gorm:"column:verifyFinish"`
 }
@@ -249,7 +249,7 @@ SELECT
   s.product,
   s.fromDemand,
   s.assignedTo,
-  DATE_FORMAT(s.estimateDevCompletion, '%Y-%m-%d') AS estimateDevCompletion,
+  DATE_FORMAT(s.developFinish, '%Y-%m-%d') AS developFinish,
   DATE_FORMAT(s.testFinish, '%Y-%m-%d') AS testFinish,
   DATE_FORMAT(s.verifyFinish, '%Y-%m-%d') AS verifyFinish
 FROM zt_story s
