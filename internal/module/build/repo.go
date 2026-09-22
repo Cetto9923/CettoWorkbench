@@ -137,6 +137,8 @@ const linkableStorySelect = "DISTINCT s.id, s.pri, s.title, s.openedBy, s.assign
 
 // FindLinkableStories 对齐禅道 getExecutionStories 默认列表。
 // DemandID>0 时并入当前业务需求拆分出的研发需求（fromDemand），并套用产品、分支与排除条件。
+//
+// 执行+业需并集不用 OR+EXISTS：优化器常退化成扫 zt_story；改为 id IN (projectstory ∪ fromDemand)。
 func (r *Repo) FindLinkableStories(ctx context.Context, req RepoFindLinkableStoriesReq) ([]linkableStoryRow, int64, error) {
 	if r == nil || r.db == nil {
 		return nil, 0, nil
@@ -148,7 +150,8 @@ func (r *Repo) FindLinkableStories(ctx context.Context, req RepoFindLinkableStor
 
 	base := func() *gorm.DB {
 		var q *gorm.DB
-		if !includeDemand {
+		switch {
+		case !includeDemand:
 			q = r.db.WithContext(ctx).Table("zt_projectstory AS ps").
 				Joins("INNER JOIN zt_story AS s ON ps.story = s.id").
 				Joins("INNER JOIN zt_product AS p ON s.product = p.id").
@@ -158,22 +161,26 @@ func (r *Repo) FindLinkableStories(ctx context.Context, req RepoFindLinkableStor
 			if req.ProductID > 0 {
 				q = q.Where("ps.product = ?", req.ProductID)
 			}
-		} else {
+		case req.ExecutionID > 0:
+			idSub := r.db.Raw(`
+SELECT ps.story AS id FROM zt_projectstory AS ps
+WHERE ps.project = ? AND ps.product = ?
+UNION
+SELECT d.id FROM zt_story AS d
+WHERE d.fromDemand = ? AND d.product = ? AND d.isParent = ? AND d.deleted = ? AND d.type = ?`,
+				req.ExecutionID, req.ProductID,
+				req.DemandID, req.ProductID, "0", "0", "story")
 			q = r.db.WithContext(ctx).Table("zt_story AS s").
 				Joins("INNER JOIN zt_product AS p ON s.product = p.id").
 				Where("s.deleted = ? AND p.deleted = ?", "0", "0").
-				Where("s.type = ?", "story")
-			if req.ExecutionID > 0 {
-				q = q.Where(`(
-					EXISTS (
-						SELECT 1 FROM zt_projectstory ps
-						WHERE ps.story = s.id AND ps.project = ? AND ps.product = ?
-					)
-					OR (s.fromDemand = ? AND s.product = ? AND s.isParent = ?)
-				)`, req.ExecutionID, req.ProductID, req.DemandID, req.ProductID, "0")
-			} else {
-				q = q.Where("s.fromDemand = ? AND s.product = ? AND s.isParent = ?", req.DemandID, req.ProductID, "0")
-			}
+				Where("s.type = ?", "story").
+				Where("s.id IN (?)", idSub)
+		default:
+			q = r.db.WithContext(ctx).Table("zt_story AS s").
+				Joins("INNER JOIN zt_product AS p ON s.product = p.id").
+				Where("s.deleted = ? AND p.deleted = ?", "0", "0").
+				Where("s.type = ?", "story").
+				Where("s.fromDemand = ? AND s.product = ? AND s.isParent = ?", req.DemandID, req.ProductID, "0")
 		}
 		return applyLinkableScope(q, req)
 	}
