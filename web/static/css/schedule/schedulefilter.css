@@ -87,20 +87,102 @@
   color: #94a3b8;
 }
 
+#scheduleMultiselectRow .schedule-filter-ms {
+  position: relative;
+  width: 168px;
+  min-width: 148px;
+  max-width: 220px;
+  flex: 0 1 168px;
+  z-index: 1;
+}
+
+#scheduleMultiselectRow .schedule-filter-ms.open {
+  z-index: 120;
+}
+
+#scheduleMultiselectRow .schedule-filter-ms .form-multiselect-display {
+  min-height: 30px;
+  height: 30px;
+  padding: 2px 36px 2px 6px;
+  border-radius: 4px;
+  border-color: var(--border);
+  background: #fff;
+  overflow: hidden;
+}
+
+#scheduleMultiselectRow .schedule-filter-ms.open .form-multiselect-display {
+  border-width: 1px;
+  border-color: var(--blue, #2563eb);
+  box-shadow: none;
+}
+
+#scheduleMultiselectRow .schedule-filter-ms .form-multiselect-display .form-multiselect-input {
+  height: 22px;
+  min-height: 22px;
+  font-size: 12px;
+  color: var(--t1, #0f172a);
+}
+
+#scheduleMultiselectRow .schedule-filter-ms .form-multiselect-tags {
+  max-width: 72px;
+  overflow: hidden;
+}
+
+#scheduleMultiselectRow .schedule-filter-ms .form-multiselect-tag {
+  max-width: 64px;
+  padding: 1px 4px;
+  font-size: 11px;
+}
+
+#scheduleMultiselectRow .schedule-filter-ms .form-dropdown-chevron,
+#scheduleMultiselectRow .schedule-filter-ms .form-dropdown-clear {
+  width: 18px;
+  height: 18px;
+  font-size: 12px;
+}
+
+#scheduleMultiselectRow .schedule-filter-ms .form-input-clear-wrap > .form-dropdown-chevron {
+  right: 22px;
+}
+
+#scheduleMultiselectRow .schedule-filter-ms .form-input-clear-wrap > .form-dropdown-clear {
+  right: 4px;
+}
+
+#scheduleMultiselectRow .schedule-filter-ms .form-multiselect-menu {
+  left: 0;
+  right: auto;
+  min-width: 200px;
+  max-width: 280px;
+}
+
+#scheduleMultiselectRow .schedule-filter-ms .form-multiselect-option {
+  min-height: 28px;
+  font-size: 12px;
+  gap: 6px;
+}
+
+#scheduleMultiselectRow .schedule-filter-ms .form-multiselect-scroll {
+  max-height: 220px;
+}
+
 #scheduleMultiselectRow > .action-btn {
   height: 30px;
 }
 
-#page-schedule #scheduleMoreFilters .schedule-owner-picker {
+#page-schedule #scheduleMoreFilters .schedule-owner-picker,
+#page-schedule #scheduleMoreFilters .schedule-pri-picker {
   width: 100%;
   min-width: 0;
 }
 
-#page-schedule #scheduleMoreFilters .schedule-owner-picker .ui-autocomplete-input-wrap {
+#page-schedule #scheduleMoreFilters .schedule-owner-picker .ui-autocomplete-input-wrap,
+#page-schedule #scheduleMoreFilters .schedule-pri-picker .ui-autocomplete-input-wrap {
   width: 100%;
 }
 
-#page-schedule #scheduleMoreFilters .schedule-owner-picker .ui-autocomplete-input {
+#page-schedule #scheduleMoreFilters .schedule-owner-picker .ui-autocomplete-input,
+#page-schedule #scheduleMoreFilters .schedule-pri-picker .ui-autocomplete-input {
   width: 100% !important;
   min-width: 0;
   height: 30px;

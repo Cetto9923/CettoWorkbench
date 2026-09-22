@@ -126,40 +126,68 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
     <div class="schedule-filter schedule-filter--primary">
       <div class="schedule-filter-primary-inner" id="scheduleMultiselectRow">
         <div class="schedule-filter-core">
-          <div class="schedule-ms" data-filter-key="groups" data-filter-label="敏捷小组">
-            <button type="button" class="form-select schedule-ms-trigger" aria-haspopup="listbox" aria-expanded="false">
-              <span class="schedule-ms-text">敏捷小组</span>
-              <i class="fas fa-chevron-down" aria-hidden="true"></i>
-            </button>
-            <div class="schedule-ms-panel" hidden>
-              <div class="schedule-ms-options">
-                {{ range .Teamgroups }}
-                <label class="schedule-ms-option">
-                  <input type="checkbox" class="schedule-ms-checkbox" value="{{ .ID }}" data-label="{{ .DisplayName }}"{{ if index $.SelectedGroupMap .ID }} checked{{ end }}>
-                  <span>{{ .DisplayName }}</span>
-                </label>
-                {{ else }}
-                <div class="schedule-ms-empty">暂无敏捷小组</div>
-                {{ end }}
+          <div class="dropdown form-multiselect schedule-filter-ms" data-role-dropdown data-filter-key="groups" data-multiselect-keep-placeholder="true">
+            <div class="form-input-clear-wrap">
+              <div class="form-multiselect-display" data-role-display>
+                <div class="form-multiselect-tags" data-role-tags></div>
+                <input type="text" class="input form-multiselect-input" data-multiselect-filter
+                  placeholder="敏捷小组"
+                  data-placeholder-empty="敏捷小组"
+                  autocomplete="off"
+                  aria-autocomplete="list"
+                  aria-label="检索敏捷小组">
+              </div>
+              <button type="button" class="form-dropdown-chevron" aria-label="展开敏捷小组" onclick="return toggleDropdown(this);">
+                <i class="bi bi-chevron-down" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="form-dropdown-clear" data-form-multiselect-clear aria-label="清除敏捷小组" hidden>×</button>
+            </div>
+            <div class="dropdown-menu form-multiselect-menu">
+              <div class="form-multiselect-scroll">
+                <div class="form-multiselect-list">
+                  {{ range .Teamgroups }}
+                  <label class="checkbox-label form-multiselect-option">
+                    <input type="checkbox" class="checkbox form-multiselect-checkbox" value="{{ .ID }}"{{ if index $.SelectedGroupMap .ID }} checked{{ end }}>
+                    <span class="checkbox-box"></span>
+                    <span class="form-multiselect-name">{{ .DisplayName }}</span>
+                  </label>
+                  {{ else }}
+                  <div class="schedule-ms-empty">暂无敏捷小组</div>
+                  {{ end }}
+                </div>
               </div>
             </div>
           </div>
 
-          <div class="schedule-ms" data-filter-key="products" data-filter-label="系统">
-            <button type="button" class="form-select schedule-ms-trigger" aria-haspopup="listbox" aria-expanded="false">
-              <span class="schedule-ms-text">系统</span>
-              <i class="fas fa-chevron-down" aria-hidden="true"></i>
-            </button>
-            <div class="schedule-ms-panel" hidden>
-              <div class="schedule-ms-options">
-                {{ range .FilterProducts }}
-                <label class="schedule-ms-option">
-                  <input type="checkbox" class="schedule-ms-checkbox" value="{{ .ID }}" data-label="{{ .Name }}"{{ if index $.SelectedProductMap .ID }} checked{{ end }}>
-                  <span>{{ .Name }}</span>
-                </label>
-                {{ else }}
-                <div class="schedule-ms-empty">暂无系统</div>
-                {{ end }}
+          <div class="dropdown form-multiselect schedule-filter-ms" data-role-dropdown data-filter-key="products" data-multiselect-keep-placeholder="true">
+            <div class="form-input-clear-wrap">
+              <div class="form-multiselect-display" data-role-display>
+                <div class="form-multiselect-tags" data-role-tags></div>
+                <input type="text" class="input form-multiselect-input" data-multiselect-filter
+                  placeholder="系统"
+                  data-placeholder-empty="系统"
+                  autocomplete="off"
+                  aria-autocomplete="list"
+                  aria-label="检索系统">
+              </div>
+              <button type="button" class="form-dropdown-chevron" aria-label="展开系统" onclick="return toggleDropdown(this);">
+                <i class="bi bi-chevron-down" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="form-dropdown-clear" data-form-multiselect-clear aria-label="清除系统" hidden>×</button>
+            </div>
+            <div class="dropdown-menu form-multiselect-menu">
+              <div class="form-multiselect-scroll">
+                <div class="form-multiselect-list">
+                  {{ range .FilterProducts }}
+                  <label class="checkbox-label form-multiselect-option">
+                    <input type="checkbox" class="checkbox form-multiselect-checkbox" value="{{ .ID }}"{{ if index $.SelectedProductMap .ID }} checked{{ end }}>
+                    <span class="checkbox-box"></span>
+                    <span class="form-multiselect-name">{{ .Name }}</span>
+                  </label>
+                  {{ else }}
+                  <div class="schedule-ms-empty">暂无系统</div>
+                  {{ end }}
+                </div>
               </div>
             </div>
           </div>
@@ -181,21 +209,35 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             </div>
           </div>
 
-          <div class="schedule-ms" data-filter-key="windows" data-filter-label="窗口">
-            <button type="button" class="form-select schedule-ms-trigger" aria-haspopup="listbox" aria-expanded="false">
-              <span class="schedule-ms-text">窗口</span>
-              <i class="fas fa-chevron-down" aria-hidden="true"></i>
-            </button>
-            <div class="schedule-ms-panel" hidden>
-              <div class="schedule-ms-options">
-                {{ range .FilterWindows }}
-                <label class="schedule-ms-option">
-                  <input type="checkbox" class="schedule-ms-checkbox" value="{{ .ID }}" data-label="{{ .Name }}"{{ if index $.SelectedWindowMap .ID }} checked{{ end }}>
-                  <span>{{ .Name }}</span>
-                </label>
-                {{ else }}
-                <div class="schedule-ms-empty">暂无窗口</div>
-                {{ end }}
+          <div class="dropdown form-multiselect schedule-filter-ms" data-role-dropdown data-filter-key="windows" data-multiselect-keep-placeholder="true">
+            <div class="form-input-clear-wrap">
+              <div class="form-multiselect-display" data-role-display>
+                <div class="form-multiselect-tags" data-role-tags></div>
+                <input type="text" class="input form-multiselect-input" data-multiselect-filter
+                  placeholder="窗口"
+                  data-placeholder-empty="窗口"
+                  autocomplete="off"
+                  aria-autocomplete="list"
+                  aria-label="检索窗口">
+              </div>
+              <button type="button" class="form-dropdown-chevron" aria-label="展开窗口" onclick="return toggleDropdown(this);">
+                <i class="bi bi-chevron-down" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="form-dropdown-clear" data-form-multiselect-clear aria-label="清除窗口" hidden>×</button>
+            </div>
+            <div class="dropdown-menu form-multiselect-menu">
+              <div class="form-multiselect-scroll">
+                <div class="form-multiselect-list">
+                  {{ range .FilterWindows }}
+                  <label class="checkbox-label form-multiselect-option">
+                    <input type="checkbox" class="checkbox form-multiselect-checkbox" value="{{ .ID }}"{{ if index $.SelectedWindowMap .ID }} checked{{ end }}>
+                    <span class="checkbox-box"></span>
+                    <span class="form-multiselect-name">{{ .Name }}</span>
+                  </label>
+                  {{ else }}
+                  <div class="schedule-ms-empty">暂无窗口</div>
+                  {{ end }}
+                </div>
               </div>
             </div>
           </div>
@@ -213,14 +255,10 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
     </div>
 
     <div id="scheduleMoreFilters" class="schedule-filter schedule-filter-more" hidden>
-      <select class="form-select" id="scheduleFilterPri">
-        <option value="">优先级</option>
-        <option value="0"{{ if eq .SelectedPri "0" }} selected{{ end }}>未设置优先级</option>
-        <option value="1"{{ if eq .SelectedPri "1" }} selected{{ end }}>P1</option>
-        <option value="2"{{ if eq .SelectedPri "2" }} selected{{ end }}>P2</option>
-        <option value="3"{{ if eq .SelectedPri "3" }} selected{{ end }}>P3</option>
-        <option value="4"{{ if eq .SelectedPri "4" }} selected{{ end }}>P4</option>
-      </select>
+      <div class="ui-autocomplete schedule-pri-picker">
+        <input type="text" id="scheduleFilterPriInput" class="form-input" placeholder="优先级" autocomplete="off">
+        <input type="hidden" id="scheduleFilterPri" class="schedule-pri-filter-value" value="{{ .SelectedPri }}" data-selected-value="{{ .SelectedPri }}">
+      </div>
       <div class="ui-autocomplete schedule-owner-picker" data-inside-users-url="{{ .InsideUsersURL }}">
         <input type="text" id="scheduleFilterTestInput" class="form-input" placeholder="测试负责人" autocomplete="off">
         <input type="hidden" id="scheduleFilterTestValue" class="schedule-owner-filter-value" value="{{ .SelectedTestOwner }}" data-selected-value="{{ .SelectedTestOwner }}">
@@ -540,20 +578,23 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
         <div class="schedule-create-section-head"><strong>窗口归属</strong></div>
         <div class="schedule-create-inline-row">
           <div class="form-group">
-            <label class="form-label" for="scheduleWindowTeamgroup">敏捷小组</label>
-            <select class="form-select" id="scheduleWindowTeamgroup" name="teamgroupId" style="width:100%">
+            <label class="form-label" for="scheduleWindowTeamgroupInput">敏捷小组</label>
+            <div id="scheduleWindowTeamgroupOptions" hidden>
               {{ range .Teamgroups }}
-              <option value="{{ .ID }}">{{ .DisplayName }}</option>
+              <span data-value="{{ .ID }}" data-label="{{ .DisplayName }}"></span>
               {{ end }}
-            </select>
+            </div>
+            <div class="ui-autocomplete">
+              <input type="text" id="scheduleWindowTeamgroupInput" class="form-input" placeholder="搜索敏捷小组" autocomplete="off" style="width:100%">
+              <input type="hidden" id="scheduleWindowTeamgroup" name="teamgroupId">
+            </div>
           </div>
           <div class="form-group">
-            <label class="form-label" for="scheduleWindowType">发布类型</label>
-            <select class="form-select" id="scheduleWindowType" name="windowType" style="width:100%">
-              <option value="regular">常规</option>
-              <option value="fast">快速</option>
-              <option value="urgent">紧急</option>
-            </select>
+            <label class="form-label" for="scheduleWindowTypeInput">发布类型</label>
+            <div class="ui-autocomplete">
+              <input type="text" id="scheduleWindowTypeInput" class="form-input" placeholder="搜索发布类型" autocomplete="off" style="width:100%">
+              <input type="hidden" id="scheduleWindowType" name="windowType" value="regular">
+            </div>
           </div>
         </div>
       </div>
@@ -614,10 +655,11 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
     <div id="taskModalInfoBar" style="font-size:12px; color:#666; margin:12px 0;"></div>
 
     <div class="task-modal-project-section" id="taskModalProjectSection" style="display:none;">
-      <label for="taskModalProjectSelect">项目</label>
-      <select id="taskModalProjectSelect" class="form-select rd-task-project-select rd-task-select">
-        <option value="">请选择项目</option>
-      </select>
+      <label for="taskModalProjectInput">项目</label>
+      <div class="ui-autocomplete">
+        <input type="text" id="taskModalProjectInput" class="form-input rd-task-project-select" placeholder="搜索项目" autocomplete="off">
+        <input type="hidden" id="taskModalProjectSelect" class="rd-task-project-select rd-task-select">
+      </div>
     </div>
 
     <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">

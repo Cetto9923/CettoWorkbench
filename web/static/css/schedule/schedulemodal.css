@@ -505,6 +505,40 @@
   color: var(--t1);
 }
 
+#taskModal .task-modal-project-section .ui-autocomplete {
+  width: 160px;
+  max-width: 100%;
+}
+
+#taskModal .task-modal-project-section .ui-autocomplete-input-wrap {
+  width: 100%;
+}
+
+#taskModal .task-modal-project-section .ui-autocomplete-input {
+  width: 100% !important;
+  min-width: 0;
+  padding: 4px 24px 4px 4px;
+  border: 1px solid #d1d5db;
+  border-radius: 3px;
+  font-size: 11px;
+  line-height: inherit;
+  box-sizing: border-box;
+  background: #fff;
+  color: var(--t1);
+}
+
+#scheduleVersionWindowModal .ui-autocomplete {
+  width: 100%;
+}
+
+#scheduleVersionWindowModal .ui-autocomplete-input-wrap {
+  width: 100%;
+}
+
+#scheduleVersionWindowModal .ui-autocomplete-input {
+  width: 100% !important;
+}
+
 .task-modal-spec-block {
   margin-bottom: 12px;
 }
