@@ -115,7 +115,7 @@ func (r *Repo) ListAllTeamgroups(ctx context.Context) ([]ZtTeamgroup, error) {
 	if err := r.db.WithContext(ctx).
 		Table((ZtTeamgroup{}).TableName()).
 		Select("id", "name", "parent", "path").
-		Where("deleted = '0'").
+		Where("deleted = '0' AND status != 'disband'").
 		Order("id ASC").
 		Find(&rows).Error; err != nil {
 		return nil, err
@@ -131,6 +131,7 @@ FROM zt_teamgroup tg
 INNER JOIN zt_team t ON t.root = tg.id AND t.type = 'teamgroup'
 WHERE t.account = ?
   AND tg.deleted = '0'
+  AND tg.status != 'disband'
 ORDER BY tg.id`
 
 	var rows []ZtTeamgroup
@@ -149,7 +150,7 @@ func (r *Repo) FindTeamgroupsByIDs(ctx context.Context, ids []uint) ([]ZtTeamgro
 	if err := r.db.WithContext(ctx).
 		Table((ZtTeamgroup{}).TableName()).
 		Select("id", "name", "parent", "path").
-		Where("id IN ? AND deleted = '0'", ids).
+		Where("id IN ? AND deleted = '0' AND status != 'disband'", ids).
 		Find(&rows).Error; err != nil {
 		return nil, err
 	}
