@@ -143,11 +143,7 @@ func Run() error {
 	poRepo := po.NewRepo(dbReadonly, db)
 	poSvc := po.NewService(poRepo, scheduleSvc, userSvc, zentaopkg.API(), zapLog)
 	poHandler := po.NewHandler(poSvc, zapLog)
-	testtaskReadDB := dbReadonly
-	if testtaskReadDB == nil {
-		testtaskReadDB = db
-	}
-	testtaskRepo := testtask.NewRepo(testtaskReadDB, db)
+	testtaskRepo := testtask.NewRepo(db)
 	testtaskSvc := testtask.NewService(testtaskRepo, userSvc, zentaopkg.API(), zapLog)
 	testtaskHandler := testtask.NewHandler(testtaskSvc, zapLog)
 	buildRepo := build.NewRepo(db)
