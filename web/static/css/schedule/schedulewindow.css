@@ -6,12 +6,15 @@
 
 /* ── 版本窗口概览（默认偏紧凑，把首屏留给需求列表） ── */
 .schedule-version-overview {
+  position: relative;
+  z-index: 40; /* 高于下方 .schedule-area，避免卡片菜单被列表区盖住 */
   background: #fff;
   border: 1px solid var(--border);
   border-radius: 8px;
   margin-bottom: 8px;
   padding: 6px 10px 8px;
   box-shadow: 0 2px 10px rgba(15, 23, 42, 0.025);
+  overflow: visible;
 }
 
 .schedule-section-title {
@@ -67,11 +70,17 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+  z-index: 1;
 }
 
 .schedule-version-card:hover {
   border-color: var(--blue);
   box-shadow: 0 6px 18px rgba(37, 99, 235, 0.1);
+}
+
+/* 菜单打开时抬高当前卡片，避免被右侧相邻卡片盖住 */
+.schedule-version-card:has(.version-card-dropdown.show) {
+  z-index: 50;
 }
 
 .schedule-version-body-click {
@@ -121,7 +130,7 @@
   border: 1px solid var(--border);
   border-radius: 6px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-  z-index: 20;
+  z-index: 60;
   padding: 4px 0;
 }
 
@@ -481,5 +490,11 @@
   .schedule-version-overview {
     max-height: 88px;
     overflow-y: auto;
+  }
+
+  /* 菜单打开时取消裁切，否则下拉会被 overflow-y:auto 挡住 */
+  .schedule-version-overview:has(.version-card-dropdown.show) {
+    overflow: visible;
+    max-height: none;
   }
 }
