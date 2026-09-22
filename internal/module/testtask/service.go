@@ -89,21 +89,41 @@ func (s *Service) GetContext(ctx context.Context, actor *model.User, demandID ui
 	return BuildContextResp(*row, displayMap, account, name, systems, users), nil
 }
 
-// ListProductExecutions 当前产品下执行列表（对齐禅道版本创建 stagefilter|leaf|order_asc；closed 在 Repo SQL 排除）。
+// ListProductExecutions 当前产品下执行列表（对齐禅道 product::getExecutionPairsByProduct(productID,'',0,'stagefilter')）。
 func (s *Service) ListProductExecutions(ctx context.Context, actor *model.User, productID uint) ([]ExecutionOption, error) {
 	_ = actor // 预留：后续可按可见执行权限过滤
 	if productID == 0 {
 		return nil, errorx.New(errorx.ErrCodeInvalidParam, "产品 ID 无效")
 	}
-	projectIDs, err := s.repo.FindProductProjectIDs(ctx, productID)
+	rows, err := s.repo.FindExecutionsByProduct(ctx, productID)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := s.repo.FindExecutionsByProjectIDs(ctx, projectIDs)
+	projectIDs := uniqueProjectIDs(rows)
+	stages, err := s.repo.FindStagesByProjectIDs(ctx, projectIDs)
 	if err != nil {
 		return nil, err
 	}
-	return BuildExecutionOptions(rows), nil
+	return BuildExecutionOptions(rows, stages), nil
+}
+
+func uniqueProjectIDs(rows []executionRow) []uint {
+	if len(rows) == 0 {
+		return nil
+	}
+	seen := make(map[uint]struct{}, len(rows))
+	out := make([]uint, 0, len(rows))
+	for _, row := range rows {
+		if row.ProjectID == 0 {
+			continue
+		}
+		if _, ok := seen[row.ProjectID]; ok {
+			continue
+		}
+		seen[row.ProjectID] = struct{}{}
+		out = append(out, row.ProjectID)
+	}
+	return out
 }
 
 // ListProductBuilds 当前产品下已有版本列表（代理禅道 GET /products/:id/builds）。

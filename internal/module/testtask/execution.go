@@ -2,7 +2,7 @@
 // 文件: internal/module/testtask/execution.go
 // 模块: 提测办理
 // 类型: action
-// 职责: 对齐禅道版本创建执行下拉：stagefilter / leaf / order_asc。
+// 职责: 对齐禅道 productTao::buildExecutionPairs（mode=stagefilter, withProjectName）。
 // 依赖: 无
 // =============================================================================
 
@@ -10,64 +10,56 @@ package testtask
 
 import (
 	"fmt"
-	"sort"
 	"strconv"
 	"strings"
 )
 
-var waterfallModels = map[string]struct{}{
-	"waterfall":     {},
-	"waterfallplus": {},
-}
-
+// 对齐禅道 buildExecutionPairs stagefilter 过滤的阶段属性。
 var stagefilterAttrs = map[string]struct{}{
 	"request": {},
 	"design":  {},
 	"review":  {},
 }
 
-// BuildExecutionOptions 按禅道 create build 的 mode 过滤并装配下拉项。
-// mode 语义：stagefilter | leaf | order_asc（closed 已在 Repo SQL 排除）。
-func BuildExecutionOptions(rows []executionRow) []ExecutionOption {
+// 对齐 $lang->project->disableExecution（zh-cn：不启用执行的项目）。
+const disableExecutionLabel = "不启用执行的项目"
+
+// BuildExecutionOptions 对齐禅道 productTao::buildExecutionPairs($executions, 'stagefilter', true)。
+func BuildExecutionOptions(rows []executionRow, stages []stageRow) []ExecutionOption {
 	if len(rows) == 0 {
 		return []ExecutionOption{}
 	}
 
-	parentSet := make(map[uint]struct{}, len(rows))
-	for _, row := range rows {
-		if row.Parent > 0 {
-			parentSet[row.Parent] = struct{}{}
+	stageByID := make(map[uint]stageRow, len(stages))
+	parentSet := make(map[uint]struct{}, len(stages))
+	for _, st := range stages {
+		stageByID[st.ID] = st
+		if st.Parent > 0 {
+			parentSet[st.Parent] = struct{}{}
 		}
 	}
 
-	filtered := make([]executionRow, 0, len(rows))
+	out := make([]ExecutionOption, 0, len(rows))
 	for _, row := range rows {
 		if _, isParent := parentSet[row.ID]; isParent {
-			continue // leaf
+			continue
 		}
-		model := strings.ToLower(row.ProjectModel)
-		if _, isWF := waterfallModels[model]; isWF {
-			if _, ban := stagefilterAttrs[strings.ToLower(row.Attribute)]; ban {
-				continue // stagefilter
-			}
+		if _, ban := stagefilterAttrs[strings.ToLower(row.Attribute)]; ban {
+			continue
 		}
-		filtered = append(filtered, row)
-	}
 
-	sorted := resetExecutionSortsByProject(filtered)
-	out := make([]ExecutionOption, 0, len(sorted))
-	for _, row := range sorted {
+		label := formatExecutionLabel(row, stageByID)
 		projName := row.ProjectName
 		if projName == "" {
 			projName = strconv.FormatUint(uint64(row.ProjectID), 10)
 		}
-		execName := row.Name
-		if execName == "" {
-			execName = strconv.FormatUint(uint64(row.ID), 10)
+		if isEmptyMultiple(row.Multiple) {
+			label = projName + "(" + disableExecutionLabel + ")"
 		}
+
 		out = append(out, ExecutionOption{
 			Value:       fmt.Sprintf("%d-%d", row.ProjectID, row.ID),
-			Label:       projName + "/" + execName,
+			Label:       label,
 			ProjectID:   row.ProjectID,
 			ExecutionID: row.ID,
 		})
@@ -75,74 +67,56 @@ func BuildExecutionOptions(rows []executionRow) []ExecutionOption {
 	return out
 }
 
-// resetExecutionSortsByProject 按项目分组后做阶段树序（对齐 execution::resetExecutionSorts）。
-func resetExecutionSortsByProject(rows []executionRow) []executionRow {
-	if len(rows) == 0 {
+// formatExecutionLabel 对齐 buildExecutionPairs 中 withProjectName=true 的名称拼装。
+func formatExecutionLabel(row executionRow, stageByID map[uint]stageRow) string {
+	projName := row.ProjectName
+	if projName == "" {
+		projName = strconv.FormatUint(uint64(row.ProjectID), 10)
+	}
+
+	if _, isStage := stageByID[row.ID]; isStage {
+		name := ""
+		for _, seg := range pathSegments(row.Path) {
+			if st, ok := stageByID[seg]; ok {
+				name += "/" + st.Name
+			}
+		}
+		return projName + name
+	}
+
+	execName := row.Name
+	if execName == "" {
+		execName = strconv.FormatUint(uint64(row.ID), 10)
+	}
+	return projName + "/" + execName
+}
+
+func pathSegments(path string) []uint {
+	path = strings.Trim(path, ",")
+	if path == "" {
 		return nil
 	}
-	byProject := make(map[uint][]executionRow, len(rows))
-	projectOrder := make([]uint, 0)
-	seenProj := make(map[uint]struct{})
-	for _, row := range rows {
-		if _, ok := seenProj[row.ProjectID]; !ok {
-			seenProj[row.ProjectID] = struct{}{}
-			projectOrder = append(projectOrder, row.ProjectID)
-		}
-		byProject[row.ProjectID] = append(byProject[row.ProjectID], row)
+	parts := strings.Split(path, ",")
+	// 对齐 PHP array_slice(explode(...), 1)：跳过首段（通常为项目/根）。
+	if len(parts) <= 1 {
+		return nil
 	}
-	sort.SliceStable(projectOrder, func(i, j int) bool {
-		return projectOrder[i] < projectOrder[j]
-	})
-
-	out := make([]executionRow, 0, len(rows))
-	for _, pid := range projectOrder {
-		out = append(out, resetExecutionSorts(byProject[pid])...)
+	out := make([]uint, 0, len(parts)-1)
+	for _, p := range parts[1:] {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		id, err := strconv.ParseUint(p, 10, 64)
+		if err != nil || id == 0 {
+			continue
+		}
+		out = append(out, uint(id))
 	}
 	return out
 }
 
-func resetExecutionSorts(executions []executionRow) []executionRow {
-	if len(executions) == 0 {
-		return nil
-	}
-	inSet := make(map[uint]executionRow, len(executions))
-	var grade1 []executionRow
-	children := make(map[uint][]executionRow)
-	for _, e := range executions {
-		inSet[e.ID] = e
-		if e.Grade == 1 {
-			grade1 = append(grade1, e)
-		}
-		if e.Grade > 1 && e.Parent > 0 {
-			children[e.Parent] = append(children[e.Parent], e)
-		}
-	}
-
-	sorted := make([]executionRow, 0, len(executions))
-	added := make(map[uint]struct{}, len(executions))
-	var walk func(parents []executionRow)
-	walk = func(parents []executionRow) {
-		for _, p := range parents {
-			if _, ok := added[p.ID]; !ok {
-				if orig, exists := inSet[p.ID]; exists {
-					sorted = append(sorted, orig)
-					added[p.ID] = struct{}{}
-				}
-			}
-			if kids := children[p.ID]; len(kids) > 0 {
-				walk(kids)
-			}
-		}
-	}
-	walk(grade1)
-
-	// 未落入树序的（无 grade/parent 信息）按原序追加
-	for _, e := range executions {
-		if _, ok := added[e.ID]; ok {
-			continue
-		}
-		sorted = append(sorted, e)
-		added[e.ID] = struct{}{}
-	}
-	return sorted
+// isEmptyMultiple 对齐 PHP empty($execution->multiple)（'0'/'' 均视为空）。
+func isEmptyMultiple(v string) bool {
+	return v == "" || v == "0"
 }
