@@ -2,7 +2,7 @@
 ========================================================================== 文件:
 web/templates/layout/header.html 模块: 布局 职责:
 渲染后台顶部导航栏、面包屑与页面标题区。 全局字段: .CurrentUser, .CSRFToken,
-.Flash, .Menus, .AppName, .CurrentPath, .LayoutNav 页面字段: .Title (string),
+.Flash, .Menus, .CurrentPath, .LayoutNav 页面字段: .Title (string),
 .PageTitle (string), .CurrentMenus ([]menu.Menu)
 说明: sidebar 布局含全局编号搜索框（#globalSearch），跳转禅道由 globalsearch.js 处理。
 ========================================================================== */}}
@@ -12,7 +12,7 @@ web/templates/layout/header.html 模块: 布局 职责:
     <a href="/home" class="nav-item">
       <span class="po-brand-logo">研</span>
       <span class="nav-item-text"
-        >{{ if .AppName }}{{ .AppName }}{{ else }}workbench{{ end }}</span
+        >研发工作台</span
       >
     </a>
   </div>

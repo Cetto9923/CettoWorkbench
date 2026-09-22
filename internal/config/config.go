@@ -25,7 +25,6 @@ type Config struct {
 
 // App 应用基础信息。
 type App struct {
-	Name string `mapstructure:"name"`
 	Env  string `mapstructure:"env"`
 	Addr string `mapstructure:"addr"`
 }

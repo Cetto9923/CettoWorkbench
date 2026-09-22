@@ -54,7 +54,6 @@ type Renderer struct {
 	staticDir         string
 	isDev             bool
 	cache             map[string]*template.Template
-	appName           string
 	layoutNav         string
 	zentaoURL         string
 	zentaoRequestType string
@@ -64,10 +63,6 @@ type Renderer struct {
 func New(cfg *config.Config, isDev bool) (*Renderer, error) {
 	templateDir := filepath.Clean("web/templates")
 	staticDir := filepath.Join(filepath.Dir(templateDir), "static")
-	appName := ""
-	if cfg != nil && strings.TrimSpace(cfg.App.Name) != "" {
-		appName = strings.TrimSpace(cfg.App.Name)
-	}
 	layoutNav := "sidebar"
 	zentaoURL := ""
 	zentaoRequestType := ""
@@ -81,7 +76,6 @@ func New(cfg *config.Config, isDev bool) (*Renderer, error) {
 		staticDir:         staticDir,
 		isDev:             isDev,
 		cache:             make(map[string]*template.Template),
-		appName:           appName,
 		layoutNav:         layoutNav,
 		zentaoURL:         zentaoURL,
 		zentaoRequestType: zentaoRequestType,
@@ -391,9 +385,6 @@ func (r *Renderer) enrichData(c *gin.Context, page string, data gin.H) {
 		} else {
 			data["CurrentMenus"] = []menu.Menu{}
 		}
-	}
-	if _, ok := data["AppName"]; !ok {
-		data["AppName"] = r.appName
 	}
 	if _, ok := data["HideChrome"]; !ok {
 		data["HideChrome"] = constants.PageHidesChrome(page)

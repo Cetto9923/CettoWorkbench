@@ -541,6 +541,19 @@ body.sidebar-collapsed .sidebar {
 
 body.sidebar-collapsed .topbar-brand {
   width: var(--sidebar-width-collapsed);
+  margin-left: calc(-1 * var(--space-6));
+  justify-content: center;
+}
+
+body.sidebar-collapsed .topbar-brand .nav-item {
+  justify-content: center;
+  gap: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+body.sidebar-collapsed .topbar-brand .nav-item-text {
+  display: none;
 }
 
 body.sidebar-collapsed .main {
