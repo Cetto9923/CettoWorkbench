@@ -172,12 +172,12 @@ ORDER BY id ASC`
 	return ids, nil
 }
 
-// ListAllProducts 返回全部未删除产品（筛选下拉用）。
+// ListAllProducts 返回全部未删除、非影子产品（筛选下拉用）。
 func (r *Repo) ListAllProducts(ctx context.Context) ([]ZtProduct, error) {
 	const query = `
 SELECT id, name
 FROM zt_product
-WHERE deleted = '0'
+WHERE deleted = '0' AND shadow <> 1
 ORDER BY id DESC`
 
 	var rows []ZtProduct
