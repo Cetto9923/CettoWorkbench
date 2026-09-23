@@ -931,6 +931,25 @@ func (r *SaveSchedulingReq) Validate() []FieldError {
 	if r.WindowID == 0 {
 		errs = append(errs, FieldError{Field: "windowId", Message: "版本窗口不能为空"})
 	}
+	dateFields := []struct {
+		field string
+		value string
+		label string
+	}{
+		{field: "developFinish", value: r.DevelopFinish, label: "提测/开发日期"},
+		{field: "testFinish", value: r.TestFinish, label: "测试完成日期"},
+		{field: "acceptancedDate", value: r.AcceptancedDate, label: "验收完成日期"},
+	}
+	for _, f := range dateFields {
+		value := strings.TrimSpace(f.value)
+		if value == "" {
+			errs = append(errs, FieldError{Field: f.field, Message: f.label + "不能为空"})
+			continue
+		}
+		if _, err := time.Parse("2006-01-02", value); err != nil {
+			errs = append(errs, FieldError{Field: f.field, Message: f.label + "格式无效"})
+		}
+	}
 	for i, story := range r.Stories {
 		prefix := "stories[" + strconv.Itoa(i) + "]"
 		action := strings.TrimSpace(story.Action)

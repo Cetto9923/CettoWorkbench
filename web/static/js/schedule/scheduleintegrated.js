@@ -264,6 +264,15 @@
     if (!data.windowId) {
       return "请选择版本窗口";
     }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(data.developFinish || "").slice(0, 10))) {
+      return "请填写提测/开发日期";
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(data.testFinish || "").slice(0, 10))) {
+      return "请填写测试完成日期";
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(data.acceptancedDate || "").slice(0, 10))) {
+      return "请填写验收完成日期";
+    }
 
     for (var i = 0; i < data.stories.length; i++) {
       var story = data.stories[i];
