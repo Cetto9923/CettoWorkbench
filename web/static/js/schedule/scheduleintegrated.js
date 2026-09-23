@@ -589,6 +589,7 @@
       row.querySelector(".story-item-role").textContent = item.role || "—";
       row.querySelector(".story-item-title").textContent = item.gv || "—";
       row.querySelector(".story-item-product").textContent = item.productName || "—";
+      row.querySelector(".story-item-dept").textContent = item.deptName || "—";
       row.querySelector(".story-item-estimate").textContent = item.pointLabel || "—";
       $tbody.append(row);
     });

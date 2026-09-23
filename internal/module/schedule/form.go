@@ -864,6 +864,8 @@ type UserStoryItem struct {
 	GV             string `json:"gv"`
 	ProductID      uint   `json:"productId"`
 	ProductName    string `json:"productName"`
+	Dept           uint   `json:"dept"`
+	DeptName       string `json:"deptName"`
 	Revpoint       int    `json:"revpoint"`
 	PointLabel     string `json:"pointLabel"`
 	EffectivePoint int    `json:"effectivePoint"`
@@ -905,6 +907,7 @@ type ZtDemandUserStory struct {
 	Role       string `gorm:"column:role"`
 	GV         string `gorm:"column:gv"`
 	Product    uint   `gorm:"column:product"`
+	Dept       uint   `gorm:"column:dept"`
 	Point      int    `gorm:"column:point"`
 	Revpoint   int    `gorm:"column:revpoint"`
 	SourceType string `gorm:"column:sourceType"`

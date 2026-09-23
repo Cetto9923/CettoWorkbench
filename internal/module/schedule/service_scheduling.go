@@ -118,12 +118,20 @@ func (s *Service) buildDemandUserStories(
 	}
 
 	productIDs := make([]uint, 0, len(rows))
+	deptIDs := make([]uint64, 0, len(rows))
 	for _, row := range rows {
 		if row.Product > 0 {
 			productIDs = append(productIDs, row.Product)
 		}
+		if row.Dept > 0 {
+			deptIDs = append(deptIDs, uint64(row.Dept))
+		}
 	}
 	productNameByID, err := s.repo.FindProductsByIDs(ctx, productIDs)
+	if err != nil {
+		return nil, err
+	}
+	deptPathByID, err := s.deptSvc.PathDisplayMapByIDs(ctx, nil, deptIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -140,6 +148,8 @@ func (s *Service) buildDemandUserStories(
 			GV:             row.GV,
 			ProductID:      row.Product,
 			ProductName:    productNameByID[row.Product],
+			Dept:           row.Dept,
+			DeptName:       deptPathByID[uint64(row.Dept)],
 			Revpoint:       row.Revpoint,
 			PointLabel:     storyPointLabel(effectivePoint),
 			EffectivePoint: effectivePoint,

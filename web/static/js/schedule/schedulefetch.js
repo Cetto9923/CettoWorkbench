@@ -2,7 +2,8 @@
   "use strict";
 
   function redirectToLogin() {
-    window.location.href = "/login?redirect=" + encodeURIComponent(window.location.pathname);
+    var redirect = window.location.pathname + window.location.search;
+    window.location.href = "/login?redirect=" + encodeURIComponent(redirect);
   }
 
   function isSessionExpired(resp, init) {
@@ -39,7 +40,8 @@
     return fetchFn(input, options).then(function (resp) {
       if (isSessionExpired(resp, options)) {
         redirectToLogin();
-        return Promise.reject(new Error("session expired"));
+        // 与 appFetch 一致：跳转中挂起，不进各模块 catch
+        return new Promise(function () {});
       }
       return resp;
     });
