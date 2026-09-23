@@ -31,8 +31,6 @@ const bizDemandUnscheduledExcludeHangSQL = `AND d.hang = '0'`
 
 const indepStoryAllOpenSQL = `AND s.status != 'closed' AND s.status != 'released'`
 
-const indepStoryExcludeReleasedSQL = `AND s.status != 'released'`
-
 type indepStorySimpleCountRow struct {
 	AllOpen       int64 `gorm:"column:all_open"`
 	PendingReview int64 `gorm:"column:pending_review"`
@@ -124,8 +122,9 @@ func buildIndepStoryFilterClause(filter, account string) filterClause {
 	account = strings.TrimSpace(account)
 	switch filter {
 	case FilterUnscheduled:
+		// 待排期不含已关闭/已发布；与「全部未关闭」一致排除 closed/released。
 		return filterClause{
-			sql:  indepStoryExcludeReleasedSQL + "\n" + indepStoryUnscheduledSQL,
+			sql:  indepStoryAllOpenSQL + "\n" + indepStoryUnscheduledSQL,
 			args: []interface{}{account, account, account, account},
 		}
 	case FilterPendingReview:
