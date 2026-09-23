@@ -481,6 +481,9 @@
         .val(id)
         .text(name || id)
         .attr("data-release-date", releaseDate)
+        .attr("data-plan-test-done", $.trim(window.planTestDone || ""))
+        .attr("data-test-done", $.trim(window.testDone || ""))
+        .attr("data-accept-done", $.trim(window.acceptDone || ""))
         .appendTo($select);
     });
 
@@ -489,6 +492,9 @@
         .val(selected)
         .text($.trim(selectedName || "") || selected)
         .attr("data-release-date", $.trim(fallbackReleaseDate || ""))
+        .attr("data-plan-test-done", "")
+        .attr("data-test-done", "")
+        .attr("data-accept-done", "")
         .appendTo($select);
     }
 
@@ -503,12 +509,21 @@
     var $select = $("#scheduleIntegratedWindowSelect");
     var $selected = $select.find("option:selected");
     var releaseDate = "";
+    var planTestDone = "";
+    var testDone = "";
+    var acceptDone = "";
 
     if ($select.val()) {
       releaseDate = $.trim($selected.attr("data-release-date") || "");
+      planTestDone = $.trim($selected.attr("data-plan-test-done") || "");
+      testDone = $.trim($selected.attr("data-test-done") || "");
+      acceptDone = $.trim($selected.attr("data-accept-done") || "");
     }
 
     setDateInputValue($("#scheduleIntegratedSchedulePlanDate"), releaseDate);
+    setDateInputValue($("#scheduleIntegratedDevelopFinish"), planTestDone);
+    setDateInputValue($("#scheduleIntegratedTestFinish"), testDone);
+    setDateInputValue($("#scheduleIntegratedAcceptancedDate"), acceptDone);
     updateReleaseMeta();
   }
 
