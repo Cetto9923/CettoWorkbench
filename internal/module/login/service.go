@@ -28,6 +28,7 @@ type Service struct {
 	repo       authRepo
 	sessionMgr sessionManager
 	logger     *zap.Logger
+	viewCache  zentaoViewCache // 可选：登录成功清禅道可见范围缓存
 }
 
 type authRepo interface {
@@ -42,13 +43,18 @@ type sessionManager interface {
 	Destroy(ctx context.Context) error
 }
 
-// NewService 创建 Service。
-func NewService(repo *Repo, sessionMgr *scs.SessionManager, logger *zap.Logger) *Service {
-	return NewServiceWithDeps(repo, sessionMgr, logger)
+// zentaoViewCache 登录后失效禅道可见范围短缓存（由 user.Service 实现）。
+type zentaoViewCache interface {
+	InvalidateZentaoView(account string)
+}
+
+// NewService 创建 Service。viewCache 可为 nil。
+func NewService(repo *Repo, sessionMgr *scs.SessionManager, logger *zap.Logger, viewCache zentaoViewCache) *Service {
+	return NewServiceWithDeps(repo, sessionMgr, logger, viewCache)
 }
 
 // NewServiceWithDeps 使用可替换依赖创建 Service（供测试）。
-func NewServiceWithDeps(repo authRepo, sessionMgr sessionManager, logger *zap.Logger) *Service {
+func NewServiceWithDeps(repo authRepo, sessionMgr sessionManager, logger *zap.Logger, viewCache zentaoViewCache) *Service {
 	if logger == nil {
 		logger = zap.NewNop()
 	}
@@ -56,6 +62,7 @@ func NewServiceWithDeps(repo authRepo, sessionMgr sessionManager, logger *zap.Lo
 		repo:       repo,
 		sessionMgr: sessionMgr,
 		logger:     logger,
+		viewCache:  viewCache,
 	}
 }
 
@@ -93,20 +100,30 @@ func (s *Service) Login(ctx context.Context, req LoginReq) (LoginResp, error) {
 	}
 	s.sessionMgr.Put(ctx, "userID", user.ID)
 
+	// 登录成功后清禅道可见范围缓存，下次业务请求重新 GET /user。
+	if s.viewCache != nil {
+		s.viewCache.InvalidateZentaoView(account)
+	}
+
 	s.recordLoginLog(ctx, req, sql.NullInt64{Int64: user.ID, Valid: true}, true, "")
 	s.logger.Info("login success", zap.String("account", account), zap.Int64("userID", user.ID))
 
 	return LoginResp{User: user}, nil
 }
 
-// checkLockout 检查账号和 IP 是否触发登录失败锁定。
+// checkLockout 检查账号是否处于临时锁定（zt_user.locked >= now）。
 // 返回 (reason, err)：reason 仅在 err != nil 时有意义，用于写登录日志。
 func (s *Service) checkLockout(ctx context.Context, account string) (reason string, err error) {
 	user, err := s.repo.FindUserByAccount(ctx, account)
 	if err != nil {
 		return "", err
 	}
-	if user.Locked != nil && user.Locked.Before(time.Now()) {
+	// 账号不存在时不在此拦截，交给后续统一「账号或密码错误」路径。
+	if user == nil {
+		return "", nil
+	}
+	// locked 表示锁定截止时间：未过期（>= now）则禁止登录。
+	if user.Locked != nil && !user.Locked.Before(time.Now()) {
 		return "account_locked", errorx.New("auth.login.locked", "账号已被临时锁定，请 15 分钟后再试")
 	}
 
@@ -115,10 +132,9 @@ func (s *Service) checkLockout(ctx context.Context, account string) (reason stri
 
 // Logout 执行登出。
 func (s *Service) Logout(ctx context.Context, actor *model.User) error {
-	// actor 当前未使用：第一期只销毁 Session。
-	// 保留此参数是遵循规范“action 类型写操作必须接收 actor”，
-	// 后续可在此记录登出日志（actor.ID、IP 等审计信息）。
-	_ = actor
+	if actor != nil && s.viewCache != nil {
+		s.viewCache.InvalidateZentaoView(actor.Account)
+	}
 	return s.sessionMgr.Destroy(ctx)
 }
 

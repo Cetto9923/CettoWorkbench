@@ -66,7 +66,6 @@ type Service struct {
 
 	zentaoViewMu    sync.Mutex
 	zentaoViewCache map[string]zentaoViewCacheEntry
-	zentaoViewTTL   time.Duration // 测试可覆盖；零值用 zentaoViewTTLDefault
 }
 
 // NewService 创建 Service。ztAPI 可为 nil（仅本地用户 CRUD 时）；调用 ZentaoView 前须配置。
@@ -335,10 +334,8 @@ func (s *Service) VisibleSprintIDs(ctx context.Context, actor *model.User) ([]ui
 }
 
 func (s *Service) getCachedZentaoView(account string) (ZentaoView, bool) {
-	ttl := s.zentaoViewTTL
-	if ttl <= 0 {
-		ttl = zentaoViewTTLDefault
-	}
+	ttl := zentaoViewTTLDefault
+
 	s.zentaoViewMu.Lock()
 	defer s.zentaoViewMu.Unlock()
 	if s.zentaoViewCache == nil {
@@ -362,6 +359,20 @@ func (s *Service) putCachedZentaoView(account string, view ZentaoView) {
 		s.zentaoViewCache = map[string]zentaoViewCacheEntry{}
 	}
 	s.zentaoViewCache[account] = zentaoViewCacheEntry{view: view, at: time.Now()}
+}
+
+// InvalidateZentaoView 清除指定账号的可见范围短缓存（登录成功时调用，保证拉到最新 view）。
+func (s *Service) InvalidateZentaoView(account string) {
+	account = strings.TrimSpace(account)
+	if s == nil || account == "" {
+		return
+	}
+	s.zentaoViewMu.Lock()
+	defer s.zentaoViewMu.Unlock()
+	if s.zentaoViewCache == nil {
+		return
+	}
+	delete(s.zentaoViewCache, account)
 }
 
 // parseCSVUintIDs 解析禅道 view 字段（逗号分隔 ID），去重且忽略非法段。

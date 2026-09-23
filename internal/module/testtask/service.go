@@ -89,13 +89,17 @@ func (s *Service) GetContext(ctx context.Context, actor *model.User, demandID ui
 	return BuildContextResp(*row, displayMap, account, name, systems, users), nil
 }
 
-// ListProductExecutions 当前产品下执行列表（对齐禅道 product::getExecutionPairsByProduct(productID,'',0,'stagefilter')）。
+// ListProductExecutions 当前产品下执行列表（对齐禅道 product::getExecutionPairsByProduct(productID,”,0,'stagefilter')）。
+// 非超管按禅道 view.sprints 过滤（user.VisibleSprintIDs / ZentaoView）。
 func (s *Service) ListProductExecutions(ctx context.Context, actor *model.User, productID uint) ([]ExecutionOption, error) {
-	_ = actor // 预留：后续可按可见执行权限过滤
 	if productID == 0 {
 		return nil, errorx.New(errorx.ErrCodeInvalidParam, "产品 ID 无效")
 	}
 	rows, err := s.repo.FindExecutionsByProduct(ctx, productID)
+	if err != nil {
+		return nil, err
+	}
+	rows, err = s.filterExecutionsByActorView(ctx, actor, rows)
 	if err != nil {
 		return nil, err
 	}
@@ -105,6 +109,51 @@ func (s *Service) ListProductExecutions(ctx context.Context, actor *model.User, 
 		return nil, err
 	}
 	return BuildExecutionOptions(rows, stages), nil
+}
+
+// filterExecutionsByActorView 对齐禅道：!$admin 时 andWhere id in view.sprints。
+func (s *Service) filterExecutionsByActorView(ctx context.Context, actor *model.User, rows []executionRow) ([]executionRow, error) {
+	if len(rows) == 0 {
+		return rows, nil
+	}
+	if s.userSvc == nil {
+		return nil, errorx.New(errorx.ErrCodeInternal, "用户服务未配置")
+	}
+	view, err := s.userSvc.ZentaoView(ctx, actor)
+	if err != nil {
+		if s.logger != nil {
+			s.logger.Error("zentao user view", zap.Error(err))
+		}
+		return nil, errorx.Wrap(errorx.ErrCodeInternal, "获取可见执行失败", err)
+	}
+	if view.Admin {
+		return rows, nil
+	}
+	return filterExecutionsByVisibleSprints(rows, view.Sprints), nil
+}
+
+// filterExecutionsByVisibleSprints 保留 id ∈ sprintIDs 的执行行。
+func filterExecutionsByVisibleSprints(rows []executionRow, sprintIDs []uint) []executionRow {
+	if len(rows) == 0 {
+		return rows
+	}
+	if len(sprintIDs) == 0 {
+		return []executionRow{}
+	}
+	allow := make(map[uint]struct{}, len(sprintIDs))
+	for _, id := range sprintIDs {
+		if id == 0 {
+			continue
+		}
+		allow[id] = struct{}{}
+	}
+	out := make([]executionRow, 0, len(rows))
+	for _, row := range rows {
+		if _, ok := allow[row.ID]; ok {
+			out = append(out, row)
+		}
+	}
+	return out
 }
 
 func uniqueProjectIDs(rows []executionRow) []uint {
