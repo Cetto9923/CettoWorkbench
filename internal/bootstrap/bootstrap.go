@@ -119,7 +119,7 @@ func Run() error {
 	requireLogin := middleware.RequireLogin(sessionMgr, db)
 	redirectIfLoggedIn := middleware.RedirectIfLoggedIn(sessionMgr)
 	userRepo := user.NewRepo(db)
-	userSvc := user.NewService(userRepo)
+	userSvc := user.NewService(userRepo, zentaopkg.API())
 	userHandler := user.NewHandler(rend, zapLog, userSvc)
 	loginLogRepo := loginlog.NewRepo(db)
 	loginLogSvc := loginlog.NewService(loginLogRepo)
