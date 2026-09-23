@@ -169,6 +169,7 @@ func (r *Repo) scheduleStoryScope(ctx context.Context, account string) *gorm.DB 
 		Where("IFNULL(sourceType, '') != ?", "demandpool").
 		Where("type = ?", "story").
 		Where("isParent = ?", "0").
+		Where("product != ?", "0").
 		Where(storyAssignedOrProductReqM, account, account).
 		Where("(" + strings.Join([]string{
 			dateUnsetExpr("developFinish"),
