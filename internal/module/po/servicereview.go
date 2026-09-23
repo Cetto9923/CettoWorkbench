@@ -39,7 +39,7 @@ func (s *Service) SubmitDemandReview(ctx context.Context, actor *model.User, req
 	}
 	status := strings.TrimSpace(demand.Status)
 	if status != "draft" && status != "refuse" {
-		return empty, errorx.New(errorx.ErrCodeConflict, "仅草稿或已驳回的需求可发起评审")
+		return empty, errorx.New(errorx.ErrCodeConflict, "仅暂存或已驳回的需求可发起评审")
 	}
 	if strings.TrimSpace(demand.CreatedBy) != account {
 		return empty, errorx.New(errorx.ErrCodeForbidden, "只有创建人可以发起评审")
