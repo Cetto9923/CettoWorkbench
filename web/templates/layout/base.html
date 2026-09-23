@@ -29,6 +29,16 @@
   {{ block "page_css" . }}{{ end }}
 </head>
 <body{{ if .HideChrome }} class="layout-chrome-hidden"{{ else }} class="has-bottom-tabs{{ if eq .LayoutNav "top" }} layout-nav-top{{ end }}"{{ end }}>
+  {{/* 侧栏收起态须在首屏绘制前恢复，否则导航跳转会先展开再收起 */}}
+  <script>
+    (function () {
+      try {
+        if (window.localStorage.getItem("gofw.sidebar.collapsed") === "1") {
+          document.body.classList.add("sidebar-collapsed");
+        }
+      } catch (e) {}
+    })();
+  </script>
   {{ if not .HideChrome }}
   <header class="topbar">
     {{ template "layout/header" . }}
