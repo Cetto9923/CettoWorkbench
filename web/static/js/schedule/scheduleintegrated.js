@@ -630,6 +630,7 @@
       shared.productProjectsMap = shared.buildProductProjectsMap(data.productProjects);
       shared.productExecutionsMap = shared.buildProductExecutionsMap(data.projectExecutions);
       shared.zentaoURL = $.trim(data.zentaoUrl || "");
+      shared.applyTaskTypes(data.taskTypes);
       shared.isSchedulingDetailLoaded = true;
     }
 

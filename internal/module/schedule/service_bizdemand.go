@@ -440,6 +440,10 @@ func (s *Service) GetDemandScheduling(ctx context.Context, actor *model.User, de
 	if err != nil {
 		return nil, err
 	}
+	taskTypes, err := s.repo.ListTaskTypeOptions(ctx)
+	if err != nil {
+		return nil, err
+	}
 	return &DemandSchedulingResp{
 		DemandSchedulingDetail: detail,
 		InvolvedProducts:       involvedProducts,
@@ -449,5 +453,6 @@ func (s *Service) GetDemandScheduling(ctx context.Context, actor *model.User, de
 		UserStories:            userStories,
 		Windows:                windows,
 		Users:                  users,
+		TaskTypes:              taskTypes,
 	}, nil
 }

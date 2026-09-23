@@ -60,6 +60,7 @@ func buildSchedulingDetailJSON(resp *DemandSchedulingResp) gin.H {
 		"userStories":       []UserStoryItem{},
 		"windows":           []SchedulingWindowOption{},
 		"users":             []SchedulingUserOption{},
+		"taskTypes":         []TaskTypeOption{},
 	}
 	if resp == nil {
 		return out
@@ -81,6 +82,9 @@ func buildSchedulingDetailJSON(resp *DemandSchedulingResp) gin.H {
 	}
 	if resp.Users != nil {
 		out["users"] = resp.Users
+	}
+	if resp.TaskTypes != nil {
+		out["taskTypes"] = resp.TaskTypes
 	}
 	if resp.DemandSchedulingDetail != nil {
 		detail := resp.DemandSchedulingDetail

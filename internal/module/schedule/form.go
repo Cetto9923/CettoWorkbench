@@ -872,6 +872,12 @@ type UserStoryItem struct {
 	EffectivePoint int    `json:"effectivePoint"`
 }
 
+// TaskTypeOption 禅道任务类型下拉项（zt_lang typeList）。
+type TaskTypeOption struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
 // DemandSchedulingResp 排期一体化弹窗加载数据。
 type DemandSchedulingResp struct {
 	*DemandSchedulingDetail
@@ -882,6 +888,7 @@ type DemandSchedulingResp struct {
 	UserStories       []UserStoryItem                            `json:"userStories"`
 	Windows           []SchedulingWindowOption                   `json:"windows"`
 	Users             []SchedulingUserOption                     `json:"users"`
+	TaskTypes         []TaskTypeOption                           `json:"taskTypes"`
 }
 
 // ZtStory 禅道 zt_story 只读投影。

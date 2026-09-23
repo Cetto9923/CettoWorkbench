@@ -6,8 +6,6 @@
     return;
   }
 
-  var TASK_TYPE_OPTIONS = shared.taskTypeOptions || [];
-
   function scheduleGetJSON(url) {
     if (window.scheduleFetch) {
       return window
@@ -367,7 +365,7 @@
   function fillTaskTypeSelect($select, selectedType) {
     var selected = $.trim(selectedType || "");
     var seen = {};
-    var options = TASK_TYPE_OPTIONS.slice();
+    var options = (shared.taskTypeOptions || []).slice();
     if (selected && options.indexOf(selected) === -1) {
       options.unshift(selected);
     }
@@ -379,10 +377,12 @@
       seen[type] = true;
       $("<option></option>").val(type).text(shared.taskTypeLabel(type)).appendTo($select);
     });
-    if (selected) {
+    if (selected && options.indexOf(selected) !== -1) {
       $select.val(selected);
-    } else {
+    } else if (options.indexOf("devel") !== -1) {
       $select.val("devel");
+    } else if (options.length) {
+      $select.val(options[0]);
     }
   }
 
