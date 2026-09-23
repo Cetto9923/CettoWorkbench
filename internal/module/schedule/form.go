@@ -258,6 +258,7 @@ func validateWindowMilestoneFields(windowType, planTestDone, testDone, acceptDon
 	for _, f := range fields {
 		value := strings.TrimSpace(f.value)
 		if value == "" {
+			errs = append(errs, FieldError{Field: f.field, Message: f.label + "不能为空"})
 			continue
 		}
 		if _, err := time.Parse("2006-01-02", value); err != nil {
