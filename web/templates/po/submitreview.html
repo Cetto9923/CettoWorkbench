@@ -3,10 +3,10 @@
 模块: PO工作台
 职责: 业需提交评审右侧抽屉（home 引入；数据由 submitreview.js 调 GET /demands/:id 回填，确认提交 POST /demands/:id/submit-review）
 全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .CurrentPath
-页面字段: .UsersJSON (string) 内部用户 JSON（account / realname，同源 ListInsideUsers）
+页面字段: （无独立注入；业务评审人下拉取详情接口 businessReviewers，对齐禅道需求池 businessReviewer）
 ========================================================================== */}}
 {{ define "po/submitreview" }}
-<div class="dd-drawer-mask" id="poDemandSubmitReviewDrawer" aria-hidden="true" data-users="{{ .UsersJSON }}">
+<div class="dd-drawer-mask" id="poDemandSubmitReviewDrawer" aria-hidden="true">
   <div class="dd-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="poDemandSubmitReviewDrawerTitle" onclick="event.stopPropagation()">
     <header class="dd-head" id="poDemandSubmitReviewHead">
       <div class="dd-idrow">

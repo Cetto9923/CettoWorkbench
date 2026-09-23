@@ -396,6 +396,9 @@
       var displayLabel = formatAutocompleteLabel(item, state.labelOnly);
       var option = document.createElement("div");
       option.className = "ui-autocomplete-option";
+      if (isAutocompleteValueSelected(state, item.value)) {
+        option.classList.add("is-selected");
+      }
       option.setAttribute("role", "option");
       option.setAttribute("data-index", String(index));
       option.setAttribute("data-value", item.value);
@@ -596,6 +599,51 @@
     });
   }
 
+  function normalizeAutocompleteSelectedValues(values) {
+    if (!Array.isArray(values)) {
+      return [];
+    }
+    var out = [];
+    var seen = {};
+    values.forEach(function (raw) {
+      var value = trimText(raw);
+      if (!value || seen[value]) {
+        return;
+      }
+      seen[value] = true;
+      out.push(value);
+    });
+    return out;
+  }
+
+  function isAutocompleteValueSelected(state, value) {
+    value = trimText(value);
+    if (!value || !state || !Array.isArray(state.selectedValues)) {
+      return false;
+    }
+    return state.selectedValues.indexOf(value) >= 0;
+  }
+
+  function markSelectedAutocompleteOptions(state) {
+    if (!state || !state.dropdown) {
+      return;
+    }
+    var options = state.dropdown.querySelectorAll(".ui-autocomplete-option");
+    for (var i = 0; i < options.length; i++) {
+      var value = options[i].getAttribute("data-value") || "";
+      options[i].classList.toggle("is-selected", isAutocompleteValueSelected(state, value));
+    }
+  }
+
+  function setAutocompleteSelectedValues(inputId, values) {
+    var state = autocompleteInstances[inputId];
+    if (!state) {
+      return;
+    }
+    state.selectedValues = normalizeAutocompleteSelectedValues(values);
+    markSelectedAutocompleteOptions(state);
+  }
+
   function createAutocompleteState(input, hidden, inputId) {
     var structure = ensureAutocompleteStructure(input, hidden);
     if (!structure) {
@@ -612,6 +660,7 @@
       dropdown: dropdown,
       items: [],
       filteredItems: [],
+      selectedValues: [],
       maxShow: 100,
       labelOnly: false,
       activeIndex: -1,
@@ -628,7 +677,7 @@
    * @param {string} inputId 可见输入框 ID
    * @param {string} hiddenId 隐藏字段 ID（存 value）
    * @param {Array<{value:string,label:string}>} items 选项列表
-   * @param {{placeholder?:string,maxShow?:number,value?:string,label?:string,labelOnly?:boolean}} options
+   * @param {{placeholder?:string,maxShow?:number,value?:string,label?:string,labelOnly?:boolean,selectedValues?:string[]}} options
    */
   function initAutocomplete(inputId, hiddenId, items, options) {
     var input = document.getElementById(inputId);
@@ -656,6 +705,7 @@
     }
 
     state.items = normalizeAutocompleteItems(items);
+    state.selectedValues = normalizeAutocompleteSelectedValues(options.selectedValues);
     state.maxShow = options.maxShow > 0 ? options.maxShow : 100;
     state.labelOnly = !!options.labelOnly;
     if (options.placeholder) {
@@ -800,4 +850,5 @@
   window.initAutocomplete = initAutocomplete;
   window.clearAutocomplete = clearAutocomplete;
   window.destroyAutocomplete = destroyAutocomplete;
+  window.setAutocompleteSelectedValues = setAutocompleteSelectedValues;
 })();

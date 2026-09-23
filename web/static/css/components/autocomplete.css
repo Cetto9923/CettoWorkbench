@@ -89,7 +89,8 @@
   background: #f0f5ff;
 }
 
-.ui-autocomplete-option.is-active {
+.ui-autocomplete-option.is-active,
+.ui-autocomplete-option.is-selected {
   background: #e8f0fe;
 }
 

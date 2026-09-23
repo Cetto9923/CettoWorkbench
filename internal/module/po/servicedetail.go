@@ -94,6 +94,7 @@ func buildDemandDetailResp(row *DemandDetailRow, displayMap map[string]string, f
 		BraAccount:        strings.TrimSpace(row.BRA),
 		Reviewer:          dashOr(lookupAccountsDisplay(displayMap, row.Reviewer)),
 		ReviewerAccounts:  splitReviewerAccounts(row.Reviewer),
+		BusinessReviewers: buildPoolBusinessReviewers(row.PoolBusinessReviewer, displayMap),
 		CreatedName:       dashOr(lookupAccountDisplay(displayMap, row.CreatedBy)),
 		CurrentOwner:      dashOr(lookupAccountDisplay(displayMap, row.AssignedTo)), // UI：指派给
 		ZentaoStatus:      strings.TrimSpace(row.Status),
@@ -166,6 +167,24 @@ func splitReviewerAccounts(raw string) []string {
 		}
 		seen[p] = struct{}{}
 		out = append(out, p)
+	}
+	return out
+}
+
+// buildPoolBusinessReviewers 对齐禅道 demand-submit：用需求池 businessReviewer 账号列表组装下拉项。
+// 仅保留 displayMap 中存在的账号（等价 noclosed / 未删除）；展示名用 AccountDisplayMap。
+func buildPoolBusinessReviewers(raw string, displayMap map[string]string) []UserOption {
+	accounts := splitReviewerAccounts(raw)
+	if len(accounts) == 0 {
+		return []UserOption{}
+	}
+	out := make([]UserOption, 0, len(accounts))
+	for _, account := range accounts {
+		label := strings.TrimSpace(displayMap[account])
+		if label == "" {
+			continue // 已删除或不存在的账号不进下拉
+		}
+		out = append(out, UserOption{Account: account, Realname: label})
 	}
 	return out
 }

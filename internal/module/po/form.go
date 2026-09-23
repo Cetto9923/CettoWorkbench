@@ -375,9 +375,10 @@ type DemandDetailResp struct {
 	ProposerName      string             `json:"proposerName"`
 	ProposerDept      string             `json:"proposerDept"`
 	OwnerName         string             `json:"ownerName"`
-	BraAccount        string             `json:"braAccount"`       // 需求负责人账号，验收弹窗默认指派给
-	Reviewer          string             `json:"reviewer"`         // 展示名（多评审人用 ", " 拼接）
-	ReviewerAccounts  []string           `json:"reviewerAccounts"` // 原始账号列表，供提交评审多选回显
+	BraAccount        string             `json:"braAccount"`        // 需求负责人账号，验收弹窗默认指派给
+	Reviewer          string             `json:"reviewer"`          // 展示名（多评审人用 ", " 拼接）
+	ReviewerAccounts  []string           `json:"reviewerAccounts"`  // 原始账号列表，供提交评审多选回显
+	BusinessReviewers []UserOption       `json:"businessReviewers"` // 所属需求池业务评审人（对齐禅道 demand-submit）
 	CreatedName       string             `json:"createdName"`
 	CurrentOwner      string             `json:"currentOwner"` // UI 展示为「指派给」，取 assignedTo
 	ZentaoStatus      string             `json:"zentaoStatus"`

@@ -20,25 +20,26 @@ import (
 
 // DemandDetailRow 业需详情投影（对齐禅道 demand-view 抽屉所需列）。
 type DemandDetailRow struct {
-	ID          int64      `gorm:"column:id"`
-	Name        string     `gorm:"column:name"`
-	Pri         string     `gorm:"column:pri"`
-	Category    string     `gorm:"column:category"`
-	Source      string     `gorm:"column:source"`
-	Desc        string     `gorm:"column:desc"`
-	VerifyPlan  string     `gorm:"column:verifyPlan"`
-	Status      string     `gorm:"column:status"`
-	Originator  string     `gorm:"column:originator"`
-	ProposeDept string     `gorm:"column:propose_dept"`
-	BRA         string     `gorm:"column:BRA"`
-	QD          string     `gorm:"column:QD"`
-	RD          string     `gorm:"column:RD"`
-	Reviewer    string     `gorm:"column:reviewer"`
-	AssignedTo  string     `gorm:"column:assignedTo"`
-	CreatedBy   string     `gorm:"column:createdBy"`
-	CreatedDate *time.Time `gorm:"column:createdDate"`
-	Deadline    *time.Time `gorm:"column:deadline"`
-	PoolName    string     `gorm:"column:pool_name"`
+	ID                   int64      `gorm:"column:id"`
+	Name                 string     `gorm:"column:name"`
+	Pri                  string     `gorm:"column:pri"`
+	Category             string     `gorm:"column:category"`
+	Source               string     `gorm:"column:source"`
+	Desc                 string     `gorm:"column:desc"`
+	VerifyPlan           string     `gorm:"column:verifyPlan"`
+	Status               string     `gorm:"column:status"`
+	Originator           string     `gorm:"column:originator"`
+	ProposeDept          string     `gorm:"column:propose_dept"`
+	BRA                  string     `gorm:"column:BRA"`
+	QD                   string     `gorm:"column:QD"`
+	RD                   string     `gorm:"column:RD"`
+	Reviewer             string     `gorm:"column:reviewer"`
+	AssignedTo           string     `gorm:"column:assignedTo"`
+	CreatedBy            string     `gorm:"column:createdBy"`
+	CreatedDate          *time.Time `gorm:"column:createdDate"`
+	Deadline             *time.Time `gorm:"column:deadline"`
+	PoolName             string     `gorm:"column:pool_name"`
+	PoolBusinessReviewer string     `gorm:"column:pool_business_reviewer"` // zt_demandpool.businessReviewer
 }
 
 // FindDemandDetailByID 查询单个业需及池/提出部门展示名。
@@ -54,7 +55,8 @@ func (r *Repo) FindDemandDetailByID(ctx context.Context, id int64) (*DemandDetai
 				"d.originator, d.BRA, d.QD, d.RD, d.reviewer, d.assignedTo, d.createdBy, "+
 				"d.createdDate, d.deadline, "+
 				"COALESCE(dept.name, '') AS propose_dept, "+
-				"COALESCE(dp.name, '') AS pool_name",
+				"COALESCE(dp.name, '') AS pool_name, "+
+				"COALESCE(dp.businessReviewer, '') AS pool_business_reviewer",
 		).
 		Joins("LEFT JOIN "+ztmodel.ZtDept{}.TableName()+" AS dept ON d.proposeDept = dept.id").
 		Joins("LEFT JOIN "+ztmodel.ZtDemandpool{}.TableName()+" AS dp ON d.pool = dp.id AND dp.deleted = ?", "0").
