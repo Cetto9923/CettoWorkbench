@@ -87,6 +87,8 @@ func RequireLogin(mgr *scs.SessionManager, db *gorm.DB) gin.HandlerFunc {
 		c.Set("currentMenus", currentMenus)
 		// 禅道出站 API 统一从 ctx 取当前账号做 type=po 免密鉴权。
 		c.Request = c.Request.WithContext(zentaopkg.WithAccount(c.Request.Context(), user.Account))
+		// PO 首页主操作等服务层按与 RequirePerm 相同的权限快照判断可见动作（perm.HasAnyGranted）。
+		c.Request = c.Request.WithContext(perm.WithGranted(c.Request.Context(), userPerms))
 		c.Next()
 	}
 }
