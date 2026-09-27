@@ -85,6 +85,48 @@
     }
   }
 
+  async function loadTeamVersionWindows(requestNo) {
+    const rows = document.getElementById("teamHomeVersionRows");
+    const status = document.getElementById("teamHomeVersionStatus");
+    if (!rows) return;
+    rows.innerHTML = '<div class="state-placeholder">正在加载授权范围内的版本窗口…</div>';
+    if (status) status.textContent = "正在加载…";
+    const query = new URLSearchParams({ scope: state.scope });
+    if (state.teamgroupId) query.set("scopeId", String(state.teamgroupId));
+    try {
+      const response = await fetch("/home/team/version-windows?" + query.toString(), {
+        credentials: "include",
+        headers: { "Accept": "application/json", "X-Requested-With": "XMLHttpRequest" },
+      });
+      const json = await response.json().catch(function () { return null; });
+      if (!response.ok || !json || json.success !== true || !Array.isArray(json.data)) {
+        throw new Error((json && (json.message || json.error)) || ("HTTP " + response.status));
+      }
+      if (requestNo !== state.requestNo) return;
+      if (!json.data.length) {
+        rows.innerHTML = '<div class="state-placeholder">未来 30 天内没有已关联的版本窗口</div>';
+        if (status) status.textContent = "0 个窗口";
+        return;
+      }
+      rows.innerHTML = json.data.map(function (windowItem) {
+        const id = positiveID(windowItem.id);
+        const groupID = positiveID(windowItem.teamgroupId);
+        const href = "/schedule?windows=" + encodeURIComponent(String(id)) + "&amp;groups=" + encodeURIComponent(String(groupID));
+        return '<article class="team-home-version-row">' +
+          '<div class="team-home-version-main"><a href="' + href + '"><strong>' + esc(windowItem.name) + '</strong></a>' +
+          '<span>' + esc(windowItem.teamgroup || "未命名敏捷小组") + '</span></div>' +
+          '<time datetime="' + esc(windowItem.releaseDate) + '">' + esc(windowItem.releaseDate) + '</time>' +
+          '<span class="team-home-version-count">' + Number(windowItem.workItemCount || 0) + ' 个工作项</span>' +
+          '</article>';
+      }).join("");
+      if (status) status.textContent = json.data.length + " 个窗口";
+    } catch (error) {
+      if (requestNo !== state.requestNo) return;
+      rows.innerHTML = '<div class="state-placeholder error">版本窗口数据暂不可用</div>';
+      if (status) status.textContent = "加载失败";
+    }
+  }
+
   function setScopeControls(data) {
     const allowed = Array.isArray(data.availableScopes) ? data.availableScopes : [];
     document.querySelectorAll("#teamHomeScopeSwitch [data-scope]").forEach(function (button) {
@@ -167,6 +209,7 @@
       }
       renderRows(data.items);
       loadIssueRiskCounts(requestNo);
+      loadTeamVersionWindows(requestNo);
       const updated = document.getElementById("teamHomeUpdatedAt");
       if (updated) updated.textContent = "授权范围内 " + Number(data.allCount || 0) + " 个团队/小组";
       syncURL();

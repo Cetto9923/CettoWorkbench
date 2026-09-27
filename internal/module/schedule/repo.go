@@ -431,6 +431,34 @@ func (r *Repo) ListUpcomingVersionWindowsForTeamgroups(ctx context.Context, team
 	return rows, nil
 }
 
+// ListTeamHomeVersionWindows returns only non-deleted windows in the next 30 days
+// for the caller's already-authorized agile group IDs.
+func (r *Repo) ListTeamHomeVersionWindows(ctx context.Context, teamgroupIDs []uint, limit int) ([]model.VersionWindow, error) {
+	if len(teamgroupIDs) == 0 {
+		return []model.VersionWindow{}, nil
+	}
+	if limit <= 0 {
+		limit = 5
+	}
+	if limit > 8 {
+		limit = 8
+	}
+	const query = `
+SELECT id, name, releaseDate, startDate, teamgroup
+FROM zt_versionwindow
+WHERE deletedAt IS NULL
+  AND teamgroup IN ?
+  AND releaseDate >= CURDATE()
+  AND releaseDate <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+ORDER BY releaseDate ASC, teamgroup ASC, id ASC
+LIMIT ?`
+	rows := []model.VersionWindow{}
+	if err := r.db.WithContext(ctx).Raw(query, teamgroupIDs, limit).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
 // Create 写入 zt_versionwindow 并回填自增 ID。
 func (r *Repo) Create(ctx context.Context, window *model.VersionWindow) error {
 	return r.db.WithContext(ctx).Create(window).Error

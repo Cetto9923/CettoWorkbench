@@ -272,6 +272,14 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 	}, nil
 }
 
+// TeamHomeVersionWindows returns upcoming window summaries for authorized agile-group IDs.
+func (s *Service) TeamHomeVersionWindows(ctx context.Context, groupIDs []uint, limit int) ([]schedule.TeamHomeVersionWindowCard, error) {
+	if s == nil || s.schedule == nil {
+		return nil, fmt.Errorf("schedule service is not configured")
+	}
+	return s.schedule.ListTeamHomeVersionWindows(ctx, groupIDs, limit)
+}
+
 // Demands 按价值流状态返回当前用户关联的需求/故事详情。
 func (s *Service) Demands(ctx context.Context, actor *model.User, req DemandsReq) (*DemandsResp, error) {
 	if req.Page <= 0 {

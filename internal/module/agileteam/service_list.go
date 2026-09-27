@@ -177,6 +177,39 @@ func (s *Service) availableLeadScopes(ctx context.Context, actor *model.User) ([
 // authorized team or department scope. A selected parent team includes its
 // direct child agile groups; a selected child group remains isolated.
 func (s *Service) LeadScopeMemberAccounts(ctx context.Context, actor *model.User, scope string, scopeID uint) ([]string, error) {
+	groupIDs, err := s.leadScopeTeamgroupIDs(ctx, actor, scope, scopeID)
+	if err != nil {
+		return nil, err
+	}
+	if len(groupIDs) == 0 {
+		return []string{}, nil
+	}
+	membersByID, err := s.repo.ListMembersByGroupIDs(ctx, groupIDs)
+	if err != nil {
+		return nil, err
+	}
+	accounts := make([]string, 0)
+	seen := make(map[string]bool)
+	for _, groupID := range groupIDs {
+		for _, member := range membersByID[groupID] {
+			memberAccount := strings.TrimSpace(member.Account)
+			if memberAccount == "" || seen[memberAccount] {
+				continue
+			}
+			seen[memberAccount] = true
+			accounts = append(accounts, memberAccount)
+		}
+	}
+	return accounts, nil
+}
+
+// LeadScopeTeamgroupIDs resolves the authorized agile groups for one team or department selection.
+// A selected parent includes its direct agile subgroups; a selected subgroup remains isolated.
+func (s *Service) LeadScopeTeamgroupIDs(ctx context.Context, actor *model.User, scope string, scopeID uint) ([]uint, error) {
+	return s.leadScopeTeamgroupIDs(ctx, actor, scope, scopeID)
+}
+
+func (s *Service) leadScopeTeamgroupIDs(ctx context.Context, actor *model.User, scope string, scopeID uint) ([]uint, error) {
 	account, err := requireActorAccount(actor)
 	if err != nil {
 		return nil, err
@@ -231,25 +264,9 @@ func (s *Service) LeadScopeMemberAccounts(ctx context.Context, actor *model.User
 		return nil, errorx.New(errorx.ErrCodeForbidden, "所选团队不在你的授权范围内")
 	}
 	if len(groupIDs) == 0 {
-		return []string{}, nil
+		return []uint{}, nil
 	}
-	membersByID, err := s.repo.ListMembersByGroupIDs(ctx, groupIDs)
-	if err != nil {
-		return nil, err
-	}
-	accounts := make([]string, 0)
-	seen := make(map[string]bool)
-	for _, groupID := range groupIDs {
-		for _, member := range membersByID[groupID] {
-			memberAccount := strings.TrimSpace(member.Account)
-			if memberAccount == "" || seen[memberAccount] {
-				continue
-			}
-			seen[memberAccount] = true
-			accounts = append(accounts, memberAccount)
-		}
-	}
-	return accounts, nil
+	return groupIDs, nil
 }
 
 func containsString(values []string, target string) bool {

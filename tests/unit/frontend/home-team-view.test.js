@@ -21,6 +21,9 @@ assert(/formalCount/.test(js) && /pendingAdd/.test(js) && /pendingRemove/.test(j
 assert(/\/issues\/risk\/items\?/.test(js) && /fetchCount\("issue"\)/.test(js) && /fetchCount\("risk"\)/.test(js), 'team home loads both open issue and risk counts from the scoped API');
 assert(/teamHomeIssueCount/.test(tpl) && /teamHomeRiskCount/.test(tpl), 'team home exposes separate issue and risk totals');
 assert(/teamHomeRiskLink/.test(js) && /scopeId/.test(js), 'issue-risk summary link preserves the selected team scope');
+assert(/\/home\/team\/version-windows\?/.test(js) && /workItemCount/.test(js), 'team home loads deduplicated upcoming version windows from its authorized scope');
+assert(/teamHomeVersionRows/.test(tpl) && /未来 30 天版本窗口/.test(tpl), 'team home exposes an upcoming version-window panel');
+assert(/schedule\?windows=/.test(js) && /&amp;groups=/.test(js), 'window links preserve the existing schedule filters');
 assert(/\/agileteam\?view=lead&amp;scope=' \+ encodeURIComponent\(state\.scope\)/.test(js), 'team rows preserve the selected authorized scope when opening an agile group');
 assert(/\/issues\/risk\?kind=issue&amp;loop=open&amp;scope=' \+ encodeURIComponent\(state\.scope\)/.test(js), 'team rows deep-link to issue-risk with the selected authorized scope');
 assert(/contextOnly/.test(js), 'synthetic parent context rows are not made selectable links');

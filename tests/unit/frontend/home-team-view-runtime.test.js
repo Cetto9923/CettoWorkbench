@@ -44,6 +44,8 @@ function createHarness(search, replies) {
   const riskCount = element('teamHomeRiskCount');
   const riskStatus = element('teamHomeRiskStatus');
   const riskLink = element('teamHomeRiskLink');
+  const versionRows = element('teamHomeVersionRows');
+  const versionStatus = element('teamHomeVersionStatus');
   const buttons = [element('team', { 'data-scope': 'team' }), element('dept', { 'data-scope': 'dept' })];
   const byID = {
     teamHomeGroupRows: rows,
@@ -56,6 +58,8 @@ function createHarness(search, replies) {
     teamHomeRiskCount: riskCount,
     teamHomeRiskStatus: riskStatus,
     teamHomeRiskLink: riskLink,
+    teamHomeVersionRows: versionRows,
+    teamHomeVersionStatus: versionStatus,
   };
   const requests = [];
   let replyIndex = 0;
@@ -82,7 +86,7 @@ function createHarness(search, replies) {
     return { ok: true, status: 200, json: async () => payload };
   };
   vm.runInNewContext(source, { window, document, location: loc, history, fetch, URL, URLSearchParams, encodeURIComponent, Number, String, Array });
-  return { loc, rows, error, errorText, updated, select, buttons, requests, issueCount, riskCount, riskStatus, riskLink };
+  return { loc, rows, error, errorText, updated, select, buttons, requests, issueCount, riskCount, riskStatus, riskLink, versionRows, versionStatus };
 }
 
 function response(options, items, activeScope = 'team') {
@@ -95,7 +99,9 @@ function tick() { return new Promise(resolve => setTimeout(resolve, 0)); }
   const selected = createHarness('?view=team&scope=team&teamgroupId=11', [response(
     [{ id: 1, name: '产品团队', type: 'team' }, { id: 11, name: '对公一组', type: 'subteam' }],
     [{ id: 11, name: '对公一组', type: 'child', formalCount: 6, pendingAdd: 1, pendingRemove: 0 }]
-  ), { success: true, total: 7 }, { success: true, total: 3 }]);
+  ), { success: true, total: 7 }, { success: true, total: 3 }, { success: true, data: [
+    { id: 77, name: '十月版本', teamgroupId: 11, teamgroup: '产品团队 / 对公一组', releaseDate: '2026-10-10', workItemCount: 12 },
+  ] }]);
   await tick();
   await tick();
   const firstRequest = new URL(selected.requests[0], 'http://workbench.local');
@@ -114,7 +120,7 @@ function tick() { return new Promise(resolve => setTimeout(resolve, 0)); }
   if (selected.issueCount.textContent !== '7' || selected.riskCount.textContent !== '3') {
     throw new Error('team issue/risk counts did not render the scoped totals');
   }
-  const scopedRiskRequests = selected.requests.slice(1).map(url => new URL(url, 'http://workbench.local'));
+  const scopedRiskRequests = selected.requests.map(url => new URL(url, 'http://workbench.local')).filter(url => url.pathname === '/issues/risk/items');
   if (scopedRiskRequests.length !== 2 || scopedRiskRequests.some(url => url.searchParams.get('scope') !== 'team' || url.searchParams.get('scopeId') !== '11')) {
     throw new Error('issue/risk summary requests did not retain the selected authorized scope');
   }
@@ -123,6 +129,14 @@ function tick() { return new Promise(resolve => setTimeout(resolve, 0)); }
   }
   if (!selected.riskLink.href.includes('scope=team') || !selected.riskLink.href.includes('scopeId=11')) {
     throw new Error('issue/risk summary link did not preserve the selected child group');
+  }
+  if (!selected.versionRows.innerHTML.includes('十月版本') || !selected.versionRows.innerHTML.includes('12 个工作项') ||
+      !selected.versionRows.innerHTML.includes('/schedule?windows=77&amp;groups=11')) {
+    throw new Error('scoped version window or its schedule deep link did not render');
+  }
+  const windowRequest = selected.requests.map(url => new URL(url, 'http://workbench.local')).find(url => url.pathname === '/home/team/version-windows');
+  if (!windowRequest || windowRequest.searchParams.get('scope') !== 'team' || windowRequest.searchParams.get('scopeId') !== '11') {
+    throw new Error('version window request did not retain the selected authorized child group');
   }
 
   const invalid = createHarness('?view=team&scope=team&teamgroupId=999', [

@@ -201,6 +201,35 @@ func TestLeadScopeMemberAccountsUsesParentFamilyAndRejectsUnmanagedParent(t *tes
 	})
 }
 
+func TestLeadScopeTeamgroupIDsKeepSelectedChildIsolated(t *testing.T) {
+	svc, mock := newTestService(t)
+	managed := func() {
+		mock.ExpectQuery(`(?s)FROM zt_teamgroup managed.*scoped.parent = managed.id.*REGEXP \?`).
+			WithArgs("(^|[[:space:],;])coach1([[:space:],;]|$)").
+			WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(1)).AddRow(uint(11)).AddRow(uint(12)))
+	}
+	managed()
+	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM zt_dept WHERE COALESCE\(manager, ''\) REGEXP \?`).
+		WithArgs("(^|[[:space:],;])coach1([[:space:],;]|$)").WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+	managed()
+	teamRows := sqlmock.NewRows([]string{"id", "name", "parent", "parent_name", "org_dept_id", "org_dept_name", "org_dept_inherited", "type", "grade", "path", "PO", "manager", "slogan", "declaration", "logo", "status", "createdDate"}).
+		AddRow(uint(1), "信贷专项团队", uint(0), "", uint(0), "", false, "parent", 1, ",1,", "", "coach1", "", "", "", "enable", "").
+		AddRow(uint(11), "对公一组", uint(1), "信贷专项团队", uint(0), "", false, "child", 2, ",1,11,", "", "", "", "", "", "enable", "").
+		AddRow(uint(12), "对公二组", uint(1), "信贷专项团队", uint(0), "", false, "child", 2, ",1,12,", "", "", "", "", "", "enable", "")
+	mock.ExpectQuery("(?s)SELECT tg.id, tg.name, tg.parent.*FROM zt_teamgroup tg.*WHERE tg.deleted = '0'.*ORDER BY tg.id ASC").WillReturnRows(teamRows)
+
+	ids, err := svc.LeadScopeTeamgroupIDs(context.Background(), &model.User{Account: "coach1"}, "team", 11)
+	if err != nil {
+		t.Fatalf("LeadScopeTeamgroupIDs() error = %v", err)
+	}
+	if len(ids) != 1 || ids[0] != 11 {
+		t.Fatalf("selected child scope IDs = %v, want [11]", ids)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("SQL expectations: %v", err)
+	}
+}
+
 func TestPageFamiliesDoesNotSplitParentFromChildren(t *testing.T) {
 	t.Parallel()
 	families := []teamFamily{

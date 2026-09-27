@@ -32,6 +32,7 @@ type Handler struct {
 	logger            *zap.Logger
 	teamViewAccess    func(context.Context, *model.User) (bool, error)
 	teamScopeAccounts func(context.Context, *model.User, string, uint) ([]string, error)
+	teamScopeGroupIDs func(context.Context, *model.User, string, uint) ([]uint, error)
 }
 
 // NewHandler 创建 PO 模块 Handler。
@@ -53,12 +54,18 @@ func (h *Handler) SetTeamScopeAccounts(resolve func(context.Context, *model.User
 	h.teamScopeAccounts = resolve
 }
 
+// SetTeamScopeGroupIDs injects the authorized agile-group resolver for team dashboard data.
+func (h *Handler) SetTeamScopeGroupIDs(resolve func(context.Context, *model.User, string, uint) ([]uint, error)) {
+	h.teamScopeGroupIDs = resolve
+}
+
 // RegisterRoutes 注册 PO 工作台路由（挂载在已配置登录与操作日志的中间件组上）。
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g := rg.Group("")
 	g.Use(middleware.ActiveNav("/home"))
 
 	g.GET("/home", h.homePageAccess(), h.Home)
+	g.GET("/home/team/version-windows", h.TeamHomeVersionWindows)
 	g.GET("/demands", middleware.RequirePerm(perm.PoHomeList), h.Demands)
 	g.POST("/demands/:id/review", middleware.RequirePerm(perm.PoHomeList), h.ReviewDemand)
 	g.POST("/demands/:id/withdraw-review", middleware.RequirePerm(perm.PoHomeList), h.WithdrawDemandReview)
