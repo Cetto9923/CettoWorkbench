@@ -223,6 +223,7 @@ func deriveDemandPrimaryAction(ctx context.Context, actor *model.User, facts pri
 		CreatedBy:               facts.CreatedBy,
 		IsCreator:               facts.IsCreator,
 		IsAssignee:              facts.IsAssignee,
+		IsSuperAdmin:            actor != nil && actor.IsSuperAdmin,
 		CanReview:               facts.CanReview,
 		HasAcceptCapability:     hasCapability(ctx, actor, perm.PoHomeList, perm.PoBoardDemandList),
 		HasClarifyCapability:    hasCapability(ctx, actor, perm.PoHomeList),

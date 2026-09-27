@@ -47,7 +47,7 @@ func (s *Service) GetDemandReviewCandidates(ctx context.Context, actor *model.Us
 		return nil, errorx.New(errorx.ErrCodeConflict, "仅暂存或已驳回的需求可发起评审")
 	}
 	account := strings.TrimSpace(actor.Account)
-	if strings.TrimSpace(demand.CreatedBy) != account {
+	if !canSubmitDemandReview(actor, demand.CreatedBy) {
 		return nil, errorx.New(errorx.ErrCodeForbidden, "只有创建人可以发起评审")
 	}
 	poolReviewers, err := s.repo.FindDemandPoolBusinessReviewer(ctx, demandID)

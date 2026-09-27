@@ -136,10 +136,11 @@ type Input struct {
 	ObjectID uint
 
 	// 需求创建人与当前账号关系
-	CreatedBy  string
-	IsCreator  bool
-	IsAssignee bool
-	CanReview  bool
+	CreatedBy    string
+	IsCreator    bool
+	IsAssignee   bool
+	IsSuperAdmin bool
+	CanReview    bool
 
 	// 当前用户对当前行的能力事实（由 Service 检查后传入）：
 	HasAcceptCapability     bool
@@ -216,7 +217,7 @@ func Derive(in Input) PrimaryAction {
 			}
 			return None()
 		case "draft", "refuse":
-			if in.IsCreator || in.IsAssignee {
+			if in.IsCreator || in.IsSuperAdmin {
 				return Enabled(string(KeySubmitReview), "提交评审", string(KindDrawer), submitReviewURL(in))
 			}
 			return None()

@@ -121,8 +121,8 @@ func (s *Service) SubmitDemandReview(ctx context.Context, actor *model.User, req
 	if st != "draft" && st != "refuse" {
 		return errorx.New(errorx.ErrCodeConflict, "仅暂存或已驳回的需求可发起评审")
 	}
-	// 口径同 Main：仅创建人可发起评审（探索版曾放开指派人/超管，待产品确认，见 INTEGRATE-ROUND-20260927 Q2）。
-	if strings.TrimSpace(demand.CreatedBy) != account {
+	// 口径同 Main：仅创建人可发起评审，另允许超级管理员提交。
+	if !canSubmitDemandReview(actor, demand.CreatedBy) {
 		return errorx.New(errorx.ErrCodeForbidden, "只有创建人可以发起评审")
 	}
 
@@ -168,4 +168,16 @@ func normalizeReviewerAccounts(accounts []string) []string {
 		out = append(out, account)
 	}
 	return out
+}
+
+// canSubmitDemandReview 校验当前用户是否有权提交需求评审。
+// 口径同 Main：仅创建人可发起评审，另允许超级管理员提交。
+func canSubmitDemandReview(actor *model.User, createdBy string) bool {
+	if actor == nil || strings.TrimSpace(actor.Account) == "" {
+		return false
+	}
+	if actor.IsSuperAdmin {
+		return true
+	}
+	return strings.TrimSpace(createdBy) == strings.TrimSpace(actor.Account)
 }

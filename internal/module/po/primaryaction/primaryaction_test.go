@@ -404,3 +404,60 @@ func TestFormatNTestTasks(t *testing.T) {
 		t.Fatalf("5 tests: %q", got)
 	}
 }
+
+
+// TestDerive_SubmitReview_Authorization_ThreeCases 验证提交评审三种角色权限派生：
+// 1. 创建人可以提交
+// 2. 超管可以提交
+// 3. 普通指派人不可提交
+func TestDerive_SubmitReview_Authorization_ThreeCases(t *testing.T) {
+	for _, st := range []string{"draft", "refuse"} {
+		t.Run("creator_can_"+st, func(t *testing.T) {
+			in := Input{
+				Stage:        StageAccept,
+				Status:       st,
+				Kind:         ObjectBusinessDemand,
+				ObjectID:     102,
+				IsCreator:    true,
+				IsAssignee:   false,
+				IsSuperAdmin: false,
+			}
+			pa := Derive(in)
+			if pa.Key != string(KeySubmitReview) || !pa.Enabled {
+				t.Fatalf("status %s: creator should have submit_review enabled, got %+v", st, pa)
+			}
+		})
+
+		t.Run("superadmin_can_"+st, func(t *testing.T) {
+			in := Input{
+				Stage:        StageAccept,
+				Status:       st,
+				Kind:         ObjectBusinessDemand,
+				ObjectID:     102,
+				IsCreator:    false,
+				IsAssignee:   false,
+				IsSuperAdmin: true,
+			}
+			pa := Derive(in)
+			if pa.Key != string(KeySubmitReview) || !pa.Enabled {
+				t.Fatalf("status %s: superadmin should have submit_review enabled, got %+v", st, pa)
+			}
+		})
+
+		t.Run("ordinary_assignee_cannot_"+st, func(t *testing.T) {
+			in := Input{
+				Stage:        StageAccept,
+				Status:       st,
+				Kind:         ObjectBusinessDemand,
+				ObjectID:     102,
+				IsCreator:    false,
+				IsAssignee:   true,
+				IsSuperAdmin: false,
+			}
+			pa := Derive(in)
+			if pa.Key != "" || pa.Enabled {
+				t.Fatalf("status %s: ordinary assignee must NOT have submit_review, got %+v", st, pa)
+			}
+		})
+	}
+}
