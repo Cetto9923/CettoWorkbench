@@ -16,7 +16,7 @@
   var objectTypeBadge = WB.objectTypeBadge;
   var draggedTask = null;
   var pendingDoneTask = null;
-  var activeTaskFlag = "";
+  var activeTaskFlag = state.focus || "";
   var listSeq = 0, metricsSeq = 0, drawerSeq = 0;
   var taskSummary = {};
 
@@ -67,6 +67,7 @@
   function loadDemand(page) {
     var seq = ++listSeq; ++metricsSeq;
     state.page = page || 1;
+    if (WB.syncUrl) { WB.syncUrl("demand"); }
     $("boardPagination").hidden = true;
     var host = $("demandGroups"); host.innerHTML = '<div class="demand-empty">加载中…</div>';
     var params = new URLSearchParams({ page: state.page, pageSize: state.pageSize }); if (state.teamgroup) { params.set("teamgroupId", state.teamgroup); }
@@ -122,6 +123,8 @@
   function loadTasks(page) {
     var seq = ++listSeq; ++metricsSeq;
     state.page = page || 1;
+    state.focus = activeTaskFlag;
+    if (WB.syncUrl) { WB.syncUrl("task"); }
     $("boardPagination").hidden = true;
     document.querySelectorAll("#taskBoard .task-col-body").forEach(function (c) { c.innerHTML = ""; });
     ensureTeamgroup();
@@ -141,6 +144,7 @@
           if (payload.selectedTeamgroupId) {
             state.teamgroup = Number(payload.selectedTeamgroupId);
             WB.saveTeamgroup(state.teamgroup);
+            if (WB.syncUrl) { WB.syncUrl("task"); }
           }
           WB.renderTeamChips();
         }
@@ -171,6 +175,7 @@
   }
   function toggleTaskFlag(flag) {
     activeTaskFlag = activeTaskFlag === flag ? "" : flag;
+    state.focus = activeTaskFlag;
     document.querySelectorAll("#taskStats .stat").forEach(function (el) {
       el.classList.toggle("active", el.dataset.flag === activeTaskFlag);
     });
@@ -450,6 +455,10 @@
   WB.seqOwners = seqOwners;
   WB.renderDemandOwners = renderDemandOwners;
   window.fetchDrawerTasks = function (id) { fetchDrawerTasks(id); };
+
+  document.querySelectorAll("#taskStats .stat").forEach(function (el) {
+    el.classList.toggle("active", el.dataset.flag === activeTaskFlag);
+  });
 
   try { switchMode(getMode()); }
   catch (e) { console.error("[wb-debug] init", e && e.stack || e); }

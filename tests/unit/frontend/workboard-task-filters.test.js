@@ -7,6 +7,7 @@ const path = require('path');
 const root = path.resolve(__dirname, '../../..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const js = read('web/static/js/po/workboard.js');
+const core = read('web/static/js/po/workboard-core.js');
 const css = read('web/static/css/po/board.css');
 function assert(condition, message) {
   if (!condition) {
@@ -24,5 +25,11 @@ assert(/visibleMetricKeys\s*=\s*\{ delivery: true, implement: true, overIteratio
   'demand board temporarily keeps only delivery rhythm metrics visible');
 assert(/metrics\s*=\s*\(metrics \|\| \[\]\)\.filter\(function \(m\)/.test(js),
   'demand board filters hidden metrics before rendering');
+assert(/urlParams\.get\("teamgroupId"\)/.test(core), 'task board restores the requested agile group from URL');
+assert(/urlParams\.get\("ownerAccount"\)/.test(core), 'task board restores the requested owner from URL');
+assert(/urlParams\.get\("focus"\)/.test(core) && /state\.focus/.test(js), 'task board restores the overdue/blocked focus from URL');
+assert(/function syncUrl\(nextMode\)/.test(core) && /WB\.syncUrl\("task"\)/.test(js), 'task filters stay shareable after selection and pagination');
+assert(/params\.set\("teamgroupId"/.test(core) && /params\.set\("ownerAccount"/.test(core) && /params\.set\("focus"/.test(core),
+  'task board deep links preserve teamgroupId, ownerAccount and focus');
 
 console.log('workboard task filters regression passed');

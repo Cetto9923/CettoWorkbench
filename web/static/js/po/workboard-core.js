@@ -5,7 +5,18 @@
   var mode = location.pathname.indexOf("/board/task") >= 0 ? "task" : "demand";
   // 小组选择：单选某小组，不再提供"全部"。teamgroup=0 仅作为"未选"占位，加载后会落到第一个实际小组。
   var TG_KEY = "po.board.teamgroup";
-  var state = { owner: "", teamgroup: loadTeamgroup(), storyFilter: 0, pendingFocus: 0, page: 1, pageSize: 50 };
+  var urlParams = new URLSearchParams(window.location.search || "");
+  var urlTeamgroup = parseInt(urlParams.get("teamgroupId"), 10) || 0;
+  var urlFocus = urlParams.get("focus");
+  var state = {
+    owner: urlParams.get("ownerAccount") || "",
+    teamgroup: urlTeamgroup > 0 ? urlTeamgroup : loadTeamgroup(),
+    storyFilter: parseInt(urlParams.get("storyId"), 10) || 0,
+    focus: urlFocus === "blocked" || urlFocus === "overdue" ? urlFocus : "",
+    pendingFocus: 0,
+    page: Math.max(1, parseInt(urlParams.get("page"), 10) || 1),
+    pageSize: 50
+  };
   var teams = [];
   var MAX_OWNERS = 6; // 直接展示人数（不含"更多"折叠）
 
@@ -49,10 +60,7 @@
     mode = next; var demand = next === "demand";
     var targetPath = "/board/" + next;
     var boardTitle = demand ? "需求看板" : "任务看板";
-    var curPath = (typeof window !== "undefined" && window.location && window.location.pathname) || "";
-    if (curPath !== targetPath && typeof window !== "undefined" && window.history && window.history.replaceState) {
-      window.history.replaceState(null, "", targetPath);
-    }
+    syncUrl(next);
     if (typeof document !== "undefined") {
       document.title = boardTitle + " - workbench";
       var topTitle = document.querySelector(".topbar-page-title");
@@ -76,6 +84,23 @@
     } else {
       ensureTeamgroup();
       if (WB.loadTasks) WB.loadTasks();
+    }
+  }
+  function syncUrl(nextMode) {
+    var selectedMode = nextMode || mode;
+    var targetPath = "/board/" + selectedMode;
+    var params = new URLSearchParams();
+    if (state.teamgroup) { params.set("teamgroupId", String(state.teamgroup)); }
+    if (selectedMode === "task") {
+      if (state.owner) { params.set("ownerAccount", state.owner); }
+      if (state.focus) { params.set("focus", state.focus); }
+      if (state.storyFilter) { params.set("storyId", String(state.storyFilter)); }
+      if (state.page > 1) { params.set("page", String(state.page)); }
+    }
+    var query = params.toString();
+    var nextUrl = targetPath + (query ? "?" + query : "");
+    if (typeof window !== "undefined" && window.history && window.history.replaceState) {
+      window.history.replaceState(null, "", nextUrl);
     }
   }
   $("demandTab").addEventListener("click", function () { switchMode("demand"); });
@@ -173,6 +198,7 @@
     priorityBadge: priorityBadge,
     objectTypeBadge: objectTypeBadge,
     switchMode: switchMode,
+    syncUrl: syncUrl,
     ensureTeamgroup: ensureTeamgroup,
     renderTeamChips: renderTeamChips,
     onGroupPick: onGroupPick,

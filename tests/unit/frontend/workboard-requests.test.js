@@ -18,10 +18,11 @@ const document = {
 let mode = 'task';
 const WB = { renderDemandMatrix() {}, applyDemandFilters() {}, toggleFlag() {} };
 const localStorage = {getItem: () => '1', setItem() {}};
-const window = { PoWB: WB, escapeHtml: String, showToast() {},
+const location = { pathname: '/board/task', search: '?teamgroupId=5&ownerAccount=alice&focus=blocked' };
+const window = { location, history: { replaceState() {} }, PoWB: WB, escapeHtml: String, showToast() {},
   PersonalList: { priorityBadge: String, objectTypeBadge: String,
     renderPagination(opts) { pagers.set(opts.container, opts); } } };
-const context = { window, document, localStorage, location: { pathname: '/board/task' }, console,
+const context = { window, document, localStorage, location, console,
   URLSearchParams, setTimeout, requestAnimationFrame: cb => cb(),
   fetch(url) { let resolve, reject; const promise = new Promise((a,b) => {resolve=a;reject=b;});
     requests.push({url, resolve: body => resolve({ok:true,json:async()=>body}), reject}); return promise; }
@@ -34,6 +35,10 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
 const payload = group => ({success:true,selectedTeamgroupId:group,teamgroups:[{id:group,name:'g'+group}],owners:[],columns:[],summary:{filteredTotal:120,total:120,overdue:61}});
 (async () => {
   assert.equal(requests.length,1);
+  const initialTaskURL = new URL(requests[0].url, 'http://test');
+  assert.equal(initialTaskURL.searchParams.get('teamgroupId'), '5', 'URL teamgroupId overrides local preference');
+  assert.equal(initialTaskURL.searchParams.get('ownerAccount'), 'alice', 'URL ownerAccount is applied to the task list');
+  assert.equal(initialTaskURL.searchParams.get('focus'), 'blocked', 'URL focus is applied to the task list');
   requests[0].resolve(payload(1)); await flush();
   requests[1].resolve({success:true,groupName:'g1',hasGroup:false}); await flush();
   const initial = requests.length;
