@@ -21,6 +21,18 @@
   var currentTab = TAB_UNRESOLVED;
   var loadSeq = 0;
 
+  function decodeHtmlEntities(str) {
+    if (!str || typeof str !== "string") {
+      return "";
+    }
+    return str
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&amp;/g, "&");
+  }
+
   function escapeHtml(text) {
     return String(text == null ? "" : text)
       .replace(/&/g, "&amp;")
@@ -94,7 +106,7 @@
     listEl.innerHTML = items
       .map(function (it) {
         var id = String((it && it.id) || "—");
-        var title = escapeHtml((it && it.title) || "");
+        var title = escapeHtml(decodeHtmlEntities((it && it.title) || ""));
         var owner = escapeHtml((it && (it.owner || it.assignedTo || it.createdBy)) || "待指派");
         var sevCode = String((it && it.severity) || "").trim();
         var sevLabel = escapeHtml((it && it.severityLabel) || "");

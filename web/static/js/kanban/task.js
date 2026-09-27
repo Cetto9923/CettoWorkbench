@@ -21,6 +21,18 @@
   var selectedAccount = "";
   var loadSeq = 0;
 
+  function decodeHtmlEntities(str) {
+    if (!str || typeof str !== "string") {
+      return "";
+    }
+    return str
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&amp;/g, "&");
+  }
+
   function escapeHtml(text) {
     return String(text == null ? "" : text)
       .replace(/&/g, "&amp;")
@@ -77,9 +89,9 @@
     var storyLink =
       task && task.storyId
         ? '<span class="task-link" title="' +
-          escapeHtml(task.storyTitle || String(task.storyId)) +
+          escapeHtml(decodeHtmlEntities(task.storyTitle || String(task.storyId))) +
           '">所属研需 ' +
-          escapeHtml(task.storyTitle || String(task.storyId)) +
+          escapeHtml(decodeHtmlEntities(task.storyTitle || String(task.storyId))) +
           "</span>"
         : "";
     var rawId = String((task && (task.displayId || task.id)) || "").trim();
@@ -97,7 +109,7 @@
       '<span class="wb-type wb-type-task"><span class="wb-type-tag">任务</span>' +
       (idInner ? '<span class="wb-type-id">' + idInner + "</span>" : "") +
       "</span>";
-    var titleText = escapeHtml((task && task.title) || "");
+    var titleText = escapeHtml(decodeHtmlEntities((task && task.title) || ""));
     var titleHtml = task && task.url
       ? '<a class="task-title task-title-link" href="' +
         escapeHtml(task.url) +
