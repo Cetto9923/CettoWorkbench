@@ -38,6 +38,32 @@
     return v;
   }
 
+  function initialScopeFromUrl() {
+    const params = new URLSearchParams(location.search || "");
+    const rawID = params.get("teamgroupId") || params.get("scopeId") || "";
+    const id = /^\d+$/.test(rawID) ? Number(rawID) : 0;
+    return {
+      scope: params.get("scope") === "dept" ? "dept" : "team",
+      scopeId: Number.isSafeInteger(id) && id > 0 ? id : 0,
+    };
+  }
+
+  function syncScopeUrl() {
+    if (!isLeadView()) return;
+    try {
+      const url = new URL(window.location.href);
+      if (state.scope) url.searchParams.set("scope", state.scope);
+      else url.searchParams.delete("scope");
+      if (state.scopeId) url.searchParams.set("teamgroupId", String(state.scopeId));
+      else url.searchParams.delete("teamgroupId");
+      // 旧链接把敏捷团队编号放在 scopeId；新链接统一使用 teamgroupId。
+      url.searchParams.delete("scopeId");
+      history.replaceState(null, "", url.pathname + url.search + url.hash);
+    } catch (e) {}
+  }
+
+  const initialScope = initialScopeFromUrl();
+
   let state = {
     status: "all",
     adjustStatus: "all",
@@ -54,8 +80,8 @@
     total: 0,
     pageCount: 1,
     view: currentView(),
-    scope: "",
-    scopeId: 0,
+    scope: initialScope.scope,
+    scopeId: initialScope.scopeId,
     collapsed: {},
   };
 
@@ -108,7 +134,11 @@
     });
     const el = document.getElementById("page-" + id);
     if (el) el.classList.add("active");
-    try { history.replaceState(null, "", "#" + id); } catch (e) {}
+    try {
+      const url = new URL(window.location.href);
+      url.hash = id;
+      history.replaceState(null, "", url.pathname + url.search + url.hash);
+    } catch (e) {}
   }
 
   window.atShowList = function () {
@@ -192,6 +222,7 @@
       const json = await apiFetch(API + "?" + q.toString());
       const data = (json && json.data) || {};
       if (isLeadView() && data.activeScope) state.scope = data.activeScope;
+      syncScopeUrl();
       state.canEdit = !!data.canEdit && !isLeadView();
       state.canMapOrgTeam = !!data.canMapOrgTeam;
       if (state.canMapOrgTeam && state.orgTeamOptions === null) {
@@ -434,12 +465,14 @@
   window.atSetScope = function (kind) {
     state.scope = kind === "dept" ? "dept" : "team";
     state.page = 1;
+    syncScopeUrl();
     loadList();
   };
 
   window.atSetScopeId = function (id) {
     state.scopeId = Number(id) || 0;
     state.page = 1;
+    syncScopeUrl();
     loadList();
   };
 
