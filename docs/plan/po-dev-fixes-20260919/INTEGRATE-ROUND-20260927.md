@@ -97,7 +97,7 @@ JSON 接口抽检均 200：todos/done/notice/follow/board/query/issues-risk item
 8. **排期探索能力（批次默认值、保存前预检、任务授权、小组窗口里程碑、探索版排期 UI）**｜integrate 排期整体为 Main｜会改排期写入口径，属业务规则｜未搬｜建议逐项确认后按项搬
 9. **/kanban 与 /board 并行**｜PO 壳层导航到 /board/*；后台旧壳层 DB 菜单仍指向 /kanban/*，两套取数口径不同｜同一“工作看板”两种结果｜两者都可访问｜建议 PO 入口统一 /board，确认后通过 DB 菜单配置隐藏 /kanban（无需改代码）
 10. **Main 漏洞：排期路由未绑定 RequirePerm**（违反核心底线 1）｜本轮新增 window-options 与同组保持一致，也未绑｜建议确认角色已分配 schedule:* 权限后统一加上
-11. **零日期字面量**：todo_query_repo 用 `= '0000-00-00'`，仓库自己的注释说明 NO_ZERO_DATE 下会触发 Error 1525（目前 OB 未报错）｜建议统一改用 dateUnsetExpr
+11. **零日期字面量**：todo_query_repo 用 `= '0000-00-00'`，仓库自己的注释说明 NO_ZERO_DATE 下会触发 Error 1525（目前 OB 未报错）｜**已决策：统一改用 dateUnsetExpr / dateSetExpr｜已改：013e11f**
 12. **大体量下拉数据**：GET /demands/:id/clarify 约 856KB、deliver 约 468KB、testtask 约 300KB（全量人员/候选）｜建议改为检索接口按需加载
 13. **侧栏分组记忆规则（UI）**：本轮改为路由优先，只有从“常用”进入的页面才保持“我的工作台”面板｜请确认交互是否符合预期
 
