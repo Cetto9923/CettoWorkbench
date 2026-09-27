@@ -1,3 +1,11 @@
+{{/* ==========================================================================
+文件: web/templates/po/demand_detail.html
+模块: PO工作台
+职责: 业务需求独立详情页（/demands/:id），只读展示摘要、主操作与关联研发需求
+全局字段: .CurrentUser, .CSRFToken, .Menus, .CurrentPath
+页面字段: .Title (string)
+          .Demand (*module/po.DemandDetailResp)
+========================================================================== */}}
 {{ define "page_css" }}
 <link rel="stylesheet" href="{{ asset "/static/css/po/personal-workspace.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/po/demand-detail.css" }}">
@@ -16,3 +24,6 @@
   </section>{{ end }}
 </main>
 {{ end }}
+{{/* 本页无独立脚本，但必须显式覆盖 page_js：同目录兄弟模板会一并解析，不覆盖则继承其他 PO 页面脚本并报错。
+     Go 模板会忽略“空白体”的重复 define，故用一个恒假 if 作为非空占位。 */}}
+{{ define "page_js" }}{{ if false }}{{ end }}{{ end }}
