@@ -33,7 +33,8 @@
       ? '<button type="button" class="at-btn primary" onclick="atSaveBasic(' + d.id + ')">保存基本信息</button>'
       : "";
     const banner = isLeadView()
-      ? '<div class="at-readonly-banner">当前为团队管理视图：团队长 / 部室负责人仅查看，不提供敏捷小组资料、成员和角色编辑权限。</div>'
+      ? '<div class="at-readonly-banner">当前为团队管理视图：敏捷教练、团队长和部室负责人只读查看。</div>' +
+        (!d.memberDetailsAvailable ? '<div class="at-readonly-banner">部室负责人视角暂不展示个人名单与调整记录，待权限口径确认。</div>' : '')
       : "";
     host.innerHTML =
       '<button type="button" class="at-back" onclick="atShowList()"><i class="fas fa-arrow-left"></i> 返回列表</button>' +
@@ -106,6 +107,13 @@
   }
 
   function renderMembers(d, canEdit) {
+    if (!d.memberDetailsAvailable) {
+      const pending = d.pending || {};
+      return '<div class="at-section-head"><h4>成员概况</h4><span class="at-section-note">正式成员 ' +
+        esc(d.formalCount || 0) + ' 人 · 待确认新增 ' + esc(pending.addCount || 0) +
+        ' · 待确认移除 ' + esc(pending.removeCount || 0) + ' · 角色调整 ' + esc(pending.changeCount || 0) +
+        '</span></div><div class="at-empty">当前权限范围不展示成员个人明细</div>';
+    }
     let html = "";
     if (d.pending) {
       const p = d.pending;

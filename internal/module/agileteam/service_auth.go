@@ -120,6 +120,31 @@ func (s *Service) CanViewTeamgroupLeadScope(ctx context.Context, actor *model.Us
 	return containsUint(teamgroupIDs, id), nil
 }
 
+// CanViewTeamgroupMemberDetails applies the still-unconfirmed department-manager
+// personal-detail policy conservatively. An explicit coach assignment grants
+// detail only for that coach's team scope; department management alone does not.
+func (s *Service) CanViewTeamgroupMemberDetails(ctx context.Context, actor *model.User, id uint) (bool, error) {
+	account, err := requireActorAccount(actor)
+	if err != nil {
+		return false, err
+	}
+	if actor.IsSuperAdmin {
+		return true, nil
+	}
+	isDeptManager, err := s.repo.IsDeptManager(ctx, account)
+	if err != nil {
+		return false, err
+	}
+	if isDeptManager {
+		return false, nil
+	}
+	managedIDs, err := s.repo.ListManagedTeamgroupIDs(ctx, account)
+	if err != nil {
+		return false, err
+	}
+	return containsUint(managedIDs, id), nil
+}
+
 // CanEnterLeadView 判断账号是否登记为敏捷教练或禅道部门负责人。
 func (s *Service) CanEnterLeadView(ctx context.Context, actor *model.User) (bool, error) {
 	account, err := requireActorAccount(actor)

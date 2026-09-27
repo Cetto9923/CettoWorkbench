@@ -203,28 +203,29 @@ type ListResp struct {
 
 // DetailResp 详情响应。
 type DetailResp struct {
-	ID            uint            `json:"id"`
-	Name          string          `json:"name"`
-	ParentID      uint            `json:"parentId"`
-	ParentName    string          `json:"parentName"`
-	CoachAccount  string          `json:"coachAccount"`
-	CoachName     string          `json:"coachName"`
-	POAccount     string          `json:"poAccount"`
-	POName        string          `json:"poName"`
-	Slogan        string          `json:"slogan"`
-	Declaration   string          `json:"declaration"`
-	Logo          string          `json:"logo"`
-	Status        string          `json:"status"`
-	StatusLabel   string          `json:"statusLabel"`
-	CreatedDate   string          `json:"createdDate"`
-	FormalCount   int             `json:"formalCount"`
-	Formal        []MemberItem    `json:"formal"`
-	PendingJoin   []MemberItem    `json:"pendingJoin"`
-	Pending       *PendingSummary `json:"pending,omitempty"`
-	History       []HistoryItem   `json:"history"`
-	CanConfirm    bool            `json:"canConfirm"`
-	CanEdit       bool            `json:"canEdit"`
-	ParentOptions []ParentOption  `json:"parentOptions,omitempty"`
+	ID                     uint            `json:"id"`
+	Name                   string          `json:"name"`
+	ParentID               uint            `json:"parentId"`
+	ParentName             string          `json:"parentName"`
+	CoachAccount           string          `json:"coachAccount"`
+	CoachName              string          `json:"coachName"`
+	POAccount              string          `json:"poAccount"`
+	POName                 string          `json:"poName"`
+	Slogan                 string          `json:"slogan"`
+	Declaration            string          `json:"declaration"`
+	Logo                   string          `json:"logo"`
+	Status                 string          `json:"status"`
+	StatusLabel            string          `json:"statusLabel"`
+	CreatedDate            string          `json:"createdDate"`
+	FormalCount            int             `json:"formalCount"`
+	Formal                 []MemberItem    `json:"formal"`
+	PendingJoin            []MemberItem    `json:"pendingJoin"`
+	Pending                *PendingSummary `json:"pending,omitempty"`
+	History                []HistoryItem   `json:"history"`
+	CanConfirm             bool            `json:"canConfirm"`
+	CanEdit                bool            `json:"canEdit"`
+	MemberDetailsAvailable bool            `json:"memberDetailsAvailable"`
+	ParentOptions          []ParentOption  `json:"parentOptions,omitempty"`
 }
 
 // UpdateBasicReq 基本信息保存（不走确认流）。

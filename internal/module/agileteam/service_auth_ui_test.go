@@ -103,3 +103,45 @@ func TestCanEnterLeadViewRequiresCoachOrDeptManager(t *testing.T) {
 		t.Fatalf("SQL expectations: %v", err)
 	}
 }
+
+func TestCanViewTeamgroupMemberDetailsDoesNotInferFromDepartmentManagement(t *testing.T) {
+	svc, mock := newTestService(t)
+	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM zt_dept WHERE COALESCE\\(manager, ''\\) REGEXP \\?").
+		WithArgs("(^|[[:space:],;])manager1([[:space:],;]|$)").
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
+	allowed, err := svc.CanViewTeamgroupMemberDetails(context.Background(), &model.User{Account: "manager1"}, 11)
+	if err != nil || allowed {
+		t.Fatalf("department manager details = (%v, %v), want (false, nil)", allowed, err)
+	}
+
+	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM zt_dept WHERE COALESCE\\(manager, ''\\) REGEXP \\?").
+		WithArgs("(^|[[:space:],;])coach1([[:space:],;]|$)").
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+	mock.ExpectQuery("(?s)FROM zt_teamgroup managed.*REGEXP \\?").
+		WithArgs("(^|[[:space:],;])coach1([[:space:],;]|$)").
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(11)))
+	allowed, err = svc.CanViewTeamgroupMemberDetails(context.Background(), &model.User{Account: "coach1"}, 11)
+	if err != nil || !allowed {
+		t.Fatalf("coach details = (%v, %v), want (true, nil)", allowed, err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("sql expectations: %v", err)
+	}
+}
+
+func TestRedactTeamgroupMemberDetailsKeepsOnlyAggregateCounts(t *testing.T) {
+	resp := &DetailResp{
+		FormalCount: 3,
+		Formal:      []MemberItem{{Account: "alice", Name: "Alice"}},
+		PendingJoin: []MemberItem{{Account: "bob", Name: "Bob"}},
+		History:     []HistoryItem{{Actor: "alice", ActorName: "Alice"}},
+		Pending:     &PendingSummary{SubmittedBy: "Alice", AddCount: 1, AddNames: []string{"Bob"}},
+	}
+	redactTeamgroupMemberDetails(resp)
+	if resp.FormalCount != 3 || len(resp.Formal) != 0 || len(resp.PendingJoin) != 0 || len(resp.History) != 0 {
+		t.Fatalf("personal data not redacted or aggregate count lost: %+v", resp)
+	}
+	if resp.Pending.SubmittedBy != "" || len(resp.Pending.AddNames) != 0 || resp.Pending.AddCount != 1 {
+		t.Fatalf("pending details not redacted or aggregate count lost: %+v", resp.Pending)
+	}
+}

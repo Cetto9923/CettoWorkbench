@@ -128,7 +128,9 @@ func (h *Handler) Detail(c *gin.Context) {
 		return
 	}
 	leadView := strings.ToLower(c.Query("view")) == "lead"
-	if leadView || !hasPerm(c, perm.AgileTeamList) {
+	dynamicLeadView := !hasPerm(c, perm.AgileTeamList)
+	leadView = leadView || dynamicLeadView
+	if leadView {
 		allowed, err := h.svc.CanViewTeamgroupLeadScope(c.Request.Context(), middleware.CurrentUser(c), id)
 		if err != nil {
 			writeErr(c, err)
@@ -153,7 +155,33 @@ func (h *Handler) Detail(c *gin.Context) {
 		writeErr(c, err)
 		return
 	}
+	resp.MemberDetailsAvailable = !leadView
+	if leadView {
+		resp.MemberDetailsAvailable, err = h.svc.CanViewTeamgroupMemberDetails(c.Request.Context(), middleware.CurrentUser(c), id)
+		if err != nil {
+			writeErr(c, err)
+			return
+		}
+		if !resp.MemberDetailsAvailable {
+			redactTeamgroupMemberDetails(resp)
+		}
+	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": resp})
+}
+
+func redactTeamgroupMemberDetails(resp *DetailResp) {
+	if resp == nil {
+		return
+	}
+	resp.Formal = []MemberItem{}
+	resp.PendingJoin = []MemberItem{}
+	resp.History = []HistoryItem{}
+	if resp.Pending != nil {
+		resp.Pending.SubmittedBy = ""
+		resp.Pending.AddNames = []string{}
+		resp.Pending.RemoveNames = []string{}
+		resp.Pending.ChangeNames = []string{}
+	}
 }
 
 func (h *Handler) SearchCandidates(c *gin.Context) {
