@@ -7,22 +7,47 @@
           .Demand (*module/po.DemandDetailResp)
 ========================================================================== */}}
 {{ define "page_css" }}
-<link rel="stylesheet" href="{{ asset "/static/css/po/personal-workspace.css" }}">
-<link rel="stylesheet" href="{{ asset "/static/css/po/demand-detail.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/demand-page.css" }}">
 {{ end }}
 {{ define "content" }}
-<main class="po-personal-workspace" id="demand-detail-page">
-  <section class="home-page-card" aria-labelledby="demand-detail-title">
-    <h3 id="demand-detail-title">{{ .Demand.Summary.Title }}</h3>
-    <p>需求 ID：<a class="table-id-link" href="{{ .Demand.Summary.ZentaoURL }}" target="_blank" rel="noopener noreferrer">{{ .Demand.Summary.ID }}</a>　价值流阶段：{{ .Demand.Summary.ValueStageLabel }}　原始状态：{{ .Demand.Summary.Status }}</p>
-    <p>主系统：{{ .Demand.Summary.MainSystemName }}　预计上线：{{ .Demand.Summary.EstimateLaunch }}</p>
-    <p>BRA：{{ .Demand.Summary.OwnerName }}　RD：{{ .Demand.Summary.CurrentOwner }}　QD：{{ .Demand.Summary.TestOwner }}</p>
-    {{ if and .Demand.PrimaryAction .Demand.PrimaryAction.Enabled (eq .Demand.PrimaryAction.Key "schedule") }}<p>当前可执行操作：<a class="dd-btn primary" href="{{ .Demand.PrimaryAction.URL }}">排期</a></p>{{ else if .Demand.PrimaryAction }}<p>当前可执行操作：{{ .Demand.PrimaryAction.Label }}</p>{{ else }}<p>当前无可执行操作</p>{{ end }}
+<div class="po-demand-page" id="demand-detail-page">
+  <section class="po-demand-card" aria-labelledby="demand-detail-title">
+    <header class="po-demand-card-head">
+      <span class="po-demand-type">业需</span>
+      <a class="po-demand-id" href="{{ .Demand.Summary.ZentaoURL }}" target="_blank" rel="noopener noreferrer" title="在禅道中打开">#{{ .Demand.Summary.ID }} <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i></a>
+      <h3 id="demand-detail-title" class="po-demand-title">{{ .Demand.Summary.Title }}</h3>
+      <div class="po-demand-action">
+        {{ if and .Demand.PrimaryAction .Demand.PrimaryAction.Enabled (eq .Demand.PrimaryAction.Key "schedule") }}<a class="btn btn-primary" href="{{ .Demand.PrimaryAction.URL }}">排期</a>
+        {{ else if .Demand.PrimaryAction }}<span class="po-demand-muted" title="{{ .Demand.PrimaryAction.Reason }}">当前操作：{{ .Demand.PrimaryAction.Label }}</span>
+        {{ else }}<span class="po-demand-muted">当前无可执行操作</span>{{ end }}
+      </div>
+    </header>
+    <dl class="po-demand-fields">
+      <div><dt>价值流阶段</dt><dd><span class="po-demand-stage">{{ or .Demand.Summary.ValueStageLabel "—" }}</span></dd></div>
+      <div><dt>原始状态</dt><dd>{{ or .Demand.Summary.Status "—" }}</dd></div>
+      <div><dt>主系统</dt><dd>{{ or .Demand.Summary.MainSystemName "—" }}</dd></div>
+      <div><dt>预计上线</dt><dd>{{ or .Demand.Summary.EstimateLaunch "—" }}</dd></div>
+      <div><dt>BRA</dt><dd>{{ or .Demand.Summary.OwnerName "—" }}</dd></div>
+      <div><dt>RD</dt><dd>{{ or .Demand.Summary.CurrentOwner "—" }}</dd></div>
+      <div><dt>QD</dt><dd>{{ or .Demand.Summary.TestOwner "—" }}</dd></div>
+    </dl>
   </section>
-  {{ if .Demand.Execution }}<section class="home-page-card"><h3>关联研发需求</h3>
-    <ul>{{ range .Demand.Execution.Stories }}<li>{{ .ID }}　{{ .Title }}　{{ .Status }}　任务进度：{{ .TasksDone }}/{{ .TasksTotal }}</li>{{ else }}<li>暂无关联研发需求</li>{{ end }}</ul>
-  </section>{{ end }}
-</main>
+  {{ if .Demand.Execution }}
+  <section class="po-demand-card">
+    <header class="po-demand-card-head"><h3 class="po-demand-title">关联研发需求</h3></header>
+    <table class="po-demand-table">
+      <thead><tr><th>ID</th><th>标题</th><th>状态</th><th>任务进度</th></tr></thead>
+      <tbody>
+        {{ range .Demand.Execution.Stories }}
+        <tr><td class="po-demand-mono">#{{ .ID }}</td><td>{{ .Title }}</td><td>{{ .Status }}</td><td class="po-demand-mono">{{ .TasksDone }}/{{ .TasksTotal }}</td></tr>
+        {{ else }}
+        <tr><td colspan="4" class="po-demand-empty">暂无关联研发需求</td></tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </section>
+  {{ end }}
+</div>
 {{ end }}
 {{/* 本页无独立脚本，但必须显式覆盖 page_js：同目录兄弟模板会一并解析，不覆盖则继承其他 PO 页面脚本并报错。
      Go 模板会忽略“空白体”的重复 define，故用一个恒假 if 作为非空占位。 */}}

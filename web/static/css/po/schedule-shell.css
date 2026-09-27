@@ -1,0 +1,40 @@
+/* ==========================================================================
+   文件: web/static/css/po/schedule-shell.css
+   模块: PO 工作台 · 排期
+   职责: Main 排期页嵌入 PO 外壳时的版式适配（仅 body.po-workbench-shell 生效）。
+         只调整布局/列宽，不改变排期页的数据与交互。
+   ========================================================================== */
+
+/* 顶栏已展示页面标题，页内重复的大标题隐藏，只保留右侧操作按钮 */
+body.po-workbench-shell #page-schedule .schedule-page-head h2 {
+  display: none;
+}
+
+body.po-workbench-shell #page-schedule .schedule-page-head {
+  justify-content: flex-end;
+}
+
+/* 业务需求表：取消 Main 的 min-width:1180px 与标题列内联 500px，让表格贴合 PO 外壳内容区宽度；
+   标题列按比例分配并用 max-width:0 触发单元格内省略号，避免操作列被挤出可视区 */
+body.po-workbench-shell #page-schedule #scheduleBizListPanel .schedule-table {
+  min-width: 0;
+}
+
+body.po-workbench-shell #page-schedule #scheduleBizListPanel .schedule-table th.schedule-col-title {
+  width: 36% !important;
+  max-width: none !important;
+}
+
+body.po-workbench-shell #page-schedule #scheduleBizListPanel .schedule-table tbody td:first-child:not([colspan]) {
+  max-width: 0;
+}
+
+/* 业务需求表第 3 列（敏捷小组）加宽，避免“团队 / 小组”被折成三四行撑高行距 */
+body.po-workbench-shell #page-schedule #scheduleBizListPanel .schedule-table th:nth-child(3),
+body.po-workbench-shell #page-schedule #scheduleBizListPanel .schedule-table td:nth-child(3) {
+  min-width: 150px;
+}
+
+body.po-workbench-shell #page-schedule .schedule-table .schedule-action-col {
+  min-width: 96px;
+}
