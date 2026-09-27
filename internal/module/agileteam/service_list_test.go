@@ -49,6 +49,30 @@ func TestSelectLeadScopeDefaultsToAvailableScopeAndPreservesExplicitChoice(t *te
 	}
 }
 
+func TestRestrictTeamgroupRowsSupportsTeamAndSingleSubteamScopes(t *testing.T) {
+	rows := []TeamgroupRow{
+		{ID: 1, Name: "信贷专项团队", Type: "parent"},
+		{ID: 11, Name: "对公一组", Parent: 1, ParentName: "信贷专项团队", Type: "child"},
+		{ID: 12, Name: "对公二组", Parent: 1, ParentName: "信贷专项团队", Type: "child"},
+	}
+	_, visible := restrictTeamgroupRows(rows, []uint{1, 11, 12}, 1)
+	if len(visible) != 3 {
+		t.Fatalf("team scope should include parent and children; got %v", visible)
+	}
+	_, visible = restrictTeamgroupRows(rows, []uint{1, 11, 12}, 11)
+	if len(visible) != 1 || visible[0].ID != 11 {
+		t.Fatalf("single subteam scope should include only group 11; got %v", visible)
+	}
+	_, visible = restrictTeamgroupRows(rows, []uint{11}, 1)
+	if len(visible) != 0 {
+		t.Fatalf("child-only coach must not select parent scope; got %v", visible)
+	}
+	_, visible = restrictTeamgroupRows(rows, []uint{11}, 11)
+	if len(visible) != 1 || visible[0].ID != 11 {
+		t.Fatalf("child-only coach should select only their group; got %v", visible)
+	}
+}
+
 func TestBuildTeamFamiliesCanUseSanitizedParentContext(t *testing.T) {
 	t.Parallel()
 	child := ListItem{ID: 11, Name: "对公1组", ParentID: 1, ParentName: "信贷专项团队", Type: "child"}
@@ -74,8 +98,8 @@ func TestDepartmentManagerScopeIncludesOnlyMappedGroupNotSiblings(t *testing.T) 
 		WithArgs(uint(20), ",1,20,%").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(20)))
 	mock.ExpectQuery("(?s)FROM zt_wb_agileteam_orgmap m.*m.deptId IN \\(\\?\\)").
 		WithArgs(uint(20)).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(11)))
-	mock.ExpectQuery("SELECT id, name FROM zt_teamgroup WHERE deleted = '0' AND id IN \\(\\?\\) ORDER BY id ASC").
-		WithArgs(uint(1)).WillReturnRows(sqlmock.NewRows([]string{"id", "name"}).AddRow(uint(1), "信贷专项团队"))
+	mock.ExpectQuery("(?s)SELECT id, name, CASE WHEN type = 'parent' OR parent = 0 THEN 'team' ELSE 'subteam' END AS type FROM zt_teamgroup WHERE deleted = '0' AND id IN \\(\\?\\) ORDER BY id ASC").
+		WithArgs(uint(11)).WillReturnRows(sqlmock.NewRows([]string{"id", "name", "type"}).AddRow(uint(11), "对公1组", "subteam"))
 
 	rows := []TeamgroupRow{
 		{ID: 1, Name: "信贷专项团队", Type: "parent"},
@@ -99,8 +123,8 @@ func TestAgileCoachScopeIncludesOnlyManagedGroupNotSibling(t *testing.T) {
 	mock.ExpectQuery("(?s)FROM zt_teamgroup managed.*scoped.parent = managed.id.*REGEXP \\?").
 		WithArgs("(^|[[:space:],;])coach1([[:space:],;]|$)").
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(11)))
-	mock.ExpectQuery("SELECT id, name FROM zt_teamgroup WHERE deleted = '0' AND id IN \\(\\?\\) ORDER BY id ASC").
-		WithArgs(uint(1)).WillReturnRows(sqlmock.NewRows([]string{"id", "name"}).AddRow(uint(1), "信贷专项团队"))
+	mock.ExpectQuery("(?s)SELECT id, name, CASE WHEN type = 'parent' OR parent = 0 THEN 'team' ELSE 'subteam' END AS type FROM zt_teamgroup WHERE deleted = '0' AND id IN \\(\\?\\) ORDER BY id ASC").
+		WithArgs(uint(11)).WillReturnRows(sqlmock.NewRows([]string{"id", "name", "type"}).AddRow(uint(11), "对公1组", "subteam"))
 
 	rows := []TeamgroupRow{
 		{ID: 1, Name: "信贷专项团队", Type: "parent"},

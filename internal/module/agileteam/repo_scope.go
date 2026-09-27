@@ -139,14 +139,18 @@ ORDER BY scoped.id ASC`, deptIDs).Scan(&ids).Error
 	return ids, nil
 }
 
-// ListParentOptionsByIDs 按 ID 返回父级选项（下拉）。
-func (r *Repo) ListParentOptionsByIDs(ctx context.Context, ids []uint) ([]ScopeOption, error) {
+// ListTeamgroupOptionsByIDs 按授权 ID 返回团队/小组选项。
+func (r *Repo) ListTeamgroupOptionsByIDs(ctx context.Context, ids []uint) ([]ScopeOption, error) {
 	if len(ids) == 0 {
 		return []ScopeOption{}, nil
 	}
 	var rows []ScopeOption
 	err := r.read().WithContext(ctx).Raw(`
-SELECT id, name FROM zt_teamgroup WHERE deleted = '0' AND id IN ? ORDER BY id ASC`, ids).Scan(&rows).Error
+SELECT id, name,
+       CASE WHEN type = 'parent' OR parent = 0 THEN 'team' ELSE 'subteam' END AS type
+FROM zt_teamgroup
+WHERE deleted = '0' AND id IN ?
+ORDER BY id ASC`, ids).Scan(&rows).Error
 	if err != nil {
 		return nil, err
 	}

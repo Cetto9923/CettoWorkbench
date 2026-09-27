@@ -156,6 +156,7 @@ type ParentOption struct {
 type ScopeOption struct {
 	ID   uint   `json:"id"`
 	Name string `json:"name"`
+	Type string `json:"type,omitempty"`
 }
 
 // ListItem 列表行。

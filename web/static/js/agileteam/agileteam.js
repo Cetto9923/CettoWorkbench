@@ -422,7 +422,8 @@
     if (sel) {
       const cur = String(state.scopeId || "");
       sel.innerHTML = '<option value="">全部可见团队</option>' + (options || []).map(function (o) {
-        return '<option value="' + esc(o.id) + '"' + (String(o.id) === cur ? " selected" : "") + ">" + esc(o.name) + "</option>";
+        const prefix = o.type === "subteam" ? "敏捷小组 · " : (o.type === "team" ? "敏捷团队 · " : "");
+        return '<option value="' + esc(o.id) + '"' + (String(o.id) === cur ? " selected" : "") + ">" + esc(prefix + o.name) + "</option>";
       }).join("");
     }
     card.querySelectorAll(".at-scope-tab").forEach(function (b) {

@@ -381,8 +381,8 @@ func (s *Service) applyLeadScope(ctx context.Context, actor *model.User, req Lis
 				}
 			}
 		}
-		parentIDs, filtered := restrictTeamgroupRows(rows, mappedIDs, req.ScopeID)
-		opts, err := s.repo.ListParentOptionsByIDs(ctx, parentIDs)
+		_, filtered := restrictTeamgroupRows(rows, mappedIDs, req.ScopeID)
+		opts, err := s.repo.ListTeamgroupOptionsByIDs(ctx, mappedIDs)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -400,8 +400,8 @@ func (s *Service) applyLeadScope(ctx context.Context, actor *model.User, req Lis
 			return nil, nil, err
 		}
 	}
-	parentIDs, filtered := restrictTeamgroupRows(rows, managedIDs, req.ScopeID)
-	opts, err := s.repo.ListParentOptionsByIDs(ctx, parentIDs)
+	_, filtered := restrictTeamgroupRows(rows, managedIDs, req.ScopeID)
+	opts, err := s.repo.ListTeamgroupOptionsByIDs(ctx, managedIDs)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -409,13 +409,30 @@ func (s *Service) applyLeadScope(ctx context.Context, actor *model.User, req Lis
 }
 
 func restrictTeamgroupRows(rows []TeamgroupRow, groupIDs []uint, scopeID uint) ([]uint, []TeamgroupRow) {
-	parentIDs := parentIDsForRows(rows, groupIDs)
+	available := make(map[uint]bool, len(groupIDs))
+	for _, id := range groupIDs {
+		available[id] = true
+	}
 	if scopeID != 0 {
-		if containsUint(parentIDs, scopeID) {
-			parentIDs = []uint{scopeID}
-		} else {
-			parentIDs = []uint{}
+		var selected *TeamgroupRow
+		for i := range rows {
+			if rows[i].ID == scopeID {
+				selected = &rows[i]
+				break
+			}
+		}
+		if !available[scopeID] || selected == nil {
 			groupIDs = []uint{}
+		} else if selected.Type == "parent" || selected.Parent == 0 {
+			children := make([]uint, 0, len(groupIDs))
+			for _, row := range rows {
+				if available[row.ID] && (row.ID == scopeID || row.Parent == scopeID) {
+					children = append(children, row.ID)
+				}
+			}
+			groupIDs = children
+		} else {
+			groupIDs = []uint{scopeID}
 		}
 	}
 	allowed := make(map[uint]bool, len(groupIDs))
@@ -430,30 +447,7 @@ func restrictTeamgroupRows(rows []TeamgroupRow, groupIDs []uint, scopeID uint) (
 			}
 		}
 	}
-	return parentIDs, filtered
-}
-
-func parentIDsForRows(rows []TeamgroupRow, groupIDs []uint) []uint {
-	allowed := make(map[uint]bool, len(groupIDs))
-	seen := map[uint]bool{}
-	var parents []uint
-	for _, id := range groupIDs {
-		allowed[id] = true
-	}
-	for _, row := range rows {
-		if !allowed[row.ID] {
-			continue
-		}
-		parentID := row.Parent
-		if parentID == 0 {
-			parentID = row.ID
-		}
-		if !seen[parentID] {
-			seen[parentID] = true
-			parents = append(parents, parentID)
-		}
-	}
-	return parents
+	return groupIDs, filtered
 }
 
 func containsUint(ids []uint, want uint) bool {
