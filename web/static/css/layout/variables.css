@@ -1,4 +1,8 @@
-:root {
+:root,
+html[data-theme="light"] {
+  /* Native controls (date/select/scrollbars) follow light chrome UI */
+  color-scheme: light;
+
   /* 品牌主色 */
   --color-primary: #6366f1;
   --color-primary-hover: #4f46e5;
@@ -9,12 +13,17 @@
 
   /* 语义功能色 */
   --color-success: #065f46;
+  --color-success-fill: #10b981;
   --color-success-bg: #d1fae5;
   --color-danger: #991b1b;
+  --color-danger-fill: #dc2626;
   --color-danger-bg: #fee2e2;
   --color-warning: #92400e;
+  --color-warning-fill: #b45309;
   --color-warning-light: #f5cd2d;
   --color-warning-bg: #fef3c7;
+  --color-info-fill: #2563eb;
+  --color-info-fill-hover: #1d4ed8;
 
   /* 页面层级色 */
   --color-page-bg: #f8f9fc;
@@ -48,7 +57,12 @@
   --color-text-accent-muted: #5b6e8c;
   --color-text-brand: #1e4b6e;
   --color-text-placeholder: #99aac2;
+  --color-text-on-accent: #ffffff;
   --color-info: #2563eb;
+
+  /* Explicit semantic tokens for PO mappings missing in light block */
+  --color-danger-accent: #dc2626;
+  --color-success-accent: #16a34a;
 
   --color-surface-soft: #f8fafd;
   --color-surface-soft-2: #f9f9fc;
@@ -58,6 +72,32 @@
   --color-surface-soft-6: #f1f1f3;
   --color-surface-soft-7: #f5f9ff;
 
+  /* PO badge and muted state surfaces */
+  --color-badge-id-bg: #ffffff;
+  --color-badge-id-text: #1e293b;
+  --color-business-bg: #eff6ff;
+  --color-business-text: #1d4ed8;
+  --color-story-bg: #f0fdfa;
+  --color-story-text: #0f766e;
+  --color-approval-bg: #f5f3ff;
+  --color-approval-text: #6d28d9;
+  --color-charter-bg: #fdf4ff;
+  --color-charter-text: #86198f;
+  --color-task-bg: #ecfdf5;
+  --color-task-text: #047857;
+  --color-bug-bg: #fff1f2;
+  --color-bug-text: #be123c;
+  --color-test-bg: #f0f9ff;
+  --color-test-text: #0284c7;
+  --color-risk-bg: #fff7ed;
+  --color-risk-text: #c2410c;
+  --color-issue-bg: #fffbeb;
+  --color-issue-text: #b45309;
+  --color-sub-demand-bg: #f5f3ff;
+  --color-sub-demand-text: #7c3aed;
+  --color-feedback-bg: #fff7ed;
+  --color-feedback-text: #c2410c;
+
   --color-success-strong: #0b5e42;
   --color-success-accent: #16a34a;
   --color-success-border: #a7f3d0;
@@ -66,6 +106,8 @@
   --color-danger-bright: #ef4444;
   --color-danger-deep: #be123c;
   --color-danger-deeper: #9f1239;
+  --color-danger-action: #be123c;
+  --color-danger-action-hover: #9f1239;
   --color-danger-border: #fecaca;
   --color-primary-gradient-start: #4f7cff;
   --color-primary-gradient-end: #3b5bdb;
@@ -82,6 +124,11 @@
   --color-ink-15-23-42-08: rgba(15, 23, 42, 0.08);
   --color-success-ring: rgba(34, 197, 94, 0.2);
   --color-danger-ring: rgba(220, 38, 38, 0.2);
+
+  /* PO 语义补充：info 浅底/描边、warning 描边（亮色值与 PO 别名一致） */
+  --color-info-bg: #eff6ff;
+  --color-info-border: #bfdbfe;
+  --color-warning-border: #fde68a;
 
   --po-bg: #f4f5f7;
   --po-white: #fff;
@@ -196,10 +243,255 @@
   --focus-ring: 0 0 0 3px rgba(99, 102, 241, 0.25);
   --color-primary-ring-soft: rgba(79, 70, 229, 0.16);
 
+  /* PO value-stream stage palette (consumed by home.css 等) */
+  --color-stage-schedule-border: #fed7aa;
+  --color-stage-schedule-bg: rgba(254, 243, 199, 0.45);
+  --color-stage-schedule-fg: #d97706;
+  --color-stage-waitacceptance-border: #bae6fd;
+  --color-stage-waitacceptance-bg: rgba(224, 242, 254, 0.45);
+  --color-stage-waitacceptance-fg: #0284c7;
+  --color-stage-publish-border: #bbf7d0;
+  --color-stage-publish-bg: rgba(240, 253, 244, 0.45);
+  --color-stage-publish-fg: #16a34a;
+  --color-stage-active-border: #2563eb;
+  --color-stage-active-bg: #eff6ff;
+  --color-stage-active-fg: #1d4ed8;
+  --color-stage-active-fg-emphasis: #1e40af;
+  --color-stage-active-fg-meta: #2563eb;
+  --color-stage-active-dot: #2563eb;
+  --color-stage-active-ring: rgba(37, 99, 235, 0.22);
+  --color-stage-active-glow: rgba(37, 99, 235, 0.22);
+  --color-version-card-bg: var(--color-info-bg);
+  --color-version-badge-bg: var(--color-info-bg);
+  --color-version-badge-border: rgba(37, 99, 235, 0);
+  --color-version-link: var(--color-info-fill);
+  --color-review-overlay: rgba(15, 23, 42, 0.32);
+  --color-notice-unread-bg: rgba(37, 99, 235, 0);
+  /* PO done tag palette (light: solid bg, dark: translucent bg + light fg) */
+  --color-badge-success-bg: var(--color-success-bg);
+  --color-badge-success-fg: var(--color-success-fill);
+  --color-badge-success-border: var(--color-success-border);
+  --color-badge-info-bg: var(--color-info-bg);
+  --color-badge-info-fg: var(--color-info-fill);
+  --color-badge-info-border: var(--color-info-border);
+  --color-badge-warning-bg: var(--color-warning-bg);
+  --color-badge-warning-fg: var(--color-warning-fill);
+  --color-badge-warning-border: var(--color-warning-border);
+  --color-badge-danger-bg: var(--color-danger-bg);
+  --color-badge-danger-fg: var(--color-danger-strong);
+  --color-badge-danger-border: var(--color-danger-border);
+  --color-badge-neutral-bg: var(--color-surface-muted);
+  --color-badge-neutral-fg: var(--color-text-secondary);
+  --color-badge-neutral-border: var(--color-border);
+
+  --color-review-modal-shadow: -8px 0 28px rgba(15, 23, 42, 0.18);
+
   /* 布局尺寸 */
   --sidebar-width: 200px;
   --sidebar-width-collapsed: calc(var(--size-10) + var(--space-5));
   --topbar-height: 52px;
   /* 含可选二级顶栏时的总高度，由 topnav.js 同步测量写入 */
   --topbar-stack-height: 52px;
+}
+
+html[data-theme="dark"] {
+  /* Native controls (date picker popup, selects, scrollbars) follow dark chrome UI */
+  color-scheme: dark;
+
+  /* 品牌主色：由偏紫 Indigo 修正为纯正科技蓝，实现简洁大方 */
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+  --color-primary-active: #1d4ed8;
+  --color-primary-active-deep: #1e40af;
+  --color-primary-light: rgba(59, 130, 246, 0.12);
+  --color-primary-border: rgba(59, 130, 246, 0.35);
+
+  /* 语义功能色 (Status bg/foreground combinations must have readable contrast, > 4.5:1) */
+  --color-success: #34d399; /* lighter for text readability against dark */
+  --color-success-fill: #059669; /* Used for backgrounds needing on-accent text */
+  --color-success-bg: #064e3b; /* dark background */
+  --color-success-strong: #10b981;
+  --color-success-accent: #34d399; /* used for --po-green alias */
+  --color-success-border: #047857;
+
+  --color-danger: #f87171; /* lighter for text readability */
+  --color-danger-fill: #dc2626;
+  --color-danger-bg: rgba(239, 68, 68, 0.15); /* translucent red bg */
+  --color-danger-strong: #ef4444;
+  --color-danger-accent: #f87171; /* used for --po-red alias */
+  --color-danger-bright: #fca5a5;
+  --color-danger-deep: #b91c1c;
+  --color-danger-deeper: #7f1d1d;
+  --color-danger-action: #f87171; /* lighter for text readability on dark surfaces */
+  --color-danger-action-hover: #fca5a5; /* even lighter for hover state */
+  --color-danger-border: rgba(239, 68, 68, 0.4); /* translucent border */
+
+  --color-warning: #fbbf24; /* lighter for text readability */
+  --color-warning-fill: #b45309; /* darker for text on accent */
+  --color-warning-bg: rgba(245, 158, 11, 0.15); /* translucent amber bg */
+  --color-warning-light: #fcd34d;
+  --color-warning-border: rgba(245, 158, 11, 0.4); /* translucent amber border */
+
+  --color-info-fill: #2563eb; /* darker blue for fill */
+  --color-info-fill-hover: #1d4ed8;
+
+  /* 页面层级色 */
+  --color-page-bg: #0f172a;
+  --color-surface: #1e293b;
+  --color-surface-hover: #334155;
+  --color-surface-muted: #0f172a;
+
+  /* 文字色阶 */
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #94a3b8;
+  --color-text-disabled: #475569;
+
+  /* 扩展文本/背景色 */
+  --color-text-body: #cbd5e1;
+  --color-text-strong: #ffffff;
+  --color-text-deep: #f8fafc;
+  --color-text-link-muted: #94a3b8;
+  --color-text-accent-muted: #94a3b8;
+  --color-text-brand: #e2e8f0;
+  --color-text-placeholder: #475569;
+  --color-text-on-accent: #ffffff;
+
+  --color-info: #93c5fd; /* readable on dark info backgrounds */
+  --color-info-bg: #1e3a8a;
+  --color-info-border: #1e40af;
+
+  /* 边框色阶 */
+  --color-border: #334155;
+  --color-border-strong: #475569;
+  --color-border-focus: #3b82f6;
+  --color-border-soft: #1e293b;
+  --color-border-soft-2: #1e293b;
+  --color-border-soft-3: #334155;
+  --color-border-soft-4: #0f172a;
+  --color-border-soft-5: #334155;
+  --color-border-soft-6: #475569;
+  --color-border-soft-7: #334155;
+  --color-border-soft-8: #475569;
+
+  /* Extended surfaces */
+  --color-surface-soft: #1e293b;
+  --color-surface-soft-2: #1e293b;
+  --color-surface-soft-3: #334155;
+  --color-surface-soft-4: #0f172a;
+  --color-surface-soft-5: #1e293b;
+  --color-surface-soft-6: #334155;
+  --color-surface-soft-7: #1e293b;
+
+  /* PO badge and muted state surfaces */
+  --color-badge-id-bg: #0f172a;
+  --color-badge-id-text: #e2e8f0;
+  --color-business-bg: #1e3a8a;
+  --color-business-text: #bfdbfe;
+  --color-story-bg: #134e4a;
+  --color-story-text: #99f6e4;
+  --color-approval-bg: rgba(245, 158, 11, 0.15);
+  --color-approval-text: #fde68a;
+  --color-charter-bg: rgba(13, 148, 136, 0.15);
+  --color-charter-text: #99f6e4;
+  --color-task-bg: #064e3b;
+  --color-task-text: #bbf7d0;
+  --color-bug-bg: #7f1d1d;
+  --color-bug-text: #fecaca;
+  --color-test-bg: #0c4a6e;
+  --color-test-text: #bae6fd;
+  --color-risk-bg: #7c2d12;
+  --color-risk-text: #fed7aa;
+  --color-issue-bg: #713f12;
+  --color-issue-text: #fde68a;
+  --color-sub-demand-bg: rgba(59, 130, 246, 0.12);
+  --color-sub-demand-text: #93c5fd;
+  --color-feedback-bg: #7c2d12;
+  --color-feedback-text: #fed7aa;
+
+  --color-primary-gradient-start: #2563eb;
+  --color-primary-gradient-end: #3b82f6;
+
+  /* 透明色 */
+  --color-white-35: rgba(255, 255, 255, 0.15);
+  --color-white-08: rgba(255, 255, 255, 0.05);
+  --color-overlay: rgba(0, 0, 0, 0.7);
+  --color-shadow-05: rgba(0, 0, 0, 0.3);
+  --color-shadow-02: rgba(0, 0, 0, 0.15);
+  --color-shadow-12: rgba(0, 0, 0, 0.5);
+  --color-ink-15-23-42-02: rgba(0, 0, 0, 0.4);
+  --color-ink-15-23-42-03: rgba(0, 0, 0, 0.2);
+  --color-ink-15-23-42-08: rgba(0, 0, 0, 0.5);
+  --color-success-ring: rgba(16, 185, 129, 0.35);
+  --color-danger-ring: rgba(239, 68, 68, 0.35);
+  --focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.35);
+  --color-primary-ring-soft: rgba(59, 130, 246, 0.20);
+
+  /* Legacy aliases with no safe equivalent remain hex */
+  --po-bg: #111827;
+  --po-border: #374151;
+  --po-t2: #9ca3af;
+  --po-t3: #4b5563;
+  --po-red-bg: #450a0a;
+  --po-orange: #f97316;
+  --po-orange-bg: #422006;
+
+  /* PO value-stream stage palette — dark overrides */
+  --color-stage-schedule-border: rgba(245, 158, 11, 0.25);
+  --color-stage-schedule-bg: rgba(245, 158, 11, 0.08);
+  --color-stage-schedule-fg: #fbbf24;
+  --color-stage-waitacceptance-border: rgba(56, 189, 248, 0.28);
+  --color-stage-waitacceptance-bg: rgba(56, 189, 248, 0.08);
+  --color-stage-waitacceptance-fg: #38bdf8;
+  --color-stage-publish-border: rgba(16, 185, 129, 0.25);
+  --color-stage-publish-bg: rgba(16, 185, 129, 0.08);
+  --color-stage-publish-fg: #34d399;
+  --color-stage-active-border: #3b82f6;
+  --color-stage-active-bg: rgba(59, 130, 246, 0.22);
+  --color-stage-active-fg: #ffffff;
+  --color-stage-active-fg-emphasis: #ffffff;
+  --color-stage-active-fg-meta: #93c5fd;
+  --color-stage-active-dot: #60a5fa;
+  --color-stage-active-ring: rgba(59, 130, 246, 0.8);
+  --color-stage-active-glow: rgba(59, 130, 246, 0.45);
+  --color-version-card-bg: rgba(30, 41, 59, 0.7);
+  --color-version-badge-bg: rgba(30, 58, 138, 0.45);
+  --color-version-badge-border: rgba(56, 189, 248, 0.25);
+  --color-version-link: #38bdf8;
+  --color-review-overlay: rgba(2, 6, 23, 0.6);
+  --color-notice-unread-bg: rgba(37, 99, 235, 0.06);
+  /* PO done tag palette — dark translucent overrides */
+  --color-badge-success-bg: rgba(16, 185, 129, 0.15);
+  --color-badge-success-fg: #34d399;
+  --color-badge-success-border: rgba(16, 185, 129, 0.35);
+  --color-badge-info-bg: rgba(59, 130, 246, 0.18);
+  --color-badge-info-fg: #93c5fd;
+  --color-badge-info-border: rgba(59, 130, 246, 0.38);
+  --color-badge-warning-bg: rgba(245, 158, 11, 0.15);
+  --color-badge-warning-fg: #fbbf24;
+  --color-badge-warning-border: rgba(245, 158, 11, 0.35);
+  --color-badge-danger-bg: rgba(239, 68, 68, 0.15);
+  --color-badge-danger-fg: #f87171;
+  --color-badge-danger-border: rgba(239, 68, 68, 0.35);
+  --color-badge-neutral-bg: rgba(255, 255, 255, 0.05);
+  --color-badge-neutral-fg: #cbd5e1;
+  --color-badge-neutral-border: rgba(255, 255, 255, 0.12);
+
+  --color-review-modal-shadow: -8px 0 28px rgba(2, 6, 23, 0.55);
+
+  /* Stage 2 公共优先级 token (P1-P4 bg/fg/bd) — 深色, WCAG AA 对比 */
+  --po-pri-1-bg: #450a0a;                    /* 深红底 */
+  --po-pri-1-fg: #fca5a5;                    /* 浅红字 (>4.5:1 on #450a0a) */
+  --po-pri-1-bd: #7f1d1d;
+
+  --po-pri-2-bg: #422006;
+  --po-pri-2-fg: #fdba74;                    /* 浅橙字 */
+  --po-pri-2-bd: #7c2d12;
+
+  --po-pri-3-bg: #1e3a8a;
+  --po-pri-3-fg: #93c5fd;                    /* 浅蓝字 */
+  --po-pri-3-bd: #1e40af;
+
+  --po-pri-4-bg: #1e293b;
+  --po-pri-4-fg: #cbd5e1;                    /* 浅灰字 */
+  --po-pri-4-bd: #334155;
 }

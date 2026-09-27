@@ -182,7 +182,7 @@
   height: var(--size-8);
   padding: 0 var(--space-4);
   background: var(--color-primary);
-  color: var(--color-surface);
+  color: var(--color-text-on-accent);
   border-color: var(--color-primary);
 }
 .btn-primary:hover {
@@ -213,12 +213,12 @@
 /* 危险按钮：只允许出现在删除确认弹窗内 */
 .btn-danger {
   height: var(--size-9);
-  background: var(--color-danger-bright);
-  color: var(--color-surface);
-  border-color: var(--color-danger-bright);
+  background: var(--color-danger-fill);
+  color: var(--color-text-on-accent);
+  border-color: var(--color-danger-fill);
 }
 .btn-danger:hover {
-  background: var(--color-danger-accent);
+  background: var(--color-danger-strong);
 }
 
 /* 图标按钮（操作列用）*/
@@ -430,16 +430,37 @@
   opacity: 1;
 }
 
+/* Shared close affordance for drawers and modals. */
+.ui-close-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border, #d8e0eb);
+  border-radius: 6px;
+  padding: 0;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.ui-close-btn:hover { background: var(--color-surface-soft-3); color: var(--color-text-deep); border-color: var(--color-info); }
+.ui-close-btn:focus-visible { outline: 2px solid var(--color-info); outline-offset: 2px; }
+
 .toast-success {
-  background: #f0fdf4;
-  color: #16a34a;
-  border: 1px solid #bbf7d0;
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  border: 1px solid var(--color-success-border);
 }
 
 .toast-error {
-  background: #fef2f2;
-  color: #dc2626;
-  border: 1px solid #fecaca;
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger-border);
 }
 
 @keyframes toast-in {
@@ -488,7 +509,7 @@
 }
 
 .dropdown-item:hover {
-  background: var(--color-surface-muted);
+  background: var(--color-surface-hover);
   color: var(--color-text-primary);
 }
 

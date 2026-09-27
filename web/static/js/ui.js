@@ -862,4 +862,11 @@
   window.clearAutocomplete = clearAutocomplete;
   window.destroyAutocomplete = destroyAutocomplete;
   window.setAutocompleteSelectedValues = setAutocompleteSelectedValues;
+  window.getCsrfToken = getCsrfToken;
+  // 人员选择器：PO 澄清 / 提交评审 / 提测 / 敏捷小组成员等页面按此名调用；
+  // 目前复用通用 autocomplete（分组标题项 value 为空会被忽略），后续如需人员专用展示再扩展。
+  window.initUserPicker = function (inputId, hiddenId, items, opts) {
+    return initAutocomplete(inputId, hiddenId, items, opts);
+  };
+  window.destroyUserPicker = destroyAutocomplete;
 })();

@@ -220,11 +220,11 @@
 }
 
 .zen-icon-action.danger {
-  color: var(--color-danger-deep);
+  color: var(--color-danger-action);
 }
 
 .zen-icon-action.danger:hover {
-  color: var(--color-danger-deeper);
+  color: var(--color-danger-action-hover);
   transform: translateY(-1px);
 }
 
@@ -413,7 +413,7 @@
   font-family: inherit;
   white-space: nowrap;
   background: var(--color-primary-hover);
-  color: #fff;
+  color: var(--color-text-on-accent);
   transition: background-color 0.15s ease;
 }
 
