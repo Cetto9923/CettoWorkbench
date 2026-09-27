@@ -332,7 +332,7 @@
   }
 
   var FOCUS_META = {
-    my_action: { title: "待我处理事项", tag: "当前要办理", subtip: "优先办理分配给您、需您推进流转与确认的事项" },
+    my_action: { title: "待我处理事项", tag: "当前要办理", subtip: "统计我参与阶段的需求，优先推进需确认与流转的事项" },
     all: { title: "全量事项清单", tag: "全盘流转", subtip: "查看所有由您关联或参与的需求与研发事项" },
     today: { title: "今日必推清单", tag: "今日聚焦", subtip: "今天到期及急需推进的高优事项" },
     blocked: { title: "阻塞事项清单", tag: "风险拦截", subtip: "处于阻塞停滞状态、急需排查解阻的事项" },

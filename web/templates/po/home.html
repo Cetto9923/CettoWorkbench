@@ -35,7 +35,7 @@
       <button type="button" class="header-quick-chip" data-home-focus="all" aria-pressed="false">
         <span>全部</span> <em>{{ if .PageError }}—{{ else }}{{ .AllCount }}{{ end }}</em>
       </button>
-      <button type="button" data-home-focus="my_action" class="header-quick-chip my-action" title="查看当前由我正式办理的事项" aria-pressed="true"><span>待我处理</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.MyPending }}{{ end }}</em></button>
+      <button type="button" data-home-focus="my_action" class="header-quick-chip my-action" title="统计我参与阶段的需求" aria-pressed="true"><span>待我处理</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.MyPending }}{{ end }}</em></button>
       <button type="button" data-home-focus="today" class="header-quick-chip warning" title="在首页查看今天到期及已超期的需求" aria-pressed="false">
         <span>今日必推</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.Today }}{{ end }}</em>
       </button>
@@ -145,7 +145,7 @@
           <h2 class="home-action-title" id="homeActionTitle">待我处理事项</h2>
           <span class="home-action-tag" id="homeActionTag">当前要办理</span>
         </div>
-        <div class="home-action-subtip" id="homeActionSubtip">优先办理分配给您、需您推进流转与确认的事项</div>
+        <div class="home-action-subtip" id="homeActionSubtip">统计我参与阶段的需求，优先推进需确认与流转的事项</div>
       </div>
       <!-- 统一标准筛选工具栏 -->
       <div class="workspace-toolbar home-toolbar">
