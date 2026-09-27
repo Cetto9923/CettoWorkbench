@@ -16,6 +16,11 @@
   var objectTypeBadge = PL.objectTypeBadge;
 
   var TAB_KIND_MAP = { biz: "business", rd: "story" };
+  var VALUE_STREAM_LABELS = {
+    accept: "受理", clarify: "澄清", schedule: "排期", developing: "提测",
+    testing: "测试", waitacceptance: "验收", acceptanced: "发起交付",
+    publish: "发布", released: "评价反馈"
+  };
 
   var ZENTAO_STATUS_LABELS = {
     draft: "暂存", wait: "待评审", active: "已评审", clarified: "已澄清",
@@ -39,6 +44,7 @@
     tab: "biz",
     keyword: "",
     status: "",
+    stage: "",
     priority: "",
     owner: "",
     system: "",
@@ -55,6 +61,7 @@
     q.set("tab", state.tab);
     if (state.keyword) { q.set("keyword", state.keyword); }
     if (state.status) { q.set("status", state.status); }
+    if (state.stage) { q.set("stage", state.stage); }
     if (state.priority) { q.set("priority", state.priority); }
     if (state.owner) { q.set("owner", state.owner); }
     if (state.system) { q.set("system", state.system); }
@@ -213,6 +220,7 @@
     }
     state.keyword = (sp.get("keyword") || "").trim();
     state.status = (sp.get("status") || "").trim();
+    state.stage = (sp.get("stage") || "").trim();
     state.priority = (sp.get("priority") || "").trim();
     state.owner = (sp.get("owner") || "").trim();
     state.system = (sp.get("system") || "").trim();
@@ -229,6 +237,15 @@
     if ($("queryPriority")) { $("queryPriority").value = state.priority; }
     if ($("queryOwner")) { $("queryOwner").value = state.owner; }
     if ($("querySystem")) { $("querySystem").value = state.system; }
+    updateStageChip();
+  }
+
+  function updateStageChip() {
+    var chip = $("queryStageChip");
+    if (!chip) { return; }
+    var label = VALUE_STREAM_LABELS[state.stage] || state.stage;
+    chip.hidden = !state.stage;
+    chip.textContent = state.stage ? ("阶段：" + label + " ×") : "";
   }
 
   function syncUrl() {
@@ -237,6 +254,7 @@
     if (state.tab !== "biz") { p.set("tab", state.tab); }
     if (state.keyword) { p.set("keyword", state.keyword); }
     if (state.status) { p.set("status", state.status); }
+    if (state.stage) { p.set("stage", state.stage); }
     if (state.priority) { p.set("priority", state.priority); }
     if (state.owner) { p.set("owner", state.owner); }
     if (state.system) { p.set("system", state.system); }
@@ -313,12 +331,14 @@
       $("queryResetBtn").addEventListener("click", function () {
         state.keyword = "";
         state.status = "";
+        state.stage = "";
         state.priority = "";
         state.owner = "";
         state.system = "";
         state.page = 1;
         if ($("queryKeyword")) { $("queryKeyword").value = ""; }
         if ($("queryStatus")) { $("queryStatus").value = ""; }
+        updateStageChip();
         if ($("queryPriority")) { $("queryPriority").value = ""; }
         if ($("queryOwner")) { $("queryOwner").value = ""; }
         if ($("querySystem")) { $("querySystem").value = ""; }
@@ -328,6 +348,15 @@
     }
     if ($("queryRetryBtn")) {
       $("queryRetryBtn").addEventListener("click", function () { load(); });
+    }
+    if ($("queryStageChip")) {
+      $("queryStageChip").addEventListener("click", function () {
+        state.stage = "";
+        state.page = 1;
+        updateStageChip();
+        syncUrl();
+        load();
+      });
     }
   }
 
