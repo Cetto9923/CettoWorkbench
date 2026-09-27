@@ -115,6 +115,7 @@ JSON 接口抽检均 200：todos/done/notice/follow/board/query/issues-risk item
 | `13ab5be7` | auth.go 挂 `perm.WithGranted`（Main 缺失导致非超管所有 PO 主操作置灰；同一份 userPerms 快照，未新增规则） |
 | `07dfbee0` | 排期页（PO 外壳）列宽/重复标题；/demands/:id 卡片化（po/demand-page.css） |
 | `71cddc5c` | 首页抽屉关闭态右缘投影；已办“查看记录”按钮溢出 |
+| `63f9f7c` | 排期页独立研发需求表取消 min-width 与内联宽度限制（贴合 PO 外壳） |
 
 ### 视觉问题表
 | # | 页面 | 问题 | 严重度 | 原因 | 状态 | 依据 |
@@ -126,7 +127,7 @@ JSON 接口抽检均 200：todos/done/notice/follow/board/query/issues-risk item
 | V5 | 首页 | “澄清/排期”等主操作全部灰色虚线 | 高 | auth 未挂权限快照（见 13ab5be7） | 已修 | 8096 |
 | V6 | 首页 | 页面右缘一条灰色阴影 | 低 | 屏外抽屉 box-shadow 露出（8096 同样存在） | 已修 | 自判 |
 | V7 | 已办 | “查看记录”按钮超出操作列 | 低 | 按钮契约覆盖 small 按钮尺寸（8096 同样） | 已修 | 自判 |
-| V8 | 排期 | 操作列被挤出可视区；敏捷小组折 3-4 行；页内标题与顶栏重复 | 中 | Main 模板内联 500px 标题列 + table min-width 1180 | 业务需求表已修；独立研发需求表未调 | Main 8090 同病，自判 |
+| V8 | 排期 | 操作列被挤出可视区；敏捷小组折 3-4 行；页内标题与顶栏重复 | 中 | Main 模板内联 500px 标题列 + table min-width 1180 | 已修 07dfbee0（业务表）、63f9f7c（独立研需表） | Main 8090 同病，自判 |
 | V9 | /demands/:id | 裸文本无样式、嵌套 main | 中 | 模板引用未加载的 home-page-card | 已修（卡片化） | 自判（8096 同样裸） |
 | V10 | 看板弹窗/澄清/提交评审/提测 | 人员选择器不初始化、看板弹窗“页面请求能力未加载” | 高（功能性） | ui.js/app.js 缺 initUserPicker/appJson | 已修（人员选择器暂为通用 autocomplete，无拼音/分组标题） | 8096 |
 | V11 | /profile、/admin/*、/kanban/* | 仍是 Main 后台外壳（品牌区 + “个人入口/工作区”菜单），与 PO 外壳两套观感 | 中 | 这些路由不在 PO 外壳路由表 | 未修（需产品决定是否纳入 PO 外壳） | 8096 同样 |
