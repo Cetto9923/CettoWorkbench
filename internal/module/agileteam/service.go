@@ -32,6 +32,24 @@ func NewService(repo *Repo, logger *zap.Logger) *Service {
 	return &Service{repo: repo, logger: logger}
 }
 
+// SetOrgTeamMapping 仅允许 PMO 维护敏捷团队到组织团队的正式挂靠。
+func (s *Service) SetOrgTeamMapping(ctx context.Context, actor *model.User, req OrgTeamMappingReq, allowGlobal bool) error {
+	if !allowGlobal {
+		return errorx.New("forbidden", "仅 PMO 或管理员可维护敏捷团队挂靠")
+	}
+	if errs := req.Validate(); len(errs) > 0 {
+		return errorx.New("validation", errs[0].Message)
+	}
+	if actor == nil || strings.TrimSpace(actor.Account) == "" {
+		return errorx.New("unauthorized", "无法识别当前用户")
+	}
+	return s.repo.SetOrgTeamMapping(ctx, req.TeamgroupID, uint(req.DeptID), actor.Account)
+}
+
+func (s *Service) ListOrgTeamOptions(ctx context.Context) ([]ScopeOption, error) {
+	return s.repo.ListOrgTeamOptions(ctx)
+}
+
 func firstAccount(raw string) string {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {

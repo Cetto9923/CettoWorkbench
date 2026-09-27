@@ -8,6 +8,7 @@
 package agileteam
 
 import (
+	"context"
 	"strings"
 	"testing"
 )
@@ -69,6 +70,32 @@ func TestUpdateBasicReqValidate(t *testing.T) {
 	jsLogo := UpdateBasicReq{ID: 1, Name: "团队", Logo: "javascript:alert(1)"}
 	if errs := jsLogo.Validate(); len(errs) == 0 {
 		t.Fatal("expected javascript logo rejection")
+	}
+}
+
+func TestOrgTeamMappingReqValidate(t *testing.T) {
+	t.Parallel()
+	valid := OrgTeamMappingReq{TeamgroupID: 12, DeptID: 34}
+	if errs := valid.Validate(); len(errs) != 0 {
+		t.Fatalf("expected valid mapping, got %v", errs)
+	}
+	if errs := (OrgTeamMappingReq{TeamgroupID: 0, DeptID: 34}).Validate(); len(errs) == 0 {
+		t.Fatal("expected missing agile teamgroup error")
+	}
+	if errs := (OrgTeamMappingReq{TeamgroupID: 12, DeptID: -1}).Validate(); len(errs) == 0 {
+		t.Fatal("expected negative department ID error")
+	}
+}
+
+func TestSetOrgTeamMappingRequiresPMO(t *testing.T) {
+	t.Parallel()
+	svc, mock := newTestService(t)
+	err := svc.SetOrgTeamMapping(context.Background(), nil, OrgTeamMappingReq{TeamgroupID: 1, DeptID: 2}, false)
+	if err == nil {
+		t.Fatal("expected PMO-only mapping guard")
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unexpected database access: %v", err)
 	}
 }
 

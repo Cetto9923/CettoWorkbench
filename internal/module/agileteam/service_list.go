@@ -92,6 +92,7 @@ func (s *Service) List(ctx context.Context, actor *model.User, req ListReq) (Lis
 		}
 		item := ListItem{
 			ID: r.ID, Name: r.Name, ParentID: r.Parent, ParentName: r.ParentName,
+			OrgDeptID: r.OrgDeptID, OrgDeptName: r.OrgDeptName, OrgDeptInherited: r.OrgDeptInherited,
 			Type: teamTypeOf(r), CoachAccount: coachAcc, CoachName: names[coachAcc],
 			POAccount: poAcc, POName: names[poAcc],
 			FormalCount: len(formal), PendingAdd: pad, PendingRemove: prem,

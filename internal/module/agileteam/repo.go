@@ -18,20 +18,23 @@ import (
 
 // TeamgroupRow 禅道敏捷小组详情行。
 type TeamgroupRow struct {
-	ID          uint   `gorm:"column:id"`
-	Name        string `gorm:"column:name"`
-	Parent      uint   `gorm:"column:parent"`
-	ParentName  string `gorm:"column:parent_name"`
-	Type        string `gorm:"column:type"`
-	Grade       int    `gorm:"column:grade"`
-	Path        string `gorm:"column:path"`
-	PO          string `gorm:"column:PO"`
-	Manager     string `gorm:"column:manager"`
-	Slogan      string `gorm:"column:slogan"`
-	Declaration string `gorm:"column:declaration"`
-	Logo        string `gorm:"column:logo"`
-	Status      string `gorm:"column:status"`
-	CreatedDate string `gorm:"column:createdDate"`
+	ID               uint   `gorm:"column:id"`
+	Name             string `gorm:"column:name"`
+	OrgDeptID        uint   `gorm:"column:org_dept_id"`
+	OrgDeptName      string `gorm:"column:org_dept_name"`
+	OrgDeptInherited bool   `gorm:"column:org_dept_inherited"`
+	Parent           uint   `gorm:"column:parent"`
+	ParentName       string `gorm:"column:parent_name"`
+	Type             string `gorm:"column:type"`
+	Grade            int    `gorm:"column:grade"`
+	Path             string `gorm:"column:path"`
+	PO               string `gorm:"column:PO"`
+	Manager          string `gorm:"column:manager"`
+	Slogan           string `gorm:"column:slogan"`
+	Declaration      string `gorm:"column:declaration"`
+	Logo             string `gorm:"column:logo"`
+	Status           string `gorm:"column:status"`
+	CreatedDate      string `gorm:"column:createdDate"`
 }
 
 // TeamMemberRow 正式成员行。
@@ -72,11 +75,17 @@ func (r *Repo) ListTeamgroups(ctx context.Context) ([]TeamgroupRow, error) {
 	err := r.read().WithContext(ctx).Raw(`
 SELECT tg.id, tg.name, tg.parent,
        COALESCE(p.name, '') AS parent_name,
+       COALESCE(own_map.deptId, parent_map.deptId, 0) AS org_dept_id,
+       COALESCE(d.name, '') AS org_dept_name,
+       CASE WHEN own_map.deptId IS NULL AND parent_map.deptId IS NOT NULL THEN 1 ELSE 0 END AS org_dept_inherited,
        tg.type, tg.grade, COALESCE(tg.path, '') AS path,
        tg.PO, tg.manager, tg.slogan, tg.declaration, tg.logo, tg.status,
        COALESCE(DATE_FORMAT(tg.createdDate, '%Y-%m-%d'), '') AS createdDate
 FROM zt_teamgroup tg
 LEFT JOIN zt_teamgroup p ON p.id = tg.parent AND p.deleted = '0'
+LEFT JOIN zt_wb_agileteam_orgmap own_map ON own_map.teamgroupId = tg.id AND own_map.status = 'active'
+LEFT JOIN zt_wb_agileteam_orgmap parent_map ON parent_map.teamgroupId = p.id AND parent_map.status = 'active'
+LEFT JOIN zt_dept d ON d.id = COALESCE(own_map.deptId, parent_map.deptId) AND d.deleted = '0'
 WHERE tg.deleted = '0'
 ORDER BY tg.id ASC`).Scan(&rows).Error
 	if err != nil {
@@ -101,11 +110,17 @@ func (r *Repo) FindTeamgroupsByIDs(ctx context.Context, ids []uint) ([]Teamgroup
 	err := r.read().WithContext(ctx).Raw(`
 SELECT tg.id, tg.name, tg.parent,
        COALESCE(p.name, '') AS parent_name,
+       COALESCE(own_map.deptId, parent_map.deptId, 0) AS org_dept_id,
+       COALESCE(d.name, '') AS org_dept_name,
+       CASE WHEN own_map.deptId IS NULL AND parent_map.deptId IS NOT NULL THEN 1 ELSE 0 END AS org_dept_inherited,
        tg.type, tg.grade, COALESCE(tg.path, '') AS path,
        tg.PO, tg.manager, tg.slogan, tg.declaration, tg.logo, tg.status,
        COALESCE(DATE_FORMAT(tg.createdDate, '%Y-%m-%d'), '') AS createdDate
 FROM zt_teamgroup tg
 LEFT JOIN zt_teamgroup p ON p.id = tg.parent AND p.deleted = '0'
+LEFT JOIN zt_wb_agileteam_orgmap own_map ON own_map.teamgroupId = tg.id AND own_map.status = 'active'
+LEFT JOIN zt_wb_agileteam_orgmap parent_map ON parent_map.teamgroupId = p.id AND parent_map.status = 'active'
+LEFT JOIN zt_dept d ON d.id = COALESCE(own_map.deptId, parent_map.deptId) AND d.deleted = '0'
 WHERE tg.deleted = '0' AND tg.id IN ?
 ORDER BY tg.id ASC`, ids).Scan(&out).Error
 	if err != nil {
@@ -127,11 +142,17 @@ func (r *Repo) FindTeamgroupByID(ctx context.Context, id uint) (*TeamgroupRow, e
 	err := r.read().WithContext(ctx).Raw(`
 SELECT tg.id, tg.name, tg.parent,
        COALESCE(p.name, '') AS parent_name,
+       COALESCE(own_map.deptId, parent_map.deptId, 0) AS org_dept_id,
+       COALESCE(d.name, '') AS org_dept_name,
+       CASE WHEN own_map.deptId IS NULL AND parent_map.deptId IS NOT NULL THEN 1 ELSE 0 END AS org_dept_inherited,
        tg.type, tg.grade, COALESCE(tg.path, '') AS path,
        tg.PO, tg.manager, tg.slogan, tg.declaration, tg.logo, tg.status,
        COALESCE(DATE_FORMAT(tg.createdDate, '%Y-%m-%d'), '') AS createdDate
 FROM zt_teamgroup tg
 LEFT JOIN zt_teamgroup p ON p.id = tg.parent AND p.deleted = '0'
+LEFT JOIN zt_wb_agileteam_orgmap own_map ON own_map.teamgroupId = tg.id AND own_map.status = 'active'
+LEFT JOIN zt_wb_agileteam_orgmap parent_map ON parent_map.teamgroupId = p.id AND parent_map.status = 'active'
+LEFT JOIN zt_dept d ON d.id = COALESCE(own_map.deptId, parent_map.deptId) AND d.deleted = '0'
 WHERE tg.id = ? AND tg.deleted = '0'
 LIMIT 1`, id).Scan(&row).Error
 	if err != nil {

@@ -31,9 +31,10 @@ const (
 	// 2026-08-27 B 决策（AGENTS.md §4.7）：拆分两个细粒度事件，便于审计 / 报表 /
 	// 任何"待确认" UI 过滤时能直接按事件类型排除 PMO 直接编辑。
 	// 字段 length=32（model.History.EventType gorm size），新值仍符合。
-	EventUpdate        = "update"         // 兼容历史：未识别主体时回退到此值
-	EventUpdateByPMO   = "updatedByPmo"   // PMO（allowGlobal=true）直接编辑，立即生效，不进待确认
-	EventUpdateByOwner = "updatedByOwner" // PO / 敏捷教练在自身权限范围内编辑，立即生效，不进待确认
+	EventUpdate         = "update"         // 兼容历史：未识别主体时回退到此值
+	EventUpdateByPMO    = "updatedByPmo"   // PMO（allowGlobal=true）直接编辑，立即生效，不进待确认
+	EventUpdateByOwner  = "updatedByOwner" // PO / 敏捷教练在自身权限范围内编辑，立即生效，不进待确认
+	EventOrgTeamMapping = "orgTeamMapping" // PMO 维护敏捷团队到组织部门的挂靠关系
 )
 
 // Adjustment 成员调整单头。

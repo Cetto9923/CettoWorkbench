@@ -46,6 +46,8 @@
     detailTab: "basic",
     canConfirm: false,
     canEdit: false,
+    canMapOrgTeam: false,
+    orgTeamOptions: null,
     page: 1,
     pageSize: 20,
     pageSizeCustom: readStoredCustomPageSize(), // 0 表示未存
@@ -168,7 +170,7 @@
     const host = document.getElementById("atListBody");
     const summary = document.getElementById("atSummaryStrip");
     if (!host) return;
-    host.innerHTML = '<tr><td colspan="9" class="at-empty">加载中…</td></tr>';
+    host.innerHTML = '<tr><td colspan="10" class="at-empty">加载中…</td></tr>';
     const q = new URLSearchParams();
     q.set("status", state.status);
     q.set("adjustStatus", state.adjustStatus || "all");
@@ -187,6 +189,11 @@
       const json = await apiFetch(API + "?" + q.toString());
       const data = (json && json.data) || {};
       state.canEdit = !!data.canEdit && !isLeadView();
+      state.canMapOrgTeam = !!data.canMapOrgTeam;
+      if (state.canMapOrgTeam && state.orgTeamOptions === null) {
+        const optionsJSON = await apiFetch(API + "/organization-teams");
+        state.orgTeamOptions = (optionsJSON && optionsJSON.data) || [];
+      }
       state.total = data.total || 0;
       state.page = data.page || state.page;
       state.pageSize = data.pageSize || state.pageSize;
@@ -196,7 +203,7 @@
       renderRows(host, data.items || []);
       renderPager();
     } catch (e) {
-      host.innerHTML = '<tr><td colspan="9" class="at-empty">' + esc(e.message || "加载失败") + "</td></tr>";
+      host.innerHTML = '<tr><td colspan="10" class="at-empty">' + esc(e.message || "加载失败") + "</td></tr>";
     }
   }
 
@@ -222,7 +229,7 @@
 
   function renderRows(host, items) {
     if (!items.length) {
-      host.innerHTML = '<tr><td colspan="9" class="at-empty">暂无敏捷小组</td></tr>';
+      host.innerHTML = '<tr><td colspan="10" class="at-empty">暂无敏捷小组</td></tr>';
       return;
     }
     host.innerHTML = items.map(function (it) {
@@ -243,9 +250,17 @@
           ? '<span class="at-tag pending" onclick="atOpenReview(' + it.pendingAdjustId + ')">' +
             adjustLabel(it.pendingAdd, it.pendingRemove) + "</span>"
           : "—";
+      const orgTeam = state.canMapOrgTeam
+        ? '<select class="at-field" aria-label="所属组织团队" onchange="atMapOrgTeam(' + it.id + ',this.value)">' +
+          '<option value="0">' + (it.orgDeptInherited ? "继承父级" : "未挂靠") + "</option>" +
+          (state.orgTeamOptions || []).map(function (opt) {
+            return '<option value="' + esc(opt.id) + '"' + (Number(opt.id) === Number(it.orgDeptId) ? " selected" : "") + '>' + esc(opt.name) + "</option>";
+          }).join("") + "</select>"
+        : esc(it.orgDeptName || "未挂靠") + (it.orgDeptInherited ? ' <span class="at-sub-id">继承父级</span>' : "");
       return (
         '<tr class="' + rowClass + '" data-id="' + it.id + '" data-parent="' + (it.parentId || "") + '">' +
         nameCell +
+        "<td>" + orgTeam + "</td>" +
         "<td>" + esc(it.parentName || "—") + "</td>" +
         "<td>" + esc(person(it.coachName, it.coachAccount)) + "</td>" +
         "<td>" + esc(person(it.poName, it.poAccount)) + "</td>" +
@@ -258,6 +273,18 @@
       );
     }).join("");
   }
+
+  window.atMapOrgTeam = async function (teamgroupId, deptId) {
+    try {
+      await apiFetch(API + "/" + encodeURIComponent(teamgroupId) + "/org-team", {
+        method: "PUT", body: { deptId: Number(deptId) || 0 }
+      });
+      await loadList();
+    } catch (e) {
+      window.alert(e.message || "组织挂靠保存失败");
+      await loadList();
+    }
+  };
 
   window.atToggleChildren = function (parentId, btn) {
     state.collapsed[parentId] = !state.collapsed[parentId];

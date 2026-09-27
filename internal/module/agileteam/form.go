@@ -80,6 +80,24 @@ type CandidateSearchReq struct {
 	TeamgroupID uint   `form:"teamgroupId"`
 }
 
+// OrgTeamMappingReq 设置敏捷团队与禅道组织团队（部门）的主挂靠。
+// DeptID 为 0 表示解除挂靠；负数无效。
+type OrgTeamMappingReq struct {
+	TeamgroupID uint `json:"teamgroupId"`
+	DeptID      int  `json:"deptId"`
+}
+
+func (r OrgTeamMappingReq) Validate() []FieldError {
+	var errs []FieldError
+	if r.TeamgroupID == 0 {
+		errs = append(errs, FieldError{Field: "teamgroupId", Message: "请选择敏捷小组"})
+	}
+	if r.DeptID < 0 {
+		errs = append(errs, FieldError{Field: "deptId", Message: "组织团队无效"})
+	}
+	return errs
+}
+
 func (r *CandidateSearchReq) Normalize() {
 	r.Q = strings.TrimSpace(r.Q)
 }
@@ -142,38 +160,42 @@ type ScopeOption struct {
 
 // ListItem 列表行。
 type ListItem struct {
-	ID              uint   `json:"id"`
-	Name            string `json:"name"`
-	ParentID        uint   `json:"parentId"`
-	ParentName      string `json:"parentName"`
-	Type            string `json:"type"`
-	ChildCount      int    `json:"childCount"`
-	CoachAccount    string `json:"coachAccount"`
-	CoachName       string `json:"coachName"`
-	POAccount       string `json:"poAccount"`
-	POName          string `json:"poName"`
-	FormalCount     int    `json:"formalCount"`
-	PendingAdd      int    `json:"pendingAdd"`
-	PendingRemove   int    `json:"pendingRemove"`
-	Status          string `json:"status"`
-	StatusLabel     string `json:"statusLabel"`
-	LastAdjustAt    string `json:"lastAdjustAt"`
-	PendingAdjustID int64  `json:"pendingAdjustId,omitempty"`
+	ID               uint   `json:"id"`
+	Name             string `json:"name"`
+	OrgDeptID        uint   `json:"orgDeptId"`
+	OrgDeptName      string `json:"orgDeptName"`
+	OrgDeptInherited bool   `json:"orgDeptInherited"`
+	ParentID         uint   `json:"parentId"`
+	ParentName       string `json:"parentName"`
+	Type             string `json:"type"`
+	ChildCount       int    `json:"childCount"`
+	CoachAccount     string `json:"coachAccount"`
+	CoachName        string `json:"coachName"`
+	POAccount        string `json:"poAccount"`
+	POName           string `json:"poName"`
+	FormalCount      int    `json:"formalCount"`
+	PendingAdd       int    `json:"pendingAdd"`
+	PendingRemove    int    `json:"pendingRemove"`
+	Status           string `json:"status"`
+	StatusLabel      string `json:"statusLabel"`
+	LastAdjustAt     string `json:"lastAdjustAt"`
+	PendingAdjustID  int64  `json:"pendingAdjustId,omitempty"`
 }
 
 // ListResp 列表响应。
 type ListResp struct {
-	Items        []ListItem    `json:"items"`
-	Total        int64         `json:"total"`
-	AllCount     int64         `json:"allCount"`
-	EnableCount  int64         `json:"enableCount"`
-	DisableCount int64         `json:"disableCount"`
-	PendingCount int64         `json:"pendingCount"`
-	Page         int           `json:"page"`
-	PageSize     int           `json:"pageSize"`
-	PageCount    int           `json:"pageCount"`
-	ScopeOptions []ScopeOption `json:"scopeOptions,omitempty"`
-	CanEdit      bool          `json:"canEdit"`
+	Items         []ListItem    `json:"items"`
+	Total         int64         `json:"total"`
+	AllCount      int64         `json:"allCount"`
+	EnableCount   int64         `json:"enableCount"`
+	DisableCount  int64         `json:"disableCount"`
+	PendingCount  int64         `json:"pendingCount"`
+	Page          int           `json:"page"`
+	PageSize      int           `json:"pageSize"`
+	PageCount     int           `json:"pageCount"`
+	ScopeOptions  []ScopeOption `json:"scopeOptions,omitempty"`
+	CanEdit       bool          `json:"canEdit"`
+	CanMapOrgTeam bool          `json:"canMapOrgTeam"`
 }
 
 // DetailResp 详情响应。

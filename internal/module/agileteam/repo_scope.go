@@ -170,6 +170,27 @@ SELECT id, name FROM zt_teamgroup WHERE deleted = '0' AND id IN ? ORDER BY id AS
 	return rows, nil
 }
 
+// ListOrgTeamOptions 返回禅道组织树中的最底层部门，作为组织团队挂靠候选。
+func (r *Repo) ListOrgTeamOptions(ctx context.Context) ([]ScopeOption, error) {
+	var rows []ScopeOption
+	err := r.read().WithContext(ctx).Raw(`
+SELECT d.id, d.name
+FROM zt_dept d
+WHERE d.deleted = '0'
+  AND NOT EXISTS (SELECT 1 FROM zt_dept child WHERE child.parent = d.id AND child.deleted = '0')
+ORDER BY d.id ASC`).Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	if rows == nil {
+		rows = []ScopeOption{}
+	}
+	for i := range rows {
+		rows[i].Name = html.UnescapeString(rows[i].Name)
+	}
+	return rows, nil
+}
+
 // SearchUsers 按账号 / 姓名 / 拼音模糊搜索用户。
 //
 // 禅道 zt_user.pinyin（VARCHAR(255)）由禅道原生维护，含真实姓名全拼与首字母（如

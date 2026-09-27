@@ -55,9 +55,11 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.GET("/adjustments/:id", middleware.RequirePerm(perm.AgileTeamList), h.AdjustmentDetail)
 	g.PUT("/adjustments/:id/confirm", middleware.RequirePerm(perm.AgileTeamConfirm), h.ConfirmAdjustment)
 	g.PUT("/adjustments/:id/reject", middleware.RequirePerm(perm.AgileTeamConfirm), h.RejectAdjustment)
+	g.GET("/organization-teams", middleware.RequirePerm(perm.AgileTeamList), h.OrgTeamOptions)
 
 	g.GET("/:id", middleware.RequirePerm(perm.AgileTeamList), h.Detail)
 	g.PUT("/:id/basic", middleware.RequirePerm(perm.AgileTeamUpdate), h.UpdateBasic)
+	g.PUT("/:id/org-team", middleware.RequirePerm(perm.AgileTeamConfirm), h.UpdateOrgTeamMapping)
 	g.POST("/:id/adjustments", middleware.RequirePerm(perm.AgileTeamUpdate), h.SubmitAdjustment)
 }
 
@@ -78,7 +80,17 @@ func (h *Handler) List(c *gin.Context) {
 		writeErr(c, err)
 		return
 	}
+	resp.CanMapOrgTeam = hasPerm(c, perm.AgileTeamConfirm)
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": resp})
+}
+
+func (h *Handler) OrgTeamOptions(c *gin.Context) {
+	items, err := h.svc.ListOrgTeamOptions(c.Request.Context())
+	if err != nil {
+		writeErr(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": items})
 }
 
 func (h *Handler) Detail(c *gin.Context) {
@@ -114,6 +126,30 @@ func (h *Handler) SearchCandidates(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": resp})
+}
+
+// UpdateOrgTeamMapping 由 PMO 维护敏捷团队与组织团队的主挂靠。
+func (h *Handler) UpdateOrgTeamMapping(c *gin.Context) {
+	id, ok := parseUintParam(c, "id")
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "小组 ID 无效"})
+		return
+	}
+	var req OrgTeamMappingReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "请求格式错误"})
+		return
+	}
+	req.TeamgroupID = id
+	if errs := req.Validate(); len(errs) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"success": false, "errors": errs})
+		return
+	}
+	if err := h.svc.SetOrgTeamMapping(c.Request.Context(), middleware.CurrentUser(c), req, hasPerm(c, perm.AgileTeamConfirm)); err != nil {
+		writeErr(c, err)
+		return
+	}
+	writeOK(c, "组织挂靠已更新")
 }
 
 func parseUintParam(c *gin.Context, name string) (uint, bool) {
