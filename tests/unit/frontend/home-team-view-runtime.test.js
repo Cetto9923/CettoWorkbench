@@ -94,7 +94,10 @@ function tick() { return new Promise(resolve => setTimeout(resolve, 0)); }
     throw new Error('selected child scope was not sent to the authorized team-list API');
   }
   if (!selected.rows.innerHTML.includes('对公一组') || !selected.rows.innerHTML.includes('teamgroupId=11')) {
-    throw new Error('authorized child row or its scoped detail link was not rendered');
+    throw new Error('authorized child row or its scoped agile-team link was not rendered');
+  }
+  if (!selected.rows.innerHTML.includes('/issues/risk?kind=issue&amp;loop=open&amp;scope=team&amp;scopeId=11')) {
+    throw new Error('child row did not preserve its team scope in the issue-risk deep link');
   }
   if (selected.select.value !== '11' || new URL(selected.loc.href).searchParams.get('teamgroupId') !== '11') {
     throw new Error('the selected group was not restored into the control and URL');
@@ -111,6 +114,17 @@ function tick() { return new Promise(resolve => setTimeout(resolve, 0)); }
   }
   if (new URL(invalid.loc.href).searchParams.has('teamgroupId')) {
     throw new Error('unauthorized group ID remained in the shareable URL');
+  }
+
+  const department = createHarness('?view=team&scope=dept&teamgroupId=1', [response(
+    [{ id: 1, name: '组织变革团队', type: 'team' }, { id: 11, name: '项目赋能组', type: 'subteam' }],
+    [{ id: 1, name: '组织变革团队', type: 'parent', formalCount: 8 }],
+    'dept'
+  )]);
+  await tick();
+  if (!department.rows.innerHTML.includes('/agileteam?view=lead&amp;scope=dept&amp;teamgroupId=1') ||
+      !department.rows.innerHTML.includes('/issues/risk?kind=issue&amp;loop=open&amp;scope=dept&amp;scopeId=1')) {
+    throw new Error('department row did not preserve the department authorization scope on both links');
   }
 
   console.log('home team scope runtime regression passed');

@@ -71,7 +71,7 @@
   function renderRows(items) {
     const rows = Array.isArray(items) ? items : [];
     if (!rows.length) {
-      rowsHost.innerHTML = '<tr><td colspan="5" class="state-placeholder">当前授权范围内没有已挂靠的敏捷团队或小组</td></tr>';
+      rowsHost.innerHTML = '<tr><td colspan="6" class="state-placeholder">当前授权范围内没有已挂靠的敏捷团队或小组</td></tr>';
       return;
     }
     rowsHost.innerHTML = rows.map(function (item) {
@@ -80,13 +80,17 @@
       const itemID = positiveID(item.id);
       const nameCell = item.contextOnly || !itemID
         ? "<strong>" + esc(item.name) + "</strong>"
-        : '<a href="/agileteam?view=lead&amp;scope=team&amp;teamgroupId=' + encodeURIComponent(String(itemID)) + '"><strong>' + esc(item.name) + "</strong></a>";
+        : '<a href="/agileteam?view=lead&amp;scope=' + encodeURIComponent(state.scope) + '&amp;teamgroupId=' + encodeURIComponent(String(itemID)) + '"><strong>' + esc(item.name) + "</strong></a>";
+      const issueRiskCell = item.contextOnly || !itemID
+        ? "—"
+        : '<a href="/issues/risk?kind=issue&amp;loop=open&amp;scope=' + encodeURIComponent(state.scope) + '&amp;scopeId=' + encodeURIComponent(String(itemID)) + '">查看问题/风险</a>';
       return "<tr>" +
         "<td>" + nameCell + "</td>" +
         "<td>" + type + "</td>" +
         "<td>" + Number(item.formalCount || 0) + "</td>" +
         "<td>" + pending + "</td>" +
         "<td>" + esc(item.statusLabel || "启用") + "</td>" +
+        "<td>" + issueRiskCell + "</td>" +
         "</tr>";
     }).join("");
   }
