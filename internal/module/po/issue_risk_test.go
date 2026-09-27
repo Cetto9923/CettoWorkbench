@@ -9,7 +9,12 @@
 package po
 
 import (
+	"context"
+	"database/sql/driver"
 	"testing"
+
+	"github.com/DATA-DOG/go-sqlmock"
+	"workbench/internal/model"
 )
 
 func TestIssueRiskListReqValidateDefaults(t *testing.T) {
@@ -31,6 +36,44 @@ func TestIssueRiskListReqValidateDefaults(t *testing.T) {
 	}
 	if r.Overdue {
 		t.Error("expected overdue default false")
+	}
+}
+
+func TestHomeIssueRiskCountsUseMyOpenIssuesAndRisks(t *testing.T) {
+	db, mock := setupMockDB(t)
+	repo := NewRepo(db, db)
+	svc := NewService(repo, nil, nil, nil)
+	openStatuses := []driver.Value{"active", "tracked", "wait", "unconfirmed", "doing", "confirmed"}
+	issueArgs := []driver.Value{"alice", "alice"}
+	issueArgs = append(issueArgs, openStatuses...)
+	mock.ExpectQuery(`SELECT count\(\*\) FROM zt_issue AS i`).
+		WithArgs(issueArgs...).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(3))
+	issueSelectArgs := append([]driver.Value{"alice", "alice"}, openStatuses...)
+	issueSelectArgs = append(issueSelectArgs, 1)
+	mock.ExpectQuery(`(?s)SELECT i\.id AS id.*FROM zt_issue AS i`).
+		WithArgs(issueSelectArgs...).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}))
+	riskArgs := []driver.Value{"alice", "alice"}
+	riskArgs = append(riskArgs, openStatuses...)
+	mock.ExpectQuery(`SELECT count\(\*\) FROM zt_risk AS k`).
+		WithArgs(riskArgs...).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(2))
+	riskSelectArgs := append([]driver.Value{"alice", "alice"}, openStatuses...)
+	riskSelectArgs = append(riskSelectArgs, 1)
+	mock.ExpectQuery(`(?s)SELECT k\.id AS id.*FROM zt_risk AS k`).
+		WithArgs(riskSelectArgs...).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}))
+
+	counts, err := svc.HomeIssueRiskCounts(context.Background(), &model.User{Account: "alice"})
+	if err != nil {
+		t.Fatalf("HomeIssueRiskCounts() error = %v", err)
+	}
+	if counts.Issues != 3 || counts.Risks != 2 {
+		t.Fatalf("unexpected counts: %+v", counts)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("SQL expectations: %v", err)
 	}
 }
 

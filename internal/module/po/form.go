@@ -41,7 +41,14 @@ type HomeResp struct {
 	StagesError         string
 	VersionWindows      []schedule.HomeVersionWindowCard
 	VersionWindowsError string
+	IssueRiskCounts     *HomeIssueRiskCounts
 	KPI                 KPICounts
+}
+
+// HomeIssueRiskCounts 当前用户创建或指派、尚未关闭的问题与风险数。
+type HomeIssueRiskCounts struct {
+	Issues int64
+	Risks  int64
 }
 
 // KPICounts 首页 5 个焦点摘要的真实计数。

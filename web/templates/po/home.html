@@ -26,9 +26,9 @@
   <!-- 1. 紧凑页头与右上角焦点 Chips — 统一外框：workspace-header (同 todos/done/notice/follow) -->
   <header class="workspace-header">
     <div class="workspace-header-left">
-      <div class="po-role-badge po-perspective-tabs" role="group" aria-label="工作视角" title="当前工作视角：PO 业务负责人">
+      <div class="po-role-badge po-perspective-tabs" role="group" aria-label="工作视角" title="当前工作视角：需求管理">
         <i class="fas fa-user-tag" aria-hidden="true"></i>
-        <span>PO 业务负责人</span>
+        <span>需求管理</span>
       </div>
     </div>
     <div class="header-quick-filters" id="homeQuickChips" role="group" aria-label="快捷焦点">
@@ -209,17 +209,35 @@
           <a class="side-link" href="/todos">进入待办 <i class="fas fa-angle-right" aria-hidden="true"></i></a>
         </div>
         <div class="home-focus-grid">
-          <a href="/issues/risk" class="focus-card danger" title="查看我的问题与风险">
+          <a href="/home?focus=blocked" class="focus-card danger" title="查看当前阻塞需求">
             <div class="focus-card-hdr">
-              <span>我的问题/风险</span>
+              <span>阻塞需求</span>
               <i class="fas fa-triangle-exclamation text-red"></i>
             </div>
             <div class="focus-card-num">
               <strong>{{ if .PageError }}—{{ else }}{{ .KPI.Blocked }}{{ end }}</strong>
-              <small>项待推进</small>
+              <small>条待处理</small>
             </div>
-            <div class="focus-card-hint">看板问题专区</div>
+            <div class="focus-card-hint">点击查看阻塞需求</div>
           </a>
+
+          {{ if .CanViewIssueRisk }}
+          <div class="focus-card" title="我创建或指派给我的未关闭问题与风险">
+            <div class="focus-card-hdr">
+              <span>我的未关闭问题 / 风险</span>
+              <i class="fas fa-shield-halved text-muted"></i>
+            </div>
+            <div class="focus-card-num">
+              <a href="/issues/risk?kind=issue&relation=allRelated&loop=open" aria-label="查看我创建或指派的未关闭问题">
+                问题 <strong>{{ if .IssueRiskCounts }}{{ .IssueRiskCounts.Issues }}{{ else }}—{{ end }}</strong>
+              </a>
+              <a href="/issues/risk?kind=risk&relation=allRelated&loop=open" aria-label="查看我创建或指派的未关闭风险">
+                风险 <strong>{{ if .IssueRiskCounts }}{{ .IssueRiskCounts.Risks }}{{ else }}—{{ end }}</strong>
+              </a>
+            </div>
+            <div class="focus-card-hint">按问题、风险分类查看</div>
+          </div>
+          {{ end }}
 
           <button type="button" class="focus-card vs-trigger" data-stage-target="clarify" title="筛选待澄清梳理阶段需求">
             <div class="focus-card-hdr">

@@ -2,6 +2,7 @@ package po
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -83,6 +84,31 @@ func (s *Service) IssueRiskList(ctx context.Context, actor *model.User, req Issu
 	}
 	return resp, nil
 }
+
+// HomeIssueRiskCounts returns the current user's created or assigned, open issue/risk counts.
+func (s *Service) HomeIssueRiskCounts(ctx context.Context, actor *model.User) (*HomeIssueRiskCounts, error) {
+	if s == nil || s.repo == nil {
+		return nil, fmt.Errorf("po repo is not configured")
+	}
+	if actor == nil || strings.TrimSpace(actor.Account) == "" {
+		return &HomeIssueRiskCounts{}, nil
+	}
+	counts := &HomeIssueRiskCounts{}
+	for _, kind := range []string{"issue", "risk"} {
+		req := IssueRiskListReq{Kind: kind, Relation: "allRelated", Loop: "open", Page: 1, PageSize: 1}
+		count, err := s.repo.CountIssueRisk(ctx, actor.Account, req)
+		if err != nil {
+			return nil, err
+		}
+		if kind == "issue" {
+			counts.Issues = count
+		} else {
+			counts.Risks = count
+		}
+	}
+	return counts, nil
+}
+
 func mapIssueRiskRow(row issueRiskRow, kind string) IssueRiskItem {
 	url := zentao.URL("issue", "view", "issueID="+strconv.FormatInt(row.ID, 10))
 	if kind == "risk" {

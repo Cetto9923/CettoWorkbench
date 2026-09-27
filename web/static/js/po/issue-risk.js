@@ -101,6 +101,42 @@
     return "/issues/risk/items?" + params.toString();
   }
 
+  function initFromUrl() {
+    var params = new URLSearchParams(window.location.search || "");
+    var kind = params.get("kind");
+    if (kind === "issue" || kind === "risk") { state.kind = kind; }
+    var relation = params.get("relation");
+    if (["allRelated", "myAction", "mySubmit"].indexOf(relation) >= 0) { state.relation = relation; }
+    var loop = params.get("loop");
+    if (["all", "open", "closed"].indexOf(loop) >= 0) { state.loop = loop; }
+    state.overdue = params.get("overdue") === "true" && state.loop === "open";
+    var status = params.get("status") || "";
+    if ((STATUS_OPTIONS[state.kind] || []).some(function (option) { return option[0] === status; })) { state.status = status; }
+    state.keyword = (params.get("keyword") || "").trim();
+    state.project = parseInt(params.get("project"), 10) || 0;
+    state.page = Math.max(1, parseInt(params.get("page"), 10) || 1);
+    var pageSize = parseInt(params.get("pageSize"), 10);
+    if (PL.PAGE_SIZE_OPTIONS && PL.PAGE_SIZE_OPTIONS.indexOf(pageSize) >= 0) { state.pageSize = pageSize; }
+    document.querySelectorAll(".po-issue-risk .category-tab").forEach(function (tab) {
+      tab.classList.toggle("active", tab.getAttribute("data-kind") === state.kind);
+    });
+  }
+
+  function syncUrl() {
+    if (!window.history || !window.history.replaceState) { return; }
+    var params = new URLSearchParams();
+    params.set("kind", state.kind);
+    params.set("relation", state.relation);
+    params.set("loop", state.loop);
+    if (state.status) { params.set("status", state.status); }
+    if (state.keyword) { params.set("keyword", state.keyword); }
+    if (state.overdue && state.loop === "open") { params.set("overdue", "true"); }
+    if (state.project) { params.set("project", String(state.project)); }
+    if (state.page > 1) { params.set("page", String(state.page)); }
+    if (state.pageSize !== 20) { params.set("pageSize", String(state.pageSize)); }
+    window.history.replaceState(null, "", window.location.pathname + "?" + params.toString());
+  }
+
   function severityClass(severity) {
     if (severity === "致命") { return "danger"; }
     if (severity === "严重") { return "warn"; }
@@ -162,6 +198,7 @@
 
   function refresh(payload) {
     if (!controller) { return; }
+    syncUrl();
     var url = buildUrl();
     controller.fetch(url, state, function (p) {
       lastItems = (p && p.items) || [];
@@ -384,11 +421,14 @@
       });
     }
     initFromStorage();
+    initFromUrl();
     initQuickChips();
     initTabs();
     initToolbar();
     initTableClicks();
     refreshStatus();
+    if ($("irRelation")) { $("irRelation").value = state.relation; }
+    if ($("irKeyword")) { $("irKeyword").value = state.keyword; }
     refresh();
   });
 })();

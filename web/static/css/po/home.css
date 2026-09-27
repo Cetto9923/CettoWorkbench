@@ -221,6 +221,8 @@
 .po-home .focus-card-hdr { display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 500; color: var(--color-text-body, #334155); }
 .po-home .focus-card.danger .focus-card-hdr { color: var(--color-danger, #991b1b); }
 .po-home .focus-card-num { display: flex; align-items: baseline; gap: 3px; margin: 4px 0 2px; }
+.po-home .focus-card-num a { display: inline-flex; align-items: baseline; gap: 4px; color: inherit; text-decoration: none; }
+.po-home .focus-card-num a:hover { text-decoration: underline; }
 .po-home .focus-card-num strong {
   font-size: 16px; font-weight: 700; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--color-text-primary, #0f172a);
 }

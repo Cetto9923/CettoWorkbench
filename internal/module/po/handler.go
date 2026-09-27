@@ -124,6 +124,17 @@ func (h *Handler) Home(c *gin.Context) {
 	} else {
 		versionWindowsError = resp.VersionWindowsError
 	}
+	canViewIssueRisk := currentUserHasPerm(c, perm.PoBoardDemandList)
+	if canViewIssueRisk && pageError == "" {
+		counts, countErr := h.svc.HomeIssueRiskCounts(c.Request.Context(), actor)
+		if countErr != nil {
+			if h.logger != nil {
+				h.logger.Warn("po home issue/risk counts", zap.Error(countErr))
+			}
+		} else {
+			resp.IssueRiskCounts = counts
+		}
+	}
 
 	if h.logger != nil {
 		h.logger.Info("po home version windows render",
@@ -141,9 +152,27 @@ func (h *Handler) Home(c *gin.Context) {
 		"StagesValid":         resp.StagesValid,
 		"VersionWindows":      resp.VersionWindows,
 		"VersionWindowsError": versionWindowsError,
+		"CanViewIssueRisk":    canViewIssueRisk,
+		"IssueRiskCounts":     resp.IssueRiskCounts,
 		"KPI":                 resp.KPI,
 		"PageError":           pageError,
 	})
+}
+
+func currentUserHasPerm(c *gin.Context, p perm.Permission) bool {
+	actor := middleware.CurrentUser(c)
+	if actor == nil {
+		return false
+	}
+	if actor.IsSuperAdmin {
+		return true
+	}
+	value, ok := c.Get("userPerms")
+	if !ok {
+		return false
+	}
+	perms, ok := value.(map[string]bool)
+	return ok && perms[p.String()]
 }
 
 // Demands 按价值流状态返回当前用户的需求/故事详情（JSON）。
