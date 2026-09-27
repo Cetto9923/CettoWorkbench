@@ -19,6 +19,7 @@ import (
 
 	"workbench/internal/constants"
 	"workbench/internal/middleware"
+	"workbench/internal/model"
 	"workbench/internal/module/po/primaryaction"
 	"workbench/internal/pkg/perm"
 	"workbench/internal/pkg/render"
@@ -26,9 +27,10 @@ import (
 
 // Handler 处理 PO 工作台页面请求。
 type Handler struct {
-	svc       *Service
-	detailSvc *DetailService
-	logger    *zap.Logger
+	svc            *Service
+	detailSvc      *DetailService
+	logger         *zap.Logger
+	teamViewAccess func(context.Context, *model.User) (bool, error)
 }
 
 // NewHandler 创建 PO 模块 Handler。
@@ -40,12 +42,17 @@ func NewHandler(svc *Service, logger *zap.Logger) *Handler {
 	return &Handler{svc: svc, detailSvc: detailSvc, logger: logger}
 }
 
+// SetTeamViewAccess injects the independent, read-only authorization check for team managers/coaches.
+func (h *Handler) SetTeamViewAccess(check func(context.Context, *model.User) (bool, error)) {
+	h.teamViewAccess = check
+}
+
 // RegisterRoutes 注册 PO 工作台路由（挂载在已配置登录与操作日志的中间件组上）。
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g := rg.Group("")
 	g.Use(middleware.ActiveNav("/home"))
 
-	g.GET("/home", middleware.RequirePerm(perm.PoHomeList), h.Home)
+	g.GET("/home", h.homePageAccess(), h.Home)
 	g.GET("/demands", middleware.RequirePerm(perm.PoHomeList), h.Demands)
 	g.POST("/demands/:id/review", middleware.RequirePerm(perm.PoHomeList), h.ReviewDemand)
 	g.POST("/demands/:id/withdraw-review", middleware.RequirePerm(perm.PoHomeList), h.WithdrawDemandReview)
@@ -98,8 +105,70 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	NewBoardHandler(h.svc, h.logger).RegisterRoutes(g)
 }
 
+func (h *Handler) homePageAccess() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		actor := middleware.CurrentUser(c)
+		if actor == nil {
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+		canDemandView := currentUserHasPerm(c, perm.PoHomeList)
+		requestedView := c.Query("view")
+		if requestedView == "demand" && !canDemandView {
+			h.denyHomeAccess(c)
+			return
+		}
+		needsTeamCheck := requestedView == "team" || !canDemandView
+		if needsTeamCheck {
+			if h.teamViewAccess != nil {
+				allowed, err := h.teamViewAccess(c.Request.Context(), actor)
+				if err != nil {
+					c.AbortWithStatus(http.StatusServiceUnavailable)
+					return
+				}
+				if allowed {
+					c.Set("teamHomeOnly", true)
+					c.Next()
+					return
+				}
+			}
+			if requestedView == "team" || !canDemandView {
+				h.denyHomeAccess(c)
+				return
+			}
+		}
+		c.Next()
+	}
+}
+
+func (h *Handler) denyHomeAccess(c *gin.Context) {
+	if c.GetHeader("X-Requested-With") == "XMLHttpRequest" {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"success": false, "error": "无权限访问"})
+		return
+	}
+	c.Header("Content-Type", "text/html; charset=utf-8")
+	c.Status(http.StatusForbidden)
+	c.Abort()
+	_, _ = c.Writer.WriteString("<!DOCTYPE html><html lang=\"zh-CN\"><head><meta charset=\"utf-8\"><title>无权限</title></head><body><h1>无权限访问</h1></body></html>")
+}
+
 // Home 渲染 PO 工作台首页。
 func (h *Handler) Home(c *gin.Context) {
+	if teamOnly, _ := c.Get("teamHomeOnly"); teamOnly == true {
+		render.Page(c, http.StatusOK, "po/home_team", gin.H{
+			"Title":             "团队管理",
+			"PageTitle":         "团队管理",
+			"PageDescription":   "按授权范围查看敏捷团队与小组",
+			"CanViewDemandHome": currentUserHasPerm(c, perm.PoHomeList),
+		})
+		return
+	}
+	canViewTeamHome := false
+	if h.teamViewAccess != nil {
+		if allowed, err := h.teamViewAccess(c.Request.Context(), middleware.CurrentUser(c)); err == nil {
+			canViewTeamHome = allowed
+		}
+	}
 	actor := middleware.CurrentUser(c)
 	account := ""
 	if actor != nil {
@@ -153,6 +222,7 @@ func (h *Handler) Home(c *gin.Context) {
 		"VersionWindows":      resp.VersionWindows,
 		"VersionWindowsError": versionWindowsError,
 		"CanViewIssueRisk":    canViewIssueRisk,
+		"CanViewTeamHome":     canViewTeamHome,
 		"IssueRiskCounts":     resp.IssueRiskCounts,
 		"KPI":                 resp.KPI,
 		"PageError":           pageError,

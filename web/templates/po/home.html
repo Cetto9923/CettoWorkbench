@@ -28,7 +28,10 @@
     <div class="workspace-header-left">
       <div class="po-role-badge po-perspective-tabs" role="group" aria-label="工作视角" title="当前工作视角：需求管理">
         <i class="fas fa-user-tag" aria-hidden="true"></i>
-        <span>需求管理</span>
+        {{ if .CanViewTeamHome }}
+        <a class="po-perspective-tab active" data-perspective="demand" href="/home?view=demand" aria-current="page">需求管理</a>
+        <a class="po-perspective-tab" data-perspective="team" href="/home?view=team">团队管理</a>
+        {{ else }}<span>需求管理</span>{{ end }}
       </div>
     </div>
     <div class="header-quick-filters" id="homeQuickChips" role="group" aria-label="快捷焦点">
