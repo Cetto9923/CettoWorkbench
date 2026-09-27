@@ -165,6 +165,7 @@ type ListItem struct {
 	OrgDeptID        uint   `json:"orgDeptId"`
 	OrgDeptName      string `json:"orgDeptName"`
 	OrgDeptInherited bool   `json:"orgDeptInherited"`
+	ContextOnly      bool   `json:"contextOnly"`
 	ParentID         uint   `json:"parentId"`
 	ParentName       string `json:"parentName"`
 	Type             string `json:"type"`
@@ -184,18 +185,20 @@ type ListItem struct {
 
 // ListResp 列表响应。
 type ListResp struct {
-	Items         []ListItem    `json:"items"`
-	Total         int64         `json:"total"`
-	AllCount      int64         `json:"allCount"`
-	EnableCount   int64         `json:"enableCount"`
-	DisableCount  int64         `json:"disableCount"`
-	PendingCount  int64         `json:"pendingCount"`
-	Page          int           `json:"page"`
-	PageSize      int           `json:"pageSize"`
-	PageCount     int           `json:"pageCount"`
-	ScopeOptions  []ScopeOption `json:"scopeOptions,omitempty"`
-	CanEdit       bool          `json:"canEdit"`
-	CanMapOrgTeam bool          `json:"canMapOrgTeam"`
+	Items           []ListItem    `json:"items"`
+	Total           int64         `json:"total"`
+	AllCount        int64         `json:"allCount"`
+	EnableCount     int64         `json:"enableCount"`
+	DisableCount    int64         `json:"disableCount"`
+	PendingCount    int64         `json:"pendingCount"`
+	Page            int           `json:"page"`
+	PageSize        int           `json:"pageSize"`
+	PageCount       int           `json:"pageCount"`
+	ScopeOptions    []ScopeOption `json:"scopeOptions,omitempty"`
+	AvailableScopes []string      `json:"availableScopes,omitempty"`
+	ActiveScope     string        `json:"activeScope,omitempty"`
+	CanEdit         bool          `json:"canEdit"`
+	CanMapOrgTeam   bool          `json:"canMapOrgTeam"`
 }
 
 // DetailResp 详情响应。

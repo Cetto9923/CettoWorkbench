@@ -54,7 +54,7 @@
     total: 0,
     pageCount: 1,
     view: currentView(),
-    scope: "team",
+    scope: "",
     scopeId: 0,
     collapsed: {},
   };
@@ -65,6 +65,9 @@
   }
 
   function currentView() {
+    const page = document.getElementById("page-agileteam");
+    const pageMode = page ? String(page.getAttribute("data-view-mode") || "").toLowerCase() : "";
+    if (pageMode === "lead" || pageMode === "pmo") return pageMode;
     const el = document.querySelector('meta[name="wb-role"]');
     const role = el ? String(el.getAttribute("content") || "").toLowerCase() : "";
     return role === "lead" ? "lead" : "pmo";
@@ -178,7 +181,7 @@
     q.set("pageSize", String(state.pageSize || 20));
     q.set("view", state.view || "pmo");
     if (isLeadView()) {
-      q.set("scope", state.scope || "team");
+      if (state.scope) q.set("scope", state.scope);
       if (state.scopeId) q.set("scopeId", String(state.scopeId));
     }
     const f = state.filters || {};
@@ -188,6 +191,7 @@
     try {
       const json = await apiFetch(API + "?" + q.toString());
       const data = (json && json.data) || {};
+      if (isLeadView() && data.activeScope) state.scope = data.activeScope;
       state.canEdit = !!data.canEdit && !isLeadView();
       state.canMapOrgTeam = !!data.canMapOrgTeam;
       if (state.canMapOrgTeam && state.orgTeamOptions === null) {
@@ -198,7 +202,7 @@
       state.page = data.page || state.page;
       state.pageSize = data.pageSize || state.pageSize;
       state.pageCount = data.pageCount || 1;
-      renderScope(data.scopeOptions || []);
+      renderScope(data.scopeOptions || [], data.availableScopes || []);
       renderSummary(summary, data);
       renderRows(host, data.items || []);
       renderPager();
@@ -233,6 +237,14 @@
       return;
     }
     host.innerHTML = items.map(function (it) {
+      if (it.contextOnly) {
+        const fold = it.childCount
+          ? '<button type="button" class="at-fold" onclick="atToggleChildren(' + it.id + ',this)">' + (state.collapsed[it.id] ? "›" : "⌄") + "</button>"
+          : '<button type="button" class="at-fold blank">⌄</button>';
+        return '<tr class="at-parent-row" data-id="' + it.id + '"><td><div class="at-team-cell">' + fold +
+          '<div><div class="at-team-name">' + esc(it.name) + '</div><div class="at-sub-id">父级层级提示</div></div></div></td>' +
+          '<td colspan="9" class="at-sub-id">仅显示当前账号有权限查看的小组</td></tr>';
+      }
       const isChild = it.type === "child" || (it.parentId && it.parentId !== 0);
       const isParent = !isChild;
       const collapsed = isChild && state.collapsed[it.parentId];
@@ -393,7 +405,7 @@
     loadList();
   };
 
-  function renderScope(options) {
+  function renderScope(options, availableScopes) {
     const card = document.getElementById("atScopeCard");
     if (!card) return;
     if (!isLeadView()) {
@@ -401,15 +413,13 @@
       return;
     }
     card.style.display = "flex";
+    const allowed = Array.isArray(availableScopes) ? availableScopes : [];
+    card.querySelectorAll(".at-scope-tab").forEach(function (b) {
+      const scope = b.getAttribute("data-scope");
+      b.style.display = allowed.indexOf(scope) >= 0 ? "" : "none";
+    });
     const sel = document.getElementById("atScopeSelect");
     if (sel) {
-      if (!state.scopeReady && !state.scopeId && options.length) {
-        state.scopeReady = true;
-        state.scopeId = Number(options[0].id) || 0;
-        loadList();
-        return;
-      }
-      state.scopeReady = true;
       const cur = String(state.scopeId || "");
       sel.innerHTML = '<option value="">全部可见团队</option>' + (options || []).map(function (o) {
         return '<option value="' + esc(o.id) + '"' + (String(o.id) === cur ? " selected" : "") + ">" + esc(o.name) + "</option>";

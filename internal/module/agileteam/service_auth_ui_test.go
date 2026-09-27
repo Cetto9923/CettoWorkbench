@@ -53,3 +53,53 @@ func TestCanEditTeamgroupObjectRejectsUnrelatedUser(t *testing.T) {
 		t.Fatalf("sql expectations: %v", err)
 	}
 }
+
+func TestCanViewTeamgroupLeadScopeAllowsManagedChildOnly(t *testing.T) {
+	svc, mock := newTestService(t)
+	mock.ExpectQuery("(?s)FROM zt_teamgroup managed.*REGEXP \\?").
+		WithArgs("(^|[[:space:],;])coach1([[:space:],;]|$)").
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(11)))
+	allowed, err := svc.CanViewTeamgroupLeadScope(context.Background(), &model.User{Account: "coach1"}, 11)
+	if err != nil || !allowed {
+		t.Fatalf("managed child access = (%v, %v), want (true, nil)", allowed, err)
+	}
+
+	mock.ExpectQuery("(?s)FROM zt_teamgroup managed.*REGEXP \\?").
+		WithArgs("(^|[[:space:],;])coach1([[:space:],;]|$)").
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(11)))
+	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM zt_dept WHERE COALESCE\\(manager, ''\\) REGEXP \\?").
+		WithArgs("(^|[[:space:],;])coach1([[:space:],;]|$)").
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+	allowed, err = svc.CanViewTeamgroupLeadScope(context.Background(), &model.User{Account: "coach1"}, 12)
+	if err != nil || allowed {
+		t.Fatalf("sibling access = (%v, %v), want (false, nil)", allowed, err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("SQL expectations: %v", err)
+	}
+}
+
+func TestCanEnterLeadViewRequiresCoachOrDeptManager(t *testing.T) {
+	svc, mock := newTestService(t)
+	mock.ExpectQuery("(?s)FROM zt_teamgroup managed.*REGEXP \\?").
+		WithArgs("(^|[[:space:],;])coach1([[:space:],;]|$)").
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(11)))
+	allowed, err := svc.CanEnterLeadView(context.Background(), &model.User{Account: "coach1"})
+	if err != nil || !allowed {
+		t.Fatalf("coach access = (%v, %v), want (true, nil)", allowed, err)
+	}
+
+	mock.ExpectQuery("(?s)FROM zt_teamgroup managed.*REGEXP \\?").
+		WithArgs("(^|[[:space:],;])member1([[:space:],;]|$)").
+		WillReturnRows(sqlmock.NewRows([]string{"id"}))
+	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM zt_dept WHERE COALESCE\\(manager, ''\\) REGEXP \\?").
+		WithArgs("(^|[[:space:],;])member1([[:space:],;]|$)").
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+	allowed, err = svc.CanEnterLeadView(context.Background(), &model.User{Account: "member1"})
+	if err != nil || allowed {
+		t.Fatalf("member access = (%v, %v), want (false, nil)", allowed, err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("SQL expectations: %v", err)
+	}
+}

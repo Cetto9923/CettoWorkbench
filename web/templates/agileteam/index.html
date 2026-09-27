@@ -17,7 +17,7 @@
   <input type="hidden" id="currentUserAccount" value="{{ if .CurrentUser }}{{ .CurrentUser.Account }}{{ end }}">
 
   <!-- 1. 敏捷小组列表视图 -->
-  <section class="page active" id="page-agileteam" data-page="agileteam">
+  <section class="page active" id="page-agileteam" data-page="agileteam" data-view-mode="{{ .ViewMode }}">
     <div class="workspace-panel">
       <!-- 范围筛选卡片 (团队管理视角) -->
       <div class="at-scope-card" id="atScopeCard" style="display:none;">
@@ -27,7 +27,7 @@
           <button type="button" class="at-scope-tab" data-scope="dept" onclick="atSetScope('dept')">按部门</button>
         </div>
         <select id="atScopeSelect" class="at-field w160" onchange="atSetScopeId(this.value)"></select>
-        <span class="at-scope-tip">团队长/部室负责人视图</span>
+        <span class="at-scope-tip">敏捷教练/团队长/部室负责人视图</span>
       </div>
 
       <!-- 统计指标与快速过滤 -->

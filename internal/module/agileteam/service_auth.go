@@ -85,6 +85,60 @@ func requireTeamgroupObjectEdit(actor *model.User, row *TeamgroupRow, allowGloba
 	return errorx.New("forbidden", "仅该敏捷小组的 PO、敏捷教练或 PMO 可执行此操作")
 }
 
+// CanViewTeamgroupLeadScope 校验团队管理视图是否有权查看指定敏捷团队。
+// 敏捷教练按 manager 关系授权；部门负责人按本人负责部门及其挂靠团队授权。
+func (s *Service) CanViewTeamgroupLeadScope(ctx context.Context, actor *model.User, id uint) (bool, error) {
+	account, err := requireActorAccount(actor)
+	if err != nil {
+		return false, err
+	}
+	if actor.IsSuperAdmin {
+		return true, nil
+	}
+	managedIDs, err := s.repo.ListManagedTeamgroupIDs(ctx, account)
+	if err != nil {
+		return false, err
+	}
+	if containsUint(managedIDs, id) {
+		return true, nil
+	}
+	isDeptManager, err := s.repo.IsDeptManager(ctx, account)
+	if err != nil {
+		return false, err
+	}
+	if !isDeptManager {
+		return false, nil
+	}
+	deptIDs, err := s.repo.ListDeptTreeIDs(ctx, account)
+	if err != nil {
+		return false, err
+	}
+	teamgroupIDs, err := s.repo.ListMappedTeamgroupIDsByDepts(ctx, deptIDs)
+	if err != nil {
+		return false, err
+	}
+	return containsUint(teamgroupIDs, id), nil
+}
+
+// CanEnterLeadView 判断账号是否登记为敏捷教练或禅道部门负责人。
+func (s *Service) CanEnterLeadView(ctx context.Context, actor *model.User) (bool, error) {
+	account, err := requireActorAccount(actor)
+	if err != nil {
+		return false, err
+	}
+	if actor.IsSuperAdmin {
+		return true, nil
+	}
+	managedIDs, err := s.repo.ListManagedTeamgroupIDs(ctx, account)
+	if err != nil {
+		return false, err
+	}
+	if len(managedIDs) > 0 {
+		return true, nil
+	}
+	return s.repo.IsDeptManager(ctx, account)
+}
+
 // CanEditTeamgroupObject 为详情页返回对象级可编辑能力。
 // coarseAllowed 由 Handler 的 AgileTeamUpdate 粗权限决定；allowGlobal 仅来自
 // AgileTeamConfirm（PMO）能力。这样前端 CanEdit 与真正写接口使用同一授权口径。

@@ -9,6 +9,7 @@ package agileteam
 
 import (
 	"context"
+	"regexp"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -16,8 +17,8 @@ import (
 
 func TestListDeptTreeIDsUsesManagedDepartmentsAndDescendants(t *testing.T) {
 	repo, mock := newTestRepo(t)
-	mock.ExpectQuery("(?s)SELECT id, COALESCE\\(path, ''\\) AS path FROM zt_dept WHERE manager = \\?").
-		WithArgs("lead1").
+	mock.ExpectQuery("(?s)SELECT id, COALESCE\\(path, ''\\) AS path FROM zt_dept WHERE COALESCE\\(manager, ''\\) REGEXP \\?").
+		WithArgs("(^|[[:space:],;])lead1([[:space:],;]|$)").
 		WillReturnRows(sqlmock.NewRows([]string{"id", "path"}).
 			AddRow(uint(20), ",1,20,").
 			AddRow(uint(40), ",1,40,"))
@@ -49,8 +50,8 @@ func TestListDeptTreeIDsUsesManagedDepartmentsAndDescendants(t *testing.T) {
 
 func TestListDeptTreeIDsReturnsEmptyWhenAccountManagesNoDepartment(t *testing.T) {
 	repo, mock := newTestRepo(t)
-	mock.ExpectQuery("(?s)SELECT id, COALESCE\\(path, ''\\) AS path FROM zt_dept WHERE manager = \\?").
-		WithArgs("member1").
+	mock.ExpectQuery("(?s)SELECT id, COALESCE\\(path, ''\\) AS path FROM zt_dept WHERE COALESCE\\(manager, ''\\) REGEXP \\?").
+		WithArgs("(^|[[:space:],;])member1([[:space:],;]|$)").
 		WillReturnRows(sqlmock.NewRows([]string{"id", "path"}))
 
 	got, err := repo.ListDeptTreeIDs(context.Background(), "member1")
@@ -62,6 +63,67 @@ func TestListDeptTreeIDsReturnsEmptyWhenAccountManagesNoDepartment(t *testing.T)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("SQL expectations: %v", err)
+	}
+}
+
+func TestListMappedTeamgroupIDsByDeptsUsesOnlyActiveMappings(t *testing.T) {
+	repo, mock := newTestRepo(t)
+	mock.ExpectQuery("(?s)FROM zt_wb_agileteam_orgmap m.*mapped.type = 'parent'.*m.status = 'active'.*m.deptId IN \\(\\?,\\?\\)").
+		WithArgs(uint(20), uint(21)).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(3)).AddRow(uint(11)).AddRow(uint(12)))
+
+	got, err := repo.ListMappedTeamgroupIDsByDepts(context.Background(), []uint{20, 21})
+	if err != nil {
+		t.Fatalf("ListMappedTeamgroupIDsByDepts() error = %v", err)
+	}
+	want := []uint{3, 11, 12}
+	if len(got) != len(want) {
+		t.Fatalf("mapped teamgroup IDs = %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("mapped teamgroup IDs = %v, want %v", got, want)
+		}
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("SQL expectations: %v", err)
+	}
+}
+
+func TestListManagedTeamgroupIDsScopesParentCoachToFamilyAndChildCoachToSelf(t *testing.T) {
+	repo, mock := newTestRepo(t)
+	mock.ExpectQuery("(?s)FROM zt_teamgroup managed.*scoped.parent = managed.id.*REGEXP \\?").
+		WithArgs("(^|[[:space:],;])lead1([[:space:],;]|$)").
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(3)).AddRow(uint(11)).AddRow(uint(12)))
+
+	got, err := repo.ListManagedTeamgroupIDs(context.Background(), " lead1 ")
+	if err != nil {
+		t.Fatalf("ListManagedTeamgroupIDs() error = %v", err)
+	}
+	want := []uint{3, 11, 12}
+	if len(got) != len(want) {
+		t.Fatalf("managed teamgroup IDs = %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("managed teamgroup IDs = %v, want %v", got, want)
+		}
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("SQL expectations: %v", err)
+	}
+}
+
+func TestAccountTokenRegexpDoesNotMatchAccountSubstring(t *testing.T) {
+	rx, err := regexp.Compile(accountTokenRegexp("lead1"))
+	if err != nil {
+		t.Fatalf("account token regexp: %v", err)
+	}
+	if rx.MatchString("teamlead1") || rx.MatchString("lead10") {
+		t.Fatal("account token must not match a longer account")
+	}
+	if !rx.MatchString("lead1, coach2") || !rx.MatchString("coach2;lead1") {
+		t.Fatal("account token should match exact delimited accounts")
 	}
 }
 

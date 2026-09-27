@@ -39,7 +39,7 @@ func NewHandler(svc *Service, logger *zap.Logger) *Handler {
 
 // RegisterRoutes 注册 /workbench/api/agile-teams 与 /agileteam 路由。
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
-	rg.GET("/agileteam", middleware.RequirePerm(perm.AgileTeamList), h.AgileTeamView)
+	rg.GET("/agileteam", h.RequireListAccess, h.AgileTeamView)
 	rg.GET("/pmo", func(c *gin.Context) {
 		c.Redirect(http.StatusMovedPermanently, "/agileteam")
 	})
@@ -49,7 +49,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 
 	g := rg.Group("/workbench/api/agile-teams")
 
-	g.GET("", middleware.RequirePerm(perm.AgileTeamList), h.List)
+	g.GET("", h.RequireListAccess, h.List)
 	// 静态前缀路由必须在 /:id 之前，避免被参数路由吞掉。
 	g.GET("/candidates", middleware.RequirePerm(perm.AgileTeamList), h.SearchCandidates)
 	g.GET("/adjustments/:id", middleware.RequirePerm(perm.AgileTeamList), h.AdjustmentDetail)
@@ -57,24 +57,52 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.PUT("/adjustments/:id/reject", middleware.RequirePerm(perm.AgileTeamConfirm), h.RejectAdjustment)
 	g.GET("/organization-teams", middleware.RequirePerm(perm.AgileTeamList), h.OrgTeamOptions)
 
-	g.GET("/:id", middleware.RequirePerm(perm.AgileTeamList), h.Detail)
+	g.GET("/:id", h.RequireListAccess, h.Detail)
 	g.PUT("/:id/basic", middleware.RequirePerm(perm.AgileTeamUpdate), h.UpdateBasic)
 	g.PUT("/:id/org-team", middleware.RequirePerm(perm.AgileTeamConfirm), h.UpdateOrgTeamMapping)
 	g.POST("/:id/adjustments", middleware.RequirePerm(perm.AgileTeamUpdate), h.SubmitAdjustment)
 }
 
+// RequireListAccess 保留现有敏捷小组列表权限，同时允许按组织数据自动授权的负责人/教练进入只读视图。
+func (h *Handler) RequireListAccess(c *gin.Context) {
+	if hasPerm(c, perm.AgileTeamList) {
+		c.Next()
+		return
+	}
+	allowed, err := h.svc.CanEnterLeadView(c.Request.Context(), middleware.CurrentUser(c))
+	if err != nil {
+		writeErr(c, err)
+		c.Abort()
+		return
+	}
+	if !allowed {
+		writeErr(c, errorx.New("forbidden", "无权查看敏捷团队管理视图"))
+		c.Abort()
+		return
+	}
+	c.Next()
+}
+
 // AgileTeamView 渲染敏捷小组治理页面。
 func (h *Handler) AgileTeamView(c *gin.Context) {
+	viewMode := "lead"
+	if hasPerm(c, perm.AgileTeamList) {
+		viewMode = "pmo"
+	}
 	render.Page(c, http.StatusOK, "agileteam/index", gin.H{
 		"Title":           "敏捷小组",
 		"PageTitle":       "敏捷小组",
 		"PageDescription": "敏捷团队编制、人员分工与组织架构治理",
+		"ViewMode":        viewMode,
 	})
 }
 
 func (h *Handler) List(c *gin.Context) {
 	var req ListReq
 	_ = c.ShouldBindQuery(&req)
+	if !hasPerm(c, perm.AgileTeamList) {
+		req.View = "lead"
+	}
 	resp, err := h.svc.List(c.Request.Context(), middleware.CurrentUser(c), req)
 	if err != nil {
 		writeErr(c, err)
@@ -100,6 +128,17 @@ func (h *Handler) Detail(c *gin.Context) {
 		return
 	}
 	leadView := strings.ToLower(c.Query("view")) == "lead"
+	if leadView || !hasPerm(c, perm.AgileTeamList) {
+		allowed, err := h.svc.CanViewTeamgroupLeadScope(c.Request.Context(), middleware.CurrentUser(c), id)
+		if err != nil {
+			writeErr(c, err)
+			return
+		}
+		if !allowed {
+			writeErr(c, errorx.New("forbidden", "无权查看该敏捷小组"))
+			return
+		}
+	}
 	canConfirm := hasPerm(c, perm.AgileTeamConfirm) && !leadView
 	coarseCanEdit := hasPerm(c, perm.AgileTeamUpdate) && !leadView
 	canEdit, err := h.svc.CanEditTeamgroupObject(

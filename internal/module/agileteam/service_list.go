@@ -23,7 +23,17 @@ type teamFamily struct {
 
 // List 敏捷小组列表（按父级+子级成组分页）。
 func (s *Service) List(ctx context.Context, actor *model.User, req ListReq) (ListResp, error) {
+	requestedScope := strings.ToLower(strings.TrimSpace(req.Scope))
 	req.Normalize()
+	var availableScopes []string
+	if req.View == "lead" {
+		var err error
+		availableScopes, err = s.availableLeadScopes(ctx, actor)
+		if err != nil {
+			return ListResp{}, err
+		}
+		req.Scope = selectLeadScope(requestedScope, availableScopes)
+	}
 	rows, err := s.repo.ListTeamgroups(ctx)
 	if err != nil {
 		return ListResp{}, err
@@ -109,6 +119,16 @@ func (s *Service) List(ctx context.Context, actor *model.User, req ListReq) (Lis
 	for _, it := range allItems {
 		byID[it.ID] = it
 	}
+	for _, it := range allItems {
+		if it.ParentID == 0 {
+			continue
+		}
+		if _, exists := byID[it.ParentID]; !exists {
+			byID[it.ParentID] = ListItem{
+				ID: it.ParentID, Name: it.ParentName, Type: "parent", ContextOnly: true,
+			}
+		}
+	}
 	families := buildTeamFamilies(matched, byID)
 	total := int64(0)
 	for _, f := range families {
@@ -122,8 +142,53 @@ func (s *Service) List(ctx context.Context, actor *model.User, req ListReq) (Lis
 		Items: pageItems, Total: total,
 		AllCount: all, EnableCount: enable, DisableCount: disable, PendingCount: pending,
 		Page: req.Page, PageSize: req.PageSize, PageCount: pageCount,
-		ScopeOptions: scopeOpts, CanEdit: req.View != "lead",
+		ScopeOptions: scopeOpts, AvailableScopes: availableScopes, ActiveScope: req.Scope, CanEdit: req.View != "lead",
 	}, nil
+}
+
+func (s *Service) availableLeadScopes(ctx context.Context, actor *model.User) ([]string, error) {
+	if actor != nil && actor.IsSuperAdmin {
+		return []string{"team", "dept"}, nil
+	}
+	account := ""
+	if actor != nil {
+		account = strings.TrimSpace(actor.Account)
+	}
+	managedIDs, err := s.repo.ListManagedTeamgroupIDs(ctx, account)
+	if err != nil {
+		return nil, err
+	}
+	scopes := make([]string, 0, 2)
+	if len(managedIDs) > 0 {
+		scopes = append(scopes, "team")
+	}
+	isDeptManager, err := s.repo.IsDeptManager(ctx, account)
+	if err != nil {
+		return nil, err
+	}
+	if isDeptManager {
+		scopes = append(scopes, "dept")
+	}
+	return scopes, nil
+}
+
+func containsString(values []string, target string) bool {
+	for _, value := range values {
+		if value == target {
+			return true
+		}
+	}
+	return false
+}
+
+func selectLeadScope(requested string, available []string) string {
+	if (requested == "team" || requested == "dept") && containsString(available, requested) {
+		return requested
+	}
+	if containsString(available, "team") {
+		return "team"
+	}
+	return "dept"
 }
 
 func teamTypeOf(r TeamgroupRow) string {
@@ -292,76 +357,103 @@ func (s *Service) applyLeadScope(ctx context.Context, actor *model.User, req Lis
 	if actor != nil {
 		acc = strings.TrimSpace(actor.Account)
 	}
-	parentIDs, err := s.repo.ListUserParentTeamIDs(ctx, acc)
-	if err != nil {
-		return nil, nil, err
-	}
+	var err error
 	if req.Scope == "dept" {
-		isMgr, err := s.repo.IsDeptManager(ctx, acc)
-		if err != nil {
-			return nil, nil, err
-		}
-		if (actor != nil && actor.IsSuperAdmin) || isMgr {
-			if actor != nil && actor.IsSuperAdmin {
-				parentIDs = parentIDsOfRows(rows)
-			} else {
+		var mappedIDs []uint
+		if actor != nil && actor.IsSuperAdmin {
+			mappedIDs = make([]uint, 0, len(rows))
+			for _, row := range rows {
+				mappedIDs = append(mappedIDs, row.ID)
+			}
+		} else {
+			isMgr, err := s.repo.IsDeptManager(ctx, acc)
+			if err != nil {
+				return nil, nil, err
+			}
+			if isMgr {
 				deptIDs, err := s.repo.ListDeptTreeIDs(ctx, acc)
 				if err != nil {
 					return nil, nil, err
 				}
-				parentIDs, err = s.repo.ListParentTeamIDsByDepts(ctx, deptIDs)
+				mappedIDs, err = s.repo.ListMappedTeamgroupIDsByDepts(ctx, deptIDs)
 				if err != nil {
 					return nil, nil, err
 				}
 			}
 		}
+		parentIDs, filtered := restrictTeamgroupRows(rows, mappedIDs, req.ScopeID)
+		opts, err := s.repo.ListParentOptionsByIDs(ctx, parentIDs)
+		if err != nil {
+			return nil, nil, err
+		}
+		return opts, filtered, nil
 	}
-	if actor != nil && actor.IsSuperAdmin && len(parentIDs) == 0 {
-		parentIDs = parentIDsOfRows(rows)
-	}
-	if req.ScopeID != 0 {
-		if containsUint(parentIDs, req.ScopeID) {
-			parentIDs = []uint{req.ScopeID}
-		} else {
-			parentIDs = []uint{}
+	var managedIDs []uint
+	if actor != nil && actor.IsSuperAdmin {
+		managedIDs = make([]uint, 0, len(rows))
+		for _, row := range rows {
+			managedIDs = append(managedIDs, row.ID)
+		}
+	} else {
+		managedIDs, err = s.repo.ListManagedTeamgroupIDs(ctx, acc)
+		if err != nil {
+			return nil, nil, err
 		}
 	}
+	parentIDs, filtered := restrictTeamgroupRows(rows, managedIDs, req.ScopeID)
 	opts, err := s.repo.ListParentOptionsByIDs(ctx, parentIDs)
 	if err != nil {
 		return nil, nil, err
 	}
-	familyIDs, err := s.repo.ListFamilyIDs(ctx, parentIDs)
-	if err != nil {
-		return nil, nil, err
-	}
-	allow := map[uint]bool{}
-	for _, id := range familyIDs {
-		allow[id] = true
-	}
-	filtered := make([]TeamgroupRow, 0, len(rows))
-	for _, r := range rows {
-		if allow[r.ID] {
-			filtered = append(filtered, r)
-		}
-	}
 	return opts, filtered, nil
 }
 
-func parentIDsOfRows(rows []TeamgroupRow) []uint {
-	seen := map[uint]bool{}
-	var ids []uint
-	for _, r := range rows {
-		id := r.Parent
-		if id == 0 {
-			id = r.ID
+func restrictTeamgroupRows(rows []TeamgroupRow, groupIDs []uint, scopeID uint) ([]uint, []TeamgroupRow) {
+	parentIDs := parentIDsForRows(rows, groupIDs)
+	if scopeID != 0 {
+		if containsUint(parentIDs, scopeID) {
+			parentIDs = []uint{scopeID}
+		} else {
+			parentIDs = []uint{}
+			groupIDs = []uint{}
 		}
-		if seen[id] {
+	}
+	allowed := make(map[uint]bool, len(groupIDs))
+	for _, id := range groupIDs {
+		allowed[id] = true
+	}
+	filtered := make([]TeamgroupRow, 0, len(groupIDs))
+	for _, row := range rows {
+		if allowed[row.ID] {
+			if scopeID == 0 || row.ID == scopeID || row.Parent == scopeID || (row.Parent == 0 && row.ID == scopeID) {
+				filtered = append(filtered, row)
+			}
+		}
+	}
+	return parentIDs, filtered
+}
+
+func parentIDsForRows(rows []TeamgroupRow, groupIDs []uint) []uint {
+	allowed := make(map[uint]bool, len(groupIDs))
+	seen := map[uint]bool{}
+	var parents []uint
+	for _, id := range groupIDs {
+		allowed[id] = true
+	}
+	for _, row := range rows {
+		if !allowed[row.ID] {
 			continue
 		}
-		seen[id] = true
-		ids = append(ids, id)
+		parentID := row.Parent
+		if parentID == 0 {
+			parentID = row.ID
+		}
+		if !seen[parentID] {
+			seen[parentID] = true
+			parents = append(parents, parentID)
+		}
 	}
-	return ids
+	return parents
 }
 
 func containsUint(ids []uint, want uint) bool {

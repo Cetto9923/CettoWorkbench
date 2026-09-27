@@ -11,6 +11,7 @@ package agileteam
 import (
 	"context"
 	"html"
+	"regexp"
 	"strings"
 )
 
@@ -34,22 +35,21 @@ ORDER BY id ASC`, excludeID).Scan(&rows).Error
 	return rows, nil
 }
 
-// ListUserParentTeamIDs 当前账号所属小组对应的父级团队 ID。
-func (r *Repo) ListUserParentTeamIDs(ctx context.Context, account string) ([]uint, error) {
+// ListManagedTeamgroupIDs 返回登记该账号为敏捷教练的团队范围。
+// 父级教练覆盖父级及直接子级；仅登记在子级的教练只获得该子级。
+func (r *Repo) ListManagedTeamgroupIDs(ctx context.Context, account string) ([]uint, error) {
 	account = strings.TrimSpace(account)
 	if account == "" {
-		return nil, nil
+		return []uint{}, nil
 	}
 	var ids []uint
 	err := r.read().WithContext(ctx).Raw(`
-SELECT DISTINCT COALESCE(NULLIF(tg.parent, 0), tg.id) AS id
-FROM zt_teamgroup tg
-LEFT JOIN zt_team t ON t.root = tg.id AND t.type = 'teamgroup' AND t.account = ?
-WHERE tg.deleted = '0' AND (
-  t.account = ? OR tg.PO = ? OR tg.manager = ?
-  OR tg.manager LIKE ? OR tg.manager LIKE ? OR tg.manager LIKE ?
-)`, account, account, account, account,
-		account+",%", "%,"+account+",%", "%,"+account).Scan(&ids).Error
+SELECT DISTINCT scoped.id
+FROM zt_teamgroup managed
+INNER JOIN zt_teamgroup scoped ON scoped.deleted = '0'
+  AND (scoped.id = managed.id OR ((managed.type = 'parent' OR managed.parent = 0) AND scoped.parent = managed.id))
+WHERE managed.deleted = '0' AND COALESCE(managed.manager, '') REGEXP ?
+ORDER BY scoped.id ASC`, accountTokenRegexp(account)).Scan(&ids).Error
 	if err != nil {
 		return nil, err
 	}
@@ -59,22 +59,8 @@ WHERE tg.deleted = '0' AND (
 	return ids, nil
 }
 
-// ListFamilyIDs 返回指定父级及其全部子级 ID。
-func (r *Repo) ListFamilyIDs(ctx context.Context, parentIDs []uint) ([]uint, error) {
-	if len(parentIDs) == 0 {
-		return []uint{}, nil
-	}
-	var ids []uint
-	err := r.read().WithContext(ctx).Raw(`
-SELECT id FROM zt_teamgroup
-WHERE deleted = '0' AND (id IN ? OR parent IN ?)`, parentIDs, parentIDs).Scan(&ids).Error
-	if err != nil {
-		return nil, err
-	}
-	if ids == nil {
-		ids = []uint{}
-	}
-	return ids, nil
+func accountTokenRegexp(account string) string {
+	return `(^|[[:space:],;])` + regexp.QuoteMeta(strings.TrimSpace(account)) + `([[:space:],;]|$)`
 }
 
 // IsDeptManager 判断账号是否为某部室负责人（zt_dept.manager）。
@@ -85,7 +71,7 @@ func (r *Repo) IsDeptManager(ctx context.Context, account string) (bool, error) 
 	}
 	var n int64
 	err := r.read().WithContext(ctx).Raw(`
-SELECT COUNT(*) FROM zt_dept WHERE manager = ?`, account).Scan(&n).Error
+SELECT COUNT(*) FROM zt_dept WHERE COALESCE(manager, '') REGEXP ?`, accountTokenRegexp(account)).Scan(&n).Error
 	return n > 0, err
 }
 
@@ -101,7 +87,7 @@ func (r *Repo) ListDeptTreeIDs(ctx context.Context, account string) ([]uint, err
 	}
 	var managed []managedDept
 	if err := r.read().WithContext(ctx).Raw(`
-SELECT id, COALESCE(path, '') AS path FROM zt_dept WHERE manager = ? ORDER BY id ASC`, account).Scan(&managed).Error; err != nil {
+SELECT id, COALESCE(path, '') AS path FROM zt_dept WHERE COALESCE(manager, '') REGEXP ? ORDER BY id ASC`, accountTokenRegexp(account)).Scan(&managed).Error; err != nil {
 		return nil, err
 	}
 	if len(managed) == 0 {
@@ -129,18 +115,21 @@ SELECT id, COALESCE(path, '') AS path FROM zt_dept WHERE manager = ? ORDER BY id
 	return ids, nil
 }
 
-// ListParentTeamIDsByDepts 部室成员所在敏捷小组对应的父级团队。
-func (r *Repo) ListParentTeamIDsByDepts(ctx context.Context, deptIDs []uint) ([]uint, error) {
+// ListMappedTeamgroupIDsByDepts 返回指定禅道部门范围内有正式挂靠的敏捷团队。
+// 父级挂靠覆盖其直接子级；子级挂靠只授权该子级，不扩展到兄弟小组。
+func (r *Repo) ListMappedTeamgroupIDsByDepts(ctx context.Context, deptIDs []uint) ([]uint, error) {
 	if len(deptIDs) == 0 {
 		return []uint{}, nil
 	}
 	var ids []uint
 	err := r.read().WithContext(ctx).Raw(`
-SELECT DISTINCT COALESCE(NULLIF(tg.parent, 0), tg.id) AS id
-FROM zt_teamgroup tg
-INNER JOIN zt_team t ON t.root = tg.id AND t.type = 'teamgroup'
-INNER JOIN zt_user u ON u.account = t.account AND u.deleted = '0'
-WHERE tg.deleted = '0' AND u.dept IN ?`, deptIDs).Scan(&ids).Error
+SELECT DISTINCT scoped.id
+FROM zt_wb_agileteam_orgmap m
+INNER JOIN zt_teamgroup mapped ON mapped.id = m.teamgroupId AND mapped.deleted = '0'
+INNER JOIN zt_teamgroup scoped ON scoped.deleted = '0'
+  AND (scoped.id = mapped.id OR ((mapped.type = 'parent' OR mapped.parent = 0) AND scoped.parent = mapped.id))
+WHERE m.status = 'active' AND m.deptId IN ?
+ORDER BY scoped.id ASC`, deptIDs).Scan(&ids).Error
 	if err != nil {
 		return nil, err
 	}
