@@ -291,3 +291,31 @@ func TestCountAllStageBreakdown_DurationCalculation(t *testing.T) {
 		t.Fatalf("mock expectations unmet: %v", err)
 	}
 }
+
+func TestRoleDemandBase_VisibilityScope_ThreeCases(t *testing.T) {
+	db, _ := openSQLMock(t)
+	repo := NewRepo(db, nil)
+
+	q := repo.roleDemandBase(context.Background(), "alice")
+	stmt := q.Session(&gorm.Session{DryRun: true}).Find(&[]struct{ ID int }{}).Statement
+	sql := stmt.SQL.String()
+
+	// 1. 多 PM 命中：使用 FIND_IN_SET(?, PM) > 0 替换原有的 PM = ? 或带空格替换的复杂表达式
+	if !strings.Contains(sql, "FIND_IN_SET(?, PM) > 0") {
+		t.Fatalf("expected FIND_IN_SET(?, PM) > 0 in roleDemandBase SQL, got: %s", sql)
+	}
+
+	// 2. 评审人只进受理：业需评审人、主管审批人身份仅限 draft, wait, refuse 阶段
+	if !strings.Contains(sql, "zt_demandreview WHERE reviewer = ?") ||
+		!strings.Contains(sql, "zt_demandmanagerreview WHERE reviewer = ?") ||
+		!strings.Contains(sql, "status IN ('draft', 'wait', 'refuse')") {
+		t.Fatalf("expected reviewer/managerReviewer to only enter accept stage (draft, wait, refuse), got: %s", sql)
+	}
+
+	// 3. 验收人只进验收：accepter 仅限 waitacceptance 或 testing 已到期阶段
+	if !strings.Contains(sql, "accepter = ?") ||
+		!strings.Contains(sql, "status = 'waitacceptance'") ||
+		!strings.Contains(sql, "status = 'testing'") {
+		t.Fatalf("expected accepter to only enter waitacceptance/testing stage, got: %s", sql)
+	}
+}

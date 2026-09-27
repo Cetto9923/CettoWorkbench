@@ -88,19 +88,28 @@ type StoryRow struct {
 // roleDemandBase 返回当前账号在 Main 口径下可见且未关闭的业务办理单元。
 // 范围为澄清 PM、QD、RD、BRA、业需评审人、主管审批人或验收人；存在有效子需求时父需求只做汇总，不重复各算一次。
 func (r *Repo) roleDemandBase(ctx context.Context, account string) *gorm.DB {
+	today := time.Now().Format("2006-01-02")
 	return r.db.WithContext(ctx).Table("zt_demand").
 		Where("deleted = ?", "0").
 		Where("status NOT IN ?", []string{"closed"}).
 		Where("NOT EXISTS (SELECT 1 FROM zt_demand child WHERE child.deleted = ? AND child.parent = zt_demand.id)", "0").
 		Where(`(
-			id IN (SELECT demand FROM zt_demandclarify WHERE FIND_IN_SET(?, REPLACE(PM, ' ', '')) > 0)
+			id IN (SELECT demand FROM zt_demandclarify WHERE FIND_IN_SET(?, PM) > 0)
 			OR QD = ?
 			OR RD = ?
 			OR BRA = ?
-			OR id IN (SELECT demand FROM zt_demandreview WHERE reviewer = ?)
-			OR id IN (SELECT demand FROM zt_demandmanagerreview WHERE reviewer = ?)
-			OR accepter = ?
-		)`, account, account, account, account, account, account, account)
+			OR (
+				(
+					id IN (SELECT demand FROM zt_demandreview WHERE reviewer = ?)
+					OR id IN (SELECT demand FROM zt_demandmanagerreview WHERE reviewer = ?)
+				)
+				AND status IN ('draft', 'wait', 'refuse')
+			)
+			OR (
+				accepter = ?
+				AND (status = 'waitacceptance' OR (status = 'testing' AND `+dateSetExpr("testFinish")+` AND testFinish <= ?))
+			)
+		)`, account, account, account, account, account, account, account, today)
 }
 
 func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysqlStageFilter) *gorm.DB {
@@ -112,11 +121,11 @@ func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysql
 func applyDemandStage(q *gorm.DB, account string, filter mysqlStageFilter) *gorm.DB {
 	if filter.acceptanceStage {
 		today := time.Now().Format("2006-01-02")
-		// (status=testing AND 今天>=testFinish) OR (status=waitacceptance AND (RD|BRA)=账号)
+		// (status=testing AND 今天>=testFinish) OR (status=waitacceptance AND (RD|BRA|accepter)=账号)
 		q = q.Where(`(
 			(status = ? AND `+dateSetExpr("testFinish")+` AND testFinish <= ?)
-			OR (status = ? AND (RD = ? OR BRA = ?))
-		)`, "testing", today, "waitacceptance", account, account)
+			OR (status = ? AND (RD = ? OR BRA = ? OR accepter = ?))
+		)`, "testing", today, "waitacceptance", account, account, account)
 		return q
 	}
 	if filter.publishStage {
