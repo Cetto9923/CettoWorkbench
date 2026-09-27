@@ -102,13 +102,12 @@ SELECT d.id AS demand_id,
          SELECT 1 FROM zt_demandappraise da
          WHERE da.demand = d.id
            AND da.appraiseBy = ?
-           AND (da.appraiseTime IS NULL OR da.appraiseTime = '0000-00-00')
+           AND (` + dateUnsetExpr("da.appraiseTime") + `)
        ) AS has_pending,
        EXISTS(
          SELECT 1 FROM zt_demandappraise da
          WHERE da.demand = d.id
-           AND da.appraiseTime IS NOT NULL
-           AND da.appraiseTime <> '0000-00-00'
+           AND ` + dateSetExpr("da.appraiseTime") + `
        ) AS has_any
 FROM zt_demand d
 WHERE d.id IN ? AND d.deleted = '0'`, account, demandIDs).Scan(&rows).Error

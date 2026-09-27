@@ -34,7 +34,7 @@ func buildTodoApprovalSQL(account string, approvalType string) (string, []interf
 		END AS title,
 		'doing' AS status, '' AS severity,
 		'2' AS pri_str, 2 AS priority_rank,
-		CASE WHEN ao.objectType = 'review' AND rv.deadline IS NOT NULL AND rv.deadline <> '0000-00-00' THEN DATE_FORMAT(rv.deadline, '%Y-%m-%d') ELSE '9999-12-31' END AS deadline_str,
+		CASE WHEN ao.objectType = 'review' AND ` + dateSetExpr("rv.deadline") + ` THEN DATE_FORMAT(rv.deadline, '%Y-%m-%d') ELSE '9999-12-31' END AS deadline_str,
 		n.account AS owner_account, '我负责' AS relation, '待我处理' AS responsibility, 0 AS blocked, 4 AS type_order,
 		ao.objectType AS object_type, ao.objectID AS object_id, COALESCE(c.project, pc.project, bg.projectID, rv.project, 0) AS project_id
 	FROM zt_approvalnode AS n
@@ -62,7 +62,7 @@ func buildTodoStorySQL(account string) (string, []interface{}) {
 		'' AS severity,
 		CASE WHEN s.pri = 1 THEN '1' WHEN s.pri = 2 THEN '2' WHEN s.pri = 3 THEN '3' WHEN s.pri = 4 THEN '4' ELSE '0' END AS pri_str,
 		CASE WHEN s.pri = 1 THEN 1 WHEN s.pri = 2 THEN 2 WHEN s.pri = 3 THEN 3 ELSE 4 END AS priority_rank,
-		CASE WHEN s.deliverDate IS NULL OR s.deliverDate = '0000-00-00' THEN '9999-12-31' ELSE DATE_FORMAT(s.deliverDate, '%Y-%m-%d') END AS deadline_str,
+		CASE WHEN ` + dateUnsetExpr("s.deliverDate") + ` THEN '9999-12-31' ELSE DATE_FORMAT(s.deliverDate, '%Y-%m-%d') END AS deadline_str,
 		s.assignedTo AS owner_account, '我负责' AS relation, '待我处理' AS responsibility, 0 AS blocked, 5 AS type_order,
 		'' AS object_type, 0 AS object_id, 0 AS project_id
 	FROM zt_story AS s
@@ -89,7 +89,7 @@ func buildTodoIssueSQL(account string) (string, []interface{}) {
 		iss.severity AS severity,
 		CASE WHEN iss.pri = '1' THEN '1' WHEN iss.pri = '2' THEN '2' WHEN iss.pri = '3' THEN '3' WHEN iss.pri = '4' THEN '4' ELSE '0' END AS pri_str,
 		CASE WHEN iss.pri = '1' THEN 1 WHEN iss.pri = 2 THEN 2 WHEN iss.pri = 3 THEN 3 ELSE 4 END AS priority_rank,
-		CASE WHEN iss.deadline IS NULL OR iss.deadline = '0000-00-00' THEN '9999-12-31' ELSE DATE_FORMAT(iss.deadline, '%Y-%m-%d') END AS deadline_str,
+		CASE WHEN ` + dateUnsetExpr("iss.deadline") + ` THEN '9999-12-31' ELSE DATE_FORMAT(iss.deadline, '%Y-%m-%d') END AS deadline_str,
 		iss.assignedTo AS owner_account, '我负责' AS relation, '待我处理' AS responsibility, 0 AS blocked, 7 AS type_order,
 		'' AS object_type, 0 AS object_id, 0 AS project_id
 	FROM zt_issue AS iss
@@ -102,7 +102,7 @@ func buildTodoPersonalSQL(account string) (string, []interface{}) {
 		'' AS severity,
 		CASE WHEN td.pri = 1 THEN '1' WHEN td.pri = 2 THEN '2' WHEN td.pri = 3 THEN '3' WHEN td.pri = 4 THEN '4' ELSE '0' END AS pri_str,
 		CASE WHEN td.pri = 1 THEN 1 WHEN td.pri = 2 THEN 2 WHEN td.pri = 3 THEN 3 ELSE 4 END AS priority_rank,
-		CASE WHEN td.date IS NULL OR td.date = '0000-00-00' THEN '9999-12-31' ELSE DATE_FORMAT(td.date, '%Y-%m-%d') END AS deadline_str,
+		CASE WHEN ` + dateUnsetExpr("td.date") + ` THEN '9999-12-31' ELSE DATE_FORMAT(td.date, '%Y-%m-%d') END AS deadline_str,
 		CASE WHEN TRIM(td.assignedTo) <> '' THEN td.assignedTo ELSE td.account END AS owner_account,
 		'我负责' AS relation, '待我处理' AS responsibility, 0 AS blocked, 8 AS type_order,
 		'' AS object_type, 0 AS object_id, 0 AS project_id
@@ -116,7 +116,7 @@ func buildTodoTesttaskSQL(account string) (string, []interface{}) {
 		'' AS severity,
 		CASE WHEN tt.pri = 1 THEN '1' WHEN tt.pri = 2 THEN '2' WHEN tt.pri = 3 THEN '3' WHEN tt.pri = 4 THEN '4' ELSE '0' END AS pri_str,
 		CASE WHEN tt.pri = 1 THEN 1 WHEN tt.pri = 2 THEN 2 WHEN tt.pri = 3 THEN 3 ELSE 4 END AS priority_rank,
-		CASE WHEN tt.end IS NULL OR tt.end = '0000-00-00' THEN '9999-12-31' ELSE DATE_FORMAT(tt.end, '%Y-%m-%d') END AS deadline_str,
+		CASE WHEN ` + dateUnsetExpr("tt.end") + ` THEN '9999-12-31' ELSE DATE_FORMAT(tt.end, '%Y-%m-%d') END AS deadline_str,
 		tt.owner AS owner_account, '我负责' AS relation, '待我处理' AS responsibility,
 		CASE WHEN tt.status = 'blocked' THEN 1 ELSE 0 END AS blocked, 9 AS type_order,
 		'' AS object_type, 0 AS object_id, 0 AS project_id

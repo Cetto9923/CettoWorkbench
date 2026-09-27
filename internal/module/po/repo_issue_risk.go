@@ -47,7 +47,7 @@ func (r *Repo) FindIssueRiskList(ctx context.Context, account string, req IssueR
 	}
 	if req.Overdue {
 		today := time.Now().Format("2006-01-02")
-		q = q.Where(fmt.Sprintf("%s IS NOT NULL AND %s != '0000-00-00' AND %s < ?", plan, plan, plan), today)
+		q = q.Where(dateSetExpr(plan) + " AND " + plan + " < ?", today)
 	}
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
@@ -99,7 +99,7 @@ func (r *Repo) CountIssueRiskProjects(ctx context.Context, account string, req I
 	}
 	if req.Overdue {
 		today := time.Now().Format("2006-01-02")
-		q = q.Where(fmt.Sprintf("%s IS NOT NULL AND %s != '0000-00-00' AND %s < ?", plan, plan, plan), today)
+		q = q.Where(dateSetExpr(plan) + " AND " + plan + " < ?", today)
 	}
 	type projectRow struct {
 		ID   uint   `gorm:"column:id"`

@@ -177,7 +177,7 @@ func buildTodoUnionSQL(account string, req TodoListReq) (string, []interface{}) 
 			'' AS severity,
 			CASE WHEN d.pri = '1' THEN '1' WHEN d.pri = '2' THEN '2' WHEN d.pri = '3' THEN '3' WHEN d.pri = '4' THEN '4' ELSE '0' END AS pri_str,
 			CASE WHEN d.pri = '1' THEN 1 WHEN d.pri = '2' THEN 2 WHEN d.pri = '3' THEN 3 ELSE 4 END AS priority_rank,
-			CASE WHEN d.deadline IS NULL OR d.deadline = '0000-00-00' OR d.deadline = '0001-01-01' THEN '9999-12-31' ELSE DATE_FORMAT(d.deadline, '%Y-%m-%d') END AS deadline_str,
+			CASE WHEN (` + dateUnsetExpr("d.deadline") + `) OR d.deadline = '0001-01-01' THEN '9999-12-31' ELSE DATE_FORMAT(d.deadline, '%Y-%m-%d') END AS deadline_str,
 			CASE WHEN TRIM(d.assignedTo) != '' THEN d.assignedTo WHEN TRIM(d.QD) != '' THEN d.QD WHEN TRIM(d.RD) != '' THEN d.RD ELSE '' END AS owner_account,
 			CASE WHEN d.assignedTo = ? THEN '我负责' ELSE '我配合' END AS relation,
 			CASE WHEN d.assignedTo = ? THEN '待我处理' ELSE '待我跟进' END AS responsibility,
@@ -196,7 +196,7 @@ func buildTodoUnionSQL(account string, req TodoListReq) (string, []interface{}) 
 			'' AS severity,
 			CASE WHEN t.pri = 1 THEN '1' WHEN t.pri = 2 THEN '2' WHEN t.pri = 3 THEN '3' WHEN t.pri = 4 THEN '4' ELSE '0' END AS pri_str,
 			CASE WHEN t.pri = 1 THEN 1 WHEN t.pri = 2 THEN 2 WHEN t.pri = 3 THEN 3 ELSE 4 END AS priority_rank,
-			CASE WHEN t.deadline IS NULL OR t.deadline = '0000-00-00' OR t.deadline = '0001-01-01' THEN '9999-12-31' ELSE DATE_FORMAT(t.deadline, '%Y-%m-%d') END AS deadline_str,
+			CASE WHEN (` + dateUnsetExpr("t.deadline") + `) OR t.deadline = '0001-01-01' THEN '9999-12-31' ELSE DATE_FORMAT(t.deadline, '%Y-%m-%d') END AS deadline_str,
 			t.assignedTo AS owner_account, '我负责' AS relation, '待我处理' AS responsibility, 0 AS blocked, 2 AS type_order,
 			'' AS object_type, 0 AS object_id, 0 AS project_id
 		FROM zt_task AS t WHERE t.deleted = '0' AND t.assignedTo = ? AND t.status NOT IN ('done', 'closed', 'cancel')`
@@ -318,7 +318,7 @@ func getDemandFilterClauses(req TodoListReq) string {
 		case "clarify":
 			sql += " AND d.status = 'active' AND NOT EXISTS (SELECT 1 FROM zt_demandclarify dc WHERE dc.demand = d.id)"
 		case "schedule":
-			sql += " AND d.status = 'clarified' AND (d.developFinish IS NULL OR d.developFinish = '0000-00-00' OR d.testFinish IS NULL OR d.testFinish = '0000-00-00' OR d.verifyFinish IS NULL OR d.verifyFinish = '0000-00-00' OR d.estimateLaunch IS NULL OR d.estimateLaunch = '0000-00-00' OR d.QD = '' OR d.mainDevelopers = '')"
+			sql += " AND d.status = 'clarified' AND (" + strings.Join([]string{dateUnsetExpr("d.developFinish"), dateUnsetExpr("d.testFinish"), dateUnsetExpr("d.verifyFinish"), dateUnsetExpr("d.estimateLaunch")}, " OR ") + " OR d.QD = '' OR d.mainDevelopers = '')"
 		case "developing":
 			sql += " AND d.status = 'developing'"
 		case "testing":
@@ -338,7 +338,7 @@ func getDemandFilterClauses(req TodoListReq) string {
 		case TodoActionReview:
 			sql += " AND d.status IN ('draft', 'wait', 'active', 'refuse')"
 		case TodoActionSchedule:
-			sql += " AND d.status = 'clarified' AND (d.developFinish IS NULL OR d.developFinish = '0000-00-00' OR d.testFinish IS NULL OR d.testFinish = '0000-00-00' OR d.verifyFinish IS NULL OR d.verifyFinish = '0000-00-00' OR d.estimateLaunch IS NULL OR d.estimateLaunch = '0000-00-00' OR d.QD = '' OR d.mainDevelopers = '')"
+			sql += " AND d.status = 'clarified' AND (" + strings.Join([]string{dateUnsetExpr("d.developFinish"), dateUnsetExpr("d.testFinish"), dateUnsetExpr("d.verifyFinish"), dateUnsetExpr("d.estimateLaunch")}, " OR ") + " OR d.QD = '' OR d.mainDevelopers = '')"
 		case TodoActionVerify:
 			sql += " AND d.status IN ('testing', 'waitacceptance')"
 		case TodoActionDeliver:

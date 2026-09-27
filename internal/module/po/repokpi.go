@@ -31,11 +31,11 @@ func (r *Repo) CountKPISummary(ctx context.Context, account string) (KPISummaryR
 	}
 	today := time.Now().Format("2006-01-02")
 	err := r.roleDemandBase(ctx, account).Select(`
-		COUNT(CASE WHEN deadline IS NOT NULL AND deadline != '0000-00-00' AND deadline <= ? THEN 1 END) AS today,
-		COUNT(CASE WHEN deadline IS NOT NULL AND deadline != '0000-00-00' AND deadline < ? THEN 1 END) AS overdue,
+		COUNT(CASE WHEN ` + dateSetExpr("deadline") + ` AND deadline <= ? THEN 1 END) AS today,
+		COUNT(CASE WHEN ` + dateSetExpr("deadline") + ` AND deadline < ? THEN 1 END) AS overdue,
 		COUNT(CASE WHEN hang = '1' THEN 1 END) AS suspended,
 		COUNT(CASE WHEN status = 'refuse' OR (
-			developFinish IS NOT NULL AND developFinish != '0000-00-00' AND developFinish <= ?
+			` + dateSetExpr("developFinish") + ` AND developFinish <= ?
 			AND (managerReviewers IS NOT NULL AND managerReviewers <> '' OR EXISTS (
 				SELECT 1 FROM zt_demandmanagerreview mr WHERE mr.demand = zt_demand.id
 			))

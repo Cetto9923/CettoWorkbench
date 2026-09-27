@@ -53,14 +53,14 @@ func (r *Repo) Snapshot(ctx context.Context) (snapshot, error) {
 		(SELECT COUNT(*) FROM zt_story WHERE deleted='0') AS stories,
 		(SELECT COUNT(*) FROM zt_story WHERE deleted='0' AND status NOT IN ('closed','released')) AS stories_active,
 		(SELECT COUNT(*) FROM zt_story WHERE deleted='0' AND status IN ('closed','released')) AS stories_done,
-		(SELECT COUNT(*) FROM zt_story WHERE deleted='0' AND status IN ('closed','released') AND estimateLaunch IS NOT NULL AND estimateLaunch != '0000-00-00' AND DATE(closedDate) <= DATE(estimateLaunch)) AS stories_closed_on_time,
+		(SELECT COUNT(*) FROM zt_story WHERE deleted='0' AND status IN ('closed','released') AND estimateLaunch IS NOT NULL AND CAST(estimateLaunch AS CHAR) NOT LIKE '0000-00-00%' AND DATE(closedDate) <= DATE(estimateLaunch)) AS stories_closed_on_time,
 		(SELECT COUNT(*) FROM zt_bug WHERE deleted='0' AND status NOT IN ('closed','cancelled')) AS bugs,
 		(SELECT COUNT(*) FROM zt_bug WHERE deleted='0' AND status NOT IN ('closed','cancelled') AND severity IN ('1','2')) AS bugs_p1p2,
 		(SELECT COUNT(*) FROM zt_bug WHERE deleted='0') AS bugs_total,
 		(SELECT COUNT(*) FROM zt_bug WHERE deleted='0' AND status IN ('resolved','closed')) AS bugs_resolved,
 		(SELECT COUNT(*) FROM zt_task WHERE deleted='0') AS tasks,
 		(SELECT COUNT(*) FROM zt_task WHERE deleted='0' AND status NOT IN ('closed','cancel')) AS tasks_open,
-		(SELECT COUNT(*) FROM zt_task WHERE deleted='0' AND status NOT IN ('closed','cancel') AND deadline IS NOT NULL AND deadline != '0000-00-00' AND DATE(deadline) < CURDATE()) AS tasks_overdue`
+		(SELECT COUNT(*) FROM zt_task WHERE deleted='0' AND status NOT IN ('closed','cancel') AND deadline IS NOT NULL AND CAST(deadline AS CHAR) NOT LIKE '0000-00-00%' AND DATE(deadline) < CURDATE()) AS tasks_overdue`
 	err := r.db.WithContext(ctx).Raw(query).Scan(&out).Error
 	return out, err
 }
