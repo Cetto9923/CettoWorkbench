@@ -177,26 +177,27 @@
     var isPinned = window.WorkbenchPinned && typeof window.WorkbenchPinned.isPinned === "function" && window.WorkbenchPinned.isPinned(path);
     var isPersonal = path === "/home" || path === "/todos" || path === "/done" || path === "/notice" || path === "/follow";
 
-    var group = storedGroup;
-    if (group === "personal" && !isPersonal && !isPinned) group = "";
-    if (!group) {
-      if (isPersonal || isPinned) {
-        group = "personal";
-      } else {
-        var matchingLink = null;
-        sidebar.querySelectorAll(".po-subnav a.nav-item[href]").forEach(function (a) {
-          if (a.closest("#sidebarPinnedContainer, .po-pinned-list")) return;
-          var href = a.getAttribute("href");
-          if (href && (href === path || path.indexOf(href) === 0)) {
-            if (!matchingLink || href.length > matchingLink.getAttribute("href").length) matchingLink = a;
-          }
-        });
-        if (matchingLink) {
-          var p = matchingLink.closest(".po-subnav-panel");
-          if (p) group = p.getAttribute("data-subnav-panel");
+    // 路由所属分组优先；记忆分组只用于两种情况：从「常用」进入的固定页保持个人面板，或路由无归属。
+    var routeGroup = "";
+    if (isPersonal) {
+      routeGroup = "personal";
+    } else {
+      var matchingLink = null;
+      sidebar.querySelectorAll(".po-subnav a.nav-item[href]").forEach(function (a) {
+        if (a.closest("#sidebarPinnedContainer, .po-pinned-list")) return;
+        var href = a.getAttribute("href");
+        if (href && (href === path || path.indexOf(href) === 0)) {
+          if (!matchingLink || href.length > matchingLink.getAttribute("href").length) matchingLink = a;
         }
+      });
+      if (matchingLink) {
+        var p = matchingLink.closest(".po-subnav-panel");
+        if (p) routeGroup = p.getAttribute("data-subnav-panel");
       }
     }
+    var group = routeGroup;
+    if (storedGroup === "personal" && isPinned) group = "personal";
+    if (!group) group = storedGroup || (isPinned ? "personal" : "");
 
     if (group) activateRailGroup(group, true);
 

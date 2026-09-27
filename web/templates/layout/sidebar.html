@@ -146,13 +146,15 @@
   {{ $isCollab := or (eq .CurrentPath "/board/demand") (eq .CurrentPath "/board/task") (eq .CurrentPath "/agileteam") (eq .CurrentPath "/pmo") }}
   {{ $isGov := or (eq .CurrentPath "/issues/risk") (eq .CurrentPath "/issue-risk") (eq .CurrentPath "/metrics/radar") (eq .CurrentPath "/metrics/manage") }}
   {{ $isAdmin := or (eq .CurrentPath "/admin/roles") (eq .CurrentPath "/admin/users") }}
+  {{/* 当前路由所属分组优先；仅路由无归属时才用记忆分组（?nav= / po_active_rail），避免直达链接或底栏切换时面板错位 */}}
   {{ $activeGroup := "personal" }}
-  {{ if and .ActiveRailGroup (or (eq .ActiveRailGroup "personal") (eq .ActiveRailGroup "plan") (eq .ActiveRailGroup "collab") (eq .ActiveRailGroup "gov") (eq .ActiveRailGroup "admin")) }}
-    {{ $activeGroup = .ActiveRailGroup }}
+  {{ if $isPersonal }}{{ $activeGroup = "personal" }}
   {{ else if $isPlan }}{{ $activeGroup = "plan" }}
   {{ else if $isCollab }}{{ $activeGroup = "collab" }}
   {{ else if $isGov }}{{ $activeGroup = "gov" }}
   {{ else if $isAdmin }}{{ $activeGroup = "admin" }}
+  {{ else if and .ActiveRailGroup (or (eq .ActiveRailGroup "personal") (eq .ActiveRailGroup "plan") (eq .ActiveRailGroup "collab") (eq .ActiveRailGroup "gov") (eq .ActiveRailGroup "admin")) }}
+    {{ $activeGroup = .ActiveRailGroup }}
   {{ end }}
   {{ $personalBadge := add .SidebarBadges.Todos .SidebarBadges.Notice }}
 
