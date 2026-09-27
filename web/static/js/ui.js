@@ -7,6 +7,16 @@
   var pendingDeleteUrl = "";
   var pendingDeleteMode = "";
 
+  // escapeHtml 通用 HTML 转义（文本与属性值均可用）；PO 工作台各页面脚本通过 window.escapeHtml 复用。
+  function escapeHtml(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
   function getCsrfToken() {
     var el = document.querySelector('meta[name="csrf-token"]');
     return el ? (el.getAttribute("content") || "").trim() : "";
@@ -840,6 +850,7 @@
   }
 
   window.showToast = showToast;
+  window.escapeHtml = escapeHtml;
   window.confirmDelete = confirmDelete;
   window.closeModal = closeModal;
   window.openShowModals = openShowModals;
