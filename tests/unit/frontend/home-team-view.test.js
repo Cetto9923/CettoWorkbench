@@ -18,6 +18,8 @@ assert(/query\.set\("scopeId"/.test(js) && /teamgroupId/.test(js), 'team home fi
 assert(/availableScopes/.test(js) && /scopeOptions/.test(js), 'scope controls use only backend-authorized options');
 assert(/requestNo !== state\.requestNo/.test(js), 'late responses cannot overwrite the newest selected scope');
 assert(/formalCount/.test(js) && /pendingAdd/.test(js) && /pendingRemove/.test(js), 'team list renders real membership and pending-adjustment counts');
+assert(/\/agileteam\?view=lead&amp;scope=team&amp;teamgroupId=/.test(js), 'team rows deep-link to the selected authorized agile group');
+assert(/contextOnly/.test(js), 'synthetic parent context rows are not made selectable links');
 assert(/CanViewDemandHome/.test(tpl) && /\/home\?view=demand/.test(tpl), 'team-only users do not receive a demand-view link');
 assert(/homePageAccess\(\)/.test(handler) && /SetTeamViewAccess/.test(handler), 'homepage authorization is checked server-side');
 

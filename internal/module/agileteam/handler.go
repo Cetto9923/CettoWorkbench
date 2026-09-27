@@ -85,16 +85,23 @@ func (h *Handler) RequireListAccess(c *gin.Context) {
 
 // AgileTeamView 渲染敏捷小组治理页面。
 func (h *Handler) AgileTeamView(c *gin.Context) {
-	viewMode := "lead"
-	if hasPerm(c, perm.AgileTeamList) {
-		viewMode = "pmo"
-	}
+	viewMode := resolveViewMode(c.Query("view"), hasPerm(c, perm.AgileTeamList))
 	render.Page(c, http.StatusOK, "agileteam/index", gin.H{
 		"Title":           "敏捷小组",
 		"PageTitle":       "敏捷小组",
 		"PageDescription": "敏捷团队编制、人员分工与组织架构治理",
 		"ViewMode":        viewMode,
 	})
+}
+
+func resolveViewMode(requested string, canListAll bool) string {
+	if strings.ToLower(strings.TrimSpace(requested)) == "lead" {
+		return "lead"
+	}
+	if canListAll {
+		return "pmo"
+	}
+	return "lead"
 }
 
 func (h *Handler) List(c *gin.Context) {

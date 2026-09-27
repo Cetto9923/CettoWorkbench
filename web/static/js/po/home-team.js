@@ -77,8 +77,12 @@
     rowsHost.innerHTML = rows.map(function (item) {
       const type = item.type === "child" ? "敏捷小组" : "敏捷团队";
       const pending = Number(item.pendingAdd || 0) + Number(item.pendingRemove || 0);
+      const itemID = positiveID(item.id);
+      const nameCell = item.contextOnly || !itemID
+        ? "<strong>" + esc(item.name) + "</strong>"
+        : '<a href="/agileteam?view=lead&amp;scope=team&amp;teamgroupId=' + encodeURIComponent(String(itemID)) + '"><strong>' + esc(item.name) + "</strong></a>";
       return "<tr>" +
-        '<td><strong>' + esc(item.name) + "</strong></td>" +
+        "<td>" + nameCell + "</td>" +
         "<td>" + type + "</td>" +
         "<td>" + Number(item.formalCount || 0) + "</td>" +
         "<td>" + pending + "</td>" +
