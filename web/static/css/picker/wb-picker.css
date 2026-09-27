@@ -1,0 +1,165 @@
+.wb-picker {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  font-size: 12px;
+}
+.wb-picker-trigger {
+  width: 100%;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border: 1px solid var(--border, #d8dee8);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--t1, #273650);
+  text-align: left;
+  cursor: pointer;
+}
+.wb-picker-trigger:hover:not(:disabled) {
+  border-color: #b7c1d4;
+}
+.wb-picker-trigger:disabled {
+  cursor: not-allowed;
+  color: var(--t3, #98a2b3);
+  background: #f6f8fb;
+}
+.wb-picker-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wb-picker-caret {
+  color: var(--t3, #98a2b3);
+  flex: none;
+}
+.wb-picker-panel {
+  position: fixed;
+  z-index: 20000;
+  min-width: 220px;
+  max-width: min(420px, calc(100vw - 24px));
+  max-height: min(420px, calc(100vh - 24px));
+  display: none;
+  flex-direction: column;
+  border: 1px solid var(--border, #d8dee8);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, .16);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+/* panel 可能挂到 body（避开 transform 祖先），用自身 is-open 控制显示 */
+.wb-picker-panel.is-open { display: flex; }
+.wb-picker-search-wrap {
+  padding: 8px;
+  border-bottom: 1px solid var(--border, #e7ebf2);
+}
+.wb-picker-search {
+  width: 100%;
+  height: 30px;
+  padding: 5px 8px;
+  border: 1px solid var(--border, #d8dee8);
+  border-radius: 6px;
+  outline: none;
+}
+.wb-picker-list {
+  overflow: auto;
+  padding: 4px;
+}
+.wb-picker-empty {
+  padding: 18px 10px;
+  color: var(--t3, #98a2b3);
+  text-align: center;
+}
+.wb-picker-group-label {
+  padding: 7px 8px 4px;
+  color: var(--t3, #98a2b3);
+  font-size: 11px;
+  font-weight: 600;
+}
+.wb-picker-option {
+  min-height: 36px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--t1, #273650);
+  text-align: left;
+  cursor: pointer;
+}
+.wb-picker-option:hover,
+.wb-picker-option.is-active {
+  background: #f3f6fb;
+}
+.wb-picker-avatar {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  background: #eef2f7;
+  color: #4f5b75;
+}
+.wb-picker-main {
+  min-width: 0;
+  flex: 1;
+}
+.wb-picker-title {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+.wb-picker-sub {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--t3, #98a2b3);
+  font-size: 11px;
+  margin-top: 1px;
+}
+.wb-picker-check {
+  width: 14px;
+  color: var(--blue, #2f6feb);
+  flex: none;
+}
+.wb-picker-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 7px 8px;
+  border-top: 1px solid var(--border, #e7ebf2);
+}
+.wb-picker-clear {
+  height: 28px;
+  padding: 0 9px;
+  border: 1px solid var(--border, #d8dee8);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--t2, #5f6b7a);
+  cursor: pointer;
+}
+.wb-person-picker-source {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+.wb-person-picker-host {
+  width: 100%;
+}

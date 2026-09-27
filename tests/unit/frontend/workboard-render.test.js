@@ -5,13 +5,15 @@ const path = require('node:path');
 
 const source = fs.readFileSync(path.join(__dirname, '../../../web/static/js/po/workboard.js'), 'utf8');
 const issueSource = fs.readFileSync(path.join(__dirname, '../../../web/static/js/po/workboard-issue.js'), 'utf8');
+// 需求矩阵渲染已拆到 workboard-demand.js，函数切片从拆分后的文件读取。
+const demandSource = fs.readFileSync(path.join(__dirname, '../../../web/static/js/po/workboard-demand.js'), 'utf8');
 // Parse the whole entry point: an invalid callback statement prevents every request.
 new vm.Script(source);
 new vm.Script(issueSource);
 assert.match(issueSource, /\/board\/issues\/" \+ encodeURIComponent\(issueID\) \+ "\/transition/);
 assert.doesNotMatch(issueSource, /currentDrawerIssue\.status\s*=/);
-const render = source.slice(source.indexOf('  function renderDemandMatrix('), source.indexOf('  function refreshDemandToggleAll('));
-const standalone = source.slice(source.indexOf('  function renderStandaloneRow('), source.indexOf('  function collectStories('));
+const render = demandSource.slice(demandSource.indexOf('  function renderDemandMatrix('), demandSource.indexOf('  function refreshDemandToggleAll('));
+const standalone = demandSource.slice(demandSource.indexOf('  function renderStandaloneRow('), demandSource.indexOf('  function collectStories('));
 const host = { innerHTML: '', querySelectorAll: () => [] };
 const context = {
   $: id => id === 'demandGroups' ? host : id === 'demandEmpty' ? { style: {} } : null,
