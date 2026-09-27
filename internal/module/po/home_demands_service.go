@@ -372,7 +372,7 @@ func buildStoryWorkItem(row StoryRow, label string, actor *model.User, displayMa
 
 func calcOverdue(dateStr string) (string, bool, int) {
 	d := strings.TrimSpace(dateStr)
-	if d == "" || d == "0000-00-00" {
+	if isUnsetDateText(d) {
 		return "", false, 0
 	}
 	if len(d) > 10 {
@@ -394,9 +394,16 @@ func calcOverdue(dateStr string) (string, bool, int) {
 	return d, true, days
 }
 
+// isUnsetDateText 判断禅道日期文本是否等价于“未填”：空串、零日期，或驱动把零日期解析成的 0001-01-01。
+// 若不排除后者，超期天数会按公元 1 年计算（Duration 溢出后显示为 106751 天）。
+func isUnsetDateText(s string) bool {
+	s = strings.TrimSpace(s)
+	return s == "" || strings.HasPrefix(s, "0000-00-00") || strings.HasPrefix(s, "0001-01-01")
+}
+
 func storyTargetDate(row StoryRow) string {
 	for _, dt := range []string{row.DevelopFinish, row.TestFinish, row.DeliverDate} {
-		if s := strings.TrimSpace(dt); s != "" && s != "0000-00-00" {
+		if s := strings.TrimSpace(dt); !isUnsetDateText(s) {
 			return s
 		}
 	}
