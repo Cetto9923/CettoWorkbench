@@ -89,32 +89,38 @@ SELECT COUNT(*) FROM zt_dept WHERE manager = ?`, account).Scan(&n).Error
 	return n > 0, err
 }
 
-// ListDeptTreeIDs 返回账号所属部门及其下级部门 ID。
+// ListDeptTreeIDs 返回账号负责的部门及其下级部门 ID。
 func (r *Repo) ListDeptTreeIDs(ctx context.Context, account string) ([]uint, error) {
 	account = strings.TrimSpace(account)
 	if account == "" {
 		return nil, nil
 	}
-	var deptID uint
+	type managedDept struct {
+		ID   uint   `gorm:"column:id"`
+		Path string `gorm:"column:path"`
+	}
+	var managed []managedDept
 	if err := r.read().WithContext(ctx).Raw(`
-SELECT dept FROM zt_user WHERE account = ? AND deleted = '0' LIMIT 1`, account).Scan(&deptID).Error; err != nil {
+SELECT id, COALESCE(path, '') AS path FROM zt_dept WHERE manager = ? ORDER BY id ASC`, account).Scan(&managed).Error; err != nil {
 		return nil, err
 	}
-	if deptID == 0 {
+	if len(managed) == 0 {
 		return []uint{}, nil
 	}
-	var path string
-	if err := r.read().WithContext(ctx).Raw(`
-SELECT path FROM zt_dept WHERE id = ? LIMIT 1`, deptID).Scan(&path).Error; err != nil {
-		return nil, err
+	deptIDs := make([]uint, 0, len(managed))
+	query := `SELECT DISTINCT id FROM zt_dept WHERE id IN ?`
+	args := []interface{}{make([]uint, 0, len(managed))}
+	for _, dept := range managed {
+		deptIDs = append(deptIDs, dept.ID)
+		if path := strings.TrimSpace(dept.Path); path != "" {
+			query += ` OR path LIKE ?`
+			args = append(args, path+"%")
+		}
 	}
+	args[0] = deptIDs
+	query += ` ORDER BY id ASC`
 	var ids []uint
-	q := r.read().WithContext(ctx).Raw(`SELECT id FROM zt_dept WHERE id = ?`, deptID)
-	if strings.TrimSpace(path) != "" {
-		q = r.read().WithContext(ctx).Raw(`
-SELECT id FROM zt_dept WHERE id = ? OR path LIKE ?`, deptID, strings.TrimSpace(path)+"%")
-	}
-	if err := q.Scan(&ids).Error; err != nil {
+	if err := r.read().WithContext(ctx).Raw(query, args...).Scan(&ids).Error; err != nil {
 		return nil, err
 	}
 	if ids == nil {
