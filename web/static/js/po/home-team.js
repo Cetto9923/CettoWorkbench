@@ -40,6 +40,51 @@
     if (alert) alert.hidden = false;
   }
 
+  function issueRiskURL() {
+    const query = new URLSearchParams({ kind: "issue", loop: "open", scope: state.scope });
+    if (state.teamgroupId) query.set("scopeId", String(state.teamgroupId));
+    return "/issues/risk?" + query.toString();
+  }
+
+  async function loadIssueRiskCounts(requestNo) {
+    const issueCount = document.getElementById("teamHomeIssueCount");
+    const riskCount = document.getElementById("teamHomeRiskCount");
+    const status = document.getElementById("teamHomeRiskStatus");
+    const link = document.getElementById("teamHomeRiskLink");
+    if (!issueCount || !riskCount) return;
+    issueCount.textContent = "…";
+    riskCount.textContent = "…";
+    if (status) status.textContent = "正在加载…";
+    if (link) link.href = issueRiskURL();
+
+    const fetchCount = async function (kind) {
+      const query = new URLSearchParams({ kind: kind, loop: "open", scope: state.scope, page: "1", pageSize: "1" });
+      if (state.teamgroupId) query.set("scopeId", String(state.teamgroupId));
+      const response = await fetch("/issues/risk/items?" + query.toString(), {
+        credentials: "include",
+        headers: { "Accept": "application/json", "X-Requested-With": "XMLHttpRequest" },
+      });
+      const json = await response.json().catch(function () { return null; });
+      if (!response.ok || !json || json.success !== true || !Number.isFinite(Number(json.total))) {
+        throw new Error((json && (json.message || json.error)) || ("HTTP " + response.status));
+      }
+      return Number(json.total);
+    };
+
+    try {
+      const counts = await Promise.all([fetchCount("issue"), fetchCount("risk")]);
+      if (requestNo !== state.requestNo) return;
+      issueCount.textContent = String(counts[0]);
+      riskCount.textContent = String(counts[1]);
+      if (status) status.textContent = "未关闭";
+    } catch (error) {
+      if (requestNo !== state.requestNo) return;
+      issueCount.textContent = "—";
+      riskCount.textContent = "—";
+      if (status) status.textContent = "问题风险数据暂不可用";
+    }
+  }
+
   function setScopeControls(data) {
     const allowed = Array.isArray(data.availableScopes) ? data.availableScopes : [];
     document.querySelectorAll("#teamHomeScopeSwitch [data-scope]").forEach(function (button) {
@@ -121,6 +166,7 @@
         return;
       }
       renderRows(data.items);
+      loadIssueRiskCounts(requestNo);
       const updated = document.getElementById("teamHomeUpdatedAt");
       if (updated) updated.textContent = "授权范围内 " + Number(data.allCount || 0) + " 个团队/小组";
       syncURL();

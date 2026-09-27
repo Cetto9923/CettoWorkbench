@@ -26,6 +26,22 @@
     <span class="at-scope-tip" id="teamHomeScopeHint">按你的部门负责人或敏捷教练授权范围展示</span>
   </section>
 
+  <section class="home-page-card team-home-risk-card" id="teamHomeRiskCard" aria-labelledby="teamHomeRiskTitle">
+    <div class="home-action-header">
+      <div class="home-action-title-group">
+        <i class="fas fa-triangle-exclamation text-blue" aria-hidden="true"></i>
+        <h2 class="home-action-title" id="teamHomeRiskTitle">未关闭问题与风险</h2>
+      </div>
+      <span class="home-action-subtip" id="teamHomeRiskStatus" aria-live="polite">正在加载…</span>
+    </div>
+    <p class="team-home-risk-caption">按当前授权范围内正式成员的创建人或处理人统计</p>
+    <div class="team-home-risk-stats">
+      <div class="team-home-risk-stat"><span>未关闭问题</span><strong id="teamHomeIssueCount">—</strong></div>
+      <div class="team-home-risk-stat"><span>未关闭风险</span><strong id="teamHomeRiskCount">—</strong></div>
+      <a class="team-home-risk-link" id="teamHomeRiskLink" href="/issues/risk?kind=issue&amp;loop=open&amp;scope=team">查看问题与风险明细</a>
+    </div>
+  </section>
+
   <section class="home-page-card" aria-labelledby="teamHomeGroupsTitle">
     <div class="home-action-header">
       <div class="home-action-title-group">

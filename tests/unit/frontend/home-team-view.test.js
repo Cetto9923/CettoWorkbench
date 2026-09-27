@@ -18,6 +18,9 @@ assert(/query\.set\("scopeId"/.test(js) && /teamgroupId/.test(js), 'team home fi
 assert(/availableScopes/.test(js) && /scopeOptions/.test(js), 'scope controls use only backend-authorized options');
 assert(/requestNo !== state\.requestNo/.test(js), 'late responses cannot overwrite the newest selected scope');
 assert(/formalCount/.test(js) && /pendingAdd/.test(js) && /pendingRemove/.test(js), 'team list renders real membership and pending-adjustment counts');
+assert(/\/issues\/risk\/items\?/.test(js) && /fetchCount\("issue"\)/.test(js) && /fetchCount\("risk"\)/.test(js), 'team home loads both open issue and risk counts from the scoped API');
+assert(/teamHomeIssueCount/.test(tpl) && /teamHomeRiskCount/.test(tpl), 'team home exposes separate issue and risk totals');
+assert(/teamHomeRiskLink/.test(js) && /scopeId/.test(js), 'issue-risk summary link preserves the selected team scope');
 assert(/\/agileteam\?view=lead&amp;scope=' \+ encodeURIComponent\(state\.scope\)/.test(js), 'team rows preserve the selected authorized scope when opening an agile group');
 assert(/\/issues\/risk\?kind=issue&amp;loop=open&amp;scope=' \+ encodeURIComponent\(state\.scope\)/.test(js), 'team rows deep-link to issue-risk with the selected authorized scope');
 assert(/contextOnly/.test(js), 'synthetic parent context rows are not made selectable links');

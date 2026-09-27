@@ -40,6 +40,10 @@ function createHarness(search, replies) {
   const updated = element('teamHomeUpdatedAt');
   const select = element('teamHomeGroupSelect');
   const retry = element('teamHomeRetry');
+  const issueCount = element('teamHomeIssueCount');
+  const riskCount = element('teamHomeRiskCount');
+  const riskStatus = element('teamHomeRiskStatus');
+  const riskLink = element('teamHomeRiskLink');
   const buttons = [element('team', { 'data-scope': 'team' }), element('dept', { 'data-scope': 'dept' })];
   const byID = {
     teamHomeGroupRows: rows,
@@ -48,6 +52,10 @@ function createHarness(search, replies) {
     teamHomeUpdatedAt: updated,
     teamHomeGroupSelect: select,
     teamHomeRetry: retry,
+    teamHomeIssueCount: issueCount,
+    teamHomeRiskCount: riskCount,
+    teamHomeRiskStatus: riskStatus,
+    teamHomeRiskLink: riskLink,
   };
   const requests = [];
   let replyIndex = 0;
@@ -74,7 +82,7 @@ function createHarness(search, replies) {
     return { ok: true, status: 200, json: async () => payload };
   };
   vm.runInNewContext(source, { window, document, location: loc, history, fetch, URL, URLSearchParams, encodeURIComponent, Number, String, Array });
-  return { loc, rows, error, errorText, updated, select, buttons, requests };
+  return { loc, rows, error, errorText, updated, select, buttons, requests, issueCount, riskCount, riskStatus, riskLink };
 }
 
 function response(options, items, activeScope = 'team') {
@@ -87,7 +95,8 @@ function tick() { return new Promise(resolve => setTimeout(resolve, 0)); }
   const selected = createHarness('?view=team&scope=team&teamgroupId=11', [response(
     [{ id: 1, name: '产品团队', type: 'team' }, { id: 11, name: '对公一组', type: 'subteam' }],
     [{ id: 11, name: '对公一组', type: 'child', formalCount: 6, pendingAdd: 1, pendingRemove: 0 }]
-  )]);
+  ), { success: true, total: 7 }, { success: true, total: 3 }]);
+  await tick();
   await tick();
   const firstRequest = new URL(selected.requests[0], 'http://workbench.local');
   if (firstRequest.searchParams.get('scopeId') !== '11' || firstRequest.searchParams.get('scope') !== 'team') {
@@ -102,6 +111,19 @@ function tick() { return new Promise(resolve => setTimeout(resolve, 0)); }
   if (selected.select.value !== '11' || new URL(selected.loc.href).searchParams.get('teamgroupId') !== '11') {
     throw new Error('the selected group was not restored into the control and URL');
   }
+  if (selected.issueCount.textContent !== '7' || selected.riskCount.textContent !== '3') {
+    throw new Error('team issue/risk counts did not render the scoped totals');
+  }
+  const scopedRiskRequests = selected.requests.slice(1).map(url => new URL(url, 'http://workbench.local'));
+  if (scopedRiskRequests.length !== 2 || scopedRiskRequests.some(url => url.searchParams.get('scope') !== 'team' || url.searchParams.get('scopeId') !== '11')) {
+    throw new Error('issue/risk summary requests did not retain the selected authorized scope');
+  }
+  if (scopedRiskRequests.map(url => url.searchParams.get('kind')).sort().join(',') !== 'issue,risk') {
+    throw new Error('team issue/risk summary must request both issue and risk kinds');
+  }
+  if (!selected.riskLink.href.includes('scope=team') || !selected.riskLink.href.includes('scopeId=11')) {
+    throw new Error('issue/risk summary link did not preserve the selected child group');
+  }
 
   const invalid = createHarness('?view=team&scope=team&teamgroupId=999', [
     response([{ id: 11, name: '对公一组', type: 'subteam' }], []),
@@ -109,7 +131,8 @@ function tick() { return new Promise(resolve => setTimeout(resolve, 0)); }
   ]);
   await tick();
   await tick();
-  if (invalid.requests.length !== 2 || new URL(invalid.requests[1], 'http://workbench.local').searchParams.has('scopeId')) {
+  const invalidScopeRequests = invalid.requests.filter(url => url.startsWith('/workbench/api/agile-teams?'));
+  if (invalidScopeRequests.length !== 2 || new URL(invalidScopeRequests[1], 'http://workbench.local').searchParams.has('scopeId')) {
     throw new Error('unauthorized group ID was not cleared and reloaded as the full authorized scope');
   }
   if (new URL(invalid.loc.href).searchParams.has('teamgroupId')) {

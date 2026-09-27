@@ -182,3 +182,13 @@
 .at-info-grid .input,.at-info-grid .textarea,.at-adjust-reason{background:var(--color-surface);color:var(--color-text-primary)}
 .at-summary:empty{display:none}
 .at-field:focus,.at-info-grid .input:focus,.at-info-grid .textarea:focus{outline:2px solid var(--color-primary-border);outline-offset:1px;border-color:var(--color-border-focus)}
+
+.po-team-home .team-home-risk-card{padding:16px 18px}
+.team-home-risk-caption{margin:0 0 12px;color:var(--color-text-secondary);font-size:11px}
+.team-home-risk-stats{display:flex;align-items:stretch;gap:10px;flex-wrap:wrap}
+.team-home-risk-stat{display:flex;align-items:center;gap:12px;min-width:170px;padding:10px 13px;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface-muted)}
+.team-home-risk-stat span{color:var(--color-text-secondary);font-size:12px}
+.team-home-risk-stat strong{margin-left:auto;color:var(--color-text-primary);font-size:21px;line-height:1}
+.team-home-risk-link{display:inline-flex;align-items:center;justify-content:center;margin-left:auto;padding:0 8px;color:var(--color-primary);font-size:12px;text-decoration:none}
+.team-home-risk-link:hover{text-decoration:underline}
+@media(max-width:760px){.team-home-risk-link{margin-left:0;min-height:36px}}
