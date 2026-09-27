@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"workbench/internal/model"
+	"workbench/internal/pkg/errorx"
 )
 
 type teamFamily struct {
@@ -170,6 +171,85 @@ func (s *Service) availableLeadScopes(ctx context.Context, actor *model.User) ([
 		scopes = append(scopes, "dept")
 	}
 	return scopes, nil
+}
+
+// LeadScopeMemberAccounts resolves formal member accounts only inside the actor's
+// authorized team or department scope. A selected parent team includes its
+// direct child agile groups; a selected child group remains isolated.
+func (s *Service) LeadScopeMemberAccounts(ctx context.Context, actor *model.User, scope string, scopeID uint) ([]string, error) {
+	account, err := requireActorAccount(actor)
+	if err != nil {
+		return nil, err
+	}
+	scope = strings.ToLower(strings.TrimSpace(scope))
+	if scope != "team" && scope != "dept" {
+		return nil, errorx.New(errorx.ErrCodeInvalidParam, "无效的团队查看范围")
+	}
+	available, err := s.availableLeadScopes(ctx, actor)
+	if err != nil {
+		return nil, err
+	}
+	if !containsString(available, scope) {
+		return nil, errorx.New(errorx.ErrCodeForbidden, "无权查看该团队范围")
+	}
+
+	var allowedIDs []uint
+	var rows []TeamgroupRow
+	if actor.IsSuperAdmin {
+		rows, err = s.repo.ListTeamgroups(ctx)
+		if err != nil {
+			return nil, err
+		}
+		allowedIDs = make([]uint, 0, len(rows))
+		for _, row := range rows {
+			allowedIDs = append(allowedIDs, row.ID)
+		}
+	} else if scope == "team" {
+		allowedIDs, err = s.repo.ListManagedTeamgroupIDs(ctx, account)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		var deptIDs []uint
+		deptIDs, err = s.repo.ListDeptTreeIDs(ctx, account)
+		if err != nil {
+			return nil, err
+		}
+		allowedIDs, err = s.repo.ListMappedTeamgroupIDsByDepts(ctx, deptIDs)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if rows == nil {
+		rows, err = s.repo.ListTeamgroups(ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+	groupIDs, visibleRows := restrictTeamgroupRows(rows, allowedIDs, scopeID)
+	if scopeID > 0 && len(visibleRows) == 0 {
+		return nil, errorx.New(errorx.ErrCodeForbidden, "所选团队不在你的授权范围内")
+	}
+	if len(groupIDs) == 0 {
+		return []string{}, nil
+	}
+	membersByID, err := s.repo.ListMembersByGroupIDs(ctx, groupIDs)
+	if err != nil {
+		return nil, err
+	}
+	accounts := make([]string, 0)
+	seen := make(map[string]bool)
+	for _, groupID := range groupIDs {
+		for _, member := range membersByID[groupID] {
+			memberAccount := strings.TrimSpace(member.Account)
+			if memberAccount == "" || seen[memberAccount] {
+				continue
+			}
+			seen[memberAccount] = true
+			accounts = append(accounts, memberAccount)
+		}
+	}
+	return accounts, nil
 }
 
 func containsString(values []string, target string) bool {

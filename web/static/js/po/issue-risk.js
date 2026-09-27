@@ -43,6 +43,8 @@
     loop: "open",
     overdue: false,
     project: 0,
+    scope: "",
+    scopeId: 0,
     page: 1,
     pageSize: 20
   };
@@ -98,6 +100,8 @@
     if (state.loop && state.loop !== "all") { params.set("loop", state.loop); }
     if (state.overdue) { params.set("overdue", "true"); }
     if (state.project) { params.set("project", String(state.project)); }
+    if (state.scope) { params.set("scope", state.scope); }
+    if (state.scopeId) { params.set("scopeId", String(state.scopeId)); }
     return "/issues/risk/items?" + params.toString();
   }
 
@@ -114,6 +118,17 @@
     if ((STATUS_OPTIONS[state.kind] || []).some(function (option) { return option[0] === status; })) { state.status = status; }
     state.keyword = (params.get("keyword") || "").trim();
     state.project = parseInt(params.get("project"), 10) || 0;
+    var scope = params.get("scope");
+    if (scope === "team" || scope === "dept") { state.scope = scope; }
+    state.scopeId = Math.max(0, parseInt(params.get("scopeId"), 10) || 0);
+    if (!state.scope) { state.scopeId = 0; }
+    if (state.scope) { state.relation = "allRelated"; }
+    var scopeNotice = $("irTeamScopeNotice");
+    if (scopeNotice && state.scope) {
+      scopeNotice.hidden = false;
+      scopeNotice.textContent = (state.scope === "dept" ? "部门团队范围" : "敏捷团队范围") +
+        (state.scopeId ? " · 已选择授权团队/小组" : " · 全部授权成员") + "（按创建人或处理人筛选）";
+    }
     state.page = Math.max(1, parseInt(params.get("page"), 10) || 1);
     var pageSize = parseInt(params.get("pageSize"), 10);
     if (PL.PAGE_SIZE_OPTIONS && PL.PAGE_SIZE_OPTIONS.indexOf(pageSize) >= 0) { state.pageSize = pageSize; }
@@ -132,6 +147,8 @@
     if (state.keyword) { params.set("keyword", state.keyword); }
     if (state.overdue && state.loop === "open") { params.set("overdue", "true"); }
     if (state.project) { params.set("project", String(state.project)); }
+    if (state.scope) { params.set("scope", state.scope); }
+    if (state.scopeId) { params.set("scopeId", String(state.scopeId)); }
     if (state.page > 1) { params.set("page", String(state.page)); }
     if (state.pageSize !== 20) { params.set("pageSize", String(state.pageSize)); }
     window.history.replaceState(null, "", window.location.pathname + "?" + params.toString());
@@ -325,6 +342,7 @@
   function initToolbar() {
     var relSel = $("irRelation");
     if (relSel) {
+      relSel.disabled = !!state.scope;
       relSel.addEventListener("change", function () {
         state.relation = relSel.value;
         state.page = 1;
@@ -372,7 +390,7 @@
         state.overdue = false;
         state.project = 0;
         state.page = 1;
-        if (relSel) { relSel.value = "allRelated"; }
+        if (relSel) { relSel.value = "allRelated"; relSel.disabled = !!state.scope; }
         if (projSel) { projSel.value = ""; }
         if (kwInput) { kwInput.value = ""; }
         refreshStatus();

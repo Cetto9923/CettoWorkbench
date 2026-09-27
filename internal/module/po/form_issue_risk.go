@@ -10,8 +10,12 @@ type IssueRiskListReq struct {
 	Loop     string `form:"loop"`
 	Overdue  bool   `form:"overdue"`
 	Project  uint   `form:"project"`
+	Scope    string `form:"scope"` // 空值表示个人视角；team / dept 表示团队管理范围
+	ScopeID  uint   `form:"scopeId"`
 	Page     int    `form:"page"`
 	PageSize int    `form:"pageSize"`
+
+	teamAccounts []string
 }
 
 func (r *IssueRiskListReq) Validate() []FieldError {
@@ -30,6 +34,16 @@ func (r *IssueRiskListReq) Validate() []FieldError {
 		return []FieldError{{Field: "relation", Message: "无效的关联范围"}}
 	}
 	r.Status = strings.TrimSpace(r.Status)
+	r.Scope = strings.ToLower(strings.TrimSpace(r.Scope))
+	if r.Scope != "" && r.Scope != "team" && r.Scope != "dept" {
+		return []FieldError{{Field: "scope", Message: "无效的团队查看范围"}}
+	}
+	if r.ScopeID > 0 && r.Scope == "" {
+		return []FieldError{{Field: "scopeId", Message: "选择具体团队时必须指定查看范围"}}
+	}
+	if r.Scope != "" && r.Relation != "allRelated" {
+		return []FieldError{{Field: "relation", Message: "团队视角不支持个人关联范围"}}
+	}
 	r.Keyword = strings.TrimSpace(r.Keyword)
 	r.Loop = strings.TrimSpace(r.Loop)
 	if r.Loop == "" {

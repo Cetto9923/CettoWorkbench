@@ -21,8 +21,15 @@ func (r *Repo) FindIssueRiskList(ctx context.Context, account string, req IssueR
 		Joins(fmt.Sprintf("LEFT JOIN zt_user ru ON ru.account = %s.resolvedBy AND ru.deleted = '0'", a)).
 		Joins(fmt.Sprintf("LEFT JOIN zt_user clu ON clu.account = %s.closedBy AND clu.deleted = '0'", a)).
 		Joins(fmt.Sprintf("LEFT JOIN zt_project p ON p.id = CAST(NULLIF(%s.project, '') AS UNSIGNED) AND p.deleted = '0'", a)).
-		Where(fmt.Sprintf("%s.deleted = '0'", a)).
-		Where(fmt.Sprintf("(%s.createdBy = ? OR %s.assignedTo = ?)", a, a), account, account)
+		Where(fmt.Sprintf("%s.deleted = '0'", a))
+	if req.Scope != "" {
+		if len(req.teamAccounts) == 0 {
+			return []issueRiskRow{}, 0, nil
+		}
+		q = q.Where(fmt.Sprintf("(%s.createdBy IN ? OR %s.assignedTo IN ?)", a, a), req.teamAccounts, req.teamAccounts)
+	} else {
+		q = q.Where(fmt.Sprintf("(%s.createdBy = ? OR %s.assignedTo = ?)", a, a), account, account)
+	}
 	if req.Relation == "myAction" {
 		q = q.Where(fmt.Sprintf("%s.assignedTo = ?", a), account)
 	}
@@ -47,7 +54,7 @@ func (r *Repo) FindIssueRiskList(ctx context.Context, account string, req IssueR
 	}
 	if req.Overdue {
 		today := time.Now().Format("2006-01-02")
-		q = q.Where(dateSetExpr(plan) + " AND " + plan + " < ?", today)
+		q = q.Where(dateSetExpr(plan)+" AND "+plan+" < ?", today)
 	}
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
@@ -60,7 +67,10 @@ func (r *Repo) FindIssueRiskList(ctx context.Context, account string, req IssueR
 }
 
 func (r *Repo) CountIssueRisk(ctx context.Context, account string, req IssueRiskListReq) (int64, error) {
-	_, total, err := r.FindIssueRiskList(ctx, account, IssueRiskListReq{Kind: req.Kind, Relation: req.Relation, Status: req.Status, Keyword: req.Keyword, Loop: req.Loop, Overdue: req.Overdue, Project: req.Project, Page: 1, PageSize: 1})
+	countReq := req
+	countReq.Page = 1
+	countReq.PageSize = 1
+	_, total, err := r.FindIssueRiskList(ctx, account, countReq)
 	return total, err
 }
 
@@ -74,7 +84,15 @@ func (r *Repo) CountIssueRiskProjects(ctx context.Context, account string, req I
 	if req.Kind == "risk" {
 		a, table, title, plan = "k", "zt_risk AS k", "k.name", "k.plannedClosedDate"
 	}
-	q := r.db.WithContext(ctx).Table(table).Joins(fmt.Sprintf("LEFT JOIN zt_project p ON p.id = CAST(NULLIF(%s.project, '') AS UNSIGNED) AND p.deleted = '0'", a)).Where(fmt.Sprintf("%s.deleted = '0'", a)).Where(fmt.Sprintf("(%s.createdBy = ? OR %s.assignedTo = ?)", a, a), account, account)
+	q := r.db.WithContext(ctx).Table(table).Joins(fmt.Sprintf("LEFT JOIN zt_project p ON p.id = CAST(NULLIF(%s.project, '') AS UNSIGNED) AND p.deleted = '0'", a)).Where(fmt.Sprintf("%s.deleted = '0'", a))
+	if req.Scope != "" {
+		if len(req.teamAccounts) == 0 {
+			return []IssueRiskProject{}, nil
+		}
+		q = q.Where(fmt.Sprintf("(%s.createdBy IN ? OR %s.assignedTo IN ?)", a, a), req.teamAccounts, req.teamAccounts)
+	} else {
+		q = q.Where(fmt.Sprintf("(%s.createdBy = ? OR %s.assignedTo = ?)", a, a), account, account)
+	}
 	if req.Relation == "myAction" {
 		q = q.Where(fmt.Sprintf("%s.assignedTo = ?", a), account)
 	}
@@ -99,7 +117,7 @@ func (r *Repo) CountIssueRiskProjects(ctx context.Context, account string, req I
 	}
 	if req.Overdue {
 		today := time.Now().Format("2006-01-02")
-		q = q.Where(dateSetExpr(plan) + " AND " + plan + " < ?", today)
+		q = q.Where(dateSetExpr(plan)+" AND "+plan+" < ?", today)
 	}
 	type projectRow struct {
 		ID   uint   `gorm:"column:id"`

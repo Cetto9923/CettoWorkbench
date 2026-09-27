@@ -1,12 +1,100 @@
 package po
 
 import (
+	"net/http"
+	"strconv"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	"net/http"
 	"workbench/internal/middleware"
+	"workbench/internal/model"
+	"workbench/internal/pkg/errorx"
+	"workbench/internal/pkg/perm"
 	"workbench/internal/pkg/render"
 )
+
+const issueRiskTeamAccountsContextKey = "issueRiskTeamAccounts"
+
+func (h *Handler) issueRiskPageAccess() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if currentUserHasPerm(c, perm.PoBoardDemandList) {
+			c.Next()
+			return
+		}
+		if _, ok := h.resolveIssueRiskTeamScope(c, middleware.CurrentUser(c)); !ok {
+			return
+		}
+		c.Next()
+	}
+}
+
+func (h *Handler) issueRiskItemsAccess() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if currentUserHasPerm(c, perm.PoBoardDemandList) {
+			c.Next()
+			return
+		}
+		if _, ok := h.resolveIssueRiskTeamScope(c, middleware.CurrentUser(c)); !ok {
+			return
+		}
+		c.Next()
+	}
+}
+
+func (h *Handler) resolveIssueRiskTeamScope(c *gin.Context, actor *model.User) ([]string, bool) {
+	if h.teamViewAccess == nil || h.teamScopeAccounts == nil {
+		h.denyHomeAccess(c)
+		return nil, false
+	}
+	allowed, err := h.teamViewAccess(c.Request.Context(), actor)
+	if err != nil {
+		c.AbortWithStatus(http.StatusServiceUnavailable)
+		return nil, false
+	}
+	if !allowed || strings.TrimSpace(c.Query("scope")) == "" {
+		h.denyHomeAccess(c)
+		return nil, false
+	}
+	scopeID, err := parseTeamScopeID(c.Query("scopeId"))
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "团队范围参数无效"})
+		return nil, false
+	}
+	accounts, err := h.teamScopeAccounts(c.Request.Context(), actor, c.Query("scope"), scopeID)
+	if err != nil {
+		writeTeamScopeError(c, h.logger, err)
+		return nil, false
+	}
+	c.Set(issueRiskTeamAccountsContextKey, accounts)
+	return accounts, true
+}
+
+func parseTeamScopeID(raw string) (uint, error) {
+	if strings.TrimSpace(raw) == "" {
+		return 0, nil
+	}
+	value, err := strconv.ParseUint(strings.TrimSpace(raw), 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return uint(value), nil
+}
+
+func writeTeamScopeError(c *gin.Context, logger *zap.Logger, err error) {
+	if bizErr, ok := errorx.IsBizError(err); ok {
+		status := http.StatusBadRequest
+		if bizErr.Code == errorx.ErrCodeForbidden {
+			status = http.StatusForbidden
+		}
+		c.AbortWithStatusJSON(status, gin.H{"message": bizErr.Msg})
+		return
+	}
+	if logger != nil {
+		logger.Error("resolve issue risk team scope", zap.Error(err))
+	}
+	c.AbortWithStatus(http.StatusServiceUnavailable)
+}
 
 func (h *Handler) IssueRisk(c *gin.Context) {
 	render.Page(c, http.StatusOK, "po/issue-risk", gin.H{
@@ -25,9 +113,27 @@ func (h *Handler) IssueRiskItems(c *gin.Context) {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"message": "参数校验失败", "errors": es})
 		return
 	}
+	if req.Scope != "" {
+		if scopedAccounts, ok := c.Get(issueRiskTeamAccountsContextKey); ok {
+			req.teamAccounts, _ = scopedAccounts.([]string)
+		} else {
+			if h.teamScopeAccounts == nil {
+				c.AbortWithStatus(http.StatusForbidden)
+				return
+			}
+			accounts, err := h.teamScopeAccounts(c.Request.Context(), middleware.CurrentUser(c), req.Scope, req.ScopeID)
+			if err != nil {
+				writeTeamScopeError(c, h.logger, err)
+				return
+			}
+			req.teamAccounts = accounts
+		}
+	}
 	resp, err := h.svc.IssueRiskList(c.Request.Context(), middleware.CurrentUser(c), req)
 	if err != nil {
-		h.logger.Error("po issue risk list", zap.Error(err))
+		if h.logger != nil {
+			h.logger.Error("po issue risk list", zap.Error(err))
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取问题风险失败"})
 		return
 	}

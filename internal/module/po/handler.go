@@ -27,10 +27,11 @@ import (
 
 // Handler 处理 PO 工作台页面请求。
 type Handler struct {
-	svc            *Service
-	detailSvc      *DetailService
-	logger         *zap.Logger
-	teamViewAccess func(context.Context, *model.User) (bool, error)
+	svc               *Service
+	detailSvc         *DetailService
+	logger            *zap.Logger
+	teamViewAccess    func(context.Context, *model.User) (bool, error)
+	teamScopeAccounts func(context.Context, *model.User, string, uint) ([]string, error)
 }
 
 // NewHandler 创建 PO 模块 Handler。
@@ -45,6 +46,11 @@ func NewHandler(svc *Service, logger *zap.Logger) *Handler {
 // SetTeamViewAccess injects the independent, read-only authorization check for team managers/coaches.
 func (h *Handler) SetTeamViewAccess(check func(context.Context, *model.User) (bool, error)) {
 	h.teamViewAccess = check
+}
+
+// SetTeamScopeAccounts injects the object-scoped membership resolver used by team read views.
+func (h *Handler) SetTeamScopeAccounts(resolve func(context.Context, *model.User, string, uint) ([]string, error)) {
+	h.teamScopeAccounts = resolve
 }
 
 // RegisterRoutes 注册 PO 工作台路由（挂载在已配置登录与操作日志的中间件组上）。
@@ -98,8 +104,8 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	// Keep the sidebar's public path aligned with the page capability name.
 	// The singular path remains as a compatibility alias for existing links.
 	for _, path := range []string{"/issues/risk", "/issue-risk"} {
-		g.GET(path, middleware.RequirePerm(perm.PoBoardDemandList), h.IssueRisk)
-		g.GET(path+"/items", middleware.RequirePerm(perm.PoBoardDemandList), h.IssueRiskItems)
+		g.GET(path, h.issueRiskPageAccess(), h.IssueRisk)
+		g.GET(path+"/items", h.issueRiskItemsAccess(), h.IssueRiskItems)
 	}
 
 	NewBoardHandler(h.svc, h.logger).RegisterRoutes(g)

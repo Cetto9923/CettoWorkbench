@@ -143,6 +143,64 @@ func TestAgileCoachScopeIncludesOnlyManagedGroupNotSibling(t *testing.T) {
 	}
 }
 
+func TestLeadScopeMemberAccountsUsesParentFamilyAndRejectsUnmanagedParent(t *testing.T) {
+	rows := sqlmock.NewRows([]string{"id", "name", "parent", "parent_name", "org_dept_id", "org_dept_name", "org_dept_inherited", "type", "grade", "path", "PO", "manager", "slogan", "declaration", "logo", "status", "createdDate"}).
+		AddRow(uint(1), "信贷专项团队", uint(0), "", uint(0), "", false, "parent", 1, ",1,", "", "coach1", "", "", "", "enable", "").
+		AddRow(uint(11), "对公一组", uint(1), "信贷专项团队", uint(0), "", false, "child", 2, ",1,11,", "", "", "", "", "", "enable", "").
+		AddRow(uint(12), "对公二组", uint(1), "信贷专项团队", uint(0), "", false, "child", 2, ",1,12,", "", "", "", "", "", "enable", "")
+
+	t.Run("parent coach gets members from family", func(t *testing.T) {
+		svc, mock := newTestService(t)
+		managed := func() {
+			mock.ExpectQuery("(?s)FROM zt_teamgroup managed.*scoped.parent = managed.id.*REGEXP \\?").
+				WithArgs("(^|[[:space:],;])coach1([[:space:],;]|$)").
+				WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(1)).AddRow(uint(11)).AddRow(uint(12)))
+		}
+		managed()
+		mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM zt_dept WHERE COALESCE\\(manager, ''\\) REGEXP \\?").
+			WithArgs("(^|[[:space:],;])coach1([[:space:],;]|$)").WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+		managed()
+		mock.ExpectQuery("(?s)SELECT tg.id, tg.name, tg.parent.*FROM zt_teamgroup tg.*WHERE tg.deleted = '0'.*ORDER BY tg.id ASC").
+			WillReturnRows(rows)
+		mock.ExpectQuery("(?s)SELECT t.root AS group_id, t.account.*FROM zt_team t.*t.root IN \\(\\?,\\?,\\?\\)").
+			WithArgs(uint(1), uint(11), uint(12)).WillReturnRows(sqlmock.NewRows([]string{"group_id", "account", "name", "role", "hours", "days", "join_date"}).
+			AddRow(uint(11), "dev1", "D1", "dev", 0.0, 0, "").AddRow(uint(12), "dev2", "D2", "qa", 0.0, 0, "").AddRow(uint(12), "dev1", "D1", "dev", 0.0, 0, ""))
+
+		got, err := svc.LeadScopeMemberAccounts(context.Background(), &model.User{Account: "coach1"}, "team", 1)
+		if err != nil {
+			t.Fatalf("LeadScopeMemberAccounts() error = %v", err)
+		}
+		if len(got) != 2 || got[0] != "dev1" || got[1] != "dev2" {
+			t.Fatalf("member accounts = %v, want deduplicated family members [dev1 dev2]", got)
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("SQL expectations: %v", err)
+		}
+	})
+
+	t.Run("child coach cannot expand to parent family", func(t *testing.T) {
+		svc, mock := newTestService(t)
+		managed := func() {
+			mock.ExpectQuery("(?s)FROM zt_teamgroup managed.*scoped.parent = managed.id.*REGEXP \\?").
+				WithArgs("(^|[[:space:],;])coach1([[:space:],;]|$)").
+				WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(11)))
+		}
+		managed()
+		mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM zt_dept WHERE COALESCE\\(manager, ''\\) REGEXP \\?").
+			WithArgs("(^|[[:space:],;])coach1([[:space:],;]|$)").WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+		managed()
+		mock.ExpectQuery("(?s)SELECT tg.id, tg.name, tg.parent.*FROM zt_teamgroup tg.*WHERE tg.deleted = '0'.*ORDER BY tg.id ASC").
+			WillReturnRows(rows)
+
+		if _, err := svc.LeadScopeMemberAccounts(context.Background(), &model.User{Account: "coach1"}, "team", 1); err == nil {
+			t.Fatal("child-only coach must not expand member scope to parent team")
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("SQL expectations: %v", err)
+		}
+	})
+}
+
 func TestPageFamiliesDoesNotSplitParentFromChildren(t *testing.T) {
 	t.Parallel()
 	families := []teamFamily{

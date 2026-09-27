@@ -39,6 +39,44 @@ func TestIssueRiskListReqValidateDefaults(t *testing.T) {
 	}
 }
 
+func TestIssueRiskListReqValidateTeamScope(t *testing.T) {
+	valid := IssueRiskListReq{Scope: "team", ScopeID: 11, Relation: "allRelated"}
+	if errs := valid.Validate(); errs != nil {
+		t.Fatalf("team scope should validate: %v", errs)
+	}
+	for _, req := range []IssueRiskListReq{
+		{Scope: "other", ScopeID: 11},
+		{ScopeID: 11},
+		{Scope: "team", ScopeID: 11, Relation: "myAction"},
+	} {
+		if errs := req.Validate(); len(errs) == 0 {
+			t.Errorf("invalid team scope request should be rejected: %+v", req)
+		}
+	}
+}
+
+func TestFindIssueRiskListUsesAuthorizedTeamMembers(t *testing.T) {
+	db, mock := setupMockDB(t)
+	repo := NewRepo(db, db)
+	openStatuses := []driver.Value{"active", "tracked", "wait", "unconfirmed", "doing", "confirmed"}
+	countArgs := []driver.Value{"dev1", "dev2", "dev1", "dev2"}
+	countArgs = append(countArgs, openStatuses...)
+	mock.ExpectQuery(`SELECT count\(\*\) FROM zt_issue AS i.*i\.createdBy IN \(\?,\?\).*i\.assignedTo IN \(\?,\?\)`).
+		WithArgs(countArgs...).WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(2))
+	selectArgs := append([]driver.Value{"dev1", "dev2", "dev1", "dev2"}, openStatuses...)
+	selectArgs = append(selectArgs, 20)
+	mock.ExpectQuery(`(?s)SELECT i\.id AS id.*FROM zt_issue AS i.*i\.createdBy IN \(\?,\?\).*i\.assignedTo IN \(\?,\?\).*ORDER BY i\.id DESC LIMIT \?`).
+		WithArgs(selectArgs...).WillReturnRows(sqlmock.NewRows([]string{"id"}))
+	req := IssueRiskListReq{Kind: "issue", Relation: "allRelated", Loop: "open", Page: 1, PageSize: 20, Scope: "team", teamAccounts: []string{"dev1", "dev2"}}
+	_, _, err := repo.FindIssueRiskList(context.Background(), "coach1", req)
+	if err != nil {
+		t.Fatalf("FindIssueRiskList() error = %v", err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("SQL expectations: %v", err)
+	}
+}
+
 func TestHomeIssueRiskCountsUseMyOpenIssuesAndRisks(t *testing.T) {
 	db, mock := setupMockDB(t)
 	repo := NewRepo(db, db)

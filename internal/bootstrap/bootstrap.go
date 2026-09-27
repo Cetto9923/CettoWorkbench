@@ -192,6 +192,7 @@ func Run() error {
 	agileTeamSvc := agileteam.NewService(agileTeamRepo, zapLog)
 	agileTeamHandler := agileteam.NewHandler(agileTeamSvc, zapLog)
 	poHandler.SetTeamViewAccess(agileTeamSvc.CanEnterLeadView)
+	poHandler.SetTeamScopeAccounts(agileTeamSvc.LeadScopeMemberAccounts)
 
 	routeDeps := server.RouteDeps{
 		SessionMgr:          sessionMgr,
