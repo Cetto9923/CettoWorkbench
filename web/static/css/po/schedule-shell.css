@@ -14,9 +14,10 @@ body.po-workbench-shell #page-schedule .schedule-page-head {
   justify-content: flex-end;
 }
 
-/* 业务需求表：取消 Main 的 min-width:1180px 与标题列内联 500px，让表格贴合 PO 外壳内容区宽度；
+/* 业务需求表与独立研发需求表：取消 Main 的 min-width:1180px 与标题列内联宽度，让表格贴合 PO 外壳内容区宽度；
    标题列按比例分配并用 max-width:0 触发单元格内省略号，避免操作列被挤出可视区 */
-body.po-workbench-shell #page-schedule #scheduleBizListPanel .schedule-table {
+body.po-workbench-shell #page-schedule #scheduleBizListPanel .schedule-table,
+body.po-workbench-shell #page-schedule #scheduleIndependentListPanel .schedule-table {
   min-width: 0;
 }
 
@@ -25,7 +26,13 @@ body.po-workbench-shell #page-schedule #scheduleBizListPanel .schedule-table th.
   max-width: none !important;
 }
 
-body.po-workbench-shell #page-schedule #scheduleBizListPanel .schedule-table tbody td:first-child:not([colspan]) {
+body.po-workbench-shell #page-schedule #scheduleIndependentListPanel .schedule-table th.schedule-col-title {
+  width: 30% !important;
+  max-width: none !important;
+}
+
+body.po-workbench-shell #page-schedule #scheduleBizListPanel .schedule-table tbody td:first-child:not([colspan]),
+body.po-workbench-shell #page-schedule #scheduleIndependentListPanel .schedule-table tbody td:first-child:not([colspan]) {
   max-width: 0;
 }
 
