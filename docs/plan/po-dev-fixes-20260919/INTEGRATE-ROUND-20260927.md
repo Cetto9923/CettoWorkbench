@@ -116,6 +116,7 @@ JSON 接口抽检均 200：todos/done/notice/follow/board/query/issues-risk item
 | `07dfbee0` | 排期页（PO 外壳）列宽/重复标题；/demands/:id 卡片化（po/demand-page.css） |
 | `71cddc5c` | 首页抽屉关闭态右缘投影；已办“查看记录”按钮溢出 |
 | `63f9f7c` | 排期页独立研发需求表取消 min-width 与内联宽度限制（贴合 PO 外壳） |
+| `9f28099` | 后台侧栏移除非 PO 外壳多余品牌条与重复收起按钮（修 profile/admin 错位） |
 
 ### 视觉问题表
 | # | 页面 | 问题 | 严重度 | 原因 | 状态 | 依据 |
@@ -130,7 +131,7 @@ JSON 接口抽检均 200：todos/done/notice/follow/board/query/issues-risk item
 | V8 | 排期 | 操作列被挤出可视区；敏捷小组折 3-4 行；页内标题与顶栏重复 | 中 | Main 模板内联 500px 标题列 + table min-width 1180 | 已修 07dfbee0（业务表）、63f9f7c（独立研需表） | Main 8090 同病，自判 |
 | V9 | /demands/:id | 裸文本无样式、嵌套 main | 中 | 模板引用未加载的 home-page-card | 已修（卡片化） | 自判（8096 同样裸） |
 | V10 | 看板弹窗/澄清/提交评审/提测 | 人员选择器不初始化、看板弹窗“页面请求能力未加载” | 高（功能性） | ui.js/app.js 缺 initUserPicker/appJson | 已修（人员选择器暂为通用 autocomplete，无拼音/分组标题） | 8096 |
-| V11 | /profile、/admin/*、/kanban/* | 仍是 Main 后台外壳（品牌区 + “个人入口/工作区”菜单），与 PO 外壳两套观感 | 中 | 这些路由不在 PO 外壳路由表 | 未修（需产品决定是否纳入 PO 外壳） | 8096 同样 |
+| V11 | /profile、/admin/*、/kanban/* | 仍是 Main 后台外壳（品牌区 + “个人入口/工作区”菜单），与 PO 外壳两套观感 | 中 | 这些路由不在 PO 外壳路由表 | 错位已修 9f28099；归属待决定 | 8096 同样 |
 | V12 | 排期 | 探索版排期 UI（窗口卡片、快捷筛选样式等）与 Main 差异大 | 中 | 排期保留 Main（业务冲突） | 未修 | 问题 8 |
 | V13 | 人员选择器 | 缺探索版 user 模式（头像/部门/拼音检索） | 低 | ui.js 保留 Main autocomplete | 未修 | 8096 |
 | V14 | 深色主题 | variables.css 已带 dark token，但头像菜单只提供浅色（Main 决策） | 低 | — | 保持 Main | Main |
