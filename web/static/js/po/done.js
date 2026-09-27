@@ -275,7 +275,7 @@
             '<td class="done-ctx">' + ctxHtml + '</td>' +
             '<td class="done-status">' + stHtml + '</td>' +
             '<td class="done-time">' + fmtDateTime(it.handledAt || it.date) + '</td>' +
-            '<td class="done-op"><button type="button" class="action-btn small wb-done-detail-btn" data-action-id="' + it.id + '">查看记录</button></td>' +
+            '<td class="done-op"><button type="button" class="action-btn action-btn--sm small wb-done-detail-btn" data-action-id="' + it.id + '">查看记录</button></td>' +
             '</tr>'
           );
         }).join("");

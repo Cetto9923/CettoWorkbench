@@ -273,8 +273,9 @@
 /* 首页评审抽屉：默认不可见，避免表单落在列表末尾。 */
 .po-review-overlay { position: fixed; inset: 0; z-index: 900; background: var(--color-review-overlay); opacity: 0; pointer-events: none; transition: opacity .2s; }
 .po-review-overlay.show { opacity: 1; pointer-events: auto; }
-.po-review-modal { position: fixed; z-index: 901; top: 0; right: 0; bottom: 0; width: min(460px, 100vw); display: flex; flex-direction: column; background: var(--color-surface); box-shadow: var(--color-review-modal-shadow); transform: translateX(100%); transition: transform .2s; }
-.po-review-modal.show { transform: translateX(0); }
+/* 关闭态隐藏阴影并设 visibility:hidden，否则屏外抽屉的左投影会在页面右缘露出一条灰边 */
+.po-review-modal { position: fixed; z-index: 901; top: 0; right: 0; bottom: 0; width: min(460px, 100vw); display: flex; flex-direction: column; background: var(--color-surface); box-shadow: none; visibility: hidden; transform: translateX(100%); transition: transform .2s, visibility 0s linear .2s, box-shadow .2s; }
+.po-review-modal.show { transform: translateX(0); visibility: visible; box-shadow: var(--color-review-modal-shadow); transition: transform .2s, visibility 0s, box-shadow .2s; }
 .po-review-hdr { display: flex; align-items: center; justify-content: space-between; padding: 18px; border-bottom: 1px solid var(--color-border); }
 .po-review-hdr h3 { margin: 0; font-size: 16px; color: var(--color-text-primary); }
 .po-review-req-name, .po-review-req-id { display: block; margin-top: 5px; font-size: 12px; font-weight: 400; color: var(--color-text-secondary); }
