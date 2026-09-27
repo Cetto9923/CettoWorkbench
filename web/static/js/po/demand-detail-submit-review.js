@@ -37,6 +37,7 @@
       '      <div class="dd-review-picker" id="ddReviewPicker"><div class="dd-review-selected" id="ddReviewSelected" aria-live="polite"></div>',
       '        <div class="dd-review-picker-input"><input id="ddReviewReviewerInput" type="text" autocomplete="off" placeholder="输入姓名、工号或拼音搜索"><input id="ddReviewReviewerValue" type="hidden"></div>',
       '      </div>',
+      '      <div id="ddReviewCandidatesEmpty" class="dd-review-picker-state dd-review-picker-empty" style="display:none;color:var(--text-secondary,#8c8c8c);margin-top:6px;">请先在禅道需求池配置业务评审人</div>',
       '      <div id="ddReviewCandidatesLoading" class="dd-review-picker-state">正在加载可选评审人…</div>',
       '      <div id="ddReviewCandidatesError" class="dd-review-picker-state dd-review-picker-error" style="display:none;"></div>',
       '      <label class="dd-reject-label dd-submit-comment-label">评审说明（选填）</label>',
@@ -99,11 +100,29 @@
   function bind(data) {
     var users = items(data);
     state = { users: users, selected: [] };
-    (data.selected || []).forEach(function (account) {
-      account = String(account || "").trim();
-      if (users.some(function (item) { return item.value === account; })) add(account);
-    });
-    renderChips();
+    var empty = document.getElementById("ddReviewCandidatesEmpty");
+    var button = document.getElementById("ddConfirmSubmitReviewBtn");
+    var input = document.getElementById("ddReviewReviewerInput");
+    if (!users.length) {
+      if (empty) empty.style.display = "block";
+      if (button) button.disabled = true;
+      if (input) {
+        input.disabled = true;
+        input.placeholder = "暂无可选业务评审人";
+      }
+    } else {
+      if (empty) empty.style.display = "none";
+      if (button) button.disabled = false;
+      if (input) {
+        input.disabled = false;
+        input.placeholder = "输入姓名、工号或拼音搜索";
+      }
+      (data.selected || []).forEach(function (account) {
+        account = String(account || "").trim();
+        if (users.some(function (item) { return item.value === account; })) add(account);
+      });
+      renderChips();
+    }
     root.initUserPicker("ddReviewReviewerInput", "ddReviewReviewerValue", users, { placeholder: "输入姓名、工号或拼音搜索", maxShow: 20 });
     var value = document.getElementById("ddReviewReviewerValue");
     if (value) value.addEventListener("change", function () {
@@ -120,8 +139,6 @@
     });
     var loading = document.getElementById("ddReviewCandidatesLoading");
     if (loading) loading.style.display = "none";
-    var button = document.getElementById("ddConfirmSubmitReviewBtn");
-    if (button) button.disabled = false;
   }
 
   function renderLoadError(error, errorEl) {
@@ -144,9 +161,11 @@
     modal.style.display = "flex";
     var loading = document.getElementById("ddReviewCandidatesLoading");
     var error = document.getElementById("ddReviewCandidatesError");
+    var empty = document.getElementById("ddReviewCandidatesEmpty");
     var button = document.getElementById("ddConfirmSubmitReviewBtn");
     if (loading) loading.style.display = "block";
     if (error) { error.style.display = "none"; error.textContent = ""; }
+    if (empty) { empty.style.display = "none"; }
     if (button) button.disabled = true;
     var fetchFn = root.appFetch || fetch;
     fetchFn("/demands/" + encodeURIComponent(demandId) + "/review-candidates", { method: "GET", credentials: "same-origin", headers: { Accept: "application/json" } })

@@ -135,6 +135,24 @@
 
   function remountReviewerPicker() {
     userOptions = buildUserOptions();
+    var emptyHint = document.getElementById("poDemandSubmitReviewEmptyHint");
+    var confirmBtn = document.getElementById("poDemandSubmitReviewConfirmBtn");
+    var inputEl = document.getElementById(INPUT_ID);
+    if (!userOptions || !userOptions.length) {
+      if (emptyHint) emptyHint.style.display = "block";
+      if (confirmBtn) confirmBtn.disabled = true;
+      if (inputEl) {
+        inputEl.disabled = true;
+        inputEl.placeholder = "暂无可选业务评审人";
+      }
+    } else {
+      if (emptyHint) emptyHint.style.display = "none";
+      if (confirmBtn) confirmBtn.disabled = false;
+      if (inputEl) {
+        inputEl.disabled = false;
+        inputEl.placeholder = "输入姓名或工号搜索";
+      }
+    }
     var preselected = demandReviewerAccounts(userOptions);
     selectedAccounts = [];
     preselected.forEach(function (account) {
