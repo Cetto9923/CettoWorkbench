@@ -41,8 +41,8 @@ func TestDemands_StoryOnly_NoDemandSQL(t *testing.T) {
 	// 变化，测试立即失败。
 	mock.ExpectQuery("(?s)^SELECT count\\(\\*\\) FROM \\(SELECT kind, id, MIN\\(stage_index\\).*`zt_story`.*UNION ALL.*`zt_story`.*\\) AS all_stages$").
 		WithArgs(
-			3, "0", "closed", "demandpool", "story", "0", "0", "alice", "alice",
-			7, "0", "closed", "demandpool", "story", "0", "alice", "alice", sqlmock.AnyArg(),
+			3, "0", "closed", "demandpool", 0, "story", "0", "0", "alice", "alice",
+			7, "0", "closed", "demandpool", 0, "story", "0", "alice", "alice", sqlmock.AnyArg(),
 		).
 		WillReturnRows(sqlmock.NewRows([]string{"count(*)"}).AddRow(2))
 
@@ -50,8 +50,8 @@ func TestDemands_StoryOnly_NoDemandSQL(t *testing.T) {
 	// 因此参数与 count 查询完全一致，末尾多一个 LIMIT 占位符。
 	mock.ExpectQuery("(?s)^SELECT id, kind, stage_index FROM \\(SELECT kind, id, MIN\\(stage_index\\).*`zt_story`.*UNION ALL.*`zt_story`.*\\) AS all_stages ORDER BY stage_index ASC, kind_rank ASC, id DESC LIMIT \\?$").
 		WithArgs(
-			3, "0", "closed", "demandpool", "story", "0", "0", "alice", "alice",
-			7, "0", "closed", "demandpool", "story", "0", "alice", "alice", sqlmock.AnyArg(),
+			3, "0", "closed", "demandpool", 0, "story", "0", "0", "alice", "alice",
+			7, "0", "closed", "demandpool", 0, "story", "0", "alice", "alice", sqlmock.AnyArg(),
 			15,
 		).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "kind", "stage_index"}).

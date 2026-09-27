@@ -209,7 +209,7 @@ func TestServiceDemands_AllStage_PriorityP1(t *testing.T) {
 		WithArgs(sqlmock.AnyArg()).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "stage", "status", "assignedTo", "accepter"}).
 			AddRow(8001, "", "wait", "alice", ""))
-	mock.ExpectQuery("(?s)SELECT d\\.id AS demand_id.*FROM zt_demand.*fromDemand IN").
+		mock.ExpectQuery("(?s)SELECT d\\.id AS demand_id.*FROM zt_demand.*fromDemand IN").
 		WithArgs(8001, 8001).
 		WillReturnRows(sqlmock.NewRows([]string{"demand_id", "count", "first_id"}).AddRow(8001, 0, 0))
 	mock.ExpectQuery("(?s)SELECT d\\.id AS demand_id.*zt_demandappraise").
@@ -318,4 +318,81 @@ func TestRoleDemandBase_VisibilityScope_ThreeCases(t *testing.T) {
 		!strings.Contains(sql, "status = 'testing'") {
 		t.Fatalf("expected accepter to only enter waitacceptance/testing stage, got: %s", sql)
 	}
+}
+
+
+// TestScheduleAndDeliverStoryScope_ExcludesFromDemand 验证排期和交付阶段的独立研发需求口径：
+// 增加 fromDemand = 0 条件，排除由业务需求转化来的研发需求（fromDemand > 0 不再出现）。
+func TestScheduleAndDeliverStoryScope_ExcludesFromDemand(t *testing.T) {
+	db, _ := openSQLMock(t)
+	repo := NewRepo(db, db)
+	ctx := context.Background()
+
+	t.Run("scheduleStoryScope_contains_fromDemand_zero", func(t *testing.T) {
+		q := repo.scheduleStoryScope(ctx, "alice")
+		var rows []struct{ ID int }
+		stmt := q.Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
+		sqlStr := stmt.SQL.String()
+		if !strings.Contains(sqlStr, "fromDemand = ?") {
+			t.Fatalf("expected scheduleStoryScope SQL to contain 'fromDemand = ?', got: %s", sqlStr)
+		}
+		hasZero := false
+		for _, arg := range stmt.Vars {
+			if v, ok := arg.(int); ok && v == 0 {
+				hasZero = true
+				break
+			}
+		}
+		if !hasZero {
+			t.Fatalf("expected scheduleStoryScope args to bind 0 for fromDemand, got vars: %v", stmt.Vars)
+		}
+	})
+
+	t.Run("deliverStoryScope_contains_fromDemand_zero", func(t *testing.T) {
+		q := repo.deliverStoryScope(ctx, "alice")
+		var rows []struct{ ID int }
+		stmt := q.Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
+		sqlStr := stmt.SQL.String()
+		if !strings.Contains(sqlStr, "fromDemand = ?") {
+			t.Fatalf("expected deliverStoryScope SQL to contain 'fromDemand = ?', got: %s", sqlStr)
+		}
+		// 交付口径里原来没有的 product != 0 不要补，只加 fromDemand = 0
+		if strings.Contains(sqlStr, "product != ?") || strings.Contains(sqlStr, "product <> ?") {
+			t.Fatalf("deliverStoryScope should NOT add product != 0, got: %s", sqlStr)
+		}
+		hasZero := false
+		for _, arg := range stmt.Vars {
+			if v, ok := arg.(int); ok && v == 0 {
+				hasZero = true
+				break
+			}
+		}
+		if !hasZero {
+			t.Fatalf("expected deliverStoryScope args to bind 0 for fromDemand, got vars: %v", stmt.Vars)
+		}
+	})
+
+	t.Run("excludes_fromDemand_greater_than_zero", func(t *testing.T) {
+		dbMock, mock := openSQLMock(t)
+		repoMock := NewRepo(dbMock, dbMock)
+
+		// 模拟执行，验证传入的参数必须绑定 fromDemand = 0，排除 fromDemand > 0
+		mock.ExpectQuery("(?s)SELECT .* FROM `zt_story` WHERE .*fromDemand = \\?.*").
+			WithArgs("0", "closed", "demandpool", 0, "story", "0", "0", "alice", "alice").
+			WillReturnRows(sqlmock.NewRows([]string{"id", "fromDemand", "title"}).
+				AddRow(1, 0, "独立研发需求"))
+
+		var queryRows []struct {
+			ID         int    `gorm:"column:id"`
+			FromDemand int    `gorm:"column:fromDemand"`
+			Title      string `gorm:"column:title"`
+		}
+		err := repoMock.scheduleStoryScope(ctx, "alice").Find(&queryRows).Error
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(queryRows) != 1 || queryRows[0].FromDemand != 0 {
+			t.Fatalf("expected only fromDemand = 0 records, got: %+v", queryRows)
+		}
+	})
 }
