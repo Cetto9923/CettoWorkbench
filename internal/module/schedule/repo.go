@@ -115,7 +115,7 @@ func (r *Repo) ListAllTeamgroups(ctx context.Context) ([]ZtTeamgroup, error) {
 	if err := r.db.WithContext(ctx).
 		Table((ZtTeamgroup{}).TableName()).
 		Select("id", "name", "parent", "path").
-		Where("deleted = '0'").
+		Where("deleted = '0' AND status != 'disband'").
 		Order("id ASC").
 		Find(&rows).Error; err != nil {
 		return nil, err
@@ -131,6 +131,7 @@ FROM zt_teamgroup tg
 INNER JOIN zt_team t ON t.root = tg.id AND t.type = 'teamgroup'
 WHERE t.account = ?
   AND tg.deleted = '0'
+  AND tg.status != 'disband'
 ORDER BY tg.id`
 
 	var rows []ZtTeamgroup
@@ -149,7 +150,7 @@ func (r *Repo) FindTeamgroupsByIDs(ctx context.Context, ids []uint) ([]ZtTeamgro
 	if err := r.db.WithContext(ctx).
 		Table((ZtTeamgroup{}).TableName()).
 		Select("id", "name", "parent", "path").
-		Where("id IN ? AND deleted = '0'", ids).
+		Where("id IN ? AND deleted = '0' AND status != 'disband'", ids).
 		Find(&rows).Error; err != nil {
 		return nil, err
 	}
@@ -171,12 +172,12 @@ ORDER BY id ASC`
 	return ids, nil
 }
 
-// ListAllProducts 返回全部未删除产品（筛选下拉用）。
+// ListAllProducts 返回全部未删除、非影子产品（筛选下拉用）。
 func (r *Repo) ListAllProducts(ctx context.Context) ([]ZtProduct, error) {
 	const query = `
 SELECT id, name
 FROM zt_product
-WHERE deleted = '0'
+WHERE deleted = '0' AND shadow <> 1
 ORDER BY id DESC`
 
 	var rows []ZtProduct

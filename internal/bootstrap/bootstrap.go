@@ -34,18 +34,18 @@ import (
 	"workbench/internal/module/debug"
 	"workbench/internal/module/dept"
 
+	"workbench/internal/module/agileteam"
 	"workbench/internal/module/build"
 	"workbench/internal/module/follow"
 	"workbench/internal/module/kanban"
 	"workbench/internal/module/login"
 	"workbench/internal/module/loginlog"
 	"workbench/internal/module/menu"
+	"workbench/internal/module/metrics"
 	"workbench/internal/module/operationlog"
 	"workbench/internal/module/po"
-	"workbench/internal/module/query"
 	"workbench/internal/module/profile"
-	"workbench/internal/module/metrics"
-	"workbench/internal/module/agileteam"
+	"workbench/internal/module/query"
 	"workbench/internal/module/role"
 	"workbench/internal/module/schedule"
 	"workbench/internal/module/testtask"
@@ -120,12 +120,12 @@ func Run() error {
 	render.SetDefault(rend)
 
 	authRepo := login.NewRepo(db)
-	authSvc := login.NewService(authRepo, sessionMgr, zapLog)
+	userRepo := user.NewRepo(db)
+	userSvc := user.NewService(userRepo, zentaopkg.API())
+	authSvc := login.NewService(authRepo, sessionMgr, zapLog, userSvc)
 	authHandler := login.NewHandler(authSvc, zapLog)
 	requireLogin := middleware.RequireLogin(sessionMgr, db)
 	redirectIfLoggedIn := middleware.RedirectIfLoggedIn(sessionMgr)
-	userRepo := user.NewRepo(db)
-	userSvc := user.NewService(userRepo)
 	userHandler := user.NewHandler(rend, zapLog, userSvc)
 	loginLogRepo := loginlog.NewRepo(db)
 	loginLogSvc := loginlog.NewService(loginLogRepo)
@@ -144,7 +144,7 @@ func Run() error {
 	roleHandler := role.NewHandler(rend, zapLog, roleSvc)
 
 	scheduleRepo := schedule.NewRepo(db)
-	scheduleSvc := schedule.NewService(scheduleRepo, userSvc, zentaopkg.API(), zapLog)
+	scheduleSvc := schedule.NewService(scheduleRepo, userSvc, deptSvc, zentaopkg.API(), zapLog)
 	scheduleHandler := schedule.NewHandler(rend, zapLog, scheduleSvc, strings.TrimRight(cfg.Zentao.URL, "/"))
 	poRepo := po.NewRepo(dbReadonly, db)
 	poSvc := po.NewService(poRepo, scheduleSvc, userSvc, zentaopkg.API(), zapLog)
@@ -165,11 +165,7 @@ func Run() error {
 		}
 		return render.SidebarBadges{Todos: b.Todos, Done: b.Done, Notice: b.Notice}, nil
 	})
-	testtaskReadDB := dbReadonly
-	if testtaskReadDB == nil {
-		testtaskReadDB = db
-	}
-	testtaskRepo := testtask.NewRepo(testtaskReadDB, db)
+	testtaskRepo := testtask.NewRepo(db)
 	testtaskSvc := testtask.NewService(testtaskRepo, userSvc, zentaopkg.API(), zapLog)
 	testtaskHandler := testtask.NewHandler(testtaskSvc, zapLog)
 	buildRepo := build.NewRepo(db)
@@ -186,7 +182,6 @@ func Run() error {
 	sqlPerfRepo := debug.NewRepo(cfg.Log.Dir)
 	sqlPerfSvc := debug.NewService(sqlPerfRepo)
 	sqlPerfHandler := debug.NewHandler(sqlPerfSvc)
-
 
 	queryRepo := query.NewRepo(dbReadonlyOrPrimary(dbReadonly, db))
 	querySvc := query.NewService(queryRepo)

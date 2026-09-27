@@ -2,8 +2,9 @@
 // 文件: internal/module/dept/service.go
 // 模块: 部门管理
 // 类型: crud
-// 职责: 实现部门树查询与增删改业务逻辑。
+// 职责: 实现部门树查询与增删改业务逻辑，以及禅道部门完整路径拼接。
 // 依赖: internal/model
+//       internal/model/zentao
 //       internal/module/dept/repo.go
 // =============================================================================
 
@@ -12,10 +13,12 @@ package dept
 import (
 	"context"
 	"errors"
+	"strconv"
 	"strings"
 	"time"
 
 	"workbench/internal/model"
+	ztmodel "workbench/internal/model/zentao"
 
 	"gorm.io/gorm"
 )
@@ -292,4 +295,93 @@ func buildTree(rows []model.Dept) []*DeptNode {
 		parent.Children = append(parent.Children, node)
 	}
 	return roots
+}
+
+// PathDisplayMap 返回全部禅道部门 ID → 完整路径（如「总行/研发部/前端组」）。
+func (s *Service) PathDisplayMap(ctx context.Context, actor *model.User) (map[uint64]string, error) {
+	_ = actor
+	rows, err := s.repo.FindAllZentaoDepts(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return buildZentaoDeptPathDisplayMap(rows), nil
+}
+
+// PathDisplayMapByIDs 按 ID 返回禅道部门完整路径；缺失 ID 不进 map。
+func (s *Service) PathDisplayMapByIDs(ctx context.Context, actor *model.User, ids []uint64) (map[uint64]string, error) {
+	if len(ids) == 0 {
+		return map[uint64]string{}, nil
+	}
+	all, err := s.PathDisplayMap(ctx, actor)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[uint64]string, len(ids))
+	for _, id := range ids {
+		if id == 0 {
+			continue
+		}
+		if path, ok := all[id]; ok && path != "" {
+			out[id] = path
+		}
+	}
+	return out, nil
+}
+
+func buildZentaoDeptPathDisplayMap(rows []ztmodel.ZtDept) map[uint64]string {
+	nameByID := make(map[uint64]string, len(rows))
+	pathByID := make(map[uint64]string, len(rows))
+	for _, row := range rows {
+		id := uint64(row.ID)
+		nameByID[id] = strings.TrimSpace(row.Name)
+		pathByID[id] = row.Path
+	}
+
+	out := make(map[uint64]string, len(rows))
+	for id, rawPath := range pathByID {
+		parts := parseZentaoDeptPathIDs(rawPath)
+		if len(parts) == 0 {
+			if name := nameByID[id]; name != "" {
+				out[id] = name
+			}
+			continue
+		}
+		names := make([]string, 0, len(parts))
+		for _, pid := range parts {
+			if name := nameByID[pid]; name != "" {
+				names = append(names, name)
+			}
+		}
+		if len(names) == 0 {
+			continue
+		}
+		out[id] = strings.Join(names, "/")
+	}
+	return out
+}
+
+func parseZentaoDeptPathIDs(path string) []uint64 {
+	path = strings.TrimSpace(path)
+	if path == "" {
+		return nil
+	}
+	rawParts := strings.Split(path, ",")
+	ids := make([]uint64, 0, len(rawParts))
+	seen := make(map[uint64]struct{}, len(rawParts))
+	for _, part := range rawParts {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		id, err := strconv.ParseUint(part, 10, 64)
+		if err != nil || id == 0 {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		ids = append(ids, id)
+	}
+	return ids
 }

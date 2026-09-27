@@ -3,6 +3,8 @@
 // 模块: PO 工作台
 // 类型: action
 // 职责: 提交业务评审弹框的评审人候选读取。
+// 依赖: internal/model
+//       internal/pkg/errorx
 // =============================================================================
 
 package po
@@ -24,7 +26,8 @@ type DemandReviewCandidatesResp struct {
 }
 
 // GetDemandReviewCandidates 查询当前需求可提交的业务评审人。
-// 授权口径与 SubmitDemandReview 一致：草稿/驳回状态下，仅创建人、指派人或超级管理员可操作。
+// 授权口径与 SubmitDemandReview 一致（同 Main）：暂存/驳回状态下，仅创建人可操作。
+// 候选人口径同 Main（bug #39365）：只取业需所属需求池的 businessReviewer，对齐禅道 demand-submit。
 func (s *Service) GetDemandReviewCandidates(ctx context.Context, actor *model.User, demandID int64) (*DemandReviewCandidatesResp, error) {
 	if actor == nil || strings.TrimSpace(actor.Account) == "" {
 		return nil, errorx.New(errorx.ErrCodeForbidden, "请先登录")
@@ -41,19 +44,39 @@ func (s *Service) GetDemandReviewCandidates(ctx context.Context, actor *model.Us
 	}
 	status := strings.TrimSpace(demand.Status)
 	if status != "draft" && status != "refuse" {
-		return nil, errorx.New(errorx.ErrCodeConflict, "当前状态不允许提交评审")
+		return nil, errorx.New(errorx.ErrCodeConflict, "仅暂存或已驳回的需求可发起评审")
 	}
 	account := strings.TrimSpace(actor.Account)
-	if !actor.IsSuperAdmin && strings.TrimSpace(demand.CreatedBy) != account && strings.TrimSpace(demand.AssignedTo) != account {
-		return nil, errorx.New(errorx.ErrCodeForbidden, "只有创建人或指派人可以选择评审人")
+	if strings.TrimSpace(demand.CreatedBy) != account {
+		return nil, errorx.New(errorx.ErrCodeForbidden, "只有创建人可以发起评审")
 	}
-	users, err := s.repo.FindCandidateUsers(ctx, account)
+	poolReviewers, err := s.repo.FindDemandPoolBusinessReviewer(ctx, demandID)
 	if err != nil {
 		return nil, err
 	}
+	allUsers, err := s.repo.FindCandidateUsers(ctx, account)
+	if err != nil {
+		return nil, err
+	}
+	users := filterPoolBusinessReviewers(allUsers, splitReviewerAccounts(poolReviewers))
 	return &DemandReviewCandidatesResp{
 		DemandID: demandID,
 		Selected: splitReviewerAccounts(demand.Reviewer),
 		Users:    users,
 	}, nil
+}
+
+// filterPoolBusinessReviewers 按需求池业务评审人账号顺序筛出候选人；已删除账号不在 users 中，自然剔除。
+func filterPoolBusinessReviewers(users []ClarifyOption, poolAccounts []string) []ClarifyOption {
+	byAccount := make(map[string]ClarifyOption, len(users))
+	for _, u := range users {
+		byAccount[u.Value] = u
+	}
+	out := make([]ClarifyOption, 0, len(poolAccounts))
+	for _, account := range poolAccounts {
+		if u, ok := byAccount[account]; ok {
+			out = append(out, u)
+		}
+	}
+	return out
 }

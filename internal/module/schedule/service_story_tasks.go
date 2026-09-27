@@ -208,10 +208,8 @@ func calculateTaskProgress(estimate, consumed, left float64, status string) int 
 			return 0
 		}
 	}
-	total := estimate
-	if total <= 0 {
-		total = consumed + left
-	}
+
+	total := consumed + left
 	if total <= 0 {
 		return 0
 	}

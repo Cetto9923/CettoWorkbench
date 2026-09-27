@@ -57,7 +57,7 @@ func (r *Repo) ListUserTeamgroups(ctx context.Context, account string) ([]teamgr
 		Table((ztmodel.ZtTeam{}).TableName()+" AS t").
 		Select("g.id, g.name, g.PO, g.manager").
 		Joins("LEFT JOIN "+(ztmodel.ZtTeamgroup{}).TableName()+" AS g ON t.root = g.id").
-		Where("t.account = ? AND t.type = ? AND g.deleted = ?", account, "teamgroup", "0").
+		Where("t.account = ? AND t.type = ? AND g.status != ? AND g.deleted = ?", account, "teamgroup", "disband", "0").
 		Order("t.`join` DESC").
 		Scan(&rows).Error
 	if err != nil {

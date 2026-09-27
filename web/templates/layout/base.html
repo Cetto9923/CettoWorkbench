@@ -2,7 +2,7 @@
 文件: web/templates/layout/base.html
 模块: 布局
 职责: 后台主布局模板，负责导航、侧栏、底部工作页签与页面容器结构。
-全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath, .LayoutNav (sidebar|top，来自配置 layout.nav), .HideChrome (bool，constants 全屏页表), .ZentaoURL (string), .ZentaoRequestType (string)
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .CurrentPath, .LayoutNav (sidebar|top，来自配置 layout.nav), .HideChrome (bool，constants 全屏页表), .ZentaoURL (string), .ZentaoRequestType (string)
 页面字段: .Title (string), .PageTitle (string), .CurrentMenus ([]menu.Menu)
 ========================================================================== */}}
 <!DOCTYPE html>
@@ -13,7 +13,7 @@
   <meta name="csrf-token" content="{{ .CSRFToken }}">
   <meta name="zentao-url" content="{{ .ZentaoURL }}">
   <meta name="zentao-request-type" content="{{ .ZentaoRequestType }}">
-  <title>{{ .Title }} - workbench</title>
+  <title>{{ .Title }} - 研发工作台</title>
   <script src="/static/js/layout/header.js"></script>
   <script src="/static/js/layout/theme.js"></script>
   <link rel="stylesheet" href="{{ asset "/static/vendor/fonts/jetbrains-mono/fonts.css" }}">
@@ -32,6 +32,16 @@
   {{ block "page_css" . }}{{ end }}
 </head>
 <body{{ if .HideChrome }} class="layout-chrome-hidden"{{ else if or (eq .CurrentPath "/home") (eq .CurrentPath "/schedule") (eq .CurrentPath "/todos") (eq .CurrentPath "/done") (eq .CurrentPath "/notice") (eq .CurrentPath "/follow") (eq .CurrentPath "/board/demand") (eq .CurrentPath "/board/task") (eq .CurrentPath "/query") (eq .CurrentPath "/issues/risk") (eq .CurrentPath "/issue-risk") (eq .CurrentPath "/metrics/manage") (eq .CurrentPath "/metrics/radar") (eq .CurrentPath "/agileteam") (eq .CurrentPath "/pmo") (hasPrefix .CurrentPath "/demands/") }} class="po-workbench-shell has-bottom-tabs"{{ else if eq .LayoutNav "top" }} class="has-bottom-tabs layout-nav-top"{{ else }} class="has-bottom-tabs"{{ end }}>
+  {{/* 侧栏收起态须在首屏绘制前恢复，否则导航跳转会先展开再收起 */}}
+  <script>
+    (function () {
+      try {
+        if (window.localStorage.getItem("gofw.sidebar.collapsed") === "1") {
+          document.body.classList.add("sidebar-collapsed");
+        }
+      } catch (e) {}
+    })();
+  </script>
   {{ if not .HideChrome }}
   <header class="topbar">
     {{ template "layout/header" . }}

@@ -13,6 +13,17 @@
     return (el.getAttribute("content") || "").trim();
   }
 
+  // appFetch 一律带 X-Requested-With，后端未登录时返回 401 JSON 而非 303；
+  // 此处统一跳登录页。跳转后返回永不 settle 的 Promise，避免各模块 catch 误弹失败 toast。
+  function redirectToLogin() {
+    var redirect = window.location.pathname + window.location.search;
+    window.location.href = "/login?redirect=" + encodeURIComponent(redirect);
+  }
+
+  function pendingUntilUnload() {
+    return new Promise(function () {});
+  }
+
   function appFetch(input, init) {
     var options = init || {};
     var headers = new Headers(options.headers || {});
@@ -22,7 +33,13 @@
     }
     headers.set("X-Requested-With", "XMLHttpRequest");
     options.headers = headers;
-    return fetch(input, options);
+    return fetch(input, options).then(function (resp) {
+      if (resp.status === 401) {
+        redirectToLogin();
+        return pendingUntilUnload();
+      }
+      return resp;
+    });
   }
 
   function setSubmittingState(form) {

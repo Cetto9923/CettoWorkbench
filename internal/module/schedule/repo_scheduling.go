@@ -336,6 +336,7 @@ SELECT
   role,
   gv,
   product,
+  dept,
   point,
   revpoint,
   source_type AS sourceType

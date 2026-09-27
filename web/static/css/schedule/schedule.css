@@ -153,7 +153,8 @@
   border: 1px solid var(--border);
   border-radius: 8px;
   margin-bottom: 16px;
-  overflow: hidden;
+  /* 不用 overflow:hidden，避免筛选多选下拉被裁切；横向滚动由内部 table wrap 承担 */
+  overflow: visible;
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03);
 }
 

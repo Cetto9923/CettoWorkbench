@@ -126,21 +126,48 @@
     }
   }
 
-  function fillModalProjectSelect(projects, selectedId) {
-    var $select = $("#taskModalProjectSelect");
+  function toProjectAutocompleteItems(projects) {
+    return (projects || [])
+      .map(function (project) {
+        var id = String(project.id || "");
+        if (!id) {
+          return null;
+        }
+        return {
+          value: id,
+          label: $.trim(project.name || "") || id,
+        };
+      })
+      .filter(Boolean);
+  }
+
+  function findProjectLabel(items, selectedId) {
     var selected = String(selectedId || "");
-    $select.empty();
-    $("<option></option>").val("").text("请选择项目").appendTo($select);
-    (projects || []).forEach(function (project) {
-      var id = String(project.id || "");
-      if (!id) {
-        return;
-      }
-      $("<option></option>").val(id).text($.trim(project.name || "") || id).appendTo($select);
-    });
-    if (selected) {
-      $select.val(selected);
+    if (!selected) {
+      return "";
     }
+    for (var i = 0; i < (items || []).length; i++) {
+      if (items[i].value === selected) {
+        return items[i].label || selected;
+      }
+    }
+    return selected;
+  }
+
+  function fillModalProjectSelect(projects, selectedId) {
+    var items = toProjectAutocompleteItems(projects);
+    var selected = String(selectedId || "");
+    if (typeof window.initAutocomplete === "function") {
+      window.initAutocomplete("taskModalProjectInput", "taskModalProjectSelect", items, {
+        placeholder: "搜索项目",
+        value: selected,
+        label: findProjectLabel(items, selected),
+        labelOnly: true,
+      });
+      return;
+    }
+    $("#taskModalProjectSelect").val(selected);
+    $("#taskModalProjectInput").val(findProjectLabel(items, selected));
   }
 
   function getModalProjectId() {
@@ -464,7 +491,7 @@
       clearTaskRowControls($(this));
     });
     $("#taskModalTableBody").empty();
-    $("#taskModalProjectSelect").empty().append($("<option></option>").val("").text("请选择项目"));
+    fillModalProjectSelect([], "");
     $("#taskModalProjectSection").hide();
     $("#taskModalSpec").empty();
     $("#taskModalInfoBar").empty();

@@ -15,10 +15,20 @@
   var ownerPickerLoading = null;
   var ownerPickersReady = false;
   var suppressOwnerChange = false;
+  var priPickerReady = false;
+  var suppressPriChange = false;
 
   var OWNER_PICKERS = [
     { inputId: "scheduleFilterTestInput", hiddenId: "scheduleFilterTestValue", placeholder: "测试负责人" },
     { inputId: "scheduleFilterAcceptInput", hiddenId: "scheduleFilterAcceptValue", placeholder: "验收负责人" },
+  ];
+
+  var PRI_OPTIONS = [
+    { value: "0", label: "未设置优先级" },
+    { value: "1", label: "P1" },
+    { value: "2", label: "P2" },
+    { value: "3", label: "P3" },
+    { value: "4", label: "P4" },
   ];
 
   function readURLParams() {
@@ -52,6 +62,13 @@
     });
   }
 
+  function closeAllFilterDropdowns() {
+    closeAllScheduleMultiselects();
+    if (typeof window.closeAllDropdowns === "function") {
+      window.closeAllDropdowns();
+    }
+  }
+
   function getSelectedValues($multiselect) {
     var selected = [];
     $multiselect.find(".schedule-ms-checkbox:checked").each(function () {
@@ -61,6 +78,17 @@
       });
     });
     return selected;
+  }
+
+  function getFormMultiselectIds($ms) {
+    var ids = [];
+    $ms.find(".form-multiselect-checkbox:checked").each(function () {
+      var value = String($(this).val() || "").trim();
+      if (value) {
+        ids.push(value);
+      }
+    });
+    return ids;
   }
 
   function formatMultiselectDisplay($multiselect, selected) {
@@ -103,6 +131,14 @@
       });
       values[key] = ids.join(",");
     });
+    $row.find(".schedule-filter-ms").each(function () {
+      var $ms = $(this);
+      var key = $ms.data("filter-key");
+      if (!key) {
+        return;
+      }
+      values[key] = getFormMultiselectIds($ms).join(",");
+    });
     return values;
   }
 
@@ -140,21 +176,41 @@
       });
   }
 
-  function findOwnerLabel(items, account) {
-    account = $.trim(account || "");
-    if (!account) {
+  function findOptionLabel(items, value) {
+    value = $.trim(value || "");
+    if (!value) {
       return "";
     }
     for (var i = 0; i < (items || []).length; i++) {
-      if (items[i].value === account) {
-        return items[i].label || account;
+      if (items[i].value === value) {
+        return items[i].label || value;
       }
     }
-    return account;
+    return value;
+  }
+
+  function findOwnerLabel(items, account) {
+    return findOptionLabel(items, account);
   }
 
   function insideUsersURL() {
     return $(".schedule-owner-picker").first().attr("data-inside-users-url") || "/users";
+  }
+
+  function initPriPicker() {
+    if (typeof window.initAutocomplete !== "function") {
+      return;
+    }
+    suppressPriChange = true;
+    var selected = $.trim($("#scheduleFilterPri").attr("data-selected-value") || $("#scheduleFilterPri").val() || "");
+    window.initAutocomplete("scheduleFilterPriInput", "scheduleFilterPri", PRI_OPTIONS, {
+      placeholder: "优先级",
+      value: selected,
+      label: findOptionLabel(PRI_OPTIONS, selected),
+      labelOnly: true,
+    });
+    priPickerReady = true;
+    suppressPriChange = false;
   }
 
   function initOwnerPickers(items) {
@@ -218,6 +274,7 @@
     $more.toggleClass("open", open).prop("hidden", !open);
     $toggle.toggleClass("active", open).attr("aria-expanded", open ? "true" : "false");
     if (open) {
+      initPriPicker();
       loadOwnerPickers();
     }
   }
@@ -235,7 +292,7 @@
     e.stopPropagation();
     var $ms = $(this).closest(".schedule-ms");
     var isOpen = $ms.hasClass("open");
-    closeAllScheduleMultiselects();
+    closeAllFilterDropdowns();
     if (isOpen) {
       return;
     }
@@ -252,16 +309,20 @@
     syncMultiselectTrigger($(this).closest(".schedule-ms"));
   });
 
+  $row.on("focusin", ".schedule-filter-ms .form-multiselect-input", function () {
+    closeAllScheduleMultiselects();
+  });
+
   $row.on("click", "#scheduleApplyFilters", function (e) {
     e.preventDefault();
-    closeAllScheduleMultiselects();
+    closeAllFilterDropdowns();
     applyAdvancedFilters();
   });
 
   $row.on("click", "#scheduleMoreFilterToggle", function (e) {
     e.preventDefault();
     e.stopPropagation();
-    closeAllScheduleMultiselects();
+    closeAllFilterDropdowns();
     toggleMoreFilters();
   });
 
@@ -272,7 +333,10 @@
     }
   });
 
-  $("#scheduleMoreFilters").on("change", ".form-select", function () {
+  $("#scheduleMoreFilters").on("change", ".schedule-pri-filter-value", function () {
+    if (suppressPriChange || !priPickerReady) {
+      return;
+    }
     applyAdvancedFilters();
   });
 

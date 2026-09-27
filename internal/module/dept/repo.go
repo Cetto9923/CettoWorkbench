@@ -2,8 +2,9 @@
 // 文件: internal/module/dept/repo.go
 // 模块: 部门管理
 // 类型: crud
-// 职责: 封装部门数据访问。
+// 职责: 封装部门数据访问（含禅道 zt_dept 只读查询）。
 // 依赖: internal/model
+//       internal/model/zentao
 // =============================================================================
 
 package dept
@@ -15,6 +16,7 @@ import (
 	"gorm.io/gorm"
 
 	"workbench/internal/model"
+	ztmodel "workbench/internal/model/zentao"
 )
 
 // Repo 封装部门数据访问。
@@ -146,4 +148,16 @@ func (r *Repo) UpdateStatusBatch(ctx context.Context, ids []uint64, status uint8
 		Updates(map[string]any{
 			"status": status,
 		}).Error
+}
+
+// FindAllZentaoDepts 查询全部禅道部门（zt_dept）。
+func (r *Repo) FindAllZentaoDepts(ctx context.Context) ([]ztmodel.ZtDept, error) {
+	var rows []ztmodel.ZtDept
+	if err := r.db.WithContext(ctx).
+		Table((ztmodel.ZtDept{}).TableName()).
+		Order("id ASC").
+		Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
 }

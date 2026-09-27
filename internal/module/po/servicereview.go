@@ -103,7 +103,7 @@ func (s *Service) WithdrawDemandReview(ctx context.Context, actor *model.User, r
 	return nil
 }
 
-// SubmitDemandReview 提交业需评审（草稿/已驳回状态下，创建人或指派人可操作）。
+// SubmitDemandReview 提交业需评审（暂存/已驳回状态下，仅创建人可操作，口径同 Main）。
 func (s *Service) SubmitDemandReview(ctx context.Context, actor *model.User, req SubmitDemandReviewReq) error {
 	if actor == nil || strings.TrimSpace(actor.Account) == "" {
 		return errorx.New(errorx.ErrCodeForbidden, "请先登录")
@@ -119,10 +119,11 @@ func (s *Service) SubmitDemandReview(ctx context.Context, actor *model.User, req
 	}
 	st := strings.TrimSpace(demand.Status)
 	if st != "draft" && st != "refuse" {
-		return errorx.New(errorx.ErrCodeConflict, "当前状态不允许提交评审")
+		return errorx.New(errorx.ErrCodeConflict, "仅暂存或已驳回的需求可发起评审")
 	}
-	if !actor.IsSuperAdmin && strings.TrimSpace(demand.CreatedBy) != account && strings.TrimSpace(demand.AssignedTo) != account {
-		return errorx.New(errorx.ErrCodeForbidden, "只有创建人或指派人可以提交评审")
+	// 口径同 Main：仅创建人可发起评审（探索版曾放开指派人/超管，待产品确认，见 INTEGRATE-ROUND-20260927 Q2）。
+	if strings.TrimSpace(demand.CreatedBy) != account {
+		return errorx.New(errorx.ErrCodeForbidden, "只有创建人可以发起评审")
 	}
 
 	reviewers := req.Reviewer

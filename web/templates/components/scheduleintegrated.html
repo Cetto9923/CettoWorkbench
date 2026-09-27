@@ -1,7 +1,7 @@
 {{/* ==========================================================================
 文件: web/templates/components/scheduleintegrated.html 模块: 通用模板 职责:
 一体化排期弹窗及 RD/任务行模板（schedule 页与 PO 首页共用） 全局字段:
-.CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath 页面字段:
+.CurrentUser, .CSRFToken, .Flash, .Menus, .CurrentPath 页面字段:
 无（静态 DOM / template 片段）
 ========================================================================== */}}
 {{ define "schedule/integrated" }}
@@ -90,27 +90,36 @@
               />
             </div>
             <div class="schedule-integrated-cell">
-              <label class="schedule-integrated-label">提测/开发</label>
+              <label class="schedule-integrated-label"
+                >提测/开发 <span class="req">*</span></label
+              >
               <input
                 type="date"
                 id="scheduleIntegratedDevelopFinish"
                 class="form-input schedule-field-control"
+                required
               />
             </div>
             <div class="schedule-integrated-cell">
-              <label class="schedule-integrated-label">测试完成</label>
+              <label class="schedule-integrated-label"
+                >测试完成 <span class="req">*</span></label
+              >
               <input
                 type="date"
                 id="scheduleIntegratedTestFinish"
                 class="form-input schedule-field-control"
+                required
               />
             </div>
             <div class="schedule-integrated-cell">
-              <label class="schedule-integrated-label">验收完成</label>
+              <label class="schedule-integrated-label"
+                >验收完成 <span class="req">*</span></label
+              >
               <input
                 type="date"
                 id="scheduleIntegratedAcceptancedDate"
                 class="form-input schedule-field-control"
+                required
               />
             </div>
             <div
@@ -228,24 +237,7 @@
       </div>
     </td>
     <td class="rd-task-cell rd-task-cell-type">
-      <select class="rd-task-type form-select rd-task-select">
-        <option value="devel">开发</option>
-        <option value="test">测试</option>
-        <option value="OLtest">上线测试</option>
-        <option value="review">评审</option>
-        <option value="affair">事务</option>
-        <option value="request">需求</option>
-        <option value="misc">其他</option>
-        <option value="codereview">代码评审</option>
-        <option value="design">设计</option>
-        <option value="study">研究</option>
-        <option value="OLDebug">上线调试</option>
-        <option value="Online">上线</option>
-        <option value="Train">培训</option>
-        <option value="meeting">会议</option>
-        <option value="discuss">讨论</option>
-        <option value="ui">界面</option>
-      </select>
+      <select class="rd-task-type form-select rd-task-select"></select>
     </td>
     <td class="rd-task-cell rd-task-cell-pri">
       <select class="rd-task-pri form-select rd-task-select">
@@ -529,7 +521,7 @@
     <td class="story-item-role"></td>
     <td class="story-item-title"></td>
     <td class="story-item-product"></td>
-    <td>—</td>
+    <td class="story-item-dept"></td>
     <td class="story-item-estimate"></td>
   </tr>
 </template>

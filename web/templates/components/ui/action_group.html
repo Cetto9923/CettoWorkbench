@@ -2,7 +2,7 @@
 文件: web/templates/components/ui/action_group.html
 模块: 通用模板
 职责: 渲染表格操作栏（可选分配权限、编辑、删除；菜单等树形场景可传 .AddSubUrl 显示「新增子级」）。
-全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .CurrentPath
 页面字段: .ID, .Name, .EditUrl, .DeleteUrl, .AssignPermUrl（可选）, .AddSubUrl（可选，仅树形列表需要）, .MoreItems([]map/struct, 可选)
 说明: .DeleteUrl 为空时不渲染删除按钮；未传 .EditUrl 时默认部门编辑链接（兼容旧用法）。
 ========================================================================== */}}

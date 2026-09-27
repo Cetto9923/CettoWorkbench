@@ -304,6 +304,18 @@
     if (!/^\d{4}-\d{2}-\d{2}$/.test(String(payload.startDate || "").slice(0, 10))) {
       return "请填写窗口开始日期";
     }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(payload.endDate || "").slice(0, 10))) {
+      return "请填写窗口结束日期";
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(payload.planTestDone || "").slice(0, 10))) {
+      return "请填写预计提测/开发完成日期";
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(payload.testDone || "").slice(0, 10))) {
+      return "请填写预计测试完成日期";
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(payload.acceptDone || "").slice(0, 10))) {
+      return "请填写预计验收完成日期";
+    }
     if (!Number(payload.teamgroupId)) {
       return "请选择敏捷小组";
     }

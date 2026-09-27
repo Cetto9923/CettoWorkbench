@@ -5,12 +5,68 @@
 
   var SCHEDULE_MATCHING_PLANS_URL = "/schedule/matching-plans";
 
-  function getDefaultTeamgroupID() {
-    var sel = document.getElementById("scheduleWindowTeamgroup");
-    if (!sel || !sel.options.length) {
+  var WINDOW_TYPE_OPTIONS = [
+    { value: "regular", label: "常规" },
+    { value: "fast", label: "快速" },
+    { value: "urgent", label: "紧急" },
+  ];
+
+  function getTeamgroupOptions() {
+    var items = [];
+    $("#scheduleWindowTeamgroupOptions [data-value]").each(function () {
+      var value = String($(this).attr("data-value") || "").trim();
+      if (!value) {
+        return;
+      }
+      items.push({
+        value: value,
+        label: String($(this).attr("data-label") || value).trim() || value,
+      });
+    });
+    return items;
+  }
+
+  function findOptionLabel(items, value) {
+    value = String(value || "").trim();
+    if (!value) {
       return "";
     }
-    return String(sel.options[0].value);
+    for (var i = 0; i < (items || []).length; i++) {
+      if (items[i].value === value) {
+        return items[i].label || value;
+      }
+    }
+    return value;
+  }
+
+  function getDefaultTeamgroupID() {
+    var items = getTeamgroupOptions();
+    return items.length ? items[0].value : "";
+  }
+
+  function syncWindowSearchSelects(d) {
+    var teamgroupId = (d && d.teamgroupId) || getDefaultTeamgroupID();
+    var windowType = (d && d.windowType) || "regular";
+    var tgItems = getTeamgroupOptions();
+    if (typeof window.initAutocomplete === "function") {
+      window.initAutocomplete("scheduleWindowTeamgroupInput", "scheduleWindowTeamgroup", tgItems, {
+        placeholder: "搜索敏捷小组",
+        value: teamgroupId,
+        label: findOptionLabel(tgItems, teamgroupId),
+        labelOnly: true,
+      });
+      window.initAutocomplete("scheduleWindowTypeInput", "scheduleWindowType", WINDOW_TYPE_OPTIONS, {
+        placeholder: "搜索发布类型",
+        value: windowType,
+        label: findOptionLabel(WINDOW_TYPE_OPTIONS, windowType),
+        labelOnly: true,
+      });
+      return;
+    }
+    $("#scheduleWindowTeamgroup").val(teamgroupId);
+    $("#scheduleWindowTeamgroupInput").val(findOptionLabel(tgItems, teamgroupId));
+    $("#scheduleWindowType").val(windowType);
+    $("#scheduleWindowTypeInput").val(findOptionLabel(WINDOW_TYPE_OPTIONS, windowType));
   }
 
   function getProductNameById(productId) {
@@ -247,8 +303,7 @@
     $("#scheduleWindowName").val(d.name || "");
     $("#scheduleWindowStart").val(d.start || "");
     $("#scheduleWindowEnd").val(d.end || "");
-    $("#scheduleWindowTeamgroup").val(d.teamgroupId || getDefaultTeamgroupID());
-    $("#scheduleWindowType").val(d.windowType || "regular");
+    syncWindowSearchSelects(d);
     $("#scheduleWindowPlanTestDone").val(d.planTestDone || "");
     $("#scheduleWindowTestDone").val(d.testDone || "");
     $("#scheduleWindowAcceptDone").val(d.acceptDone || "");

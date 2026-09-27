@@ -4,6 +4,7 @@
 // 类型: action
 // 职责: 版本窗口 CRUD 与表单数据、匹配计划查询。
 // 依赖: internal/model
+//       internal/module/dept
 //       internal/module/schedule/repo.go
 //       internal/module/schedule/service_window.go
 //       internal/module/user
@@ -22,6 +23,7 @@ import (
 	"go.uber.org/zap"
 
 	"workbench/internal/model"
+	"workbench/internal/module/dept"
 	"workbench/internal/module/user"
 	"workbench/internal/pkg/zentao"
 )
@@ -30,13 +32,14 @@ import (
 type Service struct {
 	repo    *Repo
 	userSvc *user.Service
+	deptSvc *dept.Service
 	ztAPI   *zentao.Client
 	logger  *zap.Logger
 }
 
 // NewService 创建 Service。
-func NewService(repo *Repo, userSvc *user.Service, ztAPI *zentao.Client, logger *zap.Logger) *Service {
-	return &Service{repo: repo, userSvc: userSvc, ztAPI: ztAPI, logger: logger}
+func NewService(repo *Repo, userSvc *user.Service, deptSvc *dept.Service, ztAPI *zentao.Client, logger *zap.Logger) *Service {
+	return &Service{repo: repo, userSvc: userSvc, deptSvc: deptSvc, ztAPI: ztAPI, logger: logger}
 }
 
 // GetUserTeamgroups 查询用户所属敏捷小组并拼接展示名称。

@@ -15,14 +15,14 @@ import (
 
 	"workbench/internal/middleware"
 
+	"workbench/internal/module/agileteam"
 	"workbench/internal/module/debug"
 	"workbench/internal/module/dept"
 	"workbench/internal/module/follow"
 	"workbench/internal/module/kanban"
-	"workbench/internal/module/query"
-	"workbench/internal/module/profile"
 	"workbench/internal/module/metrics"
-	"workbench/internal/module/agileteam"
+	"workbench/internal/module/profile"
+	"workbench/internal/module/query"
 
 	"workbench/internal/module/build"
 	loginmodule "workbench/internal/module/login"

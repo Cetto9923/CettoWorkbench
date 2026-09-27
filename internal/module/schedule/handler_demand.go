@@ -390,6 +390,7 @@ func (h *Handler) GetDemandScheduling(c *gin.Context) {
 		"userStories":       []UserStoryItem{},
 		"windows":           []SchedulingWindowOption{},
 		"users":             []SchedulingUserOption{},
+		"taskTypes":         []TaskTypeOption{},
 	}
 	if resp != nil {
 		if resp.InvolvedProducts != nil {
@@ -412,6 +413,9 @@ func (h *Handler) GetDemandScheduling(c *gin.Context) {
 		}
 		if resp.Users != nil {
 			out["users"] = resp.Users
+		}
+		if resp.TaskTypes != nil {
+			out["taskTypes"] = resp.TaskTypes
 		}
 		if resp.DemandSchedulingDetail != nil {
 			detail := resp.DemandSchedulingDetail

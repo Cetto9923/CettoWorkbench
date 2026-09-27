@@ -150,7 +150,7 @@ package user
 文件: web/templates/{module}/{filename}.html
 模块: {模块中文名}
 职责: 一句话描述本模板做什么
-全局字段: 本模板使用的全局注入字段（.CurrentUser / .CSRFToken / .Menus / .AppName）
+全局字段: 本模板使用的全局注入字段（.CurrentUser / .CSRFToken / .Menus）
 页面字段: 本模板需要的业务数据字段，格式为"字段名 (完整Go类型路径)"
 ========================================================================== */}}
 ```
@@ -464,7 +464,6 @@ func (h *Handler) RegisterRoutes(r *gin.Engine, requireLogin gin.HandlerFunc, lo
 | `.CurrentUser` | `*model.User` | 当前登录用户（未登录为 nil） |
 | `.CSRFToken` | `string` | CSRF Token（用于 ajax 请求头 `X-CSRF-Token`） |
 | `.Menus` | `[]menu.Menu` | 当前用户可见的侧边栏菜单 |
-| `.AppName` | `string` | 应用名称（从配置读取） |
 | `.CurrentPath` | `string` | 当前请求路径（用于菜单高亮） |
 
 ⚠️ `.Flash` 字段已废弃，不再注入。操作反馈改为后端返回 `message`，前端调用 `showToast` 显示。

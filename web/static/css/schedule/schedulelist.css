@@ -146,6 +146,9 @@
   align-items: center;
   gap: 6px;
   min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
   line-height: 1.25;
   flex-wrap: nowrap;
 }
@@ -153,6 +156,9 @@
 .schedule-title-cell .schedule-title-link {
   flex: 1 1 auto;
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 #page-schedule .schedule-title-cell {
@@ -162,6 +168,7 @@
 
 .schedule-title-cell--l1 {
   padding-left: 0;
+  overflow: hidden;
 }
 
 .schedule-title-cell--l2 {
@@ -453,6 +460,21 @@
 
 .schedule-col-title {
   padding-left: 20px;
+  width: 500px;
+  max-width: 500px;
+  overflow: hidden;
+}
+
+#page-schedule .schedule-table tbody td:first-child {
+  width: 500px;
+  max-width: 500px;
+  overflow: hidden;
+}
+
+#page-schedule #scheduleIndependentListPanel .schedule-col-title,
+#page-schedule #scheduleIndependentBody td:first-child {
+  width: 300px;
+  max-width: 300px;
 }
 
 .schedule-rd-row td {

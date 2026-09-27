@@ -28,7 +28,7 @@ const (
 	TEMPLATE_DEBUG_SQLPERF = "web/templates/debug/sqlperf.html"
 	TEMPLATE_DEBUG_SQLLOG  = "web/templates/debug/sqllog.html"
 
-	TEMPLATE_PO_HOME      = "po/home"
+	TEMPLATE_PO_HOME = "po/home"
 
 	TEMPLATE_PO_TODOS         = "po/todos"
 	TEMPLATE_PO_DONE          = "po/done"

@@ -177,14 +177,24 @@ func scheduleIncompleteDemandSQL() string {
 	}, " OR ") + ")"
 }
 
-// scheduleStoryScope 排期阶段独立研发需求：非需求池、指派给当前用户、关键日期未填。
+// storyAssignedOrProductReqM 指派人或所属产品的需求负责人（zt_product.ReqM）为当前用户（口径同 Main）。
+const storyAssignedOrProductReqM = `(zt_story.assignedTo = ? OR EXISTS (
+	SELECT 1 FROM zt_product p
+	WHERE p.id = zt_story.product AND p.deleted = '0' AND p.ReqM = ?
+))`
+
+// scheduleStoryScope 排期阶段独立研发需求（口径同 Main）：非需求池、非父需求、排除已关闭、
+// 指派人或所属产品 ReqM 为当前用户、关键日期未填。
+// 探索版曾额外要求 fromDemand 为空且仅看指派人，待产品确认，见 INTEGRATE-ROUND-20260927 业务问题清单。
 func (r *Repo) scheduleStoryScope(ctx context.Context, account string) *gorm.DB {
 	return r.db.WithContext(ctx).Table("zt_story").
 		Where("deleted = ?", "0").
-		Where("(fromDemand IS NULL OR fromDemand = 0)").
+		Where("status != ?", "closed").
 		Where("IFNULL(sourceType, '') != ?", "demandpool").
 		Where("type = ?", "story").
-		Where("assignedTo = ?", account).
+		Where("isParent = ?", "0").
+		Where("product != ?", "0").
+		Where(storyAssignedOrProductReqM, account, account).
 		Where("(" + strings.Join([]string{
 			dateUnsetExpr("developFinish"),
 			dateUnsetExpr("testFinish"),
@@ -192,15 +202,17 @@ func (r *Repo) scheduleStoryScope(ctx context.Context, account string) *gorm.DB 
 		}, " OR ") + ")")
 }
 
-// deliverStoryScope 交付阶段独立研发需求：非需求池、指派给当前用户、今天 >= deliverDate。
+// deliverStoryScope 交付阶段独立研发需求（口径同 Main）：非需求池、非父需求、排除已关闭、
+// 指派人或所属产品 ReqM 为当前用户、今天 >= deliverDate。
 func (r *Repo) deliverStoryScope(ctx context.Context, account string) *gorm.DB {
 	today := time.Now().Format("2006-01-02")
 	return r.db.WithContext(ctx).Table("zt_story").
 		Where("deleted = ?", "0").
-		Where("(fromDemand IS NULL OR fromDemand = 0)").
+		Where("status != ?", "closed").
 		Where("IFNULL(sourceType, '') != ?", "demandpool").
 		Where("type = ?", "story").
-		Where("assignedTo = ?", account).
+		Where("isParent = ?", "0").
+		Where(storyAssignedOrProductReqM, account, account).
 		Where(dateSetExpr("deliverDate")+" AND deliverDate <= ?", today)
 }
 

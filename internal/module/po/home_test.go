@@ -124,7 +124,6 @@ func findRepoRoot(t *testing.T) string {
 	return ""
 }
 
-
 func initTestRenderer(t *testing.T) {
 	t.Helper()
 	root := findRepoRoot(t)
@@ -132,7 +131,7 @@ func initTestRenderer(t *testing.T) {
 		t.Fatalf("chdir repo root: %v", err)
 	}
 	cfg := &config.Config{
-		App:    config.App{Name: "Workbench", Env: "dev"},
+		App:    config.App{Env: "dev"},
 		Layout: config.Layout{Nav: "sidebar"},
 	}
 	r, err := render.New(cfg, true)

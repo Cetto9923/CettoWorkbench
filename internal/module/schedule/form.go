@@ -258,6 +258,7 @@ func validateWindowMilestoneFields(windowType, planTestDone, testDone, acceptDon
 	for _, f := range fields {
 		value := strings.TrimSpace(f.value)
 		if value == "" {
+			errs = append(errs, FieldError{Field: f.field, Message: f.label + "不能为空"})
 			continue
 		}
 		if _, err := time.Parse("2006-01-02", value); err != nil {
@@ -864,9 +865,17 @@ type UserStoryItem struct {
 	GV             string `json:"gv"`
 	ProductID      uint   `json:"productId"`
 	ProductName    string `json:"productName"`
+	Dept           uint   `json:"dept"`
+	DeptName       string `json:"deptName"`
 	Revpoint       int    `json:"revpoint"`
 	PointLabel     string `json:"pointLabel"`
 	EffectivePoint int    `json:"effectivePoint"`
+}
+
+// TaskTypeOption 禅道任务类型下拉项（zt_lang typeList）。
+type TaskTypeOption struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 // DemandSchedulingResp 排期一体化弹窗加载数据。
@@ -879,6 +888,7 @@ type DemandSchedulingResp struct {
 	UserStories       []UserStoryItem                            `json:"userStories"`
 	Windows           []SchedulingWindowOption                   `json:"windows"`
 	Users             []SchedulingUserOption                     `json:"users"`
+	TaskTypes         []TaskTypeOption                           `json:"taskTypes"`
 }
 
 // ZtStory 禅道 zt_story 只读投影。
@@ -905,6 +915,7 @@ type ZtDemandUserStory struct {
 	Role       string `gorm:"column:role"`
 	GV         string `gorm:"column:gv"`
 	Product    uint   `gorm:"column:product"`
+	Dept       uint   `gorm:"column:dept"`
 	Point      int    `gorm:"column:point"`
 	Revpoint   int    `gorm:"column:revpoint"`
 	SourceType string `gorm:"column:sourceType"`
@@ -926,6 +937,25 @@ func (r *SaveSchedulingReq) Validate() []FieldError {
 	var errs []FieldError
 	if r.WindowID == 0 {
 		errs = append(errs, FieldError{Field: "windowId", Message: "版本窗口不能为空"})
+	}
+	dateFields := []struct {
+		field string
+		value string
+		label string
+	}{
+		{field: "developFinish", value: r.DevelopFinish, label: "提测/开发日期"},
+		{field: "testFinish", value: r.TestFinish, label: "测试完成日期"},
+		{field: "acceptancedDate", value: r.AcceptancedDate, label: "验收完成日期"},
+	}
+	for _, f := range dateFields {
+		value := strings.TrimSpace(f.value)
+		if value == "" {
+			errs = append(errs, FieldError{Field: f.field, Message: f.label + "不能为空"})
+			continue
+		}
+		if _, err := time.Parse("2006-01-02", value); err != nil {
+			errs = append(errs, FieldError{Field: f.field, Message: f.label + "格式无效"})
+		}
 	}
 	for i, story := range r.Stories {
 		prefix := "stories[" + strconv.Itoa(i) + "]"

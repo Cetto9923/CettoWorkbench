@@ -2,7 +2,7 @@
  * 文件: web/static/js/po/submitreview.js
  * 模块: PO工作台
  * 职责: 业需提交评审右侧抽屉；确认后 POST /demands/:id/submit-review 代理禅道。
- *       业务评审人：initAutocomplete 检索（默认最多展示 100 条）+ 标签多人会签。
+ *       业务评审人：数据源为详情 businessReviewers（需求池）；initAutocomplete + 标签多人会签。
  */
 (function ($) {
   "use strict";
@@ -29,18 +29,13 @@
   var clearingPicker = false;
   var valueBound = false;
 
-  function parseUsers() {
-    var raw = $("#" + DRAWER_ID).attr("data-users") || "[]";
-    try {
-      var list = JSON.parse(raw);
-      return Array.isArray(list) ? list : [];
-    } catch (e) {
-      return [];
-    }
-  }
-
+  // 下拉数据源：业需所属需求池的业务评审人（详情接口 businessReviewers，对齐禅道 demand-submit）。
   function buildUserOptions() {
-    return parseUsers()
+    var list =
+      currentDetail && Array.isArray(currentDetail.businessReviewers)
+        ? currentDetail.businessReviewers
+        : [];
+    return list
       .map(function (u) {
         var account = String((u && u.account) || "").trim();
         if (!account) {
@@ -52,29 +47,24 @@
       .filter(Boolean);
   }
 
-  function demandReviewerAccounts() {
+  // 回显：仅保留仍在池内名单中的已选评审人；不在池内的不补、不回显。
+  function demandReviewerAccounts(poolOptions) {
     if (!currentDetail || !Array.isArray(currentDetail.reviewerAccounts)) {
       return [];
     }
+    var allowed = {};
+    (poolOptions || []).forEach(function (u) {
+      if (u && u.value) {
+        allowed[u.value] = true;
+      }
+    });
     return currentDetail.reviewerAccounts
       .map(function (account) {
         return String(account || "").trim();
       })
-      .filter(Boolean);
-  }
-
-  function ensureSelectedOptions(users, accounts) {
-    var exists = {};
-    users.forEach(function (u) {
-      exists[u.value] = true;
-    });
-    accounts.forEach(function (account) {
-      if (!exists[account]) {
-        users.unshift({ value: account, label: account });
-        exists[account] = true;
-      }
-    });
-    return users;
+      .filter(function (account) {
+        return account && allowed[account];
+      });
   }
 
   function accountLabel(account) {
@@ -108,6 +98,12 @@
       .join("");
   }
 
+  function syncPickerSelectedValues() {
+    if (typeof window.setAutocompleteSelectedValues === "function") {
+      window.setAutocompleteSelectedValues(INPUT_ID, selectedAccounts);
+    }
+  }
+
   function addReviewer(account) {
     account = String(account || "").trim();
     if (!account || selectedAccounts.indexOf(account) >= 0) {
@@ -115,6 +111,7 @@
     }
     selectedAccounts.push(account);
     renderChips();
+    syncPickerSelectedValues();
   }
 
   function removeReviewer(account) {
@@ -123,6 +120,7 @@
       return item !== account;
     });
     renderChips();
+    syncPickerSelectedValues();
   }
 
   function getSelectedReviewers() {
@@ -136,8 +134,8 @@
   }
 
   function remountReviewerPicker() {
-    var preselected = demandReviewerAccounts();
-    userOptions = ensureSelectedOptions(buildUserOptions(), preselected);
+    userOptions = buildUserOptions();
+    var preselected = demandReviewerAccounts(userOptions);
     selectedAccounts = [];
     preselected.forEach(function (account) {
       addReviewer(account);
@@ -152,7 +150,8 @@
       placeholder: "输入姓名或工号搜索",
       maxShow: MAX_SHOW,
       value: "",
-      label: ""
+      label: "",
+      selectedValues: selectedAccounts.slice()
     });
 
     if (!valueBound) {

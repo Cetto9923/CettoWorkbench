@@ -2,7 +2,7 @@
 文件: web/templates/po/canal.html
 模块: PO工作台
 职责: 撤销评审右侧抽屉（home 引入；布局与 review.html 一致；数据由 canal.js 调 GET /demands/:id 回填）
-全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .AppName, .CurrentPath
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .CurrentPath
 页面字段: 无（抽屉 DOM 占位，JS 注入需求数据）
 ========================================================================== */}}
 {{ define "po/canal" }}
@@ -130,7 +130,7 @@
       <button type="button" class="dd-iconbtn" id="poDemandCanalWithdrawCloseBtn" aria-label="关闭"><i class="fas fa-xmark"></i></button>
     </div>
     <div class="dd-reject-modal-body">
-      <p class="dd-reject-label" style="margin:0 0 12px;">确定要撤销该业务需求的评审申请吗？撤销后需求将退回<strong>草稿</strong>状态，评审流程中止。</p>
+      <p class="dd-reject-label" style="margin:0 0 12px;">确定要撤销该业务需求的评审申请吗？撤销后需求将退回<strong>暂存</strong>状态，评审流程中止。</p>
       <label class="dd-reject-label" for="poDemandCanalWithdrawComment">撤销原因 / 说明：</label>
       <textarea id="poDemandCanalWithdrawComment" class="dd-reject-textarea" rows="3" placeholder="选填，默认为“创建人撤销评审”，将作为评审记录同步至禅道"></textarea>
     </div>

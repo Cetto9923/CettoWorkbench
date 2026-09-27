@@ -54,7 +54,6 @@ func (r *NoticeListReq) Validate() []FieldError {
 	return nil
 }
 
-
 type NoticeItem struct {
 	RelatedObjects []NoticeObjectLink `json:"relatedObjects,omitempty"`
 	ID             int64              `json:"id"`

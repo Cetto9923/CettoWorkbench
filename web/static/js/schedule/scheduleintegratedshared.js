@@ -73,8 +73,29 @@
     deletedStoryIds: [],
     deletedTaskIds: [],
     zentaoURL: "",
-    taskTypeOptions: taskTypeOptions,
-    taskTypeLabels: taskTypeLabels,
+    taskTypeOptions: taskTypeOptions.slice(),
+    taskTypeLabels: Object.assign({}, taskTypeLabels),
+
+    applyTaskTypes: function (items) {
+      if (!items || !items.length) {
+        return;
+      }
+      var options = [];
+      var labels = {};
+      items.forEach(function (item) {
+        var key = $.trim((item && item.key) || "");
+        if (!key) {
+          return;
+        }
+        options.push(key);
+        labels[key] = $.trim((item && item.value) || "") || key;
+      });
+      if (!options.length) {
+        return;
+      }
+      this.taskTypeOptions = options;
+      this.taskTypeLabels = labels;
+    },
 
     resetDeletedRecords: function () {
       this.deletedStoryIds = [];
@@ -136,7 +157,7 @@
 
     taskTypeLabel: function (type) {
       var key = $.trim(type || "");
-      return taskTypeLabels[key] || key || "—";
+      return (this.taskTypeLabels && this.taskTypeLabels[key]) || key || "—";
     },
 
     taskTypeClass: function (type) {

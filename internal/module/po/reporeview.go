@@ -97,6 +97,25 @@ func (r *Repo) FindDemandForReview(ctx context.Context, id int64) (*demandReview
 	return &row, nil
 }
 
+// FindDemandPoolBusinessReviewer 读业需所属需求池的业务评审人（zt_demandpool.businessReviewer，逗号分隔账号）。
+func (r *Repo) FindDemandPoolBusinessReviewer(ctx context.Context, demandID int64) (string, error) {
+	db, err := r.writer()
+	if err != nil {
+		return "", err
+	}
+	var raw string
+	err = db.WithContext(ctx).Table("zt_demand AS d").
+		Select("COALESCE(dp.businessReviewer, '')").
+		Joins("LEFT JOIN zt_demandpool AS dp ON d.pool = dp.id AND dp.deleted = ?", "0").
+		Where("d.id = ?", demandID).
+		Limit(1).
+		Scan(&raw).Error
+	if err != nil {
+		return "", fmt.Errorf("load demand pool reviewer %d: %w", demandID, err)
+	}
+	return raw, nil
+}
+
 // FindDemandReviewerResult 查当前账号在 zt_demandreview 中的一行。found=false 表示不是业务评审人。
 func (r *Repo) FindDemandReviewerResult(ctx context.Context, demandID int64, account string) (result string, found bool, err error) {
 	db, err := r.writer()

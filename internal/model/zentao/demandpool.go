@@ -12,17 +12,18 @@ import "time"
 
 // ZtDemandpool 禅道需求池表。
 type ZtDemandpool struct {
-	ID          int        `gorm:"column:id;primaryKey" json:"id"`
-	Name        string     `gorm:"column:name" json:"name"`
-	Desc        *string    `gorm:"column:desc" json:"desc"`
-	Status      string     `gorm:"column:status" json:"status"`
-	Products    string     `gorm:"column:products" json:"products"`
-	CreatedBy   string     `gorm:"column:createdBy" json:"createdBy"`
-	CreatedDate *time.Time `gorm:"column:createdDate" json:"createdDate"`
-	Owner       *string    `gorm:"column:owner" json:"owner"`
-	Reviewer    *string    `gorm:"column:reviewer" json:"reviewer"`
-	ACL         *string    `gorm:"column:acl" json:"acl"`
-	Deleted     string     `gorm:"column:deleted" json:"deleted"`
+	ID               int        `gorm:"column:id;primaryKey" json:"id"`
+	Name             string     `gorm:"column:name" json:"name"`
+	Desc             *string    `gorm:"column:desc" json:"desc"`
+	Status           string     `gorm:"column:status" json:"status"`
+	Products         string     `gorm:"column:products" json:"products"`
+	CreatedBy        string     `gorm:"column:createdBy" json:"createdBy"`
+	CreatedDate      *time.Time `gorm:"column:createdDate" json:"createdDate"`
+	Owner            *string    `gorm:"column:owner" json:"owner"`
+	Reviewer         *string    `gorm:"column:reviewer" json:"reviewer"`
+	BusinessReviewer *string    `gorm:"column:businessReviewer" json:"businessReviewer"` // 业务评审人，逗号分隔账号
+	ACL              *string    `gorm:"column:acl" json:"acl"`
+	Deleted          string     `gorm:"column:deleted" json:"deleted"`
 }
 
 // TableName 指定表名。
