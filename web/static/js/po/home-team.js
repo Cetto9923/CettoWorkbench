@@ -127,6 +127,38 @@
     }
   }
 
+  async function loadTeamValueStream(requestNo) {
+    const rows = document.getElementById("teamHomeValueStreamRows");
+    const status = document.getElementById("teamHomeValueStreamStatus");
+    if (!rows) return;
+    rows.innerHTML = '<div class="state-placeholder">正在加载授权范围内的价值流…</div>';
+    if (status) status.textContent = "正在加载…";
+    const query = new URLSearchParams({ scope: state.scope });
+    if (state.teamgroupId) query.set("scopeId", String(state.teamgroupId));
+    try {
+      const response = await fetch("/home/team/value-stream?" + query.toString(), {
+        credentials: "include",
+        headers: { "Accept": "application/json", "X-Requested-With": "XMLHttpRequest" },
+      });
+      const json = await response.json().catch(function () { return null; });
+      if (!response.ok || !json || json.success !== true || !Array.isArray(json.data)) {
+        throw new Error((json && (json.message || json.error)) || ("HTTP " + response.status));
+      }
+      if (requestNo !== state.requestNo) return;
+      rows.innerHTML = json.data.map(function (stage) {
+        return '<div class="team-home-stage-item" data-stage="' + esc(stage.status) + '">' +
+          '<span>' + esc(stage.label) + '</span><strong>' + Number(stage.count || 0) + '</strong>' +
+          '<small>业务 ' + Number(stage.demandCount || 0) + ' · 研发 ' + Number(stage.storyCount || 0) + '</small></div>';
+      }).join("");
+      if (!json.data.length) rows.innerHTML = '<div class="state-placeholder">当前授权范围内暂无价值流数据</div>';
+      if (status) status.textContent = json.data.length + " 个阶段";
+    } catch (error) {
+      if (requestNo !== state.requestNo) return;
+      rows.innerHTML = '<div class="state-placeholder error">价值流数据暂不可用</div>';
+      if (status) status.textContent = "加载失败";
+    }
+  }
+
   function setScopeControls(data) {
     const allowed = Array.isArray(data.availableScopes) ? data.availableScopes : [];
     document.querySelectorAll("#teamHomeScopeSwitch [data-scope]").forEach(function (button) {
@@ -210,6 +242,7 @@
       renderRows(data.items);
       loadIssueRiskCounts(requestNo);
       loadTeamVersionWindows(requestNo);
+      loadTeamValueStream(requestNo);
       const updated = document.getElementById("teamHomeUpdatedAt");
       if (updated) updated.textContent = "授权范围内 " + Number(data.allCount || 0) + " 个团队/小组";
       syncURL();

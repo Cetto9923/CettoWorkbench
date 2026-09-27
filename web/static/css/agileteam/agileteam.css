@@ -184,6 +184,14 @@
 .at-field:focus,.at-info-grid .input:focus,.at-info-grid .textarea:focus{outline:2px solid var(--color-primary-border);outline-offset:1px;border-color:var(--color-border-focus)}
 
 .po-team-home .team-home-risk-card{padding:16px 18px}
+.po-team-home .team-home-stage-card{padding:16px 18px}
+.team-home-stage-caption{margin:0 0 11px;color:var(--color-text-secondary);font-size:11px}
+.team-home-stage-grid{display:grid;grid-template-columns:repeat(5,minmax(110px,1fr));gap:7px}
+.team-home-stage-item{display:flex;flex-direction:column;gap:4px;min-height:80px;padding:10px 11px;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface-muted)}
+.team-home-stage-item>span{color:var(--color-text-secondary);font-size:11px}
+.team-home-stage-item>strong{color:var(--color-text-primary);font-size:21px;line-height:1.1}
+.team-home-stage-item>small{color:var(--color-text-secondary);font-size:10px}
+.team-home-stage-item[data-stage="released"]{border-color:var(--color-primary-border)}
 .po-team-home .team-home-version-card{padding:16px 18px}
 .team-home-version-caption{margin:0 0 11px;color:var(--color-text-secondary);font-size:11px}
 .team-home-version-list{display:grid;gap:7px}
@@ -200,4 +208,5 @@
 .team-home-risk-stat strong{margin-left:auto;color:var(--color-text-primary);font-size:21px;line-height:1}
 .team-home-risk-link{display:inline-flex;align-items:center;justify-content:center;margin-left:auto;padding:0 8px;color:var(--color-primary);font-size:12px;text-decoration:none}
 .team-home-risk-link:hover{text-decoration:underline}
-@media(max-width:760px){.team-home-version-row{align-items:flex-start;flex-direction:column;gap:5px}.team-home-risk-link{margin-left:0;min-height:36px}}
+@media(max-width:1000px){.team-home-stage-grid{grid-template-columns:repeat(3,minmax(100px,1fr))}}
+@media(max-width:760px){.team-home-stage-grid{grid-template-columns:repeat(2,minmax(100px,1fr))}.team-home-version-row{align-items:flex-start;flex-direction:column;gap:5px}.team-home-risk-link{margin-left:0;min-height:36px}}

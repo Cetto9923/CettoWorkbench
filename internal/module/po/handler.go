@@ -66,6 +66,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 
 	g.GET("/home", h.homePageAccess(), h.Home)
 	g.GET("/home/team/version-windows", h.TeamHomeVersionWindows)
+	g.GET("/home/team/value-stream", h.TeamHomeValueStream)
 	g.GET("/demands", middleware.RequirePerm(perm.PoHomeList), h.Demands)
 	g.POST("/demands/:id/review", middleware.RequirePerm(perm.PoHomeList), h.ReviewDemand)
 	g.POST("/demands/:id/withdraw-review", middleware.RequirePerm(perm.PoHomeList), h.WithdrawDemandReview)

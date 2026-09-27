@@ -52,3 +52,45 @@ func (h *Handler) TeamHomeVersionWindows(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": cards})
 }
+
+func (h *Handler) TeamHomeValueStream(c *gin.Context) {
+	actor := middleware.CurrentUser(c)
+	if actor == nil || h.svc == nil || h.teamViewAccess == nil || h.teamScopeGroupIDs == nil || h.teamScopeAccounts == nil {
+		c.AbortWithStatus(http.StatusForbidden)
+		return
+	}
+	allowed, err := h.teamViewAccess(c.Request.Context(), actor)
+	if err != nil {
+		c.AbortWithStatus(http.StatusServiceUnavailable)
+		return
+	}
+	if !allowed {
+		c.AbortWithStatus(http.StatusForbidden)
+		return
+	}
+	scopeID, err := parseTeamScopeID(c.Query("scopeId"))
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "团队范围参数无效"})
+		return
+	}
+	scope := strings.ToLower(strings.TrimSpace(c.Query("scope")))
+	groupIDs, err := h.teamScopeGroupIDs(c.Request.Context(), actor, scope, scopeID)
+	if err != nil {
+		writeTeamScopeError(c, h.logger, err)
+		return
+	}
+	accounts, err := h.teamScopeAccounts(c.Request.Context(), actor, scope, scopeID)
+	if err != nil {
+		writeTeamScopeError(c, h.logger, err)
+		return
+	}
+	stages, err := h.svc.TeamHomeValueStream(c.Request.Context(), groupIDs, accounts)
+	if err != nil {
+		if h.logger != nil {
+			h.logger.Error("load team home value stream", zap.Error(err))
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "价值流统计暂不可用"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": stages})
+}

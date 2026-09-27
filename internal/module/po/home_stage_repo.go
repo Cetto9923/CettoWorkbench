@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -402,4 +403,174 @@ func (r *Repo) demandStageCase(ctx context.Context, account string) (string, []i
 	}
 	sql.WriteString(" ELSE NULL END")
 	return sql.String(), args
+}
+
+// teamStageCountQuery builds the shared-stage aggregation for one authorized
+// team scope. Business demands use teamGroup first and their version window as
+// a fallback; independent stories are attributed by formal member assignee.
+func (r *Repo) teamStageCountQuery(ctx context.Context, groupIDs []uint, memberAccounts []string) (string, []interface{}, error) {
+	if len(groupIDs) == 0 {
+		return "", nil, nil
+	}
+	caseSQL, caseArgs := r.teamDemandStageCase(ctx)
+	demandStmt := r.teamDemandBase(ctx, groupIDs).
+		Select("zt_demand.id AS id, 'demand' AS kind, "+caseSQL+" AS stage_index", caseArgs...).
+		Session(&gorm.Session{DryRun: true}).Find(&[]struct{ ID int }{}).Statement
+	if demandStmt.Error != nil {
+		return "", nil, demandStmt.Error
+	}
+	parts := []string{"SELECT id, kind, stage_index FROM (" + demandStmt.SQL.String() + ") AS team_demands WHERE stage_index IS NOT NULL"}
+	args := append([]interface{}{}, demandStmt.Vars...)
+
+	accounts := make([]string, 0, len(memberAccounts))
+	seen := make(map[string]bool, len(memberAccounts))
+	for _, account := range memberAccounts {
+		account = strings.TrimSpace(account)
+		if account == "" || seen[account] {
+			continue
+		}
+		seen[account] = true
+		accounts = append(accounts, account)
+	}
+	if len(accounts) > 0 {
+		scheduleIndex, deliverIndex := -1, -1
+		for index, stage := range valueStreamStages {
+			if stage.status == "schedule" {
+				scheduleIndex = index
+			}
+			if stage.status == "acceptanced" {
+				deliverIndex = index
+			}
+		}
+		if scheduleIndex >= 0 {
+			dateFilter := "(" + strings.Join([]string{
+				dateUnsetExpr("s.developFinish"), dateUnsetExpr("s.testFinish"), dateUnsetExpr("s.verifyFinish"),
+			}, " OR ") + ")"
+			parts = append(parts, teamStoryStageSQL(scheduleIndex, dateFilter))
+			args = append(args, accounts)
+		}
+		if deliverIndex >= 0 {
+			today := time.Now().Format("2006-01-02")
+			parts = append(parts, teamStoryStageSQL(deliverIndex, dateSetExpr("s.deliverDate")+" AND s.deliverDate <= ?"))
+			args = append(args, accounts, today)
+		}
+	}
+	query := `SELECT stage_index, kind, COUNT(DISTINCT id) AS count
+FROM (` + strings.Join(parts, " UNION ALL ") + `) AS team_stage_items
+WHERE stage_index IS NOT NULL
+GROUP BY stage_index, kind`
+	return query, args, nil
+}
+
+func (r *Repo) CountTeamValueStreamStages(ctx context.Context, groupIDs []uint, memberAccounts []string) ([]stageCount, error) {
+	query, args, err := r.teamStageCountQuery(ctx, groupIDs, memberAccounts)
+	if err != nil {
+		return nil, err
+	}
+	if query == "" {
+		return []stageCount{}, nil
+	}
+	rows := []stageCount{}
+	if err := r.db.WithContext(ctx).Raw(query, args...).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+func teamStoryStageSQL(stageIndex int, extraWhere string) string {
+	return fmt.Sprintf(`SELECT s.id AS id, 'story' AS kind, %d AS stage_index
+FROM zt_story s
+WHERE s.deleted = '0'
+  AND s.status <> 'closed'
+  AND IFNULL(s.sourceType, '') <> 'demandpool'
+  AND COALESCE(s.fromDemand, 0) = 0
+  AND s.type = 'story'
+  AND s.isParent = '0'
+  AND s.product <> '0'
+  AND s.assignedTo IN ?
+  AND (%s)`, stageIndex, extraWhere)
+}
+
+func (r *Repo) teamDemandBase(ctx context.Context, groupIDs []uint) *gorm.DB {
+	return r.db.WithContext(ctx).Table("zt_demand").
+		Where("zt_demand.deleted = '0'").
+		Where("zt_demand.status NOT IN ?", []string{"closed"}).
+		Where("NOT EXISTS (SELECT 1 FROM zt_demand child WHERE child.deleted = '0' AND child.parent = zt_demand.id)").
+		Where(`(
+			CAST(NULLIF(zt_demand.teamGroup, '') AS UNSIGNED) IN ?
+			OR (
+				COALESCE(CAST(NULLIF(zt_demand.teamGroup, '') AS UNSIGNED), 0) = 0
+				AND EXISTS (
+					SELECT 1
+					FROM zt_demandwindow dw
+					INNER JOIN zt_versionwindow vw ON vw.id = dw.versionWindow AND vw.deletedAt IS NULL
+					WHERE dw.demand = zt_demand.id
+					  AND dw.story = 0
+					  AND dw.deletedAt IS NULL
+					  AND dw.versionWindow > 0
+					  AND vw.teamgroup IN ?
+				)
+			)
+		)`, groupIDs, groupIDs)
+}
+
+func (r *Repo) teamDemandStageCase(ctx context.Context) (string, []interface{}) {
+	var sql strings.Builder
+	sql.WriteString("CASE")
+	var args []interface{}
+	for index, stage := range valueStreamStages {
+		if stage.status == "all" {
+			continue
+		}
+		filter, ok := mysqlStageFilters[stage.status]
+		if !ok {
+			continue
+		}
+		stmt := applyTeamDemandStage(r.db.WithContext(ctx).Table("zt_demand"), filter).
+			Session(&gorm.Session{DryRun: true}).Find(&[]struct{ ID int }{}).Statement
+		stmt.SQL.Reset()
+		stmt.Vars = nil
+		stmt.Clauses["WHERE"].Expression.Build(stmt)
+		sql.WriteString(" WHEN (")
+		sql.WriteString(stmt.SQL.String())
+		fmt.Fprintf(&sql, ") THEN %d", index)
+		args = append(args, stmt.Vars...)
+	}
+	sql.WriteString(" ELSE NULL END")
+	return sql.String(), args
+}
+
+// applyTeamDemandStage uses value-stream predicates without personal-only actor checks.
+func applyTeamDemandStage(q *gorm.DB, filter mysqlStageFilter) *gorm.DB {
+	if filter.acceptanceStage {
+		today := time.Now().Format("2006-01-02")
+		return q.Where(`(
+			(status = ? AND `+dateSetExpr("testFinish")+` AND testFinish <= ?)
+			OR status = ?
+		)`, "testing", today, "waitacceptance")
+	}
+	if len(filter.statuses) > 0 {
+		q = q.Where("status IN ?", filter.statuses)
+	}
+	if filter.developFinishDue {
+		today := time.Now().Format("2006-01-02")
+		q = q.Where(dateSetExpr("developFinish")+" AND developFinish <= ?", today)
+	}
+	if filter.deliverDateDue {
+		today := time.Now().Format("2006-01-02")
+		q = q.Where(dateSetExpr("deliverDate")+" AND deliverDate <= ?", today)
+	}
+	if filter.noClarify {
+		q = q.Where("NOT EXISTS (SELECT 1 FROM zt_demandclarify dc WHERE dc.demand = zt_demand.id)")
+	}
+	if filter.scheduleIncomplete {
+		q = q.Where(scheduleIncompleteDemandSQL())
+	}
+	if filter.overall != nil {
+		q = q.Where("overall = ?", *filter.overall)
+	}
+	if filter.parent != nil {
+		q = q.Where("parent != ?", *filter.parent)
+	}
+	return q
 }

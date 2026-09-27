@@ -24,6 +24,8 @@ assert(/teamHomeRiskLink/.test(js) && /scopeId/.test(js), 'issue-risk summary li
 assert(/\/home\/team\/version-windows\?/.test(js) && /workItemCount/.test(js), 'team home loads deduplicated upcoming version windows from its authorized scope');
 assert(/teamHomeVersionRows/.test(tpl) && /未来 30 天版本窗口/.test(tpl), 'team home exposes an upcoming version-window panel');
 assert(/schedule\?windows=/.test(js) && /&amp;groups=/.test(js), 'window links preserve the existing schedule filters');
+assert(/\/home\/team\/value-stream\?/.test(js) && /demandCount/.test(js) && /storyCount/.test(js), 'team home loads separate business and development demand stage counts');
+assert(/teamHomeValueStreamRows/.test(tpl) && /需求价值流积压/.test(tpl), 'team home exposes its nine-stage backlog panel');
 assert(/\/agileteam\?view=lead&amp;scope=' \+ encodeURIComponent\(state\.scope\)/.test(js), 'team rows preserve the selected authorized scope when opening an agile group');
 assert(/\/issues\/risk\?kind=issue&amp;loop=open&amp;scope=' \+ encodeURIComponent\(state\.scope\)/.test(js), 'team rows deep-link to issue-risk with the selected authorized scope');
 assert(/contextOnly/.test(js), 'synthetic parent context rows are not made selectable links');

@@ -51,6 +51,15 @@ type HomeIssueRiskCounts struct {
 	Risks  int64
 }
 
+// TeamHomeValueStreamStage is a team-scoped count using the demand-management stage contract.
+type TeamHomeValueStreamStage struct {
+	Status      string `json:"status"`
+	Label       string `json:"label"`
+	Count       int64  `json:"count"`
+	DemandCount int64  `json:"demandCount"`
+	StoryCount  int64  `json:"storyCount"`
+}
+
 // KPICounts 首页 5 个焦点摘要的真实计数。
 // 4 个 KPI 由 repo CountKPI{...} 真实统计;MyPending 由 Service 计算。
 // 字段为零时前端仍展示数字 0,不显示破折号。

@@ -138,6 +138,34 @@ func TestAllStageRefQuery_ToolbarFilters_KeywordAndRelation(t *testing.T) {
 	}
 }
 
+func TestTeamValueStreamStageQueryUsesTeamAndWindowDemandOwnership(t *testing.T) {
+	db, _ := openSQLMock(t)
+	repo := NewRepo(db, nil)
+	query, args, err := repo.teamStageCountQuery(context.Background(), []uint{11, 12}, []string{"dev1", "qa1"})
+	if err != nil {
+		t.Fatalf("teamStageCountQuery() error = %v", err)
+	}
+	for _, want := range []string{
+		"CAST(NULLIF(zt_demand.teamGroup, '') AS UNSIGNED) IN (?,?)",
+		"FROM zt_demandwindow dw",
+		"dw.story = 0",
+		"vw.teamgroup IN (?,?)",
+		"COALESCE(CAST(NULLIF(zt_demand.teamGroup, '') AS UNSIGNED), 0) = 0",
+		"s.assignedTo IN ?",
+		"GROUP BY stage_index, kind",
+	} {
+		if !strings.Contains(query, want) {
+			t.Fatalf("team stage SQL missing %q: %s", want, query)
+		}
+	}
+	if strings.Contains(query, "BRA = ?") || strings.Contains(query, "accepter = ?") {
+		t.Fatalf("team stage SQL retained a personal-only value-stream condition: %s", query)
+	}
+	if len(args) == 0 {
+		t.Fatal("team stage SQL must bind authorized group and member IDs")
+	}
+}
+
 func TestSingleStage_CountAndPagedWithFilters_Priority(t *testing.T) {
 	db, _ := openSQLMock(t)
 	repo := NewRepo(db, nil)
@@ -209,7 +237,7 @@ func TestServiceDemands_AllStage_PriorityP1(t *testing.T) {
 		WithArgs(sqlmock.AnyArg()).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "stage", "status", "assignedTo", "accepter"}).
 			AddRow(8001, "", "wait", "alice", ""))
-		mock.ExpectQuery("(?s)SELECT d\\.id AS demand_id.*FROM zt_demand.*fromDemand IN").
+	mock.ExpectQuery("(?s)SELECT d\\.id AS demand_id.*FROM zt_demand.*fromDemand IN").
 		WithArgs(8001, 8001).
 		WillReturnRows(sqlmock.NewRows([]string{"demand_id", "count", "first_id"}).AddRow(8001, 0, 0))
 	mock.ExpectQuery("(?s)SELECT d\\.id AS demand_id.*zt_demandappraise").
@@ -319,7 +347,6 @@ func TestRoleDemandBase_VisibilityScope_ThreeCases(t *testing.T) {
 		t.Fatalf("expected accepter to only enter waitacceptance/testing stage, got: %s", sql)
 	}
 }
-
 
 // TestScheduleAndDeliverStoryScope_ExcludesFromDemand 验证排期和交付阶段的独立研发需求口径：
 // 增加 fromDemand = 0 条件，排除由业务需求转化来的研发需求（fromDemand > 0 不再出现）。

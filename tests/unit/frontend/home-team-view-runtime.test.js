@@ -46,6 +46,8 @@ function createHarness(search, replies) {
   const riskLink = element('teamHomeRiskLink');
   const versionRows = element('teamHomeVersionRows');
   const versionStatus = element('teamHomeVersionStatus');
+  const valueStreamRows = element('teamHomeValueStreamRows');
+  const valueStreamStatus = element('teamHomeValueStreamStatus');
   const buttons = [element('team', { 'data-scope': 'team' }), element('dept', { 'data-scope': 'dept' })];
   const byID = {
     teamHomeGroupRows: rows,
@@ -60,6 +62,8 @@ function createHarness(search, replies) {
     teamHomeRiskLink: riskLink,
     teamHomeVersionRows: versionRows,
     teamHomeVersionStatus: versionStatus,
+    teamHomeValueStreamRows: valueStreamRows,
+    teamHomeValueStreamStatus: valueStreamStatus,
   };
   const requests = [];
   let replyIndex = 0;
@@ -86,7 +90,7 @@ function createHarness(search, replies) {
     return { ok: true, status: 200, json: async () => payload };
   };
   vm.runInNewContext(source, { window, document, location: loc, history, fetch, URL, URLSearchParams, encodeURIComponent, Number, String, Array });
-  return { loc, rows, error, errorText, updated, select, buttons, requests, issueCount, riskCount, riskStatus, riskLink, versionRows, versionStatus };
+  return { loc, rows, error, errorText, updated, select, buttons, requests, issueCount, riskCount, riskStatus, riskLink, versionRows, versionStatus, valueStreamRows, valueStreamStatus };
 }
 
 function response(options, items, activeScope = 'team') {
@@ -101,6 +105,9 @@ function tick() { return new Promise(resolve => setTimeout(resolve, 0)); }
     [{ id: 11, name: '对公一组', type: 'child', formalCount: 6, pendingAdd: 1, pendingRemove: 0 }]
   ), { success: true, total: 7 }, { success: true, total: 3 }, { success: true, data: [
     { id: 77, name: '十月版本', teamgroupId: 11, teamgroup: '产品团队 / 对公一组', releaseDate: '2026-10-10', workItemCount: 12 },
+  ] }, { success: true, data: [
+    { status: 'accept', label: '受理', count: 10, demandCount: 8, storyCount: 2 },
+    { status: 'schedule', label: '排期', count: 4, demandCount: 3, storyCount: 1 },
   ] }]);
   await tick();
   await tick();
@@ -137,6 +144,13 @@ function tick() { return new Promise(resolve => setTimeout(resolve, 0)); }
   const windowRequest = selected.requests.map(url => new URL(url, 'http://workbench.local')).find(url => url.pathname === '/home/team/version-windows');
   if (!windowRequest || windowRequest.searchParams.get('scope') !== 'team' || windowRequest.searchParams.get('scopeId') !== '11') {
     throw new Error('version window request did not retain the selected authorized child group');
+  }
+  if (!selected.valueStreamRows.innerHTML.includes('受理') || !selected.valueStreamRows.innerHTML.includes('业务 8 · 研发 2')) {
+    throw new Error('team value-stream categories did not preserve business and development demand counts');
+  }
+  const valueStreamRequest = selected.requests.map(url => new URL(url, 'http://workbench.local')).find(url => url.pathname === '/home/team/value-stream');
+  if (!valueStreamRequest || valueStreamRequest.searchParams.get('scope') !== 'team' || valueStreamRequest.searchParams.get('scopeId') !== '11') {
+    throw new Error('value-stream request did not retain the selected authorized child group');
   }
 
   const invalid = createHarness('?view=team&scope=team&teamgroupId=999', [

@@ -280,6 +280,40 @@ func (s *Service) TeamHomeVersionWindows(ctx context.Context, groupIDs []uint, l
 	return s.schedule.ListTeamHomeVersionWindows(ctx, groupIDs, limit)
 }
 
+// TeamHomeValueStream returns the same nine stage categories as demand management,
+// scoped by the authorized agile groups and formal group members.
+func (s *Service) TeamHomeValueStream(ctx context.Context, groupIDs []uint, memberAccounts []string) ([]TeamHomeValueStreamStage, error) {
+	if s == nil || s.repo == nil {
+		return nil, fmt.Errorf("po repo is not configured")
+	}
+	counts, err := s.repo.CountTeamValueStreamStages(ctx, groupIDs, memberAccounts)
+	if err != nil {
+		return nil, err
+	}
+	byStage := make(map[int]map[string]int64, len(valueStreamStages))
+	for _, row := range counts {
+		if row.StageIndex <= 0 || row.StageIndex >= len(valueStreamStages) {
+			continue
+		}
+		if byStage[row.StageIndex] == nil {
+			byStage[row.StageIndex] = map[string]int64{}
+		}
+		byStage[row.StageIndex][row.Kind] = row.Count
+	}
+	out := make([]TeamHomeValueStreamStage, 0, len(valueStreamStages)-1)
+	for index, stage := range valueStreamStages {
+		if stage.status == "all" {
+			continue
+		}
+		demandCount, storyCount := byStage[index]["demand"], byStage[index]["story"]
+		out = append(out, TeamHomeValueStreamStage{
+			Status: stage.status, Label: stage.label,
+			Count: demandCount + storyCount, DemandCount: demandCount, StoryCount: storyCount,
+		})
+	}
+	return out, nil
+}
+
 // Demands 按价值流状态返回当前用户关联的需求/故事详情。
 func (s *Service) Demands(ctx context.Context, actor *model.User, req DemandsReq) (*DemandsResp, error) {
 	if req.Page <= 0 {
