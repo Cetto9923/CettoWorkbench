@@ -136,7 +136,7 @@ JSON 接口抽检均 200：todos/done/notice/follow/board/query/issues-risk item
 | V12 | 排期 | 探索版排期 UI（窗口卡片、快捷筛选样式等）与 Main 差异大 | 中 | 排期保留 Main（业务冲突） | 未修 | 问题 8 |
 | V13 | 人员选择器 | 缺探索版 user 模式（头像/部门/拼音检索） | 低 | ui.js 保留 Main autocomplete | 已修 6e28096 | 8096 |
 | V14 | 深色主题 | variables.css 已带 dark token，但头像菜单只提供浅色（Main 决策） | 低 | — | 保持 Main | Main |
-| V15 | 全局 | `/kanban/story` 标题含 `&quot;` 实体未解码（数据侧转义） | 低 | 禅道数据双重转义 | 未修 | 自判 |
+| V15 | 全局 | `/kanban/story` 标题含 `&quot;` 实体未解码（数据侧转义） | 低 | 禅道数据双重转义 | 已修 09c97b3 | 自判 |
 
 ### 需用户决定
 - V11：/profile、/admin/*、/kanban/* 是否纳入 PO 外壳。
