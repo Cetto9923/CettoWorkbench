@@ -2,7 +2,7 @@
 // 文件: internal/module/schedule/gateway.go
 // 模块: 排期工作台
 // 类型: action
-// 职责: 出站适配层：调用禅道检查业需转研发需求前的主管部门审批提醒。
+// 职责: 出站适配层：调用禅道检查业需转研发提醒，以及批量删除研发需求/任务。
 // 依赖: internal/pkg/zentao
 // =============================================================================
 
@@ -53,4 +53,55 @@ func reviewNoticeMessage(message string) string {
 		return reviewToStoryNoticeFallback
 	}
 	return message
+}
+
+// deleteTasks 调用禅道 POST /deletetasks，body 为 {"taskIdList":[...]}。
+func deleteTasks(ctx context.Context, client *zentao.Client, taskIDs []uint) error {
+	if len(taskIDs) == 0 {
+		return nil
+	}
+	if client == nil {
+		return fmt.Errorf("禅道 API 未配置")
+	}
+	body := map[string]any{"taskIdList": taskIDs}
+	if err := client.Do(ctx, http.MethodPost, "/deletetasks", body, nil); err != nil {
+		return fmt.Errorf("删除任务失败: %w", err)
+	}
+	return nil
+}
+
+// deleteStories 调用禅道 POST /deletestories，body 为 {"storyIdList":[...]}。
+func deleteStories(ctx context.Context, client *zentao.Client, storyIDs []uint) error {
+	if len(storyIDs) == 0 {
+		return nil
+	}
+	if client == nil {
+		return fmt.Errorf("禅道 API 未配置")
+	}
+	body := map[string]any{"storyIdList": storyIDs}
+	if err := client.Do(ctx, http.MethodPost, "/deletestories", body, nil); err != nil {
+		return fmt.Errorf("删除研发需求失败: %w", err)
+	}
+	return nil
+}
+
+// collectSchedulingDeletes 从排期保存请求中收集待删研发需求/任务 ID。
+func collectSchedulingDeletes(req *SaveSchedulingReq) (storyIDs []uint, taskIDs []uint) {
+	if req == nil {
+		return nil, nil
+	}
+	for _, story := range req.Stories {
+		if strings.TrimSpace(story.Action) == "delete" {
+			if story.ID > 0 {
+				storyIDs = append(storyIDs, story.ID)
+			}
+			continue
+		}
+		for _, task := range story.Tasks {
+			if strings.TrimSpace(task.Action) == "delete" && task.ID > 0 {
+				taskIDs = append(taskIDs, task.ID)
+			}
+		}
+	}
+	return storyIDs, taskIDs
 }

@@ -4,6 +4,7 @@
 // 类型: action
 // 职责: 维护任务弹窗加载与保存业务逻辑。
 // 依赖: internal/model
+//       internal/module/schedule/gateway.go
 //       internal/module/schedule/repo_story_tasks.go
 // =============================================================================
 
@@ -238,6 +239,16 @@ func (s *Service) SaveStoryTasks(ctx context.Context, actor *model.User, storyID
 
 	detail, err := s.repo.GetStoryTaskDetail(ctx, storyID)
 	if err != nil {
+		return err
+	}
+
+	var deleteTaskIDs []uint
+	for _, taskReq := range req.Tasks {
+		if strings.TrimSpace(taskReq.Action) == "delete" && taskReq.ID > 0 {
+			deleteTaskIDs = append(deleteTaskIDs, taskReq.ID)
+		}
+	}
+	if err := deleteTasks(ctx, s.ztAPI, deleteTaskIDs); err != nil {
 		return err
 	}
 

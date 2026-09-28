@@ -4,6 +4,7 @@
 // 类型: action
 // 职责: 排期一体化「确认并同步」保存业务逻辑。
 // 依赖: internal/model
+//       internal/module/schedule/gateway.go
 //       internal/module/schedule/repo_scheduling_write.go
 // =============================================================================
 
@@ -33,6 +34,9 @@ func (s *Service) SaveScheduling(ctx context.Context, actor *model.User, demandI
 
 	mainSystemID, err := s.repo.GetDemandMainSystem(ctx, demandID)
 	if err != nil {
+		return err
+	}
+	if err := s.applyZenTaoDeletes(ctx, req); err != nil {
 		return err
 	}
 
@@ -96,6 +100,9 @@ func (s *Service) SaveStoryScheduling(ctx context.Context, actor *model.User, st
 	// 主系统取自 zt_story.product（独立研发需求无 zt_demand.mainSystem）。
 	mainSystemID, err := s.repo.GetStoryProductID(ctx, storyID)
 	if err != nil {
+		return err
+	}
+	if err := s.applyZenTaoDeletes(ctx, req); err != nil {
 		return err
 	}
 
@@ -215,20 +222,21 @@ func (s *Service) applySchedulingStory(
 		return storyID, productID, 0, nil
 
 	case "delete":
-		storyID = storyReq.ID
-		if err := txRepo.DeleteStory(ctx, storyID); err != nil {
-			return 0, 0, 0, fmt.Errorf("delete story %d: %w", storyID, err)
-		}
-
-		if err := txRepo.CreateAction(ctx, "story", storyID, "deleted", account, 0, 0, 0, storyActionCanUndeleted); err != nil {
-			return 0, 0, 0, fmt.Errorf("create story action: %w", err)
-		}
-
-		return storyID, 0, 0, nil
+		// 软删与 action 已由禅道 POST /deletestories 完成（见 applyZenTaoDeletes）。
+		return storyReq.ID, 0, 0, nil
 
 	default:
 		return 0, 0, 0, fmt.Errorf("unsupported story action: %s", storyReq.Action)
 	}
+}
+
+// applyZenTaoDeletes 先删任务再删研发需求，交由禅道接口完成软删与历史。
+func (s *Service) applyZenTaoDeletes(ctx context.Context, req *SaveSchedulingReq) error {
+	storyIDs, taskIDs := collectSchedulingDeletes(req)
+	if err := deleteTasks(ctx, s.ztAPI, taskIDs); err != nil {
+		return err
+	}
+	return deleteStories(ctx, s.ztAPI, storyIDs)
 }
 
 func (s *Service) applySchedulingTasks(
@@ -303,14 +311,6 @@ func (s *Service) applySingleSchedulingTask(
 		}
 		if err := txRepo.LinkStoryToProjectAndExecution(ctx, storyID, productID, projectID, taskReq.ExecutionID, account); err != nil {
 			return fmt.Errorf("link story to project/execution: %w", err)
-		}
-
-	case "delete":
-		if err := txRepo.DeleteTask(ctx, taskReq.ID); err != nil {
-			return fmt.Errorf("delete task %d: %w", taskReq.ID, err)
-		}
-		if err := txRepo.CreateAction(ctx, "task", taskReq.ID, "deleted", account, productID, 0, 0, storyActionCanUndeleted); err != nil {
-			return fmt.Errorf("create task action: %w", err)
 		}
 	}
 	return nil
