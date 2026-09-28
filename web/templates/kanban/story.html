@@ -43,7 +43,7 @@
   </div>
 
   <div class="owner-row">
-    <span class="owner-title">PO / 需求负责人</span>
+    <span class="owner-title">产品经理 / 需求负责人</span>
     <div class="people" data-people{{ if .CurrentUser }} data-current-account="{{ .CurrentUser.Account }}"{{ end }}>
       {{ if .Teamgroups }}
         {{ range $i, $g := .Teamgroups }}
@@ -75,7 +75,7 @@
       <div class="demand-board">
         <div class="demand-grid">
           <div class="grid-head">
-            <div>需求树（PO工作对象 / 交付上下文）</div>
+            <div>需求树（需求管理工作对象 / 交付上下文）</div>
             <div>受理 / 澄清</div>
             <div>排期</div>
             <div>研发 / 提测</div>

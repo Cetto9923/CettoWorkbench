@@ -81,7 +81,7 @@
     if ($("demandRoleBanner")) $("demandRoleBanner").classList.toggle("hidden", !demand);
     if ($("taskRoleBanner")) $("taskRoleBanner").classList.toggle("hidden", demand);
     $("taskFilterTip").classList.toggle("hidden", demand || !state.storyFilter);
-    $("ownerTitle").textContent = demand ? "PO / 需求负责人" : "任务负责人";
+    $("ownerTitle").textContent = demand ? "产品经理 / 需求负责人" : "任务负责人";
     // 需求首屏先确定默认小组，再用同一小组加载需求与效能快照。
     if (demand) {
       if (WB.loadDemand) WB.loadDemand();

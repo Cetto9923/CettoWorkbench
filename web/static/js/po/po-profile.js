@@ -188,9 +188,9 @@
     var account = String((p && p.account) || (window.currentUser && window.currentUser.account) || '').trim();
     var checked = preferredSet(p);
 
-    // 1. 自选工作台角色：产品负责人 (PO)，用户可自主勾选或取消
+    // 1. 自选工作台角色：产品经理，用户可自主勾选或取消
     var selfSelectable = [
-      { key: 'po', label: '产品负责人 (PO)', checked: checked['po'] !== false }
+      { key: 'po', label: '产品经理', checked: checked['po'] !== false }
     ];
 
     var boxes = [];
@@ -219,7 +219,7 @@
 
     return '<div class="role-cards-grid" style="grid-template-columns: 1fr;" id="profileRoleCheckRow">' + boxes.join('') + '</div>' +
       '<span class="field-tip" style="margin-top:6px; display:inline-block; line-height:1.4;">' +
-        '提示：产品负责人 (PO) 可由个人自主选择开启或关闭；PMO 与团队管理视图属于组织固定授权，须由 PMO 或管理员在后台统一授权配置，个人不可在此更改。' +
+        '提示：产品经理角色可由个人自主选择开启或关闭；PMO 与团队管理视图属于组织固定授权，须由 PMO 或管理员在后台统一授权配置，个人不可在此更改。' +
       '</span>';
   }
 

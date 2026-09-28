@@ -115,7 +115,7 @@
     var nodeType = nodeTypeOf(root, null), isIndy = !!root.independent;
     var rowCls = "demand-row is-standalone" + (isOverdue(root) ? " has-overdue" : "") + (isBlocked(root) ? " has-blocked" : "");
     var flags = []; if (isOverdue(root)) flags.push("overdue"); if (isBlocked(root)) flags.push("blocked");
-    var metaBits = []; if (root.owner) metaBits.push(ownerBadge(root.owner, "PO "));
+    var metaBits = []; if (root.owner) metaBits.push(ownerBadge(root.owner, "产品经理 "));
     metaBits.push(isIndy ? "<span>尚未纳入执行</span>" : "<span>研发需求 0</span>");
     if (root.deadline) metaBits.push('<span class="biz-date">目标上线 ' + esc(root.deadline) + "</span>");
     var titleTag;
@@ -171,7 +171,7 @@
     return html;
   }
   function renderCollapsedRow(root, nodeType, stories) {
-    var metaBits = []; if (root.owner) { metaBits.push(ownerBadge(root.owner, "PO ")); }
+    var metaBits = []; if (root.owner) { metaBits.push(ownerBadge(root.owner, "产品经理 ")); }
     var sub = root.subDemandCount || 0, story = root.storyCount || 0, counts = [];
     if (sub) { counts.push(sub + "子需求"); } if (story) { counts.push(story + "研需"); }
     if (counts.length) { metaBits.push('<span class="summary">' + counts.join(" · ") + '</span>'); }
@@ -215,7 +215,7 @@
         return '<span class="' + cls + '">' + esc(s) + "</span>";
       }).join("");
 
-      var ownerDot = root.owner ? '<span class="owner-badge"><span class="owner-dot">' + esc(root.owner.charAt(0)) + "</span>PO " + esc(root.owner) + "</span>" : "";
+      var ownerDot = root.owner ? '<span class="owner-badge"><span class="owner-dot">' + esc(root.owner.charAt(0)) + "</span>产品经理 " + esc(root.owner) + "</span>" : "";
       var dateHtml = root.deadline ? '<span class="biz-date">目标上线 ' + esc(root.deadline) + "</span>" : "";
       var stories = collectStories(root);
 
