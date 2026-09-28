@@ -347,8 +347,29 @@
     applyAdvancedFilters();
   });
 
-  $(document).on("click", function () {
-    closeAllScheduleMultiselects();
+  // D8: 版本窗口概览卡点击联动筛选
+  $(document).on("click", ".schedule-version-card", function (e) {
+    if ($(e.target).closest(".schedule-version-card-actions, a, button").length) {
+      return;
+    }
+    e.preventDefault();
+    var windowId = String($(this).data("window-id") || "").trim();
+    if (!windowId) {
+      return;
+    }
+    var currentParams = readURLParams();
+    var currentWindows = (currentParams.get("windows") || "").split(",").filter(Boolean);
+    var newWindows;
+    if (currentWindows.indexOf(windowId) !== -1) {
+      newWindows = currentWindows.filter(function (id) { return id !== windowId; });
+    } else {
+      newWindows = [windowId];
+    }
+    navigateSchedule({
+      windows: newWindows.length ? newWindows.join(",") : null,
+      bizPage: null,
+      indepPage: null,
+    });
   });
 
   setMoreFiltersOpen(hasMoreFiltersActive());

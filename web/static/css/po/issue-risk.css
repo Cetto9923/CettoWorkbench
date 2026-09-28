@@ -70,12 +70,13 @@
   white-space: nowrap;
 }
 .po-issue-risk .ir-table .ir-col-status {
-  width: 120px;
-  min-width: 120px;
+  width: 145px;
+  min-width: 145px;
   white-space: nowrap;
 }
 .po-issue-risk .ir-table .ir-col-handler {
-  width: 110px;
+  width: 120px;
+  min-width: 120px;
   white-space: nowrap;
 }
 .po-issue-risk .ir-table .ir-col-plan {
@@ -89,7 +90,9 @@
   white-space: nowrap;
 }
 .po-issue-risk .ir-table .ir-col-opt {
-  width: 60px;
+  width: 72px;
+  min-width: 72px;
+  padding: 8px 4px;
   text-align: center;
   white-space: nowrap;
 }

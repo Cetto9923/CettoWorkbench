@@ -21,13 +21,10 @@ body.po-workbench-shell #page-schedule #scheduleIndependentListPanel .schedule-t
   min-width: 0;
 }
 
-body.po-workbench-shell #page-schedule #scheduleBizListPanel .schedule-table th.schedule-col-title {
-  width: 36% !important;
-  max-width: none !important;
-}
-
+body.po-workbench-shell #page-schedule #scheduleBizListPanel .schedule-table th.schedule-col-title,
 body.po-workbench-shell #page-schedule #scheduleIndependentListPanel .schedule-table th.schedule-col-title {
-  width: 30% !important;
+  width: auto !important;
+  min-width: 260px;
   max-width: none !important;
 }
 
@@ -36,12 +33,83 @@ body.po-workbench-shell #page-schedule #scheduleIndependentListPanel .schedule-t
   max-width: 0;
 }
 
-/* 业务需求表第 3 列（敏捷小组）加宽，避免“团队 / 小组”被折成三四行撑高行距 */
+/* 业务需求表与独立研发需求表敏捷小组列：单行省略不换行 */
+body.po-workbench-shell #page-schedule .schedule-table th.schedule-col-group,
+body.po-workbench-shell #page-schedule .schedule-table td.schedule-col-group,
 body.po-workbench-shell #page-schedule #scheduleBizListPanel .schedule-table th:nth-child(3),
 body.po-workbench-shell #page-schedule #scheduleBizListPanel .schedule-table td:nth-child(3) {
-  min-width: 150px;
+  width: 150px;
+  min-width: 140px;
+  max-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 body.po-workbench-shell #page-schedule .schedule-table .schedule-action-col {
   min-width: 96px;
+}
+
+/* D5: 树形列表左对齐：展开箭头/占位与子行统一缩进 24px */
+body.po-workbench-shell #page-schedule .schedule-table .schedule-title-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.25;
+}
+body.po-workbench-shell #page-schedule .schedule-table .schedule-row-expand-slot {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+body.po-workbench-shell #page-schedule .schedule-table .schedule-title-cell--l1 {
+  padding-left: 0;
+}
+body.po-workbench-shell #page-schedule .schedule-table .schedule-title-cell--l2,
+body.po-workbench-shell #page-schedule .schedule-table .schedule-title-cell--l3 {
+  padding-left: 24px;
+}
+body.po-workbench-shell #page-schedule .schedule-table .tree-guide {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  position: relative;
+  display: inline-block;
+}
+body.po-workbench-shell #page-schedule .schedule-table .tree-guide::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: -8px;
+  bottom: 50%;
+  width: 10px;
+  border-left: 1.5px solid var(--color-border);
+  border-bottom: 1.5px solid var(--color-border);
+}
+
+/* D7: 深色模式下降亮实色元素（维护任务按钮、排期状态标签） */
+html[data-theme="dark"] body.po-workbench-shell #page-schedule .action-btn--success,
+html[data-theme="dark"] body.po-workbench-shell #page-schedule .action-btn.action-btn--success {
+  background: var(--color-badge-success-bg);
+  color: var(--color-badge-success-fg);
+  border: 1px solid var(--color-badge-success-border);
+}
+html[data-theme="dark"] body.po-workbench-shell #page-schedule .action-btn--success:hover,
+html[data-theme="dark"] body.po-workbench-shell #page-schedule .action-btn.action-btn--success:hover {
+  background: var(--color-success-bg);
+  color: var(--color-badge-success-fg);
+  border-color: var(--color-badge-success-border);
+}
+html[data-theme="dark"] body.po-workbench-shell #page-schedule .stage-tag--draft {
+  background: var(--color-badge-warning-bg);
+  color: var(--color-badge-warning-fg);
+  border: 1px solid var(--color-badge-warning-border);
+}
+html[data-theme="dark"] body.po-workbench-shell #page-schedule .stage-tag--final {
+  background: var(--color-badge-success-bg);
+  color: var(--color-badge-success-fg);
+  border: 1px solid var(--color-badge-success-border);
 }

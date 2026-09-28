@@ -78,6 +78,12 @@
   box-shadow: 0 6px 18px rgba(37, 99, 235, 0.1);
 }
 
+.schedule-version-card.selected,
+.schedule-version-card.active {
+  border-color: var(--color-primary, #2563eb);
+  box-shadow: 0 0 0 2px var(--color-primary, #2563eb), 0 6px 18px rgba(37, 99, 235, 0.15);
+}
+
 /* 菜单打开时抬高当前卡片，避免被右侧相邻卡片盖住 */
 .schedule-version-card:has(.version-card-dropdown.show) {
   z-index: 50;
