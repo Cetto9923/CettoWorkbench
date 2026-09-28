@@ -149,7 +149,7 @@
   left: 50%;
   transform: translate(-50%, -50%);
   background: var(--white);
-  border-radius: 8px;
+  border-radius: var(--wb-radius-md);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
   z-index: 601;
   max-width: 560px;
@@ -465,7 +465,7 @@
 .task-modal-project-section {
   background: #eff6ff;
   border: 1px solid #bfdbfe;
-  border-radius: 8px;
+  border-radius: var(--wb-radius-md);
   padding: 10px 14px;
   margin-bottom: 12px;
   display: flex;
@@ -632,7 +632,7 @@
 .task-list-modal-table-wrap {
   overflow-x: auto;
   border: 1px solid var(--border-lt);
-  border-radius: 8px;
+  border-radius: var(--wb-radius-md);
 }
 
 .task-list-modal-table {

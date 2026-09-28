@@ -713,7 +713,7 @@
 .po-home .focus-card-hint {
   font-size: 11px;
   line-height: 1.25;
-  color: var(--wb-gray-400);
+  color: var(--wb-gray-500);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

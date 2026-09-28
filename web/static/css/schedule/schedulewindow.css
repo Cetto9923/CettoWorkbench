@@ -10,7 +10,7 @@
   z-index: 40; /* 高于下方 .schedule-area，避免卡片菜单被列表区盖住 */
   background: var(--color-surface, var(--white));
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--wb-radius-md);
   margin-bottom: 8px;
   padding: 6px 10px 8px;
   box-shadow: 0 2px 10px rgba(15, 23, 42, 0.025);
@@ -48,7 +48,7 @@
   justify-content: center;
   min-height: 72px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--wb-radius-md);
   background: var(--color-surface, var(--white));
   font-size: 13px;
   color: var(--color-text-tertiary, var(--t3));
@@ -59,7 +59,7 @@
 .schedule-version-card {
   position: relative;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--wb-radius-md);
   background: var(--color-surface, var(--white));
   text-align: left;
   padding: 0;
@@ -91,7 +91,7 @@
 
 .schedule-version-body-click {
   cursor: pointer;
-  padding: 7px 10px;
+  padding: 12px 14px;
   padding-right: 32px;
   flex: 1;
   min-width: 0;
@@ -320,7 +320,7 @@
 
 .schedule-create-plan-card {
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--wb-radius-md);
   padding: 9px 10px;
   background: var(--white);
 }

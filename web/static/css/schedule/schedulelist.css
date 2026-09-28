@@ -200,7 +200,7 @@
 }
 
 .schedule-row-expand-slot {
-  width: 18px;
+  width: 14px;
   height: 18px;
   flex-shrink: 0;
   display: inline-flex;
@@ -209,12 +209,12 @@
 }
 
 .schedule-row-expand {
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 14px;
   border: 1px solid #cbd5e1;
   background: var(--wb-bg-muted);
   color: #64748b;
-  border-radius: 4px;
+  border-radius: 3px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -222,7 +222,7 @@
   flex-shrink: 0;
   padding: 0;
   font-family: inherit;
-  margin-top: 2px;
+  margin-top: 0;
 }
 
 .schedule-row-expand i {
@@ -269,6 +269,9 @@
 .schedule-table .wb-type .wb-type-id {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  text-align: center;
   height: 100%;
   padding: 0 6px;
   color: var(--color-text-primary, #1e293b);
@@ -545,29 +548,23 @@
 #page-schedule .action-btn--primary,
 #page-schedule .action-btn.action-btn--primary,
 #page-schedule .action-btn--clarify {
-  background: var(--wb-primary);
-  color: var(--wb-text-inverse);
-  border-color: var(--wb-primary);
+  background: var(--wb-primary); color: var(--wb-text-inverse); border-color: var(--wb-primary);
 }
 #page-schedule .action-btn--primary:hover,
-#page-schedule .action-btn--clarify:hover {
-  background: var(--wb-primary-hover);
-}
+#page-schedule .action-btn--clarify:hover { background: var(--wb-primary-hover); }
 #page-schedule .action-btn--success,
 #page-schedule .action-btn.action-btn--success {
-  background: var(--wb-success);
-  color: var(--wb-text-inverse);
-  border-color: var(--wb-success);
+  background: var(--wb-success); color: var(--wb-text-inverse); border-color: var(--wb-success);
 }
-#page-schedule .action-btn--success:hover {
-  background: var(--wb-success-border);
-}
+#page-schedule .action-btn--success:hover { background: var(--wb-success-border); }
 #page-schedule .schedule-table th.schedule-col-title { width: 500px; max-width: 500px; }
 #page-schedule .schedule-table th.schedule-col-pri { width: 72px; }
-#page-schedule .schedule-table th.schedule-col-group { width: 120px; }
+#page-schedule .schedule-table th.schedule-col-group,
+#page-schedule .schedule-table td.schedule-col-group {
+  width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 #page-schedule .schedule-table th.schedule-col-stage-head { min-width: 120px; }
 #page-schedule .schedule-table th.schedule-col-stage { min-width: 160px; }
 #page-schedule .schedule-table th.schedule-col-owner { min-width: 110px; }
 #page-schedule .schedule-table th.schedule-col-tasks { width: 72px; }
 #page-schedule .schedule-table th.schedule-action-col { width: 100px; }
-

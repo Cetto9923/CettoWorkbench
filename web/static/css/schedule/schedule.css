@@ -138,7 +138,7 @@
   margin: 0;
   font-size: 18px;
   font-weight: 900;
-  color: #0f172a;
+  color: var(--color-text-primary);
 }
 
 .schedule-page-actions {
@@ -151,11 +151,11 @@
 .schedule-area {
   background: var(--white);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--wb-radius-md);
   margin-bottom: 16px;
   /* 不用 overflow:hidden，避免筛选多选下拉被裁切；横向滚动由内部 table wrap 承担 */
   overflow: visible;
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03);
+  box-shadow: var(--wb-shadow-sm);
 }
 
 .schedule-quick-scope {
@@ -296,7 +296,7 @@
 .schedule-list-title {
   font-size: 15px;
   font-weight: 900;
-  color: #0f172a;
+  color: var(--color-text-primary);
 }
 
 .schedule-list-title span {
