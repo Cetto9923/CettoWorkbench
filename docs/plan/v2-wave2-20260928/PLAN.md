@@ -21,11 +21,18 @@
 ## 仍需处理
 
 - D1 偏好存储：运行库已有旧版 `zt_wb_profile_prefs(account, preferredRoles, createdDate, updatedDate)`，新 KV CRUD 使用 `prefKey/prefValue`。迁移兼容选择待用户答复；未解决前不部署该版本。
-- 合并交接指定的 `integrate/main-plus-explore-20260922`，合并目标仅为本分支。
-- 合并后复跑构建、测试、vet 和 `make check`，完成 8098 登录态验收并留存七张真实截图。
+- 完成 8098 登录态验收并留存七张真实截图；D1 兼容决定前不部署。
+
+## 合并与冲突记录
+
+- 交接指定分支未能从远端获取；同名本地分支存在于 `/Users/yuyan9923/GitHub/workbench-claude-po`，HEAD `642f87e6d54dbee76e608ae2584a053a2da21ddc`。已将其合并到本分支，未向远端推送。
+- 共 25 个冲突：保留本分支的模块注册/团队只读授权、子范围校验、A3 需求关联窗口和四卡三级筛选；敏捷团队组织部门查询按运行库真实 schema 移除不存在的 `zt_dept.deleted`；工作台 UI 保留四卡版本。
+- `db/install.sql` 采用工作分支已有安装 SQL（含组织挂靠表），再保留本分支偏好表定义；偏好表兼容仍待确认。
+- Go 冲突文件：`internal/bootstrap/bootstrap.go`；`internal/module/agileteam/{handler.go,repo_orgmap.go,repo_scope.go}`；`internal/module/po/{form_issue_risk.go,handler.go,handler_home_team.go,handler_issue_risk.go,home_focus_test.go,home_stage_repo.go,repokpi.go,repovaluestream.go,service.go}`；`internal/module/profile/{handler.go,repo.go}`。
+- Web 冲突文件：`web/static/css/agileteam/agileteam.css`；`web/static/js/agileteam/agileteam.js`；`web/static/js/po/{home-team.js,home.js,issue-risk.js,workboard-core.js,workboard.js}`；`web/templates/po/{home.html,home_team.html}`。
 
 ## 当前验证
 
-- 相关 Go 包测试、全量 `go build ./...`、`go test ./...`、`go vet ./...`：PASS。
-- `git diff --check`、团队首页 JavaScript 语法检查：PASS。
+- 合并后 `go build ./...`、`make check`（含全量 `go test ./...` 与 `go vet ./...`）：PASS。
+- 前端 15 项 Node 回归、`git diff --check`、团队首页和敏捷团队脚本语法检查：PASS。
 - 部署和真实登录态浏览器验收尚未执行。

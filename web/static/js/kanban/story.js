@@ -21,6 +21,18 @@
   var selectedAccount = "";
   var loadSeq = 0;
 
+  function decodeHtmlEntities(str) {
+    if (!str || typeof str !== "string") {
+      return "";
+    }
+    return str
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&amp;/g, "&");
+  }
+
   function escapeHtml(text) {
     return String(text == null ? "" : text)
       .replace(/&/g, "&amp;")
@@ -151,7 +163,7 @@
   }
 
   function renderDemandRow(item) {
-    var title = escapeHtml(item.title || "");
+    var title = escapeHtml(decodeHtmlEntities(item.title || ""));
     var id = escapeHtml(item.id || "");
     var pri = escapeHtml(item.pri || "");
     var pNum = priNum(item.pri);

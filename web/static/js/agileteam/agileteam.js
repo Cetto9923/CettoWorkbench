@@ -56,8 +56,8 @@
       else url.searchParams.delete("scope");
       if (state.scopeId) url.searchParams.set("scopeId", String(state.scopeId));
       else url.searchParams.delete("scopeId");
-      // 旧链接把敏捷团队编号放在 scopeId；新链接统一使用 teamgroupId。
-      url.searchParams.delete("teamgroupId");
+      if (state.scope === "team" && state.scopeId) url.searchParams.set("teamgroupId", String(state.scopeId));
+      else url.searchParams.delete("teamgroupId");
       history.replaceState(null, "", url.pathname + url.search + url.hash);
     } catch (e) {}
   }
