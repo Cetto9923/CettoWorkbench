@@ -1,0 +1,90 @@
+<!-- {{/* ==========================================================================
+文件: web/templates/debug/apilog.html
+模块: SQL 调试工具
+职责: 禅道 API 请求日志列表页
+全局字段: 无
+页面字段: 无
+========================================================================== */}} -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>API 请求日志 - goframework</title>
+  <link rel="stylesheet" href="/static/css/layout/variables.css">
+  <link rel="stylesheet" href="/static/css/layout/base.css">
+  <link rel="stylesheet" href="/static/css/components/components.css">
+  <link rel="stylesheet" href="/static/css/debug/apilog.css">
+</head>
+<body>
+  <main class="main apilog-page">
+    <div class="page-header">
+      <div class="page-header-left">
+        <h1 class="page-title">API 请求日志</h1>
+      </div>
+    </div>
+
+    <div class="apilog-toolbar">
+      <label class="apilog-filter-label" for="apilog-date">日期</label>
+      <input type="date" id="apilog-date" class="input apilog-filter-control">
+      <span id="apilog-summary" class="apilog-summary" aria-live="polite"></span>
+    </div>
+
+    <div class="table-container apilog-table-card">
+      <div class="table-wrapper">
+        <table class="data-table" id="apilog-table">
+          <thead>
+            <tr>
+              <th class="apilog-col-elapsed">耗时</th>
+              <th class="apilog-col-time">时间</th>
+              <th class="apilog-col-method">方法</th>
+              <th class="apilog-col-url">URL</th>
+              <th class="apilog-col-status">状态</th>
+              <th class="apilog-col-payload">请求参数</th>
+              <th class="apilog-col-payload">返回参数</th>
+            </tr>
+          </thead>
+          <tbody id="apilog-tbody">
+            <tr>
+              <td colspan="7" class="apilog-empty">加载中…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="apilog-pager" class="apilog-pager" aria-label="分页" hidden>
+        <div class="apilog-pager-size">
+          <label class="apilog-filter-label" for="apilog-page-size">每页条数</label>
+          <select id="apilog-page-size" class="select apilog-page-size">
+            <option value="20" selected>20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+            <option value="200">200</option>
+            <option value="500">500</option>
+          </select>
+        </div>
+        <div class="apilog-pager-nav">
+          <button type="button" id="apilog-prev" class="apilog-pager-btn">上一页</button>
+          <span id="apilog-page-info" class="apilog-page-info"></span>
+          <button type="button" id="apilog-next" class="apilog-pager-btn">下一页</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="apilog-modal" class="apilog-modal" hidden>
+    <div class="apilog-modal-backdrop" data-apilog-close></div>
+    <div class="apilog-modal-panel" role="dialog" aria-modal="true" aria-labelledby="apilog-modal-title">
+      <div class="apilog-modal-header">
+        <h2 id="apilog-modal-title" class="apilog-modal-title">详情</h2>
+        <div class="apilog-modal-actions">
+          <button type="button" id="apilog-modal-copy" class="apilog-modal-copy">复制</button>
+          <button type="button" class="apilog-modal-close" data-apilog-close aria-label="关闭">×</button>
+        </div>
+      </div>
+      <pre id="apilog-modal-body" class="apilog-modal-body"></pre>
+    </div>
+  </div>
+
+  <script src="/static/js/debug/apilog.js"></script>
+</body>
+</html>

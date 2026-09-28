@@ -37,6 +37,8 @@ var ignoredRequests = []string{
 	"/debug/sqlperf/requests",
 	"/debug/sqllog",
 	"/debug/sqllog/queries",
+	"/debug/apilog",
+	"/debug/apilog/entries",
 }
 
 // NewRepo 创建 Repo。
