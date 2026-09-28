@@ -109,5 +109,6 @@ func (h *Handler) Queries(c *gin.Context) {
 		"date":    resp.Date,
 		"total":   resp.Total,
 		"queries": resp.Queries,
+		"routes":  resp.Routes,
 	})
 }

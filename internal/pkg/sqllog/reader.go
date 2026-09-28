@@ -35,6 +35,8 @@ type RequestSummary struct {
 type QueryEntry struct {
 	Time      string  `json:"time"`
 	RequestID string  `json:"request_id"`
+	Method    string  `json:"method"`
+	Route     string  `json:"route"`
 	Seq       int     `json:"seq"`
 	SQL       string  `json:"sql"`
 	Elapsed   string  `json:"elapsed"`

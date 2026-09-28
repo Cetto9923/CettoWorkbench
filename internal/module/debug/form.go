@@ -41,6 +41,8 @@ type RepoFindAllReq struct {
 type QueryItem struct {
 	Time      string  `json:"time"`
 	RequestID string  `json:"request_id"`
+	Method    string  `json:"method"`
+	Route     string  `json:"route"`
 	Seq       int     `json:"seq"`
 	SQL       string  `json:"sql"`
 	Elapsed   string  `json:"elapsed"`
@@ -54,6 +56,7 @@ type QueryItem struct {
 type QueriesReq struct {
 	Date  string `form:"date"`
 	Limit int    `form:"limit"`
+	Route string `form:"route"` // 完整 "METHOD path"，空表示全部
 }
 
 // QueriesResp 按日 SQL 明细查询响应。
@@ -61,10 +64,12 @@ type QueriesResp struct {
 	Date    string
 	Total   int64
 	Queries []QueryItem
+	Routes  []string // 当天 top-K 中去重接口，供下拉
 }
 
 // RepoFindQueriesReq 仓储层按日 SQL 明细查询参数。
 type RepoFindQueriesReq struct {
 	Date  string
 	Limit int
+	Route string
 }

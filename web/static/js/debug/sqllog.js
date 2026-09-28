@@ -40,7 +40,32 @@ function renderSummary(total, shown, date) {
 function renderEmpty(message) {
   const tbody = document.getElementById("sqllog-tbody");
   if (!tbody) return;
-  tbody.innerHTML = `<tr><td colspan="4" class="sqllog-empty">${escapeHtml(message)}</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="5" class="sqllog-empty">${escapeHtml(message)}</td></tr>`;
+}
+
+function formatAPI(method, route) {
+  const m = String(method ?? "").trim();
+  const r = String(route ?? "").trim();
+  if (!m && !r) return "-";
+  if (!m) return r;
+  if (!r) return m;
+  return `${m} ${r}`;
+}
+
+function fillRouteSelect(routes) {
+  const select = document.getElementById("sqllog-route");
+  if (!select) return;
+  const prev = select.value;
+  const list = Array.isArray(routes) ? routes : [];
+  const options = [`<option value="">全部</option>`].concat(
+    list.map((r) => `<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`)
+  );
+  select.innerHTML = options.join("");
+  if (prev && list.includes(prev)) {
+    select.value = prev;
+  } else {
+    select.value = "";
+  }
 }
 
 function markClampedSQL(tbody) {
@@ -76,18 +101,20 @@ function renderRows(queries) {
   const tbody = document.getElementById("sqllog-tbody");
   if (!tbody) return;
   if (!queries.length) {
-    renderEmpty("当天暂无 SQL 日志");
+    renderEmpty("当天暂无匹配的 SQL 日志");
     return;
   }
 
   const html = queries.map((q) => {
     const slowClass = (q.elapsed_ms || 0) >= SLOW_MS ? " is-slow" : "";
+    const api = formatAPI(q.method, q.route);
     const err = q.error
       ? `<div class="sqllog-error-tag">${escapeHtml(q.error)}</div>`
       : "";
     return `<tr>
       <td class="sqllog-elapsed${slowClass}">${escapeHtml(q.elapsed)}</td>
       <td>${escapeHtml(q.time)}</td>
+      <td class="sqllog-api" title="${escapeHtml(api)}">${escapeHtml(api)}</td>
       <td class="sqllog-file" title="${escapeHtml(q.file)}">${escapeHtml(shortFile(q.file))}</td>
       <td>
         <div class="sqllog-sql-wrap">
@@ -108,19 +135,30 @@ function renderRows(queries) {
 async function loadQueries() {
   const dateInput = document.getElementById("sqllog-date");
   const limitSelect = document.getElementById("sqllog-limit");
-  if (!dateInput || !limitSelect) return;
+  const routeSelect = document.getElementById("sqllog-route");
+  if (!dateInput || !limitSelect || !routeSelect) return;
 
   const date = dateInput.value || todayLocal();
   const limit = limitSelect.value || "200";
+  const route = routeSelect.value || "";
   dateInput.value = date;
 
   renderEmpty("加载中…");
   try {
-    const url = `${SQLLOG_API}?date=${encodeURIComponent(date)}&limit=${encodeURIComponent(limit)}`;
+    let url = `${SQLLOG_API}?date=${encodeURIComponent(date)}&limit=${encodeURIComponent(limit)}`;
+    if (route) {
+      url += `&route=${encodeURIComponent(route)}`;
+    }
     const res = await fetch(url, { headers: { Accept: "application/json" } });
     const json = await res.json();
     if (!res.ok || !json.success) {
       renderEmpty(json.message || "读取失败");
+      return;
+    }
+    fillRouteSelect(json.routes);
+    if (route && routeSelect.value !== route) {
+      // 切换日期后原接口不存在，已重置为全部，再拉一次无 route 的数据
+      loadQueries();
       return;
     }
     const queries = Array.isArray(json.queries) ? json.queries : [];
@@ -134,12 +172,14 @@ async function loadQueries() {
 function init() {
   const dateInput = document.getElementById("sqllog-date");
   const limitSelect = document.getElementById("sqllog-limit");
+  const routeSelect = document.getElementById("sqllog-route");
   const tbody = document.getElementById("sqllog-tbody");
-  if (!dateInput || !limitSelect) return;
+  if (!dateInput || !limitSelect || !routeSelect) return;
 
   dateInput.value = todayLocal();
   dateInput.addEventListener("change", loadQueries);
   limitSelect.addEventListener("change", loadQueries);
+  routeSelect.addEventListener("change", loadQueries);
 
   if (tbody) {
     tbody.addEventListener("click", async (e) => {

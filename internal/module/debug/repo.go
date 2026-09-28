@@ -74,12 +74,13 @@ func (r *Repo) FindAll(ctx context.Context, req RepoFindAllReq) ([]RequestItem, 
 
 // FindQueries 读取指定日期的 SQL 明细，按耗时降序，并截断到 limit。
 // 日志按天追加，重复查询只解析新增字节，见 queriesCache。
-func (r *Repo) FindQueries(ctx context.Context, req RepoFindQueriesReq) ([]QueryItem, int64, error) {
+// 返回值：明细、条数、当天去重接口列表。
+func (r *Repo) FindQueries(ctx context.Context, req RepoFindQueriesReq) ([]QueryItem, int64, []string, error) {
 	_ = ctx
 
 	date := strings.TrimSpace(req.Date)
 	path := filepath.Join(r.logDir, dailySQLLogPrefix+date+dailySQLLogSuffix)
-	return r.queries.entry(date).items(path, normalizeQueryLimit(req.Limit))
+	return r.queries.entry(date).items(path, normalizeQueryLimit(req.Limit), strings.TrimSpace(req.Route))
 }
 
 func toRequestItem(summary sqllog.RequestSummary) RequestItem {
@@ -99,6 +100,8 @@ func toQueryItem(entry sqllog.QueryEntry) QueryItem {
 	return QueryItem{
 		Time:      entry.Time,
 		RequestID: entry.RequestID,
+		Method:    entry.Method,
+		Route:     entry.Route,
 		Seq:       entry.Seq,
 		SQL:       entry.SQL,
 		Elapsed:   entry.Elapsed,

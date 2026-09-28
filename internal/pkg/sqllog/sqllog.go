@@ -58,9 +58,13 @@ func LogQuery(ctx context.Context, sql string, elapsed time.Duration, rows int64
 
 	seq := 0
 	requestID := ""
+	method := ""
+	route := ""
 	if state != nil {
 		seq = state.nextSeq()
 		requestID = state.RequestID
+		method = state.Method
+		route = state.Route
 		state.markQuery(err, slow)
 	}
 
@@ -68,6 +72,8 @@ func LogQuery(ctx context.Context, sql string, elapsed time.Duration, rows int64
 	entry := queryEntry{
 		Time:      formatTime(time.Now()),
 		RequestID: requestID,
+		Method:    method,
+		Route:     route,
 		Seq:       seq,
 		SQL:       sql,
 		Elapsed:   formatDuration(elapsed),
@@ -300,6 +306,8 @@ type requestSummaryEntry struct {
 type queryEntry struct {
 	Time      string `json:"time"`
 	RequestID string `json:"request_id,omitempty"`
+	Method    string `json:"method,omitempty"`
+	Route     string `json:"route,omitempty"`
 	Seq       int    `json:"seq"`
 	SQL       string `json:"sql"`
 	Elapsed   string `json:"elapsed"`
