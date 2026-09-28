@@ -2,7 +2,7 @@
 // 文件: internal/module/debug/repo.go
 // 模块: SQL 性能分析
 // 类型: readonly
-// 职责: 从 sql.log / sql-YYYY-MM-DD.log 读取请求汇总与单条 SQL 明细。
+// 职责: 从 sql-YYYY-MM-DD.log 读取请求汇总与单条 SQL 明细。
 // 依赖: internal/pkg/sqllog
 // =============================================================================
 
@@ -27,7 +27,6 @@ const (
 // Repo SQL 性能分析数据访问层。
 type Repo struct {
 	logDir  string
-	logPath string
 	queries *queriesCache
 }
 
@@ -46,16 +45,15 @@ func NewRepo(logDir string) *Repo {
 	dir := strings.TrimSpace(logDir)
 	return &Repo{
 		logDir:  dir,
-		logPath: filepath.Join(dir, "sql.log"),
 		queries: newQueriesCache(),
 	}
 }
 
-// FindAll 读取全部请求汇总行。
+// FindAll 按日期范围读取请求汇总行。
 func (r *Repo) FindAll(ctx context.Context, req RepoFindAllReq) ([]RequestItem, int64, error) {
 	_ = ctx
 
-	summaries, err := sqllog.ReadRequestSummaries(r.logPath)
+	summaries, err := sqllog.ReadRequestSummariesInRange(r.logDir, req.StartDate, req.EndDate)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -63,9 +61,6 @@ func (r *Repo) FindAll(ctx context.Context, req RepoFindAllReq) ([]RequestItem, 
 	items := make([]RequestItem, 0, len(summaries))
 	for _, summary := range summaries {
 		if isIgnoredRequest(summary.Method, summary.Route) {
-			continue
-		}
-		if !matchDateRange(summary.Time, req.StartDate, req.EndDate) {
 			continue
 		}
 		items = append(items, toRequestItem(summary))
@@ -126,20 +121,4 @@ func normalizeQueryLimit(limit int) int {
 
 func isIgnoredRequest(method, route string) bool {
 	return strings.EqualFold(strings.TrimSpace(method), "GET") && slices.Contains(ignoredRequests, route)
-}
-
-func matchDateRange(timeText, startDate, endDate string) bool {
-	if len(timeText) < 10 {
-		return false
-	}
-	day := timeText[:10]
-	start := strings.TrimSpace(startDate)
-	end := strings.TrimSpace(endDate)
-	if start != "" && day < start {
-		return false
-	}
-	if end != "" && day > end {
-		return false
-	}
-	return true
 }

@@ -54,7 +54,7 @@ func (h *Handler) List(c *gin.Context) {
 	c.File(constants.TEMPLATE_DEBUG_SQLPERF)
 }
 
-// Requests 返回 sql.log 中的请求汇总数据。
+// Requests 返回 sql-YYYY-MM-DD.log 中的请求汇总数据。
 func (h *Handler) Requests(c *gin.Context) {
 	var req RequestsReq
 	if err := c.ShouldBindQuery(&req); err != nil {
