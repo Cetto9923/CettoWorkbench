@@ -2,7 +2,7 @@
 // 文件: internal/pkg/sqllog/reader.go
 // 模块: 基础设施
 // 类型: infra
-// 职责: 从 sql.log / sql-YYYY-MM-DD.log 读取汇总行与单条 SQL 查询行。
+// 职责: 从 sql-YYYY-MM-DD.log 读取请求汇总行与单条 SQL 查询行。
 // 依赖: 无
 // =============================================================================
 
@@ -15,11 +15,13 @@ import (
 	"errors"
 	"io"
 	"os"
+	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 )
 
-// RequestSummary 请求级 SQL 汇总（与 sql.log 汇总行字段对应）。
+// RequestSummary 请求级 SQL 汇总（与按日日志中汇总行字段对应）。
 type RequestSummary struct {
 	Time      string  `json:"time"`
 	Level     string  `json:"level"`
@@ -35,6 +37,8 @@ type RequestSummary struct {
 type QueryEntry struct {
 	Time      string  `json:"time"`
 	RequestID string  `json:"request_id"`
+	Method    string  `json:"method"`
+	Route     string  `json:"route"`
 	Seq       int     `json:"seq"`
 	SQL       string  `json:"sql"`
 	Elapsed   string  `json:"elapsed"`
@@ -44,7 +48,69 @@ type QueryEntry struct {
 	Error     string  `json:"error,omitempty"`
 }
 
+// DailyLogPaths 返回目录下落在 [startDate, endDate] 内的 sql-YYYY-MM-DD.log 路径（按日期升序）。
+// startDate / endDate 为空时不限制对应边界。
+func DailyLogPaths(dir, startDate, endDate string) ([]string, error) {
+	dir = strings.TrimSpace(dir)
+	if dir == "" {
+		return nil, nil
+	}
+
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	start := strings.TrimSpace(startDate)
+	end := strings.TrimSpace(endDate)
+	paths := make([]string, 0)
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if !strings.HasPrefix(name, dailyLogPrefix) || !strings.HasSuffix(name, dailyLogSuffix) {
+			continue
+		}
+		day := strings.TrimSuffix(strings.TrimPrefix(name, dailyLogPrefix), dailyLogSuffix)
+		if len(day) != 10 {
+			continue
+		}
+		if start != "" && day < start {
+			continue
+		}
+		if end != "" && day > end {
+			continue
+		}
+		paths = append(paths, filepath.Join(dir, name))
+	}
+	sort.Strings(paths)
+	return paths, nil
+}
+
+// ReadRequestSummariesInRange 读取日期范围内全部按日文件中的请求汇总行。
+func ReadRequestSummariesInRange(dir, startDate, endDate string) ([]RequestSummary, error) {
+	paths, err := DailyLogPaths(dir, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+
+	summaries := make([]RequestSummary, 0)
+	for _, path := range paths {
+		daySummaries, err := ReadRequestSummaries(path)
+		if err != nil {
+			return nil, err
+		}
+		summaries = append(summaries, daySummaries...)
+	}
+	return summaries, nil
+}
+
 // ReadRequestSummaries 读取日志文件中全部请求汇总行；文件不存在时返回空切片。
+// 仅接受带非空 level 的行，避免把同文件中的 SQL 明细误解析为汇总。
 func ReadRequestSummaries(path string) ([]RequestSummary, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -68,6 +134,9 @@ func ReadRequestSummaries(path string) ([]RequestSummary, error) {
 
 		var entry RequestSummary
 		if err := json.Unmarshal(line, &entry); err != nil {
+			continue
+		}
+		if strings.TrimSpace(entry.Level) == "" {
 			continue
 		}
 		if strings.TrimSpace(entry.Route) == "" {

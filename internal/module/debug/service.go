@@ -2,7 +2,7 @@
 // 文件: internal/module/sqlperf/service.go
 // 模块: SQL 性能分析
 // 类型: readonly
-// 职责: 编排 SQL 性能分析数据查询。
+// 职责: 编排 SQL 性能分析与 API 日志数据查询。
 // 依赖: 无
 // =============================================================================
 
@@ -39,9 +39,10 @@ func (s *Service) Requests(ctx context.Context, req RequestsReq) (RequestsResp, 
 // Queries 查询指定日期的 SQL 明细（按耗时降序）；不接收 actor。
 func (s *Service) Queries(ctx context.Context, req QueriesReq) (QueriesResp, error) {
 	date := strings.TrimSpace(req.Date)
-	items, total, err := s.repo.FindQueries(ctx, RepoFindQueriesReq{
+	items, total, routes, err := s.repo.FindQueries(ctx, RepoFindQueriesReq{
 		Date:  date,
 		Limit: req.Limit,
+		Route: strings.TrimSpace(req.Route),
 	})
 	if err != nil {
 		return QueriesResp{}, err
@@ -50,5 +51,26 @@ func (s *Service) Queries(ctx context.Context, req QueriesReq) (QueriesResp, err
 		Date:    date,
 		Total:   total,
 		Queries: items,
+		Routes:  routes,
+	}, nil
+}
+
+// APIEntries 查询指定日期的禅道 API 日志（按时间倒序分页）；不接收 actor。
+func (s *Service) APIEntries(ctx context.Context, req APIEntriesReq) (APIEntriesResp, error) {
+	date := strings.TrimSpace(req.Date)
+	items, total, page, pageSize, err := s.repo.FindAPIEntries(ctx, RepoFindAPIEntriesReq{
+		Date:     date,
+		Page:     req.Page,
+		PageSize: req.PageSize,
+	})
+	if err != nil {
+		return APIEntriesResp{}, err
+	}
+	return APIEntriesResp{
+		Date:     date,
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+		Entries:  items,
 	}, nil
 }

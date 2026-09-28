@@ -1,6 +1,6 @@
 /**
  * SQL 性能分析页
- * 数据通过 /debug/sqlperf/requests 动态读取 logs/sql.log
+ * 数据通过 /debug/sqlperf/requests 动态读取 logs/sql-YYYY-MM-DD.log
  */
 const SQLPERF_API = "/debug/sqlperf/requests";
 
@@ -128,7 +128,7 @@ function renderSummary(allRequests, filteredRequests) {
     minTime +
     " ~ " +
     maxTime +
-    " · 数据源 logs/sql.log";
+    " · 数据源 logs/sql-YYYY-MM-DD.log";
 }
 
 function renderLoadState(message, isError) {
@@ -144,7 +144,7 @@ function renderLoadState(message, isError) {
 }
 
 function renderEmptyState() {
-  renderLoadState("当前 logs/sql.log 中暂无请求汇总数据，请先产生 HTTP 请求后再查看。", false);
+  renderLoadState("当前 logs/sql-YYYY-MM-DD.log 中暂无请求汇总数据，请先产生 HTTP 请求后再查看。", false);
   const app = document.getElementById("sqlperf-app");
   if (app) {
     app.style.display = "none";

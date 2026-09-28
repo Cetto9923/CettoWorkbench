@@ -1,0 +1,43 @@
+<!-- {{/* ==========================================================================
+文件: web/templates/debug/index.html
+模块: SQL 调试工具
+职责: Debug 工具导航页，入口跳转至 SQL 性能分析、慢 SQL 明细与 API 请求日志
+全局字段: 无
+页面字段: 无
+========================================================================== */}} -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Debug 工具 - goframework</title>
+  <link rel="stylesheet" href="/static/css/layout/variables.css">
+  <link rel="stylesheet" href="/static/css/layout/base.css">
+  <link rel="stylesheet" href="/static/css/components/components.css">
+  <link rel="stylesheet" href="/static/css/debug/index.css">
+</head>
+<body>
+  <main class="main debug-index-page">
+    <div class="page-header">
+      <div class="page-header-left">
+        <h1 class="page-title">Debug 工具</h1>
+      </div>
+    </div>
+
+    <nav class="debug-nav" aria-label="Debug 工具导航">
+      <a class="debug-nav-item" href="/debug/sqlperf">
+        <span class="debug-nav-title">SQL 性能分析</span>
+        <span class="debug-nav-desc">按接口汇总耗时与查询次数趋势</span>
+      </a>
+      <a class="debug-nav-item" href="/debug/sqllog">
+        <span class="debug-nav-title">慢 SQL 明细</span>
+        <span class="debug-nav-desc">按日期查看慢 SQL 明细列表</span>
+      </a>
+      <a class="debug-nav-item" href="/debug/apilog">
+        <span class="debug-nav-title">API 请求日志</span>
+        <span class="debug-nav-desc">按日期查看 API 请求与响应</span>
+      </a>
+    </nav>
+  </main>
+</body>
+</html>

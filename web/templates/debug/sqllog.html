@@ -20,10 +20,15 @@
     <div class="sqllog-toolbar">
       <label class="sqllog-filter-label" for="sqllog-date">日期</label>
       <input type="date" id="sqllog-date" class="input sqllog-filter-control">
+      <label class="sqllog-filter-label" for="sqllog-route">接口</label>
+      <select id="sqllog-route" class="select sqllog-filter-control sqllog-route">
+        <option value="">全部</option>
+      </select>
       <label class="sqllog-filter-label" for="sqllog-limit">显示条数</label>
       <select id="sqllog-limit" class="select sqllog-filter-control sqllog-limit">
+        <option value="50" selected>50</option>
         <option value="100">100</option>
-        <option value="200" selected>200</option>
+        <option value="200">200</option>
         <option value="500">500</option>
         <option value="1000">1000</option>
       </select>
@@ -37,13 +42,14 @@
             <tr>
               <th class="sqllog-col-elapsed">耗时</th>
               <th class="sqllog-col-time">时间</th>
+              <th class="sqllog-col-api">接口</th>
               <th class="sqllog-col-file">位置</th>
               <th>SQL</th>
             </tr>
           </thead>
           <tbody id="sqllog-tbody">
             <tr>
-              <td colspan="4" class="sqllog-empty">加载中…</td>
+              <td colspan="5" class="sqllog-empty">加载中…</td>
             </tr>
           </tbody>
         </table>

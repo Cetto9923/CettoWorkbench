@@ -1,0 +1,41 @@
+.debug-index-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--space-6);
+}
+
+.debug-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.debug-nav-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background: var(--color-page-bg);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.debug-nav-item:hover {
+  border-color: var(--color-primary);
+  background: var(--color-surface);
+}
+
+.debug-nav-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.debug-nav-desc {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}

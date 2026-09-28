@@ -19,18 +19,23 @@ import (
 // SQLRequestContext 注入 request_id 与 SQL 请求上下文，请求结束后写汇总行。
 func SQLRequestContext() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		route := c.FullPath()
+		if route == "" {
+			route = c.Request.URL.Path
+		}
 		state := &sqllog.RequestState{
 			RequestID: sqllog.NewRequestID(),
 			Method:    c.Request.Method,
+			Route:     route,
 			Start:     time.Now(),
 		}
 		c.Request = c.Request.WithContext(sqllog.WithRequestState(c.Request.Context(), state))
 		c.Next()
 
-		route := c.FullPath()
-		if route == "" {
-			route = c.Request.URL.Path
+		// 路由匹配后 FullPath 更准确时回填，供汇总行使用
+		if full := c.FullPath(); full != "" {
+			state.Route = full
 		}
-		sqllog.LogRequestSummary(state, route, time.Since(state.Start))
+		sqllog.LogRequestSummary(state, state.Route, time.Since(state.Start))
 	}
 }

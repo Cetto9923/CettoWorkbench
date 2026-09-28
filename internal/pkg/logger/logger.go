@@ -9,9 +9,7 @@
 package logger
 
 import (
-	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"go.uber.org/zap"
@@ -21,7 +19,7 @@ import (
 )
 
 // Init 根据配置初始化应用日志。
-// dev：控制台（可读、带颜色）+ app.log（可读、无颜色）；prod：app.log（JSON）。
+// dev：控制台（可读、带颜色）+ app-YYYY-MM-DD.log（可读、无颜色）；prod：app-YYYY-MM-DD.log（JSON）。
 // log.dir 为空时仅输出到控制台。
 func Init(cfg *config.Config) (*zap.Logger, error) {
 	level, err := zapcore.ParseLevel(cfg.Log.Level)
@@ -40,7 +38,7 @@ func Init(cfg *config.Config) (*zap.Logger, error) {
 	}
 
 	if dir := strings.TrimSpace(cfg.Log.Dir); dir != "" {
-		fileCore, err := newNamedFileCore(dir, "app.log", isProd, atomLevel)
+		fileCore, err := newDailyFileCore(dir, isProd, atomLevel)
 		if err != nil {
 			return nil, err
 		}
@@ -57,15 +55,10 @@ func Init(cfg *config.Config) (*zap.Logger, error) {
 	return zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel)), nil
 }
 
-func newNamedFileCore(dir, filename string, isProd bool, level zap.AtomicLevel) (zapcore.Core, error) {
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return nil, fmt.Errorf("create log dir %q: %w", dir, err)
-	}
-
-	logPath := filepath.Join(dir, filename)
-	file, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+func newDailyFileCore(dir string, isProd bool, level zap.AtomicLevel) (zapcore.Core, error) {
+	syncer, err := newDailyWriteSyncer(dir, "app-", ".log")
 	if err != nil {
-		return nil, fmt.Errorf("open log file %q: %w", logPath, err)
+		return nil, err
 	}
 
 	var encoder zapcore.Encoder
@@ -77,5 +70,5 @@ func newNamedFileCore(dir, filename string, isProd bool, level zap.AtomicLevel) 
 		encoder = zapcore.NewConsoleEncoder(devCfg)
 	}
 
-	return zapcore.NewCore(encoder, zapcore.AddSync(file), level), nil
+	return zapcore.NewCore(encoder, zapcore.AddSync(syncer), level), nil
 }

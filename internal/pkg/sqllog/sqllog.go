@@ -2,7 +2,7 @@
 // 文件: internal/pkg/sqllog/sqllog.go
 // 模块: 基础设施
 // 类型: infra
-// 职责: 以 JSON 行格式记录 SQL 查询日志（sql.log + 按日 sql-YYYY-MM-DD.log），dev 环境同时彩色输出到控制台。
+// 职责: 以 JSON 行格式按日记录 SQL 查询与请求汇总（sql-YYYY-MM-DD.log），dev 环境同时彩色输出到控制台。
 // 依赖: internal/config
 // =============================================================================
 
@@ -51,16 +51,20 @@ func NewRequestID() string {
 	return hex.EncodeToString(b)
 }
 
-// LogQuery 记录单条 SQL 查询（写入 sql.log 与按日 sql-YYYY-MM-DD.log）。
+// LogQuery 记录单条 SQL 查询（写入按日 sql-YYYY-MM-DD.log）。
 func LogQuery(ctx context.Context, sql string, elapsed time.Duration, rows int64, err error) {
 	state := RequestStateFromContext(ctx)
 	slow := elapsed > slowThreshold
 
 	seq := 0
 	requestID := ""
+	method := ""
+	route := ""
 	if state != nil {
 		seq = state.nextSeq()
 		requestID = state.RequestID
+		method = state.Method
+		route = state.Route
 		state.markQuery(err, slow)
 	}
 
@@ -68,6 +72,8 @@ func LogQuery(ctx context.Context, sql string, elapsed time.Duration, rows int64
 	entry := queryEntry{
 		Time:      formatTime(time.Now()),
 		RequestID: requestID,
+		Method:    method,
+		Route:     route,
 		Seq:       seq,
 		SQL:       sql,
 		Elapsed:   formatDuration(elapsed),
@@ -79,11 +85,10 @@ func LogQuery(ctx context.Context, sql string, elapsed time.Duration, rows int64
 	}
 
 	defaultWriter.write(entry)
-	defaultWriter.writeDaily(entry)
 	defaultWriter.printConsoleSQL(sql, elapsed, rows, file, err)
 }
 
-// LogRequestSummary 记录请求级 SQL 汇总（仅写入 sql.log，供性能分析页读取）。
+// LogRequestSummary 记录请求级 SQL 汇总（写入按日 sql-YYYY-MM-DD.log，供性能分析页读取）。
 func LogRequestSummary(state *RequestState, route string, elapsed time.Duration) {
 	if state == nil {
 		return
@@ -115,10 +120,9 @@ type Writer struct {
 	mu             sync.Mutex
 	enabled        bool
 	consoleEnabled bool
-	file           *os.File // sql.log（性能分析）
 	dir            string
 	day            string
-	dailyFile      *os.File // sql-YYYY-MM-DD.log（按日查询明细）
+	file           *os.File // sql-YYYY-MM-DD.log
 	now            func() time.Time
 }
 
@@ -143,10 +147,6 @@ func (w *Writer) open(cfg *config.Config) error {
 			_ = w.file.Close()
 			w.file = nil
 		}
-		if w.dailyFile != nil {
-			_ = w.dailyFile.Close()
-			w.dailyFile = nil
-		}
 		w.mu.Unlock()
 		return nil
 	}
@@ -155,22 +155,12 @@ func (w *Writer) open(cfg *config.Config) error {
 		return fmt.Errorf("create log dir %q: %w", dir, err)
 	}
 
-	logPath := filepath.Join(dir, "sql.log")
-	file, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-	if err != nil {
-		return fmt.Errorf("open sql log file %q: %w", logPath, err)
-	}
-
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	if w.file != nil {
 		_ = w.file.Close()
+		w.file = nil
 	}
-	if w.dailyFile != nil {
-		_ = w.dailyFile.Close()
-		w.dailyFile = nil
-	}
-	w.file = file
 	w.dir = dir
 	w.day = ""
 	w.enabled = true
@@ -180,40 +170,13 @@ func (w *Writer) open(cfg *config.Config) error {
 func (w *Writer) sync() error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	var firstErr error
-	if w.file != nil {
-		if err := w.file.Sync(); err != nil && firstErr == nil {
-			firstErr = err
-		}
+	if w.file == nil {
+		return nil
 	}
-	if w.dailyFile != nil {
-		if err := w.dailyFile.Sync(); err != nil && firstErr == nil {
-			firstErr = err
-		}
-	}
-	return firstErr
+	return w.file.Sync()
 }
 
 func (w *Writer) write(v any) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	if !w.enabled || w.dir == "" {
-		return
-	}
-	if err := w.ensureMainFileLocked(); err != nil {
-		return
-	}
-
-	data, err := json.Marshal(v)
-	if err != nil {
-		return
-	}
-	_, _ = w.file.Write(data)
-	_, _ = w.file.Write([]byte("\n"))
-}
-
-// writeDaily 将单条 SQL 查询写入按日文件 sql-YYYY-MM-DD.log（与 sql.log 分离）。
-func (w *Writer) writeDaily(v any) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	if !w.enabled || w.dir == "" {
@@ -226,8 +189,8 @@ func (w *Writer) writeDaily(v any) {
 	if err != nil {
 		return
 	}
-	_, _ = w.dailyFile.Write(data)
-	_, _ = w.dailyFile.Write([]byte("\n"))
+	_, _ = w.file.Write(data)
+	_, _ = w.file.Write([]byte("\n"))
 }
 
 // openFileAlive 判断已打开的文件句柄是否仍指向 path 上的同一 inode。
@@ -247,9 +210,14 @@ func openFileAlive(f *os.File, path string) bool {
 	return os.SameFile(fi, pi)
 }
 
-func (w *Writer) ensureMainFileLocked() error {
-	path := filepath.Join(w.dir, "sql.log")
-	if openFileAlive(w.file, path) {
+func (w *Writer) ensureDailyFileLocked() error {
+	nowFn := w.now
+	if nowFn == nil {
+		nowFn = time.Now
+	}
+	day := nowFn().Format("2006-01-02")
+	path := filepath.Join(w.dir, dailyLogPrefix+day+dailyLogSuffix)
+	if openFileAlive(w.file, path) && w.day == day {
 		return nil
 	}
 	if w.file != nil {
@@ -261,28 +229,6 @@ func (w *Writer) ensureMainFileLocked() error {
 		return err
 	}
 	w.file = f
-	return nil
-}
-
-func (w *Writer) ensureDailyFileLocked() error {
-	nowFn := w.now
-	if nowFn == nil {
-		nowFn = time.Now
-	}
-	day := nowFn().Format("2006-01-02")
-	path := filepath.Join(w.dir, dailyLogPrefix+day+dailyLogSuffix)
-	if openFileAlive(w.dailyFile, path) && w.day == day {
-		return nil
-	}
-	if w.dailyFile != nil {
-		_ = w.dailyFile.Close()
-		w.dailyFile = nil
-	}
-	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-	if err != nil {
-		return err
-	}
-	w.dailyFile = f
 	w.day = day
 	return nil
 }
@@ -300,6 +246,8 @@ type requestSummaryEntry struct {
 type queryEntry struct {
 	Time      string `json:"time"`
 	RequestID string `json:"request_id,omitempty"`
+	Method    string `json:"method,omitempty"`
+	Route     string `json:"route,omitempty"`
 	Seq       int    `json:"seq"`
 	SQL       string `json:"sql"`
 	Elapsed   string `json:"elapsed"`

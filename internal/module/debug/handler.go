@@ -2,7 +2,7 @@
 // 文件: internal/module/debug/handler.go
 // 模块: SQL 性能分析
 // 类型: readonly
-// 职责: 处理 SQL 性能分析 / 慢 SQL 明细页面与数据 API。
+// 职责: 处理 Debug 导航、SQL 性能分析 / 慢 SQL 明细 / API 日志页面与数据 API。
 // 依赖: internal/constants
 // =============================================================================
 
@@ -29,6 +29,8 @@ func NewHandler(svc *Service) *Handler {
 
 // RegisterRoutes 注册模块路由。
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
+	rg.GET("", h.Index)
+
 	perf := rg.Group("/sqlperf")
 	perf.GET("", h.List)
 	perf.GET("/requests", h.Requests)
@@ -36,6 +38,15 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	sqllog := rg.Group("/sqllog")
 	sqllog.GET("", h.SQLLogPage)
 	sqllog.GET("/queries", h.Queries)
+
+	apilog := rg.Group("/apilog")
+	apilog.GET("", h.APILogPage)
+	apilog.GET("/entries", h.APIEntries)
+}
+
+// Index Debug 工具导航页。
+func (h *Handler) Index(c *gin.Context) {
+	c.File(constants.TEMPLATE_DEBUG_INDEX)
 }
 
 // List 性能分析页面。
@@ -43,7 +54,7 @@ func (h *Handler) List(c *gin.Context) {
 	c.File(constants.TEMPLATE_DEBUG_SQLPERF)
 }
 
-// Requests 返回 sql.log 中的请求汇总数据。
+// Requests 返回 sql-YYYY-MM-DD.log 中的请求汇总数据。
 func (h *Handler) Requests(c *gin.Context) {
 	var req RequestsReq
 	if err := c.ShouldBindQuery(&req); err != nil {
@@ -102,5 +113,44 @@ func (h *Handler) Queries(c *gin.Context) {
 		"date":    resp.Date,
 		"total":   resp.Total,
 		"queries": resp.Queries,
+		"routes":  resp.Routes,
+	})
+}
+
+// APILogPage 禅道 API 请求日志页面。
+func (h *Handler) APILogPage(c *gin.Context) {
+	c.File(constants.TEMPLATE_DEBUG_APILOG)
+}
+
+// APIEntries 返回指定日期 api-YYYY-MM-DD.log 中的请求日志（按时间倒序）。
+func (h *Handler) APIEntries(c *gin.Context) {
+	var req APIEntriesReq
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "参数解析失败",
+		})
+		return
+	}
+	if strings.TrimSpace(req.Date) == "" {
+		req.Date = time.Now().Format("2006-01-02")
+	}
+
+	resp, err := h.svc.APIEntries(c.Request.Context(), req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "读取 API 日志失败",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":  true,
+		"date":     resp.Date,
+		"total":    resp.Total,
+		"page":     resp.Page,
+		"pageSize": resp.PageSize,
+		"entries":  resp.Entries,
 	})
 }

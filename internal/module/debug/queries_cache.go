@@ -72,16 +72,17 @@ type queriesCacheEntry struct {
 }
 
 // items 返回该日期耗时最高的 limit 条与累计行数，必要时只解析文件新增的部分。
-func (e *queriesCacheEntry) items(path string, limit int) ([]QueryItem, int64, error) {
+// routeFilter 非空时在 top-K 缓存上按完整 "METHOD path" 精确过滤；routes 始终为缓存内去重接口。
+func (e *queriesCacheEntry) items(path string, limit int, routeFilter string) ([]QueryItem, int64, []string, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
 	fi, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return []QueryItem{}, 0, nil
+			return []QueryItem{}, 0, []string{}, nil
 		}
-		return nil, 0, err
+		return nil, 0, nil, err
 	}
 
 	// 首次读取、文件被替换（inode 变了）、被截断，三种情况都从头重建。
@@ -97,13 +98,18 @@ func (e *queriesCacheEntry) items(path string, limit int) ([]QueryItem, int64, e
 		if err != nil {
 			// 半途出错时本次结果不完整，丢弃状态让下次请求重建，避免偏移量与计数错位。
 			e.worst, e.total, e.offset = nil, 0, 0
-			return nil, 0, err
+			return nil, 0, nil, err
 		}
 		e.offset = next
 	}
 	e.info = fi
 
-	return e.top(limit), e.total, nil
+	items, matched := e.top(limit, routeFilter)
+	total := e.total
+	if routeFilter != "" {
+		total = matched
+	}
+	return items, total, e.routeOptions(), nil
 }
 
 // add 把一个条目并入 top-K 堆，堆满后只保留更靠前的。
@@ -118,14 +124,26 @@ func (e *queriesCacheEntry) add(item QueryItem) {
 	}
 }
 
-// top 取出耗时最高的 limit 条。堆内本来就没有顺序，就地排序取前若干条，再用 heap.Init 还原。
-// 结果为空时返回非 nil 空切片，保证 JSON 里 queries 是 [] 而不是 null。
-func (e *queriesCacheEntry) top(limit int) []QueryItem {
+// top 取出耗时最高的 limit 条。routeFilter 非空时先精确匹配接口。
+// 返回截断后的列表，以及过滤后（截断前）的匹配条数。
+func (e *queriesCacheEntry) top(limit int, routeFilter string) ([]QueryItem, int64) {
 	if len(e.worst) == 0 || limit <= 0 {
-		return []QueryItem{}
+		return []QueryItem{}, 0
 	}
 
-	slices.SortFunc(e.worst, func(a, b QueryItem) int {
+	candidates := make([]QueryItem, 0, len(e.worst))
+	for _, item := range e.worst {
+		if routeFilter != "" && queryAPIKey(item) != routeFilter {
+			continue
+		}
+		candidates = append(candidates, item)
+	}
+	matched := int64(len(candidates))
+	if matched == 0 {
+		return []QueryItem{}, 0
+	}
+
+	slices.SortFunc(candidates, func(a, b QueryItem) int {
 		switch {
 		case a.ElapsedMS > b.ElapsedMS:
 			return -1
@@ -136,13 +154,43 @@ func (e *queriesCacheEntry) top(limit int) []QueryItem {
 		}
 	})
 
-	if limit > len(e.worst) {
-		limit = len(e.worst)
+	if limit > len(candidates) {
+		limit = len(candidates)
 	}
-	out := slices.Clone(e.worst[:limit])
+	return slices.Clone(candidates[:limit]), matched
+}
 
-	heap.Init(&e.worst)
+// routeOptions 从缓存堆去重接口键，供下拉；无接口字段归为 "-"。
+func (e *queriesCacheEntry) routeOptions() []string {
+	if len(e.worst) == 0 {
+		return []string{}
+	}
+	set := make(map[string]struct{}, len(e.worst))
+	for _, item := range e.worst {
+		set[queryAPIKey(item)] = struct{}{}
+	}
+	out := make([]string, 0, len(set))
+	for k := range set {
+		out = append(out, k)
+	}
+	slices.Sort(out)
 	return out
+}
+
+// queryAPIKey 与前端 formatAPI 一致：METHOD + 空格 + path；皆空为 "-"。
+func queryAPIKey(item QueryItem) string {
+	m := strings.TrimSpace(item.Method)
+	r := strings.TrimSpace(item.Route)
+	switch {
+	case m == "" && r == "":
+		return "-"
+	case m == "":
+		return r
+	case r == "":
+		return m
+	default:
+		return m + " " + r
+	}
 }
 
 // queryHeap 最小堆：堆顶是「耗时更低、同耗时时间更早」的一条，即列表排序时最靠后的那个。

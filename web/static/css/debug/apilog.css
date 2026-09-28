@@ -1,0 +1,291 @@
+.apilog-page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--space-6);
+}
+
+.apilog-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background: var(--color-page-bg);
+}
+
+.apilog-filter-label {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.apilog-filter-control {
+  flex: 0 1 160px;
+  min-width: 0;
+}
+
+.apilog-table-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.apilog-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-4);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  border-radius: 0;
+  background: var(--color-page-bg);
+}
+
+.apilog-pager[hidden] {
+  display: none;
+}
+
+.apilog-pager-size {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.apilog-page-size {
+  width: 100px;
+}
+
+.apilog-pager-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-left: auto;
+}
+
+.apilog-pager-btn {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: 13px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.apilog-pager-btn:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.apilog-pager-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.apilog-page-info {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.apilog-summary {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.apilog-col-elapsed {
+  width: 96px;
+}
+
+.apilog-col-time {
+  width: 180px;
+}
+
+.apilog-col-method {
+  width: 72px;
+}
+
+.apilog-col-url {
+  width: 360px;
+}
+
+.apilog-col-status {
+  width: 72px;
+}
+
+.apilog-col-payload {
+  width: 96px;
+}
+
+.apilog-elapsed {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.apilog-elapsed.is-slow {
+  color: #c2410c;
+}
+
+.apilog-method {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.apilog-url {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.apilog-status {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.apilog-status.is-ok {
+  color: #15803d;
+}
+
+.apilog-status.is-fail {
+  color: #b91c1c;
+}
+
+.apilog-view-btn {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--color-primary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.apilog-view-btn:hover {
+  text-decoration: underline;
+}
+
+.apilog-muted {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+
+.apilog-empty {
+  text-align: center;
+  color: var(--color-text-secondary);
+  padding: var(--space-8) var(--space-4);
+}
+
+body.apilog-modal-open {
+  overflow: hidden;
+}
+
+.apilog-modal[hidden] {
+  display: none;
+}
+
+.apilog-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+}
+
+.apilog-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.apilog-modal-panel {
+  position: relative;
+  z-index: 1;
+  width: min(720px, 100%);
+  max-height: min(80vh, 720px);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+}
+
+.apilog-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.apilog-modal-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.apilog-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.apilog-modal-copy {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--color-primary);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.apilog-modal-copy:hover {
+  text-decoration: underline;
+}
+
+.apilog-modal-copy.is-copied {
+  color: #15803d;
+  text-decoration: none;
+}
+
+.apilog-modal-close {
+  border: 0;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 var(--space-1);
+}
+
+.apilog-modal-close:hover {
+  color: var(--color-text-primary);
+}
+
+.apilog-modal-body {
+  margin: 0;
+  padding: var(--space-4) var(--space-5);
+  overflow: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--color-text-primary);
+  background: var(--color-page-bg);
+}
