@@ -369,6 +369,46 @@
     });
   }
 
+  /**
+   * 统一时间格式化函数: YYYY-MM-DD HH:mm
+   * 支持任意时间戳、ISO 字符串或带秒时间
+   */
+  function formatDateTime(val) {
+    if (!val || val === "—" || val === "-" || val === "null" || val === "undefined") {
+      return "—";
+    }
+    if (typeof val === "string") {
+      var trimmed = val.trim();
+      var m = trimmed.match(/^(\d{4}[-/]\d{1,2}[-/]\d{1,2})[ T](\d{1,2}:\d{2})(:\d{2})?.*$/);
+      if (m) {
+        var dp = m[1].replace(/\//g, "-").split("-");
+        var y = dp[0];
+        var mo = dp[1].padStart(2, "0");
+        var d = dp[2].padStart(2, "0");
+        var tp = m[2].split(":");
+        var hh = tp[0].padStart(2, "0");
+        var mm = tp[1];
+        return y + "-" + mo + "-" + d + " " + hh + ":" + mm;
+      }
+      var md = trimmed.match(/^(\d{4}[-/]\d{1,2}[-/]\d{1,2})$/);
+      if (md) {
+        var dp2 = md[1].replace(/\//g, "-").split("-");
+        return dp2[0] + "-" + dp2[1].padStart(2, "0") + "-" + dp2[2].padStart(2, "0");
+      }
+    }
+    var dt = new Date(val);
+    if (isNaN(dt.getTime())) {
+      return String(val);
+    }
+    var year = dt.getFullYear();
+    var month = String(dt.getMonth() + 1).padStart(2, "0");
+    var day = String(dt.getDate()).padStart(2, "0");
+    var hours = String(dt.getHours()).padStart(2, "0");
+    var minutes = String(dt.getMinutes()).padStart(2, "0");
+    return year + "-" + month + "-" + day + " " + hours + ":" + minutes;
+  }
+
+  window.formatDateTime = formatDateTime;
   window.appFetch = appFetch;
   window.appJson = appJson;
   window.openModal = openModal;

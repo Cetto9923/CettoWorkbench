@@ -1,0 +1,592 @@
+/**
+ * =============================================================================
+ * 文件: web/static/css/components.css
+ * 模块: 通用设计组件规范 (Universal Design Components)
+ * 职责: 定义页面标头、卡片、统计指标、表格、筛选栏、三态按钮、标签、空状态、悬停提示与分页
+ * 依赖: tokens.css
+ * =============================================================================
+ */
+
+/* -------------------------------------------------------------------------
+ * 1. 页面标题栏 (Page Header)
+ * ------------------------------------------------------------------------- */
+.wb-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--wb-space-3) var(--wb-space-4);
+  background: var(--wb-white);
+  border-bottom: var(--wb-border);
+  gap: var(--wb-space-3);
+}
+
+.wb-page-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--wb-space-3);
+  flex-wrap: wrap;
+}
+
+.wb-page-title {
+  margin: 0;
+  font-size: var(--wb-font-lg);
+  font-weight: 600;
+  line-height: var(--wb-lh-tight);
+  color: var(--wb-gray-900);
+}
+
+.wb-page-subtitle {
+  margin: 0;
+  font-size: var(--wb-font-sm);
+  color: var(--wb-gray-500);
+  font-weight: 400;
+}
+
+.wb-page-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--wb-space-2);
+}
+
+/* -------------------------------------------------------------------------
+ * 2. 通用卡片容器 (Card)
+ * ------------------------------------------------------------------------- */
+.wb-card {
+  background: var(--wb-white);
+  border: var(--wb-border);
+  border-radius: var(--wb-radius-md);
+  box-shadow: var(--wb-shadow-sm);
+  overflow: hidden;
+  transition: border-color var(--wb-transition-fast), box-shadow var(--wb-transition-fast);
+}
+
+.wb-card:hover {
+  border-color: var(--wb-border-color-dark);
+}
+
+.wb-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--wb-space-3) var(--wb-space-4);
+  background: var(--wb-white);
+  border-bottom: var(--wb-border);
+}
+
+.wb-card-title {
+  margin: 0;
+  font-size: var(--wb-font-md);
+  font-weight: 600;
+  color: var(--wb-gray-800);
+  display: flex;
+  align-items: center;
+  gap: var(--wb-space-2);
+}
+
+.wb-card-body {
+  padding: var(--wb-space-4);
+}
+
+.wb-card-footer {
+  padding: var(--wb-space-3) var(--wb-space-4);
+  background: var(--wb-gray-50);
+  border-top: var(--wb-border);
+}
+
+/* -------------------------------------------------------------------------
+ * 3. 统计数字卡 (Stat Card)
+ * ------------------------------------------------------------------------- */
+.wb-stat-card {
+  background: var(--wb-white);
+  border: var(--wb-border);
+  border-radius: var(--wb-radius-md);
+  padding: var(--wb-space-3) var(--wb-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--wb-space-1);
+  box-shadow: var(--wb-shadow-sm);
+  transition: all var(--wb-transition-fast);
+}
+
+.wb-stat-card:hover {
+  border-color: var(--wb-primary-border);
+  background: var(--wb-gray-50);
+}
+
+.wb-stat-label {
+  font-size: var(--wb-font-xs);
+  color: var(--wb-gray-500);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wb-stat-value {
+  font-size: var(--wb-font-xl);
+  font-weight: 700;
+  color: var(--wb-gray-900);
+  line-height: var(--wb-lh-tight);
+}
+
+.wb-stat-sub {
+  font-size: var(--wb-font-xs);
+  color: var(--wb-gray-500);
+}
+
+/* -------------------------------------------------------------------------
+ * 4. 表格系统 (Table)
+ * ------------------------------------------------------------------------- */
+.wb-table-wrapper {
+  background: var(--wb-white);
+  border: var(--wb-border);
+  border-radius: var(--wb-radius-md);
+  overflow: hidden;
+  box-shadow: var(--wb-shadow-sm);
+}
+
+.wb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--wb-font-base);
+  text-align: left;
+}
+
+.wb-table th {
+  background: var(--wb-gray-50);
+  color: var(--wb-gray-600);
+  font-size: var(--wb-font-xs);
+  font-weight: 600;
+  padding: 10px 12px;
+  border-bottom: var(--wb-border);
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+.wb-table td {
+  padding: 10px 12px;
+  color: var(--wb-gray-700);
+  border-bottom: var(--wb-border);
+  vertical-align: middle;
+  transition: background var(--wb-transition-fast);
+}
+
+.wb-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.wb-table tbody tr:hover td {
+  background: var(--wb-gray-50);
+}
+
+/* -------------------------------------------------------------------------
+ * 5. 筛选栏与胶囊 (Filter Bar & Chips)
+ * ------------------------------------------------------------------------- */
+.wb-filter-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--wb-space-2);
+  padding: var(--wb-space-3) var(--wb-space-4);
+  background: var(--wb-white);
+  border: var(--wb-border);
+  border-radius: var(--wb-radius-md);
+  box-shadow: var(--wb-shadow-sm);
+}
+
+.wb-filter-input,
+.wb-filter-select {
+  height: 32px;
+  padding: 0 var(--wb-space-2);
+  font-size: var(--wb-font-sm);
+  color: var(--wb-gray-800);
+  background: var(--wb-white);
+  border: 1px solid var(--wb-gray-300);
+  border-radius: var(--wb-radius-sm);
+  outline: none;
+  transition: border-color var(--wb-transition-fast), box-shadow var(--wb-transition-fast);
+}
+
+.wb-filter-input:focus,
+.wb-filter-select:focus {
+  border-color: var(--wb-primary);
+  box-shadow: 0 0 0 2px var(--wb-primary-light);
+}
+
+.wb-filter-chips {
+  display: flex;
+  align-items: center;
+  gap: var(--wb-space-2);
+  flex-wrap: wrap;
+}
+
+.wb-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 var(--wb-space-3);
+  font-size: var(--wb-font-xs);
+  font-weight: 500;
+  color: var(--wb-gray-600);
+  background: var(--wb-white);
+  border: 1px solid var(--wb-gray-300);
+  border-radius: var(--wb-radius-full);
+  cursor: pointer;
+  transition: all var(--wb-transition-fast);
+  user-select: none;
+}
+
+.wb-filter-chip:hover {
+  background: var(--wb-gray-100);
+  color: var(--wb-gray-800);
+  border-color: var(--wb-gray-400);
+}
+
+.wb-filter-chip.active {
+  background: var(--wb-primary-light);
+  color: var(--wb-primary);
+  border-color: var(--wb-primary-border);
+  font-weight: 600;
+}
+
+.wb-filter-chip em {
+  font-style: normal;
+  font-weight: 600;
+  padding: 0 4px;
+  border-radius: var(--wb-radius-sm);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* -------------------------------------------------------------------------
+ * 6. 按钮体系 (Buttons - 主要、次要、文字三种)
+ * ------------------------------------------------------------------------- */
+.wb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 var(--wb-space-3);
+  font-size: var(--wb-font-sm);
+  font-weight: 500;
+  border-radius: var(--wb-radius-sm);
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: all var(--wb-transition-fast);
+  outline: none;
+}
+
+.wb-btn:focus-visible {
+  box-shadow: 0 0 0 2px var(--wb-primary-light);
+}
+
+.wb-btn:disabled,
+.wb-btn.is-disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* 主要按钮 (Primary) */
+.wb-btn-primary {
+  background: var(--wb-primary);
+  border-color: var(--wb-primary);
+  color: var(--wb-white);
+}
+
+.wb-btn-primary:hover {
+  background: var(--wb-primary-hover);
+  border-color: var(--wb-primary-hover);
+  color: var(--wb-white);
+}
+
+.wb-btn-primary:active {
+  background: var(--wb-primary-active);
+  border-color: var(--wb-primary-active);
+}
+
+/* 次要按钮 (Secondary) */
+.wb-btn-secondary {
+  background: var(--wb-white);
+  border-color: var(--wb-gray-300);
+  color: var(--wb-gray-700);
+}
+
+.wb-btn-secondary:hover {
+  background: var(--wb-gray-50);
+  border-color: var(--wb-gray-400);
+  color: var(--wb-gray-900);
+}
+
+.wb-btn-secondary:active {
+  background: var(--wb-gray-100);
+}
+
+/* 文字按钮 (Ghost / Text) */
+.wb-btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--wb-primary);
+}
+
+.wb-btn-ghost:hover {
+  background: var(--wb-primary-light);
+  color: var(--wb-primary-hover);
+}
+
+.wb-btn-sm {
+  height: 26px;
+  padding: 0 var(--wb-space-2);
+  font-size: var(--wb-font-xs);
+}
+
+.wb-btn-icon {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: var(--wb-radius-sm);
+}
+
+/* -------------------------------------------------------------------------
+ * 7. 状态标签 (Tags & Priority)
+ * ------------------------------------------------------------------------- */
+.wb-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 6px;
+  font-size: var(--wb-font-xs);
+  font-weight: 500;
+  border-radius: var(--wb-radius-sm);
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.wb-tag-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* 语义色标签 */
+.wb-tag-primary {
+  background: var(--wb-primary-light);
+  color: var(--wb-primary);
+  border: 1px solid var(--wb-primary-border);
+}
+.wb-tag-primary .wb-tag-dot { background: var(--wb-primary); }
+
+.wb-tag-success {
+  background: var(--wb-success-light);
+  color: var(--wb-success);
+  border: 1px solid var(--wb-success-border);
+}
+.wb-tag-success .wb-tag-dot { background: var(--wb-success); }
+
+.wb-tag-warning {
+  background: var(--wb-warning-light);
+  color: var(--wb-warning);
+  border: 1px solid var(--wb-warning-border);
+}
+.wb-tag-warning .wb-tag-dot { background: var(--wb-warning); }
+
+.wb-tag-danger {
+  background: var(--wb-danger-light);
+  color: var(--wb-danger);
+  border: 1px solid var(--wb-danger-border);
+}
+.wb-tag-danger .wb-tag-dot { background: var(--wb-danger); }
+
+.wb-tag-info {
+  background: var(--wb-info-light);
+  color: var(--wb-info);
+  border: 1px solid var(--wb-info-border);
+}
+.wb-tag-info .wb-tag-dot { background: var(--wb-info); }
+
+.wb-tag-neutral {
+  background: var(--wb-gray-100);
+  color: var(--wb-gray-600);
+  border: 1px solid var(--wb-gray-200);
+}
+.wb-tag-neutral .wb-tag-dot { background: var(--wb-gray-400); }
+
+/* 优先级标签 (P1~P4) */
+.wb-priority-p1 {
+  background: var(--wb-danger-light);
+  color: var(--wb-danger);
+  border: 1px solid var(--wb-danger-border);
+  font-weight: 600;
+}
+.wb-priority-p2 {
+  background: var(--wb-warning-light);
+  color: var(--wb-warning);
+  border: 1px solid var(--wb-warning-border);
+  font-weight: 600;
+}
+.wb-priority-p3 {
+  background: var(--wb-info-light);
+  color: var(--wb-info);
+  border: 1px solid var(--wb-info-border);
+}
+.wb-priority-p4 {
+  background: var(--wb-gray-100);
+  color: var(--wb-gray-600);
+  border: 1px solid var(--wb-gray-200);
+}
+
+/* -------------------------------------------------------------------------
+ * 8. 悬停提示「ⓘ」 (Tooltip Icon)
+ * ------------------------------------------------------------------------- */
+.wb-tooltip-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+
+.wb-tooltip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  font-size: 11px;
+  color: var(--wb-gray-400);
+  border: 1px solid var(--wb-gray-300);
+  cursor: help;
+  background: var(--wb-white);
+  transition: all var(--wb-transition-fast);
+  line-height: 1;
+}
+
+.wb-tooltip-icon:hover {
+  color: var(--wb-primary);
+  border-color: var(--wb-primary);
+  background: var(--wb-primary-light);
+}
+
+.wb-tooltip-content {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--wb-gray-800);
+  color: var(--wb-white);
+  font-size: var(--wb-font-xs);
+  line-height: 1.4;
+  padding: 6px 10px;
+  border-radius: var(--wb-radius-sm);
+  white-space: normal;
+  width: max-content;
+  max-width: 260px;
+  box-shadow: var(--wb-shadow-md);
+  z-index: 1000;
+  pointer-events: none;
+  transition: opacity var(--wb-transition-fast), visibility var(--wb-transition-fast);
+}
+
+.wb-tooltip-content::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 4px;
+  border-style: solid;
+  border-color: var(--wb-gray-800) transparent transparent transparent;
+}
+
+.wb-tooltip-wrap:hover .wb-tooltip-content {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* -------------------------------------------------------------------------
+ * 9. 统一空状态组件 (Empty State)
+ * ------------------------------------------------------------------------- */
+.wb-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--wb-space-6) var(--wb-space-4);
+  text-align: center;
+  color: var(--wb-gray-400);
+}
+
+.wb-empty-icon {
+  font-size: 32px;
+  color: var(--wb-gray-300);
+  margin-bottom: var(--wb-space-2);
+}
+
+.wb-empty-title {
+  font-size: var(--wb-font-sm);
+  font-weight: 500;
+  color: var(--wb-gray-600);
+  margin-bottom: var(--wb-space-1);
+}
+
+.wb-empty-desc {
+  font-size: var(--wb-font-xs);
+  color: var(--wb-gray-400);
+}
+
+/* -------------------------------------------------------------------------
+ * 10. 分页器组件 (Pagination)
+ * ------------------------------------------------------------------------- */
+.wb-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--wb-space-3) var(--wb-space-4);
+  background: var(--wb-white);
+  border-top: var(--wb-border);
+  font-size: var(--wb-font-sm);
+  color: var(--wb-gray-600);
+}
+
+.wb-pagination-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.wb-pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  font-size: var(--wb-font-xs);
+  color: var(--wb-gray-700);
+  background: var(--wb-white);
+  border: 1px solid var(--wb-gray-200);
+  border-radius: var(--wb-radius-sm);
+  cursor: pointer;
+  transition: all var(--wb-transition-fast);
+}
+
+.wb-pagination-btn:hover {
+  background: var(--wb-gray-50);
+  border-color: var(--wb-gray-300);
+  color: var(--wb-gray-900);
+}
+
+.wb-pagination-btn.active {
+  background: var(--wb-primary);
+  border-color: var(--wb-primary);
+  color: var(--wb-white);
+  font-weight: 600;
+}
