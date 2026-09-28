@@ -39,6 +39,7 @@ var (
 // mysqlStageFilters 价值流阶段 → MySQL 查询条件。
 var mysqlStageFilters = map[string]mysqlStageFilter{
 	"accept":         {statuses: []string{"draft", "wait", "refuse"}},
+	"review":         {statuses: []string{"draft", "wait", "refuse"}},
 	"clarify":        {statuses: []string{"active"}, noClarify: true},
 	"schedule":       {statuses: []string{"clarified"}, scheduleIncomplete: true},
 	"developing":     {statuses: []string{"developing"}, developFinishDue: true},

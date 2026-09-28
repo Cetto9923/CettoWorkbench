@@ -37,8 +37,13 @@ func (r *Repo) acceptRefsPaged(ctx context.Context, account string, req DemandsR
 		return nil, 0, err
 	}
 	var rows []struct{ ID int }
-	err := base.Select("id, CASE WHEN id IN (SELECT demand FROM zt_demandreview WHERE reviewer = ? AND (result = '' OR result IS NULL)) THEN 0 ELSE 1 END AS review_rank", account).
-		Order("review_rank ASC, id DESC").Offset((req.Page - 1) * req.PageSize).Limit(req.PageSize).Scan(&rows).Error
+	statusRankExpr := "CASE status WHEN 'wait' THEN 1 WHEN 'refuse' THEN 2 WHEN 'draft' THEN 3 ELSE 4 END"
+	reviewRankExpr := "CASE WHEN (" +
+		"id IN (SELECT demand FROM zt_demandreview WHERE reviewer = ? AND (result = '' OR result IS NULL)) " +
+		"OR id IN (SELECT demand FROM zt_demandmanagerreview WHERE reviewer = ? AND (result = '' OR result IS NULL OR result = 'wait'))" +
+		") THEN 0 ELSE 1 END"
+	err := base.Select("id, "+statusRankExpr+" AS status_rank, "+reviewRankExpr+" AS review_rank", account, account).
+		Order("status_rank ASC, review_rank ASC, id DESC").Offset((req.Page - 1) * req.PageSize).Limit(req.PageSize).Scan(&rows).Error
 	if err != nil {
 		return nil, 0, err
 	}
