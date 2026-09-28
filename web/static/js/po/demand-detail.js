@@ -17,26 +17,47 @@
     return document.getElementById(id);
   }
 
+  function detailPageHost() {
+    var page = $("demand-detail-page");
+    if (!page || !page.getAttribute("data-demand-id")) return null;
+    return page;
+  }
+
+  function drawerShellHtml() {
+    return [
+      '<div class="dd-drawer-panel" onclick="event.stopPropagation()">',
+      '  <header class="dd-head" id="ddHead"></header>',
+      '  <nav id="ddRelationNav"></nav>',
+      '  <nav class="dd-tabs" id="ddTabs">',
+      '    <button class="dd-tab active" data-tab="overview" onclick="DemandDetail.switchTab(\'overview\')">整体概览</button>',
+      '    <button class="dd-tab" data-tab="requirement" onclick="DemandDetail.switchTab(\'requirement\')">需求与澄清 <span class="dd-tab-count" id="ddTabCountReq"></span></button>',
+      '    <button class="dd-tab" data-tab="execution" onclick="DemandDetail.switchTab(\'execution\')">研发与测试 <span class="dd-tab-count" id="ddTabCountExec"></span></button>',
+      '    <button class="dd-tab" data-tab="delivery" onclick="DemandDetail.switchTab(\'delivery\')">交付上线</button>',
+      '    <button class="dd-tab" data-tab="history" onclick="DemandDetail.switchTab(\'history\')">过程记录</button>',
+      '  </nav>',
+      '  <main class="dd-body" id="ddBody"></main>',
+      '</div>'
+    ].join("");
+  }
+
   function getDrawer() {
+    var page = detailPageHost();
+    if (page) {
+      var embedded = $("demandDetailDrawer");
+      if (!embedded) {
+        page.classList.add("dd-standalone-page");
+        page.innerHTML = '<a class="dd-page-back" href="/home?view=demand">返回列表</a><div id="demandDetailDrawer" class="dd-page-root active">' + drawerShellHtml() + "</div>";
+        embedded = $("demandDetailDrawer");
+      }
+      return embedded;
+    }
+
     var drawer = $("demandDetailDrawer");
     if (!drawer) {
       drawer = document.createElement("div");
       drawer.id = "demandDetailDrawer";
       drawer.className = "dd-drawer-mask";
-      drawer.innerHTML = [
-        '<div class="dd-drawer-panel" onclick="event.stopPropagation()">',
-        '  <header class="dd-head" id="ddHead"></header>',
-        '  <nav id="ddRelationNav"></nav>',
-        '  <nav class="dd-tabs" id="ddTabs">',
-        '    <button class="dd-tab active" data-tab="overview" onclick="DemandDetail.switchTab(\'overview\')">整体概览</button>',
-        '    <button class="dd-tab" data-tab="requirement" onclick="DemandDetail.switchTab(\'requirement\')">需求与澄清 <span class="dd-tab-count" id="ddTabCountReq"></span></button>',
-        '    <button class="dd-tab" data-tab="execution" onclick="DemandDetail.switchTab(\'execution\')">研发与测试 <span class="dd-tab-count" id="ddTabCountExec"></span></button>',
-        '    <button class="dd-tab" data-tab="delivery" onclick="DemandDetail.switchTab(\'delivery\')">交付上线</button>',
-        '    <button class="dd-tab" data-tab="history" onclick="DemandDetail.switchTab(\'history\')">过程记录</button>',
-        '  </nav>',
-        '  <main class="dd-body" id="ddBody"></main>',
-        '</div>'
-      ].join("");
+      drawer.innerHTML = drawerShellHtml();
 
       drawer.onclick = function () {
         DemandDetail.close();
@@ -130,6 +151,14 @@
 
     var drawer = getDrawer();
     drawer.classList.add("active");
+    if (detailPageHost() && window.history && window.history.replaceState) {
+      var page = detailPageHost();
+      page.setAttribute("data-demand-id", cleanId);
+      var nextPath = "/demands/" + cleanId;
+      if (window.location.pathname !== nextPath) {
+        window.history.replaceState(null, "", nextPath);
+      }
+    }
     $("ddHead").innerHTML = '<span>需求详情</span><button type="button" class="ui-close-btn" aria-label="关闭" onclick="DemandDetail.close()">×</button>';
     $("ddRelationNav").innerHTML = "";
     var tabsEl = $("ddTabs");
@@ -189,6 +218,10 @@
   }
 
   function close() {
+    if (detailPageHost()) {
+      window.location.href = "/home?view=demand";
+      return;
+    }
     requestSeq++;
     currentData = null;
     if (window.DemandDetailReview && typeof window.DemandDetailReview.closeSubmitReviewModal === "function") {
@@ -327,6 +360,11 @@
   });
 
   document.addEventListener("DOMContentLoaded", function () {
+    var page = detailPageHost();
+    if (page) {
+      open(page.getAttribute("data-demand-id"));
+      return;
+    }
     var did = new URLSearchParams(window.location.search).get("openDemand");
     if (did && (/^US\d+$/i.test(did) || /^\d+$/.test(did))) { open(did); }
   });
