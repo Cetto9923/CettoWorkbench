@@ -1,3 +1,5 @@
+总规则见 AGENTS.md，前端与 UI 规则以 AGENTS.md 为准
+
 ## 项目类型
 前后端不分离的 Go 单体 Web 项目（SSR）。URL 遵循 RESTful 风格，写操作（POST/PUT/DELETE）统一使用 ajax 请求，后端返回 JSON，前端根据 `redirectUrl` 跳转。ajax 请求直接使用真实 HTTP Method（`PUT` / `DELETE`）
 
@@ -67,6 +69,8 @@ Handler / Service / Repo 方法顺序固定，结构对称是硬约束。
 ---
 
 ## 规范优先级（冲突时以高优先级为准）
+以下原优先级只在不违反 AGENTS.md 时适用；两者冲突时以 AGENTS.md 为准。
+
 1. **核心底线**（本文件，必须）
 2. **模块 golden reference**（`@internal/module/user/`）
 
