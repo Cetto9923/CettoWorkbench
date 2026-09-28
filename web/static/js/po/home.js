@@ -16,7 +16,6 @@
     page: 1,
     pageSize: 20,
     keyword: "",
-    relation: "all",
     objectType: "all",
     priority: "all"
   };
@@ -36,7 +35,6 @@
     if (state.keyword) { p.set("keyword", state.keyword); }
     if (state.objectType && state.objectType !== "all") { p.set("objectType", state.objectType); }
     if (state.priority && state.priority !== "all") { p.set("priority", state.priority); }
-    if (state.relation && state.relation !== "all") { p.set("relation", state.relation); }
     return "/demands?" + p.toString();
   }
 
@@ -52,7 +50,6 @@
     if (state.keyword) { params.set("keyword", state.keyword); }
     if (state.objectType && state.objectType !== "all") { params.set("objectType", state.objectType); }
     if (state.priority && state.priority !== "all") { params.set("priority", state.priority); }
-    if (state.relation && state.relation !== "all") { params.set("relation", state.relation); }
     document.querySelectorAll(".home-version-name").forEach(function (link) {
       var target = new URL(link.href, location.origin);
       target.searchParams.set("stage", state.status || "all");
@@ -69,6 +66,7 @@
     var focus = sp.get("focus");
     if (["all", "my_action", "today", "blocked", "overdue", "suspended"].indexOf(focus) >= 0) { state.focus = focus; }
     var st = (sp.get("stage") || sp.get("status") || "").trim();
+    if (st === "review") { st = "accept"; }
     if (VALID_STATUSES.indexOf(st) >= 0) {
       state.status = st;
     }
@@ -95,12 +93,6 @@
       state.priority = pr;
       $("#homePrioritySegment button").removeClass("active");
       $('#homePrioritySegment button[data-priority="' + pr + '"]').addClass("active");
-    }
-    var rel = (sp.get("relation") || "").trim();
-    if (rel && rel !== "all") {
-      state.relation = rel;
-      $("#homeRelationSegment button").removeClass("active");
-      $('#homeRelationSegment button[data-relation="' + rel + '"]').addClass("active");
     }
   }
 
@@ -288,24 +280,13 @@
       refreshDemands(state.status);
     });
 
-    $("#homeRelationSegment button").on("click", function () {
-      $("#homeRelationSegment button").removeClass("active");
-      $(this).addClass("active");
-      state.relation = $(this).data("relation") || "all";
-      state.page = 1;
-      syncUrl();
-      refreshDemands(state.status);
-    });
-
     $("#homeResetBtn").on("click", function () {
       $("#homeKeyword").val("");
       $("#homeObjectTypeSegment button").removeClass("active").first().addClass("active");
       $("#homePrioritySegment button").removeClass("active").first().addClass("active");
-      $("#homeRelationSegment button").removeClass("active").first().addClass("active");
       state.keyword = "";
       state.objectType = "all";
       state.priority = "all";
-      state.relation = "all";
       state.page = 1;
       syncUrl();
       refreshDemands(state.status);
