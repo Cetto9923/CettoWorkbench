@@ -192,28 +192,28 @@ body.po-workbench-shell #page-schedule .schedule-table .tree-guide::before {
 /* D7: 深色模式下降亮实色元素（主操作按钮、维护任务按钮） */
 html[data-theme="dark"] body.po-workbench-shell #page-schedule .action-btn.primary,
 html[data-theme="dark"] body.po-workbench-shell #page-schedule .action-btn.action-btn--primary {
-  background: var(--wb-primary-hover);
-  border-color: var(--wb-primary-hover);
+  background: var(--wb-btn-primary-bg);
+  border-color: var(--wb-btn-primary-bg);
   color: var(--wb-text-inverse);
 }
 html[data-theme="dark"] body.po-workbench-shell #page-schedule .action-btn.primary:hover,
 html[data-theme="dark"] body.po-workbench-shell #page-schedule .action-btn.action-btn--primary:hover {
-  background: var(--wb-primary);
-  border-color: var(--wb-primary);
+  background: var(--wb-btn-primary-hover);
+  border-color: var(--wb-btn-primary-hover);
 }
 html[data-theme="dark"] body.po-workbench-shell #page-schedule .action-btn--success,
 html[data-theme="dark"] body.po-workbench-shell #page-schedule .action-btn.action-btn--success,
 html[data-theme="dark"] body.po-workbench-shell #page-schedule .action-btn.success {
-  background: var(--wb-success-hover);
+  background: var(--wb-btn-success-bg);
   color: var(--wb-text-inverse);
-  border: 1px solid var(--wb-success-hover);
+  border: 1px solid var(--wb-btn-success-bg);
 }
 html[data-theme="dark"] body.po-workbench-shell #page-schedule .action-btn--success:hover,
 html[data-theme="dark"] body.po-workbench-shell #page-schedule .action-btn.action-btn--success:hover,
 html[data-theme="dark"] body.po-workbench-shell #page-schedule .action-btn.success:hover {
-  background: var(--wb-success);
+  background: var(--wb-btn-success-hover);
   color: var(--wb-text-inverse);
-  border-color: var(--wb-success);
+  border-color: var(--wb-btn-success-hover);
 }
 html[data-theme="dark"] body.po-workbench-shell #page-schedule .stage-tag--draft {
   background: var(--color-badge-warning-bg);

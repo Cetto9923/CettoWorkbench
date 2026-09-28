@@ -1,6 +1,20 @@
 {{/* ==========================================================================
-文件: web/templates/schedule/index.html | 模块: 排期工作台
+文件: web/templates/schedule/index.html
+模块: 排期工作台
 职责: 排期工作台首页（版本窗口概览 + 需求列表）。
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .CurrentPath
+页面字段: .Title (string), .PageTitle (string), .Windows ([]schedule.WindowCard),
+          .BizRequirements ([]schedule.BizRequirement),
+          .IndependentRequirements ([]schedule.IndependentRequirement),
+          .BizTotal (int64), .IndependentTotal (int64),
+          .Teamgroups ([]schedule.TeamgroupOption),
+          .Products ([]schedule.ZtProduct),
+          .FilterProducts ([]schedule.ZtProduct),
+          .FilterWindows ([]schedule.WindowFilterOption),
+          .StageFilterOptions ([]schedule.StageFilterOption),
+          .SelectedWindowMap (map[uint]bool), .BizPager (*pagination.Pager),
+          .IndepPager (*pagination.Pager), .InsideUsersURL (string)
+TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
 ========================================================================== */}}
 {{ define "page_css" }}
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedule.css" }}">
@@ -38,7 +52,7 @@
             <div class="schedule-version-body-click">
               <div class="schedule-version-top">
                 <div class="schedule-version-name">
-                  <span class="schedule-version-title"><i class="fas fa-calendar-day"></i> {{ $w.ShortName }}</span>
+                  <span class="schedule-version-title" title="{{ $w.ShortName }}"><i class="fas fa-calendar-day"></i> {{ $w.ShortName }}</span>
                   {{ if $w.AgileGroup }}<span class="agile-team-tag">{{ $w.AgileGroup }}</span>{{ end }}
                 </div>
               </div>
@@ -219,7 +233,7 @@
                   <label class="checkbox-label form-multiselect-option">
                     <input type="checkbox" class="checkbox form-multiselect-checkbox" value="{{ .ID }}"{{ if index $.SelectedWindowMap .ID }} checked{{ end }}>
                     <span class="checkbox-box"></span>
-                    <span class="form-multiselect-name">{{ .Name }}</span>
+                    <span class="form-multiselect-name">{{ .Name }}{{ if .TeamName }} · {{ .TeamName }}{{ end }}</span>
                   </label>
                   {{ else }}
                   <div class="schedule-ms-empty">暂无窗口</div>
@@ -228,7 +242,6 @@
               </div>
             </div>
           </div>
-
           <label class="schedule-search-inline" for="scheduleSearch">
             <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
             <input id="scheduleSearch" name="keyword" value="{{ .SelectedKeyword }}" placeholder="编号 / 名称 / 责任人 / 系统">
@@ -240,7 +253,6 @@
         </div>
       </div>
     </div>
-
     <div id="scheduleMoreFilters" class="schedule-filter schedule-filter-more" hidden>
       <div class="ui-autocomplete schedule-pri-picker">
         <input type="text" id="scheduleFilterPriInput" class="form-input" placeholder="优先级" autocomplete="off">
@@ -635,7 +647,6 @@
     <button type="button" class="action-btn primary" id="scheduleVersionWindowModalSaveBtn">保存</button>
   </div>
 </div>
-
 <div class="batch-modal-overlay" id="taskModalOverlay"></div>
 <div class="batch-modal" id="taskModal">
   <div class="batch-modal-hdr">
@@ -644,9 +655,7 @@
   </div>
   <div class="batch-modal-body" id="taskModalBody">
     <div id="taskModalSpec"></div>
-
     <div id="taskModalInfoBar" style="font-size:12px; color:#666; margin:12px 0;"></div>
-
     <div class="task-modal-project-section" id="taskModalProjectSection" style="display:none;">
       <label for="taskModalProjectInput">项目</label>
       <div class="ui-autocomplete">
@@ -712,9 +721,7 @@
           </tr>
         </thead>
         <tbody id="taskListModalTableBody">
-          <tr>
-            <td colspan="13" class="task-list-modal-empty">暂无任务</td>
-          </tr>
+          <tr><td colspan="13" class="task-list-modal-empty">暂无任务</td></tr>
         </tbody>
       </table>
     </div>
@@ -724,10 +731,7 @@
     <button type="button" class="action-btn" id="taskListModalDismissBtn">关闭</button>
   </div>
 </div>
-
 {{ template "schedule/integrated" . }}
-
-
 <template id="schedulePlanCardLoading">
   <div class="schedule-create-plan-card">
     <div class="schedule-create-plan-title">
@@ -765,7 +769,6 @@
     </div>
   </div>
 </template>
-
 <template id="schedulePlanCardDraft">
   <div class="schedule-create-plan-card" data-field="planCard">
     <div class="schedule-create-plan-title">
@@ -783,7 +786,6 @@
     <div class="schedule-create-plan-meta" data-field="planMeta"></div>
   </div>
 </template>
-
 <template id="scheduleManageWindowRow">
   <tr>
     <td data-field="index" style="text-align:center;color:var(--t3)"></td>
@@ -800,19 +802,16 @@
     </td>
   </tr>
 </template>
-
 <template id="scheduleManageEditBtn">
   <button type="button" class="action-btn zen-icon-action primary js-manage-edit-version-window" title="编辑窗口" aria-label="编辑窗口">
     <i class="fas fa-pen"></i>
   </button>
 </template>
-
 <template id="scheduleManageDeleteBtn">
   <button type="button" class="action-btn zen-icon-action danger js-manage-delete-version-window" title="删除" aria-label="删除">
     <i class="fas fa-trash-can"></i>
   </button>
 </template>
-
 <div class="modal-overlay" id="manageVersionWindowsOverlay"></div>
 <div class="modal" id="manageVersionWindowsModal" style="width:700px;max-width:90vw">
   <div class="modal-hdr"><h3><i class="fas fa-layer-group" style="color:var(--blue)"></i> 版本窗口管理</h3><button type="button" class="modal-close" id="manageVersionWindowsCloseBtn"><i class="fas fa-xmark"></i></button></div>

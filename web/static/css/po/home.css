@@ -182,7 +182,7 @@
   font-size: 10px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-variant-numeric: tabular-nums;
-  color: var(--wb-gray-500);
+  color: var(--wb-text-secondary);
   white-space: nowrap;
   min-width: 0;
   overflow: hidden;
@@ -191,7 +191,7 @@
 }
 
 .po-home .home-vs-mini-card .vs-mini-dur .tag {
-  color: var(--wb-gray-400);
+  color: var(--wb-text-secondary);
   font-family: inherit;
   margin-right: 1px;
 }
@@ -307,12 +307,12 @@
   background: var(--color-surface-muted, var(--wb-gray-50));
   border-color: var(--color-border, var(--wb-gray-200));
 }
-.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-name { color: var(--color-text-disabled, var(--wb-gray-400)); }
-.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-count { color: var(--color-text-disabled, var(--wb-gray-400)); }
+.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-name { color: var(--wb-gray-500); }
+.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-count { color: var(--wb-gray-500); }
 .po-home .home-vs-mini-card.empty:not(.active) .vs-mini-meta,
-.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-breakdown { color: var(--color-text-disabled, var(--wb-gray-400)); }
+.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-breakdown { color: var(--wb-gray-500); }
 .po-home .home-vs-mini-card.empty:not(.active) .vs-mini-dur,
-.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-dur .tag { color: var(--color-text-disabled, var(--wb-gray-400)); }
+.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-dur .tag { color: var(--wb-gray-500); }
 
 .po-home .vs-status-dot {
   width: 6px;
@@ -449,6 +449,8 @@
 .po-home .table-scroll-container .state-placeholder { padding: 180px 20px; text-align: center; color: var(--wb-gray-400); }
 .po-home .home-action-table {
   width: 100%;
+  min-width: 780px;
+  table-layout: fixed;
   border-collapse: collapse;
 }
 .po-home .home-action-table th {
@@ -471,19 +473,14 @@
 .po-home .home-action-table tr:hover td {
   background: var(--wb-gray-50);
 }
-.po-home .home-action-table .c-id { width: 140px; }
-.po-home .home-action-table .c-title { width: auto; min-width: 280px; max-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.po-home .home-action-table .c-id { width: 130px; overflow: visible; }
+.po-home .home-action-table .c-title { width: auto; min-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .po-home .home-action-table .c-title a { display: inline-block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
-.po-home .home-action-table .c-stage { width: 95px; }
-.po-home .home-action-table .c-zt-status { width: 90px; }
-.po-home .home-action-table .c-owner { width: 95px; max-width: 110px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.po-home .home-action-table .c-stage { width: 80px; }
+.po-home .home-action-table .c-zt-status { width: 76px; }
+.po-home .home-action-table .c-owner { width: 80px; max-width: 80px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .po-home .home-action-table th.c-actions,
-.po-home .home-action-table td.c-actions {
-  width: 148px;
-  min-width: 148px;
-  text-align: right;
-  white-space: nowrap;
-}
+.po-home .home-action-table td.c-actions { width: 128px; min-width: 128px; text-align: right; white-space: nowrap; overflow: visible; }
 
 .po-home .stage-tag {
   display: inline-flex;
@@ -567,7 +564,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 6px;
 }
 .po-home .table-action-btn {
   display: inline-flex;
@@ -813,7 +810,7 @@
 .po-home .text-red { color: var(--wb-danger) !important; }
 .po-home .text-amber { color: var(--wb-warning) !important; }
 .po-home .text-emerald { color: var(--wb-success) !important; }
-.po-home .text-muted { color: var(--wb-gray-400) !important; }
+.po-home .text-muted { color: var(--wb-text-secondary) !important; }
 .po-home .text-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 
 /* 占位文字 */
@@ -825,7 +822,7 @@
   padding: 0 var(--wb-space-2);
   border: 1px dashed var(--wb-gray-300);
   border-radius: var(--wb-radius-sm);
-  color: var(--wb-gray-400);
+  color: var(--wb-gray-500);
   font-size: var(--wb-font-xs);
   line-height: 1;
   white-space: nowrap;

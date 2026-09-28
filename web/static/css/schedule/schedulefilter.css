@@ -101,13 +101,21 @@
 }
 
 #scheduleMultiselectRow .schedule-filter-ms .form-multiselect-display {
+  display: flex;
+  align-items: center;
   min-height: 30px;
   height: 30px;
   padding: 2px 36px 2px 6px;
   border-radius: 4px;
   border-color: var(--border);
   background: var(--color-surface, var(--white));
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+#scheduleMultiselectRow .schedule-filter-ms .form-multiselect-display::-webkit-scrollbar {
+  display: none;
 }
 
 #scheduleMultiselectRow .schedule-filter-ms.open .form-multiselect-display {
@@ -121,17 +129,28 @@
   min-height: 22px;
   font-size: 12px;
   color: var(--t1, #0f172a);
+  flex: 1 1 0%;
+  min-width: 0;
+  width: 0;
 }
 
 #scheduleMultiselectRow .schedule-filter-ms .form-multiselect-tags {
-  max-width: 72px;
-  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  max-width: 100%;
 }
 
 #scheduleMultiselectRow .schedule-filter-ms .form-multiselect-tag {
-  max-width: 64px;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   padding: 1px 4px;
   font-size: 11px;
+  box-sizing: border-box;
+  flex: 0 0 auto;
 }
 
 #scheduleMultiselectRow .schedule-filter-ms .form-dropdown-chevron,

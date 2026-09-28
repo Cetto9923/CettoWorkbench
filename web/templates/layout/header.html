@@ -45,7 +45,7 @@ web/templates/layout/header.html 模块: 布局 职责:
     </button>
     <div class="dropdown">
       <button class="po-user-info" type="button" onclick="return toggleDropdown(this);" aria-haspopup="menu">
-        <span class="po-user-avatar">{{ if and .CurrentUser .CurrentUser.DisplayName }}{{ if ge (len .CurrentUser.DisplayName) 3 }}{{ slice .CurrentUser.DisplayName 0 3 }}{{ else }}{{ .CurrentUser.DisplayName }}{{ end }}{{ else }}用{{ end }}</span>
+        <span class="po-user-avatar" data-user-name="{{ if .CurrentUser }}{{ .CurrentUser.DisplayName }}{{ end }}">{{ if and .CurrentUser .CurrentUser.DisplayName }}{{ if ge (len .CurrentUser.DisplayName) 3 }}{{ slice .CurrentUser.DisplayName 0 3 }}{{ else }}{{ .CurrentUser.DisplayName }}{{ end }}{{ else }}用{{ end }}</span>
         <span>{{ if .CurrentUser }}{{ .CurrentUser.DisplayName }}{{ else }}用户{{ end }}</span>
       </button>
       <div class="dropdown-menu">
@@ -105,7 +105,7 @@ web/templates/layout/header.html 模块: 布局 职责:
         onclick="return toggleDropdown(this);"
         aria-haspopup="menu"
       >
-        <span class="po-user-avatar">{{ if and .CurrentUser .CurrentUser.DisplayName }}{{ if ge (len .CurrentUser.DisplayName) 3 }}{{ slice .CurrentUser.DisplayName 0 3 }}{{ else }}{{ .CurrentUser.DisplayName }}{{ end }}{{ else }}用{{ end }}</span>
+        <span class="po-user-avatar" data-user-name="{{ if .CurrentUser }}{{ .CurrentUser.DisplayName }}{{ end }}">{{ if and .CurrentUser .CurrentUser.DisplayName }}{{ if ge (len .CurrentUser.DisplayName) 3 }}{{ slice .CurrentUser.DisplayName 0 3 }}{{ else }}{{ .CurrentUser.DisplayName }}{{ end }}{{ else }}用{{ end }}</span>
         <span>{{ if .CurrentUser }}{{ .CurrentUser.DisplayName }}{{ else }}用户{{ end }}</span>
       </button>
       <div class="dropdown-menu">
@@ -127,4 +127,23 @@ web/templates/layout/header.html 模块: 布局 职责:
   {{ end }}
 </div>
 {{ if eq .LayoutNav "top" }}{{ template "layout/topnavSecondary" . }}{{ end }}
+<script>
+(function () {
+  function cleanAvatars() {
+    var els = document.querySelectorAll(".po-user-avatar");
+    for (var i = 0; i < els.length; i++) {
+      var raw = els[i].getAttribute("data-user-name") || els[i].textContent || "";
+      var clean = raw.replace(/^[^a-zA-Z0-9\u4e00-\u9fa5]+/, "");
+      if (clean) {
+        els[i].textContent = clean.charAt(0);
+      }
+    }
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", cleanAvatars);
+  } else {
+    cleanAvatars();
+  }
+})();
+</script>
 {{ end }}

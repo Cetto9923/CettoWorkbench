@@ -64,20 +64,18 @@
   align-items: center;
   gap: 4px;
 }
-
 #page-schedule .action-btn:hover,
 .batch-modal .action-btn:hover,
 #manageVersionWindowsModal .action-btn:hover {
   border-color: var(--blue);
   color: var(--blue);
 }
-
 #page-schedule .action-btn.primary,
 #page-schedule .action-btn.action-btn--primary,
 .batch-modal .action-btn.primary,
 #manageVersionWindowsModal .action-btn.primary {
-  background: var(--wb-primary);
-  border-color: var(--wb-primary);
+  background: var(--wb-btn-primary-bg);
+  border-color: var(--wb-btn-primary-bg);
   color: var(--wb-text-inverse);
 }
 
@@ -85,21 +83,23 @@
 #page-schedule .action-btn.action-btn--primary:hover,
 .batch-modal .action-btn.primary:hover,
 #manageVersionWindowsModal .action-btn.primary:hover {
-  background: var(--wb-primary-hover);
+  background: var(--wb-btn-primary-hover);
+  border-color: var(--wb-btn-primary-hover);
 }
 
 #page-schedule .action-btn.success,
 #page-schedule .action-btn.action-btn--success,
 .batch-modal .action-btn.success {
-  background: var(--wb-success);
-  border-color: var(--wb-success);
+  background: var(--wb-btn-success-bg);
+  border-color: var(--wb-btn-success-bg);
   color: var(--wb-text-inverse);
 }
 
 #page-schedule .action-btn.success:hover,
 #page-schedule .action-btn.action-btn--success:hover,
 .batch-modal .action-btn.success:hover {
-  background: var(--wb-success-hover);
+  background: var(--wb-btn-success-hover);
+  border-color: var(--wb-btn-success-hover);
 }
 
 .batch-modal .action-btn.danger {

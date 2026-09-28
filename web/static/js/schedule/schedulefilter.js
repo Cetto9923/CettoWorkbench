@@ -374,6 +374,15 @@
 
   setMoreFiltersOpen(hasMoreFiltersActive());
 
+  function esc(s) {
+    return String(s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
   // 活跃筛选标签渲染与移除
   function renderActiveFilterTags() {
     var $bar = $("#scheduleActiveFilterBar"), $container = $("#scheduleActiveFilterTags");
@@ -407,8 +416,8 @@
 
     if (!tags.length) { $container.empty(); $bar.prop("hidden", true); return; }
     $container.html(tags.map(function (t) {
-      return '<span class="schedule-filter-tag" data-filter-key="' + t.key + '" data-filter-val="' + t.value + '">' +
-        '<span class="schedule-filter-tag-text">' + t.label + '</span>' +
+      return '<span class="schedule-filter-tag" data-filter-key="' + esc(t.key) + '" data-filter-val="' + esc(t.value) + '">' +
+        '<span class="schedule-filter-tag-text">' + esc(t.label) + '</span>' +
         '<button type="button" class="schedule-filter-tag-del" aria-label="移除筛选">×</button>' +
       '</span>';
     }).join(""));
@@ -435,6 +444,19 @@
   $(document).on("click", "#scheduleActiveFilterClearAll", function (e) {
     e.preventDefault();
     navigateSchedule({ groups: null, products: null, stages: null, windows: null, keyword: null, pri: null, test: null, accept: null, suspended: null, bizPage: null, indepPage: null });
+  });
+
+  // 点击外部与按 Esc 键关闭所有筛选下拉
+  $(document).on("click", function (e) {
+    if (!$(e.target).closest(".schedule-ms, .schedule-filter-ms, .dropdown, #scheduleMultiselectRow").length) {
+      closeAllFilterDropdowns();
+    }
+  });
+
+  $(document).on("keydown", function (e) {
+    if (e.key === "Escape" || e.keyCode === 27) {
+      closeAllFilterDropdowns();
+    }
   });
 
   renderActiveFilterTags();

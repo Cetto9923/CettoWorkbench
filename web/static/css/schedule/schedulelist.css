@@ -106,7 +106,7 @@
 
 #page-schedule .schedule-table thead th {
   background: var(--wb-bg-muted);
-  color: #64748b;
+  color: var(--wb-text-secondary);
   text-transform: none;
   letter-spacing: 0;
   font-size: 12px;
@@ -284,27 +284,30 @@
 }
 
 .schedule-table .wb-type-business {
-  border-color: var(--color-info, #2563eb);
+  border-color: var(--wb-badge-biz-border);
 }
 
 .schedule-table .wb-type-business .wb-type-tag {
-  background: var(--color-info, #2563eb);
+  background: var(--wb-badge-biz-bg);
+  color: var(--wb-badge-biz-text);
 }
 
 .schedule-table .wb-type-sub {
-  border-color: #7c3aed;
+  border-color: var(--wb-badge-sub-border);
 }
 
 .schedule-table .wb-type-sub .wb-type-tag {
-  background: #7c3aed;
+  background: var(--wb-badge-sub-bg);
+  color: var(--wb-badge-sub-text);
 }
 
 .schedule-table .wb-type-story {
-  border-color: #0d9488;
+  border-color: var(--wb-badge-story-border);
 }
 
 .schedule-table .wb-type-story .wb-type-tag {
-  background: #0d9488;
+  background: var(--wb-badge-story-bg);
+  color: var(--wb-badge-story-text);
 }
 
 .schedule-rd-role {
@@ -439,30 +442,11 @@
 }
 
 #page-schedule .schedule-col-stage,
-#page-schedule .schedule-col-owner {
-  white-space: normal;
-}
-
-.schedule-task-col {
-  text-align: center;
-}
-
-.schedule-task-link {
-  color: var(--blue);
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.schedule-task-link:hover {
-  text-decoration: underline;
-  color: #1557b0;
-}
-
-.t3 {
-  color: var(--t3);
-}
+#page-schedule .schedule-col-owner { white-space: normal; }
+.schedule-task-col { text-align: center; }
+.schedule-task-link { color: var(--blue); text-decoration: none; font-weight: 600; font-size: 13px; cursor: pointer; }
+.schedule-task-link:hover { text-decoration: underline; color: #1557b0; }
+.t3 { color: var(--wb-gray-500); }
 
 .schedule-col-title {
   padding-left: 20px;

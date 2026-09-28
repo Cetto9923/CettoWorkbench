@@ -101,7 +101,7 @@
         var item = selected[i];
         var tag = document.createElement("span");
         tag.className = "form-multiselect-tag";
-
+        tag.title = item.name;
         var name = document.createElement("span");
         name.className = "form-multiselect-tag-name";
         name.textContent = item.name;

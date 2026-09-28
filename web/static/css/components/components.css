@@ -14,10 +14,10 @@
   flex-shrink: 0;
   height: 20px;
   padding: 0 7px;
-  border: 1px solid #ffe58f;
+  border: 1px solid var(--wb-badge-hang-border);
   border-radius: 2px;
-  background: #fffbe6;
-  color: #874d00;
+  background: var(--wb-badge-hang-bg);
+  color: var(--wb-badge-hang-text);
   font-size: 12px;
   font-weight: 400;
   line-height: 20px;
@@ -309,7 +309,7 @@
   font-size: var(--font-size-xs);
 }
 .text-muted {
-  color: var(--color-text-disabled);
+  color: var(--wb-text-secondary);
   font-size: var(--font-size-xs);
 }
 .text-center {

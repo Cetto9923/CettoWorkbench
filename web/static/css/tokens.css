@@ -112,6 +112,32 @@
   --wb-border-subtle: var(--wb-gray-200);
   --wb-warning-bg: var(--wb-warning-light);
   --wb-danger-bg: var(--wb-danger-light);
+
+  /* 按钮背景与悬停 (Button solid tokens) */
+  --wb-btn-primary-bg: #1d4ed8;
+  --wb-btn-primary-hover: #1e40af;
+  --wb-btn-success-bg: #15803d;
+  --wb-btn-success-hover: #166534;
+
+  /* 徽标与挂起标签 (Badge tokens) */
+  --wb-badge-biz-text: #ffffff;
+  --wb-badge-biz-bg: #2563eb;
+  --wb-badge-biz-border: #2563eb;
+  --wb-badge-sub-text: #ffffff;
+  --wb-badge-sub-bg: #7c3aed;
+  --wb-badge-sub-border: #7c3aed;
+  --wb-badge-story-text: #ffffff;
+  --wb-badge-story-bg: #0d9488;
+  --wb-badge-story-border: #0d9488;
+  --wb-badge-hang-text: #874d00;
+  --wb-badge-hang-bg: #fffbe6;
+  --wb-badge-hang-border: #ffe58f;
+
+  /* 敏捷团队标签与头像 (Team tag & Avatar tokens) */
+  --wb-tag-team-text: var(--wb-primary);
+  --wb-tag-team-bg: var(--wb-primary-light);
+  --wb-tag-team-border: var(--wb-primary-border);
+  --wb-avatar-bg: #1d4ed8;
 }
 
 /* ---------------------------------------------------------------------------
@@ -179,4 +205,30 @@ html[data-theme="dark"] {
   --wb-border-subtle: var(--wb-gray-200);
   --wb-warning-bg: var(--wb-warning-light);
   --wb-danger-bg: var(--wb-danger-light);
+
+  /* 按钮背景与悬停 (Button solid tokens - Dark: 高对比度确保白字对比度 >= 4.5) */
+  --wb-btn-primary-bg: #2563eb;
+  --wb-btn-primary-hover: #1d4ed8;
+  --wb-btn-success-bg: #059669;
+  --wb-btn-success-hover: #047857;
+
+  /* 徽标与挂起标签 (Badge tokens - Dark: 浅色字+半透明深底) */
+  --wb-badge-biz-text: #bfdbfe;
+  --wb-badge-biz-bg: rgba(59, 130, 246, 0.18);
+  --wb-badge-biz-border: rgba(59, 130, 246, 0.35);
+  --wb-badge-sub-text: #e9d5ff;
+  --wb-badge-sub-bg: rgba(147, 51, 234, 0.18);
+  --wb-badge-sub-border: rgba(147, 51, 234, 0.35);
+  --wb-badge-story-text: #99f6e4;
+  --wb-badge-story-bg: rgba(20, 184, 166, 0.18);
+  --wb-badge-story-border: rgba(20, 184, 166, 0.35);
+  --wb-badge-hang-text: #fde68a;
+  --wb-badge-hang-bg: rgba(245, 158, 11, 0.18);
+  --wb-badge-hang-border: rgba(245, 158, 11, 0.35);
+
+  /* 敏捷团队标签与头像 (Team tag & Avatar tokens - Dark) */
+  --wb-tag-team-text: #bfdbfe;
+  --wb-tag-team-bg: rgba(59, 130, 246, 0.16);
+  --wb-tag-team-border: rgba(59, 130, 246, 0.35);
+  --wb-avatar-bg: #2563eb;
 }

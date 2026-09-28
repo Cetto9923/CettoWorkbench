@@ -112,15 +112,31 @@ html[data-theme="dark"] .action-btn.action-btn--primary:not(.zen-icon-action):no
 html[data-theme="dark"] .clarify-btn-primary,
 html[data-theme="dark"] .clarify-btn-primary.is-primary,
 html[data-theme="dark"] .po-testtask-btn.is-primary {
-  border-color: var(--wb-primary-hover);
-  background: var(--wb-primary-hover);
+  border-color: var(--wb-btn-primary-bg);
+  background: var(--wb-btn-primary-bg);
   color: var(--wb-text-inverse);
+}
+
+html[data-theme="dark"] .btn-primary:hover:not(:disabled),
+html[data-theme="dark"] .action-btn.primary:not(.zen-icon-action):not(.action-btn--sm):not(.action-btn--xs):hover:not(:disabled),
+html[data-theme="dark"] .action-btn.action-btn--primary:not(.zen-icon-action):not(.action-btn--sm):not(.action-btn--xs):hover:not(:disabled),
+html[data-theme="dark"] .clarify-btn-primary:hover:not(:disabled),
+html[data-theme="dark"] .clarify-btn-primary.is-primary:hover:not(:disabled),
+html[data-theme="dark"] .po-testtask-btn.is-primary:hover:not(:disabled) {
+  border-color: var(--wb-btn-primary-hover);
+  background: var(--wb-btn-primary-hover);
 }
 
 html[data-theme="dark"] .action-btn.success:not(.zen-icon-action):not(.action-btn--sm):not(.action-btn--xs),
 html[data-theme="dark"] .action-btn.action-btn--success:not(.zen-icon-action):not(.action-btn--sm):not(.action-btn--xs) {
-  border-color: var(--wb-success-hover);
-  background: var(--wb-success-hover);
+  border-color: var(--wb-btn-success-bg);
+  background: var(--wb-btn-success-bg);
   color: var(--wb-text-inverse);
+}
+
+html[data-theme="dark"] .action-btn.success:not(.zen-icon-action):not(.action-btn--sm):not(.action-btn--xs):hover:not(:disabled),
+html[data-theme="dark"] .action-btn.action-btn--success:not(.zen-icon-action):not(.action-btn--sm):not(.action-btn--xs):hover:not(:disabled) {
+  border-color: var(--wb-btn-success-hover);
+  background: var(--wb-btn-success-hover);
 }
 
