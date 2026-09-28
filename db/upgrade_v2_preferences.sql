@@ -1,5 +1,5 @@
--- V2 preferences. Existing preferredRoles layouts must be migrated before deployment.
-CREATE TABLE IF NOT EXISTS `zt_wb_profile_prefs` (
+-- V2 key/value preferences. Kept separate to preserve the legacy preferredRoles table.
+CREATE TABLE IF NOT EXISTS `zt_wb_profile_pref_kv` (
  `id` bigint NOT NULL AUTO_INCREMENT,
  `account` varchar(64) NOT NULL DEFAULT '',
  `prefKey` varchar(64) NOT NULL DEFAULT '',

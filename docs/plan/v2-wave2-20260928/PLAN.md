@@ -20,8 +20,8 @@
 
 ## 仍需处理
 
-- D1 偏好存储：运行库已有旧版 `zt_wb_profile_prefs(account, preferredRoles, createdDate, updatedDate)`，新 KV CRUD 使用 `prefKey/prefValue`。迁移兼容选择待用户答复；未解决前不部署该版本。
-- 完成 8098 登录态验收并留存七张真实截图；D1 兼容决定前不部署。
+- D1 偏好存储：KV 使用独立 `zt_wb_profile_pref_kv` 表，保留旧版 `zt_wb_profile_prefs(account, preferredRoles, createdDate, updatedDate)`；旧自选角色在 KV 尚无记录时回退读取，后续保存写入 KV 表。
+- 部署到 8098 并完成登录态验收，留存七张真实截图。
 
 ## 合并与冲突记录
 

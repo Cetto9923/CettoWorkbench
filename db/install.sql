@@ -375,8 +375,8 @@ ON DUPLICATE KEY UPDATE
 
 SET FOREIGN_KEY_CHECKS = 1;
 
--- V2 preferences. Existing preferredRoles layouts must be migrated before deployment.
-CREATE TABLE IF NOT EXISTS `zt_wb_profile_prefs` (
+-- V2 key/value preferences. Keep this separate from legacy zt_wb_profile_prefs(account, preferredRoles).
+CREATE TABLE IF NOT EXISTS `zt_wb_profile_pref_kv` (
  `id` bigint NOT NULL AUTO_INCREMENT,
  `account` varchar(64) NOT NULL DEFAULT '',
  `prefKey` varchar(64) NOT NULL DEFAULT '',

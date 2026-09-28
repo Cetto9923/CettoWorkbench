@@ -2,7 +2,7 @@
 // 文件: internal/module/profile/repo.go
 // 模块: 个人资料
 // 类型: action
-// 职责: 读写 zt_user 资料字段、mainTeam，加载本人已加入的敏捷小组，以及读写 zt_wb_profile_prefs 自选视图偏好。
+// 职责: 读写 zt_user 资料字段、mainTeam，加载本人已加入的敏捷小组，以及读写工作台偏好。
 // 依赖: gorm.io/gorm
 // =============================================================================
 
@@ -143,7 +143,15 @@ func (r *Repo) FindPreferredRoles(ctx context.Context, account string) ([]string
 		return nil, err
 	}
 	if !found {
-		return []string{}, nil
+		// Keep existing deployments compatible: older releases stored role names
+		// as a comma-separated value in zt_wb_profile_prefs.preferredRoles.
+		var legacy string
+		err := r.db.WithContext(ctx).Table("zt_wb_profile_prefs").Select("preferredRoles").Where("account = ?", account).Limit(1).Scan(&legacy).Error
+		if err != nil || legacy == "" {
+			return []string{}, nil
+		}
+		roles := splitRoles(legacy)
+		return roles, nil
 	}
 	var roles []string
 	if err := json.Unmarshal(value, &roles); err != nil {

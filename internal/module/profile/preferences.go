@@ -19,6 +19,8 @@ var preferenceKeys = map[string]bool{
 	"demand_hidden_cards": true, "team_hidden_cards": true, "pinned_pages": true,
 }
 
+const preferenceTable = "zt_wb_profile_pref_kv"
+
 func validatePreference(key string, value json.RawMessage) error {
 	if !preferenceKeys[key] || !json.Valid(value) || len(value) > 8192 {
 		return errorx.New("invalid_preference", "偏好键或内容无效")
@@ -47,7 +49,7 @@ func (r *Repo) ReadPreference(ctx context.Context, account, key string) (json.Ra
 	var rows []struct {
 		Value string `gorm:"column:prefValue"`
 	}
-	err := r.db.WithContext(ctx).Table("zt_wb_profile_prefs").Select("prefValue").Where("account = ? AND prefKey = ?", account, key).Limit(1).Scan(&rows).Error
+	err := r.db.WithContext(ctx).Table(preferenceTable).Select("prefValue").Where("account = ? AND prefKey = ?", account, key).Limit(1).Scan(&rows).Error
 	if err != nil {
 		return nil, false, err
 	}
@@ -61,7 +63,7 @@ func (r *Repo) ReadPreference(ctx context.Context, account, key string) (json.Ra
 }
 
 func (r *Repo) WritePreference(ctx context.Context, account, key string, value json.RawMessage) error {
-	return r.db.WithContext(ctx).Exec(`INSERT INTO zt_wb_profile_prefs (account, prefKey, prefValue) VALUES (?, ?, ?)
+	return r.db.WithContext(ctx).Exec(`INSERT INTO zt_wb_profile_pref_kv (account, prefKey, prefValue) VALUES (?, ?, ?)
 ON DUPLICATE KEY UPDATE prefValue = VALUES(prefValue), updatedAt = CURRENT_TIMESTAMP`, account, key, string(value)).Error
 }
 
