@@ -11,8 +11,8 @@
 .po-personal-workspace {
   min-height: 0;
   padding: 0;
-  background: var(--color-page-bg);
-  color: var(--color-text-strong);
+  background: var(--wb-gray-50);
+  color: var(--wb-gray-900);
   box-sizing: border-box;
 }
 

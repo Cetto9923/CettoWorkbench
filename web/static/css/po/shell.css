@@ -173,6 +173,103 @@ body.po-workbench-shell .topbar-row {
 .po-header-icon:hover { color: var(--color-text-body); background: var(--color-surface-hover, rgba(0, 0, 0, 0.04)); }
 .po-header-icon.active { color: var(--color-info); background: var(--color-info-bg, rgba(24, 144, 255, 0.08)); }
 
+/* 全局视角切换下拉框 (Perspective Switcher) */
+.po-perspective-dropdown {
+  position: relative;
+}
+.po-perspective-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  background: var(--wb-gray-100);
+  border: 1px solid var(--wb-gray-200);
+  border-radius: var(--wb-radius-sm);
+  color: var(--wb-gray-800);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: all var(--wb-transition-fast);
+}
+.po-perspective-trigger:hover {
+  background: var(--wb-primary-light);
+  border-color: var(--wb-primary-border);
+  color: var(--wb-primary);
+}
+.po-perspective-trigger i.fa-layer-group {
+  color: var(--wb-primary);
+  font-size: 12px;
+}
+.po-perspective-trigger .caret-icon {
+  font-size: 10px;
+  color: var(--wb-gray-400);
+  margin-left: 2px;
+}
+.po-perspective-dropdown .dropdown-menu {
+  min-width: 150px;
+  padding: 6px;
+  box-sizing: border-box;
+}
+.po-perspective-dropdown .dropdown-header {
+  padding: 4px 10px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--wb-gray-500);
+  white-space: nowrap;
+}
+.po-perspective-dropdown .dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--wb-radius-sm);
+  font-size: 13px;
+  color: var(--wb-gray-700);
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+.po-perspective-dropdown .dropdown-item span {
+  white-space: nowrap;
+}
+.po-perspective-dropdown .dropdown-item:hover {
+  background: var(--wb-gray-100);
+  color: var(--wb-gray-900);
+}
+.po-perspective-dropdown .dropdown-item.active {
+  background: var(--wb-primary-light);
+  color: var(--wb-primary);
+  font-weight: 600;
+}
+.po-perspective-dropdown .dropdown-item .check-mark {
+  margin-left: auto;
+  font-size: 11px;
+  padding-left: 6px;
+}
+
+/* 主题快捷切换按钮 (Quick Theme Toggle) */
+.po-header-icon.theme-quick-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--wb-gray-200);
+  border-radius: var(--wb-radius-sm);
+  background: var(--wb-white);
+  color: var(--wb-gray-600);
+  cursor: pointer;
+  transition: all var(--wb-transition-fast);
+}
+.po-header-icon.theme-quick-toggle:hover {
+  background: var(--wb-gray-100);
+  color: var(--wb-primary);
+  border-color: var(--wb-primary-border);
+}
+
 .po-user-info {
   display: flex;
   align-items: center;

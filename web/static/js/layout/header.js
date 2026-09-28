@@ -1,7 +1,7 @@
 /* ==========================================================================
    文件: web/static/js/layout/header.js
    模块: 布局
-   职责: 顶栏主题偏好（当前仅浅色）与外观控件同步。
+   职责: 顶栏主题偏好（跟随系统/浅色/深色）与外观控件同步。
 ========================================================================== */
 (function () {
   "use strict";
@@ -11,9 +11,8 @@
 
   try {
     var stored = localStorage.getItem(STORAGE_KEY);
-    // 当前仅支持浅色；其它历史偏好统一回落为 light
-    if (stored === "light") {
-      currentPreference = "light";
+    if (stored === "light" || stored === "dark" || stored === "system") {
+      currentPreference = stored;
     }
   } catch (e) {
     // ignore
@@ -23,17 +22,45 @@
     return currentPreference;
   }
 
-  function getEffectiveTheme() {
+  function getEffectiveTheme(pref) {
+    var p = pref || currentPreference;
+    if (p === "dark") return "dark";
+    if (p === "system") {
+      if (typeof window !== "undefined" && window.matchMedia) {
+        try {
+          if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            return "dark";
+          }
+        } catch (e) {}
+      }
+    }
     return "light";
   }
 
-  function applyTheme() {
+  function applyTheme(effectiveTheme) {
     if (typeof document === "undefined" || !document.documentElement) {
       return;
     }
-    document.documentElement.setAttribute("data-theme", "light");
+    var theme = effectiveTheme || getEffectiveTheme(currentPreference);
+    document.documentElement.setAttribute("data-theme", theme);
     if (document.documentElement.dataset) {
-      document.documentElement.dataset.theme = "light";
+      document.documentElement.dataset.theme = theme;
+    }
+    var quickToggle = document.getElementById("themeQuickToggle");
+    if (quickToggle) {
+      var moon = quickToggle.querySelector(".theme-moon-icon");
+      var sun = quickToggle.querySelector(".theme-sun-icon");
+      if (moon && sun) {
+        if (theme === "dark") {
+          moon.style.display = "none";
+          sun.style.display = "inline-block";
+          quickToggle.title = "切换为浅色模式";
+        } else {
+          moon.style.display = "inline-block";
+          sun.style.display = "none";
+          quickToggle.title = "切换为深色模式";
+        }
+      }
     }
   }
 
@@ -60,14 +87,17 @@
   }
 
   function setPreference(pref) {
-    // 仅接受浅色；其它值一律回落
-    currentPreference = pref === "light" ? "light" : "light";
+    if (pref !== "light" && pref !== "dark" && pref !== "system") {
+      pref = "light";
+    }
+    currentPreference = pref;
     try {
       localStorage.setItem(STORAGE_KEY, currentPreference);
     } catch (e) {
       // ignore
     }
-    applyTheme();
+    var effectiveTheme = getEffectiveTheme(currentPreference);
+    applyTheme(effectiveTheme);
     syncControls();
   }
 
@@ -76,10 +106,48 @@
   if (typeof window !== "undefined") {
     window.WorkbenchTheme = {
       getPreference: getPreference,
-      getEffectiveTheme: getEffectiveTheme,
+      getEffectiveTheme: function () {
+        return getEffectiveTheme(currentPreference);
+      },
       setPreference: setPreference,
       syncControls: syncControls,
+      toggleQuick: function () {
+        var eff = getEffectiveTheme(currentPreference);
+        setPreference(eff === "dark" ? "light" : "dark");
+      }
     };
+  }
+
+  // 监听系统主题变化
+  if (typeof window !== "undefined" && window.matchMedia) {
+    try {
+      var mql = window.matchMedia("(prefers-color-scheme: dark)");
+      var handleMediaChange = function () {
+        if (currentPreference === "system") {
+          applyTheme(getEffectiveTheme("system"));
+        }
+      };
+      if (mql && mql.addEventListener) {
+        mql.addEventListener("change", handleMediaChange);
+      } else if (mql && mql.addListener) {
+        mql.addListener(handleMediaChange);
+      }
+    } catch (e) {}
+  }
+
+  // 跨标签页同步
+  if (typeof window !== "undefined" && window.addEventListener) {
+    window.addEventListener("storage", function (e) {
+      if (!e || e.key !== STORAGE_KEY) return;
+      var val = e.newValue;
+      if (val === "light" || val === "dark" || val === "system") {
+        currentPreference = val;
+      } else {
+        currentPreference = "light";
+      }
+      applyTheme(getEffectiveTheme(currentPreference));
+      syncControls();
+    });
   }
 
   function bindControls() {
@@ -90,6 +158,16 @@
         e.preventDefault();
         var val = this.getAttribute("data-theme-value");
         setPreference(val);
+      });
+    }
+
+    var quickToggle = document.getElementById("themeQuickToggle");
+    if (quickToggle) {
+      quickToggle.addEventListener("click", function (e) {
+        e.preventDefault();
+        if (window.WorkbenchTheme && window.WorkbenchTheme.toggleQuick) {
+          window.WorkbenchTheme.toggleQuick();
+        }
       });
     }
   }

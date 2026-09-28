@@ -43,6 +43,22 @@
       if (document.documentElement.dataset) {
         document.documentElement.dataset.theme = effectiveTheme;
       }
+      var quickToggle = document.getElementById("themeQuickToggle");
+      if (quickToggle) {
+        var moon = quickToggle.querySelector(".theme-moon-icon");
+        var sun = quickToggle.querySelector(".theme-sun-icon");
+        if (moon && sun) {
+          if (effectiveTheme === "dark") {
+            moon.style.display = "none";
+            sun.style.display = "inline-block";
+            quickToggle.title = "切换为浅色模式";
+          } else {
+            moon.style.display = "inline-block";
+            sun.style.display = "none";
+            quickToggle.title = "切换为深色模式";
+          }
+        }
+      }
     }
   }
 
@@ -120,7 +136,11 @@
         return getEffectiveTheme(currentPreference);
       },
       setPreference: setPreference,
-      syncControls: syncControls
+      syncControls: syncControls,
+      toggleQuick: function() {
+        var eff = getEffectiveTheme(currentPreference);
+        setPreference(eff === 'dark' ? 'light' : 'dark');
+      }
     };
   }
 
@@ -133,6 +153,17 @@
         e.preventDefault();
         var val = this.getAttribute('data-theme-value');
         setPreference(val);
+      });
+    }
+
+    var quickToggle = document.getElementById("themeQuickToggle");
+    if (quickToggle && !quickToggle._themeBound) {
+      quickToggle._themeBound = true;
+      quickToggle.addEventListener("click", function(e) {
+        e.preventDefault();
+        if (window.WorkbenchTheme && window.WorkbenchTheme.toggleQuick) {
+          window.WorkbenchTheme.toggleQuick();
+        }
       });
     }
   }

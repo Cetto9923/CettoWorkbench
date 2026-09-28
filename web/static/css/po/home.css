@@ -87,17 +87,24 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  height: 82px;
-  min-height: 82px;
+  height: 64px;
+  min-height: 64px;
   box-sizing: border-box;
   background: var(--wb-white);
   border: 1px solid var(--wb-border-color);
-  border-radius: var(--wb-radius-sm);
+  border-radius: var(--wb-radius-md);
   cursor: pointer;
   text-align: left;
   outline: none;
-  padding: 6px 8px;
-  transition: background-color var(--wb-transition-fast), border-color var(--wb-transition-fast), box-shadow var(--wb-transition-fast);
+  padding: 5px 8px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: transform var(--wb-transition-fast), border-color var(--wb-transition-fast), box-shadow var(--wb-transition-fast), background-color var(--wb-transition-fast);
+}
+
+.po-home .home-vs-mini-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--wb-gray-400);
+  box-shadow: 0 3px 8px -1px rgba(15, 23, 42, 0.08);
 }
 
 .po-home .home-vs-mini-card:focus { outline: none; }
@@ -111,8 +118,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 4px;
-  min-height: 16px;
-  line-height: 16px;
+  min-height: 15px;
+  line-height: 15px;
 }
 
 .po-home .home-vs-mini-card .vs-mini-name {
@@ -126,43 +133,40 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  line-height: 16px;
+  line-height: 15px;
 }
 
 .po-home .home-vs-mini-card .vs-card-sub {
-  min-height: 14px;
-  line-height: 14px;
+  min-height: 13px;
+  line-height: 13px;
   margin-top: 1px;
-  margin-bottom: 2px;
 }
 
 .po-home .home-vs-mini-card .vs-mini-breakdown {
   font-size: 10px;
   color: var(--wb-gray-500);
   white-space: nowrap;
-  line-height: 14px;
+  line-height: 13px;
   display: block;
 }
 
+.po-home .home-vs-mini-card .vs-mini-bottom-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: auto;
+  gap: 4px;
+  line-height: 18px;
+}
+
 .po-home .home-vs-mini-card .vs-mini-count {
-  font-size: 16px;
-  line-height: 20px;
+  font-size: 15px;
+  line-height: 18px;
   font-weight: 700;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-variant-numeric: tabular-nums;
   color: var(--wb-gray-900);
-  margin-top: auto;
-}
-
-.po-home .home-vs-mini-card .vs-mini-meta-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 10px;
-  line-height: 14px;
-  white-space: nowrap;
-  gap: 4px;
-  margin-top: 2px;
 }
 
 .po-home .home-vs-mini-card .vs-mini-dur {
@@ -171,7 +175,7 @@
   font-variant-numeric: tabular-nums;
   color: var(--wb-gray-500);
   white-space: nowrap;
-  line-height: 14px;
+  line-height: 18px;
 }
 
 .po-home .home-vs-mini-card .vs-mini-dur .tag {
@@ -182,30 +186,39 @@
 
 /* 独立总控驾驶舱（全部） */
 .po-home .home-vs-overview-card {
-  flex: 0 0 96px;
-  width: 96px;
-  min-width: 96px;
-  height: 82px;
-  min-height: 82px;
+  flex: 0 0 92px;
+  width: 92px;
+  min-width: 92px;
+  height: 64px;
+  min-height: 64px;
   box-sizing: border-box;
-  padding: 6px 8px;
-  border-radius: var(--wb-radius-sm);
-  border: 1px solid var(--wb-border-color);
+  padding: 5px 8px;
+  border-radius: var(--wb-radius-md);
+  border: 1px solid var(--wb-primary-border);
+  background: linear-gradient(180deg, #f0f7ff 0%, #ffffff 100%);
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.05);
 }
 .po-home .home-vs-overview-card:hover {
-  border-color: var(--wb-primary-border);
-  background: var(--wb-gray-50);
+  border-color: var(--wb-primary);
+  background: #f0f7ff;
 }
 .po-home .home-vs-overview-card.active {
   z-index: 5;
   border-color: var(--wb-primary) !important;
   background: var(--wb-primary-light) !important;
-  box-shadow: 0 0 0 1px var(--wb-primary) !important;
+  box-shadow: 0 0 0 1px var(--wb-primary), 0 2px 6px rgba(37, 99, 235, 0.15) !important;
+}
+.po-home .home-vs-overview-card.active .vs-mini-name {
+  color: var(--wb-primary);
+  font-weight: 700;
+}
+.po-home .home-vs-overview-card.active .vs-mini-count {
+  color: var(--wb-primary);
 }
 
 /* 导向流水线流向符 */
 .po-home .home-vs-flow-divider {
-  flex: 0 0 34px;
+  flex: 0 0 30px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -213,7 +226,7 @@
   color: var(--wb-primary);
   font-size: var(--wb-font-xs);
   font-weight: 600;
-  height: 82px;
+  height: 64px;
 }
 .po-home .home-vs-flow-divider i { font-size: 10px; }
 
@@ -232,17 +245,17 @@
   flex: 1 1 0;
   min-width: 0;
   width: auto;
-  height: 82px;
-  min-height: 82px;
+  height: 64px;
+  min-height: 64px;
   box-sizing: border-box;
-  padding: 6px 8px;
-  border-radius: var(--wb-radius-sm);
+  padding: 5px 8px;
+  border-radius: var(--wb-radius-md);
   border: 1px solid var(--wb-border-color);
   background: var(--wb-white);
   box-shadow: var(--wb-shadow-sm);
 }
 .po-home .home-vs-chevron-step:hover {
-  border-color: var(--wb-primary-border);
+  border-color: var(--wb-gray-400);
   background: var(--wb-gray-50);
 }
 

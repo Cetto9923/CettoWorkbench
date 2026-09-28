@@ -19,8 +19,8 @@
   --wb-primary-border: #bfdbfe;     /* 浅蓝边框 */
 
   /* 中性灰阶 (Neutral Grays - 10 级沉着冷灰) */
-  --wb-gray-50:  #f8fafc;           /* 页面基础底色 / 浅表头底色 */
-  --wb-gray-100: #f1f5f9;           /* 次级容器底色 / 卡片悬停底色 */
+  --wb-gray-50:  #f1f5f9;           /* 页面基础底色 / 浅表头底色 */
+  --wb-gray-100: #eef2f6;           /* 次级容器底色 / 卡片悬停底色 */
   --wb-gray-200: #e2e8f0;           /* 默认边框 / 分隔线 */
   --wb-gray-300: #cbd5e1;           /* 控件深边框 / 禁用边框 */
   --wb-gray-400: #94a3b8;           /* 占位符 / 图标弱化 */
@@ -99,4 +99,58 @@
 
   /* 过渡动画 */
   --wb-transition-fast: 0.15s ease-in-out;
+}
+
+/* ---------------------------------------------------------------------------
+ * 深色模式设计体系 (Dark Theme Tokens)
+ * 沉稳现代暗色调：深邃冷灰底色 + 层次卡片表面 + 高对比可读文字
+ * --------------------------------------------------------------------------- */
+html[data-theme="dark"] {
+  /* 品牌主色 (深色模式微调高亮) */
+  --wb-primary: #3b82f6;            /* 科技亮蓝 */
+  --wb-primary-hover: #60a5fa;
+  --wb-primary-active: #2563eb;
+  --wb-primary-light: rgba(59, 130, 246, 0.16);
+  --wb-primary-border: rgba(59, 130, 246, 0.35);
+
+  /* 中性灰阶 (Dark Grays - 10 级沉着深色反转) */
+  --wb-gray-50:  #0b0f19;           /* 页面基础深色底 */
+  --wb-gray-100: #151c2c;           /* 容器底色 / 卡片悬停深底 */
+  --wb-gray-200: #26334d;           /* 默认深色边框 / 分隔线 */
+  --wb-gray-300: #3b4d6e;           /* 控件深边框 */
+  --wb-gray-400: #64748b;           /* 弱化占位符 / 图标弱化 */
+  --wb-gray-500: #94a3b8;           /* 辅助说明文本 / 提示文字 */
+  --wb-gray-600: #cbd5e1;           /* 次级标签 / 表头文本 */
+  --wb-gray-700: #e2e8f0;           /* 标准正文文字 */
+  --wb-gray-800: #f1f5f9;           /* 区块主标题 / 关键数值 */
+  --wb-gray-900: #ffffff;           /* 重点高亮强调纯白 */
+  --wb-white:    #121826;           /* 卡片表面深色 (Dark Surface) */
+
+  /* 语义状态色 (Semantic Colors) */
+  --wb-success: #34d399;
+  --wb-success-hover: #10b981;
+  --wb-success-light: rgba(16, 185, 129, 0.16);
+  --wb-success-border: rgba(16, 185, 129, 0.35);
+
+  --wb-warning: #fbbf24;
+  --wb-warning-hover: #f59e0b;
+  --wb-warning-light: rgba(245, 158, 11, 0.16);
+  --wb-warning-border: rgba(245, 158, 11, 0.35);
+
+  --wb-danger: #f87171;
+  --wb-danger-hover: #ef4444;
+  --wb-danger-light: rgba(239, 68, 68, 0.16);
+  --wb-danger-border: rgba(239, 68, 68, 0.35);
+
+  --wb-info: #38bdf8;
+  --wb-info-hover: #0ea5e9;
+  --wb-info-light: rgba(14, 165, 233, 0.16);
+  --wb-info-border: rgba(14, 165, 233, 0.35);
+
+  --wb-border-color: #26334d;
+  --wb-border-color-dark: #3b4d6e;
+  --wb-border: 1px solid var(--wb-border-color);
+
+  --wb-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.5);
+  --wb-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.6);
 }

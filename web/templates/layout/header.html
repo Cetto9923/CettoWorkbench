@@ -21,6 +21,26 @@ web/templates/layout/header.html 模块: 布局 职责:
     {{ end }}
   </div>
   <div class="po-header-right">
+    <div class="dropdown po-perspective-dropdown">
+      <button class="po-perspective-trigger" type="button" onclick="return toggleDropdown(this);" aria-haspopup="menu" title="切换工作视角">
+        <i class="fas fa-layer-group"></i>
+        <span class="perspective-current-label">{{ if or (eq .CurrentPath "/agileteam") (eq .Title "团队管理") (eq .PageTitle "团队管理") }}团队管理{{ else }}需求管理{{ end }}</span>
+        <i class="fas fa-chevron-down caret-icon"></i>
+      </button>
+      <div class="dropdown-menu dropdown-menu-right">
+        <div class="dropdown-header">工作视角</div>
+        <a href="/home?view=demand" class="dropdown-item{{ if not (or (eq .CurrentPath "/agileteam") (eq .Title "团队管理") (eq .PageTitle "团队管理")) }} active{{ end }}">
+          <i class="fas fa-bullseye"></i>
+          <span>需求管理</span>
+          {{ if not (or (eq .CurrentPath "/agileteam") (eq .Title "团队管理") (eq .PageTitle "团队管理")) }}<i class="fas fa-check check-mark"></i>{{ end }}
+        </a>
+        <a href="/home?view=team" class="dropdown-item{{ if or (eq .CurrentPath "/agileteam") (eq .Title "团队管理") (eq .PageTitle "团队管理") }} active{{ end }}">
+          <i class="fas fa-people-roof"></i>
+          <span>团队管理</span>
+          {{ if or (eq .CurrentPath "/agileteam") (eq .Title "团队管理") (eq .PageTitle "团队管理") }}<i class="fas fa-check check-mark"></i>{{ end }}
+        </a>
+      </div>
+    </div>
     <div class="search-box po-global-search" id="searchBox">
       <i class="fas fa-search" aria-hidden="true"></i>
       <input
@@ -39,6 +59,10 @@ web/templates/layout/header.html 模块: 布局 职责:
       <div class="search-results" id="searchResults" role="listbox"></div>
     </div>
     <a href="/notice" class="po-header-icon{{ if eq .CurrentPath "/notice" }} active{{ end }}" aria-label="通知" title="{{ if and .SidebarBadges (gt .SidebarBadges.Notice 0) }}{{ .SidebarBadges.Notice }} 条未读通知{{ else }}通知中心{{ end }}"><i class="fas fa-bell"></i>{{ if and .SidebarBadges (gt .SidebarBadges.Notice 0) }}<span class="po-header-badge">{{ if gt .SidebarBadges.Notice 99 }}99+{{ else }}{{ .SidebarBadges.Notice }}{{ end }}</span>{{ end }}</a>
+    <button type="button" class="po-header-icon theme-quick-toggle" id="themeQuickToggle" title="切换深色/浅色模式" aria-label="切换深色/浅色模式" onclick="if(window.WorkbenchTheme&&window.WorkbenchTheme.toggleQuick){window.WorkbenchTheme.toggleQuick();}">
+      <i class="bi bi-moon-stars theme-moon-icon"></i>
+      <i class="bi bi-sun theme-sun-icon" style="display:none;"></i>
+    </button>
     <div class="dropdown">
       <button class="po-user-info" type="button" onclick="return toggleDropdown(this);" aria-haspopup="menu">
         <span class="po-user-avatar">{{ if and .CurrentUser .CurrentUser.DisplayName }}{{ if ge (len .CurrentUser.DisplayName) 3 }}{{ slice .CurrentUser.DisplayName 0 3 }}{{ else }}{{ .CurrentUser.DisplayName }}{{ end }}{{ else }}用{{ end }}</span>
@@ -47,6 +71,7 @@ web/templates/layout/header.html 模块: 布局 职责:
       <div class="dropdown-menu">
         <a href="#profile" class="dropdown-item topbar-dropdown-item" data-open-profile-modal onclick="return openProfileModal(event)"><i class="fas fa-id-card"></i><span>个人资料</span></a>
         <div class="dropdown-divider"></div>
+        {{ template "layout/themepicker" . }}
         <form action="/logout" method="POST">
           <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}" />
           <button type="submit" class="dropdown-item dropdown-item-danger topbar-dropdown-item"><i class="fas fa-right-from-bracket"></i><span>登出</span></button>
@@ -104,20 +129,7 @@ web/templates/layout/header.html 模块: 布局 职责:
         <span>{{ if .CurrentUser }}{{ .CurrentUser.DisplayName }}{{ else }}用户{{ end }}</span>
       </button>
       <div class="dropdown-menu">
-        <div class="theme-picker-group" role="group" aria-label="外观设置">
-          <div class="dropdown-header">外观</div>
-          <button
-            type="button"
-            class="dropdown-item"
-            role="menuitemradio"
-            aria-checked="true"
-            data-theme-value="light"
-          >
-            <i class="bi bi-sun"></i><span>浅色</span>
-            <i class="bi bi-check check-mark"></i>
-          </button>
-        </div>
-        <div class="dropdown-divider"></div>
+        {{ template "layout/themepicker" . }}
         <form action="/logout" method="POST">
           <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}" />
           <button
