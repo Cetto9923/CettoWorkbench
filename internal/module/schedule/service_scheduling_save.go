@@ -39,6 +39,9 @@ func (s *Service) SaveScheduling(ctx context.Context, actor *model.User, demandI
 	if err := s.applyZenTaoDeletes(ctx, req); err != nil {
 		return err
 	}
+	if err := s.applyZenTaoAssigns(ctx, req); err != nil {
+		return err
+	}
 
 	return s.repo.Transaction(ctx, func(txRepo *Repo) error {
 		window, err := txRepo.FindByID(ctx, uint64(req.WindowID))
@@ -103,6 +106,9 @@ func (s *Service) SaveStoryScheduling(ctx context.Context, actor *model.User, st
 		return err
 	}
 	if err := s.applyZenTaoDeletes(ctx, req); err != nil {
+		return err
+	}
+	if err := s.applyZenTaoAssigns(ctx, req); err != nil {
 		return err
 	}
 
@@ -237,6 +243,33 @@ func (s *Service) applyZenTaoDeletes(ctx context.Context, req *SaveSchedulingReq
 		return err
 	}
 	return deleteStories(ctx, s.ztAPI, storyIDs)
+}
+
+// applyZenTaoAssigns 对编辑研需中指派人有变化的条目调用禅道 assign（写 Assigned 历史）。
+func (s *Service) applyZenTaoAssigns(ctx context.Context, req *SaveSchedulingReq) error {
+	if req == nil {
+		return nil
+	}
+	oldByID := make(map[uint]string)
+	for _, story := range req.Stories {
+		if strings.TrimSpace(story.Action) != "edit" || story.ID == 0 {
+			continue
+		}
+		if _, ok := oldByID[story.ID]; ok {
+			continue
+		}
+		snapshot, err := s.repo.FindStoryHistorySnapshot(ctx, story.ID)
+		if err != nil {
+			return fmt.Errorf("load story %d for assign: %w", story.ID, err)
+		}
+		oldByID[story.ID] = strings.TrimSpace(snapshot.AssignedTo)
+	}
+	for _, item := range resolveChangedStoryAssigns(req, oldByID) {
+		if err := assignStory(ctx, s.ztAPI, item.StoryID, item.AssignedTo); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *Service) applySchedulingTasks(

@@ -2,7 +2,7 @@
 // 文件: internal/module/schedule/gateway.go
 // 模块: 排期工作台
 // 类型: action
-// 职责: 出站适配层：调用禅道检查业需转研发提醒，以及批量删除研发需求/任务。
+// 职责: 出站适配层：调用禅道检查业需转研发提醒、指派研需，以及批量删除研发需求/任务。
 // 依赖: internal/pkg/zentao
 // =============================================================================
 
@@ -16,6 +16,12 @@ import (
 
 	"workbench/internal/pkg/zentao"
 )
+
+// storyAssignItem 待同步到禅道的研需指派。
+type storyAssignItem struct {
+	StoryID    uint
+	AssignedTo string
+}
 
 const reviewToStoryNoticeFallback = "请完成主管部门审批后，再进行转研发需求操作。"
 
@@ -53,6 +59,41 @@ func reviewNoticeMessage(message string) string {
 		return reviewToStoryNoticeFallback
 	}
 	return message
+}
+
+// assignStory 调用禅道 POST /stories/{id}/assign，body 为 {"assignedTo":"..."}。
+func assignStory(ctx context.Context, client *zentao.Client, storyID uint, assignedTo string) error {
+	if storyID == 0 {
+		return fmt.Errorf("研发需求 ID 无效")
+	}
+	if client == nil {
+		return fmt.Errorf("禅道 API 未配置")
+	}
+	path := fmt.Sprintf("/stories/%d/assign", storyID)
+	body := map[string]any{"assignedTo": strings.TrimSpace(assignedTo)}
+	if err := client.Do(ctx, http.MethodPost, path, body, nil); err != nil {
+		return fmt.Errorf("指派研发需求失败: %w", err)
+	}
+	return nil
+}
+
+// resolveChangedStoryAssigns 从排期保存请求中筛出指派人相对旧值有变化的编辑研需。
+func resolveChangedStoryAssigns(req *SaveSchedulingReq, oldByID map[uint]string) []storyAssignItem {
+	if req == nil {
+		return nil
+	}
+	out := make([]storyAssignItem, 0)
+	for _, story := range req.Stories {
+		if strings.TrimSpace(story.Action) != "edit" || story.ID == 0 {
+			continue
+		}
+		assignedTo := strings.TrimSpace(story.AssignedTo)
+		if assignedTo == strings.TrimSpace(oldByID[story.ID]) {
+			continue
+		}
+		out = append(out, storyAssignItem{StoryID: story.ID, AssignedTo: assignedTo})
+	}
+	return out
 }
 
 // deleteTasks 调用禅道 POST /deletetasks，body 为 {"taskIdList":[...]}。

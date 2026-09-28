@@ -37,10 +37,9 @@ func (s *Service) saveEditedStory(
 	}
 
 	title := strings.TrimSpace(storyReq.Title)
-	assignedTo := strings.TrimSpace(storyReq.AssignedTo)
+	// assignedTo / assignedDate 由禅道 POST /stories/{id}/assign 处理（见 applyZenTaoAssigns），
 	updates := map[string]interface{}{
 		"title":          title,
-		"assignedTo":     assignedTo,
 		"product":        productID,
 		"estimateLaunch": nullableSchedulingDate(estimateLaunch),
 		"developFinish":  nullableSchedulingDate(developFinish),
@@ -48,17 +47,12 @@ func (s *Service) saveEditedStory(
 		"lastEditedBy":   account,
 		"lastEditedDate": time.Now(),
 	}
-	// 对齐禅道 buildStoryForEdit：指派变化才刷新 assignedDate，且该字段不进 history。
-	if assignedTo != strings.TrimSpace(snapshot.AssignedTo) {
-		updates["assignedDate"] = time.Now()
-	}
 	if err := txRepo.UpdateStory(ctx, storyID, updates); err != nil {
 		return fmt.Errorf("update story %d: %w", storyID, err)
 	}
 
 	changes := []ztaction.Change{
 		{Field: "title", Old: strings.TrimSpace(snapshot.Title), New: title},
-		{Field: "assignedTo", Old: strings.TrimSpace(snapshot.AssignedTo), New: assignedTo},
 		{Field: "product", Old: strconv.FormatUint(uint64(snapshot.Product), 10), New: strconv.FormatUint(uint64(productID), 10)},
 		{Field: "estimateLaunch", Old: normalizeHistoryDate(snapshot.EstimateLaunch), New: normalizeHistoryDate(estimateLaunch)},
 		{Field: "developFinish", Old: normalizeHistoryDate(snapshot.DevelopFinish), New: normalizeHistoryDate(developFinish)},
