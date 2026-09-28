@@ -72,6 +72,7 @@ func (r *Repo) read() *gorm.DB {
 // ListTeamgroups 查询敏捷小组列表（含父组名）。
 func (r *Repo) ListTeamgroups(ctx context.Context) ([]TeamgroupRow, error) {
 	var rows []TeamgroupRow
+	// zt_dept 没有 deleted 列，部门连接只按 id 匹配。
 	err := r.read().WithContext(ctx).Raw(`
 SELECT tg.id, tg.name, tg.parent,
        COALESCE(p.name, '') AS parent_name,
@@ -85,7 +86,7 @@ FROM zt_teamgroup tg
 LEFT JOIN zt_teamgroup p ON p.id = tg.parent AND p.deleted = '0'
 LEFT JOIN zt_wb_agileteam_orgmap own_map ON own_map.teamgroupId = tg.id AND own_map.status = 'active'
 LEFT JOIN zt_wb_agileteam_orgmap parent_map ON parent_map.teamgroupId = p.id AND parent_map.status = 'active'
-LEFT JOIN zt_dept d ON d.id = COALESCE(own_map.deptId, parent_map.deptId) AND d.deleted = '0'
+LEFT JOIN zt_dept d ON d.id = COALESCE(own_map.deptId, parent_map.deptId)
 WHERE tg.deleted = '0'
 ORDER BY tg.id ASC`).Scan(&rows).Error
 	if err != nil {
@@ -120,7 +121,7 @@ FROM zt_teamgroup tg
 LEFT JOIN zt_teamgroup p ON p.id = tg.parent AND p.deleted = '0'
 LEFT JOIN zt_wb_agileteam_orgmap own_map ON own_map.teamgroupId = tg.id AND own_map.status = 'active'
 LEFT JOIN zt_wb_agileteam_orgmap parent_map ON parent_map.teamgroupId = p.id AND parent_map.status = 'active'
-LEFT JOIN zt_dept d ON d.id = COALESCE(own_map.deptId, parent_map.deptId) AND d.deleted = '0'
+LEFT JOIN zt_dept d ON d.id = COALESCE(own_map.deptId, parent_map.deptId)
 WHERE tg.deleted = '0' AND tg.id IN ?
 ORDER BY tg.id ASC`, ids).Scan(&out).Error
 	if err != nil {
@@ -152,7 +153,7 @@ FROM zt_teamgroup tg
 LEFT JOIN zt_teamgroup p ON p.id = tg.parent AND p.deleted = '0'
 LEFT JOIN zt_wb_agileteam_orgmap own_map ON own_map.teamgroupId = tg.id AND own_map.status = 'active'
 LEFT JOIN zt_wb_agileteam_orgmap parent_map ON parent_map.teamgroupId = p.id AND parent_map.status = 'active'
-LEFT JOIN zt_dept d ON d.id = COALESCE(own_map.deptId, parent_map.deptId) AND d.deleted = '0'
+LEFT JOIN zt_dept d ON d.id = COALESCE(own_map.deptId, parent_map.deptId)
 WHERE tg.id = ? AND tg.deleted = '0'
 LIMIT 1`, id).Scan(&row).Error
 	if err != nil {

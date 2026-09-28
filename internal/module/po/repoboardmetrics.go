@@ -79,14 +79,16 @@ func (r *Repo) computeCycles(ctx context.Context, ms []*BoardMetric, members []s
 		FinishedCnt int64    `gorm:"column:finishedCnt"`
 		OverIterCnt int64    `gorm:"column:overIterCnt"`
 	}{}
+	// zt_story 没有 finishedDate（该列在 zt_task）。完成研发交付以 releasedDate 为准，
+	// 与交付周期同一终点；实施周期从指派（进入实施）算到发布，不把任务完成日挪来充当需求事件。
 	sql := `SELECT
 			AVG(CASE WHEN st.status='released' AND st.openedDate!='0000-00-00 00:00:00' AND st.releasedDate!='0000-00-00 00:00:00' AND st.releasedDate>=st.openedDate
 				THEN DATEDIFF(st.releasedDate, st.openedDate) ELSE NULL END) AS delivery,
-			AVG(CASE WHEN st.finishedDate!='0000-00-00 00:00:00' AND st.assignedDate!='0000-00-00 00:00:00' AND st.finishedDate>=st.assignedDate
-				THEN DATEDIFF(st.finishedDate, st.assignedDate) ELSE NULL END) AS implement,
-			COUNT(st.id) AS finishedCnt,
-			SUM(CASE WHEN st.finishedDate!='0000-00-00 00:00:00' AND st.openedDate!='0000-00-00 00:00:00'
-				AND st.finishedDate>=st.openedDate AND DATEDIFF(st.finishedDate, st.openedDate)>14 THEN 1 ELSE 0 END) AS overIterCnt
+			AVG(CASE WHEN st.status='released' AND st.releasedDate!='0000-00-00 00:00:00' AND st.assignedDate!='0000-00-00 00:00:00' AND st.releasedDate>=st.assignedDate
+				THEN DATEDIFF(st.releasedDate, st.assignedDate) ELSE NULL END) AS implement,
+			SUM(CASE WHEN st.status='released' AND st.releasedDate!='0000-00-00 00:00:00' THEN 1 ELSE 0 END) AS finishedCnt,
+			SUM(CASE WHEN st.status='released' AND st.releasedDate!='0000-00-00 00:00:00' AND st.openedDate!='0000-00-00 00:00:00'
+				AND st.releasedDate>=st.openedDate AND DATEDIFF(st.releasedDate, st.openedDate)>14 THEN 1 ELSE 0 END) AS overIterCnt
 			FROM zt_story st
 			WHERE st.deleted='0' AND (st.openedBy IN (?) OR st.assignedTo IN (?))`
 	if err := r.db.WithContext(ctx).Raw(sql, members, members).Scan(&row).Error; err != nil {
