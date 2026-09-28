@@ -501,7 +501,7 @@
   font-size: 11px;
   line-height: inherit;
   box-sizing: border-box;
-  background: #fff;
+  background: var(--color-surface, var(--white));
   color: var(--t1);
 }
 
@@ -523,7 +523,7 @@
   font-size: 11px;
   line-height: inherit;
   box-sizing: border-box;
-  background: #fff;
+  background: var(--color-surface, var(--white));
   color: var(--t1);
 }
 

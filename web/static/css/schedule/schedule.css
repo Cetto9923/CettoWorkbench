@@ -43,7 +43,7 @@
 #page-schedule a.action-btn.success,
 #page-schedule a.action-btn.action-btn--primary,
 #page-schedule a.action-btn.action-btn--success {
-  color: #fff;
+  color: var(--wb-text-inverse);
 }
 
 /* ── 通用按钮 ── */
@@ -76,40 +76,40 @@
 #page-schedule .action-btn.action-btn--primary,
 .batch-modal .action-btn.primary,
 #manageVersionWindowsModal .action-btn.primary {
-  background: var(--blue);
-  border-color: var(--blue);
-  color: #fff;
+  background: var(--wb-primary);
+  border-color: var(--wb-primary);
+  color: var(--wb-text-inverse);
 }
 
 #page-schedule .action-btn.primary:hover,
 #page-schedule .action-btn.action-btn--primary:hover,
 .batch-modal .action-btn.primary:hover,
 #manageVersionWindowsModal .action-btn.primary:hover {
-  background: #1d4ed8;
+  background: var(--wb-primary-hover);
 }
 
 #page-schedule .action-btn.success,
 #page-schedule .action-btn.action-btn--success,
 .batch-modal .action-btn.success {
-  background: var(--green);
-  border-color: var(--green);
-  color: #fff;
+  background: var(--wb-success);
+  border-color: var(--wb-success);
+  color: var(--wb-text-inverse);
 }
 
 #page-schedule .action-btn.success:hover,
 #page-schedule .action-btn.action-btn--success:hover,
 .batch-modal .action-btn.success:hover {
-  background: #15803d;
+  background: var(--wb-success-hover);
 }
 
 .batch-modal .action-btn.danger {
-  background: var(--red);
-  border-color: var(--red);
-  color: #fff;
+  background: var(--wb-danger);
+  border-color: var(--wb-danger);
+  color: var(--wb-text-inverse);
 }
 
 .batch-modal .action-btn.danger:hover {
-  background: #b91c1c;
+  background: var(--wb-danger-hover);
 }
 
 #page-schedule .action-btn--disabled {
@@ -272,7 +272,7 @@
 .schedule-suspended-toggle.active .schedule-suspended-toggle-box {
   border-color: var(--orange);
   background: var(--orange);
-  color: #fff;
+  color: var(--wb-text-inverse);
 }
 
 .schedule-suspended-toggle.active .schedule-suspended-toggle-box i {
@@ -427,9 +427,9 @@
 }
 
 #page-schedule .schedule-more-filter-btn {
-  border-color: #cbd5e1;
-  background: #f8fafc;
-  color: #334155;
+  border-color: var(--color-border-strong, var(--border));
+  background: var(--color-surface-muted, var(--bg));
+  color: var(--color-text-body, var(--t1));
 }
 
 #page-schedule .schedule-more-filter-btn:hover,
