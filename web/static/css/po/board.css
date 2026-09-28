@@ -1,10 +1,8 @@
 /* PO 工作看板（V1.3 紧凑效能快照）
    布局目标：标题 → 负责人 → 效能快照 → 需求树+问题栏 连续紧凑排列，1920×1080 一屏可见多条需求。
    原则：无固定大高度、无 min-height 撑开、无 flex 占位留白；间距 6~8px。 */
-
 /* 公共优先级 / 对象类型：复用 wb-priority.css */
 @import url("./wb-priority.css");
-
 :root{
   --bg:var(--color-page-bg);--white:var(--color-surface);--hover:var(--color-surface-hover);
   --border:var(--color-border);--border-lt:var(--color-border-soft);
@@ -100,7 +98,8 @@
 
 /* 主区：需求树 / 任务看板占满剩余高度，问题栏与等高、独立滚动 */
 .po-board .standup{flex:1;min-height:0;display:flex;gap:12px;align-items:stretch;padding-bottom:8px}
-.po-board .board-main{flex:1;min-width:0;min-height:0}
+.po-board .board-main{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column}
+.po-board #boardPagination{flex-shrink:0}
 .po-board .issue-panel{width:220px;flex:0 0 220px;background:var(--color-surface);border:1px solid var(--border);border-radius:6px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
 .po-board .issue-hdr{display:flex;align-items:center;gap:6px;padding:9px 10px;border-bottom:1px solid var(--border-lt);flex-shrink:0}
 .po-board .issue-hdr strong{font-size:13px}
@@ -117,8 +116,8 @@
 .po-board .issue-state{height:16px;padding:0 4px;border:1px solid var(--orange-bd);background:var(--orange-bg);color:var(--orange);border-radius:3px;display:inline-flex;align-items:center;font-weight:700}
 
 /* 需求树矩阵 */
-.po-board .demand-board{height:100%;background:var(--color-surface);border:1px solid var(--border);border-radius:6px;overflow:auto}
-.po-board .demand-grid{min-width:1120px}
+.po-board .demand-board{flex:1 1 auto;min-height:0;height:auto;background:var(--color-surface);border:1px solid var(--border);border-radius:6px;overflow:auto}
+.po-board .demand-grid{width:max-content;min-width:100%}
 .po-board .grid-head,
 .po-board .biz-head,
 .po-board .biz-collapsed-row,
@@ -197,7 +196,7 @@
 .po-board .stage-card.overdue .stage-mini{color:var(--red)}
 .po-board .progress{height:4px;border-radius:4px;background:var(--color-border);margin-top:6px;overflow:hidden}
 .po-board .progress span{height:100%;display:block;background:var(--navy)}
-.po-board .demand-empty{display:none;padding:40px;text-align:center;color:var(--t3);font-size:12px}
+.po-board .demand-empty{display:none;padding:40px;text-align:center;color:var(--t3);font-size:12px}.po-board .demand-empty .wb-empty-icon{font-size:24px;display:block;margin-bottom:6px;opacity:0.6}
 .po-board #demandEmpty{display:none}
 .po-board .legend{display:flex;gap:14px;align-items:center;padding:8px 12px;color:var(--t3);font-size:9px;border-top:1px solid var(--border-lt);background:var(--color-surface)}
 .po-board .legend b{color:var(--t2)}
@@ -319,18 +318,18 @@ html[data-theme="dark"] .po-board {
   --t1: #f8fafc;
   --t2: #cbd5e1;
   --t3: #94a3b8; /* 核心调整：从极暗的 #475569 提升为 #94a3b8，对比度超 5.5:1 */
-  --navy: #60a5fa;
-  --blue-bg: rgba(59, 130, 246, 0.12);
-  --blue-bd: rgba(59, 130, 246, 0.32);
-  --green: #34d399;
-  --green-bg: rgba(16, 185, 129, 0.12);
-  --green-bd: rgba(16, 185, 129, 0.28);
-  --orange: #fbbf24;
-  --orange-bg: rgba(245, 158, 11, 0.12);
-  --orange-bd: rgba(245, 158, 11, 0.28);
-  --red: #f87171;
-  --red-bg: rgba(239, 68, 68, 0.12);
-  --red-bd: rgba(239, 68, 68, 0.3);
+  --navy: var(--color-badge-info-fg, #60a5fa);
+  --blue-bg: var(--color-badge-info-bg, rgba(59, 130, 246, 0.18));
+  --blue-bd: var(--color-badge-info-border, rgba(59, 130, 246, 0.38));
+  --green: var(--color-badge-success-fg, #34d399);
+  --green-bg: var(--color-badge-success-bg, rgba(16, 185, 129, 0.15));
+  --green-bd: var(--color-badge-success-border, rgba(16, 185, 129, 0.35));
+  --orange: var(--color-badge-warning-fg, #fbbf24);
+  --orange-bg: var(--color-badge-warning-bg, rgba(245, 158, 11, 0.15));
+  --orange-bd: var(--color-badge-warning-border, rgba(245, 158, 11, 0.35));
+  --red: var(--color-badge-danger-fg, #f87171);
+  --red-bg: var(--color-badge-danger-bg, rgba(239, 68, 68, 0.15));
+  --red-bd: var(--color-badge-danger-border, rgba(239, 68, 68, 0.35));
 }
 
 /* 1. 泳道网格与表头清晰化（解决泳道边界隐形丢失问题） */

@@ -76,7 +76,7 @@ body.po-workbench-shell .topbar-row {
   min-width: 0;
   max-width: 600px;
   white-space: nowrap;
-  flex-shrink: 0;
+  flex: 1 1 auto;
 }
 
 .topbar-page-title {

@@ -56,7 +56,9 @@
 }
 
 /* ---------- 4. 九列表格 ---------- */
+.po-done .table-scroll-container { overflow-x: auto; }
 .wb-done-table th.col-id { width: 130px; }
+.wb-done-table th.col-title { min-width: 200px; }
 .wb-done-table th.col-action { width: 130px; }
 .wb-done-table th.col-result { width: 90px; }
 .wb-done-table th.col-status-change { width: 150px; }
@@ -67,6 +69,7 @@
 
 .wb-done-table {
   width: 100%;
+  min-width: 1180px;
   border-collapse: collapse;
 }
 .wb-done-table th {

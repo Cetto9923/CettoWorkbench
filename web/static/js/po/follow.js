@@ -184,7 +184,7 @@
         watchBtn = '<button type="button" class="pw-action-btn pw-watch-btn is-watched" data-unwatch-project="' + pid + '" data-watched="1" title="取消关注" aria-label="取消关注" aria-pressed="true">' +
           '<i class="fas fa-star" aria-hidden="true"></i></button>';
       } else {
-        watchBtn = '<button type="button" class="pw-action-btn pw-watch-btn" data-unwatch-project="' + pid + '" data-watched="0" disabled title="参与项目请在禅道团队管理，不在此取关" aria-label="参与项目" style="opacity:0.35;cursor:not-allowed;">' +
+        watchBtn = '<button type="button" class="pw-action-btn pw-watch-btn" data-unwatch-project="' + pid + '" data-watched="0" disabled title="参与项目以禅道组织授权为准，不在此取关" aria-label="参与项目" style="opacity:0.35;cursor:not-allowed;">' +
           '<i class="far fa-star" aria-hidden="true"></i></button>';
       }
 

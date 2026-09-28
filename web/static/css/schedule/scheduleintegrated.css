@@ -40,11 +40,11 @@
 }
 
 #scheduleIntegratedModal input[type="date"].form-input {
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 #taskModal input[type="date"].form-input {
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 #scheduleIntegratedModal input[type="date"].form-input:not([readonly]) {
@@ -97,7 +97,7 @@
 #taskModal input[type="date"]:focus::-webkit-datetime-edit,
 #taskModal input[type="date"].form-input.has-value::-webkit-datetime-edit,
 #taskModal input[type="date"].has-value::-webkit-datetime-edit {
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 #scheduleIntegratedModal input[type="date"].form-input:invalid,
@@ -939,7 +939,7 @@
   input[type="date"].has-value::-webkit-datetime-edit,
 #taskModal .rd-node-tasks input[type="date"]:focus::-webkit-datetime-edit,
 #taskModal .rd-node-tasks input[type="date"].has-value::-webkit-datetime-edit {
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 #scheduleIntegratedModal .rd-node-header--edit .rd-node-title,

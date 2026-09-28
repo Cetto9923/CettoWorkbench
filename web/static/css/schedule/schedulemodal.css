@@ -6,7 +6,7 @@
 
 /* 日期输入框：未填时占位（年/月/日）浅灰，有值后正常色 */
 #scheduleVersionWindowModal input[type="date"].form-input {
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 #scheduleVersionWindowModal input[type="date"].form-input::-webkit-datetime-edit {
@@ -15,7 +15,7 @@
 
 #scheduleVersionWindowModal input[type="date"].form-input.has-value::-webkit-datetime-edit,
 #scheduleVersionWindowModal input[type="date"].form-input:focus::-webkit-datetime-edit {
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 #scheduleVersionWindowModal input[type="date"].form-input:invalid {
@@ -23,7 +23,7 @@
 }
 
 #scheduleVersionWindowModal input[type="date"].form-input:valid.has-value {
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 /* ── 版本窗口弹窗（完整复制 demo/personal-workbench.css 相关规则） ── */
@@ -97,7 +97,7 @@
 .batch-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.45);
   z-index: 600;
   display: none;
 }
@@ -134,7 +134,7 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.45);
   z-index: 600;
   display: none;
 }

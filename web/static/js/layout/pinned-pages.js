@@ -14,10 +14,10 @@
       key: 'schedule',
       title: '需求排期',
       subtitle: '迭代规划与容量分配',
-      meaning: 'PO 进行迭代容量规划、按周排期与交付承诺窗口确认。',
+      meaning: '产品经理进行迭代容量规划、按周排期与交付承诺窗口确认。',
       icon: 'fas fa-calendar-check',
       path: '/schedule',
-      badge: 'PO',
+      badge: '需求',
       group: 'plan',
       groupTitle: '规划',
       metric: '排期规划'

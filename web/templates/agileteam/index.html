@@ -19,7 +19,7 @@
   <!-- 1. 敏捷小组列表视图 -->
   <section class="page active" id="page-agileteam" data-page="agileteam" data-view-mode="{{ .ViewMode }}">
     <div class="workspace-panel">
-      <!-- 范围筛选卡片 (团队管理视角) -->
+      <!-- 范围筛选卡片 (组织授权视角) -->
       <div class="at-scope-card" id="atScopeCard" style="display:none;">
         <span class="at-scope-label">团队范围：</span>
         <div class="at-scope-tabs">
@@ -38,7 +38,7 @@
         <input id="atFilterName" class="at-field w160" placeholder="小组名称" />
         <input id="atFilterParent" class="at-field w160" placeholder="父级小组" />
         <input id="atFilterCoach" class="at-field w140" placeholder="敏捷教练" />
-        <input id="atFilterPO" class="at-field w140" placeholder="产品负责人" />
+        <input id="atFilterPO" class="at-field w140" placeholder="产品经理" />
         <input id="atFilterMember" class="at-field w140" placeholder="团队成员" />
         <select id="atFilterAdjust" class="at-field w160">
           <option value="all">调整状态：全部</option>
@@ -61,7 +61,7 @@
               <th>所属组织团队</th>
               <th>父级小组</th>
               <th>敏捷教练</th>
-              <th>产品负责人</th>
+              <th>产品经理</th>
               <th style="width:78px">正式成员</th>
               <th>成员调整</th>
               <th>状态</th>

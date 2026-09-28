@@ -34,7 +34,7 @@
 }
 .po-issue-risk .ir-table .ir-title {
   width: auto;
-  min-width: 260px;
+  min-width: 280px;
   white-space: normal;
   word-break: break-word;
 }
@@ -59,8 +59,8 @@
   font-size: 11px;
 }
 .po-issue-risk .ir-table .ir-col-project {
-  width: 200px;
-  max-width: 260px;
+  width: 150px;
+  max-width: 180px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -70,12 +70,12 @@
   white-space: nowrap;
 }
 .po-issue-risk .ir-table .ir-col-status {
-  width: 175px;
-  min-width: 175px;
+  width: 120px;
+  min-width: 120px;
   white-space: nowrap;
 }
 .po-issue-risk .ir-table .ir-col-handler {
-  width: 140px;
+  width: 110px;
   white-space: nowrap;
 }
 .po-issue-risk .ir-table .ir-col-plan {
@@ -85,7 +85,7 @@
   font-size: 11px;
 }
 .po-issue-risk .ir-table .ir-col-creator {
-  width: 140px;
+  width: 110px;
   white-space: nowrap;
 }
 .po-issue-risk .ir-table .ir-col-opt {

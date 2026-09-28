@@ -84,7 +84,7 @@
             data-vs-status="all"
             data-base-count="{{ if $.PageError }}—{{ else }}{{ $stage.Count }}{{ end }}"
             data-base-meta="{{ if $.PageError }}暂不可用{{ else }}全生命周期{{ end }}"
-            data-base-duration="{{ if $.PageError }}—{{ else if gt $stage.AvgDurationDays 0 }}均 {{ $stage.AvgDurationDays }}天{{ else }}—{{ end }}"
+            data-base-duration="{{ if $.PageError }}—{{ else if gt $stage.AvgDurationDays 0 }}{{ $stage.AvgDurationDays }}天{{ else }}—{{ end }}"
             aria-pressed="{{ if eq $i 0 }}true{{ else }}false{{ end }}"
             title="全部对象 · 共 {{ $stage.Count }} 条">
             <div class="vs-card-top">
@@ -96,7 +96,7 @@
             </div>
             <div class="vs-mini-bottom-row">
               <span class="vs-mini-count">{{ if $.PageError }}—{{ else }}{{ $stage.Count }}{{ end }}</span>
-              <span class="vs-mini-dur">{{ if $.PageError }}—{{ else if gt $stage.AvgDurationDays 0 }}<span class="tag">均</span> {{ $stage.AvgDurationDays }}天{{ else }}—{{ end }}</span>
+              <span class="vs-mini-dur">{{ if $.PageError }}—{{ else if gt $stage.AvgDurationDays 0 }}{{ $stage.AvgDurationDays }}天{{ else }}—{{ end }}</span>
             </div>
           </button>
           <div class="home-vs-flow-divider" aria-hidden="true">
@@ -219,13 +219,13 @@
               <strong>{{ if .PageError }}—{{ else }}{{ .KPI.Blocked }}{{ end }}</strong>
               <small>条待处理</small>
             </div>
-            <div class="focus-card-hint">点击查看阻塞需求</div>
+            <div class="focus-card-hint">查看阻塞需求</div>
           </a>
 
           {{ if .CanViewIssueRisk }}
           <div class="focus-card" title="我创建或指派给我的未关闭问题与风险">
             <div class="focus-card-hdr">
-              <span>我的未关闭问题 / 风险</span>
+              <span>问题 / 风险</span>
               <i class="fas fa-shield-halved text-muted"></i>
             </div>
             <div class="focus-card-num">
@@ -236,7 +236,7 @@
                 风险 <strong>{{ if .IssueRiskCounts }}{{ .IssueRiskCounts.Risks }}{{ else }}—{{ end }}</strong>
               </a>
             </div>
-            <div class="focus-card-hint">按问题、风险分类查看</div>
+            <div class="focus-card-hint">查看问题风险</div>
           </div>
           {{ end }}
 
@@ -247,7 +247,7 @@
             </div>
             <div class="focus-card-num">
               {{ range .ValueStreamStages }}{{ if eq .Status "clarify" }}
-              <strong class="text-primary">{{ if $.PageError }}—{{ else }}{{ .Count }}{{ end }}</strong>
+              <strong>{{ if $.PageError }}—{{ else }}{{ .Count }}{{ end }}</strong>
               {{ end }}{{ end }}
               <small>条需求池</small>
             </div>
@@ -261,7 +261,7 @@
             </div>
             <div class="focus-card-num">
               {{ range .ValueStreamStages }}{{ if eq .Status "schedule" }}
-              <strong class="text-amber">{{ if $.PageError }}—{{ else }}{{ .Count }}{{ end }}</strong>
+              <strong>{{ if $.PageError }}—{{ else }}{{ .Count }}{{ end }}</strong>
               {{ end }}{{ end }}
               <small>条待进窗口</small>
             </div>
@@ -275,7 +275,7 @@
             </div>
             <div class="focus-card-num">
               {{ range .ValueStreamStages }}{{ if eq .Status "waitacceptance" }}
-              <strong class="text-emerald">{{ if $.PageError }}—{{ else }}{{ .Count }}{{ end }}</strong>
+              <strong>{{ if $.PageError }}—{{ else }}{{ .Count }}{{ end }}</strong>
               {{ end }}{{ end }}
               <small>条待确认</small>
             </div>

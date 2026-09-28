@@ -33,7 +33,7 @@
       ? '<button type="button" class="at-btn primary" onclick="atSaveBasic(' + d.id + ')">保存基本信息</button>'
       : "";
     const banner = isLeadView()
-      ? '<div class="at-readonly-banner">当前为团队管理视图：敏捷教练、团队长和部室负责人只读查看。</div>' +
+      ? '<div class="at-readonly-banner">当前为只读视图：敏捷教练、团队长和部室负责人只读查看。</div>' +
         (!d.memberDetailsAvailable ? '<div class="at-readonly-banner">部室负责人视角暂不展示个人名单与调整记录，待权限口径确认。</div>' : '')
       : "";
     host.innerHTML =
@@ -98,7 +98,7 @@
       '<div class="label">团队名称</div><input class="input" id="atBasicName" value="' + esc(d.name || "") + '"' + ro + " />" +
       '<div class="label">创建日期</div><div>' + esc(d.createdDate || "—") + "</div>" +
       '<div class="label">敏捷教练</div><div>' + esc(person(d.coachName, d.coachAccount)) + "</div>" +
-      '<div class="label">产品负责人</div><div>' + esc(person(d.poName, d.poAccount)) + "</div>" +
+      '<div class="label">产品经理</div><div>' + esc(person(d.poName, d.poAccount)) + "</div>" +
       '<div class="label">团队口号</div><input class="input span3" id="atBasicSlogan" value="' + esc(d.slogan || "") + '"' + ro + " />" +
       '<div class="label">团队信条</div><textarea class="textarea span3" id="atBasicDecl"' + ro + ">" + esc(d.declaration || "") + "</textarea>" +
       '<div class="label">团队 Logo</div><textarea class="textarea span3" id="atBasicLogo" placeholder="Logo 文本/URL"' + ro + ">" + esc(d.logo || "") + "</textarea>" +

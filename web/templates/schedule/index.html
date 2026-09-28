@@ -52,7 +52,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             <div class="schedule-version-body-click">
               <div class="schedule-version-top">
                 <div class="schedule-version-name">
-                  <i class="fas fa-calendar-day"></i>{{ $w.ShortName }}
+                  <span class="schedule-version-title"><i class="fas fa-calendar-day"></i> {{ $w.ShortName }}</span>
                   {{ if $w.AgileGroup }}<span class="agile-team-tag">{{ $w.AgileGroup }}</span>{{ end }}
                 </div>
               </div>

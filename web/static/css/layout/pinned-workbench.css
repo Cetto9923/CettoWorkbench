@@ -78,21 +78,26 @@ body.po-workbench-shell [data-subnav-panel="personal"] .nav-item.active::before 
   display: none;
 }
 
-body.po-workbench-shell .po-subnav-panel:not([data-subnav-panel="personal"]) a.nav-item {
+body.po-workbench-shell .po-subnav-panel:not([data-subnav-panel="personal"]) .nav-item {
   font-family: var(--font-sans);
   font-size: 14px;
   font-weight: 400;
   color: var(--color-text-primary);
 }
-body.po-workbench-shell .po-subnav-panel:not([data-subnav-panel="personal"]) a.nav-item.is-workbench-pinned {
+body.po-workbench-shell .po-subnav-panel:not([data-subnav-panel="personal"]) .nav-item.is-workbench-pinned {
   color: var(--color-text-secondary);
 }
-body.po-workbench-shell .po-subnav-panel:not([data-subnav-panel="personal"]) a.nav-item:hover {
+body.po-workbench-shell .po-subnav-panel:not([data-subnav-panel="personal"]) .nav-item:hover {
   color: var(--color-text-primary);
 }
-body.po-workbench-shell .po-subnav-panel:not([data-subnav-panel="personal"]) a.nav-item.active {
+body.po-workbench-shell .po-subnav-panel:not([data-subnav-panel="personal"]) .nav-item.active {
   color: var(--color-primary);
   font-weight: 500;
+}
+html[data-theme="dark"] body.po-workbench-shell .po-subnav-panel .nav-item.active,
+html[data-theme="dark"] body.po-workbench-shell [data-subnav-panel="personal"] .nav-item.active {
+  color: var(--color-text-strong);
+  background: var(--color-primary-active-deep);
 }
 
 .pinned-manage-btn {

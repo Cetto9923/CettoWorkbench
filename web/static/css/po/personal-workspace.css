@@ -79,20 +79,8 @@
   font-weight: 700;
 }
 
-/* “待我处理”重点焦点：温润淡琥珀底色 + 金色边框 + 温暖深棕文字（杜绝厚重实底色块与内嵌气泡） */
-.po-personal-workspace .header-quick-chip.my-action.active,
-.po-personal-workspace .header-quick-chip.my-action[aria-pressed="true"] {
-  border-color: var(--color-warning-light, var(--wb-warning-border));
-  background: var(--color-warning-bg, var(--wb-warning-bg));
-  color: var(--color-warning, var(--wb-warning));
-  font-weight: 600;
-  box-shadow: none;
-}
-.po-personal-workspace .header-quick-chip.my-action.active em,
-.po-personal-workspace .header-quick-chip.my-action[aria-pressed="true"] em {
-  color: var(--color-warning, var(--wb-warning));
-  font-weight: 700;
-}
+
+
 
 .po-personal-workspace .header-quick-chip:disabled,
 .po-personal-workspace .header-quick-chip.disabled {
@@ -104,13 +92,13 @@
 
 /* 危险态（超期风险） */
 .po-personal-workspace .header-quick-chip.danger {
-  border-color: var(--color-danger-border);
-  background: var(--color-danger-bg);
-  color: var(--color-danger);
+  border-color: var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-body);
   font-weight: 500;
 }
 .po-personal-workspace .header-quick-chip.danger em {
-  color: var(--color-danger);
+  color: var(--color-danger, var(--wb-danger));
   font-weight: 700;
 }
 .po-personal-workspace .header-quick-chip.danger.active,

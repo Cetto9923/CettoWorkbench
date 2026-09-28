@@ -212,7 +212,7 @@
       var key = String(rawKey || '').toLowerCase();
       if (!key || seenRoleKeys[key]) return;
       seenRoleKeys[key] = true;
-      var label = key === 'pmo' ? 'PMO' : (key === 'lead' ? '团队管理' : (key === 'po' ? '产品经理' : key.toUpperCase()));
+      var label = key === 'pmo' ? 'PMO' : (key === 'lead' ? '组织管理' : (key === 'po' ? '产品经理' : key.toUpperCase()));
       boxes.push(
         '<label class="role-checkbox-card selected is-disabled" title="组织已授权视图，须由 PMO 或管理员统一配置，个人不可修改">' +
           '<input type="checkbox" checked disabled />' +
@@ -224,7 +224,7 @@
 
     return '<div class="role-cards-grid" style="grid-template-columns: 1fr;" id="profileRoleCheckRow">' + boxes.join('') + '</div>' +
       '<span class="field-tip" style="margin-top:6px; display:inline-block; line-height:1.4;">' +
-        '提示：产品经理角色可由个人自主选择开启或关闭；PMO 与团队管理视图属于组织固定授权，须由 PMO 或管理员在后台统一授权配置，个人不可在此更改。' +
+        '提示：产品经理角色可由个人自主选择开启或关闭；PMO 与组织管理视图属于组织固定授权，须由 PMO 或管理员在后台统一授权配置，个人不可在此更改。' +
       '</span>';
   }
 
@@ -233,7 +233,7 @@
     var orgLocked = !!ORG_ONLY_ROLES[currentRole];
     var orgNote = '';
     if (orgLocked) {
-      var label = currentRole === 'pmo' ? 'PMO' : '团队管理';
+      var label = currentRole === 'pmo' ? 'PMO' : '组织管理';
       orgNote = '<div class="field-tip" style="margin-bottom:8px;color:var(--color-primary);font-weight:500;">当前正处于「' + esc(label) +
         '」工作视角（组织固定授权）。</div>';
     }

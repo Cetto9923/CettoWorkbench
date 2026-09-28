@@ -19,7 +19,7 @@
   function st() { return S().state || {}; }
 
   // 角色下拉默认项：前端写死；后端无独立角色字典，存 zt_team.role。
-  var DEFAULT_TEAM_ROLES = ["研发", "测试", "产品负责人", "敏捷教练", "项目经理", "架构师"];
+  var DEFAULT_TEAM_ROLES = ["研发", "测试", "产品经理", "敏捷教练", "项目经理", "架构师"];
 
   var draft = [];
   var teamId = 0;
