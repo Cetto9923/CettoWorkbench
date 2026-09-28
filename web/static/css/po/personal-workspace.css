@@ -82,15 +82,15 @@
 /* “待我处理”重点焦点：温润淡琥珀底色 + 金色边框 + 温暖深棕文字（杜绝厚重实底色块与内嵌气泡） */
 .po-personal-workspace .header-quick-chip.my-action.active,
 .po-personal-workspace .header-quick-chip.my-action[aria-pressed="true"] {
-  border-color: var(--color-warning-light, #fcd34d);
-  background: var(--color-warning-bg, #fffbeb);
-  color: var(--color-warning, #92400e);
+  border-color: var(--color-warning-light, var(--wb-warning-border));
+  background: var(--color-warning-bg, var(--wb-warning-bg));
+  color: var(--color-warning, var(--wb-warning));
   font-weight: 600;
   box-shadow: none;
 }
 .po-personal-workspace .header-quick-chip.my-action.active em,
 .po-personal-workspace .header-quick-chip.my-action[aria-pressed="true"] em {
-  color: var(--color-warning, #92400e);
+  color: var(--color-warning, var(--wb-warning));
   font-weight: 700;
 }
 
@@ -116,7 +116,7 @@
 .po-personal-workspace .header-quick-chip.danger.active,
 .po-personal-workspace .header-quick-chip.danger[aria-pressed="true"] {
   background: var(--color-danger-bg);
-  border-color: var(--color-danger-strong, #ef4444);
+  border-color: var(--color-danger-strong, var(--wb-danger));
   color: var(--color-danger);
 }
 .po-personal-workspace .header-quick-chip.danger.active em,
@@ -137,7 +137,7 @@
 .po-personal-workspace .header-quick-chip.warning.active,
 .po-personal-workspace .header-quick-chip.warning[aria-pressed="true"] {
   background: var(--color-warning-bg);
-  border-color: var(--color-warning-light, #fcd34d);
+  border-color: var(--color-warning-light, var(--wb-warning-border));
   color: var(--color-warning);
 }
 .po-personal-workspace .header-quick-chip.warning.active em,
