@@ -119,6 +119,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 		g.GET("/windows/:id", h.GetWindow)
 		g.PUT("/windows/:id", h.UpdateWindow)
 		g.DELETE("/windows/:id", h.DeleteWindow)
+		g.GET("/window-options", h.WindowOptions)
 	}
 }
 

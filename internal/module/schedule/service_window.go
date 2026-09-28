@@ -143,6 +143,8 @@ func (s *Service) ListWindowCards(ctx context.Context, actor *model.User) ([]Win
 
 // HomeVersionWindowCard PO 首页版本窗口卡片展示数据。
 type HomeVersionWindowCard struct {
+	ID           uint64
+	TeamgroupID  uint
 	Name         string
 	AgileGroup   string
 	Range        string
@@ -152,8 +154,54 @@ type HomeVersionWindowCard struct {
 	DeliverCount int
 }
 
+// TeamHomeVersionWindowCard is a deduplicated version-window summary for an
+// already-authorized team scope.
+type TeamHomeVersionWindowCard struct {
+	ID            uint64 `json:"id"`
+	Name          string `json:"name"`
+	TeamgroupID   uint   `json:"teamgroupId"`
+	Teamgroup     string `json:"teamgroup"`
+	ReleaseDate   string `json:"releaseDate"`
+	WorkItemCount int    `json:"workItemCount"`
+}
+
+// ListTeamHomeVersionWindows returns upcoming windows for the supplied
+// authorized agile groups and counts distinct business demands / independent stories.
+func (s *Service) ListTeamHomeVersionWindows(ctx context.Context, teamgroupIDs []uint, limit int) ([]TeamHomeVersionWindowCard, error) {
+	if len(teamgroupIDs) == 0 {
+		return []TeamHomeVersionWindowCard{}, nil
+	}
+	windows, err := s.repo.ListTeamHomeVersionWindows(ctx, teamgroupIDs, limit)
+	if err != nil {
+		return nil, err
+	}
+	if len(windows) == 0 {
+		return []TeamHomeVersionWindowCard{}, nil
+	}
+	groupNames, err := s.loadTeamgroupDisplayNamesByIDs(ctx, teamgroupIDs)
+	if err != nil {
+		return nil, err
+	}
+	cards := make([]TeamHomeVersionWindowCard, 0, len(windows))
+	for _, window := range windows {
+		items, err := s.repo.FindWindowWorkItems(ctx, window.ID)
+		if err != nil {
+			return nil, err
+		}
+		cards = append(cards, TeamHomeVersionWindowCard{
+			ID:            window.ID,
+			Name:          strings.TrimSpace(window.Name),
+			TeamgroupID:   window.TeamgroupID,
+			Teamgroup:     groupNames[window.TeamgroupID],
+			ReleaseDate:   window.ReleaseDate.Format("2006-01-02"),
+			WorkItemCount: len(items),
+		})
+	}
+	return cards, nil
+}
+
 // ListHomeVersionWindows 查询 PO 首页近期版本窗口（最多 4 条，按用户敏捷小组过滤）。
-func (s *Service) ListHomeVersionWindows(ctx context.Context, actor *model.User) ([]HomeVersionWindowCard, error) {
+func (s *Service) ListHomeVersionWindows(ctx context.Context, actor *model.User, relatedDemandIDs ...int) ([]HomeVersionWindowCard, error) {
 	account := actorAccount(actor)
 	if account == "" {
 		s.logHomeVersionWindows(account, nil, "account empty", 0, nil)
@@ -171,12 +219,7 @@ func (s *Service) ListHomeVersionWindows(ctx context.Context, actor *model.User)
 		}
 		teamgroupIDs = append(teamgroupIDs, group.ID)
 	}
-	if len(teamgroupIDs) == 0 {
-		s.logHomeVersionWindows(account, teamgroupIDs, "deletedAt IS NULL AND releaseDate>=CURDATE() AND teamgroup IN (...)", 0, nil)
-		return []HomeVersionWindowCard{}, nil
-	}
-
-	windows, err := s.repo.ListUpcomingVersionWindowsForTeamgroups(ctx, teamgroupIDs, 4)
+	windows, err := s.repo.ListHomeRelatedVersionWindows(ctx, teamgroupIDs, relatedDemandIDs, 4)
 	if err != nil {
 		return nil, err
 	}
@@ -201,6 +244,8 @@ func (s *Service) ListHomeVersionWindows(ctx context.Context, actor *model.User)
 			return nil, err
 		}
 		cards = append(cards, HomeVersionWindowCard{
+			ID:           window.ID,
+			TeamgroupID:  window.TeamgroupID,
 			Name:         window.Name,
 			AgileGroup:   nameByID[window.TeamgroupID],
 			Range:        formatWindowDateRange(start, window.ReleaseDate),
