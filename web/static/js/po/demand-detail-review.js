@@ -228,7 +228,7 @@
       '        <div class="dd-kv-list compact">',
       '          <div class="k">提出人</div><div class="v">' + esc(summary.proposerName) + '</div>',
       '          <div class="k">提出部门</div><div class="v">' + esc(summary.proposerDept || "—") + '</div>',
-      '          <div class="k">负责人 / PO</div><div class="v">' + esc(summary.ownerName) + '</div>',
+      '          <div class="k">产品经理</div><div class="v">' + esc(summary.ownerName) + '</div>',
       '          <div class="k">业务评审人</div><div class="v">' + esc(summary.reviewer) + '</div>',
       '          <div class="k">创建人</div><div class="v">' + esc(summary.createdName || summary.createdBy || "—") + '</div>',
       '          <div class="k">当前责任人</div><div class="v">' + esc(summary.currentOwner || "待确认") + '</div>',

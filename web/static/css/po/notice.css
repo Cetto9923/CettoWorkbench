@@ -57,11 +57,11 @@
 .ui-close-btn {
   width: 28px;
   height: 28px;
-  border: 1px solid var(--po-border, #d8e0eb);
+  border: 1px solid var(--wb-border-subtle);
   border-radius: 6px;
   padding: 0;
-  background: var(--color-surface, var(--color-surface, #fff));
-  color: var(--color-text-secondary, var(--color-text-secondary, #64748b));
+  background: var(--wb-bg-surface);
+  color: var(--wb-text-secondary);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -71,10 +71,10 @@
   line-height: 1;
   transition: background .15s ease, color .15s ease, border-color .15s ease;
 }
-.ui-close-btn:hover { background: var(--color-surface-muted, var(--color-surface-muted, #f1f5f9)); color: var(--color-text-primary, var(--color-text-deep, #1f2937)); border-color: var(--color-info); }
-.ui-close-btn:focus-visible { outline: 2px solid var(--color-info); outline-offset: 2px; }
+.ui-close-btn:hover { background: var(--wb-bg-muted); color: var(--wb-text-primary); border-color: var(--wb-primary); }
+.ui-close-btn:focus-visible { outline: 2px solid var(--wb-primary); outline-offset: 2px; }
 .po-notice .notice-title-main:hover {
-  color: var(--color-info);
+  color: var(--wb-primary);
   text-decoration: underline;
 }
 
@@ -130,7 +130,7 @@
   color: var(--color-text-secondary);
 }
 .po-notice .notice-unread-state {
-  color: var(--color-info);
+  color: var(--wb-primary);
   font-weight: 600;
   display: inline-flex;
   align-items: center;
@@ -141,7 +141,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--color-info);
+  background: var(--wb-primary);
 }
 
 /* 行内操作按钮与 .table-action-btn 对齐（28px / 12px，同一行高度一致） */
@@ -158,8 +158,8 @@
   box-sizing: border-box;
 }
 .po-notice .notice-read-btn:hover:not(:disabled) {
-  border-color: var(--color-info);
-  color: var(--color-info);
+  border-color: var(--wb-primary);
+  color: var(--wb-primary);
   background: var(--color-info-bg);
 }
 .po-notice .notice-missing-rel {
@@ -170,7 +170,7 @@
   color: var(--color-text-secondary);
 }
 .po-notice .notice-view-btn {
-  color: var(--color-info);
+  color: var(--wb-primary);
   cursor: pointer;
   border: 1px solid var(--color-info-border);
   background: var(--color-surface);
@@ -186,8 +186,8 @@
 }
 .po-notice .notice-view-btn:hover {
   background: var(--color-info-bg);
-  border-color: var(--color-info);
-  color: var(--color-info);
+  border-color: var(--wb-primary);
+  color: var(--wb-primary);
   text-decoration: none;
 }
 
@@ -206,7 +206,7 @@
 .notice-drawer {
   width: min(560px, 90vw);
   height: 100vh;
-  background: var(--color-surface, #fff);
+  background: var(--wb-bg-surface);
   display: flex;
   flex-direction: column;
   box-shadow: -4px 0 16px rgba(0, 0, 0, .12);
@@ -216,7 +216,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid var(--po-border, var(--color-border, #e5e7eb));
+  border-bottom: 1px solid var(--po-border, var(--wb-border-subtle));
 }
 .notice-drawer-hdr h2 {
   font-size: 16px;
@@ -234,8 +234,8 @@
   justify-content: flex-end;
   gap: 8px;
   padding: 12px 20px;
-  border-top: 1px solid var(--po-border, var(--color-border, #e5e7eb));
-  background: var(--color-surface-muted, #f8fafc);
+  border-top: 1px solid var(--po-border, var(--wb-border-subtle));
+  background: var(--wb-bg-muted);
 }
 
 .notice-drawer .notice-detail-section {
@@ -244,7 +244,7 @@
 .notice-drawer .notice-detail-title {
   font-size: 15px;
   font-weight: 700;
-  color: var(--po-t1, var(--color-text-primary, #0f172a));
+  color: var(--po-t1, var(--wb-text-primary));
   line-height: 1.5;
   margin-bottom: 12px;
 }
@@ -252,25 +252,25 @@
   display: grid;
   grid-template-columns: 80px 1fr;
   gap: 8px 12px;
-  background: var(--color-surface-muted, #f8fafc);
-  border: 1px solid var(--color-border, #e2e8f0);
+  background: var(--wb-bg-muted);
+  border: 1px solid var(--wb-border-subtle);
   border-radius: 6px;
   padding: 12px;
   font-size: 12px;
   margin-bottom: 16px;
 }
 .notice-drawer .notice-meta-label {
-  color: var(--color-text-secondary, #64748b);
+  color: var(--wb-text-secondary);
 }
 .notice-drawer .notice-meta-value {
-  color: var(--color-text-strong, #1e293b);
+  color: var(--wb-text-primary);
 }
 .notice-drawer .notice-detail-body {
   font-size: 13px;
   line-height: 1.6;
-  color: var(--color-text-body, #334155);
-  background: var(--color-surface, #ffffff);
-  border: 1px solid var(--color-border, #e2e8f0);
+  color: var(--wb-text-secondary);
+  background: var(--color-surface, var(--wb-text-inverse));
+  border: 1px solid var(--wb-border-subtle);
   border-radius: 6px;
   padding: 16px;
   word-break: break-word;

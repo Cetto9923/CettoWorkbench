@@ -56,7 +56,7 @@
   </header>
 
   {{ if .PageError }}
-  <div class="workspace-alert workspace-alert-error" role="alert" style="margin-bottom:10px;">
+  <div class="workspace-alert workspace-alert-error" role="alert">
     <i class="fas fa-circle-exclamation"></i>
     <span>{{ .PageError }}，统计数据暂不可用</span>
   </div>
@@ -68,7 +68,7 @@
       <div class="home-vs-title-group">
         <i class="fas fa-route text-blue"></i>
         <span class="home-vs-title">需求价值全景流转流水线</span>
-        <span class="home-vs-desc">从产研各代表生命周期看板链路，点击阶段可下钻筛选需求</span>
+        <span class="wb-tooltip-wrap"><span class="wb-tooltip-icon">ⓘ</span><span class="wb-tooltip-content">从产研各代表生命周期看板链路，点击阶段可下钻筛选需求</span></span>
       </div>
       <div class="home-vs-meta">
         {{ range $i, $stage := .ValueStreamStages }}{{ if eq $stage.Status "all" }}
@@ -147,8 +147,8 @@
           <i class="fas fa-list-check text-blue" aria-hidden="true"></i>
           <h2 class="home-action-title" id="homeActionTitle">待我处理事项</h2>
           <span class="home-action-tag" id="homeActionTag">当前要办理</span>
+          <span class="wb-tooltip-wrap"><span class="wb-tooltip-icon">ⓘ</span><span class="wb-tooltip-content" id="homeActionSubtip">统计我参与阶段的需求，优先推进需确认与流转的事项</span></span>
         </div>
-        <div class="home-action-subtip" id="homeActionSubtip">统计我参与阶段的需求，优先推进需确认与流转的事项</div>
       </div>
       <!-- 统一标准筛选工具栏 -->
       <div class="workspace-toolbar home-toolbar">
@@ -177,12 +177,12 @@
         <table class="workspace-table home-action-table">
           <thead>
             <tr>
-              <th class="c-id" style="width:130px">ID</th>
+              <th class="c-id">ID</th>
               <th class="c-title">事项标题</th>
               <th class="c-stage">当前阶段</th>
               <th class="c-zt-status">状态</th>
               <th class="c-owner">当前负责人</th>
-              <th class="c-actions" style="width:124px">快捷操作</th>
+              <th class="c-actions">快捷操作</th>
             </tr>
           </thead>
           <tbody id="top5Tbody">
@@ -190,7 +190,11 @@
           </tbody>
         </table>
       </div>
-      <div class="state-placeholder" id="top5Empty" hidden>当前阶段暂无匹配需求，可切换阶段或清空筛选条件</div>
+      <div class="wb-empty" id="top5Empty" hidden>
+        <i class="fas fa-inbox wb-empty-icon" aria-hidden="true"></i>
+        <div class="wb-empty-title">当前阶段暂无匹配需求</div>
+        <div class="wb-empty-desc">可切换上方价值流阶段或清空筛选条件</div>
+      </div>
       <div class="state-placeholder error" id="top5Error" hidden>
         加载行动列表失败，请检查网络或刷新重试
         <button type="button" class="retry-btn" id="homeRetryBtn">重试</button>
@@ -289,7 +293,7 @@
         </div>
         <div class="home-version-panel">
           {{ if .VersionWindowsError }}
-            <div class="workspace-alert workspace-alert-error" role="alert" style="margin:8px 0;">
+            <div class="workspace-alert workspace-alert-error" role="alert">
               <i class="fas fa-circle-exclamation"></i>
               <span>版本窗口暂不可用（{{ .VersionWindowsError }}）</span>
             </div>
@@ -313,7 +317,11 @@
             </div>
             {{ end }}
           {{ else }}
-            <div class="home-version-empty">暂无活跃版本窗口</div>
+            <div class="wb-empty home-version-empty">
+              <i class="fas fa-calendar-xmark wb-empty-icon" aria-hidden="true"></i>
+              <div class="wb-empty-title">暂无活跃版本窗口</div>
+              <div class="wb-empty-desc">当前范围内没有进行中的版本窗口</div>
+            </div>
           {{ end }}
         </div>
         <div class="version-dock-bottom">
@@ -339,7 +347,7 @@
 <div class="po-review-overlay" id="poActionDrawerOverlay" aria-hidden="true"></div>
 <aside class="po-review-modal" id="poActionDrawer" role="dialog" aria-modal="true" aria-labelledby="poActionDrawerTitle" aria-hidden="true">
   <div class="po-review-hdr"><h3 id="poActionDrawerTitle">办理</h3><button type="button" class="po-review-close" id="poActionDrawerCloseBtn" aria-label="关闭"><i class="fas fa-xmark"></i></button></div>
-  <div class="po-review-form"><p class="po-review-context" id="poActionDrawerContext">—</p><dl class="po-review-summary"><div><dt>当前阶段</dt><dd id="poActionDrawerStage">—</dd></div><div><dt>当前负责人</dt><dd id="poActionDrawerOwner">—</dd></div><div><dt>需求摘要</dt><dd id="poActionDrawerSummary">—</dd></div></dl><form id="poActionForm"><label>办理意见 <textarea name="comment" rows="4" maxlength="2000" placeholder="请输入办理意见（可选）"></textarea></label><button class="po-review-submit" type="submit">确认办理</button></form><a class="po-review-submit" id="poActionOpenPage" href="#" style="display:none">进入工作台办理页</a><p id="poActionDrawerUnavailable" style="display:none">该操作页面暂不可用</p></div>
+  <div class="po-review-form"><p class="po-review-context" id="poActionDrawerContext">—</p><dl class="po-review-summary"><div><dt>当前阶段</dt><dd id="poActionDrawerStage">—</dd></div><div><dt>当前负责人</dt><dd id="poActionDrawerOwner">—</dd></div><div><dt>需求摘要</dt><dd id="poActionDrawerSummary">—</dd></div></dl><form id="poActionForm"><label>办理意见 <textarea name="comment" rows="4" maxlength="2000" placeholder="请输入办理意见（可选）"></textarea></label><button class="po-review-submit" type="submit">确认办理</button></form><a class="po-review-submit" id="poActionOpenPage" href="#" hidden>进入工作台办理页</a><p id="poActionDrawerUnavailable" hidden>该操作页面暂不可用</p></div>
 </aside>
 {{ template "po/urge_modal" . }}
 {{ template "po/clarify_modal" . }}

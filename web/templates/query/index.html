@@ -59,7 +59,7 @@
 
     <div class="workspace-result-bar" aria-live="polite">
       <span id="querySummary">加载中…</span>
-      <span class="workspace-result-hint">数据来自禅道业务需求 / 研发需求表</span>
+      <span class="wb-tooltip-wrap"><span class="wb-tooltip-icon">ⓘ</span><span class="wb-tooltip-content">数据来自禅道业务需求 / 研发需求表</span></span>
       <button type="button" id="queryStageChip" class="workspace-btn" hidden aria-label="清除阶段筛选"></button>
     </div>
 
@@ -67,14 +67,14 @@
       <table class="workspace-table query-table">
         <thead>
           <tr>
-            <th class="query-col-id" style="width:140px">ID</th>
+            <th class="query-col-id">ID</th>
             <th class="query-col-title">需求标题</th>
-            <th class="query-col-stage" style="width:90px">当前阶段</th>
-            <th class="query-col-status" style="width:90px">状态</th>
-            <th class="query-col-owner" style="width:130px">负责人</th>
-            <th class="query-col-system" style="width:140px">涉及系统</th>
-            <th class="query-col-dead" style="width:110px">截止日期</th>
-            <th class="query-col-action" style="width:80px">操作</th>
+            <th class="query-col-stage">当前阶段</th>
+            <th class="query-col-status">状态</th>
+            <th class="query-col-owner">负责人</th>
+            <th class="query-col-system">涉及系统</th>
+            <th class="query-col-dead">截止日期</th>
+            <th class="query-col-action">操作</th>
           </tr>
         </thead>
         <tbody id="queryTbody">

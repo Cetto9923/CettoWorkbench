@@ -203,7 +203,7 @@
     }
     subText = '<div class="notice-subject-sub">' + summaryHtml +
       '<time class="notice-subject-date" datetime="' + esc(item.date || "") + '">' +
-      esc(item.date || "—") + "</time></div>";
+      esc(window.formatDateTime ? window.formatDateTime(item.date) : (item.date || "—")) + "</time></div>";
 
     var titleTag = item.url ? "a" : "button";
     var titleAttrs = item.url

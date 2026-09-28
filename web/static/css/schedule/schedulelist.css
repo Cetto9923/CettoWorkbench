@@ -526,3 +526,48 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* 统一操作按钮与列宽 */
+#page-schedule .action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: var(--wb-radius-sm, 4px);
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+}
+#page-schedule .action-btn--primary,
+#page-schedule .action-btn.action-btn--primary,
+#page-schedule .action-btn--clarify {
+  background: var(--wb-primary);
+  color: var(--wb-text-inverse);
+  border-color: var(--wb-primary);
+}
+#page-schedule .action-btn--primary:hover,
+#page-schedule .action-btn--clarify:hover {
+  background: var(--wb-primary-hover);
+}
+#page-schedule .action-btn--success,
+#page-schedule .action-btn.action-btn--success {
+  background: var(--wb-success);
+  color: var(--wb-text-inverse);
+  border-color: var(--wb-success);
+}
+#page-schedule .action-btn--success:hover {
+  background: var(--wb-success-border);
+}
+#page-schedule .schedule-table th.schedule-col-title { width: 500px; max-width: 500px; }
+#page-schedule .schedule-table th.schedule-col-pri { width: 72px; }
+#page-schedule .schedule-table th.schedule-col-group { width: 120px; }
+#page-schedule .schedule-table th.schedule-col-stage-head { min-width: 120px; }
+#page-schedule .schedule-table th.schedule-col-stage { min-width: 160px; }
+#page-schedule .schedule-table th.schedule-col-owner { min-width: 110px; }
+#page-schedule .schedule-table th.schedule-col-tasks { width: 72px; }
+#page-schedule .schedule-table th.schedule-action-col { width: 100px; }
+

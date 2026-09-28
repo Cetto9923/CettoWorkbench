@@ -18,3 +18,11 @@
   margin-right: 6px;
   vertical-align: middle;
 }
+
+.po-query .query-col-stage { width: 90px; }
+.po-query .query-col-status { width: 90px; }
+.po-query .query-col-owner { width: 130px; }
+.po-query .query-col-system { width: 140px; }
+.po-query .query-col-dead { width: 110px; }
+.po-query .query-col-action { width: 80px; text-align: right; }
+

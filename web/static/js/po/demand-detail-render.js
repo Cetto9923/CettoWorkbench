@@ -74,8 +74,8 @@
       '<div class="dd-title">' + esc(cleanTitle) + '</div>' +
       '<div class="dd-meta">' +
       '  <span>提出人：' + esc(summary.proposerName) + '</span>' +
-      '  <span>PO：' + esc(summary.ownerName) + '</span>' +
-      '  <span>最近更新：' + esc(summary.editedDate) + '</span>' +
+      '  <span>产品经理：' + esc(summary.ownerName) + '</span>' +
+      '  <span>最近更新：' + esc(window.formatDateTime ? window.formatDateTime(summary.editedDate) : summary.editedDate) + '</span>' +
       '</div>' +
       '<div class="dd-summary-panel">' +
       '  <div class="dd-summary-grid">' +
@@ -174,10 +174,13 @@
 
     for (var i = 0; i < vs.stages.length; i++) {
       var s = vs.stages[i];
+      var roleText = s.role;
+      if (roleText === "PO") roleText = "产品经理";
+      else if (roleText) roleText = roleText.replace(/\bPO\b/g, "产品经理");
       html.push(
         '<div class="dd-flow-stage ' + esc(s.status) + '">',
         '  <div class="nm">' + esc(s.label) + '</div>',
-        '  <div class="who">' + esc(s.role) + '</div>',
+        '  <div class="who">' + esc(roleText) + '</div>',
         '  <div class="duration" title="' + esc(s.durationText) + '">' + esc(excerpt(s.durationText, 18)) + '</div>',
         '</div>'
       );
@@ -253,7 +256,7 @@
       '      </div>',
       '      <div class="dd-aside-title" style="margin-top:14px">责任与状态</div>',
       '      <div class="dd-kv-list compact">',
-      '        <div class="k">负责人 / PO</div><div class="v">' + esc(summary.ownerName) + '</div>',
+      '        <div class="k">产品经理</div><div class="v">' + esc(summary.ownerName) + '</div>',
       '        <div class="k">需求提出人</div><div class="v">' + esc(summary.proposerName) + '</div>',
       '        <div class="k">测试负责人</div><div class="v">' + esc(summary.testOwner) + '</div>',
       '        <div class="k">验收负责人</div><div class="v">' + esc(summary.acceptOwner) + '</div>',

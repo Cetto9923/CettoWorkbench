@@ -40,10 +40,13 @@
 
   function $(id) { return document.getElementById(id); }
   function fmtDateTime(value) {
-    if (!value) return '<span class="done-time-date">--</span>';
-    var m = String(value).match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2})/);
-    if (!m) return '<span class="done-time-date">' + esc(value) + "</span>";
-    return '<span class="done-time-date">' + m[1] + '</span><span class="done-time-clock">' + m[2] + "</span>";
+    if (!value || value === "—" || value === "-") return '<span class="done-time-date">--</span>';
+    var formatted = window.formatDateTime ? window.formatDateTime(value) : value;
+    var parts = String(formatted).split(" ");
+    if (parts.length >= 2) {
+      return '<span class="done-time-date">' + esc(parts[0]) + '</span><span class="done-time-clock">' + esc(parts[1]) + "</span>";
+    }
+    return '<span class="done-time-date">' + esc(formatted) + "</span>";
   }
 
   function tagClass(result) {

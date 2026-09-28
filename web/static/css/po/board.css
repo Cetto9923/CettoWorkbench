@@ -82,7 +82,7 @@
 .po-board .team-metric:hover{border-color:var(--blue-bd);background:var(--color-info-bg)}
 .po-board .team-metric.is-risk{border-color:var(--red-bd);background:var(--color-danger-bg)}
 .po-board .team-metric.is-warn{border-color:var(--orange-bd);background:var(--color-warning-bg)}
-.po-board .team-metric.is-good{border-color:var(--green-bd);background:var(--color-success-bg)}
+.po-board .team-metric.is-good{border-color:var(--wb-border-subtle);background:var(--wb-bg-surface)}
 .po-board .metric-top{display:flex;align-items:center;gap:5px;min-width:0}
 .po-board .metric-name{min-width:0;flex:1;font-size:9px;font-weight:650;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .po-board .metric-value{flex:0 0 auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;font-weight:800;color:var(--t1);white-space:nowrap}
@@ -201,11 +201,11 @@
 .po-board #demandEmpty{display:none}
 .po-board .legend{display:flex;gap:14px;align-items:center;padding:8px 12px;color:var(--t3);font-size:9px;border-top:1px solid var(--border-lt);background:var(--color-surface)}
 .po-board .legend b{color:var(--t2)}
-.po-board .role-banner{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--blue-bd);background:var(--color-info-bg);border-radius:5px;margin-bottom:8px;font-size:10px;color:var(--t2);flex-shrink:0}
-.po-board .role-banner strong{color:var(--navy)}
-.po-board .role-banner .arrow{color:var(--color-text-disabled)}
-.po-board .role-banner.task{border-color:var(--green-bd);background:var(--color-success-bg)}
-.po-board .role-banner.task strong{color:var(--green)}
+.po-board .role-banner{display:flex;align-items:center;gap:8px;padding:6px 12px;border:1px solid var(--wb-border-subtle);background:var(--wb-bg-muted);border-radius:var(--wb-radius-sm);margin-bottom:8px;font-size:11px;color:var(--wb-text-secondary);flex-shrink:0}
+.po-board .role-banner strong{color:var(--wb-text-primary)}
+.po-board .role-banner .arrow{color:var(--wb-text-tertiary)}
+.po-board .role-banner.task{border-color:var(--wb-border-subtle);background:var(--wb-bg-muted)}
+.po-board .role-banner.task strong{color:var(--wb-text-primary)}
 
 /* 任务视图 */
 .po-board .task-board{height:100%;min-width:0;min-height:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
