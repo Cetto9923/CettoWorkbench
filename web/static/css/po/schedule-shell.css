@@ -15,39 +15,136 @@ body.po-workbench-shell #page-schedule .schedule-page-head {
 }
 
 /* 业务需求表与独立研发需求表：取消 Main 的 min-width:1180px 与标题列内联宽度，让表格贴合 PO 外壳内容区宽度；
-   标题列按比例分配并用 max-width:0 触发单元格内省略号，避免操作列被挤出可视区 */
+   采用 table-layout: fixed 让非标题列紧凑，标题列自适应占据剩余宽度并支持平滑省略 */
 body.po-workbench-shell #page-schedule #scheduleBizListPanel .schedule-table,
 body.po-workbench-shell #page-schedule #scheduleIndependentListPanel .schedule-table {
   min-width: 0;
+  width: 100%;
+  table-layout: fixed;
 }
 
 body.po-workbench-shell #page-schedule #scheduleBizListPanel .schedule-table th.schedule-col-title,
 body.po-workbench-shell #page-schedule #scheduleIndependentListPanel .schedule-table th.schedule-col-title {
   width: auto !important;
-  min-width: 260px;
+  min-width: 320px;
   max-width: none !important;
+  text-align: left;
 }
 
 body.po-workbench-shell #page-schedule #scheduleBizListPanel .schedule-table tbody td:first-child:not([colspan]),
 body.po-workbench-shell #page-schedule #scheduleIndependentListPanel .schedule-table tbody td:first-child:not([colspan]) {
-  max-width: 0;
+  min-width: 320px;
+  max-width: none;
+  overflow: hidden;
 }
 
-/* 业务需求表与独立研发需求表敏捷小组列：单行省略不换行 */
+/* 标题配色契合主题 & 悬停高亮 */
+body.po-workbench-shell #page-schedule .schedule-title-link {
+  color: var(--color-text-primary);
+  font-weight: 500;
+  text-decoration: none;
+}
+body.po-workbench-shell #page-schedule .schedule-title-link:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+/* 需求编号徽章固定宽度 68px，保证 #US63425 与 #72353 纵向 100% 对齐 */
+body.po-workbench-shell #page-schedule .schedule-table .wb-type .wb-type-id {
+  width: 68px;
+  min-width: 68px;
+  box-sizing: border-box;
+  text-align: center;
+  justify-content: center;
+}
+
+/* 优先级列：居中对齐 */
+body.po-workbench-shell #page-schedule .schedule-table th.schedule-col-pri,
+body.po-workbench-shell #page-schedule .schedule-table td.schedule-col-pri,
+body.po-workbench-shell #page-schedule #scheduleBizListPanel .schedule-table th:nth-child(2),
+body.po-workbench-shell #page-schedule #scheduleBizListPanel .schedule-table td:nth-child(2) {
+  width: 68px;
+  min-width: 68px;
+  max-width: 72px;
+  text-align: center;
+}
+
+/* 敏捷小组列：单行省略不换行 */
 body.po-workbench-shell #page-schedule .schedule-table th.schedule-col-group,
 body.po-workbench-shell #page-schedule .schedule-table td.schedule-col-group,
 body.po-workbench-shell #page-schedule #scheduleBizListPanel .schedule-table th:nth-child(3),
 body.po-workbench-shell #page-schedule #scheduleBizListPanel .schedule-table td:nth-child(3) {
-  width: 150px;
-  min-width: 140px;
+  width: 130px;
+  min-width: 110px;
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+/* 排期阶段列：居中对齐 */
+body.po-workbench-shell #page-schedule .schedule-table th.schedule-col-stage-head,
+body.po-workbench-shell #page-schedule .schedule-table td:nth-child(4) {
+  width: 88px;
+  min-width: 80px;
+  max-width: 96px;
+  text-align: center;
+}
+
+/* 版本窗口列：左对齐，适度收紧 */
+body.po-workbench-shell #page-schedule .schedule-table th.schedule-col-stage,
+body.po-workbench-shell #page-schedule .schedule-table td.schedule-col-stage {
+  width: 130px;
+  min-width: 100px;
   max-width: 160px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-align: left;
 }
 
+/* 负责人列：左对齐，130px，行内省略防溢出 */
+body.po-workbench-shell #page-schedule .schedule-table th.schedule-col-owner,
+body.po-workbench-shell #page-schedule .schedule-table td.schedule-col-owner {
+  width: 130px;
+  min-width: 120px;
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+body.po-workbench-shell #page-schedule .schedule-table .schedule-owner-line {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.po-workbench-shell #page-schedule .schedule-table .schedule-owner-line .name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 任务列：居中对齐 */
+body.po-workbench-shell #page-schedule .schedule-table th.schedule-col-tasks,
+body.po-workbench-shell #page-schedule .schedule-table td.schedule-task-col {
+  width: 56px;
+  min-width: 50px;
+  max-width: 64px;
+  text-align: center;
+}
+
+/* 操作列：居中对齐 */
 body.po-workbench-shell #page-schedule .schedule-table .schedule-action-col {
+  width: 96px;
   min-width: 96px;
+  text-align: center;
 }
 
 /* D5: 树形列表左对齐：展开箭头/占位与子行统一缩进 24px */

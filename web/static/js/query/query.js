@@ -237,15 +237,53 @@
     if ($("queryPriority")) { $("queryPriority").value = state.priority; }
     if ($("queryOwner")) { $("queryOwner").value = state.owner; }
     if ($("querySystem")) { $("querySystem").value = state.system; }
-    updateStageChip();
+    updateActiveFilterTags();
+  }
+
+  function updateActiveFilterTags() {
+    var bar = $("queryActiveFilterBar");
+    var container = $("queryActiveFilterTags");
+    if (!bar || !container) { return; }
+
+    var tags = [];
+    if (state.stage) {
+      var stageLabel = VALUE_STREAM_LABELS[state.stage] || state.stage;
+      tags.push({ key: "stage", label: "阶段: " + stageLabel });
+    }
+    if (state.status) {
+      var statusLabel = (state.tab === "rd" ? STORY_STATUS_LABELS[state.status] : ZENTAO_STATUS_LABELS[state.status]) || state.status;
+      tags.push({ key: "status", label: "状态: " + statusLabel });
+    }
+    if (state.priority) {
+      tags.push({ key: "priority", label: "优先级: P" + state.priority });
+    }
+    if (state.owner) {
+      tags.push({ key: "owner", label: "负责人: " + state.owner });
+    }
+    if (state.system) {
+      tags.push({ key: "system", label: "涉及系统: " + state.system });
+    }
+    if (state.keyword) {
+      tags.push({ key: "keyword", label: '关键词: "' + state.keyword + '"' });
+    }
+
+    if (!tags.length) {
+      container.innerHTML = "";
+      bar.hidden = true;
+      return;
+    }
+
+    container.innerHTML = tags.map(function (t) {
+      return '<span class="query-filter-tag" data-key="' + esc(t.key) + '">' +
+        '<span class="tag-text">' + esc(t.label) + '</span>' +
+        '<button type="button" class="tag-del" aria-label="移除筛选">×</button>' +
+      '</span>';
+    }).join("");
+    bar.hidden = false;
   }
 
   function updateStageChip() {
-    var chip = $("queryStageChip");
-    if (!chip) { return; }
-    var label = VALUE_STREAM_LABELS[state.stage] || state.stage;
-    chip.hidden = !state.stage;
-    chip.textContent = state.stage ? ("阶段：" + label + " ×") : "";
+    updateActiveFilterTags();
   }
 
   function syncUrl() {
@@ -289,6 +327,7 @@
       clearTimeout(searchTimer);
       searchTimer = setTimeout(function () {
         state.page = 1;
+        updateActiveFilterTags();
         syncUrl();
         load();
       }, 250);
@@ -303,6 +342,7 @@
       $("queryStatus").addEventListener("change", function () {
         state.status = this.value;
         state.page = 1;
+        updateActiveFilterTags();
         syncUrl();
         load();
       });
@@ -311,6 +351,7 @@
       $("queryPriority").addEventListener("change", function () {
         state.priority = this.value;
         state.page = 1;
+        updateActiveFilterTags();
         syncUrl();
         load();
       });
@@ -327,33 +368,60 @@
         debouncedLoad();
       });
     }
+    function resetAllFilters() {
+      state.keyword = "";
+      state.status = "";
+      state.stage = "";
+      state.priority = "";
+      state.owner = "";
+      state.system = "";
+      state.page = 1;
+      if ($("queryKeyword")) { $("queryKeyword").value = ""; }
+      if ($("queryStatus")) { $("queryStatus").value = ""; }
+      if ($("queryPriority")) { $("queryPriority").value = ""; }
+      if ($("queryOwner")) { $("queryOwner").value = ""; }
+      if ($("querySystem")) { $("querySystem").value = ""; }
+      updateActiveFilterTags();
+      syncUrl();
+      load();
+    }
     if ($("queryResetBtn")) {
-      $("queryResetBtn").addEventListener("click", function () {
-        state.keyword = "";
-        state.status = "";
-        state.stage = "";
-        state.priority = "";
-        state.owner = "";
-        state.system = "";
-        state.page = 1;
-        if ($("queryKeyword")) { $("queryKeyword").value = ""; }
-        if ($("queryStatus")) { $("queryStatus").value = ""; }
-        updateStageChip();
-        if ($("queryPriority")) { $("queryPriority").value = ""; }
-        if ($("queryOwner")) { $("queryOwner").value = ""; }
-        if ($("querySystem")) { $("querySystem").value = ""; }
-        syncUrl();
-        load();
-      });
+      $("queryResetBtn").addEventListener("click", resetAllFilters);
     }
     if ($("queryRetryBtn")) {
       $("queryRetryBtn").addEventListener("click", function () { load(); });
+    }
+    var activeBar = $("queryActiveFilterBar");
+    if (activeBar) {
+      activeBar.addEventListener("click", function (e) {
+        var delBtn = e.target.closest(".tag-del");
+        if (delBtn) {
+          var tag = delBtn.closest(".query-filter-tag");
+          if (!tag) { return; }
+          var key = tag.getAttribute("data-key");
+          if (!key) { return; }
+          state[key] = "";
+          state.page = 1;
+          if (key === "keyword" && $("queryKeyword")) { $("queryKeyword").value = ""; }
+          if (key === "status" && $("queryStatus")) { $("queryStatus").value = ""; }
+          if (key === "priority" && $("queryPriority")) { $("queryPriority").value = ""; }
+          if (key === "owner" && $("queryOwner")) { $("queryOwner").value = ""; }
+          if (key === "system" && $("querySystem")) { $("querySystem").value = ""; }
+          updateActiveFilterTags();
+          syncUrl();
+          load();
+          return;
+        }
+        if (e.target.closest("#queryActiveFilterClearAll")) {
+          resetAllFilters();
+        }
+      });
     }
     if ($("queryStageChip")) {
       $("queryStageChip").addEventListener("click", function () {
         state.stage = "";
         state.page = 1;
-        updateStageChip();
+        updateActiveFilterTags();
         syncUrl();
         load();
       });

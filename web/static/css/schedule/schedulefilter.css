@@ -190,3 +190,99 @@
   font-size: 12px;
   box-sizing: border-box;
 }
+
+/* 活跃筛选条件小标签栏 */
+#page-schedule .schedule-active-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--color-surface-muted, var(--wb-gray-50));
+  border-radius: var(--wb-radius-md, 6px);
+  margin-top: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  border: 1px solid var(--color-border, var(--wb-gray-200));
+}
+
+#page-schedule .schedule-active-filters[hidden] {
+  display: none !important;
+}
+
+#page-schedule .schedule-active-filter-label {
+  color: var(--color-text-secondary, var(--wb-gray-500));
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+#page-schedule .schedule-active-filter-list {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+#page-schedule .schedule-filter-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  border-radius: var(--wb-radius-sm, 4px);
+  background: var(--color-surface, var(--wb-white));
+  border: 1px solid var(--color-border-strong, var(--wb-gray-300));
+  color: var(--color-text-primary, var(--wb-gray-800));
+  box-shadow: var(--wb-shadow-sm);
+  transition: all var(--wb-transition-fast, 0.15s ease);
+}
+
+#page-schedule .schedule-filter-tag:hover {
+  border-color: var(--color-primary, var(--wb-primary));
+}
+
+#page-schedule .schedule-filter-tag-del {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  margin-left: 2px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted, var(--wb-gray-400));
+  font-size: 13px;
+  font-weight: bold;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: all 0.15s ease;
+}
+
+#page-schedule .schedule-filter-tag-del:hover {
+  background: var(--color-danger-bg, #fee2e2);
+  color: var(--color-danger, #ef4444);
+}
+
+#page-schedule .schedule-active-filter-clear {
+  border: none;
+  background: transparent;
+  color: var(--color-primary, var(--wb-primary));
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 6px;
+  text-decoration: none;
+  font-weight: 500;
+  margin-left: 4px;
+}
+
+#page-schedule .schedule-active-filter-clear:hover {
+  text-decoration: underline;
+  color: var(--color-primary-hover, var(--wb-primary-hover));
+}

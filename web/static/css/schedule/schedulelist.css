@@ -270,7 +270,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 52px;
+  width: 68px;
+  min-width: 68px;
+  box-sizing: border-box;
   text-align: center;
   height: 100%;
   padding: 0 6px;
@@ -329,7 +331,7 @@
 }
 
 .schedule-title-link {
-  color: var(--blue);
+  color: var(--color-text-primary, #0f172a);
   cursor: pointer;
   font-weight: 500;
   text-decoration: none;
@@ -354,6 +356,7 @@
 }
 
 .schedule-title-link:hover {
+  color: var(--color-primary, #2563eb);
   text-decoration: underline;
 }
 
@@ -559,10 +562,7 @@
 #page-schedule .action-btn--success:hover { background: var(--wb-success-border); }
 #page-schedule .schedule-table th.schedule-col-title { width: 500px; max-width: 500px; }
 #page-schedule .schedule-table th.schedule-col-pri { width: 72px; }
-#page-schedule .schedule-table th.schedule-col-group,
-#page-schedule .schedule-table td.schedule-col-group {
-  width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
+#page-schedule .schedule-table th.schedule-col-group, #page-schedule .schedule-table td.schedule-col-group { width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #page-schedule .schedule-table th.schedule-col-stage-head { min-width: 120px; }
 #page-schedule .schedule-table th.schedule-col-stage { min-width: 160px; }
 #page-schedule .schedule-table th.schedule-col-owner { min-width: 110px; }

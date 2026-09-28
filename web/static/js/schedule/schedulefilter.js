@@ -374,7 +374,73 @@
 
   setMoreFiltersOpen(hasMoreFiltersActive());
 
+  // 活跃筛选标签渲染与移除
+  function renderActiveFilterTags() {
+    var $bar = $("#scheduleActiveFilterBar"), $container = $("#scheduleActiveFilterTags");
+    if (!$bar.length || !$container.length) { return; }
+    var tags = [], params = readURLParams();
+
+    [{ k: "groups", p: "小组" }, { k: "products", p: "系统" }, { k: "windows", p: "窗口" }].forEach(function (m) {
+      (params.get(m.k) || "").split(",").filter(Boolean).forEach(function (id) {
+        var $cb = $row.find('.schedule-filter-ms[data-filter-key="' + m.k + '"] .form-multiselect-checkbox[value="' + id + '"]');
+        var name = $cb.length ? $.trim($cb.closest("label").find(".form-multiselect-name").text()) : (m.p + "#" + id);
+        tags.push({ key: m.k, value: id, label: m.p + ": " + name });
+      });
+    });
+
+    var STAGE_NAME_MAP = { unscheduled: "未排期", wait_confirm: "待确定", planned: "已排期", changing: "变更中", closed: "已关闭" };
+    (params.get("stages") || "").split(",").filter(Boolean).forEach(function (val) {
+      var $cb = $row.find('.schedule-ms[data-filter-key="stages"] .schedule-ms-checkbox[value="' + val + '"]');
+      var name = ($cb.length && $.trim($cb.data("label") || $cb.closest("label").text())) || STAGE_NAME_MAP[val] || val;
+      tags.push({ key: "stages", value: val, label: "阶段: " + name });
+    });
+
+    var kw = $.trim(params.get("keyword") || "");
+    if (kw) { tags.push({ key: "keyword", value: kw, label: '关键词: "' + kw + '"' }); }
+    var pri = $.trim(params.get("pri") || "");
+    if (pri) { tags.push({ key: "pri", value: pri, label: "优先级: " + (findOptionLabel(PRI_OPTIONS, pri) || ("P" + pri)) }); }
+    var testUser = $.trim(params.get("test") || "");
+    if (testUser) { tags.push({ key: "test", value: testUser, label: "测试负责人: " + (findOwnerLabel(ownerPickerItems || [], testUser) || testUser) }); }
+    var acceptUser = $.trim(params.get("accept") || "");
+    if (acceptUser) { tags.push({ key: "accept", value: acceptUser, label: "验收负责人: " + (findOwnerLabel(ownerPickerItems || [], acceptUser) || acceptUser) }); }
+    if (params.get("suspended") === "1") { tags.push({ key: "suspended", value: "1", label: "仅看挂起" }); }
+
+    if (!tags.length) { $container.empty(); $bar.prop("hidden", true); return; }
+    $container.html(tags.map(function (t) {
+      return '<span class="schedule-filter-tag" data-filter-key="' + t.key + '" data-filter-val="' + t.value + '">' +
+        '<span class="schedule-filter-tag-text">' + t.label + '</span>' +
+        '<button type="button" class="schedule-filter-tag-del" aria-label="移除筛选">×</button>' +
+      '</span>';
+    }).join(""));
+    $bar.prop("hidden", false);
+  }
+
+  $(document).on("click", ".schedule-filter-tag-del", function (e) {
+    e.preventDefault();
+    var $tag = $(this).closest(".schedule-filter-tag"), key = $tag.data("filter-key"), val = String($tag.data("filter-val")), currentParams = readURLParams();
+    if (key === "groups" || key === "products" || key === "stages" || key === "windows") {
+      var items = (currentParams.get(key) || "").split(",").filter(function (x) { return x && x !== val; });
+      var ov = { bizPage: null, indepPage: null };
+      ov[key] = items.length ? items.join(",") : null;
+      navigateSchedule(ov);
+      return;
+    }
+    var singleMap = { keyword: "#scheduleSearch", pri: "#scheduleFilterPri", test: "#scheduleFilterTestValue", accept: "#scheduleFilterAcceptValue" };
+    if (singleMap[key]) { $(singleMap[key]).val(""); }
+    var singleOv = { bizPage: null, indepPage: null };
+    singleOv[key] = null;
+    navigateSchedule(singleOv);
+  });
+
+  $(document).on("click", "#scheduleActiveFilterClearAll", function (e) {
+    e.preventDefault();
+    navigateSchedule({ groups: null, products: null, stages: null, windows: null, keyword: null, pri: null, test: null, accept: null, suspended: null, bizPage: null, indepPage: null });
+  });
+
+  renderActiveFilterTags();
+
   window.scheduleApplyAdvancedFilters = applyAdvancedFilters;
   window.scheduleCollectAdvancedFilterValues = collectAdvancedFilterValues;
   window.toggleScheduleMoreFilters = toggleMoreFilters;
+  window.scheduleRenderActiveFilterTags = renderActiveFilterTags;
 })(jQuery);

@@ -1,20 +1,6 @@
 {{/* ==========================================================================
-文件: web/templates/schedule/index.html
-模块: 排期工作台
+文件: web/templates/schedule/index.html | 模块: 排期工作台
 职责: 排期工作台首页（版本窗口概览 + 需求列表）。
-全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .CurrentPath
-页面字段: .Title (string), .PageTitle (string), .Windows ([]schedule.WindowCard),
-          .BizRequirements ([]schedule.BizRequirement),
-          .IndependentRequirements ([]schedule.IndependentRequirement),
-          .BizTotal (int64), .IndependentTotal (int64),
-          .Teamgroups ([]schedule.TeamgroupOption),
-          .Products ([]schedule.ZtProduct),
-          .FilterProducts ([]schedule.ZtProduct),
-          .FilterWindows ([]schedule.WindowFilterOption),
-          .StageFilterOptions ([]schedule.StageFilterOption),
-          .SelectedWindowMap (map[uint]bool), .BizPager (*pagination.Pager),
-          .IndepPager (*pagination.Pager), .InsideUsersURL (string)
-TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
 ========================================================================== */}}
 {{ define "page_css" }}
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedule.css" }}">
@@ -268,6 +254,12 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
         <input type="text" id="scheduleFilterAcceptInput" class="form-input" placeholder="验收负责人" autocomplete="off">
         <input type="hidden" id="scheduleFilterAcceptValue" class="schedule-owner-filter-value" value="{{ .SelectedAcceptOwner }}" data-selected-value="{{ .SelectedAcceptOwner }}">
       </div>
+    </div>
+
+    <div class="schedule-active-filters" id="scheduleActiveFilterBar" hidden>
+      <span class="schedule-active-filter-label"><i class="fas fa-filter"></i> 已选条件：</span>
+      <div class="schedule-active-filter-list" id="scheduleActiveFilterTags"></div>
+      <button type="button" class="schedule-active-filter-clear" id="scheduleActiveFilterClearAll">清空全部</button>
     </div>
 
     <div class="schedule-data-tabs">

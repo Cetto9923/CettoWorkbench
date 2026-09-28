@@ -58,8 +58,15 @@
     </div>
 
     <div class="workspace-result-bar" aria-live="polite">
-      <span id="querySummary">加载中…</span>
-      <span class="wb-tooltip-wrap"><span class="wb-tooltip-icon">ⓘ</span><span class="wb-tooltip-content">数据来自禅道业务需求 / 研发需求表</span></span>
+      <div class="query-result-bar-left">
+        <span id="querySummary">加载中…</span>
+        <span class="wb-tooltip-wrap"><span class="wb-tooltip-icon">ⓘ</span><span class="wb-tooltip-content">数据来自禅道业务需求 / 研发需求表</span></span>
+      </div>
+      <div class="query-active-filter-bar" id="queryActiveFilterBar" hidden>
+        <span class="query-active-filter-label"><i class="fas fa-filter"></i> 已选条件：</span>
+        <div class="query-active-filter-tags" id="queryActiveFilterTags"></div>
+        <button type="button" class="query-active-filter-clear" id="queryActiveFilterClearAll">清空</button>
+      </div>
       <button type="button" id="queryStageChip" class="workspace-btn" hidden aria-label="清除阶段筛选"></button>
     </div>
 
