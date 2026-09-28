@@ -25,6 +25,7 @@ const (
 	TEMPLATE_USER_BATCHCREATE = "user/batchcreate"
 	TEMPLATE_USER_EDIT        = "user/edit"
 
+	TEMPLATE_DEBUG_INDEX   = "web/templates/debug/index.html"
 	TEMPLATE_DEBUG_SQLPERF = "web/templates/debug/sqlperf.html"
 	TEMPLATE_DEBUG_SQLLOG  = "web/templates/debug/sqllog.html"
 

@@ -2,7 +2,7 @@
 // 文件: internal/module/debug/handler.go
 // 模块: SQL 性能分析
 // 类型: readonly
-// 职责: 处理 SQL 性能分析 / 慢 SQL 明细页面与数据 API。
+// 职责: 处理 Debug 导航、SQL 性能分析 / 慢 SQL 明细页面与数据 API。
 // 依赖: internal/constants
 // =============================================================================
 
@@ -29,6 +29,8 @@ func NewHandler(svc *Service) *Handler {
 
 // RegisterRoutes 注册模块路由。
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
+	rg.GET("", h.Index)
+
 	perf := rg.Group("/sqlperf")
 	perf.GET("", h.List)
 	perf.GET("/requests", h.Requests)
@@ -36,6 +38,11 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	sqllog := rg.Group("/sqllog")
 	sqllog.GET("", h.SQLLogPage)
 	sqllog.GET("/queries", h.Queries)
+}
+
+// Index Debug 工具导航页。
+func (h *Handler) Index(c *gin.Context) {
+	c.File(constants.TEMPLATE_DEBUG_INDEX)
 }
 
 // List 性能分析页面。
