@@ -392,3 +392,79 @@ func TestHomeFocusMyActionEmptyReviewIDs_NoEmptyInClause(t *testing.T) {
 		t.Fatalf("dry-run SQL missing wait false guard: %s", sql)
 	}
 }
+
+// TestHomeFocusStageSummary_SumEqualsTotal 校验规则（44964 / 44965）：
+// 9 个阶段卡片数字相加必须严格等于当前聚焦标签的总数（不允许出现卡片数字之和 ≠ 聚焦总数）
+func TestHomeFocusStageSummary_SumEqualsTotal(t *testing.T) {
+	db, mock := openSQLMock(t)
+	repo := NewRepo(db, nil)
+
+	mock.ExpectQuery("SELECT `demand` FROM `zt_demandreview` WHERE reviewer = ?").
+		WithArgs("alice").
+		WillReturnRows(sqlmock.NewRows([]string{"demand"}))
+
+	// 模拟 9 个阶段中的业需分布：1(受理)=3, 2(澄清)=5, 4(研发)=12, 7(发起交付)=4
+	mock.ExpectQuery("(?s)SELECT stage_index, COUNT\\(\\*\\) AS count, IFNULL\\(SUM\\(duration_days\\), 0\\) AS total_duration, COUNT\\(duration_days\\) AS duration_count FROM .* GROUP BY `stage_index`").
+		WillReturnRows(sqlmock.NewRows([]string{"stage_index", "count", "total_duration", "duration_count"}).
+			AddRow(1, 3, 30, 3).
+			AddRow(2, 5, 50, 5).
+			AddRow(4, 12, 120, 12).
+			AddRow(7, 4, 40, 4))
+
+	// 模拟研发需求分布：3(排期)=6, 4(研发)=8, 5(测试)=2
+	mock.ExpectQuery("(?s)SELECT .* AS stage_index, COUNT\\(\\*\\) AS count FROM .* GROUP BY .*").
+		WillReturnRows(sqlmock.NewRows([]string{"stage_index", "count"}).
+			AddRow(3, 6).
+			AddRow(4, 8).
+			AddRow(5, 2))
+
+	stages, err := repo.HomeFocusStageSummary(context.Background(), "alice", DemandsReq{
+		Focus: "my_action",
+	})
+	if err != nil {
+		t.Fatalf("HomeFocusStageSummary error: %v", err)
+	}
+
+	if len(stages) != 10 {
+		t.Fatalf("expected 10 stages (1 all + 9 pipeline stages), got %d", len(stages))
+	}
+
+	var sumTotal int64
+	var sumDemand int64
+	var sumStory int64
+	for i := 1; i <= 9; i++ {
+		sumTotal += stages[i].Count
+		sumDemand += stages[i].DemandCount
+		sumStory += stages[i].StoryCount
+	}
+
+	totalCard := stages[0]
+	if sumTotal != totalCard.Count {
+		t.Errorf("sum of 9 stages (%d) != total card count (%d)", sumTotal, totalCard.Count)
+	}
+	if sumDemand != totalCard.DemandCount {
+		t.Errorf("sum of 9 stages demandCount (%d) != total card demandCount (%d)", sumDemand, totalCard.DemandCount)
+	}
+	if sumStory != totalCard.StoryCount {
+		t.Errorf("sum of 9 stages storyCount (%d) != total card storyCount (%d)", sumStory, totalCard.StoryCount)
+	}
+
+	// 验证具体阶段总数
+	// 阶段1: 3
+	if stages[1].Count != 3 || stages[1].DemandCount != 3 || stages[1].StoryCount != 0 {
+		t.Errorf("stage 1 mismatch: %+v", stages[1])
+	}
+	// 阶段4: 12 + 8 = 20
+	if stages[4].Count != 20 || stages[4].DemandCount != 12 || stages[4].StoryCount != 8 {
+		t.Errorf("stage 4 mismatch: %+v", stages[4])
+	}
+	// 总数: 3 + 5 + 12 + 4 (demand=24) + 6 + 8 + 2 (story=16) = 40
+	if totalCard.Count != 40 || totalCard.DemandCount != 24 || totalCard.StoryCount != 16 {
+		t.Errorf("total card mismatch: want count=40 demand=24 story=16, got count=%d demand=%d story=%d",
+			totalCard.Count, totalCard.DemandCount, totalCard.StoryCount)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("mock expectations unmet: %v", err)
+	}
+}
