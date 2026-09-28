@@ -341,7 +341,36 @@
     modal.classList.add("open");
   }
 
+  // appJson JSON 请求便捷入口：统一 Accept/JSON 序列化、登录失效跳转与错误信息提取；
+  // appFetch 仍保持返回原始 Response 的契约。PO 看板弹窗等页面脚本通过 window.appJson 调用。
+  function appJson(input, init) {
+    var options = Object.assign({}, init || {});
+    options.headers = Object.assign({ Accept: "application/json" }, options.headers || {});
+    if (options.body && typeof options.body !== "string" && !(options.body instanceof FormData)) {
+      options.headers["Content-Type"] = "application/json";
+      options.body = JSON.stringify(options.body);
+    }
+    return appFetch(input, options).then(function (response) {
+      return response.text().then(function (text) {
+        var payload = null;
+        try {
+          payload = text ? JSON.parse(text) : null;
+        } catch (e) {
+          throw new Error("数据格式解析失败");
+        }
+        if (!response.ok) {
+          var error = new Error((payload && (payload.error || payload.message)) || "请求失败 (" + response.status + ")");
+          error.status = response.status;
+          error.payload = payload;
+          throw error;
+        }
+        return payload;
+      });
+    });
+  }
+
   window.appFetch = appFetch;
+  window.appJson = appJson;
   window.openModal = openModal;
   bindFormLoading();
   bindConfirmAction();

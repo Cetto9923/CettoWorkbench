@@ -1,0 +1,180 @@
+{{/* ==========================================================================
+文件: web/templates/components/po_testtask_modal.html
+模块: PO工作台
+职责: 提测办理向导弹窗片段（components 下自动参与所有页面模板编译）
+========================================================================== */}}
+
+
+{{ define "po/testtask_form" }}
+<div class="po-testtask-form" id="poTesttaskFormRoot">
+  <h2 class="po-testtask-title">
+    <span>提测办理</span>
+    <span class="po-testtask-req-id" data-tt-demand-id>—</span>
+    <span data-tt-demand-title>加载中…</span>
+    <span class="po-testtask-stage-tag" data-tt-stage>当前阶段：排期</span>
+  </h2>
+
+  <div class="po-testtask-panel">
+    <div class="po-testtask-panel-title">
+      <span class="icon-badge"><i class="fas fa-clipboard-list"></i></span>
+      <span>当前需求上下文</span>
+    </div>
+    <div class="po-testtask-kv-grid">
+      <div>
+        <div class="label">业务需求ID</div>
+        <div data-tt-demand-id>—</div>
+      </div>
+      <div>
+        <div class="label">当前价值流阶段</div>
+        <div data-tt-stage-text>提测</div>
+      </div>
+      <div>
+        <div class="label">需求原始状态</div>
+        <div data-tt-raw-status>—</div>
+      </div>
+      <div>
+        <div class="label">主系统</div>
+        <div data-tt-main-system>—</div>
+      </div>
+      <div>
+        <div class="label">预计上线</div>
+        <div data-tt-estimate-launch>—</div>
+      </div>
+      <div>
+        <div class="label">业务需求负责人</div>
+        <div data-tt-bra-name>{{ if .CurrentUser }}{{ .CurrentUser.DisplayName }} ({{ .CurrentUser.Account }}){{ else }}—{{ end }}</div>
+      </div>
+      <div>
+        <div class="label">研发负责人 / 测试负责人</div>
+        <div data-tt-rd-qd-name>—</div>
+      </div>
+      <div>
+        <div class="label">提测办理人</div>
+        <div data-tt-handler-name>{{ if .CurrentUser }}{{ .CurrentUser.DisplayName }} ({{ .CurrentUser.Account }}){{ else }}—{{ end }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="po-testtask-panel">
+    <div class="po-testtask-steps" id="poTesttaskSteps">
+      <div class="po-testtask-step">
+        <div class="po-testtask-step-dot is-active" data-tt-step-dot="1">1</div>
+        <span>是否联调测试单</span>
+      </div>
+      <div class="po-testtask-step-line"></div>
+      <div class="po-testtask-step">
+        <div class="po-testtask-step-dot" data-tt-step-dot="2">2</div>
+        <span>配置系统版本</span>
+      </div>
+      <div class="po-testtask-step-line"></div>
+      <div class="po-testtask-step">
+        <div class="po-testtask-step-dot" data-tt-step-dot="3">3</div>
+        <span>版本关联需求</span>
+      </div>
+      <div class="po-testtask-step-line"></div>
+      <div class="po-testtask-step">
+        <div class="po-testtask-step-dot" data-tt-step-dot="4">4</div>
+        <span>配置测试单</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="po-testtask-step-panel" data-tt-panel="1">
+    <div class="po-testtask-panel">
+      <div class="po-testtask-panel-title">是否联调测试单</div>
+      <div class="po-testtask-radio-row">
+        <label><input type="radio" name="isJointTest" value="0" checked /> 否</label>
+        <label><input type="radio" name="isJointTest" value="1" /> 是</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="po-testtask-step-panel po-testtask-hidden" data-tt-panel="2">
+    <div class="po-testtask-panel">
+      <div class="po-testtask-panel-head-row">
+        <div class="po-testtask-panel-title" style="margin:0">按系统配置版本基础信息</div>
+        <div class="meta" id="poTesttaskSysMeta">共 0 个系统</div>
+      </div>
+      <div id="poTesttaskUnitsWrap">
+        <div class="po-testtask-loading-hint">正在加载涉及系统与研发需求…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="po-testtask-step-panel po-testtask-hidden" data-tt-panel="3">
+    <div class="po-testtask-panel">
+      <div class="po-testtask-panel-title">各系统版本关联需求配置</div>
+      <div id="poTesttaskLinksWrap">
+        <div class="po-testtask-loading-hint">正在加载各系统实际转出的研发需求…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="po-testtask-step-panel po-testtask-hidden" data-tt-panel="4">
+    <div data-tt-joint-single>
+      <div class="po-testtask-panel">
+        <div class="po-testtask-panel-title">各系统独立测试单</div>
+        <div id="poTesttaskTasksWrap"></div>
+      </div>
+    </div>
+    <div class="po-testtask-hidden" data-tt-joint-global>
+      <div class="po-testtask-panel">
+        <div class="po-testtask-panel-title">联调总测试单</div>
+        <div class="po-testtask-unit">
+          <div class="po-testtask-grid-4">
+            <div class="po-testtask-field">
+              <div class="po-testtask-field-label"><span class="req">*</span> 测试单名称</div>
+              <input type="text" id="poTesttaskJointName" data-tt-task-name="joint" placeholder="自动生成或输入联调总测试单名称" />
+            </div>
+            <div class="po-testtask-field">
+              <div class="po-testtask-field-label"><span class="req">*</span> 测试负责人</div>
+              <input type="text" data-tt-task-owner="joint" placeholder="输入姓名或工号搜索" />
+            </div>
+            <div class="po-testtask-field">
+              <div class="po-testtask-field-label">开始日期</div>
+              <input type="date" data-tt-task-begin="joint" />
+            </div>
+            <div class="po-testtask-field">
+              <div class="po-testtask-field-label">结束日期</div>
+              <input type="date" data-tt-task-end="joint" />
+            </div>
+          </div>
+          <div class="po-testtask-field">
+            <div class="po-testtask-field-label">测试说明 / 重点 (可选)</div>
+            <textarea data-tt-task-desc="joint"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="po-testtask-meta">第二步保存版本，第三步关联研发需求，第四步创建禅道测试单。</div>
+    <div id="poTesttaskResult" role="status"></div>
+    <div class="po-testtask-actions">
+      <button type="button" class="action-btn" id="poTesttaskSaveDraftBtn">保存草稿</button>
+      <button type="button" class="action-btn primary" id="poTesttaskSubmitBtn">提交提测</button>
+    </div>
+  </div>
+
+  <div class="po-testtask-nav">
+    <button type="button" class="action-btn po-testtask-hidden" id="poTesttaskPrevBtn">上一步</button>
+    <button type="button" class="action-btn primary" id="poTesttaskNextBtn">下一步</button>
+  </div>
+</div>
+{{ end }}
+
+{{ define "po/testtask" }}
+<div class="po-testtask-overlay" id="poTesttaskOverlay"></div>
+<div class="po-testtask-modal" id="poTesttaskModal" role="dialog" aria-labelledby="poTesttaskModalTitle">
+  <div class="po-testtask-modal-hdr">
+    <h3 id="poTesttaskModalTitle">
+      <i class="fas fa-vial"></i>
+      <span>提测办理</span>
+      <span class="po-testtask-req-id" id="poTesttaskModalDemandId"></span>
+      <span id="poTesttaskModalDemandName"></span>
+    </h3>
+    <button type="button" class="po-testtask-modal-close" id="poTesttaskCloseBtn" aria-label="关闭"><i class="fas fa-xmark"></i></button>
+  </div>
+  <div class="po-testtask-modal-body">
+    {{ template "po/testtask_form" . }}
+  </div>
+</div>
+{{ end }}

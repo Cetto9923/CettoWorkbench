@@ -1,111 +1,246 @@
 {{/* ==========================================================================
 文件: web/templates/po/home.html
 模块: PO工作台
-职责: PO 工作台首页（左行动列表 + 右聚焦专区/版本窗口，对齐原型布局）
-全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .CurrentPath
-页面字段: .Title (string), .PageTitle (string), .ValueStreamStages ([]ValueStreamStage),
-          .VersionWindows ([]schedule.HomeVersionWindowCard),
-          .LaunchWindowsJSON (string), .UsersJSON (string)
+职责: PO 工作台首页，展示真实价值流、行动列表与版本窗口。
+全局字段: .CurrentUser, .CSRFToken, .Menus, .CurrentPath
+页面字段: .Title (string), .PageTitle (string), .ValueStreamStages ([]module/po.ValueStreamStage),
+          .VersionWindows ([]module/schedule.HomeVersionWindowCard), .KPI (module/po.KPICounts)
 ========================================================================== */}}
 {{ define "page_css" }}
+<link rel="stylesheet" href="{{ asset "/static/css/po/personal-workspace.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/po/home.css" }}">
-<link rel="stylesheet" href="{{ asset "/static/css/po/common.css" }}">
-<link rel="stylesheet" href="{{ asset "/static/css/po/submitreview.css" }}">
-<link rel="stylesheet" href="{{ asset "/static/css/po/acceptance.css" }}">
-<link rel="stylesheet" href="{{ asset "/static/css/po/testtask.css" }}">
-<link rel="stylesheet" href="{{ asset "/static/css/po/linkstory.css" }}">
-<link rel="stylesheet" href="{{ asset "/static/css/po/deliver.css" }}">
-<link rel="stylesheet" href="{{ asset "/static/css/schedule/schedule.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/demand-detail.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/demand-clarify.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/po-deliver.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/po-urge.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulemodal.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/scheduleintegrated.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/schedule/scheduleintegrated-story.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/schedule/schedule-inline.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/testtask.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/linkstory.css" }}">
 {{ end }}
 
 {{ define "content" }}
-{{ $pending := 0 }}
-{{ $clarify := 0 }}
-{{ $schedule := 0 }}
-{{ $waitacceptance := 0 }}
-{{ range .ValueStreamStages }}
-  {{ if eq .Status "all" }}{{ $pending = .Count }}{{ end }}
-  {{ if eq .Status "clarify" }}{{ $clarify = .Count }}{{ end }}
-  {{ if eq .Status "schedule" }}{{ $schedule = .Count }}{{ end }}
-  {{ if eq .Status "waitacceptance" }}{{ $waitacceptance = .Count }}{{ end }}
-{{ end }}
-<template id="wbHangTagSource">{{ template "ui/hang" }}</template>
-<div class="po-home" id="poHomeRoot" data-current-account="{{ if .CurrentUser }}{{ .CurrentUser.Account }}{{ end }}">
-  <div class="page-hdr">
-    <h2 title="需求治理视角 · 受理→澄清→排期→提测→测试→验收→发起交付→发布→评价反馈">工作台首页</h2>
-    <span class="page-hdr-meta">今日行动 · 价值流推进</span>
-    <!-- <div class="home-summary page-hdr-actions" aria-label="首页焦点摘要">
-      <button type="button" class="home-hl-kpi" data-focal="today">
-        <strong class="home-hl-num">0</strong><span class="home-hl-lab">今日必推</span>
+<div class="po-personal-workspace po-home">
+  <!-- 1. 紧凑页头与右上角焦点 Chips — 统一外框：workspace-header (同 todos/done/notice/follow) -->
+  <header class="workspace-header">
+    <div class="workspace-header-left">
+      <div class="po-role-badge po-perspective-tabs" role="group" aria-label="工作视角" title="当前工作视角：需求管理">
+        <i class="fas fa-user-tag" aria-hidden="true"></i>
+        {{ if .CanViewTeamHome }}
+        <a class="po-perspective-tab active" data-perspective="demand" href="/home?view=demand" aria-current="page">需求管理</a>
+        <a class="po-perspective-tab" data-perspective="team" href="/home?view=team">团队管理</a>
+        {{ else }}<span>需求管理</span>{{ end }}
+      </div>
+    </div>
+    <div class="header-quick-filters" id="homeQuickChips" role="group" aria-label="快捷焦点">
+      <button type="button" class="header-quick-chip" data-home-focus="all" aria-pressed="false">
+        <span>全部</span> <em>{{ if .PageError }}—{{ else }}{{ .AllCount }}{{ end }}</em>
       </button>
-      <button type="button" class="home-hl-kpi active" data-focal="myPending">
-        <strong class="home-hl-num" id="hubMyPending">{{ $pending }}</strong><span class="home-hl-lab">待我处理</span>
+      <button type="button" data-home-focus="my_action" class="header-quick-chip my-action" title="统计我参与阶段的需求" aria-pressed="true"><span>待我处理</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.MyPending }}{{ end }}</em></button>
+      <button type="button" data-home-focus="today" class="header-quick-chip warning" title="在首页查看今天到期及已超期的需求" aria-pressed="false">
+        <span>今日必推</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.Today }}{{ end }}</em>
       </button>
-      <button type="button" class="home-hl-kpi danger" data-focal="blocked">
-        <strong class="home-hl-num">0</strong><span class="home-hl-lab">阻塞</span>
+      <button type="button" data-home-focus="blocked" class="header-quick-chip warning" title="在首页查看当前阻塞需求" aria-pressed="false">
+        <i class="fas fa-circle-exclamation" aria-hidden="true"></i>
+        <span>阻塞</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.Blocked }}{{ end }}</em>
       </button>
-      <button type="button" class="home-hl-kpi warning" data-focal="overdue">
-        <strong class="home-hl-num">0</strong><span class="home-hl-lab">超期</span>
+      <button type="button" data-home-focus="overdue" class="header-quick-chip danger" title="在首页查看超期事项（含关联业务需求与研发需求）" aria-pressed="false">
+        <span>超期</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.Overdue }}{{ end }}</em>
       </button>
-    </div> -->
-  </div>
+      <button type="button" data-home-focus="suspended" class="header-quick-chip" title="查看挂起事项" aria-pressed="false">
+        <span>挂起</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.Suspended }}{{ end }}</em>
+      </button>
+    </div>
+  </header>
 
-  <div class="home-vs-section home-vs-section--primary" id="homeValueStreamSection">
+  {{ if .PageError }}
+  <div class="workspace-alert workspace-alert-error" role="alert" style="margin-bottom:10px;">
+    <i class="fas fa-circle-exclamation"></i>
+    <span>{{ .PageError }}，统计数据暂不可用</span>
+  </div>
+  {{ end }}
+
+  <!-- 2. 精炼价值流管道轨 (Value Stream Pipeline) - 10 阶段彩色徽标卡片 -->
+  <div class="home-page-card home-vs-section" id="homeValueStreamSection">
     <div class="home-vs-hdr">
-      <div class="home-vs-title"><i class="fas fa-route"></i>需求价值流</div>
+      <div class="home-vs-title-group">
+        <i class="fas fa-route text-blue"></i>
+        <span class="home-vs-title">需求价值全景流转流水线</span>
+        <span class="home-vs-desc">从产研各代表生命周期看板链路，点击阶段可下钻筛选需求</span>
+      </div>
+      <div class="home-vs-meta">
+        {{ range $i, $stage := .ValueStreamStages }}{{ if eq $stage.Status "all" }}
+        <span id="homeVsMetaText">业务需求共 <strong class="text-mono">{{ if $.PageError }}—{{ else }}{{ $stage.DemandCount }}{{ end }}</strong> 条 · 研发需求共 <strong class="text-mono">{{ if $.PageError }}—{{ else }}{{ $stage.StoryCount }}{{ end }}</strong> 条</span>
+        {{ end }}{{ end }}
+        <button type="button" class="home-vs-toggle-btn" id="homeVsToggleBtn" aria-expanded="true" title="展开或收起需求价值流流水线">
+          <span id="homeVsToggleText">收起流水线</span>
+          <i class="fas fa-chevron-up" id="homeVsToggleIcon" aria-hidden="true"></i>
+        </button>
+      </div>
     </div>
     <div class="home-vs-compact-scroll" id="homeVsCompactScroll">
       <div class="home-vs-compact" id="homeVsCompact">
-        <div class="home-vs-compact-row">
+        <div class="home-vs-pipeline-wrap">
           {{ range $i, $stage := .ValueStreamStages }}
+          {{ if eq $stage.Status "all" }}
           <button type="button"
-            class="home-vs-mini-card stage-{{ $stage.Status }}{{ if eq $i 0 }} active{{ else if eq $stage.Count 0 }} empty{{ end }}"
-            data-vs-status="{{ $stage.Status }}"
-            title="{{ $stage.Label }} · {{ $stage.Count }} 条">
+            class="home-vs-mini-card home-vs-overview-card stage-all{{ if eq $i 0 }} active{{ else if eq $stage.Count 0 }} empty{{ end }}"
+            data-vs-status="all"
+            data-base-count="{{ if $.PageError }}—{{ else }}{{ $stage.Count }}{{ end }}"
+            data-base-meta="{{ if $.PageError }}暂不可用{{ else }}全部对象{{ end }}"
+            data-base-duration="{{ if $.PageError }}—{{ else if gt $stage.AvgDurationDays 0 }}均 {{ $stage.AvgDurationDays }}天{{ else }}—{{ end }}"
+            aria-pressed="{{ if eq $i 0 }}true{{ else }}false{{ end }}"
+            title="全部对象 · 共 {{ $stage.Count }} 条">
             <div class="vs-card-top">
-              <span class="vs-mini-name">{{ $stage.Label }}</span>
-              {{ if eq $stage.Status "all" }}<i class="fas fa-check vs-status-icon"></i>
-              {{ else if eq $stage.Status "schedule" }}<span class="vs-status-dot dot-amber"></span>
-              {{ else if eq $stage.Status "waitacceptance" }}<span class="vs-status-dot dot-blue"></span>
-              {{ end }}
+              <span class="vs-mini-name">全部对象</span>
+              <i class="fas fa-check vs-status-icon"></i>
             </div>
-            <div class="vs-mini-count">{{ $stage.Count }}</div>
-            <div class="vs-mini-meta">{{ if eq $stage.Status "all" }}全量汇总{{ else }}业{{ $stage.DemandCount }} · 研{{ $stage.StoryCount }}{{ end }}</div>
+            <div class="vs-mini-count">{{ if $.PageError }}—{{ else }}{{ $stage.Count }}{{ end }}</div>
+            <div class="vs-mini-meta-row">
+              <span class="vs-mini-dur">{{ if $.PageError }}—{{ else if gt $stage.AvgDurationDays 0 }}<span class="tag">均</span> {{ $stage.AvgDurationDays }}天{{ else }}—{{ end }}</span>
+            </div>
           </button>
+          <div class="home-vs-flow-divider" aria-hidden="true">
+            <span>流转</span>
+            <i class="fas fa-arrow-right"></i>
+          </div>
           {{ end }}
+          {{ end }}
+
+          <div class="home-vs-chevron-track">
+            {{ range $i, $stage := .ValueStreamStages }}
+            {{ if ne $stage.Status "all" }}
+            <button type="button"
+              class="home-vs-mini-card home-vs-chevron-step stage-{{ $stage.Status }}{{ if eq $stage.Count 0 }} empty{{ end }}"
+              data-vs-status="{{ $stage.Status }}"
+              data-base-count="{{ if $.PageError }}—{{ else }}{{ $stage.Count }}{{ end }}"
+              data-base-meta="{{ if $.PageError }}暂不可用{{ else if eq $stage.Count 0 }}-{{ else }}业{{ $stage.DemandCount }}·研{{ $stage.StoryCount }}{{ end }}"
+              data-base-duration="{{ if $.PageError }}—{{ else if eq $stage.Count 0 }}-{{ else if gt $stage.AvgDurationDays 0 }}均 {{ $stage.AvgDurationDays }}天{{ else }}—{{ end }}"
+              aria-pressed="false"
+              title="{{ $stage.Label }} · 共 {{ $stage.Count }} 条">
+              <div class="vs-card-top">
+                <span class="vs-mini-name">{{ if eq $stage.Status "schedule" }}<span class="vs-status-dot dot-amber"></span> {{ end }}{{ $i }}. {{ $stage.Label }}</span>
+                <span class="vs-mini-breakdown">{{ if $.PageError }}—{{ else if eq $stage.Count 0 }}-{{ else }}业{{ $stage.DemandCount }}·研{{ $stage.StoryCount }}{{ end }}</span>
+              </div>
+              <div class="vs-mini-count">{{ if $.PageError }}—{{ else }}{{ $stage.Count }}{{ end }}</div>
+              <div class="vs-mini-meta-row">
+                <span class="vs-mini-dur">{{ if $.PageError }}—{{ else if eq $stage.Count 0 }}-{{ else if gt $stage.AvgDurationDays 0 }}<span class="tag">均</span> {{ $stage.AvgDurationDays }}天{{ else }}—{{ end }}</span>
+              </div>
+            </button>
+            {{ end }}
+            {{ end }}
+          </div>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- 3. 主体工作双栏布局（左侧行动列表 + 右侧聚焦专区与版本窗口） -->
   <div class="home-content-grid">
-    <div class="top5-section" id="top5Section">
-      <div class="section-title" id="top5Title"><i class="fas fa-list-check"></i> 统一行动列表 · 待我处理</div>
-      <div class="home-priority-strip home-blocker-strip" id="homeBlockerStrip" hidden></div>
-      <div class="top5-list" id="top5List"></div>
-      <div class="pager-footer" id="homePager" hidden></div>
-    </div>
+    <!-- 左侧主行动工作区 -->
+    <section class="top5-section home-page-card" id="top5Section">
+      <!-- 行动清单主次标题与当前办理导向 -->
+      <div class="home-action-header" id="homeActionHeader">
+        <div class="home-action-title-group">
+          <i class="fas fa-list-check text-blue" aria-hidden="true"></i>
+          <h2 class="home-action-title" id="homeActionTitle">待我处理事项</h2>
+          <span class="home-action-tag" id="homeActionTag">当前要办理</span>
+        </div>
+        <div class="home-action-subtip" id="homeActionSubtip">统计我参与阶段的需求，优先推进需确认与流转的事项</div>
+      </div>
+      <!-- 统一标准筛选工具栏 -->
+      <div class="workspace-toolbar home-toolbar">
+        <div class="toolbar-left-group">
+          <label class="workspace-search">
+            <span aria-hidden="true">⌕</span>
+            <input type="search" id="homeKeyword" placeholder="按编号/标题精准过滤..." aria-label="关键词">
+          </label>
+          <div class="relation-segment" id="homeRelationSegment" aria-label="我的关系">
+            <button type="button" class="active" data-relation="all">全部</button>
+            <button type="button" data-relation="lead">我牵头</button>
+            <button type="button" data-relation="participate">我参与</button>
+          </div>
+          <div class="relation-segment" id="homeObjectTypeSegment" aria-label="具体对象">
+            <button type="button" class="active" data-object-type="all">全部</button>
+            <button type="button" data-object-type="demand">业务需求</button>
+            <button type="button" data-object-type="story">研发需求</button>
+          </div>
+          <div class="relation-segment" id="homePrioritySegment" aria-label="优先级">
+            <button type="button" class="active" data-priority="all">全部</button>
+            <button type="button" data-priority="p1">P1 高优</button>
+            <button type="button" data-priority="p2">P2 中优</button>
+            <button type="button" data-priority="p3">P3/P4</button>
+          </div>
+          <button type="button" id="homeResetBtn" class="workspace-btn">重置筛选</button>
+        </div>
+      </div>
 
-    <aside class="home-side-column" aria-label="PO聚焦与版本窗口">
-      <section class="home-focus-box" aria-label="PO 聚焦与风险专区">
+      <!-- 表格内容 -->
+      <div class="table-scroll-container" id="top5List">
+        <table class="workspace-table home-action-table">
+          <thead>
+            <tr>
+              <th class="c-id" style="width:130px">ID</th>
+              <th class="c-title">事项标题</th>
+              <th class="c-stage">当前阶段</th>
+              <th class="c-zt-status">状态</th>
+              <th class="c-owner">当前负责人</th>
+              <th class="c-actions" style="width:124px">快捷操作</th>
+            </tr>
+          </thead>
+          <tbody id="top5Tbody">
+            <tr><td colspan="6" class="state-placeholder">正在加载行动列表…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="state-placeholder" id="top5Empty" hidden>当前阶段暂无匹配需求，可切换阶段或清空筛选条件</div>
+      <div class="state-placeholder error" id="top5Error" hidden>
+        加载行动列表失败，请检查网络或刷新重试
+        <button type="button" class="retry-btn" id="homeRetryBtn">重试</button>
+      </div>
+      <div class="workspace-pagination" id="homePagination" hidden></div>
+    </section>
+
+    <!-- 右侧辅助侧栏：结构倒置！固定顶部 4 宫格小块 + 底部自适应版本窗口 -->
+    <aside class="home-side-column" aria-label="需求管理聚焦与版本窗口">
+      <!-- 【置顶】需求管理聚焦 (固定 4 宫格，防抖动) -->
+      <section class="home-page-card home-focus-box" aria-label="需求管理聚焦">
         <div class="home-side-hdr">
-          <div class="home-side-title"><i class="fas fa-shield-halved"></i> PO 聚焦与风险专区</div>
-          <a class="side-link" href="#">进入待办 <i class="fas fa-angle-right" aria-hidden="true"></i></a>
+          <div class="home-side-title"><i class="fas fa-shield-halved text-blue"></i> 需求管理聚焦</div>
+          <a class="side-link" href="/todos">进入待办 <i class="fas fa-angle-right" aria-hidden="true"></i></a>
         </div>
         <div class="home-focus-grid">
-          <a href="#" class="focus-card danger" title="查看我负责的问题与风险">
+          <a href="/home?focus=blocked" class="focus-card danger" title="已驳回，或开发完成日到期且主管审批未通过">
             <div class="focus-card-hdr">
-              <span>负责问题/风险</span>
+              <span>阻塞需求</span>
               <i class="fas fa-triangle-exclamation text-red"></i>
             </div>
             <div class="focus-card-num">
-              <strong>0</strong>
-              <small>项待推进</small>
+              <strong>{{ if .PageError }}—{{ else }}{{ .KPI.Blocked }}{{ end }}</strong>
+              <small>条待处理</small>
             </div>
-            <div class="focus-card-hint">看板问题专区</div>
+            <div class="focus-card-hint">点击查看阻塞需求</div>
           </a>
+
+          {{ if .CanViewIssueRisk }}
+          <div class="focus-card" title="我创建或指派给我的未关闭问题与风险">
+            <div class="focus-card-hdr">
+              <span>我的未关闭问题 / 风险</span>
+              <i class="fas fa-shield-halved text-muted"></i>
+            </div>
+            <div class="focus-card-num">
+              <a href="/issues/risk?kind=issue&relation=allRelated&loop=open" aria-label="查看我创建或指派的未关闭问题">
+                问题 <strong>{{ if .IssueRiskCounts }}{{ .IssueRiskCounts.Issues }}{{ else }}—{{ end }}</strong>
+              </a>
+              <a href="/issues/risk?kind=risk&relation=allRelated&loop=open" aria-label="查看我创建或指派的未关闭风险">
+                风险 <strong>{{ if .IssueRiskCounts }}{{ .IssueRiskCounts.Risks }}{{ else }}—{{ end }}</strong>
+              </a>
+            </div>
+            <div class="focus-card-hint">按问题、风险分类查看</div>
+          </div>
+          {{ end }}
 
           <button type="button" class="focus-card vs-trigger" data-stage-target="clarify" title="筛选待澄清梳理阶段需求">
             <div class="focus-card-hdr">
@@ -113,7 +248,9 @@
               <i class="fas fa-clipboard-list text-muted"></i>
             </div>
             <div class="focus-card-num">
-              <strong class="text-primary">{{ $clarify }}</strong>
+              {{ range .ValueStreamStages }}{{ if eq .Status "clarify" }}
+              <strong class="text-primary">{{ if $.PageError }}—{{ else }}{{ .Count }}{{ end }}</strong>
+              {{ end }}{{ end }}
               <small>条需求池</small>
             </div>
             <div class="focus-card-hint">点击联动筛选</div>
@@ -125,7 +262,9 @@
               <i class="fas fa-calendar-check text-muted"></i>
             </div>
             <div class="focus-card-num">
-              <strong class="text-amber">{{ $schedule }}</strong>
+              {{ range .ValueStreamStages }}{{ if eq .Status "schedule" }}
+              <strong class="text-amber">{{ if $.PageError }}—{{ else }}{{ .Count }}{{ end }}</strong>
+              {{ end }}{{ end }}
               <small>条待进窗口</small>
             </div>
             <div class="focus-card-hint">去排期工作台</div>
@@ -137,7 +276,9 @@
               <i class="fas fa-circle-check text-muted"></i>
             </div>
             <div class="focus-card-num">
-              <strong class="text-emerald">{{ $waitacceptance }}</strong>
+              {{ range .ValueStreamStages }}{{ if eq .Status "waitacceptance" }}
+              <strong class="text-emerald">{{ if $.PageError }}—{{ else }}{{ .Count }}{{ end }}</strong>
+              {{ end }}{{ end }}
               <small>条待确认</small>
             </div>
             <div class="focus-card-hint">按期上线保障</div>
@@ -145,29 +286,39 @@
         </div>
       </section>
 
-      <div class="home-version-dock" id="homeVersionCollapsible">
-        <div class="home-version-dock-hdr">
-          <div class="home-version-dock-title"><i class="fas fa-layer-group"></i> 版本窗口</div>
+      <!-- 【底部自适应】版本窗口 (向下延展，数量变化绝不推挤上方聚焦小块) -->
+      <div class="home-page-card home-version-dock" id="homeVersionDock">
+        <div class="home-side-hdr">
+          <div class="home-side-title"><i class="fas fa-code-branch text-blue"></i> 当前活跃版本窗口</div>
           <a class="side-link" href="/schedule">排期总览 <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
         </div>
-        <div class="home-version-panel" id="homeCurrentVersionSummary">
-          {{ range .VersionWindows }}
-          <div class="home-version-mini">
-            <div class="summary-top">
-              <div>
-                <div class="summary-title" title="{{ .Name }}"><i class="fas fa-layer-group"></i>{{ .Name }}{{ if .AgileGroup }} <span class="agile-team-tag">{{ .AgileGroup }}</span>{{ end }}</div>
-                <div class="summary-sub">{{ .Range }}</div>
+        <div class="home-version-panel">
+          {{ if .VersionWindowsError }}
+            <div class="workspace-alert workspace-alert-error" role="alert" style="margin:8px 0;">
+              <i class="fas fa-circle-exclamation"></i>
+              <span>版本窗口暂不可用（{{ .VersionWindowsError }}）</span>
+            </div>
+          {{ else if .VersionWindows }}
+            {{ range .VersionWindows }}
+            <div class="home-version-card">
+              <div class="home-version-card-hdr">
+                <a href="/schedule?windows={{ .ID }}&amp;groups={{ .TeamgroupID }}" class="home-version-name" title="进入排期维护：{{ .Name }}">
+                  <i class="fas fa-calendar-day text-blue"></i>
+                  <span>{{ .Name }}</span>
+                </a>
+                <span class="home-version-badge">{{ .Range }}</span>
+              </div>
+              <div class="summary-sub">{{ .AgileGroup }}</div>
+              <div class="summary-stats">
+                <div class="summary-stat"><span>待发需求</span> <strong>{{ .DemandCount }}</strong></div>
+                <div class="summary-stat"><span>研发中</span> <strong>{{ .DevCount }}</strong></div>
+                <div class="summary-stat"><span>测试中</span> <strong>{{ .TestCount }}</strong></div>
+                <div class="summary-stat"><span>待交付</span> <strong>{{ .DeliverCount }}</strong></div>
               </div>
             </div>
-            <div class="summary-stats">
-              <span class="summary-stat">需求 <strong>{{ .DemandCount }}</strong></span>
-              <span class="summary-stat">开发 <strong>{{ .DevCount }}</strong></span>
-              <span class="summary-stat">测试 <strong>{{ .TestCount }}</strong></span>
-              <span class="summary-stat">待交付 <strong>{{ .DeliverCount }}</strong></span>
-            </div>
-          </div>
+            {{ end }}
           {{ else }}
-          <div class="home-version-empty">暂无活跃版本窗口</div>
+            <div class="home-version-empty">暂无活跃版本窗口</div>
           {{ end }}
         </div>
         <div class="version-dock-bottom">
@@ -178,32 +329,63 @@
       </div>
     </aside>
   </div>
+
+  <div class="data-info">
+    <span>列表获取时间：<span id="lastUpdateTime">—</span></span>
+    <span>数据来源：禅道研发协同库</span>
+  </div>
 </div>
 
-{{ template "po/review" . }}
-{{ template "po/submitreview" . }}
-{{ template "po/acceptance" . }}
-{{ template "po/canal" . }}
+<div class="po-review-overlay" id="poDemandAcceptanceOverlay" aria-hidden="true"></div>
+<aside class="po-review-modal" id="poDemandAcceptanceModal" role="dialog" aria-modal="true" aria-labelledby="poDemandAcceptanceTitle" aria-hidden="true">
+  <div class="po-review-hdr"><h3 id="poDemandAcceptanceTitle">验收需求</h3><button type="button" class="po-review-close" id="poDemandAcceptanceCloseBtn" aria-label="关闭"><i class="fas fa-xmark"></i></button></div>
+  <div class="po-review-form"><p class="po-review-context">请核对验收上下文并在工作台完成验收。</p><p id="poDemandAcceptanceContext">—</p><dl class="po-review-summary"><div><dt>测试用例</dt><dd id="poAcceptanceCases">加载中</dd></div><div><dt>未解决缺陷</dt><dd id="poAcceptanceBugs">加载中</dd></div></dl><form id="poDemandAcceptanceForm"><label>验收意见 <textarea name="comment" rows="4" maxlength="2000" placeholder="请输入验收意见（可选）"></textarea></label><button class="po-review-submit" type="submit">确认验收</button></form></div>
+</aside>
+<div class="po-review-overlay" id="poActionDrawerOverlay" aria-hidden="true"></div>
+<aside class="po-review-modal" id="poActionDrawer" role="dialog" aria-modal="true" aria-labelledby="poActionDrawerTitle" aria-hidden="true">
+  <div class="po-review-hdr"><h3 id="poActionDrawerTitle">办理</h3><button type="button" class="po-review-close" id="poActionDrawerCloseBtn" aria-label="关闭"><i class="fas fa-xmark"></i></button></div>
+  <div class="po-review-form"><p class="po-review-context" id="poActionDrawerContext">—</p><dl class="po-review-summary"><div><dt>当前阶段</dt><dd id="poActionDrawerStage">—</dd></div><div><dt>当前负责人</dt><dd id="poActionDrawerOwner">—</dd></div><div><dt>需求摘要</dt><dd id="poActionDrawerSummary">—</dd></div></dl><form id="poActionForm"><label>办理意见 <textarea name="comment" rows="4" maxlength="2000" placeholder="请输入办理意见（可选）"></textarea></label><button class="po-review-submit" type="submit">确认办理</button></form><a class="po-review-submit" id="poActionOpenPage" href="#" style="display:none">进入工作台办理页</a><p id="poActionDrawerUnavailable" style="display:none">该操作页面暂不可用</p></div>
+</aside>
+{{ template "po/urge_modal" . }}
+{{ template "po/clarify_modal" . }}
+{{ template "po/deliver_modal" . }}
+{{ template "schedule/integrated_modal" . }}
+{{ template "schedule/window_modal" . }}
+{{ template "schedule/integrated_rows" . }}
+{{ template "schedule/window_plans" . }}
 {{ template "po/testtask" . }}
 {{ template "po/linkstory" . }}
-{{ template "po/deliver" . }}
-{{ template "schedule/integrated" . }}
 {{ end }}
 
 {{ define "page_js" }}
-<script src="{{ asset "/static/js/po/common.js" }}"></script>
-<script src="{{ asset "/static/js/po/review.js" }}"></script>
-<script src="{{ asset "/static/js/po/submitreview.js" }}"></script>
-<script src="{{ asset "/static/js/po/acceptancerelations.js" }}"></script>
-<script src="{{ asset "/static/js/po/acceptance.js" }}"></script>
-<script src="{{ asset "/static/js/po/canal.js" }}"></script>
+<script src="{{ asset "/static/js/po/personal-list.js" }}"></script>
+<script src="{{ asset "/static/js/po/primary-action.js" }}"></script>
+<script src="{{ asset "/static/js/po/html-sanitize.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail-richtext.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail-parent.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail-render-execution.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail-render.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail-review.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail-submit-review.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-clarify.js" }}"></script>
+<script src="{{ asset "/static/js/po/po-deliver.js" }}"></script>
+<script src="{{ asset "/static/js/po/homereview.js" }}"></script>
+<script src="{{ asset "/static/js/po/urge.js" }}"></script>
+<script src="{{ asset "/static/js/po/testtask-fields.js" }}"></script>
+<script src="{{ asset "/static/js/po/testtask-render.js" }}"></script>
 <script src="{{ asset "/static/js/po/testtask.js" }}"></script>
+<script src="{{ asset "/static/js/po/testtask-submit.js" }}"></script>
+<script src="{{ asset "/static/js/po/testtask-builds.js" }}"></script>
 <script src="{{ asset "/static/js/po/linkstory.js" }}"></script>
-<script src="{{ asset "/static/js/po/deliver.js" }}"></script>
+<script src="{{ asset "/static/js/po/home-render.js" }}"></script>
+<script src="{{ asset "/static/js/po/home.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/schedulefetch.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/schedulewindowdraft.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/schedulewindow.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/scheduleintegratedshared.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/scheduleintegratedtasks.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/scheduleintegratedrd.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/scheduleintegrated.js" }}"></script>
-<script src="{{ asset "/static/js/po/home.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/schedule-inline.js" }}"></script>
 {{ end }}

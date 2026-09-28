@@ -350,37 +350,37 @@ body.layout-nav-top.sidebar-collapsed .main {
   font-weight: 500;
 }
 
-.sidebar .nav-item.active .nav-icon {
-  color: var(--color-primary);
-}
-
 .sidebar .nav-icon {
-  width: 1.125rem;
-  min-width: 1.125rem;
-  height: 1.125rem;
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--font-size-md);
-  line-height: 1;
-  color: var(--color-text-disabled);
-  transition: color 0.15s ease;
+  width: var(--size-7); min-width: var(--size-7); height: var(--size-7);
+  flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  box-shadow: var(--shadow-sm);
+  font-size: var(--font-size-xs); line-height: 1; color: var(--color-text-secondary);
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 }
-
 /* Font Awesome 图标即 .nav-icon 本身时，保证 glyph 在固定尺寸盒内居中 */
 .sidebar i.nav-icon {
   text-align: center;
 }
 
 .sidebar .nav-icon svg {
-  width: 1.125rem;
-  height: 1.125rem;
+  width: var(--size-4);
+  height: var(--size-4);
 }
 
-.sidebar .nav-item:hover .nav-icon {
-  color: var(--color-text-secondary);
+.sidebar .nav-item:hover .nav-icon,
+.sidebar .nav-item.active .nav-icon {
+  color: var(--color-primary);
+  border-color: var(--color-primary-border);
+  background: var(--color-primary-light);
 }
+
+.sidebar .nav-item.active .nav-icon {
+  box-shadow: 0 0 0 2px var(--color-primary-light);
+}
+
+.sidebar .nav-item:hover .nav-icon { transform: translateY(-1px); }
 
 .sidebar .nav-text,
 .sidebar .nav-item-text {
@@ -407,7 +407,7 @@ body.layout-nav-top.sidebar-collapsed .main {
 .sidebar .nav-item .badge {
   min-width: 1.25rem;
   text-align: center;
-  color: var(--color-surface);
+  color: var(--color-text-on-accent);
   background: var(--color-danger-accent);
 }
 
@@ -635,101 +635,40 @@ body.sidebar-collapsed .sidebar .sidebar-collapse-icon {
   max-width: none;
 }
 
-/* ── Bottom Tabbar ──
-   访问累积的工作页签；固定在主区底部，侧栏收起时 left 跟随 */
-
-body.has-bottom-tabs {
-  --bottom-tabbar-height: 40px;
-}
-
+/* ── Bottom Tabbar (全局底部固定工作页签) ── */
+body.has-bottom-tabs { --bottom-tabbar-height: 40px; }
 .bottom-tabbar {
-  position: fixed;
-  right: 0;
-  bottom: 0;
-  left: var(--sidebar-width);
-  z-index: 110;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  height: var(--bottom-tabbar-height);
-  padding: 5px 10px;
-  overflow-x: auto;
-  border-top: 1px solid #e5e7eb;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 -4px 14px rgba(15, 23, 42, 0.06);
-  transition: left 0.2s ease;
+  position: fixed; right: 0; bottom: 0; left: var(--sidebar-width); z-index: 110;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  height: var(--bottom-tabbar-height, 40px); padding: 4px 12px;
+  border-top: 1px solid var(--color-border); background: var(--color-surface);
+  box-shadow: 0 -2px 10px rgba(15, 23, 42, 0.05); transition: left 0.2s ease; box-sizing: border-box;
 }
-
-body.layout-nav-top .bottom-tabbar,
-body.layout-chrome-hidden .bottom-tabbar {
-  left: 0;
+.bottom-tabbar-tabs, .workbench-tabbar { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0; height: 100%; overflow-x: auto; scrollbar-width: none; }
+.bottom-tabbar-tabs::-webkit-scrollbar, .workbench-tabbar::-webkit-scrollbar { display: none; }
+.bottom-tab-actions, .workbench-tab-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+body.layout-nav-top .bottom-tabbar, body.layout-chrome-hidden .bottom-tabbar { left: 0; }
+body.sidebar-collapsed .bottom-tabbar { left: var(--sidebar-width-collapsed); }
+body.has-bottom-tabs .main { padding-bottom: calc(var(--space-6) + var(--bottom-tabbar-height, 40px)); }
+.bottom-tab, .workbench-tab {
+  display: inline-flex; align-items: center; gap: 6px; max-width: 180px; height: 28px; padding: 0 8px; border: 1px solid var(--color-border); border-radius: 6px;
+  background: var(--color-surface-muted); color: var(--color-text-secondary); font-size: 12px; white-space: nowrap; text-decoration: none; flex-shrink: 0; transition: all 0.15s ease;
 }
-
-body.sidebar-collapsed .bottom-tabbar {
-  left: var(--sidebar-width-collapsed);
+.bottom-tab:hover, .workbench-tab:hover { background: var(--color-surface-hover); color: var(--color-text-primary); border-color: var(--color-border-strong); }
+.bottom-tab.active, .workbench-tab.active { border-color: var(--color-info-border); background: var(--color-info-bg); color: var(--color-info); font-weight: 600; box-shadow: 0 1px 2px rgba(37, 99, 235, 0.08); }
+.bottom-tab-pin, .workbench-tab-pin { font-size: 10px; color: var(--color-info); }
+.bottom-tab > span, .workbench-tab > span { overflow: hidden; text-overflow: ellipsis; }
+.bottom-tab-close, .workbench-tab-close {
+  display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; margin-left: 2px; padding: 0; border: 0; border-radius: 3px; background: transparent; color: inherit; font-size: 12px; line-height: 1; cursor: pointer; opacity: 0; flex-shrink: 0; transition: opacity 0.15s ease, background 0.15s ease;
 }
-
-body.has-bottom-tabs .main {
-  padding-bottom: calc(var(--space-6) + var(--bottom-tabbar-height));
+.bottom-tab:hover .bottom-tab-close, .workbench-tab:hover .workbench-tab-close,
+.bottom-tab:focus-within .bottom-tab-close, .workbench-tab:focus-within .workbench-tab-close { opacity: 0.6; }
+.bottom-tab-close:hover, .workbench-tab-close:hover,
+.bottom-tab-close:focus-visible, .workbench-tab-close:focus-visible { opacity: 1; background: rgba(15, 23, 42, 0.1); }
+.bottom-tab-action, .workbench-tab-action {
+  display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 8px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-surface); color: var(--color-text-secondary); font-size: 11px; line-height: 1; cursor: pointer; flex-shrink: 0; transition: all 0.15s ease;
 }
-
-.bottom-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  max-width: 180px;
-  height: 28px;
-  padding: 0 4px 0 8px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  background: #fff;
-  color: #667085;
-  font-size: 12px;
-  white-space: nowrap;
-  text-decoration: none;
-  flex-shrink: 0;
-}
-
-.bottom-tab:hover {
-  color: #475467;
-  border-color: #d0d5dd;
-}
-
-.bottom-tab.active {
-  border-color: #bfdbfe;
-  background: #eff6ff;
-  color: #1e3a5f;
-  font-weight: 700;
-}
-
-.bottom-tab > span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.bottom-tab-close {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  margin-left: 2px;
-  padding: 0;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-  color: inherit;
-  font-size: 14px;
-  line-height: 1;
-  cursor: pointer;
-  opacity: 0.55;
-  flex-shrink: 0;
-}
-
-.bottom-tab-close:hover {
-  opacity: 1;
-  background: rgba(15, 23, 42, 0.06);
-}
+.bottom-tab-action:hover, .workbench-tab-action:hover { background: var(--color-surface-hover); color: var(--color-text-primary); border-color: var(--color-border-strong); }
 
 /* layout-chrome-hidden：无顶栏、无侧栏；主区占满整页视口（须写在 .main 之后以免被覆盖） */
 

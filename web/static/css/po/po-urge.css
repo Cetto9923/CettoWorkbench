@@ -1,0 +1,400 @@
+/* =============================================================================
+   文件: web/static/css/po/po-urge.css
+   模块: PO 个人工作台 - 催办验收弹窗信息架构与视觉层级样式
+   规范: 符合 Semantic Theme Tokens 规范，严格 <= 300 行
+   ============================================================================= */
+
+/* 1. 模态遮罩与弹窗容器 */
+#poUrgeOverlay.po-urge-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 12160;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+#poUrgeOverlay.po-urge-modal-overlay:not(.show) { display: none !important; }
+#poUrgeOverlay.po-urge-modal-overlay.show {
+  display: flex !important;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#poUrgeModal.po-urge-modal {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  margin: auto !important;
+  width: min(92vw, 540px);
+  max-height: 88vh;
+  box-sizing: border-box;
+  display: flex !important;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 8px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.16);
+  transform: translateY(12px);
+  transition: transform 0.2s ease;
+}
+#poUrgeOverlay.po-urge-modal-overlay.show > #poUrgeModal.po-urge-modal {
+  transform: translateY(0);
+}
+#poUrgeModal > #poUrgeForm {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* 2. 弹窗头部与关闭按钮 */
+#poUrgeModal .batch-modal-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
+  background: var(--color-surface, #ffffff);
+  flex-shrink: 0;
+}
+#poUrgeModal .batch-modal-hdr h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary, #0f172a);
+}
+.po-urge-close {
+  padding: 2px 6px;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-secondary, #94a3b8);
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+.po-urge-close:hover {
+  color: var(--color-text-primary, #0f172a);
+  background: var(--color-surface-hover, #f1f5f9);
+}
+
+/* 3. 弹窗主体区 */
+#poUrgeModal .batch-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 18px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  background: var(--color-page-bg, #f8fafc);
+}
+
+/* 4. 需求摘要卡片（催什么 - 次高视觉层级） */
+.po-urge-summary-card {
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 6px;
+  background: var(--color-surface, #ffffff);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+.po-urge-summary-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.po-urge-demand-code {
+  font-size: 13px;
+  font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--color-info);
+}
+.po-urge-status-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: var(--color-warning-bg, #fffbeb);
+  color: var(--color-warning, #92400e);
+  border: 1px solid var(--color-warning-border, #fed7aa);
+}
+.po-urge-demand-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 5. 分区面板 (vf-section 通用) */
+#poUrgeModal .vf-section {
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--color-surface, #ffffff);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+#poUrgeModal .vf-section-title {
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
+  background: var(--color-surface-muted, #f8fafc);
+  color: var(--color-text-secondary, #64748b);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* 6. 催办对象（催谁 - 最高视觉层级） */
+.po-urge-recipient-body {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.po-urge-recipient-main {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary, #0f172a);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  min-height: 28px;
+}
+.po-urge-recipient-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 5px;
+  background: var(--color-primary-light, #eff6ff);
+  color: var(--color-primary, #1d4ed8);
+  border: 1px solid var(--color-primary-border, #bfdbfe);
+  font-size: 14px;
+  font-weight: 700;
+}
+.po-urge-badge-rec {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--color-warning-bg, #fffbeb);
+  color: var(--color-warning, #92400e);
+  border: 1px solid var(--color-warning-border, #fed7aa);
+}
+.po-urge-recipient-tip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  background: var(--color-warning-bg, #fffbeb);
+  color: var(--color-warning, #92400e);
+  border: 1px solid var(--color-warning-border, #fed7aa);
+  line-height: 1.4;
+}
+.po-urge-hint {
+  margin: 0;
+  font-size: 11px;
+  color: var(--color-text-disabled, #94a3b8);
+  line-height: 1.4;
+}
+.po-urge-no-recipient {
+  color: var(--color-danger, #ef4444);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* 7. 消息预览卡片（第三层级，强调边框只读区） */
+.po-urge-preview-card {
+  margin: 10px 12px;
+  padding: 12px 14px;
+  border-radius: 6px;
+  background: var(--color-surface-muted, #f8fafc);
+  border-left: 3.5px solid var(--color-primary, #2563eb);
+  border-top: 1px solid var(--color-border, #e2e8f0);
+  border-right: 1px solid var(--color-border, #e2e8f0);
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
+}
+.po-urge-preview-text {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--color-text-body, #334155);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.po-urge-readonly-tag {
+  font-size: 10px;
+  color: var(--color-text-disabled, #94a3b8);
+  font-weight: 500;
+}
+
+/* 8. 补充说明表单项（真正用户可编辑业务说明） */
+.po-urge-comment-body {
+  padding: 10px 12px;
+}
+.po-urge-comment-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--color-border-strong, #cbd5e1);
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 12px;
+  color: var(--color-text-primary, #0f172a);
+  background: var(--color-surface, #ffffff);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.po-urge-comment-input:focus {
+  border-color: var(--color-primary, #2563eb);
+  box-shadow: 0 0 0 2px var(--color-primary-light, rgba(37, 99, 235, 0.15));
+}
+
+/* 9. 通知渠道条（次要信息） */
+.po-urge-channel-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 4px;
+}
+.po-urge-channel-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary, #64748b);
+}
+.po-urge-channel-checks {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 0;
+}
+.po-urge-channel-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--color-text-body, #334155);
+  cursor: pointer;
+}
+.po-urge-channel-label.disabled {
+  color: var(--color-text-disabled, #94a3b8);
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+#poUrgeModal .error {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: var(--color-danger, #ef4444);
+}
+
+/* 10. 弹窗底栏按钮组 */
+#poUrgeModal .batch-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--color-border, #e2e8f0);
+  background: var(--color-surface, #ffffff);
+  flex-shrink: 0;
+}
+#poUrgeModal .action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 84px;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border-strong, #cbd5e1);
+  background: var(--color-surface, #ffffff);
+  color: var(--color-text-primary, #1e293b);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+#poUrgeModal .action-btn:hover {
+  background: var(--color-surface-hover, #f8fafc);
+  border-color: var(--color-border-focus, #94a3b8);
+}
+#poUrgeModal .action-btn.primary {
+  background: var(--color-primary, #2563eb);
+  border-color: var(--color-primary, #2563eb);
+  color: #ffffff;
+}
+#poUrgeModal .action-btn.primary:hover {
+  background: var(--color-primary-hover, #1d4ed8);
+  border-color: var(--color-primary-hover, #1d4ed8);
+}
+#poUrgeModal .action-btn.primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* 11. 深色模式精细适配 (Dark Mode) */
+html[data-theme="dark"] #poUrgeModal.po-urge-modal {
+  background: var(--color-surface, #1e293b);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+html[data-theme="dark"] #poUrgeModal .batch-modal-hdr,
+html[data-theme="dark"] #poUrgeModal .batch-modal-footer {
+  background: var(--color-surface, #1e293b);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+html[data-theme="dark"] #poUrgeModal .batch-modal-body {
+  background: var(--color-page-bg, #0f172a);
+}
+html[data-theme="dark"] #poUrgeModal .vf-section,
+html[data-theme="dark"] .po-urge-summary-card {
+  background: var(--color-surface, #1e293b);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+html[data-theme="dark"] #poUrgeModal .vf-section-title {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: var(--color-text-secondary, #94a3b8);
+}
+html[data-theme="dark"] .po-urge-recipient-chip {
+  background: rgba(99, 102, 241, 0.2);
+  color: #c7d2fe;
+  border-color: rgba(99, 102, 241, 0.4);
+}
+html[data-theme="dark"] .po-urge-badge-rec,
+html[data-theme="dark"] .po-urge-recipient-tip {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fde68a;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+html[data-theme="dark"] .po-urge-preview-card {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+  border-left-color: var(--color-primary, #818cf8);
+}
+html[data-theme="dark"] .po-urge-comment-input {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f8fafc;
+}
+html[data-theme="dark"] #poUrgeModal .action-btn:not(.primary) {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+}

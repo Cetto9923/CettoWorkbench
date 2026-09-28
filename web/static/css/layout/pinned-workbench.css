@@ -1,0 +1,442 @@
+/**
+ * 文件: web/static/css/layout/pinned-workbench.css
+ * 模块: 工作台
+ * 职责: 「我的工作台」自选常用专区、顶栏一键置顶及配置弹窗样式。
+ * 规范: 严格遵循 Theme Contract 语义变量，深浅色模式自适应。
+ */
+
+/* 顶栏一键固定按钮（遵守系统按钮规范与深浅色语义变量） */
+.page-pin-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  margin-left: 8px;
+  vertical-align: middle;
+  box-sizing: border-box;
+}
+
+.page-pin-toggle:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-border-strong, var(--color-border));
+  background: var(--color-surface-hover);
+}
+
+.page-pin-toggle:focus-visible {
+  outline: 2px solid var(--color-info-border);
+  outline-offset: 1px;
+}
+
+/* 已固定高亮状态：深浅色自适应语义 Token，深色下为深邃深蓝底+亮蓝字，浅色下为淡蓝底+主蓝字 */
+.page-pin-toggle.is-pinned {
+  color: var(--color-info);
+  background: var(--color-info-bg);
+  border-color: var(--color-info-border);
+  font-weight: 600;
+}
+
+.page-pin-toggle.is-pinned:hover {
+  border-color: var(--color-info);
+  opacity: 0.9;
+}
+
+/* ─── 侧栏自选常用专区 ─── */
+.po-pinned-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+body.po-workbench-shell [data-subnav-panel="personal"] {
+  font-family: var(--font-sans);
+}
+body.po-workbench-shell [data-subnav-panel="personal"] .nav-item {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-text-primary);
+}
+body.po-workbench-shell [data-subnav-panel="personal"] .nav-item.active {
+  color: var(--color-primary);
+  font-weight: 500;
+}
+body.po-workbench-shell [data-subnav-panel="personal"] .nav-item.active::before {
+  display: none;
+}
+
+body.po-workbench-shell .po-subnav-panel:not([data-subnav-panel="personal"]) a.nav-item {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-text-primary);
+}
+body.po-workbench-shell .po-subnav-panel:not([data-subnav-panel="personal"]) a.nav-item.is-workbench-pinned {
+  color: var(--color-text-secondary);
+}
+body.po-workbench-shell .po-subnav-panel:not([data-subnav-panel="personal"]) a.nav-item:hover {
+  color: var(--color-text-primary);
+}
+body.po-workbench-shell .po-subnav-panel:not([data-subnav-panel="personal"]) a.nav-item.active {
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.pinned-manage-btn {
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 1px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.pinned-manage-btn:hover {
+  color: var(--color-info);
+  background: var(--color-surface-hover);
+  border-color: var(--color-border);
+}
+
+.pinned-manage-btn.is-editing {
+  color: var(--color-text-on-accent, #ffffff) !important;
+  background: var(--color-info-fill, #2563eb);
+  border-color: var(--color-info-fill, #2563eb);
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.pinned-manage-btn.is-editing:hover {
+  background: var(--color-info-fill-hover, #1d4ed8);
+  border-color: var(--color-info-fill-hover, #1d4ed8);
+  color: var(--color-text-on-accent, #ffffff) !important;
+}
+
+/* 常用项列表 */
+.po-pinned-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.po-pinned-list .nav-item {
+  position: relative;
+}
+
+/* 编辑模式指引提示条：采用语义 Token 自适应深浅色 */
+.po-pinned-edit-tip {
+  font-size: 11px;
+  color: var(--color-info);
+  background: var(--color-info-bg);
+  border: 1px solid var(--color-info-border);
+  border-radius: 4px;
+  padding: 3px 8px;
+  margin: 4px 0 6px;
+  line-height: 1.3;
+}
+
+/* 移除按钮：常规模式严格隐藏，悬停也不出现；仅在编辑模式 (.is-editing) 显式呈现 */
+.po-pinned-list .nav-item .nav-item-unpin {
+  display: none !important;
+}
+
+/* 编辑模式卡片：弹性流式布局，保证抓手、图标、文本、标签与删除按钮互不遮盖 */
+.po-pinned-list.is-editing .nav-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px;
+  padding: 5px 8px !important;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: grab;
+  user-select: none;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.po-pinned-list.is-editing .nav-item:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-info-border);
+}
+
+.po-pinned-list.is-editing .nav-item:active {
+  cursor: grabbing;
+}
+
+/* 拖拽手柄：显式抓手图标 */
+.po-pinned-list.is-editing .pinned-drag-handle {
+  display: inline-flex !important;
+  position: static !important;
+  transform: none !important;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 16px;
+  color: var(--color-text-disabled);
+  font-size: 12px;
+  cursor: grab;
+  flex-shrink: 0;
+  opacity: 0.7;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.po-pinned-list.is-editing .nav-item:hover .pinned-drag-handle {
+  opacity: 1;
+  color: var(--color-info);
+}
+
+/* 菜单图标与文字：文本自适应缩减，防止挤压右侧操作 */
+.po-pinned-list.is-editing .nav-item .nav-icon {
+  flex-shrink: 0;
+  margin-right: 2px;
+}
+
+.po-pinned-list.is-editing .nav-item .nav-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 角色标签（如 PO）：流式布局，不占据 absolute 定位，保持与右侧删除按钮的安全间距 */
+.po-pinned-list.is-editing .nav-item .nav-badge {
+  display: inline-flex !important;
+  flex-shrink: 0;
+  margin-left: 6px !important;
+  margin-right: 6px !important;
+  position: static !important;
+}
+
+/* 移除按钮：流式排布在最右侧，绝不覆盖 badge */
+.po-pinned-list.is-editing .nav-item .nav-item-unpin {
+  display: flex !important;
+  position: static !important;
+  transform: none !important;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  font-size: 12px;
+  line-height: 1;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-left: 0 !important;
+}
+
+.po-pinned-list.is-editing .nav-item .nav-item-unpin:hover {
+  opacity: 1;
+  background: var(--color-danger-fill);
+  color: var(--color-text-on-accent, #ffffff);
+  transform: scale(1.15) !important;
+}
+
+/* 拖拽中样式：高亮半透明槽位，位置动态实时响应 */
+.po-pinned-list.is-editing .nav-item.is-dragging {
+  opacity: 0.45 !important;
+  background: var(--color-info-bg) !important;
+  border: 1.5px dashed var(--color-info) !important;
+  box-shadow: none !important;
+}
+
+/* 底部添加新常用虚线槽位 */
+.po-add-pinned-btn[hidden] { display: none; }
+.po-add-pinned-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 4px;
+  padding: 5px 8px;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: 1px dashed var(--color-border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.po-add-pinned-btn:hover {
+  color: var(--color-info);
+  border-color: var(--color-info-border);
+  background: var(--color-info-bg);
+}
+
+/* ─── 批量配置模态弹窗 ─── */
+.po-pinned-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(3px);
+}
+
+.po-pinned-modal-panel {
+  width: 560px;
+  max-width: 92vw;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+
+.po-pinned-modal-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.po-pinned-modal-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.po-pinned-modal-close {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.po-pinned-modal-close:hover {
+  color: var(--color-text-primary);
+}
+
+.po-pinned-modal-body {
+  padding: 16px 20px;
+  max-height: 460px;
+  overflow-y: auto;
+}
+
+.po-pinned-modal-tip {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  background: var(--color-info-bg);
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--color-info-border);
+  margin-bottom: 14px;
+}
+
+.po-pinned-modal-group { margin-bottom: 16px; }
+.po-pinned-modal-group:last-child { margin-bottom: 0; }
+.po-pinned-modal-group-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.po-pinned-modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.po-pinned-modal-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.po-pinned-modal-card:hover {
+  border-color: var(--color-info-border);
+  background: var(--color-surface-hover);
+}
+
+.po-pinned-modal-card.is-selected {
+  color: var(--color-info);
+  background: var(--color-info-bg);
+  border-color: var(--color-info-border);
+  font-weight: 500;
+}
+
+.po-pinned-modal-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.po-pinned-modal-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.po-pinned-modal-card-desc {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  margin-top: 3px;
+  line-height: 1.35;
+}
+
+.po-pinned-modal-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--color-surface);
+}
+
+.po-modal-count-tip {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.po-modal-actions {
+  display: flex;
+  gap: 8px;
+}

@@ -1,0 +1,330 @@
+/* =============================================================================
+   文件: web/static/css/po/done.css
+   模块: PO 个人工作台 - 我的已办专属样式
+   职责: 4 张 KPI 卡片、11 对象 Chip 过滤栏、工具栏、9 列表格与查看记录抽屉
+   ============================================================================= */
+
+/* ---------- 1. 顶部 4 张 KPI 指标微标 (复用 personal-workspace.css .header-quick-chip) ---------- */
+.po-done .header-quick-chip[data-range="objects"] {
+  cursor: default;
+}
+
+/* ---------- 2. 对象 Chip 过滤栏 ----------
+   .wb-done-domains / .wb-done-tab 已提取到 personal-workspace.css 共享层，
+   我的已办与我的待办共用同一套芯片几何与状态，此处不再重复定义。 */
+
+/* ---------- 3. 工具栏与分段按钮 ---------- */
+.wb-done-toolbar {
+  margin-bottom: 0;
+}
+.wb-done-seg-set {
+  display: inline-flex;
+  height: 28px;
+  padding: 2px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-surface-muted);
+  box-sizing: border-box;
+}
+.wb-done-seg {
+  border: 0;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .15s ease;
+}
+.wb-done-seg.active {
+  background: var(--color-surface);
+  color: var(--color-info);
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+.wb-done-select {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--color-text-body);
+  background: var(--color-surface);
+  box-sizing: border-box;
+}
+
+/* ---------- 4. 九列表格 ---------- */
+.wb-done-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.wb-done-table th {
+  background: var(--color-surface-muted, #f8fafc);
+  color: var(--po-t2, #4b5563);
+  font-size: 11px;
+  font-weight: 600;
+  height: 32px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--po-border, var(--color-border, #e5e7eb));
+  text-align: left;
+}
+.wb-done-table td {
+  height: 40px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--color-surface-muted, #f1f5f9);
+  font-size: 12px;
+  vertical-align: middle;
+}
+.wb-done-table tr:hover td {
+  background: var(--color-surface-hover, #fafbfc);
+}
+
+.done-time {
+  font-size: 10px;
+  color: var(--color-text-secondary, var(--po-t2, #4b5563));
+  line-height: 1.25;
+  font-family: ui-monospace, monospace;
+  white-space: nowrap;
+}
+.done-time-date,
+.done-time-clock { display: block; }
+.done-time-clock {
+  margin-top: 2px;
+  color: var(--color-text-secondary);
+}
+.done-obj {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+/* 已办对象 chip：复用 wb-priority.css 的 .wb-type 色板，按 kind 别名映射。
+   结构与通知中心 .notice-tag/.notice-tag-{kind} 一致：类型词 + ID 同色 chip。 */
+.done-obj-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  line-height: 1;
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
+  flex-shrink: 0;
+  gap: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.done-obj-chip-label { font-weight: 600; }
+.done-obj-id-link {
+  color: inherit;
+  text-decoration: none;
+}
+.done-obj-id-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+/* chip 内 ID 链接 hover 时整 chip 下划线（类型词 + #ID 一起），让 chip 像一个整体按钮 */
+.done-obj-chip:has(.done-obj-id-link:hover) {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.done-obj-id-plain { color: inherit; }
+/* 正常渲染使用 PersonalList.idChipHtml 的 .wb-type-* 色板。
+   helper 缺失时 done.js 仍生成 .done-obj-chip 及旧类型别名，基础样式保留。 */
+.wb-done-title-link {
+  border: 0;
+  background: transparent;
+  color: var(--po-blue, var(--color-info-fill, #2563eb));
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.wb-done-title-link:hover {
+  text-decoration: underline;
+}
+.wb-done-title-plain {
+  color: var(--po-t1, var(--color-text-deep, #1f2937));
+}
+
+.done-action-name {
+  font-weight: 600;
+  color: var(--po-t1, var(--color-text-deep, #1f2937));
+}
+
+.done-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.done-tag.success { background: var(--color-badge-success-bg); color: var(--color-badge-success-fg); border: 1px solid var(--color-badge-success-border); }
+.done-tag.blue { background: var(--color-badge-info-bg); color: var(--color-badge-info-fg); border: 1px solid var(--color-badge-info-border); }
+.done-tag.warning { background: var(--color-badge-warning-bg); color: var(--color-badge-warning-fg); border: 1px solid var(--color-badge-warning-border); }
+.done-tag.danger { background: var(--color-badge-danger-bg); color: var(--color-badge-danger-fg); border: 1px solid var(--color-badge-danger-border); }
+.done-tag.gray { background: var(--color-badge-neutral-bg); color: var(--color-badge-neutral-fg); border: 1px solid var(--color-badge-neutral-border); }
+
+.done-change {
+  font-size: 11px;
+  color: var(--po-t2, #4b5563);
+}
+.done-arrow {
+  margin: 0 4px;
+  color: var(--color-text-secondary);
+}
+.done-change-na {
+  color: var(--color-text-secondary);
+}
+
+/* 需求池 / 项目 / 执行 三行：统一字号 + 颜色阶梯（pool 强调 → project 中性 → exec 弱），
+   字号全部一致 12px，避免视觉上割裂成三档。空值 "--" 与正常文字同尺寸，仅颜色更淡。 */
+.done-ctx-pool,
+.done-ctx-project,
+.done-ctx-exec {
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: inherit;
+}
+.done-ctx-pool { color: var(--po-t1, var(--color-text-deep, #1f2937)); font-weight: 600; }
+.done-ctx-project { color: var(--po-t2, var(--color-text-body, #4b5563)); }
+.done-ctx-exec { color: var(--po-t3, var(--color-text-secondary, #6b7280)); }
+.done-ctx-pool.done-ctx-na,
+.done-ctx-project.done-ctx-na,
+.done-ctx-exec.done-ctx-na { color: var(--color-text-secondary); }
+
+.wb-done-detail-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--color-info-border);
+  border-radius: 4px;
+  background: var(--color-surface);
+  color: var(--color-info);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  box-sizing: border-box;
+  transition: all .15s ease;
+}
+.wb-done-detail-btn:hover {
+  background: var(--color-info-bg);
+  border-color: var(--color-info);
+  color: var(--color-info);
+}
+
+/* ---------- 5. 抽屉样式 ---------- */
+.wb-done-drawer-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .4);
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+}
+.wb-done-drawer-mask[hidden] {
+  display: none;
+}
+.wb-done-drawer {
+  width: min(600px, 90vw);
+  height: 100vh;
+  background: var(--color-surface, #fff);
+  display: flex;
+  flex-direction: column;
+  box-shadow: -4px 0 16px rgba(0, 0, 0, .12);
+}
+.wb-done-drawer-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--po-border, var(--color-border, #e5e7eb));
+}
+.wb-done-drawer-hdr h2 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--po-t1, var(--color-text-deep, #1f2937));
+}
+.wb-done-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+}
+.done-section {
+  margin-bottom: 20px;
+}
+.done-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--po-t1, var(--color-text-deep, #1f2937));
+  margin-bottom: 8px;
+}
+.done-summary-box {
+  background: var(--color-surface-muted, #f8fafc);
+  border: 1px solid var(--po-border, var(--color-border, #e5e7eb));
+  border-radius: 6px;
+  padding: 12px;
+}
+.done-kv {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 8px 12px;
+  font-size: 12px;
+}
+.done-kv-k {
+  color: var(--po-t3, var(--color-text-secondary, #64748b));
+}
+.done-kv-v {
+  color: var(--po-t1, var(--color-text-deep, #1f2937));
+}
+.done-kv-action {
+  font-weight: 600;
+}
+.done-tl {
+  padding: 8px 10px;
+  border-left: 2px solid var(--color-border, #e2e8f0);
+  margin-left: 6px;
+  position: relative;
+}
+.done-tl.current {
+  border-left-color: var(--color-info-fill);
+  background: var(--color-info-bg);
+  border-radius: 0 4px 4px 0;
+}
+.done-tl-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--po-t1, var(--color-text-deep, #1f2937));
+}
+.done-tl-meta {
+  font-size: 11px;
+  color: var(--po-t3, var(--color-text-secondary, #64748b));
+  margin-top: 2px;
+}
+.wb-detail-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--po-border, var(--color-border, #e5e7eb));
+  background: var(--color-surface-muted, #f8fafc);
+}

@@ -7,6 +7,16 @@
   var pendingDeleteUrl = "";
   var pendingDeleteMode = "";
 
+  // escapeHtml 通用 HTML 转义（文本与属性值均可用）；PO 工作台各页面脚本通过 window.escapeHtml 复用。
+  function escapeHtml(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
   function getCsrfToken() {
     var el = document.querySelector('meta[name="csrf-token"]');
     return el ? (el.getAttribute("content") || "").trim() : "";
@@ -164,7 +174,16 @@
     var seen = {};
     var out = [];
     (items || []).forEach(function (item) {
-      var value = trimText(item && item.value);
+      if (!item) return;
+      if (item.isGroupHeader) {
+        out.push({
+          label: trimText(item.label),
+          value: "",
+          isGroupHeader: true
+        });
+        return;
+      }
+      var value = trimText(item.value);
       if (!value || seen[value]) {
         return;
       }
@@ -172,6 +191,12 @@
       out.push({
         value: value,
         label: trimText(item.label) || value,
+        selectedLabel: trimText(item.selectedLabel),
+        dept: trimText(item.dept),
+        title: trimText(item.title),
+        avatarText: trimText(item.avatarText),
+        badge: trimText(item.badge),
+        pinyin: trimText(item.pinyin)
       });
     });
     return out;
@@ -183,7 +208,7 @@
       return null;
     }
     for (var i = 0; i < items.length; i++) {
-      if (items[i].value === value) {
+      if (!items[i].isGroupHeader && items[i].value === value) {
         return items[i];
       }
     }
@@ -221,7 +246,7 @@
     return label + "(" + value + ")";
   }
 
-  function filterAutocompleteItems(items, query, maxShow) {
+  function filterAutocompleteItems(items, query, maxShow, mode) {
     query = trimText(query).toLowerCase();
     if (!query) {
       var total = items.length;
@@ -236,7 +261,22 @@
     var matches = [];
     for (var i = 0; i < items.length; i++) {
       var item = items[i];
-      var haystack = (item.label + " " + item.value).toLowerCase();
+      if (item.isGroupHeader) {
+        continue;
+      }
+      var fields = [item.label, item.value];
+      if (item.badge) fields.push(item.badge);
+      if (item.pinyin) fields.push(item.pinyin);
+      if (mode === "user") {
+        if (item.dept) fields.push(item.dept);
+        if (item.title) fields.push(item.title);
+        if (item.selectedLabel) fields.push(item.selectedLabel);
+        if (window.PinyinLite) {
+          if (typeof window.PinyinLite.fullPinyin === "function") fields.push(window.PinyinLite.fullPinyin(item.label));
+          if (typeof window.PinyinLite.initials === "function") fields.push(window.PinyinLite.initials(item.label));
+        }
+      }
+      var haystack = fields.join(" ").toLowerCase();
       if (haystack.indexOf(query) === -1) {
         continue;
       }
@@ -369,11 +409,11 @@
     var selectedValue = trimText(state.hidden.value);
     if (selectedValue) {
       var selectedItem = findAutocompleteItem(state.items, selectedValue);
-      if (selectedItem && trimText(query) === formatAutocompleteLabel(selectedItem, state.labelOnly)) {
+      if (selectedItem && trimText(query) === (selectedItem.selectedLabel || formatAutocompleteLabel(selectedItem, state.labelOnly))) {
         query = "";
       }
     }
-    var result = filterAutocompleteItems(state.items, query, state.maxShow);
+    var result = filterAutocompleteItems(state.items, query, state.maxShow, state.mode);
     var matches = result.items;
     var dropdown = state.dropdown;
 
@@ -383,7 +423,7 @@
     if (!matches.length) {
       var empty = document.createElement("div");
       empty.className = "ui-autocomplete-empty";
-      empty.textContent = result.hasQuery ? "无匹配结果" : "暂无可用数据";
+      empty.textContent = result.hasQuery ? "无匹配结果" : (state.mode === "user" ? "暂无可选用户" : "暂无可用数据");
       dropdown.appendChild(empty);
       dropdown.classList.add("is-open");
       state.open = true;
@@ -392,23 +432,77 @@
       return;
     }
 
-    matches.forEach(function (item, index) {
+    var selectableIndex = 0;
+    var selectableItems = [];
+    matches.forEach(function (item) {
+      if (item.isGroupHeader) {
+        var groupHeader = document.createElement("div");
+        groupHeader.className = "ui-autocomplete-group-header";
+        groupHeader.textContent = item.label;
+        dropdown.appendChild(groupHeader);
+        return;
+      }
+
+      var currentIndex = selectableIndex++;
+      selectableItems.push(item);
       var displayLabel = formatAutocompleteLabel(item, state.labelOnly);
+      var selectLabel = item.selectedLabel || displayLabel;
       var option = document.createElement("div");
       option.className = "ui-autocomplete-option";
       if (isAutocompleteValueSelected(state, item.value)) {
         option.classList.add("is-selected");
       }
       option.setAttribute("role", "option");
-      option.setAttribute("data-index", String(index));
+      option.setAttribute("data-index", String(currentIndex));
       option.setAttribute("data-value", item.value);
       option.setAttribute("data-label", displayLabel);
-      option.textContent = displayLabel;
+
+      if (state.mode === "user") {
+        option.classList.add("ui-autocomplete-option--user");
+        var avatar = document.createElement("span");
+        var hash = 0, seed = item.value || item.label;
+        for (var h = 0; h < seed.length; h++) hash = ((hash * 31) + seed.charCodeAt(h)) >>> 0;
+        avatar.className = "ui-autocomplete-avatar";
+        avatar.setAttribute("data-tone", String(hash % 4));
+        avatar.setAttribute("aria-hidden", "true");
+        avatar.textContent = item.avatarText || Array.from(item.label || "?")[0];
+        option.appendChild(avatar);
+
+        var content = document.createElement("span");
+        content.className = "ui-autocomplete-content";
+        var name = document.createElement("span");
+        name.className = "ui-autocomplete-main";
+        name.textContent = displayLabel;
+        if (item.dept) {
+          var dept = document.createElement("span");
+          dept.className = "ui-autocomplete-dept";
+          dept.textContent = " " + item.dept;
+          name.appendChild(dept);
+        }
+        content.appendChild(name);
+        var meta = [item.title, item.badge].filter(Boolean).join(" ");
+        if (meta) {
+          var secondary = document.createElement("span");
+          secondary.className = "ui-autocomplete-meta";
+          secondary.textContent = meta;
+          content.appendChild(secondary);
+        }
+        option.appendChild(content);
+      } else {
+        option.textContent = displayLabel;
+        if (item.badge) {
+          var badge = document.createElement("span");
+          badge.className = "ui-autocomplete-badge";
+          badge.textContent = item.badge;
+          option.appendChild(badge);
+        }
+      }
+
       option.addEventListener("mousedown", function (ev) {
         ev.preventDefault();
       });
       option.addEventListener("click", function () {
-        selectAutocompleteItem(state, item.value, displayLabel);
+        selectAutocompleteItem(state, item.value, selectLabel);
       });
       dropdown.appendChild(option);
     });
@@ -416,18 +510,19 @@
     if (result.showHint) {
       var hint = document.createElement("div");
       hint.className = "ui-autocomplete-hint";
-      hint.textContent = "还有 " + result.remainingCount + " 条，输入关键词缩小范围";
+      hint.textContent = "还有 " + result.remainingCount + (state.mode === "user"
+        ? " 个选项没有显示，可尝试搜索来查找" : " 条，输入关键词缩小范围");
       dropdown.appendChild(hint);
     }
 
     dropdown.classList.add("is-open");
     state.open = true;
-    state.filteredItems = matches;
+    state.filteredItems = selectableItems;
     positionAutocompleteDropdown(state);
 
     if (selectedValue) {
-      for (var i = 0; i < matches.length; i++) {
-        if (matches[i].value === selectedValue) {
+      for (var i = 0; i < selectableItems.length; i++) {
+        if (selectableItems[i].value === selectedValue) {
           setActiveAutocompleteOption(state, i);
           break;
         }
@@ -581,7 +676,8 @@
         if (state.activeIndex >= 0 && state.filteredItems[state.activeIndex]) {
           ev.preventDefault();
           var picked = state.filteredItems[state.activeIndex];
-          selectAutocompleteItem(state, picked.value, formatAutocompleteLabel(picked, state.labelOnly));
+          var selectLabel = picked.selectedLabel || formatAutocompleteLabel(picked, state.labelOnly);
+          selectAutocompleteItem(state, picked.value, selectLabel);
         }
         return;
       }
@@ -658,6 +754,7 @@
       host: structure.host,
       clearBtn: structure.clearBtn,
       dropdown: dropdown,
+      mode: "",
       items: [],
       filteredItems: [],
       selectedValues: [],
@@ -704,9 +801,13 @@
       bindAutocompleteReposition(state);
     }
 
+    state.mode = options.mode || "";
+    if (state.dropdown) {
+      state.dropdown.classList.toggle("ui-autocomplete-dropdown--user", state.mode === "user");
+    }
     state.items = normalizeAutocompleteItems(items);
     state.selectedValues = normalizeAutocompleteSelectedValues(options.selectedValues);
-    state.maxShow = options.maxShow > 0 ? options.maxShow : 100;
+    state.maxShow = options.maxShow > 0 ? options.maxShow : (state.mode === "user" ? 20 : 100);
     state.labelOnly = !!options.labelOnly;
     if (options.placeholder) {
       state.input.placeholder = options.placeholder;
@@ -717,7 +818,7 @@
         state.items = ensureAutocompleteItem(state.items, options.value, options.label);
         var selectedItem = findAutocompleteItem(state.items, options.value);
         var displayLabel = selectedItem
-          ? formatAutocompleteLabel(selectedItem, state.labelOnly)
+          ? (selectedItem.selectedLabel || formatAutocompleteLabel(selectedItem, state.labelOnly))
           : formatAutocompleteLabel({ value: options.value, label: options.label }, state.labelOnly);
         selectAutocompleteItem(state, options.value, displayLabel);
       } else {
@@ -840,6 +941,7 @@
   }
 
   window.showToast = showToast;
+  window.escapeHtml = escapeHtml;
   window.confirmDelete = confirmDelete;
   window.closeModal = closeModal;
   window.openShowModals = openShowModals;
@@ -851,4 +953,11 @@
   window.clearAutocomplete = clearAutocomplete;
   window.destroyAutocomplete = destroyAutocomplete;
   window.setAutocompleteSelectedValues = setAutocompleteSelectedValues;
+  window.getCsrfToken = getCsrfToken;
+  // 人员选择器：PO 澄清 / 提交评审 / 提测 / 敏捷小组成员等页面按此名调用；
+  // 支持 mode:"user" 模式（首字彩色头像、部门与角色标签、拼音与姓名工号检索、分组标题）。
+  window.initUserPicker = function (inputId, hiddenId, items, opts) {
+    return initAutocomplete(inputId, hiddenId, items, Object.assign({}, opts, { mode: "user" }));
+  };
+  window.destroyUserPicker = destroyAutocomplete;
 })();

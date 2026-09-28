@@ -1,174 +1,114 @@
+/* =============================================================================
+   文件: web/static/js/po/home.js
+   模块: PO 个人工作台 - 首页交互脚本
+   职责: 绑定需求价值流下钻、全站统一工具栏筛选、7列行动列表展示与分页保护
+   依赖: personal-list.js (priorityBadge(), objectTypeBadge(), idChipHtml()), home-render.js, jQuery
+   ============================================================================= */
+
 (function ($) {
   "use strict";
 
-  // 与 components/pager 选项一致
-  var PAGE_SIZES = [10, 20, 50, 100];
+  var PAGE_SIZE_OPTIONS = window.PersonalList.PAGE_SIZE_OPTIONS;
+
   var state = {
-    items: [],
-    total: 0,
     status: "all",
-    focal: "myPending",
+    focus: "my_action",
     page: 1,
-    pageSize: 10
+    pageSize: 20,
+    keyword: "",
+    relation: "all",
+    objectType: "all",
+    priority: "all"
   };
 
-  var FOCAL_LABELS = {
-    today: "今日必推",
-    myPending: "待我处理",
-    blocked: "阻塞",
-    overdue: "超期"
-  };
+  var rawItems = [];
+  var VALID_STATUSES = ["all", "accept", "clarify", "schedule", "developing", "testing", "waitacceptance", "acceptanced", "publish", "released"];
+  var currentSeq = 0;
+  var hasCorrectedPage = false;
 
   function demandsUrl(status, page, pageSize) {
-    return (
-      "/demands?status=" +
-      encodeURIComponent(status || "all") +
-      "&page=" +
-      encodeURIComponent(String(page || 1)) +
-      "&pageSize=" +
-      encodeURIComponent(String(pageSize || 10))
-    );
+    var p = new URLSearchParams();
+    p.set("status", status || "all");
+    p.set("focus", state.focus);
+    p.set("page", String(page || 1));
+    p.set("pageSize", String(pageSize || 20));
+    // 透传工具栏筛选到服务端，由 SQL 过滤 + Count + 分页；前端不再二次过滤。
+    if (state.keyword) { p.set("keyword", state.keyword); }
+    if (state.objectType && state.objectType !== "all") { p.set("objectType", state.objectType); }
+    if (state.priority && state.priority !== "all") { p.set("priority", state.priority); }
+    if (state.relation && state.relation !== "all") { p.set("relation", state.relation); }
+    return "/demands?" + p.toString();
   }
 
-  function escapeHtml(text) {
-    return $("<div>").text(text == null ? "" : String(text)).html();
+  function syncUrl() {
+    if (!window.history || !window.history.replaceState) { return; }
+    var params = new URLSearchParams();
+    params.set("view", "demand");
+    params.set("stage", state.status || "all");
+    if (state.focus && state.focus !== "all") { params.set("focus", state.focus); }
+    if (state.status && state.status !== "all") { params.set("status", state.status); }
+    if (state.page > 1) { params.set("page", String(state.page)); }
+    if (state.pageSize && state.pageSize !== 15) { params.set("pageSize", String(state.pageSize)); }
+    if (state.keyword) { params.set("keyword", state.keyword); }
+    if (state.objectType && state.objectType !== "all") { params.set("objectType", state.objectType); }
+    if (state.priority && state.priority !== "all") { params.set("priority", state.priority); }
+    if (state.relation && state.relation !== "all") { params.set("relation", state.relation); }
+    document.querySelectorAll(".home-version-name").forEach(function (link) {
+      var target = new URL(link.href, location.origin);
+      target.searchParams.set("stage", state.status || "all");
+      target.searchParams.set("stages", state.status === "all" ? "" : state.status);
+      link.href = target.pathname + target.search;
+    });
+    var qs = params.toString();
+    var newUrl = window.location.pathname + (qs ? "?" + qs : "");
+    window.history.replaceState(null, "", newUrl);
   }
 
-  function dash(value) {
-    var text = (value || "").trim();
-    return text || "—";
-  }
-
-  function extractNumericId(raw) {
-    var s = String(raw == null ? "" : raw).trim().replace(/^#/, "");
-    if (!s) return "";
-    var m = s.match(/^(?:US|REQ|SUB)-?(\d+)$/i);
-    if (m) return m[1];
-    m = s.match(/^(?:RD|U)-?(\d+)$/i);
-    if (m) return m[1];
-    m = s.match(/^(\d+)$/);
-    return m ? m[1] : "";
-  }
-
-  function isStoryItem(item) {
-    var kind = String((item && item.kind) || "").toLowerCase();
-    if (kind === "story" || kind === "independent_story") {
-      return true;
+  function initFromUrl() {
+    var sp = new URLSearchParams(window.location.search || "");
+    var focus = sp.get("focus");
+    if (["all", "my_action", "today", "blocked", "overdue", "suspended"].indexOf(focus) >= 0) { state.focus = focus; }
+    var st = (sp.get("stage") || sp.get("status") || "").trim();
+    if (VALID_STATUSES.indexOf(st) >= 0) {
+      state.status = st;
     }
-    if (kind === "demand" || kind === "business" || kind === "sub_demand") {
-      return false;
+    var p = parseInt(sp.get("page"), 10);
+    if (!isNaN(p) && p >= 1) {
+      state.page = p;
     }
-    return (
-      Number(item && item.storyId) > 0 ||
-      /^U\d+$/i.test(String((item && item.id) || "").replace(/^#/, ""))
-    );
-  }
-
-  function objectTypeKind(item) {
-    return isStoryItem(item) ? "story" : "business";
-  }
-
-  // 对齐原型 PersonalList.idChipHtml：左段类型缩写 + 右段 #ID
-  function idChipHtml(kind, idHtml) {
-    var isStory = kind === "story";
-    var label = isStory ? "研需" : "业需";
-    var cls = isStory ? "wb-type-story" : "wb-type-business";
-    var safeId = typeof idHtml === "string" ? idHtml.trim() : "";
-    if (!safeId) {
-      return '<span class="wb-type ' + cls + '"><span class="wb-type-tag">' + label + "</span></span>";
+    var ps = parseInt(sp.get("pageSize"), 10);
+    if (!isNaN(ps) && PAGE_SIZE_OPTIONS.indexOf(ps) >= 0) {
+      state.pageSize = ps;
+    } else {
+      state.pageSize = window.PersonalList.loadPageSize("po.home.pageSize", state.pageSize, PAGE_SIZE_OPTIONS);
     }
-    if (safeId.charAt(0) !== "#" && safeId.indexOf(">#") < 0 && !/^#/.test(safeId)) {
-      if (/^<([a-zA-Z0-9]+)\b([^>]*)>([\s\S]*)<\/\1>$/i.test(safeId)) {
-        safeId = safeId.replace(
-          /^<([a-zA-Z0-9]+)\b([^>]*)>([\s\S]*)<\/\1>$/i,
-          "<$1$2>#$3</$1>"
-        );
-      } else {
-        safeId = "#" + safeId;
-      }
+    var kw = (sp.get("keyword") || "").trim();
+    if (kw) { state.keyword = kw; $("#homeKeyword").val(kw); }
+    var ot = (sp.get("objectType") || "").trim();
+    if (ot && ot !== "all") {
+      state.objectType = ot;
+      $("#homeObjectTypeSegment button").removeClass("active");
+      $('#homeObjectTypeSegment button[data-object-type="' + ot + '"]').addClass("active");
     }
-    return (
-      '<span class="wb-type ' +
-      cls +
-      '"><span class="wb-type-tag">' +
-      label +
-      '</span><span class="wb-type-id">' +
-      safeId +
-      "</span></span>"
-    );
-  }
-
-  // 禅道业需 status → 中文（与原型 po-core.js ZENTAO_STATUS_LABELS 对齐）
-  var ZENTAO_STATUS_LABELS = {
-    draft: "暂存",
-    wait: "待评审",
-    active: "已评审",
-    clarified: "已澄清",
-    changed: "已变更",
-    developing: "开发中",
-    testing: "测试中",
-    waitacceptance: "待验收",
-    acceptanced: "已验收",
-    waitdeliver: "待交付",
-    delivered: "已交付",
-    released: "已发布",
-    closed: "已关闭",
-    suspended: "已挂起",
-    refuse: "已驳回"
-  };
-
-  // 禅道研需 zt_story.status → 中文（与业需同名码语义不同，禁止共用）
-  var STORY_STATUS_LABELS = {
-    draft: "草稿",
-    reviewing: "评审中",
-    active: "激活",
-    changing: "变更中",
-    closed: "已关闭"
-  };
-
-  function getZentaoStatusLabel(key) {
-    var k = String(key || "").trim().toLowerCase();
-    if (!k) {
-      return "";
+    var pr = (sp.get("priority") || "").trim();
+    if (pr && pr !== "all") {
+      state.priority = pr;
+      $("#homePrioritySegment button").removeClass("active");
+      $('#homePrioritySegment button[data-priority="' + pr + '"]').addClass("active");
     }
-    return ZENTAO_STATUS_LABELS[k] || key;
-  }
-
-  function getStoryZentaoStatusLabel(key) {
-    var k = String(key || "").trim().toLowerCase();
-    if (!k) {
-      return "";
+    var rel = (sp.get("relation") || "").trim();
+    if (rel && rel !== "all") {
+      state.relation = rel;
+      $("#homeRelationSegment button").removeClass("active");
+      $('#homeRelationSegment button[data-relation="' + rel + '"]').addClass("active");
     }
-    return STORY_STATUS_LABELS[k] || key;
-  }
-
-  // 对齐原型 getHomeZentaoStatusLabel：业需/研需分表映射，禁止用动作态冒充禅道状态
-  function getHomeZentaoStatusLabel(item) {
-    var raw = String((item && item.zentaoStatus) || "").trim();
-    if (raw) {
-      var isStory =
-        (item && String(item.kind || "") === "story") ||
-        Number(item && item.storyId) > 0 ||
-        /^U\d+$/i.test(String((item && item.id) || ""));
-      if (isStory) {
-        return getStoryZentaoStatusLabel(raw);
-      }
-      return getZentaoStatusLabel(raw);
-    }
-    var label = String((item && (item.zentaoStatusLabel || item.statusLabel)) || "").trim();
-    if (label && !/^待(受理|澄清|排期)$/.test(label)) {
-      return label;
-    }
-    return "—";
   }
 
   function loadDemands(status, page, pageSize) {
     var fetchFn = window.appFetch || fetch;
     return fetchFn(demandsUrl(status, page, pageSize), { method: "GET" })
       .then(function (res) {
-        if (!res.ok) {
-          throw new Error("load demands failed");
-        }
+        if (!res.ok) { throw new Error("load demands failed (" + res.status + ")"); }
         return res.json();
       })
       .then(function (payload) {
@@ -177,758 +117,339 @@
         }
         return {
           items: Array.isArray(payload.items) ? payload.items : [],
-          total: Number(payload.total) || 0,
-          page: Number(payload.page) || page || 1,
-          pageSize: Number(payload.pageSize) || pageSize || 10
+          total: typeof payload.total === "number" ? payload.total : 0,
+          page: typeof payload.page === "number" ? payload.page : 1,
+          pageSize: typeof payload.pageSize === "number" ? payload.pageSize : 15,
+          stageSummary: Array.isArray(payload.stageSummary) ? payload.stageSummary : []
         };
-      })
-      .catch(function () {
-        if (typeof window.showToast === "function") {
-          window.showToast("加载需求列表失败，请稍后重试", "danger");
-        }
-        return { items: [], total: 0, page: 1, pageSize: pageSize || 10 };
       });
   }
 
-  function updateTitle(count) {
-    var $title = $("#top5Title");
-    if (!$title.length) {
-      return;
+  function renderValueStreamSummary(rows) {
+    if (window.PoHomeRender) {
+      window.PoHomeRender.renderValueStreamSummary(rows, state.focus);
     }
-    var focal = FOCAL_LABELS[state.focal] || "待我处理";
-    var stage = $(".home-vs-mini-card.active .vs-mini-name").first().text() || "全部";
-    var stagePart = stage && stage !== "全部" ? " · " + escapeHtml(stage) : "";
-    $title.html(
-      "<i class=\"fas fa-list-check\"></i> 统一行动列表 · " +
-        escapeHtml(focal) +
-        stagePart +
-        "（" +
-        count +
-        "）"
-    );
   }
 
-  function renderEmpty() {
-    $("#top5List").html(
-      "<div class=\"empty-state\">" +
-        "<div class=\"empty-state-title\">当前焦点暂无事项</div>" +
-        "<div class=\"empty-state-hint\">可切换顶部焦点或价值流阶段查看其他队列</div>" +
-        "</div>"
-    );
+  function refreshValueStreamSummary() {
+    // 阶段汇总随正式列表请求返回。这里不再额外发起 pageSize=1 的探测请求，
+    // 避免同一筛选条件重复执行 count/page 查询。
+    return Promise.resolve();
   }
 
-  function zentaoLinkAttrs(url, extraClass) {
-    var cls = ("js-zentao-link " + (extraClass || "")).trim();
-    return (
-      "href=\"" +
-      escapeHtml(url) +
-      "\" class=\"" +
-      cls +
-      "\" target=\"_blank\" rel=\"noopener noreferrer\""
-    );
+  function updateTitle(count, displayedCount, pageItemCount) {
+    if (window.PoHomeRender) {
+      window.PoHomeRender.updateTitle($, state, count, displayedCount, pageItemCount);
+    }
   }
 
-  function canShowReview(item) {
-    if (!item || String(item.kind || "") === "story") {
-      return false;
+  function fillUpdateTime() {
+    if (window.PoHomeRender) {
+      window.PoHomeRender.fillUpdateTime($);
     }
-    return !!item.canReview;
   }
 
-  function canShowCancelReview(item) {
-    if (!item || String(item.kind || "") === "story") {
-      return false;
-    }
-    return !!item.canCancelReview;
-  }
-
-  function canShowSubmitReview(item) {
-    if (!item || String(item.kind || "") === "story") {
-      return false;
-    }
-    return !!item.canSubmitReview;
-  }
-
-  function canShowEdit(item) {
-    if (!item || String(item.kind || "") === "story") {
-      return false;
-    }
-    return !!item.canEdit;
-  }
-
-  // 提测阶段占位按钮：业需且禅道状态 developing，或价值流标签为「提测」
-  function canShowSubmitTest(item) {
-    if (!item || String(item.kind || "") === "story") {
-      return false;
-    }
-    var zt = String(item.zentaoStatus || "").trim().toLowerCase();
-    if (zt === "developing") {
-      return true;
-    }
-    return String(item.valueStream || item.stage || "").trim() === "提测";
-  }
-
-  // 澄清阶段：业需价值流为「澄清」时展示跳转禅道澄清页
-  function canShowClarify(item) {
-    if (!item || String(item.kind || "") === "story") {
-      return false;
-    }
-    return String(item.valueStream || item.stage || "").trim() === "澄清";
-  }
-
-  // 评价反馈阶段：业需价值流为「评价反馈」时展示跳转禅道评价页
-  function canShowAppraise(item) {
-    if (!item || String(item.kind || "") === "story") {
-      return false;
-    }
-    return String(item.valueStream || item.stage || "").trim() === "评价反馈";
-  }
-
-  // 联调测试阶段：业需价值流为「联调测试」且有测试单链接时展示
-  function canShowTesttask(item) {
-    if (!item || String(item.kind || "") === "story") {
-      return false;
-    }
-    return String(item.valueStream || item.stage || "").trim() === "联调测试";
-  }
-
-  // 发起交付阶段：业需价值流为「发起交付」时展示静态按钮（暂不接业务）
-  function canShowDeliver(item) {
-    if (!item || String(item.kind || "") === "story") {
-      return false;
-    }
-    return String(item.valueStream || item.stage || "").trim() === "发起交付";
-  }
-
-  function currentAccount() {
-    return String($("#poHomeRoot").attr("data-current-account") || "").trim();
-  }
-
-  // 验收阶段：待验收且 assignedTo=当前用户时展示验收按钮（点击暂占位）
-  function canShowAcceptance(item) {
-    if (!item || String(item.kind || "") === "story") {
-      return false;
-    }
-    if (String(item.valueStream || item.stage || "").trim() !== "验收") {
-      return false;
-    }
-    if (String(item.zentaoStatus || "").trim().toLowerCase() !== "waitacceptance") {
-      return false;
-    }
-    var account = currentAccount();
-    if (!account) {
-      return false;
-    }
-    return String(item.assignedTo || "").trim() === account;
-  }
-
-  // 研需可排期：zt_story.stage ∈ wait/planned/projected
-  function isSchedulableStoryStage(item) {
-    var storyStage = String(item.stage || "").trim().toLowerCase();
-    return (
-      storyStage === "wait" ||
-      storyStage === "planned" ||
-      storyStage === "projected"
-    );
-  }
-
-  // 排期弹窗入口：价值流「排期」的业需/独立研需；以及「发起交付」阶段的独立研需
-  // 研需仅当 stage ∈ wait/planned/projected 时展示排期按钮
-  function canShowSchedule(item) {
-    if (!item) {
-      return false;
-    }
-    var valueStream = String(item.valueStream || "").trim();
-    if (valueStream === "排期") {
-      if (isStoryItem(item)) {
-        return isSchedulableStoryStage(item);
-      }
-      return true;
-    }
-    // 发起交付阶段业需走「发起交付」；独立研需复用 /schedule/stories/:id/scheduling
-    return (
-      isStoryItem(item) &&
-      valueStream === "发起交付" &&
-      isSchedulableStoryStage(item)
-    );
-  }
-
-  // 受理阶段操作按钮（评审/撤销走抽屉；编辑跳转禅道 demand-edit）
-  function acceptActionButtons(item) {
-    var parts = [];
-    var demandId = escapeHtml(item.id || "");
-    if (canShowReview(item)) {
-      parts.push(
-        "<button type=\"button\" class=\"table-action-btn primary js-demand-review\" data-demand-id=\"" +
-          demandId +
-          "\">评审</button>"
-      );
-    }
-    if (canShowCancelReview(item)) {
-      parts.push(
-        "<button type=\"button\" class=\"table-action-btn primary js-cancel-review\" data-demand-id=\"" +
-          demandId +
-          "\">撤回</button>"
-      );
-    }
-    if (canShowSubmitReview(item)) {
-      parts.push(
-        "<button type=\"button\" class=\"table-action-btn primary js-submit-review\" data-demand-id=\"" +
-          demandId +
-          "\">提交评审</button>"
-      );
-    }
-    if (canShowEdit(item)) {
-      var editUrl = String(item.zentaoEditUrl || "").trim();
-      if (editUrl) {
-        parts.push(
-          "<a " + zentaoLinkAttrs(editUrl, "table-action-btn secondary") + ">编辑</a>"
-        );
-      }
-    }
-    return parts;
-  }
-
-  // 对齐原型 PersonalList.statusTagHtml：胶囊 + 语义色 + 小圆点
-  function statusTagHtml(text) {
-    var raw = String(text == null ? "" : text).trim();
-    if (!raw || raw === "—" || raw === "--") {
-      return '<span class="wb-status-tag wb-status-neutral">—</span>';
-    }
-    var lower = raw.toLowerCase();
-    var semantic = "neutral";
-    if (
-      lower.indexOf("关闭") >= 0 ||
-      lower.indexOf("closed") >= 0 ||
-      lower.indexOf("暂存") >= 0 ||
-      lower.indexOf("草稿") >= 0 ||
-      lower.indexOf("draft") >= 0 ||
-      lower.indexOf("取消") >= 0
-    ) {
-      semantic = "neutral";
-    } else if (
-      lower.indexOf("澄清") >= 0 ||
-      lower.indexOf("完成") >= 0 ||
-      lower.indexOf("done") >= 0 ||
-      lower.indexOf("验收") >= 0 ||
-      lower.indexOf("发布") >= 0 ||
-      lower.indexOf("通过") >= 0 ||
-      lower.indexOf("正常") >= 0 ||
-      lower.indexOf("已解决") >= 0 ||
-      lower.indexOf("已闭环") >= 0 ||
-      lower.indexOf("激活") >= 0
-    ) {
-      semantic = "success";
-    } else if (
-      lower.indexOf("待") >= 0 ||
-      lower.indexOf("wait") >= 0 ||
-      lower.indexOf("排期") >= 0 ||
-      lower.indexOf("评审中") >= 0 ||
-      lower.indexOf("审批中") >= 0 ||
-      lower.indexOf("预警") >= 0 ||
-      lower.indexOf("关注") >= 0
-    ) {
-      semantic = "warning";
-    } else if (
-      lower.indexOf("挂起") >= 0 ||
-      lower.indexOf("驳回") >= 0 ||
-      lower.indexOf("阻塞") >= 0 ||
-      lower.indexOf("超期") >= 0 ||
-      lower.indexOf("逾期") >= 0 ||
-      lower.indexOf("失败") >= 0 ||
-      lower.indexOf("风险") >= 0 ||
-      lower.indexOf("异常") >= 0 ||
-      lower.indexOf("延期") >= 0
-    ) {
-      semantic = "danger";
-    } else if (
-      lower.indexOf("开发") >= 0 ||
-      lower.indexOf("doing") >= 0 ||
-      lower.indexOf("测试") >= 0 ||
-      lower.indexOf("处理") >= 0 ||
-      lower.indexOf("进行") >= 0 ||
-      lower.indexOf("评审") >= 0 ||
-      lower.indexOf("active") >= 0
-    ) {
-      semantic = "processing";
-    }
-    return (
-      '<span class="wb-status-tag wb-status-' +
-      semantic +
-      '"><i class="wb-status-dot" aria-hidden="true"></i>' +
-      escapeHtml(raw) +
-      "</span>"
-    );
+  function filterItems(items) {
+    return window.PoHomeRender ? window.PoHomeRender.filterItems(items) : (items || []).slice();
   }
 
   function renderRow(item) {
-    var id = item.id || "";
-    var url = (item.zentaoUrl || "").trim();
-    var isStory = isStoryItem(item);
-    var numId = extractNumericId(id) || String(id).replace(/^#/, "");
-    var displayId = isStory ? numId : numId ? "US" + numId : "";
-    var idInner = url
-      ? "<a " + zentaoLinkAttrs(url, "row-id-link") + ">" + escapeHtml(displayId) + "</a>"
-      : "<span class=\"row-id-link\">" + escapeHtml(displayId) + "</span>";
-    var idChip = idChipHtml(objectTypeKind(item), idInner);
-    var actionParts = acceptActionButtons(item);
-    if (canShowClarify(item)) {
-      var clarifyUrl = String(item.clarifyUrl || "").trim();
-      if (clarifyUrl) {
-        actionParts.push(
-          "<a " + zentaoLinkAttrs(clarifyUrl, "table-action-btn primary") + ">澄清</a>"
-        );
-      }
-    }
-    if (canShowAppraise(item)) {
-      var appraiseUrl = String(item.appraiseUrl || "").trim();
-      if (appraiseUrl) {
-        actionParts.push(
-          "<a " + zentaoLinkAttrs(appraiseUrl, "table-action-btn primary") + ">评价</a>"
-        );
-      }
-    }
-    if (canShowTesttask(item)) {
-      var testtaskUrl = String(item.testtaskUrl || "").trim();
-      if (testtaskUrl) {
-        actionParts.push(
-          "<a " + zentaoLinkAttrs(testtaskUrl, "table-action-btn primary") + ">测试单</a>"
-        );
-      }
-    }
-    if (!actionParts.length && canShowSubmitTest(item)) {
-      actionParts.push(
-        "<button type=\"button\" class=\"table-action-btn primary js-submit-test\" data-demand-id=\"" +
-          escapeHtml(item.id || "") +
-          "\">提测</button>"
-      );
-    }
-    if (canShowDeliver(item)) {
-      actionParts.push(
-        "<button type=\"button\" class=\"table-action-btn primary js-initiate-deliver\" data-demand-id=\"" +
-          escapeHtml(item.id || "") +
-          "\">发起交付</button>"
-      );
-    }
-    if (canShowAcceptance(item)) {
-      actionParts.push(
-        "<button type=\"button\" class=\"table-action-btn primary js-initiate-acceptance\" data-demand-id=\"" +
-          escapeHtml(item.id || "") +
-          "\">验收</button>"
-      );
-    }
-    if (canShowSchedule(item)) {
-      var scheduleIdAttr = isStory
-        ? " data-story-id=\"" + escapeHtml(numId) + "\""
-        : " data-demand-id=\"" + escapeHtml(numId) + "\"";
-      actionParts.push(
-        "<button type=\"button\" class=\"table-action-btn primary js-open-schedule\"" +
-          scheduleIdAttr +
-          ">排期</button>"
-      );
-    }
-    var actionHtml = actionParts.length
-      ? "<div class=\"table-action-group\">" + actionParts.join("") + "</div>"
-      : "";
-    var priNumMatch = String(item.pri || "").match(/(\d+)/);
-    var priNum = priNumMatch ? priNumMatch[1] : "";
-    var hangSource = document.getElementById("wbHangTagSource");
-    var hangHtml = item.suspended && hangSource
-      ? hangSource.innerHTML.trim() + " "
-      : "";
-    var titleInner =
-      (item.pri
-        ? '<span class="wb-priority" data-priority="' +
-          escapeHtml(priNum) +
-          '">' +
-          escapeHtml(item.pri) +
-          "</span> "
-        : "") +
-      hangHtml +
-      escapeHtml(item.title || "");
-    var titleHtml = url
-      ? "<a " + zentaoLinkAttrs(url, "row-title-link") + ">" + titleInner + "</a>"
-      : titleInner;
-
-    return (
-      "<div class=\"top5-row\">" +
-      "<div class=\"c-id\">" + idChip + "</div>" +
-      "<div class=\"row-title c-title\" title=\"" + escapeHtml(item.title || "") + "\">" +
-      titleHtml +
-      "</div>" +
-      "<div class=\"row-stage c-stage\"><span class=\"stage-tag\">" + escapeHtml(item.valueStream || item.stage || "—") + "</span></div>" +
-      "<div class=\"row-zt-status c-zt-status\" title=\"" +
-      escapeHtml(item.zentaoStatus || "") +
-      "\">" +
-      statusTagHtml(getHomeZentaoStatusLabel(item)) +
-      "</div>" +
-      "<div class=\"row-owner c-owner\">" + escapeHtml(dash(item.nextOwner || item.owner)) + "</div>" +
-      "<div class=\"row-actions c-actions\">" + actionHtml + "</div>" +
-      "</div>"
-    );
+    return window.PoHomeRender ? window.PoHomeRender.renderRow(item) : "";
   }
 
-  // 对齐 internal/pkg/pagination.buildPages(current, total, around=2)
-  function buildPages(currentPage, totalPages, around) {
-    if (totalPages <= 0) {
-      return [];
-    }
-    var start = Math.max(1, currentPage - around);
-    var end = Math.min(totalPages, currentPage + around);
-    var pages = [];
-    for (var i = start; i <= end; i++) {
-      pages.push(i);
-    }
-    return pages;
-  }
+  function renderList(total) {
+    var filtered = filterItems(rawItems);
+    updateTitle(total, filtered.length, rawItems.length);
+    $("#top5Error").attr("hidden", true);
 
-  // DOM 对齐 web/templates/components/pager.html；翻页走后端查询
-  function renderPagination(total) {
-    var $pager = $("#homePager");
-    if (!total) {
-      $pager.attr("hidden", true).empty();
+    if (!filtered.length) {
+      $("#top5Tbody").empty();
+      $("#top5List").attr("hidden", true);
+      $("#top5Empty").removeAttr("hidden");
+      $("#homePagination").attr("hidden", true);
       return;
     }
-    var page = state.page;
-    var ps = state.pageSize;
-    var totalPages = Math.max(1, Math.ceil(total / Math.max(1, ps)));
-    var pages = buildPages(page, totalPages, 2);
-    var hasPrev = page > 1;
-    var hasNext = totalPages > 0 && page < totalPages;
-    var html = "<div class=\"pagination-container\" aria-label=\"分页\"><ul class=\"pagination\">";
 
-    if (hasPrev) {
-      html +=
-        "<li class=\"page-item\"><a class=\"page-link\" href=\"#\" data-page=\"" +
-        (page - 1) +
-        "\" aria-label=\"上一页\"><i class=\"bi bi-chevron-left\" aria-hidden=\"true\"></i></a></li>";
-    } else {
-      html +=
-        "<li class=\"page-item disabled\"><span class=\"page-link\" aria-hidden=\"true\"><i class=\"bi bi-chevron-left\"></i></span></li>";
-    }
+    $("#top5Empty").attr("hidden", true);
+    $("#top5List").removeAttr("hidden");
+    $("#top5Tbody").html(filtered.map(renderRow).join(""));
 
-    if (totalPages > 1 && pages.length > 0) {
-      if (pages[0] > 1) {
-        html += "<li class=\"page-item\"><a class=\"page-link\" href=\"#\" data-page=\"1\">1</a></li>";
-      }
-      if (pages[0] > 2) {
-        html += "<li class=\"page-item disabled\"><span class=\"page-link\">•••</span></li>";
-      }
-      pages.forEach(function (p) {
-        if (p === page) {
-          html +=
-            "<li class=\"page-item active\"><span class=\"page-link\" aria-current=\"page\">" +
-            p +
-            "</span></li>";
-        } else {
-          html +=
-            "<li class=\"page-item\"><a class=\"page-link\" href=\"#\" data-page=\"" +
-            p +
-            "\">" +
-            p +
-            "</a></li>";
+    if (window.PersonalList) {
+      window.PersonalList.renderPagination({
+        container: document.getElementById("homePagination"),
+        page: state.page,
+        pageSize: state.pageSize,
+        total: total,
+        onPageChange: function (p) {
+          state.page = p;
+          syncUrl();
+          refreshDemands(state.status);
+        },
+        onPageSizeChange: function (s) {
+          state.pageSize = s;
+          state.page = 1;
+          window.PersonalList.savePageSize("po.home.pageSize", s);
+          syncUrl();
+          refreshDemands(state.status);
         }
       });
-      if (pages[pages.length - 1] < totalPages - 1) {
-        html += "<li class=\"page-item disabled\"><span class=\"page-link\">•••</span></li>";
-      }
-      if (pages[pages.length - 1] < totalPages) {
-        html +=
-          "<li class=\"page-item\"><a class=\"page-link\" href=\"#\" data-page=\"" +
-          totalPages +
-          "\">" +
-          totalPages +
-          "</a></li>";
-      }
-    } else {
-      html +=
-        "<li class=\"page-item active\"><span class=\"page-link\" aria-current=\"page\">" +
-        page +
-        "</span></li>";
     }
-
-    if (hasNext) {
-      html +=
-        "<li class=\"page-item\"><a class=\"page-link\" href=\"#\" data-page=\"" +
-        (page + 1) +
-        "\" aria-label=\"下一页\"><i class=\"bi bi-chevron-right\" aria-hidden=\"true\"></i></a></li>";
-    } else {
-      html +=
-        "<li class=\"page-item disabled\"><span class=\"page-link\" aria-hidden=\"true\"><i class=\"bi bi-chevron-right\"></i></span></li>";
-    }
-
-    html += "</ul><div class=\"pagination-options\">";
-    html += "<span class=\"pagination-total\">共 " + total + " 条</span>";
-    html += "<form method=\"GET\" action=\"#\" class=\"pagination-size-form\">";
-    html += "<select name=\"pageSize\" class=\"select\" aria-label=\"每页条数\">";
-    PAGE_SIZES.forEach(function (n) {
-      html +=
-        "<option value=\"" +
-        n +
-        "\"" +
-        (n === ps ? " selected" : "") +
-        ">" +
-        n +
-        " 条/页</option>";
-    });
-    html += "</select></form>";
-    html += "<form method=\"GET\" action=\"#\" class=\"pagination-jump-form\">";
-    html += "<input type=\"hidden\" name=\"pageSize\" value=\"" + ps + "\">";
-    html += "<span>跳至</span>";
-    html +=
-      "<input type=\"number\" min=\"1\" max=\"" +
-      totalPages +
-      "\" name=\"page\" class=\"input\" value=\"" +
-      page +
-      "\">";
-    html += "<span>页</span>";
-    html += "<button type=\"submit\" class=\"btn btn-neutral btn-sm\">前往</button>";
-    html += "</form></div></div>";
-
-    $pager.html(html).removeAttr("hidden");
-    bindPagination(totalPages);
-  }
-
-  function bindZentaoLinks($list) {
-    $list.find("a.js-zentao-link").on("click", function (e) {
-      var href = (this.getAttribute("href") || "").trim();
-      if (!href) {
-        return;
-      }
-      e.preventDefault();
-      window.open(href, "_blank", "noopener,noreferrer");
-    });
-  }
-
-  function findListItemByDemandId(demandId) {
-    for (var i = 0; i < state.items.length; i++) {
-      if (String(state.items[i].id || "") === demandId) {
-        return state.items[i];
-      }
-    }
-    return null;
-  }
-
-  function bindReviewButtons($list) {
-    $list.find(".js-demand-review").on("click", function () {
-      var demandId = String($(this).attr("data-demand-id") || "").trim();
-      var item = findListItemByDemandId(demandId);
-      if (!item || typeof window.openPoDemandReviewDrawer !== "function") {
-        return;
-      }
-      window.openPoDemandReviewDrawer(item);
-    });
-  }
-
-  function bindSubmitReviewButtons($list) {
-    $list.find(".js-submit-review").on("click", function () {
-      var demandId = String($(this).attr("data-demand-id") || "").trim();
-      var item = findListItemByDemandId(demandId);
-      if (!item || typeof window.openPoDemandSubmitReviewDrawer !== "function") {
-        return;
-      }
-      window.openPoDemandSubmitReviewDrawer(item);
-    });
-  }
-
-  function bindCancelReviewButtons($list) {
-    $list.find(".js-cancel-review").on("click", function () {
-      var demandId = String($(this).attr("data-demand-id") || "").trim();
-      var item = findListItemByDemandId(demandId);
-      if (!item || typeof window.openPoDemandCanalDrawer !== "function") {
-        return;
-      }
-      window.openPoDemandCanalDrawer(item);
-    });
-  }
-
-  function bindSubmitTestButtons($list) {
-    $list.find(".js-submit-test").on("click", function () {
-      var demandId = String($(this).attr("data-demand-id") || "").trim();
-      var item = findListItemByDemandId(demandId);
-      if (!item || typeof window.openPoSubmitTestModal !== "function") {
-        return;
-      }
-      window.openPoSubmitTestModal(item);
-    });
-  }
-
-  function bindDeliverButtons($list) {
-    $list.find(".js-initiate-deliver").on("click", function () {
-      var demandId = String($(this).attr("data-demand-id") || "").trim();
-      var item = findListItemByDemandId(demandId);
-      if (typeof window.openPoDeliverModal !== "function") {
-        return;
-      }
-      window.openPoDeliverModal(item || demandId);
-    });
-  }
-
-  function bindAcceptanceButtons($list) {
-    $list.find(".js-initiate-acceptance").on("click", function () {
-      var demandId = String($(this).attr("data-demand-id") || "").trim();
-      var item = findListItemByDemandId(demandId);
-      if (!item || typeof window.openPoDemandAcceptanceDrawer !== "function") {
-        return;
-      }
-      window.openPoDemandAcceptanceDrawer(item);
-    });
-  }
-
-  function bindScheduleButtons($list) {
-    $list.find(".js-open-schedule").on("click", function () {
-      if (typeof window.openScheduleIntegratedModal !== "function") {
-        return;
-      }
-      var $btn = $(this);
-      var demandId = parseInt(String($btn.attr("data-demand-id") || ""), 10) || 0;
-      var storyId = parseInt(String($btn.attr("data-story-id") || ""), 10) || 0;
-      var lookupId = demandId
-        ? "US" + demandId
-        : storyId
-          ? "U" + storyId
-          : "";
-      var item = lookupId ? findListItemByDemandId(lookupId) : null;
-      var displayId = item ? String(item.id || "") : lookupId || "—";
-      window.openScheduleIntegratedModal({
-        id: displayId,
-        title: item ? item.title || "—" : "—",
-        owner: item ? item.nextOwner || item.owner || "待分配" : "待分配",
-        system: "—",
-        detailUrl: item ? item.zentaoUrl || "" : "",
-        demandId: demandId,
-        storyId: storyId,
-        isIndependent: storyId > 0
-      });
-    });
-  }
-
-  function bindPagination(totalPages) {
-    var $pager = $("#homePager");
-    $pager.find("a.page-link[data-page]").on("click", function (e) {
-      e.preventDefault();
-      var next = parseInt($(this).attr("data-page"), 10) || 1;
-      if (next < 1 || next > totalPages || next === state.page) {
-        return;
-      }
-      state.page = next;
-      reloadDemands();
-    });
-    $pager.find(".pagination-size-form").on("submit", function (e) {
-      e.preventDefault();
-    });
-    $pager.find(".pagination-size-form select[name='pageSize']").on("change", function () {
-      state.pageSize = parseInt($(this).val(), 10) || 10;
-      state.page = 1;
-      reloadDemands();
-    });
-    $pager.find(".pagination-jump-form").on("submit", function (e) {
-      e.preventDefault();
-      var raw = $(this).find("input[name='page']").val();
-      var next = parseInt(raw, 10) || 1;
-      if (next < 1) {
-        next = 1;
-      }
-      if (next > totalPages) {
-        next = totalPages;
-      }
-      state.page = next;
-      reloadDemands();
-    });
-  }
-
-  function renderList() {
-    var total = state.total;
-    updateTitle(total);
-    if (!total) {
-      renderEmpty();
-      renderPagination(0);
-      return;
-    }
-    var html =
-      "<div class=\"top5-cols\"><span>对象#ID</span><span>事项标题</span><span>当前阶段</span><span>状态</span><span>当前负责人</span><span>操作</span></div>";
-    html += $.map(state.items, renderRow).join("");
-    $("#top5List").html(html);
-    bindZentaoLinks($("#top5List"));
-    bindReviewButtons($("#top5List"));
-    bindSubmitReviewButtons($("#top5List"));
-    bindCancelReviewButtons($("#top5List"));
-    bindSubmitTestButtons($("#top5List"));
-    bindDeliverButtons($("#top5List"));
-    bindAcceptanceButtons($("#top5List"));
-    bindScheduleButtons($("#top5List"));
-    renderPagination(total);
   }
 
   function setActiveCard($card) {
-    $(".home-vs-mini-card").removeClass("active");
-    $card.addClass("active");
+    $(".home-vs-mini-card").removeClass("active").attr("aria-pressed", "false");
+    $card.addClass("active").attr("aria-pressed", "true");
   }
 
   function refreshDemands(status) {
-    state.status = status || "all";
-    state.page = 1;
-    return reloadDemands();
+    currentSeq += 1;
+    var reqSeq = currentSeq;
+    if (status) { state.status = status; }
+
+    $("#top5List").removeAttr("hidden");
+    $("#top5Empty").attr("hidden", true);
+    $("#top5Error").attr("hidden", true);
+    $("#top5Tbody").html('<tr><td colspan="6" class="state-placeholder">正在加载行动列表…</td></tr>');
+
+    $("#top5List").attr("aria-busy", "true");
+    $("#homeListCaption").text("正在获取当前阶段数据…");
+
+    return loadDemands(state.status, state.page, state.pageSize)
+      .then(function (res) {
+        if (reqSeq !== currentSeq) { return; }
+        rawItems = res.items || [];
+        var total = res.total;
+        var totalPages = Math.max(1, Math.ceil(total / state.pageSize));
+
+        if (state.page > totalPages && total > 0 && !hasCorrectedPage) {
+          hasCorrectedPage = true;
+          state.page = totalPages;
+          syncUrl();
+          refreshDemands(state.status);
+          return;
+        }
+        hasCorrectedPage = false;
+
+        $("#top5List").attr("aria-busy", "false");
+        renderList(total);
+        // “全部”列表没有 stageSummary：显式恢复模板中的全量基线，避免保留上一次焦点查询的旧数字。
+        renderValueStreamSummary(res.stageSummary, state.focus);
+        fillUpdateTime();
+      })
+      .catch(function (err) {
+        if (reqSeq !== currentSeq) { return; }
+        hasCorrectedPage = false;
+        $("#top5List").attr("aria-busy", "false");
+        $("#lastUpdateTime").text("—");
+        updateTitle(null);
+        $("#top5Tbody").empty();
+        $("#top5List").attr("hidden", true);
+        $("#top5Empty").attr("hidden", true);
+        $("#top5Error").removeAttr("hidden");
+        $("#homePagination").attr("hidden", true);
+        window.showToast("加载需求列表失败，请稍后重试", "danger");
+      });
   }
 
-  function reloadDemands() {
-    return loadDemands(state.status, state.page, state.pageSize).then(function (payload) {
-      state.items = payload.items;
-      state.total = payload.total;
-      state.page = payload.page;
-      state.pageSize = payload.pageSize;
-      renderList();
-      return payload.items;
+  function initToolbar() {
+    var searchTimer = null;
+    $("#homeKeyword").on("input", function () {
+      var val = $(this).val();
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(function () {
+        state.keyword = val;
+        state.page = 1;
+        syncUrl();
+        refreshDemands(state.status);
+      }, 200);
+    });
+
+    $("#homeObjectTypeSegment").on("click", "button[data-object-type]", function () {
+      var btn = $(this);
+      var next = String(btn.attr("data-object-type") || "all");
+      if (next === state.objectType) { return; }
+      $("#homeObjectTypeSegment button").removeClass("active");
+      btn.addClass("active");
+      state.objectType = next;
+      state.page = 1;
+      syncUrl();
+      refreshDemands(state.status);
+    });
+
+    $("#homePrioritySegment").on("click", "button[data-priority]", function () {
+      var btn = $(this);
+      var next = String(btn.attr("data-priority") || "all");
+      if (next === state.priority) { return; }
+      $("#homePrioritySegment button").removeClass("active");
+      btn.addClass("active");
+      state.priority = next;
+      state.page = 1;
+      syncUrl();
+      refreshDemands(state.status);
+    });
+
+    $("#homeRelationSegment button").on("click", function () {
+      $("#homeRelationSegment button").removeClass("active");
+      $(this).addClass("active");
+      state.relation = $(this).data("relation") || "all";
+      state.page = 1;
+      syncUrl();
+      refreshDemands(state.status);
+    });
+
+    $("#homeResetBtn").on("click", function () {
+      $("#homeKeyword").val("");
+      $("#homeObjectTypeSegment button").removeClass("active").first().addClass("active");
+      $("#homePrioritySegment button").removeClass("active").first().addClass("active");
+      $("#homeRelationSegment button").removeClass("active").first().addClass("active");
+      state.keyword = "";
+      state.objectType = "all";
+      state.priority = "all";
+      state.relation = "all";
+      state.page = 1;
+      syncUrl();
+      refreshDemands(state.status);
     });
   }
-
-  window.refreshPoHomeDemands = reloadDemands;
 
   function initValueStreamLinkage() {
     $(".home-vs-mini-card").on("click", function () {
       var $card = $(this);
       var status = $card.attr("data-vs-status");
-      if (!status) {
-        return;
-      }
+      if (!status) { return; }
       setActiveCard($card);
+      state.status = status;
+      state.page = 1;
+      syncUrl();
       refreshDemands(status);
     });
 
+    // 右侧 PO 聚焦专区的小卡片触发联动切换价值流阶段
     $(".focus-card.vs-trigger").on("click", function () {
-      var targetStage = $(this).attr("data-stage-target");
-      if (!targetStage) {
-        return;
-      }
+      var targetStage = $(this).data("stage-target");
+      if (!targetStage) { return; }
       var $card = $('.home-vs-mini-card[data-vs-status="' + targetStage + '"]');
       if ($card.length) {
         setActiveCard($card);
+        state.status = targetStage;
+        state.page = 1;
+        syncUrl();
         refreshDemands(targetStage);
       }
     });
   }
 
-  function initFocalChips() {
-    $(".home-hl-kpi").on("click", function () {
-      var $btn = $(this);
-      $(".home-hl-kpi").removeClass("active");
-      $btn.addClass("active");
-      state.focal = $btn.attr("data-focal") || "myPending";
-      updateTitle(state.total);
+  var FOCUS_META = {
+    my_action: { title: "待我处理事项", tag: "当前要办理", subtip: "统计我参与阶段的需求，优先推进需确认与流转的事项" },
+    all: { title: "全量事项清单", tag: "全盘流转", subtip: "查看所有由您关联或参与的需求与研发事项" },
+    today: { title: "今日必推清单", tag: "今日聚焦", subtip: "今天到期及急需推进的高优事项" },
+    blocked: { title: "阻塞事项清单", tag: "风险拦截", subtip: "处于阻塞停滞状态、急需排查解阻的事项" },
+    overdue: { title: "超期事项清单", tag: "超期预警", subtip: "已超出目标交付时间未完成的事项（含关联业务需求与研发需求）" },
+    suspended: { title: "挂起事项清单", tag: "暂停流转", subtip: "已暂停流转或进入搁置状态的事项" }
+  };
+
+  function updateActionHeader(focus) {
+    var meta = FOCUS_META[focus] || FOCUS_META.my_action;
+    $("#homeActionTitle").text(meta.title);
+    $("#homeActionTag").text(meta.tag);
+    $("#homeActionSubtip").text(meta.subtip);
+  }
+
+  function initVsToggle() {
+    var STORAGE_KEY = "workbench.homeVsCollapsed";
+    var $btn = $("#homeVsToggleBtn");
+    var $section = $("#homeValueStreamSection");
+    if (!$btn.length || !$section.length) return;
+
+    function setCollapsed(collapsed) {
+      if (collapsed) {
+        $section.addClass("is-collapsed");
+        $btn.attr("aria-expanded", "false");
+        $("#homeVsToggleText").text("展开流水线");
+        $("#homeVsToggleIcon").removeClass("fa-chevron-up").addClass("fa-chevron-down");
+      } else {
+        $section.removeClass("is-collapsed");
+        $btn.attr("aria-expanded", "true");
+        $("#homeVsToggleText").text("收起流水线");
+        $("#homeVsToggleIcon").removeClass("fa-chevron-down").addClass("fa-chevron-up");
+      }
+    }
+
+    try {
+      if (window.localStorage && window.localStorage.getItem(STORAGE_KEY) === "1") {
+        setCollapsed(true);
+      }
+    } catch (e) {}
+
+    $btn.on("click", function () {
+      var next = !$section.hasClass("is-collapsed");
+      setCollapsed(next);
+      try {
+        if (window.localStorage) {
+          window.localStorage.setItem(STORAGE_KEY, next ? "1" : "0");
+        }
+      } catch (e) {}
     });
   }
 
-  $(function () {
-    initValueStreamLinkage();
-    initFocalChips();
+  window.refreshPoHomeDemands = function () {
+    refreshValueStreamSummary(); return refreshDemands(state.status);
+  };
 
-    var $active = $(".home-vs-mini-card.active").first();
-    if (!$active.length) {
-      $active = $(".home-vs-mini-card").first();
+  $(function () {
+    initFromUrl();
+    initVsToggle();
+    updateActionHeader(state.focus);
+    $("#homeQuickChips [data-home-focus]").on("click", function (event) {
+      event.preventDefault();
+      state.focus = $(this).attr("data-home-focus") || "all";
+      state.page = 1;
+      hasCorrectedPage = false;
+      $("#homeQuickChips [data-home-focus]").removeClass("active").attr("aria-pressed", "false");
+      $(this).addClass("active").attr("aria-pressed", "true");
+      updateActionHeader(state.focus);
+      syncUrl();
+      refreshValueStreamSummary();
+      refreshDemands(state.status);
+    });
+    $("#homeQuickChips [data-home-focus]").removeClass("active").attr("aria-pressed", "false");
+    $('#homeQuickChips [data-home-focus="' + state.focus + '"]').addClass("active").attr("aria-pressed", "true");
+
+    initToolbar();
+    initValueStreamLinkage();
+
+    $("#homeRetryBtn").on("click", function () {
+      refreshDemands(state.status);
+    });
+
+    // 业需评审按钮：直接打开精简评审抽屉（做减法，内嵌通过/驳回操作）
+    $("#top5Tbody").on("click", ".js-demand-review", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var demandId = String($(this).attr("data-review-demand-id") || $(this).attr("data-demand-id") || "").trim();
+      if (!demandId) return;
+      if (window.DemandDetail && typeof window.DemandDetail.open === "function") {
+        window.DemandDetail.open(demandId, { mode: "review" });
+      }
+    });
+
+    var $targetCard = $('.home-vs-mini-card[data-vs-status="' + state.status + '"]');
+    if ($targetCard.length) {
+      setActiveCard($targetCard);
+    } else {
+      var $active = $(".home-vs-mini-card.active").first();
+      if (!$active.length) {
+        $active = $(".home-vs-mini-card").first();
+      }
       if ($active.length) {
         setActiveCard($active);
+        state.status = $active.attr("data-vs-status") || "all";
       }
     }
-    refreshDemands($active.attr("data-vs-status") || "all");
+    syncUrl();
+    if (state.focus !== "all") {
+      refreshValueStreamSummary();
+    }
+    refreshDemands(state.status);
   });
 })(jQuery);

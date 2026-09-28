@@ -1,0 +1,50 @@
+/* Scope legacy scheduling tokens to the shared dialogs on any host page. */
+#scheduleIntegratedModal,
+#scheduleVersionWindowModal,
+#scheduleProductNoticeModal {
+  --white: var(--color-surface);
+  --bg: var(--color-surface-muted);
+  --hover: var(--color-surface-hover);
+  --border: var(--color-border);
+  --border-lt: var(--color-border-soft);
+  --t1: var(--color-text-primary);
+  --t2: var(--color-text-secondary);
+  --t3: var(--color-text-disabled);
+  --blue: var(--color-primary);
+  --blue-bg: var(--color-primary-light);
+  --blue-bd: var(--color-primary-border);
+  --red: var(--color-danger);
+  --r: 6px;
+  color: var(--color-text-primary);
+}
+
+/* Window creation stays above the active scheduling dialog. */
+#scheduleVersionWindowModalOverlay { z-index: 1700; }
+#scheduleVersionWindowModal { z-index: 1701; }
+#scheduleIntegratedModal .action-btn,
+#scheduleVersionWindowModal .action-btn,
+#scheduleProductNoticeModal .action-btn {
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+#scheduleIntegratedModal .action-btn.primary,
+#scheduleVersionWindowModal .action-btn.primary {
+  background: var(--color-primary);
+  color: var(--color-text-on-accent);
+  border-color: var(--color-primary);
+}
+#scheduleIntegratedModal .js-schedule-inline-create {
+  flex-shrink: 0;
+  white-space: nowrap;
+  color: var(--color-primary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 6px 10px;
+}

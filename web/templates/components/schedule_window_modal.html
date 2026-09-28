@@ -1,0 +1,93 @@
+{{ define "schedule/window_modal" }}
+<div class="batch-modal-overlay" id="scheduleVersionWindowModalOverlay"></div>
+<div class="batch-modal" id="scheduleVersionWindowModal">
+  <div class="batch-modal-hdr">
+    <h3 id="scheduleVersionWindowModalTitle">版本窗口属性</h3>
+    <button type="button" class="drawer-close ui-close-btn" id="scheduleVersionWindowModalCloseBtn"><i class="fas fa-xmark"></i></button>
+  </div>
+  <div class="batch-modal-body" id="scheduleVersionWindowModalBody">
+    <div class="schedule-create-modal" id="scheduleVersionWindowForm">
+      <div class="schedule-create-grid schedule-create-grid--4">
+        <div class="form-group">
+          <label class="form-label" for="scheduleWindowOnline">预计上线 <span style="color:var(--red)">*</span></label>
+          <input type="date" class="form-input" id="scheduleWindowOnline" name="online">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="scheduleWindowName">窗口名称 <span style="color:var(--red)">*</span></label>
+          <input type="text" class="form-input" id="scheduleWindowName" name="name" placeholder="根据预计上线自动生成">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="scheduleWindowStart">窗口开始 <span style="color:var(--red)">*</span></label>
+          <input type="date" class="form-input" id="scheduleWindowStart" name="start" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="scheduleWindowEnd">窗口结束</label>
+          <input type="date" class="form-input" id="scheduleWindowEnd" name="end">
+        </div>
+      </div>
+      <div class="schedule-create-section">
+        <div class="schedule-create-section-head"><strong>窗口归属</strong></div>
+        <div class="schedule-create-inline-row">
+          <div class="form-group">
+            <label class="form-label" for="scheduleWindowTeamgroup">敏捷小组</label>
+            <select class="form-select" id="scheduleWindowTeamgroup" name="teamgroupId" style="width:100%">
+              {{ range .Teamgroups }}
+              <option value="{{ .ID }}">{{ .DisplayName }}</option>
+              {{ end }}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="scheduleWindowType">发布类型</label>
+            <select class="form-select" id="scheduleWindowType" name="windowType" style="width:100%">
+              <option value="regular">常规</option>
+              <option value="fast">快速</option>
+              <option value="urgent">紧急</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="schedule-create-section">
+        <div class="schedule-create-grid schedule-create-grid--3">
+          <div class="form-group">
+            <label class="form-label" for="scheduleWindowPlanTestDone">预计提测 / 开发完成</label>
+            <input type="date" class="form-input" id="scheduleWindowPlanTestDone" name="planTestDone">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="scheduleWindowTestDone">预计测试完成</label>
+            <input type="date" class="form-input" id="scheduleWindowTestDone" name="testDone">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="scheduleWindowAcceptDone">预计验收完成</label>
+            <input type="date" class="form-input" id="scheduleWindowAcceptDone" name="acceptDone">
+          </div>
+        </div>
+      </div>
+      <div class="schedule-create-section">
+        <div class="schedule-create-section-head"><strong>关联系统</strong></div>
+        <div class="schedule-create-grid schedule-create-grid--systems schedule-create-systems" id="scheduleWindowSystemsGrid">
+          {{ if .Products }}
+          {{ range .Products }}
+          <label class="chk" data-product-id="{{ .ID }}" data-product-name="{{ .Name }}">
+            <input type="checkbox" name="productIds" value="{{ .ID }}">
+            <span>{{ .Name }}</span>
+          </label>
+          {{ end }}
+          {{ else }}
+          <div class="schedule-create-empty">暂无关联系统</div>
+          {{ end }}
+        </div>
+      </div>
+      <div class="schedule-create-section">
+        <div class="schedule-create-section-head"><strong>系统计划</strong></div>
+        <div class="schedule-create-plan-grid" id="scheduleWindowPlanGrid">
+          <div class="schedule-create-empty" id="scheduleWindowPlanEmpty">请先勾选关联系统，将显示各系统的计划情况。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="batch-modal-footer">
+    <button type="button" class="action-btn" id="scheduleVersionWindowModalDismissBtn">关闭</button>
+    <button type="button" class="action-btn primary" id="scheduleVersionWindowModalSaveBtn">保存</button>
+  </div>
+</div>
+{{ end }}

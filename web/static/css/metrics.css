@@ -1,0 +1,13 @@
+/* =============================================================================
+   文件: web/static/css/metrics.css
+   模块: 指标管理 (metrics)
+   职责: 兼容入口。样式已拆到 web/static/css/metrics/*.css；模板应直接引用子文件。
+         保留本文件仅作 @import 聚合，避免遗漏外链时丢样式。
+   ============================================================================= */
+
+@import url("metrics/shared.css");
+@import url("metrics/manage.css");
+@import url("metrics/radar-layout.css");
+@import url("metrics/radar-matrix.css");
+@import url("metrics/radar-dark.css");
+@import url("metrics/drawer.css");

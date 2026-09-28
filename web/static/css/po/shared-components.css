@@ -1,0 +1,102 @@
+/* Shared PO visual states. Geometry remains in each component/page stylesheet. */
+body.po-workbench-shell,
+body.po-workbench-shell * {
+  scrollbar-color: var(--po-scrollbar-thumb) var(--po-scrollbar-track);
+  scrollbar-width: thin;
+}
+
+body.po-workbench-shell *::-webkit-scrollbar {
+  width: var(--po-scrollbar-size);
+  height: var(--po-scrollbar-size);
+}
+
+body.po-workbench-shell *::-webkit-scrollbar-track {
+  background: var(--po-scrollbar-track);
+}
+
+body.po-workbench-shell *::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: var(--po-scrollbar-thumb);
+  background-clip: padding-box;
+}
+
+body.po-workbench-shell *::-webkit-scrollbar-thumb:hover {
+  background: var(--po-scrollbar-thumb-hover);
+  background-clip: padding-box;
+}
+
+body.po-workbench-shell *::-webkit-scrollbar-corner {
+  background: var(--po-scrollbar-corner);
+}
+
+body.po-workbench-shell .po-header-right .dropdown-menu {
+  min-width: 126px;
+  padding: 6px;
+  border-color: var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-body);
+  box-shadow: var(--shadow-popover);
+}
+
+body.po-workbench-shell .po-header-right .dropdown-menu form { margin: 0; }
+
+body.po-workbench-shell .po-header-right .dropdown-header {
+  padding: 6px 8px 4px;
+  color: var(--color-text-secondary);
+}
+
+body.po-workbench-shell .po-header-right .dropdown-divider {
+  margin: 4px 0;
+  background: var(--color-border);
+}
+
+body.po-workbench-shell .po-header-right .dropdown-item,
+body.po-workbench-shell .po-header-right .topbar-dropdown-item {
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-body);
+}
+
+body.po-workbench-shell .po-header-right .dropdown-item:hover,
+body.po-workbench-shell .po-header-right .topbar-dropdown-item:hover {
+  border-color: var(--color-border);
+  background: var(--color-surface-muted);
+  color: var(--color-text-primary);
+}
+
+body.po-workbench-shell .po-header-right .theme-picker-group .dropdown-item[aria-checked="true"] {
+  border-color: var(--color-info-border);
+  background: var(--color-info-bg);
+  color: var(--color-info);
+}
+
+body.po-workbench-shell .po-header-right .topbar-dropdown-item.dropdown-item-danger { color: var(--color-danger); }
+
+body.po-workbench-shell .po-header-right .topbar-dropdown-item.dropdown-item-danger:hover {
+  border-color: var(--color-danger-border);
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+body.po-workbench-shell .action.primary,
+body.po-workbench-shell .btn-primary {
+  border-color: var(--color-info-fill);
+  background: var(--color-info-fill);
+  color: var(--color-text-on-accent);
+}
+
+body.po-workbench-shell .action.primary:hover,
+body.po-workbench-shell .btn-primary:hover {
+  border-color: var(--color-info-fill-hover);
+  background: var(--color-info-fill-hover);
+  color: var(--color-text-on-accent);
+}
+
+body.po-workbench-shell .action.soft {
+  border-color: var(--color-info-border);
+  background: var(--color-info-bg);
+  color: var(--color-info);
+}
