@@ -21,8 +21,8 @@
 ## 仍需处理
 
 - D1 偏好存储：KV 使用独立 `zt_wb_profile_pref_kv` 表，保留旧版 `zt_wb_profile_prefs(account, preferredRoles, createdDate, updatedDate)`；旧自选角色在 KV 尚无记录时回退读取，后续保存写入 KV 表。
-- 8098 已部署 `workbench:v2-wave2-d36adb7e-r1`，但登录态验收发现运行库缺少敏捷小组组织挂靠表，导致 `/home/team/scopes`、`/issues/risk/items`、`/workbench/api/agile-teams` 报错；升级脚本已补齐建表 SQL，应用前需重新执行并复验。
-- 七张截图已抓取；问题风险/敏捷小组含服务端错误，团队管理截图停在加载态，需部署修复后重新验收。
+- 8098 已部署 `workbench:v2-wave2-5504769`；执行幂等升级 SQL 后确认 `zt_wb_profile_pref_kv`、`zt_wb_agileteam_orgmap` 均存在，`/login` 返回 HTTP 200。
+- 已用登录态浏览器检查七个需求页；首轮截图发现组织范围接口缺表导致问题风险/敏捷小组报错，团队首页截图处于异步加载态。补表并重新部署后，原浏览器运行时授权已过期，驱动对精确 Chrome 窗口重连返回拒绝，修复后的七页截图与交互复验待重新授权后完成。首轮截图保存在 `/private/tmp/v2-wave2-acceptance-20260928/`，仅作故障定位，不作为最终验收证据。
 
 ## 合并与冲突记录
 
