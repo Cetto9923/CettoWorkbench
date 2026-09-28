@@ -76,6 +76,7 @@ SELECT COUNT(*) FROM zt_dept WHERE COALESCE(manager, '') REGEXP ?`, accountToken
 }
 
 // ListDeptTreeIDs 返回账号负责的部门及其下级部门 ID。
+// 针对 52 科技部本部及其子孙部门，优先查补缺表 zt_wb_dept_manager_override；未命中 fallback 到 zt_dept.manager。
 func (r *Repo) ListDeptTreeIDs(ctx context.Context, account string) ([]uint, error) {
 	account = strings.TrimSpace(account)
 	if account == "" {
@@ -87,7 +88,15 @@ func (r *Repo) ListDeptTreeIDs(ctx context.Context, account string) ([]uint, err
 	}
 	var managed []managedDept
 	if err := r.read().WithContext(ctx).Raw(`
-SELECT id, COALESCE(path, '') AS path FROM zt_dept WHERE COALESCE(manager, '') REGEXP ? ORDER BY id ASC`, accountTokenRegexp(account)).Scan(&managed).Error; err != nil {
+SELECT d.id, COALESCE(d.path, '') AS path FROM zt_dept d
+LEFT JOIN zt_wb_dept_manager_override o
+  ON o.dept = d.id AND o.deleted = '0' AND (d.id = 52 OR d.path LIKE '%,52,%')
+WHERE COALESCE(
+  CASE
+    WHEN (d.id = 52 OR d.path LIKE '%,52,%') AND o.id IS NOT NULL THEN o.account
+    ELSE d.manager
+  END, ''
+) REGEXP ? ORDER BY d.id ASC`, accountTokenRegexp(account)).Scan(&managed).Error; err != nil {
 		return nil, err
 	}
 	if len(managed) == 0 {

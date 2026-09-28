@@ -91,6 +91,22 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 		g.DELETE("/:id", middleware.RequirePerm(perm.DeptDelete), h.Delete)
 		g.PUT("/:id/status", middleware.RequirePerm(perm.DeptEdit), h.UpdateStatus)
 	}
+
+	// 部门负责人补缺管理路由（针对 52 科技本部及子孙部门）
+	overrides := rg.Group("/dept-overrides")
+	overrides.Use(middleware.ActiveNav("/admin/depts"))
+	{
+		overrides.GET("", middleware.RequirePerm(perm.DeptList), h.ListOverrides)
+		overrides.POST("", middleware.RequirePerm(perm.DeptEdit), h.SaveOverride)
+		overrides.POST("/:id/delete", middleware.RequirePerm(perm.DeptDelete), h.DeleteOverride)
+	}
+
+	api := rg.Group("/api/v1/dept-overrides")
+	{
+		api.GET("", middleware.RequirePerm(perm.DeptList), h.APIListOverrides)
+		api.POST("", middleware.RequirePerm(perm.DeptEdit), h.APISaveOverride)
+		api.DELETE("/:id", middleware.RequirePerm(perm.DeptDelete), h.APIDeleteOverride)
+	}
 }
 
 // List 渲染部门树形列表（扁平化展示）。

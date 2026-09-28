@@ -1,9 +1,10 @@
 package constants
 
 const (
-	TEMPLATE_DEPT_LIST   = "dept/list"
-	TEMPLATE_DEPT_CREATE = "dept/create"
-	TEMPLATE_DEPT_EDIT   = "dept/edit"
+	TEMPLATE_DEPT_LIST      = "dept/list"
+	TEMPLATE_DEPT_CREATE    = "dept/create"
+	TEMPLATE_DEPT_EDIT      = "dept/edit"
+	TEMPLATE_DEPT_OVERRIDES = "dept/overrides"
 
 	TEMPLATE_AUTH_LOGIN = "auth/login"
 

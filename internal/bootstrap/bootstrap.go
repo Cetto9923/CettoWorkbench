@@ -90,8 +90,8 @@ func Run() error {
 		return fmt.Errorf("init database: %w", err)
 	}
 	defer func() { _ = database.Close(db) }()
-	if err := db.AutoMigrate(&model.OperationLog{}); err != nil {
-		return fmt.Errorf("ensure zt_operation_logs: %w", err)
+	if err := db.AutoMigrate(&model.OperationLog{}, &model.DeptManagerOverride{}); err != nil {
+		return fmt.Errorf("ensure tables: %w", err)
 	}
 
 	// 价值流只读备库：失败不阻断启动，PO 价值流降级为空阶段

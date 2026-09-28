@@ -92,7 +92,7 @@ func TestDepartmentManagerScopeIncludesOnlyMappedGroupNotSiblings(t *testing.T) 
 	svc, mock := newTestService(t)
 	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM zt_dept WHERE COALESCE\\(manager, ''\\) REGEXP \\?").
 		WithArgs("(^|[[:space:],;])lead1([[:space:],;]|$)").WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
-	mock.ExpectQuery("(?s)SELECT id, COALESCE\\(path, ''\\) AS path FROM zt_dept WHERE COALESCE\\(manager, ''\\) REGEXP \\?").
+	mock.ExpectQuery("(?s)SELECT d\\.id, COALESCE\\(d\\.path, ''\\) AS path FROM zt_dept d.*LEFT JOIN zt_wb_dept_manager_override.*REGEXP \\?").
 		WithArgs("(^|[[:space:],;])lead1([[:space:],;]|$)").WillReturnRows(sqlmock.NewRows([]string{"id", "path"}).AddRow(uint(20), ",1,20,"))
 	mock.ExpectQuery("(?s)SELECT DISTINCT id FROM zt_dept WHERE id IN \\(\\?\\) OR path LIKE \\?").
 		WithArgs(uint(20), ",1,20,%").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(20)))
