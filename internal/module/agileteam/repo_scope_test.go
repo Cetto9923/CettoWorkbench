@@ -153,6 +153,75 @@ func TestListDeptTreeIDs_DeptManagerOverridePriority(t *testing.T) {
 	})
 }
 
+// TestIsDeptManager_DeptManagerOverride 验证 IsDeptManager 识别补缺表：
+// 1. 只在补缺表里的账号返回 true；
+// 2. 只在 zt_dept.manager 里的账号返回 true；
+// 3. 补缺表覆盖了原 manager 的部门，原 manager 返回 false。
+func TestIsDeptManager_DeptManagerOverride(t *testing.T) {
+	t.Run("override_only_returns_true", func(t *testing.T) {
+		repo, mock := newTestRepo(t)
+		// 1. 只在补缺表里的账号返回 true (demo_leader 在补缺表有记录，zt_dept.manager 为空)
+		mock.ExpectQuery("(?s)SELECT d\\.id, COALESCE\\(d\\.path, ''\\) AS path FROM zt_dept d.*LEFT JOIN zt_wb_dept_manager_override.*REGEXP \\?").
+			WithArgs("(^|[[:space:],;])demo_leader([[:space:],;]|$)").
+			WillReturnRows(sqlmock.NewRows([]string{"id", "path"}).AddRow(uint(14), ",53,52,14,"))
+		mock.ExpectQuery("(?s)SELECT DISTINCT id FROM zt_dept WHERE id IN \\(\\?\\) OR path LIKE \\?").
+			WithArgs(uint(14), ",53,52,14,%").
+			WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(14)))
+
+		isMgr, err := repo.IsDeptManager(context.Background(), "demo_leader")
+		if err != nil {
+			t.Fatalf("case 1 error: %v", err)
+		}
+		if !isMgr {
+			t.Fatalf("case 1 got false, want true for override_only")
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("case 1 expectations: %v", err)
+		}
+	})
+
+	t.Run("zentao_only_returns_true", func(t *testing.T) {
+		repo, mock := newTestRepo(t)
+		// 2. 只在 zt_dept.manager 里的账号返回 true
+		mock.ExpectQuery("(?s)SELECT d\\.id, COALESCE\\(d\\.path, ''\\) AS path FROM zt_dept d.*LEFT JOIN zt_wb_dept_manager_override.*REGEXP \\?").
+			WithArgs("(^|[[:space:],;])lead1([[:space:],;]|$)").
+			WillReturnRows(sqlmock.NewRows([]string{"id", "path"}).AddRow(uint(14), ",53,52,14,"))
+		mock.ExpectQuery("(?s)SELECT DISTINCT id FROM zt_dept WHERE id IN \\(\\?\\) OR path LIKE \\?").
+			WithArgs(uint(14), ",53,52,14,%").
+			WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(14)))
+
+		isMgr, err := repo.IsDeptManager(context.Background(), "lead1")
+		if err != nil {
+			t.Fatalf("case 2 error: %v", err)
+		}
+		if !isMgr {
+			t.Fatalf("case 2 got false, want true for zentao_only")
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("case 2 expectations: %v", err)
+		}
+	})
+
+	t.Run("overridden_original_manager_returns_false", func(t *testing.T) {
+		repo, mock := newTestRepo(t)
+		// 3. 补缺表覆盖了原 manager 的部门，原 manager 返回 false
+		mock.ExpectQuery("(?s)SELECT d\\.id, COALESCE\\(d\\.path, ''\\) AS path FROM zt_dept d.*LEFT JOIN zt_wb_dept_manager_override.*REGEXP \\?").
+			WithArgs("(^|[[:space:],;])lead_old([[:space:],;]|$)").
+			WillReturnRows(sqlmock.NewRows([]string{"id", "path"}))
+
+		isMgr, err := repo.IsDeptManager(context.Background(), "lead_old")
+		if err != nil {
+			t.Fatalf("case 3 error: %v", err)
+		}
+		if isMgr {
+			t.Fatalf("case 3 got true, want false for overridden manager")
+		}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("case 3 expectations: %v", err)
+		}
+	})
+}
+
 func TestListMappedTeamgroupIDsByDeptsUsesOnlyActiveMappings(t *testing.T) {
 	repo, mock := newTestRepo(t)
 	mock.ExpectQuery("(?s)FROM zt_wb_agileteam_orgmap m.*mapped.type = 'parent'.*m.status = 'active'.*m.deptId IN \\(\\?,\\?\\)").

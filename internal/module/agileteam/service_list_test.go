@@ -90,8 +90,10 @@ func TestBuildTeamFamiliesCanUseSanitizedParentContext(t *testing.T) {
 
 func TestDepartmentManagerScopeIncludesOnlyMappedGroupNotSiblings(t *testing.T) {
 	svc, mock := newTestService(t)
-	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM zt_dept WHERE COALESCE\\(manager, ''\\) REGEXP \\?").
-		WithArgs("(^|[[:space:],;])lead1([[:space:],;]|$)").WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
+	mock.ExpectQuery("(?s)SELECT d\\.id, COALESCE\\(d\\.path, ''\\) AS path FROM zt_dept d.*LEFT JOIN zt_wb_dept_manager_override.*REGEXP \\?").
+		WithArgs("(^|[[:space:],;])lead1([[:space:],;]|$)").WillReturnRows(sqlmock.NewRows([]string{"id", "path"}).AddRow(uint(20), ",1,20,"))
+	mock.ExpectQuery("(?s)SELECT DISTINCT id FROM zt_dept WHERE id IN \\(\\?\\) OR path LIKE \\?").
+		WithArgs(uint(20), ",1,20,%").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(20)))
 	mock.ExpectQuery("(?s)SELECT d\\.id, COALESCE\\(d\\.path, ''\\) AS path FROM zt_dept d.*LEFT JOIN zt_wb_dept_manager_override.*REGEXP \\?").
 		WithArgs("(^|[[:space:],;])lead1([[:space:],;]|$)").WillReturnRows(sqlmock.NewRows([]string{"id", "path"}).AddRow(uint(20), ",1,20,"))
 	mock.ExpectQuery("(?s)SELECT DISTINCT id FROM zt_dept WHERE id IN \\(\\?\\) OR path LIKE \\?").
@@ -157,8 +159,8 @@ func TestLeadScopeMemberAccountsUsesParentFamilyAndRejectsUnmanagedParent(t *tes
 				WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(1)).AddRow(uint(11)).AddRow(uint(12)))
 		}
 		managed()
-		mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM zt_dept WHERE COALESCE\\(manager, ''\\) REGEXP \\?").
-			WithArgs("(^|[[:space:],;])coach1([[:space:],;]|$)").WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+		mock.ExpectQuery("(?s)SELECT d\\.id, COALESCE\\(d\\.path, ''\\) AS path FROM zt_dept d.*LEFT JOIN zt_wb_dept_manager_override.*REGEXP \\?").
+			WithArgs("(^|[[:space:],;])coach1([[:space:],;]|$)").WillReturnRows(sqlmock.NewRows([]string{"id", "path"}))
 		managed()
 		mock.ExpectQuery("(?s)SELECT tg.id, tg.name, tg.parent.*FROM zt_teamgroup tg.*WHERE tg.deleted = '0'.*ORDER BY tg.id ASC").
 			WillReturnRows(rows)
@@ -186,8 +188,8 @@ func TestLeadScopeMemberAccountsUsesParentFamilyAndRejectsUnmanagedParent(t *tes
 				WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(11)))
 		}
 		managed()
-		mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM zt_dept WHERE COALESCE\\(manager, ''\\) REGEXP \\?").
-			WithArgs("(^|[[:space:],;])coach1([[:space:],;]|$)").WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+		mock.ExpectQuery("(?s)SELECT d\\.id, COALESCE\\(d\\.path, ''\\) AS path FROM zt_dept d.*LEFT JOIN zt_wb_dept_manager_override.*REGEXP \\?").
+			WithArgs("(^|[[:space:],;])coach1([[:space:],;]|$)").WillReturnRows(sqlmock.NewRows([]string{"id", "path"}))
 		managed()
 		mock.ExpectQuery("(?s)SELECT tg.id, tg.name, tg.parent.*FROM zt_teamgroup tg.*WHERE tg.deleted = '0'.*ORDER BY tg.id ASC").
 			WillReturnRows(rows)
@@ -209,8 +211,8 @@ func TestLeadScopeTeamgroupIDsKeepSelectedChildIsolated(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(1)).AddRow(uint(11)).AddRow(uint(12)))
 	}
 	managed()
-	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM zt_dept WHERE COALESCE\(manager, ''\) REGEXP \?`).
-		WithArgs("(^|[[:space:],;])coach1([[:space:],;]|$)").WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+	mock.ExpectQuery(`(?s)SELECT d\.id, COALESCE\(d\.path, ''\) AS path FROM zt_dept d.*LEFT JOIN zt_wb_dept_manager_override.*REGEXP \?`).
+		WithArgs("(^|[[:space:],;])coach1([[:space:],;]|$)").WillReturnRows(sqlmock.NewRows([]string{"id", "path"}))
 	managed()
 	teamRows := sqlmock.NewRows([]string{"id", "name", "parent", "parent_name", "org_dept_id", "org_dept_name", "org_dept_inherited", "type", "grade", "path", "PO", "manager", "slogan", "declaration", "logo", "status", "createdDate"}).
 		AddRow(uint(1), "信贷专项团队", uint(0), "", uint(0), "", false, "parent", 1, ",1,", "", "coach1", "", "", "", "enable", "").

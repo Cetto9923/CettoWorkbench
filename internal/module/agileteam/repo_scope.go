@@ -63,16 +63,19 @@ func accountTokenRegexp(account string) string {
 	return `(^|[[:space:],;])` + regexp.QuoteMeta(strings.TrimSpace(account)) + `([[:space:],;]|$)`
 }
 
-// IsDeptManager 判断账号是否为某部室负责人（zt_dept.manager）。
+// IsDeptManager 判断账号是否为某部室负责人。
+// 规则与 ListDeptTreeIDs 保持完全一致：优先查补缺表（deleted='0'），有记录以补缺表为准；
+// 没有记录再看 zt_dept.manager；仅对 dept 52 及以下部门生效。
 func (r *Repo) IsDeptManager(ctx context.Context, account string) (bool, error) {
 	account = strings.TrimSpace(account)
 	if account == "" {
 		return false, nil
 	}
-	var n int64
-	err := r.read().WithContext(ctx).Raw(`
-SELECT COUNT(*) FROM zt_dept WHERE COALESCE(manager, '') REGEXP ?`, accountTokenRegexp(account)).Scan(&n).Error
-	return n > 0, err
+	ids, err := r.ListDeptTreeIDs(ctx, account)
+	if err != nil {
+		return false, err
+	}
+	return len(ids) > 0, nil
 }
 
 // ListDeptTreeIDs 返回账号负责的部门及其下级部门 ID。
