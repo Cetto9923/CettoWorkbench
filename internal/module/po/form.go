@@ -9,9 +9,9 @@
 package po
 
 import (
-	"strconv"
 	"strings"
 
+	"workbench/internal/module/po/primaryaction"
 	"workbench/internal/module/schedule"
 )
 
@@ -23,52 +23,80 @@ type FieldError struct {
 
 // ValueStreamStage 价值流阶段卡片数据（对应 homeVsCompact 单个阶段）。
 type ValueStreamStage struct {
-	Label       string
-	Status      string
-	Count       int64
-	DemandCount int64
-	StoryCount  int64
-}
-
-// LaunchWindowOption 发起交付「上线窗口」检索下拉选项。
-type LaunchWindowOption struct {
-	ID          uint64 `json:"id"`
-	Name        string `json:"name"`
-	ReleaseDate string `json:"releaseDate"`
-}
-
-// UserOption 发起交付「生产验证责任人」检索下拉项（内部用户，同源 user.ListInsideUsers）。
-type UserOption struct {
-	Account  string `json:"account"`
-	Realname string `json:"realname"`
+	Label           string `json:"label"`
+	Status          string `json:"status"`
+	Valid           bool   `json:"valid"` // 真实统计有效标记，失败兜底时为 false (ERROR ≠ ZERO)
+	Count           int64  `json:"count"`
+	DemandCount     int64  `json:"demandCount"`
+	StoryCount      int64  `json:"storyCount"`
+	AvgDurationDays int    `json:"avgDurationDays"`
+	AvgDurationText string `json:"avgDurationText"`
 }
 
 // HomeResp PO 工作台首页数据。
 type HomeResp struct {
-	Stages         []ValueStreamStage
-	VersionWindows []schedule.HomeVersionWindowCard
-	LaunchWindows  []LaunchWindowOption
-	Users          []UserOption
+	AllCount            int64
+	Stages              []ValueStreamStage
+	StagesValid         bool
+	StagesError         string
+	VersionWindows      []schedule.HomeVersionWindowCard
+	VersionWindowsError string
+	IssueRiskCounts     *HomeIssueRiskCounts
+	KPI                 KPICounts
+}
+
+// HomeIssueRiskCounts 当前用户创建或指派、尚未关闭的问题与风险数。
+type HomeIssueRiskCounts struct {
+	Issues int64
+	Risks  int64
+}
+
+// TeamHomeValueStreamStage is a team-scoped count using the demand-management stage contract.
+type TeamHomeValueStreamStage struct {
+	Status      string `json:"status"`
+	Label       string `json:"label"`
+	Count       int64  `json:"count"`
+	DemandCount int64  `json:"demandCount"`
+	StoryCount  int64  `json:"storyCount"`
+}
+
+// KPICounts 首页 5 个焦点摘要的真实计数。
+// 4 个 KPI 由 repo CountKPI{...} 真实统计;MyPending 由 Service 计算。
+// 字段为零时前端仍展示数字 0,不显示破折号。
+type KPICounts struct {
+	Today     int64 // 今日必推：今日到期 OR 已逾期 且未完成
+	MyPending int64 // 待我处理：handlingResponsibility=currentUser（=价值流 all 计数）
+	Blocked   int64 // 阻塞：主管部门审批存在拒绝 ∪ 验收阶段超期
+	Overdue   int64 // 超期：today > deadline 且未完成（缺日期不算）
+	Suspended int64 // 挂起：hang='1' 且未关闭
 }
 
 // DemandsReq 按价值流状态查询需求/故事详情。
 type DemandsReq struct {
-	Status   string `form:"status"`
-	Page     int    `form:"page"`
-	PageSize int    `form:"pageSize"`
+	Focus      string `form:"focus"`
+	Status     string `form:"status"`
+	Page       int    `form:"page"`
+	PageSize   int    `form:"pageSize"`
+	Keyword    string `form:"keyword"`
+	ObjectType string `form:"objectType"`
+	Priority   string `form:"priority"`
+	Relation   string `form:"relation"`
 }
 
-// Normalize 规范化分页参数（默认 page=1、pageSize=10，上限 100）。
-func (r *DemandsReq) Normalize() {
-	if r.Page < 1 {
-		r.Page = 1
+func noticeValue(value, fallback string) string {
+	if value = strings.TrimSpace(value); value == "" {
+		return fallback
 	}
-	if r.PageSize < 1 {
-		r.PageSize = 10
+	return value
+}
+
+func isNoticeValue(value string, allowed ...string) bool {
+	for _, candidate := range allowed {
+		if value == candidate {
+			return true
+		}
 	}
-	if r.PageSize > 100 {
-		r.PageSize = 100
-	}
+	return false
 }
 
 // Validate 校验查询参数。
@@ -80,30 +108,80 @@ func (r *DemandsReq) Validate() []FieldError {
 	if !isValidValueStreamStatus(status) {
 		return []FieldError{{Field: "status", Message: "无效的价值流状态"}}
 	}
+	r.Focus = noticeValue(r.Focus, "all")
+	if !isNoticeValue(r.Focus, "all", "my_action", "today", "blocked", "overdue", "suspended") {
+		return []FieldError{{Field: "focus", Message: "无效的首页焦点"}}
+	}
+	// Toolbar filters: keyword/objectType/priority/relation. 透传到 SQL，
+	// 由 Repo 在 roleDemandBase 之上追加 WHERE；前端不得再做同语义二次过滤。
+	r.Keyword = strings.TrimSpace(r.Keyword)
+	r.ObjectType = strings.ToLower(strings.TrimSpace(r.ObjectType))
+	switch r.ObjectType {
+	case "", "all", "demand":
+	case "story":
+		// 首页焦点列表支持独立研发需求。
+	default:
+		return []FieldError{{Field: "objectType", Message: "不支持的对象类型"}}
+	}
+	r.Priority = strings.ToLower(strings.TrimSpace(r.Priority))
+	switch r.Priority {
+	case "", "all", "p1", "p2", "p3":
+	default:
+		return []FieldError{{Field: "priority", Message: "无效的优先级"}}
+	}
+	r.Relation = strings.ToLower(strings.TrimSpace(r.Relation))
+	switch r.Relation {
+	case "", "all", "lead", "participate", "handling", "following":
+	default:
+		return []FieldError{{Field: "relation", Message: "无效的关系"}}
+	}
 	r.Status = status
+	if r.Page <= 0 {
+		r.Page = 1
+	}
+	if r.PageSize <= 0 {
+		r.PageSize = 15
+	} else if r.PageSize > 100 {
+		r.PageSize = 100
+	}
 	return nil
 }
 
-// ReviewDemandReq 业需评审提交（JSON Body，转发禅道 POST /demand/:id/review）。
+// Normalize 规范化分页参数（默认 page=1、pageSize=15，上限 100）。
+func (r *DemandsReq) Normalize() {
+	if r.Page <= 0 {
+		r.Page = 1
+	}
+	if r.PageSize <= 0 {
+		r.PageSize = 15
+	} else if r.PageSize > 100 {
+		r.PageSize = 100
+	}
+}
+
+// ReviewDemandReq 业需评审提交（JSON Body，对应禅道 demand-review 表单）。
 //
-// 字段对照禅道 OpenAPI：
+// 字段对照禅道 POST：
 //
-//	result  → 评审结果 pass=确认通过 / refuse=拒绝（必填）
-//	comment → 备注（纯文本，可选；驳回时前端会填）
-//	mailto  → 通知人（可选，当前抽屉不传）
+//	result      → 评审结果 pass=确认通过 / refuse=拒绝
+//	isNeedFocus → 是否重点关注 0=否 / 1=是
+//	mailto      → 通知人，逗号分隔账号
+//	comment     → 备注（纯文本）
 //
-// ID 不从 JSON 读，由 Handler 从 URL :id 填进来（和 DeleteReq 同一套路）。
+// ID 不从 JSON 读，由 Handler 从 URL :id 填进来。
 type ReviewDemandReq struct {
-	ID      int64  `json:"-"`
-	Result  string `json:"result"`
-	Mailto  string `json:"mailto"`
-	Comment string `json:"comment"`
+	ID          int64  `json:"-"`
+	Result      string `json:"result"`
+	IsNeedFocus string `json:"isNeedFocus"`
+	Mailto      string `json:"mailto"`
+	Comment     string `json:"comment"`
 }
 
 // Validate 校验评审表单。返回空切片表示通过。
 func (r *ReviewDemandReq) Validate() []FieldError {
 	var errs []FieldError
 	r.Result = strings.TrimSpace(r.Result)
+	r.IsNeedFocus = strings.TrimSpace(r.IsNeedFocus)
 	r.Mailto = strings.TrimSpace(r.Mailto)
 	r.Comment = strings.TrimSpace(r.Comment)
 
@@ -113,6 +191,9 @@ func (r *ReviewDemandReq) Validate() []FieldError {
 	if r.Result != "pass" && r.Result != "refuse" {
 		errs = append(errs, FieldError{Field: "result", Message: "请选择评审结果"})
 	}
+	if r.IsNeedFocus != "0" && r.IsNeedFocus != "1" {
+		errs = append(errs, FieldError{Field: "isNeedFocus", Message: "请选择是否需要重点关注"})
+	}
 	return errs
 }
 
@@ -121,11 +202,7 @@ type ReviewDemandResp struct {
 	ID int64 `json:"id"`
 }
 
-// WithdrawDemandReviewReq 撤回业需评审（JSON Body，转发禅道 POST /demand/:id/withdrawReview）。
-//
-//	comment → 备注/评论（可选；未传置为空字符串）
-//
-// ID 不从 JSON 读，由 Handler 从 URL :id 填入。
+// WithdrawDemandReviewReq 撤回需求评审入参。
 type WithdrawDemandReviewReq struct {
 	ID      int64  `json:"-"`
 	Comment string `json:"comment"`
@@ -136,305 +213,237 @@ func (r *WithdrawDemandReviewReq) Validate() []FieldError {
 	if r.ID <= 0 {
 		return []FieldError{{Field: "id", Message: "需求 ID 无效"}}
 	}
-	r.Comment = strings.TrimSpace(r.Comment)
 	return nil
 }
 
-// WithdrawDemandReviewResp 撤回评审成功响应。
-type WithdrawDemandReviewResp struct {
-	ID int64 `json:"id"`
-}
-
-// SubmitDemandReviewReq 发起业需评审（JSON Body，转发禅道 POST /demand/:id/submit）。
-//
-//	reviewer → 业务评审人账号数组（必填，至少一人）
-//	comment  → 评审说明（可选）
-//
-// ID 不从 JSON 读，由 Handler 从 URL :id 填入。
+// SubmitDemandReviewReq 提交需求评审入参。
 type SubmitDemandReviewReq struct {
 	ID       int64    `json:"-"`
 	Reviewer []string `json:"reviewer"`
 	Comment  string   `json:"comment"`
 }
 
-// Validate 校验发起评审入参。
+// Validate 校验提交评审入参。
 func (r *SubmitDemandReviewReq) Validate() []FieldError {
-	var errs []FieldError
-	r.Comment = strings.TrimSpace(r.Comment)
-
 	if r.ID <= 0 {
-		errs = append(errs, FieldError{Field: "id", Message: "需求 ID 无效"})
-	}
-
-	cleaned := make([]string, 0, len(r.Reviewer))
-	seen := make(map[string]struct{}, len(r.Reviewer))
-	for _, raw := range r.Reviewer {
-		account := strings.TrimSpace(raw)
-		if account == "" {
-			continue
-		}
-		if _, ok := seen[account]; ok {
-			continue
-		}
-		seen[account] = struct{}{}
-		cleaned = append(cleaned, account)
-	}
-	r.Reviewer = cleaned
-	if len(r.Reviewer) == 0 {
-		errs = append(errs, FieldError{Field: "reviewer", Message: "请至少选择一位业务评审人"})
-	}
-	return errs
-}
-
-// SubmitDemandReviewResp 发起评审成功响应。
-type SubmitDemandReviewResp struct {
-	ID int64 `json:"id"`
-}
-
-// DeliverDemandReq 发起交付提交（JSON Body，转发禅道 POST /demand/:id/deliver）。
-//
-// 字段对照禅道 OpenAPI（表单字段经 API entry 写入 $_POST）：
-//
-//	deliverDate       → 交付时间（Y-m-d，取上线窗口结束日 releaseDate）
-//	isGrayVerifyPlan  → 灰度验证计划 1/0
-//	verifyDate        → 生产验证时间（不可为空或 "0"）
-//	verifyPlan        → 生产验证计划
-//	veriFier          → 生产验证责任人（禅道字段大小写如此）
-//	isCarReview       → 快速评审；未传或空串时置为 "0"
-//
-// ID 不从 JSON 读，由 Handler 从 URL :id 填入。
-type DeliverDemandReq struct {
-	ID               int64  `json:"-"`
-	DeliverDate      string `json:"deliverDate"`
-	IsGrayVerifyPlan string `json:"isGrayVerifyPlan"`
-	VerifyDate       string `json:"verifyDate"`
-	VerifyPlan       string `json:"verifyPlan"`
-	VeriFier         string `json:"veriFier"`
-	IsCarReview      string `json:"isCarReview"`
-}
-
-// Validate 校验发起交付表单。返回空切片表示通过。
-func (r *DeliverDemandReq) Validate() []FieldError {
-	var errs []FieldError
-	r.DeliverDate = strings.TrimSpace(r.DeliverDate)
-	r.IsGrayVerifyPlan = strings.TrimSpace(r.IsGrayVerifyPlan)
-	r.VerifyDate = strings.TrimSpace(r.VerifyDate)
-	r.VerifyPlan = strings.TrimSpace(r.VerifyPlan)
-	r.VeriFier = strings.TrimSpace(r.VeriFier)
-	r.IsCarReview = strings.TrimSpace(r.IsCarReview)
-	if r.IsCarReview == "" {
-		r.IsCarReview = "0"
-	}
-
-	if r.ID <= 0 {
-		errs = append(errs, FieldError{Field: "id", Message: "需求 ID 无效"})
-	}
-	if r.DeliverDate == "" {
-		errs = append(errs, FieldError{Field: "deliverDate", Message: "请选择上线窗口"})
-	} else if len(r.DeliverDate) != 10 || r.DeliverDate[4] != '-' || r.DeliverDate[7] != '-' {
-		errs = append(errs, FieldError{Field: "deliverDate", Message: "交付时间格式无效"})
-	}
-	if r.IsGrayVerifyPlan == "" {
-		errs = append(errs, FieldError{Field: "isGrayVerifyPlan", Message: "请选择灰度验证计划"})
-	}
-	if r.VerifyDate == "" || r.VerifyDate == "0" {
-		errs = append(errs, FieldError{Field: "verifyDate", Message: "请选择生产验证时间"})
-	}
-	if r.VerifyPlan == "" {
-		errs = append(errs, FieldError{Field: "verifyPlan", Message: "请填写生产验证计划"})
-	}
-	if r.VeriFier == "" {
-		errs = append(errs, FieldError{Field: "veriFier", Message: "请选择生产验证责任人"})
-	}
-	return errs
-}
-
-// DeliverDemandResp 发起交付成功响应。
-type DeliverDemandResp struct {
-	ID int64 `json:"id"`
-}
-
-// AcceptanceReq 业需验收提交（JSON Body，转发禅道 POST /demand/:id/acceptance）。
-//
-//	acceptance  → yes 通过 / no 不通过（必填）
-//	assignedTo  → 指派账号（必填）
-//	comment     → 验收意见；acceptance=no 时必填
-//
-// ID 不从 JSON 读，由 Handler 从 URL :id 填入。
-type AcceptanceReq struct {
-	ID         int64  `json:"-"`
-	Acceptance string `json:"acceptance"`
-	AssignedTo string `json:"assignedTo"`
-	Comment    string `json:"comment"`
-}
-
-// Validate 校验验收表单。返回空切片表示通过。
-func (r *AcceptanceReq) Validate() []FieldError {
-	var errs []FieldError
-	r.Acceptance = strings.TrimSpace(r.Acceptance)
-	r.AssignedTo = strings.TrimSpace(r.AssignedTo)
-	r.Comment = strings.TrimSpace(r.Comment)
-
-	if r.ID <= 0 {
-		errs = append(errs, FieldError{Field: "id", Message: "需求 ID 无效"})
-	}
-	if r.Acceptance != "yes" && r.Acceptance != "no" {
-		errs = append(errs, FieldError{Field: "acceptance", Message: "请选择验收结果"})
-	}
-	if r.AssignedTo == "" {
-		errs = append(errs, FieldError{Field: "assignedTo", Message: "请选择指派给"})
-	}
-	if r.Acceptance == "no" && r.Comment == "" {
-		errs = append(errs, FieldError{Field: "comment", Message: "不通过时请填写验收意见"})
-	}
-	return errs
-}
-
-// AcceptanceResp 业需验收成功响应。
-type AcceptanceResp struct {
-	ID int64 `json:"id"`
-}
-
-// WorkItemDetail 单条需求或故事详情。
-type WorkItemDetail struct {
-	Kind            string `json:"kind"`
-	ID              string `json:"id"` // 展示编号：业需 US{id}，研需 U{id}
-	Pri             string `json:"pri"`
-	Title           string `json:"title"`
-	Stage           string `json:"stage"` // 研需：zt_story.stage；业需一般为空（价值流用 valueStream）
-	Blocker         string `json:"blocker"`
-	Next            string `json:"next"`
-	Owner           string `json:"owner"`     // 与 NextOwner 同值，兼容旧字段
-	NextOwner       string `json:"nextOwner"` // 下一责任人展示名（DeriveCurrentHandler）
-	ZentaoUrl       string `json:"zentaoUrl"`
-	ZentaoEditUrl   string `json:"zentaoEditUrl"` // 禅道业需编辑页（demand-edit）
-	ClarifyUrl      string `json:"clarifyUrl"`    // 禅道业需澄清页（demand-clarify）
-	AppraiseUrl     string `json:"appraiseUrl"`   // 禅道业需评价页（demand-appraise）
-	TesttaskUrl     string `json:"testtaskUrl"`   // 禅道测试单用例页（testtask-cases），联调测试阶段
-	ValueStream     string `json:"valueStream"`
-	ZentaoStatus    string `json:"zentaoStatus"`    // 禅道 status 原文，前端按业需/研需分别映射中文
-	AssignedTo      string `json:"assignedTo"`      // 指派账号原文，验收按钮等前端判定用
-	CanReview       bool   `json:"canReview"`       // 待评审且当前账号是未出结果的业务评审人
-	CanCancelReview bool   `json:"canCancelReview"` // 待评审且当前账号是提交人（创建人）
-	CanSubmitReview bool   `json:"canSubmitReview"` // 草稿/已驳回且当前账号是创建人
-	CanEdit         bool   `json:"canEdit"`         // 草稿/已驳回且当前账号是创建人
-	Suspended       bool   `json:"suspended"`       // zt_demand.hang = '1'
-}
-
-// DemandsResp 价值流状态下的需求详情列表。
-type DemandsResp struct {
-	Items    []WorkItemDetail `json:"items"`
-	Total    int64            `json:"total"`
-	Page     int              `json:"page"`
-	PageSize int              `json:"pageSize"`
-}
-
-// DemandDetailReq 业需详情查询（path :id，支持 US123 / 123）。
-type DemandDetailReq struct {
-	ID string
-}
-
-// ExtractDemandID 从 US{id} 或纯数字解析主键。
-func (r *DemandDetailReq) ExtractDemandID() int64 {
-	raw := strings.TrimSpace(r.ID)
-	raw = strings.TrimPrefix(raw, "US")
-	raw = strings.TrimPrefix(raw, "us")
-	id, err := strconv.ParseInt(raw, 10, 64)
-	if err != nil || id <= 0 {
-		return 0
-	}
-	return id
-}
-
-// Validate 校验需求 ID。
-func (r *DemandDetailReq) Validate() []FieldError {
-	if r.ExtractDemandID() <= 0 {
 		return []FieldError{{Field: "id", Message: "需求 ID 无效"}}
 	}
 	return nil
 }
 
-// DemandAttachment 需求附件。
-type DemandAttachment struct {
-	ID       uint   `json:"id"`
-	Title    string `json:"title"`
-	Size     string `json:"size"`
-	Download string `json:"download"`
+// WorkItemDetail 单条需求或故事详情。
+type WorkItemDetail struct {
+	Kind          string                       `json:"kind"`
+	ID            string                       `json:"id"` // 展示编号：业需 US{id}，其余对象使用禅道原始数字 ID
+	Pri           string                       `json:"pri"`
+	Title         string                       `json:"title"`
+	Stage         string                       `json:"stage"`
+	Blocker       string                       `json:"blocker"`
+	Next          string                       `json:"next"`
+	Owner         string                       `json:"owner"`     // 与 NextOwner 同值，兼容旧字段
+	NextOwner     string                       `json:"nextOwner"` // 下一责任人展示名（DeriveCurrentHandler）
+	ZentaoUrl     string                       `json:"zentaoUrl"`
+	ValueStream   string                       `json:"valueStream"`
+	ZentaoStatus  string                       `json:"zentaoStatus"`            // 禅道 status 原文，前端按业需/研需分别映射中文
+	Suspended     bool                         `json:"suspended"`               // 当前存在 hang='1' 的挂起事实
+	Blocked       bool                         `json:"blocked"`                 // 当前 status=refuse 的阻塞事实
+	Deadline      string                       `json:"deadline,omitempty"`      // 截止日期 (YYYY-MM-DD)
+	Overdue       bool                         `json:"overdue,omitempty"`       // 当前是否已超期
+	OverdueDays   int                          `json:"overdueDays,omitempty"`   // 超期天数 (>0)
+	PrimaryAction *primaryaction.PrimaryAction `json:"primaryAction,omitempty"` // 服务端主操作
+	CanReview     bool                         `json:"canReview"`               // 当前登录人是待评业务评审人（与指派给无关）
+	CanEdit       bool                         `json:"canEdit,omitempty"`       // 当前登录人可直接编辑（未被评审且为创建人）
+	ZentaoEditUrl string                       `json:"zentaoEditUrl,omitempty"` // 禅道原生编辑页直达链接
 }
 
-// DemandDetailResp 业需评审抽屉详情（字段对齐禅道 demand-view）。
-type DemandDetailResp struct {
-	ID                string             `json:"id"`
-	DemandID          int64              `json:"demandId"`
-	Title             string             `json:"title"`
-	Pri               string             `json:"pri"`
-	Category          string             `json:"category"`
-	Source            string             `json:"source"`
-	PoolName          string             `json:"poolName"`
-	Deadline          string             `json:"deadline"` // 期望上线，zt_demand.deadline
-	ProposerName      string             `json:"proposerName"`
-	ProposerDept      string             `json:"proposerDept"`
-	OwnerName         string             `json:"ownerName"`
-	BraAccount        string             `json:"braAccount"`        // 需求负责人账号，验收弹窗默认指派给
-	Reviewer          string             `json:"reviewer"`          // 展示名（多评审人用 ", " 拼接）
-	ReviewerAccounts  []string           `json:"reviewerAccounts"`  // 原始账号列表，供提交评审多选回显
-	BusinessReviewers []UserOption       `json:"businessReviewers"` // 所属需求池业务评审人（对齐禅道 demand-submit）
-	CreatedName       string             `json:"createdName"`
-	CurrentOwner      string             `json:"currentOwner"` // UI 展示为「指派给」，取 assignedTo
-	ZentaoStatus      string             `json:"zentaoStatus"`
-	ZentaoStatusLabel string             `json:"zentaoStatusLabel"`
-	ValueStageLabel   string             `json:"valueStageLabel"`
-	SpecHtml          string             `json:"specHtml"`
-	VerifyHtml        string             `json:"verifyHtml"`
-	ZentaoURL         string             `json:"zentaoUrl"`
-	ZentaoEditURL     string             `json:"zentaoEditUrl"`
-	Attachments       []DemandAttachment `json:"attachments"`
-	// 以下四块对齐禅道 demand-view（验收抽屉展示）
-	Stories       []DemandStoryItem        `json:"stories"`
-	UserStories   []DemandUserStoryItem    `json:"userStories"`
-	ReviewRecords []DemandReviewRecordItem `json:"reviewRecords"`
-	Tickets       []DemandTicketItem       `json:"tickets"`
+// DemandsResp 价值流状态下的需求详情列表。
+type DemandsResp struct {
+	Items        []WorkItemDetail   `json:"items"`
+	Total        int64              `json:"total"`
+	Page         int                `json:"page"`
+	PageSize     int                `json:"pageSize"`
+	StageSummary []ValueStreamStage `json:"stageSummary,omitempty"`
 }
 
-// DemandStoryItem 转化的研发需求（zt_story fromDemand）。
-type DemandStoryItem struct {
-	ID          uint   `json:"id"`
-	Title       string `json:"title"`
-	Stage       string `json:"stage"`
-	StageLabel  string `json:"stageLabel"`
-	ProductName string `json:"productName"`
-	ReleaseDate string `json:"releaseDate"`
-	ZentaoURL   string `json:"zentaoUrl"`
+// Relation 我的关系 V10.1 02 节。
+type Relation string
+
+const (
+	RelationAll       Relation = "all"
+	RelationInCharge  Relation = "in_charge" // 我负责
+	RelationCooperate Relation = "cooperate" // 我配合
+	RelationFollow    Relation = "follow"    // 我关注
+)
+
+// Responsibility 办理责任 V10.1 02 节。
+type Responsibility string
+
+const (
+	ResponsibilityAll        Responsibility = "all"
+	ResponsibilityMyAction   Responsibility = "my_action"    // 待我处理
+	ResponsibilityMyFollowUp Responsibility = "my_follow_up" // 待我跟进
+)
+
+// TodoListReq 我的待办列表请求。
+// V10.1 02 节：办理场景 ∩ 阶段 ∩ 对象 ∩ 我的关系 ∩ 办理责任 ∩ 关键词。
+type TodoListReq struct {
+	Action         TodoAction     `form:"action"`         // 办理场景；默认 all
+	ApprovalType   string         `form:"approvalType"`   // 审批场景（仅 approval 生效）；默认 all
+	Stage          string         `form:"stage"`          // 阶段（仅 demand 生效）；默认 all
+	ObjectType     string         `form:"objectType"`     // 对象类型 demand/story/task/bug/testtask；默认 all
+	Relation       Relation       `form:"relation"`       // 我的关系；默认 all
+	Responsibility Responsibility `form:"responsibility"` // 办理责任；默认 all
+	Focus          string         `form:"focus"`          // 一级快捷筛选；默认 pending
+	Keyword        string         `form:"keyword"`        // 关键词
+	Page           int            `form:"page"`           // 页码；1-based
+	PageSize       int            `form:"pageSize"`       // 每页条数；默认 20
 }
 
-// DemandUserStoryItem 用户故事条目（zt_demanduserstory）。
-type DemandUserStoryItem struct {
-	NO          int    `json:"no"`
-	Role        string `json:"role"`
-	GV          string `json:"gv"`
-	ProductName string `json:"productName"`
-	PointLabel  string `json:"pointLabel"`
+// TodoAction 办理场景（V10.1 02 节 "为什么现在要办"）。
+// 本期按需求 status 启发式映射；后续接入 zt_action action 字符串后精确化。
+type TodoAction string
+
+const (
+	TodoActionAll      TodoAction = "all"
+	TodoActionReview   TodoAction = "todo_review"   // 待受理/待评审: status IN (draft, wait, active, refuse)
+	TodoActionSchedule TodoAction = "todo_schedule" // 待排期: status IN (clarified) + scheduleIncomplete
+	TodoActionVerify   TodoAction = "todo_verify"   // 待验收: status IN (testing, waitacceptance)
+	TodoActionDeliver  TodoAction = "todo_deliver"  // 待发起交付: status IN (acceptanced)，个人责任由基础集合约束
+	TodoActionFollow   TodoAction = "todo_follow"   // 待跟进: 其它主动跟进
+)
+
+// Validate 校验 TodoListReq。
+func (r *TodoListReq) Validate() []FieldError {
+	r.Action = TodoAction(strings.TrimSpace(string(r.Action)))
+	if r.Action == "" {
+		r.Action = TodoActionAll
+	}
+	switch r.Action {
+	case TodoActionAll, TodoActionReview, TodoActionSchedule, TodoActionVerify, TodoActionDeliver, TodoActionFollow:
+	default:
+		return []FieldError{{Field: "action", Message: "无效的办理场景"}}
+	}
+	r.ApprovalType = strings.TrimSpace(r.ApprovalType)
+	if r.ApprovalType == "" {
+		r.ApprovalType = "all"
+	}
+	switch r.ApprovalType {
+	case "all", "charter", "buildguideline", "planchange", "review", "reviewchange", "reviewbymanager":
+	default:
+		return []FieldError{{Field: "approvalType", Message: "无效的审批场景"}}
+	}
+	r.Stage = strings.TrimSpace(r.Stage)
+	if r.Stage == "" {
+		r.Stage = "all"
+	}
+	switch r.Stage {
+	case "all", "accept", "clarify", "schedule", "developing", "testing", "waitacceptance", "acceptanced", "publish", "released":
+	default:
+		return []FieldError{{Field: "stage", Message: "无效的阶段状态"}}
+	}
+	r.ObjectType = strings.TrimSpace(r.ObjectType)
+	if r.ObjectType == "" {
+		r.ObjectType = "all"
+	}
+	switch r.ObjectType {
+	case "all", "approval", "demand", "story", "task", "bug", "risk", "issue", "todo", "testtask":
+	default:
+		return []FieldError{{Field: "objectType", Message: "不支持的对象类型"}}
+	}
+	r.Relation = Relation(strings.TrimSpace(string(r.Relation)))
+	if r.Relation == "" {
+		r.Relation = RelationAll
+	}
+	switch r.Relation {
+	case RelationAll, RelationInCharge, RelationCooperate, RelationFollow:
+	default:
+		return []FieldError{{Field: "relation", Message: "无效的我的关系"}}
+	}
+	r.Responsibility = Responsibility(strings.TrimSpace(string(r.Responsibility)))
+	if r.Responsibility == "" {
+		r.Responsibility = ResponsibilityAll
+	}
+	switch r.Responsibility {
+	case ResponsibilityAll, ResponsibilityMyAction, ResponsibilityMyFollowUp:
+	default:
+		return []FieldError{{Field: "responsibility", Message: "无效的办理责任"}}
+	}
+	r.Focus = strings.TrimSpace(r.Focus)
+	if r.Focus == "" {
+		r.Focus = "pending"
+	}
+	switch r.Focus {
+	case "pending", "today", "overdue", "blocked", "p1":
+	default:
+		return []FieldError{{Field: "focus", Message: "无效的一级筛选"}}
+	}
+	r.Keyword = strings.TrimSpace(r.Keyword)
+	if r.Page < 1 {
+		r.Page = 1
+	}
+	if r.PageSize < 1 || r.PageSize > 100 {
+		r.PageSize = 20
+	}
+	return nil
 }
 
-// DemandReviewRecordItem 评审信息（zt_demandreviewrecord）。
-type DemandReviewRecordItem struct {
-	ReviewType        string `json:"reviewType"`
-	ReviewTypeLabel   string `json:"reviewTypeLabel"`
-	ReviewDate        string `json:"reviewDate"`
-	ReviewResult      string `json:"reviewResult"`
-	CreatedBy         string `json:"createdBy"`
-	CreatedByName     string `json:"createdByName"`
-	CreatedDate       string `json:"createdDate"`
-	ReviewStatus      string `json:"reviewStatus"`
-	ReviewStatusLabel string `json:"reviewStatusLabel"`
+// TodoItem 我的待办单条（横跨业务需求/研发需求/任务/Bug/测试单等多种对象）。
+// kind 决定展示与跳转链接生成。
+type TodoItem struct {
+	Kind           string `json:"kind"`                    // demand / story / task / bug / test
+	ID             int64  `json:"id"`                      // 业务需求 ID（业需/任务/...各自主键）
+	DisplayID      string `json:"displayId"`               // 展示编号：业需 US{id}，其余对象使用禅道原始数字 ID
+	Title          string `json:"title"`                   // 标题
+	Type           string `json:"type"`                    // 对象类型中文标签（业务需求/任务/Bug/测试单...）
+	Stage          string `json:"stage"`                   // 当前阶段（valueStream 标签或 zentao status 中文）
+	Priority       string `json:"priority"`                // 优先级 P0..P4
+	Severity       string `json:"severity,omitempty"`      // 风险等级/问题严重程度
+	Relation       string `json:"relation"`                // 我负责/我配合/我关注
+	Responsibility string `json:"responsibility"`          // 待我处理/待我跟进
+	Reason         string `json:"reason"`                  // 形成原因（来源禅道 status 或业务场景）
+	Deadline       string `json:"deadline"`                // 截止日期 YYYY-MM-DD（无日期空串）
+	Owner          string `json:"owner"`                   // 责任人展示名
+	URL            string `json:"url"`                     // 禅道详情 URL 或工作台任务详情 URL
+	Action         string `json:"action"`                  // 当前可执行或跟进动作
+	Blocked        bool   `json:"blocked"`                 // 是否存在明确阻塞事实
+	ApprovalScene  string `json:"approvalScene,omitempty"` // 审批对象的具体审批场景
 }
 
-// DemandTicketItem 工单信息（zt_ticket.demand）。
-type DemandTicketItem struct {
-	ID          uint   `json:"id"`
-	Title       string `json:"title"`
-	Pri         string `json:"pri"`
-	Status      string `json:"status"`
-	StatusLabel string `json:"statusLabel"`
-	ZentaoURL   string `json:"zentaoUrl"`
+// TodoSummary 我的待办一级快捷指标，与返回列表同源计算。
+type TodoSummary struct {
+	Pending int `json:"pending"`
+	Today   int `json:"today"`
+	Overdue int `json:"overdue"`
+	Blocked int `json:"blocked"`
+	P1      int `json:"p1"`
+}
+
+// TodoGroupCounts 我的待办对象域计数。
+type TodoGroupCounts struct {
+	All       int `json:"all"`
+	Approval  int `json:"approval"`
+	Demand    int `json:"demand"`
+	Execution int `json:"execution"`
+	Testing   int `json:"testing"`
+	Risk      int `json:"risk"`
+	Personal  int `json:"personal"`
+}
+
+// TodoFacet 待办对象类型分面计数，与"我的已办"的 DoneFacet 芯片契约同形。
+// Key 取值必须落在 TodoListReq.ObjectType 允许的集合内，否则芯片点击会被校验拒绝。
+type TodoFacet struct {
+	Key   string `json:"key"`
+	Label string `json:"label"`
+	Count int64  `json:"count"`
+}
+
+// TodoListResp 我的待办列表响应。
+type TodoListResp struct {
+	Items    []TodoItem      `json:"items"`
+	Total    int64           `json:"total"`    // 过滤后总数（不含分页截断）
+	Page     int             `json:"page"`     // 当前页
+	PageSize int             `json:"pageSize"` // 每页条数
+	Summary  TodoSummary     `json:"summary"`
+	Groups   TodoGroupCounts `json:"groups"`
+	Facets   []TodoFacet     `json:"facets"`
 }

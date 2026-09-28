@@ -2,7 +2,7 @@
 // 文件: internal/module/po/handlerreview.go
 // 模块: PO 工作台
 // 类型: action
-// 职责: 业需发起评审 / 评审 / 撤回 HTTP 接口（POST JSON，成功返回 redirectUrl）。
+// 职责: 业需评审 HTTP 接口（POST JSON，成功返回 redirectUrl）。
 // 依赖: internal/middleware
 //       internal/pkg/errorx
 // =============================================================================
@@ -20,51 +20,6 @@ import (
 	"workbench/internal/middleware"
 	"workbench/internal/pkg/errorx"
 )
-
-// SubmitDemandReview 处理「发起评审」提交。
-//
-// 请求：POST /demands/:id/submit-review ，Body 是 JSON（reviewer 必填，comment 可选）。
-// 成功：{ success, message, redirectUrl }
-func (h *Handler) SubmitDemandReview(c *gin.Context) {
-	id, err := parseReviewDemandID(c.Param("id"))
-	if err != nil || id <= 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "需求 ID 无效"})
-		return
-	}
-
-	var req SubmitDemandReviewReq
-	if bindErr := c.ShouldBindJSON(&req); bindErr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "参数解析失败"})
-		return
-	}
-	req.ID = id
-	if fieldErrs := req.Validate(); len(fieldErrs) > 0 {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"message": "参数校验失败",
-			"errors":  fieldErrs,
-		})
-		return
-	}
-
-	actor := middleware.CurrentUser(c)
-	if _, svcErr := h.svc.SubmitDemandReview(c.Request.Context(), actor, req); svcErr != nil {
-		if h.logger != nil {
-			h.logger.Error("po submit demand review", zap.Error(svcErr), zap.Int64("id", id))
-		}
-		status, msg := reviewHTTPError(svcErr)
-		if status == http.StatusInternalServerError {
-			msg = "提交评审失败，请稍后重试"
-		}
-		c.JSON(status, gin.H{"message": msg})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"success":     true,
-		"message":     "提交评审成功",
-		"redirectUrl": "/home",
-	})
-}
 
 // ReviewDemand 处理「评审需求」提交。
 //
@@ -109,9 +64,7 @@ func (h *Handler) ReviewDemand(c *gin.Context) {
 }
 
 // WithdrawDemandReview 处理「撤回评审」提交。
-//
-// 请求：POST /demands/:id/withdraw-review ，Body 是 JSON（comment 可选）。
-// 成功：{ success, message, redirectUrl }
+// 请求：POST /demands/:id/withdraw-review
 func (h *Handler) WithdrawDemandReview(c *gin.Context) {
 	id, err := parseReviewDemandID(c.Param("id"))
 	if err != nil || id <= 0 {
@@ -121,12 +74,8 @@ func (h *Handler) WithdrawDemandReview(c *gin.Context) {
 
 	var req WithdrawDemandReviewReq
 	if bindErr := c.ShouldBindJSON(&req); bindErr != nil {
-		// comment 可选：允许空 Body，按空对象处理
-		if c.Request.ContentLength != 0 {
-			c.JSON(http.StatusBadRequest, gin.H{"message": "参数解析失败"})
-			return
-		}
-		req = WithdrawDemandReviewReq{}
+		c.JSON(http.StatusBadRequest, gin.H{"message": "参数解析失败"})
+		return
 	}
 	req.ID = id
 	if fieldErrs := req.Validate(); len(fieldErrs) > 0 {
@@ -138,14 +87,11 @@ func (h *Handler) WithdrawDemandReview(c *gin.Context) {
 	}
 
 	actor := middleware.CurrentUser(c)
-	if _, svcErr := h.svc.WithdrawDemandReview(c.Request.Context(), actor, req); svcErr != nil {
+	if svcErr := h.svc.WithdrawDemandReview(c.Request.Context(), actor, req); svcErr != nil {
 		if h.logger != nil {
 			h.logger.Error("po withdraw demand review", zap.Error(svcErr), zap.Int64("id", id))
 		}
 		status, msg := reviewHTTPError(svcErr)
-		if status == http.StatusInternalServerError {
-			msg = "撤回评审失败，请稍后重试"
-		}
 		c.JSON(status, gin.H{"message": msg})
 		return
 	}
@@ -155,6 +101,66 @@ func (h *Handler) WithdrawDemandReview(c *gin.Context) {
 		"message":     "撤回评审成功",
 		"redirectUrl": "/home",
 	})
+}
+
+// SubmitDemandReview 处理「提交评审」提交。
+// 请求：POST /demands/:id/submit-review
+func (h *Handler) SubmitDemandReview(c *gin.Context) {
+	id, err := parseReviewDemandID(c.Param("id"))
+	if err != nil || id <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "需求 ID 无效"})
+		return
+	}
+
+	var req SubmitDemandReviewReq
+	if bindErr := c.ShouldBindJSON(&req); bindErr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "参数解析失败"})
+		return
+	}
+	req.ID = id
+	if fieldErrs := req.Validate(); len(fieldErrs) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"message": "参数校验失败",
+			"errors":  fieldErrs,
+		})
+		return
+	}
+
+	actor := middleware.CurrentUser(c)
+	if svcErr := h.svc.SubmitDemandReview(c.Request.Context(), actor, req); svcErr != nil {
+		if h.logger != nil {
+			h.logger.Error("po submit demand review", zap.Error(svcErr), zap.Int64("id", id))
+		}
+		status, msg := reviewHTTPError(svcErr)
+		c.JSON(status, gin.H{"message": msg})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":     true,
+		"message":     "提交评审成功",
+		"redirectUrl": "/home",
+	})
+}
+
+// DemandReviewCandidates 返回提交评审弹框的评审人候选。
+// GET /demands/:id/review-candidates
+func (h *Handler) DemandReviewCandidates(c *gin.Context) {
+	id, err := parseReviewDemandID(c.Param("id"))
+	if err != nil || id <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "需求 ID 无效"})
+		return
+	}
+	resp, svcErr := h.svc.GetDemandReviewCandidates(c.Request.Context(), middleware.CurrentUser(c), id)
+	if svcErr != nil {
+		if h.logger != nil {
+			h.logger.Error("po get demand review candidates", zap.Error(svcErr), zap.Int64("id", id))
+		}
+		status, msg := reviewHTTPError(svcErr)
+		c.JSON(status, gin.H{"message": msg})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": resp})
 }
 
 // parseReviewDemandID 接受数字主键，或列表展示用的 US{id}。

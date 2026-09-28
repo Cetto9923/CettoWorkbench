@@ -14,8 +14,9 @@ package po
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -43,16 +44,84 @@ var valueStreamStages = []struct {
 
 // Service PO 工作台业务逻辑。
 type Service struct {
-	repo     *Repo
-	schedule *schedule.Service
-	userSvc  *user.Service
-	ztAPI    *zentao.Client
-	logger   *zap.Logger
+	repo         *Repo
+	detailSvc    *DetailService
+	schedule     *schedule.Service
+	userSvc      *user.Service
+	logger       *zap.Logger
+	issueActions zentao.IssueActionGateway
+	taskActions  taskStatusGateway
 }
 
-// NewService 创建 Service。ztAPI 可为空，评审写禅道时回退 zentao.API()。
-func NewService(repo *Repo, scheduleSvc *schedule.Service, userSvc *user.Service, ztAPI *zentao.Client, logger *zap.Logger) *Service {
-	return &Service{repo: repo, schedule: scheduleSvc, userSvc: userSvc, ztAPI: ztAPI, logger: logger}
+// NewService 创建 Service。兼容 4 参数 (repo, schedule, user, logger) 与 5 参数 (repo, schedule, user, ztAPI, logger)。
+func NewService(repo *Repo, scheduleSvc *schedule.Service, userSvc *user.Service, args ...any) *Service {
+	var logger *zap.Logger
+	for _, arg := range args {
+		if l, ok := arg.(*zap.Logger); ok {
+			logger = l
+		}
+	}
+	var detailSvc *DetailService
+	if repo != nil && repo.db != nil {
+		detailSvc = NewDetailService(NewDemandDetailRepo(repo.db))
+	}
+	s := &Service{repo: repo, detailSvc: detailSvc, schedule: scheduleSvc, userSvc: userSvc, logger: logger,
+		issueActions: zentao.NewUnavailableIssueActionGateway("当前禅道 API 未提供问题解决、关闭或重新激活动作接口"),
+		taskActions:  zentao.DefaultClient()}
+	if detailSvc != nil {
+		detailSvc.attachParent(s)
+	}
+	return s
+}
+
+type taskStatusGateway interface {
+	UpdateTask(ctx context.Context, p zentao.UpdateTaskParams) error
+}
+
+// SetTaskStatusGateway 注入禅道任务状态网关，供测试替换。
+func (s *Service) SetTaskStatusGateway(gateway taskStatusGateway) {
+	if s == nil {
+		return
+	}
+	s.taskActions = gateway
+}
+
+// SetIssueActionGateway 注入禅道问题原生动作网关；nil 始终失败关闭。
+func (s *Service) SetIssueActionGateway(gateway zentao.IssueActionGateway) {
+	if s == nil {
+		return
+	}
+	if gateway == nil {
+		gateway = zentao.NewUnavailableIssueActionGateway("当前禅道原生问题操作接口不可用")
+	}
+	s.issueActions = gateway
+}
+
+// DetailService 返回统一详情服务。
+func (s *Service) DetailService() *DetailService {
+	if s == nil {
+		return nil
+	}
+	return s.detailSvc
+}
+
+// CountValueStreamAll 首页价值流「全部」条数（业需 + 研需 kind+id 去重并集），供看板等模块调用。
+func (s *Service) CountValueStreamAll(ctx context.Context, account string) (int64, error) {
+	if s == nil || s.repo == nil {
+		return 0, nil
+	}
+	stages, err := s.countAllStageBreakdown(ctx, account)
+	if err != nil {
+		return 0, err
+	}
+	if len(stages) > 0 && stages[0].Status == "all" {
+		return stages[0].Count, nil
+	}
+	var total int64
+	for _, st := range stages {
+		total += st.Count
+	}
+	return total, nil
 }
 
 // Home 加载首页价值流阶段统计。
@@ -62,440 +131,257 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 		account = actor.Account
 	}
 
-	stages := make([]ValueStreamStage, 0, len(valueStreamStages))
-	allIdx := -1
-	for _, def := range valueStreamStages {
-		if def.status == "all" {
-			allIdx = len(stages)
-			stages = append(stages, ValueStreamStage{Label: def.label, Status: def.status})
-			continue
-		}
-
-		var demand, story int64
-		if filter, ok := mysqlStageFilters[def.status]; ok {
-			n, countErr := s.repo.CountRoleDemands(ctx, account, filter)
-			if countErr != nil {
-				return nil, countErr
-			}
-			demand = n
-			if filter.scheduleIncomplete {
-				sn, storyErr := s.repo.CountScheduleStories(ctx, account)
-				if storyErr != nil {
-					return nil, storyErr
-				}
-				story = sn
-			}
-			if filter.deliverStories {
-				sn, storyErr := s.repo.CountDeliverStories(ctx, account)
-				if storyErr != nil {
-					return nil, storyErr
-				}
-				story = sn
-			}
-		}
-		stages = append(stages, ValueStreamStage{
-			Label:       def.label,
-			Status:      def.status,
-			Count:       demand + story,
-			DemandCount: demand,
-			StoryCount:  story,
-		})
+	if s.repo == nil {
+		return nil, fmt.Errorf("po repo is not configured")
 	}
 
-	// 「全部」= 各阶段 kind+id 去重并集；只拉 ID，不拉详情
-	if allIdx >= 0 {
-		demandSum, storySum, allErr := s.countAllStageUniq(ctx, account)
-		if allErr != nil {
-			return nil, allErr
+	t0 := time.Now()
+	var (
+		breakdown  []ValueStreamStage
+		allErr     error
+		windows    []schedule.HomeVersionWindowCard
+		winErr     error
+		myPending  int64
+		pendingErr error
+		overdue    int64
+		overdueErr error
+		kpiSummary KPISummaryResult
+		kpiErr     error
+		wg         sync.WaitGroup
+	)
+
+	// 并行加载价值流全景统计、版本窗口与 KPI 指标，大幅缩短首屏加载耗时。
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		breakdown, allErr = s.countAllStageBreakdown(ctx, account)
+	}()
+
+	if s.schedule != nil {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			relatedIDs, err := s.repo.FindHomeRelatedDemandIDs(ctx, account)
+			if err != nil {
+				winErr = err
+				return
+			}
+			windows, winErr = s.schedule.ListHomeVersionWindows(ctx, actor, relatedIDs...)
+		}()
+	}
+
+	if strings.TrimSpace(account) != "" {
+		wg.Add(3)
+		go func() {
+			defer wg.Done()
+			myPending, pendingErr = s.repo.CountHomeFocus(ctx, account, DemandsReq{Status: "all", Focus: "my_action"})
+		}()
+		go func() {
+			defer wg.Done()
+			overdue, overdueErr = s.repo.CountHomeFocus(ctx, account, DemandsReq{Status: "all", Focus: "overdue"})
+		}()
+		go func() {
+			defer wg.Done()
+			kpiSummary, kpiErr = s.repo.CountKPISummary(ctx, account)
+		}()
+	}
+
+	wg.Wait()
+
+	if allErr != nil {
+		return nil, allErr
+	}
+	if pendingErr != nil {
+		return nil, pendingErr
+	}
+	if overdueErr != nil {
+		return nil, overdueErr
+	}
+	if kpiErr != nil {
+		return nil, kpiErr
+	}
+
+	stages := make([]ValueStreamStage, len(breakdown))
+	copy(stages, breakdown)
+	allIdx := -1
+	for i, st := range stages {
+		if st.Status == "all" {
+			allIdx = i
+			break
 		}
-		stages[allIdx].DemandCount = demandSum
-		stages[allIdx].StoryCount = storySum
-		stages[allIdx].Count = demandSum + storySum
+	}
+	if allIdx >= 0 {
+		var allDemand, allStory int64
+		for i, stage := range stages {
+			if i == allIdx {
+				continue
+			}
+			allDemand += stage.DemandCount
+			allStory += stage.StoryCount
+		}
+		stages[allIdx].DemandCount = allDemand
+		stages[allIdx].StoryCount = allStory
+		stages[allIdx].Count = allDemand + allStory
 	}
 
 	versionWindows := []schedule.HomeVersionWindowCard{}
+	versionWindowsError := ""
 	if s.schedule == nil {
+		versionWindowsError = "排期服务不可用"
 		if s.logger != nil {
 			s.logger.Error("po home schedule service is nil, version windows skipped")
 		}
-	} else {
-		windows, winErr := s.schedule.ListHomeVersionWindows(ctx, actor)
-		if winErr != nil {
-			if s.logger != nil {
-				s.logger.Warn("po home version windows", zap.Error(winErr))
-			}
-		} else {
-			versionWindows = windows
+	} else if winErr != nil {
+		versionWindowsError = "版本窗口查询失败"
+		if s.logger != nil {
+			s.logger.Warn("po home version windows", zap.Error(winErr))
 		}
+	} else {
+		versionWindows = windows
 	}
 
-	launchWindows := []LaunchWindowOption{}
-	vwRows, vwErr := s.repo.ListVersionWindows(ctx)
-	if vwErr != nil {
-		if s.logger != nil {
-			s.logger.Warn("po home launch windows", zap.Error(vwErr))
-		}
-	} else {
-		launchWindows = make([]LaunchWindowOption, 0, len(vwRows))
-		for _, w := range vwRows {
-			launchWindows = append(launchWindows, LaunchWindowOption{
-				ID:          w.ID,
-				Name:        strings.TrimSpace(w.Name),
-				ReleaseDate: w.ReleaseDate.Format("2006-01-02"),
-			})
-		}
+	// 全部与待我处理是两个独立口径。
+	allCount := int64(0)
+	if allIdx >= 0 {
+		allCount = stages[allIdx].Count
+	}
+	kpi := KPICounts{
+		Today:     kpiSummary.Today,
+		Overdue:   overdue,
+		Suspended: kpiSummary.Suspended,
+		Blocked:   kpiSummary.Blocked,
+		MyPending: myPending,
+	}
+
+	if s.logger != nil {
+		s.logger.Info("po home kpi",
+			zap.String("account", account),
+			zap.Int64("today", kpi.Today),
+			zap.Int64("overdue", kpi.Overdue),
+			zap.Int64("suspended", kpi.Suspended),
+			zap.Int64("blocked", kpi.Blocked),
+			zap.Int64("my_pending", kpi.MyPending),
+		)
+		s.logger.Info("po home parallel load completed",
+			zap.Duration("total_duration", time.Since(t0)),
+		)
 	}
 
 	return &HomeResp{
-		Stages:         stages,
-		VersionWindows: versionWindows,
-		LaunchWindows:  launchWindows,
-		Users:          s.listVerifierUsers(ctx, actor),
+		AllCount:            allCount,
+		Stages:              stages,
+		StagesValid:         true,
+		VersionWindows:      versionWindows,
+		VersionWindowsError: versionWindowsError,
+		KPI:                 kpi,
 	}, nil
 }
 
-// Demands 按价值流状态返回当前用户关联的需求/故事详情（后端分页）。
+// TeamHomeVersionWindows returns upcoming window summaries for authorized agile-group IDs.
+func (s *Service) TeamHomeVersionWindows(ctx context.Context, groupIDs []uint, limit int) ([]schedule.TeamHomeVersionWindowCard, error) {
+	if s == nil || s.schedule == nil {
+		return nil, fmt.Errorf("schedule service is not configured")
+	}
+	return s.schedule.ListTeamHomeVersionWindows(ctx, groupIDs, limit)
+}
+
+// TeamHomeValueStream returns the same nine stage categories as demand management,
+// scoped by the authorized agile groups and formal group members.
+func (s *Service) TeamHomeValueStream(ctx context.Context, groupIDs []uint, memberAccounts []string) ([]TeamHomeValueStreamStage, error) {
+	if s == nil || s.repo == nil {
+		return nil, fmt.Errorf("po repo is not configured")
+	}
+	counts, err := s.repo.CountTeamValueStreamStages(ctx, groupIDs, memberAccounts)
+	if err != nil {
+		return nil, err
+	}
+	byStage := make(map[int]map[string]int64, len(valueStreamStages))
+	for _, row := range counts {
+		if row.StageIndex <= 0 || row.StageIndex >= len(valueStreamStages) {
+			continue
+		}
+		if byStage[row.StageIndex] == nil {
+			byStage[row.StageIndex] = map[string]int64{}
+		}
+		byStage[row.StageIndex][row.Kind] = row.Count
+	}
+	out := make([]TeamHomeValueStreamStage, 0, len(valueStreamStages)-1)
+	for index, stage := range valueStreamStages {
+		if stage.status == "all" {
+			continue
+		}
+		demandCount, storyCount := byStage[index]["demand"], byStage[index]["story"]
+		out = append(out, TeamHomeValueStreamStage{
+			Status: stage.status, Label: stage.label,
+			Count: demandCount + storyCount, DemandCount: demandCount, StoryCount: storyCount,
+		})
+	}
+	return out, nil
+}
+
+// Demands 按价值流状态返回当前用户关联的需求/故事详情。
 func (s *Service) Demands(ctx context.Context, actor *model.User, req DemandsReq) (*DemandsResp, error) {
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+	if req.PageSize <= 0 {
+		req.PageSize = 15
+	} else if req.PageSize > 100 {
+		req.PageSize = 100
+	}
 	displayMap, err := s.loadAccountDisplayMap(ctx, actor)
 	if err != nil {
 		return nil, err
 	}
-	var resp *DemandsResp
-	if req.Status == "all" {
-		resp, err = s.listAllStageDemands(ctx, actor, displayMap)
-	} else if filter, ok := mysqlStageFilters[req.Status]; ok {
-		resp, err = s.listMySQLDemands(ctx, actor, req.Status, filter, displayMap, req.Page, req.PageSize)
-	} else {
-		resp = &DemandsResp{Items: []WorkItemDetail{}}
+	// “全部”按 Main 口径合并业务需求与研发需求；带焦点筛选时使用 SQL 候选集。
+	if req.Status == "all" && (req.Focus == "" || req.Focus == "all") {
+		return s.listAllStageDemands(ctx, actor, req, displayMap)
 	}
-	if err != nil {
-		return nil, err
-	}
-	if resp == nil {
-		resp = &DemandsResp{Items: []WorkItemDetail{}}
-	}
-	// 「全部」在 list 内未切页时在此统一切页；单阶段已带分页的保留 Total
-	if req.Status == "all" {
-		pageItems, total := paginateWorkItems(resp.Items, req.Page, req.PageSize)
-		resp.Items = pageItems
-		resp.Total = total
-	}
-	resp.Page = req.Page
-	resp.PageSize = req.PageSize
-	if resp.Items == nil {
-		resp.Items = []WorkItemDetail{}
-	}
-	return resp, nil
-}
-
-func (s *Service) loadAccountDisplayMap(ctx context.Context, actor *model.User) (map[string]string, error) {
-	if s.userSvc == nil {
-		return map[string]string{}, nil
-	}
-	return s.userSvc.AccountDisplayMap(ctx, actor)
-}
-
-// countAllStageUniq 各阶段只查 ID，按 kind+id 去重后返回业需/研需数量（与 listAllStageDemands 并集语义一致）。
-func (s *Service) countAllStageUniq(ctx context.Context, account string) (demandSum, storySum int64, err error) {
-	seenDemand := make(map[int]struct{})
-	seenStory := make(map[int]struct{})
-	for _, def := range valueStreamStages {
-		if def.status == "all" {
-			continue
+	if req.Focus != "" && req.Focus != "all" {
+		if errs := req.Validate(); len(errs) > 0 {
+			return nil, fmt.Errorf("invalid home focus request")
 		}
-		filter, ok := mysqlStageFilters[def.status]
-		if !ok {
-			continue
+		account := ""
+		if actor != nil {
+			account = actor.Account
 		}
-		ids, idErr := s.repo.FindRoleDemandIDs(ctx, account, filter)
-		if idErr != nil {
-			return 0, 0, idErr
-		}
-		for _, id := range ids {
-			seenDemand[id] = struct{}{}
-		}
-		if filter.scheduleIncomplete {
-			storyIDs, storyErr := s.repo.FindScheduleStoryIDs(ctx, account)
-			if storyErr != nil {
-				return 0, 0, storyErr
-			}
-			for _, id := range storyIDs {
-				seenStory[id] = struct{}{}
-			}
-		}
-		if filter.deliverStories {
-			storyIDs, storyErr := s.repo.FindDeliverStoryIDs(ctx, account)
-			if storyErr != nil {
-				return 0, 0, storyErr
-			}
-			for _, id := range storyIDs {
-				seenStory[id] = struct{}{}
-			}
-		}
-	}
-	return int64(len(seenDemand)), int64(len(seenStory)), nil
-}
-
-// CountValueStreamAll 首页价值流「全部」条数（业需 + 研需 kind+id 去重并集）。
-func (s *Service) CountValueStreamAll(ctx context.Context, account string) (int64, error) {
-	if s == nil {
-		return 0, nil
-	}
-	demandSum, storySum, err := s.countAllStageUniq(ctx, account)
-	if err != nil {
-		return 0, err
-	}
-	return demandSum + storySum, nil
-}
-
-// listAllStageDemands 「全部」列表 = 其余各阶段列表按阶段顺序拼接，按 kind+id 去重（保留首次出现）。
-// 返回全量 Items，由 Demands 统一切页。
-func (s *Service) listAllStageDemands(ctx context.Context, actor *model.User, displayMap map[string]string) (*DemandsResp, error) {
-	items := make([]WorkItemDetail, 0)
-	seen := make(map[string]struct{})
-	for _, def := range valueStreamStages {
-		if def.status == "all" {
-			continue
-		}
-		filter, ok := mysqlStageFilters[def.status]
-		if !ok {
-			continue
-		}
-		// 拉全量再并集；分页在 Demands 出口统一切
-		resp, err := s.listMySQLDemands(ctx, actor, def.status, filter, displayMap, 0, 0)
+		reviewIDs, err := s.repo.FindAccountPendingReviewDemandIDs(ctx, account)
 		if err != nil {
 			return nil, err
 		}
-		for _, item := range resp.Items {
-			key := workItemKey(item.Kind, item.ID)
-			if _, ok := seen[key]; ok {
-				continue
-			}
-			seen[key] = struct{}{}
-			items = append(items, item)
+		var (
+			refs     []itemRef
+			total    int
+			summary  []ValueStreamStage
+			focusErr error
+			sumErr   error
+			wg       sync.WaitGroup
+		)
+		wg.Add(2)
+		go func() {
+			defer wg.Done()
+			refs, total, focusErr = s.repo.findHomeFocusWithReviews(ctx, account, req, reviewIDs)
+		}()
+		go func() {
+			defer wg.Done()
+			summary, sumErr = s.repo.homeFocusStageSummaryWithReviews(ctx, account, req, reviewIDs)
+		}()
+		wg.Wait()
+		if focusErr != nil {
+			return nil, focusErr
 		}
-	}
-	return &DemandsResp{Items: items, Total: int64(len(items))}, nil
-}
-
-// listMySQLDemands 从 MySQL 加载指定价值流阶段的业需列表（排期/交付阶段额外合并独立研发需求）。
-// pageSize<=0 表示不分页（供「全部」并集）；否则后端分页并填充 Total。
-func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stageStatus string, filter mysqlStageFilter, displayMap map[string]string, page, pageSize int) (*DemandsResp, error) {
-	account := ""
-	if actor != nil {
-		account = actor.Account
-	}
-	needMerge := filter.scheduleIncomplete || filter.deliverStories
-	unpaged := pageSize <= 0
-
-	if !needMerge && !unpaged {
-		total, countErr := s.repo.CountRoleDemands(ctx, account, filter)
-		if countErr != nil {
-			return nil, countErr
+		if sumErr != nil {
+			return nil, sumErr
 		}
-		offset := (page - 1) * pageSize
-		rows, err := s.repo.FindRoleDemands(ctx, account, filter, pageSize, offset)
+		resp, err := s.populateWorkItems(ctx, actor, refs, total, req.Page, req.PageSize, displayMap, req)
 		if err != nil {
 			return nil, err
 		}
-		items, buildErr := s.buildDemandWorkItems(ctx, account, stageStatus, rows, displayMap)
-		if buildErr != nil {
-			return nil, buildErr
-		}
-		return &DemandsResp{Items: items, Total: total, Page: page, PageSize: pageSize}, nil
+		resp.StageSummary = summary
+		return resp, nil
 	}
-
-	rows, err := s.repo.FindRoleDemands(ctx, account, filter, 0, 0)
-	if err != nil {
-		return nil, err
+	if filter, ok := mysqlStageFilters[req.Status]; ok {
+		return s.listMySQLDemands(ctx, actor, req.Status, filter, req, displayMap)
 	}
-	items, buildErr := s.buildDemandWorkItems(ctx, account, stageStatus, rows, displayMap)
-	if buildErr != nil {
-		return nil, buildErr
-	}
-	label := valueStreamLabelForStatus(stageStatus)
-	if filter.scheduleIncomplete {
-		stories, storyErr := s.repo.FindScheduleStories(ctx, account)
-		if storyErr != nil {
-			return nil, storyErr
-		}
-		items = append(items, storyWorkItems(stories, label, actor, displayMap)...)
-	}
-	if filter.deliverStories {
-		stories, storyErr := s.repo.FindDeliverStories(ctx, account)
-		if storyErr != nil {
-			return nil, storyErr
-		}
-		items = append(items, storyWorkItems(stories, label, actor, displayMap)...)
-	}
-	if unpaged {
-		return &DemandsResp{Items: items, Total: int64(len(items))}, nil
-	}
-	pageItems, total := paginateWorkItems(items, page, pageSize)
-	return &DemandsResp{Items: pageItems, Total: total, Page: page, PageSize: pageSize}, nil
-}
-
-func (s *Service) buildDemandWorkItems(ctx context.Context, account, stageStatus string, rows []DemandRow, displayMap map[string]string) ([]WorkItemDetail, error) {
-	label := valueStreamLabelForStatus(stageStatus)
-	waitIDs := make([]int, 0, len(rows))
-	productIDs := make([]uint, 0, len(rows))
-	for _, row := range rows {
-		if strings.TrimSpace(row.Status) == "wait" {
-			waitIDs = append(waitIDs, row.ID)
-		}
-		if pid := parseMainSystemID(row.MainSystem); pid > 0 {
-			productIDs = append(productIDs, pid)
-		}
-	}
-	pendingReview, pendingErr := s.repo.FindPendingReviewDemandIDs(ctx, account, waitIDs)
-	if pendingErr != nil {
-		return nil, pendingErr
-	}
-	testtaskByProduct, ttErr := s.repo.FindMaxTesttaskIDByProducts(ctx, productIDs)
-	if ttErr != nil {
-		return nil, ttErr
-	}
-	items := make([]WorkItemDetail, 0, len(rows))
-	for _, row := range rows {
-		pri := ""
-		if row.Pri != "" {
-			pri = "P" + row.Pri
-		}
-		ownerDisp := resolveNextOwnerDisplay(row, displayMap)
-		_, canReview := pendingReview[row.ID]
-		status := strings.TrimSpace(row.Status)
-		isCreator := account != "" && strings.TrimSpace(row.CreatedBy) == account
-		canOwnerDraft := isCreator && (status == "draft" || status == "refuse")
-		testtaskURL := ""
-		if pid := parseMainSystemID(row.MainSystem); pid > 0 {
-			if taskID := testtaskByProduct[pid]; taskID > 0 {
-				testtaskURL = zentao.URL("testtask", "cases", fmt.Sprintf("taskID=%d", taskID))
-			}
-		}
-		items = append(items, WorkItemDetail{
-			Kind:            "demand",
-			ID:              fmt.Sprintf("US%d", row.ID),
-			Pri:             pri,
-			Title:           row.Name,
-			Owner:           ownerDisp,
-			NextOwner:       ownerDisp,
-			ZentaoUrl:       zentao.URL("demand", "view", fmt.Sprintf("demandID=%d", row.ID)),
-			ZentaoEditUrl:   zentao.URL("demand", "edit", fmt.Sprintf("demandID=%d", row.ID)),
-			ClarifyUrl:      zentao.URL("demand", "clarify", fmt.Sprintf("demandID=%d", row.ID)),
-			AppraiseUrl:     zentao.URL("demand", "appraise", fmt.Sprintf("demandID=%d", row.ID)),
-			TesttaskUrl:     testtaskURL,
-			ValueStream:     label,
-			ZentaoStatus:    row.Status,
-			AssignedTo:      strings.TrimSpace(row.AssignedTo),
-			CanReview:       canReview,
-			CanCancelReview: isCreator && status == "wait",
-			CanSubmitReview: canOwnerDraft,
-			CanEdit:         canOwnerDraft,
-			Suspended:       strings.TrimSpace(row.Hang) == "1",
-		})
-	}
-	return items, nil
-}
-
-// parseMainSystemID 将业需 mainSystem 字符串解析为产品 ID。
-func parseMainSystemID(raw string) uint {
-	s := strings.TrimSpace(raw)
-	if s == "" {
-		return 0
-	}
-	n, err := strconv.ParseUint(s, 10, 64)
-	if err != nil {
-		return 0
-	}
-	return uint(n)
-}
-
-func resolveNextOwnerDisplay(row DemandRow, displayMap map[string]string) string {
-	_, disp := DeriveCurrentHandler(row.Status, row.AssignedTo, row.QD, row.RD, row.BRA, row.PM,
-		lookupAccountsDisplay(displayMap, row.PM),
-		lookupAccountDisplay(displayMap, row.AssignedTo),
-		lookupAccountDisplay(displayMap, row.QD),
-		lookupAccountDisplay(displayMap, row.RD),
-		lookupAccountDisplay(displayMap, row.BRA))
-	return disp
-}
-
-func lookupAccountDisplay(displayMap map[string]string, account string) string {
-	acc := strings.TrimSpace(account)
-	if acc == "" {
-		return ""
-	}
-	if displayMap != nil {
-		if d := strings.TrimSpace(displayMap[acc]); d != "" {
-			return d
-		}
-	}
-	return acc
-}
-
-// lookupAccountsDisplay 支持 GROUP_CONCAT 多账号，逐个映射后用 ", " 拼接。
-func lookupAccountsDisplay(displayMap map[string]string, accountsCSV string) string {
-	raw := strings.TrimSpace(accountsCSV)
-	if raw == "" {
-		return ""
-	}
-	parts := strings.Split(raw, ",")
-	names := make([]string, 0, len(parts))
-	for _, p := range parts {
-		p = strings.TrimSpace(p)
-		if p == "" {
-			continue
-		}
-		names = append(names, lookupAccountDisplay(displayMap, p))
-	}
-	return strings.Join(names, ", ")
-}
-
-func storyWorkItems(rows []StoryRow, label string, actor *model.User, displayMap map[string]string) []WorkItemDetail {
-	account := ""
-	if actor != nil {
-		account = actor.Account
-	}
-	owner := lookupAccountDisplay(displayMap, account)
-	if owner == "" && actor != nil {
-		owner = FormatAccountName(actor.Account, actor.DisplayName)
-	}
-	items := make([]WorkItemDetail, 0, len(rows))
-	for _, row := range rows {
-		items = append(items, WorkItemDetail{
-			Kind:         "story",
-			ID:           fmt.Sprintf("U%d", row.ID),
-			Pri:          fmt.Sprintf("P%d", row.Pri),
-			Title:        row.Title,
-			Stage:        strings.TrimSpace(row.Stage), // 禅道研需 stage，供排期按钮判定
-			Owner:        owner,
-			NextOwner:    owner,
-			ZentaoUrl:    zentao.URL("story", "view", fmt.Sprintf("storyID=%d", row.ID)),
-			ValueStream:  label,
-			ZentaoStatus: row.Status,
-		})
-	}
-	return items
-}
-
-func isValidValueStreamStatus(status string) bool {
-	for _, def := range valueStreamStages {
-		if def.status == status {
-			return true
-		}
-	}
-	return false
-}
-
-func valueStreamLabelForStatus(status string) string {
-	for _, def := range valueStreamStages {
-		if def.status == status {
-			return def.label
-		}
-	}
-	return ""
-}
-
-func workItemKey(kind, id string) string {
-	return kind + ":" + id
+	return &DemandsResp{Items: []WorkItemDetail{}, Total: 0, Page: req.Page, PageSize: req.PageSize}, nil
 }

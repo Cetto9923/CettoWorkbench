@@ -1,0 +1,365 @@
+// =============================================================================
+// 文件: internal/module/po/repovaluestream.go
+// 模块: PO 工作台
+// 类型: action
+// 职责: 价值流 9 阶段业需/研需的个人行动范围统计与列表查询；「全部」计数仅 Pluck id。
+// 依赖: 无
+// =============================================================================
+
+package po
+
+import (
+	"context"
+	"strings"
+	"time"
+
+	"gorm.io/gorm"
+)
+
+// mysqlStageFilter 走 MySQL 的价值流阶段过滤条件。
+type mysqlStageFilter struct {
+	statuses           []string
+	overall            *string
+	parent             *string
+	developFinishDue   bool // true：今天 >= developFinish（且 developFinish 非空）
+	deliverDateDue     bool // true：今天 >= deliverDate（且 deliverDate 非空）
+	braRequired        bool // true：BRA 必须等于当前账号
+	noClarify          bool // true：无 zt_demandclarify 记录
+	acceptanceStage    bool // true：验收阶段复合条件
+	publishStage       bool // true：发布阶段复合条件（waitdeliver 或已发布未评价）
+	scheduleIncomplete bool // true：排期未完成（关键日期/QD/主研未填）
+	deliverStories     bool // true：合并交付阶段独立研发需求
+}
+
+var (
+	releasedOverallEmpty = "0"
+	releasedParent       = "-1"
+)
+
+// mysqlStageFilters 价值流阶段 → MySQL 查询条件。
+var mysqlStageFilters = map[string]mysqlStageFilter{
+	"accept":         {statuses: []string{"draft", "wait", "refuse"}},
+	"clarify":        {statuses: []string{"active"}, noClarify: true},
+	"schedule":       {statuses: []string{"clarified"}, scheduleIncomplete: true},
+	"developing":     {statuses: []string{"developing"}, developFinishDue: true},
+	"testing":        {statuses: []string{"testing"}},
+	"waitacceptance": {acceptanceStage: true},
+	"acceptanced": {
+		statuses:       []string{"acceptanced"},
+		deliverDateDue: true,
+		braRequired:    true,
+		deliverStories: true,
+	},
+	// 发布只展示待交付需求；已发布但未评价的需求不再回流到首页。
+	"publish": {statuses: []string{"waitdeliver"}},
+	"released": {
+		statuses: []string{"released"},
+		overall:  &releasedOverallEmpty,
+		parent:   &releasedParent,
+	},
+}
+
+// DemandRow 业需列表投影（账号字段；展示名由 Service 用用户 map 解析，避免 JOIN zt_user）。
+type DemandRow struct {
+	ID         int    `gorm:"column:id"`
+	Name       string `gorm:"column:name"`
+	Pri        string `gorm:"column:pri"`
+	Status     string `gorm:"column:status"`
+	Hang       string `gorm:"column:hang"`
+	Deadline   string `gorm:"column:deadline"`
+	AssignedTo string `gorm:"column:assignedTo"`
+	QD         string `gorm:"column:QD"`
+	RD         string `gorm:"column:RD"`
+	BRA        string `gorm:"column:BRA"`
+	PM         string `gorm:"column:pm"` // zt_demandclarify.PM，多账号逗号分隔
+}
+
+// StoryRow 研发需求列表投影。
+type StoryRow struct {
+	ID            int    `gorm:"column:id"`
+	Title         string `gorm:"column:title"`
+	Pri           int    `gorm:"column:pri"`
+	Status        string `gorm:"column:status"`
+	DevelopFinish string `gorm:"column:developFinish"`
+	TestFinish    string `gorm:"column:testFinish"`
+	DeliverDate   string `gorm:"column:deliverDate"`
+}
+
+// roleDemandBase 返回当前账号在 Main 口径下可见且未关闭的业务办理单元。
+// 范围为澄清 PM、QD、RD、BRA、业需评审人、主管审批人或验收人；存在有效子需求时父需求只做汇总，不重复各算一次。
+func (r *Repo) roleDemandBase(ctx context.Context, account string) *gorm.DB {
+	today := time.Now().Format("2006-01-02")
+	return r.db.WithContext(ctx).Table("zt_demand").
+		Where("deleted = ?", "0").
+		Where("status NOT IN ?", []string{"closed"}).
+		Where("NOT EXISTS (SELECT 1 FROM zt_demand child WHERE child.deleted = ? AND child.parent = zt_demand.id)", "0").
+		Where(`(
+			id IN (SELECT demand FROM zt_demandclarify WHERE FIND_IN_SET(?, PM) > 0)
+			OR QD = ?
+			OR RD = ?
+			OR BRA = ?
+			OR (
+				(
+					id IN (SELECT demand FROM zt_demandreview WHERE reviewer = ?)
+					OR id IN (SELECT demand FROM zt_demandmanagerreview WHERE reviewer = ?)
+				)
+				AND status IN ('draft', 'wait', 'refuse')
+			)
+			OR (
+				accepter = ?
+				AND (status = 'waitacceptance' OR (status = 'testing' AND `+dateSetExpr("testFinish")+` AND testFinish <= ?))
+			)
+		)`, account, account, account, account, account, account, account, today)
+}
+
+func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysqlStageFilter) *gorm.DB {
+	// 业需个人行动范围由 roleDemandBase 统一限定。
+	q := r.roleDemandBase(ctx, account)
+	return applyDemandStage(q, account, filter)
+}
+
+func applyDemandStage(q *gorm.DB, account string, filter mysqlStageFilter) *gorm.DB {
+	if filter.acceptanceStage {
+		today := time.Now().Format("2006-01-02")
+		// (status=testing AND 今天>=testFinish) OR (status=waitacceptance AND (RD|BRA|accepter)=账号)
+		q = q.Where(`(
+			(status = ? AND `+dateSetExpr("testFinish")+` AND testFinish <= ?)
+			OR (status = ? AND (RD = ? OR BRA = ? OR accepter = ?))
+		)`, "testing", today, "waitacceptance", account, account, account)
+		return q
+	}
+	if filter.publishStage {
+		// status=waitdeliver OR (status=released AND 无有效评价记录)
+		q = q.Where(`(
+			status = ?
+			OR (
+				status = ?
+				AND id NOT IN (
+					SELECT demand FROM zt_demandappraise
+					WHERE demand IS NOT NULL
+						AND appraiseBy <> '' AND appraiseBy IS NOT NULL
+						AND appraiseTime IS NOT NULL
+				)
+			)
+		)`, "waitdeliver", "released")
+		return q
+	}
+
+	q = q.Where("status IN ?", filter.statuses)
+	if filter.overall != nil {
+		q = q.Where("overall = ?", *filter.overall)
+	}
+	if filter.parent != nil {
+		q = q.Where("parent != ?", *filter.parent)
+	}
+	if filter.developFinishDue {
+		today := time.Now().Format("2006-01-02")
+		q = q.Where(dateSetExpr("developFinish")+" AND developFinish <= ?", today)
+	}
+	if filter.deliverDateDue {
+		today := time.Now().Format("2006-01-02")
+		q = q.Where(dateSetExpr("deliverDate")+" AND deliverDate <= ?", today)
+	}
+	if filter.braRequired {
+		q = q.Where("BRA = ?", account)
+	}
+	if filter.noClarify {
+		// 等价于 (SELECT COUNT(*) FROM zt_demandclarify WHERE demand = 需求id) = 0
+		q = q.Where("NOT EXISTS (SELECT 1 FROM zt_demandclarify dc WHERE dc.demand = zt_demand.id)")
+	}
+	if filter.scheduleIncomplete {
+		q = q.Where(scheduleIncompleteDemandSQL())
+	}
+	return q
+}
+
+// scheduleIncompleteDemandSQL 业务需求仍处于排期准备状态的条件。
+// 该条件与排期阶段的正式列表口径保持一致，避免参与人员分支出现另一套阶段判断。
+func scheduleIncompleteDemandSQL() string {
+	return "(" + strings.Join([]string{
+		dateUnsetExpr("developFinish"),
+		dateUnsetExpr("testFinish"),
+		dateUnsetExpr("verifyFinish"),
+		dateUnsetExpr("estimateLaunch"),
+		"QD = ''",
+		"mainDevelopers = ''",
+	}, " OR ") + ")"
+}
+
+// storyAssignedOrProductReqM 指派人或所属产品的需求负责人（zt_product.ReqM）为当前用户（口径同 Main）。
+const storyAssignedOrProductReqM = `(zt_story.assignedTo = ? OR EXISTS (
+	SELECT 1 FROM zt_product p
+	WHERE p.id = zt_story.product AND p.deleted = '0' AND p.ReqM = ?
+))`
+
+// scheduleStoryScope 排期阶段独立研发需求（口径同 Main）：非需求池、非父需求、排除已关闭、
+// 排除由业务需求转化来的研发需求 (fromDemand = 0)、指派人或所属产品 ReqM 为当前用户、关键日期未填。
+func (r *Repo) scheduleStoryScope(ctx context.Context, account string) *gorm.DB {
+	return r.db.WithContext(ctx).Table("zt_story").
+		Where("deleted = ?", "0").
+		Where("status != ?", "closed").
+		Where("IFNULL(sourceType, '') != ?", "demandpool").
+		Where("fromDemand = ?", 0).
+		Where("type = ?", "story").
+		Where("isParent = ?", "0").
+		Where("product != ?", "0").
+		Where(storyAssignedOrProductReqM, account, account).
+		Where("(" + strings.Join([]string{
+			dateUnsetExpr("developFinish"),
+			dateUnsetExpr("testFinish"),
+			dateUnsetExpr("verifyFinish"),
+		}, " OR ") + ")")
+}
+
+// deliverStoryScope 交付阶段独立研发需求（口径同 Main）：非需求池、非父需求、排除已关闭、
+// 排除由业务需求转化来的研发需求 (fromDemand = 0)、指派人或所属产品 ReqM 为当前用户、今天 >= deliverDate。
+func (r *Repo) deliverStoryScope(ctx context.Context, account string) *gorm.DB {
+	today := time.Now().Format("2006-01-02")
+	return r.db.WithContext(ctx).Table("zt_story").
+		Where("deleted = ?", "0").
+		Where("status != ?", "closed").
+		Where("IFNULL(sourceType, '') != ?", "demandpool").
+		Where("fromDemand = ?", 0).
+		Where("type = ?", "story").
+		Where("isParent = ?", "0").
+		Where(storyAssignedOrProductReqM, account, account).
+		Where(dateSetExpr("deliverDate")+" AND deliverDate <= ?", today)
+}
+
+func filterReady(account string, filter mysqlStageFilter) bool {
+	if strings.TrimSpace(account) == "" {
+		return false
+	}
+	if filter.acceptanceStage || filter.publishStage {
+		return true
+	}
+	return len(filter.statuses) > 0
+}
+
+// FindAllStageRefsPaged keeps the "all" list's first-stage de-duplication in
+// MySQL. It counts and fetches only the requested page instead of materializing
+// every eligible demand/story ID in the application process.
+func (r *Repo) FindAllStageRefsPaged(ctx context.Context, account string, req DemandsReq) ([]itemRef, int, error) {
+	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
+		return nil, 0, nil
+	}
+	base, err := r.allStageRefQuery(ctx, account, req)
+	if err != nil {
+		return nil, 0, err
+	}
+	var total int64
+	if err := r.db.WithContext(ctx).Table("(?) AS all_stages", base).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	offset := (req.Page - 1) * req.PageSize
+	if total == 0 || int64(offset) >= total {
+		return nil, int(total), nil
+	}
+	var rows []struct {
+		ID         int    `gorm:"column:id"`
+		Kind       string `gorm:"column:kind"`
+		StageIndex int    `gorm:"column:stage_index"`
+	}
+	if err := r.db.WithContext(ctx).Table("(?) AS all_stages", base).
+		Select("id, kind, stage_index").
+		Order("stage_index ASC, kind_rank ASC, id DESC").
+		Offset(offset).Limit(req.PageSize).Scan(&rows).Error; err != nil {
+		return nil, 0, err
+	}
+	refs := make([]itemRef, 0, len(rows))
+	for _, row := range rows {
+		if row.StageIndex <= 0 || row.StageIndex >= len(valueStreamStages) {
+			continue
+		}
+		refs = append(refs, itemRef{kind: row.Kind, id: row.ID, stageStatus: valueStreamStages[row.StageIndex].status})
+	}
+	return refs, int(total), nil
+}
+
+// FindRoleDemandsByIDs 按 ID 列表批量查询业需详情。
+func (r *Repo) FindRoleDemandsByIDs(ctx context.Context, ids []int) ([]DemandRow, error) {
+	if r == nil || r.db == nil || len(ids) == 0 {
+		return nil, nil
+	}
+	var rows []DemandRow
+	err := r.db.WithContext(ctx).Table("zt_demand").
+		Select(`zt_demand.id, zt_demand.name, zt_demand.pri, zt_demand.status, zt_demand.hang,
+			zt_demand.deadline, zt_demand.assignedTo, zt_demand.QD, zt_demand.RD, zt_demand.BRA,
+			clarify_pm.PM AS pm`).
+		Joins(`LEFT JOIN (
+			SELECT demand, GROUP_CONCAT(PM) AS PM
+			FROM zt_demandclarify
+			WHERE PM IS NOT NULL AND PM <> ''
+			GROUP BY demand
+		) AS clarify_pm ON clarify_pm.demand = zt_demand.id`).
+		Where("zt_demand.id IN ?", ids).
+		Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+// FindStoriesByIDs 按 ID 列表批量查询研发需求详情。
+func (r *Repo) FindStoriesByIDs(ctx context.Context, ids []int) ([]StoryRow, error) {
+	if r == nil || r.db == nil || len(ids) == 0 {
+		return nil, nil
+	}
+	var rows []StoryRow
+	err := r.db.WithContext(ctx).Table("zt_story").
+		Select("id", "title", "pri", "status", "developFinish", "testFinish", "deliverDate").
+		Where("id IN ?", ids).
+		Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+// FindPrimaryStoryIDsByDemandIDs 批量找到业务需求对应的可办理研发需求。
+// 参与列表仍按业务需求展示，但排期动作必须落到研发需求，不得生成业务需求排期入口。
+func (r *Repo) FindPrimaryStoryIDsByDemandIDs(ctx context.Context, demandIDs []int) (map[int]int, error) {
+	out := make(map[int]int)
+	if r == nil || r.db == nil || len(demandIDs) == 0 {
+		return out, nil
+	}
+	var rows []struct {
+		DemandID int `gorm:"column:demand_id"`
+		StoryID  int `gorm:"column:story_id"`
+	}
+	err := r.db.WithContext(ctx).Table("zt_story").
+		Select("fromDemand AS demand_id, MIN(id) AS story_id").
+		Where("fromDemand IN ? AND deleted = ? AND status <> ?", demandIDs, "0", "closed").
+		Group("fromDemand").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	for _, row := range rows {
+		if row.DemandID > 0 && row.StoryID > 0 {
+			out[row.DemandID] = row.StoryID
+		}
+	}
+	return out, nil
+}
+
+// dateUnsetExpr 判断 DATE 列未填（NULL 或零日期）。
+// 不能写 col = '0000-00-00'：MySQL 8 / OceanBase 在 NO_ZERO_DATE 下会把字面量转 DATE，触发 Error 1525。
+func dateUnsetExpr(col string) string {
+	return col + " IS NULL OR CAST(" + col + " AS CHAR) LIKE '0000-00-00%'"
+}
+
+// dateSetExpr 判断 DATE 列已填有效日期（非 NULL、非零日期）。
+func dateSetExpr(col string) string {
+	return col + " IS NOT NULL AND CAST(" + col + " AS CHAR) NOT LIKE '0000-00-00%'"
+}
+
+// FindHomeRelatedDemandIDs reuses the exact personal home scope for window discovery.
+func (r *Repo) FindHomeRelatedDemandIDs(ctx context.Context, account string) ([]int, error) {
+	var ids []int
+	if strings.TrimSpace(account) == "" {
+		return ids, nil
+	}
+	err := r.roleDemandBase(ctx, account).Pluck("id", &ids).Error
+	return ids, err
+}
