@@ -220,7 +220,7 @@
       if (breakdown) {
         var dCount = typeof row.demandCount === "number" ? row.demandCount : total;
         var sCount = typeof row.storyCount === "number" ? row.storyCount : 0;
-        breakdown.textContent = (!isAll && total === 0) ? "-" : ("业" + dCount + "·研" + sCount);
+        breakdown.textContent = (!isAll && total === 0) ? "-" : ("业" + dCount + " · 研" + sCount);
       }
       if (dur) {
         var durDays = Number(row.avgDurationDays || 0);

@@ -488,11 +488,16 @@
   border-radius: var(--wb-radius-sm);
   white-space: normal;
   width: max-content;
-  max-width: 260px;
+  max-width: 340px;
   box-shadow: var(--wb-shadow-md);
   z-index: 1000;
   pointer-events: none;
   transition: opacity var(--wb-transition-fast), visibility var(--wb-transition-fast);
+}
+
+.wb-tooltip-content.align-left {
+  left: 0;
+  transform: none;
 }
 
 .wb-tooltip-content::after {
@@ -504,6 +509,11 @@
   border-width: 4px;
   border-style: solid;
   border-color: var(--wb-gray-800) transparent transparent transparent;
+}
+
+.wb-tooltip-content.align-left::after {
+  left: 10px;
+  transform: none;
 }
 
 .wb-tooltip-wrap:hover .wb-tooltip-content {

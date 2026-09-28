@@ -25,14 +25,8 @@
 <div class="po-personal-workspace po-home">
   <!-- 1. 紧凑页头与右上角焦点 Chips — 统一外框：workspace-header (同 todos/done/notice/follow) -->
   <header class="workspace-header">
-    <div class="workspace-header-left">
-      <div class="po-role-badge po-perspective-tabs" role="group" aria-label="工作视角" title="当前工作视角：需求管理">
-        <i class="fas fa-user-tag" aria-hidden="true"></i>
-        {{ if .CanViewTeamHome }}
-        <a class="po-perspective-tab active" data-perspective="demand" href="/home?view=demand" aria-current="page">需求管理</a>
-        <a class="po-perspective-tab" data-perspective="team" href="/home?view=team">团队管理</a>
-        {{ else }}<span>需求管理</span>{{ end }}
-      </div>
+    <div class="workspace-header-left" hidden style="display:none;">
+      <div class="po-role-badge po-perspective-tabs" hidden style="display:none;"></div>
     </div>
     <div class="header-quick-filters" id="homeQuickChips" role="group" aria-label="快捷焦点">
       <button type="button" class="header-quick-chip" data-home-focus="all" aria-pressed="false">
@@ -89,13 +83,16 @@
             class="home-vs-mini-card home-vs-overview-card stage-all{{ if eq $i 0 }} active{{ else if eq $stage.Count 0 }} empty{{ end }}"
             data-vs-status="all"
             data-base-count="{{ if $.PageError }}—{{ else }}{{ $stage.Count }}{{ end }}"
-            data-base-meta="{{ if $.PageError }}暂不可用{{ else }}全部对象{{ end }}"
+            data-base-meta="{{ if $.PageError }}暂不可用{{ else }}全生命周期{{ end }}"
             data-base-duration="{{ if $.PageError }}—{{ else if gt $stage.AvgDurationDays 0 }}均 {{ $stage.AvgDurationDays }}天{{ else }}—{{ end }}"
             aria-pressed="{{ if eq $i 0 }}true{{ else }}false{{ end }}"
             title="全部对象 · 共 {{ $stage.Count }} 条">
             <div class="vs-card-top">
               <span class="vs-mini-name">全部对象</span>
               <i class="fas fa-check vs-status-icon"></i>
+            </div>
+            <div class="vs-card-sub">
+              <span class="vs-mini-breakdown">{{ if $.PageError }}—{{ else }}全生命周期{{ end }}</span>
             </div>
             <div class="vs-mini-count">{{ if $.PageError }}—{{ else }}{{ $stage.Count }}{{ end }}</div>
             <div class="vs-mini-meta-row">
@@ -122,7 +119,9 @@
               title="{{ $stage.Label }} · 共 {{ $stage.Count }} 条">
               <div class="vs-card-top">
                 <span class="vs-mini-name">{{ if eq $stage.Status "schedule" }}<span class="vs-status-dot dot-amber"></span> {{ end }}{{ $i }}. {{ $stage.Label }}</span>
-                <span class="vs-mini-breakdown">{{ if $.PageError }}—{{ else if eq $stage.Count 0 }}-{{ else }}业{{ $stage.DemandCount }}·研{{ $stage.StoryCount }}{{ end }}</span>
+              </div>
+              <div class="vs-card-sub">
+                <span class="vs-mini-breakdown">{{ if $.PageError }}—{{ else if eq $stage.Count 0 }}-{{ else }}业{{ $stage.DemandCount }} · 研{{ $stage.StoryCount }}{{ end }}</span>
               </div>
               <div class="vs-mini-count">{{ if $.PageError }}—{{ else }}{{ $stage.Count }}{{ end }}</div>
               <div class="vs-mini-meta-row">

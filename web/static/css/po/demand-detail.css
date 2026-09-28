@@ -202,15 +202,39 @@
 .dd-cycle-chip .s { font-size: 10px; color: var(--color-text-secondary); margin-top: 2px; }
 .dd-cycle-chip.overdue .v { color: var(--dd-red); }
 
-/* 9 阶段价值流（无横向滚动） */
-.dd-flow { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 6px; }
+/* 价值流阶段（单行横向滚动，不准换行） */
+.dd-flow {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  gap: 4px;
+  padding-bottom: 6px;
+}
+.dd-flow::-webkit-scrollbar {
+  height: 4px;
+}
+.dd-flow::-webkit-scrollbar-track {
+  background: var(--wb-gray-100);
+  border-radius: 2px;
+}
+.dd-flow::-webkit-scrollbar-thumb {
+  background: var(--wb-gray-300);
+  border-radius: 2px;
+}
+.dd-flow::-webkit-scrollbar-thumb:hover {
+  background: var(--wb-gray-400);
+}
 .dd-flow-stage {
-  height: 82px; padding: 6px 4px; border: 1px solid var(--color-border); border-radius: 6px;
+  flex: 1 1 0;
+  min-width: 68px;
+  height: 82px; padding: 6px 3px; border: 1px solid var(--color-border); border-radius: 6px;
   background: var(--wb-bg-muted); display: flex; flex-direction: column; text-align: center; font-size: 11px;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 .dd-flow-stage.done { background: var(--color-success-bg); border-color: var(--color-success-border); color: var(--wb-success); }
 .dd-flow-stage.current { background: var(--color-info-bg, #eff6ff); border-color: var(--wb-primary-border); color: var(--dd-blue); font-weight: 600; }
-.dd-flow-stage .nm { font-weight: 700; margin-bottom: 2px; }
+.dd-flow-stage .nm { font-weight: 700; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dd-flow-stage .who { font-size: 10px; color: var(--dd-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dd-flow-stage .duration { margin-top: auto; font-size: 10px; border-top: 1px solid rgba(0, 0, 0, 0.05); padding-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dd-flow-legend {
@@ -299,7 +323,6 @@
 /* 响应式适配 */
 @media (max-width: 960px) {
   .dd-grid { grid-template-columns: 1fr; }
-  .dd-flow { grid-template-columns: repeat(3, 1fr); row-gap: 8px; }
 }
 
 /* 待评审减法视图专享样式 */

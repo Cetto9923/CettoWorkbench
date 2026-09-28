@@ -88,7 +88,8 @@
       '    <div class="dd-summary-cell"><div class="lab">所属需求池</div><div class="val">' + esc(summary.poolName) + '</div></div>' +
       '    <div class="dd-summary-cell"><div class="lab">所属模块</div><div class="val">' + esc(summary.moduleName || "—") + '</div></div>' +
       '  </div>' +
-      '  <div class="dd-native-line"><b>禅道状态</b><span class="dd-native-state">' + esc(zentaoStatusLabel(summary.zentaoStatus)) + '</span><span class="dd-native-dot">•</span><span>原始状态仅用于追溯，工作台按价值流阶段统一展示与办理</span></div>' +
+      '  <div class="dd-native-line"><b>禅道状态</b><span class="dd-native-state">' + esc(zentaoStatusLabel(summary.zentaoStatus)) + '</span>' +
+      '<span class="wb-tooltip-wrap"><span class="wb-tooltip-icon">ⓘ</span><span class="wb-tooltip-content align-left">原始状态仅用于追溯，工作台按价值流阶段统一展示与办理</span></span></div>' +
       '</div>';
   }
 
@@ -162,7 +163,7 @@
     var html = [
       '<div class="dd-card">',
       '  <div class="dd-card-body">',
-      '    <div class="dd-cardhead"><h3>交付单元价值流</h3><span class="dd-note">9 阶段 · 已发生节点显示实际耗时</span></div>',
+      '    <div class="dd-cardhead"><h3>交付单元价值流</h3><span class="dd-note">' + (vs.stages && vs.stages.length ? (vs.stages.length + ' 阶段 · 已发生节点显示实际耗时') : '已发生节点显示实际耗时') + '</span></div>',
       '    <div class="dd-cycle-chips-4">',
       '      <div class="dd-cycle-chip"><div class="k">预计交付周期</div><div class="v">' + vs.estimatedCycleDays + ' 天</div><div class="s">禅道预计交付周期</div></div>',
       '      <div class="dd-cycle-chip"><div class="k">当前已用周期</div><div class="v">' + vs.usedCycleDays + ' 天</div><div class="s">未发布，统计至今天</div></div>',
@@ -177,10 +178,11 @@
       var roleText = s.role;
       if (roleText === "PO") roleText = "产品经理";
       else if (roleText) roleText = roleText.replace(/\bPO\b/g, "产品经理");
+      var fullStageText = [s.label, roleText, s.durationText].filter(Boolean).join(" · ");
       html.push(
-        '<div class="dd-flow-stage ' + esc(s.status) + '">',
-        '  <div class="nm">' + esc(s.label) + '</div>',
-        '  <div class="who">' + esc(roleText) + '</div>',
+        '<div class="dd-flow-stage ' + esc(s.status) + '" title="' + esc(fullStageText) + '">',
+        '  <div class="nm" title="' + esc(s.label) + '">' + esc(s.label) + '</div>',
+        '  <div class="who" title="' + esc(roleText) + '">' + esc(roleText) + '</div>',
         '  <div class="duration" title="' + esc(s.durationText) + '">' + esc(excerpt(s.durationText, 18)) + '</div>',
         '</div>'
       );

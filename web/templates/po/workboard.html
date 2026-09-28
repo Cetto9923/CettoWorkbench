@@ -54,21 +54,19 @@
     <div class="team-metrics-head">
       <span class="team-metrics-title">小组效能快照</span>
       <span class="team-metrics-group" id="metricsGroupName">—</span>
-      <span class="team-metrics-note">小组级 · 不随 产品经理 / 任务负责人筛选变化</span>
+      <span class="wb-tooltip-wrap"><span class="wb-tooltip-icon">ⓘ</span><span class="wb-tooltip-content">小组级指标，不随产品经理 / 任务负责人筛选变化</span></span>
       <button type="button" class="team-metrics-more">全部指标 ›</button>
     </div>
     <div class="team-metrics-grid" id="metricsGrid"><!-- JS 填充交付节奏指标或 Empty State --></div>
   </section>
 
   <div id="demandRoleBanner" class="role-banner">
-    <strong>需求看板</strong><span class="arrow">→</span>
-    <span>根节点是 <b>本人负责的工作对象</b>（业务需求 / 独立研发需求）</span><span class="arrow">→</span>
-    <span>树下研发需求仅用于展示 <b>交付进展</b>，不代表它也是 产品经理的个人任务</span>
+    <span class="role-banner-title">看板说明</span>
+    <span class="wb-tooltip-wrap"><span class="wb-tooltip-icon">ⓘ</span><span class="wb-tooltip-content align-left">根节点是本人负责的工作对象（业务需求 / 独立研发需求）；树下研发需求仅用于展示交付进展，不代表它也是产品经理的个人任务</span></span>
   </div>
   <div id="taskRoleBanner" class="role-banner task hidden">
-    <strong>任务看板</strong><span class="arrow">→</span>
-    <span>卡片全部是 <b>开发/测试执行任务</b></span><span class="arrow">→</span>
-    <span>按任务负责人筛选；产品经理 没有任务时不会出现在负责人列表</span>
+    <span class="role-banner-title">看板说明</span>
+    <span class="wb-tooltip-wrap"><span class="wb-tooltip-icon">ⓘ</span><span class="wb-tooltip-content align-left">卡片全部是开发/测试执行任务；按任务负责人筛选，产品经理没有任务时不会出现在负责人列表</span></span>
   </div>
 
   <div id="taskFilterTip" class="task-filter-tip hidden"></div>

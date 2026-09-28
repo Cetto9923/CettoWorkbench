@@ -87,13 +87,16 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  height: 64px;
+  height: 82px;
+  min-height: 82px;
+  box-sizing: border-box;
   background: var(--wb-white);
   border: 1px solid var(--wb-border-color);
   border-radius: var(--wb-radius-sm);
   cursor: pointer;
   text-align: left;
   outline: none;
+  padding: 6px 8px;
   transition: background-color var(--wb-transition-fast), border-color var(--wb-transition-fast), box-shadow var(--wb-transition-fast);
 }
 
@@ -108,27 +111,47 @@
   align-items: center;
   justify-content: space-between;
   gap: 4px;
+  min-height: 16px;
+  line-height: 16px;
 }
 
 .po-home .home-vs-mini-card .vs-mini-name {
-  font-size: var(--wb-font-xs);
-  font-weight: 500;
-  color: var(--wb-gray-700);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--wb-gray-800);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  word-break: keep-all;
+  overflow: visible;
+  text-overflow: unset;
   display: inline-flex;
   align-items: center;
   gap: 3px;
+  line-height: 16px;
+}
+
+.po-home .home-vs-mini-card .vs-card-sub {
+  min-height: 14px;
+  line-height: 14px;
+  margin-top: 1px;
+  margin-bottom: 2px;
+}
+
+.po-home .home-vs-mini-card .vs-mini-breakdown {
+  font-size: 10px;
+  color: var(--wb-gray-500);
+  white-space: nowrap;
+  line-height: 14px;
+  display: block;
 }
 
 .po-home .home-vs-mini-card .vs-mini-count {
-  font-size: var(--wb-font-base);
-  line-height: var(--wb-lh-tight);
+  font-size: 16px;
+  line-height: 20px;
   font-weight: 700;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-variant-numeric: tabular-nums;
   color: var(--wb-gray-900);
+  margin-top: auto;
 }
 
 .po-home .home-vs-mini-card .vs-mini-meta-row {
@@ -136,15 +159,10 @@
   align-items: center;
   justify-content: space-between;
   font-size: 10px;
-  line-height: 12px;
+  line-height: 14px;
   white-space: nowrap;
   gap: 4px;
-}
-
-.po-home .home-vs-mini-card .vs-mini-breakdown {
-  font-size: 10px;
-  color: var(--wb-gray-500);
-  white-space: nowrap;
+  margin-top: 2px;
 }
 
 .po-home .home-vs-mini-card .vs-mini-dur {
@@ -153,6 +171,7 @@
   font-variant-numeric: tabular-nums;
   color: var(--wb-gray-500);
   white-space: nowrap;
+  line-height: 14px;
 }
 
 .po-home .home-vs-mini-card .vs-mini-dur .tag {
@@ -166,7 +185,10 @@
   flex: 0 0 96px;
   width: 96px;
   min-width: 96px;
-  padding: 5px var(--wb-space-2);
+  height: 82px;
+  min-height: 82px;
+  box-sizing: border-box;
+  padding: 6px 8px;
   border-radius: var(--wb-radius-sm);
   border: 1px solid var(--wb-border-color);
 }
@@ -191,6 +213,7 @@
   color: var(--wb-primary);
   font-size: var(--wb-font-xs);
   font-weight: 600;
+  height: 82px;
 }
 .po-home .home-vs-flow-divider i { font-size: 10px; }
 
@@ -209,7 +232,10 @@
   flex: 1 1 0;
   min-width: 0;
   width: auto;
-  padding: 5px 7px;
+  height: 82px;
+  min-height: 82px;
+  box-sizing: border-box;
+  padding: 6px 8px;
   border-radius: var(--wb-radius-sm);
   border: 1px solid var(--wb-border-color);
   background: var(--wb-white);
@@ -435,8 +461,8 @@
 .po-home .home-action-table .c-zt-status { width: 90px; }
 .po-home .home-action-table th.c-actions,
 .po-home .home-action-table td.c-actions {
-  width: 124px;
-  min-width: 124px;
+  width: 148px;
+  min-width: 148px;
   text-align: right;
   white-space: nowrap;
 }
@@ -522,18 +548,21 @@
 .po-home .table-action-group {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  justify-content: flex-end;
+  gap: 8px;
 }
 .po-home .table-action-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   height: 26px;
-  padding: 0 var(--wb-space-2);
+  padding: 0 8px;
   border-radius: var(--wb-radius-sm);
   font-size: var(--wb-font-xs);
   cursor: pointer;
   text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
   transition: all var(--wb-transition-fast);
 }
 .po-home .table-action-btn.primary {

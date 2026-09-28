@@ -201,11 +201,9 @@
 .po-board #demandEmpty{display:none}
 .po-board .legend{display:flex;gap:14px;align-items:center;padding:8px 12px;color:var(--t3);font-size:9px;border-top:1px solid var(--border-lt);background:var(--color-surface)}
 .po-board .legend b{color:var(--t2)}
-.po-board .role-banner{display:flex;align-items:center;gap:8px;padding:6px 12px;border:1px solid var(--wb-border-subtle);background:var(--wb-bg-muted);border-radius:var(--wb-radius-sm);margin-bottom:8px;font-size:11px;color:var(--wb-text-secondary);flex-shrink:0}
-.po-board .role-banner strong{color:var(--wb-text-primary)}
-.po-board .role-banner .arrow{color:var(--wb-text-tertiary)}
+.po-board .role-banner{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border:1px solid var(--wb-border-subtle);background:var(--wb-bg-muted);border-radius:var(--wb-radius-sm);margin-bottom:8px;font-size:11px;color:var(--wb-text-secondary);flex-shrink:0;width:fit-content}
+.po-board .role-banner .role-banner-title{color:var(--wb-text-secondary);font-weight:500}
 .po-board .role-banner.task{border-color:var(--wb-border-subtle);background:var(--wb-bg-muted)}
-.po-board .role-banner.task strong{color:var(--wb-text-primary)}
 
 /* 任务视图 */
 .po-board .task-board{height:100%;min-width:0;min-height:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
