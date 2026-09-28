@@ -22,6 +22,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gin-gonic/gin"
+
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
@@ -32,14 +34,18 @@ import (
 	"workbench/internal/module/debug"
 	"workbench/internal/module/dept"
 
+	"workbench/internal/module/agileteam"
 	"workbench/internal/module/build"
 	"workbench/internal/module/follow"
 	"workbench/internal/module/kanban"
 	"workbench/internal/module/login"
 	"workbench/internal/module/loginlog"
 	"workbench/internal/module/menu"
+	"workbench/internal/module/metrics"
 	"workbench/internal/module/operationlog"
 	"workbench/internal/module/po"
+	"workbench/internal/module/profile"
+	"workbench/internal/module/query"
 	"workbench/internal/module/role"
 	"workbench/internal/module/schedule"
 	"workbench/internal/module/testtask"
@@ -143,6 +149,22 @@ func Run() error {
 	poRepo := po.NewRepo(dbReadonly, db)
 	poSvc := po.NewService(poRepo, scheduleSvc, userSvc, zentaopkg.API(), zapLog)
 	poHandler := po.NewHandler(poSvc, zapLog)
+	// 侧栏角标：注入 poSvc.SidebarBadges 为 render provider。
+	rend.SetSidebarBadgesProvider(func(c *gin.Context) (render.SidebarBadges, error) {
+		v, ok := c.Get("currentUser")
+		if !ok {
+			return render.SidebarBadges{}, nil
+		}
+		u, ok := v.(*model.User)
+		if !ok || u == nil {
+			return render.SidebarBadges{}, nil
+		}
+		b, err := poSvc.SidebarBadges(c.Request.Context(), &po.SidebarActor{Account: u.Account, ID: u.ID})
+		if err != nil {
+			return render.SidebarBadges{Todos: b.Todos, Done: b.Done, Notice: b.Notice}, err
+		}
+		return render.SidebarBadges{Todos: b.Todos, Done: b.Done, Notice: b.Notice}, nil
+	})
 	testtaskRepo := testtask.NewRepo(db)
 	testtaskSvc := testtask.NewService(testtaskRepo, userSvc, zentaopkg.API(), zapLog)
 	testtaskHandler := testtask.NewHandler(testtaskSvc, zapLog)
@@ -161,6 +183,18 @@ func Run() error {
 	sqlPerfSvc := debug.NewService(sqlPerfRepo)
 	sqlPerfHandler := debug.NewHandler(sqlPerfSvc)
 
+	queryRepo := query.NewRepo(dbReadonlyOrPrimary(dbReadonly, db))
+	querySvc := query.NewService(queryRepo)
+	queryHandler := query.NewHandler(rend, querySvc, zapLog)
+	metricsHandler := metrics.NewHandler(rend, metrics.NewService(metrics.NewRepo(dbReadonlyOrPrimary(dbReadonly, db))), zapLog)
+	profileHandler := profile.NewHandler(profile.NewService(profile.NewRepo(db)), zapLog)
+	agileTeamRepo := agileteam.NewRepo(db, dbReadonlyOrPrimary(dbReadonly, db))
+	agileTeamSvc := agileteam.NewService(agileTeamRepo, zapLog)
+	agileTeamHandler := agileteam.NewHandler(agileTeamSvc, zapLog)
+	poHandler.SetTeamViewAccess(agileTeamSvc.CanEnterDashboard)
+	poHandler.SetTeamScopeAccounts(agileTeamSvc.DashboardAccounts)
+	poHandler.SetTeamScopeGroupIDs(agileTeamSvc.DashboardGroupIDs)
+
 	routeDeps := server.RouteDeps{
 		SessionMgr:          sessionMgr,
 		DB:                  db,
@@ -175,6 +209,10 @@ func Run() error {
 		DeptHandler:         deptHandler,
 		RoleHandler:         roleHandler,
 		PoHandler:           poHandler,
+		QueryHandler:        queryHandler,
+		MetricsHandler:      metricsHandler,
+		ProfileHandler:      profileHandler,
+		AgileTeamHandler:    agileTeamHandler,
 		FollowHandler:       followHandler,
 		KanbanHandler:       kanbanHandler,
 		ScheduleHandler:     scheduleHandler,
@@ -185,4 +223,12 @@ func Run() error {
 
 	srv := server.New(cfg, zapLog, db, sessionMgr, limiter, nil, routeDeps)
 	return srv.Run()
+}
+
+// dbReadonlyOrPrimary 只读池可用则用之，否则降级主库。
+func dbReadonlyOrPrimary(ro, primary *gorm.DB) *gorm.DB {
+	if ro != nil {
+		return ro
+	}
+	return primary
 }

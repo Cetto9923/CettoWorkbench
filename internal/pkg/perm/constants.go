@@ -63,6 +63,24 @@ const (
 	PoDemandAcceptance Permission = "po:demandacceptance"
 
 	// 版本：关联研发需求
+
+	// PO 工作台
+	PoHomeList     Permission = "po:home"
+	PoTodoList     Permission = "po:todo"
+	PoDoneList     Permission = "po:done"
+	PoNoticeList   Permission = "po:notice"
+	PoNoticeUpdate Permission = "po:notice:update"
+	PoFollowList   Permission = "po:follow"
+	PoFollowUpdate Permission = "po:follow:update"
+	// PO 工作看板
+	PoBoardDemandList Permission = "po:boarddemand:list"
+	PoBoardTaskList   Permission = "po:boardtask:list"
+
+	// 敏捷小组治理
+	AgileTeamList    Permission = "agileteam:list"
+	AgileTeamUpdate  Permission = "agileteam:update"
+	AgileTeamConfirm Permission = "agileteam:confirm"
+
 	BuildLinkStory Permission = "build:linkstory"
 
 	// 工作看板：需求看板
@@ -100,6 +118,19 @@ var allPermInfos = []PermInfo{
 	{Code: PoDemandReview, Name: "工作台-业需评审", Module: "po"},
 	{Code: PoDemandDeliver, Name: "工作台-发起交付", Module: "po"},
 	{Code: PoDemandAcceptance, Name: "工作台-业需验收", Module: "po"},
+
+	{Code: PoHomeList, Name: "PO 工作台-首页", Module: "po"},
+	{Code: PoTodoList, Name: "PO 工作台-我的待办", Module: "po"},
+	{Code: PoDoneList, Name: "PO 工作台-我的已办", Module: "po"},
+	{Code: PoNoticeList, Name: "PO 工作台-通知中心", Module: "po"},
+	{Code: PoNoticeUpdate, Name: "PO 工作台-更新通知状态", Module: "po"},
+	{Code: PoFollowList, Name: "PO 工作台-我的关注", Module: "po"},
+	{Code: PoFollowUpdate, Name: "PO 工作台-更新关注关系", Module: "po"},
+	{Code: PoBoardDemandList, Name: "PO 工作台-需求看板", Module: "po"},
+	{Code: PoBoardTaskList, Name: "PO 工作台-任务看板", Module: "po"},
+	{Code: AgileTeamList, Name: "敏捷小组-列表", Module: "agileteam"},
+	{Code: AgileTeamUpdate, Name: "敏捷小组-调整提交", Module: "agileteam"},
+	{Code: AgileTeamConfirm, Name: "敏捷小组-调整确认", Module: "agileteam"},
 	{Code: BuildLinkStory, Name: "版本-关联研发需求", Module: "build"},
 	{Code: KanbanStory, Name: "工作看板-需求看板", Module: "kanban"},
 }

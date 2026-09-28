@@ -14,7 +14,7 @@ import "gorm.io/gorm"
 
 // BaseModel 定义业务模型公共字段。
 type BaseModel struct {
-	ID int64 `gorm:"column:id;primaryKey;autoIncrement`
+	ID int64 `gorm:"column:id;primaryKey;autoIncrement"`
 	// TODO 后续删除，修改为DeletedAt
 	// Deleted     uint8          `gorm:"column:deleted;not null;default:0;index"`
 	CreatedBy   string         `gorm:"column:createdBy;size:30;not null"`

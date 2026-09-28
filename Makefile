@@ -3,6 +3,12 @@ BINARY := workbench
 # 单目录部署产物：内含二进制、configs
 DIST := dist/workbench
 
+.PHONY: build check
+
+check: ## 运行 Go 单元测试与静态检查
+	go test ./...
+	go vet ./...
+
 build: ## 单目录部署：生成 $(DIST)/；拷贝到服务器后先 cd 到该目录，再执行 ./install.sh（写入配置并导库）或 ./$(BINARY)
 	@rm -rf $(DIST)
 	@mkdir -p $(DIST)/configs $(DIST)/db

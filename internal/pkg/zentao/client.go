@@ -53,6 +53,45 @@ func NewClient(cfg config.ZentaoConfig) *Client {
 	}
 }
 
+var (
+	defaultClientMu sync.RWMutex
+	defaultClient   *Client
+)
+
+// SetDefaultClient 设置全局默认客户端。
+func SetDefaultClient(c *Client) {
+	defaultClientMu.Lock()
+	defer defaultClientMu.Unlock()
+	defaultClient = c
+}
+
+// DefaultClient 返回基于全局配置的默认客户端。
+func DefaultClient() *Client {
+	defaultClientMu.RLock()
+	c := defaultClient
+	defaultClientMu.RUnlock()
+	if c != nil {
+		return c
+	}
+	defaultClientMu.Lock()
+	defer defaultClientMu.Unlock()
+	if defaultClient == nil {
+		defaultClient = NewClient(zentaoCfg)
+	}
+	return defaultClient
+}
+
+// API 返回基于全局配置的默认客户端（兼容旧名称）。
+func API() *Client {
+	return DefaultClient()
+}
+
+// SiteClient 返回用于站点 PATH_INFO 动作的客户端（关注切换等 ajax 不在 REST）。
+// Main 底座 Client 共用同一实例；Follow* 方法内部用 zentaoCfg.URL 拼站点 URL。
+func SiteClient() *Client {
+	return DefaultClient()
+}
+
 func (c *Client) currentTime() time.Time {
 	if c != nil && c.now != nil {
 		return c.now()
