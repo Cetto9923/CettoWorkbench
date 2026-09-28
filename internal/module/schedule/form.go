@@ -290,6 +290,7 @@ const (
 	StageFilterTaskUnassigned = "task_unassigned"
 	StageFilterTaskAssigned   = "task_assigned"
 	StageFilterIncomplete     = "incomplete" // 业需：排期未完成（细分阶段合集）
+	StageFilterSchedule       = "schedule"   // 兼容单值写法：等价于 incomplete / schedule
 )
 
 // StageFilterOption 排期阶段下拉选项。
@@ -300,8 +301,11 @@ type StageFilterOption struct {
 
 // WindowFilterOption 版本窗口筛选下拉选项。
 type WindowFilterOption struct {
-	ID   uint
-	Name string
+	ID          uint   `json:"id"`
+	Name        string `json:"name"`
+	TeamName    string `json:"team_name"`
+	TeamgroupID uint   `json:"team_group_id,omitempty"`
+	ReleaseDate string `json:"release_date,omitempty"`
 }
 
 // ScheduleBizStageFilterOptions 业务需求列表筛选区排期阶段选项。
@@ -362,6 +366,7 @@ func ParseCommaSeparatedStages(raw string) []string {
 		StageFilterTaskUnassigned: {},
 		StageFilterTaskAssigned:   {},
 		StageFilterIncomplete:     {},
+		StageFilterSchedule:       {},
 	}
 	parts := strings.Split(raw, ",")
 	out := make([]string, 0, len(parts))
@@ -415,10 +420,11 @@ func allowedStageFilterValues(tab string) map[string]bool {
 	if tab == "indep" {
 		options = ScheduleIndependentStageFilterOptions
 	}
-	allowed := make(map[string]bool, len(options))
+	allowed := make(map[string]bool, len(options)+1)
 	for _, option := range options {
 		allowed[option.Value] = true
 	}
+	allowed[StageFilterSchedule] = true
 	return allowed
 }
 
@@ -466,6 +472,11 @@ type FilterCountsReq struct {
 	ReuseDemandTotal  int64  `form:"reuseDemandTotal"`
 	ReuseStoryFilter  string `form:"reuseStoryFilter"`
 	ReuseStoryTotal   int64  `form:"reuseStoryTotal"`
+	Groups            string `form:"groups"`
+	Products          string `form:"products"`
+	Windows           string `form:"windows"`
+	Stages            string `form:"stages"`
+	Stage             string `form:"stage"`
 }
 
 // FilterCountsResp 角标统计 ajax 出参（仅填充当前 tab 对应侧）。
@@ -473,52 +484,6 @@ type FilterCountsResp struct {
 	Success bool         `json:"success"`
 	Demand  FilterCounts `json:"demand"`
 	Story   FilterCounts `json:"story"`
-}
-
-// NormalizeDemandFilter 规范化快捷筛选参数，默认待排期。
-func NormalizeDemandFilter(filter string) string {
-	switch strings.TrimSpace(filter) {
-	case FilterAllOpen, FilterUnscheduled, FilterPendingReview, FilterManagerReviewing, FilterClosed:
-		return strings.TrimSpace(filter)
-	case "suspended":
-		return FilterAllOpen
-	default:
-		return FilterUnscheduled
-	}
-}
-
-// NormalizeFilterCountsTab 规范化角标统计 tab，默认业务需求。
-func NormalizeFilterCountsTab(tab string) string {
-	switch strings.ToLower(strings.TrimSpace(tab)) {
-	case FilterCountsTabStory:
-		return FilterCountsTabStory
-	default:
-		return FilterCountsTabDemand
-	}
-}
-
-func filterCountReuseMatches(reuseFilter, field string) bool {
-	return strings.TrimSpace(reuseFilter) == field
-}
-
-func applyFilterCountReuse(counts *FilterCounts, reuseFilter string, reuseTotal int64) {
-	if counts == nil {
-		return
-	}
-	switch strings.TrimSpace(reuseFilter) {
-	case FilterAllOpen:
-		counts.AllOpen = reuseTotal
-	case FilterUnscheduled:
-		counts.Unscheduled = reuseTotal
-	case FilterPendingReview:
-		counts.PendingReview = reuseTotal
-	case FilterManagerReviewing:
-		counts.ManagerReviewing = reuseTotal
-	case FilterClosed:
-		counts.Closed = reuseTotal
-	case FilterCountReuseSuspended:
-		counts.Suspended = reuseTotal
-	}
 }
 
 // ListBizDemandsReq 业务需求 Tab 列表查询入参。
@@ -555,7 +520,7 @@ func (r *ListBizDemandsReq) Validate() []FieldError {
 	return errs
 }
 
-// Normalize 规范化分页参数。
+// Normalize 规范化分页与筛选参数。
 func (r *ListBizDemandsReq) Normalize() {
 	if r.Page < 1 {
 		r.Page = 1
@@ -566,12 +531,15 @@ func (r *ListBizDemandsReq) Normalize() {
 	if r.PageSize > 100 {
 		r.PageSize = 100
 	}
-	r.Filter = NormalizeDemandFilter(r.Filter)
 	r.Keyword = strings.TrimSpace(r.Keyword)
 	r.Groups = strings.TrimSpace(r.Groups)
 	r.Products = strings.TrimSpace(r.Products)
 	r.Stages = strings.TrimSpace(r.Stages)
+	if r.Stages == "" && strings.TrimSpace(r.Stage) != "" {
+		r.Stages = strings.TrimSpace(r.Stage)
+	}
 	r.Windows = strings.TrimSpace(r.Windows)
+	r.Filter = NormalizeDemandFilterWithWindows(r.Filter, r.Windows)
 	r.Pri = NormalizePriorityFilter(r.Pri)
 	r.TestOwner = strings.TrimSpace(r.TestOwner)
 	r.AcceptOwner = strings.TrimSpace(r.AcceptOwner)
@@ -681,6 +649,7 @@ type ListIndependentReq struct {
 	Groups    string `form:"groups"`    // 逗号分隔的小组 ID
 	Products  string `form:"products"`  // 逗号分隔的产品 ID
 	Stages    string `form:"stages"`    // 逗号分隔的阶段值
+	Stage     string `form:"stage"`     // 兼容单值 stage
 	Windows   string `form:"windows"`   // 逗号分隔的版本窗口 ID
 	Keyword   string `form:"keyword"`   // 编号/标题/负责人/系统
 	Pri       string `form:"pri"`       // 单值优先级：0-4
@@ -710,11 +679,14 @@ func (r *ListIndependentReq) Normalize() {
 	if r.PageSize > 100 {
 		r.PageSize = 100
 	}
-	r.Filter = NormalizeDemandFilter(r.Filter)
 	r.Groups = strings.TrimSpace(r.Groups)
 	r.Products = strings.TrimSpace(r.Products)
 	r.Stages = strings.TrimSpace(r.Stages)
+	if r.Stages == "" && strings.TrimSpace(r.Stage) != "" {
+		r.Stages = strings.TrimSpace(r.Stage)
+	}
 	r.Windows = strings.TrimSpace(r.Windows)
+	r.Filter = NormalizeDemandFilterWithWindows(r.Filter, r.Windows)
 	r.Keyword = strings.TrimSpace(r.Keyword)
 	r.Pri = NormalizePriorityFilter(r.Pri)
 	r.TestOwner = strings.TrimSpace(r.TestOwner)

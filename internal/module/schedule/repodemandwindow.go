@@ -98,3 +98,32 @@ ORDER BY dw.demand ASC, dw.updatedDate DESC, dw.id DESC`
 	}
 	return out, nil
 }
+
+// FindDemandWindowBoundIDs 查询哪些业务需求（包含子需求及父需求）直接在 zt_demandwindow 关联了窗口。
+func (r *Repo) FindDemandWindowBoundIDs(ctx context.Context, demandIDs []uint) (map[uint]bool, error) {
+	if len(demandIDs) == 0 {
+		return map[uint]bool{}, nil
+	}
+	const query = `
+SELECT DISTINCT d.id
+FROM zt_demand d
+WHERE d.id IN ?
+  AND EXISTS (
+    SELECT 1 FROM zt_demandwindow dw
+    WHERE dw.deletedAt IS NULL AND dw.story = 0 AND dw.versionWindow > 0
+      AND (
+        dw.demand = d.id
+        OR dw.demand IN (SELECT c.id FROM zt_demand c WHERE c.parent = d.id AND c.deleted = '0')
+        OR (d.parent > 0 AND dw.demand = d.parent)
+      )
+  )`
+	var matchedIDs []uint
+	if err := r.db.WithContext(ctx).Raw(query, demandIDs).Scan(&matchedIDs).Error; err != nil {
+		return nil, err
+	}
+	out := make(map[uint]bool, len(matchedIDs))
+	for _, id := range matchedIDs {
+		out[id] = true
+	}
+	return out, nil
+}

@@ -9,13 +9,13 @@
 package schedule
 
 // matchUnscheduledBizDemandCandidate 判定单条业需是否满足待排期 SQL 语义。
-// 窗口判定走 story→planstory→versionwindowproduct（与旧 EXISTS 一致），不是 zt_demandwindow。
+// 窗口判定统一按需求直接绑定（zt_demandwindow），未直接绑定任何窗口即为待排期。
 func matchUnscheduledBizDemandCandidate(
 	demand ZtDemand,
 	productCount int,
 	hasChildren bool,
+	hasDemandWindow bool,
 	stories []ZtStory,
-	windowByStory map[uint]StoryWindowRef,
 	taskStatByStory map[uint]StoryTaskStat,
 ) bool {
 	if !demandStatusUnscheduledEligible(demand.Status) {
@@ -31,22 +31,7 @@ func matchUnscheduledBizDemandCandidate(
 	} else if demand.Parent <= 0 {
 		return false
 	}
-	return demandHasUnscheduledStoryState(stories, windowByStory, taskStatByStory)
-}
-
-func demandHasUnscheduledStoryState(
-	stories []ZtStory,
-	windowByStory map[uint]StoryWindowRef,
-	taskStatByStory map[uint]StoryTaskStat,
-) bool {
-	hasWindow := false
-	for _, story := range stories {
-		if ref, ok := windowByStory[story.ID]; ok && ref.WindowID > 0 {
-			hasWindow = true
-			break
-		}
-	}
-	if !hasWindow {
+	if !hasDemandWindow {
 		return true
 	}
 	// 与排期阶段一致：仅看主系统研需；任一条未建任务或未指派即待排期。
@@ -57,8 +42,8 @@ func collectUnscheduledBizDemandTopIDs(
 	candidates []ZtDemand,
 	productCountByDemand map[uint]int,
 	hasChildren map[uint]bool,
+	demandHasWindow map[uint]bool,
 	storiesByDemand map[uint][]ZtStory,
-	windowByStory map[uint]StoryWindowRef,
 	taskStatByStory map[uint]StoryTaskStat,
 ) []uint {
 	seen := make(map[uint]bool, len(candidates))
@@ -68,8 +53,8 @@ func collectUnscheduledBizDemandTopIDs(
 			demand,
 			productCountByDemand[demand.ID],
 			hasChildren[demand.ID],
+			demandHasWindow[demand.ID],
 			storiesByDemand[demand.ID],
-			windowByStory,
 			taskStatByStory,
 		) {
 			continue

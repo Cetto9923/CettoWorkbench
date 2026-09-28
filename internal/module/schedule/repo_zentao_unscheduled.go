@@ -56,7 +56,7 @@ func (r *Repo) FindUnscheduledBizDemandTopIDs(ctx context.Context, account strin
 	storiesByDemand := groupStoriesByFromDemand(stories)
 	storyIDs := pluckStoryIDs(stories)
 
-	windowByStory, err := r.FindStoryWindowMappings(ctx, storyIDs)
+	demandHasWindow, err := r.FindDemandWindowBoundIDs(ctx, candidateIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -69,8 +69,8 @@ func (r *Repo) FindUnscheduledBizDemandTopIDs(ctx context.Context, account strin
 		candidates,
 		productCountByDemand,
 		hasChildren,
+		demandHasWindow,
 		storiesByDemand,
-		windowByStory,
 		taskStatByStory,
 	), nil
 }
@@ -124,7 +124,7 @@ WHERE deleted = '0'
 	return out, nil
 }
 
-func (r *Repo) countUnscheduledBizDemands(ctx context.Context, poolIDs []uint, account string, suspended bool) (int64, error) {
+func (r *Repo) countUnscheduledBizDemands(ctx context.Context, poolIDs []uint, account string, suspended bool, extra ...filterClause) (int64, error) {
 	topIDs, err := r.FindUnscheduledBizDemandTopIDs(ctx, account)
 	if err != nil {
 		return 0, err
@@ -138,7 +138,7 @@ func (r *Repo) countUnscheduledBizDemands(ctx context.Context, poolIDs []uint, a
 		hang = "1"
 	}
 
-	const query = `
+	query := `
 SELECT COUNT(*) AS total
 FROM zt_demand d
 WHERE d.deleted = '0'
@@ -147,8 +147,14 @@ WHERE d.deleted = '0'
   AND d.id IN ?
   AND d.hang = ?`
 
+	args := []interface{}{poolIDs, topIDs, hang}
+	if len(extra) > 0 && extra[0].sql != "" {
+		query += "\n" + extra[0].sql
+		args = append(args, extra[0].args...)
+	}
+
 	var total int64
-	if err := r.db.WithContext(ctx).Raw(query, poolIDs, topIDs, hang).Scan(&total).Error; err != nil {
+	if err := r.db.WithContext(ctx).Raw(query, args...).Scan(&total).Error; err != nil {
 		return 0, err
 	}
 	return total, nil

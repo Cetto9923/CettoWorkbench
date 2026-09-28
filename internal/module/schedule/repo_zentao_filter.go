@@ -141,34 +141,47 @@ func buildIndepStoryFilterClause(filter, account string) filterClause {
 
 // GetBizDemandFilterCounts 统计业务需求各快捷筛选项数量。
 // reuseFilter/reuseTotal：列表 total 可复用时跳过对应重 COUNT。
-func (r *Repo) GetBizDemandFilterCounts(ctx context.Context, poolIDs []uint, account, activeFilter, reuseFilter string, reuseTotal int64) (FilterCounts, error) {
+func (r *Repo) GetBizDemandFilterCounts(ctx context.Context, poolIDs []uint, account, activeFilter, reuseFilter string, reuseTotal int64, extraReq ...FilterCountsReq) (FilterCounts, error) {
 	if len(poolIDs) == 0 {
 		return FilterCounts{}, nil
 	}
+	var extra filterClause
+	if len(extraReq) > 0 {
+		params := advancedFilterParamsFromCountsReq(extraReq[0])
+		extra = buildBizDemandAdvancedClause(params)
+	}
+	if extra.sql != "" {
+		reuseFilter = ""
+	}
 
-	const simpleQuery = `
+	simpleQuery := `
 SELECT
   SUM(CASE WHEN status != 'closed' AND status != 'released' THEN 1 ELSE 0 END) AS all_open,
   SUM(CASE WHEN status = 'closed' THEN 1 ELSE 0 END) AS closed
-FROM zt_demand
+FROM zt_demand d
 WHERE deleted = '0' AND parent IN (0, -1) AND pool IN ?`
+	simpleArgs := []interface{}{poolIDs}
+	if extra.sql != "" {
+		simpleQuery += "\n" + extra.sql
+		simpleArgs = append(simpleArgs, extra.args...)
+	}
 
 	var row bizDemandSimpleCountRow
-	if err := r.db.WithContext(ctx).Raw(simpleQuery, poolIDs).Scan(&row).Error; err != nil {
+	if err := r.db.WithContext(ctx).Raw(simpleQuery, simpleArgs...).Scan(&row).Error; err != nil {
 		return FilterCounts{}, err
 	}
 
 	needUnscheduled := !filterCountReuseMatches(reuseFilter, FilterUnscheduled)
 	needPendingReview := !filterCountReuseMatches(reuseFilter, FilterPendingReview)
 	needManagerReviewing := !filterCountReuseMatches(reuseFilter, FilterManagerReviewing)
-	unscheduled, pendingReview, managerReviewing, err := r.countBizDemandHeavyFilters(ctx, poolIDs, account, needUnscheduled, needPendingReview, needManagerReviewing)
+	unscheduled, pendingReview, managerReviewing, err := r.countBizDemandHeavyFilters(ctx, poolIDs, account, needUnscheduled, needPendingReview, needManagerReviewing, extra)
 	if err != nil {
 		return FilterCounts{}, err
 	}
 
 	var suspended int64
 	if !filterCountReuseMatches(reuseFilter, FilterCountReuseSuspended) {
-		suspended, err = r.countBizDemandsWithFilter(ctx, poolIDs, account, activeFilter, true)
+		suspended, err = r.countBizDemandsWithFilter(ctx, poolIDs, account, activeFilter, true, extra)
 		if err != nil {
 			return FilterCounts{}, err
 		}
@@ -186,21 +199,21 @@ WHERE deleted = '0' AND parent IN (0, -1) AND pool IN ?`
 	return counts, nil
 }
 
-func (r *Repo) countBizDemandHeavyFilters(ctx context.Context, poolIDs []uint, account string, needUnscheduled, needPendingReview, needManagerReviewing bool) (unscheduled, pendingReview, managerReviewing int64, err error) {
+func (r *Repo) countBizDemandHeavyFilters(ctx context.Context, poolIDs []uint, account string, needUnscheduled, needPendingReview, needManagerReviewing bool, extra filterClause) (unscheduled, pendingReview, managerReviewing int64, err error) {
 	if needUnscheduled {
-		unscheduled, err = r.countBizDemandsWithFilter(ctx, poolIDs, account, FilterUnscheduled, false)
+		unscheduled, err = r.countBizDemandsWithFilter(ctx, poolIDs, account, FilterUnscheduled, false, extra)
 		if err != nil {
 			return 0, 0, 0, err
 		}
 	}
 	if needPendingReview {
-		pendingReview, err = r.countBizDemandsWithFilter(ctx, poolIDs, account, FilterPendingReview, false)
+		pendingReview, err = r.countBizDemandsWithFilter(ctx, poolIDs, account, FilterPendingReview, false, extra)
 		if err != nil {
 			return 0, 0, 0, err
 		}
 	}
 	if needManagerReviewing {
-		managerReviewing, err = r.countBizDemandsWithFilter(ctx, poolIDs, account, FilterManagerReviewing, false)
+		managerReviewing, err = r.countBizDemandsWithFilter(ctx, poolIDs, account, FilterManagerReviewing, false, extra)
 		if err != nil {
 			return 0, 0, 0, err
 		}
@@ -208,13 +221,17 @@ func (r *Repo) countBizDemandHeavyFilters(ctx context.Context, poolIDs []uint, a
 	return unscheduled, pendingReview, managerReviewing, nil
 }
 
-func (r *Repo) countBizDemandsWithFilter(ctx context.Context, poolIDs []uint, account, filter string, suspended bool) (int64, error) {
+func (r *Repo) countBizDemandsWithFilter(ctx context.Context, poolIDs []uint, account, filter string, suspended bool, extra ...filterClause) (int64, error) {
+	var extraClause filterClause
+	if len(extra) > 0 {
+		extraClause = extra[0]
+	}
 	if NormalizeDemandFilter(filter) == FilterUnscheduled {
-		return r.countUnscheduledBizDemands(ctx, poolIDs, account, suspended)
+		return r.countUnscheduledBizDemands(ctx, poolIDs, account, suspended, extraClause)
 	}
 
 	clause := applyBizDemandSuspended(buildBizDemandFilterClause(filter, account), suspended)
-	const countQuery = `
+	countQuery := `
 SELECT COUNT(*) AS total
 FROM zt_demand d
 WHERE d.deleted = '0'
@@ -223,6 +240,10 @@ WHERE d.deleted = '0'
 
 	args := append([]interface{}{poolIDs}, clause.args...)
 	query := countQuery + clause.sql
+	if extraClause.sql != "" {
+		query += "\n" + extraClause.sql
+		args = append(args, extraClause.args...)
+	}
 
 	var total int64
 	if err := r.db.WithContext(ctx).Raw(query, args...).Scan(&total).Error; err != nil {
@@ -260,12 +281,20 @@ WHERE demand IN ?
 }
 
 // GetIndependentFilterCounts 统计独立研发需求各快捷筛选项数量。
-func (r *Repo) GetIndependentFilterCounts(ctx context.Context, productIDs []uint, account, reuseFilter string, reuseTotal int64) (FilterCounts, error) {
+func (r *Repo) GetIndependentFilterCounts(ctx context.Context, productIDs []uint, account, reuseFilter string, reuseTotal int64, extraReq ...FilterCountsReq) (FilterCounts, error) {
 	if len(productIDs) == 0 {
 		return FilterCounts{}, nil
 	}
+	var indepExtra filterClause
+	if len(extraReq) > 0 {
+		params := advancedFilterParamsFromCountsReq(extraReq[0])
+		indepExtra = buildIndepStoryAdvancedClause(params)
+	}
+	if indepExtra.sql != "" {
+		reuseFilter = ""
+	}
 
-	const simpleQuery = `
+	simpleQuery := `
 SELECT
   SUM(CASE WHEN s.status != 'closed' AND s.status != 'released' THEN 1 ELSE 0 END) AS all_open,
   0 AS pending_review,
@@ -276,14 +305,19 @@ WHERE IFNULL(s.sourceType, '') != 'demandpool'
   AND s.type = 'story'
   AND s.deleted = '0'
   AND s.product IN ?`
+	simpleArgs := []interface{}{productIDs}
+	if indepExtra.sql != "" {
+		simpleQuery += "\n" + indepExtra.sql
+		simpleArgs = append(simpleArgs, indepExtra.args...)
+	}
 
 	var row indepStorySimpleCountRow
-	if err := r.db.WithContext(ctx).Raw(simpleQuery, productIDs).Scan(&row).Error; err != nil {
+	if err := r.db.WithContext(ctx).Raw(simpleQuery, simpleArgs...).Scan(&row).Error; err != nil {
 		return FilterCounts{}, err
 	}
 
 	needUnscheduled := !filterCountReuseMatches(reuseFilter, FilterUnscheduled)
-	unscheduled, err := r.countIndepStoryHeavyFilters(ctx, productIDs, account, needUnscheduled)
+	unscheduled, err := r.countIndepStoryHeavyFilters(ctx, productIDs, account, needUnscheduled, indepExtra)
 	if err != nil {
 		return FilterCounts{}, err
 	}
@@ -299,16 +333,16 @@ WHERE IFNULL(s.sourceType, '') != 'demandpool'
 	return counts, nil
 }
 
-func (r *Repo) countIndepStoryHeavyFilters(ctx context.Context, productIDs []uint, account string, needUnscheduled bool) (int64, error) {
+func (r *Repo) countIndepStoryHeavyFilters(ctx context.Context, productIDs []uint, account string, needUnscheduled bool, extra ...filterClause) (int64, error) {
 	if !needUnscheduled {
 		return 0, nil
 	}
-	return r.countIndepStoriesWithFilter(ctx, productIDs, account, FilterUnscheduled)
+	return r.countIndepStoriesWithFilter(ctx, productIDs, account, FilterUnscheduled, extra...)
 }
 
-func (r *Repo) countIndepStoriesWithFilter(ctx context.Context, productIDs []uint, account, filter string) (int64, error) {
+func (r *Repo) countIndepStoriesWithFilter(ctx context.Context, productIDs []uint, account, filter string, extra ...filterClause) (int64, error) {
 	clause := buildIndepStoryFilterClause(filter, account)
-	const countQuery = `
+	countQuery := `
 SELECT COUNT(*) AS total
 FROM zt_story s
 WHERE IFNULL(s.sourceType, '') != 'demandpool'
@@ -319,6 +353,10 @@ WHERE IFNULL(s.sourceType, '') != 'demandpool'
 
 	args := append([]interface{}{productIDs}, clause.args...)
 	query := countQuery + clause.sql
+	if len(extra) > 0 && extra[0].sql != "" {
+		query += "\n" + extra[0].sql
+		args = append(args, extra[0].args...)
+	}
 
 	var total int64
 	if err := r.db.WithContext(ctx).Raw(query, args...).Scan(&total).Error; err != nil {

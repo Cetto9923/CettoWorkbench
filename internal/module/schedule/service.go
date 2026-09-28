@@ -156,11 +156,27 @@ func (s *Service) ListFilterWindows(ctx context.Context) ([]WindowFilterOption, 
 	if len(windows) == 0 {
 		return []WindowFilterOption{}, nil
 	}
+
+	teamgroupIDs := make([]uint, 0, len(windows))
+	for _, window := range windows {
+		if window.TeamgroupID > 0 {
+			teamgroupIDs = append(teamgroupIDs, window.TeamgroupID)
+		}
+	}
+	groupNames, _ := s.loadTeamgroupDisplayNamesByIDs(ctx, teamgroupIDs)
+
 	out := make([]WindowFilterOption, 0, len(windows))
 	for _, window := range windows {
+		teamName := ""
+		if groupNames != nil {
+			teamName = groupNames[window.TeamgroupID]
+		}
 		out = append(out, WindowFilterOption{
-			ID:   uint(window.ID),
-			Name: strings.TrimSpace(window.Name),
+			ID:          uint(window.ID),
+			Name:        strings.TrimSpace(window.Name),
+			TeamName:    teamName,
+			TeamgroupID: window.TeamgroupID,
+			ReleaseDate: window.ReleaseDate.Format("2006-01-02"),
 		})
 	}
 	return out, nil

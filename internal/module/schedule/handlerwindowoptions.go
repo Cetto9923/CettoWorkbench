@@ -42,5 +42,14 @@ func (h *Handler) WindowOptions(c *gin.Context) {
 	for _, group := range data.Teamgroups {
 		groups = append(groups, windowOptionItem{ID: group.ID, Name: group.DisplayName})
 	}
-	c.JSON(http.StatusOK, gin.H{"success": true, "products": products, "teamgroups": groups})
+	filterWindows, err := h.svc.ListFilterWindows(c.Request.Context())
+	if err != nil && h.logger != nil {
+		h.logger.Warn("load filter windows for options failed", zap.Error(err))
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success":    true,
+		"products":   products,
+		"teamgroups": groups,
+		"windows":    filterWindows,
+	})
 }

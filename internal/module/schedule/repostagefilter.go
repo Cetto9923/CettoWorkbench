@@ -171,10 +171,20 @@ FROM (
       AND child_parent.parent IS NULL
   ) x
   LEFT JOIN (
-    SELECT DISTINCT ps.story
-    FROM zt_planstory ps
-    INNER JOIN zt_versionwindowproduct vwp
-      ON vwp.plan = ps.plan AND vwp.deletedAt IS NULL
+    SELECT DISTINCT dw.story
+    FROM zt_demandwindow dw
+    WHERE dw.deletedAt IS NULL AND dw.versionWindow > 0 AND dw.story > 0
+    UNION
+    SELECT DISTINCT s.id AS story
+    FROM zt_story s
+    INNER JOIN zt_demandwindow dw
+      ON dw.deletedAt IS NULL AND dw.versionWindow > 0 AND dw.story = 0
+      AND (
+        (s.fromDemand > 0 AND dw.demand = s.fromDemand)
+        OR (s.fromDemand > 0 AND dw.demand IN (
+          SELECT c.parent FROM zt_demand c WHERE c.id = s.fromDemand AND c.deleted = '0'
+        ))
+      )
   ) win ON win.story = x.story_id
   LEFT JOIN (
     SELECT
@@ -193,7 +203,7 @@ func buildBizDemandStageOrClause(stages []string) filterClause {
 	conditions := make([]string, 0, len(stages))
 	for _, stage := range stages {
 		switch stage {
-		case StageFilterIncomplete:
+		case StageFilterSchedule, StageFilterIncomplete:
 			conditions = append(conditions, "(NOT ("+bizDemandStageTaskAssignedSQL+"))")
 		case StageFilterNoStory:
 			conditions = append(conditions, "("+bizDemandStageNoStorySQL+")")
@@ -217,6 +227,8 @@ func buildIndepStoryStageOrClause(stages []string) filterClause {
 	conditions := make([]string, 0, len(stages))
 	for _, stage := range stages {
 		switch stage {
+		case StageFilterSchedule:
+			conditions = append(conditions, "(agg.window_count = 0 OR agg.task_count = 0 OR agg.unassigned_task_count > 0)")
 		case StageFilterNoWindow:
 			conditions = append(conditions, "agg.window_count = 0")
 		case StageFilterNoTask:

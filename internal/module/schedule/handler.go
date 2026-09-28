@@ -199,6 +199,7 @@ func (h *Handler) Index(c *gin.Context) {
 		"BizPager":                demandData.BizPager,
 		"IndepPager":              demandData.IndepPager,
 		"ActiveFilter":            demandData.ActiveFilter,
+		"EffectiveFilter":         demandData.ActiveFilter,
 		"SuspendedActive":         demandData.SuspendedActive,
 		"SuspendedCount":          demandData.SuspendedCount,
 		"BizFilterCounts":         demandData.BizFilterCounts,
@@ -213,12 +214,10 @@ func (h *Handler) Index(c *gin.Context) {
 func (h *Handler) GetFilterCounts(c *gin.Context) {
 	var req FilterCountsReq
 	if err := c.ShouldBindQuery(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"error":   "参数解析失败",
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "参数解析失败"})
 		return
 	}
+	enrichFilterCountsReqFromContext(c, &req)
 
 	actor := middleware.CurrentUser(c)
 	resp, err := h.svc.GetScheduleFilterCounts(c.Request.Context(), actor, req)

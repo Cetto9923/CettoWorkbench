@@ -312,21 +312,20 @@ WHERE vwp.versionWindow = ? AND vwp.deletedAt IS NULL AND vwp.plan IS NOT NULL`
 	}, nil
 }
 
-// GetWindowDemandCount 查询窗口关联的需求数量（业需去重 + 独立软需）。
+// GetWindowDemandCount 查询窗口直接关联的需求数量（业需去重 + 独立软需）。
 func (r *Repo) GetWindowDemandCount(ctx context.Context, windowID uint64) (int, error) {
 	const query = `
-SELECT
-  COUNT(DISTINCT CASE WHEN s.sourceType = 'demandpool' AND s.fromDemand > 0 THEN s.fromDemand ELSE NULL END)
-  + COUNT(CASE WHEN IFNULL(s.sourceType, '') != 'demandpool' THEN 1 ELSE NULL END) AS demandCount
-FROM zt_versionwindowproduct vwp
-JOIN zt_planstory ps ON ps.plan = vwp.plan
-JOIN zt_story s ON s.id = ps.story AND s.deleted = '0'
-WHERE vwp.versionWindow = ? AND vwp.deletedAt IS NULL AND vwp.plan IS NOT NULL`
+SELECT (SELECT COUNT(DISTINCT CASE WHEN d.parent > 0 THEN d.parent ELSE dw.demand END)
+   FROM zt_demandwindow dw JOIN zt_demand d ON d.id = dw.demand AND d.deleted = '0'
+   WHERE dw.versionWindow = ? AND dw.deletedAt IS NULL AND dw.story = 0 AND dw.demand > 0)
+  + (SELECT COUNT(DISTINCT CASE WHEN s.parent > 0 THEN s.parent ELSE dw.story END)
+   FROM zt_demandwindow dw JOIN zt_story s ON s.id = dw.story AND s.deleted = '0'
+   WHERE dw.versionWindow = ? AND dw.deletedAt IS NULL AND dw.story > 0) AS demandCount`
 
 	var row struct {
 		DemandCount int64 `gorm:"column:demandCount"`
 	}
-	if err := r.db.WithContext(ctx).Raw(query, windowID).Scan(&row).Error; err != nil {
+	if err := r.db.WithContext(ctx).Raw(query, windowID, windowID).Scan(&row).Error; err != nil {
 		return 0, err
 	}
 	return int(row.DemandCount), nil
@@ -404,7 +403,7 @@ func (r *Repo) FindAll(ctx context.Context) ([]model.VersionWindow, int64, error
 
 	var rows []model.VersionWindow
 	if err := query.
-		Order("releaseDate DESC").
+		Order("releaseDate ASC, id ASC").
 		Find(&rows).Error; err != nil {
 		return nil, 0, err
 	}

@@ -69,17 +69,32 @@ const bizDemandWindowIDsSQL = `
 const indepStoryWindowIDsSQL = `
 (
   EXISTS (
-    SELECT 1 FROM zt_planstory ps
-    INNER JOIN zt_versionwindowproduct vwp ON vwp.plan = ps.plan AND vwp.deletedAt IS NULL
-    INNER JOIN zt_versionwindow vw ON vw.id = vwp.versionWindow AND vw.deletedAt IS NULL
-    WHERE ps.story = s.id AND vw.id IN ?
+    SELECT 1 FROM zt_demandwindow dw
+    WHERE dw.deletedAt IS NULL
+      AND dw.versionWindow IN ?
+      AND (
+        dw.story = s.id
+        OR (s.fromDemand > 0 AND dw.demand = s.fromDemand AND dw.story = 0)
+        OR (
+          s.fromDemand > 0 AND dw.story = 0 AND dw.demand IN (
+            SELECT c.parent FROM zt_demand c WHERE c.id = s.fromDemand AND c.deleted = '0'
+          )
+        )
+      )
   )
   OR EXISTS (
     SELECT 1 FROM zt_story ch
-    INNER JOIN zt_planstory ps ON ps.story = ch.id
-    INNER JOIN zt_versionwindowproduct vwp ON vwp.plan = ps.plan AND vwp.deletedAt IS NULL
-    INNER JOIN zt_versionwindow vw ON vw.id = vwp.versionWindow AND vw.deletedAt IS NULL
-    WHERE ch.parent = s.id AND ch.deleted = '0' AND ch.type = 'story' AND vw.id IN ?
+    INNER JOIN zt_demandwindow dw ON dw.deletedAt IS NULL AND dw.versionWindow IN ?
+    WHERE ch.parent = s.id AND ch.deleted = '0' AND ch.type = 'story'
+      AND (
+        dw.story = ch.id
+        OR (ch.fromDemand > 0 AND dw.demand = ch.fromDemand AND dw.story = 0)
+        OR (
+          ch.fromDemand > 0 AND dw.story = 0 AND dw.demand IN (
+            SELECT c.parent FROM zt_demand c WHERE c.id = ch.fromDemand AND c.deleted = '0'
+          )
+        )
+      )
   )
 )`
 
