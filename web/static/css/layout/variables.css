@@ -60,6 +60,15 @@ html[data-theme="light"] {
   --color-text-on-accent: #ffffff;
   --color-info: #2563eb;
 
+  /* 语义映射别名 (Semantic Aliases) */
+  --color-text-main: var(--color-text-primary);
+  --color-text-muted: var(--color-text-secondary);
+  --color-text-tertiary: var(--color-text-disabled);
+  --color-text-regular: var(--color-text-body);
+  --color-text-inverse: var(--color-text-on-accent);
+  --color-border-subtle: var(--color-border-soft);
+  --color-info-subtle: var(--color-info-bg);
+
   /* Explicit semantic tokens for PO mappings missing in light block */
   --color-danger-accent: #dc2626;
   --color-success-accent: #16a34a;
@@ -359,6 +368,15 @@ html[data-theme="dark"] {
   --color-info: #93c5fd; /* readable on dark info backgrounds */
   --color-info-bg: #1e3a8a;
   --color-info-border: #1e40af;
+
+  /* 语义映射别名 (Semantic Aliases - Dark) */
+  --color-text-main: var(--color-text-primary);
+  --color-text-muted: var(--color-text-secondary);
+  --color-text-tertiary: var(--color-text-disabled);
+  --color-text-regular: var(--color-text-body);
+  --color-text-inverse: var(--color-text-on-accent);
+  --color-border-subtle: var(--color-border-soft);
+  --color-info-subtle: var(--color-info-bg);
 
   /* 边框色阶 */
   --color-border: #334155;

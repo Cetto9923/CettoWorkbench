@@ -8,7 +8,7 @@
 .schedule-version-overview {
   position: relative;
   z-index: 40; /* 高于下方 .schedule-area，避免卡片菜单被列表区盖住 */
-  background: #fff;
+  background: var(--color-surface, var(--white));
   border: 1px solid var(--border);
   border-radius: 8px;
   margin-bottom: 8px;
@@ -20,14 +20,14 @@
 .schedule-section-title {
   font-size: 12px;
   font-weight: 900;
-  color: #0f172a;
+  color: var(--color-text-primary, #0f172a);
   margin-bottom: 6px;
 }
 
 .schedule-section-title span {
   font-size: 11px;
   font-weight: 600;
-  color: #64748b;
+  color: var(--color-text-secondary, #64748b);
   margin-left: 8px;
 }
 
@@ -49,9 +49,9 @@
   min-height: 72px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--color-surface, var(--white));
   font-size: 13px;
-  color: #999;
+  color: var(--color-text-tertiary, var(--t3));
   padding: 0;
   margin: 0;
 }
@@ -60,7 +60,7 @@
   position: relative;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--color-surface, var(--white));
   text-align: left;
   padding: 0;
   cursor: default;
@@ -126,7 +126,7 @@
   top: 26px;
   right: 0;
   min-width: 120px;
-  background: #fff;
+  background: var(--color-surface, var(--white));
   border: 1px solid var(--border);
   border-radius: 6px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
@@ -168,19 +168,19 @@
 }
 
 .schedule-version-card.red {
-  background: linear-gradient(180deg, #fff 0%, #fff7f7 100%);
+  background: linear-gradient(180deg, var(--color-surface, var(--white)) 0%, rgba(239, 68, 68, 0.08) 100%);
 }
 
 .schedule-version-card.blue {
-  background: linear-gradient(180deg, #fff 0%, #f8fbff 100%);
+  background: linear-gradient(180deg, var(--color-surface, var(--white)) 0%, rgba(59, 130, 246, 0.08) 100%);
 }
 
 .schedule-version-card.green {
-  background: linear-gradient(180deg, #fff 0%, #f7fff9 100%);
+  background: linear-gradient(180deg, var(--color-surface, var(--white)) 0%, rgba(16, 185, 129, 0.08) 100%);
 }
 
 .schedule-version-card.purple {
-  background: linear-gradient(180deg, #fff 0%, #faf8ff 100%);
+  background: linear-gradient(180deg, var(--color-surface, var(--white)) 0%, rgba(139, 92, 246, 0.08) 100%);
 }
 
 .schedule-version-top {
@@ -193,7 +193,7 @@
 .schedule-version-name {
   font-size: 12px;
   font-weight: 900;
-  color: #0f172a;
+  color: var(--color-text-primary, var(--t1));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -211,9 +211,9 @@
   font-size: 9px;
   padding: 0 4px;
   border-radius: 3px;
-  background: #e8f4fd;
-  color: #1a73e8;
-  border: 1px solid #c5e1fb;
+  background: var(--color-info-subtle, var(--blue-bg));
+  color: var(--color-info-fill, var(--blue));
+  border: 1px solid var(--color-info-subtle, #c5e1fb);
   font-weight: 500;
   line-height: 1.35;
   margin-left: 4px;
@@ -223,18 +223,18 @@
 .schedule-version-top strong {
   font-size: 15px;
   font-family: "JetBrains Mono", monospace;
-  color: #0f172a;
+  color: var(--color-text-primary, var(--t1));
 }
 
 .schedule-version-range {
   font-size: 10px;
-  color: #64748b;
+  color: var(--color-text-secondary, var(--t2));
   margin-top: 2px;
 }
 
 .schedule-version-bar {
   height: 4px;
-  background: #e5e7eb;
+  background: var(--color-border-subtle, var(--border));
   border-radius: 999px;
   overflow: hidden;
   margin-top: 5px;
@@ -266,7 +266,7 @@
   flex-wrap: nowrap;
   margin-top: 5px;
   font-size: 10px;
-  color: #475569;
+  color: var(--color-text-secondary, var(--t2));
   overflow: hidden;
 }
 
@@ -279,14 +279,14 @@
 .schedule-version-meta i {
   width: 1px;
   height: 10px;
-  background: #cbd5e1;
+  background: var(--color-border-subtle, var(--border));
   margin: 0 6px;
   flex-shrink: 0;
 }
 
 .schedule-version-meta b {
   font-family: "JetBrains Mono", monospace;
-  color: #0f172a;
+  color: var(--color-text-primary, var(--t1));
 }
 
 .schedule-version-meta b.schedule-remaining-over {

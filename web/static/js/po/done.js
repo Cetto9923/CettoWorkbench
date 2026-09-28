@@ -12,6 +12,10 @@
 
   var esc = window.escapeHtml;
   var PL = window.PersonalList || {};
+  var decodeEntities = (PL && PL.decodeHtmlEntities) || function (s) {
+    if (!s) return "";
+    return String(s).replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+  };
   // 把 ZenTao API kind（demand/story/task/bug/charter/...）映射成 wb-type CSS kind
   // （business/story/...），与 PersonalList.OBJECT_KIND_FROM_API / wb-priority.css 色板对齐。
   var objectChipKindFromApi = function (apiKind) {
@@ -222,7 +226,7 @@
 
         var APPROVAL_OBJECT_TYPES = ["charter", "planchange", "buildguideline", "review", "case"];
         var html = items.map(function (it) {
-          var displayTitle = it.objectTitle || it.objectName || "";
+          var displayTitle = decodeEntities(it.objectTitle || it.objectName || "");
           if (!displayTitle) {
             // 审批类对象即便 URL 为空也必须保持非空显示，避免 "--"
             if (APPROVAL_OBJECT_TYPES.indexOf(String(it.objectType || "").toLowerCase()) >= 0) {
@@ -370,7 +374,7 @@
 
         body.innerHTML =
           '<section class="done-section"><div class="done-section-title">本次办理摘要</div><div class="done-summary-box"><div class="done-kv">' +
-          '<span class="done-kv-k">业务对象</span><span class="done-kv-v done-kv-wide">' + esc(it.objectCode) + ' · ' + esc(it.objectTitle || it.objectName || "--") + '</span>' +
+          '<span class="done-kv-k">业务对象</span><span class="done-kv-v done-kv-wide">' + esc(it.objectCode) + ' · ' + esc(decodeEntities(it.objectTitle || it.objectName || "--")) + '</span>' +
           '<span class="done-kv-k">来源</span><span class="done-kv-v">禅道</span>' +
           '<span class="done-kv-k">我做了什么</span><span class="done-kv-v done-kv-action">' + esc(actionLabel(it.actionName)) + '</span>' +
           '<span class="done-kv-k">处理结果</span><span class="done-kv-v">' + esc(it.resultText) + '</span>' +

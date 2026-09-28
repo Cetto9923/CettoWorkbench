@@ -194,7 +194,9 @@
     ];
 
     var boxes = [];
+    var seenRoleKeys = {};
     selfSelectable.forEach(function (r) {
+      seenRoleKeys[String(r.key || '').toLowerCase()] = true;
       boxes.push(
         '<label class="role-checkbox-card' + (r.checked ? ' selected' : '') + '">' +
           '<input type="checkbox" name="profilePreferredRole" value="' + esc(r.key) + '"' +
@@ -206,7 +208,10 @@
 
     // 2. 组织固定授权角色：服务端返回的组织角色只读展示，不可在个人资料自主修改。
     var orgRoles = window.RoleSwitcher ? window.RoleSwitcher.getOrgRoles() : [];
-    orgRoles.forEach(function (key) {
+    orgRoles.forEach(function (rawKey) {
+      var key = String(rawKey || '').toLowerCase();
+      if (!key || seenRoleKeys[key]) return;
+      seenRoleKeys[key] = true;
       var label = key === 'pmo' ? 'PMO' : (key === 'lead' ? '团队管理' : (key === 'po' ? '产品经理' : key.toUpperCase()));
       boxes.push(
         '<label class="role-checkbox-card selected is-disabled" title="组织已授权视图，须由 PMO 或管理员统一配置，个人不可修改">' +

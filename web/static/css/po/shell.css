@@ -65,6 +65,7 @@ body.po-workbench-shell .topbar-row {
   padding: 0 20px;
   gap: 12px;
   align-items: center;
+  flex-wrap: nowrap;
 }
 
 /* 全局统一 Page Header 标识区（单行紧凑布局：标题 │ 描述） */
@@ -133,6 +134,8 @@ body.po-workbench-shell .topbar-row {
   align-items: center;
   gap: 8px;
   margin-left: auto;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .po-global-search {
@@ -426,7 +429,7 @@ body.po-workbench-shell .sidebar .nav-badge:empty { display: none; }
 body.po-workbench-shell .main {
   height: calc(100vh - var(--po-shell-topbar-height));
   min-height: calc(100vh - var(--po-shell-topbar-height));
-  padding: var(--po-shell-pad-top) var(--po-shell-pad-x) var(--po-shell-pad-bottom);
+  padding: var(--po-shell-pad-top) var(--po-shell-pad-x) calc(var(--po-shell-pad-bottom) + 32px);
   overflow-y: auto;
   background: var(--color-page-bg);
 }

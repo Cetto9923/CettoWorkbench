@@ -21,26 +21,6 @@ web/templates/layout/header.html 模块: 布局 职责:
     {{ end }}
   </div>
   <div class="po-header-right">
-    <div class="dropdown po-perspective-dropdown">
-      <button class="po-perspective-trigger" type="button" onclick="return toggleDropdown(this);" aria-haspopup="menu" title="切换工作视角">
-        <i class="fas fa-layer-group"></i>
-        <span class="perspective-current-label">{{ if or (eq .CurrentPath "/agileteam") (eq .Title "团队管理") (eq .PageTitle "团队管理") }}团队管理{{ else }}需求管理{{ end }}</span>
-        <i class="fas fa-chevron-down caret-icon"></i>
-      </button>
-      <div class="dropdown-menu dropdown-menu-right">
-        <div class="dropdown-header">工作视角</div>
-        <a href="/home?view=demand" class="dropdown-item{{ if not (or (eq .CurrentPath "/agileteam") (eq .Title "团队管理") (eq .PageTitle "团队管理")) }} active{{ end }}">
-          <i class="fas fa-bullseye"></i>
-          <span>需求管理</span>
-          {{ if not (or (eq .CurrentPath "/agileteam") (eq .Title "团队管理") (eq .PageTitle "团队管理")) }}<i class="fas fa-check check-mark"></i>{{ end }}
-        </a>
-        <a href="/home?view=team" class="dropdown-item{{ if or (eq .CurrentPath "/agileteam") (eq .Title "团队管理") (eq .PageTitle "团队管理") }} active{{ end }}">
-          <i class="fas fa-people-roof"></i>
-          <span>团队管理</span>
-          {{ if or (eq .CurrentPath "/agileteam") (eq .Title "团队管理") (eq .PageTitle "团队管理") }}<i class="fas fa-check check-mark"></i>{{ end }}
-        </a>
-      </div>
-    </div>
     <div class="search-box po-global-search" id="searchBox">
       <i class="fas fa-search" aria-hidden="true"></i>
       <input

@@ -99,6 +99,19 @@
 
   /* 过渡动画 */
   --wb-transition-fast: 0.15s ease-in-out;
+
+  /* 语义映射别名 (Semantic Aliases) */
+  --wb-text-primary: var(--wb-gray-900);
+  --wb-text-secondary: var(--wb-gray-600);
+  --wb-text-tertiary: var(--wb-gray-400);
+  --wb-text-inverse: #ffffff;
+  --wb-bg-surface: var(--wb-white);
+  --wb-bg-muted: var(--wb-gray-100);
+  --wb-bg-hover: var(--wb-gray-100);
+  --wb-border-default: var(--wb-border-color);
+  --wb-border-subtle: var(--wb-gray-200);
+  --wb-warning-bg: var(--wb-warning-light);
+  --wb-danger-bg: var(--wb-danger-light);
 }
 
 /* ---------------------------------------------------------------------------
@@ -153,4 +166,17 @@ html[data-theme="dark"] {
 
   --wb-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.5);
   --wb-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.6);
+
+  /* 语义映射别名 (Semantic Aliases - Dark) */
+  --wb-text-primary: var(--wb-gray-900);
+  --wb-text-secondary: var(--wb-gray-600);
+  --wb-text-tertiary: var(--wb-gray-400);
+  --wb-text-inverse: #ffffff;
+  --wb-bg-surface: var(--wb-white);
+  --wb-bg-muted: var(--wb-gray-100);
+  --wb-bg-hover: var(--wb-gray-100);
+  --wb-border-default: var(--wb-border-color);
+  --wb-border-subtle: var(--wb-gray-200);
+  --wb-warning-bg: var(--wb-warning-light);
+  --wb-danger-bg: var(--wb-danger-light);
 }

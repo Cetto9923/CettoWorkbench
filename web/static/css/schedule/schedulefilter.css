@@ -73,7 +73,7 @@
 }
 
 #scheduleMultiselectRow .schedule-ms-option:hover {
-  background: #f8fafc;
+  background: var(--color-surface-hover, var(--hover));
 }
 
 #scheduleMultiselectRow .schedule-ms-checkbox {
@@ -106,7 +106,7 @@
   padding: 2px 36px 2px 6px;
   border-radius: 4px;
   border-color: var(--border);
-  background: #fff;
+  background: var(--color-surface, var(--white));
   overflow: hidden;
 }
 
