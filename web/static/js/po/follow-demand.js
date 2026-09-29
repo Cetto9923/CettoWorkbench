@@ -25,6 +25,8 @@
     state.pageSize = PL.loadPageSize("po.follow.pageSize", state.pageSize, PAGE_SIZE_OPTIONS);
   }
   var priorityBadge = PL.priorityBadge;
+  var currentAbortController = null;
+  var requestSeq = 0;
 
   function dash(v) {
     var t = String(v == null ? "" : v).trim();
@@ -258,6 +260,16 @@
   }
 
   async function load() {
+    if (currentAbortController) {
+      currentAbortController.abort();
+    }
+    currentAbortController = new AbortController();
+    var signal = currentAbortController.signal;
+    var thisSeq = ++requestSeq;
+
+    var pagEl = document.getElementById("followPagination");
+    if (pagEl) pagEl.hidden = true;
+
     var tbody = document.getElementById("followDemandTbody");
     var empty = document.getElementById("followEmpty");
     var error = document.getElementById("followError");
@@ -276,9 +288,15 @@
       page: String(state.page || 1),
       pageSize: String(state.pageSize || 20)
     });
+    var timeoutId = setTimeout(function () {
+      if (thisSeq === requestSeq && currentAbortController) {
+        currentAbortController.abort();
+      }
+    }, 15000);
     try {
       var res = await fetch("/follow/items?" + params.toString(), {
         credentials: "include",
+        signal: signal,
         headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" }
       });
       var isFallback = false;
@@ -294,10 +312,13 @@
         });
         res = await fetch("/follow/items?" + fallbackParams.toString(), {
           credentials: "include",
+          signal: signal,
           headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" }
         });
         isFallback = true;
       }
+      clearTimeout(timeoutId);
+      if (thisSeq !== requestSeq) return;
       if (!res.ok) throw new Error("fetch demand failed");
       var json = await res.json();
       if (!json || !json.success) throw new Error("fetch demand failed");
@@ -322,7 +343,15 @@
         root.FollowUpdateDemandBadge(badgeNum);
       }
     } catch (e) {
-      if (tbody) tbody.innerHTML = "";
+      clearTimeout(timeoutId);
+      if (thisSeq !== requestSeq) return;
+      if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="7" class="pw-empty-row is-error">' +
+          '加载超时或失败，请 <button type="button" class="pw-retry-btn" id="followDemandRetry">重试</button>' +
+          '</td></tr>';
+        var retryBtn = document.getElementById("followDemandRetry");
+        if (retryBtn) retryBtn.addEventListener("click", function () { load(); });
+      }
       if (summary) summary.textContent = "加载失败，请重试";
       if (error) error.hidden = false;
     }

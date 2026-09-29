@@ -90,7 +90,7 @@ html[data-theme="dark"] .po-metrics-radar .radar-kpi-block .kpi-unit-tag {
   color: var(--color-text-secondary, #94a3b8);
 }
 html[data-theme="dark"] .po-metrics-radar .radar-kpi-block .kpi-sub-text {
-  color: var(--color-text-disabled, #64748b);
+  color: var(--wb-text-secondary, #94a3b8);
 }
 html[data-theme="dark"] .po-metrics-radar .radar-kpi-block.kpi-overall-score strong { color: #60a5fa; }
 html[data-theme="dark"] .po-metrics-radar .kpi-tag.score-grade {
@@ -132,7 +132,7 @@ html[data-theme="dark"] .po-metrics-radar .radar-categories-card {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 html[data-theme="dark"] .po-metrics-radar .card-head-hint {
-  color: var(--color-text-disabled, #64748b);
+  color: var(--color-text-secondary, #94a3b8);
 }
 html[data-theme="dark"] .po-metrics-radar .radar-cat-card {
   background: rgba(255, 255, 255, 0.03);

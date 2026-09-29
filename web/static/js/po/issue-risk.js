@@ -175,8 +175,10 @@
     var idChip = (PL && PL.idChipHtml)
       ? PL.idChipHtml(item.kind || state.kind, idLink)
       : ('<span class="wb-type wb-type-' + esc(item.kind || state.kind) + '">' + idLink + '</span>');
+    var daysNum = Number(item.overdueDays || 1);
+    var overdueLabel = (daysNum > 3650 || isNaN(daysNum)) ? "逾期" : ("逾期 " + daysNum + " 天");
     var overdueTag = item.isOverdue
-      ? '<span class="ir-tag danger">逾期 ' + esc(String(item.overdueDays || 1)) + " 天</span>"
+      ? '<span class="ir-tag danger">' + esc(overdueLabel) + "</span>"
       : '<span class="ir-tag">' + esc(String(item.days || 0)) + " 天</span>";
     var actionBtn = '<button type="button" class="action-btn ir-action-view" data-ir-detail="' + esc(item.kind) + '|' + esc(item.id) + '">查看</button>';
     var statusHtml = (PL && PL.statusTagHtml) ? PL.statusTagHtml(item.status) : ('<span class="wb-status-tag">' + esc(item.status || "—") + '</span>');

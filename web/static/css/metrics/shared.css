@@ -99,7 +99,7 @@
 
 /* 指标名 / 编码 列 */
 .po-metrics-manage .metric-col-name {
-  min-width: 220px;
+  min-width: 240px;
   white-space: normal;
 }
 .po-metrics-manage .metric-table .metric-name {
@@ -123,6 +123,8 @@
   font-size: 10px;
   color: var(--color-text-disabled, #94a3b8);
   margin-top: 2px;
+  word-break: break-all;
+  overflow-wrap: break-word;
 }
 
 /* 目标 / 阈值 三段堆叠 */
@@ -246,7 +248,7 @@
   white-space: nowrap;
 }
 .po-metrics-manage .metric-table .metric-col-target {
-  min-width: 140px;
+  min-width: 175px;
 }
 .po-metrics-manage .metric-table .metric-col-opt {
   min-width: 60px;

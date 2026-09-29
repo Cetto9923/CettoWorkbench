@@ -25,8 +25,14 @@
 <div class="po-personal-workspace po-home">
   <!-- 1. 紧凑页头与右上角焦点 Chips — 统一外框：workspace-header (同 todos/done/notice/follow) -->
   <header class="workspace-header">
-    <div class="workspace-header-left" hidden style="display:none;">
-      <div class="po-role-badge po-perspective-tabs" hidden style="display:none;"></div>
+    <div class="workspace-header-left">
+      <div class="po-role-badge" role="group" aria-label="工作视角">
+        <strong aria-current="page">需求视角</strong>
+        {{ if .CanViewTeamHome }}
+        <span aria-hidden="true">/</span>
+        <a class="home-view-link" href="/home?view=team">团队视角 <span class="wb-phase2-tag">二期</span></a>
+        {{ end }}
+      </div>
     </div>
     <div class="header-quick-filters" id="homeQuickChips" role="group" aria-label="快捷焦点">
       <button type="button" class="header-quick-chip" data-home-focus="all" aria-pressed="false">
@@ -202,11 +208,11 @@
     </section>
 
     <!-- 右侧辅助侧栏：结构倒置！固定顶部 4 宫格小块 + 底部自适应版本窗口 -->
-    <aside class="home-side-column" aria-label="需求管理聚焦与版本窗口">
-      <!-- 【置顶】需求管理聚焦 (固定 4 宫格，防抖动) -->
-      <section class="home-page-card home-focus-box" aria-label="需求管理聚焦">
+    <aside class="home-side-column" aria-label="需求视角聚焦与版本窗口">
+      <!-- 【置顶】需求视角聚焦 (固定 4 宫格，防抖动) -->
+      <section class="home-page-card home-focus-box" aria-label="需求视角聚焦">
         <div class="home-side-hdr">
-          <div class="home-side-title"><i class="fas fa-shield-halved text-blue"></i> 需求管理聚焦</div>
+          <div class="home-side-title"><i class="fas fa-shield-halved text-blue"></i> 需求视角聚焦</div>
           <a class="side-link" href="/todos">进入待办 <i class="fas fa-angle-right" aria-hidden="true"></i></a>
         </div>
         <div class="home-focus-grid">

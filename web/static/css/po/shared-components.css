@@ -100,3 +100,26 @@ body.po-workbench-shell .action.soft {
   background: var(--color-info-bg);
   color: var(--color-info);
 }
+
+/* 二期规划标记组件（高 16px，字号 11px，中性柔和边框，双主题自适应） */
+.wb-phase2-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 16px;
+  line-height: 1;
+  padding: 0 4px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: var(--wb-radius-sm, 3px);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  vertical-align: middle;
+}
+
+.team-home-phase2-caption {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-left: 8px;
+}

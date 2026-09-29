@@ -396,6 +396,13 @@
   padding: 4px 0;
 }
 
+@media (max-width: 1366px) {
+  .schedule-version-grid { gap: 6px; }
+  .schedule-version-body-click { padding: 10px 8px; padding-right: 28px; }
+  .schedule-version-name { font-size: 11px; }
+  .agile-team-tag { max-width: 60px; padding: 0 3px; font-size: 10px; }
+}
+
 @media (max-width: 1180px) {
   .schedule-version-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr)) 80px;

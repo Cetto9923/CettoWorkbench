@@ -88,7 +88,7 @@
 }
 .pw-table tbody td {
   padding: 10px 12px; border-bottom: 1px solid var(--wb-bg-muted); vertical-align: top;
-  color: var(--wb-text-secondary); line-height: 1.4;
+  color: var(--color-text-body); line-height: 1.4;
 }
 .pw-table tbody tr:hover { background: var(--wb-bg-hover); }
 .pw-table tbody tr:last-child td { border-bottom: none; }
@@ -124,6 +124,7 @@
 .pw-desc {
   color: var(--wb-text-secondary); font-size: 12px; line-height: 1.45;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  word-break: break-word; overflow-wrap: break-word;
 }
 .pw-desc.muted { color: var(--color-text-secondary); }
 
@@ -292,7 +293,7 @@
 .po-follow .follow-demand-footer .workspace-pagination { margin-left: auto; }
 .po-follow .follow-scope { display: flex; align-items: center; gap: 6px; }
 .po-follow .follow-list-host {
-  max-height: calc(100vh - 280px); min-height: 220px; overflow-y: auto; padding: 0;
+  max-height: calc(100vh - 280px); overflow-y: auto; padding: 0;
 }
 .po-follow .follow-item {
   display: flex; align-items: center; gap: 12px; padding: 10px 14px;
@@ -650,7 +651,7 @@ html[data-theme="dark"] .pw-page-btn.active {
 #demandSection .fd-title-line { flex-wrap: nowrap; }
 #demandSection .fd-title-sub { display: none; }
 
-/* 统一全站标题布局规范：指标收敛至右上角 header-quick-filters，隐藏主体内冗余大指标卡 */
-.po-follow .pw-summary {
-  display: none !important;
-}
+.pw-action-btn.pw-btn-disabled { opacity: 0.35; cursor: not-allowed; }
+.pw-participated-tag { margin-left: 6px; font-size: 11px; }
+.pw-empty-row.is-error { color: var(--color-danger); }
+.pw-retry-btn { margin-left: 8px; padding: 2px 8px; font-size: 12px; border: 1px solid var(--color-border); background: var(--color-surface); border-radius: 4px; cursor: pointer; color: var(--color-text-primary); }

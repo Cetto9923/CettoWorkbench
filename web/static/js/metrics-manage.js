@@ -92,7 +92,7 @@
       '<td class="metric-col-source" title="' + esc(m.dataSource || "") + '">' + esc(m.dataSource || "—") + '</td>' +
       '<td class="metric-col-target-val">' + targetHtml + '</td>' +
       '<td class="metric-col-target">' + thresholdHtml + '</td>' +
-      '<td><span class="state-tag">' + esc(m.ownerRole || "—") + '</span></td>' +
+      '<td><span class="state-tag">' + esc(m.ownerRole === "PO" ? "产品经理" : (m.ownerRole || "—")) + '</span></td>' +
       '<td class="metric-col-dir">' + dirText + '</td>' +
       '<td class="metric-col-value">' + valueText + '</td>' +
       '<td>' + statusBadge + '</td>' +

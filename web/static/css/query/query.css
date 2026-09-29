@@ -77,7 +77,7 @@
 }
 
 .po-query .query-active-filter-bar[hidden] {
-  display: none !important;
+  display: none;
 }
 
 .po-query .query-active-filter-label {
@@ -153,4 +153,14 @@
 .po-query .query-active-filter-clear:hover {
   text-decoration: underline;
   color: var(--color-primary-hover, var(--wb-primary-hover));
+}
+
+@media (max-width: 1366px) {
+  .po-query .query-col-title { min-width: 240px; }
+  .po-query .query-col-id { width: 110px; }
+  .po-query .query-col-stage { width: 75px; }
+  .po-query .query-col-status { width: 75px; }
+  .po-query .query-col-owner { width: 90px; }
+  .po-query .query-col-system { width: 100px; }
+  .po-query .query-col-dead { width: 90px; }
 }

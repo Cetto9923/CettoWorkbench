@@ -38,7 +38,9 @@
     });
     var weeklySec = document.getElementById("weeklySection");
     var demandSec = document.getElementById("demandSection");
+    var wsHeader = document.querySelector(".po-follow .workspace-header");
     var quickChips = document.getElementById("followQuickChips");
+    if (wsHeader) wsHeader.hidden = (tab !== "demand");
     if (quickChips) quickChips.hidden = (tab !== "demand");
     if (weeklySec) weeklySec.hidden = (tab !== "weekly");
     if (demandSec) demandSec.hidden = (tab === "weekly");
@@ -175,7 +177,7 @@
 
       var sourceBadge = "";
       if (item.isParticipated || item.source === "participated" || item.source === "both") {
-        sourceBadge = '<span class="tag blue" style="margin-left:6px;font-size:11px;">参与</span>';
+        sourceBadge = '<span class="tag blue pw-participated-tag">参与</span>';
       }
 
       var isWatched = !!(item.isWatched || item.source === "watched" || item.source === "both");
@@ -184,7 +186,7 @@
         watchBtn = '<button type="button" class="pw-action-btn pw-watch-btn is-watched" data-unwatch-project="' + pid + '" data-watched="1" title="取消关注" aria-label="取消关注" aria-pressed="true">' +
           '<i class="fas fa-star" aria-hidden="true"></i></button>';
       } else {
-        watchBtn = '<button type="button" class="pw-action-btn pw-watch-btn" data-unwatch-project="' + pid + '" data-watched="0" disabled title="参与项目以禅道组织授权为准，不在此取关" aria-label="参与项目" style="opacity:0.35;cursor:not-allowed;">' +
+        watchBtn = '<button type="button" class="pw-action-btn pw-watch-btn pw-btn-disabled" data-unwatch-project="' + pid + '" data-watched="0" disabled title="参与项目以禅道组织授权为准，不在此取关" aria-label="参与项目">' +
           '<i class="far fa-star" aria-hidden="true"></i></button>';
       }
 

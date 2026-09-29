@@ -8,9 +8,10 @@
   <header class="workspace-header">
     <div class="workspace-header-left">
       <div class="po-role-badge" role="group" aria-label="工作视角">
-        {{ if .CanViewDemandHome }}<a class="home-view-link" href="/home?view=demand">需求管理</a><span aria-hidden="true">/</span>{{ end }}
-        <strong aria-current="page">团队管理</strong>
+        {{ if .CanViewDemandHome }}<a class="home-view-link" href="/home?view=demand">需求视角</a><span aria-hidden="true">/</span>{{ end }}
+        <strong aria-current="page">团队视角 <span class="wb-phase2-tag">二期</span></strong>
       </div>
+      <div class="team-home-phase2-caption">二期规划，本期仅展示设计，不纳入交付</div>
     </div>
   </header>
 

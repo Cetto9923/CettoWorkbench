@@ -448,7 +448,7 @@
 
   // 点击外部与按 Esc 键关闭所有筛选下拉
   $(document).on("click", function (e) {
-    if (!$(e.target).closest(".schedule-ms, .schedule-filter-ms, .dropdown, #scheduleMultiselectRow").length) {
+    if (!$(e.target).closest(".schedule-ms, .schedule-filter-ms, .dropdown").length) {
       closeAllFilterDropdowns();
     }
   });

@@ -581,9 +581,7 @@ body.sidebar-collapsed.po-workbench-shell .po-sidebar-collapse i { transform: ro
   border-radius: 10px;
   box-shadow: var(--shadow-popover);
 }
-.po-header-right .search-results.show {
-  display: block;
-}
+.po-header-right .search-results.show { display: block; }
 .po-header-right .search-results .gs-item {
   display: block;
   width: 100%;
@@ -598,11 +596,7 @@ body.sidebar-collapsed.po-workbench-shell .po-sidebar-collapse i { transform: ro
 .po-header-right .search-results .gs-item.is-active {
   background: var(--color-info-bg);
 }
-.po-header-right .search-results .gs-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0;
-}
+.po-header-right .search-results .gs-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; }
 
 /* FontAwesome 图标兼容兜底（解决特定 FA6 别名在部分构建版本中未内嵌的问题） */
 .fa-shield-halved:before { content: "\f3ed" !important; }

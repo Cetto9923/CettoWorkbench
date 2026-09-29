@@ -212,7 +212,8 @@
       var key = String(rawKey || '').toLowerCase();
       if (!key || seenRoleKeys[key]) return;
       seenRoleKeys[key] = true;
-      var label = key === 'pmo' ? 'PMO' : (key === 'lead' ? '组织管理' : (key === 'po' ? '产品经理' : key.toUpperCase()));
+      var roleDict = { super_admin: '超级管理员', admin: '系统管理员', lead: '团队视角', leader: '团队视角', po: '产品经理', pmo: 'PMO', dev: '研发人员', qa: '测试人员', biz: '业务人员', scrum: '敏捷教练' };
+      var label = roleDict[key] || (key === 'pmo' ? 'PMO' : key.toUpperCase());
       boxes.push(
         '<label class="role-checkbox-card selected is-disabled" title="组织已授权视图，须由 PMO 或管理员统一配置，个人不可修改">' +
           '<input type="checkbox" checked disabled />' +
@@ -224,7 +225,7 @@
 
     return '<div class="role-cards-grid" style="grid-template-columns: 1fr;" id="profileRoleCheckRow">' + boxes.join('') + '</div>' +
       '<span class="field-tip" style="margin-top:6px; display:inline-block; line-height:1.4;">' +
-        '提示：产品经理角色可由个人自主选择开启或关闭；PMO 与组织管理视图属于组织固定授权，须由 PMO 或管理员在后台统一授权配置，个人不可在此更改。' +
+        '提示：产品经理角色可由个人自主选择开启或关闭；PMO 与团队视角视图属于组织固定授权，须由 PMO 或管理员在后台统一授权配置，个人不可在此更改。' +
       '</span>';
   }
 
@@ -836,26 +837,18 @@
     }
   });
 
-  // 页面加载阶段初始化角色 tab 显隐
-  if (window.RoleSwitcher && typeof window.RoleSwitcher.init === 'function') {
-    window.RoleSwitcher.init();
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () {
-      if (window.RoleSwitcher && typeof window.RoleSwitcher.init === 'function') {
-        window.RoleSwitcher.init();
-      }
-      if (document.getElementById('profilePageBody')) {
-        window.renderProfilePage();
-      }
-    });
-  } else {
+  // 页面加载阶段初始化角色 tab 显隐与内容渲染
+  function bootProfile() {
     if (window.RoleSwitcher && typeof window.RoleSwitcher.init === 'function') {
       window.RoleSwitcher.init();
     }
     if (document.getElementById('profilePageBody')) {
       window.renderProfilePage();
     }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootProfile);
+  } else {
+    bootProfile();
   }
 })();
