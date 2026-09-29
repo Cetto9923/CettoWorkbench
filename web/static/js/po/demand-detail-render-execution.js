@@ -19,7 +19,7 @@
 
   function renderQualityTree(tree) {
     if (!tree || tree.length === 0) {
-      return '<div style="color:#8a99ad;font-size:12px;padding:12px 0;">暂无关联代码分支或静态扫描记录</div>';
+      return '<div class="dd-exec-empty">暂无关联代码分支或静态扫描记录</div>';
     }
     return tree.map(function (app) {
       var gateClass = app.gatePassed ? "green" : "red";
@@ -30,12 +30,12 @@
           var bGate = b.gateStatus === "pass" ? '<span class="dd-tag green">通过</span>' : '<span class="dd-tag red">阻断</span>';
           return [
             '<tr>',
-            '  <td><div><strong>' + esc(b.storyCode) + '</strong></div><div style="color:#64748b;font-size:11px;margin-top:2px;">' + esc(b.storyTitle) + '</div></td>',
-            '  <td class="nowrap"><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;color:#1e293b;font-size:11px;">' + esc(b.branchName) + '</code></td>',
-            '  <td class="nowrap"><span class="dd-tag blue">' + esc(b.latestMr) + '</span><div style="color:#8a99ad;font-size:10px;margin-top:2px;">' + esc(b.scanTime) + '</div></td>',
-            '  <td class="nowrap" style="text-align:center;">' + bGate + '</td>',
+            '  <td><div><strong>' + esc(b.storyCode) + '</strong></div><div class="dd-exec-sub">' + esc(b.storyTitle) + '</div></td>',
+            '  <td class="nowrap"><code class="dd-exec-code">' + esc(b.branchName) + '</code></td>',
+            '  <td class="nowrap"><span class="dd-tag blue">' + esc(b.latestMr) + '</span><div class="dd-exec-sub dd-exec-sub--xs">' + esc(b.scanTime) + '</div></td>',
+            '  <td class="nowrap dd-exec-cell-center">' + bGate + '</td>',
             '  <td class="nowrap">',
-            '    <div style="display:grid;grid-template-columns:repeat(2,auto);gap:4px;width:max-content;">',
+            '    <div class="dd-exec-metric-grid">',
             '      <span class="dd-metric-pill">得分 <strong>' + b.score + '</strong></span>',
             '      <span class="dd-metric-pill">覆盖率 <strong>' + b.coverage + '%</strong></span>',
             '      <span class="dd-metric-pill">异味 <strong>' + b.codeSmells + '</strong></span>',
@@ -56,12 +56,12 @@
         '    </div>',
         '    <div class="dd-tree-app-badges">',
         '      <span class="dd-tag ' + gateClass + '">' + gateText + '</span>',
-        '      <span style="font-size:12px;color:#64748b;">' + app.branchCount + ' 条分支</span>',
+        '      <span class="dd-exec-note">' + app.branchCount + ' 条分支</span>',
         '    </div>',
         '  </div>',
         branchRows ? (
-          '<table class="dd-table"><thead><tr><th>关联研发需求</th><th>代码分支</th><th>最新 MR 扫描</th><th style="text-align:center;">门禁</th><th>代码扫描指标</th><th>提交人</th></tr></thead><tbody>' + branchRows + '</tbody></table>'
-        ) : '<div style="padding:10px 14px;color:#8a99ad;font-size:12px;">该应用下暂无扫描分支</div>',
+          '<table class="dd-table"><thead><tr><th>关联研发需求</th><th>代码分支</th><th>最新 MR 扫描</th><th class="dd-exec-cell-center">门禁</th><th>代码扫描指标</th><th>提交人</th></tr></thead><tbody>' + branchRows + '</tbody></table>'
+        ) : '<div class="dd-exec-empty dd-exec-empty--inline">该应用下暂无扫描分支</div>',
         '</div>'
       ].join("");
     }).join("");
@@ -80,7 +80,9 @@
     var appsCount = qualityAvailable ? (qo.appsCount || (qTree ? qTree.length : 0)) : 0;
     var passedApps = qualityAvailable && qo.passedGates !== undefined ? qo.passedGates : 0;
     var isAllPass = qualityAvailable && appsCount > 0 && passedApps === appsCount;
-    var mainColor = !qualityAvailable ? "#64748b" : (isAllPass ? "#059669" : "#2563eb");
+    var mainColorClass = !qualityAvailable
+      ? "dd-exec-kpi-main--muted"
+      : (isAllPass ? "dd-exec-kpi-main--pass" : "dd-exec-kpi-main--primary");
     var mainTitle = !qualityAvailable
       ? "代码质量未接入"
       : (appsCount > 0 ? (passedApps + " / " + appsCount + " 系统达标") : "未涉及系统");
@@ -92,7 +94,7 @@
         var pct = s.tasksTotal > 0 ? Math.round((s.tasksDone / s.tasksTotal) * 100) : 0;
         var bugCol = s.bugsTotal > 0
           ? (s.bugsActive > 0 ? '<span class="dd-tag red">' + s.bugsActive + ' 未闭环</span>' : '<span class="dd-tag green">已闭环(' + s.bugsTotal + ')</span>')
-          : '<span style="color:#94a3b8;font-size:11px;">无缺陷</span>';
+          : '<span class="dd-exec-note dd-exec-note--xs">无缺陷</span>';
         return [
           '<tr>',
           '  <td class="nowrap"><strong>' + esc(s.code) + '</strong></td>',
@@ -102,9 +104,9 @@
           '  <td class="nowrap"><span class="dd-tag">' + esc(s.status) + '</span></td>',
           '  <td class="nowrap">' + bugCol + '</td>',
           '  <td class="nowrap">',
-          '    <div style="display:flex;align-items:center;gap:8px;">',
-          '      <div class="dd-progress-bar" style="width:70px;margin-top:0;"><div class="dd-progress-fill" style="width:' + pct + '%;background:#2563eb;"></div></div>',
-          '      <span style="font-size:11px;color:#64748b;">' + s.tasksDone + '/' + s.tasksTotal + ' (' + pct + '%)</span>',
+          '    <div class="dd-exec-progress-row">',
+          '      <div class="dd-progress-bar dd-exec-progress"><div class="dd-progress-fill dd-exec-progress-fill" style="width:' + pct + '%;"></div></div>',
+          '      <span class="dd-exec-note dd-exec-note--xs">' + s.tasksDone + '/' + s.tasksTotal + ' (' + pct + '%)</span>',
           '    </div>',
           '  </td>',
           '</tr>'
@@ -124,15 +126,15 @@
           '  <td class="nowrap"><span class="dd-tag ' + tagClass + '">' + esc(t.statusLabel) + '</span></td>',
           '  <td class="nowrap">' + esc(t.owner) + '</td>',
           '  <td class="nowrap">' + esc(t.beginDate) + ' ~ ' + esc(t.endDate) + '</td>',
-          '  <td class="nowrap"><a href="' + esc(t.ztUrl || '#') + '" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:none;">在禅道打开 ↗</a></td>',
+          '  <td class="nowrap"><a class="dd-exec-link" href="' + esc(t.ztUrl || '#') + '" target="_blank" rel="noopener noreferrer">在禅道打开 ↗</a></td>',
           '</tr>'
         ].join("");
       }).join("");
     }
 
     var blockingBadge = bg.deliveryBlocking > 0
-      ? '<span class="dd-tag red" style="font-size:11px;">⚠️ ' + bg.deliveryBlocking + ' 阻塞交付</span>'
-      : '<span class="dd-tag green" style="font-size:11px;">无阻塞</span>';
+      ? '<span class="dd-tag red dd-exec-tag">⚠️ ' + bg.deliveryBlocking + ' 阻塞交付</span>'
+      : '<span class="dd-tag green dd-exec-tag">无阻塞</span>';
 
     var leadsHtml = (leads.devLeads && leads.devLeads.length > 0) ? leads.devLeads.join(" / ") : "—";
 
@@ -142,20 +144,20 @@
       '    <div class="dd-kpi-grid-4">',
       '      <div class="dd-kpi-card">',
       '        <div class="dd-cardhead"><h3>测试单</h3></div>',
-      '        <div class="dd-kpi-main">' + (to.totalCount || 0) + ' <small style="font-size:13px;font-weight:400;color:#8a99ad">个</small></div>',
+      '        <div class="dd-kpi-main">' + (to.totalCount || 0) + ' <small class="dd-exec-unit">个</small></div>',
       '        <div class="dd-kpi-sub">进行中 <strong>' + (to.doingCount || 0) + '</strong> · 已完成 <strong>' + (to.doneCount || 0) + '</strong></div>',
       '      </div>',
       '      <div class="dd-kpi-card">',
       '        <div class="dd-cardhead"><h3>用例执行与测试进度</h3></div>',
-      '        <div class="dd-kpi-main">' + (tc.executedCount || 0) + ' <small style="font-size:14px;color:#64748b;font-weight:400">/ ' + (tc.totalCount || 0) + '</small></div>',
+      '        <div class="dd-kpi-main">' + (tc.executedCount || 0) + ' <small class="dd-exec-unit dd-exec-unit--lg">/ ' + (tc.totalCount || 0) + '</small></div>',
       '        <div class="dd-kpi-sub">执行率 <strong>' + (tc.executionRate || 0) + '%</strong> · 通过率 <strong>' + (tc.passRate || 0) + '%</strong></div>',
-      '        <div class="dd-progress-bar"><div class="dd-progress-fill" style="width:' + (tc.executionRate || 0) + '%;background:#2563eb;"></div></div>',
-      '        <div class="dd-progress-bar" style="margin-top:2px;"><div class="dd-progress-fill" style="width:' + (tc.passRate || 0) + '%;background:#059669;"></div></div>',
+      '        <div class="dd-progress-bar"><div class="dd-progress-fill dd-exec-progress-fill" style="width:' + (tc.executionRate || 0) + '%;"></div></div>',
+      '        <div class="dd-progress-bar dd-exec-progress--flat"><div class="dd-progress-fill dd-exec-progress-fill--pass" style="width:' + (tc.passRate || 0) + '%;"></div></div>',
       '      </div>',
       '      <div class="dd-kpi-card" id="bugSection">',
       '        <div class="dd-cardhead"><h3>关联缺陷汇总</h3></div>',
       '        <div class="dd-kpi-main">',
-      '          <span>' + (bg.totalCount || 0) + ' <small style="font-size:13px;font-weight:400;color:#8a99ad">个</small></span>',
+      '          <span>' + (bg.totalCount || 0) + ' <small class="dd-exec-unit">个</small></span>',
       '          ' + blockingBadge,
       '        </div>',
       '        <div class="dd-kpi-sub">未解决 <strong>' + (bg.activeCount || 0) + '</strong> · 已解决 <strong>' + (bg.resolvedCount || 0) + '</strong></div>',
@@ -163,25 +165,25 @@
       '      </div>',
       '      <div class="dd-kpi-card" id="qualitySection">',
       '        <div class="dd-cardhead"><h3>系统代码质量门禁</h3></div>',
-      '        <div class="dd-kpi-main" style="color:' + mainColor + ';font-size:20px;">' + mainTitle + '</div>',
+      '        <div class="dd-kpi-main ' + mainColorClass + '">' + mainTitle + '</div>',
       '        <div class="dd-kpi-sub">涉及 <strong>' + appsCount + '</strong> 应用 · <strong>' + branchCount + '</strong> 分支MR</div>',
       '        <div class="dd-kpi-note">分支绑定应用 · MR 触发扫描</div>',
       '      </div>',
       '    </div>',
       '    <div class="dd-card" id="testOrdersSection"><div class="dd-card-body">',
-      '      <div class="dd-cardhead"><h3>测试阶段与测试单流转</h3><span style="font-size:12px;color:#64748b;">同步自禅道 SIT / UAT 任务</span></div>',
+      '      <div class="dd-cardhead"><h3>测试阶段与测试单流转</h3><span class="dd-exec-note">同步自禅道 SIT / UAT 任务</span></div>',
       orderRows ? (
         '      <table class="dd-table"><thead><tr><th>测试单号</th><th>标题</th><th>阶段</th><th>状态</th><th>负责人</th><th>计划周期</th><th>操作</th></tr></thead><tbody>' + orderRows + '</tbody></table>'
-      ) : '      <div style="color:#8a99ad;font-size:12px;padding:12px 0;">暂无关联测试单 · 提测后将在此同步集成与验收测试单</div>',
+      ) : '      <div class="dd-exec-empty">暂无关联测试单 · 提测后将在此同步集成与验收测试单</div>',
       '    </div></div>',
       '    <div class="dd-card" id="storiesSection"><div class="dd-card-body">',
       '      <div class="dd-cardhead"><h3>已分发研发需求推进 (Stories)</h3></div>',
       storyRows ? (
         '      <table class="dd-table"><thead><tr><th>编号</th><th>标题</th><th>所属产品</th><th>负责人</th><th>状态</th><th>关联缺陷</th><th>任务推进</th></tr></thead><tbody>' + storyRows + '</tbody></table>'
-      ) : '      <div style="color:#8a99ad;font-size:12px;padding:12px 0;">暂未分发研发需求</div>',
+      ) : '      <div class="dd-exec-empty">暂未分发研发需求</div>',
       '    </div></div>',
       '    <div class="dd-card" id="qualityTreeSection"><div class="dd-card-body">',
-      '      <div class="dd-cardhead"><h3>各系统代码质量与分支门禁 (按应用分层树状视图)</h3><span style="font-size:12px;color:#64748b;">取各研发分支最新 MR 触发的代码扫描记录</span></div>',
+      '      <div class="dd-cardhead"><h3>各系统代码质量与分支门禁 (按应用分层树状视图)</h3><span class="dd-exec-note">取各研发分支最新 MR 触发的代码扫描记录</span></div>',
       renderQualityTree(qTree),
       '      <div class="dd-rule-note">💡 <strong>质量治理规范：</strong>代码质量不直接归属业务需求；研发需求（Story）按业务领域关联到应用，代码分支绑定应用并在合并请求（MR）时触发静态扫描与门禁校验。缺陷（Bug）亦通过研发需求间接关联并汇聚。</div>',
       '    </div></div>',

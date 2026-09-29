@@ -112,7 +112,7 @@
         '<div class="pw-drawer-body">' +
         '  <table class="pw-history-table">' +
         "    <thead><tr><th>周期</th><th>评估</th><th>问题/风险</th><th>偏离</th><th>上线状态</th><th>投入</th></tr></thead>" +
-        "    <tbody>" + (rows || '<tr><td colspan="6" style="text-align:center;color:#94a3b8">暂无历史记录</td></tr>') + "</tbody>" +
+        "    <tbody>" + (rows || '<tr><td colspan="6" class="pw-drawer-empty">暂无历史记录</td></tr>') + "</tbody>" +
         "  </table>" +
         "</div>";
 

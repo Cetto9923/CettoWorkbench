@@ -120,7 +120,7 @@
       html +=
         '<div class="at-pending-box"><div class="at-pending-title"><span class="at-tag pending">待确认</span> 成员调整 ' +
         esc(p.adjustNo) + "</div>" +
-        '<div style="font-size:11px;color:#7f735f;margin-bottom:8px">发起人 ' + esc(p.submittedBy) +
+        '<div class="at-submitter">发起人 ' + esc(p.submittedBy) +
         " · " + esc(p.submittedAt) + (p.reason ? " · " + esc(p.reason) : "") + "</div>" +
         '<div style="font-size:12px">新增 ' + esc(p.addCount) + " · 移除 " + esc(p.removeCount) +
         " · 角色调整 " + esc(p.changeCount) + "</div>" +
@@ -232,7 +232,7 @@
     body.innerHTML =
       '<div style="font-size:12px;margin-bottom:12px">' +
       "<div><b>" + esc(d.teamName) + "</b> · " + esc(d.adjustNo) + "</div>" +
-      "<div style=\"color:#8894a6;margin-top:4px\">发起人 " + esc(d.submittedBy) + " · " + esc(d.submittedAt) + "</div>" +
+      '<div class="at-submitter-time">发起人 ' + esc(d.submittedBy) + " · " + esc(d.submittedAt) + "</div>" +
       (d.reason ? '<div style="margin-top:8px">说明：' + esc(d.reason) + "</div>" : "") +
       "</div>" +
       diffGroup("新增人员", groups.add, "add") +

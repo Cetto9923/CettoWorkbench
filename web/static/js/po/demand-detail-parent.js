@@ -24,7 +24,7 @@
       attentionHtml = '<div class="dd-card"><div class="dd-card-body"><div class="dd-cardhead"><h3>当前需要关注的子需求</h3></div>' +
         pa.attentionItems.map(function (att) {
           return '<div style="padding:10px 12px;border:1px solid ' + (att.isRisk ? "#f1b7b7" : "#e2e8f0") + ';background:' + (att.isRisk ? "#fff6f6" : "#f8fafc") + ';border-radius:6px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">' +
-            '<div><strong>' + esc(att.code) + ' · ' + esc(att.title) + '</strong><div style="font-size:12px;color:#64748b;margin-top:2px;">' + esc(att.riskDesc) + '</div></div>' +
+            '<div><strong>' + esc(att.code) + ' · ' + esc(att.title) + '</strong><div class="dd-exec-sub dd-exec-sub--md">' + esc(att.riskDesc) + '</div></div>' +
             '<button class="dd-btn" onclick="DemandDetail.open(' + att.demandId + ')">查看 →</button></div>';
         }).join("") + '</div></div>';
     }

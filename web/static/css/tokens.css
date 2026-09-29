@@ -132,6 +132,7 @@
   --wb-badge-hang-text: #874d00;
   --wb-badge-hang-bg: #fffbe6;
   --wb-badge-hang-border: #ffe58f;
+  --wb-badge-notice-text: var(--wb-gray-600);
 
   /* 敏捷团队标签与头像 (Team tag & Avatar tokens) */
   --wb-tag-team-text: var(--wb-primary);
@@ -225,6 +226,7 @@ html[data-theme="dark"] {
   --wb-badge-hang-text: #fde68a;
   --wb-badge-hang-bg: rgba(245, 158, 11, 0.18);
   --wb-badge-hang-border: rgba(245, 158, 11, 0.35);
+  --wb-badge-notice-text: var(--wb-gray-500);
 
   /* 敏捷团队标签与头像 (Team tag & Avatar tokens - Dark) */
   --wb-tag-team-text: #bfdbfe;

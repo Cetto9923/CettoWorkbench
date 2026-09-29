@@ -98,11 +98,11 @@
     var html = '<div class="dd-relation-nav">';
     if (ctx.parent) {
       html += '<div class="dd-relation-top"><button class="dd-parent-link" type="button" onclick="DemandDetail.open(' + ctx.parent.demandId + ')">' +
-        '<span class="dd-back-icon">←</span><span><small style="color:#8a99ad;font-size:11px;display:block">父业务需求</small><strong>' + esc(ctx.parent.code) + ' · ' + esc(ctx.parent.title) + '</strong></span>' +
+        '<span class="dd-back-icon">←</span><span><small class="dd-parent-hint">父业务需求</small><strong>' + esc(ctx.parent.code) + ' · ' + esc(ctx.parent.title) + '</strong></span>' +
         '</button></div>';
     }
     if (ctx.siblings && ctx.siblings.length > 0) {
-      html += '<div class="dd-sibling-row"><span style="font-size:11px;color:#8a99ad;margin-right:4px">同级交付单元：</span>';
+      html += '<div class="dd-sibling-row"><span class="dd-sibling-label">同级交付单元：</span>';
       for (var i = 0; i < ctx.siblings.length; i++) {
         var sib = ctx.siblings[i];
         var cls = "dd-sibling-chip" + (sib.isCurrent ? " active" : (sib.hasRisk ? " risk" : (sib.isDone ? " done" : "")));
@@ -122,7 +122,11 @@
     var isSubmitTest = String(pa.key || "") === "submit_test" && pa.enabled !== false;
     var isRemindAccept = String(pa.key || "") === "remind_accept" && pa.enabled !== false;
     var isWithdrawReview = (String(pa.key || "") === "withdraw_review" && pa.enabled !== false) || (summary && summary.canWithdrawReview);
-    if (isSubmitTest) {
+    if (pa.enabled === false) {
+      var disabledReason = pa.reason || "暂无权限";
+      var btnLabel = spotlight.actionLabel || pa.label || "排期";
+      action = '<button type="button" class="dd-btn disabled" disabled aria-disabled="true" title="' + esc(disabledReason) + '">' + esc(btnLabel) + '</button>';
+    } else if (isSubmitTest) {
       var did = String(summary.demandId || summary.id || "").replace(/^US/i, "");
       var title = String(summary.title || "").replace(/"/g, "&quot;");
       action = '<button type="button" class="dd-btn primary js-submit-test" data-demand-id="' + esc(did) + '" data-demand-title="' + esc(summary.title || "") + '">' + esc(pa.label || spotlight.actionLabel || "提测") + '</button>';
@@ -216,7 +220,7 @@
       '        <div class="st"><b>需求描述</b><a href="javascript:void(0)" onclick="DemandDetail.switchTab(\'requirement\')">查看完整内容 →</a></div>',
       '        <p>' + esc(descTxt) + '</p>',
       '      </div>',
-      '      <div class="dd-summary-block" style="margin-top:10px">',
+      '      <div class="dd-summary-block dd-mt-10">',
       '        <div class="st"><b>验收标准</b><a href="javascript:void(0)" onclick="DemandDetail.switchTab(\'requirement\')">查看完整内容 →</a></div>',
       '        <p>' + esc(verifyTxt) + '</p>',
       '      </div>',
@@ -256,7 +260,7 @@
       '        <div class="k">BSA等级</div><div class="v">' + esc(summary.bsa) + '</div>',
       '        <div class="k">来源备注</div><div class="v">' + esc(summary.sourceNote) + '</div>',
       '      </div>',
-      '      <div class="dd-aside-title" style="margin-top:14px">责任与状态</div>',
+      '      <div class="dd-aside-title dd-mt-14">责任与状态</div>',
       '      <div class="dd-kv-list compact">',
       '        <div class="k">产品经理</div><div class="v">' + esc(summary.ownerName) + '</div>',
       '        <div class="k">需求提出人</div><div class="v">' + esc(summary.proposerName) + '</div>',
@@ -286,21 +290,21 @@
     var safeVerifyHtml = sanitizeRichText(req.verifyHtml);
 
     return '<div class="dd-card" id="requirementSection"><div class="dd-card-body">' +
-      '<div class="dd-cardhead"><h3>业务需求正文与描述</h3></div><div style="font-size:13px;line-height:1.7;color:#334155;margin-bottom:16px;">' + (safeSpecHtml || "—") + '</div>' +
-      '<div class="dd-cardhead"><h3>验收标准 (Verify Plan)</h3></div><div style="font-size:13px;line-height:1.7;color:#334155;">' + (safeVerifyHtml || "—") + '</div>' +
+      '<div class="dd-cardhead"><h3>业务需求正文与描述</h3></div><div class="dd-richtext-content dd-mb-16">' + (safeSpecHtml || "—") + '</div>' +
+      '<div class="dd-cardhead"><h3>验收标准 (Verify Plan)</h3></div><div class="dd-richtext-content">' + (safeVerifyHtml || "—") + '</div>' +
       '</div></div>' +
       '<div class="dd-card" id="clarificationSection"><div class="dd-card-body">' +
       '<div class="dd-cardhead"><h3>系统/产品维度澄清说明</h3></div>' +
-      (clarifyRows ? '<table class="dd-table"><thead><tr><th>产品/系统</th><th>需求分析师</th><th>澄清要点</th><th>计划开发完成</th><th>计划测试完成</th></tr></thead><tbody>' + clarifyRows + '</tbody></table>' : '<div style="color:#8a99ad;font-size:12px;">暂无多系统澄清拆解</div>') +
+      (clarifyRows ? '<table class="dd-table"><thead><tr><th>产品/系统</th><th>需求分析师</th><th>澄清要点</th><th>计划开发完成</th><th>计划测试完成</th></tr></thead><tbody>' + clarifyRows + '</tbody></table>' : '<div class="dd-empty-tip">暂无多系统澄清拆解</div>') +
       '</div></div>' +
       '<div class="dd-card" id="clarificationActionSection"><div class="dd-card-body">' +
       '<div class="dd-cardhead"><h3>需求澄清协同与办理动作</h3></div>' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;background:#f8fafc;padding:12px 16px;border-radius:6px;border:1px solid #e2e8f0;">' +
-      '  <div><div style="font-weight:600;font-size:13px;color:#1e293b;">需求澄清办理</div><div style="font-size:12px;color:#64748b;margin-top:2px;">支持在工作台直接办理澄清并更新涉及系统与交付节点。</div></div>' +
-      '  <div style="display:flex;gap:8px;">' +
-      (req.demandId ? '<button type="button" class="dd-btn js-drawer-clarify-btn" data-demand-id="' + esc(req.demandId) + '" style="background:#2563eb;color:#fff;border-color:#2563eb;cursor:pointer;">办理需求澄清</button>' : (req.clarifyZtUrl ? '<a href="' + esc(req.clarifyZtUrl) + '" target="_blank" rel="noopener noreferrer" class="dd-btn" style="background:#2563eb;color:#fff;border-color:#2563eb;text-decoration:none;">在禅道办理需求澄清 ↗</a>' : '<span style="font-size:12px;color:#94a3b8;">暂无澄清入口</span>')) +
+      '<div class="dd-action-panel">' +
+      '  <div><div class="dd-action-panel-title">需求澄清办理</div><div class="dd-action-panel-desc">支持在工作台直接办理澄清并更新涉及系统与交付节点。</div></div>' +
+      '  <div class="dd-action-panel-btns">' +
+      (req.demandId ? '<button type="button" class="dd-btn primary js-drawer-clarify-btn" data-demand-id="' + esc(req.demandId) + '">办理需求澄清</button>' : (req.clarifyZtUrl ? '<a href="' + esc(req.clarifyZtUrl) + '" target="_blank" rel="noopener noreferrer" class="dd-btn primary">在禅道办理需求澄清 ↗</a>' : '<span class="dd-empty-tip">暂无澄清入口</span>')) +
       '  </div></div></div>' +
-      (filesRows ? '<div class="dd-card"><div class="dd-card-body"><div class="dd-cardhead"><h3>需求附件</h3></div><ul style="padding-left:18px;margin:0;font-size:12px;color:#2563eb;">' + filesRows + '</ul></div></div>' : '');
+      (filesRows ? '<div class="dd-card"><div class="dd-card-body"><div class="dd-cardhead"><h3>需求附件</h3></div><ul class="dd-files-list">' + filesRows + '</ul></div></div>' : '');
   }
 
   function renderTabDelivery(delivery) {
@@ -308,14 +312,14 @@
     function pill(ok) { return ok ? '<span class="dd-tag green">已就绪</span>' : '<span class="dd-tag">进行中</span>'; }
     return '<div class="dd-card" id="deliverySection"><div class="dd-card-body">' +
       '<div class="dd-cardhead"><h3>交付就绪度评估 (Readiness)</h3></div>' +
-      '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">' +
-      '  <div style="border:1px solid #e2e8f0;padding:12px;border-radius:6px;background:#fafbfd"><div style="font-size:11px;color:#8a99ad;margin-bottom:4px">研发完成</div>' + pill(delivery.devDone) + '</div>' +
-      '  <div style="border:1px solid #e2e8f0;padding:12px;border-radius:6px;background:#fafbfd"><div style="font-size:11px;color:#8a99ad;margin-bottom:4px">测试通过</div>' + pill(delivery.testPassed) + '</div>' +
-      '  <div style="border:1px solid #e2e8f0;padding:12px;border-radius:6px;background:#fafbfd"><div style="font-size:11px;color:#8a99ad;margin-bottom:4px">严重缺陷闭环</div>' + pill(delivery.bugsResolved) + '</div>' +
-      '  <div style="border:1px solid #e2e8f0;padding:12px;border-radius:6px;background:#fafbfd"><div style="font-size:11px;color:#8a99ad;margin-bottom:4px">业务验收</div>' + pill(delivery.acceptanceDone) + '</div>' +
+      '<div class="dd-readiness-grid">' +
+      '  <div class="dd-readiness-card"><div class="dd-readiness-label">研发完成</div>' + pill(delivery.devDone) + '</div>' +
+      '  <div class="dd-readiness-card"><div class="dd-readiness-label">测试通过</div>' + pill(delivery.testPassed) + '</div>' +
+      '  <div class="dd-readiness-card"><div class="dd-readiness-label">严重缺陷闭环</div>' + pill(delivery.bugsResolved) + '</div>' +
+      '  <div class="dd-readiness-card"><div class="dd-readiness-label">业务验收</div>' + pill(delivery.acceptanceDone) + '</div>' +
       '</div>' +
       '<div class="dd-cardhead"><h3>发布与投产信息</h3></div>' +
-      '<div class="dd-kv-list" style="grid-template-columns:120px 1fr;">' +
+      '<div class="dd-kv-list dd-cols-120">' +
       '  <div class="k">期望上线日期</div><div class="v">' + esc(delivery.estimateLaunch) + '</div>' +
       '  <div class="k">发布规划窗口</div><div class="v">' + esc(delivery.publishWindow) + '</div>' +
       '  <div class="k">生产验证结论</div><div class="v">' + esc(delivery.verifyConclusion) + '</div>' +
@@ -325,12 +329,12 @@
   function renderTabHistory(history) {
     if (!history) return '<div class="dd-card dd-card-body">暂无过程记录</div>';
     var actionRows = (history.actions || []).map(function (a) {
-      return '<tr><td style="white-space:nowrap;">' + esc(a.date) + '</td><td><strong>' + esc(a.actor) + '</strong></td><td>' + esc(a.action) + '</td><td>' + esc(a.extra) + '</td></tr>';
+      return '<tr><td class="dd-cell-nowrap">' + esc(a.date) + '</td><td><strong>' + esc(a.actor) + '</strong></td><td>' + esc(a.action) + '</td><td>' + esc(a.extra) + '</td></tr>';
     }).join("");
     var lc = history.lifecycle || {};
     return '<div class="dd-grid"><div class="dd-main">' +
       '<div class="dd-card" id="historySection"><div class="dd-card-body"><div class="dd-cardhead"><h3>禅道操作审计日志</h3></div>' +
-      (actionRows ? '<table class="dd-table"><thead><tr><th>时间</th><th>操作人</th><th>动作</th><th>说明</th></tr></thead><tbody>' + actionRows + '</tbody></table>' : '<div style="color:#8a99ad;font-size:12px;">暂无历史动作</div>') +
+      (actionRows ? '<table class="dd-table"><thead><tr><th>时间</th><th>操作人</th><th>动作</th><th>说明</th></tr></thead><tbody>' + actionRows + '</tbody></table>' : '<div class="dd-empty-tip">暂无历史动作</div>') +
       '</div></div></div>' +
       '<aside class="dd-sidebar"><div class="dd-card"><div class="dd-card-body"><div class="dd-cardhead"><h3>生命周期经办人</h3></div>' +
       '<div class="dd-kv-list">' +

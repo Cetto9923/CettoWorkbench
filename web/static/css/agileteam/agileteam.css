@@ -295,3 +295,6 @@
 /* 9. 响应式适配 */
 @media (max-width:1080px){.po-team-home .team-home-dashboard-grid{grid-template-columns:1fr}}
 @media (max-width:760px){.po-team-home .team-vs-pipeline{flex-wrap:wrap}.po-team-home .team-vs-card{min-width:130px}.po-team-home .at-scope-select{width:100%}}
+/* 发起人标注：原为 JS 内联 #7f735f / #8894a6，深色下对比不足，改走 muted token */
+.at-submitter{font-size:11px;color:var(--color-text-muted);margin-bottom:8px}
+.at-submitter-time{display:block;color:var(--color-text-muted);margin-top:4px}

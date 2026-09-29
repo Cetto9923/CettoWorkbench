@@ -101,6 +101,33 @@ input[type="submit"] {
   font-size: var(--font-size-xs);
 }
 
+/* 表格行内操作按钮的颜色契约（统一首页 / 我的待办 / 我的关注）。
+   颜色只在这里定义一次，各页面不再私有覆写；
+   主按钮文字用 --wb-text-inverse，深色下 --wb-white 是深色卡片面，用作文字会看不清。 */
+.table-action-btn.primary {
+  background: var(--wb-btn-primary-bg);
+  border-color: var(--wb-btn-primary-bg);
+  color: var(--wb-text-inverse);
+}
+
+.table-action-btn.primary:hover {
+  background: var(--wb-btn-primary-hover);
+  border-color: var(--wb-btn-primary-hover);
+  color: var(--wb-text-inverse);
+}
+
+.table-action-btn.secondary {
+  background: var(--wb-bg-surface);
+  border-color: var(--wb-gray-300);
+  color: var(--wb-gray-700);
+}
+
+.table-action-btn.secondary:hover {
+  background: var(--wb-gray-100);
+  border-color: var(--wb-gray-400);
+  color: var(--wb-gray-900);
+}
+
 .po-workbench-shell .batch-modal-footer .action-btn,
 .po-workbench-shell .modal-footer .btn {
   min-width: 72px;

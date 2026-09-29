@@ -381,24 +381,12 @@ html[data-theme="dark"] .po-personal-workspace .category-tab.active em { color: 
 .po-personal-workspace .table-action-group {
   display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end; white-space: nowrap;
 }
+/* 尺寸与排版；颜色契约统一由 components/button-system.css 提供 */
 .po-personal-workspace .table-action-btn {
-  height: 28px; padding: 0 10px; border: 1px solid var(--color-info-border); border-radius: 4px;
-  background: var(--color-info-bg); color: var(--color-info); font-size: 12px; cursor: pointer;
+  height: 28px; padding: 0 10px; border: 1px solid transparent; border-radius: 4px;
+  font-size: 12px; cursor: pointer;
   text-decoration: none; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
   white-space: nowrap; flex-shrink: 0;
-}
-.po-personal-workspace .table-action-btn:hover { background: var(--color-info-bg); }
-.po-personal-workspace .table-action-btn.primary {
-  border-color: var(--color-info-fill); background: var(--color-info-fill); color: var(--color-text-on-accent);
-}
-.po-personal-workspace .table-action-btn.primary:hover {
-  border-color: var(--color-info-fill-hover); background: var(--color-info-fill-hover); color: var(--color-text-on-accent);
-}
-.po-personal-workspace .table-action-btn.secondary {
-  border-color: var(--color-info-border); background: var(--color-surface); color: var(--color-info);
-}
-.po-personal-workspace .table-action-btn.secondary:hover {
-  background: var(--color-info-bg); border-color: var(--color-info);
 }
 
 /* 状态占位：Loading / Empty / Error */

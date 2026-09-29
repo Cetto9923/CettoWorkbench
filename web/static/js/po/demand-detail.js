@@ -168,7 +168,7 @@
 
     var bodyEl = $("ddBody");
     if (bodyEl) {
-      bodyEl.innerHTML = '<div style="text-align:center;padding:60px 0;color:#8a99ad;font-size:13px;">正在加载需求详情...</div>';
+      bodyEl.innerHTML = '<div class="dd-exec-loading">正在加载需求详情...</div>';
     }
 
     var fetchFn = (typeof window !== "undefined" && window.appFetch) ? window.appFetch : fetch;

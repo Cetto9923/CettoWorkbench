@@ -389,7 +389,7 @@
         }
         if (typeof window.showToast === "function") {
           window.showToast(
-            (result.data && result.data.error) || (result.ok ? "保存失败" : "保存失败，请稍后重试"),
+            (result.data && (result.data.message || result.data.error)) || (result.ok ? "保存失败" : "保存失败，请稍后重试"),
             "error"
           );
         }
@@ -443,7 +443,7 @@
         }
         if (typeof window.showToast === "function") {
           window.showToast(
-            (result.data && result.data.error) || (result.ok ? "删除失败" : "删除失败，请稍后重试"),
+            (result.data && (result.data.message || result.data.error)) || (result.ok ? "删除失败" : "删除失败，请稍后重试"),
             "error"
           );
         }
