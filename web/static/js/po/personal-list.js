@@ -291,68 +291,32 @@
   }
 
   var OBJECT_TYPE_LABELS = {
-    business: "业务需求",
-    sub_demand: "子需求",
-    story: "研发需求",
-    independent_story: "独立研需",
-    task: "任务",
-    issue: "问题",
-    bug: "Bug",
-    approval: "审批",
-    todo: "待办",
-    testtask: "测试单",
-    charter: "章程",
-    feedback: "反馈",
-    project: "项目",
-    mail: "邮件",
-    risk: "风险",
-    buildguideline: "建设指引",
-    guideline: "建设指引"
+    business: "业务需求", sub_demand: "子需求", story: "研发需求", independent_story: "独立研需",
+    task: "任务", issue: "问题", bug: "Bug", approval: "审批", todo: "待办",
+    testtask: "测试单", charter: "章程", feedback: "反馈", project: "项目",
+    mail: "邮件", risk: "风险", buildguideline: "建设指引", guideline: "建设指引",
+    kanbancard: "看板", ticket: "工单"
   };
 
   /* chip 内「对象 #ID」单色标签使用的缩写版标签。
      只在 chip 上下文使用；独立 badge / tab 标题仍走 OBJECT_TYPE_LABELS 全称。 */
   var OBJECT_TYPE_SHORT_LABELS = {
-    business: "业需",
-    sub_demand: "子需",
-    story: "研需",
-    independent_story: "独立研需",
-    task: "任务",
-    issue: "问题",
-    bug: "Bug",
-    approval: "审批",
-    todo: "待办",
-    testtask: "测单",
-    charter: "章程",
-    feedback: "反馈",
-    project: "项目",
-    mail: "邮件",
-    risk: "风险",
-    buildguideline: "指引",
-    guideline: "指引"
+    business: "业需", sub_demand: "子需", story: "研需", independent_story: "独立研需",
+    task: "任务", issue: "问题", bug: "Bug", approval: "审批", todo: "待办",
+    testtask: "测单", charter: "章程", feedback: "反馈", project: "项目",
+    mail: "邮件", risk: "风险", buildguideline: "指引", guideline: "指引",
+    kanbancard: "看板", ticket: "工单"
   };
 
   /* 待办/列表 API 的 kind 字段 → objectTypeBadge 的 canonical key */
   var OBJECT_KIND_FROM_API = {
-    demand: "business",
-    business: "business",
-    sub_demand: "sub_demand",
-    story: "story",
-    independent_story: "independent_story",
-    task: "task",
-    bug: "bug",
-    issue: "issue",
-    approval: "approval",
-    todo: "todo",
-    test: "testtask",
-    testtask: "testtask",
-    charter: "charter",
-    feedback: "feedback",
-    project: "project",
-    mail: "mail",
-    risk: "risk",
-    buildguideline: "buildguideline",
-    guideline: "buildguideline"
+    demand: "business", business: "business", sub_demand: "sub_demand",
+    story: "story", independent_story: "independent_story", task: "task",
+    bug: "bug", issue: "issue", approval: "approval", todo: "todo",
+    test: "testtask", testtask: "testtask", charter: "charter",
+    feedback: "feedback", project: "project", mail: "mail", risk: "risk",
+    buildguideline: "buildguideline", guideline: "buildguideline",
+    kanbancard: "kanbancard", ticket: "ticket"
   };
 
   var REVERSE_CHINESE_MAP = {
@@ -364,7 +328,8 @@
     "测试单": "testtask", "测单": "testtask", "测试": "testtask",
     "章程": "charter", "反馈": "feedback", "项目": "project",
     "邮件": "mail", "风险": "risk",
-    "建设指引": "buildguideline", "指引": "buildguideline"
+    "建设指引": "buildguideline", "指引": "buildguideline",
+    "看板": "kanbancard", "看板卡片": "kanbancard", "工单": "ticket"
   };
 
   function normalizeKind(kind) {

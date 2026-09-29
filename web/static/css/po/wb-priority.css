@@ -217,6 +217,14 @@
 .wb-type-buildguideline:not(:has(.wb-type-tag)),
 .wb-type-guideline:not(:has(.wb-type-tag)) { background: var(--wb-info-light); color: var(--wb-info); }
 
+.wb-type-kanbancard { border-color: var(--wb-primary-border); }
+.wb-type-kanbancard .wb-type-tag { background: var(--wb-btn-primary-bg); }
+.wb-type-kanbancard:not(:has(.wb-type-tag)) { background: var(--wb-primary-light); color: var(--wb-primary); }
+
+.wb-type-ticket { border-color: var(--wb-warning-border); }
+.wb-type-ticket .wb-type-tag { background: var(--wb-warning); }
+.wb-type-ticket:not(:has(.wb-type-tag)) { background: var(--wb-warning-light); color: var(--wb-warning); }
+
 .wb-type-unknown { border-color: var(--color-text-disabled); }
 .wb-type-unknown .wb-type-tag { background: var(--color-text-disabled); }
 .wb-type-unknown:not(:has(.wb-type-tag)) { background: var(--color-surface-muted); color: var(--color-text-secondary); }
@@ -250,22 +258,26 @@
 }
 
 /* 工作台 / 排期 P1–P4（formatPriority → class p1..p4） */
-.pri-tag.p1, .pri-tag.P1, .priority-tag.P1, .table .priority-tag.P1 {
+.pri-tag.p1, .pri-tag.P1, .priority-tag.P1, .table .priority-tag.P1,
+.drawer-task-pri.p1, .drawer-task-pri.P1 {
   background: var(--po-pri-1-bg);
   color: var(--po-pri-1-fg);
   border-color: var(--po-pri-1-bd);
 }
-.pri-tag.p2, .pri-tag.P2, .priority-tag.P2, .table .priority-tag.P2 {
+.pri-tag.p2, .pri-tag.P2, .priority-tag.P2, .table .priority-tag.P2,
+.drawer-task-pri.p2, .drawer-task-pri.P2 {
   background: var(--po-pri-2-bg);
   color: var(--po-pri-2-fg);
   border-color: var(--po-pri-2-bd);
 }
-.pri-tag.p3, .pri-tag.P3, .priority-tag.P3, .table .priority-tag.P3 {
+.pri-tag.p3, .pri-tag.P3, .priority-tag.P3, .table .priority-tag.P3,
+.drawer-task-pri.p3, .drawer-task-pri.P3 {
   background: var(--po-pri-3-bg);
   color: var(--po-pri-3-fg);
   border-color: var(--po-pri-3-bd);
 }
-.pri-tag.p4, .pri-tag.P4, .priority-tag.P4, .table .priority-tag.P4 {
+.pri-tag.p4, .pri-tag.P4, .priority-tag.P4, .table .priority-tag.P4,
+.drawer-task-pri.p4, .drawer-task-pri.P4 {
   background: var(--po-pri-4-bg);
   color: var(--po-pri-4-fg);
   border-color: var(--po-pri-4-bd);
@@ -285,26 +297,6 @@
   max-width: none;
   overflow: visible;
   text-overflow: clip;
-}
-.drawer-task-pri.p1, .drawer-task-pri.P1 {
-  background: var(--po-pri-1-bg);
-  color: var(--po-pri-1-fg);
-  border-color: var(--po-pri-1-bd);
-}
-.drawer-task-pri.p2, .drawer-task-pri.P2 {
-  background: var(--po-pri-2-bg);
-  color: var(--po-pri-2-fg);
-  border-color: var(--po-pri-2-bd);
-}
-.drawer-task-pri.p3, .drawer-task-pri.P3 {
-  background: var(--po-pri-3-bg);
-  color: var(--po-pri-3-fg);
-  border-color: var(--po-pri-3-bd);
-}
-.drawer-task-pri.p4, .drawer-task-pri.P4 {
-  background: var(--po-pri-4-bg);
-  color: var(--po-pri-4-fg);
-  border-color: var(--po-pri-4-bd);
 }
 
 .stage-tag {

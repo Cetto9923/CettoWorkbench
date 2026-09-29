@@ -6,15 +6,8 @@
   var $ = function (id) { return document.getElementById(id); };
 
   var state = {
-    quickView: "unread",
-    category: "all",
-    objectType: "all",
-    timeRange: "all",
-    readState: "all",
-    needAction: "all",
-    keyword: "",
-    page: 1,
-    pageSize: 20
+    quickView: "unread", category: "all", objectType: "all", timeRange: "all",
+    readState: "all", needAction: "all", keyword: "", page: 1, pageSize: 20
   };
 
   var VALID_QUICKVIEWS = ["all", "unread", "action", "inform", "abnormal", "today"];
@@ -84,25 +77,22 @@
     business: "业务需求", sub_demand: "子需求", story: "研发需求", independent_story: "独立研发需求",
     task: "任务", bug: "Bug", testtask: "测试单", issue: "问题", risk: "风险", approval: "审批",
     feedback: "反馈", charter: "章程", mail: "邮件", project: "项目", demand: "需求",
-    buildguideline: "建设指引", guideline: "建设指引"
+    buildguideline: "建设指引", guideline: "建设指引", kanbancard: "看板", ticket: "工单"
   };
   var OBJECT_KIND_FROM_API = {
     demand: "business", business: "business", sub_demand: "sub_demand", story: "story",
     independent_story: "independent_story", task: "task", bug: "bug", test: "testtask",
     testtask: "testtask", issue: "issue", risk: "risk", approval: "approval", feedback: "feedback",
-    charter: "charter", mail: "mail", project: "project", buildguideline: "buildguideline", guideline: "buildguideline"
+    charter: "charter", mail: "mail", project: "project", buildguideline: "buildguideline", guideline: "buildguideline",
+    kanbancard: "kanbancard", ticket: "ticket"
   };
   var SUBJECT_PREFIX_ALIASES = {
-    business: ["需求", "业务需求", "业需", "demand"],
-    story: ["研需", "研发需求", "story"],
-    sub_demand: ["子需求"], independent_story: ["独立研发需求"],
-    task: ["任务", "task"], bug: ["Bug", "bug"],
-    testtask: ["测试", "测试单", "test"], issue: ["问题", "issue"],
-    risk: ["风险", "risk"], approval: ["审批", "approval"],
-    feedback: ["反馈", "feedback"], charter: ["章程", "charter"],
-    project: ["项目", "project"], mail: ["邮件"],
-    buildguideline: ["建设指引", "指引", "guideline", "buildguideline"],
-    guideline: ["建设指引", "指引", "guideline", "buildguideline"]
+    business: ["需求", "业务需求", "业需", "demand"], story: ["研需", "研发需求", "story"],
+    sub_demand: ["子需求"], independent_story: ["独立研发需求"], task: ["任务", "task"], bug: ["Bug", "bug"],
+    testtask: ["测试", "测试单", "test"], issue: ["问题", "issue"], risk: ["风险", "risk"], approval: ["审批", "approval"],
+    feedback: ["反馈", "feedback"], charter: ["章程", "charter"], project: ["项目", "project"], mail: ["邮件"],
+    buildguideline: ["建设指引", "指引", "guideline", "buildguideline"], guideline: ["建设指引", "指引", "guideline", "buildguideline"],
+    kanbancard: ["看板", "看板卡片", "kanbancard", "card"], ticket: ["工单", "ticket"]
   };
 
   function canonicalKind(ot) {
@@ -166,7 +156,10 @@
     if (!canon || canon === "mail" || !OBJECT_TYPE_LABELS[canon]) {
       var rk = reminderKindFromSubject(rawSubject);
       if (rk) { canon = rk; isReminderTemplate = true; }
-      else if (/^\s*TICKET\s*#/i.test(rawSubject)) { canon = "issue"; }
+    }
+    if ((!oid || oid === "0") && canon === "kanbancard") {
+      var cardM = /\[#(\d+)::/i.exec(rawSubject);
+      if (cardM) { oid = cardM[1]; }
     }
     var badgeHtml = "";
     if (canon && canon !== "mail" && OBJECT_TYPE_LABELS[canon]) {
@@ -188,9 +181,10 @@
       if (item.relatedObjects.length > 3) badgeHtml += '<span>等 ' + item.relatedObjects.length + ' 个 Bug</span>';
     }
     var decodeEntities = (window.PersonalList && window.PersonalList.decodeHtmlEntities) || function (s) { return s; };
+    var cleanCardSubject = rawSubject.replace(/\[#\d+::(.*?)\s*\]/g, "「$1」");
     var displayTitle = decodeEntities((canon && OBJECT_TYPE_LABELS[canon] && !isReminderTemplate)
-      ? stripSubjectPrefix(rawSubject, canon, oid)
-      : rawSubject).replace(/\[\s*\]\s*/g, "").trim();
+      ? stripSubjectPrefix(cleanCardSubject, canon, oid)
+      : cleanCardSubject).replace(/\[\s*\]\s*/g, "").trim();
 
     var subText = "", rawSummary = String(item.data || item.summary || "").replace(/\[\s*\]\s*/g, "").trim(), summaryHtml = "";
     if (rawSummary && rawSummary !== rawSubject) {
@@ -430,6 +424,10 @@
     var ot = String(item.objectType || "").trim().toLowerCase();
     var oid = String(item.objectId || "").trim();
     var canon = canonicalKind(ot);
+    if ((!oid || oid === "0") && canon === "kanbancard") {
+      var cardM = /\[#(\d+)::/i.exec(item.data || item.subject || "");
+      if (cardM) { oid = cardM[1]; }
+    }
     var objName = (OBJECT_TYPE_LABELS[canon] || OBJECT_TYPE_LABELS[ot] || ot || "—");
     var objID = displayObjectID(canon, oid);
     if (objID) { objName += " " + objID; }

@@ -436,19 +436,11 @@
         '</div>';
     }
 
-    // 绑定角色卡片点击交互（置灰项不响应点击）
+    // 绑定角色卡片交互（依靠 label 原生激活，监听 input change 更新样式，置灰项不响应）
     host.querySelectorAll('.role-checkbox-card').forEach(function (card) {
-      if (card.classList.contains('is-disabled')) {
-        return;
-      }
+      if (card.classList.contains('is-disabled')) return;
       var cb = card.querySelector('input[type="checkbox"]');
       if (!cb || cb.disabled) return;
-      card.addEventListener('click', function (e) {
-        if (e.target !== cb) {
-          cb.checked = !cb.checked;
-        }
-        card.classList.toggle('selected', cb.checked);
-      });
       cb.addEventListener('change', function () {
         card.classList.toggle('selected', cb.checked);
       });
