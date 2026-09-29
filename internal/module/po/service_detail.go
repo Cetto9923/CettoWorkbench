@@ -147,6 +147,15 @@ func (s *DetailService) GetDemandDetail(ctx context.Context, actor *model.User, 
 		if pa.Key == string(primaryaction.KeySubmitTest) {
 			pa.URL = ""
 		}
+		// 写权限闸门：与排期保存接口同一口径（超管 / PMO / 干系人 / 团队长管辖）。
+		// 仅持 perm.ScheduleList 的只读用户不出现可点的写按钮。
+		canWrite, writeErr := s.canWriteDemand(ctx, actor, row.ID)
+		if writeErr != nil {
+			return nil, writeErr
+		}
+		if !canWrite {
+			gatePrimaryActionForReadOnly(&pa)
+		}
 		resp.PrimaryAction = &pa
 		bindPrimaryActionSpotlight(resp.Spotlight, pa)
 		account := strings.TrimSpace(actor.Account)
@@ -154,11 +163,11 @@ func (s *DetailService) GetDemandDetail(ctx context.Context, actor *model.User, 
 			resp.Summary.IsCreator = strings.TrimSpace(row.CreatedBy) == account
 			resp.Summary.IsAssignee = strings.TrimSpace(row.AssignedTo) == account
 		}
-		resp.Summary.CanWithdrawReview = canWithdrawReviewForDetail(actor, row)
+		resp.Summary.CanWithdrawReview = canWrite && canWithdrawReviewForDetail(actor, row)
 		if pa.Key == string(primaryaction.KeyApprove) && pa.Enabled {
 			resp.Summary.CanReview = true
 		}
-		s.populateDemandEditability(ctx, actor, row, &resp.Summary)
+		s.populateDemandEditability(ctx, actor, row, canWrite, &resp.Summary)
 	}
 
 	// F02：API 出口对富文本字段做白名单净化，确保 specHtml / verifyHtml 即便

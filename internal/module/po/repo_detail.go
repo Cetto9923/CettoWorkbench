@@ -11,6 +11,7 @@ package po
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -391,50 +392,13 @@ ORDER BY f.id DESC`, demandID).Scan(&rows).Error
 }
 
 // CheckDemandVisibility 实现 F01 对象级授权查询：判断 actor.Account 是否与
-// 该业务需求存在任一 PO/提出/责任/测试/验收/评审/创建/闭环/编辑关系，
-// 或与需求看板一致的 RD / 澄清 PM 关系（避免看板可见详情却 403）。
-//
-// 决策由 Service 层负责（loadDemandIfVisible），Repo 仅投影候选行，不做
-// 最终放行判断。返回 true 表示命中至少一条关系；不命中返回 false。
-//
-// 涉及列（与 zt_demand / zt_demandclarify 实际 schema 对齐）：
-//
-//	originator / assignedTo / QD / RD / BRA / accepter / reviewer /
-//	createdBy / closedBy / editedBy / feedbackedBy /
-//	zt_demandclarify.PM
+// 需求存在任一干系人关系。SQL 与口径统一由 internal/module/demandauthz 承载，
+// 与排期工作台写授权共用同一份关系判断，避免两处漂移。
 func (r *DemandDetailRepo) CheckDemandVisibility(ctx context.Context, demandID uint, account string) (bool, error) {
 	if r == nil || r.db == nil {
 		return false, fmt.Errorf("demand detail repo is not configured")
 	}
-	if demandID == 0 || account == "" {
-		return false, nil
-	}
-	var hits int64
-	err := r.db.WithContext(ctx).Raw(`
-SELECT COUNT(*) FROM zt_demand d
-WHERE d.id = ? AND d.deleted = '0'
-  AND (
-    d.originator    = ?
-    OR d.assignedTo  = ?
-    OR d.QD          = ?
-    OR d.RD          = ?
-    OR d.BRA         = ?
-    OR d.accepter    = ?
-    OR d.reviewer    = ?
-    OR d.createdBy   = ?
-    OR d.closedBy    = ?
-    OR d.editedBy    = ?
-    OR d.feedbackedBy= ?
-    OR EXISTS (
-      SELECT 1 FROM zt_demandclarify c
-      WHERE c.demand = d.id AND c.PM = ?
-    )
-  )`, demandID, account, account, account, account, account,
-		account, account, account, account, account, account, account).Scan(&hits).Error
-	if err != nil {
-		return false, err
-	}
-	return hits > 0, nil
+	return r.authzRepo().CheckDemandVisibility(ctx, demandID, strings.TrimSpace(account))
 }
 
 // CountReviewedReviewers 统计已给出评审结论（非空）的评审人数量。

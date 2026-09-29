@@ -31,6 +31,11 @@ func (s *Service) SaveScheduling(ctx context.Context, actor *model.User, demandI
 		return errors.New("未登录或无法识别当前用户")
 	}
 
+	// 对象级写权限闸门：无权时直接 403，不进入事务、不写库、不同步禅道。
+	if err := s.RequireDemandWriteAccess(ctx, actor, demandID); err != nil {
+		return err
+	}
+
 	mainSystemID, err := s.repo.GetDemandMainSystem(ctx, demandID)
 	if err != nil {
 		return err

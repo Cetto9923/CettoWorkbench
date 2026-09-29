@@ -54,7 +54,9 @@ func deriveDemandEditability(actor *model.User, row *DemandDetailRow, reviewedCo
 }
 
 // populateDemandEditability 在加载详情时计算并填入编辑权限相关字段。
-func (s *DetailService) populateDemandEditability(ctx context.Context, actor *model.User, row *DemandDetailRow, summary *DemandSummary) {
+// canWrite 为对象级写权限（与排期保存同一口径）；无写权限时即便生命周期
+// 规则允许编辑也一律降级为不可编辑，避免详情出现可点的写入口。
+func (s *DetailService) populateDemandEditability(ctx context.Context, actor *model.User, row *DemandDetailRow, canWrite bool, summary *DemandSummary) {
 	if s == nil || actor == nil || row == nil || summary == nil {
 		return
 	}
@@ -69,6 +71,9 @@ func (s *DetailService) populateDemandEditability(ctx context.Context, actor *mo
 	summary.HasReviewed = reviewedCount > 0
 
 	canEdit, reason := deriveDemandEditability(actor, row, summary.ReviewedCount)
+	if canEdit && !canWrite {
+		canEdit, reason = false, ReadOnlyDemandReason
+	}
 	summary.CanEdit = canEdit
 	summary.EditDisabledReason = reason
 }
