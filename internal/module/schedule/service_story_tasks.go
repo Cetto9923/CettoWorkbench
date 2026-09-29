@@ -243,23 +243,41 @@ func (s *Service) SaveStoryTasks(ctx context.Context, actor *model.User, storyID
 	}
 
 	var deleteTaskIDs []uint
+	var editTasks []SaveSchedulingTask
 	for _, taskReq := range req.Tasks {
-		if strings.TrimSpace(taskReq.Action) == "delete" && taskReq.ID > 0 {
+		action := strings.TrimSpace(taskReq.Action)
+		if action == "delete" && taskReq.ID > 0 {
 			deleteTaskIDs = append(deleteTaskIDs, taskReq.ID)
+			continue
+		}
+		if action == "edit" && taskReq.ID > 0 {
+			editTasks = append(editTasks, SaveSchedulingTask{
+				Action:      "edit",
+				ID:          taskReq.ID,
+				ExecutionID: taskReq.ExecutionID,
+				Type:        taskReq.Type,
+				Pri:         taskReq.Pri,
+				Name:        taskReq.Name,
+				AssignedTo:  taskReq.AssignedTo,
+				Estimate:    taskReq.Estimate,
+				EstStarted:  taskReq.EstStarted,
+				Deadline:    taskReq.Deadline,
+			})
 		}
 	}
 	if err := deleteTasks(ctx, s.ztAPI, deleteTaskIDs); err != nil {
 		return err
 	}
+	if err := s.applyZenTaoTaskEdits(ctx, editTasks); err != nil {
+		return err
+	}
 
-	return s.repo.Transaction(ctx, func(txRepo *Repo) error {
-		for _, taskReq := range req.Tasks {
-			if err := s.applyStoryTaskSave(ctx, txRepo, account, storyID, detail.ProductID, req, taskReq); err != nil {
-				return err
-			}
+	for _, taskReq := range req.Tasks {
+		if err := s.applyStoryTaskSave(ctx, s.repo, account, storyID, detail.ProductID, req, taskReq); err != nil {
+			return err
 		}
-		return nil
-	})
+	}
+	return nil
 }
 
 func (s *Service) applyStoryTaskSave(

@@ -20,6 +20,7 @@ import (
 )
 
 // SaveScheduling 保存业需排期并同步禅道研发需求与任务。
+// 写操作正逐步改为禅道接口，本地不做大事务包裹（跨接口本身无法原子回滚）。
 func (s *Service) SaveScheduling(ctx context.Context, actor *model.User, demandID uint, req *SaveSchedulingReq) error {
 	if demandID == 0 {
 		return errors.New("业需 ID 无效")
@@ -42,47 +43,48 @@ func (s *Service) SaveScheduling(ctx context.Context, actor *model.User, demandI
 	if err := s.applyZenTaoAssigns(ctx, req); err != nil {
 		return err
 	}
+	if err := s.applyZenTaoTaskEdits(ctx, collectSchedulingTaskEdits(req)); err != nil {
+		return err
+	}
 
-	return s.repo.Transaction(ctx, func(txRepo *Repo) error {
-		window, err := txRepo.FindByID(ctx, uint64(req.WindowID))
+	window, err := s.repo.FindByID(ctx, uint64(req.WindowID))
+	if err != nil {
+		return err
+	}
+	if window == nil {
+		return errors.New("版本窗口不存在")
+	}
+	// 与弹窗 #scheduleIntegratedSchedulePlanDate 一致：窗口 releaseDate。
+	estimateLaunch := window.ReleaseDate.Format("2006-01-02")
+
+	savedStory := false
+	for _, storyReq := range req.Stories {
+		action := strings.TrimSpace(storyReq.Action)
+		storyID, productID, _, err := s.applySchedulingStory(ctx, s.repo, account, demandID, mainSystemID, req.WindowID, estimateLaunch, req.DevelopFinish, req.TestFinish, storyReq)
 		if err != nil {
 			return err
 		}
-		if window == nil {
-			return errors.New("版本窗口不存在")
+		if action == "delete" {
+			continue
 		}
-		// 与弹窗 #scheduleIntegratedSchedulePlanDate 一致：窗口 releaseDate。
-		estimateLaunch := window.ReleaseDate.Format("2006-01-02")
-
-		savedStory := false
-		for _, storyReq := range req.Stories {
-			action := strings.TrimSpace(storyReq.Action)
-			storyID, productID, _, err := s.applySchedulingStory(ctx, txRepo, account, demandID, mainSystemID, req.WindowID, estimateLaunch, req.DevelopFinish, req.TestFinish, storyReq)
-			if err != nil {
-				return err
-			}
-			if action == "delete" {
-				continue
-			}
-			savedStory = true
-			if err := s.applySchedulingTasks(ctx, txRepo, account, storyID, productID, storyReq.Tasks); err != nil {
-				return err
-			}
-		}
-
-		if err := s.saveEditedDemandScheduling(ctx, txRepo, account, demandID, mainSystemID, req, estimateLaunch, window); err != nil {
+		savedStory = true
+		if err := s.applySchedulingTasks(ctx, s.repo, account, storyID, productID, storyReq.Tasks); err != nil {
 			return err
 		}
+	}
 
-		// 对齐禅道 tostory：保存研发需求后，clarified → developing。
-		if savedStory {
-			if _, err := txRepo.PromoteDemandToDevelopingIfClarified(ctx, demandID, account); err != nil {
-				return fmt.Errorf("promote demand status: %w", err)
-			}
+	if err := s.saveEditedDemandScheduling(ctx, s.repo, account, demandID, mainSystemID, req, estimateLaunch, window); err != nil {
+		return err
+	}
+
+	// 对齐禅道 tostory：保存研发需求后，clarified → developing。
+	if savedStory {
+		if _, err := s.repo.PromoteDemandToDevelopingIfClarified(ctx, demandID, account); err != nil {
+			return fmt.Errorf("promote demand status: %w", err)
 		}
+	}
 
-		return txRepo.SaveDemandLevelWindow(ctx, demandID, uint64(req.WindowID), account)
-	})
+	return s.repo.SaveDemandLevelWindow(ctx, demandID, uint64(req.WindowID), account)
 }
 
 // SaveStoryScheduling 保存独立研发需求（zt_story fromDemand=0）排期并同步计划/窗口/历史。
@@ -111,45 +113,46 @@ func (s *Service) SaveStoryScheduling(ctx context.Context, actor *model.User, st
 	if err := s.applyZenTaoAssigns(ctx, req); err != nil {
 		return err
 	}
+	if err := s.applyZenTaoTaskEdits(ctx, collectSchedulingTaskEdits(req)); err != nil {
+		return err
+	}
 
-	return s.repo.Transaction(ctx, func(txRepo *Repo) error {
-		window, err := txRepo.FindByID(ctx, uint64(req.WindowID))
+	window, err := s.repo.FindByID(ctx, uint64(req.WindowID))
+	if err != nil {
+		return err
+	}
+	if window == nil {
+		return errors.New("版本窗口不存在")
+	}
+	estimateLaunch := window.ReleaseDate.Format("2006-01-02")
+
+	// (a) 子节点循环：独立研发需求常态为空，兼容未来子节点；demandID 传 0。
+	for _, storyReq := range req.Stories {
+		storyID2, productID, _, err := s.applySchedulingStory(ctx, s.repo, account, 0, mainSystemID, req.WindowID, estimateLaunch, req.DevelopFinish, req.TestFinish, storyReq)
 		if err != nil {
 			return err
 		}
-		if window == nil {
-			return errors.New("版本窗口不存在")
+		if strings.TrimSpace(storyReq.Action) == "delete" {
+			continue
 		}
-		estimateLaunch := window.ReleaseDate.Format("2006-01-02")
+		if err := s.applySchedulingTasks(ctx, s.repo, account, storyID2, productID, storyReq.Tasks); err != nil {
+			return err
+		}
+	}
 
-		// (a) 子节点循环：独立研发需求常态为空，兼容未来子节点；demandID 传 0。
-		for _, storyReq := range req.Stories {
-			storyID2, productID, _, err := s.applySchedulingStory(ctx, txRepo, account, 0, mainSystemID, req.WindowID, estimateLaunch, req.DevelopFinish, req.TestFinish, storyReq)
-			if err != nil {
-				return err
-			}
-			if strings.TrimSpace(storyReq.Action) == "delete" {
-				continue
-			}
-			if err := s.applySchedulingTasks(ctx, txRepo, account, storyID2, productID, storyReq.Tasks); err != nil {
-				return err
-			}
-		}
-
-		// (b) 主条目关联三连：自动勾选系统/建计划 → 从老计划移除 → 关联到新计划 → 写主条目历史。
-		planID, err := s.resolvePlanForProduct(ctx, txRepo, account, req.WindowID, mainSystemID)
-		if err != nil {
-			return err
-		}
-		if err := txRepo.RemoveStoryFromOtherPlans(ctx, storyID, planID, mainSystemID, account); err != nil {
-			return err
-		}
-		if err := txRepo.LinkStoryToPlan(ctx, storyID, mainSystemID, planID, account); err != nil {
-			return err
-		}
-		// (c) 日期存 zt_story，并按禅道 Edited + zt_history 记录实际变更。
-		return s.saveEditedStoryDates(ctx, txRepo, account, storyID, mainSystemID, estimateLaunch, req.DevelopFinish, req.TestFinish, req.AcceptancedDate)
-	})
+	// (b) 主条目关联三连：自动勾选系统/建计划 → 从老计划移除 → 关联到新计划 → 写主条目历史。
+	planID, err := s.resolvePlanForProduct(ctx, s.repo, account, req.WindowID, mainSystemID)
+	if err != nil {
+		return err
+	}
+	if err := s.repo.RemoveStoryFromOtherPlans(ctx, storyID, planID, mainSystemID, account); err != nil {
+		return err
+	}
+	if err := s.repo.LinkStoryToPlan(ctx, storyID, mainSystemID, planID, account); err != nil {
+		return err
+	}
+	// (c) 日期存 zt_story，并按禅道 Edited + zt_history 记录实际变更。
+	return s.saveEditedStoryDates(ctx, s.repo, account, storyID, mainSystemID, estimateLaunch, req.DevelopFinish, req.TestFinish, req.AcceptancedDate)
 }
 
 func (s *Service) applySchedulingStory(
@@ -245,6 +248,16 @@ func (s *Service) applyZenTaoDeletes(ctx context.Context, req *SaveSchedulingReq
 	return deleteStories(ctx, s.ztAPI, storyIDs)
 }
 
+// applyZenTaoTaskEdits 调用禅道编辑任务
+func (s *Service) applyZenTaoTaskEdits(ctx context.Context, tasks []SaveSchedulingTask) error {
+	for _, taskReq := range tasks {
+		if err := s.saveEditedTask(ctx, taskReq); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // applyZenTaoAssigns 对编辑研需中指派人有变化的条目调用禅道 assign（写 Assigned 历史）。
 func (s *Service) applyZenTaoAssigns(ctx context.Context, req *SaveSchedulingReq) error {
 	if req == nil {
@@ -335,11 +348,9 @@ func (s *Service) applySingleSchedulingTask(
 		}
 
 	case "edit":
+		// 禅道 PUT 已在 applyZenTaoTaskEdits 完成；此处只补本地项目/执行关联。
 		projectID, err := txRepo.GetProjectIDByExecution(ctx, taskReq.ExecutionID)
 		if err != nil {
-			return err
-		}
-		if err := s.saveEditedTask(ctx, txRepo, account, productID, projectID, taskReq); err != nil {
 			return err
 		}
 		if err := txRepo.LinkStoryToProjectAndExecution(ctx, storyID, productID, projectID, taskReq.ExecutionID, account); err != nil {

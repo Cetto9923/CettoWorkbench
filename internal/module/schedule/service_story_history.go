@@ -2,7 +2,7 @@
 // 文件: internal/module/schedule/service_story_history.go
 // 模块: 排期工作台
 // 类型: action
-// 职责: 编辑业务需求排期、研发需求或任务时对比旧值并写入禅道历史。
+// 职责: 编辑业务需求排期或研发需求时对比旧值并写入禅道历史；任务编辑走禅道 PUT。
 // 依赖: internal/model
 //       internal/pkg/ztaction
 // =============================================================================
@@ -98,63 +98,60 @@ func (s *Service) saveEditedStoryDates(
 	return txRepo.LogEditedHistory(ctx, "story", storyID, account, productID, 0, 0, changes)
 }
 
-func (s *Service) saveEditedTask(
-	ctx context.Context,
-	txRepo *Repo,
-	account string,
-	productID uint,
-	projectID uint,
-	taskReq SaveSchedulingTask,
-) error {
-	snapshot, err := txRepo.FindTaskHistorySnapshot(ctx, taskReq.ID)
+// saveEditedTask 调用禅道 PUT /tasks/{id} 编辑任务。
+// 维护任务弹窗会把未改动的已有任务也标成 edit；与库中旧值一致时不请求禅道。
+func (s *Service) saveEditedTask(ctx context.Context, taskReq SaveSchedulingTask) error {
+	if taskReq.ID == 0 {
+		return fmt.Errorf("任务 ID 无效")
+	}
+	snapshot, err := s.repo.FindTaskHistorySnapshot(ctx, taskReq.ID)
 	if err != nil {
 		return fmt.Errorf("load task %d: %w", taskReq.ID, err)
 	}
-
-	name := strings.TrimSpace(taskReq.Name)
-	taskType := strings.TrimSpace(taskReq.Type)
-	pri := normalizeTaskPriority(taskReq.Pri)
-	assignedTo := strings.TrimSpace(taskReq.AssignedTo)
-	estStarted := nullableDateValue(taskReq.EstStarted)
-	deadline := nullableDateValue(taskReq.Deadline)
-	updates := map[string]interface{}{
-		"name":           name,
-		"type":           taskType,
-		"pri":            pri,
-		"assignedTo":     assignedTo,
-		"estimate":       taskReq.Estimate,
-		"left":           taskReq.Estimate,
-		"estStarted":     estStarted,
-		"deadline":       deadline,
-		"execution":      taskReq.ExecutionID,
-		"project":        projectID,
-		"lastEditedBy":   account,
-		"lastEditedDate": time.Now(),
+	if !schedulingTaskChanged(snapshot, taskReq) {
+		return nil
 	}
-	// 对齐禅道 buildTaskForEdit：指派变化才刷新 assignedDate，且该字段不进 history。
-	if assignedTo != strings.TrimSpace(snapshot.AssignedTo) {
-		updates["assignedDate"] = time.Now()
-	}
-	if err := txRepo.UpdateTask(ctx, taskReq.ID, updates); err != nil {
+	if err := updateTask(ctx, s.ztAPI, taskReq.ID, buildZentaoTaskEditBody(taskReq)); err != nil {
 		return fmt.Errorf("update task %d: %w", taskReq.ID, err)
 	}
-
-	changes := []ztaction.Change{
-		{Field: "name", Old: strings.TrimSpace(snapshot.Name), New: name},
-		{Field: "type", Old: strings.TrimSpace(snapshot.Type), New: taskType},
-		{Field: "pri", Old: strconv.Itoa(snapshot.Pri), New: strconv.Itoa(pri)},
-		{Field: "assignedTo", Old: strings.TrimSpace(snapshot.AssignedTo), New: assignedTo},
-		{Field: "estimate", Old: formatHistoryNumber(snapshot.Estimate), New: formatHistoryNumber(taskReq.Estimate)},
-		{Field: "left", Old: formatHistoryNumber(snapshot.Left), New: formatHistoryNumber(taskReq.Estimate)},
-		{Field: "estStarted", Old: normalizeHistoryDate(snapshot.EstStarted), New: normalizeHistoryDate(estStarted)},
-		{Field: "deadline", Old: normalizeHistoryDate(snapshot.Deadline), New: normalizeHistoryDate(deadline)},
-		{Field: "execution", Old: strconv.FormatUint(uint64(snapshot.Execution), 10), New: strconv.FormatUint(uint64(taskReq.ExecutionID), 10)},
-		{Field: "project", Old: strconv.FormatUint(uint64(snapshot.Project), 10), New: strconv.FormatUint(uint64(projectID), 10)},
-	}
-	if err := txRepo.LogEditedHistory(ctx, "task", taskReq.ID, account, productID, projectID, taskReq.ExecutionID, changes); err != nil {
-		return fmt.Errorf("create task action: %w", err)
-	}
 	return nil
+}
+
+// schedulingTaskChanged 对比禅道 PUT 会写入的字段。字段集合须与 buildZentaoTaskEditBody 一致。
+func schedulingTaskChanged(snapshot *taskHistorySnapshot, taskReq SaveSchedulingTask) bool {
+	if snapshot == nil {
+		return true
+	}
+	if strings.TrimSpace(snapshot.Name) != strings.TrimSpace(taskReq.Name) {
+		return true
+	}
+	if strings.TrimSpace(snapshot.Type) != strings.TrimSpace(taskReq.Type) {
+		return true
+	}
+	if snapshot.Pri != normalizeTaskPriority(taskReq.Pri) {
+		return true
+	}
+	if strings.TrimSpace(snapshot.AssignedTo) != strings.TrimSpace(taskReq.AssignedTo) {
+		return true
+	}
+	if !sameTaskEstimate(snapshot.Estimate, taskReq.Estimate) {
+		return true
+	}
+	if normalizeHistoryDate(snapshot.EstStarted) != normalizeHistoryDate(taskReq.EstStarted) {
+		return true
+	}
+	if normalizeHistoryDate(snapshot.Deadline) != normalizeHistoryDate(taskReq.Deadline) {
+		return true
+	}
+	return snapshot.Execution != taskReq.ExecutionID
+}
+
+func sameTaskEstimate(current, next float64) bool {
+	diff := current - next
+	if diff < 0 {
+		diff = -diff
+	}
+	return diff < 0.0005
 }
 
 func (s *Service) saveEditedDemandScheduling(
@@ -216,8 +213,4 @@ func (s *Service) saveEditedDemandScheduling(
 		return fmt.Errorf("create demand action: %w", err)
 	}
 	return nil
-}
-
-func formatHistoryNumber(value float64) string {
-	return strconv.FormatFloat(value, 'f', -1, 64)
 }
