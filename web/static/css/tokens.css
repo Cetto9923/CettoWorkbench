@@ -12,9 +12,9 @@
    * 1. 颜色体系 (Colors)
    * ------------------------------------------------------------------------- */
   /* 主色 (Primary) */
-  --wb-primary: #1d4ed8;            /* 科技沉稳冷蓝 */
-  --wb-primary-hover: #1e40af;
-  --wb-primary-active: #172554;
+  --wb-primary: #2563eb;            /* 科技沉稳冷蓝 */
+  --wb-primary-hover: #1d4ed8;
+  --wb-primary-active: #1e40af;
   --wb-primary-light: #eff6ff;      /* 浅蓝背景 */
   --wb-primary-border: #bfdbfe;     /* 浅蓝边框 */
 
@@ -94,8 +94,8 @@
   --wb-border-color-dark: var(--wb-gray-300);
   --wb-border: 1px solid var(--wb-border-color);
 
-  --wb-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --wb-shadow-md: 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --wb-shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 4px 10px -2px rgba(15, 23, 42, 0.04);
+  --wb-shadow-md: 0 4px 12px -2px rgba(15, 23, 42, 0.08);
 
   /* 过渡动画 */
   --wb-transition-fast: 0.15s ease-in-out;

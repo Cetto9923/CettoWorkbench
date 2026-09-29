@@ -1,7 +1,7 @@
 /* =============================================================================
    文件: web/static/css/po/home.css
    模块: PO 个人工作台 - 首页专属样式
-   规范: 严格遵循 tokens.css 与 components.css 设计规范，无写死颜色，杜绝横向溢出
+   职责: 价值流全景流水线、行动列表表格与视角聚焦组件样式
    ============================================================================= */
 
 /* 1. 首页内容区卡片底座 */
@@ -80,8 +80,8 @@
 .po-home .home-vs-compact { width: max-content; min-width: 100%; }
 .po-home .home-vs-pipeline-wrap {
   display: flex;
-  align-items: stretch;
-  gap: 6px;
+  align-items: center;
+  gap: 8px;
   width: max-content;
   min-width: 100%;
 }
@@ -93,23 +93,25 @@
   height: 64px;
   min-height: 64px;
   box-sizing: border-box;
-  background: var(--wb-white);
-  border: 1px solid var(--wb-border-color);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: var(--wb-radius-md);
   cursor: pointer;
   text-align: left;
   outline: none;
-  padding: 5px 8px;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  padding: 6px 9px;
+  box-shadow: var(--wb-shadow-sm);
+  position: relative;
+  overflow: hidden;
   transition: transform var(--wb-transition-fast), border-color var(--wb-transition-fast), box-shadow var(--wb-transition-fast), background-color var(--wb-transition-fast);
 }
 
 .po-home .home-vs-mini-card:hover {
-  border-color: var(--wb-gray-400);
-  box-shadow: 0 3px 8px -1px rgba(15, 23, 42, 0.08);
+  border-color: var(--wb-primary-border);
+  transform: translateY(-1.5px);
+  box-shadow: 0 3px 8px var(--color-stage-card-glow);
 }
 
-.po-home .home-vs-mini-card:focus { outline: none; }
 .po-home .home-vs-mini-card:focus-visible {
   outline: 2px solid var(--wb-primary);
   outline-offset: 1px;
@@ -120,155 +122,153 @@
   align-items: center;
   justify-content: space-between;
   gap: 4px;
-  min-height: 15px;
-  line-height: 15px;
+  line-height: 1.2;
 }
 
 .po-home .home-vs-mini-card .vs-mini-name {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--wb-gray-800);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
   white-space: nowrap;
-  word-break: keep-all;
-  overflow: visible;
-  text-overflow: unset;
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  line-height: 15px;
 }
 
-.po-home .home-vs-mini-card .vs-card-sub {
-  min-height: 13px;
-  line-height: 13px;
-  margin-top: 1px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
-}
-
-.po-home .home-vs-mini-card .vs-mini-breakdown {
-  font-size: 10px;
-  color: var(--wb-gray-500);
-  white-space: nowrap;
-  line-height: 13px;
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
-}
-
-.po-home .home-vs-mini-card .vs-mini-bottom-row {
+.po-home .home-vs-mini-card .vs-card-center {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  width: 100%;
-  margin-top: auto;
-  gap: 2px;
-  line-height: 18px;
+  margin: 1px 0;
+  line-height: 1;
 }
 
 .po-home .home-vs-mini-card .vs-mini-count {
-  font-size: 14px;
-  line-height: 18px;
-  font-weight: 700;
+  font-size: 17px;
+  line-height: 1;
+  font-weight: 800;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-variant-numeric: tabular-nums;
-  color: var(--wb-gray-900);
+  color: var(--color-text-primary);
   flex-shrink: 0;
 }
 
 .po-home .home-vs-mini-card .vs-mini-dur {
-  font-size: 10px;
+  font-size: 9.5px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-variant-numeric: tabular-nums;
-  color: var(--wb-text-secondary);
+  color: var(--color-text-disabled);
   white-space: nowrap;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 18px;
+  line-height: 1;
 }
 
 .po-home .home-vs-mini-card .vs-mini-dur .tag {
-  color: var(--wb-text-secondary);
+  color: inherit;
   font-family: inherit;
   margin-right: 1px;
 }
 
+.po-home .home-vs-mini-card .vs-card-sub {
+  line-height: 1.2;
+  border-top: 1px dashed var(--color-border);
+  padding-top: 2px;
+}
+
+.po-home .home-vs-mini-card .vs-mini-breakdown {
+  font-size: 9.5px;
+  color: var(--color-text-disabled);
+  white-space: nowrap;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* 独立总控驾驶舱（全部） */
 .po-home .home-vs-overview-card {
-  flex: 0 0 108px;
-  width: 108px;
-  min-width: 108px;
-  height: 66px;
-  min-height: 66px;
+  flex: 0 0 104px;
+  width: 104px;
+  min-width: 104px;
+  height: 64px;
+  min-height: 64px;
   box-sizing: border-box;
-  padding: 5px 6px;
+  padding: 6px 9px;
   border-radius: var(--wb-radius-md);
-  border: 1px solid var(--wb-primary-border);
+  border: 1px solid var(--color-border);
   background: var(--color-surface);
-  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.05);
 }
 .po-home .home-vs-overview-card:hover {
-  border-color: var(--wb-primary);
-  background: var(--color-stage-active-bg, var(--wb-gray-50));
+  border-color: var(--wb-primary-border);
 }
 .po-personal-workspace.po-home .home-vs-overview-card.active {
   z-index: 5;
-  border-color: var(--wb-primary);
-  background: var(--wb-primary-light);
-  box-shadow: inset 0 0 0 1px var(--wb-primary), 0 2px 6px rgba(37, 99, 235, 0.15);
+  background: linear-gradient(135deg, var(--wb-primary) 0%, var(--wb-primary-hover) 100%);
+  color: var(--color-text-on-accent);
+  border-color: transparent;
+  box-shadow: 0 2px 8px var(--color-stage-overview-shadow);
 }
-.po-home .home-vs-overview-card.active .vs-mini-name {
-  color: var(--wb-primary);
-  font-weight: 700;
+.po-personal-workspace.po-home .home-vs-overview-card.active .vs-mini-name,
+.po-personal-workspace.po-home .home-vs-overview-card.active .vs-mini-count,
+.po-personal-workspace.po-home .home-vs-overview-card.active .vs-mini-breakdown,
+.po-personal-workspace.po-home .home-vs-overview-card.active .vs-mini-dur,
+.po-personal-workspace.po-home .home-vs-overview-card.active .vs-status-icon {
+  color: var(--color-text-on-accent);
 }
-.po-home .home-vs-overview-card.active .vs-mini-count {
-  color: var(--wb-primary);
+.po-personal-workspace.po-home .home-vs-overview-card.active .vs-card-sub {
+  border-top-color: var(--color-stage-white-25);
 }
 
 /* 导向流水线流向符 */
 .po-home .home-vs-flow-divider {
-  flex: 0 0 24px;
+  flex: 0 0 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  color: var(--wb-primary);
-  font-size: var(--wb-font-xs);
-  font-weight: 600;
-  height: 66px;
+  color: var(--color-text-disabled);
+  font-size: 14px;
+  font-weight: 700;
+  height: 64px;
 }
-.po-home .home-vs-flow-divider i { font-size: 10px; }
 
 /* 9阶段现代流程微卡轨道 */
 .po-home .home-vs-chevron-track {
-  flex: 1 1 0;
   display: flex;
-  align-items: stretch;
-  gap: 6px;
-  min-width: 0;
-  width: 100%;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .po-home .home-vs-chevron-step {
   position: relative;
-  flex: 1 1 98px;
+  flex: 0 0 98px;
+  width: 98px;
   min-width: 98px;
-  width: auto;
-  height: 66px;
-  min-height: 66px;
+  height: 64px;
+  min-height: 64px;
   box-sizing: border-box;
-  padding: 5px 6px;
+  padding: 6px 9px;
   border-radius: var(--wb-radius-md);
-  border: 1px solid var(--wb-border-color);
-  background: var(--wb-white);
-  box-shadow: var(--wb-shadow-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
 }
+.po-home .home-vs-chevron-step::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2.5px;
+  background: transparent;
+}
+.po-home .stage-accept::before { background: var(--color-stage-accept); }
+.po-home .stage-clarify::before { background: var(--color-stage-clarify); }
+.po-home .stage-schedule::before { background: var(--color-stage-schedule); }
+.po-home .stage-developing::before { background: var(--color-stage-developing); }
+.po-home .stage-testing::before { background: var(--color-stage-testing); }
+.po-home .stage-waitacceptance::before { background: var(--color-stage-waitacceptance); }
+.po-home .stage-acceptanced::before { background: var(--color-stage-acceptanced); }
+.po-home .stage-publish::before { background: var(--color-stage-publish); }
+.po-home .stage-released::before { background: var(--color-stage-released); }
+
 .po-home .home-vs-chevron-step:hover {
-  border-color: var(--wb-gray-400);
-  background: var(--wb-gray-50);
+  border-color: var(--wb-primary-border);
 }
 
 /* 激活态：统一科技蓝边框与微光晕 */
@@ -276,43 +276,33 @@
   z-index: 5;
   border-color: var(--wb-primary);
   background: var(--wb-primary-light);
-  box-shadow: inset 0 0 0 1px var(--wb-primary);
+  box-shadow: inset 0 0 0 1px var(--wb-primary), 0 2px 8px var(--color-stage-card-glow-active);
 }
 
-.po-home .home-vs-mini-card.active .vs-mini-name {
-  color: var(--wb-primary) !important;
-  font-weight: 600;
-}
-.po-home .home-vs-mini-card.active .vs-mini-count {
-  color: var(--wb-primary) !important;
-  font-weight: 700;
-}
-.po-home .home-vs-mini-card.active .vs-mini-meta,
-.po-home .home-vs-mini-card.active .vs-mini-breakdown {
-  color: var(--wb-primary) !important;
-}
-.po-home .home-vs-mini-card.active .vs-mini-dur {
-  color: var(--wb-primary) !important;
-}
+.po-home .home-vs-mini-card.active .vs-mini-name,
+.po-home .home-vs-mini-card.active .vs-mini-count,
+.po-home .home-vs-mini-card.active .vs-mini-breakdown,
+.po-home .home-vs-mini-card.active .vs-mini-dur,
 .po-home .home-vs-mini-card.active .vs-status-icon {
-  font-size: 9px;
-  color: var(--wb-primary) !important;
+  color: var(--wb-primary);
 }
 .po-home .home-vs-mini-card.active .vs-status-dot {
-  background: var(--wb-primary) !important;
+  background: var(--wb-primary);
 }
 
-/* 空阶段（无数据）：统一弱灰 */
+/* 空阶段（无数据）：统一弱灰虚线 */
 .po-home .home-vs-mini-card.empty:not(.active) {
+  border-style: dashed;
   background: var(--color-surface-muted, var(--wb-gray-50));
-  border-color: var(--color-border, var(--wb-gray-200));
+  opacity: 0.65;
 }
-.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-name { color: var(--wb-gray-500); }
-.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-count { color: var(--wb-gray-500); }
-.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-meta,
-.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-breakdown { color: var(--wb-gray-500); }
+.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-name,
+.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-count,
+.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-breakdown,
 .po-home .home-vs-mini-card.empty:not(.active) .vs-mini-dur,
-.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-dur .tag { color: var(--wb-gray-500); }
+.po-home .home-vs-mini-card.empty:not(.active) .vs-mini-dur .tag {
+  color: var(--color-text-disabled);
+}
 
 .po-home .vs-status-dot {
   width: 6px;
@@ -455,32 +445,34 @@
 }
 .po-home .home-action-table th {
   background: var(--wb-gray-50);
-  padding: 10px 12px;
+  padding: 8px 12px;
   font-size: var(--wb-font-xs);
   font-weight: 600;
   color: var(--wb-gray-600);
   border-bottom: 1px solid var(--wb-border-color);
   text-align: left;
+  white-space: nowrap;
 }
 .po-home .home-action-table td {
-  padding: 10px 12px;
-  height: 42px;
-  font-size: var(--wb-font-sm);
+  padding: 6px 12px;
+  height: 38px;
+  font-size: var(--wb-font-xs);
   color: var(--wb-gray-700);
   border-bottom: 1px solid var(--wb-gray-200);
   vertical-align: middle;
+  box-sizing: border-box;
 }
 .po-home .home-action-table tr:hover td {
   background: var(--wb-gray-50);
 }
 .po-home .home-action-table .c-id { width: 130px; overflow: visible; }
-.po-home .home-action-table .c-title { width: auto; min-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.po-home .home-action-table .c-title { width: auto; min-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .po-home .home-action-table .c-title a { display: inline-block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
 .po-home .home-action-table .c-stage { width: 94px; }
 .po-home .home-action-table .c-zt-status { width: 76px; }
 .po-home .home-action-table .c-owner { width: 96px; min-width: 96px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .po-home .home-action-table th.c-actions,
-.po-home .home-action-table td.c-actions { width: 128px; min-width: 128px; text-align: right; white-space: nowrap; overflow: visible; }
+.po-home .home-action-table td.c-actions { width: 136px; min-width: 136px; text-align: right; white-space: nowrap; overflow: visible; }
 
 .po-home .stage-tag {
   display: inline-flex;
@@ -565,15 +557,18 @@
   align-items: center;
   justify-content: flex-end;
   gap: 6px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }
 .po-home .table-action-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 26px;
+  height: 24px;
   padding: 0 8px;
   border-radius: var(--wb-radius-sm);
-  font-size: var(--wb-font-xs);
+  font-size: 11px;
+  line-height: 1;
   cursor: pointer;
   text-decoration: none;
   white-space: nowrap;
@@ -659,13 +654,13 @@
   box-shadow: var(--wb-shadow-sm);
 }
 .po-home .focus-card.danger {
-  background: var(--color-surface, var(--wb-white));
-  border-color: var(--color-border, var(--wb-border-color));
-  border-left: 3px solid var(--color-danger, var(--wb-danger));
+  background: var(--wb-danger-light);
+  border-color: var(--wb-danger-border);
+  border-left: 3px solid var(--wb-danger);
 }
 .po-home .focus-card.danger:hover {
-  border-color: var(--wb-primary-border);
-  border-left-color: var(--color-danger, var(--wb-danger));
+  border-color: var(--wb-danger);
+  border-left-color: var(--wb-danger);
 }
 .po-home .focus-card-hdr {
   display: flex;

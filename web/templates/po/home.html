@@ -104,17 +104,16 @@
               <span class="vs-mini-name">全部对象</span>
               <i class="fas fa-check vs-status-icon"></i>
             </div>
-            <div class="vs-card-sub">
-              <span class="vs-mini-breakdown">{{ if $.PageError }}—{{ else }}全生命周期{{ end }}</span>
-            </div>
-            <div class="vs-mini-bottom-row">
+            <div class="vs-card-center">
               <span class="vs-mini-count">{{ if $.PageError }}—{{ else }}{{ $stage.Count }}{{ end }}</span>
               <span class="vs-mini-dur">{{ if $.PageError }}—{{ else if gt $stage.AvgDurationDays 0 }}{{ $stage.AvgDurationDays }}天{{ else }}—{{ end }}</span>
             </div>
+            <div class="vs-card-sub">
+              <span class="vs-mini-breakdown">{{ if $.PageError }}—{{ else }}全生命周期{{ end }}</span>
+            </div>
           </button>
           <div class="home-vs-flow-divider" aria-hidden="true">
-            <span>流转</span>
-            <i class="fas fa-arrow-right"></i>
+            <span>›</span>
           </div>
           {{ end }}
           {{ end }}
@@ -133,12 +132,12 @@
               <div class="vs-card-top">
                 <span class="vs-mini-name">{{ if eq $stage.Status "schedule" }}<span class="vs-status-dot dot-amber"></span> {{ end }}{{ $i }}. {{ $stage.Label }}</span>
               </div>
-              <div class="vs-card-sub">
-                <span class="vs-mini-breakdown">{{ if $.PageError }}—{{ else if eq $stage.Count 0 }}-{{ else }}业{{ $stage.DemandCount }} · 研{{ $stage.StoryCount }}{{ end }}</span>
-              </div>
-              <div class="vs-mini-bottom-row">
+              <div class="vs-card-center">
                 <span class="vs-mini-count">{{ if $.PageError }}—{{ else }}{{ $stage.Count }}{{ end }}</span>
                 <span class="vs-mini-dur">{{ if $.PageError }}—{{ else if eq $stage.Count 0 }}-{{ else if gt $stage.AvgDurationDays 0 }}<span class="tag">均</span> {{ $stage.AvgDurationDays }}天{{ else }}—{{ end }}</span>
+              </div>
+              <div class="vs-card-sub">
+                <span class="vs-mini-breakdown">{{ if $.PageError }}—{{ else if eq $stage.Count 0 }}-{{ else }}业{{ $stage.DemandCount }} · 研{{ $stage.StoryCount }}{{ end }}</span>
               </div>
             </button>
             {{ end }}
