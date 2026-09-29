@@ -2,7 +2,7 @@
 // 文件: internal/module/schedule/gateway.go
 // 模块: 排期工作台
 // 类型: action
-// 职责: 出站适配层：调用禅道检查业需转研发提醒、指派研需、创建产品计划/任务，以及批量删除研发需求/任务。
+// 职责: 出站适配层：调用禅道检查业需转研发提醒、业需转研发、指派研需、创建产品计划/任务，以及批量删除研发需求/任务。
 // 依赖: internal/pkg/zentao
 // =============================================================================
 
@@ -272,4 +272,140 @@ func collectSchedulingTaskEdits(req *SaveSchedulingReq) []SaveSchedulingTask {
 		}
 	}
 	return out
+}
+
+// toStoryStoryInput 业需转研发需求的单条研需入参。
+type toStoryStoryInput struct {
+	ProductID  uint
+	PlanID     uint
+	Title      string
+	Spec       string
+	AssignedTo string
+	Estimate   float64
+}
+
+// toStoryBodyInput 组装禅道 POST /demand/:id/tostory 请求体。
+type toStoryBodyInput struct {
+	EstimateLaunch string
+	DevelopFinish  string
+	TestFinish     string
+	VerifyFinish   string
+	QD             string
+	Stories        []toStoryStoryInput
+}
+
+// toStoryResp 禅道转研发需求成功响应。
+type toStoryResp struct {
+	Message  string `json:"message"`
+	StoryIDs []uint `json:"storyIds"`
+}
+
+func collectNewSchedulingStories(req *SaveSchedulingReq) []SaveSchedulingStory {
+	if req == nil {
+		return nil
+	}
+	out := make([]SaveSchedulingStory, 0)
+	for _, story := range req.Stories {
+		if strings.TrimSpace(story.Action) == "new" {
+			out = append(out, story)
+		}
+	}
+	return out
+}
+
+func formatToStoryEstimate(v float64) string {
+	return strings.TrimRight(strings.TrimRight(fmt.Sprintf("%.4f", v), "0"), ".")
+}
+
+func formatToStoryPlan(planID uint) string {
+	if planID == 0 {
+		return ""
+	}
+	return fmt.Sprintf("%d", planID)
+}
+
+// buildZentaoToStoryBody 组装禅道 POST /demand/:id/tostory 的创建字段（数组按研需条目对齐）。
+func buildZentaoToStoryBody(in toStoryBodyInput) map[string]any {
+	n := len(in.Stories)
+	product := make([]any, n)
+	module := make([]any, n)
+	plan := make([]any, n)
+	title := make([]any, n)
+	spec := make([]any, n)
+	source := make([]any, n)
+	sourceNote := make([]any, n)
+	verify := make([]any, n)
+	assignedTo := make([]any, n)
+	category := make([]any, n)
+	pri := make([]any, n)
+	estimate := make([]any, n)
+	keywords := make([]any, n)
+	color := make([]any, n)
+	for i, story := range in.Stories {
+		product[i] = story.ProductID
+		module[i] = 0
+		plan[i] = formatToStoryPlan(story.PlanID)
+		title[i] = strings.TrimSpace(story.Title)
+		spec[i] = story.Spec
+		source[i] = ""
+		sourceNote[i] = ""
+		verify[i] = ""
+		assignedTo[i] = strings.TrimSpace(story.AssignedTo)
+		category[i] = "feature"
+		pri[i] = "3"
+		estimate[i] = formatToStoryEstimate(story.Estimate)
+		keywords[i] = ""
+		color[i] = ""
+	}
+	return map[string]any{
+		"estimateLaunch": strings.TrimSpace(in.EstimateLaunch),
+		"developFinish":  strings.TrimSpace(in.DevelopFinish),
+		"testFinish":     strings.TrimSpace(in.TestFinish),
+		"verifyFinish":   strings.TrimSpace(in.VerifyFinish),
+		"QD":             strings.TrimSpace(in.QD),
+		"product":        product,
+		"module":         module,
+		"plan":           plan,
+		"title":          title,
+		"spec":           spec,
+		"source":         source,
+		"sourceNote":     sourceNote,
+		"verify":         verify,
+		"assignedTo":     assignedTo,
+		"category":       category,
+		"pri":            pri,
+		"estimate":       estimate,
+		"keywords":       keywords,
+		"color":          color,
+	}
+}
+
+func zentaoDemandToStoryPath(demandID uint) string {
+	return fmt.Sprintf("/demand/%d/tostory", demandID)
+}
+
+// toStory 调用禅道 POST /demand/{id}/tostory，返回新建研需 ID（与请求条目顺序一致）。
+func toStory(ctx context.Context, client *zentao.Client, demandID uint, in toStoryBodyInput) ([]uint, error) {
+	if demandID == 0 {
+		return nil, fmt.Errorf("业需 ID 无效")
+	}
+	if client == nil {
+		return nil, fmt.Errorf("禅道 API 未配置")
+	}
+	if len(in.Stories) == 0 {
+		return nil, fmt.Errorf("转研发需求条目为空")
+	}
+	var out toStoryResp
+	if err := client.Do(ctx, http.MethodPost, zentaoDemandToStoryPath(demandID), buildZentaoToStoryBody(in), &out); err != nil {
+		return nil, fmt.Errorf("转研发需求失败: %w", err)
+	}
+	if len(out.StoryIDs) != len(in.Stories) {
+		return nil, fmt.Errorf("禅道返回的研需数量与请求不一致：期望 %d，实际 %d", len(in.Stories), len(out.StoryIDs))
+	}
+	for i, id := range out.StoryIDs {
+		if id == 0 {
+			return nil, fmt.Errorf("禅道返回的第 %d 条研需 ID 无效", i+1)
+		}
+	}
+	return out.StoryIDs, nil
 }

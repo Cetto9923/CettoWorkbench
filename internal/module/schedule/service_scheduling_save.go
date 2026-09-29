@@ -6,6 +6,7 @@
 // 依赖: internal/model
 //       internal/module/schedule/gateway.go
 //       internal/module/schedule/repo_scheduling_write.go
+//       internal/module/schedule/service_scheduling_tostory.go
 // =============================================================================
 
 package schedule
@@ -57,9 +58,29 @@ func (s *Service) SaveScheduling(ctx context.Context, actor *model.User, demandI
 	// 与弹窗 #scheduleIntegratedSchedulePlanDate 一致：窗口 releaseDate。
 	estimateLaunch := window.ReleaseDate.Format("2006-01-02")
 
-	savedStory := false
+	newStories := collectNewSchedulingStories(req)
+	if len(newStories) > 0 {
+		if _, err := s.applyNewStoriesViaToStory(
+			ctx,
+			account,
+			demandID,
+			req.WindowID,
+			estimateLaunch,
+			req.DevelopFinish,
+			req.TestFinish,
+			req.AcceptancedDate,
+			req.QD,
+			newStories,
+		); err != nil {
+			return err
+		}
+	}
+
 	for _, storyReq := range req.Stories {
 		action := strings.TrimSpace(storyReq.Action)
+		if action == "new" {
+			continue
+		}
 		storyID, productID, _, err := s.applySchedulingStory(ctx, s.repo, account, demandID, mainSystemID, req.WindowID, estimateLaunch, req.DevelopFinish, req.TestFinish, storyReq)
 		if err != nil {
 			return err
@@ -67,7 +88,6 @@ func (s *Service) SaveScheduling(ctx context.Context, actor *model.User, demandI
 		if action == "delete" {
 			continue
 		}
-		savedStory = true
 		if err := s.applySchedulingTasks(ctx, s.repo, account, storyID, productID, storyReq.Tasks); err != nil {
 			return err
 		}
@@ -75,13 +95,6 @@ func (s *Service) SaveScheduling(ctx context.Context, actor *model.User, demandI
 
 	if err := s.saveEditedDemandScheduling(ctx, s.repo, account, demandID, mainSystemID, req, estimateLaunch, window); err != nil {
 		return err
-	}
-
-	// 对齐禅道 tostory：保存研发需求后，clarified → developing。
-	if savedStory {
-		if _, err := s.repo.PromoteDemandToDevelopingIfClarified(ctx, demandID, account); err != nil {
-			return fmt.Errorf("promote demand status: %w", err)
-		}
 	}
 
 	return s.repo.SaveDemandLevelWindow(ctx, demandID, uint64(req.WindowID), account)
