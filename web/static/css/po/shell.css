@@ -1,6 +1,10 @@
-/* PO 工作台共享外壳：几何取自 po-v2 运行页实测。 */
+/* =============================================================================
+   文件: web/static/css/po/shell.css
+   模块: PO工作台外壳
+   职责: PO 工作台主框架双轨导航、顶栏、统一布局与滚动契约样式
+   ============================================================================= */
 body.po-workbench-shell {
-  --sidebar-width: 224px;
+  --sidebar-width: 230px;
   --topbar-height: 56px;
   --topbar-stack-height: 56px;
   background: var(--color-page-bg);
@@ -238,8 +242,8 @@ body.po-workbench-shell .sidebar.po-dual-sidebar {
 }
 
 body.po-workbench-shell .po-rail {
-  display: flex; flex: 0 0 56px; flex-direction: column; align-items: center; width: 56px;
-  padding: 10px 0; gap: 8px; border-right: 1px solid var(--color-border); background: var(--color-surface-muted);
+  display: flex; flex: 0 0 62px; flex-direction: column; align-items: center; width: 62px;
+  padding: 12px 0; gap: 10px; border-right: 1px solid var(--color-border); background: var(--color-surface-muted);
 }
 
 body.po-workbench-shell .po-rail-header,
@@ -252,17 +256,17 @@ body.po-workbench-shell .po-rail-footer { justify-content: center; }
 body.po-workbench-shell .po-rail-nav { flex: 1; flex-direction: column; gap: 8px; }
 
 body.po-workbench-shell .po-rail .po-brand-logo {
-  width: 32px; height: 32px; border-radius: 8px; font-size: 14px; text-decoration: none; box-shadow: var(--shadow-sm);
+  width: 38px; height: 38px; border-radius: 9px; font-size: 18px; font-weight: 800; text-decoration: none; box-shadow: var(--shadow-sm);
 }
 
 body.po-workbench-shell .po-rail-btn {
   position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  width: 44px; min-height: 40px; padding: 4px 0; gap: 2px; border: 0; border-radius: 9px;
+  width: 50px; min-height: 48px; padding: 4px 0; gap: 3px; border: 0; border-radius: 9px;
   background: transparent; color: var(--color-text-secondary); font: inherit; line-height: 1; cursor: pointer; appearance: none;
 }
 
-body.po-workbench-shell .po-rail-btn i { font-size: 15px; }
-body.po-workbench-shell .po-rail-btn span:not(.po-rail-dot) { font-size: 11px; font-weight: 600; }
+body.po-workbench-shell .po-rail-btn i { font-size: 20px; }
+body.po-workbench-shell .po-rail-btn span:not(.po-rail-dot) { font-size: 11.5px; font-weight: 600; }
 body.po-workbench-shell .po-rail-btn:hover { background: var(--color-surface); color: var(--color-text-primary); }
 body.po-workbench-shell .po-rail-btn.active { background: var(--color-surface); color: var(--color-info); box-shadow: var(--shadow-sm); }
 body.po-workbench-shell .po-rail-dot {
@@ -445,10 +449,10 @@ body.po-workbench-shell .po-rail-btn.is-drawer-open {
   border: 1px solid var(--color-border);
 }
 body.po-workbench-shell.has-bottom-tabs { --po-shell-pad-bottom: 56px; }
-body.sidebar-collapsed.po-workbench-shell { --sidebar-width-collapsed: 56px; }
+body.sidebar-collapsed.po-workbench-shell { --sidebar-width-collapsed: 62px; }
 
 body.sidebar-collapsed.po-workbench-shell .sidebar { width: var(--sidebar-width-collapsed); }
-body.sidebar-collapsed.po-workbench-shell .sidebar.po-dual-sidebar { width: 56px; }
+body.sidebar-collapsed.po-workbench-shell .sidebar.po-dual-sidebar { width: 62px; }
 body.sidebar-collapsed.po-workbench-shell .sidebar.po-dual-sidebar .po-subnav { display: none; }
 body.sidebar-collapsed.po-workbench-shell .topbar { left: var(--sidebar-width-collapsed); }
 body.sidebar-collapsed.po-workbench-shell .bottom-tabbar { left: var(--sidebar-width-collapsed); }
@@ -508,16 +512,10 @@ body.sidebar-collapsed.po-workbench-shell .po-sidebar-collapse i { transform: ro
   display: block;
   width: 100%;
   text-align: left;
-  border: 0;
-  background: transparent;
-  padding: 8px 12px;
-  cursor: pointer;
-  font-size: 13px;
+  border: 0; background: transparent; padding: 8px 12px; cursor: pointer; font-size: 13px;
 }
 .po-header-right .search-results .gs-item:hover,
-.po-header-right .search-results .gs-item.is-active {
-  background: var(--color-info-bg);
-}
+.po-header-right .search-results .gs-item.is-active { background: var(--color-info-bg); }
 .po-header-right .search-results .gs-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; }
 
 /* FontAwesome 图标兼容兜底（解决特定 FA6 别名在部分构建版本中未内嵌的问题） */

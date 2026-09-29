@@ -1,15 +1,20 @@
+/* =============================================================================
+   文件: web/static/css/layout/variables.css
+   模块: 布局设计变量
+   职责: 全局设计系统 CSS 自定义属性与主题变量声明规范
+   ============================================================================= */
 :root,
 html[data-theme="light"] {
   /* Native controls (date/select/scrollbars) follow light chrome UI */
   color-scheme: light;
 
   /* 品牌主色 */
-  --color-primary: #6366f1;
-  --color-primary-hover: #4f46e5;
-  --color-primary-active: #4338ca;
-  --color-primary-active-deep: #3730a3;
-  --color-primary-light: #eef2ff;
-  --color-primary-border: #c7d2fe;
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-active: #1e40af;
+  --color-primary-active-deep: #1e3a8a;
+  --color-primary-light: #eff6ff;
+  --color-primary-border: #bfdbfe;
 
   /* 语义功能色 */
   --color-success: #065f46;
@@ -26,7 +31,7 @@ html[data-theme="light"] {
   --color-info-fill-hover: #1d4ed8;
 
   /* 页面层级色 */
-  --color-page-bg: #f8f9fc;
+  --color-page-bg: #f1f4f9;
   --color-surface: #ffffff;
   --color-surface-hover: #f9fafb;
   --color-surface-muted: #f8fafc;
@@ -39,7 +44,7 @@ html[data-theme="light"] {
   /* 边框色阶 */
   --color-border: #e2e8f0; /* 1px 使用此色，视觉轻量且 Windows 可靠渲染 */
   --color-border-strong: #cbd5e1;
-  --color-border-focus: #6366f1;
+  --color-border-focus: #2563eb;
   --color-border-soft: #e3eaf3;
   --color-border-soft-2: #e5edf6;
   --color-border-soft-3: #d7e1ed;
@@ -224,10 +229,7 @@ html[data-theme="light"] {
   --font-size-lg: 15px;
   --font-size-2xl: 20px;
 
-  /* 交互元素垂直内边距例外规则：
-     按钮和导航项的垂直 padding 允许使用 6px / 7px，
-     目的是配合 36px 固定行高（font-size:13px + line-height:1 + padding*2 = 36px）。
-     除此之外所有布局间距必须使用上方规范值，不允许其他奇数值。 */
+  /* 交互元素垂直内边距例外：配合 36px 行高 */
 
   /* 圆角 */
   --radius-sm: 6px;
@@ -249,10 +251,23 @@ html[data-theme="light"] {
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
   /* Focus Ring */
-  --focus-ring: 0 0 0 3px rgba(99, 102, 241, 0.25);
-  --color-primary-ring-soft: rgba(79, 70, 229, 0.16);
+  --focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.25);
+  --color-primary-ring-soft: rgba(37, 99, 235, 0.16);
 
   /* PO value-stream stage palette (consumed by home.css 等) */
+  --color-stage-accept: #38bdf8;
+  --color-stage-clarify: #f59e0b;
+  --color-stage-schedule: #6366f1;
+  --color-stage-developing: #8b5cf6;
+  --color-stage-testing: #cbd5e1;
+  --color-stage-waitacceptance: #cbd5e1;
+  --color-stage-acceptanced: #06b6d4;
+  --color-stage-publish: #10b981;
+  --color-stage-released: #14b8a6;
+  --color-stage-card-glow: rgba(37, 99, 235, 0.1);
+  --color-stage-card-glow-active: rgba(37, 99, 235, 0.12);
+  --color-stage-overview-shadow: rgba(37, 99, 235, 0.28);
+  --color-stage-white-25: rgba(255, 255, 255, 0.25);
   --color-stage-schedule-border: #fed7aa;
   --color-stage-schedule-bg: rgba(254, 243, 199, 0.45);
   --color-stage-schedule-fg: #d97706;
@@ -430,18 +445,12 @@ html[data-theme="dark"] {
   --color-primary-gradient-end: #3b82f6;
 
   /* 透明色 */
-  --color-white-35: rgba(255, 255, 255, 0.15);
-  --color-white-08: rgba(255, 255, 255, 0.05);
-  --color-overlay: rgba(0, 0, 0, 0.7);
-  --color-shadow-05: rgba(0, 0, 0, 0.3);
-  --color-shadow-02: rgba(0, 0, 0, 0.15);
-  --color-shadow-12: rgba(0, 0, 0, 0.5);
-  --color-ink-15-23-42-02: rgba(0, 0, 0, 0.4);
-  --color-ink-15-23-42-03: rgba(0, 0, 0, 0.2);
-  --color-ink-15-23-42-08: rgba(0, 0, 0, 0.5);
-  --color-success-ring: rgba(16, 185, 129, 0.35);
-  --color-danger-ring: rgba(239, 68, 68, 0.35);
-  --focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.35);
+  --color-white-35: rgba(255, 255, 255, 0.15); --color-white-08: rgba(255, 255, 255, 0.05);
+  --color-overlay: rgba(0, 0, 0, 0.7); --color-shadow-05: rgba(0, 0, 0, 0.3);
+  --color-shadow-02: rgba(0, 0, 0, 0.15); --color-shadow-12: rgba(0, 0, 0, 0.5);
+  --color-ink-15-23-42-02: rgba(0, 0, 0, 0.4); --color-ink-15-23-42-03: rgba(0, 0, 0, 0.2);
+  --color-ink-15-23-42-08: rgba(0, 0, 0, 0.5); --color-success-ring: rgba(16, 185, 129, 0.35);
+  --color-danger-ring: rgba(239, 68, 68, 0.35); --focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.35);
   --color-primary-ring-soft: rgba(59, 130, 246, 0.20);
 
   /* Legacy aliases with no safe equivalent remain hex */
@@ -497,19 +506,8 @@ html[data-theme="dark"] {
   --color-review-modal-shadow: -8px 0 28px rgba(2, 6, 23, 0.55);
 
   /* Stage 2 公共优先级 token (P1-P4 bg/fg/bd) — 深色, WCAG AA 对比 */
-  --po-pri-1-bg: #450a0a;                    /* 深红底 */
-  --po-pri-1-fg: #fca5a5;                    /* 浅红字 (>4.5:1 on #450a0a) */
-  --po-pri-1-bd: #7f1d1d;
-
-  --po-pri-2-bg: #422006;
-  --po-pri-2-fg: #fdba74;                    /* 浅橙字 */
-  --po-pri-2-bd: #7c2d12;
-
-  --po-pri-3-bg: #1e3a8a;
-  --po-pri-3-fg: #93c5fd;                    /* 浅蓝字 */
-  --po-pri-3-bd: #1e40af;
-
-  --po-pri-4-bg: #1e293b;
-  --po-pri-4-fg: #cbd5e1;                    /* 浅灰字 */
-  --po-pri-4-bd: #334155;
+  --po-pri-1-bg: #450a0a; --po-pri-1-fg: #fca5a5; --po-pri-1-bd: #7f1d1d;
+  --po-pri-2-bg: #422006; --po-pri-2-fg: #fdba74; --po-pri-2-bd: #7c2d12;
+  --po-pri-3-bg: #1e3a8a; --po-pri-3-fg: #93c5fd; --po-pri-3-bd: #1e40af;
+  --po-pri-4-bg: #1e293b; --po-pri-4-fg: #cbd5e1; --po-pri-4-bd: #334155;
 }
