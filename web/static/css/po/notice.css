@@ -32,8 +32,9 @@
 .po-notice .notice-subject-text .wb-id-chip,
 .po-notice .notice-subject-text .wb-type {
   flex-shrink: 0;
+  color: var(--wb-badge-notice-text);
 }
-.po-notice .notice-subject-text > span {
+.po-notice .notice-subject-text > span:not(.wb-type) {
   flex-shrink: 0;
   font-size: 12px;
   color: var(--color-text-muted);

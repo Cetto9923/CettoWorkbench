@@ -218,13 +218,13 @@
         '<label class="role-checkbox-card selected is-disabled" title="组织已授权视图，须由 PMO 或管理员统一配置，个人不可修改">' +
           '<input type="checkbox" checked disabled />' +
           '<span>' + esc(label) + '</span>' +
-          '<span class="readonly-tag" style="color:var(--color-primary);font-size:11px;font-weight:500;margin-left:auto;">（组织已授权 · 只读）</span>' +
+          '<span class="readonly-tag org-auth-tag">（组织已授权 · 只读）</span>' +
         '</label>'
       );
     });
 
-    return '<div class="role-cards-grid" style="grid-template-columns: 1fr;" id="profileRoleCheckRow">' + boxes.join('') + '</div>' +
-      '<span class="field-tip" style="margin-top:6px; display:inline-block; line-height:1.4;">' +
+    return '<div class="role-cards-grid role-cards-grid--single" id="profileRoleCheckRow">' + boxes.join('') + '</div>' +
+      '<span class="field-tip role-cards-tip">' +
         '提示：产品经理角色可由个人自主选择开启或关闭；PMO 与团队长角色属于组织固定授权，须由 PMO 或管理员在后台统一授权配置，个人不可在此更改。' +
       '</span>';
   }
@@ -235,7 +235,7 @@
     var orgNote = '';
     if (orgLocked) {
       var label = currentRole === 'pmo' ? 'PMO' : '组织管理';
-      orgNote = '<div class="field-tip" style="margin-bottom:8px;color:var(--color-primary);font-weight:500;">当前正处于「' + esc(label) +
+      orgNote = '<div class="field-tip org-fixed-tip">当前正处于「' + esc(label) +
         '」工作视角（组织固定授权）。</div>';
     }
     return orgNote + roleCheckboxesHtml(p);
@@ -299,7 +299,7 @@
         '<div class="section-panel">' +
           '<div class="section-panel-header">' +
             '<span><i class="fas fa-user-shield"></i> 账号身份与基本信息</span>' +
-            '<span style="font-size: 11px; font-weight: 400; color: var(--color-text-muted);">部分字段来自禅道同步</span>' +
+            '<span class="section-panel-subtip">部分字段来自禅道同步</span>' +
           '</div>' +
 
           '<!-- 用户名片区（清晰展示姓名、工号、部门、首字大头像） -->' +
@@ -312,7 +312,7 @@
                 '<span class="user-dept-badge">' + esc(deptText) + '</span>' +
               '</div>' +
               '<div class="user-source-hint">' +
-                '<i class="fas fa-check-circle" style="color:var(--color-success)"></i> 禅道同步账号 · 头像取姓名首字' +
+                '<i class="fas fa-check-circle user-source-icon"></i> 禅道同步账号 · 头像取姓名首字' +
               '</div>' +
             '</div>' +
           '</div>' +
@@ -344,13 +344,13 @@
             '</div>' +
 
             '<div class="field-item">' +
-              '<label class="field-label">个人邮箱 <span style="color:var(--color-primary); font-size:11px;">（可维护）</span></label>' +
+              '<label class="field-label">个人邮箱 <span class="editable-tag">（可维护）</span></label>' +
               '<input class="field-control" id="profileEmail" type="email" value="' + esc(p.email || '') + '" placeholder="暂未设置邮箱（可在此填写绑定）" />' +
               '<span class="field-tip">用于接收工作台动态与任务提醒</span>' +
             '</div>' +
 
             '<div class="field-item">' +
-              '<label class="field-label">性别偏好 <span style="color:var(--color-primary); font-size:11px;">（可维护）</span></label>' +
+              '<label class="field-label">性别偏好 <span class="editable-tag">（可维护）</span></label>' +
               '<select class="field-control" id="profileGender">' + genderOptions(p.gender || '') + '</select>' +
               '<span class="field-tip">当前账号性别偏好</span>' +
             '</div>' +
@@ -358,17 +358,17 @@
         '</div>' +
 
         '<!-- 右栏：敏捷团队归属 + 自选角色视图 + 安全改密 -->' +
-        '<div style="display:flex; flex-direction:column; gap: 14px;">' +
+        '<div class="profile-right-stack">' +
           '<!-- 敏捷小组卡片 -->' +
-          '<div class="section-panel" style="padding: 14px 16px;">' +
+          '<div class="section-panel section-panel--compact">' +
             '<div class="section-panel-header">' +
               '<span><i class="fas fa-users-gear"></i> 敏捷小组归属</span>' +
             '</div>' +
-            '<div style="display:flex; flex-direction:column; gap: 8px;">' +
+            '<div class="agile-chips-container">' +
               '<label class="field-label">本人已加入的小组</label>' +
               '<div class="agile-chips-wrap" id="profileAgileCheckRow">' + agileGroupsHtml(p) + '</div>' +
             '</div>' +
-            '<div class="field-item" style="margin-top: 4px;">' +
+            '<div class="field-item field-item--mt4">' +
               '<label class="field-label" for="profileMainTeam">默认敏捷小组（对应禅道 mainTeam）</label>' +
               '<select class="field-control" id="profileMainTeam">' + mainTeamOptionsHtml(p) + '</select>' +
               '<span class="field-tip">须选自本人已加入的敏捷小组</span>' +
@@ -376,7 +376,7 @@
           '</div>' +
 
           '<!-- 工作台角色多选卡片 -->' +
-          '<div class="section-panel" style="padding: 14px 16px;">' +
+          '<div class="section-panel section-panel--compact">' +
             '<div class="section-panel-header">' +
               '<span><i class="fas fa-layer-group"></i> 工作台角色（自选多视图）</span>' +
             '</div>' +
@@ -384,16 +384,16 @@
           '</div>' +
 
           '<!-- 修改密码轻量折叠卡 -->' +
-          '<div class="section-panel" style="padding: 12px 16px;">' +
+          '<div class="section-panel section-panel--tight">' +
             '<div class="password-toggle-header" id="pwdToggleHeader">' +
-              '<span style="font-size: 13px; font-weight: 700; color: var(--color-text-primary); display:flex; align-items:center; gap:6px;">' +
-                '<i class="fas fa-key" style="color:var(--color-primary)"></i> 安全修改密码' +
+              '<span class="pwd-toggle-title">' +
+                '<i class="fas fa-key pwd-key-icon"></i> 安全修改密码' +
               '</span>' +
-              '<span style="font-size: 12px; color: var(--color-primary); cursor: pointer;" id="pwdToggleText">' +
+              '<span class="pwd-toggle-text" id="pwdToggleText">' +
                 '展开设置 <i class="fas fa-chevron-down" id="pwdToggleIcon"></i>' +
               '</span>' +
             '</div>' +
-            '<div id="pwdExpandBox" class="password-expand-box" style="display: none;">' +
+            '<div id="pwdExpandBox" class="password-expand-box" hidden>' +
               '<div class="field-item">' +
                 '<label class="field-label" for="profileOldPwd">当前原密码</label>' +
                 '<div class="pwd-input-wrap">' +
@@ -428,7 +428,7 @@
     // 如果非弹窗模式（独立页面 /profile），底部追加保存操作栏
     if (!document.getElementById('profileModalFooter')) {
       host.innerHTML +=
-        '<div class="modal-bottom-bar" style="margin-top:16px; border-radius:8px; border:1px solid var(--color-border);">' +
+        '<div class="modal-bottom-bar profile-page-bottom-bar">' +
           '<div class="modal-bottom-hint"><i class="fas fa-shield-halved"></i> <span>资料直接同步生效至禅道与研发工作台</span></div>' +
           '<div class="modal-bottom-btns">' +
             '<button type="button" class="btn-modal-save" id="profileSaveBtn"><i class="fas fa-check"></i> 保存资料</button>' +
@@ -559,7 +559,7 @@
       host.hidden = false;
     } else {
       host.innerHTML =
-        '<div class="state-placeholder" style="display:flex;align-items:center;justify-content:center;min-height:300px;gap:10px;color:var(--color-text-secondary);font-size:14px;">' +
+        '<div class="state-placeholder profile-placeholder-loading">' +
           '<i class="fas fa-circle-notch fa-spin"></i> 正在加载个人资料…' +
         '</div>';
       host.hidden = false;
@@ -581,9 +581,9 @@
       }
       if (!profileCache) {
         host.innerHTML =
-          '<div class="state-placeholder error" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:12px;color:var(--color-danger);font-size:14px;">' +
+          '<div class="state-placeholder error profile-placeholder-error">' +
             '<div><i class="fas fa-circle-exclamation"></i> ' + esc((e && e.message) || '加载个人资料失败') + '</div>' +
-            '<button type="button" class="btn-modal-save" style="height:32px;font-size:12px;padding:0 14px;" onclick="window.renderProfilePage()"><i class="fas fa-rotate-right"></i> 重试</button>' +
+            '<button type="button" class="btn-modal-save profile-retry-btn" onclick="window.renderProfilePage()"><i class="fas fa-rotate-right"></i> 重试</button>' +
           '</div>';
       }
       showToast((e && e.message) || '加载个人资料失败', 'danger');
