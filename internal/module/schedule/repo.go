@@ -12,7 +12,6 @@ import (
 	"context"
 	"errors"
 	"strings"
-	"time"
 
 	"gorm.io/gorm"
 
@@ -207,28 +206,6 @@ ORDER BY ` + "`order`" + ` ASC, id ASC`
 		return nil, err
 	}
 	return rows, nil
-}
-
-// ztProductplanCreate 用于向禅道 zt_productplan 插入新计划。
-type ztProductplanCreate struct {
-	ID           uint      `gorm:"column:id;primaryKey;autoIncrement"`
-	Product      uint      `gorm:"column:product"`
-	Branch       string    `gorm:"column:branch"`
-	Parent       uint      `gorm:"column:parent"`
-	Title        string    `gorm:"column:title"`
-	Status       string    `gorm:"column:status"`
-	Begin        string    `gorm:"column:begin"`
-	End          string    `gorm:"column:end"`
-	Order        string    `gorm:"column:order"`
-	ClosedReason string    `gorm:"column:closedReason"`
-	CreatedBy    string    `gorm:"column:createdBy"`
-	CreatedDate  time.Time `gorm:"column:createdDate"`
-	Deleted      string    `gorm:"column:deleted"`
-}
-
-// TableName 指定 zt_productplan 表。
-func (ztProductplanCreate) TableName() string {
-	return "zt_productplan"
 }
 
 // Transaction 在事务中执行 fn，失败时自动回滚。
@@ -434,28 +411,6 @@ func (r *Repo) ListUpcomingVersionWindowsForTeamgroups(ctx context.Context, team
 // Create 写入 zt_versionwindow 并回填自增 ID。
 func (r *Repo) Create(ctx context.Context, window *model.VersionWindow) error {
 	return r.db.WithContext(ctx).Create(window).Error
-}
-
-// CreateProductPlan 在禅道创建产品计划，返回新计划 ID。
-func (r *Repo) CreateProductPlan(ctx context.Context, productID uint, title, begin, end, account string) (uint, error) {
-	row := ztProductplanCreate{
-		Product:      productID,
-		Branch:       "0",
-		Parent:       0,
-		Title:        title,
-		Status:       "wait",
-		Begin:        begin,
-		End:          end,
-		Order:        "0",
-		ClosedReason: "",
-		CreatedBy:    account,
-		CreatedDate:  time.Now(),
-		Deleted:      "0",
-	}
-	if err := r.db.WithContext(ctx).Create(&row).Error; err != nil {
-		return 0, err
-	}
-	return row.ID, nil
 }
 
 // CreateWindowProduct 写入 zt_versionwindowproduct 关联记录。

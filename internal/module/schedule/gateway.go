@@ -2,7 +2,7 @@
 // 文件: internal/module/schedule/gateway.go
 // 模块: 排期工作台
 // 类型: action
-// 职责: 出站适配层：调用禅道检查业需转研发提醒、指派研需、创建/编辑任务，以及批量删除研发需求/任务。
+// 职责: 出站适配层：调用禅道检查业需转研发提醒、指派研需、创建产品计划/任务，以及批量删除研发需求/任务。
 // 依赖: internal/pkg/zentao
 // =============================================================================
 
@@ -16,6 +16,48 @@ import (
 
 	"workbench/internal/pkg/zentao"
 )
+
+// createdProductPlan 禅道创建产品计划响应的必要字段。
+type createdProductPlan struct {
+	ID uint `json:"id"`
+}
+
+func zentaoProductPlanCreatePath(productID uint) string {
+	return fmt.Sprintf("/products/%d/plans", productID)
+}
+
+// buildZentaoProductPlanCreateBody 组装禅道 POST /products/:id/plans 的创建字段。
+func buildZentaoProductPlanCreateBody(title, begin, end string) map[string]any {
+	return map[string]any{
+		"title":  strings.TrimSpace(title),
+		"begin":  strings.TrimSpace(begin),
+		"end":    strings.TrimSpace(end),
+		"branch": 0,
+	}
+}
+
+// createProductPlan 调用禅道 POST /products/{id}/plans 创建产品计划（含 opened 历史由禅道写入）。
+func createProductPlan(ctx context.Context, client *zentao.Client, productID uint, title, begin, end string) (uint, error) {
+	if productID == 0 {
+		return 0, fmt.Errorf("产品 ID 无效")
+	}
+	if client == nil {
+		return 0, fmt.Errorf("禅道 API 未配置")
+	}
+	title = strings.TrimSpace(title)
+	if title == "" {
+		return 0, fmt.Errorf("计划名称不能为空")
+	}
+	var out createdProductPlan
+	body := buildZentaoProductPlanCreateBody(title, begin, end)
+	if err := client.Do(ctx, http.MethodPost, zentaoProductPlanCreatePath(productID), body, &out); err != nil {
+		return 0, fmt.Errorf("创建产品计划失败: %w", err)
+	}
+	if out.ID == 0 {
+		return 0, fmt.Errorf("禅道未返回计划 ID")
+	}
+	return out.ID, nil
+}
 
 // storyAssignItem 待同步到禅道的研需指派。
 type storyAssignItem struct {

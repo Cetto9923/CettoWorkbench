@@ -5,6 +5,7 @@
 // 职责: 版本窗口 CRUD 与表单数据、匹配计划查询。
 // 依赖: internal/model
 //       internal/module/dept
+//       internal/module/schedule/gateway.go
 //       internal/module/schedule/repo.go
 //       internal/module/schedule/service_window.go
 //       internal/module/user
@@ -348,7 +349,7 @@ func (s *Service) saveWindowProducts(ctx context.Context, txRepo *Repo, windowID
 			planSynced = 1
 		} else if product.SyncPlan {
 			title := strings.TrimSpace(product.PlanTitle)
-			newID, err := txRepo.CreateProductPlan(ctx, product.ProductID, title, beginDate, endDate, account)
+			newID, err := createProductPlan(ctx, s.ztAPI, product.ProductID, title, beginDate, endDate)
 			if err != nil {
 				return fmt.Errorf("create product plan for product %d: %w", product.ProductID, err)
 			}

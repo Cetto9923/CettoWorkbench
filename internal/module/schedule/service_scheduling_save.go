@@ -371,7 +371,7 @@ func (s *Service) resolvePlanForProduct(
 			title = endDate
 		}
 
-		planID, err := txRepo.CreateProductPlan(ctx, productID, title, beginDate, endDate, account)
+		planID, err := createProductPlan(ctx, s.ztAPI, productID, title, beginDate, endDate)
 		if err != nil {
 			return 0, fmt.Errorf("create product plan: %w", err)
 		}
@@ -406,7 +406,7 @@ func (s *Service) resolvePlanForProduct(
 	if len(plans) > 0 {
 		planID = plans[0].ID
 	} else {
-		planID, err = txRepo.CreateProductPlan(ctx, productID, title, beginDate, endDate, account)
+		planID, err = createProductPlan(ctx, s.ztAPI, productID, title, beginDate, endDate)
 		if err != nil {
 			return 0, fmt.Errorf("create product plan: %w", err)
 		}
