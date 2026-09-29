@@ -351,10 +351,10 @@ func buildDemandSchedulingUpdates(req *SaveSchedulingReq, account string, estima
 	return map[string]interface{}{
 		"RD":             strings.TrimSpace(req.Accepter),
 		"QD":             strings.TrimSpace(req.QD),
-		"estimateLaunch": nullableSchedulingDate(estimateLaunch),
-		"developFinish":  nullableSchedulingDate(req.DevelopFinish),
-		"testFinish":     nullableSchedulingDate(req.TestFinish),
-		"verifyFinish":   nullableSchedulingDate(req.AcceptancedDate),
+		"estimateLaunch": estimateLaunch,
+		"developFinish":  req.DevelopFinish,
+		"testFinish":     req.TestFinish,
+		"verifyFinish":   req.AcceptancedDate,
 		"lastEditedBy":   account,
 		"lastEditedDate": time.Now(),
 	}

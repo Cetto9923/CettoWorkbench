@@ -96,31 +96,6 @@ func (r *Repo) GetProjectIDByExecution(ctx context.Context, executionID uint) (u
 	return 0, errors.New("项目层级过深")
 }
 
-// UserCanAccessProduct 判断用户是否有权操作指定产品/系统。
-func (r *Repo) UserCanAccessProduct(ctx context.Context, account string, productID uint) (bool, error) {
-	account = strings.TrimSpace(account)
-	if account == "" || productID == 0 {
-		return false, nil
-	}
-	isAdmin, err := r.IsAdmin(ctx, account)
-	if err != nil {
-		return false, err
-	}
-	if isAdmin {
-		return true, nil
-	}
-	products, err := r.GetUserProducts(ctx, account)
-	if err != nil {
-		return false, err
-	}
-	for _, product := range products {
-		if product.ID == productID {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
 // GetDemandMainSystem 查询业需主系统 ID。
 func (r *Repo) GetDemandMainSystem(ctx context.Context, demandID uint) (uint, error) {
 	if demandID == 0 {
@@ -212,15 +187,6 @@ func (r *Repo) CreateStorySpec(ctx context.Context, spec *ZtStorySpec) error {
 	return r.db.WithContext(ctx).Create(&row).Error
 }
 
-// CreatePlanStory 关联计划与研发需求。
-func (r *Repo) CreatePlanStory(ctx context.Context, planID uint, storyID uint) error {
-	if planID == 0 || storyID == 0 {
-		return errors.New("plan or story id is invalid")
-	}
-	row := ztmodel.ZtPlanstory{Plan: planID, Story: storyID, Order: 0}
-	return r.db.WithContext(ctx).Create(&row).Error
-}
-
 // UpdateStory 更新研发需求字段。
 func (r *Repo) UpdateStory(ctx context.Context, storyID uint, updates map[string]interface{}) error {
 	if storyID == 0 {
@@ -235,20 +201,6 @@ func (r *Repo) UpdateStory(ctx context.Context, storyID uint, updates map[string
 		Updates(updates).Error
 }
 
-// zt_action.extra 的标记位 禅道「已删除」列表列的就是 action='deleted' AND extra=1
-const storyActionCanUndeleted = "1"
-
-// DeleteStory 软删除研发需求（对齐禅道 story/control.php delete：置 deleted='1'）。
-func (r *Repo) DeleteStory(ctx context.Context, storyID uint) error {
-	if storyID == 0 {
-		return errors.New("story id is invalid")
-	}
-	return r.db.WithContext(ctx).
-		Table("zt_story").
-		Where("id = ? AND deleted = '0'", storyID).
-		Update("deleted", "1").Error
-}
-
 // UpdateTask 更新任务字段。
 func (r *Repo) UpdateTask(ctx context.Context, taskID uint, updates map[string]interface{}) error {
 	if taskID == 0 {
@@ -261,28 +213,6 @@ func (r *Repo) UpdateTask(ctx context.Context, taskID uint, updates map[string]i
 		Table("zt_task").
 		Where("id = ? AND deleted = '0'", taskID).
 		Updates(updates).Error
-}
-
-// CloseTask 关闭任务。
-func (r *Repo) CloseTask(ctx context.Context, taskID uint, actor string) error {
-	return r.UpdateTask(ctx, taskID, map[string]interface{}{
-		"status":       "closed",
-		"closedBy":     actor,
-		"closedDate":   time.Now(),
-		"closedReason": "done",
-		"assignedTo":   "closed",
-	})
-}
-
-// DeleteTask 软删除任务（对齐禅道 task/control.php delete：置 deleted='1'）。
-func (r *Repo) DeleteTask(ctx context.Context, taskID uint) error {
-	if taskID == 0 {
-		return errors.New("task id is invalid")
-	}
-	return r.db.WithContext(ctx).
-		Table("zt_task").
-		Where("id = ? AND deleted = '0'", taskID).
-		Update("deleted", "1").Error
 }
 
 // CreateAction 创建禅道操作日志。
@@ -331,4 +261,16 @@ func (r *Repo) SaveDemandLevelWindow(ctx context.Context, demandID uint, windowI
 		CreatedBy: account,
 		UpdatedBy: account,
 	}).Error
+}
+
+func parseSchedulingDatePtr(raw string) *time.Time {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil
+	}
+	t, err := time.ParseInLocation("2006-01-02", raw, time.Local)
+	if err != nil {
+		return nil
+	}
+	return &t
 }

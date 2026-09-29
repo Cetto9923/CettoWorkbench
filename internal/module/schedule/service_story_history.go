@@ -36,10 +36,10 @@ func (s *Service) saveEditedStoryDates(
 		return fmt.Errorf("load story %d: %w", storyID, err)
 	}
 	if err := txRepo.UpdateStory(ctx, storyID, map[string]interface{}{
-		"estimateLaunch": nullableSchedulingDate(estimateLaunch),
-		"developFinish":  nullableSchedulingDate(developFinish),
-		"testFinish":     nullableSchedulingDate(testFinish),
-		"verifyFinish":   nullableSchedulingDate(verifyFinish),
+		"estimateLaunch": estimateLaunch,
+		"developFinish":  developFinish,
+		"testFinish":     testFinish,
+		"verifyFinish":   verifyFinish,
 		"lastEditedBy":   account,
 		"lastEditedDate": time.Now(),
 	}); err != nil {
