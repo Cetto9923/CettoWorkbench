@@ -1,3 +1,8 @@
+/* =============================================================================
+   文件: web/static/css/agileteam/agileteam.css
+   模块: 敏捷小组管理与团队视角首页
+   职责: 敏捷团队管理、成员编辑抽屉及团队视角首页（二期）高密度仪表盘样式规范
+   ============================================================================= */
 /* 敏捷小组列表 / 详情 / 确认 Drawer */
 .at-page-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px}
 .at-page-head h2{margin:0 0 4px;font-size:18px;font-weight:720}
@@ -183,40 +188,110 @@
 .at-summary:empty{display:none}
 .at-field:focus,.at-info-grid .input:focus,.at-info-grid .textarea:focus{outline:2px solid var(--color-primary-border);outline-offset:1px;border-color:var(--color-border-focus)}
 
-.po-team-home .team-home-risk-card{padding:16px 18px}
-.po-team-home .team-home-stage-card{padding:16px 18px}
-.team-home-stage-caption{margin:0 0 11px;color:var(--color-text-secondary);font-size:11px}
-.team-home-stage-grid{display:grid;grid-template-columns:repeat(5,minmax(110px,1fr));gap:7px}
-.team-home-stage-item{display:flex;flex-direction:column;gap:4px;min-height:80px;padding:10px 11px;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface-muted)}
-.team-home-stage-item>span{color:var(--color-text-secondary);font-size:11px}
-.team-home-stage-item>strong{color:var(--color-text-primary);font-size:21px;line-height:1.1}
-.team-home-stage-item>small{color:var(--color-text-secondary);font-size:10px}
-.team-home-stage-item[data-stage="released"]{border-color:var(--color-primary-border)}
-.po-team-home .team-home-version-card{padding:16px 18px}
-.team-home-version-caption{margin:0 0 11px;color:var(--color-text-secondary);font-size:11px}
-.team-home-version-list{display:grid;gap:7px}
-.team-home-version-row{display:flex;align-items:center;gap:16px;padding:10px 12px;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface)}
-.team-home-version-main{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
-.team-home-version-main a{color:var(--color-primary);text-decoration:none;overflow-wrap:anywhere}
-.team-home-version-main a:hover{text-decoration:underline}
-.team-home-version-main span,.team-home-version-row time{color:var(--color-text-secondary);font-size:11px}
-.team-home-version-count{white-space:nowrap;color:var(--color-text-primary);font-size:12px;font-weight:650}
-.team-home-risk-caption{margin:0 0 12px;color:var(--color-text-secondary);font-size:11px}
-.team-home-risk-stats{display:flex;align-items:stretch;gap:10px;flex-wrap:wrap}
-.team-home-risk-stat{display:flex;align-items:center;gap:12px;min-width:170px;padding:10px 13px;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface-muted)}
-.team-home-risk-stat span{color:var(--color-text-secondary);font-size:12px}
-.team-home-risk-stat strong{margin-left:auto;color:var(--color-text-primary);font-size:21px;line-height:1}
-.team-home-risk-link{display:inline-flex;align-items:center;justify-content:center;margin-left:auto;padding:0 8px;color:var(--color-primary);font-size:12px;text-decoration:none}
-.team-home-risk-link:hover{text-decoration:underline}
-.team-home-due-card{padding:16px 18px}
-.team-home-due-list{display:grid;gap:7px;margin-top:12px}
-.team-home-due-row{display:flex;align-items:center;gap:16px;padding:9px 12px;border:1px solid var(--color-border);border-radius:8px;background:var(--color-surface)}
-.team-home-due-main{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
-.team-home-due-main strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
-.team-home-due-main span,.team-home-due-row time{color:var(--color-text-secondary);font-size:11px}
-.team-home-due-row.is-overdue{border-left:3px solid var(--color-danger)}
-.team-home-risk-count-link{color:inherit;text-decoration:none}
-.team-home-risk-count-link:hover{border-color:var(--color-primary-border);text-decoration:none}
-.at-scope-card .at-field:disabled{opacity:.6;cursor:not-allowed}
-@media(max-width:1000px){.team-home-stage-grid{grid-template-columns:repeat(3,minmax(100px,1fr))}}
-@media(max-width:760px){.team-home-stage-grid{grid-template-columns:repeat(2,minmax(100px,1fr))}.team-home-version-row,.team-home-due-row{align-items:flex-start;flex-direction:column;gap:5px}.team-home-risk-link{margin-left:0;min-height:36px}.at-scope-card .at-field{width:100%}}
+/* =============================================================================
+   团队视角首页 (UI 重构升级)
+   ============================================================================= */
+.po-team-home{display:flex;flex-direction:column;gap:10px}
+.po-team-home .workspace-header{padding:8px 14px}
+.po-team-home .team-home-phase2-pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--color-text-secondary);padding:3px 10px;background:var(--color-surface-muted);border:1px solid var(--color-border);border-radius:var(--wb-radius-full)}
+.po-team-home .team-home-phase2-pill i{color:var(--color-primary);font-size:12px}
+
+/* 2. 查看范围联动栏 */
+.po-team-home .at-scope-bar{display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--wb-radius-md);box-shadow:var(--wb-shadow-sm);flex-wrap:wrap}
+.po-team-home .at-scope-title{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--color-text-secondary);margin-right:4px}
+.po-team-home .at-scope-label{cursor:pointer}
+.po-team-home .at-scope-select-wrap{display:inline-flex;align-items:center;gap:6px}
+.po-team-home .at-scope-chevron{color:var(--color-text-disabled);font-size:11px}
+.po-team-home .at-scope-select{height:28px;padding:0 10px;font-size:12px;color:var(--color-text-primary);background:var(--color-surface-muted);border:1px solid var(--color-border);border-radius:var(--wb-radius-sm);outline:none;cursor:pointer;transition:border-color 0.15s ease,background-color 0.15s ease}
+.po-team-home .at-scope-select:hover:not(:disabled){border-color:var(--color-border-strong);background:var(--color-surface)}
+.po-team-home .at-scope-select:focus{border-color:var(--color-border-focus)}
+.po-team-home .at-scope-select:disabled{opacity:0.6;cursor:not-allowed;background:var(--color-surface-muted)}
+.po-team-home .at-scope-tip{margin-left:auto;font-size:11px;color:var(--color-text-disabled);display:inline-flex;align-items:center;gap:4px}
+
+/* 3. 卡片通用框架 */
+.po-team-home .home-page-card{padding:12px 14px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--wb-radius-md);box-shadow:var(--wb-shadow-sm)}
+.po-team-home .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.po-team-home .card-title-group{display:flex;align-items:center;gap:8px}
+.po-team-home .card-title-icon{font-size:14px;color:var(--color-primary)}
+.po-team-home .card-title-icon.warning-icon{color:var(--color-warning)}
+.po-team-home .card-title-icon.danger-icon{color:var(--color-danger)}
+.po-team-home .card-title{margin:0;font-size:13.5px;font-weight:600;color:var(--color-text-primary)}
+.po-team-home .card-subtitle{margin:-4px 0 10px;font-size:11px;color:var(--color-text-secondary)}
+.po-team-home .card-badge{font-size:11px;color:var(--color-text-secondary);background:var(--color-surface-muted);border:1px solid var(--color-border);padding:1px 7px;border-radius:var(--wb-radius-md);font-weight:500}
+
+/* 4. 需求价值流流水线 (9阶段单行横向流动) */
+.po-team-home .team-vs-pipeline{display:flex;align-items:center;gap:6px;overflow-x:auto;padding-bottom:2px}
+.po-team-home .team-vs-card{position:relative;flex:1 1 0;min-width:96px;height:66px;padding:6px 8px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--wb-radius-md);display:flex;flex-direction:column;justify-content:space-between;transition:transform 0.15s ease,border-color 0.15s ease,box-shadow 0.15s ease;cursor:default;overflow:hidden;box-sizing:border-box}
+.po-team-home .team-vs-card:hover{border-color:var(--color-primary-border);box-shadow:var(--wb-shadow-md);transform:translateY(-1.5px)}
+.po-team-home .team-vs-card::before{content:"";position:absolute;top:0;left:0;right:0;height:2.5px;background:var(--color-border)}
+.po-team-home .team-vs-card.stage-accept::before{background:var(--color-stage-accept)}
+.po-team-home .team-vs-card.stage-clarify::before{background:var(--color-stage-clarify)}
+.po-team-home .team-vs-card.stage-schedule::before{background:var(--color-stage-schedule)}
+.po-team-home .team-vs-card.stage-developing::before{background:var(--color-stage-developing)}
+.po-team-home .team-vs-card.stage-testing::before{background:var(--color-stage-testing)}
+.po-team-home .team-vs-card.stage-waitacceptance::before{background:var(--color-stage-waitacceptance)}
+.po-team-home .team-vs-card.stage-acceptanced::before{background:var(--color-stage-acceptanced)}
+.po-team-home .team-vs-card.stage-publish::before{background:var(--color-stage-publish)}
+.po-team-home .team-vs-card.stage-released::before{background:var(--color-stage-released)}
+.po-team-home .team-vs-top{display:flex;align-items:center;justify-content:space-between}
+.po-team-home .team-vs-name{font-size:11.5px;font-weight:600;color:var(--color-text-secondary)}
+.po-team-home .team-vs-count{font-size:17px;font-weight:700;line-height:1;color:var(--color-text-primary);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.po-team-home .team-vs-count.is-zero{color:var(--color-text-disabled);font-weight:500}
+.po-team-home .team-vs-breakdown{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--color-text-secondary);margin-top:2px}
+.po-team-home .track-pill{display:inline-flex;align-items:center;padding:1px 4px;border-radius:var(--wb-radius-sm);font-weight:500;line-height:1.2}
+.po-team-home .track-pill.biz{background:var(--color-primary-light);color:var(--color-primary)}
+.po-team-home .track-pill.dev{background:var(--color-surface-muted);border:1px solid var(--color-border);color:var(--color-text-secondary)}
+
+/* 5. 双栏协同网格 */
+.po-team-home .team-home-dashboard-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}
+.po-team-home .team-home-col{display:flex;flex-direction:column;gap:10px}
+
+/* 6. 版本窗口 */
+.po-team-home .team-home-version-list{display:flex;flex-direction:column;gap:6px}
+.po-team-home .team-version-item{display:flex;align-items:center;gap:12px;padding:9px 12px;background:var(--color-surface-muted);border:1px solid var(--color-border);border-radius:var(--wb-radius-md);transition:border-color 0.15s ease,background 0.15s ease}
+.po-team-home .team-version-item:hover{border-color:var(--color-primary-border);background:var(--color-surface)}
+.po-team-home .team-version-date{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3px 8px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--wb-radius-sm);font-size:11px;font-weight:600;color:var(--color-text-primary);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.po-team-home .team-version-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.po-team-home .team-version-title{font-size:12.5px;font-weight:600;color:var(--color-primary);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.po-team-home .team-version-title:hover{text-decoration:underline}
+.po-team-home .team-version-group{font-size:11px;color:var(--color-text-secondary)}
+.po-team-home .team-version-count-badge{font-size:11px;font-weight:600;color:var(--color-text-primary);background:var(--color-surface);border:1px solid var(--color-border);padding:2px 8px;border-radius:var(--wb-radius-md);white-space:nowrap}
+.po-team-home .version-empty-state{padding:24px 14px;text-align:center;color:var(--color-text-disabled);background:var(--color-surface-muted);border-radius:var(--wb-radius-md);border:1px dashed var(--color-border);display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px}
+.po-team-home .version-empty-state i{font-size:20px;opacity:0.6}
+
+/* 7. 阻塞与风险雷达 */
+.po-team-home .risk-kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.po-team-home .risk-kpi-box{display:flex;flex-direction:column;justify-content:space-between;padding:9px 11px;border-radius:var(--wb-radius-md);border:1px solid var(--color-border);background:var(--color-surface-muted);text-decoration:none;transition:transform 0.15s ease,box-shadow 0.15s ease,border-color 0.15s ease}
+.po-team-home .risk-kpi-box:hover{transform:translateY(-1.5px);box-shadow:var(--wb-shadow-sm);border-color:var(--color-border-strong)}
+.po-team-home .risk-kpi-box.danger{background:var(--color-danger-bg);border-color:var(--color-danger-border)}
+.po-team-home .risk-kpi-box.warning{background:var(--color-warning-bg);border-color:var(--color-warning-border)}
+.po-team-home .risk-kpi-label{font-size:11.5px;color:var(--color-text-secondary);display:flex;align-items:center;gap:5px}
+.po-team-home .risk-kpi-box.danger .risk-kpi-label{color:var(--color-danger)}
+.po-team-home .risk-kpi-box.warning .risk-kpi-label{color:var(--color-warning)}
+.po-team-home .risk-kpi-num{font-size:20px;font-weight:700;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--color-text-primary);line-height:1.2;margin-top:4px}
+.po-team-home .risk-kpi-box.danger .risk-kpi-num{color:var(--color-danger)}
+.po-team-home .risk-kpi-box.warning .risk-kpi-num{color:var(--color-warning)}
+.po-team-home .risk-footer{display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid var(--color-border);font-size:11.5px;color:var(--color-text-secondary)}
+.po-team-home .risk-detail-link{display:inline-flex;align-items:center;gap:4px;color:var(--color-primary);text-decoration:none;font-weight:500}
+.po-team-home .risk-detail-link:hover{text-decoration:underline}
+
+/* 8. 临期与逾期高风险看板 */
+.po-team-home .due-stats-bar{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.po-team-home .due-stat-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:var(--wb-radius-sm);font-size:11.5px;font-weight:500;border:1px solid var(--color-border);background:var(--color-surface-muted);color:var(--color-text-secondary)}
+.po-team-home .due-stat-chip.danger{background:var(--color-danger-bg);border-color:var(--color-danger-border);color:var(--color-danger)}
+.po-team-home .due-stat-chip strong{font-size:13px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.po-team-home .due-items-list{display:flex;flex-direction:column;gap:6px;max-height:440px;overflow-y:auto;padding-right:2px}
+.po-team-home .due-item-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 11px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--wb-radius-md);transition:border-color 0.15s ease,background 0.15s ease}
+.po-team-home .due-item-row:hover{border-color:var(--color-primary-border);background:var(--color-surface-hover)}
+.po-team-home .due-item-row.is-overdue{border-left:3.5px solid var(--color-danger)}
+.po-team-home .due-item-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.po-team-home .due-item-title{font-size:12px;font-weight:600;color:var(--color-text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.po-team-home .due-item-meta{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--color-text-secondary)}
+.po-team-home .meta-tag{padding:1px 5px;border-radius:var(--wb-radius-sm);font-size:10.5px;font-weight:500;line-height:1.2}
+.po-team-home .meta-tag.demand{background:var(--color-primary-light);color:var(--color-primary)}
+.po-team-home .meta-tag.task{background:var(--color-success-bg);color:var(--color-success)}
+.po-team-home .due-item-time{font-size:11px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--color-danger);background:var(--color-danger-bg);border:1px solid var(--color-danger-border);padding:2px 6px;border-radius:var(--wb-radius-sm);white-space:nowrap;font-weight:600}
+
+/* 9. 响应式适配 */
+@media (max-width:1080px){.po-team-home .team-home-dashboard-grid{grid-template-columns:1fr}}
+@media (max-width:760px){.po-team-home .team-vs-pipeline{flex-wrap:wrap}.po-team-home .team-vs-card{min-width:130px}.po-team-home .at-scope-select{width:100%}}

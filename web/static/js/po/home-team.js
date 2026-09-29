@@ -1,3 +1,8 @@
+// =============================================================================
+// 文件: web/static/js/po/home-team.js
+// 模块: PO工作台 - 团队视角
+// 职责: 加载并渲染敏捷团队视角的数据，包括范围联动、价值流积压、版本窗口、风险雷达与临期事项
+// =============================================================================
 (function () {
   "use strict";
 
@@ -200,7 +205,7 @@
       }
       if (requestNo !== state.requestNo) return;
       if (!json.data.length) {
-        rows.innerHTML = '<div class="state-placeholder">未来 30 天内没有已关联的版本窗口</div>';
+        rows.innerHTML = '<div class="version-empty-state"><i class="fas fa-calendar-alt" aria-hidden="true"></i><span>未来 30 天内没有已关联的版本窗口</span></div>';
         if (status) status.textContent = "0 个窗口";
         return;
       }
@@ -209,12 +214,14 @@
         const groupID = positiveID(windowItem.teamgroupId);
         const stage = new URLSearchParams(window.location.search).get("stage") || "";
         const href = "/schedule?windows=" + encodeURIComponent(String(id)) + "&groups=" + encodeURIComponent(String(groupID)) + (stage ? "&stage=" + encodeURIComponent(stage) : "");
-        return '<article class="team-home-version-row">' +
-          '<div class="team-home-version-main"><a href="' + esc(href) + '"><strong>' + esc(windowItem.name) + '</strong></a>' +
-          '<span>' + esc(windowItem.teamgroup || "未命名敏捷小组") + '</span></div>' +
-          '<time datetime="' + esc(windowItem.releaseDate) + '">' + esc(windowItem.releaseDate) + '</time>' +
-          '<span class="team-home-version-count">' + Number(windowItem.workItemCount || 0) + ' 个工作项</span>' +
-          '</article>';
+        return '<article class="team-home-version-row team-version-item">' +
+          '<div class="team-version-date"><time datetime="' + esc(windowItem.releaseDate) + '">' + esc(windowItem.releaseDate) + '</time></div>' +
+          '<div class="team-home-version-main team-version-info">' +
+            '<a class="team-version-title" href="' + esc(href) + '"><strong>' + esc(windowItem.name) + '</strong></a>' +
+            '<span class="team-version-group">' + esc(windowItem.teamgroup || "未命名敏捷小组") + '</span>' +
+          '</div>' +
+          '<span class="team-home-version-count team-version-count-badge">' + Number(windowItem.workItemCount || 0) + ' 个工作项</span>' +
+        '</article>';
       }).join("");
       if (status) status.textContent = json.data.length + " 个窗口";
     } catch (error) {
@@ -241,9 +248,18 @@
       }
       if (requestNo !== state.requestNo) return;
       rows.innerHTML = json.data.map(function (stage) {
-        return '<div class="team-home-stage-item" data-stage="' + esc(stage.status) + '">' +
-          '<span>' + esc(stage.label) + '</span><strong>' + Number(stage.count || 0) + '</strong>' +
-          '<small>业务 ' + Number(stage.demandCount || 0) + ' · 研发 ' + Number(stage.storyCount || 0) + '</small></div>';
+        const count = Number(stage.count || 0);
+        const isZero = count === 0 ? " is-zero" : "";
+        return '<div class="team-home-stage-item team-vs-card stage-' + esc(stage.status) + '" data-stage="' + esc(stage.status) + '" title="' + esc(stage.label) + '">' +
+          '<div class="team-vs-top">' +
+            '<span class="team-vs-name">' + esc(stage.label) + '</span>' +
+            '<strong class="team-vs-count' + isZero + '">' + count + '</strong>' +
+          '</div>' +
+          '<div class="team-vs-breakdown">' +
+            '<span class="track-pill biz">业务 ' + Number(stage.demandCount || 0) + '</span>' +
+            '<span class="track-pill dev">研发 ' + Number(stage.storyCount || 0) + '</span>' +
+          '</div>' +
+        '</div>';
       }).join("");
       if (!json.data.length) rows.innerHTML = '<div class="state-placeholder">当前授权范围内暂无价值流数据</div>';
       if (status) status.textContent = json.data.length + " 个阶段";
@@ -282,11 +298,20 @@
       if (status) status.textContent = "更新于 " + esc(data.updatedAt || "刚刚");
       const due = Array.isArray(data.due) ? data.due : [];
       if (rows) rows.innerHTML = due.length ? due.map(function (item) {
-        return '<article class="team-home-due-row' + (item.overdue ? ' is-overdue' : '') + '">' +
-          '<div class="team-home-due-main"><strong>' + esc(item.title || "未命名事项") + '</strong>' +
-          '<span>' + esc(item.kind === "task" ? "任务" : "需求") + ' · ' + esc(item.owner || "未分配") + '</span></div>' +
-          '<time datetime="' + esc(item.deadline || "") + '">' + esc(item.deadline || "无期限") + '</time></article>';
-      }).join("") : '<div class="state-placeholder">未来 3 个工作日内没有临期或逾期事项</div>';
+        const isTask = item.kind === "task";
+        const kindLabel = isTask ? "任务" : "需求";
+        const kindClass = isTask ? "task" : "demand";
+        return '<article class="team-home-due-row due-item-row' + (item.overdue ? ' is-overdue' : '') + '">' +
+          '<div class="team-home-due-main due-item-main">' +
+            '<strong class="due-item-title" title="' + esc(item.title || "未命名事项") + '">' + esc(item.title || "未命名事项") + '</strong>' +
+            '<div class="due-item-meta">' +
+              '<span class="meta-tag ' + kindClass + '">' + kindLabel + '</span>' +
+              '<span><i class="fas fa-user-circle" aria-hidden="true"></i> ' + esc(item.owner || "未分配") + '</span>' +
+            '</div>' +
+          '</div>' +
+          '<time class="due-item-time" datetime="' + esc(item.deadline || "") + '">' + esc(item.deadline || "无期限") + '</time>' +
+        '</article>';
+      }).join("") : '<div class="version-empty-state"><i class="fas fa-check-circle" aria-hidden="true"></i><span>未来 3 个工作日内没有临期或逾期事项</span></div>';
       const updated = document.getElementById("teamHomeUpdatedAt");
       if (updated) updated.textContent = data.throughDate ? "统计至 " + data.throughDate : "";
     } catch (error) {
