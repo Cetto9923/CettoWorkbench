@@ -27,13 +27,19 @@
   <!-- 1. 紧凑页头与右上角焦点 Chips — 统一外框：workspace-header (同 todos/done/notice/follow) -->
   <header class="workspace-header">
     <div class="workspace-header-left">
-      <div class="po-role-badge" role="group" aria-label="工作视角">
-        <strong aria-current="page">需求视角</strong>
+      <nav class="po-perspective-tabs po-role-badge" role="tablist" aria-label="工作视角">
+        <a class="po-perspective-tab active" role="tab" aria-selected="true" aria-current="page" href="/home?view=demand" title="需求视角">
+          <i class="fas fa-layer-group" aria-hidden="true"></i>
+          <span>需求视角</span>
+        </a>
         {{ if .CanViewTeamHome }}
-        <span aria-hidden="true">/</span>
-        <a class="home-view-link" href="/home?view=team">团队视角 <span class="wb-phase2-tag">二期</span></a>
+        <a class="po-perspective-tab home-view-link" role="tab" aria-selected="false" href="/home?view=team" title="团队视角（二期）">
+          <i class="fas fa-users" aria-hidden="true"></i>
+          <span>团队视角</span>
+          <span class="wb-phase2-tag">二期</span>
+        </a>
         {{ end }}
-      </div>
+      </nav>
     </div>
     <div class="header-quick-filters" id="homeQuickChips" role="group" aria-label="快捷焦点">
       <button type="button" class="header-quick-chip" data-home-focus="all" aria-pressed="false">

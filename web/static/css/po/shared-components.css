@@ -123,3 +123,90 @@ body.po-workbench-shell .action.soft {
   color: var(--color-text-secondary);
   margin-left: 8px;
 }
+
+/* 首页工作视角分段切换器 (Segmented Perspective Switcher) */
+.po-perspective-tabs.po-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 32px;
+  padding: 3px;
+  border-radius: 8px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  box-sizing: border-box;
+}
+
+.po-perspective-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  background: transparent;
+  border: 1px solid transparent;
+  box-sizing: border-box;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  line-height: 1;
+}
+
+.po-perspective-tab i {
+  font-size: 12px;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+.po-perspective-tab:hover:not(.active) {
+  color: var(--color-text-primary);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .po-perspective-tab:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.po-perspective-tab.active {
+  color: var(--color-primary);
+  font-weight: 600;
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.po-perspective-tab.active i {
+  color: var(--color-primary);
+  opacity: 1;
+}
+
+/* 二期胶囊微徽标在 Tab 内的精致适配 */
+.po-perspective-tab .wb-phase2-tag {
+  height: 16px;
+  line-height: 14px;
+  padding: 0 5px;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  margin-left: 2px;
+  transition: all 0.2s ease;
+}
+
+.po-perspective-tab.active .wb-phase2-tag {
+  border-color: var(--color-info-border);
+  background: var(--color-info-bg);
+  color: var(--color-info);
+}
+
+
