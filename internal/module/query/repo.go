@@ -205,7 +205,7 @@ func dashIfEmpty(value string) string {
 }
 
 func formatDate(value *time.Time) string {
-	if value == nil {
+	if value == nil || value.IsZero() || value.Year() < 2000 {
 		return "—"
 	}
 	return value.Format("2006-01-02")

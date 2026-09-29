@@ -17,6 +17,7 @@ import (
 
 	"workbench/internal/model"
 	"workbench/internal/pkg/errorx"
+	"workbench/internal/pkg/perm"
 )
 
 // GetDemandDetailAuthZ 输入校验 + 对象级授权 + not-found 区分的最小入口辅助。
@@ -41,18 +42,22 @@ func (s *DetailService) GetDemandDetailAuthZ(ctx context.Context, actor *model.U
 // 可见性矩阵（F01；并与需求看板 FindBoardDemandTree 口径对齐）：
 //
 //	超级管理员（actor.IsSuperAdmin == true）：全部可见。
-//	普通用户必须至少命中以下任一角色/关系：
-//	  - PO/BR：d.BRA == actor.Account
-//	  - 研发负责人：d.RD == actor.Account
-//	  - 业务提出人：d.originator == actor.Account
-//	  - 当前责任人：d.assignedTo == actor.Account
-//	  - 测试/验收人：d.QD == actor.Account || d.accepter == actor.Account
-//	  - 评审人：d.reviewer == actor.Account
-//	  - 创建人：d.createdBy == actor.Account
-//	  - 闭环人：d.closedBy == actor.Account
-//	  - 编辑人：d.editedBy == actor.Account
-//	  - 反馈接收人：d.feedbackedBy == actor.Account
-//	  - 澄清 PM：zt_demandclarify.PM == actor.Account
+//	组织角色 PMO（zt_roles.code = 'pmo'）：全部只读可见。
+//	普通用户必须至少命中以下任一条件：
+//	  1. 拥有「需求查询」页面权限（perm.ScheduleList）且非 PO / 团队长角色：放行只读查看；
+//	  2. 需求干系人个人关系（命中至少一条）：
+//	     - PO/BR：d.BRA == actor.Account
+//	     - 研发负责人：d.RD == actor.Account
+//	     - 业务提出人：d.originator == actor.Account
+//	     - 当前责任人：d.assignedTo == actor.Account
+//	     - 测试/验收人：d.QD == actor.Account || d.accepter == actor.Account
+//	     - 评审人：d.reviewer == actor.Account
+//	     - 创建人：d.createdBy == actor.Account
+//	     - 闭环人：d.closedBy == actor.Account
+//	     - 编辑人：d.editedBy == actor.Account
+//	     - 反馈接收人：d.feedbackedBy == actor.Account
+//	     - 澄清 PM：zt_demandclarify.PM == actor.Account
+//	  3. 组织角色（团队长）：需求任一干系人属于该团队长管辖部门（zt_dept.manager，补缺表优先）或其下级部门。
 //
 // 父需求沿用同一矩阵；子需求列表各自独立走 loadDemandIfVisible，避免父可见
 // 子不可见时的正文泄露（详见 service_detail.go 父/子聚合）。
@@ -67,12 +72,56 @@ func (s *DetailService) loadDemandIfVisible(ctx context.Context, actor *model.Us
 	if actor != nil && actor.IsSuperAdmin {
 		return row, nil
 	}
+
+	// 1. 组织角色 PMO：全量只读放行
+	if actor != nil && actor.ID > 0 {
+		isPMO, pmoErr := s.repo.IsPMORole(ctx, actor.ID)
+		if pmoErr != nil {
+			return nil, pmoErr
+		}
+		if isPMO {
+			return row, nil
+		}
+	}
+
+	// 2. 个人干系人关系放行
 	ok, err := s.repo.CheckDemandVisibility(ctx, demandID, actor.Account)
 	if err != nil {
 		return nil, err
 	}
-	if !ok {
+	if ok {
+		return row, nil
+	}
+
+	// 3. 组织角色团队长：管辖部门（或其下级部门）内干系人需求只读可见
+	leaderDeptIDs, err := s.repo.ListLeaderDeptTreeIDs(ctx, actor.Account)
+	if err != nil {
+		return nil, err
+	}
+	if len(leaderDeptIDs) > 0 {
+		leaderVisible, err := s.repo.CheckLeaderDemandVisibility(ctx, demandID, leaderDeptIDs)
+		if err != nil {
+			return nil, err
+		}
+		if leaderVisible {
+			return row, nil
+		}
+		// 团队长访问非管辖部门需求，严格拦截 403
 		return nil, errorx.New(errorx.ErrCodeForbidden, "无权查看该业务需求")
 	}
-	return row, nil
+
+	// 4. 显式授予需求查询权限的角色/用户放行（排除普通 PO 角色，避免 schedule:list 击穿个人数据隔离）
+	if perm.HasAnyGranted(ctx, perm.ScheduleList) {
+		isPO := false
+		if actor != nil && actor.ID > 0 {
+			if poCheck, poErr := s.repo.IsPORole(ctx, actor.ID); poErr == nil {
+				isPO = poCheck
+			}
+		}
+		if !isPO {
+			return row, nil
+		}
+	}
+
+	return nil, errorx.New(errorx.ErrCodeForbidden, "无权查看该业务需求")
 }

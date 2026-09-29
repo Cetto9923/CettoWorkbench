@@ -107,12 +107,12 @@ func (h *Handler) DemandDetailView(c *gin.Context) {
 		_ = c.ShouldBindQuery(&req)
 	}
 	if errs := req.Validate(); len(errs) > 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "需求 ID 无效"})
+		render.Error(c, http.StatusBadRequest, "需求 ID 无效", nil)
 		return
 	}
 	actor := middleware.CurrentUser(c)
 	if h.detailSvc == nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "详情服务未初始化"})
+		render.Error(c, http.StatusInternalServerError, "详情服务未初始化", nil)
 		return
 	}
 	resp, err := h.detailSvc.GetDemandDetail(c.Request.Context(), actor, req.ExtractDemandID())
@@ -120,20 +120,20 @@ func (h *Handler) DemandDetailView(c *gin.Context) {
 		if bizErr, ok := errorx.IsBizError(err); ok {
 			switch bizErr.Code {
 			case errorx.ErrCodeInvalidParam:
-				c.JSON(http.StatusUnauthorized, gin.H{"success": false, "message": "未登录或会话已过期"})
+				render.Error(c, http.StatusUnauthorized, "未登录或会话已过期", err)
 			case errorx.ErrCodeNotFound:
-				c.JSON(http.StatusNotFound, gin.H{"success": false, "message": "需求不存在"})
+				render.Error(c, http.StatusNotFound, "需求不存在", err)
 			case errorx.ErrCodeForbidden:
-				c.JSON(http.StatusForbidden, gin.H{"success": false, "message": "无权查看该业务需求"})
+				render.Error(c, http.StatusForbidden, "无权查看该业务需求", err)
 			default:
-				c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "需求详情查询失败"})
+				render.Error(c, http.StatusInternalServerError, "需求详情查询失败", err)
 			}
 			return
 		}
 		if h.logger != nil {
 			h.logger.Error("demand detail page failed", zap.Error(err))
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "需求详情查询失败"})
+		render.Error(c, http.StatusInternalServerError, "需求详情查询失败", err)
 		return
 	}
 	render.Page(c, http.StatusOK, constants.TEMPLATE_PO_DEMAND_DETAIL, gin.H{

@@ -213,9 +213,9 @@ func TestHomeHandler_ServiceErrorRendersPageError(t *testing.T) {
 	if !strings.Contains(body, "暂不可用") {
 		t.Fatalf("expected '暂不可用' in stage counts, got:\n%s", body)
 	}
-	// 验证工作视角 Perspective Tabs 已渲染且顶部全局切换器 poRoleSwitcher 已移除
-	if !strings.Contains(body, "po-perspective-tabs") {
-		t.Fatalf("expected po-perspective-tabs in response body, got:\n%s", body)
+	// 验证工作视角已渲染且顶部全局切换器 poRoleSwitcher 已移除
+	if !strings.Contains(body, "po-role-badge") {
+		t.Fatalf("expected po-role-badge in response body, got:\n%s", body)
 	}
 	if strings.Contains(body, "poRoleSwitcher") {
 		t.Fatalf("expected poRoleSwitcher to be removed from response body, got:\n%s", body)

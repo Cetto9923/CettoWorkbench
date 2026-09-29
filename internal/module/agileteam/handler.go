@@ -77,7 +77,7 @@ func (h *Handler) RequireListAccess(c *gin.Context) {
 		return
 	}
 	if !allowed {
-		writeErr(c, errorx.New("forbidden", "无权查看敏捷团队管理视图"))
+		writeErr(c, errorx.New("forbidden", "无权查看敏捷团队视角"))
 		c.Abort()
 		return
 	}

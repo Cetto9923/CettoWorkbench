@@ -79,7 +79,7 @@ func (s *Service) TeamDashboard(ctx context.Context, ids []uint, accounts []stri
 			Deadline   string
 			Status     string
 		}
-		if err = s.repo.db.WithContext(ctx).Table("zt_task").Select("id,name,assignedTo,deadline,status").Where("deleted='0' AND assignedTo IN ? AND status NOT IN ('done','closed','cancel') AND deadline > '1970-01-01' AND deadline <= ?", accounts, soon.Format("2006-01-02")).Scan(&tasks).Error; err != nil {
+		if err = s.repo.db.WithContext(ctx).Table("zt_task").Select("id,name,assignedTo,deadline,status").Where("deleted='0' AND assignedTo IN ? AND status NOT IN ('done','closed','cancel') AND deadline >= '2000-01-01' AND deadline <= ?", accounts, soon.Format("2006-01-02")).Scan(&tasks).Error; err != nil {
 			return nil, err
 		}
 		for _, t := range tasks {
@@ -110,5 +110,8 @@ func dashboardDate(raw string) time.Time {
 		return time.Time{}
 	}
 	t, _ := time.ParseInLocation("2006-01-02", raw[:10], time.Local)
+	if t.Year() < 2000 {
+		return time.Time{}
+	}
 	return t
 }

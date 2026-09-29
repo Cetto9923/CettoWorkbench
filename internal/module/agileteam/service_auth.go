@@ -85,7 +85,7 @@ func requireTeamgroupObjectEdit(actor *model.User, row *TeamgroupRow, allowGloba
 	return errorx.New("forbidden", "仅该敏捷小组的 PO、敏捷教练或 PMO 可执行此操作")
 }
 
-// CanViewTeamgroupLeadScope 校验团队管理视图是否有权查看指定敏捷团队。
+// CanViewTeamgroupLeadScope 校验团队视角是否有权查看指定敏捷团队。
 // 敏捷教练按 manager 关系授权；部门负责人按本人负责部门及其挂靠团队授权。
 func (s *Service) CanViewTeamgroupLeadScope(ctx context.Context, actor *model.User, id uint) (bool, error) {
 	account, err := requireActorAccount(actor)

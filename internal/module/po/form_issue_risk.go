@@ -12,7 +12,7 @@ type IssueRiskListReq struct {
 	Loop        string `form:"loop"`
 	Overdue     bool   `form:"overdue"`
 	Project     uint   `form:"project"`
-	Scope       string `form:"scope"` // 空值表示个人视角；team / dept 表示团队管理范围
+	Scope       string `form:"scope"` // 空值表示个人视角；team / dept 表示团队视角范围
 	ScopeID     uint   `form:"scopeId"`
 	Page        int    `form:"page"`
 	PageSize    int    `form:"pageSize"`

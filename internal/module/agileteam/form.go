@@ -152,7 +152,7 @@ type ParentOption struct {
 	Name string `json:"name"`
 }
 
-// ScopeOption 团队管理视图维度选项。
+// ScopeOption 团队视角维度选项。
 type ScopeOption struct {
 	ID   uint   `json:"id"`
 	Name string `json:"name"`

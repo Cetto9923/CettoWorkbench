@@ -82,9 +82,9 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.POST("/demands/:id/urge", middleware.RequirePerm(perm.PoHomeList), h.UrgeHomeDemand)
 	g.GET("/demands/:id/deliver", middleware.RequirePerm(perm.PoHomeList), h.GetDemandDeliver)
 	g.POST("/demands/:id/deliver", middleware.RequirePerm(perm.PoHomeList), h.DeliverDemand)
-	// 详情读接口：首页与需求看板均可打开；对象级授权仍由 DetailService 执行。
-	g.GET("/demands/:id/detail", middleware.RequireAnyPerm(perm.PoHomeList, perm.PoBoardDemandList), h.DemandDetail)
-	g.GET("/demands/:id", middleware.RequireAnyPerm(perm.PoHomeList, perm.PoBoardDemandList), h.DemandDetailView)
+	// 详情读接口：首页、需求看板与需求查询均可打开；对象级授权仍由 DetailService 执行。
+	g.GET("/demands/:id/detail", middleware.RequireAnyPerm(perm.PoHomeList, perm.PoBoardDemandList, perm.ScheduleList), h.DemandDetail)
+	g.GET("/demands/:id", middleware.RequireAnyPerm(perm.PoHomeList, perm.PoBoardDemandList, perm.ScheduleList), h.DemandDetailView)
 	g.GET("/demands/:id/primary-action", middleware.RequirePerm(perm.PoHomeList), h.GetDemandPrimaryAction)
 	g.POST("/demands/:id/participate-action", middleware.RequirePerm(perm.PoHomeList), h.ParticipateAction)
 
@@ -171,8 +171,8 @@ func (h *Handler) denyHomeAccess(c *gin.Context) {
 func (h *Handler) Home(c *gin.Context) {
 	if teamOnly, _ := c.Get("teamHomeOnly"); teamOnly == true {
 		render.Page(c, http.StatusOK, "po/home_team", gin.H{
-			"Title":             "团队管理",
-			"PageTitle":         "团队管理",
+			"Title":             "团队视角",
+			"PageTitle":         "团队视角",
 			"PageDescription":   "按授权范围查看敏捷团队与小组",
 			"CanViewDemandHome": currentUserHasPerm(c, perm.PoHomeList),
 		})

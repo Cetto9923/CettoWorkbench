@@ -160,6 +160,9 @@ func TestGetDemandDetail_ForbiddenForUnrelatedActor(t *testing.T) {
 	// 授权计数返回 0（无关系）
 	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM zt_demand d`).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+	// 团队长部门查询返回空
+	mock.ExpectQuery(`SELECT d\.id, COALESCE\(d\.path, ''\) AS path FROM zt_dept d`).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "path"}))
 
 	actor := &model.User{Account: "user_stranger", IsSuperAdmin: false}
 	resp, err := svc.GetDemandDetail(t.Context(), actor, 700)
@@ -234,6 +237,9 @@ func TestDemandDetailHandler_403ForUnrelatedActor(t *testing.T) {
 		WillReturnRows(newDemandDetailMockRow(1500, 0))
 	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM zt_demand d`).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+	// 团队长部门查询返回空
+	mock.ExpectQuery(`SELECT d\.id, COALESCE\(d\.path, ''\) AS path FROM zt_dept d`).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "path"}))
 
 	w := runDemandDetail(t, handler, &model.User{Account: "user_outsider"}, "1500")
 

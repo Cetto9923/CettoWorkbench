@@ -107,7 +107,7 @@ func (r *UpdateReq) Validate() []FieldError {
 			continue
 		}
 		if key == "lead" || key == "pmo" {
-			errs = append(errs, FieldError{Field: "preferredRoles", Message: "团队管理 / PMO 视图须由组织统一配置，不可自行勾选"})
+			errs = append(errs, FieldError{Field: "preferredRoles", Message: "团队视角 / PMO 视图须由组织统一配置，不可自行勾选"})
 			continue
 		}
 		seen[key] = true

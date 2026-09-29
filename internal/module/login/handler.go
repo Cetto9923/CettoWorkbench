@@ -50,7 +50,7 @@ func (h *Handler) RegisterRoutes(
 	redirectIfLoggedIn gin.HandlerFunc,
 	loginLimiter *ratelimitpkg.Limiter,
 ) {
-	r.GET("/", func(c *gin.Context) {
+	r.GET("/", redirectIfLoggedIn, func(c *gin.Context) {
 		c.Redirect(302, "/login")
 	})
 

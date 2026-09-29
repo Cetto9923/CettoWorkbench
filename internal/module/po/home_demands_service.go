@@ -379,8 +379,8 @@ func calcOverdue(dateStr string) (string, bool, int) {
 		d = d[:10]
 	}
 	t, err := time.Parse("2006-01-02", d)
-	if err != nil {
-		return d, false, 0
+	if err != nil || t.Year() < 2000 {
+		return "", false, 0
 	}
 	now := time.Now()
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, t.Location())
@@ -394,11 +394,21 @@ func calcOverdue(dateStr string) (string, bool, int) {
 	return d, true, days
 }
 
-// isUnsetDateText 判断禅道日期文本是否等价于“未填”：空串、零日期，或驱动把零日期解析成的 0001-01-01。
-// 若不排除后者，超期天数会按公元 1 年计算（Duration 溢出后显示为 106751 天）。
+// isUnsetDateText 判断禅道日期文本是否等价于“未填”：空串、零日期（0000-00-00），驱动解析成的 0001-01-01，或早于 2000-01-01 的脏数据。
 func isUnsetDateText(s string) bool {
 	s = strings.TrimSpace(s)
-	return s == "" || strings.HasPrefix(s, "0000-00-00") || strings.HasPrefix(s, "0001-01-01")
+	if s == "" || strings.HasPrefix(s, "0000-00-00") || strings.HasPrefix(s, "0001-01-01") {
+		return true
+	}
+	if len(s) >= 10 {
+		s = s[:10]
+	}
+	if t, err := time.Parse("2006-01-02", s); err == nil {
+		if t.Year() < 2000 {
+			return true
+		}
+	}
+	return false
 }
 
 func storyTargetDate(row StoryRow) string {

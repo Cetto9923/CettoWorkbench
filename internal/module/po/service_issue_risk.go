@@ -156,7 +156,9 @@ func mapIssueRiskRow(row issueRiskRow, kind string) IssueRiskItem {
 }
 func normalizeIssueRiskDate(raw string) string {
 	if len(raw) >= 10 && raw[:10] != "0000-00-00" {
-		return raw[:10]
+		if t, err := time.Parse("2006-01-02", raw[:10]); err == nil && t.Year() >= 2000 {
+			return raw[:10]
+		}
 	}
 	return ""
 }
