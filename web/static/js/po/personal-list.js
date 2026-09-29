@@ -305,7 +305,9 @@
     feedback: "反馈",
     project: "项目",
     mail: "邮件",
-    risk: "风险"
+    risk: "风险",
+    buildguideline: "建设指引",
+    guideline: "建设指引"
   };
 
   /* chip 内「对象 #ID」单色标签使用的缩写版标签。
@@ -325,7 +327,9 @@
     feedback: "反馈",
     project: "项目",
     mail: "邮件",
-    risk: "风险"
+    risk: "风险",
+    buildguideline: "指引",
+    guideline: "指引"
   };
 
   /* 待办/列表 API 的 kind 字段 → objectTypeBadge 的 canonical key */
@@ -346,7 +350,9 @@
     feedback: "feedback",
     project: "project",
     mail: "mail",
-    risk: "risk"
+    risk: "risk",
+    buildguideline: "buildguideline",
+    guideline: "buildguideline"
   };
 
   var REVERSE_CHINESE_MAP = {
@@ -357,7 +363,8 @@
     "审批": "approval", "待办": "todo",
     "测试单": "testtask", "测单": "testtask", "测试": "testtask",
     "章程": "charter", "反馈": "feedback", "项目": "project",
-    "邮件": "mail", "风险": "risk"
+    "邮件": "mail", "风险": "risk",
+    "建设指引": "buildguideline", "指引": "buildguideline"
   };
 
   function normalizeKind(kind) {

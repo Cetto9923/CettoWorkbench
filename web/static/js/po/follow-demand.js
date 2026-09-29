@@ -274,8 +274,7 @@
     var empty = document.getElementById("followEmpty");
     var error = document.getElementById("followError");
     var summary = document.getElementById("followSummary");
-    var countText = document.getElementById("fdCountText");
-    if (countText) countText.textContent = "";
+    if (typeof root.FollowUpdateDemandBadge === "function") root.FollowUpdateDemandBadge("—");
     if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="pw-empty-row">正在拉取关注业务需求…</td></tr>';
     if (empty) empty.hidden = true;
     if (error) error.hidden = true;

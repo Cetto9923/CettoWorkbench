@@ -18,7 +18,8 @@
     min-width: 180px;
   }
   .po-home .home-action-table .c-stage {
-    width: 72px;
+    width: 94px;
+    min-width: 94px;
   }
   .po-home .home-action-table .c-zt-status {
     width: 78px;

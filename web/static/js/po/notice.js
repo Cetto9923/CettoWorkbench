@@ -81,18 +81,16 @@
   }
 
   var OBJECT_TYPE_LABELS = {
-    business: "业务需求", sub_demand: "子需求", story: "研发需求",
-    independent_story: "独立研发需求", task: "任务", bug: "Bug",
-    testtask: "测试单", issue: "问题", risk: "风险", approval: "审批",
-    feedback: "反馈", charter: "章程", mail: "邮件", project: "项目",
-    demand: "需求"
+    business: "业务需求", sub_demand: "子需求", story: "研发需求", independent_story: "独立研发需求",
+    task: "任务", bug: "Bug", testtask: "测试单", issue: "问题", risk: "风险", approval: "审批",
+    feedback: "反馈", charter: "章程", mail: "邮件", project: "项目", demand: "需求",
+    buildguideline: "建设指引", guideline: "建设指引"
   };
   var OBJECT_KIND_FROM_API = {
-    demand: "business", business: "business", sub_demand: "sub_demand",
-    story: "story", independent_story: "independent_story", task: "task",
-    bug: "bug", test: "testtask", testtask: "testtask", issue: "issue",
-    risk: "risk", approval: "approval", feedback: "feedback",
-    charter: "charter", mail: "mail", project: "project"
+    demand: "business", business: "business", sub_demand: "sub_demand", story: "story",
+    independent_story: "independent_story", task: "task", bug: "bug", test: "testtask",
+    testtask: "testtask", issue: "issue", risk: "risk", approval: "approval", feedback: "feedback",
+    charter: "charter", mail: "mail", project: "project", buildguideline: "buildguideline", guideline: "buildguideline"
   };
   var SUBJECT_PREFIX_ALIASES = {
     business: ["需求", "业务需求", "业需", "demand"],
@@ -102,7 +100,9 @@
     testtask: ["测试", "测试单", "test"], issue: ["问题", "issue"],
     risk: ["风险", "risk"], approval: ["审批", "approval"],
     feedback: ["反馈", "feedback"], charter: ["章程", "charter"],
-    project: ["项目", "project"], mail: ["邮件"]
+    project: ["项目", "project"], mail: ["邮件"],
+    buildguideline: ["建设指引", "指引", "guideline", "buildguideline"],
+    guideline: ["建设指引", "指引", "guideline", "buildguideline"]
   };
 
   function canonicalKind(ot) {
@@ -159,7 +159,7 @@
   function formatNoticeSubject(item) {
     var ot = String(item.objectType || "").trim().toLowerCase();
     var oid = String(item.objectId || "").trim();
-    var rawSubject = String(item.subject || item.title || item.data || "—");
+    var rawSubject = String(item.subject || item.title || item.data || "—").replace(/\[\s*\]\s*/g, "").trim();
 
     var canon = canonicalKind(ot);
     var isReminderTemplate = false;
@@ -190,9 +190,9 @@
     var decodeEntities = (window.PersonalList && window.PersonalList.decodeHtmlEntities) || function (s) { return s; };
     var displayTitle = decodeEntities((canon && OBJECT_TYPE_LABELS[canon] && !isReminderTemplate)
       ? stripSubjectPrefix(rawSubject, canon, oid)
-      : rawSubject);
+      : rawSubject).replace(/\[\s*\]\s*/g, "").trim();
 
-    var subText = "", rawSummary = String(item.data || item.summary || "").trim(), summaryHtml = "";
+    var subText = "", rawSummary = String(item.data || item.summary || "").replace(/\[\s*\]\s*/g, "").trim(), summaryHtml = "";
     if (rawSummary && rawSummary !== rawSubject) {
       var icon = "";
       if (rawSummary.indexOf("审批") >= 0) icon = "💬 ";
@@ -433,8 +433,8 @@
     var objName = (OBJECT_TYPE_LABELS[canon] || OBJECT_TYPE_LABELS[ot] || ot || "—");
     var objID = displayObjectID(canon, oid);
     if (objID) { objName += " " + objID; }
-    var rawSubject = item.subject || item.title || item.data || "通知详情";
-    var content = item.content || item.data || item.summary || item.subject || "无具体内容";
+    var rawSubject = String(item.subject || item.title || item.data || "通知详情").replace(/\[\s*\]\s*/g, "").trim();
+    var content = String(item.content || item.data || item.summary || item.subject || "无具体内容").replace(/\[\s*\]\s*/g, "").trim();
 
     body.innerHTML = '<div class="notice-detail-section">' +
       '<div class="notice-detail-title">' + esc(rawSubject) + '</div>' +

@@ -44,11 +44,20 @@
     if (quickChips) quickChips.hidden = (tab !== "demand");
     if (weeklySec) weeklySec.hidden = (tab !== "weekly");
     if (demandSec) demandSec.hidden = (tab === "weekly");
-    if (tab === "weekly") loadWeeklyData();
-    else if (window.FollowDemand) window.FollowDemand.load();
+    if (tab === "weekly") {
+      var wEl = document.getElementById("tabCountWeekly");
+      if (wEl) wEl.textContent = "—";
+      loadWeeklyData();
+    } else {
+      var dEl = document.getElementById("tabCountDemand");
+      if (dEl) dEl.textContent = "—";
+      if (window.FollowDemand) window.FollowDemand.load();
+    }
   }
 
   async function loadWeeklyData() {
+    var wEl = document.getElementById("tabCountWeekly");
+    if (wEl) wEl.textContent = "—";
     var tbody = document.getElementById("pwTbody");
     if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="pw-empty-row">加载周报数据中…</td></tr>';
     var params = new URLSearchParams({
@@ -324,15 +333,12 @@
   };
   window.FollowUpdateDemandBadge = function (n) {
     var dEl = document.getElementById("tabCountDemand");
-    if (dEl) dEl.textContent = String(n || 0);
+    if (dEl) dEl.textContent = (n === "—" || n === "-") ? "—" : String(n == null ? "—" : n);
   };
 
   function updateTabBadges() {
-    var dEl = document.getElementById("tabCountDemand");
     var wEl = document.getElementById("tabCountWeekly");
-    var dCount = (window.FollowDemand && window.FollowDemand.getTotal) ? window.FollowDemand.getTotal() : 0;
     var wCount = weeklyPager.total || weeklyStats.watched || weeklyItems.length || 0;
-    if (dEl) dEl.textContent = String(dCount);
     if (wEl) wEl.textContent = String(wCount);
   }
 

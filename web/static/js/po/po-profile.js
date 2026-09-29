@@ -15,11 +15,8 @@
     return;
   }
   window.__poProfileBound = true;
-
-  var profileCache = null;
-  var profileLoading = false;
+  var profileCache = null, profileLoading = false;
   var ORG_ONLY_ROLES = { lead: 1, pmo: 1 };
-
   var esc = window.escapeHtml;
 
   function cleanAccountName(rawName, account) {
@@ -50,17 +47,20 @@
     }
   }
 
-  // =============================================================================
-  // 工作台角色切换联动器 (RoleSwitcher)
-  // 负责顶部导航栏角色 tab 的显隐联动与本地持久化
-  // =============================================================================
+  // 工作台角色识别与偏好同步器 (RoleSwitcher)
   window.RoleSwitcher = {
     detectRole: function () {
-      var activeTab = document.querySelector('.po-role-tab.active');
-      if (activeTab) {
-        return (activeTab.getAttribute('data-role') || activeTab.textContent || '').trim().toLowerCase();
-      }
-      return 'po';
+      var badge = document.querySelector('.po-role-badge [aria-current="page"], .po-role-badge strong');
+      var text = badge ? (badge.getAttribute('data-role') || badge.textContent || '').trim().toLowerCase() : '';
+      var view = (new URLSearchParams(window.location.search).get('view') || '').toLowerCase();
+      var acc = String((profileCache && profileCache.account) || (window.currentUser && window.currentUser.account) || '').toLowerCase();
+      var role = String((window.currentUser && window.currentUser.role) || '').toLowerCase();
+      var orgRoles = window.RoleSwitcher.getOrgRoles();
+      if (text.indexOf('团队') !== -1 || view === 'team' || view === 'leader' || role === 'leader' || role === 'lead' || acc.indexOf('leader') !== -1 || orgRoles.indexOf('leader') !== -1 || orgRoles.indexOf('lead') !== -1) return 'leader';
+      if (text.indexOf('需求') !== -1 || view === 'demand' || role === 'po') return 'po';
+      if (acc.indexOf('scrum') !== -1 || role === 'scrum') return 'scrum';
+      if (acc.indexOf('pmo') !== -1 || role === 'pmo' || orgRoles.indexOf('pmo') !== -1) return 'pmo';
+      return role || 'po';
     },
 
     getOrgRoles: function () {
