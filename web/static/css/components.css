@@ -294,13 +294,13 @@
 .wb-btn-primary {
   background: var(--wb-primary);
   border-color: var(--wb-primary);
-  color: var(--wb-white);
+  color: var(--wb-text-inverse);
 }
 
 .wb-btn-primary:hover {
   background: var(--wb-primary-hover);
   border-color: var(--wb-primary-hover);
-  color: var(--wb-white);
+  color: var(--wb-text-inverse);
 }
 
 .wb-btn-primary:active {
@@ -597,6 +597,6 @@
 .wb-pagination-btn.active {
   background: var(--wb-primary);
   border-color: var(--wb-primary);
-  color: var(--wb-white);
+  color: var(--wb-text-inverse);
   font-weight: 600;
 }

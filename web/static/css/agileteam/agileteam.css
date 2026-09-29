@@ -220,3 +220,6 @@
 .at-scope-card .at-field:disabled{opacity:.6;cursor:not-allowed}
 @media(max-width:1000px){.team-home-stage-grid{grid-template-columns:repeat(3,minmax(100px,1fr))}}
 @media(max-width:760px){.team-home-stage-grid{grid-template-columns:repeat(2,minmax(100px,1fr))}.team-home-version-row,.team-home-due-row{align-items:flex-start;flex-direction:column;gap:5px}.team-home-risk-link{margin-left:0;min-height:36px}.at-scope-card .at-field{width:100%}}
+/* 发起人标注：原为 JS 内联 #7f735f / #8894a6，深色下对比不足，改走 muted token */
+.at-submitter{font-size:11px;color:var(--color-text-muted);margin-bottom:8px}
+.at-submitter-time{display:block;color:var(--color-text-muted);margin-top:4px}

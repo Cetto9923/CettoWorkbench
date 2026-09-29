@@ -560,12 +560,14 @@
   flex-wrap: nowrap;
   white-space: nowrap;
 }
+/* 尺寸与排版；颜色契约统一由 components/button-system.css 提供 */
 .po-home .table-action-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   height: 24px;
   padding: 0 8px;
+  border: 1px solid transparent;
   border-radius: var(--wb-radius-sm);
   font-size: 11px;
   line-height: 1;
@@ -575,26 +577,7 @@
   flex-shrink: 0;
   transition: all var(--wb-transition-fast);
 }
-.po-home .table-action-btn.primary {
-  background: var(--wb-primary);
-  color: var(--wb-white);
-  border: 1px solid var(--wb-primary);
-  font-weight: 500;
-}
-.po-home .table-action-btn.primary:hover {
-  background: var(--wb-primary-hover);
-  border-color: var(--wb-primary-hover);
-}
-.po-home .table-action-btn.secondary {
-  background: var(--wb-white);
-  color: var(--wb-gray-700);
-  border: 1px solid var(--wb-gray-300);
-}
-.po-home .table-action-btn.secondary:hover {
-  background: var(--wb-gray-50);
-  color: var(--wb-gray-900);
-  border-color: var(--wb-gray-400);
-}
+.po-home .table-action-btn.primary { font-weight: 500; }
 
 /* 4. 右侧栏（置顶 4 宫格 + 底部版本窗口） */
 .po-home .home-side-column {
@@ -871,8 +854,8 @@
 .po-review-close { border: 0; background: transparent; color: var(--wb-gray-400); font-size: 16px; cursor: pointer; }
 .po-review-close:hover { color: var(--wb-gray-700); }
 .po-review-form { flex: 1; padding: var(--wb-space-4); overflow: auto; }
-.po-review-submit { display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 36px; border-radius: var(--wb-radius-sm); background: var(--wb-primary); color: var(--wb-white); font-size: var(--wb-font-sm); font-weight: 600; border: none; cursor: pointer; }
-.po-review-submit:hover { background: var(--wb-primary-hover); }
+.po-review-submit { display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 36px; border-radius: var(--wb-radius-sm); background: var(--wb-btn-primary-bg); color: var(--wb-text-inverse); font-size: var(--wb-font-sm); font-weight: 600; border: none; cursor: pointer; }
+.po-review-submit:hover { background: var(--wb-btn-primary-hover); }
 
 @media (max-width: 1100px) {
   .po-home .home-content-grid { grid-template-columns: minmax(0, 1fr); }

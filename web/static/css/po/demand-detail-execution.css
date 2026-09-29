@@ -1,0 +1,155 @@
+/* ==========================================================================
+   文件: web/static/css/po/demand-detail-execution.css
+   模块: PO 需求详情 - 研发与测试执行页签
+   职责: 承接 demand-detail-render-execution.js 原内联硬编码颜色，
+         统一走颜色变量，保证深色模式下不出现刺眼白块 / 深字。
+   说明: 新增变量一律复用 layout/variables.css 与 tokens.css 既有 token，
+         不新增字面颜色，不改既有变量取值。
+========================================================================== */
+
+/* 局部取值：全部映射到既有 token */
+.dd-exec {
+  /* 次要文字（对应原 #64748b / #8a99ad / #94a3b8 三档） */
+  --dd-exec-muted: var(--color-text-secondary);
+  /* 更弱一档的说明文字（对应原 #8a99ad） */
+  --dd-exec-faint: var(--color-text-tertiary);
+  /* 代码底色（对应原 #f1f5f9）与前景 */
+  --dd-exec-code-bg: var(--color-surface-muted);
+  --dd-exec-code-fg: var(--color-text-primary);
+  /* 链接色（对应原 #2563eb） */
+  --dd-exec-link: var(--color-primary);
+}
+
+/* 空态占位 */
+.dd-exec-empty {
+  color: var(--dd-exec-faint);
+  font-size: 12px;
+  padding: 12px 0;
+}
+
+.dd-exec-empty--inline {
+  padding: 10px 14px;
+}
+
+/* 表格内次要说明行 */
+.dd-exec-sub {
+  color: var(--dd-exec-muted);
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.dd-exec-sub--xs {
+  font-size: 10px;
+}
+
+.dd-exec-sub--md {
+  font-size: 12px;
+}
+
+/* 需求详情加载中占位 */
+.dd-exec-loading {
+  text-align: center;
+  padding: 60px 0;
+  color: var(--dd-exec-faint);
+  font-size: 13px;
+}
+
+/* 卡片头部的补充说明 */
+.dd-exec-note {
+  color: var(--dd-exec-muted);
+  font-size: 12px;
+}
+
+.dd-exec-note--xs {
+  font-size: 11px;
+}
+
+/* 分支名代码块：深色下底色跟随卡片面，不再是浅色白块 */
+.dd-exec-code {
+  background: var(--dd-exec-code-bg);
+  color: var(--dd-exec-code-fg);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.dd-exec-link {
+  color: var(--dd-exec-link);
+  text-decoration: none;
+}
+
+.dd-exec-link:hover {
+  text-decoration: underline;
+}
+
+/* KPI 数值后的单位小字 */
+.dd-exec-unit {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--dd-exec-faint);
+}
+
+.dd-exec-unit--lg {
+  font-size: 14px;
+  color: var(--dd-exec-muted);
+}
+
+/* 进度条容器：宽度/上边距原为内联，此处仅保留可复用部分 */
+.dd-exec-progress {
+  width: 70px;
+  margin-top: 0;
+}
+
+.dd-exec-progress--flat {
+  margin-top: 0;
+}
+
+/* 进度填充：主色 / 通过率绿色，深色下均由变量决定 */
+.dd-exec-progress-fill {
+  background: var(--color-primary);
+}
+
+.dd-exec-progress-fill--pass {
+  background: var(--color-success);
+}
+
+/* 标签字号覆写（配合既有 .dd-tag.red / .green） */
+.dd-exec-tag {
+  font-size: 11px;
+}
+
+/* 任务进度行的 flex 布局 */
+.dd-exec-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 门禁结果列居中 */
+.dd-exec-cell-center {
+  text-align: center;
+}
+
+/* 代码质量门禁 KPI 主色的三态（原为 JS 内联 #64748b/#059669/#2563eb） */
+.dd-exec-kpi-main--muted {
+  color: var(--dd-exec-muted);
+  font-size: 20px;
+}
+
+.dd-exec-kpi-main--pass {
+  color: var(--color-success);
+  font-size: 20px;
+}
+
+.dd-exec-kpi-main--primary {
+  color: var(--color-primary);
+  font-size: 20px;
+}
+
+/* 分支指标宫格 */
+.dd-exec-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: 4px;
+  width: max-content;
+}

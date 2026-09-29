@@ -10,6 +10,7 @@
   --topnav-primary-fg: #ffffff;
   --topnav-sep-color: rgba(255, 255, 255, 0.35);
   --topnav-subitem-hover-bg: #F2F2F2;
+}
 
 /* 顶栏整体改为主题蓝，二级条单独白底 */
 .topbar {

@@ -377,7 +377,7 @@
     $("drawerSummary").innerHTML =
       '<div class="drawer-stat"><div class="drawer-stat-label">本页任务</div><div class="drawer-stat-val">' + total + "</div></div>" +
       '<div class="drawer-stat"><div class="drawer-stat-label">进行中</div><div class="drawer-stat-val" style="color:var(--navy)">' + doing + "</div></div>" +
-      '<div class="drawer-stat"><div class="drawer-stat-label">未开始</div><div class="drawer-stat-val" style="color:#64748b">' + wait + "</div></div>" +
+      '<div class="drawer-stat"><div class="drawer-stat-label">未开始</div><div class="drawer-stat-val drawer-stat-val--t3">' + wait + "</div></div>" +
       '<div class="drawer-stat"><div class="drawer-stat-label">已完成</div><div class="drawer-stat-val" style="color:var(--green)">' + done + "</div></div>";
     if (!all.length) { $("drawerTaskList").innerHTML = '<div class="drawer-empty">该研发需求下暂无执行任务</div>'; return; }
     // 排序：进行中 > 未开始 > 已完成（各组内按 id 升序）
