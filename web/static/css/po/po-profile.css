@@ -356,7 +356,7 @@
 .field-tip,
 .profile-hint {
   font-size: 11px;
-  color: var(--wb-text-tertiary);
+  color: var(--color-text-secondary);
   line-height: 1.3;
 }
 

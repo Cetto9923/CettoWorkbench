@@ -212,7 +212,7 @@
       var key = String(rawKey || '').toLowerCase();
       if (!key || seenRoleKeys[key]) return;
       seenRoleKeys[key] = true;
-      var roleDict = { super_admin: '超级管理员', admin: '系统管理员', lead: '团队视角', leader: '团队视角', po: '产品经理', pmo: 'PMO', dev: '研发人员', qa: '测试人员', biz: '业务人员', scrum: '敏捷教练' };
+      var roleDict = { super_admin: '超级管理员', admin: '系统管理员', lead: '团队长', leader: '团队长', po: '产品经理', pmo: 'PMO', dev: '研发人员', qa: '测试人员', biz: '业务人员', scrum: '敏捷教练' };
       var label = roleDict[key] || (key === 'pmo' ? 'PMO' : key.toUpperCase());
       boxes.push(
         '<label class="role-checkbox-card selected is-disabled" title="组织已授权视图，须由 PMO 或管理员统一配置，个人不可修改">' +
@@ -225,7 +225,7 @@
 
     return '<div class="role-cards-grid" style="grid-template-columns: 1fr;" id="profileRoleCheckRow">' + boxes.join('') + '</div>' +
       '<span class="field-tip" style="margin-top:6px; display:inline-block; line-height:1.4;">' +
-        '提示：产品经理角色可由个人自主选择开启或关闭；PMO 与团队视角视图属于组织固定授权，须由 PMO 或管理员在后台统一授权配置，个人不可在此更改。' +
+        '提示：产品经理角色可由个人自主选择开启或关闭；PMO 与团队长角色属于组织固定授权，须由 PMO 或管理员在后台统一授权配置，个人不可在此更改。' +
       '</span>';
   }
 

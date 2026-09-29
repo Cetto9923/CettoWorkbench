@@ -879,36 +879,6 @@
 .po-review-submit { display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 36px; border-radius: var(--wb-radius-sm); background: var(--wb-primary); color: var(--wb-white); font-size: var(--wb-font-sm); font-weight: 600; border: none; cursor: pointer; }
 .po-review-submit:hover { background: var(--wb-primary-hover); }
 
-@media (max-width: 1366px) {
-  .po-home .home-content-grid {
-    grid-template-columns: minmax(0, 1fr) 260px;
-  }
-  .po-home .home-action-table {
-    min-width: 660px;
-  }
-  .po-home .home-action-table .c-id {
-    width: 110px;
-  }
-  .po-home .home-action-table .c-title {
-    min-width: 180px;
-  }
-  .po-home .home-action-table .c-stage {
-    width: 72px;
-  }
-  .po-home .home-action-table .c-zt-status {
-    width: 72px;
-  }
-  .po-home .home-action-table .c-owner {
-    width: 96px;
-    min-width: 96px;
-  }
-  .po-home .home-action-table th.c-actions,
-  .po-home .home-action-table td.c-actions {
-    width: 120px;
-    min-width: 120px;
-  }
-}
-
 @media (max-width: 1100px) {
   .po-home .home-content-grid { grid-template-columns: minmax(0, 1fr); }
   .po-home .home-side-column { display: grid; grid-template-columns: 1fr 1fr; }

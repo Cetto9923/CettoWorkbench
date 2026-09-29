@@ -208,14 +208,6 @@
   justify-content: flex-end;
 }
 
-#manageVersionWindowsModal .schedule-manage-window-count {
-  font-size: 12px;
-  color: var(--color-text-secondary);
-}
-html[data-theme="dark"] #manageVersionWindowsModal .schedule-manage-window-count {
-  color: var(--wb-text-secondary, #cbd5e1);
-}
-
 #manageVersionWindowsModal .action-btn--disabled {
   opacity: 0.55;
   cursor: not-allowed;

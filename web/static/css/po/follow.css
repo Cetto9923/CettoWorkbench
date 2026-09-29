@@ -8,19 +8,11 @@
 }
 .follow-tabs .tab-badge {
   font-size: 11px; font-weight: 600; opacity: 0.85;
-}
-.follow-tabs .is-phase2 {
-  opacity: 0.6; cursor: not-allowed;
-}
-.follow-tabs .phase2-tag {
-  font-size: 9px; padding: 1px 4px; border-radius: 2px;
-  background: var(--wb-bg-muted); color: var(--color-text-secondary); border: 1px solid var(--wb-border-subtle); font-weight: 500;
-}
-
 /* ─── 2. 项目周报: 顶部 4 KPI 汇总指标卡 ─── */
 .pw-summary {
   display: grid; grid-template-columns: repeat(4, minmax(140px, 1fr));
   gap: 10px; margin-bottom: 12px;
+  padding: 4px 6px; box-sizing: border-box;
 }
 .pw-sum-card {
   background: var(--wb-bg-surface); border: 1px solid var(--wb-border-subtle); border-radius: 7px;

@@ -1,0 +1,40 @@
+/* ==========================================================================
+   文件: web/static/css/po/home-responsive.css
+   模块: PO工作台首页
+   职责: 首页 1366px 及以下视口响应式微调与防裁切
+   ========================================================================== */
+
+@media (max-width: 1366px) {
+  .po-home .home-content-grid {
+    grid-template-columns: minmax(0, 1fr) 260px;
+  }
+  .po-home .home-action-table {
+    min-width: 660px;
+  }
+  .po-home .home-action-table .c-id {
+    width: 110px;
+  }
+  .po-home .home-action-table .c-title {
+    min-width: 180px;
+  }
+  .po-home .home-action-table .c-stage {
+    width: 72px;
+  }
+  .po-home .home-action-table .c-zt-status {
+    width: 78px;
+    min-width: 78px;
+  }
+  .po-home .home-action-table .c-zt-status .status-badge,
+  .po-home .home-action-table .c-zt-status span {
+    white-space: nowrap;
+  }
+  .po-home .home-action-table .c-owner {
+    width: 96px;
+    min-width: 96px;
+  }
+  .po-home .home-action-table th.c-actions,
+  .po-home .home-action-table td.c-actions {
+    width: 120px;
+    min-width: 120px;
+  }
+}

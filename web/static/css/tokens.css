@@ -209,8 +209,8 @@ html[data-theme="dark"] {
   /* 按钮背景与悬停 (Button solid tokens - Dark: 高对比度确保白字对比度 >= 4.5) */
   --wb-btn-primary-bg: #2563eb;
   --wb-btn-primary-hover: #1d4ed8;
-  --wb-btn-success-bg: #059669;
-  --wb-btn-success-hover: #047857;
+  --wb-btn-success-bg: #047857;
+  --wb-btn-success-hover: #065f46;
 
   /* 徽标与挂起标签 (Badge tokens - Dark: 浅色字+半透明深底) */
   --wb-badge-biz-text: #bfdbfe;

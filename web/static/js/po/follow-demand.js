@@ -274,6 +274,8 @@
     var empty = document.getElementById("followEmpty");
     var error = document.getElementById("followError");
     var summary = document.getElementById("followSummary");
+    var countText = document.getElementById("fdCountText");
+    if (countText) countText.textContent = "";
     if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="pw-empty-row">正在拉取关注业务需求…</td></tr>';
     if (empty) empty.hidden = true;
     if (error) error.hidden = true;
@@ -353,7 +355,7 @@
         if (retryBtn) retryBtn.addEventListener("click", function () { load(); });
       }
       if (summary) summary.textContent = "加载失败，请重试";
-      if (error) error.hidden = false;
+      if (error) error.hidden = true;
     }
   }
 

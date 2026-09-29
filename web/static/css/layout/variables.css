@@ -246,7 +246,7 @@ html[data-theme="light"] {
 
   /* 字体栈 */
   --font-sans: 'Noto Sans SC',-apple-system,sans-serif;
-  /* --font-sans: "JetBrains Mono", monospace; */
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
   /* Focus Ring */
   --focus-ring: 0 0 0 3px rgba(99, 102, 241, 0.25);
@@ -317,7 +317,7 @@ html[data-theme="dark"] {
 
   /* 语义功能色 (Status bg/foreground combinations must have readable contrast, > 4.5:1) */
   --color-success: #34d399; /* lighter for text readability against dark */
-  --color-success-fill: #059669; /* Used for backgrounds needing on-accent text */
+  --color-success-fill: #047857; /* Used for backgrounds needing on-accent text */
   --color-success-bg: #064e3b; /* dark background */
   --color-success-strong: #10b981;
   --color-success-accent: #34d399; /* used for --po-green alias */

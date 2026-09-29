@@ -44,7 +44,7 @@
       '<div class="at-detail-title"><h3>' + esc(d.name) + "</h3>" +
       '<div class="at-meta"><span>父级小组：' + esc(d.parentName || "—") +
       "</span><span>教练：" + esc(person(d.coachName, d.coachAccount)) +
-      "</span><span>PO：" + esc(person(d.poName, d.poAccount)) +
+      "</span><span>产品经理：" + esc(person(d.poName, d.poAccount)) +
       '</span><span class="at-tag enabled">' + esc(d.statusLabel || "启用") + "</span></div></div>" +
       '<div class="at-page-actions">' + saveBtn + "</div>" +
       "</div>" +

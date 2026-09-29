@@ -21,7 +21,6 @@
 /* 列表表格：优化列宽分配，其他列极简紧凑不换行，标题栏最大化延展 */
 .po-issue-risk .ir-table {
   width: 100%;
-  min-width: 1060px;
 }
 .po-issue-risk .ir-table th,
 .po-issue-risk .ir-table td {
@@ -30,13 +29,13 @@
   padding: 8px 10px;
 }
 .po-issue-risk .ir-table .ir-col-id {
-  width: 110px;
-  min-width: 110px;
+  width: 105px;
+  min-width: 105px;
   white-space: nowrap;
 }
 .po-issue-risk .ir-table .ir-title {
   width: auto;
-  min-width: 220px;
+  min-width: 180px;
   white-space: normal;
   word-break: break-word;
 }
@@ -61,44 +60,42 @@
   font-size: 11px;
 }
 .po-issue-risk .ir-table .ir-col-project {
-  width: 130px;
-  max-width: 160px;
+  width: 115px;
+  max-width: 130px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .po-issue-risk .ir-table .ir-col-level {
-  width: 95px;
-  min-width: 95px;
+  width: 85px;
+  min-width: 85px;
   white-space: nowrap;
 }
 .po-issue-risk .ir-table .ir-col-status {
-  width: 160px;
-  min-width: 160px;
+  width: 148px;
+  min-width: 148px;
   white-space: nowrap;
 }
 .po-issue-risk .ir-table .ir-col-handler {
-  width: 105px;
-  min-width: 105px;
+  width: 90px;
+  min-width: 90px;
   white-space: nowrap;
 }
 .po-issue-risk .ir-table .ir-col-plan {
-  width: 90px;
+  width: 85px;
   white-space: nowrap;
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 11px;
 }
 .po-issue-risk .ir-table .ir-col-creator {
-  width: 95px;
-  min-width: 95px;
+  width: 85px;
+  min-width: 85px;
   white-space: nowrap;
 }
 .po-issue-risk .ir-table .ir-col-opt {
-  width: 65px;
-  min-width: 65px;
+  width: 60px;
+  min-width: 60px;
   padding: 8px 4px;
-  text-align: center;
-  white-space: nowrap;
 }
 
 .po-issue-risk .ir-tag {

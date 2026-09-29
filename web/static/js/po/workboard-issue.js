@@ -215,7 +215,7 @@
         '    <div class="issue-detail-field"><div class="k">优先级</div><div class="v">P' + esc(issue.priority || "2") + '</div></div>' +
         '    <div class="issue-detail-field"><div class="k">严重程度</div><div class="v">' + esc(issue.severity || "2级") + '</div></div>' +
         '    <div class="issue-detail-field"><div class="k">指派给</div><div class="v">' + esc(issue.assignedTo || issue.handler || "待指派") + '</div></div>' +
-        '    <div class="issue-detail-field"><div class="k">提出人</div><div class="v">' + esc(issue.createdBy || "系统/PO") + '</div></div>' +
+        '    <div class="issue-detail-field"><div class="k">提出人</div><div class="v">' + esc(issue.createdBy || "系统/产品经理") + '</div></div>' +
         '    <div class="issue-detail-field"><div class="k">计划解决日期</div><div class="v">' + esc(issue.deadline || issue.planDate || "未设定") + '</div></div>' +
         '    <div class="issue-detail-field"><div class="k">所属项目</div><div class="v">' + esc(issue.project || "核心业务系统研发") + '</div></div>' +
         '    <div class="issue-detail-field"><div class="k">所属执行</div><div class="v">' + esc(issue.execution || "敏捷迭代2026-09") + '</div></div>' +

@@ -157,7 +157,7 @@
 
 @media (max-width: 1366px) {
   .po-query .query-col-title { min-width: 240px; }
-  .po-query .query-col-id { width: 110px; }
+  .po-query .query-col-id { width: 118px; }
   .po-query .query-col-stage { width: 75px; }
   .po-query .query-col-status { width: 75px; }
   .po-query .query-col-owner { width: 90px; }

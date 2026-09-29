@@ -12,7 +12,7 @@
 
   var candidatePool = [];
 
-  var agileTeamRoles = ["研发", "测试", "PO", "SM", "架构", "运维", "美工", "产品经理"];
+  var agileTeamRoles = ["研发", "测试", "产品经理", "SM", "架构", "运维", "美工"];
   var teamDraft = [];
   var teamSearchTerm = "";
   var teamDataRevision = 0;
@@ -241,7 +241,7 @@
       '  <button type="button" class="action-btn kb-team-copy" id="kbTeamCopyBtn">' +
       '    <i class="fas fa-copy"></i>复制项目团队' +
       '  </button>' +
-      '  <span class="kb-team-hint">当前身份：PO · 可提交调整；敏捷小组角色仅 PMO 可调整</span>' +
+      '  <span class="kb-team-hint">当前身份：产品经理 · 可提交调整；敏捷小组角色仅 PMO 可调整</span>' +
       '</div>' +
       '<div class="kb-team-confirm-tip">成员调整需组织级敏捷教练确认后正式生效</div>' +
       '<div class="kb-team-add-panel">' +

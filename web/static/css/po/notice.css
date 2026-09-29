@@ -10,6 +10,10 @@
 .po-notice .notice-table .notice-state { width: 80px; }
 .po-notice .notice-table .notice-opt { width: 220px; text-align: right; }
 
+.po-notice .table-scroll-container {
+  padding-bottom: 16px;
+}
+
 .po-notice .workspace-table td {
   height: 48px;
   padding: 6px 12px;
