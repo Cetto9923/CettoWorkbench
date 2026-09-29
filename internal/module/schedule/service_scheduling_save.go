@@ -224,24 +224,8 @@ func (s *Service) applySchedulingStory(
 		return storyID, productID, planID, nil
 
 	case "edit":
-		storyID = storyReq.ID
-		productID = storyReq.ProductID
-		if err := s.saveEditedStory(ctx, txRepo, account, storyID, productID, estimateLaunch, developFinish, testFinish, storyReq); err != nil {
-			return 0, 0, 0, err
-		}
-		// 同步计划关联:解析目标计划 → 从该 story 的其他计划移除 → 幂等关联到目标计划。
-		// 对 productID 未变化的情况也幂等(Ensure INSERT IGNORE + Remove 保留当前 plan)。
-		newPlanID, err := s.resolvePlanForProduct(ctx, txRepo, account, windowID, storyReq.ProductID)
-		if err != nil {
-			return 0, 0, 0, fmt.Errorf("resolve plan for edited story %d: %w", storyID, err)
-		}
-		if err := txRepo.RemoveStoryFromOtherPlans(ctx, storyID, newPlanID, productID, account); err != nil {
-			return 0, 0, 0, fmt.Errorf("remove story %d from other plans: %w", storyID, err)
-		}
-		if err := txRepo.LinkStoryToPlan(ctx, storyID, productID, newPlanID, account); err != nil {
-			return 0, 0, 0, fmt.Errorf("link story to plan: %w", err)
-		}
-		return storyID, productID, 0, nil
+		// 仍返回 id/product，供后续 applySchedulingTasks 使用。
+		return storyReq.ID, storyReq.ProductID, 0, nil
 
 	case "delete":
 		// 软删与 action 已由禅道 POST /deletestories 完成（见 applyZenTaoDeletes）。

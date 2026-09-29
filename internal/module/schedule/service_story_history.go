@@ -2,7 +2,7 @@
 // 文件: internal/module/schedule/service_story_history.go
 // 模块: 排期工作台
 // 类型: action
-// 职责: 编辑业务需求排期或研发需求时对比旧值并写入禅道历史；任务编辑走禅道 PUT。
+// 职责: 独立研需日期编辑、业需排期编辑与任务编辑时对比旧值并写入禅道历史；任务编辑走禅道 PUT。
 // 依赖: internal/model
 //       internal/pkg/ztaction
 // =============================================================================
@@ -19,50 +19,6 @@ import (
 	"workbench/internal/model"
 	"workbench/internal/pkg/ztaction"
 )
-
-func (s *Service) saveEditedStory(
-	ctx context.Context,
-	txRepo *Repo,
-	account string,
-	storyID uint,
-	productID uint,
-	estimateLaunch string,
-	developFinish string,
-	testFinish string,
-	storyReq SaveSchedulingStory,
-) error {
-	snapshot, err := txRepo.FindStoryHistorySnapshot(ctx, storyID)
-	if err != nil {
-		return fmt.Errorf("load story %d: %w", storyID, err)
-	}
-
-	title := strings.TrimSpace(storyReq.Title)
-	// assignedTo / assignedDate 由禅道 POST /stories/{id}/assign 处理（见 applyZenTaoAssigns），
-	updates := map[string]interface{}{
-		"title":          title,
-		"product":        productID,
-		"estimateLaunch": nullableSchedulingDate(estimateLaunch),
-		"developFinish":  nullableSchedulingDate(developFinish),
-		"testFinish":     nullableSchedulingDate(testFinish),
-		"lastEditedBy":   account,
-		"lastEditedDate": time.Now(),
-	}
-	if err := txRepo.UpdateStory(ctx, storyID, updates); err != nil {
-		return fmt.Errorf("update story %d: %w", storyID, err)
-	}
-
-	changes := []ztaction.Change{
-		{Field: "title", Old: strings.TrimSpace(snapshot.Title), New: title},
-		{Field: "product", Old: strconv.FormatUint(uint64(snapshot.Product), 10), New: strconv.FormatUint(uint64(productID), 10)},
-		{Field: "estimateLaunch", Old: normalizeHistoryDate(snapshot.EstimateLaunch), New: normalizeHistoryDate(estimateLaunch)},
-		{Field: "developFinish", Old: normalizeHistoryDate(snapshot.DevelopFinish), New: normalizeHistoryDate(developFinish)},
-		{Field: "testFinish", Old: normalizeHistoryDate(snapshot.TestFinish), New: normalizeHistoryDate(testFinish)},
-	}
-	if err := txRepo.LogEditedHistory(ctx, "story", storyID, account, productID, 0, 0, changes); err != nil {
-		return fmt.Errorf("create story action: %w", err)
-	}
-	return nil
-}
 
 func (s *Service) saveEditedStoryDates(
 	ctx context.Context,
