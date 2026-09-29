@@ -22,6 +22,7 @@ import (
 
 	"workbench/internal/model"
 	"workbench/internal/pkg/encode"
+	"workbench/internal/pkg/workbenchroles"
 	"workbench/internal/pkg/zentao"
 )
 
@@ -236,7 +237,11 @@ func (s *Service) ResetPassword(ctx context.Context, actor *model.User, req Rese
 // GetRoles 查询可分配角色列表。
 func (s *Service) GetRoles(ctx context.Context, actor *model.User) ([]model.Role, error) {
 	_ = actor
-	return s.repo.ListRoles(ctx)
+	rows, err := s.repo.ListRoles(ctx)
+	for i := range rows {
+		rows[i].Name = workbenchroles.DisplayLabel(rows[i].Code, rows[i].Name)
+	}
+	return rows, err
 }
 
 // GetUserRoleIDs 查询用户已分配角色 ID。

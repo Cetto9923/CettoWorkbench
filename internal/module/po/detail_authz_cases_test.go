@@ -4,7 +4,7 @@
 // 类型: test
 // 职责: 业务需求详情放开只读授权及边界测试：
 //   - 团队长看本团队需求 = 可见 (200)
-//   - 团队长看外团队需求 = 403
+//   - 团队长看外团队需求：有 ScheduleList 可见，无该权限为 403
 //   - PMO 角色 = 可见 (200)
 //   - 需求查询权限用户 = 可见 (200)
 //   - 无关普通用户 = 403
@@ -116,6 +116,43 @@ func TestDemandDetailAuthZ_LeaderOtherDeptDemandForbidden(t *testing.T) {
 	}
 }
 
+func TestDemandDetailAuthZ_LeaderOtherDeptQueryPermVisible(t *testing.T) {
+	gormDB, mock := setupMockDB(t)
+	repo := NewDemandDetailRepo(gormDB)
+	svc := NewDetailService(repo)
+
+	mock.ExpectQuery(`SELECT[\s\S]*FROM zt_demand d[\s\S]*WHERE d\.id = \?`).
+		WithArgs(uint(1002)).
+		WillReturnRows(newDemandDetailMockRow(1002, 0))
+
+	// PMO 角色检查：未命中
+	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM zt_gf_user_roles ur JOIN zt_roles r ON r\.id = ur\.roleId WHERE ur\.userId = \? AND ur\.deleted = '0' AND r\.deleted = '0' AND r\.isActive = 1 AND r\.code = 'pmo'`).
+		WithArgs(int64(10)).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+
+	// 个人干系人检查：未命中
+	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM zt_demand d`).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+
+	// 部门经理检查：命中部门 14
+	mock.ExpectQuery(`SELECT d\.id, COALESCE\(d\.path, ''\) AS path FROM zt_dept d`).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "path"}).AddRow(14, ",1,14,"))
+	mock.ExpectQuery(`SELECT DISTINCT id FROM zt_dept WHERE id IN \(\?\) OR path LIKE \?`).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(14))
+
+	// 团队长需求可见性检查：未命中（外部门干系人）
+	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM zt_demand d[\s\S]*WHERE d\.id = \?`).
+		WithArgs(uint(1002), sqlmock.AnyArg()).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+
+	actor := &model.User{ID: 10, Account: "demo_leader", IsSuperAdmin: false}
+	ctx := perm.WithGranted(t.Context(), map[string]bool{perm.ScheduleList.String(): true})
+	row, err := svc.GetDemandDetailAuthZ(ctx, actor, 1002)
+	if err != nil || row == nil || row.ID != 1002 {
+		t.Fatalf("expected visible with ScheduleList, row=%+v err=%v", row, err)
+	}
+}
+
 // 3. PMO 角色 = 全量只读放行 (200)
 func TestDemandDetailAuthZ_PMOGlobalVisible(t *testing.T) {
 	gormDB, mock := setupMockDB(t)
@@ -141,8 +178,8 @@ func TestDemandDetailAuthZ_PMOGlobalVisible(t *testing.T) {
 	}
 }
 
-// 4. 需求查询权限用户 = 可见 (200)
-func TestDemandDetailAuthZ_QueryPermUserGlobalVisible(t *testing.T) {
+// 4. 产品经理持需求查询权限看他人需求 = 可见 (200)
+func TestDemandDetailAuthZ_ProductManagerQueryPermGlobalVisible(t *testing.T) {
 	gormDB, mock := setupMockDB(t)
 	repo := NewDemandDetailRepo(gormDB)
 	svc := NewDetailService(repo)
@@ -164,14 +201,9 @@ func TestDemandDetailAuthZ_QueryPermUserGlobalVisible(t *testing.T) {
 	mock.ExpectQuery(`SELECT d\.id, COALESCE\(d\.path, ''\) AS path FROM zt_dept d`).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "path"}))
 
-	// PO 角色检查：非 PO 角色
-	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM zt_gf_user_roles ur JOIN zt_roles r ON r\.id = ur\.roleId WHERE ur\.userId = \? AND ur\.deleted = '0' AND r\.deleted = '0' AND r\.isActive = 1 AND r\.code = 'po'`).
-		WithArgs(int64(99)).
-		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
-
 	// 注入 schedule:list 权限上下文
 	ctx := perm.WithGranted(context.Background(), map[string]bool{perm.ScheduleList.String(): true})
-	actor := &model.User{ID: 99, Account: "user_query", IsSuperAdmin: false}
+	actor := &model.User{ID: 99, Account: "demo_po", IsSuperAdmin: false}
 
 	row, err := svc.GetDemandDetailAuthZ(ctx, actor, 1004)
 	if err != nil {
@@ -218,36 +250,40 @@ func TestDemandDetailAuthZ_NormalUserNoRelationForbidden(t *testing.T) {
 
 // 6. 只读角色调用写接口（业务评审接口） = 403
 func TestDemandDetailAuthZ_ReadOnlyRoleWriteInterfaceForbidden(t *testing.T) {
-	gormDB, mock := setupMockDB(t)
-	repo := NewRepo(gormDB, gormDB)
-	svc := NewService(repo, nil, nil, zap.NewNop())
+	for _, account := range []string{"demo_leader", "demo_po", "user_pmo"} {
+		t.Run(account, func(t *testing.T) {
+			gormDB, mock := setupMockDB(t)
+			repo := NewRepo(gormDB, gormDB)
+			svc := NewService(repo, nil, nil, zap.NewNop())
 
-	// Mock 查询需求处于 wait 状态
-	mock.ExpectQuery(`SELECT id, status, deleted, createdBy, assignedTo, reviewedBy, reviewer, mailto, isNeedFocus, product FROM `+"`?zt_demand`?"+` WHERE id = \? LIMIT \?`).
-		WithArgs(int64(1001), 1).
-		WillReturnRows(sqlmock.NewRows([]string{
-			"id", "status", "deleted", "createdBy", "assignedTo", "reviewedBy", "reviewer", "mailto", "isNeedFocus", "product",
-		}).AddRow(1001, "wait", "0", "alice", "bob", "bob", "bob", "", 0, 1))
+			// Mock 查询需求处于 wait 状态
+			mock.ExpectQuery(`SELECT id, status, deleted, createdBy, assignedTo, reviewedBy, reviewer, mailto, isNeedFocus, product FROM `+"`?zt_demand`?"+` WHERE id = \? LIMIT \?`).
+				WithArgs(int64(1001), 1).
+				WillReturnRows(sqlmock.NewRows([]string{
+					"id", "status", "deleted", "createdBy", "assignedTo", "reviewedBy", "reviewer", "mailto", "isNeedFocus", "product",
+				}).AddRow(1001, "wait", "0", "alice", "bob", "bob", "bob", "", 0, 1))
 
-	// Mock 查询当前账号在 zt_demandreview 中不存在评审记录 (found = false)
-	mock.ExpectQuery(`SELECT[\s\S]*FROM[\s\S]*zt_demandreview[\s\S]*WHERE demand = \? AND reviewer = \? LIMIT \?`).
-		WithArgs(int64(1001), "demo_leader", 1).
-		WillReturnRows(sqlmock.NewRows([]string{"result"}))
+			// Mock 查询当前账号在 zt_demandreview 中不存在评审记录 (found = false)
+			mock.ExpectQuery(`SELECT[\s\S]*FROM[\s\S]*zt_demandreview[\s\S]*WHERE demand = \? AND reviewer = \? LIMIT \?`).
+				WithArgs(int64(1001), account, 1).
+				WillReturnRows(sqlmock.NewRows([]string{"result"}))
 
-	actor := &model.User{ID: 10, Account: "demo_leader"}
-	// 团队长调用业务评审接口：非指定评审人，返回 403 Forbidden
-	_, err := svc.ReviewDemand(context.Background(), actor, ReviewDemandReq{ID: 1001, Result: "pass"})
-	if err == nil {
-		t.Fatal("expected error for write action by non-assigned leader, got nil")
-	}
-	biz, ok := errorx.IsBizError(err)
-	if !ok || biz.Code != errorx.ErrCodeForbidden {
-		t.Fatalf("expected ErrCodeForbidden, got: %v", err)
+			actor := &model.User{ID: 10, Account: account}
+			// 团队长调用业务评审接口：非指定评审人，返回 403 Forbidden
+			_, err := svc.ReviewDemand(perm.WithGranted(context.Background(), map[string]bool{perm.ScheduleList.String(): true}), actor, ReviewDemandReq{ID: 1001, Result: "pass"})
+			if err == nil {
+				t.Fatal("expected error for write action by non-assigned leader, got nil")
+			}
+			biz, ok := errorx.IsBizError(err)
+			if !ok || biz.Code != errorx.ErrCodeForbidden {
+				t.Fatalf("expected ErrCodeForbidden, got: %v", err)
+			}
+		})
 	}
 }
 
 // 7. DemandDetailView 渲染标准 HTML 403 页面
-func TestDemandDetailView_403RendersHTMLErrorPage(t *testing.T) {
+func TestDemandDetailView_LeaderWithoutQueryPerm403RendersHTMLErrorPage(t *testing.T) {
 	initTestRenderer(t)
 	gin.SetMode(gin.TestMode)
 
@@ -273,11 +309,15 @@ func TestDemandDetailView_403RendersHTMLErrorPage(t *testing.T) {
 	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM zt_demand d`).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery(`SELECT d\.id, COALESCE\(d\.path, ''\) AS path FROM zt_dept d`).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "path"}))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "path"}).AddRow(14, ",1,14,"))
+	mock.ExpectQuery(`SELECT DISTINCT id FROM zt_dept WHERE id IN \(\?\) OR path LIKE \?`).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(14))
+	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM zt_demand d`).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	actor := &model.User{ID: 200, Account: "unrelated_user", IsSuperAdmin: false}
+	actor := &model.User{ID: 200, Account: "demo_leader", IsSuperAdmin: false}
 	c.Set("currentUser", actor)
 	req, _ := http.NewRequest(http.MethodGet, "/demands/2001", nil)
 	c.Request = req

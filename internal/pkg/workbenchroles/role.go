@@ -25,7 +25,7 @@ type RoleDef struct {
 // roleEntries 是 RoleMap 的内部真源，必须与 Role* 常量保持一一对应。
 // 顺序固定：与 AllRoleKeys() 保持一致。
 var roleEntries = []RoleDef{
-	{Key: RolePO, Label: "产品负责人", Description: "负责需求梳理、价值定义与跨团队拉通"},
+	{Key: RolePO, Label: "产品经理", Description: "负责需求梳理、价值定义与跨团队拉通"},
 	{Key: RoleLead, Label: "团队长", Description: "负责团队交付、人员安排与质量把关"},
 	{Key: RoleSM, Label: "Scrum Master", Description: "负责迭代节奏、阻塞清理与持续改进"},
 	{Key: RoleDev, Label: "研发", Description: "负责代码实现、自测与日常开发任务"},

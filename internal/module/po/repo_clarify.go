@@ -292,7 +292,7 @@ func (r *Repo) FindProductMembers(ctx context.Context, productIDs []int64) (map[
 			})
 		}
 
-		addMember(p.PO, "产品负责人 (PO)")
+		addMember(p.PO, "产品经理")
 		addMember(p.QD, "测试负责人 (QD)")
 		addMember(p.RD, "研发负责人 (RD)")
 		for _, w := range strings.Split(p.Whitelist, ",") {

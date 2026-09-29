@@ -82,7 +82,7 @@ func requireTeamgroupObjectEdit(actor *model.User, row *TeamgroupRow, allowGloba
 	if canEditTeamgroupObject(actor, row, allowGlobal) {
 		return nil
 	}
-	return errorx.New("forbidden", "仅该敏捷小组的 PO、敏捷教练或 PMO 可执行此操作")
+	return errorx.New("forbidden", "仅该敏捷小组的产品经理、敏捷教练或 PMO 可执行此操作")
 }
 
 // CanViewTeamgroupLeadScope 校验团队视角是否有权查看指定敏捷团队。

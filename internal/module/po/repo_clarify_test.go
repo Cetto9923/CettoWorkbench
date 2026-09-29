@@ -83,7 +83,7 @@ func TestFindProductMembers(t *testing.T) {
 	if len(list) < 5 {
 		t.Fatalf("expected at least 5 members, got: %#v", list)
 	}
-	if list[0].Account != "alice" || list[0].Role != "产品负责人 (PO)" {
+	if list[0].Account != "alice" || list[0].Role != "产品经理" {
 		t.Fatalf("expected PO first, got: %#v", list[0])
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {

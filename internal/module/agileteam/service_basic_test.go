@@ -105,7 +105,7 @@ func TestUpdateBasicInfoOwnerUsesByOwnerEventTypeAndTag(t *testing.T) {
 
 	// PO 视角：allowGlobal=false，actor 是 PO（命中 row.PO），走对象级分支。
 	findTeamgroupByIDMock(mock, 7, "po1", "sm-owner")
-	expectBasicAtomicWithSummary(mock, 7, "新名称", "[PO/教练编辑]", EventUpdateByOwner)
+	expectBasicAtomicWithSummary(mock, 7, "新名称", "[产品经理/教练编辑]", EventUpdateByOwner)
 
 	req := UpdateBasicReq{
 		ID: 7, Name: "新名称", Slogan: "稳", Declaration: "信条", Logo: "/static/logo.png",

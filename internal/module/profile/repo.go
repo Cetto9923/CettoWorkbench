@@ -16,6 +16,7 @@ import (
 
 	"gorm.io/gorm"
 	"workbench/internal/model"
+	"workbench/internal/pkg/workbenchroles"
 )
 
 // Repo 个人资料数据访问。
@@ -193,7 +194,7 @@ ORDER BY r.sortOrder ASC, r.id ASC`, account).Scan(&rows).Error
 	}
 	opts := make([]RoleOption, len(rows))
 	for i, row := range rows {
-		opts[i] = RoleOption{Key: row.RoleKey, Label: row.Label}
+		opts[i] = RoleOption{Key: row.RoleKey, Label: workbenchroles.DisplayLabel(row.RoleKey, row.Label)}
 	}
 	return opts, nil
 }

@@ -27,13 +27,13 @@ func (s *DetailService) buildValueStream(row *DemandDetailRow) *DetailValueStrea
 		label string
 		role  string
 	}{
-		{"accept", "受理", "PO"},
-		{"clarify", "澄清", "需求分析 / PO"},
+		{"accept", "受理", "产品经理"},
+		{"clarify", "澄清", "需求分析 / 产品经理"},
 		{"schedule", "排期", "排期协同"},
 		{"developing", "研发", "敏捷研发团队"},
 		{"submittest", "提测", "研发 / 测试协同"},
 		{"testing", "测试", "测试团队"},
-		{"acceptance", "验收", "业务部门 / PO"},
+		{"acceptance", "验收", "业务部门 / 产品经理"},
 		{"publish", "发布", "发布组"},
 		{"greyverify", "生产验证", "业务 / 运维"},
 		{"closed", "已关闭", "系统"},

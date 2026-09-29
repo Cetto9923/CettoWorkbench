@@ -53,7 +53,7 @@ func (s *Service) UpdateBasicInfo(ctx context.Context, actor *model.User, req Up
 
 	// 主体标签：PMO 旁路写"PMO 直接编辑"，PO/Manager 写"PO/教练编辑"。
 	// 历史文案显式标注主体，避免与"成员调整已确认生效"等 confirm 事件混淆。
-	actorTag := "[PO/教练编辑] "
+	actorTag := "[产品经理/教练编辑] "
 	eventType := EventUpdateByOwner
 	if allowGlobal || actor.IsSuperAdmin {
 		actorTag = "[PMO直接编辑] "

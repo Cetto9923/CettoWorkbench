@@ -20,6 +20,7 @@ import (
 
 	"workbench/internal/model"
 	"workbench/internal/pkg/perm"
+	"workbench/internal/pkg/workbenchroles"
 )
 
 // Service 处理角色业务逻辑。
@@ -44,13 +45,20 @@ func (s *Service) List(ctx context.Context, actor *model.User, req ListReq) (Lis
 	if err != nil {
 		return ListResp{}, err
 	}
+	for i := range items {
+		items[i].Name = workbenchroles.DisplayLabel(items[i].Code, items[i].Name)
+	}
 	return ListResp{Items: items, Total: total}, nil
 }
 
 // GetByID 按 ID 获取角色。
 func (s *Service) GetByID(ctx context.Context, actor *model.User, id int64) (*model.Role, error) {
 	_ = actor
-	return s.repo.FindByID(ctx, id)
+	row, err := s.repo.FindByID(ctx, id)
+	if row != nil {
+		row.Name = workbenchroles.DisplayLabel(row.Code, row.Name)
+	}
+	return row, err
 }
 
 // Create 创建自定义角色。
