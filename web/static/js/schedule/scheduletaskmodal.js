@@ -523,6 +523,7 @@
       }
       if (shared) {
         shared.schedulingUsers = resp.users || [];
+        shared.applyTaskTypes(resp.taskTypes);
       }
 
       cachedProjects = resp.projects || [];

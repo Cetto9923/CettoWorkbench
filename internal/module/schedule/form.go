@@ -1119,6 +1119,7 @@ type StoryTasksResp struct {
 	Summary            StoryTaskSummary                `json:"summary"`
 	Projects           []DemandSchedulingProjectOption `json:"projects"`
 	Users              []SchedulingUserOption          `json:"users"`
+	TaskTypes          []TaskTypeOption                `json:"taskTypes"`
 	DefaultProjectID   uint                            `json:"defaultProjectId"`
 	DefaultExecutionID uint                            `json:"defaultExecutionId"`
 }

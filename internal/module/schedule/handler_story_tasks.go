@@ -56,11 +56,12 @@ func (h *Handler) GetStoryTasks(c *gin.Context) {
 	}
 
 	out := gin.H{
-		"success":  true,
-		"tasks":    []StoryTaskItem{},
-		"projects": []DemandSchedulingProjectOption{},
-		"users":    []SchedulingUserOption{},
-		"summary":  StoryTaskSummary{},
+		"success":   true,
+		"tasks":     []StoryTaskItem{},
+		"projects":  []DemandSchedulingProjectOption{},
+		"users":     []SchedulingUserOption{},
+		"taskTypes": []TaskTypeOption{},
+		"summary":   StoryTaskSummary{},
 	}
 	if resp != nil {
 		out["story"] = resp.Story
@@ -72,6 +73,9 @@ func (h *Handler) GetStoryTasks(c *gin.Context) {
 		}
 		if resp.Users != nil {
 			out["users"] = resp.Users
+		}
+		if resp.TaskTypes != nil {
+			out["taskTypes"] = resp.TaskTypes
 		}
 		out["summary"] = resp.Summary
 		out["defaultProjectId"] = resp.DefaultProjectID

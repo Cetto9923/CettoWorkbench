@@ -6,6 +6,7 @@
 // 依赖: internal/model
 //       internal/module/schedule/gateway.go
 //       internal/module/schedule/repo_story_tasks.go
+//       internal/module/schedule/repo_lang.go
 // =============================================================================
 
 package schedule
@@ -79,6 +80,11 @@ func (s *Service) GetStoryTasks(ctx context.Context, actor *model.User, storyID 
 		return nil, err
 	}
 
+	taskTypes, err := s.repo.ListTaskTypeOptions(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	demandID := detail.FromDemand
 	demandName := detail.DemandName
 	if demandName == "" && demandID > 0 {
@@ -104,6 +110,7 @@ func (s *Service) GetStoryTasks(ctx context.Context, actor *model.User, storyID 
 		Summary:            buildStoryTaskSummary(taskRows),
 		Projects:           projects,
 		Users:              users,
+		TaskTypes:          taskTypes,
 		DefaultProjectID:   detail.DefaultProjectID,
 		DefaultExecutionID: detail.DefaultExecutionID,
 	}, nil
