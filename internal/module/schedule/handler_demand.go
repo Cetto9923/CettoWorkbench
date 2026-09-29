@@ -442,52 +442,6 @@ func (h *Handler) GetDemandScheduling(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// SaveScheduling 保存排期一体化弹窗数据并同步禅道（JSON）。
-func (h *Handler) SaveScheduling(c *gin.Context) {
-	demandID, ok := parseDemandID(c)
-	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"message": "参数错误",
-		})
-		return
-	}
-
-	var req SaveSchedulingReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"message": "参数错误",
-		})
-		return
-	}
-	if errs := req.Validate(); len(errs) > 0 {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"success": false,
-			"message": formatFieldErrors(errs),
-			"errors":  errs,
-		})
-		return
-	}
-
-	actor := middleware.CurrentUser(c)
-	if err := h.svc.SaveScheduling(c.Request.Context(), actor, demandID, &req); err != nil {
-		if h.logger != nil {
-			h.logger.Error("save demand scheduling failed",
-				zap.Error(err),
-				zap.Uint("demand_id", demandID),
-			)
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"success": true})
-}
-
 // SaveStoryScheduling 保存独立研发需求排期并同步禅道（JSON）。
 func (h *Handler) SaveStoryScheduling(c *gin.Context) {
 	storyID, ok := parseStoryID(c)
@@ -499,6 +453,14 @@ func (h *Handler) SaveStoryScheduling(c *gin.Context) {
 		return
 	}
 
+	// 对象级写权限先于参数解析：403 优先于 400/422。
+	// service.SaveStoryScheduling 内部仍会再校验一次。
+	actor := middleware.CurrentUser(c)
+	if err := h.svc.RequireStoryWriteAccess(c.Request.Context(), actor, storyID); err != nil {
+		h.writeWriteAuthZError(c, "check story write access failed", storyID, err)
+		return
+	}
+
 	var req SaveSchedulingReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -516,18 +478,8 @@ func (h *Handler) SaveStoryScheduling(c *gin.Context) {
 		return
 	}
 
-	actor := middleware.CurrentUser(c)
 	if err := h.svc.SaveStoryScheduling(c.Request.Context(), actor, storyID, &req); err != nil {
-		if h.logger != nil {
-			h.logger.Error("save story scheduling failed",
-				zap.Error(err),
-				zap.Uint("story_id", storyID),
-			)
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
+		h.writeWriteAuthZError(c, "save story scheduling failed", storyID, err)
 		return
 	}
 

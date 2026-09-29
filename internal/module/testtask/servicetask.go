@@ -24,8 +24,10 @@ import (
 // CreateTesttasks 将测试单同步到禅道 POST /projects/:id/testtasks。
 // Joint=1 创建一张联调总单；否则按系统逐条创建。所属执行取版本上的 execution。
 func (s *Service) CreateTesttasks(ctx context.Context, actor *model.User, demandID uint, req CreateTesttasksReq) (*CreateTesttasksResp, error) {
-	_ = demandID
-	_ = actor
+	// 对象级写权限闸门：无权时直接 403，不请求禅道。
+	if err := s.RequireDemandWriteAccess(ctx, actor, demandID); err != nil {
+		return nil, err
+	}
 	client := s.ztAPI
 	if client == nil {
 		client = zentao.API()

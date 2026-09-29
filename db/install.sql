@@ -310,7 +310,7 @@ CREATE TABLE IF NOT EXISTS `zt_depts` (
 
 -- 15. 初始化 PO 角色
 INSERT INTO `zt_roles` (`id`, `code`, `name`, `description`, `isBuiltin`, `isActive`, `sortOrder`, `createdBy`) VALUES
- (2, 'po', '产品负责人', '负责需求梳理、价值流跟踪、排期推进与跨团队协同', 1, 1, 1, '1')
+ (2, 'po', '产品经理', '负责需求梳理、价值流跟踪、排期推进与跨团队协同', 1, 1, 1, '1')
 ON DUPLICATE KEY UPDATE
  `name` = VALUES(`name`),
  `description` = VALUES(`description`);

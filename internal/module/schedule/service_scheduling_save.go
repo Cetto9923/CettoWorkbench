@@ -31,6 +31,11 @@ func (s *Service) SaveScheduling(ctx context.Context, actor *model.User, demandI
 		return errors.New("未登录或无法识别当前用户")
 	}
 
+	// 对象级写权限闸门：无权时直接 403，不进入事务、不写库、不同步禅道。
+	if err := s.RequireDemandWriteAccess(ctx, actor, demandID); err != nil {
+		return err
+	}
+
 	mainSystemID, err := s.repo.GetDemandMainSystem(ctx, demandID)
 	if err != nil {
 		return err
@@ -91,6 +96,11 @@ func (s *Service) SaveStoryScheduling(ctx context.Context, actor *model.User, st
 	account := actorAccount(actor)
 	if account == "" {
 		return errors.New("未登录或无法识别当前用户")
+	}
+
+	// 对象级写权限闸门：无权时直接 403，不进入事务、不写库、不同步禅道。
+	if err := s.RequireStoryWriteAccess(ctx, actor, storyID); err != nil {
+		return err
 	}
 
 	// 主系统取自 zt_story.product（独立研发需求无 zt_demand.mainSystem）。

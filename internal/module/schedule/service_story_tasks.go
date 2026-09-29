@@ -236,6 +236,11 @@ func (s *Service) SaveStoryTasks(ctx context.Context, actor *model.User, storyID
 		return errors.New("未登录或无法识别当前用户")
 	}
 
+	// 对象级写权限闸门：无权时直接 403，不进入事务、不写库。
+	if err := s.RequireStoryWriteAccess(ctx, actor, storyID); err != nil {
+		return err
+	}
+
 	detail, err := s.repo.GetStoryTaskDetail(ctx, storyID)
 	if err != nil {
 		return err

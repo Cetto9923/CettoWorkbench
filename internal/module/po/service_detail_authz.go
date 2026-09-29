@@ -16,6 +16,7 @@ import (
 	"gorm.io/gorm"
 
 	"workbench/internal/model"
+	"workbench/internal/module/demandauthz"
 	"workbench/internal/pkg/errorx"
 	"workbench/internal/pkg/perm"
 )
@@ -39,30 +40,26 @@ func (s *DetailService) GetDemandDetailAuthZ(ctx context.Context, actor *model.U
 // 不可见），再做对象级权限判断。授权失败统一返回 errorx.Forbidden；
 // 不存在返回 errorx.NotFound；存储错误原样向上抛。
 //
-// 可见性矩阵（F01；按以下顺序判断，任一命中即放行）：
-// 看板 FindBoardDemandTree 只按个人关系筛选；详情页在个人关系基础上
-// 增加 PMO、团队长管辖和 perm.ScheduleList 的只读放行，看板保持原口径。
+// 可见性矩阵（F01）= 对象级关系（读写共用同一口径，见 demandauthz.Evaluate）
+// OR 需求查询权限（perm.ScheduleList）只读放行：
 //
-//	超级管理员（actor.IsSuperAdmin == true）：全部可见。
-//	组织角色 PMO（zt_roles.code = 'pmo'）：全部只读可见。
-//	普通用户必须至少命中以下任一条件：
-//	  1. 需求干系人个人关系（命中至少一条）：
-//	     - PO/BR：d.BRA == actor.Account
-//	     - 研发负责人：d.RD == actor.Account
-//	     - 业务提出人：d.originator == actor.Account
-//	     - 当前责任人：d.assignedTo == actor.Account
-//	     - 测试/验收人：d.QD == actor.Account || d.accepter == actor.Account
-//	     - 评审人：d.reviewer == actor.Account
-//	     - 创建人：d.createdBy == actor.Account
-//	     - 闭环人：d.closedBy == actor.Account
-//	     - 编辑人：d.editedBy == actor.Account
-//	     - 反馈接收人：d.feedbackedBy == actor.Account
-//	     - 澄清 PM：zt_demandclarify.PM == actor.Account
-//	  2. 组织角色（团队长）：需求任一干系人属于该团队长管辖部门（zt_dept.manager，补缺表优先）或其下级部门。
-//
-//	  3. 拥有 perm.ScheduleList：放行只读查看，不排除产品经理或团队长。
-//
-// 未命中以上条件返回 403；不授予任何写权限。
+//	超级管理员（actor.IsSuperAdmin == true）：全部可见、可写。
+//	组织角色 PMO（zt_roles.code = 'pmo'）：全部可见、可写。
+//	个人干系人关系（命中至少一条）：
+//	  - PO/BR：d.BRA == actor.Account
+//	  - 研发负责人：d.RD == actor.Account
+//	  - 业务提出人：d.originator == actor.Account
+//	  - 当前责任人：d.assignedTo == actor.Account
+//	  - 测试/验收人：d.QD == actor.Account || d.accepter == actor.Account
+//	  - 评审人：d.reviewer == actor.Account
+//	  - 创建人：d.createdBy == actor.Account
+//	  - 闭环人：d.closedBy == actor.Account
+//	  - 编辑人：d.editedBy == actor.Account
+//	  - 反馈接收人：d.feedbackedBy == actor.Account
+//	  - 澄清 PM：zt_demandclarify.PM == actor.Account
+//	组织角色（团队长）：需求任一干系人属于该团队长管辖部门（zt_dept.manager，
+//	补缺表优先）或其下级部门。
+//	以上均未命中时，perm.ScheduleList 仅放行「只读查看」，不授予任何写权限。
 //
 // 父需求沿用同一矩阵；子需求列表各自独立走 loadDemandIfVisible，避免父可见
 // 子不可见时的正文泄露（详见 service_detail.go 父/子聚合）。
@@ -74,46 +71,18 @@ func (s *DetailService) loadDemandIfVisible(ctx context.Context, actor *model.Us
 		}
 		return nil, err
 	}
-	if actor != nil && actor.IsSuperAdmin {
-		return row, nil
-	}
 
-	// 1. 组织角色 PMO：全量只读放行
-	if actor != nil && actor.ID > 0 {
-		isPMO, pmoErr := s.repo.IsPMORole(ctx, actor.ID)
-		if pmoErr != nil {
-			return nil, pmoErr
-		}
-		if isPMO {
-			return row, nil
-		}
-	}
-
-	// 2. 个人干系人关系放行
-	ok, err := s.repo.CheckDemandVisibility(ctx, demandID, actor.Account)
+	// 对象级关系判断：超管 / PMO / 干系人 / 团队长管辖。
+	// 与排期工作台写授权（demandauthz.Evaluate）共用同一份 SQL 与顺序。
+	access, err := s.repo.authzRepo().Evaluate(ctx, actor, demandID)
 	if err != nil {
 		return nil, err
 	}
-	if ok {
+	if access != demandauthz.AccessNone {
 		return row, nil
 	}
 
-	// 3. 组织角色团队长：管辖部门（或其下级部门）内干系人需求只读可见
-	leaderDeptIDs, err := s.repo.ListLeaderDeptTreeIDs(ctx, actor.Account)
-	if err != nil {
-		return nil, err
-	}
-	if len(leaderDeptIDs) > 0 {
-		leaderVisible, err := s.repo.CheckLeaderDemandVisibility(ctx, demandID, leaderDeptIDs)
-		if err != nil {
-			return nil, err
-		}
-		if leaderVisible {
-			return row, nil
-		}
-	}
-
-	// 4. 未命中个人或管辖关系时，需求查询权限仍可放行只读查看。
+	// 需求查询权限仍可放行只读查看；该权限不含写权限（见 RequireDemandWrite）。
 	if perm.HasAnyGranted(ctx, perm.ScheduleList) {
 		return row, nil
 	}
