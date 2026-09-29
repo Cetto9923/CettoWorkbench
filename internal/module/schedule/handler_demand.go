@@ -453,6 +453,14 @@ func (h *Handler) SaveStoryScheduling(c *gin.Context) {
 		return
 	}
 
+	// 对象级写权限先于参数解析：403 优先于 400/422。
+	// service.SaveStoryScheduling 内部仍会再校验一次。
+	actor := middleware.CurrentUser(c)
+	if err := h.svc.RequireStoryWriteAccess(c.Request.Context(), actor, storyID); err != nil {
+		h.writeWriteAuthZError(c, "check story write access failed", storyID, err)
+		return
+	}
+
 	var req SaveSchedulingReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -470,18 +478,8 @@ func (h *Handler) SaveStoryScheduling(c *gin.Context) {
 		return
 	}
 
-	actor := middleware.CurrentUser(c)
 	if err := h.svc.SaveStoryScheduling(c.Request.Context(), actor, storyID, &req); err != nil {
-		if h.logger != nil {
-			h.logger.Error("save story scheduling failed",
-				zap.Error(err),
-				zap.Uint("story_id", storyID),
-			)
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
+		h.writeWriteAuthZError(c, "save story scheduling failed", storyID, err)
 		return
 	}
 

@@ -200,9 +200,12 @@ func (s *Service) ListProductBuilds(ctx context.Context, actor *model.User, prod
 
 // CreateBuilds 将「创建新版本」项同步到禅道 POST /projects/:id/builds；builder 为当前用户 account。
 func (s *Service) CreateBuilds(ctx context.Context, actor *model.User, demandID uint, req CreateBuildsReq) (*CreateBuildsResp, error) {
-	_ = demandID // 路由上下文，便于日志与后续扩展校验
 	if actor == nil || strings.TrimSpace(actor.Account) == "" {
 		return nil, errorx.New(errorx.ErrCodeForbidden, "请先登录")
+	}
+	// 对象级写权限闸门：无权时直接 403，不请求禅道。
+	if err := s.RequireDemandWriteAccess(ctx, actor, demandID); err != nil {
+		return nil, err
 	}
 	client := s.ztAPI
 	if client == nil {

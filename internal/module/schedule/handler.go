@@ -363,6 +363,14 @@ func (h *Handler) UpdateWindow(c *gin.Context) {
 		return
 	}
 
+	// 对象级写权限先于参数解析：403 优先于 400/422。
+	// service.Update 内部仍会再校验一次（canModifyWindow）。
+	actor := middleware.CurrentUser(c)
+	if err := h.svc.RequireWindowWriteAccess(c.Request.Context(), actor, id); err != nil {
+		h.writeWindowAuthZError(c, id, err, "check version window write access failed", "更新版本窗口失败")
+		return
+	}
+
 	var req UpdateReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -382,26 +390,8 @@ func (h *Handler) UpdateWindow(c *gin.Context) {
 		return
 	}
 
-	actor := middleware.CurrentUser(c)
-	if actorAccount(actor) == "" {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"error":   "未登录或无法识别当前用户",
-		})
-		return
-	}
-
 	if err := h.svc.Update(c.Request.Context(), actor, req); err != nil {
-		if h.logger != nil {
-			h.logger.Error("update version window failed",
-				zap.Error(err),
-				zap.Uint64("window_id", id),
-			)
-		}
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"error":   "更新版本窗口失败",
-		})
+		h.writeWindowAuthZError(c, id, err, "update version window failed", "更新版本窗口失败")
 		return
 	}
 
@@ -423,14 +413,9 @@ func (h *Handler) DeleteWindow(c *gin.Context) {
 		return
 	}
 
+	// 未登录由 service.Delete 内的 canModifyWindow 统一判定为 403，
+	// 与 UpdateWindow 同一出口，不再在此处重复放行成 200。
 	actor := middleware.CurrentUser(c)
-	if actorAccount(actor) == "" {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"error":   "未登录或无法识别当前用户",
-		})
-		return
-	}
 
 	deleteReq := DeleteReq{ID: id}
 	if errs := deleteReq.Validate(); len(errs) > 0 {
@@ -441,16 +426,7 @@ func (h *Handler) DeleteWindow(c *gin.Context) {
 		return
 	}
 	if err := h.svc.Delete(c.Request.Context(), actor, deleteReq); err != nil {
-		if h.logger != nil {
-			h.logger.Error("delete version window failed",
-				zap.Error(err),
-				zap.Uint64("window_id", id),
-			)
-		}
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"error":   err.Error(),
-		})
+		h.writeWindowAuthZError(c, id, err, "delete version window failed", err.Error())
 		return
 	}
 

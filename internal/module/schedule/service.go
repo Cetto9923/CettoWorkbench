@@ -304,6 +304,10 @@ func (s *Service) Update(ctx context.Context, actor *model.User, req UpdateReq) 
 	if window == nil {
 		return errors.New("窗口不存在")
 	}
+	// 对象级写权限：与 Delete 共用 canModifyWindow，避免两处口径漂移。
+	if err := s.canModifyWindow(ctx, actor, window); err != nil {
+		return err
+	}
 	if err := applyUpdateReqToVersionWindow(window, req); err != nil {
 		return err
 	}
@@ -330,9 +334,9 @@ func (s *Service) Delete(ctx context.Context, actor *model.User, req DeleteReq) 
 	if window == nil {
 		return errors.New("窗口不存在")
 	}
-	account := actorAccount(actor)
-	if window.CreatedBy != account {
-		return errors.New("只有创建人可以删除")
+	// 对象级写权限：与 Update 共用 canModifyWindow，避免两处口径漂移。
+	if err := s.canModifyWindow(ctx, actor, window); err != nil {
+		return err
 	}
 	// TODO: 如果窗口已关联需求，不允许删除
 	return s.repo.Delete(ctx, req.ID)

@@ -126,6 +126,14 @@ func (h *Handler) CreateBuilds(c *gin.Context) {
 		return
 	}
 
+	// 对象级写权限先于参数解析：403 优先于 400/422。
+	// service.CreateBuilds 内部仍会再校验一次。
+	actor := middleware.CurrentUser(c)
+	if authzErr := h.svc.RequireDemandWriteAccess(c.Request.Context(), actor, id); authzErr != nil {
+		h.writeWriteAuthZError(c, id, authzErr, "check demand write access failed")
+		return
+	}
+
 	var req CreateBuildsReq
 	if bindErr := c.ShouldBindJSON(&req); bindErr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "参数解析失败"})
@@ -140,7 +148,7 @@ func (h *Handler) CreateBuilds(c *gin.Context) {
 		return
 	}
 
-	resp, svcErr := h.svc.CreateBuilds(c.Request.Context(), middleware.CurrentUser(c), id, req)
+	resp, svcErr := h.svc.CreateBuilds(c.Request.Context(), actor, id, req)
 	if svcErr != nil {
 		if h.logger != nil {
 			h.logger.Error("testtask create builds", zap.Error(svcErr), zap.Uint("id", id))
@@ -165,6 +173,14 @@ func (h *Handler) CreateTesttasks(c *gin.Context) {
 		return
 	}
 
+	// 对象级写权限先于参数解析：403 优先于 400/422。
+	// service.CreateTesttasks 内部仍会再校验一次。
+	actor := middleware.CurrentUser(c)
+	if authzErr := h.svc.RequireDemandWriteAccess(c.Request.Context(), actor, id); authzErr != nil {
+		h.writeWriteAuthZError(c, id, authzErr, "check demand write access failed")
+		return
+	}
+
 	var req CreateTesttasksReq
 	if bindErr := c.ShouldBindJSON(&req); bindErr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "参数解析失败"})
@@ -179,7 +195,7 @@ func (h *Handler) CreateTesttasks(c *gin.Context) {
 		return
 	}
 
-	resp, svcErr := h.svc.CreateTesttasks(c.Request.Context(), middleware.CurrentUser(c), id, req)
+	resp, svcErr := h.svc.CreateTesttasks(c.Request.Context(), actor, id, req)
 	if svcErr != nil {
 		if h.logger != nil {
 			h.logger.Error("testtask create tasks", zap.Error(svcErr), zap.Uint("id", id))
