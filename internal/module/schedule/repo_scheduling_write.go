@@ -46,30 +46,6 @@ type ZtStorySpec struct {
 	Spec    string
 }
 
-// ZtTaskInsert 禅道 zt_task 写入字段。
-type ZtTaskInsert struct {
-	Name       string
-	Type       string
-	Pri        int
-	Story      uint
-	Project    uint
-	Execution  uint
-	AssignedTo string
-	Estimate   float64
-	EstStarted string
-	Deadline   string
-	OpenedBy   string
-}
-
-// ZtTaskSpec 禅道 zt_taskspec 写入字段。
-type ZtTaskSpec struct {
-	Task       uint
-	Version    int
-	Name       string
-	EstStarted string
-	Deadline   string
-}
-
 // FindWindowProductPlan 查窗口下某产品的关联计划。
 func (r *Repo) FindWindowProductPlan(ctx context.Context, windowID uint, productID uint) (*model.VersionWindowProduct, error) {
 	if windowID == 0 || productID == 0 {
@@ -271,52 +247,6 @@ func (r *Repo) DeleteStory(ctx context.Context, storyID uint) error {
 		Table("zt_story").
 		Where("id = ? AND deleted = '0'", storyID).
 		Update("deleted", "1").Error
-}
-
-// CreateTask 创建任务。
-func (r *Repo) CreateTask(ctx context.Context, task *ZtTaskInsert) (uint, error) {
-	if task == nil {
-		return 0, errors.New("task is nil")
-	}
-	now := time.Now()
-	row := ztmodel.ZtTask{
-		Name:       strings.TrimSpace(task.Name),
-		Type:       strings.TrimSpace(task.Type),
-		Pri:        task.Pri,
-		Story:      task.Story,
-		Project:    task.Project,
-		Execution:  task.Execution,
-		AssignedTo: strings.TrimSpace(task.AssignedTo),
-		Estimate:   task.Estimate,
-		Consumed:   0,
-		Left:       task.Estimate,
-		EstStarted: nullableDateValue(task.EstStarted),
-		Deadline:   nullableDateValue(task.Deadline),
-		Status:     "wait",
-		OpenedBy:   task.OpenedBy,
-		OpenedDate: now,
-		Version:    1,
-		Deleted:    "0",
-	}
-	if err := r.db.WithContext(ctx).Create(&row).Error; err != nil {
-		return 0, err
-	}
-	return row.ID, nil
-}
-
-// CreateTaskSpec 创建任务描述。
-func (r *Repo) CreateTaskSpec(ctx context.Context, spec *ZtTaskSpec) error {
-	if spec == nil {
-		return errors.New("task spec is nil")
-	}
-	row := ztmodel.ZtTaskspec{
-		Task:       spec.Task,
-		Version:    spec.Version,
-		Name:       strings.TrimSpace(spec.Name),
-		EstStarted: nullableDateValue(spec.EstStarted),
-		Deadline:   nullableDateValue(spec.Deadline),
-	}
-	return r.db.WithContext(ctx).Create(&row).Error
 }
 
 // UpdateTask 更新任务字段。

@@ -2,7 +2,7 @@
 // 文件: internal/module/schedule/gateway.go
 // 模块: 排期工作台
 // 类型: action
-// 职责: 出站适配层：调用禅道检查业需转研发提醒、指派研需、编辑任务，以及批量删除研发需求/任务。
+// 职责: 出站适配层：调用禅道检查业需转研发提醒、指派研需、创建/编辑任务，以及批量删除研发需求/任务。
 // 依赖: internal/pkg/zentao
 // =============================================================================
 
@@ -108,6 +108,40 @@ func buildZentaoTaskEditBody(taskReq SaveSchedulingTask) map[string]any {
 		"deadline":   strings.TrimSpace(taskReq.Deadline),
 		"execution":  taskReq.ExecutionID,
 	}
+}
+
+// buildZentaoTaskCreateBody 组装禅道 POST /executions/:id/tasks 的创建字段。
+// execution 由 path 提供；project 由禅道按执行反填。
+func buildZentaoTaskCreateBody(storyID uint, taskReq SaveSchedulingTask) map[string]any {
+	return map[string]any{
+		"name":       strings.TrimSpace(taskReq.Name),
+		"type":       strings.TrimSpace(taskReq.Type),
+		"pri":        normalizeTaskPriority(taskReq.Pri),
+		"assignedTo": strings.TrimSpace(taskReq.AssignedTo),
+		"estimate":   taskReq.Estimate,
+		"estStarted": strings.TrimSpace(taskReq.EstStarted),
+		"deadline":   strings.TrimSpace(taskReq.Deadline),
+		"story":      storyID,
+	}
+}
+
+func zentaoTaskCreatePath(executionID uint) string {
+	return fmt.Sprintf("/executions/%d/tasks", executionID)
+}
+
+// createTask 调用禅道 POST /executions/{id}/tasks 创建任务（含 Opened 历史由禅道写入）。
+func createTask(ctx context.Context, client *zentao.Client, storyID uint, taskReq SaveSchedulingTask) error {
+	if taskReq.ExecutionID == 0 {
+		return fmt.Errorf("执行 ID 无效")
+	}
+	if client == nil {
+		return fmt.Errorf("禅道 API 未配置")
+	}
+	body := buildZentaoTaskCreateBody(storyID, taskReq)
+	if err := client.Do(ctx, http.MethodPost, zentaoTaskCreatePath(taskReq.ExecutionID), body, nil); err != nil {
+		return fmt.Errorf("创建任务失败: %w", err)
+	}
+	return nil
 }
 
 // updateTask 调用禅道 PUT /tasks/{id} 更新任务字段（含历史由禅道写入）。

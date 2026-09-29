@@ -311,37 +311,13 @@ func (s *Service) applySingleSchedulingTask(
 ) error {
 	switch strings.TrimSpace(taskReq.Action) {
 	case "new":
+		// 任务本体与 Opened 历史由禅道 POST /executions/{id}/tasks 完成。
+		if err := createTask(ctx, s.ztAPI, storyID, taskReq); err != nil {
+			return err
+		}
 		projectID, err := txRepo.GetProjectIDByExecution(ctx, taskReq.ExecutionID)
 		if err != nil {
 			return err
-		}
-		taskID, err := txRepo.CreateTask(ctx, &ZtTaskInsert{
-			Name:       taskReq.Name,
-			Type:       taskReq.Type,
-			Pri:        normalizeTaskPriority(taskReq.Pri),
-			Story:      storyID,
-			Project:    projectID,
-			Execution:  taskReq.ExecutionID,
-			AssignedTo: taskReq.AssignedTo,
-			Estimate:   taskReq.Estimate,
-			EstStarted: taskReq.EstStarted,
-			Deadline:   taskReq.Deadline,
-			OpenedBy:   account,
-		})
-		if err != nil {
-			return fmt.Errorf("create task: %w", err)
-		}
-		if err := txRepo.CreateTaskSpec(ctx, &ZtTaskSpec{
-			Task:       taskID,
-			Version:    1,
-			Name:       taskReq.Name,
-			EstStarted: taskReq.EstStarted,
-			Deadline:   taskReq.Deadline,
-		}); err != nil {
-			return fmt.Errorf("create task spec: %w", err)
-		}
-		if err := txRepo.CreateAction(ctx, "task", taskID, "Opened", account, productID, projectID, taskReq.ExecutionID, ""); err != nil {
-			return fmt.Errorf("create task action: %w", err)
 		}
 		if err := txRepo.LinkStoryToProjectAndExecution(ctx, storyID, productID, projectID, taskReq.ExecutionID, account); err != nil {
 			return fmt.Errorf("link story to project/execution: %w", err)
