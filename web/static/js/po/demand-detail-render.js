@@ -74,15 +74,15 @@
       '<div class="dd-title">' + esc(cleanTitle) + '</div>' +
       '<div class="dd-meta">' +
       '  <span>提出人：' + esc(summary.proposerName) + '</span>' +
-      '  <span>产品经理：' + esc(summary.ownerName) + '</span>' +
+      '  <span>需求负责人：' + esc(summary.ownerName) + '</span>' +
       '  <span>最近更新：' + esc(window.formatDateTime ? window.formatDateTime(summary.editedDate) : summary.editedDate) + '</span>' +
       '</div>' +
       '<div class="dd-summary-panel">' +
       '  <div class="dd-summary-grid">' +
-      '    <div class="dd-summary-cell"><div class="lab">当前阶段</div><div class="val blue">' + esc(stageLabel) + '</div></div>' +
+      '    <div class="dd-summary-cell"><div class="lab">当前阶段</div><div class="val blue">' + esc(stageLabel) + ' <span class="dd-stage-sub">' + esc(zentaoStatusLabel(summary.zentaoStatus)) + '</span></div></div>' +
       '    <div class="dd-summary-cell"><div class="lab">业务评审人</div><div class="val">' + esc(reviewer) + '</div></div>' +
       '    <div class="dd-summary-cell"><div class="lab">需求创建时间</div><div class="val">' + esc(summary.createdDate || "—") + '</div></div>' +
-      '    <div class="dd-summary-cell"><div class="lab">期望上线日期</div><div class="val">' + esc(launch) + '</div></div>' +
+      '    <div class="dd-summary-cell"><div class="lab">预计上线时间</div><div class="val">' + esc(launch) + '</div></div>' +
       '    <div class="dd-summary-cell"><div class="lab">需求类别</div><div class="val">' + esc(categoryLabel(summary.category)) + '</div></div>' +
       '    <div class="dd-summary-cell"><div class="lab">需求来源</div><div class="val">' + esc(summary.source) + '</div></div>' +
       '    <div class="dd-summary-cell"><div class="lab">所属需求池</div><div class="val">' + esc(summary.poolName) + '</div></div>' +
@@ -121,11 +121,18 @@
     var action;
     var isSubmitTest = String(pa.key || "") === "submit_test" && pa.enabled !== false;
     var isRemindAccept = String(pa.key || "") === "remind_accept" && pa.enabled !== false;
+    var isAcceptDone = (String(pa.key || "") === "accept_done" || String(pa.key || "") === "accept") && pa.enabled !== false;
     var isWithdrawReview = (String(pa.key || "") === "withdraw_review" && pa.enabled !== false) || (summary && summary.canWithdrawReview);
     if (pa.enabled === false) {
       var disabledReason = pa.reason || "暂无权限";
       var btnLabel = spotlight.actionLabel || pa.label || "排期";
+      if (pa.key === "accept_done" || pa.key === "accept" || btnLabel === "验收") {
+        disabledReason = "由指派给本人、且状态为待验收的人办理";
+      }
       action = '<button type="button" class="dd-btn disabled" disabled aria-disabled="true" title="' + esc(disabledReason) + '">' + esc(btnLabel) + '</button>';
+    } else if (isAcceptDone) {
+      var did = String(summary.demandId || summary.id || "").replace(/^US/i, "");
+      action = '<button type="button" class="dd-btn primary js-po-drawer-action" data-action-key="accept" data-demand-id="' + esc(did) + '" data-demand-title="' + esc(summary.title || "") + '" title="由指派给本人、且状态为待验收的人办理">' + esc(pa.label || spotlight.actionLabel || "验收") + '</button>';
     } else if (isSubmitTest) {
       var did = String(summary.demandId || summary.id || "").replace(/^US/i, "");
       var title = String(summary.title || "").replace(/"/g, "&quot;");
@@ -180,8 +187,8 @@
     for (var i = 0; i < vs.stages.length; i++) {
       var s = vs.stages[i];
       var roleText = s.role;
-      if (roleText === "PO") roleText = "产品经理";
-      else if (roleText) roleText = roleText.replace(/\bPO\b/g, "产品经理");
+      if (roleText === "PO" || roleText === "产品经理") roleText = "需求负责人";
+      else if (roleText) roleText = roleText.replace(/\bPO\b/g, "需求负责人").replace(/产品经理/g, "需求负责人");
       var fullStageText = [s.label, roleText, s.durationText].filter(Boolean).join(" · ");
       html.push(
         '<div class="dd-flow-stage ' + esc(s.status) + '" title="' + esc(fullStageText) + '">',
@@ -203,7 +210,7 @@
     var spHtml = renderSpotlight(data.spotlight, data);
     var summary = data.summary;
     var descTxt = excerpt(summary.desc, 160) || "暂无需求描述";
-    var verifyTxt = excerpt(summary.verifyPlan, 160) || "暂无验收标准摘要";
+    var verifyTxt = excerpt(summary.verifyPlan, 160) || "暂无生产验证计划摘要";
 
     var tasksPair = summary.tasksTotal > 0 ? (summary.tasksDone + " / " + summary.tasksTotal) : "—";
     var casesPair = summary.casesTotal > 0 ? (summary.casesExecuted + " / " + summary.casesTotal) : "—";
@@ -221,7 +228,7 @@
       '        <p>' + esc(descTxt) + '</p>',
       '      </div>',
       '      <div class="dd-summary-block dd-mt-10">',
-      '        <div class="st"><b>验收标准</b><a href="javascript:void(0)" onclick="DemandDetail.switchTab(\'requirement\')">查看完整内容 →</a></div>',
+      '        <div class="st"><b>生产验证计划</b><a href="javascript:void(0)" onclick="DemandDetail.switchTab(\'requirement\')">查看完整内容 →</a></div>',
       '        <p>' + esc(verifyTxt) + '</p>',
       '      </div>',
       '    </div></div>',
@@ -238,10 +245,10 @@
       '    <div class="dd-card"><div class="dd-card-body">',
       '      <div class="dd-cardhead"><h3>关键计划与实际</h3><span class="dd-note">只展示跨阶段关键里程碑</span></div>',
       '      <div class="dd-milestones">',
-      '        <div class="dd-ms"><div class="k">开发完成</div><div class="v">' + esc(summary.developFinish || "—") + '</div><div class="sub">计划完成</div></div>',
-      '        <div class="dd-ms"><div class="k">测试完成</div><div class="v">' + esc(summary.testFinish || "—") + '</div><div class="sub">计划完成</div></div>',
-      '        <div class="dd-ms"><div class="k">验收完成</div><div class="v">' + esc(summary.verifyFinish || "—") + '</div><div class="sub">计划完成</div></div>',
-      '        <div class="dd-ms"><div class="k">期望上线日期</div><div class="v">' + esc(summary.estimateLaunch || "—") + '</div><div class="sub">禅道当前字段</div></div>',
+      '        <div class="dd-ms"><div class="k">开发完成</div><div class="v">' + esc(summary.developFinish || "—") + '</div><div class="sub">预计完成</div></div>',
+      '        <div class="dd-ms"><div class="k">测试完成</div><div class="v">' + esc(summary.testFinish || "—") + '</div><div class="sub">预计完成</div></div>',
+      '        <div class="dd-ms"><div class="k">验收完成</div><div class="v">' + esc(summary.verifyFinish || "—") + '</div><div class="sub">预计完成</div></div>',
+      '        <div class="dd-ms"><div class="k">预计上线时间</div><div class="v">' + esc(summary.estimateLaunch || "—") + '</div><div class="sub">禅道当前字段</div></div>',
       '      </div>',
       '    </div></div>',
       '  </div>',
@@ -260,14 +267,14 @@
       '        <div class="k">BSA等级</div><div class="v">' + esc(summary.bsa) + '</div>',
       '        <div class="k">来源备注</div><div class="v">' + esc(summary.sourceNote) + '</div>',
       '      </div>',
-      '      <div class="dd-aside-title dd-mt-14">责任与状态</div>',
+      '      <div class="dd-aside-title dd-mt-14">责任与组织</div>',
       '      <div class="dd-kv-list compact">',
-      '        <div class="k">产品经理</div><div class="v">' + esc(summary.ownerName) + '</div>',
-      '        <div class="k">需求提出人</div><div class="v">' + esc(summary.proposerName) + '</div>',
+      '        <div class="k">需求负责人</div><div class="v">' + esc(summary.ownerName) + '</div>',
+      '        <div class="k">提出人</div><div class="v">' + esc(summary.proposerName) + '</div>',
       '        <div class="k">测试负责人</div><div class="v">' + esc(summary.testOwner) + '</div>',
       '        <div class="k">验收负责人</div><div class="v">' + esc(summary.acceptOwner) + '</div>',
       '        <div class="k">业务评审人</div><div class="v">' + esc(summary.reviewer) + '</div>',
-      '        <div class="k">当前责任人</div><div class="v">' + esc(summary.currentOwner || "待确认") + '</div>',
+      '        <div class="k">指派给</div><div class="v">' + esc(summary.assignedToName || summary.assignedTo || summary.currentOwner || "待确认") + '</div>',
       '        <div class="k">禅道状态</div><div class="v">' + esc(summary.zentaoStatus) + '</div>',
       '        <div class="k">当前阻塞</div><div class="v">' + esc(blocked) + '</div>',
       '      </div>',
@@ -291,11 +298,11 @@
 
     return '<div class="dd-card" id="requirementSection"><div class="dd-card-body">' +
       '<div class="dd-cardhead"><h3>业务需求正文与描述</h3></div><div class="dd-richtext-content dd-mb-16">' + (safeSpecHtml || "—") + '</div>' +
-      '<div class="dd-cardhead"><h3>验收标准 (Verify Plan)</h3></div><div class="dd-richtext-content">' + (safeVerifyHtml || "—") + '</div>' +
+      '<div class="dd-cardhead"><h3>生产验证计划 (Verify Plan)</h3></div><div class="dd-richtext-content">' + (safeVerifyHtml || "—") + '</div>' +
       '</div></div>' +
       '<div class="dd-card" id="clarificationSection"><div class="dd-card-body">' +
       '<div class="dd-cardhead"><h3>系统/产品维度澄清说明</h3></div>' +
-      (clarifyRows ? '<table class="dd-table"><thead><tr><th>产品/系统</th><th>需求分析师</th><th>澄清要点</th><th>计划开发完成</th><th>计划测试完成</th></tr></thead><tbody>' + clarifyRows + '</tbody></table>' : '<div class="dd-empty-tip">暂无多系统澄清拆解</div>') +
+      (clarifyRows ? '<table class="dd-table"><thead><tr><th>产品/系统</th><th>需求分析人员</th><th>澄清要点</th><th>预计开发完成</th><th>预计测试完成</th></tr></thead><tbody>' + clarifyRows + '</tbody></table>' : '<div class="dd-empty-tip">暂无多系统澄清拆解</div>') +
       '</div></div>' +
       '<div class="dd-card" id="clarificationActionSection"><div class="dd-card-body">' +
       '<div class="dd-cardhead"><h3>需求澄清协同与办理动作</h3></div>' +
@@ -320,9 +327,9 @@
       '</div>' +
       '<div class="dd-cardhead"><h3>发布与投产信息</h3></div>' +
       '<div class="dd-kv-list dd-cols-120">' +
-      '  <div class="k">期望上线日期</div><div class="v">' + esc(delivery.estimateLaunch) + '</div>' +
+      '  <div class="k">预计上线时间</div><div class="v">' + esc(delivery.estimateLaunch) + '</div>' +
       '  <div class="k">发布规划窗口</div><div class="v">' + esc(delivery.publishWindow) + '</div>' +
-      '  <div class="k">生产验证结论</div><div class="v">' + esc(delivery.verifyConclusion) + '</div>' +
+      '  <div class="k">生产验证计划</div><div class="v">' + esc(delivery.verifyConclusion) + '</div>' +
       '</div></div></div>';
   }
 

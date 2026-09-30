@@ -87,7 +87,7 @@
         bannerBadge = "待我评审";
         bannerText = isCreator
           ? "该需求处于待业务评审阶段。您是业务评审人，也是创建人。可在底部统一办理（评审通过、驳回拒绝、编辑或撤回）。"
-          : "该需求处于待业务评审阶段，您是业务评审人。请核对需求背景与验收标准后，在底部进行评审通过或驳回。";
+          : "该需求处于待业务评审阶段，您是业务评审人。请核对需求背景与生产验证计划后，在底部进行评审通过或驳回。";
       } else if (isCreator) {
         bannerBadge = "待业务评审";
         badgeMod = "dd-review-badge--creator";
@@ -207,8 +207,8 @@
       '        <div class="dd-review-richtext">' + (safeSpecHtml || '<span class="text-muted">暂无详细描述</span>') + '</div>',
       '      </div></div>',
       '      <div class="dd-card"><div class="dd-card-body">',
-      '        <div class="dd-cardhead"><h3>验收标准 (Verify Plan)</h3></div>',
-      '        <div class="dd-review-richtext">' + (safeVerifyHtml || '<span class="text-muted">暂无验收标准说明</span>') + '</div>',
+      '        <div class="dd-cardhead"><h3>生产验证计划 (Verify Plan)</h3></div>',
+      '        <div class="dd-review-richtext">' + (safeVerifyHtml || '<span class="text-muted">暂无生产验证计划说明</span>') + '</div>',
       '      </div></div>',
       filesRows ? ('      <div class="dd-card"><div class="dd-card-body"><div class="dd-cardhead"><h3>需求附件</h3></div><ul class="dd-file-list">' + filesRows + '</ul></div></div>') : '',
       '    </div>',
@@ -222,16 +222,16 @@
       '          <div class="k">优先级</div><div class="v">' + esc(summary.priority) + '</div>',
       '          <div class="k">所属需求池</div><div class="v">' + esc(summary.poolName) + '</div>',
       '          <div class="k">所属模块</div><div class="v">' + esc(summary.moduleName || "—") + '</div>',
-      '          <div class="k">期望上线日期</div><div class="v">' + esc(summary.estimateLaunch || "—") + '</div>',
+      '          <div class="k">预计上线时间</div><div class="v">' + esc(summary.estimateLaunch || "—") + '</div>',
       '        </div>',
-      '        <div class="dd-aside-title" style="margin-top:14px">相关责任人</div>',
+      '        <div class="dd-aside-title dd-mt-14">责任与组织</div>',
       '        <div class="dd-kv-list compact">',
       '          <div class="k">提出人</div><div class="v">' + esc(summary.proposerName) + '</div>',
       '          <div class="k">提出部门</div><div class="v">' + esc(summary.proposerDept || "—") + '</div>',
-      '          <div class="k">产品经理</div><div class="v">' + esc(summary.ownerName) + '</div>',
+      '          <div class="k">需求负责人</div><div class="v">' + esc(summary.ownerName) + '</div>',
       '          <div class="k">业务评审人</div><div class="v">' + esc(summary.reviewer) + '</div>',
       '          <div class="k">创建人</div><div class="v">' + esc(summary.createdName || summary.createdBy || "—") + '</div>',
-      '          <div class="k">当前责任人</div><div class="v">' + esc(summary.currentOwner || "待确认") + '</div>',
+      '          <div class="k">指派给</div><div class="v">' + esc(summary.assignedToName || summary.assignedTo || summary.currentOwner || "待确认") + '</div>',
       '        </div>',
       '      </div></div>',
       '    </aside>',
