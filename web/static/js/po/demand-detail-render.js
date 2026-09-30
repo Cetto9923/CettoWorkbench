@@ -239,6 +239,39 @@
     return html.join("");
   }
 
+  /**
+   * F6: 价值模型两行（需求价值系数 + 预估费用）
+   * 仅在 valueModel.enabled=true 且未 skipped 时返回 HTML，否则返回空字符串。
+   */
+  function renderValueModelRows(valueModel) {
+    if (!valueModel || !valueModel.enabled || valueModel.skipped) return "";
+    var badge = '<span class="dd-feat-badge">模型测算</span>';
+    var valueRow = '<div class="dd-valmodel-row">' +
+      '<span class="dd-valmodel-label">' + badge + ' 需求价值系数</span>' +
+      '<span class="dd-valmodel-val">' + esc(valueModel.demandValue || "—") + '</span>' +
+      '</div>';
+    var low = Number(valueModel.costLow) || 0;
+    var high = Number(valueModel.costHigh) || 0;
+    var costText;
+    if (valueModel.costAvailable === false) {
+      costText = esc(valueModel.costUnavailableReason || "费用不可用");
+    } else {
+      var unit = (low >= 10000 || high >= 10000) ? "万元" : "元";
+      var fmtN = unit === "万元"
+        ? function (n) { return (n / 10000).toFixed(2); }
+        : function (n) { return String(n); };
+      costText = esc(fmtN(low) + " ~ " + fmtN(high) + " " + unit);
+      if (valueModel.intervalPercent) {
+        costText += '<span class="dd-valmodel-muted">（' + esc(String(valueModel.intervalPercent)) + '% 区间）</span>';
+      }
+    }
+    var costRow = '<div class="dd-valmodel-row">' +
+      '<span class="dd-valmodel-label">' + badge + ' 预估费用</span>' +
+      '<span class="dd-valmodel-val">' + costText + '</span>' +
+      '</div>';
+    return '<div class="dd-valmodel-section">' + valueRow + costRow + '</div>';
+  }
+
   function renderTabOverview(data) {
     var vsHtml = renderValueStream(data.valueStream);
     var spHtml = renderSpotlight(data.spotlight, data);
@@ -270,6 +303,7 @@
       : "";
 
     var hangText = (summary.flags && summary.flags.hang) ? "是 (挂起中)" : "否";
+    var valModelHtml = renderValueModelRows(data.valueModel);
 
     return [
       '<div class="dd-grid">',
@@ -316,6 +350,7 @@
       (summary.proposeDept ? ('        <div class="k">提出部门</div><div class="v">' + esc(summary.proposeDept) + '</div>') : '') +
       '        <div class="k">来源备注</div><div class="v">' + esc(summary.sourceNote) + '</div>',
       '      </div>',
+      valModelHtml,
       '      <div class="dd-aside-title dd-mt-14">责任与组织</div>',
       '      <div class="dd-kv-list compact">',
       '        <div class="k">需求负责人</div><div class="v">' + esc(summary.ownerName) + '</div>',

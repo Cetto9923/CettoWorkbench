@@ -280,5 +280,50 @@
   width: 50px;
 }
 
+/* --- F6: 价值模型两行 --- */
+.dd-valmodel-section {
+  margin-top: 8px;
+}
 
+.dd-valmodel-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 0;
+}
+
+.dd-valmodel-label {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.dd-valmodel-val {
+  font-size: 12px;
+  color: var(--color-text-primary);
+  text-align: right;
+}
+
+.dd-valmodel-muted {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+/* --- F6/F7: 灰色功能标记徽标（「模型测算」/「二期」共用） --- */
+.dd-feat-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 5px;
+  border-radius: var(--radius-sm, 4px);
+  font-size: 10px;
+  font-weight: 500;
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  margin-right: 3px;
+  vertical-align: middle;
+}
+
+/* --- F7: 二期标记（与dd-feat-badge同款，无额外样式） --- */
 
