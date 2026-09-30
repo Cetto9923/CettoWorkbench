@@ -54,8 +54,10 @@ type DemandDetailResp struct {
 	Delivery        *DetailDelivery              `json:"delivery,omitempty"`
 	History         *DetailHistory               `json:"history,omitempty"`
 	Config          DetailConfig                 `json:"config"`
-	PrimaryAction   *primaryaction.PrimaryAction `json:"primaryAction,omitempty"` // 服务端主操作
-	ValueModel      *DemandValueModel            `json:"valueModel,omitempty"`    // 需求价值模型（开启时出现）
+	PrimaryAction   *primaryaction.PrimaryAction `json:"primaryAction,omitempty"`  // 服务端主操作
+	ValueModel      *DemandValueModel            `json:"valueModel,omitempty"`     // 需求价值模型（开启时出现）
+	FlowApproval    *DetailFlowApproval          `json:"flowApproval,omitempty"`   // 流程与审批（四块）
+	ManagementInfo  *DetailManagementInfo        `json:"managementInfo,omitempty"` // 详情管理信息段（重要检查项与实际时间）
 }
 
 // DetailConfig 集中配置（前端禁止 hardcode）。

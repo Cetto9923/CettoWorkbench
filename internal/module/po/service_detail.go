@@ -172,6 +172,18 @@ func (s *DetailService) GetDemandDetail(ctx context.Context, actor *model.User, 
 	}
 	resp.ValueModel = vm
 
+	flow, flowErr := s.populateFlowApproval(ctx, row.ID)
+	if flowErr != nil {
+		return nil, flowErr
+	}
+	resp.FlowApproval = flow
+
+	mgmt, mgmtErr := s.populateManagementInfo(ctx, row.ID)
+	if mgmtErr != nil {
+		return nil, mgmtErr
+	}
+	resp.ManagementInfo = mgmt
+
 	return resp, nil
 }
 
