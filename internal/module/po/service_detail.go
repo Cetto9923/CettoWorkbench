@@ -142,31 +142,36 @@ func (s *DetailService) GetDemandDetail(ctx context.Context, actor *model.User, 
 	// 单行详情主操作派生。
 	// 详情行已包含 stage/status/accepter/assignedTo，无需 IN 批量。
 	if actor != nil && row != nil {
-		pa := s.buildPrimaryActionForDetail(ctx, actor, row)
-		// 提测改走四步弹窗：详情 JSON 不再下发旧整页 URL，避免任何入口误跳 submit_test.html。
-		if pa.Key == string(primaryaction.KeySubmitTest) {
-			pa.URL = ""
+		if resp.Summary.Flags.Hang || resp.Summary.Flags.Changing || resp.Summary.Flags.Returning {
+			resp.PrimaryAction = nil
+		} else {
+			pa := s.buildPrimaryActionForDetail(ctx, actor, row)
+			// 提测改走四步弹窗：详情 JSON 不再下发旧整页 URL，避免任何入口误跳 submit_test.html。
+			if pa.Key == string(primaryaction.KeySubmitTest) {
+				pa.URL = ""
+			}
+			// 写权限闸门：与排期保存接口同一口径（超管 / PMO / 干系人 / 团队长管辖）。
+			// 仅持 perm.ScheduleList 的只读用户不出现可点的写按钮。
+			canWrite, writeErr := s.canWriteDemand(ctx, actor, row.ID)
+			if writeErr != nil {
+				return nil, writeErr
+			}
+			if !canWrite {
+				gatePrimaryActionForReadOnly(&pa)
+			}
+			resp.PrimaryAction = &pa
+			bindPrimaryActionSpotlight(resp.Spotlight, pa)
+			if pa.Key == string(primaryaction.KeyApprove) && pa.Enabled {
+				resp.Summary.CanReview = true
+			}
 		}
-		// 写权限闸门：与排期保存接口同一口径（超管 / PMO / 干系人 / 团队长管辖）。
-		// 仅持 perm.ScheduleList 的只读用户不出现可点的写按钮。
-		canWrite, writeErr := s.canWriteDemand(ctx, actor, row.ID)
-		if writeErr != nil {
-			return nil, writeErr
-		}
-		if !canWrite {
-			gatePrimaryActionForReadOnly(&pa)
-		}
-		resp.PrimaryAction = &pa
-		bindPrimaryActionSpotlight(resp.Spotlight, pa)
 		account := strings.TrimSpace(actor.Account)
 		if account != "" {
 			resp.Summary.IsCreator = strings.TrimSpace(row.CreatedBy) == account
 			resp.Summary.IsAssignee = strings.TrimSpace(row.AssignedTo) == account
 		}
+		canWrite, _ := s.canWriteDemand(ctx, actor, row.ID)
 		resp.Summary.CanWithdrawReview = canWrite && canWithdrawReviewForDetail(actor, row)
-		if pa.Key == string(primaryaction.KeyApprove) && pa.Enabled {
-			resp.Summary.CanReview = true
-		}
 		s.populateDemandEditability(ctx, actor, row, canWrite, &resp.Summary)
 	}
 
@@ -269,6 +274,7 @@ func (s *DetailService) buildSummary(row *DemandDetailRow) DemandSummary {
 	if row.VerifyFinish != nil || row.Status == "acceptanced" || row.Status == "waitdeliver" || row.Status == "released" {
 		acceptStatus = "待发起"
 	}
+	flags, flagNotice := deriveDetailFlags(row)
 
 	return DemandSummary{
 		ID:               code,
@@ -282,13 +288,21 @@ func (s *DetailService) buildSummary(row *DemandDetailRow) DemandSummary {
 		Duration:         defaultDash(row.Duration),
 		FeedbackedBy:     defaultDash(row.FeedbackedBy),
 		ProposerName:     defaultDash(row.OriginatorName),
-		ProposerDept:     defaultDash(row.OriginatorDept),
+		ProposerDept:     defaultDash(firstNonEmpty(row.ProposeDeptName, row.OriginatorDept)),
+		ProposeDept:      defaultDash(firstNonEmpty(row.ProposeDeptName, row.OriginatorDept)),
 		Originator:       row.Originator,
 		OwnerName:        defaultDash(row.BRAName),
 		TestOwner:        defaultDash(row.QDName),
-		AcceptOwner:      defaultDash(firstNonEmpty(row.AccepterName, row.Accepter)),
+		AcceptOwner:      defaultDash(firstNonEmpty(row.RDName, row.RD)),
+		RDName:           defaultDash(firstNonEmpty(row.RDName, row.RD)),
 		Reviewer:         defaultDash(firstNonEmpty(row.ReviewerName, row.Reviewer)),
 		CurrentOwner:     defaultDash(firstNonEmpty(row.AssignedToName, row.AssignedTo)),
+		AssignedTo:       defaultDash(firstNonEmpty(row.AssignedToName, row.AssignedTo)),
+		AssignedToName:   defaultDash(firstNonEmpty(row.AssignedToName, row.AssignedTo)),
+		LeadDept:         defaultDash(firstNonEmpty(row.LeadDeptName, row.LeadDept)),
+		TeamGroup:        defaultDash(firstNonEmpty(row.TeamGroupName, row.TeamGroup)),
+		Flags:            flags,
+		FlagNotice:       flagNotice,
 		Product:          prodName,
 		MainSystem:       defaultDash(row.MainSystem),
 		MainSystemName:   defaultDash(firstNonEmpty(row.MainSystemName, row.MainSystem)),
@@ -436,35 +450,6 @@ func (s *DetailService) buildRelationContext(parent *DemandDetailRow, siblings [
 	}
 }
 
-// buildPrimaryActionForDetail 详情行主操作。
-//
-// 复用 Service 内聚合函数 DeriveDemandPrimaryActions；单行 ID 走同样的批量
-// 路径，避免新增"单行特化"代码分支导致与批量派生结果不一致。
-//
-// 测试单与评价事实走 IN (?) 批量查询（即便 ID 数量为 1 也复用同一函数），保证
-//
-//	primaryAction.test_link / evaluate / view_evaluate 与列表页完全一致。
-func (s *DetailService) buildPrimaryActionForDetail(
-	ctx context.Context,
-	actor *model.User,
-	row *DemandDetailRow,
-) primaryaction.PrimaryAction {
-	if row == nil || row.ID == 0 {
-		return primaryaction.None()
-	}
-	svc := s.parentService()
-	if svc == nil {
-		return primaryaction.None()
-	}
-	out, err := svc.DeriveDemandPrimaryActions(ctx, actor, []uint{row.ID})
-	if err != nil {
-		return primaryaction.None()
-	}
-	if pa, ok := out[row.ID]; ok {
-		return pa
-	}
-	return primaryaction.None()
-}
 
 // parentService 返回 Service 提供的父服务（如未注入则返回 nil）。
 // service_detail.go 内不直接持有 Service 指针；构造时由 Service.NewService 注入。

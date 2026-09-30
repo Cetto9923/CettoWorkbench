@@ -62,41 +62,56 @@ type DetailConfig struct {
 	DeliveryCycleTargetDays int `json:"deliveryCycleTargetDays"`
 }
 
+// DemandFlags 需求业务标志（挂起 / 变更中 / 退回中）。
+type DemandFlags struct {
+	Hang      bool `json:"hang"`
+	Changing  bool `json:"changing"`
+	Returning bool `json:"returning"`
+}
+
 // DemandSummary 需求通用摘要。
 type DemandSummary struct {
-	ID                 string `json:"id"`
-	Code               string `json:"code"`
-	DemandID           uint   `json:"demandId"`
-	Title              string `json:"title"`
-	Source             string `json:"source"`
-	SourceNote         string `json:"sourceNote"`
-	Category           string `json:"category"`
-	BSA                string `json:"bsa"`
-	Duration           string `json:"duration"`
-	FeedbackedBy       string `json:"feedbackedBy"`
-	ProposerName       string `json:"proposerName"`
-	ProposerDept       string `json:"proposerDept"`
-	Originator         string `json:"originator"`
-	OwnerName          string `json:"ownerName"`
-	TestOwner          string `json:"testOwner"`
-	Product            string `json:"product"`
-	PoolName           string `json:"poolName"`
-	Priority           string `json:"priority"`
-	Status             string `json:"status"`
-	ZentaoStatus       string `json:"zentaoStatus"`
-	ValueStage         string `json:"valueStage"`
-	ValueStageLabel    string `json:"valueStageLabel"`
-	EstimateLaunch     string `json:"estimateLaunch"`
-	AcceptOwner        string `json:"acceptOwner"`
-	Reviewer           string `json:"reviewer"`
-	CurrentOwner       string `json:"currentOwner"`
-	MainSystem         string `json:"mainSystem"`
-	MainSystemName     string `json:"mainSystemName"`
-	ModuleName         string `json:"moduleName"`
-	Desc               string `json:"desc"`
-	VerifyPlan         string `json:"verifyPlan"`
-	EstimateDelivery   int    `json:"estimateDelivery"`
-	DevelopFinish      string `json:"developFinish"`
+	ID                 string      `json:"id"`
+	Code               string      `json:"code"`
+	DemandID           uint        `json:"demandId"`
+	Title              string      `json:"title"`
+	Source             string      `json:"source"`
+	SourceNote         string      `json:"sourceNote"`
+	Category           string      `json:"category"`
+	BSA                string      `json:"bsa"`
+	Duration           string      `json:"duration"`
+	FeedbackedBy       string      `json:"feedbackedBy"`
+	ProposerName       string      `json:"proposerName"`
+	ProposerDept       string      `json:"proposerDept"`
+	ProposeDept        string      `json:"proposeDept"`
+	Originator         string      `json:"originator"`
+	OwnerName          string      `json:"ownerName"`
+	TestOwner          string      `json:"testOwner"`
+	Product            string      `json:"product"`
+	PoolName           string      `json:"poolName"`
+	Priority           string      `json:"priority"`
+	Status             string      `json:"status"`
+	ZentaoStatus       string      `json:"zentaoStatus"`
+	ValueStage         string      `json:"valueStage"`
+	ValueStageLabel    string      `json:"valueStageLabel"`
+	EstimateLaunch     string      `json:"estimateLaunch"`
+	AcceptOwner        string      `json:"acceptOwner"`
+	RDName             string      `json:"rdName"`
+	Reviewer           string      `json:"reviewer"`
+	CurrentOwner       string      `json:"currentOwner"`
+	AssignedTo         string      `json:"assignedTo"`
+	AssignedToName     string      `json:"assignedToName"`
+	LeadDept           string      `json:"leadDept"`
+	TeamGroup          string      `json:"teamGroup"`
+	Flags              DemandFlags `json:"flags"`
+	FlagNotice         string      `json:"flagNotice"`
+	MainSystem         string      `json:"mainSystem"`
+	MainSystemName     string      `json:"mainSystemName"`
+	ModuleName         string      `json:"moduleName"`
+	Desc               string      `json:"desc"`
+	VerifyPlan         string      `json:"verifyPlan"`
+	EstimateDelivery   int         `json:"estimateDelivery"`
+	DevelopFinish      string      `json:"developFinish"`
 	TestFinish         string `json:"testFinish"`
 	VerifyFinish       string `json:"verifyFinish"`
 	StoriesCount       int    `json:"storiesCount"`

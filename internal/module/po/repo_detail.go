@@ -84,6 +84,16 @@ type DemandDetailRow struct {
 	DevelopFinish     *time.Time `gorm:"column:developFinish"`
 	TestFinish        *time.Time `gorm:"column:testFinish"`
 	VerifyFinish      *time.Time `gorm:"column:verifyFinish"`
+	LeadDept          string     `gorm:"column:leadDept"`
+	TeamGroup         string     `gorm:"column:teamGroup"`
+	ProposeDept       string     `gorm:"column:proposeDept"`
+	Hang              string     `gorm:"column:hang"`
+	IsChange          string     `gorm:"column:isChange"`
+	IsReturned        string     `gorm:"column:isReturned"`
+	RDName            string     `gorm:"column:rd_name"`
+	LeadDeptName      string     `gorm:"column:lead_dept_name"`
+	TeamGroupName     string     `gorm:"column:team_group_name"`
+	ProposeDeptName   string     `gorm:"column:propose_dept_name"`
 	ActionCreatedDate *time.Time `gorm:"-"`
 }
 
@@ -98,9 +108,11 @@ SELECT d.id, d.parent, d.pool, d.module, d.pri, d.category, d.source, d.sourceNo
        d.closedBy, d.closedDate, d.closedReason, d.editedBy, d.editedDate,
        d.duration, d.BSA, d.estimateLaunch, d.publishWindow, d.deliverDate, d.product,
        d.accepter, d.estimateDelivery, d.developFinish, d.testFinish, d.verifyFinish,
+       d.hang, d.isChange, d.isReturned, d.leadDept, d.teamGroup, d.proposeDept,
        COALESCE(u_assign.realname, d.assignedTo) AS assigned_to_name,
        COALESCE(u_bra.realname, d.BRA) AS bra_name,
        COALESCE(u_qd.realname, d.QD) AS qd_name,
+       COALESCE(u_rd.realname, d.RD) AS rd_name,
        COALESCE(u_orig.realname, d.originator) AS originator_name,
        COALESCE(u_acc.realname, d.accepter) AS accepter_name,
        COALESCE(u_creat.realname, '') AS created_by_name,
@@ -108,6 +120,9 @@ SELECT d.id, d.parent, d.pool, d.module, d.pri, d.category, d.source, d.sourceNo
                         FROM zt_user u
                         WHERE u.deleted = '0' AND FIND_IN_SET(u.account, REPLACE(d.reviewer, ' ', '')) > 0), ''), d.reviewer) AS reviewer_name,
        COALESCE(dept.name, '—') AS originator_dept,
+       COALESCE(dept_lead.name, d.leadDept, '—') AS lead_dept_name,
+       COALESCE(tg.name, d.teamGroup, '—') AS team_group_name,
+       COALESCE(dept_prop.name, NULLIF(d.proposeDept, ''), dept.name, '—') AS propose_dept_name,
        COALESCE(dp.name, '—') AS pool_name,
        COALESCE(prod.name, d.product) AS product_name,
        COALESCE(dm.name, NULLIF(CAST(d.module AS CHAR), '0')) AS module_name,
@@ -116,10 +131,14 @@ FROM zt_demand d
 LEFT JOIN zt_user u_assign ON d.assignedTo = u_assign.account AND u_assign.deleted = '0'
 LEFT JOIN zt_user u_bra ON d.BRA = u_bra.account AND u_bra.deleted = '0'
 LEFT JOIN zt_user u_qd ON d.QD = u_qd.account AND u_qd.deleted = '0'
+LEFT JOIN zt_user u_rd ON d.RD = u_rd.account AND u_rd.deleted = '0'
 LEFT JOIN zt_user u_orig ON d.originator = u_orig.account AND u_orig.deleted = '0'
 LEFT JOIN zt_user u_acc ON d.accepter = u_acc.account AND u_acc.deleted = '0'
 LEFT JOIN zt_user u_creat ON d.createdBy = u_creat.account AND u_creat.deleted = '0'
 LEFT JOIN zt_dept dept ON u_orig.dept = dept.id
+LEFT JOIN zt_dept dept_lead ON dept_lead.id = CAST(NULLIF(d.leadDept, '') AS UNSIGNED)
+LEFT JOIN zt_teamgroup tg ON tg.id = CAST(NULLIF(d.teamGroup, '') AS UNSIGNED) AND tg.deleted = '0'
+LEFT JOIN zt_dept dept_prop ON dept_prop.id = CAST(NULLIF(d.proposeDept, '') AS UNSIGNED)
 LEFT JOIN zt_demandpool dp ON d.pool = dp.id AND dp.deleted = '0'
 LEFT JOIN zt_product prod ON d.product = prod.id AND prod.deleted = '0'
 LEFT JOIN zt_module dm ON d.module = dm.id AND dm.deleted = '0'
