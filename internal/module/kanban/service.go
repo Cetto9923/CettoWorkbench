@@ -2,7 +2,7 @@
 // 文件: internal/module/kanban/service.go
 // 模块: 工作看板
 // 类型: readonly
-// 职责: 看板业务编排（所属小组 + 成员排序展示 + 需求/任务数量）。
+// 职责: 看板业务编排（所属小组 + 成员排序展示；按页面填充任务/需求角标）。
 // 依赖: internal/model
 //       internal/module/po
 //       internal/module/user
@@ -35,8 +35,16 @@ func NewService(repo *Repo, userSvc *user.Service, poSvc *po.Service, ztAPI *zen
 	return &Service{repo: repo, userSvc: userSvc, poSvc: poSvc, ztAPI: ztAPI}
 }
 
+// 成员角标统计范围：按页面只算需要的一侧，避免任务页被需求 N+1 拖慢。
+const (
+	WorkloadNone   = ""       // JSON 接口：只要成员名单，不算量
+	WorkloadTask   = "task"   // 任务看板：只填 TaskCount
+	WorkloadDemand = "demand" // 需求看板：只填 DemandCount
+)
+
 // ListMyTeamgroups 返回当前用户所属敏捷小组（含排序后的成员）。
-func (s *Service) ListMyTeamgroups(ctx context.Context, actor *model.User) ([]TeamgroupItem, error) {
+// workload 决定是否填充负责人角标：任务页只算任务，需求页只算需求，其余不算。
+func (s *Service) ListMyTeamgroups(ctx context.Context, actor *model.User, workload string) ([]TeamgroupItem, error) {
 	if actor == nil {
 		return []TeamgroupItem{}, nil
 	}
@@ -79,16 +87,17 @@ func (s *Service) ListMyTeamgroups(ctx context.Context, actor *model.User) ([]Te
 			Members: buildOrderedMembers(row.PO, row.Manager, membersByRoot[row.ID], displayMap),
 		})
 	}
-	// 暂不拉取人员后数量（首页价值流「全部」/ 指派任务），恢复时取消注释。
-	// if err := s.fillMemberWorkload(ctx, out); err != nil {
-	// 	return nil, err
-	// }
+	if err := s.fillMemberWorkload(ctx, out, workload); err != nil {
+		return nil, err
+	}
 	return out, nil
 }
 
-// fillMemberWorkload 为负责人行填充需求看板数量（首页价值流「全部」）与任务看板数量（指派）。
-// 当前未调用，保留以便恢复人员角标。
-func (s *Service) fillMemberWorkload(ctx context.Context, groups []TeamgroupItem) error {
+// fillMemberWorkload 按 workload 填充负责人角标（任务页 / 需求页互不串算）。
+func (s *Service) fillMemberWorkload(ctx context.Context, groups []TeamgroupItem, workload string) error {
+	if workload != WorkloadTask && workload != WorkloadDemand {
+		return nil
+	}
 	accounts := make([]string, 0)
 	for acc := range collectMemberAccounts(groups) {
 		accounts = append(accounts, acc)
@@ -96,21 +105,31 @@ func (s *Service) fillMemberWorkload(ctx context.Context, groups []TeamgroupItem
 	if len(accounts) == 0 {
 		return nil
 	}
-	tasks, err := s.repo.CountMemberTasks(ctx, accounts)
-	if err != nil {
-		return err
+
+	if workload == WorkloadTask {
+		tasks, err := s.repo.CountMemberTasks(ctx, accounts)
+		if err != nil {
+			return err
+		}
+		for i := range groups {
+			for j := range groups[i].Members {
+				groups[i].Members[j].TaskCount = tasks[groups[i].Members[j].Account]
+			}
+		}
+		return nil
+	}
+
+	// WorkloadDemand：按人统计价值流「全部」（与首页一致）；暂无批量接口。
+	if s.poSvc == nil {
+		return nil
 	}
 	for i := range groups {
 		for j := range groups[i].Members {
-			acc := groups[i].Members[j].Account
-			if s.poSvc != nil {
-				n, demErr := s.poSvc.CountValueStreamAll(ctx, acc)
-				if demErr != nil {
-					return demErr
-				}
-				groups[i].Members[j].DemandCount = n
+			n, demErr := s.poSvc.CountValueStreamAll(ctx, groups[i].Members[j].Account)
+			if demErr != nil {
+				return demErr
 			}
-			groups[i].Members[j].TaskCount = tasks[acc]
+			groups[i].Members[j].DemandCount = n
 		}
 	}
 	return nil

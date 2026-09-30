@@ -31,7 +31,7 @@ func (s *Service) ListValueStreamBizDemands(ctx context.Context, actor *model.Us
 		actorAccount = actor.Account
 	}
 
-	groups, err := s.ListMyTeamgroups(ctx, actor)
+	groups, err := s.ListMyTeamgroups(ctx, actor, WorkloadNone)
 	if err != nil {
 		return ListBizDemandsResp{}, err
 	}

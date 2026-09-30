@@ -32,7 +32,7 @@ func (s *Service) ListTasks(ctx context.Context, actor *model.User, req ListTask
 		actorAccount = actor.Account
 	}
 
-	groups, err := s.ListMyTeamgroups(ctx, actor)
+	groups, err := s.ListMyTeamgroups(ctx, actor, WorkloadNone)
 	if err != nil {
 		return ListTasksResp{}, err
 	}

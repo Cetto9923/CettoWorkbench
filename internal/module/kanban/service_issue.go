@@ -39,7 +39,7 @@ func (s *Service) ListIssues(ctx context.Context, actor *model.User, req ListIss
 		actorAccount = actor.Account
 	}
 
-	groups, err := s.ListMyTeamgroups(ctx, actor)
+	groups, err := s.ListMyTeamgroups(ctx, actor, WorkloadNone)
 	if err != nil {
 		return ListIssuesResp{}, err
 	}

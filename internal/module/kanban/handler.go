@@ -55,7 +55,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 // Story 渲染需求看板静态页。
 func (h *Handler) Story(c *gin.Context) {
 	actor := middleware.CurrentUser(c)
-	teamgroups, err := h.svc.ListMyTeamgroups(c.Request.Context(), actor)
+	teamgroups, err := h.svc.ListMyTeamgroups(c.Request.Context(), actor, WorkloadDemand)
 	if err != nil {
 		if h.logger != nil {
 			h.logger.Error("list kanban teamgroups failed", zap.Error(err))
@@ -75,7 +75,7 @@ func (h *Handler) Story(c *gin.Context) {
 // Task 渲染任务看板静态页。
 func (h *Handler) Task(c *gin.Context) {
 	actor := middleware.CurrentUser(c)
-	teamgroups, err := h.svc.ListMyTeamgroups(c.Request.Context(), actor)
+	teamgroups, err := h.svc.ListMyTeamgroups(c.Request.Context(), actor, WorkloadTask)
 	if err != nil {
 		if h.logger != nil {
 			h.logger.Error("list kanban teamgroups failed", zap.Error(err))
