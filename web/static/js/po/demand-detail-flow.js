@@ -207,11 +207,150 @@
     }
   }
 
+  /**
+   * F5: 流程与审批页签渲染（四块只读表，接口没返回的块不渲染，全空显示「暂无流程与审批记录」，各带一个「在禅道办理 ↗」）
+   */
+  function renderFlowApprovalTab(flowApproval, summary) {
+    flowApproval = flowApproval || {};
+    summary = summary || {};
+    var zentaoUrl = summary.zentaoUrl || "";
+    var html = [];
+
+    // 1. 主管部门审批表
+    if (flowApproval.managerReviews && flowApproval.managerReviews.length > 0) {
+      var mrRows = flowApproval.managerReviews.map(function (m, idx) {
+        var prods = (m.products || []).join("、") || "—";
+        var reviewer = m.reviewerName || m.reviewer || (m.departmentReviewers || []).join("、") || "—";
+        var submitedBy = m.submitedByName || m.submitedBy || "—";
+        var res = m.resultLabel || m.result || "—";
+        return '<tr>' +
+          '<td class="cell-center">' + (idx + 1) + '</td>' +
+          '<td>' + esc(prods) + '</td>' +
+          '<td>' + esc(reviewer) + '</td>' +
+          '<td><span class="dedup-pos-tag">' + esc(res) + '</span></td>' +
+          '<td>' + esc(submitedBy) + '</td>' +
+          '<td>' + esc(m.submitedDate || m.reviewDate || "—") + '</td>' +
+          '</tr>';
+      }).join("");
+
+      html.push(
+        '<div class="dd-card"><div class="dd-card-body">',
+        '  <div class="dd-cardhead">',
+        '    <div><h3><i class="bi bi-shield-check"></i> 主管部门审批表</h3><span class="dd-note">涉及产品主管部门会签记录</span></div>',
+        '    <div class="dd-cardhead-actions">' + renderZentaoActionBtn(zentaoUrl) + '</div>',
+        '  </div>',
+        '  <table class="dd-table">',
+        '    <thead><tr><th class="col-w-50 cell-center">序号</th><th>涉及产品</th><th>审批人</th><th>审批结果</th><th>提交人</th><th>提交时间</th></tr></thead>',
+        '    <tbody>' + mrRows + '</tbody>',
+        '  </table>',
+        '</div></div>'
+      );
+    }
+
+    // 2. 需求变更记录表
+    if (flowApproval.demandChanges && flowApproval.demandChanges.length > 0) {
+      var dcRows = flowApproval.demandChanges.map(function (c) {
+        var changeBy = c.changeByName || c.changeBy || "—";
+        var changeType = c.changeTypeLabel || c.changeType || "—";
+        var res = c.resultLabel || c.result || "—";
+        return '<tr>' +
+          '<td>' + esc(c.changeDate || c.createdDate || "—") + '</td>' +
+          '<td>' + esc(changeBy) + '</td>' +
+          '<td>' + esc(changeType) + '</td>' +
+          '<td>' + esc(c.desc || "—") + '</td>' +
+          '<td>' + esc(c.changeReason || c.reasonType || "—") + '</td>' +
+          '<td><span class="dedup-pos-tag">' + esc(res) + '</span></td>' +
+          '</tr>';
+      }).join("");
+
+      html.push(
+        '<div class="dd-card"><div class="dd-card-body">',
+        '  <div class="dd-cardhead">',
+        '    <div><h3><i class="bi bi-arrow-repeat"></i> 需求变更记录表</h3><span class="dd-note">内容与计划变更审计轨迹</span></div>',
+        '    <div class="dd-cardhead-actions">' + renderZentaoActionBtn(zentaoUrl) + '</div>',
+        '  </div>',
+        '  <table class="dd-table">',
+        '    <thead><tr><th>变更时间</th><th>变更人</th><th>变更类型</th><th>变更内容</th><th>变更原因</th><th>评审结果</th></tr></thead>',
+        '    <tbody>' + dcRows + '</tbody>',
+        '  </table>',
+        '</div></div>'
+      );
+    }
+
+    // 3. 挂起日志表
+    if (flowApproval.hangLogs && flowApproval.hangLogs.length > 0) {
+      var hlRows = flowApproval.hangLogs.map(function (h) {
+        var act = h.actionLabel || h.action || "—";
+        var hangType = h.hangUpTypeLabel || h.hangUpType || "—";
+        var who = h.accountName || h.account || "—";
+        var rawComment = h.comment || h.extra || "—";
+        var cleanComment = String(rawComment).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim() || "—";
+        return '<tr>' +
+          '<td><span class="dedup-pos-tag">' + esc(act) + '</span></td>' +
+          '<td>' + esc(h.date || "—") + '</td>' +
+          '<td>' + esc(hangType) + '</td>' +
+          '<td>' + esc(cleanComment) + '</td>' +
+          '<td>' + esc(who) + '</td>' +
+          '</tr>';
+      }).join("");
+
+      html.push(
+        '<div class="dd-card"><div class="dd-card-body">',
+        '  <div class="dd-cardhead">',
+        '    <div><h3><i class="bi bi-pause-circle"></i> 挂起日志表</h3><span class="dd-note">需求挂起与重启审计轨迹</span></div>',
+        '    <div class="dd-cardhead-actions">' + renderZentaoActionBtn(zentaoUrl) + '</div>',
+        '  </div>',
+        '  <table class="dd-table">',
+        '    <thead><tr><th>操作类型</th><th>操作日期</th><th>挂起类型</th><th>挂起原因</th><th>操作人</th></tr></thead>',
+        '    <tbody>' + hlRows + '</tbody>',
+        '  </table>',
+        '</div></div>'
+      );
+    }
+
+    // 4. 评审信息表
+    if (flowApproval.reviewRecords && flowApproval.reviewRecords.length > 0) {
+      var rrRows = flowApproval.reviewRecords.map(function (r) {
+        var revType = r.reviewTypeLabel || r.reviewType || "—";
+        var createdBy = r.createdByName || r.createdBy || "—";
+        var status = r.reviewStatusLabel || r.reviewStatus || "—";
+        return '<tr>' +
+          '<td>' + esc(revType) + '</td>' +
+          '<td>' + esc(r.reviewDate || "—") + '</td>' +
+          '<td>' + esc(r.reviewResult || "—") + '</td>' +
+          '<td>' + esc(createdBy) + '</td>' +
+          '<td>' + esc(r.createdDate || "—") + '</td>' +
+          '<td><span class="dedup-pos-tag">' + esc(status) + '</span></td>' +
+          '</tr>';
+      }).join("");
+
+      html.push(
+        '<div class="dd-card"><div class="dd-card-body">',
+        '  <div class="dd-cardhead">',
+        '    <div><h3><i class="bi bi-card-checklist"></i> 评审信息表</h3><span class="dd-note">业务评审留痕登记</span></div>',
+        '    <div class="dd-cardhead-actions">' + renderZentaoActionBtn(zentaoUrl) + '</div>',
+        '  </div>',
+        '  <table class="dd-table">',
+        '    <thead><tr><th>评审类型</th><th>评审日期</th><th>评审内容</th><th>登记人</th><th>登记日期</th><th>评审情况</th></tr></thead>',
+        '    <tbody>' + rrRows + '</tbody>',
+        '  </table>',
+        '</div></div>'
+      );
+    }
+
+    if (html.length === 0) {
+      return '<div class="dd-card"><div class="dd-card-body"><div class="dd-empty-tip">暂无流程与审批记录</div></div></div>';
+    }
+
+    return html.join("");
+  }
+
   return {
     esc: esc,
     renderZentaoActionBtn: renderZentaoActionBtn,
     renderPlanAndActual: renderPlanAndActual,
     renderImportantChecks: renderImportantChecks,
+    renderFlowApprovalTab: renderFlowApprovalTab,
     toggleCard: toggleCard
   };
 });

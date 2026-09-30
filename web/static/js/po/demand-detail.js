@@ -33,6 +33,7 @@
       '    <button class="dd-tab" data-tab="requirement" onclick="DemandDetail.switchTab(\'requirement\')">需求与澄清 <span class="dd-tab-count" id="ddTabCountReq"></span></button>',
       '    <button class="dd-tab" data-tab="execution" onclick="DemandDetail.switchTab(\'execution\')">研发与测试 <span class="dd-tab-count" id="ddTabCountExec"></span></button>',
       '    <button class="dd-tab" data-tab="delivery" onclick="DemandDetail.switchTab(\'delivery\')">交付上线</button>',
+      '    <button class="dd-tab" data-tab="flowApproval" onclick="DemandDetail.switchTab(\'flowApproval\')">流程与审批</button>',
       '    <button class="dd-tab" data-tab="history" onclick="DemandDetail.switchTab(\'history\')">过程记录</button>',
       '  </nav>',
       '  <main class="dd-body" id="ddBody"></main>',
@@ -130,6 +131,11 @@
         break;
       case "delivery":
         bodyEl.innerHTML = R.renderTabDelivery(currentData.delivery);
+        break;
+      case "flowApproval":
+        bodyEl.innerHTML = (window.DemandDetailFlow && window.DemandDetailFlow.renderFlowApprovalTab)
+          ? window.DemandDetailFlow.renderFlowApprovalTab(currentData.flowApproval, currentData.summary)
+          : '<div class="dd-empty-tip">暂无流程与审批记录</div>';
         break;
       case "history":
         bodyEl.innerHTML = R.renderTabHistory(currentData.history);

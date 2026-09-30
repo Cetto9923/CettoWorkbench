@@ -253,4 +253,32 @@
   cursor: pointer;
 }
 
+/* --- F5: 流程与审批卡片与表头动作 --- */
+.dd-cardhead-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dedup-pos-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm, 4px);
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+
+.cell-center {
+  text-align: center;
+}
+
+.col-w-50 {
+  width: 50px;
+}
+
+
 
