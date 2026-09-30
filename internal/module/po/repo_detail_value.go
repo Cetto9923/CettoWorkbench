@@ -27,6 +27,8 @@ type configKV struct {
 }
 
 // LoadDemandValueConfig 读取价值模型总开关及相关参数。
+// 总开关默认打开：zt_config 中无 enabled 项即视为开启，显式配置 "1" 开启，
+// 配置 "0" 或其他值关闭。唯一来源为禅道后台 zt_config。
 func (r *DemandDetailRepo) LoadDemandValueConfig(ctx context.Context) (*DemandValueConfig, error) {
 	if r == nil || r.db == nil {
 		return &DemandValueConfig{
@@ -45,6 +47,7 @@ func (r *DemandDetailRepo) LoadDemandValueConfig(ctx context.Context) (*DemandVa
 	}
 
 	cfg := &DemandValueConfig{
+		Enabled:        true,      // 总开关默认打开：无 enabled 项即开启，禅道显式配置为准
 		IntervalMethod: "holdout", // 禅道默认 holdout
 		NoAiCategories: r.loadNoAiCategories(ctx),
 	}

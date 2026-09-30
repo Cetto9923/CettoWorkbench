@@ -82,6 +82,7 @@
 
     var terminal = isTerminalStatus(summary.zentaoStatus);
     var pendingActual = terminal ? "—" : "进行中";
+    var pendingLaunch = terminal ? "—" : "待交付";
     var devPlanned = summary.developFinish || "—";
     var devActual = actualTimes.actualDevCompletionDate || actualTimes.actualTestStartDate || "";
     var testPlanned = summary.testFinish || "—";
@@ -133,10 +134,10 @@
       '        </div>',
       '      </div>',
       '      <div class="plan-actual-item">',
-      '        <div class="plan-actual-title"><span>上线/交付</span>' + calcDeviation(launchPlanned, launchActual) + '</div>',
+      '        <div class="plan-actual-title"><span>上线/交付</span>' + (terminal ? "" : calcDeviation(launchPlanned, launchActual)) + '</div>',
       '        <div class="plan-actual-vals">',
       '          <div class="plan-val-line"><span>预计上线:</span><strong>' + esc(launchPlanned) + '</strong></div>',
-      '          <div class="plan-val-line"><span>交付时间:</span>' + (launchActual ? ('<strong>' + esc(launchActual) + '</strong>') : '<span class="dd-text-muted">待交付</span>') + '</div>',
+      '          <div class="plan-val-line"><span>交付时间:</span>' + (launchActual ? ('<strong>' + esc(launchActual) + '</strong>') : '<span class="dd-text-muted">' + pendingLaunch + '</span>') + '</div>',
       '        </div>',
       '      </div>',
       '    </div>',
