@@ -1,0 +1,101 @@
+{{/* ==========================================================================
+文件: web/templates/po/version_follow.html
+模块: PO 工作台
+职责: 版本跟进页面。合并原「版本跟进」与「验收交付」：按版本窗口判断能否按期上线，
+     逐条需求给出唯一下一步动作。数据全部来自真实窗口关联，无任何兜底或回落。
+全局字段: .CurrentUser, .CSRFToken, .Menus, .CurrentPath
+页面字段: .Title (string), .PageTitle (string), .BaseUrl (string)
+========================================================================== */}}
+{{ define "page_css" }}
+<link rel="stylesheet" href="{{ asset "/static/css/po/personal-workspace.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/version-follow.css" }}">
+{{ end }}
+
+{{ define "content" }}
+<div class="po-personal-workspace po-version-follow">
+  <input type="hidden" id="vfCsrfToken" name="csrf_token" value="{{ .CSRFToken }}">
+  <input type="hidden" id="vfCurrentAccount" value="{{ if .CurrentUser }}{{ .CurrentUser.Account }}{{ end }}">
+
+  <header class="vf-window-bar" id="vfWindowBar" role="group" aria-label="版本窗口">
+    <span class="vf-window-bar-label">当前与近期窗口</span>
+    <div class="vf-window-chips" id="vfWindowChips"></div>
+  </header>
+
+  <section class="vf-judge-band" id="vfJudgeBand" aria-label="窗口判断">
+    <div class="vf-distance">
+      <span class="vf-days-countdown" id="vfDaysNum">—</span>
+      <span class="vf-days-label">距上线</span>
+    </div>
+    <div class="vf-judge-counts">
+      <button type="button" class="vf-count-chip is-ontrack" data-judgement="ontrack">
+        可按期 <em id="vfOnTrack">0</em>
+      </button>
+      <button type="button" class="vf-count-chip is-risk" data-judgement="risk">
+        风险 <em id="vfRisk">0</em>
+      </button>
+      <button type="button" class="vf-count-chip is-blocked" data-judgement="blocked">
+        阻塞 <em id="vfBlocked">0</em>
+      </button>
+    </div>
+    <div class="vf-stage-bar" id="vfStageBar" role="group" aria-label="阶段分布"></div>
+  </section>
+
+  <div class="vf-ai-block" id="vfAiBlock" hidden></div>
+
+  <section class="vf-filter-row" aria-label="筛选">
+    <div class="vf-scope-group" role="group" aria-label="范围">
+      <button type="button" class="vf-scope-chip is-active" data-scope="">全部</button>
+      <button type="button" class="vf-scope-chip" data-scope="todo">待我处理</button>
+      <button type="button" class="vf-scope-chip" data-scope="following">我跟进</button>
+    </div>
+    <label class="vf-filter-field">
+      <span class="vf-filter-label">阶段</span>
+      <select id="vfFilterStage"><option value="">全部</option></select>
+    </label>
+    <label class="vf-filter-field">
+      <span class="vf-filter-label">系统</span>
+      <select id="vfFilterSystem"><option value="">全部</option></select>
+    </label>
+    <label class="vf-filter-field">
+      <span class="vf-filter-label">负责人</span>
+      <select id="vfFilterOwner"><option value="">全部</option></select>
+    </label>
+    <button type="button" class="vf-filter-clear" id="vfFilterClear">清空</button>
+  </section>
+
+  <section class="vf-list-wrap" aria-label="需求列表">
+    <table class="vf-table" id="vfTable">
+      <thead>
+        <tr>
+          <th scope="col" class="vf-col-expand"><span class="sr-only">展开</span></th>
+          <th scope="col">需求信息</th>
+          <th scope="col">当前阶段</th>
+          <th scope="col">已停留</th>
+          <th scope="col">发布判断与原因</th>
+          <th scope="col">责任人</th>
+          <th scope="col">下一步操作</th>
+        </tr>
+      </thead>
+      <tbody id="vfTbody"></tbody>
+    </table>
+    <div class="vf-empty-state" id="vfEmptyState" hidden>
+      <p class="vf-empty-title" id="vfEmptyTitle">该版本窗口暂无关联需求</p>
+      <p class="vf-empty-desc" id="vfEmptyDesc">可在需求排期中把需求关联到当前版本窗口。</p>
+      <a class="vf-empty-action" id="vfEmptyAction" href="/schedule">去关联需求</a>
+    </div>
+    <nav class="vf-pager" id="vfPager" aria-label="分页"></nav>
+  </section>
+
+  <div class="vf-basis-popover" id="vfBasisPopover" hidden role="dialog" aria-modal="true" aria-label="发现依据">
+    <div class="vf-basis-header">
+      <h3 class="vf-basis-title" id="vfBasisTitle">发现依据</h3>
+      <button type="button" class="vf-basis-close-btn" id="vfBasisClose" aria-label="关闭">×</button>
+    </div>
+    <div class="vf-basis-body" id="vfBasisBody"></div>
+  </div>
+</div>
+{{ end }}
+
+{{ define "page_js" }}
+<script src="{{ asset "/static/js/po/version-follow.js" }}"></script>
+{{ end }}

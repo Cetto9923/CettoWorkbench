@@ -103,6 +103,9 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 
 	g.GET("/follow", middleware.RequirePerm(perm.PoFollowList), h.Follow)
 	g.GET("/follow/items", middleware.RequirePerm(perm.PoFollowList), h.FollowItems)
+	g.GET("/version-follow", middleware.RequirePerm(perm.PoSchedule), h.VersionFollow)
+	g.GET("/version-follow/items", middleware.RequirePerm(perm.PoSchedule), h.VersionFollowItems)
+	g.GET("/version-follow/orphan-evidence", middleware.RequirePerm(perm.PoSchedule), h.VersionFollowOrphanEvidence)
 	g.GET("/follow/demands/export", middleware.RequirePerm(perm.PoFollowList), h.FollowDemandExport)
 	g.GET("/follow/project-weeklies", middleware.RequirePerm(perm.PoFollowList), h.ProjectWeeklies)
 	g.GET("/follow/project-weeklies/:id", middleware.RequirePerm(perm.PoFollowList), h.ProjectWeeklyDetail)
