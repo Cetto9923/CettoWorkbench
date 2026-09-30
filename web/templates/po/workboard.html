@@ -11,6 +11,10 @@
 <link rel="stylesheet" href="{{ asset "/static/css/po/demand-detail.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/po/workboard-addon.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/po/dark-contrast.css" }}">
+{{/* 第5.7轮 G6：看板分页栏此前落到浏览器默认样式（select/button 原生外观）。
+     该文件内除 .po-personal-workspace / .wb-done-* 外全部限定作用域，
+     这两类选择器在本页均不存在，故整份引入只有分页栏契约生效。 */}}
+<link rel="stylesheet" href="{{ asset "/static/css/po/personal-workspace.css" }}">
 {{ end }}
 
 {{ define "content" }}
@@ -95,7 +99,7 @@
         <div class="task-col" data-col="doing"><div class="task-col-hdr">进行中 <span class="k-count">0</span></div><div class="task-col-body"></div></div>
         <div class="task-col" data-col="done"><div class="task-col-hdr">已完成 <span class="k-count">0</span></div><div class="task-col-body"></div></div>
       </div>
-      <div id="boardPagination" class="pager" hidden></div>
+      <div id="boardPagination" class="workspace-pagination" hidden></div>
     </div>
 
     <aside class="issue-panel">
@@ -147,7 +151,7 @@
   <div class="drawer-body">
     <div class="drawer-sec-title"><span>执行任务清单</span><span class="drawer-sec-note">实时同步自禅道系统</span></div>
     <div id="drawerTaskList"></div>
-    <div id="drawerPagination" class="pager" hidden></div>
+    <div id="drawerPagination" class="workspace-pagination" hidden></div>
   </div>
   <div class="drawer-footer">
     <button type="button" class="action" id="drawerCloseBtn">关闭</button>

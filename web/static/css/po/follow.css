@@ -139,36 +139,36 @@
 .pw-invest span { color: var(--wb-text-secondary); font-size: 11px; }
 .pw-invest-empty b { color: var(--wb-border-default); }
 
-/* 操作列 — 简洁图标、全局统一水平排列 */
+/* 操作列 — 简洁图标、全局统一水平排列（5.7 G4：并入 5.5 全站表格按钮契约，watch 状态色为状态机故保留） */
 .pw-actions { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .pw-action-btn {
   width: 28px;
   height: 28px;
   padding: 0;
-  border: 1px solid var(--wb-border-default);
+  border: 1px solid var(--wb-gray-300);
   background: var(--wb-bg-surface);
-  color: var(--wb-text-secondary);
+  color: var(--wb-gray-700);
   border-radius: 4px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: var(--font-size-xs);
   cursor: pointer;
   transition: all 0.15s ease;
   line-height: 1;
 }
 .pw-action-btn:hover:not(:disabled) {
-  background: var(--wb-bg-muted);
-  color: var(--color-primary, #2563eb);
-  border-color: var(--color-primary, #2563eb);
+  background: var(--wb-gray-100);
+  color: var(--wb-gray-900);
+  border-color: var(--wb-gray-400);
 }
 .pw-action-btn:disabled {
   opacity: 0.35;
   cursor: not-allowed;
 }
 .pw-action-btn.pw-watch-btn {
-  color: var(--color-text-secondary);
-  border-color: var(--wb-border-default);
+  color: var(--wb-gray-700);
+  border-color: var(--wb-gray-300);
 }
 .pw-action-btn.pw-watch-btn:hover:not(:disabled) {
   color: #f59e0b;
@@ -567,16 +567,16 @@ html[data-theme="dark"] .tag.blue {
   border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
-/* 操作列按钮暗色主题适配 */
+/* 操作列按钮暗色主题适配（5.7 G4：改用与浅色同一套契约 token，深浅自动翻面） */
 html[data-theme="dark"] .pw-action-btn {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.15);
-  color: #94a3b8;
+  background: var(--wb-bg-surface);
+  border-color: var(--wb-gray-300);
+  color: var(--wb-gray-700);
 }
 html[data-theme="dark"] .pw-action-btn:hover:not(:disabled) {
-  background: rgba(59, 130, 246, 0.15);
-  color: #60a5fa;
-  border-color: #3b82f6;
+  background: var(--wb-gray-100);
+  color: var(--wb-gray-900);
+  border-color: var(--wb-gray-400);
 }
 html[data-theme="dark"] .pw-action-btn.pw-watch-btn.is-watched {
   color: #60a5fa;

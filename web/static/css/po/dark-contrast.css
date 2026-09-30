@@ -108,3 +108,58 @@ html[data-theme="dark"] .demand-clarify-badge {
 html[data-theme="dark"] .demand-clarify-close-btn {
   color: var(--color-text-secondary);
 }
+
+/* ---------------------------------------------------------------------------
+ * 第 5.7 轮 G2 收尾：5.6 轮修完后，全站深色唯一仍低于 4.82 的元素
+ * 原：--dd-blue = --wb-primary，深色 = #3b82f6，打在 .dd-summary-block 的
+ *     --wb-bg-muted（深色 = #151c2c）上仅 4.63 —— 与 B / F 组同根因
+ *     （主色字色落在深色信息底上）
+ * 现：--color-info（深色 = #93c5fd，9.43），沿用 B 组既有解法
+ * 影响：/demands/:id .dd-summary-block .st a（「查看完整内容 →」）
+ * 结果：全站深色最低对比度 4.63 → 4.82，不达标仍为 0
+ * ------------------------------------------------------------------------- */
+html[data-theme="dark"] .dd-summary-block .st a {
+  color: var(--color-info);
+}
+
+/* ---------------------------------------------------------------------------
+ * 第 5.7 轮 G8（Trae 复验遗留 P1）
+ * /home?view=demand&stage=acceptanced 深色下，计数为 0 的空态阶段卡
+ * （5.联调测试 / 6.验收）有效对比度约 1.69。
+ * 根因：home.css 的 `.po-home .home-vs-mini-card.empty:not(.active)` 给整卡
+ *       `opacity:0.65`，其子元素又用 --color-text-disabled。这条选择器是
+ *       4 个 class，压过本文件 A 组的 `html[data-theme="dark"] + 3 个 class`，
+ *       所以 5.6 的修复被覆盖。
+ * 做法：本组选择器带 data-theme 限定，优先级 0-5-0 / 0-6-0，高于 home.css
+ *       的 0-4-0 / 0-5-0，因此无需 !important 即可生效。
+ *       深色下把 opacity 归 1，文字改用 --color-text-secondary（#94a3b8）；
+ *       「空态」的弱化观感仍由虚线边框 + 淡底色（home.css 已有的 dashed +
+ *       --color-surface-muted）承担，不依赖透明度。
+ * 浅色不受影响：本组全部限定 html[data-theme="dark"]，home.css 一行未改。
+ * ------------------------------------------------------------------------- */
+html[data-theme="dark"] .po-home .home-vs-mini-card.empty:not(.active) {
+  opacity: 1;
+}
+
+html[data-theme="dark"] .po-home .home-vs-mini-card.empty:not(.active) .vs-mini-name,
+html[data-theme="dark"] .po-home .home-vs-mini-card.empty:not(.active) .vs-mini-count,
+html[data-theme="dark"] .po-home .home-vs-mini-card.empty:not(.active) .vs-mini-breakdown,
+html[data-theme="dark"] .po-home .home-vs-mini-card.empty:not(.active) .vs-mini-dur,
+html[data-theme="dark"] .po-home .home-vs-mini-card.empty:not(.active) .vs-mini-dur .tag {
+  color: var(--color-text-secondary);
+}
+
+/* ---------------------------------------------------------------------------
+ * 第 5.7 轮 G9（Trae 复验遗留 P2）
+ * /board/demand、/board/task 深色下 .kb-req（必填项红色 *）仅 3.03。
+ * 根因：board.css 的 `html[data-theme="dark"] .po-board { --red: … }` 只作用在
+ *       .po-board 上，而 .kb-req 位于文档级弹窗（#kanbanModal 等）里，在
+ *       .po-board 之外，于是继承到 shell.css 的 `--red: var(--color-danger-fill)`
+ *       = #dc2626，打在 --color-surface 深色 #1e293b 上 3.03。
+ * 做法：深色下直接给 .kb-req 指定已定义的 --color-badge-danger-fg
+ *       （深色 = #f87171，打在 #1e293b 上 5.29），不动 --red 本身，
+ *       避免波及 board.css 里已达标的其他 --red 用法。
+ * ------------------------------------------------------------------------- */
+html[data-theme="dark"] .kb-req {
+  color: var(--color-badge-danger-fg);
+}

@@ -172,23 +172,36 @@
   font-family: ui-monospace, monospace;
   color: var(--color-text-primary, #0f172a);
 }
+/* 第5.7轮 G5：本表 9 列沿用 .workspace-table 的 table-layout:fixed，
+   固定布局下只按首行等分，数据源列没有 th 宽度时只分到 105px，21 行里
+   15 行被省略号截断。改用 auto 后列宽按内容分配，并给表头一个显式下限；
+   外层 .table-scroll-container 本就是 overflow:auto，宽度不够时在容器内
+   横向滚动，不会把整页撑出横向滚动条，也不会把其余 8 列挤到换行。
+   实测 1440/1280 两视口、浅深两色：数据源列 105px -> 290px，截断 15/21 -> 0/21，
+   其余 8 列无新增溢出单元格。 */
+.po-metrics-manage .metric-table {
+  table-layout: auto;
+}
 .po-metrics-manage .metric-col-source {
   font-size: 12px;
   color: var(--color-text-secondary, #475569);
-  max-width: 180px;
+  max-width: 300px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.po-metrics-manage .metric-col-source-h {
+  width: 300px;
 }
 .po-metrics-manage .dir-tag {
   font-size: 11px;
   font-weight: 600;
 }
 .po-metrics-manage .dir-tag.dir-up {
-  color: #059669;
+  color: var(--color-success);
 }
 .po-metrics-manage .dir-tag.dir-down {
-  color: #2563eb;
+  color: var(--color-info-fill);
 }
 
 /* 深色模式下的指标管理概览卡片 (与 follow.css / shell.css 规范完全同频 · 高对比度优化) */

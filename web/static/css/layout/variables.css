@@ -39,7 +39,7 @@ html[data-theme="light"] {
   /* 文字色阶 */
   --color-text-primary: #0f172a;
   --color-text-secondary: #64748b;
-  --color-text-disabled: #94a3b8;
+  --color-text-disabled: #475569; /* 5.7 G1: #94a3b8 白底仅 2.56 -> 灰阶 6 级, 全部浅底 >=6.20 */
 
   /* 边框色阶 */
   --color-border: #e2e8f0; /* 1px 使用此色，视觉轻量且 Windows 可靠渲染 */
@@ -76,7 +76,7 @@ html[data-theme="light"] {
 
   /* Explicit semantic tokens for PO mappings missing in light block */
   --color-danger-accent: #dc2626;
-  --color-success-accent: #16a34a;
+  --color-success-accent: #15803d; /* 5.7 G1: 白底 3.30 -> 5.02 */
 
   --color-surface-soft: #f8fafd;
   --color-surface-soft-2: #f9f9fc;
@@ -113,7 +113,7 @@ html[data-theme="light"] {
   --color-feedback-text: #c2410c;
 
   --color-success-strong: #0b5e42;
-  --color-success-accent: #16a34a;
+  --color-success-accent: #15803d; /* 5.7 G1: 白底 3.30 -> 5.02 */
   --color-success-border: #a7f3d0;
   --color-danger-strong: #b91c1c;
   --color-danger-accent: #dc2626;
@@ -166,7 +166,7 @@ html[data-theme="light"] {
   --po-pri-1-fg: var(--color-danger);
   --po-pri-1-bd: var(--color-danger-border);
   --po-pri-2-bg: var(--po-orange-bg);
-  --po-pri-2-fg: var(--po-orange);
+  --po-pri-2-fg: var(--color-warning); /* 5.7 G1: #ea5803 橙底白字 3.35 -> 6.68 */
   --po-pri-2-bd: var(--po-orange-bd);
   --po-pri-3-bg: var(--po-blue-bg);
   --po-pri-3-fg: var(--po-blue);
@@ -293,7 +293,7 @@ html[data-theme="light"] {
   --color-notice-unread-bg: rgba(37, 99, 235, 0);
   /* PO done tag palette (light: solid bg, dark: translucent bg + light fg) */
   --color-badge-success-bg: var(--color-success-bg);
-  --color-badge-success-fg: var(--color-success-fill);
+  --color-badge-success-fg: var(--color-success); /* 5.7 G1: #10b981 绿底 2.24 -> 6.78 */
   --color-badge-success-border: var(--color-success-border);
   --color-badge-info-bg: var(--color-info-bg);
   --color-badge-info-fg: var(--color-info-fill);
@@ -334,7 +334,7 @@ html[data-theme="dark"] {
   --color-success: #34d399; /* lighter for text readability against dark */
   --color-success-fill: #047857; /* Used for backgrounds needing on-accent text */
   --color-success-bg: #064e3b; /* dark background */
-  --color-success-strong: #10b981;
+  --color-success-strong: #34d399; /* 5.7 G5: 绿底 #064e3b 上 3.83 -> 5.06 */
   --color-success-accent: #34d399; /* used for --po-green alias */
   --color-success-border: #047857;
 
@@ -368,7 +368,7 @@ html[data-theme="dark"] {
   /* 文字色阶 */
   --color-text-primary: #f8fafc;
   --color-text-secondary: #94a3b8;
-  --color-text-disabled: #475569;
+  --color-text-disabled: #94a3b8; /* 5.7 G2/G5: #475569 在 #0f172a 表头底仅 2.36 -> 6.96 */
 
   /* 扩展文本/背景色 */
   --color-text-body: #cbd5e1;

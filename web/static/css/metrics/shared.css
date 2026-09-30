@@ -81,6 +81,11 @@
   background: var(--color-primary-light, #eef2ff);
   color: var(--color-primary, #6366f1);
 }
+/* 第5.7轮 G5：--color-primary 深色 #3b82f6 打在深色面仅 3.98，
+   深色下改用为深色底设计的 --color-info（8.11），与 5.6 轮 B 组同源同解。 */
+html[data-theme="dark"] .po-metrics-manage .metric-category.cat-delivery {
+  color: var(--color-info);
+}
 .po-metrics-manage .metric-category.cat-quality {
   border-color: var(--color-danger-border, #fecaca);
   background: var(--color-danger-bg, #fee2e2);
@@ -192,6 +197,12 @@
   border-color: var(--color-border-strong, #cbd5e1);
   background: var(--color-surface-soft-3, #f1f5f9);
   color: var(--color-text-disabled, #94a3b8);
+}
+/* 第5.7轮 G5：深色下 --color-text-disabled 提亮到 #94a3b8 后，打在
+   --color-surface-soft-3 深色 #334155 上仍只有 4.04，此处再提到
+   --color-text-body 深色 #cbd5e1（6.97）。 */
+html[data-theme="dark"] .po-metrics-manage .metric-status.unknown {
+  color: var(--color-text-body);
 }
 
 /* 只读配置 tag */

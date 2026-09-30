@@ -400,13 +400,13 @@ html[data-theme="dark"] .po-personal-workspace .category-tab.active em { color: 
 }
 
 /* 分页栏 (Pagination) - 统一高度 38px */
-.po-personal-workspace .workspace-pagination {
+:is(.po-personal-workspace, .po-board, .task-drawer) .workspace-pagination {
   display: flex; justify-content: space-between; align-items: center; min-height: 38px;
   padding: 6px 14px; border-top: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text-secondary); font-size: 11px;
 }
-.po-personal-workspace .pager-meta { display: flex; align-items: center; gap: 8px; }
-.po-personal-workspace .pager-controls { display: flex; align-items: center; gap: 6px; }
-.po-personal-workspace .pager-size-select {
+:is(.po-personal-workspace, .po-board, .task-drawer) .pager-meta { display: flex; align-items: center; gap: 8px; }
+:is(.po-personal-workspace, .po-board, .task-drawer) .pager-controls { display: flex; align-items: center; gap: 6px; }
+:is(.po-personal-workspace, .po-board, .task-drawer) .pager-size-select {
   height: 26px; padding: 0 18px 0 6px; border: 1px solid var(--color-border-strong); border-radius: 4px;
   background: var(--color-surface); color: var(--color-text-body); font-size: 11px;
 }
@@ -414,29 +414,29 @@ html[data-theme="dark"] .po-personal-workspace .category-tab.active em { color: 
   display: flex; align-items: center; gap: 8px; margin-top: 6px;
   color: var(--color-text-secondary); font-size: 11px; line-height: 18px;
 }
-.po-personal-workspace .pager-btn {
+:is(.po-personal-workspace, .po-board, .task-drawer) .pager-btn {
   min-width: 26px; height: 26px; padding: 0 6px; border: 1px solid var(--color-border);
   border-radius: 4px; background: var(--color-surface); color: var(--color-text-secondary); font-size: 11px;
   cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
 }
-.po-personal-workspace .pager-btn:hover:not(:disabled) { border-color: var(--color-info-fill); color: var(--color-info); background: var(--color-surface-muted); }
-.po-personal-workspace .pager-btn.active {
+:is(.po-personal-workspace, .po-board, .task-drawer) .pager-btn:hover:not(:disabled) { border-color: var(--color-info-fill); color: var(--color-info); background: var(--color-surface-muted); }
+:is(.po-personal-workspace, .po-board, .task-drawer) .pager-btn.active {
   border-color: var(--color-info-fill); background: var(--color-info-bg); color: var(--color-info); font-weight: 600;
 }
-.po-personal-workspace .pager-btn:disabled { cursor: not-allowed; opacity: .4; }
-.po-personal-workspace .pager-ellipsis { padding: 0 4px; color: var(--color-text-secondary); }
+:is(.po-personal-workspace, .po-board, .task-drawer) .pager-btn:disabled { cursor: not-allowed; opacity: .4; }
+:is(.po-personal-workspace, .po-board, .task-drawer) .pager-ellipsis { padding: 0 4px; color: var(--color-text-secondary); }
 /* 跳页控件：与 components/pager.html 的“跳至 N 页”同一交互 */
-.po-personal-workspace .pager-jump-label { color: var(--color-text-secondary); font-size: 11px; }
-.po-personal-workspace .pager-jump-input {
+:is(.po-personal-workspace, .po-board, .task-drawer) .pager-jump-label { color: var(--color-text-secondary); font-size: 11px; }
+:is(.po-personal-workspace, .po-board, .task-drawer) .pager-jump-input {
   width: 48px; height: 26px; padding: 0 6px; border: 1px solid var(--color-border); border-radius: 4px;
   background: var(--color-surface); color: var(--color-text-primary); font-size: 11px; text-align: center; box-sizing: border-box;
 }
-.po-personal-workspace .pager-jump-input:focus { outline: none; border-color: var(--color-border-focus); }
-.po-personal-workspace .pager-jump-btn {
+:is(.po-personal-workspace, .po-board, .task-drawer) .pager-jump-input:focus { outline: none; border-color: var(--color-border-focus); }
+:is(.po-personal-workspace, .po-board, .task-drawer) .pager-jump-btn {
   height: 26px; padding: 0 8px; border: 1px solid var(--color-border); border-radius: 4px;
   background: var(--color-surface); color: var(--color-text-secondary); font-size: 11px; cursor: pointer;
 }
-.po-personal-workspace .pager-jump-btn:hover {
+:is(.po-personal-workspace, .po-board, .task-drawer) .pager-jump-btn:hover {
   border-color: var(--color-info-fill); color: var(--color-info); background: var(--color-surface-muted);
 }
 

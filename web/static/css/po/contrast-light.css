@@ -1,0 +1,123 @@
+/* ==========================================================================
+   文件: web/static/css/po/contrast-light.css
+   模块: PO工作台 · 浅色模式对比度收口（第 5.7 轮 G1）
+   职责: 只在浅色下，把「--color-text-secondary / --wb-gray-500 (#64748b)」
+         打在**有色浅底**上的少数几处（4.20 ~ 4.37）换用更深的既有语义变量。
+
+   为什么不改 --color-text-secondary 变量本身：
+   浅色 --color-text-secondary 打在白底是 4.76，本身达标；它在全站浅底上
+   只有 23 处不达标，且全部集中在「彩色底 + 灰字」这一类。全站另有 291 处
+   浅色元素依赖同一个值，改变量会把已达标的一起改掉（违反 AGENTS.md 规则 h
+   「只改任务点名范围」与本轮「G1 范围外零变化」）。因此本文件只做选择器级收口。
+
+   为什么不改 --color-danger-fill 等变量：
+   该变量同时被用作**背景色**（按钮底、类型标签底），改值会波及非文字元素。
+
+   约束（AGENTS.md）：
+   - 规则 a：本文件不写任何十六进制 / rgb 字面颜色，只引用已定义语义变量
+   - 规则 d：不使用 !important
+   - 规则 f：本文件为新文件，不占用任何超 500 行文件的行数预算
+   - 深色零变化：所有规则显式限定 html[data-theme="light"]（与 5.6 轮
+     po/dark-contrast.css 的 html[data-theme="dark"] 限定对称）。
+     theme.js 始终显式写入 data-theme，故该限定在首屏后即生效。
+
+   挂载：base.html 的 PO 外壳样式块（与 components/button-system.css 同行），
+         覆盖 /home、/demands/:id、/board/demand、/board/task 等页面。
+   ========================================================================== */
+
+/* ---------------------------------------------------------------------------
+ * A 组（4.20 / 4.37 → 9.13 / 9.51）需求详情流程条上的角色名
+ * 原：--dd-muted = --color-text-secondary (#64748b)，分别打在
+ *     已完成态底 #d1fae5 (4.20) 与当前态底 #eff6ff (4.37)
+ * 现：--color-text-body (#334155)
+ * 影响：/demands/:id 的 .dd-flow-stage .who
+ * ------------------------------------------------------------------------- */
+html[data-theme="light"] .dd-flow-stage .who {
+  color: var(--color-text-body);
+}
+
+/* ---------------------------------------------------------------------------
+ * B 组（4.42 → 6.78）需求详情已完成阶段的阶段名与时长
+ * 原：.dd-flow-stage.done 的 color = --wb-success (#15803d)，打在
+ *     --color-success-bg (#d1fae5) 上仅 4.42
+ * 现：--color-success (#065f46) —— 该变量本就是为「浅绿底上的字」定义的
+ * 影响：/demands/:id .dd-flow-stage.done 的 .nm / .duration
+ * ------------------------------------------------------------------------- */
+html[data-theme="light"] .dd-flow-stage.done {
+  color: var(--color-success);
+}
+
+/* ---------------------------------------------------------------------------
+ * C 组（4.23 → 9.20）需求详情指标小格的标题与脚注
+ * 原：--dd-muted / --color-text-secondary (#64748b) 打在 --wb-bg-muted (#eef2f6)
+ * 现：--color-text-body (#334155)
+ * 影响：/demands/:id .dd-ms .k、.dd-ms .sub
+ * ------------------------------------------------------------------------- */
+html[data-theme="light"] .dd-ms .k,
+html[data-theme="light"] .dd-ms .sub {
+  color: var(--color-text-body);
+}
+
+/* ---------------------------------------------------------------------------
+ * D 组（3.95 → 6.80）工作看板「超期」统计按钮
+ * 原：--red = --color-danger-fill (#dc2626)，打在 --red-bg (#fee2e2) 上仅 3.95
+ * 现：--color-danger (#991b1b) —— 该变量本就是为「浅红底上的字」定义的
+ * 影响：/board/demand、/board/task 的 .po-board .stat.red
+ * ------------------------------------------------------------------------- */
+html[data-theme="light"] .po-board .stat.red {
+  color: var(--color-danger);
+}
+
+/* ---------------------------------------------------------------------------
+ * E 组（4.34 → 9.45）首页数据来源脚注
+ * 原：.data-info 的 #64748b 打在 --wb-bg-muted (#f1f5f9) 上仅 4.34
+ * 现：--color-text-body (#334155)
+ * 影响：/home .data-info（「列表获取时间」「数据来源」两行）
+ * ------------------------------------------------------------------------- */
+html[data-theme="light"] .po-home .data-info {
+  color: var(--color-text-body);
+}
+
+/* ---------------------------------------------------------------------------
+ * F 组（4.35 → 9.47）首页 4 宫格「阻塞」卡的提示与计数后缀
+ * 原：--wb-gray-500 (#64748b) 打在 .focus-card.danger 的 --wb-danger-light
+ *     (#fef2f2) 上仅 4.35；同一选择器在普通卡（白底 4.76）上是达标的，
+ *     故只针对 .danger 变体收口，不动普通卡
+ * 现：--color-text-body (#334155)
+ * 影响：/home .focus-card.danger .focus-card-hint、.focus-card-num small
+ * ------------------------------------------------------------------------- */
+html[data-theme="light"] .po-home .focus-card.danger .focus-card-hint,
+html[data-theme="light"] .po-home .focus-card.danger .focus-card-num small {
+  color: var(--color-text-body);
+}
+
+/* ---------------------------------------------------------------------------
+ * G 组（2.56 → 7.58）解释说明 Tooltip 的 ⓘ 图标
+ * 原：--wb-gray-400 (#94a3b8) 打在 --wb-white 上仅 2.56（本轮 42 处不足中
+ *     仅剩的 4 个选择器）。--wb-gray-400 是十级灰阶里的「图标弱化」档，
+ *     同时被滚动条、占位符等非文字元素使用，不能改变量本身；
+ *     故只把这个图标换到本轮已提亮的 --color-text-disabled。
+ * 现：--color-text-disabled (#475569)
+ * 影响：/home、/demands/:id、/board/demand、/board/task 的 .wb-tooltip-icon
+ *     （定义在 components.css，由 base.html 全局加载；深色已由
+ *       po/dark-contrast.css D 组接管，本规则限定 light 不与之冲突）
+ * ------------------------------------------------------------------------- */
+html[data-theme="light"] .wb-tooltip-icon {
+  color: var(--color-text-disabled);
+}
+
+/* ---------------------------------------------------------------------------
+ * H 组（4.23 → 9.20）周报抽屉里的三个小指标格
+ * 原：--color-text-secondary (#64748b) 打在 --wb-bg-muted (#eef2f6) 上仅 4.23
+ *     （与 C 组同一根因：灰字落在有色浅底上）
+ * 现：--color-text-body (#334155)
+ * 影响：/follow 周报抽屉的「本周完成 / 未完成 / 下周计划」小标签
+ *     之所以没出现在 6 页扫描里，是因为该抽屉需点击行才打开，
+ *     弹层走查（scripts/modals.js）才覆盖到
+ * 深色不受影响：深色已由本文件的 light 限定排除在外，且深色实测本就达标
+ * ------------------------------------------------------------------------- */
+html[data-theme="light"] .pw-pbox span {
+  color: var(--color-text-body);
+}
+
+

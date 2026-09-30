@@ -60,6 +60,14 @@
   font-weight: 500;
 }
 
+/* 第5.7轮 G5：--color-primary 深色 = #3b82f6，打在 --color-surface 深色
+   #1e293b 上仅 3.98（/admin/users、/metrics/manage、/schedule 弹窗内分页）。
+   深色下改用为深色底设计的 --color-info（#93c5fd，8.11）。 */
+html[data-theme="dark"] .pagination .page-item.active .page-link {
+  border-color: var(--color-info);
+  color: var(--color-info);
+}
+
 /* 禁用状态 */
 .pagination .page-item.disabled .page-link {
   color: var(--color-text-disabled);
