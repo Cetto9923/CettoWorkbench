@@ -25,73 +25,72 @@ func vfDay(offset int) *time.Time {
 	return &d
 }
 
-func TestDeriveJudgement(t *testing.T) {
-	cases := []struct {
-		name      string
-		raw       vfDemandRow
-		wantState string
-		wantEmpty bool
-	}{
-		{
-			name: "阻塞-已过计划提测日仍未提测",
-			raw: vfDemandRow{
-				Stage: "wait", Status: "wait", Owner: "张三",
-				SchedulePlanDate: vfDay(-5),
-			},
-			wantState: VFJudgementBlocked,
-		},
-		{
-			name:      "阻塞-缺负责人",
-			raw:       vfDemandRow{Stage: "wait", Status: "wait", SchedulePlanDate: vfDay(10)},
-			wantState: VFJudgementBlocked,
-		},
-		{
-			name: "阻塞-已进测试但验收标准为空",
-			raw: vfDemandRow{
-				Stage: "testing", Status: "testing", Owner: "李四",
-				SchedulePlanDate: vfDay(10), Acceptance: "",
-			},
-			wantState: VFJudgementBlocked,
-		},
-		{
-			name: "风险-已超期2天",
-			raw: vfDemandRow{
-				Stage: "developing", Status: "developing", Owner: "王五", Acceptance: "有标准",
-				SchedulePlanDate: vfDay(20), Deadline: vfDay(-2),
-			},
-			wantState: VFJudgementRisk,
-		},
-		{
-			name: "风险-距计划提测日2天且阶段落后",
-			raw: vfDemandRow{
-				Stage: "clarify", Status: "active", Owner: "赵六", Acceptance: "有标准",
-				SchedulePlanDate: vfDay(2),
-			},
-			wantState: VFJudgementRisk,
-		},
-		{
-			name: "可按期-计划日期内无异常",
-			raw: vfDemandRow{
-				Stage: "developing", Status: "developing", Owner: "钱七", Acceptance: "有标准",
-				SchedulePlanDate: vfDay(15), Deadline: vfDay(20),
-			},
-			wantState: VFJudgementOnTrack,
-		},
-		{
-			name:      "暂无判断-计划字段全缺",
-			raw:       vfDemandRow{Stage: "wait", Status: "wait", Owner: "孙八", Acceptance: "有标准"},
-			wantState: "",
-			wantEmpty: true,
-		},
-		{
-			name:      "暂无判断-仅有deadline为空且无plan",
-			raw:       vfDemandRow{Stage: "testing", Status: "testing", Owner: "周九", Acceptance: "有标准"},
-			wantState: "",
-			wantEmpty: true,
-		},
-	}
+// vfJudgeCase 是三态推导的单条用例。
+type vfJudgeCase struct {
+	name      string
+	raw       vfDemandRow
+	wantState string
+	wantEmpty bool
+}
 
-	for _, tc := range cases {
+// vfJudgeCases 覆盖阻塞 3 条、风险 2 条、可按期 1 条、暂无判断 2 条。
+var vfJudgeCases = []vfJudgeCase{
+	{
+		name:      "阻塞-已过计划提测日仍未提测",
+		raw:       vfDemandRow{Stage: "wait", Status: "wait", Owner: "张三", SchedulePlanDate: vfDay(-5)},
+		wantState: VFJudgementBlocked,
+	},
+	{
+		name:      "阻塞-缺负责人",
+		raw:       vfDemandRow{Stage: "wait", Status: "wait", SchedulePlanDate: vfDay(10)},
+		wantState: VFJudgementBlocked,
+	},
+	{
+		name: "阻塞-已进测试但验收标准为空",
+		raw: vfDemandRow{
+			Stage: "testing", Status: "testing", Owner: "李四",
+			SchedulePlanDate: vfDay(10), Acceptance: "",
+		},
+		wantState: VFJudgementBlocked,
+	},
+	{
+		name: "风险-已超期2天",
+		raw: vfDemandRow{
+			Stage: "developing", Status: "developing", Owner: "王五", Acceptance: "有标准",
+			SchedulePlanDate: vfDay(20), Deadline: vfDay(-2),
+		},
+		wantState: VFJudgementRisk,
+	},
+	{
+		name: "风险-距计划提测日2天且阶段落后",
+		raw: vfDemandRow{
+			Stage: "clarify", Status: "active", Owner: "赵六", Acceptance: "有标准",
+			SchedulePlanDate: vfDay(2),
+		},
+		wantState: VFJudgementRisk,
+	},
+	{
+		name: "可按期-计划日期内无异常",
+		raw: vfDemandRow{
+			Stage: "developing", Status: "developing", Owner: "钱七", Acceptance: "有标准",
+			SchedulePlanDate: vfDay(15), Deadline: vfDay(20),
+		},
+		wantState: VFJudgementOnTrack,
+	},
+	{
+		name:      "暂无判断-计划字段全缺",
+		raw:       vfDemandRow{Stage: "wait", Status: "wait", Owner: "孙八", Acceptance: "有标准"},
+		wantEmpty: true,
+	},
+	{
+		name:      "暂无判断-仅有deadline为空且无plan",
+		raw:       vfDemandRow{Stage: "testing", Status: "testing", Owner: "周九", Acceptance: "有标准"},
+		wantEmpty: true,
+	},
+}
+
+func TestDeriveJudgement(t *testing.T) {
+	for _, tc := range vfJudgeCases {
 		t.Run(tc.name, func(t *testing.T) {
 			got := deriveJudgement(judgeCtx{Raw: tc.raw, Now: vfTestNow()})
 			if got.Judgement != tc.wantState {
@@ -110,68 +109,70 @@ func TestDeriveJudgement(t *testing.T) {
 	}
 }
 
-func TestRunVFRules(t *testing.T) {
-	cases := []struct {
-		name      string
-		raw       vfDemandRow
-		avgStage  float64
-		wantRules []string
-	}{
-		{
-			name: "超期未提测命中",
-			raw: vfDemandRow{
-				ID: 1001, Stage: "wait", Status: "wait", Owner: "张三",
-				SchedulePlanDate: vfDay(-3),
-			},
-			wantRules: []string{"超期未提测"},
-		},
-		{
-			name:      "缺负责人命中",
-			raw:       vfDemandRow{ID: 1002, Stage: "clarify", Status: "active"},
-			wantRules: []string{"缺负责人"},
-		},
-		{
-			name: "验收标准为空命中",
-			raw: vfDemandRow{
-				ID: 1003, Stage: "acceptanced", Status: "acceptanced",
-				Owner: "李四", Acceptance: "",
-			},
-			wantRules: []string{"验收标准为空"},
-		},
-		{
-			name: "阶段落后于窗口平均命中",
-			raw: vfDemandRow{
-				ID: 1004, Stage: "wait", Status: "wait", Owner: "王五", Acceptance: "有",
-			},
-			avgStage:  5,
-			wantRules: []string{"阶段落后于同窗口平均"},
-		},
-		{
-			name: "全部不命中",
-			raw: vfDemandRow{
-				ID: 1005, Stage: "developing", Status: "developing",
-				Owner: "赵六", Acceptance: "有标准", SchedulePlanDate: vfDay(15),
-			},
-			avgStage:  3,
-			wantRules: nil,
-		},
-	}
+// vfRuleCase 是确定性规则的单条用例。
+type vfRuleCase struct {
+	name      string
+	raw       vfDemandRow
+	avgStage  float64
+	wantRules []string
+}
 
-	for _, tc := range cases {
+// vfRuleCases 覆盖四条规则各命中一次，外加全部不命中。
+var vfRuleCases = []vfRuleCase{
+	{
+		name:      "超期未提测命中",
+		raw:       vfDemandRow{ID: 1001, Stage: "wait", Status: "wait", Owner: "张三", SchedulePlanDate: vfDay(-3)},
+		wantRules: []string{"超期未提测"},
+	},
+	{
+		name:      "缺负责人命中",
+		raw:       vfDemandRow{ID: 1002, Stage: "clarify", Status: "active"},
+		wantRules: []string{"缺负责人"},
+	},
+	{
+		name:      "验收标准为空命中",
+		raw:       vfDemandRow{ID: 1003, Stage: "acceptanced", Status: "acceptanced", Owner: "李四"},
+		wantRules: []string{"验收标准为空"},
+	},
+	{
+		name:      "阶段落后于窗口平均命中",
+		raw:       vfDemandRow{ID: 1004, Stage: "wait", Status: "wait", Owner: "王五", Acceptance: "有"},
+		avgStage:  5,
+		wantRules: []string{"阶段落后于同窗口平均"},
+	},
+	{
+		name: "全部不命中",
+		raw: vfDemandRow{
+			ID: 1005, Stage: "developing", Status: "developing",
+			Owner: "赵六", Acceptance: "有标准", SchedulePlanDate: vfDay(15),
+		},
+		avgStage:  3,
+		wantRules: nil,
+	},
+}
+
+func TestRunVFRules(t *testing.T) {
+	for _, tc := range vfRuleCases {
 		t.Run(tc.name, func(t *testing.T) {
 			got := runVFRules(vfRule{Raw: tc.raw, Now: vfTestNow(), AvgStage: tc.avgStage})
-			if len(got) != len(tc.wantRules) {
-				t.Fatalf("命中数 = %d，期望 %d（%v）", len(got), len(tc.wantRules), got)
-			}
-			for i, want := range tc.wantRules {
-				if got[i].RuleName != want {
-					t.Fatalf("第 %d 条规则名 = %q，期望 %q", i, got[i].RuleName, want)
-				}
-				if got[i].Field == "" || got[i].TargetURL == "" {
-					t.Fatalf("第 %d 条发现缺少字段或跳转对象：%+v", i, got[i])
-				}
-			}
+			assertRuleFindings(t, got, tc.wantRules)
 		})
+	}
+}
+
+// assertRuleFindings 校验命中条数、规则名顺序与必填字段。
+func assertRuleFindings(t *testing.T, got []VersionFollowAIFinding, want []string) {
+	t.Helper()
+	if len(got) != len(want) {
+		t.Fatalf("命中数 = %d，期望 %d（%v）", len(got), len(want), got)
+	}
+	for i, name := range want {
+		if got[i].RuleName != name {
+			t.Fatalf("第 %d 条规则名 = %q，期望 %q", i, got[i].RuleName, name)
+		}
+		if got[i].Field == "" || got[i].TargetURL == "" {
+			t.Fatalf("第 %d 条发现缺少字段或跳转对象：%+v", i, got[i])
+		}
 	}
 }
 

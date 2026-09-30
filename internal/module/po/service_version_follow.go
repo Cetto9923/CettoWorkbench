@@ -243,28 +243,50 @@ func pickActiveWindow(windows []vfWindowRow, want uint64, now time.Time) vfWindo
 func filterVFItems(items []VersionFollowItemResp, req VersionFollowListReq, actor *model.User) []VersionFollowItemResp {
 	out := make([]VersionFollowItemResp, 0, len(items))
 	for _, it := range items {
-		if !vfMatchScope(it, req.Scope, actor) {
-			continue
+		if vfMatchAllFilters(it, req, actor) {
+			out = append(out, it)
 		}
-		if req.Stage != "" && it.Stage != stageLabels[req.Stage] && it.Stage != req.Stage {
-			continue
-		}
-		if req.System != "" && req.System != "全部" && it.System != req.System {
-			continue
-		}
-		if req.Owner != "" && req.Owner != "全部" && it.Owner != req.Owner {
-			continue
-		}
-		if req.Judgement != "" && it.Judgement != req.Judgement {
-			continue
-		}
-		if kw := strings.TrimSpace(req.Keyword); kw != "" &&
-			!strings.Contains(it.DemandNo, kw) && !strings.Contains(it.Title, kw) {
-			continue
-		}
-		out = append(out, it)
 	}
 	return out
+}
+
+// vfMatchAllFilters 汇总全部筛选条件，供列表过滤逐项判定。
+func vfMatchAllFilters(it VersionFollowItemResp, req VersionFollowListReq, actor *model.User) bool {
+	return vfMatchScope(it, req.Scope, actor) &&
+		vfMatchStage(it, req.Stage) &&
+		vfMatchSystem(it, req.System) &&
+		vfMatchOwner(it, req.Owner) &&
+		vfMatchJudgement(it, req.Judgement) &&
+		vfMatchKeyword(it, req.Keyword)
+}
+
+// vfMatchStage 阶段过滤；req 为空表示不限。
+func vfMatchStage(it VersionFollowItemResp, want string) bool {
+	return want == "" || it.Stage == stageLabels[want] || it.Stage == want
+}
+
+// vfMatchSystem 系统过滤；「全部」与空均表示不限。
+func vfMatchSystem(it VersionFollowItemResp, want string) bool {
+	return want == "" || want == "全部" || it.System == want
+}
+
+// vfMatchOwner 负责人过滤；「全部」与空均表示不限。
+func vfMatchOwner(it VersionFollowItemResp, want string) bool {
+	return want == "" || want == "全部" || it.Owner == want
+}
+
+// vfMatchJudgement 发布判断过滤；空表示不限。
+func vfMatchJudgement(it VersionFollowItemResp, want string) bool {
+	return want == "" || it.Judgement == want
+}
+
+// vfMatchKeyword 关键词过滤，命中需求号或标题即通过。
+func vfMatchKeyword(it VersionFollowItemResp, want string) bool {
+	kw := strings.TrimSpace(want)
+	if kw == "" {
+		return true
+	}
+	return strings.Contains(it.DemandNo, kw) || strings.Contains(it.Title, kw)
 }
 
 // vfMatchScope 处理「全部 / 待我处理 / 我跟进」三选一。

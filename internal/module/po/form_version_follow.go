@@ -170,12 +170,5 @@ var stageLabels = map[string]string{
 	"greyverify": "验证",
 }
 
-// judgementLabels 是发布判断三态的中文名。
-var judgementLabels = map[string]string{
-	VFJudgementOnTrack: "可按期",
-	VFJudgementRisk:    "风险",
-	VFJudgementBlocked: "阻塞",
-}
-
 // nowFunc 便于规则单测注入固定时间。
 var nowFunc = time.Now
