@@ -31,4 +31,4 @@ formatters:
 
 issues:
   new-from-rev: b23bd45de1753fd6020cc08c2a49ab415dc947f7
-  whole-files: true
+  whole-files: false
