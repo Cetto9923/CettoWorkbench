@@ -9,16 +9,27 @@ package agileteam
 
 import (
 	"context"
+	"database/sql/driver"
 	"regexp"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+
+	"workbench/internal/constants"
 )
+
+// techHQArgs 返回管辖范围查询中以 ? 占位符参数化的科技本部口径参数。
+func techHQArgs() []driver.Value {
+	return []driver.Value{
+		constants.DeptTechHQID, constants.DeptTechHQPathPattern(),
+		constants.DeptTechHQID, constants.DeptTechHQPathPattern(),
+	}
+}
 
 func TestListDeptTreeIDsUsesManagedDepartmentsAndDescendants(t *testing.T) {
 	repo, mock := newTestRepo(t)
 	mock.ExpectQuery("(?s)SELECT d\\.id, COALESCE\\(d\\.path, ''\\) AS path FROM zt_dept d.*LEFT JOIN zt_wb_dept_manager_override.*REGEXP \\?").
-		WithArgs("(^|[[:space:],;])lead1([[:space:],;]|$)").
+		WithArgs(append(techHQArgs(), "(^|[[:space:],;])lead1([[:space:],;]|$)")...).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "path"}).
 			AddRow(uint(20), ",1,20,").
 			AddRow(uint(40), ",1,40,"))
@@ -51,7 +62,7 @@ func TestListDeptTreeIDsUsesManagedDepartmentsAndDescendants(t *testing.T) {
 func TestListDeptTreeIDsReturnsEmptyWhenAccountManagesNoDepartment(t *testing.T) {
 	repo, mock := newTestRepo(t)
 	mock.ExpectQuery("(?s)SELECT d\\.id, COALESCE\\(d\\.path, ''\\) AS path FROM zt_dept d.*LEFT JOIN zt_wb_dept_manager_override.*REGEXP \\?").
-		WithArgs("(^|[[:space:],;])member1([[:space:],;]|$)").
+		WithArgs(append(techHQArgs(), "(^|[[:space:],;])member1([[:space:],;]|$)")...).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "path"}))
 
 	got, err := repo.ListDeptTreeIDs(context.Background(), "member1")
@@ -75,7 +86,7 @@ func TestListDeptTreeIDs_DeptManagerOverridePriority(t *testing.T) {
 		repo, mock := newTestRepo(t)
 		// 仅 zt_dept.manager = "lead1"，补缺表无记录 -> 命中部门 14
 		mock.ExpectQuery("(?s)SELECT d\\.id, COALESCE\\(d\\.path, ''\\) AS path FROM zt_dept d.*LEFT JOIN zt_wb_dept_manager_override.*REGEXP \\?").
-			WithArgs("(^|[[:space:],;])lead1([[:space:],;]|$)").
+			WithArgs(append(techHQArgs(), "(^|[[:space:],;])lead1([[:space:],;]|$)")...).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "path"}).AddRow(uint(14), ",53,52,14,"))
 		mock.ExpectQuery("(?s)SELECT DISTINCT id FROM zt_dept WHERE id IN \\(\\?\\) OR path LIKE \\?").
 			WithArgs(uint(14), ",53,52,14,%").
@@ -97,7 +108,7 @@ func TestListDeptTreeIDs_DeptManagerOverridePriority(t *testing.T) {
 		repo, mock := newTestRepo(t)
 		// 仅补缺表有值 account = "lead2" (zt_dept.manager 为空) -> lead2 命中部门 14
 		mock.ExpectQuery("(?s)SELECT d\\.id, COALESCE\\(d\\.path, ''\\) AS path FROM zt_dept d.*LEFT JOIN zt_wb_dept_manager_override.*REGEXP \\?").
-			WithArgs("(^|[[:space:],;])lead2([[:space:],;]|$)").
+			WithArgs(append(techHQArgs(), "(^|[[:space:],;])lead2([[:space:],;]|$)")...).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "path"}).AddRow(uint(14), ",53,52,14,"))
 		mock.ExpectQuery("(?s)SELECT DISTINCT id FROM zt_dept WHERE id IN \\(\\?\\) OR path LIKE \\?").
 			WithArgs(uint(14), ",53,52,14,%").
@@ -120,7 +131,7 @@ func TestListDeptTreeIDs_DeptManagerOverridePriority(t *testing.T) {
 		// zt_dept.manager 为 "lead1"，但补缺表覆盖为 "lead3"
 		// 查询 lead3: 补缺表优先生效，命中部门 14
 		mock.ExpectQuery("(?s)SELECT d\\.id, COALESCE\\(d\\.path, ''\\) AS path FROM zt_dept d.*LEFT JOIN zt_wb_dept_manager_override.*REGEXP \\?").
-			WithArgs("(^|[[:space:],;])lead3([[:space:],;]|$)").
+			WithArgs(append(techHQArgs(), "(^|[[:space:],;])lead3([[:space:],;]|$)")...).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "path"}).AddRow(uint(14), ",53,52,14,"))
 		mock.ExpectQuery("(?s)SELECT DISTINCT id FROM zt_dept WHERE id IN \\(\\?\\) OR path LIKE \\?").
 			WithArgs(uint(14), ",53,52,14,%").
@@ -136,7 +147,7 @@ func TestListDeptTreeIDs_DeptManagerOverridePriority(t *testing.T) {
 
 		// 查询原 zt_dept.manager 的 "lead1": 因为被补缺表覆盖，无法匹配到部门 14，返回空
 		mock.ExpectQuery("(?s)SELECT d\\.id, COALESCE\\(d\\.path, ''\\) AS path FROM zt_dept d.*LEFT JOIN zt_wb_dept_manager_override.*REGEXP \\?").
-			WithArgs("(^|[[:space:],;])lead1([[:space:],;]|$)").
+			WithArgs(append(techHQArgs(), "(^|[[:space:],;])lead1([[:space:],;]|$)")...).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "path"}))
 
 		got1, err1 := repo.ListDeptTreeIDs(context.Background(), "lead1")
@@ -162,7 +173,7 @@ func TestIsDeptManager_DeptManagerOverride(t *testing.T) {
 		repo, mock := newTestRepo(t)
 		// 1. 只在补缺表里的账号返回 true (demo_leader 在补缺表有记录，zt_dept.manager 为空)
 		mock.ExpectQuery("(?s)SELECT d\\.id, COALESCE\\(d\\.path, ''\\) AS path FROM zt_dept d.*LEFT JOIN zt_wb_dept_manager_override.*REGEXP \\?").
-			WithArgs("(^|[[:space:],;])demo_leader([[:space:],;]|$)").
+			WithArgs(append(techHQArgs(), "(^|[[:space:],;])demo_leader([[:space:],;]|$)")...).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "path"}).AddRow(uint(14), ",53,52,14,"))
 		mock.ExpectQuery("(?s)SELECT DISTINCT id FROM zt_dept WHERE id IN \\(\\?\\) OR path LIKE \\?").
 			WithArgs(uint(14), ",53,52,14,%").
@@ -184,7 +195,7 @@ func TestIsDeptManager_DeptManagerOverride(t *testing.T) {
 		repo, mock := newTestRepo(t)
 		// 2. 只在 zt_dept.manager 里的账号返回 true
 		mock.ExpectQuery("(?s)SELECT d\\.id, COALESCE\\(d\\.path, ''\\) AS path FROM zt_dept d.*LEFT JOIN zt_wb_dept_manager_override.*REGEXP \\?").
-			WithArgs("(^|[[:space:],;])lead1([[:space:],;]|$)").
+			WithArgs(append(techHQArgs(), "(^|[[:space:],;])lead1([[:space:],;]|$)")...).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "path"}).AddRow(uint(14), ",53,52,14,"))
 		mock.ExpectQuery("(?s)SELECT DISTINCT id FROM zt_dept WHERE id IN \\(\\?\\) OR path LIKE \\?").
 			WithArgs(uint(14), ",53,52,14,%").
@@ -206,7 +217,7 @@ func TestIsDeptManager_DeptManagerOverride(t *testing.T) {
 		repo, mock := newTestRepo(t)
 		// 3. 补缺表覆盖了原 manager 的部门，原 manager 返回 false
 		mock.ExpectQuery("(?s)SELECT d\\.id, COALESCE\\(d\\.path, ''\\) AS path FROM zt_dept d.*LEFT JOIN zt_wb_dept_manager_override.*REGEXP \\?").
-			WithArgs("(^|[[:space:],;])lead_old([[:space:],;]|$)").
+			WithArgs(append(techHQArgs(), "(^|[[:space:],;])lead_old([[:space:],;]|$)")...).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "path"}))
 
 		isMgr, err := repo.IsDeptManager(context.Background(), "lead_old")

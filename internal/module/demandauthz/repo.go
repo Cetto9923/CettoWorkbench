@@ -17,6 +17,8 @@ import (
 	"strings"
 
 	"gorm.io/gorm"
+
+	"workbench/internal/constants"
 )
 
 // Repo 封装需求对象级授权的关系查询。
@@ -72,7 +74,8 @@ WHERE ur.userId = ? AND ur.deleted = '0' AND r.deleted = '0' AND r.isActive = 1 
 }
 
 // ListLeaderDeptTreeIDs 返回账号负责的部门及其下级部门 ID。
-// 针对 52 科技部本部及其子孙部门，优先查补缺表 zt_wb_dept_manager_override；未命中 fallback 到 zt_dept.manager。
+// 针对 constants.DeptTechHQID 科技部本部及其子孙部门，优先查补缺表
+// zt_wb_dept_manager_override；未命中 fallback 到 zt_dept.manager。
 func (r *Repo) ListLeaderDeptTreeIDs(ctx context.Context, account string) ([]uint, error) {
 	if r == nil || r.db == nil {
 		return nil, fmt.Errorf("demand authz repo is not configured")
@@ -90,13 +93,16 @@ func (r *Repo) ListLeaderDeptTreeIDs(ctx context.Context, account string) ([]uin
 	err := r.db.WithContext(ctx).Raw(`
 SELECT d.id, COALESCE(d.path, '') AS path FROM zt_dept d
 LEFT JOIN zt_wb_dept_manager_override o
-  ON o.dept = d.id AND o.deleted = '0' AND (d.id = 52 OR d.path LIKE '%,52,%')
+  ON o.dept = d.id AND o.deleted = '0' AND (d.id = ? OR d.path LIKE ?)
 WHERE COALESCE(
   CASE
-    WHEN (d.id = 52 OR d.path LIKE '%,52,%') AND o.id IS NOT NULL THEN o.account
+    WHEN (d.id = ? OR d.path LIKE ?) AND o.id IS NOT NULL THEN o.account
     ELSE d.manager
   END, ''
-) REGEXP ? ORDER BY d.id ASC`, accountTokenRegexp(account)).Scan(&managed).Error
+) REGEXP ? ORDER BY d.id ASC`,
+		constants.DeptTechHQID, constants.DeptTechHQPathPattern(),
+		constants.DeptTechHQID, constants.DeptTechHQPathPattern(),
+		accountTokenRegexp(account)).Scan(&managed).Error
 	if err != nil {
 		return nil, err
 	}

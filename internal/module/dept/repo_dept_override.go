@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"workbench/internal/constants"
 	"workbench/internal/model"
 
 	"gorm.io/gorm"
@@ -52,12 +53,12 @@ func (r *Repo) ListOverrides(ctx context.Context) ([]DeptOverrideView, error) {
 	return rows, nil
 }
 
-// ListTechDepts 查询科技部本部(52)及其子孙部门列表，供下拉框选择
+// ListTechDepts 查询 constants.DeptTechHQID 科技部本部及其子孙部门列表，供下拉框选择
 func (r *Repo) ListTechDepts(ctx context.Context) ([]DeptOption, error) {
 	var depts []DeptOption
 	err := r.db.WithContext(ctx).Table("zt_dept").
 		Select("id, name, path").
-		Where("id = 52 OR path LIKE '%,52,%'").
+		Where("id = ? OR path LIKE ?", constants.DeptTechHQID, constants.DeptTechHQPathPattern()).
 		Order("grade ASC, id ASC").
 		Scan(&depts).Error
 	if err != nil {

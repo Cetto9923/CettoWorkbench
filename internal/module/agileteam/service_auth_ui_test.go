@@ -68,7 +68,7 @@ func TestCanViewTeamgroupLeadScopeAllowsManagedChildOnly(t *testing.T) {
 		WithArgs("(^|[[:space:],;])coach1([[:space:],;]|$)").
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(11)))
 	mock.ExpectQuery("(?s)SELECT d\\.id, COALESCE\\(d\\.path, ''\\) AS path FROM zt_dept d.*LEFT JOIN zt_wb_dept_manager_override.*REGEXP \\?").
-		WithArgs("(^|[[:space:],;])coach1([[:space:],;]|$)").
+		WithArgs(append(techHQArgs(), "(^|[[:space:],;])coach1([[:space:],;]|$)")...).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "path"}))
 	allowed, err = svc.CanViewTeamgroupLeadScope(context.Background(), &model.User{Account: "coach1"}, 12)
 	if err != nil || allowed {
@@ -93,7 +93,7 @@ func TestCanEnterLeadViewRequiresCoachOrDeptManager(t *testing.T) {
 		WithArgs("(^|[[:space:],;])member1([[:space:],;]|$)").
 		WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	mock.ExpectQuery("(?s)SELECT d\\.id, COALESCE\\(d\\.path, ''\\) AS path FROM zt_dept d.*LEFT JOIN zt_wb_dept_manager_override.*REGEXP \\?").
-		WithArgs("(^|[[:space:],;])member1([[:space:],;]|$)").
+		WithArgs(append(techHQArgs(), "(^|[[:space:],;])member1([[:space:],;]|$)")...).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "path"}))
 	allowed, err = svc.CanEnterLeadView(context.Background(), &model.User{Account: "member1"})
 	if err != nil || allowed {
@@ -107,7 +107,7 @@ func TestCanEnterLeadViewRequiresCoachOrDeptManager(t *testing.T) {
 func TestCanViewTeamgroupMemberDetailsDoesNotInferFromDepartmentManagement(t *testing.T) {
 	svc, mock := newTestService(t)
 	mock.ExpectQuery("(?s)SELECT d\\.id, COALESCE\\(d\\.path, ''\\) AS path FROM zt_dept d.*LEFT JOIN zt_wb_dept_manager_override.*REGEXP \\?").
-		WithArgs("(^|[[:space:],;])manager1([[:space:],;]|$)").
+		WithArgs(append(techHQArgs(), "(^|[[:space:],;])manager1([[:space:],;]|$)")...).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "path"}).AddRow(uint(20), ",1,20,"))
 	mock.ExpectQuery("(?s)SELECT DISTINCT id FROM zt_dept WHERE id IN \\(\\?\\) OR path LIKE \\?").
 		WithArgs(uint(20), ",1,20,%").
@@ -118,7 +118,7 @@ func TestCanViewTeamgroupMemberDetailsDoesNotInferFromDepartmentManagement(t *te
 	}
 
 	mock.ExpectQuery("(?s)SELECT d\\.id, COALESCE\\(d\\.path, ''\\) AS path FROM zt_dept d.*LEFT JOIN zt_wb_dept_manager_override.*REGEXP \\?").
-		WithArgs("(^|[[:space:],;])coach1([[:space:],;]|$)").
+		WithArgs(append(techHQArgs(), "(^|[[:space:],;])coach1([[:space:],;]|$)")...).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "path"}))
 	mock.ExpectQuery("(?s)FROM zt_teamgroup managed.*REGEXP \\?").
 		WithArgs("(^|[[:space:],;])coach1([[:space:],;]|$)").

@@ -92,7 +92,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 		g.PUT("/:id/status", middleware.RequirePerm(perm.DeptEdit), h.UpdateStatus)
 	}
 
-	// 部门负责人补缺管理路由（针对 52 科技本部及子孙部门）
+	// 部门负责人补缺管理路由（针对 constants.DeptTechHQID 科技本部及子孙部门）
 	overrides := rg.Group("/dept-overrides")
 	overrides.Use(middleware.ActiveNav("/admin/depts"))
 	{

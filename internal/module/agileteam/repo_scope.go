@@ -13,6 +13,8 @@ import (
 	"html"
 	"regexp"
 	"strings"
+
+	"workbench/internal/constants"
 )
 
 // ListParentTeamOptions 返回可作为父级的小组（type=parent 或 parent=0）。
@@ -65,7 +67,7 @@ func accountTokenRegexp(account string) string {
 
 // IsDeptManager 判断账号是否为某部室负责人。
 // 规则与 ListDeptTreeIDs 保持完全一致：优先查补缺表（deleted='0'），有记录以补缺表为准；
-// 没有记录再看 zt_dept.manager；仅对 dept 52 及以下部门生效。
+// 没有记录再看 zt_dept.manager；仅对 constants.DeptTechHQID 及以下部门生效。
 func (r *Repo) IsDeptManager(ctx context.Context, account string) (bool, error) {
 	account = strings.TrimSpace(account)
 	if account == "" {
@@ -79,7 +81,8 @@ func (r *Repo) IsDeptManager(ctx context.Context, account string) (bool, error) 
 }
 
 // ListDeptTreeIDs 返回账号负责的部门及其下级部门 ID。
-// 针对 52 科技部本部及其子孙部门，优先查补缺表 zt_wb_dept_manager_override；未命中 fallback 到 zt_dept.manager。
+// 针对 constants.DeptTechHQID 科技部本部及其子孙部门，优先查补缺表
+// zt_wb_dept_manager_override；未命中 fallback 到 zt_dept.manager。
 func (r *Repo) ListDeptTreeIDs(ctx context.Context, account string) ([]uint, error) {
 	account = strings.TrimSpace(account)
 	if account == "" {
@@ -93,13 +96,16 @@ func (r *Repo) ListDeptTreeIDs(ctx context.Context, account string) ([]uint, err
 	if err := r.read().WithContext(ctx).Raw(`
 SELECT d.id, COALESCE(d.path, '') AS path FROM zt_dept d
 LEFT JOIN zt_wb_dept_manager_override o
-  ON o.dept = d.id AND o.deleted = '0' AND (d.id = 52 OR d.path LIKE '%,52,%')
+  ON o.dept = d.id AND o.deleted = '0' AND (d.id = ? OR d.path LIKE ?)
 WHERE COALESCE(
   CASE
-    WHEN (d.id = 52 OR d.path LIKE '%,52,%') AND o.id IS NOT NULL THEN o.account
+    WHEN (d.id = ? OR d.path LIKE ?) AND o.id IS NOT NULL THEN o.account
     ELSE d.manager
   END, ''
-) REGEXP ? ORDER BY d.id ASC`, accountTokenRegexp(account)).Scan(&managed).Error; err != nil {
+) REGEXP ? ORDER BY d.id ASC`,
+		constants.DeptTechHQID, constants.DeptTechHQPathPattern(),
+		constants.DeptTechHQID, constants.DeptTechHQPathPattern(),
+		accountTokenRegexp(account)).Scan(&managed).Error; err != nil {
 		return nil, err
 	}
 	if len(managed) == 0 {
