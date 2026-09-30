@@ -112,20 +112,19 @@ WHERE COALESCE(
 	}
 
 	deptIDs := make([]uint, 0, len(managed))
-	query := `SELECT DISTINCT id FROM zt_dept WHERE id IN ?`
-	args := []interface{}{make([]uint, 0, len(managed))}
 	for _, dept := range managed {
 		deptIDs = append(deptIDs, dept.ID)
+	}
+
+	q := r.db.WithContext(ctx).Table("zt_dept").Distinct().Where("id IN ?", deptIDs)
+	for _, dept := range managed {
 		if path := strings.TrimSpace(dept.Path); path != "" {
-			query += ` OR path LIKE ?`
-			args = append(args, path+"%")
+			q = q.Or("path LIKE ?", path+"%")
 		}
 	}
-	args[0] = deptIDs
-	query += ` ORDER BY id ASC`
 
 	var ids []uint
-	if err := r.db.WithContext(ctx).Raw(query, args...).Scan(&ids).Error; err != nil {
+	if err := q.Order("id ASC").Pluck("id", &ids).Error; err != nil {
 		return nil, err
 	}
 	if ids == nil {

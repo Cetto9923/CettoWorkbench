@@ -22,7 +22,7 @@ const (
 	pmoQuery     = `SELECT COUNT\(\*\) FROM zt_gf_user_roles ur JOIN zt_roles r ON r\.id = ur\.roleId WHERE ur\.userId = \? AND ur\.deleted = '0' AND r\.deleted = '0' AND r\.isActive = 1 AND r\.code = \?`
 	relatedQuery = `SELECT COUNT\(\*\) FROM zt_demand d`
 	managedQuery = `SELECT d\.id, COALESCE\(d\.path, ''\) AS path FROM zt_dept d`
-	deptTree     = `SELECT DISTINCT id FROM zt_dept WHERE id IN \(\?\)`
+	deptTree     = `SELECT DISTINCT .id. FROM .zt_dept. WHERE id IN \(\?\)`
 )
 
 // 1. 超级管理员：不需要任何关系查询即可写。

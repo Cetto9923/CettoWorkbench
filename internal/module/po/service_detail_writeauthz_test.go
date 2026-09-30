@@ -70,7 +70,7 @@ func TestRequireDemandWrite_LeaderScopeAllowed(t *testing.T) {
 	mock.ExpectQuery(writeAuthzManagedQuery).
 		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "path"}).AddRow(14, ",53,52,14,"))
-	mock.ExpectQuery(`SELECT DISTINCT id FROM zt_dept WHERE id IN \(\?\)`).
+	mock.ExpectQuery(`SELECT DISTINCT .id. FROM .zt_dept. WHERE id IN \(\?\)`).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(14))
 	mock.ExpectQuery(writeAuthzRelatedQuery).
 		WithArgs(uint(63457), sqlmock.AnyArg()).

@@ -58,7 +58,7 @@ func TestDemandDetailAuthZ_LeaderDeptDemandVisible(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"id", "path"}).AddRow(14, ",1,14,"))
 
 	// 部门树展开
-	mock.ExpectQuery(`SELECT DISTINCT id FROM zt_dept WHERE id IN \(\?\) OR path LIKE \?`).
+	mock.ExpectQuery(`SELECT DISTINCT .id. FROM .zt_dept. WHERE id IN \(\?\) OR path LIKE \?`).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(14))
 
 	// 团队长需求可见性检查：命中本部门干系人
@@ -98,7 +98,7 @@ func TestDemandDetailAuthZ_LeaderOtherDeptDemandForbidden(t *testing.T) {
 	// 部门经理检查：命中部门 14
 	mock.ExpectQuery(`SELECT d\.id, COALESCE\(d\.path, ''\) AS path FROM zt_dept d`).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "path"}).AddRow(14, ",1,14,"))
-	mock.ExpectQuery(`SELECT DISTINCT id FROM zt_dept WHERE id IN \(\?\) OR path LIKE \?`).
+	mock.ExpectQuery(`SELECT DISTINCT .id. FROM .zt_dept. WHERE id IN \(\?\) OR path LIKE \?`).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(14))
 
 	// 团队长需求可见性检查：未命中（外部门干系人）
@@ -138,7 +138,7 @@ func TestDemandDetailAuthZ_LeaderOtherDeptQueryPermVisible(t *testing.T) {
 	// 部门经理检查：命中部门 14
 	mock.ExpectQuery(`SELECT d\.id, COALESCE\(d\.path, ''\) AS path FROM zt_dept d`).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "path"}).AddRow(14, ",1,14,"))
-	mock.ExpectQuery(`SELECT DISTINCT id FROM zt_dept WHERE id IN \(\?\) OR path LIKE \?`).
+	mock.ExpectQuery(`SELECT DISTINCT .id. FROM .zt_dept. WHERE id IN \(\?\) OR path LIKE \?`).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(14))
 
 	// 团队长需求可见性检查：未命中（外部门干系人）
@@ -311,7 +311,7 @@ func TestDemandDetailView_LeaderWithoutQueryPerm403RendersHTMLErrorPage(t *testi
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery(`SELECT d\.id, COALESCE\(d\.path, ''\) AS path FROM zt_dept d`).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "path"}).AddRow(14, ",1,14,"))
-	mock.ExpectQuery(`SELECT DISTINCT id FROM zt_dept WHERE id IN \(\?\) OR path LIKE \?`).
+	mock.ExpectQuery(`SELECT DISTINCT .id. FROM .zt_dept. WHERE id IN \(\?\) OR path LIKE \?`).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(14))
 	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM zt_demand d`).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
