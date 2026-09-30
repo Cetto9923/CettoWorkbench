@@ -26,9 +26,13 @@ func TestDeriveDetailFlags(t *testing.T) {
 	}{
 		{"nil_row", nil, DemandFlags{}, ""},
 		{"normal", &DemandDetailRow{Hang: "0", IsChange: "", IsReturned: "0"}, DemandFlags{}, ""},
-		{"hang", &DemandDetailRow{Hang: "1", IsChange: "", IsReturned: "0"}, DemandFlags{Hang: true}, FlagNoticePaused},
-		{"changing", &DemandDetailRow{Hang: "0", IsChange: "changing", IsReturned: "0"}, DemandFlags{Changing: true}, FlagNoticePaused},
-		{"returning", &DemandDetailRow{Hang: "0", IsChange: "", IsReturned: "1"}, DemandFlags{Returning: true}, FlagNoticePaused},
+		{"hang", &DemandDetailRow{Hang: "1", IsChange: "", IsReturned: "0"}, DemandFlags{Hang: true}, "需求已挂起，主操作已暂停，请在禅道处理"},
+		{"changing", &DemandDetailRow{Hang: "0", IsChange: "changing", IsReturned: "0"}, DemandFlags{Changing: true}, "需求变更中，主操作已暂停，请在禅道处理"},
+		{"returning", &DemandDetailRow{Hang: "0", IsChange: "", IsReturned: "1"}, DemandFlags{Returning: true}, "需求退回中，主操作已暂停，请在禅道处理"},
+		{"hang_and_changing", &DemandDetailRow{Hang: "1", IsChange: "changing", IsReturned: "0"}, DemandFlags{Hang: true, Changing: true}, "需求已挂起、变更中，主操作已暂停，请在禅道处理"},
+		{"hang_and_returning", &DemandDetailRow{Hang: "1", IsChange: "", IsReturned: "1"}, DemandFlags{Hang: true, Returning: true}, "需求已挂起、退回中，主操作已暂停，请在禅道处理"},
+		{"changing_and_returning", &DemandDetailRow{Hang: "0", IsChange: "changing", IsReturned: "1"}, DemandFlags{Changing: true, Returning: true}, "需求变更中、退回中，主操作已暂停，请在禅道处理"},
+		{"all_three", &DemandDetailRow{Hang: "1", IsChange: "changing", IsReturned: "1"}, DemandFlags{Hang: true, Changing: true, Returning: true}, "需求已挂起、变更中、退回中，主操作已暂停，请在禅道处理"},
 	}
 
 	for _, tc := range tests {
@@ -44,37 +48,38 @@ func TestDeriveDetailFlags(t *testing.T) {
 	}
 }
 
-// 2. 标志存在时详情主操作置空（buildPrimaryActionForDetail 返回 None）。
+// 2. 标志存在时详情主操作置空（PrimaryAction 为 nil）。
 func TestBuildPrimaryActionForDetail_FlagsYieldsNone(t *testing.T) {
 	svc := &DetailService{}
 	actor := &model.User{Account: "alice"}
 
-	// 挂起需求即便处于 waitacceptance 也无主操作
-	rowHang := &DemandDetailRow{ID: 101, Status: "waitacceptance", AssignedTo: "alice", Hang: "1"}
-	paHang := svc.buildPrimaryActionForDetail(context.Background(), actor, rowHang)
-	if paHang.Key != "" || paHang.Enabled {
-		t.Fatalf("hang demand should yield None, got %+v", paHang)
+	cases := []struct {
+		name  string
+		flags DemandFlags
+	}{
+		{"hang", DemandFlags{Hang: true}},
+		{"changing", DemandFlags{Changing: true}},
+		{"returning", DemandFlags{Returning: true}},
+		{"combined", DemandFlags{Hang: true, Changing: true}},
 	}
 
-	// 变更中需求无主操作
-	rowChanging := &DemandDetailRow{ID: 102, Status: "waitacceptance", AssignedTo: "alice", IsChange: "changing"}
-	paChanging := svc.buildPrimaryActionForDetail(context.Background(), actor, rowChanging)
-	if paChanging.Key != "" || paChanging.Enabled {
-		t.Fatalf("changing demand should yield None, got %+v", paChanging)
-	}
-
-	// 退回中需求无主操作
-	rowReturning := &DemandDetailRow{ID: 103, Status: "waitacceptance", AssignedTo: "alice", IsReturned: "1"}
-	paReturning := svc.buildPrimaryActionForDetail(context.Background(), actor, rowReturning)
-	if paReturning.Key != "" || paReturning.Enabled {
-		t.Fatalf("returning demand should yield None, got %+v", paReturning)
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			row := &DemandDetailRow{ID: 101, Status: "waitacceptance", AssignedTo: "alice"}
+			resp := &DemandDetailResp{Summary: DemandSummary{Flags: tc.flags}}
+			svc.applyPrimaryActionForDetail(context.Background(), actor, row, resp, true)
+			if resp.PrimaryAction != nil {
+				t.Fatalf("flags %+v should yield nil PrimaryAction, got %+v", tc.flags, resp.PrimaryAction)
+			}
+		})
 	}
 }
 
-// 3. 验收主操作改判：assignedTo == 当前用户 派生「验收」。
+// 3. 验收主操作改判：assignedTo == 当前用户 且具有验收权限，派生启用的「验收」。
 func TestBuildPrimaryActionForDetail_WaitAcceptance_AssignedTo(t *testing.T) {
 	svc := &DetailService{}
 	actor := &model.User{Account: "alice"}
+	ctx := perm.WithGranted(context.Background(), map[string]bool{perm.PoHomeList.String(): true})
 	row := &DemandDetailRow{
 		ID:         200,
 		Status:     "waitacceptance",
@@ -82,12 +87,39 @@ func TestBuildPrimaryActionForDetail_WaitAcceptance_AssignedTo(t *testing.T) {
 		Accepter:   "bob", // accepter 不是本人，但 assignedTo 是本人
 	}
 
-	pa := svc.buildPrimaryActionForDetail(context.Background(), actor, row)
+	pa := svc.buildPrimaryActionForDetail(ctx, actor, row)
 	if pa.Key != string(primaryaction.KeyAcceptDone) {
 		t.Fatalf("assignedTo == actor should yield accept, got key=%q", pa.Key)
 	}
 	if !pa.Enabled {
 		t.Fatalf("expected action to be enabled, got reason=%q", pa.Reason)
+	}
+	if pa.URL != "/demands/200/acceptance" {
+		t.Fatalf("expected url /demands/200/acceptance, got %q", pa.URL)
+	}
+}
+
+// 3b. 验收主操作改判：assignedTo == 当前用户 但无验收权限，派生禁用的「验收」（文案「验收办理页尚未接入真实禅道写链」）。
+func TestBuildPrimaryActionForDetail_WaitAcceptance_AssignedToNoPerm(t *testing.T) {
+	svc := &DetailService{}
+	actor := &model.User{Account: "alice"}
+	ctx := context.Background() // 无任何权限
+	row := &DemandDetailRow{
+		ID:         200,
+		Status:     "waitacceptance",
+		AssignedTo: "alice",
+		Accepter:   "bob",
+	}
+
+	pa := svc.buildPrimaryActionForDetail(ctx, actor, row)
+	if pa.Key != string(primaryaction.KeyAcceptDone) {
+		t.Fatalf("assignedTo == actor should yield accept, got key=%q", pa.Key)
+	}
+	if pa.Enabled {
+		t.Fatal("expected action to be disabled without permission")
+	}
+	if pa.Reason != "验收办理页尚未接入真实禅道写链" {
+		t.Fatalf("expected reason %q, got %q", "验收办理页尚未接入真实禅道写链", pa.Reason)
 	}
 	if pa.URL != "/demands/200/acceptance" {
 		t.Fatalf("expected url /demands/200/acceptance, got %q", pa.URL)

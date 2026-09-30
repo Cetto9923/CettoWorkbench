@@ -69,6 +69,11 @@ type DemandFlags struct {
 	Returning bool `json:"returning"`
 }
 
+// HasAny 返回是否存在挂起/变更中/退回中任一标志。
+func (f DemandFlags) HasAny() bool {
+	return f.Hang || f.Changing || f.Returning
+}
+
 // DemandSummary 需求通用摘要。
 type DemandSummary struct {
 	ID                 string      `json:"id"`
@@ -112,29 +117,29 @@ type DemandSummary struct {
 	VerifyPlan         string      `json:"verifyPlan"`
 	EstimateDelivery   int         `json:"estimateDelivery"`
 	DevelopFinish      string      `json:"developFinish"`
-	TestFinish         string `json:"testFinish"`
-	VerifyFinish       string `json:"verifyFinish"`
-	StoriesCount       int    `json:"storiesCount"`
-	TasksDone          int    `json:"tasksDone"`
-	TasksTotal         int    `json:"tasksTotal"`
-	CasesExecuted      int    `json:"casesExecuted"`
-	CasesTotal         int    `json:"casesTotal"`
-	BugsUnresolved     int    `json:"bugsUnresolved"`
-	AcceptanceStatus   string `json:"acceptanceStatus"`
-	CreatedDate        string `json:"createdDate"`
-	EditedDate         string `json:"editedDate"`
-	CreatedBy          string `json:"createdBy"`
-	CreatedName        string `json:"createdName"`
-	IsCreator          bool   `json:"isCreator"`
-	IsAssignee         bool   `json:"isAssignee"`
-	CanReview          bool   `json:"canReview"`
-	CanWithdrawReview  bool   `json:"canWithdrawReview"`
-	CanEdit            bool   `json:"canEdit"`
-	HasReviewed        bool   `json:"hasReviewed"`
-	ReviewedCount      int    `json:"reviewedCount"`
-	EditDisabledReason string `json:"editDisabledReason"`
-	ZentaoEditURL      string `json:"zentaoEditUrl"`
-	ZentaoURL          string `json:"zentaoUrl"`
+	TestFinish         string      `json:"testFinish"`
+	VerifyFinish       string      `json:"verifyFinish"`
+	StoriesCount       int         `json:"storiesCount"`
+	TasksDone          int         `json:"tasksDone"`
+	TasksTotal         int         `json:"tasksTotal"`
+	CasesExecuted      int         `json:"casesExecuted"`
+	CasesTotal         int         `json:"casesTotal"`
+	BugsUnresolved     int         `json:"bugsUnresolved"`
+	AcceptanceStatus   string      `json:"acceptanceStatus"`
+	CreatedDate        string      `json:"createdDate"`
+	EditedDate         string      `json:"editedDate"`
+	CreatedBy          string      `json:"createdBy"`
+	CreatedName        string      `json:"createdName"`
+	IsCreator          bool        `json:"isCreator"`
+	IsAssignee         bool        `json:"isAssignee"`
+	CanReview          bool        `json:"canReview"`
+	CanWithdrawReview  bool        `json:"canWithdrawReview"`
+	CanEdit            bool        `json:"canEdit"`
+	HasReviewed        bool        `json:"hasReviewed"`
+	ReviewedCount      int         `json:"reviewedCount"`
+	EditDisabledReason string      `json:"editDisabledReason"`
+	ZentaoEditURL      string      `json:"zentaoEditUrl"`
+	ZentaoURL          string      `json:"zentaoUrl"`
 }
 
 // ParentAggregateData 父需求聚合专用视图数据。

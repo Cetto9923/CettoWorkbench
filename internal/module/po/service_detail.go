@@ -139,38 +139,20 @@ func (s *DetailService) GetDemandDetail(ctx context.Context, actor *model.User, 
 	}
 	resp.History = history
 
-	// 单行详情主操作派生。
+	// 单行详情主操作派生与操作权限计算。
 	// 详情行已包含 stage/status/accepter/assignedTo，无需 IN 批量。
 	if actor != nil && row != nil {
-		if resp.Summary.Flags.Hang || resp.Summary.Flags.Changing || resp.Summary.Flags.Returning {
-			resp.PrimaryAction = nil
-		} else {
-			pa := s.buildPrimaryActionForDetail(ctx, actor, row)
-			// 提测改走四步弹窗：详情 JSON 不再下发旧整页 URL，避免任何入口误跳 submit_test.html。
-			if pa.Key == string(primaryaction.KeySubmitTest) {
-				pa.URL = ""
-			}
-			// 写权限闸门：与排期保存接口同一口径（超管 / PMO / 干系人 / 团队长管辖）。
-			// 仅持 perm.ScheduleList 的只读用户不出现可点的写按钮。
-			canWrite, writeErr := s.canWriteDemand(ctx, actor, row.ID)
-			if writeErr != nil {
-				return nil, writeErr
-			}
-			if !canWrite {
-				gatePrimaryActionForReadOnly(&pa)
-			}
-			resp.PrimaryAction = &pa
-			bindPrimaryActionSpotlight(resp.Spotlight, pa)
-			if pa.Key == string(primaryaction.KeyApprove) && pa.Enabled {
-				resp.Summary.CanReview = true
-			}
+		canWrite, writeErr := s.canWriteDemand(ctx, actor, row.ID)
+		if writeErr != nil {
+			return nil, writeErr
 		}
+		s.applyPrimaryActionForDetail(ctx, actor, row, resp, canWrite)
+
 		account := strings.TrimSpace(actor.Account)
 		if account != "" {
 			resp.Summary.IsCreator = strings.TrimSpace(row.CreatedBy) == account
 			resp.Summary.IsAssignee = strings.TrimSpace(row.AssignedTo) == account
 		}
-		canWrite, _ := s.canWriteDemand(ctx, actor, row.ID)
 		resp.Summary.CanWithdrawReview = canWrite && canWithdrawReviewForDetail(actor, row)
 		s.populateDemandEditability(ctx, actor, row, canWrite, &resp.Summary)
 	}
@@ -449,7 +431,6 @@ func (s *DetailService) buildRelationContext(parent *DemandDetailRow, siblings [
 		Siblings: sList,
 	}
 }
-
 
 // parentService 返回 Service 提供的父服务（如未注入则返回 nil）。
 // service_detail.go 内不直接持有 Service 指针；构造时由 Service.NewService 注入。
