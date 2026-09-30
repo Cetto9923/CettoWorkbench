@@ -191,8 +191,8 @@
 .wb-type-risk .wb-type-tag { background: #ea580c; }
 .wb-type-risk:not(:has(.wb-type-tag)) { background: var(--color-risk-bg); color: var(--color-risk-text); }
 
-.wb-type-issue { border-color: #d97706; }
-.wb-type-issue .wb-type-tag { background: #d97706; }
+.wb-type-issue { border-color: var(--color-warning-fill); }
+.wb-type-issue .wb-type-tag { background: var(--color-warning-fill); }
 .wb-type-issue:not(:has(.wb-type-tag)) { background: var(--color-issue-bg); color: var(--color-issue-text); }
 
 .wb-type-sub_demand { border-color: #8b5cf6; }
@@ -476,12 +476,13 @@ html[data-theme="dark"] .wb-status-tag.wb-status-gray .wb-status-dot {
   background: #94a3b8 !important;
 }
 
-/* 暗色模式专属：审批与子需求双色药丸徽标去紫化，回归沉稳商务琥珀金与纯正科技蓝 */
+/* 暗色模式专属：审批与子需求双色药丸徽标去紫化，回归沉稳商务琥珀金与纯正科技蓝
+   R3-5：原 #d97706 白字仅 3.19，改用 --color-warning-fill (#b45309) 达 5.02 */
 html[data-theme="dark"] .wb-type-approval {
-  border-color: #d97706;
+  border-color: var(--color-warning-fill);
 }
 html[data-theme="dark"] .wb-type-approval .wb-type-tag {
-  background: #d97706;
+  background: var(--color-warning-fill);
 }
 
 html[data-theme="dark"] .wb-type-sub_demand {

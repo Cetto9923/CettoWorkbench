@@ -7,17 +7,18 @@
 
 (function (root, factory) {
   if (typeof define === "function" && define.amd) {
-    define(["./demand-detail-richtext", "./demand-detail-parent", "./demand-detail-render-execution"], factory);
+    define(["./demand-detail-richtext", "./demand-detail-parent", "./demand-detail-render-execution", "./demand-detail-labels"], factory);
   } else if (typeof module === "object" && module.exports) {
     module.exports = factory(
       require("./demand-detail-richtext.js"),
       require("./demand-detail-parent.js"),
-      require("./demand-detail-render-execution.js")
+      require("./demand-detail-render-execution.js"),
+      require("./demand-detail-labels.js")
     );
   } else {
-    root.DemandDetailRender = factory(root.DemandDetailRichText, root.DemandDetailParent, root.DemandDetailRenderExecution);
+    root.DemandDetailRender = factory(root.DemandDetailRichText, root.DemandDetailParent, root.DemandDetailRenderExecution, root.DemandDetailLabels);
   }
-})(typeof self !== "undefined" ? self : this, function (RichText, Parent, Execution) {
+})(typeof self !== "undefined" ? self : this, function (RichText, Parent, Execution, Labels) {
   "use strict";
 
   var esc = window.escapeHtml;
@@ -31,6 +32,7 @@
   };
   var renderParentAggregate = (Parent && Parent.renderParentAggregate) || function () { return ""; };
   var renderTabExecution = (Execution && Execution.renderTabExecution) || function () { return ""; };
+  var actionLabel = (Labels && Labels.actionLabel) || function (raw) { return raw || "—"; };
   // 公共优先级渲染：PersonalList.priorityBadge
   var priorityBadge = window.PersonalList.priorityBadge;
 
@@ -426,7 +428,7 @@
   function renderTabHistory(history) {
     if (!history) return '<div class="dd-card dd-card-body">暂无过程记录</div>';
     var actionRows = (history.actions || []).map(function (a) {
-      return '<tr><td class="dd-cell-nowrap">' + esc(a.date) + '</td><td><strong>' + esc(a.actor) + '</strong></td><td>' + esc(a.action) + '</td><td>' + esc(a.extra) + '</td></tr>';
+      return '<tr><td class="dd-cell-nowrap">' + esc(a.date) + '</td><td><strong>' + esc(a.actor) + '</strong></td><td>' + esc(actionLabel(a.action)) + '</td><td>' + esc(a.extra) + '</td></tr>';
     }).join("");
     var lc = history.lifecycle || {};
     return '<div class="dd-grid"><div class="dd-main">' +

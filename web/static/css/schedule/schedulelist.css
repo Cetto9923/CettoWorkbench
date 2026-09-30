@@ -330,7 +330,7 @@
 }
 
 .schedule-rd-role--coop {
-  background: #ea580c;
+  background: var(--color-warning-fill);
 }
 
 .schedule-title-link {

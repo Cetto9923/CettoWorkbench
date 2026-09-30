@@ -310,7 +310,7 @@
   color: var(--color-text-secondary);
 }
 
-/* --- F6/F7: 灰色功能标记徽标（「模型测算」/「二期」共用） --- */
+/* --- F6/F7: 灰色功能标记徽标（「模型测算」等共用） --- */
 .dd-feat-badge {
   display: inline-flex;
   align-items: center;
@@ -325,5 +325,19 @@
   vertical-align: middle;
 }
 
-/* --- F7: 二期标记（与dd-feat-badge同款，无额外样式） --- */
+/* --- R3-4：浅色对比度收口（沿用 po/contrast-light.css 的 light 限定思路） ---
+ * (a) .dd-stage-sub「已澄清」小灰字：--color-text-secondary (#64748b) 打在
+ *     --wb-bg-muted (#eef2f6) 上仅 4.23 → --color-text-body (#334155) 9.20
+ * (b) .dd-sibling-chip.done 绿字（含其内 strong/span）：--wb-success (#15803d)
+ *     打在 --color-success-bg (#d1fae5) 上仅 4.42 → --color-success (#065f46) 6.78
+ * 显式限定 html[data-theme="light"]，深色沿用原变量值不变。
+ * ------------------------------------------------------------------------- */
+html[data-theme="light"] .dd-stage-sub {
+  color: var(--color-text-body);
+}
 
+html[data-theme="light"] .dd-sibling-chip.done,
+html[data-theme="light"] .dd-sibling-chip.done strong,
+html[data-theme="light"] .dd-sibling-chip.done span {
+  color: var(--color-success);
+}

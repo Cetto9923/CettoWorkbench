@@ -6,16 +6,17 @@
 
 (function (root, factory) {
   if (typeof define === "function" && define.amd) {
-    define(["./demand-detail-richtext"], factory);
+    define(["./demand-detail-richtext", "./demand-detail-labels"], factory);
   } else if (typeof module === "object" && module.exports) {
-    module.exports = factory(require("./demand-detail-richtext.js"));
+    module.exports = factory(require("./demand-detail-richtext.js"), require("./demand-detail-labels.js"));
   } else {
-    root.DemandDetailRenderExecution = factory(root.DemandDetailRichText);
+    root.DemandDetailRenderExecution = factory(root.DemandDetailRichText, root.DemandDetailLabels);
   }
-})(typeof self !== "undefined" ? self : this, function (RichText) {
+})(typeof self !== "undefined" ? self : this, function (RichText, Labels) {
   "use strict";
 
   var esc = window.escapeHtml;
+  var storyStatusLabel = (Labels && Labels.storyStatusLabel) || function (raw) { return raw || "—"; };
 
   function renderQualityTree(tree) {
     if (!tree || tree.length === 0) {
@@ -101,7 +102,7 @@
           '  <td>' + esc(s.title) + '</td>',
           '  <td class="nowrap">' + esc(s.product) + '</td>',
           '  <td class="nowrap">' + esc(s.owner) + '</td>',
-          '  <td class="nowrap"><span class="dd-tag">' + esc(s.status) + '</span></td>',
+          '  <td class="nowrap"><span class="dd-tag">' + esc(storyStatusLabel(s.status)) + '</span></td>',
           '  <td class="nowrap">' + bugCol + '</td>',
           '  <td class="nowrap">',
           '    <div class="dd-exec-progress-row">',
@@ -177,7 +178,7 @@
       ) : '      <div class="dd-exec-empty">暂无关联测试单 · 提测后将在此同步集成与验收测试单</div>',
       '    </div></div>',
       '    <div class="dd-card" id="storiesSection"><div class="dd-card-body">',
-      '      <div class="dd-cardhead"><h3>已分发研发需求推进 (Stories) <span class="dd-feat-badge">二期</span></h3></div>',
+      '      <div class="dd-cardhead"><h3>已分发研发需求推进 (Stories)</h3></div>',
       storyRows ? (
         '      <table class="dd-table"><thead><tr><th>编号</th><th>标题</th><th>所属产品</th><th>负责人</th><th>状态</th><th>关联缺陷</th><th>任务推进</th></tr></thead><tbody>' + storyRows + '</tbody></table>'
       ) : '      <div class="dd-exec-empty">暂未分发研发需求</div>',
