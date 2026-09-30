@@ -163,3 +163,112 @@ html[data-theme="dark"] .po-home .home-vs-mini-card.empty:not(.active) .vs-mini-
 html[data-theme="dark"] .kb-req {
   color: var(--color-badge-danger-fg);
 }
+
+/* ---------------------------------------------------------------------------
+ * 第 5.8 轮 B 组（3.68 → 5.17）深色模式主按钮白字对比度收口
+ * 影响：.btn-primary、.at-btn.primary、.at-page-btn.active、.btn-modal-save
+ * ------------------------------------------------------------------------- */
+html[data-theme="dark"] .btn-primary,
+html[data-theme="dark"] .at-btn.primary,
+html[data-theme="dark"] .at-page-btn.active,
+html[data-theme="dark"] .btn-modal-save {
+  background: var(--color-btn-primary-bg);
+  border-color: var(--color-btn-primary-bg);
+  color: var(--color-text-on-accent);
+}
+
+html[data-theme="dark"] .btn-primary:hover:not(:disabled),
+html[data-theme="dark"] .at-btn.primary:hover:not(:disabled),
+html[data-theme="dark"] .btn-modal-save:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
+
+/* ---------------------------------------------------------------------------
+ * 第 5.8 轮 E 组（3.03 → 5.29）排期版本下拉删除按钮与必填项红星
+ * 影响：/schedule .version-card-dropdown button:last-child、.schedule-integrated-label .req 等
+ * ------------------------------------------------------------------------- */
+html[data-theme="dark"] .version-card-dropdown button:last-child {
+  color: var(--color-badge-danger-fg);
+}
+
+html[data-theme="dark"] .schedule-integrated-label .req,
+html[data-theme="dark"] #taskModal .req,
+html[data-theme="dark"] .rd-task-table .req {
+  color: var(--color-badge-danger-fg);
+}
+
+html[data-theme="dark"] .rd-node-role-badge--cooperate {
+  background: var(--color-warning);
+}
+
+/* ---------------------------------------------------------------------------
+ * 第 5.8 轮 E 组（3.74 → 5.47 / 9.48）「研需」类型标签深色底字
+ * 影响：/home、/todos、/schedule 的 .wb-type-story .wb-type-tag
+ * ------------------------------------------------------------------------- */
+html[data-theme="dark"] .wb-type-story .wb-type-tag,
+html[data-theme="dark"] .wb-type-independent_story .wb-type-tag {
+  background: var(--color-story-bg);
+  color: var(--color-text-on-accent);
+}
+
+/* ---------------------------------------------------------------------------
+ * 第 5.8 轮 E 组（4.04 → 6.96）我的关注周报视图激活卡
+ * 影响：/follow .pw-sum-card.active .pw-sum-label、.pw-sum-note
+ * ------------------------------------------------------------------------- */
+html[data-theme="dark"] .pw-sum-card.active .pw-sum-label,
+html[data-theme="dark"] .pw-sum-card.active .pw-sum-note {
+  color: var(--color-info);
+}
+
+/* ---------------------------------------------------------------------------
+ * 第 5.8 轮 E 组（1.92 / 3.14 / 4.26 → 11.8 / 8.77 / 6.19）雷达图深色徽章与评分
+ * 影响：/metrics/radar .dock-badge、.radar-cat-score.score-danger
+ * ------------------------------------------------------------------------- */
+html[data-theme="dark"] .dock-badge.cat-delivery {
+  color: var(--color-info);
+}
+
+html[data-theme="dark"] .dock-badge.cat-demand {
+  color: var(--wb-badge-sub-text);
+  background: var(--wb-badge-sub-bg);
+  border-color: var(--wb-badge-sub-border);
+}
+
+html[data-theme="dark"] .dock-badge.cat-quality {
+  color: var(--color-danger-bright);
+  background: var(--color-danger-bg);
+  border-color: var(--color-danger-border);
+}
+
+html[data-theme="dark"] .po-metrics-radar .radar-cat-score.score-danger {
+  color: var(--color-danger-bright);
+}
+
+/* ---------------------------------------------------------------------------
+ * 第 5.8 轮 D 组（3.75 → 6.96）个人资料深色辅助文本
+ * 影响：/profile .user-source-hint、.profile-avatar-sub
+ * ------------------------------------------------------------------------- */
+html[data-theme="dark"] .po-profile .user-source-hint,
+html[data-theme="dark"] .po-profile .profile-avatar-sub {
+  color: var(--color-text-secondary);
+}
+
+/* ---------------------------------------------------------------------------
+ * F 组（4.26 → 6.18）雷达图高危风险与研发质量分类徽标深色对比度
+ * 影响：/metrics/radar
+ * ------------------------------------------------------------------------- */
+html[data-theme="dark"] .radar-cat-left .metric-category.cat-quality,
+html[data-theme="dark"] .radar-m-compact-tile .m-badge-pill.danger {
+  color: var(--color-danger-bright, #fca5a5);
+}
+
+/* ---------------------------------------------------------------------------
+ * G 组（3.07 → 5.71）个人资料设置辅助说明文字与只读标签深色对比度
+ * 影响：/profile
+ * ------------------------------------------------------------------------- */
+html[data-theme="dark"] .po-profile .section-panel-subtip,
+html[data-theme="dark"] .po-profile .readonly-tag,
+html[data-theme="dark"] .po-profile .profile-empty-text {
+  color: var(--color-text-secondary);
+}

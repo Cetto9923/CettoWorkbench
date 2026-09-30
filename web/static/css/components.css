@@ -459,7 +459,7 @@
   height: 15px;
   border-radius: 50%;
   font-size: 11px;
-  color: var(--wb-gray-400);
+  color: var(--color-text-secondary);
   border: 1px solid var(--wb-gray-300);
   cursor: help;
   background: var(--wb-white);

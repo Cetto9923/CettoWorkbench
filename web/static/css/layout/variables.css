@@ -8,8 +8,10 @@ html[data-theme="light"] {
   /* Native controls (date/select/scrollbars) follow light chrome UI */
   color-scheme: light;
 
-  /* 品牌主色 */
+  /* 品牌主色与操作 */
   --color-primary: #2563eb;
+  --color-primary-text: var(--color-primary);
+  --color-btn-primary-bg: #2563eb;
   --color-primary-hover: #1d4ed8;
   --color-primary-active: #1e40af;
   --color-primary-active-deep: #1e3a8a;
@@ -30,8 +32,7 @@ html[data-theme="light"] {
   --color-info-fill: #2563eb;
   --color-info-fill-hover: #1d4ed8;
 
-  /* 页面层级色 */
-  --color-page-bg: #f1f4f9;
+  --color-page-bg: #f1f4f9; /* 页面层级色 */
   --color-surface: #ffffff;
   --color-surface-hover: #f9fafb;
   --color-surface-muted: #f8fafc;
@@ -39,10 +40,9 @@ html[data-theme="light"] {
   /* 文字色阶 */
   --color-text-primary: #0f172a;
   --color-text-secondary: #64748b;
-  --color-text-disabled: #475569; /* 5.7 G1: #94a3b8 白底仅 2.56 -> 灰阶 6 级, 全部浅底 >=6.20 */
+  --color-text-disabled: #64748b; /* 5.8: 恢复与次要文字同色阶，白底 4.76，不倒置层级 */
 
-  /* 边框色阶 */
-  --color-border: #e2e8f0; /* 1px 使用此色，视觉轻量且 Windows 可靠渲染 */
+  --color-border: #e2e8f0; /* 边框色阶：1px 视觉轻量且 Windows 可靠渲染 */
   --color-border-strong: #cbd5e1;
   --color-border-focus: #2563eb;
   --color-border-soft: #e3eaf3;
@@ -314,23 +314,24 @@ html[data-theme="light"] {
   --sidebar-width: 200px;
   --sidebar-width-collapsed: calc(var(--size-10) + var(--space-5));
   --topbar-height: 52px;
-  /* 含可选二级顶栏时的总高度，由 topnav.js 同步测量写入 */
-  --topbar-stack-height: 52px;
+  --topbar-stack-height: 52px; /* 含可选二级顶栏总高，topnav.js 测量写入 */
 }
 
 html[data-theme="dark"] {
   /* Native controls (date picker popup, selects, scrollbars) follow dark chrome UI */
   color-scheme: dark;
 
-  /* 品牌主色：由偏紫 Indigo 修正为纯正科技蓝，实现简洁大方 */
-  --color-primary: #3b82f6;
+  /* 品牌主色：深色文字主色用高对比科技蓝，主按钮底色用 #2563eb */
+  --color-primary: #60a5fa;
+  --color-primary-text: #60a5fa;
+  --color-btn-primary-bg: #2563eb;
   --color-primary-hover: #2563eb;
   --color-primary-active: #1d4ed8;
   --color-primary-active-deep: #1e40af;
   --color-primary-light: rgba(59, 130, 246, 0.12);
   --color-primary-border: rgba(59, 130, 246, 0.35);
 
-  /* 语义功能色 (Status bg/foreground combinations must have readable contrast, > 4.5:1) */
+  /* 语义功能色 (> 4.5:1) */
   --color-success: #34d399; /* lighter for text readability against dark */
   --color-success-fill: #047857; /* Used for backgrounds needing on-accent text */
   --color-success-bg: #064e3b; /* dark background */
@@ -359,8 +360,7 @@ html[data-theme="dark"] {
   --color-info-fill: #2563eb; /* darker blue for fill */
   --color-info-fill-hover: #1d4ed8;
 
-  /* 页面层级色 */
-  --color-page-bg: #0f172a;
+  --color-page-bg: #0f172a; /* 页面层级色 */
   --color-surface: #1e293b;
   --color-surface-hover: #334155;
   --color-surface-muted: #0f172a;

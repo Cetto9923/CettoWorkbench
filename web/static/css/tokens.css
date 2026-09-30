@@ -103,7 +103,7 @@
   /* 语义映射别名 (Semantic Aliases) */
   --wb-text-primary: var(--wb-gray-900);
   --wb-text-secondary: var(--wb-gray-600);
-  --wb-text-tertiary: var(--wb-gray-400);
+  --wb-text-tertiary: var(--wb-gray-500); /* 5.8: 浅色白底对比度从 2.56 提至 4.76 */
   --wb-text-inverse: #ffffff;
   --wb-bg-surface: var(--wb-white);
   --wb-bg-muted: var(--wb-gray-100);
@@ -127,8 +127,8 @@
   --wb-badge-sub-bg: #7c3aed;
   --wb-badge-sub-border: #7c3aed;
   --wb-badge-story-text: #ffffff;
-  --wb-badge-story-bg: #0d9488;
-  --wb-badge-story-border: #0d9488;
+  --wb-badge-story-bg: #0f766e;
+  --wb-badge-story-border: #0f766e;
   --wb-badge-hang-text: #874d00;
   --wb-badge-hang-bg: #fffbe6;
   --wb-badge-hang-border: #ffe58f;
@@ -147,7 +147,7 @@
  * --------------------------------------------------------------------------- */
 html[data-theme="dark"] {
   /* 品牌主色 (深色模式微调高亮) */
-  --wb-primary: #3b82f6;            /* 科技亮蓝 */
+  --wb-primary: #60a5fa;            /* 科技亮蓝(深色高对比) */
   --wb-primary-hover: #60a5fa;
   --wb-primary-active: #2563eb;
   --wb-primary-light: rgba(59, 130, 246, 0.16);

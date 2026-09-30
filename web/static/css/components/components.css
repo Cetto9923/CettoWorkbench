@@ -181,9 +181,9 @@
 .btn-primary {
   height: var(--size-8);
   padding: 0 var(--space-4);
-  background: var(--color-primary);
+  background: var(--color-btn-primary-bg, var(--color-primary));
   color: var(--color-text-on-accent);
-  border-color: var(--color-primary);
+  border-color: var(--color-btn-primary-bg, var(--color-primary));
 }
 .btn-primary:hover {
   filter: brightness(0.95);

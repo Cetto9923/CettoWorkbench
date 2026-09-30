@@ -120,4 +120,108 @@ html[data-theme="light"] .pw-pbox span {
   color: var(--color-text-body);
 }
 
+/* ---------------------------------------------------------------------------
+ * I 组（3.95 / 4.23 → 6.80 / 5.48）工作看板与需求看板「超期」卡片文字与动作按钮
+ * 影响：/board/demand、/kanban/story 超期阶段卡
+ * ------------------------------------------------------------------------- */
+html[data-theme="light"] .po-board .stage-card.overdue .stage-name,
+html[data-theme="light"] .po-board .stage-card.overdue .stage-mini,
+html[data-theme="light"] .po-board .stage-card.overdue .stage-pill {
+  color: var(--color-danger);
+}
 
+html[data-theme="light"] .po-board .stage-card.overdue .stage-action,
+html[data-theme="light"] .po-board .stage-card.overdue button,
+html[data-theme="light"] .po-board .stage-card.overdue a {
+  color: var(--color-primary-hover);
+}
+
+/* ---------------------------------------------------------------------------
+ * J 组（3.95 → 6.80）需求详情兄弟需求风险标签
+ * 影响：/demands/:id .dd-sibling-chip.risk
+ * ------------------------------------------------------------------------- */
+html[data-theme="light"] .dd-sibling-chip.risk {
+  color: var(--color-danger);
+}
+
+/* ---------------------------------------------------------------------------
+ * K 组（4.32 → 9.41）排期工作台「挂起」切换按钮
+ * 影响：/schedule .schedule-suspended-toggle
+ * ------------------------------------------------------------------------- */
+html[data-theme="light"] .schedule-suspended-toggle {
+  color: var(--color-text-body);
+}
+
+/* ---------------------------------------------------------------------------
+ * L 组（4.23 / 4.42 → 9.20 / 6.29）需求详情状态标签（进行中、已就绪、无阻塞）
+ * 影响：/demands/:id .dd-tag、.dd-tag.green
+ * ------------------------------------------------------------------------- */
+html[data-theme="light"] .dd-tag:not(.blue):not(.green):not(.red) {
+  color: var(--color-text-body);
+}
+
+html[data-theme="light"] .dd-tag.green {
+  color: var(--color-success);
+}
+
+/* ---------------------------------------------------------------------------
+ * M 组（4.37 → 9.45）我的关注周报视图激活卡说明文字
+ * 影响：/follow .pw-sum-card.active .pw-sum-note
+ * ------------------------------------------------------------------------- */
+html[data-theme="light"] .pw-sum-card.active .pw-sum-note {
+  color: var(--color-text-body);
+}
+
+/* ---------------------------------------------------------------------------
+ * N 组（4.34 → 9.45）首页待办列表占位「测试单」按钮
+ * 影响：/home .po-home .home-unavailable
+ * ------------------------------------------------------------------------- */
+html[data-theme="light"] .po-home .home-unavailable {
+  color: var(--color-text-body);
+}
+
+/* ---------------------------------------------------------------------------
+ * O 组（2.28 → 9.20）个人资料浅色底辅助说明文字
+ * 影响：/profile .user-source-hint、.profile-avatar-sub
+ * ------------------------------------------------------------------------- */
+html[data-theme="light"] .po-profile .user-source-hint,
+html[data-theme="light"] .po-profile .profile-avatar-sub {
+  color: var(--color-text-body);
+}
+
+/* ---------------------------------------------------------------------------
+ * P 组（3.56 → 5.18）排期弹层配合角色徽标
+ * 影响：/schedule .rd-node-role-badge--cooperate
+ * ------------------------------------------------------------------------- */
+html[data-theme="light"] .rd-node-role-badge--cooperate {
+  background: var(--color-warning);
+}
+
+/* ---------------------------------------------------------------------------
+ * Q 组（4.32/4.37 → 9.39）看板页与任务看板灰底/浅蓝底说明文字
+ * 影响：/board/demand, /board/task, /kanban/story, /kanban/task
+ * ------------------------------------------------------------------------- */
+html[data-theme="light"] .po-board .filter-label,
+html[data-theme="light"] .po-board .owner-title,
+html[data-theme="light"] .po-board .k-count,
+html[data-theme="light"] .po-board .stage-card.actionable .stage-mini {
+  color: var(--color-text-body);
+}
+
+/* ---------------------------------------------------------------------------
+ * R 组（4.34/4.37 → 9.39）敏捷团队空状态与计数标签
+ * 影响：/agileteam
+ * ------------------------------------------------------------------------- */
+html[data-theme="light"] .po-agileteam .at-empty,
+html[data-theme="light"] .po-agileteam .at-back,
+html[data-theme="light"] .po-agileteam .at-seg-btn.active .count {
+  color: var(--color-text-body);
+}
+
+/* ---------------------------------------------------------------------------
+ * S 组（4.34 → 9.39）度量管理列表未知状态标签
+ * 影响：/metrics/manage
+ * ------------------------------------------------------------------------- */
+html[data-theme="light"] .metric-status.unknown {
+  color: var(--color-text-body);
+}

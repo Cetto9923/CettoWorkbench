@@ -7,32 +7,42 @@
 ========================================================================== */}}
 {{ define "page_css" }}
 <style>
-.override-container { padding: 24px; max-width: 1200px; margin: 0 auto; }
-.override-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.override-title { font-size: 20px; font-weight: 600; color: #1f2937; margin: 0; }
-.override-subtitle { font-size: 13px; color: #6b7280; margin-top: 4px; }
-.override-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; }
-.override-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
-.override-table th { background: #f9fafb; color: #4b5563; font-weight: 600; padding: 12px 16px; border-bottom: 1px solid #e5e7eb; }
-.override-table td { padding: 12px 16px; border-bottom: 1px solid #f3f4f6; color: #374151; vertical-align: middle; }
-.override-table tr:hover { background: #f9fafb; }
-.badge-tech { background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
-.btn-primary-custom { background: #2563eb; color: #fff; border: none; border-radius: 6px; padding: 8px 16px; font-size: 14px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
-.btn-primary-custom:hover { background: #1d4ed8; color: #fff; }
-.btn-secondary-custom { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; border-radius: 6px; padding: 8px 16px; font-size: 14px; font-weight: 500; cursor: pointer; text-decoration: none; }
-.btn-secondary-custom:hover { background: #e5e7eb; color: #1f2937; }
-.btn-danger-sm { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; border-radius: 4px; padding: 4px 10px; font-size: 12px; cursor: pointer; }
-.btn-danger-sm:hover { background: #fecaca; }
-.btn-edit-sm { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; border-radius: 4px; padding: 4px 10px; font-size: 12px; cursor: pointer; margin-right: 6px; }
-.btn-edit-sm:hover { background: #dbeafe; }
-.modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; }
-.modal-box { background: #fff; border-radius: 8px; padding: 24px; width: 480px; max-width: 90vw; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-.modal-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
-.form-group { margin-bottom: 14px; }
-.form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: #374151; }
-.form-control-custom { width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
-.form-control-custom:focus { outline: none; border-color: #2563eb; ring: 2px rgba(37,99,235,0.2); }
-.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+.override-container { padding: var(--space-6); max-width: 1200px; margin: 0 auto; }
+.override-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-5); }
+.override-title { font-size: var(--font-size-xl); font-weight: 600; color: var(--color-text-primary); margin: 0; }
+.override-subtitle { font-size: var(--font-size-sm); color: var(--color-text-secondary); margin-top: 4px; }
+.override-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow: hidden; }
+.override-table { width: 100%; border-collapse: collapse; text-align: left; font-size: var(--font-size-sm); }
+.override-table th { background: var(--color-surface-subtle); color: var(--color-text-secondary); font-weight: 600; padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border); }
+.override-table td { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border-subtle); color: var(--color-text-body); vertical-align: middle; }
+.override-table tr:hover { background: var(--color-surface-hover); }
+.badge-tech { background: var(--color-info-bg); color: var(--color-info); padding: 2px 8px; border-radius: var(--radius-sm); font-size: var(--font-size-xs); font-weight: 500; }
+.btn-primary-custom { background: var(--color-btn-primary-bg); color: var(--color-text-on-accent); border: none; border-radius: var(--radius-md); padding: var(--space-2) var(--space-4); font-size: var(--font-size-sm); font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+.btn-primary-custom:hover { background: var(--color-primary-hover); color: var(--color-text-on-accent); }
+.btn-secondary-custom { background: var(--color-surface); color: var(--color-text-body); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-2) var(--space-4); font-size: var(--font-size-sm); font-weight: 500; cursor: pointer; text-decoration: none; }
+.btn-secondary-custom:hover { background: var(--color-surface-hover); color: var(--color-text-primary); }
+.btn-danger-sm { background: var(--color-danger-bg); color: var(--color-danger); border: 1px solid var(--color-danger-border); border-radius: var(--radius-sm); padding: 4px 10px; font-size: var(--font-size-xs); cursor: pointer; }
+.btn-danger-sm:hover { background: var(--color-danger-border); }
+.btn-edit-sm { background: var(--color-info-bg); color: var(--color-info); border: 1px solid var(--color-info-border); border-radius: var(--radius-sm); padding: 4px 10px; font-size: var(--font-size-xs); cursor: pointer; margin-right: 6px; }
+.btn-edit-sm:hover { background: var(--color-info-border); }
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--color-overlay-bg); z-index: 9999; justify-content: center; align-items: center; }
+.modal-box { background: var(--color-surface); color: var(--color-text-primary); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-6); width: 480px; max-width: 90vw; box-shadow: var(--shadow-lg); }
+.modal-title { font-size: var(--font-size-base); font-weight: 600; margin-bottom: var(--space-4); color: var(--color-text-primary); }
+.form-group { margin-bottom: var(--space-3); }
+.form-group label { display: block; font-size: var(--font-size-sm); font-weight: 500; margin-bottom: 6px; color: var(--color-text-body); }
+.form-control-custom { width: 100%; padding: var(--space-2) var(--space-3); background: var(--color-surface); color: var(--color-text-primary); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: var(--font-size-sm); box-sizing: border-box; }
+.form-control-custom:focus { outline: none; border-color: var(--color-border-focus); }
+.modal-actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-5); }
+.override-empty { text-align: center; padding: 40px 0; color: var(--color-text-secondary); }
+.override-empty i { display: block; }
+.override-id-col { width: 70px; }
+.override-dept-col { width: 240px; }
+.override-account-col { width: 140px; }
+.override-realname-col { width: 140px; }
+.override-time-col { width: 160px; font-size: 13px; }
+.override-action-col { width: 130px; text-align: right; }
+.override-header-actions { display: flex; gap: 10px; }
+.override-del-form { display: inline; }
 </style>
 {{ end }}
 
@@ -43,7 +53,7 @@
       <h2 class="override-title"><i class="fas fa-user-shield me-2 text-primary"></i> 部门负责人补缺管理</h2>
       <div class="override-subtitle">针对科技部本部（52）及其子孙部门：当部门负责人有补缺记录时优先于禅道 <code>zt_dept.manager</code> 生效</div>
     </div>
-    <div style="display: flex; gap: 10px;">
+    <div class="override-header-actions">
       <a href="/admin/depts" class="btn-secondary-custom"><i class="fas fa-sitemap me-1"></i> 返回组织架构</a>
       <button type="button" class="btn-primary-custom" onclick="openAddModal()"><i class="fas fa-plus"></i> 新增负责人补缺</button>
     </div>
@@ -53,14 +63,14 @@
     <table class="override-table">
       <thead>
         <tr>
-          <th style="width: 70px;">ID</th>
-          <th style="width: 240px;">部门</th>
-          <th style="width: 140px;">补缺负责人账号</th>
-          <th style="width: 140px;">姓名</th>
+          <th class="override-id-col">ID</th>
+          <th class="override-dept-col">部门</th>
+          <th class="override-account-col">补缺负责人账号</th>
+          <th class="override-realname-col">姓名</th>
           <th>补缺说明 / 备注</th>
-          <th style="width: 140px;">更新人</th>
-          <th style="width: 160px;">创建/更新时间</th>
-          <th style="width: 130px; text-align: right;">操作</th>
+          <th class="override-account-col">更新人</th>
+          <th class="override-time-col">创建/更新时间</th>
+          <th class="override-action-col">操作</th>
         </tr>
       </thead>
       <tbody>
@@ -75,18 +85,18 @@
           <td>{{ .Realname }}</td>
           <td>{{ if .Remark }}{{ .Remark }}{{ else }}<span class="text-muted">—</span>{{ end }}</td>
           <td>{{ if .CreatedBy }}{{ .CreatedBy }}{{ else }}<span class="text-muted">—</span>{{ end }}</td>
-          <td><span class="text-muted" style="font-size: 13px;">{{ if .CreatedDate }}{{ .CreatedDate.Format "2006-01-02 15:04" }}{{ else }}—{{ end }}</span></td>
-          <td style="text-align: right;">
+          <td><span class="text-muted override-time-col">{{ if .CreatedDate }}{{ .CreatedDate.Format "2006-01-02 15:04" }}{{ else }}—{{ end }}</span></td>
+          <td class="override-action-col">
             <button type="button" class="btn-edit-sm" onclick="openEditModal({{ .Dept }}, '{{ .Account }}', '{{ .Remark }}')">编辑</button>
-            <form action="/admin/dept-overrides/{{ .ID }}/delete" method="POST" style="display: inline;" onsubmit="return confirm('确认删除该部门负责人补缺记录吗？删除后将恢复使用禅道原生设置。');">
+            <form action="/admin/dept-overrides/{{ .ID }}/delete" method="POST" class="override-del-form" onsubmit="return confirm('确认删除该部门负责人补缺记录吗？删除后将恢复使用禅道原生设置。');">
               <button type="submit" class="btn-danger-sm">删除</button>
             </form>
           </td>
         </tr>
         {{ else }}
         <tr>
-          <td colspan="8" style="text-align: center; padding: 40px 0; color: #9ca3af;">
-            <i class="fas fa-inbox fa-2x mb-2" style="display: block;"></i>
+          <td colspan="8" class="override-empty">
+            <i class="fas fa-inbox fa-2x mb-2"></i>
             暂无部门负责人补缺记录。点击右上角「新增负责人补缺」进行添加。
           </td>
         </tr>

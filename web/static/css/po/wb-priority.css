@@ -158,9 +158,9 @@
 .wb-type-todo:not(:has(.wb-type-tag)) { background: var(--color-business-bg); color: var(--color-business-text); }
 
 .wb-type-story,
-.wb-type-independent_story { border-color: #0d9488; }
+.wb-type-independent_story { border-color: var(--color-story-text); }
 .wb-type-story .wb-type-tag,
-.wb-type-independent_story .wb-type-tag { background: #0d9488; }
+.wb-type-independent_story .wb-type-tag { background: var(--color-story-text); }
 .wb-type-story:not(:has(.wb-type-tag)),
 .wb-type-independent_story:not(:has(.wb-type-tag)) { background: var(--color-story-bg); color: var(--color-story-text); }
 
