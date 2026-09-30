@@ -154,7 +154,7 @@
 }
 
 .po-home .home-vs-mini-card .vs-mini-dur {
-  font-size: 9.5px;
+  font-size: 8.5px; word-spacing: -0.4em;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-variant-numeric: tabular-nums;
   color: var(--color-text-disabled);
@@ -165,7 +165,7 @@
 .po-home .home-vs-mini-card .vs-mini-dur .tag {
   color: inherit;
   font-family: inherit;
-  margin-right: 1px;
+  margin-right: 0;
 }
 
 .po-home .home-vs-mini-card .vs-card-sub {

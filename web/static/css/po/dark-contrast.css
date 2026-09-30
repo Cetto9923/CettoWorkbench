@@ -1,0 +1,110 @@
+/* ==========================================================================
+   文件: web/static/css/po/dark-contrast.css
+   模块: PO工作台 · 深色模式对比度修正（第 5.6 轮）
+   职责: 只在 html[data-theme="dark"] 下，为第 5.6 轮实测出的 19 处
+         深色对比度不足（最低 1.93）逐处改用更浅一档的既有语义变量。
+
+   背景：第 5.4 轮把浅色主色 #1d4ed8 改为 #2563eb 时只改了 tokens.css 的
+   浅色块，深色块与一批页面级变量未同步（--po-blue 深色从未定义、
+   --color-text-disabled 深色过暗、--color-primary 字色偏暗），叠加彩色
+   徽标底色后出现成片低对比。
+
+   约束（AGENTS.md）：
+   - 规则 a：只引用已定义的语义变量，本文件不写任何十六进制/rgb/颜色字面量
+   - 规则 d：不使用 !important
+   - 规则 f：本文件为新文件，不影响既有超 500 行文件的行数预算
+   - 浅色模式零改动：本文件所有规则均限定在 html[data-theme="dark"] 下
+
+   挂载：po/home.html、po/done.html、po/follow.html、po/demand_detail.html、
+         po/workboard.html（/kanban/story 与 /kanban/task 会跳转至此模板）
+   ========================================================================== */
+
+/* ---------------------------------------------------------------------------
+ * A 组（1.93 → 5.71）首页价值流阶段卡的辅助文字
+ * 原：--color-text-disabled 深色 = #475569，打在卡片底 #1e293b 上
+ * 现：--color-text-secondary 深色 = #94a3b8
+ * 影响：/home .vs-mini-dur、.vs-mini-breakdown（9 张阶段卡）
+ * 注：卡片为 .empty 态时父级有 opacity 降透明，不在此处重复补偿
+ * ------------------------------------------------------------------------- */
+html[data-theme="dark"] .po-home .home-vs-mini-card .vs-mini-dur,
+html[data-theme="dark"] .po-home .home-vs-mini-card .vs-mini-breakdown {
+  color: var(--color-text-secondary);
+}
+
+/* ---------------------------------------------------------------------------
+ * B 组（2.82 → 5.74）主色字色打在深蓝信息底上
+ * 原：--wb-primary 深色 = #3b82f6，打在 --color-info-bg 深色 = #1e3a8a
+ * 现：--color-info 深色 = #93c5fd（该变量本就是为深色信息底设计的可读字色）
+ * 影响：/demands/:id 的 .dd-tag.blue、.dd-flow-stage.current
+ * 注：.dd-tag.blue 在 demand-detail.css 有两处重复定义（L72 / L304），
+ *     此处一并覆盖，避免只改一处导致另一处仍生效
+ * ------------------------------------------------------------------------- */
+html[data-theme="dark"] .dd-tag.blue,
+html[data-theme="dark"] .dd-flow-stage.current {
+  color: var(--color-info);
+}
+
+/* ---------------------------------------------------------------------------
+ * C 组（2.83 → 8.11）已办列表标题链接
+ * 原：--po-blue 只在 variables.css 浅色块定义，深色块从未覆盖，
+ *     深色下仍为 #2563eb，打在列表底 #1e293b 上
+ * 现：改用 --color-info；不修改 --po-blue 变量本身（它还被 kanban/follow
+ *     等多处用作背景色，改动会波及已达标的浅色与深色背景）
+ * 影响：/done .wb-done-title-link
+ * ------------------------------------------------------------------------- */
+html[data-theme="dark"] .wb-done-title-link {
+  color: var(--color-info);
+}
+
+/* ---------------------------------------------------------------------------
+ * D 组（3.73 → 6.92）解释说明 Tooltip 的 ⓘ 图标
+ * 原：--wb-gray-400 深色 = #64748b，打在 --wb-white 深色 = #121826 上
+ * 现：--color-text-secondary
+ * 影响：/home、/demands/:id、/board/demand、/board/task 的 .wb-tooltip-icon
+ *     （定义在 components.css，由 base.html 全局加载，故对本文件所挂载的
+ *       页面以及全局页面一致生效）
+ * ------------------------------------------------------------------------- */
+html[data-theme="dark"] .wb-tooltip-icon {
+  color: var(--color-text-secondary);
+}
+
+/* ---------------------------------------------------------------------------
+ * E 组（3.98 → 6.95）顶部快捷芯片与首页透视 Tab 的激活态字色
+ * 原：--color-primary 深色 = #3b82f6，打在 --color-primary-light 合成底上
+ * 现：--color-info
+ * 影响：/done 与 /follow 的 .header-quick-chip.primary（含内部 em 数字）、
+ *       /home 的 .po-perspective-tab.active 及其图标
+ * ------------------------------------------------------------------------- */
+html[data-theme="dark"] .po-personal-workspace .header-quick-chip.primary,
+html[data-theme="dark"] .po-personal-workspace .header-quick-chip.primary em,
+html[data-theme="dark"] .po-perspective-tab.active,
+html[data-theme="dark"] .po-perspective-tab.active i {
+  color: var(--color-info);
+}
+
+/* ---------------------------------------------------------------------------
+ * F 组（3.79 / 4.04 → 5.39 / 5.74）需求详情流程条上的角色名
+ * 原：--color-text-secondary 深色 = #94a3b8，分别打在已完成态底 #064e3b
+ *     与当前态底 #1e3a8a 上，两者均不足 4.5
+ * 现：--color-info（该变量在这两种彩色底上均达标）
+ * 影响：/demands/:id .dd-flow-stage .who
+ * ------------------------------------------------------------------------- */
+html[data-theme="dark"] .dd-flow-stage .who {
+  color: var(--color-info);
+}
+
+/* ---------------------------------------------------------------------------
+ * 补验弹窗时发现的同源问题（澄清弹窗默认隐藏，故首轮全站扫描未覆盖到）
+ * 这两处与上面的 A / C 组同根因，一并在此收口：
+ * - .demand-clarify-badge   用 --color-primary-hover，深色 = #2563eb → 3.45
+ * - .demand-clarify-close-btn 用 --color-text-disabled，深色 = #475569 → 2.36
+ * 澄清弹窗由 components/po_clarify_modal.html 提供，
+ * 挂载于 /home、/todos、/done、/follow、/demands/:id
+ * ------------------------------------------------------------------------- */
+html[data-theme="dark"] .demand-clarify-badge {
+  color: var(--color-info);
+}
+
+html[data-theme="dark"] .demand-clarify-close-btn {
+  color: var(--color-text-secondary);
+}
