@@ -1,0 +1,63 @@
+/* =============================================================================
+   文件: web/static/css/po/demand-detail-extra.css
+   模块: PO 工作台
+   职责: 需求详情补充样式（状态标志、统一禅道办理按钮、检查项与时间对照、流程审批表、价值模型、二期折叠等）
+   ============================================================================= */
+
+/* --- F2: 标题旁状态标志标签 --- */
+.req-flag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm, 4px);
+  font-size: var(--font-size-xs, 12px);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.req-flag-badge.changing {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+  border: 1px solid var(--color-warning-border);
+}
+
+.req-flag-badge.hanging {
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+
+.req-flag-badge.returned {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger-border);
+}
+
+/* --- F2: 主操作区暂停提示条 --- */
+.req-status-paused-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md, 6px);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs, 12px);
+  line-height: 1.5;
+  margin-top: 8px;
+}
+
+.req-status-paused-banner i {
+  color: var(--color-warning);
+  font-size: var(--font-size-sm, 14px);
+  flex-shrink: 0;
+}
+
+.dd-stage-sub {
+  font-size: var(--font-size-xs, 12px);
+  color: var(--color-text-secondary);
+  font-weight: normal;
+  margin-left: 4px;
+}

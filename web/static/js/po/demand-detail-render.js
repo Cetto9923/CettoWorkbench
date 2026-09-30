@@ -56,6 +56,21 @@
       .replace(/&#39;/g, "'");
   }
 
+  function renderFlagsHtml(flags) {
+    if (!flags) return "";
+    var html = "";
+    if (flags.hang) {
+      html += '<span class="req-flag-badge hanging" title="需求已挂起"><i class="bi bi-pause-circle"></i> 挂起</span>';
+    }
+    if (flags.changing) {
+      html += '<span class="req-flag-badge changing" title="正在计划变更评审中"><i class="bi bi-arrow-repeat"></i> 变更中</span>';
+    }
+    if (flags.returning) {
+      html += '<span class="req-flag-badge returning" title="需求退回审批中"><i class="bi bi-arrow-counterclockwise"></i> 退回中</span>';
+    }
+    return html;
+  }
+
   function renderHeader(summary, mode) {
     var tagText = mode === "parentAggregate" ? "父业务需求 · 聚合对象" : (mode === "childUnit" ? "子业务需求 · 交付单元" : "独立交付单元");
     var reviewer = summary.reviewer || "待确认";
@@ -63,11 +78,13 @@
     var stageLabel = String(summary.zentaoStatus || "").toLowerCase() === "wait" ? "待受理" : (summary.valueStageLabel || summary.valueStage || "—");
     var zentaoUrl = summary.zentaoUrl || "";
     var cleanTitle = decodeBasicEntities(summary.title);
+    var flagsHtml = renderFlagsHtml(summary.flags);
 
     return '<div class="dd-idrow">' +
       (zentaoUrl ? '<a class="dd-id table-id-link" href="' + esc(zentaoUrl) + '" target="_blank" rel="noopener noreferrer">' + esc(summary.code) + '</a>' : '<span class="dd-id">' + esc(summary.code) + '</span>') +
       '<span class="dd-tag blue">' + esc(tagText) + '</span>' +
       priorityBadge(summary.priority) +
+      flagsHtml +
       '<div class="dd-head-actions">' +
       '  <button class="ui-close-btn" onclick="DemandDetail.close()" title="关闭" aria-label="关闭">×</button>' +
       '</div></div>' +
@@ -118,6 +135,23 @@
     data = data || {};
     var pa = data.primaryAction || {};
     var summary = data.summary || {};
+
+    var flags = summary.flags || {};
+    var hasFlag = Boolean(flags.hang || flags.changing || flags.returning || summary.flagNotice);
+    if (hasFlag) {
+      var noticeText = summary.flagNotice || (flags.hang ? "需求已挂起，主操作已暂停，请在禅道处理" : (flags.changing ? "需求变更中，主操作已暂停，请在禅道处理" : "需求退回中，主操作已暂停，请在禅道处理"));
+      return [
+        '<div class="dd-card dd-spot req-actions-paused" id="spotlightSection">',
+        '  <div>',
+        '    <span class="dd-tag blue">' + esc(spotlight.badge) + '</span>',
+        '    <div class="dd-spot-title">' + esc(spotlight.title) + '</div>',
+        '    <div class="dd-spot-desc">' + esc(spotlight.desc) + '</div>',
+        '    <div class="req-status-paused-banner"><i class="bi bi-exclamation-triangle"></i> <span>' + esc(noticeText) + '</span></div>',
+        '  </div>',
+        '</div>'
+      ].join("");
+    }
+
     var action;
     var isSubmitTest = String(pa.key || "") === "submit_test" && pa.enabled !== false;
     var isRemindAccept = String(pa.key || "") === "remind_accept" && pa.enabled !== false;
