@@ -166,6 +166,12 @@ func (s *DetailService) GetDemandDetail(ctx context.Context, actor *model.User, 
 	resp.Summary.Desc = SanitizeRichTextHTML(resp.Summary.Desc)
 	resp.Summary.VerifyPlan = SanitizeRichTextHTML(resp.Summary.VerifyPlan)
 
+	vm, vmErr := s.populateValueModel(ctx, row)
+	if vmErr != nil {
+		return nil, vmErr
+	}
+	resp.ValueModel = vm
+
 	return resp, nil
 }
 

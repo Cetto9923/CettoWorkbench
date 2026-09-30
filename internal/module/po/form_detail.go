@@ -55,6 +55,7 @@ type DemandDetailResp struct {
 	History         *DetailHistory               `json:"history,omitempty"`
 	Config          DetailConfig                 `json:"config"`
 	PrimaryAction   *primaryaction.PrimaryAction `json:"primaryAction,omitempty"` // 服务端主操作
+	ValueModel      *DemandValueModel            `json:"valueModel,omitempty"`    // 需求价值模型（开启时出现）
 }
 
 // DetailConfig 集中配置（前端禁止 hardcode）。
