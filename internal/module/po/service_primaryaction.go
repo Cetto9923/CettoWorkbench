@@ -27,15 +27,20 @@ import (
 //   - 对象级授权：IsAcceptanceOwner = (accepter == actor.Account)。
 //   - 评价 / 测试单事实：批量 IN 查询一次性 fetch。
 type primaryActionFactsDemand struct {
-	ObjectID              uint
-	Kind                  primaryaction.ObjectKind
-	Stage                 primaryaction.StageKey
-	Status                string
-	CreatedBy             string
-	IsCreator             bool
-	IsAssignee            bool
-	CanReview             bool
-	IsAcceptanceOwner     bool
+	ObjectID          uint
+	Kind              primaryaction.ObjectKind
+	Stage             primaryaction.StageKey
+	Status            string
+	CreatedBy         string
+	IsCreator         bool
+	IsAssignee        bool
+	CanReview         bool
+	IsAcceptanceOwner bool
+	// HasSchedulePerm 表示 actor 具备排期权限位（ScheduleList 或 ScheduleUpdate）。
+	HasSchedulePerm bool
+	// HasDemandRelation 表示 actor 对该需求有对象级关系（超管/PMO/个人干系人/团队长管辖）。
+	// 排期按钮的可见性要求「有排期能力 + 有该关系」，避免仅凭权限位就放出按钮。
+	HasDemandRelation     bool
 	TestsCount            int
 	FirstTestURL          string
 	HasPendingEvaluate    bool
@@ -99,14 +104,40 @@ func (s *Service) DeriveDemandPrimaryActions(
 		pendingReviewMap, _ = s.repo.FindPendingReviewDemandIDs(ctx, account, waitIDs)
 	}
 
+	// 对象级关系批量判定一次，供循环内复用（避免逐需求 Evaluate 造成 N+1）。
+	// 短路：只有「具备排期能力」为真时才需要关系判定；能力为假时排期按钮本就不放行，
+	// 无需查库，既省一次往返也避免无谓的关系查询。
+	hasSchedulePerm := hasCapability(ctx, actor, perm.ScheduleList, perm.ScheduleUpdate)
+	relationBatch := &DemandRelationBatch{Related: make(map[uint]bool, len(demandIDs))}
+	relationReady := false
+	if hasSchedulePerm && s.repo != nil {
+		var relErr error
+		relationBatch, relErr = s.repo.BatchDemandRelations(ctx, actor, demandIDs)
+		if relErr != nil {
+			return nil, relErr
+		}
+		relationReady = true
+	}
+
 	for _, id := range demandIDs {
 		row := rows[id]
 		facts := primaryActionFactsDemand{
-			ObjectID:  id,
-			Kind:      primaryaction.ObjectBusinessDemand,
-			Stage:     deriveStageKey(row.Stage, row.Status),
-			Status:    row.Status,
-			CreatedBy: row.CreatedBy,
+			ObjectID:        id,
+			Kind:            primaryaction.ObjectBusinessDemand,
+			Stage:           deriveStageKey(row.Stage, row.Status),
+			Status:          row.Status,
+			CreatedBy:       row.CreatedBy,
+			HasSchedulePerm: hasSchedulePerm,
+		}
+		// 无排期能力时短路：门禁必然为 false，无需关系事实。
+		// 有排期能力但关系不可查时兜底为超管，避免基础设施缺失导致按钮全灰。
+		switch {
+		case relationReady:
+			facts.HasDemandRelation = relationBatch.HasRelated(id)
+		case !hasSchedulePerm:
+			facts.HasDemandRelation = false
+		default:
+			facts.HasDemandRelation = actor != nil && actor.IsSuperAdmin
 		}
 		if account != "" {
 			if strings.TrimSpace(row.Accepter) == account {
@@ -216,18 +247,21 @@ func (s *Service) DeriveStoryPrimaryActions(
 // deriveDemandPrimaryAction 由 Service 在已聚合事实后调用 primaryaction.Derive。
 func deriveDemandPrimaryAction(ctx context.Context, actor *model.User, facts primaryActionFactsDemand) primaryaction.PrimaryAction {
 	in := primaryaction.Input{
-		Stage:                   facts.Stage,
-		Status:                  facts.Status,
-		Kind:                    facts.Kind,
-		ObjectID:                facts.ObjectID,
-		CreatedBy:               facts.CreatedBy,
-		IsCreator:               facts.IsCreator,
-		IsAssignee:              facts.IsAssignee,
-		IsSuperAdmin:            actor != nil && actor.IsSuperAdmin,
-		CanReview:               facts.CanReview,
-		HasAcceptCapability:     hasCapability(ctx, actor, perm.PoHomeList, perm.PoBoardDemandList),
-		HasClarifyCapability:    hasCapability(ctx, actor, perm.PoHomeList),
-		HasScheduleCapability:   hasCapability(ctx, actor, perm.ScheduleList, perm.ScheduleUpdate),
+		Stage:                facts.Stage,
+		Status:               facts.Status,
+		Kind:                 facts.Kind,
+		ObjectID:             facts.ObjectID,
+		CreatedBy:            facts.CreatedBy,
+		IsCreator:            facts.IsCreator,
+		IsAssignee:           facts.IsAssignee,
+		IsSuperAdmin:         actor != nil && actor.IsSuperAdmin,
+		CanReview:            facts.CanReview,
+		HasAcceptCapability:  hasCapability(ctx, actor, perm.PoHomeList, perm.PoBoardDemandList),
+		HasClarifyCapability: hasCapability(ctx, actor, perm.PoHomeList),
+		// 排期按钮必须「有排期能力 + 与该需求有对象级关系」：
+		// 否则将来把 schedule:update 授给 po 角色后，所有 po 都会看到全部需求的排期按钮。
+		// 关系口径复用 demandauthz（超管/PMO/个人干系人/团队长管辖）。
+		HasScheduleCapability:   hasCapability(ctx, actor, perm.ScheduleList, perm.ScheduleUpdate) && facts.HasDemandRelation,
 		HasSubmitTestCapability: hasCapability(ctx, actor, perm.PoHomeList),
 		HasUrgeCapability:       hasCapability(ctx, actor, perm.PoHomeList),
 		HasDeliverCapability:    hasCapability(ctx, actor, perm.PoHomeList),
