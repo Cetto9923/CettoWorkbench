@@ -58,6 +58,9 @@
 .vf-window-chip.is-released {
   color: var(--color-text-secondary);
 }
+.vf-window-chip.is-active.is-released {
+  color: var(--color-info);
+}
 
 /* ─── 2. 窗口判断带 ─── */
 .vf-judge-band {
@@ -140,6 +143,9 @@
   background: var(--color-info-bg);
 }
 .vf-stage-seg-name { font-size: 11px; color: var(--color-text-secondary); }
+.vf-stage-seg.is-active .vf-stage-seg-name {
+  color: var(--color-info);
+}
 .vf-stage-seg-count { font-size: 11px; font-weight: 600; color: var(--color-text-primary);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 
