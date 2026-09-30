@@ -250,6 +250,27 @@
     var casesPair = summary.casesTotal > 0 ? (summary.casesExecuted + " / " + summary.casesTotal) : "—";
     var blocked = summary.bugsUnresolved > 0 ? (summary.bugsUnresolved + " 阻塞") : "无";
 
+    var mgmt = data.managementInfo || {};
+    var planActualHtml = (window.DemandDetailFlow && window.DemandDetailFlow.renderPlanAndActual)
+      ? window.DemandDetailFlow.renderPlanAndActual(summary, mgmt.actualTimes)
+      : [
+          '    <div class="dd-card"><div class="dd-card-body">',
+          '      <div class="dd-cardhead"><h3>关键计划与实际</h3><span class="dd-note">只展示跨阶段关键里程碑</span></div>',
+          '      <div class="dd-milestones">',
+          '        <div class="dd-ms"><div class="k">开发完成</div><div class="v">' + esc(summary.developFinish || "—") + '</div><div class="sub">预计完成</div></div>',
+          '        <div class="dd-ms"><div class="k">测试完成</div><div class="v">' + esc(summary.testFinish || "—") + '</div><div class="sub">预计完成</div></div>',
+          '        <div class="dd-ms"><div class="k">验收完成</div><div class="v">' + esc(summary.verifyFinish || "—") + '</div><div class="sub">预计完成</div></div>',
+          '        <div class="dd-ms"><div class="k">预计上线时间</div><div class="v">' + esc(summary.estimateLaunch || "—") + '</div><div class="sub">禅道当前字段</div></div>',
+          '      </div>',
+          '    </div></div>'
+        ].join("");
+
+    var checksHtml = (window.DemandDetailFlow && window.DemandDetailFlow.renderImportantChecks)
+      ? window.DemandDetailFlow.renderImportantChecks(mgmt.importantChecks)
+      : "";
+
+    var hangText = (summary.flags && summary.flags.hang) ? "是 (挂起中)" : "否";
+
     return [
       '<div class="dd-grid">',
       '  <div class="dd-main">',
@@ -276,15 +297,8 @@
       '        <div class="dd-metric-box"><div class="n">' + esc(summary.acceptanceStatus || "—") + '</div><div class="l">业务验收</div></div>',
       '      </div>',
       '    </div></div>',
-      '    <div class="dd-card"><div class="dd-card-body">',
-      '      <div class="dd-cardhead"><h3>关键计划与实际</h3><span class="dd-note">只展示跨阶段关键里程碑</span></div>',
-      '      <div class="dd-milestones">',
-      '        <div class="dd-ms"><div class="k">开发完成</div><div class="v">' + esc(summary.developFinish || "—") + '</div><div class="sub">预计完成</div></div>',
-      '        <div class="dd-ms"><div class="k">测试完成</div><div class="v">' + esc(summary.testFinish || "—") + '</div><div class="sub">预计完成</div></div>',
-      '        <div class="dd-ms"><div class="k">验收完成</div><div class="v">' + esc(summary.verifyFinish || "—") + '</div><div class="sub">预计完成</div></div>',
-      '        <div class="dd-ms"><div class="k">预计上线时间</div><div class="v">' + esc(summary.estimateLaunch || "—") + '</div><div class="sub">禅道当前字段</div></div>',
-      '      </div>',
-      '    </div></div>',
+      planActualHtml,
+      checksHtml,
       '  </div>',
       '  <aside class="dd-sidebar">',
       '    <div class="dd-card"><div class="dd-card-body">',
@@ -299,17 +313,21 @@
       '        <div class="k">所属模块</div><div class="v">' + esc(summary.moduleName || "—") + '</div>',
       '        <div class="k">主系统</div><div class="v">' + esc(summary.mainSystemName) + '</div>',
       '        <div class="k">BSA等级</div><div class="v">' + esc(summary.bsa) + '</div>',
+      (summary.proposeDept ? ('        <div class="k">提出部门</div><div class="v">' + esc(summary.proposeDept) + '</div>') : '') +
       '        <div class="k">来源备注</div><div class="v">' + esc(summary.sourceNote) + '</div>',
       '      </div>',
       '      <div class="dd-aside-title dd-mt-14">责任与组织</div>',
       '      <div class="dd-kv-list compact">',
       '        <div class="k">需求负责人</div><div class="v">' + esc(summary.ownerName) + '</div>',
       '        <div class="k">提出人</div><div class="v">' + esc(summary.proposerName) + '</div>',
+      '        <div class="k">牵头团队</div><div class="v">' + esc(summary.leadDept || "—") + '</div>',
+      '        <div class="k">所属敏捷团队</div><div class="v">' + esc(summary.teamGroup || "—") + '</div>',
       '        <div class="k">测试负责人</div><div class="v">' + esc(summary.testOwner) + '</div>',
       '        <div class="k">验收负责人</div><div class="v">' + esc(summary.acceptOwner) + '</div>',
       '        <div class="k">业务评审人</div><div class="v">' + esc(summary.reviewer) + '</div>',
       '        <div class="k">指派给</div><div class="v">' + esc(summary.assignedToName || summary.assignedTo || summary.currentOwner || "待确认") + '</div>',
-      '        <div class="k">禅道状态</div><div class="v">' + esc(summary.zentaoStatus) + '</div>',
+      '        <div class="k">禅道状态</div><div class="v">' + esc(zentaoStatusLabel(summary.zentaoStatus)) + '</div>',
+      '        <div class="k">挂起状态</div><div class="v">' + esc(hangText) + '</div>',
       '        <div class="k">当前阻塞</div><div class="v">' + esc(blocked) + '</div>',
       '      </div>',
       '    </div></div>',
