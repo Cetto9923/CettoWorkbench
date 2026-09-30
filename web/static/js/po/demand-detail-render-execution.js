@@ -177,7 +177,7 @@
       ) : '      <div class="dd-exec-empty">暂无关联测试单 · 提测后将在此同步集成与验收测试单</div>',
       '    </div></div>',
       '    <div class="dd-card" id="storiesSection"><div class="dd-card-body">',
-      '      <div class="dd-cardhead"><h3>已分发研发需求推进 (Stories)</h3></div>',
+      '      <div class="dd-cardhead"><h3>已分发研发需求推进 (Stories) <span class="dd-feat-badge">二期</span></h3></div>',
       storyRows ? (
         '      <table class="dd-table"><thead><tr><th>编号</th><th>标题</th><th>所属产品</th><th>负责人</th><th>状态</th><th>关联缺陷</th><th>任务推进</th></tr></thead><tbody>' + storyRows + '</tbody></table>'
       ) : '      <div class="dd-exec-empty">暂未分发研发需求</div>',
