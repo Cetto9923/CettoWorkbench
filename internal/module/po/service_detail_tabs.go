@@ -163,12 +163,11 @@ func (s *DetailService) buildSpotlight(stage, status string) *DetailSpotlight {
 		}
 	case "acceptance":
 		return &DetailSpotlight{
-			Badge:         "待验收",
-			Title:         "当前待办：业务部门确认与交付验收",
-			Desc:          "研发提测已达标，请组织业务验收并确认是否满足交付上线条件。",
-			ActionLabel:   "进入验收交付 →",
-			TargetTab:     "delivery",
-			TargetSection: "deliverySection",
+			Badge:       "待验收",
+			Title:       "当前待办：业务部门确认与交付验收",
+			Desc:        "研发提测已达标，请组织业务验收并确认是否满足交付上线条件。",
+			ActionLabel: "进入版本跟进 →",
+			ActionURL:   "/version-follow",
 		}
 	default:
 		return &DetailSpotlight{

@@ -307,6 +307,9 @@
 
     // 右侧 PO 聚焦专区的小卡片触发联动切换价值流阶段
     $(".focus-card.vs-trigger").on("click", function () {
+      // 带 data-vf-goto 的卡片跳独立页面（如版本跟进），不参与阶段联动
+      var vfGoto = $(this).attr("data-vf-goto");
+      if (vfGoto) { window.location.href = vfGoto; return; }
       var targetStage = $(this).data("stage-target");
       if (!targetStage) { return; }
       var $card = $('.home-vs-mini-card[data-vs-status="' + targetStage + '"]');
