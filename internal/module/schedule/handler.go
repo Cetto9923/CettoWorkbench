@@ -97,32 +97,6 @@ func NewHandler(renderer *render.Renderer, logger *zap.Logger, svc *Service, zen
 	}
 }
 
-// RegisterRoutes 注册排期工作台路由（挂载在已配置登录与操作日志的中间件组上）。
-func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
-	g := rg.Group("/schedule")
-	g.Use(middleware.ActiveNav("/schedule"))
-	{
-		g.GET("", h.Index)
-		g.GET("/filter-counts", h.GetFilterCounts)
-		g.GET("/matching-plans", h.GetMatchingPlans)
-		g.GET("/demands/:id/scheduling", h.GetDemandScheduling)
-		g.GET("/demands/:id/review-to-story-notice", h.CheckReviewToStoryNotice)
-		g.POST("/demands/:id/save-scheduling", h.SaveScheduling)
-		g.GET("/stories/:id/scheduling", h.GetStoryScheduling)
-		g.POST("/stories/:id/save-scheduling", h.SaveStoryScheduling)
-		g.GET("/products/:id/projects", h.GetProductProjects)
-		g.GET("/projects/:id/executions", h.GetProjectExecutions)
-		g.GET("/stories/:id/tasks", h.GetStoryTasks)
-		g.POST("/stories/:id/save-tasks", h.SaveStoryTasks)
-		g.POST("/windows", h.CreateWindow)
-		g.GET("/windows", h.ListWindows)
-		g.GET("/windows/:id", h.GetWindow)
-		g.PUT("/windows/:id", h.UpdateWindow)
-		g.DELETE("/windows/:id", h.DeleteWindow)
-		g.GET("/window-options", h.WindowOptions)
-	}
-}
-
 // Index 渲染排期工作台页面。
 func (h *Handler) Index(c *gin.Context) {
 	h.bindRenderer(c)

@@ -55,6 +55,12 @@ const (
 	ScheduleUpdate Permission = "schedule:update"
 	ScheduleDelete Permission = "schedule:delete"
 
+	// PoSchedule 排期工作台访问权（与需求排期菜单 perm 一致）。
+	// 与 schedule:create/update/delete 的区别：后者是排期工作台自身的增删改权限位，
+	// 仅超级管理员角色持有；本权限是"可进入排期工作台并在其写路径上操作"的既有口径，
+	// 种子已授予超级管理员与 PO 角色，绑定写路径时不会改变现有可写人群。
+	PoSchedule Permission = "po:schedule"
+
 	// PO 工作台：业需评审（对应禅道 demand-review）
 	PoDemandReview Permission = "po:demandreview"
 	// PO 工作台：发起交付（对应禅道 demand-deliver）
@@ -128,6 +134,7 @@ var allPermInfos = []PermInfo{
 	{Code: PoFollowUpdate, Name: "产品经理工作台-更新关注关系", Module: "po"},
 	{Code: PoBoardDemandList, Name: "产品经理工作台-需求看板", Module: "po"},
 	{Code: PoBoardTaskList, Name: "产品经理工作台-任务看板", Module: "po"},
+	{Code: PoSchedule, Name: "产品经理工作台-需求排期", Module: "po"},
 	{Code: AgileTeamList, Name: "敏捷小组-列表", Module: "agileteam"},
 	{Code: AgileTeamUpdate, Name: "敏捷小组-调整提交", Module: "agileteam"},
 	{Code: AgileTeamConfirm, Name: "敏捷小组-调整确认", Module: "agileteam"},
