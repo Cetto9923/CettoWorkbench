@@ -83,6 +83,26 @@
   <div class="home-content-grid">
     <div class="top5-section" id="top5Section">
       <div class="section-title" id="top5Title"><i class="fas fa-list-check"></i> 统一行动列表 · 待我处理</div>
+      <div class="workspace-toolbar home-toolbar">
+        <div class="toolbar-left-group">
+          <label class="workspace-search">
+            <span aria-hidden="true">⌕</span>
+            <input type="search" id="homeKeyword" placeholder="按编号/标题精准过滤..." aria-label="关键词">
+          </label>
+          <div class="relation-segment" id="homeObjectTypeSegment" aria-label="具体对象">
+            <button type="button" class="active" data-object-type="all">全部</button>
+            <button type="button" data-object-type="demand">业务需求</button>
+            <button type="button" data-object-type="story">研发需求</button>
+          </div>
+          <div class="relation-segment" id="homePrioritySegment" aria-label="优先级">
+            <button type="button" class="active" data-priority="all">全部</button>
+            <button type="button" data-priority="p1">P1 高优</button>
+            <button type="button" data-priority="p2">P2 中优</button>
+            <button type="button" data-priority="p3">P3/P4</button>
+          </div>
+          <button type="button" id="homeResetBtn" class="workspace-btn">重置筛选</button>
+        </div>
+      </div>
       <div class="home-priority-strip home-blocker-strip" id="homeBlockerStrip" hidden></div>
       <div class="top5-list" id="top5List"></div>
       <div class="pager-footer" id="homePager" hidden></div>
