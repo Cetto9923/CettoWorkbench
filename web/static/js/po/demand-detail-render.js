@@ -33,6 +33,7 @@
   var renderParentAggregate = (Parent && Parent.renderParentAggregate) || function () { return ""; };
   var renderTabExecution = (Execution && Execution.renderTabExecution) || function () { return ""; };
   var actionLabel = (Labels && Labels.actionLabel) || function (raw) { return raw || "—"; };
+  var closedReasonLabel = (Labels && Labels.closedReasonLabel) || function (raw) { return raw || "—"; };
   // 公共优先级渲染：PersonalList.priorityBadge
   var priorityBadge = window.PersonalList.priorityBadge;
 
@@ -440,7 +441,7 @@
       '<div class="k">创建人</div><div class="v">' + esc(lc.createdBy) + '</div><div class="k">创建时间</div><div class="v">' + esc(lc.createdDate) + '</div>' +
       '<div class="k">评审人</div><div class="v">' + esc(lc.reviewer) + '</div><div class="k">评审时间</div><div class="v">' + esc(lc.reviewedDate) + '</div>' +
       '<div class="k">最后编辑</div><div class="v">' + esc(lc.lastEditedBy) + '</div><div class="k">最后更新</div><div class="v">' + esc(lc.lastEditedDate) + '</div>' +
-      '<div class="k">关闭人</div><div class="v">' + esc(lc.closedBy) + '</div><div class="k">关闭原因</div><div class="v">' + esc(lc.closedReason) + '</div>' +
+      '<div class="k">关闭人</div><div class="v">' + esc(lc.closedBy) + '</div><div class="k">关闭原因</div><div class="v">' + esc(closedReasonLabel(lc.closedReason)) + '</div>' +
       '</div></div></div></aside></div>';
   }
 

@@ -149,6 +149,17 @@
     withdrawbymanager: "撤回主管审批",
   };
 
+  // 业务需求关闭原因：禅道 zentao/extension/custom/demand/lang/zh-cn.php 的
+  // $lang->demand->shutdownReason（全仓库唯一定义处）。关闭页 close.html.php 用它做下拉，
+  // 详情页 view.html.php 用 $lang->demand->shutdownReason[$demand->closedReason] 回显，
+  // 两处同表。'' 项为空，由 pick 统一按空值处理。
+  var CLOSED_REASON = {
+    duplicate: "重复",
+    done: "已完成",
+    "1": "设计如此",
+    "2": "不予处理"
+  };
+
   function pick(table, value) {
     var raw = String(value == null ? "" : value).trim();
     if (!raw) return "—";
@@ -158,7 +169,9 @@
   return {
     storyStatusLabel: function (value) { return pick(STORY_STATUS, value); },
     actionLabel: function (value) { return pick(ACTION_LABEL, value); },
+    closedReasonLabel: function (value) { return pick(CLOSED_REASON, value); },
     STORY_STATUS: STORY_STATUS,
-    ACTION_LABEL: ACTION_LABEL
+    ACTION_LABEL: ACTION_LABEL,
+    CLOSED_REASON: CLOSED_REASON
   };
 });
