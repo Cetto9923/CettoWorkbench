@@ -61,3 +61,29 @@
   font-weight: normal;
   margin-left: 4px;
 }
+
+/* --- F3: 全站统一「在禅道办理 ↗」按钮组件 --- */
+.zt-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-size: var(--font-size-xs, 12px);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 4px);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.zt-link-btn:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary-border, var(--color-primary));
+  background: var(--color-surface-hover);
+  text-decoration: none;
+}
+
