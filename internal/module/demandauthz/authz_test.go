@@ -15,10 +15,11 @@ import (
 
 	"workbench/internal/model"
 	"workbench/internal/pkg/perm"
+	"workbench/internal/pkg/workbenchroles"
 )
 
 const (
-	pmoQuery     = `SELECT COUNT\(\*\) FROM zt_gf_user_roles ur JOIN zt_roles r ON r\.id = ur\.roleId WHERE ur\.userId = \? AND ur\.deleted = '0' AND r\.deleted = '0' AND r\.isActive = 1 AND r\.code = 'pmo'`
+	pmoQuery     = `SELECT COUNT\(\*\) FROM zt_gf_user_roles ur JOIN zt_roles r ON r\.id = ur\.roleId WHERE ur\.userId = \? AND ur\.deleted = '0' AND r\.deleted = '0' AND r\.isActive = 1 AND r\.code = \?`
 	relatedQuery = `SELECT COUNT\(\*\) FROM zt_demand d`
 	managedQuery = `SELECT d\.id, COALESCE\(d\.path, ''\) AS path FROM zt_dept d`
 	deptTree     = `SELECT DISTINCT id FROM zt_dept WHERE id IN \(\?\)`
@@ -47,7 +48,7 @@ func TestEvaluate_PMOCanWrite(t *testing.T) {
 	repo := New(gormDB)
 
 	mock.ExpectQuery(pmoQuery).
-		WithArgs(int64(20)).
+		WithArgs(int64(20), workbenchroles.RolePMO).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
 
 	ok, err := repo.CanWriteDemand(t.Context(), &model.User{ID: 20, Account: "pmo_user"}, 1001)
@@ -68,7 +69,7 @@ func TestEvaluate_StakeholderCanWrite(t *testing.T) {
 	repo := New(gormDB)
 
 	mock.ExpectQuery(pmoQuery).
-		WithArgs(int64(30)).
+		WithArgs(int64(30), workbenchroles.RolePMO).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery(relatedQuery).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
@@ -91,12 +92,12 @@ func TestEvaluate_LeaderScopeCanWrite(t *testing.T) {
 	repo := New(gormDB)
 
 	mock.ExpectQuery(pmoQuery).
-		WithArgs(int64(40)).
+		WithArgs(int64(40), workbenchroles.RolePMO).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery(relatedQuery).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery(managedQuery).
-		WithArgs(sqlmock.AnyArg()).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "path"}).AddRow(14, ",53,52,14,"))
 	mock.ExpectQuery(deptTree).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(14))
@@ -124,12 +125,12 @@ func TestEvaluate_ScheduleListHolderIsReadOnly(t *testing.T) {
 	ctx := perm.WithGranted(t.Context(), map[string]bool{perm.ScheduleList.String(): true})
 
 	mock.ExpectQuery(pmoQuery).
-		WithArgs(int64(50)).
+		WithArgs(int64(50), workbenchroles.RolePMO).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery(relatedQuery).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery(managedQuery).
-		WithArgs(sqlmock.AnyArg()).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "path"}))
 
 	ok, err := repo.CanWriteDemand(ctx, &model.User{ID: 50, Account: "schedule_viewer"}, 1001)
@@ -150,12 +151,12 @@ func TestEvaluate_NoRelationCannotWrite(t *testing.T) {
 	repo := New(gormDB)
 
 	mock.ExpectQuery(pmoQuery).
-		WithArgs(int64(60)).
+		WithArgs(int64(60), workbenchroles.RolePMO).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery(relatedQuery).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery(managedQuery).
-		WithArgs(sqlmock.AnyArg()).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "path"}))
 
 	ok, err := repo.CanWriteDemand(t.Context(), &model.User{ID: 60, Account: "stranger"}, 1001)

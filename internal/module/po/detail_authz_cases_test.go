@@ -30,6 +30,7 @@ import (
 	"workbench/internal/model"
 	"workbench/internal/pkg/errorx"
 	"workbench/internal/pkg/perm"
+	"workbench/internal/pkg/workbenchroles"
 )
 
 // 1. 团队长看本团队需求 = 可见 (200)
@@ -44,8 +45,8 @@ func TestDemandDetailAuthZ_LeaderDeptDemandVisible(t *testing.T) {
 		WillReturnRows(newDemandDetailMockRow(1001, 0))
 
 	// PMO 角色检查：未命中
-	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM zt_gf_user_roles ur JOIN zt_roles r ON r\.id = ur\.roleId WHERE ur\.userId = \? AND ur\.deleted = '0' AND r\.deleted = '0' AND r\.isActive = 1 AND r\.code = 'pmo'`).
-		WithArgs(int64(10)).
+	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM zt_gf_user_roles ur JOIN zt_roles r ON r\.id = ur\.roleId WHERE ur\.userId = \? AND ur\.deleted = '0' AND r\.deleted = '0' AND r\.isActive = 1 AND r\.code = \?`).
+		WithArgs(int64(10), workbenchroles.RolePMO).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 
 	// 个人干系人检查：未命中
@@ -86,8 +87,8 @@ func TestDemandDetailAuthZ_LeaderOtherDeptDemandForbidden(t *testing.T) {
 		WillReturnRows(newDemandDetailMockRow(1002, 0))
 
 	// PMO 角色检查：未命中
-	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM zt_gf_user_roles ur JOIN zt_roles r ON r\.id = ur\.roleId WHERE ur\.userId = \? AND ur\.deleted = '0' AND r\.deleted = '0' AND r\.isActive = 1 AND r\.code = 'pmo'`).
-		WithArgs(int64(10)).
+	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM zt_gf_user_roles ur JOIN zt_roles r ON r\.id = ur\.roleId WHERE ur\.userId = \? AND ur\.deleted = '0' AND r\.deleted = '0' AND r\.isActive = 1 AND r\.code = \?`).
+		WithArgs(int64(10), workbenchroles.RolePMO).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 
 	// 个人干系人检查：未命中
@@ -126,8 +127,8 @@ func TestDemandDetailAuthZ_LeaderOtherDeptQueryPermVisible(t *testing.T) {
 		WillReturnRows(newDemandDetailMockRow(1002, 0))
 
 	// PMO 角色检查：未命中
-	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM zt_gf_user_roles ur JOIN zt_roles r ON r\.id = ur\.roleId WHERE ur\.userId = \? AND ur\.deleted = '0' AND r\.deleted = '0' AND r\.isActive = 1 AND r\.code = 'pmo'`).
-		WithArgs(int64(10)).
+	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM zt_gf_user_roles ur JOIN zt_roles r ON r\.id = ur\.roleId WHERE ur\.userId = \? AND ur\.deleted = '0' AND r\.deleted = '0' AND r\.isActive = 1 AND r\.code = \?`).
+		WithArgs(int64(10), workbenchroles.RolePMO).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 
 	// 个人干系人检查：未命中
@@ -164,8 +165,8 @@ func TestDemandDetailAuthZ_PMOGlobalVisible(t *testing.T) {
 		WillReturnRows(newDemandDetailMockRow(1003, 0))
 
 	// PMO 角色查询：命中 pmo
-	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM zt_gf_user_roles ur JOIN zt_roles r ON r\.id = ur\.roleId WHERE ur\.userId = \? AND ur\.deleted = '0' AND r\.deleted = '0' AND r\.isActive = 1 AND r\.code = 'pmo'`).
-		WithArgs(int64(88)).
+	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM zt_gf_user_roles ur JOIN zt_roles r ON r\.id = ur\.roleId WHERE ur\.userId = \? AND ur\.deleted = '0' AND r\.deleted = '0' AND r\.isActive = 1 AND r\.code = \?`).
+		WithArgs(int64(88), workbenchroles.RolePMO).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
 
 	actor := &model.User{ID: 88, Account: "user_pmo", IsSuperAdmin: false}
@@ -189,8 +190,8 @@ func TestDemandDetailAuthZ_ProductManagerQueryPermGlobalVisible(t *testing.T) {
 		WillReturnRows(newDemandDetailMockRow(1004, 0))
 
 	// PMO 角色查询：未命中
-	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM zt_gf_user_roles ur JOIN zt_roles r ON r\.id = ur\.roleId WHERE ur\.userId = \? AND ur\.deleted = '0' AND r\.deleted = '0' AND r\.isActive = 1 AND r\.code = 'pmo'`).
-		WithArgs(int64(99)).
+	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM zt_gf_user_roles ur JOIN zt_roles r ON r\.id = ur\.roleId WHERE ur\.userId = \? AND ur\.deleted = '0' AND r\.deleted = '0' AND r\.isActive = 1 AND r\.code = \?`).
+		WithArgs(int64(99), workbenchroles.RolePMO).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 
 	// 个人干系人检查：未命中
@@ -225,8 +226,8 @@ func TestDemandDetailAuthZ_NormalUserNoRelationForbidden(t *testing.T) {
 		WillReturnRows(newDemandDetailMockRow(1005, 0))
 
 	// PMO 角色查询：未命中
-	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM zt_gf_user_roles ur JOIN zt_roles r ON r\.id = ur\.roleId WHERE ur\.userId = \? AND ur\.deleted = '0' AND r\.deleted = '0' AND r\.isActive = 1 AND r\.code = 'pmo'`).
-		WithArgs(int64(100)).
+	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM zt_gf_user_roles ur JOIN zt_roles r ON r\.id = ur\.roleId WHERE ur\.userId = \? AND ur\.deleted = '0' AND r\.deleted = '0' AND r\.isActive = 1 AND r\.code = \?`).
+		WithArgs(int64(100), workbenchroles.RolePMO).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 
 	// 个人干系人检查：未命中
@@ -303,8 +304,8 @@ func TestDemandDetailView_LeaderWithoutQueryPerm403RendersHTMLErrorPage(t *testi
 	mock.ExpectQuery(`SELECT[\s\S]*FROM zt_demand d[\s\S]*WHERE d\.id = \?`).
 		WithArgs(uint(2001)).
 		WillReturnRows(newDemandDetailMockRow(2001, 0))
-	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM zt_gf_user_roles ur JOIN zt_roles r ON r\.id = ur\.roleId WHERE ur\.userId = \? AND ur\.deleted = '0' AND r\.deleted = '0' AND r\.isActive = 1 AND r\.code = 'pmo'`).
-		WithArgs(int64(200)).
+	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM zt_gf_user_roles ur JOIN zt_roles r ON r\.id = ur\.roleId WHERE ur\.userId = \? AND ur\.deleted = '0' AND r\.deleted = '0' AND r\.isActive = 1 AND r\.code = \?`).
+		WithArgs(int64(200), workbenchroles.RolePMO).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM zt_demand d`).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))

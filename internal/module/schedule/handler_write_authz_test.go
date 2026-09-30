@@ -20,6 +20,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"workbench/internal/model"
+	"workbench/internal/pkg/workbenchroles"
 )
 
 // newAuthzRouter 造一个只挂目标写路由的 gin 引擎，并注入当前用户。
@@ -102,7 +103,7 @@ func TestUpdateWindowHandler_OtherUserReturns403BeforeParsing(t *testing.T) {
 	svc := NewService(NewRepo(db), nil, nil, nil, nil)
 	expectWindowFind(mock, 501, "demo_po")
 	mock.ExpectQuery(authzPMOQuery).
-		WithArgs(int64(2)).
+		WithArgs(int64(2), workbenchroles.RolePMO).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 
 	router := newAuthzRouter(svc, &model.User{ID: 2, Account: "demo_other"})
@@ -123,7 +124,7 @@ func TestDeleteWindowHandler_OtherUserReturns403(t *testing.T) {
 	svc := NewService(NewRepo(db), nil, nil, nil, nil)
 	expectWindowFind(mock, 501, "demo_po")
 	mock.ExpectQuery(authzPMOQuery).
-		WithArgs(int64(2)).
+		WithArgs(int64(2), workbenchroles.RolePMO).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 
 	router := newAuthzRouter(svc, &model.User{ID: 2, Account: "demo_other"})

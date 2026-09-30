@@ -24,11 +24,12 @@ import (
 	"workbench/internal/model"
 	"workbench/internal/module/demandauthz"
 	"workbench/internal/pkg/errorx"
+	"workbench/internal/pkg/workbenchroles"
 	"workbench/internal/pkg/zentao"
 )
 
 const (
-	ttPMOQuery     = `SELECT COUNT\(\*\) FROM zt_gf_user_roles ur JOIN zt_roles r ON r\.id = ur\.roleId WHERE ur\.userId = \? AND ur\.deleted = '0' AND r\.deleted = '0' AND r\.isActive = 1 AND r\.code = 'pmo'`
+	ttPMOQuery     = `SELECT COUNT\(\*\) FROM zt_gf_user_roles ur JOIN zt_roles r ON r\.id = ur\.roleId WHERE ur\.userId = \? AND ur\.deleted = '0' AND r\.deleted = '0' AND r\.isActive = 1 AND r\.code = \?`
 	ttRelatedQuery = `SELECT COUNT\(\*\) FROM zt_demand d`
 	ttManagedQuery = `SELECT d\.id, COALESCE\(d\.path, ''\) AS path FROM zt_dept d`
 )
@@ -62,18 +63,18 @@ func newZentaoStub(t *testing.T, handler http.HandlerFunc) (*zentao.Client, *ato
 
 func expectDemandAuthzDenied(mock sqlmock.Sqlmock, userID int64) {
 	mock.ExpectQuery(ttPMOQuery).
-		WithArgs(userID).
+		WithArgs(userID, workbenchroles.RolePMO).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery(ttRelatedQuery).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery(ttManagedQuery).
-		WithArgs(sqlmock.AnyArg()).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "path"}))
 }
 
 func expectDemandAuthzAllowed(mock sqlmock.Sqlmock, userID int64) {
 	mock.ExpectQuery(ttPMOQuery).
-		WithArgs(userID).
+		WithArgs(userID, workbenchroles.RolePMO).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery(ttRelatedQuery).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))

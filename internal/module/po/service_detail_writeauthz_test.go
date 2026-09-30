@@ -16,10 +16,11 @@ import (
 	"workbench/internal/model"
 	"workbench/internal/module/po/primaryaction"
 	"workbench/internal/pkg/errorx"
+	"workbench/internal/pkg/workbenchroles"
 )
 
 const (
-	writeAuthzPMOQuery     = `SELECT COUNT\(\*\) FROM zt_gf_user_roles ur JOIN zt_roles r ON r\.id = ur\.roleId WHERE ur\.userId = \? AND ur\.deleted = '0' AND r\.deleted = '0' AND r\.isActive = 1 AND r\.code = 'pmo'`
+	writeAuthzPMOQuery     = `SELECT COUNT\(\*\) FROM zt_gf_user_roles ur JOIN zt_roles r ON r\.id = ur\.roleId WHERE ur\.userId = \? AND ur\.deleted = '0' AND r\.deleted = '0' AND r\.isActive = 1 AND r\.code = \?`
 	writeAuthzRelatedQuery = `SELECT COUNT\(\*\) FROM zt_demand d`
 	writeAuthzManagedQuery = `SELECT d\.id, COALESCE\(d\.path, ''\) AS path FROM zt_dept d`
 )
@@ -30,7 +31,7 @@ func TestRequireDemandWrite_StakeholderAllowed(t *testing.T) {
 	svc := NewDetailService(NewDemandDetailRepo(gormDB))
 
 	mock.ExpectQuery(writeAuthzPMOQuery).
-		WithArgs(int64(15864)).
+		WithArgs(int64(15864), workbenchroles.RolePMO).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery(writeAuthzRelatedQuery).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
@@ -62,12 +63,12 @@ func TestRequireDemandWrite_LeaderScopeAllowed(t *testing.T) {
 	svc := NewDetailService(NewDemandDetailRepo(gormDB))
 
 	mock.ExpectQuery(writeAuthzPMOQuery).
-		WithArgs(int64(15865)).
+		WithArgs(int64(15865), workbenchroles.RolePMO).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery(writeAuthzRelatedQuery).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery(writeAuthzManagedQuery).
-		WithArgs(sqlmock.AnyArg()).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "path"}).AddRow(14, ",53,52,14,"))
 	mock.ExpectQuery(`SELECT DISTINCT id FROM zt_dept WHERE id IN \(\?\)`).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(14))
@@ -89,12 +90,12 @@ func TestRequireDemandWrite_NoRelationForbidden(t *testing.T) {
 	svc := NewDetailService(NewDemandDetailRepo(gormDB))
 
 	mock.ExpectQuery(writeAuthzPMOQuery).
-		WithArgs(int64(15865)).
+		WithArgs(int64(15865), workbenchroles.RolePMO).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery(writeAuthzRelatedQuery).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery(writeAuthzManagedQuery).
-		WithArgs(sqlmock.AnyArg()).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "path"}))
 
 	err := svc.RequireDemandWrite(t.Context(), &model.User{ID: 15865, Account: "demo_leader"}, 63450)

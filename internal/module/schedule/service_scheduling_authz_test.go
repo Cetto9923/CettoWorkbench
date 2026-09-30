@@ -19,6 +19,7 @@ import (
 	"workbench/internal/model"
 	"workbench/internal/pkg/errorx"
 	"workbench/internal/pkg/perm"
+	"workbench/internal/pkg/workbenchroles"
 )
 
 func newAuthzMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock) {
@@ -36,7 +37,7 @@ func newAuthzMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock) {
 }
 
 const (
-	authzPMOQuery     = `SELECT COUNT\(\*\) FROM zt_gf_user_roles ur JOIN zt_roles r ON r\.id = ur\.roleId WHERE ur\.userId = \? AND ur\.deleted = '0' AND r\.deleted = '0' AND r\.isActive = 1 AND r\.code = 'pmo'`
+	authzPMOQuery     = `SELECT COUNT\(\*\) FROM zt_gf_user_roles ur JOIN zt_roles r ON r\.id = ur\.roleId WHERE ur\.userId = \? AND ur\.deleted = '0' AND r\.deleted = '0' AND r\.isActive = 1 AND r\.code = \?`
 	authzRelatedQuery = `SELECT COUNT\(\*\) FROM zt_demand d`
 	authzManagedQuery = `SELECT d\.id, COALESCE\(d\.path, ''\) AS path FROM zt_dept d`
 )
@@ -52,12 +53,12 @@ func TestSaveScheduling_NoWritePermissionReturnsForbiddenWithoutTouchingDB(t *te
 	ctx := perm.WithGranted(t.Context(), map[string]bool{perm.ScheduleList.String(): true})
 
 	mock.ExpectQuery(authzPMOQuery).
-		WithArgs(int64(15865)).
+		WithArgs(int64(15865), workbenchroles.RolePMO).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery(authzRelatedQuery).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery(authzManagedQuery).
-		WithArgs(sqlmock.AnyArg()).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "path"}))
 
 	actor := &model.User{ID: 15865, Account: "demo_leader"}
@@ -82,7 +83,7 @@ func TestRequireDemandWriteAccess_StakeholderAllowed(t *testing.T) {
 	svc := NewService(NewRepo(db), nil, nil, nil, nil)
 
 	mock.ExpectQuery(authzPMOQuery).
-		WithArgs(int64(15864)).
+		WithArgs(int64(15864), workbenchroles.RolePMO).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery(authzRelatedQuery).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))

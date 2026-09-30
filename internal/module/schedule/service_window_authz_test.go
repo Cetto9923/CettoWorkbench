@@ -17,6 +17,7 @@ import (
 
 	"workbench/internal/model"
 	"workbench/internal/pkg/errorx"
+	"workbench/internal/pkg/workbenchroles"
 )
 
 const windowFindQuery = `SELECT \* FROM .zt_versionwindow. WHERE .*id = \?`
@@ -70,7 +71,7 @@ func TestUpdateWindow_OtherUserForbidden(t *testing.T) {
 	expectWindowFind(mock, 501, "demo_po")
 	actor := &model.User{ID: 2, Account: "demo_other"}
 	mock.ExpectQuery(authzPMOQuery).
-		WithArgs(int64(2)).
+		WithArgs(int64(2), workbenchroles.RolePMO).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 
 	err := svc.Update(t.Context(), actor, windowUpdateReq())
@@ -106,7 +107,7 @@ func TestUpdateWindow_PMOAllowed(t *testing.T) {
 
 	expectWindowFind(mock, 501, "demo_po")
 	mock.ExpectQuery(authzPMOQuery).
-		WithArgs(int64(20)).
+		WithArgs(int64(20), workbenchroles.RolePMO).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
 
 	err := svc.Update(t.Context(), &model.User{ID: 20, Account: "pmo_user"}, windowUpdateReq())
@@ -125,7 +126,7 @@ func TestDeleteWindow_OtherUserForbidden(t *testing.T) {
 
 	expectWindowFind(mock, 501, "demo_po")
 	mock.ExpectQuery(authzPMOQuery).
-		WithArgs(int64(2)).
+		WithArgs(int64(2), workbenchroles.RolePMO).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 
 	err := svc.Delete(t.Context(), &model.User{ID: 2, Account: "demo_other"}, DeleteReq{ID: 501})
@@ -182,7 +183,7 @@ func TestRequireWindowWriteAccess_OtherUserForbidden(t *testing.T) {
 
 	expectWindowFind(mock, 501, "demo_po")
 	mock.ExpectQuery(authzPMOQuery).
-		WithArgs(int64(2)).
+		WithArgs(int64(2), workbenchroles.RolePMO).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 
 	err := svc.RequireWindowWriteAccess(t.Context(), &model.User{ID: 2, Account: "demo_other"}, 501)

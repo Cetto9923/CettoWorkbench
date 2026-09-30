@@ -10,6 +10,7 @@ import (
 	"workbench/internal/middleware"
 	"workbench/internal/model"
 	"workbench/internal/pkg/errorx"
+	"workbench/internal/pkg/workbenchroles"
 )
 
 type DashboardScope struct {
@@ -29,7 +30,7 @@ func (s *Service) dashboardGlobal(ctx context.Context, actor *model.User) (bool,
 	}
 	var count int64
 	err := s.repo.read().WithContext(ctx).Raw(`SELECT COUNT(*) FROM zt_gf_user_roles ur JOIN zt_roles r ON r.id=ur.roleId
-WHERE ur.userId=? AND ur.deleted='0' AND r.deleted='0' AND r.isActive=1 AND r.code='pmo'`, actor.ID).Scan(&count).Error
+WHERE ur.userId=? AND ur.deleted='0' AND r.deleted='0' AND r.isActive=1 AND r.code=?`, actor.ID, workbenchroles.RolePMO).Scan(&count).Error
 	return count > 0, err
 }
 

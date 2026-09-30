@@ -18,6 +18,7 @@ import (
 	"workbench/internal/model"
 	"workbench/internal/pkg/errorx"
 	"workbench/internal/pkg/perm"
+	"workbench/internal/pkg/workbenchroles"
 )
 
 const (
@@ -32,7 +33,7 @@ const (
 // 否则闸门会正确放行，用例就失去意义。
 func expectStoryAuthzDenied(mock sqlmock.Sqlmock, userID int64, storyID, storyProduct, visibleProduct uint) {
 	mock.ExpectQuery(authzPMOQuery).
-		WithArgs(userID).
+		WithArgs(userID, workbenchroles.RolePMO).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery(storyProductQuery).
 		WithArgs(storyID).
@@ -50,7 +51,7 @@ func expectStoryAuthzDenied(mock sqlmock.Sqlmock, userID int64, storyID, storyPr
 // expectStoryProductVisible 铺好「非 PMO、非超管、但产品可见」所需的查询期望。
 func expectStoryProductVisible(mock sqlmock.Sqlmock, userID int64, storyID, productID uint) {
 	mock.ExpectQuery(authzPMOQuery).
-		WithArgs(userID).
+		WithArgs(userID, workbenchroles.RolePMO).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery(storyProductQuery).
 		WithArgs(storyID).
@@ -164,7 +165,7 @@ func TestRequireStoryWriteAccess_PMOAllowed(t *testing.T) {
 	svc := NewService(NewRepo(db), nil, nil, nil, nil)
 
 	mock.ExpectQuery(authzPMOQuery).
-		WithArgs(int64(20)).
+		WithArgs(int64(20), workbenchroles.RolePMO).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
 
 	if err := svc.RequireStoryWriteAccess(t.Context(), &model.User{ID: 20, Account: "pmo_user"}, 7005); err != nil {

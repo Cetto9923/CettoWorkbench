@@ -19,6 +19,7 @@ import (
 	"gorm.io/gorm"
 
 	"workbench/internal/constants"
+	"workbench/internal/pkg/workbenchroles"
 )
 
 // Repo 封装需求对象级授权的关系查询。
@@ -48,8 +49,8 @@ func (r *Repo) IsPMORole(ctx context.Context, userID int64) (bool, error) {
 	err := r.db.WithContext(ctx).Raw(`
 SELECT COUNT(*) FROM zt_gf_user_roles ur
 JOIN zt_roles r ON r.id = ur.roleId
-WHERE ur.userId = ? AND ur.deleted = '0' AND r.deleted = '0' AND r.isActive = 1 AND r.code = 'pmo'`,
-		userID).Scan(&count).Error
+WHERE ur.userId = ? AND ur.deleted = '0' AND r.deleted = '0' AND r.isActive = 1 AND r.code = ?`,
+		userID, workbenchroles.RolePMO).Scan(&count).Error
 	if err != nil {
 		return false, err
 	}
@@ -65,8 +66,8 @@ func (r *Repo) IsPORole(ctx context.Context, userID int64) (bool, error) {
 	err := r.db.WithContext(ctx).Raw(`
 SELECT COUNT(*) FROM zt_gf_user_roles ur
 JOIN zt_roles r ON r.id = ur.roleId
-WHERE ur.userId = ? AND ur.deleted = '0' AND r.deleted = '0' AND r.isActive = 1 AND r.code = 'po'`,
-		userID).Scan(&count).Error
+WHERE ur.userId = ? AND ur.deleted = '0' AND r.deleted = '0' AND r.isActive = 1 AND r.code = ?`,
+		userID, workbenchroles.RolePO).Scan(&count).Error
 	if err != nil {
 		return false, err
 	}
