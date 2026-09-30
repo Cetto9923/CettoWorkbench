@@ -42,7 +42,8 @@
 
   function zentaoStatusLabel(value) {
     var raw = String(value || "").trim(), key = raw.toLowerCase();
-    var labels = { developing: "开发中", testing: "测试中", wait: "待评审", draft: "草稿", active: "已评审", closed: "已关闭", canceled: "已取消", cancelled: "已取消", suspended: "已挂起", blocked: "已阻塞", done: "已完成", resolved: "已解决", verified: "已验证", reviewing: "评审中", changed: "已变更", postponed: "已延期" };
+    // 禅道原表 statusList（zentao/extension/custom/demand/lang/zh-cn.php）+ 本地扩展，扩展键不得删
+    var labels = { wait: "待评审", active: "已评审", clarified: "已澄清", developing: "开发中", testing: "测试中", waitacceptance: "待验收", acceptanced: "已验收", waitdeliver: "待交付", released: "已发布", closed: "已关闭", refuse: "已驳回", draft: "暂存", canceled: "已取消", cancelled: "已取消", suspended: "已挂起", blocked: "已阻塞", done: "已完成", resolved: "已解决", verified: "已验证", reviewing: "评审中", changed: "已变更", postponed: "已延期" };
     return labels[key] || raw || "—";
   }
 
@@ -76,6 +77,8 @@
     var reviewer = summary.reviewer || "待确认";
     var launch = summary.estimateLaunch || "—";
     var stageLabel = String(summary.zentaoStatus || "").toLowerCase() === "wait" ? "待受理" : (summary.valueStageLabel || summary.valueStage || "—");
+    var ztStatusLabel = zentaoStatusLabel(summary.zentaoStatus);
+    var stageSub = String(stageLabel).trim() === ztStatusLabel ? "" : (' <span class="dd-stage-sub">' + esc(ztStatusLabel) + '</span>');
     var zentaoUrl = summary.zentaoUrl || "";
     var cleanTitle = decodeBasicEntities(summary.title);
     var flagsHtml = renderFlagsHtml(summary.flags);
@@ -96,7 +99,7 @@
       '</div>' +
       '<div class="dd-summary-panel">' +
       '  <div class="dd-summary-grid">' +
-      '    <div class="dd-summary-cell"><div class="lab">当前阶段</div><div class="val blue">' + esc(stageLabel) + ' <span class="dd-stage-sub">' + esc(zentaoStatusLabel(summary.zentaoStatus)) + '</span></div></div>' +
+      '    <div class="dd-summary-cell"><div class="lab">当前阶段</div><div class="val blue">' + esc(stageLabel) + stageSub + '</div></div>' +
       '    <div class="dd-summary-cell"><div class="lab">业务评审人</div><div class="val">' + esc(reviewer) + '</div></div>' +
       '    <div class="dd-summary-cell"><div class="lab">需求创建时间</div><div class="val">' + esc(summary.createdDate || "—") + '</div></div>' +
       '    <div class="dd-summary-cell"><div class="lab">预计上线时间</div><div class="val">' + esc(launch) + '</div></div>' +

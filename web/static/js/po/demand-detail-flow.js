@@ -66,12 +66,22 @@
   }
 
   /**
+   * R1-3: 终态需求（已关闭 / 已驳回）不再按今天核算超期
+   */
+  function isTerminalStatus(status) {
+    var key = String(status || "").trim().toLowerCase();
+    return key === "closed" || key === "refuse";
+  }
+
+  /**
    * F4: 关键计划与实际（4 项并排对照 + 4 项时间明细）
    */
   function renderPlanAndActual(summary, actualTimes) {
     summary = summary || {};
     actualTimes = actualTimes || {};
 
+    var terminal = isTerminalStatus(summary.zentaoStatus);
+    var pendingActual = terminal ? "—" : "进行中";
     var devPlanned = summary.developFinish || "—";
     var devActual = actualTimes.actualDevCompletionDate || actualTimes.actualTestStartDate || "";
     var testPlanned = summary.testFinish || "—";
@@ -102,24 +112,24 @@
       '  <div class="phase2-card-body">',
       '    <div class="plan-actual-row">',
       '      <div class="plan-actual-item">',
-      '        <div class="plan-actual-title"><span>开发完成</span>' + calcDeviation(devPlanned, devActual) + '</div>',
+      '        <div class="plan-actual-title"><span>开发完成</span>' + (terminal ? "" : calcDeviation(devPlanned, devActual)) + '</div>',
       '        <div class="plan-actual-vals">',
       '          <div class="plan-val-line"><span>预计完成:</span><strong>' + esc(devPlanned) + '</strong></div>',
-      '          <div class="plan-val-line"><span>实际完成:</span>' + (devActual ? ('<strong>' + esc(devActual) + '</strong>') : '<span class="dd-text-muted">进行中</span>') + '</div>',
+      '          <div class="plan-val-line"><span>实际完成:</span>' + (devActual ? ('<strong>' + esc(devActual) + '</strong>') : '<span class="dd-text-muted">' + pendingActual + '</span>') + '</div>',
       '        </div>',
       '      </div>',
       '      <div class="plan-actual-item">',
-      '        <div class="plan-actual-title"><span>测试完成</span>' + calcDeviation(testPlanned, testActual) + '</div>',
+      '        <div class="plan-actual-title"><span>测试完成</span>' + (terminal ? "" : calcDeviation(testPlanned, testActual)) + '</div>',
       '        <div class="plan-actual-vals">',
       '          <div class="plan-val-line"><span>预计完成:</span><strong>' + esc(testPlanned) + '</strong></div>',
-      '          <div class="plan-val-line"><span>实际完成:</span>' + (testActual ? ('<strong>' + esc(testActual) + '</strong>') : '<span class="dd-text-muted">进行中</span>') + '</div>',
+      '          <div class="plan-val-line"><span>实际完成:</span>' + (testActual ? ('<strong>' + esc(testActual) + '</strong>') : '<span class="dd-text-muted">' + pendingActual + '</span>') + '</div>',
       '        </div>',
       '      </div>',
       '      <div class="plan-actual-item">',
-      '        <div class="plan-actual-title"><span>验收完成</span>' + calcDeviation(verifyPlanned, verifyActual) + '</div>',
+      '        <div class="plan-actual-title"><span>验收完成</span>' + (terminal ? "" : calcDeviation(verifyPlanned, verifyActual)) + '</div>',
       '        <div class="plan-actual-vals">',
       '          <div class="plan-val-line"><span>预计完成:</span><strong>' + esc(verifyPlanned) + '</strong></div>',
-      '          <div class="plan-val-line"><span>实际完成:</span>' + (verifyActual ? ('<strong>' + esc(verifyActual) + '</strong>') : '<span class="dd-text-muted">进行中</span>') + '</div>',
+      '          <div class="plan-val-line"><span>实际完成:</span>' + (verifyActual ? ('<strong>' + esc(verifyActual) + '</strong>') : '<span class="dd-text-muted">' + pendingActual + '</span>') + '</div>',
       '        </div>',
       '      </div>',
       '      <div class="plan-actual-item">',
