@@ -14,7 +14,7 @@
 <script>location.replace('/board/demand');</script>
 <div class="po-board">
   <div class="page-hdr">
-    <h2>工作看板</h2>
+    {{ if .ShowContentTitle }}<h2>工作看板</h2>{{ end }}
     <div class="board-switch" role="tablist" aria-label="看板类型">
       <a href="/kanban/story" class="active" role="tab" aria-selected="true">需求看板</a>
       <a href="/kanban/task" role="tab" aria-selected="false">任务看板</a>

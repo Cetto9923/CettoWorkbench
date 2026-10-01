@@ -12,7 +12,7 @@
 {{ define "content" }}
 <div class="follow-page" id="followPageRoot">
   <div class="follow-page-hdr">
-    <h2>我的关注</h2>
+    {{ if .ShowContentTitle }}<h2>我的关注</h2>{{ end }}
     <nav class="follow-obj-tabs" aria-label="对象类型">
       <button type="button" class="follow-obj-tab" disabled>全部 <strong>6</strong></button>
       <button type="button" class="follow-obj-tab active" disabled>业务需求 <strong>3</strong></button>

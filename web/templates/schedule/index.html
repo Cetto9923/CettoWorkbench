@@ -30,7 +30,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
 <div id="page-schedule">
   <div class="schedule-page-head">
     <div>
-      <h2>需求排期工作台</h2>
+      {{ if .ShowContentTitle }}<h2>需求排期工作台</h2>{{ end }}
     </div>
     <div class="schedule-page-actions">
       <button type="button" class="action-btn js-open-manage-version-windows"><i class="fas fa-gear"></i> 窗口维护</button>
