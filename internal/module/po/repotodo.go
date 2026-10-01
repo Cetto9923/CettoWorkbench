@@ -12,7 +12,6 @@ package po
 import (
 	"context"
 	"strings"
-	"time"
 )
 
 // CountOpenTodos 返回当前账号待办总数（不取 items）。
@@ -46,28 +45,4 @@ func todoActionLabel(status string) string {
 	default:
 		return "查看"
 	}
-}
-
-// formatTodoDeadline 将禅道的零日期归为空，避免前端展示不存在的截止日。
-func formatTodoDeadline(deadline *time.Time) string {
-	if deadline == nil || deadline.Year() <= 1 {
-		return ""
-	}
-	return deadline.Format("2006-01-02")
-}
-
-// issueRiskPriLabel 把 zt_issue/zt_risk.pri（char(30)，混存数字串与 low/middle/high/urgent）映射为 P1..P4。
-// zentao 优先级语义: 1/urgent 最高 → P1，4/low 最低 → P4；无法识别返回空。
-func issueRiskPriLabel(pri string) string {
-	switch strings.ToLower(strings.TrimSpace(pri)) {
-	case "1", "urgent", "immediate":
-		return "P1"
-	case "2", "high":
-		return "P2"
-	case "3", "middle", "medium":
-		return "P3"
-	case "4", "low":
-		return "P4"
-	}
-	return ""
 }

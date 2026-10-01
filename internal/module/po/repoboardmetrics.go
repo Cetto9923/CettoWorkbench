@@ -16,21 +16,6 @@ import (
 	"time"
 )
 
-// boardTeamMetric 一个小组效能指标的数值样式定义。
-type boardTeamMetric struct {
-	Key    string `gorm:"-"`
-	Name   string `gorm:"-"`
-	Value  string `gorm:"-"`
-	Target string `gorm:"-"`
-	Trend  string `gorm:"-"`
-	State  string `gorm:"-"` // good / warn / risk / flat
-	// higherIsBetter=true 时数值越高越好；false 越低越好。
-	higherIsBetter bool
-	targetValue    float64
-	measured       float64
-	hasValue       bool
-}
-
 // boardGroupMetrics 返回当前看板展示的 4 项指标。
 func boardGroupMetrics() []*BoardMetric {
 	defs := []struct {
@@ -126,63 +111,6 @@ func (r *Repo) computeUnscheduled(ctx context.Context, ms []*BoardMetric, member
 		Where("NOT EXISTS (SELECT 1 FROM zt_task t WHERE t.story=st.id AND t.deleted='0')")
 	if err := q.Count(&n).Error; err == nil {
 		setMetricCount(ms, "unscheduled", n, 6, 3) // 目标 ≤3 个达标，≤6 预警
-	}
-}
-
-// computeBug 缺陷关闭率 + 缺陷响应效率（小组负责/创建的 Bug 口径）。
-func (r *Repo) computeBug(ctx context.Context, ms []*BoardMetric, members []string) {
-	row := struct {
-		Total       int64 `gorm:"column:total"`
-		Closed      int64 `gorm:"column:closed"`
-		Responsed   int64 `gorm:"column:responsed"`
-		OpenedReali int64 `gorm:"column:openedReasonable"`
-	}{}
-	sql := `SELECT COUNT(*) AS total,
-			SUM(CASE WHEN status='closed' THEN 1 ELSE 0 END) AS closed,
-			SUM(CASE WHEN assignedDate!='0000-00-00 00:00:00' AND assignedDate>=openedDate
-				AND TIMESTAMPDIFF(HOUR, openedDate, assignedDate)<=8 THEN 1 ELSE 0 END) AS responsed,
-			SUM(CASE WHEN assignedDate!='0000-00-00 00:00:00' THEN 1 ELSE 0 END) AS openedReasonable
-			FROM zt_bug b
-			WHERE b.deleted='0' AND (b.openedBy IN (?) OR b.assignedTo IN (?))`
-	if err := r.db.WithContext(ctx).Raw(sql, members, members).Scan(&row).Error; err != nil {
-		return
-	}
-	if row.Total > 0 {
-		closePct := float64(row.Closed) * 100 / float64(row.Total)
-		setMetricValue(ms, "bugClose", fmt.Sprintf("%.0f%%", closePct), closePct, 85, 90)
-	} else {
-		metricOf(ms, "bugClose").Value = "-"
-	}
-	if row.OpenedReali > 0 {
-		respPct := float64(row.Responsed) * 100 / float64(row.OpenedReali)
-		setMetricValue(ms, "bugResponse", fmt.Sprintf("%.0f%%", respPct), respPct, 80, 85)
-	} else {
-		metricOf(ms, "bugResponse").Value = "-"
-	}
-}
-
-// computeOnlineDelay 质效指标：上线延期数 + 质量门禁通过率（已验证交付占比近似）。
-func (r *Repo) computeOnlineDelay(ctx context.Context, ms []*BoardMetric, members []string) {
-	var delay int64
-	if err := r.db.WithContext(ctx).Table("zt_story st").
-		Where("st.deleted='0' AND st.deliverDate!='0000-00-00 00:00:00' AND st.releasedDate!='0000-00-00 00:00:00' AND st.releasedDate>st.deliverDate").
-		Where("(st.openedBy IN ? OR st.assignedTo IN ?)", members, members).
-		Count(&delay).Error; err == nil {
-		setMetricCount(ms, "onlineDelay", delay, 2, 0)
-	}
-	gateRow := struct {
-		Total  int64 `gorm:"column:total"`
-		Passed int64 `gorm:"column:passed"`
-	}{}
-	sql := `SELECT COUNT(*) AS total,
-			SUM(CASE WHEN st.verifiedDate!='0000-00-00 00:00:00' AND st.verifiedDate IS NOT NULL AND st.verifiedDate<>'' THEN 1 ELSE 0 END) AS passed
-			FROM zt_story st
-			WHERE st.deleted='0' AND (st.openedBy IN (?) OR st.assignedTo IN (?))`
-	if err := r.db.WithContext(ctx).Raw(sql, members, members).Scan(&gateRow).Error; err == nil && gateRow.Total > 0 {
-		gatePct := float64(gateRow.Passed) * 100 / float64(gateRow.Total)
-		setMetricValue(ms, "gate", fmt.Sprintf("%.0f%%", gatePct), gatePct, 80, 90)
-	} else {
-		metricOf(ms, "gate").Value = "-"
 	}
 }
 

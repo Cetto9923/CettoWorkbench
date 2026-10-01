@@ -67,10 +67,6 @@ func allStoriesHaveNoWindow(stories []ZtStory, windowByStory map[uint]StoryWindo
 	return true
 }
 
-func anyStoryHasWindow(stories []ZtStory, windowByStory map[uint]StoryWindowRef) bool {
-	return !allStoriesHaveNoWindow(stories, windowByStory)
-}
-
 func anyDemandHasWindow(demandIDs []uint, windowByDemand map[uint]DemandWindowRef) bool {
 	for _, demandID := range demandIDs {
 		if ref, ok := windowByDemand[demandID]; ok && ref.WindowID > 0 {
