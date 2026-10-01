@@ -5,15 +5,6 @@
          只调整布局/列宽，不改变排期页的数据与交互。
    ========================================================================== */
 
-/* 顶栏已展示页面标题，页内重复的大标题隐藏，只保留右侧操作按钮 */
-body.po-workbench-shell #page-schedule .schedule-page-head h2 {
-  display: none;
-}
-
-body.po-workbench-shell #page-schedule .schedule-page-head {
-  justify-content: flex-end;
-}
-
 /* 业务需求表与独立研发需求表：取消 Main 的 min-width:1180px 与标题列内联宽度，让表格贴合 PO 外壳内容区宽度；
    采用 table-layout: fixed 让非标题列紧凑，标题列自适应占据剩余宽度并支持平滑省略 */
 body.po-workbench-shell #page-schedule #scheduleBizListPanel .schedule-table,
