@@ -36,7 +36,6 @@ import (
 
 	"workbench/internal/module/agileteam"
 	"workbench/internal/module/build"
-	"workbench/internal/module/follow"
 	"workbench/internal/module/kanban"
 	"workbench/internal/module/login"
 	"workbench/internal/module/loginlog"
@@ -171,7 +170,6 @@ func Run() error {
 	buildRepo := build.NewRepo(db)
 	buildSvc := build.NewService(buildRepo, userSvc, zentaopkg.API(), zapLog)
 	buildHandler := build.NewHandler(buildSvc, zapLog)
-	followHandler := follow.NewHandler(zapLog)
 	kanbanReadDB := dbReadonly
 	if kanbanReadDB == nil {
 		kanbanReadDB = db
@@ -213,7 +211,6 @@ func Run() error {
 		MetricsHandler:      metricsHandler,
 		ProfileHandler:      profileHandler,
 		AgileTeamHandler:    agileTeamHandler,
-		FollowHandler:       followHandler,
 		KanbanHandler:       kanbanHandler,
 		ScheduleHandler:     scheduleHandler,
 		TesttaskHandler:     testtaskHandler,

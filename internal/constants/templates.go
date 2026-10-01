@@ -46,8 +46,6 @@ const (
 
 	TEMPLATE_PO_LINKSTORY = "po/linkstory"
 
-	TEMPLATE_FOLLOW_LIST = "follow/list"
-
 	TEMPLATE_KANBAN_STORY = "kanban/story"
 	TEMPLATE_KANBAN_TASK  = "kanban/task"
 
