@@ -68,7 +68,7 @@ func RecordOperationLog(db *gorm.DB, sessionMgr *scs.SessionManager) gin.Handler
 
 		logEntry := model.OperationLog{
 			TenantID:   0,
-			UserID:     uint64(maxInt64(userID)),
+			UserID:     uint64(nonNegativeInt64(userID)),
 			Account:    account,
 			Method:     c.Request.Method,
 			Path:       c.Request.URL.Path,
@@ -120,7 +120,7 @@ func buildOperationLogBody(postForm url.Values) string {
 	return filteredForm.Encode()
 }
 
-func maxInt64(v int64) int64 {
+func nonNegativeInt64(v int64) int64 {
 	if v < 0 {
 		return 0
 	}
