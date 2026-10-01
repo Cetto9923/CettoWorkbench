@@ -40,12 +40,7 @@ func TestNavigationUsesAuthenticatedPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 			html := out.Body.String()
-			for path, code := range map[string]string{"users": "user:list", "roles": "role:list", "depts": "dept:list", "dept-overrides": "dept:list", "menus": "menu:list", "operation-logs": "operationlog:list", "login-logs": "loginlog:list"} {
-				got := strings.Contains(html, `href="/admin/`+path+`"`)
-				if got != (tc.granted[code] && !tc.hidden) {
-					t.Errorf("%s link visibility=%v", path, got)
-				}
-			}
+			assertAdminLinks(t, html, tc.granted, tc.hidden)
 			if strings.Contains(html, "<script>bad()</script>") {
 				t.Error("title not escaped")
 			}
@@ -56,5 +51,15 @@ func TestNavigationUsesAuthenticatedPermissions(t *testing.T) {
 				t.Error("secondary navigation missing")
 			}
 		})
+	}
+}
+
+func assertAdminLinks(t *testing.T, html string, granted map[string]bool, hidden bool) {
+	t.Helper()
+	for path, code := range map[string]string{"users": "user:list", "roles": "role:list", "depts": "dept:list", "dept-overrides": "dept:list", "menus": "menu:list", "operation-logs": "operationlog:list", "login-logs": "loginlog:list"} {
+		got := strings.Contains(html, `href="/admin/`+path+`"`)
+		if got != (granted[code] && !hidden) {
+			t.Errorf("%s link visibility=%v", path, got)
+		}
 	}
 }
