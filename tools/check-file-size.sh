@@ -22,6 +22,13 @@ while IFS= read -r file; do
     previous=$(git show "$baseline:$file" | wc -l | tr -d ' ')
   else
     previous=0
+    case "$file" in
+      web/static/css/components/components-bundle.css)
+        if git cat-file -e "$baseline:web/static/css/components/components.css" 2>/dev/null; then
+          previous=$(git show "$baseline:web/static/css/components/components.css" | wc -l | tr -d ' ')
+        fi
+        ;;
+    esac
   fi
   delta=$((current - previous))
   printf '%s: %s 行；基线 %s 行；净增 %+d 行\n' "$file" "$current" "$previous" "$delta"

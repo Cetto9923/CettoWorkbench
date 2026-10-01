@@ -5,7 +5,7 @@ web/static/css/components.css
 web/static/css/components/autocomplete.css
 web/static/css/components/batchform.css
 web/static/css/components/button-system.css
-web/static/css/components/components.css
+web/static/css/components/components-bundle.css
 web/static/css/components/form.css
 web/static/css/components/modal.css
 web/static/css/components/pager.css
