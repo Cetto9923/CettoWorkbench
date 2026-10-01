@@ -9,6 +9,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"workbench/internal/model"
@@ -78,7 +80,9 @@ func RecordOperationLog(db *gorm.DB, sessionMgr *scs.SessionManager) gin.Handler
 		}
 
 		go func(entry model.OperationLog) {
-			_ = db.Create(&entry).Error
+			if err := saveOperationLogSafely(db, entry); err != nil {
+				zap.L().Error("record operation log failed", zap.Error(err))
+			}
 		}(logEntry)
 	}
 }
@@ -121,4 +125,14 @@ func maxInt64(v int64) int64 {
 		return 0
 	}
 	return v
+}
+
+// 后台审计写入不能因驱动或回调 panic 终止整个进程。
+func saveOperationLogSafely(db *gorm.DB, entry model.OperationLog) (err error) {
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			err = fmt.Errorf("operation log panic: %v", recovered)
+		}
+	}()
+	return db.Create(&entry).Error
 }

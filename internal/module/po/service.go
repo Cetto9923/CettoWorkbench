@@ -151,39 +151,31 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 	)
 
 	// 并行加载价值流全景统计、版本窗口与 KPI 指标，大幅缩短首屏加载耗时。
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	runQuerySafely(&wg, &allErr, func() {
 		breakdown, allErr = s.countAllStageBreakdown(ctx, account)
-	}()
+	})
 
 	if s.schedule != nil {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		runQuerySafely(&wg, &winErr, func() {
 			relatedIDs, err := s.repo.FindHomeRelatedDemandIDs(ctx, account)
 			if err != nil {
 				winErr = err
 				return
 			}
 			windows, winErr = s.schedule.ListHomeVersionWindows(ctx, actor, relatedIDs...)
-		}()
+		})
 	}
 
 	if strings.TrimSpace(account) != "" {
-		wg.Add(3)
-		go func() {
-			defer wg.Done()
+		runQuerySafely(&wg, &pendingErr, func() {
 			myPending, pendingErr = s.repo.CountHomeFocus(ctx, account, DemandsReq{Status: "all", Focus: "my_action"})
-		}()
-		go func() {
-			defer wg.Done()
+		})
+		runQuerySafely(&wg, &overdueErr, func() {
 			overdue, overdueErr = s.repo.CountHomeFocus(ctx, account, DemandsReq{Status: "all", Focus: "overdue"})
-		}()
-		go func() {
-			defer wg.Done()
+		})
+		runQuerySafely(&wg, &kpiErr, func() {
 			kpiSummary, kpiErr = s.repo.CountKPISummary(ctx, account)
-		}()
+		})
 	}
 
 	wg.Wait()
@@ -357,15 +349,12 @@ func (s *Service) Demands(ctx context.Context, actor *model.User, req DemandsReq
 			sumErr   error
 			wg       sync.WaitGroup
 		)
-		wg.Add(2)
-		go func() {
-			defer wg.Done()
+		runQuerySafely(&wg, &focusErr, func() {
 			refs, total, focusErr = s.repo.findHomeFocusWithReviews(ctx, account, req, reviewIDs)
-		}()
-		go func() {
-			defer wg.Done()
+		})
+		runQuerySafely(&wg, &sumErr, func() {
 			summary, sumErr = s.repo.homeFocusStageSummaryWithReviews(ctx, account, req, reviewIDs)
-		}()
+		})
 		wg.Wait()
 		if focusErr != nil {
 			return nil, focusErr
