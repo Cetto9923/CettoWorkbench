@@ -374,14 +374,7 @@
 
   setMoreFiltersOpen(hasMoreFiltersActive());
 
-  function esc(s) {
-    return String(s || "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  }
+  var esc = window.escapeHtml;
 
   // 活跃筛选标签渲染与移除
   function renderActiveFilterTags() {

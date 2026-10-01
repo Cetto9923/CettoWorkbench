@@ -33,14 +33,7 @@
       .replace(/&amp;/g, "&");
   }
 
-  function escapeHtml(text) {
-    return String(text == null ? "" : text)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  }
+  var escapeHtml = window.escapeHtml;
 
   function firstRune(s) {
     var t = String(s || "").trim();

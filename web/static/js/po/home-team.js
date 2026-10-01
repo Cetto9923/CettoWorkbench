@@ -23,11 +23,7 @@
     return /^\d+$/.test(value) && Number(value) > 0 ? Number(value) : 0;
   }
 
-  function esc(value) {
-    return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) {
-      return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch];
-    });
-  }
+  var esc = window.escapeHtml;
 
   function queryForScope() {
     const query = new URLSearchParams();
