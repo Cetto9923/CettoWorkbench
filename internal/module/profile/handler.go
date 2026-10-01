@@ -66,10 +66,11 @@ func (h *Handler) Index(c *gin.Context) {
 		}
 	}
 	render.Page(c, http.StatusOK, constants.TEMPLATE_PROFILE_INDEX, gin.H{
-		"Title":     "个人资料",
-		"PageTitle": "个人资料",
-		"BaseUrl":   "/profile",
-		"PageError": pageErr,
+		"Title":           "个人资料",
+		"PageTitle":       "个人资料",
+		"PageDescription": "查看与维护当前登录用户的资料、自选视图、默认小组与密码",
+		"BaseUrl":         "/profile",
+		"PageError":       pageErr,
 	})
 }
 

@@ -7,7 +7,7 @@
 ========================================================================== */}}
 {{ define "page_css" }}
 <style>
-.override-container { padding: 0; max-width: none; margin: 0; font-family: var(--font-sans); }
+.override-container { padding: 0; max-width: none; margin: 0; font-family: inherit; }
 .override-header { display: flex; justify-content: space-between; align-items: center; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-5); }
 .override-title { font-size: var(--font-size-xl); font-weight: 600; color: var(--color-text-primary); margin: 0; }
 .override-subtitle { font-size: var(--font-size-sm); color: var(--color-text-secondary); margin-top: 4px; }
@@ -36,9 +36,9 @@
 .override-empty { text-align: center; padding: 40px 0; color: var(--color-text-secondary); }
 .override-empty i { display: block; }
 .override-id-col { width: 5%; }
-.override-dept-col { width: 18%; }
-.override-account-col { width: 10%; }
-.override-realname-col { width: 8%; }
+.override-dept-col { width: 17%; }
+.override-account-col { width: 11%; }
+.override-realname-col { width: 13%; }
 .override-time-col { width: 13%; font-size: var(--font-size-sm); }
 .override-action-col { width: 12%; text-align: right; }
 .override-header-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
@@ -52,7 +52,7 @@
 <div class="override-container">
   <div class="override-header">
     <div>
-      <h2 class="override-title"><i class="fas fa-user-shield me-2 text-primary"></i> 部门负责人补缺管理</h2>
+      {{ if .ShowContentTitle }}<h2 class="override-title"><i class="fas fa-user-shield me-2 text-primary"></i> 部门负责人补缺管理</h2>{{ end }}
       <div class="override-subtitle">针对科技部本部（52）及其子孙部门：当部门负责人有补缺记录时优先于禅道 <code>zt_dept.manager</code> 生效</div>
     </div>
     <div class="override-header-actions">

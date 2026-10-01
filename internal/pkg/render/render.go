@@ -409,6 +409,8 @@ func (r *Renderer) enrichData(c *gin.Context, page string, data gin.H) {
 	if _, ok := data["LayoutNav"]; !ok {
 		data["LayoutNav"] = r.layoutNav
 	}
+	data["ShowContentTitle"] = data["HideChrome"] == true || data["LayoutNav"] == "top"
+
 	if _, ok := data["CurrentPath"]; !ok {
 		data["CurrentPath"] = ""
 		if c.Request != nil && c.Request.URL != nil {
