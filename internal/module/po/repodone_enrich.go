@@ -112,10 +112,8 @@ func (r *Repo) fetchObjectContexts(ctx context.Context, rows []doneActionDBRow) 
 	}
 
 	// 研发侧对象见 repodone_enrich_workitem.go。
-	r.loadDemandContexts(ctx, out, demandIDs)
-	r.loadStoryContexts(ctx, out, storyIDs)
-	r.loadTaskContexts(ctx, out, taskIDs)
-	r.loadBugContexts(ctx, out, bugIDs)
+	r.loadDemandStoryContexts(ctx, out, demandIDs, storyIDs)
+	r.loadTaskBugContexts(ctx, out, taskIDs, bugIDs)
 	r.loadTodoContexts(ctx, out, todoIDs)
 
 	return out, nil
