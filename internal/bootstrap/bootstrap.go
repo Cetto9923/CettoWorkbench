@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/alexedwards/scs/v2"
 	"github.com/gin-gonic/gin"
 
 	"go.uber.org/zap"
@@ -68,48 +69,27 @@ func Run() error {
 	}
 	zentaopkg.SetConfig(cfg.Zentao)
 
-	zapLog, err := logger.Init(cfg)
+	zapLog, syncLogs, err := initLogging(cfg)
 	if err != nil {
-		return fmt.Errorf("init logger: %w", err)
+		return err
 	}
-	defer func() { _ = zapLog.Sync() }()
+	defer syncLogs()
 
-	if err := sqllog.Init(cfg); err != nil {
-		return fmt.Errorf("init sql log: %w", err)
-	}
-	defer func() { _ = sqllog.Sync() }()
-
-	if err := zentaopkg.InitAPILog(cfg); err != nil {
-		return fmt.Errorf("init zentao api log: %w", err)
-	}
-	defer func() { _ = zentaopkg.SyncAPILog() }()
-
-	db, err := database.New(cfg)
+	db, closeDB, err := openDatabases(cfg)
 	if err != nil {
-		return fmt.Errorf("init database: %w", err)
+		return err
 	}
-	defer func() { _ = database.Close(db) }()
-	if err := db.AutoMigrate(&model.OperationLog{}, &model.DeptManagerOverride{}); err != nil {
-		return fmt.Errorf("ensure tables: %w", err)
-	}
+	defer closeDB()
 
 	// 价值流只读备库：失败不阻断启动，PO 价值流降级为空阶段
-	var dbReadonly *gorm.DB
-	if strings.TrimSpace(cfg.DatabaseReadonly.Host) != "" {
-		ro, roErr := database.Open(cfg.DatabaseReadonly)
-		if roErr != nil {
-			zapLog.Warn("init databaseReadonly failed, value stream will degrade", zap.Error(roErr))
-		} else {
-			dbReadonly = ro
-			defer func() { _ = database.Close(dbReadonly) }()
-		}
-	} else {
-		zapLog.Warn("databaseReadonly.host empty, value stream will degrade")
+	dbReadonly := openReadonlyPool(cfg, zapLog)
+	if dbReadonly != nil {
+		defer func() { _ = database.Close(dbReadonly) }()
 	}
+
 	sessionMgr := session.New(cfg)
 	flash.SetDefault(sessionMgr)
 	limiter := ratelimit.New(10, 20)
-	loginLimiter := ratelimit.New(3.0, 10)
 
 	isDev := cfg.App.Env == "dev"
 	rend, err := render.New(cfg, isDev)
@@ -118,38 +98,138 @@ func Run() error {
 	}
 	render.SetDefault(rend)
 
-	authRepo := login.NewRepo(db)
-	userRepo := user.NewRepo(db)
-	userSvc := user.NewService(userRepo, zentaopkg.API())
-	authSvc := login.NewService(authRepo, sessionMgr, zapLog, userSvc)
-	authHandler := login.NewHandler(authSvc, zapLog)
-	requireLogin := middleware.RequireLogin(sessionMgr, db)
-	redirectIfLoggedIn := middleware.RedirectIfLoggedIn(sessionMgr)
-	userHandler := user.NewHandler(rend, zapLog, userSvc)
-	loginLogRepo := loginlog.NewRepo(db)
-	loginLogSvc := loginlog.NewService(loginLogRepo)
-	loginLogHandler := loginlog.NewHandler(loginLogSvc)
-	operationLogRepo := operationlog.NewRepo(db)
-	operationLogSvc := operationlog.NewService(operationLogRepo)
-	operationLogHandler := operationlog.NewHandler(operationLogSvc)
-	menuRepo := menu.NewRepo(db)
-	menuSvc := menu.NewService(menuRepo)
-	menuHandler := menu.NewHandler(rend, zapLog, menuSvc)
-	deptRepo := dept.NewRepo(db)
-	deptSvc := dept.NewService(deptRepo)
-	deptHandler := dept.NewHandler(rend, zapLog, deptSvc)
-	roleRepo := role.NewRepo(db)
-	roleSvc := role.NewService(roleRepo)
-	roleHandler := role.NewHandler(rend, zapLog, roleSvc)
+	w := &wiring{
+		cfg:        cfg,
+		db:         db,
+		dbReadonly: dbReadonly,
+		rend:       rend,
+		zapLog:     zapLog,
+		sessionMgr: sessionMgr,
+		deps: server.RouteDeps{
+			SessionMgr:   sessionMgr,
+			DB:           db,
+			LoginLimiter: ratelimit.New(3.0, 10),
+		},
+	}
+	newBaseModules(w)
+	newBusinessModules(w)
 
-	scheduleRepo := schedule.NewRepo(db)
-	scheduleSvc := schedule.NewService(scheduleRepo, userSvc, deptSvc, zentaopkg.API(), zapLog)
-	scheduleHandler := schedule.NewHandler(rend, zapLog, scheduleSvc, strings.TrimRight(cfg.Zentao.URL, "/"))
-	poRepo := po.NewRepo(dbReadonly, db)
-	poSvc := po.NewService(poRepo, scheduleSvc, userSvc, zentaopkg.API(), zapLog)
-	poHandler := po.NewHandler(poSvc, zapLog)
-	// 侧栏角标：注入 poSvc.SidebarBadges 为 render provider。
-	rend.SetSidebarBadgesProvider(func(c *gin.Context) (render.SidebarBadges, error) {
+	srv := server.New(cfg, zapLog, db, sessionMgr, limiter, nil, w.deps)
+	return srv.Run()
+}
+
+// initLogging 依次初始化 zap、SQL 日志与禅道 API 日志，返回的清理函数按逆序落盘。
+func initLogging(cfg *config.Config) (*zap.Logger, func(), error) {
+	zapLog, err := logger.Init(cfg)
+	if err != nil {
+		return nil, nil, fmt.Errorf("init logger: %w", err)
+	}
+	if err := sqllog.Init(cfg); err != nil {
+		_ = zapLog.Sync()
+		return nil, nil, fmt.Errorf("init sql log: %w", err)
+	}
+	if err := zentaopkg.InitAPILog(cfg); err != nil {
+		_ = sqllog.Sync()
+		_ = zapLog.Sync()
+		return nil, nil, fmt.Errorf("init zentao api log: %w", err)
+	}
+	return zapLog, func() {
+		_ = zentaopkg.SyncAPILog()
+		_ = sqllog.Sync()
+		_ = zapLog.Sync()
+	}, nil
+}
+
+// openDatabases 打开主库并补齐建表，返回的清理函数关闭主库。
+func openDatabases(cfg *config.Config) (*gorm.DB, func(), error) {
+	db, err := database.New(cfg)
+	if err != nil {
+		return nil, nil, fmt.Errorf("init database: %w", err)
+	}
+	if err := db.AutoMigrate(&model.OperationLog{}, &model.DeptManagerOverride{}); err != nil {
+		_ = database.Close(db)
+		return nil, nil, fmt.Errorf("ensure tables: %w", err)
+	}
+	return db, func() { _ = database.Close(db) }, nil
+}
+
+// openReadonlyPool 打开价值流只读备库；未配置或打开失败时返回 nil，由调用方降级。
+func openReadonlyPool(cfg *config.Config, zapLog *zap.Logger) *gorm.DB {
+	if strings.TrimSpace(cfg.DatabaseReadonly.Host) == "" {
+		zapLog.Warn("databaseReadonly.host empty, value stream will degrade")
+		return nil
+	}
+	ro, err := database.Open(cfg.DatabaseReadonly)
+	if err != nil {
+		zapLog.Warn("init databaseReadonly failed, value stream will degrade", zap.Error(err))
+		return nil
+	}
+	return ro
+}
+
+// wiring 汇集模块装配所需的依赖，装配出的 Handler 写入 deps。
+type wiring struct {
+	cfg        *config.Config
+	db         *gorm.DB
+	dbReadonly *gorm.DB
+	rend       *render.Renderer
+	zapLog     *zap.Logger
+	sessionMgr *scs.SessionManager
+	userSvc    *user.Service
+	deptSvc    *dept.Service
+	deps       server.RouteDeps
+}
+
+// newBaseModules 装配用户、日志、菜单、部门、角色等基础模块。
+func newBaseModules(w *wiring) {
+	authRepo := login.NewRepo(w.db)
+	w.userSvc = user.NewService(user.NewRepo(w.db), zentaopkg.API())
+	authSvc := login.NewService(authRepo, w.sessionMgr, w.zapLog, w.userSvc)
+	w.deps.AuthHandler = login.NewHandler(authSvc, w.zapLog)
+	w.deps.RequireLogin = middleware.RequireLogin(w.sessionMgr, w.db)
+	w.deps.RedirectIfLoggedIn = middleware.RedirectIfLoggedIn(w.sessionMgr)
+	w.deps.UserHandler = user.NewHandler(w.rend, w.zapLog, w.userSvc)
+	w.deps.LoginLogHandler = loginlog.NewHandler(loginlog.NewService(loginlog.NewRepo(w.db)))
+	w.deps.OperationLogHandler = operationlog.NewHandler(operationlog.NewService(operationlog.NewRepo(w.db)))
+	w.deps.MenuHandler = menu.NewHandler(w.rend, w.zapLog, menu.NewService(menu.NewRepo(w.db)))
+	w.deptSvc = dept.NewService(dept.NewRepo(w.db))
+	w.deps.DeptHandler = dept.NewHandler(w.rend, w.zapLog, w.deptSvc)
+	w.deps.RoleHandler = role.NewHandler(w.rend, w.zapLog, role.NewService(role.NewRepo(w.db)))
+}
+
+// newBusinessModules 装配需求、排期、测试、提测、看板等业务模块。
+func newBusinessModules(w *wiring) {
+	scheduleSvc := schedule.NewService(schedule.NewRepo(w.db), w.userSvc, w.deptSvc, zentaopkg.API(), w.zapLog)
+	w.deps.ScheduleHandler = schedule.NewHandler(w.rend, w.zapLog, scheduleSvc, strings.TrimRight(w.cfg.Zentao.URL, "/"))
+
+	poSvc := po.NewService(po.NewRepo(w.dbReadonly, w.db), scheduleSvc, w.userSvc, zentaopkg.API(), w.zapLog)
+	poHandler := po.NewHandler(poSvc, w.zapLog)
+	w.deps.PoHandler = poHandler
+	w.rend.SetSidebarBadgesProvider(sidebarBadgesProvider(poSvc))
+
+	testtaskSvc := testtask.NewService(testtask.NewRepo(w.db), w.userSvc, zentaopkg.API(), w.zapLog)
+	w.deps.TesttaskHandler = testtask.NewHandler(testtaskSvc, w.zapLog)
+	buildSvc := build.NewService(build.NewRepo(w.db), w.userSvc, zentaopkg.API(), w.zapLog)
+	w.deps.BuildHandler = build.NewHandler(buildSvc, w.zapLog)
+	kanbanSvc := kanban.NewService(kanban.NewRepo(dbReadonlyOrPrimary(w.dbReadonly, w.db)), w.userSvc, poSvc, zentaopkg.API())
+	w.deps.KanbanHandler = kanban.NewHandler(kanbanSvc, w.zapLog)
+	w.deps.SqlPerfHandler = debug.NewHandler(debug.NewService(debug.NewRepo(w.cfg.Log.Dir)))
+
+	readDB := dbReadonlyOrPrimary(w.dbReadonly, w.db)
+	w.deps.QueryHandler = query.NewHandler(w.rend, query.NewService(query.NewRepo(readDB)), w.zapLog)
+	w.deps.MetricsHandler = metrics.NewHandler(w.rend, metrics.NewService(metrics.NewRepo(readDB)), w.zapLog)
+	w.deps.ProfileHandler = profile.NewHandler(profile.NewService(profile.NewRepo(w.db)), w.zapLog)
+
+	agileTeamSvc := agileteam.NewService(agileteam.NewRepo(w.db, readDB), w.zapLog)
+	w.deps.AgileTeamHandler = agileteam.NewHandler(agileTeamSvc, w.zapLog)
+	poHandler.SetTeamViewAccess(agileTeamSvc.CanEnterDashboard)
+	poHandler.SetTeamScopeAccounts(agileTeamSvc.DashboardAccounts)
+	poHandler.SetTeamScopeGroupIDs(agileTeamSvc.DashboardGroupIDs)
+}
+
+// sidebarBadgesProvider 侧栏角标：注入 poSvc.SidebarBadges 为 render provider。
+func sidebarBadgesProvider(poSvc *po.Service) func(*gin.Context) (render.SidebarBadges, error) {
+	return func(c *gin.Context) (render.SidebarBadges, error) {
 		v, ok := c.Get("currentUser")
 		if !ok {
 			return render.SidebarBadges{}, nil
@@ -163,63 +243,7 @@ func Run() error {
 			return render.SidebarBadges{Todos: b.Todos, Done: b.Done, Notice: b.Notice}, err
 		}
 		return render.SidebarBadges{Todos: b.Todos, Done: b.Done, Notice: b.Notice}, nil
-	})
-	testtaskRepo := testtask.NewRepo(db)
-	testtaskSvc := testtask.NewService(testtaskRepo, userSvc, zentaopkg.API(), zapLog)
-	testtaskHandler := testtask.NewHandler(testtaskSvc, zapLog)
-	buildRepo := build.NewRepo(db)
-	buildSvc := build.NewService(buildRepo, userSvc, zentaopkg.API(), zapLog)
-	buildHandler := build.NewHandler(buildSvc, zapLog)
-	kanbanReadDB := dbReadonly
-	if kanbanReadDB == nil {
-		kanbanReadDB = db
 	}
-	kanbanRepo := kanban.NewRepo(kanbanReadDB)
-	kanbanSvc := kanban.NewService(kanbanRepo, userSvc, poSvc, zentaopkg.API())
-	kanbanHandler := kanban.NewHandler(kanbanSvc, zapLog)
-	sqlPerfRepo := debug.NewRepo(cfg.Log.Dir)
-	sqlPerfSvc := debug.NewService(sqlPerfRepo)
-	sqlPerfHandler := debug.NewHandler(sqlPerfSvc)
-
-	queryRepo := query.NewRepo(dbReadonlyOrPrimary(dbReadonly, db))
-	querySvc := query.NewService(queryRepo)
-	queryHandler := query.NewHandler(rend, querySvc, zapLog)
-	metricsHandler := metrics.NewHandler(rend, metrics.NewService(metrics.NewRepo(dbReadonlyOrPrimary(dbReadonly, db))), zapLog)
-	profileHandler := profile.NewHandler(profile.NewService(profile.NewRepo(db)), zapLog)
-	agileTeamRepo := agileteam.NewRepo(db, dbReadonlyOrPrimary(dbReadonly, db))
-	agileTeamSvc := agileteam.NewService(agileTeamRepo, zapLog)
-	agileTeamHandler := agileteam.NewHandler(agileTeamSvc, zapLog)
-	poHandler.SetTeamViewAccess(agileTeamSvc.CanEnterDashboard)
-	poHandler.SetTeamScopeAccounts(agileTeamSvc.DashboardAccounts)
-	poHandler.SetTeamScopeGroupIDs(agileTeamSvc.DashboardGroupIDs)
-
-	routeDeps := server.RouteDeps{
-		SessionMgr:          sessionMgr,
-		DB:                  db,
-		RequireLogin:        requireLogin,
-		RedirectIfLoggedIn:  redirectIfLoggedIn,
-		LoginLimiter:        loginLimiter,
-		AuthHandler:         authHandler,
-		UserHandler:         userHandler,
-		LoginLogHandler:     loginLogHandler,
-		OperationLogHandler: operationLogHandler,
-		MenuHandler:         menuHandler,
-		DeptHandler:         deptHandler,
-		RoleHandler:         roleHandler,
-		PoHandler:           poHandler,
-		QueryHandler:        queryHandler,
-		MetricsHandler:      metricsHandler,
-		ProfileHandler:      profileHandler,
-		AgileTeamHandler:    agileTeamHandler,
-		KanbanHandler:       kanbanHandler,
-		ScheduleHandler:     scheduleHandler,
-		TesttaskHandler:     testtaskHandler,
-		BuildHandler:        buildHandler,
-		SqlPerfHandler:      sqlPerfHandler,
-	}
-
-	srv := server.New(cfg, zapLog, db, sessionMgr, limiter, nil, routeDeps)
-	return srv.Run()
 }
 
 // dbReadonlyOrPrimary 只读池可用则用之，否则降级主库。
