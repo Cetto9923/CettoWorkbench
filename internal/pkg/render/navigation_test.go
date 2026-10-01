@@ -26,7 +26,7 @@ func TestNavigationUsesAuthenticatedPermissions(t *testing.T) {
 	}{
 		{"missing", "/admin/users", "sidebar", nil, false},
 		{"department", "/admin/dept-overrides", "sidebar", map[string]bool{"dept:list": true}, false},
-		{"top", "/admin/users/create", "top", map[string]bool{"user:list": true}, false},
+		{"top", "/admin/roles", "top", map[string]bool{"role:list": true}, false},
 		{"standalone", "/profile", "sidebar", map[string]bool{"user:list": true}, true},
 	}
 	for _, tc := range cases {
@@ -58,7 +58,8 @@ func assertAdminLinks(t *testing.T, html string, granted map[string]bool, hidden
 	t.Helper()
 	for path, code := range map[string]string{"users": "user:list", "roles": "role:list", "depts": "dept:list", "dept-overrides": "dept:list", "menus": "menu:list", "operation-logs": "operationlog:list", "login-logs": "loginlog:list"} {
 		got := strings.Contains(html, `href="/admin/`+path+`"`)
-		if got != (granted[code] && !hidden) {
+		retired := path == "users" || path == "depts" || path == "dept-overrides"
+		if got != (granted[code] && !hidden && !retired) {
 			t.Errorf("%s link visibility=%v", path, got)
 		}
 	}

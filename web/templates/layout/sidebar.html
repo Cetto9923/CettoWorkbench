@@ -268,11 +268,8 @@
 {{ end }}
 
 {{ define "layout/adminLinks" }}
-{{ if index .UserPerms "user:list" }}<a href="/admin/users" class="nav-item{{ if eq .LayoutNav "top" }} topnav-subitem{{ end }}{{ if hasPrefix .CurrentPath "/admin/users" }} active{{ end }}"><i class="nav-icon fas fa-users"></i><span class="nav-text">用户管理</span></a>{{ end }}
 {{ if index .UserPerms "role:list" }}<a href="/admin/roles" class="nav-item{{ if eq .LayoutNav "top" }} topnav-subitem{{ end }}{{ if hasPrefix .CurrentPath "/admin/roles" }} active{{ end }}"><i class="nav-icon fas fa-user-shield"></i><span class="nav-text">角色管理</span></a>{{ end }}
 {{ if index .UserPerms "menu:list" }}<a href="/admin/menus" class="nav-item{{ if eq .LayoutNav "top" }} topnav-subitem{{ end }}{{ if hasPrefix .CurrentPath "/admin/menus" }} active{{ end }}"><i class="nav-icon fas fa-bars"></i><span class="nav-text">菜单管理</span></a>{{ end }}
-{{ if index .UserPerms "dept:list" }}<a href="/admin/depts" class="nav-item{{ if eq .LayoutNav "top" }} topnav-subitem{{ end }}{{ if hasPrefix .CurrentPath "/admin/depts" }} active{{ end }}"><i class="nav-icon fas fa-sitemap"></i><span class="nav-text">部门管理</span></a>{{ end }}
-{{ if index .UserPerms "dept:list" }}<a href="/admin/dept-overrides" class="nav-item{{ if eq .LayoutNav "top" }} topnav-subitem{{ end }}{{ if hasPrefix .CurrentPath "/admin/dept-overrides" }} active{{ end }}"><i class="nav-icon fas fa-user-check"></i><span class="nav-text">部门负责人</span></a>{{ end }}
 {{ if index .UserPerms "operationlog:list" }}<a href="/admin/operation-logs" class="nav-item{{ if eq .LayoutNav "top" }} topnav-subitem{{ end }}{{ if hasPrefix .CurrentPath "/admin/operation-logs" }} active{{ end }}"><i class="nav-icon fas fa-clock-rotate-left"></i><span class="nav-text">操作日志</span></a>{{ end }}
 {{ if index .UserPerms "loginlog:list" }}<a href="/admin/login-logs" class="nav-item{{ if eq .LayoutNav "top" }} topnav-subitem{{ end }}{{ if hasPrefix .CurrentPath "/admin/login-logs" }} active{{ end }}"><i class="nav-icon fas fa-right-to-bracket"></i><span class="nav-text">登录日志</span></a>{{ end }}
 {{ end }}
