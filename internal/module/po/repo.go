@@ -28,6 +28,9 @@ type Repo struct {
 // readDB 供查询；writeDB 供关注收敛与 SaveNoticeRead 等写入。
 // 单测可用同一句柄：NewRepo(db, db)。
 func NewRepo(readDB, writeDB *gorm.DB) *Repo {
+	if readDB == nil {
+		readDB = writeDB
+	}
 	return &Repo{db: readDB, writeDB: writeDB}
 }
 
