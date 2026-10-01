@@ -15,6 +15,7 @@ import (
 
 	"gorm.io/gorm"
 
+	"workbench/internal/pkg/datefmt"
 	"workbench/internal/pkg/zentao"
 )
 
@@ -163,10 +164,7 @@ func boardTaskItem(row boardTaskRow, stories map[int64]string, displayMap map[st
 	if owner == "" {
 		owner = ownerAccount
 	}
-	deadline := ""
-	if row.Deadline != nil && !row.Deadline.IsZero() {
-		deadline = row.Deadline.Format("2006-01-02")
-	}
+	deadline := datefmt.Date(row.Deadline)
 	priority := ""
 	if row.Priority > 0 {
 		priority = fmt.Sprintf("P%d", row.Priority)

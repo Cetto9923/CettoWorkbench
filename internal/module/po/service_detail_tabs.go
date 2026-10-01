@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"workbench/internal/module/metrics"
+	"workbench/internal/pkg/datefmt"
 	"workbench/internal/pkg/demandstage"
 	"workbench/internal/pkg/personlabel"
 	"workbench/internal/pkg/zentao"
@@ -189,21 +190,13 @@ func (s *DetailService) buildRequirement(ctx context.Context, row *DemandDetailR
 	}
 	cItems := make([]ClarificationItem, 0, len(clarifies))
 	for _, c := range clarifies {
-		devEnd := "—"
-		if c.DevEnd != nil {
-			devEnd = c.DevEnd.Format("2006-01-02")
-		}
-		testEnd := "—"
-		if c.TestEnd != nil {
-			testEnd = c.TestEnd.Format("2006-01-02")
-		}
 		cItems = append(cItems, ClarificationItem{
 			Product:     c.Product,
 			ProductName: defaultDash(c.ProductName),
 			Analyst:     defaultDash(c.PM),
 			Content:     c.SystemClarifyDesc,
-			DevEnd:      devEnd,
-			TestEnd:     testEnd,
+			DevEnd:      datefmt.Date(c.DevEnd),
+			TestEnd:     datefmt.Date(c.TestEnd),
 		})
 	}
 
@@ -213,16 +206,12 @@ func (s *DetailService) buildRequirement(ctx context.Context, row *DemandDetailR
 	}
 	fItems := make([]AttachmentItem, 0, len(files))
 	for _, f := range files {
-		created := "—"
-		if f.AddedDate != nil {
-			created = f.AddedDate.Format("2006-01-02")
-		}
 		sizeStr := fmt.Sprintf("%.1f KB", float64(f.Size)/1024.0)
 		fItems = append(fItems, AttachmentItem{
 			ID:       f.ID,
 			Title:    f.Title,
 			Size:     sizeStr,
-			Created:  created,
+			Created:  datefmt.Date(f.AddedDate),
 			Download: fmt.Sprintf("/file/download/%d", f.ID),
 		})
 	}
@@ -260,22 +249,13 @@ func (s *DetailService) buildDelivery(row *DemandDetailRow, exec *DetailExecutio
 
 	acceptanceDone := row.Status == "closed" || row.Stage == "delivered"
 
-	launchStr := "—"
-	if row.EstimateLaunch != nil {
-		launchStr = row.EstimateLaunch.Format("2006-01-02")
-	}
-	windowStr := "—"
-	if row.PublishWindow != nil {
-		windowStr = row.PublishWindow.Format("2006-01-02")
-	}
-
 	return &DetailDelivery{
 		DevDone:          devDone,
 		TestPassed:       testPassed,
 		BugsResolved:     bugsResolved,
 		AcceptanceDone:   acceptanceDone,
-		EstimateLaunch:   launchStr,
-		PublishWindow:    windowStr,
+		EstimateLaunch:   datefmt.Date(row.EstimateLaunch),
+		PublishWindow:    datefmt.Date(row.PublishWindow),
 		VerifyConclusion: defaultDash(row.VerifyPlan),
 	}
 }
@@ -307,18 +287,9 @@ func (s *DetailService) buildHistory(ctx context.Context, row *DemandDetailRow) 
 	if createdTime != nil {
 		createdStr = createdTime.Format("2006-01-02 15:04")
 	}
-	reviewedStr := "—"
-	if row.ReviewedDate != nil {
-		reviewedStr = row.ReviewedDate.Format("2006-01-02")
-	}
-	editedStr := "—"
-	if row.EditedDate != nil {
-		editedStr = row.EditedDate.Format("2006-01-02")
-	}
-	closedStr := "—"
-	if row.ClosedDate != nil {
-		closedStr = row.ClosedDate.Format("2006-01-02")
-	}
+	reviewedStr := datefmt.Date(row.ReviewedDate)
+	editedStr := datefmt.Date(row.EditedDate)
+	closedStr := datefmt.Date(row.ClosedDate)
 
 	return &DetailHistory{
 		Actions:        actItems,

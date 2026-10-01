@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"workbench/internal/pkg/datefmt"
 	"workbench/internal/pkg/errorx"
 	"workbench/internal/pkg/zentao"
 )
@@ -200,10 +201,6 @@ func (r *Repo) computeNodeCounts(nodes []*BoardDemandItem) {
 }
 
 func (r *Repo) demandNode(row boardDemandRow, kind, owner string, displayMap map[string]string) *BoardDemandItem {
-	dl := ""
-	if row.Deadline != nil && !row.Deadline.IsZero() {
-		dl = row.Deadline.Format("2006-01-02")
-	}
 	if o := displayMap[owner]; o != "" {
 		owner = o
 	}
@@ -211,7 +208,7 @@ func (r *Repo) demandNode(row boardDemandRow, kind, owner string, displayMap map
 	return &BoardDemandItem{
 		Kind: kind, ID: row.ID, DisplayID: fmt.Sprintf("%s%d", prefix, row.ID),
 		Title: row.Name, Stage: deriveStageFromStatus(row.Status), Status: row.Status,
-		Priority: priOf(row.Priority), Owner: owner, Deadline: dl,
+		Priority: priOf(row.Priority), Owner: owner, Deadline: datefmt.Date(row.Deadline),
 		ActionLabel: deriveActionLabel(row.Status), Children: []*BoardDemandItem{},
 	}
 }

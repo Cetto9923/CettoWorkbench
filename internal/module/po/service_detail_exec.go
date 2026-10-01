@@ -16,6 +16,7 @@ import (
 	"math"
 	"strings"
 
+	"workbench/internal/pkg/datefmt"
 	"workbench/internal/pkg/zentao"
 )
 
@@ -114,14 +115,6 @@ func (s *DetailService) buildExecution(ctx context.Context, demandID uint) (*Det
 		default:
 			statusLabel = "未开始"
 		}
-		begin := "—"
-		if tt.Begin != nil {
-			begin = tt.Begin.Format("2006-01-02")
-		}
-		end := "—"
-		if tt.End != nil {
-			end = tt.End.Format("2006-01-02")
-		}
 		ttItems = append(ttItems, TestOrderItem{
 			ID:          tt.ID,
 			Code:        fmt.Sprintf("%d", tt.ID),
@@ -130,8 +123,8 @@ func (s *DetailService) buildExecution(ctx context.Context, demandID uint) (*Det
 			Status:      tt.Status,
 			StatusLabel: statusLabel,
 			Owner:       defaultDash(tt.OwnerName),
-			BeginDate:   begin,
-			EndDate:     end,
+			BeginDate:   datefmt.Date(tt.Begin),
+			EndDate:     datefmt.Date(tt.End),
 			ZtURL:       zentao.TesttaskViewURL(tt.ID),
 		})
 	}

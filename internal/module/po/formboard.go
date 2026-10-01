@@ -48,10 +48,8 @@ type BoardMetric struct {
 	State  string `json:"state"` // good / warn / risk / flat
 
 	// 内部用于阈值折算，不参与 JSON 序列化。
-	higherIsBetter bool
-	targetValue    float64
-	measured       float64
-	hasValue       bool
+	measured float64
+	hasValue bool
 }
 
 // GroupMetricsResp 是小组效能指标响应；HasGroup=false 时前端展示 Empty State。

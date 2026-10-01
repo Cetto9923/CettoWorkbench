@@ -34,7 +34,6 @@ func boardGroupMetrics() []*BoardMetric {
 		m := &BoardMetric{Key: d.key, Value: "-", Trend: "", State: "flat"}
 		if spec, ok := metrics.SpecOf(d.code); ok {
 			m.Name, m.Target = spec.Name, spec.Target
-			m.higherIsBetter = false // 4 项在目录中方向均为 down
 		}
 		out = append(out, m)
 	}
@@ -129,7 +128,7 @@ func (r *Repo) computeUnscheduled(ctx context.Context, ms []*BoardMetric, member
 		Where("(QD IN ? OR RD IN ? OR BRA IN ? OR createdBy IN ?)", members, members, members, members)
 	if err := q.Count(&n).Error; err == nil {
 		s := boardSpec("unscheduled")
-		setMetricCount(ms, "unscheduled", n, int64(s.DangerValue), int64(s.TargetValue))
+		setMetricValue(ms, "unscheduled", fmt.Sprintf("%d个", n), float64(n), s.DangerValue, s.TargetValue)
 	}
 }
 
@@ -143,8 +142,8 @@ func metricOf(ms []*BoardMetric, key string) *BoardMetric {
 	return nil
 }
 
-// setMetricValue 记录真实值并按阈值折算 state。
-// goal 为"达标"严格线、warnLimit 为"预警"宽松线；higherIsBetter=true 时越高越好，false 越低越好。
+// setMetricValue 记录真实值并按阈值折算 state（看板 4 项在目录中方向均为 down，越低越好）。
+// goal 为"达标"严格线、warnLimit 为"预警"宽松线，均取自 metrics 目录。
 func setMetricValue(ms []*BoardMetric, key, display string, v, warnLimit, goal float64) {
 	m := metricOf(ms, key)
 	if m == nil {
@@ -153,51 +152,12 @@ func setMetricValue(ms []*BoardMetric, key, display string, v, warnLimit, goal f
 	m.Value = display
 	m.hasValue = true
 	m.measured = v
-	if m.higherIsBetter {
-		switch {
-		case v >= goal:
-			m.State = "good"
-		case v >= warnLimit:
-			m.State = "warn"
-		default:
-			m.State = "risk"
-		}
-		return
-	}
 	switch {
 	case v <= goal:
 		m.State = "good"
 	case v <= warnLimit:
 		m.State = "warn"
 	default:
-		m.State = "risk"
-	}
-}
-
-// setMetricCount 计数类指标（整型）。goal 为达标严格线、warnLimit 为预警宽松线。
-func setMetricCount(ms []*BoardMetric, key string, v int64, warnLimit, goal int64) {
-	m := metricOf(ms, key)
-	if m == nil {
-		return
-	}
-	m.Value = fmt.Sprintf("%d个", v)
-	m.measured = float64(v)
-	m.hasValue = true
-	if m.higherIsBetter {
-		if float64(v) >= float64(goal) {
-			m.State = "good"
-		} else if float64(v) >= float64(warnLimit) {
-			m.State = "warn"
-		} else {
-			m.State = "risk"
-		}
-		return
-	}
-	if float64(v) <= float64(goal) {
-		m.State = "good"
-	} else if float64(v) <= float64(warnLimit) {
-		m.State = "warn"
-	} else {
 		m.State = "risk"
 	}
 }

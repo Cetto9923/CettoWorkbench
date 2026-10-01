@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"workbench/internal/pkg/datefmt"
 	"workbench/internal/pkg/zentao"
 )
 
@@ -90,10 +91,7 @@ func toTaskItem(row taskRow, displayMap map[string]string, overdue bool) TaskIte
 		}
 	}
 	owner := lookupDisplay(displayMap, ownerAccount)
-	deadline := ""
-	if row.Deadline != nil && !row.Deadline.IsZero() {
-		deadline = row.Deadline.Format("2006-01-02")
-	}
+	deadline := datefmt.Date(row.Deadline)
 	return TaskItem{
 		ID:           row.ID,
 		DisplayID:    fmt.Sprintf("%d", row.ID),

@@ -40,19 +40,7 @@ func TestBoardGroupMetricsReadsCatalog(t *testing.T) {
 		if m.Name != c.name || m.Target != c.target {
 			t.Errorf("%s: name/target = %q/%q, want %q/%q", c.key, m.Name, m.Target, c.name, c.target)
 		}
-		if m.higherIsBetter {
-			t.Errorf("%s: 目录方向为 down，看板不得标成 higherIsBetter", c.key)
-		}
-		s := boardSpec(c.key)
-		if s.TargetValue != c.targetValue || s.DangerValue != c.dangerValue {
-			t.Errorf("%s: boardSpec = goal %.0f / warn %.0f, want %.0f / %.0f",
-				c.key, s.TargetValue, s.DangerValue, c.targetValue, c.dangerValue)
-		}
-		// 看板阈值必须与目录同源，而非另抄一份。
-		code := boardMetricCodes[i].code
-		if ds, ok := metrics.SpecOf(code); !ok || ds.TargetValue != s.TargetValue || ds.DangerValue != s.DangerValue {
-			t.Errorf("%s(%s): 看板阈值与目录条目不一致", c.key, code)
-		}
+		checkBoardSpecFromCatalog(t, i, c.key, c.targetValue, c.dangerValue)
 	}
 
 	// 目录里的天数常量必须落在报告指出的口径上（>42 天算超迭代；超 14 天未澄清算未排期）。
@@ -61,6 +49,21 @@ func TestBoardGroupMetricsReadsCatalog(t *testing.T) {
 	}
 	if metrics.UnscheduledClarifyDays != 14 {
 		t.Errorf("UnscheduledClarifyDays = %d, want 14", metrics.UnscheduledClarifyDays)
+	}
+}
+
+// checkBoardSpecFromCatalog 断言看板阈值与目录同源，而非另抄一份魔法数。
+func checkBoardSpecFromCatalog(t *testing.T, idx int, key string, targetValue, dangerValue float64) {
+	t.Helper()
+	s := boardSpec(key)
+	if s.TargetValue != targetValue || s.DangerValue != dangerValue {
+		t.Errorf("%s: boardSpec = goal %.0f / warn %.0f, want %.0f / %.0f",
+			key, s.TargetValue, s.DangerValue, targetValue, dangerValue)
+	}
+	code := boardMetricCodes[idx].code
+	ds, ok := metrics.SpecOf(code)
+	if !ok || ds.TargetValue != s.TargetValue || ds.DangerValue != s.DangerValue {
+		t.Errorf("%s(%s): 看板阈值与目录条目不一致", key, code)
 	}
 }
 
@@ -96,7 +99,8 @@ func TestBoardMetricThresholdFolding(t *testing.T) {
 			t.Errorf("delivery %.0f => %s, want %s", c.v, got, c.want)
 		}
 	}
-	setMetricCount(ms, "unscheduled", 9, int64(boardSpec("unscheduled").DangerValue), int64(boardSpec("unscheduled").TargetValue))
+	u := boardSpec("unscheduled")
+	setMetricValue(ms, "unscheduled", "9个", 9, u.DangerValue, u.TargetValue)
 	if got := metricOf(ms, "unscheduled").State; got != "risk" {
 		t.Errorf("unscheduled 9 => %s, want risk", got)
 	}
