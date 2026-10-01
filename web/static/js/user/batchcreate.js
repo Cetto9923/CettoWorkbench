@@ -86,7 +86,7 @@
       submitBtn.classList.add("loading");
     }
 
-    fetch(form.action, {
+    window.appFetch(form.action, {
       method: "POST",
       body: JSON.stringify(payload),
       headers: {
