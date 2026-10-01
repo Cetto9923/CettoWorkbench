@@ -19,6 +19,15 @@ import (
 	"workbench/internal/pkg/zentao"
 )
 
+// clarifyFormData 需求澄清表单的候选项与配置。
+type clarifyFormData struct {
+	cfg      ClarifyConfigData
+	products []ClarifyProductOption
+	users    []ClarifyOption
+	prodMap  map[string]string
+	userMap  map[string]string
+}
+
 // GetDemandClarifyForm 获取需求澄清初始化表单数据。
 func (s *Service) GetDemandClarifyForm(ctx context.Context, actor *model.User, demandID int64) (*DemandClarifyFormResp, error) {
 	if actor == nil || strings.TrimSpace(actor.Account) == "" {
@@ -34,9 +43,77 @@ func (s *Service) GetDemandClarifyForm(ctx context.Context, actor *model.User, d
 		return nil, errorx.New(errorx.ErrCodeNotFound, "需求不存在")
 	}
 
-	products, err := s.repo.FindCandidateProducts(ctx, account)
+	data, err := s.loadClarifyFormData(ctx, account)
 	if err != nil {
 		return nil, err
+	}
+
+	clarifies, err := s.repo.FindDemandClarifies(ctx, demandID)
+	if err != nil {
+		return nil, err
+	}
+	userStories, err := s.repo.FindDemandUserStories(ctx, demandID)
+	if err != nil {
+		return nil, err
+	}
+
+	frequentProducts, _ := s.repo.FindFrequentProducts(ctx, account, 8)
+	productMembers, _ := s.repo.FindProductMembers(ctx, productIDs(data.products))
+
+	resp := newClarifyFormResp(demand, data, clarifies, userStories, frequentProducts, productMembers)
+	return resp, nil
+}
+
+// newClarifyFormResp 把 DB 行与候选项组装成澄清表单响应。
+func newClarifyFormResp(
+	demand *demandClarifyRawRow,
+	data clarifyFormData,
+	clarifies []demandClarifyDBItem,
+	userStories []demandUserStoryDBItem,
+	frequentProducts []ClarifyProductOption,
+	productMembers map[string][]ProductMemberOption,
+) *DemandClarifyFormResp {
+	scaleEst, _ := strconv.Atoi(demand.ScaleEstimation)
+
+	return &DemandClarifyFormResp{
+		ID:                    demand.ID,
+		Code:                  fmt.Sprintf("US%d", demand.ID),
+		Name:                  demand.Name,
+		Category:              demand.Category,
+		BRA:                   demand.BRA,
+		BRAName:               data.userMap[demand.BRA],
+		QD:                    demand.QD,
+		QDName:                data.userMap[demand.QD],
+		RD:                    demand.RD,
+		RDName:                data.userMap[demand.RD],
+		Desc:                  demand.Desc,
+		ClarifyDesc:           demand.ClarifyDesc,
+		ScaleEstimation:       scaleEst,
+		IsNewProduct:          demand.IsNewProduct,
+		IsRelatedAccounts:     demand.IsRelatedAccounts,
+		IsNewFunction:         demand.IsNewFunction,
+		IsOtherImportantOrder: demand.IsOtherImportantOrder,
+		MultiLegalPersonLogo:  demand.MultiLegalPersonLogo,
+		Products:              buildClarifyProductItems(demand, clarifies, data),
+		UserStories:           buildClarifyUserStoryItems(userStories, data.cfg),
+		CategoryOptions:       data.cfg.CategoryOptions,
+		ProductOptions:        data.products,
+		FrequentProducts:      frequentProducts,
+		ProductMembers:        productMembers,
+		UserOptions:           data.users,
+		NoAICategories:        data.cfg.NoAICategories,
+		AICategories:          data.cfg.AICategories,
+		PointToKeyword:        data.cfg.PointToKeyword,
+		RevpointList:          data.cfg.RevpointList,
+		AllPointList:          data.cfg.AllPointList,
+	}
+}
+
+// loadClarifyFormData 读取澄清表单的候选项、用户与配置。
+func (s *Service) loadClarifyFormData(ctx context.Context, account string) (clarifyFormData, error) {
+	products, err := s.repo.FindCandidateProducts(ctx, account)
+	if err != nil {
+		return clarifyFormData{}, err
 	}
 	prodMap := make(map[string]string, len(products))
 	for _, p := range products {
@@ -45,32 +122,44 @@ func (s *Service) GetDemandClarifyForm(ctx context.Context, actor *model.User, d
 
 	users, err := s.repo.FindCandidateUsers(ctx, account)
 	if err != nil {
-		return nil, err
+		return clarifyFormData{}, err
 	}
 	userMap := make(map[string]string, len(users))
 	for _, u := range users {
 		userMap[u.Value] = u.Label
 	}
 
-	cfg := s.repo.LoadClarifyConfig(ctx)
+	return clarifyFormData{
+		cfg:      s.repo.LoadClarifyConfig(ctx),
+		products: products,
+		users:    users,
+		prodMap:  prodMap,
+		userMap:  userMap,
+	}, nil
+}
 
-	clarifies, err := s.repo.FindDemandClarifies(ctx, demandID)
-	if err != nil {
-		return nil, err
+// productIDs 提取候选产品 ID 列表。
+func productIDs(products []ClarifyProductOption) []int64 {
+	ids := make([]int64, 0, len(products))
+	for _, p := range products {
+		ids = append(ids, p.ID)
 	}
+	return ids
+}
 
-	clarifyItems := make([]ClarifyProductItem, 0, len(clarifies))
+// buildClarifyProductItems 把涉及系统行转为表单项，名称缺失时回退为原值。
+func buildClarifyProductItems(demand *demandClarifyRawRow, clarifies []demandClarifyDBItem, data clarifyFormData) []ClarifyProductItem {
+	items := make([]ClarifyProductItem, 0, len(clarifies))
 	for _, c := range clarifies {
-		pName := prodMap[c.Product]
+		pName := data.prodMap[c.Product]
 		if pName == "" {
 			pName = c.Product
 		}
-		pmName := userMap[c.PM]
+		pmName := data.userMap[c.PM]
 		if pmName == "" {
 			pmName = c.PM
 		}
-		isMain := demand.MainSystem != "" && (demand.MainSystem == c.Product)
-		clarifyItems = append(clarifyItems, ClarifyProductItem{
+		items = append(items, ClarifyProductItem{
 			ID:                   c.ID,
 			ProductID:            c.Product,
 			ProductName:          pName,
@@ -80,82 +169,34 @@ func (s *Service) GetDemandClarifyForm(ctx context.Context, actor *model.User, d
 			SystemClarifyDesc:    c.SystemClarifyDesc,
 			IsAdditionalInfo:     c.IsAdditionalInfo,
 			AdditionalInfo:       c.AdditionalInfo,
-			IsMainSystem:         isMain,
+			IsMainSystem:         demand.MainSystem != "" && demand.MainSystem == c.Product,
 		})
 	}
+	return items
+}
 
-	userStories, err := s.repo.FindDemandUserStories(ctx, demandID)
-	if err != nil {
-		return nil, err
-	}
-	storyItems := make([]ClarifyUserStoryItem, 0, len(userStories))
+// buildClarifyUserStoryItems 把用户故事行转为表单项，revpoint 为 0 时回退为 point。
+func buildClarifyUserStoryItems(userStories []demandUserStoryDBItem, cfg ClarifyConfigData) []ClarifyUserStoryItem {
+	items := make([]ClarifyUserStoryItem, 0, len(userStories))
 	for _, us := range userStories {
-		ptStr := strconv.Itoa(us.Point)
-		kw := cfg.PointToKeyword[ptStr]
 		rev := us.Revpoint
 		if rev == 0 {
 			rev = us.Point
 		}
-		storyItems = append(storyItems, ClarifyUserStoryItem{
+		items = append(items, ClarifyUserStoryItem{
 			ID:           us.ID,
 			Role:         us.Role,
 			GV:           us.GV,
 			ProductID:    us.Product,
 			Point:        us.Point,
-			PointKeyword: kw,
+			PointKeyword: cfg.PointToKeyword[strconv.Itoa(us.Point)],
 			Revpoint:     rev,
 			SourceType:   us.SourceType,
 			AICode:       us.AICode,
 			Checked:      true,
 		})
 	}
-
-	scaleEst, _ := strconv.Atoi(demand.ScaleEstimation)
-
-	code := fmt.Sprintf("US%d", demand.ID)
-
-	frequentProducts, _ := s.repo.FindFrequentProducts(ctx, account, 8)
-
-	prodIDs := make([]int64, 0, len(products))
-	for _, p := range products {
-		prodIDs = append(prodIDs, p.ID)
-	}
-	productMembers, _ := s.repo.FindProductMembers(ctx, prodIDs)
-
-	resp := &DemandClarifyFormResp{
-		ID:                    demand.ID,
-		Code:                  code,
-		Name:                  demand.Name,
-		Category:              demand.Category,
-		BRA:                   demand.BRA,
-		BRAName:               userMap[demand.BRA],
-		QD:                    demand.QD,
-		QDName:                userMap[demand.QD],
-		RD:                    demand.RD,
-		RDName:                userMap[demand.RD],
-		Desc:                  demand.Desc,
-		ClarifyDesc:           demand.ClarifyDesc,
-		ScaleEstimation:       scaleEst,
-		IsNewProduct:          demand.IsNewProduct,
-		IsRelatedAccounts:     demand.IsRelatedAccounts,
-		IsNewFunction:         demand.IsNewFunction,
-		IsOtherImportantOrder: demand.IsOtherImportantOrder,
-		MultiLegalPersonLogo:  demand.MultiLegalPersonLogo,
-		Products:              clarifyItems,
-		UserStories:           storyItems,
-		CategoryOptions:       cfg.CategoryOptions,
-		ProductOptions:        products,
-		FrequentProducts:      frequentProducts,
-		ProductMembers:        productMembers,
-		UserOptions:           users,
-		NoAICategories:        cfg.NoAICategories,
-		AICategories:          cfg.AICategories,
-		PointToKeyword:        cfg.PointToKeyword,
-		RevpointList:          cfg.RevpointList,
-		AllPointList:          cfg.AllPointList,
-	}
-
-	return resp, nil
+	return items
 }
 
 // ClarifyDemand 提交需求澄清。
