@@ -60,8 +60,7 @@ func followDemandWatchWhere(account string) (string, []any) {
 	return sql, []any{account, account, account}
 }
 
-// followDemandRow 关注需求列表的查询行。关注来源由 zt_starinfo 判定，
-// 系统名由 mainSystem LEFT JOIN zt_product 得出。
+// followDemandRow 关注需求列表的查询行：关注来源由 zt_starinfo 判定，系统名由 mainSystem 关联产品得出。
 type followDemandRow struct {
 	ID            int64      `gorm:"column:id"`
 	Name          string     `gorm:"column:name"`
@@ -187,8 +186,7 @@ func followOwnerPriority(displayMap map[string]string, row followDemandRow) stri
 	return ""
 }
 
-// buildFollowItems 把查询行映射为列表项：风险与关注理由由重点关注标记和
-// 关注真源推导，进度按截止日期与今天比较得出。
+// buildFollowItems 把查询行映射为列表项：风险与关注理由由重点关注标记和关注真源推导。
 func buildFollowItems(rows []followDemandRow, displayMap map[string]string, today string) []FollowItem {
 	items := make([]FollowItem, 0, len(rows))
 	for _, row := range rows {

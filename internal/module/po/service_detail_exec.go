@@ -19,8 +19,7 @@ import (
 	"workbench/internal/pkg/zentao"
 )
 
-// buildExecution 组装研发执行页签：研需进度、测试单、用例与缺陷概况。
-// 取数顺序固定为研需 → 任务 → 缺陷 → 用例 → 测试单，任一查询失败即向上返回。
+// buildExecution 组装研发执行页签：取数顺序固定为研需 → 任务 → 缺陷 → 用例 → 测试单。
 func (s *DetailService) buildExecution(ctx context.Context, demandID uint) (*DetailExecution, error) {
 	stories, err := s.repo.FindDemandStories(ctx, demandID)
 	if err != nil {
@@ -88,8 +87,7 @@ func (s *DetailService) buildExecution(ctx context.Context, demandID uint) (*Det
 	}, nil
 }
 
-// buildStoryItems 逐条研需合并任务与缺陷统计，并累加缺陷汇总。
-// 缺陷总数只由命中 bugMap 的研需贡献，缺统计的按 0 计入明细。
+// buildStoryItems 逐条研需合并任务与缺陷统计：缺陷总数只由命中 bugMap 的研需贡献。
 func buildStoryItems(stories []DemandStoryRow, taskMap map[uint]TaskCountRow, bugMap map[uint]BugCountRow) ([]StoryItem, BugSummary) {
 	items := make([]StoryItem, 0, len(stories))
 	summary := BugSummary{}
@@ -125,8 +123,7 @@ func buildStoryItems(stories []DemandStoryRow, taskMap map[uint]TaskCountRow, bu
 	return items, summary
 }
 
-// buildTestOrderItems 展开测试单并统计进行中 / 已完成数量。
-// 阶段按名称是否含 UAT 判定；缺开始或结束日期一律显示占位符。
+// buildTestOrderItems 展开测试单并统计进行中 / 已完成数量：阶段按名称是否含 UAT 判定。
 func buildTestOrderItems(testTasks []DemandTestTaskRow) ([]TestOrderItem, int, int) {
 	items := make([]TestOrderItem, 0, len(testTasks))
 	doingCount, doneCount := 0, 0
@@ -172,8 +169,7 @@ func buildTestOrderItems(testTasks []DemandTestTaskRow) ([]TestOrderItem, int, i
 	return items, doingCount, doneCount
 }
 
-// buildTestCaseSummary 由用例聚合计数推导执行率与通过率，保留一位小数；
-// 分母为 0 时保持 0，未执行数不为负。
+// buildTestCaseSummary 由用例聚合计数推导执行率与通过率，保留一位小数。
 func buildTestCaseSummary(counts TestCaseCountRow) TestCaseSummary {
 	execRate := 0.0
 	if counts.TotalCount > 0 {

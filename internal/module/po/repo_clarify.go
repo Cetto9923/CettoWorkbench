@@ -252,15 +252,6 @@ func loadAccountRealnames(ctx context.Context, db *gorm.DB, accountSet map[strin
 	return nameMap
 }
 
-// groupPMsByProduct 把历史 PM 按产品分组，避免聚合时对每个产品全表扫描。
-func groupPMsByProduct(pms []productMemberPMRow) map[string][]string {
-	grouped := make(map[string][]string, len(pms))
-	for _, pm := range pms {
-		grouped[pm.ProductID] = append(grouped[pm.ProductID], pm.PM)
-	}
-	return grouped
-}
-
 // FindProductMembers 查询指定产品相关参与人员（PO、QD、RD、白名单用户、历史曾任PM等）。
 func (r *Repo) FindProductMembers(ctx context.Context, productIDs []int64) (map[string][]ProductMemberOption, error) {
 	result := make(map[string][]ProductMemberOption)
@@ -291,7 +282,11 @@ func (r *Repo) FindProductMembers(ctx context.Context, productIDs []int64) (map[
 		Find(&pmRows).Error
 
 	nameMap := loadAccountRealnames(ctx, db, collectProductMemberAccounts(prodRows, pmRows))
-	pmByProduct := groupPMsByProduct(pmRows)
+	// 历史 PM 按产品分组，避免聚合时对每个产品全表扫描。
+	pmByProduct := make(map[string][]string, len(pmRows))
+	for _, pm := range pmRows {
+		pmByProduct[pm.ProductID] = append(pmByProduct[pm.ProductID], pm.PM)
+	}
 
 	// 按产品聚合去重人员列表
 	for _, p := range prodRows {
@@ -305,8 +300,7 @@ func (r *Repo) FindProductMembers(ctx context.Context, productIDs []int64) (map[
 	return result, nil
 }
 
-// buildProductMemberOptions 按角色顺序去重收集单个产品的参与人。
-// 同一账号只保留首次出现的角色，姓名缺失时回退到账号本身。
+// buildProductMemberOptions 按角色顺序去重收集单个产品的参与人；姓名缺失时回退到账号本身。
 func buildProductMemberOptions(p productMemberRow, pms []string, nameMap map[string]string) []ProductMemberOption {
 	var members []ProductMemberOption
 	seen := make(map[string]bool)

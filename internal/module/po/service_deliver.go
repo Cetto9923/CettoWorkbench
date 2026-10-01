@@ -15,8 +15,7 @@ import (
 	"workbench/internal/model"
 )
 
-// deliverHomeRow 把交付详情行投影成首页动作鉴权行。
-// 发起与提交交付共用同一份字段口径，两处各写一遍会漂移出鉴权漏洞。
+// deliverHomeRow 把交付详情行投影成首页动作鉴权行：发起与提交交付共用同一份字段口径。
 func deliverHomeRow(row *DeliverDetailRow) *homeActionDemandRow {
 	return &homeActionDemandRow{
 		ID:            row.ID,
