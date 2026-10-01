@@ -38,8 +38,8 @@ func (h *Handler) ListOverrides(c *gin.Context) {
 	}
 
 	render.Page(c, http.StatusOK, constants.TEMPLATE_DEPT_OVERRIDES, gin.H{
-		"Title":      "部门负责人",
-		"PageTitle":  "部门负责人",
+		"Title":      "部门负责人补缺管理",
+		"PageTitle":  "部门负责人补缺管理（科技部本部及子孙部门）",
 		"Items":      items,
 		"TechDepts":  depts,
 		"TotalCount": len(items),

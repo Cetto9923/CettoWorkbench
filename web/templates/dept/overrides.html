@@ -7,44 +7,42 @@
 ========================================================================== */}}
 {{ define "page_css" }}
 <style>
-.override-container { padding: 0; max-width: none; margin: 0; font-family: inherit; }
-.override-header { display: flex; justify-content: space-between; align-items: center; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-5); }
+.override-container { padding: var(--space-6); max-width: 1200px; margin: 0 auto; }
+.override-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-5); }
 .override-title { font-size: var(--font-size-xl); font-weight: 600; color: var(--color-text-primary); margin: 0; }
 .override-subtitle { font-size: var(--font-size-sm); color: var(--color-text-secondary); margin-top: 4px; }
-.override-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow-x: auto; }
-.override-table { width: 100%; min-width: 1000px; table-layout: fixed; border-collapse: collapse; text-align: left; font-size: var(--font-size-sm); }
+.override-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow: hidden; }
+.override-table { width: 100%; border-collapse: collapse; text-align: left; font-size: var(--font-size-sm); }
 .override-table th { background: var(--color-surface-muted); color: var(--color-text-secondary); font-weight: 600; padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border); }
-.override-table td { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border-subtle); color: var(--color-text-body); vertical-align: middle; overflow-wrap: anywhere; }
+.override-table td { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border-subtle); color: var(--color-text-body); vertical-align: middle; }
 .override-table tr:hover { background: var(--color-surface-hover); }
-.badge-tech { background: var(--color-info-bg); color: var(--color-info); padding: 2px 8px; border-radius: var(--radius-sm); font-size: var(--font-size-xs); font-weight: 500; display: inline-block; white-space: nowrap; }
+.badge-tech { background: var(--color-info-bg); color: var(--color-info); padding: 2px 8px; border-radius: var(--radius-sm); font-size: var(--font-size-xs); font-weight: 500; }
 .btn-primary-custom { background: var(--color-btn-primary-bg); color: var(--color-text-on-accent); border: none; border-radius: var(--radius-md); padding: var(--space-2) var(--space-4); font-size: var(--font-size-sm); font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
 .btn-primary-custom:hover { background: var(--color-primary-hover); color: var(--color-text-on-accent); }
 .btn-secondary-custom { background: var(--color-surface); color: var(--color-text-body); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-2) var(--space-4); font-size: var(--font-size-sm); font-weight: 500; cursor: pointer; text-decoration: none; }
 .btn-secondary-custom:hover { background: var(--color-surface-hover); color: var(--color-text-primary); }
 .btn-danger-sm { background: var(--color-danger-bg); color: var(--color-danger); border: 1px solid var(--color-danger-border); border-radius: var(--radius-sm); padding: 4px 10px; font-size: var(--font-size-xs); cursor: pointer; }
 .btn-danger-sm:hover { background: var(--color-danger-border); }
-.btn-edit-sm { background: var(--color-info-bg); color: var(--color-info); border: 1px solid var(--color-info-border); border-radius: var(--radius-sm); padding: 4px 10px; font-size: var(--font-size-xs); cursor: pointer; }
+.btn-edit-sm { background: var(--color-info-bg); color: var(--color-info); border: 1px solid var(--color-info-border); border-radius: var(--radius-sm); padding: 4px 10px; font-size: var(--font-size-xs); cursor: pointer; margin-right: 6px; }
 .btn-edit-sm:hover { background: var(--color-info-border); }
-#overrideModal.modal-overlay { display: flex; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--color-overlay); z-index: 9999; justify-content: center; align-items: center; }
-#overrideModal .modal-box { background: var(--color-surface); color: var(--color-text-primary); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-6); width: 480px; max-width: 90vw; box-shadow: var(--shadow-lg); }
-#overrideModal .modal-title { font-size: var(--font-size-base); font-weight: 600; margin-bottom: var(--space-4); color: var(--color-text-primary); }
-#overrideModal .form-group { margin-bottom: var(--space-3); }
-#overrideModal .form-group label { display: block; font-size: var(--font-size-sm); font-weight: 500; margin-bottom: 6px; color: var(--color-text-body); }
-#overrideModal .form-control-custom { width: 100%; padding: var(--space-2) var(--space-3); background: var(--color-surface); color: var(--color-text-primary); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: var(--font-size-sm); box-sizing: border-box; }
-#overrideModal .form-control-custom:focus { outline: none; border-color: var(--color-border-focus); }
-#overrideModal .modal-actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-5); }
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--color-overlay); z-index: 9999; justify-content: center; align-items: center; }
+.modal-box { background: var(--color-surface); color: var(--color-text-primary); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-6); width: 480px; max-width: 90vw; box-shadow: var(--shadow-lg); }
+.modal-title { font-size: var(--font-size-base); font-weight: 600; margin-bottom: var(--space-4); color: var(--color-text-primary); }
+.form-group { margin-bottom: var(--space-3); }
+.form-group label { display: block; font-size: var(--font-size-sm); font-weight: 500; margin-bottom: 6px; color: var(--color-text-body); }
+.form-control-custom { width: 100%; padding: var(--space-2) var(--space-3); background: var(--color-surface); color: var(--color-text-primary); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: var(--font-size-sm); box-sizing: border-box; }
+.form-control-custom:focus { outline: none; border-color: var(--color-border-focus); }
+.modal-actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-5); }
 .override-empty { text-align: center; padding: 40px 0; color: var(--color-text-secondary); }
 .override-empty i { display: block; }
-.override-id-col { width: 5%; }
-.override-dept-col { width: 17%; }
-.override-account-col { width: 11%; }
-.override-realname-col { width: 13%; }
-.override-time-col { width: 13%; font-size: var(--font-size-sm); }
-.override-action-col { width: 12%; text-align: right; }
-.override-header-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-.override-del-form { margin: 0; }
-.override-actions { display: flex; justify-content: flex-end; gap: var(--space-2); white-space: nowrap; }
-#overrideModal[hidden] { display: none; }
+.override-id-col { width: 70px; }
+.override-dept-col { width: 240px; }
+.override-account-col { width: 140px; }
+.override-realname-col { width: 140px; }
+.override-time-col { width: 160px; font-size: 13px; }
+.override-action-col { width: 130px; text-align: right; }
+.override-header-actions { display: flex; gap: 10px; }
+.override-del-form { display: inline; }
 </style>
 {{ end }}
 
@@ -52,12 +50,12 @@
 <div class="override-container">
   <div class="override-header">
     <div>
-      {{ if .ShowContentTitle }}<h2 class="override-title"><i class="fas fa-user-shield me-2 text-primary"></i> 部门负责人</h2>{{ end }}
-      <div class="override-subtitle">适用于科技本部及下属部门，优先使用此处设置的负责人。</div>
+      <h2 class="override-title"><i class="fas fa-user-shield me-2 text-primary"></i> 部门负责人补缺管理</h2>
+      <div class="override-subtitle">针对科技部本部（52）及其子孙部门：当部门负责人有补缺记录时优先于禅道 <code>zt_dept.manager</code> 生效</div>
     </div>
     <div class="override-header-actions">
       <a href="/admin/depts" class="btn-secondary-custom"><i class="fas fa-sitemap me-1"></i> 返回组织架构</a>
-      <button type="button" class="btn-primary-custom" data-override-add><i class="fas fa-plus"></i> 添加负责人</button>
+      <button type="button" class="btn-primary-custom" onclick="openAddModal()"><i class="fas fa-plus"></i> 新增负责人补缺</button>
     </div>
   </div>
 
@@ -67,9 +65,9 @@
         <tr>
           <th class="override-id-col">ID</th>
           <th class="override-dept-col">部门</th>
-          <th class="override-account-col">负责人账号</th>
+          <th class="override-account-col">补缺负责人账号</th>
           <th class="override-realname-col">姓名</th>
-          <th>备注</th>
+          <th>补缺说明 / 备注</th>
           <th class="override-account-col">更新人</th>
           <th class="override-time-col">创建/更新时间</th>
           <th class="override-action-col">操作</th>
@@ -88,19 +86,19 @@
           <td>{{ if .Remark }}{{ .Remark }}{{ else }}<span class="text-muted">—</span>{{ end }}</td>
           <td>{{ if .CreatedBy }}{{ .CreatedBy }}{{ else }}<span class="text-muted">—</span>{{ end }}</td>
           <td><span class="text-muted override-time-col">{{ if .CreatedDate }}{{ .CreatedDate.Format "2006-01-02 15:04" }}{{ else }}—{{ end }}</span></td>
-          <td class="override-action-col"><div class="override-actions">
-            <button type="button" class="btn-edit-sm" data-override-edit data-dept="{{ .Dept }}" data-account="{{ .Account }}" data-remark="{{ .Remark }}">编辑</button>
-            <form action="/admin/dept-overrides/{{ .ID }}/delete" method="POST" class="override-del-form" onsubmit="return confirm('删除后将使用禅道中的部门负责人，确定删除？');">
+          <td class="override-action-col">
+            <button type="button" class="btn-edit-sm" onclick="openEditModal({{ .Dept }}, '{{ .Account }}', '{{ .Remark }}')">编辑</button>
+            <form action="/admin/dept-overrides/{{ .ID }}/delete" method="POST" class="override-del-form" onsubmit="return confirm('确认删除该部门负责人补缺记录吗？删除后将恢复使用禅道原生设置。');">
               <input type="hidden" name="csrf_token" value="{{ $.CSRFToken }}">
               <button type="submit" class="btn-danger-sm">删除</button>
             </form>
-          </div></td>
+          </td>
         </tr>
         {{ else }}
         <tr>
           <td colspan="8" class="override-empty">
             <i class="fas fa-inbox fa-2x mb-2"></i>
-            暂未设置负责人。
+            暂无部门负责人补缺记录。点击右上角「新增负责人补缺」进行添加。
           </td>
         </tr>
         {{ end }}
@@ -110,13 +108,13 @@
 </div>
 
 {{/* 新增/编辑弹窗 */}}
-<div class="modal-overlay" id="overrideModal" hidden role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+<div class="modal-overlay" id="overrideModal">
   <div class="modal-box">
-    <div class="modal-title" id="modalTitle">添加负责人</div>
+    <div class="modal-title" id="modalTitle">新增部门负责人补缺</div>
     <form action="/admin/dept-overrides" method="POST" id="overrideForm">
       <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}">
       <div class="form-group">
-        <label for="deptSelect">部门 *</label>
+        <label for="deptSelect">选择部门 (科技本部及子孙部门) *</label>
         <select class="form-control-custom" id="deptSelect" name="dept" required>
           <option value="">-- 请选择部门 --</option>
           {{ range .TechDepts }}
@@ -126,17 +124,17 @@
       </div>
 
       <div class="form-group">
-        <label for="accountInput">负责人账号 *</label>
+        <label for="accountInput">负责人账号 (zt_user.account) *</label>
         <input type="text" class="form-control-custom" id="accountInput" name="account" placeholder="例如: 000846 或 wangweijia" required>
       </div>
 
       <div class="form-group">
-        <label for="remarkInput">备注</label>
-        <input type="text" class="form-control-custom" id="remarkInput" name="remark" placeholder="填写备注（选填）">
+        <label for="remarkInput">补缺说明 / 备注</label>
+        <input type="text" class="form-control-custom" id="remarkInput" name="remark" placeholder="说明补缺原因，例如: 产品五部临时负责人">
       </div>
 
       <div class="modal-actions">
-        <button type="button" class="btn-secondary-custom" data-override-close>取消</button>
+        <button type="button" class="btn-secondary-custom" onclick="closeModal()">取消</button>
         <button type="submit" class="btn-primary-custom">保存生效</button>
       </div>
     </form>
@@ -144,26 +142,32 @@
 </div>
 
 <script>
-(function () {
+function openAddModal() {
+  document.getElementById("modalTitle").innerText = "新增部门负责人补缺";
+  document.getElementById("deptSelect").value = "";
+  document.getElementById("deptSelect").disabled = false;
+  document.getElementById("accountInput").value = "";
+  document.getElementById("remarkInput").value = "";
+  document.getElementById("overrideModal").style.display = "flex";
+}
+
+function openEditModal(deptId, account, remark) {
+  document.getElementById("modalTitle").innerText = "编辑部门负责人补缺";
+  document.getElementById("deptSelect").value = String(deptId);
+  document.getElementById("accountInput").value = account;
+  document.getElementById("remarkInput").value = remark;
+  document.getElementById("overrideModal").style.display = "flex";
+}
+
+function closeModal() {
+  document.getElementById("overrideModal").style.display = "none";
+}
+
+window.onclick = function(event) {
   var modal = document.getElementById("overrideModal");
-  var dept = document.getElementById("deptSelect");
-  document.querySelector(".override-container").addEventListener("click", function (event) {
-    var button = event.target.closest("[data-override-add], [data-override-edit]");
-    if (!button) return;
-    var editing = button.hasAttribute("data-override-edit");
-    document.getElementById("modalTitle").textContent = editing ? "编辑负责人" : "添加负责人";
-    dept.value = editing ? button.dataset.dept : "";
-    document.getElementById("accountInput").value = editing ? button.dataset.account : "";
-    document.getElementById("remarkInput").value = editing ? button.dataset.remark : "";
-    modal.hidden = false;
-    dept.focus();
-  });
-  modal.addEventListener("click", function (event) {
-    if (event.target === modal || event.target.closest("[data-override-close]")) modal.hidden = true;
-  });
-  modal.addEventListener("keydown", function (event) {
-    if (event.key === "Escape") modal.hidden = true;
-  });
-})();
+  if (event.target === modal) {
+    closeModal();
+  }
+};
 </script>
 {{ end }}
