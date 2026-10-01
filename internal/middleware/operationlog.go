@@ -56,15 +56,7 @@ func RecordOperationLog(db *gorm.DB, sessionMgr *scs.SessionManager) gin.Handler
 			_ = db.AutoMigrate(&model.OperationLog{})
 		})
 
-		userID := int64(0)
-		account := ""
-		if sessionMgr != nil {
-			userID = sessionMgr.GetInt64(c.Request.Context(), "userID")
-			if userID <= 0 {
-				userID = sessionMgr.GetInt64(c.Request.Context(), "userId")
-			}
-			account = strings.TrimSpace(sessionMgr.GetString(c.Request.Context(), "account"))
-		}
+		userID, account := operationLogActor(c, sessionMgr)
 
 		body := buildOperationLogBody(c.Request.PostForm)
 		if len(c.Request.PostForm) == 0 {
@@ -89,6 +81,21 @@ func RecordOperationLog(db *gorm.DB, sessionMgr *scs.SessionManager) gin.Handler
 			_ = db.Create(&entry).Error
 		}(logEntry)
 	}
+}
+
+// operationLogActor 优先取 RequireLogin 注入的当前用户；会话中只存 userID，不存账号。
+func operationLogActor(c *gin.Context, sessionMgr *scs.SessionManager) (int64, string) {
+	if u := CurrentUser(c); u != nil {
+		return u.ID, strings.TrimSpace(u.Account)
+	}
+	userID := int64(0)
+	if sessionMgr != nil {
+		userID = sessionMgr.GetInt64(c.Request.Context(), "userID")
+		if userID <= 0 {
+			userID = sessionMgr.GetInt64(c.Request.Context(), "userId")
+		}
+	}
+	return userID, ""
 }
 
 func buildOperationLogBody(postForm url.Values) string {
