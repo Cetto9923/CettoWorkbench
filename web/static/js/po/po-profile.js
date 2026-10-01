@@ -737,12 +737,12 @@
     if (modal) modal.remove();
 
     overlay = document.createElement('div');
-    overlay.className = 'modal-overlay prototype-backdrop';
+    overlay.className = 'modal-overlay';
     overlay.id = 'profileModalOverlay';
     overlay.addEventListener('click', onProfileOverlayClick);
 
     modal = document.createElement('div');
-    modal.className = 'modal profile-modal profile-modal-window';
+    modal.className = 'modal profile-modal';
     modal.id = 'profileModal';
     modal.setAttribute('role', 'dialog');
     modal.setAttribute('aria-modal', 'true');
