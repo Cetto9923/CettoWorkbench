@@ -40,7 +40,7 @@
 
 /* 独立页面包装器：/demands/:id 使用与抽屉相同的详情组件，刷新后仍停在该需求。 */
 .dd-standalone-page {
-  max-width: 1200px; margin: 0 auto; padding: 16px 24px 60px;
+  max-width: none; margin: 0; padding: 0 0 60px;
   background: transparent; min-height: calc(100vh - 120px);
 }
 .dd-page-back {
