@@ -80,15 +80,6 @@ func anyDemandHasWindow(demandIDs []uint, windowByDemand map[uint]DemandWindowRe
 	return false
 }
 
-func anyDemandOrStoryHasWindow(
-	demandIDs []uint,
-	stories []ZtStory,
-	windowByDemand map[uint]DemandWindowRef,
-	windowByStory map[uint]StoryWindowRef,
-) bool {
-	return anyDemandHasWindow(demandIDs, windowByDemand) || anyStoryHasWindow(stories, windowByStory)
-}
-
 func sumMainSystemTasks(stories []ZtStory, taskStatByStory map[uint]StoryTaskStat) (int, int) {
 	taskTotal := 0
 	unassignedTotal := 0
@@ -127,27 +118,6 @@ func pickBizWindowName(stories []ZtStory, windowByStory map[uint]StoryWindowRef)
 		}
 	}
 	return ""
-}
-
-func pickDemandWindowID(
-	demandIDs []uint,
-	stories []ZtStory,
-	windowByDemand map[uint]DemandWindowRef,
-	windowByStory map[uint]StoryWindowRef,
-) uint {
-	for _, demandID := range demandIDs {
-		ref, ok := windowByDemand[demandID]
-		if ok && ref.WindowID > 0 {
-			return ref.WindowID
-		}
-	}
-	for _, story := range stories {
-		ref, ok := windowByStory[story.ID]
-		if ok && ref.WindowID > 0 {
-			return ref.WindowID
-		}
-	}
-	return 0
 }
 
 func pickDemandWindowName(
