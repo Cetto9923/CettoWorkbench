@@ -52,12 +52,12 @@
 <div class="override-container">
   <div class="override-header">
     <div>
-      {{ if .ShowContentTitle }}<h2 class="override-title"><i class="fas fa-user-shield me-2 text-primary"></i> 部门负责人补缺管理</h2>{{ end }}
-      <div class="override-subtitle">针对科技部本部（52）及其子孙部门：当部门负责人有补缺记录时优先于禅道 <code>zt_dept.manager</code> 生效</div>
+      {{ if .ShowContentTitle }}<h2 class="override-title"><i class="fas fa-user-shield me-2 text-primary"></i> 部门负责人</h2>{{ end }}
+      <div class="override-subtitle">适用于科技本部及下属部门，优先使用此处设置的负责人。</div>
     </div>
     <div class="override-header-actions">
       <a href="/admin/depts" class="btn-secondary-custom"><i class="fas fa-sitemap me-1"></i> 返回组织架构</a>
-      <button type="button" class="btn-primary-custom" data-override-add><i class="fas fa-plus"></i> 新增负责人补缺</button>
+      <button type="button" class="btn-primary-custom" data-override-add><i class="fas fa-plus"></i> 添加负责人</button>
     </div>
   </div>
 
@@ -67,9 +67,9 @@
         <tr>
           <th class="override-id-col">ID</th>
           <th class="override-dept-col">部门</th>
-          <th class="override-account-col">补缺负责人账号</th>
+          <th class="override-account-col">负责人账号</th>
           <th class="override-realname-col">姓名</th>
-          <th>补缺说明 / 备注</th>
+          <th>备注</th>
           <th class="override-account-col">更新人</th>
           <th class="override-time-col">创建/更新时间</th>
           <th class="override-action-col">操作</th>
@@ -90,7 +90,7 @@
           <td><span class="text-muted override-time-col">{{ if .CreatedDate }}{{ .CreatedDate.Format "2006-01-02 15:04" }}{{ else }}—{{ end }}</span></td>
           <td class="override-action-col"><div class="override-actions">
             <button type="button" class="btn-edit-sm" data-override-edit data-dept="{{ .Dept }}" data-account="{{ .Account }}" data-remark="{{ .Remark }}">编辑</button>
-            <form action="/admin/dept-overrides/{{ .ID }}/delete" method="POST" class="override-del-form" onsubmit="return confirm('确认删除该部门负责人补缺记录吗？删除后将恢复使用禅道原生设置。');">
+            <form action="/admin/dept-overrides/{{ .ID }}/delete" method="POST" class="override-del-form" onsubmit="return confirm('删除后将使用禅道中的部门负责人，确定删除？');">
               <input type="hidden" name="csrf_token" value="{{ $.CSRFToken }}">
               <button type="submit" class="btn-danger-sm">删除</button>
             </form>
@@ -100,7 +100,7 @@
         <tr>
           <td colspan="8" class="override-empty">
             <i class="fas fa-inbox fa-2x mb-2"></i>
-            暂无部门负责人补缺记录。点击右上角「新增负责人补缺」进行添加。
+            暂未设置负责人。
           </td>
         </tr>
         {{ end }}
@@ -112,11 +112,11 @@
 {{/* 新增/编辑弹窗 */}}
 <div class="modal-overlay" id="overrideModal" hidden role="dialog" aria-modal="true" aria-labelledby="modalTitle">
   <div class="modal-box">
-    <div class="modal-title" id="modalTitle">新增部门负责人补缺</div>
+    <div class="modal-title" id="modalTitle">添加负责人</div>
     <form action="/admin/dept-overrides" method="POST" id="overrideForm">
       <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}">
       <div class="form-group">
-        <label for="deptSelect">选择部门 (科技本部及子孙部门) *</label>
+        <label for="deptSelect">部门 *</label>
         <select class="form-control-custom" id="deptSelect" name="dept" required>
           <option value="">-- 请选择部门 --</option>
           {{ range .TechDepts }}
@@ -126,13 +126,13 @@
       </div>
 
       <div class="form-group">
-        <label for="accountInput">负责人账号 (zt_user.account) *</label>
+        <label for="accountInput">负责人账号 *</label>
         <input type="text" class="form-control-custom" id="accountInput" name="account" placeholder="例如: 000846 或 wangweijia" required>
       </div>
 
       <div class="form-group">
-        <label for="remarkInput">补缺说明 / 备注</label>
-        <input type="text" class="form-control-custom" id="remarkInput" name="remark" placeholder="说明补缺原因，例如: 产品五部临时负责人">
+        <label for="remarkInput">备注</label>
+        <input type="text" class="form-control-custom" id="remarkInput" name="remark" placeholder="填写备注（选填）">
       </div>
 
       <div class="modal-actions">
@@ -151,7 +151,7 @@
     var button = event.target.closest("[data-override-add], [data-override-edit]");
     if (!button) return;
     var editing = button.hasAttribute("data-override-edit");
-    document.getElementById("modalTitle").textContent = editing ? "编辑部门负责人补缺" : "新增部门负责人补缺";
+    document.getElementById("modalTitle").textContent = editing ? "编辑负责人" : "添加负责人";
     dept.value = editing ? button.dataset.dept : "";
     document.getElementById("accountInput").value = editing ? button.dataset.account : "";
     document.getElementById("remarkInput").value = editing ? button.dataset.remark : "";
