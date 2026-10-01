@@ -69,17 +69,30 @@ func Run() error {
 	}
 	zentaopkg.SetConfig(cfg.Zentao)
 
-	zapLog, syncLogs, err := initLogging(cfg)
+	zapLog, err := logger.Init(cfg)
 	if err != nil {
-		return err
+		return fmt.Errorf("init logger: %w", err)
 	}
-	defer syncLogs()
+	defer func() { _ = zapLog.Sync() }()
 
-	db, closeDB, err := openDatabases(cfg)
-	if err != nil {
-		return err
+	if err := sqllog.Init(cfg); err != nil {
+		return fmt.Errorf("init sql log: %w", err)
 	}
-	defer closeDB()
+	defer func() { _ = sqllog.Sync() }()
+
+	if err := zentaopkg.InitAPILog(cfg); err != nil {
+		return fmt.Errorf("init zentao api log: %w", err)
+	}
+	defer func() { _ = zentaopkg.SyncAPILog() }()
+
+	db, err := database.New(cfg)
+	if err != nil {
+		return fmt.Errorf("init database: %w", err)
+	}
+	defer func() { _ = database.Close(db) }()
+	if err := db.AutoMigrate(&model.OperationLog{}, &model.DeptManagerOverride{}); err != nil {
+		return fmt.Errorf("ensure tables: %w", err)
+	}
 
 	// 价值流只读备库：失败不阻断启动，PO 价值流降级为空阶段
 	dbReadonly := openReadonlyPool(cfg, zapLog)
@@ -116,41 +129,6 @@ func Run() error {
 
 	srv := server.New(cfg, zapLog, db, sessionMgr, limiter, nil, w.deps)
 	return srv.Run()
-}
-
-// initLogging 依次初始化 zap、SQL 日志与禅道 API 日志，返回的清理函数按逆序落盘。
-func initLogging(cfg *config.Config) (*zap.Logger, func(), error) {
-	zapLog, err := logger.Init(cfg)
-	if err != nil {
-		return nil, nil, fmt.Errorf("init logger: %w", err)
-	}
-	if err := sqllog.Init(cfg); err != nil {
-		_ = zapLog.Sync()
-		return nil, nil, fmt.Errorf("init sql log: %w", err)
-	}
-	if err := zentaopkg.InitAPILog(cfg); err != nil {
-		_ = sqllog.Sync()
-		_ = zapLog.Sync()
-		return nil, nil, fmt.Errorf("init zentao api log: %w", err)
-	}
-	return zapLog, func() {
-		_ = zentaopkg.SyncAPILog()
-		_ = sqllog.Sync()
-		_ = zapLog.Sync()
-	}, nil
-}
-
-// openDatabases 打开主库并补齐建表，返回的清理函数关闭主库。
-func openDatabases(cfg *config.Config) (*gorm.DB, func(), error) {
-	db, err := database.New(cfg)
-	if err != nil {
-		return nil, nil, fmt.Errorf("init database: %w", err)
-	}
-	if err := db.AutoMigrate(&model.OperationLog{}, &model.DeptManagerOverride{}); err != nil {
-		_ = database.Close(db)
-		return nil, nil, fmt.Errorf("ensure tables: %w", err)
-	}
-	return db, func() { _ = database.Close(db) }, nil
 }
 
 // openReadonlyPool 打开价值流只读备库；未配置或打开失败时返回 nil，由调用方降级。
