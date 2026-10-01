@@ -26,7 +26,7 @@ type TeamDashboard struct {
 }
 
 func (s *Service) TeamDashboard(ctx context.Context, ids []uint, accounts []string, _ uint) (*TeamDashboard, error) {
-	out := &TeamDashboard{Due: []DashboardDueItem{}, UpdatedAt: time.Now().Format(time.RFC3339)}
+	out := &TeamDashboard{Due: []DashboardDueItem{}, UpdatedAt: time.Now().Format("2006-01-02 15:04")}
 	if len(ids) == 0 {
 		return out, nil
 	}

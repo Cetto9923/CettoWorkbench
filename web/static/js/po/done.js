@@ -43,14 +43,13 @@
   var metaSeq = 0;
 
   function $(id) { return document.getElementById(id); }
+  function fmtDateText(value) {
+    return window.formatDateTime ? window.formatDateTime(value) : String(value == null ? "—" : value);
+  }
   function fmtDateTime(value) {
     if (!value || value === "—" || value === "-") return '<span class="done-time-date">--</span>';
-    var formatted = window.formatDateTime ? window.formatDateTime(value) : value;
-    var parts = String(formatted).split(" ");
-    if (parts.length >= 2) {
-      return '<span class="done-time-date">' + esc(parts[0]) + '</span><span class="done-time-clock">' + esc(parts[1]) + "</span>";
-    }
-    return '<span class="done-time-date">' + esc(formatted) + "</span>";
+    var p = String(fmtDateText(value)).split(" ");
+    return '<span class="done-time-date">' + esc(p[0]) + "</span>" + (p.length >= 2 ? '<span class="done-time-clock">' + esc(p[1]) + "</span>" : "");
   }
 
   function tagClass(result) {
@@ -367,7 +366,7 @@
           return (
             '<div class="done-tl' + (x.isCurrent ? " current" : "") + '">' +
             '  <div class="done-tl-title">' + esc(x.actionName) + '</div>' +
-            '  <div class="done-tl-meta">' + esc(x.actorName) + ' · ' + esc(x.occurredAt) + '</div>' +
+            '  <div class="done-tl-meta">' + esc(x.actorName) + ' · ' + esc(fmtDateText(x.occurredAt)) + '</div>' +
             '</div>'
           );
         }).join("") : '<div class="done-tl-na">暂无历史时间线</div>';
@@ -379,7 +378,7 @@
           '<span class="done-kv-k">我做了什么</span><span class="done-kv-v done-kv-action">' + esc(actionLabel(it.actionName)) + '</span>' +
           '<span class="done-kv-k">处理结果</span><span class="done-kv-v">' + esc(it.resultText) + '</span>' +
           '<span class="done-kv-k">办理人</span><span class="done-kv-v">' + esc(it.actorName) + '</span>' +
-          '<span class="done-kv-k">处理时间</span><span class="done-kv-v">' + esc(it.date || it.handledAt) + '</span>' +
+          '<span class="done-kv-k">处理时间</span><span class="done-kv-v">' + esc(fmtDateText(it.date || it.handledAt)) + '</span>' +
           '<span class="done-kv-k">状态变化</span><span class="done-kv-v">' + esc(changeText) + '</span>' +
           '<span class="done-kv-k">下一责任人</span><span class="done-kv-v">' + esc(it.nextOwnerName || "--") + '</span></div></div></section>' +
           '<section class="done-section"><div class="done-section-title">对象上下文</div><div class="done-summary-box"><div class="done-kv">' +

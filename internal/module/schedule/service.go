@@ -25,6 +25,7 @@ import (
 	"workbench/internal/model"
 	"workbench/internal/module/dept"
 	"workbench/internal/module/user"
+	"workbench/internal/pkg/datefmt"
 	"workbench/internal/pkg/zentao"
 )
 
@@ -274,7 +275,7 @@ func (s *Service) GetByID(ctx context.Context, actor *model.User, id uint64) (*W
 }
 
 func formatWindowDateRange(start, end time.Time) string {
-	return start.Format("01-02") + " ~ " + end.Format("01-02")
+	return start.Format(datefmt.Layout) + " ~ " + end.Format(datefmt.Layout)
 }
 
 // Create 保存版本窗口并按需同步禅道产品计划。

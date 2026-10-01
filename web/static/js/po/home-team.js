@@ -291,7 +291,7 @@
       if (blocked) blocked.textContent = String(Number(data.blocked || 0));
       if (overdue) overdue.textContent = String(Number(data.overdue || 0));
       if (soon) soon.textContent = String(Number(data.soon || 0));
-      if (status) status.textContent = "更新于 " + esc(data.updatedAt || "刚刚");
+      if (status) status.textContent = "更新于 " + esc(window.formatDateTime ? window.formatDateTime(data.updatedAt) : (data.updatedAt || "刚刚"));
       const due = Array.isArray(data.due) ? data.due : [];
       if (rows) rows.innerHTML = due.length ? due.map(function (item) {
         const isTask = item.kind === "task";
