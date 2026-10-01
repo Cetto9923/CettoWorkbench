@@ -44,13 +44,92 @@ func (s *Service) List(ctx context.Context, actor *model.User, req ListReq) (Lis
 		return ListResp{}, err
 	}
 
-	data, err := s.loadListRowData(ctx, rows)
+	ids := make([]uint, 0, len(rows))
+	for _, r := range rows {
+		ids = append(ids, r.ID)
+	}
+	membersByID, err := s.repo.ListMembersByGroupIDs(ctx, ids)
 	if err != nil {
 		return ListResp{}, err
 	}
-	allItems, matched, stats := buildListItems(rows, data, req)
+	pendingByID, err := s.repo.ListPendingByTeamgroupIDs(ctx, ids)
+	if err != nil {
+		return ListResp{}, err
+	}
+	adjIDs := make([]int64, 0, len(pendingByID))
+	for _, p := range pendingByID {
+		adjIDs = append(adjIDs, p.ID)
+	}
+	counts, err := s.repo.CountPendingItems(ctx, adjIDs)
+	if err != nil {
+		return ListResp{}, err
+	}
+	lastTimes, err := s.repo.LastAdjustTimes(ctx, ids)
+	if err != nil {
+		return ListResp{}, err
+	}
 
-	byID := indexListItems(allItems)
+	accounts := []string{}
+	for _, r := range rows {
+		accounts = append(accounts, r.PO, strings.TrimSpace(r.Manager))
+	}
+	names, _ := s.repo.ResolveRealnames(ctx, accounts)
+
+	var all, enable, disable, pending int64
+	allItems := make([]ListItem, 0, len(rows))
+	matched := make([]ListItem, 0, len(rows))
+	for _, r := range rows {
+		st := strings.TrimSpace(r.Status)
+		if st == "" || st == "enable" || st == "doing" {
+			enable++
+		} else {
+			disable++
+		}
+		all++
+		formal := membersByID[r.ID]
+		pad, prem := 0, 0
+		var pendID int64
+		if p, ok := pendingByID[r.ID]; ok {
+			pending++
+			pendID = p.ID
+			c := counts[p.ID]
+			pad, prem = c.Add, c.Remove
+		}
+		coachAcc := firstAccount(r.Manager)
+		poAcc := strings.TrimSpace(r.PO)
+		lastAt := ""
+		if t, ok := lastTimes[r.ID]; ok {
+			lastAt = formatTime(t)
+		}
+		item := ListItem{
+			ID: r.ID, Name: r.Name, ParentID: r.Parent, ParentName: r.ParentName,
+			OrgDeptID: r.OrgDeptID, OrgDeptName: r.OrgDeptName, OrgDeptInherited: r.OrgDeptInherited,
+			Type: teamTypeOf(r), CoachAccount: coachAcc, CoachName: names[coachAcc],
+			POAccount: poAcc, POName: names[poAcc],
+			FormalCount: len(formal), PendingAdd: pad, PendingRemove: prem,
+			Status: st, StatusLabel: statusLabel(st),
+			LastAdjustAt: lastAt, PendingAdjustID: pendID,
+		}
+		allItems = append(allItems, item)
+		if matchListFilters(r, formal, pad > 0 || prem > 0, names, req) {
+			matched = append(matched, item)
+		}
+	}
+
+	byID := map[uint]ListItem{}
+	for _, it := range allItems {
+		byID[it.ID] = it
+	}
+	for _, it := range allItems {
+		if it.ParentID == 0 {
+			continue
+		}
+		if _, exists := byID[it.ParentID]; !exists {
+			byID[it.ParentID] = ListItem{
+				ID: it.ParentID, Name: it.ParentName, Type: "parent", ContextOnly: true,
+			}
+		}
+	}
 	families := buildTeamFamilies(matched, byID)
 	total := int64(0)
 	for _, f := range families {
@@ -62,7 +141,7 @@ func (s *Service) List(ctx context.Context, actor *model.User, req ListReq) (Lis
 	}
 	return ListResp{
 		Items: pageItems, Total: total,
-		AllCount: stats.all, EnableCount: stats.enable, DisableCount: stats.disable, PendingCount: stats.pending,
+		AllCount: all, EnableCount: enable, DisableCount: disable, PendingCount: pending,
 		Page: req.Page, PageSize: req.PageSize, PageCount: pageCount,
 		ScopeOptions: scopeOpts, AvailableScopes: availableScopes, ActiveScope: req.Scope, CanEdit: req.View != "lead",
 	}, nil

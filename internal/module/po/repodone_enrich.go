@@ -77,44 +77,22 @@ func (r *Repo) fetchObjectContexts(ctx context.Context, rows []doneActionDBRow) 
 		return out, nil
 	}
 
-	var demandIDs, storyIDs, taskIDs, bugIDs, todoIDs []int64
-	var charterIDs, planchangeIDs, buildguidelineIDs, reviewIDs, caseIDs []int64
-
+	idsByType := make(map[string][]int64)
 	for _, row := range rows {
-		switch row.ObjectType {
-		case "demand":
-			demandIDs = append(demandIDs, row.ObjectID)
-		case "story":
-			storyIDs = append(storyIDs, row.ObjectID)
-		case "task":
-			taskIDs = append(taskIDs, row.ObjectID)
-		case "bug":
-			bugIDs = append(bugIDs, row.ObjectID)
-		case "todo":
-			todoIDs = append(todoIDs, row.ObjectID)
-		case "charter":
-			charterIDs = append(charterIDs, row.ObjectID)
-		case "planchange":
-			planchangeIDs = append(planchangeIDs, row.ObjectID)
-		case "buildguideline":
-			buildguidelineIDs = append(buildguidelineIDs, row.ObjectID)
-		case "review":
-			reviewIDs = append(reviewIDs, row.ObjectID)
-		case "case":
-			caseIDs = append(caseIDs, row.ObjectID)
-		}
+		idsByType[row.ObjectType] = append(idsByType[row.ObjectType], row.ObjectID)
 	}
 
 	// 审批对象上下文见 repodone_enrich_approval.go。
 	if err := r.loadApprovalObjectContexts(ctx, out,
-		charterIDs, planchangeIDs, buildguidelineIDs, reviewIDs, caseIDs); err != nil {
+		idsByType["charter"], idsByType["planchange"], idsByType["buildguideline"],
+		idsByType["review"], idsByType["case"]); err != nil {
 		return nil, err
 	}
 
 	// 研发侧对象见 repodone_enrich_workitem.go。
-	r.loadDemandStoryContexts(ctx, out, demandIDs, storyIDs)
-	r.loadTaskBugContexts(ctx, out, taskIDs, bugIDs)
-	r.loadTodoContexts(ctx, out, todoIDs)
+	r.loadDemandStoryContexts(ctx, out, idsByType["demand"], idsByType["story"])
+	r.loadTaskBugContexts(ctx, out, idsByType["task"], idsByType["bug"])
+	r.loadTodoContexts(ctx, out, idsByType["todo"])
 
 	return out, nil
 }

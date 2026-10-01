@@ -46,14 +46,6 @@ func (s *DetailService) attachParent(parent *Service) {
 	s.parent = parent
 }
 
-// detailRelation 需求详情的父子需求关系与展示模式。
-type detailRelation struct {
-	mode         string
-	childDemands []DemandChildRow
-	parentDemand *DemandDetailRow
-	siblings     []DemandChildRow
-}
-
 // GetDemandDetail 组装业务需求详情完整结构。
 //
 // F01：入口通过 GetDemandDetailAuthZ 做对象级授权与 not-found 区分；
@@ -64,9 +56,29 @@ func (s *DetailService) GetDemandDetail(ctx context.Context, actor *model.User, 
 		return nil, err
 	}
 
-	rel, err := s.loadDetailRelation(ctx, row)
-	if err != nil {
-		return nil, err
+	mode := "selfUnit"
+	var childDemands []DemandChildRow
+	var parentDemand *DemandDetailRow
+	var siblings []DemandChildRow
+
+	if row.Parent <= 0 {
+		childDemands, err = s.repo.FindChildDemands(ctx, row.ID)
+		if err != nil {
+			return nil, err
+		}
+		if len(childDemands) > 0 {
+			mode = "parentAggregate"
+		}
+	} else {
+		mode = "childUnit"
+		parentDemand, err = s.repo.FindDemandDetailByID(ctx, uint(row.Parent))
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+		siblings, err = s.repo.FindChildDemands(ctx, uint(row.Parent))
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if s.repo != nil {
@@ -75,23 +87,49 @@ func (s *DetailService) GetDemandDetail(ctx context.Context, actor *model.User, 
 		}
 	}
 
+	summary := s.buildSummary(row)
+
 	resp := &DemandDetailResp{
 		Success: true,
-		Mode:    rel.mode,
-		Summary: s.buildSummary(row),
+		Mode:    mode,
+		Summary: summary,
 		Config: DetailConfig{
 			DeliveryCycleTargetDays: 28,
 		},
 	}
 
-	if rel.mode == "parentAggregate" {
-		resp.ParentAggregate, err = s.buildParentAggregate(ctx, rel.childDemands)
+	if mode == "parentAggregate" {
+		resp.ParentAggregate, err = s.buildParentAggregate(ctx, childDemands)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		if err := s.fillDetailSelfUnit(ctx, row, rel, resp); err != nil {
-			return nil, err
+		if mode == "childUnit" && parentDemand != nil {
+			resp.RelationContext = s.buildRelationContext(parentDemand, siblings, row.ID)
+		}
+		resp.ValueStream = s.buildValueStream(row)
+		resp.Spotlight = s.buildSpotlight(row.Stage, row.Status)
+		reqTab, reqErr := s.buildRequirement(ctx, row)
+		if reqErr != nil {
+			return nil, reqErr
+		}
+		resp.Requirement = reqTab
+		exec, execErr := s.buildExecution(ctx, row.ID)
+		if execErr != nil {
+			return nil, execErr
+		}
+		resp.Execution = exec
+		resp.Delivery = s.buildDelivery(row, resp.Execution)
+
+		if resp.Execution != nil {
+			resp.Summary.StoriesCount = len(resp.Execution.Stories)
+			for _, st := range resp.Execution.Stories {
+				resp.Summary.TasksDone += st.TasksDone
+				resp.Summary.TasksTotal += st.TasksTotal
+			}
+			resp.Summary.CasesExecuted = resp.Execution.TestCaseSummary.ExecutedCount
+			resp.Summary.CasesTotal = resp.Execution.TestCaseSummary.TotalCount
+			resp.Summary.BugsUnresolved = resp.Execution.BugSummary.ActiveCount
 		}
 	}
 
@@ -104,128 +142,49 @@ func (s *DetailService) GetDemandDetail(ctx context.Context, actor *model.User, 
 	// 单行详情主操作派生与操作权限计算。
 	// 详情行已包含 stage/status/accepter/assignedTo，无需 IN 批量。
 	if actor != nil && row != nil {
-		if err := s.applyDetailActor(ctx, actor, row, resp); err != nil {
-			return nil, err
+		canWrite, writeErr := s.canWriteDemand(ctx, actor, row.ID)
+		if writeErr != nil {
+			return nil, writeErr
 		}
+		s.applyPrimaryActionForDetail(ctx, actor, row, resp, canWrite)
+
+		account := strings.TrimSpace(actor.Account)
+		if account != "" {
+			resp.Summary.IsCreator = strings.TrimSpace(row.CreatedBy) == account
+			resp.Summary.IsAssignee = strings.TrimSpace(row.AssignedTo) == account
+		}
+		resp.Summary.CanWithdrawReview = canWrite && canWithdrawReviewForDetail(actor, row)
+		s.populateDemandEditability(ctx, actor, row, canWrite, &resp.Summary)
 	}
 
 	// F02：API 出口对富文本字段做白名单净化，确保 specHtml / verifyHtml 即便
 	// 未来绕过 renderer 也不会带 script/on*/javascript: 等危险形态。
-	sanitizeDetailRichText(resp)
-
-	if err := s.fillDetailExtensions(ctx, row, resp); err != nil {
-		return nil, err
-	}
-	return resp, nil
-}
-
-// fillDetailExtensions 依次装配价值模型、审批流与管理信息。
-func (s *DetailService) fillDetailExtensions(ctx context.Context, row *DemandDetailRow, resp *DemandDetailResp) error {
-	vm, err := s.populateValueModel(ctx, row)
-	if err != nil {
-		return err
-	}
-	resp.ValueModel = vm
-
-	flow, err := s.populateFlowApproval(ctx, row.ID)
-	if err != nil {
-		return err
-	}
-	resp.FlowApproval = flow
-
-	mgmt, err := s.populateManagementInfo(ctx, row.ID)
-	if err != nil {
-		return err
-	}
-	resp.ManagementInfo = mgmt
-	return nil
-}
-
-// loadDetailRelation 判定详情展示模式并加载父/子需求关系数据。
-func (s *DetailService) loadDetailRelation(ctx context.Context, row *DemandDetailRow) (detailRelation, error) {
-	if row.Parent <= 0 {
-		childDemands, err := s.repo.FindChildDemands(ctx, row.ID)
-		if err != nil {
-			return detailRelation{}, err
-		}
-		mode := "selfUnit"
-		if len(childDemands) > 0 {
-			mode = "parentAggregate"
-		}
-		return detailRelation{mode: mode, childDemands: childDemands}, nil
-	}
-
-	parentDemand, err := s.repo.FindDemandDetailByID(ctx, uint(row.Parent))
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return detailRelation{}, err
-	}
-	siblings, err := s.repo.FindChildDemands(ctx, uint(row.Parent))
-	if err != nil {
-		return detailRelation{}, err
-	}
-	return detailRelation{mode: "childUnit", parentDemand: parentDemand, siblings: siblings}, nil
-}
-
-// fillDetailSelfUnit 组装非聚合模式下的价值流、需求、执行与交付，并回填汇总计数。
-func (s *DetailService) fillDetailSelfUnit(ctx context.Context, row *DemandDetailRow, rel detailRelation, resp *DemandDetailResp) error {
-	if rel.mode == "childUnit" && rel.parentDemand != nil {
-		resp.RelationContext = s.buildRelationContext(rel.parentDemand, rel.siblings, row.ID)
-	}
-	resp.ValueStream = s.buildValueStream(row)
-	resp.Spotlight = s.buildSpotlight(row.Stage, row.Status)
-
-	reqTab, err := s.buildRequirement(ctx, row)
-	if err != nil {
-		return err
-	}
-	resp.Requirement = reqTab
-
-	exec, err := s.buildExecution(ctx, row.ID)
-	if err != nil {
-		return err
-	}
-	resp.Execution = exec
-	resp.Delivery = s.buildDelivery(row, resp.Execution)
-
-	if resp.Execution != nil {
-		resp.Summary.StoriesCount = len(resp.Execution.Stories)
-		for _, st := range resp.Execution.Stories {
-			resp.Summary.TasksDone += st.TasksDone
-			resp.Summary.TasksTotal += st.TasksTotal
-		}
-		resp.Summary.CasesExecuted = resp.Execution.TestCaseSummary.ExecutedCount
-		resp.Summary.CasesTotal = resp.Execution.TestCaseSummary.TotalCount
-		resp.Summary.BugsUnresolved = resp.Execution.BugSummary.ActiveCount
-	}
-	return nil
-}
-
-// applyDetailActor 计算当前账号在详情页的主操作与写权限。
-func (s *DetailService) applyDetailActor(ctx context.Context, actor *model.User, row *DemandDetailRow, resp *DemandDetailResp) error {
-	canWrite, err := s.canWriteDemand(ctx, actor, row.ID)
-	if err != nil {
-		return err
-	}
-	s.applyPrimaryActionForDetail(ctx, actor, row, resp, canWrite)
-
-	account := strings.TrimSpace(actor.Account)
-	if account != "" {
-		resp.Summary.IsCreator = strings.TrimSpace(row.CreatedBy) == account
-		resp.Summary.IsAssignee = strings.TrimSpace(row.AssignedTo) == account
-	}
-	resp.Summary.CanWithdrawReview = canWrite && canWithdrawReviewForDetail(actor, row)
-	s.populateDemandEditability(ctx, actor, row, canWrite, &resp.Summary)
-	return nil
-}
-
-// sanitizeDetailRichText 对 API 出口的富文本字段做白名单净化。
-func sanitizeDetailRichText(resp *DemandDetailResp) {
 	if resp.Requirement != nil {
 		resp.Requirement.SpecHtml = SanitizeRichTextHTML(resp.Requirement.SpecHtml)
 		resp.Requirement.VerifyHtml = SanitizeRichTextHTML(resp.Requirement.VerifyHtml)
 	}
 	resp.Summary.Desc = SanitizeRichTextHTML(resp.Summary.Desc)
 	resp.Summary.VerifyPlan = SanitizeRichTextHTML(resp.Summary.VerifyPlan)
+
+	vm, vmErr := s.populateValueModel(ctx, row)
+	if vmErr != nil {
+		return nil, vmErr
+	}
+	resp.ValueModel = vm
+
+	flow, flowErr := s.populateFlowApproval(ctx, row.ID)
+	if flowErr != nil {
+		return nil, flowErr
+	}
+	resp.FlowApproval = flow
+
+	mgmt, mgmtErr := s.populateManagementInfo(ctx, row.ID)
+	if mgmtErr != nil {
+		return nil, mgmtErr
+	}
+	resp.ManagementInfo = mgmt
+
+	return resp, nil
 }
 
 // bindPrimaryActionSpotlight 将列表同源的主操作挂到详情 spotlight。

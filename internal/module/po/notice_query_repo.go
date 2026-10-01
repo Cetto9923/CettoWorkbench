@@ -172,18 +172,12 @@ func applyNoticeObjectTypeFilter(query *gorm.DB, objectType string) *gorm.DB {
 	return query.Where(cond)
 }
 
-// noticeTodayWindow 返回「今天」的起止时刻，供 TimeRange 与 QuickView 复用。
-func noticeTodayWindow(now time.Time) (time.Time, time.Time) {
-	start := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	return start, start.AddDate(0, 0, 1)
-}
-
 // applyNoticeCreatedDateFilter 追加创建时间范围条件。
 func applyNoticeCreatedDateFilter(query *gorm.DB, now time.Time, value string) *gorm.DB {
 	switch value {
 	case "today":
-		start, end := noticeTodayWindow(now)
-		return query.Where("n.createdDate >= ? AND n.createdDate < ?", start, end)
+		start := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+		return query.Where("n.createdDate >= ? AND n.createdDate < ?", start, start.AddDate(0, 0, 1))
 	case "3d":
 		return query.Where("n.createdDate >= ?", now.AddDate(0, 0, -3))
 	case "7d":
