@@ -374,6 +374,14 @@ func (r *Renderer) enrichData(c *gin.Context, page string, data gin.H) {
 			data["CurrentUser"] = nil
 		}
 	}
+	granted, _ := c.Get("userPerms")
+	permissions, _ := granted.(map[string]bool)
+	if permissions == nil {
+		permissions = map[string]bool{}
+	}
+	data["UserPerms"] = permissions
+	data["AdminVisible"] = permissions["user:list"] || permissions["role:list"] || permissions["menu:list"] || permissions["dept:list"] || permissions["operationlog:list"] || permissions["loginlog:list"]
+
 	if _, ok := data["CSRFToken"]; !ok {
 		if c.Request != nil {
 			data["CSRFToken"] = nosurf.Token(c.Request)

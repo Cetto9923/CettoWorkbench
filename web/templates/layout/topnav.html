@@ -83,6 +83,7 @@
         {{ end }}
       {{ end }}
     {{ end }}
+    {{ if .AdminVisible }}<button type="button" class="topnav-primary-item{{ if hasPrefix .CurrentPath "/admin/" }} is-active{{ end }}" data-topnav-panel="admin"><i class="bi bi-shield-lock topnav-primary-icon" aria-hidden="true"></i><span class="topnav-primary-label">组织管理</span></button>{{ end }}
   </div>
 </nav>
 {{ end }}
@@ -106,6 +107,7 @@
     {{ end }}
   {{ end }}
 {{ end }}
+{{ if and .AdminVisible (hasPrefix .CurrentPath "/admin/") }}{{ $initial = "admin" }}{{ end }}
 <div id="topnav-secondary" class="topnav-secondary"{{ if eq $initial "" }} hidden{{ end }}>
   {{ if .CurrentMenus }}
     {{ range .CurrentMenus }}
@@ -126,5 +128,6 @@
       {{ end }}
     {{ end }}
   {{ end }}
+  {{ if .AdminVisible }}<div class="topnav-panel" data-topnav-panel="admin"{{ if ne $initial "admin" }} hidden{{ end }}>{{ template "layout/adminLinks" . }}</div>{{ end }}
 </div>
 {{ end }}

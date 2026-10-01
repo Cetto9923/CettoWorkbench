@@ -8,7 +8,7 @@
 ========================================================================== */}}
 <nav class="sidebar po-dual-sidebar" id="sidebar">
   {{ $isPersonal := or (eq .CurrentPath "/home") (eq .CurrentPath "/todos") (eq .CurrentPath "/done") (eq .CurrentPath "/notice") (eq .CurrentPath "/follow") (eq .CurrentPath "/profile") }}
-  {{ $isPlan := or (eq .CurrentPath "/schedule") (eq .CurrentPath "/query") (hasPrefix .CurrentPath "/demands/") }}
+  {{ $isPlan := or (eq .CurrentPath "/schedule") (eq .CurrentPath "/query") (hasPrefix .CurrentPath "/demands/") (hasPrefix .CurrentPath "/version-follow") }}
   {{ $isCollab := or (eq .CurrentPath "/board/demand") (eq .CurrentPath "/board/task") (eq .CurrentPath "/agileteam") (eq .CurrentPath "/pmo") }}
   {{ $isGov := or (eq .CurrentPath "/issues/risk") (eq .CurrentPath "/issue-risk") (eq .CurrentPath "/metrics/radar") (eq .CurrentPath "/metrics/manage") }}
   {{ $isAdmin := hasPrefix .CurrentPath "/admin/" }}
@@ -58,7 +58,7 @@
         <i class="fas fa-chart-pie"></i>
         <span>治理</span>
       </button>
-      {{ if and .CurrentUser .CurrentUser.IsSuperAdmin }}
+      {{ if .AdminVisible }}
       <button type="button" class="po-rail-btn{{ if eq $activeGroup "admin" }} is-active-route is-drawer-open{{ end }}" data-rail-group="admin" title="组织管理">
         <span class="po-rail-route-indicator" aria-hidden="true"></span>
         <i class="fas fa-user-shield"></i>
@@ -112,7 +112,7 @@
       <div class="po-subnav-body">
         <a href="/schedule" class="nav-item{{ if eq .CurrentPath "/schedule" }} active{{ end }}"><i class="nav-icon fas fa-calendar-check"></i><span class="nav-text">需求排期</span></a>
         <a href="/query" class="nav-item{{ if eq .CurrentPath "/query" }} active{{ end }}"><i class="nav-icon fas fa-magnifying-glass"></i><span class="nav-text">需求查询</span></a>
-        <button type="button" class="nav-item po-shell-placeholder" data-placeholder-type="migration"><i class="nav-icon fas fa-boxes-packing"></i><span class="nav-text">版本交付</span><span class="nav-badge nav-badge--muted">建设中</span></button>
+        {{ if index .UserPerms "po:schedule" }}<a href="/version-follow" class="nav-item{{ if hasPrefix .CurrentPath "/version-follow" }} active{{ end }}"><i class="nav-icon fas fa-boxes-packing"></i><span class="nav-text">版本跟踪</span></a>{{ end }}
       </div>
     </div>
 
@@ -153,14 +153,14 @@
       </div>
     </div>
 
-    {{ if and .CurrentUser .CurrentUser.IsSuperAdmin }}
+    {{ if .AdminVisible }}
     {{/* 6. 组织管理 */}}
     <div class="po-subnav-panel{{ if eq $activeGroup "admin" }} is-active{{ end }}" data-subnav-panel="admin">
       <div class="po-subnav-header">
         <span class="po-subnav-title">组织管理</span>
       </div>
       <div class="po-subnav-body">
-        <a href="/admin/roles" class="nav-item{{ if or (eq .CurrentPath "/admin/roles") (eq .CurrentPath "/admin/users") }} active{{ end }}"><i class="nav-icon fas fa-user-shield"></i><span class="nav-text">后台管理</span></a>
+        {{ template "layout/adminLinks" . }}
       </div>
     </div>
     {{ end }}
@@ -265,4 +265,14 @@
     </div>
   </div>
 </div>
+{{ end }}
+
+{{ define "layout/adminLinks" }}
+{{ if index .UserPerms "user:list" }}<a href="/admin/users" class="nav-item{{ if eq .LayoutNav "top" }} topnav-subitem{{ end }}{{ if hasPrefix .CurrentPath "/admin/users" }} active{{ end }}"><i class="nav-icon fas fa-users"></i><span class="nav-text">用户管理</span></a>{{ end }}
+{{ if index .UserPerms "role:list" }}<a href="/admin/roles" class="nav-item{{ if eq .LayoutNav "top" }} topnav-subitem{{ end }}{{ if hasPrefix .CurrentPath "/admin/roles" }} active{{ end }}"><i class="nav-icon fas fa-user-shield"></i><span class="nav-text">角色管理</span></a>{{ end }}
+{{ if index .UserPerms "menu:list" }}<a href="/admin/menus" class="nav-item{{ if eq .LayoutNav "top" }} topnav-subitem{{ end }}{{ if hasPrefix .CurrentPath "/admin/menus" }} active{{ end }}"><i class="nav-icon fas fa-bars"></i><span class="nav-text">菜单管理</span></a>{{ end }}
+{{ if index .UserPerms "dept:list" }}<a href="/admin/depts" class="nav-item{{ if eq .LayoutNav "top" }} topnav-subitem{{ end }}{{ if hasPrefix .CurrentPath "/admin/depts" }} active{{ end }}"><i class="nav-icon fas fa-sitemap"></i><span class="nav-text">部门管理</span></a>{{ end }}
+{{ if index .UserPerms "dept:list" }}<a href="/admin/dept-overrides" class="nav-item{{ if eq .LayoutNav "top" }} topnav-subitem{{ end }}{{ if hasPrefix .CurrentPath "/admin/dept-overrides" }} active{{ end }}"><i class="nav-icon fas fa-user-check"></i><span class="nav-text">负责人补缺</span></a>{{ end }}
+{{ if index .UserPerms "operationlog:list" }}<a href="/admin/operation-logs" class="nav-item{{ if eq .LayoutNav "top" }} topnav-subitem{{ end }}{{ if hasPrefix .CurrentPath "/admin/operation-logs" }} active{{ end }}"><i class="nav-icon fas fa-clock-rotate-left"></i><span class="nav-text">操作日志</span></a>{{ end }}
+{{ if index .UserPerms "loginlog:list" }}<a href="/admin/login-logs" class="nav-item{{ if eq .LayoutNav "top" }} topnav-subitem{{ end }}{{ if hasPrefix .CurrentPath "/admin/login-logs" }} active{{ end }}"><i class="nav-icon fas fa-right-to-bracket"></i><span class="nav-text">登录日志</span></a>{{ end }}
 {{ end }}
