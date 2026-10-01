@@ -89,6 +89,7 @@
           <td class="override-action-col">
             <button type="button" class="btn-edit-sm" onclick="openEditModal({{ .Dept }}, '{{ .Account }}', '{{ .Remark }}')">编辑</button>
             <form action="/admin/dept-overrides/{{ .ID }}/delete" method="POST" class="override-del-form" onsubmit="return confirm('确认删除该部门负责人补缺记录吗？删除后将恢复使用禅道原生设置。');">
+              <input type="hidden" name="csrf_token" value="{{ $.CSRFToken }}">
               <button type="submit" class="btn-danger-sm">删除</button>
             </form>
           </td>
@@ -111,6 +112,7 @@
   <div class="modal-box">
     <div class="modal-title" id="modalTitle">新增部门负责人补缺</div>
     <form action="/admin/dept-overrides" method="POST" id="overrideForm">
+      <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}">
       <div class="form-group">
         <label for="deptSelect">选择部门 (科技本部及子孙部门) *</label>
         <select class="form-control-custom" id="deptSelect" name="dept" required>
