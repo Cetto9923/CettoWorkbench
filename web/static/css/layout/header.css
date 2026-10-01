@@ -82,6 +82,7 @@ html[data-theme="dark"] .po-user-avatar {
 
 @media (max-width: 992px) {
   .po-header-right .po-global-search { max-width: 120px; }
+  .topbar-identity .page-pin-text { display: none; }
 }
 
 /* 顶部用户菜单：几何与间距对齐原型 .po-header-right .dropdown-menu */
