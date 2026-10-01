@@ -18,7 +18,6 @@
   <link rel="stylesheet" href="{{ asset "/static/vendor/fonts/jetbrains-mono/fonts.css" }}">
   <link rel="stylesheet" href="{{ asset "/static/vendor/bootstrap-icons/bootstrap-icons.css" }}">
   <link rel="stylesheet" href="{{ asset "/static/vendor/fontawesome/css/all.min.css" }}">
-  <link rel="stylesheet" href="{{ asset "/static/vendor/quill/quill.snow.css" }}">
   <link rel="stylesheet" href="{{ asset "/static/css/tokens.css" }}">
   <link rel="stylesheet" href="{{ asset "/static/css/components.css" }}">
   <link rel="stylesheet" href="{{ asset "/static/css/layout/base.css" }}">
@@ -100,8 +99,6 @@
   {{ if and (not .HideChrome) (eq .LayoutNav "sidebar") }}<script src="{{ asset "/static/js/layout/globalsearch.js" }}"></script>{{ end }}
   <script src="{{ asset "/static/js/po/po-profile.js" }}"></script>
   {{ if not .HideChrome }}<script src="{{ asset "/static/js/layout/bottomtabbar.js" }}"></script>{{ end }}
-  <script src="{{ asset "/static/vendor/quill/quill.min.js" }}"></script>
-  <script src="{{ asset "/static/vendor/jquery/jquery.min.js" }}"></script>
   {{ if and (not .HideChrome) (eq .LayoutNav "top") }}<script src="{{ asset "/static/js/layout/topnav.js" }}"></script>{{ end }}
   {{ block "page_js" . }}{{ end }}
   {{ template "scripts" . }}

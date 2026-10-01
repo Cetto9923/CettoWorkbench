@@ -839,6 +839,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
 {{ end }}
 
 {{ define "page_js" }}
+<script src="{{ asset "/static/vendor/jquery/jquery.min.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/schedulefetch.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/schedulewindowdraft.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/schedulewindow.js" }}"></script>
