@@ -18,6 +18,8 @@ var (
 	irClosedStatuses = []string{"resolved", "closed", "cancel", "canceled"}
 )
 
+var issueRiskNow = time.Now
+
 // IssueRiskProject 用于 IssuesRiskList 响应中的项目下拉选项，列表按 p.name 升序，最多 100 条。
 type IssueRiskProject struct {
 	ID   uint   `json:"id"`
@@ -123,11 +125,12 @@ func mapIssueRiskRow(row issueRiskRow, kind string) IssueRiskItem {
 		}
 	}
 	overdue, od := false, 0
-	if t, e := time.Parse("2006-01-02", plan); e == nil && !issueRiskClosed(kind, row.Status) && t.Before(time.Now().Truncate(24*time.Hour)) {
-		overdue = true
-		od = int(time.Since(t).Hours() / 24)
-		if od < 1 {
-			od = 1
+	if t, e := time.Parse("2006-01-02", plan); e == nil && !issueRiskClosed(kind, row.Status) {
+		now := issueRiskNow()
+		today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, t.Location())
+		if today.After(t) {
+			overdue = true
+			od = int(today.Sub(t).Hours() / 24)
 		}
 	}
 	handler := row.HandlerName

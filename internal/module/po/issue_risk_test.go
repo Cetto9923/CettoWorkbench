@@ -12,6 +12,7 @@ import (
 	"context"
 	"database/sql/driver"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"workbench/internal/model"
@@ -248,5 +249,30 @@ func TestIssueRiskClosedHelper(t *testing.T) {
 	}
 	if issueRiskClosed("risk", "resolved") {
 		t.Error("risk should NOT be closed at resolved per existing helper")
+	}
+}
+
+func TestIssueRiskOverdueLocalCalendarDay(t *testing.T) {
+	originalNow := issueRiskNow
+	t.Cleanup(func() { issueRiskNow = originalNow })
+	cases := []struct {
+		name, plan, status string
+		hour               int
+		wantOverdue        bool
+		wantDays           int
+	}{
+		{"跨零点", "2026-09-30", "active", 0, true, 1},
+		{"当天", "2026-10-01", "active", 0, false, 0},
+		{"过去多天", "2026-09-27", "active", 0, true, 4},
+		{"空日期", "", "active", 0, false, 0},
+		{"已关闭", "2026-09-30", "closed", 0, false, 0},
+		{"当天晚间", "2026-10-01", "active", 23, false, 0},
+	}
+	for _, tc := range cases {
+		issueRiskNow = func() time.Time { return time.Date(2026, 10, 1, tc.hour, 30, 0, 0, time.Local) }
+		item := mapIssueRiskRow(issueRiskRow{PlanDate: tc.plan, Status: tc.status}, "risk")
+		if item.IsOverdue != tc.wantOverdue || item.OverdueDays != tc.wantDays {
+			t.Fatalf("%s: overdue=%t/%d, want %t/%d", tc.name, item.IsOverdue, item.OverdueDays, tc.wantOverdue, tc.wantDays)
+		}
 	}
 }
