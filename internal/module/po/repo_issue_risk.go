@@ -5,27 +5,28 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"gorm.io/gorm"
 )
 
-func (r *Repo) FindIssueRiskList(ctx context.Context, account string, req IssueRiskListReq) ([]issueRiskRow, int64, error) {
-	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
-		return []issueRiskRow{}, 0, nil
+// issueRiskAlias 按 Kind 返回表名、别名及 issue/risk 各自的列名。
+func issueRiskAlias(kind string) (a, table, title, plan string) {
+	if kind == "risk" {
+		return "k", "zt_risk AS k", "k.name", "k.plannedClosedDate"
 	}
-	a, table, title, plan, severity := "i", "zt_issue AS i", "i.title", "i.deadline", "i.severity"
-	if req.Kind == "risk" {
-		a, table, title, plan, severity = "k", "zt_risk AS k", "k.name", "k.plannedClosedDate", "k.impact"
-	}
-	q := r.db.WithContext(ctx).Table(table).
-		Joins(fmt.Sprintf("LEFT JOIN zt_user cu ON cu.account = %s.createdBy AND cu.deleted = '0'", a)).
-		Joins(fmt.Sprintf("LEFT JOIN zt_user au ON au.account = %s.assignedTo AND au.deleted = '0'", a)).
-		Joins(fmt.Sprintf("LEFT JOIN zt_user ru ON ru.account = %s.resolvedBy AND ru.deleted = '0'", a)).
-		Joins(fmt.Sprintf("LEFT JOIN zt_user clu ON clu.account = %s.closedBy AND clu.deleted = '0'", a)).
-		Joins(fmt.Sprintf("LEFT JOIN zt_project p ON p.id = CAST(NULLIF(%s.project, '') AS UNSIGNED) AND p.deleted = '0'", a)).
-		Where(fmt.Sprintf("%s.deleted = '0'", a))
+	return "i", "zt_issue AS i", "i.title", "i.deadline"
+}
+
+// issueRiskEmptyScope 判断请求是否应直接返回空结果：团队视角但没有可用账号。
+func issueRiskEmptyScope(req IssueRiskListReq) bool {
+	return req.Scope != "" && len(req.teamAccounts) == 0
+}
+
+// applyIssueRiskFilters 追加 FindIssueRiskList 与 CountIssueRiskProjects 共用的
+// 七段过滤条件：可见范围 / 关联 / 状态 / 循环 / 项目 / 关键字 / 逾期。
+// 条件顺序与两处调用方逐条一致，合并后 SQL 不变。
+func applyIssueRiskFilters(q *gorm.DB, account string, req IssueRiskListReq, a, title, plan string) *gorm.DB {
 	if req.Scope != "" {
-		if len(req.teamAccounts) == 0 {
-			return []issueRiskRow{}, 0, nil
-		}
 		q = q.Where(fmt.Sprintf("(%s.createdBy IN ? OR %s.assignedTo IN ?)", a, a), req.teamAccounts, req.teamAccounts)
 	} else {
 		q = q.Where(fmt.Sprintf("(%s.createdBy = ? OR %s.assignedTo = ?)", a, a), account, account)
@@ -56,6 +57,29 @@ func (r *Repo) FindIssueRiskList(ctx context.Context, account string, req IssueR
 		today := time.Now().Format("2006-01-02")
 		q = q.Where(dateSetExpr(plan)+" AND "+plan+" < ?", today)
 	}
+	return q
+}
+
+func (r *Repo) FindIssueRiskList(ctx context.Context, account string, req IssueRiskListReq) ([]issueRiskRow, int64, error) {
+	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
+		return []issueRiskRow{}, 0, nil
+	}
+	a, table, title, plan := issueRiskAlias(req.Kind)
+	severity := "i.severity"
+	if req.Kind == "risk" {
+		severity = "k.impact"
+	}
+	if issueRiskEmptyScope(req) {
+		return []issueRiskRow{}, 0, nil
+	}
+	q := r.db.WithContext(ctx).Table(table).
+		Joins(fmt.Sprintf("LEFT JOIN zt_user cu ON cu.account = %s.createdBy AND cu.deleted = '0'", a)).
+		Joins(fmt.Sprintf("LEFT JOIN zt_user au ON au.account = %s.assignedTo AND au.deleted = '0'", a)).
+		Joins(fmt.Sprintf("LEFT JOIN zt_user ru ON ru.account = %s.resolvedBy AND ru.deleted = '0'", a)).
+		Joins(fmt.Sprintf("LEFT JOIN zt_user clu ON clu.account = %s.closedBy AND clu.deleted = '0'", a)).
+		Joins(fmt.Sprintf("LEFT JOIN zt_project p ON p.id = CAST(NULLIF(%s.project, '') AS UNSIGNED) AND p.deleted = '0'", a)).
+		Where(fmt.Sprintf("%s.deleted = '0'", a))
+	q = applyIssueRiskFilters(q, account, req, a, title, plan)
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
 		return nil, 0, err
@@ -80,45 +104,15 @@ func (r *Repo) CountIssueRiskProjects(ctx context.Context, account string, req I
 	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
 		return []IssueRiskProject{}, nil
 	}
-	a, table, title, plan := "i", "zt_issue AS i", "i.title", "i.deadline"
-	if req.Kind == "risk" {
-		a, table, title, plan = "k", "zt_risk AS k", "k.name", "k.plannedClosedDate"
+	a, table, title, plan := issueRiskAlias(req.Kind)
+	if issueRiskEmptyScope(req) {
+		return []IssueRiskProject{}, nil
 	}
-	q := r.db.WithContext(ctx).Table(table).Joins(fmt.Sprintf("LEFT JOIN zt_project p ON p.id = CAST(NULLIF(%s.project, '') AS UNSIGNED) AND p.deleted = '0'", a)).Where(fmt.Sprintf("%s.deleted = '0'", a))
-	if req.Scope != "" {
-		if len(req.teamAccounts) == 0 {
-			return []IssueRiskProject{}, nil
-		}
-		q = q.Where(fmt.Sprintf("(%s.createdBy IN ? OR %s.assignedTo IN ?)", a, a), req.teamAccounts, req.teamAccounts)
-	} else {
-		q = q.Where(fmt.Sprintf("(%s.createdBy = ? OR %s.assignedTo = ?)", a, a), account, account)
-	}
-	if req.Relation == "myAction" {
-		q = q.Where(fmt.Sprintf("%s.assignedTo = ?", a), account)
-	}
-	if req.Relation == "mySubmit" {
-		q = q.Where(fmt.Sprintf("%s.createdBy = ?", a), account)
-	}
-	if req.Status != "" {
-		q = q.Where(fmt.Sprintf("%s.status = ?", a), req.Status)
-	}
-	if req.Loop == "open" {
-		q = q.Where(fmt.Sprintf("%s.status IN ?", a), irOpenStatuses)
-	}
-	if req.Loop == "closed" {
-		q = q.Where(fmt.Sprintf("%s.status IN ?", a), irClosedStatuses)
-	}
-	if req.Project > 0 {
-		q = q.Where("p.id = ?", req.Project)
-	}
-	if req.Keyword != "" {
-		like := "%" + req.Keyword + "%"
-		q = q.Where(fmt.Sprintf("(CAST(%s.id AS CHAR) LIKE ? OR %s LIKE ? OR COALESCE(p.name,'') LIKE ?)", a, title), like, like, like)
-	}
-	if req.Overdue {
-		today := time.Now().Format("2006-01-02")
-		q = q.Where(dateSetExpr(plan)+" AND "+plan+" < ?", today)
-	}
+	q := r.db.WithContext(ctx).Table(table).
+		Joins(fmt.Sprintf("LEFT JOIN zt_project p ON p.id = CAST(NULLIF(%s.project, '') AS UNSIGNED) AND p.deleted = '0'", a)).
+		Where(fmt.Sprintf("%s.deleted = '0'", a))
+	q = applyIssueRiskFilters(q, account, req, a, title, plan)
+
 	type projectRow struct {
 		ID   uint   `gorm:"column:id"`
 		Name string `gorm:"column:name"`
