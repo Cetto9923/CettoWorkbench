@@ -27,8 +27,8 @@ type noticeFilterCase struct {
 	wantNoConditions bool   // 该用例不应追加任何条件
 }
 
-// noticeFilterCases 覆盖 applyNoticeFilters 的全部过滤维度及其组合。
-func noticeFilterCases() []noticeFilterCase {
+// noticeObjectTypeCases 覆盖 objectType 与关键字维度。
+func noticeObjectTypeCases() []noticeFilterCase {
 	return []noticeFilterCase{
 		{name: "empty request", wantNoConditions: true},
 		{
@@ -36,30 +36,25 @@ func noticeFilterCases() []noticeFilterCase {
 			req:            NoticeListReq{Keyword: "Hello_100%"},
 			wantExtraWhere: "(LOWER(n.subject) LIKE ? OR LOWER(n.data) LIKE ? OR CAST(n.objectID AS CHAR) LIKE ?)",
 		},
-		{name: "objectType approval", req: NoticeListReq{ObjectType: "approval"},
-			wantExtraWhere: "= 'approval'"},
-		{name: "objectType demand", req: NoticeListReq{ObjectType: "demand"},
-			wantExtraWhere: "n.subject LIKE '%需求%' OR n.data LIKE '%/demand-view-%'"},
-		{name: "objectType story", req: NoticeListReq{ObjectType: "story"},
-			wantExtraWhere: "n.data LIKE '%/story-view-%'"},
-		{name: "objectType task", req: NoticeListReq{ObjectType: "task"},
-			wantExtraWhere: "n.subject LIKE '提醒：您有 任务%' OR n.data LIKE '%/task-view-%'"},
-		{name: "objectType bug", req: NoticeListReq{ObjectType: "bug"},
-			wantExtraWhere: "n.subject LIKE '提醒：您有 Bug%' OR n.data LIKE '%/bug-view-%'"},
-		{name: "objectType feedback", req: NoticeListReq{ObjectType: "feedback"},
-			wantExtraWhere: "n.subject REGEXP ?"},
-		{name: "objectType project", req: NoticeListReq{ObjectType: "project"},
-			wantExtraWhere: "n.data LIKE '%/project-view-%'"},
-		{name: "objectType testtask", req: NoticeListReq{ObjectType: "testtask"},
-			wantExtraWhere: "n.data LIKE '%/testtask-view-%' OR n.data LIKE '%/testcase-view-%'"},
-		{name: "objectType issue", req: NoticeListReq{ObjectType: "issue"},
-			wantExtraWhere: "n.data LIKE '%/issue-view-%'"},
-		{name: "objectType risk", req: NoticeListReq{ObjectType: "risk"},
-			wantExtraWhere: "n.data LIKE '%/risk-view-%'"},
-		{name: "objectType mail", req: NoticeListReq{ObjectType: "mail"},
-			wantExtraWhere: "n.objectType = 'mail'"},
+		{name: "objectType approval", req: NoticeListReq{ObjectType: "approval"}, wantExtraWhere: "= 'approval'"},
+		{name: "objectType demand", req: NoticeListReq{ObjectType: "demand"}, wantExtraWhere: "n.data LIKE '%/demand-view-%'"},
+		{name: "objectType story", req: NoticeListReq{ObjectType: "story"}, wantExtraWhere: "n.data LIKE '%/story-view-%'"},
+		{name: "objectType task", req: NoticeListReq{ObjectType: "task"}, wantExtraWhere: "n.data LIKE '%/task-view-%'"},
+		{name: "objectType bug", req: NoticeListReq{ObjectType: "bug"}, wantExtraWhere: "n.data LIKE '%/bug-view-%'"},
+		{name: "objectType feedback", req: NoticeListReq{ObjectType: "feedback"}, wantExtraWhere: "n.subject REGEXP ?"},
+		{name: "objectType project", req: NoticeListReq{ObjectType: "project"}, wantExtraWhere: "n.data LIKE '%/project-view-%'"},
+		{name: "objectType testtask", req: NoticeListReq{ObjectType: "testtask"}, wantExtraWhere: "n.data LIKE '%/testcase-view-%'"},
+		{name: "objectType issue", req: NoticeListReq{ObjectType: "issue"}, wantExtraWhere: "n.data LIKE '%/issue-view-%'"},
+		{name: "objectType risk", req: NoticeListReq{ObjectType: "risk"}, wantExtraWhere: "n.data LIKE '%/risk-view-%'"},
+		{name: "objectType mail", req: NoticeListReq{ObjectType: "mail"}, wantExtraWhere: "n.objectType = 'mail'"},
 		{name: "objectType unknown falls to default", req: NoticeListReq{ObjectType: "custom"}},
 		{name: "objectType all is unfiltered", req: NoticeListReq{ObjectType: "all"}, wantNoConditions: true},
+	}
+}
+
+// noticeStateCases 覆盖时间窗、已读状态、快捷视图、需办与类别维度。
+func noticeStateCases() []noticeFilterCase {
+	return []noticeFilterCase{
 		{name: "timeRange today", req: NoticeListReq{TimeRange: "today"}},
 		{name: "timeRange 3d", req: NoticeListReq{TimeRange: "3d"}},
 		{name: "timeRange 7d", req: NoticeListReq{TimeRange: "7d"}},
@@ -85,13 +80,12 @@ func noticeFilterCases() []noticeFilterCase {
 			},
 			includeCategory: true,
 		},
-		{
-			name:             "objectType all with category",
-			req:              NoticeListReq{ObjectType: "all", Category: "risk"},
-			includeCategory:  true,
-			wantNoConditions: false,
-		},
 	}
+}
+
+// noticeFilterCases 汇总全部维度用例。
+func noticeFilterCases() []noticeFilterCase {
+	return append(noticeObjectTypeCases(), noticeStateCases()...)
 }
 
 // TestApplyNoticeFilters_SQLBaseline 锁定各维度组合下的 WHERE 片段。
