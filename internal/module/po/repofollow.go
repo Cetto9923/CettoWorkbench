@@ -15,8 +15,6 @@ import (
 	"strings"
 	"time"
 
-	"gorm.io/gorm"
-
 	"workbench/internal/pkg/zentao"
 )
 
@@ -85,40 +83,6 @@ const followDemandListSQL = `d.id, d.name, d.status, d.pri, d.BRA, d.QD, d.RD, d
 				WHERE s3.objectType = 'demand' AND s3.objectID = d.id AND s3.account = ? AND s3.followed = '1'
 			) THEN 'star' ELSE 'mailto' END AS watch_source`
 
-// applyFollowScope 按关注范围追加过滤；ScopeAll 表示全量（含关闭），不加条件。
-func applyFollowScope(q *gorm.DB, scope FollowScope) *gorm.DB {
-	switch scope {
-	case FollowScopeOpen, "":
-		return q.Where("d.status <> ?", "closed")
-	case FollowScopeKey:
-		return q.Where("d.isNeedFocus = ?", "1")
-	case FollowScopeKeyOpen:
-		return q.Where("d.isNeedFocus = ? AND d.status <> ?", "1", "closed")
-	case FollowScopeClosed:
-		return q.Where("d.status = ?", "closed")
-	case FollowScopeOpenClean:
-		return q.Where("(d.isNeedFocus IS NULL OR d.isNeedFocus <> ?) AND d.status <> ?", "1", "closed")
-	default: // FollowScopeAll：全量（含关闭）
-		return q
-	}
-}
-
-// applyFollowLifecycle 按生命周期分桶追加状态集合；未指定则不过滤。
-func applyFollowLifecycle(q *gorm.DB, lc FollowLifecycle) *gorm.DB {
-	switch lc {
-	case FollowLifecycleClarifying:
-		return q.Where("d.status IN ?", []string{"draft", "wait", "refuse", "active"})
-	case FollowLifecycleImplementing:
-		return q.Where("d.status IN ?", []string{"clarified", "developing", "testing", "waitacceptance", "acceptanced", "waitdeliver", "delivered"})
-	case FollowLifecycleReleased:
-		return q.Where("d.status = ?", "released")
-	case FollowLifecycleClosed:
-		return q.Where("d.status = ?", "closed")
-	default:
-		return q
-	}
-}
-
 // FindFollowedDemands 查询当前账号关注的业务需求（V10.1 04 节默认对象视图）。
 // 数据真源为 zt_starinfo(objectType='demand', account=?, followed='1')，
 // 并兼容禅道历史上通过需求 mailto 字段形成的关注关系；显式取消关注优先。
@@ -149,7 +113,31 @@ func (r *Repo) FindFollowedDemands(ctx context.Context, req RepoFindFollowedDema
 	}
 
 	// Count 与列表共用同一条过滤链，两者条件必须逐字一致。
-	filtered := applyFollowLifecycle(applyFollowScope(base, req.Scope), req.Lifecycle)
+	filtered := base
+	switch req.Scope {
+	case FollowScopeOpen, "":
+		filtered = filtered.Where("d.status <> ?", "closed")
+	case FollowScopeKey:
+		filtered = filtered.Where("d.isNeedFocus = ?", "1")
+	case FollowScopeKeyOpen:
+		filtered = filtered.Where("d.isNeedFocus = ? AND d.status <> ?", "1", "closed")
+	case FollowScopeClosed:
+		filtered = filtered.Where("d.status = ?", "closed")
+	case FollowScopeOpenClean:
+		filtered = filtered.Where("(d.isNeedFocus IS NULL OR d.isNeedFocus <> ?) AND d.status <> ?", "1", "closed")
+	case FollowScopeAll:
+		// 全量（含关闭）
+	}
+	switch req.Lifecycle {
+	case FollowLifecycleClarifying:
+		filtered = filtered.Where("d.status IN ?", []string{"draft", "wait", "refuse", "active"})
+	case FollowLifecycleImplementing:
+		filtered = filtered.Where("d.status IN ?", []string{"clarified", "developing", "testing", "waitacceptance", "acceptanced", "waitdeliver", "delivered"})
+	case FollowLifecycleReleased:
+		filtered = filtered.Where("d.status = ?", "released")
+	case FollowLifecycleClosed:
+		filtered = filtered.Where("d.status = ?", "closed")
+	}
 
 	var total int64
 	if err := filtered.Count(&total).Error; err != nil {
@@ -173,6 +161,7 @@ func (r *Repo) FindFollowedDemands(ctx context.Context, req RepoFindFollowedDema
 }
 
 // followOwnerPriority 负责人回退顺序：QD → RD → BRA，取首个非空账号的显示名。
+// 拆成独立函数是为了把 buildFollowItems 的 gocognit 压在 16 以下。
 func followOwnerPriority(displayMap map[string]string, row followDemandRow) string {
 	for _, account := range []string{row.QD, row.RD, row.BRA} {
 		if strings.TrimSpace(account) == "" {
