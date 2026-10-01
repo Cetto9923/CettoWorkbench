@@ -27,16 +27,7 @@ const taskTimeLayout = "2006-01-02 15:04:05"
 // account=all 时按当前敏捷小组全员聚合。
 func (s *Service) ListTasks(ctx context.Context, actor *model.User, req ListTasksReq) (ListTasksResp, error) {
 	empty := ListTasksResp{Columns: newEmptyTaskColumns(), Summary: TaskSummary{}}
-	actorAccount := ""
-	if actor != nil {
-		actorAccount = actor.Account
-	}
-
-	groups, err := s.ListMyTeamgroups(ctx, actor)
-	if err != nil {
-		return ListTasksResp{}, err
-	}
-	targets, err := resolveKanbanAccounts(actorAccount, req.Account, req.TeamgroupID, groups)
+	targets, err := s.taskAccounts(ctx, actor, req)
 	if err != nil {
 		return ListTasksResp{}, err
 	}
@@ -83,11 +74,17 @@ func (s *Service) UpdateTaskStatus(ctx context.Context, actor *model.User, req U
 		}
 		return err
 	}
+	if strings.TrimSpace(row.AssignedTo) == "" {
+		return errorx.New(errorx.ErrCodeForbidden, "任务不在可见范围内")
+	}
+	if _, err := s.taskAccounts(ctx, actor, ListTasksReq{Account: row.AssignedTo}); err != nil {
+		return err
+	}
 	from := strings.TrimSpace(row.Status)
 	if from == target {
 		return nil
 	}
-	body := buildKanbanTaskUpdateBody(from, target, row.AssignedTo, actor.Account, time.Now())
+	body := buildKanbanTaskUpdateBody(from, target, actor.Account, time.Now())
 	if body == nil {
 		return errorx.New(errorx.ErrCodeInvalidParam, "仅支持未开始与进行中互转")
 	}
@@ -98,22 +95,17 @@ func (s *Service) UpdateTaskStatus(ctx context.Context, actor *model.User, req U
 }
 
 // buildKanbanTaskUpdateBody 按拖拽方向组装禅道任务更新字段；非法流转返回 nil。
-func buildKanbanTaskUpdateBody(fromStatus, toStatus, assignedTo, actorAccount string, now time.Time) map[string]any {
+func buildKanbanTaskUpdateBody(fromStatus, toStatus, actorAccount string, now time.Time) map[string]any {
 	fromStatus = strings.TrimSpace(fromStatus)
 	toStatus = strings.TrimSpace(toStatus)
-	assignedTo = strings.TrimSpace(assignedTo)
 	actorAccount = strings.TrimSpace(actorAccount)
 	nowStr := now.Format(taskTimeLayout)
 
 	switch {
 	case fromStatus == "wait" && toStatus == "doing":
-		editor := assignedTo
-		if editor == "" {
-			editor = actorAccount
-		}
 		return map[string]any{
 			"status":         "doing",
-			"lastEditedBy":   editor,
+			"lastEditedBy":   actorAccount,
 			"lastEditedDate": nowStr,
 			"realStarted":    nowStr,
 		}
@@ -127,4 +119,17 @@ func buildKanbanTaskUpdateBody(fromStatus, toStatus, assignedTo, actorAccount st
 	default:
 		return nil
 	}
+}
+
+// 查询和写入共用成员范围，防止通过任务 ID 修改看板范围之外的任务。
+func (s *Service) taskAccounts(ctx context.Context, actor *model.User, req ListTasksReq) ([]string, error) {
+	account := ""
+	if actor != nil {
+		account = actor.Account
+	}
+	groups, err := s.ListMyTeamgroups(ctx, actor)
+	if err != nil {
+		return nil, err
+	}
+	return resolveKanbanAccounts(account, req.Account, req.TeamgroupID, groups)
 }
