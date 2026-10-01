@@ -781,8 +781,6 @@
         var nextTheme = curTheme === 'dark' ? 'light' : 'dark';
         if (window.WorkbenchTheme && typeof window.WorkbenchTheme.setPreference === 'function') {
           window.WorkbenchTheme.setPreference(nextTheme);
-        } else {
-          document.documentElement.setAttribute('data-theme', nextTheme);
         }
         syncThemeLabel();
       });
