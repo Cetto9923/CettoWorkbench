@@ -15,6 +15,8 @@ import (
 	"strings"
 	"time"
 
+	"gorm.io/gorm"
+
 	"workbench/internal/pkg/zentao"
 )
 
@@ -58,6 +60,66 @@ func followDemandWatchWhere(account string) (string, []any) {
 	return sql, []any{account, account, account}
 }
 
+// followDemandRow 关注需求列表的查询行。关注来源由 zt_starinfo 判定，
+// 系统名由 mainSystem LEFT JOIN zt_product 得出。
+type followDemandRow struct {
+	ID            int64      `gorm:"column:id"`
+	Name          string     `gorm:"column:name"`
+	Status        string     `gorm:"column:status"`
+	Pri           string     `gorm:"column:pri"`
+	BRA           string     `gorm:"column:BRA"`
+	QD            string     `gorm:"column:QD"`
+	RD            string     `gorm:"column:RD"`
+	NeedFocus     string     `gorm:"column:need_focus"`
+	SystemName    string     `gorm:"column:system_name"`
+	WatchSource   string     `gorm:"column:watch_source"`
+	Deadline      *time.Time `gorm:"column:deadline"`
+	DevelopFinish *time.Time `gorm:"column:developFinish"`
+	TestFinish    *time.Time `gorm:"column:testFinish"`
+}
+
+// followDemandListSQL 列表投影列。少一列会让负责人 / 关键时间 / 关注来源静默丢值。
+const followDemandListSQL = `d.id, d.name, d.status, d.pri, d.BRA, d.QD, d.RD, d.deadline, d.developFinish, d.testFinish,
+			d.isNeedFocus AS need_focus, COALESCE(p.name, d.mainSystem, '') AS system_name,
+			CASE WHEN EXISTS (
+				SELECT 1 FROM zt_starinfo s3
+				WHERE s3.objectType = 'demand' AND s3.objectID = d.id AND s3.account = ? AND s3.followed = '1'
+			) THEN 'star' ELSE 'mailto' END AS watch_source`
+
+// applyFollowScope 按关注范围追加过滤；ScopeAll 表示全量（含关闭），不加条件。
+func applyFollowScope(q *gorm.DB, scope FollowScope) *gorm.DB {
+	switch scope {
+	case FollowScopeOpen, "":
+		return q.Where("d.status <> ?", "closed")
+	case FollowScopeKey:
+		return q.Where("d.isNeedFocus = ?", "1")
+	case FollowScopeKeyOpen:
+		return q.Where("d.isNeedFocus = ? AND d.status <> ?", "1", "closed")
+	case FollowScopeClosed:
+		return q.Where("d.status = ?", "closed")
+	case FollowScopeOpenClean:
+		return q.Where("(d.isNeedFocus IS NULL OR d.isNeedFocus <> ?) AND d.status <> ?", "1", "closed")
+	default: // FollowScopeAll：全量（含关闭）
+		return q
+	}
+}
+
+// applyFollowLifecycle 按生命周期分桶追加状态集合；未指定则不过滤。
+func applyFollowLifecycle(q *gorm.DB, lc FollowLifecycle) *gorm.DB {
+	switch lc {
+	case FollowLifecycleClarifying:
+		return q.Where("d.status IN ?", []string{"draft", "wait", "refuse", "active"})
+	case FollowLifecycleImplementing:
+		return q.Where("d.status IN ?", []string{"clarified", "developing", "testing", "waitacceptance", "acceptanced", "waitdeliver", "delivered"})
+	case FollowLifecycleReleased:
+		return q.Where("d.status = ?", "released")
+	case FollowLifecycleClosed:
+		return q.Where("d.status = ?", "closed")
+	default:
+		return q
+	}
+}
+
 // FindFollowedDemands 查询当前账号关注的业务需求（V10.1 04 节默认对象视图）。
 // 数据真源为 zt_starinfo(objectType='demand', account=?, followed='1')，
 // 并兼容禅道历史上通过需求 mailto 字段形成的关注关系；显式取消关注优先。
@@ -87,60 +149,17 @@ func (r *Repo) FindFollowedDemands(ctx context.Context, req RepoFindFollowedDema
 		return nil, 0, nil, err
 	}
 
-	filtered := base
-	switch req.Scope {
-	case FollowScopeOpen, "":
-		filtered = filtered.Where("d.status <> ?", "closed")
-	case FollowScopeKey:
-		filtered = filtered.Where("d.isNeedFocus = ?", "1")
-	case FollowScopeKeyOpen:
-		filtered = filtered.Where("d.isNeedFocus = ? AND d.status <> ?", "1", "closed")
-	case FollowScopeClosed:
-		filtered = filtered.Where("d.status = ?", "closed")
-	case FollowScopeOpenClean:
-		filtered = filtered.Where("(d.isNeedFocus IS NULL OR d.isNeedFocus <> ?) AND d.status <> ?", "1", "closed")
-	case FollowScopeAll:
-		// 全量（含关闭）
-	}
-	switch req.Lifecycle {
-	case FollowLifecycleClarifying:
-		filtered = filtered.Where("d.status IN ?", []string{"draft", "wait", "refuse", "active"})
-	case FollowLifecycleImplementing:
-		filtered = filtered.Where("d.status IN ?", []string{"clarified", "developing", "testing", "waitacceptance", "acceptanced", "waitdeliver", "delivered"})
-	case FollowLifecycleReleased:
-		filtered = filtered.Where("d.status = ?", "released")
-	case FollowLifecycleClosed:
-		filtered = filtered.Where("d.status = ?", "closed")
-	}
+	// Count 与列表共用同一条过滤链，两者条件必须逐字一致。
+	filtered := applyFollowLifecycle(applyFollowScope(base, req.Scope), req.Lifecycle)
 
 	var total int64
 	if err := filtered.Count(&total).Error; err != nil {
 		return nil, 0, nil, err
 	}
 
-	type row struct {
-		ID            int64      `gorm:"column:id"`
-		Name          string     `gorm:"column:name"`
-		Status        string     `gorm:"column:status"`
-		Pri           string     `gorm:"column:pri"`
-		BRA           string     `gorm:"column:BRA"`
-		QD            string     `gorm:"column:QD"`
-		RD            string     `gorm:"column:RD"`
-		NeedFocus     string     `gorm:"column:need_focus"`
-		SystemName    string     `gorm:"column:system_name"`
-		WatchSource   string     `gorm:"column:watch_source"`
-		Deadline      *time.Time `gorm:"column:deadline"`
-		DevelopFinish *time.Time `gorm:"column:developFinish"`
-		TestFinish    *time.Time `gorm:"column:testFinish"`
-	}
-	var rows []row
+	var rows []followDemandRow
 	if err := filtered.
-		Select(`d.id, d.name, d.status, d.pri, d.BRA, d.QD, d.RD, d.deadline, d.developFinish, d.testFinish,
-			d.isNeedFocus AS need_focus, COALESCE(p.name, d.mainSystem, '') AS system_name,
-			CASE WHEN EXISTS (
-				SELECT 1 FROM zt_starinfo s3
-				WHERE s3.objectType = 'demand' AND s3.objectID = d.id AND s3.account = ? AND s3.followed = '1'
-			) THEN 'star' ELSE 'mailto' END AS watch_source`, req.Account).
+		Select(followDemandListSQL, req.Account).
 		Joins("LEFT JOIN zt_product p ON p.id = CAST(NULLIF(d.mainSystem, '') AS UNSIGNED) AND p.deleted = '0'").
 		Order("d.id DESC").
 		Limit(req.PageSize).
@@ -151,31 +170,32 @@ func (r *Repo) FindFollowedDemands(ctx context.Context, req RepoFindFollowedDema
 
 	today := time.Now().In(time.Local).Format("2006-01-02")
 	displayMap, _ := r.loadAccountDisplayMap(ctx)
+	return buildFollowItems(rows, displayMap, today), total, stats, nil
+}
+
+// followOwnerPriority 负责人回退顺序：QD → RD → BRA，取首个非空账号的显示名。
+func followOwnerPriority(displayMap map[string]string, row followDemandRow) string {
+	for _, account := range []string{row.QD, row.RD, row.BRA} {
+		if strings.TrimSpace(account) == "" {
+			continue
+		}
+		if name := displayMap[account]; name != "" {
+			return name
+		}
+		return account
+	}
+	return ""
+}
+
+// buildFollowItems 把查询行映射为列表项：风险与关注理由由重点关注标记和
+// 关注真源推导，进度按截止日期与今天比较得出。
+func buildFollowItems(rows []followDemandRow, displayMap map[string]string, today string) []FollowItem {
 	items := make([]FollowItem, 0, len(rows))
 	for _, row := range rows {
-		owner := ""
-		if strings.TrimSpace(row.QD) != "" {
-			owner = displayMap[row.QD]
-			if owner == "" {
-				owner = row.QD
-			}
-		} else if strings.TrimSpace(row.RD) != "" {
-			owner = displayMap[row.RD]
-			if owner == "" {
-				owner = row.RD
-			}
-		} else if strings.TrimSpace(row.BRA) != "" {
-			owner = displayMap[row.BRA]
-			if owner == "" {
-				owner = row.BRA
-			}
-		}
 		priority := ""
 		if row.Pri != "" {
 			priority = "P" + row.Pri
 		}
-		isClosed := row.Status == "closed"
-		_, stage := mapValueStage("", row.Status)
 		risk := "无"
 		if row.NeedFocus == "1" {
 			risk = "重点关注"
@@ -188,6 +208,7 @@ func (r *Repo) FindFollowedDemands(ctx context.Context, req RepoFindFollowedDema
 		testFinish := formatFollowDate(row.TestFinish)
 		deadline := formatFollowDate(row.Deadline)
 		progressStatus, progressLabel := followProgress(row.Status, deadline, today)
+		_, stage := mapValueStage("", row.Status)
 		items = append(items, FollowItem{
 			ID:              row.ID,
 			Title:           row.Name,
@@ -199,11 +220,11 @@ func (r *Repo) FindFollowedDemands(ctx context.Context, req RepoFindFollowedDema
 			Risk:            risk,
 			Reason:          reason,
 			Priority:        priority,
-			Owner:           owner,
+			Owner:           followOwnerPriority(displayMap, row),
 			LatestNote:      "",
 			Date:            "",
 			IsKey:           row.NeedFocus == "1",
-			IsClosed:        isClosed,
+			IsClosed:        row.Status == "closed",
 			URL:             zentao.DemandViewURL(uint(row.ID)),
 			LifecycleBucket: demandFollowLifecycleBucket(row.Status),
 			DevelopFinish:   devFinish,
@@ -214,7 +235,7 @@ func (r *Repo) FindFollowedDemands(ctx context.Context, req RepoFindFollowedDema
 			ScheduleSummary: followScheduleSummary(devFinish, testFinish, deadline),
 		})
 	}
-	return items, total, stats, nil
+	return items
 }
 
 func (r *Repo) countFollowDemandStats(ctx context.Context, account, keyword string) (*FollowDemandStats, error) {
