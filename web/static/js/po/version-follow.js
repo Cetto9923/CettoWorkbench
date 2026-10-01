@@ -28,7 +28,7 @@
 
   function cacheEls() {
     [
-      "vfWindowChips", "vfDaysNum", "vfOnTrack", "vfRisk", "vfBlocked",
+      "vfWindowChips", "vfDaysNum", "vfDaysLabel", "vfOnTrack", "vfRisk", "vfBlocked",
       "vfStageBar", "vfAiBlock", "vfTbody", "vfEmptyState", "vfEmptyTitle",
       "vfEmptyDesc", "vfPager", "vfTable", "vfFilterStage", "vfFilterSystem",
       "vfFilterOwner", "vfFilterClear", "vfBasisPopover", "vfBasisBody",
@@ -99,7 +99,8 @@
 
   function renderBand(d) {
     if (el.vfDaysNum) {
-      el.vfDaysNum.textContent = typeof d.distanceDays === "number" ? d.distanceDays : "—";
+      el.vfDaysNum.textContent = typeof d.distanceDays === "number" ? Math.abs(d.distanceDays) : "—";
+      if (el.vfDaysLabel) el.vfDaysLabel.textContent = d.distanceDays < 0 ? "已过上线日（天）" : "距上线（天）";
     }
     if (el.vfOnTrack) el.vfOnTrack.textContent = d.onTrack || 0;
     if (el.vfRisk) el.vfRisk.textContent = d.risk || 0;

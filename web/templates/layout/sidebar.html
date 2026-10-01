@@ -112,7 +112,7 @@
       <div class="po-subnav-body">
         <a href="/schedule" class="nav-item{{ if eq .CurrentPath "/schedule" }} active{{ end }}"><i class="nav-icon fas fa-calendar-check"></i><span class="nav-text">需求排期</span></a>
         <a href="/query" class="nav-item{{ if eq .CurrentPath "/query" }} active{{ end }}"><i class="nav-icon fas fa-magnifying-glass"></i><span class="nav-text">需求查询</span></a>
-        {{ if index .UserPerms "po:schedule" }}<a href="/version-follow" class="nav-item{{ if hasPrefix .CurrentPath "/version-follow" }} active{{ end }}"><i class="nav-icon fas fa-boxes-packing"></i><span class="nav-text">版本跟踪</span></a>{{ end }}
+        {{ if index .UserPerms "po:schedule" }}<a href="/version-follow" class="nav-item{{ if hasPrefix .CurrentPath "/version-follow" }} active{{ end }}"><i class="nav-icon fas fa-boxes-packing"></i><span class="nav-text">版本跟进</span></a>{{ end }}
       </div>
     </div>
 
