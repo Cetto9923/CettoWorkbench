@@ -19,7 +19,6 @@ import (
 	"workbench/internal/pkg/zentao"
 )
 
-// buildExecution 组装研发执行页签：取数顺序固定为研需 → 任务 → 缺陷 → 用例 → 测试单。
 func (s *DetailService) buildExecution(ctx context.Context, demandID uint) (*DetailExecution, error) {
 	stories, err := s.repo.FindDemandStories(ctx, demandID)
 	if err != nil {
@@ -42,72 +41,32 @@ func (s *DetailService) buildExecution(ctx context.Context, demandID uint) (*Det
 	if err != nil {
 		return nil, err
 	}
-	testTasks, err := s.repo.FindStoryTestTasks(ctx, storyIDs)
-	if err != nil {
-		return nil, err
-	}
 
-	sItems, bugSummary := buildStoryItems(stories, taskMap, bugMap)
-	ttItems, doingCount, doneCount := buildTestOrderItems(testTasks)
-	testCaseSummary := buildTestCaseSummary(testCaseCounts)
+	sItems := make([]StoryItem, 0, len(stories))
+	totalBugs := 0
+	activeBugs := 0
+	resolvedBugs := 0
+	blockingBugs := 0
 
-	return &DetailExecution{
-		Stories:    sItems,
-		TestOrders: ttItems,
-		TestOrderSummary: TestOrderSummary{
-			TotalCount:   len(testTasks),
-			DoingCount:   doingCount,
-			DoneCount:    doneCount,
-			StoriesCount: len(stories),
-		},
-		TestCaseSummary: testCaseSummary,
-		BugSummary:      bugSummary,
-		QualitySummary: QualitySummary{
-			Available:     false,
-			Source:        "none",
-			AvgScore:      0,
-			BranchesCount: 0,
-			PassedGates:   0,
-			TotalGates:    0,
-		},
-		QualityOverview: QualityGateOverview{
-			Available:     false,
-			Source:        "none",
-			AppsCount:     0,
-			BranchesCount: 0,
-			PassedGates:   0,
-			FailedGates:   0,
-		},
-		// F03：扫描未接入 → 空树；前端依据 Available=false 展示「未接入」。
-		AppQualityTree: buildAppQualityTree(stories),
-		LeadsMatrix: LeadsMatrix{
-			DevLeads: collectDevLeads(stories),
-			TestLead: "—",
-		},
-	}, nil
-}
-
-// buildStoryItems 逐条研需合并任务与缺陷统计：缺陷总数只由命中 bugMap 的研需贡献。
-func buildStoryItems(stories []DemandStoryRow, taskMap map[uint]TaskCountRow, bugMap map[uint]BugCountRow) ([]StoryItem, BugSummary) {
-	items := make([]StoryItem, 0, len(stories))
-	summary := BugSummary{}
 	for _, st := range stories {
-		tDone, tTotal := 0, 0
+		tDone := 0
+		tTotal := 0
 		if t, ok := taskMap[st.ID]; ok {
 			tDone = t.Done
 			tTotal = t.Total
 		}
-		sBugsTotal, sBugsActive := 0, 0
+		sBugsTotal := 0
+		sBugsActive := 0
 		if b, ok := bugMap[st.ID]; ok {
-			summary.TotalCount += b.Total
-			summary.ActiveCount += b.Active
-			summary.ResolvedCount += b.Resolved
-			summary.DeliveryBlocking += b.DeliveryBlocking
+			totalBugs += b.Total
+			activeBugs += b.Active
+			resolvedBugs += b.Resolved
+			blockingBugs += b.DeliveryBlocking
 			sBugsTotal = b.Total
 			sBugsActive = b.Active
 		}
 
-		items = append(items, StoryItem{
+		sItems = append(sItems, StoryItem{
 			ID:         st.ID,
 			Code:       fmt.Sprintf("%d", st.ID),
 			Title:      st.Title,
@@ -120,13 +79,23 @@ func buildStoryItems(stories []DemandStoryRow, taskMap map[uint]TaskCountRow, bu
 			BugsActive: sBugsActive,
 		})
 	}
-	return items, summary
-}
 
-// buildTestOrderItems 展开测试单并统计进行中 / 已完成数量：阶段按名称是否含 UAT 判定。
-func buildTestOrderItems(testTasks []DemandTestTaskRow) ([]TestOrderItem, int, int) {
-	items := make([]TestOrderItem, 0, len(testTasks))
-	doingCount, doneCount := 0, 0
+	execRate := 0.0
+	if testCaseCounts.TotalCount > 0 {
+		execRate = math.Round(float64(testCaseCounts.ExecutedCount)/float64(testCaseCounts.TotalCount)*1000) / 10
+	}
+	passRate := 0.0
+	if testCaseCounts.ExecutedCount > 0 {
+		passRate = math.Round(float64(testCaseCounts.PassedCount)/float64(testCaseCounts.ExecutedCount)*1000) / 10
+	}
+
+	testTasks, err := s.repo.FindStoryTestTasks(ctx, storyIDs)
+	if err != nil {
+		return nil, err
+	}
+	ttItems := make([]TestOrderItem, 0, len(testTasks))
+	doingCount := 0
+	doneCount := 0
 	for _, tt := range testTasks {
 		stage := "SIT"
 		if strings.Contains(strings.ToUpper(tt.Name), "UAT") {
@@ -153,7 +122,7 @@ func buildTestOrderItems(testTasks []DemandTestTaskRow) ([]TestOrderItem, int, i
 		if tt.End != nil {
 			end = tt.End.Format("2006-01-02")
 		}
-		items = append(items, TestOrderItem{
+		ttItems = append(ttItems, TestOrderItem{
 			ID:          tt.ID,
 			Code:        fmt.Sprintf("%d", tt.ID),
 			Title:       tt.Name,
@@ -166,47 +135,70 @@ func buildTestOrderItems(testTasks []DemandTestTaskRow) ([]TestOrderItem, int, i
 			ZtURL:       zentao.TesttaskViewURL(tt.ID),
 		})
 	}
-	return items, doingCount, doneCount
-}
 
-// buildTestCaseSummary 由用例聚合计数推导执行率与通过率，保留一位小数。
-func buildTestCaseSummary(counts TestCaseCountRow) TestCaseSummary {
-	execRate := 0.0
-	if counts.TotalCount > 0 {
-		execRate = math.Round(float64(counts.ExecutedCount)/float64(counts.TotalCount)*1000) / 10
+	devLeadsMap := make(map[string]struct{})
+	for _, st := range stories {
+		if st.AssignedToName != "" && st.AssignedToName != "—" {
+			devLeadsMap[st.AssignedToName] = struct{}{}
+		}
 	}
-	passRate := 0.0
-	if counts.ExecutedCount > 0 {
-		passRate = math.Round(float64(counts.PassedCount)/float64(counts.ExecutedCount)*1000) / 10
+	devLeads := make([]string, 0, len(devLeadsMap))
+	for name := range devLeadsMap {
+		devLeads = append(devLeads, name)
 	}
-	unexec := counts.TotalCount - counts.ExecutedCount
+
+	unexec := testCaseCounts.TotalCount - testCaseCounts.ExecutedCount
 	if unexec < 0 {
 		unexec = 0
 	}
-	return TestCaseSummary{
-		TotalCount:      counts.TotalCount,
-		ExecutedCount:   counts.ExecutedCount,
-		UnexecutedCount: unexec,
-		PassedCount:     counts.PassedCount,
-		FailedCount:     counts.FailedCount,
-		ExecutionRate:   execRate,
-		PassRate:        passRate,
-	}
-}
 
-// collectDevLeads 收集研需负责人去重列表；空值与占位符 "—" 不计入。
-func collectDevLeads(stories []DemandStoryRow) []string {
-	seen := make(map[string]struct{})
-	for _, st := range stories {
-		if st.AssignedToName != "" && st.AssignedToName != "—" {
-			seen[st.AssignedToName] = struct{}{}
-		}
-	}
-	leads := make([]string, 0, len(seen))
-	for name := range seen {
-		leads = append(leads, name)
-	}
-	return leads
+	return &DetailExecution{
+		Stories:    sItems,
+		TestOrders: ttItems,
+		TestOrderSummary: TestOrderSummary{
+			TotalCount:   len(testTasks),
+			DoingCount:   doingCount,
+			DoneCount:    doneCount,
+			StoriesCount: len(stories),
+		},
+		TestCaseSummary: TestCaseSummary{
+			TotalCount:      testCaseCounts.TotalCount,
+			ExecutedCount:   testCaseCounts.ExecutedCount,
+			UnexecutedCount: unexec,
+			PassedCount:     testCaseCounts.PassedCount,
+			FailedCount:     testCaseCounts.FailedCount,
+			ExecutionRate:   execRate,
+			PassRate:        passRate,
+		},
+		BugSummary: BugSummary{
+			TotalCount:       totalBugs,
+			ActiveCount:      activeBugs,
+			ResolvedCount:    resolvedBugs,
+			DeliveryBlocking: blockingBugs,
+		},
+		QualitySummary: QualitySummary{
+			Available:     false,
+			Source:        "none",
+			AvgScore:      0,
+			BranchesCount: 0,
+			PassedGates:   0,
+			TotalGates:    0,
+		},
+		QualityOverview: QualityGateOverview{
+			Available:     false,
+			Source:        "none",
+			AppsCount:     0,
+			BranchesCount: 0,
+			PassedGates:   0,
+			FailedGates:   0,
+		},
+		// F03：扫描未接入 → 空树；前端依据 Available=false 展示「未接入」。
+		AppQualityTree: buildAppQualityTree(stories),
+		LeadsMatrix: LeadsMatrix{
+			DevLeads: devLeads,
+			TestLead: "—",
+		},
+	}, nil
 }
 
 // buildAppQualityTree F03：扫描系统未接入前返回空树，禁止拼造分支/MR/分数。
