@@ -80,6 +80,10 @@ html[data-theme="dark"] .po-user-avatar {
   opacity: 1;
 }
 
+@media (max-width: 992px) {
+  .po-header-right .po-global-search { max-width: 120px; }
+}
+
 /* 顶部用户菜单：几何与间距对齐原型 .po-header-right .dropdown-menu */
 .topbar-actions .dropdown-menu {
   min-width: 126px;
