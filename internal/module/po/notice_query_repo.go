@@ -96,6 +96,121 @@ func isNoticeReqCategoryUnfiltered(req NoticeListReq) bool {
 		strings.TrimSpace(req.Keyword) == ""
 }
 
+// noticeObjectTypes 通知对象类型的主体匹配条件、标题前缀正则与无编号兜底。
+// 各类型的差异只有这三段，抽出为表驱动，避免 applyNoticeFilters 里堆叠近似分支。
+type noticeObjectType struct {
+	objectTypeSQL string // 直接匹配 objectType 的条件
+	objectTypeArg any    // 非空时以绑定参数形式追加到 objectTypeSQL 之后
+	subjectPrefix string // 标题前缀正则（大小写与中文别名）
+	fallbackSQL   string // 标题无编号时的兜底条件
+}
+
+var noticeObjectTypes = map[string]noticeObjectType{
+	"demand": {
+		objectTypeSQL: "COALESCE(a.objectType, n.objectType) IN ('demand', 'sub_demand', 'business')",
+		subjectPrefix: "DEMAND|demand|业务需求|需求",
+		fallbackSQL:   "(n.subject LIKE '%需求%' OR n.data LIKE '%/demand-view-%')",
+	},
+	"story": {
+		objectTypeSQL: "COALESCE(a.objectType, n.objectType) = 'story'",
+		subjectPrefix: "STORY|story|研发需求|研需",
+		fallbackSQL:   "n.data LIKE '%/story-view-%'",
+	},
+	"task": {
+		objectTypeSQL: "COALESCE(a.objectType, n.objectType) = ?",
+		objectTypeArg: "task",
+		subjectPrefix: "TASK|task|任务",
+		fallbackSQL:   "(n.subject LIKE '提醒：您有 任务%' OR n.data LIKE '%/task-view-%')",
+	},
+	"bug": {
+		objectTypeSQL: "COALESCE(a.objectType, n.objectType) = 'bug'",
+		subjectPrefix: "BUG|bug|缺陷",
+		fallbackSQL:   "(n.subject LIKE '提醒：您有 Bug%' OR n.data LIKE '%/bug-view-%')",
+	},
+	"project": {
+		objectTypeSQL: "COALESCE(a.objectType, n.objectType) = 'project'",
+		subjectPrefix: "PROJECT|project|项目",
+		fallbackSQL:   "n.data LIKE '%/project-view-%'",
+	},
+	"issue": {
+		objectTypeSQL: "COALESCE(a.objectType, n.objectType) = 'issue'",
+		subjectPrefix: "ISSUE|issue|问题",
+		fallbackSQL:   "n.data LIKE '%/issue-view-%'",
+	},
+	"risk": {
+		objectTypeSQL: "COALESCE(a.objectType, n.objectType) = 'risk'",
+		subjectPrefix: "RISK|risk|风险",
+		fallbackSQL:   "n.data LIKE '%/risk-view-%'",
+	},
+	"testtask": {
+		objectTypeSQL: "COALESCE(a.objectType, n.objectType) IN ('testtask', 'testcase', 'case')",
+		subjectPrefix: "TESTTASK|testtask|TESTCASE|testcase|测试单|测试",
+		fallbackSQL:   "(n.subject LIKE '%测试单%' OR n.data LIKE '%/testtask-view-%' OR n.data LIKE '%/testcase-view-%')",
+	},
+}
+
+// applyNoticeObjectTypeFilter 按对象类型过滤：命中结构化 objectType，
+// 或命中邮件/消息类标题前缀，或落到该类型的兜底条件。
+func applyNoticeObjectTypeFilter(query *gorm.DB, objectType string) *gorm.DB {
+	if objectType == "" || objectType == "all" {
+		return query
+	}
+	spec, ok := noticeObjectTypes[objectType]
+	if !ok {
+		return query.Where("COALESCE(a.objectType, n.objectType) = ?", objectType)
+	}
+	cond := `(
+			` + spec.objectTypeSQL + `
+			OR ((COALESCE(a.objectType, n.objectType, '') IN ('mail', '', 'message')) AND (
+				n.subject REGEXP '^(` + spec.subjectPrefix + `)[[:space:]]*#[[:space:]]*[0-9]+'
+				OR (n.subject NOT REGEXP '#[[:space:]]*[0-9]+' AND ` + spec.fallbackSQL + `)
+			))
+		)`
+	if spec.objectTypeArg != nil {
+		return query.Where(cond, spec.objectTypeArg)
+	}
+	return query.Where(cond)
+}
+
+// noticeTodayWindow 返回「今天」的起止时刻，供 TimeRange 与 QuickView 复用。
+func noticeTodayWindow(now time.Time) (time.Time, time.Time) {
+	start := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	return start, start.AddDate(0, 0, 1)
+}
+
+// applyNoticeCreatedDateFilter 追加创建时间范围条件。
+func applyNoticeCreatedDateFilter(query *gorm.DB, now time.Time, value string) *gorm.DB {
+	switch value {
+	case "today":
+		start, end := noticeTodayWindow(now)
+		return query.Where("n.createdDate >= ? AND n.createdDate < ?", start, end)
+	case "3d":
+		return query.Where("n.createdDate >= ?", now.AddDate(0, 0, -3))
+	case "7d":
+		return query.Where("n.createdDate >= ?", now.AddDate(0, 0, -7))
+	case "30d":
+		return query.Where("n.createdDate >= ?", now.AddDate(0, 0, -30))
+	}
+	return query
+}
+
+// applyNoticeQuickViewFilter 追加快捷视图条件。
+func applyNoticeQuickViewFilter(query *gorm.DB, now time.Time, quickView string) *gorm.DB {
+	switch quickView {
+	case "unread":
+		return query.Where("nr.id IS NULL")
+	case "action":
+		return query.Where(noticeNeedsActionSQLExpr)
+	case "inform":
+		return query.Where("NOT (" + noticeNeedsActionSQLExpr + ")")
+	case "abnormal":
+		return query.Where(noticeCategorySQLExpr + " = 'risk'")
+	case "today":
+		return applyNoticeCreatedDateFilter(query, now, "today")
+	}
+	return query
+}
+
 func applyNoticeFilters(query *gorm.DB, now time.Time, req NoticeListReq, includeCategory bool) *gorm.DB {
 	if kw := strings.TrimSpace(req.Keyword); kw != "" {
 		escaped := "%" + escapeSQLLike(strings.ToLower(kw)) + "%"
@@ -104,97 +219,18 @@ func applyNoticeFilters(query *gorm.DB, now time.Time, req NoticeListReq, includ
 	}
 
 	switch req.ObjectType {
-	case "", "all":
-		// no filter
 	case "approval":
 		query = query.Where(noticeCategorySQLExpr + " = 'approval'")
-	case "demand":
-		query = query.Where(`(
-			COALESCE(a.objectType, n.objectType) IN ('demand', 'sub_demand', 'business')
-			OR ((COALESCE(a.objectType, n.objectType, '') IN ('mail', '', 'message')) AND (
-				n.subject REGEXP '^(DEMAND|demand|业务需求|需求)[[:space:]]*#[[:space:]]*[0-9]+'
-				OR (n.subject NOT REGEXP '#[[:space:]]*[0-9]+' AND (n.subject LIKE '%需求%' OR n.data LIKE '%/demand-view-%'))
-			))
-		)`)
-	case "story":
-		query = query.Where(`(
-			COALESCE(a.objectType, n.objectType) = 'story'
-			OR ((COALESCE(a.objectType, n.objectType, '') IN ('mail', '', 'message')) AND (
-				n.subject REGEXP '^(STORY|story|研发需求|研需)[[:space:]]*#[[:space:]]*[0-9]+'
-				OR (n.subject NOT REGEXP '#[[:space:]]*[0-9]+' AND n.data LIKE '%/story-view-%')
-			))
-		)`)
-	case "task":
-		query = query.Where(`(
-			COALESCE(a.objectType, n.objectType) = ?
-			OR ((COALESCE(a.objectType, n.objectType, '') IN ('mail', '', 'message')) AND (
-				n.subject REGEXP '^(TASK|task|任务)[[:space:]]*#[[:space:]]*[0-9]+'
-				OR (n.subject NOT REGEXP '#[[:space:]]*[0-9]+' AND (n.subject LIKE '提醒：您有 任务%' OR n.data LIKE '%/task-view-%'))
-			))
-		)`, "task")
-	case "bug":
-		query = query.Where(`(
-			COALESCE(a.objectType, n.objectType) = 'bug'
-			OR ((COALESCE(a.objectType, n.objectType, '') IN ('mail', '', 'message')) AND (
-				n.subject REGEXP '^(BUG|bug|缺陷)[[:space:]]*#[[:space:]]*[0-9]+'
-				OR (n.subject NOT REGEXP '#[[:space:]]*[0-9]+' AND (n.subject LIKE '提醒：您有 Bug%' OR n.data LIKE '%/bug-view-%'))
-			))
-		)`)
 	case "feedback":
-		query = query.Where("(COALESCE(a.objectType, n.objectType) = ? OR (COALESCE(a.objectType, n.objectType, '') IN ('mail', '') AND n.subject REGEXP ?))", "feedback", `^(反馈|FEEDBACK|Feedback)[[:space:]]*#[[:space:]]*[0-9]+`)
-	case "project":
-		query = query.Where(`(
-			COALESCE(a.objectType, n.objectType) = 'project'
-			OR ((COALESCE(a.objectType, n.objectType, '') IN ('mail', '', 'message')) AND (
-				n.subject REGEXP '^(PROJECT|project|项目)[[:space:]]*#[[:space:]]*[0-9]+'
-				OR (n.subject NOT REGEXP '#[[:space:]]*[0-9]+' AND n.data LIKE '%/project-view-%')
-			))
-		)`)
-	case "testtask":
-		query = query.Where(`(
-			COALESCE(a.objectType, n.objectType) IN ('testtask', 'testcase', 'case')
-			OR ((COALESCE(a.objectType, n.objectType, '') IN ('mail', '', 'message')) AND (
-				n.subject REGEXP '^(TESTTASK|testtask|TESTCASE|testcase|测试单|测试)[[:space:]]*#[[:space:]]*[0-9]+'
-				OR (n.subject NOT REGEXP '#[[:space:]]*[0-9]+' AND (n.subject LIKE '%测试单%' OR n.data LIKE '%/testtask-view-%' OR n.data LIKE '%/testcase-view-%'))
-			))
-		)`)
-	case "issue":
-		query = query.Where(`(
-			COALESCE(a.objectType, n.objectType) = 'issue'
-			OR ((COALESCE(a.objectType, n.objectType, '') IN ('mail', '', 'message')) AND (
-				n.subject REGEXP '^(ISSUE|issue|问题)[[:space:]]*#[[:space:]]*[0-9]+'
-				OR (n.subject NOT REGEXP '#[[:space:]]*[0-9]+' AND n.data LIKE '%/issue-view-%')
-			))
-		)`)
-	case "risk":
-		query = query.Where(`(
-			COALESCE(a.objectType, n.objectType) = 'risk'
-			OR ((COALESCE(a.objectType, n.objectType, '') IN ('mail', '', 'message')) AND (
-				n.subject REGEXP '^(RISK|risk|风险)[[:space:]]*#[[:space:]]*[0-9]+'
-				OR (n.subject NOT REGEXP '#[[:space:]]*[0-9]+' AND n.data LIKE '%/risk-view-%')
-			))
-		)`)
+		query = query.Where("(COALESCE(a.objectType, n.objectType) = ? OR (COALESCE(a.objectType, n.objectType, '') IN ('mail', '') AND n.subject REGEXP ?))",
+			"feedback", `^(反馈|FEEDBACK|Feedback)[[:space:]]*#[[:space:]]*[0-9]+`)
 	case "mail":
 		query = query.Where("n.objectType = 'mail'")
 	default:
-		query = query.Where("COALESCE(a.objectType, n.objectType) = ?", req.ObjectType)
+		query = applyNoticeObjectTypeFilter(query, req.ObjectType)
 	}
 
-	switch req.TimeRange {
-	case "today":
-		startOfToday := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-		endOfToday := startOfToday.AddDate(0, 0, 1)
-		query = query.Where("n.createdDate >= ? AND n.createdDate < ?", startOfToday, endOfToday)
-	case "3d":
-		threshold := now.AddDate(0, 0, -3)
-		query = query.Where("n.createdDate >= ?", threshold)
-	case "7d":
-		threshold := now.AddDate(0, 0, -7)
-		query = query.Where("n.createdDate >= ?", threshold)
-	case "30d":
-		threshold := now.AddDate(0, 0, -30)
-		query = query.Where("n.createdDate >= ?", threshold)
-	}
+	query = applyNoticeCreatedDateFilter(query, now, req.TimeRange)
 
 	if req.ReadState == "unread" {
 		query = query.Where("nr.id IS NULL")
@@ -202,20 +238,7 @@ func applyNoticeFilters(query *gorm.DB, now time.Time, req NoticeListReq, includ
 		query = query.Where("nr.id IS NOT NULL")
 	}
 
-	switch req.QuickView {
-	case "unread":
-		query = query.Where("nr.id IS NULL")
-	case "action":
-		query = query.Where(noticeNeedsActionSQLExpr)
-	case "inform":
-		query = query.Where("NOT (" + noticeNeedsActionSQLExpr + ")")
-	case "abnormal":
-		query = query.Where(noticeCategorySQLExpr + " = 'risk'")
-	case "today":
-		startOfToday := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-		endOfToday := startOfToday.AddDate(0, 0, 1)
-		query = query.Where("n.createdDate >= ? AND n.createdDate < ?", startOfToday, endOfToday)
-	}
+	query = applyNoticeQuickViewFilter(query, now, req.QuickView)
 
 	if req.NeedAction == "required" {
 		query = query.Where(noticeNeedsActionSQLExpr)

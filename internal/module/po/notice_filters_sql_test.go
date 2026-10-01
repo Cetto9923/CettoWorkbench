@@ -151,6 +151,23 @@ func TestApplyNoticeFilters_TodayWindowLocked(t *testing.T) {
 	}
 }
 
+// TestApplyNoticeFilters_TaskUsesBoundParam 锁定 task 分支以绑定参数而非字面量
+// 匹配 objectType：内联成 'task' 会改变生成的 SQL 文本。
+func TestApplyNoticeFilters_TaskUsesBoundParam(t *testing.T) {
+	now := time.Date(2026, 10, 2, 15, 4, 5, 0, time.Local)
+	sql, args := captureNoticeFilterSQL(t, now, NoticeListReq{ObjectType: "task"}, false)
+
+	if !strings.Contains(sql, "COALESCE(a.objectType, n.objectType) = ?") {
+		t.Errorf("task 分支应以绑定参数匹配 objectType，实际 SQL: %s", sql)
+	}
+	if strings.Contains(sql, "n.objectType) = 'task'") {
+		t.Errorf("task 分支不应把 objectType 内联成字面量，实际 SQL: %s", sql)
+	}
+	if len(args) != 1 || args[0] != "task" {
+		t.Errorf("task 分支应绑定参数 task，得到 %v", args)
+	}
+}
+
 // TestApplyNoticeFilters_UnknownObjectTypeBoundParam 锁定未知 objectType 走 default 分支并绑定参数。
 func TestApplyNoticeFilters_UnknownObjectTypeBoundParam(t *testing.T) {
 	now := time.Date(2026, 10, 2, 15, 4, 5, 0, time.Local)
