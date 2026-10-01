@@ -9,6 +9,7 @@
 body.po-workbench-shell.layout-nav-top .topbar {
   left: 0;
   height: auto;
+  min-height: var(--topbar-height);
   background: var(--color-primary);
   border-bottom: none;
 }
@@ -189,3 +190,7 @@ body.po-workbench-shell.layout-nav-top .topbar {
 
 body.po-workbench-shell .po-user-info,
 body.po-workbench-shell .po-header-icon { color: var(--color-text-on-accent); }
+
+body.po-workbench-shell.layout-nav-top .po-header-icon {
+  background: var(--color-primary-active);
+}
