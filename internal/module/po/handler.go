@@ -233,7 +233,7 @@ func (h *Handler) Home(c *gin.Context) {
 	render.Page(c, http.StatusOK, constants.TEMPLATE_PO_HOME, gin.H{
 		"Title":               "首页",
 		"PageTitle":           "首页",
-		"PageDescription":     "今日行动 · 全流程价值流推进",
+		"PageDescription":     "待办事项与需求进度",
 		"AllCount":            resp.AllCount,
 		"ValueStreamStages":   resp.Stages,
 		"StagesValid":         resp.StagesValid,
