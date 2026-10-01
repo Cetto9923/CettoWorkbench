@@ -104,38 +104,23 @@ var formalDoneActions = map[string]doneActionMeta{
 	"issue:resolved":    {Label: "解决问题", Result: "resolved"},
 }
 
-func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) ([]DoneAction, int64, error) {
-	if r == nil || r.db == nil || strings.TrimSpace(req.Account) == "" {
-		return nil, 0, nil
-	}
+// normalizeDonePaging 归一分页参数：非法页码回到第 1 页，页长限制在 1~100。
+func normalizeDonePaging(req *RepoFindDoneActionsReq) {
 	if req.Page < 1 {
 		req.Page = 1
 	}
 	if req.PageSize < 1 || req.PageSize > 100 {
 		req.PageSize = 20
 	}
+}
 
-	scopeSQL, scopeArgs := buildFormalDoneScopeSQL()
-	q := r.db.WithContext(ctx).Table("zt_action AS a").
-		Where("a.actor = ?", req.Account).
-		Where(scopeSQL, scopeArgs...)
-	if req.Result != "" && req.Result != "all" {
-		resSQL, resArgs := buildDoneResultFilterSQL(req.Result)
-		q = q.Where(resSQL, resArgs...)
+func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) ([]DoneAction, int64, error) {
+	if r == nil || r.db == nil || strings.TrimSpace(req.Account) == "" {
+		return nil, 0, nil
 	}
-	if objectScopeSQL, objectScopeArgs := buildDoneObjectScopeSQL(req.Tab, req.ObjectType); objectScopeSQL != "" {
-		q = q.Where(objectScopeSQL, objectScopeArgs...)
-	}
-	if req.Action != "" && req.Action != "all" {
-		sql, args := buildActionFilterSQL(req.Action)
-		q = q.Where(sql, args...)
-	}
-	if req.Keyword != "" {
-		kw := "%" + req.Keyword + "%"
-		q = q.Where(buildDoneKeywordFilterSQL(), kw, kw, kw, kw, kw, kw)
-	}
+	normalizeDonePaging(&req)
 
-	q = applyDoneTimeRange(q, req, time.Now())
+	q := buildDoneListQuery(r.db.WithContext(ctx), req)
 
 	// 总数
 	var total int64
@@ -170,54 +155,7 @@ func (r *Repo) FindDoneActions(ctx context.Context, req RepoFindDoneActionsReq) 
 		actor = req.Account
 	}
 
-	items := make([]DoneAction, 0, len(rows))
-	for _, row := range rows {
-		meta := formalDoneActions[row.ObjectType+":"+row.Action]
-		actionLabel := doneHistoryActionLabel(row.ObjectType, row.Action)
-		chg := hists[row.ID]
-		ctx := objCtxs[fmt.Sprintf("%s:%d", row.ObjectType, row.ObjectID)]
-		title := ctx.Title
-		if title == "" {
-			title = strings.TrimSpace(doneObjectTypeLabel(row.ObjectType) + " " + doneObjectCode(row.ObjectType, row.ObjectID))
-		}
-		url := objectViewURLWithProject(row.ObjectType, uint(row.ObjectID), uint(ctx.ProjectID))
-		resultCode, resultText := resolveDoneActionResult(row.Action, row.ObjectType, row.Extra, meta.Result)
-		items = append(items, DoneAction{
-			ID:              row.ID,
-			SourceActionId:  row.ID,
-			SourceSystem:    "zentao",
-			Actor:           actor,
-			ActorName:       actor,
-			Action:          actionLabel,
-			ActionKey:       row.Action,
-			ActionName:      actionLabel,
-			IsCoreAction:    true,
-			ObjectType:      row.ObjectType,
-			ObjectTypeLabel: doneObjectTypeLabel(row.ObjectType),
-			ObjectID:        row.ObjectID,
-			ObjectCode:      doneObjectCode(row.ObjectType, row.ObjectID),
-			ObjectName:      title,
-			ObjectTitle:     title,
-			Date:            row.Date.Format("2006-01-02 15:04:05"),
-			HandledAt:       row.Date.Format(time.RFC3339),
-			Result:          resultCode,
-			ResultCode:      resultCode,
-			ResultText:      resultText,
-			BeforeStatus:    chg[0],
-			AfterStatus:     chg[1],
-			// 当前状态只来自对象本身；已办动作结果不能冒充对象状态。
-			CurrentStatus: ctx.Status,
-			ProjectName:   ctx.ProjectName,
-			ExecutionName: ctx.ExecutionName,
-			ProductName:   ctx.ProductName,
-			PoolName:      ctx.PoolName,
-			NextOwnerName: ctx.CurrentOwner,
-			CanOpenObject: true,
-			URL:           url,
-		})
-	}
-
-	return items, total, nil
+	return buildDoneListItems(rows, hists, objCtxs, actor), total, nil
 }
 
 // applyDoneTimeRange converts calendar filters to half-open timestamp ranges so
