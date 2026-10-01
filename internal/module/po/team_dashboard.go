@@ -30,8 +30,8 @@ func (s *Service) TeamDashboard(ctx context.Context, ids []uint, accounts []stri
 	if len(ids) == 0 {
 		return out, nil
 	}
-	today := time.Now().In(time.Local).Truncate(24 * time.Hour)
-	soon, err := s.schedule.WorkdayOffset(ctx, today, 3)
+	todayDate := dashboardDate(todayStr())
+	soon, err := s.schedule.WorkdayOffset(ctx, todayDate, 3)
 	if err != nil {
 		return nil, err
 	}
@@ -58,10 +58,10 @@ func (s *Service) TeamDashboard(ctx context.Context, ids []uint, accounts []stri
 			out.Suspended++
 		}
 		date := dashboardDate(d.Deadline)
-		if date.IsZero() {
+		if date.IsZero() || isTerminal(d.Status) {
 			continue
 		}
-		late := date.Before(today)
+		late := date.Before(todayDate)
 		if late {
 			out.Overdue++
 		} else if !date.After(soon) {
@@ -84,7 +84,7 @@ func (s *Service) TeamDashboard(ctx context.Context, ids []uint, accounts []stri
 		}
 		for _, t := range tasks {
 			date := dashboardDate(t.Deadline)
-			late := date.Before(today)
+			late := date.Before(todayDate)
 			if late {
 				out.Overdue++
 			} else {

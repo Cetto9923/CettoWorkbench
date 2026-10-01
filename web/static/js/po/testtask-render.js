@@ -19,7 +19,7 @@
 
     $r.find("#poTesttaskSysMeta").text("共 " + systems.length + " 个系统");
 
-    var todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    var d = new Date(), todayStr = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
     var qdName = $.trim(data.qdName || data.qd || "");
     if (qdName === "—") qdName = "";
 
@@ -35,7 +35,7 @@
         ? '<label class="po-testtask-sys-toggle"><input type="checkbox" name="sys' + unitNo + 'Enable" value="1" checked disabled /> <span>主系统（默认提测）</span></label>'
         : '<label class="po-testtask-sys-toggle"><input type="checkbox" name="sys' + unitNo + 'Enable" value="1" ' + (enabled ? 'checked' : '') + ' /> <span>参与本次提测</span></label>';
 
-      var defVerName = todayStr + "-US" + demandId + "-" + sysName + "-提测版本";
+      var defVerName = todayStr.replace(/-/g, "") + "-US" + demandId + "-" + sysName + "-提测版本";
 
       unitsHtml +=
         '<div class="po-testtask-unit" data-tt-unit="' + unitNo + '" data-tt-unit-product="' + (sys.id || "") + '" data-is-main="' + (isMain ? "1" : "0") + '">' +
@@ -138,7 +138,7 @@
       var unitNo = idx + 1;
       var isMain = !!sys.isMain;
       var sysName = esc(sys.name || ("系统" + unitNo));
-      var defTaskName = todayStr + "-US" + demandId + "-" + sysName + "-测试单";
+      var defTaskName = todayStr.replace(/-/g, "") + "-US" + demandId + "-" + sysName + "-测试单";
       var enabled = isMain || isJointTest === 1;
       var shouldHide = !enabled;
 
@@ -156,7 +156,7 @@
         '    </div>' +
         '    <div class="po-testtask-field">' +
         '      <div class="po-testtask-field-label">开始日期</div>' +
-        '      <input type="date" data-tt-task-begin="' + unitNo + '" value="' + todayStr.slice(0,4)+"-"+todayStr.slice(4,6)+"-"+todayStr.slice(6,8) + '" />' +
+        '      <input type="date" data-tt-task-begin="' + unitNo + '" value="' + todayStr + '" />' +
         '    </div>' +
         '    <div class="po-testtask-field">' +
         '      <div class="po-testtask-field-label">结束日期</div>' +

@@ -70,7 +70,7 @@ func ruleOverdueNotSubmittedTest(r vfRule) []VersionFollowAIFinding {
 	if r.Raw.SchedulePlanDate == nil {
 		return nil
 	}
-	if r.Raw.SchedulePlanDate.After(r.Now) {
+	if dayDiff(r.Now, *r.Raw.SchedulePlanDate) >= 0 {
 		return nil
 	}
 	if stageRank(r.Raw.Stage, r.Raw.Status) >= stageIdxSubmittest {

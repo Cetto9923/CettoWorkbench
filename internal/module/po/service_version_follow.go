@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"workbench/internal/model"
+	"workbench/internal/pkg/demandstage"
 )
 
 // vfWindowBarLimit 窗口条最多展示的窗口数（含已上线窗口，由前端收进「更多窗口」）。
@@ -125,15 +126,15 @@ func (s *Service) buildVFItems(ctx context.Context, rows []vfDemandRow, now time
 	return items
 }
 
-// fillVFSummary 回填阶段分布、距上线天数与三态计数。
+// fillVFSummary 回填阶段分布、距上线天数与三态计数；分布按 demandstage 编码统计，按中文名统计会让九宫格恒为 0。
 func (s *Service) fillVFSummary(resp *VersionFollowListResp, items []VersionFollowItemResp, rows []vfDemandRow, now time.Time) {
 	byStage := map[string]int{}
 	for _, r := range rows {
-		byStage[stageLabel(r.Stage, r.Status)]++
+		code, _ := demandstage.Map(r.Stage, r.Status)
+		byStage[code]++
 	}
 	for _, code := range stageOrder {
-		name := stageLabels[code]
-		resp.StageCounts = append(resp.StageCounts, VersionFollowStageCount{Stage: name, Count: byStage[name]})
+		resp.StageCounts = append(resp.StageCounts, VersionFollowStageCount{Stage: stageLabels[code], Count: byStage[code]})
 	}
 	for _, it := range items {
 		switch it.Judgement {
@@ -146,8 +147,8 @@ func (s *Service) fillVFSummary(resp *VersionFollowListResp, items []VersionFoll
 		}
 	}
 	if len(resp.Windows) > 0 && resp.Windows[0].ReleaseDate != "" {
-		if t, err := time.Parse("2006-01-02", resp.Windows[0].ReleaseDate); err == nil {
-			resp.DistanceDays = int(t.Sub(now).Hours() / 24)
+		if t, err := time.ParseInLocation("2006-01-02", resp.Windows[0].ReleaseDate, time.Local); err == nil {
+			resp.DistanceDays = dayDiff(now, t)
 		}
 	}
 }
@@ -162,7 +163,7 @@ func vfStay(r vfDemandRow, now time.Time) (int, string) {
 	if plan == nil {
 		return 0, ""
 	}
-	days := int(now.Sub(*plan).Hours() / 24)
+	days := dayDiff(*plan, now)
 	overdue := ""
 	if days > 0 {
 		overdue = "已超期 " + strconv.Itoa(days) + " 天"

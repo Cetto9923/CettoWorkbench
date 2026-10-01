@@ -51,7 +51,7 @@ func deriveJudgement(c judgeCtx) vfJudgementResult {
 
 // judgeBlocked 判定阻塞态；不满足返回空结果。
 func judgeBlocked(c judgeCtx) vfJudgementResult {
-	if c.Raw.SchedulePlanDate != nil && !c.Raw.SchedulePlanDate.After(c.Now) &&
+	if c.Raw.SchedulePlanDate != nil && dayDiff(c.Now, *c.Raw.SchedulePlanDate) < 0 &&
 		stageRank(c.Raw.Stage, c.Raw.Status) < stageIdxSubmittest {
 		return vfJudgementResult{
 			Judgement: VFJudgementBlocked,
@@ -78,7 +78,7 @@ func judgeBlocked(c judgeCtx) vfJudgementResult {
 func judgeRisk(c judgeCtx) vfJudgementResult {
 	// 已超期不足 3 天。
 	if c.Raw.Deadline != nil {
-		over := int(c.Now.Sub(*c.Raw.Deadline).Hours() / 24)
+		over := dayDiff(*c.Raw.Deadline, c.Now)
 		if over > 0 && over < vfRiskWindowDays {
 			return vfJudgementResult{
 				Judgement: VFJudgementRisk,
@@ -88,7 +88,7 @@ func judgeRisk(c judgeCtx) vfJudgementResult {
 	}
 	// 距计划日 3 天内，且阶段落后于计划。
 	if c.Raw.SchedulePlanDate != nil {
-		days := int(c.Raw.SchedulePlanDate.Sub(c.Now).Hours() / 24)
+		days := dayDiff(c.Now, *c.Raw.SchedulePlanDate)
 		if days >= 0 && days < vfRiskWindowDays && stageRank(c.Raw.Stage, c.Raw.Status) < stageIdxSubmittest {
 			return vfJudgementResult{
 				Judgement: VFJudgementRisk,

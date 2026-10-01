@@ -14,13 +14,27 @@ import (
 	"time"
 )
 
-// computeDemandSummary 遍历叶节点统计：待澄清/阻塞/超期（同 V1.3 顶栏快捷筛选口径；
-// 前端会用 DOM 行二次精确计算，此处仅作后端口径参考）。
-// 显式栈迭代替代递归（Rules：严禁递归）；超期按本地日期字符串比较，
-// 避免按 UTC 截断的 Truncate(24h) 在本地 0~8 点窗口内错判昨天到期。
+// terminalStatusSQL 是需求终态（已关闭 / 已驳回 / 已发布）的唯一事实源，isTerminal 与各 SQL 的 NOT IN 均由它派生。
+var terminalStatusSQL = "('closed','refuse','released')"
+
+// isTerminal 判断状态是否为需求终态；引号定界，closed 不会误配到 closedX。
+func isTerminal(status string) bool {
+	return strings.Contains(terminalStatusSQL, "'"+strings.ToLower(strings.TrimSpace(status))+"'")
+}
+
+// todayStr 返回本地自然日 y-m-d；禁止 Truncate(24*time.Hour)，那是按 UTC 零点截断。
+func todayStr() string { return time.Now().Format("2006-01-02") }
+
+// dayDiff 返回 b 相对 a 的自然日差（同一天为 0），按日历日而非 24 小时时长计算。
+func dayDiff(a, b time.Time) int {
+	at := func(t time.Time) time.Time { y, m, d := t.Date(); return time.Date(y, m, d, 0, 0, 0, 0, time.Local) }
+	return int(at(b).Sub(at(a)).Hours() / 24)
+}
+
+// computeDemandSummary 显式栈遍历叶节点统计待澄清/阻塞/超期（Rules 严禁递归）；前端另按 DOM 行二次精确计算，此处仅作后端口径参考。
 func (r *Repo) computeDemandSummary(out []*BoardDemandItem) BoardDemandSummary {
 	s := BoardDemandSummary{}
-	today := time.Now().Format("2006-01-02")
+	today := todayStr()
 	stack := make([]*BoardDemandItem, 0, len(out))
 	stack = append(stack, out...)
 	for len(stack) > 0 {
@@ -38,7 +52,7 @@ func (r *Repo) computeDemandSummary(out []*BoardDemandItem) BoardDemandSummary {
 		if it.Status == "refuse" || it.Status == "hang" {
 			s.Blocked++
 		}
-		if it.Deadline != "" && it.Status != "done" && it.Status != "released" && it.Deadline < today {
+		if it.Deadline != "" && !isTerminal(it.Status) && it.Deadline < today {
 			s.Overdue++
 		}
 	}

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 	"strings"
-	"time"
 
 	"gorm.io/gorm"
 )
@@ -45,7 +44,7 @@ func (r *Repo) homeFocusQuery(ctx context.Context, account string, req DemandsRe
 func (r *Repo) homeFocusQueryWithReviews(ctx context.Context, account string, req DemandsReq, reviewIDs []int) *gorm.DB {
 	parts := []string{}
 	args := []interface{}{}
-	today := time.Now().Format("2006-01-02")
+	today := todayStr()
 	for index, stage := range valueStreamStages {
 		if stage.status == "all" || (req.Status != "all" && stage.status != req.Status) {
 			continue
@@ -71,7 +70,7 @@ func (r *Repo) homeFocusQueryWithReviews(ctx context.Context, account string, re
 		case "today":
 			q = q.Where(dateSetExpr("deadline")+" AND deadline <= ?", today)
 		case "overdue":
-			q = q.Where(dateSetExpr("deadline")+" AND deadline < ?", today)
+			q = q.Where(dateSetExpr("deadline")+" AND status NOT IN "+terminalStatusSQL+" AND deadline < ?", today)
 		case "blocked":
 			q = q.Where(`status = ? OR (
 				 `+dateSetBeforeTodaySQL("developFinish")+`
@@ -225,7 +224,7 @@ func (r *Repo) homeFocusStoryQuery(ctx context.Context, account string, req Dema
 	if req.ObjectType == "story" || req.Status == "all" || req.Status == "schedule" {
 		q = q.Where("((status IN ? AND ("+dateUnsetExpr("developFinish")+" OR "+dateUnsetExpr("testFinish")+")) OR (status IN ? AND "+dateSetExpr("deliverDate")+"))", []string{"draft", "wait", "active", "clarified", "planned", "developing"}, []string{"acceptanced", "waitdeliver", "released"})
 	}
-	today := time.Now().Format("2006-01-02")
+	today := todayStr()
 	switch req.Focus {
 	case "today":
 		q = q.Where("COALESCE(NULLIF(CASE WHEN "+dateUnsetExpr("developFinish")+" THEN NULL ELSE CAST(developFinish AS CHAR) END, ''), NULLIF(CASE WHEN "+dateUnsetExpr("testFinish")+" THEN NULL ELSE CAST(testFinish AS CHAR) END, ''), NULLIF(CASE WHEN "+dateUnsetExpr("deliverDate")+" THEN NULL ELSE CAST(deliverDate AS CHAR) END, '')) <= ?", today)

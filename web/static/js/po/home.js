@@ -14,7 +14,7 @@
     status: "all",
     focus: "my_action",
     page: 1,
-    pageSize: 20,
+    pageSize: 15,
     keyword: "",
     objectType: "all",
     priority: "all"
@@ -30,7 +30,7 @@
     p.set("status", status || "all");
     p.set("focus", state.focus);
     p.set("page", String(page || 1));
-    p.set("pageSize", String(pageSize || 20));
+    p.set("pageSize", String(pageSize || 15));
     // 透传工具栏筛选到服务端，由 SQL 过滤 + Count + 分页；前端不再二次过滤。
     if (state.keyword) { p.set("keyword", state.keyword); }
     if (state.objectType && state.objectType !== "all") { p.set("objectType", state.objectType); }

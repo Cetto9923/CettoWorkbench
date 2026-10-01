@@ -226,14 +226,11 @@
 
     for (var i = 0; i < vs.stages.length; i++) {
       var s = vs.stages[i];
-      var roleText = s.role;
-      if (roleText === "PO" || roleText === "产品经理") roleText = "需求负责人";
-      else if (roleText) roleText = roleText.replace(/\bPO\b/g, "需求负责人").replace(/产品经理/g, "需求负责人");
-      var fullStageText = [s.label, roleText, s.durationText].filter(Boolean).join(" · ");
+      var fullStageText = [s.label, s.role, s.durationText].filter(Boolean).join(" · ");
       html.push(
         '<div class="dd-flow-stage ' + esc(s.status) + '" title="' + esc(fullStageText) + '">',
         '  <div class="nm" title="' + esc(s.label) + '">' + esc(s.label) + '</div>',
-        '  <div class="who" title="' + esc(roleText) + '">' + esc(roleText) + '</div>',
+        '  <div class="who" title="' + esc(s.role) + '">' + esc(s.role) + '</div>',
         '  <div class="duration" title="' + esc(s.durationText) + '">' + esc(excerpt(s.durationText, 18)) + '</div>',
         '</div>'
       );

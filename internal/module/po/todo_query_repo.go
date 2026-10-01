@@ -12,7 +12,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"workbench/internal/pkg/zentao"
 )
@@ -62,7 +61,7 @@ func (r *Repo) QueryTodoUnified(ctx context.Context, account string, req TodoLis
 		return result, nil
 	}
 
-	todayStr := time.Now().Format("2006-01-02")
+	today := todayStr()
 	displayMap, _ := r.loadAccountDisplayMap(ctx)
 
 	unionSQL, unionArgs := buildTodoUnionSQL(account, req)
@@ -71,11 +70,11 @@ func (r *Repo) QueryTodoUnified(ctx context.Context, account string, req TodoLis
 	}
 
 	// 1. 统计 Summary 与 Groups（Focus 之前）
-	preTabWhere, preTabArgs := buildTodoOuterWhere(req, displayMap, false, todayStr)
+	preTabWhere, preTabArgs := buildTodoOuterWhere(req, displayMap, false, today)
 	summarySQL := fmt.Sprintf(`SELECT
 		COUNT(*) AS total_pending,
 		COALESCE(SUM(CASE WHEN t.deadline_str = ? THEN 1 ELSE 0 END), 0) AS today_count,
-		COALESCE(SUM(CASE WHEN t.deadline_str != '9999-12-31' AND t.deadline_str < ? THEN 1 ELSE 0 END), 0) AS overdue_count,
+		COALESCE(SUM(CASE WHEN `+todoOverdueSQL+` THEN 1 ELSE 0 END), 0) AS overdue_count,
 		COALESCE(SUM(CASE WHEN t.blocked = 1 THEN 1 ELSE 0 END), 0) AS blocked_count,
 		COALESCE(SUM(CASE WHEN t.priority_rank = 1 THEN 1 ELSE 0 END), 0) AS p1_count,
 		COALESCE(SUM(CASE WHEN t.kind = 'demand' THEN 1 ELSE 0 END), 0) AS demand_count,
@@ -83,7 +82,7 @@ func (r *Repo) QueryTodoUnified(ctx context.Context, account string, req TodoLis
 		COALESCE(SUM(CASE WHEN t.kind = 'bug' THEN 1 ELSE 0 END), 0) AS bug_count
 	FROM (%s) AS t %s`, unionSQL, preTabWhere)
 
-	summaryArgs := append([]interface{}{todayStr, todayStr}, unionArgs...)
+	summaryArgs := append([]interface{}{today, today}, unionArgs...)
 	summaryArgs = append(summaryArgs, preTabArgs...)
 
 	var countRow todoCountsRow
@@ -93,14 +92,14 @@ func (r *Repo) QueryTodoUnified(ctx context.Context, account string, req TodoLis
 	result.Summary = TodoSummary{Pending: int(countRow.TotalPending), Today: int(countRow.TodayCount), Overdue: int(countRow.OverdueCount), Blocked: int(countRow.BlockedCount), P1: int(countRow.P1Count)}
 	result.Groups = TodoGroupCounts{All: int(countRow.TotalPending), Demand: int(countRow.DemandCount), Execution: int(countRow.TaskCount), Testing: int(countRow.BugCount)}
 
-	facets, err := r.countTodoFacets(ctx, account, req, displayMap, todayStr)
+	facets, err := r.countTodoFacets(ctx, account, req, displayMap, today)
 	if err != nil {
 		return nil, err
 	}
 	result.Facets = facets
 
 	// 2. 统计应用 Tab 与 Focus 后的 Total
-	postTabWhere, postTabArgs := buildTodoOuterWhere(req, displayMap, true, todayStr)
+	postTabWhere, postTabArgs := buildTodoOuterWhere(req, displayMap, true, today)
 	totalArgs := append(append([]interface{}{}, unionArgs...), postTabArgs...)
 
 	if req.Focus == "" || req.Focus == "pending" {
@@ -146,6 +145,8 @@ func (r *Repo) QueryTodoUnified(ctx context.Context, account string, req TodoLis
 	return result, nil
 }
 
+const todoOverdueSQL = "t.deadline_str != '9999-12-31' AND t.status NOT IN ('closed', 'refuse', 'released') AND t.deadline_str < ?"
+
 func buildTodoUnionSQL(account string, req TodoListReq) (string, []interface{}) {
 	includeDemand := req.ObjectType == "" || req.ObjectType == "all" || req.ObjectType == "demand"
 	includeTask := req.ObjectType == "" || req.ObjectType == "all" || req.ObjectType == "task"
@@ -186,7 +187,7 @@ func buildTodoUnionSQL(account string, req TodoListReq) (string, []interface{}) 
 		FROM zt_demand AS d
 		WHERE d.deleted = '0' AND d.status IN ('draft','wait','refuse','active','clarified','developing','testing','waitacceptance','waitdeliver','acceptanced')
 		  AND NOT EXISTS (SELECT 1 FROM zt_demand child WHERE child.deleted = '0' AND child.parent = d.id)
-		  AND (d.assignedTo = ? OR d.distributedBy = ? OR d.QD = ? OR d.RD = ? OR d.accepter = ? OR d.id IN (SELECT demand FROM zt_demandclarify WHERE PM = ?))`
+		  AND (d.assignedTo = ? OR d.distributedBy = ? OR d.QD = ? OR d.RD = ? OR d.accepter = ? OR d.id IN (SELECT demand FROM zt_demandclarify WHERE FIND_IN_SET(?, REPLACE(PM, ' ', '')) > 0))`
 		args = append(args, account, account, account, account, account, account, account, account)
 		demandSQL += getDemandFilterClauses(req)
 		parts = append(parts, demandSQL)
@@ -392,7 +393,7 @@ func buildTodoOuterWhere(req TodoListReq, displayMap map[string]string, includeT
 			conds = append(conds, "t.deadline_str = ?")
 			args = append(args, todayStr)
 		case "overdue":
-			conds = append(conds, "t.deadline_str != '9999-12-31' AND t.deadline_str < ?")
+			conds = append(conds, todoOverdueSQL)
 			args = append(args, todayStr)
 		case "blocked":
 			conds = append(conds, "t.blocked = 1")

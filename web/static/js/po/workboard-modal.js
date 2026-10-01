@@ -69,7 +69,7 @@
     if (dueInput) {
       var d = new Date();
       d.setDate(d.getDate() + 7);
-      dueInput.value = d.toISOString().slice(0, 10);
+      dueInput.value = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
     }
 
     if (assigneeSel) {

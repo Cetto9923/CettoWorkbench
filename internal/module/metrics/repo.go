@@ -38,7 +38,7 @@ type snapshot struct {
 	// 效能 / 交付效率
 	Tasks        int64 `gorm:"column:tasks"`         // 任务总量
 	TasksOpen    int64 `gorm:"column:tasks_open"`    // 未完成
-	TasksOverdue int64 `gorm:"column:tasks_overdue"` // 逾期（deadline<today）
+	TasksOverdue int64 `gorm:"column:tasks_overdue"` // 逾期（deadline<today，且非 done/closed/cancel）
 }
 
 // Snapshot 一次 SQL 拉所有指标的运行快照（11 个 COUNT 子查询）。
@@ -60,7 +60,7 @@ func (r *Repo) Snapshot(ctx context.Context) (snapshot, error) {
 		(SELECT COUNT(*) FROM zt_bug WHERE deleted='0' AND status IN ('resolved','closed')) AS bugs_resolved,
 		(SELECT COUNT(*) FROM zt_task WHERE deleted='0') AS tasks,
 		(SELECT COUNT(*) FROM zt_task WHERE deleted='0' AND status NOT IN ('closed','cancel')) AS tasks_open,
-		(SELECT COUNT(*) FROM zt_task WHERE deleted='0' AND status NOT IN ('closed','cancel') AND deadline IS NOT NULL AND CAST(deadline AS CHAR) NOT LIKE '0000-00-00%' AND DATE(deadline) < CURDATE()) AS tasks_overdue`
+		(SELECT COUNT(*) FROM zt_task WHERE deleted='0' AND status NOT IN ('done','closed','cancel') AND deadline IS NOT NULL AND CAST(deadline AS CHAR) NOT LIKE '0000-00-00%' AND DATE(deadline) < CURDATE()) AS tasks_overdue`
 	err := r.db.WithContext(ctx).Raw(query).Scan(&out).Error
 	return out, err
 }

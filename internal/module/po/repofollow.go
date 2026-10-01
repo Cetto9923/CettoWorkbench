@@ -149,7 +149,7 @@ func (r *Repo) FindFollowedDemands(ctx context.Context, req RepoFindFollowedDema
 		return nil, 0, nil, err
 	}
 
-	today := time.Now().In(time.Local).Format("2006-01-02")
+	today := todayStr()
 	displayMap, _ := r.loadAccountDisplayMap(ctx)
 	items := make([]FollowItem, 0, len(rows))
 	for _, row := range rows {
@@ -296,7 +296,7 @@ func followProgress(status, deadline, today string) (string, string) {
 	if st == "closed" || st == "released" {
 		return "done", "已完成"
 	}
-	if deadline == "" {
+	if deadline == "" || st == "refuse" {
 		return "unknown", "—"
 	}
 	if deadline < today {

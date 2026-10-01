@@ -32,7 +32,7 @@ func (r *Repo) CountKPISummary(ctx context.Context, account string) (KPISummaryR
 	today := time.Now().Format("2006-01-02")
 	err := r.roleDemandBase(ctx, account).Select(`
 		COUNT(CASE WHEN `+dateSetExpr("deadline")+` AND deadline <= ? THEN 1 END) AS today,
-		COUNT(CASE WHEN `+dateSetExpr("deadline")+` AND deadline < ? THEN 1 END) AS overdue,
+		COUNT(CASE WHEN `+dateSetExpr("deadline")+` AND status NOT IN `+terminalStatusSQL+` AND deadline < ? THEN 1 END) AS overdue,
 		COUNT(CASE WHEN hang = '1' THEN 1 END) AS suspended,
 		COUNT(CASE WHEN status = 'refuse' OR (
 			`+dateSetBeforeTodaySQL("developFinish")+`

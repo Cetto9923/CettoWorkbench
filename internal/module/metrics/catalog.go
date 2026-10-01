@@ -51,6 +51,9 @@ type metricDef struct {
 	Enabled     bool    // 是否启用
 }
 
+// DeliveryCycleTargetDays 是 delivery.cycle 达标线天数；目录条目与 po 模块的「周期目标」共用，避免业务代码另写魔法数。
+const DeliveryCycleTargetDays = 30
+
 // metricCatalog 是 21 条指标元数据目录（唯一 SSOT）。
 // 顺序按 5 分类分组：需求治理(5) / 交付效率(5) / 研发质量(6) / 规范执行(2) / 效能管理(3)。
 var metricCatalog = []metricDef{
@@ -96,7 +99,7 @@ var metricCatalog = []metricDef{
 		Code: "delivery.cycle", Name: "交付周期", Category: CategoryDelivery,
 		Unit: "天", Description: "业务需求从业务评审通过到完成上线的天数，扣除外部挂起天数",
 		SourceType: SourceExternal, SourceLabel: "FineReport (JbuB) / 禅道 zt_demand.teamGroup", Period: "月度",
-		Direction: "down", Target: "≤30天", Danger: "50天", TargetValue: 30, DangerValue: 50,
+		Direction: "down", Target: "≤" + strconv.Itoa(DeliveryCycleTargetDays) + "天", Danger: "50天", TargetValue: DeliveryCycleTargetDays, DangerValue: 50,
 		OwnerRole: "产品经理", Formula: "AVG((实际发布时间 - 业务评审通过时间) - 挂起天数)", Order: 6, Enabled: true,
 	},
 	{

@@ -136,18 +136,12 @@ func (r *DemandsReq) Validate() []FieldError {
 		return []FieldError{{Field: "relation", Message: "无效的关系"}}
 	}
 	r.Status = status
-	if r.Page <= 0 {
-		r.Page = 1
-	}
-	if r.PageSize <= 0 {
-		r.PageSize = 15
-	} else if r.PageSize > 100 {
-		r.PageSize = 100
-	}
+	r.Normalize()
 	return nil
 }
 
 // Normalize 规范化分页参数（默认 page=1、pageSize=15，上限 100）。
+// pageSize 默认值即首页需求列表默认页长，前端 home.js 须与本值一致。
 func (r *DemandsReq) Normalize() {
 	if r.Page <= 0 {
 		r.Page = 1

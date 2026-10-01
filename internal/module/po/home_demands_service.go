@@ -290,7 +290,7 @@ func buildDemandWorkItem(row DemandRow, label string, displayMap map[string]stri
 		pri = "P" + row.Pri
 	}
 	ownerDisp := resolveNextOwnerDisplay(row, displayMap)
-	deadline, isOverdue, days := calcOverdue(row.Deadline)
+	deadline, isOverdue, days := calcOverdue(row.Deadline, row.Status)
 	return WorkItemDetail{
 		Kind:          "demand",
 		ID:            fmt.Sprintf("US%d", row.ID),
@@ -353,7 +353,7 @@ func buildStoryWorkItem(row StoryRow, label string, actor *model.User, displayMa
 	if owner == "" && actor != nil {
 		owner = personlabel.Format(actor.Account, actor.DisplayName)
 	}
-	deadline, isOverdue, days := calcOverdue(storyTargetDate(row))
+	deadline, isOverdue, days := calcOverdue(storyTargetDate(row), row.Status)
 	return WorkItemDetail{
 		Kind:         "story",
 		ID:           fmt.Sprintf("%d", row.ID),
@@ -370,26 +370,25 @@ func buildStoryWorkItem(row StoryRow, label string, actor *model.User, displayMa
 	}
 }
 
-func calcOverdue(dateStr string) (string, bool, int) {
+func calcOverdue(dateStr, status string) (string, bool, int) {
 	d := strings.TrimSpace(dateStr)
+	if isTerminal(status) {
+		return d, false, 0
+	}
 	if isUnsetDateText(d) {
 		return "", false, 0
 	}
 	if len(d) > 10 {
 		d = d[:10]
 	}
-	t, err := time.Parse("2006-01-02", d)
+	// 按本地自然日比较：time.Parse 默认落 UTC，会在 0~8 点窗口把「今天到期」算成逾期一天。
+	t, err := time.ParseInLocation("2006-01-02", d, time.Local)
 	if err != nil || t.Year() < 2000 {
 		return "", false, 0
 	}
-	now := time.Now()
-	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, t.Location())
-	if !today.After(t) {
-		return d, false, 0
-	}
-	days := int(today.Sub(t).Hours() / 24)
+	days := dayDiff(t, time.Now())
 	if days <= 0 {
-		days = 1
+		return d, false, 0
 	}
 	return d, true, days
 }

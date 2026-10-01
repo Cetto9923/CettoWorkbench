@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"workbench/internal/module/metrics"
 	"workbench/internal/pkg/demandstage"
 	"workbench/internal/pkg/personlabel"
 	"workbench/internal/pkg/zentao"
@@ -100,7 +101,7 @@ func (s *DetailService) buildValueStream(row *DemandDetailRow) *DetailValueStrea
 	if estimatedDays <= 0 {
 		estimatedDays = usedDays
 	}
-	targetDays := 28
+	targetDays := metrics.DeliveryCycleTargetDays
 	diff := estimatedDays - targetDays
 
 	return &DetailValueStream{

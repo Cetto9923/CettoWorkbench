@@ -15,8 +15,6 @@
 
   --bg-surface: var(--color-surface-muted);
   --box-shadow-soft: var(--shadow-soft);
-  --radius-lg: 12px;
-  --radius-md: 8px;
 }
 
 body {

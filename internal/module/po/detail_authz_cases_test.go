@@ -352,7 +352,7 @@ func TestCalcOverdue_DirtyDataFallback(t *testing.T) {
 		"1999-12-31",
 	}
 	for _, raw := range dirtyDates {
-		deadline, overdue, days := calcOverdue(raw)
+		deadline, overdue, days := calcOverdue(raw, "active")
 		if deadline != "" || overdue || days != 0 {
 			t.Errorf("calcOverdue(%q) = (%q, %v, %d); want ('', false, 0)", raw, deadline, overdue, days)
 		}
@@ -360,14 +360,14 @@ func TestCalcOverdue_DirtyDataFallback(t *testing.T) {
 
 	// 正常未来日期：非逾期
 	future := time.Now().AddDate(0, 1, 0).Format("2006-01-02")
-	d, overdue, days := calcOverdue(future)
+	d, overdue, days := calcOverdue(future, "active")
 	if overdue || days != 0 || d != future {
 		t.Errorf("calcOverdue(%q) = (%q, %v, %d); want (%q, false, 0)", future, d, overdue, days, future)
 	}
 
 	// 正常历史日期：逾期
 	past := "2023-01-01"
-	d2, overdue2, days2 := calcOverdue(past)
+	d2, overdue2, days2 := calcOverdue(past, "active")
 	if !overdue2 || days2 <= 0 || d2 != past {
 		t.Errorf("calcOverdue(%q) = (%q, %v, %d); want overdue=true, days > 0", past, d2, overdue2, days2)
 	}
