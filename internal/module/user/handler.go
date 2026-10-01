@@ -67,9 +67,9 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	users.DELETE("/:id", middleware.RequirePerm(perm.UserDelete), h.Delete)
 }
 
-// RegisterInsideRoutes 注册内部用户检索下拉接口（GET /users，无 RequirePerm）。
+// RegisterInsideRoutes 注册内部用户检索下拉接口（GET /users，登录用户通用能力）。
 func (h *Handler) RegisterInsideRoutes(rg *gin.RouterGroup) {
-	rg.GET("/users", h.ListInsideUsers)
+	rg.GET("/users", middleware.RequirePerm(perm.KanbanStory), h.ListInsideUsers)
 }
 
 // ListInsideUsers 返回人员选择控件用的内部用户列表（JSON）。

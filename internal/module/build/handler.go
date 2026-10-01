@@ -42,8 +42,8 @@ func NewHandler(svc *Service, logger *zap.Logger) *Handler {
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g := rg.Group("/builds")
 
-	g.GET("/:id/linkstory", middleware.RequirePerm(perm.BuildLinkStory), h.LinkStory)
-	g.GET("/:id/linkedstories", middleware.RequirePerm(perm.BuildLinkStory), h.ListLinkedStories)
+	g.GET("/:id/linkstory", middleware.RequirePerm(perm.KanbanStory), h.LinkStory)
+	g.GET("/:id/linkedstories", middleware.RequirePerm(perm.KanbanStory), h.ListLinkedStories)
 
 	g.POST("/:id/linkstories", middleware.RequirePerm(perm.BuildLinkStory), h.LinkStories)
 	g.POST("/:id/unlinkstories", middleware.RequirePerm(perm.BuildLinkStory), h.UnlinkStories)

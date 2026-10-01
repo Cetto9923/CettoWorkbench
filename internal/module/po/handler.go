@@ -65,9 +65,9 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.Use(middleware.ActiveNav("/home"))
 
 	g.GET("/home", h.homePageAccess(), h.Home)
-	g.GET("/home/team/version-windows", h.TeamHomeVersionWindows)
-	g.GET("/home/team/value-stream", h.TeamHomeValueStream)
-	g.GET("/home/team/dashboard", h.TeamDashboard)
+	g.GET("/home/team/version-windows", middleware.RequirePerm(perm.KanbanStory), h.TeamHomeVersionWindows)
+	g.GET("/home/team/value-stream", middleware.RequirePerm(perm.KanbanStory), h.TeamHomeValueStream)
+	g.GET("/home/team/dashboard", middleware.RequirePerm(perm.KanbanStory), h.TeamDashboard)
 	g.GET("/demands", middleware.RequirePerm(perm.PoHomeList), h.Demands)
 	g.POST("/demands/:id/review", middleware.RequirePerm(perm.PoHomeList), h.ReviewDemand)
 	g.POST("/demands/:id/withdraw-review", middleware.RequirePerm(perm.PoHomeList), h.WithdrawDemandReview)
@@ -116,8 +116,8 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	// Keep the sidebar's public path aligned with the page capability name.
 	// The singular path remains as a compatibility alias for existing links.
 	for _, path := range []string{"/issues/risk", "/issue-risk"} {
-		g.GET(path, h.issueRiskAccess(), h.IssueRisk)
-		g.GET(path+"/items", h.issueRiskAccess(), h.IssueRiskItems)
+		g.GET(path, middleware.RequirePerm(perm.KanbanStory), h.issueRiskAccess(), h.IssueRisk)
+		g.GET(path+"/items", middleware.RequirePerm(perm.KanbanStory), h.issueRiskAccess(), h.IssueRiskItems)
 	}
 
 	NewBoardHandler(h.svc, h.logger).RegisterRoutes(g)

@@ -18,6 +18,7 @@ import (
 
 	"workbench/internal/middleware"
 	"workbench/internal/pkg/errorx"
+	"workbench/internal/pkg/perm"
 )
 
 // Handler 提测办理 HTTP。
@@ -34,12 +35,12 @@ func NewHandler(svc *Service, logger *zap.Logger) *Handler {
 // RegisterRoutes 注册提测路由（挂载在已登录的根 group）。
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g := rg.Group("")
-	g.GET("/demands/:id/testtask", h.GetContext)
-	g.GET("/products/:id/executions", h.ListProductExecutions)
-	g.GET("/products/:id/builds", h.ListProductBuilds)
+	g.GET("/demands/:id/testtask", middleware.RequirePerm(perm.BuildLinkStory), h.GetContext)
+	g.GET("/products/:id/executions", middleware.RequirePerm(perm.BuildLinkStory), h.ListProductExecutions)
+	g.GET("/products/:id/builds", middleware.RequirePerm(perm.BuildLinkStory), h.ListProductBuilds)
 
-	g.POST("/demands/:id/testtask/builds", h.CreateBuilds)
-	g.POST("/demands/:id/testtask/tasks", h.CreateTesttasks)
+	g.POST("/demands/:id/testtask/builds", middleware.RequirePerm(perm.BuildLinkStory), h.CreateBuilds)
+	g.POST("/demands/:id/testtask/tasks", middleware.RequirePerm(perm.BuildLinkStory), h.CreateTesttasks)
 }
 
 // GetContext GET /demands/:id/testtask — 返回当前需求上下文 JSON。

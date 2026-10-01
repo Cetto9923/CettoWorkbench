@@ -46,8 +46,8 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.PUT("/password", middleware.RequirePerm(perm.PoHomeList), h.ChangePassword)
 
 	api := rg.Group("/api/profile")
-	api.GET("/get", h.GetPreference)
-	api.POST("/set", h.SetPreference)
+	api.GET("/get", middleware.RequirePerm(perm.KanbanStory), h.GetPreference)
+	api.POST("/set", middleware.RequirePerm(perm.KanbanStory), h.SetPreference)
 	api.GET("", middleware.RequirePerm(perm.PoHomeList), h.GetData)
 	api.PUT("", middleware.RequirePerm(perm.PoHomeList), h.Update)
 	api.PUT("/password", middleware.RequirePerm(perm.PoHomeList), h.ChangePassword)

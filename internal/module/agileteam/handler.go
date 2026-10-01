@@ -39,7 +39,7 @@ func NewHandler(svc *Service, logger *zap.Logger) *Handler {
 
 // RegisterRoutes 注册 /workbench/api/agile-teams 与 /agileteam 路由。
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
-	rg.GET("/home/team/scopes", h.DashboardScopes)
+	rg.GET("/home/team/scopes", middleware.RequirePerm(perm.KanbanStory), h.DashboardScopes)
 	rg.GET("/agileteam", h.RequireListAccess, h.AgileTeamView)
 	rg.GET("/pmo", func(c *gin.Context) {
 		c.Redirect(http.StatusMovedPermanently, "/agileteam")
