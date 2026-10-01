@@ -187,6 +187,80 @@ LIMIT ?`
 	return out, nil
 }
 
+// productMemberRow 产品的参与人字段行。少取一列会漏掉该角色。
+type productMemberRow struct {
+	ID        int64  `gorm:"column:id"`
+	PO        string `gorm:"column:PO"`
+	QD        string `gorm:"column:QD"`
+	RD        string `gorm:"column:RD"`
+	Feedback  string `gorm:"column:feedback"`
+	Ticket    string `gorm:"column:ticket"`
+	CreatedBy string `gorm:"column:createdBy"`
+	Whitelist string `gorm:"column:whitelist"`
+}
+
+// productMemberPMRow 历史需求分析人行。product 是 varchar，按字符串比较。
+type productMemberPMRow struct {
+	ProductID string `gorm:"column:product"`
+	PM        string `gorm:"column:PM"`
+}
+
+// collectProductMemberAccounts 汇总产品字段与历史 PM 中出现的全部账号。
+func collectProductMemberAccounts(prods []productMemberRow, pms []productMemberPMRow) map[string]bool {
+	accountSet := make(map[string]bool)
+	add := func(acc string) {
+		if a := strings.TrimSpace(acc); a != "" {
+			accountSet[a] = true
+		}
+	}
+	for _, p := range prods {
+		for _, acc := range []string{p.PO, p.QD, p.RD, p.Feedback, p.Ticket, p.CreatedBy} {
+			add(acc)
+		}
+		for _, w := range strings.Split(p.Whitelist, ",") {
+			add(w)
+		}
+	}
+	for _, pm := range pms {
+		add(pm.PM)
+	}
+	return accountSet
+}
+
+// loadAccountRealnames 批量解析账号真实姓名；查不到时调用方回退到账号本身。
+func loadAccountRealnames(ctx context.Context, db *gorm.DB, accountSet map[string]bool) map[string]string {
+	nameMap := make(map[string]string)
+	if len(accountSet) == 0 {
+		return nameMap
+	}
+	accounts := make([]string, 0, len(accountSet))
+	for a := range accountSet {
+		accounts = append(accounts, a)
+	}
+	var users []struct {
+		Account  string `gorm:"column:account"`
+		Realname string `gorm:"column:realname"`
+	}
+	if err := db.WithContext(ctx).Table("zt_user").
+		Where("account IN ?", accounts).
+		Select("account, realname").
+		Find(&users).Error; err == nil {
+		for _, u := range users {
+			nameMap[u.Account] = u.Realname
+		}
+	}
+	return nameMap
+}
+
+// groupPMsByProduct 把历史 PM 按产品分组，避免聚合时对每个产品全表扫描。
+func groupPMsByProduct(pms []productMemberPMRow) map[string][]string {
+	grouped := make(map[string][]string, len(pms))
+	for _, pm := range pms {
+		grouped[pm.ProductID] = append(grouped[pm.ProductID], pm.PM)
+	}
+	return grouped
+}
+
 // FindProductMembers 查询指定产品相关参与人员（PO、QD、RD、白名单用户、历史曾任PM等）。
 func (r *Repo) FindProductMembers(ctx context.Context, productIDs []int64) (map[string][]ProductMemberOption, error) {
 	result := make(map[string][]ProductMemberOption)
@@ -198,16 +272,7 @@ func (r *Repo) FindProductMembers(ctx context.Context, productIDs []int64) (map[
 		return result, nil
 	}
 
-	var prodRows []struct {
-		ID        int64  `gorm:"column:id"`
-		PO        string `gorm:"column:PO"`
-		QD        string `gorm:"column:QD"`
-		RD        string `gorm:"column:RD"`
-		Feedback  string `gorm:"column:feedback"`
-		Ticket    string `gorm:"column:ticket"`
-		CreatedBy string `gorm:"column:createdBy"`
-		Whitelist string `gorm:"column:whitelist"`
-	}
+	var prodRows []productMemberRow
 	if err := db.WithContext(ctx).Table("zt_product").
 		Where("id IN ? AND deleted = '0'", productIDs).
 		Select("id, PO, QD, RD, feedback, ticket, createdBy, whitelist").
@@ -215,10 +280,7 @@ func (r *Repo) FindProductMembers(ctx context.Context, productIDs []int64) (map[
 		return nil, err
 	}
 
-	var pmRows []struct {
-		ProductID string `gorm:"column:product"`
-		PM        string `gorm:"column:PM"`
-	}
+	var pmRows []productMemberPMRow
 	idStrs := make([]string, len(productIDs))
 	for i, id := range productIDs {
 		idStrs[i] = fmt.Sprintf("%d", id)
@@ -228,91 +290,57 @@ func (r *Repo) FindProductMembers(ctx context.Context, productIDs []int64) (map[
 		Select("DISTINCT product, PM").
 		Find(&pmRows).Error
 
-	// 收集全部待解析账号
-	accountSet := make(map[string]bool)
-	for _, p := range prodRows {
-		for _, acc := range []string{p.PO, p.QD, p.RD, p.Feedback, p.Ticket, p.CreatedBy} {
-			if a := strings.TrimSpace(acc); a != "" {
-				accountSet[a] = true
-			}
-		}
-		for _, w := range strings.Split(p.Whitelist, ",") {
-			if a := strings.TrimSpace(w); a != "" {
-				accountSet[a] = true
-			}
-		}
-	}
-	for _, pm := range pmRows {
-		if a := strings.TrimSpace(pm.PM); a != "" {
-			accountSet[a] = true
-		}
-	}
-
-	// 批量查询真实姓名
-	nameMap := make(map[string]string)
-	if len(accountSet) > 0 {
-		accounts := make([]string, 0, len(accountSet))
-		for a := range accountSet {
-			accounts = append(accounts, a)
-		}
-		var users []struct {
-			Account  string `gorm:"column:account"`
-			Realname string `gorm:"column:realname"`
-		}
-		if err := db.WithContext(ctx).Table("zt_user").
-			Where("account IN ?", accounts).
-			Select("account, realname").
-			Find(&users).Error; err == nil {
-			for _, u := range users {
-				nameMap[u.Account] = u.Realname
-			}
-		}
-	}
+	nameMap := loadAccountRealnames(ctx, db, collectProductMemberAccounts(prodRows, pmRows))
+	pmByProduct := groupPMsByProduct(pmRows)
 
 	// 按产品聚合去重人员列表
 	for _, p := range prodRows {
 		pKey := fmt.Sprintf("%d", p.ID)
-		var members []ProductMemberOption
-		seen := make(map[string]bool)
-
-		addMember := func(account, role string) {
-			a := strings.TrimSpace(account)
-			if a == "" || seen[a] {
-				return
-			}
-			seen[a] = true
-			rn := nameMap[a]
-			if rn == "" {
-				rn = a
-			}
-			members = append(members, ProductMemberOption{
-				Account:  a,
-				Realname: rn,
-				Role:     role,
-			})
-		}
-
-		addMember(p.PO, "产品经理")
-		addMember(p.QD, "测试负责人 (QD)")
-		addMember(p.RD, "研发负责人 (RD)")
-		for _, w := range strings.Split(p.Whitelist, ",") {
-			addMember(w, "白名单成员")
-		}
-		for _, pm := range pmRows {
-			if pm.ProductID == pKey {
-				addMember(pm.PM, "曾任需求分析人 (PM)")
-			}
-		}
-		addMember(p.Feedback, "反馈负责人")
-		addMember(p.Ticket, "工单负责人")
-		addMember(p.CreatedBy, "创建人")
-
+		members := buildProductMemberOptions(p, pmByProduct[pKey], nameMap)
 		if len(members) > 0 {
 			result[pKey] = members
 		}
 	}
 
 	return result, nil
+}
+
+// buildProductMemberOptions 按角色顺序去重收集单个产品的参与人。
+// 同一账号只保留首次出现的角色，姓名缺失时回退到账号本身。
+func buildProductMemberOptions(p productMemberRow, pms []string, nameMap map[string]string) []ProductMemberOption {
+	var members []ProductMemberOption
+	seen := make(map[string]bool)
+
+	addMember := func(account, role string) {
+		a := strings.TrimSpace(account)
+		if a == "" || seen[a] {
+			return
+		}
+		seen[a] = true
+		rn := nameMap[a]
+		if rn == "" {
+			rn = a
+		}
+		members = append(members, ProductMemberOption{
+			Account:  a,
+			Realname: rn,
+			Role:     role,
+		})
+	}
+
+	addMember(p.PO, "产品经理")
+	addMember(p.QD, "测试负责人 (QD)")
+	addMember(p.RD, "研发负责人 (RD)")
+	for _, w := range strings.Split(p.Whitelist, ",") {
+		addMember(w, "白名单成员")
+	}
+	for _, pm := range pms {
+		addMember(pm, "曾任需求分析人 (PM)")
+	}
+	addMember(p.Feedback, "反馈负责人")
+	addMember(p.Ticket, "工单负责人")
+	addMember(p.CreatedBy, "创建人")
+	return members
 }
 
 // ClarifyConfigData 配置数据。

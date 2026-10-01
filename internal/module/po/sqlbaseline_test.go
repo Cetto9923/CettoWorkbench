@@ -10,6 +10,7 @@
 package po
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -38,6 +39,27 @@ func (r *sqlBaselineRecorder) sql(i int) string {
 
 // count 已记录的查询条数。
 func (r *sqlBaselineRecorder) count() int { return len(r.queries) }
+
+// findLast 返回最后一条匹配 match 的查询，未命中返回 nil。
+// 补数据查询会发多条同类 SQL，取最后一条即主查询。
+func (r *sqlBaselineRecorder) findLast(match func(string) bool) *sqlBaselineQuery {
+	for i := len(r.queries) - 1; i >= 0; i-- {
+		if match(r.queries[i].sql) {
+			return &r.queries[i]
+		}
+	}
+	return nil
+}
+
+// containsAll 判断 SQL 是否同时含有所需片段。
+func containsAll(sql string, frags ...string) bool {
+	for _, f := range frags {
+		if !strings.Contains(sql, f) {
+			return false
+		}
+	}
+	return true
+}
 
 // newSQLBaselineRepo 构造只拼 SQL、不校验结果的 Repo，并返回记录器。
 // 回调挂在本次 gorm.Open 独有的 Callback 注册表上，不会跨用例泄漏。

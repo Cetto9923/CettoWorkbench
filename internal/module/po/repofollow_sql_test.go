@@ -16,16 +16,6 @@ import (
 	"testing"
 )
 
-// findLast 返回最后一条匹配 match 的查询，未命中返回 nil。
-func (r *sqlBaselineRecorder) findLast(match func(string) bool) *sqlBaselineQuery {
-	for i := len(r.queries) - 1; i >= 0; i-- {
-		if match(r.queries[i].sql) {
-			return &r.queries[i]
-		}
-	}
-	return nil
-}
-
 // isCountQuery 识别 Count 查询。
 func isCountQuery(s string) bool { return strings.HasPrefix(s, "SELECT count(*)") }
 
