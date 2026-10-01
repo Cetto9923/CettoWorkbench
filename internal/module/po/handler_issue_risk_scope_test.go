@@ -26,7 +26,7 @@ func TestIssueRiskTeamScopeRequiresLeadAccessAndKeepsScopeID(t *testing.T) {
 	router.GET("/issues/risk", func(c *gin.Context) {
 		c.Set("currentUser", &model.User{Account: "coach1"})
 		c.Next()
-	}, h.issueRiskPageAccess(), func(c *gin.Context) { c.Status(http.StatusNoContent) })
+	}, h.issueRiskAccess(), func(c *gin.Context) { c.Status(http.StatusNoContent) })
 	resp := httptest.NewRecorder()
 	router.ServeHTTP(resp, httptest.NewRequest(http.MethodGet, "/issues/risk?scope=team&scopeId=11", nil))
 	if resp.Code != http.StatusNoContent || gotScope != "team" || gotID != 11 {
@@ -45,7 +45,7 @@ func TestIssueRiskTeamScopeRejectsUnauthorizedSelection(t *testing.T) {
 	router.GET("/issues/risk", func(c *gin.Context) {
 		c.Set("currentUser", &model.User{Account: "coach1"})
 		c.Next()
-	}, h.issueRiskPageAccess(), func(c *gin.Context) { c.Status(http.StatusNoContent) })
+	}, h.issueRiskAccess(), func(c *gin.Context) { c.Status(http.StatusNoContent) })
 	resp := httptest.NewRecorder()
 	router.ServeHTTP(resp, httptest.NewRequest(http.MethodGet, "/issues/risk?scope=team&scopeId=1", nil))
 	if resp.Code != http.StatusForbidden {

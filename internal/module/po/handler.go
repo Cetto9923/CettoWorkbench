@@ -116,8 +116,8 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	// Keep the sidebar's public path aligned with the page capability name.
 	// The singular path remains as a compatibility alias for existing links.
 	for _, path := range []string{"/issues/risk", "/issue-risk"} {
-		g.GET(path, h.issueRiskPageAccess(), h.IssueRisk)
-		g.GET(path+"/items", h.issueRiskItemsAccess(), h.IssueRiskItems)
+		g.GET(path, h.issueRiskAccess(), h.IssueRisk)
+		g.GET(path+"/items", h.issueRiskAccess(), h.IssueRiskItems)
 	}
 
 	NewBoardHandler(h.svc, h.logger).RegisterRoutes(g)

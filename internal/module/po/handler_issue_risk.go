@@ -16,20 +16,9 @@ import (
 
 const issueRiskTeamAccountsContextKey = "issueRiskTeamAccounts"
 
-func (h *Handler) issueRiskPageAccess() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		if currentUserHasPerm(c, perm.PoBoardDemandList) {
-			c.Next()
-			return
-		}
-		if _, ok := h.resolveIssueRiskTeamScope(c, middleware.CurrentUser(c)); !ok {
-			return
-		}
-		c.Next()
-	}
-}
-
-func (h *Handler) issueRiskItemsAccess() gin.HandlerFunc {
+// issueRiskAccess 放行持有需求看板权限的用户，否则回落到团队数据范围授权。
+// 问题风险页与其 items 接口共用同一套判定。
+func (h *Handler) issueRiskAccess() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if currentUserHasPerm(c, perm.PoBoardDemandList) {
 			c.Next()
