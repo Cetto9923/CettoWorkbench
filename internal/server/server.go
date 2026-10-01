@@ -13,15 +13,9 @@ package server
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"html/template"
-	"io/fs"
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
-	"sort"
 	"strings"
 	"syscall"
 	"time"
@@ -65,11 +59,6 @@ func New(
 	}
 	r := gin.New()
 	r.Static("/static", "web/static")
-	t, err := loadTemplates("web/templates")
-	if err != nil {
-		zapLog.Panic("load templates failed", zap.Error(err))
-	}
-	r.SetHTMLTemplate(t)
 
 	return &Server{
 		httpServer: &http.Server{
@@ -85,72 +74,6 @@ func New(
 		menus:      menus,
 		routeDeps:  routeDeps,
 	}
-}
-
-// loadTemplates 递归加载目录下全部 html 模板，并注入基础 FuncMap。
-func loadTemplates(templatesDir string) (*template.Template, error) {
-	files := make([]string, 0)
-	err := filepath.WalkDir(templatesDir, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if d.IsDir() {
-			return nil
-		}
-		if strings.HasSuffix(strings.ToLower(path), ".html") {
-			files = append(files, path)
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	sort.Strings(files)
-	if len(files) == 0 {
-		return nil, fmt.Errorf("no html template found in %s", templatesDir)
-	}
-	funcMap := template.FuncMap{
-		"dict": func(values ...interface{}) (map[string]interface{}, error) {
-			if len(values)%2 != 0 {
-				return nil, errors.New("invalid dict call")
-			}
-			dict := make(map[string]interface{}, len(values)/2)
-			for i := 0; i < len(values); i += 2 {
-				key, ok := values[i].(string)
-				if !ok {
-					return nil, errors.New("dict keys must be strings")
-				}
-				dict[key] = values[i+1]
-			}
-			return dict, nil
-		},
-		"asset": func(path string) string {
-			return path
-		},
-		"add": func(a, b int) int {
-			return a + b
-		},
-		"sub": func(a, b int) int {
-			return a - b
-		},
-		"alertclass": func(level string) string {
-			switch strings.ToLower(strings.TrimSpace(level)) {
-			case "success":
-				return "success"
-			case "error":
-				return "danger"
-			case "warning":
-				return "warning"
-			case "info":
-				return "info"
-			default:
-				return "secondary"
-			}
-		},
-		"menuNavActive": menu.MenuNavActive,
-		"hasPrefix":     strings.HasPrefix,
-	}
-	return template.New("").Funcs(funcMap).ParseFiles(files...)
 }
 
 // Run 启动 HTTP 服务，并在收到 SIGINT/SIGTERM 时优雅关闭（最长等待 30 秒）。
