@@ -1,3 +1,14 @@
+// =============================================================================
+// 文件: internal/module/agileteam/service_dashboard_scope.go
+// 模块: 敏捷小组治理
+// 类型: action
+// 职责: 看板权限与部门、团队范围查询。
+// 依赖: internal/middleware
+//       internal/model
+//       internal/pkg/errorx
+//       internal/pkg/workbenchroles
+// =============================================================================
+
 package agileteam
 
 import (
@@ -28,10 +39,7 @@ func (s *Service) dashboardGlobal(ctx context.Context, actor *model.User) (bool,
 	if actor.IsSuperAdmin {
 		return true, nil
 	}
-	var count int64
-	err := s.repo.read().WithContext(ctx).Raw(`SELECT COUNT(*) FROM zt_gf_user_roles ur JOIN zt_roles r ON r.id=ur.roleId
-WHERE ur.userId=? AND ur.deleted='0' AND r.deleted='0' AND r.isActive=1 AND r.code=?`, actor.ID, workbenchroles.RolePMO).Scan(&count).Error
-	return count > 0, err
+	return s.repo.HasActiveRole(ctx, actor.ID, workbenchroles.RolePMO)
 }
 
 // DashboardScopes exposes department IDs separately from agile group IDs.

@@ -17,6 +17,15 @@ import (
 	"workbench/internal/constants"
 )
 
+// HasActiveRole 仅认可未删除的用户角色关联与启用且未删除的角色，
+// 避免失效角色关联继续授予全局看板范围。
+func (r *Repo) HasActiveRole(ctx context.Context, userID int64, roleCode string) (bool, error) {
+	var count int64
+	err := r.read().WithContext(ctx).Raw(`SELECT COUNT(*) FROM zt_gf_user_roles ur JOIN zt_roles r ON r.id=ur.roleId
+WHERE ur.userId=? AND ur.deleted='0' AND r.deleted='0' AND r.isActive=1 AND r.code=?`, userID, roleCode).Scan(&count).Error
+	return count > 0, err
+}
+
 // ListParentTeamOptions 返回可作为父级的小组（type=parent 或 parent=0）。
 func (r *Repo) ListParentTeamOptions(ctx context.Context, excludeID uint) ([]ParentOption, error) {
 	var rows []ParentOption
