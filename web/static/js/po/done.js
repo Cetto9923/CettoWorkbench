@@ -70,7 +70,7 @@
   function statusLabel(status, objectType) {
     var raw = String(status || "").trim(), key = raw.toLowerCase(), obj = String(objectType || "").toLowerCase();
     var storyLabels = { draft: "草稿", reviewing: "评审中", active: "激活", changing: "变更中", closed: "已关闭" };
-    var demandLabels = { draft: "暂存", wait: "待评审", active: "已评审", clarified: "已澄清", developing: "开发中", testing: "测试中", waitacceptance: "待验收", acceptanced: "已验收", waitdeliver: "待交付", delivered: "已交付", released: "已发布", closed: "已关闭", refuse: "已挂起" };
+    var demandLabels = { draft: "暂存", wait: "待评审", active: "已评审", clarified: "已澄清", developing: "开发中", testing: "测试中", waitacceptance: "待验收", acceptanced: "已验收", waitdeliver: "待交付", delivered: "已交付", released: "已发布", closed: "已关闭", refuse: "已驳回" };
     var charterLabels = { wait: "待审批", doing: "审批中", reviewed: "已审批", reject: "已驳回", closed: "已关闭" };
     var approvalLabels = { wait: "待审批", doing: "审批中", reviewed: "已审批", approve: "已通过", reject: "已驳回", closed: "已关闭" };
     var labels = { draft: "草稿", wait: "待处理", doing: "进行中", done: "已完成", pause: "已暂停", cancel: "已取消", closed: "已关闭", reviewing: "评审中", active: "已评审", changing: "变更中", clarified: "已澄清", developing: "开发中", testing: "测试中", waitacceptance: "待验收", acceptanced: "已验收", waitdeliver: "待交付", delivered: "已交付", released: "已发布", planned: "已排期", refuse: "已驳回", suspended: "已挂起", blocked: "已阻塞", opened: "处理中", resolved: "已解决", verified: "已验证", unconfirmed: "未确认" };

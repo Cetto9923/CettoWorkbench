@@ -176,7 +176,7 @@
 
   function stageLabel(value) {
     var labels = {
-      draft: "草稿", wait: "待受理", refuse: "已挂起", active: "待澄清",
+      draft: "草稿", wait: "待受理", refuse: "已驳回", active: "待澄清",
       clarified: "待排期", developing: "研发中", testing: "测试中",
       waitacceptance: "待验收", acceptanced: "待交付", waitdeliver: "待发布",
       opened: "处理中", doing: "进行中", unconfirmed: "未确认", confirmed: "已确认",
