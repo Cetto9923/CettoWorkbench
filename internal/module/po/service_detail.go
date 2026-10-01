@@ -239,33 +239,21 @@ func (s *DetailService) buildSummary(row *DemandDetailRow) DemandSummary {
 		createdTime = row.ActionCreatedDate
 	}
 	createdStr := ""
-	if createdTime != nil {
+	if createdTime != nil && !createdTime.IsZero() {
 		createdStr = createdTime.Format("2006-01-02 15:04")
 	}
 	editedStr := createdStr
-	if row.EditedDate != nil {
+	if row.EditedDate != nil && !row.EditedDate.IsZero() {
 		if row.EditedDate.Hour() == 0 && row.EditedDate.Minute() == 0 && row.ActionCreatedDate != nil && row.EditedDate.Format("2006-01-02") == row.ActionCreatedDate.Format("2006-01-02") {
 			editedStr = createdStr
 		} else {
 			editedStr = row.EditedDate.Format("2006-01-02 15:04")
 		}
 	}
-	launchStr := "—"
-	if row.EstimateLaunch != nil {
-		launchStr = row.EstimateLaunch.Format("2006-01-02")
-	}
-	devFinishStr := "—"
-	if row.DevelopFinish != nil {
-		devFinishStr = row.DevelopFinish.Format("2006-01-02")
-	}
-	testFinishStr := "—"
-	if row.TestFinish != nil {
-		testFinishStr = row.TestFinish.Format("2006-01-02")
-	}
-	verifyFinishStr := "—"
-	if row.VerifyFinish != nil {
-		verifyFinishStr = row.VerifyFinish.Format("2006-01-02")
-	}
+	launchStr := defaultDash(formatDateOnly(row.EstimateLaunch))
+	devFinishStr := defaultDash(formatDateOnly(row.DevelopFinish))
+	testFinishStr := defaultDash(formatDateOnly(row.TestFinish))
+	verifyFinishStr := defaultDash(formatDateOnly(row.VerifyFinish))
 	prodName := defaultDash(row.ProductName)
 	if prodName == "—" && row.MainSystemName != "" && row.MainSystemName != "—" {
 		prodName = row.MainSystemName
