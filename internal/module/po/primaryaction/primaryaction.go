@@ -198,56 +198,9 @@ func Derive(in Input) PrimaryAction {
 
 	switch in.Stage {
 	case StageAccept:
-		if in.Kind == ObjectStory || in.Kind == ObjectIndependentStory {
-			return None()
-		}
-		st := strings.ToLower(strings.TrimSpace(in.Status))
-		switch st {
-		case "wait":
-			if in.CanReview {
-				if !in.HasAcceptCapability {
-					return DisabledWithReason(string(KeyApprove), "评审", string(KindDrawer),
-						acceptURL(in),
-						"当前用户没有评审权限")
-				}
-				return Enabled(string(KeyApprove), "评审", string(KindDrawer), acceptURL(in))
-			}
-			if in.IsCreator {
-				return Enabled(string(KeyWithdrawReview), "撤回", string(KindDrawer), withdrawReviewURL(in))
-			}
-			return None()
-		case "draft", "refuse":
-			if in.IsCreator || in.IsSuperAdmin {
-				return Enabled(string(KeySubmitReview), "提交评审", string(KindDrawer), submitReviewURL(in))
-			}
-			return None()
-		default:
-			// 兜底：未显式传 status 但标记了 CanReview（如单测或旧兼容）
-			if in.CanReview {
-				if !in.HasAcceptCapability {
-					return DisabledWithReason(string(KeyApprove), "评审", string(KindDrawer),
-						acceptURL(in),
-						"当前用户没有评审权限")
-				}
-				return Enabled(string(KeyApprove), "评审", string(KindDrawer), acceptURL(in))
-			}
-			if in.IsCreator {
-				return Enabled(string(KeyWithdrawReview), "撤回", string(KindDrawer), withdrawReviewURL(in))
-			}
-			return None()
-		}
-
+		return deriveAccept(in)
 	case StageClarify:
-		if in.Kind == ObjectStory || in.Kind == ObjectIndependentStory {
-			return None()
-		}
-		if !in.HasClarifyCapability {
-			return DisabledWithReason(string(KeyClarify), "澄清", string(KindDrawer),
-				clarifyURL(in),
-				"当前用户没有澄清权限")
-		}
-		return Enabled(string(KeyClarify), "澄清", string(KindDrawer), clarifyURL(in))
-
+		return deriveClarify(in)
 	case StageSchedule:
 		if !in.HasScheduleCapability {
 			return DisabledWithReason(string(KeySchedule), "排期", string(KindInternal),
@@ -255,7 +208,6 @@ func Derive(in Input) PrimaryAction {
 				"当前用户没有排期权限")
 		}
 		return Enabled(string(KeySchedule), "排期", string(KindSchedule), scheduleURL(in))
-
 	case StageDeveloping:
 		// 提测：四步弹窗（testtask 模块）；不再挂旧整页 /submit-test。
 		if !in.HasSubmitTestCapability {
@@ -264,77 +216,121 @@ func Derive(in Input) PrimaryAction {
 				"当前用户没有提测权限")
 		}
 		return Enabled(string(KeySubmitTest), "提测", string(KindDrawer), submitTestURL(in))
-
 	case StageTesting:
-		// 联调测试 → 禅道测试单。
-		// §4-4 Stage 5 必须为 test_link 加 zt_testtask join；当前 Repo
-		// 已存在 FindStoryTestTasks，本函数消费其结果。
-		if !in.HasReadCapability {
-			return DisabledWithReason(string(KeyViewTestOrder), "测试单", string(KindExternal),
-				"", "当前用户没有读取权限")
-		}
-		switch {
-		case in.TestsCount == 0:
-			return DisabledWithReason(string(KeyViewTestOrder), "测试单", string(KindExternal),
-				"", "暂无关联测试单")
-		case in.TestsCount == 1:
-			return Enabled(string(KeyViewTestOrder), "测试单", string(KindExternal), in.FirstTestURL)
-		default:
-			return DisabledWithReason(string(KeyViewTestOrder), "测试单", string(KindExternal),
-				"", fmtNTestTasks(in.TestsCount))
-		}
-
+		return deriveTesting(in)
 	case StageAcceptance:
-		if in.IsAcceptanceOwner {
-			if in.HasAcceptCapability {
-				return Enabled(string(KeyAcceptDone), "验收", string(KindDrawer), acceptDoneURL(in))
-			}
-			return DisabledWithReason(string(KeyAcceptDone), "验收", string(KindDrawer),
-				acceptDoneURL(in), "验收办理页尚未接入真实禅道写链")
-		}
-		if !in.HasUrgeCapability {
-			return DisabledWithReason(string(KeyRemindAccept), "催办验收", string(KindDrawer), urgeAcceptURL(in), "当前用户没有催办验收权限")
-		}
-		return Enabled(string(KeyRemindAccept), "催办验收", string(KindDrawer), urgeAcceptURL(in))
-
+		return deriveAcceptance(in)
 	case StageDeliver:
-		if !in.HasDeliverCapability {
-			return DisabledWithReason(string(KeyDeliver), "发起交付", string(KindDrawer),
-				deliverURL(in),
-				"当前用户没有发起交付权限")
-		}
-		// 前置条件：交付需先验收（row.Accepter != "" 或 row.Status 在已验收）。
-		// Service 层校验后把 okDeliver 表达为 HasAcceptanceCompleted。
-		// 为避免在 Input 加冗余字段，这里用 stage 自身判定：
-		// StageDeliver 已表示 status==acceptanced，前置默认通过。
-		return Enabled(string(KeyDeliver), "发起交付", string(KindDrawer), deliverURL(in))
-
-	case StageRelease:
-		// 发布：plan §4 显式约定留空，不创建假按钮。
-		return None()
-
+		return deriveDeliver(in)
 	case StageFeedback:
-		// 有待评价任务时派生评价入口；仅有历史评价时不增加主操作。
-		switch {
-		case in.HasPendingEvaluateTask:
-			if in.HasEvaluateCapability {
-				return Enabled(string(KeyEvaluate), "评价", string(KindExternal), evaluateURL(in))
-			}
-			return DisabledWithReason(string(KeyEvaluate), "评价", string(KindDrawer),
-				evaluateURL(in), "评价办理页尚未接入真实禅道写链")
-		case in.HasHistoricalEvaluate:
-			// PRD explicitly excludes a historical-evaluation action from PO flow.
-			return None()
-		default:
-			return None()
-		}
-
-	case StageClosed, StageDelivered:
-		return None()
-
+		return deriveFeedback(in)
 	default:
+		// StageRelease：plan §4 显式约定留空，不创建假按钮；StageClosed / StageDelivered / 兜底同样无主操作。
 		return None()
 	}
+}
+
+func deriveAccept(in Input) PrimaryAction {
+	if in.Kind == ObjectStory || in.Kind == ObjectIndependentStory {
+		return None()
+	}
+	switch strings.ToLower(strings.TrimSpace(in.Status)) {
+	case "draft", "refuse":
+		if in.IsCreator || in.IsSuperAdmin {
+			return Enabled(string(KeySubmitReview), "提交评审", string(KindDrawer), submitReviewURL(in))
+		}
+		return None()
+	default:
+		// "wait" 与未显式传 status 但标记了 CanReview（如单测或旧兼容）同一口径。
+		return deriveReviewOrWithdraw(in)
+	}
+}
+
+func deriveReviewOrWithdraw(in Input) PrimaryAction {
+	if in.CanReview {
+		if !in.HasAcceptCapability {
+			return DisabledWithReason(string(KeyApprove), "评审", string(KindDrawer),
+				acceptURL(in),
+				"当前用户没有评审权限")
+		}
+		return Enabled(string(KeyApprove), "评审", string(KindDrawer), acceptURL(in))
+	}
+	if in.IsCreator {
+		return Enabled(string(KeyWithdrawReview), "撤回", string(KindDrawer), withdrawReviewURL(in))
+	}
+	return None()
+}
+
+func deriveClarify(in Input) PrimaryAction {
+	if in.Kind == ObjectStory || in.Kind == ObjectIndependentStory {
+		return None()
+	}
+	if !in.HasClarifyCapability {
+		return DisabledWithReason(string(KeyClarify), "澄清", string(KindDrawer),
+			clarifyURL(in),
+			"当前用户没有澄清权限")
+	}
+	return Enabled(string(KeyClarify), "澄清", string(KindDrawer), clarifyURL(in))
+}
+
+// deriveTesting 联调测试 → 禅道测试单。
+// §4-4 Stage 5 必须为 test_link 加 zt_testtask join；当前 Repo
+// 已存在 FindStoryTestTasks，本函数消费其结果。
+func deriveTesting(in Input) PrimaryAction {
+	if !in.HasReadCapability {
+		return DisabledWithReason(string(KeyViewTestOrder), "测试单", string(KindExternal),
+			"", "当前用户没有读取权限")
+	}
+	switch {
+	case in.TestsCount == 0:
+		return DisabledWithReason(string(KeyViewTestOrder), "测试单", string(KindExternal),
+			"", "暂无关联测试单")
+	case in.TestsCount == 1:
+		return Enabled(string(KeyViewTestOrder), "测试单", string(KindExternal), in.FirstTestURL)
+	default:
+		return DisabledWithReason(string(KeyViewTestOrder), "测试单", string(KindExternal),
+			"", fmtNTestTasks(in.TestsCount))
+	}
+}
+
+func deriveAcceptance(in Input) PrimaryAction {
+	if in.IsAcceptanceOwner {
+		if in.HasAcceptCapability {
+			return Enabled(string(KeyAcceptDone), "验收", string(KindDrawer), acceptDoneURL(in))
+		}
+		return DisabledWithReason(string(KeyAcceptDone), "验收", string(KindDrawer),
+			acceptDoneURL(in), "验收办理页尚未接入真实禅道写链")
+	}
+	if !in.HasUrgeCapability {
+		return DisabledWithReason(string(KeyRemindAccept), "催办验收", string(KindDrawer), urgeAcceptURL(in), "当前用户没有催办验收权限")
+	}
+	return Enabled(string(KeyRemindAccept), "催办验收", string(KindDrawer), urgeAcceptURL(in))
+}
+
+func deriveDeliver(in Input) PrimaryAction {
+	if !in.HasDeliverCapability {
+		return DisabledWithReason(string(KeyDeliver), "发起交付", string(KindDrawer),
+			deliverURL(in),
+			"当前用户没有发起交付权限")
+	}
+	// 前置条件：交付需先验收（row.Accepter != "" 或 row.Status 在已验收）。
+	// Service 层校验后把 okDeliver 表达为 HasAcceptanceCompleted。
+	// 为避免在 Input 加冗余字段，这里用 stage 自身判定：
+	// StageDeliver 已表示 status==acceptanced，前置默认通过。
+	return Enabled(string(KeyDeliver), "发起交付", string(KindDrawer), deliverURL(in))
+}
+
+// deriveFeedback 有待评价任务时派生评价入口；仅有历史评价时不增加主操作
+// （PRD explicitly excludes a historical-evaluation action from PO flow）。
+func deriveFeedback(in Input) PrimaryAction {
+	if !in.HasPendingEvaluateTask {
+		return None()
+	}
+	if in.HasEvaluateCapability {
+		return Enabled(string(KeyEvaluate), "评价", string(KindExternal), evaluateURL(in))
+	}
+	return DisabledWithReason(string(KeyEvaluate), "评价", string(KindDrawer),
+		evaluateURL(in), "评价办理页尚未接入真实禅道写链")
 }
 
 // formatNTestTasks 生成测试单多于 1 张时的中文 reason。
