@@ -136,6 +136,8 @@ func registerRoutes(r *gin.Engine, deps RouteDeps) {
 	}
 
 	debugGroup := r.Group("/debug")
+	debugGroup.Use(middleware.RequireLogin(deps.SessionMgr, deps.DB))
+	debugGroup.Use(middleware.RequireSuperAdmin())
 	{
 		if deps.SqlPerfHandler != nil {
 			deps.SqlPerfHandler.RegisterRoutes(debugGroup)

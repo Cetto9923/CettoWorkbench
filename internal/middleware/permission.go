@@ -63,3 +63,14 @@ func hasPermission(c *gin.Context, p perm.Permission) bool {
 	}
 	return perms[p.String()]
 }
+
+// RequireSuperAdmin 防止普通账号访问包含 SQL 与接口日志的诊断入口。
+func RequireSuperAdmin() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if actor := CurrentUser(c); actor == nil || !actor.IsSuperAdmin {
+			c.AbortWithStatus(http.StatusForbidden)
+			return
+		}
+		c.Next()
+	}
+}
