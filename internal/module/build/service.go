@@ -216,7 +216,6 @@ func (s *Service) ListLinkedStories(ctx context.Context, actor *model.User, buil
 
 // LinkStories 将勾选的研发需求关联到版本（POST 禅道 /build/:id/linkstories）。
 func (s *Service) LinkStories(ctx context.Context, actor *model.User, buildID uint, req LinkStoriesReq) error {
-	_ = actor // 预留：对象级权限 / 操作人审计
 	if buildID == 0 {
 		return errorx.New(errorx.ErrCodeInvalidParam, "版本 ID 无效")
 	}
@@ -230,6 +229,10 @@ func (s *Service) LinkStories(ctx context.Context, actor *model.User, buildID ui
 		if errors.Is(err, errBuildNotFound) {
 			return errorx.New(errorx.ErrCodeNotFound, "版本不存在")
 		}
+		return err
+	}
+
+	if err := s.requireStoryWriteAccess(ctx, actor, stories); err != nil {
 		return err
 	}
 
@@ -259,7 +262,6 @@ func (s *Service) LinkStories(ctx context.Context, actor *model.User, buildID ui
 
 // UnlinkStories 将研发需求从版本解除关联（POST 禅道 /build/:id/unlinkstories）。
 func (s *Service) UnlinkStories(ctx context.Context, actor *model.User, buildID uint, req LinkStoriesReq) error {
-	_ = actor // 预留：对象级权限 / 操作人审计
 	if buildID == 0 {
 		return errorx.New(errorx.ErrCodeInvalidParam, "版本 ID 无效")
 	}
@@ -273,6 +275,10 @@ func (s *Service) UnlinkStories(ctx context.Context, actor *model.User, buildID 
 		if errors.Is(err, errBuildNotFound) {
 			return errorx.New(errorx.ErrCodeNotFound, "版本不存在")
 		}
+		return err
+	}
+
+	if err := s.requireStoryWriteAccess(ctx, actor, stories); err != nil {
 		return err
 	}
 
