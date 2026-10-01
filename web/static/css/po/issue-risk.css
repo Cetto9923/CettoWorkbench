@@ -20,7 +20,7 @@
 
 /* 列表表格：优化列宽分配，其他列极简紧凑不换行，标题栏最大化延展 */
 .po-issue-risk .ir-table {
-  width: 100%;
+  width: 100%; min-width: 1000px;
 }
 .po-issue-risk .ir-table th,
 .po-issue-risk .ir-table td {
@@ -67,8 +67,8 @@
   white-space: nowrap;
 }
 .po-issue-risk .ir-table .ir-col-level {
-  width: 85px;
-  min-width: 85px;
+  width: 110px;
+  min-width: 110px;
   white-space: nowrap;
 }
 .po-issue-risk .ir-table .ir-col-status {

@@ -5,6 +5,7 @@
    依赖: personal-workspace.css
    ============================================================================= */
 
+.po-notice .notice-table { min-width: 800px; }
 .po-notice .notice-table .notice-subject { width: auto; min-width: 300px; }
 .po-notice .notice-table .notice-actor { min-width: 120px; width: 130px; }
 .po-notice .notice-table .notice-state { width: 80px; }
