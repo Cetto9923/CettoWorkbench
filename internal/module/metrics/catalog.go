@@ -54,6 +54,33 @@ type metricDef struct {
 // DeliveryCycleTargetDays 是 delivery.cycle 达标线天数；目录条目与 po 模块的「周期目标」共用，避免业务代码另写魔法数。
 const DeliveryCycleTargetDays = 30
 
+// OverIterationDays 是 story.overIteration 的实施周期上限天数（目录定义与看板 SQL 共用）。
+const OverIterationDays = 42
+
+// UnscheduledClarifyDays 是 story.unscheduled 的「评审通过后仍未澄清」天数上限。
+const UnscheduledClarifyDays = 14
+
+// RecentPeriodDays 是 Period 标注「近 N 天」指标的统计窗口天数；catalog 文案与 Snapshot SQL 共用。
+const RecentPeriodDays = 30
+
+// Spec 是 metricDef 中供外部模块只读消费的最小视图（看板等模块据此取名称与阈值，不另抄一份）。
+type Spec struct {
+	Name        string  // 中文名
+	Target      string  // 达标线展示文本，如 "≤30天"
+	TargetValue float64 // 达标线数值
+	DangerValue float64 // 危险线数值
+}
+
+// SpecOf 按 code 返回指标定义；code 不存在时 ok=false。
+func SpecOf(code string) (Spec, bool) {
+	for _, d := range metricCatalog {
+		if d.Code == code {
+			return Spec{Name: d.Name, Target: d.Target, TargetValue: d.TargetValue, DangerValue: d.DangerValue}, true
+		}
+	}
+	return Spec{}, false
+}
+
 // metricCatalog 是 21 条指标元数据目录（唯一 SSOT）。
 // 顺序按 5 分类分组：需求治理(5) / 交付效率(5) / 研发质量(6) / 规范执行(2) / 效能管理(3)。
 var metricCatalog = []metricDef{
@@ -74,17 +101,17 @@ var metricCatalog = []metricDef{
 	},
 	{
 		Code: "story.overIteration", Name: "超两迭代周期占比", Category: CategoryDemand,
-		Unit: "%", Description: "实施周期超过 42 天的工单占该看板小组进行中工单的比例",
+		Unit: "%", Description: "实施周期超过 " + strconv.Itoa(OverIterationDays) + " 天的工单占该看板小组进行中工单的比例",
 		SourceType: SourceExternal, SourceLabel: "FineReport (hNBB) / 禅道看板", Period: "月度",
 		Direction: "down", Target: "≤10%", Danger: "20%", TargetValue: 10, DangerValue: 20,
-		OwnerRole: "产品经理", Formula: "实施周期>42天需求数 ÷ 看板进行中需求数 * 100%", Order: 3, Enabled: true,
+		OwnerRole: "产品经理", Formula: "实施周期>" + strconv.Itoa(OverIterationDays) + "天需求数 ÷ 看板进行中需求数 * 100%", Order: 3, Enabled: true,
 	},
 	{
 		Code: "story.unscheduled", Name: "超2周未排期单数", Category: CategoryDemand,
-		Unit: "个", Description: "评审通过超 14 天仍未进行需求澄清的单数",
+		Unit: "个", Description: "评审通过超 " + strconv.Itoa(UnscheduledClarifyDays) + " 天仍未进行需求澄清的单数",
 		SourceType: SourceExternal, SourceLabel: "FineReport (hNBB) / 禅道 zt_demand", Period: "月度",
 		Direction: "down", Target: "≤3个", Danger: "8个", TargetValue: 3, DangerValue: 8,
-		OwnerRole: "产品经理", Formula: "COUNT(zt_demand WHERE 评审通过超14天未澄清)", Order: 4, Enabled: true,
+		OwnerRole: "产品经理", Formula: "COUNT(zt_demand WHERE 评审通过超" + strconv.Itoa(UnscheduledClarifyDays) + "天未澄清)", Order: 4, Enabled: true,
 	},
 	{
 		Code: "story.delayedLaunch", Name: "上线延期数", Category: CategoryDemand,
@@ -119,9 +146,9 @@ var metricCatalog = []metricDef{
 	{
 		Code: "story.closedOnTimeRate", Name: "按时关闭率", Category: CategoryDelivery,
 		Unit: "%", Description: "已关闭研发需求中，实际关闭日期未晚于预计关闭日期的比例",
-		SourceType: SourceZentao, SourceLabel: "禅道 zt_story", Period: "近 30 天",
+		SourceType: SourceZentao, SourceLabel: "禅道 zt_story", Period: "近 " + strconv.Itoa(RecentPeriodDays) + " 天",
 		Direction: "up", Target: "≥80%", Danger: "60%", TargetValue: 80, DangerValue: 60,
-		OwnerRole: "产品经理", Formula: "SUM(closedDate<=estimatedLaunch) / SUM(closed+released)", Order: 9, Enabled: true,
+		OwnerRole: "产品经理", Formula: "近" + strconv.Itoa(RecentPeriodDays) + "天内 SUM(closedDate<=estimateLaunch) / SUM(closed+released)", Order: 9, Enabled: true,
 	},
 	{
 		Code: "task.overdue", Name: "逾期任务数", Category: CategoryDelivery,
@@ -149,9 +176,9 @@ var metricCatalog = []metricDef{
 	{
 		Code: "bug.resolutionRate", Name: "缺陷解决率", Category: CategoryQuality,
 		Unit: "%", Description: "已解决/已关闭缺陷占总缺陷数的比例",
-		SourceType: SourceZentao, SourceLabel: "禅道 zt_bug", Period: "近 30 天",
+		SourceType: SourceZentao, SourceLabel: "禅道 zt_bug", Period: "近 " + strconv.Itoa(RecentPeriodDays) + " 天",
 		Direction: "up", Target: "≥85%", Danger: "70%", TargetValue: 85, DangerValue: 70,
-		OwnerRole: "测试", Formula: "(resolved+closed) / total", Order: 13, Enabled: true,
+		OwnerRole: "测试", Formula: "近" + strconv.Itoa(RecentPeriodDays) + "天新建缺陷中 (resolved+closed) / total", Order: 13, Enabled: true,
 	},
 	{
 		Code: "gate.passRate", Name: "质量门禁通过率", Category: CategoryQuality,
@@ -232,10 +259,11 @@ func valueFor(d metricDef, snap snapshot) (float64, bool) {
 		}
 		return float64(snap.StoriesDone) * 100 / float64(snap.Stories), true
 	case "story.closedOnTimeRate":
-		if snap.StoriesDone == 0 {
+		// 分母用近 N 天窗口内的已完成需求，与 Period 文案一致（见 repo.Snapshot）。
+		if snap.StoriesDoneRecent == 0 {
 			return 0, false
 		}
-		return float64(snap.StoriesClosedOnTime) * 100 / float64(snap.StoriesDone), true
+		return float64(snap.StoriesClosedOnTime) * 100 / float64(snap.StoriesDoneRecent), true
 	case "task.overdue":
 		return float64(snap.TasksOverdue), true
 	case "bug.open":
