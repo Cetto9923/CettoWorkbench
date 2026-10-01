@@ -177,29 +177,12 @@ func (r *Repo) SaveDemandReview(ctx context.Context, in saveDemandReviewIn) erro
 		// 每次从干净 session 起查，避免上一条 SQL 的 Where/Select 串到下一句。
 		q := func() *gorm.DB { return tx.Session(&gorm.Session{NewDB: true}) }
 
-		var locked demandReviewRow
-		if err := q().Clauses(clause.Locking{Strength: "UPDATE"}).
-			Select("id, status, deleted, createdBy, reviewedBy, mailto, isNeedFocus, product").
-			Where("id = ?", in.DemandID).
-			Take(&locked).Error; err != nil {
-			return fmt.Errorf("lock demand %d: %w", in.DemandID, err)
+		locked, err := lockReviewableDemand(q(), in.DemandID)
+		if err != nil {
+			return err
 		}
-		if locked.Deleted != "0" || strings.TrimSpace(locked.Status) != "wait" {
-			return errDemandNotReviewable
-		}
-
-		var mine demandReviewerRow
-		if err := q().Model(&demandReviewerRow{}).
-			Select("result").
-			Where("demand = ? AND reviewer = ?", in.DemandID, in.Account).
-			Take(&mine).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return errDemandNotReviewable
-			}
-			return fmt.Errorf("load demandreview %d %s: %w", in.DemandID, in.Account, err)
-		}
-		if strings.TrimSpace(mine.Result) != "" {
-			return errAlreadyReviewed
+		if err := ensureReviewerPending(q(), in.DemandID, in.Account); err != nil {
+			return err
 		}
 
 		// 1) 当前登录人在 zt_demandreview 里的那一行：写下结果和时间
@@ -212,74 +195,127 @@ func (r *Repo) SaveDemandReview(ctx context.Context, in saveDemandReviewIn) erro
 			return fmt.Errorf("update demandreview: %w", err)
 		}
 
-		newStatus := in.NewStatus
-		statusAction := in.StatusAction
-		assignBackTo := in.AssignBackTo
-		if in.Result == "pass" {
-			left, countErr := countUnpassedReviewers(q(), in.DemandID)
-			if countErr != nil {
-				return countErr
-			}
-			if left == 0 {
-				newStatus = "active"
-				statusAction = "reviewpassed"
-			} else {
-				newStatus = ""
-				statusAction = ""
-			}
+		newStatus, statusAction, assignBackTo, err := resolveReviewOutcome(q(), in, locked)
+		if err != nil {
+			return err
 		}
-		if newStatus == "refuse" && assignBackTo == "" {
-			assignBackTo = strings.TrimSpace(locked.CreatedBy)
+		if err := applyDemandReviewUpdate(q(), in, newStatus, assignBackTo, now); err != nil {
+			return err
 		}
+		return recordReviewActions(ctx, q(), in, statusAction, now)
+	})
+}
 
-		updates := map[string]any{
-			"reviewedDate": now,
-			"reviewedBy":   in.ReviewedBy,
-			"isNeedFocus":  in.IsNeedFocus,
-			"editedBy":     in.Account,
-			"editedDate":   now,
-		}
-		if in.Mailto != nil {
-			updates["mailto"] = *in.Mailto
-		}
-		if newStatus != "" {
-			updates["status"] = newStatus
-			if newStatus == "refuse" && assignBackTo != "" {
-				updates["assignedTo"] = assignBackTo
-			}
-		}
-		if err := q().Table("zt_demand").Where("id = ?", in.DemandID).Updates(updates).Error; err != nil {
-			return fmt.Errorf("update demand: %w", err)
-		}
+// lockReviewableDemand 加锁读取需求行，并确认其处于待评审状态。
+func lockReviewableDemand(db *gorm.DB, demandID int64) (demandReviewRow, error) {
+	var locked demandReviewRow
+	if err := db.Clauses(clause.Locking{Strength: "UPDATE"}).
+		Select("id, status, deleted, createdBy, reviewedBy, mailto, isNeedFocus, product").
+		Where("id = ?", demandID).
+		Take(&locked).Error; err != nil {
+		return locked, fmt.Errorf("lock demand %d: %w", demandID, err)
+	}
+	if locked.Deleted != "0" || strings.TrimSpace(locked.Status) != "wait" {
+		return locked, errDemandNotReviewable
+	}
+	return locked, nil
+}
 
-		// extra 存 pass/refuse，禅道历史里用来显示「确认通过/拒绝」
-		if _, err := ztaction.Create(ctx, q(), ztaction.Record{
+// ensureReviewerPending 校验当前账号是该需求的评审人且尚未提交结论。
+func ensureReviewerPending(db *gorm.DB, demandID int64, account string) error {
+	var mine demandReviewerRow
+	if err := db.Model(&demandReviewerRow{}).
+		Select("result").
+		Where("demand = ? AND reviewer = ?", demandID, account).
+		Take(&mine).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errDemandNotReviewable
+		}
+		return fmt.Errorf("load demandreview %d %s: %w", demandID, account, err)
+	}
+	if strings.TrimSpace(mine.Result) != "" {
+		return errAlreadyReviewed
+	}
+	return nil
+}
+
+// resolveReviewOutcome 通过但已无剩余评审人时把状态推进为 active 并记 reviewpassed。
+func resolveReviewOutcome(db *gorm.DB, in saveDemandReviewIn, locked demandReviewRow) (newStatus, statusAction, assignBackTo string, err error) {
+	newStatus = in.NewStatus
+	statusAction = in.StatusAction
+	assignBackTo = in.AssignBackTo
+
+	if in.Result == "pass" {
+		left, countErr := countUnpassedReviewers(db, in.DemandID)
+		if countErr != nil {
+			return "", "", "", countErr
+		}
+		if left == 0 {
+			newStatus = "active"
+			statusAction = "reviewpassed"
+		} else {
+			newStatus = ""
+			statusAction = ""
+		}
+	}
+	if newStatus == "refuse" && assignBackTo == "" {
+		assignBackTo = strings.TrimSpace(locked.CreatedBy)
+	}
+	return newStatus, statusAction, assignBackTo, nil
+}
+
+// applyDemandReviewUpdate 写回 zt_demand 的评审字段。
+func applyDemandReviewUpdate(db *gorm.DB, in saveDemandReviewIn, newStatus, assignBackTo string, now time.Time) error {
+	updates := map[string]any{
+		"reviewedDate": now,
+		"reviewedBy":   in.ReviewedBy,
+		"isNeedFocus":  in.IsNeedFocus,
+		"editedBy":     in.Account,
+		"editedDate":   now,
+	}
+	if in.Mailto != nil {
+		updates["mailto"] = *in.Mailto
+	}
+	if newStatus != "" {
+		updates["status"] = newStatus
+		if newStatus == "refuse" && assignBackTo != "" {
+			updates["assignedTo"] = assignBackTo
+		}
+	}
+	if err := db.Table("zt_demand").Where("id = ?", in.DemandID).Updates(updates).Error; err != nil {
+		return fmt.Errorf("update demand: %w", err)
+	}
+	return nil
+}
+
+// recordReviewActions 写评审操作历史；extra 存 pass/refuse 供禅道历史展示。
+func recordReviewActions(ctx context.Context, db *gorm.DB, in saveDemandReviewIn, statusAction string, now time.Time) error {
+	if _, err := ztaction.Create(ctx, db, ztaction.Record{
+		ObjectType: "demand",
+		ObjectID:   uint(in.DemandID),
+		Product:    in.Product,
+		Actor:      in.Account,
+		Action:     "reviewed",
+		Date:       now,
+		Comment:    in.Comment,
+		Extra:      in.Result,
+	}); err != nil {
+		return fmt.Errorf("insert action reviewed: %w", err)
+	}
+
+	if statusAction != "" {
+		if _, err := ztaction.Create(ctx, db, ztaction.Record{
 			ObjectType: "demand",
 			ObjectID:   uint(in.DemandID),
 			Product:    in.Product,
 			Actor:      in.Account,
-			Action:     "reviewed",
+			Action:     statusAction,
 			Date:       now,
-			Comment:    in.Comment,
-			Extra:      in.Result,
 		}); err != nil {
-			return fmt.Errorf("insert action reviewed: %w", err)
+			return fmt.Errorf("insert action %s: %w", statusAction, err)
 		}
-
-		if statusAction != "" {
-			if _, err := ztaction.Create(ctx, q(), ztaction.Record{
-				ObjectType: "demand",
-				ObjectID:   uint(in.DemandID),
-				Product:    in.Product,
-				Actor:      in.Account,
-				Action:     statusAction,
-				Date:       now,
-			}); err != nil {
-				return fmt.Errorf("insert action %s: %w", statusAction, err)
-			}
-		}
-		return nil
-	})
+	}
+	return nil
 }
 
 type saveDemandReviewIn struct {
