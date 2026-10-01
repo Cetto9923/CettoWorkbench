@@ -388,11 +388,14 @@
         var tp = m[2].split(":");
         var hh = tp[0].padStart(2, "0");
         var mm = tp[1];
+        // 零日期（0000-00-00…）统一显示「未设置」，与 datefmt.Unset 对齐。
+        if (Number(y) < 2000) return "未设置";
         return y + "-" + mo + "-" + d + " " + hh + ":" + mm;
       }
       var md = trimmed.match(/^(\d{4}[-/]\d{1,2}[-/]\d{1,2})$/);
       if (md) {
         var dp2 = md[1].replace(/\//g, "-").split("-");
+        if (Number(dp2[0]) < 2000) return "未设置";
         return dp2[0] + "-" + dp2[1].padStart(2, "0") + "-" + dp2[2].padStart(2, "0");
       }
     }
@@ -401,6 +404,7 @@
       return String(val);
     }
     var year = dt.getFullYear();
+    if (year < 2000) return "未设置";
     var month = String(dt.getMonth() + 1).padStart(2, "0");
     var day = String(dt.getDate()).padStart(2, "0");
     var hours = String(dt.getHours()).padStart(2, "0");

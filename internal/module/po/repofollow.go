@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"workbench/internal/pkg/datefmt"
 	"workbench/internal/pkg/zentao"
 )
 
@@ -184,10 +185,10 @@ func (r *Repo) FindFollowedDemands(ctx context.Context, req RepoFindFollowedDema
 		if row.WatchSource == "star" {
 			reason = "主动关注"
 		}
-		devFinish := formatFollowDate(row.DevelopFinish)
-		testFinish := formatFollowDate(row.TestFinish)
-		deadline := formatFollowDate(row.Deadline)
-		progressStatus, progressLabel := followProgress(row.Status, deadline, today)
+		devFinish := datefmt.Date(row.DevelopFinish)
+		testFinish := datefmt.Date(row.TestFinish)
+		deadline := datefmt.Date(row.Deadline)
+		progressStatus, progressLabel := followProgress(row.Status, row.Deadline, today)
 		items = append(items, FollowItem{
 			ID:              row.ID,
 			Title:           row.Name,
@@ -284,22 +285,15 @@ func demandFollowLifecycleBucket(status string) string {
 	}
 }
 
-func formatFollowDate(t *time.Time) string {
-	if t == nil || t.Year() <= 1 {
-		return ""
-	}
-	return t.Format("2006-01-02")
-}
-
-func followProgress(status, deadline, today string) (string, string) {
+func followProgress(status string, deadline *time.Time, today string) (string, string) {
 	st := strings.TrimSpace(status)
 	if st == "closed" || st == "released" {
 		return "done", "已完成"
 	}
-	if deadline == "" || st == "refuse" {
+	if deadline == nil || deadline.IsZero() || st == "refuse" {
 		return "unknown", "—"
 	}
-	if deadline < today {
+	if deadline.Format(datefmt.Layout) < today {
 		return "delayed", "延期"
 	}
 	return "normal", "正常"
@@ -307,17 +301,11 @@ func followProgress(status, deadline, today string) (string, string) {
 
 func followScheduleSummary(devFinish, testFinish, deadline string) string {
 	parts := make([]string, 0, 3)
-	if devFinish != "" {
-		parts = append(parts, "开发完成 "+devFinish)
-	}
-	if testFinish != "" {
-		parts = append(parts, "测试完成 "+testFinish)
-	}
-	if deadline != "" {
-		parts = append(parts, "截止 "+deadline)
-	}
-	if len(parts) == 0 {
-		return ""
+	for _, kv := range [][2]string{{"开发完成", devFinish}, {"测试完成", testFinish}, {"截止", deadline}} {
+		if kv[1] == datefmt.Unset || kv[1] == datefmt.Empty {
+			continue
+		}
+		parts = append(parts, kv[0]+" "+kv[1])
 	}
 	return strings.Join(parts, " · ")
 }

@@ -13,6 +13,8 @@ import (
 	"context"
 	"strings"
 	"time"
+
+	"workbench/internal/pkg/datefmt"
 )
 
 // populateFlowApproval 装配流程与审批数据块。
@@ -122,22 +124,28 @@ func parseCheckField(val, ignoreVal string, mapper func(string) string) (string,
 }
 
 func (s *DetailService) buildActualTimes(ctx context.Context, demandID uint, row *DemandManagementRow) (*DemandActualTimes, error) {
-	clarify := formatDateOnly(row.ClarifyDate)
-	actualDevStart := formatDateOnly(row.ActualDevStartDate)
-	actualTestStart := formatDateOnly(row.ActualTestStartDate)
-	submitAcceptance := formatDateOnly(row.SubmitAcceptanceDate)
-	acceptanced := formatDateOnly(row.AcceptancedDate)
-	reviewed := formatDateOnly(row.ReviewedDate)
-	deliver := formatDateOnly(row.DeliverDate)
+	clarify := datefmt.Date(row.ClarifyDate)
+	actualDevStart := datefmt.Date(row.ActualDevStartDate)
+	actualTestStart := datefmt.Date(row.ActualTestStartDate)
+	submitAcceptance := datefmt.Date(row.SubmitAcceptanceDate)
+	acceptanced := datefmt.Date(row.AcceptancedDate)
+	reviewed := datefmt.Date(row.ReviewedDate)
+	deliver := datefmt.Date(row.DeliverDate)
 
 	realRelease, err := s.repo.FindRealReleaseDate(ctx, demandID)
 	if err != nil {
 		realRelease = ""
 	}
 
-	if clarify == "" && actualDevStart == "" && actualTestStart == "" &&
-		submitAcceptance == "" && acceptanced == "" && reviewed == "" &&
-		deliver == "" && realRelease == "" {
+	// 空判定针对底层日期是否设置，与展示文案解耦：datefmt 对零日期给「未设置」、nil 给「—」。
+	allUnset := true
+	for _, v := range []string{clarify, actualDevStart, actualTestStart, submitAcceptance, acceptanced, reviewed, deliver} {
+		if v != datefmt.Unset && v != datefmt.Empty {
+			allUnset = false
+			break
+		}
+	}
+	if allUnset && realRelease == "" {
 		return nil, nil
 	}
 
@@ -158,13 +166,6 @@ func (s *DetailService) buildActualTimes(ctx context.Context, demandID uint, row
 
 func cleanCheckValue(val string) string {
 	return strings.TrimSpace(val)
-}
-
-func formatDateOnly(t *time.Time) string {
-	if t == nil || t.IsZero() {
-		return ""
-	}
-	return t.Format("2006-01-02")
 }
 
 func mapMultiLegalPersonLogoLabel(val string) string {

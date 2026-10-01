@@ -1,6 +1,9 @@
 package po
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 func TestDemandFollowLifecycleBucket(t *testing.T) {
 	cases := map[string]string{
@@ -21,29 +24,40 @@ func TestDemandFollowLifecycleBucket(t *testing.T) {
 }
 
 func TestFollowProgress(t *testing.T) {
-	st, lb := followProgress("closed", "2020-01-01", "2026-09-10")
+	day := func(s string) *time.Time {
+		v, err := time.ParseInLocation("2006-01-02", s, time.Local)
+		if err != nil {
+			t.Fatalf("parse %s: %v", s, err)
+		}
+		return &v
+	}
+	st, lb := followProgress("closed", day("2020-01-01"), "2026-09-10")
 	if st != "done" || lb != "已完成" {
 		t.Fatalf("closed => %s/%s", st, lb)
 	}
-	st, lb = followProgress("developing", "2020-01-01", "2026-09-10")
+	st, lb = followProgress("developing", day("2020-01-01"), "2026-09-10")
 	if st != "delayed" || lb != "延期" {
 		t.Fatalf("overdue => %s/%s", st, lb)
 	}
-	st, lb = followProgress("developing", "2099-01-01", "2026-09-10")
+	st, lb = followProgress("developing", day("2099-01-01"), "2026-09-10")
 	if st != "normal" || lb != "正常" {
 		t.Fatalf("future => %s/%s", st, lb)
 	}
-	st, lb = followProgress("developing", "", "2026-09-10")
+	st, lb = followProgress("developing", nil, "2026-09-10")
 	if st != "unknown" || lb != "—" {
-		t.Fatalf("empty deadline => %s/%s", st, lb)
+		t.Fatalf("nil deadline => %s/%s", st, lb)
+	}
+	st, lb = followProgress("developing", &time.Time{}, "2026-09-10")
+	if st != "unknown" || lb != "—" {
+		t.Fatalf("zero deadline => %s/%s", st, lb)
 	}
 }
 
 func TestFollowScheduleSummary(t *testing.T) {
-	if got := followScheduleSummary("", "", ""); got != "" {
-		t.Fatalf("empty want blank, got %q", got)
+	if got := followScheduleSummary("未设置", "未设置", "未设置"); got != "" {
+		t.Fatalf("all unset want blank, got %q", got)
 	}
-	got := followScheduleSummary("2026-01-01", "", "2026-02-01")
+	got := followScheduleSummary("2026-01-01", "未设置", "2026-02-01")
 	if got != "开发完成 2026-01-01 · 截止 2026-02-01" {
 		t.Fatalf("got %q", got)
 	}

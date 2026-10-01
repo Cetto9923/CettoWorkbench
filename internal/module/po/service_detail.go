@@ -21,6 +21,7 @@ import (
 	"workbench/internal/model"
 	"workbench/internal/module/metrics"
 	"workbench/internal/module/po/primaryaction"
+	"workbench/internal/pkg/datefmt"
 	"workbench/internal/pkg/personlabel"
 	"workbench/internal/pkg/zentao"
 )
@@ -251,10 +252,10 @@ func (s *DetailService) buildSummary(row *DemandDetailRow) DemandSummary {
 			editedStr = row.EditedDate.Format("2006-01-02 15:04")
 		}
 	}
-	launchStr := defaultDash(formatDateOnly(row.EstimateLaunch))
-	devFinishStr := defaultDash(formatDateOnly(row.DevelopFinish))
-	testFinishStr := defaultDash(formatDateOnly(row.TestFinish))
-	verifyFinishStr := defaultDash(formatDateOnly(row.VerifyFinish))
+	launchStr := datefmt.Date(row.EstimateLaunch)
+	devFinishStr := datefmt.Date(row.DevelopFinish)
+	testFinishStr := datefmt.Date(row.TestFinish)
+	verifyFinishStr := datefmt.Date(row.VerifyFinish)
 	prodName := defaultDash(row.ProductName)
 	if prodName == "—" && row.MainSystemName != "" && row.MainSystemName != "—" {
 		prodName = row.MainSystemName

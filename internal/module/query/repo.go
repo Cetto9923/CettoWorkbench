@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	"workbench/internal/pkg/datefmt"
 	"workbench/internal/pkg/demandstage"
 	zturl "workbench/internal/pkg/zentao"
 )
@@ -114,7 +115,7 @@ func (r *Repo) listDemands(ctx context.Context, req ListReq) (ListResp, error) {
 			Stage:    demandstage.Label(row.Stage, row.Status),
 			Owner:    dashIfEmpty(row.Owner),
 			System:   dashIfEmpty(row.System),
-			Deadline: formatDate(row.EstimateLaunch),
+			Deadline: datefmt.Date(row.EstimateLaunch),
 			Source:   row.Source,
 			URL:      zturl.DemandViewURLWithBase("", row.ID),
 		})
@@ -189,7 +190,7 @@ func (r *Repo) listStories(ctx context.Context, req ListReq) (ListResp, error) {
 			Stage:    demandstage.Label(row.Stage, row.Status),
 			Owner:    dashIfEmpty(row.Owner),
 			System:   dashIfEmpty(row.System),
-			Deadline: formatDate(row.EstimateLaunch),
+			Deadline: datefmt.Date(row.EstimateLaunch),
 			Source:   row.Source,
 			URL:      zturl.StoryViewURLWithBase("", row.ID),
 		})
@@ -202,11 +203,4 @@ func dashIfEmpty(value string) string {
 		return "—"
 	}
 	return value
-}
-
-func formatDate(value *time.Time) string {
-	if value == nil || value.IsZero() || value.Year() < 2000 {
-		return "—"
-	}
-	return value.Format("2006-01-02")
 }

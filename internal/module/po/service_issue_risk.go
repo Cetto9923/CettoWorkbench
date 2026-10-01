@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 	"workbench/internal/model"
+	"workbench/internal/pkg/datefmt"
 	"workbench/internal/pkg/zentao"
 )
 
@@ -116,7 +117,7 @@ func mapIssueRiskRow(row issueRiskRow, kind string) IssueRiskItem {
 	if kind == "risk" {
 		url = zentao.URL("risk", "view", "riskID="+strconv.FormatInt(row.ID, 10))
 	}
-	created, plan := normalizeIssueRiskDate(row.CreatedDate), normalizeIssueRiskDate(row.PlanDate)
+	created, plan := datefmt.Raw(row.CreatedDate), datefmt.Raw(row.PlanDate)
 	days := 0
 	if t, e := time.Parse("2006-01-02", created); e == nil {
 		days = int(time.Since(t).Hours() / 24)
@@ -156,14 +157,6 @@ func mapIssueRiskRow(row issueRiskRow, kind string) IssueRiskItem {
 	}
 
 	return IssueRiskItem{ID: row.ID, DisplayID: strconv.FormatInt(row.ID, 10), Kind: kind, Title: row.Title, Project: row.ProjectName, Severity: issueRiskSeverity(row.Severity), Priority: priorityLabel(row.Pri), Handler: handler, Submitter: row.CreatorName, Status: issueRiskStatusLabel(row.Status), StatusCode: row.Status, CreatedDate: created, PlanDate: plan, Days: days, IsOverdue: overdue, OverdueDays: od, URL: url}
-}
-func normalizeIssueRiskDate(raw string) string {
-	if len(raw) >= 10 && raw[:10] != "0000-00-00" {
-		if t, err := time.Parse("2006-01-02", raw[:10]); err == nil && t.Year() >= 2000 {
-			return raw[:10]
-		}
-	}
-	return ""
 }
 func issueRiskClosed(kind, status string) bool {
 	if kind == "risk" {
