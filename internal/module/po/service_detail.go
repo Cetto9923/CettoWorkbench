@@ -19,6 +19,7 @@ import (
 	"gorm.io/gorm"
 
 	"workbench/internal/model"
+	"workbench/internal/module/metrics"
 	"workbench/internal/module/po/primaryaction"
 	"workbench/internal/pkg/personlabel"
 	"workbench/internal/pkg/zentao"
@@ -94,7 +95,7 @@ func (s *DetailService) GetDemandDetail(ctx context.Context, actor *model.User, 
 		Mode:    mode,
 		Summary: summary,
 		Config: DetailConfig{
-			DeliveryCycleTargetDays: 28,
+			DeliveryCycleTargetDays: metrics.DeliveryCycleTargetDays,
 		},
 	}
 

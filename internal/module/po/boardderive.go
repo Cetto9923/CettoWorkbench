@@ -14,10 +14,9 @@ import (
 	"time"
 )
 
-// terminalStatusSQL 是需求终态（已关闭 / 已驳回 / 已发布）的唯一事实源，isTerminal 与各 SQL 的 NOT IN 均由它派生。
+// terminalStatusSQL 需求终态唯一事实源；isTerminal 与 SQL NOT IN 均派生自此。
 var terminalStatusSQL = "('closed','refuse','released')"
 
-// isTerminal 判断状态是否为需求终态；引号定界，closed 不会误配到 closedX。
 func isTerminal(status string) bool {
 	return strings.Contains(terminalStatusSQL, "'"+strings.ToLower(strings.TrimSpace(status))+"'")
 }
