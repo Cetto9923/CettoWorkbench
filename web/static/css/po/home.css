@@ -434,7 +434,7 @@
 /* 行动列表表格 */
 .po-home .table-scroll-container {
   overflow-x: auto;
-  min-height: 560px;
+  max-height: none; min-height: 0;
 }
 .po-home .table-scroll-container .state-placeholder { padding: 180px 20px; text-align: center; color: var(--wb-gray-400); }
 .po-home .home-action-table {
@@ -469,7 +469,7 @@
 .po-home .home-action-table .c-title { width: auto; min-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .po-home .home-action-table .c-title a { display: inline-block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
 .po-home .home-action-table .c-stage { width: 94px; }
-.po-home .home-action-table .c-zt-status { width: 76px; }
+.po-home .home-action-table .c-zt-status { width: 100px; text-overflow: clip; }
 .po-home .home-action-table .c-owner { width: 96px; min-width: 96px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .po-home .home-action-table th.c-actions,
 .po-home .home-action-table td.c-actions { width: 136px; min-width: 136px; text-align: right; white-space: nowrap; overflow: visible; }

@@ -213,21 +213,14 @@ html[data-theme="dark"] .po-personal-workspace .category-tab.active em { color: 
 .wb-done-domains {
   display: flex;
   align-items: center;
-  gap: 20px;
-  overflow-x: auto;
-  height: 38px;
+  gap: 0 16px;
+  flex-wrap: wrap;
+  min-height: 38px;
   padding: 0 16px;
   margin: 0;
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface);
   box-sizing: border-box;
-}
-.wb-done-domains::-webkit-scrollbar {
-  height: 4px;
-}
-.wb-done-domains::-webkit-scrollbar-thumb {
-  background: var(--color-border-strong);
-  border-radius: 2px;
 }
 .wb-done-tab {
   position: relative;
@@ -336,7 +329,7 @@ html[data-theme="dark"] .po-personal-workspace .category-tab.active em { color: 
 
 /* 表格包装与定义 */
 .po-personal-workspace .table-scroll-container {
-  max-height: calc(100vh - 330px); min-height: 220px; overflow: auto;
+  min-height: 0; overflow-x: auto;
 }
 .po-personal-workspace .workspace-table {
   width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 12px;
