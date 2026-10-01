@@ -63,3 +63,22 @@ func assertAdminLinks(t *testing.T, html string, granted map[string]bool, hidden
 		}
 	}
 }
+
+func TestProfileHasOnePageTitle(t *testing.T) {
+	_, source, _, _ := runtime.Caller(0)
+	renderer := &Renderer{templateDir: filepath.Join(filepath.Dir(source), "../../../web/templates"), cache: make(map[string]*template.Template)}
+	for _, nav := range []string{"sidebar", "top"} {
+		out := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(out)
+		ctx.Request = httptest.NewRequest("GET", "/profile", nil)
+		data := gin.H{"LayoutNav": nav, "Title": "个人资料"}
+		if err := renderer.renderPage(ctx, 200, "profile/index", data); err != nil {
+			t.Fatal(err)
+		}
+		html := out.Body.String()
+		count := strings.Count(html, `>个人资料</h2>`) + strings.Count(html, `class="topbar-page-title">个人资料</span>`)
+		if count != 1 {
+			t.Errorf("%s has %d primary titles", nav, count)
+		}
+	}
+}
