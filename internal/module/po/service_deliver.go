@@ -15,6 +15,27 @@ import (
 	"workbench/internal/model"
 )
 
+// deliverHomeRow 把交付详情行投影成首页动作鉴权行。
+// 发起与提交交付共用同一份字段口径，两处各写一遍会漂移出鉴权漏洞。
+func deliverHomeRow(row *DeliverDetailRow) *homeActionDemandRow {
+	return &homeActionDemandRow{
+		ID:            row.ID,
+		Status:        row.Status,
+		Deleted:       row.Deleted,
+		AssignedTo:    row.AssignedTo,
+		DistributedBy: row.DistributedBy,
+		CreatedBy:     row.CreatedBy,
+		SubmitedBy:    row.SubmitedBy,
+		SubmitBy:      row.SubmitBy,
+		QD:            row.QD,
+		RD:            row.RD,
+		BRA:           row.BRA,
+		Accepter:      row.Accepter,
+		VeriFier:      row.VeriFier,
+		Product:       row.Product,
+	}
+}
+
 // GetDemandDeliverMeta 获取发起交付表单初始化数据及前置检查结果。
 func (s *Service) GetDemandDeliverMeta(ctx context.Context, actor *model.User, demandID uint) (*DemandDeliverMetaResp, error) {
 	if demandID == 0 {
@@ -34,23 +55,7 @@ func (s *Service) GetDemandDeliverMeta(ctx context.Context, actor *model.User, d
 	}
 
 	// 权限检查：必须命中 RoleOwner
-	homeRow := &homeActionDemandRow{
-		ID:            row.ID,
-		Status:        row.Status,
-		Deleted:       row.Deleted,
-		AssignedTo:    row.AssignedTo,
-		DistributedBy: row.DistributedBy,
-		CreatedBy:     row.CreatedBy,
-		SubmitedBy:    row.SubmitedBy,
-		SubmitBy:      row.SubmitBy,
-		QD:            row.QD,
-		RD:            row.RD,
-		BRA:           row.BRA,
-		Accepter:      row.Accepter,
-		VeriFier:      row.VeriFier,
-		Product:       row.Product,
-	}
-	if !s.repo.homeActionAuthorized(homeRow, account, "deliver") {
+	if !s.repo.homeActionAuthorized(deliverHomeRow(row), account, "deliver") {
 		return nil, errHomeActionForbidden
 	}
 
@@ -140,23 +145,7 @@ func (s *Service) DeliverDemand(ctx context.Context, actor *model.User, req Dema
 	}
 
 	// 权限检查：必须为 RoleOwner
-	homeRow := &homeActionDemandRow{
-		ID:            row.ID,
-		Status:        row.Status,
-		Deleted:       row.Deleted,
-		AssignedTo:    row.AssignedTo,
-		DistributedBy: row.DistributedBy,
-		CreatedBy:     row.CreatedBy,
-		SubmitedBy:    row.SubmitedBy,
-		SubmitBy:      row.SubmitBy,
-		QD:            row.QD,
-		RD:            row.RD,
-		BRA:           row.BRA,
-		Accepter:      row.Accepter,
-		VeriFier:      row.VeriFier,
-		Product:       row.Product,
-	}
-	if !s.repo.homeActionAuthorized(homeRow, account, "deliver") {
+	if !s.repo.homeActionAuthorized(deliverHomeRow(row), account, "deliver") {
 		return errHomeActionForbidden
 	}
 
