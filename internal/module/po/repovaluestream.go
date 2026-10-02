@@ -121,12 +121,8 @@ func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysql
 
 func applyDemandStage(q *gorm.DB, account string, filter mysqlStageFilter) *gorm.DB {
 	if filter.acceptanceStage {
-		today := time.Now().Format("2006-01-02")
-		// (status=testing AND 今天>=testFinish) OR (status=waitacceptance AND (RD|BRA|accepter)=账号)
-		q = q.Where(`(
-			(status = ? AND `+dateSetExpr("testFinish")+` AND testFinish <= ?)
-			OR (status = ? AND (RD = ? OR BRA = ? OR accepter = ?))
-		)`, "testing", today, "waitacceptance", account, account, account)
+		// 首页 demandStageCase 按阶段首命中；testing 的 status=testing 在前，已占用到期测试需求。
+		q = q.Where(`status = ? AND (RD = ? OR BRA = ? OR accepter = ?)`, "waitacceptance", account, account, account)
 		return q
 	}
 	if filter.publishStage {
