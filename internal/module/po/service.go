@@ -42,6 +42,20 @@ var valueStreamStages = []struct {
 	{label: "评价反馈", status: "released"},
 }
 
+// valueStreamLabel 是阶段中文名的唯一出口：按编码查首页价值流阶段表。
+// closed 不在首页表内（首页无终态阶段），单独补「已关闭」；其余未收录编码显示「未知」。
+func valueStreamLabel(code string) string {
+	for _, def := range valueStreamStages[1:] {
+		if def.status == code {
+			return def.label
+		}
+	}
+	if code == "closed" {
+		return "已关闭"
+	}
+	return "未知"
+}
+
 // Service PO 工作台业务逻辑。
 type Service struct {
 	repo         *Repo

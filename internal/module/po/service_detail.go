@@ -22,6 +22,7 @@ import (
 	"workbench/internal/module/metrics"
 	"workbench/internal/module/po/primaryaction"
 	"workbench/internal/pkg/datefmt"
+	"workbench/internal/pkg/demandstage"
 	"workbench/internal/pkg/personlabel"
 	"workbench/internal/pkg/zentao"
 )
@@ -235,7 +236,8 @@ func canWithdrawReviewForDetail(actor *model.User, row *DemandDetailRow) bool {
 
 func (s *DetailService) buildSummary(row *DemandDetailRow) DemandSummary {
 	code := fmt.Sprintf("US%d", row.ID)
-	stageKey, stageLabel := mapValueStage(row.Stage, row.Status)
+	stageKey := demandstage.Map(row.Stage, row.Status)
+	stageLabel := valueStreamLabel(stageKey)
 	createdTime := row.CreatedDate
 	if row.ActionCreatedDate != nil {
 		createdTime = row.ActionCreatedDate
@@ -348,7 +350,7 @@ func (s *DetailService) buildParentAggregate(ctx context.Context, children []Dem
 			launch = c.EstimateLaunch.Format("2006-01-02")
 		}
 
-		_, stageLabel := mapValueStage(c.Stage, c.Status)
+		stageLabel := valueStreamLabel(demandstage.Map(c.Stage, c.Status))
 
 		count := counts[c.ID]
 		blockingBugs := count.BlockingBugs
@@ -403,7 +405,7 @@ func (s *DetailService) buildParentAggregate(ctx context.Context, children []Dem
 
 func (s *DetailService) buildRelationContext(parent *DemandDetailRow, siblings []DemandChildRow, currentID uint) *RelationContextData {
 	pCode := fmt.Sprintf("US%d", parent.ID)
-	_, pStageLabel := mapValueStage(parent.Stage, parent.Status)
+	pStageLabel := valueStreamLabel(demandstage.Map(parent.Stage, parent.Status))
 	pDemand := &RelationDemand{
 		DemandID:  parent.ID,
 		Code:      pCode,
@@ -416,7 +418,7 @@ func (s *DetailService) buildRelationContext(parent *DemandDetailRow, siblings [
 	sList := make([]RelationDemand, 0, len(siblings))
 	for _, sib := range siblings {
 		sCode := fmt.Sprintf("US%d", sib.ID)
-		_, sStage := mapValueStage(sib.Stage, sib.Status)
+		sStage := valueStreamLabel(demandstage.Map(sib.Stage, sib.Status))
 		launch := "—"
 		if sib.EstimateLaunch != nil {
 			launch = sib.EstimateLaunch.Format("2006-01-02")

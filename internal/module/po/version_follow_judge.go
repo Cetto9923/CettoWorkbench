@@ -52,7 +52,7 @@ func deriveJudgement(c judgeCtx) vfJudgementResult {
 // judgeBlocked 判定阻塞态；不满足返回空结果。
 func judgeBlocked(c judgeCtx) vfJudgementResult {
 	if c.Raw.SchedulePlanDate != nil && dayDiff(c.Now, *c.Raw.SchedulePlanDate) < 0 &&
-		stageRank(c.Raw.Stage, c.Raw.Status) < stageIdxSubmittest {
+		stageRank(c.Raw.Stage, c.Raw.Status) < stageIdxDeveloping {
 		return vfJudgementResult{
 			Judgement: VFJudgementBlocked,
 			Reason: "计划提测日 " + c.Raw.SchedulePlanDate.Format("2006-01-02") + " 已过，当前仍在" +
@@ -89,7 +89,7 @@ func judgeRisk(c judgeCtx) vfJudgementResult {
 	// 距计划日 3 天内，且阶段落后于计划。
 	if c.Raw.SchedulePlanDate != nil {
 		days := dayDiff(c.Now, *c.Raw.SchedulePlanDate)
-		if days >= 0 && days < vfRiskWindowDays && stageRank(c.Raw.Stage, c.Raw.Status) < stageIdxSubmittest {
+		if days >= 0 && days < vfRiskWindowDays && stageRank(c.Raw.Stage, c.Raw.Status) < stageIdxDeveloping {
 			return vfJudgementResult{
 				Judgement: VFJudgementRisk,
 				Reason: "距计划提测日 " + strconv.Itoa(days) + " 天，当前仍在" +

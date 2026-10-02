@@ -22,44 +22,43 @@ import (
 	"workbench/internal/pkg/zentao"
 )
 
-func (s *DetailService) buildValueStream(row *DemandDetailRow) *DetailValueStream {
-	// F05：阶段集合与 mapValueStage 共用同一套 key，终态单独入列，禁止匹配失败回退澄清。
-	stagesDef := []struct {
-		key   string
-		label string
-		role  string
-	}{
-		{"accept", "受理", "产品经理"},
-		{"clarify", "澄清", "需求分析 / 产品经理"},
-		{"schedule", "排期", "排期协同"},
-		{"developing", "研发", "敏捷研发团队"},
-		{"submittest", "提测", "研发 / 测试协同"},
-		{"testing", "测试", "测试团队"},
-		{"acceptance", "验收", "业务部门 / 产品经理"},
-		{"publish", "发布", "发布组"},
-		{"greyverify", "生产验证", "业务 / 运维"},
-		{"closed", "已关闭", "系统"},
-	}
+// detailStageRoles 是详情页阶段节点的责任角色，按编码查；编码取自首页价值流阶段表。
+var detailStageRoles = map[string]string{
+	"accept":         "产品经理",
+	"clarify":        "需求分析 / 产品经理",
+	"schedule":       "排期协同",
+	"developing":     "敏捷研发团队",
+	"testing":        "测试团队",
+	"waitacceptance": "业务部门 / 产品经理",
+	"acceptanced":    "发布组",
+	"publish":        "业务 / 运维",
+	"released":       "系统",
+	"closed":         "系统",
+}
 
-	currentStage, _ := mapValueStage(row.Stage, row.Status)
+func (s *DetailService) buildValueStream(row *DemandDetailRow) *DetailValueStream {
+	// F05：阶段集合直接遍历首页 valueStreamStages[1:]，末尾接终态 closed，禁止匹配失败回退澄清。
+	nodes := make([]ValueStreamItem, 0, len(valueStreamStages))
+	for _, def := range valueStreamStages[1:] {
+		nodes = append(nodes, ValueStreamItem{Key: def.status, Label: def.label, Role: detailStageRoles[def.status]})
+	}
+	nodes = append(nodes, ValueStreamItem{Key: "closed", Label: valueStreamLabel("closed"), Role: detailStageRoles["closed"]})
+
+	currentStage := demandstage.Map(row.Stage, row.Status)
 	currentIdx := -1
-	for idx, st := range stagesDef {
-		if st.key == currentStage {
+	for idx, n := range nodes {
+		if n.Key == currentStage {
 			currentIdx = idx
 			break
 		}
 	}
 
 	now := time.Now()
-	items := make([]ValueStreamItem, 0, len(stagesDef)+1)
+	items := make([]ValueStreamItem, 0, len(nodes)+1)
 	usedDays := 0
 
-	for idx, def := range stagesDef {
-		item := ValueStreamItem{
-			Key:   def.key,
-			Label: def.label,
-			Role:  def.role,
-		}
+	for idx, def := range nodes {
+		item := def
 		if currentIdx < 0 {
 			item.Status = "future"
 			item.DurationKind = "未知"
@@ -116,7 +115,7 @@ func (s *DetailService) buildValueStream(row *DemandDetailRow) *DetailValueStrea
 }
 
 func (s *DetailService) buildSpotlight(stage, status string) *DetailSpotlight {
-	stageKey, _ := mapValueStage(stage, status)
+	stageKey := demandstage.Map(stage, status)
 	switch stageKey {
 	case "accept":
 		return &DetailSpotlight{
@@ -145,7 +144,7 @@ func (s *DetailService) buildSpotlight(stage, status string) *DetailSpotlight {
 			TargetTab:     "overview",
 			TargetSection: "spotlightSection",
 		}
-	case "developing", "submittest":
+	case "developing":
 		return &DetailSpotlight{
 			Badge:         "待提测",
 			Title:         "当前待办：提交测试，推动进入联调测试",
@@ -163,7 +162,7 @@ func (s *DetailService) buildSpotlight(stage, status string) *DetailSpotlight {
 			TargetTab:     "execution",
 			TargetSection: "bugSection",
 		}
-	case "acceptance":
+	case "waitacceptance", "acceptanced":
 		return &DetailSpotlight{
 			Badge:       "待验收",
 			Title:       "当前待办：业务部门确认与交付验收",
@@ -308,11 +307,6 @@ func (s *DetailService) buildHistory(ctx context.Context, row *DemandDetailRow) 
 			ClosedReason:   defaultDash(row.ClosedReason),
 		},
 	}, nil
-}
-
-func mapValueStage(stage, status string) (string, string) {
-	// F05：返回值必须落在 buildValueStream.stagesDef（含 closed）或 unknown；禁止默认回退 clarify。
-	return demandstage.Map(stage, status)
 }
 
 func firstNonEmpty(vals ...string) string {

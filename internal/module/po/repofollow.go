@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"workbench/internal/pkg/datefmt"
+	"workbench/internal/pkg/demandstage"
 	"workbench/internal/pkg/zentao"
 )
 
@@ -176,7 +177,7 @@ func (r *Repo) FindFollowedDemands(ctx context.Context, req RepoFindFollowedDema
 			priority = "P" + row.Pri
 		}
 		isClosed := row.Status == "closed"
-		_, stage := mapValueStage("", row.Status)
+		stage := valueStreamLabel(demandstage.Map("", row.Status))
 		risk := "无"
 		if row.NeedFocus == "1" {
 			risk = "重点关注"

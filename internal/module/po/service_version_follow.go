@@ -126,15 +126,15 @@ func (s *Service) buildVFItems(ctx context.Context, rows []vfDemandRow, now time
 	return items
 }
 
-// fillVFSummary 回填阶段分布、距上线天数与三态计数；分布按 demandstage 编码统计，按中文名统计会让九宫格恒为 0。
+// fillVFSummary 回填阶段分布、距上线天数与三态计数；分布按首页价值流编码统计，
+// 显示名与列表行同源于 valueStreamLabel，点格子筛出的条数与格子计数一致。
 func (s *Service) fillVFSummary(resp *VersionFollowListResp, items []VersionFollowItemResp, rows []vfDemandRow, now time.Time) {
 	byStage := map[string]int{}
 	for _, r := range rows {
-		code, _ := demandstage.Map(r.Stage, r.Status)
-		byStage[code]++
+		byStage[demandstage.Map(r.Stage, r.Status)]++
 	}
-	for _, code := range stageOrder {
-		resp.StageCounts = append(resp.StageCounts, VersionFollowStageCount{Stage: stageLabels[code], Count: byStage[code]})
+	for _, def := range valueStreamStages[1:] {
+		resp.StageCounts = append(resp.StageCounts, VersionFollowStageCount{Stage: def.label, Count: byStage[def.status]})
 	}
 	for _, it := range items {
 		switch it.Judgement {
@@ -261,9 +261,9 @@ func vfMatchAllFilters(it VersionFollowItemResp, req VersionFollowListReq, actor
 		vfMatchKeyword(it, req.Keyword)
 }
 
-// vfMatchStage 阶段过滤；req 为空表示不限。
+// vfMatchStage 阶段过滤；req 为空表示不限。阶段条传回的显示名与列表行 Stage 同源，直接比对即可。
 func vfMatchStage(it VersionFollowItemResp, want string) bool {
-	return want == "" || it.Stage == stageLabels[want] || it.Stage == want
+	return want == "" || it.Stage == want
 }
 
 // vfMatchSystem 系统过滤；「全部」与空均表示不限。

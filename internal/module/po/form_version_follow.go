@@ -137,38 +137,19 @@ type VersionFollowListResp struct {
 	OrphanTestedCount int `json:"orphanTestedCount"`
 }
 
-// stageOrder 是九个阶段的固定展示顺序，code 取自 internal/pkg/demandstage.Map 的工作台归一码。
-// 其中 test/deliver/release/verify 四个阶段 Map 尚未产出，会落到「暂无」，此处保留位置以便阶段条结构完整。
-var stageOrder = []string{
-	"accept", "clarify", "schedule", "submittest", "testing",
-	"acceptance", "deliver", "publish", "greyverify",
-}
-
-// 九阶段在 stageOrder 中的序号，供规则直接比较，避免重复查表。
+// 九阶段在首页价值流阶段表 valueStreamStages[1:] 中的序号，供规则直接比较，避免重复查表。
+// 顺序与首页一致：受理 0 / 澄清 1 / 排期 2 / 提测 3 / 联调测试 4 / 验收 5 / 发起交付 6 / 发布 7 / 评价反馈 8。
 const (
-	stageIdxAccept     = 0
-	stageIdxClarify    = 1
-	stageIdxSchedule   = 2
-	stageIdxSubmittest = 3
-	stageIdxTesting    = 4
-	stageIdxAcceptance = 5
-	stageIdxDeliver    = 6
-	stageIdxPublish    = 7
-	stageIdxVerify     = 8
+	stageIdxAccept         = 0
+	stageIdxClarify        = 1
+	stageIdxSchedule       = 2
+	stageIdxDeveloping     = 3
+	stageIdxTesting        = 4
+	stageIdxWaitAcceptance = 5
+	stageIdxAcceptanced    = 6
+	stageIdxPublish        = 7
+	stageIdxReleased       = 8
 )
-
-// stageLabels 是九个阶段的中文名；后端未产出的 code 显示「暂无」。
-var stageLabels = map[string]string{
-	"accept":     "受理",
-	"clarify":    "澄清",
-	"schedule":   "排期",
-	"submittest": "提测",
-	"testing":    "测试",
-	"acceptance": "验收",
-	"deliver":    "发起交付",
-	"publish":    "发布",
-	"greyverify": "验证",
-}
 
 // nowFunc 便于规则单测注入固定时间。
 var nowFunc = time.Now

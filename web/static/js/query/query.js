@@ -16,11 +16,6 @@
   var objectTypeBadge = PL.objectTypeBadge;
 
   var TAB_KIND_MAP = { biz: "business", rd: "story" };
-  var VALUE_STREAM_LABELS = {
-    accept: "受理", clarify: "澄清", schedule: "排期", developing: "提测",
-    testing: "测试", waitacceptance: "验收", acceptanced: "发起交付",
-    publish: "发布", released: "评价反馈"
-  };
 
   var ZENTAO_STATUS_LABELS = {
     draft: "暂存", wait: "待评审", active: "已评审", clarified: "已澄清",
@@ -247,7 +242,8 @@
 
     var tags = [];
     if (state.stage) {
-      var stageLabel = VALUE_STREAM_LABELS[state.stage] || state.stage;
+      // 标签名按禅道原始值取，与后端 ?stage IN (d.stage, d.status) 的筛选口径一致。
+      var stageLabel = ZENTAO_STATUS_LABELS[state.stage] || state.stage;
       tags.push({ key: "stage", label: "阶段: " + stageLabel });
     }
     if (state.status) {

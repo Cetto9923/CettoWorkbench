@@ -73,7 +73,7 @@ func ruleOverdueNotSubmittedTest(r vfRule) []VersionFollowAIFinding {
 	if dayDiff(r.Now, *r.Raw.SchedulePlanDate) >= 0 {
 		return nil
 	}
-	if stageRank(r.Raw.Stage, r.Raw.Status) >= stageIdxSubmittest {
+	if stageRank(r.Raw.Stage, r.Raw.Status) >= stageIdxDeveloping {
 		return nil
 	}
 	return []VersionFollowAIFinding{{
@@ -86,7 +86,7 @@ func ruleOverdueNotSubmittedTest(r vfRule) []VersionFollowAIFinding {
 
 // ruleAcceptanceCriteriaEmpty：已进入验收阶段但验收标准为空。
 func ruleAcceptanceCriteriaEmpty(r vfRule) []VersionFollowAIFinding {
-	if stageRank(r.Raw.Stage, r.Raw.Status) < stageIdxAcceptance {
+	if stageRank(r.Raw.Stage, r.Raw.Status) < stageIdxWaitAcceptance {
 		return nil
 	}
 	if r.Raw.Acceptance != "" {
@@ -130,21 +130,21 @@ func ruleStageBehindWindowAverage(r vfRule) []VersionFollowAIFinding {
 	}}
 }
 
-// stageRank 返回阶段在工作台九阶段中的序号；未知阶段按 99 计（视为最靠后）。
+// stageRank 返回阶段在首页九阶段中的序号；未知阶段按 99 计（视为最靠后）。
 // 复用 demandstage.Map 做归一，不自造第二套映射。
 func stageRank(stage, status string) int {
-	code, _ := demandstage.Map(stage, status)
-	for i, s := range stageOrder {
-		if s == code {
+	code := demandstage.Map(stage, status)
+	for i, def := range valueStreamStages[1:] {
+		if def.status == code {
 			return i
 		}
 	}
 	return 99
 }
 
-// stageLabel 返回阶段中文名；未收录的阶段显示「暂无」。
+// stageLabel 返回阶段中文名，取自首页价值流阶段表；未收录的阶段显示「暂无」。
 func stageLabel(stage, status string) string {
-	if _, name := demandstage.Map(stage, status); name != "未知" {
+	if name := valueStreamLabel(demandstage.Map(stage, status)); name != "未知" {
 		return name
 	}
 	return "暂无"

@@ -97,7 +97,7 @@ func Enabled(key, label, kind, url string) PrimaryAction {
 	}
 }
 
-// StageKey 是来自 service_detail_tabs.mapValueStage 的内部 key。
+// StageKey 是来自 demandstage.Map 的内部 key。
 // 与 plan §4 / PLAN §4 表一一对应。
 type StageKey string
 

@@ -172,9 +172,9 @@ func (s *Service) DeriveDemandPrimaryActions(
 
 // DeriveStoryPrimaryActions 批量派生一组研发需求（包括独立研需）的 primaryAction。
 //
-// 故事的 stage 来源：status + stage（与 mapValueStage 一致）。
+// 故事的 stage 来源：status + stage（与 demandstage.Map 一致）。
 // 故事的 accepter / assignedTo 不在 zt_story 语义上等价于业务需求，
-// 这里直接复用 mapValueStage 派生阶段 key，并把 IsAcceptanceOwner 视为 false
+// 这里直接复用 demandstage.Map 派生阶段 key，并把 IsAcceptanceOwner 视为 false
 // （研需对象的"本人验收"语义不在当前仓库可见）。
 func (s *Service) DeriveStoryPrimaryActions(
 	ctx context.Context,
