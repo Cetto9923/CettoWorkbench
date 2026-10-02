@@ -40,10 +40,10 @@ web/templates/layout/header.html 模块: 布局 职责:
       <div class="search-results" id="searchResults" role="listbox"></div>
     </div>
     {{ end }}
-    <a href="/notice" class="po-header-icon{{ if eq .CurrentPath "/notice" }} active{{ end }}" aria-label="通知" title="{{ if and .SidebarBadges (gt .SidebarBadges.Notice 0) }}{{ .SidebarBadges.Notice }} 条未读通知{{ else }}通知中心{{ end }}"><i class="fas fa-bell"></i>{{ if and .SidebarBadges (gt .SidebarBadges.Notice 0) }}<span class="po-header-badge">{{ if gt .SidebarBadges.Notice 99 }}99+{{ else }}{{ .SidebarBadges.Notice }}{{ end }}</span>{{ end }}</a>
+    <a href="/notice" class="po-header-icon{{ if eq .CurrentPath "/notice" }} active{{ end }}" aria-label="通知" title="{{ if .SidebarBadges.Unavailable }}通知计数暂不可用{{ else if and .SidebarBadges (gt .SidebarBadges.Notice 0) }}{{ .SidebarBadges.Notice }} 条未读通知{{ else }}通知中心{{ end }}"><i class="fas fa-bell"></i>{{ if .SidebarBadges.Unavailable }}<span class="po-header-badge" aria-label="统计暂不可用">—</span>{{ else if and .SidebarBadges (gt .SidebarBadges.Notice 0) }}<span class="po-header-badge">{{ if gt .SidebarBadges.Notice 99 }}99+{{ else }}{{ .SidebarBadges.Notice }}{{ end }}</span>{{ end }}</a>
     <button type="button" class="po-header-icon theme-quick-toggle" id="themeQuickToggle" title="切换深色/浅色模式" aria-label="切换深色/浅色模式">
-      <i class="bi bi-moon-stars theme-moon-icon"></i>
-      <i class="bi bi-sun theme-sun-icon" style="display:none;"></i>
+      <i class="fas fa-moon theme-moon-icon"></i>
+      <i class="fas fa-sun theme-sun-icon" style="display:none;"></i>
     </button>
     <div class="dropdown">
       <button class="po-user-info" type="button" onclick="return toggleDropdown(this);" aria-haspopup="menu">

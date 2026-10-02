@@ -5,7 +5,6 @@
   "use strict";
 
   var pendingDeleteUrl = "";
-  var pendingDeleteMode = "";
 
   // escapeHtml 通用 HTML 转义（文本与属性值均可用）；PO 工作台各页面脚本通过 window.escapeHtml 复用。
   function escapeHtml(value) {
@@ -85,7 +84,6 @@
     if (!pendingDeleteUrl) {
       pendingDeleteUrl = triggerEl ? (triggerEl.getAttribute("data-url") || triggerEl.getAttribute("href") || "").trim() : "";
     }
-    pendingDeleteMode = triggerEl && triggerEl.getAttribute ? (triggerEl.getAttribute("data-delete-mode") || "").trim() : "";
     var displayName = (name || "").trim();
     if (!displayName && triggerEl && triggerEl.getAttribute) {
       displayName = (triggerEl.getAttribute("data-name") || "").trim();
@@ -94,15 +92,8 @@
     if (title) {
       title.textContent = "确认删除「" + displayName + "」？";
     }
-    modal.classList.add("open");
+    openShowModals("modal-delete");
     return false;
-  }
-
-  function closeModal(id) {
-    var modal = document.getElementById(id);
-    if (modal) {
-      modal.classList.remove("open");
-    }
   }
 
   /**
@@ -117,11 +108,7 @@
       if (!el) {
         continue;
       }
-      if (visible) {
-        el.classList.add("show");
-      } else {
-        el.classList.remove("show");
-      }
+      el.classList.toggle("show", visible);
     }
   }
 
@@ -867,83 +854,24 @@
   function submitDelete() {
     if (!pendingDeleteUrl) {
       showToast("删除地址无效，请刷新后重试", "error");
-      closeModal("modal-delete");
+      closeShowModals("modal-delete");
       return false;
     }
-
-    if (pendingDeleteMode === "json") {
-      var headers = {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        "X-CSRF-Token": getCsrfToken(),
-        "X-Requested-With": "XMLHttpRequest"
-      };
-      var init = {
-        method: "DELETE",
-        headers: headers,
-        body: "{}"
-      };
-      var req = window.appFetch ? window.appFetch(pendingDeleteUrl, init) : fetch(pendingDeleteUrl, init);
-      req
-        .then(function (res) {
-          return res.json().then(function (data) {
-            return { ok: res.ok, status: res.status, data: data };
-          });
-        })
-        .then(function (result) {
-          var data = result.data || {};
-          if (data.success && data.redirectUrl) {
-            closeModal("modal-delete");
-            showToast(data.message || "删除成功", "success");
-            window.location.href = data.redirectUrl;
-            return;
-          }
-          if (result.status === 401) {
-            window.location.href = "/login";
-            return;
-          }
-          showToast(data.message || "删除失败", "error");
-        })
-        .catch(function () {
-          showToast("删除失败，请稍后重试", "error");
-        });
-      return false;
-    }
-
-    var payload = new URLSearchParams();
-    payload.append("_method", "DELETE");
-    payload.append("csrf_token", getCsrfToken());
-
-    fetch(pendingDeleteUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-        "X-CSRF-Token": getCsrfToken(),
-        "X-Requested-With": "XMLHttpRequest"
-      },
-      body: payload.toString()
-    })
-      .then(function (res) {
-        if (!res.ok) {
-          throw new Error("删除失败");
-        }
-        closeModal("modal-delete");
-        showToast("删除成功", "success");
-        window.setTimeout(function () {
-          window.location.reload();
-        }, 250);
+    window.appJson(pendingDeleteUrl, { method: "DELETE", body: {} })
+      .then(function (data) {
+        if (!data || !data.success) throw new Error((data && data.message) || "删除失败");
+        closeShowModals("modal-delete");
+        showToast(data.message || "删除成功", "success");
+        if (data.redirectUrl) window.location.href = data.redirectUrl;
+        else window.setTimeout(function () { window.location.reload(); }, 250);
       })
-      .catch(function () {
-        showToast("删除失败，请稍后重试", "error");
-      });
-
+      .catch(function (err) { showToast(err.message || "删除失败，请稍后重试", "error"); });
     return false;
   }
 
   window.showToast = showToast;
   window.escapeHtml = escapeHtml;
   window.confirmDelete = confirmDelete;
-  window.closeModal = closeModal;
   window.openShowModals = openShowModals;
   window.closeShowModals = closeShowModals;
   window.submitDelete = submitDelete;

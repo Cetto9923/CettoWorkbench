@@ -47,8 +47,8 @@
     if (!toggleEl) {
       return;
     }
-    toggleEl.classList.toggle("bi-chevron-down", expanded);
-    toggleEl.classList.toggle("bi-chevron-right", !expanded);
+    toggleEl.classList.toggle("fa-chevron-down", expanded);
+    toggleEl.classList.toggle("fa-chevron-right", !expanded);
   };
 
   const getChildren = (id) => childrenMap.get(String(id)) || [];
@@ -59,7 +59,7 @@
 
   const isExpanded = (row) => {
     const toggle = getInteractiveToggle(row);
-    return !!toggle && toggle.classList.contains("bi-chevron-down");
+    return !!toggle && toggle.classList.contains("fa-chevron-down");
   };
 
   /** 根据扁平行的 parentId 集合判定叶子，并同步折叠图标可见性（叶子保留占位对齐） */
@@ -194,7 +194,7 @@
       return;
     }
 
-    const expanded = toggle.classList.contains("bi-chevron-down");
+    const expanded = toggle.classList.contains("fa-chevron-down");
     if (expanded) {
       setToggleIcon(toggle, false);
       hideDescendants(rowID);

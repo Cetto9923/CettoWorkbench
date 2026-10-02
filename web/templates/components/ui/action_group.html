@@ -16,12 +16,12 @@
 {{ $assignPermUrl := .AssignPermUrl }}
 <div class="action-group">
   {{ if .AddSubUrl }}
-  <a href="{{ .AddSubUrl }}" class="btn-icon" title="新增子级"><i class="bi bi-plus-square"></i></a>
+  <a href="{{ .AddSubUrl }}" class="btn-icon" title="新增子级"><i class="fas fa-square-plus"></i></a>
   {{ end }}
   {{ if $assignPermUrl }}
-  <a href="{{ $assignPermUrl }}" class="btn-icon" title="分配权限" style="color: var(--color-success);"><i class="bi bi-shield-lock"></i></a>
+  <a href="{{ $assignPermUrl }}" class="btn-icon" title="分配权限" style="color: var(--color-success);"><i class="fas fa-shield-alt"></i></a>
   {{ end }}
-  <a href="{{ $editUrl }}" class="btn-icon btn-icon-edit" title="编辑"><i class="bi bi-pencil"></i></a>
+  <a href="{{ $editUrl }}" class="btn-icon btn-icon-edit" title="编辑"><i class="fas fa-pencil"></i></a>
   {{ if $deleteUrl }}
   <button
     type="button"
@@ -30,7 +30,7 @@
     data-id="{{ .ID }}"
     onclick="return confirmDelete(this, '{{ .Name | js }}', '{{ $deleteUrl }}')"
     title="删除"
-  ><i class="bi bi-trash"></i></button>
+  ><i class="fas fa-trash"></i></button>
   {{ end }}
 </div>
 {{ end }}

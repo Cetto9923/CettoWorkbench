@@ -64,13 +64,13 @@
     if (!flags) return "";
     var html = "";
     if (flags.hang) {
-      html += '<span class="req-flag-badge hanging" title="需求已挂起"><i class="bi bi-pause-circle"></i> 挂起</span>';
+      html += '<span class="req-flag-badge hanging" title="需求已挂起"><i class="fas fa-circle-pause"></i> 挂起</span>';
     }
     if (flags.changing) {
-      html += '<span class="req-flag-badge changing" title="正在计划变更评审中"><i class="bi bi-arrow-repeat"></i> 变更中</span>';
+      html += '<span class="req-flag-badge changing" title="正在计划变更评审中"><i class="fas fa-arrows-rotate"></i> 变更中</span>';
     }
     if (flags.returning) {
-      html += '<span class="req-flag-badge returning" title="需求退回审批中"><i class="bi bi-arrow-counterclockwise"></i> 退回中</span>';
+      html += '<span class="req-flag-badge returning" title="需求退回审批中"><i class="fas fa-rotate-left"></i> 退回中</span>';
     }
     return html;
   }
@@ -152,7 +152,7 @@
         '    <span class="dd-tag blue">' + esc(spotlight.badge) + '</span>',
         '    <div class="dd-spot-title">' + esc(spotlight.title) + '</div>',
         '    <div class="dd-spot-desc">' + esc(spotlight.desc) + '</div>',
-        '    <div class="req-status-paused-banner"><i class="bi bi-exclamation-triangle"></i> <span>' + esc(noticeText) + '</span></div>',
+        '    <div class="req-status-paused-banner"><i class="fas fa-triangle-exclamation"></i> <span>' + esc(noticeText) + '</span></div>',
         '  </div>',
         '</div>'
       ].join("");

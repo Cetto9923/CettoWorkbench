@@ -63,7 +63,7 @@ function harness(search, scopes) {
     }
     return { ok: true, status: 200, json: async () => payload };
   };
-  const window = { location, history };
+  const window = { location, history, escapeHtml: value => String(value == null ? "" : value).replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char])) };
   vm.runInNewContext(source, { window, document, location, history, fetch, URL, URLSearchParams, encodeURIComponent, Number, String, Array });
   return { nodes, requests, location };
 }

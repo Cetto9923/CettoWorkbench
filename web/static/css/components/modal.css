@@ -1,3 +1,8 @@
+/*
+ * 文件: web/static/css/components/modal.css
+ * 模块: 弹窗
+ * 职责: 公共弹窗布局；显示状态统一由 ui.js 管理。
+ */
 .modal-backdrop {
   display: none;
   position: fixed;
@@ -8,7 +13,7 @@
   justify-content: center;
 }
 
-.modal-backdrop.open {
+.modal-backdrop.show {
   display: flex;
 }
 

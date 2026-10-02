@@ -17,13 +17,7 @@ function todayLocal() {
   return `${y}-${m}-${day}`;
 }
 
-function escapeHtml(text) {
-  return String(text ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
+
 
 /** 若字符串本身是 JSON，则解析一层；否则原样返回。 */
 function tryParseJSONString(text) {
@@ -112,7 +106,7 @@ function renderPager(total, page, pageSize) {
 function renderEmpty(message) {
   const tbody = document.getElementById("apilog-tbody");
   if (!tbody) return;
-  tbody.innerHTML = `<tr><td colspan="7" class="apilog-empty">${escapeHtml(message)}</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="7" class="apilog-empty">${window.escapeHtml(message)}</td></tr>`;
 }
 
 function payloadCell(idx, kind, text) {
@@ -182,11 +176,11 @@ function renderRows(entries) {
     const statusText = e.status ? String(e.status) : (ok ? "OK" : "FAIL");
     const url = e.url || e.path || "-";
     return `<tr>
-      <td class="apilog-elapsed${slowClass}">${escapeHtml(e.elapsed)}</td>
-      <td>${escapeHtml(e.time)}</td>
-      <td class="apilog-method">${escapeHtml(e.method)}</td>
-      <td class="apilog-url" title="${escapeHtml(url)}">${escapeHtml(url)}</td>
-      <td class="apilog-status ${statusClass}">${escapeHtml(statusText)}</td>
+      <td class="apilog-elapsed${slowClass}">${window.escapeHtml(e.elapsed)}</td>
+      <td>${window.escapeHtml(e.time)}</td>
+      <td class="apilog-method">${window.escapeHtml(e.method)}</td>
+      <td class="apilog-url" title="${window.escapeHtml(url)}">${window.escapeHtml(url)}</td>
+      <td class="apilog-status ${statusClass}">${window.escapeHtml(statusText)}</td>
       <td>${payloadCell(idx, "request", apilogPayloads[idx].request)}</td>
       <td>${payloadCell(idx, "response", apilogPayloads[idx].response)}</td>
     </tr>`;

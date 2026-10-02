@@ -105,9 +105,7 @@
     cloneTemplate: cloneTemplate,
     cloneTemplateElement: cloneTemplateElement,
 
-    escapeHtml: function (text) {
-      return $("<div>").text(text == null ? "" : String(text)).html();
-    },
+    escapeHtml: window.escapeHtml,
 
     formatStoryEstimate: function (value) {
       if (value === undefined || value === null || value === "") {

@@ -119,42 +119,6 @@
     return String(readMeta('wb-role') || '').toLowerCase();
   }
 
-  async function apiFetch(path, options) {
-    options = options || {};
-    var headers = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'X-Requested-With': 'XMLHttpRequest',
-      'X-CSRF-Token': (typeof window.getCsrfToken === 'function') ? window.getCsrfToken() : readMeta('csrf-token')
-    };
-    if (options.headers) {
-      Object.keys(options.headers).forEach(function (k) {
-        headers[k] = options.headers[k];
-      });
-    }
-    var fetchOpts = {
-      method: options.method || 'GET',
-      credentials: 'same-origin',
-      headers: headers
-    };
-    if (options.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
-      fetchOpts.body = JSON.stringify(options.body);
-    } else if (options.body != null) {
-      fetchOpts.body = options.body;
-    }
-
-    var fetchFn = window.appFetch || window.fetch;
-    var res = await fetchFn(path, fetchOpts);
-    if (res.status === 401) {
-      var target = encodeURIComponent(location.pathname + location.search);
-      location.href = '/login?redirect=' + target;
-      throw new Error('登录已过期，请重新登录');
-    }
-    var json = await res.json().catch(function () {
-      throw new Error('服务端响应格式异常');
-    });
-    return json;
-  }
 
   function genderOptions(selected) {
     return [
@@ -511,12 +475,7 @@
   }
 
   async function loadProfile() {
-    var json;
-    try {
-      json = await apiFetch('/api/profile');
-    } catch (e1) {
-      json = await apiFetch('/profile/data');
-    }
+    var json = await window.appJson('/api/profile');
     if (!json || !json.success || !json.data) {
       throw new Error((json && json.message) || '加载个人资料失败');
     }
@@ -609,26 +568,8 @@
     setBusy(btn, true, '保存资料', '保存中…');
 
     try {
-      var json;
-      try {
-        json = await apiFetch('/api/profile', { method: 'PUT', body: payload });
-      } catch (err) {
-        json = await apiFetch('/profile', { method: 'PUT', body: payload });
-      }
+      var json = await window.appJson('/api/profile', { method: 'PUT', body: payload });
 
-      if (json && Array.isArray(json.errors) && json.errors.length) {
-        var host = document.getElementById('profilePageBody') || document.getElementById('profileModalBody');
-        if (host && profileCache) {
-          renderBody(host, Object.assign({}, profileCache, {
-            email: payload.email,
-            gender: payload.gender,
-            preferredRoles: payload.preferredRoles,
-            mainTeamId: payload.mainTeamId
-          }), fieldErrorsHtml(json.errors));
-        }
-        showToast(json.errors[0].message || '请检查表单输入', 'danger');
-        return;
-      }
       if (!json || !json.success) {
         throw new Error((json && json.message) || '保存失败');
       }
@@ -652,7 +593,19 @@
         if (modal && modal.classList.contains('show')) window.closeProfileModal();
       }
     } catch (e) {
-      showToast((e && e.message) || '保存失败，请稍后重试', 'danger');
+      if (e.payload && Array.isArray(e.payload.errors) && e.payload.errors.length) {
+        var host = document.getElementById('profilePageBody') || document.getElementById('profileModalBody');
+        if (host && profileCache) {
+          renderBody(host, Object.assign({}, profileCache, {
+            email: payload.email,
+            gender: payload.gender,
+            preferredRoles: payload.preferredRoles,
+            mainTeamId: payload.mainTeamId
+          }), fieldErrorsHtml(e.payload.errors));
+        }
+        showToast(e.payload.errors[0].message || '请检查表单输入', 'danger');
+      }
+      else showToast((e && e.message) || '保存失败，请稍后重试', 'danger');
     } finally {
       setBusy(btn, false);
     }
@@ -693,17 +646,8 @@
         newPassword: newPwd,
         confirmPassword: confirm
       };
-      var json;
-      try {
-        json = await apiFetch('/api/profile/password', { method: 'PUT', body: payload });
-      } catch (err) {
-        json = await apiFetch('/profile/password', { method: 'PUT', body: payload });
-      }
+      var json = await window.appJson('/api/profile/password', { method: 'PUT', body: payload });
 
-      if (json && Array.isArray(json.errors) && json.errors.length) {
-        showToast(json.errors[0].message || '请检查密码格式', 'danger');
-        return;
-      }
       if (!json || !json.success) {
         showToast((json && json.message) || '密码更新失败', 'danger');
         return;

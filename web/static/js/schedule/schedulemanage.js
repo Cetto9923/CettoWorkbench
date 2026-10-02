@@ -127,7 +127,7 @@
   }
 
   function scheduleRequestFetch(url, options) {
-    var fetchFn = window.scheduleFetch || window.appFetch || fetch;
+    var fetchFn = window.appFetch;
     return fetchFn(url, options);
   }
 

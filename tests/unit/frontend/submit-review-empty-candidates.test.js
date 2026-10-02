@@ -68,7 +68,7 @@ function setupContext(candidatesData) {
 
   // Wait for promise tick
   setImmediate(() => {
-    assert.strictEqual(elements.ddReviewCandidatesEmpty.style.display, "block", "empty hint should be displayed");
+    assert.strictEqual(elements.ddReviewCandidatesEmpty.hidden, false, "empty hint should be displayed");
     assert.strictEqual(elements.ddConfirmSubmitReviewBtn.disabled, true, "submit button should be disabled when empty");
     assert.strictEqual(elements.ddReviewReviewerInput.disabled, true, "input should be disabled when empty");
 
@@ -77,7 +77,7 @@ function setupContext(candidatesData) {
     ctx2.window.DemandDetailReviewSubmitReview.open(101);
 
     setImmediate(() => {
-      assert.strictEqual(ctx2.elements.ddReviewCandidatesEmpty.style.display, "none", "empty hint should be hidden");
+      assert.strictEqual(ctx2.elements.ddReviewCandidatesEmpty.hidden, true, "empty hint should be hidden");
       assert.strictEqual(ctx2.elements.ddConfirmSubmitReviewBtn.disabled, false, "submit button should be enabled when users exist");
       assert.strictEqual(ctx2.elements.ddReviewReviewerInput.disabled, false, "input should be enabled when users exist");
       console.log("PASS: submit-review-empty-candidates (empty hint and button disable)");

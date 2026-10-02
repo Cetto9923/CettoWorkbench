@@ -16,7 +16,6 @@
   <title>{{ .Title }} - 研发工作台</title>
   <script src="{{ asset "/static/js/layout/theme.js" }}"></script>
   <link rel="stylesheet" href="{{ asset "/static/vendor/fonts/jetbrains-mono/fonts.css" }}">
-  <link rel="stylesheet" href="{{ asset "/static/vendor/bootstrap-icons/bootstrap-icons.css" }}">
   <link rel="stylesheet" href="{{ asset "/static/vendor/fontawesome/css/all.min.css" }}">
   <link rel="stylesheet" href="{{ asset "/static/css/tokens.css" }}">
   <link rel="stylesheet" href="{{ asset "/static/css/components.css" }}">
@@ -85,14 +84,16 @@
         请确认该数据不再被业务流程依赖后再执行删除操作。
       </div>
       <div class="modal-footer">
-        <button class="btn btn-neutral" type="button" onclick="closeModal('modal-delete')">取消</button>
+        <button class="btn btn-neutral" type="button" onclick="closeShowModals('modal-delete')">取消</button>
         <button class="btn btn-danger" type="button" onclick="submitDelete()">确认删除</button>
       </div>
     </div>
   </div>
   <script src="{{ asset "/static/js/ui.js" }}"></script>
   <script src="{{ asset "/static/js/app.js" }}"></script>
-  <script src="{{ asset "/static/js/components/components.js" }}"></script>
+  <script src="{{ asset "/static/js/components/form.js" }}"></script>
+  <script src="{{ asset "/static/js/components/search.js" }}"></script>
+  <script src="{{ asset "/static/js/components/batchform.js" }}"></script>
   {{/* pinned-pages.js 须先于 sidebar.js：侧栏「常用」列表初始化依赖 window.WorkbenchPinned */}}
   <script src="{{ asset "/static/js/layout/pinned-pages.js" }}"></script>
   <script src="{{ asset "/static/js/layout/sidebar.js" }}"></script>

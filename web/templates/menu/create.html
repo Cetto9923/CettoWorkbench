@@ -41,7 +41,7 @@
           <div class="dropdown menu-parent-dropdown" data-parent-dropdown>
             <div class="menu-parent-trigger" data-parent-trigger onclick="return toggleDropdown(this);">
               <input type="text" class="input" value="请选择上级菜单" readonly data-parent-display>
-              <i class="bi bi-chevron-down"></i>
+              <i class="fas fa-chevron-down"></i>
             </div>
             <div class="dropdown-menu menu-parent-menu">
               <input type="text" class="input" placeholder="搜索菜单" data-parent-search>
@@ -90,8 +90,8 @@
           <label for="icon" class="form-label">图标</label>
           <div class="dropdown menu-icon-dropdown" data-icon-dropdown>
             <div class="menu-icon-field-row">
-              <span class="menu-icon-preview" data-icon-preview><i class="bi bi-app"></i></span>
-              <input id="icon" name="icon" type="text" maxlength="64" class="input menu-icon-field-input" value="{{ .Form.Icon }}" placeholder="bi-gear">
+              <span class="menu-icon-preview" data-icon-preview><i class="fas fa-window-maximize"></i></span>
+              <input id="icon" name="icon" type="text" maxlength="64" class="input menu-icon-field-input" value="{{ .Form.Icon }}" placeholder="fa-gear">
               <button type="button" class="btn btn-neutral btn-sm menu-icon-picker-open">选择图标</button>
             </div>
             <div class="dropdown-menu menu-icon-picker-menu">

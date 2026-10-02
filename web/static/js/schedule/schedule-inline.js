@@ -2,7 +2,7 @@
   "use strict";
 
   function readJSON(url) {
-    return window.scheduleFetch(url, { headers: { Accept: "application/json" } }).then(function (response) {
+    return window.appFetch(url, { headers: { Accept: "application/json" } }).then(function (response) {
       return response.json().then(function (data) {
         if (!response.ok || !data.success) {
           throw new Error(data.error || "加载失败，请重试");

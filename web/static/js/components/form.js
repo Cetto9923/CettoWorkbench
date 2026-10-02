@@ -310,8 +310,8 @@
           );
           var ul = parentLi.querySelector(":scope > ul");
           if (parentToggle && ul) {
-            parentToggle.classList.add("bi-chevron-down");
-            parentToggle.classList.remove("bi-chevron-right");
+            parentToggle.classList.add("fa-chevron-down");
+            parentToggle.classList.remove("fa-chevron-right");
             ul.style.display = "";
           }
           parentId = parentLi.getAttribute("data-parent-id") || "";
@@ -387,10 +387,10 @@
 
         var toggle = document.createElement("i");
         if (node.children.length > 0) {
-          toggle.className = "bi bi-chevron-down form-tree-select-toggle";
+          toggle.className = "fas fa-chevron-down form-tree-select-toggle";
         } else {
           toggle.className =
-            "bi bi-dot form-tree-select-toggle form-tree-select-toggle--placeholder";
+            "fas fa-circle form-tree-select-toggle form-tree-select-toggle--placeholder";
         }
         row.appendChild(toggle);
 
@@ -477,9 +477,9 @@
         if (!childUl) {
           return;
         }
-        var expanded = toggleIcon.classList.contains("bi-chevron-down");
-        toggleIcon.classList.toggle("bi-chevron-down", !expanded);
-        toggleIcon.classList.toggle("bi-chevron-right", expanded);
+        var expanded = toggleIcon.classList.contains("fa-chevron-down");
+        toggleIcon.classList.toggle("fa-chevron-down", !expanded);
+        toggleIcon.classList.toggle("fa-chevron-right", expanded);
         childUl.style.display = expanded ? "none" : "";
         return;
       }

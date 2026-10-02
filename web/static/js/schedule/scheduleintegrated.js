@@ -28,11 +28,7 @@
   }
 
   function toast(message, type) {
-    if (typeof window.showToast === "function") {
-      window.showToast(message, type || "success");
-      return;
-    }
-    window.alert(message);
+    window.showToast(message, type || "success");
   }
 
   function flushInlineEdits() {
@@ -333,7 +329,6 @@
   }
 
   function saveScheduling() {
-    // 先判来源：独立研发需求（story）走 story 路径，业需（demand）走 demand 路径
     var isStorySource = shared && shared.currentStoryId > 0;
     if (!isStorySource && (!shared || !shared.currentDemandId)) {
       toast("业需 ID 无效，请关闭弹窗后重试", "error");
@@ -351,14 +346,13 @@
 
     setSaveButtonLoading(true);
 
-    var fetchFn = window.scheduleFetch;
+    var fetchFn = window.appFetch;
     if (typeof fetchFn !== "function") {
       setSaveButtonLoading(false);
       toast("保存功能未加载，请刷新页面后重试", "error");
       return;
     }
 
-    // 按来源分流：story 路径打 /schedule/stories/:id/save-scheduling，demand 路径保持原样
     var saveUrl = isStorySource
       ? "/schedule/stories/" + shared.currentStoryId + "/save-scheduling"
       : "/schedule/demands/" + shared.currentDemandId + "/save-scheduling";
@@ -379,9 +373,13 @@
           return;
         }
         toast((result && result.message) || "保存失败", "error");
+        if (isStorySource) loadStorySchedulingDetail(shared.currentStoryId);
+        else loadSchedulingDetail(shared.currentDemandId);
       })
       .catch(function (err) {
         toast("保存失败: " + (err && err.message ? err.message : "请稍后重试"), "error");
+        if (isStorySource) loadStorySchedulingDetail(shared.currentStoryId);
+        else loadSchedulingDetail(shared.currentDemandId);
       })
       .finally(function () {
         setSaveButtonLoading(false);

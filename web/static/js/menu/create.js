@@ -20,54 +20,54 @@
 
   /** 常用 Bootstrap Icons 类名（12×4 栅格共 48 个） */
   const MENU_FORM_ICON_CLASSES = [
-    "bi-list",
-    "bi-list-ul",
-    "bi-list-nested",
-    "bi-grid",
-    "bi-grid-3x3",
-    "bi-kanban",
-    "bi-ui-checks-grid",
-    "bi-person",
-    "bi-people",
-    "bi-person-badge",
-    "bi-person-gear",
-    "bi-person-fill",
-    "bi-house",
-    "bi-house-door",
-    "bi-building",
-    "bi-globe",
-    "bi-gear",
-    "bi-gear-fill",
-    "bi-sliders",
-    "bi-sliders2",
-    "bi-tools",
-    "bi-wrench",
-    "bi-folder",
-    "bi-folder2-open",
-    "bi-file-earmark",
-    "bi-file-earmark-text",
-    "bi-journal-text",
-    "bi-box-arrow-in-right",
-    "bi-box-arrow-right",
-    "bi-box-seam",
-    "bi-shield-lock",
-    "bi-shield-check",
-    "bi-key",
-    "bi-lock",
-    "bi-unlock",
-    "bi-speedometer2",
-    "bi-graph-up",
-    "bi-bar-chart",
-    "bi-pie-chart",
-    "bi-search",
-    "bi-bell",
-    "bi-envelope",
-    "bi-chat-dots",
-    "bi-calendar-event",
-    "bi-clock-history",
-    "bi-pencil",
-    "bi-pencil-square",
-    "bi-trash",
+    "fa-bars",
+    "fa-list-ul",
+    "fa-list",
+    "fa-table-cells-large",
+    "fa-table-cells",
+    "fa-columns",
+    "fa-list-check",
+    "fa-user",
+    "fa-users",
+    "fa-id-badge",
+    "fa-user-gear",
+    "fa-user",
+    "fa-house",
+    "fa-house",
+    "fa-building",
+    "fa-globe",
+    "fa-gear",
+    "fa-gear",
+    "fa-sliders",
+    "fa-sliders",
+    "fa-screwdriver-wrench",
+    "fa-wrench",
+    "fa-folder",
+    "fa-folder-open",
+    "fa-file",
+    "fa-file-lines",
+    "fa-book",
+    "fa-right-to-bracket",
+    "fa-right-from-bracket",
+    "fa-box",
+    "fa-shield-alt",
+    "fa-shield",
+    "fa-key",
+    "fa-lock",
+    "fa-unlock",
+    "fa-gauge",
+    "fa-chart-line",
+    "fa-chart-column",
+    "fa-chart-pie",
+    "fa-magnifying-glass",
+    "fa-bell",
+    "fa-envelope",
+    "fa-comment-dots",
+    "fa-calendar-days",
+    "fa-clock-rotate-left",
+    "fa-pencil",
+    "fa-pen-to-square",
+    "fa-trash",
   ];
 
   const closeDropdowns = () => {
@@ -144,7 +144,7 @@
     if (!iconEl) {
       return;
     }
-    iconEl.className = iconClass ? `bi ${iconClass}` : "bi bi-app";
+    iconEl.className = iconClass ? `fas ${iconClass}` : "fas fa-window-maximize";
   };
 
   const parseParentOptions = () => {
@@ -208,9 +208,9 @@
 
         const toggle = document.createElement("i");
         if (node.children.length > 0) {
-          toggle.className = "bi bi-chevron-down menu-parent-toggle";
+          toggle.className = "fas fa-chevron-down menu-parent-toggle";
         } else {
-          toggle.className = "bi bi-dot menu-parent-toggle placeholder";
+          toggle.className = "fas fa-circle menu-parent-toggle placeholder";
         }
         row.appendChild(toggle);
 
@@ -274,8 +274,8 @@
         const toggle = parent.querySelector(":scope > .menu-parent-row .menu-parent-toggle");
         const childUL = parent.querySelector(":scope > ul");
         if (toggle && childUL) {
-          toggle.classList.add("bi-chevron-down");
-          toggle.classList.remove("bi-chevron-right");
+          toggle.classList.add("fa-chevron-down");
+          toggle.classList.remove("fa-chevron-right");
           childUL.style.display = "";
         }
         parentId = String(parent.dataset.parentId || "");
@@ -300,7 +300,7 @@
       btn.className = "menu-icon-picker-cell";
       btn.dataset.iconClass = cls;
       btn.title = cls;
-      btn.innerHTML = `<i class="bi ${cls}"></i>`;
+      btn.innerHTML = `<i class="fas ${cls}"></i>`;
       iconGrid.appendChild(btn);
     });
   };
@@ -368,9 +368,9 @@
         if (!childUL) {
           return;
         }
-        const expanded = toggle.classList.contains("bi-chevron-down");
-        toggle.classList.toggle("bi-chevron-down", !expanded);
-        toggle.classList.toggle("bi-chevron-right", expanded);
+        const expanded = toggle.classList.contains("fa-chevron-down");
+        toggle.classList.toggle("fa-chevron-down", !expanded);
+        toggle.classList.toggle("fa-chevron-right", expanded);
         childUL.style.display = expanded ? "none" : "";
         return;
       }

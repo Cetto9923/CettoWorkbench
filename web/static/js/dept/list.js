@@ -61,8 +61,8 @@
 
   const setIcon = (toggleEl, expanded) => {
     if (toggleEl) {
-      toggleEl.classList.toggle("bi-chevron-down", expanded);
-      toggleEl.classList.toggle("bi-chevron-right", !expanded);
+      toggleEl.classList.toggle("fa-chevron-down", expanded);
+      toggleEl.classList.toggle("fa-chevron-right", !expanded);
     }
   };
 
@@ -132,8 +132,8 @@
     if (!toggle) {
       return;
     }
-    toggle.classList.remove("bi-dot", "placeholder");
-    toggle.classList.add("bi-chevron-down");
+    toggle.classList.remove("fa-circle", "placeholder");
+    toggle.classList.add("fa-chevron-down");
     toggle.style.pointerEvents = "";
   };
 
@@ -153,8 +153,8 @@
       const toggleEl = node.querySelector(":scope > .tree-node .tree-node-toggle");
       const childCount = getChildData(currentID).length;
       if (toggleEl && childCount > 0) {
-        toggleEl.classList.remove("bi-dot", "placeholder", "bi-chevron-right");
-        toggleEl.classList.add("bi-chevron-down");
+        toggleEl.classList.remove("fa-circle", "placeholder", "fa-chevron-right");
+        toggleEl.classList.add("fa-chevron-down");
         toggleEl.style.pointerEvents = "";
       }
       currentID = (node.getAttribute("data-parent-id") || "").trim();
@@ -178,7 +178,7 @@
 
     li.innerHTML = `
       <a href="#" class="tree-node" data-id="${li.dataset.id}" style="--depth:${Math.max(level - 1, 0)};">
-        <i class="bi bi-dot tree-node-toggle placeholder"></i>
+        <i class="fas fa-circle tree-node-toggle placeholder"></i>
         <span class="tree-node-name"></span>
       </a>`;
     const nameEl = li.querySelector(".tree-node-name");
@@ -219,7 +219,7 @@
     const editUrl = dept.editUrl || `/admin/depts/${dept.id}/edit`;
     const deleteUrl = `/admin/depts/${dept.id}`;
     const safeName = String(dept.name || "").replace(/'/g, "\\'");
-    return `<div class="action-group"><a href="${editUrl}" class="btn-icon btn-icon-edit" title="编辑"><i class="bi bi-pencil"></i></a><button type="button" class="btn-icon btn-icon-danger" data-url="${deleteUrl}" data-id="${dept.id}" onclick="return confirmDelete(this, '${safeName}', '${deleteUrl}')" title="删除"><i class="bi bi-trash"></i></button></div>`;
+    return `<div class="action-group"><a href="${editUrl}" class="btn-icon btn-icon-edit" title="编辑"><i class="fas fa-pencil"></i></a><button type="button" class="btn-icon btn-icon-danger" data-url="${deleteUrl}" data-id="${dept.id}" onclick="return confirmDelete(this, '${safeName}', '${deleteUrl}')" title="删除"><i class="fas fa-trash"></i></button></div>`;
   };
 
   const renderChildrenTable = (id) => {
@@ -279,7 +279,7 @@
     }
     const quickAddRow = document.createElement("tr");
     quickAddRow.className = "quick-add-trigger-row";
-    quickAddRow.innerHTML = '<td colspan="7" class="text-center"><button type="button" class="btn btn-neutral btn-sm quick-add-trigger" title="快速新增新部门"><i class="bi bi-plus-circle"></i> 快速新增新部门</button></td>';
+    quickAddRow.innerHTML = '<td colspan="7" class="text-center"><button type="button" class="btn btn-neutral btn-sm quick-add-trigger" title="快速新增新部门"><i class="fas fa-circle-plus"></i> 快速新增新部门</button></td>';
     childRows.appendChild(quickAddRow);
     emptyTip.style.display = "none";
     tableWrap.style.display = "";
@@ -348,7 +348,7 @@
       if (!node) {
         return;
       }
-      const expanded = toggle.classList.contains("bi-chevron-down");
+      const expanded = toggle.classList.contains("fa-chevron-down");
       if (expanded) {
         setIcon(toggle, false);
         collapseDescendants(node.dataset.id, true);

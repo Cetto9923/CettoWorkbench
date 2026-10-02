@@ -28,12 +28,6 @@
     return num <= 0 ? "3" : String(num);
   }
 
-  function escapeHtml(text) {
-    if (shared && shared.escapeHtml) {
-      return shared.escapeHtml(text);
-    }
-    return $("<div>").text(text == null ? "" : String(text)).html();
-  }
 
   function toast(message, type) {
     if (typeof window.showToast === "function") {
@@ -43,62 +37,7 @@
     window.alert(message);
   }
 
-  function scheduleGetJSON(url) {
-    if (window.scheduleFetch) {
-      return window
-        .scheduleFetch(url, {
-          method: "GET",
-          headers: { Accept: "application/json" },
-        })
-        .then(function (resp) {
-          if (!resp.ok) {
-            return Promise.reject(new Error("request failed"));
-          }
-          return resp.json();
-        });
-    }
-    return $.ajax({
-      url: url,
-      method: "GET",
-      dataType: "json",
-      headers: {
-        Accept: "application/json",
-        "X-Requested-With": "XMLHttpRequest",
-      },
-    });
-  }
 
-  function schedulePostJSON(url, body) {
-    if (window.scheduleFetch) {
-      return window
-        .scheduleFetch(url, {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(body || {}),
-        })
-        .then(function (resp) {
-          return resp.json().then(function (data) {
-            return { ok: resp.ok, status: resp.status, data: data };
-          });
-        });
-    }
-    return $.ajax({
-      url: url,
-      method: "POST",
-      contentType: "application/json",
-      dataType: "json",
-      data: JSON.stringify(body || {}),
-      headers: {
-        Accept: "application/json",
-        "X-Requested-With": "XMLHttpRequest",
-      },
-    }).then(function (data) {
-      return { ok: true, status: 200, data: data };
-    });
-  }
 
   function cloneRow(templateId) {
     if (shared && shared.cloneTemplateElement) {
@@ -212,7 +151,7 @@
       return $.Deferred().resolve([]).promise();
     }
     fillRowExecutionSelect($row, [], 0, true);
-    return scheduleGetJSON("/schedule/projects/" + pid + "/executions")
+    return window.appJson("/schedule/projects/" + pid + "/executions")
       .then(function (resp) {
         var executions = (resp && resp.executions) || [];
         fillRowExecutionSelect($row, executions, selectedId, false);
@@ -256,7 +195,7 @@
     if (/<[a-z][\s\S]*>/i.test(raw)) {
       return sanitizeRichHtml(raw);
     }
-    return escapeHtml(raw).replace(/\n/g, "<br>");
+    return window.escapeHtml(raw).replace(/\n/g, "<br>");
   }
 
   function renderSpec(story) {
@@ -270,7 +209,7 @@
     if (story.attachments && story.attachments.length) {
       html += '<div class="task-modal-spec-block"><div class="task-modal-spec-label">附件</div><ul class="task-modal-attachments">';
       story.attachments.forEach(function (file) {
-        html += "<li>" + escapeHtml(file.title || "附件") + "</li>";
+        html += "<li>" + window.escapeHtml(file.title || "附件") + "</li>";
       });
       html += "</ul></div>";
     }
@@ -517,7 +456,7 @@
   }
 
   function loadTaskModalData(storyId) {
-    return scheduleGetJSON("/schedule/stories/" + storyId + "/tasks").then(function (resp) {
+    return window.appJson("/schedule/stories/" + storyId + "/tasks").then(function (resp) {
       if (!resp || !resp.success) {
         return Promise.reject(new Error((resp && resp.error) || "加载失败"));
       }
@@ -704,11 +643,9 @@
 
     var $btn = $("#taskModalSaveBtn");
     $btn.prop("disabled", true);
-    schedulePostJSON("/schedule/stories/" + currentStoryId + "/save-tasks", {
-      tasks: tasks,
-    })
+    window.appJson("/schedule/stories/" + currentStoryId + "/save-tasks", { method: "POST", body: { tasks: tasks } })
       .then(function (result) {
-        var data = result.data || result;
+        var data = result;
         if (!data.success) {
           toast(data.message || data.error || "保存失败", "error");
           return;

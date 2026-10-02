@@ -1,17 +1,9 @@
 /*
- * workbench 全项目唯一前端脚本。
- * 原则：能用表单 PRG 就不用 JS。
+ * 文件: web/static/js/app.js
+ * 职责: 统一 Ajax 请求、表单提交与列表操作。
  */
 (function () {
   "use strict";
-
-  function getCsrfToken() {
-    var el = document.querySelector('meta[name="csrf-token"]');
-    if (!el) {
-      return "";
-    }
-    return (el.getAttribute("content") || "").trim();
-  }
 
   // appFetch 一律带 X-Requested-With，后端未登录时返回 401 JSON 而非 303；
   // 此处统一跳登录页。跳转后返回永不 settle 的 Promise，避免各模块 catch 误弹失败 toast。
@@ -27,7 +19,7 @@
   function appFetch(input, init) {
     var options = init || {};
     var headers = new Headers(options.headers || {});
-    var csrf = getCsrfToken();
+    var csrf = window.getCsrfToken();
     if (csrf) {
       headers.set("X-CSRF-Token", csrf);
     }
@@ -313,7 +305,7 @@
       selected.forEach(function (id) {
         payload.append("ids", id);
       });
-      payload.append("csrf_token", getCsrfToken());
+      payload.append("csrf_token", window.getCsrfToken());
       appFetch(batchBtn.getAttribute("data-batch-url"), {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
@@ -331,14 +323,6 @@
           }
         });
     });
-  }
-
-  function openModal(id) {
-    var modal = document.getElementById(id);
-    if (!modal) {
-      return;
-    }
-    modal.classList.add("open");
   }
 
   // appJson JSON 请求便捷入口：统一 Accept/JSON 序列化、登录失效跳转与错误信息提取；
@@ -359,7 +343,7 @@
           throw new Error("数据格式解析失败");
         }
         if (!response.ok) {
-          var error = new Error((payload && (payload.error || payload.message)) || "请求失败 (" + response.status + ")");
+          var error = new Error((payload && (payload.error || payload.message || (Array.isArray(payload.errors) && payload.errors[0] && payload.errors[0].message))) || "请求失败 (" + response.status + ")");
           error.status = response.status;
           error.payload = payload;
           throw error;
@@ -415,7 +399,6 @@
   window.formatDateTime = formatDateTime;
   window.appFetch = appFetch;
   window.appJson = appJson;
-  window.openModal = openModal;
   bindFormLoading();
   bindConfirmAction();
   bindPagerPageSize();

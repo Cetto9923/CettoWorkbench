@@ -102,7 +102,7 @@
     );
 
     var cardCls = "dd-card phase2-collapse-card" + (hasData ? "" : " is-collapsed");
-    var toggleBtnText = hasData ? '收起明细 <i class="bi bi-chevron-up"></i>' : '展开查看 <i class="bi bi-chevron-down"></i>';
+    var toggleBtnText = hasData ? '收起明细 <i class="fas fa-chevron-up"></i>' : '展开查看 <i class="fas fa-chevron-down"></i>';
 
     var html = [
       '<div class="' + cardCls + '" id="cardPlanActual"><div class="dd-card-body">',
@@ -159,10 +159,10 @@
     if (!val && !raw) return '<span class="req-checklist-val normal">—</span>';
     var text = String(val || raw || "—").trim();
     if (text === "是" || text === "1" || /是\(1\)/.test(text)) {
-      return '<span class="req-checklist-val yes"><i class="bi bi-check-circle-fill"></i> ' + esc(text) + '</span>';
+      return '<span class="req-checklist-val yes"><i class="fas fa-circle-check"></i> ' + esc(text) + '</span>';
     }
     if (text === "否" || text === "0" || /否\(0\)/.test(text)) {
-      return '<span class="req-checklist-val no"><i class="bi bi-dash-circle"></i> ' + esc(text) + '</span>';
+      return '<span class="req-checklist-val no"><i class="fas fa-circle-minus"></i> ' + esc(text) + '</span>';
     }
     return '<span class="req-checklist-val normal">' + esc(text) + '</span>';
   }
@@ -182,7 +182,7 @@
 
     var hasData = Boolean(c1 || c2 || c3 || c4 || c5 || c6 || c7);
     var cardCls = "dd-card phase2-collapse-card" + (hasData ? "" : " is-collapsed");
-    var toggleBtnText = hasData ? '收起明细 <i class="bi bi-chevron-up"></i>' : '展开查看 <i class="bi bi-chevron-down"></i>';
+    var toggleBtnText = hasData ? '收起明细 <i class="fas fa-chevron-up"></i>' : '展开查看 <i class="fas fa-chevron-down"></i>';
 
     var html = [
       '<div class="' + cardCls + '" id="cardImportantChecks"><div class="dd-card-body">',
@@ -214,7 +214,7 @@
     if (!card) return;
     var isCollapsed = card.classList.toggle("is-collapsed");
     if (btnEl) {
-      btnEl.innerHTML = isCollapsed ? '展开查看 <i class="bi bi-chevron-down"></i>' : '收起明细 <i class="bi bi-chevron-up"></i>';
+      btnEl.innerHTML = isCollapsed ? '展开查看 <i class="fas fa-chevron-down"></i>' : '收起明细 <i class="fas fa-chevron-up"></i>';
     }
   }
 
@@ -247,7 +247,7 @@
       html.push(
         '<div class="dd-card"><div class="dd-card-body">',
         '  <div class="dd-cardhead">',
-        '    <div><h3><i class="bi bi-shield-check"></i> 主管部门审批表</h3><span class="dd-note">涉及产品主管部门会签记录</span></div>',
+        '    <div><h3><i class="fas fa-shield"></i> 主管部门审批表</h3><span class="dd-note">涉及产品主管部门会签记录</span></div>',
         '    <div class="dd-cardhead-actions">' + renderZentaoActionBtn(zentaoUrl) + '</div>',
         '  </div>',
         '  <table class="dd-table">',
@@ -277,7 +277,7 @@
       html.push(
         '<div class="dd-card"><div class="dd-card-body">',
         '  <div class="dd-cardhead">',
-        '    <div><h3><i class="bi bi-arrow-repeat"></i> 需求变更记录表</h3><span class="dd-note">内容与计划变更审计轨迹</span></div>',
+        '    <div><h3><i class="fas fa-arrows-rotate"></i> 需求变更记录表</h3><span class="dd-note">内容与计划变更审计轨迹</span></div>',
         '    <div class="dd-cardhead-actions">' + renderZentaoActionBtn(zentaoUrl) + '</div>',
         '  </div>',
         '  <table class="dd-table">',
@@ -308,7 +308,7 @@
       html.push(
         '<div class="dd-card"><div class="dd-card-body">',
         '  <div class="dd-cardhead">',
-        '    <div><h3><i class="bi bi-pause-circle"></i> 挂起日志表</h3><span class="dd-note">需求挂起与重启审计轨迹</span></div>',
+        '    <div><h3><i class="fas fa-circle-pause"></i> 挂起日志表</h3><span class="dd-note">需求挂起与重启审计轨迹</span></div>',
         '    <div class="dd-cardhead-actions">' + renderZentaoActionBtn(zentaoUrl) + '</div>',
         '  </div>',
         '  <table class="dd-table">',
@@ -338,7 +338,7 @@
       html.push(
         '<div class="dd-card"><div class="dd-card-body">',
         '  <div class="dd-cardhead">',
-        '    <div><h3><i class="bi bi-card-checklist"></i> 评审信息表</h3><span class="dd-note">业务评审留痕登记</span></div>',
+        '    <div><h3><i class="fas fa-list-check"></i> 评审信息表</h3><span class="dd-note">业务评审留痕登记</span></div>',
         '    <div class="dd-cardhead-actions">' + renderZentaoActionBtn(zentaoUrl) + '</div>',
         '  </div>',
         '  <table class="dd-table">',

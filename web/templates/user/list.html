@@ -13,7 +13,7 @@
 <div class="search-fields user-search-fields">
   <div class="field-group search-field">
     <label for="searchAccount">
-      <i class="bi bi-person-badge"></i>
+      <i class="fas fa-id-badge"></i>
       <span>账号</span>
     </label>
     <input
@@ -28,7 +28,7 @@
   </div>
   <div class="field-group search-field">
     <label for="searchEmail">
-      <i class="bi bi-envelope"></i>
+      <i class="fas fa-envelope"></i>
       <span>邮箱</span>
     </label>
     <input
@@ -43,7 +43,7 @@
   </div>
   <div class="field-group search-field">
     <label for="searchStatus">
-      <i class="bi bi-toggle-on"></i>
+      <i class="fas fa-toggle-on"></i>
       <span>状态</span>
     </label>
     <select id="searchStatus" name="status" class="select">
@@ -73,24 +73,24 @@
           aria-label="展开导入菜单"
           title="展开导入菜单"
         >
-          <i class="bi bi-upload"></i>
+          <i class="fas fa-upload"></i>
           <span>导入</span>
-          <i class="bi bi-chevron-down"></i>
+          <i class="fas fa-chevron-down"></i>
         </button>
         <div class="dropdown-menu table-import-menu">
           <a href="/admin/users/batch/create" class="dropdown-item">导入</a>
           <a href="javascript:void(0);" class="dropdown-item" aria-disabled="true">下载导入模板</a>
         </div>
       </div>
-      <button type="button" class="table-tool-btn" onclick="openModal('modal-export')">
-        <i class="bi bi-download"></i>
+      <button type="button" class="table-tool-btn" onclick="openShowModals('modal-export')">
+        <i class="fas fa-download"></i>
         <span>导出</span>
       </button>
     </div>
     <div class="dropdown table-create-split">
       <a href="/admin/users/new" class="table-create-btn table-create-main">
         <span class="table-create-main-label">
-          <i class="bi bi-plus-lg"></i>
+          <i class="fas fa-plus"></i>
           <span>新增用户</span>
         </span>
         <span
@@ -100,7 +100,7 @@
           tabindex="0"
           aria-label="展开新增菜单"
         >
-          <i class="bi bi-chevron-down"></i>
+          <i class="fas fa-chevron-down"></i>
         </span>
       </a>
       <div class="dropdown-menu table-create-menu">
@@ -165,7 +165,7 @@
                   aria-label="{{ if .IsActive }}禁用{{ else }}启用{{ end }}"
                 >
                   <i
-                    class="bi icon-toggle {{ if .IsActive }}bi-toggle-on{{ else }}bi-toggle-off{{ end }}"
+                    class="fas icon-toggle {{ if .IsActive }}fa-toggle-on{{ else }}fa-toggle-off{{ end }}"
                   ></i>
                 </button>
               </form>
@@ -174,7 +174,7 @@
                 class="action-btn zen-icon-action muted disabled"
                 title="超级管理员不可禁用"
               >
-                <i class="bi icon-toggle bi-toggle-on"></i>
+                <i class="fas icon-toggle fa-toggle-on"></i>
               </span>
               {{ end }}
 
@@ -184,7 +184,7 @@
                 title="编辑"
                 aria-label="编辑"
               >
-                <i class="bi bi-pencil-square"></i>
+                <i class="fas fa-pen-to-square"></i>
               </a>
 
               {{ if not .IsSuperAdmin }}
@@ -206,7 +206,7 @@
                   title="删除"
                   aria-label="删除"
                 >
-                  <i class="bi icon-delete bi-trash3"></i>
+                  <i class="fas icon-delete fa-trash"></i>
                 </button>
               </form>
               {{ else }}
@@ -214,7 +214,7 @@
                 class="action-btn zen-icon-action danger disabled"
                 title="超级管理员不可删除"
               >
-                <i class="bi icon-delete bi-trash3"></i>
+                <i class="fas icon-delete fa-trash"></i>
               </span>
               {{ end }}
             </div>

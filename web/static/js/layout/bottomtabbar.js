@@ -75,7 +75,7 @@
 
   function iconClassFromEl(el) {
     if (!el) return "";
-    var icon = el.querySelector("i.nav-icon, i.topnav-primary-icon, i.fas, i.bi, i[class*='fa-']");
+    var icon = el.querySelector("i.nav-icon, i.topnav-primary-icon, i.fas, i[class*='fa-']");
     if (!icon) return "";
     return (icon.className || "").trim();
   }

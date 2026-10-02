@@ -24,7 +24,7 @@
 
 <div class="table-panel user-form-panel">
   <div class="panel-header">
-    <div class="panel-title"><i class="bi bi-person-badge"></i>账号基本信息</div>
+    <div class="panel-title"><i class="fas fa-id-badge"></i>账号基本信息</div>
   </div>
   <form method="POST" action="/admin/users" novalidate class="user-form">
     <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}">
@@ -89,7 +89,7 @@
                 placeholder="请选择部门"
               />
               <button type="button" class="form-dropdown-chevron" aria-label="展开部门" onclick="return toggleDropdown(this);">
-                <i class="bi bi-chevron-down text-muted" aria-hidden="true"></i>
+                <i class="fas fa-chevron-down text-muted" aria-hidden="true"></i>
               </button>
               <button type="button" class="form-dropdown-clear" data-form-tree-clear aria-label="清除" hidden>×</button>
             </div>
@@ -104,7 +104,7 @@
       </div>
 
       <section class="user-form-section">
-        <h2 class="user-form-section-title"><i class="bi bi-key-fill"></i>安全凭证</h2>
+        <h2 class="user-form-section-title"><i class="fas fa-key"></i>安全凭证</h2>
         <div class="form-grid">
           <div class="form-group">
             <label for="password" class="form-label required">密码</label>
@@ -122,7 +122,7 @@
       </section>
 
       <section class="user-form-section">
-        <h2 class="user-form-section-title"><i class="bi bi-shield-lock"></i>角色分配</h2>
+        <h2 class="user-form-section-title"><i class="fas fa-shield-alt"></i>角色分配</h2>
         <div class="form-group">
           <label class="form-label required">选择角色</label>
           <div class="dropdown form-multiselect" data-role-dropdown>
@@ -141,7 +141,7 @@
                 />
               </div>
               <button type="button" class="form-dropdown-chevron" aria-label="展开角色" onclick="return toggleDropdown(this);">
-                <i class="bi bi-chevron-down" aria-hidden="true"></i>
+                <i class="fas fa-chevron-down" aria-hidden="true"></i>
               </button>
               <button type="button" class="form-dropdown-clear" data-form-multiselect-clear aria-label="清除角色" hidden>×</button>
             </div>
@@ -167,7 +167,7 @@
 
       <section class="user-form-section user-form-switch">
         <div class="user-form-switch-label">
-          <i class="bi bi-toggle-on"></i>
+          <i class="fas fa-toggle-on"></i>
           <span>账户状态</span>
         </div>
         <label for="isActive" class="switch">

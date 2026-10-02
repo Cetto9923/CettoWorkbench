@@ -350,7 +350,7 @@
       product_id: String(productId),
       end_date: endDate,
     });
-    var fetchFn = window.scheduleFetch || window.appFetch || fetch;
+    var fetchFn = window.appFetch;
     fetchFn(SCHEDULE_MATCHING_PLANS_URL + "?" + query.toString(), {
       method: "GET",
       headers: {

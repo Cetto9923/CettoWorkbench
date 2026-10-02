@@ -107,27 +107,6 @@
 
   var esc = window.escapeHtml;
 
-  async function apiFetch(path, opts) {
-    opts = opts || {};
-    const headers = Object.assign({ "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" }, opts.headers || {});
-    const csrf = typeof window.getCsrfToken === "function" ? window.getCsrfToken() : "";
-    if (csrf && !headers["X-CSRF-Token"]) headers["X-CSRF-Token"] = csrf;
-    const res = await fetch(path, {
-      method: opts.method || "GET",
-      credentials: "include",
-      headers: headers,
-      body: opts.body ? JSON.stringify(opts.body) : undefined,
-    });
-    const json = await res.json().catch(function () { return null; });
-    if (!res.ok) {
-      const msg = (json && (json.message || (json.errors && json.errors[0] && json.errors[0].message))) || ("HTTP " + res.status);
-      const err = new Error(msg);
-      err.status = res.status;
-      err.body = json;
-      throw err;
-    }
-    return json;
-  }
 
   function showPage(id) {
     document.querySelectorAll(".page").forEach(function (p) { p.classList.remove("active"); });
@@ -221,14 +200,14 @@
       if (f[k]) q.set(k, f[k]);
     });
     try {
-      const json = await apiFetch(API + "?" + q.toString());
+      const json = await window.appJson(API + "?" + q.toString());
       const data = (json && json.data) || {};
       if (isLeadView() && data.activeScope) state.scope = data.activeScope;
       syncScopeUrl();
       state.canEdit = !!data.canEdit && !isLeadView();
       state.canMapOrgTeam = !!data.canMapOrgTeam;
       if (state.canMapOrgTeam && state.orgTeamOptions === null) {
-        const optionsJSON = await apiFetch(API + "/organization-teams");
+        const optionsJSON = await window.appJson(API + "/organization-teams");
         state.orgTeamOptions = (optionsJSON && optionsJSON.data) || [];
       }
       state.total = data.total || 0;
@@ -321,7 +300,7 @@
 
   window.atMapOrgTeam = async function (teamgroupId, deptId) {
     try {
-      await apiFetch(API + "/" + encodeURIComponent(teamgroupId) + "/org-team", {
+      await window.appJson(API + "/" + encodeURIComponent(teamgroupId) + "/org-team", {
         method: "PUT", body: { deptId: Number(deptId) || 0 }
       });
       await loadList();
@@ -501,7 +480,7 @@
     state: state,
     esc: esc,
     val: val,
-    apiFetch: apiFetch,
+    apiFetch: window.appJson,
     isLeadView: isLeadView,
     person: person,
     loadList: loadList

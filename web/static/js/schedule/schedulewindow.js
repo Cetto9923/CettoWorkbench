@@ -35,10 +35,6 @@
     return !!(err && err.message === "session expired");
   }
 
-  function scheduleRequestFetch(url, options) {
-    var fetchFn = window.scheduleFetch || window.appFetch || fetch;
-    return fetchFn(url, options);
-  }
 
   function openScheduleEditVersionWindowModal(windowId) {
     var id = Number(windowId);
@@ -50,7 +46,7 @@
     }
     var headers = { Accept: "application/json" };
 
-    scheduleRequestFetch(scheduleWindowURL(id), { method: "GET", headers: headers })
+    window.appFetch(scheduleWindowURL(id), { method: "GET", headers: headers })
       .then(function (resp) {
         return resp
           .json()
@@ -323,7 +319,7 @@
   }
 
   function submitScheduleWindowRequest(method, url, payload) {
-    return scheduleRequestFetch(url, {
+    return window.appFetch(url, {
       method: method,
       headers: {
         "Content-Type": "application/json",
@@ -417,7 +413,7 @@
     if (!window.confirm("确定要删除窗口 " + label + " 吗？")) {
       return;
     }
-    scheduleRequestFetch(scheduleWindowURL(id), {
+    window.appFetch(scheduleWindowURL(id), {
       method: "DELETE",
       headers: { Accept: "application/json" },
     })

@@ -12,7 +12,7 @@
 <div class="search-fields user-search-fields">
   <div class="field-group search-field">
     <label for="menuSearch">
-      <i class="bi bi-search"></i>
+      <i class="fas fa-magnifying-glass"></i>
       <span>菜单名称</span>
     </label>
     <input type="text" id="menuSearch" name="q" class="search-input" placeholder="搜索菜单名称...">
@@ -81,11 +81,11 @@
           <td>
             <div class="tree-cell" style="--depth: {{ sub .Level 1 }}; padding-left: calc(var(--depth, 0) * 20px + 8px);">
               {{ if $hasChildren }}
-              <i class="bi bi-chevron-down tree-toggle" title="展开/折叠"></i>
+              <i class="fas fa-chevron-down tree-toggle" title="展开/折叠"></i>
               {{ else }}
-              <i class="bi bi-chevron-right tree-toggle tree-toggle-placeholder" title="无子节点"></i>
+              <i class="fas fa-chevron-right tree-toggle tree-toggle-placeholder" title="无子节点"></i>
               {{ end }}
-              {{ if .Icon }}<i class="bi {{ .Icon }} text-muted"></i>{{ end }}
+              {{ if .Icon }}<i class="fas {{ .Icon }} text-muted"></i>{{ end }}
               <span class="text-strong">{{ .Title }}</span>
             </div>
           </td>

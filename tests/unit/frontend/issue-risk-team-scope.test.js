@@ -25,7 +25,7 @@ assert(/params\.set\("scope", state\.scope\)/.test(js) && /params\.set\("scopeId
 assert(/if \(state\.scope\) \{ state\.relation = "allRelated"; \}/.test(js) && /relSel\.disabled = !!state\.scope/.test(js), 'team scope cannot be narrowed by personal-only relation controls');
 assert(/irTeamScopeNotice/.test(html) && /按创建人或处理人筛选/.test(js), 'team scope is visible to the user');
 assert(/teamScopeAccounts\(c\.Request\.Context\(\), middleware\.CurrentUser\(c\), req\.Scope, req\.ScopeID\)/.test(handler), 'API resolves authorized members server-side');
-assert(/issueRiskPageAccess\(\)/.test(routes) && /issueRiskItemsAccess\(\)/.test(routes), 'team-only users pass explicit server-side page and API access checks');
+assert(/issueRiskAccess\(\)/.test(routes), 'team-only users pass explicit server-side page and API access checks');
 assert(/SetTeamScopeAccounts\(agileTeamSvc\.DashboardAccounts\)/.test(bootstrap), 'production bootstrap wires the authorized department/team scope resolver');
 assert(/createdBy IN \? OR %s\.assignedTo IN/.test(repo) && /len\(req\.teamAccounts\) == 0/.test(repo), 'database filters on scoped members and fails closed on empty membership');
 

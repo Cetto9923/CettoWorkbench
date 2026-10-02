@@ -37,9 +37,9 @@
       >
         <a href="#" class="tree-node" data-id="{{ .ID }}" style="--depth: {{ sub .Level 1 }};">
           {{ if $hasChildren }}
-          <i class="bi bi-chevron-down tree-node-toggle"></i>
+          <i class="fas fa-chevron-down tree-node-toggle"></i>
           {{ else }}
-          <i class="bi bi-dot tree-node-toggle placeholder"></i>
+          <i class="fas fa-circle tree-node-toggle placeholder"></i>
           {{ end }}
           <span class="tree-node-name">{{ .Name }}</span>
         </a>

@@ -24,8 +24,8 @@
         textEl.textContent = collapsed ? "展开" : "收起";
       }
       if (iconEl) {
-        iconEl.classList.toggle("bi-chevron-down", collapsed);
-        iconEl.classList.toggle("bi-chevron-up", !collapsed);
+        iconEl.classList.toggle("fa-chevron-down", collapsed);
+        iconEl.classList.toggle("fa-chevron-up", !collapsed);
       }
     }
 

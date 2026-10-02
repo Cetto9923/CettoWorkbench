@@ -6,30 +6,6 @@
     return;
   }
 
-  function scheduleGetJSON(url) {
-    if (window.scheduleFetch) {
-      return window
-        .scheduleFetch(url, {
-          method: "GET",
-          headers: { Accept: "application/json" },
-        })
-        .then(function (resp) {
-          if (!resp.ok) {
-            return Promise.reject(new Error("request failed"));
-          }
-          return resp.json();
-        });
-    }
-    return $.ajax({
-      url: url,
-      method: "GET",
-      dataType: "json",
-      headers: {
-        Accept: "application/json",
-        "X-Requested-With": "XMLHttpRequest",
-      },
-    });
-  }
 
   function cacheExecutions(projectId, executions) {
     var key = String(projectId || "");
@@ -77,7 +53,7 @@
       done(shared.productProjectsMap[key]);
       return;
     }
-    scheduleGetJSON("/schedule/products/" + key + "/projects")
+    window.appJson("/schedule/products/" + key + "/projects")
       .then(function (resp) {
         var projects = resp && resp.success ? resp.projects || [] : [];
         shared.productProjectsMap[key] = projects;
@@ -344,7 +320,7 @@
     }
 
     fillExecutionSelect($executionSelect, [], "", true);
-    scheduleGetJSON("/schedule/projects/" + projectId + "/executions")
+    window.appJson("/schedule/projects/" + projectId + "/executions")
       .then(function (resp) {
         if (!resp || !resp.success) {
           fillExecutionSelect($executionSelect, [], "", false);

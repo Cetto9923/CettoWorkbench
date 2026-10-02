@@ -14,7 +14,7 @@
   <form method="{{ if .Method }}{{ .Method }}{{ else }}GET{{ end }}" action="{{ .Action }}" class="search-panel js-search-panel{{ if $collapsed }} collapsed{{ end }}">
     <div class="search-panel-header">
       <div class="search-panel-title-wrap">
-        <i class="bi bi-search"></i>
+        <i class="fas fa-magnifying-glass"></i>
         <span class="search-panel-title">{{ $title }}</span>
       </div>
       <button
@@ -26,18 +26,18 @@
         title="{{ if $collapsed }}展开检索条件{{ else }}收起检索条件{{ end }}"
       >
         <span class="search-panel-toggle-text">{{ if $collapsed }}展开{{ else }}收起{{ end }}</span>
-        <i class="bi {{ if $collapsed }}bi-chevron-down{{ else }}bi-chevron-up{{ end }} search-panel-toggle-icon"></i>
+        <i class="fas {{ if $collapsed }}fa-chevron-down{{ else }}fa-chevron-up{{ end }} search-panel-toggle-icon"></i>
       </button>
     </div>
     <div class="search-panel-body" id="{{ $panelID }}">
       {{ template "searchpanel_fields" .Data }}
       <div class="search-actions">
         <button type="submit" class="search-btn search-btn-primary">
-          <i class="bi bi-search"></i>
+          <i class="fas fa-magnifying-glass"></i>
           <span>搜索</span>
         </button>
         <a href="{{ .ResetURL }}" class="search-btn search-btn-secondary">
-          <i class="bi bi-arrow-clockwise"></i>
+          <i class="fas fa-rotate-right"></i>
           <span>重置</span>
         </a>
       </div>

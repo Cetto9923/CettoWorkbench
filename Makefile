@@ -5,9 +5,11 @@ DIST := dist/workbench
 
 .PHONY: build check lint lint-web quality
 
-check: ## 运行 Go 单元测试与静态检查
+check: ## 运行 Go、前端单元测试与静态检查
 	go test ./...
 	go vet ./...
+	python3 tests/unit/quality/zentao-writes.test.py
+	@status=0; for test in tests/unit/frontend/*.test.js; do node "$$test" || status=1; done; exit $$status
 
 lint: ## 检查相对质量门基线新增或改动的 Go 代码，并拦截禅道表直写
 	@if command -v golangci-lint >/dev/null 2>&1 && golangci-lint version | grep -q 'version: 2\.'; then \

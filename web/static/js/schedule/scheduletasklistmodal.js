@@ -9,9 +9,6 @@
     return isNaN(num) || num <= 0 ? 0 : num;
   }
 
-  function escapeHtml(text) {
-    return $("<div>").text(text == null ? "" : String(text)).html();
-  }
 
   function toast(message, type) {
     if (typeof window.showToast === "function") {
@@ -21,30 +18,6 @@
     window.alert(message);
   }
 
-  function scheduleGetJSON(url) {
-    if (window.scheduleFetch) {
-      return window
-        .scheduleFetch(url, {
-          method: "GET",
-          headers: { Accept: "application/json" },
-        })
-        .then(function (resp) {
-          if (!resp.ok) {
-            return Promise.reject(new Error("request failed"));
-          }
-          return resp.json();
-        });
-    }
-    return $.ajax({
-      url: url,
-      method: "GET",
-      dataType: "json",
-      headers: {
-        Accept: "application/json",
-        "X-Requested-With": "XMLHttpRequest",
-      },
-    });
-  }
 
   function formatHours(value) {
     var num = Number(value || 0);
@@ -83,18 +56,18 @@
       var progress = parsePositiveInt(task.progress);
       var rowHtml = [
         "<tr>",
-        "<td>", escapeHtml(task.id), "</td>",
-        "<td>", escapeHtml(task.name || "—"), "</td>",
-        "<td>", escapeHtml(task.typeLabel || task.type || "—"), "</td>",
-        "<td>", escapeHtml(task.priLabel || ""), "</td>",
-        "<td>", escapeHtml(task.statusLabel || task.status || "—"), "</td>",
-        "<td>", escapeHtml(task.assignedToName || "—"), "</td>",
-        "<td>", escapeHtml(task.finishedByName || "—"), "</td>",
-        "<td>", escapeHtml(task.deadline || "—"), "</td>",
-        "<td>", escapeHtml(task.finishedDate || "—"), "</td>",
-        "<td>", escapeHtml(formatHours(task.estimate)), "</td>",
-        "<td>", escapeHtml(formatHours(task.consumed)), "</td>",
-        "<td>", escapeHtml(formatHours(task.left)), "</td>",
+        "<td>", window.escapeHtml(task.id), "</td>",
+        "<td>", window.escapeHtml(task.name || "—"), "</td>",
+        "<td>", window.escapeHtml(task.typeLabel || task.type || "—"), "</td>",
+        "<td>", window.escapeHtml(task.priLabel || ""), "</td>",
+        "<td>", window.escapeHtml(task.statusLabel || task.status || "—"), "</td>",
+        "<td>", window.escapeHtml(task.assignedToName || "—"), "</td>",
+        "<td>", window.escapeHtml(task.finishedByName || "—"), "</td>",
+        "<td>", window.escapeHtml(task.deadline || "—"), "</td>",
+        "<td>", window.escapeHtml(task.finishedDate || "—"), "</td>",
+        "<td>", window.escapeHtml(formatHours(task.estimate)), "</td>",
+        "<td>", window.escapeHtml(formatHours(task.consumed)), "</td>",
+        "<td>", window.escapeHtml(formatHours(task.left)), "</td>",
         '<td><div class="task-list-modal-progress"><span class="task-list-modal-progress-bar" style="width:' + progress + '%;"></span><em>' + progress + "%</em></div></td>",
         "</tr>",
       ].join("");
@@ -115,7 +88,7 @@
   }
 
   function loadTaskListData(storyId) {
-    return scheduleGetJSON("/schedule/stories/" + storyId + "/tasks").then(function (resp) {
+    return window.appJson("/schedule/stories/" + storyId + "/tasks").then(function (resp) {
       if (!resp || !resp.success) {
         return Promise.reject(new Error((resp && resp.error) || "加载失败"));
       }

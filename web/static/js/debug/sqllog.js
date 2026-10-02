@@ -13,13 +13,7 @@ function todayLocal() {
   return `${y}-${m}-${day}`;
 }
 
-function escapeHtml(text) {
-  return String(text ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
+
 
 function shortFile(path) {
   const raw = String(path ?? "");
@@ -40,7 +34,7 @@ function renderSummary(total, shown, date) {
 function renderEmpty(message) {
   const tbody = document.getElementById("sqllog-tbody");
   if (!tbody) return;
-  tbody.innerHTML = `<tr><td colspan="5" class="sqllog-empty">${escapeHtml(message)}</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="5" class="sqllog-empty">${window.escapeHtml(message)}</td></tr>`;
 }
 
 function formatAPI(method, route) {
@@ -58,7 +52,7 @@ function fillRouteSelect(routes) {
   const prev = select.value;
   const list = Array.isArray(routes) ? routes : [];
   const options = [`<option value="">全部</option>`].concat(
-    list.map((r) => `<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`)
+    list.map((r) => `<option value="${window.escapeHtml(r)}">${window.escapeHtml(r)}</option>`)
   );
   select.innerHTML = options.join("");
   if (prev && list.includes(prev)) {
@@ -109,16 +103,16 @@ function renderRows(queries) {
     const slowClass = (q.elapsed_ms || 0) >= SLOW_MS ? " is-slow" : "";
     const api = formatAPI(q.method, q.route);
     const err = q.error
-      ? `<div class="sqllog-error-tag">${escapeHtml(q.error)}</div>`
+      ? `<div class="sqllog-error-tag">${window.escapeHtml(q.error)}</div>`
       : "";
     return `<tr>
-      <td class="sqllog-elapsed${slowClass}">${escapeHtml(q.elapsed)}</td>
-      <td>${escapeHtml(q.time)}</td>
-      <td class="sqllog-api" title="${escapeHtml(api)}">${escapeHtml(api)}</td>
-      <td class="sqllog-file" title="${escapeHtml(q.file)}">${escapeHtml(shortFile(q.file))}</td>
+      <td class="sqllog-elapsed${slowClass}">${window.escapeHtml(q.elapsed)}</td>
+      <td>${window.escapeHtml(q.time)}</td>
+      <td class="sqllog-api" title="${window.escapeHtml(api)}">${window.escapeHtml(api)}</td>
+      <td class="sqllog-file" title="${window.escapeHtml(q.file)}">${window.escapeHtml(shortFile(q.file))}</td>
       <td>
         <div class="sqllog-sql-wrap">
-          <div class="sqllog-sql">${escapeHtml(q.sql)}</div>
+          <div class="sqllog-sql">${window.escapeHtml(q.sql)}</div>
           <div class="sqllog-sql-actions">
             <button type="button" class="sqllog-sql-toggle">展开</button>
             <button type="button" class="sqllog-sql-copy">复制</button>
