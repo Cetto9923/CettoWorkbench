@@ -7,10 +7,11 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+
+	"workbench/internal/pkg/errorx"
 )
 
-// SetOrgTeamMapping 以追加快照方式维护敏捷团队到禅道组织团队的主挂靠。
-// 更新前锁定禅道敏捷团队行，避免并发请求留下多个有效映射；deptID 为 0 表示解除挂靠。
+// SetOrgTeamMapping 锁定敏捷小组行后维护组织挂靠；deptID 为 0 表示解除挂靠。
 func (r *Repo) SetOrgTeamMapping(ctx context.Context, teamgroupID, deptID uint, actor string) error {
 	actor = strings.TrimSpace(actor)
 	if teamgroupID == 0 || actor == "" {
@@ -22,7 +23,7 @@ func (r *Repo) SetOrgTeamMapping(ctx context.Context, teamgroupID, deptID uint, 
 			return err
 		}
 		if groupID == 0 {
-			return gorm.ErrRecordNotFound
+			return errorx.New("not_found", "敏捷小组不存在")
 		}
 		if deptID > 0 {
 			var leafID uint
@@ -54,7 +55,6 @@ VALUES (?, ?, 'active', ?, ?)`, teamgroupID, deptID, actor, actor).Error; err !=
 		if deptID > 0 {
 			summary = fmt.Sprintf("敏捷小组已挂靠组织部门 #%d", deptID)
 		}
-		return tx.Exec(`INSERT INTO zt_wb_agileteam_history (teamgroupId, eventType, summary, actor, createdDate) VALUES (?, ?, ?, ?, ?)`,
-			teamgroupID, EventOrgTeamMapping, summary, actor, time.Now()).Error
+		return tx.Exec(`INSERT INTO zt_wb_agileteam_history (teamgroupId, eventType, summary, actor, createdDate) VALUES (?, ?, ?, ?, ?)`, teamgroupID, EventOrgTeamMapping, summary, actor, time.Now()).Error
 	})
 }
