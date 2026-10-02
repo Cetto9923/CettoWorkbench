@@ -277,6 +277,26 @@ func TestHomeFocusToolbarUsesCurrentHandler(t *testing.T) {
 	}
 }
 
+// 关键词子句的 ? 与绑定的 pattern 必须一一对应：多一个占位会静默漏参（GORM 忽略多余实参），
+// 少一个则把 pattern 串到别的阶段。此处用「有/无关键词」的实参差锁定调用方写死的 18 个 pattern。
+func TestHomeFocusKeywordBindsOneArgPerPlaceholder(t *testing.T) {
+	db, _ := openSQLMock(t)
+	repo := NewRepo(db, nil)
+	build := func(req DemandsReq) []interface{} {
+		base, queryErr := repo.homeFocusQuery(context.Background(), "alice", req)
+		if queryErr != nil {
+			t.Fatal(queryErr)
+		}
+		var rows []struct{ ID int }
+		return db.Table("(?) AS focused", applyHomeFocusToolbarFilters(base, "alice", req)).
+			Session(&gorm.Session{DryRun: true}).Find(&rows).Statement.Vars
+	}
+	// 2 个 id/name 占位 + currentHandlerDemandKeywordWhere 的 16 个阶段占位。
+	if got := len(build(DemandsReq{Keyword: "alice"})) - len(build(DemandsReq{})); got != 18 {
+		t.Fatalf("keyword clause binds %d args, want 18", got)
+	}
+}
+
 func TestHomeFocusMyActionUsesStageRoleMatrix(t *testing.T) {
 	db, _ := openSQLMock(t)
 	repo := NewRepo(db, nil)

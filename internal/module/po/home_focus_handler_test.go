@@ -79,3 +79,28 @@ func verifyHandlerWhereArgs(t *testing.T, name string, args []interface{}, skipI
 		}
 	}
 }
+
+// 关键词版必须与 developingHandlerSQL 同口径：BRA 优先，BRA 空时由负责人承担且须提测日已到。
+// 否则按负责人姓名搜不到 BRA 空的提测单，而同一单在「待我处理」里是可见的——两处口径打架。
+func TestDevelopingKeywordWhereFollowsHandlerRule(t *testing.T) {
+	kw := currentHandlerDemandKeywordWhere()
+	for _, want := range []string{
+		"(status = 'developing' AND (LOWER(IFNULL(BRA, '')) LIKE ?",
+		"((BRA IS NULL OR BRA = '') AND LOWER(IFNULL(assignedTo, '')) LIKE ? AND " + dateSetBeforeTodaySQL("developFinish") + ")",
+	} {
+		if !strings.Contains(kw, want) {
+			t.Fatalf("developing keyword clause missing %q: %s", want, kw)
+		}
+	}
+	// 提测日沿用仓库既有零日期安全 helper，与办理人口径同一份子句。
+	if !strings.Contains(kw, dateSetBeforeTodaySQL("developFinish")) {
+		t.Fatalf("developing keyword clause must reuse dateSetBeforeTodaySQL: %s", kw)
+	}
+	if strings.Contains(kw, "!= '0000-00-00'") {
+		t.Fatalf("developing keyword clause must not compare zero-date literals: %s", kw)
+	}
+	// 16 = 15 原有阶段占位 + 提测兜底新增的 1 个 assignedTo 占位；改阶段时同步改这里。
+	if got := strings.Count(kw, "?"); got != 16 {
+		t.Fatalf("keyword where placeholders = %d, want 16", got)
+	}
+}

@@ -140,7 +140,7 @@ func applyHomeFocusToolbarFiltersWithClause(base *gorm.DB, account string, req D
 		pattern := "%" + kw + "%"
 		base = base.Where(
 			"id IN (SELECT id FROM zt_demand WHERE LOWER(CAST(id AS CHAR)) LIKE ? OR LOWER(name) LIKE ? OR ("+currentHandlerDemandKeywordWhere()+"))",
-			pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern,
+			pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern,
 		)
 	}
 	switch strings.ToLower(strings.TrimSpace(req.Priority)) {

@@ -100,7 +100,7 @@ func currentHandlerDemandKeywordWhere() string {
 				SELECT 1 FROM zt_demandclarify dc WHERE dc.demand = zt_demand.id AND LOWER(IFNULL(dc.PM, '')) LIKE ?
 			)
 		))
-		OR (status = 'developing' AND LOWER(IFNULL(BRA, '')) LIKE ?)
+		OR (status = 'developing' AND (LOWER(IFNULL(BRA, '')) LIKE ? OR ((BRA IS NULL OR BRA = '') AND LOWER(IFNULL(assignedTo, '')) LIKE ? AND ` + dateSetBeforeTodaySQL("developFinish") + `)))
 		OR (status = 'testing' AND (LOWER(IFNULL(QD, '')) LIKE ? OR LOWER(IFNULL(accepter, '')) LIKE ?))
 		OR (status = 'waitacceptance' AND LOWER(IFNULL(accepter, '')) LIKE ?)
 		OR (status IN ('acceptanced', 'waitdeliver') AND LOWER(IFNULL(BRA, '')) LIKE ?)
