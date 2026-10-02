@@ -51,17 +51,7 @@ func TestUpdateTeamgroupBasicAtomicCommitsWithHistory(t *testing.T) {
 	}
 
 	mock.ExpectBegin()
-	// 1) 无锁读 id 列表
-	mock.ExpectQuery(readTreeIDsRe.String()).
-		WithArgs("0").
-		WillReturnRows(sqlmock.NewRows([]string{"id"}).
-			AddRow(uint(3)))
-	// 2) IN FOR UPDATE 锁全行
-	mock.ExpectQuery(lockTreeRowsRe.String()).
-		WithArgs(uint(3), "0").
-		WillReturnRows(sqlmock.NewRows([]string{"id", "parent", "grade", "path"}).
-			AddRow(uint(3), uint(0), 1, ",3,"))
-	// 3) basic UPDATE
+	expectBasicTargetLock(mock, 3, 0)
 	mock.ExpectExec(updateBasicRe.String()).
 		WithArgs("宣言", "logo.png", "团队三", "口号", uint(3), "0").
 		WillReturnResult(sqlmock.NewResult(0, 1))
@@ -92,13 +82,7 @@ func TestUpdateTeamgroupBasicAtomicRollsBackWhenHistoryFails(t *testing.T) {
 	writeErr := errors.New("history write failed")
 
 	mock.ExpectBegin()
-	mock.ExpectQuery(readTreeIDsRe.String()).
-		WithArgs("0").
-		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(3)))
-	mock.ExpectQuery(lockTreeRowsRe.String()).
-		WithArgs(uint(3), "0").
-		WillReturnRows(sqlmock.NewRows([]string{"id", "parent", "grade", "path"}).
-			AddRow(uint(3), uint(0), 1, ",3,"))
+	expectBasicTargetLock(mock, 3, 0)
 	mock.ExpectExec(updateBasicRe.String()).
 		WithArgs("宣言", "logo.png", "团队三", "口号", uint(3), "0").
 		WillReturnResult(sqlmock.NewResult(0, 1))
@@ -130,6 +114,7 @@ func TestUpdateTeamgroupBasicAtomic_TopologyChange_TwoLevelTree(t *testing.T) {
 	newParent := uint(2)
 
 	mock.ExpectBegin()
+	expectTeamgroupObserved(mock, 3, 0)
 	// 1) 无锁读 id 列表
 	mock.ExpectQuery(readTreeIDsRe.String()).
 		WithArgs("0").
@@ -186,6 +171,7 @@ func TestUpdateTeamgroupBasicAtomic_TopologyChange_SelfParent(t *testing.T) {
 	newParent := uint(3)
 
 	mock.ExpectBegin()
+	expectTeamgroupObserved(mock, 3, 0)
 	mock.ExpectQuery(readTreeIDsRe.String()).
 		WithArgs("0").
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(3)))
@@ -219,6 +205,7 @@ func TestUpdateTeamgroupBasicAtomic_TopologyChange_TargetMissing(t *testing.T) {
 	newParent := uint(99)
 
 	mock.ExpectBegin()
+	expectTeamgroupObserved(mock, 3, 0)
 	mock.ExpectQuery(readTreeIDsRe.String()).
 		WithArgs("0").
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uint(3)))
@@ -252,6 +239,7 @@ func TestUpdateTeamgroupBasicAtomic_TopologyChange_CycleDetected(t *testing.T) {
 	newParent := uint(4)
 
 	mock.ExpectBegin()
+	expectTeamgroupObserved(mock, 3, 0)
 	mock.ExpectQuery(readTreeIDsRe.String()).
 		WithArgs("0").
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).
@@ -288,6 +276,7 @@ func TestUpdateTeamgroupBasicAtomic_TopologyChange_CorruptTree(t *testing.T) {
 	newParent := uint(5)
 
 	mock.ExpectBegin()
+	expectTeamgroupObserved(mock, 3, 0)
 	mock.ExpectQuery(readTreeIDsRe.String()).
 		WithArgs("0").
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).
@@ -312,5 +301,31 @@ func TestUpdateTeamgroupBasicAtomic_TopologyChange_CorruptTree(t *testing.T) {
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("sql expectations: %v", err)
+	}
+}
+
+func expectTeamgroupObserved(mock sqlmock.Sqlmock, id, parent uint) {
+	mock.ExpectQuery("SELECT .* FROM `zt_teamgroup` WHERE id = \\? AND deleted = \\? LIMIT \\?").WithArgs(id, "0", 1).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "parent", "grade", "path"}).AddRow(id, parent, 1, ","+uintToStr(id)+","))
+}
+
+func expectBasicTargetLock(mock sqlmock.Sqlmock, id, parent uint) {
+	expectTeamgroupObserved(mock, id, parent)
+	mock.ExpectQuery("SELECT .* FROM `zt_teamgroup` WHERE id = \\? AND deleted = \\? LIMIT \\? FOR UPDATE").WithArgs(id, "0", 1).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "parent", "grade", "path"}).AddRow(id, parent, 1, ","+uintToStr(id)+","))
+}
+
+func TestBasicNoChangeSucceedsWithoutHistory(t *testing.T) {
+	svc, mock := newTestService(t)
+	mock.ExpectBegin()
+	expectBasicTargetLock(mock, 3, 0)
+	mock.ExpectExec(updateBasicRe.String()).WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectCommit()
+	err := svc.repo.UpdateTeamgroupBasicAtomic(t.Context(), 3, "unchanged", "", "", "", nil, &History{TeamgroupID: 3})
+	if err != nil {
+		t.Fatalf("unchanged existing team must succeed: %v", err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatal(err)
 	}
 }

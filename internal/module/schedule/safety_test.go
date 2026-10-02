@@ -77,3 +77,23 @@ func TestTaskEditDoesNotSendLeftOrConsumed(t *testing.T) {
 		t.Fatalf("task edit = %v, native calls = %d", err, calls)
 	}
 }
+
+func TestWindowStatsUsesThreeQueriesForMultipleWindows(t *testing.T) {
+	db, mock := newAuthzMockDB(t)
+	mock.ExpectQuery(`(?s)SELECT window_id, item_kind, item_id`).WithArgs(1, 2, 1, 2, 1, 2).
+		WillReturnRows(sqlmock.NewRows([]string{"window_id", "item_kind", "item_id"}).AddRow(1, "demand", 9).AddRow(2, "story", 10))
+	mock.ExpectQuery(`(?s)SELECT linked.windowID, COALESCE`).WithArgs(1, 2).
+		WillReturnRows(sqlmock.NewRows([]string{"windowID", "total"}).AddRow(1, 12.5).AddRow(2, 7))
+	mock.ExpectQuery(`(?s)SELECT linked.windowID,.*SUM`).WithArgs(1, 2).
+		WillReturnRows(sqlmock.NewRows([]string{"windowID", "devCount", "testCount", "deliverCount"}).AddRow(1, 2, 3, 4).AddRow(2, 0, 1, 0))
+	stats, err := NewRepo(db).windowsStats(t.Context(), []uint64{1, 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stats[1].DemandCount != 1 || stats[1].Consumed != 12.5 || stats[1].DevCount != 2 || stats[1].TestCount != 3 || stats[1].DeliverCount != 4 || stats[2].Consumed != 7 {
+		t.Fatalf("batch metrics lost columns: %+v", stats)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatal(err)
+	}
+}

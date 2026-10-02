@@ -51,15 +51,7 @@ func uintToStr(v uint) string {
 // 之后才是 basic UPDATE 与 history INSERT。
 func expectBasicAtomicWithSummary(mock sqlmock.Sqlmock, id uint, name, summaryPattern, eventType string) {
 	mock.ExpectBegin()
-	// 1) 无锁读 active id 列表
-	mock.ExpectQuery("(?s)SELECT id FROM `zt_teamgroup` WHERE deleted = \\? ORDER BY id ASC").
-		WithArgs("0").
-		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(id))
-	// 2) IN FOR UPDATE 锁全行
-	mock.ExpectQuery("(?s)SELECT id, parent, grade.*FROM `zt_teamgroup` WHERE id IN \\(\\?.*\\) AND deleted = \\? ORDER BY id ASC FOR UPDATE").
-		WithArgs(sqlmock.AnyArg(), "0").
-		WillReturnRows(sqlmock.NewRows([]string{"id", "parent", "grade", "path"}).
-			AddRow(id, uint(0), 1, ","+uintToStr(id)+","))
+	expectBasicTargetLock(mock, id, 0)
 	// 3) basic UPDATE
 	mock.ExpectExec("(?s)UPDATE `zt_teamgroup` SET `declaration`.*`name`.*`slogan`.*WHERE id = \\? AND deleted = \\?").
 		WithArgs("信条", "/static/logo.png", name, "稳", id, "0").

@@ -117,28 +117,7 @@ func (s *Service) Update(ctx context.Context, actor *model.User, req UpdateReq) 
 	}
 	preferred := filterPreferred(req.PreferredRoles, allowed)
 
-	// 更新姓名（如果传了且变更）
-	if req.DisplayName != "" && req.DisplayName != row.Realname {
-		if err := s.repo.UpdateDisplayName(ctx, actor.ID, req.DisplayName); err != nil {
-			return UpdateResp{}, err
-		}
-	}
-	// 更新联系方式（邮箱/性别）
-	if err := s.repo.UpdateSelfContact(ctx, actor.ID, req.Email, req.Gender, req.ApplyGenderSkip()); err != nil {
-		return UpdateResp{}, err
-	}
-	// 更新手机（如果传了且变更）
-	if req.Mobile != "" && req.Mobile != row.Mobile {
-		if err := s.repo.UpdateMobile(ctx, actor.ID, req.Mobile); err != nil {
-			return UpdateResp{}, err
-		}
-	}
-	// 更新默认小组
-	if err := s.repo.UpdateMainTeam(ctx, actor.ID, req.MainTeamID); err != nil {
-		return UpdateResp{}, err
-	}
-	// 更新自选角色偏好
-	if err := s.repo.UpsertPreferredRoles(ctx, actor.Account, preferred); err != nil {
+	if err := s.repo.SaveSelfProfile(ctx, actor, req, preferred); err != nil {
 		return UpdateResp{}, err
 	}
 

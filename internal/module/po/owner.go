@@ -10,23 +10,6 @@ package po
 
 import "strings"
 
-// FormatAccountName 账号 + realname 展示名；realname 已带账号后缀时不重复拼接。
-func FormatAccountName(account, realname string) string {
-	v := strings.TrimSpace(account)
-	if v == "" {
-		return ""
-	}
-	n := strings.TrimSpace(realname)
-	if n == "" {
-		return v
-	}
-	suffix := "(" + v + ")"
-	if n == v || strings.HasSuffix(n, suffix) || strings.Contains(n, suffix) {
-		return n
-	}
-	return n + suffix
-}
-
 // DeriveCurrentHandler 按禅道 status 推导当前办理人（账号 + 显示名）。
 //
 //	draft/wait → assignedTo

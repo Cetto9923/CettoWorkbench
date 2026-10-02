@@ -13,14 +13,6 @@ import (
 	"time"
 )
 
-func nullableDateValue(raw string) string {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return "0000-00-00"
-	}
-	return raw
-}
-
 func nullableSchedulingDate(raw string) interface{} {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {

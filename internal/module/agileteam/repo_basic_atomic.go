@@ -60,14 +60,7 @@ func (r *Repo) WithTeamgroupTable(name string) *Repo {
 	return &cp
 }
 
-// UpdateTeamgroupBasicAtomic 将基本字段、层级 path/grade 变更和审计历史放在同一事务中。
-//
-// 锁协议（关键不变量）：
-//   - 所有写路径（basic-only 与 topology）统一走"事务内第一步即整树一致性锁"。
-//     锁顺序：先无锁 SELECT id 列表（升序），再 WHERE id IN (?) ORDER BY id ASC FOR UPDATE
-//     一次性锁定全部 active teamgroup；所有路径共用同一套锁顺序，无混合事务类型。
-//   - 不再有"先锁 current 再加整树"的二级叠加，避免与并发 topology 事务形成 next-key gap lock 互锁。
-//   - 代价：basic-only 也走整树锁。开发库 117 行，单次事务开销可忽略。
+// UpdateTeamgroupBasicAtomic 基本保存只锁目标行；拓扑变更沿用一致性快照协议。
 func (r *Repo) UpdateTeamgroupBasicAtomic(
 	ctx context.Context,
 	id uint,
@@ -80,6 +73,20 @@ func (r *Repo) UpdateTeamgroupBasicAtomic(
 	}
 	table := r.teamgroupTable()
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var observed teamgroupLockRow
+		if err := tx.Table(table).Where("id = ? AND deleted = ?", id, "0").Take(&observed).Error; err != nil {
+			return teamgroupRowError(err)
+		}
+		if parentID == nil || *parentID == observed.Parent {
+			var current teamgroupLockRow
+			if err := tx.Clauses(clauseLockForUpdate).Table(table).Where("id = ? AND deleted = ?", id, "0").Take(&current).Error; err != nil {
+				return teamgroupRowError(err)
+			}
+			if parentID != nil && *parentID != current.Parent {
+				return errors.New("小组层级已变化，请刷新后重试")
+			}
+			return updateTeamgroupFields(tx, table, id, name, slogan, declaration, logo, history)
+		}
 		// 第一步：整树一致性锁（升序 id 列表 + IN FOR UPDATE）。
 		rows, err := lockActiveTreeOrdered(tx, table)
 		if err != nil {
@@ -92,34 +99,6 @@ func (r *Repo) UpdateTeamgroupBasicAtomic(
 		current, ok := byID[id]
 		if !ok {
 			return errTeamgroupMissing
-		}
-
-		parentChanged := parentID != nil && *parentID != current.Parent
-		if !parentChanged {
-			// basic-only：仅更新当前行的基本字段（不刷 path/grade，不刷 descendants）。
-			res := tx.Table(table).
-				Where("id = ? AND deleted = ?", current.ID, "0").
-				Updates(map[string]any{
-					"name":        name,
-					"slogan":      slogan,
-					"declaration": declaration,
-					"logo":        logo,
-				})
-			if res.Error != nil {
-				return res.Error
-			}
-			if res.RowsAffected != 1 {
-				return errTeamgroupMissing
-			}
-			if history != nil {
-				if history.TeamgroupID == 0 {
-					history.TeamgroupID = current.ID
-				}
-				if err := tx.Create(history).Error; err != nil {
-					return err
-				}
-			}
-			return nil
 		}
 
 		// topology：基于同一份已锁快照计算 + 写回。
@@ -149,23 +128,11 @@ func applyTopologyChange(
 		return err
 	}
 
-	// 1) 基本字段。
-	res := tx.Table(table).
-		Where("id = ? AND deleted = ?", current.ID, "0").
-		Updates(map[string]any{
-			"name":        name,
-			"slogan":      slogan,
-			"declaration": declaration,
-			"logo":        logo,
-		})
-	if res.Error != nil {
-		return res.Error
-	}
-	if res.RowsAffected != 1 {
-		return errTeamgroupMissing
+	if err := updateTeamgroupFields(tx, table, current.ID, name, slogan, declaration, logo, nil); err != nil {
+		return err
 	}
 	// 2) parent/type/grade/path。
-	res = tx.Table(table).
+	res := tx.Table(table).
 		Where("id = ? AND deleted = ?", current.ID, "0").
 		Updates(map[string]any{
 			"parent": newParentID,
@@ -195,13 +162,23 @@ func applyTopologyChange(
 	return nil
 }
 
-// lockActiveTreeOrdered 以 id 升序锁定全部 active teamgroup，避免与另一拓扑事务形成锁环。
-// 实现要点：
-//   - 使用 `WHERE id IN (...) ORDER BY id ASC FOR UPDATE` 的形式，使 InnoDB 在 index 上
-//     按主键顺序逐行加 X 锁，不依赖表扫描产生的 next-key gap lock；
-//   - id 列表先在事务外（调用栈中）确定；此处只接收确定好的 id 列表；
-//   - 与第一步"锁 current"的关系：current 已持 X 锁，再次对其加 X 锁是同事务的"锁升级"，
-//     不构成跨事务互锁。
+func updateTeamgroupFields(tx *gorm.DB, table string, id uint, name, slogan, declaration, logo string, history *History) error {
+	res := tx.Table(table).Where("id = ? AND deleted = ?", id, "0").Updates(map[string]any{
+		"name": name, "slogan": slogan, "declaration": declaration, "logo": logo,
+	})
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 || history == nil {
+		return nil
+	}
+	if history.TeamgroupID == 0 {
+		history.TeamgroupID = id
+	}
+	return tx.Create(history).Error
+}
+
+// lockActiveTreeOrdered 仅用于拓扑变更；锁顺序按主键固定。
 func lockActiveTreeOrdered(tx *gorm.DB, table string) ([]teamgroupLockRow, error) {
 	// 第一步：无锁读取 active id 列表（按 id 升序）。
 	var ids []uint
@@ -378,4 +355,11 @@ func refreshDescendantsIterative(
 		}
 	}
 	return nil
+}
+
+func teamgroupRowError(err error) error {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return errTeamgroupMissing
+	}
+	return err
 }

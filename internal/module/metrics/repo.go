@@ -21,7 +21,7 @@ type Repo struct{ db *gorm.DB }
 // NewRepo 装配 Repo；db 为 nil 时 Snapshot 返回明确错误。
 func NewRepo(db *gorm.DB) *Repo { return &Repo{db: db} }
 
-// snapshot 是 12 条指标派生所需的原子计数（单 SQL、11 个 COUNT 子查询）。
+// snapshot 是 12 条指标派生所需的原子计数（单 SQL、三个条件聚合）。
 type snapshot struct {
 	// 需求治理
 	Stories             int64 `gorm:"column:stories"`                // 研发需求总量（deleted='0'）
@@ -42,9 +42,9 @@ type snapshot struct {
 	TasksOverdue int64 `gorm:"column:tasks_overdue"` // 逾期（deadline<today，且非 done/closed/cancel）
 }
 
-// Snapshot 一次 SQL 拉所有指标的运行快照（11 个 COUNT 子查询）。
+// Snapshot 一次 SQL 拉所有指标的运行快照（三个条件聚合）。
 // 所有字符串字面量（status / deleted='0' / severity）都是服务端闭合常量；
-// today 由 SQL DATE 函数取得（无用户输入），遵循 database.md「不插值用户值」。
+// today 由 SQL CURDATE 函数取得（无用户输入），遵循 database.md「不插值用户值」。
 //
 // story.closedOnTimeRate 与 bug.resolutionRate 的目录 Period 为「近 N 天」，故其口径与 SQL 对齐：
 //   - 按时关闭率：取近 RecentPeriodDays 天内 closedDate 的已完成需求为分母，分子为其中 closedDate<=estimateLaunch 的。
@@ -57,19 +57,26 @@ func (r *Repo) Snapshot(ctx context.Context) (snapshot, error) {
 	if r == nil || r.db == nil {
 		return out, fmt.Errorf("metrics database unavailable")
 	}
-	const query = `SELECT
-		(SELECT COUNT(*) FROM zt_story WHERE deleted='0') AS stories,
-		(SELECT COUNT(*) FROM zt_story WHERE deleted='0' AND status NOT IN ('closed','released')) AS stories_active,
-		(SELECT COUNT(*) FROM zt_story WHERE deleted='0' AND status IN ('closed','released')) AS stories_done,
-		(SELECT COUNT(*) FROM zt_story WHERE deleted='0' AND status IN ('closed','released') AND CAST(closedDate AS CHAR) NOT LIKE '0000-00-00%' AND DATE(closedDate) >= DATE_SUB(CURDATE(), INTERVAL ? DAY)) AS stories_done_recent,
-		(SELECT COUNT(*) FROM zt_story WHERE deleted='0' AND status IN ('closed','released') AND estimateLaunch IS NOT NULL AND CAST(estimateLaunch AS CHAR) NOT LIKE '0000-00-00%' AND CAST(closedDate AS CHAR) NOT LIKE '0000-00-00%' AND DATE(closedDate) >= DATE_SUB(CURDATE(), INTERVAL ? DAY) AND DATE(closedDate) <= DATE(estimateLaunch)) AS stories_closed_on_time,
-		(SELECT COUNT(*) FROM zt_bug WHERE deleted='0' AND status NOT IN ('closed','cancelled')) AS bugs,
-		(SELECT COUNT(*) FROM zt_bug WHERE deleted='0' AND status NOT IN ('closed','cancelled') AND severity IN ('1','2')) AS bugs_p1p2,
-		(SELECT COUNT(*) FROM zt_bug WHERE deleted='0' AND CAST(openedDate AS CHAR) NOT LIKE '0000-00-00%' AND DATE(openedDate) >= DATE_SUB(CURDATE(), INTERVAL ? DAY)) AS bugs_total,
-		(SELECT COUNT(*) FROM zt_bug WHERE deleted='0' AND status IN ('resolved','closed') AND CAST(openedDate AS CHAR) NOT LIKE '0000-00-00%' AND DATE(openedDate) >= DATE_SUB(CURDATE(), INTERVAL ? DAY)) AS bugs_resolved,
-		(SELECT COUNT(*) FROM zt_task WHERE deleted='0') AS tasks,
-		(SELECT COUNT(*) FROM zt_task WHERE deleted='0' AND status NOT IN ('closed','cancel')) AS tasks_open,
-		(SELECT COUNT(*) FROM zt_task WHERE deleted='0' AND status NOT IN ('done','closed','cancel') AND deadline IS NOT NULL AND CAST(deadline AS CHAR) NOT LIKE '0000-00-00%' AND DATE(deadline) < CURDATE()) AS tasks_overdue`
+	const query = `SELECT * FROM (
+ SELECT COUNT(*) AS stories,
+ COUNT(CASE WHEN status NOT IN ('closed','released') THEN 1 END) AS stories_active,
+ COUNT(CASE WHEN status IN ('closed','released') THEN 1 END) AS stories_done,
+ COUNT(CASE WHEN status IN ('closed','released') AND CAST(closedDate AS CHAR) NOT LIKE '0000-00-00%' AND closedDate >= DATE_SUB(CURDATE(), INTERVAL ? DAY) THEN 1 END) AS stories_done_recent,
+ COUNT(CASE WHEN status IN ('closed','released') AND CAST(closedDate AS CHAR) NOT LIKE '0000-00-00%' AND CAST(estimateLaunch AS CHAR) NOT LIKE '0000-00-00%' AND closedDate >= DATE_SUB(CURDATE(), INTERVAL ? DAY) AND closedDate < DATE_ADD(DATE(estimateLaunch), INTERVAL 1 DAY) THEN 1 END) AS stories_closed_on_time
+ FROM zt_story WHERE deleted = '0'
+ ) s CROSS JOIN (
+ SELECT COUNT(CASE WHEN status NOT IN ('closed','cancelled') THEN 1 END) AS bugs,
+ COUNT(CASE WHEN status NOT IN ('closed','cancelled') AND severity IN ('1','2') THEN 1 END) AS bugs_p1p2,
+ COUNT(CASE WHEN CAST(openedDate AS CHAR) NOT LIKE '0000-00-00%' AND openedDate >= DATE_SUB(CURDATE(), INTERVAL ? DAY) THEN 1 END) AS bugs_total,
+ COUNT(CASE WHEN status IN ('resolved','closed') AND CAST(openedDate AS CHAR) NOT LIKE '0000-00-00%' AND openedDate >= DATE_SUB(CURDATE(), INTERVAL ? DAY) THEN 1 END) AS bugs_resolved
+ FROM zt_bug WHERE deleted = '0'
+ ) b CROSS JOIN (
+ SELECT COUNT(*) AS tasks,
+ COUNT(CASE WHEN status NOT IN ('closed','cancel') THEN 1 END) AS tasks_open,
+ COUNT(CASE WHEN status NOT IN ('done','closed','cancel') AND CAST(deadline AS CHAR) NOT LIKE '0000-00-00%' AND deadline < CURDATE() THEN 1 END) AS tasks_overdue
+ FROM zt_task WHERE deleted = '0'
+ ) t`
+
 	err := r.db.WithContext(ctx).Raw(query, RecentPeriodDays, RecentPeriodDays, RecentPeriodDays, RecentPeriodDays).Scan(&out).Error
 	return out, err
 }

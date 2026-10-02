@@ -15,7 +15,8 @@ type SidebarBadgesProvider func(c *gin.Context) (SidebarBadges, error)
 
 // SidebarBadges 侧栏角标计数字段。
 type SidebarBadges struct {
-	Todos  int `json:"todos"`
-	Done   int `json:"done"`
-	Notice int `json:"notice"`
+	Todos       int  `json:"todos"`
+	Done        int  `json:"done"`
+	Notice      int  `json:"notice"`
+	Unavailable bool `json:"unavailable"`
 }

@@ -85,53 +85,23 @@ ORDER BY tg.id ASC`, account).Scan(&rows).Error
 	return rows, nil
 }
 
-// UpdateSelfContact 更新邮箱与性别。
-// gender 传 "" 且 genderSkip 为 true 时，跳过 gender 字段更新。
-func (r *Repo) UpdateSelfContact(ctx context.Context, id int64, email, gender string, genderSkip bool) error {
-	if r == nil || r.db == nil {
-		return fmt.Errorf("profile repo is not configured")
+func (r *Repo) SaveSelfProfile(ctx context.Context, actor *model.User, req UpdateReq, preferred []string) error {
+	fields := map[string]any{"email": req.Email, "mainTeam": req.MainTeamID}
+	if !req.ApplyGenderSkip() {
+		fields["gender"] = req.Gender
 	}
-	updates := map[string]any{"email": email}
-	if !genderSkip {
-		updates["gender"] = gender
+	if req.DisplayName != "" {
+		fields["realname"] = req.DisplayName
 	}
-	return r.db.WithContext(ctx).
-		Model(&model.User{}).
-		Where("id = ? AND deleted = ?", id, "0").
-		Updates(updates).Error
-}
-
-// UpdateMainTeam 更新禅道默认小组 zt_user.mainTeam。
-func (r *Repo) UpdateMainTeam(ctx context.Context, id int64, mainTeamID uint64) error {
-	if r == nil || r.db == nil {
-		return fmt.Errorf("profile repo is not configured")
+	if req.Mobile != "" {
+		fields["mobile"] = req.Mobile
 	}
-	return r.db.WithContext(ctx).
-		Model(&model.User{}).
-		Where("id = ? AND deleted = ?", id, "0").
-		Updates(map[string]any{"mainTeam": mainTeamID}).Error
-}
-
-// UpdateMobile 更新手机号。
-func (r *Repo) UpdateMobile(ctx context.Context, id int64, mobile string) error {
-	if r == nil || r.db == nil {
-		return fmt.Errorf("profile repo is not configured")
-	}
-	return r.db.WithContext(ctx).
-		Model(&model.User{}).
-		Where("id = ? AND deleted = ?", id, "0").
-		Updates(map[string]any{"mobile": mobile}).Error
-}
-
-// UpdateDisplayName 更新显示名（realname）。
-func (r *Repo) UpdateDisplayName(ctx context.Context, id int64, realname string) error {
-	if r == nil || r.db == nil {
-		return fmt.Errorf("profile repo is not configured")
-	}
-	return r.db.WithContext(ctx).
-		Model(&model.User{}).
-		Where("id = ? AND deleted = ?", id, "0").
-		Updates(map[string]any{"realname": realname}).Error
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&model.User{}).Where("id = ? AND account = ? AND deleted = ?", actor.ID, actor.Account, "0").Updates(fields).Error; err != nil {
+			return err
+		}
+		return (&Repo{db: tx}).UpsertPreferredRoles(ctx, actor.Account, preferred)
+	})
 }
 
 // FindPreferredRoles 读取自选视图偏好。

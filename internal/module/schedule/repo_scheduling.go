@@ -356,10 +356,18 @@ func (r *Repo) GetStoryTasks(ctx context.Context, storyID uint) ([]ZtTaskItem, e
 	if storyID == 0 {
 		return []ZtTaskItem{}, nil
 	}
+	tasks, err := r.GetStoriesTasks(ctx, []uint{storyID})
+	return tasks[storyID], err
+}
+
+func (r *Repo) GetStoriesTasks(ctx context.Context, storyIDs []uint) (map[uint][]ZtTaskItem, error) {
+	if len(storyIDs) == 0 {
+		return map[uint][]ZtTaskItem{}, nil
+	}
 
 	const query = `
 SELECT
-  id,
+  id, story,
   name,
   type,
   pri,
@@ -375,15 +383,22 @@ SELECT
   project,
   execution
 FROM zt_task
-WHERE story = ?
+WHERE story IN ?
   AND deleted = '0'
 ORDER BY id ASC`
 
-	var rows []ZtTaskItem
-	if err := r.db.WithContext(ctx).Raw(query, storyID).Scan(&rows).Error; err != nil {
+	var rows []struct {
+		ZtTaskItem
+		Story uint `gorm:"column:story"`
+	}
+	if err := r.db.WithContext(ctx).Raw(query, storyIDs).Scan(&rows).Error; err != nil {
 		return nil, err
 	}
-	return rows, nil
+	tasks := make(map[uint][]ZtTaskItem, len(storyIDs))
+	for _, row := range rows {
+		tasks[row.Story] = append(tasks[row.Story], row.ZtTaskItem)
+	}
+	return tasks, nil
 }
 
 // GetProductProjects 查询产品关联的进行中和未开始项目。
@@ -391,42 +406,50 @@ func (r *Repo) GetProductProjects(ctx context.Context, productID uint) ([]ZtProj
 	if productID == 0 {
 		return []ZtProjectOption{}, nil
 	}
-
-	const query = `
-SELECT p.id, p.name, p.status, p.model
-FROM zt_projectproduct pp
-JOIN zt_project p ON p.id = pp.project AND p.deleted = '0' AND p.type = 'project'
-WHERE pp.product = ?
-  AND p.status IN ('doing', 'wait')
-ORDER BY p.id DESC`
-
-	var rows []ZtProjectOption
-	if err := r.db.WithContext(ctx).Raw(query, productID).Scan(&rows).Error; err != nil {
-		return nil, err
-	}
-	return rows, nil
+	rows, err := r.GetProductsProjects(ctx, []uint{productID})
+	return rows[productID], err
 }
 
-// GetProjectExecutions 查询项目下进行中和未开始的执行。
+func (r *Repo) GetProductsProjects(ctx context.Context, productIDs []uint) (map[uint][]ZtProjectOption, error) {
+	rows, err := r.projectOptions(ctx, `SELECT pp.product AS owner, p.id, p.name, p.status, p.model
+ FROM zt_projectproduct pp JOIN zt_project p ON p.id = pp.project AND p.deleted = '0' AND p.type = 'project'
+ WHERE pp.product IN ? AND p.status IN ('doing','wait') ORDER BY p.id DESC`, productIDs)
+	out := make(map[uint][]ZtProjectOption, len(productIDs))
+	for _, row := range rows {
+		out[row.Owner] = append(out[row.Owner], row.ZtProjectOption)
+	}
+	return out, err
+}
+
 func (r *Repo) GetProjectExecutions(ctx context.Context, projectID uint) ([]ZtExecutionOption, error) {
-	if projectID == 0 {
-		return []ZtExecutionOption{}, nil
-	}
+	rows, err := r.GetProjectsExecutions(ctx, []uint{projectID})
+	return rows[projectID], err
+}
 
-	const query = `
-SELECT id, name, type, status
-FROM zt_project
-WHERE parent = ?
-  AND type IN ('sprint', 'stage', 'kanban')
-  AND deleted = '0'
-  AND status IN ('doing', 'wait')
-ORDER BY id DESC`
-
-	var rows []ZtExecutionOption
-	if err := r.db.WithContext(ctx).Raw(query, projectID).Scan(&rows).Error; err != nil {
-		return nil, err
+func (r *Repo) GetProjectsExecutions(ctx context.Context, projectIDs []uint) (map[uint][]ZtExecutionOption, error) {
+	rows, err := r.projectOptions(ctx, `SELECT parent AS owner, id, name, type, status FROM zt_project
+ WHERE parent IN ? AND type IN ('sprint','stage','kanban') AND deleted = '0'
+ AND status IN ('doing','wait') ORDER BY id DESC`, projectIDs)
+	out := make(map[uint][]ZtExecutionOption, len(projectIDs))
+	for _, row := range rows {
+		out[row.Owner] = append(out[row.Owner], ZtExecutionOption{ID: row.ID, Name: row.Name, Type: row.Type, Status: row.Status})
 	}
-	return rows, nil
+	return out, err
+}
+
+type projectOptionRow struct {
+	ZtProjectOption
+	Owner uint   `gorm:"column:owner"`
+	Type  string `gorm:"column:type"`
+}
+
+func (r *Repo) projectOptions(ctx context.Context, query string, ids []uint) ([]projectOptionRow, error) {
+	rows := []projectOptionRow{}
+	if len(ids) == 0 {
+		return rows, nil
+	}
+	err := r.db.WithContext(ctx).Raw(query, ids).Scan(&rows).Error
+	return rows, err
 }
 
 // FindProjectsByIDs 批量查项目名称。

@@ -23,12 +23,6 @@ import (
 	"workbench/internal/pkg/sqllog"
 )
 
-const (
-	maxOpenConns    = 50
-	maxIdleConns    = 10
-	connMaxLifetime = time.Hour
-)
-
 // New 根据主库配置初始化 GORM MySQL 连接。
 func New(cfg *config.Config) (*gorm.DB, error) {
 	return Open(cfg.Database)
@@ -36,6 +30,9 @@ func New(cfg *config.Config) (*gorm.DB, error) {
 
 // Open 按给定 Database 配置打开 GORM 连接（主库 / 只读备库均可）。
 func Open(dbCfg config.Database) (*gorm.DB, error) {
+	if dbCfg.MaxOpenConns <= 0 || dbCfg.MaxIdleConns < 0 || dbCfg.MaxIdleConns > dbCfg.MaxOpenConns || dbCfg.ConnectTimeout <= 0 || dbCfg.ReadTimeout <= 0 || dbCfg.WriteTimeout <= 0 {
+		return nil, fmt.Errorf("数据库连接预算或超时配置无效")
+	}
 	dsn := buildDSN(dbCfg)
 	gormCfg := &gorm.Config{
 		Logger: newGormSQLLogger(),
@@ -50,9 +47,9 @@ func Open(dbCfg config.Database) (*gorm.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("get sql db: %w", err)
 	}
-	sqlDB.SetMaxOpenConns(maxOpenConns)
-	sqlDB.SetMaxIdleConns(maxIdleConns)
-	sqlDB.SetConnMaxLifetime(connMaxLifetime)
+	sqlDB.SetMaxOpenConns(dbCfg.MaxOpenConns)
+	sqlDB.SetMaxIdleConns(dbCfg.MaxIdleConns)
+	sqlDB.SetConnMaxLifetime(time.Hour)
 
 	if err := sqlDB.Ping(); err != nil {
 		_ = sqlDB.Close()
@@ -92,7 +89,7 @@ func buildDSN(dbCfg config.Database) string {
 	)
 	// 配置可写 JDBC 风格 "ob_read_consistency=Weak"；Go mysql 驱动无 sessionVariables 参数，
 	// 需拆成系统变量 DSN：&ob_read_consistency=%27Weak%27 → SET ob_read_consistency = 'Weak'
-	return dsn + appendSessionVarParams(dbCfg.SessionVariables)
+	return dsn + "&timeout=" + dbCfg.ConnectTimeout.String() + "&readTimeout=" + dbCfg.ReadTimeout.String() + "&writeTimeout=" + dbCfg.WriteTimeout.String() + appendSessionVarParams(dbCfg.SessionVariables)
 }
 
 // appendSessionVarParams 将 sessionVariables 转为 go-sql-driver 可识别的系统变量查询参数。

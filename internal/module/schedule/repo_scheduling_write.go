@@ -46,7 +46,6 @@ type ZtStorySpec struct {
 	Spec    string
 }
 
-// ZtTaskInsert 禅道 zt_task 写入字段。
 // FindWindowProductPlan 查窗口下某产品的关联计划。
 func (r *Repo) FindWindowProductPlan(ctx context.Context, windowID uint, productID uint) (*model.VersionWindowProduct, error) {
 	if windowID == 0 || productID == 0 {

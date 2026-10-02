@@ -231,63 +231,12 @@ func (r *Repo) FindByID(ctx context.Context, id uint64) (*model.VersionWindow, e
 	return &window, nil
 }
 
-// GetWindowConsumedHours 查询窗口关联任务的已消耗工时总和。
-// 链路: zt_versionwindowproduct.plan → zt_planstory.story → zt_task.consumed
-func (r *Repo) GetWindowConsumedHours(ctx context.Context, windowID uint64) (float64, error) {
-	const query = `
-SELECT COALESCE(SUM(t.consumed), 0) AS total
-FROM zt_versionwindowproduct vwp
-JOIN zt_planstory ps ON ps.plan = vwp.plan
-JOIN zt_task t ON t.story = ps.story AND t.deleted = '0' AND t.status != 'closed'
-WHERE vwp.versionWindow = ? AND vwp.deletedAt IS NULL AND vwp.plan IS NOT NULL`
-
-	var row struct {
-		Total float64 `gorm:"column:total"`
-	}
-	if err := r.db.WithContext(ctx).Raw(query, windowID).Scan(&row).Error; err != nil {
-		return 0, err
-	}
-	return row.Total, nil
-}
-
 // WindowStageStats 窗口需求阶段统计。
 type WindowStageStats struct {
 	DemandCount  int // 业需数 + 非需求池软需数
 	DevCount     int // 开发中
 	TestCount    int // 测试中
 	DeliverCount int // 待交付
-}
-
-// GetWindowStageStats 查询窗口关联 story 的需求/开发/测试/待交付统计。
-// 链路: zt_versionwindowproduct.plan → zt_planstory.story → zt_story
-func (r *Repo) GetWindowStageStats(ctx context.Context, windowID uint64) (*WindowStageStats, error) {
-	const query = `
-SELECT
-  COUNT(DISTINCT CASE WHEN s.sourceType = 'demandpool' AND s.fromDemand > 0 THEN s.fromDemand ELSE NULL END)
-  + COUNT(CASE WHEN IFNULL(s.sourceType, '') != 'demandpool' THEN 1 ELSE NULL END) AS demandCount,
-  SUM(CASE WHEN s.stage = 'developing' THEN 1 ELSE 0 END) AS devCount,
-  SUM(CASE WHEN s.stage = 'testing' THEN 1 ELSE 0 END) AS testCount,
-  SUM(CASE WHEN s.stage IN ('verified','tested','delivering','delivered') THEN 1 ELSE 0 END) AS deliverCount
-FROM zt_versionwindowproduct vwp
-JOIN zt_planstory ps ON ps.plan = vwp.plan
-JOIN zt_story s ON s.id = ps.story AND s.deleted = '0'
-WHERE vwp.versionWindow = ? AND vwp.deletedAt IS NULL AND vwp.plan IS NOT NULL`
-
-	var row struct {
-		DemandCount  int64 `gorm:"column:demandCount"`
-		DevCount     int64 `gorm:"column:devCount"`
-		TestCount    int64 `gorm:"column:testCount"`
-		DeliverCount int64 `gorm:"column:deliverCount"`
-	}
-	if err := r.db.WithContext(ctx).Raw(query, windowID).Scan(&row).Error; err != nil {
-		return nil, err
-	}
-	return &WindowStageStats{
-		DemandCount:  int(row.DemandCount),
-		DevCount:     int(row.DevCount),
-		TestCount:    int(row.TestCount),
-		DeliverCount: int(row.DeliverCount),
-	}, nil
 }
 
 // GetWindowDemandCount 查询窗口直接关联的需求数量（业需去重 + 独立软需）。

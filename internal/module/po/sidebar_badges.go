@@ -12,18 +12,17 @@ package po
 import (
 	"context"
 	"strings"
+	"time"
+	"workbench/internal/model"
+	"workbench/internal/pkg/render"
 )
 
 // SidebarBadges 侧栏角标数据。
-type SidebarBadges struct {
-	Todos  int `json:"todos"`
-	Done   int `json:"done"`
-	Notice int `json:"notice"`
-}
+type SidebarBadges = render.SidebarBadges
 
 // SidebarBadges 取当前 actor 三个角标计数。
-// 失败时任何子项返 0，绝不阻塞页面渲染。
-func (s *Service) SidebarBadges(ctx context.Context, actor *SidebarActor) (SidebarBadges, error) {
+// 角标最多等待 250ms；失败不冒充真实零值。
+func (s *Service) SidebarBadges(ctx context.Context, actor *model.User) (SidebarBadges, error) {
 	out := SidebarBadges{}
 	if s == nil || s.repo == nil || actor == nil {
 		return out, nil
@@ -33,23 +32,21 @@ func (s *Service) SidebarBadges(ctx context.Context, actor *SidebarActor) (Sideb
 		return out, nil
 	}
 
-	if n, err := s.repo.CountOpenTodos(ctx, account); err == nil {
-		out.Todos = int(n)
-	}
-
-	if n, err := s.repo.CountRecentDone(ctx, account); err == nil {
-		out.Done = int(n)
-	}
-
-	if n, err := s.repo.CountUnreadNotices(ctx, account); err == nil {
-		out.Notice = int(n)
+	ctx, cancel := context.WithTimeout(ctx, 250*time.Millisecond)
+	defer cancel()
+	for _, item := range []struct {
+		count  func(context.Context, string) (int64, error)
+		target *int
+	}{
+		{s.repo.CountOpenTodos, &out.Todos}, {s.repo.CountRecentDone, &out.Done}, {s.repo.CountUnreadNotices, &out.Notice},
+	} {
+		n, err := item.count(ctx, account)
+		if err != nil {
+			out.Unavailable = true
+			return out, err
+		}
+		*item.target = int(n)
 	}
 
 	return out, nil
-}
-
-// SidebarActor 侧栏角标所需的最小调用方身份。
-type SidebarActor struct {
-	Account string
-	ID      int64
 }

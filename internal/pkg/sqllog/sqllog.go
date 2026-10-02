@@ -13,6 +13,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -83,7 +84,8 @@ func LogQuery(ctx context.Context, sql string, elapsed time.Duration, rows int64
 		File:      file,
 	}
 	if err != nil {
-		entry.Error = redact.SQL(err.Error())
+		err = errors.New(redact.SQL(err.Error()))
+		entry.Error = err.Error()
 	}
 
 	defaultWriter.write(entry)

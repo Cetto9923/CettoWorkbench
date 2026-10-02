@@ -43,31 +43,22 @@ func (s *Service) ListWindowCards(ctx context.Context, actor *model.User) ([]Win
 
 // buildWindowCards 逐个窗口计算容量、已用工时与操作权限并装配卡片。
 func (s *Service) buildWindowCards(ctx context.Context, windows []model.VersionWindow, teamgroupNameByID map[uint]string, account string) ([]WindowCard, error) {
+	capacities, err := s.windowCapacities(ctx, windows)
+	if err != nil {
+		return nil, err
+	}
+	stats, err := s.repo.windowsStats(ctx, windowIDs(windows))
+	if err != nil {
+		return nil, err
+	}
 	cards := make([]WindowCard, 0, len(windows))
 	for i, window := range windows {
 		start := window.ReleaseDate
 		if window.StartDate != nil {
 			start = *window.StartDate
 		}
-		capacityHours, err := s.CalcCapacity(
-			ctx,
-			start.Format("2006-01-02"),
-			window.ReleaseDate.Format("2006-01-02"),
-			int(window.GroupSize),
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		consumed, err := s.repo.GetWindowConsumedHours(ctx, window.ID)
-		if err != nil {
-			return nil, err
-		}
-		demandCount, err := s.repo.GetWindowDemandCount(ctx, window.ID)
-		if err != nil {
-			return nil, err
-		}
-
+		capacityHours := capacities[window.ID]
+		consumed, demandCount := stats[window.ID].Consumed, stats[window.ID].DemandCount
 		usedHours := int(math.Round(consumed))
 		remainingHours := capacityHours - usedHours
 		usedPercent := 0
@@ -138,19 +129,19 @@ func (s *Service) ListTeamHomeVersionWindows(ctx context.Context, teamgroupIDs [
 	if err != nil {
 		return nil, err
 	}
+	stats, err := s.repo.windowsStats(ctx, windowIDs(windows))
+	if err != nil {
+		return nil, err
+	}
 	cards := make([]TeamHomeVersionWindowCard, 0, len(windows))
 	for _, window := range windows {
-		items, err := s.repo.FindWindowWorkItems(ctx, window.ID)
-		if err != nil {
-			return nil, err
-		}
 		cards = append(cards, TeamHomeVersionWindowCard{
 			ID:            window.ID,
 			Name:          strings.TrimSpace(window.Name),
 			TeamgroupID:   window.TeamgroupID,
 			Teamgroup:     groupNames[window.TeamgroupID],
 			ReleaseDate:   window.ReleaseDate.Format("2006-01-02"),
-			WorkItemCount: len(items),
+			WorkItemCount: stats[window.ID].DemandCount,
 		})
 	}
 	return cards, nil
@@ -189,16 +180,17 @@ func (s *Service) ListHomeVersionWindows(ctx context.Context, actor *model.User,
 		return nil, err
 	}
 
+	allStats, err := s.repo.windowsStats(ctx, windowIDs(windows))
+	if err != nil {
+		return nil, err
+	}
 	cards := make([]HomeVersionWindowCard, 0, len(windows))
 	for _, window := range windows {
 		start := window.ReleaseDate
 		if window.StartDate != nil {
 			start = *window.StartDate
 		}
-		stats, err := s.repo.GetWindowStageStats(ctx, window.ID)
-		if err != nil {
-			return nil, err
-		}
+		stats := allStats[window.ID]
 		cards = append(cards, HomeVersionWindowCard{
 			ID:           window.ID,
 			TeamgroupID:  window.TeamgroupID,
@@ -312,29 +304,22 @@ func (s *Service) ListWindows(ctx context.Context, actor *model.User) (ListWindo
 		return ListWindowsResp{Windows: []WindowListItem{}}, nil
 	}
 
+	capacities, err := s.windowCapacities(ctx, windows)
+	if err != nil {
+		return ListWindowsResp{}, err
+	}
+	stats, err := s.repo.windowsStats(ctx, windowIDs(windows))
+	if err != nil {
+		return ListWindowsResp{}, err
+	}
 	items := make([]WindowListItem, 0, len(windows))
 	for _, window := range windows {
 		start := window.ReleaseDate
 		if window.StartDate != nil {
 			start = *window.StartDate
 		}
-		capacityHours, err := s.CalcCapacity(
-			ctx,
-			start.Format("2006-01-02"),
-			window.ReleaseDate.Format("2006-01-02"),
-			int(window.GroupSize),
-		)
-		if err != nil {
-			return ListWindowsResp{}, err
-		}
-		consumed, err := s.repo.GetWindowConsumedHours(ctx, window.ID)
-		if err != nil {
-			return ListWindowsResp{}, err
-		}
-		demandCount, err := s.repo.GetWindowDemandCount(ctx, window.ID)
-		if err != nil {
-			return ListWindowsResp{}, err
-		}
+		capacityHours := capacities[window.ID]
+		consumed, demandCount := stats[window.ID].Consumed, stats[window.ID].DemandCount
 		usedHours := int(math.Round(consumed))
 		remainingHours := capacityHours - usedHours
 		usedPercent := 0

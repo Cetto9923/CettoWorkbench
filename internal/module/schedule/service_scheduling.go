@@ -41,21 +41,14 @@ func (s *Service) buildDemandSchedulingStories(
 		accounts = append(accounts, strings.TrimSpace(row.AssignedTo))
 	}
 
-	storyTasks := make(map[uint][]ZtTaskItem, len(rows))
-	for _, row := range rows {
-		tasks, err := s.repo.GetStoryTasks(ctx, row.ID)
-		if err != nil {
-			return nil, err
-		}
-		storyTasks[row.ID] = tasks
+	storyTasks, err := s.repo.GetStoriesTasks(ctx, pluckStoryIDs(rows))
+	if err != nil {
+		return nil, err
+	}
+	for _, tasks := range storyTasks {
 		for _, task := range tasks {
 			accounts = append(accounts, strings.TrimSpace(task.AssignedTo))
-			if task.Project > 0 {
-				projectIDs = append(projectIDs, task.Project)
-			}
-			if task.Execution > 0 {
-				projectIDs = append(projectIDs, task.Execution)
-			}
+			projectIDs = append(projectIDs, task.Project, task.Execution)
 		}
 	}
 
@@ -160,20 +153,19 @@ func (s *Service) buildDemandUserStories(
 
 func (s *Service) buildProductProjectsMap(ctx context.Context, productIDs []uint) (map[string][]DemandSchedulingProjectOption, error) {
 	out := make(map[string][]DemandSchedulingProjectOption)
-	for _, productID := range uniqueUints(productIDs) {
-		projectRows, err := s.repo.GetProductProjects(ctx, productID)
-		if err != nil {
-			return nil, err
-		}
-		projects := make([]DemandSchedulingProjectOption, 0, len(projectRows))
-		for _, project := range projectRows {
-			projects = append(projects, DemandSchedulingProjectOption{
-				ID:   project.ID,
-				Name: strings.TrimSpace(project.Name),
-			})
+	productIDs = uniqueUints(productIDs)
+	rows, err := s.repo.GetProductsProjects(ctx, productIDs)
+	if err != nil {
+		return nil, err
+	}
+	for _, productID := range productIDs {
+		projects := make([]DemandSchedulingProjectOption, 0, len(rows[productID]))
+		for _, project := range rows[productID] {
+			projects = append(projects, DemandSchedulingProjectOption{ID: project.ID, Name: strings.TrimSpace(project.Name)})
 		}
 		out[formatUintKey(productID)] = projects
 	}
+
 	return out, nil
 }
 
@@ -201,31 +193,30 @@ func (s *Service) buildProjectExecutionsMap(
 	productProjects map[string][]DemandSchedulingProjectOption,
 ) (map[string][]ZtExecutionOption, error) {
 	out := make(map[string][]ZtExecutionOption)
+	var ids []uint
 	for _, projects := range productProjects {
 		for _, project := range projects {
-			if project.ID == 0 {
-				continue
-			}
-			key := formatUintKey(project.ID)
-			if _, exists := out[key]; exists {
-				continue
-			}
-			rows, err := s.repo.GetProjectExecutions(ctx, project.ID)
-			if err != nil {
-				return nil, err
-			}
-			executions := make([]ZtExecutionOption, 0, len(rows))
-			for _, row := range rows {
-				executions = append(executions, ZtExecutionOption{
-					ID:     row.ID,
-					Name:   strings.TrimSpace(row.Name),
-					Type:   strings.TrimSpace(row.Type),
-					Status: strings.TrimSpace(row.Status),
-				})
-			}
-			out[key] = executions
+			ids = append(ids, project.ID)
 		}
 	}
+	ids = uniqueUints(ids)
+	rows, err := s.repo.GetProjectsExecutions(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	for _, id := range ids {
+		executions := rows[id]
+		if executions == nil {
+			executions = []ZtExecutionOption{}
+		}
+		for i := range executions {
+			executions[i].Name = strings.TrimSpace(executions[i].Name)
+			executions[i].Status = strings.TrimSpace(executions[i].Status)
+			executions[i].Type = strings.TrimSpace(executions[i].Type)
+		}
+		out[formatUintKey(id)] = executions
+	}
+
 	return out, nil
 }
 

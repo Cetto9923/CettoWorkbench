@@ -11,9 +11,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var errAdjustmentStateChanged = errors.New("agile adjustment state changed")
@@ -26,6 +28,12 @@ func (r *Repo) ApplyConfirmedAdjustment(ctx context.Context, adj *Adjustment, it
 		return fmt.Errorf("invalid adjustment")
 	}
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var group teamgroupLockRow
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Table(defaultTeamgroupTable).Where("id = ? AND deleted = ?", adj.TeamgroupID, "0").Take(&group).Error; err != nil {
+			return err
+		}
+		items = append([]AdjustmentItem(nil), items...)
+		sort.SliceStable(items, func(i, j int) bool { return items[i].Account < items[j].Account })
 		res := tx.Model(&Adjustment{}).
 			Where("id = ? AND status = ?", adj.ID, StatusPending).
 			Updates(map[string]any{

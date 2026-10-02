@@ -470,8 +470,10 @@ func (r *Renderer) enrichData(c *gin.Context, page string, data gin.H) {
 		if r.sidebarBadges != nil {
 			if v, exists := c.Get("currentUser"); exists {
 				if u, ok := v.(*model.User); ok && u != nil {
-					if b, err := r.sidebarBadges(c); err == nil {
-						badges = b
+					b, err := r.sidebarBadges(c)
+					badges = b
+					if err != nil {
+						badges.Unavailable = true
 					}
 				}
 			}

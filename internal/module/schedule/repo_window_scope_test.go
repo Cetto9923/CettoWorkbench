@@ -119,6 +119,8 @@ func TestListTeamHomeVersionWindowsCountsDeduplicatedItems(t *testing.T) {
 		WithArgs(uint64(77), uint64(77), uint64(77)).
 		WillReturnRows(sqlmock.NewRows([]string{"window_id", "item_kind", "item_id"}).AddRow(77, "demand", 123).AddRow(77, "story", 456))
 
+	mock.ExpectQuery(`(?s)SELECT linked.windowID, COALESCE`).WithArgs(uint64(77)).WillReturnRows(sqlmock.NewRows([]string{"windowID", "total"}).AddRow(77, 0))
+	mock.ExpectQuery(`(?s)SELECT linked.windowID,.*SUM`).WithArgs(uint64(77)).WillReturnRows(sqlmock.NewRows([]string{"windowID", "devCount", "testCount", "deliverCount"}).AddRow(77, 0, 0, 0))
 	cards, err := (&Service{repo: NewRepo(db)}).ListTeamHomeVersionWindows(context.Background(), []uint{11}, 5)
 	if err != nil {
 		t.Fatalf("ListTeamHomeVersionWindows() error = %v", err)

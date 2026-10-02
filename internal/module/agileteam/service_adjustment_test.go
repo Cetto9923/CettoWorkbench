@@ -44,6 +44,8 @@ func TestConfirmAdjustmentWritesTeamAtomically(t *testing.T) {
 				WillReturnRows(sqlmock.NewRows([]string{"account"}).AddRow("newbie"))
 
 			mock.ExpectBegin()
+			mock.ExpectQuery("SELECT .* FROM `zt_teamgroup`.*FOR UPDATE").WithArgs(uint(3), "0", 1).
+				WillReturnRows(sqlmock.NewRows([]string{"id", "parent"}).AddRow(3, 0))
 			mock.ExpectExec("(?s)UPDATE `zt_wb_agileteam_adjustment`").
 				WillReturnResult(sqlmock.NewResult(0, 1))
 			mock.ExpectQuery("(?s)SELECT count\\(\\*\\) FROM `zt_team`").
@@ -89,6 +91,8 @@ func TestConfirmAdjustmentConcurrentTransitionRollsBack(t *testing.T) {
 		WithArgs("newbie").
 		WillReturnRows(sqlmock.NewRows([]string{"account"}).AddRow("newbie"))
 	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT .* FROM `zt_teamgroup`.*FOR UPDATE").WithArgs(uint(3), "0", 1).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "parent"}).AddRow(3, 0))
 	mock.ExpectExec("(?s)UPDATE `zt_wb_agileteam_adjustment`").
 		WillReturnResult(sqlmock.NewResult(0, 0))
 	mock.ExpectRollback()

@@ -29,6 +29,8 @@ from pathlib import Path
 ALLOWLIST = Path(sys.argv[1])
 
 WRITE = re.compile(r"(?:\.\s*|^\s*)(Create|Save|Updates?|Update|Delete|Exec)\s*\(")
+TABLE_VAR = re.compile(r"Table\(\s*(\w+)\s*\)")
+TABLE_EXPR = re.compile(r"Table\(\s*\((\w+)\{\}\)\.TableName\(\)")
 TABLE = re.compile(r'Table\(\s*"([A-Za-z_]+)"')
 RAWTBL = re.compile(r"(?:INSERT\s+(?:IGNORE\s+)?INTO|UPDATE|DELETE\s+FROM)\s+`?([A-Za-z_]+)`?", re.I)
 INLINE_MODEL = re.compile(r"(?:Model|Create|Save|Delete)\s*\(\s*&(?:[\w]+\.)?([A-Za-z_]\w*)\s*\{")
@@ -64,23 +66,31 @@ for gomod in go_files:
         TYPE_TABLE[m.group(1) or m.group(2)] = m.group(3).lower()
 
 # --- 工作台自有表：不算禅道直写 ---------------------------------------------
-# 1) db/*.sql 的 CREATE TABLE（AGENTS.md 核心底线 14：工作台建表进 install.sql）
-WORKBENCH = set()
-for sql in sorted(Path("db").glob("*.sql")):
-    WORKBENCH |= {m.group(1).lower() for m in re.finditer(
-        r"CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?`?([A-Za-z_]\w*)`?", sql.read_text("utf-8"), re.I)}
-# 2) internal/model 顶层包的 TableName()：工作台自有的账号/权限/窗口等模型
-for gomod in sorted(Path("internal/model").glob("*.go")):
-    for m in TABLENAME.finditer(gomod.read_text("utf-8")):
-        WORKBENCH.add(m.group(3).lower())
-# 3) 命名空间前缀 zt_wb_* / zt_workbench_* 是工作台自有前缀。
-#    部分表（如 zt_wb_agileteam_history）只存在于现网、不在 install.sql，故按前缀兜底。
-
-
+# 表所有权采用明确清单；SQL 建表和模型目录均不能自动把原生表变成自有表。
+WORKBENCH = {
+    "zt_login_failures",
+    "zt_login_logs",
+    "zt_roles",
+    "zt_role_permissions",
+    "zt_gf_user_roles",
+    "zt_menus",
+    "zt_versionwindow",
+    "zt_versionwindowproduct",
+    "zt_wb_versionwindow_milestone",
+    "zt_wb_agileteam_orgmap",
+    "zt_demandwindow",
+    "zt_operation_logs",
+    "zt_workbench_notify_reads",
+    "zt_depts",
+    "zt_wb_profile_pref_kv",
+    "zt_wb_dept_manager_override",
+    "zt_wb_agileteam_adjustment",
+    "zt_wb_agileteam_adjustment_item",
+    "zt_wb_agileteam_history",
+}
+# 只有上述明确登记的工作台表可免检查。
 def is_zentao(table):
-    if not table.startswith("zt_") or table in WORKBENCH:
-        return False
-    return not re.fullmatch(r"zt_(wb|workbench)_\w+", table)
+    return table.startswith("unresolved:") or (table.startswith("zt_") and table not in WORKBENCH)
 
 
 def enclosing_func(lines, idx):
@@ -95,8 +105,6 @@ def enclosing_func(lines, idx):
 hits = []
 for gomod in go_files:
     src = gomod.read_text("utf-8")
-    if "zt_" not in src:
-        continue
     lines = src.splitlines()
     for j, line in enumerate(lines):
         wm = WRITE.search(line)
@@ -130,9 +138,17 @@ for gomod in go_files:
             if m:
                 scope[m.group(1)] = m.group(2)
 
+        table_vars = {m.group(1): m.group(2).lower() for m in re.finditer(r'(\w+)\s*(?::?=)\s*"(zt_\w+)"', src)}
+        if str(gomod) == "internal/module/agileteam/repo_basic_atomic.go":
+            table_vars["table"] = "zt_teamgroup"
         tables = set()
         for k in range(begin, end + 1):
             seg = lines[k]
+            for m in TABLE_VAR.finditer(seg):
+                tables.add(table_vars.get(m.group(1), "unresolved:" + m.group(1)))
+            for m in TABLE_EXPR.finditer(seg):
+                if m.group(1) in TYPE_TABLE:
+                    tables.add(TYPE_TABLE[m.group(1)])
             m = TABLE.search(seg)
             if m:
                 tables.add(m.group(1).lower())

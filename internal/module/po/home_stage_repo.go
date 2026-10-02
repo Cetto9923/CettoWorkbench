@@ -284,30 +284,6 @@ func (r *Repo) FindRoleDemandIDsWithFilters(ctx context.Context, account string,
 	return ids, err
 }
 
-// FindScheduleStoryIDsWithFilters 查询排期阶段符合工具栏筛选的独立研发需求 ID。
-func (r *Repo) FindScheduleStoryIDsWithFilters(ctx context.Context, account string, req DemandsReq) ([]int, error) {
-	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
-		return nil, nil
-	}
-	var ids []int
-	err := applyStoryToolbarFilters(r.scheduleStoryScope(ctx, account), account, req).
-		Order("id DESC").
-		Pluck("id", &ids).Error
-	return ids, err
-}
-
-// FindDeliverStoryIDsWithFilters 查询交付阶段符合工具栏筛选的独立研发需求 ID。
-func (r *Repo) FindDeliverStoryIDsWithFilters(ctx context.Context, account string, req DemandsReq) ([]int, error) {
-	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
-		return nil, nil
-	}
-	var ids []int
-	err := applyStoryToolbarFilters(r.deliverStoryScope(ctx, account), account, req).
-		Order("id DESC").
-		Pluck("id", &ids).Error
-	return ids, err
-}
-
 // FindStageMixedRefsPaged SQL-paginates the schedule/deliver mix of demand + story
 // IDs (demands first, then stories; each by id DESC) without materializing the
 // full ID list in process memory.

@@ -6,7 +6,9 @@
 # 格式：<文件> <函数> <表>  # 豁免理由
 # 理由必填；对应代码改掉后条目失效会报错，防止白名单腐烂。
 #
-# 收录标准：internal/pkg/zentao 与 po/gateway.go 中确认没有对应禅道写接口。
+# 收录是源码审查登记，不等同于已证明禅道没有接口或允许上线。
+# 版本、字段、权限和并发依据见 docs/quality/workbench-write-exceptions.md。
+# 未取得部署版本原生接口及隔离并发证据的例外必须阻止发布。
 # 有接口可替代、本轮仍直写的，只可进文末「待迁移」组（理由前缀「待迁移」），不得静默豁免。
 # 排查结论见 ~/Downloads/wb-禅道直写汇报.md，收口见 ~/Downloads/wb-禅道收口汇报.md。
 
@@ -37,6 +39,14 @@ internal/module/schedule/repo_story_link.go ReplaceProjectStory zt_projectstory 
 internal/pkg/ztaction/action.go Create zt_action  # 禅道 zt_action 写通道本身，禅道 REST 不提供 action 写入端点
 internal/pkg/ztaction/action.go LogHistory zt_history  # 同上，zt_history 由禅道自身维护
 
-# --- 待迁移（只允许减少，不允许新增；门禁醒目提示但不失败）---
-# 理由必须以「待迁移」起首，并写明原因、对应禅道接口、迁移前置条件。
-# 允许的键名写死在 tools/check-zentao-write.sh 的 PENDING_MAX；多出来的键名会失败。
+
+internal/module/agileteam/repo_basic_atomic.go applyTopologyChange zt_teamgroup  # 存量逐项例外；字段与权限见交付登记，原生版本及隔离并发未验证，阻止上线
+internal/module/agileteam/repo_basic_atomic.go refreshDescendantsIterative zt_teamgroup  # 存量逐项例外；字段与权限见交付登记，原生版本及隔离并发未验证，阻止上线
+internal/module/agileteam/repo_basic_atomic.go updateTeamgroupFields zt_teamgroup  # 存量逐项例外；字段与权限见交付登记，原生版本及隔离并发未验证，阻止上线
+internal/module/profile/repo.go SaveSelfProfile zt_user  # 存量逐项例外；字段与权限见交付登记，原生版本及隔离并发未验证，阻止上线
+internal/module/profile/repo.go UpdatePassword zt_user  # 存量逐项例外；字段与权限见交付登记，原生版本及隔离并发未验证，阻止上线
+internal/module/user/repo.go Delete zt_user  # 存量逐项例外；字段与权限见交付登记，原生版本及隔离并发未验证，阻止上线
+internal/module/user/repo.go Update zt_user  # 存量逐项例外；字段与权限见交付登记，原生版本及隔离并发未验证，阻止上线
+internal/module/user/repo.go UpdatePassword zt_user  # 存量逐项例外；字段与权限见交付登记，原生版本及隔离并发未验证，阻止上线
+internal/module/user/repo.go UpdateStatus zt_user  # 存量逐项例外；字段与权限见交付登记，原生版本及隔离并发未验证，阻止上线
+internal/module/user/repo.go createWithTx zt_user  # 存量逐项例外；字段与权限见交付登记，原生版本及隔离并发未验证，阻止上线

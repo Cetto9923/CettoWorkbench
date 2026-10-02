@@ -30,7 +30,6 @@ import (
 
 	"workbench/internal/config"
 	"workbench/internal/middleware"
-	"workbench/internal/model"
 
 	"workbench/internal/module/debug"
 	"workbench/internal/module/dept"
@@ -90,8 +89,8 @@ func Run() error {
 		return fmt.Errorf("init database: %w", err)
 	}
 	defer func() { _ = database.Close(db) }()
-	if err := db.AutoMigrate(&model.OperationLog{}, &model.DeptManagerOverride{}); err != nil {
-		return fmt.Errorf("ensure tables: %w", err)
+	if err := database.CheckSchema(db); err != nil {
+		return err
 	}
 
 	// 价值流只读备库：失败不阻断启动，PO 价值流降级为空阶段
@@ -208,19 +207,7 @@ func newBusinessModules(w *wiring) {
 // sidebarBadgesProvider 侧栏角标：注入 poSvc.SidebarBadges 为 render provider。
 func sidebarBadgesProvider(poSvc *po.Service) func(*gin.Context) (render.SidebarBadges, error) {
 	return func(c *gin.Context) (render.SidebarBadges, error) {
-		v, ok := c.Get("currentUser")
-		if !ok {
-			return render.SidebarBadges{}, nil
-		}
-		u, ok := v.(*model.User)
-		if !ok || u == nil {
-			return render.SidebarBadges{}, nil
-		}
-		b, err := poSvc.SidebarBadges(c.Request.Context(), &po.SidebarActor{Account: u.Account, ID: u.ID})
-		if err != nil {
-			return render.SidebarBadges{Todos: b.Todos, Done: b.Done, Notice: b.Notice}, err
-		}
-		return render.SidebarBadges{Todos: b.Todos, Done: b.Done, Notice: b.Notice}, nil
+		return poSvc.SidebarBadges(c.Request.Context(), middleware.CurrentUser(c))
 	}
 }
 
