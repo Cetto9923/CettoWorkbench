@@ -7,7 +7,9 @@
 #       禅道已有的业务动作一律走 internal/pkg/zentao（zentao.Client），不得在工作台
 #       重复实现，也不得直接写禅道表。
 # 白名单: tools/zentao-write-allowlist.txt，每行 "<文件> <函数> <表>  # 理由"，理由必填。
-# 退出码: 0=通过；1=存在未豁免的禅道直写，或白名单条目已失效/格式有误。
+# 待迁移: 理由以「待迁移」起首的条目。命中时醒目提示但不失败；键名不得超过
+#         下方 PENDING_MAX（只允许减少，不允许新增）。超出清单的新直写仍失败。
+# 退出码: 0=通过（含仅剩待迁移）；1=存在未豁免的禅道直写、待迁移新增，或白名单失效/格式有误。
 # =============================================================================
 set -euo pipefail
 
@@ -46,6 +48,12 @@ ZTACTION_CALL = {
     "LogHistory": ("zt_history",),
 }
 ZTACTION = re.compile(r"ztaction\.(" + "|".join(ZTACTION_CALL) + r")\s*\(")
+# 有禅道接口但仍直写的存量上限。允许从白名单删掉已改掉的键，不允许新增键。
+PENDING_MAX = {
+    ("internal/module/po/repo_deliver.go", "UpdateDemandDeliverFull", "zt_demand"),
+    ("internal/module/po/repo_home_actions.go", "updateHomeDemandStatus", "zt_demand"),
+    ("internal/module/schedule/repo_scheduling_write.go", "UpdateTask", "zt_task"),
+}
 
 go_files = [p for p in sorted(Path("internal").rglob("*.go")) if not p.name.endswith("_test.go")]
 
@@ -145,36 +153,65 @@ for gomod in go_files:
                 hits.append(key + (action,))
 
 # --- 白名单 ----------------------------------------------------------------
-allow, bad_cfg, used = set(), [], set()
+exempt, pending = set(), set()
+exempt_used, pending_used = set(), set()
+bad_cfg = []
 for lineno, raw in enumerate(ALLOWLIST.read_text("utf-8").splitlines(), 1):
     line = raw.strip()
     if not line or line.startswith("#"):
         continue
     body, _, reason = line.partition("#")
     parts = body.split()
-    if len(parts) != 3 or not reason.strip():
+    reason = reason.strip()
+    if len(parts) != 3 or not reason:
         bad_cfg.append(f"{ALLOWLIST}:{lineno} 格式或豁免理由缺失：{raw}")
         continue
     key = (parts[0], parts[1], parts[2].lower())
-    if key in allow:
+    if reason.startswith("待迁移"):
+        if key not in PENDING_MAX:
+            bad_cfg.append(f"{ALLOWLIST}:{lineno} 待迁移清单不允许新增：{line}")
+            continue
+        if key in pending:
+            bad_cfg.append(f"{ALLOWLIST}:{lineno} 重复条目：{line}")
+        pending.add(key)
+        pending_used.add(key)
+        continue
+    if key in PENDING_MAX:
+        bad_cfg.append(f"{ALLOWLIST}:{lineno} 待迁移项不得改为静默豁免：{line}")
+        continue
+    if key in exempt or key in pending:
         bad_cfg.append(f"{ALLOWLIST}:{lineno} 重复条目：{line}")
-    allow.add(key)
-    used.add(key)
+    exempt.add(key)
+    exempt_used.add(key)
 
-violations = []
+violations, pending_hits = [], []
 for path, func, table, verb in hits:
     key = (path, func, table)
-    if key in allow:
-        used.discard(key)
+    if key in pending:
+        pending_used.discard(key)
+        pending_hits.append((path, func, table, verb))
+    elif key in exempt:
+        exempt_used.discard(key)
     else:
         violations.append((path, func, table, verb))
 
 for path, func, table, verb in sorted(violations):
     print(f"FAIL  {path}  函数 {func}  表 {table}  动作 {verb}")
-for path, func, table in sorted(used):
+for path, func, table in sorted(exempt_used):
     print(f"FAIL  白名单条目已无对应违规，请删除：{path}  函数 {func}  表 {table}")
 for msg in bad_cfg:
     print(f"FAIL  {msg}")
-print(f"禅道直写检查：命中 {len(hits)} 处，其中豁免 {len(hits) - len(violations)} 处，未豁免 {len(violations)} 处")
-sys.exit(1 if (violations or bad_cfg or used) else 0)
+if pending_hits or pending_used:
+    print("======== 待迁移（不失败；只允许减少，不允许新增）========")
+    for path, func, table, verb in sorted(pending_hits):
+        print(f"待迁移  {path}  函数 {func}  表 {table}  动作 {verb}")
+    for path, func, table in sorted(pending_used):
+        print(f"待迁移已消除（允许减少，请从清单删除）  {path}  函数 {func}  表 {table}")
+    print(f"======== 待迁移仍剩 {len(pending_hits)} 处直写。超出本清单的新直写仍失败。========")
+exempted = len(hits) - len(violations) - len(pending_hits)
+print(
+    f"禅道直写检查：命中 {len(hits)} 处，其中豁免 {exempted} 处，"
+    f"待迁移 {len(pending_hits)} 处，未豁免 {len(violations)} 处"
+)
+sys.exit(1 if (violations or bad_cfg or exempt_used) else 0)
 PY
