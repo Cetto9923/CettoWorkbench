@@ -50,7 +50,7 @@ func (h *Handler) GetStoryTasks(c *gin.Context) {
 		}
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"error":   err.Error(),
+			"error":   clientErrorText(err),
 		})
 		return
 	}

@@ -157,3 +157,37 @@ func TestDeleteWindowHandler_NilActorReturns403(t *testing.T) {
 		t.Fatalf("unauthenticated delete must not write the database: %v", err)
 	}
 }
+
+func TestSaveStoryTasksHandler_MissingStoryReturns404(t *testing.T) {
+	db, mock := newAuthzMockDB(t)
+	svc := NewService(NewRepo(db), nil, nil, nil, nil)
+	mock.ExpectQuery(`FROM zt_story s`).
+		WithArgs(uint(999999)).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}))
+
+	router := newAuthzRouter(svc, &model.User{ID: 1, Account: "admin", IsSuperAdmin: true})
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/schedule/stories/999999/save-tasks", strings.NewReader(`{"tasks":[]}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(rec, req)
+
+	if rec.Code == http.StatusInternalServerError {
+		t.Fatalf("missing story must not be 500; body = %s", rec.Body.String())
+	}
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("status = %d, want 404; body = %s", rec.Code, rec.Body.String())
+	}
+	var body struct {
+		Success bool   `json:"success"`
+		Message string `json:"message"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode body: %v; raw = %s", err, rec.Body.String())
+	}
+	if body.Success || body.Message != "研发需求不存在" {
+		t.Fatalf("body = %s", rec.Body.String())
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("missing story must not write: %v", err)
+	}
+}

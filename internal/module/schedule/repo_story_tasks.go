@@ -3,7 +3,7 @@
 // 模块: 排期工作台
 // 类型: action
 // 职责: 维护任务弹窗研发需求详情只读查询。
-// 依赖: internal/module/schedule/form.go
+// 依赖: internal/pkg/errorx
 // =============================================================================
 
 package schedule
@@ -12,6 +12,8 @@ import (
 	"context"
 	"errors"
 	"strings"
+
+	"workbench/internal/pkg/errorx"
 )
 
 type storyTaskDetailRow struct {
@@ -60,7 +62,6 @@ type StoryTaskDetail struct {
 	Attachments        []StoryAttachmentItem
 }
 
-// GetStoryTaskDetail 查询维护任务弹窗所需的研发需求详情。
 func (r *Repo) GetStoryTaskDetail(ctx context.Context, storyID uint) (*StoryTaskDetail, error) {
 	if storyID == 0 {
 		return nil, errors.New("研发需求 ID 无效")
@@ -87,7 +88,7 @@ LIMIT 1`
 		return nil, err
 	}
 	if row.ID == 0 {
-		return nil, errors.New("研发需求不存在")
+		return nil, errorx.New(errorx.ErrCodeNotFound, "研发需求不存在")
 	}
 
 	detail := &StoryTaskDetail{
@@ -236,7 +237,6 @@ type storySchedulingRow struct {
 	VerifyFinish  string `gorm:"column:verifyFinish"`
 }
 
-// GetStorySchedulingDetail 查询独立研发需求排期弹窗所需的研发需求详情。
 func (r *Repo) GetStorySchedulingDetail(ctx context.Context, storyID uint) (*DemandSchedulingDetail, error) {
 	if storyID == 0 {
 		return nil, errors.New("研发需求 ID 无效")
@@ -262,7 +262,7 @@ LIMIT 1`
 		return nil, err
 	}
 	if row.ID == 0 {
-		return nil, errors.New("研发需求不存在")
+		return nil, errorx.New(errorx.ErrCodeNotFound, "研发需求不存在")
 	}
 	if row.FromDemand > 0 {
 		return nil, errors.New("该研发需求关联业需，请从业需入口排期")

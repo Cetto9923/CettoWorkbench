@@ -40,7 +40,7 @@ func (h *Handler) GetStoryScheduling(c *gin.Context) {
 		}
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"error":   err.Error(),
+			"error":   clientErrorText(err),
 		})
 		return
 	}
