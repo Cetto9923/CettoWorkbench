@@ -94,6 +94,8 @@ func (h *Handler) UrgeHomeDemand(c *gin.Context) {
 			status, message = http.StatusBadRequest, "未找到验收责任人，未发送催办"
 		case errors.Is(err, errUrgeChannel):
 			status, message = http.StatusBadRequest, "本轮仅支持站内通知"
+		case errors.Is(err, errUrgeType):
+			status, message = http.StatusBadRequest, "催办类型无效"
 		}
 		c.JSON(status, gin.H{"success": false, "message": message})
 		return

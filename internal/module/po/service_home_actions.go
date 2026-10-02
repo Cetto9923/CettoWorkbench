@@ -17,6 +17,7 @@ var (
 	errDeliverBlocked      = errors.New("存在严重缺陷未关闭，禁止发起交付")
 	errUrgeNoRecipient     = errors.New("未找到验收责任人")
 	errUrgeChannel         = errors.New("不支持的催办渠道")
+	errUrgeType            = errors.New("催办类型无效")
 	errUrgeDuplicate       = errors.New("催办重复")
 )
 
@@ -179,7 +180,7 @@ func (s *Service) UrgeHomeDemand(ctx context.Context, actor *model.User, id uint
 		return false, errHomeActionForbidden
 	}
 	if req.UrgeType != "accept" {
-		return false, errHomeActionConflict
+		return false, errUrgeType
 	}
 	if len(req.Channels) != 1 || req.Channels[0] != "inapp" {
 		return false, errUrgeChannel
@@ -213,8 +214,7 @@ func (s *Service) UrgeHomeDemand(ctx context.Context, actor *model.User, id uint
 	return duplicate, err
 }
 
-// canUrgeHomeAcceptance keeps the API authorization identical to the homepage:
-// a participant may remind the acceptance owner, but cannot remind themselves.
+// canUrgeHomeAcceptance 与首页一致：参与人可催验收人，但不能催自己。
 func (r *Repo) canUrgeHomeAcceptance(row *homeActionDemandRow, account string) bool {
 	if row == nil || (row.Status != "testing" && row.Status != "waitacceptance") {
 		return false
@@ -230,7 +230,6 @@ func (r *Repo) canUrgeHomeAcceptance(row *homeActionDemandRow, account string) b
 	return len(excludeHomeAccount(recipients, account)) > 0
 }
 
-// homeAcceptanceRecipientSource 标记催办对象来源，用于预览提示。
 type homeAcceptanceRecipientSource string
 
 const (
@@ -281,8 +280,7 @@ func appendHomeCSVAccounts(out []string, seen map[string]bool, raw string) []str
 	return out
 }
 
-// homeAcceptanceRecipients 与老仓 resolveUrgeRecipients(acceptance) 对齐：
-// 验收人/验证人 → 提出人 originator → 创建人 createdBy。
+// homeAcceptanceRecipients 顺序：验收人/验证人，其次提出人，再次创建人。
 func homeAcceptanceRecipients(row *homeActionDemandRow) []string {
 	accounts, _ := homeAcceptanceRecipientsWithSource(row)
 	return accounts
