@@ -291,7 +291,7 @@ func TestHomeFocusMyActionUsesStageRoleMatrix(t *testing.T) {
 		"status = 'wait' AND id IN (",
 		"status = 'active' AND (",
 		"status = 'clarified' AND (",
-		"status = 'developing' AND BRA = ?",
+		"status = 'developing' AND (BRA = ? OR ((BRA IS NULL OR BRA = '') AND assignedTo = ? AND",
 		"status = 'testing' AND (QD = ? OR (accepter = ?",
 		"status = 'waitacceptance' AND accepter = ?",
 		"status IN ('acceptanced', 'waitdeliver') AND BRA = ?",
@@ -372,8 +372,8 @@ func TestHomeFocusMyActionEmptyReviewIDs_NoEmptyInClause(t *testing.T) {
 	if !strings.Contains(where, "status = 'wait' AND 1 = 0") {
 		t.Fatalf("empty review IDs must set wait stage to 1 = 0: %s", where)
 	}
-	if len(args) != 14 {
-		t.Fatalf("expected 14 args for empty review IDs, got %d", len(args))
+	if len(args) != 15 {
+		t.Fatalf("expected 15 args for empty review IDs, got %d", len(args))
 	}
 
 	// 验证 dry-run 查询不生成空 IN

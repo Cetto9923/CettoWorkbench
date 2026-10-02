@@ -1,8 +1,6 @@
 package po
 
-// currentHandlerDemandWhere returns the stage-specific homepage "my action"
-// predicate. The same account can be related to a demand in several ways, but
-// only the role that is actionable in the current value-stream stage matches.
+// currentHandlerDemandWhere returns the stage-specific homepage "my action" predicate: only the role actionable in the current value-stream stage matches.
 func currentHandlerDemandWhere(account string) (string, []interface{}) {
 	return `(
 		(status IN ('draft', 'refuse') AND createdBy = ?)
@@ -22,17 +20,16 @@ func currentHandlerDemandWhere(account string) (string, []interface{}) {
 				WHERE dc.demand = zt_demand.id AND FIND_IN_SET(?, REPLACE(dc.PM, ' ', '')) > 0
 			)
 		))
-		OR (status = 'developing' AND BRA = ?)
+		OR ` + developingHandlerSQL + `
 		OR (status = 'testing' AND (QD = ? OR (accepter = ? AND ` + dateSetBeforeTodaySQL("testFinish") + `)))
 		OR (status = 'waitacceptance' AND accepter = ?)
 		OR (status IN ('acceptanced', 'waitdeliver') AND BRA = ?)
 		OR (status = 'released' AND (originator = ? OR BRA = ?))
-	)`, []interface{}{account, account, account, account, account, account, account, account, account, account, account, account, account, account, account}
+	)`, []interface{}{account, account, account, account, account, account, account, account, account, account, account, account, account, account, account, account}
 }
 
-// currentHandlerDemandWhereWithReviews 优化版本：利用已预查的评审 demand ID 列表替换相关子查询，
-// 避免对大表 zt_demandreview 执行逐行全表扫描。当 reviewDemandIDs 为 nil 时退化为原子查询实现；
-// 当 reviewDemandIDs 为空切片（无待评审）时，wait 阶段置为恒假条件 (1 = 0)，防止生成非法空 IN ()。
+// currentHandlerDemandWhereWithReviews 用已预查的评审 demand ID 列表替换相关子查询，避免对大表
+// zt_demandreview 逐行全表扫描；reviewDemandIDs 为 nil 时退化为原子查询实现，为空切片时 wait 置 (1 = 0)。
 func currentHandlerDemandWhereWithReviews(account string, reviewDemandIDs []int) (string, []interface{}) {
 	if reviewDemandIDs == nil {
 		return currentHandlerDemandWhere(account)
@@ -53,12 +50,12 @@ func currentHandlerDemandWhereWithReviews(account string, reviewDemandIDs []int)
 				WHERE dc.demand = zt_demand.id AND FIND_IN_SET(?, REPLACE(dc.PM, ' ', '')) > 0
 			)
 		))
-		OR (status = 'developing' AND BRA = ?)
+		OR ` + developingHandlerSQL + `
 		OR (status = 'testing' AND (QD = ? OR (accepter = ? AND ` + dateSetBeforeTodaySQL("testFinish") + `)))
 		OR (status = 'waitacceptance' AND accepter = ?)
 		OR (status IN ('acceptanced', 'waitdeliver') AND BRA = ?)
 		OR (status = 'released' AND (originator = ? OR BRA = ?))
-	)`, []interface{}{account, account, account, account, account, account, account, account, account, account, account, account, account, account}
+	)`, []interface{}{account, account, account, account, account, account, account, account, account, account, account, account, account, account, account}
 	}
 	return `(
 		(status IN ('draft', 'refuse') AND createdBy = ?)
@@ -75,12 +72,12 @@ func currentHandlerDemandWhereWithReviews(account string, reviewDemandIDs []int)
 				WHERE dc.demand = zt_demand.id AND FIND_IN_SET(?, REPLACE(dc.PM, ' ', '')) > 0
 			)
 		))
-		OR (status = 'developing' AND BRA = ?)
+		OR ` + developingHandlerSQL + `
 		OR (status = 'testing' AND (QD = ? OR (accepter = ? AND ` + dateSetBeforeTodaySQL("testFinish") + `)))
 		OR (status = 'waitacceptance' AND accepter = ?)
 		OR (status IN ('acceptanced', 'waitdeliver') AND BRA = ?)
 		OR (status = 'released' AND (originator = ? OR BRA = ?))
-	)`, []interface{}{account, reviewDemandIDs, account, account, account, account, account, account, account, account, account, account, account, account, account}
+	)`, []interface{}{account, reviewDemandIDs, account, account, account, account, account, account, account, account, account, account, account, account, account, account}
 }
 
 // currentHandlerDemandKeywordWhere is the keyword counterpart of the same
@@ -110,8 +107,10 @@ func currentHandlerDemandKeywordWhere() string {
 		OR (status = 'released' AND (LOWER(IFNULL(originator, '')) LIKE ? OR LOWER(IFNULL(BRA, '')) LIKE ?))`
 }
 
-// dateSetBeforeTodaySQL avoids a zero-date literal, which can fail under
-// MySQL's NO_ZERO_DATE mode while still accepting ZenTao's historical values.
+// dateSetBeforeTodaySQL avoids a zero-date literal (MySQL NO_ZERO_DATE) while accepting ZenTao's historical values.
 func dateSetBeforeTodaySQL(column string) string {
 	return column + " IS NOT NULL AND CAST(" + column + " AS CHAR) NOT LIKE '0000-00-00%' AND " + column + " <= CURDATE()"
 }
+
+// developingHandlerSQL 提测办理人，与 DeriveCurrentHandler 同优先级：BRA 优先；BRA 空时由负责人承担，且须 developFinish 已到。
+var developingHandlerSQL = `(status = 'developing' AND (BRA = ? OR ((BRA IS NULL OR BRA = '') AND assignedTo = ? AND ` + dateSetBeforeTodaySQL("developFinish") + `)))`

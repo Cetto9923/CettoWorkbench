@@ -32,16 +32,12 @@ func FormatAccountName(account, realname string) string {
 //	draft/wait → assignedTo
 //	active → PM → assignedTo → QD（全空显示 —）
 //	clarified → assignedTo → QD（全空显示 —）
-//	developing/testing/waitacceptance → RD
+//	developing → BRA → assignedTo
+//	testing/waitacceptance → RD
 //	waitdeliver/acceptanced → 待确认（不用 BRA）
 //	其它 → 待分配
-//
-// bra/braNm 仅保留签名兼容，内部不使用。
 func DeriveCurrentHandler(status, assignedTo, qd, rd, bra, pm, pmNm,
 	assignedToNm, qdNm, rdNm, braNm string) (account, display string) {
-	_ = bra
-	_ = braNm
-
 	get := accountNamePair
 
 	switch status {
@@ -66,7 +62,12 @@ func DeriveCurrentHandler(status, assignedTo, qd, rd, bra, pm, pmNm,
 			return acc, disp
 		}
 		return "", "—"
-	case "developing", "testing", "waitacceptance":
+	case "developing":
+		if acc, disp := get(bra, braNm); acc != "" {
+			return acc, disp
+		}
+		return get(assignedTo, assignedToNm)
+	case "testing", "waitacceptance":
 		return get(rd, rdNm)
 	case "waitdeliver", "acceptanced":
 		return "", "待确认"
