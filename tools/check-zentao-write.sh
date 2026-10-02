@@ -1,0 +1,180 @@
+#!/usr/bin/env bash
+# =============================================================================
+# 文件: tools/check-zentao-write.sh
+# 模块: 质量门
+# 类型: check script
+# 职责: 拦截非测试 Go 代码里对禅道原生表（zt_*）的直接 INSERT/UPDATE/DELETE。
+#       禅道已有的业务动作一律走 internal/pkg/zentao（zentao.Client），不得在工作台
+#       重复实现，也不得直接写禅道表。
+# 白名单: tools/zentao-write-allowlist.txt，每行 "<文件> <函数> <表>  # 理由"，理由必填。
+# 退出码: 0=通过；1=存在未豁免的禅道直写，或白名单条目已失效/格式有误。
+# =============================================================================
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+ALLOWLIST=tools/zentao-write-allowlist.txt
+if [[ ! -f "$ALLOWLIST" ]]; then
+  echo "缺少白名单文件：$ALLOWLIST"
+  exit 1
+fi
+
+python3 - "$ALLOWLIST" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+ALLOWLIST = Path(sys.argv[1])
+
+WRITE = re.compile(r"(?:\.\s*|^\s*)(Create|Save|Updates?|Update|Delete|Exec)\s*\(")
+TABLE = re.compile(r'Table\(\s*"([A-Za-z_]+)"')
+RAWTBL = re.compile(r"(?:INSERT\s+(?:IGNORE\s+)?INTO|UPDATE|DELETE\s+FROM)\s+`?([A-Za-z_]+)`?", re.I)
+INLINE_MODEL = re.compile(r"(?:Model|Create|Save|Delete)\s*\(\s*&(?:[\w]+\.)?([A-Za-z_]\w*)\s*\{")
+VAR_MODEL = re.compile(r"(?:Model|Create|Save|Delete)\s*\(\s*&(\w+)\s*[,)]")
+DECL = re.compile(r"\b(\w+)\s*:?=\s*(?:[\w]+\.)?([A-Za-z_]\w*)\s*\{")
+# x := make([]T, ...) 形式的切片变量
+MAKE = re.compile(r"\b(\w+)\s*:?=\s*make\(\s*\[\](?:[\w]+\.)?([A-Za-z_]\w*)\s*,")
+FUNC = re.compile(r"^func\s")
+# 同时匹配 `func (T) TableName()` 与 `func (r *T) TableName()`
+TABLENAME = re.compile(
+    r"func\s+\(\s*(?:\*?\s*([A-Za-z_]\w*)|\w+\s+\*?\s*([A-Za-z_]\w*))\s*\)\s*TableName\(\)"
+    r'\s*string\s*\{\s*return\s+"([A-Za-z_]+)"')
+# ztaction 是禅道 zt_action / zt_history 的唯一写通道
+ZTACTION_CALL = {
+    "Create": ("zt_action",),
+    "LogEdited": ("zt_action", "zt_history"),
+    "LogHistory": ("zt_history",),
+}
+ZTACTION = re.compile(r"ztaction\.(" + "|".join(ZTACTION_CALL) + r")\s*\(")
+
+go_files = [p for p in sorted(Path("internal").rglob("*.go")) if not p.name.endswith("_test.go")]
+
+# --- 类型 -> 表名映射（含禅道模型与模块内局部模型）--------------------------
+TYPE_TABLE = {}
+for gomod in go_files:
+    for m in TABLENAME.finditer(gomod.read_text("utf-8")):
+        TYPE_TABLE[m.group(1) or m.group(2)] = m.group(3).lower()
+
+# --- 工作台自有表：不算禅道直写 ---------------------------------------------
+# 1) db/*.sql 的 CREATE TABLE（AGENTS.md 核心底线 14：工作台建表进 install.sql）
+WORKBENCH = set()
+for sql in sorted(Path("db").glob("*.sql")):
+    WORKBENCH |= {m.group(1).lower() for m in re.finditer(
+        r"CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?`?([A-Za-z_]\w*)`?", sql.read_text("utf-8"), re.I)}
+# 2) internal/model 顶层包的 TableName()：工作台自有的账号/权限/窗口等模型
+for gomod in sorted(Path("internal/model").glob("*.go")):
+    for m in TABLENAME.finditer(gomod.read_text("utf-8")):
+        WORKBENCH.add(m.group(3).lower())
+# 3) 命名空间前缀 zt_wb_* / zt_workbench_* 是工作台自有前缀。
+#    部分表（如 zt_wb_agileteam_history）只存在于现网、不在 install.sql，故按前缀兜底。
+
+
+def is_zentao(table):
+    if not table.startswith("zt_") or table in WORKBENCH:
+        return False
+    return not re.fullmatch(r"zt_(wb|workbench)_\w+", table)
+
+
+def enclosing_func(lines, idx):
+    for k in range(idx, -1, -1):
+        m = FUNC.match(lines[k])
+        if m:
+            name = re.match(r"^func\s*(?:\([^)]*\)\s*)?([A-Za-z_]\w*)", lines[k])
+            return name.group(1) if name else "?"
+    return "?"
+
+
+hits = []
+for gomod in go_files:
+    src = gomod.read_text("utf-8")
+    if "zt_" not in src:
+        continue
+    lines = src.splitlines()
+    for j, line in enumerate(lines):
+        wm = WRITE.search(line)
+        zm = ZTACTION.search(line)
+        if not wm and not zm:
+            continue
+        # 语句起点：向上找上一条以 } ; { 收尾的行，避免跨语句误判
+        begin = 0
+        for k in range(j - 1, -1, -1):
+            if lines[k].rstrip().endswith(("}", ";", "{")):
+                begin = k + 1
+                break
+        # 语句终点：Exec( 等调用的 SQL 参数可能跨行，按括号配平向后延伸
+        end, depth = j, 0
+        for k in range(j, min(j + 12, len(lines))):
+            depth += lines[k].count("(") - lines[k].count(")")
+            end = k
+            if k > j and depth <= 0:
+                break
+        func_start = 0
+        for k in range(j, -1, -1):
+            if FUNC.match(lines[k]):
+                func_start = k
+                break
+        scope = {}
+        for k in range(func_start, j + 1):
+            m = DECL.search(lines[k])
+            if m:
+                scope[m.group(1)] = m.group(2)
+            m = MAKE.search(lines[k])
+            if m:
+                scope[m.group(1)] = m.group(2)
+
+        tables = set()
+        for k in range(begin, end + 1):
+            seg = lines[k]
+            m = TABLE.search(seg)
+            if m:
+                tables.add(m.group(1).lower())
+            for m in RAWTBL.finditer(seg):
+                tables.add(m.group(1).lower())
+            for m in INLINE_MODEL.finditer(seg):
+                if m.group(1) in TYPE_TABLE:
+                    tables.add(TYPE_TABLE[m.group(1)])
+            for m in VAR_MODEL.finditer(seg):
+                if scope.get(m.group(1), "") in TYPE_TABLE:
+                    tables.add(TYPE_TABLE[scope[m.group(1)]])
+            for m in ZTACTION.finditer(seg):
+                tables.update(ZTACTION_CALL[m.group(1)])
+        action = wm.group(1) if wm else ZTACTION.search(line).group(1)
+        for table in sorted(t for t in tables if is_zentao(t)):
+            key = (str(gomod), enclosing_func(lines, j), table)
+            if key not in {(h[0], h[1], h[2]) for h in hits}:
+                hits.append(key + (action,))
+
+# --- 白名单 ----------------------------------------------------------------
+allow, bad_cfg, used = set(), [], set()
+for lineno, raw in enumerate(ALLOWLIST.read_text("utf-8").splitlines(), 1):
+    line = raw.strip()
+    if not line or line.startswith("#"):
+        continue
+    body, _, reason = line.partition("#")
+    parts = body.split()
+    if len(parts) != 3 or not reason.strip():
+        bad_cfg.append(f"{ALLOWLIST}:{lineno} 格式或豁免理由缺失：{raw}")
+        continue
+    key = (parts[0], parts[1], parts[2].lower())
+    if key in allow:
+        bad_cfg.append(f"{ALLOWLIST}:{lineno} 重复条目：{line}")
+    allow.add(key)
+    used.add(key)
+
+violations = []
+for path, func, table, verb in hits:
+    key = (path, func, table)
+    if key in allow:
+        used.discard(key)
+    else:
+        violations.append((path, func, table, verb))
+
+for path, func, table, verb in sorted(violations):
+    print(f"FAIL  {path}  函数 {func}  表 {table}  动作 {verb}")
+for path, func, table in sorted(used):
+    print(f"FAIL  白名单条目已无对应违规，请删除：{path}  函数 {func}  表 {table}")
+for msg in bad_cfg:
+    print(f"FAIL  {msg}")
+print(f"禅道直写检查：命中 {len(hits)} 处，其中豁免 {len(hits) - len(violations)} 处，未豁免 {len(violations)} 处")
+sys.exit(1 if (violations or bad_cfg or used) else 0)
+PY

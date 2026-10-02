@@ -1,0 +1,48 @@
+# 禅道直写白名单
+#
+# 规则：非测试 Go 代码直接写禅道原生表（zt_*）即失败。禅道已有的业务动作一律调
+# internal/pkg/zentao（zentao.Client），不得在工作台重复实现、不得直写禅道表。
+#
+# 格式：<文件> <函数> <表>  # 豁免理由
+# 理由必填；对应代码改掉后条目失效会报错，防止白名单腐烂。
+#
+# 收录标准：internal/pkg/zentao 与 po/gateway.go 中确认没有对应禅道写接口。
+# 有接口可替代的一律不得进本文件，必须改写为调 zentao.Client。
+# 排查结论见 ~/Downloads/wb-禅道直写汇报.md。
+
+# --- 敏捷小组治理：成员增删改 ---
+internal/module/agileteam/repo_confirm.go ApplyConfirmedAdjustment zt_team  # zentao.Client 无团队成员管理方法；禅道侧端点未接入，改造前须先确认禅道是否开放
+internal/module/agileteam/repo_confirm.go upsertTeamMemberTx zt_team  # 同上：zt_team 成员写入无对应禅道写接口
+
+# --- PO 工作台：审计日志由禅道自身维护，REST 不暴露写入口 ---
+internal/module/po/repo_deliver.go UpdateDemandDeliverFull zt_action  # zt_action 无对应禅道写接口
+internal/module/po/repo_deliver.go UpdateDemandDeliverFull zt_story  # 交付时按 fromDemand 同步关联研发需求，zentao.Client 无此批量同步接口
+internal/module/po/repo_home_actions.go updateHomeDemandStatus zt_action  # 同上
+internal/module/po/repo_home_actions.go insertHomeDemandAction zt_action  # 同上
+internal/module/po/repo_home_actions.go insertAcceptanceUrge zt_action  # 同上
+internal/module/po/repofollow.go EnsureDemandUnfollowed zt_starinfo  # 补写 followed=0 行以压制历史 mailto 抄送关注；REST 关注切换不产生该行，无接口可替代
+internal/module/po/repofollow.go RemoveProjectReportFollow zt_project  # 解除项目周报关注：zentao.Client 仅有需求关注接口，无项目 follow 接口
+internal/module/po/repo_home_actions.go insertAcceptanceUrge zt_notify  # zentao.Client 无催办消息写入接口
+internal/module/po/reporeview.go SaveDemandReview zt_action  # zt_action 无对应禅道写接口
+
+# --- 排期工作台：zentao.Client 目前只覆盖 PUT /tasks/{id} ---
+internal/module/schedule/repo.go CreateProductPlan zt_productplan  # zentao.Client 无计划创建接口
+internal/module/schedule/repo_scheduling_write.go CreateAction zt_action  # zt_action 无对应禅道写接口
+internal/module/schedule/repo_history.go LogEditedRecord zt_action  # 同上
+internal/module/schedule/repo_history.go LogEditedRecord zt_history  # zt_history 无对应禅道写接口
+internal/module/schedule/repo_scheduling_write.go CreateStory zt_story  # zentao.Client 无研发需求创建接口
+internal/module/schedule/repo_scheduling_write.go UpdateStory zt_story  # 同上
+internal/module/schedule/repo_scheduling_write.go DeleteStory zt_story  # 同上
+internal/module/schedule/repo_scheduling_write.go CreateStorySpec zt_storyspec  # zentao.Client 无研发需求描述接口
+internal/module/schedule/repo_scheduling_write.go CreateTask zt_task  # zentao.Client 无任务创建接口（仅有 PUT /tasks/{id}）
+internal/module/schedule/repo_scheduling_write.go CreateTaskSpec zt_taskspec  # zentao.Client 无任务描述接口
+internal/module/schedule/repo_scheduling_write.go DeleteTask zt_task  # zentao.Client 无任务删除接口
+internal/module/schedule/repo_scheduling_write.go UpdateDemandScheduling zt_demand  # 排期回写业需字段，zentao.Client 无对应接口
+internal/module/schedule/repo_scheduling_write.go CreatePlanStory zt_planstory  # zentao.Client 无计划-需求关联接口
+internal/module/schedule/repo_story_link.go EnsurePlanStoryRelation zt_planstory  # 同上
+internal/module/schedule/repo_story_link.go UnlinkStoryFromPlan zt_planstory  # 同上
+internal/module/schedule/repo_story_link.go ReplaceProjectStory zt_projectstory  # zentao.Client 无项目-需求关联接口
+
+# --- ztaction：禅道 zt_action 写通道基础设施 ---
+internal/pkg/ztaction/action.go Create zt_action  # 禅道 zt_action 写通道本身，禅道 REST 不提供 action 写入端点
+internal/pkg/ztaction/action.go LogHistory zt_history  # 同上，zt_history 由禅道自身维护

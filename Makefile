@@ -9,12 +9,13 @@ check: ## 运行 Go 单元测试与静态检查
 	go test ./...
 	go vet ./...
 
-lint: ## 检查相对质量门基线新增或改动的 Go 代码
+lint: ## 检查相对质量门基线新增或改动的 Go 代码，并拦截禅道表直写
 	@if command -v golangci-lint >/dev/null 2>&1 && golangci-lint version | grep -q 'version: 2\.'; then \
 		golangci-lint run --config .golangci.yml; \
 	else \
 		go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.14.0 run --config .golangci.yml; \
 	fi
+	./tools/check-zentao-write.sh
 
 lint-web: ## 检查新增 CSS；基线已有文件见 .stylelintignore
 	npx --yes stylelint@17.14.1 "web/**/*.css" --ignore-path .stylelintignore --allow-empty-input
