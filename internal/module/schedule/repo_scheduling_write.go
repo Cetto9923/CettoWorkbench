@@ -47,29 +47,6 @@ type ZtStorySpec struct {
 }
 
 // ZtTaskInsert 禅道 zt_task 写入字段。
-type ZtTaskInsert struct {
-	Name       string
-	Type       string
-	Pri        int
-	Story      uint
-	Project    uint
-	Execution  uint
-	AssignedTo string
-	Estimate   float64
-	EstStarted string
-	Deadline   string
-	OpenedBy   string
-}
-
-// ZtTaskSpec 禅道 zt_taskspec 写入字段。
-type ZtTaskSpec struct {
-	Task       uint
-	Version    int
-	Name       string
-	EstStarted string
-	Deadline   string
-}
-
 // FindWindowProductPlan 查窗口下某产品的关联计划。
 func (r *Repo) FindWindowProductPlan(ctx context.Context, windowID uint, productID uint) (*model.VersionWindowProduct, error) {
 	if windowID == 0 || productID == 0 {
@@ -118,31 +95,6 @@ func (r *Repo) GetProjectIDByExecution(ctx context.Context, executionID uint) (u
 		current = row.Parent
 	}
 	return 0, errors.New("项目层级过深")
-}
-
-// UserCanAccessProduct 判断用户是否有权操作指定产品/系统。
-func (r *Repo) UserCanAccessProduct(ctx context.Context, account string, productID uint) (bool, error) {
-	account = strings.TrimSpace(account)
-	if account == "" || productID == 0 {
-		return false, nil
-	}
-	isAdmin, err := r.IsAdmin(ctx, account)
-	if err != nil {
-		return false, err
-	}
-	if isAdmin {
-		return true, nil
-	}
-	products, err := r.GetUserProducts(ctx, account)
-	if err != nil {
-		return false, err
-	}
-	for _, product := range products {
-		if product.ID == productID {
-			return true, nil
-		}
-	}
-	return false, nil
 }
 
 // GetDemandMainSystem 查询业需主系统 ID。
@@ -236,15 +188,6 @@ func (r *Repo) CreateStorySpec(ctx context.Context, spec *ZtStorySpec) error {
 	return r.db.WithContext(ctx).Create(&row).Error
 }
 
-// CreatePlanStory 关联计划与研发需求。
-func (r *Repo) CreatePlanStory(ctx context.Context, planID uint, storyID uint) error {
-	if planID == 0 || storyID == 0 {
-		return errors.New("plan or story id is invalid")
-	}
-	row := ztmodel.ZtPlanstory{Plan: planID, Story: storyID, Order: 0}
-	return r.db.WithContext(ctx).Create(&row).Error
-}
-
 // UpdateStory 更新研发需求字段。
 func (r *Repo) UpdateStory(ctx context.Context, storyID uint, updates map[string]interface{}) error {
 	if storyID == 0 {
@@ -261,99 +204,6 @@ func (r *Repo) UpdateStory(ctx context.Context, storyID uint, updates map[string
 
 // zt_action.extra 的标记位 禅道「已删除」列表列的就是 action='deleted' AND extra=1
 const storyActionCanUndeleted = "1"
-
-// DeleteStory 软删除研发需求（对齐禅道 story/control.php delete：置 deleted='1'）。
-func (r *Repo) DeleteStory(ctx context.Context, storyID uint) error {
-	if storyID == 0 {
-		return errors.New("story id is invalid")
-	}
-	return r.db.WithContext(ctx).
-		Table("zt_story").
-		Where("id = ? AND deleted = '0'", storyID).
-		Update("deleted", "1").Error
-}
-
-// CreateTask 创建任务。
-func (r *Repo) CreateTask(ctx context.Context, task *ZtTaskInsert) (uint, error) {
-	if task == nil {
-		return 0, errors.New("task is nil")
-	}
-	now := time.Now()
-	row := ztmodel.ZtTask{
-		Name:       strings.TrimSpace(task.Name),
-		Type:       strings.TrimSpace(task.Type),
-		Pri:        task.Pri,
-		Story:      task.Story,
-		Project:    task.Project,
-		Execution:  task.Execution,
-		AssignedTo: strings.TrimSpace(task.AssignedTo),
-		Estimate:   task.Estimate,
-		Consumed:   0,
-		Left:       task.Estimate,
-		EstStarted: nullableDateValue(task.EstStarted),
-		Deadline:   nullableDateValue(task.Deadline),
-		Status:     "wait",
-		OpenedBy:   task.OpenedBy,
-		OpenedDate: now,
-		Version:    1,
-		Deleted:    "0",
-	}
-	if err := r.db.WithContext(ctx).Create(&row).Error; err != nil {
-		return 0, err
-	}
-	return row.ID, nil
-}
-
-// CreateTaskSpec 创建任务描述。
-func (r *Repo) CreateTaskSpec(ctx context.Context, spec *ZtTaskSpec) error {
-	if spec == nil {
-		return errors.New("task spec is nil")
-	}
-	row := ztmodel.ZtTaskspec{
-		Task:       spec.Task,
-		Version:    spec.Version,
-		Name:       strings.TrimSpace(spec.Name),
-		EstStarted: nullableDateValue(spec.EstStarted),
-		Deadline:   nullableDateValue(spec.Deadline),
-	}
-	return r.db.WithContext(ctx).Create(&row).Error
-}
-
-// UpdateTask 更新任务字段。
-func (r *Repo) UpdateTask(ctx context.Context, taskID uint, updates map[string]interface{}) error {
-	if taskID == 0 {
-		return errors.New("task id is invalid")
-	}
-	if len(updates) == 0 {
-		return nil
-	}
-	return r.db.WithContext(ctx).
-		Table("zt_task").
-		Where("id = ? AND deleted = '0'", taskID).
-		Updates(updates).Error
-}
-
-// CloseTask 关闭任务。
-func (r *Repo) CloseTask(ctx context.Context, taskID uint, actor string) error {
-	return r.UpdateTask(ctx, taskID, map[string]interface{}{
-		"status":       "closed",
-		"closedBy":     actor,
-		"closedDate":   time.Now(),
-		"closedReason": "done",
-		"assignedTo":   "closed",
-	})
-}
-
-// DeleteTask 软删除任务（对齐禅道 task/control.php delete：置 deleted='1'）。
-func (r *Repo) DeleteTask(ctx context.Context, taskID uint) error {
-	if taskID == 0 {
-		return errors.New("task id is invalid")
-	}
-	return r.db.WithContext(ctx).
-		Table("zt_task").
-		Where("id = ? AND deleted = '0'", taskID).
-		Update("deleted", "1").Error
-}
 
 // CreateAction 创建禅道操作日志。
 func (r *Repo) CreateAction(ctx context.Context, objectType string, objectID uint, action string, actor string, productID uint, projectID uint, executionID uint, extra string) error {
@@ -388,17 +238,13 @@ func (r *Repo) UpdateDemandScheduling(ctx context.Context, demandID uint, update
 // 用 Unscoped 绕开 gorm 软删除以释放 uk_demand_story 唯一键位，避免残留行撞键；
 // 实际调用方 service 将本方法包在事务内以保证两步原子性。
 func (r *Repo) SaveDemandLevelWindow(ctx context.Context, demandID uint, windowID uint64, account string) error {
-	if err := r.db.WithContext(ctx).
-		Unscoped().
-		Where("demand = ? AND story = 0", demandID).
-		Delete(&model.DemandWindow{}).Error; err != nil {
-		return err
-	}
-	return r.db.WithContext(ctx).Create(&model.DemandWindow{
-		DemandID:  demandID,
-		StoryID:   0,
-		WindowID:  windowID,
-		CreatedBy: account,
-		UpdatedBy: account,
-	}).Error
+	return r.Transaction(ctx, func(tx *Repo) error {
+		if err := tx.LockWindow(ctx, windowID); err != nil {
+			return err
+		}
+		if err := tx.db.WithContext(ctx).Unscoped().Where("demand = ? AND story = 0", demandID).Delete(&model.DemandWindow{}).Error; err != nil {
+			return err
+		}
+		return tx.db.WithContext(ctx).Create(&model.DemandWindow{DemandID: demandID, WindowID: windowID, CreatedBy: account, UpdatedBy: account}).Error
+	})
 }

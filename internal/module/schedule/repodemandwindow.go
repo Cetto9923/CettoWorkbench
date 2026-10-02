@@ -26,29 +26,26 @@ type WindowWorkItem struct {
 }
 
 const findWindowWorkItemsSQL = `
-SELECT item_kind, item_id
-FROM (
-  SELECT 'demand' AS item_kind, dw.demand AS item_id
-  FROM zt_demandwindow dw
-  WHERE dw.versionWindow = ? AND dw.story = 0 AND dw.deletedAt IS NULL AND dw.demand > 0
-
-  UNION
-
-  SELECT CASE
-           WHEN s.sourceType = 'demandpool' AND s.fromDemand > 0 THEN 'demand'
-           ELSE 'story'
-         END AS item_kind,
-         CASE
-           WHEN s.sourceType = 'demandpool' AND s.fromDemand > 0 THEN s.fromDemand
-           ELSE s.id
-         END AS item_id
-  FROM zt_versionwindowproduct vwp
-  INNER JOIN zt_planstory ps ON ps.plan = vwp.plan
-  INNER JOIN zt_story s ON s.id = ps.story AND s.deleted = '0'
-  WHERE vwp.versionWindow = ? AND vwp.deletedAt IS NULL AND vwp.plan IS NOT NULL
-) AS window_items
-WHERE item_id > 0
-ORDER BY item_kind ASC, item_id ASC`
+SELECT window_id, item_kind, item_id FROM (
+ SELECT dw.versionWindow AS window_id, 'demand' AS item_kind, CASE WHEN d.parent > 0 THEN d.parent ELSE d.id END AS item_id
+ FROM zt_demandwindow dw JOIN zt_demand d ON d.id = dw.demand AND d.deleted = '0'
+ WHERE dw.versionWindow IN ? AND dw.story = 0 AND dw.deletedAt IS NULL
+ UNION
+ SELECT dw.versionWindow, CASE WHEN s.fromDemand > 0 THEN 'demand' ELSE 'story' END,
+ CASE WHEN s.fromDemand > 0 THEN CASE WHEN d.parent > 0 THEN d.parent ELSE d.id END
+      ELSE CASE WHEN s.parent > 0 THEN s.parent ELSE s.id END END
+ FROM zt_demandwindow dw JOIN zt_story s ON s.id = dw.story AND s.deleted = '0'
+ LEFT JOIN zt_demand d ON d.id = s.fromDemand AND d.deleted = '0'
+ WHERE dw.versionWindow IN ? AND dw.deletedAt IS NULL AND (s.fromDemand = 0 OR d.id IS NOT NULL)
+ UNION
+ SELECT vwp.versionWindow, CASE WHEN s.fromDemand > 0 THEN 'demand' ELSE 'story' END,
+ CASE WHEN s.fromDemand > 0 THEN CASE WHEN d.parent > 0 THEN d.parent ELSE d.id END
+      ELSE CASE WHEN s.parent > 0 THEN s.parent ELSE s.id END END
+ FROM zt_versionwindowproduct vwp JOIN zt_planstory ps ON ps.plan = vwp.plan
+ JOIN zt_story s ON s.id = ps.story AND s.deleted = '0'
+ LEFT JOIN zt_demand d ON d.id = s.fromDemand AND d.deleted = '0'
+ WHERE vwp.versionWindow IN ? AND vwp.deletedAt IS NULL AND (s.fromDemand = 0 OR d.id IS NOT NULL)
+) AS window_items WHERE item_id > 0 ORDER BY item_kind, item_id`
 
 // FindWindowWorkItems merges demand-level window links with the existing
 // product-plan/story chain. Demand-pool stories collapse to their originating
@@ -59,7 +56,7 @@ func (r *Repo) FindWindowWorkItems(ctx context.Context, windowID uint64) ([]Wind
 		return []WindowWorkItem{}, nil
 	}
 	items := []WindowWorkItem{}
-	if err := r.db.WithContext(ctx).Raw(findWindowWorkItemsSQL, windowID, windowID).Scan(&items).Error; err != nil {
+	if err := r.db.WithContext(ctx).Raw(findWindowWorkItemsSQL, []uint64{windowID}, []uint64{windowID}, []uint64{windowID}).Scan(&items).Error; err != nil {
 		return nil, err
 	}
 	return items, nil

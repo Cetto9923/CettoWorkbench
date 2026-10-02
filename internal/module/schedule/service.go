@@ -288,11 +288,21 @@ func (s *Service) Create(ctx context.Context, actor *model.User, req CreateReq) 
 	window.CreatedBy = account
 	window.UpdatedBy = account
 
+	links, err := s.prepareWindowProducts(ctx, actor, window, req.Products, account)
+	if err != nil {
+		return err
+	}
 	return s.repo.Transaction(ctx, func(txRepo *Repo) error {
 		if err := txRepo.Create(ctx, window); err != nil {
 			return fmt.Errorf("create version window: %w", err)
 		}
-		return s.saveWindowProducts(ctx, txRepo, window.ID, window, req.Products, account)
+		for _, link := range links {
+			link.WindowID = window.ID
+			if err := txRepo.CreateWindowProduct(ctx, link); err != nil {
+				return err
+			}
+		}
+		return nil
 	})
 }
 
@@ -315,6 +325,10 @@ func (s *Service) Update(ctx context.Context, actor *model.User, req UpdateReq) 
 	account := actorAccount(actor)
 	window.UpdatedBy = account
 
+	links, err := s.prepareWindowProducts(ctx, actor, window, req.Products, account)
+	if err != nil {
+		return err
+	}
 	return s.repo.Transaction(ctx, func(txRepo *Repo) error {
 		if err := txRepo.Update(ctx, window); err != nil {
 			return fmt.Errorf("update version window: %w", err)
@@ -322,7 +336,13 @@ func (s *Service) Update(ctx context.Context, actor *model.User, req UpdateReq) 
 		if err := txRepo.DeleteWindowProducts(ctx, window.ID); err != nil {
 			return fmt.Errorf("delete window products: %w", err)
 		}
-		return s.saveWindowProducts(ctx, txRepo, window.ID, window, req.Products, account)
+		for _, link := range links {
+			link.WindowID = window.ID
+			if err := txRepo.CreateWindowProduct(ctx, link); err != nil {
+				return err
+			}
+		}
+		return nil
 	})
 }
 
@@ -339,57 +359,55 @@ func (s *Service) Delete(ctx context.Context, actor *model.User, req DeleteReq) 
 	if err := s.canModifyWindow(ctx, actor, window); err != nil {
 		return err
 	}
-	// TODO: 如果窗口已关联需求，不允许删除
-	return s.repo.Delete(ctx, req.ID)
+	return s.repo.Transaction(ctx, func(tx *Repo) error {
+		if err := tx.LockWindow(ctx, req.ID); err != nil {
+			return err
+		}
+		count, err := tx.GetWindowDemandCount(ctx, req.ID)
+		if err != nil {
+			return err
+		}
+		if count > 0 {
+			return errors.New("窗口已关联需求，不能删除")
+		}
+		return tx.Delete(ctx, req.ID)
+	})
 }
 
-func (s *Service) saveWindowProducts(ctx context.Context, txRepo *Repo, windowID uint64, window *model.VersionWindow, products []WindowProductInput, account string) error {
-	endDate := window.ReleaseDate.Format("2006-01-02")
-	beginDate := endDate
-	if window.StartDate != nil {
-		beginDate = window.StartDate.Format("2006-01-02")
+func (s *Service) prepareWindowProducts(ctx context.Context, actor *model.User, window *model.VersionWindow, products []WindowProductInput, account string) ([]*model.VersionWindowProduct, error) {
+	if len(products) == 0 {
+		return nil, nil
 	}
-
+	if err := s.validateWindowProducts(ctx, actor, products); err != nil {
+		return nil, err
+	}
+	end := window.ReleaseDate.Format("2006-01-02")
+	begin := end
+	if window.StartDate != nil {
+		begin = window.StartDate.Format("2006-01-02")
+	}
+	links := make([]*model.VersionWindowProduct, 0, len(products))
 	for _, product := range products {
 		if product.ProductID == 0 {
 			continue
 		}
-
-		plans, err := txRepo.GetMatchingPlans(ctx, product.ProductID, endDate)
+		plans, err := s.repo.GetMatchingPlans(ctx, product.ProductID, end)
 		if err != nil {
-			return fmt.Errorf("get matching plans for product %d: %w", product.ProductID, err)
+			return nil, err
 		}
-
-		var planID *uint
-		planSynced := uint8(0)
-
+		link := &model.VersionWindowProduct{ProductID: product.ProductID, CreatedBy: account, UpdatedBy: account}
 		if len(plans) > 0 {
-			id := plans[0].ID
-			planID = &id
-			planSynced = 1
+			link.PlanID, link.PlanSynced = &plans[0].ID, 1
 		} else if product.SyncPlan {
-			title := strings.TrimSpace(product.PlanTitle)
-			newID, err := txRepo.CreateProductPlan(ctx, product.ProductID, title, beginDate, endDate, account)
+			id, err := createProductPlan(ctx, s.ztAPI, product.ProductID, strings.TrimSpace(product.PlanTitle), begin, end)
 			if err != nil {
-				return fmt.Errorf("create product plan for product %d: %w", product.ProductID, err)
+				return nil, err
 			}
-			planID = &newID
-			planSynced = 1
+			link.PlanID, link.PlanSynced = &id, 1
 		}
-
-		wp := &model.VersionWindowProduct{
-			WindowID:   windowID,
-			ProductID:  product.ProductID,
-			PlanID:     planID,
-			PlanSynced: planSynced,
-			CreatedBy:  account,
-			UpdatedBy:  account,
-		}
-		if err := txRepo.CreateWindowProduct(ctx, wp); err != nil {
-			return fmt.Errorf("create window product for product %d: %w", product.ProductID, err)
-		}
+		links = append(links, link)
 	}
-	return nil
+	return links, nil
 }
 
 // GetMatchingPlans 根据产品 ID 和结束日期查询匹配计划。

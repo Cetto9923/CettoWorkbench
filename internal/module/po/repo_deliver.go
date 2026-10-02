@@ -9,10 +9,7 @@ package po
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"strings"
-	"time"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -165,124 +162,31 @@ ORDER BY account ASC`
 	return rows, nil
 }
 
-// DeliverWriteParams 发起交付写入实参。
-type DeliverWriteParams struct {
-	WindowID         uint
-	DeliverDate      string
-	IsCarReview      string
-	IsGrayVerifyPlan string
-	VerifyDate       string
-	VerifyPlan       string
-	Verifier         string
-	Actor            string
-	Comment          string
-}
-
-// UpdateDemandDeliverFull 发起交付全量写入：更新 demand 状态至 waitdeliver，同步关联 story，保存上线窗口与审计日志。
-func (r *Repo) UpdateDemandDeliverFull(ctx context.Context, id uint, params DeliverWriteParams) error {
+func (r *Repo) RequireDeliverWindow(ctx context.Context, windowID uint) error {
 	db, err := r.homeActionWriter()
 	if err != nil {
 		return err
 	}
-	now := time.Now()
-	nowStr := now.Format("2006-01-02 15:04:05")
+	var window model.VersionWindow
+	if err := db.WithContext(ctx).First(&window, windowID).Error; err != nil {
+		return fmt.Errorf("上线窗口不存在：%w", err)
+	}
+	return nil
+}
 
+func (r *Repo) SaveDeliverWindow(ctx context.Context, id, windowID uint, account string) error {
+	db, err := r.homeActionWriter()
+	if err != nil {
+		return err
+	}
 	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var row DeliverDetailRow
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			Table("zt_demand").
-			Select("id, status, deleted, product").
-			Where("id = ?", id).
-			Take(&row).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return errHomeActionNotFound
-			}
+		var window model.VersionWindow
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&window, windowID).Error; err != nil {
 			return err
 		}
-		if row.Deleted != "0" {
-			return errHomeActionNotFound
+		if err := tx.Unscoped().Where("demand = ? AND story = 0", id).Delete(&model.DemandWindow{}).Error; err != nil {
+			return err
 		}
-		if row.Status != "acceptanced" && row.Status != "waitdeliver" {
-			return errHomeActionConflict
-		}
-
-		actionType := "deliver"
-		if row.Status == "waitdeliver" {
-			actionType = "changedelivery"
-		}
-
-		// 1. 更新 zt_demand
-		demandUpdates := map[string]interface{}{
-			"status":           "waitdeliver",
-			"deliverDate":      params.DeliverDate,
-			"isCarReview":      params.IsCarReview,
-			"isGrayVerifyPlan": params.IsGrayVerifyPlan,
-			"verifyDate":       params.VerifyDate,
-			"verifyPlan":       params.VerifyPlan,
-			"veriFier":         params.Verifier,
-			"lastEditedBy":     params.Actor,
-			"lastEditedDate":   nowStr,
-		}
-		if err := tx.Table("zt_demand").Where("id = ? AND deleted = '0'", id).Updates(demandUpdates).Error; err != nil {
-			return fmt.Errorf("update zt_demand deliver: %w", err)
-		}
-
-		// 2. 同步关联研发需求 zt_story（fromDemand = id）
-		storyUpdates := map[string]interface{}{
-			"deliverDate": params.DeliverDate,
-			"isCarReview": params.IsCarReview,
-		}
-		if params.VerifyDate != "" {
-			storyUpdates["verifyDate"] = params.VerifyDate
-		}
-		if params.VerifyPlan != "" {
-			storyUpdates["verifyPlan"] = params.VerifyPlan
-		}
-		if params.Verifier != "" {
-			storyUpdates["veriFier"] = params.Verifier
-		}
-		if err := tx.Table("zt_story").
-			Where("fromDemand = ? AND deleted = '0'", id).
-			Where("closedReason IS NULL OR closedReason NOT IN ?", []string{"willnotdo", "duplicate", "postponed", "cancel", "bydesign"}).
-			Updates(storyUpdates).Error; err != nil {
-			return fmt.Errorf("sync zt_story deliver: %w", err)
-		}
-
-		// 3. 关联上线窗口（若提供了 WindowID）
-		if params.WindowID > 0 {
-			if err := tx.Unscoped().
-				Where("demand = ? AND story = 0", id).
-				Delete(&model.DemandWindow{}).Error; err != nil {
-				return fmt.Errorf("delete old demand window: %w", err)
-			}
-			if err := tx.Create(&model.DemandWindow{
-				DemandID:  id,
-				StoryID:   0,
-				WindowID:  uint64(params.WindowID),
-				CreatedBy: params.Actor,
-				UpdatedBy: params.Actor,
-			}).Error; err != nil {
-				return fmt.Errorf("create demand window link: %w", err)
-			}
-		}
-
-		// 4. 插入 zt_action 审计日志
-		product := ",0,"
-		if strings.TrimSpace(row.Product) != "" && row.Product != "0" {
-			product = "," + row.Product + ","
-		}
-		comment := params.Comment
-		if strings.TrimSpace(comment) == "" {
-			comment = "工作台发起交付"
-		}
-		return tx.Create(&demandActionRow{
-			ObjectType: "demand",
-			ObjectID:   id,
-			Product:    product,
-			Actor:      params.Actor,
-			Action:     actionType,
-			Date:       now,
-			Comment:    comment,
-		}).Error
+		return tx.Create(&model.DemandWindow{DemandID: id, WindowID: uint64(windowID), CreatedBy: account, UpdatedBy: account}).Error
 	})
 }

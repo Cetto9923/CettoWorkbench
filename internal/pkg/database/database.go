@@ -170,3 +170,7 @@ func (l *gormSQLLogger) Trace(ctx context.Context, begin time.Time, fc func() (s
 	sql, rows := fc()
 	sqllog.LogQuery(ctx, sql, elapsed, rows, err)
 }
+
+func (l *gormSQLLogger) ParamsFilter(_ context.Context, sql string, _ ...interface{}) (string, []interface{}) {
+	return sql, nil
+}

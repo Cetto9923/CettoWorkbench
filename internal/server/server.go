@@ -62,8 +62,10 @@ func New(
 
 	return &Server{
 		httpServer: &http.Server{
-			Addr:    cfg.App.Addr,
-			Handler: r,
+			Addr:              cfg.App.Addr,
+			ReadHeaderTimeout: cfg.App.ReadHeaderTimeout,
+			IdleTimeout:       cfg.App.IdleTimeout,
+			Handler:           middleware.CSRF(cfg.Session.CookieSecure)(r),
 		},
 		engine:     r,
 		logger:     zapLog,
@@ -94,10 +96,10 @@ func (s *Server) Run() error {
 
 	registerRoutes(s.engine, s.routeDeps)
 
-	var handler http.Handler = s.engine
+	handler := s.httpServer.Handler
 	if s.sessionMgr != nil {
 		// 必须包在 gin.Engine 外层：SCS 才能拦截 gin 的 WriteHeader，登录 303 才会带上 Set-Cookie。
-		handler = s.sessionMgr.LoadAndSave(s.engine)
+		handler = s.sessionMgr.LoadAndSave(handler)
 	}
 	s.httpServer.Handler = handler
 

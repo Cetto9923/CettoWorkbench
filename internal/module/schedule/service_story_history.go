@@ -104,63 +104,8 @@ func (s *Service) saveEditedStoryDates(
 	return txRepo.LogEditedHistory(ctx, "story", storyID, account, productID, 0, 0, changes)
 }
 
-func (s *Service) saveEditedTask(
-	ctx context.Context,
-	txRepo *Repo,
-	account string,
-	productID uint,
-	projectID uint,
-	taskReq SaveSchedulingTask,
-) error {
-	snapshot, err := txRepo.FindTaskHistorySnapshot(ctx, taskReq.ID)
-	if err != nil {
-		return fmt.Errorf("load task %d: %w", taskReq.ID, err)
-	}
-
-	name := strings.TrimSpace(taskReq.Name)
-	taskType := strings.TrimSpace(taskReq.Type)
-	pri := normalizeTaskPriority(taskReq.Pri)
-	assignedTo := strings.TrimSpace(taskReq.AssignedTo)
-	estStarted := nullableDateValue(taskReq.EstStarted)
-	deadline := nullableDateValue(taskReq.Deadline)
-	updates := map[string]interface{}{
-		"name":           name,
-		"type":           taskType,
-		"pri":            pri,
-		"assignedTo":     assignedTo,
-		"estimate":       taskReq.Estimate,
-		"left":           taskReq.Estimate,
-		"estStarted":     estStarted,
-		"deadline":       deadline,
-		"execution":      taskReq.ExecutionID,
-		"project":        projectID,
-		"lastEditedBy":   account,
-		"lastEditedDate": time.Now(),
-	}
-	// 对齐禅道 buildTaskForEdit：指派变化才刷新 assignedDate，且该字段不进 history。
-	if assignedTo != strings.TrimSpace(snapshot.AssignedTo) {
-		updates["assignedDate"] = time.Now()
-	}
-	if err := txRepo.UpdateTask(ctx, taskReq.ID, updates); err != nil {
-		return fmt.Errorf("update task %d: %w", taskReq.ID, err)
-	}
-
-	changes := []ztaction.Change{
-		{Field: "name", Old: strings.TrimSpace(snapshot.Name), New: name},
-		{Field: "type", Old: strings.TrimSpace(snapshot.Type), New: taskType},
-		{Field: "pri", Old: strconv.Itoa(snapshot.Pri), New: strconv.Itoa(pri)},
-		{Field: "assignedTo", Old: strings.TrimSpace(snapshot.AssignedTo), New: assignedTo},
-		{Field: "estimate", Old: formatHistoryNumber(snapshot.Estimate), New: formatHistoryNumber(taskReq.Estimate)},
-		{Field: "left", Old: formatHistoryNumber(snapshot.Left), New: formatHistoryNumber(taskReq.Estimate)},
-		{Field: "estStarted", Old: normalizeHistoryDate(snapshot.EstStarted), New: normalizeHistoryDate(estStarted)},
-		{Field: "deadline", Old: normalizeHistoryDate(snapshot.Deadline), New: normalizeHistoryDate(deadline)},
-		{Field: "execution", Old: strconv.FormatUint(uint64(snapshot.Execution), 10), New: strconv.FormatUint(uint64(taskReq.ExecutionID), 10)},
-		{Field: "project", Old: strconv.FormatUint(uint64(snapshot.Project), 10), New: strconv.FormatUint(uint64(projectID), 10)},
-	}
-	if err := txRepo.LogEditedHistory(ctx, "task", taskReq.ID, account, productID, projectID, taskReq.ExecutionID, changes); err != nil {
-		return fmt.Errorf("create task action: %w", err)
-	}
-	return nil
+func (s *Service) saveEditedTask(ctx context.Context, taskReq SaveSchedulingTask) error {
+	return updateTask(ctx, s.ztAPI, taskReq.ID, buildZentaoTaskEditBody(taskReq))
 }
 
 func (s *Service) saveEditedDemandScheduling(
@@ -222,8 +167,4 @@ func (s *Service) saveEditedDemandScheduling(
 		return fmt.Errorf("create demand action: %w", err)
 	}
 	return nil
-}
-
-func formatHistoryNumber(value float64) string {
-	return strconv.FormatFloat(value, 'f', -1, 64)
 }

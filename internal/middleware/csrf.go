@@ -10,7 +10,7 @@ package middleware
 
 import (
 	"net/http"
-	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/justinas/nosurf"
@@ -19,22 +19,23 @@ import (
 const csrfErrorHTML = "<!DOCTYPE html><html lang=\"zh-CN\"><head><meta charset=\"utf-8\"><title>CSRF 校验失败</title></head><body><h1>CSRF 校验失败</h1></body></html>"
 
 // CSRF 返回可挂载到标准 net/http 的 nosurf 中间件。
-func CSRF() func(http.Handler) http.Handler {
+func CSRF(secure bool) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
-		// 临时关闭 CSRF 校验：默认透传请求。
-		// 需要恢复校验时，将环境变量 workbench_CSRF_ENABLE 设为 "1"。
-		if os.Getenv("workbench_CSRF_ENABLE") != "1" {
-			return next
-		}
-
 		csrf := nosurf.New(next)
+		csrf.SetIsTLSFunc(func(r *http.Request) bool { return secure || r.TLS != nil })
 		csrf.SetBaseCookie(http.Cookie{
 			HttpOnly: true,
 			SameSite: http.SameSiteLaxMode,
-			Secure:   os.Getenv("workbench_MODE") == "prod",
+			Secure:   secure,
 			Path:     "/",
 		})
 		csrf.SetFailureHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if strings.Contains(r.Header.Get("Content-Type"), "application/json") || strings.Contains(r.Header.Get("Accept"), "application/json") {
+				w.Header().Set("Content-Type", "application/json; charset=utf-8")
+				w.WriteHeader(http.StatusForbidden)
+				_, _ = w.Write([]byte(`{"success":false,"message":"CSRF 校验失败，请刷新页面后重试"}`))
+				return
+			}
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			w.WriteHeader(http.StatusForbidden)
 			_, _ = w.Write([]byte(csrfErrorHTML))

@@ -22,10 +22,10 @@ func TestFindWindowWorkItemsMergesAndDeduplicatesDemandSources(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mock.ExpectQuery(`(?s)SELECT item_kind, item_id FROM \(.*zt_demandwindow.*UNION.*zt_versionwindowproduct.*zt_planstory.*zt_story.*ORDER BY item_kind ASC, item_id ASC`).
-		WithArgs(uint64(77), uint64(77)).
-		WillReturnRows(sqlmock.NewRows([]string{"item_kind", "item_id"}).
-			AddRow("demand", 123).AddRow("story", 456).AddRow("demand", 789))
+	mock.ExpectQuery(`(?s)SELECT window_id, item_kind, item_id FROM \(.*zt_demandwindow.*UNION.*zt_versionwindowproduct.*zt_planstory.*zt_story.*ORDER BY item_kind, item_id`).
+		WithArgs(uint64(77), uint64(77), uint64(77)).
+		WillReturnRows(sqlmock.NewRows([]string{"window_id", "item_kind", "item_id"}).
+			AddRow(77, "demand", 123).AddRow(77, "story", 456).AddRow(77, "demand", 789))
 	items, err := NewRepo(db).FindWindowWorkItems(context.Background(), 77)
 	if err != nil {
 		t.Fatalf("FindWindowWorkItems() error = %v", err)
@@ -63,10 +63,10 @@ func TestFindWindowWorkItemsSQLUsesDistinctUnion(t *testing.T) {
 	if strings.Contains(findWindowWorkItemsSQL, "UNION ALL") {
 		t.Fatal("window work-item sources must be de-duplicated")
 	}
-	if !strings.Contains(findWindowWorkItemsSQL, "\n  UNION\n") {
+	if !strings.Contains(findWindowWorkItemsSQL, "\n UNION\n") {
 		t.Fatal("window work-item query must use distinct UNION")
 	}
-	if !strings.Contains(findWindowWorkItemsSQL, "s.fromDemand") || !strings.Contains(findWindowWorkItemsSQL, "ELSE s.id") {
+	if !strings.Contains(findWindowWorkItemsSQL, "s.fromDemand") || !strings.Contains(findWindowWorkItemsSQL, "s.parent > 0") {
 		t.Fatal("plan-chain items must map demand-pool stories to demands and retain independent stories")
 	}
 }
@@ -115,9 +115,9 @@ func TestListTeamHomeVersionWindowsCountsDeduplicatedItems(t *testing.T) {
 		WithArgs(uint(11)).WillReturnRows(sqlmock.NewRows([]string{"id", "name", "parent", "path"}).AddRow(uint(11), "对公一组", uint(1), ",1,11,"))
 	mock.ExpectQuery(`(?s)SELECT .* FROM .*zt_teamgroup.*WHERE id IN \(\?\) AND deleted = '0' AND status != 'disband'`).
 		WithArgs(uint(1)).WillReturnRows(sqlmock.NewRows([]string{"id", "name", "parent", "path"}).AddRow(uint(1), "信贷专项团队", uint(0), ",1,"))
-	mock.ExpectQuery(`(?s)SELECT item_kind, item_id FROM \(.*zt_demandwindow.*UNION.*zt_versionwindowproduct.*zt_planstory.*zt_story.*ORDER BY item_kind ASC, item_id ASC`).
-		WithArgs(uint64(77), uint64(77)).
-		WillReturnRows(sqlmock.NewRows([]string{"item_kind", "item_id"}).AddRow("demand", 123).AddRow("story", 456))
+	mock.ExpectQuery(`(?s)SELECT window_id, item_kind, item_id FROM \(.*zt_demandwindow.*UNION.*zt_versionwindowproduct.*zt_planstory.*zt_story.*ORDER BY item_kind, item_id`).
+		WithArgs(uint64(77), uint64(77), uint64(77)).
+		WillReturnRows(sqlmock.NewRows([]string{"window_id", "item_kind", "item_id"}).AddRow(77, "demand", 123).AddRow(77, "story", 456))
 
 	cards, err := (&Service{repo: NewRepo(db)}).ListTeamHomeVersionWindows(context.Background(), []uint{11}, 5)
 	if err != nil {

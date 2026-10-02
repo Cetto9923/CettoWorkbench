@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"workbench/internal/config"
+	"workbench/internal/pkg/redact"
 )
 
 const (
@@ -53,6 +54,7 @@ func NewRequestID() string {
 
 // LogQuery 记录单条 SQL 查询（写入按日 sql-YYYY-MM-DD.log）。
 func LogQuery(ctx context.Context, sql string, elapsed time.Duration, rows int64, err error) {
+	sql = redact.SQL(sql)
 	state := RequestStateFromContext(ctx)
 	slow := elapsed > slowThreshold
 
@@ -81,7 +83,7 @@ func LogQuery(ctx context.Context, sql string, elapsed time.Duration, rows int64
 		File:      file,
 	}
 	if err != nil {
-		entry.Error = err.Error()
+		entry.Error = redact.SQL(err.Error())
 	}
 
 	defaultWriter.write(entry)
@@ -224,8 +226,12 @@ func (w *Writer) ensureDailyFileLocked() error {
 		_ = w.file.Close()
 		w.file = nil
 	}
-	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
 	if err != nil {
+		return err
+	}
+	if err := f.Chmod(0o600); err != nil {
+		_ = f.Close()
 		return err
 	}
 	w.file = f

@@ -17,85 +17,6 @@ import (
 	"workbench/internal/pkg/zentao"
 )
 
-// submitDemandReviewViaZentaoReq 禅道 POST /demand/:id/submit 入参。
-type submitDemandReviewViaZentaoReq struct {
-	DemandID int64
-	Reviewer []string
-	Comment  string
-}
-
-// submitDemandReviewViaZentao 以当前登录账号（ctx）调用禅道发起评审接口。
-func submitDemandReviewViaZentao(ctx context.Context, client *zentao.Client, req submitDemandReviewViaZentaoReq) error {
-	if client == nil {
-		return fmt.Errorf("禅道 API 未配置")
-	}
-	if req.DemandID <= 0 {
-		return fmt.Errorf("需求 ID 无效")
-	}
-	if len(req.Reviewer) == 0 {
-		return fmt.Errorf("业务评审人不能为空")
-	}
-	payload := map[string]any{
-		"reviewer": req.Reviewer,
-	}
-	if comment := strings.TrimSpace(req.Comment); comment != "" {
-		payload["comment"] = comment
-	}
-	path := fmt.Sprintf("/demand/%d/submit", req.DemandID)
-	return client.Do(ctx, http.MethodPost, path, payload, nil)
-}
-
-// reviewDemandViaZentaoReq 禅道 POST /demand/:id/review 入参。
-type reviewDemandViaZentaoReq struct {
-	DemandID int64
-	Result   string // pass / refuse
-	Comment  string
-}
-
-// reviewDemandViaZentao 以当前登录账号（ctx）调用禅道评审接口。
-func reviewDemandViaZentao(ctx context.Context, client *zentao.Client, req reviewDemandViaZentaoReq) error {
-	if client == nil {
-		return fmt.Errorf("禅道 API 未配置")
-	}
-	if req.DemandID <= 0 {
-		return fmt.Errorf("需求 ID 无效")
-	}
-	result := strings.TrimSpace(req.Result)
-	if result != "pass" && result != "refuse" {
-		return fmt.Errorf("评审结果无效")
-	}
-	payload := map[string]any{
-		"result": result,
-	}
-	if comment := strings.TrimSpace(req.Comment); comment != "" {
-		payload["comment"] = comment
-	}
-	path := fmt.Sprintf("/demand/%d/review", req.DemandID)
-	return client.Do(ctx, http.MethodPost, path, payload, nil)
-}
-
-// withdrawDemandReviewViaZentaoReq 禅道 POST /demand/:id/withdrawReview 入参。
-type withdrawDemandReviewViaZentaoReq struct {
-	DemandID int64
-	Comment  string
-}
-
-// withdrawDemandReviewViaZentao 以当前登录账号（ctx）调用禅道撤回评审接口。
-// comment 始终下发；未传时置为空字符串。
-func withdrawDemandReviewViaZentao(ctx context.Context, client *zentao.Client, req withdrawDemandReviewViaZentaoReq) error {
-	if client == nil {
-		return fmt.Errorf("禅道 API 未配置")
-	}
-	if req.DemandID <= 0 {
-		return fmt.Errorf("需求 ID 无效")
-	}
-	payload := map[string]any{
-		"comment": strings.TrimSpace(req.Comment),
-	}
-	path := fmt.Sprintf("/demand/%d/withdrawReview", req.DemandID)
-	return client.Do(ctx, http.MethodPost, path, payload, nil)
-}
-
 // deliverDemandViaZentaoReq 禅道 POST /demand/:id/deliver 入参。
 type deliverDemandViaZentaoReq struct {
 	DemandID         int64
@@ -105,6 +26,7 @@ type deliverDemandViaZentaoReq struct {
 	VerifyPlan       string
 	VeriFier         string
 	IsCarReview      string
+	Comment          string
 }
 
 // deliverDemandViaZentao 以当前登录账号（ctx）调用禅道发起交付接口。
@@ -126,6 +48,7 @@ func deliverDemandViaZentao(ctx context.Context, client *zentao.Client, req deli
 		"verifyPlan":       strings.TrimSpace(req.VerifyPlan),
 		"veriFier":         strings.TrimSpace(req.VeriFier),
 		"isCarReview":      isCar,
+		"comment":          strings.TrimSpace(req.Comment),
 	}
 	path := fmt.Sprintf("/demand/%d/deliver", req.DemandID)
 	return client.Do(ctx, http.MethodPost, path, payload, nil)

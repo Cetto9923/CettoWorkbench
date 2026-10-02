@@ -55,7 +55,7 @@ func TestGetWindowDemandCountDirectBindingSQL(t *testing.T) {
 	}
 
 	mock.ExpectQuery(`(?s)SELECT.*zt_demandwindow.*zt_demand.*zt_demandwindow.*zt_story`).
-		WithArgs(uint64(1), uint64(1)).
+		WithArgs(uint64(1), uint64(1), uint64(1)).
 		WillReturnRows(sqlmock.NewRows([]string{"demandCount"}).AddRow(2))
 
 	count, err := NewRepo(db).GetWindowDemandCount(context.Background(), 1)

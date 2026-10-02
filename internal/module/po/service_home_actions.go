@@ -44,7 +44,7 @@ func (s *Service) homeAction(ctx context.Context, actor *model.User, id uint, ac
 		if row.Status != "testing" && row.Status != "waitacceptance" {
 			return errHomeActionConflict
 		}
-		return s.repo.updateHomeDemandStatus(ctx, id, row.Status, "acceptanced", account, "verified", homeActionComment(comment, "工作台验收完成"), true)
+		return acceptDemandViaZentao(ctx, s.ztAPI, acceptDemandViaZentaoReq{DemandID: int64(id), Acceptance: "yes", AssignedTo: row.AssignedTo, Comment: homeActionComment(comment, "工作台验收完成")})
 	case "deliver":
 		if row.Status != "acceptanced" {
 			return errHomeActionConflict
@@ -52,7 +52,12 @@ func (s *Service) homeAction(ctx context.Context, actor *model.User, id uint, ac
 		if err := s.checkDemandDeliverBlockers(ctx, id); err != nil {
 			return err
 		}
-		return s.repo.updateHomeDemandStatus(ctx, id, "acceptanced", "waitdeliver", account, "deliver", homeActionComment(comment, "工作台发起交付"), false)
+		detail, err := s.repo.FindDeliverDemand(ctx, id)
+		if err != nil {
+			return err
+		}
+		return s.DeliverDemand(ctx, actor, DemandDeliverReq{ID: id, DeliverDate: detail.DeliverDate, IsCarReview: detail.IsCarReview,
+			IsGrayVerifyPlan: detail.IsGrayVerifyPlan, VerifyDate: detail.VerifyDate, VerifyPlan: detail.VerifyPlan, Verifier: detail.VeriFier, Comment: comment})
 	case "urge":
 		return s.repo.insertHomeDemandAction(ctx, id, account, "reminded", homeActionComment(comment, "工作台催办验收"))
 	default:

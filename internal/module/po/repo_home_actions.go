@@ -91,41 +91,6 @@ func (r *Repo) homeActionAuthorized(row *homeActionDemandRow, account, action st
 	}
 }
 
-func (r *Repo) updateHomeDemandStatus(ctx context.Context, id uint, expected, next, actor, action, comment string, verify bool) error {
-	db, err := r.homeActionWriter()
-	if err != nil {
-		return err
-	}
-	now := time.Now()
-	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var row homeActionDemandRow
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Table("zt_demand").Select("id, status, deleted, product").Where("id = ?", id).Take(&row).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return errHomeActionNotFound
-			}
-			return err
-		}
-		if row.Deleted != "0" {
-			return errHomeActionNotFound
-		}
-		if row.Status != expected {
-			return errHomeActionConflict
-		}
-		updates := map[string]interface{}{"status": next, "editedBy": actor, "editedDate": now}
-		if verify {
-			updates["verifyFinish"] = now.Format("2006-01-02")
-		}
-		if err := tx.Table("zt_demand").Where("id = ? AND status = ? AND deleted = '0'", id, expected).Updates(updates).Error; err != nil {
-			return err
-		}
-		product := ",0,"
-		if strings.TrimSpace(row.Product) != "" && row.Product != "0" {
-			product = "," + row.Product + ","
-		}
-		return tx.Create(&demandActionRow{ObjectType: "demand", ObjectID: id, Product: product, Actor: actor, Action: action, Date: now, Comment: comment}).Error
-	})
-}
-
 func (r *Repo) insertHomeDemandAction(ctx context.Context, id uint, actor, action, comment string) error {
 	db, err := r.homeActionWriter()
 	if err != nil {

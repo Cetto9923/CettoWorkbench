@@ -9,9 +9,14 @@ package po
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
+	"workbench/internal/config"
+	"workbench/internal/pkg/zentao"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"gorm.io/driver/mysql"
@@ -149,21 +154,28 @@ func TestDeliverDemand_BraOwnerAllowed(t *testing.T) {
 		WithArgs(uint(1005)).
 		WillReturnRows(sqlmock.NewRows([]string{"severe_count", "open_count"}).AddRow(0, 0))
 
-	mock.ExpectBegin()
-	mock.ExpectQuery(`(?s)SELECT id, status, deleted, product FROM .zt_demand. WHERE id = \? LIMIT \? FOR UPDATE`).
-		WithArgs(uint(1005), 1).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "status", "deleted", "product"}).AddRow(1005, "acceptanced", "0", "1"))
-	mock.ExpectExec(`(?s)UPDATE .zt_demand. SET .* WHERE id = \? AND deleted = '0'`).
-		WithArgs("2026-09-20", "0", "0", "003030", sqlmock.AnyArg(), "waitdeliver", "003030", "1", "验证计划", 1005).
-		WillReturnResult(sqlmock.NewResult(1, 1))
-	mock.ExpectExec(`(?s)UPDATE .zt_story. SET .* WHERE \(fromDemand = \? AND deleted = '0'\) AND \(closedReason IS NULL OR closedReason NOT IN \(\?,\?,\?,\?,\?\)\)`).
-		WithArgs("2026-09-20", "0", "003030", "1", "验证计划", 1005, "willnotdo", "duplicate", "postponed", "cancel", "bydesign").
-		WillReturnResult(sqlmock.NewResult(1, 1))
-	mock.ExpectExec(`(?s)INSERT INTO.*zt_action.*`).
-		WillReturnResult(sqlmock.NewResult(1, 1))
-	mock.ExpectCommit()
+	apiCalls := 0
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Path == "/tokens" {
+			_, _ = w.Write([]byte(`{"token":"synthetic-test-token"}`))
+			return
+		}
+		apiCalls++
+		if r.Method != http.MethodPost || r.URL.Path != "/demand/1005/deliver" {
+			t.Errorf("unexpected native action: %s %s", r.Method, r.URL.Path)
+		}
+		var body map[string]any
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if body["veriFier"] != "003030" || body["deliverDate"] != "2026-09-20" {
+			t.Errorf("lost delivery fields: %v", body)
+		}
+		_, _ = w.Write([]byte(`{"result":"success"}`))
+	}))
+	defer upstream.Close()
+	s.ztAPI = zentao.NewClient(config.ZentaoConfig{API: upstream.URL})
 
-	err := s.DeliverDemand(context.Background(), &model.User{Account: "003030"}, DemandDeliverReq{
+	err := s.DeliverDemand(zentao.WithAccount(context.Background(), "003030"), &model.User{Account: "003030"}, DemandDeliverReq{
 		ID:               1005,
 		DeliverDate:      "2026-09-20",
 		IsCarReview:      "0",
@@ -175,6 +187,13 @@ func TestDeliverDemand_BraOwnerAllowed(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected BRA owner allowed to deliver, got error: %v", err)
 	}
+	if apiCalls != 1 {
+		t.Fatalf("native calls = %d", apiCalls)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatal(err)
+	}
+
 }
 
 func TestGetDemandDeliverMeta_SevereBugsBlocksCanSubmit(t *testing.T) {

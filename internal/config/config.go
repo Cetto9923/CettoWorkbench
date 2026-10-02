@@ -8,6 +8,8 @@
 
 package config
 
+import "time"
+
 // Config 根配置，字段名与 YAML 键一致。
 type Config struct {
 	App              App          `mapstructure:"app"`
@@ -25,30 +27,38 @@ type Config struct {
 
 // App 应用基础信息。
 type App struct {
-	Env  string `mapstructure:"env"`
-	Addr string `mapstructure:"addr"`
+	Env               string        `mapstructure:"env"`
+	Addr              string        `mapstructure:"addr"`
+	ReadHeaderTimeout time.Duration `mapstructure:"readHeaderTimeout"`
+	IdleTimeout       time.Duration `mapstructure:"idleTimeout"`
 }
 
 // Database 数据库连接参数。
 type Database struct {
-	Host             string `mapstructure:"host"`
-	Port             int    `mapstructure:"port"`
-	User             string `mapstructure:"user"`
-	Password         string `mapstructure:"password"`
-	DBName           string `mapstructure:"dbname"`
-	Charset          string `mapstructure:"charset"`
-	Loc              string `mapstructure:"loc"`
-	ParseTime        bool   `mapstructure:"parseTime"`
-	SessionVariables string `mapstructure:"sessionVariables"` // JDBC 风格 k=v，如 ob_read_consistency=Weak；DSN 内转为 Go 驱动系统变量
+	Host             string        `mapstructure:"host"`
+	Port             int           `mapstructure:"port"`
+	User             string        `mapstructure:"user"`
+	Password         string        `mapstructure:"password"`
+	DBName           string        `mapstructure:"dbname"`
+	Charset          string        `mapstructure:"charset"`
+	Loc              string        `mapstructure:"loc"`
+	ParseTime        bool          `mapstructure:"parseTime"`
+	MaxOpenConns     int           `mapstructure:"maxOpenConns"`
+	MaxIdleConns     int           `mapstructure:"maxIdleConns"`
+	ConnectTimeout   time.Duration `mapstructure:"connectTimeout"`
+	ReadTimeout      time.Duration `mapstructure:"readTimeout"`
+	WriteTimeout     time.Duration `mapstructure:"writeTimeout"`
+	SessionVariables string        `mapstructure:"sessionVariables"` // JDBC 风格 k=v，如 ob_read_consistency=Weak；DSN 内转为 Go 驱动系统变量
 }
 
 // ZentaoConfig 禅道配置。
 type ZentaoConfig struct {
-	URL         string `mapstructure:"url"`
-	API         string `mapstructure:"api"`
-	Account     string `mapstructure:"account"`
-	Password    string `mapstructure:"password"`
-	RequestType string `mapstructure:"requestType"` // GET | PATH_INFO，对齐禅道 config->requestType
+	HTTPTimeout time.Duration `mapstructure:"httpTimeout"`
+	URL         string        `mapstructure:"url"`
+	API         string        `mapstructure:"api"`
+	Account     string        `mapstructure:"account"`
+	Password    string        `mapstructure:"password"`
+	RequestType string        `mapstructure:"requestType"` // GET | PATH_INFO，对齐禅道 config->requestType
 }
 
 // Session 会话相关。

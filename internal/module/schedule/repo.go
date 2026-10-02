@@ -12,7 +12,6 @@ import (
 	"context"
 	"errors"
 	"strings"
-	"time"
 
 	"gorm.io/gorm"
 
@@ -210,27 +209,6 @@ ORDER BY ` + "`order`" + ` ASC, id ASC`
 }
 
 // ztProductplanCreate 用于向禅道 zt_productplan 插入新计划。
-type ztProductplanCreate struct {
-	ID           uint      `gorm:"column:id;primaryKey;autoIncrement"`
-	Product      uint      `gorm:"column:product"`
-	Branch       string    `gorm:"column:branch"`
-	Parent       uint      `gorm:"column:parent"`
-	Title        string    `gorm:"column:title"`
-	Status       string    `gorm:"column:status"`
-	Begin        string    `gorm:"column:begin"`
-	End          string    `gorm:"column:end"`
-	Order        string    `gorm:"column:order"`
-	ClosedReason string    `gorm:"column:closedReason"`
-	CreatedBy    string    `gorm:"column:createdBy"`
-	CreatedDate  time.Time `gorm:"column:createdDate"`
-	Deleted      string    `gorm:"column:deleted"`
-}
-
-// TableName 指定 zt_productplan 表。
-func (ztProductplanCreate) TableName() string {
-	return "zt_productplan"
-}
-
 // Transaction 在事务中执行 fn，失败时自动回滚。
 func (r *Repo) Transaction(ctx context.Context, fn func(txRepo *Repo) error) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -314,18 +292,12 @@ WHERE vwp.versionWindow = ? AND vwp.deletedAt IS NULL AND vwp.plan IS NOT NULL`
 
 // GetWindowDemandCount 查询窗口直接关联的需求数量（业需去重 + 独立软需）。
 func (r *Repo) GetWindowDemandCount(ctx context.Context, windowID uint64) (int, error) {
-	const query = `
-SELECT (SELECT COUNT(DISTINCT CASE WHEN d.parent > 0 THEN d.parent ELSE dw.demand END)
-   FROM zt_demandwindow dw JOIN zt_demand d ON d.id = dw.demand AND d.deleted = '0'
-   WHERE dw.versionWindow = ? AND dw.deletedAt IS NULL AND dw.story = 0 AND dw.demand > 0)
-  + (SELECT COUNT(DISTINCT CASE WHEN s.parent > 0 THEN s.parent ELSE dw.story END)
-   FROM zt_demandwindow dw JOIN zt_story s ON s.id = dw.story AND s.deleted = '0'
-   WHERE dw.versionWindow = ? AND dw.deletedAt IS NULL AND dw.story > 0) AS demandCount`
+	const query = "SELECT COUNT(*) AS demandCount FROM (" + findWindowWorkItemsSQL + ") AS counted_items"
 
 	var row struct {
 		DemandCount int64 `gorm:"column:demandCount"`
 	}
-	if err := r.db.WithContext(ctx).Raw(query, windowID, windowID).Scan(&row).Error; err != nil {
+	if err := r.db.WithContext(ctx).Raw(query, []uint64{windowID}, []uint64{windowID}, []uint64{windowID}).Scan(&row).Error; err != nil {
 		return 0, err
 	}
 	return int(row.DemandCount), nil
@@ -410,26 +382,6 @@ func (r *Repo) FindAll(ctx context.Context) ([]model.VersionWindow, int64, error
 	return rows, total, nil
 }
 
-// ListUpcomingVersionWindowsForTeamgroups 查询指定敏捷小组未过期版本窗口（最多 limit 条）。
-func (r *Repo) ListUpcomingVersionWindowsForTeamgroups(ctx context.Context, teamgroupIDs []uint, limit int) ([]model.VersionWindow, error) {
-	if len(teamgroupIDs) == 0 {
-		return []model.VersionWindow{}, nil
-	}
-	if limit <= 0 {
-		limit = 4
-	}
-
-	var rows []model.VersionWindow
-	if err := r.db.WithContext(ctx).
-		Where("releaseDate >= CURDATE() AND teamgroup IN ?", teamgroupIDs).
-		Order("releaseDate ASC").
-		Limit(limit).
-		Find(&rows).Error; err != nil {
-		return nil, err
-	}
-	return rows, nil
-}
-
 // ListTeamHomeVersionWindows returns only non-deleted windows in the next 30 days
 // for the caller's already-authorized agile group IDs.
 func (r *Repo) ListTeamHomeVersionWindows(ctx context.Context, teamgroupIDs []uint, limit int) ([]model.VersionWindow, error) {
@@ -461,28 +413,6 @@ LIMIT ?`
 // Create 写入 zt_versionwindow 并回填自增 ID。
 func (r *Repo) Create(ctx context.Context, window *model.VersionWindow) error {
 	return r.db.WithContext(ctx).Create(window).Error
-}
-
-// CreateProductPlan 在禅道创建产品计划，返回新计划 ID。
-func (r *Repo) CreateProductPlan(ctx context.Context, productID uint, title, begin, end, account string) (uint, error) {
-	row := ztProductplanCreate{
-		Product:      productID,
-		Branch:       "0",
-		Parent:       0,
-		Title:        title,
-		Status:       "wait",
-		Begin:        begin,
-		End:          end,
-		Order:        "0",
-		ClosedReason: "",
-		CreatedBy:    account,
-		CreatedDate:  time.Now(),
-		Deleted:      "0",
-	}
-	if err := r.db.WithContext(ctx).Create(&row).Error; err != nil {
-		return 0, err
-	}
-	return row.ID, nil
 }
 
 // CreateWindowProduct 写入 zt_versionwindowproduct 关联记录。

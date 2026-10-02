@@ -65,14 +65,19 @@ type Service struct {
 	logger       *zap.Logger
 	issueActions zentao.IssueActionGateway
 	taskActions  taskStatusGateway
+	ztAPI        *zentao.Client
 }
 
 // NewService 创建 Service。兼容 4 参数 (repo, schedule, user, logger) 与 5 参数 (repo, schedule, user, ztAPI, logger)。
 func NewService(repo *Repo, scheduleSvc *schedule.Service, userSvc *user.Service, args ...any) *Service {
 	var logger *zap.Logger
+	client := zentao.DefaultClient()
 	for _, arg := range args {
-		if l, ok := arg.(*zap.Logger); ok {
-			logger = l
+		switch value := arg.(type) {
+		case *zap.Logger:
+			logger = value
+		case *zentao.Client:
+			client = value
 		}
 	}
 	var detailSvc *DetailService
@@ -81,7 +86,7 @@ func NewService(repo *Repo, scheduleSvc *schedule.Service, userSvc *user.Service
 	}
 	s := &Service{repo: repo, detailSvc: detailSvc, schedule: scheduleSvc, userSvc: userSvc, logger: logger,
 		issueActions: zentao.NewUnavailableIssueActionGateway("当前禅道 API 未提供问题解决、关闭或重新激活动作接口"),
-		taskActions:  zentao.DefaultClient()}
+		taskActions:  client, ztAPI: client}
 	if detailSvc != nil {
 		detailSvc.attachParent(s)
 	}
@@ -98,17 +103,6 @@ func (s *Service) SetTaskStatusGateway(gateway taskStatusGateway) {
 		return
 	}
 	s.taskActions = gateway
-}
-
-// SetIssueActionGateway 注入禅道问题原生动作网关；nil 始终失败关闭。
-func (s *Service) SetIssueActionGateway(gateway zentao.IssueActionGateway) {
-	if s == nil {
-		return
-	}
-	if gateway == nil {
-		gateway = zentao.NewUnavailableIssueActionGateway("当前禅道原生问题操作接口不可用")
-	}
-	s.issueActions = gateway
 }
 
 // DetailService 返回统一详情服务。

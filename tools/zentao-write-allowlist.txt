@@ -15,9 +15,6 @@ internal/module/agileteam/repo_confirm.go ApplyConfirmedAdjustment zt_team  # ze
 internal/module/agileteam/repo_confirm.go upsertTeamMemberTx zt_team  # 同上：zt_team 成员写入无对应禅道写接口
 
 # --- PO 工作台：审计日志由禅道自身维护，REST 不暴露写入口 ---
-internal/module/po/repo_deliver.go UpdateDemandDeliverFull zt_action  # zt_action 无对应禅道写接口
-internal/module/po/repo_deliver.go UpdateDemandDeliverFull zt_story  # 交付时按 fromDemand 同步关联研发需求，zentao.Client 无此批量同步接口
-internal/module/po/repo_home_actions.go updateHomeDemandStatus zt_action  # 同上
 internal/module/po/repo_home_actions.go insertHomeDemandAction zt_action  # 同上
 internal/module/po/repo_home_actions.go insertAcceptanceUrge zt_action  # 同上
 internal/module/po/repofollow.go EnsureDemandUnfollowed zt_starinfo  # 补写 followed=0 行以压制历史 mailto 抄送关注；REST 关注切换不产生该行，无接口可替代
@@ -25,19 +22,13 @@ internal/module/po/repofollow.go RemoveProjectReportFollow zt_project  # 解除�
 internal/module/po/repo_home_actions.go insertAcceptanceUrge zt_notify  # zentao.Client 无催办消息写入接口
 
 # --- 排期工作台：zentao.Client 目前只覆盖 PUT /tasks/{id} ---
-internal/module/schedule/repo.go CreateProductPlan zt_productplan  # zentao.Client 无计划创建接口
 internal/module/schedule/repo_scheduling_write.go CreateAction zt_action  # zt_action 无对应禅道写接口
 internal/module/schedule/repo_history.go LogEditedRecord zt_action  # 同上
 internal/module/schedule/repo_history.go LogEditedRecord zt_history  # zt_history 无对应禅道写接口
 internal/module/schedule/repo_scheduling_write.go CreateStory zt_story  # zentao.Client 无研发需求创建接口
 internal/module/schedule/repo_scheduling_write.go UpdateStory zt_story  # 同上
-internal/module/schedule/repo_scheduling_write.go DeleteStory zt_story  # 同上
 internal/module/schedule/repo_scheduling_write.go CreateStorySpec zt_storyspec  # zentao.Client 无研发需求描述接口
-internal/module/schedule/repo_scheduling_write.go CreateTask zt_task  # zentao.Client 无任务创建接口（仅有 PUT /tasks/{id}）
-internal/module/schedule/repo_scheduling_write.go CreateTaskSpec zt_taskspec  # zentao.Client 无任务描述接口
-internal/module/schedule/repo_scheduling_write.go DeleteTask zt_task  # zentao.Client 无任务删除接口
 internal/module/schedule/repo_scheduling_write.go UpdateDemandScheduling zt_demand  # 排期回写业需字段，zentao.Client 无对应接口
-internal/module/schedule/repo_scheduling_write.go CreatePlanStory zt_planstory  # zentao.Client 无计划-需求关联接口
 internal/module/schedule/repo_story_link.go EnsurePlanStoryRelation zt_planstory  # 同上
 internal/module/schedule/repo_story_link.go UnlinkStoryFromPlan zt_planstory  # 同上
 internal/module/schedule/repo_story_link.go ReplaceProjectStory zt_projectstory  # zentao.Client 无项目-需求关联接口
@@ -49,6 +40,3 @@ internal/pkg/ztaction/action.go LogHistory zt_history  # 同上，zt_history 由
 # --- 待迁移（只允许减少，不允许新增；门禁醒目提示但不失败）---
 # 理由必须以「待迁移」起首，并写明原因、对应禅道接口、迁移前置条件。
 # 允许的键名写死在 tools/check-zentao-write.sh 的 PENDING_MAX；多出来的键名会失败。
-internal/module/po/repo_deliver.go UpdateDemandDeliverFull zt_demand  # 待迁移：无测试库且禅道实例为空，同一事务还写工作台表 zt_demandwindow 与审计 zt_action；对应接口 gateway.deliverDemandViaZentao POST /demand/:id/deliver；迁移前须有可对比的测试库或禅道实例，并拆开 story 同步、窗口关联与审计的事务边界
-internal/module/po/repo_home_actions.go updateHomeDemandStatus zt_demand  # 待迁移：无测试库且禅道实例为空，同一事务写审计 zt_action，并用 status 条件更新做乐观并发；对应接口 gateway.acceptDemandViaZentao POST /demand/:id/acceptance；迁移前须锁定并发冲突文案是否仍由工作台返回，以及审计改由禅道写入
-internal/module/schedule/repo_scheduling_write.go UpdateTask zt_task  # 待迁移：无测试库且禅道实例为空，入参是任意字段 map，调用方同一事务还写 zt_action 审计；对应接口 zentao.Client.UpdateTask PUT /tasks/{id}；迁移前须把 map 收敛成 UpdateTaskParams，并具备可对比的测试库或禅道实例

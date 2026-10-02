@@ -246,62 +246,18 @@ func (s *Service) SaveStoryTasks(ctx context.Context, actor *model.User, storyID
 		return err
 	}
 
-	return s.repo.Transaction(ctx, func(txRepo *Repo) error {
-		for _, taskReq := range req.Tasks {
-			if err := s.applyStoryTaskSave(ctx, txRepo, account, storyID, detail.ProductID, req, taskReq); err != nil {
-				return err
-			}
+	tasks := make([]SaveSchedulingTask, 0, len(req.Tasks))
+	for _, task := range req.Tasks {
+		if task.Action == "new" && !task.Create {
+			continue
 		}
-		return nil
-	})
-}
-
-func (s *Service) applyStoryTaskSave(
-	ctx context.Context,
-	txRepo *Repo,
-	account string,
-	storyID, productID uint,
-	req *SaveStoryTasksReq,
-	taskReq SaveStoryTasksTask,
-) error {
-	switch strings.TrimSpace(taskReq.Action) {
-	case "new":
-		if !taskReq.Create {
-			return nil
-		}
-		return s.applySingleSchedulingTask(ctx, txRepo, account, storyID, productID, SaveSchedulingTask{
-			Action:      "new",
-			ExecutionID: taskReq.ExecutionID,
-			Type:        taskReq.Type,
-			Pri:         taskReq.Pri,
-			Name:        taskReq.Name,
-			AssignedTo:  taskReq.AssignedTo,
-			Estimate:    taskReq.Estimate,
-			EstStarted:  taskReq.EstStarted,
-			Deadline:    taskReq.Deadline,
-		})
-
-	case "edit":
-		return s.applySingleSchedulingTask(ctx, txRepo, account, storyID, productID, SaveSchedulingTask{
-			Action:      "edit",
-			ID:          taskReq.ID,
-			ExecutionID: taskReq.ExecutionID,
-			Type:        taskReq.Type,
-			Pri:         taskReq.Pri,
-			Name:        taskReq.Name,
-			AssignedTo:  taskReq.AssignedTo,
-			Estimate:    taskReq.Estimate,
-			EstStarted:  taskReq.EstStarted,
-			Deadline:    taskReq.Deadline,
-		})
-
-	case "delete":
-		return s.applySingleSchedulingTask(ctx, txRepo, account, storyID, productID, SaveSchedulingTask{
-			Action: "delete",
-			ID:     taskReq.ID,
-		})
-
-	default:
-		return fmt.Errorf("unsupported task action: %s", taskReq.Action)
+		tasks = append(tasks, SaveSchedulingTask{Action: task.Action, ID: task.ID, ExecutionID: task.ExecutionID,
+			Type: task.Type, Pri: task.Pri, Name: task.Name, AssignedTo: task.AssignedTo,
+			Estimate: task.Estimate, EstStarted: task.EstStarted, Deadline: task.Deadline})
 	}
+	input := &SaveSchedulingReq{Stories: []SaveSchedulingStory{{Action: "edit", ID: storyID, ProductID: detail.ProductID, Tasks: tasks}}}
+	if err := s.validateSchedulingObjects(ctx, actor, 0, storyID, input); err != nil {
+		return err
+	}
+	return s.applySchedulingTasks(ctx, s.repo, account, storyID, detail.ProductID, tasks)
 }

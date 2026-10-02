@@ -29,6 +29,16 @@ func Load() (*Config, error) {
 	v.AutomaticEnv()
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	v.SetDefault("ratelimit.globalRPS", 100)
+	v.SetDefault("app.readHeaderTimeout", "5s")
+	v.SetDefault("app.idleTimeout", "60s")
+	v.SetDefault("zentao.httpTimeout", "30s")
+	for _, key := range []string{"database", "databaseReadonly"} {
+		v.SetDefault(key+".maxOpenConns", 10)
+		v.SetDefault(key+".maxIdleConns", 5)
+		v.SetDefault(key+".connectTimeout", "3s")
+		v.SetDefault(key+".readTimeout", "10s")
+		v.SetDefault(key+".writeTimeout", "10s")
+	}
 	v.SetDefault("upload.maxSizeMB", 10)
 	v.SetDefault("upload.localDir", "uploads")
 	v.SetDefault("upload.allowedTypes", []string{"image/jpeg", "image/png", "application/pdf"})

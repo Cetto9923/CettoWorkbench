@@ -163,19 +163,24 @@ func (s *Service) DeliverDemand(ctx context.Context, actor *model.User, req Dema
 		comment = "工作台发起交付"
 	}
 
-	params := DeliverWriteParams{
-		WindowID:         req.WindowID,
-		DeliverDate:      req.DeliverDate,
-		IsCarReview:      req.IsCarReview,
-		IsGrayVerifyPlan: req.IsGrayVerifyPlan,
-		VerifyDate:       req.VerifyDate,
-		VerifyPlan:       req.VerifyPlan,
-		Verifier:         req.Verifier,
-		Actor:            account,
-		Comment:          comment,
+	if req.WindowID > 0 {
+		if err := s.repo.RequireDeliverWindow(ctx, req.WindowID); err != nil {
+			return err
+		}
 	}
-
-	return s.repo.UpdateDemandDeliverFull(ctx, req.ID, params)
+	if err := deliverDemandViaZentao(ctx, s.ztAPI, deliverDemandViaZentaoReq{
+		DemandID: int64(req.ID), DeliverDate: req.DeliverDate, IsCarReview: req.IsCarReview,
+		IsGrayVerifyPlan: req.IsGrayVerifyPlan, VerifyDate: req.VerifyDate, VerifyPlan: req.VerifyPlan,
+		VeriFier: req.Verifier, Comment: comment,
+	}); err != nil {
+		return err
+	}
+	if req.WindowID > 0 {
+		if err := s.repo.SaveDeliverWindow(ctx, req.ID, req.WindowID, account); err != nil {
+			return fmt.Errorf("禅道交付已提交，窗口关联失败，请刷新核对：%w", err)
+		}
+	}
+	return nil
 }
 
 func boolStr(ok bool, t, f string) string {

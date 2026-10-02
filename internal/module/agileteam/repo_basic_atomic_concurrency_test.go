@@ -5,7 +5,7 @@
 // 职责: Batch 2B 团队树事务/并发硬门禁。
 //
 // 必须在真实 MySQL 上跑（不能用 sqlmock 替代——死锁是引擎语义层现象）。
-// 通过 WB_TEST_DSN 注入 DSN；缺省值与本地 MySQL 默认一致。
+// 通过 WB_TEST_DSN 显式指定隔离数据库，禁止共享库兜底。
 //
 // 数据隔离：
 //   - 不污染 zentaopms.zt_teamgroup；
@@ -23,6 +23,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	mysqldriver "github.com/go-sql-driver/mysql"
 	"os"
 	"strings"
 	"sync"
@@ -34,15 +35,17 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-// defaultLiveDSN 镜像 workbench/repo_recorder_live_test.go 的 fallback。
-const defaultLiveDSN = "zentao:zentao123@tcp(127.0.0.1:3306)/zentaopms?charset=utf8mb4&parseTime=true&loc=Local"
-
 func liveDSN(t *testing.T) string {
 	t.Helper()
 	dsn := os.Getenv("WB_TEST_DSN")
-	if dsn == "" {
-		dsn = defaultLiveDSN
+	if dsn == "" || os.Getenv("WB_TEST_ALLOW_WRITES") != "1" {
+		t.Skip("live tests require an explicitly authorized isolated WB_TEST_DSN and WB_TEST_ALLOW_WRITES=1")
 	}
+	parsed, err := mysqldriver.ParseDSN(dsn)
+	if err != nil || !strings.HasPrefix(parsed.DBName, "workbench_test_") {
+		t.Fatal("live tests require a dedicated workbench_test_ database")
+	}
+
 	return dsn
 }
 
@@ -60,10 +63,10 @@ func openLiveDB(t *testing.T) *gorm.DB {
 	return gdb
 }
 
-// setupTopologyTestTable 在 zentaopms 内创建临时表（同 zt_teamgroup 结构），
+// setupTopologyTestTable 在显式授权的隔离 schema 内创建测试表（同 zt_teamgroup 结构），
 // 并返回对应的 *gorm.DB 与表名。结束后 DROP。
 //
-// 复用 zentaopms schema：避免 zentao 用户无 CREATE DATABASE 权限的环境跳过测试。
+// 不允许生产或共享 schema。
 func setupTopologyTestTable(t *testing.T, gdb *gorm.DB) (*gorm.DB, string) {
 	t.Helper()
 	var historyTables int64

@@ -43,10 +43,14 @@ type Client struct {
 
 // NewClient 根据配置创建客户端。api 为空时后续调用会报错。
 func NewClient(cfg config.ZentaoConfig) *Client {
+	timeout := cfg.HTTPTimeout
+	if timeout <= 0 {
+		timeout = 30 * time.Second
+	}
 	return &Client{
 		apiBase: strings.TrimRight(strings.TrimSpace(cfg.API), "/"),
 		http: &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout: timeout,
 		},
 		tokens: map[string]tokenCacheEntry{},
 		now:    time.Now,
@@ -264,7 +268,7 @@ func (c *Client) doRaw(ctx context.Context, method, path, token string, body any
 			Response: encodeResponseBody(respBody),
 		}
 		if callErr != nil {
-			entry.Error = callErr.Error()
+			entry.Error = "API 调用失败"
 		}
 		logAPICall(entry)
 	}()
@@ -315,6 +319,16 @@ func (c *Client) doRaw(ctx context.Context, method, path, token string, body any
 		}
 		callErr = &apiError{status: resp.StatusCode, msg: msg}
 		return callErr
+	}
+	if method != http.MethodGet && len(respBody) > 0 {
+		var result struct {
+			Result string `json:"result"`
+			Status string `json:"status"`
+		}
+		if json.Unmarshal(respBody, &result) == nil && (strings.EqualFold(result.Result, "fail") || strings.EqualFold(result.Status, "fail")) {
+			callErr = &apiError{status: http.StatusBadRequest, msg: parseAPIErrorMessage(respBody)}
+			return callErr
+		}
 	}
 	if out == nil || len(respBody) == 0 {
 		return nil

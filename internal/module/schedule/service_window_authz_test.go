@@ -145,6 +145,10 @@ func TestDeleteWindow_CreatorAllowed(t *testing.T) {
 
 	expectWindowFind(mock, 501, "demo_po")
 	mock.ExpectBegin()
+	mock.ExpectQuery(`SELECT .*zt_versionwindow.*FOR UPDATE`).WithArgs(uint64(501), 1).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "createdBy"}).AddRow(501, "demo_po"))
+	mock.ExpectQuery(`(?s)SELECT COUNT.*counted_items`).WithArgs(uint64(501), uint64(501), uint64(501)).
+		WillReturnRows(sqlmock.NewRows([]string{"demandCount"}).AddRow(0))
 	mock.ExpectExec(`UPDATE .zt_versionwindow. SET .*deletedAt`).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
@@ -190,5 +194,23 @@ func TestRequireWindowWriteAccess_OtherUserForbidden(t *testing.T) {
 	assertForbidden(t, err, WindowWriteDenialMessage)
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unexpected mock state: %v", err)
+	}
+}
+
+func TestDeleteWindowRejectsLinkedWorkItemsBeforeDelete(t *testing.T) {
+	db, mock := newAuthzMockDB(t)
+	svc := NewService(NewRepo(db), nil, nil, nil, nil)
+	expectWindowFind(mock, 501, "demo_po")
+	mock.ExpectBegin()
+	mock.ExpectQuery(`SELECT .*zt_versionwindow.*FOR UPDATE`).WithArgs(uint64(501), 1).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "createdBy"}).AddRow(501, "demo_po"))
+	mock.ExpectQuery(`(?s)SELECT COUNT.*counted_items`).WithArgs(uint64(501), uint64(501), uint64(501)).
+		WillReturnRows(sqlmock.NewRows([]string{"demandCount"}).AddRow(1))
+	mock.ExpectRollback()
+	if err := svc.Delete(t.Context(), &model.User{ID: 1, Account: "demo_po"}, DeleteReq{ID: 501}); err == nil {
+		t.Fatal("linked window must reject deletion")
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatal(err)
 	}
 }

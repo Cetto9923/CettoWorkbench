@@ -55,51 +55,6 @@ LIMIT 1`, storyID).Scan(&row).Error
 	return &row, nil
 }
 
-type taskHistorySnapshot struct {
-	ID         uint    `gorm:"column:id"`
-	Name       string  `gorm:"column:name"`
-	Type       string  `gorm:"column:type"`
-	Pri        int     `gorm:"column:pri"`
-	AssignedTo string  `gorm:"column:assignedTo"`
-	Estimate   float64 `gorm:"column:estimate"`
-	Left       float64 `gorm:"column:leftHours"`
-	EstStarted string  `gorm:"column:estStarted"`
-	Deadline   string  `gorm:"column:deadline"`
-	Execution  uint    `gorm:"column:execution"`
-	Project    uint    `gorm:"column:project"`
-}
-
-// FindTaskHistorySnapshot 读取编辑前的任务字段，供对比变更。
-func (r *Repo) FindTaskHistorySnapshot(ctx context.Context, taskID uint) (*taskHistorySnapshot, error) {
-	if taskID == 0 {
-		return nil, errors.New("task id is invalid")
-	}
-	var row taskHistorySnapshot
-	err := r.db.WithContext(ctx).Raw(`
-SELECT
-  id,
-  name,
-  type,
-  pri,
-  assignedTo,
-  estimate,
-  `+"`left`"+` AS leftHours,
-  IFNULL(DATE_FORMAT(estStarted, '%Y-%m-%d'), '') AS estStarted,
-  IFNULL(DATE_FORMAT(deadline, '%Y-%m-%d'), '') AS deadline,
-  execution,
-  project
-FROM zt_task
-WHERE id = ? AND deleted = '0'
-LIMIT 1`, taskID).Scan(&row).Error
-	if err != nil {
-		return nil, err
-	}
-	if row.ID == 0 {
-		return nil, errors.New("任务不存在")
-	}
-	return &row, nil
-}
-
 type demandSchedulingSnapshot struct {
 	ID             uint   `gorm:"column:id"`
 	Product        string `gorm:"column:product"`

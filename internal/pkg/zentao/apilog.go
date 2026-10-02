@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"workbench/internal/config"
+	"workbench/internal/pkg/redact"
 )
 
 const (
@@ -134,8 +135,12 @@ func (w *apiLogWriter) ensureFileLocked() error {
 	}
 	name := apiLogFilePrefix + day + apiLogFileSuffix
 	path := filepath.Join(w.dir, name)
-	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
 	if err != nil {
+		return err
+	}
+	if err := f.Chmod(0o600); err != nil {
+		_ = f.Close()
 		return err
 	}
 	w.file = f
@@ -161,30 +166,12 @@ func formatAPILogDuration(d time.Duration) string {
 	return fmt.Sprintf("%.2fs", d.Seconds())
 }
 
-// encodeRequestBody 将请求体转为可落盘结构（原文完整保留）。
 func encodeRequestBody(body any) any {
-	if body == nil {
-		return nil
-	}
 	raw, err := json.Marshal(body)
 	if err != nil {
-		return fmt.Sprintf("%v", body)
+		return "[请求无法编码，省略]"
 	}
-	var v any
-	if err := json.Unmarshal(raw, &v); err == nil {
-		return v
-	}
-	return string(raw)
+	return redact.JSON(raw)
 }
 
-// encodeResponseBody 解析响应原文（完整保留）。
-func encodeResponseBody(raw []byte) any {
-	if len(raw) == 0 {
-		return nil
-	}
-	var v any
-	if err := json.Unmarshal(raw, &v); err != nil {
-		return string(raw)
-	}
-	return v
-}
+func encodeResponseBody(raw []byte) any { return redact.JSON(raw) }
