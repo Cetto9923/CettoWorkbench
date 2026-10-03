@@ -54,10 +54,10 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
               <div class="schedule-version-range">{{ $w.Range }}</div>
               <div class="schedule-version-bar"><span style="width: {{ $w.UsedPercent }}%;"></span></div>
               <div class="schedule-version-meta">
-                <span>需求 <b>{{ $w.DemandCount }}</b></span><i></i>
-                <span>容量 <b>{{ $w.CapacityHours }}H</b></span><i></i>
-                <span>已占用 <b>{{ $w.UsedHours }}H</b></span><i></i>
-                <span>剩余 <b{{ if lt $w.RemainingHours 0 }} class="schedule-remaining-over"{{ end }}>{{ $w.RemainingHours }}H</b></span><i></i>
+                <span>需求 <b>{{ $w.DemandCount }}</b></span>
+                <span>容量 <b>{{ $w.CapacityHours }}H</b></span>
+                <span>已占用 <b>{{ $w.UsedHours }}H</b></span>
+                <span>剩余 <b{{ if lt $w.RemainingHours 0 }} class="schedule-remaining-over"{{ end }}>{{ $w.RemainingHours }}H</b></span>
                 <span>阻塞 <b>{{ $w.BlockedCount }}</b></span>
               </div>
             </div>

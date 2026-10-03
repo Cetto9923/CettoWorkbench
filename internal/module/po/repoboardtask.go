@@ -11,6 +11,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"time"
 
 	"gorm.io/gorm"
@@ -205,15 +206,28 @@ const boardTaskOwnerSQL = "CASE WHEN zt_task.status = 'done' THEN zt_task.finish
 // FindBoardTaskOwners 复用 Service 已验证的小组成员，不重复读取成员表。
 func (r *Repo) FindBoardTaskOwners(ctx context.Context, req BoardTaskReq, displayMap map[string]string) ([]BoardOwnerOption, error) {
 	req.OwnerAccount, req.Focus = "", ""
-	var rows []struct {
-		Account string
-		Count   int64
-	}
+	var rows []BoardOwnerOption
 	if err := r.boardTaskQuery(ctx, req).
 		Select(boardTaskOwnerSQL + " AS account, COUNT(*) AS count").
-		Group(boardTaskOwnerSQL).Order("count DESC, account ASC").Scan(&rows).Error; err != nil {
+		Group(boardTaskOwnerSQL).Scan(&rows).Error; err != nil {
 		return nil, err
 	}
+	seen := make(map[string]bool, len(rows))
+	for _, row := range rows {
+		seen[row.Account] = true
+	}
+	for _, account := range req.members {
+		if account != "" && !seen[account] {
+			rows = append(rows, BoardOwnerOption{Account: account})
+			seen[account] = true
+		}
+	}
+	sort.Slice(rows, func(i, j int) bool {
+		if rows[i].Count != rows[j].Count {
+			return rows[i].Count > rows[j].Count
+		}
+		return rows[i].Account < rows[j].Account
+	})
 	out := make([]BoardOwnerOption, 0, len(rows))
 	for _, row := range rows {
 		if row.Account == "" {

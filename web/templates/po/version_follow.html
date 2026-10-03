@@ -17,7 +17,9 @@
   <input type="hidden" id="vfCurrentAccount" value="{{ if .CurrentUser }}{{ .CurrentUser.Account }}{{ end }}">
 
   <header class="vf-window-bar" id="vfWindowBar" role="group" aria-label="版本窗口">
-    <span class="vf-window-bar-label">当前与近期窗口</span>
+    <span class="vf-window-bar-label">版本窗口</span>
+    <input class="input vf-window-search" id="vfWindowSearch" aria-label="搜索版本窗口" placeholder="搜索名称、日期或状态，含历史窗口">
+    <input type="hidden" id="vfWindowId">
     <div class="vf-window-chips" id="vfWindowChips"></div>
   </header>
 

@@ -21,13 +21,7 @@
 
   function formatHours(value) {
     var num = Number(value || 0);
-    if (isNaN(num)) {
-      num = 0;
-    }
-    if (Math.floor(num) === num) {
-      return String(num);
-    }
-    return String(num);
+    return String(isNaN(num) ? 0 : num);
   }
 
   function renderInfoBar(story) {
@@ -150,3 +144,83 @@
   $("#taskListModalDismissBtn").on("click", window.closeTaskListModal);
   $("#taskListModalOverlay").on("click", window.closeTaskListModal);
 })(jQuery);
+
+// Quick iteration creation uses the same native API and searchable picker as scheduling.
+(function () {
+  'use strict';
+  let current = null;
+  let period = '2w';
+  function previewIteration() {
+    const plan = (current.plans || []).find(item => String(item.id) === document.getElementById('quickIterationPlan').value);
+    const dateFormat = new Intl.DateTimeFormat('sv-SE', {timeZone: 'Asia/Shanghai'});
+    const today = dateFormat.format(new Date());
+    const end = new Date(today + 'T00:00:00+08:00');
+    end.setUTCDate(end.getUTCDate() + (period === '4w' ? 27 : 13));
+    const endDate = dateFormat.format(end);
+    document.getElementById('quickIterationName').value = period === 'plan'
+      ? (plan ? plan.begin + ' - ' + plan.end : '') : today + ' - ' + endDate;
+    document.querySelectorAll('[data-iteration-period]').forEach(button => {
+      button.classList.toggle('active', button.dataset.iterationPeriod === period);
+      button.setAttribute('aria-pressed', String(button.dataset.iterationPeriod === period));
+    });
+  }
+  document.addEventListener('schedule:task-modal', function (event) {
+    current = event.detail;
+    period = '2w';
+    window.destroyAutocomplete('quickIterationPlanInput');
+    const previous = document.getElementById('quickIteration');
+    if (previous) previous.remove();
+    const section = document.createElement('details');
+    section.id = 'quickIteration';
+    section.className = 'task-iteration-form';
+    section.innerHTML = '<summary>快速创建迭代</summary><div class="task-iteration-fields">' +
+      '<label>迭代名称<input class="input" id="quickIterationName" readonly></label>' +
+      '<div><span>周期</span><div class="task-iteration-periods"><button type="button" class="btn btn-sm" data-iteration-period="2w">2 周</button>' +
+      '<button type="button" class="btn btn-sm" data-iteration-period="4w">4 周</button><button type="button" class="btn btn-sm" data-iteration-period="plan">计划时间</button></div></div>' +
+      '<label>关联产品计划（可选）<input class="input" id="quickIterationPlanInput" placeholder="搜索当前产品的计划"><input type="hidden" id="quickIterationPlan"></label>' +
+      '<div class="task-iteration-dates"><button type="button" class="btn btn-primary btn-sm" id="quickIterationCreate">创建并选用</button></div></div>';
+    document.querySelector('#taskModal .task-modal-project-section').appendChild(section);
+    window.initAutocomplete('quickIterationPlanInput', 'quickIterationPlan', (current.plans || []).map(plan => ({
+      value: String(plan.id), label: plan.title + ' · ' + plan.begin + ' ~ ' + plan.end
+    })), {labelOnly: true});
+    section.querySelectorAll('[data-iteration-period]').forEach(button => button.addEventListener('click', function () {
+      period = button.dataset.iterationPeriod;
+      previewIteration();
+    }));
+    document.getElementById('quickIterationPlan').addEventListener('change', previewIteration);
+    document.getElementById('quickIterationCreate').addEventListener('click', createIteration);
+    previewIteration();
+  });
+  async function createIteration() {
+    const storyID = current.story.id;
+    const projectID = Number(document.getElementById('taskModalProjectSelect').value);
+    const button = document.getElementById('quickIterationCreate');
+    button.disabled = true;
+    try {
+      const result = await window.appJson('/schedule/stories/' + storyID + '/executions', {method: 'POST', body: {
+        projectId: projectID,
+        period: period, planId: Number(document.getElementById('quickIterationPlan').value)
+      }});
+      if (!result.success) throw new Error(result.message || '创建迭代失败');
+      if (current.story.id !== storyID || Number(document.getElementById('taskModalProjectSelect').value) !== projectID) {
+        window.showToast('迭代已创建，请在对应项目中选用', 'success');
+        return;
+      }
+      const response = await window.appJson('/schedule/projects/' + projectID + '/executions');
+      if (!response.success) throw new Error('迭代已创建，加载失败，请刷新核对');
+      if (current.story.id !== storyID || Number(document.getElementById('taskModalProjectSelect').value) !== projectID) return;
+      const created = (response.executions || []).find(item => item.id === result.executionId);
+      if (!created) throw new Error('迭代已创建，请刷新执行列表核对');
+      Object.assign(document.getElementById('taskModalProjectSelect').dataset, {quickProject: String(projectID), quickExecution: String(created.id)});
+      document.querySelectorAll('#taskModal .rd-task-execution-select').forEach(select => {
+        select.add(new Option(created.name, String(created.id)));
+        select.disabled = false;
+        if (!select.value) select.value = String(created.id);
+      });
+      document.getElementById('quickIteration').open = false;
+      window.showToast('迭代已创建', 'success');
+    } catch (error) {
+      window.showToast(error.message || '创建迭代失败，请刷新核对', 'error');
+    } finally { button.disabled = false; }
+  }
+})();

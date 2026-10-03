@@ -64,6 +64,7 @@ func (h *Handler) GetStoryTasks(c *gin.Context) {
 	}
 	if resp != nil {
 		out["story"] = resp.Story
+		out["plans"] = resp.Plans
 		if resp.Tasks != nil {
 			out["tasks"] = resp.Tasks
 		}

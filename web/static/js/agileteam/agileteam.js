@@ -127,9 +127,9 @@
     loadList();
   };
 
-  window.atShowDetail = function (id) {
+  window.atShowDetail = function (id, tab) {
     state.detailId = Number(id) || 0;
-    state.detailTab = "basic";
+    state.detailTab = tab === "members" ? "members" : "basic";
     showPage("agileteam-detail");
     if (typeof window.atLoadDetail === "function") window.atLoadDetail(state.detailId);
   };
@@ -262,7 +262,7 @@
       const rowClass = (isChild ? "at-child-row" : "at-parent-row") + (collapsed ? " hidden" : "");
       const nameCell = isChild
         ? '<td class="at-child-indent"><span class="at-child-badge">子</span><span class="at-team-name" onclick="atShowDetail(' + it.id + ')">' + esc(it.name) +
-          '</span><div class="at-sub-id" style="margin-left:28px">#' + esc(it.id) + "</div></td>"
+          '</span><div class="at-sub-id">#' + esc(it.id) + "</div></td>"
         : '<td><div class="at-team-cell">' + fold + "<div><div class=\"at-team-name\" onclick=\"atShowDetail(" + it.id + ')\">' + esc(it.name) +
           '</div><div class="at-sub-id">#' + esc(it.id) + (it.childCount ? " · 父级小组" : "") + "</div></div></div></td>";
       const adjust =
@@ -285,7 +285,7 @@
         "<td>" + adjust + "</td>" +
         '<td><span class="at-tag enabled">' + esc(it.statusLabel || "启用") + "</span></td>" +
         "<td>" + esc(it.lastAdjustAt || "—") + "</td>" +
-        '<td><button type="button" class="at-link" onclick="atShowDetail(' + it.id + ')">查看</button></td>' +
+        '<td><button type="button" class="at-link" onclick="atShowDetail(' + it.id + ')">团队信息</button> <button type="button" class="at-link" onclick="atShowDetail(' + it.id + ', &quot;members&quot;)">成员管理</button></td>' +
         "</tr>"
       );
     }).join("");

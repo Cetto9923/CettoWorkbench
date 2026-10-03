@@ -135,12 +135,6 @@
     }
   }
 
-  function fillUpdateTime() {
-    if (window.PoHomeRender) {
-      window.PoHomeRender.fillUpdateTime($);
-    }
-  }
-
   function filterItems(items) {
     return window.PoHomeRender ? window.PoHomeRender.filterItems(items) : (items || []).slice();
   }
@@ -226,13 +220,11 @@
         renderList(total);
         // “全部”列表没有 stageSummary：显式恢复模板中的全量基线，避免保留上一次焦点查询的旧数字。
         renderValueStreamSummary(res.stageSummary, state.focus);
-        fillUpdateTime();
       })
       .catch(function (err) {
         if (reqSeq !== currentSeq) { return; }
         hasCorrectedPage = false;
         $("#top5List").attr("aria-busy", "false");
-        $("#lastUpdateTime").text("—");
         updateTitle(null);
         $("#top5Tbody").empty();
         $("#top5List").attr("hidden", true);

@@ -21,6 +21,7 @@
   };
 
   var el = {};
+  var requestSerial = 0;
 
   function $(id) {
     return document.getElementById(id);
@@ -32,7 +33,7 @@
       "vfStageBar", "vfAiBlock", "vfTbody", "vfEmptyState", "vfEmptyTitle",
       "vfEmptyDesc", "vfPager", "vfTable", "vfFilterStage", "vfFilterSystem",
       "vfFilterOwner", "vfFilterClear", "vfBasisPopover", "vfBasisBody",
-      "vfBasisTitle", "vfBasisClose",
+      "vfBasisTitle", "vfBasisClose", "vfWindowSearch", "vfWindowId",
     ].forEach(function (id) {
       el[id] = $(id);
     });
@@ -54,26 +55,22 @@
     if (state.judgement) q.set("judgement", state.judgement);
     q.set("page", state.page);
     q.set("pageSize", state.pageSize);
-    return fetch("/version-follow/items?" + q.toString(), {
-      headers: { Accept: "application/json" },
-      credentials: "same-origin",
-    })
-      .then(function (r) {
-        if (!r.ok) throw new Error("HTTP " + r.status);
-        return r.json();
-      })
+    var serial = ++requestSerial;
+    return window.appJson("/version-follow/items?" + q.toString())
       .then(function (j) {
+        if (serial !== requestSerial) return;
         state.data = j.data || null;
         render();
       })
-      .catch(function () {
-        // 取数失败静默：保留上一帧渲染，不打断页面。
+      .catch(function (err) {
+        if (serial === requestSerial) window.showToast(err.message || "版本窗口加载失败", "error");
       });
   }
 
   function render() {
     var d = state.data;
     if (!d) return;
+    state.windowId = d.windowId || state.windowId;
     renderWindows(d.windows || []);
     renderBand(d);
     renderAI(d);
@@ -83,7 +80,13 @@
 
   function renderWindows(windows) {
     if (!el.vfWindowChips) return;
-    el.vfWindowChips.innerHTML = windows
+    var selected = windows.find(function (w) { return w.id === state.windowId; });
+    window.initAutocomplete("vfWindowSearch", "vfWindowId", windows.map(function (w) {
+      return { value: String(w.id), label: w.name + " · " + w.releaseDate + (w.status === "closed" ? " · 已关闭" : w.released ? " · 已过期" : "") };
+    }), { value: String(state.windowId), label: selected ? selected.name + " · " + selected.releaseDate : "", labelOnly: true });
+    var visible = windows.filter(function (w) { return w.status !== "closed"; }).slice(0, 12);
+    if (selected && !visible.some(function (w) { return w.id === selected.id; })) visible.push(selected);
+    el.vfWindowChips.innerHTML = visible
       .map(function (w) {
         var cls = "vf-window-chip" + (w.id === state.windowId ? " is-active" : "") + (w.released ? " is-released" : "");
         return (
@@ -259,7 +262,6 @@
 
   function renderRows(d) {
     var items = d.items || [];
-    var details = d.details || [];
     var hasRows = items.length > 0;
     if (el.vfTable) el.vfTable.hidden = !hasRows;
     if (el.vfEmptyState) el.vfEmptyState.hidden = hasRows;
@@ -282,7 +284,7 @@
     if (el.vfTbody) {
       el.vfTbody.innerHTML = items
         .map(function (it, i) {
-          return rowHtml(it, i) + detailHtml(details[i]);
+          return rowHtml(it, i);
         })
         .join("");
     }
@@ -323,14 +325,20 @@
     el.vfPager.innerHTML = html;
   }
 
+  function selectWindow(id) {
+    if (!Number(id)) return;
+    state.windowId = Number(id);
+    state.page = 1;
+    fetchList();
+  }
+
   function bindEvents() {
+    if (el.vfWindowId) el.vfWindowId.addEventListener("change", function () { selectWindow(el.vfWindowId.value); });
     if (el.vfWindowChips) {
       el.vfWindowChips.addEventListener("click", function (e) {
         var b = e.target.closest("[data-window-id]");
         if (!b) return;
-        state.windowId = Number(b.dataset.windowId);
-        state.page = 1;
-        fetchList();
+        selectWindow(b.dataset.windowId);
       });
     }
     if (el.vfStageBar) {

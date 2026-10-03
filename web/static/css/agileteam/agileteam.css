@@ -4,9 +4,6 @@
    职责: 敏捷团队管理、成员编辑抽屉及团队视角首页（二期）高密度仪表盘样式规范
    ============================================================================= */
 /* 敏捷小组列表 / 详情 / 确认 Drawer */
-.at-page-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px}
-.at-page-head h2{margin:0 0 4px;font-size:18px;font-weight:720}
-.at-page-head p{margin:0;color:var(--color-text-secondary);font-size:12px}
 .at-page-actions{margin-left:auto;display:flex;gap:8px}
 .at-summary{background:var(--color-surface);border:1px solid var(--color-border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
 .at-seg{display:flex;gap:4px;flex-wrap:wrap}
@@ -301,3 +298,22 @@
 
 .at-org-team-picker { min-width: 150px; }
 .ui-autocomplete-dropdown[data-autocomplete-for^="atOrgTeam"] { min-width: 240px; }
+
+.po-agileteam .page:not(.active) {
+  display: none;
+}
+.at-child-indent .at-sub-id {
+  margin-left: 28px;
+}
+.at-change-counts, .at-review-summary {
+  font-size: 12px;
+}
+.at-review-summary {
+  margin-bottom: 12px;
+}
+.at-pending-actions {
+  margin-top: 10px;
+}
+.at-review-reason {
+  margin-top: 8px;
+}

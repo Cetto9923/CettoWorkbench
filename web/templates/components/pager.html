@@ -91,12 +91,8 @@ Pager.PageParam 自定义页码参数名（默认 page）；Pager.PreserveParams
       {{ if .EndAt }}<input type="hidden" name="endAt" value="{{ .EndAt }}">{{ end }}
       {{ if and $selCat (gt $selCat 0) }}<input type="hidden" name="categoryID" value="{{ $selCat }}">{{ end }}
       <input type="hidden" name="{{ $pageParam }}" value="1">
-      <select name="pageSize" class="select" onchange="this.form.submit()">
-        <option value="10"{{ if eq $pageSize 10 }} selected{{ end }}>10 条/页</option>
-        <option value="20"{{ if eq $pageSize 20 }} selected{{ end }}>20 条/页</option>
-        <option value="50"{{ if eq $pageSize 50 }} selected{{ end }}>50 条/页</option>
-        <option value="100"{{ if eq $pageSize 100 }} selected{{ end }}>100 条/页</option>
-      </select>
+      <input type="hidden" name="pageSize" id="pagerSize-{{ $pageParam }}" value="{{ $pageSize }}">
+      <span class="pager-size-control"><input class="input" id="pagerSizeInput-{{ $pageParam }}" aria-label="每页条数" value="{{ $pageSize }} 条/页"></span>
     </form>
     <form method="GET" action="{{ .CurrentPath }}" class="pagination-jump-form">
       {{ range $k, $v := $preserveParams }}<input type="hidden" name="{{ $k }}" value="{{ $v }}">{{ end }}
@@ -117,4 +113,15 @@ Pager.PageParam 自定义页码参数名（默认 page）；Pager.PreserveParams
     </form>
   </div>
 </div>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var hidden = document.getElementById('pagerSize-{{ $pageParam }}');
+    window.initAutocomplete('pagerSizeInput-{{ $pageParam }}', hidden.id,
+      [10, 20, 50, 100].map(function (size) { return {value: String(size), label: size + ' 条/页'}; }),
+      {value: hidden.value, labelOnly: true});
+    hidden.addEventListener('change', function () {
+      if (['10', '20', '50', '100'].indexOf(hidden.value) >= 0) hidden.form.submit();
+    });
+  });
+</script>
 {{ end }}

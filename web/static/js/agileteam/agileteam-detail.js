@@ -10,18 +10,23 @@
   function person(n, a) { return S().person(n, a); }
   function st() { return S().state || {}; }
 
+  let detailRequest = 0;
   window.atLoadDetail = async function(id) {
+    const request = ++detailRequest;
     const host = document.getElementById("atDetailRoot");
     if (!host) return;
+    window.destroyAutocomplete("atBasicParentInput");
     host.innerHTML = '<div class="at-empty">加载中…</div>';
     try {
       const json = await apiFetch(S().API + "/" + id + (isLeadView() ? "?view=lead" : ""));
+      if (request !== detailRequest) return;
       const d = (json && json.data) || {};
       st().canConfirm = !!d.canConfirm;
       st().canEdit = !!d.canEdit && !isLeadView();
       st().lastDetail = d;
       renderDetail(host, d);
     } catch (e) {
+      if (request !== detailRequest) return;
       host.innerHTML = '<div class="at-empty">' + esc(e.message || "加载失败") + "</div>";
     }
   }
@@ -30,7 +35,7 @@
     const logoChar = (d.name || "?").slice(0, 1);
     const canEdit = !!d.canEdit && !isLeadView();
     const saveBtn = canEdit
-      ? '<button type="button" class="at-btn primary" onclick="atSaveBasic(' + d.id + ')">保存基本信息</button>'
+      ? '<button type="button"' + (st().detailTab === "basic" ? "" : " hidden") + ' class="at-btn primary" onclick="atSaveBasic(' + d.id + ')">保存基本信息</button>'
       : "";
     const banner = isLeadView()
       ? '<div class="at-readonly-banner">当前为只读视图：敏捷教练、团队长和部室负责人只读查看。</div>' +
@@ -56,6 +61,10 @@
       '<div class="at-tab-panel' + (st().detailTab === "members" ? " active" : "") + '" id="atTab-members">' + renderMembers(d, canEdit) + "</div>" +
       '<div class="at-tab-panel' + (st().detailTab === "history" ? " active" : "") + '" id="atTab-history">' + renderHistory(d) + "</div>" +
       "</div>";
+    if (canEdit) window.initAutocomplete("atBasicParentInput", "atBasicParent", [
+      { value: "0", label: "无（作为父级小组）" }
+    ].concat((d.parentOptions || []).map(function (o) { return { value: String(o.id), label: o.name }; })),
+    { labelOnly: true, value: String(d.parentId || 0), label: d.parentName || "无（作为父级小组）" });
   }
 
   function tabBtn(key, label) {
@@ -67,10 +76,8 @@
 
   window.atSwitchTab = function (key) {
     st().detailTab = key;
-    document.querySelectorAll(".at-tab").forEach(function (b) {
-      b.classList.toggle("active", b.textContent.indexOf(key === "basic" ? "基本" : key === "members" ? "成员" : "调整") >= 0);
-    });
-    // simpler: re-toggle panels
+    const save = document.querySelector(".at-page-actions .primary");
+    if (save) save.hidden = key !== "basic";
     ["basic", "members", "history"].forEach(function (k) {
       const p = document.getElementById("atTab-" + k);
       if (p) p.classList.toggle("active", k === key);
@@ -84,12 +91,8 @@
   function renderBasic(d, canEdit) {
     const ro = canEdit ? "" : " readonly disabled";
     const parentField = canEdit
-      ? '<select class="input" id="atBasicParent">' +
-        '<option value="0"' + (!d.parentId ? " selected" : "") + ">无（作为父级小组）</option>" +
-        (d.parentOptions || []).map(function (o) {
-          return '<option value="' + esc(o.id) + '"' + (Number(d.parentId) === Number(o.id) ? " selected" : "") + ">" + esc(o.name) + "</option>";
-        }).join("") +
-        "</select>"
+      ? '<input class="input" id="atBasicParentInput" aria-label="父级小组" placeholder="搜索父级小组">' +
+        '<input type="hidden" id="atBasicParent" value="' + esc(d.parentId || 0) + '">'
       : "<div>" + esc(d.parentName || "—") + "</div>";
     return (
       '<div class="at-info-grid">' +
@@ -122,9 +125,9 @@
         esc(p.adjustNo) + "</div>" +
         '<div class="at-submitter">发起人 ' + esc(p.submittedBy) +
         " · " + esc(p.submittedAt) + (p.reason ? " · " + esc(p.reason) : "") + "</div>" +
-        '<div style="font-size:12px">新增 ' + esc(p.addCount) + " · 移除 " + esc(p.removeCount) +
+        '<div class="at-change-counts">新增 ' + esc(p.addCount) + " · 移除 " + esc(p.removeCount) +
         " · 角色调整 " + esc(p.changeCount) + "</div>" +
-        '<div style="margin-top:10px"><button type="button" class="at-btn small primary" onclick="atOpenReview(' +
+        '<div class="at-pending-actions"><button type="button" class="at-btn small primary" onclick="atOpenReview(' +
         p.adjustmentId + ')">查看调整</button></div></div>';
     }
     const editBtn = canEdit
@@ -192,7 +195,8 @@
       declaration: (document.getElementById("atBasicDecl") || {}).value || "",
       logo: (document.getElementById("atBasicLogo") || {}).value || "",
     };
-    if (parentEl) body.parentId = Number(parentEl.value || 0);
+    if (parentEl && parentEl.value === "") return window.showToast("请选择有效的父级小组", "error");
+    if (parentEl) body.parentId = Number(parentEl.value);
     try {
       await apiFetch(S().API + "/" + id + "/basic", { method: "PUT", body: body });
       window.showToast("基本信息已保存");
@@ -230,10 +234,10 @@
       if (groups[it.actionType]) groups[it.actionType].push(it);
     });
     body.innerHTML =
-      '<div style="font-size:12px;margin-bottom:12px">' +
+      '<div class="at-review-summary">' +
       "<div><b>" + esc(d.teamName) + "</b> · " + esc(d.adjustNo) + "</div>" +
       '<div class="at-submitter-time">发起人 ' + esc(d.submittedBy) + " · " + esc(d.submittedAt) + "</div>" +
-      (d.reason ? '<div style="margin-top:8px">说明：' + esc(d.reason) + "</div>" : "") +
+      (d.reason ? '<div class="at-review-reason">说明：' + esc(d.reason) + "</div>" : "") +
       "</div>" +
       diffGroup("新增人员", groups.add, "add") +
       diffGroup("移除人员", groups.remove, "remove") +

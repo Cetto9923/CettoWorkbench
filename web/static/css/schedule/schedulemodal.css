@@ -463,8 +463,8 @@
 }
 
 .task-modal-project-section {
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
+  background: var(--color-primary-light);
+  border: 1px solid var(--color-border);
   border-radius: var(--wb-radius-md);
   padding: 10px 14px;
   margin-bottom: 12px;

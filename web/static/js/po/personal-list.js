@@ -175,11 +175,9 @@
 
     var html = '<div class="pager-meta"><span>显示 ' + start + "–" + end + "，共 " + total + " 条</span></div>";
     html += '<div class="pager-controls">';
-    html += '<select class="pager-size-select" aria-label="每页条数">';
-    PAGE_SIZE_OPTIONS.forEach(function (size) {
-      html += '<option value="' + size + '"' + (size === pageSize ? " selected" : "") + ">" + size + " 条/页</option>";
-    });
-    html += "</select>";
+    var sizeInputId = host.id + "PageSizeInput";
+    var sizeValueId = host.id + "PageSizeValue";
+    html += '<span class="pager-size-control"><input class="pager-size-select" id="' + sizeInputId + '" aria-label="每页条数"><input type="hidden" id="' + sizeValueId + '" value="' + pageSize + '"></span>';
 
     // 上一页
     html += '<button type="button" class="pager-btn" data-page="' + (page - 1) + '"' + (page <= 1 ? " disabled" : "") + ' aria-label="上一页">‹</button>';
@@ -216,10 +214,13 @@
     host.innerHTML = html;
 
     // 事件委托绑定
-    var sel = host.querySelector(".pager-size-select");
+    window.initAutocomplete(sizeInputId, sizeValueId, PAGE_SIZE_OPTIONS.map(function (size) {
+      return {value: String(size), label: size + " 条/页"};
+    }), {value: String(pageSize), labelOnly: true});
+    var sel = host.querySelector("#" + sizeValueId);
     if (sel) {
       sel.addEventListener("change", function (e) {
-        if (typeof opts.onPageSizeChange === "function") {
+        if (PAGE_SIZE_OPTIONS.indexOf(Number(e.target.value)) >= 0 && typeof opts.onPageSizeChange === "function") {
           opts.onPageSizeChange(Number(e.target.value));
         }
       });

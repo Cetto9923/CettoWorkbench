@@ -89,6 +89,7 @@ type StoryTaskSummary struct {
 
 // StoryTasksResp 维护任务弹窗加载响应。
 type StoryTasksResp struct {
+	Plans              []MatchingPlanItem              `json:"plans"`
 	Story              StoryTaskStoryItem              `json:"story"`
 	Tasks              []StoryTaskItem                 `json:"tasks"`
 	Summary            StoryTaskSummary                `json:"summary"`

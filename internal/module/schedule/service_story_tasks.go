@@ -84,7 +84,12 @@ func (s *Service) GetStoryTasks(ctx context.Context, actor *model.User, storyID 
 		demandName = fmt.Sprintf("US%d", demandID)
 	}
 
+	plans, err := s.repo.IterationPlans(ctx, detail.ProductID)
+	if err != nil {
+		return nil, err
+	}
 	return &StoryTasksResp{
+		Plans: plans,
 		Story: StoryTaskStoryItem{
 			ID:             detail.StoryID,
 			Title:          detail.Title,

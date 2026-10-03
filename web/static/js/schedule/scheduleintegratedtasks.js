@@ -687,22 +687,6 @@
     return raw.slice(0, 10);
   }
 
-  function resolveUserLabel(account) {
-    var acc = $.trim(account || "");
-    if (!acc) {
-      return "";
-    }
-    var label = "";
-    (shared.schedulingUsers || []).some(function (user) {
-      if ($.trim(user.account || "") === acc) {
-        label = $.trim(user.realname || "") || acc;
-        return true;
-      }
-      return false;
-    });
-    return label || acc;
-  }
-
   function readNodeStoryTitle($node) {
     var $header = $node.find(".rd-node-header").first();
     var fromInput = $.trim($header.find(".rd-node-title-input, .rd-node-title").first().val() || "");
@@ -816,9 +800,9 @@
     var acceptancedDate = normalizeDateValue($("#scheduleIntegratedAcceptancedDate").val());
     var schedulePlanDate = normalizeDateValue($("#scheduleIntegratedSchedulePlanDate").val());
     var qd = $.trim($("#scheduleIntQDValue").val() || "");
-    var qdName = $.trim($("#scheduleIntQDInput").val() || "") || resolveUserLabel(qd);
+    var qdName = $.trim($("#scheduleIntQDInput").val() || "") || shared.resolveUserLabel(qd);
     var releaseOwner = findProductReleaseOwner(readNodeProductId($node));
-    var releaseOwnerName = resolveUserLabel(releaseOwner);
+    var releaseOwnerName = shared.resolveUserLabel(releaseOwner);
 
     var specs = [
       {

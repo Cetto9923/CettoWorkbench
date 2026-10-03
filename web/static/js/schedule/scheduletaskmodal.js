@@ -39,17 +39,6 @@
 
 
 
-  function cloneRow(templateId) {
-    if (shared && shared.cloneTemplateElement) {
-      return shared.cloneTemplateElement(templateId, "tr");
-    }
-    var tpl = document.getElementById(templateId);
-    if (!tpl || !tpl.content) {
-      return null;
-    }
-    return document.importNode(tpl.content, true).querySelector("tr");
-  }
-
   function bindTaskRowControls($row, assignedTo, assignedToName) {
     if (!tasksApi) {
       return;
@@ -66,47 +55,16 @@
   }
 
   function toProjectAutocompleteItems(projects) {
-    return (projects || [])
-      .map(function (project) {
-        var id = String(project.id || "");
-        if (!id) {
-          return null;
-        }
-        return {
-          value: id,
-          label: $.trim(project.name || "") || id,
-        };
-      })
-      .filter(Boolean);
-  }
-
-  function findProjectLabel(items, selectedId) {
-    var selected = String(selectedId || "");
-    if (!selected) {
-      return "";
-    }
-    for (var i = 0; i < (items || []).length; i++) {
-      if (items[i].value === selected) {
-        return items[i].label || selected;
-      }
-    }
-    return selected;
+    return (projects || []).filter(function (project) { return !!project.id; }).map(function (project) {
+      return {value: String(project.id), label: $.trim(project.name || "") || String(project.id)};
+    });
   }
 
   function fillModalProjectSelect(projects, selectedId) {
-    var items = toProjectAutocompleteItems(projects);
-    var selected = String(selectedId || "");
-    if (typeof window.initAutocomplete === "function") {
-      window.initAutocomplete("taskModalProjectInput", "taskModalProjectSelect", items, {
-        placeholder: "搜索项目",
-        value: selected,
-        label: findProjectLabel(items, selected),
-        labelOnly: true,
-      });
-      return;
-    }
-    $("#taskModalProjectSelect").val(selected);
-    $("#taskModalProjectInput").val(findProjectLabel(items, selected));
+    $("#taskModalProjectSelect").removeAttr("data-quick-project data-quick-execution");
+    window.initAutocomplete("taskModalProjectInput", "taskModalProjectSelect", toProjectAutocompleteItems(projects), {
+      placeholder: "搜索项目", value: String(selectedId || ""), labelOnly: true,
+    });
   }
 
   function getModalProjectId() {
@@ -136,7 +94,9 @@
 
   function loadRowExecutions($row, projectId, selectedExecutionId) {
     var pid = parsePositiveInt(projectId);
-    var selectedId = selectedExecutionId;
+    var $project = $("#taskModalProjectSelect");
+    var selectedId = selectedExecutionId || ($project.attr("data-quick-project") === String(pid)
+      ? parsePositiveInt($project.attr("data-quick-execution")) : 0);
     if (tasksApi) {
       var hasPrev = tasksApi.syncExecutionSameButton($row);
       if (hasPrev && !selectedId && tasksApi.isExecutionSameActive($row)) {
@@ -253,7 +213,7 @@
 
   // 存量任务默认只读，点铅笔才进入编辑态（与排期弹窗一致）。
   function renderExistingRow(task) {
-    var row = cloneRow("tplRdTaskRowReadonly");
+    var row = shared.cloneTemplateElement("tplRdTaskRowReadonly", "tr");
     if (!row) {
       return null;
     }
@@ -280,23 +240,9 @@
     return raw.slice(0, 10);
   }
 
-  function resolveUserLabel(account) {
-    var acc = $.trim(account || "");
-    if (!acc) {
-      return "";
-    }
-    var users = (shared && shared.schedulingUsers) || [];
-    for (var i = 0; i < users.length; i++) {
-      if ($.trim(users[i].account || "") === acc) {
-        return $.trim(users[i].realname || "") || acc;
-      }
-    }
-    return acc;
-  }
-
   function syncTaskModalProjectVisibility() {
     var hasTasks = $("#taskModalTableBody .task-modal-row").length > 0;
-    $("#taskModalProjectSection").toggle(hasTasks);
+    $("#taskModalProjectSection").toggle(hasTasks || !!currentStoryInfo.id);
   }
 
   function initTaskModalRowExecution($row, preferredExecutionId) {
@@ -334,7 +280,7 @@
   }
 
   function addEmptyTaskModalRow(config, $afterRow) {
-    var row = cloneRow("tplRdTaskRowNew");
+    var row = shared.cloneTemplateElement("tplRdTaskRowNew", "tr");
     if (!row) {
       return null;
     }
@@ -353,7 +299,7 @@
     $row.find(".rd-task-end").val(normalizeDateValue(cfg.deadline));
     if (cfg.assignedTo) {
       $row.attr("data-assigned-to", $.trim(cfg.assignedTo || ""));
-      $row.attr("data-assigned-to-name", $.trim(cfg.assignedToName || "") || resolveUserLabel(cfg.assignedTo));
+      $row.attr("data-assigned-to-name", $.trim(cfg.assignedToName || "") || shared.resolveUserLabel(cfg.assignedTo));
     }
     if (tasksApi) {
       tasksApi.mountTaskActions($row.find(".rd-task-cell-actions"), false);
@@ -378,7 +324,7 @@
       normalizeDateValue($("#scheduleIntegratedSchedulePlanDate").val()) ||
       normalizeDateValue(currentStoryInfo.releaseDate);
     var qd = $.trim($("#scheduleIntQDValue").val() || "");
-    var qdName = $.trim($("#scheduleIntQDInput").val() || "") || resolveUserLabel(qd);
+    var qdName = $.trim($("#scheduleIntQDInput").val() || "") || shared.resolveUserLabel(qd);
 
     return [
       {
@@ -479,7 +425,7 @@
 
       fillModalProjectSelect(cachedProjects, resolveDefaultProjectId(resp));
       renderTaskRows(resp.tasks || []);
-      return resp;
+      document.dispatchEvent(new CustomEvent("schedule:task-modal", {detail: resp}));
     });
   }
 
@@ -521,7 +467,7 @@
       data.assignedTo = $.trim($ownerValue.val() || "");
       data.assignedToName =
         $.trim($row.find(".rd-node-assignee-input").first().val() || "") ||
-        resolveUserLabel(data.assignedTo);
+        shared.resolveUserLabel(data.assignedTo);
     }
     data.id = $row.attr("data-task-id") || data.id || "";
     data.projectId = String(getModalProjectId() || "");

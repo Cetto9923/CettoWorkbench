@@ -7,7 +7,23 @@
 
 package po
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
+
+func TestVFStayMissingDate(t *testing.T) {
+	zero, now := time.Time{}, time.Date(2026, 10, 4, 0, 0, 0, 0, time.UTC)
+	deadline := now.AddDate(0, 0, -2)
+	for _, row := range []vfDemandRow{{}, {SchedulePlanDate: &zero}, {Deadline: &zero}} {
+		if days, overdue := vfStay(row, now); days != 0 || overdue != "" {
+			t.Fatalf("缺失日期产生虚假超期：%d %s", days, overdue)
+		}
+	}
+	if days, _ := vfStay(vfDemandRow{SchedulePlanDate: &zero, Deadline: &deadline}, now); days != 2 {
+		t.Fatalf("未回退有效截止日：%d", days)
+	}
+}
 
 // findStage 返回指定 key 的阶段节点。
 func findStage(stages []ValueStreamItem, key string) (ValueStreamItem, bool) {
@@ -159,5 +175,17 @@ func TestStageRankAndLabelShareHomeTable(t *testing.T) {
 	}
 	if got := stageLabel("", "testing"); got != "联调测试" {
 		t.Errorf("stageLabel(testing) = %q，期望与首页一致的「联调测试」", got)
+	}
+}
+
+func TestVersionFollowDistanceUsesSelectedWindow(t *testing.T) {
+	now := nowFunc()
+	resp := VersionFollowListResp{WindowID: 2, Windows: []VersionFollowWindowResp{
+		{ID: 1, ReleaseDate: now.AddDate(0, 0, -15).Format("2006-01-02")},
+		{ID: 2, ReleaseDate: now.AddDate(0, 0, 7).Format("2006-01-02")},
+	}}
+	(&Service{}).fillVFSummary(&resp, nil, nil, now)
+	if resp.DistanceDays != 7 {
+		t.Fatalf("selected window distance = %d, want 7", resp.DistanceDays)
 	}
 }

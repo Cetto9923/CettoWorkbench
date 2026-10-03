@@ -34,6 +34,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 		g.GET("/projects/:id/executions", middleware.RequirePerm(perm.ScheduleList), h.GetProjectExecutions)
 		g.GET("/stories/:id/tasks", middleware.RequirePerm(perm.ScheduleList), h.GetStoryTasks)
 		g.POST("/stories/:id/save-tasks", middleware.RequirePerm(perm.PoSchedule), h.SaveStoryTasks)
+		g.POST("/stories/:id/executions", middleware.RequirePerm(perm.PoSchedule), h.CreateIteration)
 		g.POST("/windows", middleware.RequirePerm(perm.PoSchedule), h.CreateWindow)
 		g.GET("/windows", middleware.RequirePerm(perm.ScheduleList), h.ListWindows)
 		g.GET("/windows/:id", middleware.RequirePerm(perm.ScheduleList), h.GetWindow)

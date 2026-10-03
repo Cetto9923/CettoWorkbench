@@ -399,13 +399,10 @@ html[data-theme="dark"] .po-personal-workspace .category-tab.active em { color: 
 :is(.po-personal-workspace, .po-board, .task-drawer) .pager-meta { display: flex; align-items: center; gap: 8px; }
 :is(.po-personal-workspace, .po-board, .task-drawer) .pager-controls { display: flex; align-items: center; gap: 6px; }
 :is(.po-personal-workspace, .po-board, .task-drawer) .pager-size-select {
-  height: 26px; padding: 0 18px 0 6px; border: 1px solid var(--color-border-strong); border-radius: 4px;
+  width: 86px; height: 26px; padding: 0 18px 0 6px; border: 1px solid var(--color-border-strong); border-radius: 4px;
   background: var(--color-surface); color: var(--color-text-body); font-size: 11px;
 }
-.po-personal-workspace .data-info {
-  display: flex; align-items: center; gap: 8px; margin-top: 6px;
-  color: var(--color-text-secondary); font-size: 11px; line-height: 18px;
-}
+
 :is(.po-personal-workspace, .po-board, .task-drawer) .pager-btn {
   min-width: 26px; height: 26px; padding: 0 6px; border: 1px solid var(--color-border);
   border-radius: 4px; background: var(--color-surface); color: var(--color-text-secondary); font-size: 11px;
@@ -460,3 +457,5 @@ html[data-theme="dark"] .po-personal-workspace .category-tab.active em { color: 
 .po-personal-workspace .workspace-alert-error { /* alias for current error styling */
   border-radius: 4px;
 }
+
+.pager-size-control { flex: 0 0 86px; width: 86px; }

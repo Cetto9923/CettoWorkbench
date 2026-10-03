@@ -121,6 +121,7 @@ type VersionFollowItemDetailResp struct {
 
 // VersionFollowListResp 列表接口响应。
 type VersionFollowListResp struct {
+	WindowID     uint64                        `json:"windowId"`
 	Items        []VersionFollowItemResp       `json:"items"`
 	Details      []VersionFollowItemDetailResp `json:"details"`
 	Windows      []VersionFollowWindowResp     `json:"windows"`

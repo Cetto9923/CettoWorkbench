@@ -457,3 +457,8 @@
 .vf-basis-item a {
   color: var(--color-primary);
 }
+
+.vf-window-bar .ui-autocomplete-input-wrap {
+  width: 320px;
+  max-width: 100%;
+}

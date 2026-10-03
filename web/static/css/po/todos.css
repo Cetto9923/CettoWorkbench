@@ -6,8 +6,8 @@
    ============================================================================= */
 
 .po-todos .todos-table .todos-col-obj {
-  width: 130px;
-  min-width: 130px;
+  width: 160px;
+  min-width: 160px;
   white-space: nowrap;
 }
 

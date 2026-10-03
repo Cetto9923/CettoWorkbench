@@ -175,7 +175,7 @@
       more.type = "button"; more.className = "person more"; more.textContent = "更多 " + hiddenCount + " ›";
       more.addEventListener("click", function () {
         host.removeChild(more);
-        rest.forEach(function (it) { host.appendChild(mkBtn(it)); });
+        rest.slice(shown.length).forEach(function (it) { host.appendChild(mkBtn(it)); });
       });
       host.appendChild(more);
     }

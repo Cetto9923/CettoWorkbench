@@ -271,15 +271,6 @@
     if ($total.length) { $total.text(String(count)); }
   }
 
-  function fillUpdateTime($) {
-    var now = new Date();
-    var pad = function (n) { return n < 10 ? "0" + n : String(n); };
-    $("#lastUpdateTime").text(
-      now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate()) + " " +
-      pad(now.getHours()) + ":" + pad(now.getMinutes())
-    );
-  }
-
   function filterItems(items) {
     if (!items || !items.length) { return []; }
     return items.slice();
@@ -289,7 +280,6 @@
     renderRow: renderRow,
     renderValueStreamSummary: renderValueStreamSummary,
     updateTitle: updateTitle,
-    fillUpdateTime: fillUpdateTime,
     filterItems: filterItems,
     isStoryItem: isStoryItem,
     getHomeZentaoStatusLabel: getHomeZentaoStatusLabel

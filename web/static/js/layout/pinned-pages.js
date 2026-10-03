@@ -90,6 +90,20 @@
     }
   };
 
+  PINNABLE_PAGES.board_task = Object.assign({}, PINNABLE_PAGES.board_demand, {
+    key: 'board_task', title: '任务看板', path: '/board/task'
+  });
+
+  document.querySelectorAll('.nav-item[href]').forEach(function (link) {
+    var path = link.getAttribute('href');
+    if (!path || path.charAt(0) !== '/' || path === '/home' || keyFromPathOrKey(path)) return;
+    var key = 'page:' + path;
+    var title = (link.querySelector('.nav-text') || link).textContent.trim();
+    var icon = link.querySelector('.nav-icon');
+    PINNABLE_PAGES[key] = { key: key, title: title, path: path,
+      icon: icon ? icon.className : 'fas fa-file', group: 'workbench', groupTitle: '工作台' };
+  });
+
   function getCurrentAccount() {
     var userEl = document.querySelector('[data-user-account]');
     if (userEl && userEl.dataset && userEl.dataset.userAccount) {
@@ -144,10 +158,15 @@
   function keyFromPathOrKey(val) {
     if (!val) return null;
     if (PINNABLE_PAGES[val]) return val;
+    if (val === '/pmo') val = '/agileteam';
+    if (val === '/issue-risk') val = '/issues/risk';
     for (var k in PINNABLE_PAGES) {
       if (PINNABLE_PAGES[k].path === val) return k;
     }
-    return null;
+    var parent = Object.keys(PINNABLE_PAGES).filter(function (key) {
+      return val.indexOf(PINNABLE_PAGES[key].path + '/') === 0;
+    }).sort(function (a, b) { return PINNABLE_PAGES[b].path.length - PINNABLE_PAGES[a].path.length; });
+    return parent[0] || null;
   }
 
   function isPinned(keyOrPath) {

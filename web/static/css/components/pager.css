@@ -142,3 +142,5 @@ html[data-theme="dark"] .pagination .page-item.active .page-link {
   width: var(--size-12);
   text-align: center;
 }
+
+.pagination-size-form .pager-size-control { width: 96px; flex: 0 0 96px; }

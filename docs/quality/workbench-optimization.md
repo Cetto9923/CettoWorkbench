@@ -19,26 +19,26 @@
 | R01 | 隔离转研需通过 | 恢复 Main 计划、指派、转研需和任务接口；对应禅道版本的 /demand/:id/tostory 已通过真实 HTTP 和 OB 验证；独立研需和扩展字段残留直写逐项登记，未具备上线资格。 |
 | R02 | 源码修复 | 任务编辑不发送 left / consumed / status，回归验证不覆盖剩余工时。 |
 | R03 | 源码修复 | 任何排期动作前批量校验全部子 ID、产品范围与执行归属；越权用例验证零调用、零写入。 |
-| R04 | 原冲突链已移除，待并发验收 | 验收、交付原生调用在本地事务外；不重放创建/删除，不承诺跨系统整体回滚。 |
+| R04 | 有界并发验收通过 | 验收、交付原生调用在本地事务外；6 轮双系统排期 / 交付共 12 请求成功，字段与单条关联正确。不重放创建/删除，不承诺跨系统整体回滚。 |
 | R05 | 部分完成 | 普通基本字段保存只锁目标行；拓扑变更仍保留既有整树一致性协议，已只读核实索引；禅道现有小组更新没有与工作台相同的事务锁协议，不能擅自改禅道，跨系统最小锁集合未完成。 |
 | R06 | 源码修复 | 接入现有验收、交付 gateway；窗口关联失败明确返回原生动作已成功、关联失败。 |
 | R07 | 源码修复 | API / SQL / 操作日志入口脱敏；合成凭据测试覆盖 GORM Scan 日志及文件权限。 |
 | R08 | 源码修复 | 默认 CSRF 实际挂载；真实注册路由验证缺失、错误及有效 token，支持 HTTP 本地环境。 |
 | R09 | 隔离 OB 安装通过 | 补三张敏捷业务表安装、升级脚本；在已安装禅道原生结构的隔离 OB 执行安装与升级通过。生产未执行；现有不兼容表不能由 CREATE IF NOT EXISTS 自动修复。 |
 | R10 | 源码修复 | 已锁定存在性后允许无变化保存成功。 |
-| R11 | 门禁收紧，例外待验证 | 显式自有表集合，覆盖模型与动态表名，未知表失败；29 个残留函数/表命中逐项登记，静态扫描并非完整 AST 证明。 |
+| R11 | 门禁收紧，例外待验证 | 显式自有表集合，覆盖模型与动态表名，未知表失败；28 个残留函数/表命中逐项登记，静态扫描并非完整 AST 证明。 |
 | R12 | 部分完成 | 资料与偏好同一短事务，故障回归验证原子性；隔离验证了资料保存、无变化保存、禅道 MD5 密码登录、新密码工作台登录及原会话兼容；测试密码已恢复。 |
 | R13 | 源码修复 | 直接需求、直接研发需求、Main 计划关联统一 UNION 去重；展示与删除共享口径。 |
-| R14 | 源码修复，待并发验收 | 后端锁窗口并检查关联后删除；本地关联写入遵守同一窗口锁，禅道侧竞争未实测。 |
+| R14 | 有界并发验收通过 | 后端展示 / 删除共享关联口径及窗口锁；删除先提交时更新明确失败、无孤立产品关联；原生交付阻塞期间窗口删除 9ms 完成，交付随后返回部分完成错误，无失效窗口关联。 |
 | R15 | 配置完成，生产值待定 | 连接池、DB / HTTP 超时纳入现有配置；只读回退复用主池，合计生产容量未测。 |
 | R16 | 源码修复 | 删除启动与请求 AutoMigrate；运行期 SELECT 检查五张自有表必需列，不执行 DDL。 |
 | R17 | 部分完成 | 工作台成员写入先锁小组锚点并固定账户顺序；已确认原生唯一索引 (root,type,account)，成员改为单次原子 upsert。隔离 OB 12 并发创建保持单行及首次加入日期；已验证工作台与原生 addMember 并发，以及原生先提交再确认工作台调整：最终单条成员、工时 6；并发撞重复时原生返回明确失败。只证明这两种有界场景。 |
 | R18 | 源码修复 | 角标独立 250ms 总预算，失败显示不可用，保留已有 DTO。 |
-| R19 | 窗口规模实测通过 | 任务 / 项目 / 执行批量读取；窗口从 2 个增至 20 个，整条请求 SQL 固定 10 次；基线为 16 → 124 次。其余列表仍需逐条完成规模验证。 |
+| R19 | 窗口规模实测通过 | 任务 / 项目 / 执行批量读取；窗口从 2 个增至 20 个，整条请求 SQL 固定 10 次；基线为 16 → 124 次。排期从 1 个增至 20 个研发需求，SQL 固定 18 次；基线为 18 → 37 次。其他列表仍需验证。 |
 | R20 | 源码修复，待实测 | 单条 SQL 内十二项独立计数改为三个条件聚合，使用日期范围；未做生产 EXPLAIN 或性能推断。 |
 | R21 | 源码修复 | 操作日志直接短超时写入，删除无界 goroutine；失败记录原因，不改变业务结果。 |
 | R22 | 源码清理 | 删除无调用 gateway / 辅助函数，复用用户模块账户映射和公共 HTML 转义。 |
-| R23 | 增量改善，存量未清零 | 当前开发基线 117c13a9 到本轮生产源码净减少 216 行；已有超长文件各批不增长；固定基线不变，存量复杂度和重复不因此视为全部消除。 |
+| R23 | 增量改善，存量未清零 | 固定开发基线 117c13a9 到本轮生产源码净减少 14 行；已有超长文件各批不增长；固定基线不变，存量复杂度和重复不因此视为全部消除。 |
 | R24 | 部分完成，待视觉验收 | 删除登录 Bootstrap 与 Bootstrap Icons，统一 Font Awesome；请求、删除和通用弹窗入口收敛；历史业务 jQuery / 私有控件尚未全部迁移。 |
 | R25 | 部分完成 | 本次登录 CSS 颜色进入已有两套变量职责，唯一主题入口保留；其他存量内联样式 / !important / 新窗口行为未宣称全部清理。 |
 | R26 | 静态与模拟验收通过，运行验收待定 | 修复三个前端测试失配，Go / 前端 / make quality 通过；已经取得部分真实页面、Console、HTTP / 数据库及隔离并发、性能证据；全部页面和全部跨系统竞争尚未完成。 |
@@ -55,12 +55,12 @@
 
 物理行数包含注释、空行，不压行、不移动目录。生产口径为 cmd / internal 非测试 Go，以及 web 自有 HTML / CSS / JS；排除 vendor / node_modules / dist。测试、SQL 和配置工具单列。
 
-| 类别 | Dev-CT 基线 | 优化后 | 净变化 |
+| 类别 | 固定基线 117c13a9 | 当前 | 净变化 |
 |---|---:|---:|---:|
-| 生产源码 | 125620 | 125374 | -246 |
-| 测试 | 17894 | 18344 | +450 |
+| 生产源码 | 125541 | 125527 | -14 |
+| 测试 | 18072 | 19177 | +1105 |
 | 安装 / 升级 SQL | 465 | 673 | +208 |
-| 配置和工具 | 1145 | 1161 | +16 |
+| 配置和工具 | 1227 | 1242 | +15 |
 
 删除 13 个 Bootstrap / Bootstrap Icons 资源文件（第三方资源不计入上述生产减量）。保留 SSR、原生 JavaScript、Font Awesome 及现有插件依赖，没有新增前端框架。
 
@@ -120,11 +120,11 @@
 
 本轮截图位于 `/private/tmp/wb-opt-isolated-20261003/screenshots`，团队搜索、子需求折叠和问题编号的亮暗主题图均已逐张检查；当前窗口下无内部表格纵向滚动，截图包含全部筛选结果。截图和验收脚本不提交 Git。
 
-当前生产物理行数统一按 117c13a9 的 cmd / internal 非测试 Go 与 web HTML / CSS / JS，排除 vendor / node_modules / dist，计入新增文件，统计注释与空行：125541 → 125325，净减少 216 行。第三方 Bootstrap 资源删除与历史批次口径仍见上表，不混用基线。
+当前生产物理行数统一按 117c13a9 的 cmd / internal 非测试 Go 与 web HTML / CSS / JS，排除 vendor / node_modules / dist，计入新增文件，统计注释与空行：125541 → 125527，净减少 14 行。第三方 Bootstrap 资源删除与历史批次口径仍见上表，不混用基线。
 
 新增 Go 测试：TestNativeDeletesStopAfterFailureWithoutReplay、TestProfileEmailValidation、TestObjectAuthorizationReadsPrimary。新增 JS 为 agileteam-org.js 的页面事件监听及内部回调，无新增全局函数；既有 toggleBizChildren 增加子级状态，未新增业务抽象。新增 CSS 选择器：.at-org-team-picker、.ui-autocomplete-dropdown[data-autocomplete-for^="atOrgTeam"]、.schedule-child-row:is(.is-hidden, .is-sub-hidden)、.schedule-row-expand[hidden]。新增第三方依赖为 0。
 
-仍不能宣称“所有功能验收通过”：窗口关联 / 删除跨禅道竞争、拓扑跨系统最小锁协议、合计连接峰值、禅道响应无退化及全部页面交互还未完成；29 项直写例外仍受上线门禁限制。对应 Main 的禅道接口版本已经找到；之前的 404 来自较旧的本机副本，不是最新 Main 缺失接口。
+仍不能宣称“所有功能验收通过”：窗口关联 / 删除的已测竞争场景见后文，拓扑跨系统共同锁协议、生产合计容量与全部直写例外发布验证仍未完成；28 项直写例外仍受上线门禁限制。对应 Main 的禅道接口版本已经找到；之前的 404 来自较旧的本机副本，不是最新 Main 缺失接口。
 
 ### 本轮文件净行数（相对 ff89c3a）
 
@@ -164,3 +164,172 @@
 本轮文件净行数：gateway.go +2（368 行，未超过 500）；safety_test.go +64；本文 +10 单独计为文档。生产源码本轮 +2，但相对开发优化基线仍净减少 214 行。没有新增生产函数、CSS 选择器、依赖或前端改动。新增测试函数为 TestToStoryPreservesMainContract、TestToStoryFailureNeverUsesAlternateWriteRoute、TestNativeDeletesPreserveMainContractWithoutReplay；替代旧顺序删除测试。已有共享函数服务两种删除操作，无新增包装层。
 
 本轮验收命令：`make check`、`make quality` 和最终排期模块回归均通过；离线 quality 首次因 lint 工具解析阻塞，联网后发现的新测试复杂度问题已通过缩短测试结构修复，未改变检查基线。生成的研发需求也通过工作台删除接口验证 deleted=1。
+
+### 2026-10-03 全局固定入口补验
+
+用户要求所有业务页面遵循同一个“固定到工作台”设计，因此修改共享 `web/static/js/layout/pinned-pages.js`：沿用现有账号隔离存储与顶栏按钮，从已渲染、受权限控制的导航补齐目录；任务看板保留独立目标；编辑子路径和旧别名归属对应功能入口。没有修改 header/base、增加组件体系或全局函数。
+
+本项文件变化（相对本轮 HEAD）：`pinned-pages.js` 净增 19 行，无新增函数或 CSS 选择器；`tests/unit/frontend/pinned-pages.test.js` 新增 35 行，新增测试辅助函数 `openPage`，不计生产源码。
+
+隔离 18091 已验证版本跟进固定按钮、任务看板固定按钮以及页面切换后状态保留，检查版本跟进亮暗截图与 Console；截图在私有验收目录，不提交 Git。`GOPROXY=off make check`、`make quality` 与 `git diff --check` 通过。该结果仅覆盖此项，不代表全部功能验收完成；8098 未重建，Main 与禅道源码未修改。
+
+### 2026-10-03 分页弹层与底部脚注
+
+分页条数选择在共享 `PersonalList.renderPager` 中复用现有 `initAutocomplete`，独立控件容器避免清除按钮拉宽分页栏；只接受原有允许条数。隔离 18091 我的待办真实数据验证 20→10 条切换、URL 与分页更新，以及亮暗菜单在输入框正上方展开，Console 无错误。移除首页列表获取时间、数据来源脚注及其时间生成和样式，仓库检索不存在剩余相同脚注。
+
+文件净行数（相对本轮 HEAD）：`personal-list.js` +1；`personal-workspace.css` -1；`home-render.js` -10；`home.js` -8；`home.html` -4；`contrast-light.css` -10。合计生产源码 -32。无新增具名函数；新增 CSS 选择器 `.pager-size-control`，删除两处 `.data-info` 规则。模板删除的浏览器验收仍需服务重新加载模板后补验；8098 保持原服务。本项不代表全部业务验收通过。
+
+
+## 本会话页面反馈集中验收（2026-10-03）
+
+重新获取 company/main，仍为 `0a892260040306f2da19caf5d4a3ed981135f2c9`；当前 Dev-CT 修改，未合并、推送 Main。8098 未部署；以下真实验收来自隔离 OB 33381、禅道 18080、工作台 18091，不能代替生产发布验收。
+
+| 用户反馈 | 实现与真实验收 |
+|---|---|
+| 深色登录及 Logo | 沿用前批次 Main 素材和主题修复；没有重新生成 Logo。已有亮暗截图与登录流程证据。 |
+| 问题 / 编号右侧出现省略号 | 前批次问题 #1093 徽章已通过双主题；本轮实际发现待办七位编号仍超宽，编号列改为 160px。 |
+| 挂靠团队支持搜索 | 复用公共 autocomplete；开发小组输入“核心”只出现匹配组织，已看亮暗全页图。父级小组同样支持检索。 |
+| 零任务的人仍显示 | 在现有成员读取结果中补零，无额外 SQL；程统(003030) 0 显示且可筛选，三列为空，已看亮暗图。展开更多成员不重复。 |
+| 子需求折叠研发需求 | #US63379 独立折叠三条研发需求，#US63380 仍显示；保留父级折叠与持久化，已看亮暗图。 |
+| 窗口卡片风格 | 统一主题变量、卡片边框和状态顶部色，统计固定三列排列，避免不同数字造成卡片换行不一致。 |
+| 快速创建迭代 | 两周 / 四周从北京时间当天起，分别含 14 / 28 日；计划模式使用所选产品计划的完整日期。Main 原生 POST /projects/:id/executions，products 数组与 plans 按产品 ID 索引的数组契约，未改 PHP。 |
+| 迭代自动命名 | 后端按“开始日期 - 结束日期”生成名称，前端只读展示且随周期 / 计划更新，无手工重复输入。实际创建 21096 四周、21097 两周、21098 计划周期；计划 23609 的关联真实存在。 |
+| 创建与选用交互 | 已验证先创建后拆任务时三行自动选用；已有任务行选择不被覆盖。切换项目 / 需求的过期响应不应用；创建失败不重试。禅道同项目同名错误明确返回失败，未重复创建。 |
+| 人员调整与团队信息混淆 | 列表分别提供“团队信息”“成员管理”；人员入口直达成员页且隐藏保存基本信息；切换基本信息才显示保存。真实两主题及显示状态验证通过。 |
+| 查看关闭 / 过期版本 | 全部窗口可检索；快捷条仅显示未关闭窗口及选中历史窗口。在 16 个窗口中找到首 12 条之外的关闭窗口，选中 ID=62、已过期 256 天。修复日期距离读取首窗口而非所选窗口。隔离历史样本已软删除清理。 |
+| 全局固定到工作台 | 已有公共固定组件从授权导航收集目录，保留同一持久化入口；版本跟进、任务看板、待办等均有按钮，没有第二套组件。 |
+| 每页条数下拉错位 | 个人列表 / 看板 / 抽屉的共享分页及服务端组件复用同一 autocomplete，固定控件宽度；待办 20 → 10 实际请求和菜单位置通过；服务端排期页下拉也在输入框附近。 |
+| 底部无关小字 | 删除首页“列表获取时间 / 数据来源”生成、模板和样式；全仓未再找到该页脚文案，首页真实数据亮暗全页 / 滚动到底已看。业务指标表本身的“数据来源”字段保留。 |
+
+新增依赖为 0，继续 SSR / 原生 JavaScript；jQuery 仅使用已有任务插件。没有新的 window 全局函数。`schedulemodal.css` 的浅色字面底色改为已有双主题变量，深色迭代区域白块已消除。共享分页模板 / CSS、公共固定页目录及公共用户映射属于用户要求的全局一致性范围。
+
+Go / 前端 / vet / 直写回归 `make check` 通过，在线 `make quality` 为 0 issues，未更改固定检查基线；离线 GOPROXY=off 的质量命令曾因模块元数据检查失败，不作为通过证据。隔离 OB 显式授权的拓扑 / 成员竞争测试无跳过并通过，未定义颜色变量为 0。Console 警告 / 错误为 0（已验收页面）；业务同名失败响应另行保留，不作为浏览器成功请求。
+
+当前固定口径包括注释和空行；生产 125541 → 125527，净减少 14 行。测试为 *_test.go 与 tests 下 Go / JS / Python；SQL 为 db/**/*.sql；配置工具为 configs、tools 与 Makefile / .golangci.yml / .stylelintignore。没有压行、生成代码或改变生产统计目录。已有超过 500 行的修改文件均净减少或持平。
+
+### 本轮文件行数和符号（相对 f4756a0d）
+
+| 文件 | 净行数 | 当前行数 |
+|---|---:|---:|
+| `docs/quality/workbench-optimization.md` | +169 | 335 |
+| `docs/quality/workbench-write-exceptions.md` | +8 | 64 |
+| `internal/module/po/boardownermembers_test.go` | +42 | 42 |
+| `internal/module/po/form_version_follow.go` | +1 | 156 |
+| `internal/module/po/repoboardtask.go` | +14 | 307 |
+| `internal/module/po/service_version_follow.go` | +2 | 338 |
+| `internal/module/po/stage_unify_test.go` | +28 | 191 |
+| `internal/module/profile/atomic_test.go` | +34 | 75 |
+| `internal/module/profile/repo.go` | +4 | 220 |
+| `internal/module/schedule/form_task.go` | +1 | 165 |
+| `internal/module/schedule/formiteration.go` | +29 | 29 |
+| `internal/module/schedule/gateway.go` | +22 | 390 |
+| `internal/module/schedule/handler_story_tasks.go` | +1 | 126 |
+| `internal/module/schedule/handleriteration.go` | +34 | 34 |
+| `internal/module/schedule/iteration_test.go` | +49 | 49 |
+| `internal/module/schedule/nativeplanunlink_test.go` | +71 | 71 |
+| `internal/module/schedule/repo_story_link.go` | -75 | 207 |
+| `internal/module/schedule/repoiteration.go` | +17 | 17 |
+| `internal/module/schedule/routes.go` | +1 | 45 |
+| `internal/module/schedule/service.go` | +3 | 436 |
+| `internal/module/schedule/service_scheduling_save.go` | +0 | 383 |
+| `internal/module/schedule/service_story_tasks.go` | +5 | 268 |
+| `internal/module/schedule/service_window_authz_test.go` | +17 | 233 |
+| `internal/module/schedule/serviceiteration.go` | +103 | 103 |
+| `tests/unit/frontend/agileteamdetail.test.js` | +54 | 54 |
+| `tests/unit/frontend/pinnedpages.test.js` | +39 | 39 |
+| `tests/unit/frontend/workboardownerchips.test.js` | +31 | 31 |
+| `tools/zentao-write-allowlist.txt` | -1 | 51 |
+| `web/static/css/auth/login.css` | +0 | 334 |
+| `web/static/css/agileteam/agileteam.css` | +16 | 319 |
+| `web/static/css/components/pager.css` | +2 | 146 |
+| `web/static/css/po/contrast-light.css` | -10 | 217 |
+| `web/static/css/po/personal-workspace.css` | -1 | 461 |
+| `web/static/css/po/todos.css` | +0 | 158 |
+| `web/static/css/po/version-follow.css` | +5 | 464 |
+| `web/static/css/schedule/schedulemodal.css` | +0 | 700 |
+| `web/static/css/schedule/schedulewindow.css` | -3 | 428 |
+| `web/static/js/agileteam/agileteam-detail.js` | +4 | 306 |
+| `web/static/js/agileteam/agileteam.js` | +0 | 499 |
+| `web/static/js/layout/pinned-pages.js` | +19 | 296 |
+| `web/static/js/po/home-render.js` | -10 | 287 |
+| `web/static/js/po/home.js` | -8 | 431 |
+| `web/static/js/po/personal-list.js` | +1 | 465 |
+| `web/static/js/po/version-follow.js` | +8 | 459 |
+| `web/static/js/po/workboard-core.js` | +0 | 220 |
+| `web/static/js/schedule/scheduleintegratedshared.js` | +6 | 277 |
+| `web/static/js/schedule/scheduleintegratedtasks.js` | -16 | 973 |
+| `web/static/js/schedule/scheduletasklistmodal.js` | +74 | 226 |
+| `web/static/js/schedule/scheduletaskmodal.js` | -54 | 750 |
+| `web/templates/components/pager.html` | +7 | 127 |
+| `web/templates/po/home.html` | -4 | 402 |
+| `web/templates/po/version_follow.html` | +2 | 104 |
+| `web/templates/schedule/index.html` | +0 | 853 |
+
+新增命名函数 / 方法（测试单列于文件名中）：
+
+- `internal/module/po/boardownermembers_test.go: TestBoardOwnersIncludeZeroTaskMembersWithoutExtraQueries`
+- `internal/module/po/boardownermembers_test.go: TestBoardStoryOwnersDoNotAddUnrelatedMembers`
+- `internal/module/po/stage_unify_test.go: TestVersionFollowDistanceUsesSelectedWindow、TestVFStayMissingDate`
+- `internal/module/profile/atomic_test.go: TestProfileSaveAtomicCases`
+- `internal/module/profile/atomic_test.go: testProfileSave`
+- `internal/module/schedule/formiteration.go: Validate`
+- `internal/module/schedule/gateway.go: removeStoryFromOtherPlans`
+- `internal/module/schedule/handleriteration.go: CreateIteration`
+- `internal/module/schedule/iteration_test.go: TestCreateIterationDenialPrecedesNativeCall`
+- `internal/module/schedule/iteration_test.go: TestIterationDatesAndNativePlanArray`
+- `internal/module/schedule/nativeplanunlink_test.go: TestNativePlanUnlinkContractAndFailure`
+- `internal/module/schedule/nativeplanunlink_test.go: testNativePlanUnlink`
+- `internal/module/schedule/repoiteration.go: IterationPlans`
+- `internal/module/schedule/service_window_authz_test.go: TestUpdateWindowDeletedAfterReadDoesNotRecreateLinks`
+- `internal/module/schedule/serviceiteration.go: CreateIteration`
+- `internal/module/schedule/serviceiteration.go: iterationBody`
+- `tests/unit/frontend/agileteamdetail.test.js: latestDetailWins`
+- `tests/unit/frontend/pinnedpages.test.js: openPage`
+- `web/static/js/po/version-follow.js: selectWindow`
+- `web/static/js/schedule/scheduletasklistmodal.js: createIteration`
+- `web/static/js/schedule/scheduletasklistmodal.js: previewIteration`
+- `web/static/js/schedule/scheduleintegratedshared.js: resolveUserLabel`
+
+新增 CSS 选择器：
+
+- `web/static/css/agileteam/agileteam.css: .at-change-counts, .at-review-summary`
+- `web/static/css/agileteam/agileteam.css: .at-child-indent .at-sub-id`
+- `web/static/css/agileteam/agileteam.css: .at-pending-actions`
+- `web/static/css/agileteam/agileteam.css: .at-review-reason`
+- `web/static/css/agileteam/agileteam.css: .at-review-summary`
+- `web/static/css/agileteam/agileteam.css: .po-agileteam .page:not(.active)`
+- `web/static/css/components/pager.css: .pagination-size-form .pager-size-control`
+- `web/static/css/po/personal-workspace.css: .pager-size-control`
+- `web/static/css/po/version-follow.css: .vf-window-bar .ui-autocomplete-input-wrap`
+- `web/static/css/schedule/schedulewindow.css: .task-iteration-dates`
+- `web/static/css/schedule/schedulewindow.css: .task-iteration-fields`
+- `web/static/css/schedule/schedulewindow.css: .task-iteration-fields label`
+- `web/static/css/schedule/schedulewindow.css: .task-iteration-form`
+- `web/static/css/schedule/schedulewindow.css: .task-iteration-form summary`
+- `web/static/css/schedule/schedulewindow.css: .task-iteration-periods .active`
+- `web/static/css/schedule/schedulewindow.css: .task-iteration-periods, .task-iteration-dates`
+
+
+自查：任务范围、函数规模 / 复杂度 / 嵌套门禁、已有超长文件不增长、实际重复逻辑共用、无新增依赖、逐文件行数 / 符号登记及两套主题变量检查均完成。仍未解除 R05 共同拓扑锁协议与 28 项逐项直写发布阻止条件；这部分不能通过修改工作台单方代码宣称禅道已遵守协议。
+
+
+### 扩大共享库压力样本与发布阻止项
+
+同一隔离数据集分别 120 次禅道读取；共享阶段各 240 次工作台读取、2 个原生并发读者和 4 个工作台读者。三阶段结束后停止比较基线运行，恢复验收工作台；各阶段均无非 2xx。OB 系统视图 CDB_OB_DEADLOCK_EVENT_HISTORY 最终为 0，仅代表已测场景。
+
+| 阶段 | 禅道中位 / P95 ms | 工作台中位 / P95 ms | 合计连接峰值 |
+|---|---:|---:|---:|
+| 禅道单独运行 | 1751.10 / 3112.31 | — | 4 |
+| 开发基线共同运行 | 2262.98 / 5157.33 | 366.01 / 989.40 | 11 |
+| 优化版共同运行 | 1781.68 / 4223.67 | 278.91 / 587.73 | 11 |
+| 优化版主池上限 2 的隔离试验 | 2375.39 / 6849.38 | 366.76 / 758.78 | 9 |
+
+优化版比开发基线延迟降低，但禅道 P95 仍比单独运行高，不能把“禅道无可测退化”标为通过。单方缩主池试验也未改善结果，已恢复隔离默认配置，未据此修改生产值。只读池成功连接也会贡献连接占用，生产须根据两套服务及只读池合计预算验证；回退复用主池不能代替正常多池容量评估。不同阶段存在系统负载波动，结果不能外推生产容量。
+
+发布仍阻止：R05 原生拓扑 autocommit 缺少共同锁协议；28 项原生直写例外仍非全部能力 / 并发验收；生产合计容量与禅道无退化未达到通过条件。保留 Main 与禅道源码基线，不能在工作台单方修改后假称这些条件成立。本会话页面反馈的修复与截图通过不等于原 27 项全部通过。
+
+### 2026-10-04 登录图标补验
+
+登录 Logo 原图含白色边缘；移除单边裁切，使用四周对称圆角裁切，原始品牌图像不变。login.css 净增 0 行、无新增函数或选择器。真实浅色、深色全页截图 login-logo-edge-light.png / login-logo-edge-dark.png 已逐张检查，白边与不对称消失。版本跟进同时修复数据库零日期造成虚假 106751 天超期，service_version_follow.go 净增不变；stage_unify_test.go 新增 TestVFStayMissingDate 覆盖零日期与截止日回退。截图存于隔离验收目录，不入 Git。
+
+版本跟进搜索组件实测外层为 header 自身，最终宽度约束改到已有 .ui-autocomplete-input-wrap；默认仅渲染需求行，点击展开 / 收起分别产生 1 / 0 条明细行。version-compact-final-light.png / dark.png 已逐张检查 7 条真实需求；schedule-child-collapsed-light.png / dark.png 已检查子需求收起后的研发行隐藏。原生迭代 21098 只读确认名称 2026-10-03 - 2026-10-29、起止日期一致，产品 397 的计划关联为 ,23609,。

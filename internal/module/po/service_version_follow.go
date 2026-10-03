@@ -18,9 +18,6 @@ import (
 	"workbench/internal/pkg/demandstage"
 )
 
-// vfWindowBarLimit 窗口条最多展示的窗口数（含已上线窗口，由前端收进「更多窗口」）。
-const vfWindowBarLimit = 12
-
 // vfOrphanEvidenceLimit 「未挂窗口」依据弹窗最多列出的需求条数。
 const vfOrphanEvidenceLimit = 20
 
@@ -32,7 +29,7 @@ func (s *Service) VersionFollowList(ctx context.Context, actor *model.User, req 
 		Windows: []VersionFollowWindowResp{}, StageCounts: []VersionFollowStageCount{},
 		Page: req.Page, PageSize: req.PageSize, AIPilotOn: aiPilotEnabled,
 	}
-	windows, err := s.repo.ListVFWindows(ctx, 0, vfWindowBarLimit)
+	windows, err := s.repo.ListVFWindows(ctx, 0, -1)
 	if err != nil {
 		return nil, err
 	}
@@ -48,6 +45,7 @@ func (s *Service) VersionFollowList(ctx context.Context, actor *model.User, req 
 		return nil, err
 	}
 	active := pickActiveWindow(windows, uint64(req.WindowID), now)
+	resp.WindowID = active.ID
 	for _, w := range windows {
 		resp.Windows = append(resp.Windows, VersionFollowWindowResp{
 			ID: w.ID, Name: w.Name, ReleaseDate: w.ReleaseDate.Format("2006-01-02"),
@@ -146,21 +144,25 @@ func (s *Service) fillVFSummary(resp *VersionFollowListResp, items []VersionFoll
 			resp.Blocked++
 		}
 	}
-	if len(resp.Windows) > 0 && resp.Windows[0].ReleaseDate != "" {
-		if t, err := time.ParseInLocation("2006-01-02", resp.Windows[0].ReleaseDate, time.Local); err == nil {
+	for _, window := range resp.Windows {
+		if window.ID != resp.WindowID {
+			continue
+		}
+		if t, err := time.ParseInLocation("2006-01-02", window.ReleaseDate, time.Local); err == nil {
 			resp.DistanceDays = dayDiff(now, t)
 		}
 	}
+
 }
 
 // vfStay 计算「已停留 N 天」与超期提示，替代原型的迷你进度列。
 func vfStay(r vfDemandRow, now time.Time) (int, string) {
 	// 计划日缺失时退回 deadline；两者都缺则不显示天数。
 	plan := r.SchedulePlanDate
-	if plan == nil {
+	if plan == nil || plan.IsZero() {
 		plan = r.Deadline
 	}
-	if plan == nil {
+	if plan == nil || plan.IsZero() {
 		return 0, ""
 	}
 	days := dayDiff(*plan, now)

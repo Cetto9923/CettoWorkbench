@@ -60,6 +60,12 @@
 
   window.ScheduleIntegratedShared = {
     schedulingUsers: [],
+    resolveUserLabel: function (account) {
+      var value = $.trim(account || "");
+      if (!value) return "";
+      var user = this.schedulingUsers.find(function (item) { return $.trim(item.account || "") === value; });
+      return user ? $.trim(user.realname || "") || value : value;
+    },
     involvedProducts: [],
     mainSystemId: 0,
     productProjectsMap: {},
