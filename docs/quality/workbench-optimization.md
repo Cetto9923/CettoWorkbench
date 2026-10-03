@@ -148,3 +148,9 @@
 - web/templates/schedule/index.html: -1
 - web/static/js/agileteam/agileteam-org.js: +32
 - docs/quality/workbench-optimization.md: 文档更新，单列不计生产源码。
+
+### 搜索结果竞争补充
+
+真实页面检查发现初始列表请求晚返回可覆盖新搜索结果，已增加请求序号，过期成功与失败都丢弃；加载占位前销毁旧检索下拉，避免筛选掉的小组残留浮层和监听。折叠按钮重复渲染合并后，agileteam.js 本批净变化 0，保持 499 行。实际页面立即搜索 WB隔离验收后稳定为 4 行、4 个检索输入、4 个浮层。
+
+新增测试 verifyLatestListWins 运行完整生产 JS，以逆序成功及旧请求失败验证最新结果不被覆盖，并验证移除输入前调用 destroyAutocomplete。tests/unit/frontend/agileteam-url-filters.test.js 净 +38 行；新增 CSS 选择器与第三方依赖均为 0。报告文字单列，不计生产代码。最终门禁日志更新为仓库外 check8 / quality8，基线未变。

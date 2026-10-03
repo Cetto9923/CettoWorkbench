@@ -73,6 +73,7 @@
     canConfirm: false,
     canEdit: false,
     canMapOrgTeam: false,
+    listRequest: 0,
     page: 1,
     pageSize: 20,
     pageSizeCustom: readStoredCustomPageSize(), // 0 表示未存
@@ -183,6 +184,8 @@
     const host = document.getElementById("atListBody");
     const summary = document.getElementById("atSummaryStrip");
     if (!host) return;
+    const request = ++state.listRequest;
+    host.querySelectorAll(".at-org-team-picker").forEach(function (input) { window.destroyAutocomplete(input.id); });
     host.innerHTML = '<tr><td colspan="10" class="at-empty">加载中…</td></tr>';
     const q = new URLSearchParams();
     q.set("status", state.status);
@@ -200,6 +203,7 @@
     });
     try {
       const json = await window.appJson(API + "?" + q.toString());
+      if (request !== state.listRequest) return;
       const data = (json && json.data) || {};
       if (isLeadView() && data.activeScope) state.scope = data.activeScope;
       syncScopeUrl();
@@ -214,6 +218,7 @@
       renderRows(host, data.items || []);
       renderPager();
     } catch (e) {
+      if (request !== state.listRequest) return;
       host.innerHTML = '<tr><td colspan="10" class="at-empty">' + esc(e.message || "加载失败") + "</td></tr>";
     }
   }
@@ -239,27 +244,22 @@
   }
 
   function renderRows(host, items) {
-    host.querySelectorAll(".at-org-team-picker").forEach(function (input) { window.destroyAutocomplete(input.id); });
     if (!items.length) {
       host.innerHTML = '<tr><td colspan="10" class="at-empty">暂无敏捷小组</td></tr>';
       return;
     }
     host.innerHTML = items.map(function (it) {
+      const isChild = it.type === "child" || (it.parentId && it.parentId !== 0);
+      const fold = (it.contextOnly || !isChild) && it.childCount
+        ? '<button type="button" class="at-fold" onclick="atToggleChildren(' + it.id + ',this)">' + (state.collapsed[it.id] ? "›" : "⌄") + "</button>"
+        : '<button type="button" class="at-fold blank">⌄</button>';
       if (it.contextOnly) {
-        const fold = it.childCount
-          ? '<button type="button" class="at-fold" onclick="atToggleChildren(' + it.id + ',this)">' + (state.collapsed[it.id] ? "›" : "⌄") + "</button>"
-          : '<button type="button" class="at-fold blank">⌄</button>';
         return '<tr class="at-parent-row" data-id="' + it.id + '"><td><div class="at-team-cell">' + fold +
           '<div><div class="at-team-name">' + esc(it.name) + '</div><div class="at-sub-id">父级层级提示</div></div></div></td>' +
           '<td colspan="9" class="at-sub-id">仅显示当前账号有权限查看的小组</td></tr>';
       }
-      const isChild = it.type === "child" || (it.parentId && it.parentId !== 0);
-      const isParent = !isChild;
       const collapsed = isChild && state.collapsed[it.parentId];
-      const rowClass = (isParent ? "at-parent-row" : "at-child-row") + (collapsed ? " hidden" : "");
-      const fold = isParent && it.childCount
-        ? '<button type="button" class="at-fold" onclick="atToggleChildren(' + it.id + ',this)">' + (state.collapsed[it.id] ? "›" : "⌄") + "</button>"
-        : '<button type="button" class="at-fold blank">⌄</button>';
+      const rowClass = (isChild ? "at-child-row" : "at-parent-row") + (collapsed ? " hidden" : "");
       const nameCell = isChild
         ? '<td class="at-child-indent"><span class="at-child-badge">子</span><span class="at-team-name" onclick="atShowDetail(' + it.id + ')">' + esc(it.name) +
           '</span><div class="at-sub-id" style="margin-left:28px">#' + esc(it.id) + "</div></td>"
