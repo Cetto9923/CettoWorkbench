@@ -86,11 +86,7 @@ func (s *Service) SubmitAdjustment(ctx context.Context, actor *model.User, req S
 			return nil, errorx.New("invalid", it.Account+" 已是正式成员，请改用角色调整或移除")
 		}
 		if (it.ActionType == ActionRemove || it.ActionType == ActionRoleChange) && !memberExists {
-			if _, e2 := s.repo.FindMember(ctx, req.TeamgroupID, it.Account); errors.Is(e2, gorm.ErrRecordNotFound) {
-				return nil, errorx.New("invalid", it.Account+" 不是正式成员，无法"+it.ActionType)
-			} else if e2 != nil {
-				return nil, e2
-			}
+			return nil, errorx.New("invalid", it.Account+" 不是正式成员，无法"+it.ActionType)
 		}
 		role := it.Role
 		if role == "" {

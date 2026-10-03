@@ -123,7 +123,7 @@
   background: var(--color-surface-hover, var(--hover));
 }
 
-.schedule-child-row.is-hidden {
+.schedule-child-row:is(.is-hidden, .is-sub-hidden), .schedule-row-expand[hidden] {
   display: none;
 }
 /* ── 表格树形结构（对齐 demo） ── */

@@ -73,7 +73,6 @@
     canConfirm: false,
     canEdit: false,
     canMapOrgTeam: false,
-    orgTeamOptions: null,
     page: 1,
     pageSize: 20,
     pageSizeCustom: readStoredCustomPageSize(), // 0 表示未存
@@ -206,10 +205,6 @@
       syncScopeUrl();
       state.canEdit = !!data.canEdit && !isLeadView();
       state.canMapOrgTeam = !!data.canMapOrgTeam;
-      if (state.canMapOrgTeam && state.orgTeamOptions === null) {
-        const optionsJSON = await window.appJson(API + "/organization-teams");
-        state.orgTeamOptions = (optionsJSON && optionsJSON.data) || [];
-      }
       state.total = data.total || 0;
       state.page = data.page || state.page;
       state.pageSize = data.pageSize || state.pageSize;
@@ -244,6 +239,7 @@
   }
 
   function renderRows(host, items) {
+    host.querySelectorAll(".at-org-team-picker").forEach(function (input) { window.destroyAutocomplete(input.id); });
     if (!items.length) {
       host.innerHTML = '<tr><td colspan="10" class="at-empty">暂无敏捷小组</td></tr>';
       return;
@@ -275,11 +271,8 @@
             adjustLabel(it.pendingAdd, it.pendingRemove) + "</span>"
           : "—";
       const orgTeam = state.canMapOrgTeam
-        ? '<select class="at-field" aria-label="所属组织团队" onchange="atMapOrgTeam(' + it.id + ',this.value)">' +
-          '<option value="0">' + (it.orgDeptInherited ? "继承父级" : "未挂靠") + "</option>" +
-          (state.orgTeamOptions || []).map(function (opt) {
-            return '<option value="' + esc(opt.id) + '"' + (Number(opt.id) === Number(it.orgDeptId) ? " selected" : "") + '>' + esc(opt.name) + "</option>";
-          }).join("") + "</select>"
+        ? '<input class="at-field at-org-team-picker" id="atOrgTeam' + it.id + '" aria-label="所属组织团队" placeholder="搜索挂靠团队" value="' + esc(it.orgDeptName || (it.orgDeptInherited ? "继承父级" : "未挂靠")) + '">' +
+          '<input type="hidden" id="atOrgTeamValue' + it.id + '" value="' + esc(it.orgDeptId || 0) + '">'
         : esc(it.orgDeptName || "未挂靠") + (it.orgDeptInherited ? ' <span class="at-sub-id">继承父级</span>' : "");
       return (
         '<tr class="' + rowClass + '" data-id="' + it.id + '" data-parent="' + (it.parentId || "") + '">' +
@@ -296,6 +289,7 @@
         "</tr>"
       );
     }).join("");
+    host.dispatchEvent(new CustomEvent("agileteam:rows", { bubbles: true, detail: items }));
   }
 
   window.atMapOrgTeam = async function (teamgroupId, deptId) {

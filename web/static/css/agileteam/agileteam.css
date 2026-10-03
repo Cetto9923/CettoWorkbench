@@ -57,7 +57,7 @@
 .at-event::before{content:"";position:absolute;left:-15px;top:5px;width:8px;height:8px;border-radius:50%;background:var(--color-primary);border:2px solid var(--color-surface);box-shadow:0 0 0 1px var(--color-border)}
 .at-event-title{font-size:12px;font-weight:650;margin-bottom:3px}
 .at-event-meta{font-size:11px;color:var(--color-text-secondary)}
-.at-drawer-mask{position:fixed;inset:0;background:rgba(23,32,51,.34);display:none;z-index:80}
+.at-drawer-mask{position:fixed;inset:0;background:var(--color-overlay);display:none;z-index:1000}
 .at-drawer-mask.open{display:block}
 .at-drawer{position:absolute;right:0;top:0;height:100%;width:min(460px,100%);background:var(--color-surface);box-shadow:-12px 0 30px rgba(27,40,67,.15);display:flex;flex-direction:column}
 .at-drawer-head{height:58px;padding:0 18px;border-bottom:1px solid var(--color-border);display:flex;align-items:center}
@@ -298,3 +298,6 @@
 /* 发起人标注：原为 JS 内联 #7f735f / #8894a6，深色下对比不足，改走 muted token */
 .at-submitter{font-size:11px;color:var(--color-text-muted);margin-bottom:8px}
 .at-submitter-time{display:block;color:var(--color-text-muted);margin-top:4px}
+
+.at-org-team-picker { min-width: 150px; }
+.ui-autocomplete-dropdown[data-autocomplete-for^="atOrgTeam"] { min-width: 240px; }

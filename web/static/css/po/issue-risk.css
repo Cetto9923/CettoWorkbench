@@ -29,8 +29,10 @@
   padding: 8px 10px;
 }
 .po-issue-risk .ir-table .ir-col-id {
-  width: 105px;
-  min-width: 105px;
+  width: 125px;
+  min-width: 125px;
+  overflow: visible;
+  text-overflow: clip;
   white-space: nowrap;
 }
 .po-issue-risk .ir-table .ir-title {

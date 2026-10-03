@@ -277,7 +277,7 @@
           '<td><div class="at-member-edit-person"><strong>' + esc(person(m.name, m.account)) + "</strong><span>" + esc(sub) + "</span></div></td>" +
           "<td>" + roleSelectHtml(m.role, removing, i) + "</td>" +
           '<td><input class="at-field at-member-hours-input" type="number" min="0" step="0.5" value="' + esc(m.hours) + '"' +
-            (removing ? " disabled" : "") + ' onchange="atDraftField(' + i + ',\'hours\',this.value)" /></td>' +
+            (removing ? " disabled" : "") + ' oninput="atDraftField(' + i + ',\'hours\',this.value)" /></td>' +
           '<td class="at-member-change-cell">' + change + "</td>" +
           "<td>" + action + "</td>" +
         "</tr>";

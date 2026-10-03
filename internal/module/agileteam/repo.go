@@ -73,7 +73,7 @@ func (r *Repo) read() *gorm.DB {
 func (r *Repo) ListTeamgroups(ctx context.Context) ([]TeamgroupRow, error) {
 	var rows []TeamgroupRow
 	// zt_dept 没有 deleted 列，部门连接只按 id 匹配。
-	err := r.read().WithContext(ctx).Raw(`
+	err := r.db.WithContext(ctx).Raw(`
 SELECT tg.id, tg.name, tg.parent,
        COALESCE(p.name, '') AS parent_name,
        COALESCE(own_map.deptId, parent_map.deptId, 0) AS org_dept_id,
@@ -140,7 +140,7 @@ ORDER BY tg.id ASC`, ids).Scan(&out).Error
 // FindTeamgroupByID 按 ID 查小组详情。
 func (r *Repo) FindTeamgroupByID(ctx context.Context, id uint) (*TeamgroupRow, error) {
 	var row TeamgroupRow
-	err := r.read().WithContext(ctx).Raw(`
+	err := r.db.WithContext(ctx).Raw(`
 SELECT tg.id, tg.name, tg.parent,
        COALESCE(p.name, '') AS parent_name,
        COALESCE(own_map.deptId, parent_map.deptId, 0) AS org_dept_id,
@@ -170,7 +170,7 @@ LIMIT 1`, id).Scan(&row).Error
 // ListMembers 查询正式成员。
 func (r *Repo) ListMembers(ctx context.Context, teamgroupID uint) ([]TeamMemberRow, error) {
 	var rows []TeamMemberRow
-	err := r.read().WithContext(ctx).Raw(`
+	err := r.db.WithContext(ctx).Raw(`
 SELECT t.account,
        COALESCE(NULLIF(u.realname, ''), t.account) AS name,
        t.role, t.hours, t.days,
@@ -272,7 +272,7 @@ func (r *Repo) ResolveRealnames(ctx context.Context, accounts []string) (map[str
 // FindMember 查单个正式成员。
 func (r *Repo) FindMember(ctx context.Context, teamgroupID uint, account string) (*TeamMemberRow, error) {
 	var row TeamMemberRow
-	err := r.read().WithContext(ctx).Raw(`
+	err := r.db.WithContext(ctx).Raw(`
 SELECT t.account,
        COALESCE(NULLIF(u.realname, ''), t.account) AS name,
        t.role, t.hours, t.days,

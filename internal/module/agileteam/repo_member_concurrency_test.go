@@ -12,6 +12,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/DATA-DOG/go-sqlmock"
 )
 
 func TestMemberConcurrentUpsertPreservesIdentity(t *testing.T) {
@@ -73,5 +75,40 @@ func TestBasicSaveDoesNotWaitForUnrelatedRow(t *testing.T) {
 	repo := NewRepo(db, db).WithTeamgroupTable(table)
 	if err := repo.UpdateTeamgroupBasicAtomic(ctx, 1, "g1", "", "", "", nil, nil); err != nil {
 		t.Fatalf("unrelated row lock blocked basic save: %v", err)
+	}
+}
+
+func TestObjectAuthorizationReadsPrimary(t *testing.T) {
+	primary, writer := newTestService(t)
+	weak, reader := newTestService(t)
+	repo := NewRepo(primary.repo.db, weak.repo.db)
+	writer.ExpectQuery("(?s)SELECT tg.id.*WHERE tg.id =").WithArgs(uint(5)).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "PO"}).AddRow(5, "current-owner"))
+	group, err := repo.FindTeamgroupByID(t.Context(), 5)
+	if err != nil || group.PO != "current-owner" {
+		t.Fatalf("group authorization used stale reader: %+v, %v", group, err)
+	}
+	writer.ExpectQuery("(?s)SELECT t.account.*WHERE t.type =").WithArgs(uint(5), "current-member").
+		WillReturnRows(sqlmock.NewRows([]string{"account", "role"}).AddRow("current-member", "研发"))
+	member, err := repo.FindMember(t.Context(), 5, "current-member")
+	if err != nil || member.Account != "current-member" {
+		t.Fatalf("member validation used stale reader: %+v, %v", member, err)
+	}
+	writer.ExpectQuery("(?s)SELECT t.account.*WHERE t.type =").WithArgs(uint(5)).
+		WillReturnRows(sqlmock.NewRows([]string{"account", "hours"}).AddRow("current-member", 5))
+	members, err := repo.ListMembers(t.Context(), 5)
+	if err != nil || len(members) != 1 || members[0].Hours != 5 {
+		t.Fatalf("member detail used stale reader: %+v, %v", members, err)
+	}
+	writer.ExpectQuery("(?s)SELECT tg.id.*WHERE tg.deleted =").
+		WillReturnRows(sqlmock.NewRows([]string{"id", "org_dept_id", "org_dept_name"}).AddRow(5, 14, "产品五部"))
+	groups, err := repo.ListTeamgroups(t.Context())
+	if err != nil || len(groups) != 1 || groups[0].OrgDeptID != 14 {
+		t.Fatalf("organization mapping used stale reader: %+v, %v", groups, err)
+	}
+	for _, mock := range []sqlmock.Sqlmock{writer, reader} {
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatal(err)
+		}
 	}
 }

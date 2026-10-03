@@ -109,3 +109,18 @@ func TestEncodeMD5_KnownVector(t *testing.T) {
 		t.Fatalf("MD5(123456) mismatch: %s", got)
 	}
 }
+
+func TestProfileEmailValidation(t *testing.T) {
+	for _, email := range []string{"wb.acceptance@example.invalid", "first.last+tag@dept.example.com"} {
+		req := UpdateReq{Email: email}
+		if errors := req.Validate(); len(errors) != 0 {
+			t.Errorf("valid email %q rejected: %v", email, errors)
+		}
+	}
+	for _, email := range []string{"missing-domain@", "missing-at.example.com", "user@example\\invalid"} {
+		req := UpdateReq{Email: email}
+		if errors := req.Validate(); len(errors) == 0 {
+			t.Errorf("invalid email %q accepted", email)
+		}
+	}
+}

@@ -309,7 +309,7 @@
     var rect = input.getBoundingClientRect();
     dropdown.style.position = "fixed";
     dropdown.style.left = rect.left + "px";
-    dropdown.style.top = rect.bottom + "px";
+    dropdown.style.top = (rect.bottom + dropdown.offsetHeight > window.innerHeight ? Math.max(0, rect.top - dropdown.offsetHeight) : rect.bottom) + "px";
     dropdown.style.width = rect.width + "px";
     dropdown.style.zIndex = "99999";
   }

@@ -197,12 +197,13 @@ func deleteSchedulingObjects(ctx context.Context, client *zentao.Client, kind st
 	if client == nil {
 		return fmt.Errorf("禅道 API 未配置")
 	}
-	key := map[string]string{"tasks": "taskIdList", "stories": "storyIdList"}[kind]
-	if key == "" {
+	if kind != "tasks" && kind != "stories" {
 		return fmt.Errorf("删除对象类型无效")
 	}
-	if err := client.Do(ctx, http.MethodPost, "/delete"+kind, map[string]any{key: ids}, nil); err != nil {
-		return fmt.Errorf("删除 %s 失败: %w", kind, err)
+	for i, id := range ids {
+		if err := client.Do(ctx, http.MethodDelete, fmt.Sprintf("/%s/%d", kind, id), nil, nil); err != nil {
+			return fmt.Errorf("删除 %s/%d 失败，此前 %d 项已提交，请刷新核对：%w", kind, id, i, err)
+		}
 	}
 	return nil
 }

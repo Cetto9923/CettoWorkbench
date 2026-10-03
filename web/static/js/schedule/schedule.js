@@ -274,17 +274,13 @@
   }
 
   function toggleBizChildren(parentId, $toggle) {
-    var $children = $root.find('tr.schedule-child-row[data-parent="' + parentId + '"]');
-    var collapsed = $toggle.hasClass("is-collapsed");
-
-    if (collapsed) {
-      $toggle.removeClass("is-collapsed fa-chevron-right").addClass("fa-chevron-down");
-      $children.removeClass("is-hidden");
-      return;
-    }
-
-    $toggle.addClass("is-collapsed").removeClass("fa-chevron-down").addClass("fa-chevron-right");
-    $children.addClass("is-hidden");
+    var childScope = $toggle.closest("button").data("scope") === "sub";
+    var attribute = childScope ? "data-sub-parent" : "data-parent";
+    var $children = $root.find('tr.schedule-child-row[' + attribute + '="' + parentId + '"]');
+    var collapsed = !$toggle.hasClass("is-collapsed");
+    $toggle.toggleClass("is-collapsed fa-chevron-right", collapsed).toggleClass("fa-chevron-down", !collapsed);
+    $toggle.closest("button").attr("aria-expanded", String(!collapsed));
+    $children.toggleClass(childScope ? "is-sub-hidden" : "is-hidden", collapsed);
   }
 
   function closeAllScheduleWindowCardMenus() {

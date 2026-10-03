@@ -13,6 +13,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"workbench/internal/config"
 	"workbench/internal/model"
@@ -95,5 +96,35 @@ func TestWindowStatsUsesThreeQueriesForMultipleWindows(t *testing.T) {
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestNativeDeletesStopAfterFailureWithoutReplay(t *testing.T) {
+	for _, kind := range []string{"tasks", "stories"} {
+		t.Run(kind, func(t *testing.T) {
+			var calls []string
+			upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path == "/tokens" {
+					_, _ = w.Write([]byte(`{"token":"synthetic-test-token"}`))
+					return
+				}
+				calls = append(calls, r.Method+" "+r.URL.Path)
+				if r.URL.Path == "/"+kind+"/8" {
+					w.WriteHeader(http.StatusUnauthorized)
+					return
+				}
+				_, _ = w.Write([]byte(`{"result":"success"}`))
+			}))
+			defer upstream.Close()
+			client := zentao.NewClient(config.ZentaoConfig{API: upstream.URL})
+			err := deleteSchedulingObjects(zentao.WithAccount(t.Context(), "fixture"), client, kind, []uint{7, 8, 9})
+			if err == nil || !strings.Contains(err.Error(), "此前 1 项已提交") {
+				t.Fatalf("partial failure = %v", err)
+			}
+			want := "DELETE /" + kind + "/7,DELETE /" + kind + "/8"
+			if got := strings.Join(calls, ","); got != want {
+				t.Fatalf("native calls = %s, want %s", got, want)
+			}
+		})
 	}
 }

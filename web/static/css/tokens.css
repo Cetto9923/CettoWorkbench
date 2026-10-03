@@ -206,7 +206,6 @@
   --wb-auth-button-shadow: rgba(47,111,235,.18);
   --wb-auth-button-hover-shadow: rgba(47,111,235,.22);
   --wb-auth-surface-glow-high: rgba(72,120,230,.08);
-  --wb-auth-brand-shadow: rgba(78,52,29,.14);
   --wb-auth-hero-glow-high: rgba(97,163,255,.26);
 }
 
@@ -369,6 +368,5 @@ html[data-theme="dark"] {
   --wb-auth-button-shadow: rgba(47,111,235,.18);
   --wb-auth-button-hover-shadow: rgba(47,111,235,.22);
   --wb-auth-surface-glow-high: rgba(72,120,230,.08);
-  --wb-auth-brand-shadow: rgba(78,52,29,.14);
   --wb-auth-hero-glow-high: rgba(97,163,255,.26);
 }

@@ -72,7 +72,7 @@ type ChangePasswordReq struct {
 	ConfirmPassword string `json:"confirmPassword"`
 }
 
-var emailPattern = regexp.MustCompile(`^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$`)
+var emailPattern = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 
 // Validate 校验资料更新请求。
 func (r *UpdateReq) Validate() []FieldError {
