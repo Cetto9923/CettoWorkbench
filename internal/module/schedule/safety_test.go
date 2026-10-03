@@ -13,12 +13,79 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 	"workbench/internal/config"
 	"workbench/internal/model"
 	"workbench/internal/pkg/zentao"
 )
+
+func TestToStoryPreservesMainContract(t *testing.T) {
+	const expected = `{
+	 "estimateLaunch":"2026-10-31","developFinish":"2026-10-15",
+	 "testFinish":"2026-10-20","verifyFinish":"2026-10-25","QD":"qa",
+	 "product":[2,3],"module":[0,0],"plan":["11","12"],
+	 "title":["主研需","配研需"],"spec":["主描述","配描述"],
+	 "source":["",""],"sourceNote":["",""],"verify":["",""],
+	 "assignedTo":["dev1","dev2"],"category":["feature","feature"],
+	 "pri":["3","3"],"estimate":["8.5","0"],"keywords":["",""],"color":["",""]
+	}`
+	var want map[string]any
+	if err := json.Unmarshal([]byte(expected), &want); err != nil {
+		t.Fatal(err)
+	}
+	calls := 0
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/tokens" {
+			_, _ = w.Write([]byte(`{"token":"synthetic-test-token"}`))
+			return
+		}
+		calls++
+		var got map[string]any
+		if err := json.NewDecoder(r.Body).Decode(&got); err != nil {
+			t.Error(err)
+		}
+		if r.Method != http.MethodPost || r.URL.Path != "/demand/100/tostory" || !reflect.DeepEqual(got, want) {
+			t.Errorf("Main native contract changed: %s %s, body=%v", r.Method, r.URL.Path, got)
+		}
+		_, _ = w.Write([]byte(`{"message":"success","storyIds":[21,22]}`))
+	}))
+	defer upstream.Close()
+	client := zentao.NewClient(config.ZentaoConfig{API: upstream.URL})
+	ids, err := toStory(zentao.WithAccount(t.Context(), "fixture"), client, 100, toStoryBodyInput{
+		EstimateLaunch: "2026-10-31", DevelopFinish: "2026-10-15", TestFinish: "2026-10-20",
+		VerifyFinish: "2026-10-25", QD: "qa",
+		Stories: []toStoryStoryInput{
+			{ProductID: 2, PlanID: 11, Title: " 主研需 ", Spec: "主描述", AssignedTo: "dev1", Estimate: 8.5},
+			{ProductID: 3, PlanID: 12, Title: "配研需", Spec: "配描述", AssignedTo: "dev2", Estimate: 0},
+		},
+	})
+	if err != nil || calls != 1 || !reflect.DeepEqual(ids, []uint{21, 22}) {
+		t.Fatalf("native creation = %v, %v; calls=%d", ids, err, calls)
+	}
+}
+
+func TestToStoryFailureNeverUsesAlternateWriteRoute(t *testing.T) {
+	for _, body := range []string{`{"storyIds":[21]}`, `{"storyIds":[21,0]}`, `{"result":"fail","message":"not found"}`} {
+		calls := 0
+		upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/tokens" {
+				_, _ = w.Write([]byte(`{"token":"synthetic-test-token"}`))
+				return
+			}
+			calls++
+			_, _ = w.Write([]byte(body))
+		}))
+		client := zentao.NewClient(config.ZentaoConfig{API: upstream.URL})
+		_, err := toStory(zentao.WithAccount(t.Context(), "fixture"), client, 100,
+			toStoryBodyInput{Stories: []toStoryStoryInput{{ProductID: 2}, {ProductID: 3}}})
+		upstream.Close()
+		if err == nil || calls != 1 {
+			t.Fatalf("invalid native response accepted or creation replayed: %v, calls=%d", err, calls)
+		}
+	}
+}
 
 func TestSchedulingRejectsForeignStoryBeforeWrites(t *testing.T) {
 	db, mock := newAuthzMockDB(t)
@@ -99,32 +166,29 @@ func TestWindowStatsUsesThreeQueriesForMultipleWindows(t *testing.T) {
 	}
 }
 
-func TestNativeDeletesStopAfterFailureWithoutReplay(t *testing.T) {
-	for _, kind := range []string{"tasks", "stories"} {
-		t.Run(kind, func(t *testing.T) {
-			var calls []string
-			upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.URL.Path == "/tokens" {
-					_, _ = w.Write([]byte(`{"token":"synthetic-test-token"}`))
-					return
-				}
-				calls = append(calls, r.Method+" "+r.URL.Path)
-				if r.URL.Path == "/"+kind+"/8" {
-					w.WriteHeader(http.StatusUnauthorized)
-					return
-				}
-				_, _ = w.Write([]byte(`{"result":"success"}`))
-			}))
-			defer upstream.Close()
-			client := zentao.NewClient(config.ZentaoConfig{API: upstream.URL})
-			err := deleteSchedulingObjects(zentao.WithAccount(t.Context(), "fixture"), client, kind, []uint{7, 8, 9})
-			if err == nil || !strings.Contains(err.Error(), "此前 1 项已提交") {
-				t.Fatalf("partial failure = %v", err)
+func TestNativeDeletesPreserveMainContractWithoutReplay(t *testing.T) {
+	for kind, field := range map[string]string{"tasks": "taskIdList", "stories": "storyIdList"} {
+		calls := 0
+		upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/tokens" {
+				_, _ = w.Write([]byte(`{"token":"synthetic-test-token"}`))
+				return
 			}
-			want := "DELETE /" + kind + "/7,DELETE /" + kind + "/8"
-			if got := strings.Join(calls, ","); got != want {
-				t.Fatalf("native calls = %s, want %s", got, want)
+			calls++
+			var body map[string][]uint
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Error(err)
 			}
-		})
+			if r.Method != http.MethodPost || r.URL.Path != "/delete"+kind || !reflect.DeepEqual(body, map[string][]uint{field: {7, 8, 9}}) {
+				t.Errorf("Main batch contract: %s %s %+v", r.Method, r.URL.Path, body)
+			}
+			w.WriteHeader(http.StatusUnauthorized)
+		}))
+		defer upstream.Close()
+		client := zentao.NewClient(config.ZentaoConfig{API: upstream.URL})
+		err := deleteSchedulingObjects(zentao.WithAccount(t.Context(), "fixture"), client, kind, []uint{7, 8, 9})
+		if err == nil || !strings.Contains(err.Error(), "部分操作可能已提交") || calls != 1 {
+			t.Fatalf("failure = %v, calls = %d", err, calls)
+		}
 	}
 }

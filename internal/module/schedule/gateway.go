@@ -200,10 +200,12 @@ func deleteSchedulingObjects(ctx context.Context, client *zentao.Client, kind st
 	if kind != "tasks" && kind != "stories" {
 		return fmt.Errorf("删除对象类型无效")
 	}
-	for i, id := range ids {
-		if err := client.Do(ctx, http.MethodDelete, fmt.Sprintf("/%s/%d", kind, id), nil, nil); err != nil {
-			return fmt.Errorf("删除 %s/%d 失败，此前 %d 项已提交，请刷新核对：%w", kind, id, i, err)
-		}
+	field := "taskIdList"
+	if kind == "stories" {
+		field = "storyIdList"
+	}
+	if err := client.Do(ctx, http.MethodPost, "/delete"+kind, map[string]any{field: ids}, nil); err != nil {
+		return fmt.Errorf("批量删除 %s 失败，部分操作可能已提交，请刷新核对：%w", kind, err)
 	}
 	return nil
 }
