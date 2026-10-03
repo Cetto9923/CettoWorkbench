@@ -107,20 +107,10 @@ func (r *Repo) TransitionPendingAdjustment(ctx context.Context, adj *Adjustment,
 }
 
 func upsertTeamMemberTx(tx *gorm.DB, teamgroupID uint, account, role string, hours float64, now time.Time) error {
-	var count int64
-	if err := tx.Table("zt_team").
-		Where("type = 'teamgroup' AND root = ? AND account = ?", teamgroupID, account).
-		Count(&count).Error; err != nil {
-		return err
-	}
-	if count > 0 {
-		return tx.Exec(`
-UPDATE zt_team SET role = ?, hours = ?
-WHERE type = 'teamgroup' AND root = ? AND account = ?`, role, hours, teamgroupID, account).Error
-	}
 	joinDate := now.Format("2006-01-02")
 	return tx.Exec(`
 INSERT INTO zt_team (root, type, teamgroup, account, role, position, limited, `+"`join`"+`, days, hours, estimate, consumed, `+"`left`"+`, `+"`order`"+`)
-VALUES (?, 'teamgroup', 0, ?, ?, '', 'no', ?, 0, ?, 0, 0, 0, 0)`,
+VALUES (?, 'teamgroup', 0, ?, ?, '', 'no', ?, 0, ?, 0, 0, 0, 0)
+ON DUPLICATE KEY UPDATE role = VALUES(role), hours = VALUES(hours)`,
 		teamgroupID, account, role, joinDate, hours).Error
 }

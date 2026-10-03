@@ -48,9 +48,6 @@ func TestConfirmAdjustmentWritesTeamAtomically(t *testing.T) {
 				WillReturnRows(sqlmock.NewRows([]string{"id", "parent"}).AddRow(3, 0))
 			mock.ExpectExec("(?s)UPDATE `zt_wb_agileteam_adjustment`").
 				WillReturnResult(sqlmock.NewResult(0, 1))
-			mock.ExpectQuery("(?s)SELECT count\\(\\*\\) FROM `zt_team`").
-				WithArgs(uint(3), "newbie").
-				WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
 			mock.ExpectExec("(?s)INSERT INTO zt_team").
 				WithArgs(uint(3), "newbie", "研发", sqlmock.AnyArg(), hours).
 				WillReturnResult(sqlmock.NewResult(1, 1))

@@ -58,3 +58,27 @@ func TestNativeWriteHTTP200FailureAndReadNotice(t *testing.T) {
 		t.Fatalf("read notice changed: %+v, %v", notice, err)
 	}
 }
+
+func TestNativeWriteDoesNotReplayOrAcceptHTML(t *testing.T) {
+	for _, response := range []struct {
+		status int
+		body   string
+	}{{http.StatusUnauthorized, `{"message":"expired"}`}, {http.StatusOK, `<html>license expired</html>`}, {http.StatusOK, `{"result":"fail","status":200,"message":"rejected"}`}, {http.StatusOK, `{"Ret":[{"ReturnCode":"E0305-B-A00403","ReturnMsg":"native rejected"}]}`}} {
+		calls := 0
+		upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/tokens" {
+				_, _ = w.Write([]byte(`{"token":"synthetic"}`))
+				return
+			}
+			calls++
+			w.WriteHeader(response.status)
+			_, _ = w.Write([]byte(response.body))
+		}))
+		client := NewClient(config.ZentaoConfig{API: upstream.URL})
+		err := client.Do(WithAccount(context.Background(), "fixture"), http.MethodPost, "/products/1/plans", nil, nil)
+		upstream.Close()
+		if err == nil || calls != 1 {
+			t.Fatalf("mutation response accepted or replayed: status=%d calls=%d err=%v", response.status, calls, err)
+		}
+	}
+}

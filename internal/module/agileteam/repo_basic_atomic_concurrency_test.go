@@ -60,6 +60,13 @@ func openLiveDB(t *testing.T) *gorm.DB {
 	if err != nil {
 		t.Skipf("MySQL unavailable (%v); skipping live concurrency test", err)
 	}
+	pool, err := gdb.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	pool.SetMaxOpenConns(8)
+	pool.SetMaxIdleConns(2)
+	t.Cleanup(func() { _ = pool.Close() })
 	return gdb
 }
 
@@ -74,7 +81,7 @@ func setupTopologyTestTable(t *testing.T, gdb *gorm.DB) (*gorm.DB, string) {
 		t.Skipf("cannot inspect agileteam history table (%v); skipping live concurrency test", err)
 	}
 	if historyTables == 0 {
-		t.Skip("zt_wb_agileteam_history is missing; apply db/02_po_incremental.sql before live concurrency tests")
+		t.Skip("zt_wb_agileteam_history is missing; apply db/upgrade_workbench_safety.sql before live concurrency tests")
 	}
 	table := fmt.Sprintf("wb_test_tg_%d", time.Now().UnixNano())
 	if err := gdb.Exec(fmt.Sprintf(`

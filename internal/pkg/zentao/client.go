@@ -183,7 +183,7 @@ func (c *Client) clearToken(account string) {
 }
 
 // Do 带当前登录账号的 Token 调用禅道 API；path 以 / 开头（相对 apiBase）。
-// 账号来自 ctx（RequireLogin 注入的 WithAccount）；401 时清该账号缓存并重试一次。
+// 账号来自 ctx（RequireLogin 注入的 WithAccount）；只有只读请求在 401 后刷新并重试。
 func (c *Client) Do(ctx context.Context, method, path string, body any, out any) error {
 	account := AccountFrom(ctx)
 	if account == "" {
@@ -201,6 +201,9 @@ func (c *Client) Do(ctx context.Context, method, path string, body any, out any)
 		return err
 	}
 	c.clearToken(account)
+	if method != http.MethodGet {
+		return err
+	}
 	tok, err = c.refreshTokenPO(ctx, account)
 	if err != nil {
 		return err
@@ -320,14 +323,29 @@ func (c *Client) doRaw(ctx context.Context, method, path, token string, body any
 		callErr = &apiError{status: resp.StatusCode, msg: msg}
 		return callErr
 	}
-	if method != http.MethodGet && len(respBody) > 0 {
+	if len(respBody) > 0 && !json.Valid(respBody) {
+		callErr = &apiError{status: http.StatusBadGateway, msg: "禅道接口返回非 JSON 响应，请检查服务及授权状态"}
+		return callErr
+	}
+	if len(respBody) > 0 {
 		var result struct {
 			Result string `json:"result"`
 			Status string `json:"status"`
+			Ret    []struct {
+				ReturnCode string `json:"ReturnCode"`
+				ReturnMsg  string `json:"ReturnMsg"`
+			} `json:"Ret"`
 		}
-		if json.Unmarshal(respBody, &result) == nil && (strings.EqualFold(result.Result, "fail") || strings.EqualFold(result.Status, "fail")) {
+		_ = json.Unmarshal(respBody, &result)
+		if method != http.MethodGet && (strings.EqualFold(result.Result, "fail") || strings.EqualFold(result.Status, "fail")) {
 			callErr = &apiError{status: http.StatusBadRequest, msg: parseAPIErrorMessage(respBody)}
 			return callErr
+		}
+		for _, item := range result.Ret {
+			if item.ReturnCode != "" && item.ReturnCode != "000000" {
+				callErr = &apiError{status: http.StatusBadRequest, msg: item.ReturnMsg}
+				return callErr
+			}
 		}
 	}
 	if out == nil || len(respBody) == 0 {
