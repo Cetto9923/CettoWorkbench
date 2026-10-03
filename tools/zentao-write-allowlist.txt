@@ -32,7 +32,6 @@ internal/module/schedule/repo_scheduling_write.go UpdateStory zt_story  # 同上
 internal/module/schedule/repo_scheduling_write.go CreateStorySpec zt_storyspec  # zentao.Client 无研发需求描述接口
 internal/module/schedule/repo_scheduling_write.go UpdateDemandScheduling zt_demand  # 排期回写业需字段，zentao.Client 无对应接口
 internal/module/schedule/repo_story_link.go EnsurePlanStoryRelation zt_planstory  # 同上
-internal/module/schedule/repo_story_link.go UnlinkStoryFromPlan zt_planstory  # 同上
 internal/module/schedule/repo_story_link.go ReplaceProjectStory zt_projectstory  # zentao.Client 无项目-需求关联接口
 
 # --- ztaction：禅道 zt_action 写通道基础设施 ---

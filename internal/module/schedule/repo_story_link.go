@@ -86,7 +86,7 @@ func (r *Repo) ReplaceProjectStory(ctx context.Context, row *ZtProjectStoryInser
 //     避免 edit 反复保存导致 action 刷屏（对齐禅道 execution/model.php:2849）。
 //   - action 名使用小写 "linked2project"/"linked2execution"，对齐禅道 lang key。
 //
-// 注意：调用方需在事务内调用（txRepo），与任务创建/更新同事务，失败回滚。
+// 原生任务调用已提交；本地关联失败由调用方提示部分完成。
 func (r *Repo) LinkStoryToProjectAndExecution(ctx context.Context, storyID, productID, projectID, executionID uint, account string) error {
 	if storyID == 0 {
 		return errors.New("需求 ID 无效")
@@ -97,57 +97,32 @@ func (r *Repo) LinkStoryToProjectAndExecution(ctx context.Context, storyID, prod
 		return fmt.Errorf("get story branch and version: %w", err)
 	}
 
-	// 项目关联
-	if projectID > 0 {
-		existed, err := r.ProjectStoryExists(ctx, projectID, storyID)
-		if err != nil {
-			return fmt.Errorf("check project story exists: %w", err)
+	links := []struct {
+		id        uint
+		action    string
+		execution uint
+	}{{projectID, "linked2project", 0}, {executionID, "linked2execution", executionID}}
+	for i, link := range links {
+		if link.id == 0 || (i == 1 && executionID == projectID) {
+			continue
 		}
-		order, err := r.GetProjectStoryMaxOrder(ctx, projectID)
+		existed, err := r.ProjectStoryExists(ctx, link.id, storyID)
 		if err != nil {
-			return fmt.Errorf("get project story max order: %w", err)
+			return err
+		}
+		order, err := r.GetProjectStoryMaxOrder(ctx, link.id)
+		if err != nil {
+			return err
 		}
 		if err := r.ReplaceProjectStory(ctx, &ZtProjectStoryInsert{
-			Project: projectID,
-			Product: productID,
-			Branch:  branch,
-			Story:   storyID,
-			Version: version,
-			Order:   order + 1,
+			Project: link.id, Product: productID, Branch: branch,
+			Story: storyID, Version: version, Order: order + 1,
 		}); err != nil {
-			return fmt.Errorf("replace project story for project %d: %w", projectID, err)
-		}
-		// M1 存在性守卫：仅首次关联写 action，避免 edit 刷屏。
-		if !existed {
-			if err := r.CreateAction(ctx, "story", storyID, "linked2project", account, productID, projectID, 0, fmt.Sprintf("%d", projectID)); err != nil {
-				return fmt.Errorf("create linked2project action: %w", err)
-			}
-		}
-	}
-
-	// 执行关联（与项目相同时跳过，避免重复）
-	if executionID > 0 && executionID != projectID {
-		existed, err := r.ProjectStoryExists(ctx, executionID, storyID)
-		if err != nil {
-			return fmt.Errorf("check execution story exists: %w", err)
-		}
-		order, err := r.GetProjectStoryMaxOrder(ctx, executionID)
-		if err != nil {
-			return fmt.Errorf("get execution story max order: %w", err)
-		}
-		if err := r.ReplaceProjectStory(ctx, &ZtProjectStoryInsert{
-			Project: executionID,
-			Product: productID,
-			Branch:  branch,
-			Story:   storyID,
-			Version: version,
-			Order:   order + 1,
-		}); err != nil {
-			return fmt.Errorf("replace project story for execution %d: %w", executionID, err)
+			return err
 		}
 		if !existed {
-			if err := r.CreateAction(ctx, "story", storyID, "linked2execution", account, productID, projectID, executionID, fmt.Sprintf("%d", executionID)); err != nil {
-				return fmt.Errorf("create linked2execution action: %w", err)
+			if err := r.CreateAction(ctx, "story", storyID, link.action, account, productID, projectID, link.execution, fmt.Sprint(link.id)); err != nil {
+				return err
 			}
 		}
 	}
@@ -225,56 +200,6 @@ func (r *Repo) LinkStoryToPlan(ctx context.Context, storyID, productID, planID u
 		}
 		if err := r.CreateAction(ctx, "productplan", planID, "linkstory", account, productID, 0, 0, fmt.Sprintf("%d", storyID)); err != nil {
 			return fmt.Errorf("create linkstory action: %w", err)
-		}
-	}
-
-	return nil
-}
-
-// UnlinkStoryFromPlan 把研发需求从计划摘除。
-//   - 仅当 (plan, story) 关联确实存在时才执行删除并写 action，
-//     不存在则直接返回 nil（幂等，不报错）。
-//   - zt_planstory 沿用 hard DELETE（原生 planstory 无 soft-delete 字段）。
-func (r *Repo) UnlinkStoryFromPlan(ctx context.Context, storyID, productID, planID uint, account string) error {
-	existed, err := r.PlanStoryExists(ctx, planID, storyID)
-	if err != nil {
-		return fmt.Errorf("check plan story exists: %w", err)
-	}
-	if !existed {
-		return nil
-	}
-
-	const query = "DELETE FROM zt_planstory WHERE plan = ? AND story = ?"
-	if err := r.db.WithContext(ctx).Exec(query, planID, storyID).Error; err != nil {
-		return fmt.Errorf("delete plan story: %w", err)
-	}
-
-	if err := r.CreateAction(ctx, "story", storyID, "unlinkedfromplan", account, productID, 0, 0, fmt.Sprintf("%d", planID)); err != nil {
-		return fmt.Errorf("create unlinkedfromplan action: %w", err)
-	}
-	if err := r.CreateAction(ctx, "productplan", planID, "unlinkstory", account, productID, 0, 0, fmt.Sprintf("%d", storyID)); err != nil {
-		return fmt.Errorf("create unlinkstory action: %w", err)
-	}
-
-	return nil
-}
-
-// RemoveStoryFromOtherPlans 从 zt_planstory 删除指定 story 在「非 keepPlanID」计划中的关联行。
-// 用于 edit plan 场景：把 story 从其他计划摘除，仅保留在 keepPlanID。
-// 逐个 plan 调用 UnlinkStoryFromPlan，保证每个旧 plan 各写一对 unlinked action。
-func (r *Repo) RemoveStoryFromOtherPlans(ctx context.Context, storyID, keepPlanID, productID uint, account string) error {
-	if storyID == 0 {
-		return errors.New("需求 ID 无效")
-	}
-
-	otherPlans, err := r.ListOtherPlansOfStory(ctx, storyID, keepPlanID)
-	if err != nil {
-		return fmt.Errorf("list other plans of story: %w", err)
-	}
-
-	for _, oldPlanID := range otherPlans {
-		if err := r.UnlinkStoryFromPlan(ctx, storyID, productID, oldPlanID, account); err != nil {
-			return fmt.Errorf("unlink story from plan %d: %w", oldPlanID, err)
 		}
 	}
 

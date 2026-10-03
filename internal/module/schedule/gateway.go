@@ -366,3 +366,25 @@ func toStory(ctx context.Context, client *zentao.Client, demandID uint, in toSto
 	}
 	return out.StoryIDs, nil
 }
+
+// removeStoryFromOtherPlans 摘除旧计划，原生调用在本地事务外执行。
+func (s *Service) removeStoryFromOtherPlans(ctx context.Context, storyID, keepPlanID uint) error {
+	plans, err := s.repo.ListOtherPlansOfStory(ctx, storyID, keepPlanID)
+	if err != nil {
+		return err
+	}
+	for _, planID := range plans {
+		if s.ztAPI == nil {
+			return fmt.Errorf("禅道 API 未配置")
+		}
+		var out createdProductPlan
+		path := fmt.Sprintf("/productplans/%d/unlinkstories", planID)
+		if err := s.ztAPI.Do(ctx, http.MethodPost, path, map[string]any{"stories": []uint{storyID}}, &out); err != nil {
+			return fmt.Errorf("从计划 %d 摘除研发需求 %d 失败，已有步骤可能提交，请刷新核对：%w", planID, storyID, err)
+		}
+		if out.ID != planID {
+			return fmt.Errorf("禅道摘除计划 %d 的响应不完整，请刷新核对", planID)
+		}
+	}
+	return nil
+}

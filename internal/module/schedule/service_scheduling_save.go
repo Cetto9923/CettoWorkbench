@@ -142,11 +142,11 @@ func (s *Service) saveIndependentScheduling(ctx context.Context, account string,
 	if err != nil {
 		return err
 	}
+	if err := s.removeStoryFromOtherPlans(ctx, storyID, planID); err != nil {
+		return err
+	}
 	return s.repo.Transaction(ctx, func(tx *Repo) error {
 		if err := tx.LockWindow(ctx, uint64(req.WindowID)); err != nil {
-			return err
-		}
-		if err := tx.RemoveStoryFromOtherPlans(ctx, storyID, planID, productID, account); err != nil {
 			return err
 		}
 		if err := tx.LinkStoryToPlan(ctx, storyID, productID, planID, account); err != nil {
@@ -222,14 +222,14 @@ func (s *Service) applySchedulingStory(
 		if err != nil {
 			return 0, 0, 0, err
 		}
+		if err := s.removeStoryFromOtherPlans(ctx, storyReq.ID, planID); err != nil {
+			return 0, 0, 0, err
+		}
 		err = txRepo.Transaction(ctx, func(tx *Repo) error {
 			if err := tx.LockWindow(ctx, uint64(windowID)); err != nil {
 				return err
 			}
 			if err := s.saveEditedStory(ctx, tx, account, storyReq.ID, storyReq.ProductID, estimateLaunch, developFinish, testFinish, storyReq); err != nil {
-				return err
-			}
-			if err := tx.RemoveStoryFromOtherPlans(ctx, storyReq.ID, planID, storyReq.ProductID, account); err != nil {
 				return err
 			}
 			return tx.LinkStoryToPlan(ctx, storyReq.ID, storyReq.ProductID, planID, account)
