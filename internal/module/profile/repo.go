@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"workbench/internal/model"
 	"workbench/internal/pkg/workbenchroles"
 )
@@ -97,6 +98,9 @@ func (r *Repo) SaveSelfProfile(ctx context.Context, actor *model.User, req Updat
 		fields["mobile"] = req.Mobile
 	}
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Select("id").Where("id = ? AND account = ? AND deleted = ?", actor.ID, actor.Account, "0").Take(&model.User{}).Error; err != nil {
+			return err
+		}
 		if err := tx.Model(&model.User{}).Where("id = ? AND account = ? AND deleted = ?", actor.ID, actor.Account, "0").Updates(fields).Error; err != nil {
 			return err
 		}

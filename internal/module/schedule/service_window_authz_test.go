@@ -214,3 +214,20 @@ func TestDeleteWindowRejectsLinkedWorkItemsBeforeDelete(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestUpdateWindowDeletedAfterReadDoesNotRecreateLinks(t *testing.T) {
+	db, mock := newAuthzMockDB(t)
+	svc := NewService(NewRepo(db), nil, nil, nil, nil)
+	expectWindowFind(mock, 501, "demo_po")
+	mock.ExpectBegin()
+	mock.ExpectQuery(`SELECT .*zt_versionwindow.*FOR UPDATE`).WithArgs(uint64(501), 1).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}))
+	mock.ExpectRollback()
+	err := svc.Update(t.Context(), &model.User{ID: 1, Account: "demo_po"}, windowUpdateReq())
+	if err == nil {
+		t.Fatal("deleted window must reject updates and leave product links untouched")
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatal(err)
+	}
+}

@@ -330,6 +330,9 @@ func (s *Service) Update(ctx context.Context, actor *model.User, req UpdateReq) 
 		return err
 	}
 	return s.repo.Transaction(ctx, func(txRepo *Repo) error {
+		if err := txRepo.LockWindow(ctx, window.ID); err != nil {
+			return fmt.Errorf("版本窗口已变化，请刷新核对：%w", err)
+		}
 		if err := txRepo.Update(ctx, window); err != nil {
 			return fmt.Errorf("update version window: %w", err)
 		}
