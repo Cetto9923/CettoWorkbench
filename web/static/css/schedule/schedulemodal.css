@@ -3,29 +3,23 @@
    模块: 排期工作台
    职责: 弹窗公共样式（batch-modal 骨架、overlay）、新建/编辑窗口弹窗、管理窗口弹窗
 ========================================================================== */
-
 /* 日期输入框：未填时占位（年/月/日）浅灰，有值后正常色 */
 #scheduleVersionWindowModal input[type="date"].form-input {
   color: var(--color-text-primary);
 }
-
 #scheduleVersionWindowModal input[type="date"].form-input::-webkit-datetime-edit {
   color: #aaa;
 }
-
 #scheduleVersionWindowModal input[type="date"].form-input.has-value::-webkit-datetime-edit,
 #scheduleVersionWindowModal input[type="date"].form-input:focus::-webkit-datetime-edit {
   color: var(--color-text-primary);
 }
-
 #scheduleVersionWindowModal input[type="date"].form-input:invalid {
   color: #aaa;
 }
-
 #scheduleVersionWindowModal input[type="date"].form-input:valid.has-value {
   color: var(--color-text-primary);
 }
-
 /* ── 版本窗口弹窗（完整复制 demo/personal-workbench.css 相关规则） ── */
 /* 弹窗在 #page-schedule 外，需独立 form / action-btn 基础样式 */
 #scheduleVersionWindowModal .form-group {
@@ -537,6 +531,12 @@
 
 #scheduleVersionWindowModal .ui-autocomplete-input {
   width: 100% !important;
+}
+
+.task-modal-info-bar {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin: 12px 0;
 }
 
 .task-modal-spec-block {

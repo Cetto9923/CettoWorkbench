@@ -3,7 +3,6 @@
    模块: 排期工作台
    职责: 版本窗口卡片、预览区域、容量进度条、新建窗口计划预览卡片
 ========================================================================== */
-
 /* ── 版本窗口概览（默认偏紧凑，把首屏留给需求列表） ── */
 .schedule-version-overview {
   position: relative;
@@ -16,32 +15,27 @@
   box-shadow: var(--wb-shadow-sm);
   overflow: visible;
 }
-
 .schedule-section-title {
   font-size: 12px;
   font-weight: 900;
   color: var(--color-text-primary);
   margin-bottom: 6px;
 }
-
 .schedule-section-title span {
   font-size: 11px;
   font-weight: 600;
   color: var(--color-text-secondary);
   margin-left: 8px;
 }
-
 .schedule-version-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   align-items: stretch;
 }
-
 .schedule-version-grid--empty {
   grid-template-columns: 1fr;
 }
-
 .schedule-version-grid--empty .schedule-create-empty {
   display: flex;
   align-items: center;
@@ -55,7 +49,6 @@
   padding: 0;
   margin: 0;
 }
-
 .schedule-version-card {
   position: relative;
   border: 1px solid var(--color-border);
@@ -72,23 +65,19 @@
   flex-direction: column;
   z-index: 1;
 }
-
 .schedule-version-card:hover {
   border-color: var(--color-primary);
   box-shadow: var(--wb-shadow-md);
 }
-
 .schedule-version-card.selected,
 .schedule-version-card.active {
   border-color: var(--color-primary);
   box-shadow: var(--wb-shadow-md);
 }
-
 /* 菜单打开时抬高当前卡片，避免被右侧相邻卡片盖住 */
 .schedule-version-card:has(.version-card-dropdown.show) {
   z-index: 50;
 }
-
 .schedule-version-body-click {
   cursor: pointer;
   padding: 12px 14px;
@@ -97,14 +86,12 @@
   min-width: 0;
   overflow: visible;
 }
-
 .schedule-version-card-actions {
   position: absolute;
   top: 4px;
   right: 4px;
   z-index: 10;
 }
-
 .version-card-menu-btn {
   width: 24px;
   height: 24px;
@@ -119,13 +106,11 @@
   font-size: 12px;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
-
 .version-card-menu-btn:hover {
   border-color: var(--color-border);
   background: var(--color-surface-muted);
   color: var(--color-text-primary);
 }
-
 .version-card-dropdown {
   display: none;
   position: absolute;
@@ -139,11 +124,9 @@
   z-index: 60;
   padding: 4px 0;
 }
-
 .version-card-dropdown.show {
   display: block;
 }
-
 .version-card-dropdown button {
   display: flex;
   align-items: center;
@@ -158,61 +141,49 @@
   text-align: left;
   white-space: nowrap;
 }
-
 .version-card-dropdown button:hover {
   background: var(--color-surface-muted);
 }
-
 .version-card-dropdown button:last-child {
   color: var(--color-danger);
 }
-
 .version-card-dropdown button.is-disabled {
   opacity: 0.4;
   cursor: not-allowed;
   pointer-events: none;
 }
-
 .schedule-version-card.red {
   border-top: 3px solid var(--color-danger);
 }
-
 .schedule-version-card.blue {
   border-top: 3px solid var(--color-primary);
 }
-
 .schedule-version-card.green {
   border-top: 3px solid var(--color-success);
 }
-
 .schedule-version-card.purple {
   border-top: 3px solid var(--color-primary);
 }
-
 .schedule-version-top {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   align-items: center;
   gap: 8px;
 }
-
 .schedule-version-name { display: flex; align-items: center; justify-content: space-between; gap: 4px; font-size: 12px; font-weight: 900; color: var(--color-text-primary); line-height: 1.3; min-width: 0; overflow: hidden; }
 .schedule-version-title { display: inline-flex; align-items: center; gap: 4px; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .schedule-version-title i { color: var(--color-primary); flex-shrink: 0; }
 .agile-team-tag { display: inline-block; font-size: 11px; padding: 0 4px; border-radius: 3px; background: var(--wb-tag-team-bg); color: var(--wb-tag-team-text); border: 1px solid var(--wb-tag-team-border); font-weight: 500; line-height: 1.35; margin-left: auto; vertical-align: middle; flex-shrink: 0; max-width: 75px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
 .schedule-version-top strong {
   font-size: 15px;
   font-family: "JetBrains Mono", monospace;
   color: var(--color-text-primary);
 }
-
 .schedule-version-range {
   font-size: 10px;
   color: var(--color-text-secondary);
   margin-top: 2px;
 }
-
 .schedule-version-bar {
   height: 4px;
   background: var(--color-border-subtle);
@@ -220,18 +191,15 @@
   overflow: hidden;
   margin-top: 5px;
 }
-
 .schedule-version-bar span {
   display: block;
   height: 100%;
   border-radius: 999px;
   background: var(--color-primary);
 }
-
 .schedule-version-card.red .schedule-version-bar span { background: var(--color-danger); }
 .schedule-version-card.green .schedule-version-bar span { background: var(--color-success); }
 .schedule-version-card.purple .schedule-version-bar span { background: var(--color-primary); }
-
 .schedule-version-meta {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -241,46 +209,38 @@
   color: var(--color-text-secondary);
   overflow: hidden;
 }
-
 .schedule-version-meta span {
   white-space: nowrap;
   min-width: 0;
 }
-
 .schedule-version-meta b {
   font-family: "JetBrains Mono", monospace;
   color: var(--color-text-primary);
 }
-
 .schedule-version-meta b.schedule-remaining-over {
   color: var(--color-danger);
 }
-
 .schedule-create-plan-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px 12px;
 }
-
 .schedule-create-plan-card {
   border: 1px solid var(--color-border);
   border-radius: var(--wb-radius-md);
   padding: 9px 10px;
   background: var(--color-surface);
 }
-
 .schedule-create-plan-card--existing {
   border-left: 3px solid var(--color-success);
   background: var(--color-success-bg);
   padding: 8px 10px;
 }
-
 .schedule-create-plan-card--existing .schedule-create-plan-tag {
   font-weight: 500;
   color: var(--color-success);
   font-size: 11px;
 }
-
 .schedule-create-plan-title {
   display: flex;
   align-items: center;
@@ -291,13 +251,11 @@
   font-weight: 600;
   color: var(--color-text-primary);
 }
-
 .schedule-create-plan-title span:last-child {
   font-weight: 500;
   color: var(--color-warning);
   font-size: 11px;
 }
-
 .schedule-create-plan-summary {
   display: flex;
   align-items: center;
@@ -307,122 +265,127 @@
   color: var(--color-success);
   line-height: 1.5;
 }
-
 .schedule-create-plan-summary strong {
   font-size: 12px;
 }
-
 .schedule-create-plan-card--existing .schedule-create-plan-summary {
   flex-wrap: nowrap;
   gap: 8px;
   white-space: nowrap;
 }
-
 .schedule-create-plan-card--existing .schedule-create-plan-summary .schedule-create-plan-name {
   color: var(--color-primary);
   font-weight: 600;
 }
-
 .schedule-create-plan-toggle {
   margin-bottom: 7px;
 }
-
 .schedule-create-plan-meta {
   font-size: 10px;
   color: var(--color-text-muted);
   margin-top: 4px;
   line-height: 1.45;
 }
-
 .schedule-create-empty {
   font-size: 11px;
   color: var(--color-text-muted);
   padding: 4px 0;
 }
-
 @media (max-width: 1366px) {
   .schedule-version-grid { gap: 6px; }
   .schedule-version-body-click { padding: 10px 8px; padding-right: 28px; }
   .schedule-version-name { font-size: 11px; }
   .agile-team-tag { max-width: 60px; padding: 0 3px; font-size: 10px; }
 }
-
 @media (max-width: 1180px) {
   .schedule-version-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
 }
-
 /* 窄屏：两列卡片 */
 @media (max-width: 900px) {
   .schedule-version-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 6px;
   }
-
-
   .schedule-version-meta i {
     margin: 0 4px;
   }
 }
-
 /* 矮视口（笔记本常见）：进一步压窗口区高度 */
 @media (max-height: 900px) {
   .schedule-version-overview {
     padding: 4px 8px 6px;
     margin-bottom: 6px;
   }
-
-
   .schedule-version-body-click {
     padding: 5px 8px;
     padding-right: 28px;
   }
-
   .schedule-version-range {
     display: none;
   }
-
   .schedule-version-bar {
     margin-top: 4px;
   }
-
   .schedule-version-meta {
     margin-top: 4px;
   }
-
   .schedule-version-meta span:last-child {
     display: none;
   }
-
   .schedule-version-meta i:nth-last-of-type(1) {
     display: none;
   }
 }
-
 @media (max-height: 760px) {
   .schedule-version-overview {
     max-height: 88px;
     overflow-y: auto;
   }
-
   /* 菜单打开时取消裁切，否则下拉会被 overflow-y:auto 挡住 */
   .schedule-version-overview:has(.version-card-dropdown.show) {
     overflow: visible;
     max-height: none;
   }
 }
-
 #manageVersionWindowsModal .schedule-manage-window-count {
   font-size: 12px;
   color: var(--color-text-secondary);
 }
-
-.task-iteration-form { margin-top: 8px; width: 100%; color: var(--color-text-body); }
-.task-iteration-form summary { cursor: pointer; color: var(--color-primary); }
-.task-iteration-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-.task-iteration-fields label { display: grid; gap: 4px; }
-.task-iteration-periods, .task-iteration-dates { display: flex; align-items: center; gap: 8px; }
-.task-iteration-periods .active { color: var(--color-primary); border-color: var(--color-primary); }
-.task-iteration-dates { justify-content: space-between; flex-wrap: wrap; }
+.task-iteration-form {
+  margin-top: 10px; width: 100%; box-sizing: border-box;
+  border: 1px dashed var(--color-border-subtle, var(--border));
+  border-radius: var(--wb-radius-md, 6px); padding: 10px 14px;
+  background: var(--wb-bg-muted, rgba(0, 0, 0, 0.02));
+  color: var(--color-text-body, var(--t1));
+}
+.task-iteration-form summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--color-primary); user-select: none; }
+.task-iteration-form summary:hover { text-decoration: underline; }
+.task-iteration-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; align-items: end; }
+.task-iteration-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.task-iteration-field label, .task-iteration-field span { font-size: 11px; font-weight: 600; color: var(--color-text-secondary, var(--t2)); margin: 0; }
+.task-iteration-field input.input {
+  height: 30px; padding: 4px 8px; font-size: 12px; width: 100%; box-sizing: border-box;
+  border: 1px solid var(--color-border-subtle, var(--border));
+  border-radius: var(--wb-radius-sm, 4px);
+  background: var(--color-surface, var(--white));
+  color: var(--color-text-body, var(--t1));
+}
+#taskModal .task-iteration-field .ui-autocomplete,
+#taskModal .task-iteration-field .ui-autocomplete-input { width: 100% !important; }
+.task-iteration-periods {
+  display: inline-flex; align-items: center; height: 30px;
+  border: 1px solid var(--color-border-subtle, var(--border));
+  border-radius: var(--wb-radius-sm, 4px); overflow: hidden;
+  background: var(--color-surface, var(--white));
+}
+.task-iteration-periods .btn {
+  border: none; border-right: 1px solid var(--color-border-subtle, var(--border));
+  background: transparent; color: var(--color-text-body, var(--t1));
+  padding: 0 12px; height: 100%; font-size: 12px; cursor: pointer; border-radius: 0;
+}
+.task-iteration-periods .btn:last-child { border-right: none; }
+.task-iteration-periods .btn.active { background: var(--color-primary); color: var(--color-text-on-accent, var(--white)); font-weight: 600; }
+.task-iteration-field--actions { justify-content: flex-end; }
+.task-iteration-field--actions #quickIterationCreate { height: 30px; padding: 0 14px; font-size: 12px; }

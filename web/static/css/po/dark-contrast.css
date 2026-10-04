@@ -3,22 +3,18 @@
    模块: PO工作台 · 深色模式对比度修正（第 5.6 轮）
    职责: 只在 html[data-theme="dark"] 下，为第 5.6 轮实测出的 19 处
          深色对比度不足（最低 1.93）逐处改用更浅一档的既有语义变量。
-
    背景：第 5.4 轮把浅色主色 #1d4ed8 改为 #2563eb 时只改了 tokens.css 的
    浅色块，深色块与一批页面级变量未同步（--po-blue 深色从未定义、
    --color-text-disabled 深色过暗、--color-primary 字色偏暗），叠加彩色
    徽标底色后出现成片低对比。
-
    约束（AGENTS.md）：
    - 规则 a：只引用已定义的语义变量，本文件不写任何十六进制/rgb/颜色字面量
    - 规则 d：不使用 !important
    - 规则 f：本文件为新文件，不影响既有超 500 行文件的行数预算
    - 浅色模式零改动：本文件所有规则均限定在 html[data-theme="dark"] 下
-
    挂载：po/home.html、po/done.html、po/follow.html、po/demand_detail.html、
          po/workboard.html（/kanban/story 与 /kanban/task 会跳转至此模板）
    ========================================================================== */
-
 /* ---------------------------------------------------------------------------
  * A 组（1.93 → 5.71）首页价值流阶段卡的辅助文字
  * 原：--color-text-disabled 深色 = #475569，打在卡片底 #1e293b 上
@@ -30,7 +26,6 @@ html[data-theme="dark"] .po-home .home-vs-mini-card .vs-mini-dur,
 html[data-theme="dark"] .po-home .home-vs-mini-card .vs-mini-breakdown {
   color: var(--color-text-secondary);
 }
-
 /* ---------------------------------------------------------------------------
  * B 组（2.82 → 5.74）主色字色打在深蓝信息底上
  * 原：--wb-primary 深色 = #3b82f6，打在 --color-info-bg 深色 = #1e3a8a
@@ -43,7 +38,6 @@ html[data-theme="dark"] .dd-tag.blue,
 html[data-theme="dark"] .dd-flow-stage.current {
   color: var(--color-info);
 }
-
 /* ---------------------------------------------------------------------------
  * C 组（2.83 → 8.11）已办列表标题链接
  * 原：--po-blue 只在 variables.css 浅色块定义，深色块从未覆盖，
@@ -55,7 +49,6 @@ html[data-theme="dark"] .dd-flow-stage.current {
 html[data-theme="dark"] .wb-done-title-link {
   color: var(--color-info);
 }
-
 /* ---------------------------------------------------------------------------
  * D 组（3.73 → 6.92）解释说明 Tooltip 的 ⓘ 图标
  * 原：--wb-gray-400 深色 = #64748b，打在 --wb-white 深色 = #121826 上
@@ -67,7 +60,6 @@ html[data-theme="dark"] .wb-done-title-link {
 html[data-theme="dark"] .wb-tooltip-icon {
   color: var(--color-text-secondary);
 }
-
 /* ---------------------------------------------------------------------------
  * E 组（3.98 → 6.95）顶部快捷芯片与首页透视 Tab 的激活态字色
  * 原：--color-primary 深色 = #3b82f6，打在 --color-primary-light 合成底上
@@ -81,7 +73,6 @@ html[data-theme="dark"] .po-perspective-tab.active,
 html[data-theme="dark"] .po-perspective-tab.active i {
   color: var(--color-info);
 }
-
 /* ---------------------------------------------------------------------------
  * F 组（3.79 / 4.04 → 5.39 / 5.74）需求详情流程条上的角色名
  * 原：--color-text-secondary 深色 = #94a3b8，分别打在已完成态底 #064e3b
@@ -92,7 +83,6 @@ html[data-theme="dark"] .po-perspective-tab.active i {
 html[data-theme="dark"] .dd-flow-stage .who {
   color: var(--color-info);
 }
-
 /* ---------------------------------------------------------------------------
  * 补验弹窗时发现的同源问题（澄清弹窗默认隐藏，故首轮全站扫描未覆盖到）
  * 这两处与上面的 A / C 组同根因，一并在此收口：
@@ -104,11 +94,9 @@ html[data-theme="dark"] .dd-flow-stage .who {
 html[data-theme="dark"] .demand-clarify-badge {
   color: var(--color-info);
 }
-
 html[data-theme="dark"] .demand-clarify-close-btn {
   color: var(--color-text-secondary);
 }
-
 /* ---------------------------------------------------------------------------
  * 第 5.7 轮 G2 收尾：5.6 轮修完后，全站深色唯一仍低于 4.82 的元素
  * 原：--dd-blue = --wb-primary，深色 = #3b82f6，打在 .dd-summary-block 的
@@ -121,7 +109,6 @@ html[data-theme="dark"] .demand-clarify-close-btn {
 html[data-theme="dark"] .dd-summary-block .st a {
   color: var(--color-info);
 }
-
 /* ---------------------------------------------------------------------------
  * 第 5.7 轮 G8（Trae 复验遗留 P1）
  * /home?view=demand&stage=acceptanced 深色下，计数为 0 的空态阶段卡
@@ -140,7 +127,6 @@ html[data-theme="dark"] .dd-summary-block .st a {
 html[data-theme="dark"] .po-home .home-vs-mini-card.empty:not(.active) {
   opacity: 1;
 }
-
 html[data-theme="dark"] .po-home .home-vs-mini-card.empty:not(.active) .vs-mini-name,
 html[data-theme="dark"] .po-home .home-vs-mini-card.empty:not(.active) .vs-mini-count,
 html[data-theme="dark"] .po-home .home-vs-mini-card.empty:not(.active) .vs-mini-breakdown,
@@ -148,7 +134,6 @@ html[data-theme="dark"] .po-home .home-vs-mini-card.empty:not(.active) .vs-mini-
 html[data-theme="dark"] .po-home .home-vs-mini-card.empty:not(.active) .vs-mini-dur .tag {
   color: var(--color-text-secondary);
 }
-
 /* ---------------------------------------------------------------------------
  * 第 5.7 轮 G9（Trae 复验遗留 P2）
  * /board/demand、/board/task 深色下 .kb-req（必填项红色 *）仅 3.03。
@@ -163,7 +148,6 @@ html[data-theme="dark"] .po-home .home-vs-mini-card.empty:not(.active) .vs-mini-
 html[data-theme="dark"] .kb-req {
   color: var(--color-badge-danger-fg);
 }
-
 /* ---------------------------------------------------------------------------
  * 第 5.8 轮 B 组（3.68 → 5.17）深色模式主按钮白字对比度收口
  * 影响：.btn-primary、.at-btn.primary、.at-page-btn.active、.btn-modal-save
@@ -176,14 +160,12 @@ html[data-theme="dark"] .btn-modal-save {
   border-color: var(--color-btn-primary-bg);
   color: var(--color-text-on-accent);
 }
-
 html[data-theme="dark"] .btn-primary:hover:not(:disabled),
 html[data-theme="dark"] .at-btn.primary:hover:not(:disabled),
 html[data-theme="dark"] .btn-modal-save:hover:not(:disabled) {
   background: var(--color-primary-hover);
   border-color: var(--color-primary-hover);
 }
-
 /* ---------------------------------------------------------------------------
  * 第 5.8 轮 E 组（3.03 → 5.29）排期版本下拉删除按钮与必填项红星
  * 影响：/schedule .version-card-dropdown button:last-child、.schedule-integrated-label .req 等
@@ -191,17 +173,40 @@ html[data-theme="dark"] .btn-modal-save:hover:not(:disabled) {
 html[data-theme="dark"] .version-card-dropdown button:last-child {
   color: var(--color-badge-danger-fg);
 }
-
 html[data-theme="dark"] .schedule-integrated-label .req,
 html[data-theme="dark"] #taskModal .req,
 html[data-theme="dark"] .rd-task-table .req {
   color: var(--color-badge-danger-fg);
 }
-
+html[data-theme="dark"] #taskModal.batch-modal {
+  background: var(--color-surface);
+  border-color: var(--color-border-subtle);
+}
+html[data-theme="dark"] .task-modal-project-section {
+  background: var(--wb-bg-muted);
+  border-color: var(--color-border-subtle);
+}
+html[data-theme="dark"] #taskModal .task-iteration-form {
+  background: var(--color-surface);
+  border-color: var(--color-border-subtle);
+}
+html[data-theme="dark"] .task-iteration-periods {
+  background: var(--color-surface);
+  border-color: var(--color-border-subtle);
+}
+html[data-theme="dark"] .task-iteration-periods .btn {
+  border-right-color: var(--color-border-subtle);
+  color: var(--color-text-body);
+}
+html[data-theme="dark"] .task-iteration-field input.input,
+html[data-theme="dark"] #taskModal .task-iteration-field .ui-autocomplete-input {
+  background: var(--color-surface);
+  border-color: var(--color-border-subtle);
+  color: var(--color-text-body);
+}
 html[data-theme="dark"] .rd-node-role-badge--cooperate {
   background: var(--color-warning);
 }
-
 /* ---------------------------------------------------------------------------
  * 第 5.8 轮 E 组（3.74 → 5.47 / 9.48）「研需」类型标签深色底字
  * 影响：/home、/todos、/schedule 的 .wb-type-story .wb-type-tag
@@ -211,7 +216,6 @@ html[data-theme="dark"] .wb-type-independent_story .wb-type-tag {
   background: var(--color-story-bg);
   color: var(--color-text-on-accent);
 }
-
 /* ---------------------------------------------------------------------------
  * 第 5.8 轮 E 组（4.04 → 6.96）我的关注周报视图激活卡
  * 影响：/follow .pw-sum-card.active .pw-sum-label、.pw-sum-note
@@ -220,7 +224,6 @@ html[data-theme="dark"] .pw-sum-card.active .pw-sum-label,
 html[data-theme="dark"] .pw-sum-card.active .pw-sum-note {
   color: var(--color-info);
 }
-
 /* ---------------------------------------------------------------------------
  * 第 5.8 轮 E 组（1.92 / 3.14 / 4.26 → 11.8 / 8.77 / 6.19）雷达图深色徽章与评分
  * 影响：/metrics/radar .dock-badge、.radar-cat-score.score-danger
@@ -228,19 +231,16 @@ html[data-theme="dark"] .pw-sum-card.active .pw-sum-note {
 html[data-theme="dark"] .dock-badge.cat-delivery {
   color: var(--color-info);
 }
-
 html[data-theme="dark"] .dock-badge.cat-demand {
   color: var(--wb-badge-sub-text);
   background: var(--wb-badge-sub-bg);
   border-color: var(--wb-badge-sub-border);
 }
-
 html[data-theme="dark"] .dock-badge.cat-quality {
   color: var(--color-danger-bright);
   background: var(--color-danger-bg);
   border-color: var(--color-danger-border);
 }
-
 html[data-theme="dark"] .po-metrics-radar .radar-cat-score.score-danger {
   color: var(--color-danger-bright);
 }

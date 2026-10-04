@@ -174,11 +174,11 @@
     section.id = 'quickIteration';
     section.className = 'task-iteration-form';
     section.innerHTML = '<summary>快速创建迭代</summary><div class="task-iteration-fields">' +
-      '<label>迭代名称<input class="input" id="quickIterationName" readonly></label>' +
-      '<div><span>周期</span><div class="task-iteration-periods"><button type="button" class="btn btn-sm" data-iteration-period="2w">2 周</button>' +
+      '<div class="task-iteration-field"><label for="quickIterationName">迭代名称</label><input class="input" id="quickIterationName" readonly></div>' +
+      '<div class="task-iteration-field"><span>时间盒周期</span><div class="task-iteration-periods" role="group" aria-label="迭代周期"><button type="button" class="btn btn-sm" data-iteration-period="2w">2 周</button>' +
       '<button type="button" class="btn btn-sm" data-iteration-period="4w">4 周</button><button type="button" class="btn btn-sm" data-iteration-period="plan">计划时间</button></div></div>' +
-      '<label>关联产品计划（可选）<input class="input" id="quickIterationPlanInput" placeholder="搜索当前产品的计划"><input type="hidden" id="quickIterationPlan"></label>' +
-      '<div class="task-iteration-dates"><button type="button" class="btn btn-primary btn-sm" id="quickIterationCreate">创建并选用</button></div></div>';
+      '<div class="task-iteration-field"><label for="quickIterationPlanInput">关联产品计划（可选）</label><input class="input" id="quickIterationPlanInput" placeholder="搜索当前产品的计划"><input type="hidden" id="quickIterationPlan"></div>' +
+      '<div class="task-iteration-field task-iteration-field--actions"><button type="button" class="action-btn action-btn--primary" id="quickIterationCreate">创建并选用</button></div></div>';
     document.querySelector('#taskModal .task-modal-project-section').appendChild(section);
     window.initAutocomplete('quickIterationPlanInput', 'quickIterationPlan', (current.plans || []).map(plan => ({
       value: String(plan.id), label: plan.title + ' · ' + plan.begin + ' ~ ' + plan.end
