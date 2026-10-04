@@ -373,7 +373,7 @@
   color: var(--color-text-body, var(--t1));
 }
 #taskModal .task-iteration-field .ui-autocomplete,
-#taskModal .task-iteration-field .ui-autocomplete-input { width: 100% !important; }
+#taskModal .task-iteration-field .ui-autocomplete-input-wrap .ui-autocomplete-input { width: 100%; }
 .task-iteration-periods {
   display: inline-flex; align-items: center; height: 30px;
   border: 1px solid var(--color-border-subtle, var(--border));
