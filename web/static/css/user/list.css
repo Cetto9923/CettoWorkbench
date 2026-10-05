@@ -80,3 +80,14 @@
   color: var(--color-text-disabled);
   pointer-events: none;
 }
+
+@media (min-width: 1600px) {
+  .search-panel,
+  .table-toolbar,
+  .table-container,
+  .pagination-container {
+    max-width: 1440px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
