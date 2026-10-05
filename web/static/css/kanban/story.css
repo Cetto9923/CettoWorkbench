@@ -29,7 +29,9 @@
   flex-direction: column;
   min-height: 100%;
 }
-
+@media (min-width: 1600px) {
+  .po-board .demand-grid { max-width: 1720px; margin: 0 auto; }
+}
 .po-board .grid-head {
   display: grid;
   grid-template-columns: minmax(360px, 1.55fr) repeat(5, minmax(160px, 1fr));

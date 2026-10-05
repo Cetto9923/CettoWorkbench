@@ -272,3 +272,25 @@ html[data-theme="dark"] .po-profile .readonly-tag,
 html[data-theme="dark"] .po-profile .profile-empty-text {
   color: var(--color-text-secondary);
 }
+
+/* ---------------------------------------------------------------------------
+ * 工作看板深色模式对比度与边框（/board/demand, /board/task）
+ * ------------------------------------------------------------------------- */
+html[data-theme="dark"] .po-board {
+  --t3: var(--color-text-secondary);
+}
+html[data-theme="dark"] .po-board .grid-head {
+  background: var(--color-surface);
+  border-bottom-color: var(--color-border-subtle);
+  color: var(--color-text-secondary);
+}
+html[data-theme="dark"] .po-board .demand-board {
+  background: var(--color-surface-muted);
+  border-color: var(--color-border-subtle);
+}
+html[data-theme="dark"] .po-board .kb-meta-item,
+html[data-theme="dark"] .po-board .kb-card-desc,
+html[data-theme="dark"] .po-board .demand-cell-meta,
+html[data-theme="dark"] .po-board .stage-sub-text {
+  color: var(--color-text-secondary);
+}
