@@ -241,6 +241,22 @@ html[data-theme="dark"] .dock-badge.cat-quality {
   background: var(--color-danger-bg);
   border-color: var(--color-danger-border);
 }
+html[data-theme="dark"] .dock-badge.cat-compliance {
+  color: var(--color-warning);
+  background: var(--color-warning-bg);
+  border-color: var(--color-warning-border);
+}
+html[data-theme="dark"] .dock-badge.cat-performance {
+  color: var(--color-success);
+  background: var(--color-success-bg);
+  border-color: var(--color-success-border);
+}
+html[data-theme="dark"] .po-metrics-radar .radar-cat-score.score-ok {
+  color: var(--color-success);
+}
+html[data-theme="dark"] .po-metrics-radar .radar-cat-score.score-warn {
+  color: var(--color-warning);
+}
 html[data-theme="dark"] .po-metrics-radar .radar-cat-score.score-danger {
   color: var(--color-danger-bright);
 }
