@@ -67,6 +67,10 @@ func (r *Repo) homeFocusQueryWithReviews(ctx context.Context, account string, re
 			// 只把当前价值流步骤的正式办理人视为“待我处理”；创建人、评审人和关注人不是当前负责人。
 			where, whereArgs := currentHandlerDemandWhereWithReviews(account, reviewIDs)
 			q = q.Where(where, whereArgs...)
+		case "my_managed":
+			q = q.Where("(assignedTo = ? OR BRA = ?)", account, account)
+		case "my_related":
+			// 我相关 = 我参与 ∪ 我主动关注 (已由 homeFocusDemandBase 限定：参与角色 ∪ zt_starinfo 关注)
 		case "today":
 			q = q.Where(dateSetExpr("deadline")+" AND deadline <= ?", today)
 		case "overdue":
@@ -120,7 +124,8 @@ func (r *Repo) homeFocusDemandBase(ctx context.Context, account string) *gorm.DB
 			OR id IN (SELECT demand FROM zt_demandreview WHERE reviewer = ?)
 			OR id IN (SELECT demand FROM zt_demandmanagerreview WHERE reviewer = ?)
 			OR accepter = ?
-		)`, account, account, account, account, account, account, account, account, account, account)
+			OR id IN (SELECT objectID FROM zt_starinfo WHERE objectType = 'demand' AND account = ? AND followed = '1')
+		)`, account, account, account, account, account, account, account, account, account, account, account)
 }
 
 // applyHomeFocusToolbarFilters 把 DemandsReq 的 keyword/objectType/priority/relation
@@ -240,6 +245,10 @@ func (r *Repo) homeFocusStoryQuery(ctx context.Context, account string, req Dema
 		if !participate {
 			q = q.Where("assignedTo = ?", account)
 		}
+	case "my_managed":
+		q = q.Where(storyAssignedOrProductReqM, account, account)
+	case "my_related":
+		q = q.Where("("+storyAssignedOrProductReqM+" OR id IN (SELECT objectID FROM zt_starinfo WHERE objectType = 'story' AND account = ? AND followed = '1'))", account, account, account)
 	}
 	if participate {
 		q = applyParticipateStoryToolbarFilters(q, account, req)

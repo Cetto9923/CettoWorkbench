@@ -69,7 +69,7 @@ func assertOtherStageMarkers(t *testing.T, db *gorm.DB) {
 	t.Helper()
 	markers := map[string]string{
 		"accept": "status IN", "clarify": "zt_demandclarify", "schedule": "mainDevelopers",
-		"developing": "developFinish", "acceptanced": "deliverDate", "publish": "status IN",
+		"developing": "status IN", "acceptanced": "status IN", "publish": "status IN",
 		"released": "overall",
 	}
 	for status, marker := range markers {
@@ -77,5 +77,14 @@ func assertOtherStageMarkers(t *testing.T, db *gorm.DB) {
 		if !strings.Contains(sql, marker) || strings.Contains(sql, "accepter = ?") {
 			t.Fatalf("stage %s marker %q drifted: %s", status, marker, sql)
 		}
+	}
+	// 验证提测与发起交付已去除日期/BRA门槛（全量进格）
+	devSQL, _ := stageWhereSQL(t, db, "developing")
+	if strings.Contains(devSQL, "developFinish") {
+		t.Fatalf("developing stage must not require developFinish threshold: %s", devSQL)
+	}
+	accSQL, _ := stageWhereSQL(t, db, "acceptanced")
+	if strings.Contains(accSQL, "deliverDate") || strings.Contains(accSQL, "BRA = ?") {
+		t.Fatalf("acceptanced stage must not require deliverDate or BRA threshold: %s", accSQL)
 	}
 }

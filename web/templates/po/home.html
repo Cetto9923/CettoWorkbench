@@ -43,22 +43,23 @@
       </nav>
     </div>
     <div class="header-quick-filters" id="homeQuickChips" role="group" aria-label="快捷焦点">
-      <button type="button" class="header-quick-chip" data-home-focus="all" aria-pressed="false">
-        <span>全部</span> <em>{{ if .PageError }}—{{ else }}{{ .AllCount }}{{ end }}</em>
+      <button type="button" data-home-focus="my_action" class="header-quick-chip my-action" title="真待办：有明确主动作且我是当前办理人" aria-pressed="true">
+        <span>待我处理</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.MyPending }}{{ end }}</em>
       </button>
-      <button type="button" data-home-focus="my_action" class="header-quick-chip my-action" title="统计我参与阶段的需求" aria-pressed="true"><span>待我处理</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.MyPending }}{{ end }}</em></button>
-      <button type="button" data-home-focus="today" class="header-quick-chip warning" title="在首页查看今天到期及已超期的需求" aria-pressed="false">
-        <span>今日必推</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.Today }}{{ end }}</em>
+      <button type="button" data-home-focus="my_managed" class="header-quick-chip" title="指派给我或我是需求负责人" aria-pressed="false">
+        <span>我负责</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.MyManaged }}{{ end }}</em>
       </button>
-      <button type="button" data-home-focus="blocked" class="header-quick-chip warning" title="在首页查看当前阻塞需求" aria-pressed="false">
-        <i class="fas fa-circle-exclamation" aria-hidden="true"></i>
-        <span>阻塞</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.Blocked }}{{ end }}</em>
+      <button type="button" data-home-focus="my_related" class="header-quick-chip" title="我参与或我主动关注" aria-pressed="false">
+        <span>我相关</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.MyRelated }}{{ end }}</em>
       </button>
       <button type="button" data-home-focus="overdue" class="header-quick-chip danger" title="在首页查看超期事项（含关联业务需求与研发需求）" aria-pressed="false">
         <span>超期</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.Overdue }}{{ end }}</em>
       </button>
       <button type="button" data-home-focus="suspended" class="header-quick-chip" title="查看挂起事项" aria-pressed="false">
         <span>挂起</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.Suspended }}{{ end }}</em>
+      </button>
+      <button type="button" class="header-quick-chip all-focus" data-home-focus="all" title="当前账号权限可见范围内未关闭对象" aria-pressed="false">
+        <span>全部</span> <em>{{ if .PageError }}—{{ else }}{{ .AllCount }}{{ end }}</em>
       </button>
     </div>
   </header>
@@ -98,7 +99,6 @@
             data-vs-status="all"
             data-base-count="{{ if $.PageError }}—{{ else }}{{ $stage.Count }}{{ end }}"
             data-base-meta="{{ if $.PageError }}暂不可用{{ else }}全生命周期{{ end }}"
-            data-base-duration="{{ if $.PageError }}—{{ else if gt $stage.AvgDurationDays 0 }}{{ $stage.AvgDurationDays }}天{{ else }}—{{ end }}"
             aria-pressed="{{ if eq $i 0 }}true{{ else }}false{{ end }}"
             title="全部对象 · 共 {{ $stage.Count }} 条">
             <div class="vs-card-top">
@@ -107,7 +107,6 @@
             </div>
             <div class="vs-card-center">
               <span class="vs-mini-count">{{ if $.PageError }}—{{ else }}{{ $stage.Count }}{{ end }}</span>
-              <span class="vs-mini-dur">{{ if $.PageError }}—{{ else if gt $stage.AvgDurationDays 0 }}{{ $stage.AvgDurationDays }}天{{ else }}—{{ end }}</span>
             </div>
             <div class="vs-card-sub">
               <span class="vs-mini-breakdown">{{ if $.PageError }}—{{ else }}全生命周期{{ end }}</span>
@@ -127,7 +126,6 @@
               data-vs-status="{{ $stage.Status }}"
               data-base-count="{{ if $.PageError }}—{{ else }}{{ $stage.Count }}{{ end }}"
               data-base-meta="{{ if $.PageError }}暂不可用{{ else if eq $stage.Count 0 }}-{{ else }}业{{ $stage.DemandCount }}·研{{ $stage.StoryCount }}{{ end }}"
-              data-base-duration="{{ if $.PageError }}—{{ else if eq $stage.Count 0 }}-{{ else if gt $stage.AvgDurationDays 0 }}均 {{ $stage.AvgDurationDays }}天{{ else }}—{{ end }}"
               aria-pressed="false"
               title="{{ $stage.Label }} · 共 {{ $stage.Count }} 条">
               <div class="vs-card-top">
@@ -135,7 +133,6 @@
               </div>
               <div class="vs-card-center">
                 <span class="vs-mini-count">{{ if $.PageError }}—{{ else }}{{ $stage.Count }}{{ end }}</span>
-                <span class="vs-mini-dur">{{ if $.PageError }}—{{ else if eq $stage.Count 0 }}-{{ else if gt $stage.AvgDurationDays 0 }}<span class="tag">均</span> {{ $stage.AvgDurationDays }}天{{ else }}—{{ end }}</span>
               </div>
               <div class="vs-card-sub">
                 <span class="vs-mini-breakdown">{{ if $.PageError }}—{{ else if eq $stage.Count 0 }}-{{ else }}业{{ $stage.DemandCount }} · 研{{ $stage.StoryCount }}{{ end }}</span>
@@ -214,27 +211,29 @@
       <div class="workspace-pagination" id="homePagination" hidden></div>
     </section>
 
-    <!-- 右侧辅助侧栏：结构倒置！固定顶部 4 宫格小块 + 底部自适应版本窗口 -->
-    <aside class="home-side-column" aria-label="待办概览与版本窗口">
-      <!-- 【置顶】待办概览 (固定 4 宫格，防抖动) -->
-      <section class="home-page-card home-focus-box" aria-label="待办概览">
+    <!-- 右侧辅助侧栏：置顶 6 宫格聚焦专区 + 底部自适应版本窗口 -->
+    <aside class="home-side-column" aria-label="待办与聚焦专区">
+      <!-- 【置顶】待办与聚焦专区 (固定 6 宫格) -->
+      <section class="home-page-card home-focus-box" aria-label="待办与聚焦专区">
         <div class="home-side-hdr">
-          <div class="home-side-title"><i class="fas fa-shield-halved text-blue"></i> 待办概览</div>
+          <div class="home-side-title"><i class="fas fa-shield-halved text-blue"></i> 待办与聚焦专区</div>
           <a class="side-link" href="/todos">进入待办 <i class="fas fa-angle-right" aria-hidden="true"></i></a>
         </div>
         <div class="home-focus-grid">
-          <a href="/home?focus=blocked" class="focus-card danger" title="已驳回，或开发完成日到期且主管审批未通过">
+          <!-- 1. 停留较久 (观察项) -->
+          <div class="focus-card stagnant" id="cardStagnant" title="同一阶段停留 ≥ 14 天（已关闭/已驳回不计，观察项待产品确认），点击联动筛选">
             <div class="focus-card-hdr">
-              <span>阻塞需求</span>
-              <i class="fas fa-triangle-exclamation text-red"></i>
+              <span>停留较久</span>
+              <span class="stagnant-obs-tag" title="观察项 / 进开发前需产品最终确认">观察项 · ≥14d</span>
             </div>
             <div class="focus-card-num">
-              <strong>{{ if .PageError }}—{{ else }}{{ .KPI.Blocked }}{{ end }}</strong>
-              <small>条待处理</small>
+              <strong id="stagnantCount">—</strong>
+              <small>条待推进</small>
             </div>
-            <div class="focus-card-hint">查看阻塞需求</div>
-          </a>
+            <div class="focus-card-hint">点击筛选积压需求 (待拍板)</div>
+          </div>
 
+          <!-- 2. 问题 / 风险 -->
           {{ if .CanViewIssueRisk }}
           <div class="focus-card" title="我创建或指派给我的未关闭问题与风险">
             <div class="focus-card-hdr">
@@ -243,16 +242,18 @@
             </div>
             <div class="focus-card-num">
               <a href="/issues/risk?kind=issue&relation=allRelated&loop=open" aria-label="查看我创建或指派的未关闭问题">
-                问题 <strong>{{ if .IssueRiskCounts }}{{ .IssueRiskCounts.Issues }}{{ else }}—{{ end }}</strong>
+                问 <strong>{{ if .IssueRiskCounts }}{{ .IssueRiskCounts.Issues }}{{ else }}—{{ end }}</strong>
               </a>
+              <span>·</span>
               <a href="/issues/risk?kind=risk&relation=allRelated&loop=open" aria-label="查看我创建或指派的未关闭风险">
-                风险 <strong>{{ if .IssueRiskCounts }}{{ .IssueRiskCounts.Risks }}{{ else }}—{{ end }}</strong>
+                险 <strong>{{ if .IssueRiskCounts }}{{ .IssueRiskCounts.Risks }}{{ else }}—{{ end }}</strong>
               </a>
             </div>
-            <div class="focus-card-hint">查看问题风险</div>
+            <div class="focus-card-hint">直达闭环处置</div>
           </div>
           {{ end }}
 
+          <!-- 3. 待澄清梳理 -->
           <button type="button" class="focus-card vs-trigger" data-stage-target="clarify" title="筛选待澄清梳理阶段需求">
             <div class="focus-card-hdr">
               <span>待澄清梳理</span>
@@ -264,9 +265,10 @@
               {{ end }}{{ end }}
               <small>条需求池</small>
             </div>
-            <div class="focus-card-hint">点击联动筛选</div>
+            <div class="focus-card-hint">点击联动澄清池</div>
           </button>
 
+          <!-- 4. 待规划排期 -->
           <button type="button" class="focus-card vs-trigger" data-stage-target="schedule" title="筛选待排期阶段需求">
             <div class="focus-card-hdr">
               <span>待规划排期</span>
@@ -281,9 +283,10 @@
             <div class="focus-card-hint">去排期工作台</div>
           </button>
 
-          <button type="button" class="focus-card vs-trigger" data-vf-goto="/version-follow" title="进入版本跟进">
+          <!-- 5. 待验收 (与发起交付绝对独立！) -->
+          <button type="button" class="focus-card vs-trigger acceptance-card" data-stage-target="waitacceptance" title="筛选待验收阶段需求">
             <div class="focus-card-hdr">
-              <span>版本跟进</span>
+              <span>待验收</span>
               <i class="fas fa-circle-check text-muted"></i>
             </div>
             <div class="focus-card-num">
@@ -292,7 +295,22 @@
               {{ end }}{{ end }}
               <small>条待确认</small>
             </div>
-            <div class="focus-card-hint">按期上线保障</div>
+            <div class="focus-card-hint">点击筛选验收单</div>
+          </button>
+
+          <!-- 6. 待发起交付 (与验收绝对独立！) -->
+          <button type="button" class="focus-card vs-trigger deliver-card" data-stage-target="acceptanced" title="筛选待发起交付阶段需求">
+            <div class="focus-card-hdr">
+              <span>待发起交付</span>
+              <i class="fas fa-truck-fast text-muted"></i>
+            </div>
+            <div class="focus-card-num">
+              {{ range .ValueStreamStages }}{{ if eq .Status "acceptanced" }}
+              <strong>{{ if $.PageError }}—{{ else }}{{ .Count }}{{ end }}</strong>
+              {{ end }}{{ end }}
+              <small>条待投产</small>
+            </div>
+            <div class="focus-card-hint">点击筛选交付池</div>
           </button>
         </div>
       </section>

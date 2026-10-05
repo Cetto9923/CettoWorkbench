@@ -42,13 +42,11 @@ var mysqlStageFilters = map[string]mysqlStageFilter{
 	"review":         {statuses: []string{"draft", "wait", "refuse"}},
 	"clarify":        {statuses: []string{"active"}, noClarify: true},
 	"schedule":       {statuses: []string{"clarified"}, scheduleIncomplete: true},
-	"developing":     {statuses: []string{"developing"}, developFinishDue: true},
+	"developing":     {statuses: []string{"developing"}},
 	"testing":        {statuses: []string{"testing"}},
 	"waitacceptance": {acceptanceStage: true},
 	"acceptanced": {
 		statuses:       []string{"acceptanced"},
-		deliverDateDue: true,
-		braRequired:    true,
 		deliverStories: true,
 	},
 	// 发布只展示待交付需求；已发布但未评价的需求不再回流到首页。

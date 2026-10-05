@@ -56,7 +56,7 @@ func TestHomeFocusSQLIntersectsStageBeforePagination(t *testing.T) {
 }
 
 func TestHomeFocusRequestValidation(t *testing.T) {
-	for _, focus := range []string{"all", "today", "blocked", "overdue", "suspended"} {
+	for _, focus := range []string{"all", "my_action", "my_managed", "my_related", "today", "blocked", "overdue", "suspended"} {
 		req := DemandsReq{Status: "all", Focus: focus}
 		if errs := req.Validate(); len(errs) > 0 {
 			t.Fatalf("%s: %v", focus, errs)
@@ -74,6 +74,47 @@ func TestHomeFocusRequestValidation(t *testing.T) {
 	}
 	if errs := (&DemandsReq{Status: "all", Relation: "owner"}).Validate(); len(errs) == 0 {
 		t.Fatal("legacy relation must not silently acquire the new semantics")
+	}
+}
+
+func TestHomeFocusManagedAndRelatedSQL(t *testing.T) {
+	db, _ := openSQLMock(t)
+	repo := NewRepo(db, nil)
+	ctx := context.Background()
+	account := "alice"
+
+	// 1. my_managed: assignedTo = ? OR BRA = ?
+	queryManaged, err := repo.homeFocusQuery(ctx, account, DemandsReq{Status: "developing", Focus: "my_managed"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var rows []struct{ ID int }
+	stmtManaged := db.Table("(?) AS focused", queryManaged).Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
+	if !strings.Contains(stmtManaged.SQL.String(), "assignedTo = ? OR BRA = ?") {
+		t.Fatalf("my_managed must filter by assignedTo = ? OR BRA = ?: %s", stmtManaged.SQL.String())
+	}
+
+	// 2. my_related: 包含 zt_starinfo 关注
+	queryRelated, err := repo.homeFocusQuery(ctx, account, DemandsReq{Status: "developing", Focus: "my_related"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	stmtRelated := db.Table("(?) AS focused", queryRelated).Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
+	if !strings.Contains(stmtRelated.SQL.String(), "zt_starinfo") {
+		t.Fatalf("my_related must include zt_starinfo follow table in candidate base: %s", stmtRelated.SQL.String())
+	}
+
+	// 3. 研发需求 my_managed 与 my_related
+	storyManaged := repo.homeFocusStoryQuery(ctx, account, DemandsReq{Focus: "my_managed", Status: "developing"})
+	stmtStoryM := storyManaged.Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
+	if !strings.Contains(stmtStoryM.SQL.String(), "zt_story.assignedTo = ?") || !strings.Contains(stmtStoryM.SQL.String(), "ReqM = ?") {
+		t.Fatalf("story my_managed must check assignedTo or ReqM: %s", stmtStoryM.SQL.String())
+	}
+
+	storyRelated := repo.homeFocusStoryQuery(ctx, account, DemandsReq{Focus: "my_related", Status: "developing"})
+	stmtStoryR := storyRelated.Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
+	if !strings.Contains(stmtStoryR.SQL.String(), "zt_starinfo") {
+		t.Fatalf("story my_related must include zt_starinfo: %s", stmtStoryR.SQL.String())
 	}
 }
 

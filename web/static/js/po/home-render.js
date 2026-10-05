@@ -99,16 +99,11 @@
   }
 
   function reviewActionHtml(item) {
-    var editUrl = resolveDemandEditUrl(item);
-    var editBtn = editUrl
-      ? '<a class="table-action-btn secondary" href="' + esc(editUrl) + '" target="_blank" rel="noopener noreferrer">编辑 ↗</a>'
-      : "";
     return (
       '<div class="table-action-group">' +
       '<button type="button" class="table-action-btn primary js-demand-review" data-review-demand-id="' +
       esc(item.id || "") +
       '">评审</button>' +
-      editBtn +
       '</div>'
     );
   }
@@ -180,10 +175,8 @@
       document.querySelectorAll(".home-vs-mini-card").forEach(function (card) {
         var baseCount = card.getAttribute("data-base-count");
         var baseMeta = card.getAttribute("data-base-meta");
-        var baseDuration = card.getAttribute("data-base-duration");
         var count = card.querySelector(".vs-mini-count");
         var breakdown = card.querySelector(".vs-mini-breakdown") || card.querySelector(".vs-mini-meta");
-        var dur = card.querySelector(".vs-mini-dur") || card.querySelector(".vs-mini-duration-row .val");
         var totalNum = parseInt(baseCount, 10);
         var isAll = card.getAttribute("data-vs-status") === "all";
         if (baseCount && count) { count.textContent = baseCount; }
@@ -192,13 +185,6 @@
             breakdown.textContent = "-";
           } else if (baseMeta) {
             breakdown.textContent = baseMeta;
-          }
-        }
-        if (dur) {
-          if (!isAll && !isNaN(totalNum) && totalNum === 0) {
-            dur.textContent = "-";
-          } else if (baseDuration) {
-            dur.innerHTML = (!baseDuration || baseDuration === "—") ? "—" : (isAll ? baseDuration.replace(/均\s*/, "") : (baseDuration.indexOf("均") >= 0 ? baseDuration : ('<span class="tag">均</span> ' + baseDuration)));
           }
         }
         card.classList.toggle("empty", !isNaN(totalNum) && totalNum === 0);
@@ -215,17 +201,12 @@
       var total = Number(row.count || 0);
       var count = card.querySelector(".vs-mini-count");
       var breakdown = card.querySelector(".vs-mini-breakdown") || card.querySelector(".vs-mini-meta");
-      var dur = card.querySelector(".vs-mini-dur") || card.querySelector(".vs-mini-duration-row .val");
       var isAll = status === "all";
       if (count) { count.textContent = String(total); }
       if (breakdown) {
         var dCount = typeof row.demandCount === "number" ? row.demandCount : total;
         var sCount = typeof row.storyCount === "number" ? row.storyCount : 0;
         breakdown.textContent = (!isAll && total === 0) ? "-" : ("业" + dCount + " · 研" + sCount);
-      }
-      if (dur) {
-        var durDays = Number(row.avgDurationDays || 0);
-        dur.innerHTML = (!isAll && total === 0) ? "-" : (durDays > 0 ? (isAll ? (durDays + "天") : ('<span class="tag">均</span> ' + durDays + "天")) : "—");
       }
       card.classList.toggle("empty", total === 0);
       card.setAttribute("title", (card.querySelector(".vs-mini-name") || {}).textContent + " · 共 " + total + " 条");

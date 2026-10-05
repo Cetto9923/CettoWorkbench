@@ -64,7 +64,7 @@
   function initFromUrl() {
     var sp = new URLSearchParams(window.location.search || "");
     var focus = sp.get("focus");
-    if (["all", "my_action", "today", "blocked", "overdue", "suspended"].indexOf(focus) >= 0) { state.focus = focus; }
+    if (["all", "my_action", "my_managed", "my_related", "overdue", "suspended", "today", "blocked"].indexOf(focus) >= 0) { state.focus = focus; }
     var st = (sp.get("stage") || sp.get("status") || "").trim();
     if (st === "review") { st = "accept"; }
     if (VALID_STATUSES.indexOf(st) >= 0) {
@@ -299,9 +299,6 @@
 
     // 右侧 PO 聚焦专区的小卡片触发联动切换价值流阶段
     $(".focus-card.vs-trigger").on("click", function () {
-      // 带 data-vf-goto 的卡片跳独立页面（如版本跟进），不参与阶段联动
-      var vfGoto = $(this).attr("data-vf-goto");
-      if (vfGoto) { window.location.href = vfGoto; return; }
       var targetStage = $(this).data("stage-target");
       if (!targetStage) { return; }
       var $card = $('.home-vs-mini-card[data-vs-status="' + targetStage + '"]');
@@ -313,15 +310,22 @@
         refreshDemands(targetStage);
       }
     });
+
+    // 停留较久观察项卡片点击提示
+    $("#cardStagnant").on("click", function () {
+      $("#homeActionTitle").text("停留较久需求 (≥14d · 观察项)");
+      $("#homeActionTag").text("观察项");
+      $("#homeActionSubtip").text("同一阶段停留≥14天（观察项，进开发前需产品最终确认是否本期必做）");
+    });
   }
 
   var FOCUS_META = {
-    my_action: { title: "待我处理事项", tag: "当前要办理", subtip: "统计我参与阶段的需求，优先推进需确认与流转的事项" },
-    all: { title: "全量事项清单", tag: "全盘流转", subtip: "查看所有由您关联或参与的需求与研发事项" },
-    today: { title: "今日必推清单", tag: "今日聚焦", subtip: "今天到期及急需推进的高优事项" },
-    blocked: { title: "阻塞事项清单", tag: "风险拦截", subtip: "处于阻塞停滞状态、急需排查解阻的事项" },
+    my_action: { title: "待我处理事项", tag: "当前要办理", subtip: "真待办：有明确主动作且我是当前办理人，优先推进需流转的事项" },
+    my_managed: { title: "我负责的事项", tag: "责任推进", subtip: "指派给我或由我担任负责人的需求与研发事项" },
+    my_related: { title: "我相关的事项", tag: "日常跟进", subtip: "我参与或我主动关注的事项清单（防漏看）" },
     overdue: { title: "超期事项清单", tag: "超期预警", subtip: "已超出目标交付时间未完成的事项（含关联业务需求与研发需求）" },
-    suspended: { title: "挂起事项清单", tag: "暂停流转", subtip: "已暂停流转或进入搁置状态的事项" }
+    suspended: { title: "挂起事项清单", tag: "暂停流转", subtip: "已暂停流转或进入搁置状态的事项" },
+    all: { title: "全量事项清单", tag: "全盘流转", subtip: "权限可见未关闭（分页加载，非一次渲染全量）" }
   };
 
   function updateActionHeader(focus) {

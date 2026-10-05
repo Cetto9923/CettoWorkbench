@@ -151,6 +151,10 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 		winErr     error
 		myPending  int64
 		pendingErr error
+		myManaged  int64
+		managedErr error
+		myRelated  int64
+		relatedErr error
 		overdue    int64
 		overdueErr error
 		kpiSummary KPISummaryResult
@@ -178,6 +182,12 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 		runQuerySafely(&wg, &pendingErr, func() {
 			myPending, pendingErr = s.repo.CountHomeFocus(ctx, account, DemandsReq{Status: "all", Focus: "my_action"})
 		})
+		runQuerySafely(&wg, &managedErr, func() {
+			myManaged, managedErr = s.repo.CountHomeFocus(ctx, account, DemandsReq{Status: "all", Focus: "my_managed"})
+		})
+		runQuerySafely(&wg, &relatedErr, func() {
+			myRelated, relatedErr = s.repo.CountHomeFocus(ctx, account, DemandsReq{Status: "all", Focus: "my_related"})
+		})
 		runQuerySafely(&wg, &overdueErr, func() {
 			overdue, overdueErr = s.repo.CountHomeFocus(ctx, account, DemandsReq{Status: "all", Focus: "overdue"})
 		})
@@ -193,6 +203,12 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 	}
 	if pendingErr != nil {
 		return nil, pendingErr
+	}
+	if managedErr != nil {
+		return nil, managedErr
+	}
+	if relatedErr != nil {
+		return nil, relatedErr
 	}
 	if overdueErr != nil {
 		return nil, overdueErr
@@ -251,6 +267,8 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 		Suspended: kpiSummary.Suspended,
 		Blocked:   kpiSummary.Blocked,
 		MyPending: myPending,
+		MyManaged: myManaged,
+		MyRelated: myRelated,
 	}
 
 	if s.logger != nil {
@@ -261,6 +279,8 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 			zap.Int64("suspended", kpi.Suspended),
 			zap.Int64("blocked", kpi.Blocked),
 			zap.Int64("my_pending", kpi.MyPending),
+			zap.Int64("my_managed", kpi.MyManaged),
+			zap.Int64("my_related", kpi.MyRelated),
 		)
 		s.logger.Info("po home parallel load completed",
 			zap.Duration("total_duration", time.Since(t0)),

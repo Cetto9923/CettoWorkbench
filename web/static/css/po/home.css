@@ -455,7 +455,8 @@
 }
 .po-home .home-action-table td {
   padding: 6px 12px;
-  height: 38px;
+  height: 40px;
+  max-height: 40px;
   font-size: var(--wb-font-xs);
   color: var(--wb-gray-700);
   border-bottom: 1px solid var(--wb-gray-200);
@@ -507,17 +508,25 @@
   align-items: center;
   gap: 6px;
   min-width: 0;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
 }
-.po-home .home-title-line .table-title-link {
+.po-home .home-title-line .table-title-link,
+.po-home .home-title-line .table-title-story {
   min-width: 0;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--wb-gray-900);
   text-decoration: none;
   font-weight: 500;
+  display: inline-block;
+  vertical-align: middle;
 }
-.po-home .home-title-line .table-title-link:hover {
+.po-home .home-title-line .table-title-link:hover,
+.po-home .home-title-line .table-title-story:hover {
   color: var(--wb-primary);
   text-decoration: underline;
 }
@@ -630,7 +639,6 @@
   text-decoration: none;
   transition: all var(--wb-transition-fast);
 }
-.po-home .focus-card[data-stage-target="waitacceptance"] { grid-column: span 2; }
 .po-home .focus-card:hover {
   border-color: var(--wb-primary-border);
   background: var(--wb-gray-50);
@@ -644,6 +652,41 @@
 .po-home .focus-card.danger:hover {
   border-color: var(--wb-danger);
   border-left-color: var(--wb-danger);
+}
+.po-home .focus-card.stagnant {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  border-left: 3px solid #ea580c;
+}
+.po-home .focus-card.stagnant:hover {
+  border-color: #ea580c;
+  border-left-color: #ea580c;
+}
+.po-home .focus-card.stagnant .focus-card-hdr { color: #c2410c; }
+.po-home .focus-card.stagnant .focus-card-num strong { color: #ea580c; }
+.po-home .stagnant-obs-tag {
+  font-size: 10px;
+  color: #ea580c;
+  background: #ffedd5;
+  padding: 1px 4px;
+  border-radius: var(--wb-radius-sm);
+  font-weight: 500;
+  white-space: nowrap;
+}
+html[data-theme="dark"] .po-home .focus-card.stagnant {
+  background: rgba(234, 88, 12, 0.12);
+  border-color: rgba(234, 88, 12, 0.3);
+  border-left: 3px solid #ea580c;
+}
+html[data-theme="dark"] .po-home .focus-card.stagnant:hover {
+  border-color: #f97316;
+  border-left-color: #f97316;
+}
+html[data-theme="dark"] .po-home .focus-card.stagnant .focus-card-hdr { color: #fb923c; }
+html[data-theme="dark"] .po-home .focus-card.stagnant .focus-card-num strong { color: #f97316; }
+html[data-theme="dark"] .po-home .stagnant-obs-tag {
+  color: #fb923c;
+  background: rgba(234, 88, 12, 0.2);
 }
 .po-home .focus-card-hdr {
   display: flex;

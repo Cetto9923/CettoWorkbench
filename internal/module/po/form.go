@@ -64,9 +64,11 @@ type TeamHomeValueStreamStage struct {
 // 4 个 KPI 由 repo CountKPI{...} 真实统计;MyPending 由 Service 计算。
 // 字段为零时前端仍展示数字 0,不显示破折号。
 type KPICounts struct {
-	Today     int64 // 今日必推：今日到期 OR 已逾期 且未完成
-	MyPending int64 // 待我处理：handlingResponsibility=currentUser（=价值流 all 计数）
-	Blocked   int64 // 阻塞：主管部门审批存在拒绝 ∪ 验收阶段超期
+	Today     int64 // 今日必推：今日到期 OR 已逾期 且未完成（保留兼容）
+	MyPending int64 // 待我处理：primaryAction 有明确动作 且 actor == 当前登录人
+	MyManaged int64 // 我负责：指派给我 或 我是需求负责人
+	MyRelated int64 // 我相关：我参与 ∪ 我主动关注
+	Blocked   int64 // 阻塞：主管部门审批存在拒绝 ∪ 验收阶段超期（保留兼容）
 	Overdue   int64 // 超期：today > deadline 且未完成（缺日期不算）
 	Suspended int64 // 挂起：hang='1' 且未关闭
 }
@@ -109,7 +111,7 @@ func (r *DemandsReq) Validate() []FieldError {
 		return []FieldError{{Field: "status", Message: "无效的价值流状态"}}
 	}
 	r.Focus = noticeValue(r.Focus, "all")
-	if !isNoticeValue(r.Focus, "all", "my_action", "today", "blocked", "overdue", "suspended") {
+	if !isNoticeValue(r.Focus, "all", "my_action", "my_managed", "my_related", "overdue", "suspended", "today", "blocked") {
 		return []FieldError{{Field: "focus", Message: "无效的首页焦点"}}
 	}
 	// Toolbar filters: keyword/objectType/priority/relation. 透传到 SQL，
