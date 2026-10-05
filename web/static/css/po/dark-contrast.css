@@ -217,9 +217,13 @@ html[data-theme="dark"] .wb-type-independent_story .wb-type-tag {
   color: var(--color-text-on-accent);
 }
 /* ---------------------------------------------------------------------------
- * 第 5.8 轮 E 组（4.04 → 6.96）我的关注周报视图激活卡
- * 影响：/follow .pw-sum-card.active .pw-sum-label、.pw-sum-note
+ * 第 5.8 轮 E 组（4.04 → 6.96）我的关注周报视图卡片与激活状态对比度
+ * 影响：/follow .pw-sum-card
  * ------------------------------------------------------------------------- */
+html[data-theme="dark"] .pw-sum-card {
+  background: var(--color-surface);
+  border-color: var(--color-border-subtle);
+}
 html[data-theme="dark"] .pw-sum-card.active .pw-sum-label,
 html[data-theme="dark"] .pw-sum-card.active .pw-sum-note {
   color: var(--color-info);
