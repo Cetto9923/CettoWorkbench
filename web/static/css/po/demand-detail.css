@@ -30,7 +30,7 @@
 
 /* 抽屉面板 */
 .dd-drawer-panel {
-  width: min(1200px, 94vw); height: 100%; background: var(--wb-bg-surface);
+  width: min(1600px, 94vw); height: 100%; background: var(--wb-bg-surface);
   box-shadow: -8px 0 28px rgba(0, 0, 0, 0.12);
   display: flex; flex-direction: column;
   transform: translateX(100%); transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
