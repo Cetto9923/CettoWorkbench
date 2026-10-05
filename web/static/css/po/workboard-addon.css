@@ -132,3 +132,15 @@
 .kb-team-row-new-badge { display: inline-block; padding: 0 4px; border-radius: 2px; background: var(--navy); color: var(--color-text-on-accent); font-size: 9px; font-style: normal; font-weight: 700; }
 .kb-team-remove { border: 0; background: transparent; color: var(--red); font-size: 11px; cursor: pointer; padding: 2px 4px; }
 .kb-team-remove:hover { text-decoration: underline; }
+
+@media (min-width: 1600px) {
+  .po-board .standup,
+  .po-board .team-metrics,
+  .po-board .owner-row,
+  .po-board .page-hdr {
+    max-width: 1720px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+  }
+}
