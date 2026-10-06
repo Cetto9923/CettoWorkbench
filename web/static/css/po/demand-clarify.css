@@ -7,24 +7,24 @@
 
 .demand-clarify-modal,
 #poDemandClarifyModal {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  max-width: none !important;
-  max-height: none !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  transform: none !important;
-  background: transparent !important;
-  border: none !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  z-index: 1050 !important;
-  overflow: hidden !important;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  transform: none;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  z-index: 1050;
+  overflow: hidden;
   pointer-events: none; /* 仅抽屉本体接收点击，背景遮罩透传给 backdrop */
 }
 
@@ -54,16 +54,16 @@
   top: 0;
   right: 0;
   bottom: 0;
-  left: auto !important;
+  left: auto;
   z-index: 2;
   width: clamp(1100px, 92vw, 1600px);
   max-width: 96vw;
   height: 100vh;
-  max-height: none !important;
-  margin: 0 !important;
+  max-height: none;
+  margin: 0;
   background: var(--color-surface);
-  border-radius: 0 !important;
-  border: none !important;
+  border-radius: 0;
+  border: none;
   box-shadow: -8px 0 32px rgba(15, 23, 42, 0.2);
   display: flex;
   flex-direction: column;
