@@ -480,10 +480,6 @@
   background: var(--white);
 }
 
-.schedule-action-col {
-  background: var(--white);
-}
-
 .schedule-action-buttons {
   display: flex;
   gap: 6px;
