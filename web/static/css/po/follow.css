@@ -104,14 +104,14 @@
 .submit-wait { color: var(--wb-warning); }
 .submit-late { color: var(--wb-danger); }
 
-.tag {
+.po-follow .tag {
   display: inline-flex; align-items: center; height: 20px; padding: 0 6px;
   border-radius: 3px; font-size: 11px; white-space: nowrap; font-weight: 500;
 }
-.tag.green { background: var(--color-success-bg); color: var(--color-success-accent); border: 1px solid var(--color-success-border); }
-.tag.orange { background: var(--color-warning-bg); color: var(--wb-warning); border: 1px solid var(--color-warning-border); }
-.tag.red { background: var(--color-danger-bg); color: var(--wb-danger); border: 1px solid var(--color-danger-border); }
-.tag.blue { background: var(--wb-primary-light); color: var(--wb-primary); border: 1px solid var(--wb-primary-border); }
+.po-follow .tag.green { background: var(--color-success-bg); color: var(--color-success-accent); border: 1px solid var(--color-success-border); }
+.po-follow .tag.orange { background: var(--color-warning-bg); color: var(--wb-warning); border: 1px solid var(--color-warning-border); }
+.po-follow .tag.red { background: var(--color-danger-bg); color: var(--wb-danger); border: 1px solid var(--color-danger-border); }
+.po-follow .tag.blue { background: var(--wb-primary-light); color: var(--wb-primary); border: 1px solid var(--wb-primary-border); }
 
 .pw-situation { margin-bottom: 4px; }
 .pw-desc {
@@ -546,22 +546,22 @@ html[data-theme="dark"] #demandSection .fd-schedule-inline {
 }
 
 /* 标签半透明通透质感 */
-html[data-theme="dark"] .tag.green {
+html[data-theme="dark"] .po-follow .tag.green {
   background: var(--color-badge-success-bg);
   color: var(--color-success);
   border: 1px solid rgba(16, 185, 129, 0.3);
 }
-html[data-theme="dark"] .tag.orange {
+html[data-theme="dark"] .po-follow .tag.orange {
   background: var(--color-badge-warning-bg);
   color: var(--color-warning);
   border: 1px solid rgba(245, 158, 11, 0.3);
 }
-html[data-theme="dark"] .tag.red {
+html[data-theme="dark"] .po-follow .tag.red {
   background: var(--color-badge-danger-bg);
   color: var(--color-danger);
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
-html[data-theme="dark"] .tag.blue {
+html[data-theme="dark"] .po-follow .tag.blue {
   background: rgba(59, 130, 246, 0.15);
   color: var(--color-primary);
   border: 1px solid rgba(59, 130, 246, 0.3);
