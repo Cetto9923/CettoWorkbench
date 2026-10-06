@@ -633,7 +633,6 @@
     currentStoryId = 0;
     if (typeof window.closeShowModals === "function") window.closeShowModals(MODAL_IDS);
     else $(MODAL_IDS.map(function (id) { return "#" + id; }).join(",")).removeClass("show");
-    }
   };
 
   $("#taskModalProjectSelect").on("change", function () {

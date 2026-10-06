@@ -192,7 +192,6 @@
     if (!controller) {
       controller = PL.createController({
         summaryEl: $("querySummary"),
-        emptyEl: $("queryEmpty"),
         errorEl: $("queryError"),
         tbodyEl: $("queryTbody"),
         onSuccess: function (payload) { renderItems(payload); },
@@ -419,6 +418,8 @@
     syncUrl();
     load();
   }
+
+  window.QueryList = { search: load };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);
