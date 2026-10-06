@@ -73,6 +73,7 @@
   table-layout: fixed;
   border-collapse: collapse;
 }
+.wb-done-table td { font-size: 12px; }
 .wb-done-table tr:hover td {
   background: var(--wb-bg-hover);
 }
