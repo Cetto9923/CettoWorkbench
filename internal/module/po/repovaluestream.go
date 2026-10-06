@@ -206,10 +206,9 @@ func (r *Repo) scheduleStoryScope(ctx context.Context, account string) *gorm.DB 
 		}, " OR ") + ")")
 }
 
-// deliverStoryScope 交付阶段独立研发需求（口径同 Main）：非需求池、非父需求、排除已关闭、
-// 排除由业务需求转化来的研发需求 (fromDemand = 0)、指派人或所属产品 ReqM 为当前用户、今天 >= deliverDate。
+// deliverStoryScope 交付阶段独立研发需求（阶段 B 全量进格）：非需求池、非父需求、排除已关闭、
+// 排除由业务需求转化来的研发需求 (fromDemand = 0)、指派人或所属产品 ReqM 为当前用户。
 func (r *Repo) deliverStoryScope(ctx context.Context, account string) *gorm.DB {
-	today := time.Now().Format("2006-01-02")
 	return r.db.WithContext(ctx).Table("zt_story").
 		Where("deleted = ?", "0").
 		Where("status != ?", "closed").
@@ -217,8 +216,7 @@ func (r *Repo) deliverStoryScope(ctx context.Context, account string) *gorm.DB {
 		Where("fromDemand = ?", 0).
 		Where("type = ?", "story").
 		Where("isParent = ?", "0").
-		Where(storyAssignedOrProductReqM, account, account).
-		Where(dateSetExpr("deliverDate")+" AND deliverDate <= ?", today)
+		Where(storyAssignedOrProductReqM, account, account)
 }
 
 func filterReady(account string, filter mysqlStageFilter) bool {

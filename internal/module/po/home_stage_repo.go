@@ -10,15 +10,9 @@ import (
 )
 
 type stageCount struct {
-	StageIndex    int
-	Kind          string
-	Count         int64
-	TotalDuration int64
-	DurationCount int64
-}
-
-func demandDurationDaysSQLExpr(column string) string {
-	return "CASE WHEN " + column + " IS NOT NULL AND " + column + " > '1970-01-01' THEN GREATEST(1, DATEDIFF(CURDATE(), " + column + ")) ELSE 1 END"
+	StageIndex int
+	Kind       string
+	Count      int64
 }
 
 func (r *Repo) acceptRefsPaged(ctx context.Context, account string, req DemandsReq) ([]itemRef, int, error) {
@@ -61,7 +55,7 @@ func (r *Repo) countStageRefs(ctx context.Context, account string) ([]stageCount
 		return nil, err
 	}
 	err = r.db.WithContext(ctx).Table("(?) AS all_stages", base).
-		Select("stage_index, kind, COUNT(*) AS count, IFNULL(SUM(duration_days), 0) AS total_duration, COUNT(duration_days) AS duration_count").
+		Select("stage_index, kind, COUNT(*) AS count").
 		Group("stage_index, kind").Scan(&rows).Error
 	return rows, err
 }
@@ -162,12 +156,12 @@ func (r *Repo) allStageRefQuery(ctx context.Context, account string, req Demands
 			}
 		}
 		demandBase = r.applyHomeFocusToolbarFiltersWithReviews(demandBase, account, req, reviewIDs)
-		stmt := demandBase.Select("id, 'demand' AS kind, "+stageSQL+" AS stage_index, 0 AS kind_rank, "+demandDurationDaysSQLExpr("zt_demand.createdDate")+" AS duration_days", stageArgs...).Session(&gorm.Session{DryRun: true}).Find(&[]struct{ ID int }{}).Statement
+		stmt := demandBase.Select("id, 'demand' AS kind, "+stageSQL+" AS stage_index, 0 AS kind_rank", stageArgs...).Session(&gorm.Session{DryRun: true}).Find(&[]struct{ ID int }{}).Statement
 		demandWhere := "WHERE stage_index IS NOT NULL"
 		if isParticipateScheduleRequest(req) {
 			demandWhere += fmt.Sprintf(" AND stage_index <> %d", homeFocusStageIndex("schedule"))
 		}
-		parts = append(parts, "SELECT id, kind, stage_index, kind_rank, duration_days FROM ("+stmt.SQL.String()+") AS demand_stages "+demandWhere)
+		parts = append(parts, "SELECT id, kind, stage_index, kind_rank FROM ("+stmt.SQL.String()+") AS demand_stages "+demandWhere)
 		args = append(args, stmt.Vars...)
 	}
 	for index, stage := range valueStreamStages {
@@ -184,11 +178,11 @@ func (r *Repo) allStageRefQuery(ctx context.Context, account string, req Demands
 			if strings.EqualFold(strings.TrimSpace(req.Relation), "participate") {
 				storyScope = r.participateScheduleStoryScope(ctx, account)
 				stmt = applyParticipateStoryToolbarFilters(storyScope, account, req).
-					Select("id, 'story' AS kind, ? AS stage_index, 1 AS kind_rank, NULL AS duration_days", index).
+					Select("id, 'story' AS kind, ? AS stage_index, 1 AS kind_rank", index).
 					Session(&gorm.Session{DryRun: true}).Find(&[]struct{ ID int }{}).Statement
 			} else {
 				stmt = applyStoryToolbarFilters(storyScope, account, req).
-					Select("id, 'story' AS kind, ? AS stage_index, 1 AS kind_rank, NULL AS duration_days", index).
+					Select("id, 'story' AS kind, ? AS stage_index, 1 AS kind_rank", index).
 					Session(&gorm.Session{DryRun: true}).Find(&[]struct{ ID int }{}).Statement
 			}
 			parts = append(parts, stmt.SQL.String())
@@ -196,18 +190,18 @@ func (r *Repo) allStageRefQuery(ctx context.Context, account string, req Demands
 		}
 		if includeStory && filter.deliverStories {
 			stmt := applyStoryToolbarFilters(r.deliverStoryScope(ctx, account), account, req).
-				Select("id, 'story' AS kind, ? AS stage_index, 1 AS kind_rank, NULL AS duration_days", index).
+				Select("id, 'story' AS kind, ? AS stage_index, 1 AS kind_rank", index).
 				Session(&gorm.Session{DryRun: true}).Find(&[]struct{ ID int }{}).Statement
 			parts = append(parts, stmt.SQL.String())
 			args = append(args, stmt.Vars...)
 		}
 	}
 	if len(parts) == 0 {
-		return r.db.WithContext(ctx).Table("(SELECT NULL AS kind, NULL AS id, 0 AS stage_index, 0 AS kind_rank, NULL AS duration_days WHERE 1 = 0) AS stage_candidates").
-			Select("kind, id, stage_index, kind_rank, duration_days"), nil
+		return r.db.WithContext(ctx).Table("(SELECT NULL AS kind, NULL AS id, 0 AS stage_index, 0 AS kind_rank WHERE 1 = 0) AS stage_candidates").
+			Select("kind, id, stage_index, kind_rank"), nil
 	}
 	return r.db.WithContext(ctx).Table("("+strings.Join(parts, " UNION ALL ")+") AS stage_candidates", args...).
-		Select("kind, id, MIN(stage_index) AS stage_index, MIN(kind_rank) AS kind_rank, MAX(duration_days) AS duration_days").
+		Select("kind, id, MIN(stage_index) AS stage_index, MIN(kind_rank) AS kind_rank").
 		Group("kind, id"), nil
 }
 
@@ -498,6 +492,28 @@ func (r *Repo) teamDemandScope(ctx context.Context, groupIDs []uint) *gorm.DB {
 		)`, groupIDs, groupIDs)
 }
 
+// teamMysqlStageFilters 保持团队首页原有的开发完成日与交付日门槛，与需求首页全量进格隔离。
+var teamMysqlStageFilters = map[string]mysqlStageFilter{
+	"review":         {statuses: []string{"draft", "wait", "refuse"}},
+	"clarify":        {statuses: []string{"active"}, noClarify: true},
+	"schedule":       {statuses: []string{"clarified"}, scheduleIncomplete: true},
+	"developing":     {statuses: []string{"developing"}, developFinishDue: true},
+	"testing":        {statuses: []string{"testing"}},
+	"waitacceptance": {acceptanceStage: true},
+	"acceptanced": {
+		statuses:       []string{"acceptanced"},
+		deliverDateDue: true,
+		braRequired:    true,
+		deliverStories: true,
+	},
+	"publish": {statuses: []string{"waitdeliver"}},
+	"released": {
+		statuses: []string{"released"},
+		overall:  &releasedOverallEmpty,
+		parent:   &releasedParent,
+	},
+}
+
 func (r *Repo) teamDemandStageCase(ctx context.Context) (string, []interface{}) {
 	var sql strings.Builder
 	sql.WriteString("CASE")
@@ -506,7 +522,7 @@ func (r *Repo) teamDemandStageCase(ctx context.Context) (string, []interface{}) 
 		if stage.status == "all" {
 			continue
 		}
-		filter, ok := mysqlStageFilters[stage.status]
+		filter, ok := teamMysqlStageFilters[stage.status]
 		if !ok {
 			continue
 		}

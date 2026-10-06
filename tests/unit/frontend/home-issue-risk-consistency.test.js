@@ -7,8 +7,8 @@ const home = fs.readFileSync(path.join(root, 'web/templates/po/home.html'), 'utf
 const issueRisk = fs.readFileSync(path.join(root, 'web/static/js/po/issue-risk.js'), 'utf8');
 const handler = fs.readFileSync(path.join(root, 'internal/module/po/handler.go'), 'utf8');
 
-assert.match(home, /阻塞需求/);
-assert.match(home, /href="\/home\?focus=blocked"/);
+assert.doesNotMatch(home, /class="[^"]*focus-card[^"]*danger[^"]*"/);
+assert.doesNotMatch(home, /href="\/home\?focus=blocked"/);
 assert.match(home, /IssueRiskCounts\.Issues/);
 assert.match(home, /IssueRiskCounts\.Risks/);
 assert.match(home, /kind=issue(?:&amp;|&)relation=allRelated(?:&amp;|&)loop=open/);
@@ -20,4 +20,4 @@ for (const key of ['kind', 'relation', 'loop', 'overdue', 'status', 'keyword', '
   assert.match(issueRisk, new RegExp(`params\\.get\\("${key}"\\)`), `issue-risk URL must read ${key}`);
 }
 
-console.log('PASS: homepage blocker and issue/risk counts have matching destinations and deep links');
+console.log('PASS: homepage blocker card is removed and issue/risk links remain consistent');

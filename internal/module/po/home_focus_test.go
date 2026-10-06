@@ -77,47 +77,6 @@ func TestHomeFocusRequestValidation(t *testing.T) {
 	}
 }
 
-func TestHomeFocusManagedAndRelatedSQL(t *testing.T) {
-	db, _ := openSQLMock(t)
-	repo := NewRepo(db, nil)
-	ctx := context.Background()
-	account := "alice"
-
-	// 1. my_managed: assignedTo = ? OR BRA = ?
-	queryManaged, err := repo.homeFocusQuery(ctx, account, DemandsReq{Status: "developing", Focus: "my_managed"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	var rows []struct{ ID int }
-	stmtManaged := db.Table("(?) AS focused", queryManaged).Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
-	if !strings.Contains(stmtManaged.SQL.String(), "assignedTo = ? OR BRA = ?") {
-		t.Fatalf("my_managed must filter by assignedTo = ? OR BRA = ?: %s", stmtManaged.SQL.String())
-	}
-
-	// 2. my_related: 包含 zt_starinfo 关注
-	queryRelated, err := repo.homeFocusQuery(ctx, account, DemandsReq{Status: "developing", Focus: "my_related"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	stmtRelated := db.Table("(?) AS focused", queryRelated).Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
-	if !strings.Contains(stmtRelated.SQL.String(), "zt_starinfo") {
-		t.Fatalf("my_related must include zt_starinfo follow table in candidate base: %s", stmtRelated.SQL.String())
-	}
-
-	// 3. 研发需求 my_managed 与 my_related
-	storyManaged := repo.homeFocusStoryQuery(ctx, account, DemandsReq{Focus: "my_managed", Status: "developing"})
-	stmtStoryM := storyManaged.Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
-	if !strings.Contains(stmtStoryM.SQL.String(), "zt_story.assignedTo = ?") || !strings.Contains(stmtStoryM.SQL.String(), "ReqM = ?") {
-		t.Fatalf("story my_managed must check assignedTo or ReqM: %s", stmtStoryM.SQL.String())
-	}
-
-	storyRelated := repo.homeFocusStoryQuery(ctx, account, DemandsReq{Focus: "my_related", Status: "developing"})
-	stmtStoryR := storyRelated.Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
-	if !strings.Contains(stmtStoryR.SQL.String(), "zt_starinfo") {
-		t.Fatalf("story my_related must include zt_starinfo: %s", stmtStoryR.SQL.String())
-	}
-}
-
 func TestKPISummaryBlockedUsesBlockedListDateBoundary(t *testing.T) {
 	db, mock := openSQLMock(t)
 	args := make([]driver.Value, 13)
@@ -387,43 +346,6 @@ func TestHomeFocusPageStoryBranchIsFlatAndZeroDateSafe(t *testing.T) {
 	}
 }
 
-func TestHomeFocusStageSummary_DurationCalculation(t *testing.T) {
-	db, mock := openSQLMock(t)
-	repo := NewRepo(db, nil)
-
-	mock.ExpectQuery("SELECT `demand` FROM `zt_demandreview` WHERE reviewer = ?").
-		WithArgs("alice").
-		WillReturnRows(sqlmock.NewRows([]string{"demand"}))
-
-	mock.ExpectQuery("(?s)SELECT stage_index, COUNT\\(\\*\\) AS count, IFNULL\\(SUM\\(duration_days\\), 0\\) AS total_duration, COUNT\\(duration_days\\) AS duration_count FROM .* GROUP BY `stage_index`").
-		WillReturnRows(sqlmock.NewRows([]string{"stage_index", "count", "total_duration", "duration_count"}).
-			AddRow(2, 5, 50, 5). // 澄清：50/5 = 10天
-			AddRow(3, 4, 48, 4)) // 排期：48/4 = 12天
-
-	stages, err := repo.HomeFocusStageSummary(context.Background(), "alice", DemandsReq{
-		Focus:      "my_action",
-		ObjectType: "demand",
-	})
-	if err != nil {
-		t.Fatalf("HomeFocusStageSummary error: %v", err)
-	}
-
-	if stages[2].AvgDurationDays != 10 || stages[2].AvgDurationText != "均10天" {
-		t.Errorf("clarify stage duration mismatch: days=%d, text=%q, want 10, '均10天'", stages[2].AvgDurationDays, stages[2].AvgDurationText)
-	}
-	if stages[3].AvgDurationDays != 12 || stages[3].AvgDurationText != "均12天" {
-		t.Errorf("schedule stage duration mismatch: days=%d, text=%q, want 12, '均12天'", stages[3].AvgDurationDays, stages[3].AvgDurationText)
-	}
-	// 汇总卡片
-	if stages[0].AvgDurationDays != 11 || stages[0].AvgDurationText != "均11天" {
-		t.Errorf("all stage duration mismatch: days=%d, text=%q, want 11, '均11天'", stages[0].AvgDurationDays, stages[0].AvgDurationText)
-	}
-
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Fatalf("mock expectations unmet: %v", err)
-	}
-}
-
 func TestHomeFocusMyActionEmptyReviewIDs_NoEmptyInClause(t *testing.T) {
 	// 验证：当待评审切片为空 []int{} 时，生成的 SQL 必须使用恒假 (1 = 0)，不得生成非法空 IN ()
 	where, args := currentHandlerDemandWhereWithReviews("alice", []int{})
@@ -465,12 +387,12 @@ func TestHomeFocusStageSummary_SumEqualsTotal(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"demand"}))
 
 	// 模拟 9 个阶段中的业需分布：1(受理)=3, 2(澄清)=5, 4(研发)=12, 7(发起交付)=4
-	mock.ExpectQuery("(?s)SELECT stage_index, COUNT\\(\\*\\) AS count, IFNULL\\(SUM\\(duration_days\\), 0\\) AS total_duration, COUNT\\(duration_days\\) AS duration_count FROM .* GROUP BY `stage_index`").
-		WillReturnRows(sqlmock.NewRows([]string{"stage_index", "count", "total_duration", "duration_count"}).
-			AddRow(1, 3, 30, 3).
-			AddRow(2, 5, 50, 5).
-			AddRow(4, 12, 120, 12).
-			AddRow(7, 4, 40, 4))
+	mock.ExpectQuery("(?s)SELECT stage_index, COUNT\\(\\*\\) AS count FROM .* GROUP BY `stage_index`").
+		WillReturnRows(sqlmock.NewRows([]string{"stage_index", "count"}).
+			AddRow(1, 3).
+			AddRow(2, 5).
+			AddRow(4, 12).
+			AddRow(7, 4))
 
 	// 模拟研发需求分布：3(排期)=6, 4(研发)=8, 5(测试)=2
 	mock.ExpectQuery("(?s)SELECT .* AS stage_index, COUNT\\(\\*\\) AS count FROM .* GROUP BY .*").

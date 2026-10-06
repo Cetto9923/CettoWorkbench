@@ -2,8 +2,6 @@ package po
 
 import (
 	"context"
-	"fmt"
-	"math"
 	"strings"
 
 	"gorm.io/gorm"
@@ -50,6 +48,9 @@ func (r *Repo) homeFocusQueryWithReviews(ctx context.Context, account string, re
 			continue
 		}
 		q := r.homeFocusDemandBase(ctx, account)
+		if req.Focus == "my_related" {
+			q = r.homeFocusRelatedDemandBase(ctx, account)
+		}
 		if req.Status != "all" {
 			if filter, ok := mysqlStageFilters[stage.status]; ok {
 				q = applyDemandStage(q, account, filter)
@@ -70,7 +71,7 @@ func (r *Repo) homeFocusQueryWithReviews(ctx context.Context, account string, re
 		case "my_managed":
 			q = q.Where("(assignedTo = ? OR BRA = ?)", account, account)
 		case "my_related":
-			// 我相关 = 我参与 ∪ 我主动关注 (已由 homeFocusDemandBase 限定：参与角色 ∪ zt_starinfo 关注)
+			// 我相关 = 我参与 ∪ 我主动关注 (已由 homeFocusRelatedDemandBase 限定：参与角色 ∪ zt_starinfo 关注)
 		case "today":
 			q = q.Where(dateSetExpr("deadline")+" AND deadline <= ?", today)
 		case "overdue":
@@ -88,11 +89,11 @@ func (r *Repo) homeFocusQueryWithReviews(ctx context.Context, account string, re
 			q = q.Where("hang = ?", "1")
 		}
 		var rows []struct{ ID int }
-		stmt := q.Select("id, status, assignedTo, createdBy, ? AS stage_index, "+demandDurationDaysSQLExpr("zt_demand.createdDate")+" AS duration_days", index).Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
+		stmt := q.Select("id, status, assignedTo, createdBy, ? AS stage_index", index).Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
 		if req.Status == "all" {
 			stageSQL, stageArgs := r.demandStageCase(ctx, account)
-			stmt = q.Select("id, status, assignedTo, createdBy, "+stageSQL+" AS stage_index, "+demandDurationDaysSQLExpr("zt_demand.createdDate")+" AS duration_days", stageArgs...).Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
-			parts = append(parts, "SELECT id, status, assignedTo, createdBy, stage_index, duration_days FROM ("+stmt.SQL.String()+") AS demand_stages WHERE stage_index IS NOT NULL")
+			stmt = q.Select("id, status, assignedTo, createdBy, "+stageSQL+" AS stage_index", stageArgs...).Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
+			parts = append(parts, "SELECT id, status, assignedTo, createdBy, stage_index FROM ("+stmt.SQL.String()+") AS demand_stages WHERE stage_index IS NOT NULL")
 			args = append(args, stmt.Vars...)
 			break
 		}
@@ -101,19 +102,34 @@ func (r *Repo) homeFocusQueryWithReviews(ctx context.Context, account string, re
 	}
 	if len(parts) == 0 {
 		// 无匹配阶段时返回空候选集，避免非法 SQL。
-		return r.db.WithContext(ctx).Table("(SELECT NULL AS id, NULL AS status, NULL AS assignedTo, NULL AS createdBy, 0 AS stage_index, NULL AS duration_days WHERE 1 = 0) AS candidates").
-			Select("id, status, assignedTo, createdBy, stage_index, duration_days")
+		return r.db.WithContext(ctx).Table("(SELECT NULL AS id, NULL AS status, NULL AS assignedTo, NULL AS createdBy, 0 AS stage_index WHERE 1 = 0) AS candidates").
+			Select("id, status, assignedTo, createdBy, stage_index")
 	}
 	return r.db.WithContext(ctx).Table("("+strings.Join(parts, " UNION ALL ")+") AS candidates", args...).
-		Select("id, MAX(status) AS status, MAX(assignedTo) AS assignedTo, MAX(createdBy) AS createdBy, MIN(stage_index) AS stage_index, MAX(duration_days) AS duration_days").Group("id")
+		Select("id, MAX(status) AS status, MAX(assignedTo) AS assignedTo, MAX(createdBy) AS createdBy, MIN(stage_index) AS stage_index").Group("id")
 }
 
-// homeFocusDemandBase is the homepage candidate set.  It includes the
+// homeFocusDemandBase is the homepage candidate set. It includes the
 // creator/originator in addition to the operational owners because those are
-// legitimate handlers in the accept and feedback stages.  Stage-specific
+// legitimate handlers in the accept and feedback stages. Stage-specific
 // visibility and "my action" predicates are applied by the caller; this base
 // only prevents unrelated demands from entering the homepage query.
 func (r *Repo) homeFocusDemandBase(ctx context.Context, account string) *gorm.DB {
+	return r.db.WithContext(ctx).Table("zt_demand").
+		Where("deleted = ?", "0").
+		Where("status NOT IN ?", []string{"closed"}).
+		Where("NOT EXISTS (SELECT 1 FROM zt_demand child WHERE child.deleted = ? AND child.parent = zt_demand.id)", "0").
+		Where(`(
+			createdBy = ? OR originator = ? OR assignedTo = ? OR QD = ? OR RD = ? OR BRA = ?
+			OR id IN (SELECT demand FROM zt_demandclarify WHERE FIND_IN_SET(?, REPLACE(PM, ' ', '')) > 0)
+			OR id IN (SELECT demand FROM zt_demandreview WHERE reviewer = ?)
+			OR id IN (SELECT demand FROM zt_demandmanagerreview WHERE reviewer = ?)
+			OR accepter = ?
+		)`, account, account, account, account, account, account, account, account, account, account)
+}
+
+// homeFocusRelatedDemandBase 我相关候选集：我参与 ∪ 我主动关注 (zt_starinfo)。
+func (r *Repo) homeFocusRelatedDemandBase(ctx context.Context, account string) *gorm.DB {
 	return r.db.WithContext(ctx).Table("zt_demand").
 		Where("deleted = ?", "0").
 		Where("status NOT IN ?", []string{"closed"}).
@@ -326,44 +342,27 @@ func (r *Repo) homeFocusStageSummaryWithReviews(ctx context.Context, account str
 	}
 	req.Status = "all"
 	var rows []struct {
-		StageIndex    int   `gorm:"column:stage_index"`
-		Count         int64 `gorm:"column:count"`
-		TotalDuration int64 `gorm:"column:total_duration"`
-		DurationCount int64 `gorm:"column:duration_count"`
+		StageIndex int   `gorm:"column:stage_index"`
+		Count      int64 `gorm:"column:count"`
 	}
 	if req.ObjectType != "story" {
 		base := r.applyHomeFocusToolbarFiltersWithReviews(r.homeFocusQueryWithReviews(ctx, account, req, reviewIDs), account, req, reviewIDs)
 		if err := r.db.WithContext(ctx).Table("(?) AS focused", base).
-			Select("stage_index, COUNT(*) AS count, IFNULL(SUM(duration_days), 0) AS total_duration, COUNT(duration_days) AS duration_count").
+			Select("stage_index, COUNT(*) AS count").
 			Group("stage_index").Scan(&rows).Error; err != nil {
 			return nil, err
 		}
 	}
 	var all int64
 	var allDemand int64
-	var allDemandDuration int64
-	var allDemandDurationCount int64
 	for _, row := range rows {
 		if row.StageIndex <= 0 || row.StageIndex >= len(stages) {
 			continue
 		}
 		stages[row.StageIndex].Count = row.Count
 		stages[row.StageIndex].DemandCount = row.Count
-		if row.DurationCount > 0 {
-			avg := int(math.Round(float64(row.TotalDuration) / float64(row.DurationCount)))
-			if avg < 1 {
-				avg = 1
-			}
-			stages[row.StageIndex].AvgDurationDays = avg
-			stages[row.StageIndex].AvgDurationText = fmt.Sprintf("均%d天", avg)
-		} else {
-			stages[row.StageIndex].AvgDurationDays = 0
-			stages[row.StageIndex].AvgDurationText = "—"
-		}
 		all += row.Count
 		allDemand += row.Count
-		allDemandDuration += row.TotalDuration
-		allDemandDurationCount += row.DurationCount
 	}
 	if req.ObjectType != "demand" {
 		var storyRows []struct {
@@ -387,16 +386,5 @@ func (r *Repo) homeFocusStageSummaryWithReviews(ctx context.Context, account str
 	stages[0].Count = all
 	stages[0].DemandCount = allDemand
 	stages[0].StoryCount = all - allDemand
-	if allDemandDurationCount > 0 {
-		avg := int(math.Round(float64(allDemandDuration) / float64(allDemandDurationCount)))
-		if avg < 1 {
-			avg = 1
-		}
-		stages[0].AvgDurationDays = avg
-		stages[0].AvgDurationText = fmt.Sprintf("均%d天", avg)
-	} else {
-		stages[0].AvgDurationDays = 0
-		stages[0].AvgDurationText = "—"
-	}
 	return stages, nil
 }

@@ -456,7 +456,6 @@
 .po-home .home-action-table td {
   padding: 6px 12px;
   height: 40px;
-  max-height: 40px;
   font-size: var(--wb-font-xs);
   color: var(--wb-gray-700);
   border-bottom: 1px solid var(--wb-gray-200);
@@ -526,10 +525,7 @@
   vertical-align: middle;
 }
 .po-home .home-title-line .table-title-link:hover,
-.po-home .home-title-line .table-title-story:hover {
-  color: var(--wb-primary);
-  text-decoration: underline;
-}
+.po-home .home-title-line .table-title-story:hover { color: var(--wb-primary); text-decoration: underline; }
 
 .po-home .home-inline-flag {
   display: inline-flex;
@@ -549,11 +545,7 @@
   border-color: var(--wb-warning-border);
   background: var(--wb-warning-light);
 }
-.po-home .home-inline-flag.blocked {
-  color: var(--wb-danger);
-  border-color: var(--wb-danger-border);
-  background: var(--wb-danger-light);
-}
+.po-home .home-inline-flag.blocked,
 .po-home .home-inline-flag.overdue {
   color: var(--wb-danger);
   border-color: var(--wb-danger-border);
@@ -649,45 +641,17 @@
   border-color: var(--wb-danger-border);
   border-left: 3px solid var(--wb-danger);
 }
-.po-home .focus-card.danger:hover {
-  border-color: var(--wb-danger);
-  border-left-color: var(--wb-danger);
-}
+.po-home .focus-card.danger:hover { border-color: var(--wb-danger); border-left-color: var(--wb-danger); }
 .po-home .focus-card.stagnant {
-  background: #fff7ed;
-  border-color: #fed7aa;
-  border-left: 3px solid #ea580c;
+  cursor: default;
+  background: var(--wb-warning-light);
+  border-color: var(--wb-warning-border);
+  border-left: 3px solid var(--wb-warning);
 }
-.po-home .focus-card.stagnant:hover {
-  border-color: #ea580c;
-  border-left-color: #ea580c;
-}
-.po-home .focus-card.stagnant .focus-card-hdr { color: #c2410c; }
-.po-home .focus-card.stagnant .focus-card-num strong { color: #ea580c; }
-.po-home .stagnant-obs-tag {
-  font-size: 10px;
-  color: #ea580c;
-  background: #ffedd5;
-  padding: 1px 4px;
-  border-radius: var(--wb-radius-sm);
-  font-weight: 500;
-  white-space: nowrap;
-}
-html[data-theme="dark"] .po-home .focus-card.stagnant {
-  background: rgba(234, 88, 12, 0.12);
-  border-color: rgba(234, 88, 12, 0.3);
-  border-left: 3px solid #ea580c;
-}
-html[data-theme="dark"] .po-home .focus-card.stagnant:hover {
-  border-color: #f97316;
-  border-left-color: #f97316;
-}
-html[data-theme="dark"] .po-home .focus-card.stagnant .focus-card-hdr { color: #fb923c; }
-html[data-theme="dark"] .po-home .focus-card.stagnant .focus-card-num strong { color: #f97316; }
-html[data-theme="dark"] .po-home .stagnant-obs-tag {
-  color: #fb923c;
-  background: rgba(234, 88, 12, 0.2);
-}
+.po-home .focus-card.stagnant:hover { border-color: var(--wb-warning-border); border-left-color: var(--wb-warning); background: var(--wb-warning-light); box-shadow: none; }
+.po-home .focus-card.stagnant .focus-card-hdr { color: var(--wb-warning-hover); }
+.po-home .focus-card.stagnant .focus-card-num strong { color: var(--wb-warning); }
+.po-home .stagnant-obs-tag { font-size: 10px; color: var(--wb-warning-hover); background: var(--wb-warning-light); padding: 1px 4px; border-radius: var(--wb-radius-sm); font-weight: 500; white-space: nowrap; }
 .po-home .focus-card-hdr {
   display: flex;
   align-items: center;
@@ -876,24 +840,9 @@ html[data-theme="dark"] .po-home .stagnant-obs-tag {
   transform: translateX(100%);
   transition: transform 0.2s, visibility 0s linear 0.2s, box-shadow 0.2s;
 }
-.po-review-modal.show {
-  transform: translateX(0);
-  visibility: visible;
-  box-shadow: var(--wb-shadow-md);
-  transition: transform 0.2s, visibility 0s, box-shadow 0.2s;
-}
-.po-review-hdr {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--wb-space-4);
-  border-bottom: 1px solid var(--wb-border-color);
-}
-.po-review-hdr h3 {
-  margin: 0;
-  font-size: var(--wb-font-md);
-  color: var(--wb-gray-900);
-}
+.po-review-modal.show { transform: translateX(0); visibility: visible; box-shadow: var(--wb-shadow-md); transition: transform 0.2s, visibility 0s, box-shadow 0.2s; }
+.po-review-hdr { display: flex; align-items: center; justify-content: space-between; padding: var(--wb-space-4); border-bottom: 1px solid var(--wb-border-color); }
+.po-review-hdr h3 { margin: 0; font-size: var(--wb-font-md); color: var(--wb-gray-900); }
 .po-review-close { border: 0; background: transparent; color: var(--wb-gray-400); font-size: 16px; cursor: pointer; }
 .po-review-close:hover { color: var(--wb-gray-700); }
 .po-review-form { flex: 1; padding: var(--wb-space-4); overflow: auto; }

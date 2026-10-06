@@ -47,10 +47,10 @@
         <span>待我处理</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.MyPending }}{{ end }}</em>
       </button>
       <button type="button" data-home-focus="my_managed" class="header-quick-chip" title="指派给我或我是需求负责人" aria-pressed="false">
-        <span>我负责</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.MyManaged }}{{ end }}</em>
+        <span>我负责</span> <em>—</em>
       </button>
       <button type="button" data-home-focus="my_related" class="header-quick-chip" title="我参与或我主动关注" aria-pressed="false">
-        <span>我相关</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.MyRelated }}{{ end }}</em>
+        <span>我相关</span> <em>—</em>
       </button>
       <button type="button" data-home-focus="overdue" class="header-quick-chip danger" title="在首页查看超期事项（含关联业务需求与研发需求）" aria-pressed="false">
         <span>超期</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.Overdue }}{{ end }}</em>
@@ -221,16 +221,16 @@
         </div>
         <div class="home-focus-grid">
           <!-- 1. 停留较久 (观察项) -->
-          <div class="focus-card stagnant" id="cardStagnant" title="同一阶段停留 ≥ 14 天（已关闭/已驳回不计，观察项待产品确认），点击联动筛选">
+          <div class="focus-card stagnant is-observation" id="cardStagnant" title="同一阶段停留 ≥ 14 天（观察项，待产品确认）">
             <div class="focus-card-hdr">
               <span>停留较久</span>
-              <span class="stagnant-obs-tag" title="观察项 / 进开发前需产品最终确认">观察项 · ≥14d</span>
+              <span class="stagnant-obs-tag" title="观察项 / 待产品确认">观察项 · ≥14d</span>
             </div>
             <div class="focus-card-num">
               <strong id="stagnantCount">—</strong>
               <small>条待推进</small>
             </div>
-            <div class="focus-card-hint">点击筛选积压需求 (待拍板)</div>
+            <div class="focus-card-hint">观察项 · 暂无联动</div>
           </div>
 
           <!-- 2. 问题 / 风险 -->

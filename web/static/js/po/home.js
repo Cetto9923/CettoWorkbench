@@ -144,6 +144,12 @@
   }
 
   function renderList(total) {
+    if (state.status === "all" && !state.keyword && state.priority === "all" && state.objectType === "all") {
+      var $activeChip = $('#homeQuickChips [data-home-focus="' + state.focus + '"] em');
+      if ($activeChip.length && typeof total === "number") {
+        $activeChip.text(total);
+      }
+    }
     var filtered = filterItems(rawItems);
     updateTitle(total, filtered.length, rawItems.length);
     $("#top5Error").attr("hidden", true);
@@ -311,19 +317,15 @@
       }
     });
 
-    // 停留较久观察项卡片点击提示
-    $("#cardStagnant").on("click", function () {
-      $("#homeActionTitle").text("停留较久需求 (≥14d · 观察项)");
-      $("#homeActionTag").text("观察项");
-      $("#homeActionSubtip").text("同一阶段停留≥14天（观察项，进开发前需产品最终确认是否本期必做）");
-    });
   }
 
   var FOCUS_META = {
     my_action: { title: "待我处理事项", tag: "当前要办理", subtip: "真待办：有明确主动作且我是当前办理人，优先推进需流转的事项" },
     my_managed: { title: "我负责的事项", tag: "责任推进", subtip: "指派给我或由我担任负责人的需求与研发事项" },
     my_related: { title: "我相关的事项", tag: "日常跟进", subtip: "我参与或我主动关注的事项清单（防漏看）" },
+    today: { title: "今日必推事项", tag: "今日待办", subtip: "截止日期为今日的事项清单" },
     overdue: { title: "超期事项清单", tag: "超期预警", subtip: "已超出目标交付时间未完成的事项（含关联业务需求与研发需求）" },
+    blocked: { title: "阻塞事项清单", tag: "阻塞预警", subtip: "已驳回或开发完成日到期且主管审批未通过的阻塞事项" },
     suspended: { title: "挂起事项清单", tag: "暂停流转", subtip: "已暂停流转或进入搁置状态的事项" },
     all: { title: "全量事项清单", tag: "全盘流转", subtip: "权限可见未关闭（分页加载，非一次渲染全量）" }
   };
