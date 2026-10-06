@@ -152,7 +152,7 @@ html[data-theme="dark"] .pagination .page-item.active .page-link {
 }
 :is(.po-personal-workspace, .po-board, .task-drawer) .pager-meta { display: flex; align-items: center; gap: 8px; }
 :is(.po-personal-workspace, .po-board, .task-drawer) .pager-controls { display: flex; align-items: center; gap: 6px; }
-:is(.po-personal-workspace, .po-board, .task-drawer) .pager-size-select {
+:is(.po-personal-workspace, .po-board, .task-drawer) .pager-size-control .pager-size-select {
   width: 86px; height: 26px; padding: 0 18px 0 6px; border: 1px solid var(--color-border-strong); border-radius: 4px;
   background: var(--color-surface); color: var(--color-text-body); font-size: 11px;
 }
