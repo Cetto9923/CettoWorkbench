@@ -359,10 +359,10 @@
       btn.addEventListener("click", function () { switchTab(btn.getAttribute("data-tab")); });
     });
 
-    document.querySelectorAll("#weeklySection .pw-scope-btn").forEach(function (btn) {
+    document.querySelectorAll("#weeklySection .relation-segment button").forEach(function (btn) {
       btn.addEventListener("click", function () {
         weeklyScope = btn.getAttribute("data-scope") || "mine";
-        document.querySelectorAll("#weeklySection .pw-scope-btn").forEach(function (b) {
+        document.querySelectorAll("#weeklySection .relation-segment button").forEach(function (b) {
           var active = (b.getAttribute("data-scope") || "mine") === weeklyScope;
           b.classList.toggle("active", active);
         });
@@ -396,7 +396,7 @@
         weeklyKeyword = "";
         weeklyScope = "mine";
         if (pwSearch) pwSearch.value = "";
-        document.querySelectorAll("#weeklySection .pw-scope-btn").forEach(function (b) {
+        document.querySelectorAll("#weeklySection .relation-segment button").forEach(function (b) {
           var active = (b.getAttribute("data-scope") || "mine") === "mine";
           b.classList.toggle("active", active);
         });

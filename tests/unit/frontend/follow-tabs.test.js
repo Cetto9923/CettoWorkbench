@@ -40,4 +40,6 @@ assert.match(demandScript, /class="pw-action-btn pw-watch-btn/, "业务需求操
 assert.match(script, /class="pw-action-btn pw-watch-btn/, "周报操作列按钮样式需统一");
 assert.match(script, /weeklyScope === "participated"/, "周报必须兼容处理我参与的项目");
 
+assert.match(template, /<div class="relation-segment" id="pwScopeSwitch">/, "周报范围切换应复用 relation-segment");
+assert.doesNotMatch(script, /pw-scope-btn/, "follow.js 不应再引用 .pw-scope-btn");
 console.log("PASS: follow tabs and semantic controls verified successfully");
