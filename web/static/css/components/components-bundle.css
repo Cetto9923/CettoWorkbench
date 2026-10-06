@@ -168,19 +168,10 @@
     border-color 0.15s;
   white-space: nowrap;
   text-decoration: none;
-  padding: var(--space-1) var(--space-4);
-}
-
-/* 小号按钮 */
-.btn-sm {
-  padding: var(--space-1) var(--space-3);
-  font-size: var(--font-size-base);
 }
 
 /* 主按钮：每页只允许出现一个 */
 .btn-primary {
-  height: var(--size-8);
-  padding: 0 var(--space-4);
   background: var(--color-btn-primary-bg, var(--color-primary));
   color: var(--color-text-on-accent);
   border-color: var(--color-btn-primary-bg, var(--color-primary));
