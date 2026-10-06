@@ -493,23 +493,12 @@
 }
 
 @media (max-width: 1180px) {
-  .schedule-filter-main {
-    grid-template-columns: 64px minmax(120px, 1fr) 74px minmax(120px, 1fr);
-    max-width: none;
-  }
-
   .schedule-filter-search {
     grid-column: span 1;
   }
 
   .schedule-filter-actions {
     justify-content: flex-start;
-  }
-}
-
-@media (max-width: 900px) {
-  .schedule-filter-main {
-    grid-template-columns: 1fr;
   }
 }
 
