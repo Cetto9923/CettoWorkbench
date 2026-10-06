@@ -64,7 +64,8 @@
   function initFromUrl() {
     var sp = new URLSearchParams(window.location.search || "");
     var focus = sp.get("focus");
-    if (["all", "my_action", "my_managed", "my_related", "overdue", "suspended", "today", "blocked"].indexOf(focus) >= 0) { state.focus = focus; }
+    if (focus === "all") { state.focus = "my_action"; }
+    else if (["my_action", "my_managed", "my_related", "overdue", "suspended", "today", "blocked"].indexOf(focus) >= 0) { state.focus = focus; }
     var st = (sp.get("stage") || sp.get("status") || "").trim();
     if (st === "review") { st = "accept"; }
     if (VALID_STATUSES.indexOf(st) >= 0) {
@@ -326,8 +327,7 @@
     today: { title: "今日必推事项", tag: "今日待办", subtip: "截止日期为今日的事项清单" },
     overdue: { title: "超期事项清单", tag: "超期预警", subtip: "已超出目标交付时间未完成的事项（含关联业务需求与研发需求）" },
     blocked: { title: "阻塞事项清单", tag: "阻塞预警", subtip: "已驳回或开发完成日到期且主管审批未通过的阻塞事项" },
-    suspended: { title: "挂起事项清单", tag: "暂停流转", subtip: "已暂停流转或进入搁置状态的事项" },
-    all: { title: "全量事项清单", tag: "全盘流转", subtip: "权限可见未关闭（分页加载，非一次渲染全量）" }
+    suspended: { title: "挂起事项清单", tag: "暂停流转", subtip: "已暂停流转或进入搁置状态的事项" }
   };
 
   function updateActionHeader(focus) {
@@ -384,7 +384,7 @@
     updateActionHeader(state.focus);
     $("#homeQuickChips [data-home-focus]").on("click", function (event) {
       event.preventDefault();
-      state.focus = $(this).attr("data-home-focus") || "all";
+      state.focus = $(this).attr("data-home-focus") || "my_action";
       state.page = 1;
       hasCorrectedPage = false;
       $("#homeQuickChips [data-home-focus]").removeClass("active").attr("aria-pressed", "false");

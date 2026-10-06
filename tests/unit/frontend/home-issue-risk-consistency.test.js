@@ -9,6 +9,10 @@ const handler = fs.readFileSync(path.join(root, 'internal/module/po/handler.go')
 
 assert.doesNotMatch(home, /class="[^"]*focus-card[^"]*danger[^"]*"/);
 assert.doesNotMatch(home, /href="\/home\?focus=blocked"/);
+assert.doesNotMatch(home, /data-home-focus="all"/, 'homepage must not render all-focus chip');
+assert.doesNotMatch(home, /class="[^"]*all-focus[^"]*"/, 'homepage must not render all-focus class');
+const homeJs = fs.readFileSync(path.join(root, 'web/static/js/po/home.js'), 'utf8');
+assert.match(homeJs, /focus === "all"/, 'home.js must handle focus=all fallback');
 assert.match(home, /IssueRiskCounts\.Issues/);
 assert.match(home, /IssueRiskCounts\.Risks/);
 assert.match(home, /kind=issue(?:&amp;|&)relation=allRelated(?:&amp;|&)loop=open/);

@@ -58,9 +58,6 @@
       <button type="button" data-home-focus="suspended" class="header-quick-chip" title="查看挂起事项" aria-pressed="false">
         <span>挂起</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.Suspended }}{{ end }}</em>
       </button>
-      <button type="button" class="header-quick-chip all-focus" data-home-focus="all" title="当前账号权限可见范围内未关闭对象" aria-pressed="false">
-        <span>全部</span> <em>{{ if .PageError }}—{{ else }}{{ .AllCount }}{{ end }}</em>
-      </button>
     </div>
   </header>
 
