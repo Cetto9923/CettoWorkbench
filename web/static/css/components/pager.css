@@ -144,3 +144,42 @@ html[data-theme="dark"] .pagination .page-item.active .page-link {
 }
 
 .pagination-size-form .pager-size-control { width: 96px; flex: 0 0 96px; }
+
+/* 分页栏 (Pagination) - 统一高度 38px */
+:is(.po-personal-workspace, .po-board, .task-drawer) .workspace-pagination {
+  display: flex; justify-content: space-between; align-items: center; min-height: 38px;
+  padding: 6px 14px; border-top: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text-secondary); font-size: 11px;
+}
+:is(.po-personal-workspace, .po-board, .task-drawer) .pager-meta { display: flex; align-items: center; gap: 8px; }
+:is(.po-personal-workspace, .po-board, .task-drawer) .pager-controls { display: flex; align-items: center; gap: 6px; }
+:is(.po-personal-workspace, .po-board, .task-drawer) .pager-size-select {
+  width: 86px; height: 26px; padding: 0 18px 0 6px; border: 1px solid var(--color-border-strong); border-radius: 4px;
+  background: var(--color-surface); color: var(--color-text-body); font-size: 11px;
+}
+
+:is(.po-personal-workspace, .po-board, .task-drawer) .pager-btn {
+  min-width: 26px; height: 26px; padding: 0 6px; border: 1px solid var(--color-border);
+  border-radius: 4px; background: var(--color-surface); color: var(--color-text-secondary); font-size: 11px;
+  cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+}
+:is(.po-personal-workspace, .po-board, .task-drawer) .pager-btn:hover:not(:disabled) { border-color: var(--color-info-fill); color: var(--color-info); background: var(--color-surface-muted); }
+:is(.po-personal-workspace, .po-board, .task-drawer) .pager-btn.active {
+  border-color: var(--color-info-fill); background: var(--color-info-bg); color: var(--color-info); font-weight: 600;
+}
+:is(.po-personal-workspace, .po-board, .task-drawer) .pager-btn:disabled { cursor: not-allowed; opacity: .4; }
+:is(.po-personal-workspace, .po-board, .task-drawer) .pager-ellipsis { padding: 0 4px; color: var(--color-text-secondary); }
+/* 跳页控件：与 components/pager.html 的“跳至 N 页”同一交互 */
+:is(.po-personal-workspace, .po-board, .task-drawer) .pager-jump-label { color: var(--color-text-secondary); font-size: 11px; }
+:is(.po-personal-workspace, .po-board, .task-drawer) .pager-jump-input {
+  width: 48px; height: 26px; padding: 0 6px; border: 1px solid var(--color-border); border-radius: 4px;
+  background: var(--color-surface); color: var(--color-text-primary); font-size: 11px; text-align: center; box-sizing: border-box;
+}
+:is(.po-personal-workspace, .po-board, .task-drawer) .pager-jump-input:focus { outline: none; border-color: var(--color-border-focus); }
+:is(.po-personal-workspace, .po-board, .task-drawer) .pager-jump-btn {
+  height: 26px; padding: 0 8px; border: 1px solid var(--color-border); border-radius: 4px;
+  background: var(--color-surface); color: var(--color-text-secondary); font-size: 11px; cursor: pointer;
+}
+:is(.po-personal-workspace, .po-board, .task-drawer) .pager-jump-btn:hover {
+  border-color: var(--color-info-fill); color: var(--color-info); background: var(--color-surface-muted);
+}
+.pager-size-control { flex: 0 0 86px; width: 86px; }
