@@ -51,4 +51,5 @@ context.renderDemandMatrix([{ id: 4, children: [{ id: 5, kind: 'story', independ
 assert.equal(host.innerHTML, 'root:4');
 context.renderDemandMatrix([{ id: 6, kind: 'story', independent: true }]);
 assert.equal(host.innerHTML, 'root:6');
+assert.equal((demandSource.match(/window\.renderDemandMatrix = renderDemandMatrix/g) || []).length, 1, 'renderDemandMatrix 只应赋给全局一次');
 console.log('PASS: board script parses; child demands remain; associated stories create no rows or empty groups; independent roots remain');

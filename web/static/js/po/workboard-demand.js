@@ -343,5 +343,4 @@
     toggleFlag: toggleFlag,
     refreshDemandToggleAll: refreshDemandToggleAll
   });
-  window.renderDemandMatrix = renderDemandMatrix;
 })(window.PoWB = window.PoWB || {});
