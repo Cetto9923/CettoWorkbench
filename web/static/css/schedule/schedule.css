@@ -1,38 +1,8 @@
 /* ==========================================================================
    文件: web/static/css/schedule/schedule.css
    模块: 排期工作台
-   职责: 页面布局、:root 变量、通用 action-btn、列表区框架与筛选栏、数据类型 Tab 切换
+   职责: 页面布局、通用 action-btn、列表区框架与筛选栏、数据类型 Tab 切换
 ========================================================================== */
-
-:root {
-  --bg: var(--color-page-bg);
-  --white: var(--color-surface);
-  --hover: var(--color-surface-hover);
-  --active: var(--color-surface-muted);
-  --border: var(--color-border);
-  --border-lt: var(--color-border-soft);
-  --t1: var(--color-text-primary);
-  --t2: var(--color-text-secondary);
-  --t3: var(--color-text-disabled);
-  --blue: var(--color-primary);
-  --blue-bg: var(--color-primary-light);
-  --blue-bd: var(--color-primary-border);
-  --red: var(--color-danger);
-  --red-bg: var(--color-danger-bg);
-  --red-bd: var(--color-danger-border);
-  --orange: var(--color-warning);
-  --orange-bg: var(--color-warning-bg);
-  --orange-bd: var(--color-warning-border);
-  --green: var(--color-success);
-  --green-bg: var(--color-success-bg);
-  --green-bd: var(--color-success-border);
-  --gray: var(--color-text-secondary);
-  --gray-bg: var(--color-surface-muted);
-  --purple: #7c3aed;
-  --purple-bg: #f5f3ff;
-  --purple-bd: #ddd6fe;
-  --r: 6px;
-}
 
 #page-schedule a.action-btn {
   text-decoration: none;
