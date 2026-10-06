@@ -311,8 +311,8 @@
     }
   }
 
-  window.FollowUnwatchDemand = function (id) { return unwatchItem("demand", id); };
-  window.FollowSetDemand = async function (id, followed) {
+  window.FollowDemand.unwatch = function (id) { return unwatchItem("demand", id); };
+  window.FollowDemand.setFollowed = async function (id, followed) {
     id = String(id || "").replace(/^US/i, "");
     if (!id) return false;
     try {
@@ -331,7 +331,7 @@
       return false;
     }
   };
-  window.FollowUpdateDemandBadge = function (n) {
+  window.FollowDemand.updateBadge = function (n) {
     var dEl = document.getElementById("tabCountDemand");
     if (dEl) dEl.textContent = (n === "—" || n === "-") ? "—" : String(n == null ? "—" : n);
   };

@@ -243,10 +243,10 @@
         var next = !watched;
         btn.disabled = true;
         var ok = false;
-        if (typeof root.FollowSetDemand === "function") {
-          ok = await root.FollowSetDemand(id, next);
-        } else if (!next && typeof root.FollowUnwatchDemand === "function") {
-          await root.FollowUnwatchDemand(id);
+        if (typeof root.FollowDemand.setFollowed === "function") {
+          ok = await root.FollowDemand.setFollowed(id, next);
+        } else if (!next && typeof root.FollowDemand.unwatch === "function") {
+          await root.FollowDemand.unwatch(id);
           ok = true;
         }
         btn.disabled = false;
@@ -274,7 +274,7 @@
     var empty = document.getElementById("followEmpty");
     var error = document.getElementById("followError");
     var summary = document.getElementById("followSummary");
-    if (typeof root.FollowUpdateDemandBadge === "function") root.FollowUpdateDemandBadge("—");
+    if (typeof root.FollowDemand.updateBadge === "function") root.FollowDemand.updateBadge("—");
     if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="pw-empty-row">正在拉取关注业务需求…</td></tr>';
     if (empty) empty.hidden = true;
     if (error) error.hidden = true;
@@ -339,9 +339,9 @@
       updateStatsUI();
       if (summary) summary.textContent = "关注业务需求 · 共 " + state.total + " 条";
       renderRows(items);
-      if (typeof root.FollowUpdateDemandBadge === "function") {
+      if (typeof root.FollowDemand.updateBadge === "function") {
         var badgeNum = (typeof state.stats.open === "number") ? state.stats.open : state.total;
-        root.FollowUpdateDemandBadge(badgeNum);
+        root.FollowDemand.updateBadge(badgeNum);
       }
     } catch (e) {
       clearTimeout(timeoutId);

@@ -42,4 +42,6 @@ assert.match(script, /weeklyScope === "participated"/, "周报必须兼容处理
 
 assert.match(template, /<div class="relation-segment" id="pwScopeSwitch">/, "周报范围切换应复用 relation-segment");
 assert.doesNotMatch(script, /pw-scope-btn/, "follow.js 不应再引用 .pw-scope-btn");
+assert.doesNotMatch(script + demandScript, /Follow(UnwatchDemand|SetDemand|UpdateDemandBadge)/, "关注页只保留 window.FollowDemand 一个全局出口");
+assert.match(script, /window\.FollowDemand\.setFollowed = async function/);
 console.log("PASS: follow tabs and semantic controls verified successfully");
