@@ -353,53 +353,52 @@
       return;
     }
 
-    var saveUrl = isStorySource
-      ? "/schedule/stories/" + shared.currentStoryId + "/save-scheduling"
-      : "/schedule/demands/" + shared.currentDemandId + "/save-scheduling";
-
+    var saveUrl = (isStorySource ? "/schedule/stories/" + shared.currentStoryId : "/schedule/demands/" + shared.currentDemandId) + "/save-scheduling";
     fetchFn(saveUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
-    })
-      .then(function (resp) {
-        return resp.json();
-      })
-      .then(function (result) {
-        if (result && result.success) {
-          toast("保存成功", "success");
-          closeScheduleIntegratedModal();
-          window.location.reload();
+    }).then(function (resp) {
+      return resp.json();
+    }).then(function (result) {
+      if (result && result.success) {
+        toast("保存成功", "success");
+        closeScheduleIntegratedModal();
+        var winId = data && data.windowId;
+        if (winId) {
+          var tid = isStorySource ? shared.currentStoryId : shared.currentDemandId;
+          var url = "/schedule?windows=" + encodeURIComponent(winId) + "&filter=all_open";
+          if (isStorySource) url += "&tab=indep";
+          if (tid) url += "&highlight=" + encodeURIComponent(tid);
+          window.location.href = url;
           return;
         }
-        toast((result && result.message) || "保存失败", "error");
-        if (isStorySource) loadStorySchedulingDetail(shared.currentStoryId);
-        else loadSchedulingDetail(shared.currentDemandId);
-      })
-      .catch(function (err) {
-        toast("保存失败: " + (err && err.message ? err.message : "请稍后重试"), "error");
-        if (isStorySource) loadStorySchedulingDetail(shared.currentStoryId);
-        else loadSchedulingDetail(shared.currentDemandId);
-      })
-      .finally(function () {
-        setSaveButtonLoading(false);
-      });
+        toast("保存成功，未获取到目标窗口，保留当前视图", "info");
+        window.location.reload();
+        return;
+      }
+      toast((result && result.message) || "保存失败", "error");
+      if (isStorySource) loadStorySchedulingDetail(shared.currentStoryId);
+      else loadSchedulingDetail(shared.currentDemandId);
+    }).catch(function (err) {
+      toast("保存失败: " + (err && err.message ? err.message : "请稍后重试"), "error");
+      if (isStorySource) loadStorySchedulingDetail(shared.currentStoryId);
+      else loadSchedulingDetail(shared.currentDemandId);
+    }).finally(function () {
+      setSaveButtonLoading(false);
+    });
   }
 
   function extractDemandID($btn) {
     var raw = $btn.data("demand-id");
-    if (raw === undefined || raw === null || raw === "") {
-      return 0;
-    }
+    if (raw === undefined || raw === null || raw === "") return 0;
     var id = parseInt(String(raw), 10);
     return isNaN(id) || id <= 0 ? 0 : id;
   }
 
   function extractStoryID($btn) {
     var raw = $btn.data("story-id");
-    if (raw === undefined || raw === null || raw === "") {
-      return 0;
-    }
+    if (raw === undefined || raw === null || raw === "") return 0;
     var id = parseInt(String(raw), 10);
     return isNaN(id) || id <= 0 ? 0 : id;
   }

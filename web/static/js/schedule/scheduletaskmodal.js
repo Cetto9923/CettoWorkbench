@@ -587,25 +587,29 @@
       return;
     }
 
-    var $btn = $("#taskModalSaveBtn");
-    $btn.prop("disabled", true);
+    var $btn = $("#taskModalSaveBtn").prop("disabled", true);
     window.appJson("/schedule/stories/" + currentStoryId + "/save-tasks", { method: "POST", body: { tasks: tasks } })
       .then(function (result) {
-        var data = result;
-        if (!data.success) {
-          toast(data.message || data.error || "保存失败", "error");
+        if (!result || !result.success) {
+          toast((result && (result.message || result.error)) || "保存失败", "error");
           return;
         }
         toast("任务保存成功", "success");
         closeTaskModal();
+        var params = new URLSearchParams(window.location.search);
+        var winId = params.get("windows") || (currentStoryInfo && currentStoryInfo.windowId);
+        if (winId) {
+          var targetUrl = "/schedule?windows=" + encodeURIComponent(winId) + "&filter=all_open";
+          if (params.get("tab") === "indep") targetUrl += "&tab=indep";
+          targetUrl += "&highlight=" + encodeURIComponent(currentStoryId);
+          window.location.href = targetUrl;
+          return;
+        }
+        toast("任务保存成功，未获取到目标窗口，保留当前视图", "info");
         window.location.reload();
       })
-      .catch(function () {
-        toast("保存失败", "error");
-      })
-      .finally(function () {
-        $btn.prop("disabled", false);
-      });
+      .catch(function () { toast("保存失败", "error"); })
+      .finally(function () { $btn.prop("disabled", false); });
   }
 
   window.openTaskModal = function (storyId) {
@@ -616,11 +620,8 @@
     }
     currentStoryId = storyId;
     resetModalState();
-    if (typeof window.openShowModals === "function") {
-      window.openShowModals(MODAL_IDS);
-    } else {
-      $(MODAL_IDS.map(function (id) { return "#" + id; }).join(",")).addClass("show");
-    }
+    if (typeof window.openShowModals === "function") window.openShowModals(MODAL_IDS);
+    else $(MODAL_IDS.map(function (id) { return "#" + id; }).join(",")).addClass("show");
     loadTaskModalData(storyId).catch(function (err) {
       toast((err && err.message) || "加载失败", "error");
       closeTaskModal();
@@ -630,10 +631,8 @@
   window.closeTaskModal = function () {
     resetModalState();
     currentStoryId = 0;
-    if (typeof window.closeShowModals === "function") {
-      window.closeShowModals(MODAL_IDS);
-    } else {
-      $(MODAL_IDS.map(function (id) { return "#" + id; }).join(",")).removeClass("show");
+    if (typeof window.closeShowModals === "function") window.closeShowModals(MODAL_IDS);
+    else $(MODAL_IDS.map(function (id) { return "#" + id; }).join(",")).removeClass("show");
     }
   };
 
