@@ -312,7 +312,6 @@
 /* ── 本窗口模式专属摘要条 ── */
 #page-schedule .schedule-window-active-banner {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 4px 12px; margin-bottom: 8px; min-height: 36px; height: 36px;
   background: var(--color-primary-light); border: 1px solid var(--color-primary-border);
   border-left: 4px solid var(--color-primary); border-radius: var(--wb-radius-sm, 4px);
   box-sizing: border-box;

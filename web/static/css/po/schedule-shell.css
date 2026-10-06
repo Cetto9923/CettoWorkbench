@@ -216,3 +216,34 @@ html[data-theme="dark"] body.po-workbench-shell #page-schedule .stage-tag--final
   color: var(--color-badge-success-fg);
   border: 1px solid var(--color-badge-success-border);
 }
+
+/* P1 版本窗口概览压成一行：标题 | 窗口卡 | 窗口维护 + 新建窗口 */
+#page-schedule .schedule-version-overview { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-1) var(--space-2); margin-bottom: var(--space-1); }
+#page-schedule .schedule-version-overview > .schedule-page-head { display: contents; }
+#page-schedule .schedule-version-overview .schedule-section-title { order: 0; flex: none; margin: 0; }
+#page-schedule .schedule-version-overview .schedule-version-body { order: 1; flex: 1; min-width: 0; }
+#page-schedule .schedule-version-overview .schedule-page-actions { order: 2; flex: none; }
+/* P2 窗口卡收紧 */
+#page-schedule .schedule-version-body-click { padding: var(--space-1) 28px var(--space-1) var(--space-2); }
+#page-schedule .schedule-version-bar,
+#page-schedule .schedule-version-meta { margin-top: var(--space-0_5); }
+/* P3 筛选区仍为两行，只收行距；页签与芯片同高 */
+#page-schedule .schedule-filter-row-top { margin-bottom: var(--space-1); }
+#page-schedule .schedule-data-tab { height: var(--size-7); }
+#page-schedule .schedule-filter-primary-inner { padding: var(--space-0_5) var(--space-2); }
+/* P4 表格行密度：单元格内边距收紧，行内按钮 24px */
+#page-schedule .schedule-table thead th { padding: 5px var(--space-2); }
+#page-schedule .schedule-table td { padding: var(--space-0_5) var(--space-2); }
+body.po-workbench-shell #page-schedule .schedule-table .schedule-action-buttons .action-btn { height: var(--size-6); min-height: var(--size-6); padding: 0 var(--space-2); }
+/* P5 行内操作按钮改同色描边，悬停再着浅底；页面级主按钮保持实心 */
+body.po-workbench-shell #page-schedule .schedule-table .schedule-action-buttons .action-btn.primary { background: var(--color-surface); color: var(--wb-primary); border-color: var(--wb-primary-border); }
+body.po-workbench-shell #page-schedule .schedule-table .schedule-action-buttons .action-btn.action-btn--success { background: var(--color-surface); color: var(--wb-success); border-color: var(--wb-success-border); }
+body.po-workbench-shell #page-schedule .schedule-table .schedule-action-buttons .action-btn.primary:hover { background: var(--wb-primary-light); color: var(--wb-primary); border-color: var(--wb-primary); }
+body.po-workbench-shell #page-schedule .schedule-table .schedule-action-buttons .action-btn.action-btn--success:hover { background: var(--wb-success-light); color: var(--wb-success); border-color: var(--wb-success); }
+/* P7 列宽再分配：敏捷小组放宽、版本窗口收窄；须位于敏捷小组列规则之后 */
+body.po-workbench-shell #page-schedule #scheduleBizListPanel .schedule-table th.schedule-col-group { width: 160px; max-width: 160px; }
+body.po-workbench-shell #page-schedule #scheduleBizListPanel .schedule-table td.schedule-col-group { max-width: 160px; }
+body.po-workbench-shell #page-schedule #scheduleBizListPanel .schedule-table th.schedule-col-stage { width: 100px; }
+/* P8 窗口工作台横幅 28px */
+#page-schedule .schedule-window-active-banner { height: var(--size-7); min-height: var(--size-7); padding: 0 var(--space-3); margin-bottom: var(--space-1); }
+#page-schedule .schedule-window-active-banner .action-btn { height: var(--size-6); min-height: var(--size-6); }

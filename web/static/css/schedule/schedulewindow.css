@@ -10,8 +10,6 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--wb-radius-md);
-  margin-bottom: 8px;
-  padding: 6px 10px 8px;
   box-shadow: var(--wb-shadow-sm);
   overflow: visible;
 }
@@ -19,7 +17,6 @@
   font-size: 12px;
   font-weight: 900;
   color: var(--color-text-primary);
-  margin-bottom: 6px;
 }
 .schedule-section-title span {
   font-size: 11px;
@@ -80,8 +77,6 @@
 }
 .schedule-version-body-click {
   cursor: pointer;
-  padding: 4px 10px 5px;
-  padding-right: 32px;
   flex: 1;
   min-width: 0;
   overflow: visible;
@@ -189,7 +184,6 @@
   background: var(--color-border-subtle);
   border-radius: 999px;
   overflow: hidden;
-  margin-top: 5px;
 }
 .schedule-version-bar span {
   display: block;
@@ -205,7 +199,6 @@
   grid-template-columns: repeat(4, auto);
   justify-content: space-between;
   gap: 4px 8px;
-  margin-top: 5px;
   font-size: 10px;
   color: var(--color-text-secondary);
   overflow: hidden;
@@ -294,7 +287,6 @@
 }
 @media (max-width: 1366px) {
   .schedule-version-grid { gap: 6px; }
-  .schedule-version-body-click { padding: 10px 8px; padding-right: 28px; }
   .schedule-version-name { font-size: 11px; }
   .agile-team-tag { max-width: 60px; padding: 0 3px; font-size: 10px; }
 }
@@ -315,22 +307,8 @@
 }
 /* 矮视口（笔记本常见）：进一步压窗口区高度 */
 @media (max-height: 900px) {
-  .schedule-version-overview {
-    padding: 4px 8px 6px;
-    margin-bottom: 6px;
-  }
-  .schedule-version-body-click {
-    padding: 5px 8px;
-    padding-right: 28px;
-  }
   .schedule-version-range {
     display: none;
-  }
-  .schedule-version-bar {
-    margin-top: 4px;
-  }
-  .schedule-version-meta {
-    margin-top: 4px;
   }
   .schedule-version-meta i:nth-last-of-type(1) {
     display: none;

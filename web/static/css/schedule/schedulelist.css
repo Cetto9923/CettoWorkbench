@@ -96,8 +96,6 @@
 #page-schedule .schedule-table {
   border: 0;
   border-top: 1px solid var(--border-lt);
-  min-width: 1180px;
-  table-layout: auto;
 }
 
 #page-schedule .schedule-table .schedule-col-nowrap {
@@ -110,12 +108,10 @@
   text-transform: none;
   letter-spacing: 0;
   font-size: 12px;
-  padding: 7px 10px;
   font-weight: 600;
 }
 
 #page-schedule .schedule-table td {
-  padding: 6px 10px;
   font-size: 12px;
 }
 
@@ -529,11 +525,3 @@
   background: var(--wb-success); color: var(--wb-text-inverse); border-color: var(--wb-success);
 }
 #page-schedule .action-btn--success:hover { background: var(--wb-success-border); }
-#page-schedule .schedule-table th.schedule-col-title { width: 500px; max-width: 500px; }
-#page-schedule .schedule-table th.schedule-col-pri { width: 72px; }
-#page-schedule .schedule-table th.schedule-col-group, #page-schedule .schedule-table td.schedule-col-group { width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#page-schedule .schedule-table th.schedule-col-stage-head { min-width: 120px; }
-#page-schedule .schedule-table th.schedule-col-stage { min-width: 160px; }
-#page-schedule .schedule-table th.schedule-col-owner { min-width: 110px; }
-#page-schedule .schedule-table th.schedule-col-tasks { width: 72px; }
-#page-schedule .schedule-table th.schedule-action-col { width: 100px; }

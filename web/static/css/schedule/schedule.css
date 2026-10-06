@@ -130,7 +130,7 @@
 
 .schedule-filter-row-top {
   display: flex; align-items: center; justify-content: space-between;
-  gap: 12px; margin-bottom: 8px; flex-wrap: wrap;
+  gap: 12px; flex-wrap: wrap;
 }
 .schedule-filter-row-top .schedule-data-tabs,
 .schedule-filter-row-top .schedule-quick-scope {
@@ -278,7 +278,6 @@
 }
 
 .schedule-filter-primary-inner {
-  padding: 6px 10px;
   box-sizing: border-box;
   display: flex;
   align-items: center;
@@ -443,7 +442,7 @@
 /* ── 数据类型 Tab ── */
 .schedule-data-tabs { margin-bottom: 0; display: inline-flex; align-items: center; gap: 4px; }
 .schedule-data-tab {
-  height: 32px; padding: 0 14px; display: inline-flex; align-items: center;
+  padding: 0 14px; display: inline-flex; align-items: center;
   gap: 6px; font-size: 13px; font-weight: 500; border-radius: var(--wb-radius-sm, 4px);
   border: 1px solid var(--color-border); background: var(--color-surface);
   color: var(--color-text-secondary); cursor: pointer; transition: all 0.15s;
@@ -485,10 +484,6 @@
     height: 24px;
     padding: 0 7px;
     font-size: 11px;
-  }
-
-  .schedule-filter-primary-inner {
-    padding: 4px 8px;
   }
 
   .schedule-data-tabs {

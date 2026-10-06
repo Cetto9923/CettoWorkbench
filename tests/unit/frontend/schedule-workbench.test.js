@@ -13,6 +13,7 @@ const integratedJs = fs.readFileSync(path.join(root, 'web/static/js/schedule/sch
 const taskModalJs = fs.readFileSync(path.join(root, 'web/static/js/schedule/scheduletaskmodal.js'), 'utf8');
 const indexHtml = fs.readFileSync(path.join(root, 'web/templates/schedule/index.html'), 'utf8');
 const filterCss = fs.readFileSync(path.join(root, 'web/static/css/schedule/schedulefilter.css'), 'utf8');
+const shellCss = fs.readFileSync(path.join(root, 'web/static/css/po/schedule-shell.css'), 'utf8');
 
 // 1. 窗口卡片点击进入本窗口模式（锁定该窗 + 切换全部未关闭）
 assert(
@@ -74,8 +75,8 @@ assert(
   'schedulefilter.css: 必须定义 scheduleHighlightPulse 动画与 schedule-row-highlighted 类'
 );
 assert(
-  /schedule-window-active-banner/.test(filterCss) && /height:\s*36px/.test(filterCss),
-  'schedulefilter.css: 摘要条高度必须 <= 40px'
+  /schedule-window-active-banner\s*\{[^}]*height:\s*var\(--size-7\)/.test(shellCss),
+  'schedule-shell.css: 摘要条高度必须 <= 40px'
 );
 assert(
   /white-space:\s*nowrap/.test(filterCss),
