@@ -357,16 +357,9 @@
     if (!windowId) {
       return;
     }
-    var currentParams = readURLParams();
-    var currentWindows = (currentParams.get("windows") || "").split(",").filter(Boolean);
-    var newWindows;
-    if (currentWindows.indexOf(windowId) !== -1) {
-      newWindows = currentWindows.filter(function (id) { return id !== windowId; });
-    } else {
-      newWindows = [windowId];
-    }
     navigateSchedule({
-      windows: newWindows.length ? newWindows.join(",") : null,
+      windows: windowId,
+      filter: "all_open",
       bizPage: null,
       indepPage: null,
     });

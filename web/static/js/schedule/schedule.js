@@ -13,10 +13,7 @@
 
   var defaultFilter = "unscheduled";
   var bizOnlyFilters = ["pending_review", "manager_reviewing"];
-  var indepTabDisabledTitles = {
-    pending_review: "待受理仅适用于业务需求",
-    manager_reviewing: "无主管审批状态",
-  };
+  var indepTabDisabledTitles = { pending_review: "待受理仅适用于业务需求", manager_reviewing: "无主管审批状态" };
 
   function currentDataTabType() {
     var $active = $root.find(".schedule-data-tab.active");
@@ -168,6 +165,10 @@
     var tab = currentFilterCountsTab();
     params.set("filter", filter);
     params.set("tab", tab);
+    var urlParams = readURLParams();
+    ["windows", "groups", "products", "stages"].forEach(function (k) {
+      var v = urlParams.get(k); if (v) params.set(k, v);
+    });
 
     var canReuse = $scope.attr("data-can-reuse") === "1";
     var suspended = $scope.attr("data-suspended") === "1";
@@ -300,7 +301,7 @@
 
   $root.on("click", ".schedule-action-buttons .action-btn", function (e) {
     var label = $.trim($(this).text());
-    if (label !== "去排期" && label !== "排期") {
+    if (label !== "去排期" && label !== "排期" && label.indexOf("换窗口") === -1) {
       return;
     }
     e.preventDefault();
@@ -311,11 +312,13 @@
 
   $root.on("click", ".schedule-scope-chip", function () {
     var filter = $(this).data("filter") || defaultFilter;
-    navigateSchedule(preserveSuspendedOverride({
-      filter: filter,
-      bizPage: null,
-      indepPage: null,
-    }));
+    var overrides = { filter: filter, bizPage: null, indepPage: null };
+    if (filter === "unscheduled") overrides.windows = null;
+    navigateSchedule(preserveSuspendedOverride(overrides));
+  });
+
+  $root.on("click", "#btnReturnUnscheduled", function () {
+    navigateSchedule({ filter: defaultFilter, windows: null, bizPage: null, indepPage: null });
   });
 
   $root.on("click", "#scheduleSuspendedToggle", function () {
@@ -462,6 +465,26 @@
   } catch (e) {}
 
   var params = readURLParams();
+  var highlightId = params.get("highlight");
+  if (highlightId) {
+    var $row = $root.find('tr[data-id="' + highlightId + '"], tr[data-demand-id="' + highlightId + '"], tr[data-story-id="' + highlightId + '"]').first();
+    if ($row.length) {
+      var parentId = $row.data("parent");
+      if (parentId) {
+        var $icon = $root.find('tr[data-id="' + parentId + '"] .schedule-row-expand i');
+        if ($icon.hasClass("is-collapsed")) toggleBizChildren(parentId, $icon);
+      }
+      $row.addClass("schedule-row-highlighted");
+      try { $row[0].scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {}
+      try {
+        var cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete("highlight");
+        window.history.replaceState({}, "", cleanUrl.toString());
+      } catch (e) {}
+      setTimeout(function () { $row.removeClass("schedule-row-highlighted"); }, 3500);
+    }
+  }
+
   if (params.get("tab") === "indep") {
     var $indepTab = $root.find('.schedule-data-tab[data-type="independentRD"]');
     if ($indepTab.length) {
