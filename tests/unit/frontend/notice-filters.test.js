@@ -3,10 +3,6 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const personalListSrc = fs.readFileSync(path.join(__dirname, '../../../web/static/js/po/personal-list.js'), 'utf8');
-const syncListUrlSrc = personalListSrc.match(/function syncListUrl\(p, state\) \{[\s\S]*?\n  \}/)[0];
-const bindSyncListUrl = (win) => new Function('window', 'return ' + syncListUrlSrc)(win);
-
 function loadNoticeScript(windowOverrides, documentOverrides) {
   const nodes = new Map();
   let ready;
@@ -45,8 +41,7 @@ function loadNoticeScript(windowOverrides, documentOverrides) {
     escapeHtml: (v) => String(v == null ? '' : v),
     objectTypeBadge: (k) => String(k || ''),
     loadPageSize: (_key, fallback) => fallback,
-    savePageSize() {},
-    renderPagination() {},
+    savePageSize() {}, renderPagination() {},
     reminderKindFromSubject,
     // 与 PersonalList.OBJECT_TYPE_SHORT_LABELS 保持一致：chip 上下文使用缩写 + "#" 分隔符。
     OBJECT_TYPE_SHORT_LABELS: {
@@ -102,7 +97,7 @@ function loadNoticeScript(windowOverrides, documentOverrides) {
     delete overrides.PersonalList;
   }
   const window = Object.assign(baseWindow, overrides);
-  window.PersonalList.syncListUrl = bindSyncListUrl(window);
+  window.PersonalList.syncListUrl = new Function('window', 'return ' + fs.readFileSync(path.join(__dirname, '../../../web/static/js/po/personal-list.js'), 'utf8').match(/function syncListUrl\(p, state\) \{[\s\S]*?\n  \}/)[0])(window);
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../../../web/static/js/po/notice.js'), 'utf8'), { window, document, URLSearchParams });
   return { nodes, ready, listCalls, window, document, reminderKindFromSubject };
 }
