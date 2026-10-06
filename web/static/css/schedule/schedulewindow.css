@@ -202,7 +202,8 @@
 .schedule-version-card.purple .schedule-version-bar span { background: var(--color-primary); }
 .schedule-version-meta {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, auto);
+  justify-content: space-between;
   gap: 4px 8px;
   margin-top: 5px;
   font-size: 10px;
@@ -330,9 +331,6 @@
   }
   .schedule-version-meta {
     margin-top: 4px;
-  }
-  .schedule-version-meta span:last-child {
-    display: none;
   }
   .schedule-version-meta i:nth-last-of-type(1) {
     display: none;
