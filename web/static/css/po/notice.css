@@ -208,7 +208,7 @@
   font-size: 16px;
   font-weight: 700;
   margin: 0;
-  color: var(--po-t1, var(--color-text-deep));
+  color: var(--color-text-deep);
 }
 .notice-drawer-body {
   flex: 1;
@@ -230,7 +230,7 @@
 .notice-drawer .notice-detail-title {
   font-size: 15px;
   font-weight: 700;
-  color: var(--po-t1, var(--wb-text-primary));
+  color: var(--color-text-deep);
   line-height: 1.5;
   margin-bottom: 12px;
 }
