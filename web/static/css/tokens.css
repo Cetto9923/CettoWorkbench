@@ -33,19 +33,19 @@
 
   /* 语义状态色 (Semantic Colors) */
   /* 成功 (Success) */
-  --wb-success: #15803d;
+  --wb-success: var(--color-success);
   --wb-success-hover: #166534;
   --wb-success-light: #f0fdf4;
   --wb-success-border: #bbf7d0;
 
   /* 警告 / 临期 (Warning) */
-  --wb-warning: #b45309;
+  --wb-warning: var(--color-warning);
   --wb-warning-hover: #92400e;
   --wb-warning-light: #fffbeb;
   --wb-warning-border: #fde68a;
 
   /* 危险 / 超期 / 阻塞 / 驳回 (Danger) */
-  --wb-danger: #b91c1c;
+  --wb-danger: var(--color-danger);
   --wb-danger-hover: #991b1b;
   --wb-danger-light: #fef2f2;
   --wb-danger-border: #fecaca;
