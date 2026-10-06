@@ -106,7 +106,7 @@
 }
 
 #scheduleIntegratedModal input[type="date"].form-input[readonly] {
-  background: #f8fafc;
+  background: var(--color-surface-muted);
   color: var(--wb-text-tertiary);
   cursor: not-allowed;
 }
@@ -579,7 +579,7 @@
 }
 
 .rd-task-table-head-row {
-  background: #f9fafb;
+  background: var(--color-surface-muted);
 }
 
 .rd-task-th {

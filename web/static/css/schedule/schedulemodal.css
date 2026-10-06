@@ -652,7 +652,7 @@
 }
 
 .task-list-modal-table thead th {
-  background: #f8fafc;
+  background: var(--color-surface-muted);
   color: var(--t2);
   font-weight: 600;
 }
