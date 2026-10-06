@@ -40,13 +40,13 @@
 
   /* 警告 / 临期 (Warning) */
   --wb-warning: var(--color-warning);
-  --wb-warning-hover: #92400e;
+  --wb-warning-hover: #78350f;
   --wb-warning-light: #fffbeb;
   --wb-warning-border: #fde68a;
 
   /* 危险 / 超期 / 阻塞 / 驳回 (Danger) */
   --wb-danger: var(--color-danger);
-  --wb-danger-hover: #991b1b;
+  --wb-danger-hover: #7f1d1d;
   --wb-danger-light: #fef2f2;
   --wb-danger-border: #fecaca;
 
