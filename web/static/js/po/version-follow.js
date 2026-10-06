@@ -333,7 +333,7 @@
   }
 
   function bindEvents() {
-    if (el.vfWindowId) el.vfWindowId.addEventListener("change", function () { selectWindow(el.vfWindowId.value); });
+    if (el.vfWindowId) el.vfWindowId.addEventListener("change", function () { if (Number(el.vfWindowId.value) !== state.windowId) selectWindow(el.vfWindowId.value); });
     if (el.vfWindowChips) {
       el.vfWindowChips.addEventListener("click", function (e) {
         var b = e.target.closest("[data-window-id]");
