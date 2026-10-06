@@ -110,6 +110,8 @@ function itemsFetch(url) {
   assert.equal(fail.selects.doneAction.disabled, true);
   assert.match(fail.selects.doneAction.innerHTML, /全部操作/);
 
+  assert.doesNotMatch(source, /wb-done-seg/, "已办分段按钮应复用 relation-segment");
+  assert.match(fs.readFileSync("web/templates/po/done.html", "utf8"), /class="relation-segment" role="group" aria-label="操作范围"/);
   console.log("PASS: done status labels + loadMeta failure toast");
 })().catch((err) => {
   console.error(err);

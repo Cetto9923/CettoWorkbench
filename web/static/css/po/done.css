@@ -17,33 +17,6 @@
 .wb-done-toolbar {
   margin-bottom: 0;
 }
-.wb-done-seg-set {
-  display: inline-flex;
-  height: 28px;
-  padding: 2px;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  background: var(--color-surface-muted);
-  box-sizing: border-box;
-}
-.wb-done-seg {
-  border: 0;
-  background: transparent;
-  color: var(--color-text-secondary);
-  font-size: 11px;
-  height: 22px;
-  padding: 0 8px;
-  border-radius: 3px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all .15s ease;
-}
-.wb-done-seg.active {
-  background: var(--color-surface);
-  color: var(--color-info);
-  font-weight: 600;
-  box-shadow: var(--shadow-sm);
-}
 .wb-done-select {
   height: 28px;
   padding: 0 8px;

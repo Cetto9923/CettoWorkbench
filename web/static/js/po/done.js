@@ -417,9 +417,9 @@
     });
 
     // 核心已办 / 全部操作 切换
-    document.querySelectorAll(".wb-done-seg").forEach(function (btn) {
+    document.querySelectorAll(".relation-segment button").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        document.querySelectorAll(".wb-done-seg").forEach(function (b) { b.classList.remove("active"); });
+        document.querySelectorAll(".relation-segment button").forEach(function (b) { b.classList.remove("active"); });
         btn.classList.add("active");
         state.mode = btn.getAttribute("data-mode") || "core";
         state.page = 1;
@@ -469,7 +469,7 @@
         if (actSel) actSel.value = "";
         if (resSel) resSel.value = "";
         if (prjSel) prjSel.value = "";
-        document.querySelectorAll(".wb-done-seg").forEach(function (b) {
+        document.querySelectorAll(".relation-segment button").forEach(function (b) {
           b.classList.toggle("active", b.getAttribute("data-mode") === "core");
         });
         loadMeta("").then(function () { loadList(); });
