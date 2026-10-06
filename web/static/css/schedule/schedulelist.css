@@ -247,10 +247,10 @@
   white-space: nowrap;
   box-sizing: border-box;
   overflow: hidden;
-  border: 1px solid var(--color-info, #2563eb);
+  border: 1px solid var(--color-info);
   background: var(--color-surface, var(--white));
   padding: 0;
-  color: var(--color-text-primary, #1e293b);
+  color: var(--color-text-primary);
   flex-shrink: 0;
 }
 
@@ -276,7 +276,7 @@
   text-align: center;
   height: 100%;
   padding: 0 6px;
-  color: var(--color-text-primary, #1e293b);
+  color: var(--color-text-primary);
   background: var(--color-surface, var(--white));
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 11px;
@@ -334,7 +334,7 @@
 }
 
 .schedule-title-link {
-  color: var(--color-text-primary, #0f172a);
+  color: var(--color-text-primary);
   cursor: pointer;
   font-weight: 500;
   text-decoration: none;
@@ -359,7 +359,7 @@
 }
 
 .schedule-title-link:hover {
-  color: var(--color-primary, #2563eb);
+  color: var(--color-primary);
   text-decoration: underline;
 }
 
@@ -374,8 +374,8 @@
 }
 
 .window-status-tag.ok {
-  background: var(--color-badge-success-bg, #dcfce7);
-  color: var(--color-badge-success-fg, #16a34a);
+  background: var(--color-badge-success-bg);
+  color: var(--color-badge-success-fg);
 }
 
 .stage-tag {
@@ -384,20 +384,20 @@
   border-radius: 4px;
   font-size: 11px;
   font-weight: 500;
-  background: var(--color-badge-neutral-bg, #f3f4f6);
+  background: var(--color-badge-neutral-bg);
   color: var(--color-badge-neutral-fg, var(--t2));
 }
 
 .stage-tag--draft {
-  background: var(--color-badge-warning-bg, #fef3c7);
-  color: var(--color-badge-warning-fg, #d97706);
-  border: 1px solid var(--color-badge-warning-border, #fde68a);
+  background: var(--color-badge-warning-bg);
+  color: var(--color-badge-warning-fg);
+  border: 1px solid var(--color-badge-warning-border);
 }
 
 .stage-tag--final {
-  background: var(--color-badge-success-bg, #d1fae5);
-  color: var(--color-badge-success-fg, #059669);
-  border: 1px solid var(--color-badge-success-border, #a7f3d0);
+  background: var(--color-badge-success-bg);
+  color: var(--color-badge-success-fg);
+  border: 1px solid var(--color-badge-success-border);
 }
 
 .window-name-tag-inline {

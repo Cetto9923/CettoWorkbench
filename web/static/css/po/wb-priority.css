@@ -403,13 +403,13 @@
 .wb-status-tag.wb-status-neutral,
 .wb-status-tag.wb-status-gray,
 .done-tag.gray {
-  background: var(--color-surface-muted, #f8fafc);
-  color: var(--color-text-secondary, #64748b);
-  border-color: var(--color-border, #e2e8f0);
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
 }
 .wb-status-tag.wb-status-neutral .wb-status-dot,
 .wb-status-tag.wb-status-gray .wb-status-dot {
-  background: var(--color-text-disabled, #94a3b8);
+  background: var(--color-text-disabled);
 }
 
 /* ---------------- 深色模式精细化反差适配 ---------------- */

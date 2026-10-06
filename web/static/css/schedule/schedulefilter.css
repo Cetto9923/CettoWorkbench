@@ -288,8 +288,8 @@
 }
 
 #page-schedule .schedule-filter-tag-del:hover {
-  background: var(--color-danger-bg, #fee2e2);
-  color: var(--color-danger, #ef4444);
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
 }
 
 #page-schedule .schedule-active-filter-clear {

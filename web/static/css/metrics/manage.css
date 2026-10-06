@@ -15,8 +15,8 @@
   justify-content: space-between;
   gap: 12px;
   padding: 10px 16px;
-  background: var(--color-surface, #ffffff);
-  border-bottom: 1px solid var(--color-border, #e2e8f0);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
 }
 .po-metrics-manage .toolbar-filters-group {
   display: flex;
@@ -38,7 +38,7 @@
 }
 .po-metrics-manage .filter-label {
   font-size: 12px;
-  color: var(--color-text-secondary, #64748b);
+  color: var(--color-text-secondary);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -46,19 +46,19 @@
   height: 32px;
   padding: 0 10px;
   border-radius: 5px;
-  border: 1px solid var(--color-border, #cbd5e1);
-  background: var(--color-surface, #fff);
-  color: var(--po-t1, #1e293b);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--po-t1);
   font-size: 12px;
   outline: none;
   transition: all 0.15s ease;
   cursor: pointer;
 }
 .po-metrics-manage .workspace-toolbar select:hover {
-  border-color: var(--color-primary, #6366f1);
+  border-color: var(--color-primary);
 }
 .po-metrics-manage .workspace-toolbar select:focus {
-  border-color: var(--color-primary, #6366f1);
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
 }
 
@@ -121,7 +121,7 @@
   border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 10px 14px;
-  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.04));
+  box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -157,20 +157,20 @@
 
 /* 数字专属语义色：仅数字着色，边框与底色保持统一的沉稳表面！ */
 .po-metrics-manage .metric-summary-card.c-enabled .m-sum-num {
-  color: var(--color-success, #059669);
+  color: var(--color-success);
 }
 .po-metrics-manage .metric-summary-card.c-warn .m-sum-num {
-  color: var(--color-warning, #d97706);
+  color: var(--color-warning);
 }
 .po-metrics-manage .metric-summary-card.c-danger .m-sum-num {
-  color: var(--color-danger, #dc2626);
+  color: var(--color-danger);
 }
 
 /* 基础单元类（双模式通用） */
 .po-metrics-manage .metric-target-val {
   font-weight: 700;
   font-family: ui-monospace, monospace;
-  color: var(--color-text-primary, #0f172a);
+  color: var(--color-text-primary);
 }
 /* 第5.7轮 G5：本表 9 列沿用 .workspace-table 的 table-layout:fixed，
    固定布局下只按首行等分，数据源列没有 th 宽度时只分到 105px，21 行里
@@ -184,7 +184,7 @@
 }
 .po-metrics-manage .metric-col-source {
   font-size: 12px;
-  color: var(--color-text-secondary, #475569);
+  color: var(--color-text-secondary);
   max-width: 300px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -206,13 +206,13 @@
 
 /* 深色模式下的指标管理概览卡片 (与 follow.css / shell.css 规范完全同频 · 高对比度优化) */
 html[data-theme="dark"] .po-metrics-manage .metric-summary-card {
-  background: var(--color-surface, #1e293b);
-  border-color: var(--color-border, #334155);
+  background: var(--color-surface);
+  border-color: var(--color-border);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 html[data-theme="dark"] .po-metrics-manage .metric-summary-card:hover {
-  background: var(--color-surface-hover, #334155);
-  border-color: var(--color-border-strong, #475569);
+  background: var(--color-surface-hover);
+  border-color: var(--color-border-strong);
 }
 html[data-theme="dark"] .po-metrics-manage .m-sum-label {
   color: var(--color-text-body);

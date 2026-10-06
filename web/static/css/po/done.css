@@ -215,8 +215,8 @@
   font-family: inherit;
 }
 .done-ctx-pool { color: var(--wb-text-primary); font-weight: 600; }
-.done-ctx-project { color: var(--po-t2, var(--color-text-body, #4b5563)); }
-.done-ctx-exec { color: var(--po-t3, var(--color-text-secondary, #6b7280)); }
+.done-ctx-project { color: var(--po-t2, var(--color-text-body)); }
+.done-ctx-exec { color: var(--po-t3, var(--color-text-secondary)); }
 .done-ctx-pool.done-ctx-na,
 .done-ctx-project.done-ctx-na,
 .done-ctx-exec.done-ctx-na { color: var(--color-text-secondary); }

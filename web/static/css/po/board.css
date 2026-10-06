@@ -300,18 +300,18 @@ html[data-theme="dark"] .po-board {
   --t1: #f8fafc;
   --t2: #cbd5e1;
   --t3: #94a3b8; /* 核心调整：从极暗的 #475569 提升为 #94a3b8，对比度超 5.5:1 */
-  --navy: var(--color-badge-info-fg, #60a5fa);
-  --blue-bg: var(--color-badge-info-bg, rgba(59, 130, 246, 0.18));
-  --blue-bd: var(--color-badge-info-border, rgba(59, 130, 246, 0.38));
-  --green: var(--color-badge-success-fg, #34d399);
-  --green-bg: var(--color-badge-success-bg, rgba(16, 185, 129, 0.15));
-  --green-bd: var(--color-badge-success-border, rgba(16, 185, 129, 0.35));
-  --orange: var(--color-badge-warning-fg, #fbbf24);
-  --orange-bg: var(--color-badge-warning-bg, rgba(245, 158, 11, 0.15));
-  --orange-bd: var(--color-badge-warning-border, rgba(245, 158, 11, 0.35));
-  --red: var(--color-badge-danger-fg, #f87171);
-  --red-bg: var(--color-badge-danger-bg, rgba(239, 68, 68, 0.15));
-  --red-bd: var(--color-badge-danger-border, rgba(239, 68, 68, 0.35));
+  --navy: var(--color-badge-info-fg);
+  --blue-bg: var(--color-badge-info-bg);
+  --blue-bd: var(--color-badge-info-border);
+  --green: var(--color-badge-success-fg);
+  --green-bg: var(--color-badge-success-bg);
+  --green-bd: var(--color-badge-success-border);
+  --orange: var(--color-badge-warning-fg);
+  --orange-bg: var(--color-badge-warning-bg);
+  --orange-bd: var(--color-badge-warning-border);
+  --red: var(--color-badge-danger-fg);
+  --red-bg: var(--color-badge-danger-bg);
+  --red-bd: var(--color-badge-danger-border);
 }
 /* 1. 泳道网格与表头清晰化（解决泳道边界隐形丢失问题） */
 html[data-theme="dark"] .po-board .demand-board,

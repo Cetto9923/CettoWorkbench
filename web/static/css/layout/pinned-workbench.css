@@ -122,17 +122,17 @@ html[data-theme="dark"] body.po-workbench-shell [data-subnav-panel="personal"] .
 }
 
 .pinned-manage-btn.is-editing {
-  color: var(--color-text-on-accent, #ffffff) !important;
-  background: var(--color-info-fill, #2563eb);
-  border-color: var(--color-info-fill, #2563eb);
+  color: var(--color-text-on-accent) !important;
+  background: var(--color-info-fill);
+  border-color: var(--color-info-fill);
   font-weight: 500;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 .pinned-manage-btn.is-editing:hover {
-  background: var(--color-info-fill-hover, #1d4ed8);
-  border-color: var(--color-info-fill-hover, #1d4ed8);
-  color: var(--color-text-on-accent, #ffffff) !important;
+  background: var(--color-info-fill-hover);
+  border-color: var(--color-info-fill-hover);
+  color: var(--color-text-on-accent) !important;
 }
 
 /* 常用项列表 */
@@ -256,7 +256,7 @@ html[data-theme="dark"] body.po-workbench-shell [data-subnav-panel="personal"] .
 .po-pinned-list.is-editing .nav-item .nav-item-unpin:hover {
   opacity: 1;
   background: var(--color-danger-fill);
-  color: var(--color-text-on-accent, #ffffff);
+  color: var(--color-text-on-accent);
   transform: scale(1.15) !important;
 }
 

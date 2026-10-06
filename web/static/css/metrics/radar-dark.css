@@ -9,15 +9,15 @@
    三、 深色模式下的指标雷达大屏 (html[data-theme="dark"] .po-metrics-radar)
    ----------------------------------------------------------------------------- */
 html[data-theme="dark"] .po-metrics-radar.radar-screen-container {
-  background: var(--color-page-bg, #0f172a);
+  background: var(--color-page-bg);
 }
 html[data-theme="dark"] .po-metrics-radar .radar-screen-header {
-  background: var(--color-surface, #1e293b);
-  border-color: var(--color-border, #334155);
+  background: var(--color-surface);
+  border-color: var(--color-border);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 html[data-theme="dark"] .po-metrics-radar .radar-screen-title {
-  color: var(--color-text-primary, #f8fafc);
+  color: var(--color-text-primary);
 }
 html[data-theme="dark"] .po-metrics-radar .radar-brand-badge {
   background: rgba(59, 130, 246, 0.15);
@@ -26,8 +26,8 @@ html[data-theme="dark"] .po-metrics-radar .radar-brand-badge {
 }
 html[data-theme="dark"] .po-metrics-radar .scope-chip {
   background: rgba(255, 255, 255, 0.04);
-  border-color: var(--color-border, #334155);
-  color: var(--color-text-secondary, #94a3b8);
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
 }
 html[data-theme="dark"] .po-metrics-radar .scope-chip.target {
   background: rgba(59, 130, 246, 0.12);
@@ -41,25 +41,25 @@ html[data-theme="dark"] .po-metrics-radar .scope-chip.time {
 }
 html[data-theme="dark"] .po-metrics-radar .radar-view-mode-tabs {
   background: var(--color-surface-muted);
-  border-color: var(--color-border, #334155);
+  border-color: var(--color-border);
 }
 html[data-theme="dark"] .po-metrics-radar .radar-mode-btn {
-  color: var(--color-text-secondary, #94a3b8);
+  color: var(--color-text-secondary);
 }
 html[data-theme="dark"] .po-metrics-radar .radar-mode-btn.active {
   background: #2563eb;
   color: var(--color-text-inverse);
 }
 html[data-theme="dark"] .po-metrics-radar .radar-select-group .ctrl-label {
-  color: var(--color-text-secondary, #94a3b8);
+  color: var(--color-text-secondary);
 }
 html[data-theme="dark"] .po-metrics-radar .radar-select-group .custom-select-box select {
   background: var(--color-surface-muted);
-  border-color: var(--color-border, #334155);
-  color: var(--color-text-primary, #f8fafc);
+  border-color: var(--color-border);
+  color: var(--color-text-primary);
 }
 html[data-theme="dark"] .po-metrics-radar .radar-select-group .custom-select-box .select-arrow {
-  color: var(--color-text-secondary, #94a3b8);
+  color: var(--color-text-secondary);
 }
 html[data-theme="dark"] .po-metrics-radar .pmo-config-btn {
   background: rgba(59, 130, 246, 0.12);
@@ -73,21 +73,21 @@ html[data-theme="dark"] .po-metrics-radar .pmo-config-btn:hover {
 
 /* 深色 KPI 跑道 (统一卡片表面，与工作台深色完全一致) */
 html[data-theme="dark"] .po-metrics-radar .radar-kpi-block {
-  background: var(--color-surface, #1e293b);
-  border-color: var(--color-border, #334155);
+  background: var(--color-surface);
+  border-color: var(--color-border);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 html[data-theme="dark"] .po-metrics-radar .radar-kpi-block:hover {
-  border-color: var(--color-border-strong, #475569);
+  border-color: var(--color-border-strong);
 }
 html[data-theme="dark"] .po-metrics-radar .radar-kpi-block .kpi-label {
-  color: var(--color-text-secondary, #94a3b8);
+  color: var(--color-text-secondary);
 }
 html[data-theme="dark"] .po-metrics-radar .radar-kpi-block strong {
-  color: var(--color-text-primary, #f8fafc);
+  color: var(--color-text-primary);
 }
 html[data-theme="dark"] .po-metrics-radar .radar-kpi-block .kpi-unit-tag {
-  color: var(--color-text-secondary, #94a3b8);
+  color: var(--color-text-secondary);
 }
 html[data-theme="dark"] .po-metrics-radar .radar-kpi-block .kpi-sub-text {
   color: var(--wb-text-secondary);
@@ -105,29 +105,29 @@ html[data-theme="dark"] .po-metrics-radar .kpi-progress-wrap {
 html[data-theme="dark"] .po-metrics-radar .radar-kpi-block.kpi-warning strong { color: var(--color-warning); }
 html[data-theme="dark"] .po-metrics-radar .radar-kpi-block.kpi-danger strong { color: var(--color-danger); }
 html[data-theme="dark"] .po-metrics-radar .radar-kpi-block.kpi-target strong.target-name {
-  color: var(--color-text-primary, #f8fafc);
+  color: var(--color-text-primary);
 }
 
 /* 深色左侧栏 */
 html[data-theme="dark"] .po-metrics-radar .radar-chart-card {
-  background: var(--color-surface, #1e293b);
-  border-color: var(--color-border, #334155);
+  background: var(--color-surface);
+  border-color: var(--color-border);
 }
 html[data-theme="dark"] .po-metrics-radar .card-head-title {
-  color: var(--color-text-primary, #f8fafc);
+  color: var(--color-text-primary);
 }
 html[data-theme="dark"] .po-metrics-radar .card-head-title i {
   color: #3b82f6;
 }
 html[data-theme="dark"] .po-metrics-radar .radar-chart-legend {
-  color: var(--color-text-secondary, #94a3b8);
+  color: var(--color-text-secondary);
 }
 html[data-theme="dark"] .po-metrics-radar .radar-chart-legend .leg-dot.score { background: #3b82f6; }
 html[data-theme="dark"] .po-metrics-radar .radar-chart-legend .leg-dot.benchmark { background: #10b981; border-color: #10b981; }
 
 html[data-theme="dark"] .po-metrics-radar .radar-categories-card {
-  background: var(--color-surface, #1e293b);
-  border-color: var(--color-border, #334155);
+  background: var(--color-surface);
+  border-color: var(--color-border);
 }
 html[data-theme="dark"] .po-metrics-radar .card-head-hint {
   color: var(--color-text-secondary);
@@ -137,7 +137,7 @@ html[data-theme="dark"] .po-metrics-radar .radar-cat-card {
   border-color: rgba(255, 255, 255, 0.08);
 }
 html[data-theme="dark"] .po-metrics-radar .radar-cat-card:hover {
-  border-color: var(--color-border-strong, #475569);
+  border-color: var(--color-border-strong);
   background: rgba(255, 255, 255, 0.06);
 }
 html[data-theme="dark"] .po-metrics-radar .radar-cat-card.active {
@@ -148,7 +148,7 @@ html[data-theme="dark"] .po-metrics-radar .radar-cat-score.score-ok { color: var
 html[data-theme="dark"] .po-metrics-radar .radar-cat-score.score-warn { color: var(--color-warning); background: rgba(245, 158, 11, 0.12); }
 html[data-theme="dark"] .po-metrics-radar .radar-cat-score.score-danger { color: var(--color-danger); background: rgba(239, 68, 68, 0.12); }
 html[data-theme="dark"] .po-metrics-radar .radar-cat-counts-tag {
-  color: var(--color-text-secondary, #94a3b8);
+  color: var(--color-text-secondary);
 }
 html[data-theme="dark"] .po-metrics-radar .radar-cat-counts-tag .c-ok { color: var(--color-success); }
 html[data-theme="dark"] .po-metrics-radar .radar-cat-counts-tag .c-warn { color: var(--color-warning); }
@@ -159,25 +159,25 @@ html[data-theme="dark"] .po-metrics-radar .radar-cat-track {
 
 /* 深色右侧核心指标矩阵 */
 html[data-theme="dark"] .po-metrics-radar .radar-metrics-matrix-card {
-  background: var(--color-surface, #1e293b);
-  border-color: var(--color-border, #334155);
+  background: var(--color-surface);
+  border-color: var(--color-border);
 }
 html[data-theme="dark"] .po-metrics-radar .card-title-group i {
   color: #3b82f6;
 }
 html[data-theme="dark"] .po-metrics-radar .card-title-group .card-title {
-  color: var(--color-text-primary, #f8fafc);
+  color: var(--color-text-primary);
 }
 html[data-theme="dark"] .po-metrics-radar .card-title-group .card-sub-hint {
-  color: var(--color-text-secondary, #94a3b8);
+  color: var(--color-text-secondary);
 }
 html[data-theme="dark"] .po-metrics-radar .matrix-tag-btn {
-  border-color: var(--color-border, #334155);
+  border-color: var(--color-border);
   background: var(--color-surface-muted);
-  color: var(--color-text-secondary, #94a3b8);
+  color: var(--color-text-secondary);
 }
 html[data-theme="dark"] .po-metrics-radar .matrix-tag-btn:hover {
-  border-color: var(--color-border-strong, #475569);
+  border-color: var(--color-border-strong);
   color: var(--color-text-primary);
 }
 html[data-theme="dark"] .po-metrics-radar .matrix-tag-btn.active {
@@ -201,31 +201,31 @@ html[data-theme="dark"] .po-metrics-radar .radar-m-compact-tile.selected {
   box-shadow: 0 0 0 1px #3b82f6;
 }
 html[data-theme="dark"] .po-metrics-radar .m-name-text {
-  color: var(--color-text-primary, #f8fafc);
+  color: var(--color-text-primary);
 }
 html[data-theme="dark"] .po-metrics-radar .m-val-text {
-  color: var(--color-text-primary, #f8fafc);
+  color: var(--color-text-primary);
 }
 html[data-theme="dark"] .po-metrics-radar .m-mini-gauge {
   background: rgba(255, 255, 255, 0.08);
 }
 html[data-theme="dark"] .po-metrics-radar .m-target-text {
-  color: var(--color-text-secondary, #94a3b8);
+  color: var(--color-text-secondary);
 }
 html[data-theme="dark"] .po-metrics-radar .m-code-text {
-  color: var(--color-text-disabled, #64748b);
+  color: var(--color-text-disabled);
 }
 
 /* 深色底部透视控制台 */
 html[data-theme="dark"] .po-metrics-radar .radar-detail-dock {
-  background: var(--color-surface, #1e293b);
-  border-color: var(--color-border, #334155);
+  background: var(--color-surface);
+  border-color: var(--color-border);
 }
 html[data-theme="dark"] .po-metrics-radar .dock-title {
-  color: var(--color-text-primary, #f8fafc);
+  color: var(--color-text-primary);
 }
 html[data-theme="dark"] .po-metrics-radar .dock-code {
-  color: var(--color-text-disabled, #64748b);
+  color: var(--color-text-disabled);
   background: rgba(255, 255, 255, 0.05);
   border-color: transparent;
 }
@@ -233,27 +233,27 @@ html[data-theme="dark"] .po-metrics-radar .dock-val-item strong {
   color: var(--color-primary);
 }
 html[data-theme="dark"] .po-metrics-radar .dock-target-item {
-  color: var(--color-text-secondary, #94a3b8);
+  color: var(--color-text-secondary);
 }
 html[data-theme="dark"] .po-metrics-radar .dock-divider {
-  color: var(--color-border, #334155);
+  color: var(--color-border);
 }
 html[data-theme="dark"] .po-metrics-radar .dock-row-secondary {
-  color: var(--color-text-secondary, #94a3b8);
+  color: var(--color-text-secondary);
 }
 html[data-theme="dark"] .po-metrics-radar .dock-label {
-  color: var(--color-text-secondary, #94a3b8);
+  color: var(--color-text-secondary);
 }
 html[data-theme="dark"] .po-metrics-radar .dock-row-secondary code {
   background: var(--color-surface-muted);
   color: #38bdf8;
-  border-color: var(--color-border, #334155);
+  border-color: var(--color-border);
 }
 html[data-theme="dark"] .po-metrics-radar .dock-sample-text {
-  color: var(--color-text-secondary, #94a3b8);
+  color: var(--color-text-secondary);
 }
 html[data-theme="dark"] .po-metrics-radar .dock-bullet {
-  color: var(--color-border, #334155);
+  color: var(--color-border);
 }
 html[data-theme="dark"] .po-metrics-radar .dock-config-link {
   background: rgba(59, 130, 246, 0.12);

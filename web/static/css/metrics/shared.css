@@ -16,8 +16,8 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   padding: 12px 14px;
-  background: var(--color-surface-soft, #f8fafd);
-  border-bottom: 1px solid var(--color-border, #e2e8f0);
+  background: var(--color-surface-soft);
+  border-bottom: 1px solid var(--color-border);
 }
 .po-metrics-manage .metric-summary-card {
   display: flex;
@@ -26,30 +26,30 @@
   justify-content: center;
   min-height: 56px;
   padding: 8px 12px;
-  background: var(--color-surface, #ffffff);
-  border: 1px solid var(--color-border, #e2e8f0);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
-  box-shadow: 0 1px 2px var(--color-shadow-02, rgba(0, 0, 0, 0.02));
+  box-shadow: 0 1px 2px var(--color-shadow-02);
 }
 .po-metrics-manage .metric-summary-card em {
   font-style: normal;
   font-size: 11px;
-  color: var(--color-text-disabled, #94a3b8);
+  color: var(--color-text-disabled);
   margin-bottom: 4px;
 }
 .po-metrics-manage .metric-summary-card strong {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 20px;
   font-weight: 700;
-  color: var(--po-t1, #1e293b);
+  color: var(--po-t1);
   line-height: 1.1;
 }
 .po-metrics-manage .metric-summary-card.warn {
-  border-color: var(--color-warning-border, #fed7aa);
-  background: var(--color-warning-bg, #fef3c7);
+  border-color: var(--color-warning-border);
+  background: var(--color-warning-bg);
 }
 .po-metrics-manage .metric-summary-card.warn strong {
-  color: var(--color-warning, #92400e);
+  color: var(--color-warning);
 }
 @media (max-width: 860px) {
   .po-metrics-manage .metric-summary-cards {
@@ -66,20 +66,20 @@
   border-radius: 3px;
   font-size: 11px;
   font-weight: 600;
-  border: 1px solid var(--color-border, #e2e8f0);
-  background: var(--color-surface-soft, #f8fafd);
-  color: var(--color-text-secondary, #64748b);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-soft);
+  color: var(--color-text-secondary);
   white-space: nowrap;
 }
 .po-metrics-manage .metric-category.cat-demand {
-  border-color: var(--color-info-border, #bfdbfe);
-  background: var(--color-info-bg, #eff6ff);
-  color: var(--color-info, #2563eb);
+  border-color: var(--color-info-border);
+  background: var(--color-info-bg);
+  color: var(--color-info);
 }
 .po-metrics-manage .metric-category.cat-delivery {
-  border-color: var(--color-primary-border, #c7d2fe);
-  background: var(--color-primary-light, #eef2ff);
-  color: var(--color-primary, #6366f1);
+  border-color: var(--color-primary-border);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
 }
 /* 第5.7轮 G5：--color-primary 深色 #3b82f6 打在深色面仅 3.98，
    深色下改用为深色底设计的 --color-info（8.11），与 5.6 轮 B 组同源同解。 */
@@ -87,19 +87,19 @@ html[data-theme="dark"] .po-metrics-manage .metric-category.cat-delivery {
   color: var(--color-info);
 }
 .po-metrics-manage .metric-category.cat-quality {
-  border-color: var(--color-danger-border, #fecaca);
-  background: var(--color-danger-bg, #fee2e2);
-  color: var(--color-danger, #991b1b);
+  border-color: var(--color-danger-border);
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
 }
 .po-metrics-manage .metric-category.cat-compliance {
-  border-color: var(--color-warning-border, #fed7aa);
-  background: var(--color-warning-bg, #fef3c7);
-  color: var(--color-warning, #92400e);
+  border-color: var(--color-warning-border);
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
 }
 .po-metrics-manage .metric-category.cat-performance {
-  border-color: var(--color-success-border, #a7f3d0);
-  background: var(--color-success-bg, #d1fae5);
-  color: var(--color-success, #065f46);
+  border-color: var(--color-success-border);
+  background: var(--color-success-bg);
+  color: var(--color-success);
 }
 
 /* 指标名 / 编码 列 */
@@ -112,21 +112,21 @@ html[data-theme="dark"] .po-metrics-manage .metric-category.cat-delivery {
   border: 0;
   padding: 0;
   font: inherit;
-  color: var(--po-t1, #1e293b);
+  color: var(--po-t1);
   font-weight: 500;
   cursor: pointer;
   text-align: left;
   line-height: 1.4;
 }
 .po-metrics-manage .metric-table .metric-name:hover {
-  color: var(--po-blue, #2563eb);
+  color: var(--po-blue);
   text-decoration: underline;
 }
 .po-metrics-manage .metric-table .metric-code {
   display: block;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 10px;
-  color: var(--color-text-disabled, #94a3b8);
+  color: var(--color-text-disabled);
   margin-top: 2px;
   word-break: break-all;
   overflow-wrap: break-word;
@@ -149,18 +149,18 @@ html[data-theme="dark"] .po-metrics-manage .metric-category.cat-delivery {
 .po-metrics-manage .metric-target-row em {
   font-style: normal;
   font-size: 10px;
-  color: var(--color-text-disabled, #94a3b8);
+  color: var(--color-text-disabled);
   min-width: 28px;
 }
 .po-metrics-manage .metric-target-row[data-tone="t2"] span {
-  color: var(--po-t2, #64748b);
+  color: var(--po-t2);
   font-weight: 600;
 }
 .po-metrics-manage .metric-target-row[data-tone="warn"] span {
-  color: var(--color-warning, #92400e);
+  color: var(--color-warning);
 }
 .po-metrics-manage .metric-target-row[data-tone="danger"] span {
-  color: var(--color-danger, #991b1b);
+  color: var(--color-danger);
   font-weight: 600;
 }
 
@@ -173,30 +173,30 @@ html[data-theme="dark"] .po-metrics-manage .metric-category.cat-delivery {
   border-radius: 3px;
   font-size: 11px;
   font-weight: 600;
-  border: 1px solid var(--color-border, #e2e8f0);
-  background: var(--color-surface-soft, #f8fafd);
-  color: var(--color-text-secondary, #64748b);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-soft);
+  color: var(--color-text-secondary);
   white-space: nowrap;
 }
 .po-metrics-manage .metric-status.normal {
-  border-color: var(--color-success-border, #a7f3d0);
-  background: var(--color-success-bg, #d1fae5);
-  color: var(--color-success, #065f46);
+  border-color: var(--color-success-border);
+  background: var(--color-success-bg);
+  color: var(--color-success);
 }
 .po-metrics-manage .metric-status.warn {
-  border-color: var(--color-warning-border, #fed7aa);
-  background: var(--color-warning-bg, #fef3c7);
-  color: var(--color-warning, #92400e);
+  border-color: var(--color-warning-border);
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
 }
 .po-metrics-manage .metric-status.danger {
-  border-color: var(--color-danger-border, #fecaca);
-  background: var(--color-danger-bg, #fee2e2);
-  color: var(--color-danger, #991b1b);
+  border-color: var(--color-danger-border);
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
 }
 .po-metrics-manage .metric-status.unknown {
-  border-color: var(--color-border-strong, #cbd5e1);
-  background: var(--color-surface-soft-3, #f1f5f9);
-  color: var(--color-text-disabled, #94a3b8);
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-soft-3);
+  color: var(--color-text-disabled);
 }
 /* 第5.7轮 G5：深色下 --color-text-disabled 提亮到 #94a3b8 后，打在
    --color-surface-soft-3 深色 #334155 上仍只有 4.04，此处再提到
@@ -213,9 +213,9 @@ html[data-theme="dark"] .po-metrics-manage .metric-status.unknown {
   padding: 0 6px;
   border-radius: 3px;
   font-size: 11px;
-  border: 1px solid var(--color-border, #e2e8f0);
-  background: var(--color-surface-soft, #f8fafd);
-  color: var(--color-text-secondary, #64748b);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-soft);
+  color: var(--color-text-secondary);
 }
 
 /* 操作按钮（详情） */
@@ -226,16 +226,16 @@ html[data-theme="dark"] .po-metrics-manage .metric-status.unknown {
   height: 24px;
   padding: 0 10px;
   border-radius: 4px;
-  border: 1px solid var(--color-border, #e2e8f0);
-  background: var(--color-surface, #ffffff);
-  color: var(--color-text-secondary, #475569);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
   font-size: 11px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 .po-metrics-manage .action-btn:hover {
-  border-color: var(--color-primary, #6366f1);
-  color: var(--color-primary, #4f46e5);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 /* 雷达页沿用同一套紧凑矩形操作按钮，避免被通用圆形动作样式覆盖。 */
@@ -246,10 +246,10 @@ html[data-theme="dark"] .po-metrics-manage .metric-status.unknown {
   height: 24px;
   min-width: 42px;
   padding: 0 10px;
-  border: 1px solid var(--color-border, #e2e8f0);
+  border: 1px solid var(--color-border);
   border-radius: 4px !important;
-  background: var(--color-surface, #fff);
-  color: var(--color-text-secondary, #475569);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
   font-size: 11px;
   cursor: pointer;
 }
@@ -286,34 +286,34 @@ html[data-theme="dark"] .po-metrics-manage .metric-status.unknown {
   border-radius: 3px;
   font-size: 11px;
   font-weight: 600;
-  border: 1px solid var(--color-border, #e2e8f0);
-  background: var(--color-surface-soft, #f8fafd);
-  color: var(--color-text-secondary, #64748b);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-soft);
+  color: var(--color-text-secondary);
 }
 .po-metrics-radar .metric-category.cat-demand {
-  border-color: var(--color-info-border, #bfdbfe);
-  background: var(--color-info-bg, #eff6ff);
-  color: var(--color-info, #2563eb);
+  border-color: var(--color-info-border);
+  background: var(--color-info-bg);
+  color: var(--color-info);
 }
 .po-metrics-radar .metric-category.cat-delivery {
-  border-color: var(--color-primary-border, #c7d2fe);
-  background: var(--color-primary-light, #eef2ff);
-  color: var(--color-primary, #6366f1);
+  border-color: var(--color-primary-border);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
 }
 .po-metrics-radar .metric-category.cat-quality {
-  border-color: var(--color-danger-border, #fecaca);
-  background: var(--color-danger-bg, #fee2e2);
-  color: var(--color-danger, #991b1b);
+  border-color: var(--color-danger-border);
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
 }
 .po-metrics-radar .metric-category.cat-compliance {
-  border-color: var(--color-warning-border, #fed7aa);
-  background: var(--color-warning-bg, #fef3c7);
-  color: var(--color-warning, #92400e);
+  border-color: var(--color-warning-border);
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
 }
 .po-metrics-radar .metric-category.cat-performance {
-  border-color: var(--color-success-border, #a7f3d0);
-  background: var(--color-success-bg, #d1fae5);
-  color: var(--color-success, #065f46);
+  border-color: var(--color-success-border);
+  background: var(--color-success-bg);
+  color: var(--color-success);
 }
 .po-metrics-radar .metric-status.normal,
 .po-metrics-radar .metric-status.warn,
@@ -326,38 +326,38 @@ html[data-theme="dark"] .po-metrics-manage .metric-status.unknown {
   border-radius: 3px;
   font-size: 11px;
   font-weight: 600;
-  border: 1px solid var(--color-border, #e2e8f0);
-  background: var(--color-surface-soft, #f8fafd);
-  color: var(--color-text-secondary, #64748b);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-soft);
+  color: var(--color-text-secondary);
 }
 .po-metrics-radar .metric-status.normal {
-  border-color: var(--color-success-border, #a7f3d0);
-  background: var(--color-success-bg, #d1fae5);
-  color: var(--color-success, #065f46);
+  border-color: var(--color-success-border);
+  background: var(--color-success-bg);
+  color: var(--color-success);
 }
 .po-metrics-radar .metric-status.warn {
-  border-color: var(--color-warning-border, #fed7aa);
-  background: var(--color-warning-bg, #fef3c7);
-  color: var(--color-warning, #92400e);
+  border-color: var(--color-warning-border);
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
 }
 .po-metrics-radar .metric-status.danger {
-  border-color: var(--color-danger-border, #fecaca);
-  background: var(--color-danger-bg, #fee2e2);
-  color: var(--color-danger, #991b1b);
+  border-color: var(--color-danger-border);
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
 }
 .po-metrics-radar .metric-status.unknown {
-  border-color: var(--color-border-strong, #cbd5e1);
-  background: var(--color-surface-soft-3, #f1f5f9);
-  color: var(--color-text-disabled, #94a3b8);
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-soft-3);
+  color: var(--color-text-disabled);
 }
 
 /* 错误态占位 */
 .po-metrics-radar .state-placeholder.error {
   margin: 14px 14px 18px;
   padding: 12px;
-  border: 1px solid var(--color-danger-border, #fecaca);
-  background: var(--color-danger-bg, #fee2e2);
-  color: var(--color-danger, #991b1b);
+  border: 1px solid var(--color-danger-border);
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
   border-radius: 6px;
 }
 .po-metrics-radar .state-placeholder.error .retry-btn {
@@ -365,12 +365,12 @@ html[data-theme="dark"] .po-metrics-manage .metric-status.unknown {
   height: 24px;
   padding: 0 10px;
   border-radius: 4px;
-  border: 1px solid var(--color-danger, #dc2626);
-  background: var(--color-surface, #ffffff);
-  color: var(--color-danger, #991b1b);
+  border: 1px solid var(--color-danger);
+  background: var(--color-surface);
+  color: var(--color-danger);
   font-size: 11px;
   cursor: pointer;
 }
 .po-metrics-radar .state-placeholder.error .retry-btn:hover {
-  background: var(--color-danger-bg, #fee2e2);
+  background: var(--color-danger-bg);
 }

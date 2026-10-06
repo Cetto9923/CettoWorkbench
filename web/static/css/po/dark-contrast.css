@@ -280,7 +280,7 @@ html[data-theme="dark"] .po-profile .profile-avatar-sub {
  * ------------------------------------------------------------------------- */
 html[data-theme="dark"] .radar-cat-left .metric-category.cat-quality,
 html[data-theme="dark"] .radar-m-compact-tile .m-badge-pill.danger {
-  color: var(--color-danger-bright, #fca5a5);
+  color: var(--color-danger-bright);
 }
 
 /* ---------------------------------------------------------------------------

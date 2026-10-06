@@ -176,8 +176,8 @@ body.po-workbench-shell .topbar-row {
   cursor: pointer;
   text-decoration: none;
 }
-.po-header-icon:hover { color: var(--color-text-body); background: var(--color-surface-hover, rgba(0, 0, 0, 0.04)); }
-.po-header-icon.active { color: var(--color-info); background: var(--color-info-bg, rgba(24, 144, 255, 0.08)); }
+.po-header-icon:hover { color: var(--color-text-body); background: var(--color-surface-hover); }
+.po-header-icon.active { color: var(--color-info); background: var(--color-info-bg); }
 
 
 /* 主题快捷切换按钮 (Quick Theme Toggle) */

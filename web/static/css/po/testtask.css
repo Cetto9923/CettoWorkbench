@@ -5,14 +5,14 @@
  * ========================================================================== */
 
 :root {
-  --tt-primary: var(--color-primary, #2563eb);
-  --tt-page: var(--color-page-bg, #f8fafc);
-  --tt-border: var(--color-border, #e2e8f0);
-  --tt-warn: var(--color-danger, #dc2626);
-  --tt-secondary: var(--color-text-secondary, #64748b);
-  --tt-green: var(--color-success, #16a34a);
-  --tt-orange: var(--color-warning, #d97706);
-  --tt-text: var(--color-text-primary, #0f172a);
+  --tt-primary: var(--color-primary);
+  --tt-page: var(--color-page-bg);
+  --tt-border: var(--color-border);
+  --tt-warn: var(--color-danger);
+  --tt-secondary: var(--color-text-secondary);
+  --tt-green: var(--color-success);
+  --tt-orange: var(--color-warning);
+  --tt-text: var(--color-text-primary);
 }
 
 .po-testtask-overlay {
@@ -56,7 +56,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 12px 16px;
-  background: var(--color-surface, #ffffff);
+  background: var(--color-surface);
   border-bottom: 1px solid var(--tt-border);
   flex-shrink: 0;
 }
@@ -74,7 +74,7 @@
   display: inline-flex;
   padding: 1px 8px;
   border-radius: 999px;
-  background: var(--color-surface-muted, #f8fafc);
+  background: var(--color-surface-muted);
   color: var(--tt-secondary);
   font-size: 12px;
   font-weight: 600;
@@ -83,7 +83,7 @@
 .po-testtask-modal-close {
   border: 0;
   background: none;
-  color: var(--color-text-secondary, #64748b);
+  color: var(--color-text-secondary);
   cursor: pointer;
   font-size: 16px;
   padding: 4px;
@@ -126,13 +126,13 @@
   padding: 0 8px;
   border-radius: 6px;
   background: var(--tt-primary);
-  color: var(--color-text-on-accent, #ffffff);
+  color: var(--color-text-on-accent);
   font-size: 12px;
   font-weight: 500;
 }
 
 .po-testtask-panel {
-  background: var(--color-surface, #ffffff);
+  background: var(--color-surface);
   border: 1px solid var(--tt-border);
   border-radius: 6px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
@@ -153,7 +153,7 @@
   height: 20px;
   border-radius: 50%;
   background: var(--tt-primary);
-  color: var(--color-text-on-accent, #ffffff);
+  color: var(--color-text-on-accent);
   font-size: 11px;
   display: inline-flex;
   align-items: center;
@@ -196,7 +196,7 @@
   justify-content: center;
   font-size: 12px;
   border: 2px solid var(--tt-border);
-  background: var(--color-surface, #ffffff);
+  background: var(--color-surface);
   color: var(--tt-secondary);
   box-sizing: border-box;
 }
@@ -205,7 +205,7 @@
 .po-testtask-step-dot.is-done {
   background: var(--tt-primary);
   border-color: var(--tt-primary);
-  color: var(--color-text-on-accent, #ffffff);
+  color: var(--color-text-on-accent);
 }
 
 .po-testtask-step-line {
@@ -264,7 +264,7 @@
   border-radius: 4px;
   font-size: 11px;
   font-weight: 500;
-  color: var(--color-text-on-accent, #ffffff);
+  color: var(--color-text-on-accent);
 }
 
 .po-testtask-sys-badge.is-main {
@@ -333,7 +333,7 @@
   font-size: 12px;
   font-family: inherit;
   color: var(--tt-text);
-  background: var(--color-surface, #ffffff);
+  background: var(--color-surface);
   box-sizing: border-box;
 }
 
@@ -350,7 +350,7 @@
 }
 
 .po-testtask-field .is-readonly {
-  background: var(--color-surface-muted, #f8fafc);
+  background: var(--color-surface-muted);
   color: var(--tt-secondary);
   cursor: not-allowed;
 }
@@ -377,7 +377,7 @@
   border: 1px solid var(--tt-border);
   border-radius: 4px;
   padding: 8px;
-  background: var(--color-page-bg, #f8fafc);
+  background: var(--color-page-bg);
   font-size: 12px;
   color: var(--tt-secondary);
 }
@@ -414,7 +414,7 @@
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  background: var(--color-surface, #ffffff);
+  background: var(--color-surface);
   border: 1px solid var(--tt-border);
   border-radius: 6px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);

@@ -357,7 +357,7 @@
   margin-top: 10px; width: 100%; box-sizing: border-box;
   border: 1px dashed var(--color-border-subtle, var(--border));
   border-radius: var(--wb-radius-md, 6px); padding: 10px 14px;
-  background: var(--wb-bg-muted, rgba(0, 0, 0, 0.02));
+  background: var(--wb-bg-muted);
   color: var(--color-text-body, var(--t1));
 }
 .task-iteration-form summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--color-primary); user-select: none; }

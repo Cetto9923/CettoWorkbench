@@ -350,12 +350,12 @@
   user-select: none;
   font-size: 12px;
   font-weight: 500;
-  color: var(--color-text-body, #334155);
+  color: var(--color-text-body);
   transition: all 0.15s ease;
 }
 
 :is(.po-profile, .profile-modal) .role-checkbox-card:hover {
-  background: var(--color-surface-hover, #f1f5f9);
+  background: var(--color-surface-hover);
   border-color: var(--wb-primary-border);
 }
 
@@ -547,30 +547,30 @@
 
 /* 暗色主题适配 (html[data-theme="dark"]) */
 html[data-theme="dark"] #profileModal.profile-modal {
-  background: var(--color-surface, #111827);
-  border-color: var(--color-border, #1f293d);
+  background: var(--color-surface);
+  border-color: var(--color-border);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
 html[data-theme="dark"] :is(.po-profile, .profile-modal) .modal-head,
 html[data-theme="dark"] :is(.po-profile, .profile-modal) .modal-content-grid {
-  background: var(--color-surface, #111827);
+  background: var(--color-surface);
 }
 
 html[data-theme="dark"] :is(.po-profile, .profile-modal) .theme-pill-btn {
-  background: var(--color-surface-muted, #172033);
-  border-color: var(--color-border, #1f293d);
-  color: var(--color-text-secondary, #94a3b8);
+  background: var(--color-surface-muted);
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
 }
 
 html[data-theme="dark"] :is(.po-profile, .profile-modal) .section-panel {
-  background: var(--color-surface, #111827);
-  border-color: var(--color-border, #1f293d);
+  background: var(--color-surface);
+  border-color: var(--color-border);
 }
 
 html[data-theme="dark"] :is(.po-profile, .profile-modal) .user-identity-card {
-  background: var(--color-surface-muted, #172033);
-  border-color: var(--color-border, #1f293d);
+  background: var(--color-surface-muted);
+  border-color: var(--color-border);
 }
 
 html[data-theme="dark"] :is(.po-profile, .profile-modal) .user-account-badge,
@@ -581,22 +581,22 @@ html[data-theme="dark"] :is(.po-profile, .profile-modal) .agile-chip-pill {
 }
 
 html[data-theme="dark"] :is(.po-profile, .profile-modal) .field-control {
-  background: var(--color-surface, #111827);
-  border-color: var(--color-border, #1f293d);
-  color: var(--color-text-primary, #f8fafc);
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text-primary);
 }
 
 html[data-theme="dark"] :is(.po-profile, .profile-modal) .field-control:disabled,
 html[data-theme="dark"] :is(.po-profile, .profile-modal) .field-control[readonly] {
-  background: var(--color-surface-muted, #172033);
-  color: var(--color-text-muted, #64748b);
-  border-color: var(--color-border, #1f293d);
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+  border-color: var(--color-border);
 }
 
 html[data-theme="dark"] :is(.po-profile, .profile-modal) .role-checkbox-card {
-  background: var(--color-surface-muted, #172033);
-  border-color: var(--color-border, #1f293d);
-  color: var(--color-text-body, #cbd5e1);
+  background: var(--color-surface-muted);
+  border-color: var(--color-border);
+  color: var(--color-text-body);
 }
 
 html[data-theme="dark"] :is(.po-profile, .profile-modal) .role-checkbox-card.selected {
@@ -607,19 +607,19 @@ html[data-theme="dark"] :is(.po-profile, .profile-modal) .role-checkbox-card.sel
 
 html[data-theme="dark"] :is(.po-profile, .profile-modal) .modal-bottom-bar,
 html[data-theme="dark"] :is(.po-profile, .profile-modal) .profile-page-bottom-bar {
-  background: var(--color-surface-muted, #172033);
-  border-color: var(--color-border, #1f293d);
+  background: var(--color-surface-muted);
+  border-color: var(--color-border);
 }
 
 html[data-theme="dark"] :is(.po-profile, .profile-modal) .btn-modal-cancel {
-  background: var(--color-surface, #111827);
-  border-color: var(--color-border, #1f293d);
-  color: var(--color-text-secondary, #94a3b8);
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
 }
 
 html[data-theme="dark"] :is(.po-profile, .profile-modal) .btn-modal-cancel:hover {
-  background: var(--color-surface-hover, #1e293b);
-  color: var(--color-text-primary, #f8fafc);
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
 }
 
 /* 提取的语义化辅助样式 (F4 消除行内 style) */
