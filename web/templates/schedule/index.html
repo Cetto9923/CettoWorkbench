@@ -58,7 +58,6 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
                 <span>容量 <b>{{ $w.CapacityHours }}H</b></span>
                 <span>已占用 <b>{{ $w.UsedHours }}H</b></span>
                 <span>剩余 <b{{ if lt $w.RemainingHours 0 }} class="schedule-remaining-over"{{ end }}>{{ $w.RemainingHours }}H</b></span>
-                <span>阻塞 <b>{{ $w.BlockedCount }}</b></span>
               </div>
             </div>
             <div class="schedule-version-card-actions">
@@ -66,19 +65,8 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
                 <i class="fas fa-ellipsis-vertical"></i>
               </button>
               <div class="version-card-dropdown">
-                <button type="button"
-                  class="js-edit-version-window{{ if not $w.CanEdit }} is-disabled{{ end }}"
-                  data-window-id="{{ $w.ID }}"
-                  data-window-name="{{ $w.ShortName }}"
-                  {{ if not $w.CanEdit }}disabled title="非本人创建，无法维护"{{ end }}><i class="fas fa-pen"></i> 编辑</button>
-                <button type="button"
-                  class="js-delete-version-window{{ if not $w.CanDelete }} is-disabled{{ end }}"
-                  data-window-id="{{ $w.ID }}"
-                  data-window-name="{{ $w.ShortName }}"
-                  {{ if not $w.CanDelete }}
-                  disabled
-                  {{ if not $w.CanEdit }}title="非本人创建，无法维护"{{ else }}title="已关联需求，无法删除"{{ end }}
-                  {{ end }}><i class="fas fa-trash-can"></i> 删除</button>
+                <button type="button" class="js-edit-version-window{{ if not $w.CanEdit }} is-disabled{{ end }}" data-window-id="{{ $w.ID }}" data-window-name="{{ $w.ShortName }}" {{ if not $w.CanEdit }}disabled title="非本人创建，无法维护"{{ end }}><i class="fas fa-pen"></i> 编辑</button>
+                <button type="button" class="js-delete-version-window{{ if not $w.CanDelete }} is-disabled{{ end }}" data-window-id="{{ $w.ID }}" data-window-name="{{ $w.ShortName }}" {{ if not $w.CanDelete }}disabled {{ if not $w.CanEdit }}title="非本人创建，无法维护"{{ else }}title="已关联需求，无法删除"{{ end }}{{ end }}><i class="fas fa-trash-can"></i> 删除</button>
               </div>
             </div>
           </div>
@@ -96,24 +84,54 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
 
   <div id="scheduleListViewWrap" class="schedule-area" style="margin-bottom:16px">
     {{ $activeFilter := .ActiveFilter }}
-    <div class="schedule-quick-scope" id="scheduleQuickScope"
-         data-filter-counts-url="{{ .FilterCountsURL }}"
-         data-active-filter="{{ $activeFilter }}"
-         data-suspended="{{ if .SuspendedActive }}1{{ else }}0{{ end }}"
-         data-can-reuse="{{ if .CanReuseListTotal }}1{{ else }}0{{ end }}"
-         data-biz-total="{{ .BizTotal }}"
-         data-indep-total="{{ .IndependentTotal }}">
-      <span style="font-size:12px;font-weight:700;color:var(--t2);margin-right:4px"><i class="fas fa-bolt" style="color:var(--orange);margin-right:4px"></i>快捷筛选</span>
-      <button type="button" class="schedule-scope-chip{{ if eq $activeFilter "all_open" }} active{{ end }}" data-filter="all_open" data-biz-count="" data-indep-count="" title="显示全部未关闭的需求"><i class="fas fa-folder-open"></i>全部未关闭 <strong class="js-filter-count">—</strong></button>
-      <button type="button" class="schedule-scope-chip{{ if eq $activeFilter "unscheduled" }} active{{ end }}" data-filter="unscheduled" data-biz-count="" data-indep-count="" title="与我相关（指派人/BRA/澄清PM）且已澄清/开发中：未绑窗口 / 未转研发 / 未拆任务或任务无指派人"><i class="fas fa-hourglass-start"></i>待排期 <strong class="js-filter-count">—</strong></button>
-      <button type="button" class="schedule-scope-chip schedule-scope-chip--biz-only{{ if eq $activeFilter "pending_review" }} active{{ end }}" data-filter="pending_review" data-biz-count="" data-indep-count="" title="与我相关且状态为暂存/待评审/已驳回（与首页价值流「受理」一致）"><i class="fas fa-clipboard-check"></i>待受理 <strong class="js-filter-count">—</strong></button>
-      <button type="button" class="schedule-scope-chip schedule-scope-chip--biz-only{{ if eq $activeFilter "manager_reviewing" }} active{{ end }}" data-filter="manager_reviewing" data-biz-only="1" data-biz-count="" data-indep-count="" title="与我相关（指派人/BRA/澄清PM）且正在进行主管部门审批的业务需求"><i class="fas fa-stamp"></i>主管审批中 <strong class="js-filter-count">—</strong></button>
-      <button type="button" class="schedule-scope-chip{{ if eq $activeFilter "closed" }} active{{ end }}" data-filter="closed" data-biz-count="" data-indep-count="" title="所有已关闭的需求"><i class="fas fa-circle-check"></i>已关闭 <strong class="js-filter-count">—</strong></button>
-      <button type="button" class="schedule-suspended-toggle schedule-scope-chip--biz-only{{ if .SuspendedActive }} active{{ end }}" id="scheduleSuspendedToggle" title="叠加筛选：仅显示挂起的需求">
-        <span class="schedule-suspended-toggle-box" aria-hidden="true"><i class="fas fa-check"></i></span>
-        挂起 <strong class="js-suspended-count">(—)</strong>
-      </button>
-      <button type="button" class="action-btn schedule-clear-btn" id="scheduleClearFilters"><i class="fas fa-sliders"></i> 清空筛选</button>
+    {{ $activeWindow := false }}
+    {{ range .Windows }}
+      {{ if and (not $activeWindow) (index $.SelectedWindowMap .ID) }}
+        {{ $activeWindow = . }}
+      {{ end }}
+    {{ end }}
+    {{ if $activeWindow }}
+    <div id="windowActiveBanner" class="schedule-window-active-banner">
+      <div class="schedule-window-banner-info">
+        <span class="schedule-window-banner-title">
+          <i class="fas fa-calendar-check"></i> 本窗口视图：<span id="bannerWindowName">{{ $activeWindow.ShortName }}</span>
+          {{ if $activeWindow.AgileGroup }}<span class="agile-team-tag" id="bannerTeamName">{{ $activeWindow.AgileGroup }}</span>{{ end }}
+        </span>
+        <span>周期：<strong id="bannerWindowRange">{{ $activeWindow.Range }}</strong></span>
+        <span class="schedule-window-banner-cap">容量负荷：<strong id="bannerCapDetails">{{ $activeWindow.UsedHours }}H / {{ $activeWindow.CapacityHours }}H ({{ $activeWindow.UsedPercent }}%)</strong> <span>剩余可用：<strong id="bannerRemainHours" class="{{ if lt $activeWindow.RemainingHours 0 }}schedule-remaining-over{{ end }}">{{ $activeWindow.RemainingHours }}H</strong></span></span>
+        <span>窗口内需求数：<strong id="bannerDemandCount">{{ $activeWindow.DemandCount }}</strong></span>
+      </div>
+      <div>
+        <button type="button" class="btn-return-unscheduled" id="btnReturnUnscheduled" title="退出单窗模式，回到待排期全局队列">
+          <i class="fas fa-arrow-left"></i> 返回待排期队列
+        </button>
+      </div>
+    </div>
+    {{ end }}
+
+    <div class="schedule-filter-row-top" id="scheduleFilterRowTop">
+      <div class="schedule-data-tabs" id="scheduleDataTabs">
+        <button type="button" class="schedule-data-tab active" data-type="bizReq"><i class="fas fa-file-lines"></i>业务需求</button>
+        <button type="button" class="schedule-data-tab" data-type="independentRD"><i class="fas fa-code-branch"></i>独立研发需求</button>
+      </div>
+      <div class="schedule-quick-scope" id="scheduleQuickScope"
+           data-filter-counts-url="{{ .FilterCountsURL }}"
+           data-active-filter="{{ $activeFilter }}"
+           data-suspended="{{ if .SuspendedActive }}1{{ else }}0{{ end }}"
+           data-can-reuse="{{ if .CanReuseListTotal }}1{{ else }}0{{ end }}"
+           data-biz-total="{{ .BizTotal }}"
+           data-indep-total="{{ .IndependentTotal }}">
+        <button type="button" class="schedule-scope-chip{{ if eq $activeFilter "all_open" }} active{{ end }}" data-filter="all_open" data-biz-count="" data-indep-count="" title="显示全部未关闭的需求"><i class="fas fa-folder-open"></i>全部未关闭 <strong class="js-filter-count">—</strong></button>
+        <button type="button" class="schedule-scope-chip{{ if eq $activeFilter "unscheduled" }} active{{ end }}" data-filter="unscheduled" data-biz-count="" data-indep-count="" title="与我相关（指派人/BRA/澄清PM）且已澄清/开发中：未绑窗口 / 未转研发 / 未拆任务或任务无指派人"><i class="fas fa-hourglass-start"></i>待排期 <strong class="js-filter-count">—</strong></button>
+        <button type="button" class="schedule-scope-chip schedule-scope-chip--biz-only{{ if eq $activeFilter "pending_review" }} active{{ end }}" data-filter="pending_review" data-biz-count="" data-indep-count="" title="与我相关且状态为暂存/待评审/已驳回（与首页价值流「受理」一致）"><i class="fas fa-clipboard-check"></i>待受理 <strong class="js-filter-count">—</strong></button>
+        <button type="button" class="schedule-scope-chip schedule-scope-chip--biz-only{{ if eq $activeFilter "manager_reviewing" }} active{{ end }}" data-filter="manager_reviewing" data-biz-only="1" data-biz-count="" data-indep-count="" title="与我相关（指派人/BRA/澄清PM）且正在进行主管部门审批的业务需求"><i class="fas fa-stamp"></i>主管审批中 <strong class="js-filter-count">—</strong></button>
+        <button type="button" class="schedule-scope-chip{{ if eq $activeFilter "closed" }} active{{ end }}" data-filter="closed" data-biz-count="" data-indep-count="" title="所有已关闭的需求"><i class="fas fa-circle-check"></i>已关闭 <strong class="js-filter-count">—</strong></button>
+        <button type="button" class="schedule-suspended-toggle schedule-scope-chip--biz-only{{ if .SuspendedActive }} active{{ end }}" id="scheduleSuspendedToggle" title="叠加筛选：仅显示挂起的需求">
+          <span class="schedule-suspended-toggle-box" aria-hidden="true"><i class="fas fa-check"></i></span>
+          挂起 <strong class="js-suspended-count">(—)</strong>
+        </button>
+        <button type="button" class="action-btn schedule-clear-btn" id="scheduleClearFilters"><i class="fas fa-sliders"></i> 清空筛选</button>
+      </div>
     </div>
 
     <div class="schedule-filter schedule-filter--primary">
@@ -123,12 +141,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             <div class="form-input-clear-wrap">
               <div class="form-multiselect-display" data-role-display>
                 <div class="form-multiselect-tags" data-role-tags></div>
-                <input type="text" class="input form-multiselect-input" data-multiselect-filter
-                  placeholder="敏捷小组"
-                  data-placeholder-empty="敏捷小组"
-                  autocomplete="off"
-                  aria-autocomplete="list"
-                  aria-label="检索敏捷小组">
+                <input type="text" class="input form-multiselect-input" data-multiselect-filter placeholder="敏捷小组" data-placeholder-empty="敏捷小组" autocomplete="off" aria-autocomplete="list" aria-label="检索敏捷小组">
               </div>
               <button type="button" class="form-dropdown-chevron" aria-label="展开敏捷小组" onclick="return toggleDropdown(this);">
                 <i class="fas fa-chevron-down" aria-hidden="true"></i>
@@ -156,12 +169,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             <div class="form-input-clear-wrap">
               <div class="form-multiselect-display" data-role-display>
                 <div class="form-multiselect-tags" data-role-tags></div>
-                <input type="text" class="input form-multiselect-input" data-multiselect-filter
-                  placeholder="系统"
-                  data-placeholder-empty="系统"
-                  autocomplete="off"
-                  aria-autocomplete="list"
-                  aria-label="检索系统">
+                <input type="text" class="input form-multiselect-input" data-multiselect-filter placeholder="系统" data-placeholder-empty="系统" autocomplete="off" aria-autocomplete="list" aria-label="检索系统">
               </div>
               <button type="button" class="form-dropdown-chevron" aria-label="展开系统" onclick="return toggleDropdown(this);">
                 <i class="fas fa-chevron-down" aria-hidden="true"></i>
@@ -206,12 +214,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             <div class="form-input-clear-wrap">
               <div class="form-multiselect-display" data-role-display>
                 <div class="form-multiselect-tags" data-role-tags></div>
-                <input type="text" class="input form-multiselect-input" data-multiselect-filter
-                  placeholder="窗口"
-                  data-placeholder-empty="窗口"
-                  autocomplete="off"
-                  aria-autocomplete="list"
-                  aria-label="检索窗口">
+                <input type="text" class="input form-multiselect-input" data-multiselect-filter placeholder="窗口" data-placeholder-empty="窗口" autocomplete="off" aria-autocomplete="list" aria-label="检索窗口">
               </div>
               <button type="button" class="form-dropdown-chevron" aria-label="展开窗口" onclick="return toggleDropdown(this);">
                 <i class="fas fa-chevron-down" aria-hidden="true"></i>
@@ -266,10 +269,6 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
       <button type="button" class="schedule-active-filter-clear" id="scheduleActiveFilterClearAll">清空全部</button>
     </div>
 
-    <div class="schedule-data-tabs">
-      <button type="button" class="schedule-data-tab active" data-type="bizReq"><i class="fas fa-file-lines"></i>业务需求</button>
-      <button type="button" class="schedule-data-tab" data-type="independentRD"><i class="fas fa-code-branch"></i>独立研发需求</button>
-    </div>
 
     <div id="scheduleBizListPanel">
     <div style="overflow-x:auto">
@@ -292,18 +291,10 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
           <tr class="schedule-biz-row schedule-tree-l1" data-id="{{ .ID }}">
             <td>
               <div class="schedule-title-cell schedule-title-cell--l1">
-                <span class="schedule-row-expand-slot">
-                  {{ if .HasChildren }}
-                  <button type="button" class="schedule-row-expand" data-target="{{ .ID }}" title="展开/收起子行"><i class="fas fa-chevron-down"></i></button>
-                  {{ end }}
-                </span>
+                <span class="schedule-row-expand-slot">{{ if .HasChildren }}<button type="button" class="schedule-row-expand" data-target="{{ .ID }}" title="展开/收起子行"><i class="fas fa-chevron-down"></i></button>{{ end }}</span>
                 <span class="wb-type wb-type-business"><span class="wb-type-tag">业需</span><span class="wb-type-id schedule-id-badge">#{{ .ID }}</span></span>
                 {{ if .Suspended }}{{ template "ui/hang" }}{{ end }}
-                {{ if .DetailURL }}
-                <a href="{{ .DetailURL }}" target="_blank" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
-                {{ else }}
-                <span class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</span>
-                {{ end }}
+                {{ if .DetailURL }}<a href="{{ .DetailURL }}" target="_blank" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>{{ else }}<span class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</span>{{ end }}
               </div>
             </td>
             <td class="schedule-col-nowrap"><span class="pri-tag {{ .PriClass }}">{{ .Priority }}</span></td>
@@ -318,6 +309,9 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
                 <a href="{{ .DetailURL }}" target="_blank" rel="noopener noreferrer" class="action-btn {{ .ActionClass }}" data-demand-id="{{ .DemandID }}">{{ .ActionLabel }}</a>
                 {{ else }}
                 <button type="button" class="action-btn {{ .ActionClass }}" data-demand-id="{{ .DemandID }}">{{ .ActionLabel }}</button>
+                {{ end }}
+                {{ if $activeWindow }}
+                <button type="button" class="action-btn action-btn--secondary js-change-window" data-demand-id="{{ .DemandID }}" title="调整所属版本窗口"><i class="fas fa-arrows-split-up-and-left"></i> 换窗口</button>
                 {{ end }}
               </div>
             </td>
@@ -329,11 +323,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
               <div class="schedule-title-cell schedule-title-cell--l2">
                 <span class="schedule-row-expand-slot"><button type="button" class="schedule-row-expand" data-target="{{ .ID }}" data-scope="sub" aria-expanded="true" title="展开/收起研发需求" {{ if not .DevRequirements }}hidden{{ end }}><i class="fas fa-chevron-down"></i></button></span>
                 <span class="wb-type wb-type-sub"><span class="wb-type-tag">子需</span><span class="wb-type-id schedule-id-badge">#{{ .ID }}</span></span>
-                {{ if .DetailURL }}
-                <a href="{{ .DetailURL }}" target="_blank" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
-                {{ else }}
-                <span class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</span>
-                {{ end }}
+                {{ if .DetailURL }}<a href="{{ .DetailURL }}" target="_blank" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>{{ else }}<span class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</span>{{ end }}
               </div>
             </td>
             <td class="schedule-col-nowrap"><span class="pri-tag {{ .PriClass }}">{{ .Priority }}</span></td>
@@ -349,6 +339,9 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
                 {{ else }}
                 <button type="button" class="action-btn {{ .ActionClass }}" data-demand-id="{{ .DemandID }}">{{ .ActionLabel }}</button>
                 {{ end }}
+                {{ if $activeWindow }}
+                <button type="button" class="action-btn action-btn--secondary js-change-window" data-demand-id="{{ .DemandID }}" title="调整所属版本窗口"><i class="fas fa-arrows-split-up-and-left"></i> 换窗口</button>
+                {{ end }}
               </div>
             </td>
           </tr>
@@ -359,11 +352,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
                 <span class="tree-guide"></span>
                 <span class="wb-type wb-type-story"><span class="wb-type-tag">研需</span><span class="wb-type-id schedule-id-badge">#{{ .ID }}</span></span>
                 {{ if .IsMain }}<span class="schedule-rd-role schedule-rd-role--main">主</span>{{ else }}<span class="schedule-rd-role schedule-rd-role--coop">配</span>{{ end }}
-                {{ if .DetailURL }}
-                <a href="{{ .DetailURL }}" target="_blank" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
-                {{ else }}
-                <span class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</span>
-                {{ end }}
+                {{ if .DetailURL }}<a href="{{ .DetailURL }}" target="_blank" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>{{ else }}<span class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</span>{{ end }}
               </div>
             </td>
             <td class="schedule-col-nowrap"><span class="pri-tag {{ .PriClass }}">{{ .Priority }}</span></td>
@@ -393,11 +382,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
                 <span class="tree-guide"></span>
                 <span class="wb-type wb-type-story"><span class="wb-type-tag">研需</span><span class="wb-type-id schedule-id-badge">#{{ .ID }}</span></span>
                 {{ if .IsMain }}<span class="schedule-rd-role schedule-rd-role--main">主</span>{{ else }}<span class="schedule-rd-role schedule-rd-role--coop">配</span>{{ end }}
-                {{ if .DetailURL }}
-                <a href="{{ .DetailURL }}" target="_blank" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>
-                {{ else }}
-                <span class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</span>
-                {{ end }}
+                {{ if .DetailURL }}<a href="{{ .DetailURL }}" target="_blank" class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</a>{{ else }}<span class="schedule-title-link" title="{{ .Title }}">{{ .Title }}</span>{{ end }}
               </div>
             </td>
             <td class="schedule-col-nowrap"><span class="pri-tag {{ .PriClass }}">{{ .Priority }}</span></td>
@@ -486,6 +471,9 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
                 {{ else }}
                 <button type="button" class="action-btn action-btn--primary" data-story-id="{{ .StoryID }}">排期</button>
                 {{ end }}
+                {{ if $activeWindow }}
+                <button type="button" class="action-btn action-btn--secondary js-change-window" data-story-id="{{ .StoryID }}" title="调整所属版本窗口"><i class="fas fa-arrows-split-up-and-left"></i> 换窗口</button>
+                {{ end }}
                 <button type="button" class="action-btn action-btn--success js-open-task-modal" data-story-id="{{ .StoryID }}">维护任务</button>
               </div>
             </td>
@@ -522,6 +510,9 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
                 <a href="{{ .DetailURL }}" class="action-btn action-btn--primary" data-story-id="{{ .StoryID }}">排期</a>
                 {{ else }}
                 <button type="button" class="action-btn action-btn--primary" data-story-id="{{ .StoryID }}">排期</button>
+                {{ end }}
+                {{ if $activeWindow }}
+                <button type="button" class="action-btn action-btn--secondary js-change-window" data-story-id="{{ .StoryID }}" title="调整所属版本窗口"><i class="fas fa-arrows-split-up-and-left"></i> 换窗口</button>
                 {{ end }}
                 <button type="button" class="action-btn action-btn--success js-open-task-modal" data-story-id="{{ .StoryID }}">维护任务</button>
               </div>
