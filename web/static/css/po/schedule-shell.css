@@ -76,7 +76,7 @@ body.po-workbench-shell #page-schedule #scheduleBizListPanel .schedule-table td:
 
 /* 排期阶段列：居中对齐 */
 body.po-workbench-shell #page-schedule .schedule-table th.schedule-col-stage-head,
-body.po-workbench-shell #page-schedule .schedule-table td:nth-child(4) {
+body.po-workbench-shell #page-schedule #scheduleBizListPanel .schedule-table td:nth-child(4) {
   width: 88px;
   min-width: 80px;
   max-width: 96px;
