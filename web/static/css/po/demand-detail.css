@@ -7,18 +7,6 @@
 /* 公共优先级 / 对象类型：复用 wb-priority.css */
 @import url("./wb-priority.css");
 
-:root {
-  --dd-blue: var(--wb-primary);
-  --dd-blue-dark: var(--color-info-fill-hover);
-  --dd-text: var(--color-text-strong);
-  --dd-muted: var(--color-text-secondary);
-  --dd-line: var(--color-border);
-  --dd-soft: var(--color-surface-muted);
-  --dd-green: var(--wb-success);
-  --dd-orange: var(--wb-warning);
-  --dd-red: var(--wb-danger);
-}
-
 /* 抽屉浮层遮罩 */
 .dd-drawer-mask {
   position: fixed; inset: 0;
@@ -45,11 +33,11 @@
 }
 .dd-page-back {
   display: inline-flex; align-items: center; margin-bottom: 12px;
-  color: var(--dd-blue); font-size: 13px; font-weight: 600; text-decoration: none;
+  color: var(--wb-primary); font-size: 13px; font-weight: 600; text-decoration: none;
 }
 .dd-page-back:hover { text-decoration: underline; }
 .dd-page-root {
-  border: 1px solid var(--dd-line); border-radius: 10px; background: var(--wb-bg-surface); overflow: hidden;
+  border: 1px solid var(--color-border); border-radius: 10px; background: var(--wb-bg-surface); overflow: hidden;
 }
 .dd-page-root .dd-drawer-panel {
   width: 100%; height: auto; min-height: calc(100vh - 180px);
@@ -59,11 +47,11 @@
 
 /* 头部 Header */
 .dd-head {
-  padding: 18px 24px 14px; border-bottom: 1px solid var(--dd-line);
+  padding: 18px 24px 14px; border-bottom: 1px solid var(--color-border);
   background: var(--wb-bg-surface); flex-shrink: 0;
 }
 .dd-idrow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.dd-id { font-weight: 700; font-size: 16px; color: var(--dd-blue); letter-spacing: 0.5px; }
+.dd-id { font-weight: 700; font-size: 16px; color: var(--wb-primary); letter-spacing: 0.5px; }
 .dd-tag {
   font-size: 11px; border: 1px solid var(--color-border); border-radius: 4px;
   padding: 2px 8px; color: var(--color-text-secondary); background: var(--wb-bg-hover);
@@ -75,7 +63,7 @@
   background: var(--wb-bg-surface); color: var(--wb-text-secondary); cursor: pointer;
   display: flex; align-items: center; justify-content: center; font-size: 15px;
 }
-.dd-iconbtn:hover { background: var(--wb-bg-muted); color: var(--dd-text); }
+.dd-iconbtn:hover { background: var(--wb-bg-muted); color: var(--color-text-strong); }
 .dd-title { font-weight: 700; font-size: 18px; color: var(--wb-text-primary); margin: 10px 0 8px; line-height: 1.4; }
 .dd-meta { display: flex; gap: 20px; color: var(--wb-text-secondary); font-size: 12px; flex-wrap: wrap; margin-bottom: 12px; }
 
@@ -117,7 +105,7 @@
   display: flex; align-items: center; gap: 8px; border: none; background: none;
   cursor: pointer; color: var(--wb-text-secondary); padding: 0;
 }
-.dd-parent-link:hover strong { color: var(--dd-blue); }
+.dd-parent-link:hover strong { color: var(--wb-primary); }
 .dd-back-icon {
   width: 24px; height: 24px; border: 1px solid var(--color-border); border-radius: 6px;
   background: var(--wb-bg-surface); display: flex; align-items: center; justify-content: center; font-size: 12px;
@@ -130,13 +118,13 @@
   border-radius: 12px; background: var(--wb-bg-surface); padding: 3px 8px; color: var(--wb-text-secondary);
   cursor: pointer; font-size: 11px;
 }
-.dd-sibling-chip.active { border-color: var(--wb-primary-border); background: var(--wb-primary-light); color: var(--dd-blue); font-weight: 600; }
+.dd-sibling-chip.active { border-color: var(--wb-primary-border); background: var(--wb-primary-light); color: var(--wb-primary); font-weight: 600; }
 .dd-sibling-chip.risk { border-color: var(--color-danger-border); background: var(--color-danger-bg); color: var(--wb-danger); }
 .dd-sibling-chip.done { border-color: var(--color-success-border); background: var(--color-success-bg); color: var(--wb-success); }
 
 /* Tabs 切换栏 */
 .dd-tabs {
-  display: flex; height: 44px; padding: 0 24px; border-bottom: 1px solid var(--dd-line);
+  display: flex; height: 44px; padding: 0 24px; border-bottom: 1px solid var(--color-border);
   background: var(--wb-bg-surface); flex-shrink: 0;
 }
 .dd-tab {
@@ -144,18 +132,18 @@
   cursor: pointer; position: relative; font-size: 13px; display: flex;
   align-items: center; gap: 6px;
 }
-.dd-tab:hover { color: var(--dd-blue); }
-.dd-tab.active { color: var(--dd-blue); font-weight: 600; }
+.dd-tab:hover { color: var(--wb-primary); }
+.dd-tab.active { color: var(--wb-primary); font-weight: 600; }
 .dd-tab.active::after {
   content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
-  background: var(--dd-blue);
+  background: var(--wb-primary);
 }
 .dd-tab-count {
   display: inline-flex; min-width: 16px; height: 16px; align-items: center;
   justify-content: center; padding: 0 4px; border-radius: 8px;
   background: var(--color-surface-muted); color: var(--wb-text-secondary); font-size: 10px;
 }
-.dd-tab.active .dd-tab-count { background: var(--wb-primary-light); color: var(--dd-blue); }
+.dd-tab.active .dd-tab-count { background: var(--wb-primary-light); color: var(--wb-primary); }
 
 /* 内容滚动区与栅格 */
 .dd-body { flex: 1; overflow-y: auto; padding: 20px 24px 40px; background: var(--color-page-bg); }
@@ -184,7 +172,7 @@
   padding: 6px 14px; font-size: 12px; font-weight: 500; cursor: pointer; white-space: nowrap;
 }
 .dd-btn.primary { background: var(--color-info-fill); color: var(--color-text-on-accent); border-color: var(--color-info-fill); }
-.dd-btn.primary:hover { background: var(--dd-blue-dark); }
+.dd-btn.primary:hover { background: var(--color-info-fill-hover); }
 .dd-btn.danger { background: var(--color-danger-fill); color: var(--color-text-on-accent); border-color: var(--color-danger-fill); }
 .dd-btn.danger:hover { background: var(--color-danger-deep); }
 
@@ -197,10 +185,10 @@
   border: 1px solid var(--wb-border-subtle); border-radius: 6px; background: var(--color-surface-muted);
   padding: 8px 10px; min-width: 0;
 }
-.dd-cycle-chip .k { font-size: 11px; color: var(--dd-muted); margin-bottom: 2px; }
+.dd-cycle-chip .k { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 2px; }
 .dd-cycle-chip .v { font-size: 13px; font-weight: 700; color: var(--wb-text-primary); }
 .dd-cycle-chip .s { font-size: 10px; color: var(--color-text-secondary); margin-top: 2px; }
-.dd-cycle-chip.overdue .v { color: var(--dd-red); }
+.dd-cycle-chip.overdue .v { color: var(--wb-danger); }
 
 /* 价值流阶段（单行横向滚动，不准换行） */
 .dd-flow {
@@ -233,12 +221,12 @@
   overflow: hidden;
 }
 .dd-flow-stage.done { background: var(--color-success-bg); border-color: var(--color-success-border); color: var(--wb-success); }
-.dd-flow-stage.current { background: var(--color-info-bg); border-color: var(--wb-primary-border); color: var(--dd-blue); font-weight: 600; }
+.dd-flow-stage.current { background: var(--color-info-bg); border-color: var(--wb-primary-border); color: var(--wb-primary); font-weight: 600; }
 .dd-flow-stage .nm { font-weight: 700; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dd-flow-stage .who { font-size: 10px; color: var(--dd-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dd-flow-stage .who { font-size: 10px; color: var(--color-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dd-flow-stage .duration { margin-top: auto; font-size: 10px; border-top: 1px solid rgba(0, 0, 0, 0.05); padding-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dd-flow-legend {
-  display: flex; gap: 14px; font-size: 11px; color: var(--dd-muted); margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--wb-bg-muted);
+  display: flex; gap: 14px; font-size: 11px; color: var(--color-text-secondary); margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--wb-bg-muted);
 }
 .dd-flow-legend b { color: var(--wb-text-secondary); }
 
@@ -246,7 +234,7 @@
 .dd-summary-block { padding: 8px 10px; background: var(--wb-bg-muted); border: 1px solid var(--color-border); border-radius: 6px; }
 .dd-summary-block .st { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 12px; }
 .dd-summary-block .st b { color: var(--wb-text-secondary); }
-.dd-summary-block .st a { font-size: 11px; color: var(--dd-blue); text-decoration: none; }
+.dd-summary-block .st a { font-size: 11px; color: var(--wb-primary); text-decoration: none; }
 .dd-summary-block p { margin: 0; font-size: 12px; color: var(--wb-text-secondary); line-height: 1.5; }
 
 .dd-metrics-5 {
@@ -256,7 +244,7 @@
   border: 1px solid var(--color-border); border-radius: 6px; background: var(--color-surface-muted); padding: 8px 10px; text-align: center;
 }
 .dd-metric-box .n { font-size: 15px; font-weight: 700; color: var(--wb-text-primary); }
-.dd-metric-box .l { font-size: 11px; color: var(--dd-muted); margin-top: 2px; }
+.dd-metric-box .l { font-size: 11px; color: var(--color-text-secondary); margin-top: 2px; }
 
 .dd-milestones {
   display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px;
@@ -264,14 +252,14 @@
 .dd-ms {
   border: 1px solid var(--wb-border-subtle); border-radius: 6px; background: var(--wb-bg-muted); padding: 8px 10px;
 }
-.dd-ms .k { font-size: 11px; color: var(--dd-muted); }
+.dd-ms .k { font-size: 11px; color: var(--color-text-secondary); }
 .dd-ms .v { font-size: 13px; font-weight: 600; color: var(--wb-text-primary); margin: 2px 0; }
 .dd-ms .sub { font-size: 10px; color: var(--color-text-secondary); }
 
 .dd-aside-title {
   font-size: 12px; font-weight: 700; color: var(--wb-text-secondary); margin-bottom: 8px;
 }
-.dd-note { font-size: 11px; color: var(--dd-muted); font-weight: normal; }
+.dd-note { font-size: 11px; color: var(--color-text-secondary); font-weight: normal; }
 
 /* 数据表格通用 */
 .dd-table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -283,7 +271,7 @@
 /* 侧边栏属性列表 */
 .dd-kv-list { display: grid; grid-template-columns: 80px 1fr; row-gap: 10px; font-size: 12px; }
 .dd-kv-list.compact { row-gap: 6px; }
-.dd-kv-list .k { color: var(--dd-muted); }
+.dd-kv-list .k { color: var(--color-text-secondary); }
 .dd-kv-list .v { color: var(--wb-text-secondary); font-weight: 500; }
 
 /* 研发与测试：4 维 KPI 指标卡 */
@@ -374,7 +362,7 @@
 }
 .dd-review-footer {
   position: sticky; bottom: 0; background: var(--wb-bg-surface);
-  border-top: 1px solid var(--dd-line); padding: 14px 20px;
+  border-top: 1px solid var(--color-border); padding: 14px 20px;
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05); z-index: 10;
   border-radius: 0 0 8px 8px; margin-top: auto;
 }
