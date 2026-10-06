@@ -278,10 +278,6 @@
     bar.hidden = false;
   }
 
-  function updateStageChip() {
-    updateActiveFilterTags();
-  }
-
   function syncUrl() {
     if (!window.history || !window.history.replaceState) { return; }
     var p = new URLSearchParams();
@@ -411,15 +407,6 @@
         if (e.target.closest("#queryActiveFilterClearAll")) {
           resetAllFilters();
         }
-      });
-    }
-    if ($("queryStageChip")) {
-      $("queryStageChip").addEventListener("click", function () {
-        state.stage = "";
-        state.page = 1;
-        updateActiveFilterTags();
-        syncUrl();
-        load();
       });
     }
   }

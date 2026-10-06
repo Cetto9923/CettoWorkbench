@@ -19,7 +19,7 @@
 
     <div class="workspace-toolbar">
       <label class="workspace-search">
-        <span aria-hidden="true">⌕</span>
+        <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
         <input type="search" id="queryKeyword" placeholder="编号 / 标题 / 负责人 / 涉及系统" aria-label="关键词" value="{{ .Keyword }}">
       </label>
       <select id="queryStatus" aria-label="状态">
@@ -47,11 +47,11 @@
         <option value="4"{{ if eq .Priority "4" }} selected{{ end }}>P4</option>
       </select>
       <label class="workspace-search query-owner-search">
-        <span aria-hidden="true">人</span>
+        <i class="fas fa-user" aria-hidden="true"></i>
         <input type="search" id="queryOwner" placeholder="负责人" aria-label="负责人" value="{{ .Owner }}">
       </label>
       <label class="workspace-search query-system-search">
-        <span aria-hidden="true">系</span>
+        <i class="fas fa-cube" aria-hidden="true"></i>
         <input type="search" id="querySystem" placeholder="涉及系统" aria-label="涉及系统" value="{{ .System }}">
       </label>
       <button type="button" id="queryResetBtn" class="workspace-btn">重置筛选</button>
@@ -67,7 +67,6 @@
         <div class="query-active-filter-tags" id="queryActiveFilterTags"></div>
         <button type="button" class="query-active-filter-clear" id="queryActiveFilterClearAll">清空</button>
       </div>
-      <button type="button" id="queryStageChip" class="workspace-btn" hidden aria-label="清除阶段筛选"></button>
     </div>
 
     <div class="table-scroll-container">
