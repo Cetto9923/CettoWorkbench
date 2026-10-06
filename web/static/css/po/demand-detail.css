@@ -47,7 +47,7 @@
 
 /* 头部 Header */
 .dd-head {
-  padding: 18px 24px 14px; border-bottom: 1px solid var(--color-border);
+  padding: 12px 16px 10px; border-bottom: 1px solid var(--color-border);
   background: var(--wb-bg-surface); flex-shrink: 0;
 }
 .dd-idrow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
