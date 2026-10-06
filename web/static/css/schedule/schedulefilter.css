@@ -23,7 +23,8 @@
   justify-content: space-between;
   gap: 6px;
   width: 132px;
-  height: 30px;
+  height: 32px;
+  box-sizing: border-box;
   padding: 5px 8px;
   font-size: 12px;
   text-align: left;
@@ -103,8 +104,9 @@
 #scheduleMultiselectRow .schedule-filter-ms .form-multiselect-display {
   display: flex;
   align-items: center;
-  min-height: 30px;
-  height: 30px;
+  min-height: 32px;
+  height: 32px;
+  box-sizing: border-box;
   padding: 2px 36px 2px 6px;
   border-radius: 4px;
   border-color: var(--border);
@@ -186,7 +188,8 @@
 }
 
 #scheduleMultiselectRow > .action-btn {
-  height: 30px;
+  height: 32px;
+  box-sizing: border-box;
 }
 
 #page-schedule #scheduleMoreFilters .schedule-owner-picker,
@@ -306,76 +309,10 @@
   color: var(--color-primary-hover, var(--wb-primary-hover));
 }
 
-/* ── 排期页筛选区压缩与两行布局 ── */
-#page-schedule .schedule-version-body-click { padding: 4px 10px 5px; }
-
-#page-schedule .schedule-filter-row-top {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 12px; margin-bottom: 8px; flex-wrap: wrap;
-}
-
-#page-schedule .schedule-filter-row-top .schedule-data-tabs {
-  margin-bottom: 0; display: inline-flex; align-items: center; gap: 4px;
-}
-
-#page-schedule .schedule-filter-row-top .schedule-data-tab {
-  height: 32px; padding: 0 14px; display: inline-flex; align-items: center;
-  gap: 6px; font-size: 13px; font-weight: 500; border-radius: var(--wb-radius-sm, 4px);
-  border: 1px solid var(--color-border); background: var(--color-surface);
-  color: var(--color-text-secondary); cursor: pointer;
-}
-
-#page-schedule .schedule-filter-row-top .schedule-data-tab.active {
-  border-color: var(--color-primary); background: var(--color-primary-light);
-  color: var(--color-primary); font-weight: 600;
-}
-
-#page-schedule .schedule-filter-row-top .schedule-quick-scope {
-  margin-bottom: 0; display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap;
-}
-
-#page-schedule .schedule-filter-primary-inner {
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; width: 100%;
-}
-
-#page-schedule .schedule-filter-core {
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1;
-}
-
-#page-schedule .schedule-filter-actions {
-  display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0;
-}
-
-#scheduleMultiselectRow .schedule-ms-trigger,
-#scheduleMultiselectRow .form-multiselect-display,
-#scheduleMultiselectRow .schedule-search-inline,
-#scheduleMultiselectRow .action-btn {
-  height: 32px; box-sizing: border-box;
-}
-
-#page-schedule .schedule-search-inline {
-  display: inline-flex; align-items: center; gap: 6px; height: 32px;
-  padding: 0 10px; border: 1px solid var(--color-border);
-  border-radius: var(--wb-radius-sm, 4px); background: var(--color-surface);
-}
-
-#page-schedule .schedule-search-inline input {
-  height: 28px; border: none; background: transparent;
-  font-size: 12px; color: var(--color-text-primary); outline: none;
-}
-
-#page-schedule .stage-tag,
-#page-schedule .pri-tag,
-#page-schedule .wb-type,
-#page-schedule .wb-hang-tag,
-#page-schedule .schedule-col-nowrap {
-  white-space: nowrap;
-}
-
 /* ── 本窗口模式专属摘要条 ── */
 #page-schedule .schedule-window-active-banner {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 4px 12px; margin-bottom: 8px; min-height: 36px; max-height: 40px;
+  padding: 4px 12px; margin-bottom: 8px; min-height: 36px; height: 36px;
   background: var(--color-primary-light); border: 1px solid var(--color-primary-border);
   border-left: 4px solid var(--color-primary); border-radius: var(--wb-radius-sm, 4px);
   box-sizing: border-box;
@@ -395,35 +332,21 @@ html[data-theme="dark"] #page-schedule .schedule-window-active-banner {
   display: inline-flex; align-items: center; gap: 4px;
 }
 
-#page-schedule .btn-return-unscheduled {
-  font-size: 12px; height: 28px; padding: 0 10px; display: inline-flex;
-  align-items: center; gap: 4px; border-radius: var(--wb-radius-sm, 4px);
-  border: 1px solid var(--color-border); background: var(--color-surface);
-  color: var(--color-text-primary); cursor: pointer;
-}
-
-#page-schedule .btn-return-unscheduled:hover {
-  border-color: var(--color-primary); color: var(--color-primary);
+#page-schedule .stage-tag,
+#page-schedule .wb-type,
+#page-schedule .wb-hang-tag,
+#page-schedule .schedule-col-nowrap {
+  white-space: nowrap;
 }
 
 /* ── 保存后高亮动效 ── */
 @keyframes scheduleHighlightPulse {
-  0% { background-color: var(--color-primary-light); }
-  50% { background-color: var(--color-primary-light); }
+  0%, 50% { background-color: var(--color-primary-light); }
   100% { background-color: transparent; }
 }
 
 #page-schedule tr.schedule-row-highlighted {
   animation: scheduleHighlightPulse 3s ease-out forwards;
-}
-
-#page-schedule .action-btn--secondary {
-  border: 1px solid var(--color-border); background: var(--color-surface);
-  color: var(--color-text-secondary);
-}
-
-#page-schedule .action-btn--secondary:hover {
-  border-color: var(--color-primary); color: var(--color-primary);
 }
 
 

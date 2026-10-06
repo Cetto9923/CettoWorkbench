@@ -158,44 +158,29 @@
   box-shadow: var(--wb-shadow-sm);
 }
 
+.schedule-filter-row-top {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 8px; flex-wrap: wrap;
+}
+.schedule-filter-row-top .schedule-data-tabs,
+.schedule-filter-row-top .schedule-quick-scope {
+  margin-bottom: 0; display: inline-flex; align-items: center;
+  gap: 6px; padding: 0; background: transparent; border-bottom: none; flex-wrap: wrap;
+}
 .schedule-quick-scope {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  background: var(--color-surface, var(--white));
-  border-bottom: 1px solid var(--border-lt);
-  flex-wrap: wrap;
+  display: flex; align-items: center; gap: 6px; padding: 6px 10px;
+  background: var(--color-surface, var(--white)); border-bottom: 1px solid var(--border-lt); flex-wrap: wrap;
 }
-
 .schedule-scope-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  height: 26px;
-  border-radius: 6px;
-  padding: 0 8px;
-  font-size: 12px;
-  border: 1px solid var(--border);
-  background: var(--white);
-  cursor: pointer;
-  color: var(--t2);
-  transition: color 0.15s, border-color 0.15s, background 0.15s, box-shadow 0.15s;
-  font-family: inherit;
-  white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 4px; height: 26px; border-radius: 6px;
+  padding: 0 8px; font-size: 12px; border: 1px solid var(--border); background: var(--white);
+  cursor: pointer; color: var(--t2); transition: color 0.15s, border-color 0.15s, background 0.15s;
+  font-family: inherit; white-space: nowrap;
 }
-
-.schedule-scope-chip:hover {
-  border-color: var(--blue);
-  color: var(--blue);
-}
-
+.schedule-scope-chip:hover { border-color: var(--blue); color: var(--blue); }
 .schedule-scope-chip.active {
-  background: var(--blue-bg);
-  border-color: var(--blue);
-  color: var(--blue);
-  font-weight: 600;
-  box-shadow: inset 0 0 0 1px var(--blue);
+  background: var(--blue-bg); border-color: var(--blue); color: var(--blue);
+  font-weight: 600; box-shadow: inset 0 0 0 1px var(--blue);
 }
 
 .schedule-scope-chip i {
@@ -380,11 +365,11 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  height: 30px;
+  height: 32px;
   min-width: 220px;
   max-width: 360px;
   flex: 1 1 260px;
-  padding: 0 8px;
+  padding: 0 10px;
   border: 1px solid var(--border);
   border-radius: 4px;
   background: var(--bg);
@@ -400,6 +385,7 @@
 .schedule-search-inline input {
   width: 100%;
   min-width: 0;
+  height: 28px;
   border: 0;
   outline: 0;
   background: transparent;
@@ -422,7 +408,8 @@
 
 .schedule-more-filter-btn,
 .schedule-apply-btn {
-  height: 30px;
+  height: 32px;
+  box-sizing: border-box;
   font-weight: 700;
 }
 
@@ -517,63 +504,23 @@
 }
 
 /* ── 数据类型 Tab ── */
-.schedule-data-tabs {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  padding: 0 16px;
-  background: var(--color-surface, var(--white));
-  border-bottom: 1px solid var(--border-lt);
-}
-
+.schedule-data-tabs { margin-bottom: 0; display: inline-flex; align-items: center; gap: 4px; }
 .schedule-data-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--t2);
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.15s;
-  position: relative;
+  height: 32px; padding: 0 14px; display: inline-flex; align-items: center;
+  gap: 6px; font-size: 13px; font-weight: 500; border-radius: var(--wb-radius-sm, 4px);
+  border: 1px solid var(--color-border); background: var(--color-surface);
+  color: var(--color-text-secondary); cursor: pointer; transition: all 0.15s;
 }
-
-.schedule-data-tab:hover {
-  color: var(--t1);
-  background: var(--hover);
-}
-
+.schedule-data-tab:hover { color: var(--color-text-primary); border-color: var(--color-primary); }
 .schedule-data-tab.active {
-  color: var(--blue);
-  border-bottom-color: var(--blue);
-  background: var(--blue-bg);
+  border-color: var(--color-primary); background: var(--color-primary-light);
+  color: var(--color-primary); font-weight: 600;
 }
-
-.schedule-data-tab i {
-  font-size: 12px;
-  opacity: 0.7;
-}
-
-.schedule-data-tab.active i {
-  opacity: 1;
-}
-
+.schedule-data-tab i { font-size: 12px; opacity: 0.7; }
+.schedule-data-tab.active i { opacity: 1; }
 .schedule-data-tab.is-disabled,
-.schedule-data-tab.is-disabled:hover {
-  color: var(--t3);
-  background: transparent;
-  cursor: not-allowed;
-  border-bottom-color: transparent;
-}
-
-.schedule-data-tab.is-disabled i {
-  opacity: 0.4;
-}
+.schedule-data-tab.is-disabled:hover { color: var(--t3); background: transparent; cursor: not-allowed; }
+.schedule-data-tab.is-disabled i { opacity: 0.4; }
 
 @media (max-width: 900px) {
   .schedule-page-head {
