@@ -115,7 +115,7 @@ function payload() {
     distanceDays: 7,
     onTrack: 3, risk: 0, blocked: 0,
     aiPilotOn: false,
-    items: [{ demandNo: 'D1', title: 't', system: 's', priority: 'P1', stage: '开发', stayDays: 1, judgement: 'ontrack', owner: '张三', actionEnabled: false, actionLabel: 'x', findings: [] }],
+    items: [{ demandNo: 'D1', title: '<b>t</b>', system: 's', priority: 'P1', stage: '开发', stayDays: 1, judgement: 'ontrack', owner: '张三', actionEnabled: false, actionLabel: 'x', findings: [] }],
     total: 1, pageSize: 20,
     details: [],
   };
@@ -162,6 +162,7 @@ const closest = (match) => ({ closest: (selector) => (match[selector] ? match[se
   assert.equal(requests.length, 1, '首次加载只应发出 1 次 items 请求，实际 ' + requests.length + ' 次：' + requests.join(' | '));
   assert.equal(nodes.get('vfWindowId').value, '2', '隐藏域应回填当前窗口');
   assert.equal(nodes.get('vfWindowSearch').value, 'V2 · 2026-10-20', '搜索框应显示当前窗口标签');
+  assert.match(nodes.get('vfTbody').innerHTML, /&lt;b&gt;t&lt;\/b&gt;/, '需求标题应经 window.escapeHtml 转义');
 
   const afterLoad = requests.length;
   await settle();
