@@ -439,11 +439,21 @@
     return str.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
   }
 
+  function syncListUrl(p, state) {
+    if (!window.history || !window.history.replaceState) { return; }
+    if (state.keyword) { p.set("keyword", state.keyword); }
+    if (state.page > 1) { p.set("page", String(state.page)); }
+    if (state.pageSize !== 20) { p.set("pageSize", String(state.pageSize)); }
+    var qs = p.toString();
+    window.history.replaceState(null, "", window.location.pathname + (qs ? "?" + qs : ""));
+  }
+
   window.PersonalList = {
     escapeHtml: function (value) { return window.escapeHtml(value); },
     decodeHtmlEntities: decodeHtmlEntities,
     createController: createController,
     renderPagination: renderPagination,
+    syncListUrl: syncListUrl,
     loadPageSize: loadPageSize,
     savePageSize: savePageSize,
     PAGE_SIZE_OPTIONS: PAGE_SIZE_OPTIONS,

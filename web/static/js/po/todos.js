@@ -65,7 +65,6 @@
   var controller = null;
 
   function syncUrl() {
-    if (!window.history || !window.history.replaceState) { return; }
     var p = new URLSearchParams();
     if (state.focus !== "pending") { p.set("focus", state.focus); }
     if (state.objectType !== "") { p.set("objectType", state.objectType); }
@@ -80,12 +79,7 @@
       if (state.approvalType !== "all") { p.set("approvalType", state.approvalType); }
     }
     if (state.relation !== "all") { p.set("relation", state.relation); }
-    if (state.keyword) { p.set("keyword", state.keyword); }
-    if (state.page > 1) { p.set("page", String(state.page)); }
-    if (state.pageSize !== 20) { p.set("pageSize", String(state.pageSize)); }
-    var qs = p.toString();
-    var newUrl = window.location.pathname + (qs ? "?" + qs : "");
-    window.history.replaceState(null, "", newUrl);
+    window.PersonalList.syncListUrl(p, state);
   }
 
   function initFromUrl() {

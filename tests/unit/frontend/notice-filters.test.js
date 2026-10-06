@@ -3,6 +3,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
+const personalListSrc = fs.readFileSync(path.join(__dirname, '../../../web/static/js/po/personal-list.js'), 'utf8');
+const syncListUrlSrc = personalListSrc.match(/function syncListUrl\(p, state\) \{[\s\S]*?\n  \}/)[0];
+const bindSyncListUrl = (win) => new Function('window', 'return ' + syncListUrlSrc)(win);
+
 function loadNoticeScript(windowOverrides, documentOverrides) {
   const nodes = new Map();
   let ready;
@@ -98,6 +102,7 @@ function loadNoticeScript(windowOverrides, documentOverrides) {
     delete overrides.PersonalList;
   }
   const window = Object.assign(baseWindow, overrides);
+  window.PersonalList.syncListUrl = bindSyncListUrl(window);
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../../../web/static/js/po/notice.js'), 'utf8'), { window, document, URLSearchParams });
   return { nodes, ready, listCalls, window, document, reminderKindFromSubject };
 }

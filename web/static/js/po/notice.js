@@ -19,17 +19,12 @@
   var hasCorrectedPage = false;
 
   function syncUrl() {
-    if (!window.history || !window.history.replaceState) { return; }
     var p = new URLSearchParams();
     if (state.quickView) { p.set("quickView", state.quickView); }
     ["category", "objectType", "timeRange", "readState", "needAction"].forEach(function (k) {
       if (state[k] && state[k] !== "all") { p.set(k, state[k]); }
     });
-    if (state.keyword) { p.set("keyword", state.keyword); }
-    if (state.page > 1) { p.set("page", String(state.page)); }
-    if (state.pageSize !== 20) { p.set("pageSize", String(state.pageSize)); }
-    var qs = p.toString();
-    window.history.replaceState(null, "", window.location.pathname + (qs ? "?" + qs : ""));
+    window.PersonalList.syncListUrl(p, state);
   }
 
   function initFromUrl() {

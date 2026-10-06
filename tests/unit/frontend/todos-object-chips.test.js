@@ -16,6 +16,8 @@ const template = fs.readFileSync(path.join(root, "web/templates/po/todos.html"),
 const doneScript = fs.readFileSync(path.join(root, "web/static/js/po/done.js"), "utf8");
 const sharedCss = fs.readFileSync(path.join(root, "web/static/css/po/personal-workspace.css"), "utf8");
 const todosCss = fs.readFileSync(path.join(root, "web/static/css/po/todos.css"), "utf8");
+const personalListSrc = fs.readFileSync(path.join(root, "web/static/js/po/personal-list.js"), "utf8");
+const syncListUrlSrc = personalListSrc.match(/function syncListUrl\(p, state\) \{[\s\S]*?\n  \}/)[0];
 
 // makeNode 提供最小 DOM 桩。芯片按钮按当前 innerHTML 生成一次并缓存，
 // 这样 renderObjectChips 绑定的 click 处理器和测试后续取到的是同一批对象。
@@ -84,6 +86,7 @@ function loadTodos(search) {
     loadPageSize: (_key, fallback) => fallback,
     savePageSize() {},
     renderPagination() {},
+    syncListUrl: new Function("window", "return " + syncListUrlSrc)(sandbox),
     priorityBadge: () => "",
     objectTypeBadgeFromKind: () => "",
     idChipHtml: () => "",
@@ -100,6 +103,9 @@ function loadTodos(search) {
 
   return { chips: document.getElementById("todosObjectChips"), requests, sandbox, document };
 }
+
+assert.doesNotMatch(scriptSource, /replaceState/, "待办 URL 同步须走 PersonalList.syncListUrl");
+assert.doesNotMatch(fs.readFileSync(path.join(root, "web/static/js/po/notice.js"), "utf8"), /replaceState/, "通知 URL 同步须走 PersonalList.syncListUrl");
 
 /* 1. 模板：分类栏改为与已办同款空容器，并移除冗余的"具体对象"下拉 */
 assert.match(
