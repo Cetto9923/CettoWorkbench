@@ -59,25 +59,6 @@
   text-decoration: none;
   transition: color 0.15s ease;
 }
-.ui-close-btn {
-  width: 28px;
-  height: 28px;
-  border: 1px solid var(--wb-border-subtle);
-  border-radius: 6px;
-  padding: 0;
-  background: var(--wb-bg-surface);
-  color: var(--wb-text-secondary);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font: inherit;
-  font-size: 14px;
-  line-height: 1;
-  transition: background .15s ease, color .15s ease, border-color .15s ease;
-}
-.ui-close-btn:hover { background: var(--wb-bg-muted); color: var(--wb-text-primary); border-color: var(--wb-primary); }
-.ui-close-btn:focus-visible { outline: 2px solid var(--wb-primary); outline-offset: 2px; }
 .po-notice .notice-title-main:hover {
   color: var(--wb-primary);
   text-decoration: underline;
