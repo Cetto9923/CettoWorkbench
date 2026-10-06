@@ -286,7 +286,7 @@
   left: 50%;
   transform: translateX(-50%);
   background: #0f172a;
-  color: #ffffff;
+  color: var(--color-text-inverse);
   padding: 8px 18px;
   border-radius: 6px;
   font-size: 13px;

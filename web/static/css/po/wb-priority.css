@@ -417,7 +417,7 @@ html[data-theme="dark"] .wb-status-tag.wb-status-success,
 html[data-theme="dark"] .wb-status-tag.wb-status-green,
 html[data-theme="dark"] .done-tag.success {
   background: rgba(16, 185, 129, 0.15) !important;
-  color: #34d399 !important;
+  color: var(--color-success) !important;
   border-color: rgba(16, 185, 129, 0.35) !important;
 }
 html[data-theme="dark"] .wb-status-tag.wb-status-success .wb-status-dot,
@@ -431,7 +431,7 @@ html[data-theme="dark"] .wb-status-tag.wb-status-processing,
 html[data-theme="dark"] .wb-status-tag.wb-status-blue,
 html[data-theme="dark"] .done-tag.blue {
   background: rgba(59, 130, 246, 0.18) !important;
-  color: #93c5fd !important;
+  color: var(--color-info) !important;
   border-color: rgba(59, 130, 246, 0.38) !important;
 }
 html[data-theme="dark"] .wb-status-tag.wb-status-processing .wb-status-dot,
@@ -444,7 +444,7 @@ html[data-theme="dark"] .wb-status-tag.wb-status-warning,
 html[data-theme="dark"] .wb-status-tag.wb-status-amber,
 html[data-theme="dark"] .done-tag.warning {
   background: rgba(245, 158, 11, 0.15) !important;
-  color: #fbbf24 !important;
+  color: var(--color-warning) !important;
   border-color: rgba(245, 158, 11, 0.35) !important;
 }
 html[data-theme="dark"] .wb-status-tag.wb-status-warning .wb-status-dot,
@@ -456,7 +456,7 @@ html[data-theme="dark"] .wb-status-tag.wb-status-danger,
 html[data-theme="dark"] .wb-status-tag.wb-status-red,
 html[data-theme="dark"] .done-tag.danger {
   background: rgba(239, 68, 68, 0.15) !important;
-  color: #f87171 !important;
+  color: var(--color-danger) !important;
   border-color: rgba(239, 68, 68, 0.35) !important;
 }
 html[data-theme="dark"] .wb-status-tag.wb-status-danger .wb-status-dot,
@@ -468,7 +468,7 @@ html[data-theme="dark"] .wb-status-tag.wb-status-neutral,
 html[data-theme="dark"] .wb-status-tag.wb-status-gray,
 html[data-theme="dark"] .done-tag.gray {
   background: rgba(255, 255, 255, 0.05) !important;
-  color: #cbd5e1 !important;
+  color: var(--color-text-body) !important;
   border-color: rgba(255, 255, 255, 0.12) !important;
 }
 html[data-theme="dark"] .wb-status-tag.wb-status-neutral .wb-status-dot,

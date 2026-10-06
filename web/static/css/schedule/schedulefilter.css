@@ -42,7 +42,7 @@
 #scheduleMultiselectRow .schedule-ms-trigger i {
   flex-shrink: 0;
   font-size: 10px;
-  color: #64748b;
+  color: var(--wb-text-tertiary);
 }
 
 #scheduleMultiselectRow .schedule-ms-panel {

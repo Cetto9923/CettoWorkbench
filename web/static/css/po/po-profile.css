@@ -216,7 +216,7 @@
   height: 52px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--wb-primary), #3b82f6);
-  color: #ffffff;
+  color: var(--color-text-inverse);
   font-size: 22px;
   font-weight: 700;
   display: flex;
@@ -500,7 +500,7 @@
 
 :is(.po-profile, .profile-modal) .btn-pwd-commit:hover {
   background: var(--wb-primary);
-  color: #ffffff;
+  color: var(--color-text-inverse);
 }
 
 /* 弹窗底部吸底操作栏（无论如何不会被遮挡，无需滚动） */
@@ -526,7 +526,7 @@
   border-radius: 6px;
   border: none;
   background: var(--wb-primary);
-  color: #ffffff;
+  color: var(--color-text-inverse);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -577,7 +577,7 @@ html[data-theme="dark"] :is(.po-profile, .profile-modal) .user-account-badge,
 html[data-theme="dark"] :is(.po-profile, .profile-modal) .agile-chip-pill {
   background: rgba(59, 130, 246, 0.15);
   border-color: rgba(59, 130, 246, 0.35);
-  color: #60a5fa;
+  color: var(--color-primary);
 }
 
 html[data-theme="dark"] :is(.po-profile, .profile-modal) .field-control {
@@ -601,8 +601,8 @@ html[data-theme="dark"] :is(.po-profile, .profile-modal) .role-checkbox-card {
 
 html[data-theme="dark"] :is(.po-profile, .profile-modal) .role-checkbox-card.selected {
   background: rgba(59, 130, 246, 0.15);
-  border-color: #3b82f6;
-  color: #60a5fa;
+  border-color: var(--color-border-focus);
+  color: var(--color-primary);
 }
 
 html[data-theme="dark"] :is(.po-profile, .profile-modal) .modal-bottom-bar,

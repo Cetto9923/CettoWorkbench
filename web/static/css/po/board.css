@@ -316,11 +316,11 @@ html[data-theme="dark"] .po-board {
 /* 1. 泳道网格与表头清晰化（解决泳道边界隐形丢失问题） */
 html[data-theme="dark"] .po-board .demand-board,
 html[data-theme="dark"] .po-board .grid-head {
-  background: #111827;
+  background: var(--po-bg);
   border-color: #243048;
 }
 html[data-theme="dark"] .po-board .grid-head > div {
-  color: #cbd5e1;
+  color: var(--color-text-body);
   font-weight: 700;
   border-right-color: rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.015);
@@ -330,7 +330,7 @@ html[data-theme="dark"] .po-board .tree-cell {
   border-right-color: rgba(255, 255, 255, 0.08);
 }
 html[data-theme="dark"] .po-board .demand-row {
-  background: #111827;
+  background: var(--po-bg);
   border-bottom-color: rgba(255, 255, 255, 0.06);
 }
 html[data-theme="dark"] .po-board .demand-row:hover {
@@ -347,39 +347,39 @@ html[data-theme="dark"] .po-board .stage-card.actionable {
   box-shadow: 0 0 10px rgba(59, 130, 246, 0.08);
 }
 html[data-theme="dark"] .po-board .stage-card.actionable .stage-name {
-  color: #60a5fa !important;
+  color: var(--color-primary) !important;
   font-weight: 700;
 }
 
 /* 彻底解决“科技侧需求梳理尚未完成”等暗黑不可见的问题 */
 html[data-theme="dark"] .po-board .stage-card.actionable .stage-mini,
 html[data-theme="dark"] .po-board .stage-card .stage-mini {
-  color: #cbd5e1 !important;
+  color: var(--color-text-body) !important;
   font-weight: 400;
   opacity: 0.95;
 }
 
 html[data-theme="dark"] .po-board .stage-action {
-  color: #60a5fa !important;
+  color: var(--color-primary) !important;
   font-weight: 700;
 }
 
 html[data-theme="dark"] .po-board .stage-action:hover {
-  color: #93c5fd !important;
+  color: var(--color-info) !important;
   text-decoration: underline;
 }
 
 /* 3. 需求树节点与元信息高亮 */
 html[data-theme="dark"] .po-board .node-title {
-  color: #f8fafc;
+  color: var(--color-text-primary);
 }
 
 html[data-theme="dark"] .po-board .node-meta {
-  color: #cbd5e1;
+  color: var(--color-text-body);
 }
 
 html[data-theme="dark"] .po-board .node-meta .code {
-  color: #94a3b8;
+  color: var(--color-text-secondary);
 }
 
 html[data-theme="dark"] .po-board .branch {
@@ -388,23 +388,23 @@ html[data-theme="dark"] .po-board .branch {
 
 html[data-theme="dark"] .po-board .owner-dot {
   background: rgba(59, 130, 246, 0.2);
-  color: #60a5fa;
+  color: var(--color-primary);
 }
 
 /* 4. 交付声明条轻量化 */
 html[data-theme="dark"] .po-board .role-banner {
   background: rgba(30, 41, 59, 0.7);
   border-color: rgba(59, 130, 246, 0.25);
-  color: #cbd5e1;
+  color: var(--color-text-body);
 }
 
 html[data-theme="dark"] .po-board .role-banner strong {
-  color: #60a5fa;
+  color: var(--color-primary);
 }
 
 /* 5. 效能快照指标卡告别霓虹警报色块 */
 html[data-theme="dark"] .po-board .team-metrics {
-  background: #111827;
+  background: var(--po-bg);
   border-color: #243048;
 }
 
@@ -424,7 +424,7 @@ html[data-theme="dark"] .po-board .team-metric.is-risk {
 }
 
 html[data-theme="dark"] .po-board .metric-name {
-  color: #94a3b8;
+  color: var(--color-text-secondary);
 }
 
 /* 6. 右侧问题栏独立景深 */
@@ -440,22 +440,22 @@ html[data-theme="dark"] .po-board .issue-card {
 }
 
 html[data-theme="dark"] .po-board .issue-card .issue-title {
-  color: #f8fafc;
+  color: var(--color-text-primary);
 }
 
 html[data-theme="dark"] .po-board .issue-card .issue-meta {
-  color: #94a3b8;
+  color: var(--color-text-secondary);
 }
 
 /* 7. 任务看板暗色模式 */
 html[data-theme="dark"] .po-board .task-col {
-  background: #111827;
+  background: var(--po-bg);
   border-color: #243048;
 }
 
 html[data-theme="dark"] .po-board .task-col-hdr {
   border-bottom-color: rgba(255, 255, 255, 0.08);
-  color: #cbd5e1;
+  color: var(--color-text-body);
 }
 
 html[data-theme="dark"] .po-board .task-card {
@@ -469,7 +469,7 @@ html[data-theme="dark"] .po-board .task-card:hover {
 
 html[data-theme="dark"] .po-board .task-title-link,
 html[data-theme="dark"] .po-board .task-title {
-  color: #f8fafc;
+  color: var(--color-text-primary);
 }
 
 /* 8. 折叠汇总卡片 */
@@ -479,7 +479,7 @@ html[data-theme="dark"] .po-board .card-biz-agg {
 }
 
 html[data-theme="dark"] .po-board .biz-agg-title {
-  color: #60a5fa;
+  color: var(--color-primary);
 }
 
 html[data-theme="dark"] .po-board .biz-head {

@@ -286,7 +286,7 @@
 
 .schedule-list-title span {
   font-size: 12px;
-  color: #64748b;
+  color: var(--wb-text-tertiary);
   font-weight: 700;
 }
 
@@ -341,7 +341,7 @@
 .schedule-filter-main label {
   font-size: 12px;
   font-weight: 800;
-  color: #64748b;
+  color: var(--wb-text-tertiary);
   white-space: nowrap;
 }
 

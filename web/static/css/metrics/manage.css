@@ -215,137 +215,137 @@ html[data-theme="dark"] .po-metrics-manage .metric-summary-card:hover {
   border-color: var(--color-border-strong, #475569);
 }
 html[data-theme="dark"] .po-metrics-manage .m-sum-label {
-  color: #cbd5e1;
+  color: var(--color-text-body);
 }
 html[data-theme="dark"] .po-metrics-manage .m-sum-num {
-  color: #f8fafc;
+  color: var(--color-text-primary);
 }
 html[data-theme="dark"] .po-metrics-manage .m-sum-desc {
-  color: #94a3b8;
+  color: var(--color-text-secondary);
 }
 html[data-theme="dark"] .po-metrics-manage .metric-summary-card.c-enabled .m-sum-num {
-  color: #34d399;
+  color: var(--color-success);
 }
 html[data-theme="dark"] .po-metrics-manage .metric-summary-card.c-warn .m-sum-num {
-  color: #fbbf24;
+  color: var(--color-warning);
 }
 html[data-theme="dark"] .po-metrics-manage .metric-summary-card.c-danger .m-sum-num {
-  color: #f87171;
+  color: var(--color-danger);
 }
 
 /* 深色模式下的表格与内容高对比度深度优化 · 彻底解决暗色下看不清字的问题 */
 html[data-theme="dark"] .po-metrics-manage .workspace-table th {
-  background: #0f172a !important;
-  color: #cbd5e1 !important;
+  background: var(--color-surface-muted) !important;
+  color: var(--color-text-body) !important;
   border-bottom: 1px solid #334155 !important;
 }
 html[data-theme="dark"] .po-metrics-manage .workspace-table td {
-  color: #cbd5e1 !important;
+  color: var(--color-text-body) !important;
   border-bottom: 1px solid #334155 !important;
 }
 html[data-theme="dark"] .po-metrics-manage .workspace-table tr:hover td {
   background: rgba(255, 255, 255, 0.03) !important;
 }
 html[data-theme="dark"] .po-metrics-manage .metric-table .metric-name {
-  color: #60a5fa !important;
+  color: var(--color-primary) !important;
 }
 html[data-theme="dark"] .po-metrics-manage .metric-table .metric-code {
-  color: #94a3b8 !important;
+  color: var(--color-text-secondary) !important;
 }
 html[data-theme="dark"] .po-metrics-manage .metric-col-source {
-  color: #cbd5e1 !important;
+  color: var(--color-text-body) !important;
 }
 html[data-theme="dark"] .po-metrics-manage .metric-target-val {
-  color: #f8fafc !important;
+  color: var(--color-text-primary) !important;
 }
 html[data-theme="dark"] .po-metrics-manage .metric-target-row em {
-  color: #94a3b8 !important;
+  color: var(--color-text-secondary) !important;
 }
 html[data-theme="dark"] .po-metrics-manage .metric-target-row[data-tone="warn"] span {
-  color: #fbbf24 !important;
+  color: var(--color-warning) !important;
   font-weight: 600;
 }
 html[data-theme="dark"] .po-metrics-manage .metric-target-row[data-tone="danger"] span {
-  color: #f87171 !important;
+  color: var(--color-danger) !important;
   font-weight: 600;
 }
 html[data-theme="dark"] .po-metrics-manage .dir-tag.dir-up {
-  color: #34d399 !important;
+  color: var(--color-success) !important;
 }
 html[data-theme="dark"] .po-metrics-manage .dir-tag.dir-down {
-  color: #60a5fa !important;
+  color: var(--color-primary) !important;
 }
 html[data-theme="dark"] .po-metrics-manage .state-tag {
   background: rgba(255, 255, 255, 0.05) !important;
-  border-color: #334155 !important;
-  color: #cbd5e1 !important;
+  border-color: var(--color-border) !important;
+  color: var(--color-text-body) !important;
 }
 html[data-theme="dark"] .po-metrics-manage .action-btn {
   background: rgba(255, 255, 255, 0.04) !important;
-  border-color: #334155 !important;
-  color: #cbd5e1 !important;
+  border-color: var(--color-border) !important;
+  color: var(--color-text-body) !important;
 }
 html[data-theme="dark"] .po-metrics-manage .action-btn:hover {
   background: rgba(255, 255, 255, 0.08) !important;
-  color: #ffffff !important;
+  color: var(--color-text-inverse) !important;
 }
 html[data-theme="dark"] .po-metrics-manage .action-btn.primary {
   background: #2563eb !important;
   border-color: #2563eb !important;
-  color: #ffffff !important;
+  color: var(--color-text-inverse) !important;
 }
 html[data-theme="dark"] .po-metrics-manage .action-btn.text-danger {
   background: rgba(239, 68, 68, 0.12) !important;
   border-color: rgba(239, 68, 68, 0.3) !important;
-  color: #f87171 !important;
+  color: var(--color-danger) !important;
 }
 html[data-theme="dark"] .po-metrics-manage .action-btn.text-success {
   background: rgba(16, 185, 129, 0.12) !important;
   border-color: rgba(16, 185, 129, 0.3) !important;
-  color: #34d399 !important;
+  color: var(--color-success) !important;
 }
 html[data-theme="dark"] .po-metrics-manage .workspace-result-bar {
-  background: #1e293b !important;
-  color: #cbd5e1 !important;
+  background: var(--color-surface) !important;
+  color: var(--color-text-body) !important;
   border-bottom: 1px solid #334155 !important;
 }
 html[data-theme="dark"] .po-metrics-manage .workspace-result-bar strong {
-  color: #f8fafc !important;
+  color: var(--color-text-primary) !important;
 }
 html[data-theme="dark"] .po-metrics-manage .workspace-result-hint {
-  color: #94a3b8 !important;
+  color: var(--color-text-secondary) !important;
 }
 html[data-theme="dark"] .po-metrics-manage .workspace-toolbar {
-  background: #1e293b !important;
+  background: var(--color-surface) !important;
   border-bottom: 1px solid #334155 !important;
 }
 html[data-theme="dark"] .po-metrics-manage .toolbar-filters-group .filter-label {
-  color: #cbd5e1 !important;
+  color: var(--color-text-body) !important;
 }
 html[data-theme="dark"] .po-metrics-manage .toolbar-filters-group select {
-  background: #0f172a !important;
-  border-color: #334155 !important;
-  color: #f8fafc !important;
+  background: var(--color-surface-muted) !important;
+  border-color: var(--color-border) !important;
+  color: var(--color-text-primary) !important;
 }
 html[data-theme="dark"] .po-metrics-manage .workspace-search {
-  background: #0f172a !important;
-  border-color: #334155 !important;
-  color: #cbd5e1 !important;
+  background: var(--color-surface-muted) !important;
+  border-color: var(--color-border) !important;
+  color: var(--color-text-body) !important;
 }
 html[data-theme="dark"] .po-metrics-manage .workspace-search input {
-  color: #f8fafc !important;
+  color: var(--color-text-primary) !important;
 }
 html[data-theme="dark"] .po-metrics-manage .workspace-search input::placeholder {
-  color: #64748b !important;
+  color: var(--wb-text-tertiary) !important;
 }
 html[data-theme="dark"] .po-metrics-manage .workspace-btn {
-  background: #0f172a !important;
-  border-color: #334155 !important;
-  color: #cbd5e1 !important;
+  background: var(--color-surface-muted) !important;
+  border-color: var(--color-border) !important;
+  color: var(--color-text-body) !important;
 }
 html[data-theme="dark"] .po-metrics-manage .workspace-btn:hover {
-  background: #334155 !important;
-  color: #f8fafc !important;
+  background: var(--color-surface-hover) !important;
+  color: var(--color-text-primary) !important;
 }
 
 /* 工具栏与过滤器 (规范消费 personal-workspace.css) */
