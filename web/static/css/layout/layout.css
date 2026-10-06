@@ -649,7 +649,6 @@ body.has-bottom-tabs { --bottom-tabbar-height: 40px; }
 .bottom-tab-actions, .workbench-tab-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 body.layout-nav-top .bottom-tabbar, body.layout-chrome-hidden .bottom-tabbar { left: 0; }
 body.sidebar-collapsed .bottom-tabbar { left: var(--sidebar-width-collapsed); }
-body.has-bottom-tabs .main { padding-bottom: calc(var(--space-6) + var(--bottom-tabbar-height, 40px)); }
 .bottom-tab, .workbench-tab {
   display: inline-flex; align-items: center; gap: 6px; max-width: 180px; height: 28px; padding: 0 8px; border: 1px solid var(--color-border); border-radius: 6px;
   background: var(--color-surface-muted); color: var(--color-text-secondary); font-size: 12px; white-space: nowrap; text-decoration: none; flex-shrink: 0; transition: all 0.15s ease;
