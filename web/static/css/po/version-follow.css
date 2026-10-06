@@ -365,12 +365,6 @@
 }
 
 /* ─── 8. 空态与分页 ─── */
-.vf-empty-state {
-  padding: var(--wb-space-4);
-  text-align: center;
-}
-.vf-empty-title { font-size: var(--wb-font-sm); font-weight: 600;
-  color: var(--color-text-primary); margin: 0 0 4px; }
 .vf-empty-desc { font-size: var(--wb-font-xs); color: var(--color-text-secondary); margin: 0 0 8px; }
 .vf-empty-action {
   display: inline-block;
