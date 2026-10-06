@@ -14,7 +14,7 @@ html[data-theme="dark"] .po-metrics-radar.radar-screen-container {
 html[data-theme="dark"] .po-metrics-radar .radar-screen-header {
   background: var(--color-surface);
   border-color: var(--color-border);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px var(--color-ink-15-23-42-03);
 }
 html[data-theme="dark"] .po-metrics-radar .radar-screen-title {
   color: var(--color-text-primary);
@@ -22,7 +22,7 @@ html[data-theme="dark"] .po-metrics-radar .radar-screen-title {
 html[data-theme="dark"] .po-metrics-radar .radar-brand-badge {
   background: rgba(59, 130, 246, 0.15);
   color: var(--color-primary);
-  border-color: rgba(59, 130, 246, 0.35);
+  border-color: var(--color-primary-border);
 }
 html[data-theme="dark"] .po-metrics-radar .scope-chip {
   background: rgba(255, 255, 255, 0.04);
@@ -30,7 +30,7 @@ html[data-theme="dark"] .po-metrics-radar .scope-chip {
   color: var(--color-text-secondary);
 }
 html[data-theme="dark"] .po-metrics-radar .scope-chip.target {
-  background: rgba(59, 130, 246, 0.12);
+  background: var(--color-primary-light);
   border-color: rgba(59, 130, 246, 0.3);
   color: var(--color-primary);
 }
@@ -47,7 +47,7 @@ html[data-theme="dark"] .po-metrics-radar .radar-mode-btn {
   color: var(--color-text-secondary);
 }
 html[data-theme="dark"] .po-metrics-radar .radar-mode-btn.active {
-  background: #2563eb;
+  background: var(--color-btn-primary-bg);
   color: var(--color-text-inverse);
 }
 html[data-theme="dark"] .po-metrics-radar .radar-select-group .ctrl-label {
@@ -62,12 +62,12 @@ html[data-theme="dark"] .po-metrics-radar .radar-select-group .custom-select-box
   color: var(--color-text-secondary);
 }
 html[data-theme="dark"] .po-metrics-radar .pmo-config-btn {
-  background: rgba(59, 130, 246, 0.12);
+  background: var(--color-primary-light);
   border-color: rgba(59, 130, 246, 0.3);
   color: var(--color-primary);
 }
 html[data-theme="dark"] .po-metrics-radar .pmo-config-btn:hover {
-  background: #2563eb;
+  background: var(--color-btn-primary-bg);
   color: var(--color-text-inverse);
 }
 
@@ -96,7 +96,7 @@ html[data-theme="dark"] .po-metrics-radar .radar-kpi-block.kpi-overall-score str
 html[data-theme="dark"] .po-metrics-radar .kpi-tag.score-grade {
   background: rgba(16, 185, 129, 0.2);
   color: var(--color-success);
-  border-color: rgba(16, 185, 129, 0.35);
+  border-color: var(--color-badge-success-border);
 }
 html[data-theme="dark"] .po-metrics-radar .radar-kpi-block.kpi-success strong { color: var(--color-success); }
 html[data-theme="dark"] .po-metrics-radar .kpi-progress-wrap {
@@ -142,7 +142,7 @@ html[data-theme="dark"] .po-metrics-radar .radar-cat-card:hover {
 }
 html[data-theme="dark"] .po-metrics-radar .radar-cat-card.active {
   border-color: var(--color-border-focus);
-  background: rgba(59, 130, 246, 0.12);
+  background: var(--color-primary-light);
 }
 html[data-theme="dark"] .po-metrics-radar .radar-cat-score.score-ok { color: var(--color-success); background: rgba(16, 185, 129, 0.12); }
 html[data-theme="dark"] .po-metrics-radar .radar-cat-score.score-warn { color: var(--color-warning); background: rgba(245, 158, 11, 0.12); }
@@ -181,8 +181,8 @@ html[data-theme="dark"] .po-metrics-radar .matrix-tag-btn:hover {
   color: var(--color-text-primary);
 }
 html[data-theme="dark"] .po-metrics-radar .matrix-tag-btn.active {
-  background: #2563eb;
-  border-color: #2563eb;
+  background: var(--color-btn-primary-bg);
+  border-color: var(--color-btn-primary-bg);
   color: var(--color-text-inverse);
   box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
 }
@@ -198,7 +198,7 @@ html[data-theme="dark"] .po-metrics-radar .radar-m-compact-tile:hover {
 html[data-theme="dark"] .po-metrics-radar .radar-m-compact-tile.selected {
   border-color: var(--color-border-focus) !important;
   background: rgba(59, 130, 246, 0.14) !important;
-  box-shadow: 0 0 0 1px #3b82f6;
+  box-shadow: 0 0 0 1px var(--color-border-focus);
 }
 html[data-theme="dark"] .po-metrics-radar .m-name-text {
   color: var(--color-text-primary);
@@ -226,7 +226,7 @@ html[data-theme="dark"] .po-metrics-radar .dock-title {
 }
 html[data-theme="dark"] .po-metrics-radar .dock-code {
   color: var(--color-text-disabled);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--color-badge-neutral-bg);
   border-color: transparent;
 }
 html[data-theme="dark"] .po-metrics-radar .dock-val-item strong {
@@ -256,11 +256,11 @@ html[data-theme="dark"] .po-metrics-radar .dock-bullet {
   color: var(--color-border);
 }
 html[data-theme="dark"] .po-metrics-radar .dock-config-link {
-  background: rgba(59, 130, 246, 0.12);
+  background: var(--color-primary-light);
   border-color: rgba(59, 130, 246, 0.3);
   color: var(--color-primary);
 }
 html[data-theme="dark"] .po-metrics-radar .dock-config-link:hover {
-  background: #2563eb;
+  background: var(--color-btn-primary-bg);
   color: var(--color-text-inverse);
 }

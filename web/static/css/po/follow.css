@@ -547,17 +547,17 @@ html[data-theme="dark"] #demandSection .fd-schedule-inline {
 
 /* 标签半透明通透质感 */
 html[data-theme="dark"] .tag.green {
-  background: rgba(16, 185, 129, 0.15);
+  background: var(--color-badge-success-bg);
   color: var(--color-success);
   border: 1px solid rgba(16, 185, 129, 0.3);
 }
 html[data-theme="dark"] .tag.orange {
-  background: rgba(245, 158, 11, 0.15);
+  background: var(--color-badge-warning-bg);
   color: var(--color-warning);
   border: 1px solid rgba(245, 158, 11, 0.3);
 }
 html[data-theme="dark"] .tag.red {
-  background: rgba(239, 68, 68, 0.15);
+  background: var(--color-badge-danger-bg);
   color: var(--color-danger);
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
@@ -581,11 +581,11 @@ html[data-theme="dark"] .pw-action-btn:hover:not(:disabled) {
 html[data-theme="dark"] .pw-action-btn.pw-watch-btn.is-watched {
   color: var(--color-primary);
   border-color: rgba(96, 165, 250, 0.4);
-  background: rgba(59, 130, 246, 0.12);
+  background: var(--color-primary-light);
 }
 html[data-theme="dark"] .pw-action-btn.pw-watch-btn.is-watched:hover:not(:disabled) {
   color: var(--color-info);
-  border-color: #60a5fa;
+  border-color: var(--color-primary);
   background: rgba(59, 130, 246, 0.2);
 }
 
@@ -616,7 +616,7 @@ html[data-theme="dark"] .pw-page-btn {
 html[data-theme="dark"] .pw-page-btn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.08);
   color: var(--color-text-primary);
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: var(--color-white-35);
 }
 html[data-theme="dark"] .pw-page-btn.active {
   background: var(--color-info-fill);

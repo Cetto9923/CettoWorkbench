@@ -519,7 +519,7 @@
 }
 
 .rd-node-role-badge--main {
-  background: #2563eb;
+  background: var(--color-info-fill);
 }
 
 .rd-node-role-badge--cooperate {

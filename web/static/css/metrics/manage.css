@@ -237,11 +237,11 @@ html[data-theme="dark"] .po-metrics-manage .metric-summary-card.c-danger .m-sum-
 html[data-theme="dark"] .po-metrics-manage .workspace-table th {
   background: var(--color-surface-muted) !important;
   color: var(--color-text-body) !important;
-  border-bottom: 1px solid #334155 !important;
+  border-bottom: 1px solid var(--color-border) !important;
 }
 html[data-theme="dark"] .po-metrics-manage .workspace-table td {
   color: var(--color-text-body) !important;
-  border-bottom: 1px solid #334155 !important;
+  border-bottom: 1px solid var(--color-border) !important;
 }
 html[data-theme="dark"] .po-metrics-manage .workspace-table tr:hover td {
   background: rgba(255, 255, 255, 0.03) !important;
@@ -276,7 +276,7 @@ html[data-theme="dark"] .po-metrics-manage .dir-tag.dir-down {
   color: var(--color-primary) !important;
 }
 html[data-theme="dark"] .po-metrics-manage .state-tag {
-  background: rgba(255, 255, 255, 0.05) !important;
+  background: var(--color-badge-neutral-bg) !important;
   border-color: var(--color-border) !important;
   color: var(--color-text-body) !important;
 }
@@ -290,8 +290,8 @@ html[data-theme="dark"] .po-metrics-manage .action-btn:hover {
   color: var(--color-text-inverse) !important;
 }
 html[data-theme="dark"] .po-metrics-manage .action-btn.primary {
-  background: #2563eb !important;
-  border-color: #2563eb !important;
+  background: var(--color-btn-primary-bg) !important;
+  border-color: var(--color-btn-primary-bg) !important;
   color: var(--color-text-inverse) !important;
 }
 html[data-theme="dark"] .po-metrics-manage .action-btn.text-danger {
@@ -307,7 +307,7 @@ html[data-theme="dark"] .po-metrics-manage .action-btn.text-success {
 html[data-theme="dark"] .po-metrics-manage .workspace-result-bar {
   background: var(--color-surface) !important;
   color: var(--color-text-body) !important;
-  border-bottom: 1px solid #334155 !important;
+  border-bottom: 1px solid var(--color-border) !important;
 }
 html[data-theme="dark"] .po-metrics-manage .workspace-result-bar strong {
   color: var(--color-text-primary) !important;
@@ -317,7 +317,7 @@ html[data-theme="dark"] .po-metrics-manage .workspace-result-hint {
 }
 html[data-theme="dark"] .po-metrics-manage .workspace-toolbar {
   background: var(--color-surface) !important;
-  border-bottom: 1px solid #334155 !important;
+  border-bottom: 1px solid var(--color-border) !important;
 }
 html[data-theme="dark"] .po-metrics-manage .toolbar-filters-group .filter-label {
   color: var(--color-text-body) !important;

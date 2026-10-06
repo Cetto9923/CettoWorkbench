@@ -326,7 +326,7 @@
 }
 
 .schedule-rd-role--main {
-  background: #2563eb;
+  background: var(--color-info-fill);
 }
 
 .schedule-rd-role--coop {
