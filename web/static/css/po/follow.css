@@ -17,7 +17,7 @@
 /* ─── 2. 项目周报: 顶部 4 KPI 汇总指标卡 ─── */
 .pw-summary {
   display: grid; grid-template-columns: repeat(4, minmax(140px, 1fr));
-  gap: 10px; margin-bottom: 12px;
+  gap: var(--wb-space-2); margin-bottom: var(--wb-space-2);
   padding: 4px 6px; box-sizing: border-box;
 }
 .pw-sum-card {
@@ -41,7 +41,7 @@
 .pw-toolbar {
   background: var(--wb-bg-surface); border: 1px solid var(--wb-border-subtle); border-radius: 8px;
   padding: 8px 12px; display: flex; align-items: center; gap: 8px;
-  margin-bottom: 12px; box-shadow: 0 1px 2px rgba(17, 24, 39, 0.03); flex-wrap: wrap;
+  margin-bottom: var(--wb-space-2); box-shadow: 0 1px 2px rgba(17, 24, 39, 0.03); flex-wrap: wrap;
 }
 .pw-filter-btn {
   height: 28px; border: 1px solid var(--wb-border-default); background: var(--wb-bg-surface); border-radius: 5px;
