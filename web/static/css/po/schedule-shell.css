@@ -137,11 +137,10 @@ body.po-workbench-shell #page-schedule .schedule-table .schedule-action-col {
   min-width: 96px;
   text-align: center;
 }
-/* 窗口模式多出「换窗口」：最宽组合「去排期 + 换窗口」需 128px；非窗口模式保持 96px，不挤标题列 */
-body.po-workbench-shell #page-schedule #windowActiveBanner ~ #scheduleBizListPanel .schedule-action-col { width: 128px; min-width: 128px; }
-/* 独立研需行固定有「排期 + 维护任务」需 124px；窗口模式再加「换窗口」需 185px */
+/* 窗口模式：父需求「详情 + 换窗口」、办理行「澄清 + 去排期」；非窗口保持 96px */
+body.po-workbench-shell #page-schedule #windowActiveBanner ~ #scheduleBizListPanel .schedule-action-col { width: 124px; min-width: 124px; }
+/* 独立研需的窗口与非窗口模式都只保留「排期 + 维护任务」 */
 body.po-workbench-shell #page-schedule #scheduleIndependentListPanel .schedule-action-col { width: 124px; min-width: 124px; }
-body.po-workbench-shell #page-schedule #windowActiveBanner ~ #scheduleIndependentListPanel .schedule-action-col { width: 185px; min-width: 185px; }
 
 /* D5: 树形列表左对齐：展开箭头/占位与子行统一缩进 24px */
 body.po-workbench-shell #page-schedule .schedule-table .schedule-title-cell {
