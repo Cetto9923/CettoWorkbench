@@ -17,6 +17,7 @@ import (
 
 	"workbench/internal/model"
 	"workbench/internal/module/po/primaryaction"
+	"workbench/internal/pkg/personlabel"
 	"workbench/internal/pkg/zentao"
 )
 
@@ -352,14 +353,20 @@ func lookupAccountsDisplay(displayMap map[string]string, accountsCSV string) str
 }
 
 func buildStoryWorkItem(row StoryRow, label string, actor *model.User, displayMap map[string]string) WorkItemDetail {
-	owner := lookupAccountDisplay(displayMap, row.AssignedTo)
+	owner := ""
+	if actor != nil {
+		owner = lookupAccountDisplay(displayMap, actor.Account)
+		if owner == "" {
+			owner = personlabel.Format(actor.Account, actor.DisplayName)
+		}
+	}
 	deadline, isOverdue, days := "", false, 0
 	return WorkItemDetail{
 		Kind:           "story",
 		ID:             fmt.Sprintf("%d", row.ID),
 		Pri:            fmt.Sprintf("P%d", row.Pri),
 		Title:          row.Title,
-		AssignedToName: owner,
+		AssignedToName: lookupAccountDisplay(displayMap, row.AssignedTo),
 		Owner:          owner,
 		NextOwner:      owner,
 		ZentaoUrl:      zentao.URL("story", "view", fmt.Sprintf("storyID=%d", row.ID)),
