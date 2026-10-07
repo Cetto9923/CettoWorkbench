@@ -163,8 +163,6 @@ func (s *Service) UrgeHomeDemandPreview(ctx context.Context, actor *model.User, 
 		recs = append(recs, UrgePreviewRecipient{Account: a, Label: lb})
 		labelList = append(labelList, lb)
 	}
-	reason := homeAcceptanceUrgeReason(source)
-	recipientTip := homeAcceptanceRecipientTip(source)
 	preview := buildAcceptanceUrgeMessage(row, labelList, "")
 	return &UrgePreview{
 		DemandID:       row.ID,
@@ -172,8 +170,7 @@ func (s *Service) UrgeHomeDemandPreview(ctx context.Context, actor *model.User, 
 		Status:         row.Status,
 		StatusLabel:    homeAcceptanceStatusLabel(row.Status),
 		StageLabel:     "验收",
-		Reason:         reason,
-		RecipientTip:   recipientTip,
+		Reason:         "请尽快完成验收",
 		RecipientSrc:   string(source),
 		Recipients:     recs,
 		MessagePreview: preview,
@@ -219,44 +216,16 @@ func (s *Service) UrgeHomeDemand(ctx context.Context, actor *model.User, id uint
 	return duplicate, err
 }
 
-// canUrgeHomeAcceptance 与首页一致：参与人可催验收人，但不能催自己。
+// canUrgeHomeAcceptance 与首页一致：最近一次发起验收的人催办，验收负责人不催自己。
 func (r *Repo) canUrgeHomeAcceptance(row *homeActionDemandRow, account string) bool {
-	if row == nil || (row.Status != "testing" && row.Status != "waitacceptance") {
+	if row == nil || row.Status != "waitacceptance" || !hasHomeAccount(row.AcceptanceInitiator, account) {
 		return false
 	}
-	if hasHomeAccount(row.Accepter, account) || hasHomeCSV(row.VeriFier, account) {
-		return false
-	}
-	if !r.homeActionAuthorized(row, account, "urge") {
-		return false
-	}
-	// 与预览/提交一致：解析后无人可催（含只剩自己）则不允许开催办。
-	recipients, _ := homeAcceptanceRecipientsWithSource(row)
-	return len(excludeHomeAccount(recipients, account)) > 0
+	owner := acceptanceOwner(row.RD, row.AssignedTo)
+	return owner != "" && !hasHomeAccount(owner, account)
 }
 
 type homeAcceptanceRecipientSource string
-
-const (
-	homeAcceptSrcOwner      homeAcceptanceRecipientSource = "accepter"
-	homeAcceptSrcOriginator homeAcceptanceRecipientSource = "originator"
-	homeAcceptSrcCreatedBy  homeAcceptanceRecipientSource = "createdBy"
-)
-
-func homeAcceptanceRecipientTip(src homeAcceptanceRecipientSource) string {
-	switch src {
-	case homeAcceptSrcOriginator:
-		return "未配置验收人，已按提出人推荐催办"
-	case homeAcceptSrcCreatedBy:
-		return "未配置验收人/提出人，已按创建人推荐催办"
-	default:
-		return ""
-	}
-}
-
-func homeAcceptanceUrgeReason(src homeAcceptanceRecipientSource) string {
-	return "请尽快完成验收"
-}
 
 func excludeHomeAccount(accounts []string, account string) []string {
 	account = strings.TrimSpace(account)
@@ -285,7 +254,7 @@ func appendHomeCSVAccounts(out []string, seen map[string]bool, raw string) []str
 	return out
 }
 
-// homeAcceptanceRecipients 顺序：验收人/验证人，其次提出人，再次创建人。
+// homeAcceptanceRecipients 取 RD，未填时取 assignedTo。
 func homeAcceptanceRecipients(row *homeActionDemandRow) []string {
 	accounts, _ := homeAcceptanceRecipientsWithSource(row)
 	return accounts
@@ -295,8 +264,11 @@ func homeAcceptanceRecipientsWithSource(row *homeActionDemandRow) ([]string, hom
 	if row == nil {
 		return nil, ""
 	}
-	if owner := acceptanceOwner(row.RD, row.AssignedTo); owner != "" {
-		return []string{owner}, homeAcceptSrcOwner
+	if rd := strings.TrimSpace(row.RD); rd != "" {
+		return []string{rd}, "RD"
+	}
+	if assigned := strings.TrimSpace(row.AssignedTo); assigned != "" {
+		return []string{assigned}, "assignedTo"
 	}
 	return nil, ""
 }

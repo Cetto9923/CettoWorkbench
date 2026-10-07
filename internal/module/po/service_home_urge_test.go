@@ -28,13 +28,21 @@ func TestUrgeHomeDemandReqDefaultsToAcceptanceInApp(t *testing.T) {
 
 func TestCanUrgeHomeAcceptance(t *testing.T) {
 	repo := NewRepo(nil, nil)
-	row := &homeActionDemandRow{Status: "waitacceptance", AssignedTo: "owner", RD: "acceptor", VeriFier: "verifier"}
+	row := &homeActionDemandRow{Status: "waitacceptance", AssignedTo: "other", RD: "acceptor", AcceptanceInitiator: "owner", VeriFier: "owner"}
 	if !repo.canUrgeHomeAcceptance(row, "owner") {
-		t.Fatal("assigned owner should be allowed to remind the acceptance owner")
+		t.Fatal("latest initiator should be allowed even without another participant role")
 	}
 	if repo.canUrgeHomeAcceptance(row, "acceptor") || repo.canUrgeHomeAcceptance(row, "verifier") {
 		t.Fatal("acceptance recipients must not remind themselves")
 	}
+	if repo.canUrgeHomeAcceptance(row, "other") {
+		t.Fatal("assigned participant without startacceptance must not urge")
+	}
+	row.RD = "owner"
+	if repo.canUrgeHomeAcceptance(row, "owner") {
+		t.Fatal("initiator who is also acceptance owner must not urge himself")
+	}
+	row.RD = "acceptor"
 	row.Status = "active"
 	if repo.canUrgeHomeAcceptance(row, "owner") {
 		t.Fatal("non-acceptance stage must reject urge")
@@ -68,20 +76,5 @@ func TestHomeAcceptanceRecipientsFallback(t *testing.T) {
 	}
 	if got := homeAcceptanceRecipients(&homeActionDemandRow{Originator: "ori", CreatedBy: "creator"}); len(got) != 0 {
 		t.Fatalf("unexpected fallback = %#v", got)
-	}
-}
-
-func TestHomeAcceptanceRecipientTipAndReason(t *testing.T) {
-	if tip := homeAcceptanceRecipientTip(homeAcceptSrcOwner); tip != "" {
-		t.Fatalf("owner tip = %q, want empty", tip)
-	}
-	if tip := homeAcceptanceRecipientTip(homeAcceptSrcOriginator); tip != "未配置验收人，已按提出人推荐催办" {
-		t.Fatalf("originator tip = %q", tip)
-	}
-	if tip := homeAcceptanceRecipientTip(homeAcceptSrcCreatedBy); tip != "未配置验收人/提出人，已按创建人推荐催办" {
-		t.Fatalf("createdBy tip = %q", tip)
-	}
-	if reason := homeAcceptanceUrgeReason(homeAcceptSrcOriginator); reason != "请尽快完成验收" {
-		t.Fatalf("reason should be business semantic, got %q", reason)
 	}
 }

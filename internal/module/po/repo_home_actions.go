@@ -11,23 +11,24 @@ import (
 )
 
 type homeActionDemandRow struct {
-	ID             uint   `gorm:"column:id"`
-	Name           string `gorm:"column:name"`
-	Status         string `gorm:"column:status"`
-	Deleted        string `gorm:"column:deleted"`
-	AssignedTo     string `gorm:"column:assignedTo"`
-	DistributedBy  string `gorm:"column:distributedBy"`
-	CreatedBy      string `gorm:"column:createdBy"`
-	SubmitedBy     string `gorm:"column:submitedBy"`
-	SubmitBy       string `gorm:"column:submitBy"`
-	QD             string `gorm:"column:QD"`
-	RD             string `gorm:"column:RD"`
-	BRA            string `gorm:"column:BRA"`
-	Originator     string `gorm:"column:originator"`
-	Accepter       string `gorm:"column:accepter"`
-	VeriFier       string `gorm:"column:veriFier"`
-	MainDevelopers string `gorm:"column:mainDevelopers"`
-	Product        string `gorm:"column:product"`
+	ID                  uint   `gorm:"column:id"`
+	Name                string `gorm:"column:name"`
+	Status              string `gorm:"column:status"`
+	Deleted             string `gorm:"column:deleted"`
+	AssignedTo          string `gorm:"column:assignedTo"`
+	DistributedBy       string `gorm:"column:distributedBy"`
+	CreatedBy           string `gorm:"column:createdBy"`
+	SubmitedBy          string `gorm:"column:submitedBy"`
+	SubmitBy            string `gorm:"column:submitBy"`
+	QD                  string `gorm:"column:QD"`
+	RD                  string `gorm:"column:RD"`
+	BRA                 string `gorm:"column:BRA"`
+	Originator          string `gorm:"column:originator"`
+	Accepter            string `gorm:"column:accepter"`
+	VeriFier            string `gorm:"column:veriFier"`
+	MainDevelopers      string `gorm:"column:mainDevelopers"`
+	Product             string `gorm:"column:product"`
+	AcceptanceInitiator string `gorm:"column:acceptanceInitiator"`
 }
 
 func (r *Repo) homeActionWriter() (*gorm.DB, error) {
@@ -43,7 +44,7 @@ func (r *Repo) findHomeActionDemand(ctx context.Context, id uint) (*homeActionDe
 		return nil, err
 	}
 	var row homeActionDemandRow
-	err = db.WithContext(ctx).Table("zt_demand").Select("id, name, status, deleted, assignedTo, distributedBy, createdBy, submitedBy, submitBy, QD, RD, BRA, originator, accepter, veriFier, mainDevelopers, product").Where("id = ?", id).Take(&row).Error
+	err = db.WithContext(ctx).Table("zt_demand").Select("id, name, status, deleted, assignedTo, distributedBy, createdBy, submitedBy, submitBy, QD, RD, BRA, originator, accepter, veriFier, mainDevelopers, product, "+latestAcceptanceActorSQL+" AS acceptanceInitiator").Where("id = ?", id).Take(&row).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, errHomeActionNotFound
 	}
