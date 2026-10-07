@@ -173,19 +173,19 @@
   border-color: var(--wb-gray-300);
 }
 .pw-action-btn.pw-watch-btn:hover:not(:disabled) {
-  color: #f59e0b;
-  border-color: #f59e0b;
-  background: rgba(245, 158, 11, 0.08);
+  color: var(--wb-warning);
+  border-color: var(--wb-warning-border);
+  background: var(--wb-warning-light);
 }
 .pw-action-btn.pw-watch-btn.is-watched {
-  color: #2563eb;
-  border-color: rgba(37, 99, 235, 0.35);
-  background: rgba(37, 99, 235, 0.06);
+  color: var(--wb-primary);
+  border-color: var(--wb-primary-border);
+  background: var(--wb-primary-light);
 }
 .pw-action-btn.pw-watch-btn.is-watched:hover:not(:disabled) {
-  color: #1d4ed8;
-  border-color: #1d4ed8;
-  background: rgba(37, 99, 235, 0.12);
+  color: var(--wb-primary-hover);
+  border-color: var(--wb-primary);
+  background: var(--wb-primary-light);
 }
 .link-btn {
   border: none; background: transparent; color: var(--wb-primary); font-size: 12px;
@@ -537,7 +537,7 @@ html[data-theme="dark"] .po-follow .follow-table .table-title-link {
 html[data-theme="dark"] .pw-name:hover,
 html[data-theme="dark"] #demandSection .fd-title-line .table-title-link:hover,
 html[data-theme="dark"] .po-follow .follow-table .table-title-link:hover {
-  color: #bfdbfe;
+  color: var(--color-primary);
   text-decoration: underline;
 }
 html[data-theme="dark"] #demandSection .fd-title-sub {
@@ -582,14 +582,14 @@ html[data-theme="dark"] .pw-action-btn:hover:not(:disabled) {
   border-color: var(--wb-gray-400);
 }
 html[data-theme="dark"] .pw-action-btn.pw-watch-btn.is-watched {
-  color: var(--color-primary);
-  border-color: rgba(96, 165, 250, 0.4);
-  background: var(--color-primary-light);
+  color: var(--wb-primary);
+  border-color: var(--wb-primary-border);
+  background: var(--wb-primary-light);
 }
 html[data-theme="dark"] .pw-action-btn.pw-watch-btn.is-watched:hover:not(:disabled) {
-  color: var(--color-info);
-  border-color: var(--color-primary);
-  background: rgba(59, 130, 246, 0.2);
+  color: var(--wb-primary-hover);
+  border-color: var(--wb-primary);
+  background: var(--wb-primary-light);
 }
 
 /* 操作列链接 */
