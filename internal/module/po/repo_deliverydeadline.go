@@ -10,6 +10,8 @@ import (
 	"context"
 	"strings"
 	"time"
+
+	"workbench/internal/pkg/datefmt"
 )
 
 type deliveryDeadlineConfig struct {
@@ -42,6 +44,7 @@ func (r *Repo) loadDeliveryDeadline(ctx context.Context) (deliveryDeadlineConfig
 }
 
 func (cfg deliveryDeadlineConfig) deadline(launch string) string {
+	launch = datefmt.Raw(launch)
 	if !validDeliveryDate(launch) {
 		return ""
 	}
