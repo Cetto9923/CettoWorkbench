@@ -99,7 +99,6 @@
     d.online = detail.releaseDate || "";
     d.name = detail.name || "";
     d.start = detail.startDate || "";
-    d.end = detail.releaseDate || "";
     d.windowType = detail.windowType || "regular";
     d.planTestDone = detail.planTestDone || "";
     d.testDone = detail.testDone || "";
@@ -150,7 +149,6 @@
       releaseDate: d.online || "",
       name: d.name || "",
       startDate: d.start || "",
-      endDate: d.end || "",
       teamgroupId: d.teamgroupId || "",
       windowType: d.windowType || "regular",
       planTestDone: d.planTestDone || "",
@@ -303,9 +301,6 @@
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(String(payload.startDate || "").slice(0, 10))) {
       return "请填写窗口开始日期";
-    }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(payload.endDate || "").slice(0, 10))) {
-      return "请填写窗口结束日期";
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(String(payload.planTestDone || "").slice(0, 10))) {
       return "请填写预计提测/开发完成日期";
