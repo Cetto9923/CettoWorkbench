@@ -240,6 +240,7 @@
   color: var(--color-text-primary);
 }
 .vf-table th {
+  padding: 5px var(--space-2);
   color: var(--color-text-secondary);
   font-weight: 600;
   white-space: nowrap;
