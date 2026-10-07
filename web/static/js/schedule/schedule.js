@@ -301,7 +301,7 @@
 
   $root.on("click", ".schedule-action-buttons .action-btn", function (e) {
     var label = $.trim($(this).text());
-    if (label !== "去排期" && label !== "排期" && label.indexOf("换窗口") === -1) {
+    if (label !== "去排期" && label !== "排期") {
       return;
     }
     e.preventDefault();

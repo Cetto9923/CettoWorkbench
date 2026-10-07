@@ -41,7 +41,7 @@ func toBizRequirementsView(items []BizDemandItem, zentaoBase string) []BizRequir
 		}
 		subReqs := toSubBizRequirementsView(item.Children, zentaoBase)
 		devReqs := toDevRequirementsView(item.Stories, zentaoBase)
-		actionLabel := "详情"
+		actionLabel := "排期"
 		if len(item.Children) == 0 {
 			actionLabel = "去排期"
 		}

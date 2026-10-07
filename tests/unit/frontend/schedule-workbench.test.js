@@ -65,8 +65,8 @@ assert(
   'index.html: 必须渲染本窗口模式专属摘要条 #windowActiveBanner'
 );
 assert(
-  /js-change-window/.test(indexHtml),
-  'index.html: 本窗口模式下必须渲染次要样式换窗口按钮'
+  !/js-change-window|换窗口/.test(indexHtml),
+  'index.html: 排期行只保留排期按钮，不单独渲染换窗口'
 );
 
 // 7. 样式规则：高度约束、无折行、高亮呼吸动效

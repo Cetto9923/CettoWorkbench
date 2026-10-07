@@ -137,7 +137,7 @@ body.po-workbench-shell #page-schedule .schedule-table .schedule-action-col {
   min-width: 96px;
   text-align: center;
 }
-/* 窗口模式：父需求「详情 + 换窗口」、办理行「澄清 + 去排期」；非窗口保持 96px */
+/* 窗口模式：办理行可能同时有「澄清」和「排期」；非窗口保持 96px */
 body.po-workbench-shell #page-schedule #windowActiveBanner ~ #scheduleBizListPanel .schedule-action-col { width: 124px; min-width: 124px; }
 /* 独立研需的窗口与非窗口模式都只保留「排期 + 维护任务」 */
 body.po-workbench-shell #page-schedule #scheduleIndependentListPanel .schedule-action-col { width: 124px; min-width: 124px; }

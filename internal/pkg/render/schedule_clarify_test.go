@@ -26,7 +26,7 @@ func TestScheduleWindowClarifyEntry(t *testing.T) {
 		"BizRequirements": []map[string]any{
 			{"DemandID": 101, "ID": "US101", "CanClarify": true, "ActionLabel": "去排期"},
 			{"DemandID": 102, "ID": "US102", "CanClarify": false, "ActionLabel": "去排期"},
-			{"DemandID": 103, "ID": "US103", "CanClarify": false, "ActionLabel": "详情"},
+			{"DemandID": 103, "ID": "US103", "CanClarify": false, "ActionLabel": "排期"},
 		},
 		"BizTotal": int64(2), "IndependentTotal": int64(0),
 	}
@@ -41,7 +41,7 @@ func TestScheduleWindowClarifyEntry(t *testing.T) {
 	if !strings.Contains(html, `id="poDemandClarifyModal"`) {
 		t.Fatal("shared clarify modal missing")
 	}
-	if strings.Count(html, "js-change-window") != 1 || !strings.Contains(html, `js-change-window" data-demand-id="103"`) {
-		t.Fatal("only parent detail row must retain change-window entry")
+	if strings.Contains(html, "js-change-window") || strings.Contains(html, "换窗口") {
+		t.Fatal("schedule rows must not render a separate change-window button")
 	}
 }
