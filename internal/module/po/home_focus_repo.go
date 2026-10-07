@@ -3,6 +3,7 @@ package po
 import (
 	"context"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -47,7 +48,7 @@ func (r *Repo) homeFocusQueryWithReviews(ctx context.Context, account string, re
 		if stage.status == "all" || (req.Status != "all" && stage.status != req.Status) {
 			continue
 		}
-		q := r.homeFocusDemandBase(ctx, account)
+		q := r.homeFocusDemandBase(ctx, account, req.Focus == "my_action")
 		if req.Focus == "my_related" {
 			q = r.homeFocusRelatedDemandBase(ctx, account)
 		}
@@ -75,7 +76,13 @@ func (r *Repo) homeFocusQueryWithReviews(ctx context.Context, account string, re
 		case "today":
 			q = q.Where(dateSetExpr("deadline")+" AND deadline <= ?", today)
 		case "overdue":
-			q = q.Where(dateSetExpr("deadline")+" AND status NOT IN "+terminalStatusSQL+" AND deadline < ?", today)
+			cfg, err := r.loadDeliveryDeadline(ctx)
+			if err != nil {
+				_ = q.AddError(err)
+				break
+			}
+			overdueSQL, overdueArgs := cfg.overdueSQL("estimateLaunch", time.Now())
+			q = q.Where("("+dateSetExpr("deadline")+" AND status NOT IN "+terminalStatusSQL+" AND deadline < ?) OR (status = 'acceptanced' AND ("+overdueSQL+"))", append([]interface{}{today}, overdueArgs...)...)
 		case "blocked":
 			q = q.Where(`status = ? OR (
 				 `+dateSetBeforeTodaySQL("developFinish")+`
@@ -114,12 +121,15 @@ func (r *Repo) homeFocusQueryWithReviews(ctx context.Context, account string, re
 // legitimate handlers in the accept and feedback stages. Stage-specific
 // visibility and "my action" predicates are applied by the caller; this base
 // only prevents unrelated demands from entering the homepage query.
-func (r *Repo) homeFocusDemandBase(ctx context.Context, account string) *gorm.DB {
-	return r.db.WithContext(ctx).Table("zt_demand").
+func (r *Repo) homeFocusDemandBase(ctx context.Context, account string, myAction bool) *gorm.DB {
+	q := r.db.WithContext(ctx).Table("zt_demand").
 		Where("deleted = ?", "0").
 		Where("status NOT IN ?", []string{"closed"}).
-		Where("NOT EXISTS (SELECT 1 FROM zt_demand child WHERE child.deleted = ? AND child.parent = zt_demand.id)", "0").
-		Where(`(
+		Where("NOT EXISTS (SELECT 1 FROM zt_demand child WHERE child.deleted = ? AND child.parent = zt_demand.id)", "0")
+	if myAction {
+		return q
+	}
+	return q.Where(`(
 			createdBy = ? OR originator = ? OR assignedTo = ? OR QD = ? OR RD = ? OR BRA = ?
 			OR id IN (SELECT demand FROM zt_demandclarify WHERE FIND_IN_SET(?, REPLACE(PM, ' ', '')) > 0)
 			OR id IN (SELECT demand FROM zt_demandreview WHERE reviewer = ?)
@@ -159,10 +169,12 @@ func (r *Repo) applyHomeFocusToolbarFiltersWithReviews(base *gorm.DB, account st
 func applyHomeFocusToolbarFiltersWithClause(base *gorm.DB, account string, req DemandsReq, where string, args []interface{}) *gorm.DB {
 	if kw := strings.ToLower(strings.TrimSpace(req.Keyword)); kw != "" {
 		pattern := "%" + kw + "%"
-		base = base.Where(
-			"id IN (SELECT id FROM zt_demand WHERE LOWER(CAST(id AS CHAR)) LIKE ? OR LOWER(name) LIKE ? OR ("+currentHandlerDemandKeywordWhere()+"))",
-			pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern, pattern,
-		)
+		clause := "id IN (SELECT id FROM zt_demand WHERE LOWER(CAST(id AS CHAR)) LIKE ? OR LOWER(name) LIKE ? OR (" + currentHandlerDemandKeywordWhere() + "))"
+		patterns := make([]interface{}, strings.Count(clause, "?"))
+		for i := range patterns {
+			patterns[i] = pattern
+		}
+		base = base.Where(clause, patterns...)
 	}
 	switch strings.ToLower(strings.TrimSpace(req.Priority)) {
 	case "p1":
@@ -242,15 +254,19 @@ func (r *Repo) homeFocusStoryQuery(ctx context.Context, account string, req Dema
 	if participate {
 		q = r.participateScheduleStoryScope(ctx, account)
 	}
-	if req.ObjectType == "story" || req.Status == "all" || req.Status == "schedule" {
-		q = q.Where("((status IN ? AND ("+dateUnsetExpr("developFinish")+" OR "+dateUnsetExpr("testFinish")+")) OR (status IN ? AND "+dateSetExpr("deliverDate")+"))", []string{"draft", "wait", "active", "clarified", "planned", "developing"}, []string{"acceptanced", "waitdeliver", "released"})
-	}
+	q = q.Where("fromDemand = ? AND type = ? AND isParent = ?", 0, "story", "0").Where("NOT " + storyDeliveredSQL)
 	today := todayStr()
 	switch req.Focus {
 	case "today":
 		q = q.Where("COALESCE(NULLIF(CASE WHEN "+dateUnsetExpr("developFinish")+" THEN NULL ELSE CAST(developFinish AS CHAR) END, ''), NULLIF(CASE WHEN "+dateUnsetExpr("testFinish")+" THEN NULL ELSE CAST(testFinish AS CHAR) END, ''), NULLIF(CASE WHEN "+dateUnsetExpr("deliverDate")+" THEN NULL ELSE CAST(deliverDate AS CHAR) END, '')) <= ?", today)
 	case "overdue":
-		q = q.Where("COALESCE(NULLIF(CASE WHEN "+dateUnsetExpr("developFinish")+" THEN NULL ELSE CAST(developFinish AS CHAR) END, ''), NULLIF(CASE WHEN "+dateUnsetExpr("testFinish")+" THEN NULL ELSE CAST(testFinish AS CHAR) END, ''), NULLIF(CASE WHEN "+dateUnsetExpr("deliverDate")+" THEN NULL ELSE CAST(deliverDate AS CHAR) END, '')) < ?", today)
+		cfg, err := r.loadDeliveryDeadline(ctx)
+		if err != nil {
+			_ = q.AddError(err)
+			break
+		}
+		sql, args := cfg.overdueSQL("estimateLaunch", time.Now())
+		q = q.Where(sql, args...)
 	case "blocked":
 		q = q.Where("status = ?", "refuse")
 	case "suspended":
@@ -259,7 +275,7 @@ func (r *Repo) homeFocusStoryQuery(ctx context.Context, account string, req Dema
 	case "my_action":
 		// assignedTo 是研发需求的正式办理责任字段；不把 openedBy/watch 视为待办。
 		if !participate {
-			q = q.Where("assignedTo = ?", account)
+			q = q.Where(storyAssignedOrProductReqM, account, account)
 		}
 	case "my_managed":
 		q = q.Where(storyAssignedOrProductReqM, account, account)
@@ -277,28 +293,6 @@ func (r *Repo) homeFocusStoryQuery(ctx context.Context, account string, req Dema
 		result = result.Where("("+stageSQL+") = ?", homeFocusStageIndex(req.Status))
 	}
 	return result
-}
-
-// homeStoryStage maps zt_story.status onto homepage value-stream stages.
-// Independent stories have no clarify step; early statuses belong in schedule
-// (aligned with deriveStoryStageKey: active/wait/planned → StageSchedule).
-func homeStoryStage(status string) string {
-	switch strings.ToLower(strings.TrimSpace(status)) {
-	case "draft", "wait", "active", "clarified", "planned", "projected", "designed", "designing":
-		return "schedule"
-	case "developing", "developed":
-		return "developing"
-	case "testing", "tested", "verified", "reviewing":
-		return "testing"
-	case "waitacceptance":
-		return "waitacceptance"
-	case "acceptanced", "delivering", "delivered", "waitdeliver":
-		return "acceptanced"
-	case "released", "releasing":
-		return "publish"
-	default:
-		return ""
-	}
 }
 
 func homeFocusStageIndex(status string) int {

@@ -4,10 +4,11 @@
 // 类型: action
 // 职责: 业需与独立研发需求列表页面数据加载及视图模型。
 // 依赖: internal/middleware
-//       internal/pkg/pagination
-//       internal/pkg/render
+//
+//	internal/pkg/pagination
+//	internal/pkg/render
+//
 // =============================================================================
-
 package schedule
 
 import (
@@ -82,6 +83,7 @@ type DevRequirement struct {
 
 // SubBizRequirement 子业务需求行（树形二级）。
 type SubBizRequirement struct {
+	CanClarify      bool
 	DemandID        uint
 	ID              string
 	Title           string
@@ -98,8 +100,8 @@ type SubBizRequirement struct {
 	DevRequirements []DevRequirement
 }
 
-// BizRequirement 业务需求行（树形一级）。
 type BizRequirement struct {
+	CanClarify         bool
 	DemandID           uint
 	ID                 string
 	Title              string
@@ -118,7 +120,6 @@ type BizRequirement struct {
 	SubBizRequirements []SubBizRequirement
 	DevRequirements    []DevRequirement
 }
-
 type scheduleIndexDemandData struct {
 	BizRequirements         []BizRequirement
 	BizTotal                int64
@@ -146,7 +147,6 @@ type scheduleIndexDemandData struct {
 	SelectedStageMap        map[string]bool
 	SelectedWindowMap       map[uint]bool
 }
-
 type scheduleFilterPreserveReq struct {
 	filter      string
 	suspended   bool

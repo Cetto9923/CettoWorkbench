@@ -241,11 +241,13 @@
     $(document).on("keydown", function (e) {
       if (e.key === "Escape" && $("#poDemandClarifyModal").hasClass("show")) { closeModal(); }
     });
-    $(document).on("click", ".js-po-drawer-action[data-action-key='clarify'], .js-drawer-clarify-btn", function (e) {
+    document.addEventListener("click", function (e) {
+      var trigger = e.target.closest(".js-po-drawer-action[data-action-key='clarify'], .js-drawer-clarify-btn");
+      if (!trigger) return;
       e.preventDefault();
-      var id = String($(this).attr("data-demand-id") || "").replace(/^US/i, "").trim();
+      var id = String(trigger.getAttribute("data-demand-id") || "").replace(/^US/i, "").trim();
       if (id) openModal(id);
-    });
+    }, true);
     $(document).on("click", "#poClarifyRetryBtn", function () {
       if (currentDemandId) {
         $("#poClarifyLoadingState").show();
@@ -392,9 +394,7 @@
             showToast("澄清保存超时，请稍后重试；若禅道已保存成功请刷新首页确认", "error");
             return;
           }
-          if (err.status === 422 || (err.message && err.message.indexOf("当前需求不是待澄清状态") >= 0)) {
-            handleClarifySuccess("该需求已完成澄清或状态已更新");
-          } else { showToast(err.message || "保存异常", "error"); }
+          showToast(err.message || "保存异常", "error");
         })
         .then(function () {
           if (timeoutId) { window.clearTimeout(timeoutId); }

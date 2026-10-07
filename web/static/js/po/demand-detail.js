@@ -273,18 +273,8 @@
 
   // 需求详情链接使用同一个抽屉；禅道原文和办理链接保留正常导航。
   document.addEventListener("click", function (e) {
-    if (e.target.closest(".js-po-drawer-action, [data-action-key], .table-action-btn, .js-demand-review, [data-review-demand-id]") &&
+    if (e.target.closest(".js-drawer-clarify-btn, .js-po-drawer-action, [data-action-key], .table-action-btn, .js-demand-review, [data-review-demand-id]") &&
         !e.target.closest("[data-open-demand-detail], .js-drawer-schedule-btn, [data-action-key='schedule'], a[href*='/scheduling']")) {
-      return;
-    }
-
-    var clarifyBtn = e.target.closest(".js-drawer-clarify-btn");
-    if (clarifyBtn) {
-      e.preventDefault();
-      var cDid = clarifyBtn.getAttribute("data-demand-id");
-      if (cDid && typeof window.openPoDemandClarifyModal === "function") {
-        window.openPoDemandClarifyModal(cDid);
-      }
       return;
     }
 

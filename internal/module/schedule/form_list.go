@@ -189,6 +189,7 @@ type BizDemandItem struct {
 
 // SubDemandItem 子业需（树形二级）。
 type SubDemandItem struct {
+	Suspended        bool        `json:"suspended"`
 	ID               uint        `json:"id"`
 	Name             string      `json:"name"`
 	Pri              int         `json:"pri"`

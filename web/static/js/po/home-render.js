@@ -154,7 +154,7 @@
 
     var statusText = getHomeZentaoStatusLabel(item);
     var statusHtml = (PL && PL.statusTagHtml) ? PL.statusTagHtml(statusText) : ('<span class="status-tag">' + esc(statusText) + '</span>');
-    var ownerName = dash(item.nextOwner || item.owner);
+    var ownerName = dash(item.assignedToName);
 
     return '<tr>' +
       '<td class="c-id">' + idChip + '</td>' +

@@ -78,7 +78,7 @@ func (r *Repo) homeActionAuthorized(row *homeActionDemandRow, account, action st
 	}
 	owner := hasHomeAccount(row.AssignedTo, account) || hasHomeAccount(row.DistributedBy, account)
 	submit := hasHomeAccount(row.CreatedBy, account) || hasHomeAccount(row.SubmitedBy, account) || hasHomeCSV(row.SubmitBy, account)
-	accept := hasHomeAccount(row.Accepter, account) || hasHomeCSV(row.VeriFier, account)
+	accept := hasHomeAccount(acceptanceOwner(row.RD, row.AssignedTo), account)
 	switch action {
 	case "acceptance":
 		return accept

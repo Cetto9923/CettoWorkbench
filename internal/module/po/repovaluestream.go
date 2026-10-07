@@ -40,7 +40,7 @@ var (
 var mysqlStageFilters = map[string]mysqlStageFilter{
 	"accept":         {statuses: []string{"draft", "wait", "refuse"}},
 	"review":         {statuses: []string{"draft", "wait", "refuse"}},
-	"clarify":        {statuses: []string{"active"}, noClarify: true},
+	"clarify":        {statuses: []string{"active"}},
 	"schedule":       {statuses: []string{"clarified"}, scheduleIncomplete: true},
 	"developing":     {statuses: []string{"developing"}},
 	"testing":        {statuses: []string{"testing"}},
@@ -60,28 +60,32 @@ var mysqlStageFilters = map[string]mysqlStageFilter{
 
 // DemandRow 业需列表投影（账号字段；展示名由 Service 用用户 map 解析，避免 JOIN zt_user）。
 type DemandRow struct {
-	ID         int    `gorm:"column:id"`
-	Name       string `gorm:"column:name"`
-	Pri        string `gorm:"column:pri"`
-	Status     string `gorm:"column:status"`
-	Hang       string `gorm:"column:hang"`
-	Deadline   string `gorm:"column:deadline"`
-	AssignedTo string `gorm:"column:assignedTo"`
-	QD         string `gorm:"column:QD"`
-	RD         string `gorm:"column:RD"`
-	BRA        string `gorm:"column:BRA"`
-	PM         string `gorm:"column:pm"` // zt_demandclarify.PM，多账号逗号分隔
+	ID             int    `gorm:"column:id"`
+	Name           string `gorm:"column:name"`
+	Pri            string `gorm:"column:pri"`
+	Status         string `gorm:"column:status"`
+	Hang           string `gorm:"column:hang"`
+	Deadline       string `gorm:"column:deadline"`
+	AssignedTo     string `gorm:"column:assignedTo"`
+	QD             string `gorm:"column:QD"`
+	RD             string `gorm:"column:RD"`
+	BRA            string `gorm:"column:BRA"`
+	EstimateLaunch string `gorm:"column:estimateLaunch"`
+	PM             string `gorm:"column:pm"` // zt_demandclarify.PM，多账号逗号分隔
 }
 
 // StoryRow 研发需求列表投影。
 type StoryRow struct {
-	ID            int    `gorm:"column:id"`
-	Title         string `gorm:"column:title"`
-	Pri           int    `gorm:"column:pri"`
-	Status        string `gorm:"column:status"`
-	DevelopFinish string `gorm:"column:developFinish"`
-	TestFinish    string `gorm:"column:testFinish"`
-	DeliverDate   string `gorm:"column:deliverDate"`
+	ID             int    `gorm:"column:id"`
+	Title          string `gorm:"column:title"`
+	Pri            int    `gorm:"column:pri"`
+	Status         string `gorm:"column:status"`
+	DevelopFinish  string `gorm:"column:developFinish"`
+	TestFinish     string `gorm:"column:testFinish"`
+	DeliverDate    string `gorm:"column:deliverDate"`
+	AssignedTo     string `gorm:"column:assignedTo"`
+	EstimateLaunch string `gorm:"column:estimateLaunch"`
+	Delivered      bool   `gorm:"column:delivered"`
 }
 
 // roleDemandBase 返回当前账号在 Main 口径下可见且未关闭的业务办理单元。
@@ -120,7 +124,7 @@ func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysql
 func applyDemandStage(q *gorm.DB, account string, filter mysqlStageFilter) *gorm.DB {
 	if filter.acceptanceStage {
 		// 首页 demandStageCase 按阶段首命中；testing 的 status=testing 在前，已占用到期测试需求。
-		q = q.Where(`status = ? AND (RD = ? OR BRA = ? OR accepter = ?)`, "waitacceptance", account, account, account)
+		q = q.Where("status = ?", "waitacceptance")
 		return q
 	}
 	if filter.publishStage {
@@ -190,33 +194,15 @@ const storyAssignedOrProductReqM = `(zt_story.assignedTo = ? OR EXISTS (
 // scheduleStoryScope 排期阶段独立研发需求（口径同 Main）：非需求池、非父需求、排除已关闭、
 // 排除由业务需求转化来的研发需求 (fromDemand = 0)、指派人或所属产品 ReqM 为当前用户、关键日期未填。
 func (r *Repo) scheduleStoryScope(ctx context.Context, account string) *gorm.DB {
-	return r.db.WithContext(ctx).Table("zt_story").
-		Where("deleted = ?", "0").
-		Where("status != ?", "closed").
-		Where("IFNULL(sourceType, '') != ?", "demandpool").
-		Where("fromDemand = ?", 0).
-		Where("type = ?", "story").
-		Where("isParent = ?", "0").
-		Where("product != ?", "0").
-		Where(storyAssignedOrProductReqM, account, account).
-		Where("(" + strings.Join([]string{
-			dateUnsetExpr("developFinish"),
-			dateUnsetExpr("testFinish"),
-			dateUnsetExpr("verifyFinish"),
-		}, " OR ") + ")")
+	return r.independentStoryScope(ctx, account).Where("NOT " + storyDeliveredSQL).Where("NOT " + storyWindowBoundSQL)
 }
 
-// deliverStoryScope 交付阶段独立研发需求（阶段 B 全量进格）：非需求池、非父需求、排除已关闭、
-// 排除由业务需求转化来的研发需求 (fromDemand = 0)、指派人或所属产品 ReqM 为当前用户。
 func (r *Repo) deliverStoryScope(ctx context.Context, account string) *gorm.DB {
-	return r.db.WithContext(ctx).Table("zt_story").
-		Where("deleted = ?", "0").
-		Where("status != ?", "closed").
-		Where("IFNULL(sourceType, '') != ?", "demandpool").
-		Where("fromDemand = ?", 0).
-		Where("type = ?", "story").
-		Where("isParent = ?", "0").
-		Where(storyAssignedOrProductReqM, account, account)
+	return r.independentStoryScope(ctx, account).Where("NOT " + storyDeliveredSQL).Where(storyWindowBoundSQL)
+}
+
+func (r *Repo) independentStoryScope(ctx context.Context, account string) *gorm.DB {
+	return r.db.WithContext(ctx).Table("zt_story").Where("deleted = ? AND IFNULL(sourceType, '') <> ? AND fromDemand = ? AND type = ? AND isParent = ?", "0", "demandpool", 0, "story", "0").Where(storyAssignedOrProductReqM, account, account)
 }
 
 func filterReady(account string, filter mysqlStageFilter) bool {
@@ -277,7 +263,7 @@ func (r *Repo) FindRoleDemandsByIDs(ctx context.Context, ids []int) ([]DemandRow
 	var rows []DemandRow
 	err := r.db.WithContext(ctx).Table("zt_demand").
 		Select(`zt_demand.id, zt_demand.name, zt_demand.pri, zt_demand.status, zt_demand.hang,
-			zt_demand.deadline, zt_demand.assignedTo, zt_demand.QD, zt_demand.RD, zt_demand.BRA,
+			zt_demand.deadline, zt_demand.estimateLaunch, zt_demand.assignedTo, zt_demand.QD, zt_demand.RD, zt_demand.BRA,
 			clarify_pm.PM AS pm`).
 		Joins(`LEFT JOIN (
 			SELECT demand, GROUP_CONCAT(PM) AS PM
@@ -300,7 +286,7 @@ func (r *Repo) FindStoriesByIDs(ctx context.Context, ids []int) ([]StoryRow, err
 	}
 	var rows []StoryRow
 	err := r.db.WithContext(ctx).Table("zt_story").
-		Select("id", "title", "pri", "status", "developFinish", "testFinish", "deliverDate").
+		Select("id, title, pri, status, developFinish, testFinish, deliverDate, assignedTo, estimateLaunch, "+storyDeliveredSQL+" AS delivered").
 		Where("id IN ?", ids).
 		Find(&rows).Error
 	if err != nil {

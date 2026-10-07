@@ -47,10 +47,10 @@
         <span>待我处理</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.MyPending }}{{ end }}</em>
       </button>
       <button type="button" data-home-focus="my_managed" class="header-quick-chip" title="指派给我或我是需求负责人" aria-pressed="false">
-        <span>我负责</span> <em>—</em>
+        <span>我负责</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.MyManaged }}{{ end }}</em>
       </button>
       <button type="button" data-home-focus="my_related" class="header-quick-chip" title="我参与或我主动关注" aria-pressed="false">
-        <span>我相关</span> <em>—</em>
+        <span>我相关</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.MyRelated }}{{ end }}</em>
       </button>
       <button type="button" data-home-focus="overdue" class="header-quick-chip danger" title="在首页查看超期事项（含关联业务需求与研发需求）" aria-pressed="false">
         <span>超期</span> <em>{{ if .PageError }}—{{ else }}{{ .KPI.Overdue }}{{ end }}</em>
@@ -187,7 +187,7 @@
               <th class="c-title">事项标题</th>
               <th class="c-stage">当前阶段</th>
               <th class="c-zt-status">状态</th>
-              <th class="c-owner">当前负责人</th>
+              <th class="c-owner">指派人</th>
               <th class="c-actions">快捷操作</th>
             </tr>
           </thead>

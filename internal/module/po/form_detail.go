@@ -231,6 +231,7 @@ type DetailSpotlight struct {
 
 // DetailRequirement Tab 2：需求与澄清。
 type DetailRequirement struct {
+	CanClarify     bool                `json:"canClarify"`
 	DemandID       uint                `json:"demandId"`
 	SpecHtml       string              `json:"specHtml"`
 	VerifyHtml     string              `json:"verifyHtml"`

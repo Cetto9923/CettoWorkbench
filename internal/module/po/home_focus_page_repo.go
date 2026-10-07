@@ -2,21 +2,12 @@ package po
 
 import (
 	"context"
-	"fmt"
+	"gorm.io/gorm/clause"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 )
-
-func homeFocusStoryStageSQL() string {
-	var sql strings.Builder
-	sql.WriteString("CASE LOWER(TRIM(status))")
-	for _, status := range strings.Fields("draft wait active clarified planned projected designed designing developing developed testing tested verified reviewing waitacceptance acceptanced delivering delivered waitdeliver released releasing") {
-		fmt.Fprintf(&sql, " WHEN '%s' THEN %d", status, homeFocusStageIndex(homeStoryStage(status)))
-	}
-	sql.WriteString(" ELSE 99 END")
-	return sql.String()
-}
 
 // Keep both object kinds in one ordered SQL relation so LIMIT applies after
 // merging, including the existing demand-first tie break on equal IDs.
@@ -59,6 +50,15 @@ func (r *Repo) findHomeFocusWithReviews(ctx context.Context, account string, req
 	if err := base.Session(&gorm.Session{}).Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
+	order := clause.OrderBy{Expression: clause.Expr{SQL: "action_rank ASC, stage_index ASC, id DESC, kind ASC"}}
+	if total > 0 {
+		cfg, err := r.loadDeliveryDeadline(ctx)
+		if err != nil {
+			return nil, 0, err
+		}
+		sql, args := cfg.homeOverdueOrder(time.Now())
+		order.Expression = clause.Expr{SQL: "action_rank ASC, " + sql + " ASC, stage_index ASC, id DESC, kind ASC", Vars: args}
+	}
 	var rows []struct {
 		ID         int
 		Kind       string
@@ -66,7 +66,7 @@ func (r *Repo) findHomeFocusWithReviews(ctx context.Context, account string, req
 		ActionRank int
 	}
 	if err := base.Select("id, kind, stage_index, action_rank").
-		Order("action_rank ASC, stage_index ASC, id DESC, kind ASC").
+		Clauses(order).
 		Offset((req.Page - 1) * req.PageSize).Limit(req.PageSize).Scan(&rows).Error; err != nil {
 		return nil, 0, err
 	}

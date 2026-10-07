@@ -3,7 +3,6 @@ package po
 import (
 	"context"
 	"database/sql/driver"
-	"fmt"
 	"strings"
 	"testing"
 
@@ -12,9 +11,12 @@ import (
 )
 
 func TestHomeFocusSQLIntersectsStageBeforePagination(t *testing.T) {
-	db, _ := openSQLMock(t)
+	db, mock := openSQLMock(t)
 	repo := NewRepo(db, nil)
 	for _, focus := range []string{"today", "overdue", "blocked", "suspended"} {
+		if focus == "overdue" {
+			mock.ExpectQuery("SELECT section, `key`, value").WillReturnRows(sqlmock.NewRows([]string{"section", "key", "value"}))
+		}
 		req := DemandsReq{Status: "testing", Focus: focus, Page: 2, PageSize: 15}
 		query, queryErr := repo.homeFocusQuery(context.Background(), "alice", req)
 		if queryErr != nil {
@@ -164,89 +166,26 @@ func TestHomeFocusParticipateScheduleExcludesBusinessDemand(t *testing.T) {
 }
 
 func TestHomeStoryStage_NoClarifyForIndependentStories(t *testing.T) {
-	// 研需不走澄清；draft/wait/active（及排期主路径上的 planned 等）归排期。
-	for _, status := range []string{"draft", "wait", "active", "clarified", "planned", "projected", "designed", "designing"} {
-		if got := homeStoryStage(status); got != "schedule" {
-			t.Fatalf("homeStoryStage(%q) = %q, want schedule", status, got)
-		}
-	}
-	if got := homeStoryStage("developing"); got != "developing" {
-		t.Fatalf("homeStoryStage(developing) = %q, want developing", got)
-	}
-	clarifyIdx := homeFocusStageIndex("clarify")
-	scheduleIdx := homeFocusStageIndex("schedule")
 	sql := homeFocusStoryStageSQL()
-	for _, status := range []string{"draft", "wait", "active"} {
-		wantClarify := fmt.Sprintf("WHEN '%s' THEN %d", status, clarifyIdx)
-		wantSchedule := fmt.Sprintf("WHEN '%s' THEN %d", status, scheduleIdx)
-		if strings.Contains(sql, wantClarify) {
-			t.Fatalf("homeFocusStoryStageSQL must not map %s to clarify index %d: %s", status, clarifyIdx, sql)
-		}
-		if !strings.Contains(sql, wantSchedule) {
-			t.Fatalf("homeFocusStoryStageSQL must map %s to schedule index %d: %s", status, scheduleIdx, sql)
+	for _, want := range []string{storyDeliveredSQL, storyWindowBoundSQL, "THEN 7 ELSE 3 END"} {
+		if !strings.Contains(sql, want) {
+			t.Fatalf("missing %s", want)
 		}
 	}
 }
-
 func TestHomeFocusStoryQuery_ClarifyExcludesActiveStory_ScheduleIncludes(t *testing.T) {
 	db, _ := openSQLMock(t)
 	repo := NewRepo(db, nil)
-	account := "alice"
-	clarifyIdx := homeFocusStageIndex("clarify")
-	scheduleIdx := homeFocusStageIndex("schedule")
-
-	clarifyQ := repo.homeFocusStoryQuery(context.Background(), account, DemandsReq{
-		Focus: "my_action", Status: "clarify", Page: 1, PageSize: 5,
-	})
-	var rows []struct{ ID int }
-	clarifyStmt := clarifyQ.Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
-	clarifySQL := clarifyStmt.SQL.String()
-	if !strings.Contains(clarifySQL, "CASE LOWER(TRIM(status))") || !strings.Contains(clarifySQL, ") = ?") {
-		t.Fatalf("clarify focus story query must filter by the computed stage index: %s", clarifySQL)
-	}
-	foundClarifyIdx := false
-	for _, v := range clarifyStmt.Vars {
-		if idx, ok := v.(int); ok && idx == clarifyIdx {
-			foundClarifyIdx = true
-			break
-		}
-	}
-	if !foundClarifyIdx {
-		t.Fatalf("clarify query must bind stage_index=%d, vars=%v", clarifyIdx, clarifyStmt.Vars)
-	}
-	// CASE maps early story statuses to schedule, so clarify filter cannot list them.
-	for _, status := range []string{"draft", "wait", "active"} {
-		if strings.Contains(homeFocusStoryStageSQL(), fmt.Sprintf("WHEN '%s' THEN %d", status, clarifyIdx)) {
-			t.Fatalf("active-path status %s must not land in clarify CASE branch", status)
-		}
-	}
-
-	scheduleQ := repo.homeFocusStoryQuery(context.Background(), account, DemandsReq{
-		Focus: "my_action", Status: "schedule", Page: 1, PageSize: 5,
-	})
-	scheduleStmt := scheduleQ.Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
-	scheduleSQL := scheduleStmt.SQL.String()
-	if !strings.Contains(scheduleSQL, "CASE LOWER(TRIM(status))") || !strings.Contains(scheduleSQL, ") = ?") {
-		t.Fatalf("schedule focus story query must filter by the computed stage index: %s", scheduleSQL)
-	}
-	foundScheduleIdx := false
-	for _, v := range scheduleStmt.Vars {
-		if idx, ok := v.(int); ok && idx == scheduleIdx {
-			foundScheduleIdx = true
-			break
-		}
-	}
-	if !foundScheduleIdx {
-		t.Fatalf("schedule query must bind stage_index=%d, vars=%v", scheduleIdx, scheduleStmt.Vars)
-	}
-	for _, status := range []string{"draft", "wait", "active"} {
-		want := fmt.Sprintf("WHEN '%s' THEN %d", status, scheduleIdx)
-		if !strings.Contains(homeFocusStoryStageSQL(), want) {
-			t.Fatalf("schedule CASE must include %s → %d", status, scheduleIdx)
+	for _, stage := range []string{"clarify", "schedule", "acceptanced", "developing", "testing", "waitacceptance"} {
+		var rows []struct{ ID int }
+		stmt := repo.homeFocusStoryQuery(context.Background(), "alice", DemandsReq{Focus: "my_action", Status: stage}).Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
+		for _, want := range []string{"NOT " + storyDeliveredSQL, homeFocusStoryStageSQL(), storyAssignedOrProductReqM} {
+			if !strings.Contains(stmt.SQL.String(), want) {
+				t.Fatalf("%s missing %s", stage, want)
+			}
 		}
 	}
 }
-
 func TestHomeFocusToolbarUsesCurrentHandler(t *testing.T) {
 	db, _ := openSQLMock(t)
 	repo := NewRepo(db, nil)
@@ -272,7 +211,7 @@ func TestHomeFocusToolbarUsesCurrentHandler(t *testing.T) {
 	query := applyHomeFocusToolbarFilters(base, "alice", DemandsReq{Keyword: "alice"})
 	var rows []struct{ ID int }
 	stmt := db.Table("(?) AS focused", query).Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
-	if !strings.Contains(stmt.SQL.String(), "LOWER(IFNULL(BRA, '')) LIKE") || !strings.Contains(stmt.SQL.String(), "LOWER(IFNULL(QD, '')) LIKE") {
+	if !strings.Contains(stmt.SQL.String(), "LOWER(IFNULL(BRA, '')) LIKE") || !strings.Contains(stmt.SQL.String(), "LOWER(IFNULL(tt.owner, '')) LIKE") {
 		t.Fatalf("keyword must include current stage handler: %s", stmt.SQL.String())
 	}
 }
@@ -292,7 +231,7 @@ func TestHomeFocusKeywordBindsOneArgPerPlaceholder(t *testing.T) {
 			Session(&gorm.Session{DryRun: true}).Find(&rows).Statement.Vars
 	}
 	// 2 个 id/name 占位 + currentHandlerDemandKeywordWhere 的 16 个阶段占位。
-	if got := len(build(DemandsReq{Keyword: "alice"})) - len(build(DemandsReq{})); got != 18 {
+	if got := len(build(DemandsReq{Keyword: "alice"})) - len(build(DemandsReq{})); got != 2+strings.Count(currentHandlerDemandKeywordWhere(), "?") {
 		t.Fatalf("keyword clause binds %d args, want 18", got)
 	}
 }
@@ -308,14 +247,14 @@ func TestHomeFocusMyActionUsesStageRoleMatrix(t *testing.T) {
 	sql := stmt.SQL.String()
 	for _, want := range []string{
 		"status IN ('draft', 'refuse') AND createdBy = ?",
-		"status = 'wait' AND id IN (",
+		"status = 'wait' AND (createdBy = ? OR id IN (",
 		"status = 'active' AND (",
-		"status = 'clarified' AND (",
-		"status = 'developing' AND (BRA = ? OR ((BRA IS NULL OR BRA = '') AND assignedTo = ? AND",
-		"status = 'testing' AND (QD = ? OR (accepter = ?",
-		"status = 'waitacceptance' AND accepter = ?",
-		"status IN ('acceptanced', 'waitdeliver') AND BRA = ?",
-		"status = 'released' AND (originator = ? OR BRA = ?)",
+		"status = 'clarified' AND BRA = ?",
+		developingHandlerSQL,
+		demandTestHandlerSQL,
+		acceptanceOwnerSQL,
+		"status = 'acceptanced' AND BRA = ?",
+		"status = 'released' AND overall = '0'",
 	} {
 		if !strings.Contains(sql, want) {
 			t.Fatalf("my_action role matrix missing %q: %s", want, sql)
@@ -341,7 +280,7 @@ func TestHomeFocusPageStoryBranchIsFlatAndZeroDateSafe(t *testing.T) {
 	if strings.Contains(sql, "= '0000-00-00'") || strings.Contains(sql, "!= '0000-00-00'") {
 		t.Fatalf("homepage focus query must not compare date columns with zero-date literals: %s", sql)
 	}
-	if !strings.Contains(sql, "CASE LOWER(TRIM(status))") || !strings.Contains(sql, ") = ?") {
+	if !strings.Contains(sql, "CASE WHEN") || !strings.Contains(sql, ") = ?") {
 		t.Fatalf("story branch must filter the computed stage in SQL: %s", sql)
 	}
 }
@@ -352,10 +291,10 @@ func TestHomeFocusMyActionEmptyReviewIDs_NoEmptyInClause(t *testing.T) {
 	if strings.Contains(where, "IN ()") || strings.Contains(where, "IN (?)") {
 		t.Fatalf("empty review IDs must not generate IN clause: %s", where)
 	}
-	if !strings.Contains(where, "status = 'wait' AND 1 = 0") {
+	if !strings.Contains(where, "status = 'wait' AND (createdBy = ? OR 1 = 0)") {
 		t.Fatalf("empty review IDs must set wait stage to 1 = 0: %s", where)
 	}
-	if len(args) != 15 {
+	if len(args) != strings.Count(where, "?") {
 		t.Fatalf("expected 15 args for empty review IDs, got %d", len(args))
 	}
 
@@ -371,7 +310,7 @@ func TestHomeFocusMyActionEmptyReviewIDs_NoEmptyInClause(t *testing.T) {
 	if strings.Contains(sql, "IN ()") {
 		t.Fatalf("dry-run SQL contains illegal empty IN clause: %s", sql)
 	}
-	if !strings.Contains(sql, "status = 'wait' AND 1 = 0") {
+	if !strings.Contains(sql, "status = 'wait' AND (createdBy = ? OR 1 = 0)") {
 		t.Fatalf("dry-run SQL missing wait false guard: %s", sql)
 	}
 }

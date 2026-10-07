@@ -3,7 +3,7 @@ package po
 
 import (
 	"context"
-	"strings"
+	"workbench/internal/pkg/zentao"
 )
 
 // StoryTestTaskCountRow 研发需求关联的测试单张数与首选 ID。
@@ -27,6 +27,8 @@ type DemandPrimaryActionRow struct {
 	Status     string `gorm:"column:status"`
 	AssignedTo string `gorm:"column:assignedTo"`
 	Accepter   string `gorm:"column:accepter"`
+	RD         string `gorm:"column:RD"`
+	IsHandler  bool   `gorm:"column:is_handler"`
 	CreatedBy  string `gorm:"column:createdBy"`
 }
 
@@ -40,10 +42,9 @@ func (r *DemandDetailRepo) FindDemandPrimaryActions(ctx context.Context, ids []u
 		return out, nil
 	}
 	var rows []DemandPrimaryActionRow
-	err := r.db.WithContext(ctx).Raw(`
-SELECT id, stage, status, assignedTo, accepter, createdBy
-FROM zt_demand
-WHERE id IN ? AND deleted = '0'`, ids).Scan(&rows).Error
+	where, args := currentHandlerDemandWhere(zentao.AccountFrom(ctx))
+	args = append(args, ids)
+	err := r.db.WithContext(ctx).Raw("SELECT id, stage, status, assignedTo, accepter, createdBy, RD, "+where+" AS is_handler FROM zt_demand WHERE id IN ? AND deleted = '0'", args...).Scan(&rows).Error
 	if err != nil {
 		return nil, err
 	}
@@ -54,72 +55,6 @@ WHERE id IN ? AND deleted = '0'`, ids).Scan(&rows).Error
 	for _, id := range ids {
 		if _, ok := out[id]; !ok {
 			out[id] = DemandPrimaryActionRow{ID: id}
-		}
-	}
-	return out, nil
-}
-
-// DemandEvaluateStatusRow 业务需求的评价状态聚合（Stage 5 §4-3 / PLAN §4-3 评价统计口径）。
-//
-//   - HasPendingEvaluateForAccount：当前账号在该需求下存在 zt_demandappraise
-//     且 appraiseBy = account 但 appraiseTime 为空 / 0 / 0000-00-00（"未评任务"）。
-//   - HasAnyEvaluate：任何评价存在 appraiseTime（"已有评价可读"）。
-//
-// 注意：本函数不修改 release 阶段计数（PLAN §4-3 明示禁止）；只读取事实用于
-// primaryAction.Enabled 派生，调用方按 Input.HasPendingEvaluateTask /
-//
-//	Input.HasHistoricalEvaluate 传入。
-type DemandEvaluateStatusRow struct {
-	DemandID                     uint `gorm:"column:demand_id"`
-	HasPendingEvaluateForAccount bool `gorm:"column:has_pending"`
-	HasAnyEvaluate               bool `gorm:"column:has_any"`
-}
-
-// FindDemandEvaluateStatus 批量查询一批业务需求的评价状态。
-//
-// 入参 demandIDs 为当前页业务需求 ID；account 为当前用户账号。
-//
-// SQL：
-//
-//	LEFT JOIN zt_demandappraise：appraiseTime IS NULL 或 = '0000-00-00'
-//	  且 appraiseBy = account → "本账号有未评"。
-//	appraiseTime IS NOT NULL 且 != '0000-00-00' → "任一已评"。
-func (r *DemandDetailRepo) FindDemandEvaluateStatus(ctx context.Context, account string, demandIDs []uint) (map[uint]DemandEvaluateStatusRow, error) {
-	out := make(map[uint]DemandEvaluateStatusRow, len(demandIDs))
-	if r == nil || r.db == nil || len(demandIDs) == 0 {
-		return out, nil
-	}
-	if strings.TrimSpace(account) == "" {
-		for _, id := range demandIDs {
-			out[id] = DemandEvaluateStatusRow{DemandID: id}
-		}
-		return out, nil
-	}
-	var rows []DemandEvaluateStatusRow
-	err := r.db.WithContext(ctx).Raw(`
-SELECT d.id AS demand_id,
-       EXISTS(
-         SELECT 1 FROM zt_demandappraise da
-         WHERE da.demand = d.id
-           AND da.appraiseBy = ?
-           AND (` + dateUnsetExpr("da.appraiseTime") + `)
-       ) AS has_pending,
-       EXISTS(
-         SELECT 1 FROM zt_demandappraise da
-         WHERE da.demand = d.id
-           AND ` + dateSetExpr("da.appraiseTime") + `
-       ) AS has_any
-FROM zt_demand d
-WHERE d.id IN ? AND d.deleted = '0'`, account, demandIDs).Scan(&rows).Error
-	if err != nil {
-		return nil, err
-	}
-	for _, row := range rows {
-		out[row.DemandID] = row
-	}
-	for _, id := range demandIDs {
-		if _, ok := out[id]; !ok {
-			out[id] = DemandEvaluateStatusRow{DemandID: id}
 		}
 	}
 	return out, nil
@@ -225,9 +160,11 @@ LEFT JOIN (
 
 // StoryMetaForAction 研发需求主操作派生所需最小列。
 type StoryMetaForAction struct {
-	ID     uint   `gorm:"column:id"`
-	Status string `gorm:"column:status"`
-	Stage  string `gorm:"column:stage"`
+	ID          uint   `gorm:"column:id"`
+	Status      string `gorm:"column:status"`
+	Stage       string `gorm:"column:stage"`
+	Delivered   bool   `gorm:"column:delivered"`
+	WindowBound bool   `gorm:"column:window_bound"`
 }
 
 // FindStoryMetaForAction 批量读取故事 status/stage，供 primaryAction 派生（单次 IN，禁止行循环）。
@@ -239,7 +176,7 @@ func (r *DemandDetailRepo) FindStoryMetaForAction(ctx context.Context, storyIDs 
 	var rows []StoryMetaForAction
 	err := r.db.WithContext(ctx).
 		Table("zt_story").
-		Select("id, status, stage").
+		Select("id, status, stage, "+storyDeliveredSQL+" AS delivered, "+storyWindowBoundSQL+" AS window_bound").
 		Where("id IN ? AND deleted = ?", storyIDs, "0").
 		Find(&rows).Error
 	if err != nil {

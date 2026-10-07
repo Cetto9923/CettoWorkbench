@@ -172,6 +172,7 @@ func (c bizDemandAssembleContext) buildSubDemandItems(parent ZtDemand, children 
 		demandIDs := []uint{child.ID}
 		subtreeStories := append([]ZtStory(nil), childStories...)
 		items = append(items, SubDemandItem{
+			Suspended:        strings.TrimSpace(child.Hang) == "1",
 			ID:               child.ID,
 			Name:             strings.TrimSpace(child.Name),
 			Pri:              parseDemandPri(child.Pri),

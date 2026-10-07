@@ -36,6 +36,7 @@ type primaryActionFactsDemand struct {
 	IsAssignee        bool
 	CanReview         bool
 	IsAcceptanceOwner bool
+	IsHandler         bool
 	// HasSchedulePerm 表示 actor 具备排期权限位（ScheduleList 或 ScheduleUpdate）。
 	HasSchedulePerm bool
 	// HasDemandRelation 表示 actor 对该需求有对象级关系（超管/PMO/个人干系人/团队长管辖）。
@@ -70,7 +71,7 @@ func (s *Service) DeriveDemandPrimaryActions(
 		return out, nil
 	}
 
-	rows, err := detailRepo.FindDemandPrimaryActions(ctx, demandIDs)
+	rows, err := detailRepo.FindDemandPrimaryActions(zentao.WithAccount(ctx, actorAccount(actor)), demandIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -81,15 +82,7 @@ func (s *Service) DeriveDemandPrimaryActions(
 		return nil, err
 	}
 
-	// 批量获取评价事实。
-	account := ""
-	if actor != nil {
-		account = strings.TrimSpace(actor.Account)
-	}
-	evalMap, err := detailRepo.FindDemandEvaluateStatus(ctx, account, demandIDs)
-	if err != nil {
-		return nil, err
-	}
+	account := actorAccount(actor)
 
 	// 批量查询待评审需求中当前用户是否有待评审任务。
 	var waitIDs []int
@@ -123,6 +116,7 @@ func (s *Service) DeriveDemandPrimaryActions(
 		row := rows[id]
 		facts := primaryActionFactsDemand{
 			ObjectID:        id,
+			IsHandler:       row.IsHandler,
 			Kind:            primaryaction.ObjectBusinessDemand,
 			Stage:           deriveStageKey(row.Stage, row.Status),
 			Status:          row.Status,
@@ -140,7 +134,7 @@ func (s *Service) DeriveDemandPrimaryActions(
 			facts.HasDemandRelation = actor != nil && actor.IsSuperAdmin
 		}
 		if account != "" {
-			if strings.TrimSpace(row.Accepter) == account {
+			if acceptanceOwner(row.RD, row.AssignedTo) == account {
 				facts.IsAcceptanceOwner = true
 			}
 			if strings.TrimSpace(row.CreatedBy) == account {
@@ -161,10 +155,7 @@ func (s *Service) DeriveDemandPrimaryActions(
 				facts.FirstTestURL = zentao.TesttaskViewURL(tt.FirstID)
 			}
 		}
-		if eval, ok := evalMap[id]; ok {
-			facts.HasPendingEvaluate = eval.HasPendingEvaluateForAccount
-			facts.HasHistoricalEvaluate = eval.HasAnyEvaluate
-		}
+		facts.HasPendingEvaluate = row.Status == "released" && row.IsHandler
 		out[id] = deriveDemandPrimaryAction(ctx, actor, facts)
 	}
 	return out, nil
@@ -218,7 +209,7 @@ func (s *Service) DeriveStoryPrimaryActions(
 			kind = primaryaction.ObjectIndependentStory
 		}
 		in := primaryaction.Input{
-			Stage:                   deriveStoryStageKey(row.Stage, row.Status),
+			Stage:                   deriveStoryStageKey(row),
 			Kind:                    kind,
 			ObjectID:                id,
 			HasAcceptCapability:     hasCapability(ctx, actor, perm.PoHomeList, perm.PoBoardDemandList),
@@ -257,16 +248,16 @@ func deriveDemandPrimaryAction(ctx context.Context, actor *model.User, facts pri
 		IsSuperAdmin:         actor != nil && actor.IsSuperAdmin,
 		CanReview:            facts.CanReview,
 		HasAcceptCapability:  hasCapability(ctx, actor, perm.PoHomeList, perm.PoBoardDemandList),
-		HasClarifyCapability: hasCapability(ctx, actor, perm.PoHomeList),
+		HasClarifyCapability: facts.IsHandler && hasCapability(ctx, actor, perm.PoHomeList),
 		// 排期按钮必须「有排期能力 + 与该需求有对象级关系」：
 		// 否则将来把 schedule:update 授给 po 角色后，所有 po 都会看到全部需求的排期按钮。
 		// 关系口径复用 demandauthz（超管/PMO/个人干系人/团队长管辖）。
-		HasScheduleCapability:   hasCapability(ctx, actor, perm.ScheduleList, perm.ScheduleUpdate) && facts.HasDemandRelation,
-		HasSubmitTestCapability: hasCapability(ctx, actor, perm.PoHomeList),
-		HasUrgeCapability:       hasCapability(ctx, actor, perm.PoHomeList),
+		HasScheduleCapability:   hasCapability(ctx, actor, perm.ScheduleList, perm.ScheduleUpdate) && facts.HasDemandRelation && facts.IsHandler,
+		HasSubmitTestCapability: facts.IsHandler && hasCapability(ctx, actor, perm.PoHomeList),
+		HasUrgeCapability:       facts.IsHandler && hasCapability(ctx, actor, perm.PoHomeList),
 		HasDeliverCapability:    hasCapability(ctx, actor, perm.PoHomeList),
 		HasEvaluateCapability:   hasCapability(ctx, actor, perm.PoHomeList),
-		HasReadCapability:       hasCapability(ctx, actor, perm.PoHomeList, perm.PoBoardDemandList),
+		HasReadCapability:       (facts.Stage != primaryaction.StageTesting || facts.IsHandler) && hasCapability(ctx, actor, perm.PoHomeList, perm.PoBoardDemandList),
 		IsAcceptanceOwner:       facts.IsAcceptanceOwner,
 		TestsCount:              facts.TestsCount,
 		FirstTestURL:            facts.FirstTestURL,
@@ -339,35 +330,14 @@ func deriveStageKey(stage, status string) primaryaction.StageKey {
 
 // deriveStoryStageKey 把研发需求（zt_story）的 stage 与 status 映射到 primaryaction.StageKey。
 // 研发需求没有需求澄清阶段；active 状态下由 stage 决定其生命周期（如 wait -> StageSchedule）。
-func deriveStoryStageKey(stage, status string) primaryaction.StageKey {
-	st := strings.ToLower(strings.TrimSpace(status))
-	if st == "closed" {
-		return primaryaction.StageClosed
-	}
-	sg := strings.ToLower(strings.TrimSpace(stage))
-	switch sg {
-	case "wait", "planned", "projected", "schedule":
-		return primaryaction.StageSchedule
-	case "developing", "developed":
-		return primaryaction.StageDeveloping
-	case "tested", "testing", "delivering":
-		return primaryaction.StageTesting
-	case "verified":
-		return primaryaction.StageAcceptance
-	case "released":
+func deriveStoryStageKey(row StoryMetaForAction) primaryaction.StageKey {
+	if row.Delivered {
 		return primaryaction.StageDelivered
-	case "closed":
-		return primaryaction.StageClosed
 	}
-	switch st {
-	case "developing":
-		return primaryaction.StageDeveloping
-	case "testing", "tested":
-		return primaryaction.StageTesting
-	case "active":
-		return primaryaction.StageSchedule
+	if row.WindowBound {
+		return primaryaction.StageDeliver
 	}
-	return primaryaction.StageOther
+	return primaryaction.StageSchedule
 }
 
 // detailRepo 返回 Service 内 DetailService 持有的 DemandDetailRepo（不暴露 Repo 给外部）。

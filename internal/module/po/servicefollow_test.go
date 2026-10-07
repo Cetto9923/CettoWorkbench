@@ -41,8 +41,8 @@ func TestDemands_StoryOnly_NoDemandSQL(t *testing.T) {
 	// 变化，测试立即失败。
 	mock.ExpectQuery("(?s)^SELECT count\\(\\*\\) FROM \\(SELECT kind, id, MIN\\(stage_index\\).*`zt_story`.*UNION ALL.*`zt_story`.*\\) AS all_stages$").
 		WithArgs(
-			3, "0", "closed", "demandpool", 0, "story", "0", "0", "alice", "alice",
-			7, "0", "closed", "demandpool", 0, "story", "0", "alice", "alice",
+			3, "0", "demandpool", 0, "story", "0", "alice", "alice",
+			7, "0", "demandpool", 0, "story", "0", "alice", "alice",
 		).
 		WillReturnRows(sqlmock.NewRows([]string{"count(*)"}).AddRow(2))
 
@@ -50,8 +50,8 @@ func TestDemands_StoryOnly_NoDemandSQL(t *testing.T) {
 	// 因此参数与 count 查询完全一致，末尾多一个 LIMIT 占位符。
 	mock.ExpectQuery("(?s)^SELECT id, kind, stage_index FROM \\(SELECT kind, id, MIN\\(stage_index\\).*`zt_story`.*UNION ALL.*`zt_story`.*\\) AS all_stages ORDER BY stage_index ASC, kind_rank ASC, id DESC LIMIT \\?$").
 		WithArgs(
-			3, "0", "closed", "demandpool", 0, "story", "0", "0", "alice", "alice",
-			7, "0", "closed", "demandpool", 0, "story", "0", "alice", "alice",
+			3, "0", "demandpool", 0, "story", "0", "alice", "alice",
+			7, "0", "demandpool", 0, "story", "0", "alice", "alice",
 			15,
 		).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "kind", "stage_index"}).
@@ -73,12 +73,13 @@ func TestDemands_StoryOnly_NoDemandSQL(t *testing.T) {
 			AddRow(202, 0, 0))
 
 	// DeriveStoryPrimaryActions → FindStoryMetaForAction
-	mock.ExpectQuery("SELECT id, status, stage FROM `zt_story`").
+	mock.ExpectQuery("SELECT id, status, stage, .* FROM `zt_story`").
 		WithArgs(101, 202, "0").
 		WillReturnRows(sqlmock.NewRows([]string{"id", "status", "stage"}).
 			AddRow(101, "developing", "").
 			AddRow(202, "developing", ""))
 
+	mock.ExpectQuery("SELECT section, .* FROM `zt_config`").WillReturnRows(sqlmock.NewRows([]string{"section", "key", "value"}))
 	resp, err := svc.Demands(context.Background(), &model.User{Account: "alice"}, DemandsReq{
 		Status:     "all",
 		Focus:      "all",
@@ -126,17 +127,13 @@ func TestListMySQLDemands_ScheduleDemandOnly(t *testing.T) {
 
 	// DeriveDemandPrimaryActions 的 SQL 链
 	mock.ExpectQuery("SELECT .*FROM zt_demand WHERE id IN .*deleted = .*").
-		WithArgs(sqlmock.AnyArg()).
+		WithArgs(demandActionTestArgs("alice", 9001)...).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "stage", "status", "assignedTo", "accepter"}).
 			AddRow(9001, "", "clarified", "alice", ""))
 
 	mock.ExpectQuery("(?s)SELECT d\\.id AS demand_id.*FROM zt_demand.*fromDemand IN").
 		WithArgs(9001, 9001).
 		WillReturnRows(sqlmock.NewRows([]string{"demand_id", "count", "first_id"}).AddRow(9001, 0, 0))
-
-	mock.ExpectQuery("(?s)SELECT d\\.id AS demand_id.*zt_demandappraise").
-		WithArgs("alice", 9001).
-		WillReturnRows(sqlmock.NewRows([]string{"demand_id", "has_pending", "has_any"}).AddRow(9001, false, false))
 
 	// enrichDemandCanReview：当前 status="clarified"，不是 wait，所以不应触发查询。
 	_, err := svc.listMySQLDemands(context.Background(), &model.User{Account: "alice"}, "schedule", scheduleFilter, DemandsReq{
@@ -178,7 +175,7 @@ func TestListMySQLDemands_ScheduleStoryOnly(t *testing.T) {
 		WithArgs(501, 501).
 		WillReturnRows(sqlmock.NewRows([]string{"story", "count", "first_id"}).AddRow(501, 0, 0))
 
-	mock.ExpectQuery("SELECT id, status, stage FROM `zt_story`").
+	mock.ExpectQuery("SELECT id, status, stage, .* FROM `zt_story`").
 		WithArgs(501, "0").
 		WillReturnRows(sqlmock.NewRows([]string{"id", "status", "stage"}).AddRow(501, "clarified", ""))
 

@@ -15,7 +15,6 @@ import (
 
 	"workbench/internal/model"
 	"workbench/internal/module/po/primaryaction"
-	"workbench/internal/pkg/perm"
 )
 
 // deriveDetailFlags 从需求行解析 hang/changing/returning 三标志及提示文案。
@@ -51,54 +50,8 @@ func deriveDetailFlags(row *DemandDetailRow) (DemandFlags, string) {
 	return flags, notice
 }
 
-// deriveAcceptancePrimaryAction 为待验收状态（waitacceptance）派生详情主操作。
-// 口径：
-// 1. assignedTo == 当前用户 且具有验收权限（PoHomeList 或 PoBoardDemandList）时，派生启用的「验收」；
-// 2. assignedTo == 当前用户 但无验收权限时，派生禁用的「验收」（文案「验收办理页尚未接入真实禅道写链」）；
-// 3. 非 assignedTo 用户且具有催办权限（PoHomeList）时，派生启用的「催办验收」；
-// 4. 非 assignedTo 用户且无催办权限时，派生禁用的「催办验收」（文案「当前用户没有催办验收权限」）。
-func deriveAcceptancePrimaryAction(ctx context.Context, actor *model.User, row *DemandDetailRow) primaryaction.PrimaryAction {
-	account := ""
-	if actor != nil {
-		account = strings.TrimSpace(actor.Account)
-	}
-	isAssignee := account != "" && account == strings.TrimSpace(row.AssignedTo)
-	if isAssignee {
-		if hasCapability(ctx, actor, perm.PoHomeList, perm.PoBoardDemandList) {
-			return primaryaction.Enabled(
-				string(primaryaction.KeyAcceptDone),
-				"验收",
-				string(primaryaction.KindDrawer),
-				primaryaction.AcceptDoneURL(row.ID, primaryaction.ObjectBusinessDemand),
-			)
-		}
-		return primaryaction.DisabledWithReason(
-			string(primaryaction.KeyAcceptDone),
-			"验收",
-			string(primaryaction.KindDrawer),
-			primaryaction.AcceptDoneURL(row.ID, primaryaction.ObjectBusinessDemand),
-			"验收办理页尚未接入真实禅道写链",
-		)
-	}
-	if hasCapability(ctx, actor, perm.PoHomeList) {
-		return primaryaction.Enabled(
-			string(primaryaction.KeyRemindAccept),
-			"催办验收",
-			string(primaryaction.KindDrawer),
-			primaryaction.UrgeAcceptURL(row.ID, primaryaction.ObjectBusinessDemand),
-		)
-	}
-	return primaryaction.DisabledWithReason(
-		string(primaryaction.KeyRemindAccept),
-		"催办验收",
-		string(primaryaction.KindDrawer),
-		primaryaction.UrgeAcceptURL(row.ID, primaryaction.ObjectBusinessDemand),
-		"当前用户没有催办验收权限",
-	)
-}
-
 // buildPrimaryActionForDetail 详情行主操作。
-// waitacceptance 状态下按 assignedTo==本人 改判；其他状态复用批量派生。
+// 全部状态复用首页批量派生。
 // 注意：标志判断由外层通过 Flags.HasAny() 统一处理，内部不再重复判断。
 func (s *DetailService) buildPrimaryActionForDetail(
 	ctx context.Context,
@@ -107,9 +60,6 @@ func (s *DetailService) buildPrimaryActionForDetail(
 ) primaryaction.PrimaryAction {
 	if row == nil || row.ID == 0 {
 		return primaryaction.None()
-	}
-	if strings.TrimSpace(row.Status) == "waitacceptance" {
-		return deriveAcceptancePrimaryAction(ctx, actor, row)
 	}
 	svc := s.parentService()
 	if svc == nil {

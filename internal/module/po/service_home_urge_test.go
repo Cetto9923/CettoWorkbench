@@ -6,8 +6,8 @@ import (
 )
 
 func TestHomeAcceptanceRecipients(t *testing.T) {
-	got := homeAcceptanceRecipients(&homeActionDemandRow{Accepter: "alice", VeriFier: "bob, alice, carol"})
-	want := []string{"alice", "bob", "carol"}
+	got := homeAcceptanceRecipients(&homeActionDemandRow{RD: "alice", Accepter: "bob", VeriFier: "carol"})
+	want := []string{"alice"}
 	if len(got) != len(want) {
 		t.Fatalf("recipients = %#v", got)
 	}
@@ -28,7 +28,7 @@ func TestUrgeHomeDemandReqDefaultsToAcceptanceInApp(t *testing.T) {
 
 func TestCanUrgeHomeAcceptance(t *testing.T) {
 	repo := NewRepo(nil, nil)
-	row := &homeActionDemandRow{Status: "testing", AssignedTo: "owner", Accepter: "acceptor", VeriFier: "verifier"}
+	row := &homeActionDemandRow{Status: "waitacceptance", AssignedTo: "owner", RD: "acceptor", VeriFier: "verifier"}
 	if !repo.canUrgeHomeAcceptance(row, "owner") {
 		t.Fatal("assigned owner should be allowed to remind the acceptance owner")
 	}
@@ -62,17 +62,12 @@ func TestBuildAcceptanceUrgeMessage(t *testing.T) {
 }
 
 func TestHomeAcceptanceRecipientsFallback(t *testing.T) {
-	got, src := homeAcceptanceRecipientsWithSource(&homeActionDemandRow{Originator: "ori", CreatedBy: "creator"})
-	if src != homeAcceptSrcOriginator || len(got) != 1 || got[0] != "ori" {
-		t.Fatalf("originator fallback = %#v src=%q", got, src)
+	got := homeAcceptanceRecipients(&homeActionDemandRow{AssignedTo: "assigned", Originator: "ori", CreatedBy: "creator"})
+	if len(got) != 1 || got[0] != "assigned" {
+		t.Fatalf("fallback = %#v", got)
 	}
-	got, src = homeAcceptanceRecipientsWithSource(&homeActionDemandRow{CreatedBy: "creator"})
-	if src != homeAcceptSrcCreatedBy || len(got) != 1 || got[0] != "creator" {
-		t.Fatalf("createdBy fallback = %#v src=%q", got, src)
-	}
-	got = excludeHomeAccount([]string{"a", "b", "a"}, "a")
-	if len(got) != 1 || got[0] != "b" {
-		t.Fatalf("exclude = %#v", got)
+	if got := homeAcceptanceRecipients(&homeActionDemandRow{Originator: "ori", CreatedBy: "creator"}); len(got) != 0 {
+		t.Fatalf("unexpected fallback = %#v", got)
 	}
 }
 

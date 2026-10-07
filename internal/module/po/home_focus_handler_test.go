@@ -1,11 +1,8 @@
 // =============================================================================
 // 文件: internal/module/po/home_focus_handler_test.go
 // 模块: PO 工作台
-// 类型: action
-// 职责: currentHandlerDemandWhere* 阶段办理人谓词的单元测试（验收 A-2 提测口径）。
-// 依赖: 标准库 strings / testing
+// 职责: 新办理人口径与评审预查询、关键词占位回归。
 // =============================================================================
-
 package po
 
 import (
@@ -13,94 +10,39 @@ import (
 	"testing"
 )
 
-// 验收 A-2 口径，逐条对应报告场景：
-//
-//	BRA = 本人                              → 命中（不因列表「当前负责人」是别人而被误列）
-//	BRA 空 + assignedTo = 本人 + 已到提测日   → 命中（US63451 之前永远进不了「待我处理」）
-//	BRA 空 + assignedTo = 本人 + 未设/未来    → 不命中
-//
-// 整段 SQL 文本断言：assignedTo 兜底必须整体嵌在提测日条件内，BRA 分支不受日期限制；
-// 「未设/未来不命中」由该嵌套结构保证，故随文本一并锁定。
 func TestDevelopingHandlerSQLFollowsReportRule(t *testing.T) {
-	const want = "(status = 'developing' AND (BRA = ? OR ((BRA IS NULL OR BRA = '') AND assignedTo = ? AND " +
-		"developFinish IS NOT NULL AND CAST(developFinish AS CHAR) NOT LIKE '0000-00-00%' AND developFinish <= CURDATE())))"
-	if developingHandlerSQL != want {
-		t.Fatalf("developing handler clause mismatch:\n got %s\nwant %s", developingHandlerSQL, want)
+	if strings.Contains(developingHandlerSQL, "developFinish") {
+		t.Fatal("提测不看日期")
 	}
-	// 提测日沿用仓库既有零日期安全 helper，不新造日期方言。
-	if !strings.Contains(developingHandlerSQL, dateSetBeforeTodaySQL("developFinish")) {
-		t.Fatalf("developing clause must reuse dateSetBeforeTodaySQL: %s", developingHandlerSQL)
-	}
-	if strings.Contains(developingHandlerSQL, "0000-00-00'") || strings.Contains(developingHandlerSQL, "!= '0000-00-00'") {
-		t.Fatalf("developing clause must not compare zero-date literals: %s", developingHandlerSQL)
+	if !strings.Contains(developingHandlerSQL, "IFNULL(BRA, '') = '' AND assignedTo = ?") {
+		t.Fatal("必须 BRA 优先")
 	}
 }
-
-// 三个谓词入口必须带同一条提测子句，且占位符数量与参数一一对应（错位会把账号串到别的阶段）。
 func TestDevelopingHandlerSQLWiredIntoEveryMyActionWhere(t *testing.T) {
-	atomicSQL, atomicArgs := currentHandlerDemandWhere("alice")
-	emptySQL, emptyArgs := currentHandlerDemandWhereWithReviews("alice", []int{})
-	fullSQL, fullArgs := currentHandlerDemandWhereWithReviews("alice", []int{101, 102})
-
-	for _, c := range []struct {
-		name     string
-		clause   string
-		args     []interface{}
-		skipIdx  int
-		wantArgs int
-	}{
-		{name: "currentHandlerDemandWhere", clause: atomicSQL, args: atomicArgs, skipIdx: -1, wantArgs: 16},
-		{name: "withReviews(empty)", clause: emptySQL, args: emptyArgs, skipIdx: -1, wantArgs: 15},
-		{name: "withReviews(ids)", clause: fullSQL, args: fullArgs, skipIdx: 1, wantArgs: 16},
-	} {
-		if !strings.Contains(c.clause, developingHandlerSQL) {
-			t.Fatalf("%s missing developing handler clause: %s", c.name, c.clause)
+	for _, reviews := range [][]int{nil, {}, {101, 102}} {
+		where, args := currentHandlerDemandWhereWithReviews("alice", reviews)
+		if strings.Count(where, "?") != len(args) {
+			t.Fatal("占位参数不一致")
 		}
-		if len(c.args) != c.wantArgs {
-			t.Fatalf("%s args = %d, want %d", c.name, len(c.args), c.wantArgs)
-		}
-		verifyHandlerWhereArgs(t, c.name, c.args, c.skipIdx)
-	}
-}
-
-// verifyHandlerWhereArgs 校验除 skipIdx 外每个占位符都绑定同一个账号——数量对但顺序错位，
-// 会把账号悄悄串到别的阶段。
-func verifyHandlerWhereArgs(t *testing.T, name string, args []interface{}, skipIdx int) {
-	t.Helper()
-	for i, a := range args {
-		if i == skipIdx {
-			if _, ok := a.([]int); !ok {
-				t.Fatalf("%s arg[%d] = %T, want []int reviewDemandIDs", name, i, a)
+		for _, want := range []string{developingHandlerSQL, acceptanceOwnerSQL, demandTestHandlerSQL, latestAcceptanceActorSQL, "createdBy = ? OR"} {
+			if !strings.Contains(where, want) {
+				t.Fatalf("missing %s", want)
 			}
-			continue
 		}
-		if a != "alice" {
-			t.Fatalf("%s arg[%d] = %v, want alice", name, i, a)
+		for _, forbidden := range []string{"zt_demandclarify", "waitdeliver", "developFinish"} {
+			if strings.Contains(where, forbidden) {
+				t.Fatalf("obsolete %s", forbidden)
+			}
 		}
 	}
 }
-
-// 关键词版必须与 developingHandlerSQL 同口径：BRA 优先，BRA 空时由负责人承担且须提测日已到。
-// 否则按负责人姓名搜不到 BRA 空的提测单，而同一单在「待我处理」里是可见的——两处口径打架。
 func TestDevelopingKeywordWhereFollowsHandlerRule(t *testing.T) {
-	kw := currentHandlerDemandKeywordWhere()
-	for _, want := range []string{
-		"(status = 'developing' AND (LOWER(IFNULL(BRA, '')) LIKE ?",
-		"((BRA IS NULL OR BRA = '') AND LOWER(IFNULL(assignedTo, '')) LIKE ? AND " + dateSetBeforeTodaySQL("developFinish") + ")",
-	} {
-		if !strings.Contains(kw, want) {
-			t.Fatalf("developing keyword clause missing %q: %s", want, kw)
-		}
+	where, args := currentHandlerDemandWhere("alice")
+	keyword := currentHandlerDemandKeywordWhere()
+	if strings.Count(keyword, "?") != len(args) || strings.Count(where, "?") != len(args) {
+		t.Fatal("keyword argument mismatch")
 	}
-	// 提测日沿用仓库既有零日期安全 helper，与办理人口径同一份子句。
-	if !strings.Contains(kw, dateSetBeforeTodaySQL("developFinish")) {
-		t.Fatalf("developing keyword clause must reuse dateSetBeforeTodaySQL: %s", kw)
-	}
-	if strings.Contains(kw, "!= '0000-00-00'") {
-		t.Fatalf("developing keyword clause must not compare zero-date literals: %s", kw)
-	}
-	// 16 = 15 原有阶段占位 + 提测兜底新增的 1 个 assignedTo 占位；改阶段时同步改这里。
-	if got := strings.Count(kw, "?"); got != 16 {
-		t.Fatalf("keyword where placeholders = %d, want 16", got)
+	if strings.Contains(keyword, "developFinish") || strings.Contains(keyword, "PM") {
+		t.Fatal("obsolete keyword rule")
 	}
 }

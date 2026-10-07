@@ -25,10 +25,10 @@ func TestAcceptanceStageMatchesHomeFirstHit(t *testing.T) {
 	if strings.Contains(acceptanceSQL, "testFinish") || strings.Contains(acceptanceSQL, "testing") {
 		t.Fatalf("acceptance list still unions testing-due rows: %s", acceptanceSQL)
 	}
-	if !strings.Contains(acceptanceSQL, "status = ?") || !strings.Contains(acceptanceSQL, "accepter = ?") {
+	if !strings.Contains(acceptanceSQL, "status = ?") {
 		t.Fatalf("acceptance list lost waitacceptance owner predicate: %s", acceptanceSQL)
 	}
-	if len(acceptanceArgs) != 4 || acceptanceArgs[0] != "waitacceptance" {
+	if len(acceptanceArgs) != 1 || acceptanceArgs[0] != "waitacceptance" {
 		t.Fatalf("acceptance args = %#v", acceptanceArgs)
 	}
 
@@ -68,7 +68,7 @@ func stageWhereSQL(t *testing.T, db *gorm.DB, status string) (string, []interfac
 func assertOtherStageMarkers(t *testing.T, db *gorm.DB) {
 	t.Helper()
 	markers := map[string]string{
-		"accept": "status IN", "clarify": "zt_demandclarify", "schedule": "mainDevelopers",
+		"accept": "status IN", "clarify": "status IN", "schedule": "mainDevelopers",
 		"developing": "status IN", "acceptanced": "status IN", "publish": "status IN",
 		"released": "overall",
 	}

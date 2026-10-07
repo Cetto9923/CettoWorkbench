@@ -234,15 +234,12 @@ func TestServiceDemands_AllStage_PriorityP1(t *testing.T) {
 
 	// 4. Primary actions
 	mock.ExpectQuery("SELECT .*FROM zt_demand WHERE id IN").
-		WithArgs(sqlmock.AnyArg()).
+		WithArgs(demandActionTestArgs("alice", 8001)...).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "stage", "status", "assignedTo", "accepter"}).
 			AddRow(8001, "", "wait", "alice", ""))
 	mock.ExpectQuery("(?s)SELECT d\\.id AS demand_id.*FROM zt_demand.*fromDemand IN").
 		WithArgs(8001, 8001).
 		WillReturnRows(sqlmock.NewRows([]string{"demand_id", "count", "first_id"}).AddRow(8001, 0, 0))
-	mock.ExpectQuery("(?s)SELECT d\\.id AS demand_id.*zt_demandappraise").
-		WithArgs("alice", 8001).
-		WillReturnRows(sqlmock.NewRows([]string{"demand_id", "has_pending", "has_any"}).AddRow(8001, false, false))
 
 	// 5. DeriveDemandPrimaryActions waitIDs review query
 	mock.ExpectQuery("SELECT `demand` FROM `zt_demandreview`").
@@ -254,6 +251,7 @@ func TestServiceDemands_AllStage_PriorityP1(t *testing.T) {
 		WithArgs(8001, "alice", "").
 		WillReturnRows(sqlmock.NewRows([]string{"demand"}).AddRow(8001))
 
+	mock.ExpectQuery("SELECT section, .* FROM `zt_config`").WillReturnRows(sqlmock.NewRows([]string{"section", "key", "value"}))
 	resp, err := svc.Demands(context.Background(), &model.User{Account: "alice"}, DemandsReq{
 		Status:   "all",
 		Focus:    "all",
@@ -395,7 +393,7 @@ func TestScheduleAndDeliverStoryScope_ExcludesFromDemand(t *testing.T) {
 
 		// 模拟执行，验证传入的参数必须绑定 fromDemand = 0，排除 fromDemand > 0
 		mock.ExpectQuery("(?s)SELECT .* FROM `zt_story` WHERE .*fromDemand = \\?.*").
-			WithArgs("0", "closed", "demandpool", 0, "story", "0", "0", "alice", "alice").
+			WithArgs("0", "demandpool", 0, "story", "0", "alice", "alice").
 			WillReturnRows(sqlmock.NewRows([]string{"id", "fromDemand", "title"}).
 				AddRow(1, 0, "独立研发需求"))
 

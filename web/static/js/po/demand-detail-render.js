@@ -399,7 +399,7 @@
       '<div class="dd-action-panel">' +
       '  <div><div class="dd-action-panel-title">需求澄清办理</div><div class="dd-action-panel-desc">支持在工作台直接办理澄清并更新涉及系统与交付节点。</div></div>' +
       '  <div class="dd-action-panel-btns">' +
-      (req.demandId ? '<button type="button" class="dd-btn primary js-drawer-clarify-btn" data-demand-id="' + esc(req.demandId) + '">办理需求澄清</button>' : (req.clarifyZtUrl ? '<a href="' + esc(req.clarifyZtUrl) + '" target="_blank" rel="noopener noreferrer" class="dd-btn primary">在禅道办理需求澄清 ↗</a>' : '<span class="dd-empty-tip">暂无澄清入口</span>')) +
+      (req.canClarify && req.demandId ? '<button type="button" class="dd-btn primary js-drawer-clarify-btn" data-demand-id="' + esc(req.demandId) + '">办理需求澄清</button>' : (req.canClarify && req.clarifyZtUrl ? '<a href="' + esc(req.clarifyZtUrl) + '" target="_blank" rel="noopener noreferrer" class="dd-btn primary">在禅道办理需求澄清 ↗</a>' : '<span class="dd-empty-tip">暂无澄清入口</span>')) +
       '  </div></div></div>' +
       (filesRows ? '<div class="dd-card"><div class="dd-card-body"><div class="dd-cardhead"><h3>需求附件</h3></div><ul class="dd-files-list">' + filesRows + '</ul></div></div>' : '');
   }

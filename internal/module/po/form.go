@@ -229,27 +229,28 @@ func (r *SubmitDemandReviewReq) Validate() []FieldError {
 
 // WorkItemDetail 单条需求或故事详情。
 type WorkItemDetail struct {
-	Kind          string                       `json:"kind"`
-	ID            string                       `json:"id"` // 展示编号：业需 US{id}，其余对象使用禅道原始数字 ID
-	Pri           string                       `json:"pri"`
-	Title         string                       `json:"title"`
-	Stage         string                       `json:"stage"`
-	Blocker       string                       `json:"blocker"`
-	Next          string                       `json:"next"`
-	Owner         string                       `json:"owner"`     // 与 NextOwner 同值，兼容旧字段
-	NextOwner     string                       `json:"nextOwner"` // 下一责任人展示名（DeriveCurrentHandler）
-	ZentaoUrl     string                       `json:"zentaoUrl"`
-	ValueStream   string                       `json:"valueStream"`
-	ZentaoStatus  string                       `json:"zentaoStatus"`            // 禅道 status 原文，前端按业需/研需分别映射中文
-	Suspended     bool                         `json:"suspended"`               // 当前存在 hang='1' 的挂起事实
-	Blocked       bool                         `json:"blocked"`                 // 当前 status=refuse 的阻塞事实
-	Deadline      string                       `json:"deadline,omitempty"`      // 截止日期 (YYYY-MM-DD)
-	Overdue       bool                         `json:"overdue,omitempty"`       // 当前是否已超期
-	OverdueDays   int                          `json:"overdueDays,omitempty"`   // 超期天数 (>0)
-	PrimaryAction *primaryaction.PrimaryAction `json:"primaryAction,omitempty"` // 服务端主操作
-	CanReview     bool                         `json:"canReview"`               // 当前登录人是待评业务评审人（与指派给无关）
-	CanEdit       bool                         `json:"canEdit,omitempty"`       // 当前登录人可直接编辑（未被评审且为创建人）
-	ZentaoEditUrl string                       `json:"zentaoEditUrl,omitempty"` // 禅道原生编辑页直达链接
+	Kind           string                       `json:"kind"`
+	ID             string                       `json:"id"` // 展示编号：业需 US{id}，其余对象使用禅道原始数字 ID
+	Pri            string                       `json:"pri"`
+	Title          string                       `json:"title"`
+	Stage          string                       `json:"stage"`
+	Blocker        string                       `json:"blocker"`
+	Next           string                       `json:"next"`
+	Owner          string                       `json:"owner"` // 与 NextOwner 同值，兼容旧字段
+	AssignedToName string                       `json:"assignedToName"`
+	NextOwner      string                       `json:"nextOwner"` // 下一责任人展示名（DeriveCurrentHandler）
+	ZentaoUrl      string                       `json:"zentaoUrl"`
+	ValueStream    string                       `json:"valueStream"`
+	ZentaoStatus   string                       `json:"zentaoStatus"`            // 禅道 status 原文，前端按业需/研需分别映射中文
+	Suspended      bool                         `json:"suspended"`               // 当前存在 hang='1' 的挂起事实
+	Blocked        bool                         `json:"blocked"`                 // 当前 status=refuse 的阻塞事实
+	Deadline       string                       `json:"deadline,omitempty"`      // 截止日期 (YYYY-MM-DD)
+	Overdue        bool                         `json:"overdue,omitempty"`       // 当前是否已超期
+	OverdueDays    int                          `json:"overdueDays,omitempty"`   // 超期天数 (>0)
+	PrimaryAction  *primaryaction.PrimaryAction `json:"primaryAction,omitempty"` // 服务端主操作
+	CanReview      bool                         `json:"canReview"`               // 当前登录人是待评业务评审人（与指派给无关）
+	CanEdit        bool                         `json:"canEdit,omitempty"`       // 当前登录人可直接编辑（未被评审且为创建人）
+	ZentaoEditUrl  string                       `json:"zentaoEditUrl,omitempty"` // 禅道原生编辑页直达链接
 }
 
 // DemandsResp 价值流状态下的需求详情列表。

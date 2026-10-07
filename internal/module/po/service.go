@@ -145,17 +145,19 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 
 	t0 := time.Now()
 	var (
-		breakdown  []ValueStreamStage
-		allErr     error
-		windows    []schedule.HomeVersionWindowCard
-		winErr     error
-		myPending  int64
-		pendingErr error
-		overdue    int64
-		overdueErr error
-		kpiSummary KPISummaryResult
-		kpiErr     error
-		wg         sync.WaitGroup
+		breakdown    []ValueStreamStage
+		allErr       error
+		windows      []schedule.HomeVersionWindowCard
+		winErr       error
+		myPending    int64
+		pendingErr   error
+		overdue      int64
+		overdueErr   error
+		ownership    KPICounts
+		ownershipErr error
+		kpiSummary   KPISummaryResult
+		kpiErr       error
+		wg           sync.WaitGroup
 	)
 
 	// 并行加载价值流全景统计、版本窗口与 KPI 指标，大幅缩短首屏加载耗时。
@@ -175,6 +177,7 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 	}
 
 	if strings.TrimSpace(account) != "" {
+		runQuerySafely(&wg, &ownershipErr, func() { ownership, ownershipErr = s.countHomeOwnership(ctx, account) })
 		runQuerySafely(&wg, &pendingErr, func() {
 			myPending, pendingErr = s.repo.CountHomeFocus(ctx, account, DemandsReq{Status: "all", Focus: "my_action"})
 		})
@@ -196,6 +199,9 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 	}
 	if overdueErr != nil {
 		return nil, overdueErr
+	}
+	if ownershipErr != nil {
+		return nil, ownershipErr
 	}
 	if kpiErr != nil {
 		return nil, kpiErr
@@ -251,6 +257,8 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 		Suspended: kpiSummary.Suspended,
 		Blocked:   kpiSummary.Blocked,
 		MyPending: myPending,
+		MyManaged: ownership.MyManaged,
+		MyRelated: ownership.MyRelated,
 	}
 
 	if s.logger != nil {

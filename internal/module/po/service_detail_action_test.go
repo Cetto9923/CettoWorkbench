@@ -75,108 +75,26 @@ func TestBuildPrimaryActionForDetail_FlagsYieldsNone(t *testing.T) {
 	}
 }
 
-// 3. 验收主操作改判：assignedTo == 当前用户 且具有验收权限，派生启用的「验收」。
-func TestBuildPrimaryActionForDetail_WaitAcceptance_AssignedTo(t *testing.T) {
-	svc := &DetailService{}
-	actor := &model.User{Account: "alice"}
-	ctx := perm.WithGranted(context.Background(), map[string]bool{perm.PoHomeList.String(): true})
-	row := &DemandDetailRow{
-		ID:         200,
-		Status:     "waitacceptance",
-		AssignedTo: "alice",
-		Accepter:   "bob", // accepter 不是本人，但 assignedTo 是本人
-	}
-
-	pa := svc.buildPrimaryActionForDetail(ctx, actor, row)
-	if pa.Key != string(primaryaction.KeyAcceptDone) {
-		t.Fatalf("assignedTo == actor should yield accept, got key=%q", pa.Key)
-	}
-	if !pa.Enabled {
-		t.Fatalf("expected action to be enabled, got reason=%q", pa.Reason)
-	}
-	if pa.URL != "/demands/200/acceptance" {
-		t.Fatalf("expected url /demands/200/acceptance, got %q", pa.URL)
-	}
-}
-
-// 3b. 验收主操作改判：assignedTo == 当前用户 但无验收权限，派生禁用的「验收」（文案「验收办理页尚未接入真实禅道写链」）。
-func TestBuildPrimaryActionForDetail_WaitAcceptance_AssignedToNoPerm(t *testing.T) {
-	svc := &DetailService{}
-	actor := &model.User{Account: "alice"}
-	ctx := context.Background() // 无任何权限
-	row := &DemandDetailRow{
-		ID:         200,
-		Status:     "waitacceptance",
-		AssignedTo: "alice",
-		Accepter:   "bob",
-	}
-
-	pa := svc.buildPrimaryActionForDetail(ctx, actor, row)
-	if pa.Key != string(primaryaction.KeyAcceptDone) {
-		t.Fatalf("assignedTo == actor should yield accept, got key=%q", pa.Key)
-	}
-	if pa.Enabled {
-		t.Fatal("expected action to be disabled without permission")
-	}
-	if pa.Reason != "验收办理页尚未接入真实禅道写链" {
-		t.Fatalf("expected reason %q, got %q", "验收办理页尚未接入真实禅道写链", pa.Reason)
-	}
-	if pa.URL != "/demands/200/acceptance" {
-		t.Fatalf("expected url /demands/200/acceptance, got %q", pa.URL)
-	}
-}
-
-// 4. 验收主操作改判：assignedTo != 当前用户 且 accepter == 当前用户，不得派生「验收」，应派生「催办验收」。
-func TestBuildPrimaryActionForDetail_WaitAcceptance_AccepterNotAssignedTo(t *testing.T) {
-	svc := &DetailService{}
-	actor := &model.User{Account: "bob"}
-	// 赋予催办权限
-	ctx := perm.WithGranted(context.Background(), map[string]bool{perm.PoHomeList.String(): true})
-
-	row := &DemandDetailRow{
-		ID:         201,
-		Status:     "waitacceptance",
-		AssignedTo: "alice", // assignedTo 不是本人
-		Accepter:   "bob",   // 虽为 accepter，但不是 assignedTo
-	}
-
-	pa := svc.buildPrimaryActionForDetail(ctx, actor, row)
-	if pa.Key == string(primaryaction.KeyAcceptDone) {
-		t.Fatalf("non-assignedTo user must NOT get accept action, got %+v", pa)
-	}
-	if pa.Key != string(primaryaction.KeyRemindAccept) {
-		t.Fatalf("non-assignedTo user should get remind_accept action, got key=%q", pa.Key)
-	}
-	if !pa.Enabled {
-		t.Fatalf("expected urge action to be enabled with perm, got reason=%q", pa.Reason)
-	}
-	if pa.URL != "/demands/201/urge" {
-		t.Fatalf("expected url /demands/201/urge, got %q", pa.URL)
-	}
-}
-
-// 5. 验收主操作改判：非 assignedTo 且无催办权限时，主操作为禁用的「催办验收」。
-func TestBuildPrimaryActionForDetail_WaitAcceptance_NoUrgePerm(t *testing.T) {
-	svc := &DetailService{}
-	actor := &model.User{Account: "charlie"}
-	ctx := context.Background() // 无任何权限
-
-	row := &DemandDetailRow{
-		ID:         202,
-		Status:     "waitacceptance",
-		AssignedTo: "alice",
-		Accepter:   "charlie",
-	}
-
-	pa := svc.buildPrimaryActionForDetail(ctx, actor, row)
-	if pa.Key != string(primaryaction.KeyRemindAccept) {
-		t.Fatalf("want remind_accept, got key=%q", pa.Key)
-	}
-	if pa.Enabled {
-		t.Fatal("urge action should be disabled without perm")
-	}
-	if pa.Reason != "当前用户没有催办验收权限" {
-		t.Fatalf("unexpected reason: %q", pa.Reason)
+func TestAcceptancePrimaryActionOwnerAndPermission(t *testing.T) {
+	for _, tc := range []struct {
+		rd, assigned, account string
+		grant, handler        bool
+		key                   primaryaction.ActionKey
+		enabled               bool
+	}{
+		{"alice", "bob", "alice", true, true, primaryaction.KeyAcceptDone, true},
+		{"", "alice", "alice", false, true, primaryaction.KeyAcceptDone, false},
+		{"alice", "bob", "bob", true, true, primaryaction.KeyRemindAccept, true},
+		{"alice", "bob", "charlie", false, false, primaryaction.KeyRemindAccept, false},
+	} {
+		ctx := context.Background()
+		if tc.grant {
+			ctx = perm.WithGranted(ctx, map[string]bool{perm.PoHomeList.String(): true})
+		}
+		pa := deriveDemandPrimaryAction(ctx, &model.User{Account: tc.account}, primaryActionFactsDemand{ObjectID: 200, Kind: primaryaction.ObjectBusinessDemand, Stage: primaryaction.StageAcceptance, IsAcceptanceOwner: acceptanceOwner(tc.rd, tc.assigned) == tc.account, IsHandler: tc.handler})
+		if pa.Key != string(tc.key) || pa.Enabled != tc.enabled {
+			t.Fatalf("case %+v: %+v", tc, pa)
+		}
 	}
 }
 

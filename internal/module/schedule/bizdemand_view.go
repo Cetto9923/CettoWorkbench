@@ -13,6 +13,7 @@ import (
 	"html/template"
 	"strconv"
 	"strings"
+	"workbench/internal/pkg/demandstage"
 
 	"workbench/internal/pkg/zentao"
 )
@@ -37,6 +38,7 @@ func toBizRequirementsView(items []BizDemandItem, zentaoBase string) []BizRequir
 			actionLabel = "去排期"
 		}
 		out = append(out, BizRequirement{
+			CanClarify:         !item.Suspended && demandstage.CanClarify(item.Status, "0", len(item.Children) > 0),
 			DemandID:           item.ID,
 			ID:                 formatDemandDisplayID(item.ID),
 			Title:              item.Name,
@@ -74,6 +76,7 @@ func toSubBizRequirementsView(items []SubDemandItem, zentaoBase string) []SubBiz
 			windowName = "—"
 		}
 		out = append(out, SubBizRequirement{
+			CanClarify:      !item.Suspended && demandstage.CanClarify(item.Status, "0", false),
 			DemandID:        item.ID,
 			ID:              formatDemandDisplayID(item.ID),
 			Title:           item.Name,

@@ -295,18 +295,8 @@ func homeAcceptanceRecipientsWithSource(row *homeActionDemandRow) ([]string, hom
 	if row == nil {
 		return nil, ""
 	}
-	seen := map[string]bool{}
-	out := []string{}
-	out = appendHomeCSVAccounts(out, seen, row.Accepter)
-	out = appendHomeCSVAccounts(out, seen, row.VeriFier)
-	if len(out) > 0 {
-		return out, homeAcceptSrcOwner
-	}
-	if originator := strings.TrimSpace(row.Originator); originator != "" {
-		return []string{originator}, homeAcceptSrcOriginator
-	}
-	if created := strings.TrimSpace(row.CreatedBy); created != "" {
-		return []string{created}, homeAcceptSrcCreatedBy
+	if owner := acceptanceOwner(row.RD, row.AssignedTo); owner != "" {
+		return []string{owner}, homeAcceptSrcOwner
 	}
 	return nil, ""
 }

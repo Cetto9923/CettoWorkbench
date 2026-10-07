@@ -17,6 +17,7 @@
 TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
 ========================================================================== */}}
 {{ define "page_css" }}
+<link rel="stylesheet" href="{{ asset "/static/css/po/demand-clarify.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedule.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulelist.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulewindow.css" }}">
@@ -25,8 +26,8 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/scheduleintegrated.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/po/schedule-shell.css" }}">
 {{ end }}
-
 {{ define "content" }}
+{{ template "po/clarify_modal" . }}
 <div id="page-schedule">
   {{ if .ShowContentTitle }}<div class="schedule-page-head"><h2>排期工作台</h2></div>{{ end }}
   <div class="schedule-version-overview">
@@ -81,7 +82,6 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
       </div>
     </div>
   </div>
-
   <div id="scheduleListViewWrap" class="schedule-area" style="margin-bottom:16px">
     {{ $activeFilter := .ActiveFilter }}
     {{ $activeWindow := false }}
@@ -108,7 +108,6 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
       </div>
     </div>
     {{ end }}
-
     <div class="schedule-filter-row-top" id="scheduleFilterRowTop">
       <div class="schedule-data-tabs" id="scheduleDataTabs">
         <button type="button" class="schedule-data-tab active" data-type="bizReq"><i class="fas fa-file-lines"></i>业务需求</button>
@@ -133,7 +132,6 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
         <button type="button" class="action-btn schedule-clear-btn" id="scheduleClearFilters"><i class="fas fa-sliders"></i> 清空筛选</button>
       </div>
     </div>
-
     <div class="schedule-filter schedule-filter--primary">
       <div class="schedule-filter-primary-inner" id="scheduleMultiselectRow">
         <div class="schedule-filter-core">
@@ -164,7 +162,6 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
               </div>
             </div>
           </div>
-
           <div class="dropdown form-multiselect schedule-filter-ms" data-role-dropdown data-filter-key="products" data-multiselect-keep-placeholder="true">
             <div class="form-input-clear-wrap">
               <div class="form-multiselect-display" data-role-display>
@@ -192,7 +189,6 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
               </div>
             </div>
           </div>
-
           <div class="schedule-ms" data-filter-key="stages" data-filter-label="排期阶段">
             <button type="button" class="form-select schedule-ms-trigger" aria-haspopup="listbox" aria-expanded="false">
               <span class="schedule-ms-text">排期阶段</span>
@@ -209,7 +205,6 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
               </div>
             </div>
           </div>
-
           <div class="dropdown form-multiselect schedule-filter-ms" data-role-dropdown data-filter-key="windows" data-multiselect-keep-placeholder="true">
             <div class="form-input-clear-wrap">
               <div class="form-multiselect-display" data-role-display>
@@ -305,6 +300,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             <td class="schedule-task-col"><span class="t3">—</span></td>
             <td class="schedule-action-col">
               <div class="schedule-action-buttons">
+                {{ if and $activeWindow .CanClarify }}<button type="button" class="action-btn js-drawer-clarify-btn" data-demand-id="{{ .DemandID }}">澄清</button>{{ end }}
                 {{ if .DetailURL }}
                 <a href="{{ .DetailURL }}" target="_blank" rel="noopener noreferrer" class="action-btn {{ .ActionClass }}" data-demand-id="{{ .DemandID }}">{{ .ActionLabel }}</a>
                 {{ else }}
@@ -334,6 +330,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             <td class="schedule-task-col"><span class="t3">—</span></td>
             <td class="schedule-action-col">
               <div class="schedule-action-buttons">
+                {{ if and $activeWindow .CanClarify }}<button type="button" class="action-btn js-drawer-clarify-btn" data-demand-id="{{ .DemandID }}">澄清</button>{{ end }}
                 {{ if .DetailURL }}
                 <a href="{{ .DetailURL }}" target="_blank" rel="noopener noreferrer" class="action-btn {{ .ActionClass }}" data-demand-id="{{ .DemandID }}">{{ .ActionLabel }}</a>
                 {{ else }}
@@ -830,6 +827,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
 
 {{ define "page_js" }}
 <script src="{{ asset "/static/vendor/jquery/jquery.min.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-clarify.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/schedulewindowdraft.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/schedulewindow.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/schedulemanage.js" }}"></script>

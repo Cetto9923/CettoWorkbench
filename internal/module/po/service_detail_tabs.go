@@ -216,6 +216,7 @@ func (s *DetailService) buildRequirement(ctx context.Context, row *DemandDetailR
 	}
 
 	return &DetailRequirement{
+		CanClarify:     demandstage.CanClarify(row.Status, row.Hang, false),
 		DemandID:       row.ID,
 		SpecHtml:       row.Desc,
 		VerifyHtml:     row.VerifyPlan,

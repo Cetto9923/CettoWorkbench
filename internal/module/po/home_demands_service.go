@@ -17,7 +17,6 @@ import (
 
 	"workbench/internal/model"
 	"workbench/internal/module/po/primaryaction"
-	"workbench/internal/pkg/personlabel"
 	"workbench/internal/pkg/zentao"
 )
 
@@ -185,10 +184,17 @@ func (s *Service) populateWorkItems(ctx context.Context, actor *model.User, page
 	if err := s.enrichDemandCanReview(ctx, account, items, demandMap); err != nil {
 		return nil, err
 	}
-	// 首页办理优先级：评审 > 提交 > 查看。只对当前页排序，保持前面的
-	// SQL 分页和阶段顺序不变，同时确保用户首先看到可直接办理的事项。
+	if req.Focus != "" {
+		if err := s.enrichHomeDeadlines(ctx, items, demandMap, storyMap); err != nil {
+			return nil, err
+		}
+	}
+	// 与 SQL 分页前排序一致：评审 > 提交 > 查看，同优先级超期在前。
 	sort.SliceStable(items, func(i, j int) bool {
-		return homeActionPriority(items[i]) < homeActionPriority(items[j])
+		if homeActionPriority(items[i]) != homeActionPriority(items[j]) {
+			return homeActionPriority(items[i]) < homeActionPriority(items[j])
+		}
+		return items[i].Overdue && !items[j].Overdue
 	})
 
 	return &DemandsResp{
@@ -292,21 +298,22 @@ func buildDemandWorkItem(row DemandRow, label string, displayMap map[string]stri
 	ownerDisp := resolveNextOwnerDisplay(row, displayMap)
 	deadline, isOverdue, days := calcOverdue(row.Deadline, row.Status)
 	return WorkItemDetail{
-		Kind:          "demand",
-		ID:            fmt.Sprintf("US%d", row.ID),
-		Pri:           pri,
-		Title:         row.Name,
-		Owner:         ownerDisp,
-		NextOwner:     ownerDisp,
-		ZentaoUrl:     zentao.URL("demand", "view", fmt.Sprintf("demandID=%d", row.ID)),
-		ZentaoEditUrl: zentao.DemandEditURL(uint(row.ID)),
-		ValueStream:   label,
-		ZentaoStatus:  row.Status,
-		Suspended:     strings.EqualFold(strings.TrimSpace(row.Hang), "1") || strings.EqualFold(strings.TrimSpace(row.Hang), "true"),
-		Blocked:       strings.EqualFold(strings.TrimSpace(row.Status), "refuse"),
-		Deadline:      deadline,
-		Overdue:       isOverdue,
-		OverdueDays:   days,
+		Kind:           "demand",
+		ID:             fmt.Sprintf("US%d", row.ID),
+		Pri:            pri,
+		Title:          row.Name,
+		AssignedToName: lookupAccountDisplay(displayMap, row.AssignedTo),
+		Owner:          ownerDisp,
+		NextOwner:      ownerDisp,
+		ZentaoUrl:      zentao.URL("demand", "view", fmt.Sprintf("demandID=%d", row.ID)),
+		ZentaoEditUrl:  zentao.DemandEditURL(uint(row.ID)),
+		ValueStream:    label,
+		ZentaoStatus:   row.Status,
+		Suspended:      strings.EqualFold(strings.TrimSpace(row.Hang), "1") || strings.EqualFold(strings.TrimSpace(row.Hang), "true"),
+		Blocked:        strings.EqualFold(strings.TrimSpace(row.Status), "refuse"),
+		Deadline:       deadline,
+		Overdue:        isOverdue,
+		OverdueDays:    days,
 	}
 }
 
@@ -345,28 +352,22 @@ func lookupAccountsDisplay(displayMap map[string]string, accountsCSV string) str
 }
 
 func buildStoryWorkItem(row StoryRow, label string, actor *model.User, displayMap map[string]string) WorkItemDetail {
-	account := ""
-	if actor != nil {
-		account = actor.Account
-	}
-	owner := lookupAccountDisplay(displayMap, account)
-	if owner == "" && actor != nil {
-		owner = personlabel.Format(actor.Account, actor.DisplayName)
-	}
-	deadline, isOverdue, days := calcOverdue(storyTargetDate(row), row.Status)
+	owner := lookupAccountDisplay(displayMap, row.AssignedTo)
+	deadline, isOverdue, days := "", false, 0
 	return WorkItemDetail{
-		Kind:         "story",
-		ID:           fmt.Sprintf("%d", row.ID),
-		Pri:          fmt.Sprintf("P%d", row.Pri),
-		Title:        row.Title,
-		Owner:        owner,
-		NextOwner:    owner,
-		ZentaoUrl:    zentao.URL("story", "view", fmt.Sprintf("storyID=%d", row.ID)),
-		ValueStream:  label,
-		ZentaoStatus: row.Status,
-		Deadline:     deadline,
-		Overdue:      isOverdue,
-		OverdueDays:  days,
+		Kind:           "story",
+		ID:             fmt.Sprintf("%d", row.ID),
+		Pri:            fmt.Sprintf("P%d", row.Pri),
+		Title:          row.Title,
+		AssignedToName: owner,
+		Owner:          owner,
+		NextOwner:      owner,
+		ZentaoUrl:      zentao.URL("story", "view", fmt.Sprintf("storyID=%d", row.ID)),
+		ValueStream:    label,
+		ZentaoStatus:   row.Status,
+		Deadline:       deadline,
+		Overdue:        isOverdue,
+		OverdueDays:    days,
 	}
 }
 
@@ -408,15 +409,6 @@ func isUnsetDateText(s string) bool {
 		}
 	}
 	return false
-}
-
-func storyTargetDate(row StoryRow) string {
-	for _, dt := range []string{row.DevelopFinish, row.TestFinish, row.DeliverDate} {
-		if s := strings.TrimSpace(dt); !isUnsetDateText(s) {
-			return s
-		}
-	}
-	return ""
 }
 
 func isValidValueStreamStatus(status string) bool {

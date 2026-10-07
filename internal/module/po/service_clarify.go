@@ -172,9 +172,6 @@ func (s *Service) ClarifyDemand(ctx context.Context, actor *model.User, req Dema
 	if demand == nil || demand.Deleted != "0" {
 		return errorx.New(errorx.ErrCodeNotFound, "需求不存在")
 	}
-	if strings.TrimSpace(demand.Status) != "active" {
-		return errorx.New(errorx.ErrCodeConflict, "当前需求不是待澄清状态")
-	}
 
 	cfg := s.repo.LoadClarifyConfig(ctx)
 	if fieldErrs := req.Validate(cfg.NoAICategories, cfg.AICategories); len(fieldErrs) > 0 {

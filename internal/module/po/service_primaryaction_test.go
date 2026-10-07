@@ -10,6 +10,7 @@
 package po
 
 import (
+	"database/sql/driver"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -22,7 +23,7 @@ import (
 // TestDeriveDemandPrimaryActions_BatchIN 验证批量查询使用 IN (?, ?, ?) 而非行循环 N+1。
 //
 // 期望：3 个 demand IDs → 一次性 FindDemandPrimaryActions + 一次性 CountDemandTestTasks +
-// 一次性 FindDemandEvaluateStatus（评价 SQL 也是 IN）。
+// 评价事实直接来自需求级 overall 与办理人投影。
 func TestDeriveDemandPrimaryActions_BatchIN(t *testing.T) {
 	gormDB, mock := setupMockDB(t)
 	repo := NewRepo(gormDB, gormDB)
@@ -34,11 +35,11 @@ func TestDeriveDemandPrimaryActions_BatchIN(t *testing.T) {
 
 	// 1. FindDemandPrimaryActions：id IN (?)，deleted = '0' 字面量不占占位符。
 	mock.ExpectQuery(`SELECT id, stage, status, assignedTo, accepter`).
-		WithArgs(ids[0], ids[1], ids[2]).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "stage", "status", "assignedTo", "accepter"}).
-			AddRow(10, "", "clarify", "user_x", "").
-			AddRow(20, "", "released", "user_x", "").
-			AddRow(30, "", "developing", "user_x", ""))
+		WithArgs(demandActionTestArgs("user_x", ids...)...).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "stage", "status", "assignedTo", "accepter", "is_handler"}).
+			AddRow(10, "", "active", "user_x", "", true).
+			AddRow(20, "", "released", "user_x", "", true).
+			AddRow(30, "", "developing", "user_x", "", true))
 
 	// 2. CountDemandTestTasks：需求 IN + fromDemand IN，各绑定一次。
 	mock.ExpectQuery(`(?s)SELECT d\.id AS demand_id.*FROM zt_demand.*fromDemand IN`).
@@ -47,14 +48,6 @@ func TestDeriveDemandPrimaryActions_BatchIN(t *testing.T) {
 			AddRow(10, 0, 0).
 			AddRow(20, 0, 0).
 			AddRow(30, 0, 0))
-
-	// 3. FindDemandEvaluateStatus：appraiseBy = ? 一次 + id IN (?) 一次。
-	mock.ExpectQuery(`(?s)SELECT d\.id AS demand_id.*zt_demandappraise`).
-		WithArgs("user_x", ids[0], ids[1], ids[2]).
-		WillReturnRows(sqlmock.NewRows([]string{"demand_id", "has_pending", "has_any"}).
-			AddRow(10, false, false).
-			AddRow(20, true, true).
-			AddRow(30, false, false))
 
 	out, err := svc.DeriveDemandPrimaryActions(t.Context(), &model.User{Account: "user_x", IsSuperAdmin: true}, ids)
 	if err != nil {
@@ -128,7 +121,7 @@ func TestDeriveStoryPrimaryActions_BatchIN(t *testing.T) {
 			AddRow(300, 0, 0))
 
 	// 故事事实：FindStoryMetaForAction 单次 IN + deleted = ?。
-	mock.ExpectQuery(`SELECT id, status, stage FROM`).
+	mock.ExpectQuery(`SELECT id, status, stage, .* FROM`).
 		WithArgs(ids[0], ids[1], ids[2], "0").
 		WillReturnRows(sqlmock.NewRows([]string{"id", "status", "stage"}).
 			AddRow(100, "developing", "").
@@ -179,7 +172,7 @@ func TestDeriveDemandPrimaryActions_ReviewWorkflow(t *testing.T) {
 	// 4: draft, createdBy=other -> none
 
 	mock.ExpectQuery(`SELECT id, stage, status, assignedTo, accepter, createdBy`).
-		WithArgs(ids[0], ids[1], ids[2], ids[3]).
+		WithArgs(demandActionTestArgs("user_a", ids...)...).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "stage", "status", "assignedTo", "accepter", "createdBy"}).
 			AddRow(1, "wait", "wait", "user_x", "", "other").
 			AddRow(2, "wait", "wait", "user_x", "", "user_a").
@@ -193,14 +186,6 @@ func TestDeriveDemandPrimaryActions_ReviewWorkflow(t *testing.T) {
 			AddRow(2, 0, 0).
 			AddRow(3, 0, 0).
 			AddRow(4, 0, 0))
-
-	mock.ExpectQuery(`(?s)SELECT d\.id AS demand_id.*zt_demandappraise`).
-		WithArgs("user_a", ids[0], ids[1], ids[2], ids[3]).
-		WillReturnRows(sqlmock.NewRows([]string{"demand_id", "has_pending", "has_any"}).
-			AddRow(1, false, false).
-			AddRow(2, false, false).
-			AddRow(3, false, false).
-			AddRow(4, false, false))
 
 	// FindPendingReviewDemandIDs: 只有 status=wait 的 id: 1, 2
 	mock.ExpectQuery(`SELECT .*demand.* FROM .*zt_demandreview.* WHERE demand IN \(\?,\s*\?\)`).
@@ -232,4 +217,15 @@ func TestDeriveDemandPrimaryActions_ReviewWorkflow(t *testing.T) {
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet sql expectations: %v", err)
 	}
+}
+
+func demandActionTestArgs(account string, ids ...uint) []driver.Value {
+	args := make([]driver.Value, 18, 18+len(ids))
+	for i := range args {
+		args[i] = account
+	}
+	for _, id := range ids {
+		args = append(args, id)
+	}
+	return args
 }
