@@ -66,9 +66,12 @@ func (r *Repo) homeFocusQueryWithReviews(ctx context.Context, account string, re
 		}
 		switch req.Focus {
 		case "my_action":
-			// 只把当前价值流步骤的正式办理人视为“待我处理”；创建人、评审人和关注人不是当前负责人。
+			// 已发布待评价归评价反馈；待发布不进待我处理。
 			where, whereArgs := currentHandlerDemandWhereWithReviews(account, reviewIDs)
 			q = q.Where(where, whereArgs...)
+			if req.Status == "publish" {
+				q = q.Where("1 = 0")
+			}
 		case "my_managed":
 			q = q.Where("(assignedTo = ? OR BRA = ?)", account, account)
 		case "my_related":
@@ -99,6 +102,9 @@ func (r *Repo) homeFocusQueryWithReviews(ctx context.Context, account string, re
 		stmt := q.Select("id, status, assignedTo, createdBy, ? AS stage_index", index).Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
 		if req.Status == "all" {
 			stageSQL, stageArgs := r.demandStageCase(ctx, account)
+			if req.Focus == "my_action" {
+				stageSQL = "CASE WHEN status = 'released' AND overall = '0' THEN 9 ELSE " + stageSQL + " END"
+			}
 			stmt = q.Select("id, status, assignedTo, createdBy, "+stageSQL+" AS stage_index", stageArgs...).Session(&gorm.Session{DryRun: true}).Find(&rows).Statement
 			parts = append(parts, "SELECT id, status, assignedTo, createdBy, stage_index FROM ("+stmt.SQL.String()+") AS demand_stages WHERE stage_index IS NOT NULL")
 			args = append(args, stmt.Vars...)
