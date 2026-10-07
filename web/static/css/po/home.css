@@ -470,7 +470,7 @@
 .po-home .home-action-table .c-title a { display: inline-block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
 .po-home .home-action-table .c-stage { width: 94px; }
 .po-home .home-action-table .c-zt-status { width: 100px; text-overflow: clip; }
-.po-home .home-action-table .c-owner { width: 96px; min-width: 96px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.po-home .home-action-table .c-owner { width: 120px; min-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .po-home .home-action-table th.c-actions,
 .po-home .home-action-table td.c-actions { width: 136px; min-width: 136px; text-align: right; white-space: nowrap; overflow: visible; }
 
@@ -649,7 +649,7 @@
   border-left: 3px solid var(--wb-warning);
 }
 .po-home .focus-card.stagnant:hover { border-color: var(--wb-warning-border); border-left-color: var(--wb-warning); background: var(--wb-warning-light); box-shadow: none; }
-.po-home .focus-card.stagnant .focus-card-hdr { color: var(--wb-warning-hover); }
+.po-home .focus-card.stagnant .focus-card-hdr { color: var(--wb-warning-hover); flex-wrap: wrap; gap: 2px 4px; }
 .po-home .focus-card.stagnant .focus-card-num strong { color: var(--wb-warning); }
 .po-home .stagnant-obs-tag { font-size: 10px; color: var(--wb-warning-hover); background: var(--wb-warning-light); padding: 1px 4px; border-radius: var(--wb-radius-sm); font-weight: 500; white-space: nowrap; }
 .po-home .focus-card-hdr {
