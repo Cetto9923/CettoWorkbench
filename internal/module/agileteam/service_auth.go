@@ -21,7 +21,7 @@ import (
 )
 
 func requireActorAccount(actor *model.User) (string, error) {
-	account := actorAccount(actor)
+	account := actor.TrimmedAccount()
 	if actor == nil || account == "" {
 		return "", errorx.New("unauthorized", "请先登录")
 	}
@@ -57,7 +57,7 @@ func canEditTeamgroupObject(actor *model.User, row *TeamgroupRow, allowGlobal bo
 	if actor == nil || row == nil {
 		return false
 	}
-	account := actorAccount(actor)
+	account := actor.TrimmedAccount()
 	if account == "" {
 		return false
 	}

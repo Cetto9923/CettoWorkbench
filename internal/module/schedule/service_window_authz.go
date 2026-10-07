@@ -31,7 +31,7 @@ func (s *Service) canModifyWindow(ctx context.Context, actor *model.User, window
 	if window == nil {
 		return errorx.New(errorx.ErrCodeInvalidParam, "窗口不存在")
 	}
-	account := actorAccount(actor)
+	account := actor.TrimmedAccount()
 	if account == "" {
 		return errorx.New(errorx.ErrCodeForbidden, WindowWriteDenialMessage)
 	}

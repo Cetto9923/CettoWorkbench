@@ -31,7 +31,7 @@ func (s *Service) RequireStoryWriteAccess(ctx context.Context, actor *model.User
 	if storyID == 0 {
 		return errorx.New(errorx.ErrCodeInvalidParam, "研发需求 ID 无效")
 	}
-	account := actorAccount(actor)
+	account := actor.TrimmedAccount()
 	if actor == nil || account == "" {
 		return errorx.New(errorx.ErrCodeForbidden, StoryWriteDenialMessage)
 	}

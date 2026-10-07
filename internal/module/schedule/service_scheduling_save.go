@@ -32,7 +32,7 @@ func (s *Service) saveScheduling(ctx context.Context, actor *model.User, id uint
 	if id == 0 || req == nil {
 		return errors.New("排期对象或请求参数无效")
 	}
-	if actorAccount(actor) == "" {
+	if actor.TrimmedAccount() == "" {
 		return errors.New("未登录或无法识别当前用户")
 	}
 	access := s.RequireDemandWriteAccess
@@ -67,7 +67,7 @@ func (s *Service) saveScheduling(ctx context.Context, actor *model.User, id uint
 	if err != nil {
 		return err
 	}
-	input := schedulingSaveReq{Account: actorAccount(actor), DemandID: demandID, StoryID: storyID, ProductID: productID, Window: window, Form: req}
+	input := schedulingSaveReq{Account: actor.TrimmedAccount(), DemandID: demandID, StoryID: storyID, ProductID: productID, Window: window, Form: req}
 	if err := s.syncScheduling(ctx, input); err != nil {
 		return fmt.Errorf("排期同步失败，已有步骤可能提交，请刷新核对：%w", err)
 	}

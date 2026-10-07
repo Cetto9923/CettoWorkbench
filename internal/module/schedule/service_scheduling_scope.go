@@ -83,7 +83,7 @@ func (s *Service) validateSchedulingTask(ctx context.Context, story SaveScheduli
 }
 
 func (s *Service) schedulingProductAccess(ctx context.Context, actor *model.User) (map[uint]bool, error) {
-	if actor == nil || actorAccount(actor) == "" {
+	if actor == nil || actor.TrimmedAccount() == "" {
 		return nil, errorx.New(errorx.ErrCodeForbidden, "未登录")
 	}
 	if actor.IsSuperAdmin {
@@ -98,7 +98,7 @@ func (s *Service) schedulingProductAccess(ctx context.Context, actor *model.User
 			return nil, nil
 		}
 	}
-	ids, err := s.getVisibleProductIDs(ctx, actorAccount(actor))
+	ids, err := s.getVisibleProductIDs(ctx, actor.TrimmedAccount())
 	if err != nil {
 		return nil, err
 	}

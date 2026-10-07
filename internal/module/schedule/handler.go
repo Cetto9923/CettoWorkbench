@@ -256,7 +256,7 @@ func (h *Handler) CreateWindow(c *gin.Context) {
 	}
 
 	actor := middleware.CurrentUser(c)
-	if actorAccount(actor) == "" {
+	if actor.TrimmedAccount() == "" {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
 			"error":   "未登录或无法识别当前用户",

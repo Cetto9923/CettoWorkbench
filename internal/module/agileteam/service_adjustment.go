@@ -21,13 +21,6 @@ import (
 	"workbench/internal/pkg/errorx"
 )
 
-func actorAccount(actor *model.User) string {
-	if actor == nil {
-		return ""
-	}
-	return strings.TrimSpace(actor.Account)
-}
-
 func transitionAdjustmentError(err error) error {
 	if errors.Is(err, errAdjustmentStateChanged) {
 		return errorx.New("conflict", "调整单已被其他请求处理，请刷新后重试")

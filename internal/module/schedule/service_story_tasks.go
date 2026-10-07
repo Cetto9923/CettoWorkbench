@@ -236,7 +236,7 @@ func (s *Service) SaveStoryTasks(ctx context.Context, actor *model.User, storyID
 	if req == nil {
 		return errors.New("请求参数无效")
 	}
-	account := actorAccount(actor)
+	account := actor.TrimmedAccount()
 	if account == "" {
 		return errors.New("未登录或无法识别当前用户")
 	}

@@ -2,24 +2,15 @@
 // 文件: internal/module/po/service_handler.go
 // 模块: PO 工作台
 // 类型: service
-// 职责: 验收负责人及当前账号。
+// 职责: 验收负责人判定。
 // =============================================================================
 package po
 
-import (
-	"strings"
-	"workbench/internal/model"
-)
+import "strings"
 
 func acceptanceOwner(rd, assignedTo string) string {
 	if owner := strings.TrimSpace(rd); owner != "" {
 		return owner
 	}
 	return strings.TrimSpace(assignedTo)
-}
-func actorAccount(actor *model.User) string {
-	if actor == nil {
-		return ""
-	}
-	return strings.TrimSpace(actor.Account)
 }

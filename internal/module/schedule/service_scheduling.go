@@ -222,7 +222,7 @@ func (s *Service) buildProjectExecutionsMap(
 
 // GetProductProjects 查询产品关联的项目列表（排期弹窗任务项目下拉）。
 func (s *Service) GetProductProjects(ctx context.Context, actor *model.User, productID uint) ([]DemandSchedulingProjectOption, error) {
-	_ = actorAccount(actor)
+	_ = actor.TrimmedAccount()
 	if productID == 0 {
 		return []DemandSchedulingProjectOption{}, nil
 	}
@@ -316,7 +316,7 @@ func uniqueUints(ids []uint) []uint {
 
 // GetProjectExecutions 查询项目下的执行列表（排期弹窗级联下拉）。
 func (s *Service) GetProjectExecutions(ctx context.Context, actor *model.User, projectID uint) ([]ZtExecutionOption, error) {
-	_ = actorAccount(actor)
+	_ = actor.TrimmedAccount()
 	if projectID == 0 {
 		return []ZtExecutionOption{}, nil
 	}

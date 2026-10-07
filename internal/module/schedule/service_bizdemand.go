@@ -20,7 +20,7 @@ import (
 
 // ListBizDemands 查询排期工作台业务需求 Tab 列表。
 func (s *Service) ListBizDemands(ctx context.Context, actor *model.User, req ListBizDemandsReq) (*ListBizDemandsResp, error) {
-	account := actorAccount(actor)
+	account := actor.TrimmedAccount()
 	if account == "" {
 		return &ListBizDemandsResp{Total: 0, Items: []BizDemandItem{}}, nil
 	}

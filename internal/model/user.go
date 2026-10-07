@@ -9,6 +9,7 @@
 package model
 
 import (
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -64,6 +65,14 @@ func (u *User) AfterFind(_ *gorm.DB) error {
 		u.LastLoginDateDB = &t
 	}
 	return nil
+}
+
+// TrimmedAccount 返回去空格的账号；未登录（nil 接收者）返回空串。
+func (u *User) TrimmedAccount() string {
+	if u == nil {
+		return ""
+	}
+	return strings.TrimSpace(u.Account)
 }
 
 // SetActive 更新用户启用状态（通过 locked 字段映射禅道禁用语义）。

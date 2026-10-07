@@ -19,7 +19,7 @@ import (
 
 // ListIndependentStories 查询排期工作台独立研发需求 Tab 列表。
 func (s *Service) ListIndependentStories(ctx context.Context, actor *model.User, req ListIndependentReq) (*ListIndependentResp, error) {
-	account := actorAccount(actor)
+	account := actor.TrimmedAccount()
 	if account == "" {
 		return &ListIndependentResp{Total: 0, Items: []IndependentStoryItem{}}, nil
 	}

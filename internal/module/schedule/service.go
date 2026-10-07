@@ -109,16 +109,9 @@ func (s *Service) GetUserTeamgroups(ctx context.Context, account string) ([]Team
 	return options, nil
 }
 
-func actorAccount(actor *model.User) string {
-	if actor == nil {
-		return ""
-	}
-	return strings.TrimSpace(actor.Account)
-}
-
 // GetCreateWindowFormData 查询新建版本窗口弹窗所需表单数据。
 func (s *Service) GetCreateWindowFormData(ctx context.Context, actor *model.User) (*CreateWindowFormData, error) {
-	account := actorAccount(actor)
+	account := actor.TrimmedAccount()
 	teamgroups, err := s.GetUserTeamgroups(ctx, account)
 	if err != nil {
 		return nil, err
@@ -284,7 +277,7 @@ func (s *Service) Create(ctx context.Context, actor *model.User, req CreateReq) 
 	if err != nil {
 		return err
 	}
-	account := actorAccount(actor)
+	account := actor.TrimmedAccount()
 	window.CreatedBy = account
 	window.UpdatedBy = account
 
@@ -322,7 +315,7 @@ func (s *Service) Update(ctx context.Context, actor *model.User, req UpdateReq) 
 	if err := applyUpdateReqToVersionWindow(window, req); err != nil {
 		return err
 	}
-	account := actorAccount(actor)
+	account := actor.TrimmedAccount()
 	window.UpdatedBy = account
 
 	links, err := s.prepareWindowProducts(ctx, actor, window, req.Products, account)

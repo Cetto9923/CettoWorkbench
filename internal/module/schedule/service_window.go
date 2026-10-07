@@ -25,7 +25,7 @@ var windowCardToneClasses = []string{"red", "blue", "green", "purple"}
 
 // ListWindowCards 查询版本窗口概览卡片数据。
 func (s *Service) ListWindowCards(ctx context.Context, actor *model.User) ([]WindowCard, error) {
-	account := actorAccount(actor)
+	account := actor.TrimmedAccount()
 	windows, _, err := s.repo.FindAll(ctx)
 	if err != nil {
 		return nil, err
@@ -149,7 +149,7 @@ func (s *Service) ListTeamHomeVersionWindows(ctx context.Context, teamgroupIDs [
 
 // ListHomeVersionWindows 查询 PO 首页近期版本窗口（最多 4 条，按用户敏捷小组过滤）。
 func (s *Service) ListHomeVersionWindows(ctx context.Context, actor *model.User, relatedDemandIDs ...int) ([]HomeVersionWindowCard, error) {
-	account := actorAccount(actor)
+	account := actor.TrimmedAccount()
 	if account == "" {
 		s.logHomeVersionWindows(account, nil, "account empty", 0, nil)
 		return []HomeVersionWindowCard{}, nil
@@ -295,7 +295,7 @@ func (s *Service) loadTeamgroupDisplayNames(ctx context.Context, windows []model
 
 // ListWindows 查询版本窗口维护列表。
 func (s *Service) ListWindows(ctx context.Context, actor *model.User) (ListWindowsResp, error) {
-	account := actorAccount(actor)
+	account := actor.TrimmedAccount()
 	windows, _, err := s.repo.FindAll(ctx)
 	if err != nil {
 		return ListWindowsResp{}, err

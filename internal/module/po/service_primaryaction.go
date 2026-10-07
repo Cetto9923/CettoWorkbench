@@ -71,7 +71,7 @@ func (s *Service) DeriveDemandPrimaryActions(
 		return out, nil
 	}
 
-	rows, err := detailRepo.FindDemandPrimaryActions(zentao.WithAccount(ctx, actorAccount(actor)), demandIDs)
+	rows, err := detailRepo.FindDemandPrimaryActions(zentao.WithAccount(ctx, actor.TrimmedAccount()), demandIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func (s *Service) DeriveDemandPrimaryActions(
 		return nil, err
 	}
 
-	account := actorAccount(actor)
+	account := actor.TrimmedAccount()
 
 	// 批量查询待评审需求中当前用户是否有待评审任务。
 	var waitIDs []int

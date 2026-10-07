@@ -18,7 +18,7 @@ import (
 
 // GetBizDemandFilterCounts 查询业务需求各快捷筛选项数量。
 func (s *Service) GetBizDemandFilterCounts(ctx context.Context, actor *model.User, activeFilter, reuseFilter string, reuseTotal int64, req ...FilterCountsReq) (FilterCounts, error) {
-	account := actorAccount(actor)
+	account := actor.TrimmedAccount()
 	if account == "" {
 		return FilterCounts{}, nil
 	}
@@ -36,7 +36,7 @@ func (s *Service) GetBizDemandFilterCounts(ctx context.Context, actor *model.Use
 
 // GetIndependentFilterCounts 查询独立研发需求各快捷筛选项数量。
 func (s *Service) GetIndependentFilterCounts(ctx context.Context, actor *model.User, reuseFilter string, reuseTotal int64, req ...FilterCountsReq) (FilterCounts, error) {
-	account := actorAccount(actor)
+	account := actor.TrimmedAccount()
 	if account == "" {
 		return FilterCounts{}, nil
 	}
