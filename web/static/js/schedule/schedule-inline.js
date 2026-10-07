@@ -112,7 +112,7 @@
 
   $(document).on("click", ".js-schedule-inline-create", function () {
     var shared = window.ScheduleIntegratedShared;
-    if (!shared.isSchedulingDetailLoaded || !shared.currentCanEditWindow) {
+    if (!shared.isSchedulingDetailLoaded) {
       window.showToast("当前需求暂不能变更版本窗口", "error");
       return;
     }
