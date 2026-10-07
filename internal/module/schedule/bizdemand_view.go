@@ -18,6 +18,14 @@ import (
 	"workbench/internal/pkg/zentao"
 )
 
+// hangFromSuspended 把列表 DTO 的挂起标记还原为禅道 hang 值，交由 demandstage.CanClarify 统一判断。
+func hangFromSuspended(suspended bool) string {
+	if suspended {
+		return "1"
+	}
+	return "0"
+}
+
 // toBizRequirementsView 将顶层业需列表转为页面树形一级行。
 func toBizRequirementsView(items []BizDemandItem, zentaoBase string) []BizRequirement {
 	out := make([]BizRequirement, 0, len(items))
@@ -38,7 +46,7 @@ func toBizRequirementsView(items []BizDemandItem, zentaoBase string) []BizRequir
 			actionLabel = "去排期"
 		}
 		out = append(out, BizRequirement{
-			CanClarify:         !item.Suspended && demandstage.CanClarify(item.Status, "0", len(item.Children) > 0),
+			CanClarify:         demandstage.CanClarify(item.Status, hangFromSuspended(item.Suspended), len(item.Children) > 0),
 			DemandID:           item.ID,
 			ID:                 formatDemandDisplayID(item.ID),
 			Title:              item.Name,
@@ -76,7 +84,7 @@ func toSubBizRequirementsView(items []SubDemandItem, zentaoBase string) []SubBiz
 			windowName = "—"
 		}
 		out = append(out, SubBizRequirement{
-			CanClarify:      !item.Suspended && demandstage.CanClarify(item.Status, "0", false),
+			CanClarify:      demandstage.CanClarify(item.Status, hangFromSuspended(item.Suspended), false),
 			DemandID:        item.ID,
 			ID:              formatDemandDisplayID(item.ID),
 			Title:           item.Name,

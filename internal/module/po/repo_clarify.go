@@ -36,6 +36,8 @@ type demandClarifyRawRow struct {
 	IsOtherImportantOrder string `gorm:"column:isOtherImportantOrder"`
 	MultiLegalPersonLogo  string `gorm:"column:multiLegalPersonLogo"`
 	Deleted               string `gorm:"column:deleted"`
+	Hang                  string `gorm:"column:hang"`
+	IsParent              int    `gorm:"column:isParent"`
 }
 
 // demandClarifyDBItem 需求涉及系统。
@@ -71,7 +73,8 @@ func (r *Repo) FindDemandForClarify(ctx context.Context, id int64) (*demandClari
 	}
 	var row demandClarifyRawRow
 	err = db.WithContext(ctx).Table("zt_demand").
-		Select("id, name, status, category, BRA, QD, RD, `desc`, clarifyDesc, mainSystem, scaleEstimation, isNewProduct, isRelatedAccounts, isNewFunction, isOtherImportantOrder, multiLegalPersonLogo, deleted").
+		Select("id, name, status, category, BRA, QD, RD, `desc`, clarifyDesc, mainSystem, scaleEstimation, isNewProduct, isRelatedAccounts, isNewFunction, isOtherImportantOrder, multiLegalPersonLogo, deleted, hang, "+
+			"EXISTS (SELECT 1 FROM zt_demand child WHERE child.deleted = '0' AND child.parent = zt_demand.id) AS isParent").
 		Where("id = ?", id).
 		Take(&row).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {

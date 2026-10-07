@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"workbench/internal/model"
+	"workbench/internal/pkg/demandstage"
 	"workbench/internal/pkg/errorx"
 	"workbench/internal/pkg/zentao"
 )
@@ -32,6 +33,9 @@ func (s *Service) GetDemandClarifyForm(ctx context.Context, actor *model.User, d
 	}
 	if demand == nil || demand.Deleted != "0" {
 		return nil, errorx.New(errorx.ErrCodeNotFound, "需求不存在")
+	}
+	if !demandstage.CanClarify(demand.Status, demand.Hang, demand.IsParent > 0) {
+		return nil, errorx.New(errorx.ErrCodeConflict, "当前需求状态不可澄清")
 	}
 
 	products, err := s.repo.FindCandidateProducts(ctx, account)
@@ -171,6 +175,9 @@ func (s *Service) ClarifyDemand(ctx context.Context, actor *model.User, req Dema
 	}
 	if demand == nil || demand.Deleted != "0" {
 		return errorx.New(errorx.ErrCodeNotFound, "需求不存在")
+	}
+	if !demandstage.CanClarify(demand.Status, demand.Hang, demand.IsParent > 0) {
+		return errorx.New(errorx.ErrCodeConflict, "当前需求状态不可澄清")
 	}
 
 	cfg := s.repo.LoadClarifyConfig(ctx)
