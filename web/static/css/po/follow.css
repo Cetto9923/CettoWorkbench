@@ -263,6 +263,13 @@
 .pw-history-table th { background: var(--wb-bg-muted); color: var(--wb-text-secondary); }
 
 /* ─── 7. 业务需求关注现有样式 ─── */
+.po-follow .follow-btn {
+  height: 28px; padding: 0 10px; border: 1px solid var(--wb-border-default); border-radius: 4px;
+  background: var(--wb-bg-surface); color: var(--wb-text-secondary); font-size: 12px; cursor: pointer; text-decoration: none;
+  display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
+}
+.po-follow .follow-btn:hover { background: var(--wb-bg-muted); border-color: var(--color-border-strong); }
+
 .po-follow .follow-demand-table-wrap { margin-top: 0; }
 .po-follow .follow-demand-table-wrap .table-scroll-container { overflow-x: auto; }
 .po-follow .follow-table { min-width: 1080px; }
