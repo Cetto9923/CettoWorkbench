@@ -39,6 +39,11 @@ func TestDeliveryDeadlineBoundary(t *testing.T) {
 	if got := cfg.deadline("2026-10-09"); got != cfg.Date {
 		t.Fatal(got)
 	}
+	for _, launch := range []string{"", "0000-00-00", "2099-12-31"} {
+		if _, overdue, _ := cfg.overdue(launch, time.Now()); overdue {
+			t.Fatalf("override must not make unset launch %q overdue", launch)
+		}
+	}
 	cfg.Date = "2099-12-31"
 	if _, overdue, _ := cfg.overdue("2026-10-08", time.Now()); overdue {
 		t.Fatal("sentinel date must not be overdue")

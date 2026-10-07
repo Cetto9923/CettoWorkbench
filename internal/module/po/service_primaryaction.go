@@ -328,8 +328,7 @@ func deriveStageKey(stage, status string) primaryaction.StageKey {
 	return primaryaction.StageOther
 }
 
-// deriveStoryStageKey 把研发需求（zt_story）的 stage 与 status 映射到 primaryaction.StageKey。
-// 研发需求没有需求澄清阶段；active 状态下由 stage 决定其生命周期（如 wait -> StageSchedule）。
+// deriveStoryStageKey 按交付事实与窗口绑定划分研需，stage 只参与已交付判定。
 func deriveStoryStageKey(row StoryMetaForAction) primaryaction.StageKey {
 	if row.Delivered {
 		return primaryaction.StageDelivered

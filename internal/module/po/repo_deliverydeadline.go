@@ -81,7 +81,7 @@ func (cfg deliveryDeadlineConfig) overdueSQL(column string, now time.Time) (stri
 	sql := "CASE"
 	args := []interface{}{}
 	if validDeliveryDate(cfg.Date) {
-		sql += " WHEN " + dateSetExpr(column) + " THEN ?"
+		sql += " WHEN " + dateSetExpr(column) + " AND CAST(" + column + " AS CHAR) <> '2099-12-31' THEN ?"
 		args = append(args, cfg.Date+" "+cfg.Clock)
 	} else {
 		for _, entry := range strings.Split(cfg.Windows, "|") {
