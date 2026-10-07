@@ -300,15 +300,17 @@
   text-align: left;
 }
 .vf-action-btn {
-  padding: 3px 10px;
-  border: 1px solid var(--color-primary-border);
+  height: var(--size-6);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--wb-primary-border);
   border-radius: var(--wb-radius-sm);
-  background: var(--color-info-bg);
-  color: var(--color-info);
-  font-size: var(--wb-font-xs);
+  background: var(--color-surface);
+  color: var(--wb-primary);
+  font-size: 11px;
   cursor: pointer;
   white-space: nowrap;
 }
+.vf-action-btn:not(:disabled):hover { border-color: var(--wb-primary); background: var(--wb-primary-light); }
 .vf-action-btn:disabled,
 .vf-action-btn[aria-disabled="true"] {
   border-color: var(--color-border);
