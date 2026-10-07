@@ -2,6 +2,11 @@
    PO 我的关注 - 统一监控：业务需求 / 项目周报多对象视图
    ============================================================================= */
 
+/* ─── 0. 页面容器 ─── */
+.po-follow {
+  background: none;
+}
+
 /* ─── 1. 顶部 Tab 徽章与二期标记 ─── */
 .follow-tabs .follow-tab {
   display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
