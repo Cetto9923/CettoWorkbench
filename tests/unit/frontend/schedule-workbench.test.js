@@ -65,7 +65,7 @@ assert(
   'index.html: 必须渲染本窗口模式专属摘要条 #windowActiveBanner'
 );
 assert(
-  /action-btn--secondary\s+js-change-window/.test(indexHtml),
+  /js-change-window/.test(indexHtml),
   'index.html: 本窗口模式下必须渲染次要样式换窗口按钮'
 );
 

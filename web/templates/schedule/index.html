@@ -311,7 +311,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
                 <button type="button" class="action-btn {{ .ActionClass }}" data-demand-id="{{ .DemandID }}">{{ .ActionLabel }}</button>
                 {{ end }}
                 {{ if $activeWindow }}
-                <button type="button" class="action-btn action-btn--secondary js-change-window" data-demand-id="{{ .DemandID }}" title="调整所属版本窗口"><i class="fas fa-arrows-split-up-and-left"></i> 换窗口</button>
+                <button type="button" class="action-btn js-change-window" data-demand-id="{{ .DemandID }}" title="调整所属版本窗口"><i class="fas fa-arrows-split-up-and-left"></i> 换窗口</button>
                 {{ end }}
               </div>
             </td>
@@ -340,7 +340,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
                 <button type="button" class="action-btn {{ .ActionClass }}" data-demand-id="{{ .DemandID }}">{{ .ActionLabel }}</button>
                 {{ end }}
                 {{ if $activeWindow }}
-                <button type="button" class="action-btn action-btn--secondary js-change-window" data-demand-id="{{ .DemandID }}" title="调整所属版本窗口"><i class="fas fa-arrows-split-up-and-left"></i> 换窗口</button>
+                <button type="button" class="action-btn js-change-window" data-demand-id="{{ .DemandID }}" title="调整所属版本窗口"><i class="fas fa-arrows-split-up-and-left"></i> 换窗口</button>
                 {{ end }}
               </div>
             </td>
@@ -472,7 +472,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
                 <button type="button" class="action-btn action-btn--primary" data-story-id="{{ .StoryID }}">排期</button>
                 {{ end }}
                 {{ if $activeWindow }}
-                <button type="button" class="action-btn action-btn--secondary js-change-window" data-story-id="{{ .StoryID }}" title="调整所属版本窗口"><i class="fas fa-arrows-split-up-and-left"></i> 换窗口</button>
+                <button type="button" class="action-btn js-change-window" data-story-id="{{ .StoryID }}" title="调整所属版本窗口"><i class="fas fa-arrows-split-up-and-left"></i> 换窗口</button>
                 {{ end }}
                 <button type="button" class="action-btn action-btn--success js-open-task-modal" data-story-id="{{ .StoryID }}">维护任务</button>
               </div>
@@ -512,7 +512,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
                 <button type="button" class="action-btn action-btn--primary" data-story-id="{{ .StoryID }}">排期</button>
                 {{ end }}
                 {{ if $activeWindow }}
-                <button type="button" class="action-btn action-btn--secondary js-change-window" data-story-id="{{ .StoryID }}" title="调整所属版本窗口"><i class="fas fa-arrows-split-up-and-left"></i> 换窗口</button>
+                <button type="button" class="action-btn js-change-window" data-story-id="{{ .StoryID }}" title="调整所属版本窗口"><i class="fas fa-arrows-split-up-and-left"></i> 换窗口</button>
                 {{ end }}
                 <button type="button" class="action-btn action-btn--success js-open-task-modal" data-story-id="{{ .StoryID }}">维护任务</button>
               </div>
