@@ -41,7 +41,8 @@
   display: inline-flex;
   align-items: center;
   gap: var(--wb-space-1);
-  padding: 4px 10px;
+  height: var(--size-7);
+  padding: 0 10px;
   border: 1px solid var(--color-border);
   border-radius: var(--wb-radius-sm);
   background: var(--color-surface);
@@ -456,3 +457,4 @@
   width: 320px;
   max-width: 100%;
 }
+.vf-window-bar .vf-window-search { height: var(--size-7); }
