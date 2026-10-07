@@ -18,8 +18,14 @@ for (const [name, html] of [['schedule/index.html', scheduleHtml], ['schedule_wi
     /<label[^>]*for="scheduleWindowEnd"[^>]*>窗口结束 <span[^>]*>\*<\/span><\/label>/.test(html),
     name + ': 窗口结束必须带必填标记'
   );
+  assert(/<input[^>]*id="scheduleWindowEnd"[^>]*readonly/.test(html), name + ': #scheduleWindowEnd 必须 readonly');
   assert(/<input[^>]*id="scheduleWindowEnd"[^>]*required/.test(html), name + ': #scheduleWindowEnd 必须 required');
 }
+
+assert(!componentHtml.includes('style="color:var(--red)"'), 'schedule_window_modal.html: 窗口弹窗内不得含有 style="color:var(--red)"');
+const scheduleModalMatch = scheduleHtml.match(/<div[^>]*id="scheduleVersionWindowModal"[\s\S]*?<\/div>\s*<div[^>]*id="taskModalOverlay"/);
+assert(scheduleModalMatch, 'schedule/index.html: 未找到 scheduleVersionWindowModal');
+assert(!scheduleModalMatch[0].includes('style="color:var(--red)"'), 'schedule/index.html: 窗口弹窗内不得含有 style="color:var(--red)"');
 
 assert(/schedule\/window_modal/.test(homeHtml), 'home.html 必须引用 schedule/window_modal 组件');
 for (const [name, html] of [['schedule/index.html', scheduleHtml], ['home.html', homeHtml]]) {
@@ -34,6 +40,6 @@ const ok = {
   planTestDone: '2026-12-10', testDone: '2026-12-20', acceptDone: '2026-12-25', teamgroupId: 1,
 };
 assert.strictEqual(fn(ok), '');
-assert.strictEqual(fn(Object.assign({}, ok, { endDate: '' })), '请填写窗口结束日期');
+assert.strictEqual(fn(Object.assign({}, ok, { endDate: '' })), '', 'endDate 为空时校验照样通过');
 
 console.log('schedule-window-modal: ok');
