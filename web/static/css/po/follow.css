@@ -144,8 +144,8 @@
 /* 操作列 — 简洁图标、全局统一水平排列（5.7 G4：并入 5.5 全站表格按钮契约，watch 状态色为状态机故保留） */
 .pw-actions { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .pw-action-btn {
-  width: 28px;
-  height: 28px;
+  width: var(--size-6);
+  height: var(--size-6);
   padding: 0;
   border: 1px solid var(--wb-gray-300);
   background: var(--wb-bg-surface);
