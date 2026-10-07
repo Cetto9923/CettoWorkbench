@@ -185,7 +185,8 @@
 }
 .vf-scope-chip,
 .vf-filter-clear {
-  padding: 3px 10px;
+  height: var(--size-7);
+  padding: 0 10px;
   border: 1px solid var(--color-border);
   border-radius: var(--wb-radius-sm);
   background: var(--color-surface);
@@ -209,7 +210,8 @@
   color: var(--wb-gray-600);
 }
 .vf-filter-field select {
-  padding: 3px 6px;
+  height: var(--size-7);
+  padding: 0 6px;
   border: 1px solid var(--color-border);
   border-radius: var(--wb-radius-sm);
   background: var(--color-surface);
