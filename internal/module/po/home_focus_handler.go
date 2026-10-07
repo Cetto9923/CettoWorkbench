@@ -15,9 +15,12 @@ const demandTestHandlerSQL = `EXISTS (SELECT 1 FROM zt_testtask tt JOIN zt_testr
 
 var developingHandlerSQL = `(status = 'developing' AND (BRA = ? OR (IFNULL(BRA, '') = '' AND assignedTo = ?)))`
 
-func currentHandlerDemandWhere(account string) (string, []interface{}) {
-	where := `(status IN ('draft', 'refuse') AND createdBy = ?)
- OR (status = 'wait' AND (createdBy = ? OR ` + pendingReviewSQL + `))
+// handlerHeadSQL 与 handlerTailSQL 把待评审子句夹在中间：评审条件单独传入，
+// 便于按待评审 ID 收窄时不必再对拼好的 SQL 做字符串替换或按下标改参数。
+var handlerHeadSQL = `(status IN ('draft', 'refuse') AND createdBy = ?)
+ OR (status = 'wait' AND (createdBy = ? OR `
+
+var handlerTailSQL = `))
  OR (status = 'active' AND (assignedTo = ? OR BRA = ?))
  OR (status = 'clarified' AND BRA = ?)
  OR ` + developingHandlerSQL + `
@@ -25,23 +28,35 @@ func currentHandlerDemandWhere(account string) (string, []interface{}) {
  OR (status = 'waitacceptance' AND (` + acceptanceOwnerSQL + ` OR (` + latestAcceptanceActorSQL + ` = ? AND NOT ` + acceptanceOwnerSQL + `)))
  OR (status = 'acceptanced' AND BRA = ?)
  OR (status = 'released' AND overall = '0' AND (originator = ? OR (IFNULL(originator, '') = '' AND createdBy = ?)))`
-	args := make([]interface{}, strings.Count(where, "?"))
+
+func handlerDemandWhere(account, reviewSQL string, reviewArgs ...interface{}) (string, []interface{}) {
+	args := repeatAccount(account, strings.Count(handlerHeadSQL, "?"))
+	args = append(args, reviewArgs...)
+	return "(" + handlerHeadSQL + reviewSQL + handlerTailSQL + ")",
+		append(args, repeatAccount(account, strings.Count(handlerTailSQL, "?"))...)
+}
+
+func repeatAccount(account string, count int) []interface{} {
+	args := make([]interface{}, count)
 	for i := range args {
 		args[i] = account
 	}
-	return "(" + where + ")", args
+	return args
+}
+
+func currentHandlerDemandWhere(account string) (string, []interface{}) {
+	return handlerDemandWhere(account, pendingReviewSQL, account)
 }
 
 func currentHandlerDemandWhereWithReviews(account string, reviewDemandIDs []int) (string, []interface{}) {
-	where, args := currentHandlerDemandWhere(account)
-	if reviewDemandIDs == nil {
-		return where, args
+	switch {
+	case reviewDemandIDs == nil:
+		return currentHandlerDemandWhere(account)
+	case len(reviewDemandIDs) == 0:
+		return handlerDemandWhere(account, "1 = 0")
+	default:
+		return handlerDemandWhere(account, "id IN (?)", reviewDemandIDs)
 	}
-	if len(reviewDemandIDs) == 0 {
-		return strings.Replace(where, pendingReviewSQL, "1 = 0", 1), append(args[:2], args[3:]...)
-	}
-	args[2] = reviewDemandIDs
-	return strings.Replace(where, pendingReviewSQL, "id IN (?)", 1), args
 }
 
 func currentHandlerDemandKeywordWhere() string {

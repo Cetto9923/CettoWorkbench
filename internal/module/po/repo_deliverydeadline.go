@@ -14,6 +14,12 @@ import (
 	"workbench/internal/pkg/datefmt"
 )
 
+// unsetDeliveryDate 是禅道表示「未设日期」的哨兵值，按未设处理。
+const unsetDeliveryDate = "2099-12-31"
+
+// defaultDeliveryClock 是读不到禅道 deadlineTime 时的兜底截止时刻。
+const defaultDeliveryClock = "16:30"
+
 type deliveryDeadlineConfig struct {
 	Windows string
 	Date    string
@@ -21,7 +27,7 @@ type deliveryDeadlineConfig struct {
 }
 
 func (r *Repo) loadDeliveryDeadline(ctx context.Context) (deliveryDeadlineConfig, error) {
-	cfg := deliveryDeadlineConfig{Clock: "16:30"}
+	cfg := deliveryDeadlineConfig{Clock: defaultDeliveryClock}
 	var rows []struct {
 		Section string
 		Key     string
@@ -61,8 +67,8 @@ func (cfg deliveryDeadlineConfig) deadline(launch string) string {
 }
 
 func validDeliveryDate(value string) bool {
-	_, err := time.Parse("2006-01-02", value)
-	return err == nil && value != "2099-12-31"
+	_, err := time.Parse(datefmt.Layout, value)
+	return err == nil && value != unsetDeliveryDate
 }
 
 func (cfg deliveryDeadlineConfig) overdue(launch string, now time.Time) (string, bool, int) {
@@ -70,7 +76,7 @@ func (cfg deliveryDeadlineConfig) overdue(launch string, now time.Time) (string,
 	if !validDeliveryDate(date) {
 		return "", false, 0
 	}
-	deadline, err := time.ParseInLocation("2006-01-02 15:04", date+" "+cfg.Clock, now.Location())
+	deadline, err := time.ParseInLocation(datefmt.Layout+" 15:04", date+" "+cfg.Clock, now.Location())
 	if err != nil || !now.After(deadline) {
 		return date, false, 0
 	}
@@ -84,7 +90,7 @@ func (cfg deliveryDeadlineConfig) overdueSQL(column string, now time.Time) (stri
 	sql := "CASE"
 	args := []interface{}{}
 	if validDeliveryDate(cfg.Date) {
-		sql += " WHEN " + dateSetExpr(column) + " AND CAST(" + column + " AS CHAR) <> '2099-12-31' THEN ?"
+		sql += " WHEN " + dateSetExpr(column) + " AND CAST(" + column + " AS CHAR) <> '" + unsetDeliveryDate + "' THEN ?"
 		args = append(args, cfg.Date+" "+cfg.Clock)
 	} else {
 		for _, entry := range strings.Split(cfg.Windows, "|") {
@@ -103,9 +109,9 @@ func (cfg deliveryDeadlineConfig) overdueSQL(column string, now time.Time) (stri
 }
 
 func (cfg deliveryDeadlineConfig) homeOverdueOrder(now time.Time) (string, []interface{}) {
-	demandSQL, demandArgs := cfg.overdueSQL("estimateLaunch", now)
-	storySQL, storyArgs := cfg.overdueSQL("estimateLaunch", now)
-	sql := "CASE WHEN (kind = 'demand' AND EXISTS (SELECT 1 FROM zt_demand WHERE id = focus_objects.id AND ((" + dateSetExpr("deadline") + " AND status NOT IN " + terminalStatusSQL + " AND deadline < ?) OR (status = 'acceptanced' AND (" + demandSQL + "))))) OR (kind = 'story' AND EXISTS (SELECT 1 FROM zt_story WHERE id = focus_objects.id AND NOT " + storyDeliveredSQL + " AND (" + storySQL + "))) THEN 0 ELSE 1 END"
-	args := append([]interface{}{now.Format("2006-01-02")}, demandArgs...)
-	return sql, append(args, storyArgs...)
+	// 需求与需求的 estimateLaunch 用同一套截止规则，故只生成一次条件与参数。
+	overdueSQL, overdueArgs := cfg.overdueSQL("estimateLaunch", now)
+	sql := "CASE WHEN (kind = 'demand' AND EXISTS (SELECT 1 FROM zt_demand WHERE id = focus_objects.id AND ((" + dateSetExpr("deadline") + " AND status NOT IN " + terminalStatusSQL + " AND deadline < ?) OR (status = 'acceptanced' AND (" + overdueSQL + "))))) OR (kind = 'story' AND EXISTS (SELECT 1 FROM zt_story WHERE id = focus_objects.id AND NOT " + storyDeliveredSQL + " AND (" + overdueSQL + "))) THEN 0 ELSE 1 END"
+	args := append([]interface{}{now.Format(datefmt.Layout)}, overdueArgs...)
+	return sql, append(args, overdueArgs...)
 }
