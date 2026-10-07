@@ -105,7 +105,7 @@
   color: #999;
 }
 
-#scheduleIntegratedModal input[type="date"].form-input[readonly] {
+#scheduleIntegratedModal input[type="date"].form-input[readonly], #scheduleVersionWindowModal input[type="date"].form-input[readonly], .schedule-create-modal input[type="date"].form-input[readonly] {
   background: var(--color-surface-muted);
   color: var(--wb-text-tertiary);
   cursor: not-allowed;
