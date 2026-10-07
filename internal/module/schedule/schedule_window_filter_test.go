@@ -2,6 +2,7 @@ package schedule
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -107,5 +108,32 @@ func TestListFilterWindowsTeamNameAndOrder(t *testing.T) {
 	}
 	if opts[0].ReleaseDate != "2026-09-18" {
 		t.Fatalf("opts[0].ReleaseDate = %q, want %q", opts[0].ReleaseDate, "2026-09-18")
+	}
+}
+
+func TestWindowFilterIncludesDirectAndPlanChain(t *testing.T) {
+	cases := []struct {
+		name  string
+		build func(advancedFilterParams) filterClause
+	}{
+		{"biz", buildBizDemandAdvancedClause},
+		{"indep", buildIndepStoryAdvancedClause},
+	}
+	for _, tc := range cases {
+		withWindows := tc.build(advancedFilterParams{windowIDs: []uint{2}})
+		if !strings.Contains(withWindows.sql, "zt_demandwindow") || !strings.Contains(withWindows.sql, "zt_versionwindowproduct") {
+			t.Fatalf("%s window clause must contain direct binding and plan chain:\n%s", tc.name, withWindows.sql)
+		}
+		if got := strings.Count(withWindows.sql, "?"); got != len(withWindows.args) || got != 4 {
+			t.Fatalf("%s placeholders = %d, args = %d, want 4", tc.name, got, len(withWindows.args))
+		}
+		for i, arg := range withWindows.args {
+			if ids, ok := arg.([]uint); !ok || len(ids) != 1 || ids[0] != 2 {
+				t.Fatalf("%s arg[%d] = %#v, want []uint{2}", tc.name, i, arg)
+			}
+		}
+		if without := tc.build(advancedFilterParams{}); without.sql != "" || len(without.args) != 0 {
+			t.Fatalf("%s clause without windows = %q %v, want empty", tc.name, without.sql, without.args)
+		}
 	}
 }

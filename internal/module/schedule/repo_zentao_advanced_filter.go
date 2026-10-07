@@ -64,6 +64,19 @@ const bizDemandWindowIDsSQL = `
       AND c.parent > 0
       AND dw.versionWindow IN ?
   )
+  OR d.id IN (
+    SELECT c.id FROM zt_versionwindowproduct vwp
+    INNER JOIN zt_planstory ps ON ps.plan = vwp.plan
+    INNER JOIN zt_story s ON s.id = ps.story AND s.deleted = '0'
+    INNER JOIN zt_demand c ON c.id = s.fromDemand AND c.deleted = '0'
+    WHERE vwp.deletedAt IS NULL AND vwp.versionWindow IN ?
+    UNION
+    SELECT c.parent FROM zt_versionwindowproduct vwp
+    INNER JOIN zt_planstory ps ON ps.plan = vwp.plan
+    INNER JOIN zt_story s ON s.id = ps.story AND s.deleted = '0'
+    INNER JOIN zt_demand c ON c.id = s.fromDemand AND c.deleted = '0' AND c.parent > 0
+    WHERE vwp.deletedAt IS NULL AND vwp.versionWindow IN ?
+  )
 )`
 
 const indepStoryWindowIDsSQL = `
@@ -95,6 +108,19 @@ const indepStoryWindowIDsSQL = `
           )
         )
       )
+  )
+  OR EXISTS (
+    SELECT 1 FROM zt_planstory ps
+    INNER JOIN zt_versionwindowproduct vwp ON vwp.plan = ps.plan AND vwp.deletedAt IS NULL
+    INNER JOIN zt_versionwindow vw ON vw.id = vwp.versionWindow AND vw.deletedAt IS NULL
+    WHERE ps.story = s.id AND vw.id IN ?
+  )
+  OR EXISTS (
+    SELECT 1 FROM zt_story ch
+    INNER JOIN zt_planstory ps ON ps.story = ch.id
+    INNER JOIN zt_versionwindowproduct vwp ON vwp.plan = ps.plan AND vwp.deletedAt IS NULL
+    INNER JOIN zt_versionwindow vw ON vw.id = vwp.versionWindow AND vw.deletedAt IS NULL
+    WHERE ch.parent = s.id AND ch.deleted = '0' AND ch.type = 'story' AND vw.id IN ?
   )
 )`
 
@@ -148,7 +174,7 @@ func buildBizDemandAdvancedClause(params advancedFilterParams) filterClause {
 	}
 	if len(params.windowIDs) > 0 {
 		parts = append(parts, "AND "+bizDemandWindowIDsSQL)
-		args = append(args, params.windowIDs, params.windowIDs)
+		args = append(args, params.windowIDs, params.windowIDs, params.windowIDs, params.windowIDs)
 	}
 	if params.keyword != "" {
 		exactID := extractScheduleSearchID(params.keyword)
@@ -212,7 +238,7 @@ func buildIndepStoryAdvancedClause(params advancedFilterParams) filterClause {
 	}
 	if len(params.windowIDs) > 0 {
 		parts = append(parts, "AND "+indepStoryWindowIDsSQL)
-		args = append(args, params.windowIDs, params.windowIDs)
+		args = append(args, params.windowIDs, params.windowIDs, params.windowIDs, params.windowIDs)
 	}
 	if params.keyword != "" {
 		exactID := extractScheduleSearchID(params.keyword)
