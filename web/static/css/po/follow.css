@@ -64,7 +64,7 @@
   padding: 0 10px; font-size: 12px; color: var(--wb-text-secondary); background: var(--wb-bg-surface);
 }
 .pw-reset-btn {
-  height: 28px; border: 1px solid var(--wb-border-subtle); background: var(--wb-bg-surface); border-radius: 5px;
+  height: 28px; border: 1px solid var(--wb-border-default); background: var(--wb-bg-surface); border-radius: 5px;
   padding: 0 10px; font-size: 12px; color: var(--wb-text-secondary); cursor: pointer;
 }
 .pw-reset-btn:hover { background: var(--wb-bg-muted); color: var(--wb-text-primary); }
