@@ -69,7 +69,7 @@
   align-items: center;
   gap: var(--wb-space-4);
   flex-wrap: wrap;
-  padding: var(--wb-space-3);
+  padding: var(--wb-space-1) var(--wb-space-3);
   border: 1px solid var(--color-border);
   border-radius: var(--wb-radius-md);
   background: var(--color-surface);
@@ -94,9 +94,10 @@
   display: inline-flex;
   align-items: center;
   gap: var(--wb-space-1);
-  padding: 2px 10px;
+  height: var(--size-6);
+  padding: 0 10px;
   border: 1px solid var(--color-border);
-  border-radius: 999px;
+  border-radius: var(--wb-radius-sm);
   background: var(--color-surface);
   font-size: var(--wb-font-xs);
   cursor: pointer;
@@ -129,14 +130,14 @@
 }
 .vf-stage-seg {
   display: inline-flex;
-  flex-direction: column;
   align-items: center;
-  gap: 2px;
-  min-width: 46px;
-  padding: 2px 6px;
+  gap: var(--wb-space-1);
+  height: var(--size-6);
+  padding: 0 6px;
   border: 1px solid var(--color-border);
   border-radius: var(--wb-radius-sm);
-  background: var(--color-surface-muted);
+  background: var(--color-surface);
+  font-size: var(--wb-font-xs);
   cursor: pointer;
 }
 .vf-stage-seg.is-active {
