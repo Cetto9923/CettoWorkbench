@@ -320,7 +320,7 @@
   align-items: start;
   gap: var(--wb-space-3);
 }
-.po-home .top5-section { overflow: hidden; }
+.po-home .top5-section { overflow: visible; }
 
 /* 工具栏 */
 .po-home .home-toolbar {
