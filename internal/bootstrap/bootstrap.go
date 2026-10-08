@@ -19,8 +19,10 @@
 package bootstrap
 
 import (
+	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/gin-gonic/gin"
@@ -207,7 +209,9 @@ func newBusinessModules(w *wiring) {
 // sidebarBadgesProvider 侧栏角标：注入 poSvc.SidebarBadges 为 render provider。
 func sidebarBadgesProvider(poSvc *po.Service) func(*gin.Context) (render.SidebarBadges, error) {
 	return func(c *gin.Context) (render.SidebarBadges, error) {
-		return poSvc.SidebarBadges(c.Request.Context(), middleware.CurrentUser(c))
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 250*time.Millisecond)
+		defer cancel()
+		return poSvc.SidebarBadges(ctx, middleware.CurrentUser(c))
 	}
 }
 

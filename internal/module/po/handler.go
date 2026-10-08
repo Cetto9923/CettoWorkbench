@@ -65,6 +65,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.Use(middleware.ActiveNav("/home"))
 
 	g.GET("/home", h.homePageAccess(), h.Home)
+	g.GET("/navigation/badges", middleware.RequireAnyPerm(perm.PoHomeList, perm.PoTodoList, perm.PoNoticeList), h.NavigationBadges)
 	g.GET("/home/team/version-windows", middleware.RequirePerm(perm.KanbanStory), h.TeamHomeVersionWindows)
 	g.GET("/home/team/value-stream", middleware.RequirePerm(perm.KanbanStory), h.TeamHomeValueStream)
 	g.GET("/home/team/dashboard", middleware.RequirePerm(perm.KanbanStory), h.TeamDashboard)

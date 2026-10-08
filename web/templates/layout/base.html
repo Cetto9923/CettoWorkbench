@@ -101,6 +101,7 @@
   <script src="{{ asset "/static/js/po/po-profile.js" }}"></script>
   {{ if not .HideChrome }}<script src="{{ asset "/static/js/layout/bottomtabbar.js" }}"></script>{{ end }}
   {{ if and (not .HideChrome) (eq .LayoutNav "top") }}<script src="{{ asset "/static/js/layout/topnav.js" }}"></script>{{ end }}
+  {{ if not .HideChrome }}<script src="{{ asset "/static/js/layout/badges.js" }}"></script>{{ end }}
   {{ block "page_js" . }}{{ end }}
   {{ template "scripts" . }}
 </body>

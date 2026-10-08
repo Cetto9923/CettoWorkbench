@@ -21,7 +21,7 @@ import (
 type SidebarBadges = render.SidebarBadges
 
 // SidebarBadges 取当前 actor 三个角标计数。
-// 角标最多等待 250ms；失败不冒充真实零值。
+// 异步角标最多等待 10 秒；失败不冒充真实零值。
 func (s *Service) SidebarBadges(ctx context.Context, actor *model.User) (SidebarBadges, error) {
 	out := SidebarBadges{}
 	if s == nil || s.repo == nil || actor == nil {
@@ -32,7 +32,7 @@ func (s *Service) SidebarBadges(ctx context.Context, actor *model.User) (Sidebar
 		return out, nil
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, 250*time.Millisecond)
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	for _, item := range []struct {
 		count  func(context.Context, string) (int64, error)
