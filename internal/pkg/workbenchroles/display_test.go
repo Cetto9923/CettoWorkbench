@@ -23,3 +23,18 @@ func TestDisplayLabel(t *testing.T) {
 		t.Fatalf("unexpected role: %+v", got)
 	}
 }
+
+func TestSearchAliases(t *testing.T) {
+	for _, keyword := range []string{"产品经理", "产品负责人", "PO", "po", "经理", "负责人", "产品"} {
+		code, labels := SearchAliases(keyword)
+		if code != RolePO || len(labels) != 4 {
+			t.Fatalf("%q: %q %v", keyword, code, labels)
+		}
+	}
+	for _, keyword := range []string{"", "  ", "管理员", "PMO"} {
+		code, labels := SearchAliases(keyword)
+		if code != "" || len(labels) != 0 {
+			t.Fatalf("%q: unexpected aliases %q %v", keyword, code, labels)
+		}
+	}
+}

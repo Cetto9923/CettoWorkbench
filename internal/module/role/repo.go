@@ -16,6 +16,7 @@ import (
 	"gorm.io/gorm"
 
 	"workbench/internal/model"
+	"workbench/internal/pkg/workbenchroles"
 )
 
 // Repo 封装角色数据访问。
@@ -41,7 +42,12 @@ func (r *Repo) FindAll(ctx context.Context, req RepoFindAllReq) ([]model.Role, i
 	keyword := strings.TrimSpace(req.Keyword)
 	if keyword != "" {
 		like := "%" + keyword + "%"
-		db = db.Where("name LIKE ?", like)
+		code, aliases := workbenchroles.SearchAliases(keyword)
+		if code == "" {
+			db = db.Where("name LIKE ?", like)
+		} else {
+			db = db.Where("(name LIKE ? OR code = ? OR name IN ?)", like, code, aliases)
+		}
 	}
 
 	var total int64
