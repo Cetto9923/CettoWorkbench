@@ -4,10 +4,10 @@
   var shared = window.ScheduleIntegratedShared;
   var rdApi = window.ScheduleIntegratedRd;
   var tasksApi = window.ScheduleIntegratedTasks;
+  var windowApi = window.ScheduleIntegratedWindow;
   var MODAL_IDS = ["scheduleIntegratedModal", "scheduleIntegratedModalOverlay"];
   var SAVE_BTN_DEFAULT_TEXT = "确认并同步";
   var SAVE_BTN_LOADING_TEXT = "保存中...";
-
   function parsePositiveInt(value) {
     var num = parseInt(String(value == null ? "" : value), 10);
     return isNaN(num) || num <= 0 ? 0 : num;
@@ -473,7 +473,7 @@
     var seen = {};
 
     $select.empty();
-    $("<option></option>").val("").text("请选择版本窗口").appendTo($select);
+    $("<option></option>").val("").text(windowApi.placeholderText(windows)).appendTo($select);
 
     (windows || []).forEach(function (window) {
       var id = String(window.id || "");
