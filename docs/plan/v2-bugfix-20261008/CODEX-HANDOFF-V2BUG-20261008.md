@@ -265,3 +265,28 @@ JS 中另有：
 - 所有新窗口入口未修改；外部系统、附件的规则例外仍未拍板。
 
 质量自查：范围核对完成；无新增单次接口/工厂抽象；函数与文件门禁通过；新增函数及净变化已列；无新增 CSS/依赖；截图与临时脚本未提交。
+
+
+## 7. 用户追加：公共导航计数长期横线（2026-10-08）
+
+根因：SidebarBadges 三次串行 SELECT 共用 250ms 超时，任一超时把所有计数标成 unavailable。模板显示横线，没有 JS 补取，等待多久也不会自动恢复。真实补取耗时 1.465s，证明原 250ms 预算无法覆盖该样本。
+
+修复：SSR 保留 250ms 上限，页面快速打开；新增权限保护 GET /navigation/badges，独立 10s 上限异步补取。请求期间显示省略号，完成后显示真实数字（包括 0）；侧栏通知与顶部铃铛同时更新。失败显示“重试”，点击仅补取计数；防重复请求。不增加轮询、缓存、第三方依赖或全局函数，不写库。
+
+公共文件变更理由：用户截图明确点名侧栏和全局顶部铃铛；sidebar/header 添加稳定计数定位和加载标记，base 仅加载局部职责的 badges.js。bootstrap 将 250ms 页面预算留在 SSR provider，避免异步接口沿用相同超时。未修改主题逻辑、配色、页面业务和列表查询口径。
+
+验证：003030 在 8100 问题风险页首次出现加载状态，随后我的待办 73、侧栏未读 0、铃铛 0，三处均为真实查询结果。接口日志 200/1.465024292s。浅色、深色截图逐张检查通过，控制台 error/warn 为空；内容未产生纵向滚动。新 Node 测试覆盖挂起请求加载状态、失败、点击重试与真实零值；make check、make quality、AGENTS 颜色扫描退出 0。日志 badges-check.log、badges-quality.log、badges-colors.log 在 /private/tmp/v2bugfix。截图 badges-light.png、badges-dark.png 同目录，未提交。未真实执行任何业务写操作。
+
+| 文件 | 净变化 |
+|---|---:|
+| internal/bootstrap/bootstrap.go | +4 |
+| internal/module/po/handler.go | +1 |
+| internal/module/po/handler_badges.go | +22 |
+| internal/module/po/sidebar_badges.go | 0 |
+| web/static/js/layout/badges.js | +43 |
+| web/static/js/layout/badges.test.js | +32 |
+| web/templates/layout/base.html | +1 |
+| web/templates/layout/header.html | 0 |
+| web/templates/layout/sidebar.html | 0 |
+
+测试净 +32；非测试净 +71，为新增异步计数接口和恢复机制所需。新增函数 NavigationBadges、局部 load、测试 run 及事件回调；新增 CSS 选择器 0，无超长文件净增长。login.css 原有改动保留未提交。8100 结束后关闭，8099 原演示服务不重启且未更新本轮代码。质量自查各项通过。
