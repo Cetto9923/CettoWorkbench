@@ -45,6 +45,16 @@ web/templates/layout/header.html 模块: 布局 职责:
       </button>
       <div class="search-results" id="searchResults" role="listbox"></div>
     </div>
+    <button
+      type="button"
+      class="po-header-icon theme-quick-toggle"
+      id="themeQuickToggle"
+      title="切换深色/浅色模式"
+      aria-label="切换深色/浅色模式"
+    >
+      <i class="fas fa-moon theme-moon-icon" aria-hidden="true"></i>
+      <i class="fas fa-sun theme-sun-icon" style="display: none" aria-hidden="true"></i>
+    </button>
     <div class="dropdown">
       <button
         class="po-user-info"
@@ -65,8 +75,18 @@ web/templates/layout/header.html 模块: 布局 职责:
             aria-checked="true"
             data-theme-value="light"
           >
-            <i class="bi bi-sun"></i><span>浅色</span>
-            <i class="bi bi-check check-mark"></i>
+            <i class="fas fa-sun"></i><span>浅色</span>
+            <i class="fas fa-check check-mark"></i>
+          </button>
+          <button
+            type="button"
+            class="dropdown-item"
+            role="menuitemradio"
+            aria-checked="false"
+            data-theme-value="dark"
+          >
+            <i class="fas fa-moon"></i><span>深色</span>
+            <i class="fas fa-check check-mark"></i>
           </button>
         </div>
         <div class="dropdown-divider"></div>
