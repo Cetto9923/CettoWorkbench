@@ -960,12 +960,13 @@
     });
   }
 
+  var keywordSearchTimer = null;
+
   function initKeywordSearch() {
-    var searchTimer = null;
     $("#homeKeyword").on("input", function () {
       var val = String($(this).val() || "").trim();
-      clearTimeout(searchTimer);
-      searchTimer = setTimeout(function () {
+      clearTimeout(keywordSearchTimer);
+      keywordSearchTimer = setTimeout(function () {
         if (val === state.keyword) {
           return;
         }
@@ -976,12 +977,27 @@
     });
   }
 
+  function initResetBtn() {
+    $("#homeResetBtn").on("click", function () {
+      clearTimeout(keywordSearchTimer);
+      $("#homeKeyword").val("");
+      $("#homeObjectTypeSegment button").removeClass("active").first().addClass("active");
+      $("#homePrioritySegment button").removeClass("active").first().addClass("active");
+      state.keyword = "";
+      state.objectType = "all";
+      state.priority = "all";
+      state.page = 1;
+      reloadDemands();
+    });
+  }
+
   $(function () {
     initValueStreamLinkage();
     initFocalChips();
     initObjectTypeSegment();
     initPrioritySegment();
     initKeywordSearch();
+    initResetBtn();
 
     var $active = $(".home-vs-mini-card.active").first();
     if (!$active.length) {
