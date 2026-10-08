@@ -30,15 +30,16 @@ type SidebarBadges struct {
 
 // navBadge 描述一个二级菜单的角标渲染结果。
 type navBadge struct {
-	Text  string
-	Shown bool
+	Text    string
+	Shown   bool
+	Pending bool
 }
 
 // navMenuBadge 返回该二级菜单的角标文案与是否渲染角标。
 // Go 模板要求多返回值时最后一个是 error，故用结构体承载「是否有角标」。
 func navMenuBadge(m menu.Menu, badges SidebarBadges) navBadge {
 	text, shown := SidebarBadgeOf(m, badges)
-	return navBadge{Text: text, Shown: shown}
+	return navBadge{Text: text, Shown: shown, Pending: badges.Unavailable}
 }
 
 // navGroupHasBadge 判断一级分组内是否有角标，用于窄轨红点。

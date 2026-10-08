@@ -54,12 +54,13 @@ func (m Menu) RailLabel() string {
 	return m.Title
 }
 
-// BadgeKind 返回该二级菜单对应的角标类型：todo、notice 或空串（无角标）。
+// BadgeKind 返回该二级菜单对应的角标类型，取值与 /navigation/badges 响应的
+// JSON 字段一致（todos / notice），badges.js 按该字段回填数字。
 // 角标按菜单 path 绑定，因此把菜单挪到别的一级分组下，红点会跟着走。
 func (m Menu) BadgeKind() string {
 	switch strings.TrimSpace(m.Path) {
 	case "/todos":
-		return "todo"
+		return "todos"
 	case "/notice":
 		return "notice"
 	default:

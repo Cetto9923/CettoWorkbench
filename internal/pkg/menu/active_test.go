@@ -148,11 +148,13 @@ func TestRailLabelAndBadgeKind(t *testing.T) {
 	if got := (Menu{Title: "需求规划"}).RailLabel(); got != "需求规划" {
 		t.Errorf("短名为空应回退 title，实际 %q", got)
 	}
-	if got := (Menu{Path: "/todos"}).BadgeKind(); got != "todo" {
-		t.Errorf("BadgeKind(/todos) = %q", got)
+	// 角标类型必须与 /navigation/badges 的 JSON 字段一致（todos / notice），
+	// 否则 badges.js 取不到数字，页面上会显示 undefined。
+	if got := (Menu{Path: "/todos"}).BadgeKind(); got != "todos" {
+		t.Errorf("BadgeKind(/todos) = %q，期望 todos", got)
 	}
 	if got := (Menu{Path: "/notice"}).BadgeKind(); got != "notice" {
-		t.Errorf("BadgeKind(/notice) = %q", got)
+		t.Errorf("BadgeKind(/notice) = %q，期望 notice", got)
 	}
 	if got := (Menu{Path: "/home"}).BadgeKind(); got != "" {
 		t.Errorf("BadgeKind(/home) = %q，期望空串", got)

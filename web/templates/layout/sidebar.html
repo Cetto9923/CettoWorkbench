@@ -50,7 +50,7 @@
           {{ else }}
           <a href="{{ .Path }}" class="nav-item{{ if eq .Key $activeItem }} active{{ end }}">
             <i class="nav-icon fas {{ .Icon }}"></i><span class="nav-text">{{ .Title }}</span>
-            {{ if $badge.Shown }}<span class="nav-badge{{ if eq .BadgeKind "notice" }} nav-badge--neutral{{ end }}" data-sidebar-badge="{{ .BadgeKind }}" title="{{ if eq .BadgeKind "notice" }}未读通知条数{{ else }}需要我操作的事项{{ end }}">{{ $badge.Text }}</span>{{ end }}
+            {{ if $badge.Shown }}<span class="nav-badge{{ if eq .BadgeKind "notice" }} nav-badge--neutral{{ end }}" data-sidebar-badge="{{ .BadgeKind }}" data-badge-pending="{{ $badge.Pending }}" title="{{ if eq .BadgeKind "notice" }}未读通知条数{{ else }}需要我操作的事项{{ end }}">{{ $badge.Text }}</span>{{ end }}
           </a>
           {{ end }}
         {{ end }}
