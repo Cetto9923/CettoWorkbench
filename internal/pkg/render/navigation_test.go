@@ -14,6 +14,8 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+
+	"workbench/internal/pkg/menu"
 )
 
 func TestNavigationUsesAuthenticatedPermissions(t *testing.T) {
@@ -35,7 +37,15 @@ func TestNavigationUsesAuthenticatedPermissions(t *testing.T) {
 			ctx, _ := gin.CreateTestContext(out)
 			ctx.Request = httptest.NewRequest("GET", tc.path, nil)
 			ctx.Set("userPerms", tc.granted)
-			data := gin.H{"LayoutNav": tc.nav, "HideChrome": tc.hidden, "UserPerms": map[string]bool{"role:list": true}, "Title": "<script>bad()</script>"}
+			menus := adminMenuFixture(tc.granted)
+			data := gin.H{
+				"LayoutNav": tc.nav, "HideChrome": tc.hidden,
+				"UserPerms":    map[string]bool{"role:list": true},
+				"Title":        "<script>bad()</script>",
+				"CurrentMenus": menus, "SidebarGroups": menus,
+				"CurrentPath":    tc.path,
+				"ActiveGroupKey": menu.ActiveGroupKey(menus, tc.path),
+			}
 			if err := renderer.renderPage(ctx, 403, "error", data); err != nil {
 				t.Fatal(err)
 			}
@@ -52,6 +62,24 @@ func TestNavigationUsesAuthenticatedPermissions(t *testing.T) {
 			}
 		})
 	}
+}
+
+// adminMenuFixture 构造「组织管理」分组配置：仅保留未被下线的管理入口，
+// 与 zt_menus 种子一致；调用方传入已授权权限以便校验过滤结果。
+func adminMenuFixture(granted map[string]bool) []menu.Menu {
+	all := []menu.Menu{
+		{Key: "roles", Title: "角色管理", Path: "/admin/roles", Perm: "role:list", Type: "menu"},
+		{Key: "menus", Title: "菜单管理", Path: "/admin/menus", Perm: "menu:list", Type: "menu"},
+		{Key: "operation_logs", Title: "操作日志", Path: "/admin/operation-logs", Perm: "operationlog:list", Type: "menu"},
+		{Key: "login_logs", Title: "登录日志", Path: "/admin/login-logs", Perm: "loginlog:list", Type: "menu"},
+	}
+	kept := all[:0:0]
+	for _, item := range all {
+		if granted[item.Perm] {
+			kept = append(kept, item)
+		}
+	}
+	return []menu.Menu{{Key: "menu_150", Title: "组织管理", Type: "directory", Children: kept}}
 }
 
 func assertAdminLinks(t *testing.T, html string, granted map[string]bool, hidden bool) {

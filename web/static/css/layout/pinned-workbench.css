@@ -270,6 +270,9 @@ html[data-theme="dark"] body.po-workbench-shell [data-subnav-panel="personal"] .
 
 /* 底部添加新常用虚线槽位 */
 .po-add-pinned-btn[hidden] { display: none; }
+/* 常用弹窗默认关闭：该类自带 display:flex，需用 hidden 属性覆盖。
+   原实现依赖内联 style="display:none"，本轮改为 hidden 属性（规则 d）。 */
+.po-pinned-modal-backdrop[hidden] { display: none; }
 .po-add-pinned-btn {
   display: flex;
   align-items: center;

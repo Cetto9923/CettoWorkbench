@@ -175,40 +175,25 @@
     path = path || window.location.pathname || "/";
     var storedGroup = getStoredRailGroup();
     var isPinned = window.WorkbenchPinned && typeof window.WorkbenchPinned.isPinned === "function" && window.WorkbenchPinned.isPinned(path);
-    var isPersonal = path === "/home" || path === "/todos" || path === "/done" || path === "/notice" || path === "/follow";
 
-    // 路由所属分组优先；记忆分组只用于两种情况：从「常用」进入的固定页保持个人面板，或路由无归属。
-    var routeGroup = "";
-    if (isPersonal) {
-      routeGroup = "personal";
-    } else {
-      var matchingLink = null;
-      sidebar.querySelectorAll(".po-subnav a.nav-item[href]").forEach(function (a) {
-        if (a.closest("#sidebarPinnedContainer, .po-pinned-list")) return;
-        var href = a.getAttribute("href");
-        if (href && (href === path || path.indexOf(href) === 0)) {
-          if (!matchingLink || href.length > matchingLink.getAttribute("href").length) matchingLink = a;
-        }
-      });
-      if (matchingLink) {
-        var p = matchingLink.closest(".po-subnav-panel");
-        if (p) routeGroup = p.getAttribute("data-subnav-panel");
-      }
-    }
-    var group = routeGroup;
-    if (storedGroup === "personal" && isPinned) group = "personal";
-    if (!group) group = storedGroup || (isPinned ? "personal" : "");
+    // 分组与二级高亮由服务端按菜单配置算出：已带 is-active / active 的面板与链接即答案，
+    // 这里只做前端路由切换后的兜底，因此不再按写死的地址判断归属。
+    var activePanel = sidebar.querySelector(".po-subnav-panel.is-active");
+    var routeGroup = activePanel ? activePanel.getAttribute("data-subnav-panel") : "";
+    var group = routeGroup || storedGroup;
 
     if (group) activateRailGroup(group, true);
 
+    // 二级高亮以服务端输出的 active 类为准；这里只处理前端路由切换后的兜底：
+    // 常用区里的链接按 path 匹配，其余仅当链接属于当前面板时才高亮。
     sidebar.querySelectorAll(".po-subnav a.nav-item").forEach(function (a) {
       var href = a.getAttribute("href");
       var isMatch = href && (href === path || path.indexOf(href) === 0);
       var inPinned = !!a.closest("#sidebarPinnedContainer, .po-pinned-list");
-      if (group === "personal") {
-        a.classList.toggle("active", (inPinned || !!a.closest('.po-subnav-panel[data-subnav-panel="personal"]')) && isMatch);
+      if (inPinned) {
+        a.classList.toggle("active", isMatch);
       } else {
-        a.classList.toggle("active", !inPinned && !!a.closest('.po-subnav-panel[data-subnav-panel="' + group + '"]') && isMatch);
+        a.classList.toggle("active", !!a.closest('.po-subnav-panel[data-subnav-panel="' + group + '"]') && isMatch);
       }
     });
   }
@@ -275,19 +260,18 @@
         var meta = window.WorkbenchPinned.PINNABLE_PAGES[key];
         if (!meta) return;
         var isActive = currentPath === meta.path;
-        var colorClass = "icon-" + (meta.group || "plan");
 
         if (!isEditMode) {
           // 常规浏览模式：纯净标准链接，绝对不渲染删除按钮
-          html += '<a href="' + meta.path + '" class="nav-item' + (isActive ? ' active' : '') + '" data-pinned-key="' + key + '" title="' + meta.title + '：' + (meta.meaning || meta.subtitle || '') + '">';
-          html += '<i class="nav-icon ' + meta.icon + ' ' + colorClass + '"></i>';
+          html += '<a href="' + meta.path + '" class="nav-item' + (isActive ? ' active' : '') + '" data-pinned-key="' + key + '" title="' + meta.title + '">';
+          html += '<i class="nav-icon ' + meta.icon + '"></i>';
           html += '<span class="nav-text">' + meta.title + '</span>';
           html += '</a>';
         } else {
           // 编辑管理模式：支持拖拽排序，展示抓手与删除按钮
           html += '<div class="nav-item is-editing-item" data-pinned-key="' + key + '" draggable="true" title="按住拖拽排序">';
           html += '<span class="pinned-drag-handle" title="按住拖拽排序"><i class="fas fa-grip-vertical"></i></span>';
-          html += '<i class="nav-icon ' + meta.icon + ' ' + colorClass + '"></i>';
+          html += '<i class="nav-icon ' + meta.icon + '"></i>';
           html += '<span class="nav-text">' + meta.title + '</span>';
           html += '<button type="button" class="nav-item-unpin js-unpin-btn" data-key="' + key + '" title="移除此项">×</button>';
           html += '</div>';
@@ -377,7 +361,7 @@
       isEditMode = !isEditMode;
       container.classList.toggle("is-editing", isEditMode);
       if (editTip) {
-        editTip.style.display = isEditMode ? "block" : "none";
+        editTip.hidden = !isEditMode;
       }
       if (manageBtn) {
         manageBtn.classList.toggle("is-editing", isEditMode);
@@ -422,7 +406,7 @@
         card.classList.toggle("is-selected", chk && chk.checked);
       });
       updateModalCount();
-      modal.style.display = "flex";
+      modal.hidden = false;
     };
 
     if (openBtn && modal) openBtn.addEventListener("click", openModalHandler);
@@ -444,14 +428,14 @@
         }
       });
 
-      var closeModal = function () { modal.style.display = "none"; };
+      var closeModal = function () { modal.hidden = true; };
       if (closeBtn) closeBtn.addEventListener("click", closeModal);
       if (cancelBtn) cancelBtn.addEventListener("click", closeModal);
       modal.addEventListener("click", function (e) {
         if (e.target === modal) closeModal();
       });
       document.addEventListener("keydown", function (e) {
-        if (e.key === "Escape" && modal.style.display === "flex") {
+        if (e.key === "Escape" && !modal.hidden) {
           closeModal();
         }
       });

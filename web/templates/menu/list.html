@@ -87,6 +87,8 @@
               {{ end }}
               {{ if .Icon }}<i class="fas {{ .Icon }} text-muted"></i>{{ end }}
               <span class="text-strong">{{ .Title }}</span>
+              {{ if .ShortTitle }}<span class="text-muted">（窄轨：{{ .ShortTitle }}）</span>{{ end }}
+              {{ if .Planned }}{{ template "ui/badge" (dict "Class" "status-inactive" "Text" "规划中") }}{{ end }}
             </div>
           </td>
           <td>

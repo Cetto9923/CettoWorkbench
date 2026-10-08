@@ -86,6 +86,27 @@
           <input id="sort" name="sort" type="number" class="input menu-number-input" value="{{ .Form.Sort }}">
         </div>
 
+        <div class="form-group" data-menu-field="shortTitle">
+          <label for="shortTitle" class="form-label">窄轨短名</label>
+          <input id="shortTitle" name="shortTitle" type="text" maxlength="16" class="input" value="{{ .Form.ShortTitle }}" placeholder="留空则用菜单标题">
+          <div class="text-secondary menu-field-tip">左侧窄轨按钮上的短名，一般 2-3 个字。</div>
+          {{ range .Errors }}{{ if eq .Field "shortTitle" }}<div class="field-error">{{ .Message }}</div>{{ end }}{{ end }}
+        </div>
+
+        <div class="form-group" data-menu-field="activePaths">
+          <label for="activePaths" class="form-label">额外高亮地址</label>
+          <input id="activePaths" name="activePaths" type="text" maxlength="255" class="input" value="{{ .Form.ActivePaths }}" placeholder="/board/task,/pmo">
+          <div class="text-secondary menu-field-tip">除路由路径外，打开这些地址时同样高亮本菜单；多个用英文逗号分隔，均以 / 开头。</div>
+          {{ range .Errors }}{{ if eq .Field "activePaths" }}<div class="field-error">{{ .Message }}</div>{{ end }}{{ end }}
+        </div>
+
+        <div class="form-group" data-menu-field="planned">
+          <label class="checkbox-label" for="planned">
+            <input id="planned" name="planned" type="checkbox" value="1"{{ if .Form.Planned }} checked{{ end }}>
+            <span>规划中（尚未上线，渲染为灰色不可点占位）</span>
+          </label>
+        </div>
+
         <div class="form-group" data-menu-field="icon">
           <label for="icon" class="form-label">图标</label>
           <div class="dropdown menu-icon-dropdown" data-icon-dropdown>

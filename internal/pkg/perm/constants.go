@@ -61,6 +61,10 @@ const (
 	// 种子已授予超级管理员与 PO 角色，绑定写路径时不会改变现有可写人群。
 	PoSchedule Permission = "po:schedule"
 
+	// ProjectList 项目管理分组入口（侧栏「项目」分组）。该分组目前全为规划中占位，
+	// 沿用原侧栏「仅超级管理员可见」的行为：超管经 perm.All() 自动拥有。
+	ProjectList Permission = "project:list"
+
 	// PO 工作台：业需评审（对应禅道 demand-review）
 	PoDemandReview Permission = "po:demandreview"
 	// PO 工作台：发起交付（对应禅道 demand-deliver）
@@ -121,6 +125,7 @@ var allPermInfos = []PermInfo{
 	{Code: ScheduleCreate, Name: "排期-新增", Module: "schedule"},
 	{Code: ScheduleUpdate, Name: "排期-编辑", Module: "schedule"},
 	{Code: ScheduleDelete, Name: "排期-删除", Module: "schedule"},
+	{Code: ProjectList, Name: "项目-列表", Module: "project"},
 	{Code: PoDemandReview, Name: "工作台-业需评审", Module: "po"},
 	{Code: PoDemandDeliver, Name: "工作台-发起交付", Module: "po"},
 	{Code: PoDemandAcceptance, Name: "工作台-业需验收", Module: "po"},

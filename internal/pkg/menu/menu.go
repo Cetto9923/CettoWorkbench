@@ -33,14 +33,38 @@ func KeyFromPath(path string) string {
 
 // Menu 表示侧边栏菜单节点。
 type Menu struct {
-	Key      string `yaml:"key"`
-	Title    string `yaml:"title"`
-	Icon     string `yaml:"icon"`
-	Path     string `yaml:"path"`
-	Type     string `yaml:"type"`
-	Perm     string `yaml:"perm"`
-	Order    int    `yaml:"order"`
-	Children []Menu `yaml:"children"`
+	Key         string   `yaml:"key"`
+	Title       string   `yaml:"title"`
+	ShortTitle  string   `yaml:"shortTitle"`
+	Icon        string   `yaml:"icon"`
+	Path        string   `yaml:"path"`
+	ActivePaths []string `yaml:"activePaths"`
+	Type        string   `yaml:"type"`
+	Perm        string   `yaml:"perm"`
+	Planned     bool     `yaml:"planned"`
+	Order       int      `yaml:"order"`
+	Children    []Menu   `yaml:"children"`
+}
+
+// RailLabel 返回一级菜单窄轨按钮上的短名：shortTitle 优先，为空时回退 title。
+func (m Menu) RailLabel() string {
+	if v := strings.TrimSpace(m.ShortTitle); v != "" {
+		return v
+	}
+	return m.Title
+}
+
+// BadgeKind 返回该二级菜单对应的角标类型：todo、notice 或空串（无角标）。
+// 角标按菜单 path 绑定，因此把菜单挪到别的一级分组下，红点会跟着走。
+func (m Menu) BadgeKind() string {
+	switch strings.TrimSpace(m.Path) {
+	case "/todos":
+		return "todo"
+	case "/notice":
+		return "notice"
+	default:
+		return ""
+	}
 }
 
 // LoadFromDB 从 zt_menus 加载菜单并组装树形结构。
@@ -59,7 +83,8 @@ func LoadFromDB(ctx context.Context, db *gorm.DB) ([]Menu, error) {
 	return buildMenus(rows), nil
 }
 
-// Filter 按权限过滤菜单。
+// Filter 按权限过滤菜单。规划中占位行没有 path，但必须保留在导航里，
+// 因此这里只按权限丢弃无权限的行；目录行在过滤后没有子项时隐藏。
 func Filter(menus []Menu, userPerms map[string]bool, isSuperAdmin bool) []Menu {
 	if isSuperAdmin {
 		out := make([]Menu, len(menus))
@@ -75,12 +100,24 @@ func Filter(menus []Menu, userPerms map[string]bool, isSuperAdmin bool) []Menu {
 		if len(node.Children) > 0 {
 			node.Children = Filter(node.Children, userPerms, false)
 		}
-		if len(node.Children) == 0 && node.Path == "" {
+		if len(node.Children) == 0 && node.Path == "" && !node.Planned {
 			continue
 		}
 		result = append(result, node)
 	}
 	return result
+}
+
+// splitActivePaths 拆分 activePaths 列中的逗号分隔地址，去空白与空项。
+func splitActivePaths(raw string) []string {
+	parts := strings.Split(raw, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if v := strings.TrimSpace(p); v != "" {
+			out = append(out, v)
+		}
+	}
+	return out
 }
 
 func sortMenus(menus []Menu) {
@@ -111,14 +148,17 @@ func buildMenus(rows []model.Menu) []Menu {
 		menus := make([]Menu, 0, len(items))
 		for _, item := range items {
 			node := Menu{
-				Key:      menuKey(item),
-				Title:    item.Title,
-				Icon:     item.Icon,
-				Path:     item.Path,
-				Type:     mapMenuType(item.Type),
-				Perm:     item.Perm,
-				Order:    item.Sort,
-				Children: walk(item.ID),
+				Key:         menuKey(item),
+				Title:       item.Title,
+				ShortTitle:  item.ShortTitle,
+				Icon:        item.Icon,
+				Path:        item.Path,
+				ActivePaths: splitActivePaths(item.ActivePaths),
+				Type:        mapMenuType(item.Type),
+				Perm:        item.Perm,
+				Planned:     item.Planned,
+				Order:       item.Sort,
+				Children:    walk(item.ID),
 			}
 			menus = append(menus, node)
 		}

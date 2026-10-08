@@ -418,16 +418,12 @@ func (r *Renderer) enrichData(c *gin.Context, page string, data gin.H) {
 		}
 	}
 	if _, ok := data["ActiveRailGroup"]; !ok {
-		activeRail := ""
-		if c.Request != nil && c.Request.URL != nil {
-			activeRail = c.Request.URL.Query().Get("nav")
-		}
-		if activeRail == "" && c.Request != nil {
-			if cookie, err := c.Request.Cookie("po_active_rail"); err == nil {
-				activeRail = cookie.Value
-			}
-		}
+		activeRail := RememberedRailGroup(c)
 		data["ActiveRailGroup"] = activeRail
+	}
+	if _, ok := data["SidebarGroups"]; !ok {
+		menus, _ := data["CurrentMenus"].([]menu.Menu)
+		enrichSidebarNav(c, data, menus, data["ActiveRailGroup"].(string))
 	}
 	if _, ok := data["ActiveNavKey"]; !ok {
 		navKey := ""
@@ -484,13 +480,16 @@ func (r *Renderer) enrichData(c *gin.Context, page string, data gin.H) {
 
 func (r *Renderer) funcMap() template.FuncMap {
 	return template.FuncMap{
-		"asset":         r.asset,
-		"add":           add,
-		"sub":           sub,
-		"alertclass":    alertClass,
-		"dict":          dict,
-		"menuNavActive": menu.MenuNavActive,
-		"hasPrefix":     strings.HasPrefix,
+		"asset":              r.asset,
+		"add":                add,
+		"sub":                sub,
+		"alertclass":         alertClass,
+		"dict":               dict,
+		"menuNavActive":      menu.MenuNavActive,
+		"hasPrefix":          strings.HasPrefix,
+		"navMenuBadge":       navMenuBadge,
+		"navGroupHasBadge":   navGroupHasBadge,
+		"pinnableGroupItems": pinnableGroupItems,
 	}
 }
 

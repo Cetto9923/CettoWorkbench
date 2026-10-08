@@ -24,6 +24,7 @@ import (
 
 	"workbench/internal/config"
 	"workbench/internal/model"
+	"workbench/internal/pkg/menu"
 	"workbench/internal/pkg/render"
 )
 
@@ -197,6 +198,20 @@ func TestHomeHandler_ServiceErrorRendersPageError(t *testing.T) {
 	c, _ := gin.CreateTestContext(w)
 	req, _ := http.NewRequest(http.MethodGet, "/home", nil)
 	c.Request = req
+	// 侧栏分组来自菜单配置，测试需注入与种子一致的分组数据。
+	c.Set("userPerms", map[string]bool{})
+	c.Set("currentMenus", []menu.Menu{
+		{Key: "menu_100", Title: "我的工作台", ShortTitle: "工作台", Type: "directory", Children: []menu.Menu{
+			{Key: "home", Title: "首页", Path: "/home", Type: "menu"},
+			{Key: "todos", Title: "我的待办", Path: "/todos", Type: "menu"},
+		}},
+		{Key: "menu_110", Title: "需求规划", ShortTitle: "规划", Type: "directory", Children: []menu.Menu{
+			{Key: "schedule", Title: "需求排期", Path: "/schedule", Type: "menu"},
+		}},
+		{Key: "menu_140", Title: "治理分析", ShortTitle: "治理", Type: "directory", Children: []menu.Menu{
+			{Key: "issues_risk", Title: "问题风险", Path: "/issues/risk", Type: "menu"},
+		}},
+	})
 
 	h.Home(c)
 
@@ -220,7 +235,8 @@ func TestHomeHandler_ServiceErrorRendersPageError(t *testing.T) {
 	if strings.Contains(body, "poRoleSwitcher") {
 		t.Fatalf("expected poRoleSwitcher to be removed from response body, got:\n%s", body)
 	}
-	if !strings.Contains(body, "个人工作") || !strings.Contains(body, "需求交付") || !strings.Contains(body, "治理分析") {
+	// 侧栏面板标题来自菜单配置：我的工作台 / 需求规划 / 治理分析。
+	if !strings.Contains(body, "我的工作台") || !strings.Contains(body, "需求规划") || !strings.Contains(body, "治理分析") {
 		t.Fatalf("expected updated sidebar sections in response body, got:\n%s", body)
 	}
 }

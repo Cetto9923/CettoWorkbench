@@ -66,13 +66,16 @@ func (s *Service) GetByID(ctx context.Context, actor *model.User, id uint64) (*m
 func (s *Service) Create(ctx context.Context, actor *model.User, req CreateReq) (CreateResp, error) {
 	_ = actor
 	m := &model.Menu{
-		ParentID: req.ParentID,
-		Type:     normalizeMenuType(req.Type),
-		Title:    strings.TrimSpace(req.Title),
-		Icon:     strings.TrimSpace(req.Icon),
-		Path:     strings.TrimSpace(req.Path),
-		Perm:     strings.TrimSpace(req.Perm),
-		Sort:     req.Sort,
+		ParentID:    req.ParentID,
+		Type:        normalizeMenuType(req.Type),
+		Title:       strings.TrimSpace(req.Title),
+		Icon:        strings.TrimSpace(req.Icon),
+		Path:        strings.TrimSpace(req.Path),
+		Perm:        strings.TrimSpace(req.Perm),
+		Sort:        req.Sort,
+		Planned:     req.Planned,
+		ShortTitle:  strings.TrimSpace(req.ShortTitle),
+		ActivePaths: normalizeActivePaths(req.ActivePaths),
 	}
 	if m.Title == "" {
 		return CreateResp{}, errors.New("菜单标题不能为空")
@@ -97,6 +100,9 @@ func (s *Service) Update(ctx context.Context, actor *model.User, req UpdateReq) 
 	m.Path = strings.TrimSpace(req.Path)
 	m.Perm = strings.TrimSpace(req.Perm)
 	m.Sort = req.Sort
+	m.Planned = req.Planned
+	m.ShortTitle = strings.TrimSpace(req.ShortTitle)
+	m.ActivePaths = normalizeActivePaths(req.ActivePaths)
 	m.UpdatedAt = time.Now()
 	if m.Title == "" {
 		return UpdateResp{}, errors.New("菜单标题不能为空")
@@ -154,4 +160,17 @@ func normalizeMenuType(raw string) string {
 	default:
 		return "C"
 	}
+}
+
+// normalizeActivePaths 规整额外高亮地址：按逗号拆分、去空白与空项后用逗号回写，
+// 避免页面上出现多余的空格与尾随逗号。
+func normalizeActivePaths(raw string) string {
+	parts := strings.Split(raw, ",")
+	kept := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if v := strings.TrimSpace(p); v != "" {
+			kept = append(kept, v)
+		}
+	}
+	return strings.Join(kept, ",")
 }

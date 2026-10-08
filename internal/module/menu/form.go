@@ -34,34 +34,55 @@ type ListResp struct {
 
 // CreateReq 新增菜单请求。
 type CreateReq struct {
-	ParentID uint64 `form:"parentId"`
-	Type     string `form:"menuType"`
-	Title    string `form:"title"`
-	Icon     string `form:"icon"`
-	Path     string `form:"path"`
-	Perm     string `form:"perm"`
-	Sort     int    `form:"sort"`
+	ParentID    uint64 `form:"parentId"`
+	Type        string `form:"menuType"`
+	Title       string `form:"title"`
+	Icon        string `form:"icon"`
+	Path        string `form:"path"`
+	Perm        string `form:"perm"`
+	Sort        int    `form:"sort"`
+	Planned     bool   `form:"planned"`
+	ShortTitle  string `form:"shortTitle"`
+	ActivePaths string `form:"activePaths"`
+}
+
+// validateMenuFields 校验菜单的公共字段：标题、图标、路径、权限、短名与额外高亮地址。
+func validateMenuFields(title, icon, path, perm, shortTitle, activePaths string) []FieldError {
+	errs := make([]FieldError, 0)
+	if strings.TrimSpace(title) == "" {
+		errs = append(errs, FieldError{Field: "title", Message: "菜单标题不能为空"})
+	}
+	if len([]rune(strings.TrimSpace(title))) > 64 {
+		errs = append(errs, FieldError{Field: "title", Message: "菜单标题长度不能超过 64"})
+	}
+	if len([]rune(strings.TrimSpace(icon))) > 64 {
+		errs = append(errs, FieldError{Field: "icon", Message: "图标长度不能超过 64"})
+	}
+	if len([]rune(strings.TrimSpace(path))) > 255 {
+		errs = append(errs, FieldError{Field: "path", Message: "路径长度不能超过 255"})
+	}
+	if len([]rune(strings.TrimSpace(perm))) > 64 {
+		errs = append(errs, FieldError{Field: "perm", Message: "权限标识长度不能超过 64"})
+	}
+	if len([]rune(strings.TrimSpace(shortTitle))) > 16 {
+		errs = append(errs, FieldError{Field: "shortTitle", Message: "窄轨短名长度不能超过 16"})
+	}
+	if len([]rune(strings.TrimSpace(activePaths))) > 255 {
+		errs = append(errs, FieldError{Field: "activePaths", Message: "额外高亮地址长度不能超过 255"})
+	}
+	for _, item := range strings.Split(activePaths, ",") {
+		v := strings.TrimSpace(item)
+		if v != "" && !strings.HasPrefix(v, "/") {
+			errs = append(errs, FieldError{Field: "activePaths", Message: "额外高亮地址需以 / 开头，多个用英文逗号分隔"})
+			break
+		}
+	}
+	return errs
 }
 
 // Validate 校验新增菜单请求。
 func (r *CreateReq) Validate() []FieldError {
-	errs := make([]FieldError, 0)
-	if strings.TrimSpace(r.Title) == "" {
-		errs = append(errs, FieldError{Field: "title", Message: "菜单标题不能为空"})
-	}
-	if len([]rune(strings.TrimSpace(r.Title))) > 64 {
-		errs = append(errs, FieldError{Field: "title", Message: "菜单标题长度不能超过 64"})
-	}
-	if len([]rune(strings.TrimSpace(r.Icon))) > 64 {
-		errs = append(errs, FieldError{Field: "icon", Message: "图标长度不能超过 64"})
-	}
-	if len([]rune(strings.TrimSpace(r.Path))) > 255 {
-		errs = append(errs, FieldError{Field: "path", Message: "路径长度不能超过 255"})
-	}
-	if len([]rune(strings.TrimSpace(r.Perm))) > 64 {
-		errs = append(errs, FieldError{Field: "perm", Message: "权限标识长度不能超过 64"})
-	}
-	return errs
+	return validateMenuFields(r.Title, r.Icon, r.Path, r.Perm, r.ShortTitle, r.ActivePaths)
 }
 
 // CreateResp 新增菜单响应。
@@ -71,14 +92,17 @@ type CreateResp struct {
 
 // UpdateReq 编辑菜单请求。
 type UpdateReq struct {
-	ID       uint64 `form:"-"`
-	ParentID uint64 `form:"parentId"`
-	Type     string `form:"menuType"`
-	Title    string `form:"title"`
-	Icon     string `form:"icon"`
-	Path     string `form:"path"`
-	Perm     string `form:"perm"`
-	Sort     int    `form:"sort"`
+	ID          uint64 `form:"-"`
+	ParentID    uint64 `form:"parentId"`
+	Type        string `form:"menuType"`
+	Title       string `form:"title"`
+	Icon        string `form:"icon"`
+	Path        string `form:"path"`
+	Perm        string `form:"perm"`
+	Sort        int    `form:"sort"`
+	Planned     bool   `form:"planned"`
+	ShortTitle  string `form:"shortTitle"`
+	ActivePaths string `form:"activePaths"`
 }
 
 // Validate 校验编辑菜单请求。
@@ -87,22 +111,7 @@ func (r *UpdateReq) Validate() []FieldError {
 	if r.ID == 0 {
 		errs = append(errs, FieldError{Field: "id", Message: "无效的菜单 ID"})
 	}
-	if strings.TrimSpace(r.Title) == "" {
-		errs = append(errs, FieldError{Field: "title", Message: "菜单标题不能为空"})
-	}
-	if len([]rune(strings.TrimSpace(r.Title))) > 64 {
-		errs = append(errs, FieldError{Field: "title", Message: "菜单标题长度不能超过 64"})
-	}
-	if len([]rune(strings.TrimSpace(r.Icon))) > 64 {
-		errs = append(errs, FieldError{Field: "icon", Message: "图标长度不能超过 64"})
-	}
-	if len([]rune(strings.TrimSpace(r.Path))) > 255 {
-		errs = append(errs, FieldError{Field: "path", Message: "路径长度不能超过 255"})
-	}
-	if len([]rune(strings.TrimSpace(r.Perm))) > 64 {
-		errs = append(errs, FieldError{Field: "perm", Message: "权限标识长度不能超过 64"})
-	}
-	return errs
+	return append(errs, validateMenuFields(r.Title, r.Icon, r.Path, r.Perm, r.ShortTitle, r.ActivePaths)...)
 }
 
 // UpdateResp 编辑菜单响应。
@@ -127,13 +136,16 @@ func NewUpdateReqFromModel(m *model.Menu) *UpdateReq {
 		return &UpdateReq{}
 	}
 	return &UpdateReq{
-		ID:       m.ID,
-		ParentID: m.ParentID,
-		Type:     m.Type,
-		Title:    m.Title,
-		Icon:     m.Icon,
-		Path:     m.Path,
-		Perm:     m.Perm,
-		Sort:     m.Sort,
+		ID:          m.ID,
+		ParentID:    m.ParentID,
+		Type:        m.Type,
+		Title:       m.Title,
+		Icon:        m.Icon,
+		Path:        m.Path,
+		Perm:        m.Perm,
+		Sort:        m.Sort,
+		Planned:     m.Planned,
+		ShortTitle:  m.ShortTitle,
+		ActivePaths: m.ActivePaths,
 	}
 }

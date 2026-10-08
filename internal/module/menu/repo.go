@@ -72,14 +72,17 @@ func (r *Repo) Update(ctx context.Context, m *model.Menu) error {
 		Model(&model.Menu{}).
 		Where("id = ? AND deletedAt IS NULL", m.ID).
 		Updates(map[string]any{
-			"parentId":  m.ParentID,
-			"type":      m.Type,
-			"title":     m.Title,
-			"icon":      m.Icon,
-			"path":      m.Path,
-			"perm":      m.Perm,
-			"sort":      m.Sort,
-			"updatedAt": m.UpdatedAt,
+			"parentId":    m.ParentID,
+			"type":        m.Type,
+			"title":       m.Title,
+			"icon":        m.Icon,
+			"path":        m.Path,
+			"perm":        m.Perm,
+			"sort":        m.Sort,
+			"planned":     m.Planned,
+			"shortTitle":  m.ShortTitle,
+			"activePaths": m.ActivePaths,
+			"updatedAt":   m.UpdatedAt,
 		}).Error
 }
 

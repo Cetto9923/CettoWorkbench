@@ -30,16 +30,19 @@ import (
 
 // FlatItem 用于列表页扁平渲染树结构。
 type FlatItem struct {
-	ID       uint64
-	ParentID uint64
-	Title    string
-	Icon     string
-	Path     string
-	Perm     string
-	Sort     int
-	Level    int
-	Indent   string
-	Type     string // 新增，值为 M / C / F，来自 model.Menu.Type
+	ID          uint64
+	ParentID    uint64
+	Title       string
+	Icon        string
+	Path        string
+	Perm        string
+	Sort        int
+	Level       int
+	Indent      string
+	Type        string // 新增，值为 M / C / F，来自 model.Menu.Type
+	ShortTitle  string // 一级菜单窄轨短名
+	Planned     bool   // 规划中占位菜单
+	ActivePaths string // 额外高亮地址，逗号分隔
 }
 
 // ParentOption 表示父菜单下拉选项。
@@ -274,16 +277,19 @@ func flatten(nodes []*MenuNode, level int) []FlatItem {
 			continue
 		}
 		items = append(items, FlatItem{
-			ID:       node.Menu.ID,
-			ParentID: node.Menu.ParentID,
-			Title:    node.Menu.Title,
-			Icon:     node.Menu.Icon,
-			Path:     node.Menu.Path,
-			Perm:     node.Menu.Perm,
-			Sort:     node.Menu.Sort,
-			Level:    level,
-			Indent:   strings.Repeat("— ", level),
-			Type:     node.Menu.Type,
+			ID:          node.Menu.ID,
+			ParentID:    node.Menu.ParentID,
+			Title:       node.Menu.Title,
+			Icon:        node.Menu.Icon,
+			Path:        node.Menu.Path,
+			Perm:        node.Menu.Perm,
+			Sort:        node.Menu.Sort,
+			Level:       level,
+			Indent:      strings.Repeat("— ", level),
+			Type:        node.Menu.Type,
+			ShortTitle:  node.Menu.ShortTitle,
+			Planned:     node.Menu.Planned,
+			ActivePaths: node.Menu.ActivePaths,
 		})
 		items = append(items, flatten(node.Children, level+1)...)
 	}

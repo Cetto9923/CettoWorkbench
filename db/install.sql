@@ -105,6 +105,9 @@ CREATE TABLE IF NOT EXISTS `zt_menus` (
   `perm`      VARCHAR(64) NOT NULL DEFAULT '',
   `type`      CHAR(1) NOT NULL DEFAULT 'C',
   `sort`      INT NOT NULL DEFAULT 0,
+  `planned`   TINYINT NOT NULL DEFAULT 0 COMMENT '1=规划中占位菜单，渲染为不可点占位',
+  `shortTitle` VARCHAR(16) NOT NULL DEFAULT '' COMMENT '一级菜单窄轨短名，为空时用 title',
+  `activePaths` VARCHAR(255) NOT NULL DEFAULT '' COMMENT '额外高亮地址前缀，逗号分隔',
   `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   `updatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   `deletedAt` DATETIME(3) DEFAULT NULL,
@@ -114,20 +117,49 @@ CREATE TABLE IF NOT EXISTS `zt_menus` (
   KEY `idx_zt_menus_perm` (`perm`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='工作台菜单配置';
 
--- 7. Main 基础菜单种子数据
-INSERT INTO `zt_menus` (`id`, `parentId`, `title`, `icon`, `path`, `perm`, `type`, `sort`) VALUES
- (1, 0, '个人入口', '', '', '', 'M', 100),
- (2, 1, '首页', 'fa-home', '/home', 'po:home', 'C', 1),
- (4, 0, '工作区', '', '', '', 'M', 200),
- (3, 4, '需求排期', 'fa-calendar-check', '/schedule', 'po:schedule', 'C', 1)
+-- 7. 侧栏菜单种子数据：一级分组 type='M'（parentId=0），二级 type='C'。
+--    完整数据见 db/upgrade_menu_config.sql（同一份内容，可重复执行）。
+--    已有环境的升级走 upgrade 脚本；此处为全新安装的最小骨架。
+INSERT INTO `zt_menus` (`id`, `parentId`, `title`, `shortTitle`, `icon`, `path`, `perm`, `type`, `sort`, `planned`, `activePaths`) VALUES
+ (100, 0, '我的工作台', '工作台', 'fa-desktop', '', '', 'M', 10, 0, ''),
+ (101, 100, '首页', '', 'fa-house', '/home', '', 'C', 1, 0, ''),
+ (102, 100, '我的待办', '', 'fa-list-check', '/todos', '', 'C', 2, 0, ''),
+ (103, 100, '我的已办', '', 'fa-clock-rotate-left', '/done', '', 'C', 3, 0, ''),
+ (104, 100, '通知中心', '', 'fa-bell', '/notice', '', 'C', 4, 0, ''),
+ (105, 100, '我的关注', '', 'fa-star', '/follow', '', 'C', 5, 0, ''),
+ (110, 0, '需求规划', '规划', 'fa-calendar-check', '', '', 'M', 20, 0, ''),
+ (111, 110, '需求排期', '', 'fa-calendar-check', '/schedule', '', 'C', 1, 0, ''),
+ (112, 110, '需求查询', '', 'fa-magnifying-glass', '/query', '', 'C', 2, 0, '/demands/'),
+ (113, 110, '版本跟进', '', 'fa-boxes-packing', '/version-follow', 'po:schedule', 'C', 3, 0, ''),
+ (120, 0, '团队协作', '协作', 'fa-users', '', '', 'M', 30, 0, ''),
+ (121, 120, '工作看板', '', 'fa-table-cells-large', '/board/demand', '', 'C', 1, 0, '/board/task'),
+ (122, 120, '敏捷小组', '', 'fa-users', '/agileteam', '', 'C', 2, 0, '/pmo'),
+ (123, 120, '迭代管理', '', 'fa-arrows-spin', '', '', 'C', 3, 1, ''),
+ (124, 120, '团队健康', '', 'fa-heart-pulse', '', '', 'C', 4, 1, ''),
+ (130, 0, '项目管理', '项目', 'fa-diagram-project', '', 'project:list', 'M', 40, 0, ''),
+ (131, 130, '项目总览', '', 'fa-folder-tree', '', '', 'C', 1, 1, ''),
+ (132, 130, '计划里程碑', '', 'fa-flag-checkered', '', '', 'C', 2, 1, ''),
+ (140, 0, '治理分析', '治理', 'fa-chart-pie', '', '', 'M', 50, 0, ''),
+ (141, 140, '问题风险', '', 'fa-shield-alt', '/issues/risk', '', 'C', 1, 0, '/issue-risk'),
+ (142, 140, '指标雷达', '', 'fa-chart-line', '/metrics/radar', '', 'C', 2, 0, ''),
+ (143, 140, '指标管理', '', 'fa-sliders', '/metrics/manage', '', 'C', 3, 0, ''),
+ (144, 140, '质效预警', '', 'fa-triangle-exclamation', '', '', 'C', 4, 1, ''),
+ (150, 0, '组织管理', '管理', 'fa-user-shield', '', '', 'M', 60, 0, ''),
+ (151, 150, '角色管理', '', 'fa-user-shield', '/admin/roles', 'role:list', 'C', 1, 0, ''),
+ (152, 150, '菜单管理', '', 'fa-bars', '/admin/menus', 'menu:list', 'C', 2, 0, ''),
+ (153, 150, '操作日志', '', 'fa-clock-rotate-left', '/admin/operation-logs', 'operationlog:list', 'C', 3, 0, ''),
+ (154, 150, '登录日志', '', 'fa-right-to-bracket', '/admin/login-logs', 'loginlog:list', 'C', 4, 0, '')
 ON DUPLICATE KEY UPDATE
- `parentId` = VALUES(`parentId`),
- `title`    = VALUES(`title`),
- `icon`     = VALUES(`icon`),
- `path`     = VALUES(`path`),
- `perm`     = VALUES(`perm`),
- `type`     = VALUES(`type`),
- `sort`     = VALUES(`sort`);
+ `parentId`    = VALUES(`parentId`),
+ `title`       = VALUES(`title`),
+ `shortTitle`  = VALUES(`shortTitle`),
+ `icon`        = VALUES(`icon`),
+ `path`        = VALUES(`path`),
+ `perm`        = VALUES(`perm`),
+ `type`        = VALUES(`type`),
+ `sort`        = VALUES(`sort`),
+ `planned`     = VALUES(`planned`),
+ `activePaths` = VALUES(`activePaths`);
 
 -- 8. Main 超级管理员角色与权限种子
 INSERT INTO `zt_roles` (`id`, `code`, `name`, `description`, `isBuiltin`, `isActive`, `sortOrder`) VALUES
@@ -354,24 +386,9 @@ ON DUPLICATE KEY UPDATE `updatedDate` = NOW();
 -- 默认将示例 PO 用户 wangweijia 赋予禅道端 PO 组权限（group 7: PO, group 22: 基础权限）
 INSERT IGNORE INTO `zt_usergroup` (`account`, `group`) VALUES ('wangweijia', 7), ('wangweijia', 22);
 
--- 17. 扩充工作台前端二级导航菜单
-INSERT INTO `zt_menus` (`id`, `parentId`, `title`, `icon`, `path`, `perm`, `type`, `sort`) VALUES
- -- 个人入口 (parentId = 1)
- (10, 1, '我的待办', 'fa-tasks',          '/todos',         'po:todo',              'C', 2),
- (11, 1, '我的已办', 'fa-check-circle',    '/done',          'po:done',              'C', 3),
- (12, 1, '通知中心', 'fa-bell',            '/notice',        'po:notice',            'C', 4),
- (13, 1, '我的关注', 'fa-star',            '/follow',        'po:follow',            'C', 5),
- -- 工作区 (parentId = 4)
- (20, 4, '工作看板', 'fa-columns',         '/board/demand',  'po:boarddemand:list',  'C', 2),
- (21, 4, '综合查询', 'fa-search',          '/query',         'po:home',              'C', 3)
-ON DUPLICATE KEY UPDATE
- `parentId` = VALUES(`parentId`),
- `title`    = VALUES(`title`),
- `icon`     = VALUES(`icon`),
- `path`     = VALUES(`path`),
- `perm`     = VALUES(`perm`),
- `type`     = VALUES(`type`),
- `sort`     = VALUES(`sort`);
+-- 17. 二级导航菜单已由第 7 节「侧栏菜单种子数据」统一提供。
+--     原先挂在「个人入口 / 工作区」下的扩展种子（id 10-13、20、21）已废弃：
+--     侧栏改为读取本表配置后，这些行会造成重复菜单，故不再写入。
 
 SET FOREIGN_KEY_CHECKS = 1;
 

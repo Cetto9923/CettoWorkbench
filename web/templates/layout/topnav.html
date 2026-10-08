@@ -83,13 +83,16 @@
         {{ end }}
       {{ end }}
     {{ end }}
-    {{ if .AdminVisible }}<button type="button" class="topnav-primary-item{{ if hasPrefix .CurrentPath "/admin/" }} is-active{{ end }}" data-topnav-panel="admin"><i class="fas fa-shield-alt topnav-primary-icon" aria-hidden="true"></i><span class="topnav-primary-label">组织管理</span></button>{{ end }}
+    {{/* 「组织管理」等分组同样来自菜单配置；AdminVisible 只作为兜底展示。 */}}
   </div>
 </nav>
 {{ end }}
 
 {{ define "layout/topnavSecondary" }}
-{{ $initial := "" }}
+{{/* 当前地址所属分组：优先服务端按菜单配置算出的 ActiveGroupKey，
+     其次回退 ActiveNavKey 命中的分组（ActiveNavKey 来自路由中间件）。 */}}
+{{ $initial := .ActiveGroupKey }}
+{{ if eq $initial "" }}
 {{ range .CurrentMenus }}
   {{ if or (eq .Type "directory") (eq .Type "menu") }}
     {{ if .Children }}
@@ -107,7 +110,8 @@
     {{ end }}
   {{ end }}
 {{ end }}
-{{ if and .AdminVisible (hasPrefix .CurrentPath "/admin/") }}{{ $initial = "admin" }}{{ end }}
+{{ end }}
+{{/* 分组归属由服务端按菜单配置算出；无归属时保持全部面板隐藏。 */}}
 <div id="topnav-secondary" class="topnav-secondary"{{ if eq $initial "" }} hidden{{ end }}>
   {{ if .CurrentMenus }}
     {{ range .CurrentMenus }}
@@ -128,6 +132,5 @@
       {{ end }}
     {{ end }}
   {{ end }}
-  {{ if .AdminVisible }}<div class="topnav-panel" data-topnav-panel="admin"{{ if ne $initial "admin" }} hidden{{ end }}>{{ template "layout/adminLinks" . }}</div>{{ end }}
 </div>
 {{ end }}

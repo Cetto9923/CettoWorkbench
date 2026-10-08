@@ -76,9 +76,7 @@ func RequireLogin(mgr *scs.SessionManager, db *gorm.DB) gin.HandlerFunc {
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
-		// 当前系统不做权限过滤
-		currentMenus := menus
-		// currentMenus := menu.Filter(menus, userPerms, user.IsSuperAdmin)
+		currentMenus := menu.Filter(menus, userPerms, user.IsSuperAdmin)
 
 		c.Set("currentUser", &user)
 		c.Set("userPerms", userPerms)

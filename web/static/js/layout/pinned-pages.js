@@ -9,100 +9,49 @@
   var STORAGE_KEY_PREFIX = 'workbench.pinned_pages.';
   var DEFAULT_PINNED = ['schedule', 'query', 'board_demand', 'agileteam', 'issues_risk'];
 
-  var PINNABLE_PAGES = {
-    schedule: {
-      key: 'schedule',
-      title: '需求排期',
-      subtitle: '迭代规划与容量分配',
-      meaning: '产品经理进行迭代容量规划、按周排期与交付承诺窗口确认。',
-      icon: 'fas fa-calendar-check',
-      path: '/schedule',
-      badge: '需求',
-      group: 'plan',
-      groupTitle: '规划',
-      metric: '排期规划'
-    },
-    query: {
-      key: 'query',
-      title: '需求查询',
-      subtitle: '全流程跨项目检索',
-      meaning: '跨团队、跨敏捷小组的全流程需求状态多维检索与导出。',
-      icon: 'fas fa-magnifying-glass',
-      path: '/query',
-      group: 'plan',
-      groupTitle: '规划',
-      metric: '全景检索'
-    },
-    board_demand: {
-      key: 'board_demand',
-      title: '工作看板',
-      subtitle: '敏捷泳道与状态流转',
-      meaning: '敏捷卡片协同泳道，可视化跟踪需求、任务与缺陷流转进度。',
-      icon: 'fas fa-table-columns',
-      path: '/board/demand',
-      group: 'collab',
-      groupTitle: '协作',
-      metric: '流转看板'
-    },
-    agileteam: {
-      key: 'agileteam',
-      title: '敏捷小组',
-      subtitle: '团队人员与负荷分配',
-      meaning: '敏捷小组成员配置、研发工时负荷与团队产能水位管理。',
-      icon: 'fas fa-people-group',
-      path: '/agileteam',
-      group: 'collab',
-      groupTitle: '协作',
-      metric: '团队产能'
-    },
-    metrics_manage: {
-      key: 'metrics_manage',
-      title: '度量大盘',
-      subtitle: '交付效能与质量指标',
-      meaning: '研发吞吐率、交付周期与质效达标全景多维大盘。',
-      icon: 'fas fa-gauge-high',
-      path: '/metrics/manage',
-      group: 'gov',
-      groupTitle: '治理',
-      metric: '效能大盘'
-    },
-    metrics_radar: {
-      key: 'metrics_radar',
-      title: '度量雷达',
-      subtitle: '敏捷成熟度能力评估',
-      meaning: '敏捷小组与产品线质量成熟度、工程规范雷达评估。',
-      icon: 'fas fa-compass-drafting',
-      path: '/metrics/radar',
-      group: 'gov',
-      groupTitle: '治理',
-      metric: '能力雷达'
-    },
-    issues_risk: {
-      key: 'issues_risk',
-      title: '问题风险',
-      subtitle: '滞留与超期预警排查',
-      meaning: '超期未闭环、阶段滞留与阻塞依赖风险全景监控。',
-      icon: 'fas fa-triangle-exclamation',
-      path: '/issues/risk',
-      group: 'gov',
-      groupTitle: '治理',
-      metric: '风险预警'
-    }
+  var PINNABLE_PAGES = {};
+
+  /* 历史固定 key 与默认排序保留不变，避免用户已保存的 localStorage 失效；
+     其标题、图标、链接改为从渲染好的侧栏读取，菜单改名或改链接后自动跟随。 */
+  var LEGACY_KEYS = {
+    '/schedule': 'schedule',
+    '/query': 'query',
+    '/board/demand': 'board_demand',
+    '/board/task': 'board_task',
+    '/agileteam': 'agileteam',
+    '/metrics/manage': 'metrics_manage',
+    '/metrics/radar': 'metrics_radar',
+    '/issues/risk': 'issues_risk'
   };
 
-  PINNABLE_PAGES.board_task = Object.assign({}, PINNABLE_PAGES.board_demand, {
-    key: 'board_task', title: '任务看板', path: '/board/task'
-  });
+  // 侧栏二级菜单由服务端按 zt_menus 渲染，这里把它读成可固定的页面清单。
+  function collectPinnablePages() {
+    var nav = document.getElementById('sidebar') || document.body;
+    nav.querySelectorAll('.po-subnav-panel').forEach(function (panel) {
+      var groupTitle = (panel.querySelector('.po-subnav-title') || {}).textContent || '';
+      var group = (panel.getAttribute('data-subnav-panel') || '').trim();
+      panel.querySelectorAll('.po-subnav-body a.nav-item[href]').forEach(function (link) {
+        var path = (link.getAttribute('href') || '').trim();
+        if (!path || path.charAt(0) !== '/' || path === '/home') return;
+        if (link.closest('#sidebarPinnedContainer, .po-pinned-list')) return;
+        var textEl = link.querySelector('.nav-text');
+        var iconEl = link.querySelector('.nav-icon');
+        var title = ((textEl || link).textContent || '').trim();
+        if (!title) return;
+        var key = LEGACY_KEYS[path] || ('page:' + path);
+        PINNABLE_PAGES[key] = {
+          key: key,
+          title: title,
+          path: path,
+          icon: (iconEl && iconEl.className) || 'fas fa-file',
+          group: group,
+          groupTitle: groupTitle.trim()
+        };
+      });
+    });
+  }
 
-  document.querySelectorAll('.nav-item[href]').forEach(function (link) {
-    var path = link.getAttribute('href');
-    if (!path || path.charAt(0) !== '/' || path === '/home' || keyFromPathOrKey(path)) return;
-    var key = 'page:' + path;
-    var title = (link.querySelector('.nav-text') || link).textContent.trim();
-    var icon = link.querySelector('.nav-icon');
-    PINNABLE_PAGES[key] = { key: key, title: title, path: path,
-      icon: icon ? icon.className : 'fas fa-file', group: 'workbench', groupTitle: '工作台' };
-  });
+  collectPinnablePages();
 
   function getCurrentAccount() {
     var userEl = document.querySelector('[data-user-account]');
