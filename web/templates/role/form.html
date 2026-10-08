@@ -1,0 +1,44 @@
+{{/* ==========================================================================
+文件: web/templates/role/form.html 模块: 角色管理 职责: 新增与编辑角色的共用表单。
+页面字段: .Form, .Resource（编辑页）, .BaseUrl, .CSRFToken
+========================================================================== */}}
+{{ define "role/form-css" }}
+<link rel="stylesheet" href="{{ asset "/static/css/user/create.css" }}">
+{{ end }}
+{{ define "role/form-js" }}
+<script src="{{ asset "/static/js/role/form.js" }}"></script>
+{{ end }}
+{{ define "role/form" }}
+<div class="page-header">
+  <div class="page-header-left">
+    <a href="{{ .BaseUrl }}" class="text-secondary"><i class="fas fa-arrow-left"></i> 返回角色列表</a>
+    <h1 class="page-title">{{ .PageTitle }}</h1>
+  </div>
+</div>
+{{ if .Resource }}{{ if .Resource.IsBuiltin }}
+<p class="text-secondary">内置角色不可修改名称与备注，仅可通过「分配权限」调整权限绑定。</p>
+{{ end }}{{ end }}
+<div class="table-panel user-form-panel">
+  <div class="panel-header"><div class="panel-title">角色信息</div></div>
+  <form id="roleForm" class="user-form" method="POST" action="{{ .BaseUrl }}{{ if .Resource }}/{{ .Resource.ID }}{{ end }}" data-method="{{ if .Resource }}PUT{{ else }}POST{{ end }}" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}">
+    <div class="user-form-body">
+      <p id="roleFormError" class="field-error" role="alert" hidden></p>
+      <div class="form-group">
+        <label for="name" class="form-label required">角色名称</label>
+        <input id="name" name="name" class="input" type="text" maxlength="64" required value="{{ .Form.Name }}" {{ if .Resource }}{{ if .Resource.IsBuiltin }}readonly{{ end }}{{ end }}>
+        <div class="field-error" data-field-error="name" hidden></div>
+      </div>
+      <div class="form-group">
+        <label for="remark" class="form-label">备注</label>
+        <textarea id="remark" name="remark" class="textarea" rows="3" maxlength="255" {{ if .Resource }}{{ if .Resource.IsBuiltin }}readonly{{ end }}{{ end }}>{{ .Form.Remark }}</textarea>
+        <div class="field-error" data-field-error="remark" hidden></div>
+      </div>
+    </div>
+    <div class="user-form-actions">
+      <button type="submit" class="btn btn-primary" {{ if .Resource }}{{ if .Resource.IsBuiltin }}disabled{{ end }}{{ end }}>{{ if .Resource }}保存{{ else }}创建角色{{ end }}</button>
+      <a href="{{ .BaseUrl }}" class="btn btn-neutral">取消</a>
+    </div>
+  </form>
+</div>
+{{ end }}

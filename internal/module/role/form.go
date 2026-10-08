@@ -17,8 +17,8 @@ import (
 
 // FieldError 字段级验证错误。
 type FieldError struct {
-	Field   string
-	Message string
+	Field   string `json:"field"`
+	Message string `json:"message"`
 }
 
 // ListReq 角色列表查询请求。
@@ -50,8 +50,8 @@ type ListResp struct {
 
 // CreateReq 新增角色请求。
 type CreateReq struct {
-	Name   string `form:"name"`
-	Remark string `form:"remark"`
+	Name   string `json:"name"`
+	Remark string `json:"remark"`
 }
 
 // Validate 校验新增角色请求。
@@ -73,9 +73,9 @@ type CreateResp struct {
 
 // UpdateReq 编辑角色请求。
 type UpdateReq struct {
-	ID     int64  `form:"-"`
-	Name   string `form:"name"`
-	Remark string `form:"remark"`
+	ID     int64  `json:"-"`
+	Name   string `json:"name"`
+	Remark string `json:"remark"`
 }
 
 // Validate 校验编辑角色请求。

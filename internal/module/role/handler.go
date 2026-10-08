@@ -4,7 +4,6 @@
 // 类型: crud
 // 职责: 处理角色 CRUD 与权限分配相关 HTTP 请求。
 // 依赖: internal/middleware
-//       internal/model
 //       internal/pkg/flash
 //       internal/pkg/pagination
 //       internal/pkg/perm
@@ -23,7 +22,6 @@ import (
 
 	"workbench/internal/constants"
 	"workbench/internal/middleware"
-	"workbench/internal/model"
 	"workbench/internal/pkg/flash"
 	"workbench/internal/pkg/pagination"
 	"workbench/internal/pkg/perm"
@@ -88,6 +86,7 @@ func (h *Handler) List(c *gin.Context) {
 		"Roles":     resp.Items,
 		"Pager":     pager,
 		"Q":         req.Keyword,
+		"BaseUrl":   "/admin/roles",
 	})
 }
 
@@ -101,30 +100,27 @@ func (h *Handler) NewForm(c *gin.Context) {
 			Name:   "（示例）运营专员",
 			Remark: "示例说明：提交前请改为真实角色名称与备注。",
 		},
-		"Errors": []FieldError{},
+		"BaseUrl": "/admin/roles",
 	})
 }
 
 // Create 处理新增角色提交。
 func (h *Handler) Create(c *gin.Context) {
 	var req CreateReq
-	if err := c.ShouldBind(&req); err != nil {
-		render.Error(c, http.StatusBadRequest, "参数解析失败", err)
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "参数解析失败"})
 		return
 	}
 	if fieldErrs := req.Validate(); len(fieldErrs) > 0 {
-		h.renderCreateForm(c, &req, fieldErrs)
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"success": false, "message": "请检查填写内容", "errors": fieldErrs})
 		return
 	}
-
 	actor := middleware.CurrentUser(c)
 	if _, err := h.svc.Create(c.Request.Context(), actor, req); err != nil {
-		flash.Error(c, "创建角色失败: "+err.Error())
-		c.Redirect(http.StatusSeeOther, "/admin/roles/new")
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"success": false, "message": "创建角色失败: " + err.Error()})
 		return
 	}
-	flash.Success(c, "角色创建成功")
-	c.Redirect(http.StatusSeeOther, "/admin/roles")
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "角色创建成功", "redirectUrl": "/admin/roles"})
 }
 
 // EditForm 渲染编辑角色页。
@@ -148,41 +144,33 @@ func (h *Handler) EditForm(c *gin.Context) {
 		"PageTitle": "编辑角色",
 		"Form":      NewUpdateReqFromRole(role),
 		"Resource":  role,
-		"Errors":    []FieldError{},
+		"BaseUrl":   "/admin/roles",
 	})
 }
 
 // Update 处理编辑角色提交。
 func (h *Handler) Update(c *gin.Context) {
-	h.bindRenderer(c)
 	id, ok := parseID(c.Param("id"))
 	if !ok {
-		render.Error(c, http.StatusBadRequest, "无效的角色 ID", nil)
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "无效的角色 ID"})
 		return
 	}
-
 	var req UpdateReq
-	if err := c.ShouldBind(&req); err != nil {
-		render.Error(c, http.StatusBadRequest, "参数解析失败", err)
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "参数解析失败"})
 		return
 	}
 	req.ID = id
-
 	if fieldErrs := req.Validate(); len(fieldErrs) > 0 {
-		actor := middleware.CurrentUser(c)
-		resource, _ := h.svc.GetByID(c.Request.Context(), actor, id)
-		h.renderEditForm(c, &req, resource, fieldErrs)
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"success": false, "message": "请检查填写内容", "errors": fieldErrs})
 		return
 	}
-
 	actor := middleware.CurrentUser(c)
 	if err := h.svc.Update(c.Request.Context(), actor, req); err != nil {
-		flash.Error(c, "更新角色失败: "+err.Error())
-		c.Redirect(http.StatusSeeOther, "/admin/roles/"+strconv.FormatInt(id, 10)+"/edit")
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"success": false, "message": "更新角色失败: " + err.Error()})
 		return
 	}
-	flash.Success(c, "角色更新成功")
-	c.Redirect(http.StatusSeeOther, "/admin/roles")
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "角色更新成功", "redirectUrl": "/admin/roles"})
 }
 
 // Delete 删除角色。
@@ -274,25 +262,4 @@ func parseID(raw string) (int64, bool) {
 		return 0, false
 	}
 	return id, true
-}
-
-func (h *Handler) renderCreateForm(c *gin.Context, req *CreateReq, errs []FieldError) {
-	h.bindRenderer(c)
-	render.Page(c, http.StatusUnprocessableEntity, constants.TEMPLATE_ROLE_CREATE, gin.H{
-		"Title":     "新增角色",
-		"PageTitle": "新增角色",
-		"Form":      req,
-		"Errors":    errs,
-	})
-}
-
-func (h *Handler) renderEditForm(c *gin.Context, req *UpdateReq, resource *model.Role, errs []FieldError) {
-	h.bindRenderer(c)
-	render.Page(c, http.StatusUnprocessableEntity, constants.TEMPLATE_ROLE_EDIT, gin.H{
-		"Title":     "编辑角色",
-		"PageTitle": "编辑角色",
-		"Form":      req,
-		"Resource":  resource,
-		"Errors":    errs,
-	})
 }
