@@ -194,8 +194,9 @@
       '<time class="notice-subject-date" datetime="' + esc(item.date || "") + '">' +
       esc(window.formatDateTime ? window.formatDateTime(item.date) : (item.date || "—")) + "</time></div>";
 
-    var titleTag = item.url ? "a" : "button";
-    var titleAttrs = item.url
+    var demandUrl = ot === "demand" && Number(oid) > 0 ? "/demands/" + encodeURIComponent(oid) : "";
+    var titleTag = demandUrl || item.url ? "a" : "button";
+    var titleAttrs = demandUrl ? ' href="' + esc(demandUrl) + '"' : item.url
       ? ' href="' + esc(item.url) + '" target="_blank" rel="noopener noreferrer"'
       : ' type="button" data-notice-open="' + esc(item.id) + '"';
     var titleHtml = '<' + titleTag + ' class="table-title-link notice-title-main"' + titleAttrs + '>' + esc(displayTitle) + "</" + titleTag + ">";

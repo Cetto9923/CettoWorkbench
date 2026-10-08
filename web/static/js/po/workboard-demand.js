@@ -178,7 +178,7 @@
     if (root.deadline) { metaBits.push('<span class="biz-date">目标 ' + esc(root.deadline) + '</span>'); }
     return '<div class="biz-collapsed-row" data-toggle-group="bg' + root.id + '">' +
       '<div class="tree-cell ind0"><button type="button" class="toggle">▶</button>' +
-      '<div class="node-main"><div class="node-title-line">' + typeTag(nodeType) + priTag(root.priority) + '<span class="node-title" title="' + esc(root.title) + '">' + esc(root.title) + '</span></div>' +
+      '<div class="node-main"><div class="node-title-line">' + typeTag(nodeType) + priTag(root.priority) + '<a class="node-title is-link" href="/demands/' + encodeURIComponent(root.id) + '" title="' + esc(root.title) + '">' + esc(root.title) + '</a></div>' +
       '<div class="node-meta"><span class="code"># ' + esc(root.displayId) + '</span>' + metaBits.join(" · ") + '</div></div></div>' + renderAggregatedCard(root, stories) + '</div>';
   }
   // 需求树矩阵渲染（对齐原型 V1.3）
@@ -220,7 +220,7 @@
       var stories = collectStories(root);
 
       var headHtml = '<div class="biz-head"><div class="biz-head-main" data-toggle-group="bg' + root.id + '">' +
-        '<button type="button" class="toggle">▼</button>' + '<div class="node-main"><div class="node-title-line">' + typeTag(nodeType) + priTag(root.priority) + '<span class="biz-title" title="' + esc(root.title) + '">' + esc(root.title) + '</span></div>' +
+        '<button type="button" class="toggle">▼</button>' + '<div class="node-main"><div class="node-title-line">' + typeTag(nodeType) + priTag(root.priority) + '<a class="biz-title node-title is-link" href="/demands/' + encodeURIComponent(root.id) + '" title="' + esc(root.title) + '">' + esc(root.title) + '</a></div>' +
         '<div class="node-meta"><span class="code"># ' + esc(root.displayId) + '</span></div></div>' +
         ownerDot + summaryHtml + dateHtml + '</div></div>' +
         renderCollapsedRow(root, nodeType, stories);
@@ -235,7 +235,7 @@
     host.innerHTML = html;
     host.querySelectorAll("[data-toggle-group]").forEach(function (h) {
       h.addEventListener("click", function (e) {
-        if (e.target.closest(".stage-action[data-toast]")) { return; }
+        if (e.target.closest(".stage-action[data-toast], a[href^='/demands/']")) { return; }
         e.stopPropagation();
         var group = $(h.dataset.toggleGroup);
         if (!group) { return; }

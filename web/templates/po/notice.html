@@ -5,7 +5,7 @@
 全局字段: .CurrentUser, .CSRFToken, .Menus, .CurrentPath
 页面字段: .Title (string), .PageTitle (string), .BaseUrl (string)
 ========================================================================== */}}
-{{ define "page_css" }}
+{{ define "page_css" }}{{ template "po/detail_css" . }}
 <link rel="stylesheet" href="{{ asset "/static/css/po/personal-workspace.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/po/notice.css" }}">
 {{ end }}
@@ -85,7 +85,7 @@
 {{ end }}
 
 {{ define "page_js" }}
-<script src="{{ asset "/static/vendor/jquery/jquery.min.js" }}"></script>
+<script src="{{ asset "/static/vendor/jquery/jquery.min.js" }}"></script>{{ template "po/detail_js" . }}{{ template "po/detail_clarify" . }}
 <script src="{{ asset "/static/js/po/personal-list.js" }}"></script>
 <script src="{{ asset "/static/js/po/notice.js" }}"></script>
 {{ end }}

@@ -1,0 +1,28 @@
+{{/* 文件: components/po_detail_assets.html 模块: 业务需求 职责: 多列表复用既有详情资源。 */}}
+{{ define "po/detail_css" }}
+<link rel="stylesheet" href="{{ asset "/static/css/po/demand-detail.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/demand-detail-execution.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/demand-clarify.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/po-deliver.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/demand-detail-extra.css" }}">
+{{ end }}
+{{ define "po/detail_js" }}
+<script src="{{ asset "/static/js/po/personal-list.js" }}"></script>
+<script src="{{ asset "/static/js/po/primary-action.js" }}"></script>
+<script src="{{ asset "/static/js/po/html-sanitize.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail-richtext.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail-parent.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail-labels.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail-render-execution.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail-render.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail-review.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail-submit-review.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail-flow.js" }}"></script>
+<script src="{{ asset "/static/js/po/demand-detail.js" }}"></script>
+<script src="{{ asset "/static/js/po/po-deliver.js" }}"></script>
+{{ template "po/deliver_modal" . }}
+{{ end }}
+{{ define "po/detail_clarify" }}
+{{ template "po/clarify_modal" . }}
+<script src="{{ asset "/static/js/po/demand-clarify.js" }}"></script>
+{{ end }}

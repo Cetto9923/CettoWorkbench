@@ -311,3 +311,28 @@ logo 源图 csrcb-icon.png 自带白色边缘，修正已有 login.css 裁切为
 8100 两种主题偏好的全页截图逐张检查通过，无白边、截断和内部滚动：/private/tmp/v2bugfix/login-fixed-light-{dark,light}-preference.png。深色偏好下登录背景 rgb(248,250,252)，按钮恢复蓝色；真实账号 003030 登录后主题及 color-scheme 仍为 dark，控制台无 error/warn。登录页无业务数据；未执行业务写操作。make check、make quality、颜色扫描均通过，未定义变量 0；日志 login-light-{check,quality}.log 同目录。
 
 文件净变化：login.css +2/-1 净 +1；tokens.css +1/-69 净 -68；本交接文档净 +9。测试代码净 0，非测试代码净 -67。新增函数、CSS 选择器、变量、依赖均为 0。质量自查各项完成。更新 8099，旧版二进制及运行目录保留用于回滚，8100 用完关闭；不推送。
+
+
+## 11. 用户确认：只统一业务需求标题
+
+业务需求标题统一打开既有 DemandDetail 抽屉：待办按 item.kind=demand 构造 /demands/:id 并删除失效的 ID DOM 拦截；排期的业务及子业务标题改同一路径；主看板父需求标题可查看，点击不折叠，箭头仍负责折叠；父详情内子需求标题复用既有 open；版本跟进标题补入口；通知仅按真实 objectType=demand、有效 objectId 打开需求详情，原标读行为保留。研发及其他对象链接原样保留，编号链接和操作按钮不改。三个原未加载详情的页面复用组件模板中的现有 CSS/JS 资源，不改全局模板、主题或路由权限。旧 /kanban/story 模板已 location.replace('/board/demand')，上一轮静态盘点忽略该跳转；无需修改其休眠脚本。
+
+8100 真实账号 003030 验证：待办 US2511、排期 US63425、主看板父需求 US63420 和子需求 US63422 均打开同一抽屉，列表 URL 不变；看板标题不切折叠状态，箭头仍可展开；排期研需 72353 的禅道链接及 target 保留。浅深全页及详情内部底部截图逐张检查，无新增白块或溢出，控制台 error/warn 为空。截图 /private/tmp/v2bugfix/titles-{todos,schedule,board,notice,version}-{light,dark}.png，带内部滚动的底部截图同目录，未提交。版本跟进当前窗口无关联需求，不能声称真实标题点击通过；已读业务通知唯一样本 US10 详情返回“需求不存在”，不擅改历史数据。四个 Node 回归覆盖待办多对象区分、业务/研发通知及无对象消息、版本标题与展开按钮、父详情子标题；全部通过。未执行真实业务写操作，通知仅点已读记录。
+
+工作区 make check 通过；make quality 被既有未提交 repo_story_deliver.go 与 repo_deliver.go 的 dupl 拦住，该交付补丁不属本轮，未修改。使用当前 HEAD c6a13389 的独立 Git 副本，只加入本轮文件，保留原质量基线，make check 与 make quality 均通过；日志 titles-{check,quality}.log、titles-clean-{check,quality}.log 同目录。AGENTS 颜色扫描未定义变量 0，git diff --check 通过。新增生产函数、CSS 选择器、颜色变量、依赖均 0；新增模板定义 po/detail_css、po/detail_js、po/detail_clarify，均在本轮页面使用；测试辅助 render、escapeHtml 及测试回调。超长 schedule 模板净减 1 行。质量自查完成。
+
+| 文件 | 本轮净变化 |
+|---|---:|
+| web/static/js/po/todos.js | -21 |
+| web/static/js/po/notice.js | +1 |
+| web/static/js/po/version-follow.js | +0 |
+| web/static/js/po/workboard-demand.js | +0 |
+| web/static/js/po/demand-detail-parent.js | +0 |
+| web/templates/po/notice.html | +0 |
+| web/templates/po/version_follow.html | +0 |
+| web/templates/schedule/index.html | -1 |
+| web/templates/components/po_detail_assets.html | +28 |
+| web/static/js/po/demand-title.test.js | +57 |
+| 本交接文档（第 11 节） | +25 |
+
+测试净 +57；非测试代码净 +7，增长来自三个页面当轮复用的既有详情资源加载模板（28 行），没有新增业务层。当前工作树已收口为 Dev-CT，用户已授权提交；本次仅提交已验证的标题修复及本节记录，独立研需交付 WIP 原样保留，不推送。8099 保持原服务运行，不覆盖其部署；8100 用完关闭。

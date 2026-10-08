@@ -186,7 +186,7 @@
     var cleanRawTitle = decodeEntities(item.title || "—");
     var title = esc(cleanRawTitle);
     var idContent = item.url ? '<a class="table-id-link" href="' + esc(item.url) + '" target="_blank" rel="noopener noreferrer">' + id + "</a>" : id;
-    var titleContent = item.url ? '<a class="table-title-link" href="' + esc(item.url) + '" target="_blank" rel="noopener noreferrer">' + title + "</a>" : title;
+    var titleContent = item.kind === "demand" ? '<a class="table-title-link" href="/demands/' + encodeURIComponent(String(item.id)) + '">' + title + "</a>" : item.url ? '<a class="table-title-link" href="' + esc(item.url) + '" target="_blank" rel="noopener noreferrer">' + title + "</a>" : title;
     var isStory = String(item.kind || "").toLowerCase() === "story";
     var isIssueRisk = state.objectType === "risk" || state.objectType === "issue";
     var metricHtml = isIssueRisk
@@ -460,26 +460,5 @@
     syncUrl();
     refresh();
 
-    var tbody = $("todosTbody");
-    if (tbody) {
-      tbody.addEventListener("click", function (e) {
-        var target = e.target.closest("a.table-title-link");
-        if (!target) { return; }
-        var row = target.closest("tr");
-        if (!row) { return; }
-        var idEl = row.querySelector(".todos-item-id");
-        if (idEl && window.DemandDetail) {
-          var raw = (idEl.textContent || "").trim();
-          // Only business demands use the Workbench drawer.  Numeric IDs in
-          // this list may be stories, tasks, bugs, or approvals; opening them
-          // through /demands/:id/detail turns those valid ZenTao links into a
-          // misleading “需求不存在” response.
-          if (/^US\d+/i.test(raw)) {
-            e.preventDefault();
-            window.DemandDetail.open(raw);
-          }
-        }
-      });
-    }
   });
 })();

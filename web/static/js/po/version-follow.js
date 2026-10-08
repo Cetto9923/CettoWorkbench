@@ -221,7 +221,7 @@
       '<td><button type="button" class="vf-expand-btn" data-expand="' + i + '" aria-label="展开">▸</button></td>' +
       "<td>" +
       '<span class="vf-req-no">#' + esc(it.demandNo) + "</span> " +
-      '<div class="vf-req-title">' + esc(it.title) + "</div>" +
+      '<a class="vf-req-title table-title-link" href="/demands/' + encodeURIComponent(String(it.demandId)) + '">' + esc(it.title) + "</a>" +
       '<div class="vf-req-meta">' + esc(it.system) + " · " + esc(it.priority) + "</div>" +
       "</td>" +
       "<td>" + esc(it.stage) + "</td>" +

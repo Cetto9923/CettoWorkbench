@@ -33,7 +33,7 @@
       unitsHtml = '<div class="dd-card"><div class="dd-card-body"><div class="dd-cardhead"><h3>交付单元列表 (' + pa.deliveryUnits.length + ')</h3></div>' +
         '<table class="dd-table"><thead><tr><th>编号</th><th>子需求名称</th><th>阶段</th><th>负责人</th><th>研发需求</th><th>任务</th><th>计划上线</th><th>操作</th></tr></thead><tbody>' +
         pa.deliveryUnits.map(function (u) {
-          return '<tr><td><strong>' + esc(u.code) + '</strong></td><td>' + esc(u.title) + '</td><td>' + esc(u.stage) + '</td><td>' + esc(u.owner) + '</td><td>' + u.storiesNum + '</td><td>' + u.tasksNum + '</td><td>' + esc(u.launchDate) + '</td><td><button class="dd-btn" onclick="DemandDetail.open(' + u.demandId + ')">详情</button></td></tr>';
+          return '<tr><td><strong>' + esc(u.code) + '</strong></td><td><button type="button" class="table-title-link" onclick="DemandDetail.open(' + u.demandId + ')">' + esc(u.title) + '</button></td><td>' + esc(u.stage) + '</td><td>' + esc(u.owner) + '</td><td>' + u.storiesNum + '</td><td>' + u.tasksNum + '</td><td>' + esc(u.launchDate) + '</td><td><button class="dd-btn" onclick="DemandDetail.open(' + u.demandId + ')">详情</button></td></tr>';
         }).join("") + '</tbody></table></div></div>';
     }
     return '<div class="dd-card dd-spot"><div><span class="dd-tag blue">父需求聚合汇总</span>' +
