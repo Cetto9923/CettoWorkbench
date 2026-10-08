@@ -25,15 +25,27 @@
   };
 
   // 侧栏二级菜单由服务端按 zt_menus 渲染，这里把它读成可固定的页面清单。
+  // 顶栏模式下没有侧栏容器，此时用历史清单兜底，保证常用功能仍可固定。
   function collectPinnablePages() {
     var nav = document.getElementById('sidebar') || document.body;
+    if (!nav || typeof nav.querySelectorAll !== 'function') {
+      Object.keys(LEGACY_KEYS).forEach(function (path) {
+        PINNABLE_PAGES[LEGACY_KEYS[path]] = {
+          key: LEGACY_KEYS[path], title: LEGACY_KEYS[path], path: path,
+          icon: 'fas fa-file', group: '', groupTitle: ''
+        };
+      });
+      return;
+    }
     nav.querySelectorAll('.po-subnav-panel').forEach(function (panel) {
-      var groupTitle = (panel.querySelector('.po-subnav-title') || {}).textContent || '';
-      var group = (panel.getAttribute('data-subnav-panel') || '').trim();
-      panel.querySelectorAll('.po-subnav-body a.nav-item[href]').forEach(function (link) {
+      var titleEl = panel.querySelector('.po-subnav-title');
+      var groupTitle = (titleEl && titleEl.textContent) || '';
+      var group = (panel.getAttribute && panel.getAttribute('data-subnav-panel') || '').trim();
+      var links = panel.querySelectorAll ? panel.querySelectorAll('.po-subnav-body a.nav-item[href]') : [];
+      Array.prototype.forEach.call(links, function (link) {
         var path = (link.getAttribute('href') || '').trim();
         if (!path || path.charAt(0) !== '/' || path === '/home') return;
-        if (link.closest('#sidebarPinnedContainer, .po-pinned-list')) return;
+        if (link.closest && link.closest('#sidebarPinnedContainer, .po-pinned-list')) return;
         var textEl = link.querySelector('.nav-text');
         var iconEl = link.querySelector('.nav-icon');
         var title = ((textEl || link).textContent || '').trim();
@@ -48,6 +60,16 @@
           groupTitle: groupTitle.trim()
         };
       });
+    });
+    // 未在侧栏出现的旧地址（如仅顶栏可见的页面）仍按历史 key 兜底，保证已固定的项不丢。
+    Object.keys(LEGACY_KEYS).forEach(function (path) {
+      var key = LEGACY_KEYS[path];
+      if (!PINNABLE_PAGES[key]) {
+        PINNABLE_PAGES[key] = {
+          key: key, title: key, path: path,
+          icon: 'fas fa-file', group: '', groupTitle: ''
+        };
+      }
     });
   }
 
