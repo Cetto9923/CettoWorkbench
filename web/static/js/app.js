@@ -16,8 +16,12 @@
     return new Promise(function () {});
   }
 
+  // quietUnauthorized 仅供后台装饰性请求（如侧栏角标补取）显式开启：
+  // 开启后 401 原样返回给调用方自行降级，不再跳登录页。缺省即 false，全站行为不变。
   function appFetch(input, init) {
     var options = init || {};
+    var quietUnauthorized = options.quietUnauthorized === true;
+    delete options.quietUnauthorized;
     var headers = new Headers(options.headers || {});
     var csrf = window.getCsrfToken();
     if (csrf) {
@@ -26,7 +30,7 @@
     headers.set("X-Requested-With", "XMLHttpRequest");
     options.headers = headers;
     return fetch(input, options).then(function (resp) {
-      if (resp.status === 401) {
+      if (resp.status === 401 && !quietUnauthorized) {
         redirectToLogin();
         return pendingUntilUnload();
       }
