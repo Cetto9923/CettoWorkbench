@@ -302,3 +302,12 @@ logo 源图 csrcb-icon.png 自带白色边缘，修正已有 login.css 裁切为
 ## 9. 首页说明浮层被裁切
 
 13eeda9：home.css 中 .po-home .top5-section 的 overflow:hidden 裁掉向上展开的说明，改为 visible。仅 +1/-1 净 0 行，不新增函数、CSS 选择器、颜色或行为。真实账号 003030 的浅深全页及内部底部截图逐张核对完成，提示完整，列表与分页布局正常；截图 /private/tmp/v2bugfix/tooltip-{light,dark}.png、tooltip-bottom-{light,dark}.png 不提交。make check、make quality、颜色扫描通过，无真实业务写操作。更新 8099 样式，用完关闭 8100；保留上一版部署用于回滚。
+
+
+## 10. 用户确认：登录页固定浅色
+
+本节取代第 8 节的登录深色方案。删除 tokens.css 中仅供登录页使用的深色 --wb-auth-* 覆盖，沿用浅色表单与蓝色强调；login.css 的 body 指定 color-scheme:light，保证原生复选框也不跟随深色，并将 SSO hover 改为登录专用背景变量。logo 白边裁切保留。公共 token 文件修改理由：登录配色唯一来源在该文件，仅删除登录专用覆盖，不改内部页面 token、主题脚本或存储偏好。
+
+8100 两种主题偏好的全页截图逐张检查通过，无白边、截断和内部滚动：/private/tmp/v2bugfix/login-fixed-light-{dark,light}-preference.png。深色偏好下登录背景 rgb(248,250,252)，按钮恢复蓝色；真实账号 003030 登录后主题及 color-scheme 仍为 dark，控制台无 error/warn。登录页无业务数据；未执行业务写操作。make check、make quality、颜色扫描均通过，未定义变量 0；日志 login-light-{check,quality}.log 同目录。
+
+文件净变化：login.css +2/-1 净 +1；tokens.css +1/-69 净 -68；本交接文档净 +9。测试代码净 0，非测试代码净 -67。新增函数、CSS 选择器、变量、依赖均为 0。质量自查各项完成。更新 8099，旧版二进制及运行目录保留用于回滚，8100 用完关闭；不推送。
