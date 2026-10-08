@@ -9,7 +9,10 @@
     status: "all",
     focal: "myPending",
     page: 1,
-    pageSize: 10
+    pageSize: 10,
+    objectType: "all",
+    priority: "all",
+    keyword: ""
   };
 
   var FOCAL_LABELS = {
@@ -20,14 +23,23 @@
   };
 
   function demandsUrl(status, page, pageSize) {
-    return (
+    var url =
       "/demands?status=" +
       encodeURIComponent(status || "all") +
       "&page=" +
       encodeURIComponent(String(page || 1)) +
       "&pageSize=" +
-      encodeURIComponent(String(pageSize || 10))
-    );
+      encodeURIComponent(String(pageSize || 10));
+    if (state.objectType && state.objectType !== "all") {
+      url += "&objectType=" + encodeURIComponent(state.objectType);
+    }
+    if (state.priority && state.priority !== "all") {
+      url += "&priority=" + encodeURIComponent(state.priority);
+    }
+    if (state.keyword) {
+      url += "&keyword=" + encodeURIComponent(state.keyword);
+    }
+    return url;
   }
 
   function escapeHtml(text) {
@@ -918,9 +930,58 @@
     });
   }
 
+  function initObjectTypeSegment() {
+    $("#homeObjectTypeSegment").on("click", "button[data-object-type]", function () {
+      var $btn = $(this);
+      var next = String($btn.attr("data-object-type") || "all");
+      if (next === state.objectType) {
+        return;
+      }
+      $("#homeObjectTypeSegment button").removeClass("active");
+      $btn.addClass("active");
+      state.objectType = next;
+      state.page = 1;
+      reloadDemands();
+    });
+  }
+
+  function initPrioritySegment() {
+    $("#homePrioritySegment").on("click", "button[data-priority]", function () {
+      var $btn = $(this);
+      var next = String($btn.attr("data-priority") || "all");
+      if (next === state.priority) {
+        return;
+      }
+      $("#homePrioritySegment button").removeClass("active");
+      $btn.addClass("active");
+      state.priority = next;
+      state.page = 1;
+      reloadDemands();
+    });
+  }
+
+  function initKeywordSearch() {
+    var searchTimer = null;
+    $("#homeKeyword").on("input", function () {
+      var val = String($(this).val() || "").trim();
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(function () {
+        if (val === state.keyword) {
+          return;
+        }
+        state.keyword = val;
+        state.page = 1;
+        reloadDemands();
+      }, 200);
+    });
+  }
+
   $(function () {
     initValueStreamLinkage();
     initFocalChips();
+    initObjectTypeSegment();
+    initPrioritySegment();
+    initKeywordSearch();
 
     var $active = $(".home-vs-mini-card.active").first();
     if (!$active.length) {

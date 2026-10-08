@@ -162,9 +162,9 @@ func (s *Service) Demands(ctx context.Context, actor *model.User, req DemandsReq
 	}
 	var resp *DemandsResp
 	if req.Status == "all" {
-		resp, err = s.listAllStageDemands(ctx, actor, displayMap)
+		resp, err = s.listAllStageDemands(ctx, actor, displayMap, req)
 	} else if filter, ok := mysqlStageFilters[req.Status]; ok {
-		resp, err = s.listMySQLDemands(ctx, actor, req.Status, filter, displayMap, req.Page, req.PageSize)
+		resp, err = s.listMySQLDemands(ctx, actor, req.Status, filter, displayMap, req.Page, req.PageSize, req)
 	} else {
 		resp = &DemandsResp{Items: []WorkItemDetail{}}
 	}
@@ -246,93 +246,6 @@ func (s *Service) CountValueStreamAll(ctx context.Context, account string) (int6
 		return 0, err
 	}
 	return demandSum + storySum, nil
-}
-
-// listAllStageDemands 「全部」列表 = 其余各阶段列表按阶段顺序拼接，按 kind+id 去重（保留首次出现）。
-// 返回全量 Items，由 Demands 统一切页。
-func (s *Service) listAllStageDemands(ctx context.Context, actor *model.User, displayMap map[string]string) (*DemandsResp, error) {
-	items := make([]WorkItemDetail, 0)
-	seen := make(map[string]struct{})
-	for _, def := range valueStreamStages {
-		if def.status == "all" {
-			continue
-		}
-		filter, ok := mysqlStageFilters[def.status]
-		if !ok {
-			continue
-		}
-		// 拉全量再并集；分页在 Demands 出口统一切
-		resp, err := s.listMySQLDemands(ctx, actor, def.status, filter, displayMap, 0, 0)
-		if err != nil {
-			return nil, err
-		}
-		for _, item := range resp.Items {
-			key := workItemKey(item.Kind, item.ID)
-			if _, ok := seen[key]; ok {
-				continue
-			}
-			seen[key] = struct{}{}
-			items = append(items, item)
-		}
-	}
-	return &DemandsResp{Items: items, Total: int64(len(items))}, nil
-}
-
-// listMySQLDemands 从 MySQL 加载指定价值流阶段的业需列表（排期/交付阶段额外合并独立研发需求）。
-// pageSize<=0 表示不分页（供「全部」并集）；否则后端分页并填充 Total。
-func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stageStatus string, filter mysqlStageFilter, displayMap map[string]string, page, pageSize int) (*DemandsResp, error) {
-	account := ""
-	if actor != nil {
-		account = actor.Account
-	}
-	needMerge := filter.scheduleIncomplete || filter.deliverStories
-	unpaged := pageSize <= 0
-
-	if !needMerge && !unpaged {
-		total, countErr := s.repo.CountRoleDemands(ctx, account, filter)
-		if countErr != nil {
-			return nil, countErr
-		}
-		offset := (page - 1) * pageSize
-		rows, err := s.repo.FindRoleDemands(ctx, account, filter, pageSize, offset)
-		if err != nil {
-			return nil, err
-		}
-		items, buildErr := s.buildDemandWorkItems(ctx, account, stageStatus, rows, displayMap)
-		if buildErr != nil {
-			return nil, buildErr
-		}
-		return &DemandsResp{Items: items, Total: total, Page: page, PageSize: pageSize}, nil
-	}
-
-	rows, err := s.repo.FindRoleDemands(ctx, account, filter, 0, 0)
-	if err != nil {
-		return nil, err
-	}
-	items, buildErr := s.buildDemandWorkItems(ctx, account, stageStatus, rows, displayMap)
-	if buildErr != nil {
-		return nil, buildErr
-	}
-	label := valueStreamLabelForStatus(stageStatus)
-	if filter.scheduleIncomplete {
-		stories, storyErr := s.repo.FindScheduleStories(ctx, account)
-		if storyErr != nil {
-			return nil, storyErr
-		}
-		items = append(items, storyWorkItems(stories, label, actor, displayMap)...)
-	}
-	if filter.deliverStories {
-		stories, storyErr := s.repo.FindDeliverStories(ctx, account)
-		if storyErr != nil {
-			return nil, storyErr
-		}
-		items = append(items, storyWorkItems(stories, label, actor, displayMap)...)
-	}
-	if unpaged {
-		return &DemandsResp{Items: items, Total: int64(len(items))}, nil
-	}
-	pageItems, total := paginateWorkItems(items, page, pageSize)
-	return &DemandsResp{Items: pageItems, Total: total, Page: page, PageSize: pageSize}, nil
 }
 
 func (s *Service) buildDemandWorkItems(ctx context.Context, account, stageStatus string, rows []DemandRow, displayMap map[string]string) ([]WorkItemDetail, error) {

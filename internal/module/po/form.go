@@ -53,9 +53,12 @@ type HomeResp struct {
 
 // DemandsReq 按价值流状态查询需求/故事详情。
 type DemandsReq struct {
-	Status   string `form:"status"`
-	Page     int    `form:"page"`
-	PageSize int    `form:"pageSize"`
+	Status     string `form:"status"`
+	Page       int    `form:"page"`
+	PageSize   int    `form:"pageSize"`
+	ObjectType string `form:"objectType"` // all / demand / story；空视为 all
+	Priority   string `form:"priority"`   // all / p1 / p2 / p3（p3 含 P3+P4）；空视为 all
+	Keyword    string `form:"keyword"`    // 编号/标题模糊匹配
 }
 
 // Normalize 规范化分页参数（默认 page=1、pageSize=10，上限 100）。
@@ -81,6 +84,23 @@ func (r *DemandsReq) Validate() []FieldError {
 		return []FieldError{{Field: "status", Message: "无效的价值流状态"}}
 	}
 	r.Status = status
+	r.ObjectType = strings.ToLower(strings.TrimSpace(r.ObjectType))
+	switch r.ObjectType {
+	case "", "all":
+		r.ObjectType = "all"
+	case "demand", "story":
+	default:
+		return []FieldError{{Field: "objectType", Message: "不支持的对象类型"}}
+	}
+	r.Priority = strings.ToLower(strings.TrimSpace(r.Priority))
+	switch r.Priority {
+	case "", "all":
+		r.Priority = "all"
+	case "p1", "p2", "p3":
+	default:
+		return []FieldError{{Field: "priority", Message: "无效的优先级"}}
+	}
+	r.Keyword = strings.TrimSpace(r.Keyword)
 	return nil
 }
 
