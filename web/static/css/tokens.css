@@ -150,6 +150,7 @@
   --wb-auth-accent: #2f6feb;
   --wb-auth-sso-text: #354157;
   --wb-auth-button-start: #3f7bf0;
+  --wb-auth-button-end: var(--wb-auth-accent);
   --wb-auth-label: #46536a;
   --wb-auth-sso-icon: #5a7ed0;
   --wb-auth-remember: #6d788a;
@@ -303,20 +304,21 @@ html[data-theme="dark"] {
   --wb-avatar-bg: #2563eb;
 
   /* 登录页深色表单；Hero 保持原有白字对比 */
-  --wb-auth-hero-start: #0a2f6c;
+  --wb-auth-hero-start: #202e3c;
   --wb-auth-text: var(--wb-gray-900);
-  --wb-auth-hero-middle: #154b98;
+  --wb-auth-hero-middle: #2b3d4f;
   --wb-auth-input-text: var(--wb-gray-900);
-  --wb-auth-hero-end: #2765c8;
-  --wb-auth-button-border: #2c68dd;
-  --wb-auth-accent: #2f6feb;
+  --wb-auth-hero-end: #384c61;
+  --wb-auth-button-border: #53748d;
+  --wb-auth-accent: #769ab6;
   --wb-auth-sso-text: var(--wb-gray-800);
-  --wb-auth-button-start: #3f7bf0;
+  --wb-auth-button-start: #476a85;
+  --wb-auth-button-end: #385a74;
   --wb-auth-label: var(--wb-gray-700);
   --wb-auth-sso-icon: #5a7ed0;
   --wb-auth-remember: var(--wb-gray-500);
   --wb-auth-brand-caption: var(--wb-gray-500);
-  --wb-auth-focus: #7da5f2;
+  --wb-auth-focus: #819cae;
   --wb-auth-caption: var(--wb-gray-400);
   --wb-auth-eye: var(--wb-gray-400);
   --wb-auth-input-icon: var(--wb-gray-400);
@@ -332,8 +334,8 @@ html[data-theme="dark"] {
   --wb-auth-input-border: var(--wb-gray-200);
   --wb-auth-divider: var(--wb-gray-200);
   --wb-auth-error-border: var(--wb-danger-border);
-  --wb-auth-page: var(--wb-gray-50);
-  --wb-auth-surface: var(--wb-gray-50);
+  --wb-auth-page: #1c242d;
+  --wb-auth-surface: #1c242d;
   --wb-auth-error-bg: var(--wb-danger-light);
   --wb-auth-on-hero: #fff;
   --wb-auth-hero-mask: rgba(0,0,0,.65);
@@ -364,9 +366,9 @@ html[data-theme="dark"] {
   --wb-auth-field-bg: var(--wb-white);
   --wb-auth-hero-title: rgba(255,255,255,.92);
   --wb-auth-hero-glow-low: rgba(43,112,224,.26);
-  --wb-auth-focus-ring: rgba(47,111,235,.08);
-  --wb-auth-button-shadow: rgba(47,111,235,.18);
-  --wb-auth-button-hover-shadow: rgba(47,111,235,.22);
+  --wb-auth-focus-ring: rgba(129,156,174,.12);
+  --wb-auth-button-shadow: rgba(0,0,0,.12);
+  --wb-auth-button-hover-shadow: rgba(0,0,0,.16);
   --wb-auth-surface-glow-high: rgba(72,120,230,.08);
   --wb-auth-hero-glow-high: rgba(97,163,255,.26);
 }
