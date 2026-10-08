@@ -16,3 +16,9 @@ func (s *Service) List(ctx context.Context, req ListReq) (ListResp, error) {
 	}
 	return s.repo.List(ctx, req)
 }
+
+// ListGroupOptions 返回敏捷小组筛选下拉的全部未删除小组；筛选器面向全域，
+// 不按当前登录人过滤。
+func (s *Service) ListGroupOptions(ctx context.Context) ([]GroupOption, error) {
+	return s.repo.ListGroupOptions(ctx)
+}

@@ -38,6 +38,7 @@ func (h *Handler) Index(c *gin.Context) {
 		}
 		resp = ListResp{Kind: req.Tab, Rows: []Row{}}
 	}
+	groups, _ := h.svc.ListGroupOptions(c.Request.Context())
 	render.Page(c, http.StatusOK, constants.TEMPLATE_QUERY_INDEX, gin.H{
 		"Title":           "需求查询",
 		"PageTitle":       "需求查询",
@@ -48,6 +49,8 @@ func (h *Handler) Index(c *gin.Context) {
 		"Priority":        req.Priority,
 		"Owner":           req.Owner,
 		"System":          req.System,
+		"Group":           req.Group,
+		"Groups":          groups,
 		"Rows":            resp.Rows,
 		"Total":           resp.Total,
 	})
@@ -80,6 +83,7 @@ func reqFromContext(c *gin.Context) ListReq {
 		Owner:    c.Query("owner"),
 		System:   c.Query("system"),
 		Stage:    c.Query("stage"),
+		Group:    c.Query("group"),
 		Page:     page,
 		PageSize: size,
 	}

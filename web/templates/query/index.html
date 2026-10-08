@@ -46,6 +46,12 @@
         <option value="3"{{ if eq .Priority "3" }} selected{{ end }}>P3</option>
         <option value="4"{{ if eq .Priority "4" }} selected{{ end }}>P4</option>
       </select>
+      <select id="queryGroup" aria-label="敏捷小组">
+        <option value="">全部敏捷小组</option>
+        {{ range .Groups }}
+        <option value="{{ .ID }}"{{ if eq $.Group (printf "%d" .ID) }} selected{{ end }}>{{ .Name }}</option>
+        {{ end }}
+      </select>
       <label class="workspace-search query-owner-search">
         <i class="fas fa-user" aria-hidden="true"></i>
         <input type="search" id="queryOwner" placeholder="负责人" aria-label="负责人" value="{{ .Owner }}">

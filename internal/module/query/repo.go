@@ -78,6 +78,11 @@ func (r *Repo) listDemands(ctx context.Context, req ListReq) (ListResp, error) {
 	if req.Stage != "" {
 		q = q.Where("? IN (d.stage, d.status)", req.Stage)
 	}
+	// teamGroup 是 varchar(25) 而选项 id 是数字，此处按字符串形态比较：
+	// 与列类型逐字对齐，避免 MySQL/OceanBase 下隐式数值转换的不确定行为。
+	if req.Group != "" {
+		q = q.Where("d.teamGroup = ?", req.Group)
+	}
 
 	var total int64
 	if err := q.Count(&total).Error; err != nil {
@@ -157,6 +162,10 @@ func (r *Repo) listStories(ctx context.Context, req ListReq) (ListResp, error) {
 	}
 	if req.Stage != "" {
 		q = q.Where("? IN (s.stage, s.status)", req.Stage)
+	}
+	if req.Group != "" {
+		q = q.Joins(groupCaliberJoins).
+			Where(groupCaliberExpr+" = ?", req.Group)
 	}
 
 	var total int64

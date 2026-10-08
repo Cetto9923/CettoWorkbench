@@ -18,6 +18,8 @@ type ListReq struct {
 	Owner    string
 	System   string
 	Stage    string
+	// Group 敏捷小组 id，按字符串形态与 zt_demand.teamGroup 的 varchar 列比较。
+	Group    string
 	Page     int
 	PageSize int
 }
@@ -32,6 +34,7 @@ func (r *ListReq) Normalize() {
 	r.Owner = strings.TrimSpace(r.Owner)
 	r.System = strings.TrimSpace(r.System)
 	r.Stage = strings.TrimSpace(r.Stage)
+	r.Group = strings.TrimSpace(r.Group)
 	if r.Page < 1 {
 		r.Page = 1
 	}
