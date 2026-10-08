@@ -297,3 +297,8 @@ JS 中另有：
 logo 源图 csrcb-icon.png 自带白色边缘，修正已有 login.css 裁切为 inset(4% 8% 4% 4% round 28%)，图案和源图片不改。本次用户明确点名登录页，原未提交 logo 裁切修改在此次同范围调整并一并提交。深色仅修改登录专用 --wb-auth-* token：背景由近黑改蓝灰，Hero/按钮降低蓝色饱和度；链接和焦点保留可识别对比度。新增 --wb-auth-button-end 在浅色、深色两块均定义，区分链接颜色与按钮深色终点，确保白字可读。其他页面 token 不改，浅色配色不变。
 
 8100 登录页浅色／深色全页截图均已逐张检查，logo 无白边、文字清晰、无纵向内部滚动；登录页不需要业务数据。截图 /private/tmp/v2bugfix/login-new-light.png、login-new-dark.png，未提交。make check、make quality 和颜色扫描均退出 0（未定义变量 0）。无新增测试、函数、CSS 选择器或依赖。login.css +2/-2 净 0；tokens.css +14/-12 净 +2（浅深两处按钮终点定义）；本节文档净 +7 行。仅样式调整，未提交登录或写库。8100 用完关闭；8099 不重启，仍为原演示样式。质量自查各项完成。
+
+
+## 9. 首页说明浮层被裁切
+
+13eeda9：home.css 中 .po-home .top5-section 的 overflow:hidden 裁掉向上展开的说明，改为 visible。仅 +1/-1 净 0 行，不新增函数、CSS 选择器、颜色或行为。真实账号 003030 的浅深全页及内部底部截图逐张核对完成，提示完整，列表与分页布局正常；截图 /private/tmp/v2bugfix/tooltip-{light,dark}.png、tooltip-bottom-{light,dark}.png 不提交。make check、make quality、颜色扫描通过，无真实业务写操作。更新 8099 样式，用完关闭 8100；保留上一版部署用于回滚。
