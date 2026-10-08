@@ -336,3 +336,47 @@ logo 源图 csrcb-icon.png 自带白色边缘，修正已有 login.css 裁切为
 | 本交接文档（第 11 节） | +25 |
 
 测试净 +57；非测试代码净 +7，增长来自三个页面当轮复用的既有详情资源加载模板（28 行），没有新增业务层。当前工作树已收口为 Dev-CT，用户已授权提交；本次仅提交已验证的标题修复及本节记录，独立研需交付 WIP 原样保留，不推送。8099 保持原服务运行，不覆盖其部署；8100 用完关闭。
+
+
+## 12. 用户授权：独立研需交付补丁收口与重复代码治理
+
+本节收口此前保留的 13 个文件，不推送、不合并、不改禅道源码，不新增直写或真实业务写操作。复用既有交付弹窗，按对象类型分别请求 /demands/:id/deliver 与 /stories/:id/deliver；业需带 US 展示号，研需用纯编号，缺失研需不回落到业需。
+
+治理结果：缺陷计数与窗口结果读取抽到两个共用 Repo 方法（各被业需和研需调用），交付错误映射复用一个 Handler 函数；未移动质量基线或添加 lint 豁免。研需查询补齐 fromDemand=0、type=story、非父、非需求池，权限保留指派人/产品 ReqM/超管；已交付、未绑定窗口、严重缺陷阻断提交，已交付判断沿用 storyDeliveredSQL，不看 deliverDate。取消/编辑 mode 不得绕过新建必填校验，成功 JSON 带 redirectUrl；窗口和人员取数错误向上返回。
+
+前端修复：切换需求清空旧上下文，重试只请求当前对象，关闭或换对象后忽略旧 GET/POST 响应；422 保留输入、不提示成功，提交中禁止重复点击。已绑定的历史窗口加入当前选项，避免模型中已选窗口却显示“请选择”。真实验收还发现 form 不是弹性容器造成底部被裁，现用 hidden 控制表单、正文滚动、底部按钮固定；交付 CSS 字面颜色替换为既有语义变量，深色检查标签不再泛白。未新增全局 JS 函数、颜色变量或依赖。
+
+只读 SELECT：库 zentaopms_migrated，独立研需 7,930 条；veriFier 或有效 verifyDate 已填 2 条，2 条均有 zt_action(objectType=story, action=deliver) 记录。68485 为 active/wait，未发起交付，产品计划 23606 对应有效窗口 2（26-0918窗口，2026-09-18）；数据中另有失效窗口 1，读取联表排除它。SQL 结果 /private/tmp/v2bugfix/delivery-select.txt，未写库。
+
+验证：make check、make quality 均通过，dupl 0、新增 Go 质量问题 0、未豁免禅道直写 0；AGENTS 未定义颜色变量扫描 0，git diff --check 通过。新增回归覆盖匿名/他人、已交付、未排期、严重缺陷、原生拒绝及请求字段、422、取消/编辑校验、错误状态码、对象路由、重试、旧加载/提交响应、失败保留输入和重复点击。写流程全部使用 sqlmock/httptest/VM 模拟，没有发起真实交付。
+
+8100 账号 003030：真实研需 68485 和业需 US63275 的表单正确加载；两主题及内部底部 8 张全页图逐张检查，责任人与保存按钮可见，控制台 error/warn 为空；滚动底部 scrollTop=149，clientHeight=524，scrollHeight=673。截图 /private/tmp/v2bugfix/delivery-{story,demand}-{light,dark}.png 及对应 -bottom.png，日志 delivery-govern-{check,quality}.log，不提交临时文件。8100 用完关闭；8099 原服务不覆盖。
+
+验证边界：现有验收配置的 zentao.api 为空；本地 ~/GitHub/ZentaoPMS 的标准 stories API 源码没有交付扩展，不能据此确认实际定制禅道的 /stories/:id/deliver 是否已部署。保留原补丁接口路径，只验证本项目组装与模拟响应，不声称真实原生提交或窗口变更已通过；真实写入及定制接口契约仍需后续联调。另选窗口时，此研需补丁只校验窗口存在，提交 payload 不含 windowId，也未写回产品计划关联；不能声称窗口已变更，关联应如何更新须先确认原生契约，不能擅加直写。
+
+| 文件 | 本轮净变化 |
+|---|---:|
+| internal/module/po/gateway.go | +8 |
+| internal/module/po/handler.go | +2 |
+| internal/module/po/handler_deliver.go | +38 |
+| internal/module/po/handler_story_deliver_test.go | +49 |
+| internal/module/po/primaryaction/primaryaction.go | +1 |
+| internal/module/po/primaryaction/primaryaction_test.go | +6 |
+| internal/module/po/primaryaction/primaryaction_url.go | +3 |
+| internal/module/po/repo_deliver.go | -25 |
+| internal/module/po/repo_deliver_scan.go | +40 |
+| internal/module/po/repo_story_deliver.go | +82 |
+| internal/module/po/service_home_actions.go | +1 |
+| internal/module/po/service_story_deliver.go | +131 |
+| internal/module/po/service_story_deliver_test.go | +140 |
+| tests/unit/frontend/story-deliver.test.js | +107 |
+| web/static/css/po/po-deliver.css | +3 |
+| web/static/js/po/homereview.js | +2 |
+| web/static/js/po/po-deliver.js | +26 |
+| web/static/js/po/primary-action.js | +1 |
+| web/templates/components/po_deliver_modal.html | +0 |
+
+测试代码净 +302，非测试代码净 +313：增长主要来自原未提交的独立研需交付读接口、服务和原生适配接入；去重部分替换原两处读取与错误处理，不新增架构层。所有改动代码文件均小于 500 行。
+
+新增生产符号：postZentaoDeliver、deliverStoryViaZentao、GetStoryDeliver、DeliverStory（Handler/Service）、writeDeliverActionError、readDeliverBugCounts、readDeliverWindow、FindDeliverStory、CheckStoryDeliverBlockers、FindStoryLinkedWindow、loadDeliverStory、GetStoryDeliverMeta、storyDeliverMeta；交付 JS storyKind、deliverDisplay、deliverEndpoint。新增结构 deliverStoryRow、错误 errStoryNotFound。新增 CSS 选择器 #poDeliverForm:not([hidden])，其余复用已有选择器；新增测试辅助 expectDeliverStory、node、jquery、flush、respond、meta、verifyRetryAndStaleResponse、verifySubmit、verifyStaleSubmit 及测试函数/回调。无第三方依赖。质量自查逐项完成。
+本交接文档第 12 节净 +44 行。

@@ -37,7 +37,8 @@
     }
     if (kind === "drawer" || kind === "internal") {
       var did = String(pa.demandId || item.id || "").replace(/^US/i, "");
-      return '<button type="button" class="table-action-btn primary js-po-drawer-action" data-action-key="' + esc(pa.key) + '" data-action-url="' + esc(url) + '" data-demand-id="' + esc(did) + '">' + esc(label) + '</button>';
+      var objectKind = isStory ? "story" : "demand";
+      return '<button type="button" class="table-action-btn primary js-po-drawer-action" data-action-key="' + esc(pa.key) + '" data-action-url="' + esc(url) + '" data-demand-id="' + esc(did) + '" data-object-kind="' + esc(objectKind) + '">' + esc(label) + '</button>';
     }
     if (url) {
       if (/^https?:\/\//i.test(url)) {

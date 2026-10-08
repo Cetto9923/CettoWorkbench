@@ -183,7 +183,8 @@ type Input struct {
 //	testing            external view_test_order 禅道测试单 URL     capability + 唯一测试单
 //	acceptance+本人    drawer accept_done /demands/:id/acceptance  capability + IsAcceptanceOwner
 //	acceptance+他人    drawer remind_accept /demands/:id/urge     capability
-//	deliver            modal deliver    POST /demands/:id/deliver  capability+前置
+//	deliver + biz      modal deliver    /demands/:id/deliver       capability+前置
+//	deliver + story    modal deliver    /stories/:id/deliver       capability+前置
 //	release            "" 留空          —                         永远 None
 //	feedback+未评      external evaluate 禅道评价页面              capability + HasPendingEvaluateTask
 //	feedback+有评价    "" 留空          —                         None

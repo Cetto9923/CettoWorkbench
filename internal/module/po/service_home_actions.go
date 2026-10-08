@@ -12,6 +12,7 @@ import (
 
 var (
 	errHomeActionNotFound  = errors.New("需求不存在")
+	errStoryNotFound       = errors.New("研发需求不存在")
 	errHomeActionForbidden = errors.New("无权办理该需求")
 	errHomeActionConflict  = errors.New("需求状态已变化，请刷新后重试")
 	errDeliverBlocked      = errors.New("存在严重缺陷未关闭，禁止发起交付")

@@ -108,8 +108,10 @@
     $(document).on("click", ".js-po-drawer-action[data-action-key='deliver']", function (e) {
       e.preventDefault();
       var btn = $(this), id = String(btn.attr("data-demand-id") || "").replace(/^US/i, "");
+      var kind = String(btn.attr("data-object-kind") || "");
+      if (kind !== "story") { kind = "demand"; }
       if (typeof window.openPoDeliverModal === "function") {
-        window.openPoDeliverModal(id);
+        window.openPoDeliverModal(id, { kind: kind });
       }
     });
     $(document).on("click", ".js-po-drawer-action[data-action-key='submit_test'], .js-submit-test", function (e) {

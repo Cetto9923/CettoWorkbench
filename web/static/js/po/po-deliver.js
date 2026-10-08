@@ -4,13 +4,21 @@
   "use strict";
 
   var LAUNCH_WINDOW_OTHER = "__launch_other__";
-  var currentCtx = null, isSubmitting = false;
+  var currentCtx = null, pendingDeliver = null, isSubmitting = false;
 
   var esc = window.escapeHtml;
 
   function demandIdOf(value) {
     var m = String(value == null ? "" : value).trim().match(/(?:US|REQ|DEMAND)?[-#]?(\d+)/i);
     return m ? m[1] : "";
+  }
+
+  function storyKind(kind) { return kind === "story"; }
+
+  function deliverDisplay(kind, numeric) { return storyKind(kind) ? numeric : ("US" + numeric); }
+
+  function deliverEndpoint(kind, numeric) {
+    return (storyKind(kind) ? "/stories/" : "/demands/") + encodeURIComponent(numeric) + "/deliver";
   }
 
   function showToast(msg, type) { window.showToast(msg, type); }
@@ -197,9 +205,10 @@
     updateLaunchWindowUI(ctx);
   }
 
-  function loadDeliverData(demandId) {
+  function loadDeliverData(demandId, kind) {
+    var request = pendingDeliver;
     var fetchFn = window.appFetch || window.fetch;
-    return fetchFn("/demands/" + encodeURIComponent(demandId) + "/deliver", {
+    return fetchFn(deliverEndpoint(kind, demandId), {
       method: "GET", headers: { Accept: "application/json" }
     })
       .then(function (res) {
@@ -207,14 +216,23 @@
         return res.json();
       })
       .then(function (data) {
+        if (pendingDeliver !== request) return;
         var precheck = data.precheck || { canSubmit: true, rows: [] };
-        var linkedWindow = data.linkedWindow || {}, windows = Array.isArray(data.windows) ? data.windows : [];
-        var defaults = data.defaults || {};
+        var linkedWindow = data.linkedWindow || { id: data.windowId, name: data.windowName, releaseDate: data.releaseDate };
+        var windows = Array.isArray(data.windows) ? data.windows : [];
+        var defaults = data.defaults || {
+          deliverDate: data.deliverDate, isCarReview: data.isCarReview, isGrayVerifyPlan: data.isGrayVerifyPlan,
+          verifyDate: data.verifyDate, verifyPlan: data.verifyPlan, verifier: data.verifier
+        };
         var initialWindowId = Number(linkedWindow.id || 0);
+        if (initialWindowId && !findWindowInList(windows, initialWindowId)) windows = windows.concat([linkedWindow]);
         var initialDeliverDate = cleanDate(defaults.deliverDate || linkedWindow.releaseDate || "");
+        var displayLabel = String(data.displayId || deliverDisplay(kind, demandId));
+        $("#poDeliverModalTitle").text("发起交付 · " + displayLabel);
 
         var ctx = {
-          demandId: String(demandId), defaults: defaults, userOptions: data.userOptions || [],
+          demandId: String(demandId), kind: storyKind(kind) ? "story" : "demand", displayLabel: displayLabel,
+          defaults: defaults, userOptions: data.userOptions || data.users || [],
           scheduling: { windowId: initialWindowId, windowName: linkedWindow.name || "", releaseDate: cleanDate(linkedWindow.releaseDate || ""), windows: windows },
           launchMode: initialWindowId > 0 ? "window" : "", selectedWindowId: initialWindowId,
           deliverDate: initialDeliverDate, precheck: precheck
@@ -223,9 +241,10 @@
 
         currentCtx = ctx; window._poDeliverCtx = ctx;
         renderPrecheck(precheck); renderForm(ctx);
-        $("#poDeliverLoadingState").hide(); $("#poDeliverForm").show();
+        $("#poDeliverLoadingState").hide(); $("#poDeliverForm").prop("hidden", false);
       })
       .catch(function (err) {
+        if (pendingDeliver !== request) return;
         $("#poDeliverLoadingState").hide();
         $("#poDeliverErrorMsg").text(err.message || "加载失败，请稍后重试");
         $("#poDeliverErrorState").show();
@@ -280,18 +299,21 @@
     return true;
   }
 
-  function openPoDeliverModal(id) {
+  function openPoDeliverModal(id, options) {
     var numeric = demandIdOf(id);
-    if (!numeric) { showToast("无法识别业务需求编号", "error"); return false; }
+    var kind = options && options.kind === "story" ? "story" : "demand";
+    if (!numeric) { showToast(storyKind(kind) ? "无法识别研发需求编号" : "无法识别业务需求编号", "error"); return false; }
     var overlay = document.getElementById("poDeliverModalOverlay");
     if (!overlay) return false;
 
-    $("#poDeliverModalTitle").text("发起交付 · US" + numeric);
+    currentCtx = null; window._poDeliverCtx = null;
+    pendingDeliver = { demandId: numeric, kind: kind };
+    $("#poDeliverModalTitle").text("发起交付 · " + deliverDisplay(kind, numeric));
     $(overlay).addClass("show").css("display", "flex").attr("aria-hidden", "false");
     $("#poDeliverLoadingState").show();
-    $("#poDeliverErrorState, #poDeliverForm").hide();
+    $("#poDeliverErrorState").hide(); $("#poDeliverForm").prop("hidden", true);
 
-    loadDeliverData(numeric);
+    loadDeliverData(numeric, kind);
     return false;
   }
 
@@ -302,7 +324,7 @@
       $(overlay).removeClass("show").attr("aria-hidden", "true");
       setTimeout(function () { if (!$(overlay).hasClass("show")) $(overlay).css("display", "none"); }, 240);
     }
-    currentCtx = null; window._poDeliverCtx = null; isSubmitting = false;
+    currentCtx = null; pendingDeliver = null; window._poDeliverCtx = null; isSubmitting = false;
   }
 
   function submitPoDeliverModal() {
@@ -317,7 +339,7 @@
     isSubmitting = true;
 
     var fetchFn = window.appFetch || window.fetch;
-    fetchFn("/demands/" + encodeURIComponent(ctx.demandId) + "/deliver", {
+    fetchFn(deliverEndpoint(ctx.kind, ctx.demandId), {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({
@@ -336,7 +358,8 @@
         });
       })
       .then(function () {
-        showToast("US" + ctx.demandId + " 已发起交付，进入待发布", "success");
+        if (currentCtx !== ctx) return;
+        showToast((ctx.displayLabel || deliverDisplay(ctx.kind, ctx.demandId)) + " 已发起交付，进入待发布", "success");
         closePoDeliverModal();
         if (typeof window.refreshPoHomeDemands === "function") window.refreshPoHomeDemands();
         if (window.DemandDetail && typeof window.DemandDetail.refresh === "function") {
@@ -346,9 +369,11 @@
         }
       })
       .catch(function (err) {
+        if (currentCtx !== ctx) return;
         showToast(err.message || "发起交付失败，请稍后重试", "error");
       })
       .finally(function () {
+        if (currentCtx !== ctx) return;
         isSubmitting = false;
         if (btn) btn.disabled = false;
       });
@@ -358,9 +383,10 @@
     $("#poDeliverCloseBtn, #poDeliverCancelBtn").on("click", closePoDeliverModal);
     $("#poDeliverModalOverlay").on("click", function (e) { if (e.target === this) closePoDeliverModal(); });
     $("#poDeliverRetryBtn").on("click", function () {
-      if (currentCtx && currentCtx.demandId) {
+      var pending = pendingDeliver;
+      if (pending && pending.demandId) {
         $("#poDeliverLoadingState").show(); $("#poDeliverErrorState").hide();
-        loadDeliverData(currentCtx.demandId);
+        loadDeliverData(pending.demandId, pending.kind);
       }
     });
     $("#poLaunchWindowSelect").on("change", onPoLaunchWindowChange);

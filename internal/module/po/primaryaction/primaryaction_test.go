@@ -297,6 +297,13 @@ func TestDerive_DeliverStage(t *testing.T) {
 	if pa.URL != "/demands/700/deliver" {
 		t.Fatalf("url = %q", pa.URL)
 	}
+	story := Derive(Input{
+		Stage: StageDeliver, Kind: ObjectIndependentStory, ObjectID: 68485,
+		HasDeliverCapability: true,
+	})
+	if story.URL != "/stories/68485/deliver" {
+		t.Fatalf("story url = %q", story.URL)
+	}
 }
 
 // TestDerive_ReleaseStage 发布：永远 None（plan §4 显式约定）。
@@ -404,7 +411,6 @@ func TestFormatNTestTasks(t *testing.T) {
 		t.Fatalf("5 tests: %q", got)
 	}
 }
-
 
 // TestDerive_SubmitReview_Authorization_ThreeCases 验证提交评审三种角色权限派生：
 // 1. 创建人可以提交

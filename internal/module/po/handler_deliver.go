@@ -31,16 +31,7 @@ func (h *Handler) GetDemandDeliver(c *gin.Context) {
 	actor := middleware.CurrentUser(c)
 	resp, svcErr := h.svc.GetDemandDeliverMeta(c.Request.Context(), actor, id)
 	if svcErr != nil {
-		if h.logger != nil {
-			h.logger.Error("po get demand deliver meta failed", zap.Error(svcErr), zap.Uint("id", id))
-		}
-		status := http.StatusInternalServerError
-		if svcErr == errHomeActionNotFound {
-			status = http.StatusNotFound
-		} else if svcErr == errHomeActionForbidden {
-			status = http.StatusForbidden
-		}
-		c.JSON(status, gin.H{"success": false, "message": svcErr.Error()})
+		writeDeliverActionError(c, h.logger, "po get demand deliver meta failed", id, svcErr)
 		return
 	}
 
@@ -76,21 +67,7 @@ func (h *Handler) DeliverDemand(c *gin.Context) {
 		actionErr = h.svc.DeliverHomeDemand(c.Request.Context(), middleware.CurrentUser(c), id, req.Comment)
 	}
 	if actionErr != nil {
-		if h.logger != nil {
-			h.logger.Error("po deliver demand failed", zap.Error(actionErr), zap.Uint("id", id))
-		}
-		status := http.StatusInternalServerError
-		switch {
-		case errors.Is(actionErr, errHomeActionNotFound):
-			status = http.StatusNotFound
-		case errors.Is(actionErr, errHomeActionForbidden):
-			status = http.StatusForbidden
-		case errors.Is(actionErr, errHomeActionConflict):
-			status = http.StatusConflict
-		case errors.Is(actionErr, errDeliverBlocked):
-			status = http.StatusConflict
-		}
-		c.JSON(status, gin.H{"success": false, "message": actionErr.Error()})
+		writeDeliverActionError(c, h.logger, "po deliver demand failed", id, actionErr)
 		return
 	}
 	response := gin.H{"success": true, "message": "发起交付成功"}
@@ -98,6 +75,67 @@ func (h *Handler) DeliverDemand(c *gin.Context) {
 		response["redirectUrl"] = "/home"
 	}
 	c.JSON(http.StatusOK, response)
+}
+
+// GetStoryDeliver 获取独立研发需求发起交付表单。
+// GET /stories/:id/deliver
+func (h *Handler) GetStoryDeliver(c *gin.Context) {
+	id, err := parseDeliverDemandID(c.Param("id"))
+	if err != nil || id == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "研发需求 ID 无效"})
+		return
+	}
+	resp, svcErr := h.svc.GetStoryDeliverMeta(c.Request.Context(), middleware.CurrentUser(c), id)
+	if svcErr != nil {
+		writeDeliverActionError(c, h.logger, "po get story deliver meta failed", id, svcErr)
+		return
+	}
+	c.JSON(http.StatusOK, resp)
+}
+
+// DeliverStory 提交独立研发需求发起交付。
+// POST /stories/:id/deliver
+func (h *Handler) DeliverStory(c *gin.Context) {
+	id, err := parseDeliverDemandID(c.Param("id"))
+	if err != nil || id == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "研发需求 ID 无效"})
+		return
+	}
+	var req DemandDeliverReq
+	if bindErr := c.ShouldBindJSON(&req); bindErr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "参数解析失败"})
+		return
+	}
+	req.ID = id
+	errs := req.Validate()
+	if req.Mode != "create" {
+		errs = append(errs, FieldError{Field: "mode", Message: "不支持的交付操作"})
+	}
+	if len(errs) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"success": false, "message": "参数校验失败", "errors": errs})
+		return
+	}
+	if actionErr := h.svc.DeliverStory(c.Request.Context(), middleware.CurrentUser(c), req); actionErr != nil {
+		writeDeliverActionError(c, h.logger, "po deliver story failed", id, actionErr)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "发起交付成功", "redirectUrl": "/home"})
+}
+
+func writeDeliverActionError(c *gin.Context, logger *zap.Logger, msg string, id uint, actionErr error) {
+	if logger != nil {
+		logger.Error(msg, zap.Error(actionErr), zap.Uint("id", id))
+	}
+	status := http.StatusInternalServerError
+	switch {
+	case errors.Is(actionErr, errHomeActionNotFound), errors.Is(actionErr, errStoryNotFound):
+		status = http.StatusNotFound
+	case errors.Is(actionErr, errHomeActionForbidden):
+		status = http.StatusForbidden
+	case errors.Is(actionErr, errHomeActionConflict), errors.Is(actionErr, errDeliverBlocked):
+		status = http.StatusConflict
+	}
+	c.JSON(status, gin.H{"success": false, "message": actionErr.Error()})
 }
 
 func parseDeliverDemandID(raw string) (uint, error) {

@@ -72,10 +72,6 @@ LIMIT 1`
 
 // CheckDeliverBlockers 检查严重缺陷数及阻塞情况。
 func (r *Repo) CheckDeliverBlockers(ctx context.Context, demandID uint) (severeBugs int, openBugs int, err error) {
-	db, err := r.homeActionWriter()
-	if err != nil {
-		return 0, 0, err
-	}
 	// 查询关联研发需求下的未关闭缺陷
 	const query = `
 SELECT
@@ -87,23 +83,11 @@ WHERE s.fromDemand = ?
   AND b.deleted = '0'
   AND b.status IN ('active', 'resolved')`
 
-	type bugCountRow struct {
-		SevereCount int `gorm:"column:severe_count"`
-		OpenCount   int `gorm:"column:open_count"`
-	}
-	var countRow bugCountRow
-	if err := db.WithContext(ctx).Raw(query, demandID).Scan(&countRow).Error; err != nil {
-		return 0, 0, err
-	}
-	return countRow.SevereCount, countRow.OpenCount, nil
+	return r.readDeliverBugCounts(ctx, query, demandID)
 }
 
 // FindDemandLinkedWindow 查询需求已关联的上线窗口（zt_demandwindow story=0）。
 func (r *Repo) FindDemandLinkedWindow(ctx context.Context, demandID uint) (windowID uint, windowName, releaseDate string, err error) {
-	db, err := r.homeActionWriter()
-	if err != nil {
-		return 0, "", "", err
-	}
 	const query = `
 SELECT dw.versionWindow AS window_id, vw.name AS window_name, DATE_FORMAT(vw.releaseDate, '%Y-%m-%d') AS release_date
 FROM zt_demandwindow dw
@@ -112,16 +96,7 @@ WHERE dw.demand = ? AND dw.story = 0 AND dw.deletedAt IS NULL
 ORDER BY dw.updatedDate DESC, dw.id DESC
 LIMIT 1`
 
-	type winRow struct {
-		WindowID    uint   `gorm:"column:window_id"`
-		WindowName  string `gorm:"column:window_name"`
-		ReleaseDate string `gorm:"column:release_date"`
-	}
-	var res winRow
-	if err := db.WithContext(ctx).Raw(query, demandID).Scan(&res).Error; err != nil {
-		return 0, "", "", err
-	}
-	return res.WindowID, res.WindowName, res.ReleaseDate, nil
+	return r.readDeliverWindow(ctx, query, demandID)
 }
 
 // ListUpcomingDeliverWindows 查询未过期的上线窗口列表。

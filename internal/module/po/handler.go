@@ -83,6 +83,8 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.POST("/demands/:id/urge", middleware.RequirePerm(perm.PoHomeList), h.UrgeHomeDemand)
 	g.GET("/demands/:id/deliver", middleware.RequirePerm(perm.PoHomeList), h.GetDemandDeliver)
 	g.POST("/demands/:id/deliver", middleware.RequirePerm(perm.PoHomeList), h.DeliverDemand)
+	g.GET("/stories/:id/deliver", middleware.RequirePerm(perm.PoHomeList), h.GetStoryDeliver)
+	g.POST("/stories/:id/deliver", middleware.RequirePerm(perm.PoHomeList), h.DeliverStory)
 	// 详情读接口：首页、需求看板与需求查询均可打开；对象级授权仍由 DetailService 执行。
 	g.GET("/demands/:id/detail", middleware.RequireAnyPerm(perm.PoHomeList, perm.PoBoardDemandList, perm.ScheduleList), h.DemandDetail)
 	g.GET("/demands/:id", middleware.RequireAnyPerm(perm.PoHomeList, perm.PoBoardDemandList, perm.ScheduleList), h.DemandDetailView)

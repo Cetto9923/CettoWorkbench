@@ -63,8 +63,11 @@ func UrgeAcceptURL(objectID uint, kind ObjectKind) string {
 	return fmt.Sprintf("/demands/%d/urge", objectID)
 }
 
-// DeliverURL 发起交付站内提交端点。
+// DeliverURL 发起交付站内提交端点。按对象类型区分业需和研需接口。
 func DeliverURL(objectID uint, kind ObjectKind) string {
+	if kind == ObjectStory || kind == ObjectIndependentStory {
+		return fmt.Sprintf("/stories/%d/deliver", objectID)
+	}
 	return fmt.Sprintf("/demands/%d/deliver", objectID)
 }
 

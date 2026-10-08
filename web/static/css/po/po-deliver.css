@@ -9,7 +9,7 @@
   inset: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(15, 23, 42, 0.45);
+  background: var(--color-overlay);
   backdrop-filter: blur(2px);
   z-index: 12150;
   display: flex !important;
@@ -43,7 +43,7 @@
   max-height: 88vh;
   background: var(--color-surface);
   border-radius: 8px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 10px 25px var(--color-shadow-12);
   display: flex !important;
   flex-direction: column;
   overflow: hidden;
@@ -68,6 +68,9 @@
 }
 .po-deliver-close-btn:hover { color: var(--color-text-main); }
 
+#poDeliverForm:not([hidden]) {
+  display: flex; flex-direction: column; flex: 1; min-height: 0;
+}
 #poDeliverModal .batch-modal-body {
   padding: 14px 18px; overflow-y: auto; flex: 1; min-height: 0;
   display: flex; flex-direction: column; gap: 12px;
@@ -81,7 +84,7 @@
 /* 前置检查与 Section */
 #poDeliverModal .vf-section {
   border: 1px solid var(--color-border); border-radius: 6px;
-  overflow: hidden; background: var(--color-surface);
+  overflow: hidden; background: var(--color-surface); flex-shrink: 0;
 }
 #poDeliverModal .vf-section-title {
   font-size: 12px; font-weight: 700; color: var(--color-text-secondary);
@@ -100,18 +103,18 @@
   font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600;
 }
 #poDeliverModal .ad-tag.ok {
-  background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0;
+  background: var(--color-success-bg); color: var(--color-success); border: 1px solid var(--color-success-border);
 }
 #poDeliverModal .ad-tag.bad {
-  background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;
+  background: var(--color-danger-bg); color: var(--color-danger); border: 1px solid var(--color-danger-border);
 }
 #poDeliverModal .vf-section .hint {
   font-size: 11px; color: var(--color-text-muted);
   padding: 8px 12px; margin: 0; line-height: 1.4;
 }
 #poDeliverModal .vf-section .error {
-  font-size: 11px; color: #dc2626; padding: 8px 12px; margin: 0;
-  background: #fef2f2; line-height: 1.4;
+  font-size: 11px; color: var(--color-danger); padding: 8px 12px; margin: 0;
+  background: var(--color-danger-bg); line-height: 1.4;
 }
 
 /* 表单 Grid */
@@ -128,7 +131,7 @@
 #poDeliverModal .ad-field label {
   font-size: 12px; font-weight: 600; color: var(--color-text-main);
 }
-#poDeliverModal .ad-req { color: #dc2626; margin-left: 2px; }
+#poDeliverModal .ad-req { color: var(--color-danger); margin-left: 2px; }
 #poDeliverModal .ad-input {
   width: 100%; border: 1px solid var(--color-border); border-radius: 5px;
   padding: 6px 10px; font-size: 13px; color: var(--color-text-main);
@@ -144,7 +147,7 @@
   font-size: 13px; font-weight: 400; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;
 }
 #poDeliverModal .po-launch-window-notice {
-  font-size: 11px; color: #2563eb; margin-top: 4px; line-height: 1.4;
+  font-size: 11px; color: var(--color-info); margin-top: 4px; line-height: 1.4;
 }
 #poDeliverModal .po-launch-date-field {
   margin-top: 8px;
