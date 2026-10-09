@@ -4,33 +4,8 @@
    职责: 页面布局、:root 变量、通用 action-btn、列表区框架与筛选栏、数据类型 Tab 切换
 ========================================================================== */
 
+/* 色板 token（--bg/--t1 等）由 layout/variables.css 统一管理，此处仅保留排期局部半径 */
 :root {
-  --bg: #f4f5f7;
-  --white: #fff;
-  --hover: #f7f8fa;
-  --active: #eef1f6;
-  --border: #e5e7eb;
-  --border-lt: #f0f0f0;
-  --t1: #1f2937;
-  --t2: #6b7280;
-  --t3: #9ca3af;
-  --blue: #2563eb;
-  --blue-bg: #eff6ff;
-  --blue-bd: #bfdbfe;
-  --red: #dc2626;
-  --red-bg: #fef2f2;
-  --red-bd: #fecaca;
-  --orange: #ea580c;
-  --orange-bg: #fff7ed;
-  --orange-bd: #fed7aa;
-  --green: #16a34a;
-  --green-bg: #f0fdf4;
-  --green-bd: #bbf7d0;
-  --gray: #6b7280;
-  --gray-bg: #f9fafb;
-  --purple: #7c3aed;
-  --purple-bg: #f5f3ff;
-  --purple-bd: #ddd6fe;
   --r: 6px;
 }
 

@@ -2,7 +2,8 @@
    文件: web/static/css/schedule/scheduleintegrated.css
    模块: 排期工作台
    职责: 一体化排期弹窗（#scheduleIntegratedModal）样式
-   依赖: web/static/css/schedule/schedule.css、schedulemodal.css（:root 变量与 batch-modal 骨架须先加载；一体化弹窗样式在本文件）
+   依赖: layout/variables.css（局部 token）、schedulemodal.css（batch-modal 骨架）、
+         components/modaldark.css（深色，随 base 加载）
 ========================================================================== */
 
 /* ── 弹窗容器（对齐 #scheduleVersionWindowModal 布局） ── */
@@ -40,11 +41,11 @@
 }
 
 #scheduleIntegratedModal input[type="date"].form-input {
-  color: #333;
+  color: var(--t1);
 }
 
 #taskModal input[type="date"].form-input {
-  color: #333;
+  color: var(--t1);
 }
 
 #scheduleIntegratedModal input[type="date"].form-input:not([readonly]) {
@@ -84,7 +85,7 @@
 #scheduleIntegratedModal input[type="date"]::-webkit-datetime-edit,
 #taskModal input[type="date"].form-input::-webkit-datetime-edit,
 #taskModal input[type="date"]::-webkit-datetime-edit {
-  color: #aaa;
+  color: var(--t3);
 }
 
 #scheduleIntegratedModal
@@ -97,17 +98,17 @@
 #taskModal input[type="date"]:focus::-webkit-datetime-edit,
 #taskModal input[type="date"].form-input.has-value::-webkit-datetime-edit,
 #taskModal input[type="date"].has-value::-webkit-datetime-edit {
-  color: #333;
+  color: var(--t1);
 }
 
 #scheduleIntegratedModal input[type="date"].form-input:invalid,
 #taskModal input[type="date"].form-input:invalid {
-  color: #999;
+  color: var(--t3);
 }
 
 #scheduleIntegratedModal input[type="date"].form-input[readonly] {
-  background: #f8fafc;
-  color: #64748b;
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
   cursor: not-allowed;
 }
 
@@ -252,7 +253,7 @@
 .schedule-integrated-cell .form-input.schedule-field-control:focus {
   outline: none;
   border-color: var(--blue);
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+  box-shadow: 0 0 0 2px var(--color-primary-ring-soft);
 }
 
 #scheduleIntegratedModal .schedule-integrated-cell .ui-autocomplete {
@@ -273,7 +274,7 @@
   .ui-autocomplete-input:focus {
   outline: none;
   border-color: var(--blue);
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+  box-shadow: 0 0 0 2px var(--color-primary-ring-soft);
 }
 
 #scheduleIntegratedModal .ui-autocomplete-dropdown,
@@ -300,7 +301,7 @@
 .schedule-window-combo:focus-within,
 .schedule-target-combo:focus-within {
   border-color: var(--blue);
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+  box-shadow: 0 0 0 2px var(--color-primary-ring-soft);
 }
 
 #scheduleIntegratedModal
@@ -434,19 +435,19 @@
   width: 100%;
   margin-top: 12px;
   padding: 10px;
-  border: 1px dashed #d1d5db;
+  border: 1px dashed var(--border);
   border-radius: 6px;
-  background: #fff;
+  background: var(--white);
   font-size: 12px;
-  color: #2563eb;
+  color: var(--blue);
   cursor: pointer;
 }
 
 .rd-node {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
   border-radius: 6px;
   margin-bottom: 12px;
-  background: #fff;
+  background: var(--white);
 }
 
 .rd-node-header {
@@ -454,7 +455,7 @@
   align-items: center;
   gap: 8px;
   padding: 10px 14px;
-  background: #f8fafc;
+  background: var(--color-surface-muted);
   border-radius: 6px 6px 0 0;
   flex-wrap: wrap;
 }
@@ -475,19 +476,19 @@
 
 .rd-node-id {
   font-size: 11px;
-  color: #64748b;
+  color: var(--color-text-secondary);
   font-weight: 600;
   flex-shrink: 0;
 }
 
 .rd-node-product-name {
   font-size: 11px;
-  color: #666;
+  color: var(--t2);
   flex-shrink: 0;
 }
 
 .rd-node-assignee-display {
-  color: #999;
+  color: var(--t3);
   font-size: 11px;
   white-space: nowrap;
   flex-shrink: 0;
@@ -505,20 +506,20 @@
   padding: 1px 6px;
   border-radius: 3px;
   font-size: 11px;
-  color: #fff;
+  color: var(--color-text-on-accent);
   flex-shrink: 0;
 }
 
 .rd-node-role-badge--main {
-  background: #2563eb;
+  background: var(--blue);
 }
 
 .rd-node-role-badge--cooperate {
-  background: #ea580c;
+  background: var(--orange);
 }
 
 .rd-node-role-badge--none {
-  background: #64748b;
+  background: var(--color-text-secondary);
 }
 
 .rd-node-title-input,
@@ -536,22 +537,22 @@
 #taskModal .rd-task-select {
   width: 100%;
   padding: 4px;
-  border: 1px solid var(--color-border, #d1d5db);
+  border: 1px solid var(--color-border);
   border-radius: 3px;
   font-size: 11px;
   box-sizing: border-box;
-  background: var(--color-surface, var(--white));
+  background: var(--color-surface);
   color: var(--t1);
 }
 
 .rd-node-product-select,
 .rd-task-select {
   padding: 3px 4px;
-  border: 1px solid var(--color-border, #d1d5db);
+  border: 1px solid var(--color-border);
   border-radius: 3px;
   font-size: 11px;
   box-sizing: border-box;
-  background: var(--color-surface, var(--white));
+  background: var(--color-surface);
   color: var(--t1);
 }
 
@@ -622,16 +623,16 @@
   align-items: stretch;
   min-width: 0;
   width: 100%;
-  border: 1px solid var(--color-border, #d1d5db);
+  border: 1px solid var(--color-border);
   border-radius: 3px;
-  background: var(--color-surface, var(--white));
+  background: var(--color-surface);
   overflow: hidden;
   box-sizing: border-box;
 }
 
 .rd-task-execution-combo:focus-within {
   border-color: var(--blue);
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+  box-shadow: 0 0 0 2px var(--color-primary-ring-soft);
 }
 
 .rd-task-execution-combo .rd-task-execution-select,
@@ -656,9 +657,9 @@
 .rd-task-execution-same {
   flex: 0 0 auto;
   border: none;
-  border-left: 1px solid var(--color-border, #e5e7eb);
+  border-left: 1px solid var(--color-border);
   background: transparent;
-  color: var(--color-text-secondary, #64748b);
+  color: var(--color-text-secondary);
   font-size: 11px;
   font-weight: 500;
   padding: 0 8px;
@@ -673,24 +674,24 @@
 /* 未选中：中性字色，与输入区同底，不抢视线 */
 .rd-task-execution-same[aria-pressed="false"] {
   background: transparent;
-  color: var(--color-text-secondary, #64748b);
+  color: var(--color-text-secondary);
 }
 
 /* 选中：浅色底 + 品牌色字（轻量 chip，避免半截实心块） */
 .rd-task-execution-same[aria-pressed="true"] {
-  background: var(--color-info-soft, #eff6ff);
-  color: var(--color-info, #2563eb);
+  background: var(--color-info-soft);
+  color: var(--color-info);
   font-weight: 600;
 }
 
 .rd-task-execution-same[aria-pressed="false"]:hover {
-  background: var(--color-surface-muted, #f8fafc);
-  color: var(--color-text-primary, #334155);
+  background: var(--color-surface-muted);
+  color: var(--color-text-primary);
 }
 
 .rd-task-execution-same[aria-pressed="true"]:hover {
-  background: var(--color-info-soft, #eff6ff);
-  color: var(--color-info, #2563eb);
+  background: var(--color-info-soft);
+  color: var(--color-info);
 }
 
 .rd-task-execution-combo.is-first-row .rd-task-execution-same {
@@ -717,29 +718,29 @@
 }
 
 .rd-task-type-label--devel {
-  color: #2563eb;
+  color: var(--blue);
 }
 
 .rd-task-type-label--test {
-  color: #ea580c;
+  color: var(--orange);
 }
 
 .rd-task-type-label--Online {
-  color: #16a34a;
+  color: var(--green);
 }
 
 .rd-task-type-label--default {
-  color: #64748b;
+  color: var(--color-text-secondary);
 }
 
 .rd-add-task {
   margin-top: 6px;
   padding: 4px 12px;
-  border: 1px dashed #d1d5db;
+  border: 1px dashed var(--border);
   border-radius: 4px;
-  background: var(--color-surface, var(--white));
+  background: var(--color-surface);
   font-size: 11px;
-  color: #2563eb;
+  color: var(--blue);
   cursor: pointer;
 }
 
@@ -748,7 +749,7 @@
   background: none;
   padding: 8px;
   cursor: pointer;
-  color: #64748b;
+  color: var(--color-text-secondary);
   line-height: 1;
   display: inline-flex;
   align-items: center;
@@ -771,7 +772,7 @@
   background: none;
   padding: 8px;
   cursor: pointer;
-  color: #999;
+  color: var(--t3);
   line-height: 1;
   display: inline-flex;
   align-items: center;
@@ -780,13 +781,13 @@
 }
 
 #scheduleIntegratedModal .rd-confirm-btn {
-  color: #2563eb;
+  color: var(--blue);
 }
 
 #scheduleIntegratedModal .rd-delete-btn:hover,
 #scheduleIntegratedModal .task-delete-btn:hover,
 #taskModal .task-delete-btn:hover {
-  color: #e53e3e;
+  color: var(--color-danger-accent);
 }
 
 #scheduleIntegratedModal .rd-edit-btn:hover,
@@ -794,11 +795,11 @@
 #scheduleIntegratedModal .task-add-btn:hover,
 #taskModal .task-edit-btn:hover,
 #taskModal .task-add-btn:hover {
-  color: #2563eb;
+  color: var(--blue);
 }
 
 #scheduleIntegratedModal .rd-confirm-btn:hover {
-  color: #1d4ed8;
+  color: var(--color-btn-primary-bg);
 }
 
 #scheduleIntegratedModal .rd-delete-btn i,
@@ -929,7 +930,7 @@
   .rd-node-tasks
   input[type="date"]::-webkit-datetime-edit,
 #taskModal .rd-node-tasks input[type="date"]::-webkit-datetime-edit {
-  color: #aaa;
+  color: var(--t3);
 }
 
 #scheduleIntegratedModal
@@ -940,7 +941,7 @@
   input[type="date"].has-value::-webkit-datetime-edit,
 #taskModal .rd-node-tasks input[type="date"]:focus::-webkit-datetime-edit,
 #taskModal .rd-node-tasks input[type="date"].has-value::-webkit-datetime-edit {
-  color: #333;
+  color: var(--t1);
 }
 
 #scheduleIntegratedModal .rd-node-header--edit .rd-node-title,
