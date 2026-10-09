@@ -12,13 +12,13 @@
 #poDemandAcceptanceModal .po-testtask-ac-input,
 #poDemandAcceptanceModal .ui-autocomplete-input {
   width: 100%;
-  border: 1px solid var(--tt-border, #e5e6eb);
+  border: 1px solid var(--color-border, #e5e6eb);
   border-radius: 4px;
   padding: 4px 8px;
   font-size: 12px;
   font-family: inherit;
-  color: var(--tt-text, #1d2129);
-  background: #fff;
+  color: var(--color-text-primary, #1d2129);
+  background: var(--color-surface, #fff);
   box-sizing: border-box;
 }
 
@@ -31,7 +31,7 @@
 #poDemandAcceptanceModal .po-testtask-ac-input:focus,
 #poDemandAcceptanceModal .ui-autocomplete-input:focus {
   outline: none;
-  border-color: var(--tt-primary, #165dff);
+  border-color: var(--color-info-fill, #165dff);
   box-shadow: none;
 }
 

@@ -550,7 +550,6 @@
   display: none;
 }
 
-/* #top5List：对齐原型 home-action-table（行面用 --color-card = 原型 --wb-white） */
 .po-home .top5-list {
   border: 0;
   border-radius: 0;

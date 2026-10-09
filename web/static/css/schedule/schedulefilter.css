@@ -170,10 +170,13 @@
   height: 30px;
 }
 
+/* 控件尺寸对齐主筛选 .schedule-filter-ms / .schedule-ms-trigger */
 #page-schedule #scheduleMoreFilters .schedule-owner-picker,
 #page-schedule #scheduleMoreFilters .schedule-pri-picker {
-  width: 100%;
-  min-width: 0;
+  width: 168px;
+  min-width: 148px;
+  max-width: 220px;
+  flex: 0 1 168px;
 }
 
 #page-schedule #scheduleMoreFilters .schedule-owner-picker .ui-autocomplete-input-wrap,
@@ -189,4 +192,8 @@
   padding: 5px 28px 5px 8px;
   font-size: 12px;
   box-sizing: border-box;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--t1);
 }

@@ -257,3 +257,40 @@ textarea,
   box-shadow: 0 0 0 0.14rem var(--color-primary-ring-soft);
   outline: none;
 }
+
+/* 全局滚动条 */
+body,
+body * {
+  scrollbar-color: var(--po-scrollbar-thumb) var(--po-scrollbar-track);
+  scrollbar-width: thin;
+}
+
+body::-webkit-scrollbar,
+body *::-webkit-scrollbar {
+  width: var(--po-scrollbar-size);
+  height: var(--po-scrollbar-size);
+}
+
+body::-webkit-scrollbar-track,
+body *::-webkit-scrollbar-track {
+  background: var(--po-scrollbar-track);
+}
+
+body::-webkit-scrollbar-thumb,
+body *::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: var(--po-scrollbar-thumb);
+  background-clip: padding-box;
+}
+
+body::-webkit-scrollbar-thumb:hover,
+body *::-webkit-scrollbar-thumb:hover {
+  background: var(--po-scrollbar-thumb-hover);
+  background-clip: padding-box;
+}
+
+body::-webkit-scrollbar-corner,
+body *::-webkit-scrollbar-corner {
+  background: var(--po-scrollbar-corner);
+}

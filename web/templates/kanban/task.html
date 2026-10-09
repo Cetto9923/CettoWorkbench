@@ -9,6 +9,7 @@
 {{ define "page_css" }}
 <link rel="stylesheet" href="{{ asset "/static/css/kanban/common.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/kanban/task.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/kanban/dark.css" }}">
 {{ end }}
 
 {{ define "content" }}
@@ -36,7 +37,6 @@
       </div>
     </div>
     <div class="actions">
-      <button type="button" class="action" disabled>调整成员</button>
       <a class="action primary" href="{{ .TaskCreateURL }}" target="_blank" rel="noopener noreferrer">+ 建任务</a>
       <a class="action primary" href="{{ .IssueCreateURL }}" target="_blank" rel="noopener noreferrer">+ 提问题</a>
     </div>

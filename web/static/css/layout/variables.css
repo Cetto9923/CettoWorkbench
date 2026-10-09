@@ -241,6 +241,13 @@ html[data-theme="light"] {
   --topbar-height: 52px;
   /* 含可选二级顶栏时的总高度，由 topnav.js 同步测量写入 */
   --topbar-stack-height: 52px;
+
+  /* 滚动条（对齐原型 shell.css；深色随 --color-* 自动切换） */
+  --po-scrollbar-size: 8px;
+  --po-scrollbar-track: transparent;
+  --po-scrollbar-thumb: var(--color-border-strong);
+  --po-scrollbar-thumb-hover: var(--color-text-disabled);
+  --po-scrollbar-corner: var(--color-surface);
 }
 
 html[data-theme="dark"] {
@@ -299,11 +306,11 @@ html[data-theme="dark"] {
   --color-text-brand: #e2e8f0;
   --color-text-placeholder: #475569;
   --color-text-on-accent: #ffffff;
-  --color-info: #93c5fd;
+  --color-info: #2563eb;
   --color-info-fill: #2563eb;
   --color-info-bg: #1e3a8a;
   --color-info-border: #1e40af;
-  --color-info-soft: rgba(59, 130, 246, 0.16); /* 对齐原型 --wb-primary-light */
+  --color-info-soft: rgba(59, 130, 246, 0.16);
   --color-btn-primary-bg: #2563eb;
   --color-btn-primary-hover: #1d4ed8;
   --color-badge-id-bg: #0f172a;
@@ -311,8 +318,6 @@ html[data-theme="dark"] {
   --color-badge-neutral-bg: rgba(255, 255, 255, 0.05);
   --color-badge-neutral-fg: #cbd5e1;
   --color-badge-neutral-border: rgba(255, 255, 255, 0.12);
-  --color-business-bg: #1e3a8a;
-  --color-business-text: #bfdbfe;
   --color-story-bg: #134e4a;
   --color-story-text: #99f6e4;
 

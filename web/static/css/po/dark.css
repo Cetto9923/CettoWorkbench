@@ -1,0 +1,499 @@
+/* ==========================================================================
+   文件: web/static/css/po/dark.css
+   模块: PO工作台
+   职责: PO 弹窗/抽屉深色模式对齐原型（详情/评审/交付/提测 + dark-contrast）
+========================================================================== */
+
+/* 抽屉面板 / 头部 / 卡片：对齐原型 --wb-bg-surface（深色 #121826 = --color-card） */
+html[data-theme="dark"] .dd-drawer-panel,
+html[data-theme="dark"] .dd-head,
+html[data-theme="dark"] .dd-card,
+html[data-theme="dark"] .dd-review-footer {
+  background: var(--color-card);
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] .dd-card {
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .dd-body {
+  background: var(--color-page-bg);
+}
+
+/* 头部内属性块：对齐原型 --wb-bg-muted（#151c2c） */
+html[data-theme="dark"] .dd-spot-card,
+html[data-theme="dark"] .dd-core-item {
+  background: var(--color-toolbar-control-hover);
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] .dd-native-line {
+  background: var(--color-card);
+  border-color: var(--color-border);
+}
+
+/* 标识 / 链接：深色用高对比 info（对齐 dark-contrast B 组） */
+html[data-theme="dark"] .dd-id,
+html[data-theme="dark"] .dd-spot-card .val.blue,
+html[data-theme="dark"] .dd-tag.blue,
+html[data-theme="dark"] .dd-file-list,
+html[data-theme="dark"] .dd-file-list a,
+html[data-theme="dark"] .dd-table-title a {
+  color: var(--color-info);
+}
+
+html[data-theme="dark"] .dd-tag.blue {
+  border-color: var(--color-info-border);
+  background: var(--color-info-bg);
+}
+
+html[data-theme="dark"] .dd-iconbtn {
+  background: var(--color-card);
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] .dd-iconbtn:hover {
+  background: var(--color-toolbar-control-hover);
+  color: var(--color-text-strong);
+}
+
+html[data-theme="dark"] .dd-title,
+html[data-theme="dark"] .dd-cardhead h3,
+html[data-theme="dark"] .dd-spot-card .val,
+html[data-theme="dark"] .dd-core-item .v,
+html[data-theme="dark"] .dd-native-state {
+  color: var(--color-text-strong);
+}
+
+html[data-theme="dark"] .dd-meta,
+html[data-theme="dark"] .dd-spot-card .lab,
+html[data-theme="dark"] .dd-core-item .k,
+html[data-theme="dark"] .dd-kv-list .k,
+html[data-theme="dark"] .dd-native-line {
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] .dd-meta b,
+html[data-theme="dark"] .dd-kv-list .v,
+html[data-theme="dark"] .dd-aside-title,
+html[data-theme="dark"] .dd-review-richtext,
+html[data-theme="dark"] .dd-table {
+  color: var(--color-text-body);
+}
+
+html[data-theme="dark"] .dd-table th,
+html[data-theme="dark"] .dd-table td {
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] .dd-table th {
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+}
+
+/* 主按钮：对齐 dark-contrast 5.8 轮主按钮收口 */
+html[data-theme="dark"] .dd-btn.primary {
+  background: var(--color-btn-primary-bg);
+  border-color: var(--color-btn-primary-bg);
+  color: var(--color-text-on-accent);
+}
+
+html[data-theme="dark"] .dd-btn.primary:hover {
+  background: var(--color-btn-primary-hover);
+  border-color: var(--color-btn-primary-hover);
+}
+
+html[data-theme="dark"] .dd-btn:not(.primary):not(.danger):not(.danger-outline) {
+  background: var(--color-surface);
+  border-color: var(--color-border-strong);
+  color: var(--color-text-body);
+}
+
+html[data-theme="dark"] .dd-btn.danger {
+  background: var(--color-danger-accent);
+  border-color: var(--color-danger-accent);
+  color: var(--color-text-on-accent);
+}
+
+html[data-theme="dark"] .dd-btn.danger:hover {
+  background: var(--color-danger-deep);
+  border-color: var(--color-danger-deep);
+}
+
+html[data-theme="dark"] .dd-btn.danger-outline {
+  color: var(--color-danger-bright);
+  border-color: var(--color-danger-bright);
+  background: transparent;
+}
+
+html[data-theme="dark"] .dd-btn.danger-outline:hover {
+  background: var(--color-danger-bg);
+}
+
+/* 编辑按钮：原型 --wb-primary / --wb-primary-light */
+html[data-theme="dark"] .dd-btn-edit {
+  color: var(--color-info);
+  border-color: var(--color-info-border);
+  background: var(--color-info-soft);
+}
+
+html[data-theme="dark"] .dd-btn-edit:hover:not(:disabled) {
+  background: var(--color-info-fill);
+  border-color: var(--color-info-fill);
+  color: var(--color-text-on-accent);
+}
+
+html[data-theme="dark"] .dd-btn:disabled,
+html[data-theme="dark"] .dd-btn.primary:disabled,
+html[data-theme="dark"] .dd-btn-edit:disabled {
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+  opacity: 0.7;
+}
+
+/* 驳回 / 通过弹窗 */
+html[data-theme="dark"] .dd-reject-modal-dialog {
+  background: var(--color-card);
+}
+
+html[data-theme="dark"] .dd-reject-modal-header,
+html[data-theme="dark"] .dd-reject-modal-footer {
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] .dd-reject-modal-footer {
+  background: var(--color-surface-muted);
+}
+
+html[data-theme="dark"] .dd-reject-modal-header h3,
+html[data-theme="dark"] .dd-reject-label {
+  color: var(--color-text-strong);
+}
+
+html[data-theme="dark"] .dd-reject-textarea {
+  background: var(--color-card);
+  border-color: var(--color-border-strong);
+  color: var(--color-text-body);
+}
+
+html[data-theme="dark"] .dd-reject-textarea::placeholder {
+  color: var(--color-text-placeholder);
+}
+
+html[data-theme="dark"] .dd-reject-textarea:focus {
+  border-color: var(--color-danger-bright);
+  box-shadow: 0 0 0 2px var(--color-danger-ring);
+}
+
+/* 验收弹窗：检索下拉 input（对齐交付弹窗 / 提测 ac-input） */
+html[data-theme="dark"] #poDemandAcceptanceModal .po-testtask-ac-input,
+html[data-theme="dark"] #poDemandAcceptanceModal .ui-autocomplete-input {
+  background: var(--color-card);
+  border-color: var(--color-border-strong);
+  color: var(--color-text-body);
+}
+
+html[data-theme="dark"] #poDemandAcceptanceModal .po-testtask-ac-input::placeholder,
+html[data-theme="dark"] #poDemandAcceptanceModal .ui-autocomplete-input::placeholder {
+  color: var(--color-text-placeholder);
+}
+
+html[data-theme="dark"] #poDemandAcceptanceModal .po-testtask-ac-input:focus,
+html[data-theme="dark"] #poDemandAcceptanceModal .ui-autocomplete-input:focus {
+  border-color: var(--color-info);
+  box-shadow: 0 0 0 2px var(--color-primary-ring-soft);
+}
+
+html[data-theme="dark"] .dd-required {
+  color: var(--color-danger-bright);
+}
+
+/* 提交评审 picker / chip（submitreview.css 复用） */
+html[data-theme="dark"] .dd-review-picker {
+  background: var(--color-surface);
+  border-color: var(--color-border-strong);
+}
+
+html[data-theme="dark"] .dd-review-picker:focus-within {
+  border-color: var(--color-info);
+  box-shadow: 0 0 0 2px var(--color-primary-ring-soft);
+}
+
+html[data-theme="dark"] .dd-review-chip {
+  background: var(--color-info-soft);
+  border-color: var(--color-info-border);
+  color: var(--color-info);
+}
+
+html[data-theme="dark"] .dd-review-picker-display .ui-autocomplete-input,
+html[data-theme="dark"] .dd-review-picker-display input.ui-autocomplete-input {
+  background: transparent;
+  color: var(--color-text-primary);
+}
+
+html[data-theme="dark"] .dd-review-picker-display .ui-autocomplete-input::placeholder {
+  color: var(--color-text-placeholder);
+}
+
+html[data-theme="dark"] .dd-submit-review-hint {
+  color: var(--color-text-secondary);
+}
+
+/* ── 发起交付弹窗（对齐原型 po-deliver + dark-contrast） ── */
+html[data-theme="dark"] #poDeliverModal.batch-modal,
+html[data-theme="dark"] .po-deliver-modal {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 10px 25px var(--color-shadow-12);
+}
+
+html[data-theme="dark"] #poDeliverModal .batch-modal-hdr,
+html[data-theme="dark"] #poDeliverModal .batch-modal-footer {
+  background: var(--color-card);
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] #poDeliverModal .batch-modal-footer {
+  background: var(--color-surface-muted);
+}
+
+html[data-theme="dark"] #poDeliverModal .batch-modal-hdr h3 {
+  color: var(--color-text-strong);
+}
+
+html[data-theme="dark"] .po-deliver-close-btn {
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] .po-deliver-close-btn:hover {
+  color: var(--color-text-strong);
+}
+
+html[data-theme="dark"] #poDeliverModal .vf-section {
+  background: var(--color-card);
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] #poDeliverModal .vf-section-title {
+  background: var(--color-toolbar-control-hover);
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] #poDeliverModal .ad-check-row {
+  border-color: var(--color-border);
+  color: var(--color-text-body);
+}
+
+html[data-theme="dark"] #poDeliverModal .ad-tag.ok {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  border-color: var(--color-success-border);
+}
+
+html[data-theme="dark"] #poDeliverModal .ad-tag.bad {
+  background: var(--color-danger-bg);
+  color: var(--color-danger-bright);
+  border-color: var(--color-danger-border);
+}
+
+html[data-theme="dark"] #poDeliverModal .vf-section .hint {
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] #poDeliverModal .vf-section .error {
+  color: var(--color-danger-bright);
+  background: var(--color-danger-bg);
+}
+
+html[data-theme="dark"] #poDeliverModal .ad-field label,
+html[data-theme="dark"] #poDeliverModal .checks label {
+  color: var(--color-text-body);
+}
+
+html[data-theme="dark"] #poDeliverModal .ad-req {
+  color: var(--color-danger-bright);
+}
+
+html[data-theme="dark"] #poDeliverModal .ad-input,
+html[data-theme="dark"] #poDeliverModal .ui-autocomplete-input,
+html[data-theme="dark"] #poDeliverModal input.ad-input,
+html[data-theme="dark"] #poDeliverModal textarea.ad-input {
+  background: var(--color-card);
+  border-color: var(--color-border-strong);
+  color: var(--color-text-body);
+}
+
+html[data-theme="dark"] #poDeliverModal .ad-input::placeholder,
+html[data-theme="dark"] #poDeliverModal .ui-autocomplete-input::placeholder {
+  color: var(--color-text-placeholder);
+}
+
+html[data-theme="dark"] #poDeliverModal .ad-input:focus,
+html[data-theme="dark"] #poDeliverModal .ui-autocomplete-input:focus {
+  border-color: var(--color-info);
+  box-shadow: 0 0 0 2px var(--color-primary-ring-soft);
+}
+
+html[data-theme="dark"] #poDeliverModal .action-btn:not(.primary) {
+  background: var(--color-surface);
+  border-color: var(--color-border-strong);
+  color: var(--color-text-body);
+}
+
+html[data-theme="dark"] #poDeliverModal .action-btn:not(.primary):hover {
+  border-color: var(--color-info);
+  color: var(--color-info);
+}
+
+html[data-theme="dark"] #poDeliverModal .action-btn.primary {
+  background: var(--color-btn-primary-bg);
+  border-color: var(--color-btn-primary-bg);
+  color: var(--color-text-on-accent);
+}
+
+html[data-theme="dark"] #poDeliverModal .action-btn.primary:hover {
+  background: var(--color-btn-primary-hover);
+  border-color: var(--color-btn-primary-hover);
+}
+
+html[data-theme="dark"] #poDeliverModal .action-btn.primary:disabled,
+html[data-theme="dark"] #poDeliverModal .action-btn:disabled {
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+  opacity: 0.7;
+}
+
+html[data-theme="dark"] #poDeliverModal .demand-clarify-loading {
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] #poDeliverModal .clarify-spinner {
+  border-color: var(--color-border);
+  border-top-color: var(--color-info);
+}
+
+html[data-theme="dark"] #poDeliverModal .demand-clarify-error-state {
+  color: var(--color-danger-bright);
+}
+
+/* ── 提测办理：token 已随主题切换；此处只收口深色对比度（对齐 dark-contrast） ── */
+html[data-theme="dark"] .po-testtask-modal-hdr,
+html[data-theme="dark"] .po-testtask-panel {
+  background: var(--color-card);
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .po-testtask-step-dot.is-active,
+html[data-theme="dark"] .po-testtask-step-dot.is-done,
+html[data-theme="dark"] .po-testtask-stage-tag,
+html[data-theme="dark"] .po-testtask-panel-title .icon-badge {
+  background: var(--color-btn-primary-bg);
+  border-color: var(--color-btn-primary-bg);
+  color: var(--color-text-on-accent);
+}
+
+html[data-theme="dark"] .po-testtask-field input[type="text"],
+html[data-theme="dark"] .po-testtask-field input[type="date"],
+html[data-theme="dark"] .po-testtask-field select,
+html[data-theme="dark"] .po-testtask-field textarea,
+html[data-theme="dark"] .po-testtask-field .ui-autocomplete-input,
+html[data-theme="dark"] .po-testtask-field .po-testtask-ac-input,
+html[data-theme="dark"] .po-testtask-field .form-multiselect-display {
+  background: var(--color-card);
+  border-color: var(--color-border-strong);
+  color: var(--color-text-body);
+}
+
+html[data-theme="dark"] .po-testtask-field input:focus,
+html[data-theme="dark"] .po-testtask-field select:focus,
+html[data-theme="dark"] .po-testtask-field textarea:focus,
+html[data-theme="dark"] .po-testtask-field .ui-autocomplete-input:focus,
+html[data-theme="dark"] .po-testtask-field .po-testtask-ac-input:focus,
+html[data-theme="dark"] .po-testtask-field .form-multiselect.open .form-multiselect-display {
+  border-color: var(--color-info);
+  box-shadow: 0 0 0 2px var(--color-primary-ring-soft);
+}
+
+html[data-theme="dark"] .po-testtask-link-add,
+html[data-theme="dark"] .po-testtask-btn:hover:not(.is-primary) {
+  color: var(--color-info);
+  border-color: var(--color-info);
+}
+
+html[data-theme="dark"] .po-testtask-btn.is-primary {
+  background: var(--color-btn-primary-bg);
+  border-color: var(--color-btn-primary-bg);
+  color: var(--color-text-on-accent);
+}
+
+html[data-theme="dark"] .po-testtask-btn.is-primary:hover {
+  background: var(--color-btn-primary-hover);
+  border-color: var(--color-btn-primary-hover);
+  color: var(--color-text-on-accent);
+}
+
+html[data-theme="dark"] .po-testtask-field-label .req {
+  color: var(--color-danger-bright);
+}
+
+/* ── 关联研发需求：token 已随主题切换；此处收口深色表面/链接/检索焦点 ── */
+html[data-theme="dark"] .po-linkstory-modal,
+html[data-theme="dark"] .po-linkstory-modal-hdr,
+html[data-theme="dark"] .po-linkstory-modal-body,
+html[data-theme="dark"] .po-linkstory-table-panel,
+html[data-theme="dark"] .po-linkstory-footer {
+  background: var(--color-card);
+  border-color: var(--color-border);
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .po-linkstory-modal {
+  box-shadow: 0 8px 32px var(--color-shadow-12);
+}
+
+html[data-theme="dark"] .po-linkstory-modal-hdr h3 {
+  color: var(--color-text-strong);
+}
+
+html[data-theme="dark"] .po-linkstory-modal-close {
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] .po-linkstory-modal-close:hover {
+  color: var(--color-text-strong);
+}
+
+html[data-theme="dark"] .po-linkstory-title {
+  color: var(--color-info);
+}
+
+html[data-theme="dark"] .po-linkstory-table-panel .table th {
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] .po-linkstory-table-panel .table td {
+  border-color: var(--color-border);
+  color: var(--color-text-body);
+}
+
+html[data-theme="dark"] .po-linkstory .search-input,
+html[data-theme="dark"] .po-linkstory .ui-autocomplete-input,
+html[data-theme="dark"] .po-linkstory select {
+  background: var(--color-card);
+  border-color: var(--color-border-strong);
+  color: var(--color-text-body);
+}
+
+html[data-theme="dark"] .po-linkstory .search-input:focus,
+html[data-theme="dark"] .po-linkstory .ui-autocomplete-input:focus,
+html[data-theme="dark"] .po-linkstory select:focus {
+  border-color: var(--color-info);
+  box-shadow: 0 0 0 2px var(--color-primary-ring-soft);
+}

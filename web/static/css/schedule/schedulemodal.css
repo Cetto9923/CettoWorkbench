@@ -229,8 +229,14 @@
   align-items: center;
   justify-content: center;
   gap: 2px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
+#manageVersionWindowsModal .schedule-manage-actions .action-btn,
+#manageVersionWindowsModal .schedule-manage-actions .action-btn.primary,
+#manageVersionWindowsModal .schedule-manage-actions .action-btn.danger,
 #manageVersionWindowsModal .action-btn.zen-icon-action {
   width: 1.65rem;
   height: 1.65rem;
@@ -463,9 +469,9 @@
 }
 
 .task-modal-project-section {
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 8px;
+  background: var(--color-primary-light);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   padding: 10px 14px;
   margin-bottom: 12px;
   display: flex;
@@ -501,7 +507,7 @@
   font-size: 11px;
   line-height: inherit;
   box-sizing: border-box;
-  background: #fff;
+  background: var(--color-surface, var(--white));
   color: var(--t1);
 }
 
@@ -518,12 +524,12 @@
   width: 100% !important;
   min-width: 0;
   padding: 4px 24px 4px 4px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-border, #d1d5db);
   border-radius: 3px;
   font-size: 11px;
   line-height: inherit;
   box-sizing: border-box;
-  background: #fff;
+  background: var(--color-surface, var(--white));
   color: var(--t1);
 }
 
