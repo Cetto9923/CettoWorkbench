@@ -7,19 +7,15 @@ web/templates/layout/header.html 模块: 布局 职责:
 说明: sidebar 布局含全局编号搜索框（#globalSearch），跳转禅道由 globalsearch.js 处理。
 ========================================================================== */}}
 <div class="topbar-row">
-  {{ if eq .LayoutNav "sidebar" }}
-  <div class="topbar-brand">
-    <a href="/home" class="nav-item">
-      <span class="po-brand-logo">研</span>
-      <span class="nav-item-text"
-        >研发工作台</span
-      >
-    </a>
+  {{ if eq .LayoutNav "top" }}{{ template "layout/topnavPrimary" . }}
+  {{ else if eq .LayoutNav "sidebar" }}
+  <div class="topbar-identity">
+    <span class="topbar-page-title">{{ if .PageTitle }}{{ .PageTitle }}{{ else if .Title }}{{ .Title }}{{ else }}工作台{{ end }}</span>
   </div>
-  {{ end }} {{ if eq .LayoutNav "top" }} {{ template "layout/topnavPrimary" . }}
   {{ else }}
   <div class="topbar-primary-spacer" aria-hidden="true"></div>
-  {{ end }} {{ if eq .LayoutNav "sidebar" }}
+  {{ end }}
+  {{ if eq .LayoutNav "sidebar" }}
   <div class="topbar-actions">
     <div class="search-box" id="searchBox">
       <i class="fas fa-search" aria-hidden="true"></i>

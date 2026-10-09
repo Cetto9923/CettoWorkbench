@@ -23,12 +23,13 @@
   <link rel="stylesheet" href="/static/css/layout/variables.css">
   <link rel="stylesheet" href="/static/css/layout/app.css">
   <link rel="stylesheet" href="/static/css/layout/layout.css">
+  {{ if and (not .HideChrome) (eq .LayoutNav "sidebar") }}<link rel="stylesheet" href="/static/css/layout/sidebar.css">{{ end }}
   {{ if and (not .HideChrome) (eq .LayoutNav "top") }}<link rel="stylesheet" href="/static/css/layout/topnav.css">{{ end }}
   <link rel="stylesheet" href="/static/css/components/components.css">
   <link rel="stylesheet" href="/static/css/layout/header.css">
   {{ block "page_css" . }}{{ end }}
 </head>
-<body{{ if .HideChrome }} class="layout-chrome-hidden"{{ else }} class="has-bottom-tabs{{ if eq .LayoutNav "top" }} layout-nav-top{{ end }}"{{ end }}>
+<body{{ if .HideChrome }} class="layout-chrome-hidden"{{ else }} class="has-bottom-tabs{{ if eq .LayoutNav "sidebar" }} po-workbench-shell{{ end }}{{ if eq .LayoutNav "top" }} layout-nav-top{{ end }}"{{ end }}>
   {{/* 侧栏收起态须在首屏绘制前恢复，否则导航跳转会先展开再收起 */}}
   <script>
     (function () {
