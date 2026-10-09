@@ -3,7 +3,7 @@
 web/templates/layout/header.html 模块: 布局 职责:
 渲染后台顶部导航栏、面包屑与页面标题区。 全局字段: .CurrentUser, .CSRFToken,
 .Flash, .Menus, .CurrentPath, .LayoutNav 页面字段: .Title (string),
-.PageTitle (string), .CurrentMenus ([]menu.Menu)
+.PageTitle (string), .PageDescription (string), .CurrentMenus ([]menu.Menu)
 说明: sidebar 布局含全局编号搜索框（#globalSearch），跳转禅道由 globalsearch.js 处理。
 ========================================================================== */}}
 <div class="topbar-row">
@@ -11,6 +11,10 @@ web/templates/layout/header.html 模块: 布局 职责:
   {{ else if eq .LayoutNav "sidebar" }}
   <div class="topbar-identity">
     <span class="topbar-page-title">{{ if .PageTitle }}{{ .PageTitle }}{{ else if .Title }}{{ .Title }}{{ else }}工作台{{ end }}</span>
+    {{ if .PageDescription }}
+    <span class="topbar-divider" aria-hidden="true">│</span>
+    <span class="topbar-page-desc" title="{{ .PageDescription }}">{{ .PageDescription }}</span>
+    {{ end }}
   </div>
   {{ else }}
   <div class="topbar-primary-spacer" aria-hidden="true"></div>

@@ -4,7 +4,7 @@
 职责: 任务看板静态壳；三列任务由 task.js ajax 填充，小组/成员切换驱动刷新；
       wait/doing 拖拽经 taskdrag.js 调用 PUT /kanban/tasks/:id 写禅道。
 全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .CurrentPath
-页面字段: .Title (string), .PageTitle (string), .BaseUrl (string), .IssueCreateURL (string), .TaskCreateURL (string), .Teamgroups ([]module/kanban.TeamgroupItem；MemberItem.TaskCount)
+页面字段: .Title (string), .PageDescription (string), .BaseUrl (string), .IssueCreateURL (string), .TaskCreateURL (string), .Teamgroups ([]module/kanban.TeamgroupItem；MemberItem.TaskCount)
 ========================================================================== */}}
 {{ define "page_css" }}
 <link rel="stylesheet" href="{{ asset "/static/css/kanban/common.css" }}">
@@ -15,7 +15,7 @@
 {{ define "content" }}
 <div class="po-board">
   <div class="page-hdr">
-    <h2>工作看板</h2>
+    <h2>{{ .Title }}</h2>
     <div class="board-switch" role="tablist" aria-label="看板类型">
       <a href="/kanban/story" role="tab" aria-selected="false">需求看板</a>
       <a href="/kanban/task" class="active" role="tab" aria-selected="true">任务看板</a>

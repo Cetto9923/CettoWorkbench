@@ -32,17 +32,6 @@
   flex-shrink: 0;
 }
 
-.po-home .page-hdr-meta {
-  margin: 0;
-  font-size: 11px;
-  color: var(--po-t3);
-  flex: 1 1 auto;
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .po-home .home-summary {
   display: inline-flex;
   align-items: stretch;

@@ -95,8 +95,8 @@ func (h *Handler) Home(c *gin.Context) {
 	}
 
 	render.Page(c, http.StatusOK, constants.TEMPLATE_PO_HOME, gin.H{
-		"Title":             "工作台首页",
-		"PageTitle":         "工作台首页",
+		"Title":             "首页",
+		"PageDescription":   "待办事项与需求进度",
 		"ValueStreamStages": resp.Stages,
 		"VersionWindows":    resp.VersionWindows,
 		"LaunchWindowsJSON": launchWindowsJSON,

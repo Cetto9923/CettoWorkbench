@@ -42,7 +42,7 @@ func NewHandler(svc *Service, logger *zap.Logger) *Handler {
 // RegisterRoutes 注册工作看板路由（挂载在已配置登录与操作日志的中间件组上）。
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g := rg.Group("/kanban")
-	g.Use(middleware.ActiveNav("/kanban/story"))
+	g.Use(middleware.ActiveNav("/kanban/task"))
 	g.GET("/story", middleware.RequirePerm(perm.KanbanStory), h.Story)
 	g.GET("/story/demands", middleware.RequirePerm(perm.KanbanStory), h.Demands)
 	g.GET("/task", middleware.RequirePerm(perm.KanbanStory), h.Task)
@@ -64,11 +64,11 @@ func (h *Handler) Story(c *gin.Context) {
 	}
 
 	render.Page(c, http.StatusOK, constants.TEMPLATE_KANBAN_STORY, gin.H{
-		"Title":          "工作看板",
-		"PageTitle":      "工作看板",
-		"BaseUrl":        "/kanban/story",
-		"IssueCreateURL": zentao.URL("issue", "create"),
-		"Teamgroups":     teamgroups,
+		"Title":           "需求看板",
+		"PageDescription": "按任务状态与敏捷小组执行跟进看板",
+		"BaseUrl":         "/kanban/story",
+		"IssueCreateURL":  zentao.URL("issue", "create"),
+		"Teamgroups":      teamgroups,
 	})
 }
 
@@ -84,12 +84,12 @@ func (h *Handler) Task(c *gin.Context) {
 	}
 
 	render.Page(c, http.StatusOK, constants.TEMPLATE_KANBAN_TASK, gin.H{
-		"Title":          "工作看板",
-		"PageTitle":      "工作看板",
-		"BaseUrl":        "/kanban/task",
-		"IssueCreateURL": zentao.URL("issue", "create"),
-		"TaskCreateURL":  zentao.URL("task", "create", "executionID=0&storyID=0&moduleID=0"),
-		"Teamgroups":     teamgroups,
+		"Title":           "任务看板",
+		"PageDescription": "按任务状态与敏捷小组执行跟进看板",
+		"BaseUrl":         "/kanban/task",
+		"IssueCreateURL":  zentao.URL("issue", "create"),
+		"TaskCreateURL":   zentao.URL("task", "create", "executionID=0&storyID=0&moduleID=0"),
+		"Teamgroups":      teamgroups,
 	})
 }
 

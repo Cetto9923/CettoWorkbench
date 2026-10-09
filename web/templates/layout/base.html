@@ -55,7 +55,10 @@
   </div>
 
   {{ if not .HideChrome }}
-  <nav class="bottom-tabbar" id="bottom-tabbar" aria-label="已打开工作页签"></nav>
+  <footer class="bottom-tabbar" id="bottom-tabbar" aria-label="已打开工作页签">
+    <nav class="bottom-tabbar-tabs" id="workbench-tabbar" aria-label="页签列表"></nav>
+    <div class="bottom-tab-actions" id="workbench-tab-actions"></div>
+  </footer>
   {{ end }}
 
   <div class="toast-container" id="toast-container"></div>
