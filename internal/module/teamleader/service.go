@@ -202,9 +202,8 @@ func (s *Service) assembleHierarchy(
 		uniqueAccounts[acc] = true
 	}
 
-	// 判断当前用户是否具备全团队管理权限 (超管 / 团队长 / 团队PO)
-	hasTeamAdmin := isSuperAdmin ||
-		(parent != nil && (parent.Manager == actorAccount || parent.PO == actorAccount))
+	// 判断当前用户是否具备全团队管理权限 (超管 / 团队长，团队PO暂不自动等同于团队长管理权限)
+	hasTeamAdmin := isSuperAdmin || (parent != nil && strings.TrimSpace(parent.Manager) == actorAccount)
 
 	// 组装各个子小组 DTO
 	subDTOs := make([]SubGroupDTO, 0, len(subGroups))
@@ -212,10 +211,11 @@ func (s *Service) assembleHierarchy(
 		rawMembers := cleanedGroupMembers[g.ID]
 		totalGroupCount := len(rawMembers)
 
-		// 检查当前账号是否对当前子小组有明细查看权 (全团队管理权 / 该小组长 / 该小组PO / 该小组成员)
+		// 检查当前账号是否对当前子小组有明细查看权 (全团队管理权 / 团队PO / 该小组长 / 该小组PO / 该小组成员)
 		canViewDetail := hasTeamAdmin ||
-			g.Manager == actorAccount ||
-			g.PO == actorAccount ||
+			(parent != nil && strings.TrimSpace(parent.PO) == actorAccount) ||
+			strings.TrimSpace(g.Manager) == actorAccount ||
+			strings.TrimSpace(g.PO) == actorAccount ||
 			accountGroupMap[actorAccount][g.ID]
 
 		memberDTOs := make([]TeamMemberDTO, 0)

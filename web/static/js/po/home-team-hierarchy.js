@@ -45,12 +45,16 @@
     const container = document.getElementById("teamHierarchyContainer");
     if (!container) return;
 
+    state.requestSeq = (state.requestSeq || 0) + 1;
+    const reqSeq = state.requestSeq;
+
     state.isLoading = true;
     container.innerHTML = '<div class="state-placeholder">正在加载敏捷团队与小组层级…</div>';
 
     try {
       const url = teamID > 0 ? "/team/hierarchy?teamId=" + teamID : "/team/hierarchy";
       const resp = await fetch(url, { credentials: "same-origin" });
+      if (reqSeq !== state.requestSeq) return;
       if (resp.status === 403) {
         container.innerHTML =
           '<div class="th-empty-card" role="alert"><div class="th-empty-icon"><i class="fas fa-ban"></i></div><p class="th-empty-text">您无权访问该团队数据</p></div>';
@@ -60,6 +64,7 @@
         throw new Error("HTTP " + resp.status);
       }
       const json = await resp.json();
+      if (reqSeq !== state.requestSeq) return;
       if (!json.success || !json.data) {
         throw new Error(json.message || "数据加载失败");
       }
@@ -84,6 +89,7 @@
 
       renderHierarchy();
     } catch (err) {
+      if (reqSeq !== state.requestSeq) return;
       container.innerHTML =
         '<div class="th-empty-card" role="alert"><div class="th-empty-icon"><i class="fas fa-circle-exclamation"></i></div><p class="th-empty-text">' +
         esc(err.message || "加载团队层级数据失败") +
@@ -95,7 +101,9 @@
         });
       }
     } finally {
-      state.isLoading = false;
+      if (reqSeq === state.requestSeq) {
+        state.isLoading = false;
+      }
     }
   }
 

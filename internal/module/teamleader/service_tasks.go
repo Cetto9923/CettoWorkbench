@@ -39,6 +39,11 @@ func (s *Service) ListGroupTasks(ctx context.Context, actor *model.User, req Lis
 		return nil, errorx.New(errorx.ErrCodeForbidden, "无权访问该团队数据")
 	}
 
+	parent, err := s.repo.FindParentTeamByID(ctx, req.TeamID)
+	if err != nil {
+		return nil, errorx.Wrap(errorx.ErrCodeInternal, "查询团队信息失败", err)
+	}
+
 	subGroups, err := s.repo.FindSubGroupsByParentID(ctx, req.TeamID)
 	if err != nil {
 		return nil, errorx.Wrap(errorx.ErrCodeInternal, "查询子小组失败", err)
@@ -54,26 +59,97 @@ func (s *Service) ListGroupTasks(ctx context.Context, actor *model.User, req Lis
 	}
 	memberAccounts := extractMemberAccounts(memberRows)
 
-	account := strings.TrimSpace(req.Account)
-	if account != "" && account != "all" {
-		return s.fetchMemberLevelTasks(ctx, targetGroup, account, memberAccounts)
-	}
-	return s.fetchGroupLevelTasks(ctx, targetGroup, memberAccounts)
-}
+	actorAccount := strings.TrimSpace(actor.Account)
+	isSuperAdmin := actor.IsSuperAdmin
+	isTeamLeader := isSuperAdmin || (parent != nil && strings.TrimSpace(parent.Manager) == actorAccount)
+	isGroupLeader := strings.TrimSpace(targetGroup.Manager) == actorAccount
+	isGroupPO := strings.TrimSpace(targetGroup.PO) == actorAccount
+	isGroupMember := containsString(memberAccounts, actorAccount)
 
-func (s *Service) fetchGroupLevelTasks(ctx context.Context, group *TeamgroupRaw, memberAccounts []string) (*GroupTasksResp, error) {
-	confirmedRows, err := s.repo.FindGroupTasksByDemand(ctx, group.ID, 200)
+	// 1. 小组级访问控制：团队长、本组组长、本组PO、本组正式成员有权访问该小组
+	if !isTeamLeader && !isGroupLeader && !isGroupPO && !isGroupMember {
+		return nil, errorx.New(errorx.ErrCodeForbidden, "无权访问该小组任务数据")
+	}
+
+	// 2. 成员级筛选鉴权：
+	targetAccount := strings.TrimSpace(req.Account)
+	if targetAccount != "" && targetAccount != "all" {
+		if !containsString(memberAccounts, targetAccount) {
+			return nil, errorx.New(errorx.ErrCodeForbidden, "无权查看该成员或该成员不属于当前小组")
+		}
+		// 普通成员只能查看本人任务，不可指定组内其他成员
+		if !isTeamLeader && !isGroupLeader && !isGroupPO && targetAccount != actorAccount {
+			return nil, errorx.New(errorx.ErrCodeForbidden, "普通成员仅可查看本人任务，无权查询其他成员任务")
+		}
+	}
+
+	// 3. 待核查任务可见性范围判定：
+	// 团队长、小组长可核查本组全部组员的待核查任务；普通成员仅能核查指派给本人的待核查任务
+	var pendingAccounts []string
+	if isTeamLeader || isGroupLeader {
+		if targetAccount != "" && targetAccount != "all" {
+			pendingAccounts = []string{targetAccount}
+		} else {
+			pendingAccounts = memberAccounts
+		}
+	} else if isGroupMember {
+		pendingAccounts = []string{actorAccount}
+	}
+
+	// 4. 标准分页与时间窗口定义
+	now := time.Now()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	thirtyDaysAgo := today.AddDate(0, 0, -30)
+
+	page := req.Page
+	if page <= 0 {
+		page = 1
+	}
+	pageSize := req.PageSize
+	if pageSize <= 0 {
+		pageSize = 50
+	} else if pageSize > 200 {
+		pageSize = 200
+	}
+	offset := (page - 1) * pageSize
+
+	pendingPage := req.PendingPage
+	if pendingPage <= 0 {
+		pendingPage = 1
+	}
+	pendingPageSize := req.PendingPageSize
+	if pendingPageSize <= 0 {
+		pendingPageSize = 20
+	} else if pendingPageSize > 200 {
+		pendingPageSize = 200
+	}
+	pendingOffset := (pendingPage - 1) * pendingPageSize
+
+	// 5. 真实数据库指标统计
+	summary, err := s.repo.CountGroupConfirmedTasks(ctx, targetGroup.ID, targetAccount, thirtyDaysAgo, today)
 	if err != nil {
-		return nil, errorx.Wrap(errorx.ErrCodeInternal, "查询正式小组任务失败", err)
+		return nil, errorx.Wrap(errorx.ErrCodeInternal, "统计小组任务指标失败", err)
 	}
 
-	pendingRows, err := s.repo.FindPendingTasksByAccounts(ctx, memberAccounts, 200)
+	pendingTotal, err := s.repo.CountPendingTasksByAccounts(ctx, pendingAccounts)
+	if err != nil {
+		return nil, errorx.Wrap(errorx.ErrCodeInternal, "统计待核查任务失败", err)
+	}
+	summary.PendingReviewTotal = pendingTotal
+
+	// 6. 分页查询正式研发任务
+	confirmedRows, err := s.repo.FindGroupConfirmedTasksPaged(ctx, targetGroup.ID, targetAccount, thirtyDaysAgo, pageSize, offset)
+	if err != nil {
+		return nil, errorx.Wrap(errorx.ErrCodeInternal, "查询小组研发任务失败", err)
+	}
+
+	// 7. 分页查询待核查候选任务
+	pendingRows, err := s.repo.FindPendingTasksByAccountsPaged(ctx, pendingAccounts, pendingPageSize, pendingOffset)
 	if err != nil {
 		return nil, errorx.Wrap(errorx.ErrCodeInternal, "查询待核查任务失败", err)
 	}
 
 	accountMap := s.resolveTaskAccounts(ctx, confirmedRows, pendingRows)
-	today := time.Now().Truncate(24 * time.Hour)
 
 	confirmedItems := make([]GroupTaskItem, 0, len(confirmedRows))
 	for _, row := range confirmedRows {
@@ -87,123 +163,60 @@ func (s *Service) fetchGroupLevelTasks(ctx context.Context, group *TeamgroupRaw,
 		pendingItems = append(pendingItems, it)
 	}
 
-	columns, summary := assembleKanbanColumns(confirmedItems, len(pendingItems))
+	cols := assembleKanbanColumns(confirmedItems)
+	timeRangeLabel := "已完成任务统计近30天，逾期仅统计未完成任务"
+
 	return &GroupTasksResp{
-		GroupID:            group.ID,
-		GroupName:          group.Name,
-		Summary:            summary,
-		Columns:            columns,
+		GroupID:        targetGroup.ID,
+		GroupName:      targetGroup.Name,
+		TimeRangeLabel: timeRangeLabel,
+		Summary:        summary,
+		Columns:        cols,
+		ConfirmedPagination: TaskPaginationInfo{
+			Page:     page,
+			PageSize: pageSize,
+			Total:    summary.ConfirmedTotal,
+		},
 		PendingReviewTasks: pendingItems,
+		PendingPagination: TaskPaginationInfo{
+			Page:     pendingPage,
+			PageSize: pendingPageSize,
+			Total:    pendingTotal,
+		},
 	}, nil
 }
 
-func (s *Service) fetchMemberLevelTasks(ctx context.Context, group *TeamgroupRaw, targetAccount string, memberAccounts []string) (*GroupTasksResp, error) {
-	rows, err := s.repo.FindAllTasksByAccount(ctx, targetAccount, 200)
-	if err != nil {
-		return nil, errorx.Wrap(errorx.ErrCodeInternal, "查询成员任务失败", err)
-	}
-
-	accountMap := s.resolveTaskAccounts(ctx, rows, nil)
-	groupNameMap := s.resolveOtherGroupNames(ctx, rows, group.ID)
-	today := time.Now().Truncate(24 * time.Hour)
-	currentGroupIDStr := strconv.FormatUint(uint64(group.ID), 10)
-
-	var confirmedItems []GroupTaskItem
-	var pendingItems []GroupTaskItem
-
-	for _, row := range rows {
-		tg := strings.TrimSpace(row.DemandTeamGroup)
-		if tg == currentGroupIDStr {
-			confirmedItems = append(confirmedItems, buildGroupTaskItem(row, accountMap, today, "confirmed", ""))
-		} else if tg != "" {
-			otherName := groupNameMap[parseUintOrZero(tg)]
-			confirmedItems = append(confirmedItems, buildGroupTaskItem(row, accountMap, today, "confirmed", otherName))
-		} else {
-			pendingItems = append(pendingItems, buildGroupTaskItem(row, accountMap, today, "pending", ""))
-		}
-	}
-
-	columns, summary := assembleKanbanColumns(confirmedItems, len(pendingItems))
-	return &GroupTasksResp{
-		GroupID:            group.ID,
-		GroupName:          group.Name,
-		Summary:            summary,
-		Columns:            columns,
-		PendingReviewTasks: pendingItems,
-	}, nil
-}
-
-func buildGroupTaskItem(row TaskDataRow, accountMap map[string]string, today time.Time, attr, srcGroup string) GroupTaskItem {
-	ownerAcc := strings.TrimSpace(row.AssignedTo)
-	if row.Status == "done" && strings.TrimSpace(row.FinishedBy) != "" {
-		ownerAcc = strings.TrimSpace(row.FinishedBy)
-	}
-	ownerName := accountMap[ownerAcc]
-	if ownerName == "" {
-		ownerName = ownerAcc
-	}
-
-	deadlineStr := ""
-	overdue := false
-	if row.Deadline != nil && !row.Deadline.IsZero() {
-		deadlineStr = row.Deadline.Format("2006-01-02")
-		if row.Deadline.Before(today) && row.Status != "done" {
-			overdue = true
-		}
-	}
-
-	return GroupTaskItem{
-		ID:              row.ID,
-		DisplayID:       fmt.Sprintf("#%d", row.ID),
-		Title:           row.Name,
-		Status:          row.Status,
-		Type:            row.Type,
-		StoryID:         row.StoryID,
-		StoryTitle:      row.StoryTitle,
-		Owner:           ownerName,
-		OwnerAccount:    ownerAcc,
-		Deadline:        deadlineStr,
-		Overdue:         overdue,
-		URL:             zentao.URL("task", "view", fmt.Sprintf("taskID=%d", row.ID)),
-		Attribution:     attr,
-		SourceGroupName: srcGroup,
-		IsPendingReview: attr == "pending",
-	}
-}
-
-func assembleKanbanColumns(items []GroupTaskItem, pendingTotal int) ([]GroupTaskColumn, GroupTaskSummary) {
+func assembleKanbanColumns(items []GroupTaskItem) []GroupTaskColumn {
 	waitItems := make([]GroupTaskItem, 0, len(items))
 	doingItems := make([]GroupTaskItem, 0, len(items))
 	doneItems := make([]GroupTaskItem, 0, len(items))
 
-	summary := GroupTaskSummary{
-		ConfirmedTotal:     len(items),
-		PendingReviewTotal: pendingTotal,
-	}
-
 	for _, it := range items {
-		if it.Overdue {
-			summary.ConfirmedOverdue++
-		}
 		switch it.Status {
 		case "wait":
-			summary.ConfirmedWait++
 			waitItems = append(waitItems, it)
 		case "doing":
-			summary.ConfirmedDoing++
 			doingItems = append(doingItems, it)
 		case "done":
-			summary.ConfirmedDone++
 			doneItems = append(doneItems, it)
 		}
 	}
 
-	cols := []GroupTaskColumn{
+	return []GroupTaskColumn{
 		{Key: "wait", Name: "未开始", Count: len(waitItems), Items: waitItems},
 		{Key: "doing", Name: "进行中", Count: len(doingItems), Items: doingItems},
 		{Key: "done", Name: "已完成", Count: len(doneItems), Items: doneItems},
 	}
-	return cols, summary
+}
+
+func containsString(slice []string, val string) bool {
+	val = strings.TrimSpace(val)
+	for _, it := range slice {
+		if strings.TrimSpace(it) == val {
+			return true
+		}
+	}
+	return false
 }
 
 func isTeamAuthorized(teamID uint, authorized []TeamOptionDTO) bool {
@@ -280,3 +293,40 @@ func parseUintOrZero(s string) uint {
 	}
 	return uint(v)
 }
+
+func buildGroupTaskItem(row TaskDataRow, accountMap map[string]string, today time.Time, attr, srcGroup string) GroupTaskItem {
+	ownerAcc := strings.TrimSpace(row.AssignedTo)
+	if row.Status == "done" && strings.TrimSpace(row.FinishedBy) != "" {
+		ownerAcc = strings.TrimSpace(row.FinishedBy)
+	}
+	ownerName := accountMap[ownerAcc]
+	if ownerName == "" {
+		ownerName = ownerAcc
+	}
+	deadlineStr := ""
+	overdue := false
+	if row.Deadline != nil && !row.Deadline.IsZero() {
+		deadlineStr = row.Deadline.Format("2006-01-02")
+		if row.Deadline.Before(today) && row.Status != "done" {
+			overdue = true
+		}
+	}
+	return GroupTaskItem{
+		ID:              row.ID,
+		DisplayID:       fmt.Sprintf("#%d", row.ID),
+		Title:           row.Name,
+		Status:          row.Status,
+		Type:            row.Type,
+		StoryID:         row.StoryID,
+		StoryTitle:      row.StoryTitle,
+		Owner:           ownerName,
+		OwnerAccount:    ownerAcc,
+		Deadline:        deadlineStr,
+		Overdue:         overdue,
+		URL:             zentao.URL("task", "view", fmt.Sprintf("taskID=%d", row.ID)),
+		Attribution:     attr,
+		SourceGroupName: srcGroup,
+		IsPendingReview: attr == "pending",
+	}
+}
+

@@ -438,14 +438,13 @@
       }
 
       if (target.closest("#teamBatchUrgeBtn")) {
-        showTeamToast("已向 2 位未按时提交周报的项目负责人发送催报提醒通知！");
+        showTeamToast("【二期规划】周报催报功能尚未接入后端服务，未执行实际提醒");
         return;
       }
 
       const urgeSingle = target.closest('[data-action="urgeSingle"]');
       if (urgeSingle) {
-        const owner = urgeSingle.getAttribute("data-owner") || "项目负责人";
-        showTeamToast("已向负责人 [" + owner + "] 发送周报催办提醒！");
+        showTeamToast("【二期规划】催报功能尚未接入后端服务，未执行实际提醒");
         return;
       }
 

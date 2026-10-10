@@ -201,50 +201,133 @@ type TaskDataRow struct {
 	AssignedTo      string     `gorm:"column:assignedTo"`
 	FinishedBy      string     `gorm:"column:finishedBy"`
 	Deadline        *time.Time `gorm:"column:deadline"`
+	FinishedDate    *time.Time `gorm:"column:finishedDate"`
 	StoryTitle      string     `gorm:"column:storyTitle"`
 	DemandTeamGroup string     `gorm:"column:demandTeamGroup"`
 }
 
-// FindGroupTasksByDemand 查询明确归属于指定小组的需求研发任务（严格参数化）。
-func (r *Repo) FindGroupTasksByDemand(ctx context.Context, groupID uint, limit int) ([]TaskDataRow, error) {
+// CountGroupConfirmedTasks 真实统计小组研发任务指标（区分状态、近30天完成及未完成逾期）。
+func (r *Repo) CountGroupConfirmedTasks(ctx context.Context, groupID uint, account string, thirtyDaysAgo, today time.Time) (GroupTaskSummary, error) {
+	var summary GroupTaskSummary
+	if r == nil || r.db == nil || groupID == 0 {
+		return summary, nil
+	}
+	gidStr := strconv.FormatUint(uint64(groupID), 10)
+	account = strings.TrimSpace(account)
+
+	type countResult struct {
+		WaitCount    int `gorm:"column:wait_count"`
+		DoingCount   int `gorm:"column:doing_count"`
+		DoneCount    int `gorm:"column:done_count"`
+		OverdueCount int `gorm:"column:overdue_count"`
+	}
+	var res countResult
+
+	query := r.db.WithContext(ctx).
+		Table("zt_demand AS d").
+		Select(`
+			COUNT(CASE WHEN t.status = 'wait' THEN 1 END) AS wait_count,
+			COUNT(CASE WHEN t.status = 'doing' THEN 1 END) AS doing_count,
+			COUNT(CASE WHEN t.status = 'done' AND (t.finishedDate >= ? OR (t.finishedDate IS NULL AND t.assignedDate >= ?)) THEN 1 END) AS done_count,
+			COUNT(CASE WHEN t.status IN ('wait', 'doing') AND t.deadline IS NOT NULL AND t.deadline != '0000-00-00' AND t.deadline < ? THEN 1 END) AS overdue_count
+		`, thirtyDaysAgo, thirtyDaysAgo, today).
+		Joins("INNER JOIN zt_story AS s ON s.fromDemand = d.id AND s.deleted = '0'").
+		Joins("INNER JOIN zt_task AS t ON t.story = s.id AND t.deleted = '0'").
+		Where("d.deleted = '0' AND d.teamGroup = ?", gidStr)
+
+	if account != "" && account != "all" {
+		query = query.Where("(t.assignedTo = ? OR (t.status = 'done' AND t.finishedBy = ?))", account, account)
+	}
+
+	if err := query.Scan(&res).Error; err != nil {
+		return summary, err
+	}
+
+	summary.ConfirmedWait = res.WaitCount
+	summary.ConfirmedDoing = res.DoingCount
+	summary.ConfirmedDone = res.DoneCount
+	summary.ConfirmedOverdue = res.OverdueCount
+	summary.ConfirmedTotal = res.WaitCount + res.DoingCount + res.DoneCount
+	return summary, nil
+}
+
+// FindGroupConfirmedTasksPaged 分页查询明确归属于指定小组的需求研发任务。
+func (r *Repo) FindGroupConfirmedTasksPaged(ctx context.Context, groupID uint, account string, thirtyDaysAgo time.Time, limit, offset int) ([]TaskDataRow, error) {
 	if r == nil || r.db == nil || groupID == 0 {
 		return []TaskDataRow{}, nil
 	}
-	if limit <= 0 || limit > 500 {
-		limit = 200
+	if limit <= 0 || limit > 200 {
+		limit = 50
+	}
+	if offset < 0 {
+		offset = 0
 	}
 	gidStr := strconv.FormatUint(uint64(groupID), 10)
+	account = strings.TrimSpace(account)
+
 	var rows []TaskDataRow
-	err := r.db.WithContext(ctx).
+	query := r.db.WithContext(ctx).
 		Table("zt_demand AS d").
-		Select(`t.id, t.name, t.type, t.status, t.story, t.assignedTo, t.finishedBy, t.deadline,
+		Select(`t.id, t.name, t.type, t.status, t.story, t.assignedTo, t.finishedBy, t.deadline, t.finishedDate,
 			IFNULL(s.title, '') AS storyTitle,
 			d.teamGroup AS demandTeamGroup`).
 		Joins("INNER JOIN zt_story AS s ON s.fromDemand = d.id AND s.deleted = '0'").
 		Joins("INNER JOIN zt_task AS t ON t.story = s.id AND t.deleted = '0'").
 		Where("d.deleted = '0' AND d.teamGroup = ?", gidStr).
-		Where("(t.status IN ('wait', 'doing') OR (t.status = 'done'))").
-		Order("t.id DESC").
-		Limit(limit).
-		Scan(&rows).Error
+		Where("(t.status IN ('wait', 'doing') OR (t.status = 'done' AND (t.finishedDate >= ? OR (t.finishedDate IS NULL AND t.assignedDate >= ?))))", thirtyDaysAgo, thirtyDaysAgo)
+
+	if account != "" && account != "all" {
+		query = query.Where("(t.assignedTo = ? OR (t.status = 'done' AND t.finishedBy = ?))", account, account)
+	}
+
+	err := query.Order("t.id DESC").Limit(limit).Offset(offset).Scan(&rows).Error
 	if err != nil {
 		return nil, err
 	}
 	return rows, nil
 }
 
-// FindPendingTasksByAccounts 查询小组成员名下待核查归属的候选任务（无需求或需求未指定小组）。
-func (r *Repo) FindPendingTasksByAccounts(ctx context.Context, accounts []string, limit int) ([]TaskDataRow, error) {
+// CountPendingTasksByAccounts 统计待核查候选任务总数。
+func (r *Repo) CountPendingTasksByAccounts(ctx context.Context, accounts []string) (int, error) {
+	if r == nil || r.db == nil || len(accounts) == 0 {
+		return 0, nil
+	}
+	var count int64
+	err := r.db.WithContext(ctx).
+		Table("zt_task AS t").
+		Joins("LEFT JOIN zt_story AS s ON s.id = t.story AND s.deleted = '0'").
+		Joins("LEFT JOIN zt_demand AS d ON d.id = s.fromDemand AND d.deleted = '0'").
+		Where("t.deleted = '0' AND t.status IN ('wait', 'doing')").
+		Where("t.assignedTo IN ?", accounts).
+		Where(`(
+			t.story = 0
+			OR s.id IS NULL
+			OR d.id IS NULL
+			OR d.teamGroup = ''
+			OR d.teamGroup IS NULL
+		)`).
+		Count(&count).Error
+	if err != nil {
+		return 0, err
+	}
+	return int(count), nil
+}
+
+// FindPendingTasksByAccountsPaged 分页查询小组成员名下待核查归属的候选任务。
+func (r *Repo) FindPendingTasksByAccountsPaged(ctx context.Context, accounts []string, limit, offset int) ([]TaskDataRow, error) {
 	if r == nil || r.db == nil || len(accounts) == 0 {
 		return []TaskDataRow{}, nil
 	}
-	if limit <= 0 || limit > 500 {
-		limit = 200
+	if limit <= 0 || limit > 200 {
+		limit = 20
+	}
+	if offset < 0 {
+		offset = 0
 	}
 	var rows []TaskDataRow
 	err := r.db.WithContext(ctx).
 		Table("zt_task AS t").
-		Select(`t.id, t.name, t.type, t.status, t.story, t.assignedTo, t.finishedBy, t.deadline,
+		Select(`t.id, t.name, t.type, t.status, t.story, t.assignedTo, t.finishedBy, t.deadline, t.finishedDate,
 			IFNULL(s.title, '') AS storyTitle,
 			IFNULL(d.teamGroup, '') AS demandTeamGroup`).
 		Joins("LEFT JOIN zt_story AS s ON s.id = t.story AND s.deleted = '0'").
@@ -260,37 +343,7 @@ func (r *Repo) FindPendingTasksByAccounts(ctx context.Context, accounts []string
 		)`).
 		Order("t.id DESC").
 		Limit(limit).
-		Scan(&rows).Error
-	if err != nil {
-		return nil, err
-	}
-	return rows, nil
-}
-
-// FindAllTasksByAccount 查询特定成员负责的所有任务（包含跨组任务及归属信息）。
-func (r *Repo) FindAllTasksByAccount(ctx context.Context, account string, limit int) ([]TaskDataRow, error) {
-	account = strings.TrimSpace(account)
-	if r == nil || r.db == nil || account == "" {
-		return []TaskDataRow{}, nil
-	}
-	if limit <= 0 || limit > 500 {
-		limit = 200
-	}
-	var rows []TaskDataRow
-	err := r.db.WithContext(ctx).
-		Table("zt_task AS t").
-		Select(`t.id, t.name, t.type, t.status, t.story, t.assignedTo, t.finishedBy, t.deadline,
-			IFNULL(s.title, '') AS storyTitle,
-			IFNULL(d.teamGroup, '') AS demandTeamGroup`).
-		Joins("LEFT JOIN zt_story AS s ON s.id = t.story AND s.deleted = '0'").
-		Joins("LEFT JOIN zt_demand AS d ON d.id = s.fromDemand AND d.deleted = '0'").
-		Where("t.deleted = '0'").
-		Where(`(
-			(t.assignedTo = ? AND t.status IN ('wait', 'doing'))
-			OR (t.finishedBy = ? AND t.status = 'done')
-		)`, account, account).
-		Order("t.id DESC").
-		Limit(limit).
+		Offset(offset).
 		Scan(&rows).Error
 	if err != nil {
 		return nil, err

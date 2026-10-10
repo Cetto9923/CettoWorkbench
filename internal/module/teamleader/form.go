@@ -75,10 +75,14 @@ type TeamHierarchyResp struct {
 
 // ListGroupTasksReq 小组研发工作看板查询请求。
 type ListGroupTasksReq struct {
-	TeamID  uint   `form:"teamId"`
-	GroupID uint   `form:"groupId"`
-	Account string `form:"account"`
-	Scope   string `form:"scope"` // all | confirmed | pending
+	TeamID          uint   `form:"teamId"`
+	GroupID         uint   `form:"groupId"`
+	Account         string `form:"account"`
+	Scope           string `form:"scope"` // all | confirmed | pending
+	Page            int    `form:"page"`
+	PageSize        int    `form:"pageSize"`
+	PendingPage     int    `form:"pendingPage"`
+	PendingPageSize int    `form:"pendingPageSize"`
 }
 
 // Validate 校验小组任务查询参数。
@@ -91,6 +95,13 @@ func (r *ListGroupTasksReq) Validate() []FieldError {
 		errs = append(errs, FieldError{Field: "groupId", Message: "小组ID不能为空"})
 	}
 	return errs
+}
+
+// TaskPaginationInfo 任务分页元信息。
+type TaskPaginationInfo struct {
+	Page     int `json:"page"`
+	PageSize int `json:"pageSize"`
+	Total    int `json:"total"`
 }
 
 // GroupTaskItem 小组研发任务单卡。
@@ -122,20 +133,24 @@ type GroupTaskColumn struct {
 
 // GroupTaskSummary 小组任务指标概览（待核查任务严格与正式指标分离）。
 type GroupTaskSummary struct {
-	ConfirmedTotal     int `json:"confirmedTotal"`     // 正式任务总数
+	ConfirmedTotal     int `json:"confirmedTotal"`     // 正式任务总数 (wait+doing+近30天done)
 	ConfirmedWait      int `json:"confirmedWait"`      // 正式未开始
 	ConfirmedDoing     int `json:"confirmedDoing"`     // 正式进行中
-	ConfirmedDone      int `json:"confirmedDone"`      // 正式已完成
-	ConfirmedOverdue   int `json:"confirmedOverdue"`   // 正式逾期
+	ConfirmedDone      int `json:"confirmedDone"`      // 正式已完成 (近30天口径)
+	ConfirmedOverdue   int `json:"confirmedOverdue"`   // 正式逾期 (仅统计未完成任务)
 	PendingReviewTotal int `json:"pendingReviewTotal"` // 待核查候选任务总数（不计入正式指标）
 }
 
 // GroupTasksResp 小组研发工作看板响应。
 type GroupTasksResp struct {
-	GroupID            uint              `json:"groupId"`
-	GroupName          string            `json:"groupName"`
-	Summary            GroupTaskSummary  `json:"summary"`
-	Columns            []GroupTaskColumn `json:"columns"`
-	PendingReviewTasks []GroupTaskItem   `json:"pendingReviewTasks"` // 独立分离的待核查候选任务
+	GroupID             uint               `json:"groupId"`
+	GroupName           string             `json:"groupName"`
+	TimeRangeLabel      string             `json:"timeRangeLabel"` // 统计口径说明：已完成任务统计近30天，逾期仅统计未完成
+	Summary             GroupTaskSummary   `json:"summary"`
+	Columns             []GroupTaskColumn  `json:"columns"`
+	ConfirmedPagination TaskPaginationInfo `json:"confirmedPagination"`
+	PendingReviewTasks  []GroupTaskItem    `json:"pendingReviewTasks"` // 独立分离的待核查候选任务
+	PendingPagination   TaskPaginationInfo `json:"pendingPagination"`
 }
+
 

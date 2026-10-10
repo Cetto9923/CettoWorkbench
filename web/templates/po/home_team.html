@@ -97,11 +97,11 @@
           <button type="button" class="link team-matrix-link-btn" data-open-screen="scr_team_projects">团队项目大屏 ↗</button>
         </div>
         <div class="trio-body team-trio-body">
-          <div class="trio-big team-trio-big" id="teamProjectsCount">8<small>个在建</small></div>
+          <div class="trio-big team-trio-big" id="teamProjectsCount">--<small>个在建</small></div>
           <div class="trio-stats team-trio-stats" id="teamProjectsStats">
-            <span class="chip red">2 延期风险</span>
-            <span class="chip orange">3 临期节点</span>
-            <span class="chip green">3 正常推进</span>
+            <span class="chip grey">-- 延期风险</span>
+            <span class="chip grey">-- 临期节点</span>
+            <span class="chip grey">-- 正常推进</span>
           </div>
         </div>
         <div class="trio-foot team-trio-foot">
@@ -120,11 +120,11 @@
           <button type="button" class="link team-matrix-link-btn" data-open-screen="scr_team_tickets">团队工单大屏 ↗</button>
         </div>
         <div class="trio-body team-trio-body">
-          <div class="trio-big team-trio-big" id="teamTicketsCount">29<small>单在途</small></div>
+          <div class="trio-big team-trio-big" id="teamTicketsCount">--<small>单在途</small></div>
           <div class="trio-stats team-trio-stats" id="teamTicketsStats">
-            <span class="chip red">4 在途延期</span>
-            <span class="chip orange">11 待排期</span>
-            <span class="chip green">本月上线 12</span>
+            <span class="chip grey">-- 在途延期</span>
+            <span class="chip grey">-- 待排期</span>
+            <span class="chip grey">本月上线 --</span>
           </div>
         </div>
         <div class="trio-foot team-trio-foot">
@@ -143,16 +143,16 @@
           <button type="button" class="link team-matrix-link-btn" data-open-screen="rep_weekly_list">进入周报中心 ↗</button>
         </div>
         <div class="trio-body team-trio-body">
-          <div class="trio-big team-trio-big weekly-pending" id="teamWeeklyPending">4<small>份待办</small></div>
+          <div class="trio-big team-trio-big weekly-pending" id="teamWeeklyPending">--<small>份待办</small></div>
           <div class="trio-stats team-trio-stats" id="teamWeeklyStats">
-            <span class="chip red">2 份未提交</span>
-            <span class="chip orange">2 份待确认</span>
-            <span class="chip green">4 份已归档</span>
+            <span class="chip grey">-- 份未提交</span>
+            <span class="chip grey">-- 份待确认</span>
+            <span class="chip grey">-- 份已归档</span>
           </div>
         </div>
         <div class="trio-foot team-trio-foot">
-          <span id="teamWeeklySummary">应交 8 份 · 完成率 50%</span>
-          <button type="button" class="btn small soft" id="teamBatchUrgeBtn"><i class="fas fa-bell" aria-hidden="true"></i> 一键催报未交项</button>
+          <span id="teamWeeklySummary">周报例行统计（二期规划）</span>
+          <button type="button" class="btn small soft" id="teamBatchUrgeBtn" disabled title="二期规划功能"><i class="fas fa-bell" aria-hidden="true"></i> 一键催报未交项（二期）</button>
         </div>
       </div>
     </div>
@@ -168,57 +168,14 @@
             <div class="panel-title">
               <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
               <span>今日重点关注与管理行动</span>
-              <span class="chip red" id="teamActionCountBadge">3 项需干预</span>
+              <span class="chip grey" id="teamActionCountBadge">二期规划</span>
             </div>
             <span class="panel-sub">周报异常、项目延期与阻塞合流处理，统一按紧急度排队</span>
           </div>
         </div>
 
         <div class="action-stream team-action-stream" id="teamActionStreamList">
-          <article class="action-card team-action-card critical">
-            <div class="action-left team-action-left">
-              <div class="action-header team-action-header">
-                <span class="action-type team-action-type weekly">周报例行</span>
-                <strong class="action-title team-action-title">手机银行 8.0 项目周报尚未提交</strong>
-              </div>
-              <div class="action-meta team-action-meta">责任人：<strong>王睿</strong> ｜ 截止周五 18:00，已逾期 14 小时未提报</div>
-            </div>
-            <div class="action-ops team-action-ops">
-              <button type="button" class="btn small danger-soft" data-action="urgeSingle" data-owner="王睿" data-target="手机银行 8.0">
-                <i class="fas fa-bell" aria-hidden="true"></i> 催办周报
-              </button>
-            </div>
-          </article>
-
-          <article class="action-card team-action-card warning">
-            <div class="action-left team-action-left">
-              <div class="action-header team-action-header">
-                <span class="action-type team-action-type review">周报待审</span>
-                <strong class="action-title team-action-title">普惠金融二期周报已提交，待团队长审阅</strong>
-              </div>
-              <div class="action-meta team-action-meta">责任人：<strong>张航</strong> ｜ 包含 1 项外部接口延期风险披露</div>
-            </div>
-            <div class="action-ops team-action-ops">
-              <button type="button" class="btn small primary" data-action="reviewWeekly" data-target="普惠金融二期">
-                <i class="fas fa-check" aria-hidden="true"></i> 确认周报
-              </button>
-            </div>
-          </article>
-
-          <article class="action-card team-action-card todo">
-            <div class="action-left team-action-left">
-              <div class="action-header team-action-header">
-                <span class="action-type team-action-type delay">进度风险</span>
-                <strong class="action-title team-action-title">对公二代支付批量对账模块开发逾期 2 天</strong>
-              </div>
-              <div class="action-meta team-action-meta">责任人：<strong>付昊</strong> ｜ 联调环境数据库表锁导致集成阻塞</div>
-            </div>
-            <div class="action-ops team-action-ops">
-              <button type="button" class="btn small soft" data-action="openProjectDrawer" data-target="对公二代支付">
-                <i class="fas fa-arrow-right" aria-hidden="true"></i> 查看原因
-              </button>
-            </div>
-          </article>
+          <div class="state-placeholder">【二期规划】晨会重点关注与管理行动流水线尚未接入生产数据</div>
         </div>
       </section>
 
@@ -236,13 +193,11 @@
         </div>
 
         <div class="timeline-card team-timeline-card" id="teamLaunchTimelineList">
-          <div class="timeline-item team-timeline-item"><span class="timeline-date team-timeline-date">10-18</span><span class="timeline-name team-timeline-name" title="对公二代支付系统重构 - 10月第三批">对公二代支付系统重构 - 10月第三批</span><span class="chip red">投产中</span></div>
-          <div class="timeline-item team-timeline-item"><span class="timeline-date team-timeline-date">10-25</span><span class="timeline-name team-timeline-name" title="企业手机银行 8.0 阶段迭代上线">企业手机银行 8.0 阶段迭代上线</span><span class="chip green">正常推进</span></div>
-          <div class="timeline-item team-timeline-item"><span class="timeline-date team-timeline-date">11-08</span><span class="timeline-name team-timeline-name" title="普惠信贷核心服务双活演练上线">普惠信贷核心服务双活演练上线</span><span class="chip orange">待演练</span></div>
+          <div class="state-placeholder">【二期规划】近 30 天交付与发版窗口尚未接入生产数据</div>
         </div>
 
         <div class="team-timeline-foot">
-          <span>最近已完成上线批次：3 批</span>
+          <span>最近已完成上线批次：--</span>
           <button type="button" class="link team-matrix-link-btn" data-open-screen="rep_recent_launch">已上线明细 ↗</button>
         </div>
       </section>
@@ -256,7 +211,7 @@
         <i class="fas fa-users-line card-title-icon" aria-hidden="true"></i>
         <h2 class="home-action-title card-title" id="teamMemberLoadTitle">团队成员负荷与作战人员快照</h2>
       </div>
-      <span class="home-action-subtip card-badge" id="teamMemberLoadStatus" aria-live="polite">按实际工时与工作日动态测算</span>
+      <span class="home-action-subtip card-badge" id="teamMemberLoadStatus" aria-live="polite">二期规划功能</span>
     </div>
     <p class="team-home-risk-caption card-subtitle">
       基于敏捷小组维护的每日可用工时与禅道未完成任务工时测算；工时缺失人员独立标识，不误算虚假负荷率
@@ -276,11 +231,7 @@
           </tr>
         </thead>
         <tbody id="teamMemberLoadTbody">
-          <tr data-action="openMemberDrawer" data-name="王睿"><td class="strong"><strong>王睿</strong></td><td>后端研发</td><td>4 个项目</td><td>9 项</td><td><span class="chip red">2 项</span></td><td><strong class="load-danger">115%</strong></td><td><span class="chip red">超负荷冲突</span></td></tr>
-          <tr data-action="openMemberDrawer" data-name="张航"><td class="strong"><strong>张航</strong></td><td>后端研发</td><td>3 个项目</td><td>8 项</td><td><span class="chip red">2 项</span></td><td><strong class="load-warning">85%</strong></td><td><span class="chip orange">重载关注</span></td></tr>
-          <tr data-action="openMemberDrawer" data-name="赵宁"><td class="strong"><strong>赵宁</strong></td><td>测试骨干</td><td>3 个项目</td><td>6 项</td><td><span class="chip orange">1 项</span></td><td><strong class="load-normal">75%</strong></td><td><span class="chip green">平稳</span></td></tr>
-          <tr data-action="openMemberDrawer" data-name="李晴"><td class="strong"><strong>李晴</strong></td><td>前端研发</td><td>2 个项目</td><td>5 项</td><td><span class="chip green">0 项</span></td><td><strong class="load-normal">55%</strong></td><td><span class="chip green">平稳</span></td></tr>
-          <tr data-action="openMemberDrawer" data-name="孙悦"><td class="strong"><strong>孙悦</strong></td><td>需求分析</td><td>2 个项目</td><td>4 项</td><td><span class="chip green">0 项</span></td><td><span class="chip grey">待补工时</span></td><td><span class="chip grey">需补计划</span></td></tr>
+          <tr><td colspan="7" class="pw-empty-row"><div class="state-placeholder">【二期规划】团队成员工时与负荷动态测算功能尚未接入生产数据</div></td></tr>
         </tbody>
       </table>
     </div>

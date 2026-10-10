@@ -16,6 +16,7 @@
     currentView: "confirmed", // confirmed | pending
     isLoading: false,
     kanbanData: null,
+    requestSeq: 0,
   };
 
   function esc(s) {
@@ -31,6 +32,7 @@
     const container = document.getElementById("thGroupKanbanContainer");
     if (!container || state.teamID <= 0 || state.groupID <= 0) return;
 
+    const reqSeq = ++state.requestSeq;
     state.isLoading = true;
     container.innerHTML =
       '<div class="state-placeholder th-kanban-placeholder"><i class="fas fa-spinner fa-spin"></i> 正在加载小组研发工作数据…</div>';
@@ -46,6 +48,7 @@
       }
 
       const resp = await fetch(url, { credentials: "same-origin" });
+      if (reqSeq !== state.requestSeq) return;
       if (resp.status === 403) {
         container.innerHTML =
           '<div class="th-empty-card" role="alert"><p class="th-empty-text">您无权访问该小组任务数据</p></div>';
@@ -56,6 +59,7 @@
       }
 
       const json = await resp.json();
+      if (reqSeq !== state.requestSeq) return;
       if (!json.success || !json.data) {
         throw new Error(json.message || "加载小组任务失败");
       }
@@ -63,6 +67,7 @@
       state.kanbanData = json.data;
       render();
     } catch (err) {
+      if (reqSeq !== state.requestSeq) return;
       container.innerHTML =
         '<div class="th-empty-card" role="alert"><p class="th-empty-text">' +
         esc(err.message || "加载小组研发任务失败") +
@@ -72,7 +77,9 @@
         btn.addEventListener("click", loadTasks);
       }
     } finally {
-      state.isLoading = false;
+      if (reqSeq === state.requestSeq) {
+        state.isLoading = false;
+      }
     }
   }
 
@@ -135,6 +142,11 @@
         "</strong></span>";
     }
     html += "  </div>";
+    if (data.timeRangeLabel) {
+      html += '  <div class="th-kanban-time-tip">';
+      html += '    <i class="fas fa-circle-info"></i> ' + esc(data.timeRangeLabel);
+      html += '  </div>';
+    }
     html += "</div>";
 
     // 2. 成员筛选栏
@@ -190,10 +202,12 @@
       html += "</div>";
     } else {
       // 待核查候选任务面板
+      const pendPag = data.pendingPagination || {};
       html += '<div class="th-pending-panel">';
       html += '  <div class="th-pending-tip">';
       html +=
-        '    <i class="fas fa-triangle-exclamation"></i> 提示：以下任务因无明确业务需求归属或属于独立技术改造，未计入正式小组指标。请团队长核查后在禅道中补充需求挂靠。';
+        '    <i class="fas fa-triangle-exclamation"></i> 提示：以下任务因无明确业务需求归属或属于独立技术改造，未计入正式小组指标。请团队长核查后在禅道中补充需求挂靠。' +
+        (pendPag.total > 0 ? '（共 ' + pendPag.total + ' 项候选任务）' : '');
       html += "  </div>";
       if (pendingTasks.length === 0) {
         html +=

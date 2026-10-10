@@ -174,16 +174,12 @@
       }
       if (target.closest('[data-action="confirmWeeklyArchive"]')) {
         closeDrawer();
-        showToast("周报审阅已通过并成功归档！");
-        var pending = document.getElementById("teamWeeklyPending");
-        if (pending) pending.innerHTML = '3<small>份待办</small>';
-        var stats = document.getElementById("teamWeeklyStats");
-        if (stats) stats.innerHTML = '<span class="chip red">2 份未提交</span><span class="chip orange">1 份待确认</span><span class="chip green">5 份已归档</span>';
+        showToast("【二期规划】周报归档接口尚未对接后端服务，未执行归档操作");
         return;
       }
       if (target.closest('[data-action="confirmCoordAction"]')) {
         closeDrawer();
-        showToast("已将协同阻塞登记入团队待办事项！");
+        showToast("【二期规划】协同待办接口尚未对接后端服务，未执行登记操作");
         return;
       }
 
