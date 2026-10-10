@@ -49,6 +49,7 @@ import (
 	"workbench/internal/module/query"
 	"workbench/internal/module/role"
 	"workbench/internal/module/schedule"
+	"workbench/internal/module/teamleader"
 	"workbench/internal/module/testtask"
 	"workbench/internal/module/user"
 	"workbench/internal/pkg/database"
@@ -204,6 +205,10 @@ func newBusinessModules(w *wiring) {
 	poHandler.SetTeamViewAccess(agileTeamSvc.CanEnterDashboard)
 	poHandler.SetTeamScopeAccounts(agileTeamSvc.DashboardAccounts)
 	poHandler.SetTeamScopeGroupIDs(agileTeamSvc.DashboardGroupIDs)
+
+	teamLeaderRepo := teamleader.NewRepo(w.db)
+	teamLeaderSvc := teamleader.NewService(teamLeaderRepo)
+	w.deps.TeamLeaderHandler = teamleader.NewHandler(teamLeaderSvc, w.zapLog)
 }
 
 // sidebarBadgesProvider 侧栏角标：注入 poSvc.SidebarBadges 为 render provider。

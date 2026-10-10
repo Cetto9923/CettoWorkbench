@@ -1,11 +1,13 @@
 {{/* =============================================================================
    文件: web/templates/po/home_team.html
-   模块: PO工作台
-   职责: 团队视角首页（二期），展示敏捷团队范围、需求价值流积压、版本窗口、临期逾期及阻塞风险
+   模块: PO工作台 - 团队长工作台 (晨会作战与大屏中枢)
+   职责: 团队长日常管理驾驶舱，展示承建项目大盘、工单流转、周报例行、作战行动流水线、人员负荷与大屏中枢
    ============================================================================= */}}
 {{ define "page_css" }}
 <link rel="stylesheet" href="{{ asset "/static/css/po/personal-workspace.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/agileteam/agileteam.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/home-team.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/po/home-team-hierarchy.css" }}">
 {{ end }}
 
 {{ define "content" }}
@@ -20,20 +22,22 @@
           <span>需求视角</span>
         </a>
         {{ end }}
-        <a class="po-perspective-tab active" role="tab" aria-selected="true" aria-current="page" href="/home?view=team" title="团队视角（二期）">
-          <i class="fas fa-users" aria-hidden="true"></i>
-          <span>团队视角</span>
-          <span class="wb-phase2-tag">二期</span>
+        <a class="po-perspective-tab active" role="tab" aria-selected="true" aria-current="page" href="/home?view=team" title="团队长工作台">
+          <i class="fas fa-users-gear" aria-hidden="true"></i>
+          <span>团队长工作台</span>
         </a>
       </nav>
       <div class="team-home-phase2-pill">
         <i class="fas fa-compass" aria-hidden="true"></i>
-        <span>二期规划 · 敏捷团队交付与效能监控驾驶舱</span>
+        <span>二期</span>
       </div>
     </div>
   </header>
 
-  <!-- 2. 查看范围联动选择栏 -->
+  <!-- 1.5 团队大盘与小组协同矩阵 (P0-1 动态层级与去重展示) -->
+  <div id="teamHierarchyContainer"></div>
+
+  <!-- 2. 查看范围联动选择栏 (部门 -> 组织团队 -> 敏捷小组) -->
   <section class="home-page-card at-scope-card at-scope-bar" id="teamHomeScopeCard" aria-label="选择团队范围">
     <span class="at-scope-title">
       <i class="fas fa-sitemap" aria-hidden="true"></i>
@@ -58,108 +62,387 @@
     </span>
   </section>
 
-  <!-- 3. 需求价值流积压卡片 (9阶段连续横向流水线) -->
-  <section class="home-page-card team-home-stage-card" aria-labelledby="teamHomeValueStreamTitle">
-    <div class="home-action-header card-header">
-      <div class="home-action-title-group card-title-group">
-        <i class="fas fa-layer-group card-title-icon" aria-hidden="true"></i>
-        <h2 class="home-action-title card-title" id="teamHomeValueStreamTitle">需求价值流积压</h2>
+  <!-- 3. 常用大屏与报表快捷直达 Dock -->
+  <div id="teamScreenDockWrap">
+    <div class="screen-dock team-screen-dock">
+      <div class="screen-dock-left team-screen-dock-left">
+        <div class="screen-dock-tag team-screen-dock-tag">
+          <i class="fas fa-link" aria-hidden="true"></i> 常用大屏直达
+        </div>
+        <div class="screen-pills team-screen-pills">
+          <button type="button" class="screen-pill team-screen-pill" data-open-screen="scr_agile_eff" title="迭代速率、交付周期与流转效率全景"><i class="fas fa-chart-line" aria-hidden="true"></i><span>研发效能大盘</span><small>↗</small></button>
+          <button type="button" class="screen-pill team-screen-pill" data-open-screen="scr_code_quality" title="静态检查、圈复杂度与单测覆盖率"><i class="fas fa-code-commit" aria-hidden="true"></i><span>代码质量大盘</span><small>↗</small></button>
+          <button type="button" class="screen-pill team-screen-pill" data-open-screen="scr_launch_board" title="生产发布计划、窗口封版与投产态势"><i class="fas fa-rocket" aria-hidden="true"></i><span>重点投产监控</span><small>↗</small></button>
+          <button type="button" class="screen-pill team-screen-pill" data-open-screen="rep_weekly_list" title="全团队承建项目周报提交与归档台账"><i class="fas fa-file-waveform" aria-hidden="true"></i><span>项目周报汇总</span><small>↗</small></button>
+        </div>
       </div>
-      <span class="home-action-subtip card-badge" id="teamHomeValueStreamStatus" aria-live="polite">正在加载…</span>
+      <button type="button" class="screen-dock-more team-screen-dock-more" id="teamToggleMatrixBtn">
+        <span>全部大屏与报表 (14)</span>
+        <i class="fas fa-chevron-down" aria-hidden="true" id="teamMatrixChevron"></i>
+      </button>
     </div>
-    <p class="team-home-stage-caption card-subtitle">业务需求按所属敏捷小组归属，字段为空时使用版本窗口所属小组；独立研发需求按正式小组成员指派人归属</p>
-    <div class="team-home-stage-grid team-vs-pipeline" id="teamHomeValueStreamRows" aria-live="polite">
-      <div class="state-placeholder">正在加载授权范围内的价值流…</div>
-    </div>
-  </section>
+  </div>
 
-  <!-- 4. 双栏协同仪表盘 (左侧：版本窗口与风险雷达，右侧：临期逾期高危清单) -->
-  <div class="team-home-dashboard-grid">
-    <!-- 左栏 -->
-    <div class="team-home-col">
-      <!-- 4.1 未来 30 天版本窗口 -->
-      <section class="home-page-card team-home-version-card" aria-labelledby="teamHomeVersionTitle">
-        <div class="home-action-header card-header">
-          <div class="home-action-title-group card-title-group">
-            <i class="fas fa-calendar-check card-title-icon" aria-hidden="true"></i>
-            <h2 class="home-action-title card-title" id="teamHomeVersionTitle">未来 30 天版本窗口</h2>
+  <!-- 4. 第一层：三大聚焦大盘 (项目大盘 + 工单流转 + 周报例行) -->
+  <div id="teamTrioCardsWrap">
+    <div class="trio-grid team-trio-grid">
+      <!-- 1. 项目交付大盘 -->
+      <div class="trio-card team-trio-card">
+        <div class="trio-top team-trio-top">
+          <div class="trio-title team-trio-title">
+            <div class="trio-icon team-trio-icon"><i class="fas fa-briefcase" aria-hidden="true"></i></div>
+            <span>承建项目态势</span>
           </div>
-          <span class="home-action-subtip card-badge" id="teamHomeVersionStatus" aria-live="polite">正在加载…</span>
+          <button type="button" class="link team-matrix-link-btn" data-open-screen="scr_team_projects">团队项目大屏 ↗</button>
         </div>
-        <p class="team-home-version-caption card-subtitle">按上线日期排序；工作项数已合并业务需求直连与计划链，并去除重复</p>
-        <div class="team-home-version-list" id="teamHomeVersionRows" aria-live="polite">
-          <div class="state-placeholder">正在加载授权范围内的版本窗口…</div>
+        <div class="trio-body team-trio-body">
+          <div class="trio-big team-trio-big" id="teamProjectsCount">8<small>个在建</small></div>
+          <div class="trio-stats team-trio-stats" id="teamProjectsStats">
+            <span class="chip red">2 延期风险</span>
+            <span class="chip orange">3 临期节点</span>
+            <span class="chip green">3 正常推进</span>
+          </div>
+        </div>
+        <div class="trio-foot team-trio-foot">
+          <span>项目任务去重覆盖</span>
+          <button type="button" class="link team-matrix-link-btn" data-open-screen="scr_team_projects">查看项目清单 →</button>
+        </div>
+      </div>
+
+      <!-- 2. 业务工单流水线 -->
+      <div class="trio-card team-trio-card">
+        <div class="trio-top team-trio-top">
+          <div class="trio-title team-trio-title">
+            <div class="trio-icon team-trio-icon"><i class="fas fa-layer-group" aria-hidden="true"></i></div>
+            <span>业务工单流转</span>
+          </div>
+          <button type="button" class="link team-matrix-link-btn" data-open-screen="scr_team_tickets">团队工单大屏 ↗</button>
+        </div>
+        <div class="trio-body team-trio-body">
+          <div class="trio-big team-trio-big" id="teamTicketsCount">29<small>单在途</small></div>
+          <div class="trio-stats team-trio-stats" id="teamTicketsStats">
+            <span class="chip red">4 在途延期</span>
+            <span class="chip orange">11 待排期</span>
+            <span class="chip green">本月上线 12</span>
+          </div>
+        </div>
+        <div class="trio-foot team-trio-foot">
+          <span>业务需求全生命周期</span>
+          <button type="button" class="link team-matrix-link-btn" data-open-screen="scr_team_tickets">工单流转全景 →</button>
+        </div>
+      </div>
+
+      <!-- 3. 本期周报例行 -->
+      <div class="trio-card team-trio-card team-trio-card-weekly">
+        <div class="trio-top team-trio-top">
+          <div class="trio-title team-trio-title">
+            <div class="trio-icon warn team-trio-icon"><i class="fas fa-file-pen" aria-hidden="true"></i></div>
+            <span>本期周报例行</span>
+          </div>
+          <button type="button" class="link team-matrix-link-btn" data-open-screen="rep_weekly_list">进入周报中心 ↗</button>
+        </div>
+        <div class="trio-body team-trio-body">
+          <div class="trio-big team-trio-big weekly-pending" id="teamWeeklyPending">4<small>份待办</small></div>
+          <div class="trio-stats team-trio-stats" id="teamWeeklyStats">
+            <span class="chip red">2 份未提交</span>
+            <span class="chip orange">2 份待确认</span>
+            <span class="chip green">4 份已归档</span>
+          </div>
+        </div>
+        <div class="trio-foot team-trio-foot">
+          <span id="teamWeeklySummary">应交 8 份 · 完成率 50%</span>
+          <button type="button" class="btn small soft" id="teamBatchUrgeBtn"><i class="fas fa-bell" aria-hidden="true"></i> 一键催报未交项</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. 第二层：晨会作战双栏 (左：重点关注行动流水线，右：近30天发版窗口) -->
+  <div id="teamBattleGridWrap">
+    <div class="battle-grid team-battle-grid">
+      <!-- 左栏：重点关注与管理行动流水线 -->
+      <section class="panel team-panel">
+        <div class="panel-title-row">
+          <div>
+            <div class="panel-title">
+              <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+              <span>今日重点关注与管理行动</span>
+              <span class="chip red" id="teamActionCountBadge">3 项需干预</span>
+            </div>
+            <span class="panel-sub">周报异常、项目延期与阻塞合流处理，统一按紧急度排队</span>
+          </div>
+        </div>
+
+        <div class="action-stream team-action-stream" id="teamActionStreamList">
+          <article class="action-card team-action-card critical">
+            <div class="action-left team-action-left">
+              <div class="action-header team-action-header">
+                <span class="action-type team-action-type weekly">周报例行</span>
+                <strong class="action-title team-action-title">手机银行 8.0 项目周报尚未提交</strong>
+              </div>
+              <div class="action-meta team-action-meta">责任人：<strong>王睿</strong> ｜ 截止周五 18:00，已逾期 14 小时未提报</div>
+            </div>
+            <div class="action-ops team-action-ops">
+              <button type="button" class="btn small danger-soft" data-action="urgeSingle" data-owner="王睿" data-target="手机银行 8.0">
+                <i class="fas fa-bell" aria-hidden="true"></i> 催办周报
+              </button>
+            </div>
+          </article>
+
+          <article class="action-card team-action-card warning">
+            <div class="action-left team-action-left">
+              <div class="action-header team-action-header">
+                <span class="action-type team-action-type review">周报待审</span>
+                <strong class="action-title team-action-title">普惠金融二期周报已提交，待团队长审阅</strong>
+              </div>
+              <div class="action-meta team-action-meta">责任人：<strong>张航</strong> ｜ 包含 1 项外部接口延期风险披露</div>
+            </div>
+            <div class="action-ops team-action-ops">
+              <button type="button" class="btn small primary" data-action="reviewWeekly" data-target="普惠金融二期">
+                <i class="fas fa-check" aria-hidden="true"></i> 确认周报
+              </button>
+            </div>
+          </article>
+
+          <article class="action-card team-action-card todo">
+            <div class="action-left team-action-left">
+              <div class="action-header team-action-header">
+                <span class="action-type team-action-type delay">进度风险</span>
+                <strong class="action-title team-action-title">对公二代支付批量对账模块开发逾期 2 天</strong>
+              </div>
+              <div class="action-meta team-action-meta">责任人：<strong>付昊</strong> ｜ 联调环境数据库表锁导致集成阻塞</div>
+            </div>
+            <div class="action-ops team-action-ops">
+              <button type="button" class="btn small soft" data-action="openProjectDrawer" data-target="对公二代支付">
+                <i class="fas fa-arrow-right" aria-hidden="true"></i> 查看原因
+              </button>
+            </div>
+          </article>
         </div>
       </section>
 
-      <!-- 4.2 阻塞与风险雷达 -->
-      <section class="home-page-card team-home-risk-card" id="teamHomeRiskCard" aria-labelledby="teamHomeRiskTitle">
-        <div class="home-action-header card-header">
-          <div class="home-action-title-group card-title-group">
-            <i class="fas fa-triangle-exclamation card-title-icon warning-icon" aria-hidden="true"></i>
-            <h2 class="home-action-title card-title" id="teamHomeRiskTitle">阻塞与风险</h2>
+      <!-- 右栏：近 30 天交付与发版窗口 -->
+      <section class="panel team-panel">
+        <div class="panel-title-row">
+          <div>
+            <div class="panel-title">
+              <i class="fas fa-calendar-check" aria-hidden="true"></i>
+              <span>近 30 天交付与发版窗口</span>
+            </div>
+            <span class="panel-sub">聚焦关键投产节点与批次</span>
           </div>
-          <span class="home-action-subtip card-badge" id="teamHomeRiskStatus" aria-live="polite">正在加载…</span>
+          <button type="button" class="link team-matrix-link-btn" data-open-screen="rep_scheduled_launch">待上线清单 ↗</button>
         </div>
-        <p class="team-home-risk-caption card-subtitle">阻塞需求按“已驳回，或开发完成日到期且主管审批未通过”统计</p>
-        <div class="team-home-risk-stats risk-kpi-grid">
-          <a class="team-home-risk-stat team-home-risk-count-link risk-kpi-box danger" id="teamHomeBlockedLink" href="/home?view=demand&amp;focus=blocked" title="查看审批阻塞需求">
-            <span class="risk-kpi-label"><i class="fas fa-shield-halved" aria-hidden="true"></i> 审批阻塞需求</span>
-            <strong class="risk-kpi-num" id="teamHomeBlockedCount">—</strong>
-          </a>
-          <div class="team-home-risk-stat risk-kpi-box warning">
-            <span class="risk-kpi-label"><i class="fas fa-circle-exclamation" aria-hidden="true"></i> 未关闭问题</span>
-            <strong class="risk-kpi-num" id="teamHomeIssueCount">—</strong>
-          </div>
-          <div class="team-home-risk-stat risk-kpi-box warning">
-            <span class="risk-kpi-label"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> 未关闭风险</span>
-            <strong class="risk-kpi-num" id="teamHomeRiskCount">—</strong>
-          </div>
-        </div>
-        <div class="risk-footer">
-          <span class="home-action-subtip" id="teamHomeUpdatedAt" aria-live="polite"></span>
-          <a class="team-home-risk-link risk-detail-link" id="teamHomeRiskLink" href="/issues/risk?kind=issue&amp;loop=open&amp;scope=team">
-            <span>查看问题与风险明细</span>
-            <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
-          </a>
-        </div>
-        <div class="state-placeholder error" id="teamHomeError" hidden role="alert">
-          <span id="teamHomeErrorText">团队数据暂不可用</span>
-          <button type="button" class="retry-btn" id="teamHomeRetry">重试</button>
-        </div>
-      </section>
-    </div>
 
-    <!-- 右栏：临期与逾期高风险看板 -->
-    <div class="team-home-col">
-      <section class="home-page-card team-home-due-card" id="teamHomeDueCard" aria-labelledby="teamHomeDueTitle">
-        <div class="home-action-header card-header">
-          <div class="home-action-title-group card-title-group">
-            <i class="fas fa-hourglass-half card-title-icon danger-icon" aria-hidden="true"></i>
-            <h2 class="home-action-title card-title" id="teamHomeDueTitle">临期与逾期</h2>
-          </div>
-          <span class="home-action-subtip card-badge" id="teamHomeDueStatus" aria-live="polite">正在加载…</span>
+        <div class="timeline-card team-timeline-card" id="teamLaunchTimelineList">
+          <div class="timeline-item team-timeline-item"><span class="timeline-date team-timeline-date">10-18</span><span class="timeline-name team-timeline-name" title="对公二代支付系统重构 - 10月第三批">对公二代支付系统重构 - 10月第三批</span><span class="chip red">投产中</span></div>
+          <div class="timeline-item team-timeline-item"><span class="timeline-date team-timeline-date">10-25</span><span class="timeline-name team-timeline-name" title="企业手机银行 8.0 阶段迭代上线">企业手机银行 8.0 阶段迭代上线</span><span class="chip green">正常推进</span></div>
+          <div class="timeline-item team-timeline-item"><span class="timeline-date team-timeline-date">11-08</span><span class="timeline-name team-timeline-name" title="普惠信贷核心服务双活演练上线">普惠信贷核心服务双活演练上线</span><span class="chip orange">待演练</span></div>
         </div>
-        <p class="team-home-risk-caption card-subtitle" id="teamHomeDueCaption">按工作日计算未来 3 天，展示最早到期的需求和任务</p>
-        <div class="team-home-risk-stats due-stats-bar">
-          <div class="team-home-risk-stat due-stat-chip danger">
-            <span>逾期事项</span>
-            <strong id="teamHomeOverdueCount">—</strong>
-          </div>
-          <div class="team-home-risk-stat due-stat-chip">
-            <span>3 个工作日内到期</span>
-            <strong id="teamHomeSoonCount">—</strong>
-          </div>
-        </div>
-        <div class="team-home-due-list due-items-list" id="teamHomeDueRows" aria-live="polite">
-          <div class="state-placeholder">正在加载临期与逾期事项…</div>
+
+        <div class="team-timeline-foot">
+          <span>最近已完成上线批次：3 批</span>
+          <button type="button" class="link team-matrix-link-btn" data-open-screen="rep_recent_launch">已上线明细 ↗</button>
         </div>
       </section>
     </div>
   </div>
+
+  <!-- 6. 第三层：团队成员负荷与作战人员快照 -->
+  <section class="home-page-card team-home-risk-card" id="teamMemberLoadCard" aria-labelledby="teamMemberLoadTitle">
+    <div class="home-action-header card-header">
+      <div class="home-action-title-group card-title-group">
+        <i class="fas fa-users-line card-title-icon" aria-hidden="true"></i>
+        <h2 class="home-action-title card-title" id="teamMemberLoadTitle">团队成员负荷与作战人员快照</h2>
+      </div>
+      <span class="home-action-subtip card-badge" id="teamMemberLoadStatus" aria-live="polite">按实际工时与工作日动态测算</span>
+    </div>
+    <p class="team-home-risk-caption card-subtitle">
+      基于敏捷小组维护的每日可用工时与禅道未完成任务工时测算；工时缺失人员独立标识，不误算虚假负荷率
+    </p>
+
+    <div class="team-load-table-wrap" id="teamMemberLoadContent">
+      <table class="data-table team-load-table" id="teamMemberLoadTable">
+        <thead>
+          <tr>
+            <th>成员</th>
+            <th>岗位角色</th>
+            <th>承接项目数</th>
+            <th>在研任务</th>
+            <th>逾期/临期</th>
+            <th>计划负荷率</th>
+            <th>状态定性</th>
+          </tr>
+        </thead>
+        <tbody id="teamMemberLoadTbody">
+          <tr data-action="openMemberDrawer" data-name="王睿"><td class="strong"><strong>王睿</strong></td><td>后端研发</td><td>4 个项目</td><td>9 项</td><td><span class="chip red">2 项</span></td><td><strong class="load-danger">115%</strong></td><td><span class="chip red">超负荷冲突</span></td></tr>
+          <tr data-action="openMemberDrawer" data-name="张航"><td class="strong"><strong>张航</strong></td><td>后端研发</td><td>3 个项目</td><td>8 项</td><td><span class="chip red">2 项</span></td><td><strong class="load-warning">85%</strong></td><td><span class="chip orange">重载关注</span></td></tr>
+          <tr data-action="openMemberDrawer" data-name="赵宁"><td class="strong"><strong>赵宁</strong></td><td>测试骨干</td><td>3 个项目</td><td>6 项</td><td><span class="chip orange">1 项</span></td><td><strong class="load-normal">75%</strong></td><td><span class="chip green">平稳</span></td></tr>
+          <tr data-action="openMemberDrawer" data-name="李晴"><td class="strong"><strong>李晴</strong></td><td>前端研发</td><td>2 个项目</td><td>5 项</td><td><span class="chip green">0 项</span></td><td><strong class="load-normal">55%</strong></td><td><span class="chip green">平稳</span></td></tr>
+          <tr data-action="openMemberDrawer" data-name="孙悦"><td class="strong"><strong>孙悦</strong></td><td>需求分析</td><td>2 个项目</td><td>4 项</td><td><span class="chip green">0 项</span></td><td><span class="chip grey">待补工时</span></td><td><span class="chip grey">需补计划</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 7. 第四层：全量 14 个组织数据大屏与管理报表矩阵 (可收叠/展开) -->
+  <div id="teamScreenMatrixWrap">
+    <section class="panel team-panel screen-matrix team-screen-matrix" id="fullScreenMatrix" hidden>
+      <div class="panel-title-row">
+        <div>
+          <div class="panel-title">
+            <i class="fas fa-sitemap" aria-hidden="true"></i>
+            <span>组织数据大屏与专项管理报表统一中枢 (14)</span>
+          </div>
+          <span class="panel-sub">收纳全部 14 个外部与系统原生看板，直接点击直达</span>
+        </div>
+        <button type="button" class="btn small" id="teamCloseMatrixBtn">收起矩阵</button>
+      </div>
+
+      <!-- 业务大屏类 (6) -->
+      <div class="matrix-group team-matrix-group">
+        <div class="matrix-header team-matrix-header"><i class="fas fa-chart-pie" aria-hidden="true"></i> 业务与交付大屏 (6)</div>
+        <div class="matrix-links team-matrix-links">
+          <button type="button" class="matrix-link team-matrix-link" data-open-screen="scr_agile_eff"><span>研发效能大盘</span><small>↗</small></button>
+          <button type="button" class="matrix-link team-matrix-link" data-open-screen="scr_code_quality"><span>代码质量大盘</span><small>↗</small></button>
+          <button type="button" class="matrix-link team-matrix-link" data-open-screen="scr_launch_board"><span>重点投产监控</span><small>↗</small></button>
+          <button type="button" class="matrix-link team-matrix-link" data-open-screen="scr_team_projects"><span>团队项目全景</span><small>↗</small></button>
+          <button type="button" class="matrix-link team-matrix-link" data-open-screen="scr_team_tickets"><span>业务工单大屏</span><small>↗</small></button>
+          <button type="button" class="matrix-link team-matrix-link" data-open-screen="scr_ci_cd"><span>构建发布流水线</span><small>↗</small></button>
+        </div>
+      </div>
+
+      <!-- 管理报告类 (5) -->
+      <div class="matrix-group team-matrix-group">
+        <div class="matrix-header team-matrix-header"><i class="fas fa-file-lines" aria-hidden="true"></i> 项目报告与交付清单 (5)</div>
+        <div class="matrix-links team-matrix-links">
+          <button type="button" class="matrix-link team-matrix-link" data-open-screen="rep_weekly_list"><span>项目周报汇总</span><small>↗</small></button>
+          <button type="button" class="matrix-link team-matrix-link" data-open-screen="rep_scheduled_launch"><span>待上线清单</span><small>↗</small></button>
+          <button type="button" class="matrix-link team-matrix-link" data-open-screen="rep_recent_launch"><span>已上线明细</span><small>↗</small></button>
+          <button type="button" class="matrix-link team-matrix-link" data-open-screen="rep_bug_track"><span>缺陷流转台账</span><small>↗</small></button>
+          <button type="button" class="matrix-link team-matrix-link" data-open-screen="rep_milestones"><span>里程碑达成率报表</span><small>↗</small></button>
+        </div>
+      </div>
+
+      <!-- 治理台账类 (3) -->
+      <div class="matrix-group team-matrix-group">
+        <div class="matrix-header team-matrix-header"><i class="fas fa-shield-halved" aria-hidden="true"></i> 治理、风险与合规台账 (3)</div>
+        <div class="matrix-links team-matrix-links">
+          <button type="button" class="matrix-link team-matrix-link" data-open-screen="gov_risk_radar"><span>项目风险雷达</span><small>↗</small></button>
+          <button type="button" class="matrix-link team-matrix-link" data-open-screen="gov_capacity_alloc"><span>组织人员负荷看板</span><small>↗</small></button>
+          <button type="button" class="matrix-link team-matrix-link" data-open-screen="gov_compliance_audit"><span>过程合规审计台账</span><small>↗</small></button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- 8. 辅助深度分析：价值流积压与版本窗口 (按需查看) -->
+  <details class="team-home-stage-details">
+    <summary class="btn soft small team-home-stage-summary">
+      <i class="fas fa-chart-gantt" aria-hidden="true"></i>
+      <span>展开价值流阶段与历史版本窗口分析</span>
+    </summary>
+    <div class="team-home-stage-content">
+      <!-- 需求价值流积压 -->
+      <section class="home-page-card team-home-stage-card" aria-labelledby="teamHomeValueStreamTitle">
+        <div class="home-action-header card-header">
+          <div class="home-action-title-group card-title-group">
+            <i class="fas fa-layer-group card-title-icon" aria-hidden="true"></i>
+            <h2 class="home-action-title card-title" id="teamHomeValueStreamTitle">需求价值流积压</h2>
+          </div>
+          <span class="home-action-subtip card-badge" id="teamHomeValueStreamStatus" aria-live="polite">正在加载…</span>
+        </div>
+        <div class="team-home-stage-grid team-vs-pipeline" id="teamHomeValueStreamRows" aria-live="polite">
+          <div class="state-placeholder">正在加载授权范围内的价值流…</div>
+        </div>
+      </section>
+
+      <!-- 版本窗口与临期事项 -->
+      <div class="team-home-dashboard-grid">
+        <div class="team-home-col">
+          <section class="home-page-card team-home-version-card" aria-labelledby="teamHomeVersionTitle">
+            <div class="home-action-header card-header">
+              <div class="home-action-title-group card-title-group">
+                <i class="fas fa-calendar-check card-title-icon" aria-hidden="true"></i>
+                <h2 class="home-action-title card-title" id="teamHomeVersionTitle">未来 30 天版本窗口</h2>
+              </div>
+              <span class="home-action-subtip card-badge" id="teamHomeVersionStatus" aria-live="polite">正在加载…</span>
+            </div>
+            <div class="team-home-version-list" id="teamHomeVersionRows" aria-live="polite">
+              <div class="state-placeholder">正在加载授权范围内的版本窗口…</div>
+            </div>
+          </section>
+
+          <!-- 阻塞与风险 -->
+          <section class="home-page-card team-home-risk-card team-home-risk-detail" id="teamHomeRiskCard" aria-labelledby="teamHomeRiskTitle">
+            <div class="home-action-header card-header">
+              <div class="home-action-title-group card-title-group">
+                <i class="fas fa-triangle-exclamation card-title-icon warning-icon" aria-hidden="true"></i>
+                <h2 class="home-action-title card-title" id="teamHomeRiskTitle">阻塞与风险</h2>
+              </div>
+              <span class="home-action-subtip card-badge" id="teamHomeRiskStatus" aria-live="polite">正在加载…</span>
+            </div>
+            <p class="team-home-risk-caption card-subtitle">阻塞需求按“已驳回，或开发完成日到期且主管审批未通过”统计</p>
+            <div class="team-home-risk-stats risk-kpi-grid">
+              <a class="team-home-risk-stat team-home-risk-count-link risk-kpi-box danger" id="teamHomeBlockedLink" href="/home?view=demand&amp;focus=blocked" title="查看审批阻塞需求">
+                <span class="risk-kpi-label"><i class="fas fa-shield-halved" aria-hidden="true"></i> 审批阻塞需求</span>
+                <strong class="risk-kpi-num" id="teamHomeBlockedCount">—</strong>
+              </a>
+              <div class="team-home-risk-stat risk-kpi-box warning">
+                <span class="risk-kpi-label"><i class="fas fa-circle-exclamation" aria-hidden="true"></i> 未关闭问题</span>
+                <strong class="risk-kpi-num" id="teamHomeIssueCount">—</strong>
+              </div>
+              <div class="team-home-risk-stat risk-kpi-box warning">
+                <span class="risk-kpi-label"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> 未关闭风险</span>
+                <strong class="risk-kpi-num" id="teamHomeRiskCount">—</strong>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="team-home-col">
+          <section class="home-page-card team-home-due-card" id="teamHomeDueCard" aria-labelledby="teamHomeDueTitle">
+            <div class="home-action-header card-header">
+              <div class="home-action-title-group card-title-group">
+                <i class="fas fa-hourglass-half card-title-icon danger-icon" aria-hidden="true"></i>
+                <h2 class="home-action-title card-title" id="teamHomeDueTitle">临期与逾期</h2>
+              </div>
+              <span class="home-action-subtip card-badge" id="teamHomeDueStatus" aria-live="polite">正在加载…</span>
+            </div>
+            <div class="team-home-risk-stats due-stats-bar team-home-due-stats">
+              <div class="team-home-risk-stat due-stat-chip danger">
+                <span>逾期事项</span>
+                <strong id="teamHomeOverdueCount">—</strong>
+              </div>
+              <div class="team-home-risk-stat due-stat-chip">
+                <span>3 个工作日内到期</span>
+                <strong id="teamHomeSoonCount">—</strong>
+              </div>
+            </div>
+            <div class="team-home-due-list due-items-list" id="teamHomeDueRows" aria-live="polite">
+              <div class="state-placeholder">正在加载临期与逾期事项…</div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <!-- 错误提示 -->
+  <div class="state-placeholder error" id="teamHomeError" hidden role="alert">
+    <span id="teamHomeErrorText">团队数据暂不可用</span>
+    <button type="button" class="retry-btn" id="teamHomeRetry">重试</button>
+  </div>
 </div>
+
+<!-- 模态弹窗与抽屉挂载点 -->
+<div class="team-drawer-overlay" id="teamDrawerOverlay" aria-hidden="true"></div>
+<aside class="team-drawer" id="teamDrawer" aria-label="明细抽屉" aria-hidden="true"></aside>
+<div id="teamHomeModalRoot"></div>
 {{ end }}
 
 {{ define "page_js" }}
 <script src="{{ asset "/static/js/po/home-team.js" }}"></script>
+<script src="{{ asset "/static/js/po/home-team-drawer.js" }}"></script>
+<script src="{{ asset "/static/js/po/home-team-hierarchy.js" }}"></script>
 {{ end }}

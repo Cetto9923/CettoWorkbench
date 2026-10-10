@@ -1,0 +1,323 @@
+/* =============================================================================
+   文件: web/static/css/po/home-team-hierarchy.css
+   模块: 团队长工作台 - 团队与小组层级展示
+   职责: 团队总览横幅、团队选择器、动态子小组选项卡、小组成员卡片与跨组徽章样式
+   ============================================================================= */
+
+/* 1. 团队层级主容器 */
+.th-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+/* 2. 团队大盘总览横幅 */
+.th-banner-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg, 12px);
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  box-shadow: 0 2px 10px var(--color-shadow-02);
+}
+
+.th-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.th-team-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.th-team-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.th-team-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-strong);
+}
+
+.th-team-selector {
+  padding: 4px 10px;
+  font-size: 13px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--color-surface);
+  color: var(--color-text-body);
+  outline: none;
+  cursor: pointer;
+}
+
+.th-team-selector:focus {
+  border-color: var(--color-primary-border);
+}
+
+.th-banner-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.th-meta-item strong {
+  color: var(--color-text-strong);
+  margin-left: 4px;
+}
+
+.th-banner-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.th-stat-pill {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 6px);
+  padding: 6px 14px;
+}
+
+.th-stat-label {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.th-stat-num {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+/* 3. 动态子小组导航栏 */
+.th-group-tabs-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg, 12px);
+  padding: 16px 20px;
+}
+
+.th-tabs-nav {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 12px;
+  overflow-x: auto;
+}
+
+.th-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid transparent;
+  background: var(--color-surface-muted);
+  color: var(--color-text-body);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.th-tab-btn:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-primary-hover);
+}
+
+.th-tab-btn.active {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border-color: var(--color-primary-border);
+  font-weight: 600;
+}
+
+.th-tab-count {
+  font-size: 12px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+}
+
+.th-tab-btn.active .th-tab-count {
+  background: var(--color-primary);
+  color: var(--color-surface);
+}
+
+/* 4. 当前选中小组摘要卡片 */
+.th-group-summary-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 12px 16px;
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid var(--color-border);
+}
+
+.th-summary-group-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-strong);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.th-summary-roles {
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  flex-wrap: wrap;
+}
+
+.th-summary-roles span b {
+  color: var(--color-text-body);
+  font-weight: 500;
+  margin-left: 2px;
+}
+
+.th-role-unconfigured {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+/* 5. 小组成员网格矩阵 */
+.th-members-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.th-member-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md, 8px);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s ease;
+}
+
+.th-member-card:hover {
+  border-color: var(--color-primary-border);
+  box-shadow: 0 4px 12px var(--color-shadow-02);
+}
+
+.th-member-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.th-member-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.th-member-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.th-member-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-strong);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.th-member-account {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.th-member-role {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 跨组徽章 */
+.th-cross-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm, 4px);
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+  border: 1px solid var(--color-warning-border, var(--color-border));
+}
+
+/* 6. 空状态 */
+.th-empty-card {
+  text-align: center;
+  padding: 40px 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg, 12px);
+  color: var(--color-text-muted);
+}
+
+.th-empty-icon {
+  font-size: 32px;
+  margin-bottom: 10px;
+  color: var(--color-text-muted);
+}
+
+.th-empty-text {
+  font-size: 14px;
+  margin: 0;
+}

@@ -31,6 +31,7 @@ import (
 	pomodule "workbench/internal/module/po"
 	"workbench/internal/module/role"
 	"workbench/internal/module/schedule"
+	"workbench/internal/module/teamleader"
 	"workbench/internal/module/testtask"
 	"workbench/internal/module/user"
 	ratelimitpkg "workbench/internal/pkg/ratelimit"
@@ -57,6 +58,7 @@ type RouteDeps struct {
 	AgileTeamHandler    *agileteam.Handler
 	KanbanHandler       *kanban.Handler
 	ScheduleHandler     *schedule.Handler
+	TeamLeaderHandler   *teamleader.Handler
 	TesttaskHandler     *testtask.Handler
 	BuildHandler        *build.Handler
 	SqlPerfHandler      *debug.Handler
@@ -121,6 +123,9 @@ func registerRoutes(r *gin.Engine, deps RouteDeps) {
 		}
 		if deps.ScheduleHandler != nil {
 			deps.ScheduleHandler.RegisterRoutes(po)
+		}
+		if deps.TeamLeaderHandler != nil {
+			deps.TeamLeaderHandler.RegisterRoutes(po)
 		}
 		if deps.TesttaskHandler != nil {
 			deps.TesttaskHandler.RegisterRoutes(po)
