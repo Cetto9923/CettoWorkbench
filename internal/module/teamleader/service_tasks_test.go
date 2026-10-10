@@ -362,3 +362,44 @@ func TestListGroupTasks_ConfirmedAndPendingTasks(t *testing.T) {
 		t.Errorf("expected non-empty time range label")
 	}
 }
+
+// TestPendingTasks_ViewerProjectAccessIsolation 负向测试：验证待核查任务严格以查看者（而非执行人）为主体核验项目ACL边界。
+func TestPendingTasks_ViewerProjectAccessIsolation(t *testing.T) {
+	db, mock := newMockDB(t)
+	repo := NewRepo(db)
+	ctx := context.Background()
+
+	// 1. 验证 CountPendingTasksByAccounts 严格绑定查看者 coach01 参数
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT count(*) FROM zt_task AS t INNER JOIN zt_project AS p ON p.id = t.project AND p.deleted = '0'")).
+		WithArgs(
+			"dev01",
+			"coach01", "coach01", "%,coach01,%", "coach01", "coach01", "coach01", "%,coach01,%", "coach01",
+		).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+
+	count, err := repo.CountPendingTasksByAccounts(ctx, []string{"dev01"}, "coach01", false)
+	if err != nil {
+		t.Fatalf("unexpected error in CountPendingTasksByAccounts: %v", err)
+	}
+	if count != 0 {
+		t.Fatalf("expected count 0 for unauthorized viewer, got %d", count)
+	}
+
+	// 2. 验证 FindPendingTasksByAccountsPaged 严格绑定查看者 coach01 参数且未授权时不返回任何记录
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT t.id, t.name, t.type, t.status, t.story, t.assignedTo, t.finishedBy, t.deadline, t.finishedDate,")).
+		WithArgs(
+			"dev01",
+			"coach01", "coach01", "%,coach01,%", "coach01", "coach01", "coach01", "%,coach01,%", "coach01",
+			20,
+		).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "type", "status", "story", "assignedTo", "finishedBy", "deadline", "finishedDate", "storyTitle", "demandTeamGroup"}))
+
+	rows, err := repo.FindPendingTasksByAccountsPaged(ctx, []string{"dev01"}, "coach01", false, 20, 0)
+	if err != nil {
+		t.Fatalf("unexpected error in FindPendingTasksByAccountsPaged: %v", err)
+	}
+	if len(rows) != 0 {
+		t.Fatalf("expected 0 rows for unauthorized viewer, got %d", len(rows))
+	}
+}
+

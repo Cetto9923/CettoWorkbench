@@ -131,7 +131,7 @@ func (s *Service) ListGroupTasks(ctx context.Context, actor *model.User, req Lis
 		return nil, errorx.Wrap(errorx.ErrCodeInternal, "统计小组任务指标失败", err)
 	}
 
-	pendingTotal, err := s.repo.CountPendingTasksByAccounts(ctx, pendingAccounts)
+	pendingTotal, err := s.repo.CountPendingTasksByAccounts(ctx, pendingAccounts, actorAccount, isSuperAdmin)
 	if err != nil {
 		return nil, errorx.Wrap(errorx.ErrCodeInternal, "统计待核查任务失败", err)
 	}
@@ -144,7 +144,7 @@ func (s *Service) ListGroupTasks(ctx context.Context, actor *model.User, req Lis
 	}
 
 	// 7. 分页查询待核查候选任务
-	pendingRows, err := s.repo.FindPendingTasksByAccountsPaged(ctx, pendingAccounts, pendingPageSize, pendingOffset)
+	pendingRows, err := s.repo.FindPendingTasksByAccountsPaged(ctx, pendingAccounts, actorAccount, isSuperAdmin, pendingPageSize, pendingOffset)
 	if err != nil {
 		return nil, errorx.Wrap(errorx.ErrCodeInternal, "查询待核查任务失败", err)
 	}

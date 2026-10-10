@@ -55,7 +55,11 @@ def run_readonly_sql(sql):
     res = subprocess.check_output(cmd, env=env, text=True)
     return [line.split("\t") for line in res.strip().splitlines() if line.strip()]
 
-def login_curl(account, password="123456"):
+TEST_PASSWORD = os.environ.get("WB_TEST_PASSWORD") or os.environ.get("WORKBENCH_E2E_PASSWORD") or "123456"
+
+def login_curl(account, password=None):
+    if password is None:
+        password = TEST_PASSWORD
     jar = f"/tmp/wb_audit_{account}.cookie"
     page = subprocess.check_output(["curl", "-s", "-c", jar, f"{BASE_URL}/login"], text=True)
     m = re.search(r'name="csrf_token"\s+value="([^"]+)"', page)
@@ -213,13 +217,13 @@ if "team_leader" in jars:
         record("SEC-08", "P0", "FAIL", f"团队长查看小组任务失败: HTTP {code}")
 
 # SEC-09: 待核查任务是否暴露外部项目或无项目权限的任务（审计）
-# 检查 FindPendingTasksByAccountsPaged 是否加入项目 ACL / 团队关联过滤
+# 检查是否以当前登录用户（viewer）为主体校验项目 ACL / 团队关联过滤，严禁以任务执行人身份代替查看者授权
 repo_code = Path("internal/module/teamleader/repo.go").read_text(encoding="utf-8")
-func_m = re.search(r'func \(r \*Repo\) FindPendingTasksByAccountsPaged.*?\n\}', repo_code, re.S)
-if func_m and ("zt_project" in func_m.group(0) or "project" in func_m.group(0).lower() and "join" in func_m.group(0).lower()):
-    record("SEC-09", "P1", "PASS", "待核查任务 SQL 校验了项目授权边界")
+has_viewer_acl = "applyViewerProjectACL" in repo_code and "viewerAccount" in repo_code and "tm.account = t.assignedTo" not in repo_code
+if has_viewer_acl:
+    record("SEC-09", "P1", "PASS", "待核查任务严格以登录用户(viewer)为主体校验项目ACL边界，避免执行人私有项目泄露")
 else:
-    record("SEC-09", "P1", "FAIL", "待核查任务查询仅以 assignedTo IN (accounts) 过滤，未复用禅道项目/执行权限边界，存在组员名下外部保密项目任务泄露风险")
+    record("SEC-09", "P1", "FAIL", "待核查任务查询未以当前查看者为主体校验项目ACL，存在执行人私有保密项目向管理者泄露风险")
 
 # SEC-10: 小组 PO 非正式成员时的表现
 if "group_po" in jars:
@@ -229,6 +233,19 @@ if "group_po" in jars:
         record("SEC-10", "P1", "PASS", f"小组PO(003030)可访问看板 (200)，候选任务总数为 {pending_total}")
     else:
         record("SEC-10", "P1", "FAIL", f"小组PO访问看板失败: HTTP {code}")
+
+# SEC-11: 负向测试：任务执行人拥有私有项目权限、团队长或小组长没有权限时，不能返回该任务的标题、编号或其他敏感信息
+if "group_leader" in jars:
+    code, data = fetch_api(jars["group_leader"], "/team/group/tasks?teamId=146&groupId=147")
+    if code == 200 and data and data.get("success"):
+        pending_items = data.get("data", {}).get("pendingReviewTasks", [])
+        leaked = [it for it in pending_items if it.get("id") in [1143, 41905] or "金融科技总部重点工作管理" in it.get("title", "")]
+        if len(leaked) == 0:
+            record("SEC-11", "P0", "PASS", "负向测试通过：小组长无权查看的私有项目任务未泄露（标题与编号未返回）")
+        else:
+            record("SEC-11", "P0", "FAIL", f"负向测试失败：私有项目任务发生泄露: {leaked}")
+    else:
+        record("SEC-11", "P0", "FAIL", f"小组长查询小组任务失败: HTTP {code}")
 
 # --- 3. 任务统计与分页专项 ---
 # 数据库只读核对：
@@ -318,7 +335,7 @@ with sync_playwright() as p:
     # UI-01: 登录小组长账号访问团队长工作台
     page.goto(f"{BASE_URL}/login")
     page.fill("#account", "771349")
-    page.fill("#password", "123456")
+    page.fill("#password", TEST_PASSWORD)
     page.click('button[type="submit"]')
     page.wait_for_url(lambda u: "/login" not in u, timeout=15000)
 

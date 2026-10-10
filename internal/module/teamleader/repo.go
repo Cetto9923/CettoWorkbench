@@ -287,36 +287,36 @@ func (r *Repo) FindGroupConfirmedTasksPaged(ctx context.Context, groupID uint, a
 	return rows, nil
 }
 
-// CountPendingTasksByAccounts 统计待核查候选任务总数（严格校验项目存在性与可见范围授权边界）。
-func (r *Repo) CountPendingTasksByAccounts(ctx context.Context, accounts []string) (int, error) {
+// CountPendingTasksByAccounts 统计待核查候选任务总数（严格校验当前查看者对所属项目的访问授权边界）。
+func (r *Repo) CountPendingTasksByAccounts(ctx context.Context, accounts []string, viewerAccount string, isSuperAdmin bool) (int, error) {
 	if r == nil || r.db == nil || len(accounts) == 0 {
 		return 0, nil
 	}
 	var count int64
-	err := r.db.WithContext(ctx).
+	query := r.db.WithContext(ctx).
 		Table("zt_task AS t").
 		Joins("INNER JOIN zt_project AS p ON p.id = t.project AND p.deleted = '0'").
 		Joins("LEFT JOIN zt_story AS s ON s.id = t.story AND s.deleted = '0'").
 		Joins("LEFT JOIN zt_demand AS d ON d.id = s.fromDemand AND d.deleted = '0'").
 		Where("t.deleted = '0' AND t.status IN ('wait', 'doing')").
 		Where("t.assignedTo IN ?", accounts).
-		Where("(p.acl != 'private' OR EXISTS (SELECT 1 FROM zt_team AS tm WHERE tm.root = p.id AND tm.type = 'project' AND tm.account = t.assignedTo))").
 		Where(`(
 			t.story = 0
 			OR s.id IS NULL
 			OR d.id IS NULL
 			OR d.teamGroup = ''
 			OR d.teamGroup IS NULL
-		)`).
-		Count(&count).Error
+		)`)
+	query = applyViewerProjectACL(query, viewerAccount, isSuperAdmin)
+	err := query.Count(&count).Error
 	if err != nil {
 		return 0, err
 	}
 	return int(count), nil
 }
 
-// FindPendingTasksByAccountsPaged 分页查询小组成员名下待核查归属的候选任务（严格校验项目存在性与可见范围授权边界）。
-func (r *Repo) FindPendingTasksByAccountsPaged(ctx context.Context, accounts []string, limit, offset int) ([]TaskDataRow, error) {
+// FindPendingTasksByAccountsPaged 分页查询小组成员名下待核查归属的候选任务（严格校验当前查看者对所属项目的访问授权边界）。
+func (r *Repo) FindPendingTasksByAccountsPaged(ctx context.Context, accounts []string, viewerAccount string, isSuperAdmin bool, limit, offset int) ([]TaskDataRow, error) {
 	if r == nil || r.db == nil || len(accounts) == 0 {
 		return []TaskDataRow{}, nil
 	}
@@ -327,7 +327,7 @@ func (r *Repo) FindPendingTasksByAccountsPaged(ctx context.Context, accounts []s
 		offset = 0
 	}
 	var rows []TaskDataRow
-	err := r.db.WithContext(ctx).
+	query := r.db.WithContext(ctx).
 		Table("zt_task AS t").
 		Select(`t.id, t.name, t.type, t.status, t.story, t.assignedTo, t.finishedBy, t.deadline, t.finishedDate,
 			IFNULL(s.title, '') AS storyTitle,
@@ -337,22 +337,42 @@ func (r *Repo) FindPendingTasksByAccountsPaged(ctx context.Context, accounts []s
 		Joins("LEFT JOIN zt_demand AS d ON d.id = s.fromDemand AND d.deleted = '0'").
 		Where("t.deleted = '0' AND t.status IN ('wait', 'doing')").
 		Where("t.assignedTo IN ?", accounts).
-		Where("(p.acl != 'private' OR EXISTS (SELECT 1 FROM zt_team AS tm WHERE tm.root = p.id AND tm.type = 'project' AND tm.account = t.assignedTo))").
 		Where(`(
 			t.story = 0
 			OR s.id IS NULL
 			OR d.id IS NULL
 			OR d.teamGroup = ''
 			OR d.teamGroup IS NULL
-		)`).
-		Order("t.id DESC").
-		Limit(limit).
-		Offset(offset).
-		Scan(&rows).Error
+		)`)
+	query = applyViewerProjectACL(query, viewerAccount, isSuperAdmin)
+	err := query.Order("t.id DESC").Limit(limit).Offset(offset).Scan(&rows).Error
 	if err != nil {
 		return nil, err
 	}
 	return rows, nil
+}
+
+// applyViewerProjectACL 校验当前查看者对任务关联项目的可见权限，严格以登录用户为主体。
+func applyViewerProjectACL(query *gorm.DB, viewerAccount string, isSuperAdmin bool) *gorm.DB {
+	if isSuperAdmin || query == nil {
+		return query
+	}
+	acc := strings.TrimSpace(viewerAccount)
+	if acc == "" {
+		return query.Where("1 = 0")
+	}
+	pattern := "%," + acc + ",%"
+	return query.Where(`(
+		p.acl = 'open'
+		OR p.PM = ?
+		OR p.openedBy = ?
+		OR CONCAT(',', p.whitelist, ',') LIKE ?
+		OR EXISTS (SELECT 1 FROM zt_team AS tm WHERE tm.root = p.id AND tm.type = 'project' AND tm.account = ?)
+		OR EXISTS (SELECT 1 FROM zt_project AS ep JOIN zt_team AS tm ON tm.root = ep.id AND tm.type = 'execution' AND tm.account = ? WHERE ep.project = p.id AND ep.deleted = '0')
+		OR (p.acl = 'program' AND EXISTS (SELECT 1 FROM zt_project AS pr WHERE pr.id = p.parent AND pr.deleted = '0' AND (
+			pr.acl = 'open' OR pr.PM = ? OR CONCAT(',', pr.whitelist, ',') LIKE ? OR EXISTS (SELECT 1 FROM zt_team AS ptm WHERE ptm.root = pr.id AND ptm.type = 'project' AND ptm.account = ?)
+		)))
+	)`, acc, acc, pattern, acc, acc, acc, pattern, acc)
 }
 
 // FindSubGroupNamesMap 批量查询小组ID对应的名称映射。
