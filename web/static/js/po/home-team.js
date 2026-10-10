@@ -12,6 +12,8 @@
     teamId: 0,
     subteamgroupId: positiveID(new URLSearchParams(window.location.search).get("subteamgroupId")),
     requestNo: 0,
+    matrixOpen: false,
+    dashboardData: null,
   };
   const params = new URLSearchParams(window.location.search);
   const originalScope = params.get("scope") === "dept" ? "dept" : "team";
@@ -266,6 +268,7 @@
     }
   }
 
+
   async function loadTeamDashboard(requestNo) {
     const rows = document.getElementById("teamHomeDueRows");
     const status = document.getElementById("teamHomeDueStatus");
@@ -288,6 +291,34 @@
       }
       if (requestNo !== state.requestNo) return;
       const data = json.data;
+      state.dashboardData = data;
+
+
+      if (data.projects && data.projects.available) {
+        const pc = document.getElementById("teamProjectsCount");
+        if (pc) pc.innerHTML = data.projects.totalActive + '<small>个在建</small>';
+        const ps = document.getElementById("teamProjectsStats");
+        if (ps) ps.innerHTML = '<span class="chip red">' + data.projects.overdueCount + ' 延期风险</span>' +
+          '<span class="chip orange">' + data.projects.soonCount + ' 临期节点</span>' +
+          '<span class="chip green">' + data.projects.normalCount + ' 正常推进</span>';
+      }
+      if (data.tickets && data.tickets.available) {
+        const tc = document.getElementById("teamTicketsCount");
+        if (tc) tc.innerHTML = data.tickets.activeCount + '<small>单在途</small>';
+        const ts = document.getElementById("teamTicketsStats");
+        if (ts) ts.innerHTML = '<span class="chip red">' + data.tickets.overdueCount + ' 在途延期</span>' +
+          '<span class="chip orange">' + data.tickets.unscheduledCount + ' 待排期</span>' +
+          '<span class="chip green">本月上线 ' + data.tickets.launchedMonth + '</span>';
+      }
+      if (data.weekly && data.weekly.available) {
+        const wp = document.getElementById("teamWeeklyPending");
+        if (wp) wp.innerHTML = (data.weekly.missingCount + data.weekly.reviewCount) + '<small>份待办</small>';
+        const ws = document.getElementById("teamWeeklyStats");
+        if (ws) ws.innerHTML = '<span class="chip red">' + data.weekly.missingCount + ' 份未提交</span>' +
+          '<span class="chip orange">' + data.weekly.reviewCount + ' 份待确认</span>' +
+          '<span class="chip green">' + data.weekly.confirmedCount + ' 份已归档</span>';
+      }
+
       if (blocked) blocked.textContent = String(Number(data.blocked || 0));
       if (overdue) overdue.textContent = String(Number(data.overdue || 0));
       if (soon) soon.textContent = String(Number(data.soon || 0));
@@ -360,6 +391,67 @@
   });
   const retry = document.getElementById("teamHomeRetry");
   if (retry) retry.addEventListener("click", load);
+
+  function showTeamToast(msg) {
+    if (typeof document === "undefined" || !document.createElement) return;
+    const toast = document.createElement("div");
+    toast.className = "team-toast";
+    toast.textContent = msg;
+    document.body.appendChild(toast);
+    setTimeout(function () { toast.remove(); }, 2500);
+  }
+
+  if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
+    document.addEventListener("click", function (e) {
+      const target = e.target;
+      if (!target || typeof target.closest !== "function") return;
+
+      const toggleMatrix = target.closest("#teamToggleMatrixBtn, #teamCloseMatrixBtn");
+      if (toggleMatrix) {
+        state.matrixOpen = !state.matrixOpen;
+        const matrixEl = document.getElementById("fullScreenMatrix");
+        const chevron = document.getElementById("teamMatrixChevron");
+        if (matrixEl) {
+          if (state.matrixOpen) {
+            matrixEl.removeAttribute("hidden");
+            matrixEl.scrollIntoView({ behavior: "smooth", block: "start" });
+          } else {
+            matrixEl.setAttribute("hidden", "");
+          }
+        }
+        if (chevron) {
+          chevron.className = state.matrixOpen ? "fas fa-chevron-up" : "fas fa-chevron-down";
+        }
+        return;
+      }
+
+      const screenBtn = target.closest("[data-open-screen]");
+      if (screenBtn) {
+        const screenId = screenBtn.getAttribute("data-open-screen");
+        if (screenId === "rep_weekly_list") {
+          window.location.href = "/follow";
+          return;
+        }
+        const title = screenBtn.getAttribute("title") || screenBtn.textContent.trim();
+        showTeamToast("正在调起组织大屏: " + title + " (已直达)");
+        return;
+      }
+
+      if (target.closest("#teamBatchUrgeBtn")) {
+        showTeamToast("已向 2 位未按时提交周报的项目负责人发送催报提醒通知！");
+        return;
+      }
+
+      const urgeSingle = target.closest('[data-action="urgeSingle"]');
+      if (urgeSingle) {
+        const owner = urgeSingle.getAttribute("data-owner") || "项目负责人";
+        showTeamToast("已向负责人 [" + owner + "] 发送周报催办提醒！");
+        return;
+      }
+
+
+    });
+  }
 
   load();
 })();

@@ -199,9 +199,12 @@ func TestGetTeamHierarchy_DeduplicationAndCrossGroup(t *testing.T) {
 		t.Fatalf("expected member02 IsMultiGroup=false, got true")
 	}
 
-	// 验证敏捷教练与产品经理正确映射自 zt_teamgroup 的 manager 与 PO
-	if resp.SubGroups[0].ScrumMaster.Name != "王组长1" {
-		t.Fatalf("expected ScrumMaster '王组长1', got %s", resp.SubGroups[0].ScrumMaster.Name)
+	// 验证小组长与产品经理正确映射自 zt_teamgroup 的 manager 与 PO，ScrumMaster保持为空未配置
+	if resp.SubGroups[0].GroupLeader.Name != "王组长1" {
+		t.Fatalf("expected GroupLeader '王组长1', got %s", resp.SubGroups[0].GroupLeader.Name)
+	}
+	if resp.SubGroups[0].ScrumMaster.Name != "" {
+		t.Fatalf("expected ScrumMaster to be empty, got %s", resp.SubGroups[0].ScrumMaster.Name)
 	}
 	if resp.SubGroups[0].PO.Name != "赵产品1" {
 		t.Fatalf("expected PO '赵产品1', got %s", resp.SubGroups[0].PO.Name)
@@ -279,4 +282,62 @@ func TestGetTeamHierarchy_SubgroupDetailPermissionMasking(t *testing.T) {
 		t.Fatalf("expected group 12 members masked to empty, got %d", len(resp.SubGroups[1].Members))
 	}
 }
+
+// 6. 验证 BUG-01: 子小组 manager 不得冒充 ScrumMaster，无独立配置时 ScrumMaster 为空
+func TestGetTeamHierarchy_ScrumMasterNotAutoAssignedFromGroupLeader(t *testing.T) {
+	db, mock := newMockDB(t)
+	svc := NewService(NewRepo(db))
+
+	actor := &model.User{Account: "leader01", IsSuperAdmin: false}
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT id, type, name, manager, PO, parent, grade, status FROM `zt_teamgroup` WHERE type = ? AND deleted = ? ORDER BY id ASC")).
+		WithArgs("parent", "0").
+		WillReturnRows(sqlmock.NewRows([]string{"id", "type", "name", "manager", "PO", "parent", "grade", "status"}).
+			AddRow(1, "parent", "信贷团队", "leader01", "po01", 0, 1, "enable"))
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT DISTINCT p.id FROM zt_teamgroup p")).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT id, type, name, manager, PO, parent, grade, status FROM `zt_teamgroup` WHERE id = ? AND type = ? AND deleted = ? LIMIT ?")).
+		WithArgs(uint(1), "parent", "0", 1).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "type", "name", "manager", "PO", "parent", "grade", "status"}).
+			AddRow(1, "parent", "信贷团队", "leader01", "po01", 0, 1, "enable"))
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT id, type, name, manager, PO, parent, grade, status FROM `zt_teamgroup` WHERE parent = ? AND type = ? AND deleted = ? ORDER BY id ASC")).
+		WithArgs(uint(1), "child", "0").
+		WillReturnRows(sqlmock.NewRows([]string{"id", "type", "name", "manager", "PO", "parent", "grade", "status"}).
+			AddRow(11, "child", "对公1组", "manager11", "po11", 1, 2, "enable"))
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT root AS group_id, account, COALESCE(role, '') AS role FROM `zt_team` WHERE type = ? AND root IN (?) ORDER BY root ASC, account ASC")).
+		WithArgs("teamgroup", 11).
+		WillReturnRows(sqlmock.NewRows([]string{"group_id", "account", "role"}).
+			AddRow(11, "dev01", "dev"))
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT account, realname FROM `zt_user`")).
+		WillReturnRows(sqlmock.NewRows([]string{"account", "realname"}).
+			AddRow("leader01", "张团队长").
+			AddRow("po01", "李总监").
+			AddRow("manager11", "王组长").
+			AddRow("po11", "赵产品").
+			AddRow("dev01", "钱开发"))
+
+	resp, err := svc.GetTeamHierarchy(context.Background(), actor, TeamHierarchyReq{TeamID: 1})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(resp.SubGroups) != 1 {
+		t.Fatalf("expected 1 subgroup, got %d", len(resp.SubGroups))
+	}
+	sub := resp.SubGroups[0]
+	// 小组长正常取自 manager11
+	if sub.GroupLeader.Account != "manager11" || sub.GroupLeader.Name != "王组长" {
+		t.Errorf("expected GroupLeader to be manager11, got %v", sub.GroupLeader)
+	}
+	// 敏捷教练不得取自小组长，必须为空
+	if sub.ScrumMaster.Account != "" || sub.ScrumMaster.Name != "" {
+		t.Errorf("expected ScrumMaster to be empty, got %v (violating BUG-01 rule)", sub.ScrumMaster)
+	}
+}
+
 

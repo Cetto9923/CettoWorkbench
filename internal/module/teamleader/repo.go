@@ -10,7 +10,9 @@ package teamleader
 
 import (
 	"context"
+	"strconv"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -188,3 +190,135 @@ func (r *Repo) ResolveRealnames(ctx context.Context, accounts []string) (map[str
 	}
 	return out, nil
 }
+
+// TaskDataRow 任务查询数据库原始行。
+type TaskDataRow struct {
+	ID              int64      `gorm:"column:id"`
+	Name            string     `gorm:"column:name"`
+	Type            string     `gorm:"column:type"`
+	Status          string     `gorm:"column:status"`
+	StoryID         int64      `gorm:"column:story"`
+	AssignedTo      string     `gorm:"column:assignedTo"`
+	FinishedBy      string     `gorm:"column:finishedBy"`
+	Deadline        *time.Time `gorm:"column:deadline"`
+	StoryTitle      string     `gorm:"column:storyTitle"`
+	DemandTeamGroup string     `gorm:"column:demandTeamGroup"`
+}
+
+// FindGroupTasksByDemand 查询明确归属于指定小组的需求研发任务（严格参数化）。
+func (r *Repo) FindGroupTasksByDemand(ctx context.Context, groupID uint, limit int) ([]TaskDataRow, error) {
+	if r == nil || r.db == nil || groupID == 0 {
+		return []TaskDataRow{}, nil
+	}
+	if limit <= 0 || limit > 500 {
+		limit = 200
+	}
+	gidStr := strconv.FormatUint(uint64(groupID), 10)
+	var rows []TaskDataRow
+	err := r.db.WithContext(ctx).
+		Table("zt_demand AS d").
+		Select(`t.id, t.name, t.type, t.status, t.story, t.assignedTo, t.finishedBy, t.deadline,
+			IFNULL(s.title, '') AS storyTitle,
+			d.teamGroup AS demandTeamGroup`).
+		Joins("INNER JOIN zt_story AS s ON s.fromDemand = d.id AND s.deleted = '0'").
+		Joins("INNER JOIN zt_task AS t ON t.story = s.id AND t.deleted = '0'").
+		Where("d.deleted = '0' AND d.teamGroup = ?", gidStr).
+		Where("(t.status IN ('wait', 'doing') OR (t.status = 'done'))").
+		Order("t.id DESC").
+		Limit(limit).
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+// FindPendingTasksByAccounts 查询小组成员名下待核查归属的候选任务（无需求或需求未指定小组）。
+func (r *Repo) FindPendingTasksByAccounts(ctx context.Context, accounts []string, limit int) ([]TaskDataRow, error) {
+	if r == nil || r.db == nil || len(accounts) == 0 {
+		return []TaskDataRow{}, nil
+	}
+	if limit <= 0 || limit > 500 {
+		limit = 200
+	}
+	var rows []TaskDataRow
+	err := r.db.WithContext(ctx).
+		Table("zt_task AS t").
+		Select(`t.id, t.name, t.type, t.status, t.story, t.assignedTo, t.finishedBy, t.deadline,
+			IFNULL(s.title, '') AS storyTitle,
+			IFNULL(d.teamGroup, '') AS demandTeamGroup`).
+		Joins("LEFT JOIN zt_story AS s ON s.id = t.story AND s.deleted = '0'").
+		Joins("LEFT JOIN zt_demand AS d ON d.id = s.fromDemand AND d.deleted = '0'").
+		Where("t.deleted = '0' AND t.status IN ('wait', 'doing')").
+		Where("t.assignedTo IN ?", accounts).
+		Where(`(
+			t.story = 0
+			OR s.id IS NULL
+			OR d.id IS NULL
+			OR d.teamGroup = ''
+			OR d.teamGroup IS NULL
+		)`).
+		Order("t.id DESC").
+		Limit(limit).
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+// FindAllTasksByAccount 查询特定成员负责的所有任务（包含跨组任务及归属信息）。
+func (r *Repo) FindAllTasksByAccount(ctx context.Context, account string, limit int) ([]TaskDataRow, error) {
+	account = strings.TrimSpace(account)
+	if r == nil || r.db == nil || account == "" {
+		return []TaskDataRow{}, nil
+	}
+	if limit <= 0 || limit > 500 {
+		limit = 200
+	}
+	var rows []TaskDataRow
+	err := r.db.WithContext(ctx).
+		Table("zt_task AS t").
+		Select(`t.id, t.name, t.type, t.status, t.story, t.assignedTo, t.finishedBy, t.deadline,
+			IFNULL(s.title, '') AS storyTitle,
+			IFNULL(d.teamGroup, '') AS demandTeamGroup`).
+		Joins("LEFT JOIN zt_story AS s ON s.id = t.story AND s.deleted = '0'").
+		Joins("LEFT JOIN zt_demand AS d ON d.id = s.fromDemand AND d.deleted = '0'").
+		Where("t.deleted = '0'").
+		Where(`(
+			(t.assignedTo = ? AND t.status IN ('wait', 'doing'))
+			OR (t.finishedBy = ? AND t.status = 'done')
+		)`, account, account).
+		Order("t.id DESC").
+		Limit(limit).
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+// FindSubGroupNamesMap 批量查询小组ID对应的名称映射。
+func (r *Repo) FindSubGroupNamesMap(ctx context.Context, groupIDs []uint) (map[uint]string, error) {
+	out := make(map[uint]string)
+	if len(groupIDs) == 0 {
+		return out, nil
+	}
+	var rows []struct {
+		ID   uint   `gorm:"column:id"`
+		Name string `gorm:"column:name"`
+	}
+	err := r.db.WithContext(ctx).
+		Table("zt_teamgroup").
+		Select("id, name").
+		Where("id IN ? AND deleted = '0'", groupIDs).
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	for _, it := range rows {
+		out[it.ID] = it.Name
+	}
+	return out, nil
+}
+

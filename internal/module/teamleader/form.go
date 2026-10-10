@@ -72,3 +72,70 @@ type TeamHierarchyResp struct {
 	AuthorizedTeams []TeamOptionDTO `json:"authorizedTeams"` // 当前账号被授权的所有三级团队列表
 	MyRole          string          `json:"myRole"`          // 当前账号身份: team_leader / group_leader / po / member / admin / guest
 }
+
+// ListGroupTasksReq 小组研发工作看板查询请求。
+type ListGroupTasksReq struct {
+	TeamID  uint   `form:"teamId"`
+	GroupID uint   `form:"groupId"`
+	Account string `form:"account"`
+	Scope   string `form:"scope"` // all | confirmed | pending
+}
+
+// Validate 校验小组任务查询参数。
+func (r *ListGroupTasksReq) Validate() []FieldError {
+	var errs []FieldError
+	if r.TeamID == 0 {
+		errs = append(errs, FieldError{Field: "teamId", Message: "团队ID不能为空"})
+	}
+	if r.GroupID == 0 {
+		errs = append(errs, FieldError{Field: "groupId", Message: "小组ID不能为空"})
+	}
+	return errs
+}
+
+// GroupTaskItem 小组研发任务单卡。
+type GroupTaskItem struct {
+	ID              int64  `json:"id"`
+	DisplayID       string `json:"displayId"`
+	Title           string `json:"title"`
+	Status          string `json:"status"` // wait | doing | done
+	Type            string `json:"type"`
+	StoryID         int64  `json:"storyId"`
+	StoryTitle      string `json:"storyTitle"`
+	Owner           string `json:"owner"`
+	OwnerAccount    string `json:"ownerAccount"`
+	Deadline        string `json:"deadline"`
+	Overdue         bool   `json:"overdue"`
+	URL             string `json:"url"`
+	Attribution     string `json:"attribution"`     // confirmed | pending
+	SourceGroupName string `json:"sourceGroupName"` // 跨组任务所属小组名称（若有）
+	IsPendingReview bool   `json:"isPendingReview"` // 是否待核查归属
+}
+
+// GroupTaskColumn 小组任务看板单列。
+type GroupTaskColumn struct {
+	Key   string          `json:"key"`
+	Name  string          `json:"name"`
+	Count int             `json:"count"`
+	Items []GroupTaskItem `json:"items"`
+}
+
+// GroupTaskSummary 小组任务指标概览（待核查任务严格与正式指标分离）。
+type GroupTaskSummary struct {
+	ConfirmedTotal     int `json:"confirmedTotal"`     // 正式任务总数
+	ConfirmedWait      int `json:"confirmedWait"`      // 正式未开始
+	ConfirmedDoing     int `json:"confirmedDoing"`     // 正式进行中
+	ConfirmedDone      int `json:"confirmedDone"`      // 正式已完成
+	ConfirmedOverdue   int `json:"confirmedOverdue"`   // 正式逾期
+	PendingReviewTotal int `json:"pendingReviewTotal"` // 待核查候选任务总数（不计入正式指标）
+}
+
+// GroupTasksResp 小组研发工作看板响应。
+type GroupTasksResp struct {
+	GroupID            uint              `json:"groupId"`
+	GroupName          string            `json:"groupName"`
+	Summary            GroupTaskSummary  `json:"summary"`
+	Columns            []GroupTaskColumn `json:"columns"`
+	PendingReviewTasks []GroupTaskItem   `json:"pendingReviewTasks"` // 独立分离的待核查候选任务
+}
+

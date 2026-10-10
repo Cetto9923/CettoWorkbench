@@ -1,0 +1,375 @@
+/* =============================================================================
+   文件: web/static/css/po/home-team-kanban.css
+   模块: 团队长工作台 - 小组研发工作看板
+   职责: 提供三列任务看板、成员筛选条、指标摘要、待核查候选任务与卡片样式。
+   ============================================================================= */
+
+/* 1. 看板总容器 */
+.th-kanban-wrap {
+  margin-top: 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-soft);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 2. 看板顶部操作与摘要栏 */
+.th-kanban-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border-soft);
+}
+
+.th-kanban-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.th-kanban-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.th-kanban-view-tabs {
+  display: inline-flex;
+  background: var(--color-page-bg);
+  padding: 3px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border-soft);
+}
+
+.th-kanban-view-tab {
+  border: none;
+  background: transparent;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.th-kanban-view-tab:hover {
+  color: var(--color-text-primary);
+}
+
+.th-kanban-view-tab.active {
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.th-kanban-badge-warn {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+/* 3. 指标统计胶囊 */
+.th-kanban-stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.th-kanban-stat-pill {
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--color-page-bg);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-soft);
+}
+
+.th-kanban-stat-pill strong {
+  color: var(--color-text-primary);
+  font-weight: 700;
+  margin-left: 3px;
+}
+
+.th-kanban-stat-pill.danger {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border-color: var(--color-danger-bg);
+}
+
+.th-kanban-stat-pill.danger strong {
+  color: var(--color-danger);
+}
+
+/* 4. 成员筛选栏 */
+.th-kanban-people-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 6px 0;
+}
+
+.th-kanban-people-label {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.th-kanban-person-btn {
+  border: 1px solid var(--color-border-soft);
+  background: var(--color-surface);
+  color: var(--color-text-body);
+  border-radius: 14px;
+  padding: 3px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+}
+
+.th-kanban-person-btn:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-border-strong);
+}
+
+.th-kanban-person-btn.active {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border-color: var(--color-primary-border);
+  font-weight: 600;
+}
+
+/* 5. 三列任务看板网格 */
+.th-kanban-columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  min-height: 280px;
+}
+
+.th-kanban-col {
+  background: var(--color-page-bg);
+  border: 1px solid var(--color-border-soft);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.th-kanban-col-hdr {
+  height: 38px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--color-border-soft);
+  background: var(--color-surface-muted);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.th-kanban-col-count {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-soft);
+  padding: 1px 7px;
+  border-radius: 10px;
+}
+
+.th-kanban-col-body {
+  padding: 10px;
+  overflow-y: auto;
+  max-height: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 6. 任务卡片 */
+.th-kanban-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-soft);
+  border-radius: 6px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: all 0.15s ease;
+}
+
+.th-kanban-card:hover {
+  border-color: var(--color-primary-border);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.th-kanban-card.is-overdue {
+  border-left: 3px solid var(--color-danger);
+}
+
+.th-kanban-card.is-pending {
+  border-left: 3px solid var(--color-warning);
+}
+
+.th-kanban-card-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.th-kanban-card-title {
+  font-size: 13px;
+  color: var(--color-text-primary);
+  font-weight: 600;
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+.th-kanban-card-id {
+  font-size: 11px;
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.th-kanban-card-id:hover {
+  text-decoration: underline;
+}
+
+.th-kanban-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+}
+
+.th-kanban-card-story {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  background: var(--color-page-bg);
+  padding: 2px 6px;
+  border-radius: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.th-kanban-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+.th-kanban-tag.tag-cross {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.th-kanban-tag.tag-pending {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+.th-kanban-tag.tag-overdue {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+/* 7. 待核查候选任务专用列表面板 */
+.th-pending-panel {
+  background: var(--color-page-bg);
+  border: 1px solid var(--color-border-soft);
+  border-radius: 6px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.th-pending-tip {
+  font-size: 12px;
+  color: var(--color-warning);
+  background: var(--color-warning-bg);
+  padding: 8px 12px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.th-pending-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px;
+}
+
+/* 8. 触发按钮 */
+.th-toggle-kanban-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary-border);
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.th-toggle-kanban-btn:hover {
+  background: var(--color-primary);
+  color: var(--color-surface);
+}
+
+.th-toggle-kanban-btn.active {
+  background: var(--color-primary);
+  color: var(--color-surface);
+}
+
+.th-kanban-placeholder {
+  padding: 24px;
+}
+
+.th-kanban-placeholder-col {
+  padding: 20px 0;
+}
+
+.th-kanban-card-tags {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+

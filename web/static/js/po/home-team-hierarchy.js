@@ -12,6 +12,7 @@
     activeGroupID: 0,
     selectedTeamID: 0,
     isLoading: false,
+    isKanbanOpen: false,
   };
 
   function esc(s) {
@@ -204,6 +205,14 @@
         "</b></span>";
       html += "    <span>组内人数: <b>" + curGroup.memberCount + " 人</b></span>";
       html += "  </div>";
+      html +=
+        '  <button type="button" class="th-toggle-kanban-btn' +
+        (state.isKanbanOpen ? " active" : "") +
+        '" id="thToggleKanbanBtn">';
+      html +=
+        '    <i class="fas fa-diagram-project"></i> ' +
+        (state.isKanbanOpen ? "收起研发工作" : "小组研发工作");
+      html += "  </button>";
       html += "</div>";
 
   function getAvatarText(name, account) {
@@ -218,7 +227,7 @@
       html += '<div class="th-members-grid">';
       if (!curGroup.members || curGroup.members.length === 0) {
         html +=
-          '<div class="th-empty-card" style="grid-column: 1 / -1;"><p class="th-empty-text">暂无成员记录</p></div>';
+          '<div class="th-empty-card th-empty-fullwidth"><p class="th-empty-text">暂无成员记录</p></div>';
       } else {
         curGroup.members.forEach(function (m) {
           const avatarChar = getAvatarText(m.name, m.account);
@@ -251,6 +260,9 @@
         });
       }
       html += "</div>"; // end th-members-grid
+
+      // 小组研发工作看板挂载点
+      html += '<div id="thGroupKanbanContainer"></div>';
     }
     html += "</div>"; // end th-group-tabs-card
     html += "</div>"; // end th-container
@@ -278,6 +290,29 @@
         }
       });
     });
+
+    // 小组研发工作展开/收起按钮
+    const toggleKanbanBtn = document.getElementById("thToggleKanbanBtn");
+    if (toggleKanbanBtn) {
+      toggleKanbanBtn.addEventListener("click", function () {
+        state.isKanbanOpen = !state.isKanbanOpen;
+        renderHierarchy();
+      });
+    }
+
+    // 若当前看板处于展开态，触发看板加载
+    if (state.isKanbanOpen && window.TeamGroupKanban && subGroups.length > 0) {
+      const curGroup = subGroups.find(function (g) {
+        return g.id === state.activeGroupID;
+      }) || subGroups[0];
+      window.TeamGroupKanban.loadGroupKanban(
+        state.selectedTeamID,
+        curGroup.id,
+        curGroup.name,
+        curGroup.members
+      );
+    }
+
   }
 
   // 页面入口挂载

@@ -241,9 +241,9 @@ func (s *Service) assembleHierarchy(
 			}
 		}
 
-		coachName := resolveName(g.Manager, nameMap)
+		leaderName := resolveName(g.Manager, nameMap)
 		if strings.TrimSpace(g.Manager) == "" {
-			coachName = "未配置"
+			leaderName = "未配置"
 		}
 		poName := resolveName(g.PO, nameMap)
 		if strings.TrimSpace(g.PO) == "" {
@@ -253,9 +253,9 @@ func (s *Service) assembleHierarchy(
 		subDTOs = append(subDTOs, SubGroupDTO{
 			ID:          g.ID,
 			Name:        g.Name,
-			GroupLeader: PersonDTO{Account: g.Manager, Name: coachName},
+			GroupLeader: PersonDTO{Account: g.Manager, Name: leaderName},
 			PO:          PersonDTO{Account: g.PO, Name: poName},
-			ScrumMaster: PersonDTO{Account: g.Manager, Name: coachName}, // 敏捷小组的敏捷教练来源于 zt_teamgroup.manager
+			ScrumMaster: PersonDTO{}, // 严格遵守业务规则：禅道无独立SM来源时置空，由前端统一展示“未配置”，禁止将小组长冒充SM
 			MemberCount: totalGroupCount,
 			Members:     memberDTOs,
 		})

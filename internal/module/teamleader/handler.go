@@ -41,6 +41,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.Use(middleware.RequireAnyPerm(perm.KanbanStory, perm.AgileTeamList, perm.PoHomeList))
 	{
 		g.GET("/hierarchy", h.GetHierarchy)
+		g.GET("/group/tasks", h.GetGroupTasks)
 	}
 }
 
@@ -83,3 +84,44 @@ func (h *Handler) GetHierarchy(c *gin.Context) {
 		"data":    resp,
 	})
 }
+
+// GetGroupTasks 获取指定小组的研发工作任务列表（支持小组全员及单成员筛选）。
+func (h *Handler) GetGroupTasks(c *gin.Context) {
+	actor := middleware.CurrentUser(c)
+	var req ListGroupTasksReq
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "参数解析失败"})
+		return
+	}
+
+	if errs := req.Validate(); len(errs) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"success": false, "message": "参数校验失败", "errors": errs})
+		return
+	}
+
+	resp, err := h.svc.ListGroupTasks(c.Request.Context(), actor, req)
+	if err != nil {
+		var bizErr *errorx.BizError
+		if errors.As(err, &bizErr) {
+			if bizErr.Code == errorx.ErrCodeForbidden {
+				c.JSON(http.StatusForbidden, gin.H{"success": false, "message": bizErr.Msg})
+				return
+			}
+			if bizErr.Code == errorx.ErrCodeInvalidParam {
+				c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": bizErr.Msg})
+				return
+			}
+		}
+		if h.logger != nil {
+			h.logger.Error("list group tasks error", zap.Error(err))
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "获取小组任务数据失败"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    resp,
+	})
+}
+

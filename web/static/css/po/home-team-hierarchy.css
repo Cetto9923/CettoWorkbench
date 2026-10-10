@@ -321,3 +321,8 @@
   font-size: 14px;
   margin: 0;
 }
+
+.th-empty-card.th-empty-fullwidth {
+  grid-column: 1 / -1;
+}
+
