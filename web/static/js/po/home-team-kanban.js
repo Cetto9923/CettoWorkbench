@@ -14,6 +14,10 @@
     members: [],
     selectedAccount: "all",
     currentView: "confirmed", // confirmed | pending
+    page: 1,
+    pageSize: 50,
+    pendingPage: 1,
+    pendingPageSize: 20,
     isLoading: false,
     kanbanData: null,
     requestSeq: 0,
@@ -42,7 +46,15 @@
         "/team/group/tasks?teamId=" +
         encodeURIComponent(state.teamID) +
         "&groupId=" +
-        encodeURIComponent(state.groupID);
+        encodeURIComponent(state.groupID) +
+        "&page=" +
+        encodeURIComponent(state.page) +
+        "&pageSize=" +
+        encodeURIComponent(state.pageSize) +
+        "&pendingPage=" +
+        encodeURIComponent(state.pendingPage) +
+        "&pendingPageSize=" +
+        encodeURIComponent(state.pendingPageSize);
       if (state.selectedAccount && state.selectedAccount !== "all") {
         url += "&account=" + encodeURIComponent(state.selectedAccount);
       }
@@ -200,6 +212,7 @@
         html += "  </div>";
       });
       html += "</div>";
+      html += renderPaginationHTML("confirmed", data.confirmedPagination);
     } else {
       // 待核查候选任务面板
       const pendPag = data.pendingPagination || {};
@@ -219,6 +232,7 @@
         });
         html += "  </div>";
       }
+      html += renderPaginationHTML("pending", data.pendingPagination);
       html += "</div>";
     }
 
@@ -227,6 +241,26 @@
 
     // 绑定交互事件
     bindEvents(container);
+  }
+
+  function renderPaginationHTML(type, pagInfo) {
+    const total = (pagInfo && pagInfo.total) || 0;
+    const pageSize = (pagInfo && pagInfo.pageSize) || (type === "confirmed" ? state.pageSize : state.pendingPageSize);
+    const currentPage = (pagInfo && pagInfo.page) || (type === "confirmed" ? state.page : state.pendingPage);
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+    let html = '<div class="th-kanban-pagination">';
+    html += '  <span class="th-pagination-info">共 ' + total + ' 项 / 第 ' + currentPage + ' 页 (共 ' + totalPages + ' 页)</span>';
+    html += '  <div class="th-pagination-actions">';
+    html += '    <button type="button" class="th-page-btn" data-type="' + type + '" data-dir="prev"' + (currentPage <= 1 ? " disabled" : "") + '>';
+    html += '      <i class="fas fa-chevron-left"></i> 上一页';
+    html += '    </button>';
+    html += '    <button type="button" class="th-page-btn" data-type="' + type + '" data-dir="next"' + (currentPage >= totalPages ? " disabled" : "") + '>';
+    html += '      下一页 <i class="fas fa-chevron-right"></i>';
+    html += '    </button>';
+    html += '  </div>';
+    html += '</div>';
+    return html;
   }
 
   function renderCardHTML(item) {
@@ -309,7 +343,43 @@
         const acc = btn.getAttribute("data-account");
         if (acc && acc !== state.selectedAccount) {
           state.selectedAccount = acc;
+          state.page = 1;
+          state.pendingPage = 1;
           loadTasks();
+        }
+      });
+    });
+
+    const pageBtns = container.querySelectorAll(".th-page-btn");
+    pageBtns.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        if (btn.disabled || state.isLoading) return;
+        const type = btn.getAttribute("data-type");
+        const dir = btn.getAttribute("data-dir");
+        if (type === "confirmed") {
+          const confPag = (state.kanbanData && state.kanbanData.confirmedPagination) || {};
+          const total = confPag.total || 0;
+          const pageSize = confPag.pageSize || state.pageSize || 50;
+          const totalPages = Math.max(1, Math.ceil(total / pageSize));
+          if (dir === "prev" && state.page > 1) {
+            state.page--;
+            loadTasks();
+          } else if (dir === "next" && state.page < totalPages) {
+            state.page++;
+            loadTasks();
+          }
+        } else if (type === "pending") {
+          const pendPag = (state.kanbanData && state.kanbanData.pendingPagination) || {};
+          const total = pendPag.total || 0;
+          const pageSize = pendPag.pageSize || state.pendingPageSize || 20;
+          const totalPages = Math.max(1, Math.ceil(total / pageSize));
+          if (dir === "prev" && state.pendingPage > 1) {
+            state.pendingPage--;
+            loadTasks();
+          } else if (dir === "next" && state.pendingPage < totalPages) {
+            state.pendingPage++;
+            loadTasks();
+          }
         }
       });
     });
@@ -324,6 +394,8 @@
       state.members = members || [];
       state.selectedAccount = "all";
       state.currentView = "confirmed";
+      state.page = 1;
+      state.pendingPage = 1;
       loadTasks();
     },
     clear: function () {

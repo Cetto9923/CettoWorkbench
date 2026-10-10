@@ -228,9 +228,9 @@ func (r *Repo) CountGroupConfirmedTasks(ctx context.Context, groupID uint, accou
 		Select(`
 			COUNT(CASE WHEN t.status = 'wait' THEN 1 END) AS wait_count,
 			COUNT(CASE WHEN t.status = 'doing' THEN 1 END) AS doing_count,
-			COUNT(CASE WHEN t.status = 'done' AND (t.finishedDate >= ? OR (t.finishedDate IS NULL AND t.assignedDate >= ?)) THEN 1 END) AS done_count,
+			COUNT(CASE WHEN t.status = 'done' AND t.finishedDate IS NOT NULL AND t.finishedDate != '0000-00-00 00:00:00' AND t.finishedDate >= ? THEN 1 END) AS done_count,
 			COUNT(CASE WHEN t.status IN ('wait', 'doing') AND t.deadline IS NOT NULL AND t.deadline != '0000-00-00' AND t.deadline < ? THEN 1 END) AS overdue_count
-		`, thirtyDaysAgo, thirtyDaysAgo, today).
+		`, thirtyDaysAgo, today).
 		Joins("INNER JOIN zt_story AS s ON s.fromDemand = d.id AND s.deleted = '0'").
 		Joins("INNER JOIN zt_task AS t ON t.story = s.id AND t.deleted = '0'").
 		Where("d.deleted = '0' AND d.teamGroup = ?", gidStr)
@@ -274,7 +274,7 @@ func (r *Repo) FindGroupConfirmedTasksPaged(ctx context.Context, groupID uint, a
 		Joins("INNER JOIN zt_story AS s ON s.fromDemand = d.id AND s.deleted = '0'").
 		Joins("INNER JOIN zt_task AS t ON t.story = s.id AND t.deleted = '0'").
 		Where("d.deleted = '0' AND d.teamGroup = ?", gidStr).
-		Where("(t.status IN ('wait', 'doing') OR (t.status = 'done' AND (t.finishedDate >= ? OR (t.finishedDate IS NULL AND t.assignedDate >= ?))))", thirtyDaysAgo, thirtyDaysAgo)
+		Where("(t.status IN ('wait', 'doing') OR (t.status = 'done' AND t.finishedDate IS NOT NULL AND t.finishedDate != '0000-00-00 00:00:00' AND t.finishedDate >= ?))", thirtyDaysAgo)
 
 	if account != "" && account != "all" {
 		query = query.Where("(t.assignedTo = ? OR (t.status = 'done' AND t.finishedBy = ?))", account, account)
@@ -287,7 +287,7 @@ func (r *Repo) FindGroupConfirmedTasksPaged(ctx context.Context, groupID uint, a
 	return rows, nil
 }
 
-// CountPendingTasksByAccounts 统计待核查候选任务总数。
+// CountPendingTasksByAccounts 统计待核查候选任务总数（严格校验项目存在性与可见范围授权边界）。
 func (r *Repo) CountPendingTasksByAccounts(ctx context.Context, accounts []string) (int, error) {
 	if r == nil || r.db == nil || len(accounts) == 0 {
 		return 0, nil
@@ -295,10 +295,12 @@ func (r *Repo) CountPendingTasksByAccounts(ctx context.Context, accounts []strin
 	var count int64
 	err := r.db.WithContext(ctx).
 		Table("zt_task AS t").
+		Joins("INNER JOIN zt_project AS p ON p.id = t.project AND p.deleted = '0'").
 		Joins("LEFT JOIN zt_story AS s ON s.id = t.story AND s.deleted = '0'").
 		Joins("LEFT JOIN zt_demand AS d ON d.id = s.fromDemand AND d.deleted = '0'").
 		Where("t.deleted = '0' AND t.status IN ('wait', 'doing')").
 		Where("t.assignedTo IN ?", accounts).
+		Where("(p.acl != 'private' OR EXISTS (SELECT 1 FROM zt_team AS tm WHERE tm.root = p.id AND tm.type = 'project' AND tm.account = t.assignedTo))").
 		Where(`(
 			t.story = 0
 			OR s.id IS NULL
@@ -313,7 +315,7 @@ func (r *Repo) CountPendingTasksByAccounts(ctx context.Context, accounts []strin
 	return int(count), nil
 }
 
-// FindPendingTasksByAccountsPaged 分页查询小组成员名下待核查归属的候选任务。
+// FindPendingTasksByAccountsPaged 分页查询小组成员名下待核查归属的候选任务（严格校验项目存在性与可见范围授权边界）。
 func (r *Repo) FindPendingTasksByAccountsPaged(ctx context.Context, accounts []string, limit, offset int) ([]TaskDataRow, error) {
 	if r == nil || r.db == nil || len(accounts) == 0 {
 		return []TaskDataRow{}, nil
@@ -330,10 +332,12 @@ func (r *Repo) FindPendingTasksByAccountsPaged(ctx context.Context, accounts []s
 		Select(`t.id, t.name, t.type, t.status, t.story, t.assignedTo, t.finishedBy, t.deadline, t.finishedDate,
 			IFNULL(s.title, '') AS storyTitle,
 			IFNULL(d.teamGroup, '') AS demandTeamGroup`).
+		Joins("INNER JOIN zt_project AS p ON p.id = t.project AND p.deleted = '0'").
 		Joins("LEFT JOIN zt_story AS s ON s.id = t.story AND s.deleted = '0'").
 		Joins("LEFT JOIN zt_demand AS d ON d.id = s.fromDemand AND d.deleted = '0'").
 		Where("t.deleted = '0' AND t.status IN ('wait', 'doing')").
 		Where("t.assignedTo IN ?", accounts).
+		Where("(p.acl != 'private' OR EXISTS (SELECT 1 FROM zt_team AS tm WHERE tm.root = p.id AND tm.type = 'project' AND tm.account = t.assignedTo))").
 		Where(`(
 			t.story = 0
 			OR s.id IS NULL

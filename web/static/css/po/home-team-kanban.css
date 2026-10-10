@@ -373,3 +373,53 @@
   align-items: center;
 }
 
+/* 9. 看板分页控件 */
+.th-kanban-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-soft);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.th-pagination-info {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.th-pagination-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.th-page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: var(--color-text-primary);
+  background: var(--color-page-bg);
+  border: 1px solid var(--color-border-soft);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.th-page-btn:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+  border-color: var(--color-primary-border);
+  color: var(--color-primary);
+}
+
+.th-page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+
