@@ -219,4 +219,40 @@
     {{ end }}
   </div>
 </nav>
+{{/* 从「常用」进入时须在首屏绘制前切回常用面板，否则会先闪一下真实菜单分组 */}}
+<script>
+(function () {
+  try {
+    var viaPinned =
+      window.localStorage.getItem("po_nav_via_pinned") === "1" ||
+      /(?:^|;\s*)po_nav_via_pinned=1(?:;|$)/.test(document.cookie);
+    if (!viaPinned) return;
+    var sidebar = document.getElementById("sidebar");
+    if (!sidebar || !sidebar.classList.contains("po-dual-sidebar")) return;
+    var section = document.getElementById("pinnedSection");
+    if (!section) return;
+    var pinnedPanel = section.closest(".po-subnav-panel");
+    if (!pinnedPanel) return;
+    var group = pinnedPanel.getAttribute("data-subnav-panel") || "";
+    if (!group) return;
+    var stored = "";
+    var match = document.cookie.match(/(?:^|;\s*)po_active_rail=([^;]+)/);
+    if (match && match[1]) {
+      stored = decodeURIComponent(match[1]);
+    } else {
+      stored = window.localStorage.getItem("po_active_rail") || "";
+    }
+    if (stored !== group) return;
+    sidebar.querySelectorAll(".po-rail-btn").forEach(function (btn) {
+      var isCurrent = btn.getAttribute("data-rail-group") === group;
+      btn.classList.toggle("is-drawer-open", isCurrent);
+      btn.classList.toggle("is-active-route", isCurrent);
+      btn.setAttribute("aria-expanded", isCurrent ? "true" : "false");
+    });
+    sidebar.querySelectorAll(".po-subnav-panel").forEach(function (panel) {
+      panel.classList.toggle("is-active", panel.getAttribute("data-subnav-panel") === group);
+    });
+  } catch (e) {}
+})();
+</script>
 {{ end }}

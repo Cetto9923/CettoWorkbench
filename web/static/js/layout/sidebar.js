@@ -7,6 +7,7 @@
  *   3) 侧边栏整体收起 + localStorage 持久化
  *   4) 自动展开当前页面所在菜单路径
  *   5) 个人面板「常用」列表渲染与编辑（拖拽排序 / 移除）
+ *   6) 从「常用」点击进入时，刷新后仍停留在常用面板并高亮对应项
  */
 (function () {
   "use strict";
@@ -62,6 +63,9 @@
   }
 
   var RAIL_STORAGE_KEY = "po_active_rail";
+  /* 从「常用」点击进入时置位，避免刷新后被服务端真实菜单分组抢走高亮 */
+  var PINNED_NAV_KEY = "po_nav_via_pinned";
+
   function getStoredRailGroup() {
     try {
       var match = document.cookie.match(/(?:^|;\s*)po_active_rail=([^;]+)/);
@@ -79,6 +83,35 @@
       document.cookie =
         "po_active_rail=" + encodeURIComponent(group) + ";path=/;max-age=31536000;SameSite=Lax";
     } catch (e) {}
+  }
+
+  function getNavViaPinned() {
+    try {
+      if (window.localStorage.getItem(PINNED_NAV_KEY) === "1") return true;
+      return /(?:^|;\s*)po_nav_via_pinned=1(?:;|$)/.test(document.cookie);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function setNavViaPinned(enabled) {
+    try {
+      if (enabled) {
+        window.localStorage.setItem(PINNED_NAV_KEY, "1");
+        document.cookie =
+          "po_nav_via_pinned=1;path=/;max-age=31536000;SameSite=Lax";
+      } else {
+        window.localStorage.removeItem(PINNED_NAV_KEY);
+        document.cookie = "po_nav_via_pinned=;path=/;max-age=0;SameSite=Lax";
+      }
+    } catch (e) {}
+  }
+
+  function getPinnedRailGroup() {
+    var section = document.getElementById("pinnedSection");
+    if (!section) return "";
+    var panel = section.closest(".po-subnav-panel");
+    return panel ? panel.getAttribute("data-subnav-panel") || "" : "";
   }
 
   function activateRailGroup(group, updateRoute) {
@@ -106,6 +139,7 @@
     if (railBtn && sidebar.contains(railBtn)) {
       var group = railBtn.getAttribute("data-rail-group");
       if (group) {
+        setNavViaPinned(false);
         activateRailGroup(group, true);
         if (document.body.classList.contains("sidebar-collapsed")) {
           applyCollapsed(false);
@@ -119,6 +153,8 @@
 
     var navLink = e.target.closest(".po-subnav a.nav-item[href]");
     if (navLink && sidebar.contains(navLink)) {
+      var fromPinned = !!navLink.closest("#sidebarPinnedContainer, #pinnedSection");
+      setNavViaPinned(fromPinned);
       var panel = navLink.closest(".po-subnav-panel");
       if (panel) {
         var g = panel.getAttribute("data-subnav-panel");
@@ -187,14 +223,22 @@
     var storedGroup = getStoredRailGroup();
     var activePanel = sidebar.querySelector(".po-subnav-panel.is-active");
     var routeGroup = activePanel ? activePanel.getAttribute("data-subnav-panel") : "";
+    var pinnedGroup = getPinnedRailGroup();
     var group = routeGroup || storedGroup;
+    var updateRoute = !routeGroup;
+
+    /* 从「常用」进入：优先停留在常用所在面板，并同步一级轨高亮 */
+    if (getNavViaPinned() && pinnedGroup && storedGroup === pinnedGroup) {
+      group = pinnedGroup;
+      updateRoute = true;
+    }
 
     if (!group) {
       var firstBtn = sidebar.querySelector(".po-rail-btn[data-rail-group]");
       if (firstBtn) group = firstBtn.getAttribute("data-rail-group") || "";
     }
 
-    if (group) activateRailGroup(group, !routeGroup);
+    if (group) activateRailGroup(group, updateRoute);
   }
 
   if (isDualSidebar) syncActiveRoute();
