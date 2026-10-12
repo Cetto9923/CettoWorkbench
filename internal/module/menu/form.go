@@ -180,3 +180,34 @@ type PinUserMenuResp struct {
 type UnpinUserMenuReq struct {
 	MenuID uint64
 }
+
+// ReorderUserMenuReq 按 menuIds 顺序重写当前用户固定菜单 sort。
+type ReorderUserMenuReq struct {
+	MenuIDs []uint64 `json:"menuIds"`
+}
+
+// Validate 校验排序请求（允许空列表；有项时禁止重复）。
+func (r *ReorderUserMenuReq) Validate() []FieldError {
+	var errs []FieldError
+	if r.MenuIDs == nil {
+		r.MenuIDs = []uint64{}
+	}
+	seen := make(map[uint64]struct{}, len(r.MenuIDs))
+	for _, id := range r.MenuIDs {
+		if id == 0 {
+			errs = append(errs, FieldError{Field: "menuIds", Message: "菜单 ID 无效"})
+			return errs
+		}
+		if _, ok := seen[id]; ok {
+			errs = append(errs, FieldError{Field: "menuIds", Message: "菜单 ID 重复"})
+			return errs
+		}
+		seen[id] = struct{}{}
+	}
+	return errs
+}
+
+// ReorderUserMenuResp 排序成功响应。
+type ReorderUserMenuResp struct {
+	Items []UserMenuItem `json:"items"`
+}

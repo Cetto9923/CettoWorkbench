@@ -6,7 +6,7 @@
  *   2) 手风琴展开/折叠（同级互斥）
  *   3) 侧边栏整体收起 + localStorage 持久化
  *   4) 自动展开当前页面所在菜单路径
- *   5) 个人面板「常用」列表只读渲染（WorkbenchPinned）
+ *   5) 个人面板「常用」列表渲染与编辑（拖拽排序 / 移除）
  */
 (function () {
   "use strict";
@@ -226,7 +226,7 @@
     }
   }
 
-  /* ── 个人面板「常用」列表（只读展示，数据来自 WorkbenchPinned） ── */
+  /* ── 个人面板「常用」列表（WorkbenchPinned：展示 / 编辑排序 / 移除） ── */
   function escapeHtml(s) {
     return String(s)
       .replace(/&/g, "&amp;")
@@ -248,42 +248,240 @@
     return currentPath === p || currentPath.indexOf(p + "/") === 0;
   }
 
-  function renderPinnedList() {
+  function initPinnedSection() {
     var container = document.getElementById("sidebarPinnedContainer");
+    var manageBtn = document.getElementById("btnManagePinned");
+    var editTip = document.getElementById("pinnedEditTip");
     if (!container || !window.WorkbenchPinned) return;
 
-    var items = window.WorkbenchPinned.getPinnedItems() || [];
-    var currentPath = window.location.pathname;
-    var html = "";
-    items.forEach(function (item) {
-      var path = String((item && item.path) || "").trim();
-      if (!path) return;
-      var title = String((item && item.title) || path).trim();
-      var active = pathIsActive(path, currentPath);
-      html +=
-        '<a href="' +
-        escapeHtml(path) +
-        '" class="nav-item' +
-        (active ? " active" : "") +
-        '" data-menu-id="' +
-        escapeHtml(String((item && item.menuId) || "")) +
-        '" title="' +
-        escapeHtml(title) +
-        '">';
-      html += '<i class="nav-icon ' + escapeHtml(pinnedIconClass(item && item.icon)) + '"></i>';
-      html += '<span class="nav-text">' + escapeHtml(title) + "</span>";
-      html += "</a>";
-    });
+    var isEditMode = false;
+    var draftItems = [];
+    var saving = false;
 
-    container.innerHTML = html;
-  }
+    function syncDraftFromStore() {
+      draftItems = (window.WorkbenchPinned.getPinnedItems() || []).slice();
+    }
 
-  function initPinnedSection() {
-    if (!document.getElementById("sidebarPinnedContainer") || !window.WorkbenchPinned) return;
+    function renderPinnedList() {
+      if (!isEditMode) {
+        syncDraftFromStore();
+      }
+      var currentPath = window.location.pathname;
+      var html = "";
+      draftItems.forEach(function (item) {
+        var path = String((item && item.path) || "").trim();
+        var menuId = String((item && item.menuId) || "").trim();
+        if (!path || !menuId) return;
+        var title = String((item && item.title) || path).trim();
+        if (!isEditMode) {
+          var active = pathIsActive(path, currentPath);
+          html +=
+            '<a href="' +
+            escapeHtml(path) +
+            '" class="nav-item' +
+            (active ? " active" : "") +
+            '" data-menu-id="' +
+            escapeHtml(menuId) +
+            '" title="' +
+            escapeHtml(title) +
+            '">';
+          html += '<i class="nav-icon ' + escapeHtml(pinnedIconClass(item && item.icon)) + '"></i>';
+          html += '<span class="nav-text">' + escapeHtml(title) + "</span>";
+          html += "</a>";
+        } else {
+          html +=
+            '<div class="nav-item is-editing-item" data-menu-id="' +
+            escapeHtml(menuId) +
+            '" draggable="true" title="按住拖拽排序">';
+          html +=
+            '<span class="pinned-drag-handle" title="按住拖拽排序"><i class="fas fa-grip-vertical"></i></span>';
+          html += '<span class="nav-text">' + escapeHtml(title) + "</span>";
+          html +=
+            '<button type="button" class="nav-item-unpin js-unpin-btn" data-menu-id="' +
+            escapeHtml(menuId) +
+            '" title="移除此项">×</button>';
+          html += "</div>";
+        }
+      });
+      container.innerHTML = html;
+      if (isEditMode) {
+        bindEditModeEvents();
+      }
+    }
+
+    function syncOrderFromDOM() {
+      var byId = {};
+      draftItems.forEach(function (item) {
+        byId[String(item.menuId)] = item;
+      });
+      var next = [];
+      container.querySelectorAll(".is-editing-item").forEach(function (el) {
+        var id = el.getAttribute("data-menu-id");
+        if (id && byId[id]) next.push(byId[id]);
+      });
+      draftItems = next;
+    }
+
+    function bindEditModeEvents() {
+      container.querySelectorAll(".js-unpin-btn").forEach(function (btn) {
+        btn.addEventListener("click", function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (saving) return;
+          var menuId = btn.getAttribute("data-menu-id");
+          if (!menuId || typeof window.WorkbenchPinned.unpin !== "function") return;
+          saving = true;
+          window.WorkbenchPinned.unpin(menuId)
+            .then(function (wrap) {
+              if (!wrap.res.ok || !wrap.data || !wrap.data.success) {
+                var msg = (wrap.data && wrap.data.message) || "移除失败";
+                if (typeof window.showToast === "function") {
+                  window.showToast(msg, "error");
+                }
+                return;
+              }
+              draftItems = draftItems.filter(function (it) {
+                return String(it.menuId) !== String(menuId);
+              });
+              renderPinnedList();
+            })
+            .catch(function () {
+              if (typeof window.showToast === "function") {
+                window.showToast("移除失败，请稍后重试", "error");
+              }
+            })
+            .then(function () {
+              saving = false;
+            });
+        });
+      });
+
+      var draggedEl = null;
+      container.querySelectorAll(".is-editing-item").forEach(function (item) {
+        item.addEventListener("dragstart", function (e) {
+          draggedEl = item;
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData("text/plain", item.getAttribute("data-menu-id") || "");
+          setTimeout(function () {
+            if (item) item.classList.add("is-dragging");
+          }, 0);
+        });
+        item.addEventListener("dragover", function (e) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "move";
+          if (!draggedEl || draggedEl === item) return;
+          var rect = item.getBoundingClientRect();
+          var midY = rect.top + rect.height / 2;
+          if (e.clientY < midY) {
+            if (item.previousElementSibling !== draggedEl) {
+              container.insertBefore(draggedEl, item);
+            }
+          } else if (item.nextElementSibling !== draggedEl) {
+            container.insertBefore(draggedEl, item.nextSibling);
+          }
+        });
+        item.addEventListener("drop", function (e) {
+          e.preventDefault();
+          syncOrderFromDOM();
+        });
+        item.addEventListener("dragend", function () {
+          if (draggedEl) {
+            draggedEl.classList.remove("is-dragging");
+            draggedEl = null;
+          }
+          syncOrderFromDOM();
+        });
+      });
+    }
+
+    function exitEditMode(opts) {
+      var silent = opts && opts.silent;
+      isEditMode = false;
+      container.classList.remove("is-editing");
+      if (editTip) editTip.hidden = true;
+      if (manageBtn) {
+        manageBtn.classList.remove("is-editing");
+        manageBtn.innerHTML = "<span>编辑</span>";
+        manageBtn.title = "自定义与排序常用页面";
+      }
+      syncDraftFromStore();
+      renderPinnedList();
+      if (!silent && typeof window.showToast === "function") {
+        window.showToast("已保存自选常用排序", "success");
+      }
+    }
+
+    function enterEditMode() {
+      isEditMode = true;
+      syncDraftFromStore();
+      container.classList.add("is-editing");
+      if (editTip) editTip.hidden = false;
+      if (manageBtn) {
+        manageBtn.classList.add("is-editing");
+        manageBtn.innerHTML =
+          '<i class="fas fa-check" aria-hidden="true"></i><span>完成</span>';
+        manageBtn.title = "完成排序与修改";
+      }
+      renderPinnedList();
+    }
+
+    function finishEditMode() {
+      if (saving) return;
+      syncOrderFromDOM();
+      var menuIds = draftItems
+        .map(function (it) {
+          return Number(it.menuId);
+        })
+        .filter(function (id) {
+          return id > 0;
+        });
+      if (typeof window.WorkbenchPinned.reorder !== "function") {
+        exitEditMode({ silent: true });
+        return;
+      }
+      saving = true;
+      window.WorkbenchPinned.reorder(menuIds)
+        .then(function (wrap) {
+          if (!wrap.res.ok || !wrap.data || !wrap.data.success) {
+            var msg = (wrap.data && wrap.data.message) || "保存排序失败";
+            if (typeof window.showToast === "function") {
+              window.showToast(msg, "error");
+            }
+            return;
+          }
+          exitEditMode();
+        })
+        .catch(function () {
+          if (typeof window.showToast === "function") {
+            window.showToast("保存排序失败，请稍后重试", "error");
+          }
+        })
+        .then(function () {
+          saving = false;
+        });
+    }
+
+    if (manageBtn) {
+      manageBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        if (isEditMode) {
+          finishEditMode();
+        } else {
+          enterEditMode();
+        }
+      });
+    }
+
     renderPinnedList();
-    window.addEventListener("workbench:pinned-change", renderPinnedList);
+    window.addEventListener("workbench:pinned-change", function () {
+      if (!isEditMode) {
+        renderPinnedList();
+      }
+    });
     if (typeof window.WorkbenchPinned.reload === "function") {
-      window.WorkbenchPinned.reload().then(renderPinnedList);
+      window.WorkbenchPinned.reload().then(function () {
+        if (!isEditMode) renderPinnedList();
+      });
     }
   }
 

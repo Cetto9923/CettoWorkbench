@@ -204,7 +204,11 @@
             <div class="po-pinned-section" id="pinnedSection">
               <div class="po-pinned-section-header" id="pinnedSectionHeader">
                 <span>常用</span>
+                <button type="button" class="pinned-manage-btn" id="btnManagePinned" title="自定义与排序常用页面">
+                  <span>编辑</span>
+                </button>
               </div>
+              <div class="po-pinned-edit-tip" id="pinnedEditTip" hidden><i class="fas fa-arrows-up-down"></i>拖拽 ⠿ 调整排序，点击 × 移除</div>
               <div class="po-pinned-list" id="sidebarPinnedContainer"></div>
             </div>
             {{ end }}

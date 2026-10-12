@@ -86,6 +86,7 @@ func (h *Handler) RegisterUserMenuRoutes(rg *gin.RouterGroup) {
 	g := rg.Group("/usermenus")
 	g.GET("", middleware.RequirePerm(perm.UserMenuList), h.ListUserMenus)
 	g.POST("", middleware.RequirePerm(perm.UserMenuCreate), h.PinUserMenu)
+	g.PUT("", middleware.RequirePerm(perm.UserMenuUpdate), h.ReorderUserMenus)
 	g.DELETE("/:menuId", middleware.RequirePerm(perm.UserMenuDelete), h.UnpinUserMenu)
 }
 
@@ -142,6 +143,30 @@ func (h *Handler) UnpinUserMenu(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "已取消固定",
+	})
+}
+
+// ReorderUserMenus 保存常用列表排序。
+func (h *Handler) ReorderUserMenus(c *gin.Context) {
+	actor := middleware.CurrentUser(c)
+	var req ReorderUserMenuReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "请求格式错误"})
+		return
+	}
+	if errs := req.Validate(); len(errs) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"success": false, "errors": errs})
+		return
+	}
+	resp, err := h.svc.ReorderUserMenus(c.Request.Context(), actor, currentUserPerms(c), req)
+	if err != nil {
+		writeUserMenuError(c, h.logger, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "已保存常用排序",
+		"items":   resp.Items,
 	})
 }
 

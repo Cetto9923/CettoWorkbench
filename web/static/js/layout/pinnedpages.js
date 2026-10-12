@@ -127,6 +127,26 @@
     });
   }
 
+  function reorderPinned(menuIds) {
+    return appFetch(API, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ menuIds: menuIds })
+    }).then(function (res) {
+      return res.json().then(function (data) { return { res: res, data: data }; });
+    });
+  }
+
+  function notifyPinnedChange() {
+    window.dispatchEvent(new CustomEvent('workbench:pinned-change', {
+      detail: { pinned: pinnedItems }
+    }));
+  }
+
+  function setPinnedItems(items) {
+    pinnedItems = Array.isArray(items) ? items.slice() : [];
+  }
+
   function initTopbarPinToggle() {
     var btn = document.getElementById('pagePinToggle');
     if (!btn) return;
@@ -174,9 +194,7 @@
             title = sidebarHit.title || title;
           }
           showPinnedToast(!doingUnpin, title);
-          window.dispatchEvent(new CustomEvent('workbench:pinned-change', {
-            detail: { pinned: pinnedItems }
-          }));
+          notifyPinnedChange();
         });
       }).catch(function () {
         if (typeof window.showToast === 'function') {
@@ -192,9 +210,7 @@
     loadPinnedItems().then(function () {
       initTopbarPinToggle();
       syncPinnedMenuState();
-      window.dispatchEvent(new CustomEvent('workbench:pinned-change', {
-        detail: { pinned: pinnedItems }
-      }));
+      notifyPinnedChange();
     });
   }
 
@@ -206,6 +222,33 @@
 
   window.WorkbenchPinned = {
     getPinnedItems: function () { return pinnedItems.slice(); },
-    reload: loadPinnedItems
+    reload: loadPinnedItems,
+    unpin: function (menuId) {
+      return unpinCurrent(menuId).then(function (wrap) {
+        if (!wrap.res.ok || !wrap.data || !wrap.data.success) {
+          return wrap;
+        }
+        return loadPinnedItems().then(function () {
+          currentMatch = matchItemForPath(window.location.pathname);
+          var btn = document.getElementById('pagePinToggle');
+          if (btn && btn.style.display !== 'none') {
+            updateTopbarPinState(btn);
+          }
+          syncPinnedMenuState();
+          notifyPinnedChange();
+          return wrap;
+        });
+      });
+    },
+    reorder: function (menuIds) {
+      return reorderPinned(menuIds).then(function (wrap) {
+        if (wrap.res.ok && wrap.data && wrap.data.success && Array.isArray(wrap.data.items)) {
+          setPinnedItems(wrap.data.items);
+          syncPinnedMenuState();
+          notifyPinnedChange();
+        }
+        return wrap;
+      });
+    }
   };
 })();

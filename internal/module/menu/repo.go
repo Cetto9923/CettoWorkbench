@@ -197,6 +197,41 @@ func (r *Repo) DeleteUserMenu(ctx context.Context, account string, menuID uint64
 	return nil
 }
 
+// FindUserMenuIDsByAccount 返回账号下全部固定 menuId。
+func (r *Repo) FindUserMenuIDsByAccount(ctx context.Context, account string) ([]uint64, error) {
+	var ids []uint64
+	err := r.db.WithContext(ctx).
+		Model(&model.UserMenu{}).
+		Where("account = ?", account).
+		Order("sort DESC, id DESC").
+		Pluck("menuId", &ids).Error
+	return ids, err
+}
+
+// UpdateUserMenuSorts 按 menuId→sort 批量更新当前账号固定项排序。
+func (r *Repo) UpdateUserMenuSorts(ctx context.Context, account, actorAccount string, sorts map[uint64]int) error {
+	if len(sorts) == 0 {
+		return nil
+	}
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		for menuID, sortVal := range sorts {
+			res := tx.Model(&model.UserMenu{}).
+				Where("account = ? AND menuId = ?", account, menuID).
+				Updates(map[string]any{
+					"sort":      sortVal,      // model.UserMenu.Sort
+					"updatedBy": actorAccount, // model.UserMenu.UpdatedBy
+				})
+			if res.Error != nil {
+				return res.Error
+			}
+			if res.RowsAffected == 0 {
+				return gorm.ErrRecordNotFound
+			}
+		}
+		return nil
+	})
+}
+
 // isNotFound 判断是否为记录不存在。
 func isNotFound(err error) bool {
 	return errors.Is(err, gorm.ErrRecordNotFound)

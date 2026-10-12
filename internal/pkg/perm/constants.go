@@ -46,6 +46,7 @@ const (
 	// 用户固定工作台菜单（登录用户自助）
 	UserMenuList   Permission = "usermenu:list"
 	UserMenuCreate Permission = "usermenu:create"
+	UserMenuUpdate Permission = "usermenu:update"
 	UserMenuDelete Permission = "usermenu:delete"
 
 	// 部门管理
@@ -96,6 +97,7 @@ var allPermInfos = []PermInfo{
 	{Code: MenuDelete, Name: "菜单-删除", Module: "menu"},
 	{Code: UserMenuList, Name: "固定菜单-列表", Module: "usermenu"},
 	{Code: UserMenuCreate, Name: "固定菜单-新增", Module: "usermenu"},
+	{Code: UserMenuUpdate, Name: "固定菜单-排序", Module: "usermenu"},
 	{Code: UserMenuDelete, Name: "固定菜单-删除", Module: "usermenu"},
 	{Code: DeptList, Name: "部门-列表", Module: "dept"},
 	{Code: DeptCreate, Name: "部门-新增", Module: "dept"},
@@ -117,6 +119,7 @@ var systemPerms = map[Permission]bool{
 	AuthLogout:         true,
 	UserMenuList:       true,
 	UserMenuCreate:     true,
+	UserMenuUpdate:     true,
 	UserMenuDelete:     true,
 	PoDemandReview:     true,
 	PoDemandDeliver:    true,

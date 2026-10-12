@@ -246,6 +246,50 @@ func (s *Service) UnpinUserMenu(ctx context.Context, actor *model.User, req Unpi
 	return err
 }
 
+// ReorderUserMenus 按 menuIds 顺序重写 sort；未出现在请求中的已固定项保持相对顺序排在末尾。
+func (s *Service) ReorderUserMenus(ctx context.Context, actor *model.User, perms map[string]bool, req ReorderUserMenuReq) (ReorderUserMenuResp, error) {
+	if actor == nil || strings.TrimSpace(actor.Account) == "" {
+		return ReorderUserMenuResp{}, errorx.New(errorx.ErrCodeForbidden, "请先登录")
+	}
+	existing, err := s.repo.FindUserMenuIDsByAccount(ctx, actor.Account)
+	if err != nil {
+		return ReorderUserMenuResp{}, err
+	}
+	owned := make(map[uint64]struct{}, len(existing))
+	for _, id := range existing {
+		owned[id] = struct{}{}
+	}
+	inReq := make(map[uint64]struct{}, len(req.MenuIDs))
+	for _, id := range req.MenuIDs {
+		if _, ok := owned[id]; !ok {
+			return ReorderUserMenuResp{}, errorx.New(errorx.ErrCodeInvalidParam, "含有未固定的菜单")
+		}
+		inReq[id] = struct{}{}
+	}
+	// 最终顺序 = 请求顺序 + 未提及的已固定项（保持原相对序）
+	ordered := make([]uint64, 0, len(existing))
+	ordered = append(ordered, req.MenuIDs...)
+	for _, id := range existing {
+		if _, ok := inReq[id]; !ok {
+			ordered = append(ordered, id)
+		}
+	}
+	// 列表按 sort DESC 展示：数组首位 sort 最大
+	n := len(ordered)
+	sorts := make(map[uint64]int, n)
+	for i, id := range ordered {
+		sorts[id] = n - i
+	}
+	if err := s.repo.UpdateUserMenuSorts(ctx, actor.Account, actor.Account, sorts); err != nil {
+		return ReorderUserMenuResp{}, err
+	}
+	list, err := s.ListUserMenus(ctx, actor, perms)
+	if err != nil {
+		return ReorderUserMenuResp{}, err
+	}
+	return ReorderUserMenuResp{Items: list.Items}, nil
+}
+
 func (s *Service) resolveMenuByPath(ctx context.Context, path string, perms map[string]bool, isSuperAdmin bool) (*model.Menu, error) {
 	path = strings.TrimSpace(path)
 	if path == "" || path[0] != '/' || path == "/home" {

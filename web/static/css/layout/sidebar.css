@@ -388,30 +388,3 @@ body.sidebar-collapsed.po-workbench-shell .po-rail .po-brand-logo {
   display: inline-flex;
   margin: 0;
 }
-
-/* ─── 个人面板「常用」专区（对齐原型 pinnedSectionHeader，只读展示） ─── */
-.po-pinned-section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 16px;
-  padding: 0 10px;
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--color-text-secondary);
-}
-
-.po-pinned-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.po-pinned-list .nav-item {
-  position: relative;
-}
-
-/* 已固定到常用的其它面板菜单项略降对比度（常用列表链接不加 is-workbench-pinned） */
-body.po-workbench-shell .po-subnav-panel a.nav-item.is-workbench-pinned {
-  color: var(--color-text-secondary);
-}
