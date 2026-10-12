@@ -7,6 +7,7 @@
 @import "./autocomplete.css";
 @import "./priority.css";
 @import "./severity.css";
+@import "./tooltip.css";
 
 /* 挂起标签：模板 ui/hang 与首页行动列表共用 */
 .wb-hang-tag {

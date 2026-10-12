@@ -873,8 +873,47 @@
   }
 
   function setActiveCard($card) {
-    $(".home-vs-mini-card").removeClass("active");
-    $card.addClass("active");
+    $(".home-vs-mini-card").removeClass("active").attr("aria-pressed", "false");
+    $card.addClass("active").attr("aria-pressed", "true");
+  }
+
+  function initVsToggle() {
+    var STORAGE_KEY = "workbench.homeVsCollapsed";
+    var $btn = $("#homeVsToggleBtn");
+    var $section = $("#homeValueStreamSection");
+    if (!$btn.length || !$section.length) {
+      return;
+    }
+
+    function setCollapsed(collapsed) {
+      if (collapsed) {
+        $section.addClass("is-collapsed");
+        $btn.attr("aria-expanded", "false");
+        $("#homeVsToggleText").text("展开流水线");
+        $("#homeVsToggleIcon").removeClass("fa-chevron-up").addClass("fa-chevron-down");
+      } else {
+        $section.removeClass("is-collapsed");
+        $btn.attr("aria-expanded", "true");
+        $("#homeVsToggleText").text("收起流水线");
+        $("#homeVsToggleIcon").removeClass("fa-chevron-down").addClass("fa-chevron-up");
+      }
+    }
+
+    try {
+      if (window.localStorage && window.localStorage.getItem(STORAGE_KEY) === "1") {
+        setCollapsed(true);
+      }
+    } catch (e) {}
+
+    $btn.on("click", function () {
+      var next = !$section.hasClass("is-collapsed");
+      setCollapsed(next);
+      try {
+        if (window.localStorage) {
+          window.localStorage.setItem(STORAGE_KEY, next ? "1" : "0");
+        }
+      } catch (e) {}
+    });
   }
 
   function refreshDemands(status) {
@@ -993,6 +1032,7 @@
 
   $(function () {
     initValueStreamLinkage();
+    initVsToggle();
     initFocalChips();
     initObjectTypeSegment();
     initPrioritySegment();

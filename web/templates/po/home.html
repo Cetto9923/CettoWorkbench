@@ -1,7 +1,7 @@
 {{/* ==========================================================================
 文件: web/templates/po/home.html
 模块: PO工作台
-职责: PO 工作台首页（左行动列表 + 右聚焦专区/版本窗口，对齐原型布局）
+职责: PO 工作台首页（需求进度流水线 + 左行动列表 + 右聚焦专区/版本窗口）
 全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .CurrentPath
 页面字段: .Title (string), .PageDescription (string), .ValueStreamStages ([]ValueStreamStage),
           .VersionWindows ([]schedule.HomeVersionWindowCard),
@@ -51,29 +51,69 @@
     </div> -->
   </div>
 
-  <div class="home-vs-section home-vs-section--primary" id="homeValueStreamSection">
+  <div class="home-vs-section" id="homeValueStreamSection">
     <div class="home-vs-hdr">
-      <div class="home-vs-title"><i class="fas fa-route"></i>需求价值流</div>
+      <div class="home-vs-title-group">
+        <i class="fas fa-route text-blue"></i>
+        <span class="home-vs-title">需求进度</span>
+        {{ template "ui/tooltip" (dict "Text" "从产研各代表生命周期看板链路，点击阶段可下钻筛选需求" "Class" "home-vs-hint") }}
+      </div>
+      <div class="home-vs-meta">
+        {{ range $i, $stage := .ValueStreamStages }}{{ if eq $stage.Status "all" }}
+        <span id="homeVsMetaText">业务需求共 <strong class="text-mono">{{ $stage.DemandCount }}</strong> 条 · 研发需求共 <strong class="text-mono">{{ $stage.StoryCount }}</strong> 条</span>
+        {{ end }}{{ end }}
+        <button type="button" class="home-vs-toggle-btn" id="homeVsToggleBtn" aria-expanded="true" title="展开或收起需求进度流水线">
+          <span id="homeVsToggleText">收起流水线</span>
+          <i class="fas fa-chevron-up" id="homeVsToggleIcon" aria-hidden="true"></i>
+        </button>
+      </div>
     </div>
     <div class="home-vs-compact-scroll" id="homeVsCompactScroll">
       <div class="home-vs-compact" id="homeVsCompact">
-        <div class="home-vs-compact-row">
+        <div class="home-vs-pipeline-wrap">
           {{ range $i, $stage := .ValueStreamStages }}
+          {{ if eq $stage.Status "all" }}
           <button type="button"
-            class="home-vs-mini-card stage-{{ $stage.Status }}{{ if eq $i 0 }} active{{ else if eq $stage.Count 0 }} empty{{ end }}"
-            data-vs-status="{{ $stage.Status }}"
-            title="{{ $stage.Label }} · {{ $stage.Count }} 条">
+            class="home-vs-mini-card home-vs-overview-card stage-all{{ if eq $i 0 }} active{{ else if eq $stage.Count 0 }} empty{{ end }}"
+            data-vs-status="all"
+            aria-pressed="{{ if eq $i 0 }}true{{ else }}false{{ end }}"
+            title="全部对象 · 共 {{ $stage.Count }} 条">
             <div class="vs-card-top">
-              <span class="vs-mini-name">{{ $stage.Label }}</span>
-              {{ if eq $stage.Status "all" }}<i class="fas fa-check vs-status-icon"></i>
-              {{ else if eq $stage.Status "schedule" }}<span class="vs-status-dot dot-amber"></span>
-              {{ else if eq $stage.Status "waitacceptance" }}<span class="vs-status-dot dot-blue"></span>
-              {{ end }}
+              <span class="vs-mini-name">全部对象</span>
+              <i class="fas fa-check vs-status-icon"></i>
             </div>
-            <div class="vs-mini-count">{{ $stage.Count }}</div>
-            <div class="vs-mini-meta">{{ if eq $stage.Status "all" }}全量汇总{{ else }}业{{ $stage.DemandCount }} · 研{{ $stage.StoryCount }}{{ end }}</div>
+            <div class="vs-card-center">
+              <span class="vs-mini-count">{{ $stage.Count }}</span>
+            </div>
+            <div class="vs-card-sub">
+              <span class="vs-mini-breakdown">{{ if eq $stage.Count 0 }}-{{ else }}业{{ $stage.DemandCount }} · 研{{ $stage.StoryCount }}{{ end }}</span>
+            </div>
           </button>
+          <div class="home-vs-flow-divider" aria-hidden="true"><span>›</span></div>
           {{ end }}
+          {{ end }}
+
+          <div class="home-vs-chevron-track">
+            {{ range $i, $stage := .ValueStreamStages }}
+            {{ if ne $stage.Status "all" }}
+            <button type="button"
+              class="home-vs-mini-card home-vs-chevron-step stage-{{ $stage.Status }}{{ if eq $stage.Count 0 }} empty{{ end }}"
+              data-vs-status="{{ $stage.Status }}"
+              aria-pressed="false"
+              title="{{ $stage.Label }} · 共 {{ $stage.Count }} 条">
+              <div class="vs-card-top">
+                <span class="vs-mini-name">{{ if eq $stage.Status "schedule" }}<span class="vs-status-dot dot-amber"></span> {{ end }}{{ $i }}. {{ $stage.Label }}</span>
+              </div>
+              <div class="vs-card-center">
+                <span class="vs-mini-count">{{ $stage.Count }}</span>
+              </div>
+              <div class="vs-card-sub">
+                <span class="vs-mini-breakdown">{{ if eq $stage.Count 0 }}-{{ else }}业{{ $stage.DemandCount }} · 研{{ $stage.StoryCount }}{{ end }}</span>
+              </div>
+            </button>
+            {{ end }}
+            {{ end }}
+          </div>
         </div>
       </div>
     </div>

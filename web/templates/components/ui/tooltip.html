@@ -1,0 +1,21 @@
+{{/* ==========================================================================
+文件: web/templates/components/ui/tooltip.html
+模块: 通用模板
+职责: 全站统一悬停提示气泡（info 图标 + 气泡文案）
+全局字段: 无
+页面字段: .Text (string，必填)
+          .Align (string，可选：left / right，默认居中)
+          .Placement (string，可选：bottom，默认上方)
+          .Class (string，可选，附加到 wrap)
+用法: {{ template "ui/tooltip" (dict "Text" "说明文字") }}
+========================================================================== */}}
+{{ define "ui/tooltip" }}
+<span class="wb-tooltip-wrap{{ with .Class }} {{ . }}{{ end }}">
+  <span class="wb-tooltip-icon" aria-hidden="true">
+    <svg class="wb-tooltip-svg" viewBox="0 0 512 512" focusable="false">
+      <path fill="currentColor" d="M256 48a208 208 0 1 1 0 416 208 208 0 1 1 0-416zm0 464A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336h24V272H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-144a32 32 0 1 0 0-64 32 32 0 1 0 0 64z"/>
+    </svg>
+  </span>
+  <span class="wb-tooltip-content{{ if eq .Align "left" }} align-left{{ else if eq .Align "right" }} align-right{{ end }}{{ if eq .Placement "bottom" }} placement-bottom{{ end }}">{{ .Text }}</span>
+</span>
+{{ end }}

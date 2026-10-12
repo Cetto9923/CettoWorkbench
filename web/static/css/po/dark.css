@@ -497,3 +497,46 @@ html[data-theme="dark"] .po-linkstory select:focus {
   border-color: var(--color-info);
   box-shadow: 0 0 0 2px var(--color-primary-ring-soft);
 }
+
+/* 首页需求进度：深色可读性（对齐原型 dark-contrast） */
+html[data-theme="dark"] .po-home .home-vs-mini-card .vs-mini-breakdown {
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] .po-home .home-vs-mini-card.empty:not(.active) {
+  opacity: 1;
+}
+
+html[data-theme="dark"] .po-home .home-vs-mini-card.empty:not(.active) .vs-mini-name,
+html[data-theme="dark"] .po-home .home-vs-mini-card.empty:not(.active) .vs-mini-count,
+html[data-theme="dark"] .po-home .home-vs-mini-card.empty:not(.active) .vs-mini-breakdown {
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] .po-home .home-vs-toggle-btn {
+  background: var(--color-card);
+  border-color: var(--color-border-strong);
+  color: var(--color-stage-overview-from);
+}
+
+html[data-theme="dark"] .po-home .home-vs-toggle-btn:hover {
+  background: var(--color-surface-muted);
+  border-color: var(--color-stage-overview-from);
+}
+
+html[data-theme="dark"] .po-home .home-vs-chevron-step.active {
+  border-color: var(--color-stage-overview-from);
+  background: var(--color-info-soft);
+  box-shadow: inset 0 0 0 1px var(--color-stage-overview-from), 0 2px 8px var(--color-stage-card-glow-active);
+}
+
+html[data-theme="dark"] .po-home .home-vs-chevron-step.active .vs-mini-name,
+html[data-theme="dark"] .po-home .home-vs-chevron-step.active .vs-mini-count,
+html[data-theme="dark"] .po-home .home-vs-chevron-step.active .vs-mini-breakdown,
+html[data-theme="dark"] .po-home .home-vs-chevron-step.active .vs-status-icon {
+  color: var(--color-stage-overview-from);
+}
+
+html[data-theme="dark"] .po-home .home-vs-mini-card.active .vs-status-dot {
+  background: var(--color-stage-overview-from);
+}

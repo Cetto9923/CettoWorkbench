@@ -72,7 +72,22 @@ html[data-theme="light"] {
   --color-story-bg: #f0fdfa;
   --color-story-text: #0f766e;
 
-  /* 首页价值流阶段色板 */
+  /* 首页价值流阶段色板（顶条 + 强调态，对齐原型 homeValueStreamSection） */
+  --color-stage-accept: #38bdf8;
+  --color-stage-clarify: #f59e0b;
+  --color-stage-schedule: #6366f1;
+  --color-stage-developing: #8b5cf6;
+  --color-stage-testing: #cbd5e1;
+  --color-stage-waitacceptance: #cbd5e1;
+  --color-stage-acceptanced: #06b6d4;
+  --color-stage-publish: #10b981;
+  --color-stage-released: #14b8a6;
+  --color-stage-card-glow: rgba(37, 99, 235, 0.1);
+  --color-stage-card-glow-active: rgba(37, 99, 235, 0.12);
+  --color-stage-overview-from: #2563eb;
+  --color-stage-overview-to: #1d4ed8;
+  --color-stage-overview-shadow: rgba(37, 99, 235, 0.28);
+  --color-stage-white-25: rgba(255, 255, 255, 0.25);
   --color-stage-schedule-border: #fed7aa;
   --color-stage-schedule-bg: rgba(254, 243, 199, 0.45);
   --color-stage-schedule-fg: #d97706;
@@ -351,7 +366,22 @@ html[data-theme="dark"] {
   --color-story-bg: #134e4a;
   --color-story-text: #99f6e4;
 
-  /* 首页价值流阶段色板 */
+  /* 首页价值流阶段色板（顶条 + 强调态，对齐原型 homeValueStreamSection） */
+  --color-stage-accept: #38bdf8;
+  --color-stage-clarify: #fbbf24;
+  --color-stage-schedule: #818cf8;
+  --color-stage-developing: #a78bfa;
+  --color-stage-testing: #64748b;
+  --color-stage-waitacceptance: #64748b;
+  --color-stage-acceptanced: #22d3ee;
+  --color-stage-publish: #34d399;
+  --color-stage-released: #2dd4bf;
+  --color-stage-card-glow: rgba(59, 130, 246, 0.18);
+  --color-stage-card-glow-active: rgba(59, 130, 246, 0.28);
+  --color-stage-overview-from: #60a5fa; /* 对齐原型深色 --wb-primary */
+  --color-stage-overview-to: #60a5fa;
+  --color-stage-overview-shadow: rgba(59, 130, 246, 0.35);
+  --color-stage-white-25: rgba(255, 255, 255, 0.25);
   --color-stage-schedule-border: rgba(245, 158, 11, 0.25);
   --color-stage-schedule-bg: rgba(245, 158, 11, 0.08);
   --color-stage-schedule-fg: #fbbf24;
