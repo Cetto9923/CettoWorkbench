@@ -6,6 +6,7 @@
  *   2) 手风琴展开/折叠（同级互斥）
  *   3) 侧边栏整体收起 + localStorage 持久化
  *   4) 自动展开当前页面所在菜单路径
+ *   5) 个人面板「常用」列表只读渲染（WorkbenchPinned）
  */
 (function () {
   "use strict";
@@ -224,4 +225,67 @@
       node = node.parentElement;
     }
   }
+
+  /* ── 个人面板「常用」列表（只读展示，数据来自 WorkbenchPinned） ── */
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function pinnedIconClass(icon) {
+    var raw = String(icon || "").trim();
+    if (!raw) return "fas fa-circle";
+    if (/\bfa[srlbd]?\b/.test(raw)) return raw;
+    return "fas " + raw;
+  }
+
+  function pathIsActive(path, currentPath) {
+    var p = String(path || "").trim();
+    if (!p) return false;
+    return currentPath === p || currentPath.indexOf(p + "/") === 0;
+  }
+
+  function renderPinnedList() {
+    var container = document.getElementById("sidebarPinnedContainer");
+    if (!container || !window.WorkbenchPinned) return;
+
+    var items = window.WorkbenchPinned.getPinnedItems() || [];
+    var currentPath = window.location.pathname;
+    var html = "";
+    items.forEach(function (item) {
+      var path = String((item && item.path) || "").trim();
+      if (!path) return;
+      var title = String((item && item.title) || path).trim();
+      var active = pathIsActive(path, currentPath);
+      html +=
+        '<a href="' +
+        escapeHtml(path) +
+        '" class="nav-item' +
+        (active ? " active" : "") +
+        '" data-menu-id="' +
+        escapeHtml(String((item && item.menuId) || "")) +
+        '" title="' +
+        escapeHtml(title) +
+        '">';
+      html += '<i class="nav-icon ' + escapeHtml(pinnedIconClass(item && item.icon)) + '"></i>';
+      html += '<span class="nav-text">' + escapeHtml(title) + "</span>";
+      html += "</a>";
+    });
+
+    container.innerHTML = html;
+  }
+
+  function initPinnedSection() {
+    if (!document.getElementById("sidebarPinnedContainer") || !window.WorkbenchPinned) return;
+    renderPinnedList();
+    window.addEventListener("workbench:pinned-change", renderPinnedList);
+    if (typeof window.WorkbenchPinned.reload === "function") {
+      window.WorkbenchPinned.reload().then(renderPinnedList);
+    }
+  }
+
+  initPinnedSection();
 })();

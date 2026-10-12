@@ -1,8 +1,59 @@
 /* ==========================================================================
    文件: web/static/css/layout/header.css
    模块: 布局
-   职责: 顶栏用户区、主题快捷切换与用户下拉菜单样式。
+   职责: 顶栏用户区、主题快捷切换、固定到工作台按钮与用户下拉菜单样式。
 ========================================================================== */
+
+/* 顶栏一键固定按钮（对齐原型 pagePinToggle，深浅色语义变量） */
+.page-pin-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  margin-left: 8px;
+  vertical-align: middle;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.page-pin-toggle:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-border-strong, var(--color-border));
+  background: var(--color-surface-hover);
+}
+
+.page-pin-toggle:focus-visible {
+  outline: 2px solid var(--color-info-border);
+  outline-offset: 1px;
+}
+
+.page-pin-toggle.is-pinned {
+  color: var(--color-info);
+  background: var(--color-info-bg);
+  border-color: var(--color-info-border);
+  font-weight: 600;
+}
+
+.page-pin-toggle.is-pinned:hover {
+  border-color: var(--color-info);
+  opacity: 0.9;
+}
+
+@media (max-width: 992px) {
+  .topbar-identity .page-pin-text {
+    display: none;
+  }
+}
 
 .po-header-icon {
   position: relative;

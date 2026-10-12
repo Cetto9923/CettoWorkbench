@@ -11,6 +11,10 @@ web/templates/layout/header.html 模块: 布局 职责:
   {{ else if eq .LayoutNav "sidebar" }}
   <div class="topbar-identity">
     <span class="topbar-page-title">{{ if .PageTitle }}{{ .PageTitle }}{{ else if .Title }}{{ .Title }}{{ else }}工作台{{ end }}</span>
+    <button type="button" class="page-pin-toggle" id="pagePinToggle" style="display:none;" title="固定至我的工作台">
+      <i class="fas fa-thumbtack" aria-hidden="true"></i>
+      <span class="page-pin-text">固定到工作台</span>
+    </button>
     {{ if .PageDescription }}
     <span class="topbar-divider" aria-hidden="true">│</span>
     <span class="topbar-page-desc" title="{{ .PageDescription }}">{{ .PageDescription }}</span>
@@ -62,7 +66,7 @@ web/templates/layout/header.html 模块: 布局 职责:
         onclick="return toggleDropdown(this);"
         aria-haspopup="menu"
       >
-        <span class="po-user-avatar">{{ if and .CurrentUser .CurrentUser.DisplayName }}{{ if ge (len .CurrentUser.DisplayName) 3 }}{{ slice .CurrentUser.DisplayName 0 3 }}{{ else }}{{ .CurrentUser.DisplayName }}{{ end }}{{ else }}用{{ end }}</span>
+        <span class="po-user-avatar" data-user-account="{{ if .CurrentUser }}{{ .CurrentUser.Account }}{{ end }}">{{ if and .CurrentUser .CurrentUser.DisplayName }}{{ if ge (len .CurrentUser.DisplayName) 3 }}{{ slice .CurrentUser.DisplayName 0 3 }}{{ else }}{{ .CurrentUser.DisplayName }}{{ end }}{{ else }}用{{ end }}</span>
         <span>{{ if .CurrentUser }}{{ .CurrentUser.DisplayName }}{{ else }}用户{{ end }}</span>
       </button>
       <div class="dropdown-menu">

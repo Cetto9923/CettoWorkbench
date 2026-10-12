@@ -166,7 +166,7 @@ ALTER TABLE `zt_versionwindow`
 UPDATE `zt_menus` SET `path` = '/kanban/task' WHERE `title` = '工作看板';
 -- 2026/09/20
 
--- 用户固定到工作台的菜单（title/path 以 zt_menus 为准，本表只存关联）
+-- 2026/10/12
 CREATE TABLE IF NOT EXISTS `zt_usermenu` (
   `id`          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `account`     VARCHAR(30) NOT NULL COMMENT '用户账号，对应 zt_user.account',
@@ -181,3 +181,4 @@ CREATE TABLE IF NOT EXISTS `zt_usermenu` (
   KEY `idx_zt_usermenu_account` (`account`),
   KEY `idx_zt_usermenu_menuId` (`menuId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户固定工作台菜单';
+-- 2026/10/12

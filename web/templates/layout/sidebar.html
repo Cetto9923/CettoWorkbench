@@ -175,6 +175,7 @@
   <!-- 右侧子功能面板 (Detail Sub-Panel) -->
   <div class="po-subnav" aria-label="子功能导航">
     {{ if .CurrentMenus }}
+      {{ $pinnedPlaced := false }}
       {{ range .CurrentMenus }}
         {{ if or (eq .Type "directory") (eq .Type "menu") }}
         {{ $isActive := menuNavActive $activeKey . }}
@@ -195,6 +196,17 @@
                    "Path"         .Path
                    "ActiveNavKey" $activeKey
                    "Depth"        0) }}
+            {{ end }}
+
+            {{/* 「常用」固定在第一个一级分组（个人）二级菜单下方，列表由 JS 填充 */}}
+            {{ if not $pinnedPlaced }}
+            {{ $pinnedPlaced = true }}
+            <div class="po-pinned-section" id="pinnedSection">
+              <div class="po-pinned-section-header" id="pinnedSectionHeader">
+                <span>常用</span>
+              </div>
+              <div class="po-pinned-list" id="sidebarPinnedContainer"></div>
+            </div>
             {{ end }}
           </div>
         </div>

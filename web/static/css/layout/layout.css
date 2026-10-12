@@ -393,8 +393,7 @@ body.layout-nav-top.sidebar-collapsed .main {
 }
 
 /* 菜单角标（计数 / 角色标记） */
-.sidebar .nav-item .badge,
-.sidebar .nav-item .nav-badge {
+.sidebar .nav-item .badge {
   flex-shrink: 0;
   margin-left: auto;
   font-size: var(--font-size-2xs);
@@ -409,12 +408,6 @@ body.layout-nav-top.sidebar-collapsed .main {
   text-align: center;
   color: var(--color-surface);
   background: var(--color-danger-accent);
-}
-
-.sidebar .nav-item .nav-badge {
-  color: var(--color-primary);
-  background: var(--color-primary-light);
-  letter-spacing: 0.02em;
 }
 
 /* ── Nav Item Header（带箭头的父级行）── */
@@ -568,8 +561,7 @@ body.sidebar-collapsed .sidebar .nav-item-text,
 body.sidebar-collapsed .sidebar .nav-section-label,
 body.sidebar-collapsed .sidebar .nav-divider,
 body.sidebar-collapsed .sidebar .nav-arrow,
-body.sidebar-collapsed .sidebar .badge,
-body.sidebar-collapsed .sidebar .nav-badge {
+body.sidebar-collapsed .sidebar .badge {
   display: none;
   flex: none;
   opacity: 0;

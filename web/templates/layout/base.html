@@ -88,6 +88,8 @@
   <script src="/static/js/ui.js"></script>
   <script src="/static/js/app.js"></script>
   <script src="/static/js/components/components.js"></script>
+  {{/* pinnedpages.js 须先于 sidebar.js：侧栏「常用」列表依赖 window.WorkbenchPinned */}}
+  {{ if and (not .HideChrome) (eq .LayoutNav "sidebar") }}<script src="/static/js/layout/pinnedpages.js"></script>{{ end }}
   <script src="/static/js/layout/sidebar.js"></script>
   {{ if and (not .HideChrome) (eq .LayoutNav "sidebar") }}<script src="/static/js/layout/globalsearch.js"></script>{{ end }}
   {{ if not .HideChrome }}<script src="/static/js/layout/bottomtabbar.js"></script>{{ end }}
