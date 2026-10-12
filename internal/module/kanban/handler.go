@@ -49,6 +49,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g.GET("/task/items", middleware.RequirePerm(perm.KanbanStory), h.Tasks)
 	g.GET("/issues", middleware.RequirePerm(perm.KanbanStory), h.Issues)
 	g.GET("/createissue", middleware.RequirePerm(perm.KanbanStory), h.CreateIssue)
+	g.POST("/issue", middleware.RequirePerm(perm.KanbanStory), h.SaveCreateIssue)
 
 	g.PUT("/tasks/:id", middleware.RequirePerm(perm.KanbanStory), h.UpdateTaskStatus)
 }
@@ -247,6 +248,52 @@ func (h *Handler) CreateIssue(c *gin.Context) {
 		"project":    resp.Project,
 		"assignedTo": resp.AssignedTo,
 		"owner":      resp.Owner,
+	})
+}
+
+// SaveCreateIssue 保存提问题（代理禅道 POST /issuesimplecreate）。
+// 成功：{ success, message, redirectUrl, id }。
+func (h *Handler) SaveCreateIssue(c *gin.Context) {
+	var req SaveCreateIssueReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "请求格式错误"})
+		return
+	}
+	if errs := req.Validate(); len(errs) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"success": false, "errors": errs})
+		return
+	}
+
+	resp, err := h.svc.SaveCreateIssue(c.Request.Context(), middleware.CurrentUser(c), req)
+	if err != nil {
+		if biz, ok := errorx.IsBizError(err); ok {
+			status := http.StatusBadRequest
+			switch biz.Code {
+			case errorx.ErrCodeForbidden:
+				status = http.StatusForbidden
+			case errorx.ErrCodeInvalidParam:
+				status = http.StatusBadRequest
+			case errorx.ErrCodeInternal:
+				status = http.StatusInternalServerError
+			}
+			c.JSON(status, gin.H{"success": false, "message": biz.Msg})
+			return
+		}
+		if h.logger != nil {
+			h.logger.Error("save kanban createissue failed", zap.Error(err))
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "创建问题失败",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":     true,
+		"message":     "问题已创建",
+		"redirectUrl": "/kanban/task",
+		"id":          resp.ID,
 	})
 }
 

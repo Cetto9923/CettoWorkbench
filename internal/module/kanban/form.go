@@ -216,3 +216,37 @@ type CreateIssueResp struct {
 	AssignedTo CreateIssueFieldOptions `json:"assignedTo"`
 	Owner      CreateIssueFieldOptions `json:"owner"`
 }
+
+// SaveCreateIssueReq 保存提问题（JSON Body，转发禅道 POST /issuesimplecreate）。
+type SaveCreateIssueReq struct {
+	Title      string `json:"title"`
+	Project    uint   `json:"project"`
+	AssignedTo string `json:"assignedTo"`
+	Owner      string `json:"owner"`
+}
+
+// Validate 校验四字段必填。
+func (r *SaveCreateIssueReq) Validate() []FieldError {
+	var errs []FieldError
+	r.Title = strings.TrimSpace(r.Title)
+	r.AssignedTo = strings.TrimSpace(r.AssignedTo)
+	r.Owner = strings.TrimSpace(r.Owner)
+	if r.Title == "" {
+		errs = append(errs, FieldError{Field: "title", Message: "问题名称不能为空"})
+	}
+	if r.Project == 0 {
+		errs = append(errs, FieldError{Field: "project", Message: "请选择所属项目"})
+	}
+	if r.AssignedTo == "" {
+		errs = append(errs, FieldError{Field: "assignedTo", Message: "请选择指派给"})
+	}
+	if r.Owner == "" {
+		errs = append(errs, FieldError{Field: "owner", Message: "请选择提出人"})
+	}
+	return errs
+}
+
+// SaveCreateIssueResp 保存提问题成功响应（含禅道新建问题 ID）。
+type SaveCreateIssueResp struct {
+	ID int64 `json:"id"`
+}

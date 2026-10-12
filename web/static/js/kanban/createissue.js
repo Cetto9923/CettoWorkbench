@@ -1,15 +1,17 @@
 /* =============================================================================
    文件: web/static/js/kanban/createissue.js
    模块: 工作看板
-   职责: 提问题弹窗开关；所属项目/指派给/提出人走 GET /kanban/createissue。
+   职责: 提问题弹窗开关、选项加载与保存（GET/POST /kanban/createissue）。
 ============================================================================= */
 (function () {
   "use strict";
 
   var OPTIONS_URL = "/kanban/createissue";
+  var SAVE_URL = "/kanban/issue";
 
   var bound = false;
   var loadSeq = 0;
+  var submitting = false;
 
   function $(id) {
     return document.getElementById(id);
@@ -191,9 +193,107 @@
     overlay.setAttribute("aria-hidden", "true");
   }
 
+  function csrfHeaders() {
+    var headers = {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "X-Requested-With": "XMLHttpRequest",
+    };
+    var meta = document.querySelector('meta[name="csrf-token"]');
+    var token = meta ? String(meta.getAttribute("content") || "").trim() : "";
+    if (token) headers["X-CSRF-Token"] = token;
+    return headers;
+  }
+
+  function readFormData() {
+    var titleEl = $("kanbanIssueTitle");
+    var projectEl = $("kanbanIssueProject");
+    var assignedEl = $("kanbanIssueAssignedTo");
+    var ownerEl = $("kanbanIssueOwner");
+    return {
+      title: titleEl ? String(titleEl.value || "").trim() : "",
+      project: Number(projectEl ? projectEl.value : 0) || 0,
+      assignedTo: assignedEl ? String(assignedEl.value || "").trim() : "",
+      owner: ownerEl ? String(ownerEl.value || "").trim() : "",
+    };
+  }
+
+  function validateFormData(data) {
+    if (!data.title) {
+      showToast("请填写问题名称", "error");
+      return false;
+    }
+    if (!data.project) {
+      showToast("请选择所属项目", "error");
+      return false;
+    }
+    if (!data.assignedTo) {
+      showToast("请选择指派给", "error");
+      return false;
+    }
+    if (!data.owner) {
+      showToast("请选择提出人", "error");
+      return false;
+    }
+    return true;
+  }
+
+  function setSubmitDisabled(disabled) {
+    var btn = $("kanbanCreateIssueSaveBtn");
+    if (btn) btn.disabled = !!disabled;
+  }
+
   function onSubmit(ev) {
     ev.preventDefault();
-    showToast("静态预览：提问题尚未接入保存", "info");
+    if (submitting) return;
+    var data = readFormData();
+    if (!validateFormData(data)) return;
+
+    submitting = true;
+    setSubmitDisabled(true);
+    var fetchFn = typeof window.appFetch === "function" ? window.appFetch : fetch;
+    fetchFn(SAVE_URL, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: csrfHeaders(),
+      body: JSON.stringify(data),
+    })
+      .then(function (r) {
+        return r.text().then(function (text) {
+          var parsed = {};
+          try {
+            parsed = text ? JSON.parse(text) : {};
+          } catch (ignore) {
+            parsed = {};
+          }
+          return { ok: r.ok, data: parsed, status: r.status };
+        });
+      })
+      .then(function (wrap) {
+        var resp = wrap.data || {};
+        if (wrap.ok && resp.success) {
+          var msg = resp.message || "问题已创建";
+          if (resp.id) msg = msg + "（#" + resp.id + "）";
+          showToast(msg, "success");
+          closeModal();
+          if (window.KanbanIssue && typeof window.KanbanIssue.reload === "function") {
+            window.KanbanIssue.reload();
+          }
+          return;
+        }
+        if (resp.errors && resp.errors.length) {
+          showToast(resp.errors[0].message || "校验失败", "error");
+          return;
+        }
+        showToast(resp.message || "创建问题失败", "error");
+      })
+      .catch(function () {
+        showToast("创建问题失败，请稍后重试", "error");
+      })
+      .then(function () {
+        submitting = false;
+        setSubmitDisabled(false);
+      });
   }
 
   function bindOnce() {

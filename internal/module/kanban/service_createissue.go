@@ -2,20 +2,23 @@
 // 文件: internal/module/kanban/service_createissue.go
 // 模块: 工作看板
 // 类型: action
-// 职责: 提问题弹窗下拉（所属项目 / 指派给 / 提出人），对齐禅道 simpleCreate。
+// 职责: 提问题弹窗下拉与保存（转发禅道 POST /issuesimplecreate）。
 // 依赖: internal/model
 //       internal/pkg/errorx
+//       internal/pkg/zentao
 // =============================================================================
 
 package kanban
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 
 	"workbench/internal/model"
 	"workbench/internal/pkg/errorx"
+	"workbench/internal/pkg/zentao"
 )
 
 // CreateIssue 返回提问题弹窗选项与默认值。
@@ -135,6 +138,33 @@ func (s *Service) CreateIssue(ctx context.Context, actor *model.User, req Create
 		AssignedTo: CreateIssueFieldOptions{Options: assignedOpts, Value: defaultAssigned},
 		Owner:      CreateIssueFieldOptions{Options: ownerOpts, Value: defaultOwner},
 	}, nil
+}
+
+// SaveCreateIssue 保存提问题：以当前用户身份转发禅道 POST /issuesimplecreate。
+func (s *Service) SaveCreateIssue(ctx context.Context, actor *model.User, req SaveCreateIssueReq) (SaveCreateIssueResp, error) {
+	empty := SaveCreateIssueResp{}
+	if actor == nil || strings.TrimSpace(actor.Account) == "" {
+		return empty, errorx.New(errorx.ErrCodeForbidden, "请先登录")
+	}
+
+	client := s.ztAPI
+	if client == nil {
+		client = zentao.API()
+	}
+	if client == nil {
+		return empty, errorx.New(errorx.ErrCodeInternal, "禅道 API 未配置")
+	}
+
+	id, err := createIssueSimple(ctx, client, createIssueSimpleReq{
+		Title:      req.Title,
+		Project:    req.Project,
+		AssignedTo: req.AssignedTo,
+		Owner:      req.Owner,
+	})
+	if err != nil {
+		return empty, errorx.Wrap(errorx.ErrCodeInvalidParam, fmt.Sprintf("创建问题失败：%s", err.Error()), err)
+	}
+	return SaveCreateIssueResp{ID: id}, nil
 }
 
 func memberRowsToAccounts(rows []teamMemberRow) []string {
