@@ -74,6 +74,7 @@ html[data-theme="dark"] #page-schedule .schedule-data-tabs {
   background: var(--color-surface);
 }
 
+html[data-theme="dark"] #scheduleMultiselectRow .schedule-window-picker .ui-autocomplete-input,
 html[data-theme="dark"] #page-schedule #scheduleMoreFilters .schedule-owner-picker .ui-autocomplete-input,
 html[data-theme="dark"] #page-schedule #scheduleMoreFilters .schedule-pri-picker .ui-autocomplete-input {
   background: var(--color-surface);

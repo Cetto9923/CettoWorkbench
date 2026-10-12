@@ -109,12 +109,23 @@
     $multiselect.find(".schedule-ms-text").text(formatMultiselectDisplay($multiselect, selected));
   }
 
+  function firstSelectedValue(raw) {
+    var parts = String(raw || "").split(",");
+    for (var i = 0; i < parts.length; i++) {
+      var value = $.trim(parts[i] || "");
+      if (value) {
+        return value;
+      }
+    }
+    return "";
+  }
+
   function collectAdvancedFilterValues() {
     var values = {
       groups: "",
       products: "",
       stages: "",
-      windows: "",
+      windows: firstSelectedValue($("#scheduleFilterWindow").val()),
       keyword: $.trim($("#scheduleSearch").val() || ""),
       pri: $.trim($("#scheduleFilterPri").val() || ""),
       test: $.trim($("#scheduleFilterTestValue").val() || ""),
@@ -195,6 +206,40 @@
 
   function insideUsersURL() {
     return $(".schedule-owner-picker").first().attr("data-inside-users-url") || "/users";
+  }
+
+  function readWindowFilterOptions() {
+    var items = [];
+    $("#scheduleFilterWindowOptions option").each(function () {
+      var value = $.trim($(this).val() || "");
+      if (!value) {
+        return;
+      }
+      items.push({
+        value: value,
+        label: $.trim($(this).text() || "") || value,
+      });
+    });
+    return items;
+  }
+
+  function initWindowPicker() {
+    if (typeof window.initAutocomplete !== "function") {
+      return;
+    }
+    if (!$("#scheduleFilterWindowInput").length || !$("#scheduleFilterWindow").length) {
+      return;
+    }
+    var items = readWindowFilterOptions();
+    var selected = firstSelectedValue(
+      $("#scheduleFilterWindow").attr("data-selected-value") || $("#scheduleFilterWindow").val() || ""
+    );
+    window.initAutocomplete("scheduleFilterWindowInput", "scheduleFilterWindow", items, {
+      placeholder: "窗口",
+      value: selected,
+      label: findOptionLabel(items, selected),
+      labelOnly: true,
+    });
   }
 
   function initPriPicker() {
@@ -288,6 +333,8 @@
     syncMultiselectTrigger($(this));
   });
 
+  initWindowPicker();
+
   $row.on("click", ".schedule-ms-trigger", function (e) {
     e.stopPropagation();
     var $ms = $(this).closest(".schedule-ms");
@@ -309,7 +356,7 @@
     syncMultiselectTrigger($(this).closest(".schedule-ms"));
   });
 
-  $row.on("focusin", ".schedule-filter-ms .form-multiselect-input", function () {
+  $row.on("focusin", ".schedule-filter-ms .form-multiselect-input, #scheduleFilterWindowInput", function () {
     closeAllScheduleMultiselects();
   });
 

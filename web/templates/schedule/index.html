@@ -12,7 +12,7 @@
           .FilterProducts ([]schedule.ZtProduct),
           .FilterWindows ([]schedule.WindowFilterOption),
           .StageFilterOptions ([]schedule.StageFilterOption),
-          .SelectedWindowMap (map[uint]bool), .BizPager (*pagination.Pager),
+          .SelectedWindows (string), .BizPager (*pagination.Pager),
           .IndepPager (*pagination.Pager), .InsideUsersURL (string)
 TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
 ========================================================================== */}}
@@ -210,37 +210,14 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             </div>
           </div>
 
-          <div class="dropdown form-multiselect schedule-filter-ms" data-role-dropdown data-filter-key="windows" data-multiselect-keep-placeholder="true">
-            <div class="form-input-clear-wrap">
-              <div class="form-multiselect-display" data-role-display>
-                <div class="form-multiselect-tags" data-role-tags></div>
-                <input type="text" class="input form-multiselect-input" data-multiselect-filter
-                  placeholder="窗口"
-                  data-placeholder-empty="窗口"
-                  autocomplete="off"
-                  aria-autocomplete="list"
-                  aria-label="检索窗口">
-              </div>
-              <button type="button" class="form-dropdown-chevron" aria-label="展开窗口" onclick="return toggleDropdown(this);">
-                <i class="bi bi-chevron-down" aria-hidden="true"></i>
-              </button>
-              <button type="button" class="form-dropdown-clear" data-form-multiselect-clear aria-label="清除窗口" hidden>×</button>
-            </div>
-            <div class="dropdown-menu form-multiselect-menu">
-              <div class="form-multiselect-scroll">
-                <div class="form-multiselect-list">
-                  {{ range .FilterWindows }}
-                  <label class="checkbox-label form-multiselect-option">
-                    <input type="checkbox" class="checkbox form-multiselect-checkbox" value="{{ .ID }}"{{ if index $.SelectedWindowMap .ID }} checked{{ end }}>
-                    <span class="checkbox-box"></span>
-                    <span class="form-multiselect-name">{{ .Name }}</span>
-                  </label>
-                  {{ else }}
-                  <div class="schedule-ms-empty">暂无窗口</div>
-                  {{ end }}
-                </div>
-              </div>
-            </div>
+          <div class="ui-autocomplete schedule-window-picker">
+            <input type="text" id="scheduleFilterWindowInput" class="form-input" placeholder="窗口" autocomplete="off" aria-label="检索窗口">
+            <input type="hidden" id="scheduleFilterWindow" class="schedule-window-filter-value" value="{{ .SelectedWindows }}" data-selected-value="{{ .SelectedWindows }}">
+            <select id="scheduleFilterWindowOptions" hidden aria-hidden="true">
+              {{ range .FilterWindows }}
+              <option value="{{ .ID }}">{{ .Name }}</option>
+              {{ end }}
+            </select>
           </div>
 
           <label class="schedule-search-inline" for="scheduleSearch">
