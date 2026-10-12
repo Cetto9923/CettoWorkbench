@@ -75,6 +75,11 @@ type CreateReq struct {
 	Products     []WindowProductInput `json:"products"`
 }
 
+// CreateResp 新建版本窗口响应。
+type CreateResp struct {
+	ID uint64
+}
+
 // Validate 校验新建版本窗口请求。
 func (r *CreateReq) Validate() []FieldError {
 	errs := validateWindowSaveFields(

@@ -289,7 +289,8 @@ func (h *Handler) CreateWindow(c *gin.Context) {
 		return
 	}
 
-	if err := h.svc.Create(c.Request.Context(), actor, req); err != nil {
+	resp, err := h.svc.Create(c.Request.Context(), actor, req)
+	if err != nil {
 		if h.logger != nil {
 			h.logger.Error("save version window failed",
 				zap.Error(err),
@@ -306,6 +307,7 @@ func (h *Handler) CreateWindow(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success":     true,
 		"message":     "版本窗口保存成功",
+		"windowId":    resp.ID,
 		"redirectUrl": scheduleRedirectURL,
 	})
 }

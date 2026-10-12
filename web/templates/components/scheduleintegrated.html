@@ -1,8 +1,10 @@
 {{/* ==========================================================================
-文件: web/templates/components/scheduleintegrated.html 模块: 通用模板 职责:
-一体化排期弹窗及 RD/任务行模板（schedule 页与 PO 首页共用） 全局字段:
-.CurrentUser, .CSRFToken, .Flash, .Menus, .CurrentPath 页面字段: 无（静态 DOM /
-template 片段）
+文件: web/templates/components/scheduleintegrated.html
+模块: 通用模板
+职责: 一体化排期弹窗及 RD/任务行模板（schedule 页与 PO 首页共用）；末尾引入新建版本窗口弹窗
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .CurrentPath
+页面字段: .Teamgroups ([]schedule.TeamgroupOption) — 供 schedule/versionwindow
+          .Products ([]schedule.ZtProduct) — 供 schedule/versionwindow
 ========================================================================== */}}
 {{ define "schedule/integrated" }}
 <div class="batch-modal-overlay" id="scheduleIntegratedModalOverlay"></div>
@@ -44,6 +46,7 @@ template 片段）
                 >
                   <option value="">请选择版本窗口</option>
                 </select>
+                <button type="button" class="action-btn js-schedule-inline-create">新建窗口</button>
               </div>
             </div>
             <div class="schedule-integrated-cell">
@@ -531,4 +534,6 @@ template 片段）
     <td class="story-item-estimate"></td>
   </tr>
 </template>
+
+{{ template "schedule/versionwindow" . }}
 {{ end }}

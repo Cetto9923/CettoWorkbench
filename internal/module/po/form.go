@@ -49,6 +49,8 @@ type HomeResp struct {
 	VersionWindows []schedule.HomeVersionWindowCard
 	LaunchWindows  []LaunchWindowOption
 	Users          []UserOption
+	Teamgroups     []schedule.TeamgroupOption
+	Products       []schedule.ZtProduct
 }
 
 // DemandsReq 按价值流状态查询需求/故事详情。

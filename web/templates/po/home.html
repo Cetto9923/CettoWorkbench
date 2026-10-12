@@ -5,7 +5,8 @@
 全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .CurrentPath
 页面字段: .Title (string), .PageDescription (string), .ValueStreamStages ([]ValueStreamStage),
           .VersionWindows ([]schedule.HomeVersionWindowCard),
-          .LaunchWindowsJSON (string), .UsersJSON (string)
+          .LaunchWindowsJSON (string), .UsersJSON (string),
+          .Teamgroups ([]schedule.TeamgroupOption), .Products ([]schedule.ZtProduct)
 ========================================================================== */}}
 {{ define "page_css" }}
 <link rel="stylesheet" href="{{ asset "/static/css/po/home.css" }}">
@@ -17,8 +18,10 @@
 <link rel="stylesheet" href="{{ asset "/static/css/po/linkstory.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/po/deliver.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedule.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulewindow.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulemodal.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/scheduleintegrated.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/schedule/dark.css" }}">
 {{ end }}
 
 {{ define "content" }}
@@ -266,6 +269,8 @@
 <script src="{{ asset "/static/js/po/linkstory.js" }}"></script>
 <script src="{{ asset "/static/js/po/deliver.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/schedulefetch.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/schedulewindowdraft.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/schedulewindow.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/scheduleintegratedshared.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/scheduleintegratedtasks.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/scheduleintegratedrd.js" }}"></script>

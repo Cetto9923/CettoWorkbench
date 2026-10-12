@@ -336,6 +336,34 @@
   box-shadow: none;
 }
 
+/* 新建窗口弹窗叠在排期一体化弹窗之上 */
+#scheduleVersionWindowModalOverlay {
+  z-index: 1700;
+}
+
+#scheduleVersionWindowModal {
+  z-index: 1701;
+}
+
+#scheduleIntegratedModal .js-schedule-inline-create {
+  flex-shrink: 0;
+  align-self: stretch;
+  white-space: nowrap;
+  color: var(--blue);
+  background: var(--white);
+  border: none;
+  border-left: 1px solid var(--border);
+  border-radius: 0;
+  padding: 0 10px;
+  font-size: 12px;
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+#scheduleIntegratedModal .js-schedule-inline-create:hover {
+  background: var(--bg);
+}
+
 .integrated-rd-tree-empty {
   padding: 24px 16px;
   text-align: center;

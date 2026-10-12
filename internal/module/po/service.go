@@ -146,11 +146,31 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 		}
 	}
 
+	teamgroups := []schedule.TeamgroupOption{}
+	products := []schedule.ZtProduct{}
+	if s.schedule != nil {
+		formData, formErr := s.schedule.GetCreateWindowFormData(ctx, actor)
+		if formErr != nil {
+			if s.logger != nil {
+				s.logger.Warn("po home create window form data", zap.Error(formErr))
+			}
+		} else if formData != nil {
+			if formData.Teamgroups != nil {
+				teamgroups = formData.Teamgroups
+			}
+			if formData.Products != nil {
+				products = formData.Products
+			}
+		}
+	}
+
 	return &HomeResp{
 		Stages:         stages,
 		VersionWindows: versionWindows,
 		LaunchWindows:  launchWindows,
 		Users:          s.listVerifierUsers(ctx, actor),
+		Teamgroups:     teamgroups,
+		Products:       products,
 	}, nil
 }
 

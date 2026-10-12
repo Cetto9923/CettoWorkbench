@@ -19,6 +19,7 @@ import (
 
 	"workbench/internal/constants"
 	"workbench/internal/middleware"
+	"workbench/internal/module/schedule"
 	"workbench/internal/pkg/errorx"
 	"workbench/internal/pkg/perm"
 	"workbench/internal/pkg/render"
@@ -68,13 +69,25 @@ func (h *Handler) Home(c *gin.Context) {
 		if h.logger != nil {
 			h.logger.Warn("po home value stream", zap.Error(err))
 		}
-		resp = &HomeResp{Stages: emptyValueStreamStages(), LaunchWindows: []LaunchWindowOption{}, Users: []UserOption{}}
+		resp = &HomeResp{
+			Stages:     emptyValueStreamStages(),
+			LaunchWindows: []LaunchWindowOption{},
+			Users:      []UserOption{},
+			Teamgroups: []schedule.TeamgroupOption{},
+			Products:   []schedule.ZtProduct{},
+		}
 	}
 	if resp.LaunchWindows == nil {
 		resp.LaunchWindows = []LaunchWindowOption{}
 	}
 	if resp.Users == nil {
 		resp.Users = []UserOption{}
+	}
+	if resp.Teamgroups == nil {
+		resp.Teamgroups = []schedule.TeamgroupOption{}
+	}
+	if resp.Products == nil {
+		resp.Products = []schedule.ZtProduct{}
 	}
 
 	if h.logger != nil {
@@ -101,6 +114,8 @@ func (h *Handler) Home(c *gin.Context) {
 		"VersionWindows":    resp.VersionWindows,
 		"LaunchWindowsJSON": launchWindowsJSON,
 		"UsersJSON":         usersJSON,
+		"Teamgroups":        resp.Teamgroups,
+		"Products":          resp.Products,
 	})
 }
 
