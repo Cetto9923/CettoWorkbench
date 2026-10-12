@@ -1,0 +1,64 @@
+{{/* ==========================================================================
+文件: web/templates/kanban/createissue.html
+模块: 工作看板
+职责: 提问题静态弹窗（对齐禅道 simpleCreate 字段；无附件；由 task 页引入）。
+全局字段: .CurrentUser, .CSRFToken
+页面字段: 无（静态占位选项由 createissue.js 注入）
+========================================================================== */}}
+{{ define "kanban/createissue" }}
+<div id="kanbanCreateIssueOverlay" class="kanban-createissue-overlay" aria-hidden="true">
+  <div id="kanbanCreateIssueModal" class="kanban-createissue-modal" role="dialog" aria-modal="true" aria-labelledby="kanbanCreateIssueTitle">
+    <div class="kanban-createissue-hdr">
+      <h3 id="kanbanCreateIssueTitle">提问题</h3>
+      <button type="button" class="kanban-createissue-close" id="kanbanCreateIssueCloseBtn" aria-label="关闭">&times;</button>
+    </div>
+
+    <div class="kanban-createissue-body">
+      <form id="kanbanCreateIssueForm" novalidate>
+        <div class="kanban-createissue-field">
+          <label class="kanban-createissue-label" for="kanbanIssueProjectInput">
+            所属项目 <span class="kanban-createissue-req">*</span>
+          </label>
+          <div class="ui-autocomplete">
+            <input type="text" id="kanbanIssueProjectInput" class="input" placeholder="搜索项目" autocomplete="off">
+            <input type="hidden" id="kanbanIssueProject" name="project" value="">
+          </div>
+        </div>
+
+        <div class="kanban-createissue-field">
+          <label class="kanban-createissue-label" for="kanbanIssueTitle">
+            问题名称 <span class="kanban-createissue-req">*</span>
+          </label>
+          <input type="text" id="kanbanIssueTitle" name="title" class="input" maxlength="255" placeholder="请输入问题名称" autocomplete="off">
+        </div>
+
+        <div class="kanban-createissue-row">
+          <div class="kanban-createissue-field">
+            <label class="kanban-createissue-label" for="kanbanIssueAssignedToInput">
+              指派给 <span class="kanban-createissue-req">*</span>
+            </label>
+            <div class="ui-autocomplete">
+              <input type="text" id="kanbanIssueAssignedToInput" class="input" placeholder="搜索成员" autocomplete="off">
+              <input type="hidden" id="kanbanIssueAssignedTo" name="assignedTo" value="">
+            </div>
+          </div>
+          <div class="kanban-createissue-field">
+            <label class="kanban-createissue-label" for="kanbanIssueOwnerInput">
+              提出人 <span class="kanban-createissue-req">*</span>
+            </label>
+            <div class="ui-autocomplete">
+              <input type="text" id="kanbanIssueOwnerInput" class="input" placeholder="搜索成员" autocomplete="off">
+              <input type="hidden" id="kanbanIssueOwner" name="owner" value="">
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="kanban-createissue-footer">
+      <button type="button" class="action-btn" id="kanbanCreateIssueCancelBtn">取消</button>
+      <button type="submit" form="kanbanCreateIssueForm" class="action-btn primary" id="kanbanCreateIssueSaveBtn">保存</button>
+    </div>
+  </div>
+</div>
+{{ end }}

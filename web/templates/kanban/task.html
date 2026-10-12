@@ -2,13 +2,15 @@
 文件: web/templates/kanban/task.html
 模块: 工作看板
 职责: 任务看板静态壳；三列任务由 task.js ajax 填充，小组/成员切换驱动刷新；
-      wait/doing 拖拽经 taskdrag.js 调用 PUT /kanban/tasks/:id 写禅道。
+      wait/doing 拖拽经 taskdrag.js 调用 PUT /kanban/tasks/:id 写禅道；
+      「提问题」打开 createissue 静态弹窗。
 全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .CurrentPath
-页面字段: .Title (string), .PageDescription (string), .BaseUrl (string), .IssueCreateURL (string), .TaskCreateURL (string), .Teamgroups ([]module/kanban.TeamgroupItem；MemberItem.TaskCount)
+页面字段: .Title (string), .PageDescription (string), .BaseUrl (string), .TaskCreateURL (string), .Teamgroups ([]module/kanban.TeamgroupItem；MemberItem.TaskCount)
 ========================================================================== */}}
 {{ define "page_css" }}
 <link rel="stylesheet" href="{{ asset "/static/css/kanban/common.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/kanban/task.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/kanban/createissue.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/kanban/dark.css" }}">
 {{ end }}
 
@@ -38,7 +40,7 @@
     </div>
     <div class="actions">
       <a class="action primary" href="{{ .TaskCreateURL }}" target="_blank" rel="noopener noreferrer">+ 建任务</a>
-      <a class="action primary" href="{{ .IssueCreateURL }}" target="_blank" rel="noopener noreferrer">+ 提问题</a>
+      <button type="button" class="action primary" data-kanban-create-issue>+ 提问题</button>
     </div>
   </div>
 
@@ -103,9 +105,11 @@
     </aside>
   </div>
 </div>
+{{ template "kanban/createissue" . }}
 {{ end }}
 {{ define "page_js" }}
 <script src="{{ asset "/static/js/kanban/issue.js" }}"></script>
+<script src="{{ asset "/static/js/kanban/createissue.js" }}"></script>
 <script src="{{ asset "/static/js/kanban/task.js" }}"></script>
 <script src="{{ asset "/static/js/kanban/taskdrag.js" }}"></script>
 {{ end }}

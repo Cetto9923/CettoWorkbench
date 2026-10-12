@@ -19,12 +19,12 @@ const kanbanIssueLimit = 200
 
 // issueRow 问题栏查询原始行。
 type issueRow struct {
-	ID         int64
-	Title      string
-	Severity   string
-	Status     string
-	CreatedBy  string
-	AssignedTo string
+	ID         int64  `gorm:"column:id"`
+	Title      string `gorm:"column:title"`
+	Severity   string `gorm:"column:severity"`
+	Status     string `gorm:"column:status"`
+	CreatedBy  string `gorm:"column:createdBy"`
+	AssignedTo string `gorm:"column:assignedTo"`
 }
 
 // FindKanbanIssues 查询选中账号（可多个）提出的问题。
@@ -39,16 +39,7 @@ func (r *Repo) FindKanbanIssues(ctx context.Context, accounts, statuses []string
 		return []issueRow{}, nil
 	}
 
-	type rawRow struct {
-		ID         int64  `gorm:"column:id"`
-		Title      string `gorm:"column:title"`
-		Severity   string `gorm:"column:severity"`
-		Status     string `gorm:"column:status"`
-		CreatedBy  string `gorm:"column:createdBy"`
-		AssignedTo string `gorm:"column:assignedTo"`
-	}
-
-	var rows []rawRow
+	var rows []issueRow
 	err := r.db.WithContext(ctx).
 		Table((ztmodel.ZtIssue{}).TableName()).
 		Select("id, title, severity, status, createdBy, assignedTo").
@@ -66,18 +57,7 @@ func (r *Repo) FindKanbanIssues(ctx context.Context, accounts, statuses []string
 		return []issueRow{}, nil
 	}
 
-	out := make([]issueRow, 0, len(rows))
-	for _, row := range rows {
-		out = append(out, issueRow{
-			ID:         row.ID,
-			Title:      row.Title,
-			Severity:   row.Severity,
-			Status:     row.Status,
-			CreatedBy:  row.CreatedBy,
-			AssignedTo: row.AssignedTo,
-		})
-	}
-	return out, nil
+	return rows, nil
 }
 
 // CountKanbanIssuesByStatus 按状态统计选中账号提出的未删、非关闭问题数。

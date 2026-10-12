@@ -16,7 +16,6 @@ import (
 	"strings"
 
 	"workbench/internal/model"
-	"workbench/internal/pkg/errorx"
 	"workbench/internal/pkg/zentao"
 )
 
@@ -29,33 +28,31 @@ var (
 // ListIssues 按选中负责人（提出人 createdBy）与 tab 拉取问题列表。
 // 始终排除 deleted / closed；返回双侧 tab 计数。
 func (s *Service) ListIssues(ctx context.Context, actor *model.User, req ListIssuesReq) (ListIssuesResp, error) {
-	empty := ListIssuesResp{Items: []IssueItem{}, Counts: IssueTabCounts{}}
-	if errs := req.Validate(); len(errs) > 0 {
-		return empty, errorx.New(errorx.ErrCodeInvalidParam, errs[0].Message)
-	}
+	// empty := ListIssuesResp{Items: []IssueItem{}, Counts: IssueTabCounts{}}
 
-	actorAccount := ""
-	if actor != nil {
-		actorAccount = actor.Account
-	}
+	actorAccount :=  req.Account
+	// if actor != nil {
+	// 	actorAccount = actor.Account
+	// }
 
-	groups, err := s.ListMyTeamgroups(ctx, actor, WorkloadNone)
+	// 全部功能下线
+	// groups, err := s.ListMyTeamgroups(ctx, actor, WorkloadNone)
+	// if err != nil {
+	// 	return ListIssuesResp{}, err
+	// }
+	// targets, err := resolveKanbanAccounts(actorAccount, req.Account, req.TeamgroupID, groups)
+	// if err != nil {
+	// 	return ListIssuesResp{}, err
+	// }
+	// if len(targets) == 0 {
+	// 	return empty, nil
+	// }
+
+	unresolvedN, err := s.repo.CountKanbanIssuesByStatus(ctx, []string{actorAccount}, issueStatusesUnresolved)
 	if err != nil {
 		return ListIssuesResp{}, err
 	}
-	targets, err := resolveKanbanAccounts(actorAccount, req.Account, req.TeamgroupID, groups)
-	if err != nil {
-		return ListIssuesResp{}, err
-	}
-	if len(targets) == 0 {
-		return empty, nil
-	}
-
-	unresolvedN, err := s.repo.CountKanbanIssuesByStatus(ctx, targets, issueStatusesUnresolved)
-	if err != nil {
-		return ListIssuesResp{}, err
-	}
-	resolvedN, err := s.repo.CountKanbanIssuesByStatus(ctx, targets, issueStatusesResolved)
+	resolvedN, err := s.repo.CountKanbanIssuesByStatus(ctx, []string{actorAccount}, issueStatusesResolved)
 	if err != nil {
 		return ListIssuesResp{}, err
 	}
@@ -64,7 +61,7 @@ func (s *Service) ListIssues(ctx context.Context, actor *model.User, req ListIss
 	if req.Tab == IssueTabResolved {
 		statuses = issueStatusesResolved
 	}
-	rows, err := s.repo.FindKanbanIssues(ctx, targets, statuses)
+	rows, err := s.repo.FindKanbanIssues(ctx, []string{actorAccount}, statuses)
 	if err != nil {
 		return ListIssuesResp{}, err
 	}
@@ -77,10 +74,8 @@ func (s *Service) ListIssues(ctx context.Context, actor *model.User, req ListIss
 	items := make([]IssueItem, 0, len(rows))
 	for _, row := range rows {
 		ownerAcc := strings.TrimSpace(row.AssignedTo)
-		if ownerAcc == "" {
-			ownerAcc = strings.TrimSpace(row.CreatedBy)
-		}
 		sev := strings.TrimSpace(row.Severity)
+
 		items = append(items, IssueItem{
 			ID:            row.ID,
 			Title:         row.Title,
