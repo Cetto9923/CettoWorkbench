@@ -211,22 +211,28 @@
         </div>
         <div class="home-version-panel" id="homeCurrentVersionSummary">
           {{ range .VersionWindows }}
-          <div class="home-version-mini">
-            <div class="summary-top">
-              <div>
-                <div class="summary-title" title="{{ .Name }}"><i class="fas fa-layer-group"></i>{{ .Name }}{{ if .AgileGroup }} <span class="agile-team-tag">{{ .AgileGroup }}</span>{{ end }}</div>
-                <div class="summary-sub">{{ .Range }}</div>
-              </div>
+          <div class="home-version-card">
+            <div class="home-version-card-hdr">
+              <a href="/schedule?windows={{ .ID }}&amp;groups={{ .TeamgroupID }}" class="home-version-name" title="进入排期维护：{{ .Name }}">
+                <i class="fas fa-calendar-day text-blue"></i>
+                <span>{{ .Name }}</span>
+              </a>
+              <span class="home-version-badge">{{ .Range }}</span>
             </div>
+            {{ if .AgileGroup }}<div class="summary-sub">{{ .AgileGroup }}</div>{{ end }}
             <div class="summary-stats">
-              <span class="summary-stat">需求 <strong>{{ .DemandCount }}</strong></span>
-              <span class="summary-stat">开发 <strong>{{ .DevCount }}</strong></span>
-              <span class="summary-stat">测试 <strong>{{ .TestCount }}</strong></span>
-              <span class="summary-stat">待交付 <strong>{{ .DeliverCount }}</strong></span>
+              <div class="summary-stat"><span>待发需求</span> <strong>{{ .DemandCount }}</strong></div>
+              <div class="summary-stat"><span>研发中</span> <strong>{{ .DevCount }}</strong></div>
+              <div class="summary-stat"><span>测试中</span> <strong>{{ .TestCount }}</strong></div>
+              <div class="summary-stat"><span>待交付</span> <strong>{{ .DeliverCount }}</strong></div>
             </div>
           </div>
           {{ else }}
-          <div class="home-version-empty">暂无活跃版本窗口</div>
+          <div class="home-version-empty">
+            <i class="fas fa-calendar-xmark" aria-hidden="true"></i>
+            <div class="home-version-empty-title">暂无活跃版本窗口</div>
+            <div class="home-version-empty-desc">当前范围内没有进行中的版本窗口</div>
+          </div>
           {{ end }}
         </div>
         <div class="version-dock-bottom">

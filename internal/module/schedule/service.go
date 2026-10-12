@@ -259,7 +259,7 @@ func (s *Service) GetByID(ctx context.Context, actor *model.User, id uint64) (*W
 }
 
 func formatWindowDateRange(start, end time.Time) string {
-	return start.Format("01-02") + " ~ " + end.Format("01-02")
+	return start.Format("2006-01-02") + " ~ " + end.Format("2006-01-02")
 }
 
 // Create 保存版本窗口并按需同步禅道产品计划。
