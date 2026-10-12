@@ -2,7 +2,7 @@
 // 文件: internal/module/menu/form.go
 // 模块: 菜单管理
 // 类型: crud
-// 职责: 定义菜单模块请求/响应结构体与校验逻辑。
+// 职责: 定义菜单模块与用户固定菜单的请求/响应结构体与校验逻辑。
 // 依赖: internal/model
 // =============================================================================
 
@@ -136,4 +136,47 @@ func NewUpdateReqFromModel(m *model.Menu) *UpdateReq {
 		Perm:     m.Perm,
 		Sort:     m.Sort,
 	}
+}
+
+// UserMenuItem 用户固定菜单展示项（title/path/icon 来自 zt_menus）。
+type UserMenuItem struct {
+	ID     uint64 `json:"id"`
+	MenuID uint64 `json:"menuId"`
+	Title  string `json:"title"`
+	Path   string `json:"path"`
+	Icon   string `json:"icon"`
+	Sort   int    `json:"sort"`
+}
+
+// ListUserMenuResp 当前用户固定菜单列表。
+type ListUserMenuResp struct {
+	Items []UserMenuItem `json:"items"`
+}
+
+// PinUserMenuReq 按页面 path 固定菜单。
+type PinUserMenuReq struct {
+	Path string `json:"path"`
+}
+
+// Validate 校验固定请求。
+func (r *PinUserMenuReq) Validate() []FieldError {
+	var errs []FieldError
+	path := strings.TrimSpace(r.Path)
+	if path == "" || path[0] != '/' {
+		errs = append(errs, FieldError{Field: "path", Message: "页面路径无效"})
+	}
+	if path == "/home" {
+		errs = append(errs, FieldError{Field: "path", Message: "首页不可固定"})
+	}
+	return errs
+}
+
+// PinUserMenuResp 固定成功响应。
+type PinUserMenuResp struct {
+	Item UserMenuItem `json:"item"`
+}
+
+// UnpinUserMenuReq 取消固定（MenuID 由 Handler 从 path 赋值）。
+type UnpinUserMenuReq struct {
+	MenuID uint64
 }
