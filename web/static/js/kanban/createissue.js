@@ -1,26 +1,15 @@
 /* =============================================================================
    文件: web/static/js/kanban/createissue.js
    模块: 工作看板
-   职责: 提问题静态弹窗开关与检索下拉（占位选项，不提交）。
+   职责: 提问题弹窗开关；所属项目/指派给/提出人走 GET /kanban/createissue。
 ============================================================================= */
 (function () {
   "use strict";
 
-  var PROJECT_OPTIONS = [
-    { value: "101", label: "示例项目 · 信贷系统" },
-    { value: "102", label: "示例项目 · 支付中台" },
-    { value: "103", label: "示例项目 · 数据平台" },
-  ];
-
-  var MEMBER_OPTIONS = [
-    { value: "zhangsan", label: "张三" },
-    { value: "lisi", label: "李四" },
-    { value: "wangwu", label: "王五" },
-    { value: "zhaoliu", label: "赵六" },
-  ];
+  var OPTIONS_URL = "/kanban/createissue";
 
   var bound = false;
-  var selectsReady = false;
+  var loadSeq = 0;
 
   function $(id) {
     return document.getElementById(id);
@@ -32,79 +21,49 @@
     }
   }
 
-  function currentAccount() {
-    var people = document.querySelector(".po-board [data-people]");
-    return people
-      ? String(people.getAttribute("data-current-account") || "").trim()
+  function activeTeamgroupID() {
+    var active = document.querySelector(
+      ".po-board [data-teamgroup-chips] .chip.active[data-teamgroup-id]"
+    );
+    return active
+      ? String(active.getAttribute("data-teamgroup-id") || "").trim()
       : "";
   }
 
-  function memberOptionsWithAccount() {
-    var account = currentAccount();
-    if (!account) return MEMBER_OPTIONS.slice();
-    for (var i = 0; i < MEMBER_OPTIONS.length; i++) {
-      if (MEMBER_OPTIONS[i].value === account) {
-        return MEMBER_OPTIONS.slice();
-      }
-    }
-    return MEMBER_OPTIONS.concat([{ value: account, label: account }]);
+  function activeAccount() {
+    var group = document.querySelector(
+      ".po-board .people-group:not(.is-hidden)"
+    );
+    if (!group) return "";
+    var person = group.querySelector(".person.active[data-account]");
+    return person
+      ? String(person.getAttribute("data-account") || "").trim()
+      : "";
   }
 
-  function findOption(items, value) {
+  function normalizeOptions(field) {
+    field = field || {};
+    var raw = Array.isArray(field.options) ? field.options : [];
+    var options = [];
+    for (var i = 0; i < raw.length; i++) {
+      var value = String((raw[i] && raw[i].value) || "").trim();
+      if (!value) continue;
+      var label = String((raw[i] && raw[i].label) || "").trim() || value;
+      options.push({ value: value, label: label });
+    }
+    return {
+      options: options,
+      value: String(field.value || "").trim(),
+    };
+  }
+
+  function findLabel(options, value) {
     var v = String(value || "").trim();
-    if (!v) return null;
-    for (var i = 0; i < items.length; i++) {
-      if (items[i].value === v) return items[i];
+    if (!v) return "";
+    for (var i = 0; i < options.length; i++) {
+      if (options[i].value === v) return options[i].label;
     }
-    return null;
-  }
-
-  function initSearchSelects() {
-    if (typeof window.initAutocomplete !== "function") {
-      return;
-    }
-    if (selectsReady) {
-      return;
-    }
-    var members = memberOptionsWithAccount();
-    var owner =
-      findOption(members, currentAccount()) || members[0] || null;
-    var sm = members[0] || null;
-
-    window.initAutocomplete(
-      "kanbanIssueProjectInput",
-      "kanbanIssueProject",
-      PROJECT_OPTIONS,
-      {
-        value: PROJECT_OPTIONS[0] ? PROJECT_OPTIONS[0].value : "",
-        label: PROJECT_OPTIONS[0] ? PROJECT_OPTIONS[0].label : "",
-        labelOnly: true,
-        placeholder: "搜索项目",
-      }
-    );
-    window.initAutocomplete(
-      "kanbanIssueAssignedToInput",
-      "kanbanIssueAssignedTo",
-      members,
-      {
-        value: sm ? sm.value : "",
-        label: sm ? sm.label : "",
-        labelOnly: true,
-        placeholder: "搜索成员",
-      }
-    );
-    window.initAutocomplete(
-      "kanbanIssueOwnerInput",
-      "kanbanIssueOwner",
-      members,
-      {
-        value: owner ? owner.value : "",
-        label: owner ? owner.label : "",
-        labelOnly: true,
-        placeholder: "搜索成员",
-      }
-    );
-    selectsReady = true;
+    return v;
   }
 
   function destroySearchSelects() {
@@ -114,28 +73,114 @@
     window.destroyAutocomplete("kanbanIssueProjectInput");
     window.destroyAutocomplete("kanbanIssueAssignedToInput");
     window.destroyAutocomplete("kanbanIssueOwnerInput");
-    selectsReady = false;
   }
 
-  function resetForm() {
+  function initField(inputId, hiddenId, field, placeholder) {
+    if (typeof window.initAutocomplete !== "function") {
+      return;
+    }
+    var normalized = normalizeOptions(field);
+    var value = normalized.value;
+    var label = findLabel(normalized.options, value);
+    window.initAutocomplete(inputId, hiddenId, normalized.options, {
+      value: value,
+      label: label,
+      labelOnly: true,
+      placeholder: placeholder || "搜索",
+    });
+  }
+
+  function initSelects(project, assignedTo, owner) {
+    destroySearchSelects();
+    initField(
+      "kanbanIssueProjectInput",
+      "kanbanIssueProject",
+      project,
+      "搜索项目"
+    );
+    initField(
+      "kanbanIssueAssignedToInput",
+      "kanbanIssueAssignedTo",
+      assignedTo,
+      "搜索成员"
+    );
+    initField("kanbanIssueOwnerInput", "kanbanIssueOwner", owner, "搜索成员");
+  }
+
+  function emptyFields() {
+    return {
+      project: { options: [], value: "" },
+      assignedTo: { options: [], value: "" },
+      owner: { options: [], value: "" },
+    };
+  }
+
+  function optionsUrl(teamgroupId, account) {
+    var params = new URLSearchParams();
+    if (teamgroupId) params.set("teamgroupId", teamgroupId);
+    if (account) params.set("account", account);
+    var q = params.toString();
+    return q ? OPTIONS_URL + "?" + q : OPTIONS_URL;
+  }
+
+  function loadOptions() {
+    var teamgroupId = activeTeamgroupID();
+    var account = activeAccount();
     var title = $("kanbanIssueTitle");
     if (title) title.value = "";
-    destroySearchSelects();
-    initSearchSelects();
+
+    if (!teamgroupId) {
+      var empty = emptyFields();
+      initSelects(empty.project, empty.assignedTo, empty.owner);
+      showToast("请先选择敏捷小组", "error");
+      return Promise.resolve(false);
+    }
+
+    var seq = ++loadSeq;
+    var fetchFn = typeof window.appFetch === "function" ? window.appFetch : fetch;
+    return fetchFn(optionsUrl(teamgroupId, account), {
+      method: "GET",
+      credentials: "same-origin",
+      headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" },
+    })
+      .then(function (r) {
+        if (!r.ok) throw new Error("http");
+        return r.json();
+      })
+      .then(function (payload) {
+        if (seq !== loadSeq) return false;
+        if (!payload || payload.success !== true) {
+          throw new Error((payload && payload.message) || "payload");
+        }
+        initSelects(
+          payload.project || {},
+          payload.assignedTo || {},
+          payload.owner || {}
+        );
+        return true;
+      })
+      .catch(function () {
+        if (seq !== loadSeq) return false;
+        var empty = emptyFields();
+        initSelects(empty.project, empty.assignedTo, empty.owner);
+        showToast("加载提问题选项失败", "error");
+        return false;
+      });
   }
 
   function openModal() {
     var overlay = $("kanbanCreateIssueOverlay");
     if (!overlay) return;
-    resetForm();
     overlay.classList.add("show");
     overlay.setAttribute("aria-hidden", "false");
-    var title = $("kanbanIssueTitle");
-    if (title) {
-      setTimeout(function () {
-        title.focus();
-      }, 0);
-    }
+    loadOptions().then(function () {
+      var title = $("kanbanIssueTitle");
+      if (title) {
+        setTimeout(function () {
+          title.focus();
+        }, 0);
+      }
+    });
   }
 
   function closeModal() {
@@ -160,7 +205,6 @@
       if (openBtn) {
         ev.preventDefault();
         openModal();
-        return;
       }
     });
 

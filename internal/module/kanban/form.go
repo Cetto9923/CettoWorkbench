@@ -182,3 +182,37 @@ type ListIssuesResp struct {
 	Items  []IssueItem    `json:"items"`
 	Counts IssueTabCounts `json:"counts"`
 }
+
+// CreateIssueReq 提问题弹窗下拉选项查询
+type CreateIssueReq struct {
+	Account     string `form:"account"`
+	TeamgroupID uint   `form:"teamgroupId"`
+}
+
+// Validate 校验敏捷小组必填。
+func (r *CreateIssueReq) Validate() []FieldError {
+	if r.TeamgroupID == 0 {
+		return []FieldError{{Field: "teamgroupId", Message: "请选择敏捷小组"}}
+	}
+	r.Account = strings.TrimSpace(r.Account)
+	return nil
+}
+
+// CreateIssueOption 检索下拉单选项。
+type CreateIssueOption struct {
+	Value string `json:"value"`
+	Label string `json:"label"`
+}
+
+// CreateIssueFieldOptions 单个下拉的选项列表与默认值。
+type CreateIssueFieldOptions struct {
+	Options []CreateIssueOption `json:"options"`
+	Value   string              `json:"value"`
+}
+
+// CreateIssueResp 提问题弹窗下拉数据（所属项目 / 指派给 / 提出人）。
+type CreateIssueResp struct {
+	Project    CreateIssueFieldOptions `json:"project"`
+	AssignedTo CreateIssueFieldOptions `json:"assignedTo"`
+	Owner      CreateIssueFieldOptions `json:"owner"`
+}

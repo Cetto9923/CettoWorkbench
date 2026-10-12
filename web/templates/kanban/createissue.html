@@ -3,7 +3,7 @@
 模块: 工作看板
 职责: 提问题静态弹窗（对齐禅道 simpleCreate 字段；无附件；由 task 页引入）。
 全局字段: .CurrentUser, .CSRFToken
-页面字段: 无（静态占位选项由 createissue.js 注入）
+页面字段: 无（所属项目/指派给/提出人由 GET /kanban/createissue 注入）
 ========================================================================== */}}
 {{ define "kanban/createissue" }}
 <div id="kanbanCreateIssueOverlay" class="kanban-createissue-overlay" aria-hidden="true">
