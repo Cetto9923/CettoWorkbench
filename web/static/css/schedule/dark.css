@@ -123,6 +123,11 @@ html[data-theme="dark"] #page-schedule .schedule-version-card.purple {
   background: var(--color-surface);
 }
 
+html[data-theme="dark"] #page-schedule .schedule-version-card.is-selected {
+  border-color: var(--blue, #3b82f6);
+  box-shadow: 0 0 0 1px var(--blue, #3b82f6), 0 6px 18px rgba(59, 130, 246, 0.2);
+}
+
 html[data-theme="dark"] #page-schedule .schedule-version-card.red {
   border-top: 3px solid var(--color-danger);
 }

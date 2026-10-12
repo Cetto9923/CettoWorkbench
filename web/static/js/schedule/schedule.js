@@ -365,6 +365,37 @@
     window.location.reload();
   });
 
+  function firstWindowFilterValue(raw) {
+    var parts = String(raw || "").split(",");
+    for (var i = 0; i < parts.length; i++) {
+      var value = $.trim(parts[i] || "");
+      if (value) {
+        return value;
+      }
+    }
+    return "";
+  }
+
+  function applyWindowCardFilter(windowId) {
+    windowId = String(windowId || "").trim();
+    if (!windowId) {
+      return;
+    }
+    var current = firstWindowFilterValue(readURLParams().get("windows"));
+    navigateSchedule({
+      windows: current === windowId ? null : windowId,
+      bizPage: null,
+      indepPage: null,
+    });
+  }
+
+  $root.on("click", ".schedule-version-body-click", function (e) {
+    if ($(e.target).closest(".schedule-version-card-actions").length) {
+      return;
+    }
+    applyWindowCardFilter($(this).closest(".schedule-version-card").data("window-id"));
+  });
+
   $root.on("click", ".js-toggle-window-card-menu", function (e) {
     e.preventDefault();
     e.stopPropagation();
@@ -475,4 +506,11 @@
     syncFilterTabUI();
   }
   loadFilterCounts();
+
+  if (firstWindowFilterValue(params.get("windows"))) {
+    var listWrap = document.getElementById("scheduleListViewWrap");
+    if (listWrap && typeof listWrap.scrollIntoView === "function") {
+      listWrap.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
 })(jQuery);
