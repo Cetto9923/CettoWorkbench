@@ -44,13 +44,13 @@
       <button type="button" data-home-focus="my_managed" class="header-quick-chip" title="指派给我或我是需求负责人" aria-pressed="false">
         <span>我负责</span> <em>0</em>
       </button>
-      <button type="button" data-home-focus="my_related" class="header-quick-chip" title="我参与或我主动关注" aria-pressed="false">
-        <span>我相关</span> <em>0</em>
+      <button type="button" data-home-focus="my_related" class="header-quick-chip" title="我主动关注" aria-pressed="false">
+        <span>我关注的</span> <em>{{ .Focus.MyRelated }}</em>
       </button>
       <button type="button" data-home-focus="overdue" class="header-quick-chip danger" title="在首页查看超期事项（含关联业务需求与研发需求）" aria-pressed="false">
         <span>超期</span> <em>0</em>
       </button>
-      <button type="button" data-home-focus="suspended" class="header-quick-chip" title="查看挂起事项（价值流范围内）" aria-pressed="false">
+      <button type="button" data-home-focus="suspended" class="header-quick-chip" title="查看挂起事项" aria-pressed="false">
         <span>挂起</span> <em>{{ .Focus.Suspended }}</em>
       </button>
     </div>

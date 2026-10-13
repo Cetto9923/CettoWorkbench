@@ -2,7 +2,7 @@
 // 文件: internal/module/po/service_homestages.go
 // 模块: PO 工作台
 // 类型: action
-// 职责: 首页价值流阶段统计与挂起（价值流并集）计数。
+// 职责: 首页价值流阶段统计与焦点角标（挂起 / 我关注的）计数。
 // 依赖: 无
 // =============================================================================
 
@@ -10,10 +10,11 @@ package po
 
 import (
 	"context"
+	"strings"
 )
 
-// buildValueStreamStages 按阶段统计业需/研需；suspended 时仅业需且 hang='1'，研需恒为 0。
-func (s *Service) buildValueStreamStages(ctx context.Context, account string, suspended bool) ([]ValueStreamStage, error) {
+// buildValueStreamStages 按阶段统计业需/研需；focus 决定候选口径（空=角色；suspended/my_related 仅业需）。
+func (s *Service) buildValueStreamStages(ctx context.Context, account, focus string) ([]ValueStreamStage, error) {
 	stages := make([]ValueStreamStage, 0, len(valueStreamStages))
 	allIdx := -1
 	for _, def := range valueStreamStages {
@@ -28,15 +29,20 @@ func (s *Service) buildValueStreamStages(ctx context.Context, account string, su
 			stages = append(stages, ValueStreamStage{Label: def.label, Status: def.status})
 			continue
 		}
-		filter.suspended = suspended
+		filter.suspended = focus == FocusSuspended
 
 		var demand, story int64
-		n, countErr := s.repo.CountRoleDemands(ctx, account, filter)
+		var countErr error
+		switch focus {
+		case FocusMyRelated:
+			demand, countErr = s.repo.CountStarredDemands(ctx, account, filter)
+		default:
+			demand, countErr = s.repo.CountRoleDemands(ctx, account, filter)
+		}
 		if countErr != nil {
 			return nil, countErr
 		}
-		demand = n
-		if !suspended {
+		if focus == FocusNone {
 			if filter.scheduleIncomplete {
 				sn, storyErr := s.repo.CountScheduleStories(ctx, account)
 				if storyErr != nil {
@@ -62,7 +68,7 @@ func (s *Service) buildValueStreamStages(ctx context.Context, account string, su
 	}
 
 	if allIdx >= 0 {
-		demandSum, storySum, allErr := s.countAllStageUniq(ctx, account, suspended)
+		demandSum, storySum, allErr := s.countAllStageUniq(ctx, account, focus)
 		if allErr != nil {
 			return nil, allErr
 		}
@@ -74,8 +80,8 @@ func (s *Service) buildValueStreamStages(ctx context.Context, account string, su
 }
 
 // countAllStageUniq 各阶段只查 ID，按 kind+id 去重后返回业需/研需数量。
-// suspended 时业需叠加 hang='1'，不计入研需。
-func (s *Service) countAllStageUniq(ctx context.Context, account string, suspended bool) (demandSum, storySum int64, err error) {
+// focus=suspended/my_related 时仅业需、不计入研需。
+func (s *Service) countAllStageUniq(ctx context.Context, account, focus string) (demandSum, storySum int64, err error) {
 	seenDemand := make(map[int]struct{})
 	seenStory := make(map[int]struct{})
 	for _, def := range valueStreamStages {
@@ -86,15 +92,22 @@ func (s *Service) countAllStageUniq(ctx context.Context, account string, suspend
 		if !ok {
 			continue
 		}
-		filter.suspended = suspended
-		ids, idErr := s.repo.FindRoleDemandIDs(ctx, account, filter)
+		filter.suspended = focus == FocusSuspended
+		var ids []int
+		var idErr error
+		switch focus {
+		case FocusMyRelated:
+			ids, idErr = s.repo.FindStarredDemandIDs(ctx, account, filter)
+		default:
+			ids, idErr = s.repo.FindRoleDemandIDs(ctx, account, filter)
+		}
 		if idErr != nil {
 			return 0, 0, idErr
 		}
 		for _, id := range ids {
 			seenDemand[id] = struct{}{}
 		}
-		if suspended {
+		if focus != FocusNone {
 			continue
 		}
 		if filter.scheduleIncomplete {
@@ -121,6 +134,15 @@ func (s *Service) countAllStageUniq(ctx context.Context, account string, suspend
 
 // countSuspendedInValueStream 价值流并集内挂起业需数（芯片角标）。
 func (s *Service) countSuspendedInValueStream(ctx context.Context, account string) (int64, error) {
-	demandSum, _, err := s.countAllStageUniq(ctx, account, true)
+	demandSum, _, err := s.countAllStageUniq(ctx, account, FocusSuspended)
+	return demandSum, err
+}
+
+// countMyRelatedInValueStream 价值流并集内「我关注的」业需数（价值流 ∩ zt_starinfo）。
+func (s *Service) countMyRelatedInValueStream(ctx context.Context, account string) (int64, error) {
+	if strings.TrimSpace(account) == "" {
+		return 0, nil
+	}
+	demandSum, _, err := s.countAllStageUniq(ctx, account, FocusMyRelated)
 	return demandSum, err
 }

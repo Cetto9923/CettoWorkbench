@@ -13,7 +13,7 @@
     objectType: "all",
     priority: "all",
     keyword: "",
-    suspended: false
+    focus: "" // 与 data-home-focus 对齐："" | suspended | my_related …
   };
 
   var FOCAL_LABELS = {
@@ -21,8 +21,12 @@
     myPending: "待我处理",
     blocked: "阻塞",
     overdue: "超期",
-    suspended: "挂起"
+    suspended: "挂起",
+    my_related: "我关注的"
   };
+
+  // 已实现筛选的焦点芯片（其余仅占位）
+  var FOCUS_FILTERS = { suspended: true, my_related: true };
 
   function demandsUrl(status, page, pageSize, withStages) {
     var url =
@@ -41,8 +45,8 @@
     if (state.keyword) {
       url += "&keyword=" + encodeURIComponent(state.keyword);
     }
-    if (state.suspended) {
-      url += "&suspended=1";
+    if (state.focus) {
+      url += "&focus=" + encodeURIComponent(state.focus);
     }
     if (withStages) {
       url += "&withStages=1";
@@ -216,8 +220,8 @@
     if (!$title.length) {
       return;
     }
-    var focal = state.suspended
-      ? FOCAL_LABELS.suspended
+    var focal = state.focus
+      ? FOCAL_LABELS[state.focus] || state.focus
       : FOCAL_LABELS[state.focal] || "待我处理";
     var stage = $(".home-vs-mini-card.active .vs-mini-name").first().text() || "全部";
     var stagePart = stage && stage !== "全部" ? " · " + escapeHtml(stage) : "";
@@ -1002,16 +1006,26 @@
     });
   }
 
-  function setSuspendedChipActive(active) {
-    var $chip = $('#homeQuickChips [data-home-focus="suspended"]');
-    $chip.toggleClass("active", !!active).attr("aria-pressed", active ? "true" : "false");
+  function syncFocusChips() {
+    $("#homeQuickChips [data-home-focus]").each(function () {
+      var key = String($(this).attr("data-home-focus") || "");
+      if (!FOCUS_FILTERS[key]) {
+        return;
+      }
+      var active = state.focus === key;
+      $(this).toggleClass("active", active).attr("aria-pressed", active ? "true" : "false");
+    });
   }
 
-  function initSuspendedChip() {
-    $("#homeQuickChips").on("click", '[data-home-focus="suspended"]', function () {
-      state.suspended = !state.suspended;
-      setSuspendedChipActive(state.suspended);
-      state.focal = state.suspended ? "suspended" : "myPending";
+  function initFocusChips() {
+    $("#homeQuickChips").on("click", "[data-home-focus]", function () {
+      var key = String($(this).attr("data-home-focus") || "");
+      if (!FOCUS_FILTERS[key]) {
+        return;
+      }
+      state.focus = state.focus === key ? "" : key;
+      state.focal = state.focus || "myPending";
+      syncFocusChips();
       state.page = 1;
       reloadDemands(true);
     });
@@ -1118,7 +1132,7 @@
     initValueStreamLinkage();
     initVsToggle();
     initFocalChips();
-    initSuspendedChip();
+    initFocusChips();
     initObjectTypeSegment();
     initPrioritySegment();
     initKeywordSearch();

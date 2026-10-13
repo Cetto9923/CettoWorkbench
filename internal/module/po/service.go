@@ -62,20 +62,26 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 		account = actor.Account
 	}
 
-	// 挂起角标与价值流阶段统计并行，缩短首屏墙钟时间
-	type suspendedResult struct {
+	// 焦点角标与价值流阶段统计并行，缩短首屏墙钟时间
+	type focusCountResult struct {
 		n   int64
 		err error
 	}
-	suspendedCh := make(chan suspendedResult, 1)
+	suspendedCh := make(chan focusCountResult, 1)
+	myRelatedCh := make(chan focusCountResult, 1)
 	go func() {
 		n, err := s.countSuspendedInValueStream(ctx, account)
-		suspendedCh <- suspendedResult{n: n, err: err}
+		suspendedCh <- focusCountResult{n: n, err: err}
+	}()
+	go func() {
+		n, err := s.countMyRelatedInValueStream(ctx, account)
+		myRelatedCh <- focusCountResult{n: n, err: err}
 	}()
 
-	stages, err := s.buildValueStreamStages(ctx, account, false)
+	stages, err := s.buildValueStreamStages(ctx, account, FocusNone)
 	if err != nil {
 		<-suspendedCh // 避免 goroutine 泄漏
+		<-myRelatedCh
 		return nil, err
 	}
 
@@ -86,6 +92,13 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 		}
 	} else {
 		focus.Suspended = sr.n
+	}
+	if mr := <-myRelatedCh; mr.err != nil {
+		if s.logger != nil {
+			s.logger.Warn("po home my_related count", zap.Error(mr.err))
+		}
+	} else {
+		focus.MyRelated = mr.n
 	}
 
 	versionWindows := []schedule.HomeVersionWindowCard{}
@@ -164,7 +177,7 @@ func (s *Service) Demands(ctx context.Context, actor *model.User, req DemandsReq
 	if req.Status == "all" {
 		resp, err = s.listAllStageDemands(ctx, actor, displayMap, req)
 	} else if filter, ok := mysqlStageFilters[req.Status]; ok {
-		filter.suspended = req.Suspended
+		filter.suspended = req.Focus == FocusSuspended
 		resp, err = s.listMySQLDemands(ctx, actor, req.Status, filter, displayMap, req.Page, req.PageSize, req)
 	} else {
 		resp = &DemandsResp{Items: []WorkItemDetail{}}
@@ -187,7 +200,7 @@ func (s *Service) Demands(ctx context.Context, actor *model.User, req DemandsReq
 		resp.Items = []WorkItemDetail{}
 	}
 	if req.WithStages {
-		stages, stageErr := s.buildValueStreamStages(ctx, account, req.Suspended)
+		stages, stageErr := s.buildValueStreamStages(ctx, account, req.Focus)
 		if stageErr != nil {
 			return nil, stageErr
 		}
@@ -208,7 +221,7 @@ func (s *Service) CountValueStreamAll(ctx context.Context, account string) (int6
 	if s == nil {
 		return 0, nil
 	}
-	demandSum, storySum, err := s.countAllStageUniq(ctx, account, false)
+	demandSum, storySum, err := s.countAllStageUniq(ctx, account, FocusNone)
 	if err != nil {
 		return 0, err
 	}

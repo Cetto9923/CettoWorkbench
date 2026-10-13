@@ -32,6 +32,7 @@ type ValueStreamStage struct {
 
 // HomeFocusCounts 首页顶部焦点芯片计数（均在价值流并集口径内）。
 type HomeFocusCounts struct {
+	MyRelated int64 // 我关注的：价值流 ∩ zt_starinfo followed=1 的业需数
 	Suspended int64 // 挂起：价值流并集内 hang='1' 的业需数
 }
 
@@ -59,6 +60,14 @@ type HomeResp struct {
 	Products       []schedule.ZtProduct
 }
 
+// 首页焦点芯片（互斥；对齐 data-home-focus）。空 = 默认价值流角色口径。
+const (
+	FocusNone      = ""
+	FocusSuspended = "suspended"
+	FocusMyRelated = "my_related"
+	// 预留：FocusMyAction / FocusMyManaged / FocusOverdue …
+)
+
 // DemandsReq 按价值流状态查询需求/故事详情。
 type DemandsReq struct {
 	Status     string `form:"status"`
@@ -67,8 +76,18 @@ type DemandsReq struct {
 	ObjectType string `form:"objectType"` // all / demand / story；空视为 all
 	Priority   string `form:"priority"`   // all / p1 / p2 / p3（p3 含 P3+P4）；空视为 all
 	Keyword    string `form:"keyword"`    // 编号/标题模糊匹配
-	Suspended  bool   `form:"suspended"`  // true：价值流叠加 hang='1'（仅业需）
+	Focus      string `form:"focus"`      // 焦点芯片：空 / suspended / my_related …
 	WithStages bool   `form:"withStages"` // true：响应附带各阶段统计（焦点切换时用）
+}
+
+// focusDemandOnly 挂起 / 关注等仅业需口径（不合并研需）。
+func (r DemandsReq) focusDemandOnly() bool {
+	switch r.Focus {
+	case FocusSuspended, FocusMyRelated:
+		return true
+	default:
+		return false
+	}
 }
 
 // Normalize 规范化分页参数（默认 page=1、pageSize=10，上限 100）。
@@ -111,6 +130,12 @@ func (r *DemandsReq) Validate() []FieldError {
 		return []FieldError{{Field: "priority", Message: "无效的优先级"}}
 	}
 	r.Keyword = strings.TrimSpace(r.Keyword)
+	r.Focus = strings.ToLower(strings.TrimSpace(r.Focus))
+	switch r.Focus {
+	case FocusNone, FocusSuspended, FocusMyRelated:
+	default:
+		return []FieldError{{Field: "focus", Message: "不支持的焦点筛选"}}
+	}
 	return nil
 }
 

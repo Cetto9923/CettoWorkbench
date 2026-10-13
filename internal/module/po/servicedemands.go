@@ -2,7 +2,7 @@
 // 文件: internal/module/po/servicedemands.go
 // 模块: PO 工作台
 // 类型: action
-// 职责: 价值流阶段需求列表装配，支持 objectType / priority / keyword 工具栏筛选。
+// 职责: 价值流阶段需求列表装配，支持 objectType / priority / keyword / focus 筛选。
 // 依赖: internal/model
 // =============================================================================
 
@@ -28,7 +28,7 @@ func (s *Service) listAllStageDemands(ctx context.Context, actor *model.User, di
 		if !ok {
 			continue
 		}
-		filter.suspended = req.Suspended
+		filter.suspended = req.Focus == FocusSuspended
 		// 拉全量再并集；分页在 Demands 出口统一切
 		resp, err := s.listMySQLDemands(ctx, actor, def.status, filter, displayMap, 0, 0, req)
 		if err != nil {
@@ -56,8 +56,8 @@ func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stage
 		account = actor.Account
 	}
 	includeDemand := req.ObjectType != "story"
-	// 挂起仅业需有 hang；挂起模式下不合并研需
-	includeStory := req.ObjectType != "demand" && !req.Suspended && !filter.suspended
+	// 焦点仅业需口径（挂起/关注等）时不合并研需
+	includeStory := req.ObjectType != "demand" && !req.focusDemandOnly()
 	needMerge := includeStory && (filter.scheduleIncomplete || filter.deliverStories)
 	unpaged := pageSize <= 0
 	useSQLPage := !needMerge && !unpaged && req.Priority == "all" && req.Keyword == ""
@@ -71,12 +71,7 @@ func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stage
 	}
 
 	if useSQLPage {
-		total, countErr := s.repo.CountRoleDemands(ctx, account, filter)
-		if countErr != nil {
-			return nil, countErr
-		}
-		offset := (page - 1) * pageSize
-		rows, err := s.repo.FindRoleDemands(ctx, account, filter, pageSize, offset)
+		total, rows, err := s.findFocusDemands(ctx, account, filter, req, pageSize, (page-1)*pageSize)
 		if err != nil {
 			return nil, err
 		}
@@ -87,7 +82,7 @@ func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stage
 		return &DemandsResp{Items: items, Total: total, Page: page, PageSize: pageSize}, nil
 	}
 
-	rows, err := s.repo.FindRoleDemands(ctx, account, filter, 0, 0)
+	_, rows, err := s.findFocusDemands(ctx, account, filter, req, 0, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -103,6 +98,29 @@ func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stage
 		items = append(items, storyItems...)
 	}
 	return finalizeDemandsResp(items, page, pageSize, unpaged, req), nil
+}
+
+// findFocusDemands 按焦点口径查业需；limit<=0 时不分页且 total 为 0（由调用方按 items 计）。
+func (s *Service) findFocusDemands(ctx context.Context, account string, filter mysqlStageFilter, req DemandsReq, limit, offset int) (total int64, rows []DemandRow, err error) {
+	switch req.Focus {
+	case FocusMyRelated:
+		if limit > 0 {
+			total, err = s.repo.CountStarredDemands(ctx, account, filter)
+			if err != nil {
+				return 0, nil, err
+			}
+		}
+		rows, err = s.repo.FindStarredDemands(ctx, account, filter, limit, offset)
+	default:
+		if limit > 0 {
+			total, err = s.repo.CountRoleDemands(ctx, account, filter)
+			if err != nil {
+				return 0, nil, err
+			}
+		}
+		rows, err = s.repo.FindRoleDemands(ctx, account, filter, limit, offset)
+	}
+	return total, rows, err
 }
 
 func (s *Service) listStageStories(ctx context.Context, actor *model.User, account, stageStatus string, filter mysqlStageFilter, displayMap map[string]string) ([]WorkItemDetail, error) {
