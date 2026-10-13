@@ -62,55 +62,30 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 		account = actor.Account
 	}
 
-	stages := make([]ValueStreamStage, 0, len(valueStreamStages))
-	allIdx := -1
-	for _, def := range valueStreamStages {
-		if def.status == "all" {
-			allIdx = len(stages)
-			stages = append(stages, ValueStreamStage{Label: def.label, Status: def.status})
-			continue
-		}
+	// 挂起角标与价值流阶段统计并行，缩短首屏墙钟时间
+	type suspendedResult struct {
+		n   int64
+		err error
+	}
+	suspendedCh := make(chan suspendedResult, 1)
+	go func() {
+		n, err := s.countSuspendedInValueStream(ctx, account)
+		suspendedCh <- suspendedResult{n: n, err: err}
+	}()
 
-		var demand, story int64
-		if filter, ok := mysqlStageFilters[def.status]; ok {
-			n, countErr := s.repo.CountRoleDemands(ctx, account, filter)
-			if countErr != nil {
-				return nil, countErr
-			}
-			demand = n
-			if filter.scheduleIncomplete {
-				sn, storyErr := s.repo.CountScheduleStories(ctx, account)
-				if storyErr != nil {
-					return nil, storyErr
-				}
-				story = sn
-			}
-			if filter.deliverStories {
-				sn, storyErr := s.repo.CountDeliverStories(ctx, account)
-				if storyErr != nil {
-					return nil, storyErr
-				}
-				story = sn
-			}
-		}
-		stages = append(stages, ValueStreamStage{
-			Label:       def.label,
-			Status:      def.status,
-			Count:       demand + story,
-			DemandCount: demand,
-			StoryCount:  story,
-		})
+	stages, err := s.buildValueStreamStages(ctx, account, false)
+	if err != nil {
+		<-suspendedCh // 避免 goroutine 泄漏
+		return nil, err
 	}
 
-	// 「全部」= 各阶段 kind+id 去重并集；只拉 ID，不拉详情
-	if allIdx >= 0 {
-		demandSum, storySum, allErr := s.countAllStageUniq(ctx, account)
-		if allErr != nil {
-			return nil, allErr
+	focus := HomeFocusCounts{}
+	if sr := <-suspendedCh; sr.err != nil {
+		if s.logger != nil {
+			s.logger.Warn("po home suspended count", zap.Error(sr.err))
 		}
-		stages[allIdx].DemandCount = demandSum
-		stages[allIdx].StoryCount = storySum
-		stages[allIdx].Count = demandSum + storySum
+	} else {
+		focus.Suspended = sr.n
 	}
 
 	versionWindows := []schedule.HomeVersionWindowCard{}
@@ -166,6 +141,7 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 
 	return &HomeResp{
 		Stages:         stages,
+		Focus:          focus,
 		VersionWindows: versionWindows,
 		LaunchWindows:  launchWindows,
 		Users:          s.listVerifierUsers(ctx, actor),
@@ -176,6 +152,10 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 
 // Demands 按价值流状态返回当前用户关联的需求/故事详情（后端分页）。
 func (s *Service) Demands(ctx context.Context, actor *model.User, req DemandsReq) (*DemandsResp, error) {
+	account := ""
+	if actor != nil {
+		account = actor.Account
+	}
 	displayMap, err := s.loadAccountDisplayMap(ctx, actor)
 	if err != nil {
 		return nil, err
@@ -184,6 +164,7 @@ func (s *Service) Demands(ctx context.Context, actor *model.User, req DemandsReq
 	if req.Status == "all" {
 		resp, err = s.listAllStageDemands(ctx, actor, displayMap, req)
 	} else if filter, ok := mysqlStageFilters[req.Status]; ok {
+		filter.suspended = req.Suspended
 		resp, err = s.listMySQLDemands(ctx, actor, req.Status, filter, displayMap, req.Page, req.PageSize, req)
 	} else {
 		resp = &DemandsResp{Items: []WorkItemDetail{}}
@@ -205,6 +186,13 @@ func (s *Service) Demands(ctx context.Context, actor *model.User, req DemandsReq
 	if resp.Items == nil {
 		resp.Items = []WorkItemDetail{}
 	}
+	if req.WithStages {
+		stages, stageErr := s.buildValueStreamStages(ctx, account, req.Suspended)
+		if stageErr != nil {
+			return nil, stageErr
+		}
+		resp.Stages = stages
+	}
 	return resp, nil
 }
 
@@ -215,53 +203,12 @@ func (s *Service) loadAccountDisplayMap(ctx context.Context, actor *model.User) 
 	return s.userSvc.AccountDisplayMap(ctx, actor)
 }
 
-// countAllStageUniq 各阶段只查 ID，按 kind+id 去重后返回业需/研需数量（与 listAllStageDemands 并集语义一致）。
-func (s *Service) countAllStageUniq(ctx context.Context, account string) (demandSum, storySum int64, err error) {
-	seenDemand := make(map[int]struct{})
-	seenStory := make(map[int]struct{})
-	for _, def := range valueStreamStages {
-		if def.status == "all" {
-			continue
-		}
-		filter, ok := mysqlStageFilters[def.status]
-		if !ok {
-			continue
-		}
-		ids, idErr := s.repo.FindRoleDemandIDs(ctx, account, filter)
-		if idErr != nil {
-			return 0, 0, idErr
-		}
-		for _, id := range ids {
-			seenDemand[id] = struct{}{}
-		}
-		if filter.scheduleIncomplete {
-			storyIDs, storyErr := s.repo.FindScheduleStoryIDs(ctx, account)
-			if storyErr != nil {
-				return 0, 0, storyErr
-			}
-			for _, id := range storyIDs {
-				seenStory[id] = struct{}{}
-			}
-		}
-		if filter.deliverStories {
-			storyIDs, storyErr := s.repo.FindDeliverStoryIDs(ctx, account)
-			if storyErr != nil {
-				return 0, 0, storyErr
-			}
-			for _, id := range storyIDs {
-				seenStory[id] = struct{}{}
-			}
-		}
-	}
-	return int64(len(seenDemand)), int64(len(seenStory)), nil
-}
-
 // CountValueStreamAll 首页价值流「全部」条数（业需 + 研需 kind+id 去重并集）。
 func (s *Service) CountValueStreamAll(ctx context.Context, account string) (int64, error) {
 	if s == nil {
 		return 0, nil
 	}
-	demandSum, storySum, err := s.countAllStageUniq(ctx, account)
+	demandSum, storySum, err := s.countAllStageUniq(ctx, account, false)
 	if err != nil {
 		return 0, err
 	}

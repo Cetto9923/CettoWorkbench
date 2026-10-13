@@ -28,6 +28,7 @@ func (s *Service) listAllStageDemands(ctx context.Context, actor *model.User, di
 		if !ok {
 			continue
 		}
+		filter.suspended = req.Suspended
 		// 拉全量再并集；分页在 Demands 出口统一切
 		resp, err := s.listMySQLDemands(ctx, actor, def.status, filter, displayMap, 0, 0, req)
 		if err != nil {
@@ -55,7 +56,8 @@ func (s *Service) listMySQLDemands(ctx context.Context, actor *model.User, stage
 		account = actor.Account
 	}
 	includeDemand := req.ObjectType != "story"
-	includeStory := req.ObjectType != "demand"
+	// 挂起仅业需有 hang；挂起模式下不合并研需
+	includeStory := req.ObjectType != "demand" && !req.Suspended && !filter.suspended
 	needMerge := includeStory && (filter.scheduleIncomplete || filter.deliverStories)
 	unpaged := pageSize <= 0
 	useSQLPage := !needMerge && !unpaged && req.Priority == "all" && req.Keyword == ""

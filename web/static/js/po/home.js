@@ -12,17 +12,19 @@
     pageSize: 10,
     objectType: "all",
     priority: "all",
-    keyword: ""
+    keyword: "",
+    suspended: false
   };
 
   var FOCAL_LABELS = {
     today: "今日必推",
     myPending: "待我处理",
     blocked: "阻塞",
-    overdue: "超期"
+    overdue: "超期",
+    suspended: "挂起"
   };
 
-  function demandsUrl(status, page, pageSize) {
+  function demandsUrl(status, page, pageSize, withStages) {
     var url =
       "/demands?status=" +
       encodeURIComponent(status || "all") +
@@ -38,6 +40,12 @@
     }
     if (state.keyword) {
       url += "&keyword=" + encodeURIComponent(state.keyword);
+    }
+    if (state.suspended) {
+      url += "&suspended=1";
+    }
+    if (withStages) {
+      url += "&withStages=1";
     }
     return url;
   }
@@ -174,9 +182,9 @@
     return "—";
   }
 
-  function loadDemands(status, page, pageSize) {
+  function loadDemands(status, page, pageSize, withStages) {
     var fetchFn = window.appFetch || fetch;
-    return fetchFn(demandsUrl(status, page, pageSize), { method: "GET" })
+    return fetchFn(demandsUrl(status, page, pageSize, withStages), { method: "GET" })
       .then(function (res) {
         if (!res.ok) {
           throw new Error("load demands failed");
@@ -191,14 +199,15 @@
           items: Array.isArray(payload.items) ? payload.items : [],
           total: Number(payload.total) || 0,
           page: Number(payload.page) || page || 1,
-          pageSize: Number(payload.pageSize) || pageSize || 10
+          pageSize: Number(payload.pageSize) || pageSize || 10,
+          stages: Array.isArray(payload.stages) ? payload.stages : null
         };
       })
       .catch(function () {
         if (typeof window.showToast === "function") {
           window.showToast("加载需求列表失败，请稍后重试", "danger");
         }
-        return { items: [], total: 0, page: 1, pageSize: pageSize || 10 };
+        return { items: [], total: 0, page: 1, pageSize: pageSize || 10, stages: null };
       });
   }
 
@@ -207,7 +216,9 @@
     if (!$title.length) {
       return;
     }
-    var focal = FOCAL_LABELS[state.focal] || "待我处理";
+    var focal = state.suspended
+      ? FOCAL_LABELS.suspended
+      : FOCAL_LABELS[state.focal] || "待我处理";
     var stage = $(".home-vs-mini-card.active .vs-mini-name").first().text() || "全部";
     var stagePart = stage && stage !== "全部" ? " · " + escapeHtml(stage) : "";
     $title.html(
@@ -218,6 +229,61 @@
         count +
         "）"
     );
+  }
+
+  function stageBreakdownText(stage) {
+    var demand = Number(stage && stage.demandCount) || 0;
+    var story = Number(stage && stage.storyCount) || 0;
+    var count = Number(stage && stage.count) || demand + story;
+    if (count === 0) {
+      return "-";
+    }
+    return "业" + demand + " · 研" + story;
+  }
+
+  function applyValueStreamStages(stages) {
+    if (!Array.isArray(stages) || !stages.length) {
+      return;
+    }
+    var byStatus = {};
+    stages.forEach(function (stage) {
+      if (stage && stage.status) {
+        byStatus[stage.status] = stage;
+      }
+    });
+    $(".home-vs-mini-card[data-vs-status]").each(function () {
+      var $card = $(this);
+      var status = $card.attr("data-vs-status");
+      var stage = byStatus[status];
+      if (!stage) {
+        return;
+      }
+      var count = Number(stage.count) || 0;
+      $card.toggleClass("empty", count === 0 && !$card.hasClass("active"));
+      $card.find(".vs-mini-count").text(String(count));
+      $card.find(".vs-mini-breakdown").text(stageBreakdownText(stage));
+      var label = stage.label || $card.find(".vs-mini-name").text() || status;
+      $card.attr("title", label + " · 共 " + count + " 条");
+    });
+    var all = byStatus.all;
+    if (all) {
+      $("#homeVsMetaText").html(
+        "业务需求共 <strong class=\"text-mono\">" +
+          (Number(all.demandCount) || 0) +
+          "</strong> 条 · 研发需求共 <strong class=\"text-mono\">" +
+          (Number(all.storyCount) || 0) +
+          "</strong> 条"
+      );
+    }
+    $(".focus-card.vs-trigger[data-stage-target]").each(function () {
+      var $card = $(this);
+      var target = $card.attr("data-stage-target");
+      var stage = byStatus[target];
+      if (!stage) {
+        return;
+      }
+      $card.find(".focus-card-num strong").text(String(Number(stage.count) || 0));
+    });
   }
 
   function renderEmpty() {
@@ -916,20 +982,38 @@
     });
   }
 
-  function refreshDemands(status) {
+  function refreshDemands(status, withStages) {
     state.status = status || "all";
     state.page = 1;
-    return reloadDemands();
+    return reloadDemands(withStages);
   }
 
-  function reloadDemands() {
-    return loadDemands(state.status, state.page, state.pageSize).then(function (payload) {
+  function reloadDemands(withStages) {
+    return loadDemands(state.status, state.page, state.pageSize, !!withStages).then(function (payload) {
       state.items = payload.items;
       state.total = payload.total;
       state.page = payload.page;
       state.pageSize = payload.pageSize;
+      if (payload.stages) {
+        applyValueStreamStages(payload.stages);
+      }
       renderList();
       return payload.items;
+    });
+  }
+
+  function setSuspendedChipActive(active) {
+    var $chip = $('#homeQuickChips [data-home-focus="suspended"]');
+    $chip.toggleClass("active", !!active).attr("aria-pressed", active ? "true" : "false");
+  }
+
+  function initSuspendedChip() {
+    $("#homeQuickChips").on("click", '[data-home-focus="suspended"]', function () {
+      state.suspended = !state.suspended;
+      setSuspendedChipActive(state.suspended);
+      state.focal = state.suspended ? "suspended" : "myPending";
+      state.page = 1;
+      reloadDemands(true);
     });
   }
 
@@ -1034,6 +1118,7 @@
     initValueStreamLinkage();
     initVsToggle();
     initFocalChips();
+    initSuspendedChip();
     initObjectTypeSegment();
     initPrioritySegment();
     initKeywordSearch();
@@ -1046,6 +1131,6 @@
         setActiveCard($active);
       }
     }
-    refreshDemands($active.attr("data-vs-status") || "all");
+    refreshDemands($active.attr("data-vs-status") || "all", false);
   });
 })(jQuery);

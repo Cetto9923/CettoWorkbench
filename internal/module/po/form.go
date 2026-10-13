@@ -23,11 +23,16 @@ type FieldError struct {
 
 // ValueStreamStage 价值流阶段卡片数据（对应 homeVsCompact 单个阶段）。
 type ValueStreamStage struct {
-	Label       string
-	Status      string
-	Count       int64
-	DemandCount int64
-	StoryCount  int64
+	Label       string `json:"label"`
+	Status      string `json:"status"`
+	Count       int64  `json:"count"`
+	DemandCount int64  `json:"demandCount"`
+	StoryCount  int64  `json:"storyCount"`
+}
+
+// HomeFocusCounts 首页顶部焦点芯片计数（均在价值流并集口径内）。
+type HomeFocusCounts struct {
+	Suspended int64 // 挂起：价值流并集内 hang='1' 的业需数
 }
 
 // LaunchWindowOption 发起交付「上线窗口」检索下拉选项。
@@ -46,6 +51,7 @@ type UserOption struct {
 // HomeResp PO 工作台首页数据。
 type HomeResp struct {
 	Stages         []ValueStreamStage
+	Focus          HomeFocusCounts
 	VersionWindows []schedule.HomeVersionWindowCard
 	LaunchWindows  []LaunchWindowOption
 	Users          []UserOption
@@ -61,6 +67,8 @@ type DemandsReq struct {
 	ObjectType string `form:"objectType"` // all / demand / story；空视为 all
 	Priority   string `form:"priority"`   // all / p1 / p2 / p3（p3 含 P3+P4）；空视为 all
 	Keyword    string `form:"keyword"`    // 编号/标题模糊匹配
+	Suspended  bool   `form:"suspended"`  // true：价值流叠加 hang='1'（仅业需）
+	WithStages bool   `form:"withStages"` // true：响应附带各阶段统计（焦点切换时用）
 }
 
 // Normalize 规范化分页参数（默认 page=1、pageSize=10，上限 100）。
@@ -345,10 +353,11 @@ type WorkItemDetail struct {
 
 // DemandsResp 价值流状态下的需求详情列表。
 type DemandsResp struct {
-	Items    []WorkItemDetail `json:"items"`
-	Total    int64            `json:"total"`
-	Page     int              `json:"page"`
-	PageSize int              `json:"pageSize"`
+	Items    []WorkItemDetail   `json:"items"`
+	Total    int64              `json:"total"`
+	Page     int                `json:"page"`
+	PageSize int                `json:"pageSize"`
+	Stages   []ValueStreamStage `json:"stages,omitempty"` // withStages=1 时填充
 }
 
 // DemandDetailReq 业需详情查询（path :id，支持 US123 / 123）。

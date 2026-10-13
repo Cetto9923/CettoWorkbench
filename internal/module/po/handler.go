@@ -70,11 +70,11 @@ func (h *Handler) Home(c *gin.Context) {
 			h.logger.Warn("po home value stream", zap.Error(err))
 		}
 		resp = &HomeResp{
-			Stages:     emptyValueStreamStages(),
+			Stages:        emptyValueStreamStages(),
 			LaunchWindows: []LaunchWindowOption{},
-			Users:      []UserOption{},
-			Teamgroups: []schedule.TeamgroupOption{},
-			Products:   []schedule.ZtProduct{},
+			Users:         []UserOption{},
+			Teamgroups:    []schedule.TeamgroupOption{},
+			Products:      []schedule.ZtProduct{},
 		}
 	}
 	if resp.LaunchWindows == nil {
@@ -111,6 +111,7 @@ func (h *Handler) Home(c *gin.Context) {
 		"Title":             "首页",
 		"PageDescription":   "待办事项与需求进度",
 		"ValueStreamStages": resp.Stages,
+		"Focus":             resp.Focus,
 		"VersionWindows":    resp.VersionWindows,
 		"LaunchWindowsJSON": launchWindowsJSON,
 		"UsersJSON":         usersJSON,
@@ -148,13 +149,17 @@ func (h *Handler) Demands(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	out := gin.H{
 		"success":  true,
 		"items":    resp.Items,
 		"total":    resp.Total,
 		"page":     resp.Page,
 		"pageSize": resp.PageSize,
-	})
+	}
+	if len(resp.Stages) > 0 {
+		out["stages"] = resp.Stages
+	}
+	c.JSON(http.StatusOK, out)
 }
 
 func emptyValueStreamStages() []ValueStreamStage {

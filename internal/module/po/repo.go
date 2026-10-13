@@ -34,6 +34,7 @@ type mysqlStageFilter struct {
 	acceptanceStage    bool // true：验收阶段复合条件
 	scheduleIncomplete bool // true：排期未完成（关键日期/QD/主研未填）
 	deliverStories     bool // true：合并交付阶段独立研发需求
+	suspended          bool // true：叠加 hang='1'（仅业需；由请求层写入，不进静态 map）
 }
 
 var releasedOverallEmpty = "0"
@@ -112,6 +113,10 @@ func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysql
 			OR RD = ?
 			OR BRA = ?
 		)`, account, account, account, account)
+	// 挂起叠加尽早下推，验收阶段 early-return 前也生效
+	if filter.suspended {
+		q = q.Where("hang = ?", "1")
+	}
 
 	if filter.acceptanceStage {
 		today := time.Now().Format("2006-01-02")

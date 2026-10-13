@@ -3,7 +3,8 @@
 模块: PO工作台
 职责: PO 工作台首页（需求进度流水线 + 左行动列表 + 右聚焦专区/版本窗口）
 全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .CurrentPath
-页面字段: .Title (string), .PageDescription (string), .ValueStreamStages ([]ValueStreamStage),
+页面字段: .Title (string), .PageDescription (string), .ValueStreamStages ([]po.ValueStreamStage),
+          .Focus (po.HomeFocusCounts),
           .VersionWindows ([]schedule.HomeVersionWindowCard),
           .LaunchWindowsJSON (string), .UsersJSON (string),
           .Teamgroups ([]schedule.TeamgroupOption), .Products ([]schedule.ZtProduct)
@@ -37,7 +38,7 @@
 <div class="po-home" id="poHomeRoot" data-current-account="{{ if .CurrentUser }}{{ .CurrentUser.Account }}{{ end }}">
   <div class="page-hdr">
     <div class="header-quick-filters" id="homeQuickChips" role="group" aria-label="快捷焦点">
-      <button type="button" data-home-focus="my_action" class="header-quick-chip my-action" title="真待办：有明确主动作且我是当前办理人" aria-pressed="true">
+      <button type="button" data-home-focus="my_action" class="header-quick-chip my-action" title="真待办：有明确主动作且我是当前办理人" aria-pressed="false">
         <span>待我处理</span> <em>0</em>
       </button>
       <button type="button" data-home-focus="my_managed" class="header-quick-chip" title="指派给我或我是需求负责人" aria-pressed="false">
@@ -49,8 +50,8 @@
       <button type="button" data-home-focus="overdue" class="header-quick-chip danger" title="在首页查看超期事项（含关联业务需求与研发需求）" aria-pressed="false">
         <span>超期</span> <em>0</em>
       </button>
-      <button type="button" data-home-focus="suspended" class="header-quick-chip" title="查看挂起事项" aria-pressed="false">
-        <span>挂起</span> <em>0</em>
+      <button type="button" data-home-focus="suspended" class="header-quick-chip" title="查看挂起事项（价值流范围内）" aria-pressed="false">
+        <span>挂起</span> <em>{{ .Focus.Suspended }}</em>
       </button>
     </div>
   </div>
