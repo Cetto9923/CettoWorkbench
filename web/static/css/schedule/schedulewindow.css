@@ -33,13 +33,21 @@
 
 .schedule-version-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) 80px;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
   gap: 8px;
   align-items: stretch;
 }
 
+.schedule-version-grid .schedule-page-actions {
+  grid-column: -1;
+  grid-row: 1;
+  align-self: center;
+  justify-self: start;
+}
+
 .schedule-version-grid--empty {
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr auto;
+  align-items: center;
 }
 
 .schedule-version-grid--empty .schedule-create-empty {
@@ -298,51 +306,6 @@
   color: var(--red);
 }
 
-.schedule-version-extra {
-  grid-column: -1;
-  grid-row: 1;
-  width: 80px;
-  border: 1px dashed var(--color-border-strong, #cbd5e1);
-  border-radius: 6px;
-  background: var(--color-surface-muted, #f8fafc);
-  color: var(--color-text-secondary, #64748b);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 4px;
-  min-width: 0;
-  box-sizing: border-box;
-  transition: all 0.15s;
-}
-
-.schedule-version-extra:hover {
-  border-color: var(--color-info-fill, var(--blue, #2563eb));
-  background: var(--color-surface, #fff);
-}
-
-.schedule-version-extra:hover .schedule-version-add {
-  color: var(--color-info-fill, var(--blue, #2563eb));
-}
-
-.schedule-version-add {
-  border: none;
-  background: transparent;
-  color: var(--color-text-secondary, #64748b);
-  font-family: inherit;
-  font-weight: 600;
-  font-size: 11px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  cursor: pointer;
-  height: 100%;
-  width: 100%;
-  padding: 0;
-  box-sizing: border-box;
-  transition: all 0.15s;
-}
 .schedule-create-plan-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -429,24 +392,15 @@
 
 @media (max-width: 1180px) {
   .schedule-version-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) 80px;
-  }
-
-  .schedule-version-extra {
-    grid-column: auto;
-    grid-row: auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
   }
 }
 
-/* 窄屏：两列卡片，隐藏页头已有的「新建窗口」 */
+/* 窄屏：两列卡片 + 操作列 */
 @media (max-width: 900px) {
   .schedule-version-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
     gap: 6px;
-  }
-
-  .schedule-version-extra {
-    display: none;
   }
 
   .schedule-version-meta i {

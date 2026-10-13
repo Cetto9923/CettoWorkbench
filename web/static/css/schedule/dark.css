@@ -50,7 +50,6 @@ html[data-theme="dark"] #page-schedule .action-btn--disabled:hover {
 }
 
 /* ── 页面标题与列表区硬编码浅色 ── */
-html[data-theme="dark"] #page-schedule .schedule-page-head h2,
 html[data-theme="dark"] #page-schedule .schedule-list-title,
 html[data-theme="dark"] #page-schedule .schedule-section-title {
   color: var(--color-text-primary);
