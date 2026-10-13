@@ -1077,6 +1077,8 @@ type StoryTaskStoryItem struct {
 	DemandName     string                `json:"demandName"`
 	WindowName     string                `json:"windowName"`
 	ReleaseDate    string                `json:"releaseDate"`
+	TeamgroupID    uint                  `json:"teamgroupId"`
+	TeamgroupName  string                `json:"teamgroupName"`
 	Attachments    []StoryAttachmentItem `json:"attachments"`
 }
 

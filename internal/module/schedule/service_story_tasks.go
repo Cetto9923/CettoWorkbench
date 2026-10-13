@@ -91,6 +91,15 @@ func (s *Service) GetStoryTasks(ctx context.Context, actor *model.User, storyID 
 		demandName = fmt.Sprintf("US%d", demandID)
 	}
 
+	teamgroupName := ""
+	if detail.TeamgroupID > 0 {
+		names, err := s.loadTeamgroupDisplayNamesByIDs(ctx, []uint{detail.TeamgroupID})
+		if err != nil {
+			return nil, err
+		}
+		teamgroupName = names[detail.TeamgroupID]
+	}
+
 	return &StoryTasksResp{
 		Story: StoryTaskStoryItem{
 			ID:             detail.StoryID,
@@ -104,6 +113,8 @@ func (s *Service) GetStoryTasks(ctx context.Context, actor *model.User, storyID 
 			DemandName:     demandName,
 			WindowName:     detail.WindowName,
 			ReleaseDate:    detail.ReleaseDate,
+			TeamgroupID:    detail.TeamgroupID,
+			TeamgroupName:  teamgroupName,
 			Attachments:    detail.Attachments,
 		},
 		Tasks:              buildStoryTaskItems(taskRows, realnameByAccount, projectNameByID),

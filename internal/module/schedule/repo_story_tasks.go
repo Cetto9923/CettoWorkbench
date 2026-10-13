@@ -29,6 +29,7 @@ type storyWindowDetailRow struct {
 	WindowID    uint   `gorm:"column:windowID"`
 	WindowName  string `gorm:"column:windowName"`
 	ReleaseDate string `gorm:"column:releaseDate"`
+	TeamgroupID uint   `gorm:"column:teamgroupID"`
 }
 
 type storyAttachmentRow struct {
@@ -55,6 +56,7 @@ type StoryTaskDetail struct {
 	DemandName         string
 	WindowName         string
 	ReleaseDate        string
+	TeamgroupID        uint
 	DefaultProjectID   uint
 	DefaultExecutionID uint
 	Attachments        []StoryAttachmentItem
@@ -109,12 +111,13 @@ LIMIT 1`
 		detail.DemandName = name
 	}
 
-	windowName, releaseDate, err := r.findStoryWindowDetail(ctx, storyID)
+	windowName, releaseDate, teamgroupID, err := r.findStoryWindowDetail(ctx, storyID)
 	if err != nil {
 		return nil, err
 	}
 	detail.WindowName = windowName
 	detail.ReleaseDate = releaseDate
+	detail.TeamgroupID = teamgroupID
 
 	defaultProjectID, defaultExecutionID, err := r.findRecentProductTaskProject(ctx, row.Product)
 	if err != nil {
@@ -147,12 +150,13 @@ LIMIT 1`
 	return strings.TrimSpace(name), nil
 }
 
-func (r *Repo) findStoryWindowDetail(ctx context.Context, storyID uint) (windowName, releaseDate string, err error) {
+func (r *Repo) findStoryWindowDetail(ctx context.Context, storyID uint) (windowName, releaseDate string, teamgroupID uint, err error) {
 	const query = `
 SELECT
   vw.id AS windowID,
   vw.name AS windowName,
-  DATE_FORMAT(vw.releaseDate, '%Y-%m-%d') AS releaseDate
+  DATE_FORMAT(vw.releaseDate, '%Y-%m-%d') AS releaseDate,
+  vw.teamgroup AS teamgroupID
 FROM zt_planstory ps
 INNER JOIN zt_versionwindowproduct vwp
   ON vwp.plan = ps.plan AND vwp.deletedAt IS NULL
@@ -164,9 +168,9 @@ LIMIT 1`
 
 	var row storyWindowDetailRow
 	if err := r.db.WithContext(ctx).Raw(query, storyID).Scan(&row).Error; err != nil {
-		return "", "", err
+		return "", "", 0, err
 	}
-	return strings.TrimSpace(row.WindowName), formatZenTaoDate(row.ReleaseDate), nil
+	return strings.TrimSpace(row.WindowName), formatZenTaoDate(row.ReleaseDate), row.TeamgroupID, nil
 }
 
 func (r *Repo) findRecentProductTaskProject(ctx context.Context, productID uint) (projectID, executionID uint, err error) {
@@ -289,7 +293,7 @@ LIMIT 1`
 		windowName = strings.TrimSpace(ref.WindowName)
 	}
 	if windowID > 0 {
-		_, releaseDate, err := r.findStoryWindowDetail(ctx, storyID)
+		_, releaseDate, _, err := r.findStoryWindowDetail(ctx, storyID)
 		if err != nil {
 			return nil, err
 		}

@@ -19,6 +19,7 @@
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedule.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulelist.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulewindow.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/schedule/maintaintaskiteration.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulemodal.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulefilter.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/scheduleintegrated.css" }}">
@@ -28,7 +29,6 @@
 {{ define "content" }}
 <div id="page-schedule">
   <div class="schedule-version-overview">
-    <!-- <div class="schedule-section-title">版本窗口概览 <span>按预计上线时间</span></div> -->
     <div class="schedule-section-title">版本窗口概览</div>
     <div class="schedule-version-body">
       <div id="scheduleCapacitySummaryLine">
@@ -519,53 +519,7 @@
   </div>
 </div>
 
-<div class="batch-modal-overlay" id="taskModalOverlay"></div>
-<div class="batch-modal" id="taskModal">
-  <div class="batch-modal-hdr">
-    <h3 id="taskModalTitle">拆任务</h3>
-    <button type="button" class="drawer-close" onclick="closeTaskModal()"><i class="fas fa-xmark"></i></button>
-  </div>
-  <div class="batch-modal-body" id="taskModalBody">
-    <div id="taskModalSpec"></div>
-
-    <div id="taskModalInfoBar" style="font-size:12px; color:#666; margin:12px 0;"></div>
-
-    <div class="task-modal-project-section" id="taskModalProjectSection" style="display:none;">
-      <label for="taskModalProjectInput">项目</label>
-      <div class="ui-autocomplete">
-        <input type="text" id="taskModalProjectInput" class="form-input rd-task-project-select" placeholder="搜索项目" autocomplete="off">
-        <input type="hidden" id="taskModalProjectSelect" class="rd-task-project-select rd-task-select">
-      </div>
-    </div>
-
-    <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
-      <button type="button" class="action-btn action-btn--primary" id="taskModalAddBtn">拆任务</button>
-    </div>
-
-    <div class="rd-node-tasks" id="taskModalTasksWrap">
-    <table class="rd-task-table" id="taskModalTable">
-      <thead>
-        <tr>
-          <th style="width:220px">执行 <span class="req">*</span></th>
-          <th style="width:80px">类型</th>
-          <th style="width:72px">优先级</th>
-          <th style="width:140px">任务名称 <span class="req">*</span></th>
-          <th style="width:120px">指派给</th>
-          <th style="width:70px">预估(h) <span class="req">*</span></th>
-          <th style="width:110px">预计开始</th>
-          <th style="width:110px">截止时间 <span class="req">*</span></th>
-          <th style="width:48px">操作</th>
-        </tr>
-      </thead>
-      <tbody id="taskModalTableBody"></tbody>
-    </table>
-    </div>
-  </div>
-  <div class="batch-modal-footer">
-    <button type="button" class="action-btn" onclick="closeTaskModal()">取消</button>
-    <button type="button" class="action-btn action-btn--primary" id="taskModalSaveBtn">保存任务</button>
-  </div>
-</div>
+{{ template "schedule/maintaintask" . }}
 
 <div class="batch-modal-overlay" id="taskListModalOverlay"></div>
 <div class="batch-modal" id="taskListModal">
@@ -738,7 +692,8 @@
 <script src="{{ asset "/static/js/schedule/scheduleintegratedtasks.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/scheduleintegratedrd.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/scheduleintegrated.js" }}"></script>
-<script src="{{ asset "/static/js/schedule/scheduletaskmodal.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/maintaintask.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/maintaintaskiteration.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/scheduletasklistmodal.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/schedulefilter.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/schedule.js" }}"></script>

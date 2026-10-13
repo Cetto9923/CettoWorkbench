@@ -1,3 +1,8 @@
+/* ==========================================================================
+   文件: web/static/js/schedule/maintaintask.js
+   模块: 排期工作台
+   职责: 维护任务弹窗（打开/加载/编辑行/保存）
+   ========================================================================== */
 (function ($) {
   "use strict";
 
@@ -267,13 +272,6 @@
     if (story.verify) {
       html += '<div class="task-modal-spec-block"><div class="task-modal-spec-label">验收标准</div><div class="task-modal-spec-content">' + formatRichTextContent(story.verify) + "</div></div>";
     }
-    if (story.attachments && story.attachments.length) {
-      html += '<div class="task-modal-spec-block"><div class="task-modal-spec-label">附件</div><ul class="task-modal-attachments">';
-      story.attachments.forEach(function (file) {
-        html += "<li>" + escapeHtml(file.title || "附件") + "</li>";
-      });
-      html += "</ul></div>";
-    }
     if (!html) {
       html = '<div class="task-modal-spec-empty">暂无描述</div>';
     }
@@ -357,7 +355,7 @@
 
   function syncTaskModalProjectVisibility() {
     var hasTasks = $("#taskModalTableBody .task-modal-row").length > 0;
-    $("#taskModalProjectSection").toggle(hasTasks);
+    $("#taskModalProjectSection").css("display", hasTasks ? "flex" : "none");
   }
 
   function initTaskModalRowExecution($row, preferredExecutionId) {
@@ -492,9 +490,12 @@
     });
     $("#taskModalTableBody").empty();
     fillModalProjectSelect([], "");
-    $("#taskModalProjectSection").hide();
+    $("#taskModalProjectSection").css("display", "none");
     $("#taskModalSpec").empty();
     $("#taskModalInfoBar").empty();
+    if (window.ScheduleQuickIteration && typeof window.ScheduleQuickIteration.reset === "function") {
+      window.ScheduleQuickIteration.reset();
+    }
   }
 
   function resolveDefaultProjectId(resp) {
@@ -534,6 +535,8 @@
         title: story.title || "",
         releaseDate: story.releaseDate || "",
         productId: story.productId || 0,
+        teamgroupId: story.teamgroupId || 0,
+        teamgroupName: story.teamgroupName || "",
       };
       $("#taskModalTitle").text("拆任务 · " + (story.id || storyId));
       renderSpec(story);
@@ -541,6 +544,13 @@
 
       fillModalProjectSelect(cachedProjects, resolveDefaultProjectId(resp));
       renderTaskRows(resp.tasks || []);
+      if (window.ScheduleQuickIteration && typeof window.ScheduleQuickIteration.refresh === "function") {
+        window.ScheduleQuickIteration.refresh({
+          storyId: currentStoryInfo.id || storyId,
+          teamgroupId: currentStoryInfo.teamgroupId,
+          teamgroupName: currentStoryInfo.teamgroupName,
+        });
+      }
       return resp;
     });
   }
