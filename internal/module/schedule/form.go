@@ -1120,12 +1120,19 @@ type StoryTaskSummary struct {
 	LeftTotal     float64 `json:"leftTotal"`
 }
 
+// ProductPlanOption 维护任务弹窗关联产品计划下拉项。
+type ProductPlanOption struct {
+	ID    uint   `json:"id"`
+	Title string `json:"title"`
+}
+
 // StoryTasksResp 维护任务弹窗加载响应。
 type StoryTasksResp struct {
 	Story              StoryTaskStoryItem              `json:"story"`
 	Tasks              []StoryTaskItem                 `json:"tasks"`
 	Summary            StoryTaskSummary                `json:"summary"`
 	Projects           []DemandSchedulingProjectOption `json:"projects"`
+	Plans              []ProductPlanOption             `json:"plans"`
 	Users              []SchedulingUserOption          `json:"users"`
 	TaskTypes          []TaskTypeOption                `json:"taskTypes"`
 	DefaultProjectID   uint                            `json:"defaultProjectId"`

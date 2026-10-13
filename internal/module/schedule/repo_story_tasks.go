@@ -176,6 +176,23 @@ func (r *Repo) findDemandTeamgroupID(ctx context.Context, demandID uint) (uint, 
 	return parseUintString(teamGroup), nil
 }
 
+// ListProductOpenPlans 查询产品下未删除、未关闭的产品计划。
+func (r *Repo) ListProductOpenPlans(ctx context.Context, productID uint) ([]ZtProductplan, error) {
+	if productID == 0 {
+		return []ZtProductplan{}, nil
+	}
+	var rows []ZtProductplan
+	if err := r.db.WithContext(ctx).
+		Table((ZtProductplan{}).TableName()).
+		Select("id", "title").
+		Where("product = ? AND deleted = ? AND status <> ?", productID, "0", "closed").
+		Order("id DESC").
+		Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
 func (r *Repo) findStoryWindowDetail(ctx context.Context, storyID uint) (windowName, releaseDate string, teamgroupID uint, err error) {
 	const query = `
 SELECT

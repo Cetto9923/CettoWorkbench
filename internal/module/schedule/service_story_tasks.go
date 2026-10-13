@@ -100,6 +100,18 @@ func (s *Service) GetStoryTasks(ctx context.Context, actor *model.User, storyID 
 		teamgroupName = names[detail.TeamgroupID]
 	}
 
+	planRows, err := s.repo.ListProductOpenPlans(ctx, detail.ProductID)
+	if err != nil {
+		return nil, err
+	}
+	plans := make([]ProductPlanOption, 0, len(planRows))
+	for _, plan := range planRows {
+		plans = append(plans, ProductPlanOption{
+			ID:    plan.ID,
+			Title: strings.TrimSpace(plan.Title),
+		})
+	}
+
 	return &StoryTasksResp{
 		Story: StoryTaskStoryItem{
 			ID:             detail.StoryID,
@@ -120,6 +132,7 @@ func (s *Service) GetStoryTasks(ctx context.Context, actor *model.User, storyID 
 		Tasks:              buildStoryTaskItems(taskRows, realnameByAccount, projectNameByID),
 		Summary:            buildStoryTaskSummary(taskRows),
 		Projects:           projects,
+		Plans:              plans,
 		Users:              users,
 		TaskTypes:          taskTypes,
 		DefaultProjectID:   detail.DefaultProjectID,

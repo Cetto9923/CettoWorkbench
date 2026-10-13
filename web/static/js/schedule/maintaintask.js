@@ -549,6 +549,7 @@
           storyId: currentStoryInfo.id || storyId,
           teamgroupId: currentStoryInfo.teamgroupId,
           teamgroupName: currentStoryInfo.teamgroupName,
+          plans: resp.plans || [],
         });
       }
       return resp;

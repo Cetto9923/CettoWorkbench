@@ -214,11 +214,27 @@
     });
   }
 
-  function initPlanAutocomplete() {
+  function planItems(plans) {
+    return (plans || [])
+      .map(function (p) {
+        var id = String((p && p.id) || "").trim();
+        if (!id || id === "0") {
+          return null;
+        }
+        var title = String((p && p.title) || "").trim();
+        return {
+          value: id,
+          label: title || id,
+        };
+      })
+      .filter(Boolean);
+  }
+
+  function initPlanAutocomplete(plans) {
     if (typeof window.initAutocomplete !== "function") {
       return;
     }
-    window.initAutocomplete("quickIterationPlanInput", "quickIterationPlan", [], {
+    window.initAutocomplete("quickIterationPlanInput", "quickIterationPlan", planItems(plans), {
       labelOnly: true,
       value: "",
       placeholder: "请选择产品计划",
@@ -270,7 +286,7 @@
     applyPeriodDates();
     var team = resolveDefaultTeam(options);
     initOwnerAutocomplete(team.manager);
-    initPlanAutocomplete();
+    initPlanAutocomplete(options.plans);
     initTeamAutocomplete(team);
   }
 
