@@ -35,6 +35,7 @@ type mysqlStageFilter struct {
 	scheduleIncomplete bool // true：排期未完成（关键日期/QD/主研未填）
 	deliverStories     bool // true：合并交付阶段独立研发需求
 	suspended          bool // true：叠加 hang='1'（仅业需；由请求层写入，不进静态 map）
+	overdue            bool // true：叠加超期条件（业需/研需；由请求层写入，不进静态 map）
 }
 
 var releasedOverallEmpty = "0"
@@ -113,9 +114,12 @@ func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysql
 			OR RD = ?
 			OR BRA = ?
 		)`, account, account, account, account)
-	// 挂起叠加尽早下推，验收阶段 early-return 前也生效
+	// 挂起/超期叠加尽早下推，验收阶段 early-return 前也生效
 	if filter.suspended {
 		q = q.Where("hang = ?", "1")
+	}
+	if filter.overdue {
+		q = applyDemandOverdue(q)
 	}
 
 	if filter.acceptanceStage {
@@ -161,6 +165,22 @@ func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysql
 	return q
 }
 
+// applyDemandOverdue 业需超期：acceptanced 看 estimateLaunch；其余非终态看 deadline。
+func applyDemandOverdue(q *gorm.DB) *gorm.DB {
+	today := time.Now().Format("2006-01-02")
+	return q.Where(`(
+		(status = ? AND `+dateSetExpr("estimateLaunch")+` AND estimateLaunch < ?)
+		OR (status NOT IN ? AND `+dateSetExpr("deadline")+` AND deadline < ?)
+	)`, "acceptanced", today, []string{"acceptanced", "closed", "refuse", "released"}, today)
+}
+
+// applyStoryOverdue 独立研需超期：阶段非 released/closed 且 estimateLaunch < 今天。
+func applyStoryOverdue(q *gorm.DB) *gorm.DB {
+	today := time.Now().Format("2006-01-02")
+	return q.Where("stage NOT IN ?", []string{"released", "closed"}).
+		Where(dateSetExpr("estimateLaunch")+" AND estimateLaunch < ?", today)
+}
+
 // storyAssignedOrProductReqM 指派人或所属产品的需求负责人（zt_product.ReqM）为当前用户。
 const storyAssignedOrProductReqM = `(zt_story.assignedTo = ? OR EXISTS (
 	SELECT 1 FROM zt_product p
@@ -168,8 +188,8 @@ const storyAssignedOrProductReqM = `(zt_story.assignedTo = ? OR EXISTS (
 ))`
 
 // scheduleStoryScope 排期阶段独立研发需求：非需求池、非父需求、排除已关闭、指派人或所属产品 ReqM 为当前用户、关键日期未填。
-func (r *Repo) scheduleStoryScope(ctx context.Context, account string) *gorm.DB {
-	return r.db.WithContext(ctx).Table("zt_story").
+func (r *Repo) scheduleStoryScope(ctx context.Context, account string, overdue bool) *gorm.DB {
+	q := r.db.WithContext(ctx).Table("zt_story").
 		Where("deleted = ?", "0").
 		Where("status != ?", "closed").
 		Where("IFNULL(sourceType, '') != ?", "demandpool").
@@ -182,12 +202,16 @@ func (r *Repo) scheduleStoryScope(ctx context.Context, account string) *gorm.DB 
 			dateUnsetExpr("testFinish"),
 			dateUnsetExpr("verifyFinish"),
 		}, " OR ") + ")")
+	if overdue {
+		q = applyStoryOverdue(q)
+	}
+	return q
 }
 
 // deliverStoryScope 交付阶段独立研发需求：非需求池、非父需求、排除已关闭、指派人或所属产品 ReqM 为当前用户、今天 >= deliverDate。
-func (r *Repo) deliverStoryScope(ctx context.Context, account string) *gorm.DB {
+func (r *Repo) deliverStoryScope(ctx context.Context, account string, overdue bool) *gorm.DB {
 	today := time.Now().Format("2006-01-02")
-	return r.db.WithContext(ctx).Table("zt_story").
+	q := r.db.WithContext(ctx).Table("zt_story").
 		Where("deleted = ?", "0").
 		Where("status != ?", "closed").
 		Where("IFNULL(sourceType, '') != ?", "demandpool").
@@ -195,6 +219,10 @@ func (r *Repo) deliverStoryScope(ctx context.Context, account string) *gorm.DB {
 		Where("isParent = ?", "0").
 		Where(storyAssignedOrProductReqM, account, account).
 		Where(dateSetExpr("deliverDate")+" AND deliverDate <= ?", today)
+	if overdue {
+		q = applyStoryOverdue(q)
+	}
+	return q
 }
 
 func filterReady(account string, filter mysqlStageFilter) bool {
@@ -285,22 +313,22 @@ func applyDemandListOrder(q *gorm.DB, filter mysqlStageFilter) *gorm.DB {
 }
 
 // CountScheduleStories 统计排期阶段独立研发需求数量。
-func (r *Repo) CountScheduleStories(ctx context.Context, account string) (int64, error) {
+func (r *Repo) CountScheduleStories(ctx context.Context, account string, overdue bool) (int64, error) {
 	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
 		return 0, nil
 	}
 	var total int64
-	err := r.scheduleStoryScope(ctx, account).Count(&total).Error
+	err := r.scheduleStoryScope(ctx, account, overdue).Count(&total).Error
 	return total, err
 }
 
 // FindScheduleStoryIDs 查询排期阶段独立研发需求 ID。
-func (r *Repo) FindScheduleStoryIDs(ctx context.Context, account string) ([]int, error) {
+func (r *Repo) FindScheduleStoryIDs(ctx context.Context, account string, overdue bool) ([]int, error) {
 	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
 		return nil, nil
 	}
 	var ids []int
-	err := r.scheduleStoryScope(ctx, account).
+	err := r.scheduleStoryScope(ctx, account, overdue).
 		Order("id DESC").
 		Pluck("id", &ids).Error
 	if err != nil {
@@ -310,12 +338,12 @@ func (r *Repo) FindScheduleStoryIDs(ctx context.Context, account string) ([]int,
 }
 
 // FindScheduleStories 查询排期阶段独立研发需求列表。
-func (r *Repo) FindScheduleStories(ctx context.Context, account string) ([]StoryRow, error) {
+func (r *Repo) FindScheduleStories(ctx context.Context, account string, overdue bool) ([]StoryRow, error) {
 	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
 		return nil, nil
 	}
 	var rows []StoryRow
-	err := r.scheduleStoryScope(ctx, account).
+	err := r.scheduleStoryScope(ctx, account, overdue).
 		Select("id", "title", "pri", "status", "stage").
 		Order("id DESC").
 		Find(&rows).Error
@@ -326,22 +354,22 @@ func (r *Repo) FindScheduleStories(ctx context.Context, account string) ([]Story
 }
 
 // CountDeliverStories 统计交付阶段独立研发需求数量。
-func (r *Repo) CountDeliverStories(ctx context.Context, account string) (int64, error) {
+func (r *Repo) CountDeliverStories(ctx context.Context, account string, overdue bool) (int64, error) {
 	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
 		return 0, nil
 	}
 	var total int64
-	err := r.deliverStoryScope(ctx, account).Count(&total).Error
+	err := r.deliverStoryScope(ctx, account, overdue).Count(&total).Error
 	return total, err
 }
 
 // FindDeliverStoryIDs 查询交付阶段独立研发需求 ID。
-func (r *Repo) FindDeliverStoryIDs(ctx context.Context, account string) ([]int, error) {
+func (r *Repo) FindDeliverStoryIDs(ctx context.Context, account string, overdue bool) ([]int, error) {
 	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
 		return nil, nil
 	}
 	var ids []int
-	err := r.deliverStoryScope(ctx, account).
+	err := r.deliverStoryScope(ctx, account, overdue).
 		Order("id DESC").
 		Pluck("id", &ids).Error
 	if err != nil {
@@ -351,12 +379,12 @@ func (r *Repo) FindDeliverStoryIDs(ctx context.Context, account string) ([]int, 
 }
 
 // FindDeliverStories 查询交付阶段独立研发需求列表。
-func (r *Repo) FindDeliverStories(ctx context.Context, account string) ([]StoryRow, error) {
+func (r *Repo) FindDeliverStories(ctx context.Context, account string, overdue bool) ([]StoryRow, error) {
 	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
 		return nil, nil
 	}
 	var rows []StoryRow
-	err := r.deliverStoryScope(ctx, account).
+	err := r.deliverStoryScope(ctx, account, overdue).
 		Select("id", "title", "pri", "status", "stage").
 		Order("id DESC").
 		Find(&rows).Error

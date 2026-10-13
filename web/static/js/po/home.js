@@ -13,7 +13,7 @@
     objectType: "all",
     priority: "all",
     keyword: "",
-    focus: "" // 与 data-home-focus 对齐："" | suspended | my_related …
+    focus: "" // 与 data-home-focus 对齐："" | suspended | my_related | overdue …
   };
 
   var FOCAL_LABELS = {
@@ -26,7 +26,7 @@
   };
 
   // 已实现筛选的焦点芯片（其余仅占位）
-  var FOCUS_FILTERS = { suspended: true, my_related: true };
+  var FOCUS_FILTERS = { suspended: true, my_related: true, overdue: true };
 
   function demandsUrl(status, page, pageSize, withStages) {
     var url =

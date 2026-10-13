@@ -28,7 +28,7 @@ func (s *Service) listAllStageDemands(ctx context.Context, actor *model.User, di
 		if !ok {
 			continue
 		}
-		filter.suspended = req.Focus == FocusSuspended
+		applyFocusFilterFlags(&filter, req.Focus)
 		// 拉全量再并集；分页在 Demands 出口统一切
 		resp, err := s.listMySQLDemands(ctx, actor, def.status, filter, displayMap, 0, 0, req)
 		if err != nil {
@@ -134,14 +134,14 @@ func (s *Service) collectStageStories(ctx context.Context, actor *model.User, ac
 	label := valueStreamLabelForStatus(stageStatus)
 	items := make([]WorkItemDetail, 0)
 	if filter.scheduleIncomplete {
-		stories, storyErr := s.repo.FindScheduleStories(ctx, account)
+		stories, storyErr := s.repo.FindScheduleStories(ctx, account, filter.overdue)
 		if storyErr != nil {
 			return nil, storyErr
 		}
 		items = append(items, storyWorkItems(stories, label, actor, displayMap)...)
 	}
 	if filter.deliverStories {
-		stories, storyErr := s.repo.FindDeliverStories(ctx, account)
+		stories, storyErr := s.repo.FindDeliverStories(ctx, account, filter.overdue)
 		if storyErr != nil {
 			return nil, storyErr
 		}

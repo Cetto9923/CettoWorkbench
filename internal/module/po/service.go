@@ -68,10 +68,15 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 		err error
 	}
 	suspendedCh := make(chan focusCountResult, 1)
+	overdueCh := make(chan focusCountResult, 1)
 	myRelatedCh := make(chan focusCountResult, 1)
 	go func() {
 		n, err := s.countSuspendedInValueStream(ctx, account)
 		suspendedCh <- focusCountResult{n: n, err: err}
+	}()
+	go func() {
+		n, err := s.countOverdueInValueStream(ctx, account)
+		overdueCh <- focusCountResult{n: n, err: err}
 	}()
 	go func() {
 		n, err := s.countMyRelatedInValueStream(ctx, account)
@@ -81,6 +86,7 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 	stages, err := s.buildValueStreamStages(ctx, account, FocusNone)
 	if err != nil {
 		<-suspendedCh // 避免 goroutine 泄漏
+		<-overdueCh
 		<-myRelatedCh
 		return nil, err
 	}
@@ -92,6 +98,13 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 		}
 	} else {
 		focus.Suspended = sr.n
+	}
+	if or := <-overdueCh; or.err != nil {
+		if s.logger != nil {
+			s.logger.Warn("po home overdue count", zap.Error(or.err))
+		}
+	} else {
+		focus.Overdue = or.n
 	}
 	if mr := <-myRelatedCh; mr.err != nil {
 		if s.logger != nil {
@@ -177,7 +190,7 @@ func (s *Service) Demands(ctx context.Context, actor *model.User, req DemandsReq
 	if req.Status == "all" {
 		resp, err = s.listAllStageDemands(ctx, actor, displayMap, req)
 	} else if filter, ok := mysqlStageFilters[req.Status]; ok {
-		filter.suspended = req.Focus == FocusSuspended
+		applyFocusFilterFlags(&filter, req.Focus)
 		resp, err = s.listMySQLDemands(ctx, actor, req.Status, filter, displayMap, req.Page, req.PageSize, req)
 	} else {
 		resp = &DemandsResp{Items: []WorkItemDetail{}}
