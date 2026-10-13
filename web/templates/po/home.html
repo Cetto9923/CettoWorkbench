@@ -25,12 +25,10 @@
 {{ end }}
 
 {{ define "content" }}
-{{ $pending := 0 }}
 {{ $clarify := 0 }}
 {{ $schedule := 0 }}
 {{ $waitacceptance := 0 }}
 {{ range .ValueStreamStages }}
-  {{ if eq .Status "all" }}{{ $pending = .Count }}{{ end }}
   {{ if eq .Status "clarify" }}{{ $clarify = .Count }}{{ end }}
   {{ if eq .Status "schedule" }}{{ $schedule = .Count }}{{ end }}
   {{ if eq .Status "waitacceptance" }}{{ $waitacceptance = .Count }}{{ end }}
@@ -38,20 +36,23 @@
 <template id="wbHangTagSource">{{ template "ui/hang" }}</template>
 <div class="po-home" id="poHomeRoot" data-current-account="{{ if .CurrentUser }}{{ .CurrentUser.Account }}{{ end }}">
   <div class="page-hdr">
-    <!-- <div class="home-summary page-hdr-actions" aria-label="首页焦点摘要">
-      <button type="button" class="home-hl-kpi" data-focal="today">
-        <strong class="home-hl-num">0</strong><span class="home-hl-lab">今日必推</span>
+    <div class="header-quick-filters" id="homeQuickChips" role="group" aria-label="快捷焦点">
+      <button type="button" data-home-focus="my_action" class="header-quick-chip my-action" title="真待办：有明确主动作且我是当前办理人" aria-pressed="true">
+        <span>待我处理</span> <em>0</em>
       </button>
-      <button type="button" class="home-hl-kpi active" data-focal="myPending">
-        <strong class="home-hl-num" id="hubMyPending">{{ $pending }}</strong><span class="home-hl-lab">待我处理</span>
+      <button type="button" data-home-focus="my_managed" class="header-quick-chip" title="指派给我或我是需求负责人" aria-pressed="false">
+        <span>我负责</span> <em>0</em>
       </button>
-      <button type="button" class="home-hl-kpi danger" data-focal="blocked">
-        <strong class="home-hl-num">0</strong><span class="home-hl-lab">阻塞</span>
+      <button type="button" data-home-focus="my_related" class="header-quick-chip" title="我参与或我主动关注" aria-pressed="false">
+        <span>我相关</span> <em>0</em>
       </button>
-      <button type="button" class="home-hl-kpi warning" data-focal="overdue">
-        <strong class="home-hl-num">0</strong><span class="home-hl-lab">超期</span>
+      <button type="button" data-home-focus="overdue" class="header-quick-chip danger" title="在首页查看超期事项（含关联业务需求与研发需求）" aria-pressed="false">
+        <span>超期</span> <em>0</em>
       </button>
-    </div> -->
+      <button type="button" data-home-focus="suspended" class="header-quick-chip" title="查看挂起事项" aria-pressed="false">
+        <span>挂起</span> <em>0</em>
+      </button>
+    </div>
   </div>
 
   <div class="home-vs-section" id="homeValueStreamSection">
