@@ -36,6 +36,7 @@ type mysqlStageFilter struct {
 	deliverStories     bool // true：合并交付阶段独立研发需求
 	suspended          bool // true：叠加 hang='1'（仅业需；由请求层写入，不进静态 map）
 	overdue            bool // true：叠加超期条件（业需/研需；由请求层写入，不进静态 map）
+	myManaged          bool // true：叠加 assignedTo|BRA=账号（业需；由请求层写入，不进静态 map）
 }
 
 var releasedOverallEmpty = "0"
@@ -114,12 +115,15 @@ func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysql
 			OR RD = ?
 			OR BRA = ?
 		)`, account, account, account, account)
-	// 挂起/超期叠加尽早下推，验收阶段 early-return 前也生效
+	// 挂起/超期/我负责叠加尽早下推，验收阶段 early-return 前也生效
 	if filter.suspended {
 		q = q.Where("hang = ?", "1")
 	}
 	if filter.overdue {
 		q = applyDemandOverdue(q)
+	}
+	if filter.myManaged {
+		q = applyDemandMyManaged(q, account)
 	}
 
 	if filter.acceptanceStage {
@@ -172,6 +176,11 @@ func applyDemandOverdue(q *gorm.DB) *gorm.DB {
 		(status = ? AND `+dateSetExpr("estimateLaunch")+` AND estimateLaunch < ?)
 		OR (status NOT IN ? AND `+dateSetExpr("deadline")+` AND deadline < ?)
 	)`, "acceptanced", today, []string{"acceptanced", "closed", "refuse", "released"}, today)
+}
+
+// applyDemandMyManaged 业需「我负责」：指派给我或 BRA 是我。
+func applyDemandMyManaged(q *gorm.DB, account string) *gorm.DB {
+	return q.Where("(assignedTo = ? OR BRA = ?)", account, account)
 }
 
 // applyStoryOverdue 独立研需超期：阶段非 released/closed 且 estimateLaunch < 今天。
