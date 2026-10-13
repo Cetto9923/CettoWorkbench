@@ -3,7 +3,7 @@
 模块: 排期工作台
 职责: 维护任务弹窗（含快速创建迭代折叠区）
 全局字段: .CurrentUser, .CSRFToken, .Menus, .CurrentPath
-页面字段: 无
+页面字段: .Teamgroups ([]schedule.TeamgroupOption)
 ========================================================================== */}}
 {{ define "schedule/maintaintask" }}
 <div class="batch-modal-overlay" id="taskModalOverlay"></div>
@@ -64,6 +64,15 @@
           </div>
           <div class="task-iteration-field">
             <label for="quickIterationTeamInput">敏捷团队</label>
+            <div id="taskModalTeamgroupOptions" hidden>
+              {{ range .Teamgroups }}
+              <span
+                data-value="{{ .ID }}"
+                data-label="{{ .DisplayName }}"
+                data-manager="{{ .Manager }}"
+              ></span>
+              {{ end }}
+            </div>
             <div class="ui-autocomplete">
               <input type="text" id="quickIterationTeamInput" class="input" placeholder="请选择" autocomplete="off">
               <input type="hidden" id="quickIterationTeam" name="quickIterationTeam">

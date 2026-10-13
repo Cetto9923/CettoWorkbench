@@ -18,6 +18,7 @@ import (
 type TeamgroupOption struct {
 	ID          uint
 	DisplayName string
+	Manager     string
 }
 
 // CreateWindowFormData 新建版本窗口弹窗表单数据。

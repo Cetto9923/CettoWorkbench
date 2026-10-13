@@ -104,6 +104,7 @@ func (s *Service) GetUserTeamgroups(ctx context.Context, account string) ([]Team
 		options = append(options, TeamgroupOption{
 			ID:          group.ID,
 			DisplayName: displayName,
+			Manager:     group.Manager,
 		})
 	}
 	return options, nil

@@ -64,10 +64,11 @@ func (ZtProductplan) TableName() string {
 
 // ZtTeamgroup 表示禅道 zt_teamgroup 表只读字段。
 type ZtTeamgroup struct {
-	ID     uint   `gorm:"column:id"`
-	Name   string `gorm:"column:name"`
-	Parent uint   `gorm:"column:parent"`
-	Path   string `gorm:"column:path"`
+	ID      uint   `gorm:"column:id"`
+	Name    string `gorm:"column:name"`
+	Parent  uint   `gorm:"column:parent"`
+	Path    string `gorm:"column:path"`
+	Manager string `gorm:"column:manager"`
 }
 
 // TableName 指定 zt_teamgroup 表。
@@ -113,7 +114,7 @@ func (r *Repo) ListAllTeamgroups(ctx context.Context) ([]ZtTeamgroup, error) {
 	var rows []ZtTeamgroup
 	if err := r.db.WithContext(ctx).
 		Table((ZtTeamgroup{}).TableName()).
-		Select("id", "name", "parent", "path").
+		Select("id", "name", "parent", "path", "manager").
 		Where("deleted = '0' AND status != 'disband'").
 		Order("id ASC").
 		Find(&rows).Error; err != nil {
@@ -125,7 +126,7 @@ func (r *Repo) ListAllTeamgroups(ctx context.Context) ([]ZtTeamgroup, error) {
 // GetUserTeamgroups 查询当前用户所属的敏捷小组。
 func (r *Repo) GetUserTeamgroups(ctx context.Context, account string) ([]ZtTeamgroup, error) {
 	const query = `
-SELECT tg.id, tg.name, tg.parent, tg.path
+SELECT tg.id, tg.name, tg.parent, tg.path, tg.manager
 FROM zt_teamgroup tg
 INNER JOIN zt_team t ON t.root = tg.id AND t.type = 'teamgroup'
 WHERE t.account = ?
@@ -148,7 +149,7 @@ func (r *Repo) FindTeamgroupsByIDs(ctx context.Context, ids []uint) ([]ZtTeamgro
 	var rows []ZtTeamgroup
 	if err := r.db.WithContext(ctx).
 		Table((ZtTeamgroup{}).TableName()).
-		Select("id", "name", "parent", "path").
+		Select("id", "name", "parent", "path", "manager").
 		Where("id IN ? AND deleted = '0' AND status != 'disband'", ids).
 		Find(&rows).Error; err != nil {
 		return nil, err

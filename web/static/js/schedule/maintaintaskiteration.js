@@ -89,7 +89,7 @@
         var name = String(u.realname || "").trim();
         return {
           value: account,
-          label: name ? name + "（" + account + "）" : account,
+          label: name || account,
         };
       })
       .filter(Boolean);
@@ -98,7 +98,7 @@
   function teamgroupItems() {
     var items = [];
     var seen = {};
-    document.querySelectorAll("#scheduleWindowTeamgroupOptions [data-value]").forEach(function (el) {
+    document.querySelectorAll("#taskModalTeamgroupOptions [data-value]").forEach(function (el) {
       var value = String(el.getAttribute("data-value") || "").trim();
       if (!value || seen[value]) {
         return;
@@ -107,21 +107,7 @@
       items.push({
         value: value,
         label: String(el.getAttribute("data-label") || value).trim() || value,
-      });
-    });
-    if (items.length) {
-      return items;
-    }
-    document.querySelectorAll('#scheduleMultiselectRow [data-filter-key="groups"] .form-multiselect-checkbox').forEach(function (el) {
-      var value = String(el.value || "").trim();
-      if (!value || seen[value]) {
-        return;
-      }
-      seen[value] = true;
-      var nameEl = el.closest("label") ? el.closest("label").querySelector(".form-multiselect-name") : null;
-      items.push({
-        value: value,
-        label: nameEl ? String(nameEl.textContent || "").trim() || value : value,
+        manager: String(el.getAttribute("data-manager") || "").trim(),
       });
     });
     return items;
@@ -153,25 +139,25 @@
     return "";
   }
 
-  function initOwnerAutocomplete() {
-    if (typeof window.initAutocomplete !== "function") {
-      return;
+  function findItemByValue(items, value) {
+    value = String(value || "").trim();
+    if (!value) {
+      return null;
     }
-    window.initAutocomplete("quickIterationOwnerInput", "quickIterationOwner", userItems(), {
-      labelOnly: true,
-      value: "",
-    });
+    for (var i = 0; i < (items || []).length; i++) {
+      if (String(items[i].value) === value) {
+        return items[i];
+      }
+    }
+    return null;
   }
 
-  function initPlanAutocomplete() {
-    if (typeof window.initAutocomplete !== "function") {
-      return;
+  function firstManagerAccount(manager) {
+    var raw = String(manager || "").trim();
+    if (!raw) {
+      return "";
     }
-    window.initAutocomplete("quickIterationPlanInput", "quickIterationPlan", [], {
-      labelOnly: true,
-      value: "",
-      placeholder: "请选择产品计划",
-    });
+    return raw.split(",")[0].trim();
   }
 
   function resolveTeamFromStory(storyId) {
@@ -191,11 +177,9 @@
     return cell ? String(cell.textContent || "").trim() : "";
   }
 
-  function initTeamAutocomplete(options) {
+  // 解析弹窗打开时默认选中的敏捷团队；仅用于首次默认，切换团队不联动负责人。
+  function resolveDefaultTeam(options) {
     options = options || {};
-    if (typeof window.initAutocomplete !== "function") {
-      return;
-    }
     var items = teamgroupItems();
     var teamId = String(options.teamgroupId || "").trim();
     if (teamId === "0") {
@@ -208,11 +192,49 @@
     if (!teamName) {
       teamName = findItemLabel(items, teamId) || resolveTeamFromStory(options.storyId);
     }
-    window.initAutocomplete("quickIterationTeamInput", "quickIterationTeam", items, {
+    var item = findItemByValue(items, teamId);
+    return {
+      items: items,
+      teamId: teamId,
+      teamName: teamName,
+      manager: item ? firstManagerAccount(item.manager) : "",
+    };
+  }
+
+  function initOwnerAutocomplete(ownerAccount) {
+    if (typeof window.initAutocomplete !== "function") {
+      return;
+    }
+    var users = userItems();
+    var owner = String(ownerAccount || "").trim();
+    window.initAutocomplete("quickIterationOwnerInput", "quickIterationOwner", users, {
+      labelOnly: true,
+      value: owner,
+      label: findItemLabel(users, owner),
+    });
+  }
+
+  function initPlanAutocomplete() {
+    if (typeof window.initAutocomplete !== "function") {
+      return;
+    }
+    window.initAutocomplete("quickIterationPlanInput", "quickIterationPlan", [], {
+      labelOnly: true,
+      value: "",
+      placeholder: "请选择产品计划",
+    });
+  }
+
+  function initTeamAutocomplete(team) {
+    team = team || {};
+    if (typeof window.initAutocomplete !== "function") {
+      return;
+    }
+    window.initAutocomplete("quickIterationTeamInput", "quickIterationTeam", team.items || teamgroupItems(), {
       labelOnly: true,
       placeholder: "请选择",
-      value: teamId,
-      label: teamName,
+      value: team.teamId || "",
+      label: team.teamName || "",
     });
   }
 
@@ -246,9 +268,10 @@
     options = options || {};
     syncPeriodRadios();
     applyPeriodDates();
-    initOwnerAutocomplete();
+    var team = resolveDefaultTeam(options);
+    initOwnerAutocomplete(team.manager);
     initPlanAutocomplete();
-    initTeamAutocomplete(options);
+    initTeamAutocomplete(team);
   }
 
   function bindEvents() {

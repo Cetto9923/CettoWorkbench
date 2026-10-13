@@ -111,13 +111,22 @@ LIMIT 1`
 		detail.DemandName = name
 	}
 
-	windowName, releaseDate, teamgroupID, err := r.findStoryWindowDetail(ctx, storyID)
+	windowName, releaseDate, windowTeamgroupID, err := r.findStoryWindowDetail(ctx, storyID)
 	if err != nil {
 		return nil, err
 	}
 	detail.WindowName = windowName
 	detail.ReleaseDate = releaseDate
-	detail.TeamgroupID = teamgroupID
+	// 与列表一致：研需用 fromDemand 自身 teamGroup；独立研需仍用窗口 teamgroup。
+	if row.FromDemand > 0 {
+		demandTeamgroupID, err := r.findDemandTeamgroupID(ctx, row.FromDemand)
+		if err != nil {
+			return nil, err
+		}
+		detail.TeamgroupID = demandTeamgroupID
+	} else {
+		detail.TeamgroupID = windowTeamgroupID
+	}
 
 	defaultProjectID, defaultExecutionID, err := r.findRecentProductTaskProject(ctx, row.Product)
 	if err != nil {
@@ -148,6 +157,23 @@ LIMIT 1`
 		return "", err
 	}
 	return strings.TrimSpace(name), nil
+}
+
+// findDemandTeamgroupID 读业需自身 teamGroup（顶层/子业需均不回溯父级）。
+func (r *Repo) findDemandTeamgroupID(ctx context.Context, demandID uint) (uint, error) {
+	if demandID == 0 {
+		return 0, nil
+	}
+	var teamGroup string
+	if err := r.db.WithContext(ctx).
+		Table("zt_demand").
+		Select("teamGroup").
+		Where("id = ? AND deleted = '0'", demandID).
+		Limit(1).
+		Scan(&teamGroup).Error; err != nil {
+		return 0, err
+	}
+	return parseUintString(teamGroup), nil
 }
 
 func (r *Repo) findStoryWindowDetail(ctx context.Context, storyID uint) (windowName, releaseDate string, teamgroupID uint, err error) {
