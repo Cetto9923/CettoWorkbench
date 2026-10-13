@@ -70,6 +70,7 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 	suspendedCh := make(chan focusCountResult, 1)
 	overdueCh := make(chan focusCountResult, 1)
 	myManagedCh := make(chan focusCountResult, 1)
+	myActionCh := make(chan focusCountResult, 1)
 	myRelatedCh := make(chan focusCountResult, 1)
 	go func() {
 		n, err := s.countSuspendedInValueStream(ctx, account)
@@ -84,6 +85,10 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 		myManagedCh <- focusCountResult{n: n, err: err}
 	}()
 	go func() {
+		n, err := s.countMyActionInValueStream(ctx, account)
+		myActionCh <- focusCountResult{n: n, err: err}
+	}()
+	go func() {
 		n, err := s.countMyRelatedInValueStream(ctx, account)
 		myRelatedCh <- focusCountResult{n: n, err: err}
 	}()
@@ -93,6 +98,7 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 		<-suspendedCh // 避免 goroutine 泄漏
 		<-overdueCh
 		<-myManagedCh
+		<-myActionCh
 		<-myRelatedCh
 		return nil, err
 	}
@@ -118,6 +124,13 @@ func (s *Service) Home(ctx context.Context, actor *model.User) (*HomeResp, error
 		}
 	} else {
 		focus.MyManaged = mm.n
+	}
+	if ma := <-myActionCh; ma.err != nil {
+		if s.logger != nil {
+			s.logger.Warn("po home my_action count", zap.Error(ma.err))
+		}
+	} else {
+		focus.MyAction = ma.n
 	}
 	if mr := <-myRelatedCh; mr.err != nil {
 		if s.logger != nil {

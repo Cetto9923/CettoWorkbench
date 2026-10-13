@@ -13,7 +13,7 @@
     objectType: "all",
     priority: "all",
     keyword: "",
-    focus: "" // 与 data-home-focus 对齐："" | suspended | my_related | overdue | my_managed …
+    focus: "" // 与 data-home-focus 对齐："" | suspended | my_related | overdue | my_managed | my_action …
   };
 
   var FOCAL_LABELS = {
@@ -23,11 +23,12 @@
     overdue: "超期",
     suspended: "挂起",
     my_related: "我关注的",
-    my_managed: "我负责"
+    my_managed: "我负责",
+    my_action: "待我处理"
   };
 
   // 已实现筛选的焦点芯片（其余仅占位）
-  var FOCUS_FILTERS = { suspended: true, my_related: true, overdue: true, my_managed: true };
+  var FOCUS_FILTERS = { suspended: true, my_related: true, overdue: true, my_managed: true, my_action: true };
 
   function demandsUrl(status, page, pageSize, withStages) {
     var url =

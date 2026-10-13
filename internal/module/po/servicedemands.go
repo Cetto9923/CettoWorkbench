@@ -134,14 +134,14 @@ func (s *Service) collectStageStories(ctx context.Context, actor *model.User, ac
 	label := valueStreamLabelForStatus(stageStatus)
 	items := make([]WorkItemDetail, 0)
 	if filter.scheduleIncomplete {
-		stories, storyErr := s.repo.FindScheduleStories(ctx, account, filter.overdue)
+		stories, storyErr := s.repo.FindScheduleStories(ctx, account, filter)
 		if storyErr != nil {
 			return nil, storyErr
 		}
 		items = append(items, storyWorkItems(stories, label, actor, displayMap)...)
 	}
 	if filter.deliverStories {
-		stories, storyErr := s.repo.FindDeliverStories(ctx, account, filter.overdue)
+		stories, storyErr := s.repo.FindDeliverStories(ctx, account, filter)
 		if storyErr != nil {
 			return nil, storyErr
 		}

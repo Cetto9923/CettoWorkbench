@@ -32,6 +32,7 @@ type ValueStreamStage struct {
 
 // HomeFocusCounts 首页顶部焦点芯片计数（均在价值流并集口径内）。
 type HomeFocusCounts struct {
+	MyAction  int64 // 待我处理：各阶段「我处理」规则并集（含独立研需）
 	MyManaged int64 // 我负责：指派给我或 BRA=我的业需 + 指派/ReqM 独立研需
 	MyRelated int64 // 我关注的：价值流 ∩ zt_starinfo followed=1 的业需数
 	Overdue   int64 // 超期：价值流并集内超期业需 + 独立研需数
@@ -69,7 +70,7 @@ const (
 	FocusMyRelated = "my_related"
 	FocusOverdue   = "overdue"
 	FocusMyManaged = "my_managed"
-	// 预留：FocusMyAction …
+	FocusMyAction  = "my_action"
 )
 
 // DemandsReq 按价值流状态查询需求/故事详情。
@@ -80,11 +81,11 @@ type DemandsReq struct {
 	ObjectType string `form:"objectType"` // all / demand / story；空视为 all
 	Priority   string `form:"priority"`   // all / p1 / p2 / p3（p3 含 P3+P4）；空视为 all
 	Keyword    string `form:"keyword"`    // 编号/标题模糊匹配
-	Focus      string `form:"focus"`      // 焦点芯片：空 / suspended / my_related / overdue / my_managed …
+	Focus      string `form:"focus"`      // 焦点芯片：空 / suspended / my_related / overdue / my_managed / my_action …
 	WithStages bool   `form:"withStages"` // true：响应附带各阶段统计（焦点切换时用）
 }
 
-// focusDemandOnly 挂起 / 关注等仅业需口径（不合并研需）。超期/我负责需合并独立研需。
+// focusDemandOnly 挂起 / 关注等仅业需口径（不合并研需）。超期/我负责/待我处理需合并独立研需。
 func (r DemandsReq) focusDemandOnly() bool {
 	switch r.Focus {
 	case FocusSuspended, FocusMyRelated:
@@ -136,7 +137,7 @@ func (r *DemandsReq) Validate() []FieldError {
 	r.Keyword = strings.TrimSpace(r.Keyword)
 	r.Focus = strings.ToLower(strings.TrimSpace(r.Focus))
 	switch r.Focus {
-	case FocusNone, FocusSuspended, FocusMyRelated, FocusOverdue, FocusMyManaged:
+	case FocusNone, FocusSuspended, FocusMyRelated, FocusOverdue, FocusMyManaged, FocusMyAction:
 	default:
 		return []FieldError{{Field: "focus", Message: "不支持的焦点筛选"}}
 	}

@@ -2,7 +2,7 @@
 // 文件: internal/module/po/service_homestages.go
 // 模块: PO 工作台
 // 类型: action
-// 职责: 首页价值流阶段统计与焦点角标（挂起 / 关注 / 超期 / 我负责）计数。
+// 职责: 首页价值流阶段统计与焦点角标（挂起 / 关注 / 超期 / 我负责 / 待我处理）计数。
 // 依赖: 无
 // =============================================================================
 
@@ -13,19 +13,20 @@ import (
 	"strings"
 )
 
-// focusIncludesStories 空焦点、超期、我负责需合并独立研需；挂起/关注仅业需。
+// focusIncludesStories 空焦点、超期、我负责、待我处理需合并独立研需；挂起/关注仅业需。
 func focusIncludesStories(focus string) bool {
-	return focus == FocusNone || focus == FocusOverdue || focus == FocusMyManaged
+	return focus == FocusNone || focus == FocusOverdue || focus == FocusMyManaged || focus == FocusMyAction
 }
 
-// applyFocusFilterFlags 将焦点芯片写入阶段 filter（挂起 / 超期 / 我负责叠加）。
+// applyFocusFilterFlags 将焦点芯片写入阶段 filter（挂起 / 超期 / 我负责 / 待我处理叠加）。
 func applyFocusFilterFlags(filter *mysqlStageFilter, focus string) {
 	filter.suspended = focus == FocusSuspended
 	filter.overdue = focus == FocusOverdue
 	filter.myManaged = focus == FocusMyManaged
+	filter.myAction = focus == FocusMyAction
 }
 
-// buildValueStreamStages 按阶段统计业需/研需；focus 决定候选口径（空=角色；suspended/my_related 仅业需；overdue/my_managed 含研需）。
+// buildValueStreamStages 按阶段统计业需/研需；focus 决定候选口径（空=角色；suspended/my_related 仅业需；overdue/my_managed/my_action 含研需）。
 func (s *Service) buildValueStreamStages(ctx context.Context, account, focus string) ([]ValueStreamStage, error) {
 	stages := make([]ValueStreamStage, 0, len(valueStreamStages))
 	allIdx := -1
@@ -56,14 +57,14 @@ func (s *Service) buildValueStreamStages(ctx context.Context, account, focus str
 		}
 		if focusIncludesStories(focus) {
 			if filter.scheduleIncomplete {
-				sn, storyErr := s.repo.CountScheduleStories(ctx, account, filter.overdue)
+				sn, storyErr := s.repo.CountScheduleStories(ctx, account, filter)
 				if storyErr != nil {
 					return nil, storyErr
 				}
 				story = sn
 			}
 			if filter.deliverStories {
-				sn, storyErr := s.repo.CountDeliverStories(ctx, account, filter.overdue)
+				sn, storyErr := s.repo.CountDeliverStories(ctx, account, filter)
 				if storyErr != nil {
 					return nil, storyErr
 				}
@@ -92,7 +93,7 @@ func (s *Service) buildValueStreamStages(ctx context.Context, account, focus str
 }
 
 // countAllStageUniq 各阶段只查 ID，按 kind+id 去重后返回业需/研需数量。
-// focus=suspended/my_related 时仅业需；overdue/my_managed 含独立研需。
+// focus=suspended/my_related 时仅业需；overdue/my_managed/my_action 含独立研需。
 func (s *Service) countAllStageUniq(ctx context.Context, account, focus string) (demandSum, storySum int64, err error) {
 	seenDemand := make(map[int]struct{})
 	seenStory := make(map[int]struct{})
@@ -123,7 +124,7 @@ func (s *Service) countAllStageUniq(ctx context.Context, account, focus string) 
 			continue
 		}
 		if filter.scheduleIncomplete {
-			storyIDs, storyErr := s.repo.FindScheduleStoryIDs(ctx, account, filter.overdue)
+			storyIDs, storyErr := s.repo.FindScheduleStoryIDs(ctx, account, filter)
 			if storyErr != nil {
 				return 0, 0, storyErr
 			}
@@ -132,7 +133,7 @@ func (s *Service) countAllStageUniq(ctx context.Context, account, focus string) 
 			}
 		}
 		if filter.deliverStories {
-			storyIDs, storyErr := s.repo.FindDeliverStoryIDs(ctx, account, filter.overdue)
+			storyIDs, storyErr := s.repo.FindDeliverStoryIDs(ctx, account, filter)
 			if storyErr != nil {
 				return 0, 0, storyErr
 			}
@@ -162,6 +163,15 @@ func (s *Service) countOverdueInValueStream(ctx context.Context, account string)
 // countMyManagedInValueStream 价值流并集内「我负责」业需+独立研需数（芯片角标）。
 func (s *Service) countMyManagedInValueStream(ctx context.Context, account string) (int64, error) {
 	demandSum, storySum, err := s.countAllStageUniq(ctx, account, FocusMyManaged)
+	if err != nil {
+		return 0, err
+	}
+	return demandSum + storySum, nil
+}
+
+// countMyActionInValueStream 价值流并集内「待我处理」业需+独立研需数（芯片角标）。
+func (s *Service) countMyActionInValueStream(ctx context.Context, account string) (int64, error) {
+	demandSum, storySum, err := s.countAllStageUniq(ctx, account, FocusMyAction)
 	if err != nil {
 		return 0, err
 	}
