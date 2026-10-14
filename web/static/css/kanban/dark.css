@@ -13,7 +13,7 @@ html[data-theme="dark"] .po-board {
   --border-lt: var(--color-border-soft);
   --t1: var(--color-text-primary);
   --t2: var(--color-text-secondary);
-  --t3: var(--color-text-disabled);
+  --t3: var(--color-text-secondary);
   --navy: var(--color-primary);
   --blue-bg: var(--color-primary-light);
   --blue-bd: var(--color-primary-border);

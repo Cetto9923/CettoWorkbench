@@ -4,25 +4,23 @@
    职责: PO 弹窗/抽屉深色模式对齐原型（详情/评审/交付/提测 + dark-contrast）
 ========================================================================== */
 
-/* 抽屉面板 / 头部 / 卡片：Gemini 深空毛玻璃质感 */
+/* 抽屉面板 / 头部 / 卡片：实色表面 + 面板毛玻璃 */
 html[data-theme="dark"] .dd-drawer-panel {
-  background: var(--glass-subnav, var(--color-card));
+  background: var(--color-surface);
   backdrop-filter: var(--glass-blur, blur(18px));
   -webkit-backdrop-filter: var(--glass-blur, blur(18px));
-  border-left: 1px solid var(--glass-border, var(--color-border));
+  border-left: 1px solid var(--color-border);
   box-shadow: -16px 0 44px rgba(0, 0, 0, 0.65);
 }
 
 html[data-theme="dark"] .dd-head,
 html[data-theme="dark"] .dd-review-footer {
-  background: var(--glass-surface, var(--color-card));
-  backdrop-filter: var(--glass-blur, blur(16px));
-  -webkit-backdrop-filter: var(--glass-blur, blur(16px));
+  background: var(--color-surface);
   border-color: var(--color-border);
 }
 
 html[data-theme="dark"] .dd-card {
-  background: var(--glass-surface, var(--color-card));
+  background: var(--color-surface);
   border-color: var(--color-border);
   box-shadow: var(--shadow-sm);
 }

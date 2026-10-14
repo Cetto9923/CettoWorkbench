@@ -727,8 +727,8 @@ body.has-bottom-tabs .main {
 
 .bottom-tab.active {
   border-color: var(--color-info-border);
-  background: var(--color-info-bg);
-  color: var(--color-text-brand);
+  background: var(--color-info-soft);
+  color: var(--color-info);
   font-weight: 700;
 }
 

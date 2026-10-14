@@ -17,7 +17,8 @@
 .po-board .task-col {
   background: var(--white);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-card);
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -25,7 +26,7 @@
 
 .po-board .task-col-hdr {
   height: 36px;
-  padding: 0 10px;
+  padding: 0 12px;
   border-bottom: 1px solid var(--border-lt);
   display: flex;
   align-items: center;
@@ -37,8 +38,9 @@
 
 .po-board .k-count {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
   font-size: 10px;
-  color: var(--t3);
+  color: var(--t2);
   background: var(--bg);
   padding: 1px 6px;
   border-radius: 4px;
@@ -55,7 +57,7 @@
   padding: 8px 10px;
   border: 1px solid var(--border-lt);
   border-left: 3px solid transparent;
-  border-radius: 4px;
+  border-radius: 8px;
   margin-bottom: 6px;
   background: var(--white);
   cursor: default;
@@ -171,12 +173,12 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  color: var(--t3);
-  font-size: 9px;
+  color: var(--t2);
+  font-size: 11px;
 }
 
 .po-board .task-link {
-  font-size: 9px;
+  font-size: 11px;
   color: var(--navy);
   max-width: 100%;
   overflow: hidden;
@@ -193,8 +195,8 @@
 }
 
 .po-board .task-due {
-  font-size: 9px;
-  color: var(--t3);
+  font-size: 11px;
+  color: var(--t2);
 }
 
 .po-board .task-due.over {

@@ -110,15 +110,13 @@
 }
 /* ── 需求列表区 ── */
 .schedule-area {
-  background: var(--glass-surface, var(--white));
-  backdrop-filter: var(--glass-blur, blur(16px));
-  -webkit-backdrop-filter: var(--glass-blur, blur(16px));
+  background: var(--color-surface, var(--white));
   border: 1px solid var(--border);
   border-radius: 12px;
   margin-bottom: 16px;
   /* 不用 overflow:hidden，避免筛选多选下拉被裁切；横向滚动由内部 table wrap 承担 */
   overflow: visible;
-  box-shadow: var(--shadow-card, 0 4px 16px rgba(15, 23, 42, 0.03));
+  box-shadow: var(--shadow-card);
 }
 
 .schedule-quick-scope {
@@ -160,7 +158,7 @@
   border-color: var(--blue-bd, var(--blue));
   color: var(--blue);
   font-weight: 600;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 2px 8px var(--color-primary-ring-soft);
+  box-shadow: none;
 }
 
 .schedule-scope-chip i {

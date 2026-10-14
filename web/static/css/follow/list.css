@@ -37,9 +37,9 @@
   display: inline-flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px;
-  padding: 3px;
-  border-radius: 999px;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 8px;
   background: var(--color-surface-muted);
   border: 1px solid var(--color-border);
 }
@@ -48,10 +48,10 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
-  height: 26px;
+  height: 24px;
   padding: 0 12px;
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: 6px;
   background: transparent;
   color: var(--color-text-secondary);
   font-size: var(--font-size-xs);
@@ -66,24 +66,24 @@
 }
 
 .follow-obj-tab.active {
-  background: var(--color-btn-primary-bg, var(--color-primary));
-  color: var(--color-text-on-accent);
-  font-weight: 600;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-weight: 650;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
 }
 
 .follow-obj-tab.active strong {
-  color: var(--color-text-on-accent);
+  color: var(--color-primary);
 }
 
 .follow-obj-tab--muted {
-  color: var(--color-text-disabled);
+  color: var(--color-text-secondary);
 }
 
 .follow-obj-phase {
   margin-left: 2px;
   font-size: 10.5px;
-  color: var(--color-text-disabled);
+  color: var(--color-text-secondary);
 }
 
 .follow-stage-cards {
@@ -96,14 +96,12 @@
 .follow-stage-card {
   position: relative;
   overflow: hidden;
-  background: var(--glass-surface, var(--color-card));
-  backdrop-filter: var(--glass-blur, blur(16px));
-  -webkit-backdrop-filter: var(--glass-blur, blur(16px));
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 14px 16px;
   min-height: 88px;
-  box-shadow: var(--shadow-card, var(--shadow-sm));
+  box-shadow: var(--shadow-card);
   transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
 }
 
@@ -181,7 +179,7 @@
   color: var(--color-info);
   background: var(--color-info-soft);
   font-weight: 600;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  box-shadow: none;
 }
 
 .follow-result-meta {
@@ -191,12 +189,10 @@
 }
 
 .follow-table-panel {
-  background: var(--glass-surface, var(--color-surface));
-  backdrop-filter: var(--glass-blur, blur(16px));
-  -webkit-backdrop-filter: var(--glass-blur, blur(16px));
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 12px;
-  box-shadow: var(--shadow-card, var(--shadow-sm));
+  box-shadow: var(--shadow-card);
   overflow: hidden;
 }
 
@@ -208,12 +204,16 @@
   background: var(--color-surface-muted);
   color: var(--color-text-secondary);
   border-bottom: 1px solid var(--color-border);
+  font-size: 12px;
+  padding: 8px 12px;
   font-weight: 600;
 }
 
 .follow-table td {
   border-bottom: 1px solid var(--color-border);
   color: var(--color-text-body);
+  font-size: 12px;
+  padding: 8px 12px;
 }
 
 .follow-table tbody tr:hover td {

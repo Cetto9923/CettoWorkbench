@@ -1,9 +1,9 @@
 {{ define "layout/header" }} {{/*
 ========================================================================== 文件:
 web/templates/layout/header.html 模块: 布局 职责:
-渲染后台顶部导航栏、面包屑与页面标题区。 全局字段: .CurrentUser, .CSRFToken,
-.Flash, .Menus, .CurrentPath, .LayoutNav 页面字段: .Title (string),
-.PageTitle (string), .PageDescription (string), .CurrentMenus ([]menu.Menu)
+渲染后台顶部导航栏、面包屑与页面标题区（含主题四态切换：跟随系统 / 浅色 / 深色 / 樱花粉）。
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .CurrentPath, .LayoutNav
+页面字段: .Title (string), .PageTitle (string), .PageDescription (string), .CurrentMenus ([]menu.Menu)
 说明: sidebar 布局含全局编号搜索框（#globalSearch），跳转禅道由 globalsearch.js 处理。
 ========================================================================== */}}
 <div class="topbar-row">
@@ -56,6 +56,7 @@ web/templates/layout/header.html 模块: 布局 职责:
       title="切换深色/浅色模式"
       aria-label="切换深色/浅色模式"
     >
+      <i class="fas fa-circle-half-stroke theme-system-icon" style="display: none" aria-hidden="true"></i>
       <i class="fas fa-moon theme-moon-icon" aria-hidden="true"></i>
       <i class="fas fa-sun theme-sun-icon" style="display: none" aria-hidden="true"></i>
     </button>
@@ -71,7 +72,18 @@ web/templates/layout/header.html 模块: 布局 职责:
       </button>
       <div class="dropdown-menu">
         <div class="theme-picker-group" role="group" aria-label="外观设置">
-          <div class="dropdown-header">外观</div>
+          <div class="dropdown-header">外观主题</div>
+          <button
+            type="button"
+            class="dropdown-item"
+            role="menuitemradio"
+            aria-checked="false"
+            data-theme-value="system"
+          >
+            <i class="fas fa-circle-half-stroke"></i><span>跟随系统</span>
+            <span class="theme-system-sub" id="themeSystemSub"></span>
+            <i class="fas fa-check check-mark"></i>
+          </button>
           <button
             type="button"
             class="dropdown-item"
@@ -90,6 +102,16 @@ web/templates/layout/header.html 模块: 布局 职责:
             data-theme-value="dark"
           >
             <i class="fas fa-moon"></i><span>深色</span>
+            <i class="fas fa-check check-mark"></i>
+          </button>
+          <button
+            type="button"
+            class="dropdown-item"
+            role="menuitemradio"
+            aria-checked="false"
+            data-theme-value="pink"
+          >
+            <i class="fas fa-heart theme-pink-swatch"></i><span>樱花粉</span>
             <i class="fas fa-check check-mark"></i>
           </button>
         </div>

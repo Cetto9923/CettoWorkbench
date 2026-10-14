@@ -182,11 +182,11 @@
             {{ else if eq .Title "需求规划" }}{{ $railIcon = "fa-calendar-check" }}
             {{ else if eq .Title "工作区" }}{{ $railIcon = "fa-layer-group" }}
             {{ else if eq .Title "团队协作" }}{{ $railIcon = "fa-users" }}
-            {{ else if eq .Title "团队管理" }}{{ $railIcon = "fa-people-roof" }}
+            {{ else if eq .Title "团队管理" }}{{ $railIcon = "fa-user-friends" }}
             {{ else if eq .Title "项目管理" }}{{ $railIcon = "fa-diagram-project" }}
             {{ else if eq .Title "治理分析" }}{{ $railIcon = "fa-chart-pie" }}
             {{ else if or (eq .Title "组织管理") (eq .Title "系统管理") }}{{ $railIcon = "fa-user-shield" }}
-            {{ else }}{{ $railIcon = "fa-grid-2" }}{{ end }}
+            {{ else }}{{ $railIcon = "fa-th-large" }}{{ end }}
           {{ end }}
           {{ $railLabel := .Title }}
           {{ if or (eq .Title "我的工作台") (eq .Title "个人入口") }}{{ $railLabel = "工作台" }}

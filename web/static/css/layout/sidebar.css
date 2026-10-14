@@ -84,9 +84,7 @@ body.po-workbench-shell .sidebar.po-dual-sidebar {
   flex-direction: row;
   padding: 0;
   overflow: hidden;
-  background: var(--glass-subnav, var(--color-surface));
-  backdrop-filter: var(--glass-blur, blur(16px));
-  -webkit-backdrop-filter: var(--glass-blur, blur(16px));
+  background: var(--color-surface);
   box-shadow: 1px 0 0 var(--glass-border, transparent);
 }
 
@@ -101,9 +99,7 @@ body.po-workbench-shell .po-rail {
   padding: 12px 0 10px;
   gap: 10px;
   border-right: 1px solid var(--color-border);
-  background: var(--glass-rail, var(--color-surface-muted));
-  backdrop-filter: var(--glass-blur, blur(16px));
-  -webkit-backdrop-filter: var(--glass-blur, blur(16px));
+  background: var(--color-surface-muted);
   box-sizing: border-box;
   z-index: 2;
 }
@@ -148,18 +144,18 @@ body.po-workbench-shell .po-rail .po-brand-logo {
   font-size: 17px;
   font-weight: 800;
   text-decoration: none;
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  background: linear-gradient(135deg, var(--color-primary-gradient-start, #3b82f6) 0%, var(--color-primary-gradient-end, #1d4ed8) 100%);
   color: #ffffff;
   box-shadow:
-    0 4px 12px rgba(37, 99, 235, 0.28),
+    0 4px 12px var(--color-stage-overview-shadow, rgba(37, 99, 235, 0.28)),
     inset 0 1px 0 rgba(255, 255, 255, 0.32);
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.2s ease;
 }
 
 body.po-workbench-shell .po-rail .po-brand-logo:hover {
   transform: translateY(-1px) scale(1.02);
   box-shadow:
-    0 6px 16px rgba(37, 99, 235, 0.36),
+    0 6px 16px var(--color-stage-overview-shadow, rgba(37, 99, 235, 0.36)),
     inset 0 1px 0 rgba(255, 255, 255, 0.38);
 }
 
@@ -171,13 +167,14 @@ body.po-workbench-shell .po-rail-btn {
   align-items: center;
   justify-content: center;
   width: 54px;
+  height: 54px;
   min-height: 54px;
   padding: 6px 2px 5px;
   gap: 4px;
   border: 1px solid transparent;
   border-radius: 12px;
   background: transparent;
-  color: var(--color-text-secondary);
+  color: var(--color-text-body);
   font: inherit;
   line-height: 1;
   cursor: pointer;
@@ -211,11 +208,21 @@ body.po-workbench-shell .po-rail-btn i {
   line-height: 1;
 }
 
+/* 热更新兼容：若服务端模板缓存仍输出 FA6 类名，通过 FA5 glyph 兜底显示图标 */
+body.po-workbench-shell .po-rail-btn i.fa-people-roof::before {
+  content: "\f500";
+}
+
+body.po-workbench-shell .po-rail-btn i.fa-grid-2::before {
+  content: "\f009";
+}
+
 body.po-workbench-shell .po-rail-btn .po-rail-label,
 body.po-workbench-shell .po-rail-btn > span:not(.po-rail-dot):not(.po-rail-route-indicator):not(.po-rail-phase-tag):not(.po-rail-icon-box) {
   max-width: 50px;
-  font-size: 11px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 550;
+  color: var(--color-text-body);
   letter-spacing: 0.01em;
   line-height: 1.15;
   overflow: hidden;
@@ -368,7 +375,7 @@ body.po-workbench-shell .po-subnav .nav-icon {
   min-width: 18px;
   height: 18px;
   font-size: 13px;
-  color: var(--color-text-disabled);
+  color: var(--color-text-secondary);
   transition: color 0.15s ease, transform 0.15s ease;
 }
 
@@ -501,16 +508,21 @@ body.sidebar-collapsed.po-workbench-shell .po-rail .po-brand-logo {
 }
 
 body.po-workbench-shell .po-rail-phase-tag {
+  position: absolute;
+  top: 2px;
+  right: 2px;
   font-size: 9px;
   line-height: 1.15;
-  color: var(--color-text-disabled);
+  color: var(--color-text-secondary);
   background: var(--color-surface-hover);
   border: 1px solid var(--color-border);
   border-radius: 4px;
   padding: 0 3px;
-  transform: scale(0.85);
+  transform: scale(0.78);
+  transform-origin: top right;
   display: inline-block;
-  margin-top: -1px;
+  margin-top: 0;
+  pointer-events: none;
 }
 
 body.po-workbench-shell .po-subnav-phase-tag {
