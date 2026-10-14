@@ -13,6 +13,8 @@ package schedule
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 
 	"workbench/internal/model"
 	"workbench/internal/pkg/zentao"
@@ -52,4 +54,38 @@ func (s *Service) CreateExecution(ctx context.Context, actor *model.User, req Cr
 		}
 	}
 	return resp, nil
+}
+
+// linkNewStoryToTaskExecutions 将新建研需关联到任务所选执行。
+// 用于补齐「未保存研需时创建迭代」跳过的执行-需求关联，须在拆任务前调用。
+func (s *Service) linkNewStoryToTaskExecutions(ctx context.Context, storyID uint, tasks []SaveSchedulingTask) error {
+	if storyID == 0 || len(tasks) == 0 {
+		return nil
+	}
+	client := s.ztAPI
+	if client == nil {
+		client = zentao.API()
+	}
+	if client == nil {
+		return errors.New("禅道 API 未配置")
+	}
+
+	seen := make(map[uint]struct{})
+	for _, task := range tasks {
+		if strings.TrimSpace(task.Action) == "delete" {
+			continue
+		}
+		executionID := task.ExecutionID
+		if executionID == 0 {
+			continue
+		}
+		if _, ok := seen[executionID]; ok {
+			continue
+		}
+		seen[executionID] = struct{}{}
+		if err := linkExecutionStories(ctx, client, executionID, []uint{storyID}); err != nil {
+			return fmt.Errorf("关联研发需求 %d 到执行 %d: %w", storyID, executionID, err)
+		}
+	}
+	return nil
 }
