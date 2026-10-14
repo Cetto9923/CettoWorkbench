@@ -499,3 +499,50 @@ html[data-theme="dark"] #page-schedule .schedule-view-tabs .view-tab.active {
   background: var(--color-surface-muted);
   color: var(--color-info);
 }
+
+/* ── 版本窗口弹窗深色样式适配 ── */
+html[data-theme="dark"] #scheduleVersionWindowModal .batch-modal-hdr,
+html[data-theme="dark"] #scheduleVersionWindowModal .batch-modal-footer {
+  background: var(--color-surface);
+}
+
+html[data-theme="dark"] .schedule-create-systems {
+  background: var(--color-bg-subtle, rgba(255, 255, 255, 0.04));
+  border-color: var(--border);
+}
+
+html[data-theme="dark"] .schedule-create-systems .chk {
+  background: var(--color-surface);
+  border-color: var(--border);
+}
+
+html[data-theme="dark"] .schedule-create-systems .chk:hover {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: var(--blue);
+}
+
+html[data-theme="dark"] .schedule-create-systems .chk:has(input:checked) {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: var(--blue);
+}
+
+html[data-theme="dark"] .schedule-create-systems .chk:has(input:checked) span {
+  color: var(--color-blue-light, #93c5fd);
+}
+
+html[data-theme="dark"] .schedule-create-plan-card {
+  background: var(--color-surface);
+  border-color: var(--border);
+}
+
+html[data-theme="dark"] .schedule-create-plan-card--existing {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: var(--border);
+  border-left-color: var(--green);
+}
+
+html[data-theme="dark"] .schedule-create-empty {
+  background: var(--color-surface);
+  border-color: var(--border);
+}
+

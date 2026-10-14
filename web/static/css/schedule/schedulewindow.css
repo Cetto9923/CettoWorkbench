@@ -309,20 +309,26 @@
 .schedule-create-plan-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px 12px;
+  gap: 12px 14px;
 }
 
 .schedule-create-plan-card {
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 9px 10px;
+  padding: 12px 14px;
   background: var(--white);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.schedule-create-plan-card:hover {
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
 }
 
 .schedule-create-plan-card--existing {
-  border-left: 3px solid var(--green);
+  border-left: 4px solid var(--green);
   background: var(--green-bg);
-  padding: 8px 10px;
+  padding: 11px 13px;
 }
 
 .schedule-create-plan-card--existing .schedule-create-plan-tag {
@@ -331,13 +337,36 @@
   font-size: 11px;
 }
 
+.schedule-create-plan-badge {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.schedule-create-plan-badge.badge--loading {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--blue);
+}
+
+.schedule-create-plan-badge.badge--pending {
+  background: var(--bg);
+  color: var(--t3);
+  border: 1px solid var(--border);
+}
+
+.schedule-create-plan-badge.badge--draft {
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--orange);
+}
+
 .schedule-create-plan-title {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 6px;
-  font-size: 12px;
+  margin-bottom: 8px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--t1);
 }
@@ -374,20 +403,30 @@
 }
 
 .schedule-create-plan-toggle {
-  margin-bottom: 7px;
+  margin-bottom: 8px;
+  font-size: 12px;
 }
 
 .schedule-create-plan-meta {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--t3);
-  margin-top: 4px;
+  margin-top: 6px;
   line-height: 1.45;
 }
 
 .schedule-create-empty {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--t3);
-  padding: 4px 0;
+  padding: 20px;
+  text-align: center;
+  background: var(--bg);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 @media (max-width: 1180px) {

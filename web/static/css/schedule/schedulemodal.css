@@ -30,28 +30,29 @@
 /* ── 版本窗口弹窗（完整复制 demo/personal-workbench.css 相关规则） ── */
 /* 弹窗在 #page-schedule 外，需独立 form / action-btn 基础样式 */
 #scheduleVersionWindowModal .form-group {
-  margin-bottom: 16px;
+  margin-bottom: 0;
 }
 
 #scheduleVersionWindowModal .form-label {
   display: block;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--t2);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 #scheduleVersionWindowModal .form-input,
 #scheduleVersionWindowModal .form-select {
   width: 100%;
-  padding: 8px 12px;
+  height: 36px;
+  padding: 6px 11px;
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 13px;
   font-family: inherit;
   color: var(--t1);
   background: var(--white);
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
   box-sizing: border-box;
 }
 
@@ -59,6 +60,7 @@
 #scheduleVersionWindowModal .form-select:focus {
   outline: none;
   border-color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.12);
 }
 
 .drawer-close {
@@ -123,8 +125,11 @@
   display: none;
 }
 #scheduleVersionWindowModal.batch-modal {
-  width: min(94vw, 980px);
+  width: min(92vw, 920px);
+  max-width: 920px;
   max-height: 90vh;
+  border-radius: 12px;
+  box-shadow: 0 20px 48px -8px rgba(15, 23, 42, 0.22), 0 0 0 1px rgba(15, 23, 42, 0.08);
   overflow: hidden;
 }
 .modal-overlay {
@@ -325,23 +330,68 @@
 }
 
 #scheduleVersionWindowModal .batch-modal-hdr {
-  padding: 14px 18px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--color-surface, var(--white));
 }
 
 #scheduleVersionWindowModal .batch-modal-hdr h3 {
-  font-size: 13px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--t1);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#scheduleVersionWindowModal .batch-modal-hdr .drawer-close {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--t3);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.15s ease;
+}
+
+#scheduleVersionWindowModal .batch-modal-hdr .drawer-close:hover {
+  background: var(--bg);
+  color: var(--t1);
 }
 
 #scheduleVersionWindowModal .batch-modal-body {
   flex: 0 1 auto;
   min-height: 0;
-  max-height: calc(90vh - 116px);
+  max-height: calc(90vh - 126px);
   overflow-y: auto;
-  padding: 14px 18px 16px;
+  padding: 20px 24px;
 }
 
 #scheduleVersionWindowModal .batch-modal-footer {
-  padding: 12px 18px;
+  padding: 14px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--color-surface, var(--white));
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+#scheduleVersionWindowModal .batch-modal-footer .action-btn {
+  padding: 7px 18px;
+  font-size: 13px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .batch-modal-footer {
@@ -353,7 +403,7 @@
 }
 
 .schedule-create-modal {
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .schedule-create-modal .form-group {
@@ -361,14 +411,26 @@
 }
 
 .schedule-create-modal .form-label {
-  font-size: 11px;
-  margin-bottom: 3px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--t2);
+  margin-bottom: 6px;
+  white-space: nowrap;
 }
 
 .schedule-create-modal .form-input,
 .schedule-create-modal .form-select {
-  padding: 7px 10px;
-  font-size: 12px;
+  width: 100%;
+  height: 36px;
+  padding: 6px 11px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--t1);
+  background: var(--white);
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-sizing: border-box;
 }
 
 .schedule-create-modal .chk {
@@ -382,7 +444,7 @@
 
 .schedule-create-grid {
   display: grid;
-  gap: 10px 12px;
+  gap: 14px 16px;
 }
 
 .schedule-create-grid--4 {
@@ -393,21 +455,17 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.schedule-create-grid--systems {
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 8px 12px;
-}
-
 .schedule-create-inline-row {
   display: grid;
-  grid-template-columns: 1.1fr 1fr auto;
-  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
   align-items: end;
-  margin-bottom: 10px;
 }
 
 .schedule-create-section {
-  margin-top: 10px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--border);
 }
 
 .schedule-create-section-head {
@@ -415,37 +473,121 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin: 0 0 6px;
+  margin: 0 0 10px;
 }
 
 .schedule-create-section-head strong {
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--t1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.schedule-create-section-head strong::before {
+  content: "";
+  display: inline-block;
+  width: 3px;
+  height: 12px;
+  background: var(--blue);
+  border-radius: 2px;
+}
+
+.schedule-systems-count {
+  font-size: 11px;
+  font-weight: normal;
+  color: var(--t3);
+  margin-left: 6px;
 }
 
 .schedule-create-systems {
-  margin-bottom: 8px;
+  max-height: 185px;
+  overflow-y: auto;
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px 10px;
+  margin-bottom: 4px;
 }
 
-@media (max-width: 1080px) {
-  .schedule-create-grid--4 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+.schedule-create-systems .chk {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.schedule-create-systems .chk:hover {
+  border-color: var(--blue);
+  background: rgba(59, 130, 246, 0.04);
+}
+
+.schedule-create-systems .chk input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: var(--blue);
+  cursor: pointer;
+}
+
+.schedule-create-systems .chk span {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--t2);
+  word-break: break-all;
+  transition: color 0.15s;
+}
+
+.schedule-create-systems .chk:has(input:checked) {
+  border-color: var(--blue);
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.schedule-create-systems .chk:has(input:checked) span {
+  color: var(--blue);
+  font-weight: 500;
+}
+
+@media (max-width: 960px) {
+  #scheduleVersionWindowModal.batch-modal {
+    width: 94vw;
+    max-width: 94vw;
   }
 
-  .schedule-create-inline-row {
+  .schedule-create-grid--4 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 760px) {
   #scheduleVersionWindowModal.batch-modal {
-    width: 94vw;
+    width: 96vw;
+    max-width: 96vw;
+  }
+
+  #scheduleVersionWindowModal .batch-modal-body {
+    padding: 14px 16px;
   }
 
   .schedule-create-grid--3,
   .schedule-create-plan-grid,
   .schedule-create-inline-row,
   .schedule-create-grid--4 {
+    grid-template-columns: 1fr;
+  }
+
+  .schedule-create-systems {
     grid-template-columns: 1fr;
   }
 }

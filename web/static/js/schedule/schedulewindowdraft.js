@@ -297,6 +297,13 @@
     });
   }
 
+  function updateScheduleSystemsCount(count) {
+    var countEl = document.getElementById("scheduleWindowSystemsCount");
+    if (countEl) {
+      countEl.textContent = count > 0 ? "（已选 " + count + " 项）" : "";
+    }
+  }
+
   function fillScheduleVersionWindowForm(isActive) {
     var d = getScheduleVersionCreateDraft();
     $("#scheduleWindowOnline").val(d.online || "");
@@ -312,6 +319,7 @@
     $("#scheduleWindowSystemsGrid input[name='productIds']").each(function () {
       this.checked = selected.has(Number(this.value));
     });
+    updateScheduleSystemsCount(selected.size);
 
     renderSchedulePlanGrid(isActive);
     syncScheduleDateInputFilledState();
@@ -441,5 +449,6 @@
     hasValidOnlineDate: hasValidScheduleOnlineDate,
     getProductName: getProductNameById,
     getDefaultTeamgroupID: getDefaultTeamgroupID,
+    updateSystemsCount: updateScheduleSystemsCount,
   };
 })(jQuery);

@@ -229,6 +229,9 @@
         if (target.checked) {
           set.add(id);
           d.productIds = Array.from(set);
+          if (typeof draftApi.updateSystemsCount === "function") {
+            draftApi.updateSystemsCount(d.productIds.length);
+          }
           if (draftApi.hasValidOnlineDate(d)) {
             draftApi.fetchMatchingPlans(id, productName, isModalActive());
           } else {
@@ -237,6 +240,9 @@
         } else {
           set.delete(id);
           d.productIds = Array.from(set);
+          if (typeof draftApi.updateSystemsCount === "function") {
+            draftApi.updateSystemsCount(d.productIds.length);
+          }
           delete (d.systemPlanDraft || {})[String(id)];
           delete (d.systemPlanMatch || {})[String(id)];
           draftApi.renderPlanGrid(isModalActive());
