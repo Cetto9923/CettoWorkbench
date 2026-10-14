@@ -39,12 +39,45 @@
     shared.productExecutionsMap[key] = executions || [];
   }
 
+  function invalidateExecutionsCache(projectId) {
+    var key = String(projectId || "");
+    if (!key || !shared.productExecutionsMap) {
+      return;
+    }
+    delete shared.productExecutionsMap[key];
+  }
+
   function getCachedExecutions(projectId) {
     var key = String(projectId || "");
     if (!key || !shared.productExecutionsMap[key]) {
       return null;
     }
     return shared.productExecutionsMap[key];
+  }
+
+  // 快速创建迭代成功后：清缓存、刷新本节点任务行执行下拉并选用新建执行
+  function selectNewExecution($node, executionId, executionName) {
+    if (!$node || !$node.length) {
+      return;
+    }
+    var project = readSectionProject($node);
+    var projectId = project.projectId;
+    var eid = String(executionId || "");
+    var ename = $.trim(executionName || "");
+    invalidateExecutionsCache(projectId);
+    $node.find(".rd-task-body .rd-task-row").each(function () {
+      var $row = $(this);
+      if ($row.find(".rd-task-execution-select").length) {
+        loadRowExecutions($row, projectId, eid);
+        return;
+      }
+      if (eid) {
+        $row.attr("data-execution-id", eid);
+        if (ename) {
+          $row.attr("data-execution-name", ename);
+        }
+      }
+    });
   }
 
   function getStoryProjects($node) {
@@ -900,6 +933,8 @@
     loadRowExecutions: loadRowExecutions,
     loadProductProjects: loadProductProjects,
     initNodeProjectSelect: initNodeProjectSelect,
+    selectNewExecution: selectNewExecution,
+    readSectionProject: readSectionProject,
     syncAddTaskButtonVisibility: syncAddTaskButtonVisibility,
     syncExecutionSameButton: syncExecutionSameButton,
     setExecutionSameActive: setExecutionSameActive,

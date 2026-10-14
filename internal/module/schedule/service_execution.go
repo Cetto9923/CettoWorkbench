@@ -18,7 +18,8 @@ import (
 	"workbench/internal/pkg/zentao"
 )
 
-// CreateExecution 以当前用户身份创建项目下的执行（迭代），并关联当前研发需求。
+// CreateExecution 以当前用户身份创建项目下的执行（迭代）；
+// 仅当 StoryID > 0 时关联研发需求（未保存研需跳过关联）。
 func (s *Service) CreateExecution(ctx context.Context, actor *model.User, req CreateExecutionReq) (CreateExecutionResp, error) {
 	var empty CreateExecutionResp
 	if actorAccount(actor) == "" {
@@ -45,8 +46,10 @@ func (s *Service) CreateExecution(ctx context.Context, actor *model.User, req Cr
 	if err != nil {
 		return empty, err
 	}
-	if err := linkExecutionStories(ctx, client, resp.ID, []uint{req.StoryID}); err != nil {
-		return empty, err
+	if req.StoryID > 0 {
+		if err := linkExecutionStories(ctx, client, resp.ID, []uint{req.StoryID}); err != nil {
+			return empty, err
+		}
 	}
 	return resp, nil
 }

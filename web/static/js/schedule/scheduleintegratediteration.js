@@ -295,6 +295,10 @@
       });
   }
 
+  function resolveNodeProductId($node) {
+    return parsePositiveInt($node.attr("data-product-id") || $node.find(".rd-node-product").val());
+  }
+
   function bindFormEvents($form) {
     if ($form.attr("data-qi-bound") === "1") {
       return;
@@ -311,10 +315,6 @@
     $form.on("change input", ".rd-quick-iteration-begin, .rd-quick-iteration-end", function () {
       syncDateDisplay(this);
     });
-  }
-
-  function resolveNodeProductId($node) {
-    return parsePositiveInt($node.attr("data-product-id") || $node.find(".rd-node-product").val());
   }
 
   function initForNode($node) {
@@ -368,5 +368,8 @@
   window.ScheduleIntegratedIteration = {
     initForNode: initForNode,
     onProductChange: onProductChange,
+    ensureFieldIds: ensureFieldIds,
+    normalizeYMD: normalizeYMD,
+    resolveNodeProductId: resolveNodeProductId,
   };
 })(jQuery);
