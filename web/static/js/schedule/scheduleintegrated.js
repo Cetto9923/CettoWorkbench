@@ -631,6 +631,7 @@
       shared.productExecutionsMap = shared.buildProductExecutionsMap(data.projectExecutions);
       shared.zentaoURL = $.trim(data.zentaoUrl || "");
       shared.applyTaskTypes(data.taskTypes);
+      shared.currentDemandName = $.trim(data.name || "");
       shared.isSchedulingDetailLoaded = true;
     }
 
@@ -733,6 +734,7 @@
       shared.taskRowSeq = 0;
       shared.manualNodeSeq = 0;
       shared.currentDemandId = 0;
+      shared.currentDemandName = "";
       shared.currentStoryId = 0;
       shared.currentDemandDetailURL = "";
       shared.isSchedulingDetailLoaded = false;

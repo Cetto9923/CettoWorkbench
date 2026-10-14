@@ -67,6 +67,7 @@
     taskRowSeq: 0,
     manualNodeSeq: 0,
     currentDemandId: 0,
+    currentDemandName: "",
     currentStoryId: 0,
     currentDemandDetailURL: "",
     isSchedulingDetailLoaded: false,
