@@ -36,7 +36,7 @@
   position: sticky;
   top: 0;
   z-index: 4;
-  background: #eff6ff;
+  background: var(--blue-bg);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
@@ -48,7 +48,7 @@
   justify-content: center;
   border-right: 1px solid var(--border-lt);
   font-size: 11px;
-  color: #334155;
+  color: var(--t1);
   font-weight: 700;
 }
 

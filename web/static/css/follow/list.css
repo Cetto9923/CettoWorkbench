@@ -1,18 +1,18 @@
 /* ==========================================================================
    文件: web/static/css/follow/list.css
    模块: 我的关注
-   职责: 我的关注列表静态页样式（对象 Tab + 阶段卡 + 筛选 + 表格）
+   职责: 我的关注列表页样式（对象 Tab + 阶段卡 + 筛选 + 表格）
 ========================================================================== */
 
 .main:has(.follow-page) {
-  padding: 12px 16px 16px;
-  padding-bottom: calc(16px + var(--bottom-tabbar-height, 0px));
-  background: #f4f5f7;
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  padding-bottom: calc(var(--space-4) + var(--bottom-tabbar-height, 0px));
+  background: var(--color-page-bg);
 }
 
 .follow-page {
-  font-size: 13px;
-  color: var(--po-t1);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
   line-height: 1.4;
 }
 
@@ -20,16 +20,16 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 12px 16px;
-  margin-bottom: 12px;
-  min-height: 36px;
+  gap: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-3);
+  min-height: var(--size-9);
 }
 
 .follow-page-hdr h2 {
   margin: 0;
-  font-size: 18px;
+  font-size: var(--font-size-xl);
   font-weight: 600;
-  color: var(--po-t1);
+  color: var(--color-text-primary);
   flex-shrink: 0;
 }
 
@@ -37,20 +37,20 @@
   display: inline-flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-1);
 }
 
 .follow-obj-tab {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  height: 28px;
-  padding: 0 12px;
+  gap: var(--space-1);
+  height: var(--size-7);
+  padding: 0 var(--space-3);
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: transparent;
-  color: #64748b;
-  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
   font-family: inherit;
   cursor: default;
 }
@@ -61,92 +61,92 @@
 }
 
 .follow-obj-tab.active {
-  background: var(--po-blue);
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-text-on-accent);
   font-weight: 500;
 }
 
 .follow-obj-tab.active strong {
-  color: #fff;
+  color: var(--color-text-on-accent);
 }
 
 .follow-obj-tab--muted {
-  color: #94a3b8;
+  color: var(--color-text-disabled);
 }
 
 .follow-obj-phase {
   margin-left: 2px;
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--color-text-disabled);
 }
 
 .follow-stage-cards {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 12px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
 }
 
 .follow-stage-card {
-  background: #fff;
-  border: 1px solid var(--po-border);
-  border-radius: 8px;
-  padding: 14px 16px;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
   min-height: 88px;
 }
 
 .follow-stage-num {
-  font-size: 28px;
+  font-size: var(--font-size-2xl);
   font-weight: 650;
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
-  color: #98a2b3;
+  color: var(--color-text-secondary);
 }
 
 .follow-stage-num--danger {
-  color: #d92d20;
+  color: var(--color-danger);
 }
 
 .follow-stage-label {
-  margin-top: 6px;
-  font-size: 13px;
+  margin-top: var(--space-1);
+  font-size: var(--font-size-sm);
   font-weight: 500;
-  color: var(--po-t1);
+  color: var(--color-text-primary);
 }
 
 .follow-stage-hint {
   margin-top: 2px;
   font-size: 11px;
-  color: #98a2b3;
+  color: var(--color-text-disabled);
 }
 
 .follow-filter-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
-  margin-bottom: 10px;
+  margin-bottom: var(--space-2);
 }
 
 .follow-scope {
   display: inline-flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-1);
 }
 
 .follow-scope-chip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  height: 28px;
-  padding: 0 10px;
-  border: 1px solid #e2e8f0;
-  border-radius: 999px;
-  background: #fff;
-  color: #64748b;
-  font-size: 12px;
+  gap: var(--space-1);
+  height: var(--size-7);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
   font-family: inherit;
   cursor: default;
 }
@@ -157,23 +157,23 @@
 }
 
 .follow-scope-chip.active {
-  border-color: var(--po-blue);
-  color: var(--po-blue);
-  background: var(--po-blue-bg);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-light);
   font-weight: 500;
-  box-shadow: inset 0 0 0 1px var(--po-blue-bd);
+  box-shadow: inset 0 0 0 1px var(--color-primary-border);
 }
 
 .follow-result-meta {
-  font-size: 12px;
-  color: #64748b;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
   white-space: nowrap;
 }
 
 .follow-table-panel {
-  background: #fff;
-  border: 1px solid var(--po-border);
-  border-radius: 8px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
@@ -182,7 +182,14 @@
 }
 
 .follow-table thead th {
-  background: #f8fafc;
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.follow-table td {
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-body);
 }
 
 .follow-table .col-objid {
@@ -224,26 +231,26 @@
   display: inline-flex;
   align-items: center;
   height: 20px;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   font-size: 11px;
   font-weight: 600;
   line-height: 1;
   white-space: nowrap;
   box-sizing: border-box;
   overflow: hidden;
-  border: 1px solid var(--color-info, #2563eb);
-  background: #fff;
+  border: 1px solid var(--color-info);
+  background: var(--color-surface);
   padding: 0;
-  color: #1e293b;
+  color: var(--color-text-primary);
 }
 
 .follow-table .wb-type .wb-type-tag {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0 6px;
+  padding: 0 var(--space-1);
   height: 100%;
-  color: #fff;
+  color: var(--color-text-on-accent);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -253,37 +260,37 @@
   display: inline-flex;
   align-items: center;
   height: 100%;
-  padding: 0 6px;
-  color: #1e293b;
-  background: #fff;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  padding: 0 var(--space-1);
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  font-family: var(--font-sans);
   font-size: 11px;
   font-weight: 600;
 }
 
 .follow-table .wb-type-business {
-  border-color: var(--color-info, #2563eb);
+  border-color: var(--color-info);
 }
 
 .follow-table .wb-type-business .wb-type-tag {
-  background: var(--color-info, #2563eb);
+  background: var(--color-info);
 }
 
 .follow-stage-badge {
   display: inline-flex;
   align-items: center;
   height: 22px;
-  padding: 0 8px;
-  border-radius: 999px;
-  border: 1px solid #bfdbfe;
-  background: #eff6ff;
-  color: #1d4ed8;
-  font-size: 12px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-primary-border);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
   white-space: nowrap;
 }
 
 .follow-empty-cell {
-  color: #cbd5e1;
+  color: var(--color-text-disabled);
 }
 
 .follow-row-actions {
@@ -297,15 +304,15 @@
   border: 0;
   background: transparent;
   padding: 0;
-  color: var(--po-blue);
-  font-size: 12px;
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
   font-family: inherit;
   line-height: 1.5;
   cursor: default;
 }
 
 .follow-act--muted {
-  color: #64748b;
+  color: var(--color-text-secondary);
 }
 
 @media (max-width: 900px) {

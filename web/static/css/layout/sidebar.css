@@ -159,7 +159,7 @@ body.po-workbench-shell .po-rail-btn i {
   font-size: 20px;
 }
 
-body.po-workbench-shell .po-rail-btn > span:not(.po-rail-dot):not(.po-rail-route-indicator) {
+body.po-workbench-shell .po-rail-btn > span:not(.po-rail-dot):not(.po-rail-route-indicator):not(.po-rail-phase-tag) {
   max-width: 48px;
   font-size: 11.5px;
   font-weight: 600;
@@ -375,7 +375,7 @@ body.sidebar-collapsed.po-workbench-shell .po-sidebar-collapse i {
 }
 
 /* 覆盖旧单栏收起规则（双轨下不隐藏窄轨文字/图标） */
-body.sidebar-collapsed.po-workbench-shell .po-rail-btn > span:not(.po-rail-dot):not(.po-rail-route-indicator) {
+body.sidebar-collapsed.po-workbench-shell .po-rail-btn > span:not(.po-rail-dot):not(.po-rail-route-indicator):not(.po-rail-phase-tag) {
   display: block;
   opacity: 1;
   width: auto;
@@ -387,4 +387,29 @@ body.sidebar-collapsed.po-workbench-shell .po-rail-btn > span:not(.po-rail-dot):
 body.sidebar-collapsed.po-workbench-shell .po-rail .po-brand-logo {
   display: inline-flex;
   margin: 0;
+}
+
+body.po-workbench-shell .po-rail-phase-tag {
+  font-size: 10px;
+  line-height: 1.2;
+  color: var(--color-text-disabled);
+  background: var(--color-surface-hover);
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  padding: 0 3px;
+  transform: scale(0.85);
+  display: inline-block;
+  margin-top: 2px;
+}
+
+body.po-workbench-shell .po-subnav-phase-tag {
+  font-size: 11px;
+  font-weight: normal;
+  color: var(--color-text-disabled);
+  background: var(--color-surface-hover);
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  padding: 1px 4px;
+  margin-left: 6px;
+  vertical-align: middle;
 }

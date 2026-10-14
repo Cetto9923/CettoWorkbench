@@ -95,14 +95,14 @@
 }
 
 .po-home .header-quick-chip.danger em {
-  color: var(--color-danger, var(--wb-danger));
+  color: var(--color-danger);
   font-weight: 700;
 }
 
 .po-home .header-quick-chip.danger.active,
 .po-home .header-quick-chip.danger[aria-pressed="true"] {
   background: var(--color-danger-bg);
-  border-color: var(--color-danger-strong, var(--wb-danger));
+  border-color: var(--color-danger-strong);
   color: var(--color-danger);
 }
 

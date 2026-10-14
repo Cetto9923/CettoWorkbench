@@ -1,28 +1,28 @@
 /* ==========================================================================
    文件: web/static/css/kanban/dark.css
    模块: 工作看板
-   职责: 深色模式对齐原型 board.css + dark-contrast.css（含类型标签）
+   职责: 深色模式对齐语义变量（含需求树与类型标签）
 ========================================================================== */
 
 html[data-theme="dark"] .po-board {
-  --bg: #0b1120;
-  --white: #111827;
-  --hover: #1e293b;
-  --active: #172033;
-  --border: #243048;
-  --border-lt: rgba(255, 255, 255, 0.08);
-  --t1: #f8fafc;
-  --t2: #cbd5e1;
-  --t3: #94a3b8;
-  --navy: var(--color-info);
-  --blue-bg: rgba(59, 130, 246, 0.18);
-  --blue-bd: rgba(59, 130, 246, 0.38);
+  --bg: var(--color-page-bg);
+  --white: var(--color-surface);
+  --hover: var(--color-surface-hover);
+  --active: var(--color-surface-muted);
+  --border: var(--color-border);
+  --border-lt: var(--color-border-soft);
+  --t1: var(--color-text-primary);
+  --t2: var(--color-text-secondary);
+  --t3: var(--color-text-disabled);
+  --navy: var(--color-primary);
+  --blue-bg: var(--color-primary-light);
+  --blue-bd: var(--color-primary-border);
   --green: var(--color-success);
-  --green-bg: rgba(16, 185, 129, 0.15);
-  --green-bd: rgba(16, 185, 129, 0.35);
+  --green-bg: var(--color-success-bg);
+  --green-bd: var(--color-success-border);
   --orange: var(--color-warning);
-  --orange-bg: rgba(245, 158, 11, 0.15);
-  --orange-bd: rgba(245, 158, 11, 0.35);
+  --orange-bg: var(--color-warning-bg);
+  --orange-bd: var(--po-orange-bd);
   --red: var(--color-danger);
   --red-bg: var(--color-danger-bg);
   --red-bd: var(--color-danger-border);
@@ -30,7 +30,7 @@ html[data-theme="dark"] .po-board {
 
 /* 切换条 / 人员更多 / 问题 Tab */
 html[data-theme="dark"] .po-board .board-switch {
-  border-color: #243048;
+  border-color: var(--color-border);
 }
 
 html[data-theme="dark"] .po-board .board-switch button,
@@ -41,13 +41,13 @@ html[data-theme="dark"] .po-board .board-switch a {
 html[data-theme="dark"] .po-board .board-switch button.active,
 html[data-theme="dark"] .po-board .board-switch a.active {
   background: var(--color-surface);
-  color: var(--color-info);
+  color: var(--color-primary);
 }
 
 html[data-theme="dark"] .po-board .person.more {
-  color: var(--color-info);
+  color: var(--color-primary);
   background: var(--color-surface);
-  border-color: #243048;
+  border-color: var(--color-border);
 }
 
 /* 主按钮：与首页 .table-action-btn.primary 一致 */
@@ -82,20 +82,20 @@ html[data-theme="dark"] .po-board .person.role-coach.active .count {
 html[data-theme="dark"] .po-board .person.role-member.active .mini-avatar,
 html[data-theme="dark"] .po-board .person.role-po.active .mini-avatar,
 html[data-theme="dark"] .po-board .person.role-coach.active .mini-avatar {
-  background: rgba(59, 130, 246, 0.28);
+  background: var(--color-primary-light);
   color: var(--navy);
 }
 
 html[data-theme="dark"] .po-board .issue-tab.active {
-  border-color: var(--color-info);
-  color: var(--color-info);
-  background: rgba(59, 130, 246, 0.18);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-light);
 }
 
-/* 泳道网格与表头（board.css + dark-contrast 覆盖） */
+/* 泳道网格与表头 */
 html[data-theme="dark"] .po-board .demand-board {
   background: var(--color-surface-muted);
-  border-color: #243048;
+  border-color: var(--color-border);
 }
 
 html[data-theme="dark"] .po-board .grid-head {
@@ -107,39 +107,39 @@ html[data-theme="dark"] .po-board .grid-head {
 html[data-theme="dark"] .po-board .grid-head > div {
   color: var(--color-text-body);
   font-weight: 700;
-  border-right-color: rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.015);
+  border-right-color: var(--color-border-soft);
+  background: var(--color-surface);
 }
 
-/* 阶段格：对齐原型 board.css（浅蓝高光，非 indigo） */
+/* 阶段格 */
 html[data-theme="dark"] .po-board .stage-cell,
 html[data-theme="dark"] .po-board .tree-cell {
-  border-right-color: rgba(255, 255, 255, 0.08);
+  border-right-color: var(--color-border-soft);
 }
 
 html[data-theme="dark"] .po-board .demand-row {
-  background: var(--po-bg);
-  border-bottom-color: rgba(255, 255, 255, 0.06);
+  background: var(--color-page-bg);
+  border-bottom-color: var(--color-border-soft);
 }
 
 html[data-theme="dark"] .po-board .demand-row:hover,
 html[data-theme="dark"] .po-board .demand-row.is-standalone:hover {
-  background: #172033;
+  background: var(--color-surface-hover);
 }
 
 html[data-theme="dark"] .po-board .stage-card {
-  background: rgba(255, 255, 255, 0.03);
-  border-color: rgba(255, 255, 255, 0.08);
+  background: var(--color-surface);
+  border-color: var(--color-border-soft);
 }
 
 html[data-theme="dark"] .po-board .stage-card.actionable {
-  background: rgba(59, 130, 246, 0.12) !important;
-  border: 1px solid rgba(59, 130, 246, 0.35) !important;
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.08);
+  background: var(--color-primary-light);
+  border: 1px solid var(--color-primary-border);
+  box-shadow: 0 0 10px var(--color-primary-light);
 }
 
 html[data-theme="dark"] .po-board .stage-card.actionable .stage-name {
-  color: #60a5fa !important;
+  color: var(--color-primary);
   font-weight: 700;
 }
 
@@ -149,18 +149,18 @@ html[data-theme="dark"] .po-board .stage-name {
 
 html[data-theme="dark"] .po-board .stage-card.actionable .stage-mini,
 html[data-theme="dark"] .po-board .stage-card .stage-mini {
-  color: var(--color-text-body) !important;
+  color: var(--color-text-body);
   font-weight: 400;
   opacity: 0.95;
 }
 
 html[data-theme="dark"] .po-board .stage-action {
-  color: #60a5fa !important;
+  color: var(--color-primary);
   font-weight: 700;
 }
 
 html[data-theme="dark"] .po-board .stage-action:hover {
-  color: var(--color-info) !important;
+  color: var(--color-primary-hover);
   text-decoration: underline;
 }
 
@@ -178,11 +178,11 @@ html[data-theme="dark"] .po-board .node-meta .code {
 }
 
 html[data-theme="dark"] .po-board .branch {
-  color: rgba(255, 255, 255, 0.18);
+  color: var(--color-border-strong);
 }
 
 html[data-theme="dark"] .po-board .owner-dot {
-  background: rgba(59, 130, 246, 0.2);
+  background: var(--color-primary-light);
   color: var(--color-primary);
 }
 
@@ -203,14 +203,14 @@ html[data-theme="dark"] .po-board .wb-type-story .wb-type-tag {
 
 /* 问题栏 */
 html[data-theme="dark"] .po-board .issue-panel {
-  background: #131b2e;
-  border-color: #243048;
+  background: var(--color-card);
+  border-color: var(--color-border);
 }
 
 html[data-theme="dark"] .po-board .issue-card {
-  background: #1a233a;
-  border-color: rgba(255, 255, 255, 0.08);
-  border-left: 3px solid #3b82f6;
+  background: var(--color-surface);
+  border-color: var(--color-border-soft);
+  border-left: 3px solid var(--color-primary);
 }
 
 html[data-theme="dark"] .po-board .issue-card .issue-title {
@@ -223,22 +223,22 @@ html[data-theme="dark"] .po-board .issue-card .issue-meta {
 
 /* 任务看板 */
 html[data-theme="dark"] .po-board .task-col {
-  background: var(--po-bg);
-  border-color: #243048;
+  background: var(--color-page-bg);
+  border-color: var(--color-border);
 }
 
 html[data-theme="dark"] .po-board .task-col-hdr {
-  border-bottom-color: rgba(255, 255, 255, 0.08);
+  border-bottom-color: var(--color-border-soft);
   color: var(--color-text-body);
 }
 
 html[data-theme="dark"] .po-board .task-card {
-  background: #1a233a;
-  border-color: rgba(255, 255, 255, 0.08);
+  background: var(--color-surface);
+  border-color: var(--color-border-soft);
 }
 
 html[data-theme="dark"] .po-board .task-card:hover {
-  border-color: rgba(59, 130, 246, 0.4);
+  border-color: var(--color-primary-border);
 }
 
 html[data-theme="dark"] .po-board .task-title-link,
@@ -252,7 +252,7 @@ html[data-theme="dark"] .po-board .wb-type .task-code-link {
 }
 
 html[data-theme="dark"] .ki-status.is-closed {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--color-surface-muted);
   color: var(--color-text-secondary);
-  border-color: #243048;
+  border-color: var(--color-border);
 }

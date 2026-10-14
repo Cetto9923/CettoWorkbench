@@ -160,6 +160,7 @@
                   aria-expanded="{{ if $isActive }}true{{ else }}false{{ end }}">
             <span class="po-rail-route-indicator" aria-hidden="true"></span>
             <span>{{ .Title }}</span>
+            {{ if eq .Title "团队管理" }}<span class="po-rail-phase-tag">二期</span>{{ end }}
           </button>
           {{ end }}
         {{ end }}
@@ -181,7 +182,7 @@
         {{ $isActive := menuNavActive $activeKey . }}
         <div class="po-subnav-panel{{ if $isActive }} is-active{{ end }}" data-subnav-panel="{{ .Key }}">
           <div class="po-subnav-header">
-            <span class="po-subnav-title">{{ .Title }}</span>
+            <span class="po-subnav-title">{{ .Title }}{{ if eq .Title "团队管理" }}<span class="po-subnav-phase-tag">二期</span>{{ end }}</span>
           </div>
           <div class="po-subnav-body">
             {{ if .Children }}

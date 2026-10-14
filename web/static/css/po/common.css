@@ -290,13 +290,13 @@
 }
 
 .dd-btn.danger {
-  background: var(--color-danger-fill, #ef4444);
-  color: var(--color-text-on-accent, #fff);
-  border-color: var(--color-danger-fill, #ef4444);
+  background: var(--color-danger-strong);
+  color: var(--color-text-on-accent);
+  border-color: var(--color-danger-strong);
 }
 
 .dd-btn.danger:hover {
-  background: var(--color-danger-deep, #dc2626);
+  background: var(--color-danger-deep);
 }
 
 .dd-aside-title {
@@ -404,15 +404,15 @@
 }
 
 .dd-table th {
-  background: var(--color-surface-muted, #f8fafc);
-  color: var(--color-text-muted, #64748b);
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
   font-weight: 600;
   white-space: nowrap;
 }
 
 .dd-table td.text-muted,
 .dd-table .text-muted {
-  color: var(--color-text-muted, #94a3b8);
+  color: var(--color-text-disabled);
   text-align: center;
 }
 
