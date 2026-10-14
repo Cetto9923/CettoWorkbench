@@ -1111,3 +1111,22 @@ render.HTML(c, pages.UserList, data)
 新增模块时在对应分组下追加常量，**不创建独立文件**。
 
 ---
+
+## 21. 前端通用组件、样式与多入口防错规范
+
+### 21.1 公共组件自包含（Self-Contained）原则
+- 跨页面复用的弹窗、抽屉或卡片（位于 `web/templates/components/` 下），其依赖的子组件、DOM 骨架及 HTML5 `<template>` 必须**全部定义在该组件自身模板文件内**。
+- **严禁**将公共弹窗/组件所需的 `<template>` 或 DOM 片段孤立地写在某一个具体宿主页面（如 `schedule/index.html`）。否则其他宿主页（如 `po/home.html`）唤起该弹窗时将因缺失模板而无法渲染。
+
+### 21.2 DOM 与模板查询强制 Fail-Fast
+- 在基础工具函数（如 `cloneScheduleTemplate` 或通用 DOM 查询）中，**严禁静默吞错**（如直接 `return null` 且无提示）。
+- 若未获取到关键节点或模板，必须显式触发 `console.error("[Component Missing] ...")`，在控制台清晰打印缺失的选择器与修复提示，确保在内网无调试工具环境中能够一秒定位问题。
+
+### 21.3 定制弹窗尺寸与 CSS 盒模型检查
+- 定制弹窗尺寸时，若宿主元素继承了通用基础类（如 `.batch-modal`、`.modal`），必须显式重写 `max-width` / `min-width` / `max-height`（如 `max-width: 960px`），防止基础类中的 `max-width: 500px` 造成截断。
+- 调整尺寸后，必须在浏览器 DevTools 的 **Computed（计算样式）** 标签页检查最终生效的 `width` 与 `max-width`。
+
+### 21.4 多入口交叉冒烟验证（Matrix Verification）
+- 凡修改被多处引用的公共弹窗、浮层或组件，必须在**所有调用入口页面**完成端到端交互回归（例如：分别在 `/schedule` 排期页和 `/home` 工作台首页点开弹窗，完整走通选择、填写、渲染、保存流程）。
+- 任何路由或权限码变更，必须同步验证全局外围操作（如顶部导航高亮、面包屑、“固定到工作台”是否能正常识别与唤起）。
+

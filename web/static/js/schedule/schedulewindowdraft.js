@@ -187,6 +187,7 @@
   function cloneScheduleTemplate(id) {
     var tpl = document.getElementById(id);
     if (!tpl || !tpl.content || !tpl.content.firstElementChild) {
+      console.error("[ScheduleTemplate Missing] 未找到模板节点: #" + id + "，请确保当前页面引入了 components/scheduleversionwindow.html");
       return null;
     }
     return document.importNode(tpl.content.firstElementChild, true);

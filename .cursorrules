@@ -31,12 +31,16 @@
     - 列表页禁止 `Resource`，业务数据用具体名（如 `Users` / `Products`）
     - 禁止具体实体名（`.User`、`.Customer`）替代 `Resource`
 11. **表单验证统一手写 `Validate() []FieldError` 方法，禁止引入 `go-playground/validator`**
-13. **除弹窗外的所有页面均在当前页打开**，禁止打开新窗口`
+13. **除弹窗外的所有页面均在当前页打开**，禁止打开新窗口
 14. 在 `db/install.sql` 新增建表 SQL，字段名小驼峰，含 `deletedAt` 、`createdBy` 、`createdDate` 、`updatedBy` 、`updatedDate` 字段，表名前缀为zt_
-15.所有表需要在 model 中实体化
-16.所有下拉都为检索下拉
-17.所有日期的格式为 y-m-d
+15. 所有表需要在 model 中实体化
+16. 所有下拉都为检索下拉
+17. 所有日期的格式为 y-m-d
 18. 所有样式需要适配深色模式
+19. **公共组件/弹窗必须自包含（Self-Contained）**：跨页面共用的弹窗/抽屉（放于 `components/`），其依赖的子组件、DOM 及 `<template>` 标签必须全部放在自身模板文件内，严禁孤立在调用页（如 `index.html`）。
+20. **DOM 与模板获取强制 Fail-Fast，严禁静默吞错**：JS 获取关键 DOM 节点或克隆 `<template>` 时，若节点不存在必须显式 `console.error` 告警，严禁静默 `return`。
+21. **弹窗与覆盖样式必须核验真实盒模型**：定制弹窗尺寸时，若继承了通用基础类（如 `.batch-modal`），必须显式重写 `max-width` / `min-width` / `max-height`，防止被父类截断（如 `max-width: 500px`），禁止仅写 `width`。
+22. **多入口公共组件强制交叉回归**：任何公共弹窗/组件变更，必须在所有调用入口页面（如排期页、工作台首页等）逐一完成端到端交互回归。
 ---
 
 ## 其他注意事项
