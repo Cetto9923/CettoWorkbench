@@ -2,8 +2,9 @@
 // 文件: internal/module/schedule/service_scheduling_tostory.go
 // 模块: 排期工作台
 // 类型: action
-// 职责: 业需排期保存时通过禅道 tostory 批量创建研发需求，并挂计划、拆任务。
+// 职责: 业需排期保存时通过禅道 tostory 批量创建研发需求，并挂计划、关联执行、拆任务。
 // 依赖: internal/module/schedule/gateway.go
+//       internal/module/schedule/service_execution.go
 //       internal/module/schedule/repo_scheduling_write.go
 // =============================================================================
 
@@ -75,6 +76,10 @@ func (s *Service) applyNewStoriesViaToStory(
 			if err := s.repo.LinkStoryToPlan(ctx, storyID, productID, planID, account); err != nil {
 				return nil, fmt.Errorf("link story %d to plan: %w", storyID, err)
 			}
+		}
+		// 未保存时创建的迭代未挂研需；此处按任务所选执行补齐关联后再拆任务
+		if err := s.linkNewStoryToTaskExecutions(ctx, storyID, storyReq.Tasks); err != nil {
+			return nil, err
 		}
 		if err := s.applySchedulingTasks(ctx, s.repo, account, storyID, productID, storyReq.Tasks); err != nil {
 			return nil, err

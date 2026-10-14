@@ -118,6 +118,16 @@
             "</a>";
         }
         var metaLeft = owner + (sevBadge ? " · " + sevBadge : "");
+        var titleHtml =
+          it && it.url
+            ? '<a class="issue-title issue-title-link" href="' +
+              escapeHtml(it.url) +
+              '" target="_blank" rel="noopener noreferrer" title="' +
+              title +
+              '">' +
+              title +
+              "</a>"
+            : '<div class="issue-title" title="' + title + '">' + title + "</div>";
         return (
           '<div class="issue-card ' +
           state +
@@ -127,11 +137,8 @@
           '  <div class="issue-id">' +
           idInner +
           "</div>" +
-          '  <div class="issue-title" title="' +
-          title +
-          '">' +
-          title +
-          "</div>" +
+          "  " +
+          titleHtml +
           '  <div class="issue-meta">' +
           "    <span>" +
           metaLeft +

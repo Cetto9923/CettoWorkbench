@@ -57,10 +57,45 @@
     return node;
   }
 
+  function buildDefaultRdTitle(productName) {
+    var demandId = shared.currentDemandId || 0;
+    var demandName = $.trim(shared.currentDemandName || "");
+    var product = $.trim(productName || "");
+    if (!demandId || !demandName) {
+      return "";
+    }
+    var parts = ["US" + demandId, demandName];
+    if (product && product !== "—") {
+      parts.push(product);
+    }
+    return parts.join("-");
+  }
+
+  function applyDefaultRdTitle($node, productName) {
+    var title = buildDefaultRdTitle(productName);
+    var $input = $node.find(".rd-node-title").first();
+    $input.val(title);
+    $node.attr("data-auto-title", title);
+  }
+
+  function syncAutoRdTitleOnProductChange($node, productName) {
+    if (!$node.hasClass("rd-node--draft")) {
+      return;
+    }
+    var $input = $node.find(".rd-node-title").first();
+    var current = $.trim($input.val() || "");
+    var previousAuto = $.trim($node.attr("data-auto-title") || "");
+    if (current && current !== previousAuto) {
+      return;
+    }
+    applyDefaultRdTitle($node, productName);
+  }
+
   function buildDraftRdNode() {
     shared.manualNodeSeq += 1;
     var nodeId = shared.manualNodeSeq;
     var defaultProductId = shared.mainSystemId || "";
+    var defaultProductName = resolveProductName(defaultProductId);
 
     var node = shared.cloneTemplateElement("tplRdNodeDraft", ".rd-node");
     if (!node) {
@@ -70,10 +105,12 @@
     $node.attr("data-node-id", nodeId);
     $node.attr("data-new", "true");
     $node.attr("data-product-id", defaultProductId || "");
+    $node.attr("data-product-name", defaultProductName === "—" ? "" : defaultProductName);
 
     var $header = $node.find(".rd-node-header").first();
     $header.find(".rd-node-role-badge").replaceWith(shared.buildRoleBadge(defaultProductId, shared.mainSystemId));
     shared.fillProductSelect($header.find(".rd-node-product"), shared.involvedProducts, defaultProductId);
+    applyDefaultRdTitle($node, defaultProductName);
 
     var inputId = "rdNodeOwnerInput" + nodeId;
     var hiddenId = "rdNodeOwnerValue" + nodeId;
@@ -119,6 +156,10 @@
     $node.attr("data-product-id", productId || "");
     $node.attr("data-product-name", name === "—" ? "" : name);
     $node.find(".rd-node-role-badge").first().replaceWith(shared.buildRoleBadge(productId, shared.mainSystemId));
+    syncAutoRdTitleOnProductChange($node, name);
+    if (window.ScheduleIntegratedIteration && typeof window.ScheduleIntegratedIteration.onProductChange === "function") {
+      window.ScheduleIntegratedIteration.onProductChange($node, productId);
+    }
     if (!productId) {
       $node.attr("data-projects", JSON.stringify([]));
       tasksApi.initNodeProjectSelect($node, "");
@@ -128,6 +169,12 @@
       $node.attr("data-projects", JSON.stringify(projects));
       tasksApi.initNodeProjectSelect($node, "");
     });
+  }
+
+  function initQuickIteration($node) {
+    if (window.ScheduleIntegratedIteration && typeof window.ScheduleIntegratedIteration.initForNode === "function") {
+      window.ScheduleIntegratedIteration.initForNode($node);
+    }
   }
 
   function closeOtherInlineEdits($exceptNode) {
@@ -231,6 +278,7 @@
       $container.append(node);
       tasksApi.initNodeProjectSelect($node);
       tasksApi.syncAddTaskButtonVisibility($node);
+      initQuickIteration($node);
     });
 
     updateTreeEmptyState();
@@ -260,9 +308,11 @@
       tasksApi.loadProductProjects(defaultProductId, function (projects) {
         $node.attr("data-projects", JSON.stringify(projects));
         tasksApi.initNodeProjectSelect($node);
+        initQuickIteration($node);
       });
     } else {
       tasksApi.initNodeProjectSelect($node);
+      initQuickIteration($node);
     }
     updateTreeEmptyState();
   }

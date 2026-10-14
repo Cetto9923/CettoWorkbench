@@ -631,6 +631,9 @@
       shared.productExecutionsMap = shared.buildProductExecutionsMap(data.projectExecutions);
       shared.zentaoURL = $.trim(data.zentaoUrl || "");
       shared.applyTaskTypes(data.taskTypes);
+      shared.currentDemandName = $.trim(data.name || "");
+      shared.currentTeamgroupId = parsePositiveInt(data.teamgroupId);
+      shared.currentTeamgroupName = $.trim(data.teamgroupName || "");
       shared.isSchedulingDetailLoaded = true;
     }
 
@@ -733,8 +736,12 @@
       shared.taskRowSeq = 0;
       shared.manualNodeSeq = 0;
       shared.currentDemandId = 0;
+      shared.currentDemandName = "";
       shared.currentStoryId = 0;
       shared.currentDemandDetailURL = "";
+      shared.currentTeamgroupId = 0;
+      shared.currentTeamgroupName = "";
+      shared.quickIterationSeq = 0;
       shared.isSchedulingDetailLoaded = false;
       shared.resetDeletedRecords();
     }

@@ -246,6 +246,54 @@ func (s *Service) GetProductProjects(ctx context.Context, actor *model.User, pro
 	return projects, nil
 }
 
+// GetProductOpenPlans 查询产品下未关闭的产品计划（快速创建迭代下拉）。
+func (s *Service) GetProductOpenPlans(ctx context.Context, actor *model.User, productID uint) ([]ProductPlanOption, error) {
+	_ = actorAccount(actor)
+	if productID == 0 {
+		return []ProductPlanOption{}, nil
+	}
+	rows, err := s.repo.ListProductOpenPlans(ctx, productID)
+	if err != nil {
+		return nil, err
+	}
+	plans := make([]ProductPlanOption, 0, len(rows))
+	for _, row := range rows {
+		plans = append(plans, ProductPlanOption{
+			ID:    row.ID,
+			Title: strings.TrimSpace(row.Title),
+		})
+	}
+	return plans, nil
+}
+
+// fillSchedulingTeamgroup 填充排期详情的业需/窗口敏捷团队。
+func (s *Service) fillSchedulingTeamgroup(ctx context.Context, detail *DemandSchedulingDetail, demandID, storyID uint) error {
+	if detail == nil {
+		return nil
+	}
+	var teamgroupID uint
+	var err error
+	if demandID > 0 {
+		teamgroupID, err = s.repo.findDemandTeamgroupID(ctx, demandID)
+	} else if storyID > 0 {
+		_, _, teamgroupID, err = s.repo.findStoryWindowDetail(ctx, storyID)
+	}
+	if err != nil {
+		return err
+	}
+	detail.TeamgroupID = teamgroupID
+	if teamgroupID == 0 {
+		detail.TeamgroupName = ""
+		return nil
+	}
+	names, err := s.loadTeamgroupDisplayNamesByIDs(ctx, []uint{teamgroupID})
+	if err != nil {
+		return err
+	}
+	detail.TeamgroupName = names[teamgroupID]
+	return nil
+}
+
 func buildDemandSchedulingTasks(
 	tasks []ZtTaskItem,
 	realnameByAccount map[string]string,

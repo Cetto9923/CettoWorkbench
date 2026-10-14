@@ -410,6 +410,9 @@ func (s *Service) GetDemandScheduling(ctx context.Context, actor *model.User, de
 	if err != nil {
 		return nil, err
 	}
+	if err := s.fillSchedulingTeamgroup(ctx, detail, demandID, 0); err != nil {
+		return nil, err
+	}
 	windows, err := s.repo.ListUpcomingSchedulingWindows(ctx)
 	if err != nil {
 		return nil, err

@@ -67,9 +67,13 @@
     taskRowSeq: 0,
     manualNodeSeq: 0,
     currentDemandId: 0,
+    currentDemandName: "",
     currentStoryId: 0,
     currentDemandDetailURL: "",
+    currentTeamgroupId: 0,
+    currentTeamgroupName: "",
     isSchedulingDetailLoaded: false,
+    quickIterationSeq: 0,
     deletedStoryIds: [],
     deletedTaskIds: [],
     zentaoURL: "",
@@ -175,6 +179,12 @@
       var $input = $(input);
       var date = $.trim($input.val() || "");
       $input.toggleClass("has-value", date !== "");
+      // 快速创建迭代：用 ::after(data-date) 展示，空值为「年-月-日」，有值仍为 yyyy-mm-dd
+      var wrap = input.closest ? input.closest(".task-iteration-date") : null;
+      if (wrap) {
+        wrap.setAttribute("data-date", date || "年-月-日");
+        wrap.classList.toggle("is-empty", !date);
+      }
     },
 
     buildRoleBadge: function (productId, mainSystemId) {
