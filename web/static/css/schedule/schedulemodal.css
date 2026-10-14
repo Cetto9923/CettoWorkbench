@@ -594,8 +594,8 @@
 }
 
 #taskModal.batch-modal {
-  width: min(96vw, 1240px);
-  max-width: 1240px;
+  width: min(96vw, 1200px);
+  max-width: 1200px;
   height: 92vh;
   max-height: 92vh;
   border-radius: 12px;
