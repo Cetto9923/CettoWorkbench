@@ -2,7 +2,7 @@
 // 文件: internal/module/kanban/handler.go
 // 模块: 工作看板
 // 类型: action
-// 职责: 需求/任务看板静态页、业需/任务/问题 JSON，及任务状态拖拽更新。
+// 职责: 需求/任务看板静态页、业需/任务/问题/提问题选项 JSON，及任务状态拖拽更新。
 // 依赖: internal/middleware
 //       internal/pkg/errorx
 //       internal/pkg/perm
@@ -42,12 +42,14 @@ func NewHandler(svc *Service, logger *zap.Logger) *Handler {
 // RegisterRoutes 注册工作看板路由（挂载在已配置登录与操作日志的中间件组上）。
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	g := rg.Group("/kanban")
-	g.Use(middleware.ActiveNav("/kanban/story"))
+	g.Use(middleware.ActiveNav("/kanban/task"))
 	g.GET("/story", middleware.RequirePerm(perm.KanbanStory), h.Story)
 	g.GET("/story/demands", middleware.RequirePerm(perm.KanbanStory), h.Demands)
 	g.GET("/task", middleware.RequirePerm(perm.KanbanStory), h.Task)
 	g.GET("/task/items", middleware.RequirePerm(perm.KanbanStory), h.Tasks)
 	g.GET("/issues", middleware.RequirePerm(perm.KanbanStory), h.Issues)
+	g.GET("/createissue", middleware.RequirePerm(perm.KanbanStory), h.CreateIssue)
+	g.POST("/issue", middleware.RequirePerm(perm.KanbanStory), h.SaveCreateIssue)
 
 	g.PUT("/tasks/:id", middleware.RequirePerm(perm.KanbanStory), h.UpdateTaskStatus)
 }
@@ -55,7 +57,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 // Story 渲染需求看板静态页。
 func (h *Handler) Story(c *gin.Context) {
 	actor := middleware.CurrentUser(c)
-	teamgroups, err := h.svc.ListMyTeamgroups(c.Request.Context(), actor)
+	teamgroups, err := h.svc.ListMyTeamgroups(c.Request.Context(), actor, WorkloadDemand)
 	if err != nil {
 		if h.logger != nil {
 			h.logger.Error("list kanban teamgroups failed", zap.Error(err))
@@ -64,18 +66,18 @@ func (h *Handler) Story(c *gin.Context) {
 	}
 
 	render.Page(c, http.StatusOK, constants.TEMPLATE_KANBAN_STORY, gin.H{
-		"Title":          "工作看板",
-		"PageTitle":      "工作看板",
-		"BaseUrl":        "/kanban/story",
-		"IssueCreateURL": zentao.URL("issue", "create"),
-		"Teamgroups":     teamgroups,
+		"Title":           "需求看板",
+		"PageDescription": "按任务状态与敏捷小组执行跟进看板",
+		"BaseUrl":         "/kanban/story",
+		"IssueCreateURL":  zentao.URL("issue", "create"),
+		"Teamgroups":      teamgroups,
 	})
 }
 
 // Task 渲染任务看板静态页。
 func (h *Handler) Task(c *gin.Context) {
 	actor := middleware.CurrentUser(c)
-	teamgroups, err := h.svc.ListMyTeamgroups(c.Request.Context(), actor)
+	teamgroups, err := h.svc.ListMyTeamgroups(c.Request.Context(), actor, WorkloadTask)
 	if err != nil {
 		if h.logger != nil {
 			h.logger.Error("list kanban teamgroups failed", zap.Error(err))
@@ -84,12 +86,12 @@ func (h *Handler) Task(c *gin.Context) {
 	}
 
 	render.Page(c, http.StatusOK, constants.TEMPLATE_KANBAN_TASK, gin.H{
-		"Title":          "工作看板",
-		"PageTitle":      "工作看板",
-		"BaseUrl":        "/kanban/task",
-		"IssueCreateURL": zentao.URL("issue", "create"),
-		"TaskCreateURL":  zentao.URL("task", "create", "executionID=0&storyID=0&moduleID=0"),
-		"Teamgroups":     teamgroups,
+		"Title":           "任务看板",
+		"PageDescription": "按任务状态与敏捷小组执行跟进看板",
+		"BaseUrl":         "/kanban/task",
+		"IssueCreateURL":  zentao.URL("issue", "create"),
+		"TaskCreateURL":   zentao.URL("task", "create", "executionID=0&storyID=0&moduleID=0"),
+		"Teamgroups":      teamgroups,
 	})
 }
 
@@ -204,6 +206,94 @@ func (h *Handler) Issues(c *gin.Context) {
 		"success": true,
 		"items":   resp.Items,
 		"counts":  resp.Counts,
+	})
+}
+
+// CreateIssue 提问题弹窗下拉选项（所属项目 / 指派给 / 提出人）。
+func (h *Handler) CreateIssue(c *gin.Context) {
+	var req CreateIssueReq
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "请求参数错误"})
+		return
+	}
+	if errs := req.Validate(); len(errs) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"success": false, "errors": errs})
+		return
+	}
+
+	resp, err := h.svc.CreateIssue(c.Request.Context(), middleware.CurrentUser(c), req)
+	if err != nil {
+		if biz, ok := errorx.IsBizError(err); ok {
+			status := http.StatusBadRequest
+			switch biz.Code {
+			case errorx.ErrCodeForbidden:
+				status = http.StatusForbidden
+			case errorx.ErrCodeInvalidParam:
+				status = http.StatusBadRequest
+			}
+			c.JSON(status, gin.H{"success": false, "message": biz.Msg})
+			return
+		}
+		if h.logger != nil {
+			h.logger.Error("list kanban createissue options failed", zap.Error(err))
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "获取提问题选项失败",
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success":    true,
+		"project":    resp.Project,
+		"assignedTo": resp.AssignedTo,
+		"owner":      resp.Owner,
+	})
+}
+
+// SaveCreateIssue 保存提问题（代理禅道 POST /issuesimplecreate）。
+// 成功：{ success, message, redirectUrl, id }。
+func (h *Handler) SaveCreateIssue(c *gin.Context) {
+	var req SaveCreateIssueReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "请求格式错误"})
+		return
+	}
+	if errs := req.Validate(); len(errs) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"success": false, "errors": errs})
+		return
+	}
+
+	resp, err := h.svc.SaveCreateIssue(c.Request.Context(), middleware.CurrentUser(c), req)
+	if err != nil {
+		if biz, ok := errorx.IsBizError(err); ok {
+			status := http.StatusBadRequest
+			switch biz.Code {
+			case errorx.ErrCodeForbidden:
+				status = http.StatusForbidden
+			case errorx.ErrCodeInvalidParam:
+				status = http.StatusBadRequest
+			case errorx.ErrCodeInternal:
+				status = http.StatusInternalServerError
+			}
+			c.JSON(status, gin.H{"success": false, "message": biz.Msg})
+			return
+		}
+		if h.logger != nil {
+			h.logger.Error("save kanban createissue failed", zap.Error(err))
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "创建问题失败",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":     true,
+		"message":     "问题已创建",
+		"redirectUrl": "/kanban/task",
+		"id":          resp.ID,
 	})
 }
 

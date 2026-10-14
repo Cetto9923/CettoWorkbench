@@ -1,0 +1,48 @@
+/* ==========================================================================
+   文件: web/static/css/components/modaldark.css
+   模块: Design System / Components
+   职责: 通用 batch-modal 深色骨架与少数无法靠 token 自动切换的控件特例
+   说明: 弹窗内容色优先在组件 CSS 中写 var(--color-*) / 局部别名；
+         本文件只保留「浅色硬编码骨架」或「原生 option」等无法单靠别名搞定的覆盖
+========================================================================== */
+
+/* ── 通用 batch-modal 骨架（浅色文件写死了 shadow/border 时的深色兜底） ── */
+html[data-theme="dark"] .batch-modal {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 8px 32px var(--color-shadow-12);
+}
+
+/* ── 通用 batch-modal 主操作按钮（浅色 schedule.css 写了实色，需深色对齐主题） ── */
+html[data-theme="dark"] .batch-modal .action-btn.primary,
+html[data-theme="dark"] .batch-modal .action-btn.action-btn--primary {
+  background: var(--color-btn-primary-bg);
+  border-color: var(--color-btn-primary-bg);
+  color: var(--color-text-on-accent);
+}
+
+html[data-theme="dark"] .batch-modal .action-btn.primary:hover,
+html[data-theme="dark"] .batch-modal .action-btn.action-btn--primary:hover {
+  background: var(--color-btn-primary-hover);
+  border-color: var(--color-btn-primary-hover);
+}
+
+html[data-theme="dark"] .batch-modal .action-btn.success,
+html[data-theme="dark"] .batch-modal .action-btn.action-btn--success {
+  background: var(--color-btn-success-bg);
+  border-color: var(--color-btn-success-bg);
+  color: var(--color-text-on-accent);
+}
+
+html[data-theme="dark"] .batch-modal .action-btn.success:hover,
+html[data-theme="dark"] .batch-modal .action-btn.action-btn--success:hover {
+  background: var(--color-btn-success-hover);
+  border-color: var(--color-btn-success-hover);
+}
+
+/* 原生 <select>/<option> 在部分浏览器不会继承 token，需显式底色 */
+html[data-theme="dark"] #scheduleIntegratedModal #scheduleIntegratedWindowSelect,
+html[data-theme="dark"] #scheduleIntegratedModal #scheduleIntegratedWindowSelect option {
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+}

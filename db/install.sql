@@ -165,3 +165,20 @@ ALTER TABLE `zt_versionwindow`
 
 UPDATE `zt_menus` SET `path` = '/kanban/task' WHERE `title` = '工作看板';
 -- 2026/09/20
+
+-- 2026/10/12
+CREATE TABLE IF NOT EXISTS `zt_usermenu` (
+  `id`          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `account`     VARCHAR(30) NOT NULL COMMENT '用户账号，对应 zt_user.account',
+  `menuId`      BIGINT UNSIGNED NOT NULL COMMENT '菜单 ID，对应 zt_menus.id',
+  `sort`        INT NOT NULL DEFAULT 0 COMMENT '排序，越大越靠前',
+  `createdBy`   VARCHAR(30) NOT NULL DEFAULT '',
+  `createdDate` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedBy`   VARCHAR(30) NOT NULL DEFAULT '',
+  `updatedDate` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_zt_usermenu_account_menu` (`account`, `menuId`),
+  KEY `idx_zt_usermenu_account` (`account`),
+  KEY `idx_zt_usermenu_menuId` (`menuId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户固定工作台菜单';
+-- 2026/10/12

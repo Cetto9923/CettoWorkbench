@@ -29,6 +29,7 @@ type storyWindowDetailRow struct {
 	WindowID    uint   `gorm:"column:windowID"`
 	WindowName  string `gorm:"column:windowName"`
 	ReleaseDate string `gorm:"column:releaseDate"`
+	TeamgroupID uint   `gorm:"column:teamgroupID"`
 }
 
 type storyAttachmentRow struct {
@@ -55,6 +56,7 @@ type StoryTaskDetail struct {
 	DemandName         string
 	WindowName         string
 	ReleaseDate        string
+	TeamgroupID        uint
 	DefaultProjectID   uint
 	DefaultExecutionID uint
 	Attachments        []StoryAttachmentItem
@@ -109,12 +111,22 @@ LIMIT 1`
 		detail.DemandName = name
 	}
 
-	windowName, releaseDate, err := r.findStoryWindowDetail(ctx, storyID)
+	windowName, releaseDate, windowTeamgroupID, err := r.findStoryWindowDetail(ctx, storyID)
 	if err != nil {
 		return nil, err
 	}
 	detail.WindowName = windowName
 	detail.ReleaseDate = releaseDate
+	// 与列表一致：研需用 fromDemand 自身 teamGroup；独立研需仍用窗口 teamgroup。
+	if row.FromDemand > 0 {
+		demandTeamgroupID, err := r.findDemandTeamgroupID(ctx, row.FromDemand)
+		if err != nil {
+			return nil, err
+		}
+		detail.TeamgroupID = demandTeamgroupID
+	} else {
+		detail.TeamgroupID = windowTeamgroupID
+	}
 
 	defaultProjectID, defaultExecutionID, err := r.findRecentProductTaskProject(ctx, row.Product)
 	if err != nil {
@@ -147,12 +159,47 @@ LIMIT 1`
 	return strings.TrimSpace(name), nil
 }
 
-func (r *Repo) findStoryWindowDetail(ctx context.Context, storyID uint) (windowName, releaseDate string, err error) {
+// findDemandTeamgroupID 读业需自身 teamGroup（顶层/子业需均不回溯父级）。
+func (r *Repo) findDemandTeamgroupID(ctx context.Context, demandID uint) (uint, error) {
+	if demandID == 0 {
+		return 0, nil
+	}
+	var teamGroup string
+	if err := r.db.WithContext(ctx).
+		Table("zt_demand").
+		Select("teamGroup").
+		Where("id = ? AND deleted = '0'", demandID).
+		Limit(1).
+		Scan(&teamGroup).Error; err != nil {
+		return 0, err
+	}
+	return parseUintString(teamGroup), nil
+}
+
+// ListProductOpenPlans 查询产品下未删除、未关闭的产品计划。
+func (r *Repo) ListProductOpenPlans(ctx context.Context, productID uint) ([]ZtProductplan, error) {
+	if productID == 0 {
+		return []ZtProductplan{}, nil
+	}
+	var rows []ZtProductplan
+	if err := r.db.WithContext(ctx).
+		Table((ZtProductplan{}).TableName()).
+		Select("id", "title").
+		Where("product = ? AND deleted = ? AND status <> ?", productID, "0", "closed").
+		Order("id DESC").
+		Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+func (r *Repo) findStoryWindowDetail(ctx context.Context, storyID uint) (windowName, releaseDate string, teamgroupID uint, err error) {
 	const query = `
 SELECT
   vw.id AS windowID,
   vw.name AS windowName,
-  DATE_FORMAT(vw.releaseDate, '%Y-%m-%d') AS releaseDate
+  DATE_FORMAT(vw.releaseDate, '%Y-%m-%d') AS releaseDate,
+  vw.teamgroup AS teamgroupID
 FROM zt_planstory ps
 INNER JOIN zt_versionwindowproduct vwp
   ON vwp.plan = ps.plan AND vwp.deletedAt IS NULL
@@ -164,9 +211,9 @@ LIMIT 1`
 
 	var row storyWindowDetailRow
 	if err := r.db.WithContext(ctx).Raw(query, storyID).Scan(&row).Error; err != nil {
-		return "", "", err
+		return "", "", 0, err
 	}
-	return strings.TrimSpace(row.WindowName), formatZenTaoDate(row.ReleaseDate), nil
+	return strings.TrimSpace(row.WindowName), formatZenTaoDate(row.ReleaseDate), row.TeamgroupID, nil
 }
 
 func (r *Repo) findRecentProductTaskProject(ctx context.Context, productID uint) (projectID, executionID uint, err error) {
@@ -289,7 +336,7 @@ LIMIT 1`
 		windowName = strings.TrimSpace(ref.WindowName)
 	}
 	if windowID > 0 {
-		_, releaseDate, err := r.findStoryWindowDetail(ctx, storyID)
+		_, releaseDate, _, err := r.findStoryWindowDetail(ctx, storyID)
 		if err != nil {
 			return nil, err
 		}

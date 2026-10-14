@@ -96,7 +96,7 @@
 #page-schedule .schedule-table {
   border: 0;
   border-top: 1px solid var(--border-lt);
-  min-width: 1180px;
+  min-width: 1280px;
   table-layout: auto;
 }
 
@@ -119,7 +119,7 @@
   font-size: 12px;
 }
 
-#page-schedule .schedule-biz-row:hover {
+#page-schedule .schedule-biz-row:hover td {
   background: #f8fbff;
 }
 
@@ -460,21 +460,31 @@
 
 .schedule-col-title {
   padding-left: 20px;
-  width: 500px;
-  max-width: 500px;
+  width: 560px;
+  max-width: 560px;
   overflow: hidden;
 }
 
 #page-schedule .schedule-table tbody td:first-child {
-  width: 500px;
-  max-width: 500px;
+  width: 560px;
+  max-width: 560px;
   overflow: hidden;
 }
 
 #page-schedule #scheduleIndependentListPanel .schedule-col-title,
 #page-schedule #scheduleIndependentBody td:first-child {
-  width: 300px;
-  max-width: 300px;
+  width: 380px;
+  max-width: 380px;
+}
+
+#page-schedule .schedule-table th.schedule-col-group,
+#page-schedule .schedule-table td.schedule-col-group {
+  width: 160px;
+  min-width: 140px;
+  max-width: 260px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .schedule-rd-row td {
@@ -486,12 +496,9 @@
   background: #fafcff;
 }
 
-.schedule-rd-row .schedule-action-col {
-  background: var(--white);
-}
-
+/* 操作列不铺实底，避免悬停「去排期」时盖住行选中态 */
 .schedule-action-col {
-  background: var(--white);
+  background: transparent;
 }
 
 .schedule-action-buttons {

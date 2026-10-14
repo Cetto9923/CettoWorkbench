@@ -23,11 +23,20 @@ type FieldError struct {
 
 // ValueStreamStage 价值流阶段卡片数据（对应 homeVsCompact 单个阶段）。
 type ValueStreamStage struct {
-	Label       string
-	Status      string
-	Count       int64
-	DemandCount int64
-	StoryCount  int64
+	Label       string `json:"label"`
+	Status      string `json:"status"`
+	Count       int64  `json:"count"`
+	DemandCount int64  `json:"demandCount"`
+	StoryCount  int64  `json:"storyCount"`
+}
+
+// HomeFocusCounts 首页顶部焦点芯片计数（均在价值流并集口径内）。
+type HomeFocusCounts struct {
+	MyAction  int64 // 待我处理：各阶段「我处理」规则并集（含独立研需）
+	MyManaged int64 // 我负责：指派给我或 BRA=我的业需 + 指派/ReqM 独立研需
+	MyRelated int64 // 我关注的：价值流 ∩ zt_starinfo followed=1 的业需数
+	Overdue   int64 // 超期：价值流并集内超期业需 + 独立研需数
+	Suspended int64 // 挂起：价值流并集内 hang='1' 的业需数
 }
 
 // LaunchWindowOption 发起交付「上线窗口」检索下拉选项。
@@ -46,16 +55,44 @@ type UserOption struct {
 // HomeResp PO 工作台首页数据。
 type HomeResp struct {
 	Stages         []ValueStreamStage
+	Focus          HomeFocusCounts
 	VersionWindows []schedule.HomeVersionWindowCard
 	LaunchWindows  []LaunchWindowOption
 	Users          []UserOption
+	Teamgroups     []schedule.TeamgroupOption
+	Products       []schedule.ZtProduct
 }
+
+// 首页焦点芯片（互斥；对齐 data-home-focus）。空 = 默认价值流角色口径。
+const (
+	FocusNone      = ""
+	FocusSuspended = "suspended"
+	FocusMyRelated = "my_related"
+	FocusOverdue   = "overdue"
+	FocusMyManaged = "my_managed"
+	FocusMyAction  = "my_action"
+)
 
 // DemandsReq 按价值流状态查询需求/故事详情。
 type DemandsReq struct {
-	Status   string `form:"status"`
-	Page     int    `form:"page"`
-	PageSize int    `form:"pageSize"`
+	Status     string `form:"status"`
+	Page       int    `form:"page"`
+	PageSize   int    `form:"pageSize"`
+	ObjectType string `form:"objectType"` // all / demand / story；空视为 all
+	Priority   string `form:"priority"`   // all / p1 / p2 / p3（p3 含 P3+P4）；空视为 all
+	Keyword    string `form:"keyword"`    // 编号/标题模糊匹配
+	Focus      string `form:"focus"`      // 焦点芯片：空 / suspended / my_related / overdue / my_managed / my_action …
+	WithStages bool   `form:"withStages"` // true：响应附带各阶段统计（焦点切换时用）
+}
+
+// focusDemandOnly 挂起 / 关注等仅业需口径（不合并研需）。超期/我负责/待我处理需合并独立研需。
+func (r DemandsReq) focusDemandOnly() bool {
+	switch r.Focus {
+	case FocusSuspended, FocusMyRelated:
+		return true
+	default:
+		return false
+	}
 }
 
 // Normalize 规范化分页参数（默认 page=1、pageSize=10，上限 100）。
@@ -81,6 +118,29 @@ func (r *DemandsReq) Validate() []FieldError {
 		return []FieldError{{Field: "status", Message: "无效的价值流状态"}}
 	}
 	r.Status = status
+	r.ObjectType = strings.ToLower(strings.TrimSpace(r.ObjectType))
+	switch r.ObjectType {
+	case "", "all":
+		r.ObjectType = "all"
+	case "demand", "story":
+	default:
+		return []FieldError{{Field: "objectType", Message: "不支持的对象类型"}}
+	}
+	r.Priority = strings.ToLower(strings.TrimSpace(r.Priority))
+	switch r.Priority {
+	case "", "all":
+		r.Priority = "all"
+	case "p1", "p2", "p3":
+	default:
+		return []FieldError{{Field: "priority", Message: "无效的优先级"}}
+	}
+	r.Keyword = strings.TrimSpace(r.Keyword)
+	r.Focus = strings.ToLower(strings.TrimSpace(r.Focus))
+	switch r.Focus {
+	case FocusNone, FocusSuspended, FocusMyRelated, FocusOverdue, FocusMyManaged, FocusMyAction:
+	default:
+		return []FieldError{{Field: "focus", Message: "不支持的焦点筛选"}}
+	}
 	return nil
 }
 
@@ -323,10 +383,11 @@ type WorkItemDetail struct {
 
 // DemandsResp 价值流状态下的需求详情列表。
 type DemandsResp struct {
-	Items    []WorkItemDetail `json:"items"`
-	Total    int64            `json:"total"`
-	Page     int              `json:"page"`
-	PageSize int              `json:"pageSize"`
+	Items    []WorkItemDetail   `json:"items"`
+	Total    int64              `json:"total"`
+	Page     int                `json:"page"`
+	PageSize int                `json:"pageSize"`
+	Stages   []ValueStreamStage `json:"stages,omitempty"` // withStages=1 时填充
 }
 
 // DemandDetailReq 业需详情查询（path :id，支持 US123 / 123）。

@@ -2,9 +2,10 @@
 // 文件: internal/module/menu/handler.go
 // 模块: 菜单管理
 // 类型: crud
-// 职责: 处理菜单管理页面请求并调用 Service 完成增删改查。
+// 职责: 处理菜单管理与用户固定工作台菜单请求。
 // 依赖: internal/middleware
 //       internal/model
+//       internal/pkg/errorx
 //       internal/pkg/flash
 //       internal/pkg/perm
 //       internal/pkg/render
@@ -23,6 +24,7 @@ import (
 	"workbench/internal/constants"
 	"workbench/internal/middleware"
 	"workbench/internal/model"
+	"workbench/internal/pkg/errorx"
 	"workbench/internal/pkg/flash"
 	"workbench/internal/pkg/perm"
 	"workbench/internal/pkg/render"
@@ -77,6 +79,122 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 		g.PUT("/:id", middleware.RequirePerm(perm.MenuEdit), h.Update)
 		g.DELETE("/:id", middleware.RequirePerm(perm.MenuDelete), h.Delete)
 	}
+}
+
+// RegisterUserMenuRoutes 注册用户固定菜单接口（挂载在已登录根路由组）。
+func (h *Handler) RegisterUserMenuRoutes(rg *gin.RouterGroup) {
+	g := rg.Group("/usermenus")
+	g.GET("", middleware.RequirePerm(perm.UserMenuList), h.ListUserMenus)
+	g.POST("", middleware.RequirePerm(perm.UserMenuCreate), h.PinUserMenu)
+	g.PUT("", middleware.RequirePerm(perm.UserMenuUpdate), h.ReorderUserMenus)
+	g.DELETE("/:menuId", middleware.RequirePerm(perm.UserMenuDelete), h.UnpinUserMenu)
+}
+
+// ListUserMenus 返回当前用户固定菜单列表。
+func (h *Handler) ListUserMenus(c *gin.Context) {
+	actor := middleware.CurrentUser(c)
+	resp, err := h.svc.ListUserMenus(c.Request.Context(), actor, currentUserPerms(c))
+	if err != nil {
+		writeUserMenuError(c, h.logger, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"items":   resp.Items,
+	})
+}
+
+// PinUserMenu 固定当前页面对应菜单。
+func (h *Handler) PinUserMenu(c *gin.Context) {
+	actor := middleware.CurrentUser(c)
+	var req PinUserMenuReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "请求格式错误"})
+		return
+	}
+	if errs := req.Validate(); len(errs) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"success": false, "errors": errs})
+		return
+	}
+	resp, err := h.svc.PinUserMenu(c.Request.Context(), actor, currentUserPerms(c), req)
+	if err != nil {
+		writeUserMenuError(c, h.logger, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "已固定到工作台",
+		"item":    resp.Item,
+	})
+}
+
+// UnpinUserMenu 取消固定。
+func (h *Handler) UnpinUserMenu(c *gin.Context) {
+	actor := middleware.CurrentUser(c)
+	menuID, ok := parseID(c.Param("menuId"))
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "菜单 ID 无效"})
+		return
+	}
+	if err := h.svc.UnpinUserMenu(c.Request.Context(), actor, UnpinUserMenuReq{MenuID: menuID}); err != nil {
+		writeUserMenuError(c, h.logger, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "已取消固定",
+	})
+}
+
+// ReorderUserMenus 保存常用列表排序。
+func (h *Handler) ReorderUserMenus(c *gin.Context) {
+	actor := middleware.CurrentUser(c)
+	var req ReorderUserMenuReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "请求格式错误"})
+		return
+	}
+	if errs := req.Validate(); len(errs) > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"success": false, "errors": errs})
+		return
+	}
+	resp, err := h.svc.ReorderUserMenus(c.Request.Context(), actor, currentUserPerms(c), req)
+	if err != nil {
+		writeUserMenuError(c, h.logger, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "已保存常用排序",
+		"items":   resp.Items,
+	})
+}
+
+func currentUserPerms(c *gin.Context) map[string]bool {
+	v, ok := c.Get("userPerms")
+	if !ok {
+		return nil
+	}
+	perms, _ := v.(map[string]bool)
+	return perms
+}
+
+func writeUserMenuError(c *gin.Context, logger *zap.Logger, err error) {
+	if biz, ok := errorx.IsBizError(err); ok {
+		status := http.StatusBadRequest
+		switch biz.Code {
+		case errorx.ErrCodeForbidden:
+			status = http.StatusForbidden
+		case errorx.ErrCodeNotFound:
+			status = http.StatusNotFound
+		case errorx.ErrCodeInvalidParam:
+			status = http.StatusBadRequest
+		}
+		c.JSON(status, gin.H{"success": false, "message": biz.Msg})
+		return
+	}
+	logger.Error("usermenu failed", zap.Error(err))
+	render.Error(c, http.StatusInternalServerError, "操作失败", err)
 }
 
 // List 渲染菜单树形列表（扁平化展示）。

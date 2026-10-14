@@ -21,7 +21,7 @@
 }
 
 .dd-required {
-  color: #ef4444;
+  color: var(--color-danger-bright, #ef4444);
 }
 
 .dd-submit-comment-label {

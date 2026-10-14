@@ -69,7 +69,7 @@ func (s *Service) ListBizDemands(ctx context.Context, actor *model.User, req Lis
 	}
 	productIDs := collectBizDemandProductIDs(topDemands, childDemands, stories)
 	storyIDs := pluckStoryIDs(stories)
-	teamgroupIDs := collectBizDemandTeamgroupIDs(topDemands)
+	teamgroupIDs := collectBizDemandTeamgroupIDs(topDemands, childDemands)
 	accounts := collectBizDemandAccounts(topDemands, childDemands, stories)
 
 	productNameByID, err := s.repo.FindProductsByIDs(ctx, productIDs)
@@ -161,16 +161,16 @@ func (c bizDemandAssembleContext) buildBizDemandItem(top ZtDemand) BizDemandItem
 	}
 }
 
-func (c bizDemandAssembleContext) buildSubDemandItems(parent ZtDemand, children []ZtDemand) []SubDemandItem {
+func (c bizDemandAssembleContext) buildSubDemandItems(_ ZtDemand, children []ZtDemand) []SubDemandItem {
 	if len(children) == 0 {
 		return []SubDemandItem{}
 	}
-	parentTeamgroupName := c.teamgroupName(parent.TeamGroup)
 	items := make([]SubDemandItem, 0, len(children))
 	for _, child := range children {
 		childStories := c.storiesByDemand[child.ID]
 		demandIDs := []uint{child.ID}
 		subtreeStories := append([]ZtStory(nil), childStories...)
+		childTeamgroupName := c.teamgroupName(child.TeamGroup)
 		items = append(items, SubDemandItem{
 			ID:               child.ID,
 			Name:             strings.TrimSpace(child.Name),
@@ -178,11 +178,11 @@ func (c bizDemandAssembleContext) buildSubDemandItems(parent ZtDemand, children 
 			Status:           strings.TrimSpace(child.Status),
 			MainSystemName:   c.productNameByID[parseUintString(child.MainSystem)],
 			ExtraSystemCount: extraSystemCount(c.productCountByDemand[child.ID]),
-			TeamgroupName:    parentTeamgroupName,
+			TeamgroupName:    childTeamgroupName,
 			OwnerName:        resolveDemandOwner(child.BRA, c.realnameByAccount),
 			Stage:            calcBizDemandStage(demandIDs, filterMainSystemStories(subtreeStories), c.windowByDemand, c.taskStatByStory),
 			WindowName:       pickDemandWindowName(demandIDs, subtreeStories, c.windowByDemand, c.windowByStory),
-			Stories:          c.buildStoryItems(parent.TeamGroup, parentTeamgroupName, childStories),
+			Stories:          c.buildStoryItems(child.TeamGroup, childTeamgroupName, childStories),
 		})
 	}
 	return items
@@ -342,20 +342,24 @@ func collectBizDemandProductIDs(topDemands, childDemands []ZtDemand, stories []Z
 	return ids
 }
 
-func collectBizDemandTeamgroupIDs(topDemands []ZtDemand) []uint {
+func collectBizDemandTeamgroupIDs(topDemands, childDemands []ZtDemand) []uint {
 	seen := make(map[uint]struct{})
-	ids := make([]uint, 0, len(topDemands))
-	for _, demand := range topDemands {
-		id := parseUintString(demand.TeamGroup)
-		if id == 0 {
-			continue
+	ids := make([]uint, 0, len(topDemands)+len(childDemands))
+	add := func(demands []ZtDemand) {
+		for _, demand := range demands {
+			id := parseUintString(demand.TeamGroup)
+			if id == 0 {
+				continue
+			}
+			if _, ok := seen[id]; ok {
+				continue
+			}
+			seen[id] = struct{}{}
+			ids = append(ids, id)
 		}
-		if _, ok := seen[id]; ok {
-			continue
-		}
-		seen[id] = struct{}{}
-		ids = append(ids, id)
 	}
+	add(topDemands)
+	add(childDemands)
 	return ids
 }
 

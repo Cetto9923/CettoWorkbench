@@ -54,6 +54,10 @@ func RequireLogin(mgr *scs.SessionManager, db *gorm.DB) gin.HandlerFunc {
 
 		userPerms := map[string]bool{
 			perm.AuthLogout.String():         true,
+			perm.UserMenuList.String():       true, // 固定工作台菜单：登录用户自助
+			perm.UserMenuCreate.String():     true,
+			perm.UserMenuUpdate.String():     true,
+			perm.UserMenuDelete.String():     true,
 			perm.PoDemandReview.String():     true, // 评审资格以禅道指派为准，登录用户即可调接口
 			perm.PoDemandAcceptance.String(): true, // 验收资格以禅道 assignedTo 为准，登录用户即可调接口
 			perm.BuildLinkStory.String():     true, // 提测关联需求，登录用户即可拉列表

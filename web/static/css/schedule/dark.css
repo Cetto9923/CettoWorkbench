@@ -1,0 +1,473 @@
+/* ==========================================================================
+   文件: web/static/css/schedule/dark.css
+   模块: 排期工作台
+   职责: 排期页级深色（#page-schedule / 版本窗口管理 / 任务弹窗）
+   说明: 局部 token 与通用 batch-modal / 一体化排期弹窗深色已上收至
+         layout/variables.css、components/modaldark.css
+========================================================================== */
+
+/* ── 页级主操作按钮 ── */
+html[data-theme="dark"] #page-schedule .action-btn.primary,
+html[data-theme="dark"] #page-schedule .action-btn.action-btn--primary,
+html[data-theme="dark"] #manageVersionWindowsModal .action-btn.primary {
+  background: var(--color-btn-primary-bg);
+  border-color: var(--color-btn-primary-bg);
+  color: var(--color-text-on-accent);
+}
+
+html[data-theme="dark"] #page-schedule .action-btn.primary:hover,
+html[data-theme="dark"] #page-schedule .action-btn.action-btn--primary:hover,
+html[data-theme="dark"] #manageVersionWindowsModal .action-btn.primary:hover {
+  background: var(--color-btn-primary-hover);
+  border-color: var(--color-btn-primary-hover);
+}
+
+html[data-theme="dark"] #page-schedule .action-btn.success,
+html[data-theme="dark"] #page-schedule .action-btn.action-btn--success {
+  background: var(--color-btn-success-bg);
+  border-color: var(--color-btn-success-bg);
+  color: var(--color-text-on-accent);
+}
+
+html[data-theme="dark"] #page-schedule .action-btn.success:hover,
+html[data-theme="dark"] #page-schedule .action-btn.action-btn--success:hover {
+  background: var(--color-btn-success-hover);
+  border-color: var(--color-btn-success-hover);
+}
+
+html[data-theme="dark"] #page-schedule a.action-btn.primary,
+html[data-theme="dark"] #page-schedule a.action-btn.success,
+html[data-theme="dark"] #page-schedule a.action-btn.action-btn--primary,
+html[data-theme="dark"] #page-schedule a.action-btn.action-btn--success {
+  color: var(--color-text-on-accent);
+}
+
+html[data-theme="dark"] #page-schedule .action-btn--disabled,
+html[data-theme="dark"] #page-schedule .action-btn--disabled:hover {
+  background: var(--gray-bg) !important;
+  color: var(--t3) !important;
+  border-color: var(--border) !important;
+}
+
+/* ── 页面标题与列表区硬编码浅色 ── */
+html[data-theme="dark"] #page-schedule .schedule-list-title,
+html[data-theme="dark"] #page-schedule .schedule-section-title {
+  color: var(--color-text-primary);
+}
+
+html[data-theme="dark"] #page-schedule .schedule-list-title span,
+html[data-theme="dark"] #page-schedule .schedule-section-title span {
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] #page-schedule .schedule-area {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+html[data-theme="dark"] #page-schedule .schedule-quick-scope,
+html[data-theme="dark"] #page-schedule .schedule-filter-primary-inner,
+html[data-theme="dark"] #page-schedule .schedule-filter-more,
+html[data-theme="dark"] #page-schedule .schedule-data-tabs {
+  background: var(--color-surface);
+}
+
+html[data-theme="dark"] #scheduleMultiselectRow .schedule-window-picker .ui-autocomplete-input,
+html[data-theme="dark"] #page-schedule #scheduleMoreFilters .schedule-owner-picker .ui-autocomplete-input,
+html[data-theme="dark"] #page-schedule #scheduleMoreFilters .schedule-pri-picker .ui-autocomplete-input {
+  background: var(--color-surface);
+  border-color: var(--border);
+  color: var(--color-text-primary);
+}
+
+html[data-theme="dark"] #page-schedule .schedule-more-filter-btn {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-muted);
+  color: var(--color-text-body);
+}
+
+html[data-theme="dark"] #page-schedule .schedule-suspended-toggle.active {
+  background: var(--orange-bg);
+  color: var(--color-warning);
+  box-shadow: inset 0 0 0 1px var(--orange-bd);
+}
+
+html[data-theme="dark"] #page-schedule .schedule-suspended-toggle-box {
+  background: var(--color-surface);
+}
+
+/* ── 版本窗口概览 ── */
+html[data-theme="dark"] #page-schedule .schedule-version-overview {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+html[data-theme="dark"] #page-schedule .schedule-version-card,
+html[data-theme="dark"] #page-schedule .schedule-version-grid--empty .schedule-create-empty {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text-primary);
+}
+
+html[data-theme="dark"] #page-schedule .schedule-version-grid--empty .schedule-create-empty {
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] #page-schedule .schedule-version-card.red,
+html[data-theme="dark"] #page-schedule .schedule-version-card.blue,
+html[data-theme="dark"] #page-schedule .schedule-version-card.green,
+html[data-theme="dark"] #page-schedule .schedule-version-card.purple {
+  background: var(--color-surface);
+}
+
+html[data-theme="dark"] #page-schedule .schedule-version-card.is-selected {
+  border-color: var(--blue, #3b82f6);
+  box-shadow: 0 0 0 1px var(--blue, #3b82f6), 0 6px 18px rgba(59, 130, 246, 0.2);
+}
+
+html[data-theme="dark"] #page-schedule .schedule-version-card.red {
+  border-top: 3px solid var(--color-danger);
+}
+
+html[data-theme="dark"] #page-schedule .schedule-version-card.blue {
+  border-top: 3px solid var(--color-info);
+}
+
+html[data-theme="dark"] #page-schedule .schedule-version-card.green {
+  border-top: 3px solid var(--color-success);
+}
+
+html[data-theme="dark"] #page-schedule .schedule-version-card.purple {
+  border-top: 3px solid #a78bfa;
+}
+
+html[data-theme="dark"] #page-schedule .schedule-version-name,
+html[data-theme="dark"] #page-schedule .schedule-version-top strong,
+html[data-theme="dark"] #page-schedule .schedule-version-meta b {
+  color: var(--color-text-primary);
+}
+
+html[data-theme="dark"] #page-schedule .schedule-version-range,
+html[data-theme="dark"] #page-schedule .schedule-version-meta {
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] #page-schedule .schedule-version-bar {
+  background: #26334d;
+}
+
+html[data-theme="dark"] #page-schedule .schedule-version-meta i {
+  background: #3b4d6e;
+}
+
+html[data-theme="dark"] #page-schedule .version-card-dropdown {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.6);
+}
+
+html[data-theme="dark"] #page-schedule .version-card-dropdown button:last-child {
+  color: var(--color-danger-accent);
+}
+
+html[data-theme="dark"] #page-schedule .agile-team-tag {
+  background: rgba(59, 130, 246, 0.16);
+  color: #bfdbfe;
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
+/* ── 表格与类型标签 ── */
+html[data-theme="dark"] #page-schedule .schedule-table thead th,
+html[data-theme="dark"] #manageVersionWindowsModal .schedule-table thead th {
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] #page-schedule .schedule-table tbody tr:hover td,
+html[data-theme="dark"] #page-schedule .schedule-biz-row:hover td,
+html[data-theme="dark"] #page-schedule .schedule-rd-row:hover td,
+html[data-theme="dark"] #page-schedule .schedule-table tbody tr:hover .schedule-action-col {
+  background: var(--color-surface-hover);
+}
+
+html[data-theme="dark"] #page-schedule .schedule-tree-l2,
+html[data-theme="dark"] #page-schedule .schedule-tree-l3,
+html[data-theme="dark"] #page-schedule .schedule-child-row {
+  background: var(--color-surface);
+}
+
+/* 树展开按钮：浅色硬编码在深底上发灰；改为弱边框 + 次级字色，悬停用信息色 */
+html[data-theme="dark"] #page-schedule .schedule-row-expand {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] #page-schedule .schedule-row-expand:hover {
+  border-color: var(--color-info);
+  color: var(--color-info);
+  background: var(--blue-bg);
+}
+
+html[data-theme="dark"] #page-schedule .schedule-table .wb-type {
+  background: var(--color-badge-id-bg);
+  color: var(--color-badge-id-text);
+  border-color: var(--color-info-fill);
+}
+
+html[data-theme="dark"] #page-schedule .schedule-table .wb-type .wb-type-id {
+  color: var(--color-badge-id-text);
+  background: var(--color-badge-id-bg);
+}
+
+html[data-theme="dark"] #page-schedule .schedule-table .wb-type-business .wb-type-tag {
+  background: var(--color-info-fill);
+  color: var(--color-text-on-accent);
+}
+
+html[data-theme="dark"] #page-schedule .schedule-table .wb-type-story .wb-type-tag,
+html[data-theme="dark"] #page-schedule .schedule-table .wb-type-independent_story .wb-type-tag {
+  background: var(--color-story-bg);
+  color: var(--color-text-on-accent);
+}
+
+html[data-theme="dark"] #page-schedule .schedule-table .wb-type-sub {
+  border-color: #a78bfa;
+}
+
+html[data-theme="dark"] #page-schedule .schedule-table .wb-type-sub .wb-type-tag {
+  background: #7c3aed;
+  color: var(--color-text-on-accent);
+}
+
+html[data-theme="dark"] #page-schedule .stage-tag {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] #page-schedule .stage-tag--draft {
+  background: var(--color-warning-bg);
+  color: var(--color-warning-light);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+html[data-theme="dark"] #page-schedule .stage-tag--final {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  border: 1px solid var(--color-success-border);
+}
+
+html[data-theme="dark"] #page-schedule .window-status-tag.ok {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+html[data-theme="dark"] #page-schedule .schedule-title-link {
+  color: var(--color-info);
+}
+
+/* ── 筛选多选：schedule-ms 下拉与 form-multiselect-menu 同色 ── */
+html[data-theme="dark"] #scheduleMultiselectRow .schedule-ms-trigger i,
+html[data-theme="dark"] #scheduleMultiselectRow .schedule-ms-empty {
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] #scheduleMultiselectRow .schedule-ms-panel,
+html[data-theme="dark"] #scheduleMultiselectRow .schedule-filter-ms .form-multiselect-menu {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] #scheduleMultiselectRow .schedule-ms-option:hover,
+html[data-theme="dark"] #scheduleMultiselectRow .schedule-filter-ms .form-multiselect-option:hover {
+  background: var(--color-surface-muted);
+}
+
+html[data-theme="dark"] #scheduleMultiselectRow .schedule-ms-trigger.form-select,
+html[data-theme="dark"] #scheduleMultiselectRow .schedule-filter-ms .form-multiselect-display {
+  background: var(--color-surface);
+  border-color: var(--border);
+  color: var(--color-text-primary);
+}
+
+/* ── 排期页专有弹窗骨架与日期输入（通用 .batch-modal 见 components/modaldark.css） ── */
+html[data-theme="dark"] #manageVersionWindowsModal.modal {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
+}
+
+html[data-theme="dark"] #manageVersionWindowsOverlay.modal-overlay {
+  background: var(--color-overlay);
+}
+
+/* 排期页 / 版本窗口 / 任务弹窗 date：深色下文字统一白色（含 webkit datetime-edit） */
+html[data-theme="dark"] #page-schedule input[type="date"],
+html[data-theme="dark"] #page-schedule input[type="date"].form-input,
+html[data-theme="dark"] #page-schedule input[type="date"]::-webkit-datetime-edit,
+html[data-theme="dark"] #page-schedule input[type="date"].form-input::-webkit-datetime-edit,
+html[data-theme="dark"] #page-schedule input[type="date"].has-value::-webkit-datetime-edit,
+html[data-theme="dark"] #page-schedule input[type="date"].form-input.has-value::-webkit-datetime-edit,
+html[data-theme="dark"] #page-schedule input[type="date"]:focus::-webkit-datetime-edit,
+html[data-theme="dark"] #page-schedule input[type="date"].form-input:focus::-webkit-datetime-edit,
+html[data-theme="dark"] #page-schedule input[type="date"]:invalid,
+html[data-theme="dark"] #page-schedule input[type="date"].form-input:invalid,
+html[data-theme="dark"] #page-schedule input[type="date"]:valid.has-value,
+html[data-theme="dark"] #page-schedule input[type="date"].form-input:valid.has-value,
+html[data-theme="dark"] #scheduleVersionWindowModal input[type="date"],
+html[data-theme="dark"] #scheduleVersionWindowModal input[type="date"].form-input,
+html[data-theme="dark"] #scheduleVersionWindowModal input[type="date"]::-webkit-datetime-edit,
+html[data-theme="dark"] #scheduleVersionWindowModal input[type="date"].form-input::-webkit-datetime-edit,
+html[data-theme="dark"] #scheduleVersionWindowModal input[type="date"].has-value::-webkit-datetime-edit,
+html[data-theme="dark"] #scheduleVersionWindowModal input[type="date"].form-input.has-value::-webkit-datetime-edit,
+html[data-theme="dark"] #scheduleVersionWindowModal input[type="date"]:focus::-webkit-datetime-edit,
+html[data-theme="dark"] #scheduleVersionWindowModal input[type="date"].form-input:focus::-webkit-datetime-edit,
+html[data-theme="dark"] #scheduleVersionWindowModal input[type="date"]:invalid,
+html[data-theme="dark"] #scheduleVersionWindowModal input[type="date"].form-input:invalid,
+html[data-theme="dark"] #scheduleVersionWindowModal input[type="date"]:valid.has-value,
+html[data-theme="dark"] #scheduleVersionWindowModal input[type="date"].form-input:valid.has-value,
+html[data-theme="dark"] #taskModal input[type="date"],
+html[data-theme="dark"] #taskModal input[type="date"].form-input,
+html[data-theme="dark"] #taskModal input[type="date"]::-webkit-datetime-edit,
+html[data-theme="dark"] #taskModal input[type="date"].form-input::-webkit-datetime-edit,
+html[data-theme="dark"] #taskModal input[type="date"].has-value::-webkit-datetime-edit,
+html[data-theme="dark"] #taskModal input[type="date"].form-input.has-value::-webkit-datetime-edit,
+html[data-theme="dark"] #taskModal input[type="date"]:focus::-webkit-datetime-edit,
+html[data-theme="dark"] #taskModal input[type="date"].form-input:focus::-webkit-datetime-edit,
+html[data-theme="dark"] #taskModal input[type="date"]:invalid,
+html[data-theme="dark"] #taskModal input[type="date"].form-input:invalid,
+html[data-theme="dark"] #taskModal .rd-node-tasks input[type="date"]::-webkit-datetime-edit,
+html[data-theme="dark"] #taskModal .rd-node-tasks input[type="date"].has-value::-webkit-datetime-edit,
+html[data-theme="dark"] #taskModal .rd-node-tasks input[type="date"]:focus::-webkit-datetime-edit {
+  color: var(--color-text-on-accent);
+}
+
+html[data-theme="dark"] #taskModal.batch-modal,
+html[data-theme="dark"] #taskModal .task-iteration-form,
+html[data-theme="dark"] #taskModal .task-iteration-field input.input,
+html[data-theme="dark"] #taskModal .task-iteration-field .ui-autocomplete-input {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text-body);
+}
+
+html[data-theme="dark"] #taskModal .task-iteration-form {
+  background: var(--color-surface-muted, var(--wb-bg-muted));
+}
+
+html[data-theme="dark"] #taskModal .task-iteration-periods .radio-label {
+  color: var(--color-text-body);
+}
+
+html[data-theme="dark"] #taskModal .task-iteration-daterange-sep {
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] #taskModal .task-iteration-date::after {
+  color: var(--color-text-body);
+}
+
+html[data-theme="dark"] #taskModal .task-iteration-date.is-empty::after {
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] .task-modal-project-section {
+  background: var(--color-surface-muted, var(--wb-bg-muted));
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] #taskModal .task-modal-project-section .form-select,
+html[data-theme="dark"] #taskModal .task-modal-project-section .rd-task-project-select,
+html[data-theme="dark"] #taskModal .task-modal-project-section .ui-autocomplete-input {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text-primary);
+}
+
+/* 维护任务弹窗编辑行：控件与深色 surface 一致，避免硬编码白底 */
+html[data-theme="dark"] #taskModal .rd-task-input,
+html[data-theme="dark"] #taskModal .rd-task-select,
+html[data-theme="dark"] #taskModal .rd-node-assignee-field,
+html[data-theme="dark"] #taskModal .rd-task-execution-combo,
+html[data-theme="dark"] #taskModal .rd-task-table input,
+html[data-theme="dark"] #taskModal .rd-task-table select,
+html[data-theme="dark"] #taskModal .rd-task-table .ui-autocomplete-input,
+html[data-theme="dark"] #taskModal .rd-task-row--editing .rd-task-input,
+html[data-theme="dark"] #taskModal .rd-task-row--editing .rd-task-select,
+html[data-theme="dark"] #taskModal .rd-task-row--editing input,
+html[data-theme="dark"] #taskModal .rd-task-row--editing select,
+html[data-theme="dark"] #taskModal .rd-task-row--existing.rd-task-row--editing .rd-task-input,
+html[data-theme="dark"] #taskModal .rd-task-row--existing.rd-task-row--editing .rd-task-select,
+html[data-theme="dark"] #taskModal .rd-task-row--new .rd-task-input,
+html[data-theme="dark"] #taskModal .rd-task-row--new .rd-task-select {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text-primary);
+}
+
+html[data-theme="dark"] #taskModal .rd-task-execution-combo .rd-task-execution-select {
+  background: transparent;
+  color: var(--color-text-primary);
+}
+
+html[data-theme="dark"] #taskModal .rd-task-table .ui-autocomplete-input::placeholder {
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] #taskModal .rd-task-select:disabled,
+html[data-theme="dark"] #taskModal .rd-task-execution-select:disabled {
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  opacity: 1;
+}
+
+html[data-theme="dark"] #taskModal .rd-task-execution-same[aria-pressed="false"] {
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] #taskModal .rd-task-execution-same[aria-pressed="true"] {
+  background: var(--color-info-soft);
+  color: var(--color-info);
+}
+
+html[data-theme="dark"] #manageVersionWindowsModal .action-btn--disabled,
+html[data-theme="dark"] #manageVersionWindowsModal .action-btn--disabled:hover {
+  background: var(--gray-bg) !important;
+}
+
+/* 管理弹窗操作组：图标按钮去底/去边，避免被 .action-btn.primary 实色覆盖 */
+html[data-theme="dark"] #manageVersionWindowsModal .schedule-manage-actions,
+html[data-theme="dark"] #manageVersionWindowsModal .schedule-manage-actions .action-btn,
+html[data-theme="dark"] #manageVersionWindowsModal .schedule-manage-actions .action-btn.primary,
+html[data-theme="dark"] #manageVersionWindowsModal .schedule-manage-actions .action-btn.danger,
+html[data-theme="dark"] #manageVersionWindowsModal .schedule-manage-actions .action-btn.zen-icon-action {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+html[data-theme="dark"] #manageVersionWindowsModal .schedule-manage-actions .action-btn.zen-icon-action,
+html[data-theme="dark"] #manageVersionWindowsModal .schedule-manage-actions .action-btn.zen-icon-action.primary,
+html[data-theme="dark"] #manageVersionWindowsModal .schedule-manage-actions .action-btn.zen-icon-action.danger {
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] #manageVersionWindowsModal .schedule-manage-actions .action-btn.zen-icon-action.primary:hover:not(.action-btn--disabled) {
+  background: transparent;
+  border: none;
+  color: var(--color-info);
+}
+
+html[data-theme="dark"] #manageVersionWindowsModal .schedule-manage-actions .action-btn.zen-icon-action.danger:hover:not(.action-btn--disabled) {
+  background: transparent;
+  border: none;
+  color: var(--color-danger);
+}
+
+html[data-theme="dark"] #page-schedule .schedule-view-tabs .view-tab.active {
+  background: var(--color-surface-muted);
+  color: var(--color-info);
+}

@@ -144,7 +144,7 @@
 
 .po-board .wb-type .wb-type-id a,
 .po-board .wb-type .task-code-link {
-  color: #1e293b;
+  color: var(--color-badge-id-text, #1e293b);
   text-decoration: none;
   font-family: inherit;
   font-size: inherit;
@@ -153,7 +153,7 @@
 
 .po-board .wb-type .wb-type-id a:hover,
 .po-board .wb-type .task-code-link:hover {
-  color: var(--navy, #2563eb);
+  color: var(--color-info, #2563eb);
   text-decoration: underline;
 }
 

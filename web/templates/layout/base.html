@@ -23,12 +23,16 @@
   <link rel="stylesheet" href="/static/css/layout/variables.css">
   <link rel="stylesheet" href="/static/css/layout/app.css">
   <link rel="stylesheet" href="/static/css/layout/layout.css">
+  {{ if and (not .HideChrome) (eq .LayoutNav "sidebar") }}
+  <link rel="stylesheet" href="/static/css/layout/sidebar.css">
+  <link rel="stylesheet" href="/static/css/layout/pinnedworkbench.css">
+  {{ end }}
   {{ if and (not .HideChrome) (eq .LayoutNav "top") }}<link rel="stylesheet" href="/static/css/layout/topnav.css">{{ end }}
   <link rel="stylesheet" href="/static/css/components/components.css">
   <link rel="stylesheet" href="/static/css/layout/header.css">
   {{ block "page_css" . }}{{ end }}
 </head>
-<body{{ if .HideChrome }} class="layout-chrome-hidden"{{ else }} class="has-bottom-tabs{{ if eq .LayoutNav "top" }} layout-nav-top{{ end }}"{{ end }}>
+<body{{ if .HideChrome }} class="layout-chrome-hidden"{{ else }} class="has-bottom-tabs{{ if eq .LayoutNav "sidebar" }} po-workbench-shell{{ end }}{{ if eq .LayoutNav "top" }} layout-nav-top{{ end }}"{{ end }}>
   {{/* 侧栏收起态须在首屏绘制前恢复，否则导航跳转会先展开再收起 */}}
   <script>
     (function () {
@@ -54,7 +58,10 @@
   </div>
 
   {{ if not .HideChrome }}
-  <nav class="bottom-tabbar" id="bottom-tabbar" aria-label="已打开工作页签"></nav>
+  <footer class="bottom-tabbar" id="bottom-tabbar" aria-label="已打开工作页签">
+    <nav class="bottom-tabbar-tabs" id="workbench-tabbar" aria-label="页签列表"></nav>
+    <div class="bottom-tab-actions" id="workbench-tab-actions"></div>
+  </footer>
   {{ end }}
 
   <div class="toast-container" id="toast-container"></div>
@@ -84,6 +91,8 @@
   <script src="/static/js/ui.js"></script>
   <script src="/static/js/app.js"></script>
   <script src="/static/js/components/components.js"></script>
+  {{/* pinnedpages.js 须先于 sidebar.js：侧栏「常用」列表依赖 window.WorkbenchPinned */}}
+  {{ if and (not .HideChrome) (eq .LayoutNav "sidebar") }}<script src="/static/js/layout/pinnedpages.js"></script>{{ end }}
   <script src="/static/js/layout/sidebar.js"></script>
   {{ if and (not .HideChrome) (eq .LayoutNav "sidebar") }}<script src="/static/js/layout/globalsearch.js"></script>{{ end }}
   {{ if not .HideChrome }}<script src="/static/js/layout/bottomtabbar.js"></script>{{ end }}

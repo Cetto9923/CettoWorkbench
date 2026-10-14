@@ -1,14 +1,16 @@
 /*
  * 文件: web/static/js/layout/bottomtabbar.js
  * 模块: 布局
- * 职责: 底部工作页签（访问累积 + localStorage 持久化 + 关闭）
+ * 职责: 底部工作页签（访问累积 + localStorage 持久化 + 关闭 / 关闭其他）
  */
 (function () {
   "use strict";
 
   var STORAGE_KEY = "workbench.bottomTabs.v1";
-  var bar = document.getElementById("bottom-tabbar");
+  var bar = document.getElementById("workbench-tabbar") || document.getElementById("bottom-tabbar");
   if (!bar) return;
+
+  var actionsBar = document.getElementById("workbench-tab-actions");
 
   function currentPath() {
     return window.location.pathname || "/";
@@ -120,6 +122,30 @@
     return tabs;
   }
 
+  function renderActions(tabs) {
+    if (!actionsBar) return;
+    actionsBar.innerHTML = "";
+
+    if (tabs.length <= 1) return;
+
+    var closeOthers = document.createElement("button");
+    closeOthers.type = "button";
+    closeOthers.className = "workbench-tab-action bottom-tab-action";
+    closeOthers.title = "关闭其他页签";
+    closeOthers.innerHTML =
+      '<i class="fas fa-rectangle-xmark" aria-hidden="true"></i> <span>关闭其他页签</span>';
+    closeOthers.addEventListener("click", function (e) {
+      e.preventDefault();
+      var current = currentPath();
+      var kept = tabs.filter(function (t) {
+        return t.path === current;
+      });
+      writeTabs(kept);
+      render(kept);
+    });
+    actionsBar.appendChild(closeOthers);
+  }
+
   function render(tabs) {
     var path = currentPath();
     bar.innerHTML = "";
@@ -154,6 +180,8 @@
 
       bar.appendChild(a);
     });
+
+    renderActions(tabs);
   }
 
   function closeTab(path) {

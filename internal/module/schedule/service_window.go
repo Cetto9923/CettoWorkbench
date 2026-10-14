@@ -143,6 +143,8 @@ func (s *Service) ListWindowCards(ctx context.Context, actor *model.User) ([]Win
 
 // HomeVersionWindowCard PO 首页版本窗口卡片展示数据。
 type HomeVersionWindowCard struct {
+	ID           uint64
+	TeamgroupID  uint
 	Name         string
 	AgileGroup   string
 	Range        string
@@ -201,6 +203,8 @@ func (s *Service) ListHomeVersionWindows(ctx context.Context, actor *model.User)
 			return nil, err
 		}
 		cards = append(cards, HomeVersionWindowCard{
+			ID:           window.ID,
+			TeamgroupID:  window.TeamgroupID,
 			Name:         window.Name,
 			AgileGroup:   nameByID[window.TeamgroupID],
 			Range:        formatWindowDateRange(start, window.ReleaseDate),

@@ -182,3 +182,71 @@ type ListIssuesResp struct {
 	Items  []IssueItem    `json:"items"`
 	Counts IssueTabCounts `json:"counts"`
 }
+
+// CreateIssueReq 提问题弹窗下拉选项查询
+type CreateIssueReq struct {
+	Account     string `form:"account"`
+	TeamgroupID uint   `form:"teamgroupId"`
+}
+
+// Validate 校验敏捷小组必填。
+func (r *CreateIssueReq) Validate() []FieldError {
+	if r.TeamgroupID == 0 {
+		return []FieldError{{Field: "teamgroupId", Message: "请选择敏捷小组"}}
+	}
+	r.Account = strings.TrimSpace(r.Account)
+	return nil
+}
+
+// CreateIssueOption 检索下拉单选项。
+type CreateIssueOption struct {
+	Value string `json:"value"`
+	Label string `json:"label"`
+}
+
+// CreateIssueFieldOptions 单个下拉的选项列表与默认值。
+type CreateIssueFieldOptions struct {
+	Options []CreateIssueOption `json:"options"`
+	Value   string              `json:"value"`
+}
+
+// CreateIssueResp 提问题弹窗下拉数据（所属项目 / 指派给 / 提出人）。
+type CreateIssueResp struct {
+	Project    CreateIssueFieldOptions `json:"project"`
+	AssignedTo CreateIssueFieldOptions `json:"assignedTo"`
+	Owner      CreateIssueFieldOptions `json:"owner"`
+}
+
+// SaveCreateIssueReq 保存提问题（JSON Body，转发禅道 POST /issuesimplecreate）。
+type SaveCreateIssueReq struct {
+	Title      string `json:"title"`
+	Project    uint   `json:"project"`
+	AssignedTo string `json:"assignedTo"`
+	Owner      string `json:"owner"`
+}
+
+// Validate 校验四字段必填。
+func (r *SaveCreateIssueReq) Validate() []FieldError {
+	var errs []FieldError
+	r.Title = strings.TrimSpace(r.Title)
+	r.AssignedTo = strings.TrimSpace(r.AssignedTo)
+	r.Owner = strings.TrimSpace(r.Owner)
+	if r.Title == "" {
+		errs = append(errs, FieldError{Field: "title", Message: "问题名称不能为空"})
+	}
+	if r.Project == 0 {
+		errs = append(errs, FieldError{Field: "project", Message: "请选择所属项目"})
+	}
+	if r.AssignedTo == "" {
+		errs = append(errs, FieldError{Field: "assignedTo", Message: "请选择指派给"})
+	}
+	if r.Owner == "" {
+		errs = append(errs, FieldError{Field: "owner", Message: "请选择提出人"})
+	}
+	return errs
+}
+
+// SaveCreateIssueResp 保存提问题成功响应（含禅道新建问题 ID）。
+type SaveCreateIssueResp struct {
+	ID int64 `json:"id"`
+}

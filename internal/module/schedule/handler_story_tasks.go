@@ -59,6 +59,7 @@ func (h *Handler) GetStoryTasks(c *gin.Context) {
 		"success":   true,
 		"tasks":     []StoryTaskItem{},
 		"projects":  []DemandSchedulingProjectOption{},
+		"plans":     []ProductPlanOption{},
 		"users":     []SchedulingUserOption{},
 		"taskTypes": []TaskTypeOption{},
 		"summary":   StoryTaskSummary{},
@@ -70,6 +71,9 @@ func (h *Handler) GetStoryTasks(c *gin.Context) {
 		}
 		if resp.Projects != nil {
 			out["projects"] = resp.Projects
+		}
+		if resp.Plans != nil {
+			out["plans"] = resp.Plans
 		}
 		if resp.Users != nil {
 			out["users"] = resp.Users

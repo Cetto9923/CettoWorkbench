@@ -2,19 +2,22 @@
 文件: web/templates/kanban/task.html
 模块: 工作看板
 职责: 任务看板静态壳；三列任务由 task.js ajax 填充，小组/成员切换驱动刷新；
-      wait/doing 拖拽经 taskdrag.js 调用 PUT /kanban/tasks/:id 写禅道。
+      wait/doing 拖拽经 taskdrag.js 调用 PUT /kanban/tasks/:id 写禅道；
+      「提问题」打开 createissue 静态弹窗。
 全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .CurrentPath
-页面字段: .Title (string), .PageTitle (string), .BaseUrl (string), .IssueCreateURL (string), .TaskCreateURL (string), .Teamgroups ([]module/kanban.TeamgroupItem；MemberItem.TaskCount)
+页面字段: .Title (string), .PageDescription (string), .BaseUrl (string), .TaskCreateURL (string), .Teamgroups ([]module/kanban.TeamgroupItem；MemberItem.TaskCount)
 ========================================================================== */}}
 {{ define "page_css" }}
 <link rel="stylesheet" href="{{ asset "/static/css/kanban/common.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/kanban/task.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/kanban/createissue.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/kanban/dark.css" }}">
 {{ end }}
 
 {{ define "content" }}
 <div class="po-board">
   <div class="page-hdr">
-    <h2>工作看板</h2>
+    <h2>{{ .Title }}</h2>
     <div class="board-switch" role="tablist" aria-label="看板类型">
       <a href="/kanban/story" role="tab" aria-selected="false">需求看板</a>
       <a href="/kanban/task" class="active" role="tab" aria-selected="true">任务看板</a>
@@ -36,9 +39,8 @@
       </div>
     </div>
     <div class="actions">
-      <button type="button" class="action" disabled>调整成员</button>
       <a class="action primary" href="{{ .TaskCreateURL }}" target="_blank" rel="noopener noreferrer">+ 建任务</a>
-      <a class="action primary" href="{{ .IssueCreateURL }}" target="_blank" rel="noopener noreferrer">+ 提问题</a>
+      <button type="button" class="action primary" data-kanban-create-issue>+ 提问题</button>
     </div>
   </div>
 
@@ -53,7 +55,7 @@
             {{ range $j, $m := $g.Members }}
         <button type="button" class="person role-{{ $m.Role }}{{ if ge $j 5 }} is-overflow{{ end }}" data-account="{{ $m.Account }}" title="{{ $m.Display }}"{{ if ge $j 5 }} hidden{{ end }}>
           <span class="mini-avatar">{{ $m.Initial }}</span>{{ $m.Display }}
-          {{/* <span class="count" title="指派任务">{{ $m.TaskCount }}</span> */}}
+          <span class="count" title="指派任务">{{ $m.TaskCount }}</span>
         </button>
             {{ end }}
             {{ if gt (len $g.Members) 5 }}
@@ -103,9 +105,11 @@
     </aside>
   </div>
 </div>
+{{ template "kanban/createissue" . }}
 {{ end }}
 {{ define "page_js" }}
 <script src="{{ asset "/static/js/kanban/issue.js" }}"></script>
+<script src="{{ asset "/static/js/kanban/createissue.js" }}"></script>
 <script src="{{ asset "/static/js/kanban/task.js" }}"></script>
 <script src="{{ asset "/static/js/kanban/taskdrag.js" }}"></script>
 {{ end }}

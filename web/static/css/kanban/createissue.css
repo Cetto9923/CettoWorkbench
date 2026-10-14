@@ -1,0 +1,213 @@
+/* ==========================================================================
+   文件: web/static/css/kanban/createissue.css
+   模块: 工作看板
+   职责: 提问题静态弹窗样式（对齐禅道 simpleCreate 表单密度；色值走主题 token）
+========================================================================== */
+
+.kanban-createissue-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: var(--color-overlay);
+  backdrop-filter: blur(2px);
+  z-index: 12150;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.kanban-createissue-overlay.show {
+  display: flex;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.kanban-createissue-modal {
+  position: relative;
+  width: min(92vw, 720px);
+  max-height: calc(100vh - 32px);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px var(--color-shadow-12);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translateY(16px);
+  transition: transform 0.2s ease;
+}
+
+.kanban-createissue-overlay.show .kanban-createissue-modal {
+  transform: translateY(0);
+}
+
+.kanban-createissue-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--color-border);
+  flex: 0 0 auto;
+}
+
+.kanban-createissue-hdr h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-strong, var(--color-text-primary));
+}
+
+.kanban-createissue-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--color-text-disabled);
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.kanban-createissue-close:hover {
+  color: var(--color-text-strong, var(--color-text-primary));
+}
+
+.kanban-createissue-body {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: calc(100vh - 160px);
+  padding: 18px 20px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+#kanbanCreateIssueForm {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+}
+
+.kanban-createissue-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.kanban-createissue-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.kanban-createissue-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.kanban-createissue-req {
+  color: var(--color-danger-bright, #dc2626);
+}
+
+.kanban-createissue-field .input,
+.kanban-createissue-field .ui-autocomplete-input {
+  width: 100%;
+  height: 32px;
+  font-size: 13px;
+}
+
+.kanban-createissue-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface-muted, var(--color-surface));
+  flex: 0 0 auto;
+}
+
+.kanban-createissue-modal .action-btn {
+  padding: 6px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-surface);
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.kanban-createissue-modal .action-btn:hover {
+  border-color: var(--color-info, var(--color-primary));
+  color: var(--color-info, var(--color-primary));
+}
+
+.kanban-createissue-modal .action-btn.primary {
+  background: var(--color-btn-primary-bg, var(--color-primary));
+  border-color: var(--color-btn-primary-bg, var(--color-primary));
+  color: var(--color-text-on-accent, #fff);
+}
+
+.kanban-createissue-modal .action-btn.primary:hover {
+  background: var(--color-btn-primary-hover, var(--color-primary));
+  border-color: var(--color-btn-primary-hover, var(--color-primary));
+  color: var(--color-text-on-accent, #fff);
+}
+
+.po-board button.action {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+@media (max-width: 640px) {
+  .kanban-createissue-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+html[data-theme="dark"] .kanban-createissue-modal {
+  background: var(--color-card, var(--color-surface));
+  border-color: var(--color-border);
+  box-shadow: 0 10px 25px var(--color-shadow-12);
+}
+
+html[data-theme="dark"] .kanban-createissue-hdr,
+html[data-theme="dark"] .kanban-createissue-footer {
+  border-color: var(--color-border);
+  background: var(--color-card, var(--color-surface));
+}
+
+html[data-theme="dark"] .kanban-createissue-footer {
+  background: var(--color-surface-muted);
+}
+
+html[data-theme="dark"] .kanban-createissue-hdr h3 {
+  color: var(--color-text-strong, var(--color-text-primary));
+}
+
+html[data-theme="dark"] .kanban-createissue-modal .action-btn.primary {
+  background: var(--color-btn-primary-bg);
+  border-color: var(--color-btn-primary-bg);
+  color: var(--color-text-on-accent);
+}
+
+html[data-theme="dark"] .kanban-createissue-modal .action-btn.primary:hover {
+  background: var(--color-btn-primary-hover);
+  border-color: var(--color-btn-primary-hover);
+}

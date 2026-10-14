@@ -1,7 +1,7 @@
 /* ==========================================================================
    文件: web/static/js/layout/header.js
    模块: 布局
-   职责: 顶栏主题偏好（当前仅浅色）与外观控件同步。
+   职责: 顶栏主题偏好（浅色/深色）与外观控件同步。
 ========================================================================== */
 (function () {
   "use strict";
@@ -11,9 +11,9 @@
 
   try {
     var stored = localStorage.getItem(STORAGE_KEY);
-    // 当前仅支持浅色；其它历史偏好统一回落为 light
-    if (stored === "light") {
-      currentPreference = "light";
+    // 暂不支持跟随系统；历史 system 偏好回落为 light
+    if (stored === "light" || stored === "dark") {
+      currentPreference = stored;
     }
   } catch (e) {
     // ignore
@@ -23,17 +23,37 @@
     return currentPreference;
   }
 
-  function getEffectiveTheme() {
-    return "light";
+  function getEffectiveTheme(pref) {
+    var p = pref || currentPreference;
+    return p === "dark" ? "dark" : "light";
   }
 
-  function applyTheme() {
+  function applyTheme(effectiveTheme) {
     if (typeof document === "undefined" || !document.documentElement) {
       return;
     }
-    document.documentElement.setAttribute("data-theme", "light");
+    var theme = effectiveTheme || getEffectiveTheme();
+    document.documentElement.setAttribute("data-theme", theme);
     if (document.documentElement.dataset) {
-      document.documentElement.dataset.theme = "light";
+      document.documentElement.dataset.theme = theme;
+    }
+    var quickToggle = document.getElementById("themeQuickToggle");
+    if (quickToggle) {
+      var moon = quickToggle.querySelector(".theme-moon-icon");
+      var sun = quickToggle.querySelector(".theme-sun-icon");
+      if (moon && sun) {
+        if (theme === "dark") {
+          moon.style.display = "none";
+          sun.style.display = "inline-block";
+          quickToggle.title = "切换为浅色模式";
+          quickToggle.setAttribute("aria-label", "切换为浅色模式");
+        } else {
+          moon.style.display = "inline-block";
+          sun.style.display = "none";
+          quickToggle.title = "切换为深色模式";
+          quickToggle.setAttribute("aria-label", "切换为深色模式");
+        }
+      }
     }
   }
 
@@ -60,36 +80,65 @@
   }
 
   function setPreference(pref) {
-    // 仅接受浅色；其它值一律回落
-    currentPreference = pref === "light" ? "light" : "light";
+    currentPreference = pref === "dark" ? "dark" : "light";
     try {
       localStorage.setItem(STORAGE_KEY, currentPreference);
     } catch (e) {
       // ignore
     }
-    applyTheme();
+    applyTheme(getEffectiveTheme(currentPreference));
     syncControls();
   }
 
-  applyTheme();
+  function toggleQuick() {
+    setPreference(getEffectiveTheme() === "dark" ? "light" : "dark");
+  }
+
+  applyTheme(getEffectiveTheme(currentPreference));
 
   if (typeof window !== "undefined") {
     window.WorkbenchTheme = {
       getPreference: getPreference,
-      getEffectiveTheme: getEffectiveTheme,
+      getEffectiveTheme: function () {
+        return getEffectiveTheme(currentPreference);
+      },
       setPreference: setPreference,
       syncControls: syncControls,
+      toggleQuick: toggleQuick,
     };
+
+    window.addEventListener("storage", function (e) {
+      if (!e || e.key !== STORAGE_KEY) {
+        return;
+      }
+      if (e.newValue === "light" || e.newValue === "dark") {
+        currentPreference = e.newValue;
+      } else {
+        currentPreference = "light";
+      }
+      applyTheme(getEffectiveTheme(currentPreference));
+      syncControls();
+    });
   }
 
   function bindControls() {
     syncControls();
+    applyTheme(getEffectiveTheme(currentPreference));
     var controls = document.querySelectorAll('[role="menuitemradio"][data-theme-value]');
     for (var i = 0; i < controls.length; i++) {
       controls[i].addEventListener("click", function (e) {
         e.preventDefault();
         var val = this.getAttribute("data-theme-value");
         setPreference(val);
+      });
+    }
+
+    var quickToggle = document.getElementById("themeQuickToggle");
+    if (quickToggle && !quickToggle._themeBound) {
+      quickToggle._themeBound = true;
+      quickToggle.addEventListener("click", function (e) {
+        e.preventDefault();
+        toggleQuick();
       });
     }
   }

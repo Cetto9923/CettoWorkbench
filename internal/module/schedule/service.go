@@ -104,6 +104,7 @@ func (s *Service) GetUserTeamgroups(ctx context.Context, account string) ([]Team
 		options = append(options, TeamgroupOption{
 			ID:          group.ID,
 			DisplayName: displayName,
+			Manager:     group.Manager,
 		})
 	}
 	return options, nil
@@ -259,25 +260,29 @@ func (s *Service) GetByID(ctx context.Context, actor *model.User, id uint64) (*W
 }
 
 func formatWindowDateRange(start, end time.Time) string {
-	return start.Format("01-02") + " ~ " + end.Format("01-02")
+	return start.Format("2006-01-02") + " ~ " + end.Format("2006-01-02")
 }
 
 // Create 保存版本窗口并按需同步禅道产品计划。
-func (s *Service) Create(ctx context.Context, actor *model.User, req CreateReq) error {
+func (s *Service) Create(ctx context.Context, actor *model.User, req CreateReq) (CreateResp, error) {
 	window, err := buildVersionWindowFromCreateReq(req)
 	if err != nil {
-		return err
+		return CreateResp{}, err
 	}
 	account := actorAccount(actor)
 	window.CreatedBy = account
 	window.UpdatedBy = account
 
-	return s.repo.Transaction(ctx, func(txRepo *Repo) error {
+	err = s.repo.Transaction(ctx, func(txRepo *Repo) error {
 		if err := txRepo.Create(ctx, window); err != nil {
 			return fmt.Errorf("create version window: %w", err)
 		}
 		return s.saveWindowProducts(ctx, txRepo, window.ID, window, req.Products, account)
 	})
+	if err != nil {
+		return CreateResp{}, err
+	}
+	return CreateResp{ID: window.ID}, nil
 }
 
 // Update 更新版本窗口并重建关联产品及计划。

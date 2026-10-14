@@ -1,0 +1,390 @@
+/* ==========================================================================
+   文件: web/static/css/layout/sidebar.css
+   模块: 布局
+   职责: 双轨侧栏（窄轨 + 子面板）布局与样式，对齐原型 shell.css 侧栏部分
+         仅在 body.po-workbench-shell 下生效；数据仍由 CurrentMenus 驱动
+========================================================================== */
+
+body.po-workbench-shell {
+  --sidebar-width: 230px;
+  --sidebar-rail-width: 62px;
+  --po-sidebar-motion: 0.2s ease;
+  --po-subnav-fade: 150ms ease;
+}
+
+body.po-workbench-shell .topbar {
+  left: var(--sidebar-width);
+  transition: left var(--po-sidebar-motion);
+}
+
+/* 品牌移至窄轨；顶栏改为页面标题 */
+body.po-workbench-shell .topbar-brand {
+  display: none;
+}
+
+body.po-workbench-shell .topbar-identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 600px;
+  white-space: nowrap;
+  flex: 1 1 auto;
+}
+
+body.po-workbench-shell .topbar-page-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+body.po-workbench-shell .topbar-divider {
+  font-size: 14px;
+  color: var(--color-border-strong);
+  user-select: none;
+  flex-shrink: 0;
+}
+
+body.po-workbench-shell .topbar-page-desc {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 992px) {
+  body.po-workbench-shell .topbar-page-desc,
+  body.po-workbench-shell .topbar-divider {
+    display: none;
+  }
+}
+
+body.po-workbench-shell .topbar-row {
+  padding: 0 20px;
+  gap: 12px;
+  align-items: center;
+}
+
+body.po-workbench-shell .sidebar {
+  top: 0;
+  bottom: 0;
+  width: var(--sidebar-width);
+  border-right-color: var(--color-border);
+  z-index: 120;
+  transition: width var(--po-sidebar-motion);
+}
+
+body.po-workbench-shell .sidebar.po-dual-sidebar {
+  display: flex;
+  flex-direction: row;
+  padding: 0;
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+/* ── 窄轨 ── */
+
+body.po-workbench-shell .po-rail {
+  display: flex;
+  flex: 0 0 var(--sidebar-rail-width);
+  flex-direction: column;
+  align-items: center;
+  width: var(--sidebar-rail-width);
+  padding: 12px 0;
+  gap: 10px;
+  border-right: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
+}
+
+body.po-workbench-shell .po-rail-header,
+body.po-workbench-shell .po-rail-footer,
+body.po-workbench-shell .po-rail-nav {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+body.po-workbench-shell .po-rail-header,
+body.po-workbench-shell .po-rail-footer {
+  justify-content: center;
+}
+
+body.po-workbench-shell .po-rail-nav {
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 6px;
+  min-height: 0;
+}
+
+body.po-workbench-shell .po-rail .po-brand-logo {
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  font-size: 18px;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+  background: var(--color-info-fill);
+  color: var(--color-text-on-accent);
+}
+
+body.po-workbench-shell .po-rail-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  min-height: 48px;
+  padding: 4px 0;
+  gap: 3px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+  appearance: none;
+}
+
+body.po-workbench-shell .po-rail-btn i {
+  font-size: 20px;
+}
+
+body.po-workbench-shell .po-rail-btn > span:not(.po-rail-dot):not(.po-rail-route-indicator) {
+  max-width: 48px;
+  font-size: 11.5px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.po-workbench-shell .po-rail-btn:hover {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+body.po-workbench-shell .po-rail-btn.is-active-route {
+  color: var(--color-info);
+}
+
+body.po-workbench-shell .po-rail-btn .po-rail-route-indicator {
+  display: none;
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  border-radius: 0 2px 2px 0;
+  background: var(--color-info-fill);
+}
+
+body.po-workbench-shell .po-rail-btn.is-active-route .po-rail-route-indicator {
+  display: block;
+}
+
+body.po-workbench-shell .po-rail-btn.is-drawer-open {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+body.po-workbench-shell .po-rail-btn.is-drawer-open.is-active-route {
+  color: var(--color-info);
+}
+
+/* ── 子面板 ── */
+
+body.po-workbench-shell .po-subnav {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 10px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  opacity: 1;
+  transition:
+    opacity var(--po-sidebar-motion),
+    padding var(--po-sidebar-motion),
+    flex-basis var(--po-sidebar-motion);
+}
+
+body.po-workbench-shell .po-subnav-panel {
+  display: none;
+}
+
+body.po-workbench-shell .po-subnav-panel.is-active {
+  display: block;
+  animation: po-subnav-fade-in var(--po-subnav-fade) both;
+}
+
+@keyframes po-subnav-fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.po-workbench-shell .po-subnav-panel.is-active {
+    animation: none;
+  }
+
+  body.po-workbench-shell .sidebar,
+  body.po-workbench-shell .topbar,
+  body.po-workbench-shell .bottom-tabbar,
+  body.po-workbench-shell .po-subnav,
+  body.po-workbench-shell .po-sidebar-collapse,
+  body.po-workbench-shell .po-sidebar-collapse i {
+    transition: none !important;
+  }
+}
+
+body.po-workbench-shell .po-subnav-header {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  margin-bottom: 8px;
+}
+
+body.po-workbench-shell .po-subnav-title {
+  color: var(--color-text-primary);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+body.po-workbench-shell .po-subnav-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+body.po-workbench-shell .po-subnav .nav-icon {
+  display: none;
+}
+
+body.po-workbench-shell .po-subnav .nav-item {
+  gap: 6px;
+  padding: 6px 10px;
+  min-height: 32px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+body.po-workbench-shell .po-subnav .nav-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.po-workbench-shell .sidebar .nav-item:hover {
+  background: var(--color-surface-muted);
+  color: var(--color-text-primary);
+}
+
+body.po-workbench-shell .sidebar .nav-item.active {
+  background: var(--color-info-bg);
+  color: var(--color-info);
+  font-weight: 600;
+}
+
+body.po-workbench-shell .po-sidebar-collapse {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  opacity: 0.55;
+  transition:
+    opacity 0.15s ease,
+    color 0.15s ease,
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+body.po-workbench-shell .po-sidebar-collapse i {
+  transition: transform var(--po-sidebar-motion);
+}
+
+body.po-workbench-shell .sidebar:hover .po-sidebar-collapse,
+body.po-workbench-shell .po-sidebar-collapse:focus-visible {
+  opacity: 1;
+}
+
+body.sidebar-collapsed.po-workbench-shell {
+  --sidebar-width-collapsed: var(--sidebar-rail-width);
+}
+
+body.sidebar-collapsed.po-workbench-shell .sidebar,
+body.sidebar-collapsed.po-workbench-shell .sidebar.po-dual-sidebar {
+  width: var(--sidebar-width-collapsed);
+}
+
+body.sidebar-collapsed.po-workbench-shell .sidebar.po-dual-sidebar .po-subnav {
+  flex: 0 0 0;
+  min-width: 0;
+  width: 0;
+  padding: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+body.sidebar-collapsed.po-workbench-shell .topbar {
+  left: var(--sidebar-width-collapsed);
+}
+
+body.sidebar-collapsed.po-workbench-shell .bottom-tabbar {
+  left: var(--sidebar-width-collapsed);
+  transition: left var(--po-sidebar-motion);
+}
+
+body.po-workbench-shell .bottom-tabbar {
+  transition: left var(--po-sidebar-motion);
+}
+
+body.sidebar-collapsed.po-workbench-shell .po-sidebar-collapse {
+  display: inline-flex;
+  opacity: 1;
+  color: var(--color-text-primary);
+  border: none;
+}
+
+body.sidebar-collapsed.po-workbench-shell .po-sidebar-collapse i {
+  transform: rotate(180deg);
+}
+
+/* 覆盖旧单栏收起规则（双轨下不隐藏窄轨文字/图标） */
+body.sidebar-collapsed.po-workbench-shell .po-rail-btn > span:not(.po-rail-dot):not(.po-rail-route-indicator) {
+  display: block;
+  opacity: 1;
+  width: auto;
+  height: auto;
+  overflow: hidden;
+  max-width: 48px;
+}
+
+body.sidebar-collapsed.po-workbench-shell .po-rail .po-brand-logo {
+  display: inline-flex;
+  margin: 0;
+}

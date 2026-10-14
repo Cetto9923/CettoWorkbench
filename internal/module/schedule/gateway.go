@@ -2,7 +2,7 @@
 // 文件: internal/module/schedule/gateway.go
 // 模块: 排期工作台
 // 类型: action
-// 职责: 出站适配层：调用禅道检查业需转研发提醒、业需转研发、指派研需、创建产品计划/任务，以及批量删除研发需求/任务。
+// 职责: 出站适配层：调用禅道检查业需转研发提醒、业需转研发、指派研需、创建产品计划/执行/任务，以及批量删除研发需求/任务。
 // 依赖: internal/pkg/zentao
 // =============================================================================
 
@@ -12,6 +12,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"workbench/internal/pkg/zentao"
@@ -408,4 +409,68 @@ func toStory(ctx context.Context, client *zentao.Client, demandID uint, in toSto
 		}
 	}
 	return out.StoryIDs, nil
+}
+
+// createdExecution 禅道创建执行响应的必要字段。
+type createdExecution struct {
+	ID   uint   `json:"id"`
+	Name string `json:"name"`
+}
+
+func zentaoExecutionCreatePath(projectID uint) string {
+	return fmt.Sprintf("/projects/%d/executions", projectID)
+}
+
+// buildZentaoExecutionCreateBody 组装禅道创建执行字段。
+func buildZentaoExecutionCreateBody(req CreateExecutionReq, teamMembers []string) map[string]any {
+	productID := req.ProductID
+	products := []uint{productID}
+	plans := map[string][]uint{}
+	if req.PlanID > 0 {
+		plans[strconv.FormatUint(uint64(productID), 10)] = []uint{req.PlanID}
+	}
+	members := make([]string, 0, len(teamMembers))
+	for _, account := range teamMembers {
+		account = strings.TrimSpace(account)
+		if account == "" {
+			continue
+		}
+		members = append(members, account)
+	}
+	return map[string]any{
+		"name":        strings.TrimSpace(req.Name),
+		"begin":       strings.TrimSpace(req.Begin),
+		"end":         strings.TrimSpace(req.End),
+		"days":        countWorkdaysInclusive(req.Begin, req.End),
+		"products":    products,
+		"plans":       plans,
+		"lifetime":    "short",
+		"PM":          strings.TrimSpace(req.PM),
+		"scrumTeam":   req.ScrumTeam,
+		"teamMembers": members,
+	}
+}
+
+// createExecution 调用禅道 POST /projects/{id}/executions 创建执行。
+func createExecution(ctx context.Context, client *zentao.Client, req CreateExecutionReq, teamMembers []string) (CreateExecutionResp, error) {
+	var empty CreateExecutionResp
+	if req.ProjectID == 0 {
+		return empty, fmt.Errorf("项目 ID 无效")
+	}
+	if client == nil {
+		return empty, fmt.Errorf("禅道 API 未配置")
+	}
+	var out createdExecution
+	body := buildZentaoExecutionCreateBody(req, teamMembers)
+	if err := client.Do(ctx, http.MethodPost, zentaoExecutionCreatePath(req.ProjectID), body, &out); err != nil {
+		return empty, fmt.Errorf("创建迭代失败: %w", err)
+	}
+	if out.ID == 0 {
+		return empty, fmt.Errorf("禅道未返回执行 ID")
+	}
+	name := strings.TrimSpace(out.Name)
+	if name == "" {
+		name = strings.TrimSpace(req.Name)
+	}
+	return CreateExecutionResp{ID: out.ID, Name: name}, nil
 }

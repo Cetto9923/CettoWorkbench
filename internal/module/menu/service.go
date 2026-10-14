@@ -2,9 +2,10 @@
 // 文件: internal/module/menu/service.go
 // 模块: 菜单管理
 // 类型: crud
-// 职责: 实现菜单树查询与增删改业务逻辑。
+// 职责: 实现菜单树查询、增删改与用户固定工作台菜单业务逻辑。
 // 依赖: internal/model
 //       internal/module/menu/repo.go
+//       internal/pkg/errorx
 // =============================================================================
 
 package menu
@@ -16,6 +17,7 @@ import (
 	"time"
 
 	"workbench/internal/model"
+	"workbench/internal/pkg/errorx"
 )
 
 // MenuNode 表示菜单树节点。
@@ -154,4 +156,183 @@ func normalizeMenuType(raw string) string {
 	default:
 		return "C"
 	}
+}
+
+// ListUserMenus 返回当前用户可见的固定菜单（title/path 来自 zt_menus）。
+func (s *Service) ListUserMenus(ctx context.Context, actor *model.User, perms map[string]bool) (ListUserMenuResp, error) {
+	if actor == nil || strings.TrimSpace(actor.Account) == "" {
+		return ListUserMenuResp{}, errorx.New(errorx.ErrCodeForbidden, "请先登录")
+	}
+	rows, err := s.repo.FindUserMenusByAccount(ctx, actor.Account)
+	if err != nil {
+		return ListUserMenuResp{}, err
+	}
+	items := make([]UserMenuItem, 0, len(rows))
+	for _, row := range rows {
+		if !menuPermAllowed(perms, actor.IsSuperAdmin, row.Perm) {
+			continue
+		}
+		items = append(items, UserMenuItem{
+			ID:     row.ID,
+			MenuID: row.MenuID,
+			Title:  row.Title,
+			Path:   row.Path,
+			Icon:   row.Icon,
+			Sort:   row.Sort,
+		})
+	}
+	return ListUserMenuResp{Items: items}, nil
+}
+
+// PinUserMenu 按 path 解析 zt_menus 后固定到当前用户。
+func (s *Service) PinUserMenu(ctx context.Context, actor *model.User, perms map[string]bool, req PinUserMenuReq) (PinUserMenuResp, error) {
+	if actor == nil || strings.TrimSpace(actor.Account) == "" {
+		return PinUserMenuResp{}, errorx.New(errorx.ErrCodeForbidden, "请先登录")
+	}
+	path := strings.TrimSpace(req.Path)
+	m, err := s.resolveMenuByPath(ctx, path, perms, actor.IsSuperAdmin)
+	if err != nil {
+		return PinUserMenuResp{}, err
+	}
+
+	existing, findErr := s.repo.FindUserMenuByAccountMenuID(ctx, actor.Account, m.ID)
+	if findErr != nil && !isNotFound(findErr) {
+		return PinUserMenuResp{}, findErr
+	}
+
+	maxSort, err := s.repo.MaxUserMenuSort(ctx, actor.Account)
+	if err != nil {
+		return PinUserMenuResp{}, err
+	}
+	nextSort := maxSort + 1
+
+	if existing != nil {
+		return PinUserMenuResp{Item: UserMenuItem{
+			ID: existing.ID, MenuID: m.ID, Title: m.Title, Path: m.Path, Icon: m.Icon, Sort: existing.Sort,
+		}}, nil
+	}
+
+	now := time.Now()
+	row := &model.UserMenu{
+		CreatedBy:   actor.Account,
+		CreatedDate: now,
+		UpdatedBy:   actor.Account,
+		UpdatedDate: now,
+		Account: actor.Account,
+		MenuID:  m.ID,
+		Sort:    nextSort,
+	}
+	id, err := s.repo.CreateUserMenu(ctx, row)
+	if err != nil {
+		return PinUserMenuResp{}, err
+	}
+	return PinUserMenuResp{Item: UserMenuItem{
+		ID: uint64(id), MenuID: m.ID, Title: m.Title, Path: m.Path, Icon: m.Icon, Sort: nextSort,
+	}}, nil
+}
+
+// UnpinUserMenu 取消固定。
+func (s *Service) UnpinUserMenu(ctx context.Context, actor *model.User, req UnpinUserMenuReq) error {
+	if actor == nil || strings.TrimSpace(actor.Account) == "" {
+		return errorx.New(errorx.ErrCodeForbidden, "请先登录")
+	}
+	if req.MenuID == 0 {
+		return errorx.New(errorx.ErrCodeInvalidParam, "菜单 ID 无效")
+	}
+	err := s.repo.DeleteUserMenu(ctx, actor.Account, req.MenuID)
+	if isNotFound(err) {
+		return errorx.New(errorx.ErrCodeNotFound, "未固定该菜单")
+	}
+	return err
+}
+
+// ReorderUserMenus 按 menuIds 顺序重写 sort；未出现在请求中的已固定项保持相对顺序排在末尾。
+func (s *Service) ReorderUserMenus(ctx context.Context, actor *model.User, perms map[string]bool, req ReorderUserMenuReq) (ReorderUserMenuResp, error) {
+	if actor == nil || strings.TrimSpace(actor.Account) == "" {
+		return ReorderUserMenuResp{}, errorx.New(errorx.ErrCodeForbidden, "请先登录")
+	}
+	existing, err := s.repo.FindUserMenuIDsByAccount(ctx, actor.Account)
+	if err != nil {
+		return ReorderUserMenuResp{}, err
+	}
+	owned := make(map[uint64]struct{}, len(existing))
+	for _, id := range existing {
+		owned[id] = struct{}{}
+	}
+	inReq := make(map[uint64]struct{}, len(req.MenuIDs))
+	for _, id := range req.MenuIDs {
+		if _, ok := owned[id]; !ok {
+			return ReorderUserMenuResp{}, errorx.New(errorx.ErrCodeInvalidParam, "含有未固定的菜单")
+		}
+		inReq[id] = struct{}{}
+	}
+	// 最终顺序 = 请求顺序 + 未提及的已固定项（保持原相对序）
+	ordered := make([]uint64, 0, len(existing))
+	ordered = append(ordered, req.MenuIDs...)
+	for _, id := range existing {
+		if _, ok := inReq[id]; !ok {
+			ordered = append(ordered, id)
+		}
+	}
+	// 列表按 sort DESC 展示：数组首位 sort 最大
+	n := len(ordered)
+	sorts := make(map[uint64]int, n)
+	for i, id := range ordered {
+		sorts[id] = n - i
+	}
+	if err := s.repo.UpdateUserMenuSorts(ctx, actor.Account, actor.Account, sorts); err != nil {
+		return ReorderUserMenuResp{}, err
+	}
+	list, err := s.ListUserMenus(ctx, actor, perms)
+	if err != nil {
+		return ReorderUserMenuResp{}, err
+	}
+	return ReorderUserMenuResp{Items: list.Items}, nil
+}
+
+func (s *Service) resolveMenuByPath(ctx context.Context, path string, perms map[string]bool, isSuperAdmin bool) (*model.Menu, error) {
+	path = strings.TrimSpace(path)
+	if path == "" || path[0] != '/' || path == "/home" {
+		return nil, errorx.New(errorx.ErrCodeInvalidParam, "当前页面不可固定")
+	}
+	menus, err := s.repo.FindPinnableMenus(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var best *model.Menu
+	bestLen := -1
+	for i := range menus {
+		m := &menus[i]
+		mp := strings.TrimSpace(m.Path)
+		if mp == "" {
+			continue
+		}
+		if !menuPermAllowed(perms, isSuperAdmin, m.Perm) {
+			continue
+		}
+		if path == mp || strings.HasPrefix(path, mp+"/") {
+			if len(mp) > bestLen {
+				best = m
+				bestLen = len(mp)
+			}
+		}
+	}
+	if best == nil {
+		return nil, errorx.New(errorx.ErrCodeNotFound, "未找到可固定的菜单")
+	}
+	return best, nil
+}
+
+func menuPermAllowed(perms map[string]bool, isSuperAdmin bool, permCode string) bool {
+	if isSuperAdmin {
+		return true
+	}
+	code := strings.TrimSpace(permCode)
+	if code == "" {
+		return true
+	}
+	if perms == nil {
+		return false
+	}
+	return perms[code]
 }

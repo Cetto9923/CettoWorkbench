@@ -114,6 +114,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 		g.GET("/projects/:id/executions", h.GetProjectExecutions)
 		g.GET("/stories/:id/tasks", h.GetStoryTasks)
 		g.POST("/stories/:id/save-tasks", h.SaveStoryTasks)
+		g.POST("/:projectId/executions", h.CreateExecution)
 		g.POST("/windows", h.CreateWindow)
 		g.GET("/windows", h.ListWindows)
 		g.GET("/windows/:id", h.GetWindow)
@@ -172,7 +173,6 @@ func (h *Handler) Index(c *gin.Context) {
 
 	render.Page(c, http.StatusOK, constants.TEMPLATE_SCHEDULE_INDEX, gin.H{
 		"Title":                   "排期工作台",
-		"PageTitle":               "排期工作台",
 		"Windows":                 windows,
 		"BizRequirements":         demandData.BizRequirements,
 		"BizTotal":                demandData.BizTotal,
@@ -290,7 +290,8 @@ func (h *Handler) CreateWindow(c *gin.Context) {
 		return
 	}
 
-	if err := h.svc.Create(c.Request.Context(), actor, req); err != nil {
+	resp, err := h.svc.Create(c.Request.Context(), actor, req)
+	if err != nil {
 		if h.logger != nil {
 			h.logger.Error("save version window failed",
 				zap.Error(err),
@@ -307,6 +308,7 @@ func (h *Handler) CreateWindow(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success":     true,
 		"message":     "版本窗口保存成功",
+		"windowId":    resp.ID,
 		"redirectUrl": scheduleRedirectURL,
 	})
 }

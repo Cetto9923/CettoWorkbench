@@ -95,6 +95,9 @@ func registerRoutes(r *gin.Engine, deps RouteDeps) {
 		if deps.UserHandler != nil {
 			deps.UserHandler.RegisterInsideRoutes(po)
 		}
+		if deps.MenuHandler != nil {
+			deps.MenuHandler.RegisterUserMenuRoutes(po)
+		}
 		if deps.PoHandler != nil {
 			deps.PoHandler.RegisterRoutes(po)
 		}

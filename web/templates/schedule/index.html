@@ -12,34 +12,23 @@
           .FilterProducts ([]schedule.ZtProduct),
           .FilterWindows ([]schedule.WindowFilterOption),
           .StageFilterOptions ([]schedule.StageFilterOption),
-          .SelectedWindowMap (map[uint]bool), .BizPager (*pagination.Pager),
+          .SelectedWindows (string), .BizPager (*pagination.Pager),
           .IndepPager (*pagination.Pager), .InsideUsersURL (string)
-TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
 ========================================================================== */}}
 {{ define "page_css" }}
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedule.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulelist.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulewindow.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/schedule/maintaintaskiteration.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulemodal.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/schedulefilter.css" }}">
 <link rel="stylesheet" href="{{ asset "/static/css/schedule/scheduleintegrated.css" }}">
+<link rel="stylesheet" href="{{ asset "/static/css/schedule/dark.css" }}">
 {{ end }}
 
 {{ define "content" }}
 <div id="page-schedule">
-  <div class="schedule-page-head">
-    <div>
-      <h2>PO 排期工作台</h2>
-    </div>
-    <div class="schedule-page-actions">
-      <button type="button" class="action-btn js-open-manage-version-windows"><i class="fas fa-gear"></i> 窗口维护</button>
-      <button type="button" class="action-btn primary js-open-create-version-window"><i class="fas fa-plus"></i> 新建窗口</button>
-      <!-- <button type="button" class="action-btn js-schedule-reload" title="刷新" aria-label="刷新"><i class="fas fa-rotate"></i></button> -->
-    </div>
-  </div>
-
   <div class="schedule-version-overview">
-    <!-- <div class="schedule-section-title">版本窗口概览 <span>按预计上线时间</span></div> -->
     <div class="schedule-section-title">版本窗口概览</div>
     <div class="schedule-version-body">
       <div id="scheduleCapacitySummaryLine">
@@ -47,7 +36,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
         <div class="schedule-version-grid">
           {{ range $i, $w := .Windows }}
           {{ if lt $i 4 }}
-          <div class="schedule-version-card {{ $w.ToneClass }}" data-window-id="{{ $w.ID }}">
+          <div class="schedule-version-card {{ $w.ToneClass }}{{ if eq (printf "%d" $w.ID) $.SelectedWindows }} is-selected{{ end }}" data-window-id="{{ $w.ID }}" data-window-name="{{ $w.ShortName }}" title="按此窗口筛选需求列表">
             <div class="schedule-version-body-click">
               <div class="schedule-version-top">
                 <div class="schedule-version-name">
@@ -88,13 +77,18 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
           </div>
           {{ end }}
           {{ end }}
-          <div class="schedule-version-extra">
-            <button type="button" class="schedule-version-add js-open-create-version-window"><i class="fas fa-plus"></i><span>新建窗口</span></button>
+          <div class="schedule-page-actions">
+            <button type="button" class="action-btn js-open-manage-version-windows"><i class="fas fa-gear"></i> 窗口维护</button>
+            <button type="button" class="action-btn primary js-open-create-version-window"><i class="fas fa-plus"></i> 新建窗口</button>
           </div>
         </div>
         {{ else }}
         <div class="schedule-version-grid schedule-version-grid--empty">
           <div class="schedule-create-empty">暂无版本窗口</div>
+          <div class="schedule-page-actions">
+            <button type="button" class="action-btn js-open-manage-version-windows"><i class="fas fa-gear"></i> 窗口维护</button>
+            <button type="button" class="action-btn primary js-open-create-version-window"><i class="fas fa-plus"></i> 新建窗口</button>
+          </div>
         </div>
         {{ end }}
       </div>
@@ -209,37 +203,14 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             </div>
           </div>
 
-          <div class="dropdown form-multiselect schedule-filter-ms" data-role-dropdown data-filter-key="windows" data-multiselect-keep-placeholder="true">
-            <div class="form-input-clear-wrap">
-              <div class="form-multiselect-display" data-role-display>
-                <div class="form-multiselect-tags" data-role-tags></div>
-                <input type="text" class="input form-multiselect-input" data-multiselect-filter
-                  placeholder="窗口"
-                  data-placeholder-empty="窗口"
-                  autocomplete="off"
-                  aria-autocomplete="list"
-                  aria-label="检索窗口">
-              </div>
-              <button type="button" class="form-dropdown-chevron" aria-label="展开窗口" onclick="return toggleDropdown(this);">
-                <i class="bi bi-chevron-down" aria-hidden="true"></i>
-              </button>
-              <button type="button" class="form-dropdown-clear" data-form-multiselect-clear aria-label="清除窗口" hidden>×</button>
-            </div>
-            <div class="dropdown-menu form-multiselect-menu">
-              <div class="form-multiselect-scroll">
-                <div class="form-multiselect-list">
-                  {{ range .FilterWindows }}
-                  <label class="checkbox-label form-multiselect-option">
-                    <input type="checkbox" class="checkbox form-multiselect-checkbox" value="{{ .ID }}"{{ if index $.SelectedWindowMap .ID }} checked{{ end }}>
-                    <span class="checkbox-box"></span>
-                    <span class="form-multiselect-name">{{ .Name }}</span>
-                  </label>
-                  {{ else }}
-                  <div class="schedule-ms-empty">暂无窗口</div>
-                  {{ end }}
-                </div>
-              </div>
-            </div>
+          <div class="ui-autocomplete schedule-window-picker">
+            <input type="text" id="scheduleFilterWindowInput" class="form-input" placeholder="窗口" autocomplete="off" aria-label="检索窗口">
+            <input type="hidden" id="scheduleFilterWindow" class="schedule-window-filter-value" value="{{ .SelectedWindows }}" data-selected-value="{{ .SelectedWindows }}">
+            <select id="scheduleFilterWindowOptions" hidden aria-hidden="true">
+              {{ range .FilterWindows }}
+              <option value="{{ .ID }}">{{ .Name }}</option>
+              {{ end }}
+            </select>
           </div>
 
           <label class="schedule-search-inline" for="scheduleSearch">
@@ -279,11 +250,11 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
       <table class="schedule-table">
         <thead id="scheduleTableHead">
           <tr>
-            <th class="schedule-col-title" style="width:500px;max-width:500px">标题</th>
+            <th class="schedule-col-title" style="width:560px;max-width:560px">标题</th>
             <th class="schedule-col-nowrap" style="width:72px">优先级</th>
-            <th class="schedule-col-nowrap" style="width:120px">敏捷小组</th>
+            <th class="schedule-col-nowrap schedule-col-group" style="width:160px">敏捷小组</th>
             <th class="schedule-col-nowrap" style="min-width:120px">排期阶段</th>
-            <th class="schedule-col-stage" style="min-width:160px">版本窗口</th>
+            <th class="schedule-col-stage" style="min-width:100px">版本窗口</th>
             <th class="schedule-col-owner" style="min-width:110px">负责人</th>
             <th class="schedule-col-nowrap" style="width:72px">任务</th>
             <th class="schedule-action-col schedule-col-nowrap" style="width:100px">操作</th>
@@ -310,7 +281,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
               </div>
             </td>
             <td class="schedule-col-nowrap"><span class="pri-tag {{ .PriClass }}">{{ .Priority }}</span></td>
-            <td>{{ .AgileGroup }}</td>
+            <td class="schedule-col-nowrap schedule-col-group" title="{{ .AgileGroup }}">{{ .AgileGroup }}</td>
             <td class="schedule-col-nowrap"><span class="stage-tag {{ .StageClass }}">{{ .Stage }}</span></td>
             <td class="schedule-col-stage"><span class="schedule-window-name">{{ .WindowName }}</span></td>
             <td class="schedule-col-owner"><span class="schedule-owner-line"><i class="fas fa-user"></i><span class="name">{{ .Owner }}</span></span></td>
@@ -339,7 +310,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
               </div>
             </td>
             <td class="schedule-col-nowrap"><span class="pri-tag {{ .PriClass }}">{{ .Priority }}</span></td>
-            <td>{{ .AgileGroup }}</td>
+            <td class="schedule-col-nowrap schedule-col-group" title="{{ .AgileGroup }}">{{ .AgileGroup }}</td>
             <td class="schedule-col-nowrap"><span class="stage-tag {{ .StageClass }}">{{ .Stage }}</span></td>
             <td class="schedule-col-stage"><span class="schedule-window-name">{{ .WindowName }}</span></td>
             <td class="schedule-col-owner"><span class="schedule-owner-line"><i class="fas fa-user"></i><span class="name">{{ .Owner }}</span></span></td>
@@ -369,7 +340,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
               </div>
             </td>
             <td class="schedule-col-nowrap"><span class="pri-tag {{ .PriClass }}">{{ .Priority }}</span></td>
-            <td>{{ .AgileGroup }}</td>
+            <td class="schedule-col-nowrap schedule-col-group" title="{{ .AgileGroup }}">{{ .AgileGroup }}</td>
             <td class="schedule-col-nowrap"><span class="stage-tag {{ .StageClass }}">{{ .Stage }}</span></td>
             <!-- <td class="schedule-col-nowrap"><span class="t3">—</span></td> -->
             <td class="schedule-col-stage"><span class="schedule-window-name">{{ .WindowName }}</span></td>
@@ -404,7 +375,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
               </div>
             </td>
             <td class="schedule-col-nowrap"><span class="pri-tag {{ .PriClass }}">{{ .Priority }}</span></td>
-            <td>{{ .AgileGroup }}</td>
+            <td class="schedule-col-nowrap schedule-col-group" title="{{ .AgileGroup }}">{{ .AgileGroup }}</td>
             <td class="schedule-col-nowrap"><span class="stage-tag {{ .StageClass }}">{{ .Stage }}</span></td>
             <!-- <td class="schedule-col-nowrap"><span class="t3">—</span></td> -->
             <td class="schedule-col-stage"><span class="schedule-window-name">{{ .WindowName }}</span></td>
@@ -442,12 +413,12 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
       <table class="schedule-table">
         <thead>
           <tr>
-            <th class="schedule-col-title" style="width:300px;max-width:300px;padding-left: 20px;">标题</th>
+            <th class="schedule-col-title" style="width:380px;max-width:380px;padding-left: 20px;">标题</th>
             <th class="schedule-col-nowrap" style="width:72px">优先级</th>
             <th class="schedule-col-nowrap" style="width:120px">关联系统</th>
             <th class="schedule-col-nowrap" style="width:120px">排期窗口</th>
             <th class="schedule-col-nowrap" style="min-width:120px">排期阶段</th>
-            <th class="schedule-col-nowrap" style="width:120px">敏捷小组</th>
+            <th class="schedule-col-nowrap schedule-col-group" style="width:160px">敏捷小组</th>
             <th class="schedule-col-owner" style="min-width:110px">负责人</th>
             <th class="schedule-col-nowrap" style="width:72px">任务</th>
             <th class="schedule-action-col schedule-col-nowrap" style="width:140px">操作</th>
@@ -474,7 +445,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             <td>{{ .ProductName }}</td>
             <td><span class="window-name-tag-inline">{{ .WindowName }}</span></td>
             <td><span class="stage-tag {{ .StageClass }}">{{ .Stage }}</span></td>
-            <td>{{ .TeamgroupName }}</td>
+            <td class="schedule-col-nowrap schedule-col-group" title="{{ .TeamgroupName }}">{{ .TeamgroupName }}</td>
             <td class="schedule-col-owner"><span class="schedule-owner-line"><i class="fas fa-user"></i><span class="name">{{ .Owner }}</span></span></td>
             <td class="schedule-task-col">
               {{ if gt .TaskCount 0 }}
@@ -511,7 +482,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
             <td>{{ .ProductName }}</td>
             <td><span class="window-name-tag-inline">{{ .WindowName }}</span></td>
             <td><span class="stage-tag {{ .StageClass }}">{{ .Stage }}</span></td>
-            <td>{{ .TeamgroupName }}</td>
+            <td class="schedule-col-nowrap schedule-col-group" title="{{ .TeamgroupName }}">{{ .TeamgroupName }}</td>
             <td class="schedule-col-owner"><span class="schedule-owner-line"><i class="fas fa-user"></i><span class="name">{{ .Owner }}</span></span></td>
             <td class="schedule-task-col">
               {{ if gt .TaskCount 0 }}
@@ -548,148 +519,7 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
   </div>
 </div>
 
-<div class="batch-modal-overlay" id="scheduleVersionWindowModalOverlay"></div>
-<div class="batch-modal" id="scheduleVersionWindowModal">
-  <div class="batch-modal-hdr">
-    <h3 id="scheduleVersionWindowModalTitle">版本窗口属性</h3>
-    <button type="button" class="drawer-close" id="scheduleVersionWindowModalCloseBtn"><i class="fas fa-xmark"></i></button>
-  </div>
-  <div class="batch-modal-body" id="scheduleVersionWindowModalBody">
-    <div class="schedule-create-modal" id="scheduleVersionWindowForm">
-      <div class="schedule-create-grid schedule-create-grid--4">
-        <div class="form-group">
-          <label class="form-label" for="scheduleWindowOnline">预计上线 <span style="color:var(--red)">*</span></label>
-          <input type="date" class="form-input" id="scheduleWindowOnline" name="online">
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="scheduleWindowName">窗口名称 <span style="color:var(--red)">*</span></label>
-          <input type="text" class="form-input" id="scheduleWindowName" name="name" placeholder="根据预计上线自动生成">
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="scheduleWindowStart">窗口开始 <span style="color:var(--red)">*</span></label>
-          <input type="date" class="form-input" id="scheduleWindowStart" name="start" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="scheduleWindowEnd">窗口结束 <span style="color:var(--red)">*</span></label>
-          <input type="date" class="form-input" id="scheduleWindowEnd" name="end" required>
-        </div>
-      </div>
-      <div class="schedule-create-section">
-        <div class="schedule-create-section-head"><strong>窗口归属</strong></div>
-        <div class="schedule-create-inline-row">
-          <div class="form-group">
-            <label class="form-label" for="scheduleWindowTeamgroupInput">敏捷小组</label>
-            <div id="scheduleWindowTeamgroupOptions" hidden>
-              {{ range .Teamgroups }}
-              <span data-value="{{ .ID }}" data-label="{{ .DisplayName }}"></span>
-              {{ end }}
-            </div>
-            <div class="ui-autocomplete">
-              <input type="text" id="scheduleWindowTeamgroupInput" class="form-input" placeholder="搜索敏捷小组" autocomplete="off" style="width:100%">
-              <input type="hidden" id="scheduleWindowTeamgroup" name="teamgroupId">
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="scheduleWindowTypeInput">发布类型</label>
-            <div class="ui-autocomplete">
-              <input type="text" id="scheduleWindowTypeInput" class="form-input" placeholder="搜索发布类型" autocomplete="off" style="width:100%">
-              <input type="hidden" id="scheduleWindowType" name="windowType" value="regular">
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="schedule-create-section">
-        <div class="schedule-create-grid schedule-create-grid--3">
-          <div class="form-group">
-            <label class="form-label" for="scheduleWindowPlanTestDone">预计提测 / 开发完成 <span style="color:var(--red)">*</span></label>
-            <input type="date" class="form-input" id="scheduleWindowPlanTestDone" name="planTestDone" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="scheduleWindowTestDone">预计测试完成 <span style="color:var(--red)">*</span></label>
-            <input type="date" class="form-input" id="scheduleWindowTestDone" name="testDone" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="scheduleWindowAcceptDone">预计验收完成 <span style="color:var(--red)">*</span></label>
-            <input type="date" class="form-input" id="scheduleWindowAcceptDone" name="acceptDone" required>
-          </div>
-        </div>
-      </div>
-      <div class="schedule-create-section">
-        <div class="schedule-create-section-head"><strong>关联系统</strong></div>
-        <div class="schedule-create-grid schedule-create-grid--systems schedule-create-systems" id="scheduleWindowSystemsGrid">
-          {{ if .Products }}
-          {{ range .Products }}
-          <label class="chk" data-product-id="{{ .ID }}" data-product-name="{{ .Name }}">
-            <input type="checkbox" name="productIds" value="{{ .ID }}">
-            <span>{{ .Name }}</span>
-          </label>
-          {{ end }}
-          {{ else }}
-          <div class="schedule-create-empty">暂无关联系统</div>
-          {{ end }}
-        </div>
-      </div>
-      <div class="schedule-create-section">
-        <div class="schedule-create-section-head"><strong>系统计划</strong></div>
-        <div class="schedule-create-plan-grid" id="scheduleWindowPlanGrid">
-          <div class="schedule-create-empty" id="scheduleWindowPlanEmpty">请先勾选关联系统，将显示各系统的计划情况。</div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="batch-modal-footer">
-    <button type="button" class="action-btn" id="scheduleVersionWindowModalDismissBtn">关闭</button>
-    <button type="button" class="action-btn primary" id="scheduleVersionWindowModalSaveBtn">保存</button>
-  </div>
-</div>
-
-<div class="batch-modal-overlay" id="taskModalOverlay"></div>
-<div class="batch-modal" id="taskModal">
-  <div class="batch-modal-hdr">
-    <h3 id="taskModalTitle">拆任务</h3>
-    <button type="button" class="drawer-close" onclick="closeTaskModal()"><i class="fas fa-xmark"></i></button>
-  </div>
-  <div class="batch-modal-body" id="taskModalBody">
-    <div id="taskModalSpec"></div>
-
-    <div id="taskModalInfoBar" style="font-size:12px; color:#666; margin:12px 0;"></div>
-
-    <div class="task-modal-project-section" id="taskModalProjectSection" style="display:none;">
-      <label for="taskModalProjectInput">项目</label>
-      <div class="ui-autocomplete">
-        <input type="text" id="taskModalProjectInput" class="form-input rd-task-project-select" placeholder="搜索项目" autocomplete="off">
-        <input type="hidden" id="taskModalProjectSelect" class="rd-task-project-select rd-task-select">
-      </div>
-    </div>
-
-    <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
-      <button type="button" class="action-btn action-btn--primary" id="taskModalAddBtn">拆任务</button>
-    </div>
-
-    <div class="rd-node-tasks" id="taskModalTasksWrap">
-    <table class="rd-task-table" id="taskModalTable">
-      <thead>
-        <tr>
-          <th style="width:220px">执行 <span class="req">*</span></th>
-          <th style="width:80px">类型</th>
-          <th style="width:72px">优先级</th>
-          <th style="width:140px">任务名称 <span class="req">*</span></th>
-          <th style="width:120px">指派给</th>
-          <th style="width:70px">预估(h) <span class="req">*</span></th>
-          <th style="width:110px">预计开始</th>
-          <th style="width:110px">截止时间 <span class="req">*</span></th>
-          <th style="width:48px">操作</th>
-        </tr>
-      </thead>
-      <tbody id="taskModalTableBody"></tbody>
-    </table>
-    </div>
-  </div>
-  <div class="batch-modal-footer">
-    <button type="button" class="action-btn" onclick="closeTaskModal()">取消</button>
-    <button type="button" class="action-btn action-btn--primary" id="taskModalSaveBtn">保存任务</button>
-  </div>
-</div>
+{{ template "schedule/maintaintask" . }}
 
 <div class="batch-modal-overlay" id="taskListModalOverlay"></div>
 <div class="batch-modal" id="taskListModal">
@@ -733,7 +563,6 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
 </div>
 
 {{ template "schedule/integrated" . }}
-
 
 <template id="schedulePlanCardLoading">
   <div class="schedule-create-plan-card">
@@ -863,7 +692,8 @@ TODO: 内联 style 过多（约 135 处），后续抽成 CSS class
 <script src="{{ asset "/static/js/schedule/scheduleintegratedtasks.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/scheduleintegratedrd.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/scheduleintegrated.js" }}"></script>
-<script src="{{ asset "/static/js/schedule/scheduletaskmodal.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/maintaintask.js" }}"></script>
+<script src="{{ asset "/static/js/schedule/maintaintaskiteration.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/scheduletasklistmodal.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/schedulefilter.js" }}"></script>
 <script src="{{ asset "/static/js/schedule/schedule.js" }}"></script>

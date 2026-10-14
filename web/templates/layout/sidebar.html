@@ -7,7 +7,6 @@
    title="{{ .Menu.Title }}">
   {{ if .Menu.Icon }}<i class="nav-icon fas {{ .Menu.Icon }}"></i>{{ else }}<i class="nav-icon fas fa-circle"></i>{{ end }}
   <span class="nav-text">{{ .Menu.Title }}</span>
-  {{ if eq .Path "/schedule" }}<span class="nav-badge">PO</span>{{ end }}
 </a>
 {{ end }}
 
@@ -138,60 +137,122 @@
 {{/* ==========================================================================
   文件: web/templates/layout/sidebar.html
   模块: 布局
-  职责: 渲染后台左侧菜单导航，分区标签 + 分隔线样式，支持多级展开/折叠与整体收起
-  全局字段: .CurrentUser, .CSRFToken, .Menus, .CurrentPath, .ActiveNavKey
-  页面字段: .CurrentMenus ([]menu.Menu)
+  职责: 渲染左侧双轨菜单：一级分组窄轨 + 二级面板；数据仍用 CurrentMenus / ActiveNavKey
+  全局字段: .CurrentUser, .CSRFToken, .CurrentMenus, .CurrentPath, .ActiveNavKey
 ========================================================================== */}}
-<nav class="sidebar" id="sidebar">
-  <div class="sidebar-body">
-    <div class="sidebar-nav">
+<nav class="sidebar po-dual-sidebar" id="sidebar">
+  {{ $activeKey := .ActiveNavKey }}
+
+  <!-- 左侧窄轨 (Master Rail) -->
+  <aside class="po-rail" aria-label="工作台大类导航">
+    <div class="po-rail-header">
+      <a href="/home" class="po-brand-logo" title="研发工作台首页">研</a>
+    </div>
+    <div class="po-rail-nav">
       {{ if .CurrentMenus }}
-        {{ range $i, $m := .CurrentMenus }}
-          {{ if or (eq $m.Type "directory") (eq $m.Type "menu") }}
-            {{ if gt $i 0 }}<div class="nav-divider" role="separator"></div>{{ end }}
-
-            {{ if $m.Children }}
-              {{ $hasNavChild := false }}
-              {{ range $m.Children }}
-                {{ if or (eq .Type "directory") (eq .Type "menu") }}{{ $hasNavChild = true }}{{ end }}
-              {{ end }}
-
-              {{ if $hasNavChild }}
-              <div class="nav-section-label">{{ $m.Title }}</div>
-              {{ template "sidebar/menuItems" (dict
-                   "Items"        $m.Children
-                   "CurrentPath"  $.CurrentPath
-                   "ActiveNavKey" $.ActiveNavKey
-                   "Depth"        0) }}
-              {{ else if $m.Path }}
-              {{ template "sidebar/navLink" (dict
-                   "Menu"         $m
-                   "Path"         $m.Path
-                   "ActiveNavKey" $.ActiveNavKey
-                   "Depth"        0) }}
-              {{ end }}
-
-            {{ else if $m.Path }}
-            {{ template "sidebar/navLink" (dict
-                 "Menu"         $m
-                 "Path"         $m.Path
-                 "ActiveNavKey" $.ActiveNavKey
-                 "Depth"        0) }}
-            {{ end }}
+        {{ range .CurrentMenus }}
+          {{ if or (eq .Type "directory") (eq .Type "menu") }}
+          {{ $isActive := menuNavActive $activeKey . }}
+          <button type="button"
+                  class="po-rail-btn{{ if $isActive }} is-active-route is-drawer-open{{ end }}"
+                  data-rail-group="{{ .Key }}"
+                  title="{{ .Title }}"
+                  aria-expanded="{{ if $isActive }}true{{ else }}false{{ end }}">
+            <span class="po-rail-route-indicator" aria-hidden="true"></span>
+            <span>{{ .Title }}</span>
+          </button>
           {{ end }}
         {{ end }}
       {{ end }}
     </div>
-  </div>
+    <div class="po-rail-footer">
+      <button type="button" class="nav-item po-sidebar-collapse js-sidebar-collapse" id="sidebarToggle" title="收起/展开子菜单" aria-label="收起/展开子菜单">
+        <i class="fas fa-angles-left"></i>
+      </button>
+    </div>
+  </aside>
 
-  <div class="sidebar-footer">
-    <button type="button" class="nav-item js-sidebar-collapse" id="sidebarToggle" title="收起菜单">
-      <svg class="nav-icon sidebar-collapse-icon" viewBox="0 0 15 15" fill="none"
-           stroke="currentColor" stroke-width="1.5">
-        <path d="M10 3L5.5 7.5L10 12"/>
-      </svg>
-      <span class="nav-text sidebar-collapse-text">收起菜单</span>
-    </button>
+  <!-- 右侧子功能面板 (Detail Sub-Panel) -->
+  <div class="po-subnav" aria-label="子功能导航">
+    {{ if .CurrentMenus }}
+      {{ $pinnedPlaced := false }}
+      {{ range .CurrentMenus }}
+        {{ if or (eq .Type "directory") (eq .Type "menu") }}
+        {{ $isActive := menuNavActive $activeKey . }}
+        <div class="po-subnav-panel{{ if $isActive }} is-active{{ end }}" data-subnav-panel="{{ .Key }}">
+          <div class="po-subnav-header">
+            <span class="po-subnav-title">{{ .Title }}</span>
+          </div>
+          <div class="po-subnav-body">
+            {{ if .Children }}
+              {{ template "sidebar/menuItems" (dict
+                   "Items"        .Children
+                   "CurrentPath"  $.CurrentPath
+                   "ActiveNavKey" $activeKey
+                   "Depth"        0) }}
+            {{ else if .Path }}
+              {{ template "sidebar/navLink" (dict
+                   "Menu"         .
+                   "Path"         .Path
+                   "ActiveNavKey" $activeKey
+                   "Depth"        0) }}
+            {{ end }}
+
+            {{/* 「常用」固定在第一个一级分组（个人）二级菜单下方，列表由 JS 填充 */}}
+            {{ if not $pinnedPlaced }}
+            {{ $pinnedPlaced = true }}
+            <div class="po-pinned-section" id="pinnedSection">
+              <div class="po-pinned-section-header" id="pinnedSectionHeader">
+                <span>常用</span>
+                <button type="button" class="pinned-manage-btn" id="btnManagePinned" title="自定义与排序常用页面">
+                  <span>编辑</span>
+                </button>
+              </div>
+              <div class="po-pinned-edit-tip" id="pinnedEditTip" hidden><i class="fas fa-arrows-up-down"></i>拖拽 ⠿ 调整排序，点击 × 移除</div>
+              <div class="po-pinned-list" id="sidebarPinnedContainer"></div>
+            </div>
+            {{ end }}
+          </div>
+        </div>
+        {{ end }}
+      {{ end }}
+    {{ end }}
   </div>
 </nav>
+{{/* 从「常用」进入时须在首屏绘制前切回常用面板，否则会先闪一下真实菜单分组 */}}
+<script>
+(function () {
+  try {
+    var viaPinned =
+      window.localStorage.getItem("po_nav_via_pinned") === "1" ||
+      /(?:^|;\s*)po_nav_via_pinned=1(?:;|$)/.test(document.cookie);
+    if (!viaPinned) return;
+    var sidebar = document.getElementById("sidebar");
+    if (!sidebar || !sidebar.classList.contains("po-dual-sidebar")) return;
+    var section = document.getElementById("pinnedSection");
+    if (!section) return;
+    var pinnedPanel = section.closest(".po-subnav-panel");
+    if (!pinnedPanel) return;
+    var group = pinnedPanel.getAttribute("data-subnav-panel") || "";
+    if (!group) return;
+    var stored = "";
+    var match = document.cookie.match(/(?:^|;\s*)po_active_rail=([^;]+)/);
+    if (match && match[1]) {
+      stored = decodeURIComponent(match[1]);
+    } else {
+      stored = window.localStorage.getItem("po_active_rail") || "";
+    }
+    if (stored !== group) return;
+    sidebar.querySelectorAll(".po-rail-btn").forEach(function (btn) {
+      var isCurrent = btn.getAttribute("data-rail-group") === group;
+      btn.classList.toggle("is-drawer-open", isCurrent);
+      btn.classList.toggle("is-active-route", isCurrent);
+      btn.setAttribute("aria-expanded", isCurrent ? "true" : "false");
+    });
+    sidebar.querySelectorAll(".po-subnav-panel").forEach(function (panel) {
+      panel.classList.toggle("is-active", panel.getAttribute("data-subnav-panel") === group);
+    });
+  } catch (e) {}
+})();
+</script>
 {{ end }}

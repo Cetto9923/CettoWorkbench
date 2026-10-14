@@ -1,0 +1,167 @@
+/**
+ * 文件: web/static/css/layout/pinnedworkbench.css
+ * 模块: 工作台
+ * 职责: 侧栏「常用」专区标题、编辑态拖拽/移除与已固定态样式（深浅色语义变量）。
+ */
+
+/* ─── 个人面板「常用」专区（对齐原型 pinnedSectionHeader） ─── */
+.po-pinned-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+.pinned-manage-btn {
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 1px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.pinned-manage-btn:hover {
+  color: var(--color-info);
+  background: var(--color-surface-hover);
+  border-color: var(--color-border);
+}
+
+.pinned-manage-btn.is-editing {
+  color: var(--color-text-on-accent) !important;
+  background: var(--color-info-fill);
+  border-color: var(--color-info-fill);
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.pinned-manage-btn.is-editing:hover {
+  opacity: 0.92;
+  color: var(--color-text-on-accent) !important;
+}
+
+.po-pinned-edit-tip {
+  font-size: 11px;
+  color: var(--color-info);
+  background: var(--color-info-bg);
+  border: 1px solid var(--color-info-border);
+  border-radius: 4px;
+  padding: 3px 8px;
+  margin: 4px 0 6px;
+  line-height: 1.3;
+}
+
+.po-pinned-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.po-pinned-list .nav-item {
+  position: relative;
+}
+
+.po-pinned-list .nav-item .nav-item-unpin {
+  display: none !important;
+}
+
+.po-pinned-list.is-editing .nav-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px;
+  padding: 5px 8px !important;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: grab;
+  user-select: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  position: relative;
+}
+
+.po-pinned-list.is-editing .nav-item:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-info-border);
+}
+
+.po-pinned-list.is-editing .nav-item:active {
+  cursor: grabbing;
+}
+
+.po-pinned-list.is-editing .pinned-drag-handle {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 16px;
+  color: var(--color-text-disabled);
+  font-size: 12px;
+  cursor: grab;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.po-pinned-list.is-editing .nav-item:hover .pinned-drag-handle {
+  opacity: 1;
+  color: var(--color-info);
+}
+
+body.po-workbench-shell .po-pinned-list.is-editing .nav-item .nav-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  margin-right: 2px;
+}
+
+.po-pinned-list.is-editing .nav-item .nav-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.po-pinned-list.is-editing .nav-item .nav-item-unpin {
+  display: flex !important;
+  position: static !important;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  font-size: 12px;
+  line-height: 1;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.po-pinned-list.is-editing .nav-item .nav-item-unpin:hover {
+  background: var(--color-danger-accent);
+  color: var(--color-text-on-accent);
+  transform: scale(1.1);
+}
+
+.po-pinned-list.is-editing .nav-item.is-dragging {
+  opacity: 0.45 !important;
+  background: var(--color-info-bg) !important;
+  border: 1.5px dashed var(--color-info) !important;
+  box-shadow: none !important;
+}
+
+/* 已固定到常用的其它面板菜单项略降对比度（常用列表链接不加 is-workbench-pinned） */
+body.po-workbench-shell .po-subnav-panel a.nav-item.is-workbench-pinned {
+  color: var(--color-text-secondary);
+}

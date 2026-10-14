@@ -78,7 +78,7 @@
   padding: 2px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: #f8fafc;
+  background: var(--color-surface-muted);
 }
 
 .po-board .board-switch button,
@@ -98,7 +98,7 @@
 
 .po-board .board-switch button.active,
 .po-board .board-switch a.active {
-  background: var(--white);
+  background: var(--color-surface);
   color: var(--navy);
   font-weight: 700;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
@@ -230,9 +230,16 @@
 }
 
 .po-board .action.primary {
-  border-color: var(--navy);
-  background: var(--navy);
-  color: #fff;
+  border-color: var(--color-btn-primary-bg);
+  background: var(--color-btn-primary-bg);
+  color: var(--color-text-on-accent);
+  font-weight: 500;
+}
+
+.po-board .action.primary:hover {
+  border-color: var(--color-btn-primary-hover);
+  background: var(--color-btn-primary-hover);
+  color: var(--color-text-on-accent);
 }
 
 .po-board .action:disabled,
@@ -394,7 +401,7 @@
   min-height: 0;
 }
 
-/* 类型标签（需求树 / 任务卡共用） */
+/* 类型标签（需求树 / 任务卡共用；色板对齐首页 top5-list / 原型 wb-priority） */
 .po-board .wb-type {
   display: inline-flex;
   align-items: center;
@@ -406,10 +413,10 @@
   white-space: nowrap;
   box-sizing: border-box;
   overflow: hidden;
-  border: 1px solid var(--color-info, #2563eb);
-  background: #fff;
+  border: 1px solid var(--color-border-strong, #cbd5e1);
+  background: var(--color-badge-id-bg, #ffffff);
   padding: 0;
-  color: #1e293b;
+  color: var(--color-badge-id-text, #1e293b);
   flex-shrink: 0;
 }
 
@@ -419,7 +426,7 @@
   justify-content: center;
   padding: 0 6px;
   height: 100%;
-  color: #fff;
+  color: var(--color-text-on-accent);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -430,27 +437,27 @@
   align-items: center;
   height: 100%;
   padding: 0 6px;
-  color: #1e293b;
-  background: #fff;
+  color: var(--color-badge-id-text, #1e293b);
+  background: var(--color-badge-id-bg, #ffffff);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 11px;
   font-weight: 600;
 }
 
 .po-board .wb-type-business {
-  border-color: var(--color-info, #2563eb);
+  border-color: var(--color-info-fill);
 }
 
 .po-board .wb-type-business .wb-type-tag {
-  background: var(--color-info, #2563eb);
+  background: var(--color-info-fill);
 }
 
 .po-board .wb-type-story {
-  border-color: #0d9488;
+  border-color: var(--color-story-text);
 }
 
 .po-board .wb-type-story .wb-type-tag {
-  background: #0d9488;
+  background: var(--color-story-text);
 }
 
 .po-board .demand-empty {

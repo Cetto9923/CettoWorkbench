@@ -9,25 +9,51 @@
     status: "all",
     focal: "myPending",
     page: 1,
-    pageSize: 10
+    pageSize: 10,
+    objectType: "all",
+    priority: "all",
+    keyword: "",
+    focus: "" // 与 data-home-focus 对齐："" | suspended | my_related | overdue | my_managed | my_action …
   };
 
   var FOCAL_LABELS = {
     today: "今日必推",
     myPending: "待我处理",
     blocked: "阻塞",
-    overdue: "超期"
+    overdue: "超期",
+    suspended: "挂起",
+    my_related: "我关注的",
+    my_managed: "我负责",
+    my_action: "待我处理"
   };
 
-  function demandsUrl(status, page, pageSize) {
-    return (
+  // 已实现筛选的焦点芯片（其余仅占位）
+  var FOCUS_FILTERS = { suspended: true, my_related: true, overdue: true, my_managed: true, my_action: true };
+
+  function demandsUrl(status, page, pageSize, withStages) {
+    var url =
       "/demands?status=" +
       encodeURIComponent(status || "all") +
       "&page=" +
       encodeURIComponent(String(page || 1)) +
       "&pageSize=" +
-      encodeURIComponent(String(pageSize || 10))
-    );
+      encodeURIComponent(String(pageSize || 10));
+    if (state.objectType && state.objectType !== "all") {
+      url += "&objectType=" + encodeURIComponent(state.objectType);
+    }
+    if (state.priority && state.priority !== "all") {
+      url += "&priority=" + encodeURIComponent(state.priority);
+    }
+    if (state.keyword) {
+      url += "&keyword=" + encodeURIComponent(state.keyword);
+    }
+    if (state.focus) {
+      url += "&focus=" + encodeURIComponent(state.focus);
+    }
+    if (withStages) {
+      url += "&withStages=1";
+    }
+    return url;
   }
 
   function escapeHtml(text) {
@@ -162,9 +188,9 @@
     return "—";
   }
 
-  function loadDemands(status, page, pageSize) {
+  function loadDemands(status, page, pageSize, withStages) {
     var fetchFn = window.appFetch || fetch;
-    return fetchFn(demandsUrl(status, page, pageSize), { method: "GET" })
+    return fetchFn(demandsUrl(status, page, pageSize, withStages), { method: "GET" })
       .then(function (res) {
         if (!res.ok) {
           throw new Error("load demands failed");
@@ -179,14 +205,15 @@
           items: Array.isArray(payload.items) ? payload.items : [],
           total: Number(payload.total) || 0,
           page: Number(payload.page) || page || 1,
-          pageSize: Number(payload.pageSize) || pageSize || 10
+          pageSize: Number(payload.pageSize) || pageSize || 10,
+          stages: Array.isArray(payload.stages) ? payload.stages : null
         };
       })
       .catch(function () {
         if (typeof window.showToast === "function") {
           window.showToast("加载需求列表失败，请稍后重试", "danger");
         }
-        return { items: [], total: 0, page: 1, pageSize: pageSize || 10 };
+        return { items: [], total: 0, page: 1, pageSize: pageSize || 10, stages: null };
       });
   }
 
@@ -195,7 +222,9 @@
     if (!$title.length) {
       return;
     }
-    var focal = FOCAL_LABELS[state.focal] || "待我处理";
+    var focal = state.focus
+      ? FOCAL_LABELS[state.focus] || state.focus
+      : FOCAL_LABELS[state.focal] || "待我处理";
     var stage = $(".home-vs-mini-card.active .vs-mini-name").first().text() || "全部";
     var stagePart = stage && stage !== "全部" ? " · " + escapeHtml(stage) : "";
     $title.html(
@@ -206,6 +235,61 @@
         count +
         "）"
     );
+  }
+
+  function stageBreakdownText(stage) {
+    var demand = Number(stage && stage.demandCount) || 0;
+    var story = Number(stage && stage.storyCount) || 0;
+    var count = Number(stage && stage.count) || demand + story;
+    if (count === 0) {
+      return "-";
+    }
+    return "业" + demand + " · 研" + story;
+  }
+
+  function applyValueStreamStages(stages) {
+    if (!Array.isArray(stages) || !stages.length) {
+      return;
+    }
+    var byStatus = {};
+    stages.forEach(function (stage) {
+      if (stage && stage.status) {
+        byStatus[stage.status] = stage;
+      }
+    });
+    $(".home-vs-mini-card[data-vs-status]").each(function () {
+      var $card = $(this);
+      var status = $card.attr("data-vs-status");
+      var stage = byStatus[status];
+      if (!stage) {
+        return;
+      }
+      var count = Number(stage.count) || 0;
+      $card.toggleClass("empty", count === 0 && !$card.hasClass("active"));
+      $card.find(".vs-mini-count").text(String(count));
+      $card.find(".vs-mini-breakdown").text(stageBreakdownText(stage));
+      var label = stage.label || $card.find(".vs-mini-name").text() || status;
+      $card.attr("title", label + " · 共 " + count + " 条");
+    });
+    var all = byStatus.all;
+    if (all) {
+      $("#homeVsMetaText").html(
+        "业务需求共 <strong class=\"text-mono\">" +
+          (Number(all.demandCount) || 0) +
+          "</strong> 条 · 研发需求共 <strong class=\"text-mono\">" +
+          (Number(all.storyCount) || 0) +
+          "</strong> 条"
+      );
+    }
+    $(".focus-card.vs-trigger[data-stage-target]").each(function () {
+      var $card = $(this);
+      var target = $card.attr("data-stage-target");
+      var stage = byStatus[target];
+      if (!stage) {
+        return;
+      }
+      $card.find(".focus-card-num strong").text(String(Number(stage.count) || 0));
+    });
   }
 
   function renderEmpty() {
@@ -861,24 +945,91 @@
   }
 
   function setActiveCard($card) {
-    $(".home-vs-mini-card").removeClass("active");
-    $card.addClass("active");
+    $(".home-vs-mini-card").removeClass("active").attr("aria-pressed", "false");
+    $card.addClass("active").attr("aria-pressed", "true");
   }
 
-  function refreshDemands(status) {
+  function initVsToggle() {
+    var STORAGE_KEY = "workbench.homeVsCollapsed";
+    var $btn = $("#homeVsToggleBtn");
+    var $section = $("#homeValueStreamSection");
+    if (!$btn.length || !$section.length) {
+      return;
+    }
+
+    function setCollapsed(collapsed) {
+      if (collapsed) {
+        $section.addClass("is-collapsed");
+        $btn.attr("aria-expanded", "false");
+        $("#homeVsToggleText").text("展开流水线");
+        $("#homeVsToggleIcon").removeClass("fa-chevron-up").addClass("fa-chevron-down");
+      } else {
+        $section.removeClass("is-collapsed");
+        $btn.attr("aria-expanded", "true");
+        $("#homeVsToggleText").text("收起流水线");
+        $("#homeVsToggleIcon").removeClass("fa-chevron-down").addClass("fa-chevron-up");
+      }
+    }
+
+    try {
+      if (window.localStorage && window.localStorage.getItem(STORAGE_KEY) === "1") {
+        setCollapsed(true);
+      }
+    } catch (e) {}
+
+    $btn.on("click", function () {
+      var next = !$section.hasClass("is-collapsed");
+      setCollapsed(next);
+      try {
+        if (window.localStorage) {
+          window.localStorage.setItem(STORAGE_KEY, next ? "1" : "0");
+        }
+      } catch (e) {}
+    });
+  }
+
+  function refreshDemands(status, withStages) {
     state.status = status || "all";
     state.page = 1;
-    return reloadDemands();
+    return reloadDemands(withStages);
   }
 
-  function reloadDemands() {
-    return loadDemands(state.status, state.page, state.pageSize).then(function (payload) {
+  function reloadDemands(withStages) {
+    return loadDemands(state.status, state.page, state.pageSize, !!withStages).then(function (payload) {
       state.items = payload.items;
       state.total = payload.total;
       state.page = payload.page;
       state.pageSize = payload.pageSize;
+      if (payload.stages) {
+        applyValueStreamStages(payload.stages);
+      }
       renderList();
       return payload.items;
+    });
+  }
+
+  function syncFocusChips() {
+    $("#homeQuickChips [data-home-focus]").each(function () {
+      var key = String($(this).attr("data-home-focus") || "");
+      if (!FOCUS_FILTERS[key]) {
+        return;
+      }
+      var active = state.focus === key;
+      $(this).toggleClass("active", active).attr("aria-pressed", active ? "true" : "false");
+    });
+  }
+
+  function initFocusChips() {
+    $("#homeQuickChips").on("click", "[data-home-focus]", function () {
+      var key = String($(this).attr("data-home-focus") || "");
+      if (!FOCUS_FILTERS[key]) {
+        return;
+      }
+      state.focus = state.focus === key ? "" : key;
+      state.focal = state.focus || "myPending";
+      syncFocusChips();
+      state.page = 1;
+      reloadDemands(true);
     });
   }
 
@@ -918,9 +1069,76 @@
     });
   }
 
+  function initObjectTypeSegment() {
+    $("#homeObjectTypeSegment").on("click", "button[data-object-type]", function () {
+      var $btn = $(this);
+      var next = String($btn.attr("data-object-type") || "all");
+      if (next === state.objectType) {
+        return;
+      }
+      $("#homeObjectTypeSegment button").removeClass("active");
+      $btn.addClass("active");
+      state.objectType = next;
+      state.page = 1;
+      reloadDemands();
+    });
+  }
+
+  function initPrioritySegment() {
+    $("#homePrioritySegment").on("click", "button[data-priority]", function () {
+      var $btn = $(this);
+      var next = String($btn.attr("data-priority") || "all");
+      if (next === state.priority) {
+        return;
+      }
+      $("#homePrioritySegment button").removeClass("active");
+      $btn.addClass("active");
+      state.priority = next;
+      state.page = 1;
+      reloadDemands();
+    });
+  }
+
+  var keywordSearchTimer = null;
+
+  function initKeywordSearch() {
+    $("#homeKeyword").on("input", function () {
+      var val = String($(this).val() || "").trim();
+      clearTimeout(keywordSearchTimer);
+      keywordSearchTimer = setTimeout(function () {
+        if (val === state.keyword) {
+          return;
+        }
+        state.keyword = val;
+        state.page = 1;
+        reloadDemands();
+      }, 200);
+    });
+  }
+
+  function initResetBtn() {
+    $("#homeResetBtn").on("click", function () {
+      clearTimeout(keywordSearchTimer);
+      $("#homeKeyword").val("");
+      $("#homeObjectTypeSegment button").removeClass("active").first().addClass("active");
+      $("#homePrioritySegment button").removeClass("active").first().addClass("active");
+      state.keyword = "";
+      state.objectType = "all";
+      state.priority = "all";
+      state.page = 1;
+      reloadDemands();
+    });
+  }
+
   $(function () {
     initValueStreamLinkage();
+    initVsToggle();
     initFocalChips();
+    initFocusChips();
+    initObjectTypeSegment();
+    initPrioritySegment();
+    initKeywordSearch();
+    initResetBtn();
 
     var $active = $(".home-vs-mini-card.active").first();
     if (!$active.length) {
@@ -929,6 +1147,6 @@
         setActiveCard($active);
       }
     }
-    refreshDemands($active.attr("data-vs-status") || "all");
+    refreshDemands($active.attr("data-vs-status") || "all", false);
   });
 })(jQuery);

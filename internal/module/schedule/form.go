@@ -2,7 +2,7 @@
 // 文件: internal/module/schedule/form.go
 // 模块: 排期工作台
 // 类型: action
-// 职责: 定义排期模块请求/响应结构体。
+// 职责: 定义排期模块请求/响应结构体（含快速创建迭代）。
 // 依赖: 无
 // =============================================================================
 
@@ -18,6 +18,7 @@ import (
 type TeamgroupOption struct {
 	ID          uint
 	DisplayName string
+	Manager     string
 }
 
 // CreateWindowFormData 新建版本窗口弹窗表单数据。
@@ -73,6 +74,11 @@ type CreateReq struct {
 	TeamgroupID  uint                 `json:"teamgroupId"`
 	GroupSize    int                  `json:"groupSize"`
 	Products     []WindowProductInput `json:"products"`
+}
+
+// CreateResp 新建版本窗口响应。
+type CreateResp struct {
+	ID uint64
 }
 
 // Validate 校验新建版本窗口请求。
@@ -1072,6 +1078,8 @@ type StoryTaskStoryItem struct {
 	DemandName     string                `json:"demandName"`
 	WindowName     string                `json:"windowName"`
 	ReleaseDate    string                `json:"releaseDate"`
+	TeamgroupID    uint                  `json:"teamgroupId"`
+	TeamgroupName  string                `json:"teamgroupName"`
 	Attachments    []StoryAttachmentItem `json:"attachments"`
 }
 
@@ -1112,12 +1120,19 @@ type StoryTaskSummary struct {
 	LeftTotal     float64 `json:"leftTotal"`
 }
 
+// ProductPlanOption 维护任务弹窗关联产品计划下拉项。
+type ProductPlanOption struct {
+	ID    uint   `json:"id"`
+	Title string `json:"title"`
+}
+
 // StoryTasksResp 维护任务弹窗加载响应。
 type StoryTasksResp struct {
 	Story              StoryTaskStoryItem              `json:"story"`
 	Tasks              []StoryTaskItem                 `json:"tasks"`
 	Summary            StoryTaskSummary                `json:"summary"`
 	Projects           []DemandSchedulingProjectOption `json:"projects"`
+	Plans              []ProductPlanOption             `json:"plans"`
 	Users              []SchedulingUserOption          `json:"users"`
 	TaskTypes          []TaskTypeOption                `json:"taskTypes"`
 	DefaultProjectID   uint                            `json:"defaultProjectId"`
@@ -1213,4 +1228,83 @@ func storyPointLabel(point int) string {
 	default:
 		return ""
 	}
+}
+
+// CreateExecutionReq 快速创建迭代请求（projectId 由 path 注入）。
+type CreateExecutionReq struct {
+	ProjectID uint   `json:"-"`
+	Name      string `json:"name"`
+	Begin     string `json:"begin"`
+	End       string `json:"end"`
+	ProductID uint   `json:"productId"`
+	PlanID    uint   `json:"planId"`
+	PM        string `json:"pm"`
+	ScrumTeam uint   `json:"scrumTeam"`
+}
+
+// CreateExecutionResp 快速创建迭代成功响应。
+type CreateExecutionResp struct {
+	ID   uint   `json:"id"`
+	Name string `json:"name"`
+}
+
+// Validate 校验快速创建迭代必填项与日期格式。
+func (r *CreateExecutionReq) Validate() []FieldError {
+	var errs []FieldError
+	if r.ProjectID == 0 {
+		errs = append(errs, FieldError{Field: "projectId", Message: "项目不能为空"})
+	}
+	if strings.TrimSpace(r.Name) == "" {
+		errs = append(errs, FieldError{Field: "name", Message: "迭代名称不能为空"})
+	}
+	begin := strings.TrimSpace(r.Begin)
+	end := strings.TrimSpace(r.End)
+	if begin == "" {
+		errs = append(errs, FieldError{Field: "begin", Message: "开始日期不能为空"})
+	} else if !isYMD(begin) {
+		errs = append(errs, FieldError{Field: "begin", Message: "开始日期格式无效"})
+	}
+	if end == "" {
+		errs = append(errs, FieldError{Field: "end", Message: "结束日期不能为空"})
+	} else if !isYMD(end) {
+		errs = append(errs, FieldError{Field: "end", Message: "结束日期格式无效"})
+	}
+	if isYMD(begin) && isYMD(end) && begin > end {
+		errs = append(errs, FieldError{Field: "end", Message: "结束日期不能早于开始日期"})
+	}
+	if r.ProductID == 0 {
+		errs = append(errs, FieldError{Field: "productId", Message: "产品不能为空"})
+	}
+	if strings.TrimSpace(r.PM) == "" {
+		errs = append(errs, FieldError{Field: "pm", Message: "执行负责人不能为空"})
+	}
+	return errs
+}
+
+func isYMD(value string) bool {
+	if len(value) != 10 || value[4] != '-' || value[7] != '-' {
+		return false
+	}
+	_, err := time.ParseInLocation("2006-01-02", value, time.Local)
+	return err == nil
+}
+
+// countWorkdaysInclusive 对齐禅道 computeDaysDelta：含首尾，剔除周六、周日。
+func countWorkdaysInclusive(begin, end string) int {
+	begin = strings.TrimSpace(begin)
+	end = strings.TrimSpace(end)
+	b, err1 := time.ParseInLocation("2006-01-02", begin, time.Local)
+	e, err2 := time.ParseInLocation("2006-01-02", end, time.Local)
+	if err1 != nil || err2 != nil || e.Before(b) {
+		return 0
+	}
+	days := 0
+	for d := b; !d.After(e); d = d.AddDate(0, 0, 1) {
+		wd := d.Weekday()
+		if wd == time.Saturday || wd == time.Sunday {
+			continue
+		}
+		days++
+	}
+	return days
 }

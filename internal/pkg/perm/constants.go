@@ -43,6 +43,12 @@ const (
 	MenuEdit   Permission = "menu:edit"
 	MenuDelete Permission = "menu:delete"
 
+	// 用户固定工作台菜单（登录用户自助）
+	UserMenuList   Permission = "usermenu:list"
+	UserMenuCreate Permission = "usermenu:create"
+	UserMenuUpdate Permission = "usermenu:update"
+	UserMenuDelete Permission = "usermenu:delete"
+
 	// 部门管理
 	DeptList   Permission = "dept:list"
 	DeptCreate Permission = "dept:create"
@@ -89,6 +95,10 @@ var allPermInfos = []PermInfo{
 	{Code: MenuCreate, Name: "菜单-新增", Module: "menu"},
 	{Code: MenuEdit, Name: "菜单-编辑", Module: "menu"},
 	{Code: MenuDelete, Name: "菜单-删除", Module: "menu"},
+	{Code: UserMenuList, Name: "固定菜单-列表", Module: "usermenu"},
+	{Code: UserMenuCreate, Name: "固定菜单-新增", Module: "usermenu"},
+	{Code: UserMenuUpdate, Name: "固定菜单-排序", Module: "usermenu"},
+	{Code: UserMenuDelete, Name: "固定菜单-删除", Module: "usermenu"},
 	{Code: DeptList, Name: "部门-列表", Module: "dept"},
 	{Code: DeptCreate, Name: "部门-新增", Module: "dept"},
 	{Code: DeptEdit, Name: "部门-编辑", Module: "dept"},
@@ -107,6 +117,10 @@ var allPermInfos = []PermInfo{
 // systemPerms 是系统内置放行权限，不对外暴露到权限配置 UI。
 var systemPerms = map[Permission]bool{
 	AuthLogout:         true,
+	UserMenuList:       true,
+	UserMenuCreate:     true,
+	UserMenuUpdate:     true,
+	UserMenuDelete:     true,
 	PoDemandReview:     true,
 	PoDemandDeliver:    true,
 	PoDemandAcceptance: true,

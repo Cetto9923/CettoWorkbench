@@ -822,4 +822,127 @@
   $("#scheduleIntegratedSaveBtn").on("click", function () {
     saveScheduling();
   });
+
+  function appendWindowOption($select, item) {
+    var id = String(item.id || "");
+    if (!id) {
+      return null;
+    }
+    var $opt = $("<option></option>")
+      .val(id)
+      .text(item.name || id)
+      .attr("data-release-date", item.releaseDate || "")
+      .attr("data-plan-test-done", item.planTestDone || "")
+      .attr("data-test-done", item.testDone || "")
+      .attr("data-accept-done", item.acceptDone || "");
+    $opt.appendTo($select);
+    return $opt;
+  }
+
+  function selectCreatedWindow(payload, resData, previousIDs) {
+    var $select = $("#scheduleIntegratedWindowSelect");
+    var createdId = resData && resData.windowId ? String(resData.windowId) : "";
+    var releaseDate = (payload && payload.releaseDate) || "";
+    var name = (payload && payload.name) || "";
+    var planTestDone = (resData && resData.planTestDone) || (payload && payload.planTestDone) || "";
+    var testDone = (resData && resData.testDone) || (payload && payload.testDone) || "";
+    var acceptDone = (resData && resData.acceptDone) || (payload && payload.acceptDone) || "";
+
+    if (createdId && !$select.find("option[value='" + createdId + "']").length) {
+      appendWindowOption($select, {
+        id: createdId,
+        name: name,
+        releaseDate: releaseDate,
+        planTestDone: planTestDone,
+        testDone: testDone,
+        acceptDone: acceptDone,
+      });
+    }
+
+    if (createdId) {
+      $select.val(createdId).trigger("change");
+      return;
+    }
+
+    var matchedId = "";
+    $select.find("option").each(function () {
+      var id = String(this.value || "");
+      if (!id || (previousIDs && previousIDs.has(id))) {
+        return;
+      }
+      if ($(this).text() === name && $(this).attr("data-release-date") === releaseDate) {
+        matchedId = id;
+      }
+    });
+    if (matchedId) {
+      $select.val(matchedId).trigger("change");
+    }
+  }
+
+  function refreshWindowsAfterInlineCreate(payload, resData, previousIDs) {
+    var detailURL = shared.currentStoryId
+      ? "/schedule/stories/" + shared.currentStoryId + "/scheduling"
+      : shared.currentDemandId
+        ? "/schedule/demands/" + shared.currentDemandId + "/scheduling"
+        : "";
+    if (!detailURL) {
+      selectCreatedWindow(payload, resData, previousIDs);
+      return;
+    }
+
+    var fetchFn = window.scheduleFetch || window.appFetch || fetch;
+    fetchFn(detailURL, { headers: { Accept: "application/json" } })
+      .then(function (resp) {
+        return resp.json().then(function (data) {
+          return { ok: resp.ok, data: data || {} };
+        });
+      })
+      .then(function (result) {
+        if (!result.ok || !result.data || !result.data.success) {
+          selectCreatedWindow(payload, resData, previousIDs);
+          return;
+        }
+        var selectedBefore = $("#scheduleIntegratedWindowSelect").val();
+        fillWindowSelect(
+          result.data.windows,
+          selectedBefore,
+          "",
+          $("#scheduleIntegratedSchedulePlanDate").val()
+        );
+        selectCreatedWindow(payload, resData, previousIDs);
+      })
+      .catch(function () {
+        selectCreatedWindow(payload, resData, previousIDs);
+      });
+  }
+
+  $(document).on("click", ".js-schedule-inline-create", function () {
+    if (!shared || !shared.isSchedulingDetailLoaded) {
+      toast("当前需求暂不能变更版本窗口", "error");
+      return;
+    }
+    if (typeof window.openScheduleCreateVersionWindowModal !== "function") {
+      toast("新建窗口功能暂不可用", "error");
+      return;
+    }
+    var $button = $(this).prop("disabled", true);
+    var previousIDs = {};
+    $("#scheduleIntegratedWindowSelect option").each(function () {
+      if (this.value) {
+        previousIDs[this.value] = true;
+      }
+    });
+    var previousIDSet = {
+      has: function (id) {
+        return !!previousIDs[String(id)];
+      },
+    };
+    try {
+      window.openScheduleCreateVersionWindowModal(function (payload, resData) {
+        refreshWindowsAfterInlineCreate(payload, resData, previousIDSet);
+      });
+    } finally {
+      $button.prop("disabled", false);
+    }
+  });
 })(jQuery);

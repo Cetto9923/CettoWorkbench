@@ -91,6 +91,24 @@ func (r *Repo) ListTeamMembersByRoots(ctx context.Context, roots []uint) ([]team
 	return rows, nil
 }
 
+// FindTeamgroupManager 查询敏捷小组 manager（Scrum Master，可多人逗号分隔）。
+func (r *Repo) FindTeamgroupManager(ctx context.Context, teamgroupID uint) (string, error) {
+	if teamgroupID == 0 {
+		return "", nil
+	}
+	var manager string
+	err := r.db.WithContext(ctx).
+		Table((ztmodel.ZtTeamgroup{}).TableName()).
+		Select("manager").
+		Where("id = ? AND deleted = ?", teamgroupID, "0").
+		Limit(1).
+		Scan(&manager).Error
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(manager), nil
+}
+
 // FindKanbanTasks 查询选中账号（可多个）的看板任务。
 // wait/doing：assignedTo IN accounts；done：finishedBy IN accounts；不含 pause。
 func (r *Repo) FindKanbanTasks(ctx context.Context, accounts []string) ([]taskRow, error) {

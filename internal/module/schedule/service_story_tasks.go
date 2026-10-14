@@ -91,6 +91,27 @@ func (s *Service) GetStoryTasks(ctx context.Context, actor *model.User, storyID 
 		demandName = fmt.Sprintf("US%d", demandID)
 	}
 
+	teamgroupName := ""
+	if detail.TeamgroupID > 0 {
+		names, err := s.loadTeamgroupDisplayNamesByIDs(ctx, []uint{detail.TeamgroupID})
+		if err != nil {
+			return nil, err
+		}
+		teamgroupName = names[detail.TeamgroupID]
+	}
+
+	planRows, err := s.repo.ListProductOpenPlans(ctx, detail.ProductID)
+	if err != nil {
+		return nil, err
+	}
+	plans := make([]ProductPlanOption, 0, len(planRows))
+	for _, plan := range planRows {
+		plans = append(plans, ProductPlanOption{
+			ID:    plan.ID,
+			Title: strings.TrimSpace(plan.Title),
+		})
+	}
+
 	return &StoryTasksResp{
 		Story: StoryTaskStoryItem{
 			ID:             detail.StoryID,
@@ -104,11 +125,14 @@ func (s *Service) GetStoryTasks(ctx context.Context, actor *model.User, storyID 
 			DemandName:     demandName,
 			WindowName:     detail.WindowName,
 			ReleaseDate:    detail.ReleaseDate,
+			TeamgroupID:    detail.TeamgroupID,
+			TeamgroupName:  teamgroupName,
 			Attachments:    detail.Attachments,
 		},
 		Tasks:              buildStoryTaskItems(taskRows, realnameByAccount, projectNameByID),
 		Summary:            buildStoryTaskSummary(taskRows),
 		Projects:           projects,
+		Plans:              plans,
 		Users:              users,
 		TaskTypes:          taskTypes,
 		DefaultProjectID:   detail.DefaultProjectID,

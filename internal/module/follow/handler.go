@@ -41,6 +41,5 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 func (h *Handler) List(c *gin.Context) {
 	render.Page(c, http.StatusOK, constants.TEMPLATE_FOLLOW_LIST, gin.H{
 		"Title":     "我的关注",
-		"PageTitle": "我的关注",
 	})
 }

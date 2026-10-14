@@ -34,6 +34,11 @@ type mysqlStageFilter struct {
 	acceptanceStage    bool // true：验收阶段复合条件
 	scheduleIncomplete bool // true：排期未完成（关键日期/QD/主研未填）
 	deliverStories     bool // true：合并交付阶段独立研发需求
+	myActionMode       string // 待我处理分阶段规则（静态）；见 myAction* 常量
+	suspended          bool   // true：叠加 hang='1'（仅业需；由请求层写入，不进静态 map）
+	overdue            bool   // true：叠加超期条件（业需/研需；由请求层写入，不进静态 map）
+	myManaged          bool   // true：叠加 assignedTo|BRA=账号（业需；由请求层写入，不进静态 map）
+	myAction           bool   // true：叠加 myActionMode（由请求层写入，不进静态 map）
 }
 
 var releasedOverallEmpty = "0"
@@ -41,24 +46,27 @@ var releasedOverallEmpty = "0"
 // mysqlStageFilters 价值流阶段 → MySQL 查询条件。
 var mysqlStageFilters = map[string]mysqlStageFilter{
 	"accept": {
-		statuses:    []string{"draft", "wait", "refuse"},
-		statusOrder: []string{"wait", "refuse", "draft"}, // 待评审 → 已驳回 → 草稿
+		statuses:     []string{"draft", "wait", "refuse"},
+		statusOrder:  []string{"wait", "refuse", "draft"}, // 待评审 → 已驳回 → 草稿
+		myActionMode: myActionCreatedOrReviewer,
 	},
-	"clarify":        {statuses: []string{"active"}, noClarify: true},
-	"schedule":       {statuses: []string{"clarified"}, scheduleIncomplete: true},
-	"developing":     {statuses: []string{"developing"}, developFinishDue: true},
-	"testing":        {statuses: []string{"testing"}},
-	"waitacceptance": {acceptanceStage: true},
+	"clarify":        {statuses: []string{"active"}, noClarify: true, myActionMode: myActionAll},
+	"schedule":       {statuses: []string{"clarified"}, scheduleIncomplete: true, myActionMode: myActionAll},
+	"developing":     {statuses: []string{"developing"}, developFinishDue: true, myActionMode: myActionBRA},
+	"testing":        {statuses: []string{"testing"}, myActionMode: myActionQDOrAssigned},
+	"waitacceptance": {acceptanceStage: true, myActionMode: myActionAcceptance},
 	"acceptanced": {
 		statuses:       []string{"acceptanced"},
 		braRequired:    true,
 		deliverDateDue: true,
 		deliverStories: true,
+		myActionMode:   myActionBRA,
 	},
-	"publish": {statuses: []string{"waitdeliver"}},
+	"publish": {statuses: []string{"waitdeliver"}, myActionMode: myActionBRA},
 	"released": {
-		statuses: []string{"released"},
-		overall:  &releasedOverallEmpty,
+		statuses:     []string{"released"},
+		overall:      &releasedOverallEmpty,
+		myActionMode: myActionOriginator,
 	},
 }
 
@@ -112,6 +120,19 @@ func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysql
 			OR RD = ?
 			OR BRA = ?
 		)`, account, account, account, account)
+	// 挂起/超期/我负责/待我处理叠加尽早下推，验收阶段 early-return 前也生效
+	if filter.suspended {
+		q = q.Where("hang = ?", "1")
+	}
+	if filter.overdue {
+		q = applyDemandOverdue(q)
+	}
+	if filter.myManaged {
+		q = applyDemandMyManaged(q, account)
+	}
+	if filter.myAction {
+		q = applyDemandMyAction(q, account, filter.myActionMode)
+	}
 
 	if filter.acceptanceStage {
 		today := time.Now().Format("2006-01-02")
@@ -154,42 +175,6 @@ func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysql
 		}, " OR ") + ")")
 	}
 	return q
-}
-
-// storyAssignedOrProductReqM 指派人或所属产品的需求负责人（zt_product.ReqM）为当前用户。
-const storyAssignedOrProductReqM = `(zt_story.assignedTo = ? OR EXISTS (
-	SELECT 1 FROM zt_product p
-	WHERE p.id = zt_story.product AND p.deleted = '0' AND p.ReqM = ?
-))`
-
-// scheduleStoryScope 排期阶段独立研发需求：非需求池、非父需求、排除已关闭、指派人或所属产品 ReqM 为当前用户、关键日期未填。
-func (r *Repo) scheduleStoryScope(ctx context.Context, account string) *gorm.DB {
-	return r.db.WithContext(ctx).Table("zt_story").
-		Where("deleted = ?", "0").
-		Where("status != ?", "closed").
-		Where("IFNULL(sourceType, '') != ?", "demandpool").
-		Where("type = ?", "story").
-		Where("isParent = ?", "0").
-		Where("product != ?", "0").
-		Where(storyAssignedOrProductReqM, account, account).
-		Where("(" + strings.Join([]string{
-			dateUnsetExpr("developFinish"),
-			dateUnsetExpr("testFinish"),
-			dateUnsetExpr("verifyFinish"),
-		}, " OR ") + ")")
-}
-
-// deliverStoryScope 交付阶段独立研发需求：非需求池、非父需求、排除已关闭、指派人或所属产品 ReqM 为当前用户、今天 >= deliverDate。
-func (r *Repo) deliverStoryScope(ctx context.Context, account string) *gorm.DB {
-	today := time.Now().Format("2006-01-02")
-	return r.db.WithContext(ctx).Table("zt_story").
-		Where("deleted = ?", "0").
-		Where("status != ?", "closed").
-		Where("IFNULL(sourceType, '') != ?", "demandpool").
-		Where("type = ?", "story").
-		Where("isParent = ?", "0").
-		Where(storyAssignedOrProductReqM, account, account).
-		Where(dateSetExpr("deliverDate")+" AND deliverDate <= ?", today)
 }
 
 func filterReady(account string, filter mysqlStageFilter) bool {
@@ -277,88 +262,6 @@ func applyDemandListOrder(q *gorm.DB, filter mysqlStageFilter) *gorm.DB {
 	return q.Order(clause.OrderBy{
 		Expression: clause.Expr{SQL: b.String(), Vars: args},
 	})
-}
-
-// CountScheduleStories 统计排期阶段独立研发需求数量。
-func (r *Repo) CountScheduleStories(ctx context.Context, account string) (int64, error) {
-	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
-		return 0, nil
-	}
-	var total int64
-	err := r.scheduleStoryScope(ctx, account).Count(&total).Error
-	return total, err
-}
-
-// FindScheduleStoryIDs 查询排期阶段独立研发需求 ID。
-func (r *Repo) FindScheduleStoryIDs(ctx context.Context, account string) ([]int, error) {
-	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
-		return nil, nil
-	}
-	var ids []int
-	err := r.scheduleStoryScope(ctx, account).
-		Order("id DESC").
-		Pluck("id", &ids).Error
-	if err != nil {
-		return nil, err
-	}
-	return ids, nil
-}
-
-// FindScheduleStories 查询排期阶段独立研发需求列表。
-func (r *Repo) FindScheduleStories(ctx context.Context, account string) ([]StoryRow, error) {
-	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
-		return nil, nil
-	}
-	var rows []StoryRow
-	err := r.scheduleStoryScope(ctx, account).
-		Select("id", "title", "pri", "status", "stage").
-		Order("id DESC").
-		Find(&rows).Error
-	if err != nil {
-		return nil, err
-	}
-	return rows, nil
-}
-
-// CountDeliverStories 统计交付阶段独立研发需求数量。
-func (r *Repo) CountDeliverStories(ctx context.Context, account string) (int64, error) {
-	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
-		return 0, nil
-	}
-	var total int64
-	err := r.deliverStoryScope(ctx, account).Count(&total).Error
-	return total, err
-}
-
-// FindDeliverStoryIDs 查询交付阶段独立研发需求 ID。
-func (r *Repo) FindDeliverStoryIDs(ctx context.Context, account string) ([]int, error) {
-	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
-		return nil, nil
-	}
-	var ids []int
-	err := r.deliverStoryScope(ctx, account).
-		Order("id DESC").
-		Pluck("id", &ids).Error
-	if err != nil {
-		return nil, err
-	}
-	return ids, nil
-}
-
-// FindDeliverStories 查询交付阶段独立研发需求列表。
-func (r *Repo) FindDeliverStories(ctx context.Context, account string) ([]StoryRow, error) {
-	if r == nil || r.db == nil || strings.TrimSpace(account) == "" {
-		return nil, nil
-	}
-	var rows []StoryRow
-	err := r.deliverStoryScope(ctx, account).
-		Select("id", "title", "pri", "status", "stage").
-		Order("id DESC").
-		Find(&rows).Error
-	if err != nil {
-		return nil, err
-	}
-	return rows, nil
 }
 
 // FindMaxTesttaskIDByProducts 按产品取最大测试单 id（ORDER BY id DESC LIMIT 1）。

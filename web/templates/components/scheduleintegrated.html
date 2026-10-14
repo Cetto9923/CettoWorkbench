@@ -1,8 +1,10 @@
 {{/* ==========================================================================
-文件: web/templates/components/scheduleintegrated.html 模块: 通用模板 职责:
-一体化排期弹窗及 RD/任务行模板（schedule 页与 PO 首页共用） 全局字段:
-.CurrentUser, .CSRFToken, .Flash, .Menus, .CurrentPath 页面字段:
-无（静态 DOM / template 片段）
+文件: web/templates/components/scheduleintegrated.html
+模块: 通用模板
+职责: 一体化排期弹窗及 RD/任务行模板（schedule 页与 PO 首页共用）；末尾引入新建版本窗口弹窗
+全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .CurrentPath
+页面字段: .Teamgroups ([]schedule.TeamgroupOption) — 供 schedule/versionwindow
+          .Products ([]schedule.ZtProduct) — 供 schedule/versionwindow
 ========================================================================== */}}
 {{ define "schedule/integrated" }}
 <div class="batch-modal-overlay" id="scheduleIntegratedModalOverlay"></div>
@@ -44,6 +46,7 @@
                 >
                   <option value="">请选择版本窗口</option>
                 </select>
+                <button type="button" class="action-btn js-schedule-inline-create">新建窗口</button>
               </div>
             </div>
             <div class="schedule-integrated-cell">
@@ -279,7 +282,9 @@
 </template>
 
 <template id="tplRdTaskRowReadonly">
-  <tr class="task-modal-row task-modal-row--existing rd-task-row rd-task-row--existing">
+  <tr
+    class="task-modal-row task-modal-row--existing rd-task-row rd-task-row--existing"
+  >
     <td class="rd-task-cell rd-task-cell-execution"></td>
     <td class="rd-task-cell rd-task-cell-type"></td>
     <td class="rd-task-cell rd-task-cell-pri"></td>
@@ -447,7 +452,9 @@
         class="rd-node-title form-input rd-node-title-input"
         placeholder="研发需求名称"
       />
-      <span class="rd-node-spec-label">描述<span class="form-required-mark">*</span></span>
+      <span class="rd-node-spec-label"
+        >描述<span class="form-required-mark">*</span></span
+      >
       <input
         type="text"
         class="rd-node-spec form-input rd-node-spec-input"
@@ -455,7 +462,9 @@
         required
       />
       <span class="rd-node-header-right">
-        <span class="rd-node-assignee-label">指派给<span class="form-required-mark">*</span></span>
+        <span class="rd-node-assignee-label"
+          >指派给<span class="form-required-mark">*</span></span
+        >
         <span class="rd-node-assignee-wrap">
           <input
             type="text"
@@ -525,4 +534,6 @@
     <td class="story-item-estimate"></td>
   </tr>
 </template>
+
+{{ template "schedule/versionwindow" . }}
 {{ end }}

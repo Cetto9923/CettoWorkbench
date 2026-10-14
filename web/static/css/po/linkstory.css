@@ -1,21 +1,13 @@
 /* ==========================================================================
  * 文件: web/static/css/po/linkstory.css
  * 模块: PO工作台
- * 职责: 关联研发需求弹窗样式（对齐禅道 linkStory 筛选+表格布局）
+ * 职责: 关联研发需求弹窗样式（语义 token；对齐原型 + 禅道 linkStory 布局）
  * ========================================================================== */
-
-:root {
-  --ls-primary: #165dff;
-  --ls-border: #e5e6eb;
-  --ls-text: #1d2129;
-  --ls-secondary: #86909c;
-  --ls-page: #fff;
-}
 
 .po-linkstory-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.35);
+  background: color-mix(in srgb, var(--color-text-primary) 35%, transparent);
   z-index: 710;
   display: none;
 }
@@ -34,10 +26,11 @@
   width: min(96vw, 1080px);
   max-height: 90vh;
   overflow: hidden;
-  background: var(--ls-page);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
-  color: var(--ls-text);
+  box-shadow: 0 8px 32px var(--color-shadow-12);
+  color: var(--color-text-primary);
   font-size: 13px;
   line-height: 1.5;
 }
@@ -52,8 +45,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 0px 12px;
-  border-bottom: 1px solid var(--ls-border);
+  padding: 0 12px;
+  border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
 }
 
@@ -64,15 +57,20 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  color: var(--color-text-primary);
 }
 
 .po-linkstory-modal-close {
   border: 0;
   background: none;
-  color: #98a2b3;
+  color: var(--color-text-secondary);
   cursor: pointer;
   font-size: 16px;
   padding: 4px;
+}
+
+.po-linkstory-modal-close:hover {
+  color: var(--color-text-primary);
 }
 
 .po-linkstory-modal-body {
@@ -82,6 +80,7 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+  background: var(--color-surface);
 }
 
 .po-linkstory {
@@ -96,9 +95,10 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  border: 1px solid var(--ls-border);
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   overflow: hidden;
+  background: var(--color-surface);
 }
 
 .po-linkstory-table-panel .table-wrapper {
@@ -137,7 +137,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--ls-primary);
+  /* 用 info 而非 indigo 的 --color-primary，深浅色链接对比度一致 */
+  color: var(--color-info);
   text-decoration: none;
 }
 
@@ -152,8 +153,8 @@
   gap: 12px;
   flex-wrap: wrap;
   padding: 8px 12px;
-  border-top: 1px solid var(--ls-border);
-  background: #fff;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
   flex-shrink: 0;
 }
 
