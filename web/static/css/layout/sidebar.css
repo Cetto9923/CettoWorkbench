@@ -145,7 +145,7 @@ body.po-workbench-shell .po-rail .po-brand-logo {
   font-weight: 800;
   text-decoration: none;
   background: linear-gradient(135deg, var(--color-primary-gradient-start, #3b82f6) 0%, var(--color-primary-gradient-end, #1d4ed8) 100%);
-  color: #ffffff;
+  color: var(--color-text-on-accent, #ffffff);
   box-shadow:
     0 4px 12px var(--color-stage-overview-shadow, rgba(37, 99, 235, 0.28)),
     inset 0 1px 0 rgba(255, 255, 255, 0.32);
