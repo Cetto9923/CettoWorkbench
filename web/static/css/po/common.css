@@ -296,11 +296,9 @@
   color: var(--color-text-on-accent);
   border-color: var(--color-danger-accent);
 }
-
 .dd-btn.danger:hover {
   background: var(--color-danger-deep);
   border-color: var(--color-danger-deep);
-  color: var(--color-text-on-accent);
 }
 
 .dd-aside-title {
@@ -499,7 +497,6 @@
   align-items: center;
   justify-content: center;
 }
-
 .dd-reject-modal-dialog {
   background: var(--color-surface, #fff);
   border: 1px solid var(--color-border-strong);

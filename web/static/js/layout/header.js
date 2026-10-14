@@ -96,28 +96,18 @@
 
     var quickToggle = document.getElementById("themeQuickToggle");
     if (quickToggle) {
-      var sysIcon = quickToggle.querySelector(".theme-system-icon");
-      var moon = quickToggle.querySelector(".theme-moon-icon");
-      var sun = quickToggle.querySelector(".theme-sun-icon");
-
-      if (sysIcon) sysIcon.hidden = true;
-      if (moon) moon.hidden = true;
-      if (sun) sun.hidden = true;
-
-      if (currentMode === "system" && sysIcon) {
-        sysIcon.hidden = false;
-      } else if (effective === "dark" && sun) {
-        sun.hidden = false;
-      } else if (moon) {
-        moon.hidden = false;
+      var icon = quickToggle.querySelector(".theme-quick-icon") || quickToggle.querySelector("i");
+      if (icon) {
+        if (currentMode === "system") {
+          icon.className = "fas fa-circle-half-stroke theme-quick-icon";
+        } else if (effective === "dark") {
+          icon.className = "fas fa-sun theme-quick-icon";
+        } else {
+          icon.className = "fas fa-moon theme-quick-icon";
+        }
       }
 
-      var nextModeText =
-        currentMode === "light"
-          ? "深色模式"
-          : currentMode === "dark"
-          ? "跟随系统"
-          : "浅色模式";
+      var nextModeText = effective === "dark" ? "浅色模式" : "深色模式";
       var label =
         "当前：" +
         getColorLabel(currentColor) +
@@ -234,15 +224,11 @@
     setMode(pref);
   }
 
-  /* 顶栏按钮仅负责 浅色 -> 深色 -> 跟随系统 三态循环，不改变蓝/粉主题色 */
+  /* 顶栏快捷按钮：点击直接在浅色与深色之间切换 */
   function toggleQuick() {
-    if (currentMode === "light") {
-      setMode("dark");
-    } else if (currentMode === "dark") {
-      setMode("system");
-    } else {
-      setMode("light");
-    }
+    var effective = getEffectiveTheme(currentMode);
+    var next = effective === "dark" ? "light" : "dark";
+    setMode(next);
   }
 
   applyTheme();

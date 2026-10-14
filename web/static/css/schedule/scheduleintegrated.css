@@ -335,21 +335,16 @@
   outline: none;
   box-shadow: none;
 }
-
-/* 新建窗口弹窗叠在排期一体化弹窗之上：降低第二层遮罩透明度，避免底层发黑（修复 #19） */
 #scheduleVersionWindowModalOverlay {
   z-index: 1700;
   background: rgba(15, 23, 42, 0.22);
 }
-
 html[data-theme="dark"] #scheduleVersionWindowModalOverlay {
   background: rgba(0, 0, 0, 0.28);
 }
-
 #scheduleVersionWindowModal {
   z-index: 1701;
 }
-
 #scheduleIntegratedModal .js-schedule-inline-create {
   flex-shrink: 0;
   align-self: stretch;
@@ -619,38 +614,27 @@ html[data-theme="dark"] #scheduleVersionWindowModalOverlay {
 .rd-task-th--execution {
   width: 220px;
 }
-
 .rd-task-project-section {
   margin-top: 8px;
 }
-
-/* 维护任务表格列宽优化：确保「SIT测试/生产变更」下拉与指派给占位文字不截断（修复 #17） */
 .rd-task-th--type {
-  width: 108px;
-  min-width: 100px;
+  min-width: 108px;
 }
-
 .rd-task-th--name {
   width: 150px;
   max-width: 180px;
   overflow: hidden;
 }
-
 .rd-task-th--owner {
-  width: 172px;
-  min-width: 156px;
+  min-width: 172px;
 }
-
 .rd-task-th--hours {
-  width: 78px;
-  min-width: 72px;
+  min-width: 78px;
 }
-
 .rd-task-th--start,
 .rd-task-th--end {
   width: 100px;
 }
-
 .rd-task-th--actions {
   width: 48px;
 }
