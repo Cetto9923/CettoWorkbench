@@ -124,7 +124,9 @@
 }
 #scheduleVersionWindowModal.batch-modal {
   width: min(94vw, 980px);
-  max-height: 90vh;
+  max-width: 980px;
+  height: 92vh;
+  max-height: 92vh;
   overflow: hidden;
 }
 .modal-overlay {
@@ -333,9 +335,9 @@
 }
 
 #scheduleVersionWindowModal .batch-modal-body {
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   min-height: 0;
-  max-height: calc(90vh - 116px);
+  max-height: none;
   overflow-y: auto;
   padding: 14px 18px 16px;
 }
