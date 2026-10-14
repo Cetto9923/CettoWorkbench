@@ -336,9 +336,14 @@
   box-shadow: none;
 }
 
-/* 新建窗口弹窗叠在排期一体化弹窗之上 */
+/* 新建窗口弹窗叠在排期一体化弹窗之上：降低第二层遮罩透明度，避免底层发黑（修复 #19） */
 #scheduleVersionWindowModalOverlay {
   z-index: 1700;
+  background: rgba(15, 23, 42, 0.22);
+}
+
+html[data-theme="dark"] #scheduleVersionWindowModalOverlay {
+  background: rgba(0, 0, 0, 0.28);
 }
 
 #scheduleVersionWindowModal {
@@ -619,22 +624,26 @@
   margin-top: 8px;
 }
 
+/* 维护任务表格列宽优化：确保「SIT测试/生产变更」下拉与指派给占位文字不截断（修复 #17） */
 .rd-task-th--type {
-  width: 80px;
+  width: 108px;
+  min-width: 100px;
 }
 
 .rd-task-th--name {
-  width: 140px;
-  max-width: 140px;
+  width: 150px;
+  max-width: 180px;
   overflow: hidden;
 }
 
 .rd-task-th--owner {
-  width: 140px;
+  width: 172px;
+  min-width: 156px;
 }
 
 .rd-task-th--hours {
-  width: 60px;
+  width: 78px;
+  min-width: 72px;
 }
 
 .rd-task-th--start,
@@ -909,8 +918,11 @@
 }
 
 #scheduleIntegratedModal .rd-node-tasks .rd-task-table th:nth-child(5),
-#scheduleIntegratedModal .rd-node-tasks .rd-task-table td.rd-task-cell-owner {
-  width: 140px;
+#scheduleIntegratedModal .rd-node-tasks .rd-task-table td.rd-task-cell-owner,
+#taskModal .rd-node-tasks .rd-task-table th:nth-child(5),
+#taskModal .rd-node-tasks .rd-task-table td.rd-task-cell-owner {
+  width: 172px;
+  min-width: 156px;
 }
 
 #scheduleIntegratedModal .rd-node-tasks .rd-task-table td input,

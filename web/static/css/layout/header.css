@@ -1,7 +1,7 @@
 /* ==========================================================================
    文件: web/static/css/layout/header.css
    模块: 布局
-   职责: 顶栏用户区、主题快捷切换（跟随系统/浅色/深色/樱花粉）、固定到工作台按钮与用户下拉菜单样式。
+   职责: 顶栏用户区、主题快捷切换（浅色/深色/跟随系统）、主题色系选择（经典蓝/樱花粉）、固定到工作台按钮与用户下拉菜单样式。
 ========================================================================== */
 
 /* 顶栏一键固定按钮（对齐原型 pagePinToggle，深浅色语义变量 + 胶囊质感） */
@@ -11,7 +11,7 @@
   gap: 5px;
   height: 26px;
   padding: 0 10px;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 500;
   line-height: 1;
   color: var(--color-text-secondary);
@@ -27,9 +27,9 @@
 }
 
 .page-pin-toggle:hover {
-  color: var(--color-text-primary);
-  border-color: var(--color-border-strong, var(--color-border));
-  background: var(--color-surface-hover);
+  color: var(--color-primary);
+  border-color: var(--color-primary-border);
+  background: var(--color-primary-light);
 }
 
 .page-pin-toggle:focus-visible {
@@ -78,33 +78,36 @@
 .po-header-icon.theme-quick-toggle {
   border: 1px solid var(--color-border);
   background: var(--color-surface-muted);
-  color: var(--color-text-secondary);
+  color: var(--color-primary);
   transition: all 0.16s ease;
 }
 
 .po-header-icon.theme-quick-toggle:hover {
-  background: var(--color-surface-hover);
+  background: var(--color-primary-light);
   color: var(--color-primary);
   border-color: var(--color-primary-border);
   transform: translateY(-0.5px);
 }
 
+.po-header-icon.theme-quick-toggle .theme-pink-icon,
 .theme-picker-group .theme-pink-swatch {
-  color: var(--color-theme-pink-swatch);
+  color: var(--color-theme-pink-swatch, #e04b80);
+}
+
+.theme-picker-group .theme-blue-swatch {
+  color: var(--color-theme-blue-swatch, #2563eb);
 }
 
 .theme-picker-group .theme-system-sub {
-  display: inline-flex;
-  align-items: center;
   margin-left: 6px;
-  padding: 1px 6px;
+  padding: 2px 7px;
   border-radius: 999px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--color-text-secondary);
   background: var(--color-surface-muted);
   border: 1px solid var(--color-border);
-  line-height: 1.35;
+  line-height: 1.25;
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -162,19 +165,27 @@
 .theme-picker-group .dropdown-item {
   display: flex;
   align-items: center;
+  white-space: nowrap;
+}
+
+.theme-picker-group .dropdown-item > span:first-of-type {
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .theme-picker-group .dropdown-item i:first-child {
   width: 16px;
   text-align: center;
   margin-right: var(--space-2);
+  flex-shrink: 0;
 }
 
 .theme-picker-group .dropdown-item .check-mark {
   margin-left: auto;
-  padding-left: 8px;
+  padding-left: 10px;
   opacity: 0;
   color: var(--color-primary);
+  flex-shrink: 0;
 }
 
 .theme-picker-group .dropdown-item[aria-checked="true"] {
@@ -186,15 +197,16 @@
   opacity: 1;
 }
 
-/* 顶部用户菜单：毛玻璃浮层 */
+/* 顶部用户菜单：加宽至 220px 不折行 + 实色表面不透出底层文字（修复 #13） */
 .topbar-actions .dropdown-menu {
-  min-width: 184px;
+  min-width: 220px;
+  width: max-content;
   padding: 6px;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: var(--glass-surface, var(--color-surface));
-  backdrop-filter: var(--glass-blur, blur(16px));
-  -webkit-backdrop-filter: var(--glass-blur, blur(16px));
+  border: 1px solid var(--color-border-strong);
+  border-radius: 12px;
+  background: var(--color-surface);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   color: var(--color-text-body);
   box-shadow: var(--shadow-popover);
 }
@@ -204,10 +216,11 @@
 }
 
 .topbar-actions .dropdown-header {
-  padding: 6px 8px 4px;
+  padding: 6px 10px 4px;
   font-size: var(--font-size-xs);
   font-weight: 600;
   color: var(--color-text-secondary);
+  white-space: nowrap;
 }
 
 .topbar-actions .dropdown-divider {
@@ -237,22 +250,17 @@
   align-items: center;
   padding: 7px 10px;
   font-size: 13px;
-  line-height: 1.2;
-  white-space: nowrap;
-}
-
-.topbar-actions .dropdown-item span {
-  white-space: nowrap;
+  line-height: 1.25;
 }
 
 .topbar-actions .topbar-dropdown-item {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 10px;
-  font-size: 12.5px;
+  padding: 7px 10px;
+  font-size: 13px;
   font-weight: 500;
-  line-height: 1.2;
+  line-height: 1.25;
 }
 
 .topbar-actions .topbar-dropdown-item i {

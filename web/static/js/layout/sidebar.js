@@ -279,11 +279,56 @@
       .replace(/"/g, "&quot;");
   }
 
-  function pinnedIconClass(icon) {
-    var raw = String(icon || "").trim();
-    if (!raw) return "fas fa-circle";
-    if (/\bfa[srlbd]?\b/.test(raw)) return raw;
-    return "fas " + raw;
+  var TITLE_ICON_MAP = {
+    "首页": "fa-house",
+    "我的待办": "fa-list-check",
+    "我的已办": "fa-clock-rotate-left",
+    "通知中心": "fa-bell",
+    "我的关注": "fa-star",
+    "需求排期": "fa-calendar-check",
+    "排期工作台": "fa-calendar-check",
+    "需求查询": "fa-magnifying-glass",
+    "版本跟进": "fa-boxes-packing",
+    "工作看板": "fa-table-cells-large",
+    "需求看板": "fa-table-cells-large",
+    "任务看板": "fa-table-cells-large",
+    "敏捷小组": "fa-users",
+    "问题风险": "fa-shield-halved",
+    "指标雷达": "fa-chart-line",
+    "指标管理": "fa-sliders",
+    "项目周报": "fa-file-lines",
+    "用户管理": "fa-user-gear",
+    "部门管理": "fa-sitemap",
+    "角色管理": "fa-user-shield",
+    "菜单管理": "fa-bars-staggered",
+    "操作日志": "fa-clock-rotate-left",
+    "登录日志": "fa-right-to-bracket"
+  };
+
+  function resolvePinnedIcon(item) {
+    var raw = String((item && item.icon) || "").trim();
+    if (raw && /\bfa-[a-z0-9-]+/.test(raw) && raw !== "fa-circle" && raw !== "fas fa-circle") {
+      return /\b(fas|far|fal|fad|fab|fa-solid|fa-regular|fa-light)\b/.test(raw) ? raw : "fas " + raw;
+    }
+    var path = String((item && item.path) || "").trim();
+    if (path && sidebar) {
+      var matchLink = sidebar.querySelector('.po-subnav-body a.nav-item[href="' + path.replace(/"/g, '') + '"]:not(#sidebarPinnedContainer a)');
+      if (matchLink) {
+        var iconEl = matchLink.querySelector(".nav-icon");
+        if (iconEl && iconEl.className) {
+          var cls = iconEl.className.replace(/\bnav-icon\b/g, "").trim();
+          if (cls) return cls;
+        }
+      }
+    }
+    var title = String((item && item.title) || "").trim();
+    if (title && TITLE_ICON_MAP[title]) {
+      return "fas " + TITLE_ICON_MAP[title];
+    }
+    if (path.indexOf("/kanban") === 0) return "fas fa-table-cells-large";
+    if (path.indexOf("/schedule") === 0) return "fas fa-calendar-check";
+    if (path.indexOf("/follow") === 0) return "fas fa-star";
+    return "fas fa-bookmark";
   }
 
   function pathIsActive(path, currentPath) {
@@ -317,28 +362,30 @@
         var menuId = String((item && item.menuId) || "").trim();
         if (!path || !menuId) return;
         var title = String((item && item.title) || path).trim();
+        var iconClass = resolvePinnedIcon(item);
         if (!isEditMode) {
           var active = pathIsActive(path, currentPath);
           html +=
             '<a href="' +
             escapeHtml(path) +
-            '" class="nav-item' +
+            '" class="nav-item po-pinned-item' +
             (active ? " active" : "") +
             '" data-menu-id="' +
             escapeHtml(menuId) +
             '" title="' +
             escapeHtml(title) +
             '">';
-          html += '<i class="nav-icon ' + escapeHtml(pinnedIconClass(item && item.icon)) + '"></i>';
+          html += '<i class="nav-icon ' + escapeHtml(iconClass) + '"></i>';
           html += '<span class="nav-text">' + escapeHtml(title) + "</span>";
           html += "</a>";
         } else {
           html +=
-            '<div class="nav-item is-editing-item" data-menu-id="' +
+            '<div class="nav-item po-pinned-item is-editing-item" data-menu-id="' +
             escapeHtml(menuId) +
             '" draggable="true" title="按住拖拽排序">';
           html +=
             '<span class="pinned-drag-handle" title="按住拖拽排序"><i class="fas fa-grip-vertical"></i></span>';
+          html += '<i class="nav-icon ' + escapeHtml(iconClass) + '"></i>';
           html += '<span class="nav-text">' + escapeHtml(title) + "</span>";
           html +=
             '<button type="button" class="nav-item-unpin js-unpin-btn" data-menu-id="' +

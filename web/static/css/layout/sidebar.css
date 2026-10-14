@@ -84,7 +84,7 @@ body.po-workbench-shell .sidebar.po-dual-sidebar {
   flex-direction: row;
   padding: 0;
   overflow: hidden;
-  background: var(--color-surface);
+  background: var(--glass-subnav, var(--color-surface));
   box-shadow: 1px 0 0 var(--glass-border, transparent);
 }
 
@@ -99,7 +99,7 @@ body.po-workbench-shell .po-rail {
   padding: 12px 0 10px;
   gap: 10px;
   border-right: 1px solid var(--color-border);
-  background: var(--color-surface-muted);
+  background: var(--glass-rail, var(--color-surface-muted));
   box-sizing: border-box;
   z-index: 2;
 }
@@ -287,9 +287,9 @@ html[data-theme="dark"] body.po-workbench-shell .po-rail-btn.is-drawer-open {
 }
 
 html[data-theme="dark"] body.po-workbench-shell .po-rail-btn.is-active-route .po-rail-icon-box {
-  background: rgba(59, 130, 246, 0.22);
-  color: #7cb3ff;
-  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.35), 0 0 12px rgba(59, 130, 246, 0.2);
+  background: var(--color-info-soft);
+  color: var(--color-info);
+  box-shadow: inset 0 0 0 1px var(--color-info-border), 0 0 12px var(--color-primary-ring-soft);
 }
 
 /* ── 右侧二级子面板 (Detail Sub-Panel) ── */

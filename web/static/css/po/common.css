@@ -292,13 +292,15 @@
 }
 
 .dd-btn.danger {
-  background: var(--color-danger-strong);
+  background: var(--color-danger-accent);
   color: var(--color-text-on-accent);
-  border-color: var(--color-danger-strong);
+  border-color: var(--color-danger-accent);
 }
 
 .dd-btn.danger:hover {
   background: var(--color-danger-deep);
+  border-color: var(--color-danger-deep);
+  color: var(--color-text-on-accent);
 }
 
 .dd-aside-title {
@@ -500,10 +502,11 @@
 
 .dd-reject-modal-dialog {
   background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border-strong);
   border-radius: 12px;
   width: 460px;
   max-width: 92vw;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 20px 40px -5px rgba(15, 23, 42, 0.22);
   overflow: hidden;
 }
 

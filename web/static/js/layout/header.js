@@ -1,19 +1,40 @@
 /* ==========================================================================
    文件: web/static/js/layout/header.js
    模块: 布局
-   职责: 顶栏主题偏好（跟随系统 / 浅色 / 深色 / 樱花粉）与外观控件同步，支持系统深浅色实时联动。
+   职责: 顶栏外观模式（跟随系统 / 浅色 / 深色）与主题色系（经典蓝 / 樱花粉）正交管理
+         支持四套主题（蓝浅 / 蓝深 / 粉浅 / 粉深）、localStorage 持久化与首屏零闪屏同步。
 ========================================================================== */
 (function () {
   "use strict";
 
-  var STORAGE_KEY = "workbench.theme.preference";
-  var VALID_PREFS = { system: true, light: true, dark: true, pink: true };
-  var currentPreference = "system";
+  var MODE_KEY = "workbench.theme.mode";
+  var COLOR_KEY = "workbench.theme.color";
+  var LEGACY_PREF_KEY = "workbench.theme.preference";
+
+  var VALID_MODES = { system: true, light: true, dark: true };
+  var VALID_COLORS = { blue: true, pink: true };
+
+  var currentMode = "light";
+  var currentColor = "blue";
 
   try {
-    var stored = localStorage.getItem(STORAGE_KEY);
-    if (stored && VALID_PREFS[stored]) {
-      currentPreference = stored;
+    var storedMode = localStorage.getItem(MODE_KEY);
+    var storedColor = localStorage.getItem(COLOR_KEY);
+    var legacyPref = localStorage.getItem(LEGACY_PREF_KEY);
+
+    if (storedMode && VALID_MODES[storedMode]) {
+      currentMode = storedMode;
+    } else if (legacyPref) {
+      if (legacyPref === "pink") {
+        currentMode = "light";
+        if (!storedColor) currentColor = "pink";
+      } else if (VALID_MODES[legacyPref]) {
+        currentMode = legacyPref;
+      }
+    }
+
+    if (storedColor && VALID_COLORS[storedColor]) {
+      currentColor = storedColor;
     }
   } catch (e) {
     // ignore
@@ -34,40 +55,38 @@
     return "light";
   }
 
-  function getPreference() {
-    return currentPreference;
-  }
-
-  function getEffectiveTheme(pref) {
-    var p = pref || currentPreference;
-    if (p === "system") {
+  function getEffectiveTheme(mode) {
+    var m = mode || currentMode;
+    if (m === "system") {
       return getSystemTheme();
     }
-    if (p === "dark" || p === "pink") {
-      return p;
-    }
-    return "light";
+    return m === "dark" ? "dark" : "light";
   }
 
-  function getThemeLabel(pref, effective) {
-    if (pref === "system") {
-      return "跟随系统（当前" + (effective === "dark" ? "深色" : "浅色") + "）";
+  function getModeLabel(mode, effective) {
+    if (mode === "system") {
+      return "跟随系统（" + (effective === "dark" ? "深色" : "浅色") + "）";
     }
-    if (pref === "dark") return "深色模式";
-    if (pref === "pink") return "樱花粉主题";
-    return "浅色模式";
+    return mode === "dark" ? "深色模式" : "浅色模式";
   }
 
-  function applyTheme(effectiveTheme) {
+  function getColorLabel(color) {
+    return color === "pink" ? "樱花粉" : "经典蓝";
+  }
+
+  function applyTheme() {
     if (typeof document === "undefined" || !document.documentElement) {
       return;
     }
-    var theme = effectiveTheme || getEffectiveTheme(currentPreference);
-    document.documentElement.setAttribute("data-theme", theme);
-    document.documentElement.setAttribute("data-theme-pref", currentPreference);
-    if (document.documentElement.dataset) {
-      document.documentElement.dataset.theme = theme;
-      document.documentElement.dataset.themePref = currentPreference;
+    var effective = getEffectiveTheme(currentMode);
+    var root = document.documentElement;
+    root.setAttribute("data-theme", effective);
+    root.setAttribute("data-theme-color", currentColor);
+    root.setAttribute("data-theme-pref", currentMode);
+    if (root.dataset) {
+      root.dataset.theme = effective;
+      root.dataset.themeColor = currentColor;
+      root.dataset.themePref = currentMode;
     }
 
     var systemSub = document.getElementById("themeSystemSub");
@@ -81,22 +100,78 @@
       var moon = quickToggle.querySelector(".theme-moon-icon");
       var sun = quickToggle.querySelector(".theme-sun-icon");
 
-      if (sysIcon) sysIcon.style.display = "none";
-      if (moon) moon.style.display = "none";
-      if (sun) sun.style.display = "none";
+      if (sysIcon) sysIcon.hidden = true;
+      if (moon) moon.hidden = true;
+      if (sun) sun.hidden = true;
 
-      if (currentPreference === "system" && sysIcon) {
-        sysIcon.style.display = "inline-block";
-      } else if (theme === "dark" && sun) {
-        sun.style.display = "inline-block";
+      if (currentMode === "system" && sysIcon) {
+        sysIcon.hidden = false;
+      } else if (effective === "dark" && sun) {
+        sun.hidden = false;
       } else if (moon) {
-        moon.style.display = "inline-block";
+        moon.hidden = false;
       }
 
-      var nextAction = theme === "dark" ? "切换为浅色模式" : "切换为深色模式";
-      var label = "当前：" + getThemeLabel(currentPreference, theme) + " · 点击" + nextAction;
+      var nextModeText =
+        currentMode === "light"
+          ? "深色模式"
+          : currentMode === "dark"
+          ? "跟随系统"
+          : "浅色模式";
+      var label =
+        "当前：" +
+        getColorLabel(currentColor) +
+        " · " +
+        getModeLabel(currentMode, effective) +
+        "（点击切换至" +
+        nextModeText +
+        "）";
       quickToggle.title = label;
       quickToggle.setAttribute("aria-label", label);
+    }
+  }
+
+  function upgradeCachedDropdownDOM() {
+    if (typeof document === "undefined") return;
+    var existingColorGroup = document.querySelector(".theme-color-group");
+    if (existingColorGroup) return;
+
+    var pickerGroup = document.querySelector(".topbar-actions .theme-picker-group");
+    if (!pickerGroup) return;
+
+    var headerEl = pickerGroup.querySelector(".dropdown-header");
+    if (headerEl) headerEl.textContent = "外观模式";
+
+    var pinkBtn = pickerGroup.querySelector('[data-theme-value="pink"]');
+    if (pinkBtn && pinkBtn.parentNode) {
+      pinkBtn.parentNode.removeChild(pinkBtn);
+    }
+
+    var modeBtns = pickerGroup.querySelectorAll("[data-theme-value]");
+    for (var i = 0; i < modeBtns.length; i++) {
+      var v = modeBtns[i].getAttribute("data-theme-value");
+      if (v) modeBtns[i].setAttribute("data-theme-mode", v);
+    }
+
+    var divider = document.createElement("div");
+    divider.className = "dropdown-divider";
+
+    var colorGroup = document.createElement("div");
+    colorGroup.className = "theme-picker-group theme-color-group";
+    colorGroup.setAttribute("role", "group");
+    colorGroup.setAttribute("aria-label", "主题色系");
+    colorGroup.innerHTML =
+      '<div class="dropdown-header">主题色系</div>' +
+      '<button type="button" class="dropdown-item" role="menuitemradio" aria-checked="true" data-theme-color-opt="blue">' +
+      '<i class="fas fa-circle theme-blue-swatch"></i><span>经典蓝</span><i class="fas fa-check check-mark"></i>' +
+      "</button>" +
+      '<button type="button" class="dropdown-item" role="menuitemradio" aria-checked="false" data-theme-color-opt="pink">' +
+      '<i class="fas fa-heart theme-pink-swatch"></i><span>樱花粉</span><i class="fas fa-check check-mark"></i>' +
+      "</button>";
+
+    if (pickerGroup.parentNode) {
+      pickerGroup.parentNode.insertBefore(colorGroup, pickerGroup.nextSibling);
+      pickerGroup.parentNode.insertBefore(divider, colorGroup);
     }
   }
 
@@ -104,49 +179,91 @@
     if (typeof document === "undefined" || !document.querySelectorAll) {
       return;
     }
-    var controls = document.querySelectorAll('[role="menuitemradio"][data-theme-value]');
-    for (var i = 0; i < controls.length; i++) {
-      var ctrl = controls[i];
-      var val = ctrl.getAttribute("data-theme-value");
-      if (val === currentPreference) {
-        ctrl.setAttribute("aria-checked", "true");
-        if (ctrl.classList) {
-          ctrl.classList.add("active");
-        }
-      } else {
-        ctrl.setAttribute("aria-checked", "false");
-        if (ctrl.classList) {
-          ctrl.classList.remove("active");
-        }
-      }
+    var modeControls = document.querySelectorAll('[role="menuitemradio"][data-theme-mode]');
+    for (var i = 0; i < modeControls.length; i++) {
+      var ctrl = modeControls[i];
+      var val = ctrl.getAttribute("data-theme-mode");
+      var checked = val === currentMode;
+      ctrl.setAttribute("aria-checked", checked ? "true" : "false");
+      ctrl.classList.toggle("active", checked);
+    }
+
+    var colorControls = document.querySelectorAll('[role="menuitemradio"][data-theme-color-opt]');
+    for (var j = 0; j < colorControls.length; j++) {
+      var cCtrl = colorControls[j];
+      var cVal = cCtrl.getAttribute("data-theme-color-opt");
+      var cChecked = cVal === currentColor;
+      cCtrl.setAttribute("aria-checked", cChecked ? "true" : "false");
+      cCtrl.classList.toggle("active", cChecked);
     }
   }
 
-  function setPreference(pref) {
-    currentPreference = VALID_PREFS[pref] ? pref : "system";
+  function persistState() {
     try {
-      localStorage.setItem(STORAGE_KEY, currentPreference);
+      localStorage.setItem(MODE_KEY, currentMode);
+      localStorage.setItem(COLOR_KEY, currentColor);
+      localStorage.setItem(LEGACY_PREF_KEY, currentMode);
     } catch (e) {
       // ignore
     }
-    applyTheme(getEffectiveTheme(currentPreference));
+  }
+
+  function setMode(mode) {
+    currentMode = VALID_MODES[mode] ? mode : "system";
+    persistState();
+    applyTheme();
     syncControls();
   }
 
-  function toggleQuick() {
-    var effective = getEffectiveTheme(currentPreference);
-    setPreference(effective === "dark" ? "light" : "dark");
+  function setColor(color) {
+    currentColor = VALID_COLORS[color] ? color : "blue";
+    persistState();
+    applyTheme();
+    syncControls();
   }
 
-  applyTheme(getEffectiveTheme(currentPreference));
+  function setPreference(pref) {
+    if (pref === "pink") {
+      setColor("pink");
+      return;
+    }
+    if (pref === "blue") {
+      setColor("blue");
+      return;
+    }
+    setMode(pref);
+  }
+
+  /* 顶栏按钮仅负责 浅色 -> 深色 -> 跟随系统 三态循环，不改变蓝/粉主题色 */
+  function toggleQuick() {
+    if (currentMode === "light") {
+      setMode("dark");
+    } else if (currentMode === "dark") {
+      setMode("system");
+    } else {
+      setMode("light");
+    }
+  }
+
+  applyTheme();
 
   if (typeof window !== "undefined") {
     window.WorkbenchTheme = {
-      getPreference: getPreference,
+      getPreference: function () {
+        return currentMode;
+      },
+      getMode: function () {
+        return currentMode;
+      },
+      getColor: function () {
+        return currentColor;
+      },
       getEffectiveTheme: function () {
-        return getEffectiveTheme(currentPreference);
+        return getEffectiveTheme(currentMode);
       },
       setPreference: setPreference,
+      setMode: setMode,
+      setColor: setColor,
       syncControls: syncControls,
       toggleQuick: toggleQuick,
     };
@@ -159,8 +276,8 @@
           if (systemSub) {
             systemSub.textContent = getSystemTheme() === "dark" ? "深色" : "浅色";
           }
-          if (currentPreference === "system") {
-            applyTheme(getEffectiveTheme("system"));
+          if (currentMode === "system") {
+            applyTheme();
             syncControls();
           }
         };
@@ -175,28 +292,41 @@
     }
 
     window.addEventListener("storage", function (e) {
-      if (!e || e.key !== STORAGE_KEY) {
-        return;
+      if (!e) return;
+      if (e.key === MODE_KEY && e.newValue && VALID_MODES[e.newValue]) {
+        currentMode = e.newValue;
+        applyTheme();
+        syncControls();
+      } else if (e.key === COLOR_KEY && e.newValue && VALID_COLORS[e.newValue]) {
+        currentColor = e.newValue;
+        applyTheme();
+        syncControls();
       }
-      if (e.newValue && VALID_PREFS[e.newValue]) {
-        currentPreference = e.newValue;
-      } else {
-        currentPreference = "system";
-      }
-      applyTheme(getEffectiveTheme(currentPreference));
-      syncControls();
     });
   }
 
   function bindControls() {
+    upgradeCachedDropdownDOM();
     syncControls();
-    applyTheme(getEffectiveTheme(currentPreference));
-    var controls = document.querySelectorAll('[role="menuitemradio"][data-theme-value]');
-    for (var i = 0; i < controls.length; i++) {
-      controls[i].addEventListener("click", function (e) {
+    applyTheme();
+
+    var modeControls = document.querySelectorAll('[role="menuitemradio"][data-theme-mode]');
+    for (var i = 0; i < modeControls.length; i++) {
+      if (modeControls[i]._modeBound) continue;
+      modeControls[i]._modeBound = true;
+      modeControls[i].addEventListener("click", function (e) {
         e.preventDefault();
-        var val = this.getAttribute("data-theme-value");
-        setPreference(val);
+        setMode(this.getAttribute("data-theme-mode"));
+      });
+    }
+
+    var colorControls = document.querySelectorAll('[role="menuitemradio"][data-theme-color-opt]');
+    for (var j = 0; j < colorControls.length; j++) {
+      if (colorControls[j]._colorBound) continue;
+      colorControls[j]._colorBound = true;
+      colorControls[j].addEventListener("click", function (e) {
+        e.preventDefault();
+        setColor(this.getAttribute("data-theme-color-opt"));
       });
     }
 

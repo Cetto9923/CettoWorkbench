@@ -113,7 +113,7 @@
   left: 50%;
   transform: translate(-50%, -50%);
   background: var(--white);
-  border-radius: var(--r);
+  border-radius: 12px;
   box-shadow: 0 8px 32px var(--color-shadow-12);
   z-index: 601;
   max-width: 500px;
@@ -123,11 +123,12 @@
   display: none;
 }
 
+/* 新建/编辑版本窗口：去掉固定高度，自适应内容且超出内部滚动（修复 #16） */
 #scheduleVersionWindowModal.batch-modal {
   width: min(94vw, 980px);
   max-width: 980px;
-  height: 92vh;
-  max-height: 92vh;
+  height: auto;
+  max-height: 90vh;
   overflow: hidden;
 }
 
@@ -150,7 +151,7 @@
   left: 50%;
   transform: translate(-50%, -50%);
   background: var(--white);
-  border-radius: 8px;
+  border-radius: 12px;
   box-shadow: 0 8px 32px var(--color-shadow-12);
   z-index: 601;
   max-width: 560px;
@@ -158,6 +159,18 @@
   max-height: 80vh;
   overflow-y: auto;
   display: none;
+}
+
+/* 窗口维护弹窗：加宽至 960px，保证窗口期列单行完整显示不折成三行（修复 #18） */
+#manageVersionWindowsModal.modal {
+  width: min(94vw, 960px);
+  max-width: 960px;
+}
+
+#manageVersionWindowsModal .schedule-table th,
+#manageVersionWindowsModal .schedule-table td {
+  white-space: nowrap;
+  padding: 8px 12px;
 }
 
 .modal.show {
@@ -332,9 +345,9 @@
 }
 
 #scheduleVersionWindowModal .batch-modal-body {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-height: 0;
-  max-height: none;
+  max-height: calc(90vh - 116px);
   overflow-y: auto;
   padding: 14px 18px 16px;
 }
@@ -449,10 +462,10 @@
   }
 }
 
-/* ── 维护任务弹窗 ── */
+/* ── 维护任务弹窗（加宽至 1220px，避免类型与指派人截断，修复 #17） ── */
 #taskModal.batch-modal {
-  width: min(96vw, 1100px);
-  max-width: 1100px;
+  width: min(96vw, 1220px);
+  max-width: 1220px;
   max-height: 92vh;
   overflow: hidden;
   display: none;

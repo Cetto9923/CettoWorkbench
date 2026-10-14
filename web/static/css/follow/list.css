@@ -96,19 +96,20 @@
 .follow-stage-card {
   position: relative;
   overflow: hidden;
-  background: var(--color-surface);
+  background-color: var(--color-surface);
+  background-image: var(--wb-header-gradient);
   border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 14px 16px;
   min-height: 88px;
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-sm);
   transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
 }
 
 .follow-stage-card:hover {
   transform: translateY(-1.5px);
   border-color: var(--color-info-border);
-  box-shadow: var(--shadow-card-hover, var(--shadow-sm));
+  box-shadow: var(--shadow-sm);
 }
 
 .follow-stage-num {
@@ -201,7 +202,7 @@
 }
 
 .follow-table thead th {
-  background: var(--color-surface-muted);
+  background: var(--color-table-head-bg, var(--color-surface-muted));
   color: var(--color-text-secondary);
   border-bottom: 1px solid var(--color-border);
   font-size: 12px;

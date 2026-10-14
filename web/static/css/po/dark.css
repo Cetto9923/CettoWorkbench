@@ -129,6 +129,7 @@ html[data-theme="dark"] .dd-btn.danger {
 html[data-theme="dark"] .dd-btn.danger:hover {
   background: var(--color-danger-deep);
   border-color: var(--color-danger-deep);
+  color: var(--color-text-on-accent);
 }
 
 html[data-theme="dark"] .dd-btn.danger-outline {
@@ -163,18 +164,20 @@ html[data-theme="dark"] .dd-btn-edit:disabled {
   opacity: 0.7;
 }
 
-/* 驳回 / 通过弹窗 */
+/* 叠在抽屉上的弹窗（深色）：背景比抽屉亮一层 + 清晰强边框与深阴影（修复 #15） */
 html[data-theme="dark"] .dd-reject-modal-dialog {
-  background: var(--color-card);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border-strong);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
 html[data-theme="dark"] .dd-reject-modal-header,
 html[data-theme="dark"] .dd-reject-modal-footer {
-  border-color: var(--color-border);
+  border-color: var(--color-border-strong);
 }
 
 html[data-theme="dark"] .dd-reject-modal-footer {
-  background: var(--color-surface-muted);
+  background: var(--color-surface);
 }
 
 html[data-theme="dark"] .dd-reject-modal-header h3,
@@ -390,11 +393,24 @@ html[data-theme="dark"] #poDeliverModal .demand-clarify-error-state {
   color: var(--color-danger-bright);
 }
 
-/* ── 提测办理：token 已随主题切换；此处只收口深色对比度（对齐 dark-contrast） ── */
+/* ── 提测办理：token 已随主题切换；深色下步骤连线用 --color-border-strong（修复 #21） ── */
+html[data-theme="dark"] .po-testtask-modal {
+  border: 1px solid var(--color-border-strong);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+}
+
 html[data-theme="dark"] .po-testtask-modal-hdr,
 html[data-theme="dark"] .po-testtask-panel {
-  background: var(--color-card);
+  background: var(--color-surface);
   box-shadow: none;
+}
+
+html[data-theme="dark"] .po-testtask-step-line {
+  background: var(--color-border-strong);
+}
+
+html[data-theme="dark"] .po-testtask-step-dot {
+  border-color: var(--color-border-strong);
 }
 
 html[data-theme="dark"] .po-testtask-step-dot.is-active,

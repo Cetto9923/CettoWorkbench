@@ -212,15 +212,26 @@
   height: var(--size-9);
 }
 
-/* 危险按钮：只允许出现在删除确认弹窗内 */
 .btn-danger {
   height: var(--size-9);
-  background: var(--color-danger-bright);
-  color: var(--color-surface);
-  border-color: var(--color-danger-bright);
+  background: var(--color-danger-accent);
+  color: var(--color-text-on-accent);
+  border-color: var(--color-danger-accent);
 }
 .btn-danger:hover {
+  background: var(--color-danger-deep);
+  border-color: var(--color-danger-deep);
+  color: var(--color-text-on-accent);
+}
+html[data-theme="dark"] .btn-danger {
   background: var(--color-danger-accent);
+  border-color: var(--color-danger-accent);
+  color: var(--color-text-on-accent);
+}
+html[data-theme="dark"] .btn-danger:hover {
+  background: var(--color-danger-deep);
+  border-color: var(--color-danger-deep);
+  color: var(--color-text-on-accent);
 }
 
 /* 图标按钮（操作列用）*/

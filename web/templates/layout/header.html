@@ -1,7 +1,7 @@
 {{ define "layout/header" }} {{/*
 ========================================================================== 文件:
 web/templates/layout/header.html 模块: 布局 职责:
-渲染后台顶部导航栏、面包屑与页面标题区（含主题四态切换：跟随系统 / 浅色 / 深色 / 樱花粉）。
+渲染后台顶部导航栏、面包屑与页面标题区（含浅色/深色/跟随系统三态模式 + 蓝/粉双主题色系独立选择）。
 全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .CurrentPath, .LayoutNav
 页面字段: .Title (string), .PageTitle (string), .PageDescription (string), .CurrentMenus ([]menu.Menu)
 说明: sidebar 布局含全局编号搜索框（#globalSearch），跳转禅道由 globalsearch.js 处理。
@@ -53,12 +53,12 @@ web/templates/layout/header.html 模块: 布局 职责:
       type="button"
       class="po-header-icon theme-quick-toggle"
       id="themeQuickToggle"
-      title="切换深色/浅色模式"
-      aria-label="切换深色/浅色模式"
+      title="切换浅色/深色/跟随系统模式"
+      aria-label="切换浅色/深色/跟随系统模式"
     >
-      <i class="fas fa-circle-half-stroke theme-system-icon" style="display: none" aria-hidden="true"></i>
+      <i class="fas fa-circle-half-stroke theme-system-icon" hidden aria-hidden="true"></i>
       <i class="fas fa-moon theme-moon-icon" aria-hidden="true"></i>
-      <i class="fas fa-sun theme-sun-icon" style="display: none" aria-hidden="true"></i>
+      <i class="fas fa-sun theme-sun-icon" hidden aria-hidden="true"></i>
     </button>
     <div class="dropdown">
       <button
@@ -71,13 +71,14 @@ web/templates/layout/header.html 模块: 布局 职责:
         <span>{{ if .CurrentUser }}{{ .CurrentUser.DisplayName }}{{ else }}用户{{ end }}</span>
       </button>
       <div class="dropdown-menu">
-        <div class="theme-picker-group" role="group" aria-label="外观设置">
-          <div class="dropdown-header">外观主题</div>
+        <div class="theme-picker-group" role="group" aria-label="外观模式">
+          <div class="dropdown-header">外观模式</div>
           <button
             type="button"
             class="dropdown-item"
             role="menuitemradio"
             aria-checked="false"
+            data-theme-mode="system"
             data-theme-value="system"
           >
             <i class="fas fa-circle-half-stroke"></i><span>跟随系统</span>
@@ -89,6 +90,7 @@ web/templates/layout/header.html 模块: 布局 职责:
             class="dropdown-item"
             role="menuitemradio"
             aria-checked="true"
+            data-theme-mode="light"
             data-theme-value="light"
           >
             <i class="fas fa-sun"></i><span>浅色</span>
@@ -99,9 +101,24 @@ web/templates/layout/header.html 模块: 布局 职责:
             class="dropdown-item"
             role="menuitemradio"
             aria-checked="false"
+            data-theme-mode="dark"
             data-theme-value="dark"
           >
             <i class="fas fa-moon"></i><span>深色</span>
+            <i class="fas fa-check check-mark"></i>
+          </button>
+        </div>
+        <div class="dropdown-divider"></div>
+        <div class="theme-picker-group theme-color-group" role="group" aria-label="主题色系">
+          <div class="dropdown-header">主题色系</div>
+          <button
+            type="button"
+            class="dropdown-item"
+            role="menuitemradio"
+            aria-checked="true"
+            data-theme-color-opt="blue"
+          >
+            <i class="fas fa-circle theme-blue-swatch"></i><span>经典蓝</span>
             <i class="fas fa-check check-mark"></i>
           </button>
           <button
@@ -109,7 +126,7 @@ web/templates/layout/header.html 模块: 布局 职责:
             class="dropdown-item"
             role="menuitemradio"
             aria-checked="false"
-            data-theme-value="pink"
+            data-theme-color-opt="pink"
           >
             <i class="fas fa-heart theme-pink-swatch"></i><span>樱花粉</span>
             <i class="fas fa-check check-mark"></i>

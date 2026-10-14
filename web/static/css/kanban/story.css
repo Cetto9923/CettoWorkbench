@@ -37,7 +37,7 @@
   position: sticky;
   top: 0;
   z-index: 4;
-  background: var(--color-surface-muted);
+  background: var(--color-table-head-bg, var(--color-surface-muted));
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
