@@ -6,9 +6,12 @@
 
 .po-board .demand-board {
   height: 100%;
-  background: var(--white);
+  background: var(--glass-surface, var(--white));
+  backdrop-filter: var(--glass-blur, blur(16px));
+  -webkit-backdrop-filter: var(--glass-blur, blur(16px));
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 10px;
+  box-shadow: var(--shadow-card, none);
   overflow-x: auto;
   overflow-y: auto;
   scrollbar-gutter: stable;
@@ -36,7 +39,9 @@
   position: sticky;
   top: 0;
   z-index: 4;
-  background: var(--blue-bg);
+  background: var(--glass-bg, var(--blue-bg));
+  backdrop-filter: var(--glass-blur, blur(14px));
+  -webkit-backdrop-filter: var(--glass-blur, blur(14px));
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }

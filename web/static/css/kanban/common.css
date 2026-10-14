@@ -1,12 +1,12 @@
 /* ==========================================================================
    文件: web/static/css/kanban/common.css
    模块: 工作看板
-   职责: 需求/任务看板共用样式（壳布局、页头、人员筛选、问题栏）
+   职责: 需求/任务看板共用样式（壳布局、页头、人员筛选、问题栏，支持毛玻璃层级）
 ========================================================================== */
 
 .main:has(.po-board) {
   box-sizing: border-box;
-  padding: 10px 12px 12px;
+  padding: 10px 14px 12px;
   padding-bottom: calc(12px + var(--bottom-tabbar-height, 40px));
   background: var(--color-page-bg);
   display: flex;
@@ -62,22 +62,22 @@
   flex-shrink: 0;
   flex-wrap: wrap;
   padding: 0 2px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .po-board .page-hdr h2 {
   margin: 0;
   font-size: 16px;
   line-height: 28px;
-  font-weight: 600;
+  font-weight: 650;
 }
 
 .po-board .board-switch {
   display: inline-flex;
-  height: 26px;
+  height: 28px;
   padding: 2px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--color-surface-muted);
 }
 
@@ -86,22 +86,24 @@
   border: 0;
   background: transparent;
   padding: 0 12px;
-  border-radius: 4px;
+  border-radius: 6px;
   color: var(--t2);
   font-size: 12px;
+  font-weight: 500;
   line-height: 22px;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
   cursor: pointer;
+  transition: all 0.16s ease;
 }
 
 .po-board .board-switch button.active,
 .po-board .board-switch a.active {
   background: var(--color-surface);
   color: var(--navy);
-  font-weight: 700;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  font-weight: 650;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
   cursor: default;
 }
 
@@ -112,10 +114,10 @@
 }
 
 .po-board .stat {
-  height: 22px;
-  padding: 0 8px;
+  height: 24px;
+  padding: 0 9px;
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: 999px;
   background: var(--white);
   color: var(--t2);
   font-size: 11px;
@@ -165,31 +167,35 @@
 .po-board .chips {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
 }
 
 .po-board .chip {
-  height: 26px;
+  height: 28px;
   border: 1px solid var(--border);
-  background: var(--white);
+  background: var(--glass-surface, var(--white));
   color: var(--t2);
-  border-radius: 4px;
-  padding: 0 10px;
-  font-size: 11px;
+  border-radius: 999px;
+  padding: 0 12px;
+  font-size: 11.5px;
+  font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
+  transition: all 0.16s ease;
 }
 
 .po-board .chip:hover {
   border-color: var(--blue-bd);
   color: var(--navy);
+  transform: translateY(-0.5px);
 }
 
 .po-board .chip.active {
-  border-color: var(--navy);
+  border-color: var(--blue-bd, var(--navy));
   background: var(--blue-bg);
   color: var(--navy);
-  font-weight: 700;
+  font-weight: 650;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .po-board .chips-empty {
@@ -208,14 +214,16 @@
   height: 28px;
   border: 1px solid var(--border);
   background: var(--white);
-  border-radius: 4px;
+  border-radius: 6px;
   padding: 0 11px;
   color: var(--t2);
-  font-size: 11px;
+  font-size: 11.5px;
+  font-weight: 500;
   display: inline-flex;
   align-items: center;
   text-decoration: none;
   cursor: default;
+  transition: all 0.16s ease;
 }
 
 .po-board a.action {
@@ -226,7 +234,7 @@
   border-color: var(--blue-bd);
   background: var(--blue-bg);
   color: var(--navy);
-  font-weight: 700;
+  font-weight: 650;
 }
 
 .po-board .action.primary {
@@ -253,7 +261,7 @@
   align-items: flex-start;
   gap: 8px;
   flex-shrink: 0;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   min-height: 30px;
 }
 
@@ -263,14 +271,14 @@
   font-weight: 700;
   white-space: nowrap;
   flex-shrink: 0;
-  line-height: 26px;
+  line-height: 28px;
 }
 
 .po-board .people {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 6px;
   flex: 1;
   min-width: 0;
   overflow: visible;
@@ -280,7 +288,7 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 6px;
   flex: 1;
   min-width: 0;
   overflow: visible;
@@ -296,7 +304,7 @@
 
 .po-board .person.more {
   color: var(--navy);
-  font-weight: 700;
+  font-weight: 650;
   border-color: var(--blue-bd);
   background: var(--blue-bg);
 }
@@ -307,24 +315,27 @@
 }
 
 .po-board .person {
-  height: 26px;
+  height: 28px;
   border: 1px solid var(--border);
-  background: var(--white);
-  border-radius: 4px;
-  padding: 0 9px;
+  background: var(--glass-surface, var(--white));
+  border-radius: 999px;
+  padding: 0 10px 0 6px;
   color: var(--t2);
-  font-size: 11px;
+  font-size: 11.5px;
+  font-weight: 500;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
+  transition: all 0.16s ease;
 }
 
 .po-board .person:hover {
   border-color: var(--blue-bd);
   color: var(--navy);
+  transform: translateY(-0.5px);
 }
 
 /* 角色底色：未选中时区分 PO / 敏捷教练 */
@@ -347,8 +358,8 @@
   border-color: var(--navy);
   background: var(--navy);
   color: var(--color-text-on-accent);
-  font-weight: 700;
-  box-shadow: none;
+  font-weight: 650;
+  box-shadow: 0 2px 8px var(--color-primary-ring-soft);
 }
 
 .po-board .count {
@@ -363,21 +374,21 @@
 }
 
 .po-board .mini-avatar {
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background: rgba(37, 99, 235, 0.12);
+  background: rgba(37, 99, 235, 0.14);
   color: var(--navy);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 8.5px;
+  font-size: 9px;
   font-weight: 700;
   flex-shrink: 0;
 }
 
 .po-board .person.role-coach .mini-avatar {
-  background: rgba(22, 163, 74, 0.14);
+  background: rgba(22, 163, 74, 0.16);
   color: var(--green);
 }
 
@@ -477,11 +488,14 @@
 }
 
 .po-board .issue-panel {
-  width: 220px;
-  flex: 0 0 220px;
-  background: var(--white);
+  width: 224px;
+  flex: 0 0 224px;
+  background: var(--glass-surface, var(--white));
+  backdrop-filter: var(--glass-blur, blur(16px));
+  -webkit-backdrop-filter: var(--glass-blur, blur(16px));
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 10px;
+  box-shadow: var(--shadow-card, none);
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -492,7 +506,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 9px 10px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--border-lt);
   flex-shrink: 0;
 }
@@ -507,13 +521,13 @@
   border: 1px solid var(--blue-bd);
   background: var(--blue-bg);
   color: var(--navy);
-  padding: 1px 5px;
-  border-radius: 4px;
+  padding: 1px 6px;
+  border-radius: 999px;
 }
 
 .po-board .issue-tabs {
   display: flex;
-  gap: 4px;
+  gap: 5px;
   padding: 8px 8px 6px;
   flex-shrink: 0;
   border-bottom: 1px solid var(--border-lt);
@@ -521,10 +535,10 @@
 
 .po-board .issue-tab {
   flex: 1;
-  height: 24px;
+  height: 26px;
   border: 1px solid var(--border);
   background: var(--white);
-  border-radius: 4px;
+  border-radius: 6px;
   padding: 0 4px;
   font-size: 11px;
   color: var(--t2);
@@ -542,10 +556,10 @@
 }
 
 .po-board .issue-tab.active {
-  border-color: var(--navy);
+  border-color: var(--blue-bd, var(--navy));
   color: var(--navy);
   background: var(--blue-bg);
-  font-weight: 700;
+  font-weight: 650;
 }
 
 .po-board .issue-tab strong {
@@ -558,7 +572,7 @@
 }
 
 .po-board .issue-list {
-  padding: 0 8px 8px;
+  padding: 8px;
   overflow: auto;
   flex: 1;
   min-height: 0;
@@ -567,17 +581,18 @@
 .po-board .issue-card {
   border: 1px solid var(--border-lt);
   border-left: 3px solid var(--navy);
-  border-radius: 5px;
-  padding: 8px 10px;
-  margin-bottom: 7px;
+  border-radius: 7px;
+  padding: 9px 10px;
+  margin-bottom: 8px;
   background: var(--white);
   cursor: default;
-  transition: all 0.15s;
+  transition: all 0.16s ease;
 }
 
 .po-board .issue-card:hover {
   border-color: var(--blue-bd);
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(37, 99, 235, 0.1);
 }
 
 .po-board .issue-card.state-resolved {
@@ -592,12 +607,12 @@
 .po-board .issue-id {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   color: var(--t3);
-  font-size: 9px;
+  font-size: 9.5px;
 }
 
 .po-board .issue-title {
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 11.5px;
+  font-weight: 650;
   margin-top: 4px;
   line-height: 1.35;
 }
@@ -607,7 +622,7 @@
   justify-content: space-between;
   margin-top: 6px;
   color: var(--t3);
-  font-size: 9px;
+  font-size: 9.5px;
   gap: 4px;
   align-items: center;
 }
@@ -617,9 +632,9 @@
   align-items: center;
   height: 18px;
   padding: 0 6px;
-  border-radius: 3px;
+  border-radius: 4px;
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 650;
   white-space: nowrap;
 }
 

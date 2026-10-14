@@ -4,26 +4,40 @@
  * 职责: 侧栏「常用」专区标题、编辑态拖拽/移除与已固定态样式（深浅色语义变量）。
  */
 
+.po-pinned-section {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--color-border);
+}
+
 /* ─── 个人面板「常用」专区（对齐原型 pinnedSectionHeader） ─── */
 .po-pinned-section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 16px;
-  padding: 0 10px;
-  font-size: 12px;
-  font-weight: 400;
+  margin-bottom: 6px;
+  padding: 0 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   color: var(--color-text-secondary);
+}
+
+.po-pinned-title-icon {
+  font-size: 10px;
+  margin-right: 5px;
+  color: var(--color-text-disabled);
+  transform: rotate(-25deg);
 }
 
 .pinned-manage-btn {
   font-family: inherit;
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--color-text-secondary);
   background: transparent;
   border: 1px solid transparent;
-  padding: 1px 6px;
-  border-radius: 4px;
+  padding: 2px 7px;
+  border-radius: 5px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -42,7 +56,7 @@
   background: var(--color-info-fill);
   border-color: var(--color-info-fill);
   font-weight: 500;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25);
 }
 
 .pinned-manage-btn.is-editing:hover {
@@ -53,18 +67,18 @@
 .po-pinned-edit-tip {
   font-size: 11px;
   color: var(--color-info);
-  background: var(--color-info-bg);
+  background: var(--color-info-soft);
   border: 1px solid var(--color-info-border);
-  border-radius: 4px;
-  padding: 3px 8px;
+  border-radius: 6px;
+  padding: 4px 8px;
   margin: 4px 0 6px;
-  line-height: 1.3;
+  line-height: 1.35;
 }
 
 .po-pinned-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .po-pinned-list .nav-item {
@@ -79,10 +93,10 @@
   display: flex !important;
   align-items: center !important;
   gap: 6px;
-  padding: 5px 8px !important;
+  padding: 6px 8px !important;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: grab;
   user-select: none;
   transition: background-color 0.15s ease, border-color 0.15s ease;

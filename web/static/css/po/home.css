@@ -42,67 +42,80 @@
 }
 
 .po-home .header-quick-chip {
-  height: 28px;
-  padding: 0 10px;
-  border-radius: 4px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
   border: 1px solid var(--color-border);
-  background: var(--color-surface);
+  background: var(--glass-surface, var(--color-surface));
+  backdrop-filter: var(--glass-blur, blur(12px));
+  -webkit-backdrop-filter: var(--glass-blur, blur(12px));
   color: var(--color-text-secondary);
   font-size: 12px;
+  font-weight: 500;
   font-family: inherit;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.16s ease;
   text-decoration: none;
   box-sizing: border-box;
   white-space: nowrap;
+  box-shadow: var(--shadow-sm);
 }
 
 .po-home .header-quick-chip:hover:not(:disabled) {
-  background: var(--color-surface-muted);
+  background: var(--color-surface-hover);
   border-color: var(--color-border-strong);
+  color: var(--color-text-primary);
+  transform: translateY(-0.5px);
 }
 
 .po-home .header-quick-chip em {
   font-style: normal;
   font-size: 11px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-weight: 600;
+  font-weight: 650;
   color: var(--color-text-body);
+  background: var(--color-surface-muted);
+  padding: 1px 6px;
+  border-radius: 999px;
+  line-height: 1.3;
 }
 
 .po-home .header-quick-chip.active,
 .po-home .header-quick-chip[aria-pressed="true"] {
   border-color: var(--color-info-border);
-  background: var(--color-info-bg);
+  background: var(--color-info-soft);
   color: var(--color-info);
   font-weight: 600;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 2px 8px var(--color-primary-ring-soft);
 }
 
 .po-home .header-quick-chip.active em,
 .po-home .header-quick-chip[aria-pressed="true"] em {
   color: var(--color-info);
+  background: rgba(37, 99, 235, 0.12);
   font-weight: 700;
 }
 
 .po-home .header-quick-chip.danger {
   border-color: var(--color-border);
-  background: var(--color-surface);
+  background: var(--glass-surface, var(--color-surface));
   color: var(--color-text-body);
   font-weight: 500;
 }
 
 .po-home .header-quick-chip.danger em {
   color: var(--color-danger);
+  background: var(--color-danger-bg);
   font-weight: 700;
 }
 
 .po-home .header-quick-chip.danger.active,
 .po-home .header-quick-chip.danger[aria-pressed="true"] {
   background: var(--color-danger-bg);
-  border-color: var(--color-danger-strong);
+  border-color: var(--color-danger-border);
   color: var(--color-danger);
 }
 
@@ -116,17 +129,19 @@
 .po-home .top5-section,
 .po-home .home-version-dock,
 .po-home .home-focus-box {
-  background: var(--color-card);
+  background: var(--glass-surface, var(--color-card));
+  backdrop-filter: var(--glass-blur, blur(16px));
+  -webkit-backdrop-filter: var(--glass-blur, blur(16px));
   border: 1px solid var(--color-border);
-  border-radius: 8px;
-  box-shadow: var(--shadow-sm);
-  padding: 10px 12px;
-  margin-bottom: 8px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-card, var(--shadow-sm));
+  padding: 12px 14px;
+  margin-bottom: 10px;
 }
 
 .po-home .home-content-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
+  grid-template-columns: minmax(0, 1fr) 288px;
   align-items: start;
   gap: 12px;
   margin-bottom: 8px;
@@ -150,7 +165,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .po-home .home-side-title {
@@ -168,13 +183,14 @@
 }
 
 .po-home .side-link {
-  font-size: 11px;
+  font-size: 11.5px;
   color: var(--po-blue, #2563eb);
   text-decoration: none;
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: 3px;
   white-space: nowrap;
+  font-weight: 500;
 }
 
 .po-home .side-link:hover {
@@ -182,7 +198,7 @@
 }
 
 .po-home .home-focus-box {
-  padding: 10px 12px;
+  padding: 12px 14px;
 }
 
 .po-home .home-focus-grid {
@@ -194,19 +210,21 @@
 .po-home .focus-card {
   display: flex;
   flex-direction: column;
-  padding: 8px;
-  border-radius: 6px;
+  padding: 10px 11px;
+  border-radius: 10px;
   border: 1px solid var(--color-border);
   background: var(--color-surface-muted);
   cursor: pointer;
   text-decoration: none;
   text-align: left;
   font-family: inherit;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
 }
 
 .po-home .focus-card:hover {
   border-color: var(--color-info-border);
+  background: var(--color-surface-hover);
+  transform: translateY(-1.5px);
   box-shadow: var(--shadow-sm);
 }
 
@@ -217,6 +235,7 @@
 
 .po-home .focus-card.danger:hover {
   border-color: var(--color-danger-bright);
+  transform: translateY(-1.5px);
 }
 
 .po-home .focus-card-hdr {

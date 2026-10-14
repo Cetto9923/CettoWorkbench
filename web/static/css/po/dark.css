@@ -4,32 +4,43 @@
    职责: PO 弹窗/抽屉深色模式对齐原型（详情/评审/交付/提测 + dark-contrast）
 ========================================================================== */
 
-/* 抽屉面板 / 头部 / 卡片：对齐原型 --wb-bg-surface（深色 #121826 = --color-card） */
-html[data-theme="dark"] .dd-drawer-panel,
+/* 抽屉面板 / 头部 / 卡片：Gemini 深空毛玻璃质感 */
+html[data-theme="dark"] .dd-drawer-panel {
+  background: var(--glass-subnav, var(--color-card));
+  backdrop-filter: var(--glass-blur, blur(18px));
+  -webkit-backdrop-filter: var(--glass-blur, blur(18px));
+  border-left: 1px solid var(--glass-border, var(--color-border));
+  box-shadow: -16px 0 44px rgba(0, 0, 0, 0.65);
+}
+
 html[data-theme="dark"] .dd-head,
-html[data-theme="dark"] .dd-card,
 html[data-theme="dark"] .dd-review-footer {
-  background: var(--color-card);
+  background: var(--glass-surface, var(--color-card));
+  backdrop-filter: var(--glass-blur, blur(16px));
+  -webkit-backdrop-filter: var(--glass-blur, blur(16px));
   border-color: var(--color-border);
 }
 
 html[data-theme="dark"] .dd-card {
-  box-shadow: none;
+  background: var(--glass-surface, var(--color-card));
+  border-color: var(--color-border);
+  box-shadow: var(--shadow-sm);
 }
 
 html[data-theme="dark"] .dd-body {
   background: var(--color-page-bg);
 }
 
-/* 头部内属性块：对齐原型 --wb-bg-muted（#151c2c） */
+/* 头部内属性块：对齐原型 --wb-bg-muted */
 html[data-theme="dark"] .dd-spot-card,
 html[data-theme="dark"] .dd-core-item {
-  background: var(--color-toolbar-control-hover);
+  background: rgba(255, 255, 255, 0.03);
   border-color: var(--color-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 html[data-theme="dark"] .dd-native-line {
-  background: var(--color-card);
+  background: rgba(255, 255, 255, 0.025);
   border-color: var(--color-border);
 }
 
