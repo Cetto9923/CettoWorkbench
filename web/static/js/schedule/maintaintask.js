@@ -756,6 +756,9 @@
     getProductId: function () {
       return parsePositiveInt(currentStoryInfo.productId);
     },
+    getStoryId: function () {
+      return parsePositiveInt(currentStoryId || currentStoryInfo.id);
+    },
     selectNewExecution: selectNewExecution,
   };
 

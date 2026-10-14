@@ -2,9 +2,9 @@
 // 文件: internal/module/schedule/service_execution.go
 // 模块: 排期工作台
 // 类型: action
-// 职责: 快速创建迭代业务编排（查团队成员并代理禅道创建执行）。
+// 职责: 快速创建迭代业务编排（查团队成员并代理禅道创建执行，再关联当前研发需求）。
 // 依赖: internal/model
-//       internal/module/schedule/gateway_execution.go
+//       internal/module/schedule/gateway.go
 //       internal/pkg/zentao
 // =============================================================================
 
@@ -18,7 +18,7 @@ import (
 	"workbench/internal/pkg/zentao"
 )
 
-// CreateExecution 以当前用户身份创建项目下的执行（迭代）。
+// CreateExecution 以当前用户身份创建项目下的执行（迭代），并关联当前研发需求。
 func (s *Service) CreateExecution(ctx context.Context, actor *model.User, req CreateExecutionReq) (CreateExecutionResp, error) {
 	var empty CreateExecutionResp
 	if actorAccount(actor) == "" {
@@ -41,5 +41,12 @@ func (s *Service) CreateExecution(ctx context.Context, actor *model.User, req Cr
 		teamMembers = accounts
 	}
 
-	return createExecution(ctx, client, req, teamMembers)
+	resp, err := createExecution(ctx, client, req, teamMembers)
+	if err != nil {
+		return empty, err
+	}
+	if err := linkExecutionStories(ctx, client, resp.ID, []uint{req.StoryID}); err != nil {
+		return empty, err
+	}
+	return resp, nil
 }
