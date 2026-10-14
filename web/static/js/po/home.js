@@ -1008,6 +1008,27 @@
     });
   }
 
+  function syncUrlParams(status, focus) {
+    if (!window.history || !window.history.replaceState) {
+      return;
+    }
+    try {
+      var currentUrl = new URL(window.location.href);
+      if (status && status !== "all") {
+        currentUrl.searchParams.set("status", status);
+      } else {
+        currentUrl.searchParams.delete("status");
+        currentUrl.searchParams.delete("stage");
+      }
+      if (focus) {
+        currentUrl.searchParams.set("focus", focus);
+      } else {
+        currentUrl.searchParams.delete("focus");
+      }
+      window.history.replaceState({}, "", currentUrl.pathname + currentUrl.search);
+    } catch (e) {}
+  }
+
   function syncFocusChips() {
     $("#homeQuickChips [data-home-focus]").each(function () {
       var key = String($(this).attr("data-home-focus") || "");
@@ -1028,6 +1049,7 @@
       state.focus = state.focus === key ? "" : key;
       state.focal = state.focus || "myPending";
       syncFocusChips();
+      syncUrlParams(state.status, state.focus);
       state.page = 1;
       reloadDemands(true);
     });
@@ -1043,6 +1065,7 @@
         return;
       }
       setActiveCard($card);
+      syncUrlParams(status, state.focus);
       refreshDemands(status);
     });
 
@@ -1054,6 +1077,7 @@
       var $card = $('.home-vs-mini-card[data-vs-status="' + targetStage + '"]');
       if ($card.length) {
         setActiveCard($card);
+        syncUrlParams(targetStage, state.focus);
         refreshDemands(targetStage);
       }
     });
@@ -1131,22 +1155,44 @@
   }
 
   $(function () {
+    var urlParams = null;
+    try {
+      urlParams = new URLSearchParams(window.location.search);
+    } catch (e) {}
+
+    var initialStatus = urlParams ? urlParams.get("status") || urlParams.get("stage") : "";
+    var initialFocus = urlParams ? urlParams.get("focus") : "";
+
+    if (initialFocus && FOCUS_FILTERS[initialFocus]) {
+      state.focus = initialFocus;
+      state.focal = initialFocus;
+    }
+
     initValueStreamLinkage();
     initVsToggle();
     initFocalChips();
     initFocusChips();
+    syncFocusChips();
     initObjectTypeSegment();
     initPrioritySegment();
     initKeywordSearch();
     initResetBtn();
 
-    var $active = $(".home-vs-mini-card.active").first();
-    if (!$active.length) {
-      $active = $(".home-vs-mini-card").first();
-      if ($active.length) {
-        setActiveCard($active);
-      }
+    var $active = null;
+    if (initialStatus) {
+      $active = $('.home-vs-mini-card[data-vs-status="' + initialStatus + '"]').first();
     }
-    refreshDemands($active.attr("data-vs-status") || "all", false);
+    if (!$active || !$active.length) {
+      $active = $(".home-vs-mini-card.active").first();
+    }
+    if (!$active || !$active.length) {
+      $active = $(".home-vs-mini-card").first();
+    }
+    if ($active && $active.length) {
+      setActiveCard($active);
+    }
+    var activeStatus = ($active && $active.attr("data-vs-status")) || "all";
+    syncUrlParams(activeStatus, state.focus);
+    refreshDemands(activeStatus, false);
   });
 })(jQuery);

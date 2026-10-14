@@ -375,6 +375,10 @@
         if (result && result.success) {
           toast("保存成功", "success");
           closeScheduleIntegratedModal();
+          if (typeof window.refreshPoHomeDemands === "function") {
+            window.refreshPoHomeDemands(true);
+            return;
+          }
           window.location.reload();
           return;
         }
