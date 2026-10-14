@@ -3,10 +3,19 @@
 模块: 通用模板
 职责: 一体化排期弹窗及 RD/任务行模板（schedule 页与 PO 首页共用）；末尾引入新建版本窗口弹窗
 全局字段: .CurrentUser, .CSRFToken, .Flash, .Menus, .CurrentPath
-页面字段: .Teamgroups ([]schedule.TeamgroupOption) — 供 schedule/versionwindow
+页面字段: .Teamgroups ([]schedule.TeamgroupOption) — 供 versionwindow / 快速创建迭代
           .Products ([]schedule.ZtProduct) — 供 schedule/versionwindow
 ========================================================================== */}}
 {{ define "schedule/integrated" }}
+<div id="scheduleIntegratedTeamgroupOptions" hidden>
+  {{ range .Teamgroups }}
+  <span
+    data-value="{{ .ID }}"
+    data-label="{{ .DisplayName }}"
+    data-manager="{{ .Manager }}"
+  ></span>
+  {{ end }}
+</div>
 <div class="batch-modal-overlay" id="scheduleIntegratedModalOverlay"></div>
 <div class="batch-modal schedule-integrated-modal" id="scheduleIntegratedModal">
   <div class="batch-modal-hdr">
@@ -414,11 +423,11 @@
             <span>周期</span>
             <div class="task-iteration-periods" role="radiogroup" aria-label="迭代周期">
               <label class="radio-label">
-                <input type="radio" class="rd-quick-iteration-period" name="rdQuickIterationPeriod" value="2w" checked>
+                <input type="radio" class="rd-quick-iteration-period" value="2w" checked>
                 <span>2周</span>
               </label>
               <label class="radio-label">
-                <input type="radio" class="rd-quick-iteration-period" name="rdQuickIterationPeriod" value="4w">
+                <input type="radio" class="rd-quick-iteration-period" value="4w">
                 <span>4周</span>
               </label>
             </div>

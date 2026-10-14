@@ -107,6 +107,9 @@ func (s *Service) GetStoryScheduling(ctx context.Context, actor *model.User, sto
 	if err != nil {
 		return nil, err
 	}
+	if err := s.fillSchedulingTeamgroup(ctx, detail, 0, storyID); err != nil {
+		return nil, err
+	}
 	windows, err := s.repo.ListUpcomingSchedulingWindows(ctx)
 	if err != nil {
 		return nil, err

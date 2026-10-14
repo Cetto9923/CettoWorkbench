@@ -157,6 +157,9 @@
     $node.attr("data-product-name", name === "—" ? "" : name);
     $node.find(".rd-node-role-badge").first().replaceWith(shared.buildRoleBadge(productId, shared.mainSystemId));
     syncAutoRdTitleOnProductChange($node, name);
+    if (window.ScheduleIntegratedIteration && typeof window.ScheduleIntegratedIteration.onProductChange === "function") {
+      window.ScheduleIntegratedIteration.onProductChange($node, productId);
+    }
     if (!productId) {
       $node.attr("data-projects", JSON.stringify([]));
       tasksApi.initNodeProjectSelect($node, "");
@@ -166,6 +169,12 @@
       $node.attr("data-projects", JSON.stringify(projects));
       tasksApi.initNodeProjectSelect($node, "");
     });
+  }
+
+  function initQuickIteration($node) {
+    if (window.ScheduleIntegratedIteration && typeof window.ScheduleIntegratedIteration.initForNode === "function") {
+      window.ScheduleIntegratedIteration.initForNode($node);
+    }
   }
 
   function closeOtherInlineEdits($exceptNode) {
@@ -269,6 +278,7 @@
       $container.append(node);
       tasksApi.initNodeProjectSelect($node);
       tasksApi.syncAddTaskButtonVisibility($node);
+      initQuickIteration($node);
     });
 
     updateTreeEmptyState();
@@ -298,9 +308,11 @@
       tasksApi.loadProductProjects(defaultProductId, function (projects) {
         $node.attr("data-projects", JSON.stringify(projects));
         tasksApi.initNodeProjectSelect($node);
+        initQuickIteration($node);
       });
     } else {
       tasksApi.initNodeProjectSelect($node);
+      initQuickIteration($node);
     }
     updateTreeEmptyState();
   }

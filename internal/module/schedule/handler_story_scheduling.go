@@ -2,8 +2,9 @@
 // 文件: internal/module/schedule/handler_story_scheduling.go
 // 模块: 排期工作台
 // 类型: action
-// 职责: 处理独立研发需求排期弹窗 HTTP 请求。
+// 职责: 处理独立研发需求排期弹窗与产品计划查询 HTTP 请求。
 // 依赖: internal/module/schedule/service_independent.go
+//       internal/module/schedule/service_scheduling.go
 //       internal/middleware
 // =============================================================================
 
@@ -105,6 +106,44 @@ func buildSchedulingDetailJSON(resp *DemandSchedulingResp) gin.H {
 		out["acceptancedDate"] = detail.AcceptancedDate
 		out["windowId"] = detail.WindowID
 		out["windowName"] = detail.WindowName
+		out["teamgroupId"] = detail.TeamgroupID
+		out["teamgroupName"] = detail.TeamgroupName
 	}
 	return out
+}
+
+// GetProductOpenPlans 返回产品下未关闭的产品计划（JSON）。
+func (h *Handler) GetProductOpenPlans(c *gin.Context) {
+	productID, ok := parseProductID(c)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "产品 ID 无效",
+		})
+		return
+	}
+
+	actor := middleware.CurrentUser(c)
+	plans, err := h.svc.GetProductOpenPlans(c.Request.Context(), actor, productID)
+	if err != nil {
+		if h.logger != nil {
+			h.logger.Error("get product open plans failed",
+				zap.Error(err),
+				zap.Uint("product_id", productID),
+			)
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"error":   "加载产品计划失败",
+		})
+		return
+	}
+	if plans == nil {
+		plans = []ProductPlanOption{}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"plans":   plans,
+	})
 }

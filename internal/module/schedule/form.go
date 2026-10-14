@@ -765,6 +765,8 @@ type DemandSchedulingDetail struct {
 	AcceptancedDate  string `json:"acceptancedDate"`
 	WindowID         uint   `json:"windowId"`
 	WindowName       string `json:"windowName"`
+	TeamgroupID      uint   `json:"teamgroupId"`
+	TeamgroupName    string `json:"teamgroupName"`
 }
 
 // SchedulingWindowOption 排期弹窗版本窗口下拉项。

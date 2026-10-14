@@ -436,6 +436,8 @@ func (h *Handler) GetDemandScheduling(c *gin.Context) {
 			out["acceptancedDate"] = detail.AcceptancedDate
 			out["windowId"] = detail.WindowID
 			out["windowName"] = detail.WindowName
+			out["teamgroupId"] = detail.TeamgroupID
+			out["teamgroupName"] = detail.TeamgroupName
 		}
 	}
 	out["zentaoUrl"] = h.zentaoURL
