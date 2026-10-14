@@ -56,7 +56,8 @@ const (
 	DeptDelete Permission = "dept:delete"
 
 	// 排期工作台
-	ScheduleList   Permission = "schedule:list"
+	ScheduleList   Permission = "po:schedule"
+	// ScheduleList   Permission = "schedule:list"
 	ScheduleCreate Permission = "schedule:create"
 	ScheduleUpdate Permission = "schedule:update"
 	ScheduleDelete Permission = "schedule:delete"
