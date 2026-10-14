@@ -28,7 +28,7 @@ type mysqlStageFilter struct {
 	statusOrder        []string // 非空时按该顺序排 status，其次 id DESC（受理：待评审→已驳回→草稿）
 	overall            *string
 	developFinishDue   bool // true：今天 >= developFinish（且 developFinish 非空）
-	deliverDateDue     bool // true：今天 >= deliverDate（且 deliverDate 非空）
+	deliverDateWithin  bool // true：今天 <= deliverDate 或 deliverDate 为空（发起交付）
 	braRequired        bool // true：BRA 必须等于当前账号
 	noClarify          bool // true：无 zt_demandclarify 记录
 	acceptanceStage    bool // true：验收阶段复合条件
@@ -56,11 +56,11 @@ var mysqlStageFilters = map[string]mysqlStageFilter{
 	"testing":        {statuses: []string{"testing"}, myActionMode: myActionQDOrAssigned},
 	"waitacceptance": {acceptanceStage: true, myActionMode: myActionAcceptance},
 	"acceptanced": {
-		statuses:       []string{"acceptanced"},
-		braRequired:    true,
-		deliverDateDue: true,
-		deliverStories: true,
-		myActionMode:   myActionBRA,
+		statuses:          []string{"acceptanced"},
+		braRequired:       true, // 需求负责人=当前用户
+		deliverDateWithin: true, // 当前时间 <= 交付截止 或 截止为空
+		deliverStories:    true,
+		myActionMode:      myActionBRA,
 	},
 	"publish": {statuses: []string{"waitdeliver"}, myActionMode: myActionBRA},
 	"released": {
@@ -152,9 +152,10 @@ func (r *Repo) roleDemandScope(ctx context.Context, account string, filter mysql
 		today := time.Now().Format("2006-01-02")
 		q = q.Where(dateSetExpr("developFinish")+" AND developFinish <= ?", today)
 	}
-	if filter.deliverDateDue {
+	if filter.deliverDateWithin {
 		today := time.Now().Format("2006-01-02")
-		q = q.Where(dateSetExpr("deliverDate")+" AND deliverDate <= ?", today)
+		// 当前时间 <= 交付截止时间 or 交付截止时间为空
+		q = q.Where("("+dateUnsetExpr("deliverDate")+" OR deliverDate >= ?)", today)
 	}
 	if filter.braRequired {
 		q = q.Where("BRA = ?", account)

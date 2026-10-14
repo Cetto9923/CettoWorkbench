@@ -104,8 +104,9 @@ func (r *Repo) scheduleStoryScope(ctx context.Context, account string, filter my
 	return q
 }
 
-// deliverStoryScope 交付阶段独立研发需求：非需求池、非父需求、排除已关闭；
-// 默认指派人或 ReqM；待我处理时仅 product.ReqM；今天 >= deliverDate。
+// deliverStoryScope 发起交付阶段独立研发需求：非需求池、非父需求、排除已关闭；
+// 指派人=当前用户 or 产品 ReqM=当前用户；当前时间 <= 交付截止 或 截止为空。
+// 待我处理焦点时仅 product.ReqM。
 func (r *Repo) deliverStoryScope(ctx context.Context, account string, filter mysqlStageFilter) *gorm.DB {
 	today := time.Now().Format("2006-01-02")
 	q := r.db.WithContext(ctx).Table("zt_story").
@@ -119,7 +120,8 @@ func (r *Repo) deliverStoryScope(ctx context.Context, account string, filter mys
 	} else {
 		q = q.Where(storyAssignedOrProductReqM, account, account)
 	}
-	q = q.Where(dateSetExpr("deliverDate")+" AND deliverDate <= ?", today)
+	// 当前时间 <= 交付截止时间 or 交付截止时间为空
+	q = q.Where("("+dateUnsetExpr("deliverDate")+" OR deliverDate >= ?)", today)
 	if filter.overdue {
 		q = applyStoryOverdue(q)
 	}
