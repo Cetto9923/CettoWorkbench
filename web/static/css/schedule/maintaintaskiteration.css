@@ -1,7 +1,7 @@
 /* ==========================================================================
    文件: web/static/css/schedule/maintaintaskiteration.css
    模块: 排期工作台
-   职责: 维护任务弹窗「快速创建迭代」折叠面板样式（对齐原型 quickIteration）
+   职责: 「快速创建迭代」折叠面板样式（维护任务弹窗 + 一体化排期任务区）
    ========================================================================== */
 
 .task-iteration-form {
@@ -65,13 +65,17 @@
 
 #taskModal .task-modal-project-section .task-iteration-field .ui-autocomplete,
 #taskModal .task-modal-project-section .task-iteration-field .ui-autocomplete-input-wrap,
-#taskModal .task-modal-project-section .task-iteration-field .ui-autocomplete-input {
+#taskModal .task-modal-project-section .task-iteration-field .ui-autocomplete-input,
+.rd-task-project-section .task-iteration-field .ui-autocomplete,
+.rd-task-project-section .task-iteration-field .ui-autocomplete-input-wrap,
+.rd-task-project-section .task-iteration-field .ui-autocomplete-input {
   width: 100% !important;
   max-width: none;
   flex: none;
 }
 
-#taskModal .task-modal-project-section .task-iteration-field .ui-autocomplete-input {
+#taskModal .task-modal-project-section .task-iteration-field .ui-autocomplete-input,
+.rd-task-project-section .task-iteration-field .ui-autocomplete-input {
   height: 30px;
   padding: 4px 24px 4px 8px;
   font-size: 12px;
@@ -145,24 +149,60 @@
   min-width: 0;
 }
 
+/* 覆盖一体化弹窗 .has-value 规则，只保留 ::after 的 y-m-d，避免与浏览器本地化日期叠显 */
 #taskModal .task-iteration-date input[type="date"],
-#taskModal .task-iteration-date input[type="date"].input {
+#taskModal .task-iteration-date input[type="date"].input,
+#taskModal .task-iteration-date input[type="date"].has-value,
+#taskModal .task-iteration-date input[type="date"]:focus,
+#taskModal .task-iteration-date input[type="date"]:valid,
+#scheduleIntegratedModal .task-iteration-date input[type="date"],
+#scheduleIntegratedModal .task-iteration-date input[type="date"].input,
+#scheduleIntegratedModal .task-iteration-date input[type="date"].has-value,
+#scheduleIntegratedModal .task-iteration-date input[type="date"]:focus,
+#scheduleIntegratedModal .task-iteration-date input[type="date"]:valid,
+.rd-task-project-section .task-iteration-date input[type="date"],
+.rd-task-project-section .task-iteration-date input[type="date"].input,
+.rd-task-project-section .task-iteration-date input[type="date"].has-value,
+.rd-task-project-section .task-iteration-date input[type="date"]:focus,
+.rd-task-project-section .task-iteration-date input[type="date"]:valid {
   color: transparent;
   cursor: pointer;
 }
 
 #taskModal .task-iteration-date input[type="date"]::-webkit-datetime-edit,
-#taskModal .task-iteration-date input[type="date"].input::-webkit-datetime-edit {
+#taskModal .task-iteration-date input[type="date"].input::-webkit-datetime-edit,
+#taskModal .task-iteration-date input[type="date"].has-value::-webkit-datetime-edit,
+#taskModal .task-iteration-date input[type="date"]:focus::-webkit-datetime-edit,
+#scheduleIntegratedModal .task-iteration-date input[type="date"]::-webkit-datetime-edit,
+#scheduleIntegratedModal .task-iteration-date input[type="date"].input::-webkit-datetime-edit,
+#scheduleIntegratedModal .task-iteration-date input[type="date"].has-value::-webkit-datetime-edit,
+#scheduleIntegratedModal .task-iteration-date input[type="date"]:focus::-webkit-datetime-edit,
+#scheduleIntegratedModal .rd-node-tasks .task-iteration-date input[type="date"]::-webkit-datetime-edit,
+#scheduleIntegratedModal .rd-node-tasks .task-iteration-date input[type="date"].has-value::-webkit-datetime-edit,
+#scheduleIntegratedModal .rd-node-tasks .task-iteration-date input[type="date"]:focus::-webkit-datetime-edit,
+#taskModal .rd-node-tasks .task-iteration-date input[type="date"]::-webkit-datetime-edit,
+#taskModal .rd-node-tasks .task-iteration-date input[type="date"].has-value::-webkit-datetime-edit,
+#taskModal .rd-node-tasks .task-iteration-date input[type="date"]:focus::-webkit-datetime-edit,
+.rd-task-project-section .task-iteration-date input[type="date"]::-webkit-datetime-edit,
+.rd-task-project-section .task-iteration-date input[type="date"].input::-webkit-datetime-edit,
+.rd-task-project-section .task-iteration-date input[type="date"].has-value::-webkit-datetime-edit,
+.rd-task-project-section .task-iteration-date input[type="date"]:focus::-webkit-datetime-edit {
   color: transparent;
 }
 
-#taskModal .task-iteration-date input[type="date"]::-webkit-calendar-picker-indicator {
+#taskModal .task-iteration-date input[type="date"]::-webkit-calendar-picker-indicator,
+#scheduleIntegratedModal .task-iteration-date input[type="date"]::-webkit-calendar-picker-indicator,
+.rd-task-project-section .task-iteration-date input[type="date"]::-webkit-calendar-picker-indicator {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   opacity: 0;
   cursor: pointer;
+}
+
+.rd-task-project-section .rd-quick-iteration {
+  margin-top: 10px;
 }
 
 .task-iteration-daterange-sep {

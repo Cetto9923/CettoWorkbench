@@ -344,32 +344,60 @@ html[data-theme="dark"] #taskModal .rd-node-tasks input[type="date"]:focus::-web
   color: var(--color-text-on-accent);
 }
 
+/* 迭代日期走 ::after，深色下仍保持原生编辑区透明 */
+html[data-theme="dark"] #taskModal .task-iteration-date input[type="date"],
+html[data-theme="dark"] #taskModal .task-iteration-date input[type="date"].has-value,
+html[data-theme="dark"] #taskModal .task-iteration-date input[type="date"]:focus,
+html[data-theme="dark"] #taskModal .task-iteration-date input[type="date"]::-webkit-datetime-edit,
+html[data-theme="dark"] #taskModal .task-iteration-date input[type="date"].has-value::-webkit-datetime-edit,
+html[data-theme="dark"] #taskModal .task-iteration-date input[type="date"]:focus::-webkit-datetime-edit,
+html[data-theme="dark"] #scheduleIntegratedModal .task-iteration-date input[type="date"],
+html[data-theme="dark"] #scheduleIntegratedModal .task-iteration-date input[type="date"].has-value,
+html[data-theme="dark"] #scheduleIntegratedModal .task-iteration-date input[type="date"]:focus,
+html[data-theme="dark"] #scheduleIntegratedModal .task-iteration-date input[type="date"]::-webkit-datetime-edit,
+html[data-theme="dark"] #scheduleIntegratedModal .task-iteration-date input[type="date"].has-value::-webkit-datetime-edit,
+html[data-theme="dark"] #scheduleIntegratedModal .task-iteration-date input[type="date"]:focus::-webkit-datetime-edit,
+html[data-theme="dark"] .rd-task-project-section .task-iteration-date input[type="date"],
+html[data-theme="dark"] .rd-task-project-section .task-iteration-date input[type="date"].has-value,
+html[data-theme="dark"] .rd-task-project-section .task-iteration-date input[type="date"]::-webkit-datetime-edit,
+html[data-theme="dark"] .rd-task-project-section .task-iteration-date input[type="date"].has-value::-webkit-datetime-edit {
+  color: transparent;
+}
+
 html[data-theme="dark"] #taskModal.batch-modal,
 html[data-theme="dark"] #taskModal .task-iteration-form,
 html[data-theme="dark"] #taskModal .task-iteration-field input.input,
-html[data-theme="dark"] #taskModal .task-iteration-field .ui-autocomplete-input {
+html[data-theme="dark"] #taskModal .task-iteration-field .ui-autocomplete-input,
+html[data-theme="dark"] .rd-task-project-section .task-iteration-form,
+html[data-theme="dark"] .rd-task-project-section .task-iteration-field input.input,
+html[data-theme="dark"] .rd-task-project-section .task-iteration-field .ui-autocomplete-input {
   background: var(--color-surface);
   border-color: var(--color-border);
   color: var(--color-text-body);
 }
 
-html[data-theme="dark"] #taskModal .task-iteration-form {
+html[data-theme="dark"] #taskModal .task-iteration-form,
+html[data-theme="dark"] .rd-task-project-section .task-iteration-form {
   background: var(--color-surface-muted, var(--wb-bg-muted));
 }
 
-html[data-theme="dark"] #taskModal .task-iteration-periods .radio-label {
+html[data-theme="dark"] #taskModal .task-iteration-periods .radio-label,
+html[data-theme="dark"] .rd-task-project-section .task-iteration-periods .radio-label {
   color: var(--color-text-body);
 }
 
-html[data-theme="dark"] #taskModal .task-iteration-daterange-sep {
+html[data-theme="dark"] #taskModal .task-iteration-daterange-sep,
+html[data-theme="dark"] .rd-task-project-section .task-iteration-daterange-sep {
   color: var(--color-text-secondary);
 }
 
-html[data-theme="dark"] #taskModal .task-iteration-date::after {
+html[data-theme="dark"] #taskModal .task-iteration-date::after,
+html[data-theme="dark"] .rd-task-project-section .task-iteration-date::after {
   color: var(--color-text-body);
 }
 
-html[data-theme="dark"] #taskModal .task-iteration-date.is-empty::after {
+html[data-theme="dark"] #taskModal .task-iteration-date.is-empty::after,
+html[data-theme="dark"] .rd-task-project-section .task-iteration-date.is-empty::after {
   color: var(--color-text-secondary);
 }
 

@@ -396,6 +396,64 @@
       <select class="rd-task-project-select form-select rd-task-select">
         <option value="">请选择项目</option>
       </select>
+      <details class="task-iteration-form rd-quick-iteration">
+        <summary>快速创建迭代</summary>
+        <div class="task-iteration-fields">
+          <div class="task-iteration-field">
+            <label>迭代名称 <span style="color:var(--red)">*</span></label>
+            <input class="input rd-quick-iteration-name" type="text" autocomplete="off">
+          </div>
+          <div class="task-iteration-field">
+            <label>执行负责人 <span style="color:var(--red)">*</span></label>
+            <div class="ui-autocomplete">
+              <input type="text" class="input rd-quick-iteration-owner-input" placeholder="请选择" autocomplete="off">
+              <input type="hidden" class="rd-quick-iteration-owner">
+            </div>
+          </div>
+          <div class="task-iteration-field">
+            <span>周期</span>
+            <div class="task-iteration-periods" role="radiogroup" aria-label="迭代周期">
+              <label class="radio-label">
+                <input type="radio" class="rd-quick-iteration-period" name="rdQuickIterationPeriod" value="2w" checked>
+                <span>2周</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" class="rd-quick-iteration-period" name="rdQuickIterationPeriod" value="4w">
+                <span>4周</span>
+              </label>
+            </div>
+          </div>
+          <div class="task-iteration-field">
+            <label>计划起止日期 <span style="color:var(--red)">*</span></label>
+            <div class="task-iteration-daterange">
+              <div class="task-iteration-date is-empty" data-date="年-月-日">
+                <input class="input rd-quick-iteration-begin" type="date">
+              </div>
+              <span class="task-iteration-daterange-sep">~</span>
+              <div class="task-iteration-date is-empty" data-date="年-月-日">
+                <input class="input rd-quick-iteration-end" type="date">
+              </div>
+            </div>
+          </div>
+          <div class="task-iteration-field">
+            <label>敏捷团队</label>
+            <div class="ui-autocomplete">
+              <input type="text" class="input rd-quick-iteration-team-input" placeholder="请选择" autocomplete="off">
+              <input type="hidden" class="rd-quick-iteration-team">
+            </div>
+          </div>
+          <div class="task-iteration-field">
+            <label>关联产品计划</label>
+            <div class="ui-autocomplete">
+              <input type="text" class="input rd-quick-iteration-plan-input" placeholder="请选择产品计划" autocomplete="off">
+              <input type="hidden" class="rd-quick-iteration-plan">
+            </div>
+          </div>
+          <div class="task-iteration-field task-iteration-field--actions">
+            <button type="button" class="action-btn primary rd-quick-iteration-create">创建并选用</button>
+          </div>
+        </div>
+      </details>
     </div>
     <table class="rd-task-table">
       <tbody class="rd-task-body"></tbody>
