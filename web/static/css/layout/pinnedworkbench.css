@@ -162,19 +162,19 @@ body.po-workbench-shell .po-pinned-list .nav-item .nav-icon {
 }
 
 /* 编辑态：显示拖拽把手和移除按钮，悬停提示 */
-body.po-workbench-shell .po-pinned-list.is-editing .nav-item {
+.po-pinned-list.is-editing .nav-item {
   cursor: grab;
   user-select: none;
   background: var(--color-surface-muted);
   border: 1px dashed var(--color-border);
 }
 
-body.po-workbench-shell .po-pinned-list.is-editing .nav-item:hover {
+.po-pinned-list.is-editing .nav-item:hover {
   background: var(--color-surface-hover);
   border-color: var(--color-info-border);
 }
 
-body.po-workbench-shell .po-pinned-list.is-editing .nav-item:active {
+.po-pinned-list.is-editing .nav-item:active {
   cursor: grabbing;
 }
 
