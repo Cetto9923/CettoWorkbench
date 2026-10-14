@@ -17,7 +17,7 @@
 4. **Service 方法用 Req/Resp 结构体，禁止多位置参数**（单个 id int64 除外，见 §6）
 5. **SQL 必须参数化(复杂报表除外)，禁止 `db.Raw()` 和 `db.Exec()` 拼接字符串**
    - 复杂报表 JOIN / 子查询，必须使用 `?` 占位符，禁止字符串拼接，SQL 只能写在 Repo 层
-6. **单文件 ≤500 行**（硬线），建议 300 行；超限按职责拆分（见 §17.1）
+6. **单文件 ≤500 行**（硬线），建议 300 行；超限按职责拆分。gateway.go 和 form.go 文件除外
 7. **禁止 `c.PostForm()` / `c.Query()` 散落，强制结构体绑定**
    - Path 参数（`:id`）通过 `c.Param("id")` 获取
    - Query 参数（GET）：`c.ShouldBindQuery(&req)` 或带 `form` tag 的 `c.ShouldBind(&req)`；Req 使用 `form` tag
@@ -36,6 +36,7 @@
 15.所有表需要在 model 中实体化
 16.所有下拉都为检索下拉
 17.所有日期的格式为 y-m-d
+18. 所有样式需要适配深色模式
 ---
 
 ## 其他注意事项
@@ -45,7 +46,6 @@
 ## 命名规则
 - **文件名/目录名**：全小写拼接
   - 例外：静态资源文件（字体、第三方库、图片）保留原始命名
-- **Go 标识符**：未导出小驼峰，导出大驼峰
 
 ---
 
@@ -65,10 +65,6 @@ Handler / Service / Repo 方法顺序固定，结构对称是硬约束。
 4. **routes.go + bootstrap.go 注册**
 
 ---
-
-## 规范优先级（冲突时以高优先级为准）
-1. **核心底线**（本文件，必须）
-2. **模块 golden reference**（`@internal/module/user/`）
 
 ## 规范索引
 - **Go 开发完整规范** → `@.cursor/rules/conventions.mdc`
