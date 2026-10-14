@@ -28,7 +28,6 @@
 .po-testtask-overlay.show {
   display: block;
 }
-
 .po-testtask-modal {
   position: fixed;
   top: 50%;
@@ -36,11 +35,11 @@
   transform: translate(-50%, -50%);
   z-index: 621;
   display: none;
-  width: min(96vw, 1100px);
-  max-height: 92vh;
+  width: min(96vw, 1020px);
+  max-height: 90vh;
   overflow: hidden;
   background: var(--tt-page);
-  border-radius: 10px;
+  border-radius: 12px;
   box-shadow: 0 8px 32px var(--color-shadow-12);
   color: var(--tt-text);
   font-size: 13px;
@@ -90,18 +89,15 @@
   font-size: 16px;
   padding: 4px;
 }
-
 .po-testtask-modal-body {
   overflow: auto;
-  padding: 16px;
-  flex: 1;
+  padding: 12px 16px;
+  flex: 0 1 auto;
   min-height: 0;
 }
-
 .po-testtask-modal .po-testtask-title {
   display: none;
 }
-
 .po-testtask-page {
   max-width: 1100px;
   margin: 0 auto;
@@ -110,7 +106,6 @@
   color: var(--tt-text);
   font-size: 13px;
 }
-
 .po-testtask-title {
   margin: 0 0 12px;
   font-size: 15px;
@@ -136,10 +131,14 @@
 .po-testtask-panel {
   background: var(--color-surface);
   border: 1px solid var(--tt-border);
-  border-radius: 6px;
+  border-radius: 8px;
   box-shadow: 0 1px 2px var(--color-shadow-05);
-  padding: 16px;
-  margin-bottom: 16px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+.po-testtask-panel:last-child {
+  margin-bottom: 0;
 }
 
 .po-testtask-panel-title {
@@ -213,7 +212,7 @@
 .po-testtask-step-line {
   width: 48px;
   height: 2px;
-  background: var(--tt-border);
+  background: var(--color-border-strong);
   flex-shrink: 0;
 }
 

@@ -335,16 +335,16 @@
   outline: none;
   box-shadow: none;
 }
-
-/* 新建窗口弹窗叠在排期一体化弹窗之上 */
 #scheduleVersionWindowModalOverlay {
   z-index: 1700;
+  background: rgba(15, 23, 42, 0.22);
 }
-
+html[data-theme="dark"] #scheduleVersionWindowModalOverlay {
+  background: rgba(0, 0, 0, 0.28);
+}
 #scheduleVersionWindowModal {
   z-index: 1701;
 }
-
 #scheduleIntegratedModal .js-schedule-inline-create {
   flex-shrink: 0;
   align-self: stretch;
@@ -614,34 +614,27 @@
 .rd-task-th--execution {
   width: 220px;
 }
-
 .rd-task-project-section {
   margin-top: 8px;
 }
-
 .rd-task-th--type {
-  width: 80px;
+  min-width: 108px;
 }
-
 .rd-task-th--name {
-  width: 140px;
-  max-width: 140px;
+  width: 150px;
+  max-width: 180px;
   overflow: hidden;
 }
-
 .rd-task-th--owner {
-  width: 140px;
+  min-width: 172px;
 }
-
 .rd-task-th--hours {
-  width: 60px;
+  min-width: 78px;
 }
-
 .rd-task-th--start,
 .rd-task-th--end {
   width: 100px;
 }
-
 .rd-task-th--actions {
   width: 48px;
 }
@@ -909,8 +902,11 @@
 }
 
 #scheduleIntegratedModal .rd-node-tasks .rd-task-table th:nth-child(5),
-#scheduleIntegratedModal .rd-node-tasks .rd-task-table td.rd-task-cell-owner {
-  width: 140px;
+#scheduleIntegratedModal .rd-node-tasks .rd-task-table td.rd-task-cell-owner,
+#taskModal .rd-node-tasks .rd-task-table th:nth-child(5),
+#taskModal .rd-node-tasks .rd-task-table td.rd-task-cell-owner {
+  width: 172px;
+  min-width: 156px;
 }
 
 #scheduleIntegratedModal .rd-node-tasks .rd-task-table td input,

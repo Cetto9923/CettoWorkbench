@@ -13,6 +13,26 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* 原生表单控件主题色与深色模式跟随（修复 #20） */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--color-primary);
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] button {
+  color-scheme: dark;
+}
+
+html[data-theme="dark"] input[type="checkbox"],
+html[data-theme="dark"] input[type="radio"] {
+  accent-color: var(--color-primary);
+  color-scheme: dark;
+}
+
 /* Focus Ring 全局覆盖 */
 :focus-visible {
   outline: none;
@@ -32,4 +52,12 @@ input[type=number]::-webkit-outer-spin-button {
 }
 input[type=number] {
   -moz-appearance: textfield;
+}
+
+[hidden],
+i[hidden],
+button[hidden],
+div[hidden],
+span[hidden] {
+  display: none;
 }

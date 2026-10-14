@@ -211,16 +211,16 @@
   border-color: var(--color-border);
   height: var(--size-9);
 }
-
-/* 危险按钮：只允许出现在删除确认弹窗内 */
 .btn-danger {
   height: var(--size-9);
-  background: var(--color-danger-bright);
-  color: var(--color-surface);
-  border-color: var(--color-danger-bright);
+  background: var(--color-danger-accent);
+  color: var(--color-text-on-accent);
+  border-color: var(--color-danger-accent);
 }
 .btn-danger:hover {
-  background: var(--color-danger-accent);
+  background: var(--color-danger-deep);
+  border-color: var(--color-danger-deep);
+  color: var(--color-text-on-accent);
 }
 
 /* 图标按钮（操作列用）*/
@@ -580,3 +580,147 @@
   border-radius: var(--space-0_5);
   padding: 0 var(--size-0_5);
 }
+
+/* ==========================================================================
+   跨视图共享原子组件（8092 工作台 & 8099 团队视图共用规范）
+========================================================================== */
+
+.wb-card {
+  background: var(--wb-surface-1, var(--color-surface));
+  border: 1px solid var(--wb-border-subtle, var(--color-border));
+  border-radius: var(--wb-radius-card, 12px);
+  box-shadow: var(--shadow-card);
+}
+
+.wb-kpi-card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 10px 14px;
+  background: var(--wb-surface-1, var(--color-surface));
+  border: 1px solid var(--wb-border-subtle, var(--color-border));
+  border-radius: var(--wb-radius-subcard, 8px);
+  box-shadow: var(--shadow-sm);
+  font-variant-numeric: tabular-nums;
+  transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.wb-kpi-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2.5px;
+  background: transparent;
+}
+
+.wb-kpi-card:hover {
+  border-color: var(--color-info-border);
+  transform: translateY(-1px);
+}
+
+.wb-seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 30px;
+  padding: 2px;
+  border-radius: var(--wb-radius-subcard, 8px);
+  background: var(--wb-surface-2, var(--color-surface-muted));
+  border: 1px solid var(--wb-border-subtle, var(--color-border));
+}
+
+.wb-seg button,
+.wb-seg a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--wb-radius-ctrl, 6px);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wb-seg button.active,
+.wb-seg button.on,
+.wb-seg a.active,
+.wb-seg a.on {
+  background: var(--wb-surface-1, var(--color-surface));
+  color: var(--color-primary);
+  font-weight: 650;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
+}
+
+.wb-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--wb-border-subtle, var(--color-border));
+  border-radius: var(--wb-radius-pill, 999px);
+  background: var(--wb-surface-1, var(--color-surface));
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: none;
+  transition: all 0.15s ease;
+}
+
+.wb-chip:hover {
+  border-color: var(--color-info-border);
+  color: var(--color-primary);
+}
+
+.wb-chip.active,
+.wb-chip.on {
+  border-color: var(--color-info-border);
+  background: var(--color-info-soft);
+  color: var(--color-info);
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.wb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.wb-table thead th {
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  background: var(--wb-surface-2, var(--color-surface-muted));
+  border-bottom: 1px solid var(--wb-border-subtle, var(--color-border));
+  text-align: left;
+  white-space: nowrap;
+}
+
+.wb-table tbody td {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--color-text-body);
+  border-bottom: 1px solid var(--wb-border-subtle, var(--color-border));
+  vertical-align: middle;
+}
+
+.wb-table tbody tr:hover td {
+  background: var(--color-surface-hover);
+}
+

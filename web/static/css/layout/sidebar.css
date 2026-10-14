@@ -1,15 +1,15 @@
 /* ==========================================================================
    文件: web/static/css/layout/sidebar.css
    模块: 布局
-   职责: 双轨侧栏（窄轨 + 子面板）布局与样式，对齐原型 shell.css 侧栏部分
+   职责: 双轨侧栏（窄轨图标胶囊 + 子面板毛玻璃层级）布局与样式
          仅在 body.po-workbench-shell 下生效；数据仍由 CurrentMenus 驱动
 ========================================================================== */
 
 body.po-workbench-shell {
-  --sidebar-width: 230px;
-  --sidebar-rail-width: 62px;
-  --po-sidebar-motion: 0.2s ease;
-  --po-subnav-fade: 150ms ease;
+  --sidebar-width: 236px;
+  --sidebar-rail-width: 66px;
+  --po-sidebar-motion: 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  --po-subnav-fade: 160ms ease;
 }
 
 body.po-workbench-shell .topbar {
@@ -27,21 +27,22 @@ body.po-workbench-shell .topbar-identity {
   align-items: center;
   gap: 8px;
   min-width: 0;
-  max-width: 600px;
+  max-width: 640px;
   white-space: nowrap;
   flex: 1 1 auto;
 }
 
 body.po-workbench-shell .topbar-page-title {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 15.5px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
   color: var(--color-text-primary);
   line-height: 1;
   flex-shrink: 0;
 }
 
 body.po-workbench-shell .topbar-divider {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--color-border-strong);
   user-select: none;
   flex-shrink: 0;
@@ -73,7 +74,7 @@ body.po-workbench-shell .sidebar {
   top: 0;
   bottom: 0;
   width: var(--sidebar-width);
-  border-right-color: var(--color-border);
+  border-right: 1px solid var(--color-border);
   z-index: 120;
   transition: width var(--po-sidebar-motion);
 }
@@ -83,10 +84,11 @@ body.po-workbench-shell .sidebar.po-dual-sidebar {
   flex-direction: row;
   padding: 0;
   overflow: hidden;
-  background: var(--color-surface);
+  background: var(--glass-subnav, var(--color-surface));
+  box-shadow: 1px 0 0 var(--glass-border, transparent);
 }
 
-/* ── 窄轨 ── */
+/* ── 左侧一级窄轨 (Master Rail) ── */
 
 body.po-workbench-shell .po-rail {
   display: flex;
@@ -94,10 +96,12 @@ body.po-workbench-shell .po-rail {
   flex-direction: column;
   align-items: center;
   width: var(--sidebar-rail-width);
-  padding: 12px 0;
+  padding: 12px 0 10px;
   gap: 10px;
   border-right: 1px solid var(--color-border);
-  background: var(--color-surface-muted);
+  background: var(--glass-rail, var(--color-surface-muted));
+  box-sizing: border-box;
+  z-index: 2;
 }
 
 body.po-workbench-shell .po-rail-header,
@@ -106,6 +110,7 @@ body.po-workbench-shell .po-rail-nav {
   display: flex;
   align-items: center;
   width: 100%;
+  box-sizing: border-box;
 }
 
 body.po-workbench-shell .po-rail-header,
@@ -113,97 +118,181 @@ body.po-workbench-shell .po-rail-footer {
   justify-content: center;
 }
 
+body.po-workbench-shell .po-rail-header {
+  padding-bottom: 4px;
+}
+
 body.po-workbench-shell .po-rail-nav {
   flex: 1;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 0 6px;
+  padding: 2px 6px;
   min-height: 0;
+  scrollbar-width: none;
+}
+
+body.po-workbench-shell .po-rail-nav::-webkit-scrollbar {
+  display: none;
 }
 
 body.po-workbench-shell .po-rail .po-brand-logo {
   width: 38px;
   height: 38px;
-  border-radius: 9px;
-  font-size: 18px;
+  border-radius: 11px;
+  font-size: 17px;
   font-weight: 800;
   text-decoration: none;
-  box-shadow: var(--shadow-sm);
-  background: var(--color-info-fill);
-  color: var(--color-text-on-accent);
+  background: linear-gradient(135deg, var(--color-primary-gradient-start, #3b82f6) 0%, var(--color-primary-gradient-end, #1d4ed8) 100%);
+  color: var(--color-text-on-accent, #ffffff);
+  box-shadow:
+    0 4px 12px var(--color-stage-overview-shadow, rgba(37, 99, 235, 0.28)),
+    inset 0 1px 0 rgba(255, 255, 255, 0.32);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.2s ease;
 }
 
+body.po-workbench-shell .po-rail .po-brand-logo:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow:
+    0 6px 16px var(--color-stage-overview-shadow, rgba(37, 99, 235, 0.36)),
+    inset 0 1px 0 rgba(255, 255, 255, 0.38);
+}
+
+/* 一级导航按钮（图标胶囊 + 2字精简标签） */
 body.po-workbench-shell .po-rail-btn {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 50px;
-  min-height: 48px;
-  padding: 4px 0;
-  gap: 3px;
-  border: 0;
-  border-radius: 9px;
+  width: 54px;
+  height: 54px;
+  min-height: 54px;
+  padding: 6px 2px 5px;
+  gap: 4px;
+  border: 1px solid transparent;
+  border-radius: 12px;
   background: transparent;
-  color: var(--color-text-secondary);
+  color: var(--color-text-body);
   font: inherit;
   line-height: 1;
   cursor: pointer;
   appearance: none;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.15s ease;
+}
+
+body.po-workbench-shell .po-rail-icon-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 26px;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.18s ease;
 }
 
 body.po-workbench-shell .po-rail-btn i {
-  font-size: 20px;
+  font-size: 15px;
+  line-height: 1;
 }
 
-body.po-workbench-shell .po-rail-btn > span:not(.po-rail-dot):not(.po-rail-route-indicator) {
-  max-width: 48px;
-  font-size: 11.5px;
-  font-weight: 600;
+/* 热更新兼容：若服务端模板缓存仍输出 FA6 类名，通过 FA5 glyph 兜底显示图标 */
+body.po-workbench-shell .po-rail-btn i.fa-people-roof::before {
+  content: "\f500";
+}
+
+body.po-workbench-shell .po-rail-btn i.fa-grid-2::before {
+  content: "\f009";
+}
+
+body.po-workbench-shell .po-rail-btn .po-rail-label,
+body.po-workbench-shell .po-rail-btn > span:not(.po-rail-dot):not(.po-rail-route-indicator):not(.po-rail-phase-tag):not(.po-rail-icon-box) {
+  max-width: 50px;
+  font-size: 12px;
+  font-weight: 550;
+  color: var(--color-text-body);
+  letter-spacing: 0.01em;
+  line-height: 1.15;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: color 0.18s ease, font-weight 0.18s ease;
 }
 
 body.po-workbench-shell .po-rail-btn:hover {
-  background: var(--color-surface);
   color: var(--color-text-primary);
+}
+
+body.po-workbench-shell .po-rail-btn:hover .po-rail-icon-box {
+  background: var(--color-surface-hover);
+  transform: translateY(-1px);
+}
+
+body.po-workbench-shell .po-rail-btn.is-drawer-open {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-sm);
 }
 
 body.po-workbench-shell .po-rail-btn.is-active-route {
   color: var(--color-info);
 }
 
+body.po-workbench-shell .po-rail-btn.is-active-route .po-rail-icon-box,
+body.po-workbench-shell .po-rail-btn.is-drawer-open.is-active-route .po-rail-icon-box {
+  background: var(--color-info-soft);
+  color: var(--color-info);
+  box-shadow: inset 0 0 0 1px var(--color-info-border);
+}
+
+body.po-workbench-shell .po-rail-btn.is-active-route .po-rail-label {
+  font-weight: 650;
+  color: var(--color-info);
+}
+
 body.po-workbench-shell .po-rail-btn .po-rail-route-indicator {
   display: none;
   position: absolute;
-  left: 0;
+  left: -1px;
   top: 50%;
   transform: translateY(-50%);
   width: 3px;
   height: 20px;
-  border-radius: 0 2px 2px 0;
+  border-radius: 0 3px 3px 0;
   background: var(--color-info-fill);
+  box-shadow: 0 0 8px var(--color-info-fill);
 }
 
 body.po-workbench-shell .po-rail-btn.is-active-route .po-rail-route-indicator {
   display: block;
 }
 
-body.po-workbench-shell .po-rail-btn.is-drawer-open {
-  background: var(--color-surface);
-  color: var(--color-text-primary);
-  box-shadow: var(--shadow-sm);
+html[data-theme="dark"] body.po-workbench-shell .po-rail-btn.is-drawer-open {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
-body.po-workbench-shell .po-rail-btn.is-drawer-open.is-active-route {
+html[data-theme="dark"] body.po-workbench-shell .po-rail-btn.is-active-route .po-rail-icon-box {
+  background: var(--color-info-soft);
   color: var(--color-info);
+  box-shadow: inset 0 0 0 1px var(--color-info-border), 0 0 12px var(--color-primary-ring-soft);
 }
 
-/* ── 子面板 ── */
+/* ── 右侧二级子面板 (Detail Sub-Panel) ── */
 
 body.po-workbench-shell .po-subnav {
   flex: 1;
@@ -256,33 +345,50 @@ body.po-workbench-shell .po-subnav-panel.is-active {
 body.po-workbench-shell .po-subnav-header {
   display: flex;
   align-items: center;
-  height: 28px;
+  height: 30px;
+  padding: 0 8px 6px;
   margin-bottom: 8px;
+  border-bottom: 1px solid var(--color-border-soft, var(--color-border));
 }
 
 body.po-workbench-shell .po-subnav-title {
   color: var(--color-text-primary);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
+  letter-spacing: 0.01em;
+  display: inline-flex;
+  align-items: center;
 }
 
 body.po-workbench-shell .po-subnav-body {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
+/* 恢复二级面板图标展示，赋予精致层级 */
 body.po-workbench-shell .po-subnav .nav-icon {
-  display: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  min-width: 18px;
+  height: 18px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  transition: color 0.15s ease, transform 0.15s ease;
 }
 
 body.po-workbench-shell .po-subnav .nav-item {
-  gap: 6px;
-  padding: 6px 10px;
-  min-height: 32px;
-  border-radius: 6px;
+  gap: 8px;
+  padding: 7px 10px;
+  min-height: 34px;
+  border-radius: 8px;
+  border: 1px solid transparent;
   font-size: 13px;
   font-weight: 500;
+  color: var(--color-text-body);
+  transition: all 0.15s ease;
 }
 
 body.po-workbench-shell .po-subnav .nav-text {
@@ -292,43 +398,54 @@ body.po-workbench-shell .po-subnav .nav-text {
   white-space: nowrap;
 }
 
-body.po-workbench-shell .sidebar .nav-item:hover {
-  background: var(--color-surface-muted);
+body.po-workbench-shell .sidebar .po-subnav .nav-item:hover {
+  background: var(--color-surface-hover);
   color: var(--color-text-primary);
 }
 
-body.po-workbench-shell .sidebar .nav-item.active {
-  background: var(--color-info-bg);
+body.po-workbench-shell .sidebar .po-subnav .nav-item:hover .nav-icon {
+  color: var(--color-info);
+  transform: scale(1.04);
+}
+
+body.po-workbench-shell .sidebar .po-subnav .nav-item.active {
+  background: var(--color-info-soft);
+  border-color: var(--color-info-border);
   color: var(--color-info);
   font-weight: 600;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+body.po-workbench-shell .sidebar .po-subnav .nav-item.active .nav-icon {
+  color: var(--color-info);
 }
 
 body.po-workbench-shell .po-sidebar-collapse {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   margin: 0;
   padding: 0;
+  border-radius: 8px;
   color: var(--color-text-secondary);
   cursor: pointer;
-  opacity: 0.55;
+  opacity: 0.7;
   transition:
     opacity 0.15s ease,
     color 0.15s ease,
-    background 0.15s ease,
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
+    background 0.15s ease;
+}
+
+body.po-workbench-shell .po-sidebar-collapse:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+  opacity: 1;
 }
 
 body.po-workbench-shell .po-sidebar-collapse i {
   transition: transform var(--po-sidebar-motion);
-}
-
-body.po-workbench-shell .sidebar:hover .po-sidebar-collapse,
-body.po-workbench-shell .po-sidebar-collapse:focus-visible {
-  opacity: 1;
 }
 
 body.sidebar-collapsed.po-workbench-shell {
@@ -375,16 +492,47 @@ body.sidebar-collapsed.po-workbench-shell .po-sidebar-collapse i {
 }
 
 /* 覆盖旧单栏收起规则（双轨下不隐藏窄轨文字/图标） */
-body.sidebar-collapsed.po-workbench-shell .po-rail-btn > span:not(.po-rail-dot):not(.po-rail-route-indicator) {
+body.sidebar-collapsed.po-workbench-shell .po-rail-btn .po-rail-label,
+body.sidebar-collapsed.po-workbench-shell .po-rail-btn > span:not(.po-rail-dot):not(.po-rail-route-indicator):not(.po-rail-phase-tag):not(.po-rail-icon-box) {
   display: block;
   opacity: 1;
   width: auto;
   height: auto;
   overflow: hidden;
-  max-width: 48px;
+  max-width: 50px;
 }
 
 body.sidebar-collapsed.po-workbench-shell .po-rail .po-brand-logo {
   display: inline-flex;
   margin: 0;
+}
+
+body.po-workbench-shell .po-rail-phase-tag {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 9px;
+  line-height: 1.15;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-hover);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 0 3px;
+  transform: scale(0.78);
+  transform-origin: top right;
+  display: inline-block;
+  margin-top: 0;
+  pointer-events: none;
+}
+
+body.po-workbench-shell .po-subnav-phase-tag {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-hover);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: 6px;
+  vertical-align: middle;
 }

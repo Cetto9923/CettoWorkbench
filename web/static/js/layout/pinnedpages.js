@@ -249,6 +249,15 @@
         }
         return wrap;
       });
-    }
+    },
+    resolvePinnedIcon: resolvePinnedIcon
   };
+
+  function resolvePinnedIcon(item) {
+    var raw = String((item && item.icon) || "").trim();
+    if (raw && /\bfa-[a-z0-9-]+/.test(raw) && raw !== "fa-circle" && raw !== "fas fa-circle") {
+      return /\b(fas|far|fal|fad|fab|fa-solid|fa-regular|fa-light)\b/.test(raw) ? raw : "fas " + raw;
+    }
+    return "";
+  }
 })();

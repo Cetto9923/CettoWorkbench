@@ -278,12 +278,10 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
   }
-
-  function pinnedIconClass(icon) {
-    var raw = String(icon || "").trim();
-    if (!raw) return "fas fa-circle";
-    if (/\bfa[srlbd]?\b/.test(raw)) return raw;
-    return "fas " + raw;
+  function resolvePinnedIcon(item) {
+    return (window.WorkbenchPinned && typeof window.WorkbenchPinned.resolvePinnedIcon === "function")
+      ? window.WorkbenchPinned.resolvePinnedIcon(item)
+      : "";
   }
 
   function pathIsActive(path, currentPath) {
@@ -317,28 +315,33 @@
         var menuId = String((item && item.menuId) || "").trim();
         if (!path || !menuId) return;
         var title = String((item && item.title) || path).trim();
+        var iconClass = resolvePinnedIcon(item);
+        var iconHtml = iconClass
+          ? '<i class="nav-icon ' + escapeHtml(iconClass) + '"></i>'
+          : "";
         if (!isEditMode) {
           var active = pathIsActive(path, currentPath);
           html +=
             '<a href="' +
             escapeHtml(path) +
-            '" class="nav-item' +
+            '" class="nav-item po-pinned-item' +
             (active ? " active" : "") +
             '" data-menu-id="' +
             escapeHtml(menuId) +
             '" title="' +
             escapeHtml(title) +
             '">';
-          html += '<i class="nav-icon ' + escapeHtml(pinnedIconClass(item && item.icon)) + '"></i>';
+          html += iconHtml;
           html += '<span class="nav-text">' + escapeHtml(title) + "</span>";
           html += "</a>";
         } else {
           html +=
-            '<div class="nav-item is-editing-item" data-menu-id="' +
+            '<div class="nav-item po-pinned-item is-editing-item" data-menu-id="' +
             escapeHtml(menuId) +
             '" draggable="true" title="按住拖拽排序">';
           html +=
             '<span class="pinned-drag-handle" title="按住拖拽排序"><i class="fas fa-grip-vertical"></i></span>';
+          html += iconHtml;
           html += '<span class="nav-text">' + escapeHtml(title) + "</span>";
           html +=
             '<button type="button" class="nav-item-unpin js-unpin-btn" data-menu-id="' +

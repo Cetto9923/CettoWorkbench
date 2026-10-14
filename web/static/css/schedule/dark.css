@@ -378,7 +378,7 @@ html[data-theme="dark"] .rd-task-project-section .task-iteration-field .ui-autoc
 
 html[data-theme="dark"] #taskModal .task-iteration-form,
 html[data-theme="dark"] .rd-task-project-section .task-iteration-form {
-  background: var(--color-surface-muted, var(--wb-bg-muted));
+  background: var(--color-surface-muted);
 }
 
 html[data-theme="dark"] #taskModal .task-iteration-periods .radio-label,
@@ -402,7 +402,7 @@ html[data-theme="dark"] .rd-task-project-section .task-iteration-date.is-empty::
 }
 
 html[data-theme="dark"] .task-modal-project-section {
-  background: var(--color-surface-muted, var(--wb-bg-muted));
+  background: var(--color-surface-muted);
   border-color: var(--color-border);
 }
 
