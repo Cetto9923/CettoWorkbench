@@ -15,7 +15,7 @@
   <div class="batch-modal-body" id="taskModalBody">
     <div id="taskModalSpec"></div>
 
-    <div id="taskModalInfoBar" style="font-size:12px; color:#666; margin:12px 0;"></div>
+    <div id="taskModalInfoBar" class="task-modal-info-bar"></div>
 
     <div class="task-modal-project-section" id="taskModalProjectSection" style="display:none;">
       <label for="taskModalProjectInput">项目</label>
@@ -38,7 +38,7 @@
             </div>
           </div>
           <div class="task-iteration-field">
-            <span>周期</span>
+            <span class="label">周期</span>
             <div class="task-iteration-periods" role="radiogroup" aria-label="迭代周期">
               <label class="radio-label">
                 <input type="radio" name="quickIterationPeriod" value="2w" checked>
@@ -100,15 +100,15 @@
     <table class="rd-task-table" id="taskModalTable">
       <thead>
         <tr>
-          <th style="width:220px">执行 <span class="req">*</span></th>
-          <th style="width:80px">类型</th>
-          <th style="width:72px">优先级</th>
-          <th style="width:140px">任务名称 <span class="req">*</span></th>
-          <th style="width:120px">指派给</th>
-          <th style="width:70px">预估(h) <span class="req">*</span></th>
-          <th style="width:110px">预计开始</th>
-          <th style="width:110px">截止时间 <span class="req">*</span></th>
-          <th style="width:48px">操作</th>
+          <th style="min-width: 180px; width: 220px">执行 <span class="req">*</span></th>
+          <th style="min-width: 80px; width: 88px">类型</th>
+          <th style="min-width: 64px; width: 72px">优先级</th>
+          <th style="min-width: 180px">任务名称 <span class="req">*</span></th>
+          <th style="min-width: 140px; width: 160px">指派给</th>
+          <th style="min-width: 70px; width: 76px">预估(h) <span class="req">*</span></th>
+          <th style="min-width: 110px; width: 116px">预计开始</th>
+          <th style="min-width: 110px; width: 116px">截止时间 <span class="req">*</span></th>
+          <th style="min-width: 48px; width: 52px; text-align: center">操作</th>
         </tr>
       </thead>
       <tbody id="taskModalTableBody"></tbody>

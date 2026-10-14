@@ -461,6 +461,33 @@ html[data-theme="dark"] #taskModal .rd-task-execution-same[aria-pressed="true"] 
   color: var(--color-info);
 }
 
+html[data-theme="dark"] #taskModal .batch-modal-hdr,
+html[data-theme="dark"] #taskModal .batch-modal-footer {
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] #taskModal .rd-node-tasks {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] #taskModal .rd-task-table th {
+  background: var(--color-surface-muted);
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+html[data-theme="dark"] #taskModal .rd-task-table td {
+  border-color: var(--color-border);
+}
+
+html[data-theme="dark"] #taskModal .task-modal-spec-content,
+html[data-theme="dark"] #taskModal .task-modal-info-bar {
+  background: var(--color-surface-muted);
+  border-color: var(--color-border);
+  color: var(--color-text-body);
+}
+
 html[data-theme="dark"] #manageVersionWindowsModal .action-btn--disabled,
 html[data-theme="dark"] #manageVersionWindowsModal .action-btn--disabled:hover {
   background: var(--gray-bg) !important;
