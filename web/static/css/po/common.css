@@ -15,14 +15,13 @@
 .dd-drawer-mask {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.45);
-  backdrop-filter: blur(2px);
+  background: var(--color-overlay, rgba(15, 23, 42, 0.45));
   z-index: 1000;
   display: flex;
   justify-content: flex-end;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.22s ease;
 }
 
 .dd-drawer-mask.active {
@@ -34,11 +33,14 @@
   width: min(1200px, 94vw);
   height: 100%;
   background: var(--color-surface, #fff);
-  box-shadow: -8px 0 28px rgba(0, 0, 0, 0.12);
+  backdrop-filter: var(--glass-blur, blur(18px));
+  -webkit-backdrop-filter: var(--glass-blur, blur(18px));
+  border-left: 1px solid var(--color-border);
+  box-shadow: -12px 0 36px rgba(0, 0, 0, 0.18);
   display: flex;
   flex-direction: column;
   transform: translateX(100%);
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
 }
 
@@ -290,13 +292,13 @@
 }
 
 .dd-btn.danger {
-  background: var(--color-danger-fill, #ef4444);
-  color: var(--color-text-on-accent, #fff);
-  border-color: var(--color-danger-fill, #ef4444);
+  background: var(--color-danger-strong);
+  color: var(--color-text-on-accent);
+  border-color: var(--color-danger-strong);
 }
 
 .dd-btn.danger:hover {
-  background: var(--color-danger-deep, #dc2626);
+  background: var(--color-danger-deep);
 }
 
 .dd-aside-title {
@@ -404,15 +406,15 @@
 }
 
 .dd-table th {
-  background: var(--color-surface-muted, #f8fafc);
-  color: var(--color-text-muted, #64748b);
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
   font-weight: 600;
   white-space: nowrap;
 }
 
 .dd-table td.text-muted,
 .dd-table .text-muted {
-  color: var(--color-text-muted, #94a3b8);
+  color: var(--color-text-disabled);
   text-align: center;
 }
 
@@ -494,7 +496,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(2px);
 }
 
 .dd-reject-modal-dialog {

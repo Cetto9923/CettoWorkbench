@@ -1,25 +1,25 @@
 /* ==========================================================================
    文件: web/static/css/layout/header.css
    模块: 布局
-   职责: 顶栏用户区、主题快捷切换、固定到工作台按钮与用户下拉菜单样式。
+   职责: 顶栏用户区、主题快捷切换（跟随系统/浅色/深色/樱花粉）、固定到工作台按钮与用户下拉菜单样式。
 ========================================================================== */
 
-/* 顶栏一键固定按钮（对齐原型 pagePinToggle，深浅色语义变量） */
+/* 顶栏一键固定按钮（对齐原型 pagePinToggle，深浅色语义变量 + 胶囊质感） */
 .page-pin-toggle {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  height: 24px;
-  padding: 0 8px;
-  font-size: 11px;
+  height: 26px;
+  padding: 0 10px;
+  font-size: 11.5px;
   font-weight: 500;
   line-height: 1;
   color: var(--color-text-secondary);
-  background: var(--color-surface);
+  background: var(--color-surface-muted);
   border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border-radius: 999px;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition: all 0.16s ease;
   margin-left: 8px;
   vertical-align: middle;
   box-sizing: border-box;
@@ -39,14 +39,14 @@
 
 .page-pin-toggle.is-pinned {
   color: var(--color-info);
-  background: var(--color-info-bg);
+  background: var(--color-info-soft);
   border-color: var(--color-info-border);
   font-weight: 600;
 }
 
 .page-pin-toggle.is-pinned:hover {
   border-color: var(--color-info);
-  opacity: 0.9;
+  opacity: 0.92;
 }
 
 @media (max-width: 992px) {
@@ -63,7 +63,7 @@
   width: 32px;
   height: 32px;
   border: 0;
-  border-radius: var(--radius-sm);
+  border-radius: 8px;
   background: transparent;
   color: var(--color-text-secondary);
   cursor: pointer;
@@ -77,33 +77,56 @@
 
 .po-header-icon.theme-quick-toggle {
   border: 1px solid var(--color-border);
-  background: var(--color-surface);
+  background: var(--color-surface-muted);
   color: var(--color-text-secondary);
-  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition: all 0.16s ease;
 }
 
 .po-header-icon.theme-quick-toggle:hover {
-  background: var(--color-surface-muted);
+  background: var(--color-surface-hover);
   color: var(--color-primary);
   border-color: var(--color-primary-border);
+  transform: translateY(-0.5px);
+}
+
+.theme-picker-group .theme-pink-swatch {
+  color: var(--color-theme-pink-swatch);
+}
+
+.theme-picker-group .theme-system-sub {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  line-height: 1.35;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .po-user-info {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   height: 34px;
-  padding: 4px 8px;
-  border: 0;
-  border-radius: 6px;
+  padding: 4px 10px 4px 6px;
+  border: 1px solid transparent;
+  border-radius: 999px;
   background: transparent;
-  color: var(--color-text-secondary);
-  font: 13px/1 var(--font-sans);
+  color: var(--color-text-body);
+  font: 500 13px/1 var(--font-sans);
   cursor: pointer;
+  transition: all 0.16s ease;
 }
 
 .po-user-info:hover {
   background: var(--color-surface-muted);
+  border-color: var(--color-border);
   color: var(--color-text-primary);
 }
 
@@ -114,10 +137,11 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: var(--color-info);
+  background: linear-gradient(135deg, var(--color-primary-gradient-start, #3b82f6) 0%, var(--color-primary-gradient-end, #2563eb) 100%);
   color: #fff;
   font-size: 11px;
   font-weight: 700;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
 .dropdown-header {
@@ -141,11 +165,14 @@
 }
 
 .theme-picker-group .dropdown-item i:first-child {
+  width: 16px;
+  text-align: center;
   margin-right: var(--space-2);
 }
 
 .theme-picker-group .dropdown-item .check-mark {
   margin-left: auto;
+  padding-left: 8px;
   opacity: 0;
   color: var(--color-primary);
 }
@@ -159,12 +186,15 @@
   opacity: 1;
 }
 
-/* 顶部用户菜单：几何与间距对齐原型 .po-header-right .dropdown-menu */
+/* 顶部用户菜单：毛玻璃浮层 */
 .topbar-actions .dropdown-menu {
-  min-width: 126px;
+  min-width: 184px;
   padding: 6px;
-  border-color: var(--color-border);
-  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--glass-surface, var(--color-surface));
+  backdrop-filter: var(--glass-blur, blur(16px));
+  -webkit-backdrop-filter: var(--glass-blur, blur(16px));
   color: var(--color-text-body);
   box-shadow: var(--shadow-popover);
 }
@@ -198,24 +228,29 @@
   font: inherit;
   cursor: pointer;
   text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.14s ease;
 }
 
-/* 主题项：与原型 .dropdown-item 一致 */
 .topbar-actions .dropdown-item {
   display: flex;
   align-items: center;
-  padding: 8px 12px;
+  padding: 7px 10px;
   font-size: 13px;
   line-height: 1.2;
+  white-space: nowrap;
 }
 
-/* 操作项（登出等）：与原型 .topbar-dropdown-item 一致，需压过 .dropdown-item */
+.topbar-actions .dropdown-item span {
+  white-space: nowrap;
+}
+
 .topbar-actions .topbar-dropdown-item {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 12px;
-  font-size: 12px;
+  padding: 6px 10px;
+  font-size: 12.5px;
   font-weight: 500;
   line-height: 1.2;
 }
@@ -228,14 +263,15 @@
 .topbar-actions .dropdown-item:hover,
 .topbar-actions .topbar-dropdown-item:hover {
   border-color: var(--color-border);
-  background: var(--color-surface-muted);
+  background: var(--color-surface-hover);
   color: var(--color-text-primary);
 }
 
 .topbar-actions .theme-picker-group .dropdown-item[aria-checked="true"] {
   border-color: var(--color-primary-border);
   background: var(--color-primary-light);
-  color: var(--color-primary-hover);
+  color: var(--color-primary);
+  font-weight: 600;
 }
 
 .topbar-actions .theme-picker-group .dropdown-item[aria-checked="true"] .check-mark {

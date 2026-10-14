@@ -15,8 +15,11 @@
   right: 0;
   height: auto;
   min-height: var(--topbar-height);
-  background: var(--color-surface);
+  background: var(--glass-bg, var(--color-surface));
+  backdrop-filter: var(--glass-blur, blur(16px));
+  -webkit-backdrop-filter: var(--glass-blur, blur(16px));
   border-bottom: 1px solid var(--color-border);
+  box-shadow: var(--glass-highlight, none);
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -73,7 +76,7 @@ body.layout-nav-top.sidebar-collapsed .main {
   width: 24px;
   height: 24px;
   border-radius: 6px;
-  background: #1e40af;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
   color: #fff;
   font-size: 12px;
   font-weight: 700;
@@ -92,18 +95,25 @@ body.layout-nav-top.sidebar-collapsed .main {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   box-sizing: border-box;
-  width: 260px;
-  height: var(--size-8);
-  padding: 0 10px;
-  background: var(--color-page-bg);
+  width: 256px;
+  height: 32px;
+  padding: 0 12px;
+  background: var(--color-surface-muted);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: 8px;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+.search-box:hover {
+  border-color: var(--color-border-strong);
 }
 
 .search-box:focus-within {
+  background: var(--color-surface);
   border-color: var(--color-info);
+  box-shadow: 0 0 0 3px var(--color-primary-ring-soft);
 }
 
 .search-box > i.fa-search {
@@ -154,17 +164,19 @@ body.layout-nav-top.sidebar-collapsed .main {
 .search-results {
   display: none;
   position: absolute;
-  top: calc(100% + var(--space-1));
+  top: calc(100% + 6px);
   right: 0;
   left: auto;
   width: 320px;
   max-height: 420px;
   overflow-y: auto;
-  padding: var(--space-1);
-  background: var(--color-surface);
+  padding: 6px;
+  background: var(--glass-surface, var(--color-surface));
+  backdrop-filter: var(--glass-blur, blur(16px));
+  -webkit-backdrop-filter: var(--glass-blur, blur(16px));
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  box-shadow: 0 4px 20px var(--color-shadow-12);
+  border-radius: 10px;
+  box-shadow: var(--shadow-popover);
   z-index: 500;
 }
 
@@ -715,8 +727,8 @@ body.has-bottom-tabs .main {
 
 .bottom-tab.active {
   border-color: var(--color-info-border);
-  background: var(--color-info-bg);
-  color: var(--color-text-brand);
+  background: var(--color-info-soft);
+  color: var(--color-info);
   font-weight: 700;
 }
 

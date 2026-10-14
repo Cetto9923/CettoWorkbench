@@ -24,7 +24,7 @@ Pager.PageParam 自定义页码参数名（默认 page）；Pager.PreserveParams
   <ul class="pagination">
     {{ if and .Pager .Pager.HasPrev }}
     <li class="page-item">
-      <a class="page-link" href="?{{ $pageParam }}={{ sub $currentPage 1 }}&pageSize={{ $pageSize }}{{ range $k, $v := $preserveParams }}&{{ $k }}={{ $v }}{{ end }}{{ if .Q }}&q={{ .Q | urlquery }}{{ end }}{{ if .Status }}&status={{ .Status | urlquery }}{{ end }}{{ if .Account }}&account={{ .Account | urlquery }}{{ end }}{{ if .Method }}&method={{ .Method | urlquery }}{{ end }}{{ if .Path }}&path={{ .Path | urlquery }}{{ end }}{{ if .IP }}&ip={{ .IP | urlquery }}{{ end }}{{ if .StartAt }}&startAt={{ .StartAt | urlquery }}{{ end }}{{ if .EndAt }}&endAt={{ .EndAt | urlquery }}{{ end }}{{ if and $selCat (gt $selCat 0) }}&categoryID={{ $selCat }}{{ end }}" aria-label="上一页">
+      <a class="page-link" href="?{{ $pageParam }}={{ sub $currentPage 1 }}&pageSize={{ $pageSize }}{{ range $k, $v := $preserveParams }}{{ if and (ne $k $pageParam) (ne $k "pageSize") }}&{{ $k }}={{ $v }}{{ end }}{{ end }}{{ if .Q }}&q={{ .Q | urlquery }}{{ end }}{{ if .Status }}&status={{ .Status | urlquery }}{{ end }}{{ if .Account }}&account={{ .Account | urlquery }}{{ end }}{{ if .Method }}&method={{ .Method | urlquery }}{{ end }}{{ if .Path }}&path={{ .Path | urlquery }}{{ end }}{{ if .IP }}&ip={{ .IP | urlquery }}{{ end }}{{ if .StartAt }}&startAt={{ .StartAt | urlquery }}{{ end }}{{ if .EndAt }}&endAt={{ .EndAt | urlquery }}{{ end }}{{ if and $selCat (gt $selCat 0) }}&categoryID={{ $selCat }}{{ end }}" aria-label="上一页">
         <i class="bi bi-chevron-left" aria-hidden="true"></i>
       </a>
     </li>
@@ -36,7 +36,7 @@ Pager.PageParam 自定义页码参数名（默认 page）；Pager.PreserveParams
 
     {{ if and (gt $totalPages 1) .Pager (gt (len .Pager.Pages) 0) }}
       {{ if gt (index .Pager.Pages 0) 1 }}
-      <li class="page-item"><a class="page-link" href="?{{ $pageParam }}=1&pageSize={{ $pageSize }}{{ range $k, $v := $preserveParams }}&{{ $k }}={{ $v }}{{ end }}{{ if .Q }}&q={{ .Q | urlquery }}{{ end }}{{ if .Status }}&status={{ .Status | urlquery }}{{ end }}{{ if .Account }}&account={{ .Account | urlquery }}{{ end }}{{ if .Method }}&method={{ .Method | urlquery }}{{ end }}{{ if .Path }}&path={{ .Path | urlquery }}{{ end }}{{ if .IP }}&ip={{ .IP | urlquery }}{{ end }}{{ if .StartAt }}&startAt={{ .StartAt | urlquery }}{{ end }}{{ if .EndAt }}&endAt={{ .EndAt | urlquery }}{{ end }}{{ if and $selCat (gt $selCat 0) }}&categoryID={{ $selCat }}{{ end }}">1</a></li>
+      <li class="page-item"><a class="page-link" href="?{{ $pageParam }}=1&pageSize={{ $pageSize }}{{ range $k, $v := $preserveParams }}{{ if and (ne $k $pageParam) (ne $k "pageSize") }}&{{ $k }}={{ $v }}{{ end }}{{ end }}{{ if .Q }}&q={{ .Q | urlquery }}{{ end }}{{ if .Status }}&status={{ .Status | urlquery }}{{ end }}{{ if .Account }}&account={{ .Account | urlquery }}{{ end }}{{ if .Method }}&method={{ .Method | urlquery }}{{ end }}{{ if .Path }}&path={{ .Path | urlquery }}{{ end }}{{ if .IP }}&ip={{ .IP | urlquery }}{{ end }}{{ if .StartAt }}&startAt={{ .StartAt | urlquery }}{{ end }}{{ if .EndAt }}&endAt={{ .EndAt | urlquery }}{{ end }}{{ if and $selCat (gt $selCat 0) }}&categoryID={{ $selCat }}{{ end }}">1</a></li>
       {{ end }}
       {{ if gt (index .Pager.Pages 0) 2 }}
       <li class="page-item disabled"><span class="page-link">•••</span></li>
@@ -47,7 +47,7 @@ Pager.PageParam 自定义页码参数名（默认 page）；Pager.PreserveParams
         {{ if eq . $currentPage }}
         <span class="page-link" aria-current="page">{{ . }}</span>
         {{ else }}
-        <a class="page-link" href="?{{ $pageParam }}={{ . }}&pageSize={{ $pageSize }}{{ range $k, $v := $preserveParams }}&{{ $k }}={{ $v }}{{ end }}{{ if $.Q }}&q={{ $.Q | urlquery }}{{ end }}{{ if $.Status }}&status={{ $.Status | urlquery }}{{ end }}{{ if $.Account }}&account={{ $.Account | urlquery }}{{ end }}{{ if $.Method }}&method={{ $.Method | urlquery }}{{ end }}{{ if $.Path }}&path={{ $.Path | urlquery }}{{ end }}{{ if $.IP }}&ip={{ $.IP | urlquery }}{{ end }}{{ if $.StartAt }}&startAt={{ $.StartAt | urlquery }}{{ end }}{{ if $.EndAt }}&endAt={{ $.EndAt | urlquery }}{{ end }}{{ if and $selCat (gt $selCat 0) }}&categoryID={{ $selCat }}{{ end }}">{{ . }}</a>
+        <a class="page-link" href="?{{ $pageParam }}={{ . }}&pageSize={{ $pageSize }}{{ range $k, $v := $preserveParams }}{{ if and (ne $k $pageParam) (ne $k "pageSize") }}&{{ $k }}={{ $v }}{{ end }}{{ end }}{{ if $.Q }}&q={{ $.Q | urlquery }}{{ end }}{{ if $.Status }}&status={{ $.Status | urlquery }}{{ end }}{{ if $.Account }}&account={{ $.Account | urlquery }}{{ end }}{{ if $.Method }}&method={{ $.Method | urlquery }}{{ end }}{{ if $.Path }}&path={{ $.Path | urlquery }}{{ end }}{{ if $.IP }}&ip={{ $.IP | urlquery }}{{ end }}{{ if $.StartAt }}&startAt={{ $.StartAt | urlquery }}{{ end }}{{ if $.EndAt }}&endAt={{ $.EndAt | urlquery }}{{ end }}{{ if and $selCat (gt $selCat 0) }}&categoryID={{ $selCat }}{{ end }}">{{ . }}</a>
         {{ end }}
       </li>
       {{ end }}
@@ -56,7 +56,7 @@ Pager.PageParam 自定义页码参数名（默认 page）；Pager.PreserveParams
       <li class="page-item disabled"><span class="page-link">•••</span></li>
       {{ end }}
       {{ if lt (index .Pager.Pages (sub (len .Pager.Pages) 1)) $totalPages }}
-      <li class="page-item"><a class="page-link" href="?{{ $pageParam }}={{ $totalPages }}&pageSize={{ $pageSize }}{{ range $k, $v := $preserveParams }}&{{ $k }}={{ $v }}{{ end }}{{ if .Q }}&q={{ .Q | urlquery }}{{ end }}{{ if .Status }}&status={{ .Status | urlquery }}{{ end }}{{ if .Account }}&account={{ .Account | urlquery }}{{ end }}{{ if .Method }}&method={{ .Method | urlquery }}{{ end }}{{ if .Path }}&path={{ .Path | urlquery }}{{ end }}{{ if .IP }}&ip={{ .IP | urlquery }}{{ end }}{{ if .StartAt }}&startAt={{ .StartAt | urlquery }}{{ end }}{{ if .EndAt }}&endAt={{ .EndAt | urlquery }}{{ end }}{{ if and $selCat (gt $selCat 0) }}&categoryID={{ $selCat }}{{ end }}">{{ $totalPages }}</a></li>
+      <li class="page-item"><a class="page-link" href="?{{ $pageParam }}={{ $totalPages }}&pageSize={{ $pageSize }}{{ range $k, $v := $preserveParams }}{{ if and (ne $k $pageParam) (ne $k "pageSize") }}&{{ $k }}={{ $v }}{{ end }}{{ end }}{{ if .Q }}&q={{ .Q | urlquery }}{{ end }}{{ if .Status }}&status={{ .Status | urlquery }}{{ end }}{{ if .Account }}&account={{ .Account | urlquery }}{{ end }}{{ if .Method }}&method={{ .Method | urlquery }}{{ end }}{{ if .Path }}&path={{ .Path | urlquery }}{{ end }}{{ if .IP }}&ip={{ .IP | urlquery }}{{ end }}{{ if .StartAt }}&startAt={{ .StartAt | urlquery }}{{ end }}{{ if .EndAt }}&endAt={{ .EndAt | urlquery }}{{ end }}{{ if and $selCat (gt $selCat 0) }}&categoryID={{ $selCat }}{{ end }}">{{ $totalPages }}</a></li>
       {{ end }}
     {{ else }}
     <li class="page-item active">
@@ -66,7 +66,7 @@ Pager.PageParam 自定义页码参数名（默认 page）；Pager.PreserveParams
 
     {{ if and .Pager .Pager.HasNext }}
     <li class="page-item">
-      <a class="page-link" href="?{{ $pageParam }}={{ add $currentPage 1 }}&pageSize={{ $pageSize }}{{ range $k, $v := $preserveParams }}&{{ $k }}={{ $v }}{{ end }}{{ if .Q }}&q={{ .Q | urlquery }}{{ end }}{{ if .Status }}&status={{ .Status | urlquery }}{{ end }}{{ if .Account }}&account={{ .Account | urlquery }}{{ end }}{{ if .Method }}&method={{ .Method | urlquery }}{{ end }}{{ if .Path }}&path={{ .Path | urlquery }}{{ end }}{{ if .IP }}&ip={{ .IP | urlquery }}{{ end }}{{ if .StartAt }}&startAt={{ .StartAt | urlquery }}{{ end }}{{ if .EndAt }}&endAt={{ .EndAt | urlquery }}{{ end }}{{ if and $selCat (gt $selCat 0) }}&categoryID={{ $selCat }}{{ end }}" aria-label="下一页">
+      <a class="page-link" href="?{{ $pageParam }}={{ add $currentPage 1 }}&pageSize={{ $pageSize }}{{ range $k, $v := $preserveParams }}{{ if and (ne $k $pageParam) (ne $k "pageSize") }}&{{ $k }}={{ $v }}{{ end }}{{ end }}{{ if .Q }}&q={{ .Q | urlquery }}{{ end }}{{ if .Status }}&status={{ .Status | urlquery }}{{ end }}{{ if .Account }}&account={{ .Account | urlquery }}{{ end }}{{ if .Method }}&method={{ .Method | urlquery }}{{ end }}{{ if .Path }}&path={{ .Path | urlquery }}{{ end }}{{ if .IP }}&ip={{ .IP | urlquery }}{{ end }}{{ if .StartAt }}&startAt={{ .StartAt | urlquery }}{{ end }}{{ if .EndAt }}&endAt={{ .EndAt | urlquery }}{{ end }}{{ if and $selCat (gt $selCat 0) }}&categoryID={{ $selCat }}{{ end }}" aria-label="下一页">
         <i class="bi bi-chevron-right" aria-hidden="true"></i>
       </a>
     </li>
@@ -80,7 +80,7 @@ Pager.PageParam 自定义页码参数名（默认 page）；Pager.PreserveParams
   <div class="pagination-options">
     <span class="pagination-total">共 {{ if .Pager }}{{ .Pager.TotalItems }}{{ else }}0{{ end }} 条</span>
     <form method="GET" action="{{ .CurrentPath }}" class="pagination-size-form">
-      {{ range $k, $v := $preserveParams }}<input type="hidden" name="{{ $k }}" value="{{ $v }}">{{ end }}
+      {{ range $k, $v := $preserveParams }}{{ if and (ne $k $pageParam) (ne $k "pageSize") }}<input type="hidden" name="{{ $k }}" value="{{ $v }}">{{ end }}{{ end }}
       {{ if .Q }}<input type="hidden" name="q" value="{{ .Q }}">{{ end }}
       {{ if .Status }}<input type="hidden" name="status" value="{{ .Status }}">{{ end }}
       {{ if .Account }}<input type="hidden" name="account" value="{{ .Account }}">{{ end }}
@@ -99,7 +99,7 @@ Pager.PageParam 自定义页码参数名（默认 page）；Pager.PreserveParams
       </select>
     </form>
     <form method="GET" action="{{ .CurrentPath }}" class="pagination-jump-form">
-      {{ range $k, $v := $preserveParams }}<input type="hidden" name="{{ $k }}" value="{{ $v }}">{{ end }}
+      {{ range $k, $v := $preserveParams }}{{ if and (ne $k $pageParam) (ne $k "pageSize") }}<input type="hidden" name="{{ $k }}" value="{{ $v }}">{{ end }}{{ end }}
       {{ if .Q }}<input type="hidden" name="q" value="{{ .Q }}">{{ end }}
       {{ if .Status }}<input type="hidden" name="status" value="{{ .Status }}">{{ end }}
       {{ if .Account }}<input type="hidden" name="account" value="{{ .Account }}">{{ end }}

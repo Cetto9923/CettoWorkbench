@@ -1,11 +1,34 @@
 {{ define "sidebar/navLink" }}
 {{/* 叶子菜单链接（section 内与嵌套子菜单共用） */}}
+{{ $itemIcon := .Menu.Icon }}
+{{ if not $itemIcon }}
+  {{ if eq .Menu.Title "首页" }}{{ $itemIcon = "fa-house" }}
+  {{ else if eq .Menu.Title "我的待办" }}{{ $itemIcon = "fa-list-check" }}
+  {{ else if eq .Menu.Title "我的已办" }}{{ $itemIcon = "fa-clock-rotate-left" }}
+  {{ else if eq .Menu.Title "通知中心" }}{{ $itemIcon = "fa-bell" }}
+  {{ else if eq .Menu.Title "我的关注" }}{{ $itemIcon = "fa-star" }}
+  {{ else if eq .Menu.Title "需求排期" }}{{ $itemIcon = "fa-calendar-check" }}
+  {{ else if eq .Menu.Title "需求查询" }}{{ $itemIcon = "fa-magnifying-glass" }}
+  {{ else if eq .Menu.Title "版本跟进" }}{{ $itemIcon = "fa-boxes-packing" }}
+  {{ else if eq .Menu.Title "工作看板" }}{{ $itemIcon = "fa-table-cells-large" }}
+  {{ else if eq .Menu.Title "敏捷小组" }}{{ $itemIcon = "fa-users" }}
+  {{ else if eq .Menu.Title "问题风险" }}{{ $itemIcon = "fa-shield-halved" }}
+  {{ else if eq .Menu.Title "指标雷达" }}{{ $itemIcon = "fa-chart-line" }}
+  {{ else if eq .Menu.Title "指标管理" }}{{ $itemIcon = "fa-sliders" }}
+  {{ else if eq .Menu.Title "用户管理" }}{{ $itemIcon = "fa-user-gear" }}
+  {{ else if eq .Menu.Title "部门管理" }}{{ $itemIcon = "fa-sitemap" }}
+  {{ else if eq .Menu.Title "角色管理" }}{{ $itemIcon = "fa-user-shield" }}
+  {{ else if eq .Menu.Title "菜单管理" }}{{ $itemIcon = "fa-bars-staggered" }}
+  {{ else if eq .Menu.Title "操作日志" }}{{ $itemIcon = "fa-clock-rotate-left" }}
+  {{ else if eq .Menu.Title "登录日志" }}{{ $itemIcon = "fa-right-to-bracket" }}
+  {{ else }}{{ $itemIcon = "fa-circle-dot" }}{{ end }}
+{{ end }}
 <a href="{{ .Path }}"
    class="nav-item{{ if menuNavActive .ActiveNavKey .Menu }} active{{ end }}"
    data-menu-path="{{ .Path }}"
    {{ if gt .Depth 0 }}data-depth="{{ .Depth }}"{{ end }}
    title="{{ .Menu.Title }}">
-  {{ if .Menu.Icon }}<i class="nav-icon fas {{ .Menu.Icon }}"></i>{{ else }}<i class="nav-icon fas fa-circle"></i>{{ end }}
+  <i class="nav-icon fas {{ $itemIcon }}"></i>
   <span class="nav-text">{{ .Menu.Title }}</span>
 </a>
 {{ end }}
@@ -42,7 +65,7 @@
              class="nav-item{{ if and $ctx.ActiveNavKey (eq $ctx.ActiveNavKey .Key) }} active{{ end }}"
              data-menu-path="{{ .Path }}"
              title="{{ .Title }}">
-            {{ if .Icon }}<i class="nav-icon fas {{ .Icon }}"></i>{{ else }}<i class="nav-icon fas fa-circle"></i>{{ end }}
+            {{ if .Icon }}<i class="nav-icon fas {{ .Icon }}"></i>{{ else }}<i class="nav-icon fas fa-folder"></i>{{ end }}
             <span class="nav-text">{{ .Title }}</span>
           </a>
           <button type="button"
@@ -85,7 +108,7 @@
                  class="nav-item{{ if and $ctx.ActiveNavKey (eq $ctx.ActiveNavKey .Key) }} active{{ end }}"
                  data-menu-path="{{ .Path }}"
                  title="{{ .Title }}">
-                {{ if .Icon }}<i class="nav-icon fas {{ .Icon }}"></i>{{ else }}<i class="nav-icon fas fa-circle"></i>{{ end }}
+                {{ if .Icon }}<i class="nav-icon fas {{ .Icon }}"></i>{{ else }}<i class="nav-icon fas fa-folder"></i>{{ end }}
                 <span class="nav-text">{{ .Title }}</span>
               </a>
               <button type="button"
@@ -137,7 +160,7 @@
 {{/* ==========================================================================
   文件: web/templates/layout/sidebar.html
   模块: 布局
-  职责: 渲染左侧双轨菜单：一级分组窄轨 + 二级面板；数据仍用 CurrentMenus / ActiveNavKey
+  职责: 渲染左侧双轨菜单：一级分组窄轨（图标+精简标签） + 二级面板；数据仍用 CurrentMenus / ActiveNavKey
   全局字段: .CurrentUser, .CSRFToken, .CurrentMenus, .CurrentPath, .ActiveNavKey
 ========================================================================== */}}
 <nav class="sidebar po-dual-sidebar" id="sidebar">
@@ -153,13 +176,38 @@
         {{ range .CurrentMenus }}
           {{ if or (eq .Type "directory") (eq .Type "menu") }}
           {{ $isActive := menuNavActive $activeKey . }}
+          {{ $railIcon := .Icon }}
+          {{ if not $railIcon }}
+            {{ if or (eq .Title "我的工作台") (eq .Title "个人入口") }}{{ $railIcon = "fa-desktop" }}
+            {{ else if eq .Title "需求规划" }}{{ $railIcon = "fa-calendar-check" }}
+            {{ else if eq .Title "工作区" }}{{ $railIcon = "fa-layer-group" }}
+            {{ else if eq .Title "团队协作" }}{{ $railIcon = "fa-users" }}
+            {{ else if eq .Title "团队管理" }}{{ $railIcon = "fa-user-friends" }}
+            {{ else if eq .Title "项目管理" }}{{ $railIcon = "fa-diagram-project" }}
+            {{ else if eq .Title "治理分析" }}{{ $railIcon = "fa-chart-pie" }}
+            {{ else if or (eq .Title "组织管理") (eq .Title "系统管理") }}{{ $railIcon = "fa-user-shield" }}
+            {{ else }}{{ $railIcon = "fa-th-large" }}{{ end }}
+          {{ end }}
+          {{ $railLabel := .Title }}
+          {{ if or (eq .Title "我的工作台") (eq .Title "个人入口") }}{{ $railLabel = "工作台" }}
+          {{ else if eq .Title "需求规划" }}{{ $railLabel = "规划" }}
+          {{ else if eq .Title "团队协作" }}{{ $railLabel = "协作" }}
+          {{ else if eq .Title "团队管理" }}{{ $railLabel = "团队" }}
+          {{ else if eq .Title "项目管理" }}{{ $railLabel = "项目" }}
+          {{ else if eq .Title "治理分析" }}{{ $railLabel = "治理" }}
+          {{ else if eq .Title "组织管理" }}{{ $railLabel = "管理" }}
+          {{ else if eq .Title "系统管理" }}{{ $railLabel = "系统" }}{{ end }}
           <button type="button"
                   class="po-rail-btn{{ if $isActive }} is-active-route is-drawer-open{{ end }}"
                   data-rail-group="{{ .Key }}"
                   title="{{ .Title }}"
                   aria-expanded="{{ if $isActive }}true{{ else }}false{{ end }}">
             <span class="po-rail-route-indicator" aria-hidden="true"></span>
-            <span>{{ .Title }}</span>
+            <span class="po-rail-icon-box" aria-hidden="true">
+              <i class="fas {{ $railIcon }}"></i>
+            </span>
+            <span class="po-rail-label">{{ $railLabel }}</span>
+            {{ if eq .Title "团队管理" }}<span class="po-rail-phase-tag">二期</span>{{ end }}
           </button>
           {{ end }}
         {{ end }}
@@ -181,7 +229,7 @@
         {{ $isActive := menuNavActive $activeKey . }}
         <div class="po-subnav-panel{{ if $isActive }} is-active{{ end }}" data-subnav-panel="{{ .Key }}">
           <div class="po-subnav-header">
-            <span class="po-subnav-title">{{ .Title }}</span>
+            <span class="po-subnav-title">{{ .Title }}{{ if eq .Title "团队管理" }}<span class="po-subnav-phase-tag">二期</span>{{ end }}</span>
           </div>
           <div class="po-subnav-body">
             {{ if .Children }}
@@ -203,7 +251,7 @@
             {{ $pinnedPlaced = true }}
             <div class="po-pinned-section" id="pinnedSection">
               <div class="po-pinned-section-header" id="pinnedSectionHeader">
-                <span>常用</span>
+                <span><i class="fas fa-thumbtack po-pinned-title-icon" aria-hidden="true"></i>常用</span>
                 <button type="button" class="pinned-manage-btn" id="btnManagePinned" title="自定义与排序常用页面">
                   <span>编辑</span>
                 </button>
