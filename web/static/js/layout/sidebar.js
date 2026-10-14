@@ -281,7 +281,7 @@
   function resolvePinnedIcon(item) {
     return (window.WorkbenchPinned && typeof window.WorkbenchPinned.resolvePinnedIcon === "function")
       ? window.WorkbenchPinned.resolvePinnedIcon(item)
-      : "fas fa-bookmark";
+      : "";
   }
 
   function pathIsActive(path, currentPath) {
@@ -316,6 +316,9 @@
         if (!path || !menuId) return;
         var title = String((item && item.title) || path).trim();
         var iconClass = resolvePinnedIcon(item);
+        var iconHtml = iconClass
+          ? '<i class="nav-icon ' + escapeHtml(iconClass) + '"></i>'
+          : "";
         if (!isEditMode) {
           var active = pathIsActive(path, currentPath);
           html +=
@@ -328,7 +331,7 @@
             '" title="' +
             escapeHtml(title) +
             '">';
-          html += '<i class="nav-icon ' + escapeHtml(iconClass) + '"></i>';
+          html += iconHtml;
           html += '<span class="nav-text">' + escapeHtml(title) + "</span>";
           html += "</a>";
         } else {
@@ -338,7 +341,7 @@
             '" draggable="true" title="按住拖拽排序">';
           html +=
             '<span class="pinned-drag-handle" title="按住拖拽排序"><i class="fas fa-grip-vertical"></i></span>';
-          html += '<i class="nav-icon ' + escapeHtml(iconClass) + '"></i>';
+          html += iconHtml;
           html += '<span class="nav-text">' + escapeHtml(title) + "</span>";
           html +=
             '<button type="button" class="nav-item-unpin js-unpin-btn" data-menu-id="' +
