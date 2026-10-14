@@ -13,6 +13,7 @@
   var deletedTaskIds = [];
   var cachedProjects = [];
   var currentStoryInfo = {};
+  var preferredNewExecutionId = 0;
 
   function parsePositiveInt(value) {
     var num = parseInt(String(value == null ? "" : value), 10);
@@ -359,6 +360,9 @@
   }
 
   function initTaskModalRowExecution($row, preferredExecutionId) {
+    if (!preferredExecutionId && preferredNewExecutionId) {
+      preferredExecutionId = preferredNewExecutionId;
+    }
     if (tasksApi) {
       var hasPrev = tasksApi.syncExecutionSameButton($row);
       if (hasPrev) {
@@ -485,6 +489,7 @@
     deletedTaskIds = [];
     cachedProjects = [];
     currentStoryInfo = {};
+    preferredNewExecutionId = 0;
     $("#taskModalTableBody .task-modal-row").each(function () {
       clearTaskRowControls($(this));
     });
@@ -496,6 +501,14 @@
     if (window.ScheduleQuickIteration && typeof window.ScheduleQuickIteration.reset === "function") {
       window.ScheduleQuickIteration.reset();
     }
+  }
+
+  function selectNewExecution(executionId) {
+    preferredNewExecutionId = parsePositiveInt(executionId);
+    var pid = getModalProjectId();
+    $("#taskModalTableBody .task-modal-row").each(function () {
+      loadRowExecutions($(this), pid, preferredNewExecutionId);
+    });
   }
 
   function resolveDefaultProjectId(resp) {
@@ -547,6 +560,7 @@
       if (window.ScheduleQuickIteration && typeof window.ScheduleQuickIteration.refresh === "function") {
         window.ScheduleQuickIteration.refresh({
           storyId: currentStoryInfo.id || storyId,
+          productId: currentStoryInfo.productId,
           teamgroupId: currentStoryInfo.teamgroupId,
           teamgroupName: currentStoryInfo.teamgroupName,
           plans: resp.plans || [],
@@ -736,6 +750,14 @@
         $btn.prop("disabled", false);
       });
   }
+
+  window.ScheduleMaintainTask = {
+    getProjectId: getModalProjectId,
+    getProductId: function () {
+      return parsePositiveInt(currentStoryInfo.productId);
+    },
+    selectNewExecution: selectNewExecution,
+  };
 
   window.openTaskModal = function (storyId) {
     storyId = parsePositiveInt(storyId);

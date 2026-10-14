@@ -114,6 +114,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 		g.GET("/projects/:id/executions", h.GetProjectExecutions)
 		g.GET("/stories/:id/tasks", h.GetStoryTasks)
 		g.POST("/stories/:id/save-tasks", h.SaveStoryTasks)
+		g.POST("/:projectId/executions", h.CreateExecution)
 		g.POST("/windows", h.CreateWindow)
 		g.GET("/windows", h.ListWindows)
 		g.GET("/windows/:id", h.GetWindow)

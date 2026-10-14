@@ -1,12 +1,15 @@
 /* ==========================================================================
    文件: web/static/js/schedule/maintaintaskiteration.js
    模块: 排期工作台
-   职责: 维护任务弹窗「快速创建迭代」UI 交互（本轮仅前端，不接创建接口）
+   职责: 维护任务弹窗「快速创建迭代」UI 交互与创建并选用
    ========================================================================== */
 (function () {
   "use strict";
 
   var period = "2w";
+  var context = {
+    productId: 0,
+  };
 
   function $(id) {
     return document.getElementById(id);
@@ -16,6 +19,11 @@
     if (typeof window.showToast === "function") {
       window.showToast(message, level || "info");
     }
+  }
+
+  function parsePositiveInt(value) {
+    var num = parseInt(String(value == null ? "" : value), 10);
+    return isNaN(num) || num <= 0 ? 0 : num;
   }
 
   function shanghaiToday() {
@@ -256,6 +264,7 @@
 
   function resetQuickIterationForm() {
     period = "2w";
+    context.productId = 0;
     var section = $("quickIteration");
     if (section) {
       section.open = false;
@@ -282,12 +291,142 @@
 
   function refreshQuickIterationUI(options) {
     options = options || {};
+    context.productId = parsePositiveInt(options.productId);
     syncPeriodRadios();
     applyPeriodDates();
     var team = resolveDefaultTeam(options);
     initOwnerAutocomplete(team.manager);
     initPlanAutocomplete(options.plans);
     initTeamAutocomplete(team);
+  }
+
+  function resolveProjectId() {
+    if (window.ScheduleMaintainTask && typeof window.ScheduleMaintainTask.getProjectId === "function") {
+      return parsePositiveInt(window.ScheduleMaintainTask.getProjectId());
+    }
+    return parsePositiveInt(($("taskModalProjectSelect") || {}).value);
+  }
+
+  function resolveProductId() {
+    if (context.productId) {
+      return context.productId;
+    }
+    if (window.ScheduleMaintainTask && typeof window.ScheduleMaintainTask.getProductId === "function") {
+      return parsePositiveInt(window.ScheduleMaintainTask.getProductId());
+    }
+    return 0;
+  }
+
+  function collectCreatePayload() {
+    return {
+      name: String(($("quickIterationName") || {}).value || "").trim(),
+      begin: normalizeYMD(($("quickIterationBegin") || {}).value),
+      end: normalizeYMD(($("quickIterationEnd") || {}).value),
+      productId: resolveProductId(),
+      planId: parsePositiveInt(($("quickIterationPlan") || {}).value),
+      pm: String(($("quickIterationOwner") || {}).value || "").trim(),
+      scrumTeam: parsePositiveInt(($("quickIterationTeam") || {}).value),
+    };
+  }
+
+  function validateCreatePayload(payload, projectId) {
+    if (!projectId) {
+      return "请先选择项目";
+    }
+    if (!payload.name) {
+      return "请填写迭代名称";
+    }
+    if (!payload.pm) {
+      return "请选择执行负责人";
+    }
+    if (!payload.begin || !payload.end) {
+      return "请选择计划起止日期";
+    }
+    if (payload.begin > payload.end) {
+      return "结束日期不能早于开始日期";
+    }
+    if (!payload.productId) {
+      return "缺少需求所属产品";
+    }
+    return "";
+  }
+
+  function postJSON(url, body) {
+    if (typeof window.scheduleFetch === "function") {
+      return window
+        .scheduleFetch(url, {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(body || {}),
+        })
+        .then(function (resp) {
+          return resp.json().then(function (data) {
+            return { ok: resp.ok, status: resp.status, data: data };
+          });
+        });
+    }
+    return fetch(url, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+      },
+      body: JSON.stringify(body || {}),
+    }).then(function (resp) {
+      return resp.json().then(function (data) {
+        return { ok: resp.ok, status: resp.status, data: data };
+      });
+    });
+  }
+
+  function createAndSelect() {
+    var projectId = resolveProjectId();
+    var payload = collectCreatePayload();
+    var errMsg = validateCreatePayload(payload, projectId);
+    if (errMsg) {
+      toast(errMsg, "error");
+      return;
+    }
+
+    var createBtn = $("quickIterationCreate");
+    if (createBtn) {
+      createBtn.disabled = true;
+    }
+
+    postJSON("/schedule/" + encodeURIComponent(projectId) + "/executions", payload)
+      .then(function (result) {
+        var data = (result && result.data) || {};
+        if (!data.success) {
+          toast(data.message || data.error || "创建失败", "error");
+          return;
+        }
+        var execution = data.execution || {};
+        var executionId = parsePositiveInt(execution.id);
+        if (!executionId) {
+          toast("创建成功但未返回执行 ID", "error");
+          return;
+        }
+        toast(data.message || "创建成功", "success");
+        var section = $("quickIteration");
+        if (section) {
+          section.open = false;
+        }
+        if (window.ScheduleMaintainTask && typeof window.ScheduleMaintainTask.selectNewExecution === "function") {
+          window.ScheduleMaintainTask.selectNewExecution(executionId);
+        }
+      })
+      .catch(function () {
+        toast("创建失败", "error");
+      })
+      .finally(function () {
+        if (createBtn) {
+          createBtn.disabled = false;
+        }
+      });
   }
 
   function bindEvents() {
@@ -324,7 +463,7 @@
     var createBtn = $("quickIterationCreate");
     if (createBtn) {
       createBtn.addEventListener("click", function () {
-        toast("功能开发中", "info");
+        createAndSelect();
       });
     }
   }
