@@ -9,6 +9,7 @@
   var period = "2w";
   var context = {
     productId: 0,
+    storyId: 0,
   };
 
   function $(id) {
@@ -265,6 +266,8 @@
   function resetQuickIterationForm() {
     period = "2w";
     context.productId = 0;
+    context.storyId = 0;
+    setCreatingState(false);
     var section = $("quickIteration");
     if (section) {
       section.open = false;
@@ -292,12 +295,23 @@
   function refreshQuickIterationUI(options) {
     options = options || {};
     context.productId = parsePositiveInt(options.productId);
+    context.storyId = parsePositiveInt(options.storyId);
     syncPeriodRadios();
     applyPeriodDates();
     var team = resolveDefaultTeam(options);
     initOwnerAutocomplete(team.manager);
     initPlanAutocomplete(options.plans);
     initTeamAutocomplete(team);
+  }
+
+  function resolveStoryId() {
+    if (context.storyId) {
+      return context.storyId;
+    }
+    if (window.ScheduleMaintainTask && typeof window.ScheduleMaintainTask.getStoryId === "function") {
+      return parsePositiveInt(window.ScheduleMaintainTask.getStoryId());
+    }
+    return 0;
   }
 
   function resolveProjectId() {
@@ -326,6 +340,7 @@
       planId: parsePositiveInt(($("quickIterationPlan") || {}).value),
       pm: String(($("quickIterationOwner") || {}).value || "").trim(),
       scrumTeam: parsePositiveInt(($("quickIterationTeam") || {}).value),
+      storyId: resolveStoryId(),
     };
   }
 
@@ -347,6 +362,9 @@
     }
     if (!payload.productId) {
       return "缺少需求所属产品";
+    }
+    if (!payload.storyId) {
+      return "缺少当前研发需求";
     }
     return "";
   }
@@ -383,6 +401,41 @@
     });
   }
 
+  var CREATE_BTN_IDLE_HTML = "创建并选用";
+  var CREATE_BTN_BUSY_HTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i>创建中…';
+
+  function setCreatingState(busy) {
+    var section = $("quickIteration");
+    var createBtn = $("quickIterationCreate");
+
+    if (section) {
+      section.classList.toggle("is-creating", !!busy);
+    }
+    if (createBtn) {
+      createBtn.disabled = !!busy;
+      createBtn.classList.toggle("is-creating", !!busy);
+      createBtn.setAttribute("aria-busy", busy ? "true" : "false");
+      createBtn.innerHTML = busy ? CREATE_BTN_BUSY_HTML : CREATE_BTN_IDLE_HTML;
+    }
+
+    if (section) {
+      section.querySelectorAll("input, button, textarea, select").forEach(function (el) {
+        if (el.id === "quickIterationCreate") {
+          return;
+        }
+        if (busy) {
+          if (!el.hasAttribute("data-prev-disabled")) {
+            el.setAttribute("data-prev-disabled", el.disabled ? "1" : "0");
+          }
+          el.disabled = true;
+        } else if (el.hasAttribute("data-prev-disabled")) {
+          el.disabled = el.getAttribute("data-prev-disabled") === "1";
+          el.removeAttribute("data-prev-disabled");
+        }
+      });
+    }
+  }
+
   function createAndSelect() {
     var projectId = resolveProjectId();
     var payload = collectCreatePayload();
@@ -393,9 +446,11 @@
     }
 
     var createBtn = $("quickIterationCreate");
-    if (createBtn) {
-      createBtn.disabled = true;
+    if (createBtn && createBtn.classList.contains("is-creating")) {
+      return;
     }
+
+    setCreatingState(true);
 
     postJSON("/schedule/" + encodeURIComponent(projectId) + "/executions", payload)
       .then(function (result) {
@@ -423,9 +478,7 @@
         toast("创建失败", "error");
       })
       .finally(function () {
-        if (createBtn) {
-          createBtn.disabled = false;
-        }
+        setCreatingState(false);
       });
   }
 

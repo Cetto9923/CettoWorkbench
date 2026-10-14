@@ -2,7 +2,7 @@
 // 文件: internal/module/schedule/gateway.go
 // 模块: 排期工作台
 // 类型: action
-// 职责: 出站适配层：调用禅道检查业需转研发提醒、业需转研发、指派研需、创建产品计划/执行/任务，以及批量删除研发需求/任务。
+// 职责: 出站适配层：调用禅道检查业需转研发提醒、业需转研发、指派研需、创建产品计划/执行/任务、关联执行需求，以及批量删除研发需求/任务。
 // 依赖: internal/pkg/zentao
 // =============================================================================
 
@@ -473,4 +473,33 @@ func createExecution(ctx context.Context, client *zentao.Client, req CreateExecu
 		name = strings.TrimSpace(req.Name)
 	}
 	return CreateExecutionResp{ID: out.ID, Name: name}, nil
+}
+
+func zentaoExecutionStoriesPath(executionID uint) string {
+	return fmt.Sprintf("/executions/%d/stories", executionID)
+}
+
+// linkExecutionStories 调用禅道 POST /executions/{id}/stories 关联研发需求。
+func linkExecutionStories(ctx context.Context, client *zentao.Client, executionID uint, storyIDs []uint) error {
+	if executionID == 0 {
+		return fmt.Errorf("执行 ID 无效")
+	}
+	if client == nil {
+		return fmt.Errorf("禅道 API 未配置")
+	}
+	if len(storyIDs) == 0 {
+		return fmt.Errorf("研发需求为空")
+	}
+	for i, id := range storyIDs {
+		if id == 0 {
+			return fmt.Errorf("第 %d 条研发需求 ID 无效", i+1)
+		}
+	}
+	body := map[string]any{
+		"stories": storyIDs,
+	}
+	if err := client.Do(ctx, http.MethodPost, zentaoExecutionStoriesPath(executionID), body, nil); err != nil {
+		return fmt.Errorf("关联研发需求到执行失败: %w", err)
+	}
+	return nil
 }

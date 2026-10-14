@@ -177,8 +177,22 @@
   align-items: flex-end;
 }
 
-.task-iteration-field--actions #quickIterationCreate {
-  align-self: flex-end;
+.task-iteration-field--actions #quickIterationCreate.is-creating {
+  cursor: wait;
+}
+
+.task-iteration-field--actions #quickIterationCreate.is-creating .fa-spinner {
+  margin-right: 6px;
+}
+
+.task-iteration-form.is-creating {
+  opacity: 0.92;
+  pointer-events: none;
+}
+
+.task-iteration-form.is-creating summary {
+  pointer-events: none;
+  cursor: wait;
 }
 
 @media (max-width: 720px) {

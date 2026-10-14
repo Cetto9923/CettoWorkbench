@@ -1240,6 +1240,7 @@ type CreateExecutionReq struct {
 	PlanID    uint   `json:"planId"`
 	PM        string `json:"pm"`
 	ScrumTeam uint   `json:"scrumTeam"`
+	StoryID   uint   `json:"storyId"`
 }
 
 // CreateExecutionResp 快速创建迭代成功响应。
@@ -1277,6 +1278,9 @@ func (r *CreateExecutionReq) Validate() []FieldError {
 	}
 	if strings.TrimSpace(r.PM) == "" {
 		errs = append(errs, FieldError{Field: "pm", Message: "执行负责人不能为空"})
+	}
+	if r.StoryID == 0 {
+		errs = append(errs, FieldError{Field: "storyId", Message: "研发需求不能为空"})
 	}
 	return errs
 }
