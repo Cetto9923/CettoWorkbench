@@ -158,8 +158,8 @@ func normalizeMenuType(raw string) string {
 	}
 }
 
-// ListUserMenus 返回当前用户可见的固定菜单（title/path 来自 zt_menus）。
-func (s *Service) ListUserMenus(ctx context.Context, actor *model.User, perms map[string]bool) (ListUserMenuResp, error) {
+// ListUserMenus 返回当前用户的固定菜单（title/path 来自 zt_menus；与侧栏一致
+func (s *Service) ListUserMenus(ctx context.Context, actor *model.User) (ListUserMenuResp, error) {
 	if actor == nil || strings.TrimSpace(actor.Account) == "" {
 		return ListUserMenuResp{}, errorx.New(errorx.ErrCodeForbidden, "请先登录")
 	}
@@ -169,9 +169,6 @@ func (s *Service) ListUserMenus(ctx context.Context, actor *model.User, perms ma
 	}
 	items := make([]UserMenuItem, 0, len(rows))
 	for _, row := range rows {
-		if !menuPermAllowed(perms, actor.IsSuperAdmin, row.Perm) {
-			continue
-		}
 		items = append(items, UserMenuItem{
 			ID:     row.ID,
 			MenuID: row.MenuID,
@@ -184,13 +181,13 @@ func (s *Service) ListUserMenus(ctx context.Context, actor *model.User, perms ma
 	return ListUserMenuResp{Items: items}, nil
 }
 
-// PinUserMenu 按 path 解析 zt_menus 后固定到当前用户。
-func (s *Service) PinUserMenu(ctx context.Context, actor *model.User, perms map[string]bool, req PinUserMenuReq) (PinUserMenuResp, error) {
+// PinUserMenu 按 path 解析 zt_menus 后固定到当前用户
+func (s *Service) PinUserMenu(ctx context.Context, actor *model.User, req PinUserMenuReq) (PinUserMenuResp, error) {
 	if actor == nil || strings.TrimSpace(actor.Account) == "" {
 		return PinUserMenuResp{}, errorx.New(errorx.ErrCodeForbidden, "请先登录")
 	}
 	path := strings.TrimSpace(req.Path)
-	m, err := s.resolveMenuByPath(ctx, path, perms, actor.IsSuperAdmin)
+	m, err := s.resolveMenuByPath(ctx, path)
 	if err != nil {
 		return PinUserMenuResp{}, err
 	}
@@ -247,7 +244,7 @@ func (s *Service) UnpinUserMenu(ctx context.Context, actor *model.User, req Unpi
 }
 
 // ReorderUserMenus 按 menuIds 顺序重写 sort；未出现在请求中的已固定项保持相对顺序排在末尾。
-func (s *Service) ReorderUserMenus(ctx context.Context, actor *model.User, perms map[string]bool, req ReorderUserMenuReq) (ReorderUserMenuResp, error) {
+func (s *Service) ReorderUserMenus(ctx context.Context, actor *model.User, req ReorderUserMenuReq) (ReorderUserMenuResp, error) {
 	if actor == nil || strings.TrimSpace(actor.Account) == "" {
 		return ReorderUserMenuResp{}, errorx.New(errorx.ErrCodeForbidden, "请先登录")
 	}
@@ -283,14 +280,15 @@ func (s *Service) ReorderUserMenus(ctx context.Context, actor *model.User, perms
 	if err := s.repo.UpdateUserMenuSorts(ctx, actor.Account, actor.Account, sorts); err != nil {
 		return ReorderUserMenuResp{}, err
 	}
-	list, err := s.ListUserMenus(ctx, actor, perms)
+	list, err := s.ListUserMenus(ctx, actor)
 	if err != nil {
 		return ReorderUserMenuResp{}, err
 	}
 	return ReorderUserMenuResp{Items: list.Items}, nil
 }
 
-func (s *Service) resolveMenuByPath(ctx context.Context, path string, perms map[string]bool, isSuperAdmin bool) (*model.Menu, error) {
+// resolveMenuByPath 按 path 最长前缀匹配可固定菜单；不做 perm 校验（与侧栏一致）。
+func (s *Service) resolveMenuByPath(ctx context.Context, path string) (*model.Menu, error) {
 	path = strings.TrimSpace(path)
 	if path == "" || path[0] != '/' || path == "/home" {
 		return nil, errorx.New(errorx.ErrCodeInvalidParam, "当前页面不可固定")
@@ -307,9 +305,6 @@ func (s *Service) resolveMenuByPath(ctx context.Context, path string, perms map[
 		if mp == "" {
 			continue
 		}
-		if !menuPermAllowed(perms, isSuperAdmin, m.Perm) {
-			continue
-		}
 		if path == mp || strings.HasPrefix(path, mp+"/") {
 			if len(mp) > bestLen {
 				best = m
@@ -321,18 +316,4 @@ func (s *Service) resolveMenuByPath(ctx context.Context, path string, perms map[
 		return nil, errorx.New(errorx.ErrCodeNotFound, "未找到可固定的菜单")
 	}
 	return best, nil
-}
-
-func menuPermAllowed(perms map[string]bool, isSuperAdmin bool, permCode string) bool {
-	if isSuperAdmin {
-		return true
-	}
-	code := strings.TrimSpace(permCode)
-	if code == "" {
-		return true
-	}
-	if perms == nil {
-		return false
-	}
-	return perms[code]
 }

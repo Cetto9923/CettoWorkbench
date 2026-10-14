@@ -93,7 +93,7 @@ func (h *Handler) RegisterUserMenuRoutes(rg *gin.RouterGroup) {
 // ListUserMenus 返回当前用户固定菜单列表。
 func (h *Handler) ListUserMenus(c *gin.Context) {
 	actor := middleware.CurrentUser(c)
-	resp, err := h.svc.ListUserMenus(c.Request.Context(), actor, currentUserPerms(c))
+	resp, err := h.svc.ListUserMenus(c.Request.Context(), actor)
 	if err != nil {
 		writeUserMenuError(c, h.logger, err)
 		return
@@ -116,7 +116,7 @@ func (h *Handler) PinUserMenu(c *gin.Context) {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"success": false, "errors": errs})
 		return
 	}
-	resp, err := h.svc.PinUserMenu(c.Request.Context(), actor, currentUserPerms(c), req)
+	resp, err := h.svc.PinUserMenu(c.Request.Context(), actor, req)
 	if err != nil {
 		writeUserMenuError(c, h.logger, err)
 		return
@@ -158,7 +158,7 @@ func (h *Handler) ReorderUserMenus(c *gin.Context) {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"success": false, "errors": errs})
 		return
 	}
-	resp, err := h.svc.ReorderUserMenus(c.Request.Context(), actor, currentUserPerms(c), req)
+	resp, err := h.svc.ReorderUserMenus(c.Request.Context(), actor, req)
 	if err != nil {
 		writeUserMenuError(c, h.logger, err)
 		return
@@ -168,15 +168,6 @@ func (h *Handler) ReorderUserMenus(c *gin.Context) {
 		"message": "已保存常用排序",
 		"items":   resp.Items,
 	})
-}
-
-func currentUserPerms(c *gin.Context) map[string]bool {
-	v, ok := c.Get("userPerms")
-	if !ok {
-		return nil
-	}
-	perms, _ := v.(map[string]bool)
-	return perms
 }
 
 func writeUserMenuError(c *gin.Context, logger *zap.Logger, err error) {
